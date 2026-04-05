@@ -21,7 +21,8 @@
 
   // ── Giriş/Mobil sayfaları atla ─────────────────────────────
   const PAGE = (window.location.pathname.split('/').pop() || 'index.html').replace('.html', '');
-  if (['giris', 'mobil'].some(p => PAGE.includes(p))) return;
+  var _ATLA = ['giris', 'mobil', '404', '403', '500', 'session-expired'];
+  if (_ATLA.some(function(p){ return PAGE.includes(p); })) return;
 
   // ── DİL YÖNETİCİSİ (Kural D-01) ────────────────────────────
   var _langData = {};
@@ -250,12 +251,61 @@
     catch (e) { return {}; }
   }
 
+  // ✅ SB-01: Merkezi auth kontrolü — tüm sayfalar buradan korunur
   function authKontrol() {
-    const o = getOturum();
-    if (!o || !o.rol) {
-      localStorage.setItem('ares_oturum', JSON.stringify({ tamAd: 'Demo Kullanıcı', rol: 'yonetici', id: 'demo' }));
+    // Sayfaya özgü SB-01 bloklarını devre dışı bırakmak için flag
+    window._aresAuthMerkezi = true;
+
+    // ARES hazır değilse bekle, sonra kontrol et
+    var _bekle = 0;
+    function _kontrol() {
+      _bekle++;
+      var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+
+      if (supa) {
+        supa.auth.getSession().then(function(res) {
+          var session = res.data && res.data.session;
+          if (session) {
+            // Oturum var — kullanıcı bilgilerini doldur
+            ARES.oturumKontrol().then(function(oturum) {
+              if (oturum) {
+                // Topbar'ı oturum bilgileriyle güncelle
+                _topbarOturumGuncelle(oturum);
+              }
+            });
+          } else {
+            // Oturum yok — giriş sayfasına yönlendir
+            window.location.href = 'giris.html';
+          }
+        }).catch(function() {
+          // Supabase'e ulaşılamıyor — local mod, devam et
+        });
+      } else if (_bekle < 30) {
+        // ARES henüz yüklenmedi, 100ms bekle
+        setTimeout(_kontrol, 100);
+      }
+      // 30 deneme sonrası (3 saniye) — offline/local mod kabul et, devam et
     }
+
+    // İlk kontrol için kısa gecikme (ARES.supabase() hazır olsun)
+    setTimeout(_kontrol, 150);
     return true;
+  }
+
+  // Topbar'daki kullanıcı bilgisini Supabase oturumuyla güncelle
+  function _topbarOturumGuncelle(oturum) {
+    var ad  = oturum.ad_soyad || 'Kullanıcı';
+    var ilk = (ad[0] || 'U').toUpperCase();
+    var rol = oturum.rol === 'yonetici' ? 'Yönetici'
+            : oturum.rol === 'imalatci' ? 'İmalatçı'
+            : oturum.rol || '';
+
+    var nameEl  = document.querySelector('.user-name');
+    var roleEl  = document.querySelector('.user-role');
+    var avatarEl = document.querySelector('.user-chip > div:first-child');
+    if (nameEl)  nameEl.textContent  = ad.split(' ')[0];
+    if (roleEl)  roleEl.textContent  = rol;
+    if (avatarEl) avatarEl.textContent = ilk;
   }
 
   // ── GLOBAL CSS enjeksiyonu ─────────────────────────────────
@@ -455,9 +505,20 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   transition: transform 0.22s cubic-bezier(.4,0,.2,1);
 }
 [data-theme="dark"] .theme-switch-thumb { transform: translateX(16px); }
+/* ── Güvenlik: tablo verileri seçilemez ── */
+td, th,
+.nav-item, .nav-label, .nav-sep-label,
+.spool-no-badge, .tr-stat-val, .tr-name,
+.sc-val, .aktif-badge {
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Input ve textarea'da seçime izin ver */
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
     `;
-    document.head.appendChild(style);
-  }
 
   // ── Sidebar HTML'ini sıfırdan oluştur ve app-shell'e ekle ─
   function buildSidebar() {
@@ -646,15 +707,56 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
       else if (el) el.textContent = document.title.replace(/AresPipe[\s\-–|]+/g, '').trim();
     }, 60);
 
-    // Logout
-    document.getElementById('tb-logout').onclick = () => {
+    // ✅ Logout — ARES.cikisYap() + giris.html
+    document.getElementById('tb-logout').onclick = function() {
       if (confirm('Çıkış yapmak istiyor musunuz?')) {
-        localStorage.removeItem('ares_oturum');
-        window.location.href = 'giris.html';
+        if (typeof ARES !== 'undefined' && ARES.cikisYap) {
+          ARES.cikisYap().then(function() {
+            window.location.href = 'giris.html';
+          });
+        } else {
+          localStorage.removeItem('ares_oturum');
+          window.location.href = 'giris.html';
+        }
       }
     };
 
     setupSearch();
+    _guvenlikKoruma();
+  }
+
+  // ✅ Güvenlik: sağ tık + klavye kısayol engelleme
+  function _guvenlikKoruma() {
+    // Sağ tık engelle
+    document.addEventListener('contextmenu', function(e) {
+      // Input/textarea içinde sağ tığa izin ver
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+    });
+
+    // Klavye kısayolları engelle
+    document.addEventListener('keydown', function(e) {
+      var ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'u': // Ctrl+U — kaynak görüntüle
+        case 's': // Ctrl+S — kaydet
+        case 'p': // Ctrl+P — yazdır (isteğe bağlı, kaldırılabilir)
+          e.preventDefault();
+          break;
+        case 'a': // Ctrl+A — tümünü seç — sadece input dışında engelle
+          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+          }
+          break;
+      }
+
+      // F12 — DevTools
+      if (e.key === 'F12') {
+        e.preventDefault();
+      }
+    });
   }
 
   // ── Dil Dropdown ───────────────────────────────────────────
