@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kalite Kontrol | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<!-- ✅ Flash prevention — B-03 -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ── TEMA DEĞİŞKENLERİ (flash önleme) ── */
@@ -16,7 +17,7 @@
 .page{padding:28px 28px 40px;}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
-.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 
 /* ── SOL KENAR RENK SİSTEMİ (Kural B-01) ── */
@@ -34,14 +35,14 @@
 .si-g{background:rgba(22,163,110,.12);color:var(--gr);}
 .si-a{background:rgba(217,119,6,.12);color:var(--warn);}
 .si-p{background:rgba(124,58,237,.12);color:var(--leg);}
-.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.stat-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 .stat-value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--tx);line-height:1;}
 
 /* ── SEÇİM BAR ── */
 .secim-bar{background:rgba(45,142,255,.06);border:1px solid rgba(45,142,255,.2);border-radius:12px;padding:12px 18px;margin-bottom:16px;display:none;align-items:center;gap:20px;flex-wrap:wrap;}
 .secim-bar.on{display:flex;}
 .sval{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--ac);line-height:1;}
-.slbl{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
+.slbl{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
 .ssep{width:1px;height:34px;background:rgba(45,142,255,.2);}
 
 /* ── SEKMELER ── */
@@ -49,16 +50,16 @@
 .tab-btn{background:none;border:none;color:var(--txm);font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;padding:9px 18px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;display:flex;align-items:center;gap:7px;}
 .tab-btn:hover{color:var(--tx);}
 .tab-btn.active{color:var(--leg);border-bottom-color:var(--leg);font-weight:600;}
-.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:14px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
 .tab-btn.active .tc{background:rgba(124,58,237,.15);color:var(--leg);}
 .panel{display:none;}.panel.on{display:block;}
 
 /* ── FİLTRE (Kural F-01) ── */
 .fbar{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-.fsel{padding:7px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;height:34px;}
+.fsel{padding:7px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;height:34px;}
 .fsel:focus{border-color:var(--ac);}
 .swrap{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:0 10px;flex:1;min-width:180px;max-width:260px;height:34px;}
-.swrap input{border:none;background:transparent;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
+.swrap input{border:none;background:transparent;color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
 .swrap input::placeholder{color:var(--txd);}
 
 /* ── GRUPLAR ── */
@@ -66,19 +67,19 @@
 .dhead{padding:12px 18px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;user-select:none;transition:background .15s;}
 .dhead:hover{background:var(--bor);}
 .dtitle{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);}
-.dsub{font-size:12px;color:var(--txd);margin-top:2px;}
+.dsub{font-size:14px;color:var(--txd);margin-top:2px;}
 .dbody.shut{display:none;}
 
 /* ── TABLO ── */
-.st{width:100%;border-collapse:collapse;font-size:13px;}
-.st thead th{text-align:left;padding:8px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.st{width:100%;border-collapse:collapse;font-size:14px;}
+.st thead th{text-align:left;padding:8px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
 .st td{padding:9px 14px;border-bottom:1px solid var(--bor);vertical-align:middle;}
 .st tr:last-child td{border-bottom:none;}
 .st tbody tr:hover td{background:rgba(45,142,255,.04);}
 .ck{width:15px;height:15px;cursor:pointer;accent-color:var(--ac);}
 
 /* ── BADGE ── */
-.b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:14px;font-weight:600;white-space:nowrap;}
 .bb{background:rgba(45,142,255,.12);color:var(--ac);}
 .bg{background:rgba(22,163,110,.12);color:var(--gr);}
 .ba{background:rgba(217,119,6,.12);color:var(--warn);}
@@ -86,13 +87,13 @@
 .bp{background:rgba(124,58,237,.12);color:var(--leg);}
 
 /* ── BUTONLAR ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:'Barlow',sans-serif;white-space:nowrap;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:'Barlow',sans-serif;white-space:nowrap;}
 .btn-p{background:var(--ac);color:#fff;}.btn-p:hover{opacity:.88;}
 .btn-s{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-s:hover{border-color:var(--ac);color:var(--ac);}
 .btn-g{background:transparent;color:var(--txm);border:1px solid var(--bor);}.btn-g:hover{background:var(--sur2);color:var(--tx);}
 .btn-ok{background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);}.btn-ok:hover{background:rgba(22,163,110,.2);}
 .btn-no{background:rgba(229,62,62,.10);color:var(--re);border:1px solid rgba(229,62,62,.25);}.btn-no:hover{background:rgba(229,62,62,.18);}
-.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-sm{padding:5px 11px;font-size:14px;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* ── PAKET KARTLARI ── */
@@ -101,7 +102,7 @@
 .pno{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--ac);}
 .pbody{padding:10px 18px 14px;border-top:1px solid var(--bor);background:var(--sur2);}
 .chips{display:flex;flex-wrap:wrap;gap:5px;}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:var(--sur2);border:1px solid var(--bor);color:var(--txm);}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:14px;font-weight:600;background:var(--sur2);border:1px solid var(--bor);color:var(--txm);}
 .chip.ok{background:rgba(22,163,110,.08);border-color:rgba(22,163,110,.3);color:var(--gr);}
 .chip.no{background:rgba(229,62,62,.08);border-color:rgba(229,62,62,.3);color:var(--re);}
 
@@ -112,12 +113,12 @@
 .mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
 .mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:2px;}.mcl:hover{color:var(--tx);}
 .fg{margin-bottom:14px;}
-.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.fi{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
 .fi:focus{border-color:var(--ac);}
 .fi::placeholder{color:var(--txd);}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.fta{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:68px;}
+.fta{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:68px;}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:3000;animation:tslide .3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
@@ -138,12 +139,12 @@
 <!-- SAYFA BAŞLIĞI -->
 <div class="page-header">
   <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Kalite Kontrol</span></div>
-    <h1 class="page-title">Kalite Kontrol</h1>
+    <div class="breadcrumb"><a href="index.html" data-i18n="kk_home">Ana Sayfa</a><span>/</span><span data-i18n="kk_breadcrumb">Kalite Kontrol</span></div>
+    <h1 class="page-title" data-i18n="kk_title">Kalite Kontrol</h1>
   </div>
   <button class="btn btn-p" id="btnDavetUst" onclick="davetAc()" disabled>
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Davet Paketi Oluştur
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg data-i18n="kk_btn_create">
+    <span data-i18n="kk_btn_create_invite">Davet Paketi Oluştur</span>
   </button>
 </div>
 
@@ -151,54 +152,54 @@
 <div class="stat-row">
   <div class="stat-card cl-ac">
     <div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-    <div><div class="stat-label">Kaliteye Hazır</div><div class="stat-value" id="sH">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_hazir">Kaliteye Hazır</div><div class="stat-value" id="sH">0</div></div>
   </div>
   <div class="stat-card cl-leg">
     <div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-    <div><div class="stat-label">Davet Paketi</div><div class="stat-value" id="sD">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_davet">Davet Paketi</div><div class="stat-value" id="sD">0</div></div>
   </div>
   <div class="stat-card cl-warn">
     <div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div><div class="stat-label">Tersane Bekleniyor</div><div class="stat-value" id="sB">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_bekle">Tersane Bekleniyor</div><div class="stat-value" id="sB">0</div></div>
   </div>
   <div class="stat-card cl-gr">
     <div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div><div class="stat-label">Onaylanan</div><div class="stat-value" id="sO">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_onay">Onaylanan</div><div class="stat-value" id="sO">0</div></div>
   </div>
 </div>
 
 <!-- SEÇİM BAR -->
 <div class="secim-bar" id="secBar">
-  <div><div class="sval" id="secD">0</div><div class="slbl">Devre</div></div>
+  <div><div class="sval" id="secD">0</div><div class="slbl" data-i18n="kk_sec_devre">Devre</div></div>
   <div class="ssep"></div>
-  <div><div class="sval" id="secS">0</div><div class="slbl">Spool</div></div>
+  <div><div class="sval" id="secS">0</div><div class="slbl" data-i18n="kk_sec_spool">Spool</div></div>
   <div class="ssep"></div>
-  <div><div class="sval" id="secK">0</div><div class="slbl">kg</div></div>
+  <div><div class="sval" id="secK">0</div><div class="slbl" data-i18n="kk_sec_kg">kg</div></div>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button class="btn btn-g btn-sm" onclick="secTemizle()">Temizle</button>
-    <button class="btn btn-p btn-sm" onclick="davetAc()">Davet Paketi Oluştur</button>
+    <button class="btn btn-g btn-sm" onclick="secTemizle()" data-i18n="kk_btn_clear">Temizle</button>
+    <button class="btn btn-p btn-sm" onclick="davetAc()" data-i18n="kk_btn_create_pkg">Davet Paketi Oluştur</button>
   </div>
 </div>
 
 <!-- SEKMELER -->
 <div class="tab-bar">
-  <button class="tab-btn active" data-tab="davet">Davet Oluştur <span class="tc" id="tD">0</span></button>
-  <button class="tab-btn" data-tab="bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
-  <button class="tab-btn" data-tab="onaylanan">Onaylananlar <span class="tc" id="tO">0</span></button>
+  <button class="tab-btn active" data-tab="davet"><span data-i18n="kk_tab_davet">Davet Oluştur</span> <span class="tc" id="tD">0</span></button>
+  <button class="tab-btn" data-tab="bekleyen"><span data-i18n="kk_tab_bekle">Bekleyen</span> <span class="tc" id="tB">0</span></button>
+  <button class="tab-btn" data-tab="onaylanan"><span data-i18n="kk_tab_onay">Onaylananlar</span> <span class="tc" id="tO">0</span></button>
 </div>
 
 <!-- PANEL: DAVET OLUŞTUR -->
 <div class="panel on" id="panelDavet">
   <div class="fbar cl-warn">
-    <select class="fsel" id="fT" onchange="filtrele()"><option value="">Tüm Tersaneler</option></select>
-    <select class="fsel" id="fP" onchange="filtrele()"><option value="">Tüm Projeler</option></select>
+    <select class="fsel" id="fT" onchange="filtrele()"><option value="" data-i18n="kk_filter_yard">Tüm Tersaneler</option></select>
+    <select class="fsel" id="fP" onchange="filtrele()"><option value="" data-i18n="kk_filter_all_projects">Tüm Projeler</option></select>
     <div class="swrap">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--txd);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="fA" placeholder="Devre veya spool ara..." oninput="filtrele()">
+      <input type="text" id="fA" data-i18n-placeholder="kk_search_ph" data-i18n-placeholder="kk_search_ph" placeholder="Devre veya spool ara..." oninput="filtrele()">
     </div>
-    <button class="btn btn-g btn-sm" onclick="filtreSifirla()">Temizle</button>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txm);cursor:pointer;margin-left:auto;">
-      <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)"> Tümünü Seç
+    <button class="btn btn-g btn-sm" onclick="filtreSifirla()" data-i18n="kk_btn_clear">Temizle</button>
+    <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);cursor:pointer;margin-left:auto;">
+      <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)" data-i18n="kk_select_all"><span data-i18n="kk_select_all"> Tümünü Seç</span>
     </label>
   </div>
   <div id="hazirListe"></div>
@@ -222,24 +223,24 @@
 <div id="mDavet" class="mov" style="display:none;">
   <div class="mbox">
     <div class="mhead">
-      <div class="mtitle">Kalite Davet Paketi Oluştur</div>
+      <div class="mtitle" data-i18n="kk_modal_davet_title">Kalite Davet Paketi Oluştur</div>
       <button class="mcl" onclick="document.getElementById('mDavet').style.display='none'">&#x2715;</button>
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:600;color:var(--txd);margin-bottom:8px;">Seçilen Spooller</div>
-      <div id="mOzet" style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;font-size:13px;"></div>
+      <div style="font-size:14px;font-weight:600;color:var(--txd);margin-bottom:8px;" data-i18n="kk_modal_secilenler">Seçilen Spooller</div>
+      <div id="mOzet" style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;font-size:14px;"></div>
       <div id="mListe" style="max-height:130px;overflow-y:auto;"></div>
     </div>
     <div class="fr fg">
-      <div><label class="fl">Davet Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="dTarih"></div>
-      <div><label class="fl">Tahmini Kontrol Tarihi</label><input type="date" class="fi" id="dKontrol"></div>
+      <div><label class="fl" data-i18n="kk_davet_tarihi">Davet Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="dTarih"></div>
+      <div><label class="fl" data-i18n="kk_kontrol_tarihi">Tahmini Kontrol Tarihi</label><input type="date" class="fi" id="dKontrol"></div>
     </div>
-    <div class="fg"><label class="fl">Kontakt / Not</label><input class="fi" id="dNot" placeholder="Tersane yetkilisi veya not..."></div>
-    <div class="fg"><label class="fl">Mail <span style="font-size:10px;color:var(--txd);font-weight:400;">(opsiyonel)</span></label><input type="email" class="fi" id="dMail" placeholder="quality@tersane.com.tr"></div>
+    <div class="fg"><label class="fl" data-i18n="kk_kontakt">Kontakt / Not</label><input class="fi" id="dNot" placeholder="Tersane yetkilisi veya not..."></div>
+    <div class="fg"><label class="fl" data-i18n="kk_mail">Mail</label><input type="email" class="fi" id="dMail" placeholder="quality@tersane.com.tr"></div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mDavet').style.display='none'">Iptal</button>
-      <button class="btn btn-s" onclick="showToast('PDF onizleme yakindan','info')">PDF Onizle</button>
-      <button class="btn btn-p" style="flex:2;" onclick="davetKaydet()">Paketi Olustur &amp; Kaydet</button>
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mDavet').style.display='none'" data-i18n="kk_btn_iptal">İptal</button>
+      <button class="btn btn-s" onclick="showToast(tv('kk_toast_pdf','PDF önizleme yakında'),'info')" data-i18n="kk_btn_pdf">PDF Önizle</button>
+      <button class="btn btn-p" style="flex:2;" onclick="davetKaydet()" data-i18n="kk_btn_kaydet">Paketi Oluştur &amp; Kaydet</button>
     </div>
   </div>
 </div>
@@ -248,35 +249,210 @@
 <div id="mOnay" class="mov" style="display:none;">
   <div class="mbox" style="max-width:480px;">
     <div class="mhead">
-      <div class="mtitle">Kalite Onayi Gir</div>
+      <div class="mtitle" data-i18n="kk_modal_onay_title">Kalite Onayı Gir</div>
       <button class="mcl" onclick="document.getElementById('mOnay').style.display='none'">&#x2715;</button>
     </div>
     <input type="hidden" id="oPaketId">
     <div class="fr fg">
-      <div><label class="fl">Kontrol Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="oTarih"></div>
-      <div><label class="fl">Kontrol Eden <span style="color:var(--re)">*</span></label><input class="fi" id="oKisi" placeholder="Ad Soyad"></div>
+      <div><label class="fl" data-i18n="kk_kontrol_tarihi2">Kontrol Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="oTarih"></div>
+      <div><label class="fl" data-i18n="kk_kontrol_eden">Kontrol Eden <span style="color:var(--re)">*</span></label><input class="fi" id="oKisi" data-i18n-placeholder="kk_controller" placeholder="Ad Soyad"></div>
     </div>
     <div class="fg">
-      <label class="fl">Karar <span style="color:var(--re)">*</span></label>
+      <label class="fl" data-i18n="kk_karar">Karar <span style="color:var(--re)">*</span></label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button class="btn btn-ok" id="bOnay" onclick="kararSec('onay')" style="justify-content:center;padding:12px;">Tamami Onaylandi</button>
-        <button class="btn btn-no" id="bRet"  onclick="kararSec('ret')"  style="justify-content:center;padding:12px;">Ret / Duzeltme</button>
+        <button class="btn btn-ok" id="bOnay" onclick="kararSec('onay')" style="justify-content:center;padding:12px;" data-i18n="kk_tamami">Tamamı Onaylandı</button>
+        <button class="btn btn-no" id="bRet"  onclick="kararSec('ret')"  style="justify-content:center;padding:12px;" data-i18n="kk_ret">Ret / Düzeltme</button>
       </div>
     </div>
     <div id="retBlok" style="display:none;" class="fg">
-      <label class="fl">Ret Nedeni <span style="color:var(--re)">*</span></label>
-      <textarea class="fta" id="oRetNot" placeholder="Hangi spooller ret aldi, duzeltme talebi nedir?"></textarea>
+      <label class="fl" data-i18n="kk_ret_neden">Ret Nedeni <span style="color:var(--re)">*</span></label>
+      <textarea class="fta" id="oRetNot" data-i18n-placeholder="kk_reject_ph" placeholder="Hangi spooller ret aldı, düzeltme talebi nedir?"></textarea>
     </div>
-    <div class="fg"><label class="fl">Ek Not</label><input class="fi" id="oNot" placeholder="Opsiyonel..."></div>
+    <div class="fg"><label class="fl" data-i18n="kk_ek_not">Ek Not</label><input class="fi" id="oNot" data-i18n-placeholder="kk_optional" placeholder="Opsiyonel..."></div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mOnay').style.display='none'">Iptal</button>
-      <button class="btn btn-p" style="flex:2;" onclick="onayKaydet()">Onayi Kaydet</button>
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mOnay').style.display='none'" data-i18n="kk_btn_iptal">İptal</button>
+      <button class="btn btn-p" style="flex:2;" onclick="onayKaydet()" data-i18n="kk_btn_onay_kaydet">Onayı Kaydet</button>
     </div>
   </div>
 </div>
 
 <script>
 'use strict';
+
+// ════ D-01 DİL SİSTEMİ ════
+// ── YARDIMCI ────────────────────────────────────────────────
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── D-01 DİL SİSTEMİ ────────────────────────────────────────
+var _I18N = {
+  en:{
+    kk_home:'Home', kk_breadcrumb:'Quality Control',
+    kk_title:'Quality Control',
+    kk_btn_create_invite:'Create Invitation Package',
+    kk_stat_ready:'Ready for QC', kk_stat_invite:'Invitation Package',
+    kk_stat_waiting:'Awaiting Yard', kk_stat_approved:'Approved',
+    kk_sec_devre:'Circuit', kk_sec_spool:'Spool', kk_sec_kg:'kg',
+    kk_sec_clear:'Clear', kk_sec_create:'Create Invitation Package',
+    kk_tab_davet:'Create Invitation', kk_tab_bekleyen:'Pending',
+    kk_tab_onaylanan:'Approved',
+    kk_filter_all_yards:'All Yards', kk_filter_all_projects:'All Projects',
+    kk_search_ph:'Search circuit or spool...',
+    kk_filter_clear:'Clear',
+    kk_select_all:'Select All',
+    kk_no_spool:'No spools to display',
+    kk_secili:' selected',
+    kk_all:'All',
+    kk_spool_col:'Spool', kk_weight_col:'Weight',
+    kk_no_pending:'No pending invitation packages',
+    kk_no_approved:'No approved packages yet',
+    kk_modal_invite_title:'Create Quality Invitation Package',
+    kk_selected_spools:'Selected Spools',
+    kk_invite_date:'Invitation Date', kk_control_date:'Estimated Control Date',
+    kk_contact_note:'Contact / Note', kk_mail:'Email',
+    kk_mail_optional:'(optional)',
+    kk_cancel:'Cancel', kk_pdf_preview:'Preview PDF',
+    kk_create_save:'Create & Save Package',
+    kk_modal_approve_title:'Enter Quality Approval',
+    kk_control_date_label:'Control Date', kk_controller:'Controller',
+    kk_decision:'Decision',
+    kk_approve_all:'Approve All',
+    kk_reject:'Reject / Correction',
+    kk_reject_reason:'Rejection Reason',
+    kk_reject_ph:'Which spools were rejected, what corrections are needed?',
+    kk_extra_note:'Additional Note', kk_optional:'Optional...',
+    kk_save_approval:'Save Approval',
+    kk_status_pending:'Awaiting Yard',
+    kk_status_approved:'Approved',
+    kk_status_rejected:'Rejected / Correction',
+    kk_pdf_btn:'PDF',
+    kk_enter_approval:'Enter Approval',
+    kk_to_shipment:'To Shipment →',
+    kk_toast_select_first:'Please select spools first',
+    kk_toast_invite_date_req:'Invitation date is required',
+    kk_toast_created:'invitation package created',
+    kk_toast_decision_req:'Please select a decision',
+    kk_toast_date_req:'Date is required',
+    kk_toast_controller_req:'Controller name is required',
+    kk_toast_reject_req:'Rejection reason is required',
+    kk_toast_approved_ship:'approved — ready for shipment!',
+    kk_toast_rejected:'rejected',
+    kk_toast_pdf:'PDF downloading...',
+    kk_toast_shipment:'Added to shipment preparation list',
+    kk_toast_pdf_soon:'PDF preview coming soon',
+    kk_davet_spool:'Spool:', kk_davet_circuit:'Circuit:', kk_davet_total:'Total:',
+    kk_card_invite:'Invite:', kk_card_control:'Control:',
+    kk_toast_select_first:'Please select spools first',
+    kk_toast_olusturuldu:'invitation package created',
+    kk_empty_bekle:'No pending invitation packages',
+    kk_empty_onay:'No approved packages yet',
+    kk_durum_bekle:'Awaiting Yard',
+    kk_durum_onay:'Approved',
+    kk_durum_ret:'Rejected / Correction',
+    kk_toast_sevkiyat:'PDF downloading...',
+    kk_sevkiyata:'To Shipment →',
+    kk_toast_karar:'Please select a decision',
+    kk_toast_tarih:'Date is required',
+    kk_toast_kisi:'Controller name is required',
+    kk_toast_ret_neden:'Rejection reason is required',
+    kk_toast_onaylandi:'approved — ready for shipment!',
+    kk_toast_ret_sonuc:'rejected',
+  },
+  ar:{
+    kk_home:'الرئيسية', kk_breadcrumb:'مراقبة الجودة',
+    kk_title:'مراقبة الجودة',
+    kk_btn_create_invite:'إنشاء حزمة دعوة',
+    kk_stat_ready:'جاهز للجودة', kk_stat_invite:'حزمة الدعوة',
+    kk_stat_waiting:'في انتظار الحوض', kk_stat_approved:'موافق عليه',
+    kk_sec_devre:'دائرة', kk_sec_spool:'بكرة', kk_sec_kg:'كجم',
+    kk_sec_clear:'مسح', kk_sec_create:'إنشاء حزمة دعوة',
+    kk_tab_davet:'إنشاء دعوة', kk_tab_bekleyen:'قيد الانتظار',
+    kk_tab_onaylanan:'موافق عليه',
+    kk_filter_all_yards:'جميع الأحواض', kk_filter_all_projects:'جميع المشاريع',
+    kk_search_ph:'ابحث عن دائرة أو بكرة...',
+    kk_filter_clear:'مسح',
+    kk_select_all:'تحديد الكل',
+    kk_no_spool:'لا توجد بكرات للعرض',
+    kk_secili:' محدد',
+    kk_all:'الكل',
+    kk_spool_col:'البكرة', kk_weight_col:'الوزن',
+    kk_no_pending:'لا توجد حزم دعوة معلقة',
+    kk_no_approved:'لا توجد حزم موافق عليها بعد',
+    kk_modal_invite_title:'إنشاء حزمة دعوة الجودة',
+    kk_selected_spools:'البكرات المحددة',
+    kk_invite_date:'تاريخ الدعوة', kk_control_date:'تاريخ المراقبة المتوقع',
+    kk_contact_note:'جهة الاتصال / ملاحظة', kk_mail:'البريد الإلكتروني',
+    kk_mail_optional:'(اختياري)',
+    kk_cancel:'إلغاء', kk_pdf_preview:'معاينة PDF',
+    kk_create_save:'إنشاء وحفظ الحزمة',
+    kk_modal_approve_title:'إدخال موافقة الجودة',
+    kk_control_date_label:'تاريخ المراقبة', kk_controller:'المراقب',
+    kk_decision:'القرار',
+    kk_approve_all:'الموافقة على الكل',
+    kk_reject:'رفض / تصحيح',
+    kk_reject_reason:'سبب الرفض',
+    kk_reject_ph:'أي بكرات رُفضت وما هو طلب التصحيح؟',
+    kk_extra_note:'ملاحظة إضافية', kk_optional:'اختياري...',
+    kk_save_approval:'حفظ الموافقة',
+    kk_status_pending:'في انتظار الحوض',
+    kk_status_approved:'موافق عليه',
+    kk_status_rejected:'مرفوض / تصحيح',
+    kk_pdf_btn:'PDF',
+    kk_enter_approval:'إدخال الموافقة',
+    kk_to_shipment:'إلى الشحن →',
+    kk_toast_select_first:'يرجى تحديد البكرات أولاً',
+    kk_toast_invite_date_req:'تاريخ الدعوة مطلوب',
+    kk_toast_created:'تم إنشاء حزمة الدعوة',
+    kk_toast_decision_req:'يرجى تحديد قرار',
+    kk_toast_date_req:'التاريخ مطلوب',
+    kk_toast_controller_req:'اسم المراقب مطلوب',
+    kk_toast_reject_req:'سبب الرفض مطلوب',
+    kk_toast_approved_ship:'موافق عليه — جاهز للشحن!',
+    kk_toast_rejected:'مرفوض',
+    kk_toast_pdf:'جاري تنزيل PDF...',
+    kk_toast_shipment:'تمت الإضافة إلى قائمة تحضير الشحن',
+    kk_toast_pdf_soon:'معاينة PDF قريباً',
+    kk_davet_spool:'بكرة:', kk_davet_circuit:'دائرة:', kk_davet_total:'المجموع:',
+    kk_card_invite:'الدعوة:', kk_card_control:'المراقبة:',
+    kk_toast_select_first:'يرجى تحديد البكرات أولاً',
+    kk_toast_olusturuldu:'تم إنشاء حزمة الدعوة',
+    kk_empty_bekle:'لا توجد حزم دعوة معلقة',
+    kk_empty_onay:'لا توجد حزم موافق عليها بعد',
+    kk_durum_bekle:'في انتظار الحوض',
+    kk_durum_onay:'موافق عليه',
+    kk_durum_ret:'مرفوض / تصحيح',
+    kk_toast_sevkiyat:'جاري تنزيل PDF...',
+    kk_sevkiyata:'إلى الشحن →',
+    kk_toast_karar:'يرجى تحديد قرار',
+    kk_toast_tarih:'التاريخ مطلوب',
+    kk_toast_kisi:'اسم المراقب مطلوب',
+    kk_toast_ret_neden:'سبب الرفض مطلوب',
+    kk_toast_onaylandi:'موافق عليه — جاهز للشحن!',
+    kk_toast_ret_sonuc:'مرفوض',
+  }
+};
+function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
+function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
+function _applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k=el.getAttribute('data-i18n');
+    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
+    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
+    var v=tv(k,el.getAttribute('data-i18n-tr'));
+    if(isInp){el.placeholder=v;}else{el.textContent=v;}
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var k=el.getAttribute('data-i18n-placeholder');
+    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
+    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
+  });
+}
+window._onLangChange=function(){
+  _applyI18n();
+  filtrele();
+  renderBekle();
+  renderOnay();
+};
+new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 
 // ── VERİ ────────────────────────────────────────────────────
 var HAZIR_SABIT = [
@@ -336,7 +512,7 @@ function doldur() {
   fT.addEventListener('change', function() {
     var t = fT.value;
     var fP = document.getElementById('fP');
-    fP.innerHTML = '<option value="">Tum Projeler</option>';
+    fP.innerHTML = '<option value="">'+tv('kk_filter_proj','Tüm Projeler')+'</option>';
     var projs = [];
     HAZIR.forEach(function(h){ if(!t||h.tersane===t){ var k=h.projeNo+'|'+h.gemi; if(projs.indexOf(k)<0) projs.push(k); } });
     projs.sort().forEach(function(s){
@@ -368,7 +544,7 @@ function filtreSifirla() {
   document.getElementById('fT').value = '';
   document.getElementById('fA').value = '';
   var fP = document.getElementById('fP');
-  fP.innerHTML = '<option value="">Tum Projeler</option>';
+  fP.innerHTML = '<option value="">'+tv('kk_filter_proj','Tüm Projeler')+'</option>';
   var projSet = [];
   HAZIR.forEach(function(h){ var k=h.projeNo+'|'+h.gemi; if(projSet.indexOf(k)<0) projSet.push(k); });
   projSet.sort().forEach(function(s){
@@ -381,7 +557,7 @@ function filtreSifirla() {
 // ── HAZIR LİSTE RENDER ───────────────────────────────────────
 function renderHazir(liste) {
   var el = document.getElementById('hazirListe');
-  if (!liste.length) { el.innerHTML = '<div class="bos">Gosterilecek spool yok</div>'; return; }
+  if (!liste.length) { el.innerHTML = '<div class="bos">'+tv('kk_empty_spool','Gösterilecek spool yok')+'</div>'; return; }
   var G = {};
   liste.forEach(function(h) {
     var gk = h.tersane+'||'+h.projeNo;
@@ -400,27 +576,27 @@ function renderHazir(liste) {
     html += '<div class="dgrup">';
     html += '<div class="dhead cl-ac" onclick="toggleGrup(this)">';
     html += '<div>';
-    html += '<div class="dtitle">'+g.tersane+' &middot; <span style="color:var(--ac);">'+g.projeNo+'</span> <span style="font-weight:400;color:var(--txm);">'+g.gemi+'</span></div>';
-    html += '<div class="dsub">'+all.length+' spool &middot; '+kg+' kg</div>';
+    html += '<div class="dtitle">'+esc(g.tersane)+' &middot; <span style="color:var(--ac);">'+esc(g.projeNo)+'</span> <span style="font-weight:400;color:var(--txm);">'+esc(g.gemi)+'</span></div>';
+    html += '<div class="dsub">'+all.length+' spool &middot; '+esc(kg)+' kg</div>';
     html += '</div>';
     html += '<div style="display:flex;align-items:center;gap:10px;">';
-    if(nSec>0) html += '<span class="b bb">'+nSec+' secili</span>';
-    html += '<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txm);cursor:pointer;">';
+    if(nSec>0) html += '<span class="b bb">'+esc(String(nSec))+tv('kk_secili',' seçili')+'</span>';
+    html += '<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:5px;font-size:14px;color:var(--txm);cursor:pointer;">';
     html += '<input type="checkbox" class="ck" '+(nSec===all.length&&all.length>0?'checked':'')+' onchange="grupSec(this,\''+ids+'\')">';
-    html += ' Tumu</label>';
-    html += '<span style="color:var(--txd);font-size:13px;">&#9654;</span>';
+    html += ' '+tv('kk_tumu','Tümü')+'</label>';
+    html += '<span style="color:var(--txd);font-size:14px;">&#9654;</span>';
     html += '</div></div>';
     html += '<div class="dbody shut">';
     Object.keys(g.devs).forEach(function(dev) {
       var spls = g.devs[dev];
       html += '<div style="border-bottom:1px solid var(--bor);">';
-      html += '<div style="padding:8px 18px;background:var(--sur2);font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;">'+dev+'</div>';
-      html += '<table class="st"><thead><tr><th style="width:32px;"></th><th>Spool</th><th style="text-align:right;">Agirlik</th></tr></thead><tbody>';
+      html += '<div style="padding:8px 18px;background:var(--sur2);font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;">'+esc(dev)+'</div>';
+      html += '<table class="st"><thead><tr><th style="width:32px;"></th><th>'+tv('kk_spool_col','Spool')+'</th><th style="text-align:right;">'+tv('kk_weight_col','Ağırlık')+'</th></tr></thead><tbody>';
       spls.forEach(function(s) {
         html += '<tr>';
         html += '<td><input type="checkbox" class="ck" '+(secHas(s.id)?'checked':'')+' onchange="spSec(\''+s.id+'\',this.checked)"></td>';
-        html += '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">'+s.spool+'</td>';
-        html += '<td style="text-align:right;color:var(--txm);">'+s.agirlik+' kg</td>';
+        html += '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">'+esc(s.spool)+'</td>';
+        html += '<td style="text-align:right;color:var(--txm);">'+esc(String(s.agirlik))+' kg</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -477,19 +653,19 @@ function guncelSecBar() {
 
 // ── DAVET ────────────────────────────────────────────────────
 function davetAc() {
-  if (!secSize()) { showToast('Once spool secin','error'); return; }
+  if (!secSize()) { showToast(tv('kk_toast_spool_sec','Önce spool seçin'),'error'); return; }
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var kg = sl.reduce(function(a,h){ return a+h.agirlik; },0).toFixed(1);
   var devSet = {};
   sl.forEach(function(h){ devSet[h.devre]=true; });
-  var ozet = 'Spool: <strong style="color:var(--tx);">'+sl.length+'</strong> &nbsp;';
-  ozet += 'Devre: <strong style="color:var(--tx);">'+Object.keys(devSet).length+'</strong> &nbsp;';
-  ozet += 'Toplam: <strong style="color:var(--ac);">'+kg+' kg</strong>';
+  var ozet = tv('kk_sec_spool','Spool')+': <strong style="color:var(--tx);">'+sl.length+'</strong> &nbsp;';
+  ozet += tv('kk_davet_circuit','Devre:')+' <strong style="color:var(--tx);">'+esc(String(Object.keys(devSet).length))+'</strong> &nbsp;';
+  ozet += tv('kk_davet_total','Toplam:')+' <strong style="color:var(--ac);">'+esc(kg)+' kg</strong>';
   document.getElementById('mOzet').innerHTML = ozet;
   var listHtml = sl.map(function(h){
-    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:12px;">'+
-      '<span style="color:var(--txm);">'+h.projeNo+' / <span style="color:var(--ac);">'+h.devre+'</span> / <strong style="color:var(--tx);">'+h.spool+'</strong></span>'+
-      '<span style="color:var(--txd);">'+h.agirlik+' kg</span></div>';
+    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:14px;">'+
+      '<span style="color:var(--txm);">'+esc(h.projeNo)+' / <span style="color:var(--ac);">'+esc(h.devre)+'</span> / <strong style="color:var(--tx);">'+esc(h.spool)+'</strong></span>'+
+      '<span style="color:var(--txd);">'+esc(String(h.agirlik))+' kg</span></div>';
   }).join('');
   document.getElementById('mListe').innerHTML = listHtml;
   document.getElementById('dTarih').value = new Date().toISOString().split('T')[0];
@@ -501,7 +677,7 @@ function davetAc() {
 
 function davetKaydet() {
   var tarih = document.getElementById('dTarih').value;
-  if (!tarih) { showToast('Davet tarihi zorunlu','error'); return; }
+  if (!tarih) { showToast(tv('kk_toast_davet_tarih','Davet tarihi zorunlu'),'error'); return; }
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var fmt = function(d){ return d ? new Date(d).toLocaleDateString('tr-TR') : '-'; };
   var no = 'KD-26-'+String(psayac).padStart(3,'0'); psayac++;
@@ -528,8 +704,9 @@ function davetKaydet() {
   }
   secClear();
   document.getElementById('mDavet').style.display = 'none';
+  try{var _lg=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_lg.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'KK_DAVET_OLUSTUR',kaynak:no,aciklama:sl.length+' spool'});localStorage.setItem('ares_islemLog',JSON.stringify(_lg.slice(0,1000)));}catch(e){}
   filtrele(); renderBekle(); renderOnay(); guncelStatler();
-  showToast(no+' numarali davet paketi olusturuldu','success');
+  showToast(no+' '+tv('kk_toast_olusturuldu','numaralı davet paketi oluşturuldu'),'success');
   tabGit('bekleyen');
 }
 
@@ -537,33 +714,33 @@ function davetKaydet() {
 function renderBekle() {
   var el = document.getElementById('bekleListe');
   var bl = paketler.filter(function(p){ return p.durum==='bekleyen'; });
-  el.innerHTML = bl.length ? bl.map(pkart).join('') : '<div class="bos">Bekleyen davet paketi yok</div>';
+  el.innerHTML = bl.length ? bl.map(pkart).join('') : '<div class="bos">'+tv('kk_empty_bekle','Bekleyen davet paketi yok')+'</div>';
 }
 
 function renderOnay() {
   var el = document.getElementById('onayListe');
   var ol = paketler.filter(function(p){ return p.durum==='onaylandi'||p.durum==='reddedildi'; });
-  el.innerHTML = ol.length ? ol.map(pkart).join('') : '<div class="bos">Henuz onaylanan paket yok</div>';
+  el.innerHTML = ol.length ? ol.map(pkart).join('') : '<div class="bos">'+tv('kk_empty_onay','Henüz onaylanan paket yok')+'</div>';
 }
 
 function pkart(p) {
-  var dm = {bekleyen:'<span class="b ba">Tersane Bekleniyor</span>',onaylandi:'<span class="b bg">Onaylandi</span>',reddedildi:'<span class="b br">Ret / Duzeltme</span>'};
+  var dm = {bekleyen:'<span class="b ba">'+tv('kk_durum_bekle','Tersane Bekleniyor')+'</span>',onaylandi:'<span class="b bg">'+tv('kk_durum_onay','Onaylandı')+'</span>',reddedildi:'<span class="b br">'+tv('kk_durum_ret','Ret / Düzeltme')+'</span>'};
   var kg = p.spooller.reduce(function(a,s){ return a+(s.agirlik||0); },0).toFixed(1);
   var h = '<div class="pkart"><div class="phead">';
   h += '<div>';
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><div class="pno">'+p.id+'</div>'+(dm[p.durum]||'')+'</div>';
-  h += '<div style="font-size:13px;color:var(--txm);">'+p.tersane+' &middot; '+p.projeNo+' / '+p.gemi+'</div>';
-  h += '<div style="font-size:12px;color:var(--txd);margin-top:4px;">Davet: <strong style="color:var(--tx);">'+p.davetTarihi+'</strong> &middot; Kontrol: <strong style="color:var(--tx);">'+p.kontrolTarihi+'</strong> &middot; '+p.spooller.length+' spool &middot; '+kg+' kg'+(p.not?' &middot; '+p.not:'')+'</div>';
-  if (p.onay) h += '<div style="font-size:12px;margin-top:5px;color:'+(p.durum==='onaylandi'?'var(--gr)':'var(--re)')+';">'+(p.durum==='onaylandi'?'&check;':'&cross;')+' '+p.onay.kisi+' &mdash; '+p.onay.tarih+(p.onay.not?' &mdash; '+p.onay.not:'')+'</div>';
+  h += '<div style="font-size:14px;color:var(--txm);">'+esc(p.tersane)+' &middot; '+esc(p.projeNo)+' / '+esc(p.gemi)+'</div>';
+  h += '<div style="font-size:14px;color:var(--txd);margin-top:4px;">'+tv('kk_card_invite','Davet:')+' <strong style="color:var(--tx);">'+esc(p.davetTarihi)+'</strong> &middot; '+tv('kk_card_control','Kontrol:')+' <strong style="color:var(--tx);">'+esc(p.kontrolTarihi)+'</strong> &middot; '+esc(String(p.spooller.length))+' spool &middot; '+esc(String(kg))+' kg'+(p.not?' &middot; '+esc(p.not):'')+'</div>';
+  if (p.onay) h += '<div style="font-size:14px;margin-top:5px;color:'+(p.durum==='onaylandi'?'var(--gr)':'var(--re)')+';">'+(p.durum==='onaylandi'?'&check;':'&cross;')+' '+p.onay.kisi+' &mdash; '+p.onay.tarih+(p.onay.not?' &mdash; '+p.onay.not:'')+'</div>';
   h += '</div>';
   h += '<div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">';
-  h += '<button class="btn btn-g btn-sm" onclick="showToast(\'PDF indiriliyor...\',\'info\')">PDF</button>';
-  if (p.durum==='bekleyen') h += '<button class="btn btn-p btn-sm" onclick="onayAc(\''+p.id+'\')">Onay Gir</button>';
-  if (p.durum==='onaylandi') h += '<button class="btn btn-ok btn-sm" onclick="showToast(\'Sevkiyat hazirlik listesine eklendi\',\'success\')">Sevkiyata &rarr;</button>';
+  h += '<button class="btn btn-g btn-sm" onclick="showToast(tv(\'kk_toast_sevkiyat\',\'PDF indiriliyor...\'),\'info\')">'+tv('kk_pdf_btn','PDF')+'</button>';
+  if (p.durum==='bekleyen') h += '<button class="btn btn-p btn-sm" onclick="onayAc(\''+esc(p.id)+'\')">' + tv('kk_enter_approval','Onay Gir')+'</button>';
+  if (p.durum==='onaylandi') h += '<button class="btn btn-ok btn-sm" onclick="showToast(tv(\'kk_toast_sevkiyat\',\'Sevkiyata eklendi\'),\'success\')">'+tv('kk_sevkiyata','Sevkiyata →')+'</button>';
   h += '</div></div>';
   h += '<div class="pbody"><div class="chips">';
   p.spooller.forEach(function(s){
-    h += '<span class="chip '+(s.durumOnay==='onay'?'ok':s.durumOnay==='ret'?'no':'')+'">'+s.spool+' <span style="opacity:.5;font-size:10px;">/ '+s.devre+'</span></span>';
+    h += '<span class="chip '+(s.durumOnay==='onay'?'ok':s.durumOnay==='ret'?'no':'')+'">'+esc(s.spool)+' <span style="opacity:.5;font-size:14px;">/ '+esc(s.devre)+'</span></span>';
   });
   h += '</div></div></div>';
   return h;
@@ -596,10 +773,10 @@ function onayKaydet() {
   var kisi  = document.getElementById('oKisi').value.trim();
   var not   = document.getElementById('oNot').value.trim();
   var ret   = document.getElementById('oRetNot').value.trim();
-  if (!karar) { showToast('Karar secin','error'); return; }
-  if (!tarih) { showToast('Tarih zorunlu','error'); return; }
-  if (!kisi)  { showToast('Kontrol eden zorunlu','error'); return; }
-  if (karar==='ret'&&!ret) { showToast('Ret nedeni girilmeli','error'); return; }
+  if (!karar) { showToast(tv('kk_toast_karar','Karar seçin'),'error'); return; }
+  if (!tarih) { showToast(tv('kk_toast_tarih','Tarih zorunlu'),'error'); return; }
+  if (!kisi)  { showToast(tv('kk_toast_kisi','Kontrol eden zorunlu'),'error'); return; }
+  if (karar==='ret'&&!ret) { showToast(tv('kk_toast_ret_neden','Ret nedeni girilmeli'),'error'); return; }
   var p = null;
   paketler.forEach(function(x){ if(x.id===id) p=x; });
   if (!p) return;
@@ -611,8 +788,9 @@ function onayKaydet() {
     SYOS.kkOnayKaydet(id, karar, new Date(tarih).toLocaleDateString('tr-TR'), kisi, notFinal);
   }
   document.getElementById('mOnay').style.display = 'none';
+  try{var _lgo=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_lgo.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'KK_ONAY_KAYDET',kaynak:id,aciklama:karar});localStorage.setItem('ares_islemLog',JSON.stringify(_lgo.slice(0,1000)));}catch(e){}
   renderBekle(); renderOnay(); guncelStatler();
-  showToast(karar==='onay' ? id+' onaylandi - sevkiyata hazir!' : id+' ret aldi', karar==='onay'?'success':'error');
+  showToast(karar==='onay' ? id+' '+tv('kk_toast_onaylandi','onaylandı — sevkiyata hazır!') : id+' '+tv('kk_toast_ret_sonuc','ret aldı'), karar==='onay'?'success':'error');
   if (karar==='onay') tabGit('onaylanan');
 }
 
@@ -658,11 +836,29 @@ function showToast(msg, type) {
 
 // ── BAŞLAT ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
-  doldur();
-  filtrele();
-  renderBekle();
-  renderOnay();
-  guncelStatler();
+  (async function() {
+    // ── SB-01 AUTH KONTROLÜ ─────────────────────────────────
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
+      }
+    } catch(e) {}
+    doldur();
+    filtrele();
+    renderBekle();
+    renderOnay();
+    guncelStatler();
+    _applyI18n(); // D-01: ilk açılış dil uygulaması
+    document.documentElement.style.visibility = '';
+  })();
 });
 </script>
 </body>
