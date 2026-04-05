@@ -152,6 +152,7 @@ circle.donut-seg{cursor:pointer;transition:stroke-width .15s;}
 @keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -275,85 +276,11 @@ circle.donut-seg{cursor:pointer;transition:stroke-width .15s;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ── D-01 DİL SİSTEMİ ────────────────────────────────────────
-var _I18N={
-  en:{
-    idx_sys_label:'Shipyard Management System',idx_title:'Dashboard',
-    idx_stat_proje:'Active Projects',idx_stat_devre:'Active Circuits',
-    idx_stat_kesim:'Cutting Pending',idx_stat_kk:'QC Pending',
-    idx_stat_sevk:'Shipped This Month',
-    idx_spool_title:'Total Spool Status in System',
-    idx_btn_adet:'Count',idx_btn_kg:'Weight',
-    idx_mat_tumu:'All',idx_mat_celik:'Steel',idx_mat_pas:'Stainless',
-    idx_mat_alu:'Aluminum',idx_mat_cunife:'Cunife',
-    idx_lbl_total_adet:'TOTAL COUNT',idx_lbl_total_kg:'TOTAL WEIGHT',
-    idx_cal_today:'Today',idx_cal_calendars:'Calendars',
-    idx_cal_search:'Search events...',
-    idx_cal_legend:'Days with events',
-    idx_cal_dblclick:'· Double-click to add a note',
-    idx_cal_no_event:'no events',
-    idx_stage_bekleyen:'PENDING',idx_stage_imalat:'FABRICATION',
-    idx_stage_kaynak:'WELDING',idx_stage_on_kontrol:'PRE-INSPECT',
-    idx_stage_kalite:'QUALITY',idx_stage_sevke_hazir:'READY',
-    idx_grp_uretim:'PRODUCTION',idx_grp_cikis:'CONTROL & DISPATCH',
-    idx_ev_proje:'Project',idx_ev_personel:'Personnel',
-    idx_ev_not:'Note',idx_ev_musteri:'Customer',
-    idx_loading:'Loading...',
-    idx_mo:['January','February','March','April','May','June','July','August','September','October','November','December'],
-    idx_dow:['Mo','Tu','We','Th','Fr','Sa','Su']
-  },
-  ar:{
-    idx_sys_label:'نظام إدارة الحوض',idx_title:'لوحة التحكم',
-    idx_stat_proje:'المشاريع النشطة',idx_stat_devre:'الدوائر النشطة',
-    idx_stat_kesim:'قيد القطع',idx_stat_kk:'قيد مراقبة الجودة',
-    idx_stat_sevk:'شحنات هذا الشهر',
-    idx_spool_title:'حالة البكرات في النظام',
-    idx_btn_adet:'العدد',idx_btn_kg:'الوزن',
-    idx_mat_tumu:'الكل',idx_mat_celik:'فولاذ',idx_mat_pas:'ستانليس',
-    idx_mat_alu:'ألومنيوم',idx_mat_cunife:'كيونيفي',
-    idx_lbl_total_adet:'إجمالي العدد',idx_lbl_total_kg:'إجمالي الوزن',
-    idx_cal_today:'اليوم',idx_cal_calendars:'التقويمات',
-    idx_cal_search:'ابحث عن أحداث...',
-    idx_cal_legend:'أيام بها أحداث',
-    idx_cal_dblclick:'· انقر مرتين لإضافة ملاحظة',
-    idx_cal_no_event:'لا توجد أحداث',
-    idx_stage_bekleyen:'قيد الانتظار',idx_stage_imalat:'التصنيع',
-    idx_stage_kaynak:'اللحام',idx_stage_on_kontrol:'الفحص المبدئي',
-    idx_stage_kalite:'الجودة',idx_stage_sevke_hazir:'جاهز للشحن',
-    idx_grp_uretim:'الإنتاج',idx_grp_cikis:'المراقبة والشحن',
-    idx_ev_proje:'مشروع',idx_ev_personel:'موظف',
-    idx_ev_not:'ملاحظة',idx_ev_musteri:'عميل',
-    idx_loading:'جاري التحميل...',
-    idx_mo:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-    idx_dow:['إث','ثل','أر','خم','جم','سب','أح']
-  }
-};
 var _MO_TR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 var _DOW_TR=['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(k,tr){var l=_getLang(),d=_I18N[l];if(d&&d[k]!==undefined)return d[k];return tr!==undefined?tr:k;}
-function tvArr(k,fb){var l=_getLang(),d=_I18N[l];if(d&&Array.isArray(d[k]))return d[k];return fb;}
 function getMo(i){return tvArr('idx_mo',_MO_TR)[i]||_MO_TR[i];}
 function getDow(i){return tvArr('idx_dow',_DOW_TR)[i]||_DOW_TR[i];}
-function _applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var inp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',inp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
-    if(inp){el.placeholder=v;}else{el.textContent=v;}
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
-  });
-}
 window._onLangChange=function(){_applyI18n();updateClock();renderAll();renderMiniCal();renderPopup();};
-new MutationObserver(function(){
-  _applyI18n();
-  if(typeof renderAll==='function')renderAll();
-  if(typeof renderMiniCal==='function'){renderMiniCal();renderPopup();}
-}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 
 // ── SAAT ────────────────────────────────────────────────────
 function updateClock(){

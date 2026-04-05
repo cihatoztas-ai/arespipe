@@ -129,6 +129,7 @@
 .bos{text-align:center;padding:48px 24px;color:var(--txd);font-size:14px;}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -284,180 +285,6 @@
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ── D-01 DİL SİSTEMİ ────────────────────────────────────────
-var _I18N = {
-  en:{
-    kk_home:'Home', kk_breadcrumb:'Quality Control',
-    kk_title:'Quality Control',
-    kk_btn_create_invite:'Create Invitation Package',
-    kk_stat_ready:'Ready for QC', kk_stat_invite:'Invitation Package',
-    kk_stat_waiting:'Awaiting Yard', kk_stat_approved:'Approved',
-    kk_sec_devre:'Circuit', kk_sec_spool:'Spool', kk_sec_kg:'kg',
-    kk_sec_clear:'Clear', kk_sec_create:'Create Invitation Package',
-    kk_tab_davet:'Create Invitation', kk_tab_bekleyen:'Pending',
-    kk_tab_onaylanan:'Approved',
-    kk_filter_all_yards:'All Yards', kk_filter_all_projects:'All Projects',
-    kk_search_ph:'Search circuit or spool...',
-    kk_filter_clear:'Clear',
-    kk_select_all:'Select All',
-    kk_no_spool:'No spools to display',
-    kk_secili:' selected',
-    kk_all:'All',
-    kk_spool_col:'Spool', kk_weight_col:'Weight',
-    kk_no_pending:'No pending invitation packages',
-    kk_no_approved:'No approved packages yet',
-    kk_modal_invite_title:'Create Quality Invitation Package',
-    kk_selected_spools:'Selected Spools',
-    kk_invite_date:'Invitation Date', kk_control_date:'Estimated Control Date',
-    kk_contact_note:'Contact / Note', kk_mail:'Email',
-    kk_mail_optional:'(optional)',
-    kk_cancel:'Cancel', kk_pdf_preview:'Preview PDF',
-    kk_create_save:'Create & Save Package',
-    kk_modal_approve_title:'Enter Quality Approval',
-    kk_control_date_label:'Control Date', kk_controller:'Controller',
-    kk_decision:'Decision',
-    kk_approve_all:'Approve All',
-    kk_reject:'Reject / Correction',
-    kk_reject_reason:'Rejection Reason',
-    kk_reject_ph:'Which spools were rejected, what corrections are needed?',
-    kk_extra_note:'Additional Note', kk_optional:'Optional...',
-    kk_save_approval:'Save Approval',
-    kk_status_pending:'Awaiting Yard',
-    kk_status_approved:'Approved',
-    kk_status_rejected:'Rejected / Correction',
-    kk_pdf_btn:'PDF',
-    kk_enter_approval:'Enter Approval',
-    kk_to_shipment:'To Shipment →',
-    kk_toast_select_first:'Please select spools first',
-    kk_toast_invite_date_req:'Invitation date is required',
-    kk_toast_created:'invitation package created',
-    kk_toast_decision_req:'Please select a decision',
-    kk_toast_date_req:'Date is required',
-    kk_toast_controller_req:'Controller name is required',
-    kk_toast_reject_req:'Rejection reason is required',
-    kk_toast_approved_ship:'approved — ready for shipment!',
-    kk_toast_rejected:'rejected',
-    kk_toast_pdf:'PDF downloading...',
-    kk_toast_shipment:'Added to shipment preparation list',
-    kk_toast_pdf_soon:'PDF preview coming soon',
-    kk_davet_spool:'Spool:', kk_davet_circuit:'Circuit:', kk_davet_total:'Total:',
-    kk_card_invite:'Invite:', kk_card_control:'Control:',
-    kk_stat_hazir:'Ready for QC', kk_stat_davet:'Invitation Package',
-    kk_stat_bekle:'Awaiting Yard', kk_stat_onay:'Approved',
-    kk_tab_bekle:'Pending', kk_tab_onay:'Approved',
-    kk_filter_yard:'All Yards', kk_filter_proj:'All Projects',
-    kk_btn_clear:'Clear', kk_tumu:'All',
-    kk_empty_spool:'No spools to display',
-    kk_toast_select_first:'Please select spools first',
-    kk_toast_olusturuldu:'invitation package created',
-    kk_empty_bekle:'No pending invitation packages',
-    kk_empty_onay:'No approved packages yet',
-    kk_durum_bekle:'Awaiting Yard',
-    kk_durum_onay:'Approved',
-    kk_durum_ret:'Rejected / Correction',
-    kk_toast_sevkiyat:'PDF downloading...',
-    kk_sevkiyata:'To Shipment →',
-    kk_toast_karar:'Please select a decision',
-    kk_toast_tarih:'Date is required',
-    kk_toast_kisi:'Controller name is required',
-    kk_toast_ret_neden:'Rejection reason is required',
-    kk_toast_onaylandi:'approved — ready for shipment!',
-    kk_toast_ret_sonuc:'rejected',
-  },
-  ar:{
-    kk_home:'الرئيسية', kk_breadcrumb:'مراقبة الجودة',
-    kk_title:'مراقبة الجودة',
-    kk_btn_create_invite:'إنشاء حزمة دعوة',
-    kk_stat_ready:'جاهز للجودة', kk_stat_invite:'حزمة الدعوة',
-    kk_stat_waiting:'في انتظار الحوض', kk_stat_approved:'موافق عليه',
-    kk_sec_devre:'دائرة', kk_sec_spool:'بكرة', kk_sec_kg:'كجم',
-    kk_sec_clear:'مسح', kk_sec_create:'إنشاء حزمة دعوة',
-    kk_tab_davet:'إنشاء دعوة', kk_tab_bekleyen:'قيد الانتظار',
-    kk_tab_onaylanan:'موافق عليه',
-    kk_filter_all_yards:'جميع الأحواض', kk_filter_all_projects:'جميع المشاريع',
-    kk_search_ph:'ابحث عن دائرة أو بكرة...',
-    kk_filter_clear:'مسح',
-    kk_select_all:'تحديد الكل',
-    kk_no_spool:'لا توجد بكرات للعرض',
-    kk_secili:' محدد',
-    kk_all:'الكل',
-    kk_spool_col:'البكرة', kk_weight_col:'الوزن',
-    kk_no_pending:'لا توجد حزم دعوة معلقة',
-    kk_no_approved:'لا توجد حزم موافق عليها بعد',
-    kk_modal_invite_title:'إنشاء حزمة دعوة الجودة',
-    kk_selected_spools:'البكرات المحددة',
-    kk_invite_date:'تاريخ الدعوة', kk_control_date:'تاريخ المراقبة المتوقع',
-    kk_contact_note:'جهة الاتصال / ملاحظة', kk_mail:'البريد الإلكتروني',
-    kk_mail_optional:'(اختياري)',
-    kk_cancel:'إلغاء', kk_pdf_preview:'معاينة PDF',
-    kk_create_save:'إنشاء وحفظ الحزمة',
-    kk_modal_approve_title:'إدخال موافقة الجودة',
-    kk_control_date_label:'تاريخ المراقبة', kk_controller:'المراقب',
-    kk_decision:'القرار',
-    kk_approve_all:'الموافقة على الكل',
-    kk_reject:'رفض / تصحيح',
-    kk_reject_reason:'سبب الرفض',
-    kk_reject_ph:'أي بكرات رُفضت وما هو طلب التصحيح؟',
-    kk_extra_note:'ملاحظة إضافية', kk_optional:'اختياري...',
-    kk_save_approval:'حفظ الموافقة',
-    kk_status_pending:'في انتظار الحوض',
-    kk_status_approved:'موافق عليه',
-    kk_status_rejected:'مرفوض / تصحيح',
-    kk_pdf_btn:'PDF',
-    kk_enter_approval:'إدخال الموافقة',
-    kk_to_shipment:'إلى الشحن →',
-    kk_toast_select_first:'يرجى تحديد البكرات أولاً',
-    kk_toast_invite_date_req:'تاريخ الدعوة مطلوب',
-    kk_toast_created:'تم إنشاء حزمة الدعوة',
-    kk_toast_decision_req:'يرجى تحديد قرار',
-    kk_toast_date_req:'التاريخ مطلوب',
-    kk_toast_controller_req:'اسم المراقب مطلوب',
-    kk_toast_reject_req:'سبب الرفض مطلوب',
-    kk_toast_approved_ship:'موافق عليه — جاهز للشحن!',
-    kk_toast_rejected:'مرفوض',
-    kk_toast_pdf:'جاري تنزيل PDF...',
-    kk_toast_shipment:'تمت الإضافة إلى قائمة تحضير الشحن',
-    kk_toast_pdf_soon:'معاينة PDF قريباً',
-    kk_davet_spool:'بكرة:', kk_davet_circuit:'دائرة:', kk_davet_total:'المجموع:',
-    kk_card_invite:'الدعوة:', kk_card_control:'المراقبة:',
-    kk_stat_hazir:'جاهز للجودة', kk_stat_davet:'حزمة الدعوة',
-    kk_stat_bekle:'في انتظار الحوض', kk_stat_onay:'موافق عليه',
-    kk_tab_bekle:'قيد الانتظار', kk_tab_onay:'موافق عليه',
-    kk_filter_yard:'جميع الأحواض', kk_filter_proj:'جميع المشاريع',
-    kk_btn_clear:'مسح', kk_tumu:'الكل',
-    kk_empty_spool:'لا توجد بكرات للعرض',
-    kk_toast_select_first:'يرجى تحديد البكرات أولاً',
-    kk_toast_olusturuldu:'تم إنشاء حزمة الدعوة',
-    kk_empty_bekle:'لا توجد حزم دعوة معلقة',
-    kk_empty_onay:'لا توجد حزم موافق عليها بعد',
-    kk_durum_bekle:'في انتظار الحوض',
-    kk_durum_onay:'موافق عليه',
-    kk_durum_ret:'مرفوض / تصحيح',
-    kk_toast_sevkiyat:'جاري تنزيل PDF...',
-    kk_sevkiyata:'إلى الشحن →',
-    kk_toast_karar:'يرجى تحديد قرار',
-    kk_toast_tarih:'التاريخ مطلوب',
-    kk_toast_kisi:'اسم المراقب مطلوب',
-    kk_toast_ret_neden:'سبب الرفض مطلوب',
-    kk_toast_onaylandi:'موافق عليه — جاهز للشحن!',
-    kk_toast_ret_sonuc:'مرفوض',
-  }
-};
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
-function _applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
-    if(isInp){el.placeholder=v;}else{el.textContent=v;}
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
-  });
-}
 window._onLangChange=function(){
   _applyI18n();
   guncelStatler();
@@ -465,7 +292,6 @@ window._onLangChange=function(){
   renderBekle();
   renderOnay();
 };
-new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 
 // ── VERİ ────────────────────────────────────────────────────
 var HAZIR_SABIT = [

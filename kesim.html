@@ -248,6 +248,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .search-clear{position:absolute;right:8px;background:none;border:none;color:var(--txd);cursor:pointer;font-size:14px;}
 </style>
   <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -453,130 +454,6 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 <script>
 'use strict';
 // ════ D-01 DİL SİSTEMİ ════
-var _I18N = {
-  en:{
-    ks_home:'Home', ks_breadcrumb:'Cutting Management',
-    ks_page_title:'✂ Cutting Management',
-    ks_tab_pending:'✂ Cutting Pending', ks_tab_lists:'📋 Cutting Lists',
-    ks_tab_done:'✓ Cut Lists', ks_tab_single:'⚡ Individual Cuts',
-    ks_stat_pending:'Total Pending', ks_stat_filtered:'Filtered', ks_stat_inlist:'In List',
-    ks_col_yard:'Yard', ks_col_isemir:'Work Order', ks_col_spool:'Spool No',
-    ks_col_spoolid:'Spool ID', ks_col_mat:'Material', ks_col_grade:'Grade',
-    ks_col_cap:'Diameter', ks_col_thk:'Thickness', ks_col_cut:'Cut (mm)',
-    ks_col_uca:'End A', ks_col_ucb:'End B', ks_col_sert:'Cert.',
-    ks_col_action:'Action', ks_col_cut_done:'Cut',
-    ks_filter_yard:'Yard', ks_filter_mat:'Material', ks_filter_grade:'Grade',
-    ks_filter_diam:'Diameter', ks_filter_thk:'Thickness',
-    ks_filter_cert:'Certificate', ks_filter_cert_yes:'Certified', ks_filter_cert_no:'Uncertified',
-    ks_filter_isemir:'Work Order', ks_search_ph:'Spool no, work order, material...',
-    ks_btn_reset:'↺ Reset', ks_btn_create:'📋 Create Cutting List',
-    ks_select_all:'Select All', ks_btn_clear:'Clear', ks_btn_apply:'Apply',
-    ks_empty_notfound:'No records found', ks_empty_hint:'Change filter or search criteria',
-    ks_footer_boru:'pipes · Page', ks_footer_total:'Total:',
-    ks_chip_yard:'Yard', ks_chip_mat:'Material', ks_chip_grade:'Grade',
-    ks_chip_cap:'Diameter', ks_chip_thk:'Thickness', ks_chip_cert:'Certificate',
-    ks_chip_cert_yes:'Certified', ks_chip_cert_no:'Uncertified',
-    ks_chip_isemir:'Work Order', ks_chip_search:'Search',
-    ks_lists_header:'📋 Cutting Lists', ks_done_header:'✓ Cut Lists',
-    ks_single_header:'⚡ Individual Cuts',
-    ks_no_lists:'No cutting lists created yet',
-    ks_no_lists_hint:'Create a list from the Cutting Pending tab',
-    ks_no_arc:'No completed records yet',
-    ks_no_single:'No individual cuts yet',
-    ks_cut_progress:'Cutting progress',
-    ks_cut_label:'cut',
-    ks_btn_markall:'☑ Mark All', ks_btn_unmarkall:'☐ Unmark All',
-    ks_btn_form:'📂 Cutting Form', ks_btn_save_close:'✓ Save & Close List',
-    ks_modal_list_title:'📋 Create Cutting List',
-    ks_modal_list_no:'List Number', ks_modal_list_hint:'Leave empty for auto numbering.',
-    ks_modal_list_yard:'Yard:', ks_modal_list_mat:'Material:', ks_modal_list_cap:'Diameter:',
-    ks_modal_list_total:'Total Cut:', ks_modal_list_cancel:'Cancel',
-    ks_modal_list_create:'✓ Create List',
-    ks_modal_cut_title:'Cutting Complete?',
-    ks_modal_cut_desc:'This pipe will be removed from the list and processed.',
-    ks_modal_cut_btn:'✓ Yes, Cut',
-    ks_modal_cut_cancel:'Cancel',
-    ks_created:'created', ks_excel_ready:'Excel being prepared...',
-    ks_excel_err:'Excel error:', ks_downloaded:'downloaded',
-    ks_at_least_one:'At least 1 record must be checked',
-    ks_kismi:'partial', ks_geri_dondu:'returned', ks_tamamlandi:'completed',
-    ks_kesim_tamamlandi:'cut completed',
-    ks_form_stok:'Standard Stock Length (mm)', ks_form_kerf:'Saw Kerf (mm)',
-    ks_form_trim:'End Trim (mm)', ks_form_minartik:'Min Usable Remnant (mm)',
-    ks_form_parcaboru:'Available Pipe Sections — optional, mm',
-    ks_form_addstok:'+ Add Pipe Section',
-    ks_form_cancel:'Cancel', ks_form_run:'✂ Generate Form & Download',
-  },
-  ar:{
-    ks_home:'الرئيسية', ks_breadcrumb:'إدارة القطع',
-    ks_page_title:'✂ إدارة القطع',
-    ks_tab_pending:'✂ قيد الانتظار', ks_tab_lists:'📋 قوائم القطع',
-    ks_tab_done:'✓ قوائم مقطوعة', ks_tab_single:'⚡ قطع فردية',
-    ks_stat_pending:'إجمالي المنتظر', ks_stat_filtered:'مصفى', ks_stat_inlist:'في القائمة',
-    ks_col_yard:'الحوض', ks_col_isemir:'أمر العمل', ks_col_spool:'رقم البكرة',
-    ks_col_spoolid:'معرف البكرة', ks_col_mat:'المادة', ks_col_grade:'الجودة',
-    ks_col_cap:'القطر', ks_col_thk:'السماكة', ks_col_cut:'القطع (مم)',
-    ks_col_uca:'الطرف A', ks_col_ucb:'الطرف B', ks_col_sert:'شهادة',
-    ks_col_action:'الإجراء', ks_col_cut_done:'مقطوع',
-    ks_filter_yard:'الحوض', ks_filter_mat:'المادة', ks_filter_grade:'الجودة',
-    ks_filter_diam:'القطر', ks_filter_thk:'السماكة',
-    ks_filter_cert:'الشهادة', ks_filter_cert_yes:'موثق', ks_filter_cert_no:'غير موثق',
-    ks_filter_isemir:'أمر العمل', ks_search_ph:'رقم البكرة، أمر العمل، المادة...',
-    ks_btn_reset:'↺ إعادة', ks_btn_create:'📋 إنشاء قائمة قطع',
-    ks_select_all:'تحديد الكل', ks_btn_clear:'مسح', ks_btn_apply:'تطبيق',
-    ks_empty_notfound:'لا توجد سجلات', ks_empty_hint:'غير معايير التصفية أو البحث',
-    ks_footer_boru:'أنابيب · صفحة', ks_footer_total:'المجموع:',
-    ks_chip_yard:'الحوض', ks_chip_mat:'المادة', ks_chip_grade:'الجودة',
-    ks_chip_cap:'القطر', ks_chip_thk:'السماكة', ks_chip_cert:'الشهادة',
-    ks_chip_cert_yes:'موثق', ks_chip_cert_no:'غير موثق',
-    ks_chip_isemir:'أمر العمل', ks_chip_search:'بحث',
-    ks_lists_header:'📋 قوائم القطع', ks_done_header:'✓ قوائم مقطوعة',
-    ks_single_header:'⚡ قطع فردية',
-    ks_no_lists:'لم يتم إنشاء قوائم قطع بعد',
-    ks_no_lists_hint:'أنشئ قائمة من تبويب قيد الانتظار',
-    ks_no_arc:'لا توجد سجلات مكتملة بعد',
-    ks_no_single:'لا توجد قطع فردية بعد',
-    ks_cut_progress:'تقدم القطع',
-    ks_cut_label:'مقطوع',
-    ks_btn_markall:'☑ تحديد الكل', ks_btn_unmarkall:'☐ إلغاء الكل',
-    ks_btn_form:'📂 نموذج القطع', ks_btn_save_close:'✓ حفظ وإغلاق القائمة',
-    ks_modal_list_title:'📋 إنشاء قائمة قطع',
-    ks_modal_list_no:'رقم القائمة', ks_modal_list_hint:'اتركه فارغاً للترقيم التلقائي.',
-    ks_modal_list_yard:'الحوض:', ks_modal_list_mat:'المادة:', ks_modal_list_cap:'القطر:',
-    ks_modal_list_total:'إجمالي القطع:', ks_modal_list_cancel:'إلغاء',
-    ks_modal_list_create:'✓ إنشاء القائمة',
-    ks_modal_cut_title:'اكتمل القطع؟',
-    ks_modal_cut_desc:'سيتم إزالة هذا الأنبوب من القائمة ومعالجته.',
-    ks_modal_cut_btn:'✓ نعم، تم القطع',
-    ks_modal_cut_cancel:'إلغاء',
-    ks_created:'تم الإنشاء', ks_excel_ready:'جاري تحضير Excel...',
-    ks_excel_err:'خطأ Excel:', ks_downloaded:'تم التنزيل',
-    ks_at_least_one:'يجب تحديد سجل واحد على الأقل',
-    ks_kismi:'جزئي', ks_geri_dondu:'عاد', ks_tamamlandi:'مكتمل',
-    ks_kesim_tamamlandi:'اكتمل القطع',
-    ks_form_stok:'طول المخزون القياسي (مم)', ks_form_kerf:'هامش المنشار (مم)',
-    ks_form_trim:'قص الطرف (مم)', ks_form_minartik:'الحد الأدنى للبقايا (مم)',
-    ks_form_parcaboru:'أنابيب المقاطع المتوفرة — اختياري، مم',
-    ks_form_addstok:'+ إضافة مقطع أنبوب',
-    ks_form_cancel:'إلغاء', ks_form_run:'✂ إنشاء النموذج وتنزيله',
-  }
-};
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
-function _applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
-    if(isInp){el.placeholder=v;}else{el.textContent=v;}
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
-  });
-}
 window._onLangChange=function(){
   _applyI18n();
   renderTable();
@@ -584,7 +461,6 @@ window._onLangChange=function(){
   if(aktifTab==='tamamlandi') renderArc();
   if(aktifTab==='tekil') renderTekil();
 };
-new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 
 // ════════════════════════════════════
 // VERİ

@@ -12,7 +12,6 @@
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
 
-
 /* SIDEBAR */
 
 [data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
@@ -130,6 +129,7 @@ td{padding:10px 14px;font-size:14px;vertical-align:middle;}
 .bos{text-align:center;padding:48px 20px;color:var(--txd);}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -225,153 +225,13 @@ td{padding:10px 14px;font-size:14px;vertical-align:middle;}
 <script>
 'use strict';
 // ─── D-01 — DİL SİSTEMİ ─────────────────────────────────────────────
-var _I18N = {
-  en: {
-    cmn_anasayfa:       'Home',
-    cmn_yenile:         'Refresh',
-    cmn_onceki:         'Previous',
-    cmn_sonraki:        'Next',
-    log_baslik:         'Operation Log',
-    log_csv_indir:      'Download CSV',
-    log_temizle:        'Clear Log',
-    log_stat_toplam:    'Total Records',
-    log_stat_bugun:     'Today',
-    log_stat_kullanici: 'Users',
-    log_stat_tip:       'Operation Types',
-    log_ara_placeholder:'🔍 Search operation, source, description…',
-    log_f_tum_islem:    'All Operations',
-    log_f_giris:        '🔐 Login',
-    log_f_kk:           '✅ Quality Control',
-    log_f_sevk:         '📦 Shipment',
-    log_f_test:         '🧪 Test',
-    log_f_spool:        '⚙️ Spool',
-    log_f_devre:        '🔄 Circuit',
-    log_f_is:           '🔧 Work',
-    log_f_tanim:        '📋 Definition',
-    log_f_tum_zaman:    'All Time',
-    log_f_bugun:        'Today',
-    log_f_hafta:        'This Week',
-    log_f_ay:           'This Month',
-    log_gorunum_tablo:  'Table',
-    log_gorunum_zaman:  'Timeline',
-    log_gecmis:         'Operation History',
-    log_kayit_bulunamadi: 'No records found',
-    log_th_no:          '#',
-    log_th_zaman:       'TIME',
-    log_th_islem:       'OPERATION',
-    log_th_kullanici:   'USER',
-    log_th_kaynak:      'SOURCE',
-    log_th_aciklama:    'DESCRIPTION',
-    log_kayit_sayisi:   ' records',
-    log_csv_indirildi:  'CSV downloaded',
-    log_temizlendi:     'Log cleared',
-    log_yenilendi:      'Refreshed',
-    log_temizle_onay:   'All log records will be deleted. Are you sure?',
-    log_il_giris:        'Login',
-    log_il_kk_gonder:    'QC Submitted',
-    log_il_kk_onayla:    'QC Approved',
-    log_il_kk_red:       'QC Rejected',
-    log_il_sevk:         'Shipment',
-    log_il_test_olustur: 'Test Created',
-    log_il_test_sonuc:   'Test Result',
-    log_il_devre_durdur: 'Circuit Stopped',
-    log_il_spool_durdur: 'Spool Stopped',
-    log_il_is_baslat:    'Work Started',
-    log_il_is_bitir:     'Work Completed',
-    log_il_tanim_ekle:   'Definition Added',
-    log_il_tanim_sil:    'Definition Deleted'
-  },
-  ar: {
-    cmn_anasayfa:       'الرئيسية',
-    cmn_yenile:         'تحديث',
-    cmn_onceki:         'السابق',
-    cmn_sonraki:        'التالي',
-    log_baslik:         'سجل العمليات',
-    log_csv_indir:      'تنزيل CSV',
-    log_temizle:        'مسح السجل',
-    log_stat_toplam:    'إجمالي السجلات',
-    log_stat_bugun:     'اليوم',
-    log_stat_kullanici: 'المستخدمون',
-    log_stat_tip:       'أنواع العمليات',
-    log_ara_placeholder:'🔍 بحث في العملية، المصدر، الوصف…',
-    log_f_tum_islem:    'جميع العمليات',
-    log_f_giris:        '🔐 تسجيل الدخول',
-    log_f_kk:           '✅ مراقبة الجودة',
-    log_f_sevk:         '📦 الشحن',
-    log_f_test:         '🧪 اختبار',
-    log_f_spool:        '⚙️ Spool',
-    log_f_devre:        '🔄 دائرة',
-    log_f_is:           '🔧 عمل',
-    log_f_tanim:        '📋 تعريف',
-    log_f_tum_zaman:    'كل الأوقات',
-    log_f_bugun:        'اليوم',
-    log_f_hafta:        'هذا الأسبوع',
-    log_f_ay:           'هذا الشهر',
-    log_gorunum_tablo:  'جدول',
-    log_gorunum_zaman:  'الجدول الزمني',
-    log_gecmis:         'سجل العمليات',
-    log_kayit_bulunamadi: 'لا توجد سجلات',
-    log_th_no:          '#',
-    log_th_zaman:       'الوقت',
-    log_th_islem:       'العملية',
-    log_th_kullanici:   'المستخدم',
-    log_th_kaynak:      'المصدر',
-    log_th_aciklama:    'الوصف',
-    log_kayit_sayisi:   ' سجل',
-    log_csv_indirildi:  'تم تنزيل CSV',
-    log_temizlendi:     'تم مسح السجل',
-    log_yenilendi:      'تم التحديث',
-    log_temizle_onay:   'سيتم حذف جميع سجلات العمليات. هل أنت متأكد؟',
-    log_il_giris:        'تسجيل الدخول',
-    log_il_kk_gonder:    'تم إرسال مراقبة الجودة',
-    log_il_kk_onayla:    'تمت الموافقة على مراقبة الجودة',
-    log_il_kk_red:       'رُفضت مراقبة الجودة',
-    log_il_sevk:         'شحن',
-    log_il_test_olustur: 'تم إنشاء الاختبار',
-    log_il_test_sonuc:   'نتيجة الاختبار',
-    log_il_devre_durdur: 'تم إيقاف الدائرة',
-    log_il_spool_durdur: 'تم إيقاف Spool',
-    log_il_is_baslat:    'بدأ العمل',
-    log_il_is_bitir:     'اكتمل العمل',
-    log_il_tanim_ekle:   'تمت إضافة التعريف',
-    log_il_tanim_sil:    'تم حذف التعريف'
-  }
-};
 
-function _getLang() {
-  return document.documentElement.getAttribute('lang') || localStorage.getItem('ares_lang') || 'tr';
-}
-
-function tv(key, fallback) {
-  var lang = _getLang();
-  var dict = _I18N[lang];
-  if (dict && dict[key] !== undefined) return dict[key];
-  return fallback !== undefined ? fallback : key;
-}
-
-function _applyI18n() {
-  var lang = _getLang();
-  document.querySelectorAll('[data-i18n]').forEach(function(el) {
-    var key = el.getAttribute('data-i18n');
-    var val = tv(key);
-    if (val !== key) el.textContent = val;
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-    var key = el.getAttribute('data-i18n-placeholder');
-    var val = tv(key);
-    if (val !== key) el.placeholder = val;
-  });
-}
 
 window._onLangChange = function() {
   _applyI18n();
   renderLog();
 };
 
-new MutationObserver(function() {
-  _applyI18n();
-  renderLog();
-}).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 // ─── GÜVENLİK — G-01 ────────────────────────────────────────────────
 function esc(s) {
@@ -662,7 +522,6 @@ function yenile() { renderLog(); toast(tv('log_yenilendi', 'Yenilendi')); }
 // ─── TOAST ───────────────────────────────────────────────────────────
 let toastT=null;
 function toast(msg,tip='ok'){const e=document.querySelector('.toast');if(e)e.remove();const el=document.createElement('div');el.className='toast t-'+tip;el.textContent=msg;document.body.appendChild(el);if(toastT)clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),3000);}
-
 
 
 // ─── SIRALAMA (D-05 — 3-state) ────────────────────────────────────────

@@ -191,6 +191,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 <body>
 
@@ -350,133 +351,12 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 <script>
 'use strict';
 // ════ D-01 DİL SİSTEMİ ════
-var _I18N = {
-  en:{
-    mk_home:'Home', mk_breadcrumb:'Marking Management',
-    mk_page_title:'✂ Marking Management',
-    mk_tab_pending:'Pending Marking', mk_tab_lists:'Marking Lists', mk_tab_done:'Completed',
-    mk_stat_pending:'Total Pending', mk_stat_filtered:'Filtered', mk_stat_inlist:'In List',
-    mk_col_yard:'Yard', mk_col_isemir:'Work Order', mk_col_spool:'Spool No',
-    mk_col_spoolid:'Spool ID', mk_col_parca:'Part Name', mk_col_malzeme:'Material',
-    mk_col_cap:'Diameter', mk_col_action:'Action',
-    mk_filter_yard:'Yard', mk_filter_parca:'Part', mk_filter_mat:'Material',
-    mk_filter_grade:'Grade', mk_filter_diam:'Diameter',
-    mk_filter_isemir:'Work Order', mk_search_ph:'Spool no, work order, material...',
-    mk_select_all:'Select All', mk_btn_clear:'Clear', mk_btn_apply:'Apply',
-    mk_btn_reset:'↺ Reset', mk_btn_create:'🏷 Create Marking List',
-    mk_empty_notfound:'No records found',
-    mk_empty_hint:'Change filter or search criteria',
-    mk_serbest:'Free marking',
-    mk_chip_tersane:'Yard', mk_chip_parca:'Part', mk_chip_kalite:'Grade',
-    mk_chip_cap:'Diameter', mk_chip_isemir:'Work Order', mk_chip_search:'Search',
-    mk_footer_record:'records · Page',
-    mk_lists_title:'Created Lists', mk_lists_header:'🗒 Marking Lists',
-    mk_arc_title:'Archive', mk_arc_header:'✓ Completed Lists',
-    mk_no_lists:'No marking lists created yet',
-    mk_no_arc:'No completed records yet',
-    mk_progress_label:'Marking progress',
-    mk_marked:'marked',
-    mk_btn_markall:'☑ Mark All', mk_btn_unmarkall:'☐ Unmark All',
-    mk_btn_excel:'📂 Download Excel',
-    mk_btn_save_close:'✓ Save & Close List',
-    mk_col_done:'Done',
-    mk_manuel_title:'Manuel İşaretlenenler',
-    mk_modal_mark_title:'Mark as Labelled',
-    mk_modal_mark_desc:'Was this part manually marked?',
-    mk_modal_mark_btn:'✓ Yes, Marked',
-    mk_modal_warn_title:'Cannot Create List',
-    mk_modal_warn_desc:'Selected records must have the same part name and diameter.',
-    mk_modal_warn_retry:'Retry with same criteria',
-    mk_modal_warn_ok:'OK, I will fix the filter',
-    mk_modal_list_title:'🏷 Create Marking List',
-    mk_modal_list_no:'List Number',
-    mk_modal_list_hint:'Leave empty for auto numbering.',
-    mk_modal_list_tersane:'Yard:', mk_modal_list_parca:'Part:',
-    mk_modal_list_cap:'Diameter:', mk_modal_list_kayit:'Records:',
-    mk_modal_list_cancel:'Cancel', mk_modal_list_create:'✓ Create List',
-    mk_manuel_iptal:'Cancel', mk_at_least_one:'At least 1 record must be checked',
-    mk_created:'created',
-    mk_kismi:'partial',
-    mk_geri_dondu:'returned',
-    mk_tamamlandi:'completed',
-    mk_plaka:'Plate',
-    mk_indirildi:'downloaded',
-  },
-  ar:{
-    mk_home:'الرئيسية', mk_breadcrumb:'إدارة الوسم',
-    mk_page_title:'✂ إدارة الوسم',
-    mk_tab_pending:'في انتظار الوسم', mk_tab_lists:'قوائم الوسم', mk_tab_done:'مكتمل',
-    mk_stat_pending:'إجمالي المنتظر', mk_stat_filtered:'مصفى', mk_stat_inlist:'في القائمة',
-    mk_col_yard:'الحوض', mk_col_isemir:'أمر العمل', mk_col_spool:'رقم البكرة',
-    mk_col_spoolid:'معرف البكرة', mk_col_parca:'اسم القطعة', mk_col_malzeme:'المادة',
-    mk_col_cap:'القطر', mk_col_action:'الإجراء',
-    mk_filter_yard:'الحوض', mk_filter_parca:'القطعة', mk_filter_mat:'المادة',
-    mk_filter_grade:'الجودة', mk_filter_diam:'القطر',
-    mk_filter_isemir:'أمر العمل', mk_search_ph:'رقم البكرة، أمر العمل، المادة...',
-    mk_select_all:'تحديد الكل', mk_btn_clear:'مسح', mk_btn_apply:'تطبيق',
-    mk_btn_reset:'↺ إعادة', mk_btn_create:'🏷 إنشاء قائمة وسم',
-    mk_empty_notfound:'لا توجد سجلات',
-    mk_empty_hint:'غير معايير التصفية أو البحث',
-    mk_serbest:'وسم حر',
-    mk_chip_tersane:'الحوض', mk_chip_parca:'القطعة', mk_chip_kalite:'الجودة',
-    mk_chip_cap:'القطر', mk_chip_isemir:'أمر العمل', mk_chip_search:'بحث',
-    mk_footer_record:'سجلات · صفحة',
-    mk_lists_title:'القوائم المنشأة', mk_lists_header:'🗒 قوائم الوسم',
-    mk_arc_title:'الأرشيف', mk_arc_header:'✓ القوائم المكتملة',
-    mk_no_lists:'لم يتم إنشاء قوائم وسم بعد',
-    mk_no_arc:'لا توجد سجلات مكتملة بعد',
-    mk_progress_label:'تقدم الوسم',
-    mk_marked:'موسوم',
-    mk_btn_markall:'☑ تحديد الكل', mk_btn_unmarkall:'☐ إلغاء الكل',
-    mk_btn_excel:'📂 تنزيل Excel',
-    mk_btn_save_close:'✓ حفظ وإغلاق القائمة',
-    mk_col_done:'تم',
-    mk_manuel_title:'الموسومة يدوياً',
-    mk_modal_mark_title:'تحديد كموسوم',
-    mk_modal_mark_desc:'هل تم وسم هذه القطعة يدوياً؟',
-    mk_modal_mark_btn:'✓ نعم، تم الوسم',
-    mk_modal_warn_title:'لا يمكن إنشاء القائمة',
-    mk_modal_warn_desc:'يجب أن تحتوي السجلات المحددة على نفس اسم القطعة والقطر.',
-    mk_modal_warn_retry:'أعد المحاولة بنفس المعايير',
-    mk_modal_warn_ok:'موافق، سأصحح التصفية',
-    mk_modal_list_title:'🏷 إنشاء قائمة وسم',
-    mk_modal_list_no:'رقم القائمة',
-    mk_modal_list_hint:'اتركه فارغاً للترقيم التلقائي.',
-    mk_modal_list_tersane:'الحوض:', mk_modal_list_parca:'القطعة:',
-    mk_modal_list_cap:'القطر:', mk_modal_list_kayit:'السجلات:',
-    mk_modal_list_cancel:'إلغاء', mk_modal_list_create:'✓ إنشاء القائمة',
-    mk_manuel_iptal:'إلغاء', mk_at_least_one:'يجب تحديد سجل واحد على الأقل',
-    mk_created:'تم الإنشاء',
-    mk_kismi:'جزئي',
-    mk_geri_dondu:'عاد',
-    mk_tamamlandi:'مكتمل',
-    mk_plaka:'لوحة',
-    mk_indirildi:'تم التنزيل',
-  }
-};
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
-function _applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
-    if(isInp){el.placeholder=v;}else{el.textContent=v;}
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
-  });
-}
 window._onLangChange=function(){
   _applyI18n();
   applyFilters();
   if(aktifTab==='listeler') renderML();
   if(aktifTab==='tamamlandi') renderArc();
 };
-new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 
 // ════ VERİ ════
 // tip: 'otomatik' | 'plaka' | 'manuel'
