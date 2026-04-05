@@ -500,9 +500,6 @@ function _applyI18n() {
 new MutationObserver(function() { _applyI18n(); renderTumSev(); renderHazir(); })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
-// ✅ C3: _onLangChange
-window._onLangChange = function() { _applyI18n(); renderTumSev(); renderHazir(); };
-
 // ✅ G-07: Sevkiyat no — önce ARES.sonrakiNo, fallback local
 async function yeniSevkNo(){
   var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
@@ -528,16 +525,8 @@ const HAZIR_SABIT = [
 
 // Store'dan gelen + sabit listeyi birleştir
 function _buildHAZIR() {
-  if (typeof ARES === 'undefined') return [...HAZIR_SABIT];
-  const storeHazir = []  // Supabase'den gelecek — ARES bağlantısı sonraya;
-  const storeIds = new Set(storeHazir.map(s => s.id));
-  const storeSpooller = storeHazir.map(s => ({
-    id: s.id, spool: s.spoolKodu?.split('-').pop() || s.spoolKodu,
-    devre: s.devre, projeNo: s.projeNo, gemi: s.gemi,
-    tersane: s.tersane, agirlik: s.agirlik,
-    kaynak: s.kaynak === 'kalite_onay' ? 'kalite' : 'direkt'
-  }));
-  return [...HAZIR_SABIT.filter(s => !storeIds.has(s.id)), ...storeSpooller];
+  // Supabase bağlantısı sonraya — şimdilik sabit demo veri
+  return [...HAZIR_SABIT];
 }
 let HAZIR_SPOOLLER = _buildHAZIR();
 
@@ -1038,16 +1027,21 @@ function showToast(msg,type='success'){
       _bekle++;
       setTimeout(_kontrol, 100); return;
     }
-    // Başlat
-    _applyI18n();
+    // ares-layout.js visibility'yi kendi yönetiyor
     doldurFiltreler();
     renderTumSev();
     renderHazir();
     guncelStatler();
-    document.documentElement.style.visibility = '';
   }
   _kontrol();
 })();
+
+// ✅ C3: _onLangChange — ares-layout.js dil yüklenince çağırır
+window._onLangChange = function() {
+  _applyI18n();
+  renderTumSev();
+  renderHazir();
+};
 </script>
 </body>
 </html>
