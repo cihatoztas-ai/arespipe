@@ -4,18 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Tersaneler | AresPipe</title>
-<script>(function(){try{var t=localStorage.getItem('ares_theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang');if(l)document.documentElement.setAttribute('lang',l);}catch(e){}document.documentElement.style.visibility='hidden';})();</script>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'dark';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
-
-
 *{margin:0;padding:0;box-sizing:border-box;}
-
 .page{padding:28px 28px 40px;}
 a{color:var(--ac);cursor:pointer;text-decoration:none;}
+
 .bo{display:inline-flex;align-items:center;gap:6px;padding:0 13px;height:32px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer;}
 .bo:hover{border-color:var(--ac);color:var(--ac);}
 .bp{display:inline-flex;align-items:center;gap:6px;padding:0 13px;height:32px;border-radius:6px;border:none;background:var(--ac);color:#fff;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
@@ -23,83 +28,73 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
 .inp{background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:6px 11px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--tx);outline:none;height:34px;}
 .inp:focus{border-color:var(--ac);}
 .inp::placeholder{color:var(--txd);}
-[data-theme=dark] .sun{display:block;}[data-theme=dark] .moon{display:none;}
-[data-theme=light] .sun{display:none;}[data-theme=light] .moon{display:block;}
 
-/* STAT CARDS */
-:root{--ic-blue:#4f46e5;--ic-orange:#f97316;}
-.ic-blue{background:var(--ic-blue);color:#fff;}
-.ic-green{background:var(--gr);color:#fff;}
-.ic-orange{background:var(--ic-orange);color:#fff;}
-.ic-amber{background:var(--warn);color:#fff;}
-.ic-violet{background:var(--leg);color:#fff;}
-.ic-red{background:var(--re);color:#fff;}
-/* STAT CARDS */
-.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.sc{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 16px;display:flex;align-items:center;gap:12px;}
-.sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.sc-body{flex:1;min-width:0;}
-.sc-label{font-size:12px;color:var(--txd);font-weight:600;margin-bottom:4px;}
-.sc-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--tx);}
-.sc-unit{font-size:14px;font-weight:500;color:var(--txd);}
-
-
-/* SOL KENAR RENK (Kural B-01) */
+/* ✅ SOL KENAR RENK — B-01 */
 .cl-ac{border-left:3px solid var(--ac) !important;}
 .cl-gr{border-left:3px solid var(--gr) !important;}
 .cl-re{border-left:3px solid var(--re) !important;}
 .cl-warn{border-left:3px solid var(--warn) !important;}
 .cl-leg{border-left:3px solid var(--leg) !important;}
+
+/* STAT KARTLARI */
+.ic-blue{background:#4f46e5;color:#fff;}
+.ic-green{background:var(--gr);color:#fff;}
+.ic-orange{background:#f97316;color:#fff;}
+.ic-violet{background:var(--leg);color:#fff;}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.sc{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 16px;display:flex;align-items:center;gap:12px;}
+.sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sc-body{flex:1;min-width:0;}
+/* ✅ B3: 14px */
+.sc-label{font-size:14px;color:var(--txd);font-weight:600;margin-bottom:4px;}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--tx);}
+.sc-unit{font-size:14px;font-weight:500;color:var(--txd);}
+
 /* FİLTRE TABS */
 .ftab-wrap{display:flex;gap:3px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:3px;}
-.ftab{padding:5px 14px;border-radius:5px;border:none;background:transparent;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;color:var(--txd);cursor:pointer;transition:background .15s,color .15s;}
+/* ✅ B3: 14px */
+.ftab{padding:5px 14px;border-radius:5px;border:none;background:transparent;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;transition:background .15s,color .15s;}
 .ftab:hover{color:var(--tx);}
 .ftab.on{background:var(--sur);color:var(--tx);border:1px solid var(--bor);}
-.ftab-count{background:var(--sur2);border:1px solid var(--bor);border-radius:10px;font-size:12px;padding:0 6px;margin-left:3px;font-weight:700;}
-.ftab.on .ftab-count{border-color:var(--bor);}
+/* ✅ B3: 14px */
+.ftab-count{background:var(--sur2);border:1px solid var(--bor);border-radius:10px;font-size:14px;padding:0 6px;margin-left:3px;font-weight:700;}
 
 /* ROW CARDS */
 .tlist{display:flex;flex-direction:column;gap:10px;}
-.trow{background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--gr);border-radius:14px;display:flex;align-items:stretch;overflow:hidden;transition:border-color .2s;}
-.trow:hover{border-color:rgba(16,185,129,.4);cursor:pointer;}
+.trow{background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--gr);border-radius:14px;display:flex;align-items:stretch;overflow:hidden;transition:border-color .2s;cursor:pointer;}
+.trow:hover{border-color:rgba(22,163,110,.4);}
 .trow.pasif{border-left-color:var(--re) !important;}
 .trow.pasif:hover{border-color:rgba(229,62,62,.4);}
-
 .tr-ident{display:flex;align-items:center;gap:14px;padding:16px 20px;min-width:240px;flex-shrink:0;}
-.tr-logo{width:76px;height:50px;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:var(--txd);letter-spacing:.4px;}
+/* ✅ B3: 14px */
+.tr-logo{width:76px;height:50px;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--txd);letter-spacing:.4px;overflow:hidden;}
+.tr-logo img{width:100%;height:100%;object-fit:contain;}
 .tr-name{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;line-height:1.1;white-space:nowrap;}
-.tr-loc{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--txm);margin-top:4px;}
-
+/* ✅ B3: 14px */
+.tr-loc{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--txm);margin-top:4px;}
 .tr-middle{display:flex;align-items:stretch;margin-left:auto;border-left:1px solid var(--bor);}
 .tr-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 20px;border-right:1px solid var(--bor);gap:1px;min-width:90px;}
 .tr-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;line-height:1;}
-.tr-stat-lbl{font-size:12px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;font-weight:600;text-align:center;}
-
+/* ✅ B3: 14px */
+.tr-stat-lbl{font-size:14px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;font-weight:600;text-align:center;}
 .tr-contact{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px 22px;border-right:1px solid var(--bor);min-width:220px;}
-.tr-cline{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);}
-
+/* ✅ B3: 14px */
+.tr-cline{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);}
 .tr-right{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 18px;min-width:160px;}
-.tr-status{display:inline-flex;padding:2px 8px;border-radius:9px;font-size:12px;font-weight:600;white-space:nowrap;}
-.tr-status.aktif{background:rgba(16,185,129,.1);color:var(--gr);border:1px solid rgba(16,185,129,.2);}
-.tr-status.pasif{background:rgba(239,68,68,.08);color:var(--re);border:1px solid rgba(239,68,68,.2);}
+/* ✅ B3: 14px */
+.tr-status{display:inline-flex;padding:2px 8px;border-radius:9px;font-size:14px;font-weight:600;white-space:nowrap;}
+.tr-status.aktif{background:rgba(22,163,110,.10);color:var(--gr);border:1px solid rgba(22,163,110,.2);}
+.tr-status.pasif{background:rgba(229,62,62,.08);color:var(--re);border:1px solid rgba(229,62,62,.2);}
 .tr-prog{width:100%;}
 .tr-prog-bar{height:4px;background:var(--sur2);border-radius:3px;overflow:hidden;margin-bottom:3px;}
 .tr-prog-fill{height:100%;border-radius:3px;background:var(--ac);transition:width .5s ease;}
-.tr-prog-pct{font-size:12px;font-weight:700;color:var(--ac);text-align:right;}
-
-.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:#94a3b8;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin:0 1px;transition:border-color .15s,color .15s,background .15s;}
+/* ✅ B3: 14px */
+.tr-prog-pct{font-size:14px;font-weight:700;color:var(--ac);text-align:right;}
+.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin:0 1px;transition:border-color .15s,color .15s,background .15s;}
 .icon-btn:hover{border-color:var(--ac);color:var(--ac);background:rgba(45,142,255,.1);}
 .icon-btn.del:hover{border-color:var(--re);color:var(--re);background:rgba(229,62,62,.1);}
 
-/* CONFIRM MODAL */
-.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;}
-.confirm-overlay.open{display:flex;}
-.confirm-box{background:var(--sur);border:1px solid var(--bor);border-radius:14px;width:380px;max-width:95vw;padding:28px 26px;display:flex;flex-direction:column;gap:16px;}
-.confirm-icon{width:44px;height:44px;border-radius:50%;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.confirm-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
-.confirm-msg{font-size:14px;color:var(--txm);line-height:1.6;}
-.confirm-name{font-weight:700;color:var(--tx);}
-.confirm-actions{display:flex;gap:8px;justify-content:flex-end;}
+/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--sur);border:1px solid var(--bor);border-radius:14px;width:520px;max-width:95vw;max-height:92vh;overflow-y:auto;}
@@ -110,37 +105,53 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
 .modal-body{padding:20px 22px;display:flex;flex-direction:column;gap:16px;}
 .modal-foot{padding:14px 22px;border-top:1px solid var(--bor);display:flex;justify-content:flex-end;gap:8px;}
 .field{display:flex;flex-direction:column;gap:5px;}
-.field label{font-size:12px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
+/* ✅ B3: 14px */
+.field label{font-size:14px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
 .field .inp{width:100%;font-size:14px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-/* Logo upload area */
 .logo-drop{border:1.5px dashed var(--bor);border-radius:9px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:border-color .15s,background .15s;}
-.logo-drop:hover{border-color:var(--ac);background:rgba(14,165,233,.04);}
+.logo-drop:hover{border-color:var(--ac);background:rgba(45,142,255,.04);}
 .logo-drop svg{opacity:.4;}
-.logo-drop span{font-size:13px;color:var(--txd);}
-.logo-drop small{font-size:12px;color:var(--txd);}
+/* ✅ B3: 14px */
+.logo-drop span{font-size:14px;color:var(--txd);}
+.logo-drop small{font-size:14px;color:var(--txd);}
 .logo-preview{display:none;width:100%;height:60px;object-fit:contain;border-radius:6px;margin-top:6px;}
 
+/* CONFIRM MODAL */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--sur);border:1px solid var(--bor);border-radius:14px;width:380px;max-width:95vw;padding:28px 26px;display:flex;flex-direction:column;gap:16px;}
+.confirm-icon{width:44px;height:44px;border-radius:50%;background:rgba(229,62,62,.12);border:1px solid rgba(229,62,62,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.confirm-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.confirm-msg{font-size:14px;color:var(--txm);line-height:1.6;}
+.confirm-name{font-weight:700;color:var(--tx);}
+.confirm-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+.bos-alan{text-align:center;padding:48px;color:var(--txd);font-size:14px;background:var(--sur);border:1px solid var(--bor);border-radius:14px;margin-top:8px;}
+.yukleniyor{text-align:center;padding:48px;color:var(--txd);font-size:14px;}
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
-
 <div class="app-shell">
-
 <div class="main-content">
-
 <div class="page">
 
 <!-- BAŞLIK -->
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
   <div>
-    <div style="font-size:13px;color:var(--txd);margin-bottom:6px;display:flex;align-items:center;gap:6px;"><a href="index.html" style="color:var(--txd);text-decoration:none;" data-i18n="tr_home">Ana Sayfa</a><span>/</span><span data-i18n="tr_breadcrumb">Tersaneler</span></div>
+    <!-- ✅ B3: 14px -->
+    <div style="font-size:14px;color:var(--txd);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      <a href="index.html" style="color:var(--txd);text-decoration:none;" data-i18n="tr_home">Ana Sayfa</a>
+      <span>/</span>
+      <span data-i18n="tr_breadcrumb">Tersaneler</span>
+    </div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;" data-i18n="tr_page_title">Tersaneler</div>
-    <div style="font-size:13px;color:var(--txm);margin-top:3px;" data-i18n="tr_subtitle">Çalıştığımız tersaneler ve iş özeti</div>
+    <!-- ✅ B3: 14px -->
+    <div style="font-size:14px;color:var(--txm);margin-top:3px;" data-i18n="tr_subtitle">Çalıştığımız tersaneler ve iş özeti</div>
   </div>
-  <button class="bp" onclick="modalAc()" style="height:34px;font-size:13px;flex:none;margin-top:4px;">
+  <button class="bp" onclick="modalAc()" style="height:34px;flex:none;margin-top:4px;">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     <span data-i18n="tr_btn_new">Yeni Tersane</span>
   </button>
@@ -152,33 +163,33 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
     <div class="sc-icon ic-blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
     <div class="sc-body">
       <div class="sc-label" data-i18n="tr_stat_total_yard">Toplam Tersane</div>
-      <div class="sc-val"><span id="st-tersane">4</span> <span class="sc-unit" data-i18n="tr_unit_yard">tersane</span></div>
+      <div class="sc-val"><span id="st-tersane">0</span> <span class="sc-unit" data-i18n="tr_unit_yard">tersane</span></div>
     </div>
   </div>
   <div class="sc cl-gr">
     <div class="sc-icon ic-green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
     <div class="sc-body">
       <div class="sc-label" data-i18n="tr_stat_total_project">Toplam Proje</div>
-      <div class="sc-val"><span id="st-proje">29</span> <span class="sc-unit" data-i18n="tr_unit_project">proje</span></div>
+      <div class="sc-val"><span id="st-proje">0</span> <span class="sc-unit" data-i18n="tr_unit_project">proje</span></div>
     </div>
   </div>
   <div class="sc cl-warn">
     <div class="sc-icon ic-violet"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
     <div class="sc-body">
       <div class="sc-label" data-i18n="tr_stat_total_spool">Toplam Spool</div>
-      <div class="sc-val"><span id="st-spool">1.393</span> <span class="sc-unit">spool</span></div>
+      <div class="sc-val"><span id="st-spool">0</span> <span class="sc-unit">spool</span></div>
     </div>
   </div>
   <div class="sc cl-re">
     <div class="sc-icon ic-orange"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
     <div class="sc-body">
       <div class="sc-label" data-i18n="tr_stat_total_weight">Toplam Ağırlık (kg)</div>
-      <div class="sc-val"><span id="st-agirlik">44.820</span> <span class="sc-unit">kg</span></div>
+      <div class="sc-val"><span id="st-agirlik">0</span> <span class="sc-unit">kg</span></div>
     </div>
   </div>
 </div>
 
-<!-- FİLTRE SATIRI (Kural F-01) -->
+<!-- FİLTRE SATIRI — F-01 -->
 <div class="cl-warn" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px 14px;">
   <div class="ftab-wrap">
     <button class="ftab on" onclick="filtrele('tumu',this)" data-i18n="tr_tab_all">Tümü</button>
@@ -190,120 +201,16 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
   </div>
 </div>
 
-<!-- TERSANE SATIRLARI -->
-<div class="tlist" id="tlist">
+<!-- TERSANE LİSTESİ — JS render -->
+<div id="yukleniyor" class="yukleniyor" data-i18n="tr_loading">Yükleniyor…</div>
+<div class="tlist" id="tlist" style="display:none;"></div>
+<div id="bos" class="bos-alan" style="display:none;" data-i18n="tr_no_result">Eşleşen tersane bulunamadı.</div>
 
-  <!-- TERSAN -->
-  <div class="trow" data-durum="aktif" data-ad="TERSAN Tersanesi" data-aktif="4" data-proje="12" data-spool="426" data-agirlik="14820">
-    <div class="tr-ident">
-      <div class="tr-logo">TERSAN</div>
-      <div>
-        <div class="tr-name">TERSAN Tersanesi</div>
-        <div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Yalova, Türkiye</div>
-      </div>
-    </div>
-    <div class="tr-middle">
-      <div class="tr-stat"><div class="tr-stat-val">12</div><div class="tr-stat-lbl" data-i18n="tr_top_project">Top. Proje</div></div>
-      <div class="tr-stat"><div class="tr-stat-val" style="color:var(--ac);">4</div><div class="tr-stat-lbl" data-i18n="tr_active_project">Aktif Proje</div></div>
-      
-      <div class="tr-contact">
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>+90 (226) 353 00 00</div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dcb5b2bab39ca8b9aeafbdb2a8b9aeafb4b5acf2bfb3b1">[email&#160;protected]</a></div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">www.tersantership.com</span></div>
-      </div>
-    </div>
-    <div class="tr-right" onclick="event.stopPropagation()">
-      <span class="tr-status aktif" data-i18n="tr_status_active">Aktif</span>
-      <div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:67%"></div></div><div class="tr-prog-pct" data-pct="67">%67 tamamlandı</div></div>
-      <div><button class="icon-btn" title="Düzenle" onclick="tersaneDuzenle(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn del" title="Sil" onclick="tersaneSil(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
-    </div>
-  </div>
+</div><!-- /.page -->
+</div><!-- /.main-content -->
+</div><!-- /.app-shell -->
 
-  <!-- SEDEF -->
-  <div class="trow" data-durum="aktif" data-ad="SEDEF Tersanesi" data-aktif="3" data-proje="9" data-spool="383" data-agirlik="13880">
-    <div class="tr-ident">
-      <div class="tr-logo">SEDEF</div>
-      <div>
-        <div class="tr-name">SEDEF Tersanesi</div>
-        <div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Tuzla, İstanbul</div>
-      </div>
-    </div>
-    <div class="tr-middle">
-      <div class="tr-stat"><div class="tr-stat-val">9</div><div class="tr-stat-lbl" data-i18n="tr_top_project">Top. Proje</div></div>
-      <div class="tr-stat"><div class="tr-stat-val" style="color:var(--ac);">3</div><div class="tr-stat-lbl" data-i18n="tr_active_project">Aktif Proje</div></div>
-      
-      <div class="tr-contact">
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>+90 (216) 395 12 00</div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689baacadacafbaa1a0b9b0a8bbade7aaa6a4">[email&#160;protected]</a></div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">www.sedefshipyard.com</span></div>
-      </div>
-    </div>
-    <div class="tr-right" onclick="event.stopPropagation()">
-      <span class="tr-status aktif" data-i18n="tr_status_active">Aktif</span>
-      <div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:67%"></div></div><div class="tr-prog-pct" data-pct="67">%67 tamamlandı</div></div>
-      <div><button class="icon-btn" title="Düzenle" onclick="tersaneDuzenle(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn del" title="Sil" onclick="tersaneSil(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
-    </div>
-  </div>
-
-  <!-- GEMAK -->
-  <div class="trow" data-durum="aktif" data-ad="GEMAK Tersanesi" data-aktif="3" data-proje="8" data-spool="491" data-agirlik="15010">
-    <div class="tr-ident">
-      <div class="tr-logo">GEMAK</div>
-      <div>
-        <div class="tr-name">GEMAK Tersanesi</div>
-        <div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Tuzla, İstanbul</div>
-      </div>
-    </div>
-    <div class="tr-middle">
-      <div class="tr-stat"><div class="tr-stat-val">8</div><div class="tr-stat-lbl" data-i18n="tr_top_project">Top. Proje</div></div>
-      <div class="tr-stat"><div class="tr-stat-val" style="color:var(--ac);">3</div><div class="tr-stat-lbl" data-i18n="tr_active_project">Aktif Proje</div></div>
-      
-      <div class="tr-contact">
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>+90 (216) 446 27 70</div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="543d3a323b14333139353f7a373b397a2026">[email&#160;protected]</a></div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">www.gemak.com.tr</span></div>
-      </div>
-    </div>
-    <div class="tr-right" onclick="event.stopPropagation()">
-      <span class="tr-status aktif" data-i18n="tr_status_active">Aktif</span>
-      <div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:63%"></div></div><div class="tr-prog-pct" data-pct="63">%63 tamamlandı</div></div>
-      <div><button class="icon-btn" title="Düzenle" onclick="tersaneDuzenle(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn del" title="Sil" onclick="tersaneSil(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
-    </div>
-  </div>
-
-  <!-- DESAN -->
-  <div class="trow pasif" data-durum="pasif" data-ad="DESAN Tersanesi" data-aktif="0" data-proje="3" data-spool="93" data-agirlik="2150">
-    <div class="tr-ident">
-      <div class="tr-logo" style="color:var(--txd);">DESAN</div>
-      <div>
-        <div class="tr-name" style="color:var(--txm);">DESAN Tersanesi</div>
-        <div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Derince, Kocaeli</div>
-      </div>
-    </div>
-    <div class="tr-middle">
-      <div class="tr-stat"><div class="tr-stat-val">3</div><div class="tr-stat-lbl" data-i18n="tr_top_project">Top. Proje</div></div>
-      <div class="tr-stat"><div class="tr-stat-val" style="color:var(--txd);">0</div><div class="tr-stat-lbl" data-i18n="tr_active_project">Aktif Proje</div></div>
-      
-      <div class="tr-contact">
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg><span style="color:var(--txd);">+90 (262) 229 50 00</span></div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span style="color:var(--txd);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d6bfb8b0b996b2b3a5b7b8f8b5b9bbf8a2a4">[email&#160;protected]</a></span></div>
-        <div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--txd);">www.desan.com.tr</span></div>
-      </div>
-    </div>
-    <div class="tr-right" onclick="event.stopPropagation()">
-      <span class="tr-status pasif" data-i18n="tr_status_passive">Pasif</span>
-      <div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:100%;background:var(--gr);"></div></div><div class="tr-prog-pct" style="color:var(--gr);" data-pct="100">%100 tamamlandı</div></div>
-      <div><button class="icon-btn" title="Düzenle" onclick="tersaneDuzenle(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn del" title="Sil" onclick="tersaneSil(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
-    </div>
-  </div>
-
-</div><!-- /.tlist -->
-
-<div id="bos" style="display:none;padding:48px;text-align:center;color:var(--txd);font-size:14px;background:var(--sur);border:1px solid var(--bor);border-radius:14px;margin-top:8px;">Eşleşen tersane bulunamadı.</div>
-
-</div>
-
-<!-- MODAL: YENİ TERSANE -->
+<!-- MODAL: YENİ / DÜZENLE TERSANE -->
 <div class="modal-overlay" id="modalOverlay" onclick="modalKapat(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
@@ -320,7 +227,7 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
           <img id="logoPreview" class="logo-preview" alt="">
         </div>
         <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="logoSec(this)">
-        <input type="hidden" id="duzenlemeIndex" value="">
+        <input type="hidden" id="duzenlemeId" value="">
       </div>
       <div class="field">
         <label><span data-i18n="tr_field_name">Tersane Adı</span> <span style="color:var(--re);">*</span></label>
@@ -369,7 +276,8 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
       <div class="confirm-title" data-i18n="tr_confirm_title">Tersaneyi Sil</div>
     </div>
     <div class="confirm-msg">
-      <span class="confirm-name" id="confirmAd"></span> <span data-i18n="tr_confirm_msg">tersanesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</span>
+      <span class="confirm-name" id="confirmAd"></span>
+      <span data-i18n="tr_confirm_msg">tersanesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</span>
     </div>
     <div class="confirm-actions">
       <button class="bo" onclick="confirmKapat()" data-i18n="tr_btn_dismiss">Vazgeç</button>
@@ -382,379 +290,466 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
 </div>
 
 <script>
+'use strict'; // ✅ A1
 
-'use strict';
+// ✅ D1: esc()
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-// ── D-01 DİL SİSTEMİ ─────────────────────────────────────────
+
+// ✅ C1: _I18N — EN ve AR
 var _I18N = {
   en:{
-    tr_page_title:'Shipyards',
-    tr_subtitle:'Shipyards we work with and job summary',
+    tr_page_title:'Shipyards', tr_subtitle:'Shipyards we work with and job summary',
     tr_home:'Home', tr_breadcrumb:'Shipyards',
-    tr_stat_yard:'SHIPYARD', tr_stat_total_yard:'Total Shipyards',
-    tr_stat_project:'PROJECT', tr_stat_total_project:'Total Projects',
-    tr_stat_spool:'SPOOL', tr_stat_total_spool:'Total Spools',
-    tr_stat_weight:'WEIGHT', tr_stat_total_weight:'Total Weight (kg)',
+    tr_stat_total_yard:'Total Shipyards', tr_stat_total_project:'Total Projects',
+    tr_stat_total_spool:'Total Spools', tr_stat_total_weight:'Total Weight (kg)',
+    tr_unit_yard:'shipyards', tr_unit_project:'projects',
     tr_btn_new:'New Shipyard',
     tr_tab_all:'All', tr_tab_active:'Active', tr_tab_passive:'Passive',
     tr_search_ph:'Search shipyard...',
-    tr_top_project:'Total Projects', tr_active_project:'Active Projects', tr_top_spool:'Total Spools',
+    tr_top_project:'Total Proj.', tr_active_project:'Active Proj.', tr_top_spool:'Total Spool',
     tr_status_active:'Active', tr_status_passive:'Passive',
-    tr_pct_done:'% complete',
-    tr_modal_title:'Add New Shipyard',
-    tr_logo_label:'Shipyard Logo',
-    tr_logo_click:'Click to upload logo',
-    tr_logo_hint:'PNG, JPG, SVG — max 2 MB',
+    tr_pct_done:'complete',
+    tr_loading:'Loading\u2026', tr_no_result:'No matching shipyard found.',
+    tr_modal_title:'Add New Shipyard', tr_modal_edit_title:'Edit Shipyard',
+    tr_logo_label:'Shipyard Logo', tr_logo_click:'Click to upload logo',
+    tr_logo_hint:'PNG, JPG, SVG \u2014 max 2 MB',
     tr_field_name:'Shipyard Name', tr_field_city:'City', tr_field_country:'Country',
     tr_field_phone:'Phone', tr_field_email:'E-mail', tr_field_web:'Website',
     tr_ph_name:'e.g. TERSAN Shipyard', tr_ph_city:'e.g. Istanbul',
-    tr_ph_country:'Turkey', tr_ph_phone:'+90 (000) 000 00 00',
-    tr_ph_email:'info@shipyard.com', tr_ph_web:'www.shipyard.com',
-    tr_btn_cancel:'Cancel', tr_btn_add:'Add Shipyard',
+    tr_ph_phone:'+90 (000) 000 00 00', tr_ph_email:'info@shipyard.com', tr_ph_web:'www.shipyard.com',
+    tr_btn_cancel:'Cancel', tr_btn_add:'Add Shipyard', tr_btn_save:'Save',
     tr_confirm_title:'Delete Shipyard',
-    tr_confirm_msg:'Are you sure you want to delete the shipyard? This action cannot be undone.',
+    tr_confirm_msg:'Are you sure you want to delete this shipyard? This cannot be undone.',
     tr_btn_dismiss:'Dismiss', tr_btn_confirm_del:'Yes, Delete',
-    tr_edit_title:'Edit', tr_del_title:'Delete',
-    tr_unit_yard:'shipyards', tr_unit_project:'projects',
-    tr_modal_edit_title:'Edit Shipyard', tr_btn_save:'Save',
+    tr_hata_ad_zorunlu:'Shipyard name is required.',
+    tr_hata_sehir_zorunlu:'City is required.',
+    tr_kaydedildi:'Saved.', tr_silindi:'Deleted.', tr_db_hata:'Database error.',
   },
   ar:{
-    tr_page_title:'الأحواض',
-    tr_subtitle:'الأحواض التي نعمل معها وملخص الأعمال',
-    tr_home:'الرئيسية', tr_breadcrumb:'الأحواض',
-    tr_stat_yard:'الحوض', tr_stat_total_yard:'إجمالي الأحواض',
-    tr_stat_project:'المشروع', tr_stat_total_project:'إجمالي المشاريع',
-    tr_stat_spool:'البكرة', tr_stat_total_spool:'إجمالي البكرات',
-    tr_stat_weight:'الوزن', tr_stat_total_weight:'الوزن الكلي (كجم)',
-    tr_btn_new:'حوض جديد',
-    tr_tab_all:'الكل', tr_tab_active:'نشط', tr_tab_passive:'غير نشط',
-    tr_search_ph:'بحث عن حوض...',
-    tr_top_project:'إجمالي المشاريع', tr_active_project:'المشاريع النشطة', tr_top_spool:'إجمالي البكرات',
-    tr_status_active:'نشط', tr_status_passive:'غير نشط',
-    tr_pct_done:'% مكتمل',
-    tr_modal_title:'إضافة حوض جديد',
-    tr_logo_label:'شعار الحوض',
-    tr_logo_click:'انقر لرفع الشعار',
-    tr_logo_hint:'PNG, JPG, SVG — الحد الأقصى 2 ميجابايت',
-    tr_field_name:'اسم الحوض', tr_field_city:'المدينة', tr_field_country:'الدولة',
-    tr_field_phone:'الهاتف', tr_field_email:'البريد الإلكتروني', tr_field_web:'الموقع الإلكتروني',
-    tr_ph_name:'مثال: حوض TERSAN', tr_ph_city:'مثال: إسطنبول',
-    tr_ph_country:'تركيا', tr_ph_phone:'+90 (000) 000 00 00',
-    tr_ph_email:'info@shipyard.com', tr_ph_web:'www.shipyard.com',
-    tr_btn_cancel:'إلغاء', tr_btn_add:'إضافة حوض',
-    tr_confirm_title:'حذف الحوض',
-    tr_confirm_msg:'هل أنت متأكد من حذف هذا الحوض؟ لا يمكن التراجع عن هذا الإجراء.',
-    tr_btn_dismiss:'تراجع', tr_btn_confirm_del:'نعم، احذف',
-    tr_edit_title:'تعديل', tr_del_title:'حذف',
-    tr_unit_yard:'أحواض', tr_unit_project:'مشاريع',
-    tr_modal_edit_title:'تعديل الحوض', tr_btn_save:'حفظ',
+    tr_page_title:'\u0627\u0644\u0623\u062d\u0648\u0627\u0636', tr_subtitle:'\u0627\u0644\u0623\u062d\u0648\u0627\u0636 \u0627\u0644\u062a\u064a \u0646\u0639\u0645\u0644 \u0645\u0639\u0647\u0627',
+    tr_home:'\u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629', tr_breadcrumb:'\u0627\u0644\u0623\u062d\u0648\u0627\u0636',
+    tr_stat_total_yard:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0623\u062d\u0648\u0627\u0636',
+    tr_stat_total_project:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639',
+    tr_stat_total_spool:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0628\u0643\u0631\u0627\u062a',
+    tr_stat_total_weight:'\u0627\u0644\u0648\u0632\u0646 \u0627\u0644\u0643\u0644\u064a (\u0643\u062c\u0645)',
+    tr_unit_yard:'\u0623\u062d\u0648\u0627\u0636', tr_unit_project:'\u0645\u0634\u0627\u0631\u064a\u0639',
+    tr_btn_new:'\u062d\u0648\u0636 \u062c\u062f\u064a\u062f',
+    tr_tab_all:'\u0627\u0644\u0643\u0644', tr_tab_active:'\u0646\u0634\u0637', tr_tab_passive:'\u063a\u064a\u0631 \u0646\u0634\u0637',
+    tr_search_ph:'\u0628\u062d\u062b \u0639\u0646 \u062d\u0648\u0636...',
+    tr_top_project:'\u0625\u062c\u0645\u0627\u0644\u064a', tr_active_project:'\u0646\u0634\u0637', tr_top_spool:'\u0628\u0643\u0631\u0627\u062a',
+    tr_status_active:'\u0646\u0634\u0637', tr_status_passive:'\u063a\u064a\u0631 \u0646\u0634\u0637',
+    tr_pct_done:'\u0645\u0643\u062a\u0645\u0644',
+    tr_loading:'\u062c\u0627\u0631\u0650 \u0627\u0644\u062a\u062d\u0645\u064a\u0644\u2026', tr_no_result:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c.',
+    tr_modal_title:'\u0625\u0636\u0627\u0641\u0629 \u062d\u0648\u0636', tr_modal_edit_title:'\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u062d\u0648\u0636',
+    tr_logo_label:'\u0634\u0639\u0627\u0631 \u0627\u0644\u062d\u0648\u0636', tr_logo_click:'\u0627\u0646\u0642\u0631 \u0644\u0631\u0641\u0639 \u0627\u0644\u0634\u0639\u0627\u0631',
+    tr_logo_hint:'PNG, JPG, SVG \u2014 \u0645\u0627\u0643\u0633 2 \u0645\u064a\u063a\u0627\u0628\u0627\u064a\u062a',
+    tr_field_name:'\u0627\u0633\u0645 \u0627\u0644\u062d\u0648\u0636', tr_field_city:'\u0627\u0644\u0645\u062f\u064a\u0646\u0629',
+    tr_field_country:'\u0627\u0644\u062f\u0648\u0644\u0629', tr_field_phone:'\u0627\u0644\u0647\u0627\u062a\u0641',
+    tr_field_email:'\u0627\u0644\u0628\u0631\u064a\u062f', tr_field_web:'\u0627\u0644\u0645\u0648\u0642\u0639',
+    tr_ph_name:'\u0645\u062b\u0627\u0644: \u062d\u0648\u0636 TERSAN', tr_ph_city:'\u0645\u062b\u0627\u0644: \u0625\u0633\u0637\u0646\u0628\u0648\u0644',
+    tr_ph_phone:'+90 (000) 000 00 00', tr_ph_email:'info@shipyard.com', tr_ph_web:'www.shipyard.com',
+    tr_btn_cancel:'\u0625\u0644\u063a\u0627\u0621', tr_btn_add:'\u0625\u0636\u0627\u0641\u0629 \u062d\u0648\u0636', tr_btn_save:'\u062d\u0641\u0638',
+    tr_confirm_title:'\u062d\u0630\u0641 \u0627\u0644\u062d\u0648\u0636',
+    tr_confirm_msg:'\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f\u061f',
+    tr_btn_dismiss:'\u062a\u0631\u0627\u062c\u0639', tr_btn_confirm_del:'\u0646\u0639\u0645\u060c \u0627\u062d\u0630\u0641',
+    tr_hata_ad_zorunlu:'\u0627\u0633\u0645 \u0627\u0644\u062d\u0648\u0636 \u0645\u0637\u0644\u0648\u0628.',
+    tr_hata_sehir_zorunlu:'\u0627\u0644\u0645\u062f\u064a\u0646\u0629 \u0645\u0637\u0644\u0648\u0628\u0629.',
+    tr_kaydedildi:'\u062a\u0645 \u0627\u0644\u062d\u0641\u0638.',
+    tr_silindi:'\u062a\u0645 \u0627\u0644\u062d\u0630\u0641.',
+    tr_db_hata:'\u062e\u0637\u0623 \u0641\u064a \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a.',
   }
 };
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
+
+// ✅ C2: tv()
+function tv(key,tr){
+  var lang=document.documentElement.getAttribute('lang')||'tr';
+  var dict=_I18N[lang];
+  if(dict&&dict[key]!==undefined)return dict[key];
+  return tr!==undefined?tr:key;
+}
+
+// ✅ C2: _applyI18n()
 function _applyI18n(){
+  var lang=document.documentElement.getAttribute('lang')||'tr';
+  var isTr=lang==='tr';
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var k=el.getAttribute('data-i18n');
     var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
     if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
+    var v=isTr?el.getAttribute('data-i18n-tr'):tv(k,el.getAttribute('data-i18n-tr'));
     if(isInp){el.placeholder=v;}else{el.textContent=v;}
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
     var k=el.getAttribute('data-i18n-placeholder');
     if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
+    el.placeholder=isTr?el.getAttribute('data-i18n-ph-tr'):tv(k,el.getAttribute('data-i18n-ph-tr'));
   });
 }
-function _applyPct(){
-  document.querySelectorAll('[data-pct]').forEach(function(el){
-    var pct=el.getAttribute('data-pct');
-    el.textContent='%'+pct+' '+tv('tr_pct_done','tamamlandı');
+
+// ✅ C3: _onLangChange
+window._onLangChange=function(){ _applyI18n(); tersaneRender(); };
+
+// ✅ C2: MutationObserver
+new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+
+// ═══════════════════════════════════════════════════════════════════
+// VERİ — Supabase: tersaneler tablosu
+// ═══════════════════════════════════════════════════════════════════
+var veri = [];     // [{id,ad,sehir,ulke,tel,mail,web,logoUrl,aktif,projeTopSayisi,aktifProjeSayisi}]
+var aktifFiltre = 'tumu';
+var _silTarget  = null;
+
+// Local mod varsayılan tersaneler
+var VARSAYILAN_TERSANELER = [
+  {id:'T001',ad:'TERSAN Tersanesi',  sehir:'Yalova',         ulke:'Türkiye',tel:'+90 (226) 353 00 00',mail:'info@tersan.com.tr',    web:'www.tersaneship.com',logoUrl:'',aktif:true, projeTopSayisi:12,aktifProjeSayisi:4},
+  {id:'T002',ad:'SEDEF Tersanesi',   sehir:'Tuzla',          ulke:'İstanbul',tel:'+90 (216) 395 10 00',mail:'info@sedef.com.tr',     web:'www.sedef.com.tr',   logoUrl:'',aktif:true, projeTopSayisi:9, aktifProjeSayisi:3},
+  {id:'T003',ad:'RMK Marine',        sehir:'Tuzla',          ulke:'İstanbul',tel:'+90 (216) 581 08 00',mail:'info@rmkmarine.com.tr', web:'www.rmkmarine.com.tr',logoUrl:'',aktif:true, projeTopSayisi:5, aktifProjeSayisi:1},
+  {id:'T004',ad:'DESAN Tersanesi',   sehir:'Kocaeli',        ulke:'Türkiye', tel:'+90 (262) 316 13 00',mail:'info@desan.com.tr',     web:'www.desan.com.tr',   logoUrl:'',aktif:false,projeTopSayisi:3, aktifProjeSayisi:0},
+];
+
+async function veriYukle() {
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    // Tersaneler
+    var tRes = await supa.from('tersaneler')
+      .select('*')
+      .eq('tenant_id', ARES.tenantId())
+      .order('ad');
+    if (tRes.error) {
+      console.warn('[tersaneler] Yükleme hatası:', tRes.error.message);
+      toast(tv('tr_db_hata','Veritabanı hatası.'), 'er');
+      veri = [];
+      return;
+    }
+
+    // Projeler (istatistik için)
+    var pRes = await supa.from('projeler')
+      .select('id, tersane_id, aktif')
+      .eq('tenant_id', ARES.tenantId());
+    var pData = pRes.error ? [] : (pRes.data || []);
+
+    // Alan eşlemesi: Supabase → UI
+    veri = (tRes.data || []).map(function(t) {
+      var projelerT      = pData.filter(function(p){ return p.tersane_id === t.id; });
+      var aktifPrjSayisi = projelerT.filter(function(p){ return p.aktif; }).length;
+      return {
+        id:               t.id,
+        ad:               t.ad,
+        sehir:            t.sehir      || '',
+        ulke:             t.ulke       || 'Türkiye',
+        tel:              t.tel        || '',
+        mail:             t.email      || '',
+        web:              t.web        || '',
+        logoUrl:          t.logo_url   || '',
+        aktif:            t.aktif !== false,
+        projeTopSayisi:   projelerT.length,
+        aktifProjeSayisi: aktifPrjSayisi,
+      };
+    });
+  } else {
+    veri = VARSAYILAN_TERSANELER;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — JS ile satır üret, esc() ile XSS koruması
+// ═══════════════════════════════════════════════════════════════════
+function tersaneRender() {
+  var liste  = document.getElementById('tlist');
+  var bosEl  = document.getElementById('bos');
+  var yukEl  = document.getElementById('yukleniyor');
+  if (!liste) return;
+
+  var ara        = (document.getElementById('araInput').value || '').toLowerCase();
+  var gorunen    = 0, topProje = 0, topAktifP = 0;
+  var html       = '';
+
+  veri.forEach(function(t) {
+    // Aktif/pasif → filtre eşleşmesi
+    var durum = t.aktif ? 'aktif' : 'pasif';
+    var fitDurum = aktifFiltre === 'tumu' || durum === aktifFiltre;
+    var fitAra   = !ara || (t.ad + ' ' + t.sehir + ' ' + t.ulke).toLowerCase().includes(ara);
+    if (!fitDurum || !fitAra) return;
+
+    gorunen++;
+    topProje  += t.projeTopSayisi;
+    topAktifP += t.aktifProjeSayisi;
+
+    var pct = t.projeTopSayisi > 0
+      ? Math.round((t.projeTopSayisi - t.aktifProjeSayisi) / t.projeTopSayisi * 100)
+      : (t.aktif ? 0 : 100);
+    var pctRenk  = pct === 100 ? 'var(--gr)' : 'var(--ac)';
+    var durumHtml = t.aktif
+      ? '<span class="tr-status aktif">' + tv('tr_status_active','Aktif') + '</span>'
+      : '<span class="tr-status pasif">' + tv('tr_status_passive','Pasif') + '</span>';
+    var logoHtml = t.logoUrl
+      ? '<img src="' + esc(t.logoUrl) + '" alt="' + esc(t.ad) + '">'
+      : esc(t.ad.split(' ')[0].toUpperCase().substring(0,6));
+    var telHtml  = t.tel  ? '<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>' + esc(t.tel) + '</div>' : '';
+    var mailHtml = t.mail ? '<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' + esc(t.mail) + '</div>' : '';
+    var webHtml  = t.web  ? '<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">' + esc(t.web) + '</span></div>' : '';
+
+    html +=
+      '<div class="trow' + (t.aktif ? '' : ' pasif') + '" data-id="' + esc(t.id) + '">' +
+        '<div class="tr-ident">' +
+          '<div class="tr-logo">' + logoHtml + '</div>' +
+          '<div>' +
+            '<div class="tr-name">' + esc(t.ad) + '</div>' +
+            '<div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' + esc(t.sehir) + (t.ulke ? ', ' + esc(t.ulke) : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tr-middle">' +
+          '<div class="tr-stat"><div class="tr-stat-val">' + t.projeTopSayisi + '</div><div class="tr-stat-lbl">' + tv('tr_top_project','Top. Proje') + '</div></div>' +
+          '<div class="tr-stat"><div class="tr-stat-val" style="color:var(--ac);">' + t.aktifProjeSayisi + '</div><div class="tr-stat-lbl">' + tv('tr_active_project','Aktif Proje') + '</div></div>' +
+          '<div class="tr-contact">' + telHtml + mailHtml + webHtml + '</div>' +
+        '</div>' +
+        '<div class="tr-right" onclick="event.stopPropagation()">' +
+          durumHtml +
+          '<div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:' + pct + '%;background:' + pctRenk + ';"></div></div><div class="tr-prog-pct" style="color:' + pctRenk + ';">%' + pct + ' ' + tv('tr_pct_done','tamamlandı') + '</div></div>' +
+          '<div>' +
+            '<button class="icon-btn" title="' + tv('tr_modal_edit_title','Düzenle') + '" onclick="tersaneDuzenle(\'' + esc(t.id) + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+            '<button class="icon-btn del" title="' + tv('tr_btn_confirm_del','Sil') + '" onclick="tersaneSilAc(\'' + esc(t.id) + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
   });
+
+  liste.innerHTML = html;
+
+  // İstatistikler
+  var s = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+  s('st-tersane', gorunen);
+  s('st-proje',   topProje);
+  s('st-spool',   0);
+  s('st-agirlik', 0);
+
+  yukEl.style.display  = 'none';
+  liste.style.display  = gorunen === 0 ? 'none' : '';
+  bosEl.style.display  = gorunen === 0 ? '' : 'none';
 }
-window._onLangChange=function(){_applyI18n();_applyPct();};
-new MutationObserver(function(){_applyI18n();_applyPct();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-var _silTarget=null;
-function tersaneSil(btn){
-  _silTarget=btn.closest('.trow');
-  var ad=_silTarget.getAttribute('data-ad')||'Bu tersane';
-  document.getElementById('confirmAd').textContent=ad;
-  document.getElementById('confirmBtn').onclick=function(){
-    var _ad=_silTarget.getAttribute('data-ad')||'';
-    try{var log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'TERSANE_SIL',kaynak:_ad,aciklama:'Silindi'});localStorage.setItem('ares_islemLog',JSON.stringify(log.slice(0,500)));}catch(e){}
-    _silTarget.remove();
-    confirmKapat();
-    uygula();
-  };
-  document.getElementById('confirmOverlay').classList.add('open');
+
+// ── Filtreler ─────────────────────────────────────────────────────
+function filtrele(tip, btn) {
+  aktifFiltre = tip;
+  document.querySelectorAll('.ftab').forEach(function(b){ b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  tersaneRender();
 }
-function confirmKapat(){
-  document.getElementById('confirmOverlay').classList.remove('open');
-  _silTarget=null;
-}
-function modalAc(){
-  // Yeni ekleme modu
-  document.getElementById('duzenlemeIndex').value='';
+function araFiltrele() { tersaneRender(); }
+
+// ── Modal ─────────────────────────────────────────────────────────
+function modalAc() {
+  document.getElementById('duzenlemeId').value = '';
   document.getElementById('modalBaslik').setAttribute('data-i18n','tr_modal_title');
-  document.getElementById('modalBaslik').textContent=tv('tr_modal_title','Yeni Tersane Ekle');
+  document.getElementById('modalBaslik').textContent = tv('tr_modal_title','Yeni Tersane Ekle');
   document.getElementById('modalKaydetMetin').setAttribute('data-i18n','tr_btn_add');
-  document.getElementById('modalKaydetMetin').textContent=tv('tr_btn_add','Tersane Ekle');
+  document.getElementById('modalKaydetMetin').textContent = tv('tr_btn_add','Tersane Ekle');
+  formSifirla();
   document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  document.body.style.overflow = 'hidden';
 }
-function modalKapat(e){
-  if(e&&e.target!==document.getElementById('modalOverlay')&&e.type==='click') return;
+function modalKapat(e) {
+  if (e && e.target !== document.getElementById('modalOverlay') && e.type === 'click') return;
   document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow='';
+  document.body.style.overflow = '';
 }
-function logoSec(input){
-  var file=input.files[0];
-  if(!file) return;
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var preview=document.getElementById('logoPreview');
-    var drop=document.getElementById('logoDrop');
-    preview.src=e.target.result;
-    preview.style.display='block';
-    drop.querySelector('svg').style.display='none';
-    drop.querySelector('span').style.display='none';
-    drop.querySelector('small').style.display='none';
+function formSifirla() {
+  ['fAd','fSehir','fTel','fMail','fWeb'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('fUlke').value = 'Türkiye';
+  document.getElementById('logoPreview').style.display = 'none';
+  document.getElementById('logoPreview').src = '';
+  var drop = document.getElementById('logoDrop');
+  drop.querySelector('svg').style.display  = '';
+  drop.querySelector('span').style.display = '';
+  drop.querySelector('small').style.display = '';
+  document.getElementById('logoInput').value = '';
+}
+
+// ── Logo seç ─────────────────────────────────────────────────────
+function logoSec(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById('logoPreview');
+    var drop    = document.getElementById('logoDrop');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    drop.querySelector('svg').style.display   = 'none';
+    drop.querySelector('span').style.display  = 'none';
+    drop.querySelector('small').style.display = 'none';
   };
   reader.readAsDataURL(file);
 }
 
-function tersaneDuzenle(btn){
-  var row=btn.closest('.trow');
-  // Mevcut verileri formdan oku
-  var ad   =row.getAttribute('data-ad')||'';
-  var name =row.querySelector('.tr-name');
-  var loc  =row.querySelector('.tr-loc');
-  var lines=row.querySelectorAll('.tr-cline');
-  var tel='',mail='',web='';
-  lines.forEach(function(l){
-    var t=l.textContent.trim();
-    if(t.startsWith('+')) tel=t;
-    else if(t.includes('@')) mail=t;
-    else web=t;
-  });
-  // Formu doldur
-  document.getElementById('fAd').value=ad;
-  var locTxt=loc?loc.textContent.trim():'';
-  var locParts=locTxt.split(',');
-  document.getElementById('fSehir').value=locParts[0]?locParts[0].trim():'';
-  document.getElementById('fUlke').value=locParts[1]?locParts[1].trim():'Türkiye';
-  document.getElementById('fTel').value=tel;
-  document.getElementById('fMail').value=mail;
-  document.getElementById('fWeb').value=web;
-  // Logo önizleme
-  var logo=row.querySelector('.tr-logo');
-  var logoImg=logo?logo.querySelector('img'):null;
-  if(logoImg&&logoImg.src){
-    var preview=document.getElementById('logoPreview');
-    preview.src=logoImg.src;preview.style.display='block';
-    document.getElementById('logoDrop').querySelector('svg').style.display='none';
-    document.getElementById('logoDrop').querySelector('span').style.display='none';
-    document.getElementById('logoDrop').querySelector('small').style.display='none';
-  }
-  // Düzenleme modu ayarla
-  document.getElementById('duzenlemeIndex').value=Array.from(document.querySelectorAll('.trow')).indexOf(row);
+// ── Tersane düzenle ───────────────────────────────────────────────
+function tersaneDuzenle(id) {
+  var t = veri.find(function(x){ return x.id === id; });
+  if (!t) return;
+  document.getElementById('duzenlemeId').value = id;
   document.getElementById('modalBaslik').removeAttribute('data-i18n');
-  document.getElementById('modalBaslik').textContent=tv('tr_modal_edit_title',ad+' — Düzenle');
+  document.getElementById('modalBaslik').textContent = tv('tr_modal_edit_title',t.ad + ' — Düzenle');
   document.getElementById('modalKaydetMetin').removeAttribute('data-i18n');
-  document.getElementById('modalKaydetMetin').textContent=tv('tr_btn_save','Kaydet');
-  document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function tersaneKaydet(){
-  var ad=document.getElementById('fAd').value.trim();
-  var sehir=document.getElementById('fSehir').value.trim();
-  if(!ad){document.getElementById('fAd').style.borderColor='var(--re)';document.getElementById('fAd').focus();return;}
-  if(!sehir){document.getElementById('fSehir').style.borderColor='var(--re)';document.getElementById('fSehir').focus();return;}
-  document.getElementById('fAd').style.borderColor='';
-  document.getElementById('fSehir').style.borderColor='';
-  // Düzenleme modu kontrolü
-  var duzIdx=document.getElementById('duzenlemeIndex').value;
-  if(duzIdx!==''){
-    var rows=document.querySelectorAll('.trow');
-    var row=rows[parseInt(duzIdx)];
-    if(row){
-      var tel=document.getElementById('fTel').value.trim();
-      var mail=document.getElementById('fMail').value.trim();
-      var web=document.getElementById('fWeb').value.trim();
-      row.setAttribute('data-ad',ad);
-      var nameEl=row.querySelector('.tr-name'); if(nameEl) nameEl.textContent=ad;
-      var locEl=row.querySelector('.tr-loc');
-      if(locEl){var svg=locEl.querySelector('svg');locEl.textContent='';if(svg)locEl.appendChild(svg);locEl.appendChild(document.createTextNode(sehir+(document.getElementById('fUlke').value?', '+document.getElementById('fUlke').value:'')));}
-      // Logo güncelle
-      var preview=document.getElementById('logoPreview');
-      var logoEl=row.querySelector('.tr-logo');
-      if(logoEl){
-        if(preview.src&&preview.style.display!=='none'){
-          var existImg=logoEl.querySelector('img');
-          if(!existImg){existImg=document.createElement('img');existImg.style.cssText='width:100%;height:100%;object-fit:contain;border-radius:6px;';logoEl.appendChild(existImg);}
-          existImg.src=preview.src;logoEl.textContent='';logoEl.appendChild(existImg);
-        }else{var kisa=ad.split(' ')[0].toUpperCase().substring(0,6);logoEl.textContent=kisa;}
-      }
-      // İletişim güncelle
-      var contact=row.querySelector('.tr-contact');
-      if(contact){
-        contact.innerHTML=
-          (tel?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>'+esc(tel)+'</div>':'')+
-          (mail?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'+esc(mail)+'</div>':'')+
-          (web?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">'+esc(web)+'</span></div>':'');
-      }
-      // Log
-      try{var log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'TERSANE_DUZENLE',kaynak:ad,aciklama:sehir});localStorage.setItem('ares_islemLog',JSON.stringify(log.slice(0,500)));}catch(e){}
-      ['fAd','fSehir','fTel','fMail','fWeb'].forEach(function(id){document.getElementById(id).value='';});
-      document.getElementById('fUlke').value='Türkiye';
-      document.getElementById('logoPreview').style.display='none';
-      document.getElementById('logoDrop').querySelector('svg').style.display='';
-      document.getElementById('logoDrop').querySelector('span').style.display='';
-      document.getElementById('logoDrop').querySelector('small').style.display='';
-      document.getElementById('logoInput').value='';
-      modalKapat();
-      return;
-    }
+  document.getElementById('modalKaydetMetin').textContent = tv('tr_btn_save','Kaydet');
+  document.getElementById('fAd').value    = t.ad;
+  document.getElementById('fSehir').value = t.sehir;
+  document.getElementById('fUlke').value  = t.ulke || 'Türkiye';
+  document.getElementById('fTel').value   = t.tel;
+  document.getElementById('fMail').value  = t.mail;
+  document.getElementById('fWeb').value   = t.web;
+  formSifirla(); // logo sıfırla (url varsa göster)
+  if (t.logoUrl) {
+    var preview = document.getElementById('logoPreview');
+    preview.src = t.logoUrl;
+    preview.style.display = 'block';
+    var drop = document.getElementById('logoDrop');
+    drop.querySelector('svg').style.display   = 'none';
+    drop.querySelector('span').style.display  = 'none';
+    drop.querySelector('small').style.display = 'none';
   }
-  var tel=document.getElementById('fTel').value.trim();
-  var mail=document.getElementById('fMail').value.trim();
-  var web=document.getElementById('fWeb').value.trim();
-  var liste=document.getElementById('tlist');
-  var sira=liste.querySelectorAll('.trow').length+1;
-  var kisa=ad.split(' ')[0].toUpperCase().substring(0,6);
-  var row=document.createElement('div');
-  row.className='trow';
-  row.setAttribute('data-durum','aktif');
-  row.setAttribute('data-ad',ad);
-  row.setAttribute('data-proje','0');
-  row.setAttribute('data-spool','0');
-  row.setAttribute('data-agirlik','0');
-  row.innerHTML=
-    '<div class="tr-ident">'+
-      '<div class="tr-logo">'+esc(kisa)+'</div>'+
-      '<div>'+
-        '<div class="tr-name">'+esc(ad)+'</div>'+
-        '<div class="tr-loc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'+esc(sehir)+'</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="tr-middle">'+
-      '<div class="tr-stat"><div class="tr-stat-val" style="color:var(--ac);">0</div><div class="tr-stat-lbl" data-i18n="tr_active_project">Aktif Proje</div></div>'+
-      '<div class="tr-stat"><div class="tr-stat-val">0</div><div class="tr-stat-lbl" data-i18n="tr_top_project">Top. Proje</div></div>'+
-      '<div class="tr-stat"><div class="tr-stat-val">0</div><div class="tr-stat-lbl" data-i18n="tr_top_spool">Top. Spool</div></div>'+
-      '<div class="tr-contact">'+
-        (tel?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.55a2 2 0 012.11.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>'+esc(tel)+'</div>':'')+
-        (mail?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'+esc(mail)+'</div>':'')+
-        (web?'<div class="tr-cline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 014-10z"/></svg><span style="color:var(--ac);">'+esc(web)+'</span></div>':'')+
-      '</div>'+
-    '</div>'+
-    '<div class="tr-right" onclick="event.stopPropagation()">'+
-      '<span class="tr-status aktif">'+tv('tr_status_active','Aktif')+'</span>'+
-      '<div class="tr-prog"><div class="tr-prog-bar"><div class="tr-prog-fill" style="width:0%"></div></div><div class="tr-prog-pct">%0 '+tv('tr_pct_done','tamamlandı')+'</div></div>'+
-      '<div><button class="icon-btn" title="Düzenle" onclick="tersaneDuzenle(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'+
-      '<button class="icon-btn del" title="Sil" ><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'+
-    '</div>';
-  liste.appendChild(row);
-  // Formu sıfırla
-  ['fAd','fSehir','fTel','fMail','fWeb'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('fUlke').value='Türkiye';
-  document.getElementById('logoPreview').style.display='none';
-  document.getElementById('logoDrop').querySelector('svg').style.display='';
-  document.getElementById('logoDrop').querySelector('span').style.display='';
-  document.getElementById('logoDrop').querySelector('small').style.display='';
-  document.getElementById('logoInput').value='';
-  // Log
-  try{var log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'TERSANE_EKLE',kaynak:ad,aciklama:sehir});localStorage.setItem('ares_islemLog',JSON.stringify(log.slice(0,500)));}catch(e){}
+  // form alanlarını sonra doldur (formSifirla sonrası)
+  document.getElementById('fAd').value    = t.ad;
+  document.getElementById('fSehir').value = t.sehir;
+  document.getElementById('fUlke').value  = t.ulke || 'Türkiye';
+  document.getElementById('fTel').value   = t.tel;
+  document.getElementById('fMail').value  = t.mail;
+  document.getElementById('fWeb').value   = t.web;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+// ── Tersane kaydet (insert / update) ─────────────────────────────
+async function tersaneKaydet() {
+  var ad    = document.getElementById('fAd').value.trim();
+  var sehir = document.getElementById('fSehir').value.trim();
+  if (!ad)    { document.getElementById('fAd').style.borderColor='var(--re)';   document.getElementById('fAd').focus();    toast(tv('tr_hata_ad_zorunlu','Tersane adı zorunludur.'), 'er'); return; }
+  if (!sehir) { document.getElementById('fSehir').style.borderColor='var(--re)';document.getElementById('fSehir').focus(); toast(tv('tr_hata_sehir_zorunlu','Şehir zorunludur.'), 'er'); return; }
+  document.getElementById('fAd').style.borderColor = '';
+  document.getElementById('fSehir').style.borderColor = '';
+
+  var ulke  = document.getElementById('fUlke').value.trim() || 'Türkiye';
+  var tel   = document.getElementById('fTel').value.trim();
+  var mail  = document.getElementById('fMail').value.trim();
+  var web   = document.getElementById('fWeb').value.trim();
+  var duzId = document.getElementById('duzenlemeId').value;
+
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    if (duzId) {
+      // Güncelle
+      var res = await supa.from('tersaneler').update({
+        ad: ad, sehir: sehir, ulke: ulke, tel: tel, email: mail, web: web,
+        guncelleme: new Date().toISOString()
+      }).eq('id', duzId);
+      if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
+      var t = veri.find(function(x){ return x.id === duzId; });
+      if (t) { t.ad=ad; t.sehir=sehir; t.ulke=ulke; t.tel=tel; t.mail=mail; t.web=web; }
+      ARES.logEkle('TERSANE_DUZENLE', ad + ' güncellendi', 'tersane', duzId, {});
+    } else {
+      // Ekle
+      var res = await supa.from('tersaneler').insert({
+        tenant_id: ARES.tenantId(),
+        ad: ad, sehir: sehir, ulke: ulke, tel: tel, email: mail, web: web,
+        aktif: true, logo_url: null
+      }).select().single();
+      if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
+      veri.push({
+        id: res.data.id, ad: ad, sehir: sehir, ulke: ulke, tel: tel, mail: mail, web: web,
+        logoUrl: '', aktif: true, projeTopSayisi: 0, aktifProjeSayisi: 0
+      });
+      ARES.logEkle('TERSANE_EKLE', ad + ' eklendi', 'tersane', res.data.id, {});
+    }
+  } else {
+    // Local mod
+    if (duzId) {
+      var t = veri.find(function(x){ return x.id === duzId; });
+      if (t) { t.ad=ad; t.sehir=sehir; t.ulke=ulke; t.tel=tel; t.mail=mail; t.web=web; }
+    } else {
+      veri.push({
+        id: 'TX' + Date.now(), ad: ad, sehir: sehir, ulke: ulke, tel: tel, mail: mail, web: web,
+        logoUrl: '', aktif: true, projeTopSayisi: 0, aktifProjeSayisi: 0
+      });
+    }
+    // ✅ D3: ARES.logEkle (local modda localStorage'a yazar)
+    ARES.logEkle(duzId ? 'TERSANE_DUZENLE' : 'TERSANE_EKLE', ad, 'tersane', duzId || null, {});
+  }
+
+  tersaneRender();
   modalKapat();
-  uygula();
-}
-/* disabled: function toggleTheme(){
-  var h=document.documentElement;
-  h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');
-} */
-
-var aktifFiltre='tumu';
-
-function filtrele(tip,btn){
-  aktifFiltre=tip;
-  document.querySelectorAll('.ftab').forEach(function(b){b.classList.remove('on');});
-  if(btn) btn.classList.add('on');
-  uygula();
+  toast(tv('tr_kaydedildi','Kaydedildi.'), 'ok');
 }
 
-function araFiltrele(){ uygula(); }
+// ── Tersane sil ───────────────────────────────────────────────────
+function tersaneSilAc(id) {
+  var t = veri.find(function(x){ return x.id === id; });
+  if (!t) return;
+  _silTarget = id;
+  document.getElementById('confirmAd').textContent = t.ad;
+  document.getElementById('confirmBtn').onclick = function(){ tersaneSilOnayla(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+async function tersaneSilOnayla() {
+  if (!_silTarget) return;
+  var id = _silTarget;
+  var t  = veri.find(function(x){ return x.id === id; });
+  var ad = t ? t.ad : '';
 
-function uygula(){
-  var ara=(document.getElementById('araInput').value||'').toLowerCase();
-  var rows=document.querySelectorAll('.trow');
-  var gorunen=0, topProje=0, topAktif=0, topSpool=0, topAgirlik=0;
-  var maxProje=0, maxSpool=0, maxAgirlik=0, maxTersane=rows.length;
-  var tamamlananTersane=0;
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    // ✅ G-12: Soft delete
+    var ok = await ARES.softSil('tersaneler', id);
+    if (!ok) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
+  }
 
-  rows.forEach(function(r){
-    maxProje   +=parseInt(r.getAttribute('data-proje')||0);
-    maxSpool   +=parseInt(r.getAttribute('data-spool')||0);
-    maxAgirlik +=parseInt(r.getAttribute('data-agirlik')||0);
-  });
+  veri = veri.filter(function(x){ return x.id !== id; });
+  // ✅ D3: ARES.logEkle
+  ARES.logEkle('TERSANE_SIL', ad + ' silindi', 'tersane', id, {});
+  confirmKapat();
+  tersaneRender();
+  toast(tv('tr_silindi','Silindi.'), 'ok');
+}
+function confirmKapat() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  _silTarget = null;
+}
 
-  rows.forEach(function(r){
-    var durum=r.getAttribute('data-durum')||'';
-    var aktif=parseInt(r.getAttribute('data-aktif')||0);
-    if(aktif===0 && durum!=='pasif'){
-      r.setAttribute('data-durum','pasif');
-      r.classList.add('pasif');
-      var st=r.querySelector('.tr-status');
-      if(st){st.className='tr-status pasif';st.textContent=tv('tr_status_passive','Pasif');}
-      durum='pasif';
+// ── TOAST ─────────────────────────────────────────────────────────
+var _toastT = null;
+function toast(msg, tip) {
+  var e = document.querySelector('.ares-toast');
+  if (e) e.remove();
+  var el = document.createElement('div');
+  el.className = 'ares-toast';
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;z-index:9999;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);border-left:3px solid ' + (tip==='er'?'var(--re)':'var(--gr)') + ';color:' + (tip==='er'?'var(--re)':'var(--tx)') + ';animation:fadeIn .3s ease;';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  if (_toastT) clearTimeout(_toastT);
+  _toastT = setTimeout(function(){ el.remove(); }, 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ SB-01: Auth kontrolü + sayfa başlatma
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    var _bekle = 0;
+    while (_bekle < 80) {
+      var _supa = ARES.supabase();
+      if (_supa) {
+        var _ses = await _supa.auth.getSession();
+        if (_ses.data && _ses.data.session) {
+          await ARES.oturumKontrol();
+          break;
+        }
+        if (_bekle > 20) { location.href = 'giris.html'; return; }
+      }
+      await new Promise(function(r){ setTimeout(r, 100); });
+      _bekle++;
     }
-    var txt=r.textContent.toLowerCase();
-    var ok=(aktifFiltre==='tumu'||durum===aktifFiltre)&&(ara===''||txt.indexOf(ara)>-1);
-    r.style.display=ok?'':'none';
-    if(ok){
-      gorunen++;
-      var proje  =parseInt(r.getAttribute('data-proje')||0);
-      var aktifP =parseInt(r.getAttribute('data-aktif')||0);
-      topProje   +=proje;
-      topAktif   +=aktifP;
-      topSpool   +=parseInt(r.getAttribute('data-spool')||0);
-      topAgirlik +=parseInt(r.getAttribute('data-agirlik')||0);
-      // Tamamlanan tersane = aktif projesi olmayan (pasif)
-      if(aktifP===0) tamamlananTersane++;
-    }
-  });
-
-  // Tamamlanan proje = toplam - aktif
-  var tamamlananProje  = topProje - topAktif;
-  var aktifTersane     = gorunen - tamamlananTersane;
-  var tamamlananSpool  = Math.round(topSpool  * (topProje>0 ? tamamlananProje/topProje : 0));
-  var tamamlananAgirlik= Math.round(topAgirlik* (topProje>0 ? tamamlananProje/topProje : 0));
-
-  var set=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  var setW=function(id,p){var el=document.getElementById(id);if(el)el.style.width=p+'%';};
-  set('st-tersane', gorunen);
-  set('st-proje',   topProje);
-  set('st-spool',   topSpool.toLocaleString('tr-TR'));
-  set('st-agirlik', topAgirlik.toLocaleString('tr-TR'));
-
-  // Bar = tamamlanan / toplam (tüm filtrelerde aynı kural)
-  // Tersane: tümü → pasif/toplam | aktif → %100 (hepsi aktif) | pasif → %100 (hepsi tamamlanmış)
-  var tersaneBar = topProje>0 ? Math.round(tamamlananProje/topProje*100) : 0;
-  // bar-* proje_liste stilinde yok — kaldırıldı
-
-  var bos=document.getElementById('bos');
-  var liste=document.getElementById('tlist');
-  if(bos)   bos.style.display=gorunen===0?'':'none';
-  if(liste) liste.style.display=gorunen===0?'none':'';
-}
-
-document.addEventListener('DOMContentLoaded', function(){ uygula(); });
-document.documentElement.style.visibility='';
+    await veriYukle();
+    tersaneRender();
+  })();
+});
 </script>
-
-</div><!-- /.page -->
-</div><!-- /.main-content -->
-</div><!-- /.app-shell -->
-
-
-
 </body>
 </html>
