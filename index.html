@@ -616,15 +616,26 @@ renderMiniCal();renderPopup();
 document.addEventListener('DOMContentLoaded',function(){
   (async function(){
     try{
+      // ARES hazır olana kadar bekle
+      var _bekle=0;
+      while(_bekle<80&&typeof ARES==='undefined'){
+        await new Promise(function(r){setTimeout(r,100);});
+        _bekle++;
+      }
       var _supa=(typeof ARES!=='undefined')?ARES.supabase():null;
-      if(_supa){var _ses=await _supa.auth.getSession();if(_ses.data&&_ses.data.session)await ARES.oturumKontrol();}
-    }catch(e){}
-    await veriYukle();
-    _applyI18n();
-    // calModal backdrop click — element artık DOM'da
-    var cm=document.getElementById('calModal');
-    if(cm)cm.addEventListener('click',function(e){if(e.target===this)closeCalModal();});
-    document.documentElement.style.visibility='';
+      if(!_supa){location.href='giris.html';return;}
+      var _ses=await _supa.auth.getSession();
+      if(!_ses.data||!_ses.data.session){location.href='giris.html';return;}
+      await ARES.oturumKontrol();
+      await veriYukle();
+      _applyI18n();
+      var cm=document.getElementById('calModal');
+      if(cm)cm.addEventListener('click',function(e){if(e.target===this)closeCalModal();});
+    }catch(e){
+      console.error('[ARES] init hatası:',e);
+    }finally{
+      document.documentElement.style.visibility='';
+    }
   })();
 });
 </script>
