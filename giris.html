@@ -4,93 +4,422 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giriş | AresPipe</title>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
 <script>(function(){
   var t=localStorage.getItem('ares_theme')||'dark';
-  document.documentElement.setAttribute('data-theme',t);
   var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
   document.documentElement.setAttribute('lang',l);
   document.documentElement.style.visibility='hidden';
 })()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ── Değişkenler ───────────────────────────────────────────── */
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
-[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
-[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+[data-theme=dark]{
+  --bg:#07090f;--sur:rgba(11,16,26,0.90);--sur2:rgba(20,28,44,0.80);
+  --bor:rgba(45,142,255,0.14);--bor2:rgba(255,255,255,0.06);
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#4a5a72;
+}
+[data-theme=light-anthracite]{
+  --bg:#cdd3da;--sur:rgba(228,233,239,0.95);--sur2:rgba(208,215,224,0.90);
+  --bor:rgba(45,142,255,0.20);--bor2:rgba(0,0,0,0.08);
+  --tx:#141e2b;--txm:#3a4f63;--txd:#7a8fa6;
+}
+
+/* ── Reset & Base ──────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;position:relative;overflow:hidden;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--bor) 1px,transparent 1px),linear-gradient(90deg,var(--bor) 1px,transparent 1px);background-size:48px 48px;opacity:0.4;pointer-events:none;}
-body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,transparent 40%,var(--bg) 100%);pointer-events:none;}
-.giris-kapsayici{position:relative;z-index:1;width:100%;max-width:420px;padding:24px;}
-.logo-alan{text-align:center;margin-bottom:36px;}
-.logo-ikon{width:52px;height:52px;background:rgba(45,142,255,.15);border:1px solid rgba(45,142,255,.3);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;}
-.logo-baslik{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--tx);letter-spacing:1px;}
-.logo-alt{font-size:13px;color:var(--txd);margin-top:4px;}
-.giris-kart{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:32px;}
-.form-grup{margin-bottom:18px;}
-.form-etiket{display:block;font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;}
-.form-input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;transition:border-color 0.15s,box-shadow 0.15s;outline:none;}
-.form-input:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,142,255,.12);}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  font-family:'Barlow',sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;position:relative;overflow:hidden;
+}
+
+/* ── Animasyonlu arka plan ─────────────────────────────────── */
+.bg-orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(80px);z-index:0;}
+.bg-orb-1{
+  width:700px;height:700px;
+  background:radial-gradient(circle,rgba(45,142,255,0.10) 0%,transparent 65%);
+  top:-200px;left:-200px;
+  animation:drift 12s ease-in-out infinite alternate;
+}
+.bg-orb-2{
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(22,163,110,0.06) 0%,transparent 65%);
+  bottom:-150px;right:-150px;
+  animation:drift 16s ease-in-out infinite alternate-reverse;
+}
+.bg-orb-3{
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(124,58,237,0.05) 0%,transparent 65%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:pulse 8s ease-in-out infinite;
+}
+@keyframes drift{from{transform:translate(0,0);}to{transform:translate(60px,40px);}}
+@keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+.bg-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(45,142,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(45,142,255,0.03) 1px,transparent 1px);
+  background-size:64px 64px;
+}
+
+/* ── Merkez kapsayıcı ──────────────────────────────────────── */
+.giris-wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:420px;
+  padding:20px;
+  animation:rise 0.55s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Dil seçici ────────────────────────────────────────────── */
+.lang-secici{
+  display:flex;gap:4px;justify-content:flex-end;margin-bottom:24px;
+}
+.lang-btn{
+  background:var(--sur2);border:1px solid var(--bor2);
+  border-radius:7px;padding:4px 10px;
+  font-size:14px;font-weight:600;font-family:'Barlow',sans-serif;
+  color:var(--txd);cursor:pointer;transition:all 0.15s;
+}
+.lang-btn:hover{color:var(--tx);border-color:var(--bor);}
+.lang-btn.aktif{background:rgba(45,142,255,.12);color:var(--ac);border-color:rgba(45,142,255,.3);}
+
+/* ── Logo alanı ────────────────────────────────────────────── */
+.logo-alan{text-align:center;margin-bottom:32px;}
+.logo-mark{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:60px;height:60px;margin-bottom:16px;position:relative;
+}
+.logo-mark svg{width:60px;height:60px;}
+.logo-baslik{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:34px;font-weight:800;
+  color:var(--tx);letter-spacing:2px;
+  line-height:1;margin-bottom:6px;
+}
+/* ✅ B3: 14px ve üzeri */
+.logo-altyazi{
+  font-size:14px;color:var(--txd);
+  letter-spacing:0.4px;font-weight:400;
+}
+
+/* ── Kart ──────────────────────────────────────────────────── */
+.giris-kart{
+  background:var(--sur);
+  border:1px solid var(--bor);
+  border-radius:22px;
+  padding:36px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 0 80px rgba(45,142,255,0.06),
+    0 32px 64px rgba(0,0,0,0.45);
+}
+
+/* ── Form elemanları ───────────────────────────────────────── */
+.form-grup{margin-bottom:20px;}
+/* ✅ B3: 14px */
+.form-etiket{
+  display:block;font-size:14px;font-weight:700;
+  color:var(--txd);text-transform:uppercase;
+  letter-spacing:0.7px;margin-bottom:8px;
+}
+.form-input{
+  width:100%;background:var(--sur2);
+  border:1px solid var(--bor2);border-radius:11px;
+  padding:12px 16px;font-size:15px;color:var(--tx);
+  font-family:'Barlow',sans-serif;
+  transition:border-color 0.18s,box-shadow 0.18s;outline:none;
+}
+.form-input:focus{
+  border-color:rgba(45,142,255,.5);
+  box-shadow:0 0 0 3px rgba(45,142,255,.10);
+}
 .form-input::placeholder{color:var(--txd);}
 .sifre-kapsam{position:relative;}
-.sifre-goster{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txd);font-size:16px;padding:4px;transition:color 0.15s;}
-.sifre-goster:hover{color:var(--tx);}
-.giris-btn{width:100%;background:var(--ac);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;cursor:pointer;transition:opacity 0.15s,transform 0.1s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;}
-.giris-btn:hover{opacity:0.9;}
-.giris-btn:active{transform:scale(0.99);}
-.giris-btn:disabled{opacity:0.6;cursor:not-allowed;}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+.sifre-goster{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:var(--txd);padding:4px;
+  transition:color 0.15s;line-height:1;
+  display:flex;align-items:center;
+}
+.sifre-goster:hover{color:var(--ac);}
+.sifre-goster svg{width:18px;height:18px;}
+
+/* ── Giriş butonu ──────────────────────────────────────────── */
+.giris-btn{
+  width:100%;
+  background:linear-gradient(135deg,#2D8EFF 0%,#1a75e8 100%);
+  color:#fff;border:none;border-radius:11px;
+  padding:13px;font-size:16px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:0.8px;
+  cursor:pointer;
+  transition:opacity 0.15s,transform 0.12s,box-shadow 0.15s;
+  margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 4px 20px rgba(45,142,255,.28);
+}
+.giris-btn:hover{opacity:0.92;box-shadow:0 6px 28px rgba(45,142,255,.40);}
+.giris-btn:active{transform:scale(0.985);}
+.giris-btn:disabled{opacity:0.55;cursor:not-allowed;box-shadow:none;}
+
+/* ── Spinner ───────────────────────────────────────────────── */
+.spinner{
+  width:17px;height:17px;
+  border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin 0.7s linear infinite;display:none;flex-shrink:0;
+}
 @keyframes spin{to{transform:rotate(360deg);}}
-.hata-kutu{display:none;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.25);border-left:3px solid var(--re);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--re);margin-top:16px;line-height:1.5;}
+
+/* ── Mesaj kutuları ────────────────────────────────────────── */
+/* ✅ B3: 14px */
+.hata-kutu{
+  display:none;
+  background:rgba(229,62,62,.07);
+  border:1px solid rgba(229,62,62,.22);
+  border-left:3px solid var(--re);
+  border-radius:9px;padding:11px 15px;
+  font-size:14px;color:var(--re);
+  margin-top:18px;line-height:1.5;
+}
 .hata-kutu.goster{display:block;}
-.bilgi-kutu{display:none;background:rgba(45,142,255,.06);border:1px solid rgba(45,142,255,.2);border-left:3px solid var(--ac);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--txm);margin-top:16px;}
+.bilgi-kutu{
+  display:none;
+  background:rgba(45,142,255,.06);
+  border:1px solid rgba(45,142,255,.18);
+  border-left:3px solid var(--ac);
+  border-radius:9px;padding:11px 15px;
+  font-size:14px;color:var(--txm);
+  margin-top:18px;
+}
 .bilgi-kutu.goster{display:block;}
-.giris-alt{text-align:center;margin-top:20px;font-size:12px;color:var(--txd);}
+
+/* ── Alt bilgi ─────────────────────────────────────────────── */
+/* ✅ B3: 14px */
+.giris-alt{
+  text-align:center;margin-top:22px;
+  font-size:14px;color:var(--txd);
+}
 </style>
 <script src="ares-store.js"></script>
 </head>
 <body>
-<div class="giris-kapsayici">
-  <div class="logo-alan">
-    <div class="logo-ikon">&#128295;</div>
-    <div class="logo-baslik">AresPipe</div>
-    <div class="logo-alt">Tersane Boru İmalat Takip Sistemi</div>
+
+<!-- Arka plan elemanları -->
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+<div class="bg-grid"></div>
+
+<div class="giris-wrap">
+
+  <!-- ── Dil seçici ── -->
+  <div class="lang-secici" id="langSecici">
+    <button class="lang-btn" data-lang="tr" onclick="_setLangGiris('tr')">TR</button>
+    <button class="lang-btn" data-lang="en" onclick="_setLangGiris('en')">EN</button>
+    <button class="lang-btn" data-lang="ar" onclick="_setLangGiris('ar')">AR</button>
   </div>
+
+  <!-- ── Logo ── -->
+  <div class="logo-alan">
+    <div class="logo-mark">
+      <!-- Pipe cross-section logomark -->
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="30,3 55,16.5 55,43.5 30,57 5,43.5 5,16.5" fill="rgba(45,142,255,0.08)" stroke="rgba(45,142,255,0.5)" stroke-width="1.2"/>
+        <polygon points="30,10 48,20 48,40 30,50 12,40 12,20" fill="none" stroke="rgba(45,142,255,0.2)" stroke-width="0.8"/>
+        <circle cx="30" cy="30" r="10" fill="none" stroke="#2D8EFF" stroke-width="2"/>
+        <circle cx="30" cy="30" r="5" fill="rgba(45,142,255,0.25)"/>
+        <line x1="30" y1="20" x2="30" y2="10" stroke="rgba(45,142,255,0.4)" stroke-width="1.2"/>
+        <line x1="30" y1="40" x2="30" y2="50" stroke="rgba(45,142,255,0.4)" stroke-width="1.2"/>
+        <line x1="20" y1="30" x2="12" y2="30" stroke="rgba(45,142,255,0.4)" stroke-width="1.2"/>
+        <line x1="40" y1="30" x2="48" y2="30" stroke="rgba(45,142,255,0.4)" stroke-width="1.2"/>
+      </svg>
+    </div>
+    <div class="logo-baslik">ARESPIPE</div>
+    <div class="logo-altyazi" data-i18n="giris_altyazi">Tersane Boru İmalat Takip Sistemi</div>
+  </div>
+
+  <!-- ── Giriş kartı ── -->
   <div class="giris-kart">
     <div class="form-grup">
-      <label class="form-etiket" for="email">E-posta</label>
-      <input class="form-input" type="email" id="email" placeholder="ornek@firma.com" autocomplete="email" autofocus>
+      <label class="form-etiket" for="email" data-i18n="giris_eposta">E-posta</label>
+      <input class="form-input" type="email" id="email"
+        placeholder="ornek@firma.com"
+        autocomplete="email" autofocus>
     </div>
     <div class="form-grup">
-      <label class="form-etiket" for="sifre">Şifre</label>
+      <label class="form-etiket" for="sifre" data-i18n="giris_sifre">Şifre</label>
       <div class="sifre-kapsam">
-        <input class="form-input" type="password" id="sifre" placeholder="••••••••" autocomplete="current-password" style="padding-right:42px;">
-        <button class="sifre-goster" type="button" onclick="sifreGoster()" title="Şifreyi göster">&#128065;</button>
+        <input class="form-input" type="password" id="sifre"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          style="padding-right:46px;">
+        <button class="sifre-goster" type="button" onclick="sifreGoster()" id="sifreGosterBtn">
+          <!-- göz ikonu -->
+          <svg id="ikonGor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg id="ikonGizle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none;">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </button>
       </div>
     </div>
     <button class="giris-btn" id="girisBtn" onclick="girisYap()">
       <span class="spinner" id="spinner"></span>
-      <span id="btnYazi">Giriş Yap</span>
+      <span id="btnYazi" data-i18n="giris_gir">Giriş Yap</span>
     </button>
     <div class="hata-kutu" id="hataKutu"></div>
-    <div class="bilgi-kutu" id="bilgiKutu">Giriş yapılıyor, lütfen bekleyin...</div>
+    <div class="bilgi-kutu" id="bilgiKutu" data-i18n="giris_yukleniyor">Giriş yapılıyor, lütfen bekleyin…</div>
   </div>
+
   <div class="giris-alt">AresPipe &copy; 2026</div>
 </div>
+
 <script>
-'use strict';
+'use strict'; // ✅ A1
 
-document.getElementById('email').addEventListener('keydown', function(e){
-  if(e.key==='Enter') document.getElementById('sifre').focus();
-});
-document.getElementById('sifre').addEventListener('keydown', function(e){
-  if(e.key==='Enter') girisYap();
-});
+// ═══════════════════════════════════════════════════════════════════
+// ✅ C1: _I18N — EN ve AR çevirileri (D-01)
+// ═══════════════════════════════════════════════════════════════════
+var _I18N = {
+  en: {
+    giris_altyazi:         'Shipyard Pipe Fabrication Tracking',
+    giris_eposta:          'Email',
+    giris_sifre:           'Password',
+    giris_gir:             'Sign In',
+    giris_yukleniyor:      'Signing in, please wait\u2026',
+    giris_basarili:        'Login successful, redirecting\u2026',
+    giris_hata_bos_eposta: 'Email address is required.',
+    giris_hata_bos_sifre:  'Password is required.',
+    giris_hata_invalid:    'Invalid email or password.',
+    giris_hata_email:      'Email address not confirmed.',
+    giris_hata_limit:      'Too many attempts. Please wait.',
+    giris_hata_sunucu:     'Cannot connect to server, please wait\u2026',
+    giris_hata_genel:      'Unexpected error: ',
+    giris_yukleniyor_btn:  'Signing in\u2026',
+  },
+  ar: {
+    giris_altyazi:         '\u0646\u0638\u0627\u0645 \u062a\u062a\u0628\u0639 \u062a\u0635\u0646\u064a\u0639 \u0627\u0644\u0623\u0646\u0627\u0628\u064a\u0628',
+    giris_eposta:          '\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a',
+    giris_sifre:           '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631',
+    giris_gir:             '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644',
+    giris_yukleniyor:      '\u062c\u0627\u0631\u0650 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644\u060c \u064a\u0631\u062c\u0649 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631\u2026',
+    giris_basarili:        '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644\u060c \u062c\u0627\u0631\u0650 \u0627\u0644\u062a\u062d\u0648\u064a\u0644\u2026',
+    giris_hata_bos_eposta: '\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0645\u0637\u0644\u0648\u0628.',
+    giris_hata_bos_sifre:  '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0645\u0637\u0644\u0648\u0628\u0629.',
+    giris_hata_invalid:    '\u0628\u0631\u064a\u062f \u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0623\u0648 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d\u0629.',
+    giris_hata_email:      '\u0644\u0645 \u064a\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a.',
+    giris_hata_limit:      '\u0645\u062d\u0627\u0648\u0644\u0627\u062a \u0643\u062b\u064a\u0631\u0629. \u064a\u0631\u062c\u0649 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631.',
+    giris_hata_sunucu:     '\u062a\u0639\u0630\u0651\u0631 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0627\u0644\u062e\u0627\u062f\u0645\u060c \u064a\u0631\u062c\u0649 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631\u2026',
+    giris_hata_genel:      '\u062e\u0637\u0623 \u063a\u064a\u0631 \u0645\u062a\u0648\u0642\u0639: ',
+    giris_yukleniyor_btn:  '\u062c\u0627\u0631\u0650 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644\u2026',
+  }
+};
 
-function sifreGoster() {
-  var inp = document.getElementById('sifre');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
+// ═══════════════════════════════════════════════════════════════════
+// ✅ C2: tv() — JS render için TR fallback ile çeviri (D-01)
+// ═══════════════════════════════════════════════════════════════════
+function tv(key, tr) {
+  var lang = document.documentElement.getAttribute('lang') || 'tr';
+  var dict = _I18N[lang];
+  if (dict && dict[key] !== undefined) return dict[key];
+  return tr !== undefined ? tr : key;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ✅ C2: _applyI18n() — statik data-i18n elementleri güncelle (D-01)
+// (ares-layout.js bu sayfada devre dışı olduğu için sayfa içi)
+// ═══════════════════════════════════════════════════════════════════
+function _applyI18n() {
+  var lang  = document.documentElement.getAttribute('lang') || 'tr';
+  var isTr  = lang === 'tr';
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (!el.hasAttribute('data-i18n-tr')) el.setAttribute('data-i18n-tr', el.textContent.trim());
+    el.textContent = isTr ? el.getAttribute('data-i18n-tr') : (tv(key) !== key ? tv(key) : el.getAttribute('data-i18n-tr'));
+  });
+  // Dil butonlarında aktif işareti
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.toggle('aktif', btn.dataset.lang === lang);
+  });
+  // RTL desteği (Arapça)
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ C2: MutationObserver — html[lang] değişimini yakala (D-01)
+// ═══════════════════════════════════════════════════════════════════
+new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.attributeName === 'lang') _applyI18n();
+  });
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ D1: esc() — innerHTML için XSS koruması (G-01)
+// ═══════════════════════════════════════════════════════════════════
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Dil değiştirici — ares-layout.js bu sayfada devre dışı
+// ═══════════════════════════════════════════════════════════════════
+function _setLangGiris(lang) {
+  localStorage.setItem('ares_lang', lang);
+  document.documentElement.setAttribute('lang', lang);
+  // MutationObserver → _applyI18n() otomatik tetiklenir
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Klavye kısayolları
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('email').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('sifre').focus();
+  });
+  document.getElementById('sifre').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') girisYap();
+  });
+  _applyI18n(); // ✅ Sayfa açılışında mevcut dili uygula
+  document.documentElement.style.visibility = '';
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Şifre göster/gizle
+// ═══════════════════════════════════════════════════════════════════
+function sifreGoster() {
+  var inp  = document.getElementById('sifre');
+  var gor  = document.getElementById('ikonGor');
+  var gizle = document.getElementById('ikonGizle');
+  var gosteriyor = inp.type === 'password';
+  inp.type        = gosteriyor ? 'text' : 'password';
+  gor.style.display   = gosteriyor ? 'none'  : '';
+  gizle.style.display = gosteriyor ? ''      : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UI yardımcıları — C6: tv() ile çeviri
+// ═══════════════════════════════════════════════════════════════════
 function hataGoster(mesaj) {
   var k = document.getElementById('hataKutu');
   k.textContent = mesaj;
@@ -99,56 +428,65 @@ function hataGoster(mesaj) {
 }
 
 function yukleniyorAc() {
-  document.getElementById('spinner').style.display = 'block';
-  document.getElementById('btnYazi').textContent = 'Giriş yapılıyor...';
-  document.getElementById('girisBtn').disabled = true;
+  document.getElementById('spinner').style.display    = 'block';
+  document.getElementById('btnYazi').textContent       = tv('giris_yukleniyor_btn','Giriş yapılıyor\u2026');
+  document.getElementById('girisBtn').disabled         = true;
   document.getElementById('hataKutu').classList.remove('goster');
+  document.getElementById('bilgiKutu').textContent     = tv('giris_yukleniyor','Giriş yapılıyor, lütfen bekleyin\u2026');
   document.getElementById('bilgiKutu').classList.add('goster');
 }
 
 function yukleniyorKapat() {
-  document.getElementById('spinner').style.display = 'none';
-  document.getElementById('btnYazi').textContent = 'Giriş Yap';
-  document.getElementById('girisBtn').disabled = false;
+  document.getElementById('spinner').style.display    = 'none';
+  document.getElementById('btnYazi').textContent       = tv('giris_gir','Giriş Yap');
+  document.getElementById('girisBtn').disabled         = false;
   document.getElementById('bilgiKutu').classList.remove('goster');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ✅ Giriş işlemi — Supabase ARES.girisYap()
+// ═══════════════════════════════════════════════════════════════════
 async function girisYap() {
   var email = document.getElementById('email').value.trim();
   var sifre = document.getElementById('sifre').value;
-  if (!email) { hataGoster('E-posta adresi boş bırakılamaz.'); return; }
-  if (!sifre) { hataGoster('Şifre boş bırakılamaz.'); return; }
+  if (!email) { hataGoster(tv('giris_hata_bos_eposta','E-posta adresi boş bırakılamaz.')); return; }
+  if (!sifre) { hataGoster(tv('giris_hata_bos_sifre','Şifre boş bırakılamaz.')); return; }
+
   yukleniyorAc();
+
   try {
     var sonuc = await ARES.girisYap(email, sifre);
     if (sonuc.hata) {
       yukleniyorKapat();
-      var mesaj = sonuc.hata;
-      if (mesaj.includes('Invalid login')) mesaj = 'E-posta veya şifre hatalı.';
-      if (mesaj.includes('Email not confirmed')) mesaj = 'E-posta adresiniz doğrulanmamış.';
-      if (mesaj.includes('Too many requests')) mesaj = 'Çok fazla deneme. Lütfen bekleyin.';
-      if (mesaj.includes('bağlı değil')) mesaj = 'Sunucuya bağlanılamadı, lütfen bekleyin...';
+      var ham = sonuc.hata;
+      var mesaj;
+      if (ham.includes('Invalid login'))       mesaj = tv('giris_hata_invalid','E-posta veya şifre hatalı.');
+      else if (ham.includes('Email not confirmed')) mesaj = tv('giris_hata_email','E-posta adresiniz doğrulanmamış.');
+      else if (ham.includes('Too many requests'))   mesaj = tv('giris_hata_limit','Çok fazla deneme. Lütfen bekleyin.');
+      else if (ham.includes('bağlı değil'))         mesaj = tv('giris_hata_sunucu','Sunucuya bağlanılamadı, lütfen bekleyin\u2026');
+      else                                           mesaj = esc(ham);
       hataGoster(mesaj);
       return;
     }
-    document.getElementById('bilgiKutu').textContent = 'Giriş başarılı, yönlendiriliyorsunuz...';
+    document.getElementById('bilgiKutu').textContent = tv('giris_basarili','Giriş başarılı, yönlendiriliyorsunuz\u2026');
     document.getElementById('bilgiKutu').classList.add('goster');
-    setTimeout(function() { window.location.href = 'index.html'; }, 600);
+    setTimeout(function(){ window.location.href = 'index.html'; }, 600);
   } catch(e) {
     yukleniyorKapat();
-    hataGoster('Beklenmeyen hata: ' + e.message);
+    hataGoster(tv('giris_hata_genel','Beklenmeyen hata: ') + esc(e.message));
   }
 }
 
-(async function oturumKontrol() {
+// ═══════════════════════════════════════════════════════════════════
+// Mevcut oturum kontrolü — oturum açıksa direkt yönlendir
+// ═══════════════════════════════════════════════════════════════════
+(async function oturumVarMi() {
   try {
     if (typeof ARES === 'undefined') return;
     var oturum = await ARES.oturumKontrol();
     if (oturum) { window.location.href = 'index.html'; }
   } catch(e) { /* sessiz geç */ }
 })();
-
-document.documentElement.style.visibility = '';
 </script>
 </body>
 </html>
