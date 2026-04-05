@@ -370,56 +370,58 @@ function _capKey(mm) {
   if (d <= 273.0) return 'l';   // DN125–DN250
   return 'xl';                   // DN300+
 }
-// Supabase durum → STAGES key (fallback: bekleyen)
+// Supabase aktif_basamak (sistem_adi) → STAGES key
 var _durumMap = {
-  'bekleyen':'bekleyen','hazirlaniyor':'bekleyen',
-  'imalat':'imalat','uretimde':'imalat',
-  'kaynak':'kaynak','kaynakta':'kaynak',
-  'on_kontrol':'on_kontrol','on kontrol':'on_kontrol',
-  'kalite':'kalite','kalite_kontrol':'kalite','kalite kontrol':'kalite',
-  'sevke_hazir':'sevke_hazir','sevke hazir':'sevke_hazir','tamamlandi':'sevke_hazir'
+  'on_imalat' :'bekleyen',   // Basamak 1
+  'imalat'    :'imalat',     // Basamak 2
+  'kaynak'    :'kaynak',     // Basamak 3
+  'on_kontrol':'on_kontrol', // Basamak 4
+  'kk'        :'kalite',     // Basamak 5 — "kk" = kalite kontrol
+  'sevkiyat'  :'sevke_hazir' // Basamak 6
 };
 function _stageKey(d) { return _durumMap[(d||'').toLowerCase()] || 'bekleyen'; }
 
 async function veriYukle() {
   try {
     var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
-    if (!supa) return; // demo data kalır
+    if (!supa) return;
 
     var res = await supa
       .from('spooller')
       .select(`
-        id, durum, agirlik_kg,
-        spool_malzemeleri(malzeme, dis_cap_mm),
+        id, aktif_basamak,
+        spool_malzemeleri(malzeme, dis_cap_mm, agirlik_kg),
         devreler(devre_no, projeler(proje_no, gemi_adi))
       `)
       .order('id', { ascending: false });
 
-    if (res.error || !res.data || !res.data.length) return;
+    if (res.error || !res.data || !res.data.length) {
+      console.warn('[ARES] veriYukle:', res.error || 'veri yok');
+      return;
+    }
 
-    // STAGES items'larını temizle, Supabase verisiyle doldur
     STAGES.forEach(function(st) { st.items = []; });
 
     res.data.forEach(function(row) {
-      var mal  = row.spool_malzemeleri  || {};
-      var dv   = row.devreler           || {};
-      var prj  = dv.projeler            || {};
-      var stKey = _stageKey(row.durum);
+      var mal  = Array.isArray(row.spool_malzemeleri) ? row.spool_malzemeleri[0] : (row.spool_malzemeleri || {});
+      var dv   = row.devreler  || {};
+      var prj  = dv.projeler   || {};
+      var stKey = _stageKey(row.aktif_basamak);
       var st   = STAGES.find(function(s){ return s.key === stKey; });
       if (!st) return;
       st.items.push({
         id:     row.id,
         proje:  prj.proje_no  || '—',
         gemi:   prj.gemi_adi  || '—',
-        durum:  row.durum     || 'bekleyen',
+        durum:  row.aktif_basamak || 'on_imalat',
         adet:   1,
-        kg:     parseFloat(row.agirlik_kg) || 0,
+        kg:     parseFloat(mal.agirlik_kg) || 0,
         mat:    _matKey(mal.malzeme),
         capGrp: _capKey(mal.dis_cap_mm)
       });
     });
 
-    renderAll(); // Gerçek veriyle yeniden çiz
+    renderAll();
     console.log('[ARES] Donut: ' + res.data.length + ' spool yüklendi');
   } catch(e) {
     console.warn('[ARES] veriYukle hatası:', e);
