@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oturum Süresi Doldu | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+[data-theme=dark]{
+  --bg:#0d1117;--sur:#161b24;--bor:#262f3e;
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+  --ac:#2D8EFF;--warn:#d97706;
+}
+[data-theme=light-anthracite]{
+  --bg:#d8dde4;--sur:#e4e9ef;--bor:#bcc5d0;
+  --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
+  --ac:#2D8EFF;--warn:#d97706;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--bg);color:var(--tx);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;overflow:hidden;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--bor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bor) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:.4;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle, rgba(217,119,6,.07) 0%, transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-60%);
+  pointer-events:none;
+}
+.container{
+  position:relative;z-index:1;
+  text-align:center;padding:40px 20px;
+  animation:fadeUp .6s ease both;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:900;
+  color:var(--ac);letter-spacing:1px;
+  margin-bottom:40px;display:block;opacity:.7;
+}
+.icon-box{
+  width:80px;height:80px;
+  background:rgba(217,119,6,.12);
+  border:1px solid rgba(217,119,6,.25);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  margin:0 auto 24px;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(217,119,6,.2);}
+  50%{box-shadow:0 0 0 12px rgba(217,119,6,.0);}
+}
+.title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(24px,4vw,36px);
+  font-weight:800;color:var(--tx);
+  margin-bottom:8px;letter-spacing:.5px;
+}
+.desc{
+  font-size:15px;color:var(--txm);
+  max-width:380px;margin:0 auto 32px;
+  line-height:1.6;
+}
+.countdown{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;
+  color:var(--warn);
+  background:rgba(217,119,6,.1);
+  border:1px solid rgba(217,119,6,.2);
+  border-radius:8px;
+  padding:6px 14px;
+  display:inline-block;
+  margin-bottom:28px;
+}
+.actions{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:10px;
+  font-size:14px;font-weight:600;
+  font-family:'Barlow',sans-serif;
+  cursor:pointer;text-decoration:none;
+  transition:all .15s;border:none;
+}
+.btn-primary{background:var(--ac);color:#fff;}
+.btn-primary:hover{opacity:.85;}
+.btn-outline{
+  background:none;border:1px solid var(--bor);color:var(--txm);
+}
+.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+</style>
+</head>
+<body>
+<div class="container">
+  <span class="logo">⬡ AresPipe</span>
+
+  <div class="icon-box">⏱</div>
+
+  <div class="title">Oturum Süresi Doldu</div>
+  <div class="desc">Güvenliğiniz için oturumunuz otomatik olarak sonlandırıldı. Devam etmek için tekrar giriş yapın.</div>
+
+  <div class="countdown" id="countdown">5 saniye içinde giriş sayfasına yönlendiriliyorsunuz...</div>
+
+  <div class="actions">
+    <a href="giris.html" class="btn btn-primary">
+      🔐 Tekrar Giriş Yap
+    </a>
+    <a href="javascript:history.back()" class="btn btn-outline">
+      ← Geri Git
+    </a>
+  </div>
+</div>
+
+<script>
+document.documentElement.style.visibility='';
+// 5 saniye geri sayım
+var sn = 5;
+var el = document.getElementById('countdown');
+var timer = setInterval(function(){
+  sn--;
+  if(sn <= 0){
+    clearInterval(timer);
+    location.href = 'giris.html';
+  } else {
+    el.textContent = sn + ' saniye içinde giriş sayfasına yönlendiriliyorsunuz...';
+  }
+}, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sevkiyatlar | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+
+[data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
+[data-theme="light"] .icon-sun{display:none!important;}[data-theme="light"] .icon-moon{display:block!important;}
+[data-theme="slate"] .icon-sun{display:block!important;}[data-theme="slate"] .icon-moon{display:none!important;}
+[data-theme="navy"] .icon-sun{display:block!important;}[data-theme="navy"] .icon-moon{display:none!important;}
+.page{padding:24px 28px;}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.page-title-label{font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
+
+/* STAT */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.si-b{background:rgba(45,142,255,.12);color:var(--ac);}
+.si-g{background:rgba(22,163,110,.12);color:var(--gr);}
+.si-a{background:rgba(217,119,6,.12);color:var(--warn);}
+.si-r{background:rgba(229,62,62,.12);color:var(--re);}
+.si-p{background:rgba(124,58,237,.12);color:var(--leg);}
+.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--tx);line-height:1;}
+
+/* SEKMELER */
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--bor);margin-bottom:20px;}
+.tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+.tab-btn:hover{color:var(--tx);}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tab-btn.active .tc{background:rgba(14,165,233,0.15);color:var(--ac);}
+.panel{display:none;}.panel.on{display:block;}
+
+/* FİLTRE */
+.fbar{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fsel:focus{border-color:var(--ac);}
+.swrap{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:260px;}
+.swrap input{border:none;background:transparent;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
+.swrap input::placeholder{color:var(--txd);}
+
+/* SEÇİM BAR */
+.secbar{background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:12px 18px;margin-bottom:16px;display:none;align-items:center;gap:20px;flex-wrap:wrap;}
+.secbar.on{display:flex;}
+.sv{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--ac);line-height:1;}
+.sl{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;}
+.ssep{width:1px;height:34px;background:rgba(14,165,233,0.2);}
+
+/* HAZIR LİSTE - Devre/Spool gruplu */
+.dgrup{background:var(--sur);border:1px solid var(--bor);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.dhead{padding:12px 18px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;user-select:none;}
+.dhead:hover{background:var(--bor);}
+.dtitle{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);}
+.dsub{font-size:12px;color:var(--txd);margin-top:2px;}
+.dbody.shut{display:none;}
+.st{width:100%;border-collapse:collapse;font-size:13px;}
+.st thead th{text-align:left;padding:8px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--bg);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.st td{padding:9px 14px;border-bottom:1px solid var(--bor);vertical-align:middle;}
+.st tr:last-child td{border-bottom:none;}
+.st tbody tr:hover td{background:rgba(14,165,233,0.03);}
+.ck{width:15px;height:15px;cursor:pointer;accent-color:var(--ac);}
+
+/* SEVKİYAT KARTI — renkli sol kenar ile tip gösterimi */
+.skart{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:10px;display:flex;}
+.skart-tip{width:5px;flex-shrink:0;}
+.skart-tip.giden{background:#0ea5e9;}
+.skart-tip.gelen{background:#10b981;}
+.skart-tip.serbest{background:#f59e0b;}
+.skart-ic{flex:1;padding:0;}
+.skart-head{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.skart-body{padding:10px 18px 14px;border-top:1px solid var(--bor);background:var(--bg);}
+.sno{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.sno.giden{color:#0ea5e9;}
+.sno.gelen{color:#10b981;}
+.sno.serbest{color:#f59e0b;}
+.tip-rozet{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;}
+.tr-giden{background:rgba(14,165,233,0.12);color:#0ea5e9;}
+.tr-gelen{background:rgba(16,185,129,0.12);color:#10b981;}
+.tr-serbest{background:rgba(245,158,11,0.12);color:#f59e0b;}
+
+/* BADGE */
+.b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.bb{background:rgba(14,165,233,0.12);color:var(--ac);}
+.bg{background:rgba(16,185,129,0.12);color:var(--gr);}
+.ba{background:rgba(245,158,11,0.12);color:var(--warn);}
+.br{background:rgba(239,68,68,0.12);color:var(--re);}
+.bx{background:var(--sur2);color:var(--txm);}
+
+/* SPOOL CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:var(--sur2);border:1px solid var(--bor);color:var(--txm);}
+
+/* BELGE LISTESI */
+.belge-list{display:flex;flex-direction:column;gap:6px;}
+.belge-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--sur2);border-radius:8px;border:1px solid var(--bor);font-size:12px;}
+.belge-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+
+/* FOTO GRID */
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px;}
+.foto-item{aspect-ratio:1;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:20px;transition:border-color 0.15s;}
+.foto-item:hover{border-color:var(--ac);}
+.foto-item img{width:100%;height:100%;object-fit:cover;}
+.foto-ekle{border-style:dashed;color:var(--txd);}
+.foto-ekle:hover{border-color:var(--ac);color:var(--ac);}
+
+/* BUTON */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
+.btn-p{background:var(--ac);color:#fff;}.btn-p:hover{opacity:0.88;}
+.btn-g{background:transparent;color:var(--txm);border:1px solid var(--bor);}.btn-g:hover{background:var(--sur2);color:var(--tx);}
+.btn-s{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-s:hover{border-color:var(--ac);color:var(--ac);}
+.btn-ok{background:rgba(16,185,129,0.12);color:var(--gr);border:1px solid rgba(16,185,129,0.3);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:24px;width:100%;max-width:620px;box-shadow:0 24px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;}
+.mbox-lg{max-width:780px;}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:2px;}.mcl:hover{color:var(--tx);}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.15s;}
+.fi:focus{border-color:var(--ac);}
+.fi::placeholder{color:var(--txd);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:68px;}
+.tip-sec{display:flex;gap:8px;}
+.tip-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--bor);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow',sans-serif;}
+.tip-btn:hover{border-color:var(--txm);}
+.tip-btn.secili-giden{border-color:#0ea5e9;background:rgba(14,165,233,0.08);}
+.tip-btn.secili-gelen{border-color:#10b981;background:rgba(16,185,129,0.08);}
+.tip-btn.secili-serbest{border-color:#f59e0b;background:rgba(245,158,11,0.08);}
+.tip-btn-icon{font-size:22px;margin-bottom:4px;}
+.tip-btn-label{font-size:12px;font-weight:700;color:var(--tx);}
+.tip-btn-sub{font-size:10px;color:var(--txd);margin-top:2px;}
+
+/* DETAY MODAL */
+.detay-sec{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.detay-blok{background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px;}
+.detay-blok-title{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.detay-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bor);font-size:12px;}
+.detay-row:last-child{border-bottom:none;}
+.detay-key{color:var(--txd);}
+.detay-val{font-weight:600;color:var(--tx);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:1100;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+.t-ok{border-left:3px solid var(--gr);}.t-er{border-left:3px solid var(--re);}.t-in{border-left:3px solid var(--ac);}
+@keyframes tin{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+
+
+
+/* SOL KENAR RENK (Kural B-01) */
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+.bos{text-align:center;padding:48px 24px;color:var(--txd);}
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+<div class="main-content"><div class="page">
+
+<!-- BAŞLIK -->
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Sevkiyat</span></div>
+    <h1 class="page-title">Sevkiyat</h1>
+  </div>
+  <button class="btn btn-p" onclick="yeniSevkAc()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Yeni Sevkiyat
+  </button>
+</div>
+
+<!-- RENK LEJANDı -->
+<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+    <div style="width:14px;height:14px;border-radius:3px;background:#0ea5e9;"></div> Giden Sevkiyat (Spool)
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+    <div style="width:14px;height:14px;border-radius:3px;background:#10b981;"></div> Gelen Sevkiyat
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+    <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;"></div> Serbest Giden (Malzeme/İade)
+  </div>
+</div>
+
+<!-- STAT -->
+<div class="stat-row">
+  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label">Sevkiyata Hazır</div><div class="stat-value" id="sH">0</div></div></div>
+  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label">Gönderildi</div><div class="stat-value" id="sG">0</div></div></div>
+  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label">Gelen</div><div class="stat-value" id="sGelen">0</div></div></div>
+  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label">Toplam Paket</div><div class="stat-value" id="sT">0</div></div></div>
+  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-label">Bu Yıl Spool</div><div class="stat-value" id="sSpool">0</div></div></div>
+</div>
+
+<!-- SEKMELER -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="tumsev">
+    Tüm Sevkiyatlar <span class="tc" id="tA">0</span>
+  </button>
+  <button class="tab-btn" data-tab="hazir">
+    Sevkiyat Hazırlık <span class="tc" id="tH">0</span>
+  </button>
+</div>
+
+<!-- TÜM SEVKİYATLAR -->
+<div class="panel on" id="panelTumsev">
+  <div class="fbar cl-ac">
+    <select class="fsel" id="fTsT" onchange="renderTumSev()">
+      <option value="">Tüm Tipler</option>
+      <option value="giden">Giden (Spool)</option>
+      <option value="gelen">Gelen</option>
+      <option value="serbest">Serbest Giden</option>
+    </select>
+    <select class="fsel" id="fTsTers" onchange="renderTumSev()">
+      <option value="">Tüm Tersaneler</option>
+    </select>
+    <div class="swrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="fTsA" placeholder="Paket no, alıcı, tersane..." oninput="renderTumSev()">
+    </div>
+    <button class="btn btn-g btn-sm" onclick="tumsevSifirla()">↺ Sıfırla</button>
+    <div style="margin-left:auto;">
+      <button class="btn btn-p" onclick="yeniSevkiyatAc()">+ Yeni Sevkiyat</button>
+    </div>
+  </div>
+
+  <!-- TABLO -->
+  <div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">No</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tip</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tarih</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Gönderen</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı Sevk Yeri</th>
+            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">İçerik Özeti</th>
+            <th style="text-align:right;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Ağırlık</th>
+            <th style="width:44px;background:var(--sur2);border-bottom:1px solid var(--bor);"></th>
+          </tr>
+        </thead>
+        <tbody id="tumsevTbody"></tbody>
+      </table>
+    </div>
+    <!-- SAYFALAMA -->
+    <div id="tumsevPagination" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--bor);background:var(--sur2);"></div>
+  </div>
+</div>
+
+<!-- HAZIR -->
+<div class="panel" id="panelHazir">
+  <div class="fbar">
+    <select class="fsel" id="fHT" onchange="renderHazir()"><option value="">Tüm Tersaneler</option></select>
+    <select class="fsel" id="fHP" onchange="renderHazir()"><option value="">Tüm Projeler</option></select>
+    <div class="swrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="fHA" placeholder="Devre veya spool ara..." oninput="renderHazir()">
+    </div>
+    <button class="btn btn-g btn-sm" onclick="hazirFiltreTemizle()">Temizle</button>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txm);cursor:pointer;margin-left:auto;">
+      <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)"> Tümünü Seç
+    </label>
+  </div>
+  <!-- Seçim barı -->
+  <div class="secbar" id="secBar">
+    <div><div class="sv" id="secD">0</div><div class="sl">Devre</div></div>
+    <div class="ssep"></div>
+    <div><div class="sv" id="secS">0</div><div class="sl">Spool</div></div>
+    <div class="ssep"></div>
+    <div><div class="sv" id="secK">0.0</div><div class="sl">kg</div></div>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-g btn-sm" onclick="secTemizle()">Temizle</button>
+      <button class="btn btn-p btn-sm" onclick="paketOlusturAc()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Sevkiyat Paketi Oluştur
+      </button>
+    </div>
+  </div>
+  <div id="hazirListe"></div>
+</div>
+</div></div></div>
+
+<!-- ===== YENİ SEVKİYAT TİP SEÇİM MODAL ===== -->
+<div id="mTip" class="mov" style="display:none;">
+  <div class="mbox" style="max-width:480px;">
+    <div class="mhead"><div class="mtitle">Yeni Sevkiyat</div><button class="mcl" onclick="document.getElementById('mTip').style.display='none'">✕</button></div>
+    <div style="font-size:13px;color:var(--txm);margin-bottom:16px;">Oluşturmak istediğiniz sevkiyat tipini seçin:</div>
+    <div class="tip-sec">
+      <button class="tip-btn" onclick="tipSec('giden')">
+        <div class="tip-btn-icon">📦</div>
+        <div class="tip-btn-label" style="color:#0ea5e9;">Giden Sevkiyat</div>
+        <div class="tip-btn-sub">Spool paketi — kalite onaylı veya direkt</div>
+      </button>
+      <button class="tip-btn" onclick="tipSec('gelen')">
+        <div class="tip-btn-icon">📥</div>
+        <div class="tip-btn-label" style="color:#10b981;">Gelen Sevkiyat</div>
+        <div class="tip-btn-sub">Tersaneden gelen malzeme kaydı</div>
+      </button>
+      <button class="tip-btn" onclick="tipSec('serbest')">
+        <div class="tip-btn-icon">🔄</div>
+        <div class="tip-btn-label" style="color:#f59e0b;">Serbest Giden</div>
+        <div class="tip-btn-sub">Malzeme iadesi veya spool dışı gönderim</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SEVKİYAT PAKETI OLUŞTUR MODAL ===== -->
+<div id="mPaket" class="mov" style="display:none;">
+  <div class="mbox mbox-lg">
+    <div class="mhead">
+      <div>
+        <div class="mtitle" id="mPaketTitle">Sevkiyat Paketi Oluştur</div>
+        <div style="font-size:12px;color:var(--txd);margin-top:2px;" id="mPaketSub"></div>
+      </div>
+      <button class="mcl" onclick="document.getElementById('mPaket').style.display='none'">✕</button>
+    </div>
+
+    <!-- Giden: seçili spool özeti -->
+    <div id="mSpoolOzet" style="display:none;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--txd);margin-bottom:8px;">Seçilen İçerik</div>
+      <div id="mOzetSat" style="display:flex;gap:16px;margin-bottom:8px;font-size:13px;flex-wrap:wrap;"></div>
+      <div id="mOzetListe" style="max-height:120px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Form alanları -->
+    <div class="fr2 fg">
+      <div><label class="fl">Tersane / Alıcı <span style="color:var(--re);">*</span></label><select class="fi" id="pTersane"><option value="">Seçin...</option><option>Sedef Tersanesi</option><option>Tersan Tersanesi</option><option>RMK Marine</option><option>Cemre Tersanesi</option><option>Dearsan Tersanesi</option></select></div>
+      <div><label class="fl">Proje No</label><input class="fi" id="pProje" placeholder="NB1099..."></div>
+    </div>
+    <div class="fr3 fg">
+      <div><label class="fl">Nakliye Aracı / Plaka</label><input class="fi" id="pArac" placeholder="34 ABC 123"></div>
+      <div><label class="fl">İrsaliye No</label><input class="fi" id="pIrsaliye" placeholder="İRS-2026-..."></div>
+      <div><label class="fl">Sevk Tarihi <span style="color:var(--re);">*</span></label><input type="date" class="fi" id="pTarih"></div>
+    </div>
+    <div class="fr2 fg">
+      <div><label class="fl">Teslim Alan Kişi</label><input class="fi" id="pTeslimKisi" placeholder="Ad Soyad / Unvan"></div>
+      <div><label class="fl">İletişim</label><input class="fi" id="pTeslimTel" placeholder="Telefon veya mail"></div>
+    </div>
+    <div class="fg" id="pSerbIcerikBlok" style="display:none;">
+      <label class="fl">İçerik / Açıklama <span style="color:var(--re);">*</span></label>
+      <textarea class="fta" id="pIcerik" placeholder="Ne gönderildiğini açıklayın: malzeme adı, miktar, iade nedeni..."></textarea>
+    </div>
+    <div class="fg">
+      <label class="fl">Teslim Tutanağı / Not</label>
+      <textarea class="fta" id="pNot" placeholder="Teslimat notu, özel durum..."></textarea>
+    </div>
+    <div class="fg">
+      <label class="fl">Fotoğraf Ekle <span style="font-size:10px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
+      <div class="foto-grid" id="mFotoGrid">
+        <div class="foto-item foto-ekle" onclick="showToast('Fotoğraf yükleme: gerçek uygulamada aktif olacak','info')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mPaket').style.display='none'">İptal</button>
+      <button class="btn btn-s" onclick="showToast('Liste PDF\'i hazırlanıyor...','info')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Sevkiyat Listesi
+      </button>
+      <button class="btn btn-p" style="flex:2;" onclick="paketKaydet()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.64A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        Sevkiyatı Kaydet & Gönder
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAY MODAL ===== -->
+<div id="mDetay" class="mov" style="display:none;">
+  <div class="mbox mbox-lg">
+    <div class="mhead">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="mtitle" id="dNo"></div>
+          <div id="dTipRozet"></div>
+        </div>
+        <div style="font-size:12px;color:var(--txd);margin-top:3px;" id="dMeta"></div>
+      </div>
+      <button class="mcl" onclick="document.getElementById('mDetay').style.display='none'">✕</button>
+    </div>
+    <div id="dIcerik"></div>
+  </div>
+</div>
+
+<script>
+function yeniSevkNo(){
+  const yil=String(new Date().getFullYear()).slice(-2);
+  const sayac=parseInt(localStorage.getItem('syos_sevkSayac')||'0')+1;
+  localStorage.setItem('syos_sevkSayac',sayac);
+  return 'S'+yil+'-'+String(sayac).padStart(3,'0');
+}
+
+// ===== VERİ =====
+// Sevkiyata hazır spool grupları (kalite onaylı veya direkt)
+// Sabit hazır spooller (demo)
+const HAZIR_SABIT = [
+  {id:'hs1',spool:'S01',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:12.5,kaynak:'kalite'},
+  {id:'hs2',spool:'S02',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:8.3, kaynak:'kalite'},
+  {id:'hs3',spool:'S03',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:6.1, kaynak:'kalite'},
+  {id:'hs4',spool:'S01',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:14.8,kaynak:'direkt'},
+  {id:'hs5',spool:'S02',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:9.3, kaynak:'direkt'},
+];
+
+// Store'dan gelen + sabit listeyi birleştir
+function _buildHAZIR() {
+  if (typeof SYOS === 'undefined') return [...HAZIR_SABIT];
+  const storeHazir = SYOS.sevkHazirListesi();
+  const storeIds = new Set(storeHazir.map(s => s.id));
+  const storeSpooller = storeHazir.map(s => ({
+    id: s.id, spool: s.spoolKodu?.split('-').pop() || s.spoolKodu,
+    devre: s.devre, projeNo: s.projeNo, gemi: s.gemi,
+    tersane: s.tersane, agirlik: s.agirlik,
+    kaynak: s.kaynak === 'kalite_onay' ? 'kalite' : 'direkt'
+  }));
+  return [...HAZIR_SABIT.filter(s => !storeIds.has(s.id)), ...storeSpooller];
+}
+let HAZIR_SPOOLLER = _buildHAZIR();
+
+// Mevcut sevkiyat kayıtları
+let tumsevSayfa = 1;
+let sevkiyatlar = [
+  {
+    id:'S26-001', no:'S26-001', tip:'giden', durum:'gonderildi',
+    tersane:'Sedef Tersanesi', projeNo:'NB1099', gemi:'MV Atlas',
+    arac:'34 ABC 001', irsaliye:'İRS-2026-001', tarih:'15.03.2026',
+    teslimKisi:'Ahmet Yılmaz', teslimTel:'0532 111 2233',
+    not:'Sorunsuz teslim.',
+    spooller:[{spool:'S01',devre:'fw-bypass',agirlik:7.2},{spool:'S02',devre:'fw-bypass',agirlik:5.8}],
+    belgeler:['Sevkiyat Listesi','İrsaliye'],
+    fotograflar:[],
+  },
+  {
+    id:'S26-002', no:'S26-002', tip:'gelen', durum:'gonderildi',
+    tersane:'Sedef Tersanesi', projeNo:'NB1099', gemi:'MV Atlas',
+    arac:'34 XYZ 456', irsaliye:'TRS-2026-044', tarih:'18.03.2026',
+    teslimKisi:'Mehmet Demir', teslimTel:'',
+    not:'Tersaneden gelen flanş malzemeleri.',
+    icerik:'Kaynak boyunlu flanş PN16 x 12 adet, Conta seti x 24 adet',
+    spooller:[], belgeler:['İrsaliye','İrsaliye Karşılığı'],
+    fotograflar:[],
+  },
+  {
+    id:'S26-003', no:'S26-003', tip:'serbest', durum:'gonderildi',
+    tersane:'Tersan Tersanesi', projeNo:'NB1140', gemi:'Tug Orion',
+    arac:'61 DEF 789', irsaliye:'İRS-2026-002', tarih:'22.03.2026',
+    teslimKisi:'', teslimTel:'',
+    not:'Artan paslanmaz boru malzemelerin iadesi.',
+    icerik:'Dikişsiz paslanmaz çelik boru Ø48.3 x 3 adet (toplam 4.2m)',
+    spooller:[], belgeler:['İade İrsaliyesi'],
+    fotograflar:[],
+  },
+];
+
+let secili = new Set();
+let aktifTip = 'giden';
+let paketSayac = 4;
+
+// ===== FİLTRE DOLDUR =====
+function doldurFiltreler() {
+  const ts = [...new Set(HAZIR_SPOOLLER.map(h=>h.tersane))].sort();
+  const fHT = document.getElementById('fHT');
+  ts.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fHT.appendChild(o);});
+  fHT.addEventListener('change',()=>{
+    const t=fHT.value;
+    const fHP=document.getElementById('fHP');
+    fHP.innerHTML='<option value="">Tüm Projeler</option>';
+    [...new Set(HAZIR_SPOOLLER.filter(h=>!t||h.tersane===t).map(h=>h.projeNo+'|'+h.gemi))].sort()
+      .forEach(s=>{const[no,gemi]=s.split('|');const o=document.createElement('option');o.value=no;o.textContent=no+' — '+gemi;fHP.appendChild(o);});
+    renderHazir();
+  });
+  [...new Set(HAZIR_SPOOLLER.map(h=>h.projeNo+'|'+h.gemi))].sort().forEach(s=>{
+    const[no,gemi]=s.split('|');const fHP=document.getElementById('fHP');
+    const o=document.createElement('option');o.value=no;o.textContent=no+' — '+gemi;fHP.appendChild(o);
+  });
+
+  // Tüm Sevkiyatlar tersane filtresi
+  const fTsTers = document.getElementById('fTsTers');
+  if(fTsTers){
+    const allTers=[...new Set(sevkiyatlar.map(s=>s.tersane).filter(Boolean))].sort();
+    allTers.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fTsTers.appendChild(o);});
+  }
+}
+
+function renderHazir() {
+  const t=document.getElementById('fHT').value;
+  const p=document.getElementById('fHP').value;
+  const a=document.getElementById('fHA').value.toLowerCase().trim();
+  const liste=HAZIR_SPOOLLER.filter(h=>(!t||h.tersane===t)&&(!p||h.projeNo===p)&&(!a||h.devre.toLowerCase().includes(a)||h.spool.toLowerCase().includes(a)));
+  const el=document.getElementById('hazirListe');
+  if(!liste.length){el.innerHTML='<div class="bos">Sevkiyata hazır spool yok</div>';return;}
+
+  const G={};
+  liste.forEach(h=>{
+    const gk=h.tersane+'||'+h.projeNo;
+    if(!G[gk]) G[gk]={tersane:h.tersane,projeNo:h.projeNo,gemi:h.gemi,devs:{}};
+    if(!G[gk].devs[h.devre]) G[gk].devs[h.devre]=[];
+    G[gk].devs[h.devre].push(h);
+  });
+
+  el.innerHTML=Object.values(G).map(g=>{
+    const all=Object.values(g.devs).flat();
+    const kg=all.reduce((a,s)=>a+s.agirlik,0).toFixed(1);
+    const ns=all.filter(s=>secili.has(s.id)).length;
+    const ids=JSON.stringify(all.map(s=>s.id));
+    return `<div class="dgrup">
+      <div class="dhead" onclick="grupToggle(this)">
+        <div>
+          <div class="dtitle">${g.tersane} <span style="color:var(--txd);font-size:13px;font-weight:400;">/</span> ${g.projeNo} — ${g.gemi}</div>
+          <div class="dsub">${Object.keys(g.devs).length} devre · ${all.length} spool · ${kg} kg
+            ${all.some(s=>s.kaynak==='kalite')?'<span class="b bg" style="margin-left:6px;font-size:10px;">Kalite Onaylı</span>':''}
+            ${all.some(s=>s.kaynak==='direkt')?'<span class="b bb" style="margin-left:6px;font-size:10px;">Direkt İmalat</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+          ${ns?`<span class="b bb">${ns} seçili</span>`:''}
+          <button class="btn btn-g btn-sm" onclick="grupSec(${ids})">Tümünü Seç</button>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="dbody">
+        ${Object.entries(g.devs).map(([dev,sp])=>`
+          <div style="border-bottom:1px solid var(--bor);">
+            <div style="padding:7px 18px;display:flex;align-items:center;gap:10px;background:var(--bg);">
+              <span style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;">Devre</span>
+              <span style="font-size:13px;font-weight:700;color:var(--ac);">${dev}</span>
+              <span style="font-size:11px;color:var(--txd);">${sp.length} spool</span>
+            </div>
+            <table class="st">
+              <thead><tr>
+                <th style="width:38px;"><input type="checkbox" class="ck" ${sp.every(s=>secili.has(s.id))?'checked':''}
+                  onchange="devSec(${JSON.stringify(sp.map(s=>s.id))},this.checked)"></th>
+                <th>Spool</th><th>Ağırlık</th><th>Kaynak</th>
+              </tr></thead>
+              <tbody>
+                ${sp.map(s=>`<tr>
+                  <td><input type="checkbox" class="ck" data-id="${s.id}" ${secili.has(s.id)?'checked':''}
+                    onchange="spSec('${s.id}',this.checked)"></td>
+                  <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--leg);">${s.spool}</span></td>
+                  <td style="color:var(--txm);">${s.agirlik} kg</td>
+                  <td>${s.kaynak==='kalite'?'<span class="b bg" style="font-size:10px;">Kalite Onaylı</span>':'<span class="b bb" style="font-size:10px;">Direkt İmalat</span>'}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  guncelSecBar();
+}
+
+function grupToggle(h){
+  const b=h.nextElementSibling;
+  const c=b.classList.toggle('shut');
+  const s=h.querySelector('svg:last-of-type');
+  if(s) s.style.transform=c?'rotate(-90deg)':'';
+}
+function grupSec(ids){ids.forEach(id=>secili.add(id));renderHazir();}
+function devSec(ids,c){ids.forEach(id=>c?secili.add(id):secili.delete(id));renderHazir();}
+function spSec(id,c){c?secili.add(id):secili.delete(id);guncelSecBar();}
+function hepsiniSec(c){HAZIR_SPOOLLER.forEach(h=>c?secili.add(h.id):secili.delete(h.id));renderHazir();}
+function secTemizle(){secili.clear();document.getElementById('ckAll').checked=false;renderHazir();}
+function hazirFiltreTemizle(){
+  document.getElementById('fHT').value='';
+  document.getElementById('fHP').innerHTML='<option value="">Tüm Projeler</option>';
+  [...new Set(HAZIR_SPOOLLER.map(h=>h.projeNo+'|'+h.gemi))].sort().forEach(s=>{
+    const[no,gemi]=s.split('|');const fHP=document.getElementById('fHP');
+    const o=document.createElement('option');o.value=no;o.textContent=no+' — '+gemi;fHP.appendChild(o);
+  });
+  document.getElementById('fHA').value='';
+  renderHazir();
+}
+
+function guncelSecBar(){
+  const sl=HAZIR_SPOOLLER.filter(h=>secili.has(h.id));
+  const n=sl.length;
+  const d=new Set(sl.map(h=>h.devre+h.projeNo)).size;
+  const kg=sl.reduce((a,h)=>a+h.agirlik,0).toFixed(1);
+  document.getElementById('secBar').classList.toggle('on',n>0);
+  document.getElementById('secD').textContent=d;
+  document.getElementById('secS').textContent=n;
+  document.getElementById('secK').textContent=kg;
+}
+
+// ===== TIP SEÇİM =====
+function yeniSevkAc(){document.getElementById('mTip').style.display='flex';}
+function tipSec(tip){
+  aktifTip=tip;
+  document.getElementById('mTip').style.display='none';
+  if(tip==='giden' && secili.size===0){
+    // Hazır sekmesine yönlendir
+    tabGit('hazir');
+    showToast('Hazır listesinden spool seçip "Sevkiyat Paketi Oluştur" butonunu kullanın','info');
+    return;
+  }
+  paketOlusturAc();
+}
+
+function paketOlusturAc(){
+  if(aktifTip==='giden' && secili.size===0){
+    showToast('Önce hazır listesinden spool seçin','error'); return;
+  }
+  aktifTip='giden';// paket oluştur butonundan gelince tip giden
+  const sl=HAZIR_SPOOLLER.filter(h=>secili.has(h.id));
+  const kg=sl.reduce((a,h)=>a+h.agirlik,0).toFixed(1);
+  const devs=[...new Set(sl.map(h=>h.devre))];
+
+  const title={giden:'Giden Sevkiyat Paketi',gelen:'Gelen Sevkiyat Kaydı',serbest:'Serbest Giden Sevkiyat'}[aktifTip]||'Sevkiyat';
+  document.getElementById('mPaketTitle').textContent=title;
+  document.getElementById('mPaketSub').textContent='';
+
+  const spoolOzetEl=document.getElementById('mSpoolOzet');
+  const serbIcerik=document.getElementById('pSerbIcerikBlok');
+
+  if(aktifTip==='giden'){
+    spoolOzetEl.style.display='block';
+    serbIcerik.style.display='none';
+    document.getElementById('mOzetSat').innerHTML=
+      `<span style="color:var(--txm);">Spool: <strong style="color:var(--tx);">${sl.length}</strong></span>
+       <span style="color:var(--txm);">Devre: <strong style="color:var(--tx);">${devs.length}</strong></span>
+       <span style="color:var(--txm);">Toplam: <strong style="color:#0ea5e9;">${kg} kg</strong></span>`;
+    document.getElementById('mOzetListe').innerHTML=sl.map(h=>
+      `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:12px;">
+        <span style="color:var(--txm);">${h.projeNo} / <span style="color:var(--ac);">${h.devre}</span> / <strong>${h.spool}</strong></span>
+        <span style="color:var(--txd);">${h.agirlik} kg</span>
+      </div>`).join('');
+    if(sl[0]){document.getElementById('pTersane').value=sl[0].tersane;document.getElementById('pProje').value=sl[0].projeNo;}
+  } else {
+    spoolOzetEl.style.display='none';
+    serbIcerik.style.display='block';
+    document.getElementById('pTersane').value='';
+    document.getElementById('pProje').value='';
+  }
+
+  document.getElementById('pTarih').value=new Date().toISOString().split('T')[0];
+  document.getElementById('pArac').value='';
+  document.getElementById('pIrsaliye').value='';
+  document.getElementById('pTeslimKisi').value='';
+  document.getElementById('pTeslimTel').value='';
+  document.getElementById('pNot').value='';
+  document.getElementById('pIcerik').value='';
+  document.getElementById('mPaket').style.display='flex';
+}
+
+function paketKaydet(){
+  const tersane=document.getElementById('pTersane').value;
+  const tarih=document.getElementById('pTarih').value;
+  if(!tersane){showToast('Tersane / alıcı zorunludur','error');return;}
+  if(!tarih){showToast('Tarih zorunludur','error');return;}
+  if(aktifTip!=='giden'){
+    const ic=document.getElementById('pIcerik').value.trim();
+    if(!ic){showToast('İçerik / açıklama zorunludur','error');return;}
+  }
+
+  const sl=aktifTip==='giden'?HAZIR_SPOOLLER.filter(h=>secili.has(h.id)):[];
+  const no=yeniSevkNo();
+  const fmt=d=>d?new Date(d).toLocaleDateString('tr-TR'):'—';
+  const arac=document.getElementById('pArac').value.trim();
+  const irsaliye=document.getElementById('pIrsaliye').value.trim();
+  const teslimKisi=document.getElementById('pTeslimKisi').value.trim();
+  const teslimTel=document.getElementById('pTeslimTel').value.trim();
+  const notV=document.getElementById('pNot').value.trim();
+  const icerik=document.getElementById('pIcerik').value.trim();
+
+  const yeniPaket = {
+    id:no, no, tip:aktifTip, durum:'gonderildi',
+    tersane, projeNo:document.getElementById('pProje').value,
+    gemi:sl[0]?.gemi||'', arac, irsaliye,
+    tarih:fmt(tarih), teslimKisi, teslimTel, not:notV, icerik,
+    spooller:sl.map(h=>({spool:h.spool,devre:h.devre,agirlik:h.agirlik})),
+    belgeler:aktifTip==='giden'?['Sevkiyat Listesi','İrsaliye']:['İrsaliye'],
+    fotograflar:[],
+  };
+  sevkiyatlar.unshift(yeniPaket);
+
+  // Store'a yaz
+  if (typeof SYOS !== 'undefined') {
+    SYOS.sevkPaketOlustur(
+      aktifTip, sl.map(h=>h.id),
+      tersane, document.getElementById('pProje').value,
+      arac, irsaliye, fmt(tarih), teslimKisi, teslimTel, notV, icerik
+    );
+    // Hazır listeyi store'dan yenile
+    HAZIR_SPOOLLER.length = 0;
+    _buildHAZIR().forEach(h => HAZIR_SPOOLLER.push(h));
+  }
+
+  if(aktifTip==='giden') secili.clear();
+  document.getElementById('mPaket').style.display='none';
+  renderHazir(); renderTumSev(); guncelStatler();
+  showToast(`${no} sevkiyat paketi oluşturuldu`,'success');
+  tabGit('tumsev');
+}
+
+// ===== GÖNDERİLDİ & ARŞİV RENDER =====
+function renderTumSev(){
+  const fT=document.getElementById('fTsT')?.value||'';
+  const fTers=document.getElementById('fTsTers')?.value||'';
+  const fA=document.getElementById('fTsA')?.value.toLowerCase().trim()||'';
+  let liste=sevkiyatlar.filter(s=>{
+    if(fT && s.tip!==fT) return false;
+    if(fTers && s.tersane!==fTers) return false;
+    if(fA && !s.no.toLowerCase().includes(fA) && !s.tersane.toLowerCase().includes(fA) &&
+       !(s.alici||'').toLowerCase().includes(fA) && !(s.icerik||'').toLowerCase().includes(fA)) return false;
+    return true;
+  }).sort((a,b)=>b.id.localeCompare(a.id));
+
+  const SAYFA_BOYUT=15;
+  const toplamSayfa=Math.ceil(liste.length/SAYFA_BOYUT)||1;
+  if(tumsevSayfa>toplamSayfa) tumsevSayfa=1;
+  const baslangic=(tumsevSayfa-1)*SAYFA_BOYUT;
+  const sayfa=liste.slice(baslangic,baslangic+SAYFA_BOYUT);
+
+  const tipLabel={giden:'📦 Giden',gelen:'📥 Gelen',serbest:'🔄 Serbest'};
+  const tipRenk={giden:'var(--ac)',gelen:'var(--gr)',serbest:'var(--warn)'};
+
+  const tbody=document.getElementById('tumsevTbody');
+  if(!tbody) return;
+
+  tbody.innerHTML=sayfa.length?sayfa.map((s,i)=>{
+    const kg=s.spooller&&s.spooller.length?s.spooller.reduce((a,x)=>a+(x.agirlik||0),0):0;
+    const kgStr=kg>0?kg.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' kg':'—';
+    const icerikOzet=s.icerik||(s.spooller&&s.spooller.length?s.spooller.length+' spool':'—');
+    return `<tr onclick="sevkDetayAc('${s.id}')" style="cursor:pointer;transition:background 0.1s;" onmouseenter="this.style.background='rgba(14,165,233,0.04)'" onmouseleave="this.style.background=''">
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:${tipRenk[s.tip]||'var(--ac)'};">${s.no}</span>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);">
+        <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:${tipRenk[s.tip]}22;color:${tipRenk[s.tip]||'var(--ac)'};">${tipLabel[s.tip]||s.tip}</span>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);color:var(--txm);font-size:12px;">${s.tarih||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:13px;font-weight:500;">${s.gonderen||'ITHINKSO'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:13px;font-weight:500;">${s.alici||s.tersane||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:12px;color:var(--txm);">${s.aliciSevkYeri||s.adres||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:12px;color:var(--txm);max-width:200px;overflow:hidden;text-overflow:ellipsis;">${icerikOzet}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);text-align:right;font-size:13px;font-weight:600;">${kgStr}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);text-align:center;">
+        <button onclick="event.stopPropagation();sevkDetayAc('${s.id}')" style="background:none;border:1px solid var(--bor);border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--txd);display:inline-flex;align-items:center;justify-content:center;font-size:13px;">→</button>
+      </td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--txd);">Kayıt bulunamadı</td></tr>`;
+
+  // Sayfalama
+  const pag=document.getElementById('tumsevPagination');
+  if(!pag) return;
+  if(toplamSayfa<=1){pag.style.display='none';return;}
+  pag.style.display='flex';
+
+  let btns='';
+  for(let i=1;i<=toplamSayfa;i++){
+    const akt=i===tumsevSayfa;
+    btns+=`<button onclick="tumsevSayfaGit(${i})" style="padding:5px 10px;border-radius:7px;border:1px solid ${akt?'var(--ac)':'var(--bor)'};background:${akt?'var(--ac)':'var(--sur2)'};color:${akt?'#fff':'var(--txm)'};font-size:13px;font-weight:${akt?'700':'500'};cursor:pointer;min-width:32px;">${i}</button>`;
+  }
+  pag.innerHTML=`
+    <span style="font-size:12px;color:var(--txd);">${liste.length} kayıt · ${baslangic+1}-${Math.min(baslangic+SAYFA_BOYUT,liste.length)} gösteriliyor</span>
+    <div style="display:flex;gap:4px;">${btns}</div>`;
+
+  // Sayaç
+  const tA=document.getElementById('tA');
+  if(tA) tA.textContent=sevkiyatlar.length;
+}
+
+function tumsevSayfaGit(s){tumsevSayfa=s;renderTumSev();}
+function tumsevSifirla(){
+  const ft=document.getElementById('fTsT');
+  const fters=document.getElementById('fTsTers');
+  const fa=document.getElementById('fTsA');
+  if(ft)ft.value='';if(fters)fters.value='';if(fa)fa.value='';
+  tumsevSayfa=1;renderTumSev();
+}
+
+function sevkKartHtml(s){
+  const tipLabel={giden:'📦 Giden Spool',gelen:'📥 Gelen',serbest:'🔄 Serbest Giden'};
+  const kg=s.spooller.reduce((a,x)=>a+(x.agirlik||0),0).toFixed(1);
+  return `<div class="skart">
+    <div class="skart-tip ${s.tip}"></div>
+    <div class="skart-ic">
+      <div class="skart-head">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div class="sno ${s.tip}">${s.no}</div>
+            <span class="tip-rozet tr-${s.tip}">${tipLabel[s.tip]||s.tip}</span>
+          </div>
+          <div style="font-size:13px;color:var(--txm);">${s.tersane}${s.projeNo?' · '+s.projeNo:''}${s.gemi?' / '+s.gemi:''}</div>
+          <div style="font-size:12px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span>Tarih: <strong style="color:var(--tx);">${s.tarih}</strong></span>
+            ${s.irsaliye?`<span>İrsaliye: <strong style="color:var(--tx);">${s.irsaliye}</strong></span>`:''}
+            ${s.arac?`<span>Araç: <strong style="color:var(--tx);">${s.arac}</strong></span>`:''}
+            ${s.teslimKisi?`<span>Teslim: <strong style="color:var(--tx);">${s.teslimKisi}</strong></span>`:''}
+            ${s.spooller.length?`<span>${s.spooller.length} spool · ${kg} kg</span>`:''}
+          </div>
+          ${s.icerik?`<div style="font-size:12px;color:var(--txm);margin-top:4px;font-style:italic;">${s.icerik}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
+          <button class="btn btn-g btn-sm" onclick="showToast('PDF hazırlanıyor...','info')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Liste
+          </button>
+          <button class="btn btn-g btn-sm" onclick="detayAc('${s.id}')">Detay</button>
+        </div>
+      </div>
+      ${s.spooller.length?`<div class="skart-body"><div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:10px;">/ ${x.devre}</span></span>`).join('')}</div></div>`:''}
+    </div>
+  </div>`;
+}
+
+// ===== DETAY MODAL =====
+function detayAc(id){
+  const s=sevkiyatlar.find(x=>x.id===id); if(!s) return;
+  const tipLabel={giden:'📦 Giden Spool',gelen:'📥 Gelen',serbest:'🔄 Serbest Giden'};
+  document.getElementById('dNo').textContent=s.no;
+  document.getElementById('dNo').className='mtitle sno '+s.tip;
+  document.getElementById('dTipRozet').innerHTML=`<span class="tip-rozet tr-${s.tip}">${tipLabel[s.tip]||s.tip}</span>`;
+  document.getElementById('dMeta').textContent=s.tersane+(s.projeNo?' · '+s.projeNo:'')+(s.gemi?' / '+s.gemi:'');
+  const kg=s.spooller.reduce((a,x)=>a+(x.agirlik||0),0).toFixed(1);
+
+  document.getElementById('dIcerik').innerHTML=`
+    <div class="detay-sec" style="margin-bottom:16px;">
+      <div class="detay-blok">
+        <div class="detay-blok-title">Sevkiyat Bilgileri</div>
+        <div class="detay-row"><span class="detay-key">Tarih</span><span class="detay-val">${s.tarih}</span></div>
+        <div class="detay-row"><span class="detay-key">İrsaliye</span><span class="detay-val">${s.irsaliye||'—'}</span></div>
+        <div class="detay-row"><span class="detay-key">Araç / Plaka</span><span class="detay-val">${s.arac||'—'}</span></div>
+        <div class="detay-row"><span class="detay-key">Teslim Alan</span><span class="detay-val">${s.teslimKisi||'—'}</span></div>
+        <div class="detay-row"><span class="detay-key">İletişim</span><span class="detay-val">${s.teslimTel||'—'}</span></div>
+        ${s.spooller.length?`<div class="detay-row"><span class="detay-key">Toplam Ağırlık</span><span class="detay-val">${kg} kg</span></div>`:''}
+      </div>
+      <div class="detay-blok">
+        <div class="detay-blok-title">Belgeler</div>
+        <div class="belge-list">
+          ${s.belgeler.map(b=>`<div class="belge-item">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="belge-icon" style="background:rgba(14,165,233,0.12);color:var(--ac);">📄</div>
+              <span>${b}</span>
+            </div>
+            <button class="btn btn-g btn-sm" onclick="showToast('${b} indiriliyor...','info')">İndir</button>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    ${s.icerik?`<div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">İçerik</div>
+      <div style="font-size:13px;color:var(--tx);">${s.icerik}</div>
+    </div>`:''}
+    ${s.spooller.length?`<div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Listesi</div>
+      <div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:10px;">/ ${x.devre}</span> <span style="color:var(--txd);font-size:10px;">${x.agirlik}kg</span></span>`).join('')}</div>
+    </div>`:''}
+    ${s.not?`<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Not / Teslim Tutanağı</div>
+      <div style="font-size:13px;color:var(--tx);">${s.not}</div>
+    </div>`:''}
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Fotoğraflar</div>
+      <div class="foto-grid">
+        ${s.fotograflar.map(f=>`<div class="foto-item"><img src="${f}" alt="foto"></div>`).join('')}
+        <div class="foto-ekle foto-item" onclick="showToast('Fotoğraf yükleme: gerçek uygulamada aktif','info')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('mDetay').style.display='flex';
+}
+
+// ===== STAT =====
+function guncelStatler(){
+  const hazir=HAZIR_SPOOLLER.length;
+  const gonderildi=sevkiyatlar.filter(s=>s.durum==='gonderildi'&&s.tip==='giden').length;
+  const gelen=sevkiyatlar.filter(s=>s.tip==='gelen').length;
+  const toplam=sevkiyatlar.length;
+  const spool=sevkiyatlar.filter(s=>s.tip==='giden').reduce((a,s)=>a+s.spooller.length,0);
+  document.getElementById('sH').textContent=hazir;
+  document.getElementById('sG').textContent=gonderildi;
+  document.getElementById('sGelen').textContent=gelen;
+  document.getElementById('sT').textContent=toplam;
+  document.getElementById('sSpool').textContent=spool;
+  document.getElementById('tH').textContent=hazir;
+  const _tG=document.getElementById('tG');if(_tG)_tG.textContent=gonderildi;
+  document.getElementById('tA').textContent=toplam;
+}
+
+// ===== TAB =====
+
+function yeniSevkiyatAc(){
+  document.getElementById('mTip').style.display='flex';
+}
+function tabGit(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  const pid=tab==='tumsev'?'panelTumsev':tab==='hazir'?'panelHazir':'panel'+tab.charAt(0).toUpperCase()+tab.slice(1);
+  document.getElementById(pid)?.classList.add('on');
+  if(tab==='tumsev') renderTumSev();
+  if(tab==='hazir') renderHazir();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>tabGit(btn.dataset.tab)));
+
+// ===== TOAST =====
+let _tt;
+function showToast(msg,type='success'){
+  let el=document.getElementById('_t');
+  if(!el){el=document.createElement('div');el.id='_t';document.body.appendChild(el);}
+  el.className='toast t-'+(type==='success'?'ok':type==='error'?'er':'in');
+  el.innerHTML=`<span>${msg}</span><button style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px;" onclick="this.parentElement.style.display='none'">✕</button>`;
+  el.style.display='flex';clearTimeout(_tt);
+  _tt=setTimeout(()=>{if(el)el.style.display='none';},3500);
+}
+
+// ===== BAŞLAT =====
+doldurFiltreler();
+renderTumSev();
+renderHazir();
+guncelStatler();
+</script>
+</body>
+</html>

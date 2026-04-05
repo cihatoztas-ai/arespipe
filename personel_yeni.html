@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Yeni Personel | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* TOPBAR */
+
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:1px;}
+.logo span{color:var(--ac);}
+.sep{width:1px;height:20px;background:var(--bor);}
+.bc{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--txd);}
+.bc a{color:var(--ac);cursor:pointer;text-decoration:none;}
+
+.tbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txd);}
+.tbtn:hover{border-color:var(--ac);color:var(--ac);}
+[data-theme=dark] .sun{display:block;}[data-theme=dark] .moon{display:none;}
+[data-theme=light] .sun{display:none;}[data-theme=light] .moon{display:block;}
+
+/* SAYFA LAYOUT */
+.page{max-width:1100px;padding:28px 28px;}
+.page-header{margin-bottom:24px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;}
+.page-sub{font-size:14px;color:var(--txd);}
+
+
+/* SOL KENAR RENK (Kural B-01) */
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+/* FORM GRID */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.form-grid.full{grid-template-columns:1fr;}
+
+/* KART */
+.fcard{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:22px 24px;}
+.fcard-title{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--bor);}
+.fcard-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fcard-icon.ac{background:rgba(45,142,255,.12);color:var(--ac);}
+.fcard-icon.gr{background:rgba(22,163,110,.12);color:var(--gr);}
+.fcard-icon.leg{background:rgba(124,58,237,.12);color:var(--leg);}
+.fcard-icon.warn{background:rgba(217,119,6,.12);color:var(--warn);}
+.fcard-icon.txd{background:rgba(100,116,139,.1);color:var(--txm);}
+.fcard-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--txd);}
+
+/* FORM ELEMANLARI */
+.fg{display:grid;gap:14px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.fl{display:flex;flex-direction:column;gap:5px;}
+.lbl{font-size:12px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;}
+.lbl.req::after{content:' *';color:var(--re);}
+.inp{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--tx);outline:none;width:100%;transition:border-color .15s;}
+.inp:focus{border-color:var(--ac);}
+.inp::placeholder{color:var(--txd);}
+select.inp{cursor:pointer;}
+textarea.inp{resize:vertical;min-height:80px;line-height:1.5;}
+input[type=date].inp{color-scheme:dark;}
+[data-theme=light-anthracite] input[type=date].inp{color-scheme:light;}
+
+.inp-hint{font-size:11px;color:var(--txd);margin-top:3px;}
+.inp-err{font-size:11px;color:var(--re);margin-top:3px;display:none;}
+
+/* FOTOĞRAF YÜKLEYİCİ */
+.foto-wrap{display:flex;align-items:center;gap:20px;}
+.foto-preview{width:90px;height:90px;border-radius:10px;background:var(--sur2);border:2px dashed var(--bor);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--ac);overflow:hidden;flex-shrink:0;cursor:pointer;transition:border-color .15s;}
+.foto-preview:hover{border-color:var(--ac);}
+.foto-preview img{width:100%;height:100%;object-fit:cover;}
+.foto-actions{display:flex;flex-direction:column;gap:8px;}
+.foto-btn{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:34px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;}
+.foto-btn:hover{border-color:var(--ac);color:var(--ac);}
+.foto-hint{font-size:11px;color:var(--txd);}
+
+/* BRANŞ SEÇİCİ */
+.brans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.brans-opt{padding:9px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:13px;color:var(--txm);transition:all .12s;text-align:center;}
+.brans-opt:hover{border-color:var(--ac);color:var(--ac);}
+.brans-opt.on{border-color:var(--ac);background:rgba(45,142,255,.08);color:var(--ac);font-weight:600;}
+
+/* YETENEKler */
+.yetenek-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.yopt{padding:5px 12px;border-radius:20px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:12px;color:var(--txm);transition:all .12s;}
+.yopt:hover{border-color:var(--ac);color:var(--ac);}
+.yopt.on{border-color:var(--ac);background:rgba(45,142,255,.08);color:var(--ac);}
+.yopt.on.gr{border-color:var(--gr);background:rgba(22,163,110,.08);color:var(--gr);}
+.ekip-inp-row{display:flex;gap:8px;margin-top:10px;}
+
+/* IBAN SATIRI */
+.iban-row{display:grid;grid-template-columns:1fr 2fr 1fr 100px 34px;gap:8px;align-items:end;margin-bottom:10px;}
+.iban-rm{width:34px;height:38px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.iban-rm:hover{border-color:var(--re);color:var(--re);}
+
+/* ALT BUTONLAR */
+.form-footer{position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bor);padding:14px 28px;display:flex;align-items:center;gap:12px;z-index:99;}
+.btn-kaydet{display:inline-flex;align-items:center;gap:7px;padding:0 28px;height:42px;border-radius:9px;border:none;background:var(--ac);color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+.btn-kaydet:hover{opacity:.88;}
+.btn-iptal{display:inline-flex;align-items:center;gap:7px;padding:0 20px;height:42px;border-radius:9px;border:1px solid var(--bor);background:transparent;color:var(--txm);font-family:'Barlow',sans-serif;font-size:15px;cursor:pointer;}
+.btn-iptal:hover{border-color:var(--re);color:var(--re);}
+.form-footer-note{margin-left:auto;font-size:12px;color:var(--txd);}
+
+
+
+[data-theme="dark"]  .icon-sun  { display:block!important; }
+[data-theme="dark"]  .icon-moon { display:none!important; }
+[data-theme="light"] .icon-sun  { display:none!important; }
+[data-theme="light"] .icon-moon { display:block!important; }
+
+/* ===== 4 TEMA SİSTEMİ ===== */
+:root { --ac:#0ea5e9; --gr:#10b981; --re:#ef4444; --warn:#f59e0b; --leg:#a855f7; }
+
+/* ANTRASIT — koyu gri, endüstriyel */
+
+/* NAVY — lacivert, denizcilik kurumsal */
+
+
+
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+<div class="main-content">
+
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:13px;color:var(--txd);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      <a href="personel.html" style="color:var(--txd);text-decoration:none;">Personel</a>
+      <span>/</span><span>Yeni Personel</span>
+    </div>
+    <div class="page-title">Yeni Personel Ekle</div>
+    <div class="page-sub">Zorunlu alanlar * ile isaretlenmistir</div>
+  </div>
+
+  <div class="form-grid">
+
+    <!-- SOL KOLON -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Kimlik Bilgileri -->
+      <div class="fcard cl-ac">
+        <div class="fcard-title">
+          <div class="fcard-icon ac"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="fcard-name">Kimlik Bilgileri</div>
+        </div>
+        <div class="fg">
+          <!-- Fotoğraf -->
+          <div class="fl">
+            <div class="lbl">Fotograf</div>
+            <div class="foto-wrap">
+              <div class="foto-preview" id="fotoPreview" onclick="document.getElementById('fotoInput').click()">
+                <span id="fotoInitials">?</span>
+                <img id="fotoImg" src="" style="display:none;">
+              </div>
+              <div class="foto-actions">
+                <label class="foto-btn">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Fotograf Yukle
+                  <input type="file" id="fotoInput" accept="image/*" style="display:none;" onchange="fotoYukle(this)">
+                </label>
+                <div class="foto-hint">JPG, PNG — max 5MB</div>
+              </div>
+            </div>
+          </div>
+          <div class="fg2">
+            <div class="fl"><div class="lbl req">Ad</div><input class="inp" id="fAd" placeholder="Ad" oninput="adGuncelle()"></div>
+            <div class="fl"><div class="lbl req">Soyad</div><input class="inp" id="fSoyad" placeholder="Soyad" oninput="adGuncelle()"></div>
+          </div>
+          <div class="fl"><div class="lbl req">T.C. Kimlik No</div><input class="inp" id="fTc" placeholder="xxxxxxxxxxx" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'')"><div class="inp-hint">11 haneli TC kimlik numarasi</div></div>
+          <div class="fg2">
+            <div class="fl"><div class="lbl">Dogum Tarihi</div><input type="date" class="inp" id="fDogum"></div>
+            <div class="fl"><div class="lbl">Dogum Yeri</div><input class="inp" id="fDogumYeri" placeholder="Sehir"></div>
+          </div>
+          <div class="fg2">
+            <div class="fl">
+              <div class="lbl">Kan Grubu</div>
+              <select class="inp" id="fKan">
+                <option value="">Secin</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>0+</option><option>0-</option>
+              </select>
+            </div>
+            <div class="fl">
+              <div class="lbl">Medeni Durum</div>
+              <select class="inp" id="fMedeni">
+                <option value="">Secin</option>
+                <option>Bekâr</option>
+                <option>Evli</option>
+                <option>Bosanmis</option>
+                <option>Dul</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg2">
+            <div class="fl"><div class="lbl">Cocuk Sayisi</div><input type="number" class="inp" id="fCocuk" placeholder="0" min="0" max="20"></div>
+            <div class="fl"><div class="lbl">SGK No</div><input class="inp" id="fSgk" placeholder="SGK sicil numarasi"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- İşe Giriş -->
+      <div class="fcard">
+        <div class="fcard-title">
+          <div class="fcard-icon warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="fcard-name">Ise Giris</div>
+        </div>
+        <div class="fg">
+          <div class="fg2">
+            <div class="fl"><div class="lbl">Ise Giris Tarihi</div><input type="date" class="inp" id="fGiris"></div>
+            <div class="fl">
+              <div class="lbl">Personel No</div>
+              <input class="inp" id="fNo" value="W-" placeholder="W-1025">
+              <div class="inp-hint">Otomatik atanir, degistirilebilir</div>
+            </div>
+          </div>
+          <div class="fg2">
+            <div class="fl">
+              <div class="lbl">Calisma Tipi</div>
+              <select class="inp" id="fTip">
+                <option>Tam Zamanli</option>
+                <option>Yarim Zamanli</option>
+                <option>Sozlesmeli</option>
+                <option>Stajyer</option>
+              </select>
+            </div>
+            <div class="fl">
+              <div class="lbl">Durum</div>
+              <select class="inp" id="fDurum">
+                <option value="aktif">Aktif</option>
+                <option value="pasif">Pasif</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banka & IBAN -->
+      <div class="fcard">
+        <div class="fcard-title">
+          <div class="fcard-icon txd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="fcard-name">Banka &amp; IBAN</div>
+        </div>
+        <div id="ibanListesi" style="display:flex;flex-direction:column;gap:0;margin-bottom:10px;"></div>
+        <button class="foto-btn" onclick="ibanEkle()" style="width:100%;justify-content:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          IBAN Ekle
+        </button>
+      </div>
+
+    </div>
+
+    <!-- SAĞ KOLON -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- İletişim -->
+      <div class="fcard">
+        <div class="fcard-title">
+          <div class="fcard-icon ac"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+          <div class="fcard-name">Iletisim Bilgileri</div>
+        </div>
+        <div class="fg">
+          <div class="fg2">
+            <div class="fl"><div class="lbl req">Cep Telefonu</div><input class="inp" id="fTel" placeholder="+90 5xx xxx xx xx"></div>
+            <div class="fl"><div class="lbl">E-posta</div><input type="email" class="inp" id="fEmail" placeholder="ornek@sirket.com"></div>
+          </div>
+          <div class="fl"><div class="lbl">Adres</div><textarea class="inp" id="fAdres" placeholder="Mahalle, sokak, no, ilce, sehir"></textarea></div>
+          <div class="fg2">
+            <div class="fl"><div class="lbl">Acil Durum Kisi</div><input class="inp" id="fAcilKisi" placeholder="Adi Soyadi"></div>
+            <div class="fl"><div class="lbl">Acil Durum Tel</div><input class="inp" id="fAcilTel" placeholder="+90 5xx xxx xx xx"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branş & Yetenekler -->
+      <div class="fcard">
+        <div class="fcard-title">
+          <div class="fcard-icon gr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+          <div class="fcard-name">Brans &amp; Yetenekler</div>
+        </div>
+        <div class="fg">
+          <!-- Ana Branş -->
+          <div class="fl">
+            <div class="lbl">Ana Brans <span style="font-size:11px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;">(sonradan eklenebilir)</span></div>
+            <div class="brans-grid" id="bransGrid">
+              <div class="brans-opt" onclick="bransSec(this,'Argon (TIG) Kaynakci')">Argon (TIG) Kaynakci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Gaz Alti (MIG/MAG)')">Gaz Alti (MIG/MAG)</div>
+              <div class="brans-opt" onclick="bransSec(this,'MMA Kaynakci')">MMA Kaynakci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Imalatci')">Imalatci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Kesimci')">Kesimci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Boru Montajci')">Boru Montajci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Elektrikci')">Elektrikci</div>
+              <div class="brans-opt" onclick="bransSec(this,'CNC Operatoru')">CNC Operatoru</div>
+              <div class="brans-opt" onclick="bransSec(this,'Boyaci')">Boyaci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Temizlikci')">Temizlikci</div>
+              <div class="brans-opt" onclick="bransSec(this,'Vinc Operatoru')">Vinc Operatoru</div>
+              <div class="brans-opt" onclick="bransSec(this,'Forklift Operatoru')">Forklift Operatoru</div>
+            </div>
+            <input class="inp" id="bransYeni" placeholder="Listede yoksa yazin..." style="margin-top:8px;" onkeydown="if(event.key==='Enter'){bransSec(null,this.value);this.value='';}">
+          </div>
+
+          <!-- Kaynak Türleri (kaynakçı seçilince göster) -->
+          <div class="fl" id="kayTurWrap" style="display:none;">
+            <div class="lbl">Kaynak Turleri</div>
+            <div class="yetenek-grid" id="kayTurGrid">
+              <div class="yopt on" onclick="yoptToggle(this)">Argon (TIG)</div>
+              <div class="yopt" onclick="yoptToggle(this)">MIG/MAG</div>
+              <div class="yopt" onclick="yoptToggle(this)">MMA (Elektrod)</div>
+              <div class="yopt" onclick="yoptToggle(this)">Paslanmaz Celik</div>
+              <div class="yopt" onclick="yoptToggle(this)">Cunife</div>
+              <div class="yopt" onclick="yoptToggle(this)">Karbon Celik</div>
+              <div class="yopt" onclick="yoptToggle(this)">Aluminyum</div>
+              <div class="yopt" onclick="yoptToggle(this)">Titanyum</div>
+              <div class="yopt" onclick="yoptToggle(this)">Nikel Alasimlari</div>
+            </div>
+          </div>
+
+          <!-- Diğer Yetenekler -->
+          <div class="fl">
+            <div class="lbl">Diger Yetenekler</div>
+            <div class="yetenek-grid" id="yyGrid">
+              <div class="yopt gr" onclick="yoptToggle(this)">Forklift</div>
+              <div class="yopt" onclick="yoptToggle(this)">Vinc Operatoru</div>
+              <div class="yopt" onclick="yoptToggle(this)">Boru Kesimi</div>
+              <div class="yopt" onclick="yoptToggle(this)">Boru Montaji</div>
+              <div class="yopt" onclick="yoptToggle(this)">Ilk Yardim</div>
+              <div class="yopt" onclick="yoptToggle(this)">Taslama</div>
+              <div class="yopt" onclick="yoptToggle(this)">Boyama</div>
+              <div class="yopt" onclick="yoptToggle(this)">Civata Montaji</div>
+              <div class="yopt" onclick="yoptToggle(this)">ISG Egitimi</div>
+            </div>
+            <div class="ekip-inp-row">
+              <input class="inp" id="yyYeni" placeholder="Baska yetenek ekle...">
+              <button class="foto-btn" onclick="yyEkle()" style="white-space:nowrap;">+ Ekle</button>
+            </div>
+          </div>
+
+          <!-- Makine & Ekipman -->
+          <div class="fl">
+            <div class="lbl">Makine &amp; Ekipman</div>
+            <div class="yetenek-grid" id="ekGrid">
+              <div class="yopt" onclick="yoptToggle(this)">Lincoln Electric Power Wave</div>
+              <div class="yopt" onclick="yoptToggle(this)">ESAB Aristo 500t</div>
+              <div class="yopt" onclick="yoptToggle(this)">Miller Dynasty 350</div>
+              <div class="yopt" onclick="yoptToggle(this)">Fronius TransTig</div>
+              <div class="yopt" onclick="yoptToggle(this)">Kemppi MasterTig</div>
+            </div>
+            <div class="ekip-inp-row">
+              <input class="inp" id="ekYeni" placeholder="Baska ekipman ekle...">
+              <button class="foto-btn" onclick="ekEkle()" style="white-space:nowrap;">+ Ekle</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ALT BUTON BARI -->
+<div class="form-footer">
+  <button class="btn-kaydet" onclick="kaydet()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Personeli Kaydet
+  </button>
+  <button class="btn-iptal" onclick="window.location='personel.html'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    Iptal
+  </button>
+  <div class="form-footer-note">* Zorunlu alanlar doldurulmadan kayit yapilmaz</div>
+<!-- /.form-footer -->
+
+</div><!-- /.page -->
+</div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+</body>
+</html>
