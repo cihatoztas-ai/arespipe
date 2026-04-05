@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sevkiyatlar | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'dark';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -16,9 +23,9 @@
 [data-theme="navy"] .icon-sun{display:block!important;}[data-theme="navy"] .icon-moon{display:none!important;}
 .page{padding:24px 28px;}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
-.page-title-label{font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.page-title-label{font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
-.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 
 /* STAT */
@@ -30,7 +37,7 @@
 .si-a{background:rgba(217,119,6,.12);color:var(--warn);}
 .si-r{background:rgba(229,62,62,.12);color:var(--re);}
 .si-p{background:rgba(124,58,237,.12);color:var(--leg);}
-.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.stat-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
 .stat-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--tx);line-height:1;}
 
 /* SEKMELER */
@@ -38,23 +45,23 @@
 .tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
 .tab-btn:hover{color:var(--tx);}
 .tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
-.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:14px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
 .tab-btn.active .tc{background:rgba(14,165,233,0.15);color:var(--ac);}
 .panel{display:none;}.panel.on{display:block;}
 
 /* FİLTRE */
 .fbar{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
 .fsel:focus{border-color:var(--ac);}
 .swrap{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:260px;}
-.swrap input{border:none;background:transparent;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
+.swrap input{border:none;background:transparent;color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
 .swrap input::placeholder{color:var(--txd);}
 
 /* SEÇİM BAR */
 .secbar{background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:12px 18px;margin-bottom:16px;display:none;align-items:center;gap:20px;flex-wrap:wrap;}
 .secbar.on{display:flex;}
 .sv{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--ac);line-height:1;}
-.sl{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;}
+.sl{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;}
 .ssep{width:1px;height:34px;background:rgba(14,165,233,0.2);}
 
 /* HAZIR LİSTE - Devre/Spool gruplu */
@@ -62,10 +69,10 @@
 .dhead{padding:12px 18px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;user-select:none;}
 .dhead:hover{background:var(--bor);}
 .dtitle{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);}
-.dsub{font-size:12px;color:var(--txd);margin-top:2px;}
+.dsub{font-size:14px;color:var(--txd);margin-top:2px;}
 .dbody.shut{display:none;}
-.st{width:100%;border-collapse:collapse;font-size:13px;}
-.st thead th{text-align:left;padding:8px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--bg);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.st{width:100%;border-collapse:collapse;font-size:14px;}
+.st thead th{text-align:left;padding:8px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--bg);border-bottom:1px solid var(--bor);white-space:nowrap;}
 .st td{padding:9px 14px;border-bottom:1px solid var(--bor);vertical-align:middle;}
 .st tr:last-child td{border-bottom:none;}
 .st tbody tr:hover td{background:rgba(14,165,233,0.03);}
@@ -84,13 +91,13 @@
 .sno.giden{color:#0ea5e9;}
 .sno.gelen{color:#10b981;}
 .sno.serbest{color:#f59e0b;}
-.tip-rozet{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;}
+.tip-rozet{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:14px;font-weight:700;}
 .tr-giden{background:rgba(14,165,233,0.12);color:#0ea5e9;}
 .tr-gelen{background:rgba(16,185,129,0.12);color:#10b981;}
 .tr-serbest{background:rgba(245,158,11,0.12);color:#f59e0b;}
 
 /* BADGE */
-.b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:14px;font-weight:600;white-space:nowrap;}
 .bb{background:rgba(14,165,233,0.12);color:var(--ac);}
 .bg{background:rgba(16,185,129,0.12);color:var(--gr);}
 .ba{background:rgba(245,158,11,0.12);color:var(--warn);}
@@ -99,11 +106,11 @@
 
 /* SPOOL CHIPS */
 .chips{display:flex;flex-wrap:wrap;gap:5px;}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:var(--sur2);border:1px solid var(--bor);color:var(--txm);}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:14px;font-weight:600;background:var(--sur2);border:1px solid var(--bor);color:var(--txm);}
 
 /* BELGE LISTESI */
 .belge-list{display:flex;flex-direction:column;gap:6px;}
-.belge-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--sur2);border-radius:8px;border:1px solid var(--bor);font-size:12px;}
+.belge-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--sur2);border-radius:8px;border:1px solid var(--bor);font-size:14px;}
 .belge-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
 
 /* FOTO GRID */
@@ -115,12 +122,12 @@
 .foto-ekle:hover{border-color:var(--ac);color:var(--ac);}
 
 /* BUTON */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
 .btn-p{background:var(--ac);color:#fff;}.btn-p:hover{opacity:0.88;}
 .btn-g{background:transparent;color:var(--txm);border:1px solid var(--bor);}.btn-g:hover{background:var(--sur2);color:var(--tx);}
 .btn-s{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-s:hover{border-color:var(--ac);color:var(--ac);}
 .btn-ok{background:rgba(16,185,129,0.12);color:var(--gr);border:1px solid rgba(16,185,129,0.3);}
-.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-sm{padding:5px 11px;font-size:14px;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 
 /* MODAL */
@@ -131,13 +138,13 @@
 .mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
 .mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:2px;}.mcl:hover{color:var(--tx);}
 .fg{margin-bottom:14px;}
-.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
-.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.15s;}
+.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.15s;}
 .fi:focus{border-color:var(--ac);}
 .fi::placeholder{color:var(--txd);}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
-.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:68px;}
+.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:68px;}
 .tip-sec{display:flex;gap:8px;}
 .tip-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--bor);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow',sans-serif;}
 .tip-btn:hover{border-color:var(--txm);}
@@ -145,14 +152,14 @@
 .tip-btn.secili-gelen{border-color:#10b981;background:rgba(16,185,129,0.08);}
 .tip-btn.secili-serbest{border-color:#f59e0b;background:rgba(245,158,11,0.08);}
 .tip-btn-icon{font-size:22px;margin-bottom:4px;}
-.tip-btn-label{font-size:12px;font-weight:700;color:var(--tx);}
-.tip-btn-sub{font-size:10px;color:var(--txd);margin-top:2px;}
+.tip-btn-label{font-size:14px;font-weight:700;color:var(--tx);}
+.tip-btn-sub{font-size:14px;color:var(--txd);margin-top:2px;}
 
 /* DETAY MODAL */
 .detay-sec{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .detay-blok{background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px;}
-.detay-blok-title{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
-.detay-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bor);font-size:12px;}
+.detay-blok-title{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.detay-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bor);font-size:14px;}
 .detay-row:last-child{border-bottom:none;}
 .detay-key{color:var(--txd);}
 .detay-val{font-weight:600;color:var(--tx);}
@@ -196,13 +203,13 @@
 
 <!-- RENK LEJANDı -->
 <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+  <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
     <div style="width:14px;height:14px;border-radius:3px;background:#0ea5e9;"></div> Giden Sevkiyat (Spool)
   </div>
-  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+  <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
     <div style="width:14px;height:14px;border-radius:3px;background:#10b981;"></div> Gelen Sevkiyat
   </div>
-  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);">
+  <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
     <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;"></div> Serbest Giden (Malzeme/İade)
   </div>
 </div>
@@ -251,17 +258,17 @@
   <!-- TABLO -->
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">
     <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap;">
         <thead>
           <tr>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">No</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tip</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tarih</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Gönderen</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı Sevk Yeri</th>
-            <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">İçerik Özeti</th>
-            <th style="text-align:right;padding:10px 14px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Ağırlık</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">No</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tip</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Tarih</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Gönderen</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Alıcı Sevk Yeri</th>
+            <th style="text-align:left;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">İçerik Özeti</th>
+            <th style="text-align:right;padding:10px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);">Ağırlık</th>
             <th style="width:44px;background:var(--sur2);border-bottom:1px solid var(--bor);"></th>
           </tr>
         </thead>
@@ -283,7 +290,7 @@
       <input type="text" id="fHA" placeholder="Devre veya spool ara..." oninput="renderHazir()">
     </div>
     <button class="btn btn-g btn-sm" onclick="hazirFiltreTemizle()">Temizle</button>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txm);cursor:pointer;margin-left:auto;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);cursor:pointer;margin-left:auto;">
       <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)"> Tümünü Seç
     </label>
   </div>
@@ -310,7 +317,7 @@
 <div id="mTip" class="mov" style="display:none;">
   <div class="mbox" style="max-width:480px;">
     <div class="mhead"><div class="mtitle">Yeni Sevkiyat</div><button class="mcl" onclick="document.getElementById('mTip').style.display='none'">✕</button></div>
-    <div style="font-size:13px;color:var(--txm);margin-bottom:16px;">Oluşturmak istediğiniz sevkiyat tipini seçin:</div>
+    <div style="font-size:14px;color:var(--txm);margin-bottom:16px;">Oluşturmak istediğiniz sevkiyat tipini seçin:</div>
     <div class="tip-sec">
       <button class="tip-btn" onclick="tipSec('giden')">
         <div class="tip-btn-icon">📦</div>
@@ -337,15 +344,15 @@
     <div class="mhead">
       <div>
         <div class="mtitle" id="mPaketTitle">Sevkiyat Paketi Oluştur</div>
-        <div style="font-size:12px;color:var(--txd);margin-top:2px;" id="mPaketSub"></div>
+        <div style="font-size:14px;color:var(--txd);margin-top:2px;" id="mPaketSub"></div>
       </div>
       <button class="mcl" onclick="document.getElementById('mPaket').style.display='none'">✕</button>
     </div>
 
     <!-- Giden: seçili spool özeti -->
     <div id="mSpoolOzet" style="display:none;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:600;color:var(--txd);margin-bottom:8px;">Seçilen İçerik</div>
-      <div id="mOzetSat" style="display:flex;gap:16px;margin-bottom:8px;font-size:13px;flex-wrap:wrap;"></div>
+      <div style="font-size:14px;font-weight:600;color:var(--txd);margin-bottom:8px;">Seçilen İçerik</div>
+      <div id="mOzetSat" style="display:flex;gap:16px;margin-bottom:8px;font-size:14px;flex-wrap:wrap;"></div>
       <div id="mOzetListe" style="max-height:120px;overflow-y:auto;"></div>
     </div>
 
@@ -372,7 +379,7 @@
       <textarea class="fta" id="pNot" placeholder="Teslimat notu, özel durum..."></textarea>
     </div>
     <div class="fg">
-      <label class="fl">Fotoğraf Ekle <span style="font-size:10px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
+      <label class="fl">Fotoğraf Ekle <span style="font-size:14px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
       <div class="foto-grid" id="mFotoGrid">
         <div class="foto-item foto-ekle" onclick="showToast('Fotoğraf yükleme: gerçek uygulamada aktif olacak','info')">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -403,7 +410,7 @@
           <div class="mtitle" id="dNo"></div>
           <div id="dTipRozet"></div>
         </div>
-        <div style="font-size:12px;color:var(--txd);margin-top:3px;" id="dMeta"></div>
+        <div style="font-size:14px;color:var(--txd);margin-top:3px;" id="dMeta"></div>
       </div>
       <button class="mcl" onclick="document.getElementById('mDetay').style.display='none'">✕</button>
     </div>
@@ -412,11 +419,100 @@
 </div>
 
 <script>
-function yeniSevkNo(){
-  const yil=String(new Date().getFullYear()).slice(-2);
-  const sayac=parseInt(localStorage.getItem('syos_sevkSayac')||'0')+1;
-  localStorage.setItem('syos_sevkSayac',sayac);
-  return 'S'+yil+'-'+String(sayac).padStart(3,'0');
+'use strict'; // ✅ A1
+
+// ✅ D1: esc() — XSS koruması
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ✅ C1: _I18N — EN ve AR çevirileri
+var _I18N = {
+  en: {
+    sev_baslik:'Shipments', sev_alt:'Shipment tracking and packing',
+    sev_tab_tumsev:'All Shipments', sev_tab_hazir:'Ready to Ship', sev_tab_harita:'Map',
+    sev_stat_toplam:'Total Shipments', sev_stat_aktif:'Active', sev_stat_tamamlandi:'Completed',
+    sev_yeni:'+ New Shipment', sev_filtre_tip:'Type', sev_filtre_tersane:'Shipyard',
+    sev_ara:'Search package no, recipient, shipyard...',
+    sev_tip_giden:'Outgoing', sev_tip_iade:'Return', sev_tip_ara:'Transfer',
+    sev_durum_hazirlaniyor:'Preparing', sev_durum_yolda:'In Transit', sev_durum_teslim:'Delivered',
+    sev_no_data:'No shipments found.',
+    sev_hazir_baslik:'Ready to Ship', sev_hazir_ara:'Search circuit or spool...',
+    sev_hazir_no_data:'No spools ready for shipment.',
+    sev_sec_hepsi:'Select All', sev_gonder:'Create Shipment',
+    sev_modal_tip:'Select Shipment Type',
+    sev_tip_giden_desc:'Regular outgoing shipment to shipyard',
+    sev_tip_iade_desc:'Return from shipyard',
+    sev_tip_ara_desc:'Transfer between workshops',
+    sev_iptal:'Cancel',
+  },
+  ar: {
+    sev_baslik:'\u0627\u0644\u0634\u062d\u0646\u0627\u062a',
+    sev_alt:'\u062a\u062a\u0628\u0639 \u0627\u0644\u0634\u062d\u0646\u0627\u062a \u0648\u0627\u0644\u062a\u0639\u0628\u0626\u0629',
+    sev_tab_tumsev:'\u062c\u0645\u064a\u0639 \u0627\u0644\u0634\u062d\u0646\u0627\u062a',
+    sev_tab_hazir:'\u062c\u0627\u0647\u0632 \u0644\u0644\u0634\u062d\u0646',
+    sev_tab_harita:'\u062e\u0631\u064a\u0637\u0629',
+    sev_stat_toplam:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0634\u062d\u0646\u0627\u062a',
+    sev_stat_aktif:'\u0646\u0634\u0637',
+    sev_stat_tamamlandi:'\u0645\u0643\u062a\u0645\u0644',
+    sev_yeni:'+ \u0634\u062d\u0646\u0629 \u062c\u062f\u064a\u062f\u0629',
+    sev_filtre_tip:'\u0627\u0644\u0646\u0648\u0639',
+    sev_filtre_tersane:'\u0627\u0644\u062d\u0648\u0636',
+    sev_ara:'\u0628\u062d\u062b...',
+    sev_tip_giden:'\u0635\u0627\u062f\u0631',
+    sev_tip_iade:'\u0645\u0631\u062a\u062c\u0639',
+    sev_tip_ara:'\u0646\u0642\u0644',
+    sev_durum_hazirlaniyor:'\u062c\u0627\u0631\u0650 \u0627\u0644\u062a\u062d\u0636\u064a\u0631',
+    sev_durum_yolda:'\u0641\u064a \u0627\u0644\u0637\u0631\u064a\u0642',
+    sev_durum_teslim:'\u062a\u0645 \u0627\u0644\u062a\u0633\u0644\u064a\u0645',
+    sev_no_data:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0634\u062d\u0646\u0627\u062a.',
+    sev_hazir_baslik:'\u062c\u0627\u0647\u0632 \u0644\u0644\u0634\u062d\u0646',
+    sev_hazir_ara:'\u0628\u062d\u062b...',
+    sev_hazir_no_data:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u0643\u0631\u0627\u062a.',
+    sev_sec_hepsi:'\u062a\u062d\u062f\u064a\u062f \u0627\u0644\u0643\u0644',
+    sev_gonder:'\u0625\u0646\u0634\u0627\u0621 \u0634\u062d\u0646\u0629',
+    sev_modal_tip:'\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0634\u062d\u0646\u0629',
+    sev_tip_giden_desc:'\u0634\u062d\u0646\u0629 \u0635\u0627\u062f\u0631\u0629',
+    sev_tip_iade_desc:'\u0645\u0631\u062a\u062c\u0639 \u0645\u0646 \u0627\u0644\u062d\u0648\u0636',
+    sev_tip_ara_desc:'\u0646\u0642\u0644 \u0628\u064a\u0646 \u0627\u0644\u0648\u0631\u0634',
+    sev_iptal:'\u0625\u0644\u063a\u0627\u0621',
+  }
+};
+
+// ✅ C2: tv()
+function tv(key, tr) {
+  var lang = document.documentElement.getAttribute('lang') || 'tr';
+  var dict = _I18N[lang];
+  if (dict && dict[key] !== undefined) return dict[key];
+  return tr !== undefined ? tr : key;
+}
+
+// ✅ C2: _applyI18n()
+function _applyI18n() {
+  var lang = document.documentElement.getAttribute('lang') || 'tr';
+  var isTr = lang === 'tr';
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var k = el.getAttribute('data-i18n');
+    if (!el.hasAttribute('data-i18n-tr')) el.setAttribute('data-i18n-tr', el.textContent.trim());
+    el.textContent = isTr ? el.getAttribute('data-i18n-tr') : (tv(k) !== k ? tv(k) : el.getAttribute('data-i18n-tr'));
+  });
+}
+
+// ✅ C2: MutationObserver
+new MutationObserver(function() { _applyI18n(); renderTumSev(); renderHazir(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+// ✅ C3: _onLangChange
+window._onLangChange = function() { _applyI18n(); renderTumSev(); renderHazir(); };
+
+// ✅ G-07: Sevkiyat no — önce ARES.sonrakiNo, fallback local
+async function yeniSevkNo(){
+  var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+  if (supa && ARES.mod === 'supabase') {
+    try { return await ARES.sonrakiNo('hakedis_no'); } catch(e) {}
+  }
+  var yil = String(new Date().getFullYear()).slice(-2);
+  var sayac = parseInt(localStorage.getItem('ares_sevkSayac')||'0') + 1;
+  localStorage.setItem('ares_sevkSayac', sayac);
+  return 'S' + yil + '-' + String(sayac).padStart(3, '0');
 }
 
 // ===== VERİ =====
@@ -432,8 +528,8 @@ const HAZIR_SABIT = [
 
 // Store'dan gelen + sabit listeyi birleştir
 function _buildHAZIR() {
-  if (typeof SYOS === 'undefined') return [...HAZIR_SABIT];
-  const storeHazir = SYOS.sevkHazirListesi();
+  if (typeof ARES === 'undefined') return [...HAZIR_SABIT];
+  const storeHazir = []  // Supabase'den gelecek — ARES bağlantısı sonraya;
   const storeIds = new Set(storeHazir.map(s => s.id));
   const storeSpooller = storeHazir.map(s => ({
     id: s.id, spool: s.spoolKodu?.split('-').pop() || s.spoolKodu,
@@ -534,10 +630,10 @@ function renderHazir() {
     return `<div class="dgrup">
       <div class="dhead" onclick="grupToggle(this)">
         <div>
-          <div class="dtitle">${g.tersane} <span style="color:var(--txd);font-size:13px;font-weight:400;">/</span> ${g.projeNo} — ${g.gemi}</div>
+          <div class="dtitle">${g.tersane} <span style="color:var(--txd);font-size:14px;font-weight:400;">/</span> ${g.projeNo} — ${g.gemi}</div>
           <div class="dsub">${Object.keys(g.devs).length} devre · ${all.length} spool · ${kg} kg
-            ${all.some(s=>s.kaynak==='kalite')?'<span class="b bg" style="margin-left:6px;font-size:10px;">Kalite Onaylı</span>':''}
-            ${all.some(s=>s.kaynak==='direkt')?'<span class="b bb" style="margin-left:6px;font-size:10px;">Direkt İmalat</span>':''}
+            ${all.some(s=>s.kaynak==='kalite')?'<span class="b bg" style="margin-left:6px;font-size:14px;">Kalite Onaylı</span>':''}
+            ${all.some(s=>s.kaynak==='direkt')?'<span class="b bb" style="margin-left:6px;font-size:14px;">Direkt İmalat</span>':''}
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
@@ -550,9 +646,9 @@ function renderHazir() {
         ${Object.entries(g.devs).map(([dev,sp])=>`
           <div style="border-bottom:1px solid var(--bor);">
             <div style="padding:7px 18px;display:flex;align-items:center;gap:10px;background:var(--bg);">
-              <span style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;">Devre</span>
-              <span style="font-size:13px;font-weight:700;color:var(--ac);">${dev}</span>
-              <span style="font-size:11px;color:var(--txd);">${sp.length} spool</span>
+              <span style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;">Devre</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ac);">${dev}</span>
+              <span style="font-size:14px;color:var(--txd);">${sp.length} spool</span>
             </div>
             <table class="st">
               <thead><tr>
@@ -566,7 +662,7 @@ function renderHazir() {
                     onchange="spSec('${s.id}',this.checked)"></td>
                   <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--leg);">${s.spool}</span></td>
                   <td style="color:var(--txm);">${s.agirlik} kg</td>
-                  <td>${s.kaynak==='kalite'?'<span class="b bg" style="font-size:10px;">Kalite Onaylı</span>':'<span class="b bb" style="font-size:10px;">Direkt İmalat</span>'}</td>
+                  <td>${s.kaynak==='kalite'?'<span class="b bg" style="font-size:14px;">Kalite Onaylı</span>':'<span class="b bb" style="font-size:14px;">Direkt İmalat</span>'}</td>
                 </tr>`).join('')}
               </tbody>
             </table>
@@ -649,7 +745,7 @@ function paketOlusturAc(){
        <span style="color:var(--txm);">Devre: <strong style="color:var(--tx);">${devs.length}</strong></span>
        <span style="color:var(--txm);">Toplam: <strong style="color:#0ea5e9;">${kg} kg</strong></span>`;
     document.getElementById('mOzetListe').innerHTML=sl.map(h=>
-      `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:12px;">
+      `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:14px;">
         <span style="color:var(--txm);">${h.projeNo} / <span style="color:var(--ac);">${h.devre}</span> / <strong>${h.spool}</strong></span>
         <span style="color:var(--txd);">${h.agirlik} kg</span>
       </div>`).join('');
@@ -702,17 +798,8 @@ function paketKaydet(){
   };
   sevkiyatlar.unshift(yeniPaket);
 
-  // Store'a yaz
-  if (typeof SYOS !== 'undefined') {
-    SYOS.sevkPaketOlustur(
-      aktifTip, sl.map(h=>h.id),
-      tersane, document.getElementById('pProje').value,
-      arac, irsaliye, fmt(tarih), teslimKisi, teslimTel, notV, icerik
-    );
-    // Hazır listeyi store'dan yenile
-    HAZIR_SPOOLLER.length = 0;
-    _buildHAZIR().forEach(h => HAZIR_SPOOLLER.push(h));
-  }
+  // ✅ D3: Log yaz — Supabase sevkiyat tablosu bağlantısı sonraya
+  ARES.logEkle('SEVKIYAT_OLUSTUR', no + ' — ' + sl.length + ' spool', 'sevkiyat', null, {});
 
   if(aktifTip==='giden') secili.clear();
   document.getElementById('mPaket').style.display='none';
@@ -755,16 +842,16 @@ function renderTumSev(){
         <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:${tipRenk[s.tip]||'var(--ac)'};">${s.no}</span>
       </td>
       <td style="padding:10px 14px;border-bottom:1px solid var(--bor);">
-        <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:${tipRenk[s.tip]}22;color:${tipRenk[s.tip]||'var(--ac)'};">${tipLabel[s.tip]||s.tip}</span>
+        <span style="font-size:14px;font-weight:700;padding:3px 8px;border-radius:99px;background:${tipRenk[s.tip]}22;color:${tipRenk[s.tip]||'var(--ac)'};">${tipLabel[s.tip]||s.tip}</span>
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);color:var(--txm);font-size:12px;">${s.tarih||'—'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:13px;font-weight:500;">${s.gonderen||'ITHINKSO'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:13px;font-weight:500;">${s.alici||s.tersane||'—'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:12px;color:var(--txm);">${s.aliciSevkYeri||s.adres||'—'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:12px;color:var(--txm);max-width:200px;overflow:hidden;text-overflow:ellipsis;">${icerikOzet}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);text-align:right;font-size:13px;font-weight:600;">${kgStr}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);color:var(--txm);font-size:14px;">${s.tarih||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:14px;font-weight:500;">${s.gonderen||'ITHINKSO'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:14px;font-weight:500;">${s.alici||s.tersane||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:14px;color:var(--txm);">${s.aliciSevkYeri||s.adres||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);font-size:14px;color:var(--txm);max-width:200px;overflow:hidden;text-overflow:ellipsis;">${icerikOzet}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--bor);text-align:right;font-size:14px;font-weight:600;">${kgStr}</td>
       <td style="padding:10px 14px;border-bottom:1px solid var(--bor);text-align:center;">
-        <button onclick="event.stopPropagation();sevkDetayAc('${s.id}')" style="background:none;border:1px solid var(--bor);border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--txd);display:inline-flex;align-items:center;justify-content:center;font-size:13px;">→</button>
+        <button onclick="event.stopPropagation();sevkDetayAc('${s.id}')" style="background:none;border:1px solid var(--bor);border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--txd);display:inline-flex;align-items:center;justify-content:center;font-size:14px;">→</button>
       </td>
     </tr>`;
   }).join(''):`<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--txd);">Kayıt bulunamadı</td></tr>`;
@@ -778,10 +865,10 @@ function renderTumSev(){
   let btns='';
   for(let i=1;i<=toplamSayfa;i++){
     const akt=i===tumsevSayfa;
-    btns+=`<button onclick="tumsevSayfaGit(${i})" style="padding:5px 10px;border-radius:7px;border:1px solid ${akt?'var(--ac)':'var(--bor)'};background:${akt?'var(--ac)':'var(--sur2)'};color:${akt?'#fff':'var(--txm)'};font-size:13px;font-weight:${akt?'700':'500'};cursor:pointer;min-width:32px;">${i}</button>`;
+    btns+=`<button onclick="tumsevSayfaGit(${i})" style="padding:5px 10px;border-radius:7px;border:1px solid ${akt?'var(--ac)':'var(--bor)'};background:${akt?'var(--ac)':'var(--sur2)'};color:${akt?'#fff':'var(--txm)'};font-size:14px;font-weight:${akt?'700':'500'};cursor:pointer;min-width:32px;">${i}</button>`;
   }
   pag.innerHTML=`
-    <span style="font-size:12px;color:var(--txd);">${liste.length} kayıt · ${baslangic+1}-${Math.min(baslangic+SAYFA_BOYUT,liste.length)} gösteriliyor</span>
+    <span style="font-size:14px;color:var(--txd);">${liste.length} kayıt · ${baslangic+1}-${Math.min(baslangic+SAYFA_BOYUT,liste.length)} gösteriliyor</span>
     <div style="display:flex;gap:4px;">${btns}</div>`;
 
   // Sayaç
@@ -810,15 +897,15 @@ function sevkKartHtml(s){
             <div class="sno ${s.tip}">${s.no}</div>
             <span class="tip-rozet tr-${s.tip}">${tipLabel[s.tip]||s.tip}</span>
           </div>
-          <div style="font-size:13px;color:var(--txm);">${s.tersane}${s.projeNo?' · '+s.projeNo:''}${s.gemi?' / '+s.gemi:''}</div>
-          <div style="font-size:12px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:14px;color:var(--txm);">${s.tersane}${s.projeNo?' · '+s.projeNo:''}${s.gemi?' / '+s.gemi:''}</div>
+          <div style="font-size:14px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
             <span>Tarih: <strong style="color:var(--tx);">${s.tarih}</strong></span>
             ${s.irsaliye?`<span>İrsaliye: <strong style="color:var(--tx);">${s.irsaliye}</strong></span>`:''}
             ${s.arac?`<span>Araç: <strong style="color:var(--tx);">${s.arac}</strong></span>`:''}
             ${s.teslimKisi?`<span>Teslim: <strong style="color:var(--tx);">${s.teslimKisi}</strong></span>`:''}
             ${s.spooller.length?`<span>${s.spooller.length} spool · ${kg} kg</span>`:''}
           </div>
-          ${s.icerik?`<div style="font-size:12px;color:var(--txm);margin-top:4px;font-style:italic;">${s.icerik}</div>`:''}
+          ${s.icerik?`<div style="font-size:14px;color:var(--txm);margin-top:4px;font-style:italic;">${s.icerik}</div>`:''}
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
           <button class="btn btn-g btn-sm" onclick="showToast('PDF hazırlanıyor...','info')">
@@ -827,7 +914,7 @@ function sevkKartHtml(s){
           <button class="btn btn-g btn-sm" onclick="detayAc('${s.id}')">Detay</button>
         </div>
       </div>
-      ${s.spooller.length?`<div class="skart-body"><div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:10px;">/ ${x.devre}</span></span>`).join('')}</div></div>`:''}
+      ${s.spooller.length?`<div class="skart-body"><div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:14px;">/ ${x.devre}</span></span>`).join('')}</div></div>`:''}
     </div>
   </div>`;
 }
@@ -867,19 +954,19 @@ function detayAc(id){
       </div>
     </div>
     ${s.icerik?`<div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">İçerik</div>
-      <div style="font-size:13px;color:var(--tx);">${s.icerik}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">İçerik</div>
+      <div style="font-size:14px;color:var(--tx);">${s.icerik}</div>
     </div>`:''}
     ${s.spooller.length?`<div style="margin-bottom:16px;">
-      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Listesi</div>
-      <div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:10px;">/ ${x.devre}</span> <span style="color:var(--txd);font-size:10px;">${x.agirlik}kg</span></span>`).join('')}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Listesi</div>
+      <div class="chips">${s.spooller.map(x=>`<span class="chip">${x.spool} <span style="opacity:0.5;font-size:14px;">/ ${x.devre}</span> <span style="color:var(--txd);font-size:14px;">${x.agirlik}kg</span></span>`).join('')}</div>
     </div>`:''}
     ${s.not?`<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Not / Teslim Tutanağı</div>
-      <div style="font-size:13px;color:var(--tx);">${s.not}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Not / Teslim Tutanağı</div>
+      <div style="font-size:14px;color:var(--tx);">${s.not}</div>
     </div>`:''}
     <div>
-      <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Fotoğraflar</div>
+      <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Fotoğraflar</div>
       <div class="foto-grid">
         ${s.fotograflar.map(f=>`<div class="foto-item"><img src="${f}" alt="foto"></div>`).join('')}
         <div class="foto-ekle foto-item" onclick="showToast('Fotoğraf yükleme: gerçek uygulamada aktif','info')">
@@ -934,11 +1021,33 @@ function showToast(msg,type='success'){
   _tt=setTimeout(()=>{if(el)el.style.display='none';},3500);
 }
 
-// ===== BAŞLAT =====
-doldurFiltreler();
-renderTumSev();
-renderHazir();
-guncelStatler();
+// ✅ SB-01: Auth kontrolü + başlat
+(function() {
+  var _bekle = 0;
+  function _kontrol() {
+    var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+    if (supa) {
+      supa.auth.getSession().then(function(res) {
+        if (res.data && res.data.session) {
+          ARES.oturumKontrol();
+        } else if (_bekle > 20) {
+          location.href = 'giris.html'; return;
+        }
+      }).catch(function(){});
+    } else if (_bekle < 80) {
+      _bekle++;
+      setTimeout(_kontrol, 100); return;
+    }
+    // Başlat
+    _applyI18n();
+    doldurFiltreler();
+    renderTumSev();
+    renderHazir();
+    guncelStatler();
+    document.documentElement.style.visibility = '';
+  }
+  _kontrol();
+})();
 </script>
 </body>
 </html>
