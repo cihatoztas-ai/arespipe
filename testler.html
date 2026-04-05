@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Testler | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -19,9 +19,9 @@
 [data-theme="navy"] .icon-sun{display:block!important;}[data-theme="navy"] .icon-moon{display:none!important;}
 .page{padding:28px 28px 40px;}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
-.page-title-label{font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.page-title-label{font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
-.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 
 /* STAT */
@@ -33,7 +33,7 @@
 .si-a{background:rgba(217,119,6,.12);color:var(--warn);}
 .si-r{background:rgba(229,62,62,.12);color:var(--re);}
 .si-p{background:rgba(124,58,237,.12);color:var(--leg);}
-.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.stat-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
 .stat-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--tx);line-height:1;}
 
 /* SEKMELER */
@@ -41,16 +41,16 @@
 .tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
 .tab-btn:hover{color:var(--tx);}
 .tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
-.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:14px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
 .tab-btn.active .tc{background:rgba(45,142,255,.12);color:var(--ac);}
 .panel{display:none;}.panel.on{display:block;}
 
 /* FİLTRE */
 .fbar{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
 .fsel:focus{border-color:var(--ac);}
 .swrap{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:280px;}
-.swrap input{border:none;background:transparent;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
+.swrap input{border:none;background:transparent;color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
 .swrap input::placeholder{color:var(--txd);}
 
 /* TEST KARTI */
@@ -62,7 +62,7 @@
 .tno{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--warn);}
 
 /* DURUM BADGE */
-.b{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:14px;font-weight:600;white-space:nowrap;}
 .bb{background:rgba(45,142,255,.12);color:var(--ac);}
 .bg{background:rgba(22,163,110,.12);color:var(--gr);}
 .ba{background:rgba(217,119,6,.12);color:var(--warn);}
@@ -78,8 +78,8 @@
 .tip-dg{background:var(--sur2);color:var(--txm);border:1px solid var(--bor);}
 
 /* SPOOL SONUÇ TABLOSU */
-.st{width:100%;border-collapse:collapse;font-size:13px;}
-.st thead th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.st{width:100%;border-collapse:collapse;font-size:14px;}
+.st thead th{text-align:left;padding:8px 12px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
 .st td{padding:9px 12px;border-bottom:1px solid var(--bor);vertical-align:middle;}
 .st tr:last-child td{border-bottom:none;}
 .st tbody tr:hover td{background:rgba(14,165,233,0.02);}
@@ -91,11 +91,11 @@
 .foto-ekle{border-style:dashed;color:var(--txd);}
 
 /* BUTON */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
 .btn-p{background:var(--ac);color:#fff;}.btn-p:hover{opacity:0.88;}
 .btn-g{background:transparent;color:var(--txm);border:1px solid var(--bor);}.btn-g:hover{background:var(--sur2);color:var(--tx);}
 .btn-s{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-s:hover{border-color:var(--ac);color:var(--ac);}
-.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-sm{padding:5px 11px;font-size:14px;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 
 /* MODAL */
@@ -106,13 +106,13 @@
 .mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
 .mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:2px;}.mcl:hover{color:var(--tx);}
 .fg{margin-bottom:14px;}
-.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
-.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
 .fi:focus{border-color:var(--ac);}
 .fi::placeholder{color:var(--txd);}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
-.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:72px;}
+.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:72px;}
 
 /* TEST TİP SEÇİM */
 .tip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
@@ -120,16 +120,16 @@
 .tip-kart:hover{border-color:var(--txm);}
 .tip-kart.sec{border-color:var(--ac);background:rgba(45,142,255,.08);}
 .tip-kart-kod{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--ac);}
-.tip-kart-ad{font-size:11px;color:var(--txm);margin-top:2px;}
+.tip-kart-ad{font-size:14px;color:var(--txm);margin-top:2px;}
 
 /* SONUÇ GİRİŞ TABLOSU */
-.sonuc-tablo{width:100%;border-collapse:collapse;font-size:13px;}
-.sonuc-tablo thead th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
+.sonuc-tablo{width:100%;border-collapse:collapse;font-size:14px;}
+.sonuc-tablo thead th{text-align:left;padding:8px 10px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
 .sonuc-tablo td{padding:6px 8px;border-bottom:1px solid var(--bor);vertical-align:middle;}
 .sonuc-tablo tr:last-child td{border-bottom:none;}
-.sonuc-sel{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:12px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
+.sonuc-sel{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
 .sonuc-sel:focus{border-color:var(--ac);}
-.sonuc-inp{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:12px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
+.sonuc-inp{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
 .sonuc-inp:focus{border-color:var(--ac);}
 
 /* TOAST */
@@ -148,6 +148,7 @@
 .bos-icon{font-size:36px;margin-bottom:12px;}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -158,40 +159,40 @@
 
 <div class="page-header">
   <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Testler</span></div>
-    <h1 class="page-title">Test Yönetimi</h1>
+    <div class="breadcrumb"><a href="index.html" data-i18n="cmn_anasayfa">Ana Sayfa</a><span>/</span><span data-i18n="ts_baslik">Testler</span></div>
+    <h1 class="page-title" data-i18n="ts_baslik">Test Yönetimi</h1>
   </div>
 
 </div>
 
 <!-- STAT -->
 <div class="stat-row">
-  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label">Bekleyen</div><div class="stat-value" id="sB">0</div></div></div>
-  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0H5m4 0h10M5 14a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg></div><div><div class="stat-label">Devam Eden</div><div class="stat-value" id="sD">0</div></div></div>
-  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label">Tamamlanan</div><div class="stat-value" id="sT">0</div></div></div>
-  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="stat-label">Hatalı / Tamir</div><div class="stat-value" id="sH">0</div></div></div>
-  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-label">Toplam Paket</div><div class="stat-value" id="sTop">0</div></div></div>
+  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_bekleyen">Bekleyen</div><div class="stat-value" id="sB">0</div></div></div>
+  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0H5m4 0h10M5 14a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_devam">Devam Eden</div><div class="stat-value" id="sD">0</div></div></div>
+  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_tamamlanan">Tamamlanan</div><div class="stat-value" id="sT">0</div></div></div>
+  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_hatali">Hatalı / Tamir</div><div class="stat-value" id="sH">0</div></div></div>
+  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_toplam">Toplam Paket</div><div class="stat-value" id="sTop">0</div></div></div>
 </div>
 
 <!-- SEKMELER -->
 <div class="tab-bar">
-  <button class="tab-btn active" data-tab="bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
-  <button class="tab-btn" data-tab="devam">Devam Eden <span class="tc" id="tD">0</span></button>
-  <button class="tab-btn" data-tab="tamamlanan">Tamamlanan <span class="tc" id="tT">0</span></button>
-  <button class="tab-btn" data-tab="hepsi">Tüm Testler <span class="tc" id="tHepsi">0</span></button>
+  <button class="tab-btn active" data-tab="bekleyen"><span data-i18n="ts_tab_bekleyen">Bekleyen</span> <span class="tc" id="tB">0</span></button>
+  <button class="tab-btn" data-tab="devam"><span data-i18n="ts_tab_devam">Devam Eden</span> <span class="tc" id="tD">0</span></button>
+  <button class="tab-btn" data-tab="tamamlanan"><span data-i18n="ts_tab_tamamlanan">Tamamlanan</span> <span class="tc" id="tT">0</span></button>
+  <button class="tab-btn" data-tab="hepsi"><span data-i18n="ts_tab_hepsi">Tüm Testler</span> <span class="tc" id="tHepsi">0</span></button>
 </div>
 
 <!-- FİLTRELER (hepsi için ortak) -->
 <div class="fbar cl-ac">
-  <button class="btn btn-p btn-sm" onclick="yeniTestAc()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Test</button>
+  <button class="btn btn-p btn-sm" onclick="yeniTestAc()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg data-i18n="ts_btn_yeni"> Yeni Test</button>
   <div style="flex:1"></div>
-  <select class="fsel" id="fTip" onchange="renderAktif()"><option value="">Tüm Test Türleri</option></select>
-  <select class="fsel" id="fTersane" onchange="renderAktif()"><option value="">Tüm Tersaneler</option></select>
+  <select class="fsel" id="fTip" onchange="renderAktif()"><option value="" data-i18n="ts_f_tum_tip">Tüm Test Türleri</option></select>
+  <select class="fsel" id="fTersane" onchange="renderAktif()"><option value="" data-i18n="ts_f_tum_tersane">Tüm Tersaneler</option></select>
   <div class="swrap">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="fAra" placeholder="Test no, devre, proje..." oninput="renderAktif()">
+    <input type="text" id="fAra" data-i18n-placeholder="ts_ara_ph" placeholder="Test no, devre, proje..." oninput="renderAktif()">
   </div>
-  <button class="btn btn-g btn-sm" onclick="fSifirla()">Temizle</button>
+  <button class="btn btn-g btn-sm" onclick="fSifirla()" data-i18n="cmn_temizle">Temizle</button>
 </div>
 
 <div class="panel on" id="panelBekleyen"><div id="listeBekleyen"></div></div>
@@ -204,7 +205,7 @@
 <!-- ===== YENİ TEST MODAL ===== -->
 <div id="mYeni" class="mov" style="display:none;">
   <div class="mbox">
-    <div class="mhead"><div class="mtitle">Yeni Test Paketi</div><button class="mcl" onclick="document.getElementById('mYeni').style.display='none'">✕</button></div>
+    <div class="mhead"><div class="mtitle" data-i18n="ts_modal_yeni">Yeni Test Paketi</div><button class="mcl" onclick="document.getElementById('mYeni').style.display='none'">✕</button></div>
 
     <!-- Adım 1: Devre seç -->
     <div class="fg">
@@ -247,7 +248,7 @@
     </div>
 
     <!-- Uyarı notu -->
-    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--txm);margin-bottom:16px;">
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--txm);margin-bottom:16px;">
       <span style="color:var(--warn);font-weight:700;">Uyarı:</span> Bu devreye test tanımlandığında imalat ve kaynak aşamasında QR okutan personele otomatik uyarı gösterilecektir.
     </div>
 
@@ -264,7 +265,7 @@
     <div class="mhead">
       <div>
         <div class="mtitle" id="mSonucTitle">Test Sonucu Gir</div>
-        <div style="font-size:12px;color:var(--txd);margin-top:2px;" id="mSonucSub"></div>
+        <div style="font-size:14px;color:var(--txd);margin-top:2px;" id="mSonucSub"></div>
       </div>
       <button class="mcl" onclick="document.getElementById('mSonuc').style.display='none'">✕</button>
     </div>
@@ -311,12 +312,12 @@
     </div>
 
     <div class="fg">
-      <label class="fl">Fotoğraf & Döküman <span style="font-size:10px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
+      <label class="fl">Fotoğraf & Döküman <span style="font-size:14px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
       <div class="foto-grid">
         <div class="foto-item foto-ekle" onclick="showToast('Fotoğraf yükleme gerçek uygulamada aktif','info')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
-        <div class="foto-item foto-ekle" onclick="showToast('PDF yükleme gerçek uygulamada aktif','info')" style="font-size:13px;color:var(--txd);">PDF</div>
+        <div class="foto-item foto-ekle" onclick="showToast('PDF yükleme gerçek uygulamada aktif','info')" style="font-size:14px;color:var(--txd);">PDF</div>
       </div>
     </div>
 
@@ -330,9 +331,9 @@
 <!-- ===== TEST TİPİ TANIMLA MODAL ===== -->
 <div id="mTip" class="mov" style="display:none;">
   <div class="mbox" style="max-width:480px;">
-    <div class="mhead"><div class="mtitle">Test Türleri</div><button class="mcl" onclick="document.getElementById('mTip').style.display='none'">✕</button></div>
+    <div class="mhead"><div class="mtitle" data-i18n="ts_modal_tip">Test Türleri</div><button class="mcl" onclick="document.getElementById('mTip').style.display='none'">✕</button></div>
     <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--txd);margin-bottom:10px;">Sistemde tanımlı test türleri:</div>
+      <div style="font-size:14px;color:var(--txd);margin-bottom:10px;">Sistemde tanımlı test türleri:</div>
       <div id="tipListesi" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="fi" id="yeniTipKod" placeholder="Kod (örn. MT)" style="width:80px;flex:0 0 80px;">
@@ -345,6 +346,8 @@
 </div>
 
 <script>
+'use strict';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // ===== VERİ =====
 let TEST_TIPLERI = [
   { kod:'RT', ad:'Röntgen / Film Çekimi' },
@@ -468,7 +471,7 @@ function renderTab(tab) {
   liste = aktifFiltre(liste);
   const elId = {bekleyen:'listeBekleyen',devam:'listeDevam',tamamlanan:'listeTamamlanan',hepsi:'listeHepsi'}[tab];
   const el = document.getElementById(elId);
-  if (!liste.length) { el.innerHTML='<div class="bos"><div class="bos-icon">🧪</div>Gösterilecek test yok</div>'; return; }
+  if (!liste.length) { el.innerHTML='<div class="bos"><div class="bos-icon">🧪</div>'+tv('ts_bos','Gösterilecek test yok')+'</div>'; return; }
   el.innerHTML = liste.map(testKartHtml).join('');
 }
 
@@ -478,46 +481,46 @@ function renderHepsi() {
 
 function testKartHtml(t) {
   const durumMap = {
-    bekleyen: '<span class="b ba">Bekliyor</span>',
-    devam:    '<span class="b bb">Devam Ediyor</span>',
-    tamamlandi:'<span class="b bg">Tamamlandı ✓</span>',
-    hatali:   '<span class="b br">Hatalı / Tamir</span>',
+    bekleyen: '<span class="b ba">'+tv('ts_durum_bekleyen','Bekliyor')+'</span>',
+    devam:    '<span class="b bb">'+tv('ts_durum_devam','Devam Ediyor')+'</span>',
+    tamamlandi:'<span class="b bg">'+tv('ts_durum_tamamlandi','Tamamlandı ✓')+'</span>',
+    hatali:   '<span class="b br">'+tv('ts_durum_hatali','Hatalı / Tamir')+'</span>',
   };
   const tipCls = {RT:'tip-rt',PT:'tip-pt',UT:'tip-ut',VT:'tip-vt'}[t.tip]||'tip-dg';
   const gecti = t.spooller.filter(s=>s.sonuc==='gecti').length;
   const hatali = t.spooller.filter(s=>s.sonuc==='hatali').length;
   const bekliyor = t.spooller.filter(s=>s.sonuc==='bekliyor').length;
 
-  return `<div class="tkart" id="kart-${t.id}">
+  return `<div class="tkart" id="kart-${esc(t.id)}">
     <div class="tkart-head" onclick="kartToggle('${t.id}')">
       <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
-          <div class="tno">${t.no}</div>
-          <span class="b ${tipCls}" style="font-size:11px;">${t.tip} — ${t.tipAd}</span>
+          <div class="tno">${esc(t.no)}</div>
+          <span class="b ${tipCls}" style="font-size:14px;">${esc(t.tip)} — ${esc(t.tipAd)}</span>
           ${durumMap[t.durum]||''}
         </div>
-        <div style="font-size:13px;color:var(--txm);">${t.tersane} · ${t.projeNo} / ${t.devre}</div>
-        <div style="font-size:12px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
-          <span>Tarih: <strong style="color:var(--tx);">${t.tarih}</strong></span>
-          ${t.firma?`<span>Yetkili: <strong style="color:var(--tx);">${t.firma}</strong></span>`:''}
+        <div style="font-size:14px;color:var(--txm);">${esc(t.tersane)} · ${esc(t.projeNo)} / ${esc(t.devre)}</div>
+        <div style="font-size:14px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+          <span>'+tv('ts_kart_tarih','Tarih:')+' <strong style="color:var(--tx);">${esc(t.tarih)}</strong></span>
+          ${t.firma?`<span>'+tv('ts_kart_yetkili','Yetkili:')+' <strong style="color:var(--tx);">${esc(t.firma)}</strong></span>`:''}
           <span>${t.spooller.length} spool
-            ${gecti?` · <span style="color:var(--gr);">${gecti} geçti</span>`:''}
-            ${hatali?` · <span style="color:var(--re);">${hatali} hatalı</span>`:''}
-            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} bekliyor</span>`:''}
+            ${gecti?` · <span style="color:var(--gr);">${gecti} '+tv('ts_gecti','geçti')+'</span>`:''}
+            ${hatali?` · <span style="color:var(--re);">${hatali} '+tv('ts_hatali','hatalı')+'</span>`:''}
+            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} '+tv('ts_bekliyor','bekliyor')+'</span>`:''}
           </span>
         </div>
-        ${t.not?`<div style="font-size:12px;color:var(--txd);margin-top:4px;font-style:italic;">${t.not}</div>`:''}
+        ${t.not?`<div style="font-size:14px;color:var(--txd);margin-top:4px;font-style:italic;">${esc(t.not)}</div>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
         ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">Sonuç Gir</button>` : ''}
-        ${t.belgeler.length?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();showToast('PDF indiriliyor...','info')">PDF</button>`:''}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;margin-top:4px;" id="chev-${t.id}"><polyline points="6 9 12 15 18 9"/></svg>
+        ${t.belgeler.length?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();showToast(tv('ts_pdf_indir','PDF indiriliyor...'),'info')">PDF</button>`:''}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;margin-top:4px;" id="chev-${esc(t.id)}"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
-    <div class="tkart-body" id="body-${t.id}">
+    <div class="tkart-body" id="body-${esc(t.id)}">
       <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
         <div>
-          <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Sonuçları</div>
+          <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">'+tv('ts_spool_sonuclari','Spool Sonuçları')+'</div>
           <table class="st">
             <thead><tr>
               <th>Spool No</th><th>Sonuç</th><th>Hata Kaynağı</th><th>Not</th>
@@ -526,24 +529,24 @@ function testKartHtml(t) {
               ${t.spooller.map(s=>`<tr>
                 <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--leg);">${s.no}</span></td>
                 <td>${sonucBadge(s.sonuc)}</td>
-                <td style="color:var(--txm);font-size:12px;">${s.hataKaynagi||'—'}</td>
-                <td style="color:var(--txd);font-size:12px;">${s.spoolNot||'—'}</td>
+                <td style="color:var(--txm);font-size:14px;">${s.hataKaynagi||'—'}</td>
+                <td style="color:var(--txd);font-size:14px;">${s.spoolNot||'—'}</td>
               </tr>`).join('')}
             </tbody>
           </table>
         </div>
         <div style="min-width:180px;">
           ${t.sonucBilgi?`
-            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Test Bilgisi</div>
-            <div style="font-size:12px;color:var(--txm);line-height:1.8;">
+            <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Test Bilgisi</div>
+            <div style="font-size:14px;color:var(--txm);line-height:1.8;">
               <div>Tarih: <strong style="color:var(--tx);">${t.sonucBilgi.tarih}</strong></div>
               ${t.sonucBilgi.bas?`<div>Süre: ${t.sonucBilgi.bas} – ${t.sonucBilgi.bit}</div>`:''}
               <div>Onaylayan: <strong style="color:var(--tx);">${t.sonucBilgi.kisi}</strong></div>
               ${t.sonucBilgi.not?`<div style="margin-top:6px;padding:8px;background:var(--sur2);border-radius:8px;font-style:italic;">${t.sonucBilgi.not}</div>`:''}
-            </div>` : '<div style="color:var(--txd);font-size:12px;">Sonuç henüz girilmedi</div>'}
+            </div>` : '<div style="color:var(--txd);font-size:14px;">Sonuç henüz girilmedi</div>'}
           ${t.belgeler.length?`
-            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-top:12px;margin-bottom:6px;">Belgeler</div>
-            ${t.belgeler.map(b=>`<div style="font-size:12px;color:var(--ac);padding:4px 0;cursor:pointer;" onclick="showToast('${b} indiriliyor...','info')">📄 ${b}</div>`).join('')}`:''}
+            <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-top:12px;margin-bottom:6px;">Belgeler</div>
+            ${t.belgeler.map(b=>`<div style="font-size:14px;color:var(--ac);padding:4px 0;cursor:pointer;" onclick="showToast('${b} indiriliyor...','info')">📄 ${b}</div>`).join('')}`:''}
         </div>
       </div>
     </div>
@@ -602,8 +605,8 @@ function renderTipGrid() {
   const grid = document.getElementById('tipGrid');
   grid.innerHTML = TEST_TIPLERI.map(t=>`
     <button class="tip-kart${secilenTip===t.kod?' sec':''}" onclick="tipSec('${t.kod}')">
-      <div class="tip-kart-kod">${t.kod}</div>
-      <div class="tip-kart-ad">${t.ad}</div>
+      <div class="tip-kart-kod">${esc(t.kod)}</div>
+      <div class="tip-kart-ad">${esc(t.ad)}</div>
     </button>`).join('') +
     `<button class="tip-kart${secilenTip==='DIGER'?' sec':''}" onclick="tipSec('DIGER')">
       <div class="tip-kart-kod">+</div>
@@ -714,8 +717,9 @@ function sonucKaydet() {
   else if (genel==='kaldi')  t.durum='hatali';
 
   document.getElementById('mSonuc').style.display='none';
+  try{var _lg=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_lg.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'TEST_SONUC',kaynak:t.no,aciklama:genel});localStorage.setItem('ares_islemLog',JSON.stringify(_lg.slice(0,1000)));}catch(e){}
   renderHepsi(); guncelStatler();
-  showToast(t.no+' test sonucu kaydedildi','success');
+  showToast(esc(t.no)+tv('ts_toast_sonuc',' test sonucu kaydedildi'),'success');
 }
 
 // ===== TEST TİPİ TANIMLA =====
@@ -726,16 +730,16 @@ function testTipAc() {
 function renderTipListesi() {
   document.getElementById('tipListesi').innerHTML = TEST_TIPLERI.map(t=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--sur2);border-radius:8px;border:1px solid var(--bor);">
-      <span><strong style="color:var(--ac);margin-right:8px;">${t.kod}</strong>${t.ad}</span>
-      ${['RT','PT'].includes(t.kod)?'<span style="font-size:11px;color:var(--txd);">Varsayılan</span>':
+      <span><strong style="color:var(--ac);margin-right:8px;">${esc(t.kod)}</strong>${esc(t.ad)}</span>
+      ${['RT','PT'].includes(t.kod)?'<span style="font-size:14px;color:var(--txd);">Varsayılan</span>':
         `<button onclick="tipSil('${t.kod}')" style="background:none;border:none;color:var(--re);cursor:pointer;font-size:16px;line-height:1;">✕</button>`}
     </div>`).join('');
 }
 function tipEkle() {
   const kod = document.getElementById('yeniTipKod').value.trim().toUpperCase();
   const ad  = document.getElementById('yeniTipAd').value.trim();
-  if (!kod||!ad) { showToast('Kod ve ad zorunlu','error'); return; }
-  if (TEST_TIPLERI.find(t=>t.kod===kod)) { showToast('Bu kod zaten var','error'); return; }
+  if (!kod||!ad) { showToast(tv('ts_toast_kod_ad','Kod ve ad zorunlu'),'error'); return; }
+  if (TEST_TIPLERI.find(t=>t.kod===kod)) { showToast(tv('ts_toast_kod_var','Bu kod zaten var'),'error'); return; }
   TEST_TIPLERI.push({kod,ad});
   document.getElementById('yeniTipKod').value='';
   document.getElementById('yeniTipAd').value='';
@@ -744,7 +748,7 @@ function tipEkle() {
   const fTip=document.getElementById('fTip');
   const o=document.createElement('option');o.value=kod;o.textContent=kod+' — '+ad;
   fTip.insertBefore(o,fTip.lastElementChild);
-  showToast(kod+' test türü eklendi','success');
+  showToast(esc(kod)+tv('ts_toast_tip_eklendi',' test türü eklendi'),'success');
 }
 function tipSil(kod) {
   TEST_TIPLERI = TEST_TIPLERI.filter(t=>t.kod!==kod);
@@ -797,7 +801,30 @@ function showToast(msg,type='success'){
 
 
 
-init();
+// C3: Dil değişiminde yeniden render
+window._onLangChange = function() { _applyI18n(); renderHepsi(); };
+
+// SB-01: Auth + init
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        var _supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
+      }
+    } catch(e) {}
+    init();
+    _applyI18n();
+    document.documentElement.style.visibility = '';
+  })();
+});
 </script>
 </body>
 </html>
