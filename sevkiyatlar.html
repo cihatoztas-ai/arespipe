@@ -229,7 +229,7 @@
     <span data-i18n="sev_tab_tumsev">Tüm Sevkiyatlar</span> <span class="tc" id="tA">0</span>
   </button>
   <button class="tab-btn" data-tab="hazir">
-    Sevkiyat Hazırlık <span class="tc" id="tH">0</span>
+    <span data-i18n="sev_tab_hazir">Sevkiyat Hazırlık</span> <span class="tc" id="tH">0</span>
   </button>
 </div>
 
@@ -608,7 +608,6 @@ var _I18N={
 };
 
 // ✅ C2: tv()
-// ✅ C2: tv()
 function tv(key,tr){
   var lang=document.documentElement.getAttribute('lang')||'tr';
   var dict=_I18N[lang];
@@ -620,10 +619,20 @@ function tv(key,tr){
 function _applyI18n(){
   var lang=document.documentElement.getAttribute('lang')||'tr';
   var isTr=lang==='tr';
+  // data-i18n — metin içeriği
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var k=el.getAttribute('data-i18n');
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',el.textContent.trim());
-    el.textContent=isTr?el.getAttribute('data-i18n-tr'):(tv(k)!==k?tv(k):el.getAttribute('data-i18n-tr'));
+    // Yalnızca metin düğümü olan elementlere uygula (çocuğu olmayan)
+    if(el.children.length===0){
+      if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',el.textContent.trim());
+      el.textContent=isTr?el.getAttribute('data-i18n-tr'):(tv(k)!==k?tv(k):el.getAttribute('data-i18n-tr'));
+    }
+  });
+  // data-i18n-placeholder — input/textarea placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var k=el.getAttribute('data-i18n-placeholder');
+    if(!el.hasAttribute('data-i18n-placeholder-tr'))el.setAttribute('data-i18n-placeholder-tr',el.placeholder||'');
+    el.placeholder=isTr?el.getAttribute('data-i18n-placeholder-tr'):(tv(k)!==k?tv(k):el.getAttribute('data-i18n-placeholder-tr'));
   });
 }
 
@@ -643,16 +652,77 @@ function yeniSevkNo(){
 }
 
 // ── VERİ ─────────────────────────────────────────────────────
-var HAZIR_SABIT=[
-  {id:'hs1',spool:'S01',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:12.5,kaynak:'kalite'},
-  {id:'hs2',spool:'S02',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:8.3, kaynak:'kalite'},
-  {id:'hs3',spool:'S03',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi',agirlik:6.1, kaynak:'kalite'},
-  {id:'hs4',spool:'S01',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:14.8,kaynak:'direkt'},
-  {id:'hs5',spool:'S02',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:9.3, kaynak:'direkt'},
-];
+var HAZIR_SABIT=[];  // Supabase'den yüklenecek
+var HAZIR_SPOOLLER=[];
 
-// ✅ D3: SYOS bağımlılığı kaldırıldı — şimdilik demo, Supabase bağlantısı sonraya
-var HAZIR_SPOOLLER=HAZIR_SABIT.slice();
+// ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
+async function veriYukle() {
+  try {
+    var supa = ARES.supabase();
+    if (!supa) return;
+
+    // 1. Sevkiyata hazır spooller — aktif_basamak = 'kk' veya 'sevkiyat' olan
+    var hazirRes = await supa
+      .from('spooller')
+      .select('id, spool_no, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
+      .in('aktif_basamak', ['kk', 'sevkiyat'])
+      .eq('silindi', false);
+
+    HAZIR_SPOOLLER = (hazirRes.data || []).map(function(s) {
+      var dv  = s.devreler || {};
+      var prj = dv.projeler || {};
+      var trs = prj.tersaneler || {};
+      return {
+        id:       s.id,
+        supaId:   s.id,
+        spool:    s.spool_no || '—',
+        devre:    dv.devre_no || '—',
+        projeNo:  prj.proje_no || '—',
+        gemi:     prj.gemi_adi || '—',
+        tersane:  trs.ad || '—',
+        tersaneId:trs.id || null,
+        agirlik:  parseFloat(s.agirlik_kg) || 0,
+        kaynak:   'kalite'
+      };
+    });
+    HAZIR_SABIT = HAZIR_SPOOLLER.slice();
+
+    // 2. Geçmiş sevkiyatlar
+    var sevkRes = await supa
+      .from('sevkiyatlar')
+      .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, agirlik_kg, devreler(devre_no)))')
+      .order('olusturma', { ascending: false });
+
+    sevkiyatlar = (sevkRes.data || []).map(function(s) {
+      var spoolList = (s.sevkiyat_spooller || []).map(function(ss) {
+        var sp = ss.spooller || {};
+        var dv = sp.devreler || {};
+        return { spool: sp.spool_no || '—', devre: dv.devre_no || '—', agirlik: parseFloat(sp.agirlik_kg) || 0 };
+      });
+      return {
+        id:          s.id,
+        supaId:      s.id,
+        no:          s.sevk_no || '—',
+        tip:         s.tip || 'giden',
+        durum:       'gonderildi',
+        tersane:     (s.tersaneler && s.tersaneler.ad) || '—',
+        tersaneId:   s.tersane_id || null,
+        arac:        s.arac_plaka || '',
+        irsaliye:    s.irsaliye_no || '',
+        tarih:       s.tarih ? new Date(s.tarih).toLocaleDateString('tr-TR') : '—',
+        teslimKisi:  s.teslim_alan || '',
+        not:         s.not_ || '',
+        icerik:      '',
+        spooller:    spoolList,
+        belgeler:    [],
+        fotograflar: []
+      };
+    });
+
+  } catch(e) {
+    console.warn('[ARES] sevkiyat veriYukle hatası:', e);
+  }
+}
 
 var tumsevSayfa=1;
 var sevkiyatlar=[
@@ -872,6 +942,37 @@ function paketKaydet(){
   // ✅ D3: Log — Supabase bağlantısı sonraya
   if(typeof ARES!=='undefined'&&ARES.logEkle){
     ARES.logEkle('SEVKIYAT_OLUSTUR',no+' — '+sl.length+' spool','sevkiyat',null,{});
+  // Supabase'e kaydet
+  if (ARES.mod === 'supabase') {
+    (async function() {
+      try {
+        var supa = ARES.supabase();
+        var sevkData = {
+          tenant_id: ARES.tenantId(),
+          sevk_no: no,
+          tip: aktifTip,
+          tarih: new Date().toISOString(),
+          tersane_id: sl[0] && sl[0].tersaneId ? sl[0].tersaneId : null,
+          irsaliye_no: paket.irsaliyeNo || null,
+          arac_plaka: paket.arac || null,
+          teslim_alan: paket.teslimKisi || null,
+          not_: paket.not_ || null
+        };
+        var res = await supa.from('sevkiyatlar').insert(sevkData).select('id').single();
+        if (res.data && res.data.id) {
+          var sevkId = res.data.id;
+          // Spooller bağla
+          for (var i = 0; i < sl.length; i++) {
+            await supa.from('sevkiyat_spooller').insert({
+              tenant_id: ARES.tenantId(),
+              sevkiyat_id: sevkId,
+              spool_id: sl[i].supaId || sl[i].id
+            });
+          }
+        }
+      } catch(e) { console.warn('[ARES] Sevkiyat kayıt hatası:', e); }
+    })();
+  }
   }
   if(aktifTip==='giden')secili.clear();
   document.getElementById('mPaket').style.display='none';
@@ -1052,22 +1153,25 @@ function showToast(msg,type){
 }
 
 // ✅ SB-01: Auth kontrolü + başlat
-(function(){
-  var _bekle=0;
-  function _kontrol(){
-    var supa=(typeof ARES!=='undefined')?ARES.supabase():null;
-    if(supa){
-      supa.auth.getSession().then(function(res){
-        if(res.data&&res.data.session){ARES.oturumKontrol();}
-        else if(_bekle>20){location.href='giris.html';}
-      }).catch(function(){});
-    } else if(_bekle<80){_bekle++;setTimeout(_kontrol,100);return;}
-    doldurFiltreler();
-    renderTumSev();
-    renderHazir();
-    guncelStatler();
-  }
-  _kontrol();
+(async function(){
+  try {
+    var _bekle = 0;
+    while (_bekle < 80) {
+      var _supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+      if (_supa) {
+        var _ses = await _supa.auth.getSession();
+        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+        if (_bekle > 20) { location.href = 'giris.html'; return; }
+      }
+      await new Promise(function(r){ setTimeout(r, 100); });
+      _bekle++;
+    }
+  } catch(e) {}
+  if (ARES.mod === 'supabase') { await veriYukle(); }
+  doldurFiltreler();
+  renderTumSev();
+  renderHazir();
+  guncelStatler();
 })();
 </script>
 </body>
