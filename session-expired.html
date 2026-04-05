@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Oturum Süresi Doldu | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})()</script>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 [data-theme=dark]{
@@ -82,7 +83,7 @@ body::after{
 }
 .countdown{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:700;
+  font-size:14px;font-weight:700;
   color:var(--warn);
   background:rgba(217,119,6,.1);
   border:1px solid rgba(217,119,6,.2);
