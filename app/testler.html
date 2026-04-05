@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testler | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+
+
+
+[data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
+[data-theme="light"] .icon-sun{display:none!important;}[data-theme="light"] .icon-moon{display:block!important;}
+[data-theme="slate"] .icon-sun{display:block!important;}[data-theme="slate"] .icon-moon{display:none!important;}
+[data-theme="navy"] .icon-sun{display:block!important;}[data-theme="navy"] .icon-moon{display:none!important;}
+.page{padding:28px 28px 40px;}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.page-title-label{font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
+
+/* STAT */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.si-b{background:rgba(45,142,255,.12);color:var(--ac);}
+.si-g{background:rgba(22,163,110,.12);color:var(--gr);}
+.si-a{background:rgba(217,119,6,.12);color:var(--warn);}
+.si-r{background:rgba(229,62,62,.12);color:var(--re);}
+.si-p{background:rgba(124,58,237,.12);color:var(--leg);}
+.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--tx);line-height:1;}
+
+/* SEKMELER */
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--bor);margin-bottom:20px;}
+.tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+.tab-btn:hover{color:var(--tx);}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tab-btn.active .tc{background:rgba(45,142,255,.12);color:var(--ac);}
+.panel{display:none;}.panel.on{display:block;}
+
+/* FİLTRE */
+.fbar{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.fsel{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fsel:focus{border-color:var(--ac);}
+.swrap{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:280px;}
+.swrap input{border:none;background:transparent;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;flex:1;}
+.swrap input::placeholder{color:var(--txd);}
+
+/* TEST KARTI */
+.tkart{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border-color 0.15s;}
+.tkart:hover{border-color:rgba(14,165,233,0.3);}
+.tkart-head{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;}
+.tkart-body{padding:12px 18px 14px;border-top:1px solid var(--bor);background:var(--bg);display:none;}
+.tkart-body.open{display:block;}
+.tno{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--warn);}
+
+/* DURUM BADGE */
+.b{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.bb{background:rgba(45,142,255,.12);color:var(--ac);}
+.bg{background:rgba(22,163,110,.12);color:var(--gr);}
+.ba{background:rgba(217,119,6,.12);color:var(--warn);}
+.br{background:rgba(229,62,62,.12);color:var(--re);}
+.bp{background:rgba(124,58,237,.12);color:var(--leg);}
+.bx{background:var(--sur2);color:var(--txm);}
+
+/* TEST TİP ROZET */
+.tip-rt{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.3);}
+.tip-pt{background:rgba(45,142,255,.12);color:var(--ac);border:1px solid rgba(45,142,255,.3);}
+.tip-ut{background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);}
+.tip-vt{background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);}
+.tip-dg{background:var(--sur2);color:var(--txm);border:1px solid var(--bor);}
+
+/* SPOOL SONUÇ TABLOSU */
+.st{width:100%;border-collapse:collapse;font-size:13px;}
+.st thead th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.st td{padding:9px 12px;border-bottom:1px solid var(--bor);vertical-align:middle;}
+.st tr:last-child td{border-bottom:none;}
+.st tbody tr:hover td{background:rgba(14,165,233,0.02);}
+
+/* FOTO GRID */
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;}
+.foto-item{aspect-ratio:1;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:border-color 0.15s;}
+.foto-item:hover{border-color:var(--ac);}
+.foto-ekle{border-style:dashed;color:var(--txd);}
+
+/* BUTON */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
+.btn-p{background:var(--ac);color:#fff;}.btn-p:hover{opacity:0.88;}
+.btn-g{background:transparent;color:var(--txm);border:1px solid var(--bor);}.btn-g:hover{background:var(--sur2);color:var(--tx);}
+.btn-s{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-s:hover{border-color:var(--ac);color:var(--ac);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:24px;width:100%;max-width:640px;box-shadow:0 24px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;}
+.mbox-lg{max-width:800px;}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:2px;}.mcl:hover{color:var(--tx);}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.fi:focus{border-color:var(--ac);}
+.fi::placeholder{color:var(--txd);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:72px;}
+
+/* TEST TİP SEÇİM */
+.tip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.tip-kart{padding:10px 12px;border-radius:10px;border:2px solid var(--bor);background:transparent;cursor:pointer;text-align:left;transition:all 0.15s;font-family:'Barlow',sans-serif;}
+.tip-kart:hover{border-color:var(--txm);}
+.tip-kart.sec{border-color:var(--ac);background:rgba(45,142,255,.08);}
+.tip-kart-kod{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--ac);}
+.tip-kart-ad{font-size:11px;color:var(--txm);margin-top:2px;}
+
+/* SONUÇ GİRİŞ TABLOSU */
+.sonuc-tablo{width:100%;border-collapse:collapse;font-size:13px;}
+.sonuc-tablo thead th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
+.sonuc-tablo td{padding:6px 8px;border-bottom:1px solid var(--bor);vertical-align:middle;}
+.sonuc-tablo tr:last-child td{border-bottom:none;}
+.sonuc-sel{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:12px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
+.sonuc-sel:focus{border-color:var(--ac);}
+.sonuc-inp{padding:5px 8px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:12px;font-family:'Barlow',sans-serif;outline:none;width:100%;}
+.sonuc-inp:focus{border-color:var(--ac);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:1100;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+.t-ok{border-left:3px solid var(--gr);}.t-er{border-left:3px solid var(--re);}.t-in{border-left:3px solid var(--ac);}
+@keyframes tin{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+
+/* SOL KENAR RENK (Kural B-01) */
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+.bos{text-align:center;padding:48px 24px;color:var(--txd);}
+.bos-icon{font-size:36px;margin-bottom:12px;}
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+<div class="main-content"><div class="page">
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Testler</span></div>
+    <h1 class="page-title">Test Yönetimi</h1>
+  </div>
+
+</div>
+
+<!-- STAT -->
+<div class="stat-row">
+  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label">Bekleyen</div><div class="stat-value" id="sB">0</div></div></div>
+  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0H5m4 0h10M5 14a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg></div><div><div class="stat-label">Devam Eden</div><div class="stat-value" id="sD">0</div></div></div>
+  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label">Tamamlanan</div><div class="stat-value" id="sT">0</div></div></div>
+  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="stat-label">Hatalı / Tamir</div><div class="stat-value" id="sH">0</div></div></div>
+  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-label">Toplam Paket</div><div class="stat-value" id="sTop">0</div></div></div>
+</div>
+
+<!-- SEKMELER -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
+  <button class="tab-btn" data-tab="devam">Devam Eden <span class="tc" id="tD">0</span></button>
+  <button class="tab-btn" data-tab="tamamlanan">Tamamlanan <span class="tc" id="tT">0</span></button>
+  <button class="tab-btn" data-tab="hepsi">Tüm Testler <span class="tc" id="tHepsi">0</span></button>
+</div>
+
+<!-- FİLTRELER (hepsi için ortak) -->
+<div class="fbar cl-ac">
+  <button class="btn btn-p btn-sm" onclick="yeniTestAc()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Test</button>
+  <div style="flex:1"></div>
+  <select class="fsel" id="fTip" onchange="renderAktif()"><option value="">Tüm Test Türleri</option></select>
+  <select class="fsel" id="fTersane" onchange="renderAktif()"><option value="">Tüm Tersaneler</option></select>
+  <div class="swrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="fAra" placeholder="Test no, devre, proje..." oninput="renderAktif()">
+  </div>
+  <button class="btn btn-g btn-sm" onclick="fSifirla()">Temizle</button>
+</div>
+
+<div class="panel on" id="panelBekleyen"><div id="listeBekleyen"></div></div>
+<div class="panel" id="panelDevam"><div id="listeDevam"></div></div>
+<div class="panel" id="panelTamamlanan"><div id="listeTamamlanan"></div></div>
+<div class="panel" id="panelHepsi"><div id="listeHepsi"></div></div>
+
+</div></div></div>
+
+<!-- ===== YENİ TEST MODAL ===== -->
+<div id="mYeni" class="mov" style="display:none;">
+  <div class="mbox">
+    <div class="mhead"><div class="mtitle">Yeni Test Paketi</div><button class="mcl" onclick="document.getElementById('mYeni').style.display='none'">✕</button></div>
+
+    <!-- Adım 1: Devre seç -->
+    <div class="fg">
+      <label class="fl">Tersane & Devre <span style="color:var(--re)">*</span></label>
+      <div class="fr2" style="margin-bottom:8px;">
+        <select class="fi" id="yTersane" onchange="devreleriDoldur()">
+          <option value="">Tersane seçin...</option>
+          <option value="Sedef Tersanesi">Sedef Tersanesi</option>
+          <option value="Tersan Tersanesi">Tersan Tersanesi</option>
+          <option value="RMK Marine">RMK Marine</option>
+        </select>
+        <select class="fi" id="yDevre">
+          <option value="">Önce tersane seçin</option>
+        </select>
+      </div>
+      <div class="fr2">
+        <div><label class="fl" style="margin-bottom:4px;">Proje No</label><input class="fi" id="yProje" placeholder="Otomatik gelecek..." readonly style="opacity:0.6;"></div>
+        <div><label class="fl" style="margin-bottom:4px;">Gemi</label><input class="fi" id="yGemi" placeholder="Otomatik gelecek..." readonly style="opacity:0.6;"></div>
+      </div>
+    </div>
+
+    <!-- Adım 2: Test türü -->
+    <div class="fg">
+      <label class="fl">Test Türü <span style="color:var(--re)">*</span></label>
+      <div class="tip-grid" id="tipGrid"></div>
+      <div id="digerTipBlok" style="display:none;margin-top:8px;">
+        <input class="fi" id="digerTipAd" placeholder="Test türü adını girin...">
+      </div>
+    </div>
+
+    <!-- Açıklama / Özel Not -->
+    <div class="fg">
+      <label class="fl">Açıklama / Özel Not</label>
+      <textarea class="fta" id="yNot" placeholder="Örn: DN150–DN300 arası spool'larda %10 oranında RT istenmektedir. Kaynak dikişleri ISO 17636-1'e uygun olmalıdır."></textarea>
+    </div>
+
+    <div class="fr2 fg">
+      <div><label class="fl">Planlanan Tarih</label><input type="date" class="fi" id="yTarih"></div>
+      <div><label class="fl">Test Firması / Yetkili</label><input class="fi" id="yFirma" placeholder="Test yapacak firma veya kişi"></div>
+    </div>
+
+    <!-- Uyarı notu -->
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--txm);margin-bottom:16px;">
+      <span style="color:var(--warn);font-weight:700;">Uyarı:</span> Bu devreye test tanımlandığında imalat ve kaynak aşamasında QR okutan personele otomatik uyarı gösterilecektir.
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mYeni').style.display='none'">İptal</button>
+      <button class="btn btn-p" style="flex:2;" onclick="testKaydet()">Test Paketini Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SONUÇ GİRİŞ MODAL ===== -->
+<div id="mSonuc" class="mov" style="display:none;">
+  <div class="mbox mbox-lg">
+    <div class="mhead">
+      <div>
+        <div class="mtitle" id="mSonucTitle">Test Sonucu Gir</div>
+        <div style="font-size:12px;color:var(--txd);margin-top:2px;" id="mSonucSub"></div>
+      </div>
+      <button class="mcl" onclick="document.getElementById('mSonuc').style.display='none'">✕</button>
+    </div>
+
+    <input type="hidden" id="mSonucId">
+
+    <div class="fr3 fg">
+      <div><label class="fl">Test Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="mSonucTarih"></div>
+      <div><label class="fl">Başlangıç Saati</label><input type="time" class="fi" id="mSonucBas"></div>
+      <div><label class="fl">Bitiş Saati</label><input type="time" class="fi" id="mSonucBit"></div>
+    </div>
+
+    <div class="fr2 fg">
+      <div><label class="fl">Test Onaylayan <span style="color:var(--re)">*</span></label><input class="fi" id="mSonucKisi" placeholder="Ad Soyad / Unvan"></div>
+      <div><label class="fl">Genel Sonuç <span style="color:var(--re)">*</span></label>
+        <select class="fi" id="mSonucGenel">
+          <option value="">Seçin...</option>
+          <option value="gecti">✓ Tamamı Geçti</option>
+          <option value="kismi">⚠ Kısmen Geçti (Bazı Spooller Hatalı)</option>
+          <option value="kaldi">✗ Kaldı / Tamir Gerekli</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Spool bazlı sonuç tablosu -->
+    <div class="fg">
+      <label class="fl">Spool Bazlı Sonuçlar</label>
+      <div style="border:1px solid var(--bor);border-radius:10px;overflow:hidden;">
+        <table class="sonuc-tablo">
+          <thead><tr>
+            <th>Spool No</th>
+            <th>Test Sonucu</th>
+            <th>Hata Kaynağı</th>
+            <th>Not</th>
+          </tr></thead>
+          <tbody id="sonucTablo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Genel Not / Rapor Özeti</label>
+      <textarea class="fta" id="mSonucNot" placeholder="Test sırasında gözlemlenen durumlar, öneriler..."></textarea>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Fotoğraf & Döküman <span style="font-size:10px;color:var(--txd);font-weight:400;">(gerçek uygulamada yükleme çalışacak)</span></label>
+      <div class="foto-grid">
+        <div class="foto-item foto-ekle" onclick="showToast('Fotoğraf yükleme gerçek uygulamada aktif','info')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="foto-item foto-ekle" onclick="showToast('PDF yükleme gerçek uygulamada aktif','info')" style="font-size:13px;color:var(--txd);">PDF</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mSonuc').style.display='none'">İptal</button>
+      <button class="btn btn-p" style="flex:2;" onclick="sonucKaydet()">Sonucu Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEST TİPİ TANIMLA MODAL ===== -->
+<div id="mTip" class="mov" style="display:none;">
+  <div class="mbox" style="max-width:480px;">
+    <div class="mhead"><div class="mtitle">Test Türleri</div><button class="mcl" onclick="document.getElementById('mTip').style.display='none'">✕</button></div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--txd);margin-bottom:10px;">Sistemde tanımlı test türleri:</div>
+      <div id="tipListesi" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="fi" id="yeniTipKod" placeholder="Kod (örn. MT)" style="width:80px;flex:0 0 80px;">
+        <input class="fi" id="yeniTipAd" placeholder="Test türü adı (örn. Manyetik Parçacık)">
+        <button class="btn btn-p btn-sm" onclick="tipEkle()" style="flex-shrink:0;">Ekle</button>
+      </div>
+    </div>
+    <button class="btn btn-g" style="width:100%;" onclick="document.getElementById('mTip').style.display='none'">Kapat</button>
+  </div>
+</div>
+
+<script>
+// ===== VERİ =====
+let TEST_TIPLERI = [
+  { kod:'RT', ad:'Röntgen / Film Çekimi' },
+  { kod:'PT', ad:'Basınç Testi' },
+  { kod:'UT', ad:'Ultrasonik Kalınlık' },
+  { kod:'VT', ad:'Görsel Muayene' },
+];
+
+const DEVRELER = {
+  'Sedef Tersanesi': [
+    { id:'D01', ad:'265-overboard', projeNo:'NB1099', gemi:'MV Atlas',
+      spooller:['S01','S02','S03'] },
+    { id:'D02', ad:'bilge-001',    projeNo:'NB1099', gemi:'MV Atlas',
+      spooller:['S01','S02'] },
+    { id:'D03', ad:'fw-main',      projeNo:'NB1120', gemi:'Poseidon 7',
+      spooller:['S01','S02','S03','S04'] },
+  ],
+  'Tersan Tersanesi': [
+    { id:'D04', ad:'lube-oil',     projeNo:'NB1140', gemi:'Tug Orion',
+      spooller:['S01','S02','S03'] },
+  ],
+  'RMK Marine': [
+    { id:'D05', ad:'sea-water',    projeNo:'NB1152', gemi:'Mira',
+      spooller:['S01','S02'] },
+  ],
+};
+
+let testler = [
+  {
+    id:'T26-016', no:'T26-016', durum:'bekleyen',
+    tersane:'Cemre Shipyard', projeNo:'NB-124', gemi:'',
+    devre:'FW-305', tip:'PT', tipAd:'Basınç Testi',
+    not:'10 bar basınç altında 60 dk bekleme',
+    tarih:'22.04.2026', firma:'Montaj Şefi Uğur Demir',
+    spooller:[
+      {no:'S01',sonuc:'bekliyor',hataKaynagi:'',spoolNot:''},
+      {no:'S02',sonuc:'bekliyor',hataKaynagi:'',spoolNot:''},
+      {no:'S03',sonuc:'bekliyor',hataKaynagi:'',spoolNot:''},
+    ],
+    sonucBilgi:null, fotograflar:[], belgeler:[]
+  },
+  {
+    id:'T26-017', no:'T26-017', durum:'hatali',
+    tersane:'Cemre Shipyard', projeNo:'NB-123', gemi:'',
+    devre:'FW-101', tip:'UT', tipAd:'Ultrasonik Kalınlık',
+    not:'',
+    tarih:'20.04.2026', firma:'NDT Lab',
+    spooller:[
+      {no:'S01',sonuc:'gecti',   hataKaynagi:'',                            spoolNot:''},
+      {no:'S02',sonuc:'hatali',  hataKaynagi:'Kök Kaynağını Yapan Kaynakçı',spoolNot:'Eksik nüfuziyet, onarım yolunda'},
+      {no:'S03',sonuc:'gecti',   hataKaynagi:'',                            spoolNot:''},
+    ],
+    sonucBilgi:{tarih:'20.04.2026',bas:'09:15',bit:'11:55',kisi:'Uğur Demir',genel:'kismi',not:'S02 eksik nüfuziyet nedenli testi geçemedi.'},
+    fotograflar:[], belgeler:['Ultrasonik Test Raporu T26-017.pdf']
+  },
+  {
+    id:'T26-018', no:'T26-018', durum:'tamamlandi',
+    tersane:'Sedef Tersanesi', projeNo:'NB1099', gemi:'MV Atlas',
+    devre:'265-overboard', tip:'RT', tipAd:'Röntgen / Film Çekimi',
+    not:'DN150–DN300 spoollar %10 oranında RT',
+    tarih:'15.04.2026', firma:'RT Uzmanları A.Ş.',
+    spooller:[
+      {no:'S01',sonuc:'gecti',hataKaynagi:'',spoolNot:''},
+      {no:'S02',sonuc:'gecti',hataKaynagi:'',spoolNot:''},
+      {no:'S03',sonuc:'gecti',hataKaynagi:'',spoolNot:''},
+    ],
+    sonucBilgi:{tarih:'15.04.2026',bas:'08:30',bit:'14:00',kisi:'Ahmet Yılmaz',genel:'gecti',not:'Tüm spool\'lar geçti.'},
+    fotograflar:[], belgeler:['RT Raporu T26-018.pdf']
+  },
+];
+
+let testSayac = 19;
+let secilenTip = '';
+
+// ===== BAŞLANGIÇ =====
+function init() {
+  // Filtreleri doldur
+  const fTip = document.getElementById('fTip');
+  TEST_TIPLERI.forEach(t => {
+    const o = document.createElement('option'); o.value=t.kod; o.textContent=t.kod+' — '+t.ad; fTip.appendChild(o);
+  });
+  const o2 = document.createElement('option'); o2.value='DIGER'; o2.textContent='Diğer'; fTip.appendChild(o2);
+
+  const fTersane = document.getElementById('fTersane');
+  [...new Set(testler.map(t=>t.tersane))].forEach(t=>{
+    const o=document.createElement('option');o.value=t;o.textContent=t;fTersane.appendChild(o);
+  });
+
+  renderTipGrid();
+  renderHepsi();
+  guncelStatler();
+}
+
+// ===== RENDER =====
+function aktifFiltre(liste) {
+  const tip     = document.getElementById('fTip').value;
+  const tersane = document.getElementById('fTersane').value;
+  const ara     = document.getElementById('fAra').value.toLowerCase().trim();
+  return liste.filter(t =>
+    (!tip || t.tip === tip || (tip==='DIGER' && !TEST_TIPLERI.find(x=>x.kod===t.tip))) &&
+    (!tersane || t.tersane === tersane) &&
+    (!ara || t.no.toLowerCase().includes(ara) || t.devre.toLowerCase().includes(ara) || t.projeNo.toLowerCase().includes(ara))
+  );
+}
+
+function renderAktif() {
+  const tab = document.querySelector('.tab-btn.active')?.dataset.tab || 'bekleyen';
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  const durumMap = {bekleyen:'bekleyen',devam:'devam',tamamlanan:'tamamlandi',hepsi:null};
+  const durum = durumMap[tab];
+  const src = durum ? testler.filter(t=>t.durum===durum || (durum==='bekleyen' && t.durum==='hatali' && false)) : testler;
+  let liste;
+  if (tab === 'bekleyen')    liste = testler.filter(t=>t.durum==='bekleyen');
+  else if (tab === 'devam')  liste = testler.filter(t=>t.durum==='devam');
+  else if (tab === 'tamamlanan') liste = testler.filter(t=>t.durum==='tamamlandi'||t.durum==='hatali');
+  else                       liste = testler;
+
+  liste = aktifFiltre(liste);
+  const elId = {bekleyen:'listeBekleyen',devam:'listeDevam',tamamlanan:'listeTamamlanan',hepsi:'listeHepsi'}[tab];
+  const el = document.getElementById(elId);
+  if (!liste.length) { el.innerHTML='<div class="bos"><div class="bos-icon">🧪</div>Gösterilecek test yok</div>'; return; }
+  el.innerHTML = liste.map(testKartHtml).join('');
+}
+
+function renderHepsi() {
+  ['bekleyen','devam','tamamlanan','hepsi'].forEach(renderTab);
+}
+
+function testKartHtml(t) {
+  const durumMap = {
+    bekleyen: '<span class="b ba">Bekliyor</span>',
+    devam:    '<span class="b bb">Devam Ediyor</span>',
+    tamamlandi:'<span class="b bg">Tamamlandı ✓</span>',
+    hatali:   '<span class="b br">Hatalı / Tamir</span>',
+  };
+  const tipCls = {RT:'tip-rt',PT:'tip-pt',UT:'tip-ut',VT:'tip-vt'}[t.tip]||'tip-dg';
+  const gecti = t.spooller.filter(s=>s.sonuc==='gecti').length;
+  const hatali = t.spooller.filter(s=>s.sonuc==='hatali').length;
+  const bekliyor = t.spooller.filter(s=>s.sonuc==='bekliyor').length;
+
+  return `<div class="tkart" id="kart-${t.id}">
+    <div class="tkart-head" onclick="kartToggle('${t.id}')">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
+          <div class="tno">${t.no}</div>
+          <span class="b ${tipCls}" style="font-size:11px;">${t.tip} — ${t.tipAd}</span>
+          ${durumMap[t.durum]||''}
+        </div>
+        <div style="font-size:13px;color:var(--txm);">${t.tersane} · ${t.projeNo} / ${t.devre}</div>
+        <div style="font-size:12px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+          <span>Tarih: <strong style="color:var(--tx);">${t.tarih}</strong></span>
+          ${t.firma?`<span>Yetkili: <strong style="color:var(--tx);">${t.firma}</strong></span>`:''}
+          <span>${t.spooller.length} spool
+            ${gecti?` · <span style="color:var(--gr);">${gecti} geçti</span>`:''}
+            ${hatali?` · <span style="color:var(--re);">${hatali} hatalı</span>`:''}
+            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} bekliyor</span>`:''}
+          </span>
+        </div>
+        ${t.not?`<div style="font-size:12px;color:var(--txd);margin-top:4px;font-style:italic;">${t.not}</div>`:''}
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
+        ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">Sonuç Gir</button>` : ''}
+        ${t.belgeler.length?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();showToast('PDF indiriliyor...','info')">PDF</button>`:''}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;margin-top:4px;" id="chev-${t.id}"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="tkart-body" id="body-${t.id}">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Sonuçları</div>
+          <table class="st">
+            <thead><tr>
+              <th>Spool No</th><th>Sonuç</th><th>Hata Kaynağı</th><th>Not</th>
+            </tr></thead>
+            <tbody>
+              ${t.spooller.map(s=>`<tr>
+                <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--leg);">${s.no}</span></td>
+                <td>${sonucBadge(s.sonuc)}</td>
+                <td style="color:var(--txm);font-size:12px;">${s.hataKaynagi||'—'}</td>
+                <td style="color:var(--txd);font-size:12px;">${s.spoolNot||'—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="min-width:180px;">
+          ${t.sonucBilgi?`
+            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Test Bilgisi</div>
+            <div style="font-size:12px;color:var(--txm);line-height:1.8;">
+              <div>Tarih: <strong style="color:var(--tx);">${t.sonucBilgi.tarih}</strong></div>
+              ${t.sonucBilgi.bas?`<div>Süre: ${t.sonucBilgi.bas} – ${t.sonucBilgi.bit}</div>`:''}
+              <div>Onaylayan: <strong style="color:var(--tx);">${t.sonucBilgi.kisi}</strong></div>
+              ${t.sonucBilgi.not?`<div style="margin-top:6px;padding:8px;background:var(--sur2);border-radius:8px;font-style:italic;">${t.sonucBilgi.not}</div>`:''}
+            </div>` : '<div style="color:var(--txd);font-size:12px;">Sonuç henüz girilmedi</div>'}
+          ${t.belgeler.length?`
+            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-top:12px;margin-bottom:6px;">Belgeler</div>
+            ${t.belgeler.map(b=>`<div style="font-size:12px;color:var(--ac);padding:4px 0;cursor:pointer;" onclick="showToast('${b} indiriliyor...','info')">📄 ${b}</div>`).join('')}`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function sonucBadge(s) {
+  const m={gecti:'<span class="b bg">✓ Geçti</span>',hatali:'<span class="b br">✗ Hatalı</span>',tamir:'<span class="b ba">⚠ Tamir</span>',bekliyor:'<span class="b bx">Bekliyor</span>'};
+  return m[s]||'<span class="b bx">—</span>';
+}
+
+function kartToggle(id) {
+  const body = document.getElementById('body-'+id);
+  const chev = document.getElementById('chev-'+id);
+  const open = body.classList.toggle('open');
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ===== YENİ TEST =====
+function yeniTestAc() {
+  secilenTip = '';
+  document.getElementById('yTersane').value='';
+  document.getElementById('yDevre').innerHTML='<option value="">Önce tersane seçin</option>';
+  document.getElementById('yProje').value='';
+  document.getElementById('yGemi').value='';
+  document.getElementById('yNot').value='';
+  document.getElementById('yTarih').value=new Date().toISOString().split('T')[0];
+  document.getElementById('yFirma').value='';
+  document.getElementById('digerTipBlok').style.display='none';
+  document.getElementById('digerTipAd').value='';
+  renderTipGrid();
+  document.getElementById('mYeni').style.display='flex';
+}
+
+function devreleriDoldur() {
+  const t = document.getElementById('yTersane').value;
+  const sel = document.getElementById('yDevre');
+  sel.innerHTML = '<option value="">Devre seçin...</option>';
+  (DEVRELER[t]||[]).forEach(d=>{
+    const o=document.createElement('option');
+    o.value=d.id;
+    o.textContent=d.ad+' ('+d.projeNo+')';
+    o.dataset.proje=d.projeNo; o.dataset.gemi=d.gemi; o.dataset.spooller=JSON.stringify(d.spooller);
+    sel.appendChild(o);
+  });
+  sel.onchange = function() {
+    const opt = sel.selectedOptions[0];
+    document.getElementById('yProje').value = opt?.dataset.proje||'';
+    document.getElementById('yGemi').value  = opt?.dataset.gemi||'';
+  };
+  document.getElementById('yProje').value='';
+  document.getElementById('yGemi').value='';
+}
+
+function renderTipGrid() {
+  const grid = document.getElementById('tipGrid');
+  grid.innerHTML = TEST_TIPLERI.map(t=>`
+    <button class="tip-kart${secilenTip===t.kod?' sec':''}" onclick="tipSec('${t.kod}')">
+      <div class="tip-kart-kod">${t.kod}</div>
+      <div class="tip-kart-ad">${t.ad}</div>
+    </button>`).join('') +
+    `<button class="tip-kart${secilenTip==='DIGER'?' sec':''}" onclick="tipSec('DIGER')">
+      <div class="tip-kart-kod">+</div>
+      <div class="tip-kart-ad">Diğer (Tanımla)</div>
+    </button>`;
+}
+
+function tipSec(kod) {
+  secilenTip = kod;
+  renderTipGrid();
+  document.getElementById('digerTipBlok').style.display = kod==='DIGER'?'block':'none';
+}
+
+function testKaydet() {
+  const tersane = document.getElementById('yTersane').value;
+  const devreSel = document.getElementById('yDevre');
+  const devreOpt = devreSel.selectedOptions[0];
+  const devreAd = devreOpt?.textContent?.split(' (')[0]||'';
+  if (!tersane || !devreSel.value) { showToast('Tersane ve devre seçimi zorunlu','error'); return; }
+  if (!secilenTip) { showToast('Test türü seçin','error'); return; }
+
+  let tipAd = TEST_TIPLERI.find(t=>t.kod===secilenTip)?.ad || document.getElementById('digerTipAd').value.trim() || 'Diğer';
+  if (secilenTip==='DIGER' && !document.getElementById('digerTipAd').value.trim()) {
+    showToast('Test türü adını girin','error'); return;
+  }
+
+  const spoollar = JSON.parse(devreOpt?.dataset.spooller||'[]');
+  const no = 'T26-0'+String(testSayac).padStart(2,'0'); testSayac++;
+
+  testler.unshift({
+    id:no, no, durum:'bekleyen',
+    tersane, projeNo:document.getElementById('yProje').value,
+    gemi:document.getElementById('yGemi').value,
+    devre:devreAd, tip:secilenTip==='DIGER'?document.getElementById('digerTipAd').value:secilenTip, tipAd,
+    not:document.getElementById('yNot').value.trim(),
+    tarih:new Date(document.getElementById('yTarih').value).toLocaleDateString('tr-TR'),
+    firma:document.getElementById('yFirma').value.trim(),
+    spooller:spoollar.map(s=>({no:s,sonuc:'bekliyor',hataKaynagi:'',spoolNot:''})),
+    sonucBilgi:null, fotograflar:[], belgeler:[]
+  });
+
+  document.getElementById('mYeni').style.display='none';
+  renderHepsi(); guncelStatler();
+  showToast(`${no} test paketi oluşturuldu — devreye uyarı tanımlandı`,'success');
+}
+
+// ===== SONUÇ GİRİŞ =====
+function sonucAc(id) {
+  const t = testler.find(x=>x.id===id); if(!t) return;
+  document.getElementById('mSonucId').value = id;
+  document.getElementById('mSonucTitle').textContent = t.no + ' — Sonuç Gir';
+  document.getElementById('mSonucSub').textContent = t.tipAd + ' · ' + t.tersane + ' · ' + t.devre;
+  document.getElementById('mSonucTarih').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mSonucBas').value = '';
+  document.getElementById('mSonucBit').value = '';
+  document.getElementById('mSonucKisi').value = t.sonucBilgi?.kisi||'';
+  document.getElementById('mSonucGenel').value = t.sonucBilgi?.genel||'';
+  document.getElementById('mSonucNot').value = t.sonucBilgi?.not||'';
+
+  const tbody = document.getElementById('sonucTablo');
+  tbody.innerHTML = t.spooller.map(s=>`
+    <tr>
+      <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--leg);">${s.no}</span></td>
+      <td>
+        <select class="sonuc-sel" id="sr-${t.id}-${s.no}">
+          <option value="bekliyor" ${s.sonuc==='bekliyor'?'selected':''}>Bekliyor</option>
+          <option value="gecti"    ${s.sonuc==='gecti'?'selected':''}>✓ Geçti</option>
+          <option value="hatali"   ${s.sonuc==='hatali'?'selected':''}>✗ Hatalı</option>
+          <option value="tamir"    ${s.sonuc==='tamir'?'selected':''}>⚠ Tamir</option>
+        </select>
+      </td>
+      <td><input class="sonuc-inp" id="hk-${t.id}-${s.no}" value="${s.hataKaynagi}" placeholder="İmalatçı / Kaynakçı..."></td>
+      <td><input class="sonuc-inp" id="sn-${t.id}-${s.no}" value="${s.spoolNot}" placeholder="Not..."></td>
+    </tr>`).join('');
+
+  document.getElementById('mSonuc').style.display='flex';
+}
+
+function sonucKaydet() {
+  const id  = document.getElementById('mSonucId').value;
+  const tarih = document.getElementById('mSonucTarih').value;
+  const kisi  = document.getElementById('mSonucKisi').value.trim();
+  const genel = document.getElementById('mSonucGenel').value;
+  if (!tarih) { showToast('Tarih zorunlu','error'); return; }
+  if (!kisi)  { showToast('Onaylayan kişi zorunlu','error'); return; }
+  if (!genel) { showToast('Genel sonuç seçin','error'); return; }
+
+  const t = testler.find(x=>x.id===id); if(!t) return;
+
+  // Spool sonuçlarını oku
+  t.spooller.forEach(s=>{
+    s.sonuc       = document.getElementById(`sr-${t.id}-${s.no}`)?.value||'bekliyor';
+    s.hataKaynagi = document.getElementById(`hk-${t.id}-${s.no}`)?.value.trim()||'';
+    s.spoolNot    = document.getElementById(`sn-${t.id}-${s.no}`)?.value.trim()||'';
+  });
+
+  t.sonucBilgi = {
+    tarih: new Date(tarih).toLocaleDateString('tr-TR'),
+    bas: document.getElementById('mSonucBas').value,
+    bit: document.getElementById('mSonucBit').value,
+    kisi, genel,
+    not: document.getElementById('mSonucNot').value.trim()
+  };
+
+  // Durumu güncelle
+  if (genel==='gecti')       t.durum='tamamlandi';
+  else if (genel==='kismi')  t.durum='hatali';
+  else if (genel==='kaldi')  t.durum='hatali';
+
+  document.getElementById('mSonuc').style.display='none';
+  renderHepsi(); guncelStatler();
+  showToast(t.no+' test sonucu kaydedildi','success');
+}
+
+// ===== TEST TİPİ TANIMLA =====
+function testTipAc() {
+  renderTipListesi();
+  document.getElementById('mTip').style.display='flex';
+}
+function renderTipListesi() {
+  document.getElementById('tipListesi').innerHTML = TEST_TIPLERI.map(t=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--sur2);border-radius:8px;border:1px solid var(--bor);">
+      <span><strong style="color:var(--ac);margin-right:8px;">${t.kod}</strong>${t.ad}</span>
+      ${['RT','PT'].includes(t.kod)?'<span style="font-size:11px;color:var(--txd);">Varsayılan</span>':
+        `<button onclick="tipSil('${t.kod}')" style="background:none;border:none;color:var(--re);cursor:pointer;font-size:16px;line-height:1;">✕</button>`}
+    </div>`).join('');
+}
+function tipEkle() {
+  const kod = document.getElementById('yeniTipKod').value.trim().toUpperCase();
+  const ad  = document.getElementById('yeniTipAd').value.trim();
+  if (!kod||!ad) { showToast('Kod ve ad zorunlu','error'); return; }
+  if (TEST_TIPLERI.find(t=>t.kod===kod)) { showToast('Bu kod zaten var','error'); return; }
+  TEST_TIPLERI.push({kod,ad});
+  document.getElementById('yeniTipKod').value='';
+  document.getElementById('yeniTipAd').value='';
+  renderTipListesi();
+  // Filtre dropdown'a da ekle
+  const fTip=document.getElementById('fTip');
+  const o=document.createElement('option');o.value=kod;o.textContent=kod+' — '+ad;
+  fTip.insertBefore(o,fTip.lastElementChild);
+  showToast(kod+' test türü eklendi','success');
+}
+function tipSil(kod) {
+  TEST_TIPLERI = TEST_TIPLERI.filter(t=>t.kod!==kod);
+  renderTipListesi();
+}
+
+// ===== STAT =====
+function guncelStatler() {
+  const b = testler.filter(t=>t.durum==='bekleyen').length;
+  const d = testler.filter(t=>t.durum==='devam').length;
+  const tt = testler.filter(t=>t.durum==='tamamlandi').length;
+  const h = testler.filter(t=>t.durum==='hatali').length;
+  document.getElementById('sB').textContent=b;
+  document.getElementById('sD').textContent=d;
+  document.getElementById('sT').textContent=tt;
+  document.getElementById('sH').textContent=h;
+  document.getElementById('sTop').textContent=testler.length;
+  document.getElementById('tB').textContent=b;
+  document.getElementById('tD').textContent=d;
+  document.getElementById('tT').textContent=tt+h;
+  document.getElementById('tHepsi').textContent=testler.length;
+}
+
+function fSifirla() {
+  document.getElementById('fTip').value='';
+  document.getElementById('fTersane').value='';
+  document.getElementById('fAra').value='';
+  renderAktif();
+}
+
+// ===== TAB =====
+function tabGit(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('on');
+  renderTab(tab);
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>tabGit(btn.dataset.tab)));
+
+// ===== TOAST =====
+let _tt;
+function showToast(msg,type='success'){
+  let el=document.getElementById('_t');
+  if(!el){el=document.createElement('div');el.id='_t';document.body.appendChild(el);}
+  el.className='toast t-'+(type==='success'?'ok':type==='error'?'er':'in');
+  el.innerHTML=`<span>${msg}</span><button style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px;" onclick="this.parentElement.style.display='none'">✕</button>`;
+  el.style.display='flex';clearTimeout(_tt);
+  _tt=setTimeout(()=>{if(el)el.style.display='none';},3500);
+}
+
+
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Personel | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+.page{padding:28px 28px 40px;}
+.cl-ac  {border-left:3px solid var(--ac)   !important;}
+.cl-gr  {border-left:3px solid var(--gr)   !important;}
+.cl-re  {border-left:3px solid var(--re)   !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg {border-left:3px solid var(--leg)  !important;}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
+.stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.sc{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:transparent;transition:background .15s;}
+.sc:hover{border-color:var(--ac);}
+.sc.on{border-color:var(--ac);}.sc.on::after{background:var(--ac);}
+.sc.on-gr{border-color:var(--gr);}.sc.on-gr::after{background:var(--gr);}
+.sc.on-re{border-color:var(--re);}.sc.on-re::after{background:var(--re);}
+.sc.on-warn{border-color:var(--warn);}.sc.on-warn::after{background:var(--warn);}
+.sc.on-leg{border-color:var(--leg);}.sc.on-leg::after{background:var(--leg);}
+.sc-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ic-ac  {background:rgba(45,142,255,.12);color:var(--ac);}
+.ic-gr  {background:rgba(22,163,110,.12);color:var(--gr);}
+.ic-re  {background:rgba(229,62,62,.12);color:var(--re);}
+.ic-warn{background:rgba(217,119,6,.12);color:var(--warn);}
+.ic-leg {background:rgba(124,58,237,.12);color:var(--leg);}
+.ic-txd {background:rgba(107,122,144,.1);color:var(--txd);}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;line-height:1;}
+.sc-lbl{font-size:11px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.fbar{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:200px;max-width:340px;}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--txd);}
+.search-inp{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:7px 12px 7px 34px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--tx);outline:none;height:36px;}
+.search-inp:focus{border-color:var(--ac);}
+.search-inp::placeholder{color:var(--txd);}
+.durum-toggle{display:flex;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;overflow:hidden;}
+.dt-btn{padding:0 14px;height:36px;border:none;background:transparent;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;color:var(--txd);border-right:1px solid var(--bor);transition:all .12s;}
+.dt-btn:last-child{border-right:none;}
+.dt-btn:hover{color:var(--tx);}
+.dt-btn.on.all{color:var(--tx);font-weight:600;}
+.dt-btn.on.aktif{color:var(--gr);font-weight:600;}
+.dt-btn.on.pasif{color:var(--txm);font-weight:600;}
+.fsel{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:0 10px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--txm);outline:none;cursor:pointer;height:36px;}
+.fsel:focus{border-color:var(--ac);}
+.reset-btn{display:inline-flex;align-items:center;gap:5px;padding:0 12px;height:36px;border-radius:8px;border:1px solid var(--bor);background:transparent;color:var(--txd);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;}
+.reset-btn:hover{border-color:var(--re);color:var(--re);}
+.result-count{font-size:13px;color:var(--txd);margin-left:auto;}
+.ba{display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.ba:hover{opacity:.88;}
+.tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;}
+.tbl{width:100%;border-collapse:collapse;white-space:nowrap;}
+.tbl thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;background:var(--sur2);border-bottom:1px solid var(--bor);}
+.tbl thead th.sort{cursor:pointer;user-select:none;}
+.tbl thead th.sort:hover{color:var(--tx);}
+.tbl thead th.sort::after{content:' ⇅';font-size:10px;opacity:.35;font-weight:400;}
+.tbl thead th.asc::after{content:' ↑';opacity:1;color:var(--ac);}
+.tbl thead th.desc::after{content:' ↓';opacity:1;color:var(--ac);}
+.tbl tbody td{padding:12px 14px;border-bottom:1px solid var(--bor);vertical-align:middle;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:rgba(45,142,255,.03);}
+.tbl tbody tr.pasif-row td{opacity:.5;}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;}
+.nc-name{font-size:14px;font-weight:600;}
+.nc-sub{font-size:12px;color:var(--txd);}
+.dbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.dbadge.aktif{background:rgba(22,163,110,.1);color:var(--gr);border:1px solid rgba(22,163,110,.25);}
+.dbadge.aktif::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gr);}
+.dbadge.pasif{background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
+.belge-ok  {color:var(--gr);font-size:13px;font-weight:500;}
+.belge-warn{color:var(--warn);font-size:13px;font-weight:500;}
+.belge-miss{color:var(--re);font-size:13px;font-weight:500;}
+.icon-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.icon-btn:hover{border-color:var(--ac);color:var(--ac);}
+.pgn{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--bor);flex-wrap:wrap;gap:8px;}
+.pgn-info{font-size:13px;color:var(--txd);}
+.pgn-btns{display:flex;gap:4px;align-items:center;}
+.pgn-btn{min-width:32px;height:32px;padding:0 8px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.pgn-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac);}
+.pgn-btn.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600;}
+.pgn-btn:disabled{opacity:.35;cursor:default;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:12px;z-index:3000;animation:tslide .3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.t-ok{border-left:3px solid var(--gr);}.t-er{border-left:3px solid var(--re);}.t-in{border-left:3px solid var(--ac);}
+@keyframes tslide{from{transform:translateX(110%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.bos{text-align:center;padding:60px 20px;color:var(--txd);font-size:14px;}
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+<div class="app-shell">
+<div class="main-content">
+<div class="page">
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Personel</span></div>
+    <h1 class="page-title">Personel</h1>
+  </div>
+  <button class="ba" onclick="window.location='personel_yeni.html'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Yeni Personel
+  </button>
+</div>
+
+<!-- STAT KARTLAR -->
+<div class="stat-row">
+  <div class="sc cl-ac" id="sc-toplam" onclick="statFilt('toplam')">
+    <div class="sc-icon ic-ac"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+    <div><div class="sc-val" id="sv-toplam" style="color:var(--ac);">0</div><div class="sc-lbl">Toplam</div></div>
+  </div>
+  <div class="sc cl-gr" id="sc-aktif" onclick="statFilt('aktif')">
+    <div class="sc-icon ic-gr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg></div>
+    <div><div class="sc-val" id="sv-aktif" style="color:var(--gr);">0</div><div class="sc-lbl">Aktif</div></div>
+  </div>
+  <div class="sc cl-warn" id="sc-pasif" onclick="statFilt('pasif')">
+    <div class="sc-icon ic-txd"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></div>
+    <div><div class="sc-val" id="sv-pasif" style="color:var(--txd);">0</div><div class="sc-lbl">Pasif</div></div>
+  </div>
+  <div class="sc cl-re" id="sc-eksik" onclick="statFilt('eksik')">
+    <div class="sc-icon ic-re"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+    <div><div class="sc-val" id="sv-eksik" style="color:var(--re);">0</div><div class="sc-lbl">Eksik Belge</div></div>
+  </div>
+  <div class="sc cl-warn" id="sc-uyari" onclick="statFilt('uyari')">
+    <div class="sc-icon ic-warn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div><div class="sc-val" id="sv-uyari" style="color:var(--warn);">0</div><div class="sc-lbl">Belge Uyarısı</div></div>
+  </div>
+  <div class="sc cl-leg" id="sc-adli" onclick="statFilt('adli')">
+    <div class="sc-icon ic-leg"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <div><div class="sc-val" id="sv-adli" style="color:var(--leg);">0</div><div class="sc-lbl">Adli Dosya</div></div>
+  </div>
+</div>
+
+<!-- FİLTRE (Kural F-01) -->
+<div class="fbar cl-warn">
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-inp" id="searchInp" placeholder="Ad, branş, personel no..." oninput="filtrele()">
+  </div>
+  <div class="durum-toggle">
+    <button class="dt-btn on all" id="dt-all"   onclick="setDurum('all',this)">Tümü</button>
+    <button class="dt-btn aktif"  id="dt-aktif" onclick="setDurum('aktif',this)">Aktif</button>
+    <button class="dt-btn pasif"  id="dt-pasif" onclick="setDurum('pasif',this)">Pasif</button>
+  </div>
+  <select class="fsel" id="filtBrans" onchange="filtrele()">
+    <option value="">Tüm Branşlar</option>
+    <option>Kaynakçı</option>
+    <option>İmalatçı</option>
+    <option>Kesimci</option>
+    <option>Boru Montajcı</option>
+    <option>Elektrikçi</option>
+  </select>
+  <select class="fsel" id="filtBelge" onchange="filtrele()">
+    <option value="">Tüm Belgeler</option>
+    <option value="eksik">Eksik Belgeli</option>
+    <option value="uyari">Uyarılı</option>
+    <option value="tam">Tam</option>
+  </select>
+  <button class="reset-btn" onclick="sifirla()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+    Sıfırla
+  </button>
+  <div class="result-count" id="resultCount"></div>
+</div>
+
+<!-- TABLO -->
+<div class="tbl-wrap cl-ac">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th style="width:52px;"></th>
+        <th style="width:90px;">No</th>
+        <th class="sort" data-col="ad">Ad Soyad</th>
+        <th class="sort" data-col="brans">Branş</th>
+        <th class="sort" data-col="giris">İşe Giriş</th>
+        <th class="sort" data-col="kidem">Kıdem</th>
+        <th>Belgeler</th>
+        <th class="sort" data-col="durum">Durum</th>
+        <th style="width:50px;"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="bos" id="emptyMsg" style="display:none;">Sonuç bulunamadı</div>
+  <div class="pgn" id="pgnWrap">
+    <div class="pgn-info" id="pgnInfo"></div>
+    <div class="pgn-btns" id="pgnBtns"></div>
+  </div>
+</div>
+
+</div><!-- /.page -->
+</div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+<script>
+'use strict';
+
+var personeller = [
+  {id:'P26-001',ad:'Mehmet Yilmaz', brans:'Kaynakci',       giris:'01.03.2020',kidem:'5 yil', belge:'tam',   durum:'aktif',adli:false},
+  {id:'P26-002',ad:'Ali Kara',      brans:'Imalatci',        giris:'15.06.2019',kidem:'6 yil', belge:'uyari', durum:'aktif',adli:false},
+  {id:'P26-003',ad:'Hasan Celik',   brans:'Kesimci',         giris:'10.01.2022',kidem:'4 yil', belge:'eksik', durum:'aktif',adli:false},
+  {id:'P26-004',ad:'Ibrahim Demir', brans:'Kaynakci',        giris:'05.09.2018',kidem:'7 yil', belge:'tam',   durum:'aktif',adli:true},
+  {id:'P26-005',ad:'Mustafa Aydin', brans:'Boru Montajci',   giris:'20.11.2021',kidem:'4 yil', belge:'tam',   durum:'aktif',adli:false},
+  {id:'P26-006',ad:'Kadir Sahin',   brans:'Elektrikci',      giris:'03.04.2017',kidem:'9 yil', belge:'uyari', durum:'aktif',adli:false},
+  {id:'P26-007',ad:'Serkan Arslan', brans:'Kaynakci',        giris:'12.07.2023',kidem:'2 yil', belge:'eksik', durum:'aktif',adli:true},
+  {id:'P26-008',ad:'Fatih Koc',     brans:'Imalatci',        giris:'28.02.2016',kidem:'10 yil',belge:'tam',   durum:'pasif',adli:false},
+  {id:'P26-009',ad:'Emre Dogan',    brans:'Kesimci',         giris:'17.08.2020',kidem:'5 yil', belge:'tam',   durum:'pasif',adli:false},
+  {id:'P26-010',ad:'Volkan Kilic',  brans:'Kaynakci',        giris:'09.05.2019',kidem:'7 yil', belge:'eksik', durum:'aktif',adli:false},
+  {id:'P26-011',ad:'Onder Yildiz',  brans:'Boru Montajci',   giris:'22.01.2022',kidem:'4 yil', belge:'tam',   durum:'aktif',adli:false},
+  {id:'P26-012',ad:'Caner Ozdemir', brans:'Elektrikci',      giris:'14.10.2015',kidem:'11 yil',belge:'uyari', durum:'aktif',adli:false},
+];
+
+var SAYFA_BOYUT = 25;
+var _sayfa     = 1;
+var _filtreli  = [];
+var _durumFilt = 'all';
+var _statFilt  = '';
+var _sortKey   = '';
+var _sortDir   = 1;
+
+var AVATAR_RENKLER = ['#2D8EFF','#16a36e','#d97706','#e53e3e','#7c3aed','#f97316','#06b6d4'];
+function avatarRenk(ad) {
+  var idx = 0;
+  for (var i=0; i<ad.length; i++) idx = (idx + ad.charCodeAt(i)) % AVATAR_RENKLER.length;
+  return AVATAR_RENKLER[idx];
+}
+
+function guncelStatlar() {
+  var t=personeller.length, a=0, p=0, e=0, u=0, d=0;
+  personeller.forEach(function(x){
+    if(x.durum==='aktif') a++; else p++;
+    if(x.belge==='eksik') e++;
+    if(x.belge==='uyari') u++;
+    if(x.adli) d++;
+  });
+  document.getElementById('sv-toplam').textContent=t;
+  document.getElementById('sv-aktif').textContent=a;
+  document.getElementById('sv-pasif').textContent=p;
+  document.getElementById('sv-eksik').textContent=e;
+  document.getElementById('sv-uyari').textContent=u;
+  document.getElementById('sv-adli').textContent=d;
+}
+
+function statFilt(tip) {
+  _statFilt = (_statFilt===tip)?'':tip;
+  document.querySelectorAll('.sc').forEach(function(c){
+    c.className=c.className.replace(/ on(-\w+)?/g,'');
+  });
+  if (_statFilt) {
+    var map={toplam:'on',aktif:'on-gr',pasif:'on-warn',eksik:'on-re',uyari:'on-warn',adli:'on-leg'};
+    var el=document.getElementById('sc-'+_statFilt);
+    if(el) el.classList.add(map[_statFilt]||'on');
+  }
+  _sayfa=1; filtrele();
+}
+
+function setDurum(d, btn) {
+  _durumFilt=d;
+  document.querySelectorAll('.dt-btn').forEach(function(b){ b.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  _sayfa=1; filtrele();
+}
+
+function filtrele() {
+  var ara   = (document.getElementById('searchInp').value||'').toLowerCase();
+  var brans = document.getElementById('filtBrans').value;
+  var belge = document.getElementById('filtBelge').value;
+  _filtreli = personeller.filter(function(p) {
+    var txt=(p.ad+p.brans+p.id).toLowerCase();
+    var okA = !ara   || txt.indexOf(ara)>=0;
+    var okB = !brans || p.brans===brans;
+    var okBe= !belge || p.belge===belge;
+    var okD = _durumFilt==='all' || p.durum===_durumFilt;
+    var okS = true;
+    if(_statFilt==='aktif') okS=p.durum==='aktif';
+    if(_statFilt==='pasif') okS=p.durum==='pasif';
+    if(_statFilt==='eksik') okS=p.belge==='eksik';
+    if(_statFilt==='uyari') okS=p.belge==='uyari';
+    if(_statFilt==='adli')  okS=p.adli;
+    return okA&&okB&&okBe&&okD&&okS;
+  });
+  if(_sortKey){
+    _filtreli.sort(function(a,b){
+      return (a[_sortKey]||'').localeCompare(b[_sortKey]||'','tr')*_sortDir;
+    });
+  }
+  _sayfa=Math.min(_sayfa,Math.max(1,Math.ceil(_filtreli.length/SAYFA_BOYUT)));
+  renderTablo(); renderPgn();
+  document.getElementById('resultCount').textContent=_filtreli.length+' personel';
+}
+
+function sifirla() {
+  document.getElementById('searchInp').value='';
+  document.getElementById('filtBrans').value='';
+  document.getElementById('filtBelge').value='';
+  _durumFilt='all'; _statFilt=''; _sortKey=''; _sortDir=1;
+  document.querySelectorAll('.sc').forEach(function(c){c.className=c.className.replace(/ on(-\w+)?/g,'');});
+  document.querySelectorAll('.dt-btn').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('dt-all').classList.add('on');
+  document.querySelectorAll('.tbl thead th.sort').forEach(function(th){th.classList.remove('asc','desc');});
+  _sayfa=1; filtrele();
+}
+
+function renderTablo() {
+  var tbody=document.getElementById('tbody');
+  var empty=document.getElementById('emptyMsg');
+  var pgn=document.getElementById('pgnWrap');
+  if(!_filtreli.length){tbody.innerHTML='';empty.style.display='';pgn.style.display='none';return;}
+  empty.style.display='none'; pgn.style.display='';
+  var bas=(_sayfa-1)*SAYFA_BOYUT;
+  var bit=Math.min(bas+SAYFA_BOYUT,_filtreli.length);
+  tbody.innerHTML=_filtreli.slice(bas,bit).map(function(p,i){
+    var ren=avatarRenk(p.ad);
+    var harf=p.ad.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('');
+    var belgeH=p.belge==='tam'
+      ?'<span class="belge-ok">&#10003; Tam</span>'
+      :p.belge==='uyari'
+        ?'<span class="belge-warn">&#9888; Uyari</span>'
+        :'<span class="belge-miss">&#10005; Eksik</span>';
+    var durumH=p.durum==='aktif'
+      ?'<span class="dbadge aktif">Aktif</span>'
+      :'<span class="dbadge pasif">Pasif</span>';
+    var adliH=p.adli?'<span style="font-size:10px;background:rgba(124,58,237,.12);color:var(--leg);padding:1px 5px;border-radius:4px;font-weight:700;margin-left:5px;">Adli</span>':'';
+    return '<tr class="'+(p.durum==='pasif'?'pasif-row':'')+'">'+
+      '<td><div class="avatar" style="background:'+ren+';">'+harf+'</div></td>'+
+      '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;color:var(--ac);">'+p.id+'</td>'+
+      '<td><div class="nc-name">'+p.ad+adliH+'</div></td>'+
+      '<td style="color:var(--txm);font-size:13px;">'+p.brans+'</td>'+
+      '<td style="color:var(--txm);font-size:13px;">'+p.giris+'</td>'+
+      '<td style="font-size:14px;font-weight:500;">'+p.kidem+'</td>'+
+      '<td>'+belgeH+'</td>'+
+      '<td>'+durumH+'</td>'+
+      '<td style="text-align:center;">'+
+        '<button class="icon-btn" title="Profil" onclick="showToast(\'Profil sayfasi hazirlanmaktadir\',\'info\')">'+
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+
+        '</button>'+
+      '</td>'+
+      '</tr>';
+  }).join('');
+}
+
+function sortBy(key) {
+  if(_sortKey===key){_sortDir*=-1;}else{_sortDir=1;_sortKey=key;}
+  document.querySelectorAll('.tbl thead th.sort').forEach(function(th){th.classList.remove('asc','desc');});
+  var th=document.querySelector('.tbl thead th[data-col="'+key+'"]');
+  if(th) th.classList.add(_sortDir===1?'asc':'desc');
+  _sayfa=1; filtrele();
+}
+
+document.querySelectorAll('.tbl thead th.sort').forEach(function(th){
+  th.addEventListener('click',function(){sortBy(th.getAttribute('data-col'));});
+});
+
+function sayfaGit(s){_sayfa=s;renderTablo();renderPgn();}
+
+function renderPgn(){
+  var top=Math.max(1,Math.ceil(_filtreli.length/SAYFA_BOYUT));
+  var bas=(_sayfa-1)*SAYFA_BOYUT+1;
+  var bit=Math.min(_sayfa*SAYFA_BOYUT,_filtreli.length);
+  document.getElementById('pgnInfo').textContent=bas+'-'+bit+' / '+_filtreli.length+' personel';
+  var html='<button class="pgn-btn" '+((_sayfa<=1)?'disabled':'')+' onclick="sayfaGit('+(_sayfa-1)+')">&#8592;</button>';
+  var pages=[];
+  for(var i=1;i<=top;i++){
+    if(i===1||i===top||Math.abs(i-_sayfa)<=1) pages.push(i);
+    else if(pages[pages.length-1]!=='...') pages.push('...');
+  }
+  pages.forEach(function(p){
+    if(p==='...') html+='<span style="padding:0 4px;color:var(--txd);">&#8230;</span>';
+    else html+='<button class="pgn-btn'+(p===_sayfa?' on':'')+'" onclick="sayfaGit('+p+')">'+p+'</button>';
+  });
+  html+='<button class="pgn-btn" '+((_sayfa>=top)?'disabled':'')+' onclick="sayfaGit('+(_sayfa+1)+')">&#8594;</button>';
+  document.getElementById('pgnBtns').innerHTML=html;
+}
+
+function showToast(msg,type){
+  var old=document.getElementById('_toast');if(old)old.remove();
+  var t=document.createElement('div');t.id='_toast';
+  t.className='toast t-'+({'success':'ok','error':'er'}[type]||'in');
+  t.innerHTML='<span>'+msg+'</span><button style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px;margin-left:8px;" onclick="this.parentElement.remove()">&#x2715;</button>';
+  document.body.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.remove();},3500);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  guncelStatlar();
+  filtrele();
+});
+</script>
+</body>
+</html>

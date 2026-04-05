@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Senaryo Kütüphanesi | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+.page{padding:28px 28px 60px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
+
+/* FİLTRE BARI */
+.filtre-bari{display:flex;align-items:center;gap:10px;margin-bottom:20px;background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--warn);border-radius:10px;padding:10px 14px;flex-wrap:wrap;}
+.filtre-btn{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);transition:all 0.15s;font-family:'Barlow',sans-serif;}
+.filtre-btn:hover,.filtre-btn.aktif{border-color:var(--ac);color:var(--ac);background:rgba(45,142,255,.08);}
+.filtre-spacer{flex:1;}
+.senaryo-sayisi{font-size:12px;color:var(--txd);}
+
+/* SENARYO KARTI */
+.senaryo-kart{background:var(--sur);border:1px solid var(--bor);border-radius:16px;overflow:hidden;margin-bottom:16px;transition:border-color 0.15s;}
+.senaryo-kart:hover{border-color:rgba(45,142,255,.3);}
+.senaryo-head{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;cursor:pointer;user-select:none;transition:background 0.15s;}
+.senaryo-head:hover{background:var(--sur2);}
+.senaryo-no{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;padding:4px 10px;border-radius:7px;background:var(--sur2);color:var(--txd);flex-shrink:0;margin-top:2px;}
+.senaryo-meta{flex:1;}
+.senaryo-baslik{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);margin-bottom:6px;}
+.senaryo-ozet{font-size:12px;color:var(--txm);line-height:1.5;}
+.senaryo-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.senaryo-arrow{font-size:11px;color:var(--txd);transition:transform 0.2s;flex-shrink:0;margin-top:6px;}
+.senaryo-kart.open .senaryo-arrow{transform:rotate(180deg);}
+.senaryo-body{display:none;border-top:1px solid var(--bor);padding:20px;}
+.senaryo-kart.open .senaryo-body{display:block;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-sahadan{background:rgba(22,163,110,.12);color:var(--gr);}
+.b-kenar{background:rgba(217,119,6,.12);color:var(--warn);}
+.b-beklenti{background:rgba(45,142,255,.12);color:var(--ac);}
+.b-kritik{background:rgba(229,62,62,.12);color:var(--re);}
+.b-onemli{background:rgba(217,119,6,.12);color:var(--warn);}
+.b-olsa{background:rgba(100,116,139,.12);color:var(--txd);}
+
+/* DURUM */
+.durum-satir{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:5px;font-size:12px;}
+.d-tam{background:rgba(22,163,110,.06);border:1px solid rgba(22,163,110,.15);}
+.d-kismi{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.15);}
+.d-yok{background:rgba(229,62,62,.06);border:1px solid rgba(229,62,62,.15);}
+.d-gelecek{background:rgba(45,142,255,.06);border:1px solid rgba(45,142,255,.15);}
+.durum-ikon{font-size:14px;flex-shrink:0;}
+.durum-icerik{flex:1;color:var(--txm);line-height:1.5;}
+
+/* AKIŞ */
+.akis{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0;padding:12px;background:var(--sur2);border-radius:10px;}
+.akis-adim{background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--txm);white-space:nowrap;}
+.akis-ok{color:var(--txd);font-size:13px;}
+.akis-adim.vurgulu{background:rgba(45,142,255,.1);border-color:rgba(45,142,255,.3);color:var(--ac);}
+.akis-adim.eksik{background:rgba(229,62,62,.08);border-color:rgba(229,62,62,.2);color:var(--re);}
+
+/* BÖLÜM BAŞLIĞI */
+.bolum{font-size:10px;font-weight:800;color:var(--txd);text-transform:uppercase;letter-spacing:0.7px;margin:16px 0 8px;}
+
+/* KARAR KUTUSU */
+.karar-kutu{border-radius:10px;padding:14px 16px;margin-top:16px;}
+.k-geri{background:rgba(229,62,62,.06);border:2px solid rgba(229,62,62,.2);}
+.k-devam{background:rgba(22,163,110,.06);border:2px solid rgba(22,163,110,.2);}
+.k-bekle{background:rgba(217,119,6,.06);border:2px solid rgba(217,119,6,.2);}
+.karar-baslik{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;margin-bottom:6px;}
+.karar-aciklama{font-size:12px;color:var(--txm);line-height:1.6;}
+
+/* AKTÖR */
+.aktor-liste{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
+.aktor{background:var(--sur2);border:1px solid var(--bor);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--txm);}
+
+/* TABLO */
+.s-tablo{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0;}
+.s-tablo th{padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;border-bottom:1px solid var(--bor);background:var(--sur2);}
+.s-tablo td{padding:8px 10px;border-bottom:1px solid var(--bor);color:var(--txm);vertical-align:top;}
+.s-tablo tr:last-child td{border-bottom:none;}
+
+/* PDF */
+.pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-family:'Barlow',sans-serif;transition:all 0.15s;}
+.pdf-btn:hover{border-color:var(--ac);color:var(--ac);}
+
+@media print{.filtre-bari,.pdf-btn,#ares-topbar,.sidebar{display:none!important;}.senaryo-body{display:block!important;}.page{padding:0!important;}}
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+<div class="app-shell"><div class="main-content"><div class="page">
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Senaryo Kütüphanesi</span></div>
+    <h1 class="page-title">Senaryo Kütüphanesi</h1>
+    <div style="font-size:13px;color:var(--txd);margin-top:4px;">Gerçek saha senaryoları · Kenar durumlar · Beklentiler — Program bu hedefleri karşılıyor mu?</div>
+  </div>
+  <button class="pdf-btn" onclick="window.print()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    PDF / Yazdır
+  </button>
+</div>
+
+<!-- FİLTRE BARI -->
+<div class="filtre-bari">
+  <button class="filtre-btn aktif" onclick="filtrele('hepsi',this)">Tümü</button>
+  <button class="filtre-btn" onclick="filtrele('sahadan',this)">🏭 Sahadan</button>
+  <button class="filtre-btn" onclick="filtrele('beklenti',this)">💡 Beklenti</button>
+  <button class="filtre-btn" onclick="filtrele('kenar',this)">⚠️ Kenar Durum</button>
+  <button class="filtre-btn" onclick="filtrele('kritik',this)">🔴 Kritik</button>
+  <div class="filtre-spacer"></div>
+  <span class="senaryo-sayisi" id="senaryo-sayisi">2 senaryo</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     S-01: TERSANE PERSPEKTİFİ
+═══════════════════════════════════════════════════════ -->
+<div class="senaryo-kart" data-kaynak="beklenti" data-oncelik="kritik">
+  <div class="senaryo-head" onclick="tog(this.parentElement)">
+    <div class="senaryo-no">S-01</div>
+    <div class="senaryo-meta">
+      <div class="senaryo-baslik">Tersane Perspektifi — Çok Imalatçılı Yönetim</div>
+      <div class="senaryo-ozet">Bir tersane AresPipe'ı kendisi kullanmak istiyor. Birden fazla imalatçı firmaya iş dağıtıyor, yüzey işlemi, depo ve montaj aşamalarını da takip etmek istiyor.</div>
+      <div class="senaryo-badges">
+        <span class="badge b-beklenti">💡 Beklenti</span>
+        <span class="badge b-kritik">🔴 Kritik</span>
+        <span style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(124,58,237,.12);color:var(--leg);">🏗️ Mimari Etkisi Yüksek</span>
+      </div>
+    </div>
+    <span class="senaryo-arrow">▼</span>
+  </div>
+  <div class="senaryo-body">
+
+    <div class="bolum">Aktörler</div>
+    <div class="aktor-liste">
+      <div class="aktor">🏭 Tersane (merkez kullanıcı)</div>
+      <div class="aktor">🔧 A İmalatçı Firması</div>
+      <div class="aktor">🔧 B İmalatçı Firması</div>
+      <div class="aktor">🚛 Yüzey İşlemi Firması</div>
+      <div class="aktor">🏗️ C Montaj Firması</div>
+      <div class="aktor">🏗️ D Montaj Firması</div>
+    </div>
+
+    <div class="bolum">Senaryo Akışı</div>
+    <div class="akis">
+      <div class="akis-adim vurgulu">İzometri Havuzu</div><span class="akis-ok">→</span>
+      <div class="akis-adim vurgulu">Devre Girişi</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">İş Dağıtımı (A/B)</div><span class="akis-ok">→</span>
+      <div class="akis-adim">İmalat + QR</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">Teslim Alma</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">Yüzey İşlemi</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">Boru Sahası Depo</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">Montaj (C/D)</div><span class="akis-ok">→</span>
+      <div class="akis-adim eksik">Müşteri Teslim</div>
+    </div>
+    <div style="font-size:11px;color:var(--txd);margin-bottom:12px;">🔵 Mevcut sistemde var &nbsp; 🔴 Eksik</div>
+
+    <div class="bolum">Mevcut Sistemin Karşıladığı</div>
+    <div class="durum-satir d-tam"><span class="durum-ikon">✅</span><div class="durum-icerik"><strong>Devre ve spool takibi</strong> — mevcut</div></div>
+    <div class="durum-satir d-tam"><span class="durum-ikon">✅</span><div class="durum-icerik"><strong>Multi-tenant yapısı (M-07)</strong> — her firma izole</div></div>
+    <div class="durum-satir d-tam"><span class="durum-ikon">✅</span><div class="durum-icerik"><strong>QR sistemi</strong> — planlandı (NOT-02)</div></div>
+    <div class="durum-satir d-tam"><span class="durum-ikon">✅</span><div class="durum-icerik"><strong>Proje/tersane hiyerarşisi</strong> — mevcut</div></div>
+
+    <div class="bolum">Eksik Olan</div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>İş dağıtımı</strong> — "Bu devreyi A firmasına ver" özelliği yok</div></div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>Alt yüklenici girişi</strong> — imalatçı firmalar sisteme nasıl girecek?</div></div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>Yüzey işlemi aşaması</strong> — ayrı firma, ayrı adım olarak tanımlı değil</div></div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>Depo/saha takibi</strong> — boru sahası, montaj bekleyen stok yönetimi yok</div></div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>Montaj firması takibi</strong> — montaj ayrı bir aşama olarak tanımlı değil</div></div>
+    <div class="durum-satir d-yok"><span class="durum-ikon">❌</span><div class="durum-icerik"><strong>Müşteriye teslim</strong> — son adım mevcut akışta yok</div></div>
+
+    <div class="bolum">Kritik Mimari Sorun</div>
+    <div style="background:var(--sur2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--txm);line-height:1.8;">
+      Şu an sistem <strong style="color:var(--tx);">imalatçı perspektifinden</strong> tasarlandı. Bu senaryo <strong style="color:var(--tx);">tersane perspektifi</strong> gerektiriyor. Tenant yapısına yeni bir katman eklenmeli:<br><br>
+      <code style="background:var(--sur);padding:8px 12px;border-radius:7px;display:block;color:var(--ac);line-height:2;">
+        Müşteri (Tersane)<br>
+        &nbsp;&nbsp;└── Proje<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── İmalat Firmaları (A, B, C...)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Montaj Firmaları (C, D...)
+      </code>
+      Şu an bu hiyerarşi mevcut değil. Proje doğrudan firmaya bağlı.
+    </div>
+
+    <div class="bolum">Supabase Şemasına Etkisi</div>
+    <div class="durum-satir d-gelecek"><span class="durum-ikon">💡</span><div class="durum-icerik">Supabase şeması tasarlanırken bu hiyerarşi göz önünde bulundurulmalı. Şema doğru kurulursa bu senaryo sonradan eklenebilir — yeniden yazmak gerekmez.</div></div>
+
+    <div class="karar-kutu k-bekle" style="margin-top:16px;">
+      <div class="karar-baslik" style="color:var(--warn);">⏳ Karar: Supabase Şemasına Taşı</div>
+      <div class="karar-aciklama">Şu an prototipi bitir. Supabase şeması tasarlanırken bu senaryo referans alınacak. Şemada "alt yüklenici" ve "aşama" kavramlarına yer açılacak. Başa dönmeye gerek yok — ama şema tasarımında bu senaryoyu unutma.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     S-02: MÜŞTERİ PORTAL PERSPEKTİFİ
+═══════════════════════════════════════════════════════ -->
+<div class="senaryo-kart" data-kaynak="beklenti" data-oncelik="kritik">
+  <div class="senaryo-head" onclick="tog(this.parentElement)">
+    <div class="senaryo-no">S-02</div>
+    <div class="senaryo-meta">
+      <div class="senaryo-baslik">Müşteri Portalı — Çok İmalatçılı Tek Giriş</div>
+      <div class="senaryo-ozet">Bir tersane birden fazla imalatçıyla çalışıyor. Müşteri tek kullanıcı adı/şifreyle giriş yapıp tüm imalatçılarının durumunu tek ekranda görmek istiyor.</div>
+      <div class="senaryo-badges">
+        <span class="badge b-beklenti">💡 Beklenti</span>
+        <span class="badge b-kritik">🔴 Kritik</span>
+        <span style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(124,58,237,.12);color:var(--leg);">🏗️ Mimari Etkisi Yüksek</span>
+      </div>
+    </div>
+    <span class="senaryo-arrow">▼</span>
+  </div>
+  <div class="senaryo-body">
+
+    <div class="bolum">Aktörler</div>
+    <div class="aktor-liste">
+      <div class="aktor">🏭 Tersane (müşteri)</div>
+      <div class="aktor">🔧 A İmalatçı Firması (AresPipe kullanıcısı)</div>
+      <div class="aktor">🔧 B İmalatçı Firması (AresPipe kullanıcısı)</div>
+    </div>
+
+    <div class="bolum">Senaryo</div>
+    <div style="background:var(--sur2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--txm);line-height:1.9;margin:8px 0;">
+      Tersane hem A firmasına hem B firmasına iş veriyor. Her iki firma da AresPipe kullanıyor. Tersane A firmasından bir kullanıcı adı/şifre, B firmasından ayrı bir kullanıcı adı/şifre alıyor.<br><br>
+      <strong style="color:var(--tx);">Soru:</strong> Müşteri her imalatçının sistemine ayrı ayrı mı girecek? Yoksa tek girişle iki firmanın durumunu birlikte görebilecek mi?
+    </div>
+
+    <div class="bolum">İki Model Karşılaştırması</div>
+    <table class="s-tablo">
+      <thead><tr><th>Model</th><th>Nasıl Çalışır</th><th>Müşteri Deneyimi</th><th>Mimari Karmaşıklık</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Model 1</strong><br><span style="font-size:10px;color:var(--txd);">Şu anki plan</span></td>
+          <td>Her imalatçı ayrı portal verir. Müşteri kaç imalatçısı varsa o kadar sisteme girer.</td>
+          <td style="color:var(--re);">Kötü — ayrı şifreler, ayrı ekranlar, bütünsel görüş yok</td>
+          <td style="color:var(--gr);">Düşük — mevcut yapı yeterli</td>
+        </tr>
+        <tr>
+          <td><strong>Model 2</strong><br><span style="font-size:10px;color:var(--txd);">Bu senaryo</span></td>
+          <td>Müşteri portalı imalatçıdan bağımsız çalışır. Tek hesapla tüm imalatçıları görür.</td>
+          <td style="color:var(--gr);">İyi — tek giriş, bütünsel tablo</td>
+          <td style="color:var(--re);">Yüksek — cross-tenant veri erişimi gerekir</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="bolum">Mimari Zorluk</div>
+    <div style="background:var(--sur2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--txm);line-height:1.8;">
+      Model 2 için tenant izolasyonu (M-07) farklı düşünülmeli:<br><br>
+      • A firmasının verisi B firmasına görünmez — doğru<br>
+      • Ama tersane müşterisi hem A hem B'nin verisini görmeli — bu cross-tenant erişim<br>
+      • Çözüm: "Müşteri" kavramı tenant'tan bağımsız bir katmanda tutulmalı<br>
+      • Supabase'de: <code style="background:var(--sur);padding:2px 6px;border-radius:4px;color:var(--ac);">customers</code> tablosu + <code style="background:var(--sur);padding:2px 6px;border-radius:4px;color:var(--ac);">customer_project_access</code> tablosu
+    </div>
+
+    <div class="bolum">S-01 ile İlişkisi</div>
+    <div class="durum-satir d-gelecek"><span class="durum-ikon">🔗</span><div class="durum-icerik">S-01 ve S-02 birbirini tamamlıyor. İkisi de "müşteri merkezi, imalatçılar çevre" mimarisine işaret ediyor. Supabase şemasında birlikte ele alınmalı.</div></div>
+
+    <div class="karar-kutu k-bekle" style="margin-top:16px;">
+      <div class="karar-baslik" style="color:var(--warn);">⏳ Karar: Supabase Şemasına Taşı</div>
+      <div class="karar-aciklama">Şu an mevcut portal planı (NOT-04) yeterli — müşteri kendi imalatçısının sistemine giriyor. Ama Supabase şeması tasarlanırken "müşteri" kavramı tenant'tan bağımsız bir katmana oturtulmalı. Böylece ileride Model 2'ye geçmek mümkün olur.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- YENİ SENARYO ALANI -->
+<div style="border:2px dashed var(--bor);border-radius:16px;padding:24px;text-align:center;color:var(--txd);">
+  <div style="font-size:24px;margin-bottom:8px;">+</div>
+  <div style="font-size:13px;font-weight:600;">Yeni Senaryo</div>
+  <div style="font-size:12px;margin-top:4px;">Aklına gelen sahadan, kenar durum veya beklenti senaryolarını buraya ekle</div>
+</div>
+
+</div></div></div>
+
+<script>
+function tog(el){ el.classList.toggle('open'); }
+
+function filtrele(tip, btn) {
+  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('aktif'));
+  btn.classList.add('aktif');
+  var kartlar = document.querySelectorAll('.senaryo-kart');
+  var sayi = 0;
+  kartlar.forEach(function(k) {
+    if (tip === 'hepsi') {
+      k.style.display = '';
+      sayi++;
+    } else if (tip === 'kritik') {
+      var goster = k.dataset.oncelik === 'kritik';
+      k.style.display = goster ? '' : 'none';
+      if (goster) sayi++;
+    } else {
+      var goster = k.dataset.kaynak === tip;
+      k.style.display = goster ? '' : 'none';
+      if (goster) sayi++;
+    }
+  });
+  document.getElementById('senaryo-sayisi').textContent = sayi + ' senaryo';
+}
+
+document.documentElement.style.visibility = '';
+</script>
+</body>
+</html>

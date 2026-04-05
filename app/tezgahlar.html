@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tezgahlar | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+
+
+
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+
+
+
+
+
+
+.sum-bar{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:24px;
+}
+.sum-card{
+  background: var(--sur);
+  border:1px solid var(--bor);
+  border-radius:16px;
+  padding:16px 20px;
+  text-align:center;
+}
+.sum-card .sl{
+  font-size:12px;
+  font-weight:500;
+  color: var(--txd);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:8px;
+}
+.sum-card .sv{
+  font-size:32px;
+  font-weight:700;
+}
+.sum-card.imalat .sv{color:var(--ac);}
+.sum-card.argon .sv{color:var(--warn);}
+.sum-card.gazalti .sv{color:var(--gr);}
+
+.filters{
+  display:flex;
+  gap:8px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
+.filter-btn{
+  font-size:13px;
+  font-weight:500;
+  padding:8px 20px;
+  border-radius:40px;
+  border:1px solid var(--bor);
+  background:transparent;
+  color: var(--txm);
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.filter-btn:hover{
+  background: var(--sur2);
+  color: var(--tx);
+  border-color: var(--bor);
+}
+.filter-btn.on{
+  background: var(--tx);
+  color: var(--bg);
+  border-color: var(--tx);
+  font-weight:600;
+}
+
+
+/* SOL KENAR RENK (Kural B-01) */
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+/* ===== LİSTE/TABLO GÖRÜNÜMÜ ===== */
+.grid{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Tablo başlık satırı */
+.grid-header{
+  display:grid;
+  grid-template-columns: 240px 170px 1fr 160px 140px 300px;
+  gap:0;
+  padding:0 8px 6px 16px;
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  color: var(--txd);
+  border-bottom:1px solid var(--bor);
+  margin-bottom:4px;
+}
+
+.card{
+  background: var(--sur);
+  border:1px solid var(--bor);
+  border-radius:12px;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:grid;
+  grid-template-columns: 240px 170px 1fr 160px 140px 300px;
+  grid-template-rows: 1fr 3px;
+  align-items:center;
+  min-height:102px;
+  overflow:hidden;
+}
+.card:hover{
+  border-color: var(--bor);
+  background: var(--sur2);
+  box-shadow:0 4px 12px -2px rgba(0,0,0,0.3);
+}
+
+.border-aktif{border-left:4px solid #10b981;}
+.border-bosta{border-left:4px solid #ef4444;}
+.border-mola{border-left:4px solid #f59e0b;}
+
+/* === KİŞİ SÜTUNU === */
+.c-head{
+  padding:8px 12px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.person-photo{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid var(--bor);
+  flex-shrink:0;
+}
+.person-info{
+  flex:1;
+  min-width:0;
+}
+.c-name{
+  font-size:13px;
+  font-weight:600;
+  color: var(--tx);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.c-role{
+  font-size:11px;
+  color: var(--txd);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.c-role strong{
+  color:var(--warn);
+  font-weight:600;
+}
+.s-pill{
+  display:inline-block;
+  font-size:10px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:20px;
+  margin-top:3px;
+  letter-spacing:0.3px;
+}
+.sp-aktif{
+  background:rgba(16,185,129,0.1);
+  color:var(--gr);
+  border:1px solid rgba(16,185,129,0.3);
+}
+.sp-bosta{
+  background:rgba(239,68,68,0.1);
+  color:var(--re);
+  border:1px solid rgba(239,68,68,0.3);
+}
+.sp-mola{
+  background:rgba(245,158,11,0.1);
+  color:var(--warn);
+  border:1px solid rgba(245,158,11,0.3);
+}
+
+/* === MESAI SÜTUNU === */
+.work-hours{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  padding:8px 10px;
+  border-left:1px solid var(--bor);
+}
+.work-time{
+  font-size:12px;
+  color: var(--txm);
+  white-space:nowrap;
+}
+.work-time span{
+  color:var(--warn);
+  font-weight:600;
+  margin:0 1px;
+}
+.work-controls{
+  display:flex;
+  gap:2px;
+}
+.work-btn{
+  background: var(--sur);
+  border:1px solid var(--bor);
+  color: var(--txm);
+  width:18px;
+  height:18px;
+  border-radius:4px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+.work-btn:hover{
+  background: var(--bor);
+  color: var(--tx);
+}
+
+/* === SPOOL SÜTUNU === */
+.spool-box, .no-job{
+  padding:8px 12px;
+  border-left:1px solid var(--bor);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:transparent;
+  border-radius:0;
+  margin:0;
+  min-height:unset;
+  height:100%;
+}
+.spool-no{
+  font-size:12px;
+  font-weight:700;
+  color:var(--ac);
+  margin-bottom:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.spool-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 12px;
+}
+.sm-row{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.sm-label{
+  font-size:10px;
+  color: var(--txd);
+}
+.sm-val{
+  font-size:11px;
+  font-weight:600;
+  color: var(--tx);
+}
+.no-job{
+  text-align:left;
+  color: var(--txd);
+  font-size:12px;
+  font-style:italic;
+  justify-content:center;
+  align-items:center;
+}
+
+/* === TIMER SÜTUNU === */
+.timer-row{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:12px 14px;
+  border-left:1px solid var(--bor);
+  gap:4px;
+}
+.t-label{
+  font-size:10px;
+  color: var(--txd);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  white-space:nowrap;
+}
+.t-val{
+  font-size:24px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.tv-g{color:var(--gr);}
+.tv-r{color:var(--re);}
+.tv-y{color:var(--warn);}
+
+.idle-warn{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font-size:10px;
+  color:var(--re);
+  font-weight:600;
+  margin-top:2px;
+}
+.iw-dot{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--re);
+  animation:pulse 1.5s infinite;
+  flex-shrink:0;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* === TAMAMLANAN SÜTUNU === */
+.col-eff{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:12px 16px;
+  border-left:1px solid var(--bor);
+  height:100%;
+  gap:4px;
+}
+.completed-count{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.completed-label{
+  font-size:10px;
+  font-weight:600;
+  color: var(--txd);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.completed-value{
+  font-size:36px;
+  font-weight:700;
+  color:var(--warn);
+  line-height:1;
+}
+
+.eff-bar{
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height:3px;
+  background: var(--bor);
+  display:flex;
+  overflow:hidden;
+  border-radius:0 0 12px 12px;
+  opacity:0.55;
+}
+.eff-aktif{background:var(--gr);}
+.eff-pasif{background:var(--re);}
+
+/* === SON İŞ SÜTUNU === */
+.prev-job{
+  padding:14px 16px;
+  border-left:1px solid var(--bor);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  height:100%;
+}
+.prev-spool{
+  font-size:12px;
+  font-weight:600;
+  color: var(--tx);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  margin-bottom:4px;
+}
+.prev-datetime{
+  display:flex;
+  flex-wrap:wrap;
+  gap:3px 10px;
+  font-size:11px;
+  color: var(--txm);
+}
+.prev-datetime span{
+  color:var(--warn);
+  font-weight:600;
+}
+.prev-datetime i{
+  color: var(--txd);
+  font-style:normal;
+}
+
+/* ===== SIDEBAR ===== */
+* { margin:0; padding:0; box-sizing:border-box; }
+:root { --ac:#0ea5e9; --gr:#10b981; --re:#ef4444; --warn:#f59e0b; --leg:#a855f7; }
+
+[data-theme="dark"]  .icon-sun  { display:block!important; }
+[data-theme="dark"]  .icon-moon { display:none!important; }
+[data-theme="light"] .icon-sun  { display:none!important; }
+[data-theme="light"] .icon-moon { display:block!important; }
+
+/* ===== 4 TEMA SİSTEMİ ===== */
+:root { --ac:#0ea5e9; --gr:#10b981; --re:#ef4444; --warn:#f59e0b; --leg:#a855f7; }
+
+/* ANTRASIT — koyu gri, endüstriyel */
+
+/* NAVY — lacivert, denizcilik kurumsal */
+
+.tp-btn {
+  width:26px; height:26px; border-radius:6px; border:2px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.15s; flex-shrink:0;
+}
+.tp-btn:hover { transform:scale(1.12); }
+.tp-btn.active { border-width:2px; border-color:var(--ac) !important; box-shadow:0 0 0 2px rgba(14,165,233,0.3); }
+
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+<div class="main-content">
+<div class="page" style="padding:28px 28px 40px;">
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:13px;color:var(--txd);margin-bottom:6px;display:flex;align-items:center;gap:6px;"><a href="index.html" style="color:var(--txd);text-decoration:none;">Ana Sayfa</a><span>/</span><span>Tezgahlar</span></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;">Atölye Takip</div>
+    <div style="font-size:13px;color:var(--txm);margin-top:3px;">Anlık personel ve tezgah durumu</div>
+  </div>
+  <div class="page-clock" id="clk" style="font-size:13px;color:var(--txm);background:var(--sur2);padding:6px 14px;border-radius:8px;border:1px solid var(--bor);"></div>
+</div>
+
+<div class="sum-bar" id="sumBar"></div>
+
+<div class="filters" id="filterContainer">
+  <button class="filter-btn on" data-filter="hepsi">Tümü</button>
+  <button class="filter-btn" data-filter="aktif">Aktif</button>
+  <button class="filter-btn" data-filter="bosta">Boşta</button>
+  <button class="filter-btn" data-filter="mola">Mola</button>
+  <button class="filter-btn" data-filter="imalat">İmalat</button>
+  <button class="filter-btn" data-filter="kaynak">Kaynak</button>
+</div>
+
+<div class="grid-header">
+  <span>Personel</span>
+  <span>Mesai</span>
+  <span>Anlık İş</span>
+  <span>Süre</span>
+  <span>Tamamlanan</span>
+  <span>Son İş</span>
+</div>
+<div class="grid" id="grid"></div>
+
+<script>
+var NOW = Date.now();
+
+var personel = [
+  {
+    id: 1,
+    ad: "Erim Şengezer",
+    rol: "İmalat",
+    rolKey: "imalat",
+    foto: "https://i.pravatar.cc/150?u=1",
+    durum: "bosta",
+    boslayanAt: NOW - 366000,
+    aktifDk: 214,
+    pasifDk: 46,
+    tamamlanan: 7,
+    imalatAdet: 5,
+    argonAdet: 0,
+    gazaltiAdet: 2,
+    girisSaat: "08:30",
+    cikisSaat: "17:00",
+    anlik: null,
+    son: {
+      spool: "NB1099C-M100-317-P2-S02",
+      baslaTarih: "2024-01-15",
+      baslaSaat: "09:15",
+      bitisTarih: "2024-01-15",
+      bitisSaat: "09:41",
+      sure: "00:26"
+    }
+  },
+  {
+    id: 2,
+    ad: "Gamze Akbulut",
+    rol: "Kaynak",
+    rolKey: "kaynak",
+    foto: "https://i.pravatar.cc/150?u=2",
+    durum: "aktif",
+    islemTuru: "Gaz Altı Kaynak",
+    baslangicAt: NOW - 10790000,
+    aktifDk: 238,
+    pasifDk: 22,
+    tamamlanan: 9,
+    imalatAdet: 0,
+    argonAdet: 2,
+    gazaltiAdet: 7,
+    girisSaat: "08:30",
+    cikisSaat: "20:00",
+    anlik: {
+      spool: "NB1137-G400-804-604-S01",
+      isEmri: "I26-032",
+      malzeme: "Çelik–St37",
+      cap: "114.3mm",
+      agirlik: "25.0 kg"
+    },
+    son: {
+      spool: "NB1137-M120-582-1020-S01",
+      baslaTarih: "2024-01-15",
+      baslaSaat: "11:20",
+      bitisTarih: "2024-01-15",
+      bitisSaat: "11:48",
+      sure: "00:28"
+    }
+  },
+  {
+    id: 3,
+    ad: "Murat Demir",
+    rol: "İmalat",
+    rolKey: "imalat",
+    foto: "https://i.pravatar.cc/150?u=3",
+    durum: "aktif",
+    islemTuru: "CNC Kesim",
+    baslangicAt: NOW - 4520000,
+    aktifDk: 195,
+    pasifDk: 65,
+    tamamlanan: 12,
+    imalatAdet: 12,
+    argonAdet: 0,
+    gazaltiAdet: 0,
+    girisSaat: "08:30",
+    cikisSaat: "17:00",
+    anlik: {
+      spool: "NB1120-K200-441-02-S03",
+      isEmri: "K14-088",
+      malzeme: "Karbon–A106",
+      cap: "88.9mm",
+      agirlik: "18.4 kg"
+    },
+    son: {
+      spool: "NB1120-K200-441-02-S02",
+      baslaTarih: "2024-01-15",
+      baslaSaat: "13:15",
+      bitisTarih: "2024-01-15",
+      bitisSaat: "13:40",
+      sure: "00:25"
+    }
+  },
+  {
+    id: 4,
+    ad: "Selin Yıldız",
+    rol: "Kaynak",
+    rolKey: "kaynak",
+    foto: "https://i.pravatar.cc/150?u=4",
+    durum: "aktif",
+    islemTuru: "Argon Kaynağı",
+    baslangicAt: NOW - 2110000,
+    aktifDk: 178,
+    pasifDk: 82,
+    tamamlanan: 5,
+    imalatAdet: 0,
+    argonAdet: 5,
+    gazaltiAdet: 0,
+    girisSaat: "08:30",
+    cikisSaat: "17:00",
+    anlik: {
+      spool: "NB1152-B300-228-01-S01",
+      isEmri: "B09-017",
+      malzeme: "Paslanmaz–316L",
+      cap: "60.3mm",
+      agirlik: "12.6 kg"
+    },
+    son: {
+      spool: "NB1152-B300-228-01-S04",
+      baslaTarih: "2024-01-15",
+      baslaSaat: "10:30",
+      bitisTarih: "2024-01-15",
+      bitisSaat: "11:05",
+      sure: "00:35"
+    }
+  },
+  {
+    id: 5,
+    ad: "Ali Koç",
+    rol: "İmalat",
+    rolKey: "imalat",
+    foto: "https://i.pravatar.cc/150?u=5",
+    durum: "mola",
+    boslayanAt: NOW - 1102000,
+    aktifDk: 156,
+    pasifDk: 104,
+    tamamlanan: 6,
+    imalatAdet: 4,
+    argonAdet: 0,
+    gazaltiAdet: 2,
+    girisSaat: "08:30",
+    cikisSaat: "17:00",
+    anlik: null,
+    son: {
+      spool: "NB1099C-M100-411-03-S01",
+      baslaTarih: "2024-01-15",
+      baslaSaat: "14:15",
+      bitisTarih: "2024-01-15",
+      bitisSaat: "14:41",
+      sure: "00:26"
+    }
+  }
+];
+
+var activeFilter = "hepsi";
+
+function pad(n) { return String(n).padStart(2, "0"); }
+function secToHMS(s) {
+  var h = Math.floor(s / 3600);
+  var m = Math.floor((s % 3600) / 60);
+  var sec = s % 60;
+  return pad(h) + ":" + pad(m) + ":" + pad(sec);
+}
+
+/* disabled:  */
+
+document.querySelectorAll(".filter-btn").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    activeFilter = this.dataset.filter;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("on"));
+    this.classList.add("on");
+    renderGrid();
+  });
+});
+
+function filteredPersonel() {
+  if (activeFilter === "hepsi") return personel;
+  if (["aktif", "bosta", "mola"].includes(activeFilter)) {
+    return personel.filter(p => p.durum === activeFilter);
+  }
+  return personel.filter(p => p.rolKey === activeFilter);
+}
+
+function renderSummary() {
+  var imalat = personel.reduce((s, p) => s + p.imalatAdet, 0);
+  var argon = personel.reduce((s, p) => s + p.argonAdet, 0);
+  var gazalti = personel.reduce((s, p) => s + p.gazaltiAdet, 0);
+  
+  document.getElementById("sumBar").innerHTML = `
+    <div class="sum-card imalat cl-ac">
+      <div class="sl">İmalat</div>
+      <div class="sv">${imalat}</div>
+    </div>
+    <div class="sum-card argon cl-warn">
+      <div class="sl">Argon</div>
+      <div class="sv">${argon}</div>
+    </div>
+    <div class="sum-card gazalti cl-gr">
+      <div class="sl">Gazaltı</div>
+      <div class="sv">${gazalti}</div>
+    </div>
+  `;
+}
+
+function adjustWorkHours(personId, tip, delta) {
+  var p = personel.find(p => p.id === personId);
+  if (!p) return;
+  
+  var saat, dakika;
+  
+  if (tip === 'giris') {
+    [saat, dakika] = p.girisSaat.split(":").map(Number);
+    dakika += delta * 30; // 30 dakika artış/azalış
+  } else {
+    [saat, dakika] = p.cikisSaat.split(":").map(Number);
+    dakika += delta * 30; // 30 dakika artış/azalış
+  }
+  
+  // Dakika düzeltme
+  if (dakika >= 60) {
+    saat += Math.floor(dakika / 60);
+    dakika = dakika % 60;
+  }
+  if (dakika < 0) {
+    saat += Math.floor(dakika / 60) - 1;
+    dakika = 60 + (dakika % 60);
+  }
+  
+  if (saat < 0) saat = 0;
+  if (saat > 23) saat = 23;
+  
+  var yeniSaat = pad(saat) + ":" + pad(dakika);
+  
+  if (tip === 'giris') {
+    p.girisSaat = yeniSaat;
+  } else {
+    p.cikisSaat = yeniSaat;
+  }
+  
+  var card = document.querySelector(`.card[data-person-id="${personId}"]`);
+  if (card) {
+    var workTimeSpan = card.querySelector(".work-time");
+    if (workTimeSpan) {
+      workTimeSpan.innerHTML = `🕒 <span>${p.girisSaat}</span> → <span>${p.cikisSaat}</span>`;
+    }
+  }
+}
+
+function cardHTML(p) {
+  var timerSec = p.durum === "aktif" 
+    ? Math.floor((Date.now() - p.baslangicAt) / 1000)
+    : Math.floor((Date.now() - p.boslayanAt) / 1000);
+  
+  var timerStr = secToHMS(timerSec);
+  var tClass = p.durum === "aktif" ? "tv-g" : p.durum === "mola" ? "tv-y" : "tv-r";
+  
+  var spClass = p.durum === "aktif" ? "sp-aktif" : p.durum === "mola" ? "sp-mola" : "sp-bosta";
+  var spLabel = p.durum === "aktif" ? "AKTİF" : p.durum === "mola" ? "MOLA" : "BOŞTA";
+  var bClass = p.durum === "aktif" ? "border-aktif" : p.durum === "mola" ? "border-mola" : "border-bosta";
+  
+  var aktifPct = Math.round(p.aktifDk / (p.aktifDk + p.pasifDk) * 100) || 0;
+  var pasifPct = 100 - aktifPct;
+  
+  var aktifH = Math.floor(p.aktifDk / 60);
+  var aktifM = p.aktifDk % 60;
+  var pasifH = Math.floor(p.pasifDk / 60);
+  var pasifM = p.pasifDk % 60;
+
+  var jobSection = p.anlik ? `
+    <div class="spool-box">
+      <div class="spool-no">${p.anlik.spool}</div>
+      <div class="spool-meta">
+        <div class="sm-row"><span class="sm-label">Mlz:</span><span class="sm-val">${p.anlik.malzeme}</span></div>
+        <div class="sm-row"><span class="sm-label">Çap:</span><span class="sm-val">${p.anlik.cap}</span></div>
+        <div class="sm-row"><span class="sm-label">Ağr:</span><span class="sm-val">${p.anlik.agirlik}</span></div>
+        <div class="sm-row"><span class="sm-label">İE:</span><span class="sm-val">${p.anlik.isEmri}</span></div>
+      </div>
+    </div>
+  ` : `<div class="no-job">⏳ Atanmış iş yok</div>`;
+
+  var idleWarn = (p.durum === "bosta" && timerSec > 600) ? `
+    <div class="idle-warn">
+      <div class="iw-dot"></div>
+      Uzun süredir boşta!
+    </div>
+  ` : "";
+
+  return `
+    <div class="card ${bClass}" data-person-id="${p.id}" onclick="window.location='/personel/${p.id}'">
+
+      <!-- 1. KİŞİ -->
+      <div class="c-head">
+        <img class="person-photo" src="${p.foto}" alt="${p.ad}" onerror="this.src='https://i.pravatar.cc/150?u=${p.id}'">
+        <div class="person-info">
+          <div class="c-name">${p.ad}</div>
+          <div class="c-role">${p.rol}${p.islemTuru ? ' · <strong>' + p.islemTuru + '</strong>' : ''}</div>
+          <div class="s-pill ${spClass}">${spLabel}</div>
+        </div>
+      </div>
+
+      <!-- 2. MESAİ -->
+      <div class="work-hours">
+        <div class="work-time">
+          🕒 <span>${p.girisSaat}</span> → <span>${p.cikisSaat}</span>
+        </div>
+        <div class="work-controls">
+          <button class="work-btn" onclick="event.stopPropagation(); adjustWorkHours(${p.id}, 'giris', -1)">−</button>
+          <button class="work-btn" onclick="event.stopPropagation(); adjustWorkHours(${p.id}, 'giris', 1)">+</button>
+          <button class="work-btn" onclick="event.stopPropagation(); adjustWorkHours(${p.id}, 'cikis', -1)">−</button>
+          <button class="work-btn" onclick="event.stopPropagation(); adjustWorkHours(${p.id}, 'cikis', 1)">+</button>
+        </div>
+      </div>
+
+      <!-- 3. ANLÍK İŞ -->
+      ${jobSection}
+
+      <!-- 4. TIMER -->
+      <div class="timer-row">
+        <span class="t-label">${p.durum === "aktif" ? "İş Süresi" : p.durum === "mola" ? "Mola" : "Boşta"}</span>
+        <span class="t-val ${tClass}" data-timer-id="${p.id}">${timerStr}</span>
+        ${idleWarn}
+      </div>
+
+      <!-- 5. TAMAMLANAN -->
+      <div class="col-eff">
+        <div class="completed-count">
+          <span class="completed-value">${p.tamamlanan}</span>
+          <span class="completed-label">İş</span>
+        </div>
+      </div>
+
+      <!-- 6. SON İŞ -->
+      <div class="prev-job">
+        <div class="prev-spool">${p.son.spool}</div>
+        <div class="prev-datetime">
+          <span>Başlama:</span> ${p.son.baslaTarih} ${p.son.baslaSaat} <i>|</i>
+          <span>Bitiş:</span> ${p.son.bitisTarih} ${p.son.bitisSaat} <i>|</i>
+          <span>Süre:</span> ${p.son.sure}
+        </div>
+      </div>
+
+      <!-- ALT ŞERİT (tüm kart genişliğinde) -->
+      <div class="eff-bar">
+        <div class="eff-aktif" style="width:${aktifPct}%;"></div>
+        <div class="eff-pasif" style="width:${pasifPct}%;"></div>
+      </div>
+
+    </div>
+  `;
+}
+
+function renderGrid() {
+  var fp = filteredPersonel();
+  document.getElementById("grid").innerHTML = fp.map(cardHTML).join("");
+}
+
+function updateTimers() {
+  var fp = filteredPersonel();
+  fp.forEach(p => {
+    var timerSec = p.durum === "aktif" 
+      ? Math.floor((Date.now() - p.baslangicAt) / 1000)
+      : Math.floor((Date.now() - p.boslayanAt) / 1000);
+    
+    var timerEl = document.querySelector(`.t-val[data-timer-id="${p.id}"]`);
+    if (timerEl) timerEl.textContent = secToHMS(timerSec);
+  });
+  
+  var n = new Date();
+  document.getElementById("clk").textContent = 
+    n.toLocaleDateString("tr-TR", {weekday:"long",day:"2-digit",month:"long"}) + 
+    " — " + pad(n.getHours()) + ":" + pad(n.getMinutes()) + ":" + pad(n.getSeconds());
+}
+
+setInterval(function() {
+  var now = new Date();
+  var saat = now.getHours();
+  var dakika = now.getMinutes();
+  
+  var molaZamani = (
+    (saat === 10 && dakika <= 15) ||
+    (saat === 12 && dakika <= 60) ||
+    (saat === 15 && dakika <= 15)
+  );
+  
+  if (molaZamani) {
+    var degisti = false;
+    personel.forEach(p => {
+      if (p.durum === "aktif") {
+        p.durum = "mola";
+        p.boslayanAt = Date.now();
+        degisti = true;
+      }
+    });
+    if (degisti) renderGrid();
+  }
+}, 60000);
+
+renderSummary();
+renderGrid();
+setInterval(updateTimers, 1000);
+updateTimers();
+</script>
+
+</div><!-- /.page -->
+</div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+
+
+</body>
+</html>

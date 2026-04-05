@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanımlar | AresPipe</title>
+<!-- ✅ Flash prevention — Kural FP-01 -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ✅ Renk değişkenleri — Kural CV-01 */
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+
+[data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
+[data-theme="light-anthracite"] .icon-sun{display:none!important;}[data-theme="light-anthracite"] .icon-moon{display:block!important;}
+
+/* SAYFA */
+.page{padding:28px 28px 40px;}
+.page-title-label{font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
+
+/* SEKMELER */
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--bor);margin-bottom:20px;overflow-x:auto;}
+.tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+.tab-btn:hover{color:var(--tx);}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
+.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;border-radius:99px;font-size:11px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
+.tab-btn.active .tc{background:rgba(45,142,255,.12);color:var(--ac);}
+.panel{display:none;}.panel.on{display:block;}
+
+/* ✅ TABLO KARTI — Kural B-01 */
+.tablo-kart{background:var(--sur);border:1px solid var(--bor);border-radius:16px;overflow:hidden;}
+.tablo-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bor);}
+.tablo-baslik{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--bor);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--bor);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--sur2);}
+td{padding:12px 16px;font-size:13px;vertical-align:middle;}
+.td-kod{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ac);}
+.td-eylem{display:flex;gap:6px;justify-content:flex-end;}
+.td-readonly{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--txm);user-select:none;}
+
+/* BUTON */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
+.btn-ac{background:var(--ac);color:#fff;}.btn-ac:hover{filter:brightness(1.1);}
+.btn-g{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-g:hover{border-color:var(--ac);color:var(--ac);}
+.btn-g:disabled{opacity:0.35;cursor:not-allowed;}.btn-g:disabled:hover{border-color:var(--bor);color:var(--tx);}
+.btn-re{background:rgba(229,62,62,.10);color:var(--re);border:1px solid rgba(229,62,62,.25);}.btn-re:hover{background:rgba(229,62,62,.18);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+
+/* RENK CHIP */
+.renk-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
+.renk-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* AKTİF / PASİF */
+.aktif-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;}
+.b-ak{background:rgba(22,163,110,.12);color:var(--gr);}
+.b-pa{background:rgba(100,116,139,0.12);color:var(--txd);}
+.aktif-toggle{cursor:pointer;border:none;font-family:'Barlow',sans-serif;transition:all 0.15s;}
+.aktif-toggle:hover{filter:brightness(1.2);}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:24px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;}.mcl:hover{color:var(--tx);}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;box-sizing:border-box;}
+.fi:focus{border-color:var(--ac);}
+.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:60px;box-sizing:border-box;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mfooter{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:9999;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+.t-ok{border-left:3px solid var(--gr);}.t-er{border-left:3px solid var(--re);}
+@keyframes tin{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* ✅ SOL KENAR RENK — Kural B-01 */
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+
+.bos{text-align:center;padding:40px 20px;color:var(--txd);}
+.arama-fi{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;width:220px;}
+.arama-fi:focus{border-color:var(--ac);}
+
+/* ✅ Filtre barı — Kural F-01 */
+.filtre-bari{display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px 14px;}
+.filtre-bari-bosluk{flex:1;}
+
+/* Basamak inline input */
+.basamak-input{padding:5px 9px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;width:160px;}
+.basamak-input:focus{border-color:var(--ac);}
+.cb-zorunlu{width:16px;height:16px;accent-color:var(--ac);cursor:pointer;}
+</style>
+<!-- ✅ Script sırası — Kural SC-01 -->
+<script src="ares-store.js"></script>
+<script src="ares-layout.js"></script>
+<!-- ✅ D-01: Dil ares-layout.js tarafından yönetilir, _onLangChange hook ile tablo yenilenir -->
+</head>
+<body>
+
+<div class="app-shell">
+<!-- Sidebar inject edilir — ares-layout.js -->
+
+<div class="main-content">
+  <div class="page">
+
+    <div style="margin-bottom:20px;">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="genel_ana_sayfa">Ana Sayfa</a>
+        <span>/</span>
+        <span data-i18n="tanim_baslik">Tanımlar</span>
+      </div>
+      <h1 class="page-title" data-i18n="tanim_baslik">Tanımlar</h1>
+    </div>
+
+    <!-- ✅ SEKMELER — 5 sekme -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="malzeme"   onclick="tabSec('malzeme',this)">
+        <span data-i18n="tanim_tab_malzeme">Malzeme Tipleri</span>
+        <span class="tc" id="tMalzeme">0</span>
+      </button>
+      <button class="tab-btn" data-tab="kaynak" onclick="tabSec('kaynak',this)">
+        <span data-i18n="tanim_tab_kaynak">Kaynak Yöntemleri</span>
+        <span class="tc" id="tKaynak">0</span>
+      </button>
+      <button class="tab-btn" data-tab="sertifika" onclick="tabSec('sertifika',this)">
+        <span data-i18n="tanim_tab_sertifika">Sertifika Tipleri</span>
+        <span class="tc" id="tSertifika">0</span>
+      </button>
+      <button class="tab-btn" data-tab="cap" onclick="tabSec('cap',this)">
+        <span data-i18n="tanim_tab_cap">Çap Sınıfları</span>
+        <span class="tc" id="tCap">0</span>
+      </button>
+      <button class="tab-btn" data-tab="basamak" onclick="tabSec('basamak',this)">
+        <span data-i18n="tanim_islem_basamaklari">İşlem Basamakları</span>
+        <span class="tc" id="tBasamak">0</span>
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MALZEME PANELİ -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panel on" id="panelmalzeme">
+      <!-- ✅ Filtre barı F-01 -->
+      <div class="filtre-bari cl-warn">
+        <button class="btn btn-ac btn-sm" onclick="yeniEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="genel_yeni_ekle">Yeni Ekle</span>
+        </button>
+        <div class="filtre-bari-bosluk"></div>
+        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="tabloFiltre('malzeme',this.value)">
+      </div>
+      <!-- ✅ cl-ac — Kural B-01 -->
+      <div class="tablo-kart cl-ac">
+        <div class="tablo-header">
+          <div class="tablo-baslik" data-i18n="tanim_tab_malzeme">Malzeme Tipleri</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-i18n="genel_kod">KOD</th>
+            <th data-i18n="genel_ad">AD</th>
+            <th data-i18n="tanim_standart">STANDART</th>
+            <th data-i18n="tanim_akma_day">AKMA DAY. (MPa)</th>
+            <th data-i18n="genel_notlar">NOTLAR</th>
+            <th data-i18n="genel_durum">DURUM</th>
+            <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
+          </tr></thead>
+          <tbody id="malzemeTablo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- KAYNAK PANELİ -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panel" id="panelkaynak">
+      <div class="filtre-bari cl-warn">
+        <button class="btn btn-ac btn-sm" onclick="yeniEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="genel_yeni_ekle">Yeni Ekle</span>
+        </button>
+        <div class="filtre-bari-bosluk"></div>
+        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="tabloFiltre('kaynak',this.value)">
+      </div>
+      <div class="tablo-kart cl-ac">
+        <div class="tablo-header">
+          <div class="tablo-baslik" data-i18n="tanim_tab_kaynak">Kaynak Yöntemleri</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-i18n="genel_kod">KOD</th>
+            <th data-i18n="genel_ad">AD</th>
+            <th data-i18n="tanim_aws_no">AWS NO</th>
+            <th data-i18n="genel_aciklama">AÇIKLAMA</th>
+            <th data-i18n="genel_durum">DURUM</th>
+            <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
+          </tr></thead>
+          <tbody id="kaynakTablo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SERTİFİKA PANELİ -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panel" id="panelsertifika">
+      <div class="filtre-bari cl-warn">
+        <button class="btn btn-ac btn-sm" onclick="yeniEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="genel_yeni_ekle">Yeni Ekle</span>
+        </button>
+        <div class="filtre-bari-bosluk"></div>
+        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="tabloFiltre('sertifika',this.value)">
+      </div>
+      <div class="tablo-kart cl-ac">
+        <div class="tablo-header">
+          <div class="tablo-baslik" data-i18n="tanim_tab_sertifika">Sertifika Tipleri</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-i18n="genel_kod">KOD</th>
+            <th data-i18n="genel_ad">AD</th>
+            <th data-i18n="tanim_verici_kurulus">VERİCİ KURULUŞ</th>
+            <th data-i18n="tanim_gecerlilik">GEÇERLİLİK</th>
+            <th data-i18n="genel_aciklama">AÇIKLAMA</th>
+            <th data-i18n="genel_durum">DURUM</th>
+            <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
+          </tr></thead>
+          <tbody id="sertifikaTablo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ÇAP PANELİ -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panel" id="panelcap">
+      <div class="filtre-bari cl-warn">
+        <button class="btn btn-ac btn-sm" onclick="yeniEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="genel_yeni_ekle">Yeni Ekle</span>
+        </button>
+        <div class="filtre-bari-bosluk"></div>
+        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="tabloFiltre('cap',this.value)">
+      </div>
+      <div class="tablo-kart cl-ac">
+        <div class="tablo-header">
+          <div class="tablo-baslik" data-i18n="tanim_tab_cap">Çap Sınıfları</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-i18n="tanim_dn">DN</th>
+            <th data-i18n="tanim_dis_cap">DIŞ ÇAP (mm)</th>
+            <th data-i18n="tanim_sinif">SINIF</th>
+            <th data-i18n="tanim_et_kalinligi">ET KALINLIĞI (mm)</th>
+            <th data-i18n="genel_aciklama">AÇIKLAMA</th>
+            <th data-i18n="genel_durum">DURUM</th>
+            <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
+          </tr></thead>
+          <tbody id="capTablo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ✅ İŞLEM BASAMAKLARI PANELİ — Kural M-09 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panel" id="panelbasamak">
+      <!-- ✅ Filtre barı F-01 -->
+      <div class="filtre-bari cl-warn">
+        <button class="btn btn-ac btn-sm" onclick="yeniEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="tanim_basamak_yeni">Yeni Basamak</span>
+        </button>
+        <div class="filtre-bari-bosluk"></div>
+        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="tabloFiltre('basamak',this.value)">
+      </div>
+      <!-- ✅ cl-ac — Kural B-01 -->
+      <div class="tablo-kart cl-ac">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:52px;text-align:center;" data-i18n="tanim_sira">SIRA</th>
+              <th data-i18n="tanim_sistem_adi">SİSTEM ADI</th>
+              <th data-i18n="tanim_gorunen_ad">GÖRÜNEN AD</th>
+              <th style="text-align:center;" data-i18n="tanim_zorunlu">ZORUNLU</th>
+              <th data-i18n="genel_durum">DURUM</th>
+              <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
+            </tr>
+          </thead>
+          <tbody id="basamakTablo"></tbody>
+        </table>
+      </div>
+      <!-- ✅ Kural D-01: silinemez mesajı için gizli ref -->
+      <span style="display:none;" data-i18n="tanim_silinemez">Bu basamak silinemez</span>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- MODAL -->
+<div class="mov" id="modal" style="display:none;">
+  <div class="mbox">
+    <div class="mhead">
+      <div class="mtitle" id="modalBaslik" data-i18n="genel_yeni_kayit">Yeni Kayıt</div>
+      <button class="mcl" onclick="modalKapat()">×</button>
+    </div>
+    <div id="modalForm"></div>
+    <div class="mfooter">
+      <button class="btn btn-g" onclick="modalKapat()" data-i18n="genel_iptal">İptal</button>
+      <button class="btn btn-ac" onclick="kaydet()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span data-i18n="genel_kaydet">Kaydet</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// ✅ VERİ — localStorage key: ares_tanimlar (Kural LS-01)
+// ═══════════════════════════════════════════════════════════════════
+const VARSAYILAN = {
+  malzeme: [
+    {id:'M001',kod:'A106-B',    ad:'Carbon Steel Seamless',     standart:'ASTM A106',akma:241,notlar:'Yüksek sıcaklık servisi',aktif:true},
+    {id:'M002',kod:'A312-TP316L',ad:'Stainless Steel Seamless', standart:'ASTM A312',akma:170,notlar:'Korozyon dirençli',      aktif:true},
+    {id:'M003',kod:'A335-P11',  ad:'Alloy Steel Seamless',      standart:'ASTM A335',akma:207,notlar:'Krom-molibden çelik',   aktif:true},
+    {id:'M004',kod:'A53-B',     ad:'Carbon Steel Welded',       standart:'ASTM A53', akma:241,notlar:'Genel amaçlı',          aktif:true},
+    {id:'M005',kod:'A358-316L', ad:'Austenitic Stainless Welded',standart:'ASTM A358',akma:170,notlar:'Çift geçişli kaynaklı',aktif:false},
+  ],
+  kaynak: [
+    {id:'K001',kod:'SMAW',ad:'Manuel Metal Ark Kaynağı',awsNo:'AWS D1.1',  aciklama:'Örtülü elektrod ile kaynak',  aktif:true},
+    {id:'K002',kod:'GTAW',ad:'TIG Kaynağı',            awsNo:'AWS D10.12',aciklama:'Gaz tungsten ark kaynağı',     aktif:true},
+    {id:'K003',kod:'GMAW',ad:'MIG/MAG Kaynağı',        awsNo:'AWS D1.1',  aciklama:'Gaz metal ark kaynağı',       aktif:true},
+    {id:'K004',kod:'FCAW',ad:'Özlü Tel Kaynağı',       awsNo:'AWS D1.1',  aciklama:'Flux-core ark kaynağı',       aktif:true},
+    {id:'K005',kod:'SAW', ad:'Tozaltı Kaynağı',        awsNo:'AWS D1.1',  aciklama:'Submerged arc welding',       aktif:false},
+  ],
+  sertifika: [
+    {id:'S001',kod:'ABS-CERT',ad:'ABS Sınıf Sertifikası',           kurulus:'American Bureau of Shipping',gecerlilik:'5 yıl',aciklama:'Deniz taşıtı sınıflandırma',  aktif:true},
+    {id:'S002',kod:'DNV-WPS', ad:'DNV Kaynak Prosedür Belgesi',     kurulus:'DNV GL',                    gecerlilik:'3 yıl',aciklama:'Kaynak prosedür şartnamesi',   aktif:true},
+    {id:'S003',kod:'ASME-U',  ad:'ASME U Damgası',                  kurulus:'ASME',                      gecerlilik:'3 yıl',aciklama:'Basınçlı kap imalat',           aktif:true},
+    {id:'S004',kod:'ISO-9001',ad:'ISO 9001 Kalite Belgesi',         kurulus:'TÜV / BSI',                 gecerlilik:'3 yıl',aciklama:'Kalite yönetim sistemi',        aktif:true},
+    {id:'S005',kod:'EN-15085',ad:'Demiryolu Kaynak Sertifikası',    kurulus:'TÜV Rheinland',             gecerlilik:'3 yıl',aciklama:'Raylı araç kaynak belgesi',     aktif:false},
+  ],
+  cap: [
+    {id:'C001',dn:'DN15', dis:21.3, sinif:'SCH40',et:2.77,aciklama:'½" boru',aktif:true},
+    {id:'C002',dn:'DN25', dis:33.4, sinif:'SCH40',et:3.38,aciklama:'1" boru', aktif:true},
+    {id:'C003',dn:'DN50', dis:60.3, sinif:'SCH40',et:3.91,aciklama:'2" boru', aktif:true},
+    {id:'C004',dn:'DN80', dis:88.9, sinif:'SCH40',et:5.49,aciklama:'3" boru', aktif:true},
+    {id:'C005',dn:'DN100',dis:114.3,sinif:'SCH40',et:6.02,aciklama:'4" boru', aktif:true},
+    {id:'C006',dn:'DN150',dis:168.3,sinif:'SCH40',et:7.11,aciklama:'6" boru', aktif:true},
+    {id:'C007',dn:'DN200',dis:219.1,sinif:'SCH40',et:8.18,aciklama:'8" boru', aktif:true},
+  ],
+  // ✅ İşlem Basamakları — Kural M-09
+  basamak: [
+    {id:'B001',ad:'kesim',     gorunenAd:'Kesim',          sira:1,zorunlu:true, aktif:true},
+    {id:'B002',ad:'bukum',     gorunenAd:'Büküm',          sira:2,zorunlu:false,aktif:true},
+    {id:'B003',ad:'kaynak',    gorunenAd:'Kaynak',         sira:3,zorunlu:true, aktif:true},
+    {id:'B004',ad:'markalama', gorunenAd:'Markalama',      sira:4,zorunlu:false,aktif:true},
+    {id:'B005',ad:'kk',        gorunenAd:'Kalite Kontrol', sira:5,zorunlu:true, aktif:true},
+    {id:'B006',ad:'sevkiyat',  gorunenAd:'Sevkiyat',       sira:6,zorunlu:true, aktif:true},
+  ],
+};
+
+let AKTİF_TAB = 'malzeme';
+let DUZENLEME_ID = null;
+let veri = {};
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ STORE — ares_tanimlar (Kural LS-01)
+// ═══════════════════════════════════════════════════════════════════
+function veriYukle() {
+  const k = localStorage.getItem('ares_tanimlar');
+  if (k) {
+    try { veri = JSON.parse(k); } catch { veri = JSON.parse(JSON.stringify(VARSAYILAN)); }
+  } else {
+    veri = JSON.parse(JSON.stringify(VARSAYILAN));
+    localStorage.setItem('ares_tanimlar', JSON.stringify(veri));
+  }
+  if (!veri.basamak) veri.basamak = JSON.parse(JSON.stringify(VARSAYILAN.basamak));
+  sayacGuncelle();
+  tabloRender(AKTİF_TAB);
+}
+
+function veriKaydet() {
+  localStorage.setItem('ares_tanimlar', JSON.stringify(veri));
+  sayacGuncelle();
+}
+
+function sayacGuncelle() {
+  ['malzeme','kaynak','sertifika','cap'].forEach(tp => {
+    const el = document.getElementById('t' + tp.charAt(0).toUpperCase() + tp.slice(1));
+    if (el) el.textContent = (veri[tp]||[]).filter(x=>x.aktif).length;
+  });
+  const tB = document.getElementById('tBasamak');
+  if (tB) tB.textContent = (veri.basamak||[]).filter(x=>x.aktif).length;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TABLO RENDER — malzeme / kaynak / sertifika / çap
+// ═══════════════════════════════════════════════════════════════════
+const KOLON = {
+  malzeme:   ['kod','ad','standart','akma','notlar'],
+  kaynak:    ['kod','ad','awsNo','aciklama'],
+  sertifika: ['kod','ad','kurulus','gecerlilik','aciklama'],
+  cap:       ['dn','dis','sinif','et','aciklama'],
+};
+
+function tabloRender(tip, filtre='') {
+  if (tip === 'basamak') { basamakRender(filtre); return; }
+  const tbody = document.getElementById(tip + 'Tablo');
+  if (!tbody) return;
+  const liste = (veri[tip]||[]).filter(x => {
+    if (!filtre) return true;
+    return Object.values(x).join(' ').toLowerCase().includes(filtre.toLowerCase());
+  });
+  if (!liste.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="bos">${t('genel_kayit_yok')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = liste.map(x => {
+    const aktifBadge = x.aktif
+      ? `<span class="aktif-badge b-ak">● ${t('genel_aktif')}</span>`
+      : `<span class="aktif-badge b-pa">○ ${t('genel_pasif')}</span>`;
+    return `<tr>
+      <td class="td-kod">${x[KOLON[tip][0]]}</td>
+      ${KOLON[tip].slice(1).map(k=>`<td>${x[k]||'—'}</td>`).join('')}
+      <td>${aktifBadge}</td>
+      <td><div class="td-eylem">
+        <button class="btn btn-g btn-sm" onclick="duzenle('${tip}','${x.id}')">${t('genel_duzenle')}</button>
+        <button class="btn btn-re btn-sm" onclick="sil('${tip}','${x.id}')">${t('genel_sil')}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function tabloFiltre(tip, val) {
+  if (tip === 'basamak') { basamakRender(val); return; }
+  tabloRender(tip, val);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ BASAMAK RENDER — Kural M-09
+// ═══════════════════════════════════════════════════════════════════
+function basamakRender(filtre='') {
+  const tbody = document.getElementById('basamakTablo');
+  if (!tbody) return;
+  let liste = (veri.basamak||[]).slice().sort((a,b) => a.sira - b.sira);
+  if (filtre) {
+    const f = filtre.toLowerCase();
+    liste = liste.filter(x => x.gorunenAd.toLowerCase().includes(f) || x.ad.toLowerCase().includes(f));
+  }
+  if (!liste.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="bos">${t('genel_kayit_yok')}</td></tr>`;
+    return;
+  }
+  const maxSira = Math.max(...(veri.basamak||[]).map(b=>b.sira));
+  const minSira = Math.min(...(veri.basamak||[]).map(b=>b.sira));
+  tbody.innerHTML = liste.map(x => {
+    const isFirst = x.sira === minSira;
+    const isLast  = x.sira === maxSira;
+    const durumBtn = x.aktif
+      ? `<button class="aktif-badge b-ak aktif-toggle" onclick="basamakToggleAktif('${x.id}')">● ${t('genel_aktif')}</button>`
+      : `<button class="aktif-badge b-pa aktif-toggle" onclick="basamakToggleAktif('${x.id}')">○ ${t('genel_pasif')}</button>`;
+    return `<tr>
+      <td style="text-align:center;font-weight:700;color:var(--txd);width:52px;">${x.sira}</td>
+      <td><span class="td-readonly">${x.ad}</span></td>
+      <td>
+        <input
+          class="basamak-input"
+          value="${x.gorunenAd.replace(/"/g,'&quot;')}"
+          onchange="basamakGorunenAdKaydet('${x.id}',this.value)"
+          title="${t('tanim_gorunen_ad_duzenle')}"
+        >
+      </td>
+      <td style="text-align:center;">
+        <input
+          type="checkbox"
+          class="cb-zorunlu"
+          ${x.zorunlu?'checked':''}
+          onchange="basamakZorunluKaydet('${x.id}',this.checked)"
+        >
+      </td>
+      <td>${durumBtn}</td>
+      <td>
+        <div class="td-eylem">
+          <button class="btn btn-g btn-sm" onclick="siraDegistir('${x.id}',-1)" ${isFirst?'disabled':''} title="${t('tanim_yukari_tasi')}">↑</button>
+          <button class="btn btn-g btn-sm" onclick="siraDegistir('${x.id}',1)"  ${isLast ?'disabled':''} title="${t('tanim_asagi_tasi')}">↓</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Basamak: sıra değiştir ──────────────────────────────────────
+function siraDegistir(id, yon) {
+  const list = veri.basamak || [];
+  const cur = list.find(x=>x.id===id);
+  if (!cur) return;
+  const hedef = list.find(x=>x.sira === cur.sira + yon);
+  if (!hedef) return;
+  const tmp = hedef.sira;
+  hedef.sira = cur.sira;
+  cur.sira   = tmp;
+  veriKaydet();
+  basamakRender();
+  toast(t('tanim_sira_guncellendi'), 'ok');
+  _log('BASAMAK_SIRA', 'basamak', cur.ad);
+}
+
+// ─── Basamak: görünen ad kaydet ──────────────────────────────────
+function basamakGorunenAdKaydet(id, val) {
+  const b = (veri.basamak||[]).find(x=>x.id===id);
+  if (!b || !val.trim()) return;
+  b.gorunenAd = val.trim();
+  veriKaydet();
+  toast(t('genel_kaydedildi'), 'ok');
+  _log('BASAMAK_GUNCELLE', 'basamak', b.ad);
+}
+
+// ─── Basamak: zorunlu kaydet ─────────────────────────────────────
+function basamakZorunluKaydet(id, val) {
+  const b = (veri.basamak||[]).find(x=>x.id===id);
+  if (!b) return;
+  b.zorunlu = val;
+  veriKaydet();
+  toast(t('genel_kaydedildi'), 'ok');
+  _log('BASAMAK_ZORUNLU', 'basamak', b.ad);
+}
+
+// ─── Basamak: aktif/pasif toggle ─────────────────────────────────
+function basamakToggleAktif(id) {
+  const b = (veri.basamak||[]).find(x=>x.id===id);
+  if (!b) return;
+  b.aktif = !b.aktif;
+  veriKaydet();
+  basamakRender();
+  if (!b.aktif) toast(t('tanim_basamak_pasif'), 'ok');
+  else          toast(t('genel_kaydedildi'), 'ok');
+  _log('BASAMAK_TOGGLE', 'basamak', b.ad);
+}
+
+// ─── Basamak: yeni ekle (M-09: ID otomatik) ──────────────────────
+function yeniBasamakEkle() {
+  const list = veri.basamak || [];
+  const maxSira = list.length ? Math.max(...list.map(b=>b.sira)) : 0;
+  const ts = String(Date.now()).slice(-4);
+  const id = 'BX' + ts;
+  const yeni = {
+    id,
+    ad: 'basamak_' + id.toLowerCase(),
+    gorunenAd: t('tanim_basamak_yeni'),
+    sira: maxSira + 1,
+    zorunlu: false,
+    aktif: true,
+  };
+  list.push(yeni);
+  veri.basamak = list;
+  veriKaydet();
+  basamakRender();
+  toast(t('genel_kaydedildi'), 'ok');
+  _log('BASAMAK_EKLE', 'basamak', yeni.ad);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TAB GEÇİŞ
+// ═══════════════════════════════════════════════════════════════════
+function tabSec(tip, btn) {
+  AKTİF_TAB = tip;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('active');
+  document.getElementById('panel'+tip).classList.add('on');
+  if (tip === 'basamak') basamakRender();
+  else tabloRender(tip);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════════
+// ✅ D-01: Modal form içerikleri t() ile üretiliyor
+function getFormlar(tip) {
+  const forms = {
+    malzeme: `
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('genel_kod')}</label><input class="fi" id="fKod" placeholder="A106-B"></div>
+        <div class="fg"><label class="fl">${t('tanim_standart')}</label><input class="fi" id="fStandart" placeholder="ASTM A106"></div>
+      </div>
+      <div class="fg"><label class="fl">${t('genel_ad')}</label><input class="fi" id="fAd" placeholder="Carbon Steel Seamless"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('tanim_akma_day')}</label><input class="fi" id="fAkma" type="number" placeholder="241"></div>
+        <div class="fg"><label class="fl">${t('genel_durum')}</label><select class="fi" id="fAktif"><option value="true">${t('genel_aktif')}</option><option value="false">${t('genel_pasif')}</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">${t('genel_notlar')}</label><textarea class="fta" id="fNotlar"></textarea></div>`,
+    kaynak: `
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('genel_kod')}</label><input class="fi" id="fKod" placeholder="SMAW"></div>
+        <div class="fg"><label class="fl">${t('tanim_aws_no')}</label><input class="fi" id="fAwsNo" placeholder="AWS D1.1"></div>
+      </div>
+      <div class="fg"><label class="fl">${t('genel_ad')}</label><input class="fi" id="fAd" placeholder="Manuel Metal Ark Kaynağı"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('genel_aciklama')}</label><input class="fi" id="fAciklama" placeholder="${t('genel_kisa_aciklama')}"></div>
+        <div class="fg"><label class="fl">${t('genel_durum')}</label><select class="fi" id="fAktif"><option value="true">${t('genel_aktif')}</option><option value="false">${t('genel_pasif')}</option></select></div>
+      </div>`,
+    sertifika: `
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('genel_kod')}</label><input class="fi" id="fKod" placeholder="ABS-CERT"></div>
+        <div class="fg"><label class="fl">${t('tanim_verici_kurulus')}</label><input class="fi" id="fKurulus" placeholder="ABS"></div>
+      </div>
+      <div class="fg"><label class="fl">${t('genel_ad')}</label><input class="fi" id="fAd" placeholder="${t('tanim_sertifika_adi')}"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('tanim_gecerlilik')}</label><input class="fi" id="fGecerlilik" placeholder="3 ${t('tanim_yil')}"></div>
+        <div class="fg"><label class="fl">${t('genel_durum')}</label><select class="fi" id="fAktif"><option value="true">${t('genel_aktif')}</option><option value="false">${t('genel_pasif')}</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">${t('genel_aciklama')}</label><textarea class="fta" id="fAciklama"></textarea></div>`,
+    cap: `
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('tanim_dn')}</label><input class="fi" id="fDn" placeholder="DN50"></div>
+        <div class="fg"><label class="fl">${t('tanim_sinif')}</label><input class="fi" id="fSinif" placeholder="SCH40"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('tanim_dis_cap')}</label><input class="fi" id="fDis" type="number" step="0.01" placeholder="60.3"></div>
+        <div class="fg"><label class="fl">${t('tanim_et_kalinligi')}</label><input class="fi" id="fEt" type="number" step="0.01" placeholder="3.91"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">${t('genel_aciklama')}</label><input class="fi" id="fAciklama" placeholder='2" boru'></div>
+        <div class="fg"><label class="fl">${t('genel_durum')}</label><select class="fi" id="fAktif"><option value="true">${t('genel_aktif')}</option><option value="false">${t('genel_pasif')}</option></select></div>
+      </div>`,
+  };
+  return forms[tip] || '';
+}
+
+// ✅ D-01: ADLAR t() ile döndürülüyor
+function getAdlar(tip) {
+  const adlar = {
+    malzeme:   t('tanim_tur_malzeme'),
+    kaynak:    t('tanim_tur_kaynak'),
+    sertifika: t('tanim_tur_sertifika'),
+    cap:       t('tanim_tur_cap'),
+    basamak:   t('tanim_tur_basamak'),
+  };
+  return adlar[tip] || tip;
+}
+
+function yeniEkle() {
+  if (AKTİF_TAB === 'basamak') { yeniBasamakEkle(); return; }
+  DUZENLEME_ID = null;
+  document.getElementById('modalBaslik').textContent = t('genel_yeni') + ' ' + getAdlar(AKTİF_TAB);
+  document.getElementById('modalForm').innerHTML = getFormlar(AKTİF_TAB);
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function duzenle(tip, id) {
+  DUZENLEME_ID = id;
+  const kayit = (veri[tip]||[]).find(x=>x.id===id);
+  if (!kayit) return;
+  document.getElementById('modalBaslik').textContent = getAdlar(tip) + ' ' + t('genel_duzenle');
+  document.getElementById('modalForm').innerHTML = getFormlar(tip);
+  const fieldMap = {
+    malzeme:  {fKod:'kod',fAd:'ad',fStandart:'standart',fAkma:'akma',fNotlar:'notlar',fAktif:'aktif'},
+    kaynak:   {fKod:'kod',fAd:'ad',fAwsNo:'awsNo',fAciklama:'aciklama',fAktif:'aktif'},
+    sertifika:{fKod:'kod',fAd:'ad',fKurulus:'kurulus',fGecerlilik:'gecerlilik',fAciklama:'aciklama',fAktif:'aktif'},
+    cap:      {fDn:'dn',fDis:'dis',fSinif:'sinif',fEt:'et',fAciklama:'aciklama',fAktif:'aktif'},
+  };
+  Object.entries(fieldMap[tip]).forEach(([fid,key])=>{
+    const el = document.getElementById(fid);
+    if (el) el.value = kayit[key] !== undefined ? String(kayit[key]) : '';
+  });
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function modalKapat() { document.getElementById('modal').style.display='none'; DUZENLEME_ID=null; }
+
+function kaydet() {
+  const tip = AKTİF_TAB;
+  let yeni = {};
+
+  if (tip==='malzeme') {
+    yeni = {kod:v('fKod'),ad:v('fAd'),standart:v('fStandart'),akma:parseFloat(v('fAkma'))||0,notlar:v('fNotlar'),aktif:v('fAktif')==='true'};
+    if (!yeni.kod||!yeni.ad) { toast(t('tanim_kod_ad_zorunlu'),'er'); return; }
+  } else if (tip==='kaynak') {
+    yeni = {kod:v('fKod'),ad:v('fAd'),awsNo:v('fAwsNo'),aciklama:v('fAciklama'),aktif:v('fAktif')==='true'};
+    if (!yeni.kod||!yeni.ad) { toast(t('tanim_kod_ad_zorunlu'),'er'); return; }
+  } else if (tip==='sertifika') {
+    yeni = {kod:v('fKod'),ad:v('fAd'),kurulus:v('fKurulus'),gecerlilik:v('fGecerlilik'),aciklama:v('fAciklama'),aktif:v('fAktif')==='true'};
+    if (!yeni.kod||!yeni.ad) { toast(t('tanim_kod_ad_zorunlu'),'er'); return; }
+  } else if (tip==='cap') {
+    yeni = {dn:v('fDn'),dis:parseFloat(v('fDis'))||0,sinif:v('fSinif'),et:parseFloat(v('fEt'))||0,aciklama:v('fAciklama'),aktif:v('fAktif')==='true'};
+    if (!yeni.dn) { toast(t('tanim_dn_zorunlu'),'er'); return; }
+  }
+
+  if (DUZENLEME_ID) {
+    const idx = (veri[tip]||[]).findIndex(x=>x.id===DUZENLEME_ID);
+    if (idx>-1) veri[tip][idx] = {...veri[tip][idx],...yeni};
+  } else {
+    yeni.id = tip.charAt(0).toUpperCase() + Date.now();
+    (veri[tip] = veri[tip]||[]).push(yeni);
+  }
+
+  veriKaydet();
+  tabloRender(tip);
+  modalKapat();
+  toast(t('genel_kaydedildi'), 'ok');
+  _log('TANIM_' + (DUZENLEME_ID?'GUNCELLE':'EKLE'), tip, yeni.kod||yeni.dn||'');
+}
+
+function sil(tip, id) {
+  if (!confirm(t('tanim_silme_onay'))) return;
+  veri[tip] = (veri[tip]||[]).filter(x=>x.id!==id);
+  veriKaydet();
+  tabloRender(tip);
+  toast(t('genel_silindi'), 'ok');
+  _log('TANIM_SIL', tip, id);
+}
+
+function v(id) { const el=document.getElementById(id); return el?el.value.trim():''; }
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ LOG — ares_islemLog (Kural LS-01)
+// ═══════════════════════════════════════════════════════════════════
+function _log(islem, kaynak, aciklama) {
+  const log = JSON.parse(localStorage.getItem('ares_islemLog') || '[]');
+  log.unshift({id:'L'+Date.now(), tarih:new Date().toLocaleString('tr-TR'), islem, kaynak, aciklama});
+  localStorage.setItem('ares_islemLog', JSON.stringify(log.slice(0,500)));
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────
+let toastT = null;
+function toast(msg, tip='ok') {
+  const e = document.querySelector('.toast');
+  if (e) e.remove();
+  const el = document.createElement('div');
+  el.className = 'toast t-' + tip;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  if (toastT) clearTimeout(toastT);
+  toastT = setTimeout(()=>el.remove(), 3500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+// ✅ D-01: Dil değişince JS ile üretilen tabloyu da yenile
+window._onLangChange = function() { tabloRender(AKTİF_TAB); };
+
+document.documentElement.style.visibility = '';
+veriYukle();
+</script>
+</body>
+</html>
