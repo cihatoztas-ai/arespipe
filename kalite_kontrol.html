@@ -468,15 +468,20 @@ var HAZIR_SABIT = [
 ];
 
 function _buildHAZIR() {
-  if (typeof SYOS === 'undefined') return HAZIR_SABIT.slice();
-  var storeHazir = SYOS.kkHazirListesi();
-  var storeIds = {};
-  storeHazir.forEach(function(s){ storeIds[s.id] = true; });
-  return HAZIR_SABIT.filter(function(s){ return !storeIds[s.id]; }).concat(storeHazir);
+  if (typeof SYOS === 'undefined' || typeof SYOS.kkHazirListesi !== 'function') return HAZIR_SABIT.slice();
+  try {
+    var storeHazir = SYOS.kkHazirListesi();
+    var storeIds = {};
+    storeHazir.forEach(function(s){ storeIds[s.id] = true; });
+    return HAZIR_SABIT.filter(function(s){ return !storeIds[s.id]; }).concat(storeHazir);
+  } catch(e) { return HAZIR_SABIT.slice(); }
 }
 
 function _buildPaketler() {
-  var storePaketler = (typeof SYOS !== 'undefined') ? SYOS.kkPaketleri() : [];
+  var storePaketler = [];
+  if (typeof SYOS !== 'undefined' && typeof SYOS.kkPaketleri === 'function') {
+    try { storePaketler = SYOS.kkPaketleri(); } catch(e) {}
+  }
   var sabit = [
     {id:'KD-26-001',tersane:'Sedef Tersanesi',projeNo:'NB1099',gemi:'MV Atlas',
      davetTarihi:'20.03.2026',kontrolTarihi:'25.03.2026',not:'Ahmet Bey',mail:'quality@sedef.com.tr',
@@ -784,8 +789,8 @@ function onayKaydet() {
   p.spooller.forEach(function(s){ s.durumOnay = karar; });
   var notFinal = karar==='ret' ? ret+(not?' / '+not:'') : not;
   p.onay = {karar:karar, tarih:new Date(tarih).toLocaleDateString('tr-TR'), kisi:kisi, not:notFinal};
-  if (typeof SYOS !== 'undefined') {
-    SYOS.kkOnayKaydet(id, karar, new Date(tarih).toLocaleDateString('tr-TR'), kisi, notFinal);
+  if (typeof SYOS !== 'undefined' && typeof SYOS.kkOnayKaydet === 'function') {
+    try { SYOS.kkOnayKaydet(id, karar, new Date(tarih).toLocaleDateString('tr-TR'), kisi, notFinal); } catch(e) {}
   }
   document.getElementById('mOnay').style.display = 'none';
   try{var _lgo=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_lgo.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'KK_ONAY_KAYDET',kaynak:id,aciklama:karar});localStorage.setItem('ares_islemLog',JSON.stringify(_lgo.slice(0,1000)));}catch(e){}
@@ -837,19 +842,10 @@ function showToast(msg, type) {
 // ── BAŞLAT ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
-    // ── SB-01 AUTH KONTROLÜ ─────────────────────────────────
+    // ── OPSİYONEL OTURUM KONTROLÜ (bu sayfa auth gerektirmez) ──
     try {
-      var _bekle = 0;
-      while (_bekle < 80) {
-        var _supa = ARES.supabase();
-        if (_supa) {
-          var _ses = await _supa.auth.getSession();
-          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
-          if (_bekle > 20) { location.href = 'giris.html'; return; }
-        }
-        await new Promise(function(r){ setTimeout(r, 100); });
-        _bekle++;
-      }
+      var _supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+      if (_supa) { await _supa.auth.getSession(); }
     } catch(e) {}
     doldur();
     filtrele();
