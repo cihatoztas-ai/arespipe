@@ -341,6 +341,12 @@ var _I18N = {
     kk_toast_pdf_soon:'PDF preview coming soon',
     kk_davet_spool:'Spool:', kk_davet_circuit:'Circuit:', kk_davet_total:'Total:',
     kk_card_invite:'Invite:', kk_card_control:'Control:',
+    kk_stat_hazir:'Ready for QC', kk_stat_davet:'Invitation Package',
+    kk_stat_bekle:'Awaiting Yard', kk_stat_onay:'Approved',
+    kk_tab_bekle:'Pending', kk_tab_onay:'Approved',
+    kk_filter_yard:'All Yards', kk_filter_proj:'All Projects',
+    kk_btn_clear:'Clear', kk_tumu:'All',
+    kk_empty_spool:'No spools to display',
     kk_toast_select_first:'Please select spools first',
     kk_toast_olusturuldu:'invitation package created',
     kk_empty_bekle:'No pending invitation packages',
@@ -413,6 +419,12 @@ var _I18N = {
     kk_toast_pdf_soon:'معاينة PDF قريباً',
     kk_davet_spool:'بكرة:', kk_davet_circuit:'دائرة:', kk_davet_total:'المجموع:',
     kk_card_invite:'الدعوة:', kk_card_control:'المراقبة:',
+    kk_stat_hazir:'جاهز للجودة', kk_stat_davet:'حزمة الدعوة',
+    kk_stat_bekle:'في انتظار الحوض', kk_stat_onay:'موافق عليه',
+    kk_tab_bekle:'قيد الانتظار', kk_tab_onay:'موافق عليه',
+    kk_filter_yard:'جميع الأحواض', kk_filter_proj:'جميع المشاريع',
+    kk_btn_clear:'مسح', kk_tumu:'الكل',
+    kk_empty_spool:'لا توجد بكرات للعرض',
     kk_toast_select_first:'يرجى تحديد البكرات أولاً',
     kk_toast_olusturuldu:'تم إنشاء حزمة الدعوة',
     kk_empty_bekle:'لا توجد حزم دعوة معلقة',
@@ -448,6 +460,7 @@ function _applyI18n(){
 }
 window._onLangChange=function(){
   _applyI18n();
+  guncelStatler();
   filtrele();
   renderBekle();
   renderOnay();
@@ -807,6 +820,19 @@ function guncelStatler() {
   document.getElementById('sD').textContent = paketler.length;
   document.getElementById('sB').textContent = b;
   document.getElementById('sO').textContent = o;
+  document.getElementById('tD').textContent = HAZIR.length;
+  document.getElementById('tB').textContent = b;
+  document.getElementById('tO').textContent = o;
+  // Stat label'ları her zaman doğru dilde göster
+  var lblMap = {sH:'kk_stat_hazir', sD:'kk_stat_davet', sB:'kk_stat_bekle', sO:'kk_stat_onay'};
+  var lblDefault = {sH:'Kaliteye Hazır', sD:'Davet Paketi', sB:'Tersane Bekleniyor', sO:'Onaylanan'};
+  Object.keys(lblMap).forEach(function(id){
+    var valEl = document.getElementById(id);
+    if(valEl && valEl.previousElementSibling){
+      valEl.previousElementSibling.textContent = tv(lblMap[id], lblDefault[id]);
+    }
+  });
+  // Tab badge'leri
   document.getElementById('tD').textContent = HAZIR.length;
   document.getElementById('tB').textContent = b;
   document.getElementById('tO').textContent = o;
