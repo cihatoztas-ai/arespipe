@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>500 — Sunucu Hatası | AresPipe</title>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+[data-theme=dark]{
+  --bg:#0d1117;--sur:#161b24;--bor:#262f3e;
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+  --ac:#2D8EFF;--warn:#d97706;--re:#e53e3e;--or:#f97316;
+}
+[data-theme=light-anthracite]{
+  --bg:#d8dde4;--sur:#e4e9ef;--bor:#bcc5d0;
+  --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
+  --ac:#2D8EFF;--warn:#d97706;--re:#e53e3e;--or:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--bg);color:var(--tx);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;overflow:hidden;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--bor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bor) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:.4;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle, rgba(249,115,22,.07) 0%, transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-60%);
+  pointer-events:none;
+}
+.container{
+  position:relative;z-index:1;
+  text-align:center;padding:40px 20px;
+  animation:fadeUp .6s ease both;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:900;
+  color:var(--ac);letter-spacing:1px;
+  margin-bottom:40px;display:block;opacity:.7;
+}
+.big-num{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(120px,20vw,200px);
+  font-weight:900;line-height:1;
+  letter-spacing:-4px;
+  color:var(--or);opacity:.15;
+  position:relative;user-select:none;
+}
+.icon-wrap{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:80px;height:80px;
+  background:rgba(249,115,22,.12);
+  border:1px solid rgba(249,115,22,.25);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  animation:shake 3s ease-in-out infinite;
+}
+@keyframes shake{
+  0%,90%,100%{transform:translate(-50%,-50%) rotate(0deg);}
+  92%{transform:translate(-50%,-50%) rotate(-3deg);}
+  96%{transform:translate(-50%,-50%) rotate(3deg);}
+}
+
+/* Pipe animasyonu — basınç sorunu */
+.pipe-line{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin:24px 0;opacity:.25;
+}
+.pipe-seg{width:32px;height:8px;background:var(--txd);}
+.pipe-seg:first-child{border-radius:4px 0 0 4px;}
+.pipe-seg:last-child{border-radius:0 4px 4px 0;}
+.pipe-joint{width:14px;height:14px;background:var(--txd);border-radius:50%;}
+.pipe-hot{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--or);opacity:1 !important;
+  animation:hotpulse 1s ease-in-out infinite;
+}
+@keyframes hotpulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.5);}
+  50%{box-shadow:0 0 0 6px rgba(249,115,22,.0);}
+}
+
+.title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(24px,4vw,36px);
+  font-weight:800;color:var(--tx);
+  margin:12px 0 8px;letter-spacing:.5px;
+}
+.desc{
+  font-size:15px;color:var(--txm);
+  max-width:420px;margin:0 auto 12px;
+  line-height:1.6;
+}
+.hata-kodu{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:14px;font-weight:700;
+  color:var(--txd);
+  background:var(--sur);
+  border:1px solid var(--bor);
+  border-radius:7px;
+  padding:5px 14px;
+  display:inline-block;
+  margin-bottom:28px;
+  letter-spacing:.3px;
+}
+.actions{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:10px;
+  font-size:14px;font-weight:600;
+  font-family:'Barlow',sans-serif;
+  cursor:pointer;text-decoration:none;
+  transition:all .15s;border:none;
+}
+.btn-primary{background:var(--ac);color:#fff;}
+.btn-primary:hover{opacity:.85;}
+.btn-outline{background:none;border:1px solid var(--bor);color:var(--txm);}
+.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+</style>
+</head>
+<body>
+<div class="container">
+  <span class="logo">⬡ AresPipe</span>
+
+  <div class="pipe-line">
+    <div class="pipe-seg"></div>
+    <div class="pipe-joint"></div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-hot"></div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-joint"></div>
+    <div class="pipe-seg"></div>
+  </div>
+
+  <div style="position:relative;display:inline-block;">
+    <div class="big-num">500</div>
+    <div class="icon-wrap">⚙️</div>
+  </div>
+
+  <div class="title">Sunucu Hatası</div>
+  <div class="desc">Beklenmedik bir hata oluştu. Teknik ekibimiz bilgilendirildi. Lütfen birkaç dakika sonra tekrar deneyin.</div>
+  <div class="hata-kodu">HATA KODU: 500 · Internal Server Error</div>
+
+  <div class="actions">
+    <a href="javascript:location.reload()" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+      Sayfayı Yenile
+    </a>
+    <a href="index.html" class="btn btn-outline">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Ana Sayfaya Dön
+    </a>
+  </div>
+</div>
+
+<script>document.documentElement.style.visibility='';</script>
+</body>
+</html>

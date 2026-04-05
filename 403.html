@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>403 — Erişim Reddedildi | AresPipe</title>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+[data-theme=dark]{
+  --bg:#0d1117;--sur:#161b24;--bor:#262f3e;
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+  --ac:#2D8EFF;--warn:#d97706;--re:#e53e3e;--leg:#7c3aed;
+}
+[data-theme=light-anthracite]{
+  --bg:#d8dde4;--sur:#e4e9ef;--bor:#bcc5d0;
+  --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
+  --ac:#2D8EFF;--warn:#d97706;--re:#e53e3e;--leg:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--bg);color:var(--tx);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;overflow:hidden;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--bor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bor) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:.4;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle, rgba(124,58,237,.07) 0%, transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-60%);
+  pointer-events:none;
+}
+.container{
+  position:relative;z-index:1;
+  text-align:center;padding:40px 20px;
+  animation:fadeUp .6s ease both;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:900;
+  color:var(--ac);letter-spacing:1px;
+  margin-bottom:40px;display:block;opacity:.7;
+}
+.big-num{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(120px,20vw,200px);
+  font-weight:900;line-height:1;
+  letter-spacing:-4px;
+  color:var(--leg);opacity:.15;
+  position:relative;user-select:none;
+}
+.icon-wrap{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:80px;height:80px;
+  background:rgba(124,58,237,.12);
+  border:1px solid rgba(124,58,237,.25);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+}
+
+/* Kilit animasyonu */
+.lock-icon{
+  animation:lockShake 4s ease-in-out infinite;
+}
+@keyframes lockShake{
+  0%,85%,100%{transform:none;}
+  88%{transform:rotate(-8deg);}
+  92%{transform:rotate(8deg);}
+  96%{transform:rotate(-4deg);}
+}
+
+/* Pipe — kilitli vana */
+.pipe-line{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin:24px 0;opacity:.25;
+}
+.pipe-seg{width:32px;height:8px;background:var(--txd);}
+.pipe-seg:first-child{border-radius:4px 0 0 4px;}
+.pipe-seg:last-child{border-radius:0 4px 4px 0;}
+.pipe-joint{width:14px;height:14px;background:var(--txd);border-radius:50%;}
+.pipe-valve{
+  width:20px;height:20px;
+  background:var(--leg);border-radius:4px;
+  opacity:1 !important;
+  position:relative;
+}
+
+.title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(24px,4vw,36px);
+  font-weight:800;color:var(--tx);
+  margin:12px 0 8px;letter-spacing:.5px;
+}
+.desc{
+  font-size:15px;color:var(--txm);
+  max-width:420px;margin:0 auto 12px;
+  line-height:1.6;
+}
+.rol-bilgi{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:600;
+  color:var(--txd);
+  background:var(--sur);
+  border:1px solid var(--bor);
+  border-radius:7px;
+  padding:6px 14px;
+  margin-bottom:28px;
+}
+.rol-bilgi svg{stroke:var(--leg);}
+.actions{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:10px;
+  font-size:14px;font-weight:600;
+  font-family:'Barlow',sans-serif;
+  cursor:pointer;text-decoration:none;
+  transition:all .15s;border:none;
+}
+.btn-primary{background:var(--ac);color:#fff;}
+.btn-primary:hover{opacity:.85;}
+.btn-outline{background:none;border:1px solid var(--bor);color:var(--txm);}
+.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+.btn-warn{
+  background:rgba(124,58,237,.1);
+  border:1px solid rgba(124,58,237,.25);
+  color:var(--leg);
+}
+.btn-warn:hover{background:rgba(124,58,237,.18);}
+</style>
+</head>
+<body>
+<div class="container">
+  <span class="logo">⬡ AresPipe</span>
+
+  <div class="pipe-line">
+    <div class="pipe-seg"></div>
+    <div class="pipe-joint"></div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-valve"></div>
+    <div class="pipe-seg" style="opacity:.15;"></div>
+    <div class="pipe-joint" style="opacity:.15;"></div>
+    <div class="pipe-seg" style="opacity:.1;"></div>
+  </div>
+
+  <div style="position:relative;display:inline-block;">
+    <div class="big-num">403</div>
+    <div class="icon-wrap">
+      <span class="lock-icon">🔒</span>
+    </div>
+  </div>
+
+  <div class="title">Erişim Reddedildi</div>
+  <div class="desc">Bu sayfaya erişim yetkiniz bulunmuyor. Farklı bir hesapla giriş yapabilir veya yöneticinizle iletişime geçebilirsiniz.</div>
+
+  <div class="rol-bilgi">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <span id="rolYazi">Bu sayfaya erişmek için yetki gereklidir</span>
+  </div>
+
+  <div class="actions">
+    <a href="index.html" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Ana Sayfaya Dön
+    </a>
+    <a href="giris.html" class="btn btn-warn">
+      🔐 Farklı Hesapla Giriş
+    </a>
+    <a href="javascript:history.back()" class="btn btn-outline">
+      ← Geri Git
+    </a>
+  </div>
+</div>
+
+<script>
+document.documentElement.style.visibility = '';
+
+// Oturumdaki rol bilgisini göster
+(function() {
+  try {
+    var o = JSON.parse(localStorage.getItem('ares_oturum') || '{}');
+    if (o && o.rol) {
+      var rolAd = o.rol === 'yonetici' ? 'Yönetici'
+                : o.rol === 'imalatci' ? 'İmalatçı'
+                : o.rol;
+      var el = document.getElementById('rolYazi');
+      if (el) el.textContent = 'Giriş yapan: ' + (o.tamAd || o.ad_soyad || '') + ' · Rol: ' + rolAd;
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
