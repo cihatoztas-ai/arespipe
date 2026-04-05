@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="tr" data-theme="dark">
-<head><script>(function(){try{var t=localStorage.getItem('ares_theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang');if(l)document.documentElement.setAttribute('lang',l);}catch(e){}document.documentElement.style.visibility='hidden';})();</script>
+<head>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'dark';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,14 +39,14 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .main-content{margin-left:220px;transition:margin-left 0.22s cubic-bezier(.4,0,.2,1);flex:1;min-width:0;}
 
 .page{padding:28px 28px 40px;max-width:1100px;}
-.breadcrumb{font-size:12px;color:var(--txd);margin-bottom:6px;}
+.breadcrumb{font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;margin-bottom:20px;}
 
 /* FORM KART */
 .form-kart{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:22px 24px;margin-bottom:16px;}
 .kart-baslik{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--bor);}
-.kart-ikon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.kart-ikon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 
 /* FORM ALANLARI */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -46,18 +54,18 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 @media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr;}}
 .fg{display:flex;flex-direction:column;gap:5px;}
 .fg.span2{grid-column:1/-1;}
-.fl{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;}
+.fl{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;}
 .fl .req{color:var(--re);}
-.fi{padding:9px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.15s;width:100%;}
+.fi{padding:9px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.15s;width:100%;}
 .fi:focus{border-color:var(--ac);}
 .fi.hata{border-color:var(--re);}
 select.fi{cursor:pointer;}
 textarea.fi{resize:vertical;min-height:72px;}
-.fi-hint{font-size:12px;color:var(--txd);margin-top:2px;}
+.fi-hint{font-size:14px;color:var(--txd);margin-top:2px;}
 
 /* RADIO / CHECKBOX GRUP */
 .radio-grup{display:flex;flex-wrap:wrap;gap:6px;}
-.radio-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all 0.15s;user-select:none;}
+.radio-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:14px;font-weight:500;color:var(--txm);transition:all 0.15s;user-select:none;}
 .radio-btn:hover{border-color:var(--ac);color:var(--ac);}
 .radio-btn.aktif{border-color:var(--ac);background:rgba(14,165,233,0.10);color:var(--ac);font-weight:600;}
 .radio-btn input{display:none;}
@@ -68,24 +76,24 @@ textarea.fi{resize:vertical;min-height:72px;}
 .excel-alan.yuklendi{border-color:var(--gr);border-style:solid;background:rgba(16,185,129,0.04);}
 .excel-ikon{font-size:28px;margin-bottom:6px;}
 .excel-baslik{font-size:14px;font-weight:600;margin-bottom:4px;}
-.excel-aciklama{font-size:12px;color:var(--txd);}
+.excel-aciklama{font-size:14px;color:var(--txd);}
 .excel-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 
 /* SPOOL TABLOSU */
 .spool-table-wrap{border:1px solid var(--bor);border-radius:12px;overflow:hidden;margin-top:12px;}
-.spool-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
-.spool-table thead th{text-align:left;padding:8px 10px;font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
+.spool-table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap;}
+.spool-table thead th{text-align:left;padding:8px 10px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
 .spool-table td{padding:7px 10px;border-bottom:1px solid var(--bor);vertical-align:middle;}
 .spool-table tr:last-child td{border-bottom:none;}
 .spool-table tbody tr:hover td{background:rgba(14,165,233,0.03);}
 .spool-no-badge{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ac);}
 .td-sil{background:none;border:none;color:var(--txd);cursor:pointer;padding:3px 6px;border-radius:5px;font-size:14px;line-height:1;}
 .td-sil:hover{color:var(--re);background:rgba(239,68,68,0.1);}
-.spool-bos{text-align:center;padding:28px;color:var(--txd);font-size:13px;}
+.spool-bos{text-align:center;padding:28px;color:var(--txd);font-size:14px;}
 
 /* SPOOL MANUEL EKLEME */
 .spool-ekle-satir{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 36px;gap:6px;align-items:center;padding:10px 12px;background:var(--sur2);border-top:1px solid var(--bor);}
-.spool-ekle-satir .fi{padding:6px 8px;font-size:12px;}
+.spool-ekle-satir .fi{padding:6px 8px;font-size:14px;}
 
 /* AKSIYON BAR */
 .aksiyon-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px;}
@@ -93,24 +101,24 @@ textarea.fi{resize:vertical;min-height:72px;}
 .btn-g{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);}.btn-g:hover{border-color:var(--ac);color:var(--ac);}
 .btn-ac{background:var(--ac);color:#fff;}.btn-ac:hover{filter:brightness(1.1);}
 .btn-gr{background:var(--gr);color:#fff;}.btn-gr:hover{filter:brightness(1.1);}
-.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-sm{padding:6px 12px;font-size:14px;}
 .btn-excel{background:rgba(16,185,129,0.1);color:var(--gr);border:1px solid rgba(16,185,129,0.3);}.btn-excel:hover{background:rgba(16,185,129,0.18);}
 
 /* ÖZET PANEL */
 .ozet-kart{background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none;}
 .ozet-kart.goster{display:block;}
-.ozet-satir{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(14,165,233,0.1);}
+.ozet-satir{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;border-bottom:1px solid rgba(14,165,233,0.1);}
 .ozet-satir:last-child{border-bottom:none;}
 .ozet-label{color:var(--txd);}
 .ozet-val{font-weight:600;}
 
 /* SPOOL SEKME */
-.spool-tab{padding:8px 16px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.spool-tab{padding:8px 16px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
 .spool-tab:hover{color:var(--tx);}
 .spool-tab.aktif{color:var(--gr);border-bottom-color:var(--gr);font-weight:600;}
 
 /* IFS chip */
-.ifs-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);transition:all 0.15s;}
+.ifs-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);transition:all 0.15s;}
 .ifs-chip:hover,.ifs-chip.aktif{border-color:var(--gr);background:rgba(16,185,129,0.1);color:var(--gr);}
 
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:10px;z-index:1100;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
@@ -154,12 +162,6 @@ textarea.fi{resize:vertical;min-height:72px;}
       <label class="fl"><span data-i18n="dny_yard">Tersane</span> <span class="req">*</span></label>
       <select class="fi" id="selTersane" onchange="tersaneSecildi()">
         <option value="" data-i18n="dny_select_yard">— Tersane seçin —</option>
-        <option value="SEDEF">Sedef Tersanesi — İstanbul</option>
-        <option value="TERSAN">Tersan Tersanesi — Trabzon</option>
-        <option value="RMK">RMK Marine — İstanbul</option>
-        <option value="CEMRE">Cemre Tersanesi — Yalova</option>
-        <option value="ADA">Ada Denizcilik</option>
-        <option value="DITAS">Ditaş Deniz</option>
       </select>
     </div>
     <div class="fg">
@@ -230,7 +232,7 @@ textarea.fi{resize:vertical;min-height:72px;}
   <div class="kart-baslik">
     <div class="kart-ikon" style="background:rgba(16,185,129,0.12);color:var(--gr);">📦</div>
     <span data-i18n="dny_spool_list">Spool Listesi</span>
-    <span id="spoolSayac" style="font-size:13px;font-weight:500;color:var(--txd);margin-left:4px;"></span>
+    <span id="spoolSayac" style="font-size:14px;font-weight:500;color:var(--txd);margin-left:4px;"></span>
   </div>
 
   <!-- SEKME BAR -->
@@ -240,7 +242,7 @@ textarea.fi{resize:vertical;min-height:72px;}
     </button>
     <button class="spool-tab" id="tabIFS" onclick="spoolTabSec('ifs')" style="display:none;">
       <span data-i18n="dny_tab_ifs">🏭 IFS Malzeme Listesi</span>
-      <span style="background:rgba(16,185,129,0.2);color:var(--gr);font-size:12px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">TERSAN</span>
+      <span style="background:rgba(16,185,129,0.2);color:var(--gr);font-size:14px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">TERSAN</span>
     </button>
     <button class="spool-tab" id="tabManuel" onclick="spoolTabSec('manuel')">
       <span data-i18n="dny_tab_manual">✏️ Manuel Giriş</span>
@@ -262,7 +264,7 @@ textarea.fi{resize:vertical;min-height:72px;}
 
   <!-- IFS SEKMESİ — sadece TERSAN seçilince -->
   <div id="panelIFS" style="display:none;">
-    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--txm);">
+    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:14px;color:var(--txm);">
       <strong style="color:var(--gr);">IFS Malzeme Listesi</strong> — Tersan IFS sisteminden export edilen <code>.xlsm</code> dosyasını yükleyin.
       Spool listesi ve her spoolun malzeme detayları otomatik oluşturulur.
     </div>
@@ -276,7 +278,7 @@ textarea.fi{resize:vertical;min-height:72px;}
     <!-- IFS Önizleme -->
     <div id="ifsOnizleme" style="display:none;margin-top:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:13px;font-weight:600;" id="ifsOzet"></div>
+        <div style="font-size:14px;font-weight:600;" id="ifsOzet"></div>
         <div style="display:flex;gap:6px;">
           <button class="btn btn-g btn-sm" onclick="ifsFiltrele()" data-i18n="dny_filter">Filtrele</button>
           <button class="btn btn-gr btn-sm" onclick="ifsOnayla()" data-i18n="dny_import_all">✓ Tümünü Aktar</button>
@@ -284,7 +286,7 @@ textarea.fi{resize:vertical;min-height:72px;}
       </div>
       <!-- Pipeline filtre -->
       <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;" data-i18n="dny_pipeline_label">Pipeline:</span>
+        <span style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;" data-i18n="dny_pipeline_label">Pipeline:</span>
         <div id="ifsPipelineChips" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
       </div>
       <!-- IFS spool listesi -->
@@ -353,8 +355,8 @@ textarea.fi{resize:vertical;min-height:72px;}
   <div class="kart-baslik">
     <div class="kart-ikon" style="background:rgba(239,68,68,0.12);color:var(--re);">📄</div>
     <span data-i18n="dny_iso_drawings">ISO / Spool Çizimleri</span>
-    <span id="pdfSayac" style="font-size:13px;font-weight:500;color:var(--txd);margin-left:4px;"></span>
-    <span style="margin-left:auto;font-size:12px;color:var(--txd);" data-i18n="dny_pdf_auto">Dosya adından spool otomatik eşleştirilir</span>
+    <span id="pdfSayac" style="font-size:14px;font-weight:500;color:var(--txd);margin-left:4px;"></span>
+    <span style="margin-left:auto;font-size:14px;color:var(--txd);" data-i18n="dny_pdf_auto">Dosya adından spool otomatik eşleştirilir</span>
   </div>
 
   <!-- PDF sürükle bırak -->
@@ -367,7 +369,7 @@ textarea.fi{resize:vertical;min-height:72px;}
     <div class="excel-baslik" data-i18n="dny_pdf_drag">PDF dosyalarını sürükleyin veya tıklayın</div>
     <div class="excel-aciklama">
       Birden fazla dosya seçilebilir · Dosya adından spool eşleştirilir<br>
-      <span style="font-size:12px;color:var(--txd);">Örn: AT110-816-026_1_2__S01_1.pdf → Pipeline: AT110-816-026, Spool: S01</span>
+      <span style="font-size:14px;color:var(--txd);">Örn: AT110-816-026_1_2__S01_1.pdf → Pipeline: AT110-816-026, Spool: S01</span>
     </div>
   </div>
 
@@ -379,7 +381,7 @@ textarea.fi{resize:vertical;min-height:72px;}
 
 <!-- ── ÖZET ── -->
 <div class="ozet-kart" id="ozetKart">
-  <div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:10px;" data-i18n="dny_summary_title">📋 Kayıt Özeti</div>
+  <div style="font-size:14px;font-weight:700;color:var(--ac);margin-bottom:10px;" data-i18n="dny_summary_title">📋 Kayıt Özeti</div>
   <div class="ozet-satir"><span class="ozet-label" data-i18n="dny_oz_yard">Tersane</span><span class="ozet-val" id="ozTersane">—</span></div>
   <div class="ozet-satir"><span class="ozet-label" data-i18n="dny_oz_project">Proje</span><span class="ozet-val" id="ozProje">—</span></div>
   <div class="ozet-satir"><span class="ozet-label" data-i18n="dny_oz_work_order">İş Emri</span><span class="ozet-val" id="ozIsEmri">—</span></div>
@@ -495,6 +497,8 @@ var _I18N = {
     dny_pdf_loaded:'PDF(s) loaded · spool(s) matched',
     dny_matched:'matched',
     dny_select_project_first:'— Select project —',
+    dny_db_hata:'Database error: ',
+    dny_select_project:'— Select project —',
   },
   ar: {
     dny_home:'الرئيسية', dny_active_circuits:'الدوائر النشطة', dny_new_circuit:'دائرة جديدة',
@@ -566,6 +570,8 @@ var _I18N = {
     dny_pdf_loaded:'PDF محمل · متطابق مع البكرة',
     dny_matched:'تم التطابق',
     dny_select_project_first:'— اختر المشروع —',
+    dny_db_hata:'خطأ في قاعدة البيانات: ',
+    dny_select_project:'— اختر المشروع —',
   }
 };
 function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
@@ -592,15 +598,13 @@ function _applyI18n(){
 window._onLangChange=function(){_applyI18n();spoolTableGuncelle();};
 new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 // ── İŞ EMRİ OTOMATIK ─────────────────────────────────────────
-function isEmriUret() {
+// ✅ G-07: İş emri önizleme — kaydet() içinde ARES.sonrakiNo('is_emri') kullanılır
+function isEmriPreviewGoster() {
   const yil = new Date().getFullYear().toString().slice(-2);
-  const sayac = parseInt(localStorage.getItem('ares_isEmriSayac') || '0') + 1;
-  localStorage.setItem('ares_isEmriSayac', sayac);
-  const no = 'P' + yil + '-' + String(sayac).padStart(3, '0');
-  document.getElementById('isEmri').textContent = no;
-  return no;
+  const el = document.getElementById('isEmri');
+  if (el) el.textContent = 'I' + yil + '-···';
 }
-let _isEmriNo = isEmriUret();
+isEmriPreviewGoster();
 const PROJELER = {
   SEDEF:  [{no:'NB1099',ad:'NB1099 — MV Atlas'},{no:'NB1100',ad:'NB1100 — MV Bora'}],
   TERSAN: [{no:'NB1137',ad:'NB1137 — Kargo A'},{no:'NB1138',ad:'NB1138 — Kargo B'}],
@@ -610,19 +614,41 @@ const PROJELER = {
   DITAS:  [{no:'NB201', ad:'NB201 — Feribot'}],
 };
 
-// ── TERSAN SEÇİLİNCE IFS SEKMESI GÖSTER ─────────────────────
-function tersaneSecildi() {
-  const t = document.getElementById('selTersane').value;
-  const sel = document.getElementById('selProje');
-  sel.innerHTML = '<option value="">— Proje seçin —</option>';
-  (PROJELER[t] || []).forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.no; opt.textContent = p.ad;
-    sel.appendChild(opt);
-  });
-  // IFS sekmesini göster/gizle
+// ── TERSANE SEÇİLDİ — Projeler Supabase'den ─────────────────
+async function tersaneSecildi() {
+  const tersaneId = document.getElementById('selTersane').value;
+  const sel       = document.getElementById('selProje');
+  sel.innerHTML   = `<option value="">${tv('dny_select_project','— Proje seçin —')}</option>`;
+
+  const supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase' && tersaneId) {
+    const res = await supa.from('projeler')
+      .select('id,proje_no,gemi_adi')
+      .eq('tersane_id', tersaneId)
+      .eq('tenant_id', ARES.tenantId())
+      .order('proje_no');
+    if (!res.error && res.data) {
+      res.data.forEach(function(p) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = (p.proje_no || '') + (p.gemi_adi ? ' — ' + p.gemi_adi : '');
+        sel.appendChild(opt);
+      });
+    }
+  } else {
+    // Local mod: hardcoded projeler
+    (PROJELER[tersaneId] || []).forEach(function(p) {
+      const opt = document.createElement('option');
+      opt.value = p.no; opt.textContent = p.ad;
+      sel.appendChild(opt);
+    });
+  }
+
+  // IFS sekmesini göster/gizle (TERSAN adı içeriyorsa)
   const tabIFS = document.getElementById('tabIFS');
-  if (t === 'TERSAN') {
+  const selEl  = document.getElementById('selTersane');
+  const selTxt = selEl.options[selEl.selectedIndex]?.text || '';
+  if (selTxt.toUpperCase().includes('TERSAN')) {
     tabIFS.style.display = 'flex';
   } else {
     tabIFS.style.display = 'none';
@@ -760,16 +786,16 @@ function ifsSpoolListesiRender() {
       satir += `
         <tr style="cursor:pointer;" onclick="ifsDetayToggle('${uid}', event)">
           <td style="padding:8px 10px;"><input type="checkbox" class="ifs-spool-cb" data-pipeline="${pipeline}" data-spool="${spoolNo}" checked onclick="event.stopPropagation()"></td>
-          <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--ac);">${pipeline}</td>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ac);">${pipeline}</td>
           <td style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;">${spoolNo}</td>
-          <td style="font-size:12px;color:var(--txd);">${items.length} kalem</td>
-          <td style="font-size:13px;font-weight:600;">${toplamKg.toLocaleString('tr-TR',{minimumFractionDigits:3})} kg</td>
-          <td style="font-size:12px;color:var(--txm);">${malzemeler||'—'}</td>
-          <td style="font-size:12px;color:var(--txm);">${caplar||'—'}</td>
+          <td style="font-size:14px;color:var(--txd);">${items.length} kalem</td>
+          <td style="font-size:14px;font-weight:600;">${toplamKg.toLocaleString('tr-TR',{minimumFractionDigits:3})} kg</td>
+          <td style="font-size:14px;color:var(--txm);">${malzemeler||'—'}</td>
+          <td style="font-size:14px;color:var(--txm);">${caplar||'—'}</td>
         </tr>
         <tr id="detail_${uid}" style="display:none;">
           <td colspan="7" style="padding:0 10px 8px 40px;background:var(--sur2);">
-            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
               <thead><tr>
                 <th style="text-align:left;padding:4px 8px;color:var(--txd);">Açıklama</th>
                 <th style="text-align:left;padding:4px 8px;color:var(--txd);">Boyut</th>
@@ -977,14 +1003,14 @@ function spoolTableGuncelle() {
     tbody.innerHTML = spooller.map((s, i) => `
       <tr>
         <td style="color:var(--txd);font-family:'Barlow Condensed',sans-serif;font-weight:700;">${i+1}</td>
-        <td style="color:var(--txd);font-size:12px;">${esc(s.pipeline)||'—'}</td>
+        <td style="color:var(--txd);font-size:14px;">${esc(s.pipeline)||'—'}</td>
         <td><span class="spool-no-badge">${esc(s.spoolNo)||'—'}</span></td>
-        <td style="color:var(--txd);font-size:12px;">${esc(s.rev)||'—'}</td>
-        <td style="font-size:12px;font-weight:600;">${esc(s.malzeme)||'—'}</td>
-        <td style="font-size:12px;color:var(--txm);">${esc(s.kalite)||'—'}</td>
-        <td style="font-size:12px;">${esc(s.cap)||'—'}</td>
-        <td style="font-size:12px;font-weight:600;">${s.agirlik?s.agirlik.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—'}</td>
-        <td style="font-size:12px;color:var(--txm);">${esc(s.yuzey)||'—'}</td>
+        <td style="color:var(--txd);font-size:14px;">${esc(s.rev)||'—'}</td>
+        <td style="font-size:14px;font-weight:600;">${esc(s.malzeme)||'—'}</td>
+        <td style="font-size:14px;color:var(--txm);">${esc(s.kalite)||'—'}</td>
+        <td style="font-size:14px;">${esc(s.cap)||'—'}</td>
+        <td style="font-size:14px;font-weight:600;">${s.agirlik?s.agirlik.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—'}</td>
+        <td style="font-size:14px;color:var(--txm);">${esc(s.yuzey)||'—'}</td>
         <td><button class="td-sil" onclick="spoolSil(${i})" title="Sil">✕</button></td>
       </tr>`).join('');
   }
@@ -1045,47 +1071,132 @@ function ozetGuncelle() {
   ozet.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
-// ── KAYDET ───────────────────────────────────────────────────
-function kaydet() {
+// ── KAYDET — ✅ Supabase + M-09 + G-07 ──────────────────────
+async function kaydet() {
   if (!validate()) { toast(tv('dny_required_fields','Zorunlu alanları doldurun'), 'er'); return; }
 
+  const btnKaydet    = document.getElementById('btnKaydet');
+  btnKaydet.disabled = true;
+
   const malzemeSecili = document.querySelector('input[name="malzeme"]:checked')?.value || '';
-  const yuzeySecili   = document.querySelector('input[name="yuzey"]:checked')?.value || '';
+  const yuzeySecili   = document.querySelector('input[name="yuzey"]:checked')?.value   || '';
+  const malzemeFinal  = malzemeSecili === 'Diğer' ? gv('malzemeDiger') : malzemeSecili;
 
-  const devre = {
-    isEmri:      _isEmriNo,
-    tersane:     gv('selTersane'),
-    gemi:        gv('selProje'),
-    devre:       gv('devreAdi'),
-    zone:        gv('devreZone'),
-    termin:      gv('devreTermin') || null,
-    malzeme:     [malzemeSecili === 'Diğer' ? gv('malzemeDiger') : malzemeSecili],
-    yuzey:       yuzeySecili,
-    notlar:      gv('devreNot'),
-    spool:       spooller.length,
-    agirlik:     toplamAgirlik(),
-    ilerleme:    0,
-    durum:       'Bekliyor',
-    sonIslem:    '',
-    spoolListesi: spooller,
-    olusturma:   new Date().toLocaleString('tr-TR'),
-  };
+  const supa = ARES.supabase();
 
-  // Store'a kaydet (store varsa)
-  try {
+  if (supa && ARES.mod === 'supabase') {
+    try {
+      // ✅ G-07: İş emri — Supabase sequence
+      const isEmriNo = await ARES.sonrakiNo('is_emri');
+      document.getElementById('isEmri').textContent = isEmriNo;
+
+      // ✅ M-09: Basamak snapshot
+      const basamakSnapshot = await ARES.basamakSnapshotOlustur();
+      const ilkBasamak = basamakSnapshot.length ? basamakSnapshot[0].sistem_adi : 'on_imalat';
+
+      // 1. Devre insert
+      const devreRes = await supa.from('devreler').insert({
+        tenant_id:        ARES.tenantId(),
+        proje_id:         gv('selProje'),
+        devre_no:         gv('devreAdi'),
+        zone:             gv('devreZone') || null,
+        termin:           gv('devreTermin') || null,
+        malzeme:          malzemeFinal,
+        yuzey:            yuzeySecili,
+        notlar:           gv('devreNot') || null,
+        basamak_snapshot: basamakSnapshot,
+        aktif_basamak:    ilkBasamak,
+        durum:            'Bekliyor',
+        ilerleme:         0,
+        agirlik:          toplamAgirlik(),
+        is_emri_no:       isEmriNo,
+        alistirma_devresi: false,
+      }).select().single();
+
+      if (devreRes.error) {
+        toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
+        btnKaydet.disabled = false; return;
+      }
+      const devreId = devreRes.data.id;
+
+      // 2. Spooller insert
+      if (spooller.length) {
+        const spoolRows = spooller.map(function(s, idx) {
+          return {
+            tenant_id:   ARES.tenantId(),
+            devre_id:    devreId,
+            spool_no:    s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
+            pipeline_no: s.pipeline || null,
+            rev:         s.rev      || null,
+            malzeme:     s.malzeme  || null,
+            kalite:      s.kalite   || null,
+            dis_cap_mm:  parseFloat(s.cap) || null,
+            agirlik:     s.agirlik  || 0,
+            yuzey:       s.yuzey    || null,
+            durum:       'Bekliyor',
+            aktif_basamak: ilkBasamak,
+          };
+        });
+        const spoolRes = await supa.from('spooller').insert(spoolRows).select('id');
+
+        // 3. IFS malzeme kalemleri
+        if (!spoolRes.error && spoolRes.data && spoolRes.data.length) {
+          const malzemeRows = [];
+          spoolRes.data.forEach(function(dbSpool, i) {
+            const localSpool = spooller[i];
+            if (localSpool && localSpool.ifsItems) {
+              localSpool.ifsItems.forEach(function(item) {
+                malzemeRows.push({
+                  spool_id: dbSpool.id,
+                  tanim:    item.desc    || null,
+                  boyut:    item.dims    || null,
+                  malzeme:  item.malzeme || null,
+                  miktar:   item.miktar  || 0,
+                  agirlik:  item.agirlik || 0,
+                  ifs_kod:  item.ifsKod  || null,
+                });
+              });
+            }
+          });
+          if (malzemeRows.length) {
+            await supa.from('spool_malzemeleri').insert(malzemeRows);
+          }
+        }
+      }
+
+      // ✅ D3: ARES.logEkle
+      await ARES.logEkle('DEVRE_EKLE', gv('devreAdi') + ' — ' + spooller.length + ' spool', 'devre', devreId, { devre_id: devreId });
+
+      toast(tv('dny_saved','✅ Devre kaydedildi'), 'ok');
+      setTimeout(function() { window.location.href = 'devreler.html'; }, 1200);
+
+    } catch(err) {
+      console.error(err);
+      toast(tv('dny_db_hata','Veritabanı hatası: ') + (err.message || ''), 'er');
+      btnKaydet.disabled = false;
+    }
+
+  } else {
+    // Local mod
+    const isEmriNo = 'I' + new Date().getFullYear().toString().slice(-2) + '-' + String(Date.now()).slice(-3);
+    const devre = {
+      id: Date.now(), isEmri: isEmriNo,
+      tersane: gv('selTersane'), gemi: gv('selProje'),
+      devre: gv('devreAdi'), zone: gv('devreZone'),
+      termin: gv('devreTermin') || null,
+      malzeme: malzemeFinal, yuzey: yuzeySecili,
+      notlar: gv('devreNot'), spool: spooller.length,
+      agirlik: toplamAgirlik(), ilerleme: 0, durum: 'Bekliyor',
+      spoolListesi: spooller, olusturma: new Date().toLocaleString('tr-TR'),
+    };
     const mevcut = JSON.parse(localStorage.getItem('ares_devreler') || '[]');
-    devre.id = Date.now();
     mevcut.unshift(devre);
     localStorage.setItem('ares_devreler', JSON.stringify(mevcut));
-
-    // Log
-    const log = JSON.parse(localStorage.getItem('ares_islemLog') || '[]');
-    log.unshift({id:'L'+Date.now(), tarih:new Date().toLocaleString('tr-TR'), islem:'DEVRE_EKLE', kaynak:devre.isEmri, aciklama:devre.devre+' — '+spooller.length+' spool'});
-    localStorage.setItem('ares_islemLog', JSON.stringify(log.slice(0,500)));
-  } catch(e) {}
-
-  toast(tv('dny_saved','✅ Devre kaydedildi'), 'ok');
-  setTimeout(() => window.location.href = 'devreler.html', 1200);
+    // ✅ D3: ARES.logEkle (local modda localStorage'a yazar)
+    ARES.logEkle('DEVRE_EKLE', devre.devre + ' — ' + spooller.length + ' spool', 'devre', String(devre.id), {});
+    toast(tv('dny_saved','✅ Devre kaydedildi'), 'ok');
+    setTimeout(function() { window.location.href = 'devreler.html'; }, 1200);
+  }
 }
 
 // ── PDF YÜKLEME ───────────────────────────────────────────────
@@ -1190,8 +1301,8 @@ function pdfListeGuncelle() {
         <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px solid ${p.matched?'rgba(16,185,129,0.3)':'rgba(245,158,11,0.35)'};border-radius:10px;background:${p.matched?'rgba(16,185,129,0.04)':'rgba(245,158,11,0.04)'};">
           <span style="font-size:18px;margin-top:2px;">${p.matched ? '✅' : '⚠️'}</span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.fileName)}</div>
-            <div style="font-size:12px;color:var(--txd);margin-top:2px;">
+            <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.fileName)}</div>
+            <div style="font-size:14px;color:var(--txd);margin-top:2px;">
               ${p.pipeline ? `Pipeline: <strong>${esc(p.pipeline)}</strong>` : '<em>Pipeline tanımlanamadı</em>'}
               ${p.spoolNo  ? ` · Spool: <strong>${esc(p.spoolNo)}</strong>` : ''}
               ${p.matched  ? ` · <span style="color:var(--gr);">✓ Eşleşti</span>${spoolPdfSayisi > 1 ? ` · <span style="color:var(--ac);font-weight:700;">${spoolPdfSayisi} PDF bu spoolda</span>` : ''}` : ''}
@@ -1199,8 +1310,8 @@ function pdfListeGuncelle() {
             </div>
             ${!p.matched ? `
               <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-                <span style="font-size:12px;font-weight:700;color:var(--warn);white-space:nowrap;">Manuel eşleştir:</span>
-                <select class="fi" style="padding:5px 10px;font-size:12px;flex:1;max-width:320px;"
+                <span style="font-size:14px;font-weight:700;color:var(--warn);white-space:nowrap;">Manuel eşleştir:</span>
+                <select class="fi" style="padding:5px 10px;font-size:14px;flex:1;max-width:320px;"
                         onchange="pdfManuelEsles(${i}, this.value)">
                   ${spoolOptions}
                 </select>
@@ -1242,6 +1353,29 @@ function pdfSil(i) {
   pdfListeGuncelle();
 }
 
+// ── TERSANE DROPDOWN DOLDUR ─────────────────────────────────
+async function tersaneleriDoldur() {
+  const sel  = document.getElementById('selTersane');
+  const supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    const res = await supa.from('tersaneler')
+      .select('id,ad,sehir')
+      .eq('aktif', true)
+      .eq('tenant_id', ARES.tenantId())
+      .order('ad');
+    if (!res.error && res.data && res.data.length) {
+      sel.innerHTML = `<option value="">${tv('dny_select_yard','— Tersane seçin —')}</option>`;
+      res.data.forEach(function(t) {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.ad + (t.sehir ? ' — ' + t.sehir : '');
+        sel.appendChild(opt);
+      });
+    }
+  }
+  // Local mod: HTML'de zaten hardcoded option var
+}
+
 // ── TOAST ────────────────────────────────────────────────────
 let toastT = null;
 function toast(msg, tip='ok') {
@@ -1254,6 +1388,29 @@ function toast(msg, tip='ok') {
   toastT = setTimeout(() => el.remove(), 3500);
 }
 </script>
-<script>document.documentElement.style.visibility='';</script>
+<script>
+// ✅ SB-01: Auth kontrolü + sayfa başlatma
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    var _bekle = 0;
+    while (_bekle < 80) {
+      var _supa = ARES.supabase();
+      if (_supa) {
+        var _ses = await _supa.auth.getSession();
+        if (_ses.data && _ses.data.session) {
+          await ARES.oturumKontrol();
+          break;
+        }
+        if (_bekle > 20) { location.href = 'giris.html'; return; }
+      }
+      await new Promise(function(r){ setTimeout(r, 100); });
+      _bekle++;
+    }
+    await tersaneleriDoldur();
+    isEmriPreviewGoster();
+  })();
+});
+document.documentElement.style.visibility = '';
+</script>
 </body>
 </html>
