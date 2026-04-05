@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Markalama Yonetimi</title>
+<title>Markalama Yönetimi | AresPipe</title>
+<!-- ✅ Flash prevention — B-03 -->
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <style>
@@ -27,7 +29,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .si-green{background:rgba(16,185,129,.15);color:var(--gr);}
 .si-amber{background:rgba(245,158,11,.15);color:var(--warn);}
 .si-or{background:rgba(249,115,22,.15);color:var(--or);}
-.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px;}
+.stat-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px;}
 .stat-value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;}
 .prog-wrap{height:3px;background:var(--sur2);border-radius:4px;overflow:hidden;margin-top:7px;}
 .prog-fill{height:100%;border-radius:4px;transition:width .5s;}
@@ -35,14 +37,14 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .main-tab{padding:11px 26px;border:none;background:transparent;font-family:'Barlow',sans-serif;font-size:15px;font-weight:500;color:var(--txd);cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;display:flex;align-items:center;gap:8px;}
 .main-tab:hover{color:var(--tx);}
 .main-tab.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:700;}
-.mtbadge{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700;}
+.mtbadge{padding:2px 8px;border-radius:10px;font-size:14px;font-weight:700;}
 .panel{display:none;}
 .panel.active{display:block;}
 .filter-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:12px 16px;margin-bottom:16px;}
 .filter-card-title{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
 .search-wrap{position:relative;max-width:520px;}
 .search-wrap .s-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--txd);}
-.search-input{width:100%;background:var(--sur2);border:1.5px solid var(--bor);border-radius:9px;padding:8px 32px 8px 36px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;transition:border-color .2s;}
+.search-input{width:100%;background:var(--sur2);border:1.5px solid var(--bor);border-radius:9px;padding:8px 32px 8px 36px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;transition:border-color .2s;}
 .search-input:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(14,165,233,.08);}
 .search-input::placeholder{color:var(--txd);}
 .search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txd);cursor:pointer;font-size:18px;display:none;}
@@ -54,8 +56,8 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .active-chip button:hover{color:var(--re);}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:0;}
 .filter-group{display:flex;flex-direction:column;gap:5px;}
-.filter-label{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;}
-.filter-select{background:var(--sur2);border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;transition:border-color .2s;min-width:120px;cursor:pointer;}
+.filter-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;}
+.filter-select{background:var(--sur2);border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;transition:border-color .2s;min-width:120px;cursor:pointer;}
 .filter-select:focus{outline:none;border-color:var(--ac);}
 .filter-select.has-val{border-color:var(--ac);background:rgba(14,165,233,.06);}
 .filter-spacer{flex:1;}
@@ -67,19 +69,19 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .btn-green:hover{opacity:.85;}
 .btn-green:disabled{opacity:.35;cursor:not-allowed;}
 .ms-wrap{position:relative;}
-.ms-trigger{display:flex;align-items:center;justify-content:space-between;background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--txm);cursor:pointer;min-width:140px;gap:8px;font-family:'Barlow',sans-serif;transition:border-color .2s;user-select:none;font-weight:500;}
+.ms-trigger{display:flex;align-items:center;justify-content:space-between;background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;padding:8px 10px;font-size:14px;color:var(--txm);cursor:pointer;min-width:140px;gap:8px;font-family:'Barlow',sans-serif;transition:border-color .2s;user-select:none;font-weight:500;}
 .ms-trigger:hover,.ms-trigger.open{border-color:var(--ac);}
 .ms-trigger.has-sel{border-color:var(--ac);background:rgba(14,165,233,.06);color:var(--tx);}
 .ms-trigger-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ms-arrow{font-size:10px;color:var(--txd);transition:transform .2s;}
+.ms-arrow{font-size:14px;color:var(--txd);transition:transform .2s;}
 .ms-trigger.open .ms-arrow{transform:rotate(180deg);}
-.ms-count{background:var(--ac);color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:2px 8px;}
+.ms-count{background:var(--ac);color:#fff;border-radius:10px;font-size:14px;font-weight:700;padding:2px 8px;}
 .ms-dropdown{position:absolute;top:calc(100% + 5px);left:0;z-index:700;background:var(--sur);border:1px solid var(--bor);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.4);min-width:260px;overflow:hidden;}
 .ms-search{padding:10px 12px;border-bottom:1px solid var(--bor);}
 .ms-search input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:7px 10px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;}
 .ms-search input:focus{outline:none;border-color:var(--ac);}
 .ms-actions{display:flex;gap:8px;padding:7px 12px;border-bottom:1px solid var(--bor);}
-.ms-act{font-size:12px;font-weight:700;cursor:pointer;background:none;border:none;color:var(--ac);font-family:'Barlow',sans-serif;}
+.ms-act{font-size:14px;font-weight:700;cursor:pointer;background:none;border:none;color:var(--ac);font-family:'Barlow',sans-serif;}
 .ms-act:hover{text-decoration:underline;}
 .ms-list{max-height:220px;overflow-y:auto;padding:5px 0;}
 .ms-list::-webkit-scrollbar{width:4px;}
@@ -89,13 +91,13 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .ms-item.checked{background:rgba(14,165,233,.06);}
 .ms-cb{width:17px;height:17px;border-radius:4px;flex-shrink:0;border:1.5px solid var(--bor);background:var(--sur2);display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .ms-item.checked .ms-cb{background:var(--ac);border-color:var(--ac);}
-.ms-cb span{color:#fff;font-size:11px;}
+.ms-cb span{color:#fff;font-size:14px;}
 .ms-empty{padding:16px;text-align:center;font-size:14px;color:var(--txd);}
 .ms-footer{padding:9px 12px;border-top:1px solid var(--bor);display:flex;justify-content:flex-end;}
 .uyari-item{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid rgba(239,68,68,.12);font-size:14px;color:var(--txm);}
 .table-wrapper{background:var(--sur);border:1px solid var(--bor);border-radius:16px;overflow-x:auto;}
 .data-table{width:100%;border-collapse:collapse;min-width:900px;}
-.data-table thead th{text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;user-select:none;cursor:pointer;font-family:'Barlow',sans-serif;}
+.data-table thead th{text-align:left;padding:11px 14px;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;user-select:none;cursor:pointer;font-family:'Barlow',sans-serif;}
 .data-table thead th:hover{color:var(--ac);}
 .data-table thead th.no-sort{cursor:default;}
 .data-table thead th.sort-asc::after{content:' \2191';color:var(--ac);}
@@ -112,7 +114,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .cl-or  {border-left:3px solid var(--or)  !important;}
 .cl-leg {border-left:3px solid var(--leg) !important;}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--txd);}
-.cell-tersane{font-size:13px;font-weight:500;color:var(--leg);}
+.cell-tersane{font-size:14px;font-weight:500;color:var(--leg);}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
 .cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--leg);}
@@ -131,23 +133,23 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 .kl-card:hover{border-color:rgba(245,158,11,.4);}
 .kl-head{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .15s;}
 .kl-head:hover{background:var(--sur2);}
-.kl-arrow{font-size:13px;color:var(--txd);transition:transform .25s;flex-shrink:0;width:18px;}
+.kl-arrow{font-size:14px;color:var(--txd);transition:transform .25s;flex-shrink:0;width:18px;}
 .kl-card.open .kl-arrow{transform:rotate(90deg);}
 .kl-no{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--warn);flex-shrink:0;min-width:100px;}
 .kl-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-.kl-tag{display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:13px;font-weight:600;}
+.kl-tag{display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:14px;font-weight:600;}
 .klt-tersane{background:rgba(168,85,247,.12);color:var(--leg);}
 .klt-malzeme{background:rgba(14,165,233,.1);color:var(--ac);}
 .klt-kalite{background:rgba(14,165,233,.08);color:var(--ac);border:1px solid rgba(14,165,233,.2);}
 .klt-cap{background:rgba(16,185,129,.1);color:var(--gr);}
 .klt-kal{background:rgba(245,158,11,.1);color:var(--warn);}
 .klt-count{background:rgba(249,115,22,.12);color:var(--or);font-weight:700;}
-.kl-meta{font-size:12px;color:var(--txd);flex-shrink:0;text-align:right;line-height:1.7;}
+.kl-meta{font-size:14px;color:var(--txd);flex-shrink:0;text-align:right;line-height:1.7;}
 .kl-body{display:none;border-top:1px solid var(--bor);}
 .kl-card.open .kl-body{display:block;}
 .kl-action-bar{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-wrap:wrap;}
 .kl-progress{flex:1;min-width:200px;}
-.kl-progress-label{font-size:13px;color:var(--txm);margin-bottom:6px;display:flex;justify-content:space-between;}
+.kl-progress-label{font-size:14px;color:var(--txm);margin-bottom:6px;display:flex;justify-content:space-between;}
 .kl-progress-bar{height:8px;background:var(--bor);border-radius:6px;overflow:hidden;}
 .kl-progress-fill{height:100%;background:var(--gr);border-radius:6px;transition:width .4s;}
 .kl-row-cut{opacity:1;}
@@ -157,7 +159,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 .arc-card{background:var(--sur);border:1px solid rgba(16,185,129,.3);border-radius:16px;margin-bottom:12px;overflow:hidden;}
 .arc-head{display:flex;align-items:center;gap:16px;padding:14px 20px;cursor:pointer;user-select:none;transition:background .15s;}
 .arc-head:hover{background:var(--sur2);}
-.arc-arrow{font-size:13px;color:var(--txd);transition:transform .25s;flex-shrink:0;width:18px;}
+.arc-arrow{font-size:14px;color:var(--txd);transition:transform .25s;flex-shrink:0;width:18px;}
 .arc-card.open .arc-arrow{transform:rotate(90deg);}
 .arc-body{display:none;border-top:1px solid rgba(16,185,129,.2);}
 .arc-card.open .arc-body{display:block;}
@@ -198,57 +200,57 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
 <div class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span class="cur">Markalama Yönetimi</span></div>
+    <div class="breadcrumb"><a href="index.html" data-i18n="mk_home">Ana Sayfa</a><span>/</span><span class="cur" data-i18n="mk_breadcrumb">Markalama Yönetimi</span></div>
   </div>
 
   <div style="margin-bottom:22px;">
-    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--marka-p);letter-spacing:1px;line-height:1;">&#127991;&#65039; Markalama Yönetimi</h1>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--marka-p);letter-spacing:1px;line-height:1;" data-i18n="mk_page_title">&#127991;&#65039; Markalama Yönetimi</h1>
   </div>
 
   <!-- STAT KARTLARI -->
   <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div><div style="flex:1;"><div class="stat-label">Toplam Bekleyen</div><div class="stat-value" id="stTop" style="color:var(--ac);">&#8212;</div></div></div>
-    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div><div style="flex:1;"><div class="stat-label">Filtrelenen</div><div class="stat-value" id="stFiltre" style="color:var(--warn);">&#8212;</div></div></div>
-    <div class="stat-card cl-or"><div class="stat-icon si-or"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div style="flex:1;"><div class="stat-label">Listede Olan</div><div class="stat-value" id="stListede" style="color:var(--or);">&#8212;</div></div></div>
+    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div><div style="flex:1;"><div class="stat-label" data-i18n="mk_stat_pending">Toplam Bekleyen</div><div class="stat-value" id="stTop" style="color:var(--ac);">&#8212;</div></div></div>
+    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div><div style="flex:1;"><div class="stat-label" data-i18n="mk_stat_filtered">Filtrelenen</div><div class="stat-value" id="stFiltre" style="color:var(--warn);">&#8212;</div></div></div>
+    <div class="stat-card cl-or"><div class="stat-icon si-or"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div style="flex:1;"><div class="stat-label" data-i18n="mk_stat_inlist">Listede Olan</div><div class="stat-value" id="stListede" style="color:var(--or);">&#8212;</div></div></div>
   </div>
 
   <!-- SEKMELER -->
   <div class="main-tabs">
-    <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')">&#9203; Markalama Bekleyen <span class="mtbadge" id="badge-bekliyor" style="background:rgba(239,68,68,.15);color:var(--re);"></span></button>
-    <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')">&#128203; Markalama Listeleri <span class="mtbadge" id="badge-listeler" style="background:rgba(245,158,11,.15);color:var(--warn);"></span></button>
-    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')">&#10003; Tamamlanan <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(16,185,129,.12);color:var(--gr);"></span></button>
+    <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')"><span data-i18n="mk_tab_pending">&#9203; Markalama Bekleyen</span> <span class="mtbadge" id="badge-bekliyor" style="background:rgba(239,68,68,.15);color:var(--re);"></span></button>
+    <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')"><span data-i18n="mk_tab_lists">&#128203; Markalama Listeleri</span> <span class="mtbadge" id="badge-listeler" style="background:rgba(245,158,11,.15);color:var(--warn);"></span></button>
+    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')"><span data-i18n="mk_tab_done">&#10003; Tamamlanan</span> <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(16,185,129,.12);color:var(--gr);"></span></button>
   </div>
 
   <!-- PANEL: MARKALAMA BEKLEYEN -->
   <div class="panel active" id="panel-bekliyor">
-    <div class="filter-card">
+    <div class="filter-card cl-warn">
       <div class="filter-row" style="margin-top:0;align-items:center;">
         <div class="search-wrap" style="max-width:280px;flex:1;">
           <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="searchInput" placeholder="Spool no, is emir, malzeme... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:13px;">
+          <input class="search-input" id="searchInput" data-i18n-placeholder="mk_search_ph" placeholder="Spool no, iş emir, malzeme... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
           <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
         </div>
         
-        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="">Tersane</option></select>
+        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="" data-i18n="mk_filter_yard">Tersane</option></select>
         <div class="ms-wrap">
             <div class="ms-trigger" id="msTrigger" onclick="toggleMs(event)">
-              <span class="ms-trigger-text" id="msTxt">İş Emir</span>
+              <span class="ms-trigger-text" id="msTxt" data-i18n="mk_filter_isemir">İş Emir</span>
               <span class="ms-count" id="msCnt" style="display:none;"></span>
               <span class="ms-arrow">&#9660;</span>
             </div>
             <div class="ms-dropdown" id="msDD" style="display:none;">
-              <div class="ms-search"><input type="text" id="msQ" placeholder="İş emir ara..." oninput="buildMs()"></div>
-              <div class="ms-actions"><button class="ms-act" onclick="msAll()">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
+              <div class="ms-search"><input type="text" id="msQ" data-i18n-placeholder="mk_search_ph" placeholder="İş emir ara..." oninput="buildMs()"></div>
+              <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="mk_select_all">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()" data-i18n="mk_btn_clear">Temizle</button></div>
               <div class="ms-list" id="msList"></div>
-              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:13px;" onclick="closeMs()">Uygula</button></div>
+              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()" data-i18n="mk_btn_apply">Uygula</button></div>
             </div>
           </div>
-        <select class="filter-select" id="fParca" onchange="onFC()" title="Parça Adı"><option value="">Parça Adı</option></select>
-        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="">Kalite</option></select>
-        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="">Çap</option></select>
+        <select class="filter-select" id="fParca" onchange="onFC()" title="Parça Adı"><option value="" data-i18n="mk_filter_parca">Parça Adı</option></select>
+        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="" data-i18n="mk_filter_grade">Kalite</option></select>
+        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="" data-i18n="mk_filter_diam">Çap</option></select>
         <div class="filter-spacer"></div>
-        <button class="btn-outline" onclick="resetAll()" style="white-space:nowrap;">&#8635; Sıfırla</button>
-        <button class="btn-green" id="btnOlustur" onclick="openModal()" style="height:34px;font-size:13px;padding:0 14px;border-radius:8px;white-space:nowrap;" disabled>&#127991;&#65039; Markalama Listesi Oluştur</button>
+        <button class="btn-outline" onclick="resetAll()" style="white-space:nowrap;" data-i18n="mk_btn_reset">&#8635; Sıfırla</button>
+        <button class="btn-green" id="btnOlustur" onclick="openModal()" style="height:34px;font-size:13px;padding:0 14px;border-radius:8px;white-space:nowrap;" disabled data-i18n="mk_btn_create">&#127991;&#65039; Markalama Listesi Oluştur</button>
       </div>
       <div class="active-chips" id="activeChips" style="display:none;margin-top:10px;"></div>
     </div>
@@ -257,18 +259,18 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <table class="data-table">
         <thead><tr>
           <th class="no-sort" style="width:36px;">#</th>
-          <th onclick="sortBy('tersane')">Tersane</th>
-          <th onclick="sortBy('isEmir')">İş Emir</th>
-          <th onclick="sortBy('spoolNo')">Spool No</th>
-          <th onclick="sortBy('spoolId')" style="color:var(--leg);">Spool ID</th>
-          <th onclick="sortBy('malzemeAdi')">Parça Adı</th>
-          <th onclick="sortBy('kalite')">Malzeme</th>
-          <th onclick="sortBy('cap')">Çap</th>
-          <th class="no-sort" style="width:60px;text-align:center;">İşlem</th>
+          <th onclick="sortBy('tersane')" data-i18n="mk_col_yard">Tersane</th>
+          <th onclick="sortBy('isEmir')" data-i18n="mk_col_isemir">İş Emir</th>
+          <th onclick="sortBy('spoolNo')" data-i18n="mk_col_spool">Spool No</th>
+          <th onclick="sortBy('spoolId')" style="color:var(--leg);" data-i18n="mk_col_spoolid">Spool ID</th>
+          <th onclick="sortBy('malzemeAdi')" data-i18n="mk_col_parca">Parça Adı</th>
+          <th onclick="sortBy('kalite')" data-i18n="mk_col_malzeme">Malzeme</th>
+          <th onclick="sortBy('cap')" data-i18n="mk_col_cap">Çap</th>
+          <th class="no-sort" style="width:60px;text-align:center;" data-i18n="mk_col_action">İşlem</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
-      <div id="emptyState" class="empty-state" style="display:none;"><div class="empty-icon">&#128269;</div><div style="font-weight:600;margin-bottom:6px;">Gösterilecek kayıt bulunamadı</div><div style="font-size:14px;">Filtre veya arama kriterlerini değiştirin</div></div>
+      <div id="emptyState" class="empty-state" style="display:none;"><div class="empty-icon">&#128269;</div><div style="font-weight:600;margin-bottom:6px;" data-i18n="mk_empty_notfound">Gösterilecek kayıt bulunamadı</div><div style="font-size:14px;" data-i18n="mk_empty_hint">Filtre veya arama kriterlerini değiştirin</div></div>
       <div id="tblFooter" class="tbl-footer" style="display:none;"><span id="footerTxt"></span></div>
     </div>
   </div>
@@ -300,14 +302,14 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div>
-        <div class="modal-title" style="font-size:17px;margin-bottom:2px;">Markalandı Olarak İşaretle</div>
-        <div style="font-size:13px;color:var(--txd);">Bu parça manuel olarak markalandı mı?</div>
+        <div class="modal-title" style="font-size:17px;margin-bottom:2px;" data-i18n="mk_modal_mark_title">Markalandı Olarak İşaretle</div>
+        <div style="font-size:14px;color:var(--txd);" data-i18n="mk_modal_mark_desc">Bu parça manuel olarak markalandı mı?</div>
       </div>
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="manuelMarkIcerik"></div>
     <div class="modal-btns">
-      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('manuelMarkModal').style.display='none'">İptal</button>
-      <button class="btn-green" style="flex:2;" id="manuelMarkOnayBtn" onclick="manuelMarkalaOnayla()">&#10003; Evet, Markalandı</button>
+      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('manuelMarkModal').style.display='none'" data-i18n="mk_manuel_iptal">İptal</button>
+      <button class="btn-green" style="flex:2;" id="manuelMarkOnayBtn" onclick="manuelMarkalaOnayla()" data-i18n="mk_modal_mark_btn">&#10003; Evet, Markalandı</button>
     </div>
   </div>
 </div>
@@ -320,32 +322,162 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--re)" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </div>
       <div>
-        <div class="modal-title" style="font-size:18px;color:var(--re);margin-bottom:2px;">Liste Oluşturulamaz</div>
-        <div style="font-size:13px;color:var(--txd);">Seçilen kayıtlar aynı parça adı ve çapa sahip olmalıdır.</div>
+        <div class="modal-title" style="font-size:18px;color:var(--re);margin-bottom:2px;" data-i18n="mk_modal_warn_title">Liste Oluşturulamaz</div>
+        <div style="font-size:14px;color:var(--txd);" data-i18n="mk_modal_warn_desc">Seçilen kayıtlar aynı parça adı ve çapa sahip olmalıdır.</div>
       </div>
     </div>
     <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="uyariModalIcerik"></div>
-    <button class="btn-primary" style="width:100%;background:var(--re);" onclick="document.getElementById('uyariModal').style.display='none'">Tamam, filtreyi düzelteceğim</button>
+    <button class="btn-primary" style="width:100%;background:var(--re);" onclick="document.getElementById('uyariModal').style.display='none'" data-i18n="mk_modal_warn_ok">Tamam, filtreyi düzelteceğim</button>
   </div>
 </div>
 
 <!-- LİSTE OLUŞTUR MODAL -->
 <div class="modal-ov" id="listeModal" style="display:none;">
   <div class="modal-box">
-    <div class="modal-title">&#127991;&#65039; Markalama Listesi Oluştur</div>
+    <div class="modal-title" data-i18n="mk_modal_list_title">&#127991;&#65039; Markalama Listesi Oluştur</div>
     <div class="modal-sub" id="modalSub"></div>
-    <label class="modal-label">Liste Numarası</label>
+    <label class="modal-label" data-i18n="mk_modal_list_no">Liste Numarası</label>
     <input class="modal-input" id="listeNoInput" placeholder="ML-001" maxlength="30">
-    <div class="modal-hint">Boş bırakırsanız otomatik numara atanır.</div>
+    <div class="modal-hint" data-i18n="mk_modal_list_hint">Boş bırakırsanız otomatik numara atanır.</div>
     <div class="modal-preview" id="modalPreview"></div>
     <div class="modal-btns">
-      <button class="btn-outline" style="flex:1;" onclick="closeModal()">İptal</button>
-      <button class="btn-green" style="flex:2;" onclick="createListe()">&#10003; Listeyi Oluştur</button>
+      <button class="btn-outline" style="flex:1;" onclick="closeModal()" data-i18n="mk_modal_list_cancel">İptal</button>
+      <button class="btn-green" style="flex:2;" onclick="createListe()" data-i18n="mk_modal_list_create">&#10003; Listeyi Oluştur</button>
     </div>
   </div>
 </div>
 
 <script>
+'use strict';
+// ════ D-01 DİL SİSTEMİ ════
+var _I18N = {
+  en:{
+    mk_home:'Home', mk_breadcrumb:'Marking Management',
+    mk_page_title:'✂ Marking Management',
+    mk_tab_pending:'Pending Marking', mk_tab_lists:'Marking Lists', mk_tab_done:'Completed',
+    mk_stat_pending:'Total Pending', mk_stat_filtered:'Filtered', mk_stat_inlist:'In List',
+    mk_col_yard:'Yard', mk_col_isemir:'Work Order', mk_col_spool:'Spool No',
+    mk_col_spoolid:'Spool ID', mk_col_parca:'Part Name', mk_col_malzeme:'Material',
+    mk_col_cap:'Diameter', mk_col_action:'Action',
+    mk_filter_yard:'Yard', mk_filter_parca:'Part', mk_filter_mat:'Material',
+    mk_filter_grade:'Grade', mk_filter_diam:'Diameter',
+    mk_filter_isemir:'Work Order', mk_search_ph:'Spool no, work order, material...',
+    mk_select_all:'Select All', mk_btn_clear:'Clear', mk_btn_apply:'Apply',
+    mk_btn_reset:'↺ Reset', mk_btn_create:'🏷 Create Marking List',
+    mk_empty_notfound:'No records found',
+    mk_empty_hint:'Change filter or search criteria',
+    mk_serbest:'Free marking',
+    mk_chip_tersane:'Yard', mk_chip_parca:'Part', mk_chip_kalite:'Grade',
+    mk_chip_cap:'Diameter', mk_chip_isemir:'Work Order', mk_chip_search:'Search',
+    mk_footer_record:'records · Page',
+    mk_lists_title:'Created Lists', mk_lists_header:'🗒 Marking Lists',
+    mk_arc_title:'Archive', mk_arc_header:'✓ Completed Lists',
+    mk_no_lists:'No marking lists created yet',
+    mk_no_arc:'No completed records yet',
+    mk_progress_label:'Marking progress',
+    mk_marked:'marked',
+    mk_btn_markall:'☑ Mark All', mk_btn_unmarkall:'☐ Unmark All',
+    mk_btn_excel:'📂 Download Excel',
+    mk_btn_save_close:'✓ Save & Close List',
+    mk_col_done:'Done',
+    mk_manuel_title:'Manuel İşaretlenenler',
+    mk_modal_mark_title:'Mark as Labelled',
+    mk_modal_mark_desc:'Was this part manually marked?',
+    mk_modal_mark_btn:'✓ Yes, Marked',
+    mk_modal_warn_title:'Cannot Create List',
+    mk_modal_warn_desc:'Selected records must have the same part name and diameter.',
+    mk_modal_warn_retry:'Retry with same criteria',
+    mk_modal_warn_ok:'OK, I will fix the filter',
+    mk_modal_list_title:'🏷 Create Marking List',
+    mk_modal_list_no:'List Number',
+    mk_modal_list_hint:'Leave empty for auto numbering.',
+    mk_modal_list_tersane:'Yard:', mk_modal_list_parca:'Part:',
+    mk_modal_list_cap:'Diameter:', mk_modal_list_kayit:'Records:',
+    mk_modal_list_cancel:'Cancel', mk_modal_list_create:'✓ Create List',
+    mk_manuel_iptal:'Cancel', mk_at_least_one:'At least 1 record must be checked',
+    mk_created:'created',
+    mk_kismi:'partial',
+    mk_geri_dondu:'returned',
+    mk_tamamlandi:'completed',
+    mk_plaka:'Plate',
+    mk_indirildi:'downloaded',
+  },
+  ar:{
+    mk_home:'الرئيسية', mk_breadcrumb:'إدارة الوسم',
+    mk_page_title:'✂ إدارة الوسم',
+    mk_tab_pending:'في انتظار الوسم', mk_tab_lists:'قوائم الوسم', mk_tab_done:'مكتمل',
+    mk_stat_pending:'إجمالي المنتظر', mk_stat_filtered:'مصفى', mk_stat_inlist:'في القائمة',
+    mk_col_yard:'الحوض', mk_col_isemir:'أمر العمل', mk_col_spool:'رقم البكرة',
+    mk_col_spoolid:'معرف البكرة', mk_col_parca:'اسم القطعة', mk_col_malzeme:'المادة',
+    mk_col_cap:'القطر', mk_col_action:'الإجراء',
+    mk_filter_yard:'الحوض', mk_filter_parca:'القطعة', mk_filter_mat:'المادة',
+    mk_filter_grade:'الجودة', mk_filter_diam:'القطر',
+    mk_filter_isemir:'أمر العمل', mk_search_ph:'رقم البكرة، أمر العمل، المادة...',
+    mk_select_all:'تحديد الكل', mk_btn_clear:'مسح', mk_btn_apply:'تطبيق',
+    mk_btn_reset:'↺ إعادة', mk_btn_create:'🏷 إنشاء قائمة وسم',
+    mk_empty_notfound:'لا توجد سجلات',
+    mk_empty_hint:'غير معايير التصفية أو البحث',
+    mk_serbest:'وسم حر',
+    mk_chip_tersane:'الحوض', mk_chip_parca:'القطعة', mk_chip_kalite:'الجودة',
+    mk_chip_cap:'القطر', mk_chip_isemir:'أمر العمل', mk_chip_search:'بحث',
+    mk_footer_record:'سجلات · صفحة',
+    mk_lists_title:'القوائم المنشأة', mk_lists_header:'🗒 قوائم الوسم',
+    mk_arc_title:'الأرشيف', mk_arc_header:'✓ القوائم المكتملة',
+    mk_no_lists:'لم يتم إنشاء قوائم وسم بعد',
+    mk_no_arc:'لا توجد سجلات مكتملة بعد',
+    mk_progress_label:'تقدم الوسم',
+    mk_marked:'موسوم',
+    mk_btn_markall:'☑ تحديد الكل', mk_btn_unmarkall:'☐ إلغاء الكل',
+    mk_btn_excel:'📂 تنزيل Excel',
+    mk_btn_save_close:'✓ حفظ وإغلاق القائمة',
+    mk_col_done:'تم',
+    mk_manuel_title:'الموسومة يدوياً',
+    mk_modal_mark_title:'تحديد كموسوم',
+    mk_modal_mark_desc:'هل تم وسم هذه القطعة يدوياً؟',
+    mk_modal_mark_btn:'✓ نعم، تم الوسم',
+    mk_modal_warn_title:'لا يمكن إنشاء القائمة',
+    mk_modal_warn_desc:'يجب أن تحتوي السجلات المحددة على نفس اسم القطعة والقطر.',
+    mk_modal_warn_retry:'أعد المحاولة بنفس المعايير',
+    mk_modal_warn_ok:'موافق، سأصحح التصفية',
+    mk_modal_list_title:'🏷 إنشاء قائمة وسم',
+    mk_modal_list_no:'رقم القائمة',
+    mk_modal_list_hint:'اتركه فارغاً للترقيم التلقائي.',
+    mk_modal_list_tersane:'الحوض:', mk_modal_list_parca:'القطعة:',
+    mk_modal_list_cap:'القطر:', mk_modal_list_kayit:'السجلات:',
+    mk_modal_list_cancel:'إلغاء', mk_modal_list_create:'✓ إنشاء القائمة',
+    mk_manuel_iptal:'إلغاء', mk_at_least_one:'يجب تحديد سجل واحد على الأقل',
+    mk_created:'تم الإنشاء',
+    mk_kismi:'جزئي',
+    mk_geri_dondu:'عاد',
+    mk_tamamlandi:'مكتمل',
+    mk_plaka:'لوحة',
+    mk_indirildi:'تم التنزيل',
+  }
+};
+function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
+function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
+function _applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k=el.getAttribute('data-i18n');
+    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
+    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
+    var v=tv(k,el.getAttribute('data-i18n-tr'));
+    if(isInp){el.placeholder=v;}else{el.textContent=v;}
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var k=el.getAttribute('data-i18n-placeholder');
+    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
+    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
+  });
+}
+window._onLangChange=function(){
+  _applyI18n();
+  applyFilters();
+  if(aktifTab==='listeler') renderML();
+  if(aktifTab==='tamamlandi') renderArc();
+};
+new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+
 // ════ VERİ ════
 // tip: 'otomatik' | 'plaka' | 'manuel'
 // yuzey: markanin vurulacagi malzeme (flans, boru, bilezik vb.)
@@ -396,16 +528,22 @@ let markalamaListeleri = [];
 let mlSayac = 1;
 let aktifTab='bekliyor', filtreData=[], secilenIsEmir=new Set(), aramaMetni='', sortKey='', sortDir=1;
 
-const tipLabel = {otomatik:'Otomatik', plaka:'Plaka', manuel:'Manuel'};
+function tipLabel(tip){
+  if(tip==='otomatik') return tv('mk_tab_pending_tip','Otomatik');
+  if(tip==='plaka')    return tv('mk_plaka','Plaka');
+  if(tip==='manuel')  return 'Manuel';
+  return tip;
+}
 const tipIcon  = {otomatik:'AO', plaka:'PL', manuel:'MN'};
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function progColor(pct){return pct>=100?'var(--gr)':pct>=50?'var(--warn)':'var(--re)';}
 function hl(text){
   if(!aramaMetni) return esc(text);
   return esc(text).replace(new RegExp('('+aramaMetni.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
 }
 function malzInfoHtml(m){
-  if(m.tip==='manuel') return '<div style="font-size:12px;color:var(--txd);">Serbest markalama</div>';
+  if(m.tip==='manuel') return '<div style="font-size:14px;color:var(--txd);">'+tv('mk_serbest','Serbest markalama')+'</div>';
   var parts=[];
   if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
   if(m.cap)    parts.push('&#216;'+esc(m.cap));
@@ -413,8 +551,7 @@ function malzInfoHtml(m){
 }
 function tipBadgeHtml(tip){
   var cls=tip==='otomatik'?'tip-oto':tip==='plaka'?'tip-plaka':'tip-manuel';
-  var lbl=tipLabel[tip]||tip;
-  return '<span class="tip-badge '+cls+'">'+lbl+'</span>';
+  return '<span class="tip-badge '+cls+'">'+tipLabel(tip)+'</span>';
 }
 
 // ════ TAB ════
@@ -441,7 +578,7 @@ function buildMs(){
   var q=(document.getElementById('msQ')?document.getElementById('msQ').value:'').toLowerCase();
   var el=document.getElementById('msList');
   var items=allIsEmirList().filter(function(v){return v.toLowerCase().includes(q);});
-  if(!items.length){el.innerHTML='<div class="ms-empty">Sonuc yok</div>';return;}
+  if(!items.length){el.innerHTML='<div class="ms-empty">'+tv('mk_empty_notfound','Sonuç yok')+'</div>';return;}
   el.innerHTML=items.map(function(v){
     var on=secilenIsEmir.has(v);
     return '<div class="ms-item'+(on?' checked':'')+'" onclick="toggleMsItem(\''+v+'\')"><div class="ms-cb"><span>'+(on?'&#10003;':'')+'</span></div><div>'+esc(v)+'</div></div>';
@@ -452,8 +589,8 @@ function msAll(){allIsEmirList().forEach(function(v){secilenIsEmir.add(v);});bui
 function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();}
 function updateMsTrig(){
   var trig=document.getElementById('msTrigger'),txt=document.getElementById('msTxt'),cnt=document.getElementById('msCnt'),n=secilenIsEmir.size;
-  if(!n){txt.textContent='İş Emir';cnt.style.display='none';trig.classList.remove('has-sel');}
-  else{var a=[...secilenIsEmir];txt.textContent=n===1?a[0]:a[0]+' +'+(n-1)+' daha';cnt.textContent=n;cnt.style.display='inline';trig.classList.add('has-sel');}
+  if(!n){txt.textContent=tv('mk_filter_isemir','İş Emir');cnt.style.display='none';trig.classList.remove('has-sel');}
+  else{var a=[...secilenIsEmir];txt.textContent=n===1?a[0]:a[0]+' +'+(n-1);cnt.textContent=n;cnt.style.display='inline';trig.classList.add('has-sel');}
 }
 function toggleMs(e){
   e.stopPropagation();
@@ -495,18 +632,19 @@ function resetAll(){
 }
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
-  [{id:'fTersane',l:'Tersane'},{id:'fParca',l:'Parça'},{id:'fKalite',l:'Kalite'},{id:'fCap',l:'Çap'}]
-    .forEach(function(f){var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+f.l+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">&#10005;</button></div>');});
-  [...secilenIsEmir].forEach(function(ie){chips.push('<div class="active-chip">Is Emir: <b>'+esc(ie)+'</b><button onclick="rmMs(\''+ie+'\')">&#10005;</button></div>');});
-  if(aramaMetni)chips.push('<div class="active-chip">Arama: <b>&quot;'+esc(aramaMetni)+'&quot;</b><button onclick="clearSearch()">&#10005;</button></div>');
+  [{id:'fTersane',l:'mk_chip_tersane',tr:'Tersane'},{id:'fParca',l:'mk_chip_parca',tr:'Parça'},{id:'fKalite',l:'mk_chip_kalite',tr:'Kalite'},{id:'fCap',l:'mk_chip_cap',tr:'Çap'}]
+    .forEach(function(f){var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+tv(f.l,f.tr)+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">&#10005;</button></div>');});
+  [...secilenIsEmir].forEach(function(ie){chips.push('<div class="active-chip">'+tv('mk_chip_isemir','İş Emir')+': <b>'+esc(ie)+'</b><button onclick="rmMs(\''+ie+'\')">&#10005;</button></div>');});
+  if(aramaMetni)chips.push('<div class="active-chip">'+tv('mk_chip_search','Arama')+': <b>&quot;'+esc(aramaMetni)+'&quot;</b><button onclick="clearSearch()">&#10005;</button></div>');
   cont.style.display=chips.length?'flex':'none';cont.innerHTML=chips.join('');
 }
 function clearChip(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');applyFilters();}
 function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();}
 
 // ════ SIRALAMA ════
-var PG = 20; // sayfa başına kayıt
+var PG = 25; // sayfa başına kayıt — P-01
 var bekPg = 1, mlPg = {}, arcPg = {};
+var sortState = 0; // 0=varsayılan, 1=asc, 2=desc
 
 function pgHtml(cur, total, onClickFn){
   var pages = Math.ceil(total/PG);
@@ -529,7 +667,19 @@ var sortFns={
   kalite:function(a,b){return (a.kalite||'').localeCompare(b.kalite||'');},
   cap:function(a,b){return parseFloat(a.cap||0)-parseFloat(b.cap||0);}
 };
-function sortBy(key){sortDir=(sortKey===key)?sortDir*-1:1;sortKey=key;sortData();renderTable();}
+function sortBy(key){
+  if(sortKey===key){sortState=(sortState+1)%3;}
+  else{sortKey=key;sortState=1;}
+  if(sortState===0){sortKey='';}
+  sortDir=sortState===2?-1:1;
+  document.querySelectorAll('.data-table thead th').forEach(function(th){
+    th.classList.remove('sort-asc','sort-desc');
+    if(sortKey&&th.getAttribute('onclick')==='sortBy(\''+sortKey+'\')'){
+      th.classList.add(sortState===1?'sort-asc':'sort-desc');
+    }
+  });
+  sortData();renderTable();
+}
 function sortData(){var fn=sortFns[sortKey];if(fn)filtreData.sort(function(a,b){return fn(a,b)*sortDir;});}
 
 // ════ TABLO ════
@@ -548,9 +698,9 @@ function renderTable(){
   tbody.innerHTML=slice.map(function(m,i){
     var altSatir='';
     if(m.tip==='manuel'){
-      altSatir='<div style="font-size:12px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
+      altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest','Serbest markalama')+'</div>';
     } else if(m.tip==='plaka'){
-      var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">Plaka &middot; '+parts2.join(' &middot; ')+'</div>':'';
+      var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_plaka','Plaka')+' &middot; '+parts2.join(' &middot; ')+'</div>':'';
     } else {
       var parts=[];
       if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
@@ -570,7 +720,7 @@ function renderTable(){
       +'</tr>';
   }).join('');
   document.getElementById('footerTxt').innerHTML=
-    '<span>'+filtreData.length+' kayıt · Sayfa '+bekPg+'/'+pages+'</span>'
+    '<span>'+filtreData.length+' '+tv('mk_footer_record','kayıt · Sayfa')+' '+bekPg+'/'+pages+'</span>'
     +pgHtml(bekPg, filtreData.length, 'goBekPg');
 }
 function goBekPg(p){bekPg=p;renderTable();}
@@ -608,8 +758,9 @@ function manuelMarkalaOnayla(){
   }
   document.getElementById('manuelMarkModal').style.display='none';
   _manuelMarkId=null;
+  try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'MARKALAMA_TAMAMLA',kaynak:m.spoolNo||m.id,aciklama:(m.malzemeAdi||m.yuzey||'')+(m.cap?' Ø'+m.cap:'')});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,1000)));}catch(e){}
   applyFilters();updateStats();
-  toast((m.malzemeAdi||m.yuzey||'Parça')+' markalandı olarak işaretlendi','success');
+  toast((m.malzemeAdi||m.yuzey||tv('mk_col_parca','Parça'))+' '+tv('mk_modal_mark_btn','markalandı olarak işaretlendi'),'success');
 }
 
 // ════ LİSTE OLUŞTUR ════
@@ -634,13 +785,13 @@ function openModal(){
 
   var tipler=[...new Set(filtreData.map(function(m){return m.tip;}))];
   var tersaneler=[...new Set(filtreData.map(function(m){return m.tersane;}))];
-  document.getElementById('modalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' kayit</b>';
+  document.getElementById('modalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' '+tv('mk_footer_record','kayıt')+'</b>';
   document.getElementById('listeNoInput').value='ML'+new Date().getFullYear().toString().slice(-2)+'-'+String(mlSayac).padStart(3,'0');
   document.getElementById('modalPreview').innerHTML=
-    '<b>Tersane:</b> '+esc(tersaneler.join(', '))+'<br>'
-    +'<b>Parça:</b> '+esc(parcalar[0]||'—')+'<br>'
-    +'<b>Çap:</b> '+esc(caplar[0]||'—')+'<br>'
-    +'<b>Kayit:</b> <span style="color:var(--warn);font-weight:700;">'+filtreData.length+' adet</span>';
+    '<b>'+tv('mk_modal_list_tersane','Tersane:')+'</b> '+esc(tersaneler.join(', '))+'<br>'
+    +'<b>'+tv('mk_modal_list_parca','Parça:')+'</b> '+esc(parcalar[0]||'—')+'<br>'
+    +'<b>'+tv('mk_modal_list_cap','Çap:')+'</b> '+esc(caplar[0]||'—')+'<br>'
+    +'<b>'+tv('mk_modal_list_kayit','Kayıt:')+'</b> <span style="color:var(--warn);font-weight:700;">'+filtreData.length+' adet</span>';
   document.getElementById('listeModal').style.display='flex';
   setTimeout(function(){document.getElementById('listeNoInput').select();},50);
 }
@@ -663,7 +814,7 @@ function createListe(){
   mlSayac++;
   sec.forEach(function(m){m.durum='listede';});
   closeModal();applyFilters();updateStats();
-  toast(listeNo+' olusturuldu - '+sec.length+' kayit','success');
+  toast(listeNo+' '+tv('mk_created','oluşturuldu')+' — '+sec.length+' '+tv('mk_footer_record','kayıt'),'success');
   switchTab('listeler');
 }
 
@@ -672,7 +823,7 @@ function renderML(){
   var cont=document.getElementById('mlContainer');
   var aktif=markalamaListeleri.filter(function(ml){return !ml.kapali;});
   if(!aktif.length){
-    cont.innerHTML='<div style="text-align:center;padding:64px 24px;color:var(--txd);"><div style="font-size:48px;opacity:.3;margin-bottom:16px;">&#127991;&#65039;</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">Henuz markalama listesi olusturulmadi</div></div>';
+    cont.innerHTML='<div style="text-align:center;padding:64px 24px;color:var(--txd);"><div style="font-size:48px;opacity:.3;margin-bottom:16px;">&#127991;&#65039;</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">'+tv('mk_no_lists','Henüz markalama listesi oluşturulmadı')+'</div></div>';
     return;
   }
   cont.innerHTML=aktif.map(function(ml){
@@ -688,28 +839,28 @@ function renderML(){
       +'<div class="kl-tags">'
       +ml.kriter.tersaneler.map(function(v){return '<span class="kl-tag klt-tersane">&#127981; '+esc(v)+'</span>';}).join('')
       +tipler.map(function(t){return '<span class="kl-tag klt-tip">'+tipBadgeHtml(t)+'</span>';}).join('')
-      +'<span class="kl-tag klt-count" id="mlcnt-'+ml.id+'">&#127991;&#65039; '+yapildi+'/'+toplam+' markalandi</span>'
+      +'<span class="kl-tag klt-count" id="mlcnt-'+ml.id+'">&#127991;&#65039; '+yapildi+'/'+toplam+' '+tv('mk_marked','markalandı')+'</span>'
       +'</div>'
       +'<div class="kl-meta">'+esc(ml.tarih)+'</div>'
       +'</div>'
       +'<div class="kl-body" id="mlbody-'+ml.id+'">'
       +'<div class="kl-action-bar">'
       +'<div class="kl-progress">'
-      +'<div class="kl-progress-label"><span>Markalama durumu</span>'
+      +'<div class="kl-progress-label"><span>'+tv('mk_progress_label','Markalama durumu')+'</span>'
       +'<span id="mlprog-lbl-'+ml.id+'" style="font-weight:700;color:'+(yapildi===toplam?'var(--gr)':'var(--warn)')+';">'+yapildi+' / '+toplam+' &nbsp;&middot;&nbsp; %'+pct+'</span>'
-      +'</div><div class="kl-progress-bar"><div class="kl-progress-fill" id="mlprog-'+ml.id+'" style="width:'+pct+'%;"></div></div>'
+      +'</div><div class="kl-progress-bar"><div class="kl-progress-fill" id="mlprog-'+ml.id+'" style="width:'+pct+'%;background:'+progColor(pct)+'"></div></div>'
       +'</div>'
-      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',true)" style="height:34px;font-size:13px;">&#9745; Tümünü İşaretle</button>'
-      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',false)" style="height:34px;font-size:13px;">&#9744; Tümünü Kaldır</button>'
-      +'<button class="btn-outline" onclick="mlExcelIndir(\''+ml.id+'\')" style="height:34px;font-size:13px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">&#128194; Excel Indir</button>'
-      +'<button class="btn-green" onclick="mlKaydet(\''+ml.id+'\')" style="height:34px;font-size:13px;padding:0 16px;border-radius:8px;">&#10003; Listeyi Kaydet &amp; Kapat</button>'
+      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',true)" style="height:34px;font-size:14px;">'+tv('mk_btn_markall','☑ Tümünü İşaretle')+'</button>'
+      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',false)" style="height:34px;font-size:14px;">'+tv('mk_btn_unmarkall','☐ Tümünü Kaldır')+'</button>'
+      +'<button class="btn-outline" onclick="mlExcelIndir(\''+ml.id+'\')" style="height:34px;font-size:14px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">'+tv('mk_btn_excel','📂 Excel İndir')+'</button>'
+      +'<button class="btn-green" onclick="mlKaydet(\''+ml.id+'\')" style="height:34px;font-size:14px;padding:0 16px;border-radius:8px;">'+tv('mk_btn_save_close','✓ Listeyi Kaydet & Kapat')+'</button>'
       +'</div>'
       +'<div style="overflow-x:auto;">'
       +'<table class="data-table" style="min-width:900px;"><thead><tr>'
-      +'<th class="no-sort" style="width:44px;text-align:center;">Yapıldı</th>'
+      +'<th class="no-sort" style="width:44px;text-align:center;">'+tv('mk_col_done','Yapıldı')+'</th>'
       +'<th class="no-sort" style="width:36px;">#</th>'
-      +'<th>Tersane</th><th>İş Emir</th><th>Spool No</th><th>Spool ID</th>'
-      +'<th>Parça Adı</th><th>Malzeme</th><th>Çap</th>'
+      +'<th>'+tv('mk_col_yard','Tersane')+'</th><th>'+tv('mk_col_isemir','İş Emir')+'</th><th>'+tv('mk_col_spool','Spool No')+'</th><th>'+tv('mk_col_spoolid','Spool ID')+'</th>'
+      +'<th>'+tv('mk_col_parca','Parça Adı')+'</th><th>'+tv('mk_col_malzeme','Malzeme')+'</th><th>'+tv('mk_col_cap','Çap')+'</th>'
       +'</tr></thead><tbody>'
       +(function(){
         if(!mlPg[ml.id]) mlPg[ml.id]=1;
@@ -719,8 +870,8 @@ function renderML(){
         return mlM.slice(offset,offset+PG).map(function(m,i){
           var ch=ml.markalanmisIds.has(m.id);
           var altSatir='';
-          if(m.tip==='manuel') altSatir='<div style="font-size:12px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
-          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?'Plaka &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+          if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest','Serbest markalama')+'</div>';
+          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
           return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mlrow-'+ml.id+'-'+m.id+'">'
             +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mlToggleRow(\''+ml.id+'\',\''+m.id+'\',this.checked)"></td>'
             +'<td class="cell-no">'+(offset+i+1)+'</td>'
@@ -737,7 +888,7 @@ function renderML(){
       +'</tbody></table></div>'
       +(function(){
         var pages=Math.ceil(mlM.length/PG);
-        return '<div class="tbl-footer"><span style="color:var(--txm);">'+toplam+' kayıt'+(pages>1?' · Sayfa '+(mlPg[ml.id]||1)+'/'+pages:'')+'</span>'
+        return '<div class="tbl-footer"><span style="color:var(--txm);">'+toplam+' '+tv('mk_footer_record','kayıt')+(pages>1?' · '+tv('mk_footer_page','Sayfa')+' '+(mlPg[ml.id]||1)+'/'+pages:'')+'</span>'
           +pgHtml(mlPg[ml.id]||1,mlM.length,'goMlPg("'+ml.id+'",')+'</div>';
       })()
       +'</div></div>';
@@ -756,7 +907,7 @@ function mlToggleRow(mlId,markaId,checked){
   var lbl=document.getElementById('mlprog-lbl-'+mlId);
   if(lbl){lbl.textContent=done+' / '+top+' \u00b7 %'+pct;lbl.style.color=done===top?'var(--gr)':'var(--warn)';}
   var fill=document.getElementById('mlprog-'+mlId);if(fill)fill.style.width=pct+'%';
-  var cnt=document.getElementById('mlcnt-'+mlId);if(cnt)cnt.textContent='\u{1F3F7}\uFE0F '+done+'/'+top+' markalandi';
+  var cnt=document.getElementById('mlcnt-'+mlId);if(cnt)cnt.textContent='\u{1F3F7}\uFE0F '+done+'/'+top+' '+tv('mk_marked','markalandı');
 }
 function mlTumunuSec(mlId,checked){
   var ml=markalamaListeleri.find(function(x){return x.id===mlId;});if(!ml)return;
@@ -768,15 +919,16 @@ function mlKaydet(mlId){
   var mlM=markalamalar.filter(function(m){return ml.markaIds.includes(m.id);});
   var yapildi=mlM.filter(function(m){return ml.markalanmisIds.has(m.id);});
   var yapilmadi=mlM.filter(function(m){return !ml.markalanmisIds.has(m.id);});
-  if(!yapildi.length){toast('En az 1 kayit isaretlenmelidir','error');return;}
+  if(!yapildi.length){toast(tv('mk_at_least_one','En az 1 kayıt işaretlenmelidir'),'error');return;}
   var zaman=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   var kismi=yapilmadi.length>0;
   ml.arsiv.push({tarih:zaman,markalanmisIds:[...ml.markalanmisIds],yapildiCount:yapildi.length,toplamCount:mlM.length,kismiMi:kismi});
   yapildi.forEach(function(m){m.durum='tamamlandi';});
   yapilmadi.forEach(function(m){m.durum='bekliyor';});
   ml.kapali=true;
+  try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'MARKALAMA_LISTE_KAYDET',kaynak:ml.no,aciklama:yapildi.length+'/'+mlM.length});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,1000)));}catch(e){}
   applyFilters();updateStats();renderML();renderArc();
-  toast(kismi?ml.no+' kismi - '+yapildi.length+'/'+mlM.length+' - '+yapilmadi.length+' geri dondu':ml.no+' tamamlandi',kismi?'info':'success');
+  toast(kismi?ml.no+' '+tv('mk_kismi','kısmi')+' — '+yapildi.length+'/'+mlM.length+' · '+yapilmadi.length+' '+tv('mk_geri_dondu','geri döndü'):ml.no+' '+tv('mk_tamamlandi','tamamlandı'),kismi?'info':'success');
   switchTab('tamamlandi');
 }
 
@@ -785,14 +937,14 @@ function renderArc(){
   var cont=document.getElementById('arcContainer');if(!cont)return;
   var kapalilar=markalamaListeleri.filter(function(ml){return ml.kapali;});
   var manuelTam=markalamalar.filter(function(m){return m.markalandi&&m.manuelTarih;});
-  if(!kapalilar.length&&!manuelTam.length){cont.innerHTML='<div style="text-align:center;padding:64px 24px;color:var(--txd);"><div style="font-size:48px;opacity:.3;margin-bottom:16px;">&#10003;</div><div style="font-size:16px;font-weight:600;">Henuz tamamlanan kayıt yok</div></div>';return;}
+  if(!kapalilar.length&&!manuelTam.length){cont.innerHTML='<div style="text-align:center;padding:64px 24px;color:var(--txd);"><div style="font-size:48px;opacity:.3;margin-bottom:16px;">&#10003;</div><div style="font-size:16px;font-weight:600;">'+tv('mk_no_arc','Henüz tamamlanan kayıt yok')+'</div></div>';return;}
   var html='';
   // Manuel işaretlenenler
   if(manuelTam.length){
     html+='<div class="arc-card" id="arccard-manuel" style="border-color:rgba(22,163,110,.3);">'
       +'<div class="arc-head" onclick="toggleArc(\'manuel\')">'
       +'<span class="arc-arrow">&#9658;</span>'
-      +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--gr);min-width:160px;">Manuel İşaretlenenler</div>'
+      +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--gr);min-width:160px;">'+tv('mk_manuel_title','Manuel İşaretlenenler')+'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:8px;flex:1;align-items:center;">'
       +'<span class="arc-badge-tam">&#10003; '+manuelTam.length+' kayıt</span>'
       +'</div>'
@@ -960,7 +1112,7 @@ async function buildExcel(listeNo, kayitlar){
   var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=listeNo+'_Markalama.xlsx';
   a.click();URL.revokeObjectURL(a.href);
-  toast(listeNo+'_Markalama.xlsx indirildi','success');
+  toast(listeNo+'_Markalama.xlsx '+tv('mk_indirildi','indirildi'),'success');
 }
 
 // ════ STAT ════
@@ -984,36 +1136,8 @@ function toast(msg,type){
   document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove();},4000);
 }
 
-// Sidebar toggle
-(function(){
-  var btn=document.getElementById('sidebarToggle');
-  var sb=document.getElementById('sidebar');
-  if(btn&&sb){
-    btn.addEventListener('click',function(){
-      sb.classList.toggle('collapsed');
-      try{
-}catch(e){}
-    });
-    try{
-}catch(e){}
-  }
-})();
-// Tema toggle: dark ↔ light-anthracite (spool_detay ile aynı sistem)
-(function(){
-  function applyTheme(t){
-    document.documentElement.setAttribute('data-theme',t);
-    try{localStorage.setItem('ares_theme',t);}catch(e){}
-    var lbl=document.getElementById('themeLabel');
-    if(lbl)lbl.textContent=t==='light-anthracite'?'Açık Tema':'Koyu Tema';
-  }
-  var saved=localStorage.getItem('ares_theme')||'dark';
-  applyTheme(saved);
-  var btn=document.getElementById('themeToggle');
-  if(btn)btn.addEventListener('click',function(){
-    var cur=document.documentElement.getAttribute('data-theme')||'dark';
-    applyTheme(cur==='dark'?'light-anthracite':'dark');
-  });
-})();
+// visibility restore
+document.documentElement.style.visibility='';
 document.addEventListener('DOMContentLoaded',function(){
   (async function() {
   try {
@@ -1033,9 +1157,7 @@ document.addEventListener('DOMContentLoaded',function(){
   else { populateFilters(); applyFilters(); }
   document.documentElement.style.visibility='';
   })();
-});
-
-</script>
+});</script>
 
 </div><!-- /.main-content -->
 </div><!-- /.app-shell -->
