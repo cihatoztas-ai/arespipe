@@ -501,18 +501,18 @@ function testKartHtml(t) {
         </div>
         <div style="font-size:14px;color:var(--txm);">${esc(t.tersane)} · ${esc(t.projeNo)} / ${esc(t.devre)}</div>
         <div style="font-size:14px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
-          <span>'+tv('ts_kart_tarih','Tarih:')+' <strong style="color:var(--tx);">${esc(t.tarih)}</strong></span>
-          ${t.firma?`<span>'+tv('ts_kart_yetkili','Yetkili:')+' <strong style="color:var(--tx);">${esc(t.firma)}</strong></span>`:''}
+          <span>${tv('ts_kart_tarih','Tarih:')} <strong style="color:var(--tx);">${esc(t.tarih)}</strong></span>
+          ${t.firma?`<span>${tv('ts_kart_yetkili','Yetkili:')} <strong style="color:var(--tx);">${esc(t.firma)}</strong></span>`:''}
           <span>${t.spooller.length} spool
-            ${gecti?` · <span style="color:var(--gr);">${gecti} '+tv('ts_gecti','geçti')+'</span>`:''}
-            ${hatali?` · <span style="color:var(--re);">${hatali} '+tv('ts_hatali','hatalı')+'</span>`:''}
-            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} '+tv('ts_bekliyor','bekliyor')+'</span>`:''}
+            ${gecti?` · <span style="color:var(--gr);">${gecti} ${tv('ts_gecti','geçti')}</span>`:''}
+            ${hatali?` · <span style="color:var(--re);">${hatali} ${tv('ts_hatali','hatalı')}</span>`:''}
+            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} ${tv('ts_bekliyor','bekliyor')}</span>`:''}
           </span>
         </div>
         ${t.not?`<div style="font-size:14px;color:var(--txd);margin-top:4px;font-style:italic;">${esc(t.not)}</div>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
-        ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">Sonuç Gir</button>` : ''}
+        ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">${tv('ts_btn_sonuc','Sonuç Gir')}</button>` : ''}
         ${t.belgeler.length?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();showToast(tv('ts_pdf_indir','PDF indiriliyor...'),'info')">PDF</button>`:''}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;margin-top:4px;" id="chev-${esc(t.id)}"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
@@ -520,7 +520,7 @@ function testKartHtml(t) {
     <div class="tkart-body" id="body-${esc(t.id)}">
       <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">'+tv('ts_spool_sonuclari','Spool Sonuçları')+'</div>
+          <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tv('ts_spool_sonuclari','Spool Sonuçları')}</div>
           <table class="st">
             <thead><tr>
               <th>Spool No</th><th>Sonuç</th><th>Hata Kaynağı</th><th>Not</th>
@@ -657,7 +657,7 @@ function testKaydet() {
 function sonucAc(id) {
   const t = testler.find(x=>x.id===id); if(!t) return;
   document.getElementById('mSonucId').value = id;
-  document.getElementById('mSonucTitle').textContent = t.no + ' — Sonuç Gir';
+  document.getElementById('mSonucTitle').textContent = t.no + ' — ' + tv('ts_btn_sonuc','Sonuç Gir');
   document.getElementById('mSonucSub').textContent = t.tipAd + ' · ' + t.tersane + ' · ' + t.devre;
   document.getElementById('mSonucTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('mSonucBas').value = '';
