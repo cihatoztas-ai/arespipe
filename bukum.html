@@ -1463,6 +1463,7 @@ document.addEventListener('DOMContentLoaded',function(){
   } catch(e) {}
   if (ARES.mod === 'supabase') { await veriYukle(); }
   else { populateFilters(); applyFilters(); }
+  _applyI18n(); // D-01: ilk açılış dil uygulaması
   document.documentElement.style.visibility='';
   })();
 });
