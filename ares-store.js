@@ -12,6 +12,7 @@
  */
 
 const ARES = (function () {
+  'use strict'; // ✅ A1
 
   // ── SUPABASE BAĞLANTI ────────────────────────────────────
   const SUPA_URL = 'https://ochvbepfiatzvyknkvsn.supabase.co';
