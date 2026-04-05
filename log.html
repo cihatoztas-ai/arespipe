@@ -314,21 +314,43 @@ function islemRenk(islem) {
 
 function islemLabel(islem) {
   if (!islem) return '—';
-  var i = islem.toUpperCase();
-  if (i === 'GİRİŞ'        || i === 'GIRIS')        return tv('log_il_giris',        'Giriş');
-  if (i === 'KK_GONDER')                             return tv('log_il_kk_gonder',    'KK Gönderildi');
-  if (i === 'KK_ONAYLA')                             return tv('log_il_kk_onayla',    'KK Onaylandı');
-  if (i === 'KK_RED')                                return tv('log_il_kk_red',       'KK Reddedildi');
-  if (i === 'SEVKİYAT'     || i === 'SEVKIYAT')      return tv('log_il_sevk',         'Sevkiyat');
-  if (i === 'TEST_OLUSTUR')                          return tv('log_il_test_olustur', 'Test Oluşturuldu');
-  if (i === 'TEST_SONUC')                            return tv('log_il_test_sonuc',   'Test Sonucu');
-  if (i === 'DEVRE_DURDUR')                          return tv('log_il_devre_durdur', 'Devre Durduruldu');
-  if (i === 'SPOOL_DURDUR')                          return tv('log_il_spool_durdur', 'Spool Durduruldu');
-  if (i === 'IS_BASLAT')                             return tv('log_il_is_baslat',    'İş Başlatıldı');
-  if (i === 'IS_BITIR')                              return tv('log_il_is_bitir',     'İş Bitirildi');
-  if (i === 'TANIM_EKLE')                            return tv('log_il_tanim_ekle',   'Tanım Eklendi');
-  if (i === 'TANIM_SIL')                             return tv('log_il_tanim_sil',    'Tanım Silindi');
-  return islem;
+  var i = islem.toUpperCase()
+    .replace(/İ/g,'I').replace(/Ş/g,'S').replace(/Ğ/g,'G')
+    .replace(/Ü/g,'U').replace(/Ö/g,'O').replace(/Ç/g,'C');
+  // Giriş
+  if (i==='GIRIS'  || i==='GIRIS_YAP')          return tv('log_il_giris',        'Giriş');
+  // Kesim
+  if (i==='KESIM_TAMAMLA'|| i==='KESIM TAMAMLA') return tv('log_il_kesim_tamamla','Kesim Tamamlandı');
+  if (i==='KESIM_EKLENDI' || i==='KESIM EKLENDI') return tv('log_il_kesim_eklendi','Kesim Eklendi');
+  if (i==='KESIM_LISTE_KAYDET')                   return tv('log_il_kesim_liste',  'Kesim Listesi Kaydedildi');
+  // Büküm
+  if (i==='BUKUM_TAMAMLA' || i==='BUKUM TAMAMLA') return tv('log_il_bukum_tamamla','Büküm Tamamlandı');
+  if (i==='BUKUM_EKLENDI')                         return tv('log_il_bukum_eklendi','Büküm Eklendi');
+  // Markalama
+  if (i==='MARKALAMA_TAMAMLA')                     return tv('log_il_mrk_tamamla', 'Markalama Tamamlandı');
+  if (i==='MARKALAMA_EKLENDI')                     return tv('log_il_mrk_eklendi',  'Markalama Eklendi');
+  // KK
+  if (i==='KK_DAVET_OLUSTUR')                      return tv('log_il_kk_davet',    'KK Davet Oluşturuldu');
+  if (i==='KK_ONAY_KAYDET')                         return tv('log_il_kk_onay',    'KK Onayı Kaydedildi');
+  if (i==='KK_GONDER')                              return tv('log_il_kk_gonder',   'KK Gönderildi');
+  if (i==='KK_ONAYLA')                              return tv('log_il_kk_onayla',   'KK Onaylandı');
+  if (i==='KK_RED')                                 return tv('log_il_kk_red',      'KK Reddedildi');
+  // Sevkiyat
+  if (i.includes('SEVK'))                           return tv('log_il_sevk',        'Sevkiyat');
+  // Test
+  if (i==='TEST_OLUSTUR')                           return tv('log_il_test_olustur','Test Oluşturuldu');
+  if (i==='TEST_SONUC')                             return tv('log_il_test_sonuc',  'Test Sonucu');
+  // Durdurma
+  if (i==='DEVRE_DURDUR')                           return tv('log_il_devre_durdur','Devre Durduruldu');
+  if (i==='SPOOL_DURDUR')                           return tv('log_il_spool_durdur','Spool Durduruldu');
+  // İş
+  if (i==='IS_BASLAT')                              return tv('log_il_is_baslat',  'İş Başlatıldı');
+  if (i==='IS_BITIR')                               return tv('log_il_is_bitir',   'İş Bitirildi');
+  // Tanım
+  if (i==='TANIM_EKLE')                             return tv('log_il_tanim_ekle', 'Tanım Eklendi');
+  if (i==='TANIM_SIL')                              return tv('log_il_tanim_sil',  'Tanım Silindi');
+  // Bilinmeyen — ham değeri göster ama _ yerine boşluk
+  return islem.replace(/_/g,' ');
 }
 
 function islemIkon(islem) {
@@ -480,8 +502,13 @@ function nokRenk(islem) {
 
 function zamanParca(str) {
   if (!str) return {tarih:'—',saat:'—'};
-  const parts = str.split(', ');
-  return { tarih: parts[0]||'—', saat: parts[1]||'—' };
+  // tr-TR locale: "05.04.2026 19:06" (boşluk) veya "05.04.2026, 19:06" (virgül+boşluk)
+  var parts = str.split(', ');
+  if (parts.length >= 2) return { tarih: parts[0], saat: parts[1] };
+  // Boşluk ile ayrılmış format
+  var spIdx = str.lastIndexOf(' ');
+  if (spIdx > 5) return { tarih: str.slice(0, spIdx), saat: str.slice(spIdx+1) };
+  return { tarih: str, saat: '—' };
 }
 
 // ─── GÖRÜNÜM ─────────────────────────────────────────────────────────
