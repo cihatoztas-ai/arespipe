@@ -780,7 +780,12 @@ async function spoolYukle() {
       var aktif = 0;
       if (_aktifStr && snap.length) {
         var _idx = snap.findIndex(function(b){ return b.sistem_adi === _aktifStr; });
-        aktif = _idx >= 0 ? _idx + 1 : 0; // tamamlanan basamak sayısı
+        aktif = _idx >= 0 ? _idx + 1 : 0;
+      } else if (_aktifStr) {
+        // Snapshot yok — STAGE_SISTEM'den bul
+        var _stageSistem = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
+        var _idx2 = _stageSistem.indexOf(_aktifStr);
+        aktif = _idx2 >= 0 ? _idx2 + 1 : 0;
       }
       // adimlar dizisi: 1=tamam, 3=aktif, 0=bekliyor
       var adimlar = [];
