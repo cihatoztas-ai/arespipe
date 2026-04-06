@@ -179,6 +179,17 @@
 .dp-day.selected{background:var(--ac);color:#fff;font-weight:700;}
 .dp-day.other-month{color:var(--txd);opacity:.4;}
 .dp-day.empty{cursor:default;}
+
+/* Pipeline Malzeme */
+.pl-kart{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.pl-kart-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .15s;}
+.pl-kart-head:hover{background:var(--sur2);}
+.pl-kart.open .pl-kart-head{background:var(--sur2);}
+.pl-kart-body{display:none;border-top:1px solid var(--bor);}
+.pl-kart.open .pl-kart-body{display:block;}
+.pl-pipeline-no{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--ac);}
+.pl-spooller{font-size:14px;color:var(--txd);}
+.pl-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:14px;font-weight:700;background:rgba(217,119,6,.12);color:var(--warn);}
 </style>
   <script src="ares-store.js"></script>
   <script src="ares-lang.js"></script>
@@ -469,29 +480,32 @@
 
   <!-- ═══ MALZEME LİSTESİ ═══ -->
   <div id="panelMalzeme" class="tab-panel" style="display:none;">
-    <div class="table-wrapper cl-warn">
-      <div class="table-header">
-        <div class="table-title"><span data-i18n="dv_mat_combined">Birlestik Malzeme Listesi</span> <span id="mlKalem" style="font-size:14px;font-weight:400;color:var(--txd);margin-left:6px;"></span></div>
-        <div style="display:flex;gap:12px;font-size:14px;color:var(--txd);">
-          <span><span data-i18n="dv_mat_pipe_label">Boru:</span> <b id="mlBoru" style="color:var(--tx);">--</b></span>
-          <span><span data-i18n="dv_mat_fitting_label">Fitting:</span> <b id="mlFitting" style="color:var(--tx);">--</b></span>
-          <span><span data-i18n="th_cert">Sertifika:</span> <b id="mlSertifika" style="color:var(--warn);">--</b></span>
-        </div>
+
+    <!-- Pipeline Malzeme Listeleri -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">
+        📐 Pipeline Malzeme Listeleri
+        <span id="plMalzToplamBadge" style="font-size:14px;font-weight:400;color:var(--txd);margin-left:8px;"></span>
       </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead><tr>
-            <th>#</th><th data-i18n="dv_th_type">Tur</th><th data-i18n="th_desc">Aciklama</th><th data-i18n="sp_stat_material">Malzeme</th><th data-i18n="th_quality">Kalite</th>
-            <th data-i18n="sp_stat_diameter">Dis Cap (mm)</th><th data-i18n="sp_stat_thickness">Et (mm)</th><th data-i18n="dv_th_total_len">Toplam Uzunluk</th><th data-i18n="th_qty">Adet</th>
-            <th data-i18n="th_cert">Sertifika</th><th data-i18n="dv_th_spools">Spooller</th>
-          </tr></thead>
-          <tbody id="malzemeTableBody"></tbody>
-        </table>
-      </div>
-      <div id="mlSertifikaNote" style="display:none;padding:10px 18px;background:rgba(217,119,6,.07);border-top:1px solid var(--bor);font-size:14px;color:var(--warn);" data-i18n="dv_cert_note">
-        &#9888; Sertifikali malzemeler icin Heat No ve sertifika belgeleri temin edilmeli.
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-g btn-sm" onclick="plSablonIndir()" style="height:32px;font-size:14px;">📥 Şablon</button>
+        <label class="btn btn-ac btn-sm" style="height:32px;font-size:14px;cursor:pointer;display:flex;align-items:center;">
+          📤 Excel Yükle
+          <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="plExcelYukle(this)">
+        </label>
+        <button class="btn-primary" onclick="plMalzEkleModal()" style="height:32px;font-size:14px;">+ Malzeme Ekle</button>
       </div>
     </div>
+
+    <!-- Pipeline grupları -->
+    <div id="plMalzListesi"></div>
+
+    <!-- Boş durum -->
+    <div id="plMalzBos" style="display:none;padding:32px;text-align:center;color:var(--txd);font-size:14px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;">
+      Henüz pipeline malzeme listesi eklenmemiş.<br>
+      <span style="font-size:14px;opacity:.7;">+ Pipeline Malzeme Ekle butonu ile pipeline numarası ve malzeme listesini girin.</span>
+    </div>
+
   </div>
 
   <!-- ═══ İŞLEM KAYITLARI ═══ -->
@@ -520,6 +534,71 @@
 <!-- ═══════════════════════════════════════════════════
      MODALLER
 ═══════════════════════════════════════════════════ -->
+
+<!-- Pipeline Malzeme Ekle Modal -->
+<div id="plMalzModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">📐 Pipeline Malzeme Ekle</div>
+      <button onclick="document.getElementById('plMalzModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Pipeline No *</label>
+          <select id="plModalPipelineSel" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;"></select>
+        </div>
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Tür *</label>
+          <select id="plModalTip" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" onchange="plModalTipDegis(this.value)">
+            <option value="boru">Boru</option>
+            <option value="fitting">Fitting</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Tanım *</label>
+        <input id="plModalTanim" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="ör: Pipe Seamless 114.3x3.05">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Malzeme</label>
+          <input id="plModalMalzeme" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="Karbon Çelik">
+        </div>
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Kalite</label>
+          <input id="plModalKalite" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="316L">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Dış Çap (mm)</label>
+          <input id="plModalCap" type="number" step="0.1" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="114.3">
+        </div>
+        <div>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Et (mm)</label>
+          <input id="plModalEt" type="number" step="0.01" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="3.05">
+        </div>
+        <div id="plModalBoyDiv">
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Boy (mm)</label>
+          <input id="plModalBoy" type="number" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="6000">
+        </div>
+        <div id="plModalAdetDiv" style="display:none;">
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Adet</label>
+          <input id="plModalAdet" type="number" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="4">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="plModalSert" style="width:16px;height:16px;accent-color:var(--warn);cursor:pointer;">
+        <label for="plModalSert" style="font-size:14px;color:var(--txm);cursor:pointer;">Sertifikalı malzeme (3.2 / 3.3)</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--bor);justify-content:flex-end;">
+      <button onclick="document.getElementById('plMalzModal').style.display='none'" style="padding:8px 18px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:14px;font-family:'Barlow',sans-serif;cursor:pointer;">Kapat</button>
+      <button onclick="plMalzKaydet()" class="btn-primary" style="height:36px;font-size:14px;">+ Ekle</button>
+    </div>
+  </div>
+</div>
 
 <!-- Context Menu -->
 <div id="ctxMenuEl" class="ctx-menu"></div>
@@ -974,6 +1053,7 @@ function initTabs() {
       btn.classList.add('active');
       const el = document.getElementById(panels[btn.dataset.tab]);
       if(el) el.style.display = 'block';
+      if(btn.dataset.tab === 'malzeme') plMalzYukle();
     });
   });
 }
@@ -1576,6 +1656,273 @@ async function terminKaydetVal(val) {
 }
 
 // ── MALZEME LİSTESİ ─────────────────────────────────────────────
+
+// ── PIPELINE MALZEME SİSTEMİ ──────────────────────────────────
+var PL_MALZEME = []; // {pipeline_no, malzemeler:[...], supaId}
+
+async function plMalzYukle() {
+  var supa = ARES.supabase();
+  var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
+  if (!supa || !devreId) { plMalzRender(); return; }
+  var res = await supa.from('pipeline_malzemeleri')
+    .select('*')
+    .eq('devre_id', devreId)
+    .order('pipeline_no');
+  if (res.error) { console.warn('Pipeline malzeme yükleme:', res.error); plMalzRender(); return; }
+  // Pipeline bazında grupla
+  var gruplar = {};
+  (res.data || []).forEach(function(m) {
+    if (!gruplar[m.pipeline_no]) gruplar[m.pipeline_no] = [];
+    gruplar[m.pipeline_no].push(m);
+  });
+  PL_MALZEME = Object.entries(gruplar).map(function(e) {
+    return { pipeline_no: e[0], malzemeler: e[1] };
+  });
+  plMalzRender();
+}
+
+function plMalzRender() {
+  var el = document.getElementById('plMalzListesi');
+  var bos = document.getElementById('plMalzBos');
+  var badge = document.getElementById('plMalzToplamBadge');
+  if (!el) return;
+
+  if (!PL_MALZEME.length) {
+    el.innerHTML = '';
+    if (bos) bos.style.display = 'block';
+    if (badge) badge.textContent = '';
+    return;
+  }
+  if (bos) bos.style.display = 'none';
+
+  var toplamKalem = PL_MALZEME.reduce(function(s, p) { return s + p.malzemeler.length; }, 0);
+  if (badge) badge.textContent = PL_MALZEME.length + ' pipeline · ' + toplamKalem + ' kalem';
+
+  el.innerHTML = PL_MALZEME.map(function(p, pi) {
+    var spoollar = SPOOLS.filter(function(s) { return s.pipeline === p.pipeline_no; }).map(function(s) { return s.spoolNo; });
+    var rows = p.malzemeler.map(function(m, i) {
+      var turBg = m.tip === 'boru' ? 'rgba(45,142,255,.12)' : 'rgba(124,58,237,.12)';
+      var turClr = m.tip === 'boru' ? 'var(--ac)' : 'var(--leg)';
+      return '<tr>' +
+        '<td style="color:var(--txd);">' + (i+1) + '</td>' +
+        '<td><span style="padding:1px 7px;border-radius:4px;font-size:14px;font-weight:700;background:' + turBg + ';color:' + turClr + ';">' + esc(m.tip === 'boru' ? 'BORU' : 'FİTTİNG') + '</span></td>' +
+        '<td>' + esc(m.tanim || '—') + '</td>' +
+        '<td>' + esc(m.malzeme || '—') + '</td>' +
+        '<td style="color:var(--ac);font-weight:600;">' + esc(m.kalite || '—') + '</td>' +
+        '<td style="text-align:right;">' + (m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.', ',') + ' mm' : '—') + '</td>' +
+        '<td style="text-align:right;">' + (m.et_mm ? String(m.et_mm).replace('.', ',') + ' mm' : '—') + '</td>' +
+        '<td style="text-align:right;">' + (m.tip === 'boru' && m.boy_mm ? m.boy_mm + ' mm' : '—') + '</td>' +
+        '<td style="text-align:right;">' + (m.tip === 'fitting' && m.adet ? m.adet + ' adet' : '—') + '</td>' +
+        '<td style="text-align:center;">' + (m.sertifikali ? '<span style="color:var(--warn);font-weight:700;">⚠</span>' : '—') + '</td>' +
+        '<td onclick="event.stopPropagation()"><button class="btn btn-re btn-sm" onclick="plMalzSil('' + esc(m.id) + '','' + esc(p.pipeline_no) + '')">✕</button></td>' +
+        '</tr>';
+    }).join('');
+
+    return '<div class="pl-kart" id="plKart_' + pi + '">' +
+      '<div class="pl-kart-head" onclick="this.parentElement.classList.toggle('open')">' +
+        '<div style="flex:1;">' +
+          '<div class="pl-pipeline-no">' + esc(p.pipeline_no) + '</div>' +
+          '<div class="pl-spooller">' + (spoollar.length ? spoollar.join(', ') + ' · ' : '') + p.malzemeler.length + ' kalem</div>' +
+        '</div>' +
+        '<button class="btn btn-ac btn-sm" onclick="event.stopPropagation();plMalzSatirEkle('' + esc(p.pipeline_no) + '')">+ Malzeme</button>' +
+        '<span style="font-size:12px;color:var(--txd);margin-left:8px;">▼</span>' +
+      '</div>' +
+      '<div class="pl-kart-body">' +
+        '<div class="table-scroll">' +
+          '<table class="data-table">' +
+            '<thead><tr><th>#</th><th>Tür</th><th>Tanım</th><th>Malzeme</th><th>Kalite</th><th>Dış Çap</th><th>Et (mm)</th><th>Boy</th><th>Adet</th><th>Sert.</th><th style="width:36px;"></th></tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        (p.malzemeler.some(function(m){return m.sertifikali;}) ? '<div style="padding:8px 18px;background:rgba(217,119,6,.07);font-size:14px;color:var(--warn);">⚠ Sertifikalı malzemeler için Heat No temin edilmeli.</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Pipeline Malzeme Ekle Modal ──────────────────────────────────
+var _plAktifPipeline = '';
+
+function plMalzEkleModal() {
+  // Pipeline listesini spoollardan çek
+  var pipelinelar = [...new Set(SPOOLS.map(function(s){ return s.pipeline; }).filter(Boolean))].sort();
+  if (!pipelinelar.length) { showToast('Önce spool listesi yüklenmelidir', 'error'); return; }
+  var opts = pipelinelar.map(function(p) {
+    return '<option value="' + esc(p) + '">' + esc(p) + '</option>';
+  }).join('');
+
+  var modal = document.getElementById('plMalzModal');
+  if (!modal) return;
+  var sel = document.getElementById('plModalPipelineSel');
+  if (sel) sel.innerHTML = opts;
+  _plAktifPipeline = pipelinelar[0];
+  if (sel) sel.value = _plAktifPipeline;
+  modal.style.display = 'flex';
+}
+
+function plMalzSatirEkle(pipelineNo) {
+  var pipelinelar = [...new Set(SPOOLS.map(function(s){ return s.pipeline; }).filter(Boolean))].sort();
+  var opts = pipelinelar.map(function(p) {
+    return '<option value="' + esc(p) + '"' + (p === pipelineNo ? ' selected' : '') + '>' + esc(p) + '</option>';
+  }).join('');
+  var modal = document.getElementById('plMalzModal');
+  var sel = document.getElementById('plModalPipelineSel');
+  if (sel) sel.innerHTML = opts;
+  _plAktifPipeline = pipelineNo;
+  if (sel) sel.value = pipelineNo;
+  if (modal) modal.style.display = 'flex';
+}
+
+
+function plSablonIndir() {
+  if (typeof XLSX === 'undefined') { showToast('XLSX kütüphanesi yüklenmedi', 'error'); return; }
+  var ws = XLSX.utils.aoa_to_sheet([
+    ['Pipeline No','Tür','Tanım','Malzeme','Kalite','Dış Çap (mm)','Et (mm)','Boy (mm)','Adet','Sertifikalı'],
+    ['CF400-7321-099','boru','Pipe Seamless 114.3x3.05','Paslanmaz','316L',114.3,3.05,6000,'','hayır'],
+    ['CF400-7321-099','fitting','Elbow 90° LR','Paslanmaz','316L',114.3,'','',2,'evet'],
+  ]);
+  // Sütun genişlikleri
+  ws['!cols'] = [{wch:20},{wch:10},{wch:35},{wch:15},{wch:10},{wch:14},{wch:10},{wch:10},{wch:8},{wch:12}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Pipeline Malzeme');
+  XLSX.writeFile(wb, 'pipeline_malzeme_sablonu.xlsx');
+}
+
+async function plExcelYukle(input) {
+  var file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  if (typeof XLSX === 'undefined') { showToast('XLSX kütüphanesi yüklenmedi', 'error'); return; }
+
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, {type:'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (rows.length < 2) { showToast('Dosya boş', 'error'); return; }
+
+      var h = rows[0].map(function(c){ return String(c).toLowerCase().trim(); });
+      var idx = {
+        pipeline: h.findIndex(function(c){ return c.includes('pipeline'); }),
+        tip:      h.findIndex(function(c){ return c === 'tür' || c === 'tur' || c === 'tip'; }),
+        tanim:    h.findIndex(function(c){ return c.includes('tanım') || c.includes('tanim'); }),
+        malzeme:  h.findIndex(function(c){ return c.includes('malzeme'); }),
+        kalite:   h.findIndex(function(c){ return c.includes('kalite'); }),
+        cap:      h.findIndex(function(c){ return c.includes('çap') || c.includes('cap') || c.includes('dis'); }),
+        et:       h.findIndex(function(c){ return c === 'et (mm)' || c === 'et'; }),
+        boy:      h.findIndex(function(c){ return c.includes('boy'); }),
+        adet:     h.findIndex(function(c){ return c === 'adet'; }),
+        sert:     h.findIndex(function(c){ return c.includes('sertifika'); }),
+      };
+
+      var supa = ARES.supabase();
+      var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
+      if (!supa || !devreId) { showToast('Supabase bağlantısı yok', 'error'); return; }
+
+      var satirlar = [];
+      for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        if (row.every(function(c){ return c === ''; })) continue;
+        var pipeline = String(row[idx.pipeline] || '').trim();
+        var tanim    = String(row[idx.tanim]    || '').trim();
+        if (!pipeline || !tanim) continue;
+        var tip = String(row[idx.tip] || 'boru').toLowerCase().trim();
+        if (tip !== 'fitting') tip = 'boru';
+        var sertStr = String(row[idx.sert] || '').toLowerCase().trim();
+        var sert = sertStr === 'evet' || sertStr === 'true' || sertStr === '1';
+        satirlar.push({
+          tenant_id:   ARES.tenantId(),
+          devre_id:    devreId,
+          pipeline_no: pipeline,
+          tip:         tip,
+          tanim:       tanim,
+          malzeme:     String(row[idx.malzeme] || '').trim() || null,
+          kalite:      String(row[idx.kalite]  || '').trim() || null,
+          dis_cap_mm:  parseFloat(String(row[idx.cap]  || '').replace(',','.')) || null,
+          et_mm:       parseFloat(String(row[idx.et]   || '').replace(',','.')) || null,
+          boy_mm:      tip === 'boru'    ? (parseFloat(String(row[idx.boy]  || '').replace(',','.')) || null) : null,
+          adet:        tip === 'fitting' ? (parseFloat(String(row[idx.adet] || '').replace(',','.')) || null) : null,
+          sertifikali: sert,
+        });
+      }
+
+      if (!satirlar.length) { showToast('Geçerli satır bulunamadı', 'error'); return; }
+
+      var res = await supa.from('pipeline_malzemeleri').insert(satirlar);
+      if (res.error) { showToast('Hata: ' + res.error.message, 'error'); return; }
+
+      showToast(satirlar.length + ' satır yüklendi', 'success');
+      await plMalzYukle();
+    } catch(err) {
+      showToast('Excel okunamadı: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function plModalTipDegis(val) {
+  document.getElementById('plModalBoyDiv').style.display  = val === 'boru'    ? 'block' : 'none';
+  document.getElementById('plModalAdetDiv').style.display = val === 'fitting' ? 'block' : 'none';
+}
+
+async function plMalzKaydet() {
+  var pipeline = (document.getElementById('plModalPipelineSel') || {}).value || '';
+  var tip   = (document.getElementById('plModalTip') || {}).value || 'boru';
+  var tanim = (document.getElementById('plModalTanim') || {}).value.trim() || '';
+  var malz  = (document.getElementById('plModalMalzeme') || {}).value.trim() || '';
+  var kal   = (document.getElementById('plModalKalite') || {}).value.trim() || '';
+  var cap   = parseFloat(((document.getElementById('plModalCap') || {}).value || '').replace(',', '.')) || null;
+  var et    = parseFloat(((document.getElementById('plModalEt') || {}).value || '').replace(',', '.')) || null;
+  var boy   = parseFloat(((document.getElementById('plModalBoy') || {}).value || '').replace(',', '.')) || null;
+  var adet  = parseFloat(((document.getElementById('plModalAdet') || {}).value || '').replace(',', '.')) || null;
+  var agr   = parseFloat(((document.getElementById('plModalAgr') || {}).value || '').replace(',', '.')) || null;
+  var sert  = (document.getElementById('plModalSert') || {}).checked || false;
+
+  if (!pipeline || !tanim) { showToast('Pipeline ve tanım zorunlu', 'error'); return; }
+
+  var supa = ARES.supabase();
+  var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
+  if (supa && devreId) {
+    var res = await supa.from('pipeline_malzemeleri').insert({
+      tenant_id:   ARES.tenantId(),
+      devre_id:    devreId,
+      pipeline_no: pipeline,
+      tip:         tip,
+      tanim:       tanim,
+      malzeme:     malz || null,
+      kalite:      kal || null,
+      dis_cap_mm:  cap,
+      et_mm:       et,
+      boy_mm:      tip === 'boru' ? boy : null,
+      adet:        tip === 'fitting' ? adet : null,
+      agirlik_kg:  agr || null,
+      sertifikali: sert,
+    });
+    if (res.error) { showToast('Hata: ' + res.error.message, 'error'); return; }
+  }
+
+  // Formu temizle ama modalı kapatma
+  ['plModalTanim','plModalMalzeme','plModalKalite','plModalCap','plModalEt','plModalBoy','plModalAdet','plModalAgr'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var sertEl = document.getElementById('plModalSert'); if (sertEl) sertEl.checked = false;
+
+  showToast('Malzeme eklendi', 'success');
+  await plMalzYukle();
+}
+
+async function plMalzSil(id, pipelineNo) {
+  if (!confirm(pipelineNo + ' — bu malzemeyi silmek istediğinizden emin misiniz?')) return;
+  var supa = ARES.supabase();
+  if (supa) {
+    var res = await supa.from('pipeline_malzemeleri').delete().eq('id', id);
+    if (res.error) { showToast('Hata: ' + res.error.message, 'error'); return; }
+  }
+  showToast('Silindi', 'success');
+  await plMalzYukle();
+}
+
 function birlesikMalzeme() {
   const gruplar = {};
   SPOOL_MALZEMELER.forEach(m=>{
@@ -2172,7 +2519,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     statGuncelle(); // spooller yüklendikten sonra stat güncelle
   }
   renderTable();
-  renderMalzeme();
+  renderMalzeme(); plMalzYukle();
   renderDokumanlar();
   renderGenelNotes();
   renderIslemler();

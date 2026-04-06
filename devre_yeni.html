@@ -221,7 +221,14 @@ textarea.fi{resize:vertical;min-height:72px;}
     </div>
   </div>
   <div class="grid2">
-    <div class="fg span2">
+    <div class="fg">
+      <label class="fl">Alıştırma Devresi</label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.2);border-radius:8px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="alistirmaDevresi" style="width:16px;height:16px;accent-color:var(--warn);cursor:pointer;">
+        <span style="font-size:14px;color:var(--txm);">Tüm spooller <strong style="color:var(--warn);">alıştırma VAR</strong> olarak kaydedilsin</span>
+      </label>
+    </div>
+    <div class="fg">
       <label class="fl" data-i18n="dny_notes">Açıklama / Notlar</label>
       <textarea class="fi" id="devreNot" data-i18n-placeholder="dny_notes_ph" placeholder="Opsiyonel notlar..."></textarea>
     </div>
@@ -1067,7 +1074,7 @@ async function kaydet() {
         ilerleme:         0,
         agirlik:          toplamAgirlik(),
         is_emri_no:       isEmriNo,
-        alistirma_devresi: false,
+        alistirma_devresi: !!(document.getElementById('alistirmaDevresi')||{}).checked,
       }).select().single();
 
       if (devreRes.error) {
@@ -1095,6 +1102,7 @@ async function kaydet() {
             durum:            'Bekliyor',
             aktif_basamak:    ilkBasamak,
             basamak_snapshot: basamakSnapshot,
+            alistirma:        (document.getElementById('alistirmaDevresi')||{}).checked ? 'VAR' : 'YOK',
           };
         });
         const spoolRes = await supa.from('spooller').upsert(spoolRows, {
