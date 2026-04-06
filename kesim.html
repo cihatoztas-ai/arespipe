@@ -1361,11 +1361,18 @@ document.addEventListener('DOMContentLoaded', function() {
         _bekle++;
       }
       if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
-      var _supa = ARES.supabase();
-      if (!_supa) { location.href = 'giris.html'; return; }
-      var _ses = await _supa.auth.getSession();
-      if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
-      await ARES.oturumKontrol();
+      // Supabase CDN async — hazır olana kadar bekle
+      _bekle = 0;
+      while (_bekle < 80) {
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
+      }
       if (window._applyI18n) _applyI18n();
       if (ARES.mod === 'supabase') { await veriYukle(); }
       else { populateFilters(); applyFilters(); }
