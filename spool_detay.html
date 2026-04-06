@@ -1082,14 +1082,18 @@ async function sonrakiBasamakGec() {
   try {
     var supa = ARES.supabase();
     if (supa && SP.supaId) {
-      var { error } = await supa
+      var { data: updData, error } = await supa
         .from('spooller')
         .update({
           aktif_basamak: hedefBasamak.sistem_adi,
           guncelleme: new Date().toISOString()
         })
-        .eq('id', SP.supaId);
-      if (error) { toast('Güncelleme hatası: ' + error.message, 'err'); return; }
+        .eq('id', SP.supaId)
+        .select('id');
+      if (error || !updData || !updData.length) {
+        toast('Güncelleme hatası: ' + (error?.message || 'Satır bulunamadı'), 'err');
+        return;
+      }
       // Log ekle
       await supa.from('islem_log').insert({
         tenant_id: ARES.tenantId(),
