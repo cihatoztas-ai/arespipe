@@ -155,6 +155,30 @@
 .si-value{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--tx);}
 .si-value.warn{color:var(--re);}
 .si-div{width:1px;height:36px;background:var(--bor);}
+
+/* ── TARİH SEÇİCİ (Custom Datepicker) ────────────────────────── */
+.dp-wrap{position:relative;display:inline-block;}
+.dp-btn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.dp-btn:hover{border-color:var(--ac);}
+.dp-btn .dp-icon{color:var(--ac);font-size:15px;}
+.dp-btn .dp-val{font-weight:600;}
+.dp-btn .dp-clear{margin-left:4px;color:var(--txd);font-size:13px;line-height:1;padding:0 2px;cursor:pointer;}
+.dp-btn .dp-clear:hover{color:var(--re);}
+.dp-popup{position:fixed;z-index:3000;background:var(--sur);border:1px solid var(--bor);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.35);padding:16px;width:280px;display:none;}
+.dp-popup.open{display:block;}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.dp-nav{background:none;border:none;color:var(--txd);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;line-height:1;}
+.dp-nav:hover{background:var(--sur2);color:var(--tx);}
+.dp-month-year{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--tx);cursor:pointer;padding:4px 8px;border-radius:6px;}
+.dp-month-year:hover{background:var(--sur2);}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.dp-day-hdr{text-align:center;font-size:11px;font-weight:700;color:var(--txd);padding:4px 0;text-transform:uppercase;}
+.dp-day{text-align:center;padding:6px 0;border-radius:7px;font-size:14px;cursor:pointer;color:var(--txm);transition:all .12s;}
+.dp-day:hover{background:var(--sur2);color:var(--tx);}
+.dp-day.today{color:var(--ac);font-weight:700;}
+.dp-day.selected{background:var(--ac);color:#fff;font-weight:700;}
+.dp-day.other-month{color:var(--txd);opacity:.4;}
+.dp-day.empty{cursor:default;}
 </style>
   <script src="ares-store.js"></script>
   <script src="ares-lang.js"></script>
@@ -283,8 +307,20 @@
     <div class="si-div"></div>
     <div class="si-item">
       <div class="si-label" data-i18n="dv_bar_deadline">Termin Tarihi</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <input id="terminInput" type="date" style="background:var(--sur2);border:1px solid var(--bor);border-radius:7px;padding:5px 10px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;" onchange="terminKaydet()" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'">
+      <div class="dp-wrap" id="dpWrap">
+        <button class="dp-btn" onclick="dpAc(event)" id="dpBtn">
+          <span class="dp-icon">📅</span>
+          <span class="dp-val" id="dpVal">Tarih seç</span>
+          <span class="dp-clear" id="dpClear" onclick="dpTemizle(event)" style="display:none;">✕</span>
+        </button>
+        <div class="dp-popup" id="dpPopup">
+          <div class="dp-head">
+            <button class="dp-nav" onclick="dpNav(-1)">&#8249;</button>
+            <span class="dp-month-year" id="dpMonthYear"></span>
+            <button class="dp-nav" onclick="dpNav(1)">&#8250;</button>
+          </div>
+          <div class="dp-grid" id="dpGrid"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -963,7 +999,7 @@ function sayfaYukle() {
     const bar = document.getElementById('ddIsEmriBar');
     if(bar) { bar.style.display='flex'; setText('ddIsEmriNo', DEVRE.isEmri); }
   }  if(DEVRE.tersaneIsEmri) { const el=document.getElementById('tersaneIsEmriInput'); if(el) el.value=DEVRE.tersaneIsEmri; }
-  if(DEVRE.terminTarihi) { const el=document.getElementById('terminInput'); if(el) el.value=DEVRE.terminTarihi; }
+  dpDoldur(DEVRE.terminTarihi||'');
   statGuncelle();
 }
 function setText(id, val) { const el=document.getElementById(id); if(el) el.textContent=val||'--'; }
@@ -1414,8 +1450,117 @@ async function tersaneIsEmriKaydet() {
   }
   showToast('Tersane is emri kaydedildi','success');
 }
-async function terminKaydet() {
-  const val = (document.getElementById('terminInput')||{}).value||'';
+
+// ── CUSTOM DATEPICKER ─────────────────────────────────────────
+var _dpDate = null; // seçili tarih {y,m,d}
+var _dpView = null; // görüntülenen ay {y,m}
+
+function dpAc(e) {
+  e.stopPropagation();
+  var popup = document.getElementById('dpPopup');
+  if (popup.classList.contains('open')) { dpKapat(); return; }
+  // Mevcut tarihi view olarak set et
+  var now = new Date();
+  _dpView = _dpDate ? {y:_dpDate.y, m:_dpDate.m} : {y:now.getFullYear(), m:now.getMonth()};
+  dpRender();
+  // Popup pozisyonla
+  var btn = document.getElementById('dpBtn');
+  var r = btn.getBoundingClientRect();
+  popup.style.top = (r.bottom + 6) + 'px';
+  popup.style.left = r.left + 'px';
+  // Ekran taşmasını önle
+  setTimeout(function(){
+    var pw = popup.offsetWidth, ww = window.innerWidth;
+    if (r.left + pw > ww) popup.style.left = (ww - pw - 8) + 'px';
+  }, 0);
+  popup.classList.add('open');
+  document.addEventListener('click', dpDisariTikla, {once:true});
+}
+
+function dpKapat() {
+  var popup = document.getElementById('dpPopup');
+  if (popup) popup.classList.remove('open');
+}
+
+function dpDisariTikla(e) {
+  var popup = document.getElementById('dpPopup');
+  if (popup && !popup.contains(e.target)) {
+    dpKapat();
+  }
+}
+
+function dpNav(yon) {
+  _dpView.m += yon;
+  if (_dpView.m > 11) { _dpView.m = 0; _dpView.y++; }
+  if (_dpView.m < 0)  { _dpView.m = 11; _dpView.y--; }
+  dpRender();
+}
+
+function dpRender() {
+  var AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+               'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  var GUNLER = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
+  var y = _dpView.y, m = _dpView.m;
+  document.getElementById('dpMonthYear').textContent = AYLAR[m] + ' ' + y;
+
+  var ilkGun = new Date(y, m, 1).getDay(); // 0=Paz
+  ilkGun = (ilkGun + 6) % 7; // Pazartesi başlangıç
+  var sonGun = new Date(y, m+1, 0).getDate();
+  var bugun = new Date();
+
+  var html = GUNLER.map(function(g){ return '<div class="dp-day-hdr">'+g+'</div>'; }).join('');
+
+  // Önceki ayın son günleri
+  var prevSon = new Date(y, m, 0).getDate();
+  for (var i = ilkGun - 1; i >= 0; i--) {
+    html += '<div class="dp-day other-month">' + (prevSon - i) + '</div>';
+  }
+  // Bu ayın günleri
+  for (var d = 1; d <= sonGun; d++) {
+    var cls = 'dp-day';
+    if (bugun.getFullYear()===y && bugun.getMonth()===m && bugun.getDate()===d) cls += ' today';
+    if (_dpDate && _dpDate.y===y && _dpDate.m===m && _dpDate.d===d) cls += ' selected';
+    html += '<div class="'+cls+'" onclick="dpSec('+y+','+m+','+d+')">'+d+'</div>';
+  }
+  // Sonraki ayın ilk günleri
+  var kalan = (7 - (ilkGun + sonGun) % 7) % 7;
+  for (var n = 1; n <= kalan; n++) {
+    html += '<div class="dp-day other-month">'+n+'</div>';
+  }
+  document.getElementById('dpGrid').innerHTML = html;
+}
+
+function dpSec(y, m, d) {
+  _dpDate = {y:y, m:m, d:d};
+  var ay = String(m+1).padStart(2,'0');
+  var gun = String(d).padStart(2,'0');
+  var isoVal = y + '-' + ay + '-' + gun;
+  var goster = gun + '.' + ay + '.' + y;
+  document.getElementById('dpVal').textContent = goster;
+  document.getElementById('dpClear').style.display = 'inline';
+  dpKapat();
+  terminKaydetVal(isoVal);
+}
+
+function dpTemizle(e) {
+  e.stopPropagation();
+  _dpDate = null;
+  document.getElementById('dpVal').textContent = 'Tarih seç';
+  document.getElementById('dpClear').style.display = 'none';
+  terminKaydetVal('');
+}
+
+function dpDoldur(isoStr) {
+  if (!isoStr) { _dpDate=null; document.getElementById('dpVal').textContent='Tarih seç'; document.getElementById('dpClear').style.display='none'; return; }
+  var p = isoStr.split('-');
+  if (p.length < 3) return;
+  _dpDate = {y:parseInt(p[0]), m:parseInt(p[1])-1, d:parseInt(p[2])};
+  document.getElementById('dpVal').textContent = p[2]+'.'+p[1]+'.'+p[0];
+  document.getElementById('dpClear').style.display = 'inline';
+}
+
+async function terminKaydetVal(val) {
+  val = val || '';
   DEVRE.terminTarihi = val;
   // ✅ D3: Supabase güncelle
   const supa = ARES.supabase();
