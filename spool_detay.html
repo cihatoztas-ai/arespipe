@@ -1010,7 +1010,7 @@ function malzemeOpts(secili){
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
   var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');
-  txc('shNo',no); txc('shId', SP.supaId ? SP.supaId.substring(0,8).toUpperCase() : SP.spoolId || '--');
+  txc('shNo',no); txc('shId', SP.spoolId ? 'ID: '+SP.spoolId : SP.supaId ? SP.supaId.substring(0,8).toUpperCase() : '--');
   txc('bcDevre',SP._devre); txc('bcSpool',SP.spoolNo);
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',SP.yuzey); txc('stMalz',SP.malzeme);
