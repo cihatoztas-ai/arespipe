@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 <style>
 /* ── Tema değişkenleri ── */
@@ -412,93 +413,60 @@ textarea.fi{resize:vertical;min-height:72px;}
 // ── ESC — XSS koruması ────────────────────────────────────────
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 // ── D-01 DİL SİSTEMİ ─────────────────────────────────────────
-var _I18N = {
+// ── C1: Sayfa çevirileri — ARES.lang.extend + yerel fallback ──
+var _PAGE_I18N = {
   en: {
-    /* breadcrumb / sayfa */
     dny_home:'Home', dny_active_circuits:'Active Circuits', dny_new_circuit:'New Circuit',
     dny_page_title:'Add New Circuit',
-    /* kart başlıkları */
     dny_project_info:'Project Info', dny_circuit_info:'Circuit Info', dny_spool_list:'Spool List',
     dny_iso_drawings:'ISO / Spool Drawings',
-    /* proje bilgileri */
     dny_yard:'Shipyard', dny_project:'Project / Vessel', dny_work_order:'Work Order No',
     dny_auto_generated:'Auto generated',
-    dny_select_yard:'— Select shipyard —',
-    dny_select_project:'— Select project —',
+    dny_select_yard:'— Select shipyard —', dny_select_project:'— Select project —',
     dny_select_yard_first:'— Select shipyard first —',
-    /* devre bilgileri */
     dny_circuit_name:'Circuit Name / Code', dny_circuit_name_ph:'e.g. 265-overboard, Bilge System...',
     dny_zone:'Zone', dny_zone_ph:'e.g. Z01, A-Deck, FR20-FR40...',
-    dny_deadline:'Deadline',
-    dny_main_material:'Main Material',
+    dny_deadline:'Deadline', dny_main_material:'Main Material',
     dny_mat_carbon:'Carbon Steel', dny_mat_ss:'Stainless', dny_mat_copper:'Copper Alloy', dny_mat_other:'Other',
     dny_mat_other_ph:'Specify material...',
     dny_surface:'Surface Treatment',
     dny_surf_acid:'Acid', dny_surf_galv:'Galvanized', dny_surf_black:'Black', dny_surf_paint:'Painted',
     dny_notes:'Description / Notes', dny_notes_ph:'Optional notes...',
-    /* spool sekmeleri */
     dny_tab_standard:'📊 Standard Excel', dny_tab_ifs:'🏭 IFS Material List', dny_tab_manual:'✏️ Manual Entry',
-    /* excel */
     dny_excel_drag:'Drag Excel file here or click',
     dny_excel_desc:'Pipeline No · Spool No · Material · Grade · Nominal Diameter · Weight · Surface',
     dny_template_download:'⬇ Download Template',
-    /* IFS */
-    dny_ifs_info:'Upload the <code>.xlsm</code> file exported from the Tersan IFS system. Spool list and material details are created automatically.',
     dny_ifs_title:'IFS Material List (.xlsm)',
-    dny_ifs_desc:'All sheet: System · Pipeline No. · SpoolNo · Description · Dimensions · Material · Weight',
-    dny_filter:'Filter', dny_import_all:'✓ Import All',
-    dny_pipeline_label:'Pipeline:',
-    /* spool tablo başlıkları */
+    dny_filter:'Filter', dny_import_all:'✓ Import All', dny_pipeline_label:'Pipeline:',
     dny_th_pipeline:'Pipeline No', dny_th_spool:'Spool No', dny_th_rev:'Rev',
     dny_th_material:'Material', dny_th_grade:'Grade', dny_th_diameter:'Nom. Diameter',
     dny_th_weight:'Weight (kg)', dny_th_surface:'Surface',
     dny_th_ifs_spool:'Spool', dny_th_mat_count:'Item Count',
     dny_th_total_weight:'Total Weight', dny_th_diam:'Diameter',
-    dny_th_desc:'Description', dny_th_dims:'Dimensions', dny_th_qty:'Qty', dny_th_weight_kg:'Weight (kg)',
-    /* manuel ekleme placeholders */
-    dny_ph_pipeline:'Pipeline No', dny_ph_spool:'Spool No', dny_ph_rev:'Rev',
+    dny_ph_pipeline:'Pipeline No', dny_ph_spool:'Spool No',
     dny_ph_material:'Material', dny_ph_grade:'Grade', dny_ph_diam:'Diameter (mm)',
     dny_ph_weight:'Weight', dny_ph_surface:'Surface',
     dny_add_spool_btn:'Add Spool Manually',
-    /* PDF */
     dny_pdf_auto:'File name matched to spool automatically',
     dny_pdf_drag:'Drag PDF files here or click',
-    dny_pdf_desc:'Multiple files allowed · Spool matched from filename',
-    dny_pdf_example:'e.g. AT110-816-026_1_2__S01_1.pdf → Pipeline: AT110-816-026, Spool: S01',
-    dny_pdf_no_pipeline:'<em>Pipeline could not be identified</em>',
-    dny_pdf_matched:'✓ Matched',
-    dny_pdf_manual_match:'Manual match:',
-    dny_pdf_select_spool:'— Select spool —',
-    dny_pdf_no_spool:'— Load spools first —',
-    /* özet */
+    dny_pdf_select_spool:'— Select spool —', dny_pdf_no_spool:'— Load spools first —',
     dny_summary_title:'📋 Record Summary',
     dny_oz_yard:'Shipyard', dny_oz_project:'Project', dny_oz_work_order:'Work Order',
     dny_oz_circuit:'Circuit', dny_oz_spool_count:'Spool Count', dny_oz_total_weight:'Total Weight',
-    /* aksiyon */
     dny_cancel:'Cancel', dny_preview:'Preview', dny_save:'Save Circuit',
-    /* js mesajları */
-    dny_ifs_empty:'IFS file is empty',
-    dny_no_data:'No matching data found',
-    dny_ifs_error:'Could not read IFS: ',
-    dny_all:'All',
+    dny_ifs_empty:'IFS file is empty', dny_no_data:'No matching data found',
+    dny_ifs_error:'Could not read IFS: ', dny_all:'All',
     dny_select_spool_err:'Select at least one spool',
     dny_excel_empty:'Excel appears to be empty',
     dny_no_rows:'No valid rows found — check header row',
-    dny_excel_error:'Could not read Excel: ',
-    dny_template_dl:'Template downloaded',
-    dny_spool_required:'Spool No is required',
-    dny_unit_piece:'items',
+    dny_excel_error:'Could not read Excel: ', dny_template_dl:'Template downloaded',
+    dny_spool_required:'Spool No is required', dny_unit_piece:'items',
     dny_required_fields:'Please fill in required fields',
-    dny_saved:'✅ Circuit saved',
-    dny_no_spool_yet:'No spools added yet',
-    dny_no_data_ifs:'No data',
-    dny_transferred:'spools imported',
-    dny_loaded:'spools loaded',
-    dny_pdf_loaded:'PDF(s) loaded · spool(s) matched',
-    dny_matched:'matched',
+    dny_saved:'✅ Circuit saved', dny_no_spool_yet:'No spools added yet',
+    dny_no_data_ifs:'No data', dny_transferred:'spools imported', dny_loaded:'spools loaded',
+    dny_pdf_loaded:'PDF(s) loaded · spool(s) matched', dny_matched:'matched',
     dny_select_project_first:'— Select project —',
-    dny_db_hata:'Database error: ',
-    dny_select_project:'— Select project —',
+    dny_db_hata:'Database error: ', dny_select_project:'— Select project —',
   },
   ar: {
     dny_home:'الرئيسية', dny_active_circuits:'الدوائر النشطة', dny_new_circuit:'دائرة جديدة',
@@ -511,10 +479,9 @@ var _I18N = {
     dny_select_yard_first:'— اختر الحوض أولاً —',
     dny_circuit_name:'اسم الدائرة / الكود', dny_circuit_name_ph:'مثال: 265-overboard...',
     dny_zone:'المنطقة', dny_zone_ph:'مثال: Z01, A-Deck...',
-    dny_deadline:'تاريخ التسليم',
-    dny_main_material:'المادة الرئيسية',
-    dny_mat_carbon:'فولاذ كربوني', dny_mat_ss:'فولاذ مقاوم للصدأ', dny_mat_copper:'سبيكة نحاس', dny_mat_other:'أخرى',
-    dny_mat_other_ph:'حدد المادة...',
+    dny_deadline:'تاريخ التسليم', dny_main_material:'المادة الرئيسية',
+    dny_mat_carbon:'فولاذ كربوني', dny_mat_ss:'فولاذ مقاوم للصدأ',
+    dny_mat_copper:'سبيكة نحاس', dny_mat_other:'أخرى', dny_mat_other_ph:'حدد المادة...',
     dny_surface:'معالجة السطح',
     dny_surf_acid:'حمضي', dny_surf_galv:'مجلفن', dny_surf_black:'أسود', dny_surf_paint:'مطلي',
     dny_notes:'الوصف / الملاحظات', dny_notes_ph:'ملاحظات اختيارية...',
@@ -522,81 +489,53 @@ var _I18N = {
     dny_excel_drag:'اسحب ملف Excel هنا أو انقر',
     dny_excel_desc:'رقم الخط · رقم البكرة · المادة · الجودة · القطر · الوزن · السطح',
     dny_template_download:'⬇ تحميل القالب',
-    dny_ifs_info:'قم بتحميل ملف <code>.xlsm</code> المُصدَّر من نظام IFS.',
     dny_ifs_title:'قائمة مواد IFS (.xlsm)',
-    dny_ifs_desc:'ورقة All: النظام · رقم الخط · رقم البكرة · الوصف · الأبعاد · المادة · الوزن',
-    dny_filter:'تصفية', dny_import_all:'✓ استيراد الكل',
-    dny_pipeline_label:'الخط:',
+    dny_filter:'تصفية', dny_import_all:'✓ استيراد الكل', dny_pipeline_label:'الخط:',
     dny_th_pipeline:'رقم الخط', dny_th_spool:'رقم البكرة', dny_th_rev:'المراجعة',
     dny_th_material:'المادة', dny_th_grade:'الجودة', dny_th_diameter:'القطر الاسمي',
     dny_th_weight:'الوزن (كجم)', dny_th_surface:'السطح',
     dny_th_ifs_spool:'البكرة', dny_th_mat_count:'عدد القطع',
     dny_th_total_weight:'الوزن الكلي', dny_th_diam:'القطر',
-    dny_th_desc:'الوصف', dny_th_dims:'الأبعاد', dny_th_qty:'الكمية', dny_th_weight_kg:'الوزن (كجم)',
-    dny_ph_pipeline:'رقم الخط', dny_ph_spool:'رقم البكرة', dny_ph_rev:'المراجعة',
+    dny_ph_pipeline:'رقم الخط', dny_ph_spool:'رقم البكرة',
     dny_ph_material:'المادة', dny_ph_grade:'الجودة', dny_ph_diam:'القطر (ملم)',
     dny_ph_weight:'الوزن', dny_ph_surface:'السطح',
     dny_add_spool_btn:'إضافة بكرة يدوياً',
     dny_pdf_auto:'يُطابَق الملف مع البكرة تلقائياً',
     dny_pdf_drag:'اسحب ملفات PDF هنا أو انقر',
-    dny_pdf_desc:'يمكن اختيار ملفات متعددة · تُطابَق البكرة من اسم الملف',
-    dny_pdf_example:'مثال: AT110-816-026_1_2__S01_1.pdf',
-    dny_pdf_no_pipeline:'<em>لم يتم التعرف على الخط</em>',
-    dny_pdf_matched:'✓ متطابق',
-    dny_pdf_manual_match:'مطابقة يدوية:',
-    dny_pdf_select_spool:'— اختر البكرة —',
-    dny_pdf_no_spool:'— قم بتحميل البكرات أولاً —',
+    dny_pdf_select_spool:'— اختر البكرة —', dny_pdf_no_spool:'— قم بتحميل البكرات أولاً —',
     dny_summary_title:'📋 ملخص السجل',
     dny_oz_yard:'الحوض', dny_oz_project:'المشروع', dny_oz_work_order:'أمر العمل',
     dny_oz_circuit:'الدائرة', dny_oz_spool_count:'عدد البكرات', dny_oz_total_weight:'الوزن الكلي',
     dny_cancel:'إلغاء', dny_preview:'معاينة', dny_save:'حفظ الدائرة',
-    dny_ifs_empty:'ملف IFS فارغ',
-    dny_no_data:'لم يتم العثور على بيانات مناسبة',
-    dny_ifs_error:'تعذرت قراءة IFS: ',
-    dny_all:'الكل',
+    dny_ifs_empty:'ملف IFS فارغ', dny_no_data:'لم يتم العثور على بيانات مناسبة',
+    dny_ifs_error:'تعذرت قراءة IFS: ', dny_all:'الكل',
     dny_select_spool_err:'اختر بكرة واحدة على الأقل',
     dny_excel_empty:'يبدو أن ملف Excel فارغ',
     dny_no_rows:'لم يتم العثور على صفوف — تحقق من صف العنوان',
-    dny_excel_error:'تعذرت قراءة Excel: ',
-    dny_template_dl:'تم تحميل القالب',
-    dny_spool_required:'رقم البكرة مطلوب',
-    dny_unit_piece:'عناصر',
+    dny_excel_error:'تعذرت قراءة Excel: ', dny_template_dl:'تم تحميل القالب',
+    dny_spool_required:'رقم البكرة مطلوب', dny_unit_piece:'عناصر',
     dny_required_fields:'يرجى ملء الحقول المطلوبة',
-    dny_saved:'✅ تم حفظ الدائرة',
-    dny_no_spool_yet:'لم تتم إضافة أي بكرة بعد',
-    dny_no_data_ifs:'لا توجد بيانات',
-    dny_transferred:'بكرات تم استيرادها',
+    dny_saved:'✅ تم حفظ الدائرة', dny_no_spool_yet:'لم تتم إضافة أي بكرة بعد',
+    dny_no_data_ifs:'لا توجد بيانات', dny_transferred:'بكرات تم استيرادها',
     dny_loaded:'بكرات تم تحميلها',
-    dny_pdf_loaded:'PDF محمل · متطابق مع البكرة',
-    dny_matched:'تم التطابق',
+    dny_pdf_loaded:'PDF محمل · متطابق مع البكرة', dny_matched:'تم التطابق',
     dny_select_project_first:'— اختر المشروع —',
-    dny_db_hata:'خطأ في قاعدة البيانات: ',
-    dny_select_project:'— اختر المشروع —',
+    dny_db_hata:'خطأ في قاعدة البيانات: ', dny_select_project:'— اختر المشروع —',
   }
 };
-function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
-function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
-function _applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=tv(k,el.getAttribute('data-i18n-tr'));
-    if(isInp){el.placeholder=v;}else{el.textContent=v;}
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
-    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
-  });
-  document.querySelectorAll('[data-i18n-html]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-html');
-    if(!el.hasAttribute('data-i18n-html-tr'))el.setAttribute('data-i18n-html-tr',el.innerHTML);
-    el.innerHTML=tv(k,el.getAttribute('data-i18n-html-tr'));
-  });
+// ares-lang.js yüklüyse extend et; değilse yerel tv() tanımla
+if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
+  ARES.lang.extend('en', _PAGE_I18N.en);
+  ARES.lang.extend('ar', _PAGE_I18N.ar);
+} else {
+  window.tv = function(key, fallback) {
+    var lang = document.documentElement.getAttribute('lang') || 'tr';
+    var d = _PAGE_I18N[lang];
+    if (d && d[key] !== undefined) return d[key];
+    return fallback !== undefined ? fallback : key;
+  };
 }
-window._onLangChange=function(){_applyI18n();spoolTableGuncelle();};
-new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+window._onLangChange = function() { spoolTableGuncelle(); };
 // ── İŞ EMRİ OTOMATIK ─────────────────────────────────────────
 // ✅ G-07: İş emri önizleme — kaydet() içinde ARES.sonrakiNo('is_emri') kullanılır
 function isEmriPreviewGoster() {
@@ -981,7 +920,7 @@ function sablonIndir() {
   // Sütun genişlikleri
   ws['!cols'] = [{wch:14},{wch:12},{wch:8},{wch:16},{wch:10},{wch:12},{wch:12},{wch:16},{wch:24}];
   XLSX.utils.book_append_sheet(wb, ws, 'Devre_Spool_Listesi');
-  XLSX.writeFile(wb, 'SYOS_Devre_Spool_Sablonu.xlsx');
+  XLSX.writeFile(wb, 'AresPipe_Devre_Spool_Sablonu.xlsx');
   toast(tv('dny_template_dl','Şablon indirildi'), 'in');
 }
 
@@ -1061,7 +1000,7 @@ function ozetGuncelle() {
 
   document.getElementById('ozTersane').textContent = tersaneAd;
   document.getElementById('ozProje').textContent   = projeAd;
-  document.getElementById('ozIsEmri').textContent  = _isEmriNo;
+  document.getElementById('ozIsEmri').textContent  = gv('isEmri');
   document.getElementById('ozDevre').textContent   = gv('devreAdi') || '—';
   document.getElementById('ozSpool').textContent   = spooller.length + ' ' + tv('dny_unit_piece','adet');
   document.getElementById('ozAgirlik').textContent = toplamAgirlik().toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' kg';
@@ -1115,31 +1054,34 @@ async function kaydet() {
 
       if (devreRes.error) {
         toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
-        btnKaydet.disabled = false; return;
+        return;
       }
       const devreId = devreRes.data.id;
 
       // 2. Spooller insert
       if (spooller.length) {
         const spoolRows = spooller.map(function(s, idx) {
+          // ✅ Bug1: Türkçe virgüllü çap formatını düzelt (örn: "114,3" → 114.3)
+          const capMm = parseFloat(String(s.cap || '').replace(',', '.')) || null;
           return {
-            tenant_id:   ARES.tenantId(),
-            devre_id:    devreId,
-            spool_no:    s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
-            pipeline_no: s.pipeline || null,
-            rev:         s.rev      || null,
-            malzeme:     s.malzeme  || null,
-            kalite:      s.kalite   || null,
-            dis_cap_mm:  parseFloat(s.cap) || null,
-            agirlik:     s.agirlik  || 0,
-            yuzey:       s.yuzey    || null,
-            durum:       'Bekliyor',
+            tenant_id:     ARES.tenantId(),
+            devre_id:      devreId,
+            spool_no:      s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
+            pipeline_no:   s.pipeline || null,
+            rev:           s.rev      || null,
+            malzeme:       s.malzeme  || null,
+            kalite:        s.kalite   || null,
+            dis_cap_mm:    capMm,
+            agirlik:       s.agirlik  || 0,
+            yuzey:         s.yuzey    || null,
+            durum:         'Bekliyor',
             aktif_basamak: ilkBasamak,
           };
         });
         const spoolRes = await supa.from('spooller').insert(spoolRows).select('id');
 
-        // 3. IFS malzeme kalemleri
+        // 3. IFS malzeme kalemleri — sadece IFS spooller için
+        // Standart/manuel spooller spool_detay sayfasından malzeme sekmesiyle girilecek
         if (!spoolRes.error && spoolRes.data && spoolRes.data.length) {
           const malzemeRows = [];
           spoolRes.data.forEach(function(dbSpool, i) {
@@ -1147,13 +1089,14 @@ async function kaydet() {
             if (localSpool && localSpool.ifsItems) {
               localSpool.ifsItems.forEach(function(item) {
                 malzemeRows.push({
-                  spool_id: dbSpool.id,
-                  tanim:    item.desc    || null,
-                  boyut:    item.dims    || null,
-                  malzeme:  item.malzeme || null,
-                  miktar:   item.miktar  || 0,
-                  agirlik:  item.agirlik || 0,
-                  ifs_kod:  item.ifsKod  || null,
+                  tenant_id: ARES.tenantId(), // ✅ Bug2: tenant_id eklendi
+                  spool_id:  dbSpool.id,
+                  tanim:     item.desc    || null,
+                  boyut:     item.dims    || null,
+                  malzeme:   item.malzeme || null,
+                  miktar:    item.miktar  || 0,
+                  agirlik:   item.agirlik || 0,
+                  ifs_kod:   item.ifsKod  || null,
                 });
               });
             }
@@ -1173,6 +1116,8 @@ async function kaydet() {
     } catch(err) {
       console.error(err);
       toast(tv('dny_db_hata','Veritabanı hatası: ') + (err.message || ''), 'er');
+    } finally {
+      // ✅ Bug3: finally — hata olsa da buton açılır
       btnKaydet.disabled = false;
     }
 
@@ -1411,6 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
   })();
 });
 document.documentElement.style.visibility = '';
+if (typeof _applyI18n === 'function') _applyI18n();
 </script>
 </body>
 </html>
