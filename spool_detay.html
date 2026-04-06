@@ -1024,6 +1024,7 @@ function yukle(){
 // ── TRACKER ───────────────────────────────────────────────────
 var STAGES=['Ön İmalat','İmalat','Kaynak','Ön Kontrol','KK','Sevkiyat'];
 var STAGE_KEYS=['sp_stage_pre','sp_stage_fab','sp_stage_weld','sp_stage_inspect','sp_stage_qc','sp_stage_ship'];
+var STAGE_SISTEM=['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
 var CHIPS=[
   {t:'sp_chip_not_started',tr:'Henüz başlanmadı',c:'var(--txd)',bg:'var(--sur2)'},
   {t:'sp_chip_pre',tr:'Ön imalat aşamasında',c:'var(--ac)',bg:'rgba(45,142,255,.10)'},
@@ -1065,10 +1066,10 @@ function renderTracker(){
 async function sonrakiBasamakGec() {
   var cur = parseInt(SP.trackerCurrent, 10) || 0;
   var snap = SP._basamakSnapshot || [];
-  // Snapshot yoksa STAGES'den üret
+  // Snapshot yoksa STAGE_SISTEM'den üret
   if (!snap.length) {
     snap = STAGES.map(function(s, i) {
-      return { sistem_adi: STAGE_KEYS[i].replace('sp_stage_',''), gorunen_ad: s, sira: i+1 };
+      return { sistem_adi: STAGE_SISTEM[i], gorunen_ad: s, sira: i+1 };
     });
   }
   if (cur >= snap.length) { toast('Tüm basamaklar tamamlandı', 'ok'); return; }

@@ -685,6 +685,8 @@ function basamakRender(filtre) {
           (isFirst ? 'disabled' : '') + ' title="' + tv('tanim_yukari_tasi','Yukarı taşı') + '">\u2191</button>' +
         '<button class="btn btn-g btn-sm" onclick="siraDegistir(\'' + esc(x.id) + '\',1)" ' +
           (isLast  ? 'disabled' : '') + ' title="' + tv('tanim_asagi_tasi','Aşağı taşı') + '">\u2193</button>' +
+        '<button class="btn btn-re btn-sm" onclick="basamakSil(\'' + esc(x.id) + '\')" ' +
+          ' title="' + tv('tanim_sil','Sil') + '">\u2715</button>' +
       '</div></td>' +
     '</tr>';
   }).join('');
@@ -817,6 +819,33 @@ async function yeniBasamakEkle() {
   sayacGuncelle();
   toast(tv('genel_kaydedildi','Kaydedildi.'), 'ok');
   ARES.logEkle('BASAMAK_EKLE', 'Yeni basamak eklendi', 'basamak', null, {});
+}
+
+// ─── Basamak: sil ───────────────────────────────────────────────
+async function basamakSil(id) {
+  var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
+  if (!b) return;
+  // Sistem basamaklarını koruma: on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat
+  var korunanlar = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
+  if (korunanlar.indexOf(b.ad) !== -1) {
+    toast(tv('tanim_silinemez','Bu basamak silinemez — sistem tarafından kullanılıyor.'), 'er');
+    return;
+  }
+  if (!confirm(b.gorunenAd + ' — ' + tv('tanim_silme_onay','Bu kaydı silmek istediğinizden emin misiniz?'))) return;
+
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    var res = await supa.from('basamak_tanimlari')
+      .update({ aktif: false, guncelleme: new Date().toISOString() })
+      .eq('id', id);
+    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
+  }
+
+  veri.basamak = (veri.basamak||[]).filter(function(x){ return x.id !== id; });
+  basamakRender();
+  sayacGuncelle();
+  toast(tv('genel_silindi','Silindi.'), 'ok');
+  ARES.logEkle('BASAMAK_SIL', b.gorunenAd + ' silindi', 'basamak', id, {});
 }
 
 // ═══════════════════════════════════════════════════════════════════
