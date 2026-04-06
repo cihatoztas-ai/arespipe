@@ -658,7 +658,10 @@ function ifsOku(file) {
         if (row.every(c => c === '')) continue;
         const pipeline = String(row[idx.pipeline] || '').trim();
         const spool    = String(row[idx.spool]    || '').trim();
+        // Özet satırlarını atla: boş, formül (=ile başlayan) veya geçersiz spool
         if (!pipeline || !spool) continue;
+        if (spool.startsWith('=')) continue;
+        if (pipeline.startsWith('=')) continue;
         if (!ifsData[pipeline]) ifsData[pipeline] = {};
         if (!ifsData[pipeline][spool]) ifsData[pipeline][spool] = [];
         ifsData[pipeline][spool].push({
@@ -1078,7 +1081,10 @@ async function kaydet() {
             aktif_basamak: ilkBasamak,
           };
         });
-        const spoolRes = await supa.from('spooller').insert(spoolRows).select('id');
+        const spoolRes = await supa.from('spooller').upsert(spoolRows, {
+          onConflict: 'tenant_id,devre_id,spool_no',
+          ignoreDuplicates: true
+        }).select('id');
 
         // 3. IFS malzeme kalemleri — sadece IFS spooller için
         // Standart/manuel spooller spool_detay sayfasından malzeme sekmesiyle girilecek
