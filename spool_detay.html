@@ -887,8 +887,8 @@ async function spoolYukle(supaId) {
     NOTLAR = (notRes.data || []).map(function(n) {
       return {
         id:    n.id,
-        metin: n.icerik || n.metin || '',
-        kisi:  n.ekleyen_id || 'Admin',
+        metin: n.metin || '',
+        kisi:  n.yapan_id || 'Admin',
         tarih: n.olusturma ? new Date(n.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
       };
     });
@@ -955,6 +955,11 @@ if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
     sp_chip_shipped:'تم الشحن',
   });
 }
+// tv() güvenli fallback — ares-lang.js yüklenemezse TR metnini döner
+if (typeof tv === 'undefined') {
+  function tv(k, tr) { return tr !== undefined ? tr : k; }
+}
+
 function toast(msg,tip){
   var old=document.querySelector('.toast');if(old)old.remove();
   var t=document.createElement('div');
@@ -1250,7 +1255,7 @@ function renderNotlar(){
   renderQrOnizleme();
 }
 function notEkle(){var i=T('notInput');var m=i?i.value.trim():'';if(!m){toast('Not boş olamaz','er');return;}NOTLAR.unshift({id:Date.now(),metin:m,kisi:'Admin',tarih:bugun()});
-  _supaInsert('notlar',{icerik:m,qr_goster:true,ekleyen_id:ARES.oturumAl()?.id||null});
+  _supaInsert('notlar',{metin:m,yapan_id:ARES.oturumAl()?.id||null});
   i.value='';renderNotlar();}
 function notSil(id){NOTLAR=NOTLAR.filter(function(n){return n.id!==id;});renderNotlar();}
 
