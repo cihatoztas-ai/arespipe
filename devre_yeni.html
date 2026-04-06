@@ -658,10 +658,12 @@ function ifsOku(file) {
         if (row.every(c => c === '')) continue;
         const pipeline = String(row[idx.pipeline] || '').trim();
         const spool    = String(row[idx.spool]    || '').trim();
-        // Özet satırlarını atla: boş, formül (=ile başlayan) veya geçersiz spool
         if (!pipeline || !spool) continue;
+        // Özet satırlarını atla: formül string, sayısal sonuç veya bilinen özet isimleri
         if (spool.startsWith('=')) continue;
-        if (pipeline.startsWith('=')) continue;
+        if (!isNaN(parseFloat(spool))) continue; // XLSX.js formülü sayıya çevirmiş
+        const ozet = ['total', 'cog', 'center of gravity'];
+        if (ozet.some(kw => pipeline.toLowerCase().includes(kw))) continue;
         if (!ifsData[pipeline]) ifsData[pipeline] = {};
         if (!ifsData[pipeline][spool]) ifsData[pipeline][spool] = [];
         ifsData[pipeline][spool].push({
@@ -1097,6 +1099,7 @@ async function kaydet() {
                 malzemeRows.push({
                   tenant_id:  ARES.tenantId(),
                   spool_id:   dbSpool.id,
+                  kod:        item.ifsKod  || item.desc?.substring(0,20) || 'IFS',
                   tanim:      item.desc    || null,
                   boyut:      item.dims    || null,
                   malzeme:    item.malzeme || null,
