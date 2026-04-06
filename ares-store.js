@@ -1,7 +1,11 @@
 /**
- * AresPipe Store — v2.2
+ * AresPipe Store — v2.3
  * Supabase entegrasyonlu veri katmanı.
  * Supabase CDN'i otomatik yükler — HTML'e ek script gerekmez.
+ *
+ * Değişiklikler v2.3:
+ * - is_emri prefix: I → P (P26-xxx formatı)
+ * - SYOS alias kaldırıldı (A2 ihlali)
  *
  * Değişiklikler v2.2:
  * - CDN yüklenince mod otomatik 'supabase'e geçer
@@ -203,8 +207,8 @@ const ARES = (function () {
         // Hata durumunda local fallback
         return _sonrakiNoLocal(tip, yil);
       }
-      // Prefix ekle: is_emri → I26-001, hakedis_no → H26-001
-      const prefix = tip === 'is_emri' ? 'I' : tip === 'hakedis_no' ? 'H' : 'S';
+      // Prefix ekle: is_emri → P26-001, hakedis_no → H26-001
+      const prefix = tip === 'is_emri' ? 'P' : tip === 'hakedis_no' ? 'H' : 'S';
       return prefix + yil + '-' + String(data).padStart(3, '0');
     }
 
@@ -213,7 +217,8 @@ const ARES = (function () {
 
   function _sonrakiNoLocal(tip, yil) {
     const sayaclar = _lget('sayaclar') || { is_emri: 1, spool_no: 1, hakedis_no: 1 };
-    const no       = tip + yil + '-' + String(sayaclar[tip] || 1).padStart(3, '0');
+    const prefix   = tip === 'is_emri' ? 'P' : tip === 'hakedis_no' ? 'H' : 'S';
+    const no       = prefix + yil + '-' + String(sayaclar[tip] || 1).padStart(3, '0');
     sayaclar[tip]  = (sayaclar[tip] || 1) + 1;
     _lset('sayaclar', sayaclar);
     return no;
@@ -524,6 +529,3 @@ const ARES = (function () {
   };
 
 })();
-
-// Geriye dönük uyumluluk
-const SYOS = ARES;
