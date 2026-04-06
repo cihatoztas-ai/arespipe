@@ -1714,12 +1714,12 @@ function plMalzRender() {
         '<td style="text-align:right;">' + (m.tip === 'boru' && m.boy_mm ? m.boy_mm + ' mm' : '—') + '</td>' +
         '<td style="text-align:right;">' + (m.tip === 'fitting' && m.adet ? m.adet + ' adet' : '—') + '</td>' +
         '<td style="text-align:center;">' + (m.sertifikali ? '<span style="color:var(--warn);font-weight:700;">⚠</span>' : '—') + '</td>' +
-        '<td onclick="event.stopPropagation()"><button class="btn btn-re btn-sm" onclick="plMalzSil('' + esc(m.id) + '','' + esc(p.pipeline_no) + '')">✕</button></td>' +
+        '<td onclick="event.stopPropagation()"><button class="btn btn-re btn-sm" onclick="plMalzSil(\'' + esc(m.id) + '\',\'' + esc(p.pipeline_no) + '\')">✕</button></td>' +
         '</tr>';
     }).join('');
 
     return '<div class="pl-kart" id="plKart_' + pi + '">' +
-      '<div class="pl-kart-head" onclick="this.parentElement.classList.toggle('open')">' +
+      '<div class="pl-kart-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
         '<div style="flex:1;">' +
           '<div class="pl-pipeline-no">' + esc(p.pipeline_no) + '</div>' +
           '<div class="pl-spooller">' + (spoollar.length ? spoollar.join(', ') + ' · ' : '') + p.malzemeler.length + ' kalem</div>' +
