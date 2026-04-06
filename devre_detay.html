@@ -770,7 +770,7 @@ async function spoolYukle() {
         *, spool_malzemeleri(*),
         kesim_kalemleri(id, kesildi),
         bukum_kalemleri(id, bukuldu),
-        markalama_kalemleri(id, tamamlandi)
+        markalama_kalemleri(id, markalandi)
       `)
       .eq('devre_id', devreId)
       .order('spool_no');
@@ -843,7 +843,7 @@ async function spoolYukle() {
         alistirma: s.alistirma || 'YOK',
         bukum:     (function(){ var a=s.bukum_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.bukuldu;}).length}; })(),
         kesim:     (function(){ var a=s.kesim_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.kesildi;}).length}; })(),
-        markalama: (function(){ var a=s.markalama_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.tamamlandi;}).length}; })(),
+        markalama: (function(){ var a=s.markalama_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.markalandi;}).length}; })(),
         test:      {toplam:0, tamamlanan:0},
         durduruldu: s.durdurma_sebebi ? 'VAR' : 'YOK',
         stopped:    s.durduruldu || false,
