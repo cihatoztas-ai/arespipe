@@ -859,7 +859,7 @@ async function veriYukle() {
     var devRes = await supa
       .from('devreler')
       .select('*, projeler(proje_no, gemi_adi, tersaneler(ad, kod))')
-      .eq('silindi', false)
+      .neq('silindi', true)
       .order('olusturma', { ascending: false });
     if (devRes.error) { console.warn('Devre yükleme:', devRes.error); renderTable(); return; }
 
@@ -867,7 +867,7 @@ async function veriYukle() {
     var spoolRes = await supa
       .from('spooller')
       .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey')
-      .eq('silindi', false);
+      .neq('silindi', true);
 
     // Son işlem tarihleri
     var logRes = await supa
@@ -935,8 +935,8 @@ async function veriYukle() {
         zone:     d.zone          || '—',
         spool:    spools.length,
         agirlik:  totalAg,
-        malzeme:  malzemeArr,
-        yuzey:    yuzeyArr,
+        malzeme:  d.malzeme ? [d.malzeme] : malzemeArr,
+        yuzey:    d.yuzey   ? [d.yuzey]   : yuzeyArr,
         ilerleme: avgIler,
         durum:    d.durum         || 'baslamadi',
         sonIslem: sonIslem,
