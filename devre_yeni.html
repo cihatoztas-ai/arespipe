@@ -1095,14 +1095,14 @@ async function kaydet() {
             if (localSpool && localSpool.ifsItems) {
               localSpool.ifsItems.forEach(function(item) {
                 malzemeRows.push({
-                  tenant_id: ARES.tenantId(), // ✅ Bug2: tenant_id eklendi
-                  spool_id:  dbSpool.id,
-                  tanim:     item.desc    || null,
-                  boyut:     item.dims    || null,
-                  malzeme:   item.malzeme || null,
-                  miktar:    item.miktar  || 0,
-                  agirlik:   item.agirlik || 0,
-                  ifs_kod:   item.ifsKod  || null,
+                  tenant_id:  ARES.tenantId(),
+                  spool_id:   dbSpool.id,
+                  tanim:      item.desc    || null,
+                  boyut:      item.dims    || null,
+                  malzeme:    item.malzeme || null,
+                  miktar:     item.miktar  || 0,
+                  agirlik_kg: item.agirlik || 0,
+                  ifs_kod:    item.ifsKod  || null,
                 });
               });
             }
