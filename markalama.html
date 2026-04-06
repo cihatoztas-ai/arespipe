@@ -363,7 +363,7 @@ async function veriYukle() {
     if (!supa) return;
     var res = await supa
       .from('markalama_kalemleri')
-      .select('*, spool_malzemeleri(aciklama, malzeme, kalite, dis_cap_mm), spooller(spool_no, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm), spooller(id, spool_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
     if (res.error) { console.warn('[ARES] Markalama yükleme:', res.error); return; }
     markalamalar = (res.data || []).map(function(k) {
@@ -380,7 +380,7 @@ async function veriYukle() {
         spoolId:  sp.id            || '',
         tersane:  trs.ad           || '—',
         isEmir:   prj.is_emri_no   || '—',
-        yuzey:    mal.aciklama     || '—',
+        yuzey:    mal.tanim        || '—',
         malzeme:  mal.malzeme      || '—',
         kalite:   mal.kalite       || '—',
         cap:      mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',

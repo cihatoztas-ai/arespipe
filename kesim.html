@@ -471,7 +471,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(aciklama, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(spool_no, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
