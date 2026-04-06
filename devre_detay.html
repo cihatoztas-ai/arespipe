@@ -318,6 +318,7 @@
               <th style="width:32px;">#</th>
               <th class="sort-th" data-sort="pipeline" onclick="sortBy('pipeline')" style="cursor:pointer;" data-i18n="dv_th_pipeline">Pipeline No <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
               <th class="sort-th" data-sort="spoolNo" onclick="sortBy('spoolNo')" style="cursor:pointer;" data-i18n="dv_th_spool">Spool No <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
+              <th style="white-space:nowrap;">Spool ID</th>
               <th class="sort-th" data-sort="cap" onclick="sortBy('cap')" style="cursor:pointer;" data-i18n="sp_stat_diameter">Cap <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
               <th class="sort-th" data-sort="agirlik" onclick="sortBy('agirlik')" style="cursor:pointer;" data-i18n="sp_stat_weight">Agirlik <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
               <th data-i18n="sp_stat_material">Malzeme</th>
@@ -1002,7 +1003,7 @@ function renderTable() {
   if(_page > totalPages) _page = totalPages;
   const slice = aktif.slice((_page-1)*_perPage, _page*_perPage);
 
-  if(!total) { tbody.innerHTML=`<tr><td colspan="18" style="text-align:center;padding:24px;color:var(--txd);">${tv('dv_no_spools','Henuz spool eklenmemis')}</td></tr>`; _renderPagination(0,0,0); return; }
+  if(!total) { tbody.innerHTML=`<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--txd);">${tv('dv_no_spools','Henuz spool eklenmemis')}</td></tr>`; _renderPagination(0,0,0); return; }
   tbody.innerHTML = slice.map((s,i)=>{
     const d = DURUM_CFG[s.durum] || {cls:'sb-waiting',text:s.durumText||s.durum};
     const stl = s.stopped ? 'opacity:.55;' : '';
@@ -1010,7 +1011,8 @@ function renderTable() {
     return `<tr style="${stl}cursor:pointer;" onclick="navigateToSpool('${esc(s.spoolNo)}')">
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
-      <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span><div style="font-size:14px;color:var(--leg);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.3px;">ID:${s.spoolId}</div></td>
+      <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||'—'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
       <td style="font-size:14px;">${esc(s.malzeme)||'--'}</td>
