@@ -1010,7 +1010,7 @@ function renderTable() {
     return `<tr style="${stl}cursor:pointer;" onclick="navigateToSpool('${esc(s.spoolNo)}')">
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
-      <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
+      <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span><div style="font-size:14px;color:var(--leg);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.3px;">ID:${s.spoolId}</div></td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
       <td style="font-size:14px;">${esc(s.malzeme)||'--'}</td>
@@ -1943,7 +1943,7 @@ async function devreYukle() {
           supaId:        d.id,
           id:            d.id,
           isEmri:        d.is_emri_no       || '',
-          tersane:       tersane.ad || tersane.kod || '',
+          tersane:       tersane.kod || tersane.ad || '',
           gemi:          proje.gemi_adi      || proje.proje_no || '',
           devre:         d.devre_no          || '',
           zone:          d.zone              || '',
