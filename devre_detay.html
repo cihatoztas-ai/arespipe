@@ -1724,7 +1724,7 @@ function plMalzRender() {
           '<div class="pl-pipeline-no">' + esc(p.pipeline_no) + '</div>' +
           '<div class="pl-spooller">' + (spoollar.length ? spoollar.join(', ') + ' · ' : '') + p.malzemeler.length + ' kalem</div>' +
         '</div>' +
-        '<button class="btn btn-ac btn-sm" onclick="event.stopPropagation();plMalzSatirEkle('' + esc(p.pipeline_no) + '')">+ Malzeme</button>' +
+        '<button class="btn btn-ac btn-sm" onclick="event.stopPropagation();plMalzSatirEkle(\'' + esc(p.pipeline_no) + '\')">+ Malzeme</button>' +
         '<span style="font-size:12px;color:var(--txd);margin-left:8px;">▼</span>' +
       '</div>' +
       '<div class="pl-kart-body">' +
