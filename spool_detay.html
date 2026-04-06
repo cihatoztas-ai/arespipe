@@ -868,7 +868,7 @@ async function spoolYukle(supaId) {
         ad:        m.tanim || '—',
         cap:       m.dis_cap_mm ? String(m.dis_cap_mm).replace('.',',') + ' mm' : '—',
         olcu:      b.olcu_mm  ? String(b.olcu_mm) : '—',
-        bukuldumu: b.bukuldumu || false
+        bukuldu: b.bukuldu || false
       };
     });
 
@@ -1397,11 +1397,11 @@ function kesimSil(id){var k=KESIMLER.find(function(x){return x.id===id;});if(k&&
 
 // ── BÜKÜM ────────────────────────────────────────────────────
 function renderBukumler(){
-  dotGuncelle('bukumDot',BUKUMLER,'bukuldumu');
+  dotGuncelle('bukumDot',BUKUMLER,'bukuldu');
   var el=T('bukumListe'),tbl=T('bukumTablo');
-  var html=BUKUMLER.length?BUKUMLER.map(function(b){return'<div style="padding:8px 0;border-bottom:1px solid var(--bor);display:flex;align-items:flex-start;gap:8px;"><div style="width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;background:'+(b.bukuldumu?'var(--gr)':'var(--re)')+';"></div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">'+esc(b.ad)+'</div><div style="font-size:14px;color:var(--ac);font-weight:700;">'+esc(b.olcu)+' mm</div></div><div style="display:flex;gap:3px;">'+(b.bukuldumu?'':'<button data-eid="'+esc(b.id)+'" onclick="bukumTamamla(this.dataset.eid)" class="ctx" style="border-color:rgba(22,163,110,.4);color:var(--gr);">✓</button>')+'<button data-eid="'+esc(b.id)+'" onclick="bukumSil(this.dataset.eid)" class="ctx ctx-re">✕</button></div></div>';}).join(''):'<div style="font-size:14px;color:var(--txd);">'+tv('sp_no_bends','Henüz büküm eklenmemiş')+'</div>';
+  var html=BUKUMLER.length?BUKUMLER.map(function(b){return'<div style="padding:8px 0;border-bottom:1px solid var(--bor);display:flex;align-items:flex-start;gap:8px;"><div style="width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;background:'+(b.bukuldu?'var(--gr)':'var(--re)')+';"></div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">'+esc(b.ad)+'</div><div style="font-size:14px;color:var(--ac);font-weight:700;">'+esc(b.olcu)+' mm</div></div><div style="display:flex;gap:3px;">'+(b.bukuldu?'':'<button data-eid="'+esc(b.id)+'" onclick="bukumTamamla(this.dataset.eid)" class="ctx" style="border-color:rgba(22,163,110,.4);color:var(--gr);">✓</button>')+'<button data-eid="'+esc(b.id)+'" onclick="bukumSil(this.dataset.eid)" class="ctx ctx-re">✕</button></div></div>';}).join(''):'<div style="font-size:14px;color:var(--txd);">'+tv('sp_no_bends','Henüz büküm eklenmemiş')+'</div>';
   if(el)el.innerHTML=html;
-  if(tbl)tbl.innerHTML=BUKUMLER.length?BUKUMLER.map(function(b){return'<tr><td style="font-weight:600;">'+esc(b.ad)+'</td><td style="color:var(--ac);font-weight:700;">'+esc(b.olcu)+' mm</td><td><span style="font-size:14px;font-weight:600;padding:2px 8px;border-radius:10px;'+(b.bukuldumu?'background:rgba(22,163,110,.12);color:var(--gr);':'background:rgba(229,62,62,.12);color:var(--re);')+'">'+tv(b.bukuldumu?'sp_bend_done':'sp_bend_pending',b.bukuldumu?'Büküldü':'Bükülecek')+'</span></td><td><button data-eid="'+esc(b.id)+'" onclick="bukumSil(this.dataset.eid)" class="ctx ctx-re btn-sm">✕</button></td></tr>';}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:16px;">'+tv('sp_no_bends','Henüz büküm eklenmemiş')+'</td></tr>';
+  if(tbl)tbl.innerHTML=BUKUMLER.length?BUKUMLER.map(function(b){return'<tr><td style="font-weight:600;">'+esc(b.ad)+'</td><td style="color:var(--ac);font-weight:700;">'+esc(b.olcu)+' mm</td><td><span style="font-size:14px;font-weight:600;padding:2px 8px;border-radius:10px;'+(b.bukuldu?'background:rgba(22,163,110,.12);color:var(--gr);':'background:rgba(229,62,62,.12);color:var(--re);')+'">'+tv(b.bukuldu?'sp_bend_done':'sp_bend_pending',b.bukuldu?'Büküldü':'Bükülecek')+'</span></td><td><button data-eid="'+esc(b.id)+'" onclick="bukumSil(this.dataset.eid)" class="ctx ctx-re btn-sm">✕</button></td></tr>';}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:16px;">'+tv('sp_no_bends','Henüz büküm eklenmemiş')+'</td></tr>';
 }
 function bukumModalAc(){var bm=T('bm_malz');if(bm)bm.innerHTML=malzemeOpts('');var bo=T('bm_olcu');if(bo)bo.value='';bmMalzInfo();T('bukumModal').style.display='flex';}
 function bmMalzInfo(){var s=T('bm_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('bm_info');if(i)i.innerHTML=m?('<strong>'+esc(m.malz)+'</strong> — <span style="color:var(--ac);">'+esc(m.kal)+'</span> — '+esc(m.cap)):'Malzeme seçin';}
@@ -1409,13 +1409,13 @@ function bukumKaydet(){
   var mId=(T('bm_malz')||{}).value||'',olcu=String((T('bm_olcu')||{}).value||'').trim();
   if(!olcu||isNaN(olcu)||+olcu<=0){toast('Geçerli uzunluk girin','er');return;}
   var m=MALZEME.find(function(x){return x.id===mId;});if(!m){toast('Malzeme seçin','er');return;}
-  BUKUMLER.push({id:String(Date.now()),ad:m.ac,cap:m.cap,olcu,bukuldumu:false});
+  BUKUMLER.push({id:String(Date.now()),ad:m.ac,cap:m.cap,olcu,bukuldu:false});
   KESIMLER.push({id:String(Date.now()+1),ad:m.ac,cap:m.cap,et:m.et,kal:m.kal,olcu,ucA:'bukum',ucB:'bukum',kesildi:false});
-  _supaInsert('bukum_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),bukuldumu:false});
+  _supaInsert('bukum_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),bukuldu:false});
   _supaInsert('kesim_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),uc_a:'bukum',uc_b:'bukum',kesildi:false,bukum_borusu:true});
   T('bukumModal').style.display='none';renderBukumler();renderKesimler();logEkle('Büküm Eklendi',m.ac+' '+olcu+'mm');toast(m.ac+' büküm eklendi','ok');
 }
-function bukumTamamla(id){var b=BUKUMLER.find(function(x){return x.id===id;});if(b){b.bukuldumu=true;renderBukumler();logEkle('Büküm Tamamlandı',b.ad);toast(b.ad+' büküldü','ok');}}
+function bukumTamamla(id){var b=BUKUMLER.find(function(x){return x.id===id;});if(b){b.bukuldu=true;renderBukumler();logEkle('Büküm Tamamlandı',b.ad);toast(b.ad+' büküldü','ok');}}
 function bukumSil(id){var b=BUKUMLER.find(function(x){return x.id===id;});if(b&&confirm('"'+b.ad+'" silinsin mi?')){BUKUMLER=BUKUMLER.filter(function(x){return x.id!==id;});renderBukumler();}}
 
 // ── MARKALAMA ────────────────────────────────────────────────
