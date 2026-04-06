@@ -1096,21 +1096,50 @@ async function kaydet() {
             const localSpool = spooller[i];
             if (localSpool && localSpool.ifsItems) {
               localSpool.ifsItems.forEach(function(item) {
+                const _bp  = _boyutParcala(item.dims);
+                const _dsc = (item.desc || '').toLowerCase();
+                const _tip = (_dsc.includes('pipe') || _dsc.includes('tube') || _dsc.includes('boru')) ? 'boru' : 'fitting';
+                const _srt = _dsc.includes('3.1') || _dsc.includes('certif');
                 malzemeRows.push({
-                  tenant_id:  ARES.tenantId(),
-                  spool_id:   dbSpool.id,
-                  kod:        item.ifsKod  || item.desc?.substring(0,20) || 'IFS',
-                  tanim:      item.desc    || null,
-                  boyut:      item.dims    || null,
-                  malzeme:    item.malzeme || null,
-                  miktar:     item.miktar  || 0,
-                  agirlik_kg: item.agirlik || 0,
-                  ifs_kod:    item.ifsKod  || null,
+                  tenant_id:   ARES.tenantId(),
+                  spool_id:    dbSpool.id,
+                  kod:         item.ifsKod  || item.desc?.substring(0,20) || 'IFS',
+                  tip:         _tip,
+                  tanim:       item.desc    || null,
+                  boyut:       item.dims    || null,
+                  malzeme:     _malzemeTipi(item.malzeme),
+                  kalite:      item.malzeme || null,
+                  dis_cap_mm:  _bp.dis_cap,
+                  et_mm:       _bp.et,
+                  boy_mm:      item.uzunluk || null,
+                  adet:        item.miktar  || null,
+                  miktar:      item.miktar  || 0,
+                  agirlik_kg:  item.agirlik || 0,
+                  ifs_kod:     item.ifsKod  || null,
+                  sertifikali: _srt,
                 });
               });
             }
           });
           if (malzemeRows.length) {
+            // ── Boyut parser: "88.9x8.0" → dis_cap=88.9, et=8.0
+            function _boyutParcala(str) {
+              if (!str) return { dis_cap: null, et: null };
+              const m = String(str).match(/^([\d.,]+)x([\d.,]+)/);
+              if (m) return {
+                dis_cap: parseFloat(m[1].replace(',','.')) || null,
+                et:      parseFloat(m[2].replace(',','.')) || null
+              };
+              return { dis_cap: parseFloat(String(str).replace(',','.')) || null, et: null };
+            }
+            // ── Malzeme tipi: kalite koddan türet
+            function _malzemeTipi(kalite) {
+              if (!kalite) return 'Karbon Çelik';
+              const k = kalite.toUpperCase();
+              if (k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
+              if (k.includes('CUNI') || k.includes('CU') || k.includes('ALUM')) return 'Bakır Alaşım';
+              return 'Karbon Çelik';
+            }
             await supa.from('spool_malzemeleri').insert(malzemeRows);
           }
         }
