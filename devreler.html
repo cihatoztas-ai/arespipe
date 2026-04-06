@@ -859,13 +859,15 @@ async function veriYukle() {
     var devRes = await supa
       .from('devreler')
       .select('*, projeler(proje_no, gemi_adi, tersaneler(ad, kod))')
+      .eq('silindi', false)
       .order('olusturma', { ascending: false });
     if (devRes.error) { console.warn('Devre yükleme:', devRes.error); renderTable(); return; }
 
     // Spool istatistikleri
     var spoolRes = await supa
       .from('spooller')
-      .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey');
+      .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey')
+      .eq('silindi', false);
 
     // Son işlem tarihleri
     var logRes = await supa
