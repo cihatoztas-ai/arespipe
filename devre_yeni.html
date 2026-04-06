@@ -1088,6 +1088,25 @@ async function kaydet() {
           ignoreDuplicates: true
         }).select('id');
 
+        // ── Boyut parser: "88.9x8.0" → dis_cap=88.9, et=8.0
+        function _boyutParcala(str) {
+          if (!str) return { dis_cap: null, et: null };
+          const m = String(str).match(/^([\d.,]+)x([\d.,]+)/);
+          if (m) return {
+            dis_cap: parseFloat(m[1].replace(',','.')) || null,
+            et:      parseFloat(m[2].replace(',','.')) || null
+          };
+          return { dis_cap: parseFloat(String(str).replace(',','.')) || null, et: null };
+        }
+        // ── Malzeme tipi: kalite koddan türet
+        function _malzemeTipi(kalite) {
+          if (!kalite) return 'Karbon Çelik';
+          const k = kalite.toUpperCase();
+          if (k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
+          if (k.includes('CUNI') || k.includes('CU') || k.includes('ALUM')) return 'Bakır Alaşım';
+          return 'Karbon Çelik';
+        }
+
         // 3. IFS malzeme kalemleri — sadece IFS spooller için
         // Standart/manuel spooller spool_detay sayfasından malzeme sekmesiyle girilecek
         if (!spoolRes.error && spoolRes.data && spoolRes.data.length) {
@@ -1122,24 +1141,6 @@ async function kaydet() {
             }
           });
           if (malzemeRows.length) {
-            // ── Boyut parser: "88.9x8.0" → dis_cap=88.9, et=8.0
-            function _boyutParcala(str) {
-              if (!str) return { dis_cap: null, et: null };
-              const m = String(str).match(/^([\d.,]+)x([\d.,]+)/);
-              if (m) return {
-                dis_cap: parseFloat(m[1].replace(',','.')) || null,
-                et:      parseFloat(m[2].replace(',','.')) || null
-              };
-              return { dis_cap: parseFloat(String(str).replace(',','.')) || null, et: null };
-            }
-            // ── Malzeme tipi: kalite koddan türet
-            function _malzemeTipi(kalite) {
-              if (!kalite) return 'Karbon Çelik';
-              const k = kalite.toUpperCase();
-              if (k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
-              if (k.includes('CUNI') || k.includes('CU') || k.includes('ALUM')) return 'Bakır Alaşım';
-              return 'Karbon Çelik';
-            }
             await supa.from('spool_malzemeleri').insert(malzemeRows);
           }
         }
