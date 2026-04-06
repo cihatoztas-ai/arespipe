@@ -772,18 +772,19 @@ async function spoolYukle(supaId) {
     // Malzeme listesi
     MALZEME = (s.spool_malzemeleri || []).map(function(m, i) {
       return {
-        id:   m.id,
-        kod:  m.kod   || ('M' + (i+1)),
-        ac:   m.aciklama || '—',
-        malz: m.malzeme  || '—',
-        kal:  m.kalite   || '—',
-        cap:  m.dis_cap_mm ? String(m.dis_cap_mm).replace('.',',') + ' mm' : '—',
-        et:   m.et_mm     ? String(m.et_mm).replace('.',',') + ' mm' : '--',
-        boy:  m.uzunluk_mm ? m.uzunluk_mm + ' mm' : '--',
-        adet: m.adet      || null,
-        agr:  m.agirlik_kg ? String(m.agirlik_kg).replace('.',',') + ' kg' : '--',
-        heat: m.heat_no   || '',
-        sert: m.sertifika || false
+        id:     m.id,
+        supaId: m.id,
+        kod:    m.kod        || ('M' + (i+1)),
+        ac:     m.tanim      || m.aciklama || '—',
+        malz:   m.malzeme    || '—',
+        kal:    m.kalite     || '—',
+        cap:    m.dis_cap_mm ? String(m.dis_cap_mm).replace('.',',') + ' mm' : '—',
+        et:     m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
+        boy:    m.boy_mm     ? m.boy_mm + ' mm' : '--',
+        adet:   m.adet       || null,
+        agr:    m.agirlik_kg ? String(m.agirlik_kg).replace('.',',') + ' kg' : '--',
+        heat:   m.heat_no    || '',
+        sert:   m.sertifikali || false
       };
     });
 
@@ -1030,7 +1031,7 @@ function malzemeOpts(secili){
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
   var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');
-  txc('shNo',no); txc('shId',SP.supaId || SP.spoolId || '--');
+  txc('shNo',no); txc('shId', SP.supaId ? SP.supaId.substring(0,8).toUpperCase() : SP.spoolId || '--');
   txc('bcDevre',SP._devre); txc('bcSpool',SP.spoolNo);
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',SP.yuzey); txc('stMalz',SP.malzeme);
@@ -1304,7 +1305,18 @@ function renderMalzeme(){
   }).join('');
   sertGuncelle();
 }
-function sertToggle(id,v){var m=MALZEME.find(function(x){return x.id===id;});if(m){m.sert=v;sertGuncelle();}}
+function sertToggle(id,v){
+  var m=MALZEME.find(function(x){return x.id===id;});
+  if(m){
+    m.sert=v;
+    // Supabase'e kaydet
+    var supa=ARES.supabase();
+    if(supa && m.supaId && ARES.mod==='supabase'){
+      supa.from('spool_malzemeleri').update({sertifikali:v,guncelleme:new Date().toISOString()}).eq('id',m.supaId).then(function(){});
+    }
+    sertGuncelle();
+  }
+}
 function sertGuncelle(){
   var sertli=MALZEME.filter(function(m){return m.sert;});
   var k=T('bkSertKutu'),ic=T('bkSertIcerik');
