@@ -777,30 +777,47 @@ async function spoolYukle() {
       var total   = snap.length || 6;
       // aktif_basamak sistem_adi string → index'e çevir
       var _aktifStr = s.aktif_basamak || '';
-      var aktif = 0;
+      var aktif = -1; // -1 = henüz başlanmadı
       if (_aktifStr && snap.length) {
         var _idx = snap.findIndex(function(b){ return b.sistem_adi === _aktifStr; });
-        aktif = _idx >= 0 ? _idx + 1 : 0;
+        aktif = _idx >= 0 ? _idx : -1;
       } else if (_aktifStr) {
-        // Snapshot yok — STAGE_SISTEM'den bul
         var _stageSistem = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
         var _idx2 = _stageSistem.indexOf(_aktifStr);
-        aktif = _idx2 >= 0 ? _idx2 + 1 : 0;
+        aktif = _idx2 >= 0 ? _idx2 : -1;
       }
       // adimlar dizisi: 1=tamam, 3=aktif, 0=bekliyor
       var adimlar = [];
       for (var a = 0; a < total; a++) {
-        if (a < aktif)      adimlar.push(1);
-        else if (a === aktif) adimlar.push(3);
-        else                adimlar.push(0);
+        if (aktif < 0)          adimlar.push(0);       // hiç başlanmadı
+        else if (a < aktif)     adimlar.push(1);        // tamamlandı
+        else if (a === aktif)   adimlar.push(3);        // aktif
+        else                    adimlar.push(0);        // bekliyor
       }
       // durum
       var durum = 'waiting';
-      if (s.durduruldu)         durum = 'stopped';
-      else if (aktif >= total)  durum = 'done';
-      else if (aktif >= 4)      durum = 'qc';
-      else if (aktif > 0)       durum = 'progress';
-      var durumText = {waiting:'Bekliyor',progress:'Imalat',qc:'Kalite Kontrol',done:'Tamamlandi',stopped:'Durduruldu'}[durum] || durum;
+      if (s.durduruldu)              durum = 'stopped';
+      else if (aktif >= total - 1)   durum = 'done';
+      else if (aktif >= 4)           durum = 'qc';
+      else if (aktif > 0)            durum = 'progress';
+      // aktif=0 (on_imalat) → waiting (Bekliyor)
+      // durumText: aktif basamağın görünen adı
+      var _basamakAdlari = {
+        'on_imalat':'Ön İmalat','imalat':'İmalat','kaynak':'Kaynak',
+        'on_kontrol':'Ön Kontrol','kk':'Kalite Kontrol','sevkiyat':'Sevkiyat'
+      };
+      // Snapshot'tan görünen ad al, yoksa map'ten
+      var _aktifGorunen = '';
+      if (aktif >= 0) {
+        if (snap.length && snap[aktif]) {
+          _aktifGorunen = snap[aktif].gorunen_ad || _basamakAdlari[_aktifStr] || _aktifStr;
+        } else {
+          _aktifGorunen = _basamakAdlari[_aktifStr] || _aktifStr;
+        }
+      }
+      var durumText = aktif < 0 ? 'Bekliyor'
+        : aktif >= total - 1 ? 'Tamamlandı'
+        : _aktifGorunen || 'Devam Ediyor';
       // cap gösterimi
       var capVal = s.dis_cap_mm ? String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—';
       var agirlikVal = s.agirlik ? String(parseFloat(s.agirlik).toFixed(2)).replace('.',',') + ' kg' : '0 kg';
@@ -1028,7 +1045,7 @@ function renderTable() {
       <td style="font-size:14px;">${esc(s.malzeme)||'--'}</td>
       <td style="font-size:14px;color:var(--ac);">${esc(s.kalite)||'--'}</td>
       <td style="font-size:14px;">${esc(s.yuzey)||'--'}</td>
-      <td><span class="status-badge ${d.cls}">${s.stopped?tv('dv_status_stopped','Durduruldu'):esc(d.text)}</span></td>
+      <td><span class="status-badge ${d.cls}">${s.stopped?tv('dv_status_stopped','Durduruldu'):esc(s.durumText||d.text)}</span></td>
       <td>
         <div class="mini-steps" title="${getAdimLabels().map(esc).join(' → ')}">
           ${s.adimlar.map(renderStep).join('')}
