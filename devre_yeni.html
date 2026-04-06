@@ -1088,15 +1088,39 @@ async function kaydet() {
           ignoreDuplicates: true
         }).select('id');
 
-        // ── Boyut parser: "88.9x8.0" → dis_cap=88.9, et=8.0
+        // ── Boyut parser: "88.9x8.0" | "4\" Sch 10S" | "DN100" → dis_cap, et
         function _boyutParcala(str) {
           if (!str) return { dis_cap: null, et: null };
-          const m = String(str).match(/^([\d.,]+)x([\d.,]+)/);
-          if (m) return {
-            dis_cap: parseFloat(m[1].replace(',','.')) || null,
-            et:      parseFloat(m[2].replace(',','.')) || null
+          const s = String(str).trim();
+          // Format: "88.9x8.0" veya "114.3x4.5"
+          const mxm = s.match(/^([\d.,]+)x([\d.,]+)/i);
+          if (mxm) return {
+            dis_cap: parseFloat(mxm[1].replace(',','.')) || null,
+            et:      parseFloat(mxm[2].replace(',','.')) || null
           };
-          return { dis_cap: parseFloat(String(str).replace(',','.')) || null, et: null };
+          // Format: '4" Sch 10S' → inch nominal → OD mm
+          const inchOD = {'1/4':13.7,'3/8':17.2,'1/2':21.3,'3/4':26.7,
+            '1':33.4,'1.5':48.3,'1-1/2':48.3,'1.25':42.4,
+            '2':60.3,'2.5':73,'2-1/2':73,'3':88.9,'3.5':101.6,
+            '4':114.3,'5':141.3,'6':168.3,'8':219.1,
+            '10':273,'12':323.9,'14':355.6,'16':406.4,'18':457.2,'20':508,'24':609.6};
+          const mIn = s.match(/^([\d.\-\/]+)\s*"/);
+          if (mIn) {
+            const k = mIn[1].replace('-','.');
+            return { dis_cap: inchOD[k] || null, et: null };
+          }
+          // Format: "DN100" veya "DN100 L=100"
+          const dnOD = {15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,
+            65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,
+            200:219.1,250:273,300:323.9,350:355.6,400:406.4,
+            450:457,500:508,600:609.6};
+          const mDN = s.match(/DN\s*(\d+)/i);
+          if (mDN) {
+            const dn = parseInt(mDN[1]);
+            return { dis_cap: dnOD[dn] || null, et: null };
+          }
+          // Tek sayı
+          return { dis_cap: parseFloat(s.replace(',','.')) || null, et: null };
         }
         // ── Malzeme tipi: kalite koddan türet
         function _malzemeTipi(kalite) {
@@ -1118,7 +1142,7 @@ async function kaydet() {
                 const _bp  = _boyutParcala(item.dims);
                 const _dsc = (item.desc || '').toLowerCase();
                 const _tip = (_dsc.includes('pipe') || _dsc.includes('tube') || _dsc.includes('boru')) ? 'boru' : 'fitting';
-                const _srt = _dsc.includes('3.1') || _dsc.includes('certif');
+                const _srt = _dsc.includes('3.2') || _dsc.includes('3.3');
                 malzemeRows.push({
                   tenant_id:   ARES.tenantId(),
                   spool_id:    dbSpool.id,
