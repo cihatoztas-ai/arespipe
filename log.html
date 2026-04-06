@@ -12,6 +12,7 @@
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
 
+
 /* SIDEBAR */
 
 [data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
@@ -64,9 +65,6 @@
 
 table{width:100%;border-collapse:collapse;}
 thead th{padding:9px 14px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--bor);background:var(--sur2);white-space:nowrap;}
-thead th.sortable{cursor:pointer;user-select:none;}
-thead th.sortable:hover{color:var(--ac);}
-thead th.sort-asc,thead th.sort-desc{color:var(--ac);}
 tbody tr{border-bottom:1px solid var(--bor);transition:background 0.12s;}
 tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:var(--sur2);}
@@ -225,13 +223,153 @@ td{padding:10px 14px;font-size:14px;vertical-align:middle;}
 <script>
 'use strict';
 // ─── D-01 — DİL SİSTEMİ ─────────────────────────────────────────────
+var _I18N = {
+  en: {
+    cmn_anasayfa:       'Home',
+    cmn_yenile:         'Refresh',
+    cmn_onceki:         'Previous',
+    cmn_sonraki:        'Next',
+    log_baslik:         'Operation Log',
+    log_csv_indir:      'Download CSV',
+    log_temizle:        'Clear Log',
+    log_stat_toplam:    'Total Records',
+    log_stat_bugun:     'Today',
+    log_stat_kullanici: 'Users',
+    log_stat_tip:       'Operation Types',
+    log_ara_placeholder:'🔍 Search operation, source, description…',
+    log_f_tum_islem:    'All Operations',
+    log_f_giris:        '🔐 Login',
+    log_f_kk:           '✅ Quality Control',
+    log_f_sevk:         '📦 Shipment',
+    log_f_test:         '🧪 Test',
+    log_f_spool:        '⚙️ Spool',
+    log_f_devre:        '🔄 Circuit',
+    log_f_is:           '🔧 Work',
+    log_f_tanim:        '📋 Definition',
+    log_f_tum_zaman:    'All Time',
+    log_f_bugun:        'Today',
+    log_f_hafta:        'This Week',
+    log_f_ay:           'This Month',
+    log_gorunum_tablo:  'Table',
+    log_gorunum_zaman:  'Timeline',
+    log_gecmis:         'Operation History',
+    log_kayit_bulunamadi: 'No records found',
+    log_th_no:          '#',
+    log_th_zaman:       'TIME',
+    log_th_islem:       'OPERATION',
+    log_th_kullanici:   'USER',
+    log_th_kaynak:      'SOURCE',
+    log_th_aciklama:    'DESCRIPTION',
+    log_kayit_sayisi:   ' records',
+    log_csv_indirildi:  'CSV downloaded',
+    log_temizlendi:     'Log cleared',
+    log_yenilendi:      'Refreshed',
+    log_temizle_onay:   'All log records will be deleted. Are you sure?',
+    log_il_giris:        'Login',
+    log_il_kk_gonder:    'QC Submitted',
+    log_il_kk_onayla:    'QC Approved',
+    log_il_kk_red:       'QC Rejected',
+    log_il_sevk:         'Shipment',
+    log_il_test_olustur: 'Test Created',
+    log_il_test_sonuc:   'Test Result',
+    log_il_devre_durdur: 'Circuit Stopped',
+    log_il_spool_durdur: 'Spool Stopped',
+    log_il_is_baslat:    'Work Started',
+    log_il_is_bitir:     'Work Completed',
+    log_il_tanim_ekle:   'Definition Added',
+    log_il_tanim_sil:    'Definition Deleted'
+  },
+  ar: {
+    cmn_anasayfa:       'الرئيسية',
+    cmn_yenile:         'تحديث',
+    cmn_onceki:         'السابق',
+    cmn_sonraki:        'التالي',
+    log_baslik:         'سجل العمليات',
+    log_csv_indir:      'تنزيل CSV',
+    log_temizle:        'مسح السجل',
+    log_stat_toplam:    'إجمالي السجلات',
+    log_stat_bugun:     'اليوم',
+    log_stat_kullanici: 'المستخدمون',
+    log_stat_tip:       'أنواع العمليات',
+    log_ara_placeholder:'🔍 بحث في العملية، المصدر، الوصف…',
+    log_f_tum_islem:    'جميع العمليات',
+    log_f_giris:        '🔐 تسجيل الدخول',
+    log_f_kk:           '✅ مراقبة الجودة',
+    log_f_sevk:         '📦 الشحن',
+    log_f_test:         '🧪 اختبار',
+    log_f_spool:        '⚙️ Spool',
+    log_f_devre:        '🔄 دائرة',
+    log_f_is:           '🔧 عمل',
+    log_f_tanim:        '📋 تعريف',
+    log_f_tum_zaman:    'كل الأوقات',
+    log_f_bugun:        'اليوم',
+    log_f_hafta:        'هذا الأسبوع',
+    log_f_ay:           'هذا الشهر',
+    log_gorunum_tablo:  'جدول',
+    log_gorunum_zaman:  'الجدول الزمني',
+    log_gecmis:         'سجل العمليات',
+    log_kayit_bulunamadi: 'لا توجد سجلات',
+    log_th_no:          '#',
+    log_th_zaman:       'الوقت',
+    log_th_islem:       'العملية',
+    log_th_kullanici:   'المستخدم',
+    log_th_kaynak:      'المصدر',
+    log_th_aciklama:    'الوصف',
+    log_kayit_sayisi:   ' سجل',
+    log_csv_indirildi:  'تم تنزيل CSV',
+    log_temizlendi:     'تم مسح السجل',
+    log_yenilendi:      'تم التحديث',
+    log_temizle_onay:   'سيتم حذف جميع سجلات العمليات. هل أنت متأكد؟',
+    log_il_giris:        'تسجيل الدخول',
+    log_il_kk_gonder:    'تم إرسال مراقبة الجودة',
+    log_il_kk_onayla:    'تمت الموافقة على مراقبة الجودة',
+    log_il_kk_red:       'رُفضت مراقبة الجودة',
+    log_il_sevk:         'شحن',
+    log_il_test_olustur: 'تم إنشاء الاختبار',
+    log_il_test_sonuc:   'نتيجة الاختبار',
+    log_il_devre_durdur: 'تم إيقاف الدائرة',
+    log_il_spool_durdur: 'تم إيقاف Spool',
+    log_il_is_baslat:    'بدأ العمل',
+    log_il_is_bitir:     'اكتمل العمل',
+    log_il_tanim_ekle:   'تمت إضافة التعريف',
+    log_il_tanim_sil:    'تم حذف التعريف'
+  }
+};
 
+function _getLang() {
+  return document.documentElement.getAttribute('lang') || localStorage.getItem('ares_lang') || 'tr';
+}
+
+function tv(key, fallback) {
+  var lang = _getLang();
+  var dict = _I18N[lang];
+  if (dict && dict[key] !== undefined) return dict[key];
+  return fallback !== undefined ? fallback : key;
+}
+
+function _applyI18n() {
+  var lang = _getLang();
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    var val = tv(key);
+    if (val !== key) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    var val = tv(key);
+    if (val !== key) el.placeholder = val;
+  });
+}
 
 window._onLangChange = function() {
   _applyI18n();
   renderLog();
 };
 
+new MutationObserver(function() {
+  _applyI18n();
+  renderLog();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 // ─── GÜVENLİK — G-01 ────────────────────────────────────────────────
 function esc(s) {
@@ -278,24 +416,14 @@ function demoLogEkle() {
   return mevcut;
 }
 
-// ─── LOG YÜKLE (localStorage + Supabase) ─────────────────────────────
+// ─── LOG YÜKLE ───────────────────────────────────────────────────────
 function logYukle() {
   try {
-    var raw = JSON.parse(localStorage.getItem('ares_islemLog') || '[]');
-    // Supabase kayıtlarıyla birleştir (ID çakışması olmadan)
-    var supaIds = new Set(_supaLoglar.map(function(l){ return l.id; }));
-    var localFiltered = raw.filter(function(l){ return !supaIds.has(String(l.id)); });
-    var merged = _supaLoglar.concat(localFiltered);
-    // Tarihe göre sırala (en yeni önce)
-    merged.sort(function(a,b){
-      var da = tarihParse(a.tarih), db = tarihParse(b.tarih);
-      if (!da && !db) return 0;
-      if (!da) return 1;
-      if (!db) return -1;
-      return db - da;
-    });
-    return merged;
-  } catch(e) { return _supaLoglar.length ? _supaLoglar : []; }
+    const raw = JSON.parse(localStorage.getItem('ares_islemLog') || '[]');
+    const map = {};
+    raw.forEach(function(l) { map[l.id] = l; });
+    return Object.values(map).sort(function(a,b) { return b.id.localeCompare(a.id); });
+  } catch(e) { return []; }
 }
 
 // ─── İŞLEM TİPİ RENK / BADGE ─────────────────────────────────────────
@@ -314,43 +442,21 @@ function islemRenk(islem) {
 
 function islemLabel(islem) {
   if (!islem) return '—';
-  var i = islem.toUpperCase()
-    .replace(/İ/g,'I').replace(/Ş/g,'S').replace(/Ğ/g,'G')
-    .replace(/Ü/g,'U').replace(/Ö/g,'O').replace(/Ç/g,'C');
-  // Giriş
-  if (i==='GIRIS'  || i==='GIRIS_YAP')          return tv('log_il_giris',        'Giriş');
-  // Kesim
-  if (i==='KESIM_TAMAMLA'|| i==='KESIM TAMAMLA') return tv('log_il_kesim_tamamla','Kesim Tamamlandı');
-  if (i==='KESIM_EKLENDI' || i==='KESIM EKLENDI') return tv('log_il_kesim_eklendi','Kesim Eklendi');
-  if (i==='KESIM_LISTE_KAYDET')                   return tv('log_il_kesim_liste',  'Kesim Listesi Kaydedildi');
-  // Büküm
-  if (i==='BUKUM_TAMAMLA' || i==='BUKUM TAMAMLA') return tv('log_il_bukum_tamamla','Büküm Tamamlandı');
-  if (i==='BUKUM_EKLENDI')                         return tv('log_il_bukum_eklendi','Büküm Eklendi');
-  // Markalama
-  if (i==='MARKALAMA_TAMAMLA')                     return tv('log_il_mrk_tamamla', 'Markalama Tamamlandı');
-  if (i==='MARKALAMA_EKLENDI')                     return tv('log_il_mrk_eklendi',  'Markalama Eklendi');
-  // KK
-  if (i==='KK_DAVET_OLUSTUR')                      return tv('log_il_kk_davet',    'KK Davet Oluşturuldu');
-  if (i==='KK_ONAY_KAYDET')                         return tv('log_il_kk_onay',    'KK Onayı Kaydedildi');
-  if (i==='KK_GONDER')                              return tv('log_il_kk_gonder',   'KK Gönderildi');
-  if (i==='KK_ONAYLA')                              return tv('log_il_kk_onayla',   'KK Onaylandı');
-  if (i==='KK_RED')                                 return tv('log_il_kk_red',      'KK Reddedildi');
-  // Sevkiyat
-  if (i.includes('SEVK'))                           return tv('log_il_sevk',        'Sevkiyat');
-  // Test
-  if (i==='TEST_OLUSTUR')                           return tv('log_il_test_olustur','Test Oluşturuldu');
-  if (i==='TEST_SONUC')                             return tv('log_il_test_sonuc',  'Test Sonucu');
-  // Durdurma
-  if (i==='DEVRE_DURDUR')                           return tv('log_il_devre_durdur','Devre Durduruldu');
-  if (i==='SPOOL_DURDUR')                           return tv('log_il_spool_durdur','Spool Durduruldu');
-  // İş
-  if (i==='IS_BASLAT')                              return tv('log_il_is_baslat',  'İş Başlatıldı');
-  if (i==='IS_BITIR')                               return tv('log_il_is_bitir',   'İş Bitirildi');
-  // Tanım
-  if (i==='TANIM_EKLE')                             return tv('log_il_tanim_ekle', 'Tanım Eklendi');
-  if (i==='TANIM_SIL')                              return tv('log_il_tanim_sil',  'Tanım Silindi');
-  // Bilinmeyen — ham değeri göster ama _ yerine boşluk
-  return islem.replace(/_/g,' ');
+  var i = islem.toUpperCase();
+  if (i === 'GİRİŞ'        || i === 'GIRIS')        return tv('log_il_giris',        'Giriş');
+  if (i === 'KK_GONDER')                             return tv('log_il_kk_gonder',    'KK Gönderildi');
+  if (i === 'KK_ONAYLA')                             return tv('log_il_kk_onayla',    'KK Onaylandı');
+  if (i === 'KK_RED')                                return tv('log_il_kk_red',       'KK Reddedildi');
+  if (i === 'SEVKİYAT'     || i === 'SEVKIYAT')      return tv('log_il_sevk',         'Sevkiyat');
+  if (i === 'TEST_OLUSTUR')                          return tv('log_il_test_olustur', 'Test Oluşturuldu');
+  if (i === 'TEST_SONUC')                            return tv('log_il_test_sonuc',   'Test Sonucu');
+  if (i === 'DEVRE_DURDUR')                          return tv('log_il_devre_durdur', 'Devre Durduruldu');
+  if (i === 'SPOOL_DURDUR')                          return tv('log_il_spool_durdur', 'Spool Durduruldu');
+  if (i === 'IS_BASLAT')                             return tv('log_il_is_baslat',    'İş Başlatıldı');
+  if (i === 'IS_BITIR')                              return tv('log_il_is_bitir',     'İş Bitirildi');
+  if (i === 'TANIM_EKLE')                            return tv('log_il_tanim_ekle',   'Tanım Eklendi');
+  if (i === 'TANIM_SIL')                             return tv('log_il_tanim_sil',    'Tanım Silindi');
+  return islem;
 }
 
 function islemIkon(islem) {
@@ -424,7 +530,7 @@ function renderSayfa() {
   if (SAYFA > toplamSayfa) SAYFA = toplamSayfa;
   const bas = (SAYFA-1) * SAYFA_BOYUT;
   const bit = Math.min(bas + SAYFA_BOYUT, toplam);
-  const sayfa = _applySort(FILTERED).slice(bas, bit);
+  const sayfa = FILTERED.slice(bas, bit);
 
   document.getElementById('logSayac').textContent = toplam + tv('log_kayit_sayisi', ' kayıt');
   document.getElementById('sayfaInfo').textContent = SAYFA + ' / ' + toplamSayfa + ' sayfa (' + bas+1 + '–' + bit + ')';
@@ -440,27 +546,13 @@ function renderSayfa() {
   else renderTimeline(sayfa);
 }
 
-function _thSort(key, label) {
-  var cls = _sortKey === key ? (_sortDir === 1 ? ' sort-asc' : ' sort-desc') : '';
-  var arrow = _sortKey === key ? (_sortDir === 1 ? ' ↑' : _sortDir === -1 ? ' ↓' : '') : '';
-  return '<th class="sortable'+cls+'" onclick="sortBy(\''+key+'\')" style="cursor:pointer;user-select:none;">'+label+arrow+'</th>';
-}
-
 function renderTable(kayitlar) {
-  var sortedAll = _applySort(FILTERED);
   document.getElementById('logIcerik').innerHTML = `
     <table>
-      <thead><tr>
-        ${_thSort('no',       tv('log_th_no','#'))}
-        ${_thSort('zaman',    tv('log_th_zaman','ZAMAN'))}
-        ${_thSort('islem',    tv('log_th_islem','İŞLEM'))}
-        ${_thSort('kullanici',tv('log_th_kullanici','KULLANICI'))}
-        ${_thSort('kaynak',   tv('log_th_kaynak','KAYNAK'))}
-        ${_thSort('aciklama', tv('log_th_aciklama','AÇIKLAMA'))}
-      </tr></thead>
-      <tbody>${kayitlar.map((l) => `
+      <thead><tr><th>${tv('log_th_no','#')}</th><th>${tv('log_th_zaman','ZAMAN')}</th><th>${tv('log_th_islem','İŞLEM')}</th><th>${tv('log_th_kullanici','KULLANICI')}</th><th>${tv('log_th_kaynak','KAYNAK')}</th><th>${tv('log_th_aciklama','AÇIKLAMA')}</th></tr></thead>
+      <tbody>${kayitlar.map((l,i) => `
         <tr>
-          <td style="font-size:14px;color:var(--txd);font-family:'Barlow Condensed',sans-serif;">${sortedAll.indexOf(l)+1}</td>
+          <td style="font-size:14px;color:var(--txd);font-family:'Barlow Condensed',sans-serif;">${FILTERED.indexOf(l)+1}</td>
           <td class="td-zaman"><span class="zaman-tarih">${esc(zamanParca(l.tarih).tarih)}</span><span class="zaman-saat">${esc(zamanParca(l.tarih).saat)}</span></td>
           <td><span class="islem-badge ${islemRenk(l.islem)}">${islemIkon(l.islem)} ${esc(islemLabel(l.islem))}</span></td>
           <td style="font-size:14px;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(l.yapan||'—')}</td>
@@ -502,13 +594,8 @@ function nokRenk(islem) {
 
 function zamanParca(str) {
   if (!str) return {tarih:'—',saat:'—'};
-  // tr-TR locale: "05.04.2026 19:06" (boşluk) veya "05.04.2026, 19:06" (virgül+boşluk)
-  var parts = str.split(', ');
-  if (parts.length >= 2) return { tarih: parts[0], saat: parts[1] };
-  // Boşluk ile ayrılmış format
-  var spIdx = str.lastIndexOf(' ');
-  if (spIdx > 5) return { tarih: str.slice(0, spIdx), saat: str.slice(spIdx+1) };
-  return { tarih: str, saat: '—' };
+  const parts = str.split(', ');
+  return { tarih: parts[0]||'—', saat: parts[1]||'—' };
 }
 
 // ─── GÖRÜNÜM ─────────────────────────────────────────────────────────
@@ -538,7 +625,8 @@ function csvIndir() {
 
 // ─── LOGU TEMİZLE ────────────────────────────────────────────────────
 function loguTemizle() {
-  if (!confirm(tv('log_temizle_onay', 'Tüm log kayıtları silinecek. Emin misiniz?'))) return;
+  if (!logTemizleOnay) { logTemizleModalAc(); return; }
+  logTemizleOnay = false;
   localStorage.setItem('ares_islemLog', '[]');
   renderLog();
   toast(tv('log_temizlendi', 'Log temizlendi'));
@@ -551,84 +639,63 @@ let toastT=null;
 function toast(msg,tip='ok'){const e=document.querySelector('.toast');if(e)e.remove();const el=document.createElement('div');el.className='toast t-'+tip;el.textContent=msg;document.body.appendChild(el);if(toastT)clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),3000);}
 
 
-// ─── SIRALAMA (D-05 — 3-state) ────────────────────────────────────────
-var _sortKey = '', _sortDir = 0; // 0=yok, 1=asc, -1=desc
-var _sortMap = {
-  no:      function(a,b){ return FILTERED.indexOf(a)-FILTERED.indexOf(b); },
-  zaman:   function(a,b){ return (tarihParse(a.tarih)||0)-(tarihParse(b.tarih)||0); },
-  islem:   function(a,b){ return (a.islem||'').localeCompare(b.islem||''); },
-  kullanici:function(a,b){ return (a.yapan||'').localeCompare(b.yapan||''); },
-  kaynak:  function(a,b){ return (a.kaynak||'').localeCompare(b.kaynak||''); },
-  aciklama:function(a,b){ return (a.aciklama||'').localeCompare(b.aciklama||''); }
+
+// ─── Onay değişkeni ──────────────────────────────────────────────────
+var logTemizleOnay = false;
+
+function logTemizleModalAc() {
+  document.getElementById('logTemizleModal').style.display = 'flex';
+}
+function logTemizleModalKapat() {
+  document.getElementById('logTemizleModal').style.display = 'none';
+  logTemizleOnay = false;
+}
+function logTemizleOnayla() {
+  logTemizleOnay = true;
+  logTemizleModalKapat();
+  logTemizle();
+}
+
+// ─── Dil değişince yeniden render ─────────────────────────────────────
+window._onLangChange = function() {
+  _applyI18n();
+  renderLog();
 };
-function sortBy(key) {
-  if (_sortKey === key) {
-    _sortDir = _sortDir === 1 ? -1 : _sortDir === -1 ? 0 : 1;
-  } else { _sortKey = key; _sortDir = 1; }
-  if (_sortDir === 0) _sortKey = '';
-  renderSayfa();
-}
-function _applySort(arr) {
-  if (!_sortKey || !_sortDir) return arr;
-  var fn = _sortMap[_sortKey];
-  if (!fn) return arr;
-  return arr.slice().sort(function(a,b){ return fn(a,b)*_sortDir; });
-}
 
-// ─── SUPABASE LOG YÜKLEME ─────────────────────────────────────────────
-var _supaLoglar = []; // Supabase'den gelen kayıtlar
-
-async function supaLogYukle(supa) {
-  try {
-    var res = await supa.from('islem_log')
-      .select('id, islem, aciklama, katman, olusturma, yapan_id, kullanicilar(ad_soyad)')
-      .order('olusturma', { ascending: false })
-      .limit(1000);
-    if (res.error || !res.data || !res.data.length) return;
-    _supaLoglar = res.data.map(function(r) {
-      var tarihStr = r.olusturma
-        ? new Date(r.olusturma).toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
-        : '—';
-      return {
-        id:       String(r.id),
-        tarih:    tarihStr,
-        islem:    r.islem   || '—',
-        kaynak:   r.katlan  || r.katman || '—',
-        aciklama: r.aciklama || '—',
-        yapan:    (r.kullanicilar && r.kullanicilar.ad_soyad) || r.yapan_id || '—',
-        kaynak_supa: true
-      };
-    });
-    renderLog();
-  } catch(e) { console.warn('[ARES] supaLogYukle:', e); }
-}
-
-// ─── INIT ────────────────────────────────────────────────────────────
+// ─── SB-01: Auth + finally ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
-    // SB-01: Auth kontrolü
     try {
       var _bekle = 0;
-      while (_bekle < 80) {
-        var _supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
-        if (_supa) {
-          var _ses = await _supa.auth.getSession();
-          if (_ses.data && _ses.data.session) {
-            await ARES.oturumKontrol();
-            await supaLogYukle(_supa); // Supabase log'larını yükle
-            break;
-          }
-          if (_bekle > 20) { location.href = 'giris.html'; return; }
-        }
+      while (_bekle < 80 && typeof ARES === 'undefined') {
         await new Promise(function(r){ setTimeout(r, 100); });
         _bekle++;
       }
-    } catch(e) { console.warn('[ARES] auth:', e); }
-    _applyI18n();
-    renderLog();
-    document.documentElement.style.visibility = '';
+      if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
+      var _supa = ARES.supabase();
+      if (!_supa) { location.href = 'giris.html'; return; }
+      var _ses = await _supa.auth.getSession();
+      if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
+      _applyI18n();
+      renderLog();
+    } catch(e) { console.error('[ARES]', e); }
+    finally {
+      document.documentElement.style.visibility = '';
+    }
   })();
 });
 </script>
+
+<!-- LOG TEMİZLE ONAY MODAL -->
+<div id="logTemizleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)logTemizleModalKapat()">
+  <div style="background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:28px;max-width:400px;width:90%;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--re);margin-bottom:8px;">⚠ Log Temizle</div>
+    <div style="font-size:14px;color:var(--txm);margin-bottom:20px;line-height:1.6;">Tüm log kayıtları kalıcı olarak silinecek. Bu işlem <strong style="color:var(--re);">geri alınamaz.</strong></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="logTemizleModalKapat()" style="padding:0 16px;height:36px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;">İptal</button>
+      <button onclick="logTemizleOnayla()" style="padding:0 16px;height:36px;border-radius:9px;border:1px solid rgba(229,62,62,.3);background:rgba(229,62,62,.12);color:var(--re);font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;">Temizle</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

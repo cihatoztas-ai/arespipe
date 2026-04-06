@@ -213,14 +213,14 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   </div>
 
   <div style="margin-bottom:22px;">
-    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--bukum-c);letter-spacing:1px;line-height:1;" data-i18n="bk_page_title">&#128260; Büküm Yönetimi</h1>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--bukum-c);letter-spacing:1px;line-height:1;">&#128260; Büküm Yönetimi</h1>
   </div>
 
   <!-- STAT KARTLARI -->
   <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card cl-leg"><div class="stat-icon si-purple">&#128260;</div><div style="flex:1;"><div class="stat-label" data-i18n="bk_stat_total">Toplam Büküm</div><div class="stat-value" id="stTop" style="color:var(--leg);">&#8212;</div><div class="prog-wrap"><div class="prog-fill" id="progTam" style="background:var(--gr);width:0%;"></div></div></div></div>
-    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div><div><div class="stat-label" data-i18n="bk_stat_projects">Projelerimiz</div><div class="stat-value" id="stSpool" style="color:var(--ac);">&#8212;</div></div></div>
-    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-label" data-i18n="bk_stat_fason">Fason Büküm</div><div class="stat-value" id="stFason" style="color:var(--warn);">&#8212;</div></div></div>
+    <div class="stat-card cl-leg"><div class="stat-icon si-purple">&#128260;</div><div style="flex:1;"><div class="stat-label">Toplam Büküm</div><div class="stat-value" id="stTop" style="color:var(--leg);">&#8212;</div><div class="prog-wrap"><div class="prog-fill" id="progTam" style="background:var(--gr);width:0%;"></div></div></div></div>
+    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div><div><div class="stat-label">Projelerimiz</div><div class="stat-value" id="stSpool" style="color:var(--ac);">&#8212;</div></div></div>
+    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-label">Fason Büküm</div><div class="stat-value" id="stFason" style="color:var(--warn);">&#8212;</div></div></div>
   </div>
 
   <!-- SEKMELER -->
@@ -242,11 +242,11 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div class="filter-row" style="margin-top:0;align-items:center;">
         <div class="search-wrap" style="max-width:280px;flex:1;">
           <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="searchInput" data-i18n-placeholder="bk_search_ph" placeholder="Spool no, malzeme, iş emir, cap... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
+          <input class="search-input" id="searchInput" placeholder="Spool no, malzeme, iş emir, cap... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
           <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
         </div>
         
-        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="" data-i18n="bk_col_yard">Tersane</option></select>
+        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="">Tersane</option></select>
         <div class="ms-wrap">
             <div class="ms-trigger" id="msTrigger" onclick="toggleMs(event)">
               <span class="ms-trigger-text" id="msTxt" data-i18n="bk_filter_isemir">İş Emir</span>
@@ -255,15 +255,15 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
             </div>
             <div class="ms-dropdown" id="msDD" style="display:none;">
               <div class="ms-search"><input type="text" id="msQ" data-i18n-placeholder="bk_search_ph" placeholder="İş emir ara..." oninput="buildMs()"></div>
-              <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="bk_select_all">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()" data-i18n="bk_btn_clear">Temizle</button></div>
+              <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="bk_select_all">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
               <div class="ms-list" id="msList"></div>
-              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()" data-i18n="bk_btn_apply">Uygula</button></div>
+              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
             </div>
           </div>
-        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value="" data-i18n="bk_filter_mat">Malzeme</option></select>
-        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="" data-i18n="bk_filter_grade">Kalite</option></select>
-        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="" data-i18n="bk_filter_diam">Çap</option></select>
-        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value="" data-i18n="bk_filter_thk">Et Kal.</option></select>
+        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value="">Malzeme</option></select>
+        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="">Kalite</option></select>
+        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="">Çap</option></select>
+        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value="">Et Kal.</option></select>
         <div class="filter-spacer"></div>
         <span id="filtreCount" style="font-size:14px;font-weight:600;color:var(--txm);white-space:nowrap;"></span>
         <button class="btn-outline" onclick="resetAll()" style="white-space:nowrap;" data-i18n="bk_btn_reset">&#8635; Sıfırla</button>
@@ -285,7 +285,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
           <th onclick="sortBy('cap')" data-i18n="bk_col_diam">Çap</th>
           <th onclick="sortBy('kalinlik')" data-i18n="bk_col_thk">Et Kal.</th>
           <th onclick="sortBy('olcu')" style="color:var(--bukum-c);" data-i18n="bk_col_len">Büküm Uzunluğu</th>
-          <th class="no-sort" style="text-align:center;width:120px;" data-i18n="bk_col_action">İşlem</th>
+          <th class="no-sort" style="text-align:center;width:120px;">İşlem</th>
           <th class="no-sort" style="text-align:center;width:50px;">QR</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
@@ -307,7 +307,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     <div id="fasonListView">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
-          <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="bk_fason_files">Fason Büküm Dosyaları</div>
+          <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Fason Büküm Dosyaları</div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--bukum-c);">&#128196; Fason Büküm</div>
         </div>
         <button class="btn-green" onclick="yeniFasonModal()" style="gap:8px;"><span data-i18n="bk_btn_new_fason">+ Yeni Fason Büküm Oluştur</span></button>
@@ -321,7 +321,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap;">
         <button onclick="geriDon()" class="btn-outline" style="height:36px;font-size:14px;" data-i18n="bk_btn_back">&#8592; Geri</button>
         <div>
-          <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;" data-i18n="bk_fason_dosyasi">Fason Büküm Dosyası</div>
+          <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Fason Büküm Dosyası</div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--bukum-c);" id="fdBaslik">—</div>
         </div>
         <div style="flex:1;"></div>
@@ -335,7 +335,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
         <div style="flex:1;min-width:200px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;color:var(--txm);" data-i18n="bk_bend_progress">Büküm İlerlemesi</span>
+            <span style="font-size:14px;font-weight:600;color:var(--txm);">Büküm İlerlemesi</span>
             <span id="fdDurum" style="font-size:14px;font-weight:700;">—</span>
           </div>
           <div class="kl-progress-bar"><div class="kl-progress-fill" id="fdProgFill" style="width:0%;"></div></div>
@@ -359,12 +359,14 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <table class="data-table">
           <thead><tr>
             <th class="no-sort" style="width:36px;">#</th>
-            <th data-i18n="bk_col_mat">Malzeme</th>
-            <th data-i18n="bk_col_grade">Kalite</th>
-            <th style="color:var(--ac);" data-i18n="bk_col_diam">Çap</th>
-            <th data-i18n="bk_col_thk">Et Kal.</th>
-            <th style="color:var(--bukum-c);" data-i18n="bk_col_len">Uzunluk</th>
-            <th class="no-sort" style="text-align:center;width:160px;" data-i18n="bk_col_status">Durum</th>
+            <th>Spool No</th>
+            <th style="color:var(--leg);">Spool ID</th>
+            <th>Malzeme</th>
+            <th>Kalite</th>
+            <th style="color:var(--ac);">Çap</th>
+            <th>Et Kal.</th>
+            <th style="color:var(--bukum-c);">Uzunluk</th>
+            <th class="no-sort" style="text-align:center;width:160px;">Durum</th>
             <th class="no-sort" style="width:40px;"></th>
           </tr></thead>
           <tbody id="fdBoruBody"></tbody>
@@ -378,7 +380,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <div class="panel" id="panel-kesilenler">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="bk_done_title">Tamamlanan Büküm</div>
+        <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Tamamlanan Büküm</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);">&#10003; Bükülenler</div>
       </div>
     </div>
@@ -388,20 +390,20 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div class="filter-row" style="margin-top:0;">
         <div class="search-wrap" style="max-width:360px;">
           <svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="kfArama" data-i18n-placeholder="bk_search_ph" placeholder="Spool no, fason no, malzeme..." oninput="applyKesilenFilters()">
+          <input class="search-input" id="kfArama" placeholder="Spool no, fason no, malzeme..." oninput="applyKesilenFilters()">
         </div>
-        <div class="filter-group"><div class="filter-label" data-i18n="bk_filter_source">Kaynak</div>
+        <div class="filter-group"><div class="filter-label">Kaynak</div>
           <select class="filter-select" id="kfKaynak" onchange="applyKesilenFilters()">
-            <option value="" data-i18n="bk_filter_kaynak">Kaynak</option>
-            <option value="spool" data-i18n="bk_filter_spool">Spool</option>
-            <option value="fason" data-i18n="bk_filter_fason_src">Fason</option>
+            <option value="">Kaynak</option>
+            <option value="spool">Spool</option>
+            <option value="fason">Fason</option>
           </select>
         </div>
-        <div class="filter-group"><div class="filter-label" data-i18n="bk_filter_mat">Malzeme</div><select class="filter-select" id="kfMalzeme" onchange="applyKesilenFilters()"><option value="" data-i18n="bk_filter_mat">Malzeme</option></select></div>
-        <div class="filter-group"><div class="filter-label" data-i18n="bk_filter_grade">Kalite</div><select class="filter-select" id="kfKalite" onchange="applyKesilenFilters()"><option value="" data-i18n="bk_filter_grade">Kalite</option></select></div>
-        <div class="filter-group"><div class="filter-label" data-i18n="bk_filter_diam">Çap</div><select class="filter-select" id="kfCap" onchange="applyKesilenFilters()"><option value="" data-i18n="bk_filter_diam">Çap</option></select></div>
+        <div class="filter-group"><div class="filter-label">Malzeme</div><select class="filter-select" id="kfMalzeme" onchange="applyKesilenFilters()"><option value="">Malzeme</option></select></div>
+        <div class="filter-group"><div class="filter-label">Kalite</div><select class="filter-select" id="kfKalite" onchange="applyKesilenFilters()"><option value="">Kalite</option></select></div>
+        <div class="filter-group"><div class="filter-label">Çap</div><select class="filter-select" id="kfCap" onchange="applyKesilenFilters()"><option value="">Çap</option></select></div>
         <div class="filter-spacer"></div>
-        <button class="btn-outline" onclick="['kfMalzeme','kfKalite','kfCap','kfKaynak'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();" data-i18n="bk_btn_reset">&#8635; Sıfırla</button>
+        <button class="btn-outline" onclick="['kfMalzeme','kfKalite','kfCap','kfKaynak'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();">&#8635; Sıfırla</button>
       </div>
     </div>
 
@@ -410,18 +412,18 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <thead><tr>
           <th class="no-sort" style="width:36px;">#</th>
           <th data-i18n="bk_col_isemir_fb">İş Emir / FB No</th>
-          <th data-i18n="bk_col_spool">Spool No</th>
-          <th style="color:var(--leg);" data-i18n="bk_col_spoolid">Spool ID</th>
-          <th data-i18n="bk_col_mat">Malzeme</th>
-          <th data-i18n="bk_col_grade">Kalite</th>
-          <th style="color:var(--ac);" data-i18n="bk_col_diam">Çap</th>
-          <th data-i18n="bk_col_thk">Et Kal.</th>
-          <th style="color:var(--bukum-c);" data-i18n="bk_col_len">Uzunluk</th>
-          <th style="color:var(--gr);" data-i18n="bk_col_bend_date">Büküm Tarihi</th>
+          <th>Spool No</th>
+          <th style="color:var(--leg);">Spool ID</th>
+          <th>Malzeme</th>
+          <th>Kalite</th>
+          <th style="color:var(--ac);">Çap</th>
+          <th>Et Kal.</th>
+          <th style="color:var(--bukum-c);">Uzunluk</th>
+          <th style="color:var(--gr);">Büküm Tarihi</th>
         </tr></thead>
         <tbody id="kesilenBody"></tbody>
       </table>
-      <div id="kesilenEmpty" class="empty-state" style="display:none;"><div class="empty-icon">&#10003;</div><div style="font-weight:600;" data-i18n="bk_empty_done">Henüz bükülen boru yok</div></div>
+      <div id="kesilenEmpty" class="empty-state" style="display:none;"><div class="empty-icon">&#10003;</div><div style="font-weight:600;">Henüz bükülen boru yok</div></div>
       <div id="kesilenFooter" class="tbl-footer" style="display:none;"><span id="kesilenCount"></span></div>
     </div>
   </div>
@@ -430,12 +432,104 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
 'use strict';
 // ── D-01 DİL SİSTEMİ ─────────────────────────────────────────
-window._onLangChange=function(){
-  _applyI18n();
-  renderBekliyor();
-  if(aktifTab==='kesilenler') applyKesilenFilters();
-  if(aktifTab==='fason') renderFasonListe();
+var _I18N = {
+  en:{
+    bk_home:'Home', bk_breadcrumb:'Bending',
+    bk_page_title:'Bending Management',
+    bk_tab_pending:'Pending', bk_tab_fason:'Job Order Bending', bk_tab_done:'Bent',
+    bk_stat_pending:'Pending', bk_stat_fason:'Job Orders', bk_stat_done:'Bent',
+    bk_col_no:'#', bk_col_yard:'Yard', bk_col_isemir:'Work Order', bk_col_spool:'Spool No',
+    bk_col_spoolid:'Spool ID', bk_col_mat:'Material', bk_col_grade:'Grade',
+    bk_col_diam:'Diameter', bk_col_thk:'Thickness', bk_col_len:'Bend Length',
+    bk_col_action:'Action', bk_col_qr:'QR',
+    bk_col_isemir_fb:'Work Order / FB No', bk_col_firm:'Firm', bk_col_pipes:'Pipes',
+    bk_col_progress:'Progress', bk_col_status:'Status', bk_col_date:'Date',
+    bk_empty_pending:'No pipes awaiting bending',
+    bk_empty_fason:'No job order bending files',
+    bk_empty_done:'No bent pipes yet',
+    bk_btn_new_fason:'+ New Job Order Bending',
+    bk_btn_back:'← Back',
+    bk_btn_reset:'↺ Reset',
+    bk_btn_template:'⬇ Template',
+    bk_btn_upload:'⬆ Upload',
+    bk_btn_bent:'✓ Bent',
+    bk_filter_isemir:'Work Order',
+    bk_filter_mat:'Material', bk_filter_grade:'Grade',
+    bk_filter_diam:'Diameter', bk_filter_thk:'Thickness',
+    bk_filter_source:'Source', bk_filter_all:'All',
+    bk_filter_spool:'Spool', bk_filter_fason_src:'Job Order',
+    bk_search_ph:'Spool no, job order no, material...',
+    bk_select_all:'Select All',
+    bk_fason_files:'Job Order Bending Files',
+    bk_fason_title:'Job Order Bending',
+    bk_bend_progress:'Bending Progress',
+    bk_bent_label:'Bent',
+    bk_pg_prev:'← Prev', bk_pg_next:'Next →',
+    bk_qr_title:'QR — Bending Pipe',
+    bk_no_fason:'No job order bending files yet',
+    bk_new_fason_hint:'Click the New Job Order Bending button',
+    bk_new_fason_modal:'📄 New Job Order Bending',
+    bk_bend_len_label:'Bend Length (mm)',
+    bk_bend_len_hint:'Pipe length that can be bent',
+  },
+  ar:{
+    bk_home:'الرئيسية', bk_breadcrumb:'الثني',
+    bk_page_title:'إدارة الثني',
+    bk_tab_pending:'قيد الانتظار', bk_tab_fason:'ثني الأوامر', bk_tab_done:'مثني',
+    bk_stat_pending:'قيد الانتظار', bk_stat_fason:'أوامر العمل', bk_stat_done:'مثني',
+    bk_col_no:'#', bk_col_yard:'الحوض', bk_col_isemir:'أمر العمل', bk_col_spool:'رقم البكرة',
+    bk_col_spoolid:'معرف البكرة', bk_col_mat:'المادة', bk_col_grade:'الجودة',
+    bk_col_diam:'القطر', bk_col_thk:'السماكة', bk_col_len:'طول الثني',
+    bk_col_action:'الإجراء', bk_col_qr:'QR',
+    bk_col_isemir_fb:'أمر / FB', bk_col_firm:'الشركة', bk_col_pipes:'الأنابيب',
+    bk_col_progress:'التقدم', bk_col_status:'الحالة', bk_col_date:'التاريخ',
+    bk_empty_pending:'لا توجد أنابيب في انتظار الثني',
+    bk_empty_fason:'لا توجد ملفات ثني أوامر',
+    bk_empty_done:'لا توجد أنابيب مثنية بعد',
+    bk_btn_new_fason:'+ ثني أمر جديد',
+    bk_btn_back:'← رجوع',
+    bk_btn_reset:'↺ إعادة',
+    bk_btn_template:'⬇ قالب',
+    bk_btn_upload:'⬆ رفع',
+    bk_btn_bent:'✓ تم الثني',
+    bk_filter_isemir:'أمر العمل',
+    bk_filter_mat:'المادة', bk_filter_grade:'الجودة',
+    bk_filter_diam:'القطر', bk_filter_thk:'السماكة',
+    bk_filter_source:'المصدر', bk_filter_all:'الكل',
+    bk_filter_spool:'بكرة', bk_filter_fason_src:'أمر',
+    bk_search_ph:'رقم البكرة، أمر العمل، المادة...',
+    bk_select_all:'تحديد الكل',
+    bk_fason_files:'ملفات ثني الأوامر',
+    bk_fason_title:'ثني الأوامر',
+    bk_bend_progress:'تقدم الثني',
+    bk_bent_label:'مثني',
+    bk_pg_prev:'← السابق', bk_pg_next:'التالي →',
+    bk_qr_title:'QR — أنبوب الثني',
+    bk_no_fason:'لا توجد ملفات ثني بعد',
+    bk_new_fason_hint:'انقر على زر إنشاء ثني أمر جديد',
+    bk_new_fason_modal:'📄 ثني أمر جديد',
+    bk_bend_len_label:'طول الثني (مم)',
+    bk_bend_len_hint:'طول الأنبوب الذي يمكن ثنيه',
+  }
 };
+function _getLang(){return document.documentElement.getAttribute('lang')||'tr';}
+function tv(key,tr){var lang=_getLang(),dict=_I18N[lang];if(dict&&dict[key])return dict[key];return tr!==undefined?tr:key;}
+function _applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k=el.getAttribute('data-i18n');
+    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
+    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
+    var v=tv(k,el.getAttribute('data-i18n-tr'));
+    if(isInp){el.placeholder=v;}else{el.textContent=v;}
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var k=el.getAttribute('data-i18n-placeholder');
+    if(!el.hasAttribute('data-i18n-ph-tr'))el.setAttribute('data-i18n-ph-tr',el.placeholder);
+    el.placeholder=tv(k,el.getAttribute('data-i18n-ph-tr'));
+  });
+}
+window._onLangChange=function(){_applyI18n();renderBekliyor();};
+new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 // ════ VERİ ════
 // kaynak: 'spool' | 'fason'
 // durum: 'bekliyor' | 'tamamlandi'
@@ -535,7 +629,6 @@ function hl(text){
   return esc(text).replace(new RegExp('('+aramaMetni.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
 }
 function durumRenk(pct){return pct===100?'var(--gr)':pct>0?'var(--warn)':'var(--re)';}
-function progColor(pct){return pct>=100?'var(--gr)':pct>=50?'var(--warn)':'var(--re)';}
 function refLabel(b){
   // iş emir sütununda gösterilecek: fason ise FB no, spool ise iş emir
   if(b.kaynak==='fason'){
@@ -596,7 +689,7 @@ function renderRow(b,i){
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
     +'<td class="cell-kesim">'+b.olcu+' mm</td>'
     +'<td style="text-align:center;">'
-      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu">&#10003; '+tv('bk_btn_bent_done','Büktüm')+'</button>'
+      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu">&#10003; Buktum</button>'
     +'</td>'
     +'<td style="text-align:center;">'
       +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
@@ -636,21 +729,7 @@ var sortFns={
   kalinlik:function(a,b){return parseFloat(a.kalinlik)-parseFloat(b.kalinlik);},
   olcu:    function(a,b){return a.olcu-b.olcu;}
 };
-var sortState=0; // 0=varsayılan, 1=asc, 2=desc
-function sortBy(key){
-  if(sortKey===key){sortState=(sortState+1)%3;}
-  else{sortKey=key;sortState=1;}
-  if(sortState===0){sortKey='';}
-  sortDir=sortState===2?-1:1;
-  // Başlık görseli güncelle
-  document.querySelectorAll('.data-table thead th').forEach(function(th){
-    th.classList.remove('sort-asc','sort-desc');
-    if(sortKey&&th.getAttribute('onclick')==='sortBy(\''+sortKey+'\')'){
-      th.classList.add(sortState===1?'sort-asc':'sort-desc');
-    }
-  });
-  applyFilters();
-}
+function sortBy(key){sortDir=(sortKey===key)?sortDir*-1:1;sortKey=key;applyFilters();}
 
 // ════ BÜKÜLECEKLER — TABLO ════
 function pgGit(d){mevcutSayfa+=d;renderBekliyor();}
@@ -680,59 +759,24 @@ function renderBekliyor(){
       document.getElementById('pgNext').disabled=mevcutSayfa>=toplamSayfa;
     }
   }
-  document.getElementById('footerTxt').textContent=filtreData.length+' '+tv('bk_footer_boru','boru')+' ('
+  document.getElementById('footerTxt').textContent=filtreData.length+' boru ('
     +filtreData.filter(function(b){return b.kaynak==='spool';}).length+' spool + '
     +filtreData.filter(function(b){return b.kaynak==='fason';}).length+' fason)';
-  document.getElementById('footerSum').innerHTML=tv('bk_footer_toplam','Toplam:')+' <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
-}
-
-// ════ BÜKÜM ONAY MODALI ════
-function buktuOnayModal(id, onConfirm) {
-  var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
-  var ref=refLabel(b);
-  var old=document.getElementById('buktuOnayOv');if(old)old.remove();
-  var ov=document.createElement('div');ov.className='modal-ov';ov.id='buktuOnayOv';
-  ov.innerHTML='<div class="modal-box" style="max-width:440px;">'
-    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
-      +'<div style="width:46px;height:46px;border-radius:50%;background:rgba(22,163,110,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
-        +'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-      +'</div>'
-      +'<div>'
-        +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--gr);">'+tv('bk_confirm_title','Büküm Tamamlandı mı?')+'</div>'
-        +'<div style="font-size:14px;color:var(--txd);margin-top:3px;">'+tv('bk_confirm_desc','Bu boru listeden çıkarılacak ve işlenecek.')+'</div>'
-      +'</div>'
-    +'</div>'
-    +'<div style="background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;margin-bottom:22px;">'
-      +'<div style="font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px;">'+esc(ref)+'</div>'
-      +'<div style="font-size:14px;">'
-        +'<span style="color:var(--ac);font-weight:600;">'+esc(b.malzeme)+' '+esc(b.kalite)+'</span>'
-        +'&nbsp;&nbsp;·&nbsp;&nbsp;&#216;'+esc(b.cap)
-        +'&nbsp;&nbsp;·&nbsp;&nbsp;<span style="color:var(--bukum-c);font-weight:700;">'+esc(String(b.olcu))+' mm</span>'
-      +'</div>'
-    +'</div>'
-    +'<div style="display:flex;gap:10px;">'
-      +'<button id="buktuIptal" class="btn-outline" style="flex:1;">'+tv('bk_btn_iptal','İptal')+'</button>'
-      +'<button id="buktuOnayla" class="btn-green" style="flex:2;">&#10003; '+tv('bk_confirm_yes','Evet, Büküldü')+'</button>'
-    +'</div>'
-    +'</div>';
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-  document.body.appendChild(ov);
-  document.getElementById('buktuIptal').onclick=function(){ov.remove();};
-  document.getElementById('buktuOnayla').onclick=function(){ov.remove();onConfirm();};
+  document.getElementById('footerSum').innerHTML='Toplam: <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
 }
 
 function buktu(id){
-  buktuOnayModal(id, function(){ buktuIslem(id); });
-}
-
-function buktuIslem(id){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
+  // Onay popup
+  // confirm() kaldırıldı — doğrudan işaretlenir, toast ile bildirilir
   b.durum='tamamlandi';
   b.bukulduZaman=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  // Supabase'e yaz
   if(b.supaId && ARES.mod==='supabase'){
     ARES.supabase().from('bukum_kalemleri').update({bukuldumu:true,guncelleme:new Date().toISOString()}).eq('id',b.supaId).then(function(r){
       if(r.error) console.warn('[ARES] Büküm güncelleme:',r.error.message);
     });
+    // İşlem logu
     ARES.supabase().from('islem_log').insert({
       tenant_id:ARES.tenantId(),islem:'BUKUM_TAMAMLA',
       aciklama:b.malzeme+' '+b.cap+' '+b.olcu+'mm',
@@ -743,7 +787,7 @@ function buktuIslem(id){
   try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_TAMAMLA',kaynak:b.spoolNo||b.id,aciklama:b.malzeme+' '+b.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}
   applyFilters();updateStats();
   if(aktifFasonId&&aktifTab==='fason') openFasonDetay(aktifFasonId);
-  toast(b.olcu+'mm '+tv('bk_bent_done_label','büküldü'),'success');
+  toast(b.olcu+'mm büküldü','success');
 }
 
 function showQR(id){
@@ -758,17 +802,14 @@ function showQR(id){
     +'<canvas id="qrBig" style="border-radius:6px;margin-bottom:14px;"></canvas>'
     +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(b.malzeme)+' '+esc(b.kalite)+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
-    +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">'+tv('bk_btn_close','Kapat')+'</button>'
+    +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">Kapat</button>'
     +'</div>';
   ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
   document.body.appendChild(ov);
   setTimeout(function(){
     var c=document.getElementById('qrBig');
-    if(c&&typeof QRCode!=='undefined'){
-      var _qrDark=getComputedStyle(document.documentElement).getPropertyValue('--leg').trim()||'#7c3aed';
-      var _qrLight=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#0d1117';
-      QRCode.toCanvas(c,'BUKUM:'+b.id+'|'+ref+'|'+b.olcu,{width:200,margin:2,color:{dark:_qrDark,light:_qrLight}});
-    }
+    if(c&&typeof QRCode!=='undefined')
+      QRCode.toCanvas(c,'BUKUM:'+b.id+'|'+ref+'|'+b.olcu,{width:200,margin:2,color:{dark:'#a855f7',light:'#111620'}});
   },50);
 }
 
@@ -843,12 +884,12 @@ function openFasonDetay(id){
           +'<button onclick="belgeSil(\''+id+'\',\''+bg.id+'\')" style="background:none;border:none;color:var(--re);cursor:pointer;font-size:14px;padding:0 0 0 4px;">&#10005;</button>'
           +'</div>';
       }).join('')
-    :'<span style="font-size:14px;color:var(--txd);">'+tv('bk_no_belge','Henüz belge eklenmemiş')+'</span>';
+    :'<span style="font-size:14px;color:var(--txd);">Henuz belge eklenmemis</span>';
 
   // Boru tablosu
   var tbody=document.getElementById('fdBoruBody');
   if(!borular.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--txd);">'+tv('bk_no_boru_hint','Henüz boru eklenmemiş — boru ekle butonuna tıklayın')+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--txd);">Henuz boru eklenmemis — boru ekle butonuna tiklayin</td></tr>';
     return;
   }
   tbody.innerHTML=borular.map(function(b,i){
@@ -862,8 +903,8 @@ function openFasonDetay(id){
       +'<td class="cell-kesim">'+b.olcu+' mm</td>'
       +'<td style="text-align:center;">'
         +(done
-          ?'<span style="color:var(--gr);font-size:14px;">&#10003; '+tv('bk_bent_done_label','Büküldü')+'</span><div style="font-size:14px;color:var(--txd);">'+esc(b.bukulduZaman||'')+'</div>'
-          :'<button onclick="fasonBuktu(\''+b.id+'\')" class="btn-buktu" style="font-size:14px;height:30px;padding:0 10px;">&#10003; '+tv('bk_btn_bent_done','Büktüm')+'</button>')
+          ?'<span style="color:var(--gr);font-size:14px;">&#10003; Bukuldu</span><div style="font-size:14px;color:var(--txd);">'+esc(b.bukulduZaman||'')+'</div>'
+          :'<button onclick="fasonBuktu(\''+b.id+'\')" class="btn-buktu" style="font-size:14px;height:30px;padding:0 10px;">&#10003; Bukuldu</button>')
       +'</td>'
       +'<td style="text-align:center;">'
         +(done?'':'<button onclick="fdBoruDuzenle(\''+b.id+'\')" style="width:26px;height:26px;border-radius:6px;background:rgba(14,165,233,.1);border:1px solid var(--ac);color:var(--ac);cursor:pointer;font-size:14px;">&#9998;</button>')
@@ -876,23 +917,11 @@ function openFasonDetay(id){
 }
 
 function fasonBuktu(id){
-  buktuOnayModal(id, function(){ fasonBuktuIslem(id); });
-}
-
-function fasonBuktuIslem(id){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
   b.durum='tamamlandi';
   b.bukulduZaman=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  if(b.supaId && ARES.mod==='supabase'){
-    ARES.supabase().from('islem_log').insert({
-      tenant_id:ARES.tenantId(),islem:'BUKUM_TAMAMLA',
-      aciklama:b.malzeme+' '+b.cap+' '+b.olcu+'mm',
-      katman:'fason',katman_id:b.fasonId||null,
-      yapan_id:ARES.oturumAl()?.id||null
-    }).then(function(){});
-  }
   try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_TAMAMLA',kaynak:b.spoolNo||b.id,aciklama:b.malzeme+' '+b.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}
-  toast(b.olcu+'mm '+tv('bk_bent_done_label','büküldü'),'success');
+  toast(b.olcu+'mm bukuldu','success');
   openFasonDetay(aktifFasonId);
   if(aktifTab==='bekliyor') applyFilters();
   updateStats();
@@ -900,40 +929,16 @@ function fasonBuktuIslem(id){
 
 function fdBoruSil(id){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
-  var old=document.getElementById('silOnayOv');if(old)old.remove();
-  var ov=document.createElement('div');ov.className='modal-ov';ov.id='silOnayOv';
-  ov.innerHTML='<div class="modal-box" style="max-width:400px;">'
-    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
-      +'<div style="width:46px;height:46px;border-radius:50%;background:rgba(229,62,62,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
-        +'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--re)" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
-      +'</div>'
-      +'<div>'
-        +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--re);">'+tv('bk_sil_title','Boru Silinsin mi?')+'</div>'
-        +'<div style="font-size:14px;color:var(--txd);margin-top:3px;">'+tv('bk_sil_desc','Bu işlem geri alınamaz.')+'</div>'
-      +'</div>'
-    +'</div>'
-    +'<div style="background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;margin-bottom:22px;font-size:14px;">'
-      +'<span style="color:var(--ac);font-weight:600;">'+esc(b.malzeme)+' '+esc(b.kalite)+'</span>'
-      +'&nbsp;·&nbsp;&#216;'+esc(b.cap)
-      +'&nbsp;·&nbsp;<span style="color:var(--warn);font-weight:700;">'+esc(String(b.olcu))+' mm</span>'
-    +'</div>'
-    +'<div style="display:flex;gap:10px;">'
-      +'<button id="silIptal" class="btn-outline" style="flex:1;">'+tv('bk_btn_iptal','İptal')+'</button>'
-      +'<button id="silOnayla" style="flex:2;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 18px;height:40px;border-radius:10px;border:none;background:var(--re);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;">&#10005; '+tv('bk_sil_btn','Evet, Sil')+'</button>'
-    +'</div>'
-    +'</div>';
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-  document.body.appendChild(ov);
-  document.getElementById('silIptal').onclick=function(){ov.remove();};
-  document.getElementById('silOnayla').onclick=function(){
-    ov.remove();
-    var _sil=bukumler.find(function(x){return x.id===id;});
-    if(_sil){try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_SIL',kaynak:_sil.spoolNo||_sil.id,aciklama:_sil.malzeme+' '+_sil.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}}
-    bukumler=bukumler.filter(function(x){return x.id!==id;});
-    openFasonDetay(aktifFasonId);
-    applyFilters();updateStats();
-    toast(tv('bk_boru_silindi','Boru silindi'),'info');
-  };
+  // onay modal ile yapılıyor
+  _silPendingId = id;
+  document.getElementById('fdBoruSilModal').style.display='flex';
+  return;
+  var _sil=bukumler.find(function(x){return x.id===id;});
+  if(_sil){try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_SIL',kaynak:_sil.spoolNo||_sil.id,aciklama:_sil.malzeme+' '+_sil.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}}
+  bukumler=bukumler.filter(function(x){return x.id!==id;});
+  openFasonDetay(aktifFasonId);
+  applyFilters();updateStats();
+  toast('Boru silindi','info');
 }
 
 function fdBoruDuzenle(id){
@@ -963,21 +968,21 @@ function fdBoruEkleModal(editBoru){
   // Build form using DOM, no innerHTML string concat issues
   ov.innerHTML='<div class="modal-box" style="max-width:460px;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">'
-      +'<div class="modal-title" style="color:var(--bukum-c);">'+(isEdit?tv('bk_boru_duzenle','Boru Düzenle'):tv('bk_boru_ekle','Boru Ekle'))+'</div>'
+      +'<div class="modal-title" style="color:var(--bukum-c);">'+(isEdit?'Boru Duzenle':'Boru Ekle')+'</div>'
       +'<button id="boruEkleKapat" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">&#10005;</button>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">'
-      +'<div><label class="fm-label">'+tv('bk_fm_malzeme','Malzeme')+'</label><input id="nb_malzeme" class="fm-input" placeholder="Karbon Celik" value="'+(isEdit?esc(editBoru.malzeme):'')+'"></div>'
-      +'<div><label class="fm-label">'+tv('bk_fm_kalite','Kalite')+'</label><input id="nb_kalite" class="fm-input" placeholder="St37" value="'+(isEdit?esc(editBoru.kalite):'')+'"></div>'
-      +'<div><label class="fm-label">'+tv('bk_fm_cap','Cap (mm)')+'</label><input id="nb_cap" class="fm-input" placeholder="60,3 mm" value="'+(isEdit?esc(editBoru.cap):'')+'"></div>'
-      +'<div><label class="fm-label">'+tv('bk_fm_kalinlik','Et Kalinligi (mm)')+'</label><input id="nb_kalinlik" class="fm-input" placeholder="4,5 mm" value="'+(isEdit?esc(editBoru.kalinlik):'')+'"></div>'
+      +'<div><label class="fm-label">Malzeme</label><input id="nb_malzeme" class="fm-input" placeholder="Karbon Celik" value="'+(isEdit?esc(editBoru.malzeme):'')+'"></div>'
+      +'<div><label class="fm-label">Kalite</label><input id="nb_kalite" class="fm-input" placeholder="St37" value="'+(isEdit?esc(editBoru.kalite):'')+'"></div>'
+      +'<div><label class="fm-label">Cap (mm)</label><input id="nb_cap" class="fm-input" placeholder="60,3 mm" value="'+(isEdit?esc(editBoru.cap):'')+'"></div>'
+      +'<div><label class="fm-label">Et Kalinligi (mm)</label><input id="nb_kalinlik" class="fm-input" placeholder="4,5 mm" value="'+(isEdit?esc(editBoru.kalinlik):'')+'"></div>'
     +'</div>'
-    +'<div style="margin-bottom:8px;"><label class="fm-label">'+tv('bk_bend_len_label','Büküm Uzunlugu (mm)')+'</label>'
+    +'<div style="margin-bottom:8px;"><label class="fm-label">Büküm Uzunlugu (mm)</label>'
       +'<input id="nb_olcu" class="fm-input" type="number" min="1" placeholder="ornek: 1450" value="'+(isEdit?editBoru.olcu:'')+'"></div>'
     +'<div style="font-size:14px;color:var(--txd);margin-bottom:20px;">'+tv('bk_bend_len_hint','Büküm yapılabilecek boru uzunluğu')+'</div>'
     +'<div style="display:flex;gap:10px;">'
-      +'<button id="boruEkleIptal" class="btn-outline" style="flex:1;">'+tv('bk_btn_iptal','İptal')+'</button>'
-      +'<button id="boruEkleKaydetBtn" class="btn-green" style="flex:2;">'+(isEdit?tv('bk_btn_guncelle','Güncelle'):tv('bk_btn_ekle','Ekle'))+'</button>'
+      +'<button id="boruEkleIptal" class="btn-outline" style="flex:1;">Iptal</button>'
+      +'<button id="boruEkleKaydetBtn" class="btn-green" style="flex:2;">'+(isEdit?'Guncelle':'Ekle')+'</button>'
     +'</div>'
     +'</div>';
 
@@ -1000,14 +1005,14 @@ function boruEkleKaydet(editId){
   var mlId=document.getElementById('nb_malzeme_id').value;
   var ml=malzemeListesi.find(function(x){return x.id===mlId;});
   var olcu=parseInt(document.getElementById('nb_olcu').value);
-  if(!ml){toast(tv('bk_mal_sec','Malzeme seçiniz'),'error');return;}
-  if(!olcu||olcu<=0){toast(tv('bk_olcu_gir','Geçerli bir uzunluk giriniz'),'error');return;}
+  if(!ml){toast('Malzeme seciniz','error');return;}
+  if(!olcu||olcu<=0){toast('Gecerli bir uzunluk giriniz','error');return;}
   var malzeme=ml.malzeme,kalite=ml.kalite,cap=ml.cap,kalinlik=ml.kalinlik;
 
   if(editId){
     var b=bukumler.find(function(x){return x.id===editId;});
     if(b){b.malzeme=malzeme;b.kalite=kalite;b.cap=cap;b.kalinlik=kalinlik;b.olcu=olcu;}
-    toast(tv('bk_btn_guncelle','Güncellendi'),'success');
+    toast('Boru guncellendi','success');
   } else {
     bukumler.push({
       id:'FB'+Date.now(),kaynak:'fason',ref:null,
@@ -1016,7 +1021,7 @@ function boruEkleKaydet(editId){
       durum:'bekliyor',fasonId:aktifFasonId,
       bukulduZaman:null
     });
-    toast(tv('bk_boru_eklendi','Boru eklendi'),'success');
+    toast('Boru eklendi','success');
   }
   document.getElementById('boruEkleOv').remove();
   openFasonDetay(aktifFasonId);
@@ -1029,7 +1034,7 @@ function fdExcelImport(){
   var inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
   inp.onchange=function(e){
     var file=e.target.files[0];if(!file)return;
-    toast(esc(file.name)+' — '+tv('bk_belge_secildi','seçildi — Excel import yakında eklenecek'),'info');
+    toast(file.name+' secildi — Excel import yakindan eklenecek','info');
   };
   inp.click();
 }
@@ -1044,7 +1049,7 @@ function fdBelgeYukle(){
       fb.belgeler.push({id:'BLG'+Date.now()+Math.random().toString(36).slice(2),ad:file.name,boyut:formatBoyut(file.size)});
     });
     openFasonDetay(aktifFasonId);
-    toast(e.target.files.length+' '+tv('bk_belge_eklendi','belge eklendi'),'success');
+    toast(e.target.files.length+' belge eklendi','success');
   };
   inp.click();
 }
@@ -1059,20 +1064,20 @@ function yeniFasonModal(){
       +'<div class="modal-title" style="color:var(--bukum-c);">'+tv('bk_new_fason_modal','📄 Yeni Fason Büküm')+'</div>'
       +'<button onclick="document.getElementById(\'yeniFasonOv\').remove()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">&#10005;</button>'
     +'</div>'
-    +'<div style="margin-bottom:14px;"><label class="modal-label">'+tv('bk_nf_dosya_no','Dosya Numarası')+'</label>'
+    +'<div style="margin-bottom:14px;"><label class="modal-label">Dosya Numarasi</label>'
       +'<input class="modal-input" id="nf_no" placeholder="FB26-001" maxlength="20" '
         +'value="FB'+new Date().getFullYear().toString().slice(-2)+'-'+String(fbSayac).padStart(3,'0')+'"></div>'
-    +'<div style="margin-bottom:14px;"><label class="modal-label">'+tv('bk_nf_firma','Firma')+'</label>'
+    +'<div style="margin-bottom:14px;"><label class="modal-label">Firma</label>'
       +'<select id="nf_firma" style="width:100%;background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:\'Barlow\',sans-serif;">'
-        +'<option value="">'+tv('bk_nf_firma_sec','Firma seçin...')+'</option>'+firmaOpts+'</select></div>'
-    +'<div style="margin-bottom:14px;"><label class="modal-label">'+tv('bk_nf_aciklama','Açıklama (opsiyonel)')+'</label>'
-      +'<input id="nf_aciklama" type="text" placeholder="'+tv('bk_nf_aciklama_ph','Kısa açıklama...')+'" style="width:100%;background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:\'Barlow\',sans-serif;"></div>'
-    +'<div style="margin-bottom:22px;"><label class="modal-label">'+tv('bk_nf_belge_yukle','Belge Yükle (opsiyonel)')+'</label>'
+        +'<option value="">Firma secin...</option>'+firmaOpts+'</select></div>'
+    +'<div style="margin-bottom:14px;"><label class="modal-label">Aciklama (opsiyonel)</label>'
+      +'<input id="nf_aciklama" type="text" placeholder="Kisa aciklama..." style="width:100%;background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:\'Barlow\',sans-serif;"></div>'
+    +'<div style="margin-bottom:22px;"><label class="modal-label">Belge Yukle (opsiyonel)</label>'
       +'<div id="nf_belgeler" style="display:flex;flex-wrap:wrap;gap:6px;min-height:8px;margin-bottom:8px;"></div>'
-      +'<button onclick="nfBelgeEkle()" style="width:100%;padding:8px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:\'Barlow\',sans-serif;" onmouseover="this.style.borderColor=\'var(--bukum-c)\';this.style.color=\'var(--bukum-c)\'" onmouseout="this.style.borderColor=\'var(--bor)\';this.style.color=\'var(--txd)\'">'+tv('bk_nf_belge_ekle','+ Belge Ekle')+'</button></div>'
+      +'<button onclick="nfBelgeEkle()" style="width:100%;padding:8px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:\'Barlow\',sans-serif;" onmouseover="this.style.borderColor=\'var(--bukum-c)\';this.style.color=\'var(--bukum-c)\'" onmouseout="this.style.borderColor=\'var(--bor)\';this.style.color=\'var(--txd)\'">+ Belge Ekle</button></div>'
     +'<div style="display:flex;gap:10px;">'
-      +'<button onclick="document.getElementById(\'yeniFasonOv\').remove()" class="btn-outline" style="flex:1;">'+tv('bk_btn_iptal','İptal')+'</button>'
-      +'<button onclick="yeniFasonKaydet()" class="btn-green" style="flex:2;">&#10003; '+tv('bk_nf_olustur','Dosyayı Oluştur')+'</button>'
+      +'<button onclick="document.getElementById(\'yeniFasonOv\').remove()" class="btn-outline" style="flex:1;">Iptal</button>'
+      +'<button onclick="yeniFasonKaydet()" class="btn-green" style="flex:2;">&#10003; Dosyayi Olustur</button>'
     +'</div>'
     +'</div>';
   ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
@@ -1102,8 +1107,8 @@ function yeniFasonKaydet(){
   var no=document.getElementById('nf_no').value.trim();
   var firmaId=document.getElementById('nf_firma').value;
   var aciklama=document.getElementById('nf_aciklama').value.trim();
-  if(!no){toast(tv('bk_dosya_no_gir','Dosya numarası giriniz'),'error');return;}
-  if(!firmaId){toast(tv('bk_firma_sec','Firma seçiniz'),'error');return;}
+  if(!no){toast('Dosya numarasi giriniz','error');return;}
+  if(!firmaId){toast('Firma seciniz','error');return;}
   var id='FB'+Date.now();
   fasonlar.push({id:id,no:no,firmaId:firmaId,aciklama:aciklama,
     tarih:new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
@@ -1111,7 +1116,7 @@ function yeniFasonKaydet(){
   _nfBelgeler=[];fbSayac++;
   document.getElementById('yeniFasonOv').remove();
   updateStats();
-  toast(esc(no)+' '+tv('bk_olusturuldu','oluşturuldu'),'success');
+  toast(no+' olusturuldu','success');
   // Hemen detaya git
   aktifTab='fason';
   document.querySelectorAll('.main-tab').forEach(function(t){t.classList.toggle('active',t.id==='tab-fason');});
@@ -1191,7 +1196,7 @@ async function excelSablonIndir(){
     var a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
     a.download='fason_bukum_sablon.csv';a.click();
-    toast(tv('bk_csv_indir','CSV şablon indirildi'),'info');
+    toast('CSV sablon indirildi','info');
     return;
   }
   var wb=new ExcelJS.Workbook();
@@ -1219,7 +1224,7 @@ async function excelSablonIndir(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
   a.download='fason_bukum_sablon.xlsx';a.click();
-  toast(tv('bk_excel_indir','Excel şablon indirildi'),'success');
+  toast('Excel sablon indirildi','success');
 }
 
 // ════ STAT ════
@@ -1234,9 +1239,7 @@ function updateStats(){
   // Progress bar: tüm bükümlerde tamamlanma oranı
   var tumTop=bukumler.length;
   var tumTam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
-  var tumPct=tumTop?Math.round(tumTam/tumTop*100):0;
-  document.getElementById('progTam').style.width=tumPct+'%';
-  document.getElementById('progTam').style.background=progColor(tumPct);
+  document.getElementById('progTam').style.width=(tumTop?Math.round(tumTam/tumTop*100):0)+'%';
   // Badge'ler — filtresiz
   var bek=bukumler.filter(function(b){return b.durum==='bekliyor';}).length;
   var tam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
@@ -1252,25 +1255,51 @@ function toast(msg,type){
   t.innerHTML='<span>'+msg+'</span><button style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:18px;flex-shrink:0;" onclick="this.parentElement.remove()">&#10005;</button>';
   document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove();},4000);
 }
+// ── Dil değişince yeniden render ────────────────────────────────
+window._onLangChange = function() {
+  if (window._applyI18n) _applyI18n();
+  applyFilters();
+};
+
+// ── Silme onay modalı ────────────────────────────────────────────
+var _silPendingId = null;
+function _fdBoruSilOnayla() {
+  if (_silPendingId === null) return;
+  var id = _silPendingId; _silPendingId = null;
+  document.getElementById('fdBoruSilModal').style.display = 'none';
+  var _sil = bukumler.find(function(x){return x.id===id;});
+  if (_sil){try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_SIL',kaynak:_sil.spoolNo||_sil.id,aciklama:_sil.malzeme+' '+_sil.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}}
+  bukumler = bukumler.filter(function(x){return x.id!==id;});
+  openFasonDetay(aktifFasonId);
+  applyFilters(); updateStats();
+  toast('Boru silindi','info');
+}
+function _fdBoruSilIptal() {
+  _silPendingId = null;
+  document.getElementById('fdBoruSilModal').style.display = 'none';
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   (async function() {
-  try {
-    var _bekle = 0;
-    while (_bekle < 80) {
-      var _supa = ARES.supabase();
-      if (_supa) {
-        var _ses = await _supa.auth.getSession();
-        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
-        if (_bekle > 20) { location.href = 'giris.html'; return; }
+    try {
+      var _bekle = 0;
+      while (_bekle < 80 && typeof ARES === 'undefined') {
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
       }
-      await new Promise(function(r){ setTimeout(r, 100); });
-      _bekle++;
+      if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
+      var _supa = ARES.supabase();
+      if (!_supa) { location.href = 'giris.html'; return; }
+      var _ses = await _supa.auth.getSession();
+      if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
+      await ARES.oturumKontrol();
+      if (window._applyI18n) _applyI18n();
+      if (ARES.mod === 'supabase') { await veriYukle(); }
+      else { populateFilters(); applyFilters(); }
+    } catch(e) { console.error('[ARES]', e); }
+    finally {
+      document.documentElement.style.visibility = '';
     }
-  } catch(e) {}
-  if (ARES.mod === 'supabase') { await veriYukle(); }
-  else { populateFilters(); applyFilters(); }
-  _applyI18n(); // D-01: ilk açılış dil uygulaması
-  document.documentElement.style.visibility='';
   })();
 });
 
@@ -1279,5 +1308,17 @@ document.addEventListener('DOMContentLoaded',function(){
 </div><!-- /.main-content -->
 </div><!-- /.app-shell -->
 <!-- Sidebar toggle ve tema: ares-layout.js tarafından yönetilir -->
+
+<!-- FASON BORU SİL MODAL -->
+<div id="fdBoruSilModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)_fdBoruSilIptal()">
+  <div style="background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:28px;max-width:380px;width:90%;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--re);margin-bottom:8px;">Boru Sil</div>
+    <div style="font-size:14px;color:var(--txm);margin-bottom:20px;">Bu boru fason listesinden silinsin mi?</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="_fdBoruSilIptal()" style="padding:0 16px;height:36px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;">İptal</button>
+      <button onclick="_fdBoruSilOnayla()" style="padding:0 16px;height:36px;border-radius:9px;border:1px solid rgba(229,62,62,.3);background:rgba(229,62,62,.12);color:var(--re);font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;">Sil</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
