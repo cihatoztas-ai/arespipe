@@ -956,8 +956,8 @@ if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
   });
 }
 // tv() güvenli fallback — ares-lang.js yüklenemezse TR metnini döner
-if (typeof tv === 'undefined') {
-  function tv(k, tr) { return tr !== undefined ? tr : k; }
+if (typeof window.tv === 'undefined') {
+  window.tv = function(k, tr) { return tr !== undefined ? tr : k; };
 }
 
 function toast(msg,tip){
