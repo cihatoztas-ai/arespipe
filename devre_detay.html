@@ -763,10 +763,15 @@ async function spoolYukle() {
     var devreId = localStorage.getItem('ares_aktif_devre_id');
     if (!devreId) return;
 
-    // Spooller
+    // Spooller + kesim/büküm/markalama count
     var spRes = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(*)')
+      .select(`
+        *, spool_malzemeleri(*),
+        kesim_kalemleri(id, kesildi),
+        bukum_kalemleri(id, bukuldu),
+        markalama_kalemleri(id, tamamlandi)
+      `)
       .eq('devre_id', devreId)
       .order('spool_no');
 
@@ -836,9 +841,9 @@ async function spoolYukle() {
         adimlar:   adimlar,
         sonIslem:  s.guncelleme ? new Date(s.guncelleme).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null,
         alistirma: s.alistirma || 'YOK',
-        bukum:     {toplam:0, tamamlanan:0},
-        kesim:     {toplam:0, tamamlanan:0},
-        markalama: {toplam:0, tamamlanan:0},
+        bukum:     (function(){ var a=s.bukum_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.bukuldu;}).length}; })(),
+        kesim:     (function(){ var a=s.kesim_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.kesildi;}).length}; })(),
+        markalama: (function(){ var a=s.markalama_kalemleri||[]; return {toplam:a.length, tamamlanan:a.filter(function(x){return x.tamamlandi;}).length}; })(),
         test:      {toplam:0, tamamlanan:0},
         durduruldu: s.durdurma_sebebi ? 'VAR' : 'YOK',
         stopped:    s.durduruldu || false,
