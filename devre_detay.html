@@ -1017,7 +1017,7 @@ function renderTable() {
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
       <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
-      <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||'—'}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
       <td style="font-size:14px;">${esc(s.malzeme)||'--'}</td>
