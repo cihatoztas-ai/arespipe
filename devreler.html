@@ -858,14 +858,14 @@ async function veriYukle() {
     // Devreler + proje + tersane
     var devRes = await supa
       .from('devreler')
-      .select('*, projeler(proje_no, gemi_adi, is_emri_no, tersaneler(ad, kod))')
+      .select('*, projeler(proje_no, gemi_adi, tersaneler(ad, kod))')
       .order('olusturma', { ascending: false });
     if (devRes.error) { console.warn('Devre yükleme:', devRes.error); renderTable(); return; }
 
     // Spool istatistikleri
     var spoolRes = await supa
       .from('spooller')
-      .select('id, devre_id, agirlik_kg, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey_islemi');
+      .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey');
 
     // Son işlem tarihleri
     var logRes = await supa
@@ -892,7 +892,7 @@ async function veriYukle() {
       var uiId   = i + 1;
       _supaIdMap[uiId] = d.id;
       var spools = spoolByDevre[d.id] || [];
-      var totalAg = spools.reduce(function(s, x) { return s + (parseFloat(x.agirlik_kg) || 0); }, 0);
+      var totalAg = spools.reduce(function(s, x) { return s + (parseFloat(x.agirlik) || 0); }, 0);
       // İlerleme: aktif_basamak string → index dönüşümü
       var avgIler = spools.length ? Math.round(
         spools.reduce(function(s, x) {
@@ -911,8 +911,8 @@ async function veriYukle() {
       // Malzeme ve yüzey — spool listesinden unique değerler
       var malzemeSet = {}, yuzeySet = {};
       spools.forEach(function(s) {
-        if (s.malzeme)      malzemeSet[s.malzeme.toLowerCase()] = true;
-        if (s.yuzey_islemi) yuzeySet[s.yuzey_islemi]            = true;
+        if (s.malzeme) malzemeSet[s.malzeme.toLowerCase()] = true;
+        if (s.yuzey)   yuzeySet[s.yuzey]                   = true;
       });
       var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['celik'];
       var yuzeyArr   = Object.keys(yuzeySet);
@@ -926,11 +926,11 @@ async function veriYukle() {
       return {
         id:       uiId,
         supaId:   d.id,
-        isEmri:   prj.is_emri_no  || '—',
+        isEmri:   d.is_emri_no   || '—',
         tersane:  trs.ad          || '—',
-        gemi:     prj.gemi_adi    || '—',
+        gemi:     prj.proje_no    || '—',
         devre:    d.devre_no      || d.ad || '—',
-        zone:     d.zone_no       || '—',
+        zone:     d.zone          || '—',
         spool:    spools.length,
         agirlik:  totalAg,
         malzeme:  malzemeArr,
