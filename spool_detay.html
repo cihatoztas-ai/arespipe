@@ -905,9 +905,9 @@ function txc(id,v){var e=T(id);if(e)e.textContent=v||'--';}
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 // D-01: Çeviri yardımcısı — t() bulamazsa Türkçe fallback döner
 
-// ✅ C1: _I18N — EN ve AR çevirileri (D-01)
-var _I18N = {
-  en: {
+// ── DİL ANAHTARLARI — ares-lang.js sistemi ─────────────────────
+if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
+  ARES.lang.extend('en', {
     sp_alist_none:'Not determined', sp_invite_date:'Date:',
     sp_items_unit:'items', sp_logs_unit:'records',
     sp_mark_auto:'Automatic', sp_mark_manuel:'Manual', sp_mark_plaka:'Plate',
@@ -929,8 +929,8 @@ var _I18N = {
     sp_chip_fab:'In fabrication', sp_chip_weld:'In welding',
     sp_chip_inspect:'In pre-inspection', sp_chip_qc:'In quality control',
     sp_chip_shipped:'Shipped',
-  },
-  ar: {
+  });
+  ARES.lang.extend('ar', {
     sp_alist_none:'غير محدد', sp_invite_date:'التاريخ:',
     sp_items_unit:'قلم', sp_logs_unit:'سجل',
     sp_mark_auto:'تلقائي', sp_mark_manuel:'يدوي', sp_mark_plaka:'لوحة',
@@ -953,33 +953,7 @@ var _I18N = {
     sp_chip_fab:'في مرحلة التصنيع', sp_chip_weld:'في مرحلة اللحام',
     sp_chip_inspect:'في الفحص المبدئي', sp_chip_qc:'في مراقبة الجودة',
     sp_chip_shipped:'تم الشحن',
-  }
-};
-
-// ✅ C2: tv() — inline _I18N + window.t fallback (D-01)
-function tv(key,tr){
-  var lang=document.documentElement.getAttribute('lang')||'tr';
-  var dict=_I18N[lang];
-  if(dict&&dict[key]!==undefined)return dict[key];
-  var v=window.t?window.t(key):key;
-  if(v!==key)return v;
-  return tr!==undefined?tr:key;
-}
-// ✅ C2: _applyI18n() — data-i18n elementleri yenile (D-01)
-function _applyI18n(){
-  var lang=document.documentElement.getAttribute('lang')||'tr';
-  var isTr=lang==='tr';
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var isInp=el.tagName==='INPUT'||el.tagName==='TEXTAREA';
-    if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',isInp?el.placeholder:el.textContent.trim());
-    var v=isTr?el.getAttribute('data-i18n-tr'):tv(k,el.getAttribute('data-i18n-tr'));
-    if(isInp){el.placeholder=v;}else{el.textContent=v;}
   });
-}
-// ✅ C2: MutationObserver — html[lang] değişimini yakala (D-01)
-if(typeof MutationObserver!=='undefined'){
-  new MutationObserver(function(){_applyI18n();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 }
 function toast(msg,tip){
   var old=document.querySelector('.toast');if(old)old.remove();
@@ -1179,9 +1153,13 @@ function renderQR(){
   var c=T('qrBig');
   if(c){
     var ctx=c.getContext('2d');
-    ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,c.width,c.height);
-    ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;ctx.strokeRect(4,4,c.width-8,c.height-8);
-    ctx.fillStyle='#94a3b8';ctx.font='bold 10px Arial';ctx.textAlign='center';
+    var cs=getComputedStyle(document.documentElement);
+    var cBg=cs.getPropertyValue('--sur2').trim()||'#1c2333';
+    var cBor=cs.getPropertyValue('--bor').trim()||'#262f3e';
+    var cTxt=cs.getPropertyValue('--txd').trim()||'#6b7a90';
+    ctx.fillStyle=cBg;ctx.fillRect(0,0,c.width,c.height);
+    ctx.strokeStyle=cBor;ctx.lineWidth=1;ctx.strokeRect(4,4,c.width-8,c.height-8);
+    ctx.fillStyle=cTxt;ctx.font='bold 10px Arial';ctx.textAlign='center';
     ctx.fillText('QR KOD',c.width/2,c.height/2-6);
     ctx.font='9px Arial';
     ctx.fillText('NOT-02',c.width/2,c.height/2+8);
