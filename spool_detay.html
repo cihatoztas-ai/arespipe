@@ -745,6 +745,10 @@ async function spoolYukle(supaId) {
     if (_aktifStr && _snap.length) {
       var _idx = _snap.findIndex(function(b){ return b.sistem_adi === _aktifStr; });
       SP.trackerCurrent = _idx >= 0 ? _idx + 1 : 0;
+    } else if (_aktifStr) {
+      // Snapshot yok — STAGE_SISTEM'den bul
+      var _idx2 = STAGE_SISTEM.indexOf(_aktifStr);
+      SP.trackerCurrent = _idx2 >= 0 ? _idx2 + 1 : 0;
     } else {
       SP.trackerCurrent = 0;
     }
