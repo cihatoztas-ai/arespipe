@@ -1347,7 +1347,7 @@ function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
 function navigateToSpool(spoolNo) {
   const s = SPOOLS.find(x=>x.spoolNo===spoolNo); if(!s) return;
   const data = Object.assign({}, s, {
-    _devre: DEVRE.devre, _gemi: DEVRE.gemi,
+    _devre: DEVRE.devre, _gemi: DEVRE.gemi, _projeNo: DEVRE.projeNo||DEVRE.isEmri||'',
     _isEmri: DEVRE.isEmri, _tersane: DEVRE.tersane,
     spoolId: String(s.idx).padStart(4,'0')
   });
@@ -2711,6 +2711,7 @@ async function devreYukle() {
           isEmri:        d.is_emri_no       || '',
           tersane:       tersane.kod || tersane.ad || '',
           gemi:          proje.gemi_adi      || proje.proje_no || '',
+          projeNo:       proje.proje_no      || '',
           devre:         d.devre_no          || '',
           zone:          d.zone              || '',
           spool:         0, // spoolYukle sonrası güncellenir

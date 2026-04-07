@@ -1108,7 +1108,7 @@ function malzemeOpts(secili){
 // ── YÜKLEME ───────────────────────────────────────────────────
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
-  var markParts=[SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean);
+  var markParts=[SP._projeNo||SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean);
   if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
   var markaYazisi = markParts.join('-');
   var tersaneKisa = SP._tersane ? SP._tersane.split(' ')[0].toUpperCase() : '';
@@ -1766,7 +1766,7 @@ function markModalAc(){
   var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
   markTipGuncelle();
   // Markalama yazısı önizleme — format: GEMİ-PİPELİNE-SPOOL[-REV]
-  var markParts=[SP._gemi||SP._isEmri, SP.pipeline, SP.spoolNo].filter(Boolean);
+  var markParts=[SP._projeNo||SP._gemi||SP._isEmri, SP.pipeline, SP.spoolNo].filter(Boolean);
   if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
   var markYazisi = markParts.join('-') || '—';
   var oniz=T('markOnizleme');
@@ -1886,7 +1886,7 @@ function duzenleKaydet(){
   SP.agirlik=((T('ed_agr')||{}).value||'').trim();SP.yuzey=((T('ed_yuz')||{}).value||'');
   SP.malzeme=((T('ed_malz')||{}).value||'');SP.kalite=((T('ed_kal')||{}).value||'').trim();
   txc('stCap',SP.cap);txc('stKal',SP.kalinlik);txc('stAgr',SP.agirlik);txc('stYuzey',SP.yuzey);txc('stMalz',SP.malzeme);
-  var _mp2=[SP._gemi,SP.pipeline,SP.spoolNo].filter(Boolean);
+  var _mp2=[SP._projeNo||SP._gemi,SP.pipeline,SP.spoolNo].filter(Boolean);
   if(SP.rev&&SP.rev.trim())_mp2.push(SP.rev.trim().toUpperCase());
   var _my2=_mp2.join('-');
   var _tk2=SP._tersane?SP._tersane.split(' ')[0].toUpperCase():'';
