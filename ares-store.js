@@ -196,33 +196,65 @@ const ARES = (function () {
   }
 
   // ── NUMARA ÜRETİCİ — G-07 Sequence ──────────────────────
-  async function sonrakiNo(tip) {
-    const yil = new Date().getFullYear().toString().slice(-2);
+  // Config DB'den okunur (sayac_tanimlari), hardcode prefix yok.
+  // tanimlar.html "Kod Serileri" sekmesinden kullanıcı duzenleyebilir.
 
+  let _sayacConfig = null; // cache — sayacConfigSifirla() ile temizlenir
+
+  const _SAYAC_VARSAYILAN = {
+    is_emri:    { prefix: 'P', yil_ekle: true,  digits: 3, aciklama: 'Is Emri Numarasi'  },
+    hakedis_no: { prefix: 'H', yil_ekle: true,  digits: 3, aciklama: 'Hakedis Numarasi'  },
+    sevkiyat:   { prefix: 'S', yil_ekle: true,  digits: 3, aciklama: 'Sevkiyat Numarasi' },
+    spool:      { prefix: '',  yil_ekle: false, digits: 4, aciklama: 'Spool Kisa Kod'    },
+  };
+
+  async function _sayacConfigYukle() {
     if (mod === 'supabase' && _supa) {
-      // tip: 'is_emri' | 'spool_no' | 'hakedis_no'
-      const { data, error } = await _supa.rpc('sonraki_no', { p_tip: tip });
-      if (error) {
-        console.warn('[ARES] Sequence hatası:', error.message);
-        // Hata durumunda local fallback
-        return _sonrakiNoLocal(tip, yil);
+      const { data } = await _supa
+        .from('sayac_tanimlari')
+        .select('tip, prefix, yil_ekle, digits, son_no, aciklama')
+        .eq('tenant_id', tenantId());
+      if (data && data.length) {
+        _sayacConfig = {};
+        data.forEach(r => { _sayacConfig[r.tip] = r; });
+        return;
       }
-      // Prefix ekle: is_emri → P26-001, hakedis_no → H26-001
-      const prefix = tip === 'is_emri' ? 'P' : tip === 'hakedis_no' ? 'H' : 'S';
-      return prefix + yil + '-' + String(data).padStart(3, '0');
     }
-
-    return _sonrakiNoLocal(tip, yil);
+    _sayacConfig = {};
   }
 
-  function _sonrakiNoLocal(tip, yil) {
-    const sayaclar = _lget('sayaclar') || { is_emri: 1, spool_no: 1, hakedis_no: 1 };
-    const prefix   = tip === 'is_emri' ? 'P' : tip === 'hakedis_no' ? 'H' : 'S';
-    const no       = prefix + yil + '-' + String(sayaclar[tip] || 1).padStart(3, '0');
-    sayaclar[tip]  = (sayaclar[tip] || 1) + 1;
+  function _sayacCfgAl(tip) {
+    const db = _sayacConfig && _sayacConfig[tip];
+    if (db && (db.prefix !== undefined || db.digits)) return db;
+    return _SAYAC_VARSAYILAN[tip] || { prefix: '', yil_ekle: false, digits: 4 };
+  }
+
+  function _noFormatla(cfg, rawNo) {
+    const yil = cfg.yil_ekle ? new Date().getFullYear().toString().slice(-2) : '';
+    const sep = cfg.yil_ekle ? '-' : '';
+    return (cfg.prefix || '') + yil + sep + String(rawNo).padStart(cfg.digits || 3, '0');
+  }
+
+  async function sonrakiNo(tip) {
+    if (!_sayacConfig) await _sayacConfigYukle();
+    const cfg = _sayacCfgAl(tip);
+    if (mod === 'supabase' && _supa) {
+      const { data, error } = await _supa.rpc('sonraki_no', { p_tip: tip });
+      if (!error && data != null) return _noFormatla(cfg, data);
+      console.warn('[ARES] Sequence hatasi:', error ? error.message : '');
+    }
+    return _sonrakiNoLocal(tip, cfg);
+  }
+
+  function _sonrakiNoLocal(tip, cfg) {
+    const sayaclar = _lget('sayaclar') || {};
+    const no = _noFormatla(cfg, sayaclar[tip] || 1);
+    sayaclar[tip] = (sayaclar[tip] || 1) + 1;
     _lset('sayaclar', sayaclar);
     return no;
   }
+
+  function sayacConfigSifirla() { _sayacConfig = null; }
 
   // ── SOFT DELETE — G-12 ───────────────────────────────────
   async function softSil(tablo, id) {
@@ -517,6 +549,7 @@ const ARES = (function () {
 
     // Numara (async — G-07)
     sonrakiNo,
+    sayacConfigSifirla,
 
     // Silme (G-12)
     softSil,

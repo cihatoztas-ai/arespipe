@@ -144,6 +144,10 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
         <span data-i18n="tanim_islem_basamaklari">İşlem Basamakları</span>
         <span class="tc" id="tBasamak">0</span>
       </button>
+      <button class="tab-btn" data-tab="kod" onclick="tabSec('kod',this)">
+        <span>Kod Serileri</span>
+        <span class="tc" id="tKod">0</span>
+      </button>
     </div>
 
     <!-- MALZEME PANELİ -->
@@ -288,6 +292,39 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
         </table>
       </div>
       <span style="display:none;" data-i18n="tanim_silinemez">Bu basamak silinemez</span>
+    </div>
+
+    <!-- KOD SERİLERİ PANELİ -->
+    <div class="panel" id="panelkod">
+      <div class="filtre-bari cl-leg" style="margin-bottom:16px;">
+        <button class="btn btn-sm" style="background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);" onclick="kodSeriEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Yeni Seri Ekle
+        </button>
+        <div style="flex:1"></div>
+        <span style="font-size:13px;color:var(--txd);">Prefix değişikliği geçmiş numaraları etkilemez.</span>
+      </div>
+      <div class="tablo-kart cl-leg">
+        <div class="tablo-header">
+          <div class="tablo-baslik">Kod Serileri &amp; Sayaçlar</div>
+          <div style="font-size:13px;color:var(--txd);">sayac_tanimlari</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:120px;">Tip</th>
+              <th>Açıklama</th>
+              <th style="width:80px;">Prefix</th>
+              <th style="width:80px;text-align:center;">Yıl Ekle</th>
+              <th style="width:80px;text-align:center;">Basamak</th>
+              <th style="width:120px;">Örnek</th>
+              <th style="width:80px;text-align:right;">Son No</th>
+              <th style="width:90px;"></th>
+            </tr>
+          </thead>
+          <tbody id="kodSeriTablo"></tbody>
+        </table>
+      </div>
     </div>
 
   </div><!-- /page -->
@@ -536,6 +573,8 @@ async function veriYukle() {
 
   // basamak → Supabase
   await basamaklariYukle();
+  // kod serileri → Supabase
+  await kodSeriYukle();
 
   sayacGuncelle();
   tabloRender(AKTİF_TAB);
@@ -858,6 +897,7 @@ function tabSec(tip, btn) {
   btn.classList.add('active');
   document.getElementById('panel' + tip).classList.add('on');
   if (tip === 'basamak') basamakRender();
+  else if (tip === 'kod') kodSeriRender();
   else tabloRender(tip);
 }
 
@@ -1040,6 +1080,124 @@ document.addEventListener('DOMContentLoaded', function() {
     await veriYukle();
   })();
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// KOD SERİLERİ — sayac_tanimlari CRUD
+// ═══════════════════════════════════════════════════════════════════
+var _kodSeriData = []; // { id, tip, aciklama, prefix, yil_ekle, digits, son_no }
+
+async function kodSeriYukle() {
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    var res = await supa
+      .from('sayac_tanimlari')
+      .select('id, tip, aciklama, prefix, yil_ekle, digits, son_no')
+      .eq('tenant_id', ARES.tenantId())
+      .order('tip');
+    if (!res.error) {
+      _kodSeriData = res.data || [];
+    } else {
+      toast('Kod serileri yüklenemedi: ' + res.error.message, 'er');
+      _kodSeriData = [];
+    }
+  } else {
+    _kodSeriData = [];
+  }
+  kodSeriRender();
+  var tKod = document.getElementById('tKod');
+  if (tKod) tKod.textContent = _kodSeriData.length;
+}
+
+function _kodOrnek(row) {
+  var yil = row.yil_ekle ? new Date().getFullYear().toString().slice(-2) : '';
+  var sep = row.yil_ekle ? '-' : '';
+  var digits = row.digits || 3;
+  return (row.prefix || '') + yil + sep + String(row.son_no != null ? row.son_no + 1 : 1).padStart(digits, '0');
+}
+
+function kodSeriRender() {
+  var tbody = document.getElementById('kodSeriTablo');
+  if (!tbody) return;
+  if (!_kodSeriData.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--txd);">Henüz kayıt yok — Supabase SQL ile ekleyin</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _kodSeriData.map(function(r) {
+    var kilitli = (r.son_no || 0) > 0;
+    var kilitIkon = kilitli ? '<span title="Numara üretildi — prefix değişimi dikkat gerektirir" style="color:var(--warn);font-size:14px;">⚠</span>' : '';
+    return '<tr>' +
+      '<td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--leg);font-size:14px;">' + esc(r.tip) + '</td>' +
+      '<td><input class="fi" style="font-size:13px;padding:5px 8px;" value="' + esc(r.aciklama || '') + '" onblur="kodSeriKaydet('' + r.id + '','aciklama',this.value)"></td>' +
+      '<td><div style="display:flex;align-items:center;gap:4px;">' +
+        '<input class="fi" style="font-size:13px;padding:5px 8px;width:52px;" value="' + esc(r.prefix || '') + '" maxlength="4" onblur="kodSeriKaydet('' + r.id + '','prefix',this.value)">' +
+        kilitIkon +
+      '</div></td>' +
+      '<td style="text-align:center;"><input type="checkbox"' + (r.yil_ekle ? ' checked' : '') + ' onchange="kodSeriKaydet('' + r.id + '','yil_ekle',this.checked)"></td>' +
+      '<td style="text-align:center;"><input class="fi" type="number" style="font-size:13px;padding:5px 6px;width:52px;text-align:center;" value="' + (r.digits || 3) + '" min="2" max="6" onblur="kodSeriKaydet('' + r.id + '','digits',parseInt(this.value)||3)"></td>' +
+      '<td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">' + esc(_kodOrnek(r)) + '</td>' +
+      '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--txm);">' + (r.son_no || 0) + '</td>' +
+      '<td style="text-align:right;">' +
+        '<button class="td-sil" style="background:rgba(217,119,6,.1);color:var(--warn);border-color:rgba(217,119,6,.3);" onclick="kodSeriSifirla('' + r.id + '','' + esc(r.tip) + '')" title="Sayacı sıfırla">↺</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function kodSeriKaydet(id, alan, deger) {
+  var supa = ARES.supabase();
+  var guncelleme = { guncelleme: new Date().toISOString() };
+  guncelleme[alan] = deger;
+  if (supa && ARES.mod === 'supabase') {
+    var res = await supa.from('sayac_tanimlari').update(guncelleme).eq('id', id);
+    if (res.error) { toast('Kayıt hatası: ' + res.error.message, 'er'); return; }
+  }
+  var row = _kodSeriData.find(function(r){ return r.id === id; });
+  if (row) row[alan] = deger;
+  kodSeriRender();
+  ARES.sayacConfigSifirla(); // store cache'i temizle
+  toast('Kaydedildi.', 'ok');
+}
+
+async function kodSeriSifirla(id, tip) {
+  if (!confirm(tip + ' sayacını sıfırlamak istiyor musunuz?\nSonraki numara 1'den başlar.')) return;
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    var res = await supa.from('sayac_tanimlari').update({ son_no: 0 }).eq('id', id);
+    if (res.error) { toast('Sıfırlama hatası: ' + res.error.message, 'er'); return; }
+  }
+  var row = _kodSeriData.find(function(r){ return r.id === id; });
+  if (row) row.son_no = 0;
+  kodSeriRender();
+  ARES.sayacConfigSifirla();
+  toast(tip + ' sayacı sıfırlandı.', 'ok');
+}
+
+async function kodSeriEkle() {
+  var tip = prompt('Yeni seri tipi (sistem adı, örn: kk_davet):');
+  if (!tip || !tip.trim()) return;
+  tip = tip.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  var aciklama = prompt('Açıklama (örn: Kalite Kontrol No):') || tip;
+  var prefix   = prompt('Prefix (örn: KK, boş bırakılabilir):') || '';
+  var supa = ARES.supabase();
+  if (supa && ARES.mod === 'supabase') {
+    var res = await supa.from('sayac_tanimlari').insert({
+      tenant_id: ARES.tenantId(),
+      tip:       tip,
+      son_no:    0,
+      prefix:    prefix,
+      yil_ekle:  true,
+      digits:    3,
+      aciklama:  aciklama,
+    }).select().single();
+    if (res.error) { toast('Eklenemedi: ' + res.error.message, 'er'); return; }
+    _kodSeriData.push(res.data);
+    kodSeriRender();
+    var tKod = document.getElementById('tKod');
+    if (tKod) tKod.textContent = _kodSeriData.length;
+    ARES.sayacConfigSifirla();
+    toast(tip + ' serisi eklendi.', 'ok');
+  }
+}
 </script>
 </body>
 </html>
