@@ -1088,14 +1088,36 @@ function statGuncelle() {
   const aktif = SPOOLS.filter(s=>!s.iptal);
   setText('ddStatSpool', aktif.length + ' ' + tv('dv_unit_spool','spool'));
   setText('ddStatAgirlik', Math.round(toplumAgirlik()).toLocaleString('tr-TR')+' kg');
-  setText('ddStatMalzeme', (DEVRE.malzeme||[]).join(', ')||'--');
-  setText('ddStatYuzey', (DEVRE.yuzey||[]).join(', ')||'--');
+  // Sapan malzeme/yuzey/kalite değerlerini bul
+  function _malzKat2(str){ if(!str)return ''; const u=String(str).toUpperCase(); if(u.includes('316')||u.includes('304')||u.includes('PASLANMAZ')||u.includes('INOX'))return 'Paslanmaz'; if(u.includes('CUNI')||u.includes('BAKIR'))return 'Bakır Alaşım'; return 'Karbon Çelik'; }
+  const _dvMalz = ((DEVRE.malzeme||[])[0]||'').trim();
+  const _dvYuz  = ((DEVRE.yuzey||[])[0]||'').trim().toUpperCase();
+  const sapanMalzSet = new Set(), sapanYuzSet = new Set(), sapanKalSet = new Set();
+  aktif.forEach(function(s){
+    if(_dvMalz && s.malzeme && s.malzeme!=='—' && _malzKat2(s.malzeme) !== _dvMalz) sapanMalzSet.add(_malzKat2(s.malzeme));
+    if(_dvYuz  && s.yuzey   && s.yuzey!=='—'   && s.yuzey.toUpperCase() !== _dvYuz) sapanYuzSet.add(s.yuzey);
+  });
+  function _sapanHtml(ana, sapanSet) {
+    var el = document.getElementById(ana);
+    if(!el) return;
+    var div = el.parentElement || el;
+    var extra = div.querySelector('.sapan-ekler');
+    if(extra) extra.remove();
+    if(!sapanSet.size) return;
+    var span = document.createElement('div');
+    span.className = 'sapan-ekler';
+    span.style.cssText = 'font-size:12px;color:var(--warn);font-weight:600;margin-top:2px;';
+    span.textContent = '+' + [...sapanSet].join(', ');
+    div.appendChild(span);
+  }
+  setText('ddStatMalzeme', _dvMalz||'--'); _sapanHtml('ddStatMalzeme', sapanMalzSet);
+  setText('ddStatYuzey', ((DEVRE.yuzey||[])[0]||'--')); _sapanHtml('ddStatYuzey', sapanYuzSet);
   setText('ddStatTermin', DEVRE.terminTarihi ? tarihFormat(new Date(DEVRE.terminTarihi)) : tv('sp_alist_none','Belirlenmemis'));
   setText('ddSpoolCount', aktif.length+' '+tv('dv_records','kayit'));
   setText('ddGenelSpoolSayi', aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('ddGenelAgirlik', Math.round(toplumAgirlik()).toLocaleString('tr-TR')+' kg');
-  setText('ddGenelMalzeme', (DEVRE.malzeme||[]).join(', ')||'--');
-  setText('ddGenelYuzey', (DEVRE.yuzey||[]).join(', ')||'--');
+  setText('ddGenelMalzeme', _dvMalz||'--'); _sapanHtml('ddGenelMalzeme', sapanMalzSet);
+  setText('ddGenelYuzey', ((DEVRE.yuzey||[])[0]||'--')); _sapanHtml('ddGenelYuzey', sapanYuzSet);
 }
 
 // ── SIRALAMA + PAGİNATİON ─────────────────────────────────────────
@@ -1172,6 +1194,9 @@ function renderTable() {
     const spoolYuz     = (s.yuzey||'').trim().toUpperCase();
     const malzSapma = _devreMalzKat && s.malzeme && s.malzeme !== '—' && spoolMalzKat !== _devreMalzKat;
     const yuzSapma  = _devreYuz && spoolYuz && spoolYuz !== '—' && spoolYuz !== _devreYuz;
+    // Kalite: devre genelindeki çoğunluk kalitesinden farklıysa renklendir
+    const _moddKalite = (function(){ const m={}; SPOOLS.filter(s=>!s.iptal).forEach(function(x){if(x.kalite&&x.kalite!=='—')m[x.kalite]=(m[x.kalite]||0)+1;}); return Object.entries(m).sort((a,b)=>b[1]-a[1])[0]?.[0]||''; })();
+    const kalSapma  = _moddKalite && s.kalite && s.kalite !== '—' && s.kalite !== _moddKalite;
     const sapmaStl  = 'background:rgba(217,119,6,.10);color:var(--warn);font-weight:600;border-radius:5px;padding:2px 6px;font-size:13px;';
     return `<tr style="${stl}cursor:pointer;${(malzSapma||yuzSapma)?'border-left:3px solid var(--warn);padding-left:2px;':''}" onclick="navigateToSpool('${esc(s.spoolNo)}')">
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
@@ -1181,7 +1206,7 @@ function renderTable() {
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
       <td style="font-size:14px;">${malzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreMalzKat}">${esc(s.malzeme)}</span>` : esc(s.malzeme)||'--'}</td>
-      <td style="font-size:14px;color:var(--ac);">${esc(s.kalite)||'--'}</td>
+      <td style="font-size:14px;">${kalSapma ? `<span style="${sapmaStl}">${esc(s.kalite)}</span>` : `<span style="color:var(--ac);">${esc(s.kalite)||'--'}</span>`}</td>
       <td style="font-size:14px;">${yuzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreYuz}">${esc(s.yuzey)}</span>` : esc(s.yuzey)||'--'}</td>
       <td><span class="status-badge ${d.cls}">${s.stopped?tv('dv_status_stopped','Durduruldu'):esc(s.durumText||d.text)}</span></td>
       <td>
