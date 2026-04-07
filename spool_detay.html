@@ -761,7 +761,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(*), fotograflar(*), belgeler(*), devreler(devre_no, ad, projeler(proje_no, is_emri_no, tersaneler(ad)))')
+      .select('*, spool_malzemeleri(*), fotograflar(*), belgeler(*), devreler(devre_no, ad, zone, projeler(proje_no, is_emri_no, tersaneler(ad)))')
       .eq('id', supaId)
       .single();
 
@@ -824,7 +824,7 @@ async function spoolYukle(supaId) {
       var dv = s.devreler;
       // "805-Internal Drain Sys — K300-Galv" formatı
       SP._devre = dv.devre_no
-        ? dv.devre_no + (dv.ad ? ' — ' + dv.ad : '')
+        ? dv.devre_no + (dv.zone ? ' — ' + dv.zone : (dv.ad ? ' — ' + dv.ad : ''))
         : SP._devre;
       if (dv.projeler) {
         SP._gemi   = dv.projeler.proje_no   || SP._gemi;
