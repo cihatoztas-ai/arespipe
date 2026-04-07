@@ -701,6 +701,10 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       <div id="mPlakaInfo" style="display:none;padding:10px 12px;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.25);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_plaka_info">Spool malzemesi otomatik atanır. Malzeme seçimi gerekmez.</div>
       <div id="mManuelInfo" style="display:none;padding:10px 12px;background:rgba(100,116,139,.07);border:1px solid rgba(100,116,139,.2);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_manuel_info">Serbest markalama. Malzeme seçimi gerekmez.</div>
     </div>
+    <div style="margin:0 16px 4px;padding:12px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">Markalama Yazısı</div>
+      <div id="markOnizleme" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--ac);letter-spacing:.5px;word-break:break-all;">—</div>
+    </div>
     <div class="mfoot"><button class="btn" onclick="this.closest('.mov').style.display='none'" data-i18n="sp_cancel_btn">İptal</button><button class="btn btn-ac" onclick="markKaydet()" data-i18n="sp_add_to_list_btn">Listeye Ekle</button></div>
   </div>
 </div>
@@ -1748,7 +1752,29 @@ function renderMarkalar(){
   if(el)el.innerHTML=html;
   if(tbl)tbl.innerHTML=MARKALAR.length?MARKALAR.map(function(m){return'<tr><td style="font-weight:600;">'+esc(m.ad)+'</td><td style="color:var(--leg);">'+esc(tipLabel[m.tip]||m.tip)+'</td><td><span style="font-size:14px;font-weight:600;padding:2px 8px;border-radius:10px;'+(m.markalandi?'background:rgba(22,163,110,.12);color:var(--gr);':'background:rgba(229,62,62,.12);color:var(--re);')+'">'+tv(m.markalandi?'sp_mark_done':'sp_mark_pending',m.markalandi?'Markalandı':'Markalanacak')+'</span></td><td><button data-eid="'+esc(m.id)+'" onclick="markSil(this.dataset.eid)" class="ctx ctx-re btn-sm">✕</button></td></tr>';}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:16px;">'+tv('sp_no_marks','Henüz markalama eklenmemiş')+'</td></tr>';
 }
-function markModalAc(){var mm=T('mm_malz');if(mm)mm.innerHTML=malzemeOpts('');var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;markTipGuncelle();T('markModal').style.display='flex';}
+function markModalAc(){
+  var mm=T('mm_malz');if(mm)mm.innerHTML=malzemeOpts('');
+  var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
+  markTipGuncelle();
+  // Markalama yazısı önizleme — format: GEMİ-PİPELİNE-SPOOL[-REV]
+  var markParts=[SP._gemi||SP._isEmri, SP.pipeline, SP.spoolNo].filter(Boolean);
+  if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
+  var markYazisi = markParts.join('-') || '—';
+  var oniz=T('markOnizleme');
+  if(oniz){
+    oniz.textContent = markYazisi;
+    // Kısa kod varsa alt satırda göster
+    var altEl = T('markOnizlemeAlt');
+    if(!altEl){
+      altEl = document.createElement('div');
+      altEl.id = 'markOnizlemeAlt';
+      altEl.style.cssText = 'font-size:13px;color:var(--txd);margin-top:4px;';
+      oniz.parentElement.appendChild(altEl);
+    }
+    altEl.textContent = SP.spoolId ? 'Kısa Kod: ' + SP.spoolId : '';
+  }
+  T('markModal').style.display='flex';
+}
 function markTipGuncelle(){
   var tip=(document.querySelector('input[name="mTip"]:checked')||{}).value||'otomatik';
   document.querySelectorAll('.mark-tip').forEach(function(b){var a=b.dataset.v===tip;b.classList.toggle('aktif',a);});
