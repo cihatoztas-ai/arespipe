@@ -815,7 +815,14 @@ function ifsOnayla() {
     const yuzeyVal = (document.querySelector('input[name="yuzey"]:checked') || {}).value || '';
     spooller.push({
       pipeline, spoolNo, rev: revOtomatik,
-      malzeme: anaMalzeme, kalite: anaMalzeme,
+      malzeme: (function(k){
+        if(!k)return 'Karbon Çelik';
+        const u=k.toUpperCase();
+        if(u.includes('316')||u.includes('304')||u.includes('PASLANMAZ')||u.includes('SS')||u.includes('INOX'))return 'Paslanmaz';
+        if(u.includes('CUNI')||u.includes('BAKIR')||u.includes('ALUM'))return 'Bakır Alaşım';
+        return 'Karbon Çelik';
+      })(anaMalzeme),
+      kalite: anaMalzeme,
       cap: caplar[0] || '', agirlik: toplamKg, yuzey: yuzeyVal,
       ifsItems: items,
     });

@@ -1859,14 +1859,14 @@ function duzenleKaydet(){
     var capN=parseFloat(String(SP.cap).replace(',','.').replace(/[^0-9.]/g,''))||null;
     var etN=parseFloat(String(SP.kalinlik).replace(',','.').replace(/[^0-9.]/g,''))||null;
     supa.from('spooller').update({
-      spool_no:    SP.spoolNo||null,
-      pipeline_no: SP.pipeline||null,
-      malzeme:     SP.malzeme||null,
-      kalite:      SP.kalite||null,
-      yuzey:       SP.yuzey||null,
-      dis_cap_mm:  capN,
-      et_mm:       etN,
-      guncelleme:  new Date().toISOString(),
+      spool_no:         SP.spoolNo||null,
+      pipeline_no:      SP.pipeline||null,
+      malzeme:          SP.malzeme||null,
+      kalite:           SP.kalite||null,
+      yuzey:            SP.yuzey||null,
+      dis_cap_mm:       capN,
+      et_kalinligi_mm:  etN,
+      guncelleme:       new Date().toISOString(),
     }).eq('id',SP.supaId).then(function(r){
       if(r.error)toast('Kayıt hatası: '+r.error.message,'er');
       else toast('Güncellendi','ok');
