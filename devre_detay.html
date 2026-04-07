@@ -365,6 +365,7 @@
               <th style="width:32px;">#</th>
               <th class="sort-th" data-sort="pipeline" onclick="sortBy('pipeline')" style="cursor:pointer;" data-i18n="dv_th_pipeline">Pipeline No <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
               <th class="sort-th" data-sort="spoolNo" onclick="sortBy('spoolNo')" style="cursor:pointer;" data-i18n="dv_th_spool">Spool No <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
+              <th style="white-space:nowrap;color:var(--txd);">Rev</th>
               <th style="white-space:nowrap;">Spool ID</th>
               <th class="sort-th" data-sort="cap" onclick="sortBy('cap')" style="cursor:pointer;" data-i18n="sp_stat_diameter">Cap <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
               <th class="sort-th" data-sort="agirlik" onclick="sortBy('agirlik')" style="cursor:pointer;" data-i18n="sp_stat_weight">Agirlik <span class="sort-arrow" style="font-size:14px;opacity:.5;">↕</span></th>
@@ -979,6 +980,7 @@ async function spoolYukle() {
         supaId:    s.id,
         pipeline:  s.pipeline_no    || '—',
         spoolNo:   s.spool_no       || '—',
+        rev:       s.rev             || '',
         cap:       capVal,
         agirlik:   agirlikVal,
         malzeme:   (s.malzeme       || '').toUpperCase(),
@@ -1206,7 +1208,7 @@ function renderTable() {
   if(_page > totalPages) _page = totalPages;
   const slice = aktif.slice((_page-1)*_perPage, _page*_perPage);
 
-  if(!total) { tbody.innerHTML=`<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--txd);">${tv('dv_no_spools','Henuz spool eklenmemis')}</td></tr>`; _renderPagination(0,0,0); return; }
+  if(!total) { tbody.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:24px;color:var(--txd);">${tv('dv_no_spools','Henuz spool eklenmemis')}</td></tr>`; _renderPagination(0,0,0); return; }
   // Sapma tespiti — malzeme kategori eşlemesi
   function _malzKategori(str) {
     if(!str) return '';
@@ -1235,6 +1237,7 @@ function renderTable() {
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
       <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
+      <td style="font-size:13px;color:var(--txd);">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">${esc(s.rev)}</span>` : '—'}</td>
       <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
