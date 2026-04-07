@@ -1152,19 +1152,27 @@ function renderTable() {
   const slice = aktif.slice((_page-1)*_perPage, _page*_perPage);
 
   if(!total) { tbody.innerHTML=`<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--txd);">${tv('dv_no_spools','Henuz spool eklenmemis')}</td></tr>`; _renderPagination(0,0,0); return; }
-  // Sapma tespiti için devre geneli değerleri
-  const _devreMalz = ((DEVRE.malzeme||[])[0]||'').toUpperCase().trim();
-  const _devreYuz  = ((DEVRE.yuzey||[])[0]||'').toUpperCase().trim();
+  // Sapma tespiti — malzeme kategori eşlemesi
+  function _malzKategori(str) {
+    if(!str) return '';
+    const k = String(str).toUpperCase();
+    if(k.includes('PASLANMAZ') || k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
+    if(k.includes('CUNI') || k.includes('CU') || k.includes('BAKIM') || k.includes('BAKIR') || k.includes('ALUM')) return 'Bakır Alaşım';
+    return 'Karbon Çelik';
+  }
+  const _devreMalzKat = ((DEVRE.malzeme||[])[0]||'').trim();
+  const _devreYuz     = ((DEVRE.yuzey||[])[0]||'').trim().toUpperCase();
 
   tbody.innerHTML = slice.map((s,i)=>{
     const d = DURUM_CFG[s.durum] || {cls:'sb-waiting',text:s.durumText||s.durum};
     const stl = s.stopped ? 'opacity:.55;' : '';
     const globalIdx = (_page-1)*_perPage + i + 1;
-    const spoolMalz = (s.malzeme||'').toUpperCase().trim();
-    const spoolYuz  = (s.yuzey||'').toUpperCase().trim();
-    const malzSapma = _devreMalz && spoolMalz && spoolMalz !== '—' && spoolMalz !== _devreMalz;
-    const yuzSapma  = _devreYuz  && spoolYuz  && spoolYuz  !== '—' && spoolYuz  !== _devreYuz;
-    const sapmaStl  = 'background:rgba(217,119,6,.13);color:var(--warn);font-weight:700;border-radius:5px;padding:2px 5px;font-size:13px;';
+    // Malzeme: ham string'i kategoriye çevir, sonra karşılaştır
+    const spoolMalzKat = _malzKategori(s.malzeme);
+    const spoolYuz     = (s.yuzey||'').trim().toUpperCase();
+    const malzSapma = _devreMalzKat && s.malzeme && s.malzeme !== '—' && spoolMalzKat !== _devreMalzKat;
+    const yuzSapma  = _devreYuz && spoolYuz && spoolYuz !== '—' && spoolYuz !== _devreYuz;
+    const sapmaStl  = 'background:rgba(217,119,6,.10);color:var(--warn);font-weight:600;border-radius:5px;padding:2px 6px;font-size:13px;';
     return `<tr style="${stl}cursor:pointer;${(malzSapma||yuzSapma)?'border-left:3px solid var(--warn);padding-left:2px;':''}" onclick="navigateToSpool('${esc(s.spoolNo)}')">
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
@@ -1172,9 +1180,9 @@ function renderTable() {
       <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
-      <td style="font-size:14px;">${malzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreMalz}">⚠ ${esc(s.malzeme)}</span>` : esc(s.malzeme)||'--'}</td>
+      <td style="font-size:14px;">${malzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreMalzKat}">${esc(s.malzeme)}</span>` : esc(s.malzeme)||'--'}</td>
       <td style="font-size:14px;color:var(--ac);">${esc(s.kalite)||'--'}</td>
-      <td style="font-size:14px;">${yuzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreYuz}">⚠ ${esc(s.yuzey)}</span>` : esc(s.yuzey)||'--'}</td>
+      <td style="font-size:14px;">${yuzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreYuz}">${esc(s.yuzey)}</span>` : esc(s.yuzey)||'--'}</td>
       <td><span class="status-badge ${d.cls}">${s.stopped?tv('dv_status_stopped','Durduruldu'):esc(s.durumText||d.text)}</span></td>
       <td>
         <div class="mini-steps" title="${getAdimLabels().map(esc).join(' → ')}">
