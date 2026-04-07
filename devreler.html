@@ -1575,7 +1575,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
 
   // İçerik — yıldız durumuna göre
   function devreIcerik(d) {
-    var ml = getML(d.id);
+    var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
     var kalemler = ml ? ml.kalemler : [];
     var state = starMap[d.supaId];
     var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
@@ -1744,7 +1744,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     var wb = XLSX.utils.book_new();
     var rows1 = [['#','Is Emri','Gemi','Devre','Zone','Spool','Agirlik (kg)','Malzeme Durumu','Tamamlanan','Toplam Kalem']];
     starred.forEach(function(d, i) {
-      var ml = getML(d.id);
+      var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
       var kalemler = ml ? ml.kalemler : [];
       var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
       rows1.push([i+1, d.isEmri, d.gemi, d.devre, d.zone, d.spool, Math.round(d.agirlik), DURUM_LABEL[starMap[d.supaId]] || '', hazir, kalemler.length]);
@@ -1754,7 +1754,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     XLSX.utils.book_append_sheet(wb, ws1, 'Ozet');
     var rows2 = [['Is Emri','Gemi','Devre','Kalem No','Tip','Aciklama','Dis Cap (mm)','Malzeme','Kalite','Miktar','Birim','Durum']];
     starred.forEach(function(d) {
-      var ml = getML(d.id);
+      var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
       var kalemler = ml ? ml.kalemler : [];
       var state = starMap[d.supaId];
       var hazirEx = kalemler.filter(function(k) { return k.hazir; }).length;
