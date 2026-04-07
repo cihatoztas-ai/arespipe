@@ -1262,7 +1262,7 @@ function renderTable() {
       <td>${islemBadge(s.kesim)}</td>
       <td>${islemBadge(s.markalama)}</td>
       <td>${islemBadge(s.test)}</td>
-      <td style="text-align:center;">${s.stopped ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#e53e3e" opacity="0.15" stroke="#e53e3e" stroke-width="1.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="#e53e3e" stroke-width="2.5" stroke-linecap="round"/></svg>' : ''}</td>
+      <td style="text-align:center;">${s.stopped ? '<svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e53e3e"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="white" stroke-width="1.2"/><rect x="5" y="10.2" width="14" height="3.6" rx="0.5" fill="white"/></svg>' : ''}</td>
       <td onclick="event.stopPropagation()">
         <button class="ctx-trigger" onclick="ctxAc(event,'${esc(s.spoolNo)}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
