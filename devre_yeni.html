@@ -786,7 +786,14 @@ function ifsOnayla() {
   if (!secili.length) { toast(tv('dny_select_spool_err','En az bir spool seçin'), 'er'); return; }
   secili.forEach(cb => {
     const pipeline = cb.dataset.pipeline;
-    const spoolNo  = cb.dataset.spool;
+    const spoolRaw  = cb.dataset.spool;
+    // Rev'i spool_no'dan ayır: S01-R1, S01_REV2, S01 R1 vb.
+    function _spoolRevAyir(raw) {
+      const m = raw.match(/^(.+?)[\s\-_]+(?:REV|R)(\w+)$/i);
+      if (m) return { spool: m[1].trim(), rev: 'R' + m[2].toUpperCase() };
+      return { spool: raw.trim(), rev: '' };
+    }
+    const { spool: spoolNo, rev: revOtomatik } = _spoolRevAyir(spoolRaw);
     const items    = (ifsData[pipeline] || {})[spoolNo] || [];
     const toplamKg = items.reduce((s,i) => s + i.agirlik, 0);
     const malzMap  = {};
@@ -807,7 +814,7 @@ function ifsOnayla() {
     // Yüzey: devre formundan al
     const yuzeyVal = (document.querySelector('input[name="yuzey"]:checked') || {}).value || '';
     spooller.push({
-      pipeline, spoolNo, rev:'',
+      pipeline, spoolNo, rev: revOtomatik,
       malzeme: anaMalzeme, kalite: anaMalzeme,
       cap: caplar[0] || '', agirlik: toplamKg, yuzey: yuzeyVal,
       ifsItems: items,
@@ -1058,8 +1065,8 @@ async function kaydet() {
       const basamakSnapshot = await ARES.basamakSnapshotOlustur();
       const ilkBasamak = basamakSnapshot.length ? basamakSnapshot[0].sistem_adi : 'on_imalat';
 
-      // 1. Devre insert
-      const devreRes = await supa.from('devreler').insert({
+      // 1. Devre upsert (insert veya mevcut devreyi getir — retry'da 409 olmaz)
+      const devreRes = await supa.from('devreler').upsert({
         tenant_id:        ARES.tenantId(),
         proje_id:         gv('selProje'),
         devre_no:         gv('devreAdi'),
@@ -1075,7 +1082,7 @@ async function kaydet() {
         agirlik:          toplamAgirlik(),
         is_emri_no:       isEmriNo,
         alistirma_devresi: !!(document.getElementById('alistirmaDevresi')||{}).checked,
-      }).select().single();
+      }, { onConflict: 'tenant_id,proje_id,devre_no' }).select().single();
 
       if (devreRes.error) {
         toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
@@ -1093,7 +1100,7 @@ async function kaydet() {
             devre_id:      devreId,
             spool_no:      s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
             pipeline_no:   s.pipeline || null,
-            rev:           s.rev      || null,
+            rev:           s.rev      || '',
             malzeme:       s.malzeme  || null,
             kalite:        s.kalite   || null,
             dis_cap_mm:    capMm,
@@ -1106,7 +1113,7 @@ async function kaydet() {
           };
         });
         const spoolRes = await supa.from('spooller').upsert(spoolRows, {
-          onConflict: 'tenant_id,devre_id,pipeline_no,spool_no',
+          onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,rev',
           ignoreDuplicates: false
         });
 
@@ -1114,18 +1121,18 @@ async function kaydet() {
         let spoolFetch = { data: [], error: null };
         if (!spoolRes.error) {
           spoolFetch = await supa.from('spooller')
-            .select('id, pipeline_no, spool_no')
+            .select('id, pipeline_no, spool_no, rev')
             .eq('tenant_id', ARES.tenantId())
             .eq('devre_id', devreId);
         }
         // spoolRes.data yerine spoolFetch.data kullan; pipeline_no+spool_no ile eşleştir
         const spoolIdMap = {};
         (spoolFetch.data || []).forEach(function(r) {
-          spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no] = r.id;
+          spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no + '__' + (r.rev || '')] = r.id;
         });
         // spoolRes.data'yı spooller sırasına göre yeniden oluştur
         const spoolResData = spoolRows.map(function(r) {
-          return { id: spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no] || null };
+          return { id: spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no + '__' + (r.rev || '')] || null };
         });
         const spoolResWrapped = { error: spoolRes.error || spoolFetch.error, data: spoolResData };
 
