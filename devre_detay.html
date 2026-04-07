@@ -1779,22 +1779,44 @@ async function spoolMalzYukle() {
     if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Henüz malzeme eklenmemiş</td></tr>';
     return;
   }
-  if (tbody) tbody.innerHTML = _spoolMalzData.map(function(m) {
-    var sp = m.spooller || {};
-    var spoolLabel = (sp.kisa_kod ? sp.kisa_kod + ' · ' : '') + (sp.spool_no || '—');
-    var boyAdet = m.tip === 'boru' ? (m.boy_mm ? m.boy_mm + ' mm' : '—') : (m.adet ? m.adet + ' adet' : '—');
+  // Aynı özellikteki malzemeleri grupla ve topla
+  var grupMap = {};
+  _spoolMalzData.forEach(function(m) {
+    var key = [m.kod||'', m.tanim||'', m.malzeme||'', m.kalite||'',
+               String(m.dis_cap_mm||''), String(m.et_mm||''), m.tip||''].join('|');
+    if (!grupMap[key]) {
+      grupMap[key] = { kod:m.kod, tanim:m.tanim, malzeme:m.malzeme, kalite:m.kalite,
+        dis_cap_mm:m.dis_cap_mm, et_mm:m.et_mm, tip:m.tip,
+        boy_top:0, adet_top:0, agirlik_top:0, sertifikali:false, n:0 };
+    }
+    var g = grupMap[key];
+    g.boy_top     += parseFloat(m.boy_mm     || 0);
+    g.adet_top    += parseFloat(m.adet       || 0);
+    g.agirlik_top += parseFloat(m.agirlik_kg || 0);
+    if (m.sertifikali) g.sertifikali = true;
+    g.n++;
+  });
+  var gruplar = Object.values(grupMap).sort(function(a,b){
+    return (a.dis_cap_mm||0)-(b.dis_cap_mm||0) || (a.tanim||'').localeCompare(b.tanim||'');
+  });
+  var toplamAgirlik = gruplar.reduce(function(s,g){return s+g.agirlik_top;},0);
+  if (badge) badge.textContent = gruplar.length + ' kalem · ' + toplamAgirlik.toFixed(1).replace('.',',') + ' kg';
+  if (tbody) tbody.innerHTML = gruplar.map(function(g) {
+    var boyAdet = g.tip === 'boru'
+      ? (g.boy_top ? (g.boy_top/1000).toFixed(3).replace('.',',') + ' m (' + g.boy_top.toFixed(0) + ' mm)' : '—')
+      : (g.adet_top ? g.adet_top + ' adet' : '—');
     return '<tr>' +
-      '<td style="padding:8px 12px;font-weight:700;color:var(--leg);white-space:nowrap;">' + esc(spoolLabel) + '</td>' +
-      '<td style="padding:8px 12px;font-size:13px;font-weight:600;">' + esc(m.kod||'—') + '</td>' +
-      '<td style="padding:8px 12px;color:var(--txm);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(m.tanim||'') + '">' + esc(m.tanim||'—') + '</td>' +
-      '<td style="padding:8px 12px;">' + esc(m.malzeme||'—') + '</td>' +
-      '<td style="padding:8px 12px;color:var(--ac);font-weight:600;">' + esc(m.kalite||'—') + '</td>' +
-      '<td style="padding:8px 12px;text-align:right;">' + (m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—') + '</td>' +
-      '<td style="padding:8px 12px;text-align:right;">' + (m.et_mm ? String(m.et_mm).replace('.',',') + ' mm' : '—') + '</td>' +
-      '<td style="padding:8px 12px;text-align:right;">' + esc(boyAdet) + '</td>' +
-      '<td style="padding:8px 12px;text-align:right;">' + (m.agirlik_kg ? String(parseFloat(m.agirlik_kg).toFixed(3)).replace('.',',') + ' kg' : '—') + '</td>' +
-      '<td style="padding:8px 12px;font-family:monospace;font-size:13px;color:var(--txm);">' + esc(m.heat_no||'—') + '</td>' +
-      '<td style="padding:8px 12px;text-align:center;">' + (m.sertifikali ? '<span style="color:var(--warn);font-weight:700;">⚠</span>' : '—') + '</td>' +
+      '<td style="padding:8px 12px;font-size:13px;color:var(--txd);">' + g.n + ' spool</td>' +
+      '<td style="padding:8px 12px;font-size:13px;font-weight:600;">' + esc(g.kod||'—') + '</td>' +
+      '<td style="padding:8px 12px;color:var(--txm);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(g.tanim||'') + '">' + esc(g.tanim||'—') + '</td>' +
+      '<td style="padding:8px 12px;">' + esc(g.malzeme||'—') + '</td>' +
+      '<td style="padding:8px 12px;color:var(--ac);font-weight:600;">' + esc(g.kalite||'—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + (g.dis_cap_mm ? String(parseFloat(g.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + (g.et_mm ? String(g.et_mm).replace('.',',') + ' mm' : '—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--tx);">' + boyAdet + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--tx);">' + (g.agirlik_top ? g.agirlik_top.toFixed(3).replace('.',',') + ' kg' : '—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;color:var(--txd);">—</td>' +
+      '<td style="padding:8px 12px;text-align:center;">' + (g.sertifikali ? '<span style="color:var(--warn);font-weight:700;">⚠</span>' : '—') + '</td>' +
       '</tr>';
   }).join('');
 }
