@@ -1326,7 +1326,7 @@ async function fotoKaydet(){
   var prog=T('fotoProgress'),bar=T('fotoProgressBar'),pLbl=T('fotoProgressLabel'),pPct=T('fotoProgressPct');
   if(prog)prog.style.display='block';
   var aciklama=(T('fotoAciklama')||{}).value||'';
-  var yapan=ARES.oturum()&&ARES.oturum().ad_soyad?ARES.oturum().ad_soyad:'—';
+  var _ot=ARES.oturumAl();var yapan=_ot&&_ot.ad_soyad?_ot.ad_soyad:'—';
   var toplam=_fotoFiles.length,basarili=0,hatali=0;
 
   for(var i=0;i<toplam;i++){
