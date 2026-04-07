@@ -922,6 +922,7 @@ async function spoolYukle() {
         markalama_kalemleri(id, markalandi)
       `)
       .eq('devre_id', devreId)
+      .order('pipeline_no')
       .order('spool_no');
 
     if (spRes.error) { console.warn('Spool yükleme:', spRes.error); return; }
@@ -1124,7 +1125,7 @@ function statGuncelle() {
   setText('ddStatSpool', aktif.length + ' ' + tv('dv_unit_spool','spool'));
   setText('ddStatAgirlik', Math.round(toplumAgirlik()).toLocaleString('tr-TR')+' kg');
   // Sapan malzeme/yuzey/kalite değerlerini bul
-  function _malzKat2(str){ if(!str)return ''; const u=String(str).toUpperCase(); if(u.includes('316')||u.includes('304')||u.includes('PASLANMAZ')||u.includes('INOX'))return 'Paslanmaz'; if(u.includes('ALUM'))return 'Alüminyum'; if(u.includes('CUNI')||u.includes('BAKIR'))return 'Bakır Alaşım'; return 'Karbon Çelik'; }
+  function _malzKat2(str){ if(!str)return ''; const u=String(str).toUpperCase(); if(u.includes('316')||u.includes('304')||u.includes('PASLANMAZ')||u.includes('INOX'))return 'Paslanmaz'; if(u.includes('ALUM')||u.includes('ALÜM'))return 'Alüminyum'; if(u.includes('CUNI')||u.includes('BAKIR'))return 'Bakır Alaşım'; return 'Karbon Çelik'; }
   const _dvMalz = ((DEVRE.malzeme||[])[0]||'').trim();
   const _dvYuz  = ((DEVRE.yuzey||[])[0]||'').trim().toUpperCase();
   const sapanMalzSet = new Set(), sapanYuzSet = new Set(), sapanKalSet = new Set();
@@ -1214,7 +1215,7 @@ function renderTable() {
     if(!str) return '';
     const k = String(str).toUpperCase();
     if(k.includes('PASLANMAZ') || k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
-    if(k.includes('ALUM')) return 'Alüminyum';
+    if(k.includes('ALUM')||k.includes('ALÜM')) return 'Alüminyum';
     if(k.includes('CUNI') || k.includes('BAKIR') || k.includes('BAKIM')) return 'Bakır Alaşım';
     return 'Karbon Çelik';
   }
