@@ -1237,13 +1237,13 @@ function renderTable() {
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
       <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
-      <td style="font-size:13px;" onclick="event.stopPropagation();">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);cursor:pointer;" onclick="revDuzenle('${esc(s.spoolNo)}',this)" title="Düzenle">${esc(s.rev)}</span>` : `<span style="font-size:12px;color:var(--txd);cursor:pointer;opacity:.5;" onclick="revDuzenle('${esc(s.spoolNo)}',this)" title="Rev ekle">+ Rev</span>`}</td>
+      <td style="font-size:13px;" onclick="event.stopPropagation();inlineEdit(this,'rev','${esc(s.spoolNo)}','text','','')" title="Düzenle">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">${esc(s.rev)}</span>` : '<span style="color:var(--txd);">—</span>'}</td>
       <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
-      <td style="font-size:14px;">${malzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreMalzKat}">${esc(s.malzeme)}</span>` : esc(s.malzeme)||'--'}</td>
-      <td style="font-size:14px;">${kalSapma ? `<span style="${sapmaStl}">${esc(s.kalite)}</span>` : `<span style="color:var(--ac);">${esc(s.kalite)||'--'}</span>`}</td>
-      <td style="font-size:14px;">${yuzSapma ? `<span style="${sapmaStl}" title="Devre geneli: ${_devreYuz}">${esc(s.yuzey)}</span>` : esc(s.yuzey)||'--'}</td>
+      <td style="font-size:14px;cursor:pointer;" onclick="event.stopPropagation();inlineEdit(this,'malzeme','${esc(s.spoolNo)}','select','Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum,Çelik','${esc(s.malzeme)}')" title="Düzenle">${malzSapma ? `<span style="${sapmaStl}">${esc(s.malzeme)}</span>` : `<span>${esc(s.malzeme)||'—'}</span>`}</td>
+      <td style="font-size:14px;cursor:pointer;" onclick="event.stopPropagation();inlineEdit(this,'kalite','${esc(s.spoolNo)}','text','','${esc(s.kalite)}')" title="Düzenle">${kalSapma ? `<span style="${sapmaStl}">${esc(s.kalite)}</span>` : `<span style="color:var(--ac);">${esc(s.kalite)||'—'}</span>`}</td>
+      <td style="font-size:14px;cursor:pointer;" onclick="event.stopPropagation();inlineEdit(this,'yuzey','${esc(s.spoolNo)}','select','Galvaniz,Asit,Siyah,Epoksi,Boyalı','${esc(s.yuzey)}')" title="Düzenle">${yuzSapma ? `<span style="${sapmaStl}">${esc(s.yuzey)}</span>` : `<span>${esc(s.yuzey)||'—'}</span>`}</td>
       <td><span class="status-badge ${d.cls}">${s.stopped?tv('dv_status_stopped','Durduruldu'):esc(s.durumText||d.text)}</span></td>
       <td>
         <div class="mini-steps" title="${getAdimLabels().map(esc).join(' → ')}">
@@ -1280,25 +1280,57 @@ function _renderPagination(total, page, totalPages) {
 }
 function _changePage(d){_page=Math.max(1,_page+d);renderTable();}
 
-function revDuzenle(spoolNo, el) {
+function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
   var s = SPOOLS.find(function(x){ return x.spoolNo === spoolNo; });
   if (!s) return;
-  var mevcut = s.rev || '';
-  var yeni = prompt('Rev No (boş bırakırsan silinir):', mevcut);
-  if (yeni === null) return; // iptal
-  yeni = yeni.trim();
-  s.rev = yeni;
-  // Supabase güncelle
-  var supa = ARES.supabase();
-  if (supa && s.supaId && ARES.mod === 'supabase') {
-    supa.from('spooller').update({ rev: yeni, guncelleme: new Date().toISOString() })
-      .eq('id', s.supaId)
-      .then(function(r) {
-        if (r.error) showToast('Kayıt hatası: ' + r.error.message, 'error');
-        else showToast('Rev güncellendi', 'success');
-      });
+  var mevcut = s[alan] || '';
+  // Input oluştur
+  var inp;
+  if (tip === 'select') {
+    inp = document.createElement('select');
+    inp.style.cssText = 'width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);outline:none;';
+    var bos = document.createElement('option');
+    bos.value = ''; bos.textContent = '—';
+    inp.appendChild(bos);
+    secenekler.split(',').forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt.trim(); o.textContent = opt.trim();
+      if (opt.trim() === mevcut) o.selected = true;
+      inp.appendChild(o);
+    });
+  } else {
+    inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = mevcut;
+    inp.style.cssText = 'width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);outline:none;';
   }
-  renderTable();
+  var origContent = td.innerHTML;
+  td.innerHTML = '';
+  td.appendChild(inp);
+  inp.focus();
+  if (inp.select) inp.select();
+
+  function kaydet() {
+    var yeni = inp.value.trim();
+    s[alan] = yeni;
+    var supa = ARES.supabase();
+    if (supa && s.supaId && ARES.mod === 'supabase') {
+      var guncelleme = { guncelleme: new Date().toISOString() };
+      guncelleme[alan === 'malzeme' ? 'malzeme' :
+                 alan === 'kalite'  ? 'kalite'  :
+                 alan === 'yuzey'   ? 'yuzey'   : 'rev'] = yeni || (alan === 'rev' ? '' : null);
+      supa.from('spooller').update(guncelleme).eq('id', s.supaId)
+        .then(function(r){ if(r.error) showToast('Hata: '+r.error.message,'error'); });
+    }
+    renderTable();
+  }
+
+  inp.addEventListener('blur', kaydet);
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { inp.blur(); }
+    if (e.key === 'Escape') { td.innerHTML = origContent; }
+  });
+  if (tip === 'select') inp.addEventListener('change', function(){ inp.blur(); });
 }
 
 function navigateToSpool(spoolNo) {
