@@ -206,6 +206,7 @@ textarea.fi{resize:vertical;min-height:72px;}
         <label class="radio-btn aktif"><input type="radio" name="malzeme" value="Karbon Çelik" checked> <span data-i18n="dny_mat_carbon">Karbon Çelik</span></label>
         <label class="radio-btn"><input type="radio" name="malzeme" value="Paslanmaz"> <span data-i18n="dny_mat_ss">Paslanmaz</span></label>
         <label class="radio-btn"><input type="radio" name="malzeme" value="Bakır Alaşım"> <span data-i18n="dny_mat_copper">Bakır Alaşım</span></label>
+        <label class="radio-btn"><input type="radio" name="malzeme" value="Alüminyum"> <span>Alüminyum</span></label>
         <label class="radio-btn"><input type="radio" name="malzeme" value="Diğer"> <span data-i18n="dny_mat_other">Diğer</span></label>
       </div>
       <input class="fi" id="malzemeDiger" data-i18n-placeholder="dny_mat_other_ph" placeholder="Malzeme belirtin..." style="display:none;margin-top:8px;">
@@ -819,7 +820,8 @@ function ifsOnayla() {
         if(!k)return 'Karbon Çelik';
         const u=k.toUpperCase();
         if(u.includes('316')||u.includes('304')||u.includes('PASLANMAZ')||u.includes('SS')||u.includes('INOX'))return 'Paslanmaz';
-        if(u.includes('CUNI')||u.includes('BAKIR')||u.includes('ALUM'))return 'Bakır Alaşım';
+        if(u.includes('ALUM'))return 'Alüminyum';
+        if(u.includes('CUNI')||u.includes('BAKIR'))return 'Bakır Alaşım';
         return 'Karbon Çelik';
       })(anaMalzeme),
       kalite: anaMalzeme,
@@ -1246,7 +1248,8 @@ async function kaydet() {
           if (!kalite) return 'Karbon Çelik';
           const k = kalite.toUpperCase();
           if (k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
-          if (k.includes('CUNI') || k.includes('CU') || k.includes('ALUM')) return 'Bakır Alaşım';
+          if (k.includes('ALUM')) return 'Alüminyum';
+          if (k.includes('CUNI') || k.includes('CU') || k.includes('BAKIR')) return 'Bakır Alaşım';
           return 'Karbon Çelik';
         }
 
