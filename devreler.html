@@ -983,7 +983,7 @@ function setML(id, data) {
 }
 
 function mlKontrolAc(id) {
-  var d = DEVRELER.find(function(x) { return x.id === id; });
+  var d = DEVRELER.find(function(x) { return x.supaId === id; });
   if (!d) return;
   _mlkAktifId = id;
   // ML yoksa caps'ten otomatik üret
@@ -1097,7 +1097,7 @@ function getSilinenler() { try { return JSON.parse(localStorage.getItem('ares_si
 function silModal(e, id) {
   e.stopPropagation();
   _silAktifId = id;
-  var d = DEVRELER.find(function(x) { return x.id === id; });
+  var d = DEVRELER.find(function(x) { return x.supaId === id; });
   var el = document.getElementById('silDevreBilgi');
   if (el && d) el.textContent = d.isEmri + ' — ' + d.devre;
   modal('modalSil', true);
@@ -1105,7 +1105,7 @@ function silModal(e, id) {
 
 function silOnayla() {
   if (_silAktifId === null) return;
-  var d = DEVRELER.find(function(x) { return x.id === _silAktifId; });
+  var d = DEVRELER.find(function(x) { return x.supaId === _silAktifId; });
   modal('modalSil', false);
   var aktifId = _silAktifId;
   _silAktifId = null;
@@ -1138,7 +1138,7 @@ function getIptalMap() { try { return JSON.parse(localStorage.getItem('ares_ipta
 function iptalModal(e, id) {
   e.stopPropagation();
   _iptalAktifId = id;
-  var d = DEVRELER.find(function(x) { return x.id === id; });
+  var d = DEVRELER.find(function(x) { return x.supaId === id; });
   var el = document.getElementById('iptalDevreBilgi');
   if (el && d) el.textContent = d.isEmri + ' — ' + d.devre;
   var nd = document.getElementById('iptalNeden');
@@ -1150,7 +1150,7 @@ function iptalOnayla() {
   if (_iptalAktifId === null) return;
   var neden = (document.getElementById('iptalNeden') || {}).value || '';
   if (!neden.trim()) { showToast('İptal nedeni zorunlu', 'error'); return; }
-  var d = DEVRELER.find(function(x) { return x.id === _iptalAktifId; });
+  var d = DEVRELER.find(function(x) { return x.supaId === _iptalAktifId; });
   var map = getIptalMap();
   map[_iptalAktifId] = {
     tarih: new Date().toLocaleString('tr-TR'),
@@ -1345,7 +1345,7 @@ function renderTable(sayfaReset) {
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
 
-    return '<tr' + rowCls + ' onclick="devreAc(' + d.id + ')">' +
+    return '<tr' + rowCls + ' onclick="devreAc(\'' + d.supaId + '\')">' +
       '<td class="star-cell" onclick="event.stopPropagation();">' +
         '<span id="star_' + d.supaId + '" class="star-icon ' + starCfg.cls + '" onclick="yildizToggle(\'' + d.supaId + '\')" title="' + esc(starCfg.label || 'Malzeme durumu') + '">' + starCfg.icon + '</span>' +
         '<input class="sira-input' + (_siraCache[d.supaId] ? ' has-val' : '') + '" id="sira_' + d.supaId + '" data-sid="' + d.supaId + '" type="text" maxlength="3" placeholder="—" value="' + esc(_siraCache[d.supaId] || '') + '" onclick="event.stopPropagation()" onchange="siraGuncelle(this.dataset.sid,this.value);this.classList.toggle(\'has-val\',this.value.trim()!==\'\')" onkeydown="if(event.key===\'Enter\')this.blur()" title="İmalat sıra numarası">' +
@@ -1364,15 +1364,15 @@ function renderTable(sayfaReset) {
       '<td><span class="status-badge ' + dur.cls + '">' + esc(dur.text) + '</span></td>' +
       '<td style="font-size:14px;color:var(--txd);">' + tarihFormat(esc(d.sonIslem || '—')) + '</td>' +
       '<td class="termin-cell" onclick="event.stopPropagation();">' +
-        '<button class="termin-btn ' + terminRenk(_terminCache[d.id]) + '" onclick="takvimAc(event,' + d.id + ')">' +
+        '<button class="termin-btn ' + terminRenk(_terminCache[d.supaId]) + '" onclick="takvimAc(event,\'' + d.supaId + '\')">' +
           '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
-          terminGoster(_terminCache[d.id]) +
+          terminGoster(_terminCache[d.supaId]) +
         '</button>' +
       '</td>' +
       '<td class="act-cell" onclick="event.stopPropagation();">' +
-        '<button class="act-btn edit" onclick="devreDuzenle(event,' + d.id + ')" title="Düzenle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
-        (iptalBilgi ? '' : '<button class="act-btn cancel" onclick="iptalModal(event,' + d.id + ')" title="İptal Et"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>') +
-        '<button class="act-btn del" onclick="silModal(event,' + d.id + ')" title="Sil"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>' +
+        '<button class="act-btn edit" onclick="devreDuzenle(event,\'' + d.supaId + '\')" title="Düzenle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+        (iptalBilgi ? '' : '<button class="act-btn cancel" onclick="iptalModal(event,\'' + d.supaId + '\')" title="İptal Et"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>') +
+        '<button class="act-btn del" onclick="silModal(event,\'' + d.supaId + '\')" title="Sil"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>' +
       '</td>' +
     '</tr>';
   }).join('');
@@ -1383,7 +1383,7 @@ function renderTable(sayfaReset) {
 }
 
 function devreAc(id) {
-  var d = DEVRELER.find(function(x) { return x.id === id; });
+  var d = DEVRELER.find(function(x) { return x.supaId === id; });
   if (!d) return;
   try {
     localStorage.setItem('ares_aktif_devre', JSON.stringify(d));
