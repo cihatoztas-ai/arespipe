@@ -778,25 +778,24 @@ async function veriYukle() {
     var supa = ARES.supabase();
     if (!supa) { renderTable(); return; }
 
-    // Devreler + proje + tersane
-    var devRes = await supa
-      .from('devreler')
-      .select('*, projeler(proje_no, tersaneler(ad, kod))')
-      .neq('silindi', true)
-      .order('olusturma', { ascending: false });
+    // Tüm sorgular paralel — Promise.all ile tek tur
+    var results = await Promise.all([
+      supa.from('devreler')
+        .select('*, projeler(proje_no, tersaneler(ad, kod))')
+        .neq('silindi', true)
+        .order('olusturma', { ascending: false }),
+      supa.from('spooller')
+        .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey')
+        .neq('silindi', true),
+      supa.from('islem_log')
+        .select('devre_id, olusturma')
+        .order('olusturma', { ascending: false })
+        .limit(500)
+    ]);
+    var devRes   = results[0];
+    var spoolRes = results[1];
+    var logRes   = results[2];
     if (devRes.error) { console.warn('Devre yükleme:', devRes.error); renderTable(); return; }
-
-    // Spool istatistikleri
-    var spoolRes = await supa
-      .from('spooller')
-      .select('id, devre_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey')
-      .neq('silindi', true);
-
-    // Son işlem tarihleri
-    var logRes = await supa
-      .from('islem_log')
-      .select('devre_id, olusturma')
-      .order('olusturma', { ascending: false });
 
     // devre_id → spooller ve loglar
     var spoolByDevre = {}, logByDevre = {};
@@ -1349,7 +1348,7 @@ function renderTable(sayfaReset) {
     return '<tr' + rowCls + ' onclick="devreAc(' + d.id + ')">' +
       '<td class="star-cell" onclick="event.stopPropagation();">' +
         '<span id="star_' + d.supaId + '" class="star-icon ' + starCfg.cls + '" onclick="yildizToggle(\'' + d.supaId + '\')" title="' + esc(starCfg.label || 'Malzeme durumu') + '">' + starCfg.icon + '</span>' +
-        '<input class="sira-input' + (_siraCache[d.supaId] ? ' has-val' : '') + '" id="sira_' + d.supaId + '" type="text" maxlength="3" placeholder="—" value="' + esc(_siraCache[d.supaId] || '') + '" onclick="event.stopPropagation()" onchange="siraGuncelle('" + d.supaId + "',this.value);this.classList.toggle(\'has-val\',this.value.trim()!==\'\')" onkeydown="if(event.key===\'Enter\')this.blur()" title="İmalat sıra numarası">' +
+        '<input class="sira-input' + (_siraCache[d.supaId] ? ' has-val' : '') + '" id="sira_' + d.supaId + '" data-sid="' + d.supaId + '" type="text" maxlength="3" placeholder="—" value="' + esc(_siraCache[d.supaId] || '') + '" onclick="event.stopPropagation()" onchange="siraGuncelle(this.dataset.sid,this.value);this.classList.toggle(\'has-val\',this.value.trim()!==\'\')" onkeydown="if(event.key===\'Enter\')this.blur()" title="İmalat sıra numarası">' +
       '</td>' +
       '<td style="color:var(--txd);font-size:14px;">' + (globalIdx + 1) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
