@@ -220,6 +220,7 @@
     @media(max-width:768px){ .page{ padding:16px; } }
   </style>
 
+  <script src="ares-lang.js"></script>
   <script src="ares-store.js"></script>
   <script src="ares-layout.js"></script>
 </head>
@@ -614,6 +615,12 @@
 
 <script>
 'use strict';
+
+// tv() güvenli fallback — ares-lang.js'den önce çağrılırsa TR döner
+function tv(key, tr) {
+  if (typeof window.tv === 'function' && window.tv !== tv) return window.tv(key, tr);
+  return tr !== undefined ? tr : key;
+}
 
 // Çeviriler ares-lang.js tarafından sağlanır (lang/en.json, lang/ar.json)
 // Dil değişince tabloyu yeniden render et
@@ -2054,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // İlk yükleme
   navBadgeGuncelle();
   guncelleMLButonu();
-  _applyI18n();
+  if (typeof _applyI18n === "function") _applyI18n();
 
   // Supabase modda Supabase'den yükle, yoksa boş tablo
   if (ARES.mod === 'supabase') {
@@ -2064,7 +2071,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // D-01: dil değişimi
-  window._onLangChange = function() { _applyI18n(); renderTable(); };
+  window._onLangChange = function() { if (typeof _applyI18n === "function") _applyI18n(); renderTable(); };
 
   // B-03: visibility restore
   document.documentElement.style.visibility = '';
