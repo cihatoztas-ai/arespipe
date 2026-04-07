@@ -1065,33 +1065,50 @@ async function kaydet() {
       const basamakSnapshot = await ARES.basamakSnapshotOlustur();
       const ilkBasamak = basamakSnapshot.length ? basamakSnapshot[0].sistem_adi : 'on_imalat';
 
-      // 1. Devre upsert (insert veya mevcut devreyi getir — retry'da 409 olmaz)
-      const devreRes = await supa.from('devreler').upsert({
-        tenant_id:        ARES.tenantId(),
-        proje_id:         gv('selProje'),
-        devre_no:         gv('devreAdi'),
-        zone:             gv('devreZone') || null,
-        termin:           gv('devreTermin') || null,
-        malzeme:          malzemeFinal,
-        yuzey:            yuzeySecili,
-        notlar:           gv('devreNot') || null,
-        basamak_snapshot: basamakSnapshot,
-        aktif_basamak:    ilkBasamak,
-        durum:            'aktif',
-        ilerleme:         0,
-        agirlik:          toplamAgirlik(),
-        is_emri_no:       isEmriNo,
-        alistirma_devresi: !!(document.getElementById('alistirmaDevresi')||{}).checked,
-      }, { onConflict: 'tenant_id,proje_id,devre_no' }).select().single();
-
-      if (devreRes.error) {
-        toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
-        return;
+      // 1. Devre kaydet — partial index nedeniyle upsert kullanılamaz
+      // Önce mevcut kontrolü, yoksa insert
+      let devreId = null;
+      const devreKontrol = await supa.from('devreler')
+        .select('id')
+        .eq('tenant_id', ARES.tenantId())
+        .eq('proje_id',  gv('selProje'))
+        .eq('devre_no',  gv('devreAdi'))
+        .eq('silindi',   false)
+        .maybeSingle();
+      if (devreKontrol.data) {
+        devreId = devreKontrol.data.id;
+      } else {
+        const devreRes = await supa.from('devreler').insert({
+          tenant_id:        ARES.tenantId(),
+          proje_id:         gv('selProje'),
+          devre_no:         gv('devreAdi'),
+          zone:             gv('devreZone') || null,
+          termin:           gv('devreTermin') || null,
+          malzeme:          malzemeFinal,
+          yuzey:            yuzeySecili,
+          notlar:           gv('devreNot') || null,
+          basamak_snapshot: basamakSnapshot,
+          aktif_basamak:    ilkBasamak,
+          durum:            'aktif',
+          ilerleme:         0,
+          agirlik:          toplamAgirlik(),
+          is_emri_no:       isEmriNo,
+          alistirma_devresi: !!(document.getElementById('alistirmaDevresi')||{}).checked,
+        }).select('id').single();
+        if (devreRes.error) {
+          toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
+          return;
+        }
+        devreId = devreRes.data.id;
       }
-      const devreId = devreRes.data.id;
 
       // 2. Spooller insert
       if (spooller.length) {
+        // Her spool için global sayaçtan kisa_kod üret (P26-0001, P26-0002...)
+        const kisaKodlar = [];
+        for (let _ki = 0; _ki < spooller.length; _ki++) {
+          kisaKodlar.push(await ARES.sonrakiNo('spool'));
+        }
         const spoolRows = spooller.map(function(s, idx) {
           // ✅ Bug1: Türkçe virgüllü çap formatını düzelt (örn: "114,3" → 114.3)
           const capMm = parseFloat(String(s.cap || '').replace(',', '.')) || null;
@@ -1099,6 +1116,7 @@ async function kaydet() {
             tenant_id:     ARES.tenantId(),
             devre_id:      devreId,
             spool_no:      s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
+            kisa_kod:      kisaKodlar[idx] || null,
             pipeline_no:   s.pipeline || null,
             rev:           s.rev      || '',
             malzeme:       s.malzeme  || null,
