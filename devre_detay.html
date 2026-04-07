@@ -879,6 +879,7 @@ function esc(s){var d=document.createElement('div');d.textContent=s==null?'':Str
 // ── DİL ANAHTARLARI — ares-lang.js sistemi ─────────────────────
 if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
   // Çeviriler lang/en.json ve lang/ar.json dosyalarından gelir
+
 }
 // tv() güvenli fallback — ares-lang.js yüklenemezse TR metnini döner
 if (typeof window.tv === 'undefined') {
@@ -1241,7 +1242,7 @@ function renderTable() {
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
       <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
       <td style="font-size:13px;" onclick="event.stopPropagation();inlineEdit(this,'rev','${esc(s.spoolNo)}','text','','')" title="Düzenle">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">${esc(s.rev)}</span>` : '<span style="color:var(--txd);">—</span>'}</td>
-      <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||(s.kisa_kod || String(s.idx).padStart(4,'0'))}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txd);">${esc(s.et)||'—'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
@@ -1351,7 +1352,7 @@ function navigateToSpool(spoolNo) {
   const data = Object.assign({}, s, {
     _devre: DEVRE.devre, _gemi: DEVRE.gemi, _projeNo: DEVRE.projeNo||DEVRE.isEmri||'',
     _isEmri: DEVRE.isEmri, _tersane: DEVRE.tersane,
-    spoolId: String(s.idx).padStart(4,'0')
+    spoolId: (s.kisa_kod || String(s.idx).padStart(4,'0'))
   });
   localStorage.setItem('ares_aktif_spool', JSON.stringify(data));
   window.location.href = 'spool_detay.html';
@@ -2597,7 +2598,7 @@ function _etiketToggle(spoolNo) {
 
 function _etiketKartiHTML(s, canvasId) {
   const spoolFmt = [DEVRE.gemi, DEVRE.devre, s.spoolNo].filter(Boolean).join('-');
-  const spoolId  = String(s.idx).padStart(4,'0');
+  const spoolId  = (s.kisa_kod || String(s.idx).padStart(4,'0'));
   return {
     qrData: spoolFmt+'-'+spoolId,
     html: `<div style="background:#fff;border:1.5px solid #1e3a5f;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:5px;">
@@ -2653,7 +2654,7 @@ function etiketYazdir() {
         const cv=document.getElementById('yazdir_cv_'+i);
         const png = cv?cv.toDataURL():'';
         const spoolFmt=[DEVRE.gemi,DEVRE.devre,s.spoolNo].filter(Boolean).join('-');
-        const spoolId=String(s.idx).padStart(4,'0');
+        const spoolId=(s.kisa_kod || String(s.idx).padStart(4,'0'));
         return {png,spoolFmt,spoolId,isEmri:DEVRE.isEmri||'--',tersane:DEVRE.tersane||'--'};
       });
       document.body.removeChild(tmp);
