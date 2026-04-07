@@ -481,6 +481,39 @@
   <!-- ═══ MALZEME LİSTESİ ═══ -->
   <div id="panelMalzeme" class="tab-panel" style="display:none;">
 
+    <!-- Tüm Spool Malzemeleri -->
+    <div style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">
+          📦 Tüm Spool Malzemeleri
+          <span id="spoolMalzBadge" style="font-size:14px;font-weight:400;color:var(--txd);margin-left:8px;"></span>
+        </div>
+        <button class="btn btn-sm" onclick="spoolMalzExcel()" style="height:32px;font-size:14px;">📥 Excel</button>
+      </div>
+      <div style="overflow-x:auto;border:1px solid var(--bor);border-radius:12px;background:var(--sur);">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="background:var(--sur2);">
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);white-space:nowrap;">Spool</th>
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Kod</th>
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Açıklama</th>
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Malzeme</th>
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Kalite</th>
+              <th style="padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Çap</th>
+              <th style="padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Et</th>
+              <th style="padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Boy/Adet</th>
+              <th style="padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Ağırlık</th>
+              <th style="padding:9px 12px;text-align:left;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Heat No</th>
+              <th style="padding:9px 12px;text-align:center;font-size:13px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Sert.</th>
+            </tr>
+          </thead>
+          <tbody id="spoolMalzBody">
+            <tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Pipeline Malzeme Listeleri -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">
@@ -1053,7 +1086,7 @@ function initTabs() {
       btn.classList.add('active');
       const el = document.getElementById(panels[btn.dataset.tab]);
       if(el) el.style.display = 'block';
-      if(btn.dataset.tab === 'malzeme') plMalzYukle();
+      if(btn.dataset.tab === 'malzeme') { spoolMalzYukle(); plMalzYukle(); }
     });
   });
 }
@@ -1701,6 +1734,82 @@ async function terminKaydetVal(val) {
 
 // ── PIPELINE MALZEME SİSTEMİ ──────────────────────────────────
 var PL_MALZEME = []; // {pipeline_no, malzemeler:[...], supaId}
+
+// ── SPOOL MALZEMELERİ TOPLU LİSTESİ ─────────────────────────────
+var _spoolMalzData = [];
+
+async function spoolMalzYukle() {
+  var supa = ARES.supabase();
+  var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
+  var tbody = document.getElementById('spoolMalzBody');
+  if (!supa || !devreId) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Bağlantı yok</td></tr>';
+    return;
+  }
+  // Önce devredeki spool ID'lerini al
+  var spRes = await supa.from('spooller')
+    .select('id, spool_no, kisa_kod')
+    .eq('devre_id', devreId)
+    .eq('silindi', false);
+  if (spRes.error || !spRes.data || !spRes.data.length) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Bu devreye ait spool bulunamadı</td></tr>';
+    return;
+  }
+  var spoolIdMap = {};
+  spRes.data.forEach(function(s){ spoolIdMap[s.id] = s; });
+  var spoolIds = spRes.data.map(function(s){ return s.id; });
+
+  var res = await supa
+    .from('spool_malzemeleri')
+    .select('*')
+    .in('spool_id', spoolIds)
+    .order('spool_id');
+  if (res.error) {
+    console.warn('Spool malzeme yükleme:', res.error);
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--re);">Yükleme hatası: ' + res.error.message + '</td></tr>';
+    return;
+  }
+  // spooller bilgisini ekle
+  _spoolMalzData = (res.data || []).map(function(m){
+    return Object.assign({}, m, { spooller: spoolIdMap[m.spool_id] || {} });
+  });
+  var badge = document.getElementById('spoolMalzBadge');
+  if (badge) badge.textContent = _spoolMalzData.length + ' kalem';
+  if (!_spoolMalzData.length) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Henüz malzeme eklenmemiş</td></tr>';
+    return;
+  }
+  if (tbody) tbody.innerHTML = _spoolMalzData.map(function(m) {
+    var sp = m.spooller || {};
+    var spoolLabel = (sp.kisa_kod ? sp.kisa_kod + ' · ' : '') + (sp.spool_no || '—');
+    var boyAdet = m.tip === 'boru' ? (m.boy_mm ? m.boy_mm + ' mm' : '—') : (m.adet ? m.adet + ' adet' : '—');
+    return '<tr>' +
+      '<td style="padding:8px 12px;font-weight:700;color:var(--leg);white-space:nowrap;">' + esc(spoolLabel) + '</td>' +
+      '<td style="padding:8px 12px;font-size:13px;font-weight:600;">' + esc(m.kod||'—') + '</td>' +
+      '<td style="padding:8px 12px;color:var(--txm);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(m.tanim||'') + '">' + esc(m.tanim||'—') + '</td>' +
+      '<td style="padding:8px 12px;">' + esc(m.malzeme||'—') + '</td>' +
+      '<td style="padding:8px 12px;color:var(--ac);font-weight:600;">' + esc(m.kalite||'—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + (m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + (m.et_mm ? String(m.et_mm).replace('.',',') + ' mm' : '—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + esc(boyAdet) + '</td>' +
+      '<td style="padding:8px 12px;text-align:right;">' + (m.agirlik_kg ? String(parseFloat(m.agirlik_kg).toFixed(3)).replace('.',',') + ' kg' : '—') + '</td>' +
+      '<td style="padding:8px 12px;font-family:monospace;font-size:13px;color:var(--txm);">' + esc(m.heat_no||'—') + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;">' + (m.sertifikali ? '<span style="color:var(--warn);font-weight:700;">⚠</span>' : '—') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function spoolMalzExcel() {
+  if (!_spoolMalzData.length) { return; }
+  var rows = [['Spool No','Kod','Açıklama','Malzeme','Kalite','Çap (mm)','Et (mm)','Boy (mm)','Adet','Ağırlık (kg)','Heat No','Sertifikali']];
+  _spoolMalzData.forEach(function(m) {
+    var sp = m.spooller || {};
+    rows.push([sp.spool_no||'', m.kod||'', m.tanim||'', m.malzeme||'', m.kalite||'', m.dis_cap_mm||'', m.et_mm||'', m.boy_mm||'', m.adet||'', m.agirlik_kg||'', m.heat_no||'', m.sertifikali?'Evet':'Hayir']);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Malzemeler');
+  XLSX.writeFile(wb, 'malzeme_listesi.xlsx');
+}
 
 async function plMalzYukle() {
   var supa = ARES.supabase();
