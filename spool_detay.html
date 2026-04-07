@@ -212,6 +212,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 <!-- SPOOL HEADER -->
 <div class="sh-top">
   <div class="sh-kimlik">
+    <div style="font-size:13px;font-weight:700;color:var(--txd);letter-spacing:.5px;margin-bottom:4px;" id="shTersaneMarka">--</div>
     <div class="sh-no" id="shNo">--</div>
     <div class="sh-id-row">
       <div class="sh-id"><span data-i18n="sp_spool_id">Spool ID:</span> <span id="shId">--</span></div>
@@ -689,6 +690,10 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
   <div class="mbox" style="max-width:460px;">
     <div class="mhead"><span class="mtitle" data-i18n="sp_modal_mark_title">🏷️ Markalama Ekle</span><button class="mclose" onclick="this.closest('.mov').style.display='none'">✕</button></div>
     <div class="mbody">
+      <div style="padding:12px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">Markalama Yazısı</div>
+        <div id="markOnizleme" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--ac);letter-spacing:.5px;word-break:break-all;">—</div>
+      </div>
       <div class="fg">
         <label class="fl" data-i18n="sp_mark_type_label">Markalama Tipi</label>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
@@ -701,10 +706,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       <div id="mPlakaInfo" style="display:none;padding:10px 12px;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.25);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_plaka_info">Spool malzemesi otomatik atanır. Malzeme seçimi gerekmez.</div>
       <div id="mManuelInfo" style="display:none;padding:10px 12px;background:rgba(100,116,139,.07);border:1px solid rgba(100,116,139,.2);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_manuel_info">Serbest markalama. Malzeme seçimi gerekmez.</div>
     </div>
-    <div style="margin:0 16px 4px;padding:12px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;">
-      <div style="font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">Markalama Yazısı</div>
-      <div id="markOnizleme" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--ac);letter-spacing:.5px;word-break:break-all;">—</div>
-    </div>
+
     <div class="mfoot"><button class="btn" onclick="this.closest('.mov').style.display='none'" data-i18n="sp_cancel_btn">İptal</button><button class="btn btn-ac" onclick="markKaydet()" data-i18n="sp_add_to_list_btn">Listeye Ekle</button></div>
   </div>
 </div>
@@ -1106,6 +1108,12 @@ function malzemeOpts(secili){
 // ── YÜKLEME ───────────────────────────────────────────────────
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
+  var markParts=[SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean);
+  if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
+  var markaYazisi = markParts.join('-');
+  // Tersane kısa adı / marka yazısı
+  var tersaneKisa = SP._tersane ? SP._tersane.split(' ')[0].toUpperCase() : '';
+  txc('shTersaneMarka', tersaneKisa ? tersaneKisa + ' / ' + markaYazisi : markaYazisi);
   var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');
   txc('shNo',no); txc('shId', SP.spoolId ? 'ID: '+SP.spoolId : SP.supaId ? SP.supaId.substring(0,8).toUpperCase() : '--');
   txc('bcDevre',SP._devre); txc('bcSpool',SP.spoolNo);
