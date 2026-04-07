@@ -1851,6 +1851,8 @@ function duzenleKaydet(){
   txc('stCap',SP.cap);txc('stKal',SP.kalinlik);txc('stAgr',SP.agirlik);txc('stYuzey',SP.yuzey);txc('stMalz',SP.malzeme);
   var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');txc('shNo',no);txc('bcSpool',SP.spoolNo);
   T('duzenleModal').style.display='none';renderQR();logEkle('Spool Düzenlendi',sno);
+  // localStorage güncelle — sayfa yenilenince eski değere dönmesin
+  try { localStorage.setItem('ares_aktif_spool', JSON.stringify(SP)); } catch(e) {}
   // Supabase'e kaydet
   var supa=ARES.supabase();
   if(supa && SP.supaId && ARES.mod==='supabase'){
