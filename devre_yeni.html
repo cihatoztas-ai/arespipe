@@ -1130,12 +1130,12 @@ async function kaydet() {
             alistirma:        (document.getElementById('alistirmaDevresi')||{}).checked ? 'VAR' : 'YOK',
           };
         });
-        const spoolRes = await supa.from('spooller').upsert(spoolRows, {
-          onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,rev',
-          ignoreDuplicates: false
+        // insert — conflict'te atla (ayrı SELECT ile ID alınıyor)
+        const spoolRes = await supa.from('spooller').insert(spoolRows, {
+          ignoreDuplicates: true
         });
 
-        // upsert().select() Supabase'de güvenilir dönmez — ayrı fetch yap
+        // insert sonrası ayrı fetch ile ID al
         let spoolFetch = { data: [], error: null };
         if (!spoolRes.error) {
           spoolFetch = await supa.from('spooller')
