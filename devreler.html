@@ -918,6 +918,15 @@ async function veriYukle() {
       });
       var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['celik'];
       var yuzeyArr   = Object.keys(yuzeySet);
+      // Sapma: devre genelinden farklı malzeme/yüzey olan spool sayısı
+      var devreMalz = (d.malzeme || '').toLowerCase().trim();
+      var devreYuz  = (d.yuzey  || '').trim();
+      var malzemeSapma = devreMalz ? spools.filter(function(s){
+        return s.malzeme && s.malzeme.toLowerCase().trim() !== devreMalz;
+      }).length : 0;
+      var yuzeySapma = devreYuz ? spools.filter(function(s){
+        return s.yuzey && s.yuzey.trim() !== devreYuz;
+      }).length : 0;
       var prj  = d.projeler || {};
       var trs  = prj.tersaneler || {};
       var sonIslem = logByDevre[d.id]
@@ -935,8 +944,10 @@ async function veriYukle() {
         zone:     d.zone          || '—',
         spool:    spools.length,
         agirlik:  totalAg,
-        malzeme:  d.malzeme ? [d.malzeme] : malzemeArr,
-        yuzey:    d.yuzey   ? [d.yuzey]   : yuzeyArr,
+        malzeme:       d.malzeme ? [d.malzeme] : malzemeArr,
+        yuzey:         d.yuzey   ? [d.yuzey]   : yuzeyArr,
+        malzemeSapma:  malzemeSapma,
+        yuzeySapma:    yuzeySapma,
         ilerleme: avgIler,
         durum:    d.durum         || 'baslamadi',
         sonIslem: sonIslem,
@@ -1403,12 +1414,12 @@ function renderTable(sayfaReset) {
     var matBadge = d.malzeme.map(function(m) {
       var label = m === 'celik' ? tv('dr_mat_celik', 'Çelik') : tv('dr_mat_paslanmaz', 'Paslanmaz');
       return '<span class="mat-badge ' + (m === 'celik' ? 'mb-celik' : 'mb-pas') + '">' + esc(label) + '</span>';
-    }).join('');
+    }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
       var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : 'yb-siyah';
       var key = 'dr_yuzey_' + y.toLowerCase();
       return '<span class="yuzey-badge ' + cls + '">' + esc(tv(key, y)) + '</span>';
-    }).join('');
+    }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
 
