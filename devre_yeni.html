@@ -1106,9 +1106,28 @@ async function kaydet() {
           };
         });
         const spoolRes = await supa.from('spooller').upsert(spoolRows, {
-          onConflict: 'tenant_id,devre_id,spool_no',
-          ignoreDuplicates: true
-        }).select('id');
+          onConflict: 'tenant_id,devre_id,pipeline_no,spool_no',
+          ignoreDuplicates: false
+        });
+
+        // upsert().select() Supabase'de güvenilir dönmez — ayrı fetch yap
+        let spoolFetch = { data: [], error: null };
+        if (!spoolRes.error) {
+          spoolFetch = await supa.from('spooller')
+            .select('id, pipeline_no, spool_no')
+            .eq('tenant_id', ARES.tenantId())
+            .eq('devre_id', devreId);
+        }
+        // spoolRes.data yerine spoolFetch.data kullan; pipeline_no+spool_no ile eşleştir
+        const spoolIdMap = {};
+        (spoolFetch.data || []).forEach(function(r) {
+          spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no] = r.id;
+        });
+        // spoolRes.data'yı spooller sırasına göre yeniden oluştur
+        const spoolResData = spoolRows.map(function(r) {
+          return { id: spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no] || null };
+        });
+        const spoolResWrapped = { error: spoolRes.error || spoolFetch.error, data: spoolResData };
 
         // ── Boyut parser: "88.9x8.0" | "4\" Sch 10S" | "DN100" → dis_cap, et
         function _boyutParcala(str) {
@@ -1205,9 +1224,9 @@ async function kaydet() {
 
         // 3. IFS malzeme kalemleri — sadece IFS spooller için
         // Standart/manuel spooller spool_detay sayfasından malzeme sekmesiyle girilecek
-        if (!spoolRes.error && spoolRes.data && spoolRes.data.length) {
+        if (!spoolResWrapped.error && spoolResWrapped.data && spoolResWrapped.data.length) {
           const malzemeRows = [];
-          spoolRes.data.forEach(function(dbSpool, i) {
+          spoolResWrapped.data.forEach(function(dbSpool, i) {
             const localSpool = spooller[i];
             if (localSpool && localSpool.ifsItems) {
               localSpool.ifsItems.forEach(function(item) {
