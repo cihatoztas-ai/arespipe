@@ -241,7 +241,12 @@ const ARES = (function () {
     if (mod === 'supabase' && _supa) {
       const { data, error } = await _supa.rpc('sonraki_no', { p_tip: tip });
       if (!error && data != null) return _noFormatla(cfg, data);
-      console.warn('[ARES] Sequence hatasi:', error ? error.message : '');
+      // ✅ FIX: sessiz hata yerine açık log
+      console.error('[ARES] sonrakiNo RPC basarisiz — local fallback:', tip,
+        'error:', error ? error.message : '(yok)', 'data:', data, 'tenant:', tenantId());
+    } else {
+      console.error('[ARES] sonrakiNo — Supabase bagli degil, local fallback:',
+        'mod:', mod, 'supa:', !!_supa);
     }
     return _sonrakiNoLocal(tip, cfg);
   }
