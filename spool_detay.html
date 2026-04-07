@@ -639,6 +639,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="fg"><label class="fl">Pipeline No</label><input class="fi" id="ed_pip" placeholder="M100-317-01-P2"></div>
         <div class="fg"><label class="fl" data-i18n="sp_spool_no_label">Spool No *</label><input class="fi" id="ed_sno" placeholder="S02"></div>
+        <div class="fg"><label class="fl">Rev No</label><input class="fi" id="ed_rev" placeholder="R1, R2..."></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_diameter">Dış Çap</label><input class="fi" id="ed_cap" placeholder="114,3 mm"></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_thickness">Et Kalınlığı</label><input class="fi" id="ed_et" placeholder="4,50 mm"></div>
         <div class="fg"><label class="fl" data-i18n="sp_weight_label">Ağırlık (kg)</label><input class="fi" id="ed_agr" placeholder="26,82 kg"></div>
@@ -1839,12 +1840,13 @@ function duzenleAc(){
   var s=function(id,v){var e=T(id);if(e)e.value=v||'';};
   s('ed_pip',SP.pipeline);s('ed_sno',SP.spoolNo);s('ed_cap',SP.cap);s('ed_et',SP.kalinlik);
   s('ed_agr',SP.agirlik);s('ed_kal',SP.kalite);
-  var ey=T('ed_yuz');if(ey)ey.value=SP.yuzey||'';var em=T('ed_malz');if(em)em.value=SP.malzeme||'';
+  var ey=T('ed_yuz');if(ey)ey.value=SP.yuzey||'';var em=T('ed_malz');if(em)em.value=SP.malzeme||'';var er=T('ed_rev');if(er)er.value=SP.rev||'';
   T('duzenleModal').style.display='flex';
 }
 function duzenleKaydet(){
   var sno=((T('ed_sno')||{}).value||'').trim();if(!sno){toast('Spool No zorunlu','er');return;}
   SP.pipeline=((T('ed_pip')||{}).value||'').trim();SP.spoolNo=sno;
+  SP.rev=((T('ed_rev')||{}).value||'').trim();
   SP.cap=((T('ed_cap')||{}).value||'').trim();SP.kalinlik=((T('ed_et')||{}).value||'').trim();
   SP.agirlik=((T('ed_agr')||{}).value||'').trim();SP.yuzey=((T('ed_yuz')||{}).value||'');
   SP.malzeme=((T('ed_malz')||{}).value||'');SP.kalite=((T('ed_kal')||{}).value||'').trim();
@@ -1861,6 +1863,7 @@ function duzenleKaydet(){
     supa.from('spooller').update({
       spool_no:         SP.spoolNo||null,
       pipeline_no:      SP.pipeline||null,
+      rev:              SP.rev||'',
       malzeme:          SP.malzeme||null,
       kalite:           SP.kalite||null,
       yuzey:            SP.yuzey||null,

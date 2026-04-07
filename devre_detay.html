@@ -1237,7 +1237,7 @@ function renderTable() {
       <td style="color:var(--txd);font-size:14px;">${globalIdx}</td>
       <td style="font-size:14px;font-weight:600;color:var(--txm);" onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')" title="${esc(s.pipeline)}">${esc(s.pipeline)||'--'}</td>
       <td onclick="event.stopPropagation();navigateToSpool('${esc(s.spoolNo)}')"><span style="font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">${esc(s.spoolNo)}</span></td>
-      <td style="font-size:13px;color:var(--txd);">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">${esc(s.rev)}</span>` : '—'}</td>
+      <td style="font-size:13px;" onclick="event.stopPropagation();">${s.rev ? `<span style="font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);cursor:pointer;" onclick="revDuzenle('${esc(s.spoolNo)}',this)" title="Düzenle">${esc(s.rev)}</span>` : `<span style="font-size:12px;color:var(--txd);cursor:pointer;opacity:.5;" onclick="revDuzenle('${esc(s.spoolNo)}',this)" title="Rev ekle">+ Rev</span>`}</td>
       <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">${s.spoolId||String(s.idx).padStart(4,'0')}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.cap)||'--'}</td>
       <td style="font-size:14px;color:var(--txm);">${esc(s.agirlik)||'--'}</td>
@@ -1279,6 +1279,27 @@ function _renderPagination(total, page, totalPages) {
     <button class="btn-sm" onclick="_changePage(1)" ${page>=totalPages?'disabled style="opacity:.4;"':''}>→ ${tv('dv_next','Sonraki')}</button>`;
 }
 function _changePage(d){_page=Math.max(1,_page+d);renderTable();}
+
+function revDuzenle(spoolNo, el) {
+  var s = SPOOLS.find(function(x){ return x.spoolNo === spoolNo; });
+  if (!s) return;
+  var mevcut = s.rev || '';
+  var yeni = prompt('Rev No (boş bırakırsan silinir):', mevcut);
+  if (yeni === null) return; // iptal
+  yeni = yeni.trim();
+  s.rev = yeni;
+  // Supabase güncelle
+  var supa = ARES.supabase();
+  if (supa && s.supaId && ARES.mod === 'supabase') {
+    supa.from('spooller').update({ rev: yeni, guncelleme: new Date().toISOString() })
+      .eq('id', s.supaId)
+      .then(function(r) {
+        if (r.error) showToast('Kayıt hatası: ' + r.error.message, 'error');
+        else showToast('Rev güncellendi', 'success');
+      });
+  }
+  renderTable();
+}
 
 function navigateToSpool(spoolNo) {
   const s = SPOOLS.find(x=>x.spoolNo===spoolNo); if(!s) return;
