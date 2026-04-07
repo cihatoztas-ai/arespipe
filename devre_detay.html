@@ -1284,41 +1284,14 @@ function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
   var s = SPOOLS.find(function(x){ return x.spoolNo === spoolNo; });
   if (!s) return;
   var mevcut = s[alan] || '';
-  // Input oluştur
-  var inp;
-  if (tip === 'select') {
-    inp = document.createElement('select');
-    inp.style.cssText = 'width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);outline:none;';
-    var bos = document.createElement('option');
-    bos.value = ''; bos.textContent = '—';
-    inp.appendChild(bos);
-    secenekler.split(',').forEach(function(opt) {
-      var o = document.createElement('option');
-      o.value = opt.trim(); o.textContent = opt.trim();
-      if (opt.trim() === mevcut) o.selected = true;
-      inp.appendChild(o);
-    });
-  } else {
-    inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = mevcut;
-    inp.style.cssText = 'width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);outline:none;';
-  }
-  var origContent = td.innerHTML;
-  td.innerHTML = '';
-  td.appendChild(inp);
-  inp.focus();
-  if (inp.select) inp.select();
 
-  function kaydet() {
-    var yeni = inp.value.trim();
+  function _kaydet(yeni) {
+    yeni = (yeni || '').trim();
     s[alan] = yeni;
     var supa = ARES.supabase();
     if (supa && s.supaId && ARES.mod === 'supabase') {
       var guncelleme = { guncelleme: new Date().toISOString() };
-      guncelleme[alan === 'malzeme' ? 'malzeme' :
-                 alan === 'kalite'  ? 'kalite'  :
-                 alan === 'yuzey'   ? 'yuzey'   : 'rev'] = yeni || (alan === 'rev' ? '' : null);
+      guncelleme[alan] = yeni || (alan === 'rev' ? '' : null);
       supa.from('spooller').update(guncelleme).eq('id', s.supaId)
         .then(function(r){ if(r.error) showToast('Hata: '+r.error.message,'error'); });
     }
@@ -1326,16 +1299,44 @@ function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
   }
 
   if (tip === 'select') {
-    // Select: blur kapanmadan tetikleniyor — sadece change dinle
-    inp.addEventListener('change', function(){ kaydet(); });
-    inp.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') { td.innerHTML = origContent; }
+    // Custom dropdown overlay — native select kapatma sorununu önler
+    var opts = secenekler.split(',').map(function(x){ return x.trim(); });
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:8000;';
+    var popup = document.createElement('div');
+    var rect = td.getBoundingClientRect();
+    popup.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + (rect.bottom+2) + 'px;' +
+      'background:var(--sur);border:1px solid var(--ac);border-radius:8px;overflow:hidden;' +
+      'box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:8001;min-width:130px;';
+    opts.forEach(function(opt) {
+      var item = document.createElement('div');
+      item.textContent = opt || '—';
+      item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--tx);' +
+        (opt === mevcut ? 'background:rgba(45,142,255,.12);font-weight:700;color:var(--ac);' : '');
+      item.addEventListener('mouseenter', function(){ this.style.background='rgba(45,142,255,.08)'; });
+      item.addEventListener('mouseleave', function(){ this.style.background = opt===mevcut?'rgba(45,142,255,.12)':''; });
+      item.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+        document.body.removeChild(overlay);
+        _kaydet(opt);
+      });
+      popup.appendChild(item);
     });
+    overlay.addEventListener('mousedown', function(e) {
+      if (e.target === overlay) document.body.removeChild(overlay);
+    });
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
   } else {
-    // Text input: blur ve Enter
-    inp.addEventListener('blur', kaydet);
+    // Text input
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.value = mevcut;
+    inp.style.cssText = 'width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);outline:none;';
+    var origContent = td.innerHTML;
+    td.innerHTML = ''; td.appendChild(inp); inp.focus(); if(inp.select) inp.select();
+    inp.addEventListener('blur', function(){ _kaydet(inp.value); });
     inp.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { inp.blur(); }
+      if (e.key === 'Enter') inp.blur();
       if (e.key === 'Escape') { td.innerHTML = origContent; }
     });
   }
