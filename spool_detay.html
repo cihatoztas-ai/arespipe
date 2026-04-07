@@ -31,10 +31,19 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .durdur-band{display:none;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-left:4px solid var(--re);border-radius:12px;padding:12px 18px;margin-bottom:20px;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 /* HEADER */
 .spool-header{margin-bottom:20px;}
-.sh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+.sh-top{margin-bottom:12px;border-radius:12px;overflow:hidden;border:1px solid var(--bor);}
 .sh-kimlik{}
-.sh-no{font-size:36px;font-weight:800;color:var(--ac);letter-spacing:1px;line-height:1;margin-bottom:6px;}
-.sh-id-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sh-band{background:var(--ac);padding:10px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sh-tersane{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;}
+.sh-band-sep{width:1px;height:18px;background:rgba(255,255,255,.3);flex-shrink:0;}
+.sh-band-bilgi{font-size:13px;color:rgba(255,255,255,.75);}
+.sh-band-right{margin-left:auto;display:flex;gap:6px;}
+.sh-chip{background:rgba(255,255,255,.15);border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;color:#fff;border:none;cursor:pointer;}
+.sh-chip:hover{background:rgba(255,255,255,.25);}
+.sh-body{padding:14px 18px;}
+.sh-marka-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--txd);text-transform:uppercase;margin-bottom:4px;}
+.sh-no{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--ac);letter-spacing:1.5px;line-height:1.1;word-break:break-all;}
+.sh-id-row{display:none;}
 .sh-id{display:inline-flex;align-items:center;gap:6px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:700;color:var(--txm);}
 .sh-id span{color:var(--leg);}
 .sh-aksiyonlar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;}
@@ -212,15 +221,22 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 <!-- SPOOL HEADER -->
 <div class="sh-top">
   <div class="sh-kimlik">
-    <div style="font-size:13px;font-weight:700;color:var(--txd);letter-spacing:.5px;margin-bottom:4px;" id="shTersaneMarka">--</div>
-    <div class="sh-no" id="shNo">--</div>
-    <div class="sh-id-row">
-      <div class="sh-id"><span data-i18n="sp_spool_id">Spool ID:</span> <span id="shId">--</span></div>
-      <div class="sh-id" style="cursor:pointer;border-color:rgba(45,142,255,.3);color:var(--ac);" onclick="qrModalAc()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>
-        <span data-i18n="sp_qr_btn">QR & Uyarılar</span>
+    <!-- Renkli üst band -->
+    <div class="sh-band">
+      <span class="sh-tersane" id="shTersaneAd">--</span>
+      <div class="sh-band-sep"></div>
+      <span class="sh-band-bilgi" id="shBandBilgi">--</span>
+      <div class="sh-band-right">
+        <span class="sh-chip" id="shId">ID: --</span>
+        <button class="sh-chip" onclick="qrModalAc()">QR &amp; Uyarılar</button>
       </div>
     </div>
+    <!-- Marka yazısı -->
+    <div class="sh-body">
+      <div class="sh-marka-label">Marka Yazısı</div>
+      <div class="sh-no" id="shNo">--</div>
+    </div>
+    <div id="shTersaneMarka" style="display:none;"></div>
   </div>
 </div>
 
@@ -1112,11 +1128,13 @@ function yukle(){
   if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
   var markaYazisi = markParts.join('-');
   var tersaneKisa = SP._tersane ? SP._tersane.split(' ')[0].toUpperCase() : '';
-  // Büyük başlık: TERSAN / MARKA YAZISI
-  txc('shNo', tersaneKisa ? tersaneKisa + ' / ' + markaYazisi : markaYazisi);
-  // Alt satır: marka yazısı etiketi
-  txc('shTersaneMarka', markaYazisi ? '🏷 ' + markaYazisi : '');
-  txc('shId', SP.spoolId ? 'ID: '+SP.spoolId : SP.supaId ? SP.supaId.substring(0,8).toUpperCase() : '--');
+  txc('shTersaneAd', tersaneKisa || SP._tersane || '—');
+  txc('shBandBilgi', [SP._gemi, SP._devre].filter(Boolean).join(' · '));
+  txc('shNo', markaYazisi || '—');
+  var shIdEl = document.getElementById('shId');
+  if(shIdEl) shIdEl.textContent = SP.spoolId ? 'ID: '+SP.spoolId : (SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : 'ID: --');
+  txc('shTersaneMarka', '');
+  
   txc('bcDevre',SP._devre); txc('bcSpool',SP.spoolNo);
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',SP.yuzey); txc('stMalz',SP.malzeme);
@@ -1766,7 +1784,7 @@ function markModalAc(){
   var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
   markTipGuncelle();
   // Markalama yazısı önizleme — format: GEMİ-PİPELİNE-SPOOL[-REV]
-  var markParts=[SP._projeNo||SP._gemi||SP._isEmri, SP.pipeline, SP.spoolNo].filter(Boolean);
+  var markParts=[SP._projeNo||SP._isEmri||SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean);
   if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
   var markYazisi = markParts.join('-') || '—';
   var oniz=T('markOnizleme');
@@ -1890,8 +1908,12 @@ function duzenleKaydet(){
   if(SP.rev&&SP.rev.trim())_mp2.push(SP.rev.trim().toUpperCase());
   var _my2=_mp2.join('-');
   var _tk2=SP._tersane?SP._tersane.split(' ')[0].toUpperCase():'';
-  txc('shNo',_tk2?_tk2+' / '+_my2:_my2);
-  txc('shTersaneMarka',_my2?'🏷 '+_my2:'');
+  txc('shTersaneAd', _tk2||SP._tersane||'—');
+  txc('shBandBilgi', [SP._gemi, SP._devre].filter(Boolean).join(' · '));
+  txc('shNo', _my2||'—');
+  var _shId2=document.getElementById('shId');
+  if(_shId2)_shId2.textContent='ID: '+(SP.spoolId||'--');
+  txc('shTersaneMarka','');
   txc('bcSpool',SP.spoolNo);
   T('duzenleModal').style.display='none';renderQR();logEkle('Spool Düzenlendi',sno);
   // localStorage güncelle — sayfa yenilenince eski değere dönmesin
