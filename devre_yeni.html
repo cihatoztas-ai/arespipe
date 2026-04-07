@@ -1134,14 +1134,11 @@ async function kaydet() {
         const spoolRes = await supa.from('spooller').insert(spoolRows);
         // 23505 = unique constraint — önceki denemeden kalan kayıt, sorun değil
 
-        // Her durumda fetch — insert başarısız olsa bile mevcut kayıtları al
-        let spoolFetch = { data: [], error: null };
-        if (!spoolRes.error || spoolRes.error.code === '23505') {
-          spoolFetch = await supa.from('spooller')
-            .select('id, pipeline_no, spool_no, rev')
-            .eq('tenant_id', ARES.tenantId())
-            .eq('devre_id', devreId);
-        }
+        // Her zaman SELECT — insert hatası olsa bile mevcut kayıtları al
+        const spoolFetch = await supa.from('spooller')
+          .select('id, pipeline_no, spool_no, rev')
+          .eq('tenant_id', ARES.tenantId())
+          .eq('devre_id', devreId);
         // spoolRes.data yerine spoolFetch.data kullan; pipeline_no+spool_no ile eşleştir
         const spoolIdMap = {};
         (spoolFetch.data || []).forEach(function(r) {
@@ -1151,7 +1148,7 @@ async function kaydet() {
         const spoolResData = spoolRows.map(function(r) {
           return { id: spoolIdMap[(r.pipeline_no || '') + '__' + r.spool_no + '__' + (r.rev || '')] || null };
         });
-        const spoolResWrapped = { error: spoolRes.error || spoolFetch.error, data: spoolResData };
+        const spoolResWrapped = { error: spoolFetch.error, data: spoolResData };
 
         // ── Boyut parser: "88.9x8.0" | "4\" Sch 10S" | "DN100" → dis_cap, et
         function _boyutParcala(str) {
@@ -1248,10 +1245,16 @@ async function kaydet() {
 
         // 3. IFS malzeme kalemleri — sadece IFS spooller için
         // Standart/manuel spooller spool_detay sayfasından malzeme sekmesiyle girilecek
-        if (!spoolResWrapped.error && spoolResWrapped.data && spoolResWrapped.data.length) {
+        // Malzeme insert: spoolFetch verisini pipeline_no+spool_no ile eşleştir
+        const fetchedSpools = spoolFetch.data || [];
+        if (fetchedSpools.length) {
           const malzemeRows = [];
-          spoolResWrapped.data.forEach(function(dbSpool, i) {
-            const localSpool = spooller[i];
+          fetchedSpools.forEach(function(dbSpool) {
+            // localSpool'u pipeline_no + spool_no ile bul
+            const localSpool = spooller.find(function(s) {
+              return (s.pipeline || '') === (dbSpool.pipeline_no || '') &&
+                     (s.spoolNo || '') === (dbSpool.spool_no || '');
+            });
             if (localSpool && localSpool.ifsItems) {
               localSpool.ifsItems.forEach(function(item) {
                 const _bp  = _boyutParcala(item.dims);
