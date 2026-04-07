@@ -1325,12 +1325,20 @@ function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
     renderTable();
   }
 
-  inp.addEventListener('blur', kaydet);
-  inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { inp.blur(); }
-    if (e.key === 'Escape') { td.innerHTML = origContent; }
-  });
-  if (tip === 'select') inp.addEventListener('change', function(){ inp.blur(); });
+  if (tip === 'select') {
+    // Select: blur kapanmadan tetikleniyor — sadece change dinle
+    inp.addEventListener('change', function(){ kaydet(); });
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { td.innerHTML = origContent; }
+    });
+  } else {
+    // Text input: blur ve Enter
+    inp.addEventListener('blur', kaydet);
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { inp.blur(); }
+      if (e.key === 'Escape') { td.innerHTML = origContent; }
+    });
+  }
 }
 
 function navigateToSpool(spoolNo) {
