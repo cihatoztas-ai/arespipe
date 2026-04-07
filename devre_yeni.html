@@ -1110,7 +1110,7 @@ async function kaydet() {
 
       // 2. Spooller insert
       if (spooller.length) {
-        // Her spool için global sayaçtan kisa_kod üret (P26-0001, P26-0002...)
+        // Her spool için global sayaçtan spool_id üret (P26-0001, P26-0002...)
         const kisaKodlar = [];
         for (let _ki = 0; _ki < spooller.length; _ki++) {
           kisaKodlar.push(await ARES.sonrakiNo('spool'));
@@ -1122,7 +1122,7 @@ async function kaydet() {
             tenant_id:     ARES.tenantId(),
             devre_id:      devreId,
             spool_no:      s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
-            kisa_kod:      kisaKodlar[idx] || null,
+            spool_id:      kisaKodlar[idx] || null,
             pipeline_no:   s.pipeline || null,
             rev:           s.rev      || '',
             malzeme:       s.malzeme  || null,

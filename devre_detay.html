@@ -1001,7 +1001,7 @@ async function spoolYukle() {
         durduruldu: s.durdurma_sebebi ? 'VAR' : 'YOK',
         stopped:    s.durduruldu || false,
         iptal:      s.silindi    || false,
-        spoolId:    s.kisa_kod   || ''
+        spoolId:    s.spool_id   || ''
       };
     });
 
@@ -1819,7 +1819,7 @@ async function spoolMalzYukle() {
   }
   // Önce devredeki spool ID'lerini al
   var spRes = await supa.from('spooller')
-    .select('id, spool_no, kisa_kod')
+    .select('id, spool_no, spool_id')
     .eq('devre_id', devreId)
     .eq('silindi', false);
   if (spRes.error || !spRes.data || !spRes.data.length) {
