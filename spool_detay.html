@@ -195,8 +195,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 <div class="breadcrumb">
   <a href="../index.html" data-i18n="nav_home">Ana Sayfa</a><span>/</span>
   <a href="../devreler.html" data-i18n="nav_active_circuits">Aktif Devreler</a><span>/</span>
-  <a href="../devre_detay.html" id="bcDevre">--</a><span>/</span>
-  <span class="cur" id="bcSpool">--</span>
+  <span class="cur" id="bcDevre">--</span>
   <div style="margin-left:auto;display:flex;gap:8px;">
     <button class="btn btn-sm" onclick="history.back()" data-i18n="btn_back">← Geri</button>
     <button class="btn btn-sm" onclick="duzenleAc()" data-i18n="btn_edit">✎ Düzenle</button>
@@ -1049,16 +1048,9 @@ function yukle(){
   var shIdEl = T('shId');
   if(shIdEl) shIdEl.textContent = SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : (SP.spoolId ? 'ID: '+SP.spoolId : 'ID: --');
   txc('shTersaneMarka', '');
-  txc('bcSpool', SP.spoolNo);
 
   // ✅ FIX: bcDevre metni + href dinamik (devre_id URL param + ../ prefix)
-  var bcEl = T('bcDevre');
-  if(bcEl) {
-    bcEl.textContent = SP._devre || '--';
-    bcEl.href = SP.devre_id
-      ? '../devre_detay.html?id=' + SP.devre_id
-      : '../devre_detay.html';
-  }
+  txc('bcDevre', SP._devre || '--');
 
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',SP.yuzey); txc('stMalz',SP.malzeme);
@@ -1887,7 +1879,6 @@ function duzenleKaydet(){
   txc('shBandBilgi',SP._devre||'');
   txc('shNo',_my2||'—');
   var _shId2=T('shId');if(_shId2)_shId2.textContent='ID: '+(SP.supaId?SP.supaId.substring(0,8).toUpperCase():SP.spoolId||'--');
-  txc('bcSpool',SP.spoolNo);
   T('duzenleModal').style.display='none';renderQR();
   logEkle('Spool Düzenlendi',SP.pipeline+' / '+sno+(SP.rev?' rev:'+SP.rev:''));
   try{localStorage.setItem('ares_aktif_spool',JSON.stringify(SP));}catch(e){}
