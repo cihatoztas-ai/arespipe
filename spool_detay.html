@@ -1337,7 +1337,7 @@ async function fotoKaydet(){
     if(pPct)pPct.textContent=pct+'%';
     try{
       var blob=await _resizeImage(f,1400,0.82);
-      var dosyaAdi='fotograflar/'+SP.supaId+'/'+Date.now()+'_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      var dosyaAdi=ARES.tenantId()+'/fotograflar/'+SP.supaId+'/'+Date.now()+'_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
       var upRes=await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi,blob,{contentType:'image/jpeg',upsert:false});
       if(upRes.error)throw new Error(upRes.error.message);
       var url=supa.storage.from('arespipe-dosyalar').getPublicUrl(upRes.data.path).data.publicUrl;
