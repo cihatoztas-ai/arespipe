@@ -300,7 +300,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
             <div class="ms-search"><input type="text" id="msQ" placeholder="İş emir ara..." oninput="buildMs()"></div>
             <div class="ms-actions"><button class="ms-act" onclick="msAll()">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
             <div class="ms-list" id="msList"></div>
-            <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:13px;" onclick="closeMs()">Uygula</button></div>
+            <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
           </div>
         </div>
         <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value="">Malzeme</option></select>
@@ -404,10 +404,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       </div>
       <div>
         <div class="modal-title" style="font-size:18px;color:var(--re);margin-bottom:2px;">Liste Oluşturulamaz</div>
-        <div style="font-size:13px;color:var(--txd);">Aynı malzeme, kalite, çap ve et kalınlığına sahip borular seçilmelidir.</div>
+        <div style="font-size:14px;color:var(--txd);">Aynı malzeme, kalite, çap ve et kalınlığına sahip borular seçilmelidir.</div>
       </div>
     </div>
-    <div style="background:rgba(229,62,62,.06);border:1px solid rgba(229,62,62,.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--txm);" id="uyariIcerik"></div>
+    <div style="background:rgba(229,62,62,.06);border:1px solid rgba(229,62,62,.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:var(--txm);" id="uyariIcerik"></div>
     <button class="btn-outline" style="width:100%;border-color:rgba(229,62,62,.4);color:var(--re);" onclick="document.getElementById('uyariModal').style.display='none'">Tamam, filtreyi düzelteceğim</button>
   </div>
 </div>
@@ -421,10 +421,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       </div>
       <div>
         <div class="modal-title" style="font-size:18px;color:var(--gr);margin-bottom:2px;">Kesim Tamamlandı mı?</div>
-        <div style="font-size:13px;color:var(--txd);">Bu boru listeden çıkarılacak ve spool sayfasına işlenecek.</div>
+        <div style="font-size:14px;color:var(--txd);">Bu boru listeden çıkarılacak ve spool sayfasına işlenecek.</div>
       </div>
     </div>
-    <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--txm);line-height:1.8;" id="kesimOnayIcerik"></div>
+    <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:var(--txm);line-height:1.8;" id="kesimOnayIcerik"></div>
     <div style="display:flex;gap:10px;">
       <button class="btn-outline" style="flex:1;" onclick="document.getElementById('kesimOnayModal').style.display='none'">İptal</button>
       <button class="btn-green" style="flex:2;" onclick="kesimTamamla()">✓ Evet, Kesildi</button>
@@ -437,7 +437,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       <div class="modal-title" style="color:var(--gr);">📂 Boru Kesim Formu</div>
       <button onclick="closeFormModal()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">✕</button>
     </div>
-    <div id="fmOzet" style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--txm);line-height:1.7;"></div>
+    <div id="fmOzet" style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:14px;color:var(--txm);line-height:1.7;"></div>
     <div class="fm-section">Kesim Parametreleri</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
       <div><label class="fm-label">Standart Stok Boyu (mm)</label><input class="fm-input" id="fmStokBoy" type="number" value="6000" min="100"></div>
@@ -445,9 +445,9 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       <div><label class="fm-label">Uç Fire / Trim (mm)</label><input class="fm-input" id="fmTrim" type="number" value="0" min="0"></div>
       <div><label class="fm-label">Min. Kullanılabilir Artık (mm)</label><input class="fm-input" id="fmMinArtik" type="number" value="1500" min="0"></div>
     </div>
-    <div class="fm-section" style="margin-top:20px;">Elimizdeki Parça Borular <span style="font-size:11px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;">— opsiyonel, mm</span></div>
+    <div class="fm-section" style="margin-top:20px;">Elimizdeki Parça Borular <span style="font-size:14px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;">— opsiyonel, mm</span></div>
     <div id="fmStoklar" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-    <button onclick="fmAddStok()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:13px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;margin-bottom:20px;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
+    <button onclick="fmAddStok()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;margin-bottom:20px;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
     <div style="display:flex;gap:10px;">
       <button onclick="closeFormModal()" class="btn-outline" style="flex:1;">İptal</button>
       <button onclick="runForm()" class="btn-green" style="flex:2;height:42px;font-size:14px;">✂️ Formu Oluştur &amp; İndir</button>
@@ -471,7 +471,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
@@ -482,14 +482,14 @@ async function veriYukle() {
       var dv   = sp.devreler         || {};
       var prj  = dv.projeler         || {};
       var trs  = prj.tersaneler      || {};
-      var spoolLabel = [prj.gemi_adi, dv.devre_no, sp.spool_no].filter(Boolean).join('-');
+      var spoolLabel = [prj.proje_no, dv.devre_no, sp.spool_no].filter(Boolean).join('-');
       return {
         id:          k.id,
         supaId:      k.id,
         isEmir:      prj.is_emri_no  || '—',
         tersane:     trs.ad          || '—',
         spool:       spoolLabel      || sp.spool_no || '—',
-        spoolId:     sp.id           || '',
+        spoolId:     sp.spool_id      || '',
         malzeme:     mal.malzeme     || '—',
         kalite:      mal.kalite      || '—',
         cap:         mal.dis_cap_mm  ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
@@ -733,22 +733,22 @@ function renderTable(){
   var i=start+idx;
     var sertBadge=k.sertifika
       ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
-      :'<span style="color:var(--txd);font-size:13px;">—</span>';
+      :'<span style="color:var(--txd);font-size:14px;">—</span>';
     return '<tr>'
       +'<td class="cell-no">'+(i+1)+'</td>'
       +'<td class="cell-tersane">'+hl(k.tersane)+'</td>'
       +'<td class="cell-emir">'+hl(k.isEmir)+'</td>'
       +'<td class="cell-spool">'+hl(k.spool)+'</td>'
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
-      +'<td style="font-size:13px;">'+hl(k.malzeme)+'</td>'
-      +'<td><span style="color:var(--ac);font-size:13px;">'+hl(k.kalite)+'</span></td>'
+      +'<td style="font-size:14px;">'+hl(k.malzeme)+'</td>'
+      +'<td><span style="color:var(--ac);font-size:14px;">'+hl(k.kalite)+'</span></td>'
       +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--ac);">'+hl(k.cap)+'</td>'
-      +'<td style="font-size:13px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
+      +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+hl(k.kesimOlcusu)+' mm</td>'
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucMap[k.ucA]||k.ucA)+'</span>':'')+'</td>'
       +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucMap[k.ucB]||k.ucB)+'</span>':'')+'</td>'
       +'<td style="text-align:center;">'+sertBadge+'</td>'
-      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="Kesim tamamlandı olarak işaretle" style="display:inline-flex;align-items:center;gap:5px;padding:0 10px;height:30px;border-radius:8px;border:1.5px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">✓ Kesildi</button></td>'
+      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="Kesim tamamlandı olarak işaretle" style="display:inline-flex;align-items:center;gap:5px;padding:0 10px;height:30px;border-radius:8px;border:1.5px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">✓ Kesildi</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('footerTxt').textContent=filtreData.length+' boru · Sayfa '+pgBoru+'/'+totalPages;
@@ -889,10 +889,10 @@ function renderKL(){
       +'<div class="kl-progress-label"><span>Kesim durumu</span><span id="klprog-lbl-'+kl.id+'" style="font-weight:700;color:'+(kesildi===toplam?'var(--gr)':'var(--warn)')+';">'+kesildi+' / '+toplam+' boru · %'+pct+'</span></div>'
       +'<div class="kl-progress-bar"><div class="kl-progress-fill" id="klprog-'+kl.id+'" style="width:'+pct+'%;"></div></div>'
       +'</div>'
-      +'<button class="btn-outline" onclick="klTumunuSec(\''+kl.id+'\',true)" style="height:34px;font-size:13px;">☑ Tümünü İşaretle</button>'
-      +'<button class="btn-outline" onclick="klTumunuSec(\''+kl.id+'\',false)" style="height:34px;font-size:13px;">☐ Tümünü Kaldır</button>'
-      +'<button class="btn-outline" onclick="openFormModal(\''+kl.id+'\',null)" style="height:34px;font-size:13px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Boru Kesim Formu</button>'
-      +'<button class="btn-green" onclick="klKaydet(\''+kl.id+'\')" style="height:34px;font-size:13px;padding:0 16px;border-radius:8px;">✓ Listeyi Kaydet &amp; Kapat</button>'
+      +'<button class="btn-outline" onclick="klTumunuSec(\''+kl.id+'\',true)" style="height:34px;font-size:14px;">☑ Tümünü İşaretle</button>'
+      +'<button class="btn-outline" onclick="klTumunuSec(\''+kl.id+'\',false)" style="height:34px;font-size:14px;">☐ Tümünü Kaldır</button>'
+      +'<button class="btn-outline" onclick="openFormModal(\''+kl.id+'\',null)" style="height:34px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Boru Kesim Formu</button>'
+      +'<button class="btn-green" onclick="klKaydet(\''+kl.id+'\')" style="height:34px;font-size:14px;padding:0 16px;border-radius:8px;">✓ Listeyi Kaydet &amp; Kapat</button>'
       +'</div>'
       +'<div style="overflow-x:auto;">'
       +'<table class="data-table" style="min-width:900px;">'
@@ -1028,7 +1028,7 @@ function renderArc(){
       +kl.kriter.tersaneler.map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
       +'<span class="kl-tag klt-count">✂️ '+arcB.length+' boru · '+mm.toLocaleString('tr-TR')+' mm</span>'
       +'</div>'
-      +'<div style="font-size:12px;color:var(--txd);flex-shrink:0;">'+esc(arc.tarih)+'</div>'
+      +'<div style="font-size:14px;color:var(--txd);flex-shrink:0;">'+esc(arc.tarih)+'</div>'
       +'</div>'
       +'<div class="arc-body" id="arcbody-'+kl.id+'-'+ai+'">'
       +'<div style="overflow-x:auto;">'
@@ -1050,7 +1050,7 @@ function renderArc(){
       +'<div class="tbl-footer">'
       +'<span style="color:var(--txm);">'+arcB.length+' boru · '+esc(arc.tarih)+'</span>'
       +'<div style="display:flex;gap:12px;align-items:center;">'
-      +'<button class="btn-outline" onclick="openFormModal(\''+kl.id+'\','+ai+')" style="height:32px;font-size:12px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Kesim Formu İndir</button>'
+      +'<button class="btn-outline" onclick="openFormModal(\''+kl.id+'\','+ai+')" style="height:32px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Kesim Formu İndir</button>'
       +'<span style="font-weight:700;">Toplam: <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span></span>'
       +'</div></div>'
       +'</div></div>';
@@ -1074,7 +1074,7 @@ function renderTekil(){
   var badge=document.getElementById('badge-tekil');
   if(badge) badge.textContent=tekil.length||'';
   if(!tekil.length){
-    cont.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div style="font-size:16px;font-weight:600;">Henüz tekil kesilen yok</div><div style="font-size:13px;color:var(--txd);margin-top:6px;">Listeye dahil edilmeden kesildi işaretlenen parçalar burada görünür</div></div>';
+    cont.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div style="font-size:16px;font-weight:600;">Henüz tekil kesilen yok</div><div style="font-size:14px;color:var(--txd);margin-top:6px;">Listeye dahil edilmeden kesildi işaretlenen parçalar burada görünür</div></div>';
     return;
   }
   cont.innerHTML='<div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">'
@@ -1085,14 +1085,14 @@ function renderTekil(){
     +tekil.map(function(k,i){
       var ucMap={duz:'Düz',kaynak:'Kaynak',yiv:'Yiv',dis:'Diş',bukum:'Büküm'};
       return '<tr>'
-        +'<td style="color:var(--txd);font-size:12px;">'+(i+1)+'</td>'
-        +'<td style="font-size:12px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
-        +'<td style="font-size:12px;">'+esc(k.malzeme||'—')+'</td>'
-        +'<td style="font-size:12px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+        +'<td style="color:var(--txd);font-size:14px;">'+(i+1)+'</td>'
+        +'<td style="font-size:14px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
+        +'<td style="font-size:14px;">'+esc(k.malzeme||'—')+'</td>'
+        +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="font-size:14px;font-weight:700;color:var(--warn);">'+esc(String(k.kesimOlcusu||'—'))+' mm</td>'
-        +'<td style="font-size:12px;">'+esc(ucMap[k.ucA]||k.ucA||'—')+'</td>'
-        +'<td style="font-size:12px;">'+esc(ucMap[k.ucB]||k.ucB||'—')+'</td>'
-        +'<td style="font-size:12px;color:var(--txd);">'+esc(k.kesimTarih||'—')+'</td>'
+        +'<td style="font-size:14px;">'+esc(ucMap[k.ucA]||k.ucA||'—')+'</td>'
+        +'<td style="font-size:14px;">'+esc(ucMap[k.ucB]||k.ucB||'—')+'</td>'
+        +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kesimTarih||'—')+'</td>'
         +'</tr>';
     }).join('')
     +'</tbody></table></div>';
@@ -1304,9 +1304,9 @@ function kesimTamamlaOnay(id){
   var k = borular.find(x=>x.id===id); if(!k) return;
   _kesimOnayId = id;
   document.getElementById('kesimOnayIcerik').innerHTML =
-    '<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:5px;">'
+    '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:5px;">'
     +esc(k.spool)+'</div>'
-    +'<div style="font-size:12px;color:var(--txd);">'
+    +'<div style="font-size:14px;color:var(--txd);">'
     +'<span style="color:var(--ac);">'+esc(k.malzeme)+' '+esc(k.kalite)+'</span>'
     +' &nbsp;·&nbsp; Ø'+esc(k.cap)
     +' &nbsp;·&nbsp; <span style="color:var(--warn);font-weight:700;">'+esc(k.kesimOlcusu)+' mm</span>'

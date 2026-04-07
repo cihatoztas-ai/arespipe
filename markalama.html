@@ -227,7 +227,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div class="filter-row" style="margin-top:0;align-items:center;">
         <div class="search-wrap" style="max-width:280px;flex:1;">
           <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="searchInput" placeholder="Spool no, is emir, malzeme... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:13px;">
+          <input class="search-input" id="searchInput" placeholder="Spool no, is emir, malzeme... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
           <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
         </div>
         
@@ -242,7 +242,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
               <div class="ms-search"><input type="text" id="msQ" placeholder="İş emir ara..." oninput="buildMs()"></div>
               <div class="ms-actions"><button class="ms-act" onclick="msAll()">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
               <div class="ms-list" id="msList"></div>
-              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:13px;" onclick="closeMs()">Uygula</button></div>
+              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
             </div>
           </div>
         <select class="filter-select" id="fParca" onchange="onFC()" title="Parça Adı"><option value="">Parça Adı</option></select>
@@ -250,7 +250,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="">Çap</option></select>
         <div class="filter-spacer"></div>
         <button class="btn-outline" onclick="resetAll()" style="white-space:nowrap;">&#8635; Sıfırla</button>
-        <button class="btn-green" id="btnOlustur" onclick="openModal()" style="height:34px;font-size:13px;padding:0 14px;border-radius:8px;white-space:nowrap;" disabled>&#127991;&#65039; Markalama Listesi Oluştur</button>
+        <button class="btn-green" id="btnOlustur" onclick="openModal()" style="height:34px;font-size:14px;padding:0 14px;border-radius:8px;white-space:nowrap;" disabled>&#127991;&#65039; Markalama Listesi Oluştur</button>
       </div>
       <div class="active-chips" id="activeChips" style="display:none;margin-top:10px;"></div>
     </div>
@@ -278,7 +278,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <!-- PANEL: MARKALAMA LİSTELERİ -->
   <div class="panel" id="panel-listeler">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div><div style="font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Oluşturulan Listeler</div>
+      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Oluşturulan Listeler</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--warn);">&#128203; Markalama Listeleri</div></div>
     </div>
     <div id="mlContainer"></div>
@@ -287,7 +287,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <!-- PANEL: TAMAMLANAN -->
   <div class="panel" id="panel-tamamlandi">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div><div style="font-size:12px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Arşiv</div>
+      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Arşiv</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);">&#10003; Tamamlanan Listeler</div></div>
     </div>
     <div id="arcContainer"></div>
@@ -303,7 +303,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       </div>
       <div>
         <div class="modal-title" style="font-size:17px;margin-bottom:2px;">Markalandı Olarak İşaretle</div>
-        <div style="font-size:13px;color:var(--txd);">Bu parça manuel olarak markalandı mı?</div>
+        <div style="font-size:14px;color:var(--txd);">Bu parça manuel olarak markalandı mı?</div>
       </div>
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="manuelMarkIcerik"></div>
@@ -323,7 +323,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       </div>
       <div>
         <div class="modal-title" style="font-size:18px;color:var(--re);margin-bottom:2px;">Liste Oluşturulamaz</div>
-        <div style="font-size:13px;color:var(--txd);">Seçilen kayıtlar aynı parça adı ve çapa sahip olmalıdır.</div>
+        <div style="font-size:14px;color:var(--txd);">Seçilen kayıtlar aynı parça adı ve çapa sahip olmalıdır.</div>
       </div>
     </div>
     <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="uyariModalIcerik"></div>
@@ -363,7 +363,7 @@ async function veriYukle() {
     if (!supa) return;
     var res = await supa
       .from('markalama_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm), spooller(id, spool_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm), spooller(id, spool_no, spool_id, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
     if (res.error) { console.warn('[ARES] Markalama yükleme:', res.error); return; }
     markalamalar = (res.data || []).map(function(k) {
@@ -372,12 +372,12 @@ async function veriYukle() {
       var dv  = sp.devreler         || {};
       var prj = dv.projeler         || {};
       var trs = prj.tersaneler      || {};
-      var spoolLabel = [prj.gemi_adi, dv.devre_no, sp.spool_no].filter(Boolean).join('-');
+      var spoolLabel = [prj.proje_no, dv.devre_no, sp.spool_no].filter(Boolean).join('-');
       return {
         id:       k.id,
         supaId:   k.id,
         spoolNo:  spoolLabel       || sp.spool_no || '—',
-        spoolId:  sp.id            || '',
+        spoolId:  sp.spool_id      || '',
         tersane:  trs.ad           || '—',
         isEmir:   prj.is_emri_no   || '—',
         yuzey:    mal.tanim        || '—',
@@ -409,11 +409,11 @@ function hl(text){
   return esc(text).replace(new RegExp('('+aramaMetni.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
 }
 function malzInfoHtml(m){
-  if(m.tip==='manuel') return '<div style="font-size:12px;color:var(--txd);">Serbest markalama</div>';
+  if(m.tip==='manuel') return '<div style="font-size:14px;color:var(--txd);">Serbest markalama</div>';
   var parts=[];
   if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
   if(m.cap)    parts.push('&#216;'+esc(m.cap));
-  return parts.length?'<div style="font-size:12px;color:var(--txm);">'+parts.join(' &nbsp;&middot;&nbsp; ')+'</div>':'';
+  return parts.length?'<div style="font-size:14px;color:var(--txm);">'+parts.join(' &nbsp;&middot;&nbsp; ')+'</div>':'';
 }
 function tipBadgeHtml(tip){
   var cls=tip==='otomatik'?'tip-oto':tip==='plaka'?'tip-plaka':'tip-manuel';
@@ -552,14 +552,14 @@ function renderTable(){
   tbody.innerHTML=slice.map(function(m,i){
     var altSatir='';
     if(m.tip==='manuel'){
-      altSatir='<div style="font-size:12px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
+      altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
     } else if(m.tip==='plaka'){
-      var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">Plaka &middot; '+parts2.join(' &middot; ')+'</div>':'';
+      var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">Plaka &middot; '+parts2.join(' &middot; ')+'</div>':'';
     } else {
       var parts=[];
       if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
       if(m.cap)    parts.push('&#216;'+esc(m.cap));
-      altSatir=parts.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">'+parts.join(' &middot; ')+'</div>':'';
+      altSatir=parts.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+parts.join(' &middot; ')+'</div>':'';
     }
     return '<tr>'
       +'<td class="cell-no">'+(offset+i+1)+'</td>'
@@ -568,8 +568,8 @@ function renderTable(){
       +'<td class="cell-spool">'+hl(m.spoolNo)+'</td>'
       +'<td class="cell-spoolid">'+hl(m.spoolId)+'</td>'
       +'<td style="font-size:14px;color:var(--tx);">'+hl(m.malzemeAdi||m.yuzey||'—')+'</td>'
-      +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:13px;">—</span>':'<span style="font-size:13px;">'+hl(m.kalite||'—')+'</span>')+'</td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:13px;">—</span>')+'</td>'
+      +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':'<span style="font-size:14px;">'+hl(m.kalite||'—')+'</span>')+'</td>'
+      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
       +'<td style="text-align:center;"><button onclick="manuelMarkala(\''+m.id+'\')" title="Markalandı olarak işaretle" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button></td>'
       +'</tr>';
   }).join('');
@@ -585,8 +585,8 @@ function manuelMarkala(id){
   var m=markalamalar.find(function(x){return x.id===id;});if(!m)return;
   _manuelMarkId=id;
   document.getElementById('manuelMarkIcerik').innerHTML=
-    '<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:6px;">'+(esc(m.malzemeAdi||m.yuzey||'—'))+'</div>'
-    +'<div style="font-size:12px;color:var(--txd);">'
+    '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:6px;">'+(esc(m.malzemeAdi||m.yuzey||'—'))+'</div>'
+    +'<div style="font-size:14px;color:var(--txd);">'
     +(m.kalite?'<span style="color:var(--ac);">'+esc(m.kalite)+'</span> &nbsp;':'')
     +(m.cap?'&#216;'+esc(m.cap)+' &nbsp;':'')
     +'<span>Spool: '+esc(m.spoolNo)+'</span>'
@@ -630,8 +630,8 @@ function openModal(){
     if(caplar.length>1)   satirlar.push('<b>Çap:</b> '+caplar.map(function(v){return '<span style="color:var(--warn);">'+esc(v)+'</span>';}).join(', '));
     // Uyarı modal
     document.getElementById('uyariModalIcerik').innerHTML=
-      '<div style="font-size:13px;color:var(--txm);line-height:1.8;">'+satirlar.join('<br>')+'</div>'
-      +'<div style="margin-top:12px;font-size:13px;color:var(--txd);">Aynı parça adı ve çapa sahip kayıtları seçerek tekrar deneyin.</div>';
+      '<div style="font-size:14px;color:var(--txm);line-height:1.8;">'+satirlar.join('<br>')+'</div>'
+      +'<div style="margin-top:12px;font-size:14px;color:var(--txd);">Aynı parça adı ve çapa sahip kayıtları seçerek tekrar deneyin.</div>';
     document.getElementById('uyariModal').style.display='flex';
     return;
   }
@@ -703,10 +703,10 @@ function renderML(){
       +'<span id="mlprog-lbl-'+ml.id+'" style="font-weight:700;color:'+(yapildi===toplam?'var(--gr)':'var(--warn)')+';">'+yapildi+' / '+toplam+' &nbsp;&middot;&nbsp; %'+pct+'</span>'
       +'</div><div class="kl-progress-bar"><div class="kl-progress-fill" id="mlprog-'+ml.id+'" style="width:'+pct+'%;"></div></div>'
       +'</div>'
-      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',true)" style="height:34px;font-size:13px;">&#9745; Tümünü İşaretle</button>'
-      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',false)" style="height:34px;font-size:13px;">&#9744; Tümünü Kaldır</button>'
-      +'<button class="btn-outline" onclick="mlExcelIndir(\''+ml.id+'\')" style="height:34px;font-size:13px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">&#128194; Excel Indir</button>'
-      +'<button class="btn-green" onclick="mlKaydet(\''+ml.id+'\')" style="height:34px;font-size:13px;padding:0 16px;border-radius:8px;">&#10003; Listeyi Kaydet &amp; Kapat</button>'
+      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',true)" style="height:34px;font-size:14px;">&#9745; Tümünü İşaretle</button>'
+      +'<button class="btn-outline" onclick="mlTumunuSec(\''+ml.id+'\',false)" style="height:34px;font-size:14px;">&#9744; Tümünü Kaldır</button>'
+      +'<button class="btn-outline" onclick="mlExcelIndir(\''+ml.id+'\')" style="height:34px;font-size:14px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">&#128194; Excel Indir</button>'
+      +'<button class="btn-green" onclick="mlKaydet(\''+ml.id+'\')" style="height:34px;font-size:14px;padding:0 16px;border-radius:8px;">&#10003; Listeyi Kaydet &amp; Kapat</button>'
       +'</div>'
       +'<div style="overflow-x:auto;">'
       +'<table class="data-table" style="min-width:900px;"><thead><tr>'
@@ -723,8 +723,8 @@ function renderML(){
         return mlM.slice(offset,offset+PG).map(function(m,i){
           var ch=ml.markalanmisIds.has(m.id);
           var altSatir='';
-          if(m.tip==='manuel') altSatir='<div style="font-size:12px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
-          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?'Plaka &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+          if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
+          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?'Plaka &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
           return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mlrow-'+ml.id+'-'+m.id+'">'
             +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mlToggleRow(\''+ml.id+'\',\''+m.id+'\',this.checked)"></td>'
             +'<td class="cell-no">'+(offset+i+1)+'</td>'
@@ -732,9 +732,9 @@ function renderML(){
             +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
             +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
-            +'<td style="font-size:13px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
-            +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:12px;">—</span>':'<span style="font-size:13px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:12px;">—</span>')+'</td>'
+            +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
+            +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':'<span style="font-size:14px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
+            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
             +'</tr>';
         }).join('');
       })()
@@ -820,10 +820,10 @@ function renderArc(){
             +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
             +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
-            +'<td style="font-size:13px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
-            +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:12px;">—</span>':'<span style="font-size:13px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:12px;">—</span>')+'</td>'
-            +'<td style="font-size:12px;color:var(--txd);">'+esc(m.manuelTarih||'—')+'</td>'
+            +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
+            +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':'<span style="font-size:14px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
+            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+            +'<td style="font-size:14px;color:var(--txd);">'+esc(m.manuelTarih||'—')+'</td>'
             +'</tr>';
         }).join('');
       })()
@@ -850,7 +850,7 @@ function renderArc(){
         +tipler.map(function(t){return tipBadgeHtml(t);}).join(' ')
         +'<span class="kl-tag klt-count">&#127991;&#65039; '+arcM.length+' kayit</span>'
         +'</div>'
-        +'<div style="font-size:12px;color:var(--txd);text-align:right;flex-shrink:0;">'+esc(arc.tarih)+'</div>'
+        +'<div style="font-size:14px;color:var(--txd);text-align:right;flex-shrink:0;">'+esc(arc.tarih)+'</div>'
         +'</div>'
         +'<div class="arc-body" id="arcbody-'+ml.id+'-'+ai+'">'
         +'<div style="overflow-x:auto;">'
@@ -867,17 +867,17 @@ function renderArc(){
           var offset=(arcPg[arcKey]-1)*PG;
           return arcM.slice(offset,offset+PG).map(function(m,i){
             var altSatir='';
-            if(m.tip==='manuel') altSatir='<div style="font-size:12px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
-            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:12px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?'Plaka &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+            if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">Serbest markalama</div>';
+            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?'Plaka &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
             return '<tr>'
               +'<td class="cell-no">'+(offset+i+1)+'</td>'
               +'<td class="cell-tersane">'+esc(m.tersane)+'</td>'
               +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
               +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
               +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
-              +'<td style="font-size:13px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
-              +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:12px;">—</span>':'<span style="font-size:13px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
-              +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:12px;">—</span>')+'</td>'
+              +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
+              +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':'<span style="font-size:14px;">'+esc(m.kalite||'—')+'</span>')+'</td>'
+              +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
               +'</tr>';
           }).join('');
         })()
@@ -888,7 +888,7 @@ function renderArc(){
           return '<div class="tbl-footer"><span style="color:var(--txm);">'+arcM.length+' kayıt · '+esc(arc.tarih)+(pages>1?' · Sayfa '+(arcPg[arcKey]||1)+'/'+pages:'')+'</span>'
             +'<div style="display:flex;align-items:center;gap:12px;">'
             +pgHtml(arcPg[arcKey]||1,arcM.length,'goArcPg("'+arcKey+'",')
-            +'<button class="btn-outline" onclick="arcExcelIndir(\''+ml.id+'\','+ai+')" style="height:32px;font-size:12px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">&#128194; Excel Indir</button>'
+            +'<button class="btn-outline" onclick="arcExcelIndir(\''+ml.id+'\','+ai+')" style="height:32px;font-size:14px;border-color:rgba(168,85,247,.4);color:var(--marka-p);">&#128194; Excel Indir</button>'
             +'</div></div>';
         })()
         +'</div></div>';
