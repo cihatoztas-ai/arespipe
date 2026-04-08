@@ -223,8 +223,8 @@
     @media(max-width:768px){ .page{ padding:16px; } }
   </style>
 
-  <script src="ares-lang.js"></script>
   <script src="ares-store.js"></script>
+  <script src="ares-lang.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -239,7 +239,7 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="btn-outline" id="btnExport">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span data-i18n="dr_export">Dışa Aktar</span>
+        <span data-i18n="dr_export" data-i18n="dr_export">Dışa Aktar</span>
       </button>
       <button class="btn-primary" onclick="location.href='devre_yeni.html'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -321,10 +321,10 @@
     </select>
     <select class="fsel" id="fDurum">
       <option value="" data-i18n="dr_all_statuses">Tüm Durumlar</option>
-      <option value="baslamadi">Başlamadı</option>
-      <option value="imalatta">İmalatta</option>
-      <option value="kalite_davette">Kalite Davette</option>
-      <option value="sevke_hazir">Sevke Hazır</option>
+      <option value="baslamadi" data-i18n="dr_status_notstarted">Başlamadı</option>
+      <option value="imalatta" data-i18n="dr_status_production">İmalatta</option>
+      <option value="kalite_davette" data-i18n="dr_status_qc">Kalite Davette</option>
+      <option value="sevke_hazir" data-i18n="dr_status_ready">Sevke Hazır</option>
     </select>
     <div class="filter-sep"></div>
     <div class="search-wrap">
@@ -359,28 +359,28 @@
             <th style="width:70px;"></th>
             <th style="width:36px;">#</th>
             <th class="sort-th" data-sort="isEmri" onclick="sortBy('isEmri')" style="cursor:pointer;">
-              <span data-i18n="dr_th_isemri">İş Emri</span> <span class="sort-arrow-wrap"></span>
+              <span data-i18n="cmn_th_is_emri">İş Emri</span> <span class="sort-arrow-wrap"></span>
             </th>
             <th class="sort-th" data-sort="tersane" onclick="sortBy('tersane')" style="cursor:pointer;">
-              <span data-i18n="dr_th_tersane">Tersane</span> <span class="sort-arrow-wrap"></span>
+              <span data-i18n="cmn_th_tersane">Tersane</span> <span class="sort-arrow-wrap"></span>
             </th>
             <th class="sort-th" data-sort="gemi" onclick="sortBy('gemi')" style="cursor:pointer;">
               <span data-i18n="dr_th_gemi">Gemi</span> <span class="sort-arrow-wrap"></span>
             </th>
-            <th><span data-i18n="dr_th_devre">Devre</span></th>
+            <th><span data-i18n="cmn_devre">Devre</span></th>
             <th><span data-i18n="dr_th_zone">Zone</span></th>
             <th class="sort-th" data-sort="spool" onclick="sortBy('spool')" style="cursor:pointer;text-align:right;">
-              <span data-i18n="dr_th_spool">Spool</span> <span class="sort-arrow-wrap"></span>
+              <span data-i18n="cmn_spool">Spool</span> <span class="sort-arrow-wrap"></span>
             </th>
             <th class="sort-th" data-sort="agirlik" onclick="sortBy('agirlik')" style="cursor:pointer;text-align:right;">
-              <span data-i18n="dr_th_agirlik">Ağırlık</span> <span class="sort-arrow-wrap"></span>
+              <span data-i18n="cmn_th_agirlik">Ağırlık</span> <span class="sort-arrow-wrap"></span>
             </th>
-            <th><span data-i18n="dr_th_malzeme">Malzeme</span></th>
-            <th><span data-i18n="dr_th_yuzey">Yüzey</span></th>
+            <th><span data-i18n="cmn_th_malzeme">Malzeme</span></th>
+            <th><span data-i18n="cmn_th_yuzey">Yüzey</span></th>
             <th class="sort-th" data-sort="ilerleme" onclick="sortBy('ilerleme')" style="cursor:pointer;">
-              <span data-i18n="dr_th_ilerleme">İlerleme</span> <span class="sort-arrow-wrap"></span>
+              <span data-i18n="cmn_th_ilerleme">İlerleme</span> <span class="sort-arrow-wrap"></span>
             </th>
-            <th><span data-i18n="dr_th_durum">Durum</span></th>
+            <th><span data-i18n="cmn_th_durum">Durum</span></th>
             <th><span data-i18n="dr_th_sonislem">Son İşlem</span></th>
             <th style="cursor:pointer;" onclick="sortBy('termin')">
               <span>Termin</span> <span class="sort-arrow-wrap" data-sort-th="termin"></span>
@@ -480,7 +480,7 @@
     <div class="modal-head">
       <div class="modal-head-left">
         <div class="modal-head-icon" style="background:var(--ac);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-        <div class="modal-title" data-i18n="dr_modal_export">Dışa Aktar</div>
+        <div class="modal-title" data-i18n="dr_modal_export" data-i18n="dr_export">Dışa Aktar</div>
       </div>
       <button class="modal-close" data-close="modalExport">✕</button>
     </div>
@@ -490,7 +490,7 @@
         <label class="fmt-opt"><input type="radio" name="exportFormat" value="pdf"> <span style="color:var(--re);">PDF</span></label>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="btn-outline" data-close="modalExport">İptal</button>
+        <button class="btn-outline" data-close="modalExport" data-i18n="cmn_iptal">İptal</button>
         <button class="btn-primary" id="btnExcelExport">Dışa Aktar</button>
       </div>
     </div>
@@ -520,7 +520,7 @@
         <label class="fmt-opt"><input type="radio" name="mlFormat" value="her_ikisi"> <span data-i18n="dr_modal_ml_both">Her İkisi</span></label>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="btn-outline" data-close="modalML" data-i18n="dr_modal_ml_cancel">İptal</button>
+        <button class="btn-outline" data-close="modalML" data-i18n="dr_modal_ml_cancel" data-i18n="cmn_iptal">İptal</button>
         <button class="btn-primary" id="btnMLOlustur">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span data-i18n="dr_modal_ml_create">Oluştur</span>
@@ -573,7 +573,7 @@
       <textarea id="iptalNeden" rows="3" placeholder="Örn: Proje değişikliği, tasarım revizyonu..." style="width:100%;box-sizing:border-box;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:vertical;" onfocus="this.style.borderColor='var(--warn)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
       <div style="font-size:14px;color:var(--txd);margin-top:6px;">İptal edilen devre arşivde saklanır, silinmez.</div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button class="btn-outline" data-close="modalIptal">Vazgeç</button>
+        <button class="btn-outline" data-close="modalIptal" data-i18n="cmn_iptal">Vazgeç</button>
         <button class="btn-primary" onclick="iptalOnayla()" style="background:var(--warn);">İptal Et</button>
       </div>
     </div>
@@ -931,7 +931,7 @@ async function sorgulaVeGoster() {
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
                 'projeler(proje_no, is_emri_no, tersaneler(ad, kod)), ' +
-                'spooller(id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
+                'spooller(id, spool_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1)
     );
@@ -968,7 +968,7 @@ async function sorgulaVeGoster() {
     ):0;
 
     var count = document.getElementById('tableCount');
-    if (count) count.textContent = '('+_ssTotal+' devre)';
+    if (count) count.textContent = '('+_ssTotal+' '+tv('cmn_devre','devre')+')';
     var stD=document.getElementById('stDevre');   if(stD) stD.textContent=_ssTotal;
     var stS=document.getElementById('stSpool');   if(stS) stS.textContent=totalSpool;
     var stA=document.getElementById('stAgirlik'); if(stA) stA.textContent=Math.round(totalAgirlik).toLocaleString('tr-TR');
@@ -1070,8 +1070,8 @@ function mockMalzemeUret(devre) {
     // Boru kalemi
     kalemler.push({id:'k'+idx++, tip:'boru', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Dikişsiz boru ' + capGoster, birim:'m', miktar:parseFloat((adet*2.5).toFixed(1)), hazir:false});
     // Fitting kalemleri
-    if (adet >= 2) kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Dirsek 90° ' + capGoster, birim:'adet', miktar:adet, hazir:false});
-    kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Flanş kaynaklı ' + capGoster + ' PN16', birim:'adet', miktar:Math.ceil(adet*1.5), hazir:false});
+    if (adet >= 2) kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Dirsek 90° ' + capGoster, birim:tv('cmn_adet','adet'), miktar:adet, hazir:false});
+    kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Flanş kaynaklı ' + capGoster + ' PN16', birim:tv('cmn_adet','adet'), miktar:Math.ceil(adet*1.5), hazir:false});
   });
   return {devreId:devre.id, isEmri:devre.isEmri, gemi:devre.gemi, devre:devre.devre, kalemler:kalemler};
 }
@@ -1401,7 +1401,7 @@ function _doRender() {
   segBar('capBar', capItems);
 
   if (!liste.length) {
-    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--txd);font-size:14px;">' + tv('dr_no_results', 'Filtreyle eşleşen devre bulunamadı') + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--txd);font-size:14px;">' + tv('dr_no_results', tv('dr_no_results','Filtreyle eşleşen devre bulunamadı')) + '</td></tr>';
     paginationGuncelle(0, 0, 0);
     _updateSortHeaders();
     return;
@@ -2084,20 +2084,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── AUTH KONTROLÜ ─────────────────────────────────────────────
   try {
-    // Supabase CDN + session hazır olana kadar bekle (max 8 sn)
     var _bekle = 0;
     while (_bekle < 80) {
+      if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
       var _supa = ARES.supabase();
       if (_supa) {
         var _ses = await _supa.auth.getSession();
-        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; } // oturum var, devam
-        if (_bekle > 20) { location.href = 'giris.html'; return; } // 2 sn bekledik, oturum yok
+        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+        if (_bekle > 20) { location.href = 'giris.html'; return; }
       }
       await new Promise(function(r){ setTimeout(r, 100); });
       _bekle++;
     }
-    // Session varsa _oturum'u doldur
-    await ARES.oturumKontrol();
   } catch(e) { /* offline modu — devam */ }
 
   // Modal kapama
@@ -2164,10 +2162,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // D-01: dil değişimi
   window._onLangChange = function() { if (typeof _applyI18n === "function") _applyI18n(); renderTable(); };
 
-  // B-03: visibility restore
-  document.documentElement.style.visibility = '';
-
-  })(); // async wrapper sonu
+  } catch(e){ console.error('[ARES]',e); } finally { document.documentElement.style.visibility=''; }
+  })();
 });
 </script>
 
