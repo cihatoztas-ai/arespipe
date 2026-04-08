@@ -778,6 +778,7 @@ function _logEkle(devre, islem, aciklama) {
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────────
 async function veriYukle() {
+  if (typeof ARES === 'undefined') return;
   var supa = ARES.supabase();
   if (!supa) return;
   try {
@@ -901,6 +902,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
 }
 
 async function sorgulaVeGoster() {
+  if (typeof ARES === 'undefined') return;
   var supa = ARES.supabase();
   if (!supa) return;
 
@@ -1412,6 +1414,7 @@ function _doRender() {
   var sayfaListesi = liste; // sunucudan zaten sayfalı
 
   var DURUM_MAP = {
+    aktif:          {cls:'sb-imalatta',  get text() { return tv('cmn_aktif', 'Aktif'); }},
     baslamadi:      {cls:'sb-baslamadi', get text() { return tv('dr_status_notstarted', 'Başlamadı'); }},
     imalatta:       {cls:'sb-imalatta',  get text() { return tv('dr_status_production', 'İmalatta'); }},
     kalite_davette: {cls:'sb-kalite',    get text() { return tv('dr_status_qc', 'Kalite Davette'); }},
@@ -1443,7 +1446,8 @@ function _doRender() {
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
       var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : y === 'Boyalı' ? 'yb-boyali' : 'yb-siyah';
-      var key = 'dr_yuzey_' + y.toLowerCase();
+      var norm = y.toLowerCase().replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ö/g,'o').replace(/ü/g,'u');
+      var key = 'dr_yuzey_' + norm;
       return '<span class="yuzey-badge ' + cls + '">' + esc(tv(key, y)) + '</span>';
     }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
     var pc = progColor(d.ilerleme);
