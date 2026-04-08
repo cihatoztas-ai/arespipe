@@ -812,7 +812,7 @@ async function spoolYukle(supaId) {
     if (SP.pipeline && SP.devre_id) {
       var pmRes = await supa
         .from('pipeline_malzemeleri')
-        .select('id, tanim, aciklama, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, agirlik_kg, heat_no, sertifikali, tip')
+        .select('*')
         .eq('tenant_id', ARES.tenantId())
         .eq('devre_id', SP.devre_id)
         .eq('pipeline_no', SP.pipeline)
@@ -884,12 +884,12 @@ async function spoolYukle(supaId) {
     // İşlem logu, notlar, kesim, büküm, markalama — PARALEL
     var [logRes, notRes, kesimRes, bukumRes, markRes] = await Promise.all([
       supa.from('islem_log')
-        .select('id, olusturma, islem, aciklama, yapan_id, ad_soyad')
+        .select('*')
         .eq('spool_id', supaId)
         .order('olusturma', { ascending: false })
         .limit(100),
       supa.from('notlar')
-        .select('id, metin, yapan_id, olusturma')
+        .select('*')
         .eq('spool_id', supaId)
         .eq('silindi', false)
         .order('olusturma', { ascending: false }),
