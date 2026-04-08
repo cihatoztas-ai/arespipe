@@ -380,11 +380,12 @@ async function veriYukle() {
         spoolId:    sp.spool_id      || '',
         tersane:    trs.ad           || '—',
         isEmir:     prj.is_emri_no   || '—',
-        malzemeAdi: k.malzeme_adi    || mal.tanim   || '',
-        yuzey:      k.malzeme_adi    || mal.tanim   || '—',
+        malzemeAdi: k.malzeme_adi    || k.yuzey    || mal.tanim   || '',
+        yuzey:      k.malzeme_adi    || k.yuzey    || mal.tanim   || '—',
         malzeme:    mal.malzeme      || '—',
         kalite:     mal.kalite       || '—',
         cap:        mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '',
+        et:         k.et_mm          ? String(parseFloat(k.et_mm).toFixed(1)).replace('.',',') + ' mm' : '',
         tip:        k.tip            || 'otomatik',
         durum:      k.markalandi     ? 'tamamlandi' : 'bekliyor'
       };
@@ -639,7 +640,11 @@ function renderTable(){
     if(m.tip==='manuel'){
       altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest','Serbest markalama')+'</div>';
     } else if(m.tip==='plaka'){
-      var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_tip_plaka','Plaka')+' &middot; '+parts2.join(' &middot; ')+'</div>':'';
+      var parts2=[];
+      if(m.kalite) parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
+      if(m.et)     parts2.push('e='+esc(m.et));
+      else if(m.cap) parts2.push('&#216;'+esc(m.cap));
+      altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_tip_plaka','Plaka')+' &middot; '+parts2.join(' &middot; ')+'</div>':'';
     } else {
       var parts=[];
       if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
