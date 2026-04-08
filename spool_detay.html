@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -1279,18 +1280,30 @@ function lbKey(e){if(e.key==='Escape'){T('lb').classList.remove('open');document
 // ── QR ────────────────────────────────────────────────────────
 function renderQR(){
   var fmt=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join('-');
+  // QR içeriği: sadece spool_id (0135 gibi) — kısa, hızlı okunur
+  var qrIcerik = SP.spoolId || SP.supaId || 'ARES';
   var c=T('qrBig');
   if(c){
-    var ctx=c.getContext('2d');
-    var cs=getComputedStyle(document.documentElement);
-    var cBg=cs.getPropertyValue('--sur2').trim()||'#1c2333';
-    var cBor=cs.getPropertyValue('--bor').trim()||'#262f3e';
-    var cTxt=cs.getPropertyValue('--txd').trim()||'#6b7a90';
-    ctx.fillStyle=cBg;ctx.fillRect(0,0,c.width,c.height);
-    ctx.strokeStyle=cBor;ctx.lineWidth=1;ctx.strokeRect(4,4,c.width-8,c.height-8);
-    ctx.fillStyle=cTxt;ctx.font='bold 10px Arial';ctx.textAlign='center';
-    ctx.fillText('QR KOD',c.width/2,c.height/2-6);
-    ctx.font='9px Arial';ctx.fillText('NOT-02',c.width/2,c.height/2+8);
+    c.innerHTML='';
+    if(typeof QRCode !== 'undefined' && qrIcerik){
+      try {
+        new QRCode(c, {
+          text: qrIcerik,
+          width: c.offsetWidth || 160,
+          height: c.offsetHeight || 160,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch(e) {
+        c.textContent = qrIcerik;
+      }
+    } else {
+      // qrcode.js yüklenmediyse spool_id'yi yaz
+      c.style.display='flex';c.style.alignItems='center';c.style.justifyContent='center';
+      c.style.fontSize='28px';c.style.fontWeight='800';c.style.color='#0f172a';
+      c.textContent = qrIcerik;
+    }
   }
   txc('qrModalIsEmri',SP._isEmri||'');
   txc('qrModalNo',fmt||'--');
@@ -1302,7 +1315,7 @@ function qrModalAc(){T('qrModal').style.display='flex';}
 function qrYazdir(){
   var fmt=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join('-');
   var c=T('qrBig');if(!c)return;
-  var img=c.toDataURL();
+  var qrImg=c.querySelector('img');var img=qrImg?qrImg.src:'';
   var win=window.open('','_blank','width=440,height=320');if(!win)return;
   var d=win.document;d.open();
   d.write('<html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;padding:20px;}.bar{background:#1e3a5f;color:#fff;padding:7px 14px;display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:14px;border-radius:6px;}.et{display:flex;gap:12px;align-items:center;border:2px solid #1e3a5f;border-radius:8px;padding:14px;width:360px;}.no{font-size:14px;font-weight:900;color:#0f172a;word-break:break-all;margin-bottom:4px;}@media print{.bar{display:none;}}</style></head><body>');
@@ -1951,10 +1964,18 @@ document.addEventListener('DOMContentLoaded',function(){
       }
     }catch(e){/* offline — devam */}
 
-    yukle();
-    if(ARES.mod==='supabase' && SP.supaId){
-      await spoolYukle(SP.supaId);
-      yukle(); // SP zenginleştikten sonra UI güncelle
+    // URL param desteği — QR ile açılınca ?id=UUID
+    var _urlParams = new URLSearchParams(location.search);
+    var _urlId = _urlParams.get('id');
+    if (_urlId && ARES.mod === 'supabase') {
+      await spoolYukle(_urlId);
+      yukle();
+    } else {
+      yukle();
+      if(ARES.mod==='supabase' && SP.supaId){
+        await spoolYukle(SP.supaId);
+        yukle();
+      }
     }
     renderTracker();renderFotolar();renderKesimler();renderBukumler();
     renderMarkalar();renderTestler();renderMalzeme();renderNotlar();
