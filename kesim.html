@@ -250,6 +250,12 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .search-input{background:var(--sur2);border:1.5px solid var(--bor);color:var(--tx);border-radius:8px;padding:0 32px;height:36px;font-family:'Barlow',sans-serif;font-size:px14px;outline:none;width:100%;}
 .search-input:focus{border-color:var(--ac);}
 .search-clear{position:absolute;right:8px;background:none;border:none;color:var(--txd);cursor:pointer;font-size:14px;}
+
+    .mb-celik  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(45,142,255,.1);color:var(--ac); }
+    .mb-pas    { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(124,58,237,.1);color:var(--leg); }
+    .mb-bakir  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(217,119,6,.1);color:var(--warn); }
+    .mb-alum   { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(22,163,110,.1);color:var(--gr); }
+    .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--sur2);color:var(--txd); }
 </style>
   <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
@@ -289,10 +295,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <div class="filter-card">
       <!-- Satır 1: Filtreler -->
       <div class="filter-row">
-        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="">Tersane</option></select>
+        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value=""><span data-i18n="cmn_th_tersane">Tersane</span></option></select>
         <div class="ms-wrap">
           <div class="ms-trigger" id="msTrigger" onclick="toggleMs(event)">
-            <span class="ms-trigger-text" id="msTxt">İş Emri</span>
+            <span class="ms-trigger-text" id="msTxt"><span data-i18n="cmn_th_is_emri">İş Emri</span></span>
             <span class="ms-count" id="msCnt" style="display:none;"></span>
             <span class="ms-arrow">▾</span>
           </div>
@@ -303,10 +309,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
             <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
           </div>
         </div>
-        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value="">Malzeme</option></select>
-        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="">Kalite</option></select>
-        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="">Çap</option></select>
-        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value="">Et Kal.</option></select>
+        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value=""><span data-i18n="cmn_th_malzeme">Malzeme</span></option></select>
+        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value=""><span data-i18n="cmn_th_kalite">Kalite</span></option></select>
+        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value=""><span data-i18n="cmn_th_cap">Çap</span></option></select>
+        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value=""><span data-i18n="cmn_th_et">Et Kal.</span></option></select>
         <select class="filter-select" id="fSert" onchange="onFC()" title="Sertifika">
           <option value="">Sertifika</option>
           <option value="evet">Sertifikalı</option>
@@ -334,8 +340,8 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th class="no-sort" style="width:36px;">#</th>
           <th onclick="sortBy('tersane')">Tersane</th>
           <th onclick="sortBy('isEmir')">İş Emri</th>
-          <th onclick="sortBy('spool')">Spool No</th>
-          <th onclick="sortBy('spoolId')" style="color:var(--leg);">Spool ID</th>
+          <th onclick="sortBy('spool')"><span data-i18n="cmn_th_spool_no">Spool No</span></th>
+          <th onclick="sortBy('spoolId')" style="color:var(--leg);"><span data-i18n="cmn_th_spool_id">Spool ID</span></th>
           <th onclick="sortBy('malzeme')">Malzeme</th>
           <th onclick="sortBy('kalite')">Kalite</th>
           <th onclick="sortBy('cap')">Çap</th>
@@ -457,6 +463,17 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
 <script>
 'use strict';
+
+function matBadge(m) {
+  var ml = (m||'').toLowerCase();
+  var label, cls;
+  if (ml.indexOf('karbon')!==-1||ml==='celik') { label=tv('cmn_malzeme_karbon','Karbon Çelik'); cls='mb-celik'; }
+  else if (ml.indexOf('paslanmaz')!==-1) { label=tv('cmn_malzeme_paslanmaz','Paslanmaz'); cls='mb-pas'; }
+  else if (ml.indexOf('bakır')!==-1||ml.indexOf('cuni')!==-1) { label=tv('cmn_malzeme_bakir','Bakır Alaşım'); cls='mb-bakir'; }
+  else if (ml.indexOf('alüm')!==-1||ml.indexOf('alum')!==-1) { label=tv('cmn_malzeme_alum','Alüminyum'); cls='mb-alum'; }
+  else { label=m||'—'; cls='mb-diger'; }
+  return '<span class="'+cls+'">'+label+'</span>';
+}
 // ════════════════════════════════════
 // VERİ
 // ════════════════════════════════════
@@ -740,7 +757,7 @@ function renderTable(){
       +'<td class="cell-emir">'+hl(k.isEmir)+'</td>'
       +'<td class="cell-spool">'+hl(k.spool)+'</td>'
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
-      +'<td style="font-size:14px;">'+hl(k.malzeme)+'</td>'
+      +'<td>'+matBadge(k.malzeme)+'</td>'
       +'<td><span style="color:var(--ac);font-size:14px;">'+hl(k.kalite)+'</span></td>'
       +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--ac);">'+hl(k.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
