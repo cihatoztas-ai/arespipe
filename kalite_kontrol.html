@@ -281,44 +281,10 @@
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
 // ── VERİ ────────────────────────────────────────────────────
-var HAZIR_SABIT = [
-  {id:'h1',spool:'S01',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi', agirlik:12.5},
-  {id:'h2',spool:'S02',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi', agirlik:8.3},
-  {id:'h3',spool:'S03',devre:'265-overboard',projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi', agirlik:6.1},
-  {id:'h4',spool:'S01',devre:'bilge-001',    projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi', agirlik:18.4},
-  {id:'h5',spool:'S02',devre:'bilge-001',    projeNo:'NB1099',gemi:'MV Atlas',   tersane:'Sedef Tersanesi', agirlik:22.0},
-  {id:'h6',spool:'S01',devre:'fw-main',      projeNo:'NB1120',gemi:'Poseidon 7', tersane:'Sedef Tersanesi', agirlik:9.7},
-  {id:'h7',spool:'S02',devre:'fw-main',      projeNo:'NB1120',gemi:'Poseidon 7', tersane:'Sedef Tersanesi', agirlik:11.2},
-  {id:'h8',spool:'S01',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:14.8},
-  {id:'h9',spool:'S02',devre:'lube-oil',     projeNo:'NB1140',gemi:'Tug Orion',  tersane:'Tersan Tersanesi',agirlik:9.3}
-];
-
-function _buildHAZIR() {
-  if (typeof ARES === 'undefined') return HAZIR_SABIT.slice();
-  var storeHazir = ARES.kkHazirListesi();
-  var storeIds = {};
-  storeHazir.forEach(function(s){ storeIds[s.id] = true; });
-  return HAZIR_SABIT.filter(function(s){ return !storeIds[s.id]; }).concat(storeHazir);
-}
-
-function _buildPaketler() {
-  var storePaketler = (typeof ARES !== 'undefined') ? ARES.kkPaketleri() : [];
-  var sabit = [
-    {id:'KD-26-001',tersane:'Sedef Tersanesi',projeNo:'NB1099',gemi:'MV Atlas',
-     davetTarihi:'20.03.2026',kontrolTarihi:'25.03.2026',not:'Ahmet Bey',mail:'quality@sedef.com.tr',
-     durum:'bekleyen',onay:null,
-     spooller:[{id:'x1',spool:'S01',devre:'fw-bypass',agirlik:7.2},{id:'x2',spool:'S02',devre:'fw-bypass',agirlik:5.8}]}
-  ];
-  var storeIds = {};
-  storePaketler.forEach(function(p){ storeIds[p.id] = true; });
-  return storePaketler.concat(sabit.filter(function(p){ return !storeIds[p.id]; }));
-}
-
-var HAZIR    = _buildHAZIR();
-var paketler = _buildPaketler();
+var HAZIR    = [];  // aktif_basamak = 'on_kontrol' spool'ları
+var paketler = [];  // kk_davetler tablosundan
 var sec      = {};
 var karar    = '';
-var psayac   = 2;
 
 function secHas(id){ return !!sec[id]; }
 function secAdd(id){ sec[id] = true; }
@@ -327,8 +293,81 @@ function secSize(){ return Object.keys(sec).length; }
 function secClear(){ sec = {}; }
 
 // ── FİLTRE ──────────────────────────────────────────────────
-function doldur() {
+async function veriYukle() {
+  var supa = ARES.supabase();
+  if (!supa) return;
+  try {
+    // 1. KK hazır spooller — aktif_basamak = 'on_kontrol'
+    var spRes = await supa
+      .from('spooller')
+      .select('id, spool_no, spool_id, pipeline_no, agirlik, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad)))')
+      .eq('aktif_basamak', 'on_kontrol')
+      .eq('tenant_id', ARES.tenantId())
+      .order('pipeline_no').order('spool_no');
+
+    HAZIR = (spRes.data || []).map(function(s) {
+      var dv  = s.devreler || {};
+      var prj = dv.projeler || {};
+      var trs = prj.tersaneler || {};
+      return {
+        id:       s.id,
+        supaId:   s.id,
+        spool:    [prj.proje_no, s.pipeline_no, s.spool_no].filter(Boolean).join('-'),
+        spoolId:  s.spool_id || '',
+        devre:    dv.devre_no || '—',
+        projeNo:  prj.proje_no || '—',
+        isEmri:   prj.is_emri_no || '—',
+        tersane:  trs.ad || '—',
+        agirlik:  parseFloat(s.agirlik) || 0
+      };
+    });
+
+    // 2. KK davetleri
+    var dvRes = await supa
+      .from('kk_davetler')
+      .select('*, kk_davet_spooller(*, spooller(spool_no, spool_id, pipeline_no, agirlik, devreler(devre_no, projeler(proje_no, tersaneler(ad)))))')
+      .eq('tenant_id', ARES.tenantId())
+      .order('olusturma', {ascending: false});
+
+    paketler = (dvRes.data || []).map(function(d) {
+      return {
+        id:           d.id,
+        tersane:      d.tersane || '—',
+        projeNo:      d.proje_no || '—',
+        davetTarihi:  d.davet_tarihi ? new Date(d.davet_tarihi).toLocaleDateString('tr-TR') : '—',
+        kontrolTarihi:d.kontrol_tarihi ? new Date(d.kontrol_tarihi).toLocaleDateString('tr-TR') : '—',
+        not:          d.not || '',
+        mail:         d.mail || '',
+        durum:        d.durum || 'bekleyen',
+        onay:         d.onay_kisi ? {kisi:d.onay_kisi, tarih:d.onay_tarihi, not:d.onay_not, karar:d.durum} : null,
+        spooller:     (d.kk_davet_spooller || []).map(function(ks) {
+          var sp = ks.spooller || {};
+          var dv = sp.devreler || {};
+          return {
+            id:         ks.id,
+            spoolId:    ks.spool_id,
+            spool:      sp.spool_no || '—',
+            devre:      dv.devre_no || '—',
+            agirlik:    parseFloat(sp.agirlik) || 0,
+            durumOnay:  ks.durum || null
+          };
+        })
+      };
+    });
+
+  } catch(e) {
+    console.error('[KK] veriYukle hatası:', e);
+  }
+  doldurFiltreler();
+  filtrele();
+  renderBekle();
+  renderOnay();
+  guncelStatler();
+}
+
+function doldurFiltreler() {
   var fT = document.getElementById('fT');
+  fT.innerHTML = '<option value="">'+tv('kk_filter_all_yards','Tüm Tersaneler')+'</option>';
   var tersaneler = [];
   HAZIR.forEach(function(h){ if(tersaneler.indexOf(h.tersane)<0) tersaneler.push(h.tersane); });
   tersaneler.sort().forEach(function(t){
@@ -338,21 +377,20 @@ function doldur() {
   fT.addEventListener('change', function() {
     var t = fT.value;
     var fP = document.getElementById('fP');
-    fP.innerHTML = '<option value="">Tum Projeler</option>';
+    fP.innerHTML = '<option value="">'+tv('kk_filter_all_projects','Tüm Projeler')+'</option>';
     var projs = [];
-    HAZIR.forEach(function(h){ if(!t||h.tersane===t){ var k=h.projeNo+'|'+h.gemi; if(projs.indexOf(k)<0) projs.push(k); } });
+    HAZIR.forEach(function(h){ if(!t||h.tersane===t){ if(projs.indexOf(h.projeNo)<0) projs.push(h.projeNo); } });
     projs.sort().forEach(function(s){
-      var parts=s.split('|');
-      var o=document.createElement('option'); o.value=parts[0]; o.textContent=parts[0]+' - '+parts[1]; fP.appendChild(o);
+      var o=document.createElement('option'); o.value=s; o.textContent=s; fP.appendChild(o);
     });
     filtrele();
   });
   var projSet = [];
-  HAZIR.forEach(function(h){ var k=h.projeNo+'|'+h.gemi; if(projSet.indexOf(k)<0) projSet.push(k); });
+  HAZIR.forEach(function(h){ if(projSet.indexOf(h.projeNo)<0) projSet.push(h.projeNo); });
   var fP = document.getElementById('fP');
+  fP.innerHTML = '<option value="">'+tv('kk_filter_all_projects','Tüm Projeler')+'</option>';
   projSet.sort().forEach(function(s){
-    var parts=s.split('|');
-    var o=document.createElement('option'); o.value=parts[0]; o.textContent=parts[0]+' - '+parts[1]; fP.appendChild(o);
+    var o=document.createElement('option'); o.value=s; o.textContent=s; fP.appendChild(o);
   });
 }
 
@@ -362,7 +400,7 @@ function filtrele() {
   var a = document.getElementById('fA').value.toLowerCase().trim();
   renderHazir(HAZIR.filter(function(h){
     return (!t||h.tersane===t) && (!p||h.projeNo===p) &&
-           (!a||h.devre.toLowerCase().indexOf(a)>=0||h.spool.toLowerCase().indexOf(a)>=0);
+           (!a||h.devre.toLowerCase().indexOf(a)>=0||h.spool.toLowerCase().indexOf(a)>=0||h.spoolId.toLowerCase().indexOf(a)>=0);
   }));
 }
 
@@ -372,10 +410,9 @@ function filtreSifirla() {
   var fP = document.getElementById('fP');
   fP.innerHTML = '<option value="">Tum Projeler</option>';
   var projSet = [];
-  HAZIR.forEach(function(h){ var k=h.projeNo+'|'+h.gemi; if(projSet.indexOf(k)<0) projSet.push(k); });
+  HAZIR.forEach(function(h){ if(projSet.indexOf(h.projeNo)<0) projSet.push(h.projeNo); });
   projSet.sort().forEach(function(s){
-    var parts=s.split('|');
-    var o=document.createElement('option'); o.value=parts[0]; o.textContent=parts[0]+' - '+parts[1]; fP.appendChild(o);
+    var o=document.createElement('option'); o.value=s; o.textContent=s; fP.appendChild(o);
   });
   filtrele();
 }
@@ -387,7 +424,7 @@ function renderHazir(liste) {
   var G = {};
   liste.forEach(function(h) {
     var gk = h.tersane+'||'+h.projeNo;
-    if (!G[gk]) G[gk] = {tersane:h.tersane,projeNo:h.projeNo,gemi:h.gemi,devs:{}};
+    if (!G[gk]) G[gk] = {tersane:h.tersane,projeNo:h.projeNo,devs:{}};
     if (!G[gk].devs[h.devre]) G[gk].devs[h.devre] = [];
     G[gk].devs[h.devre].push(h);
   });
@@ -402,7 +439,7 @@ function renderHazir(liste) {
     html += '<div class="dgrup">';
     html += '<div class="dhead cl-ac" onclick="toggleGrup(this)">';
     html += '<div>';
-    html += '<div class="dtitle">'+g.tersane+' &middot; <span style="color:var(--ac);">'+g.projeNo+'</span> <span style="font-weight:400;color:var(--txm);">'+g.gemi+'</span></div>';
+    html += '<div class="dtitle">'+esc(g.tersane)+' &middot; <span style="color:var(--ac);">'+esc(g.projeNo)+'</span></div>';
     html += '<div class="dsub">'+all.length+' spool &middot; '+kg+' kg</div>';
     html += '</div>';
     html += '<div style="display:flex;align-items:center;gap:10px;">';
@@ -421,7 +458,7 @@ function renderHazir(liste) {
       spls.forEach(function(s) {
         html += '<tr>';
         html += '<td><input type="checkbox" class="ck" '+(secHas(s.id)?'checked':'')+' onchange="spSec(\''+s.id+'\',this.checked)"></td>';
-        html += '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">'+s.spool+'</td>';
+        html += '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--ac);">'+esc(s.spool)+'</td><td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;color:var(--leg);">'+esc(s.spoolId)+'</td>';
         html += '<td style="text-align:right;color:var(--txm);">'+s.agirlik+' kg</td>';
         html += '</tr>';
       });
@@ -468,7 +505,7 @@ function guncelSecBar() {
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var n = sl.length;
   var devSet = {};
-  sl.forEach(function(h){ devSet[h.devre+h.projeNo]=true; });
+  sl.forEach(function(h){ devSet[h.devre+'||'+h.projeNo]=true; });
   var kg = sl.reduce(function(a,h){ return a+h.agirlik; }, 0).toFixed(1);
   document.getElementById('secBar').className = 'secim-bar' + (n>0?' on':'');
   document.getElementById('secD').textContent = Object.keys(devSet).length;
@@ -501,38 +538,45 @@ function davetAc() {
   document.getElementById('mDavet').style.display = 'flex';
 }
 
-function davetKaydet() {
+async function davetKaydet() {
   var tarih = document.getElementById('dTarih').value;
   if (!tarih) { showToast('Davet tarihi zorunlu','error'); return; }
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var fmt = function(d){ return d ? new Date(d).toLocaleDateString('tr-TR') : '-'; };
-  var no = 'KD-26-'+String(psayac).padStart(3,'0'); psayac++;
-  var yeni = {
-    id:no,
-    tersane: sl[0]?sl[0].tersane:'-',
-    projeNo: sl[0]?sl[0].projeNo:'-',
-    gemi:    sl[0]?sl[0].gemi:'-',
-    davetTarihi:  fmt(tarih),
-    kontrolTarihi:fmt(document.getElementById('dKontrol').value),
-    not:  document.getElementById('dNot').value.trim(),
-    mail: document.getElementById('dMail').value.trim(),
-    durum:'bekleyen', onay:null,
-    spooller: sl.map(function(h){ return {id:h.id,spool:h.spool,devre:h.devre,agirlik:h.agirlik,durumOnay:null}; })
-  };
-  paketler.push(yeni);
-  if (typeof ARES !== 'undefined') {
-    ARES.kkPaketOlustur(sl.map(function(h){return h.id;}),
-      yeni.tersane, yeni.projeNo, yeni.gemi,
-      yeni.davetTarihi, yeni.kontrolTarihi, yeni.not, yeni.mail);
-    var yeni2 = _buildHAZIR();
-    HAZIR.length = 0;
-    yeni2.forEach(function(h){ HAZIR.push(h); });
+  var supa = ARES.supabase();
+  if (!supa) { showToast('Bağlantı hatası','error'); return; }
+  try {
+    // kk_davetler'e yaz
+    var dvRes = await supa.from('kk_davetler').insert({
+      tenant_id:      ARES.tenantId(),
+      tersane:        sl[0] ? sl[0].tersane : '—',
+      proje_no:       sl[0] ? sl[0].projeNo : '—',
+      davet_tarihi:   tarih,
+      kontrol_tarihi: document.getElementById('dKontrol').value || null,
+      not:            document.getElementById('dNot').value.trim() || null,
+      mail:           document.getElementById('dMail').value.trim() || null,
+      durum:          'bekleyen'
+    }).select().single();
+    if (dvRes.error) throw dvRes.error;
+    var davetId = dvRes.data.id;
+    // kk_davet_spooller'a yaz
+    var spInserts = sl.map(function(h) {
+      return { tenant_id: ARES.tenantId(), kk_davet_id: davetId, spool_id: h.supaId, durum: null };
+    });
+    await supa.from('kk_davet_spooller').insert(spInserts);
+    // spooller aktif_basamak → 'kk'
+    var spoolIds = sl.map(function(h){ return h.supaId; });
+    await supa.from('spooller').update({ aktif_basamak: 'kk' }).in('id', spoolIds);
+    ARES.logEkle('KK_DAVET', davetId+' daveti oluşturuldu', 'devre', null, {});
+    secClear();
+    document.getElementById('mDavet').style.display = 'none';
+    showToast('Davet paketi oluşturuldu','success');
+    await veriYukle();
+    tabGit('bekleyen');
+  } catch(e) {
+    console.error('[KK] davetKaydet hatası:', e);
+    showToast('Kayıt hatası: '+e.message,'error');
   }
-  secClear();
-  document.getElementById('mDavet').style.display = 'none';
-  filtrele(); renderBekle(); renderOnay(); guncelStatler();
-  showToast(no+' numarali davet paketi olusturuldu','success');
-  tabGit('bekleyen');
 }
 
 // ── BEKLEYEN / ONAYLANAN ─────────────────────────────────────
@@ -554,7 +598,7 @@ function pkart(p) {
   var h = '<div class="pkart"><div class="phead">';
   h += '<div>';
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><div class="pno">'+p.id+'</div>'+(dm[p.durum]||'')+'</div>';
-  h += '<div style="font-size:14px;color:var(--txm);">'+p.tersane+' &middot; '+p.projeNo+' / '+p.gemi+'</div>';
+  h += '<div style="font-size:14px;color:var(--txm);">'+esc(p.tersane)+' &middot; <span style="color:var(--ac);">'+esc(p.projeNo)+'</span></div>';
   h += '<div style="font-size:14px;color:var(--txd);margin-top:4px;">Davet: <strong style="color:var(--tx);">'+p.davetTarihi+'</strong> &middot; Kontrol: <strong style="color:var(--tx);">'+p.kontrolTarihi+'</strong> &middot; '+p.spooller.length+' spool &middot; '+kg+' kg'+(p.not?' &middot; '+p.not:'')+'</div>';
   if (p.onay) h += '<div style="font-size:14px;margin-top:5px;color:'+(p.durum==='onaylandi'?'var(--gr)':'var(--re)')+';">'+(p.durum==='onaylandi'?'&check;':'&cross;')+' '+p.onay.kisi+' &mdash; '+p.onay.tarih+(p.onay.not?' &mdash; '+p.onay.not:'')+'</div>';
   h += '</div>';
@@ -592,7 +636,7 @@ function kararSec(k) {
   document.getElementById('retBlok').style.display = k==='ret' ? 'block' : 'none';
 }
 
-function onayKaydet() {
+async function onayKaydet() {
   var id    = document.getElementById('oPaketId').value;
   var tarih = document.getElementById('oTarih').value;
   var kisi  = document.getElementById('oKisi').value.trim();
@@ -605,17 +649,38 @@ function onayKaydet() {
   var p = null;
   paketler.forEach(function(x){ if(x.id===id) p=x; });
   if (!p) return;
-  p.durum = karar==='onay' ? 'onaylandi' : 'reddedildi';
-  p.spooller.forEach(function(s){ s.durumOnay = karar; });
-  var notFinal = karar==='ret' ? ret+(not?' / '+not:'') : not;
-  p.onay = {karar:karar, tarih:new Date(tarih).toLocaleDateString('tr-TR'), kisi:kisi, not:notFinal};
-  if (typeof ARES !== 'undefined') {
-    ARES.kkOnayKaydet(id, karar, new Date(tarih).toLocaleDateString('tr-TR'), kisi, notFinal);
+  var supa = ARES.supabase();
+  if (!supa) { showToast('Bağlantı hatası','error'); return; }
+  try {
+    var yeniDurum = karar==='onay' ? 'onaylandi' : 'reddedildi';
+    var notFinal  = karar==='ret' ? ret+(not?' / '+not:'') : not;
+    // kk_davetler güncelle
+    await supa.from('kk_davetler').update({
+      durum:       yeniDurum,
+      onay_kisi:   kisi,
+      onay_tarihi: new Date(tarih).toLocaleDateString('tr-TR'),
+      onay_not:    notFinal || null
+    }).eq('id', id);
+    // kk_davet_spooller güncelle
+    await supa.from('kk_davet_spooller').update({ durum: karar }).eq('kk_davet_id', id);
+    // spooller aktif_basamak güncelle
+    var p = paketler.find(function(x){ return x.id===id; });
+    if (p && p.spooller) {
+      var spoolIds = p.spooller.map(function(s){ return s.spoolId; }).filter(Boolean);
+      if (spoolIds.length) {
+        var yeniBasamak = karar==='onay' ? 'sevkiyat' : 'on_kontrol';
+        await supa.from('spooller').update({ aktif_basamak: yeniBasamak }).in('id', spoolIds);
+      }
+    }
+    ARES.logEkle('KK_'+(karar==='onay'?'ONAYLA':'RED'), id+' '+(karar==='onay'?'onaylandı':'reddedildi'), 'devre', null, {});
+    document.getElementById('mOnay').style.display = 'none';
+    showToast(karar==='onay' ? 'Onaylandı — Sevkiyata hazır!' : 'Reddedildi', karar==='onay'?'success':'error');
+    await veriYukle();
+    if (karar==='onay') tabGit('onaylanan');
+  } catch(e) {
+    console.error('[KK] onayKaydet hatası:', e);
+    showToast('Kayıt hatası: '+e.message,'error');
   }
-  document.getElementById('mOnay').style.display = 'none';
-  renderBekle(); renderOnay(); guncelStatler();
-  showToast(karar==='onay' ? id+' onaylandi - sevkiyata hazir!' : id+' ret aldi', karar==='onay'?'success':'error');
-  if (karar==='onay') tabGit('onaylanan');
 }
 
 // ── STAT & TAB ───────────────────────────────────────────────
@@ -681,11 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var _ses = await _supa.auth.getSession();
       if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
       if (window._applyI18n) _applyI18n();
-      doldur();
-      filtrele();
-      renderBekle();
-      renderOnay();
-      guncelStatler();
+      await veriYukle();
     } catch(e) { console.error('[ARES]', e); }
     finally {
       document.documentElement.style.visibility = '';
