@@ -103,7 +103,13 @@ async function semaYukle(url, key, tenantId) {
     if (!res.ok) return semaFallback();
 
     const data = await res.json();
-    return semaFormatla(data);
+
+    // exec_sql [{exec_sql: [...]}] formatında dönüyor — içini çıkar
+    let kolonlar = data;
+    if (Array.isArray(data) && data[0] && data[0].exec_sql) {
+      kolonlar = data[0].exec_sql;
+    }
+    return semaFormatla(kolonlar);
   } catch(e) {
     return semaFallback();
   }
@@ -158,6 +164,8 @@ KURALLAR:
 9. spooller tablosunda ağırlık için 'agirlik' kolonunu kullan (agirlik_kg değil)
 10. spooller tablosunda kalite için 'kalite' kolonunu kullan (kalite_standart değil)
 11. spooller tablosunda yüzey için 'yuzey' kolonunu kullan (yuzey_islemi değil)
+12. 'olusturma' bir kolon adıdır, tablo adı değildir — FROM olusturma gibi kullanma
+13. Alias kullanırken tablo adlarıyla karıştırma
 12. projeler tablosunda 'silindi' kolonu YOK — bu filtreyi projeler için kullanma
 13. tersaneler tablosunda 'silindi' kolonu YOK — bu filtreyi tersaneler için kullanma
 
@@ -250,8 +258,14 @@ async function sqlCalistir(url, key, sql) {
       return { error: err };
     }
 
-    const rows = await res.json();
-    return { rows: Array.isArray(rows) ? rows : [rows] };
+    const data = await res.json();
+
+    // exec_sql [{exec_sql: [...]}] formatında dönüyor — içini çıkar
+    let rows = data;
+    if (Array.isArray(data) && data[0] && data[0].exec_sql !== undefined) {
+      rows = data[0].exec_sql;
+    }
+    return { rows: Array.isArray(rows) ? rows : (rows ? [rows] : []) };
   } catch(e) {
     return { error: e.message };
   }
