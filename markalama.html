@@ -383,7 +383,7 @@ async function veriYukle() {
         isEmir:     prj.is_emri_no   || '—',
         malzemeAdi: k.malzeme_adi    || k.yuzey    || mal.tanim   || '',
         yuzey:      k.malzeme_adi    || k.yuzey    || mal.tanim   || '—',
-        malzeme:    mal.malzeme      || '—',
+        malzeme:    k.malzeme        || mal.malzeme  || '—',
         kalite:     mal.kalite       || '—',
         cap:        mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '',
         et:         k.et_mm          ? String(parseFloat(k.et_mm).toFixed(1)).replace('.',',') + ' mm' : '',

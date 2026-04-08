@@ -1745,16 +1745,18 @@ function markTipGuncelle(){
 function markKaydet(){
   var tip=(document.querySelector('input[name="mTip"]:checked')||{}).value||'otomatik';
   var entry={id:String(Date.now()),tip,markalandi:false};
-  var yuzeyAdi='', etMm=null;
+  var yuzeyAdi='', etMm=null, malzemeAdi=null;
   if(tip==='otomatik'){
     var m=MALZEME.find(function(x){return x.id==(T('mm_malz')||{}).value;});
     if(!m){toast('Malzeme seçin','er');return;}
     entry.ad=m.ac;
     entry.malzId=m.id;
     yuzeyAdi=m.ac;
+    malzemeAdi=SP.malzeme||null; // spoolun malzeme kategorisi
   } else if(tip==='plaka'){
     entry.ad='Plaka ('+SP.malzeme+' '+SP.kalite+')';
     yuzeyAdi='Plaka';
+    malzemeAdi=SP.malzeme||null; // ← spoolun malzemesi plakaya da işleniyor
     // et_mm: SP.kalinlik'ten parse et (örn: "3,20 mm" → 3.2)
     var etStr=SP.kalinlik?SP.kalinlik.replace(/\s*mm\s*/i,'').replace(',','.').trim():'';
     etMm=etStr&&!isNaN(parseFloat(etStr))?parseFloat(etStr):null;
@@ -1762,11 +1764,13 @@ function markKaydet(){
     entry.ad='Manuel';
     yuzeyAdi='Manuel';
   }
+  entry.malzemeAdi=malzemeAdi; // lokal gösterim için
   MARKALAR.push(entry);
   _supaInsert('markalama_kalemleri',{
     malzeme_id: entry.malzId||null,
     tip:        entry.tip,
     yuzey:      yuzeyAdi||null,
+    malzeme:    malzemeAdi||null,
     et_mm:      etMm,
     markalandi: false
   });
