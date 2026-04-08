@@ -762,7 +762,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(*), fotograflar(*), belgeler(*), devreler(devre_no, ad, zone, projeler(proje_no, is_emri_no, tersaneler(ad)))')
+      .select('*, spool_malzemeleri(*), fotograflar(*), belgeler(*), devreler(devre_no, ad, zone, is_emri_no, projeler(proje_no, tersaneler(ad)))')
       .eq('id', supaId)
       .single();
 
@@ -829,11 +829,11 @@ async function spoolYukle(supaId) {
         : SP._devre;
       if (dv.projeler) {
         SP._gemi   = dv.projeler.proje_no   || SP._gemi;
-        SP._isEmri = dv.projeler.is_emri_no || SP._isEmri;
         if (dv.projeler.tersaneler) {
           SP._tersane = dv.projeler.tersaneler.ad || SP._tersane;
         }
       }
+      SP._isEmri = dv.is_emri_no || SP._isEmri;
     }
 
     // localStorage güncelle

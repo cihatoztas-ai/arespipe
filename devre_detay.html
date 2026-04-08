@@ -2721,7 +2721,7 @@ async function devreYukle() {
   if (supa && ARES.mod === 'supabase' && devreId) {
     try {
       const res = await supa.from('devreler')
-        .select('*, projeler(id, proje_no, is_emri_no, tersaneler(id, ad, kod))')
+        .select('*, projeler(id, proje_no, tersaneler(id, ad, kod))')
         .eq('id', devreId)
         .single();
       if (!res.error && res.data) {

@@ -302,7 +302,7 @@ async function veriYukle() {
     var tid = ARES.tenantId();
     var results = await Promise.all([
       supa.from('spooller')
-        .select('id, spool_no, spool_id, pipeline_no, agirlik, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad)))')
+        .select('id, spool_no, spool_id, pipeline_no, agirlik, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad)))')
         .eq('aktif_basamak', 'on_kontrol')
         .eq('tenant_id', tid)
         .order('pipeline_no').order('spool_no'),
@@ -325,7 +325,7 @@ async function veriYukle() {
         spoolId:  s.spool_id || '',
         devre:    dv.devre_no || '—',
         projeNo:  prj.proje_no || '—',
-        isEmri:   prj.is_emri_no || '—',
+        isEmri:   dv.is_emri_no || '—',
         tersane:  trs.ad || '—',
         agirlik:  parseFloat(s.agirlik) || 0
       };

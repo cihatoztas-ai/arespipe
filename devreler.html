@@ -932,7 +932,7 @@ async function sorgulaVeGoster() {
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
-                'projeler(proje_no, is_emri_no, tersaneler(ad, kod)), ' +
+                'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1)
