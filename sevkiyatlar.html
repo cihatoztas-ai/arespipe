@@ -12,7 +12,7 @@
   document.documentElement.setAttribute('lang',l);
   document.documentElement.style.visibility='hidden';
 })()</script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -181,6 +181,7 @@
 .bos{text-align:center;padding:48px 24px;color:var(--txd);}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -607,41 +608,8 @@ var _I18N={
   }
 };
 
-// ✅ C2: tv()
-function tv(key,tr){
-  var lang=document.documentElement.getAttribute('lang')||'tr';
-  var dict=_I18N[lang];
-  if(dict&&dict[key]!==undefined)return dict[key];
-  return tr!==undefined?tr:key;
-}
-
-// ✅ C2: _applyI18n()
-function _applyI18n(){
-  var lang=document.documentElement.getAttribute('lang')||'tr';
-  var isTr=lang==='tr';
-  // data-i18n — metin içeriği
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    // Yalnızca metin düğümü olan elementlere uygula (çocuğu olmayan)
-    if(el.children.length===0){
-      if(!el.hasAttribute('data-i18n-tr'))el.setAttribute('data-i18n-tr',el.textContent.trim());
-      el.textContent=isTr?el.getAttribute('data-i18n-tr'):(tv(k)!==k?tv(k):el.getAttribute('data-i18n-tr'));
-    }
-  });
-  // data-i18n-placeholder — input/textarea placeholder
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-placeholder');
-    if(!el.hasAttribute('data-i18n-placeholder-tr'))el.setAttribute('data-i18n-placeholder-tr',el.placeholder||'');
-    el.placeholder=isTr?el.getAttribute('data-i18n-placeholder-tr'):(tv(k)!==k?tv(k):el.getAttribute('data-i18n-placeholder-tr'));
-  });
-}
-
-// ✅ C2: MutationObserver
-new MutationObserver(function(){_applyI18n();renderTumSev();renderHazir();})
-  .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-
 // ✅ C3: _onLangChange — ares-layout.js çağırır
-window._onLangChange=function(){_applyI18n();renderTumSev();renderHazir();};
+window._onLangChange=function(){if(window._applyI18n)_applyI18n();renderTumSev();renderHazir();};
 
 // ── Sevkiyat no ──────────────────────────────────────────────
 function yeniSevkNo(){
@@ -657,16 +625,21 @@ var HAZIR_SPOOLLER=[];
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
 async function veriYukle() {
+  if (typeof ARES === 'undefined') return;
   try {
     var supa = ARES.supabase();
     if (!supa) return;
 
-    // 1. Sevkiyata hazır spooller — aktif_basamak = 'kk' veya 'sevkiyat' olan
-    var hazirRes = await supa
-      .from('spooller')
-      .select('id, spool_no, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
-      .in('aktif_basamak', ['kk', 'sevkiyat'])
-      .eq('silindi', false);
+    // 1+2 paralel — hazır spooller + geçmiş sevkiyatlar
+    var [hazirRes, sevkRes] = await Promise.all([
+      supa.from('spooller')
+        .select('id, spool_no, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
+        .in('aktif_basamak', ['kk', 'sevkiyat'])
+        .eq('silindi', false),
+      supa.from('sevkiyatlar')
+        .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, agirlik_kg, devreler(devre_no)))')
+        .order('olusturma', { ascending: false })
+    ]);
 
     HAZIR_SPOOLLER = (hazirRes.data || []).map(function(s) {
       var dv  = s.devreler || {};
@@ -686,12 +659,6 @@ async function veriYukle() {
       };
     });
     HAZIR_SABIT = HAZIR_SPOOLLER.slice();
-
-    // 2. Geçmiş sevkiyatlar
-    var sevkRes = await supa
-      .from('sevkiyatlar')
-      .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, agirlik_kg, devreler(devre_no)))')
-      .order('olusturma', { ascending: false });
 
     sevkiyatlar = (sevkRes.data || []).map(function(s) {
       var spoolList = (s.sevkiyat_spooller || []).map(function(ss) {
@@ -993,7 +960,7 @@ function renderTumSev(){
        !(s.alici||'').toLowerCase().includes(fA)&&!(s.icerik||'').toLowerCase().includes(fA))return false;
     return true;
   }).sort(function(a,b){return b.id.localeCompare(a.id);});
-  var SAYFA_BOYUT=15;
+  var SAYFA_BOYUT=25;
   var toplamSayfa=Math.ceil(liste.length/SAYFA_BOYUT)||1;
   if(tumsevSayfa>toplamSayfa)tumsevSayfa=1;
   var baslangic=(tumsevSayfa-1)*SAYFA_BOYUT;
