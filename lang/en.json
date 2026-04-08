@@ -939,5 +939,7 @@
   "cmn_devre": "Circuit",
   "cmn_spool": "Spool",
   "cmn_pdf": "PDF",
-  "cmn_yukleniyor": "⏳ Loading..."
+  "cmn_yukleniyor": "⏳ Loading...",
+  "dr_yuzey_boyali": "Painted",
+  "dr_opt_boyali": "Painted"
 }
