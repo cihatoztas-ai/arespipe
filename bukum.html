@@ -610,7 +610,7 @@ function renderRow(b,i){
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
     +'<td class="cell-kesim">'+b.olcu+' mm</td>'
     +'<td style="text-align:center;">'
-      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu">&#10003; Buktum</button>'
+      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Büküm Tamamla</button>'
     +'</td>'
     +'<td style="text-align:center;">'
       +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
@@ -686,18 +686,28 @@ function renderBekliyor(){
   document.getElementById('footerSum').innerHTML='Toplam: <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
 }
 
+var _bekleyenBukumId = null;
+
 function buktu(id){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
-  // Onay popup
-  // confirm() kaldırıldı — doğrudan işaretlenir, toast ile bildirilir
+  _bekleyenBukumId = id;
+  // Modal detaylarını doldur
+  document.getElementById('bukumOnayi_spool').textContent = b.spoolNo || b.spoolId || '—';
+  document.getElementById('bukumOnayi_bilgi').textContent = 
+    (b.malzeme||'') + ' · ' + (b.kalite||'') + ' · Ø' + (b.cap||'') + ' · ' + (b.olcu||'') + ' mm';
+  document.getElementById('modalBukumOnayi').style.display = 'flex';
+}
+
+function buktuOnayla(){
+  document.getElementById('modalBukumOnayi').style.display = 'none';
+  var id = _bekleyenBukumId; _bekleyenBukumId = null;
+  var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
   b.durum='tamamlandi';
   b.bukulduZaman=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  // Supabase'e yaz
   if(b.supaId && ARES.mod==='supabase'){
     ARES.supabase().from('bukum_kalemleri').update({bukuldumu:true,guncelleme:new Date().toISOString()}).eq('id',b.supaId).then(function(r){
       if(r.error) console.warn('[ARES] Büküm güncelleme:',r.error.message);
     });
-    // İşlem logu
     ARES.supabase().from('islem_log').insert({
       tenant_id:ARES.tenantId(),islem:'BUKUM_TAMAMLA',
       aciklama:b.malzeme+' '+b.cap+' '+b.olcu+'mm',
@@ -708,7 +718,7 @@ function buktu(id){
   try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_TAMAMLA',kaynak:b.spoolNo||b.id,aciklama:b.malzeme+' '+b.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}
   applyFilters();updateStats();
   if(aktifFasonId&&aktifTab==='fason') openFasonDetay(aktifFasonId);
-  toast(b.olcu+'mm büküldü','success');
+  toast(b.spoolNo+' — '+b.olcu+'mm büküm tamamlandı','success');
 }
 
 function showQR(id){
@@ -719,7 +729,7 @@ function showQR(id){
   ov.innerHTML='<div class="modal-box" style="max-width:300px;text-align:center;">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;color:var(--bukum-c);">'+tv('bk_qr_title','QR — Büküm Borusu')+'</div>'
     +'<div style="font-size:14px;font-weight:700;margin-bottom:3px;"><span class="ref-badge '+(b.kaynak==='fason'?'ref-fason':'ref-emir')+'">'+esc(ref)+'</span></div>'
-    +'<div style="font-size:14px;color:var(--txd);margin-bottom:16px;">'+esc(alt)+'</div>'
+    +'<div style="font-size:14px;color:var(--txd);margin-bottom:4px;">'+esc(alt)+'</div>'+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:var(--leg);margin-bottom:12px;">'+esc(b.spoolId||'—')+'</div>'
     +'<canvas id="qrBig" style="border-radius:6px;margin-bottom:14px;"></canvas>'
     +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(b.malzeme)+' '+esc(b.kalite)+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
@@ -730,7 +740,7 @@ function showQR(id){
   setTimeout(function(){
     var c=document.getElementById('qrBig');
     if(c&&typeof QRCode!=='undefined')
-      QRCode.toCanvas(c,'BUKUM:'+b.id+'|'+ref+'|'+b.olcu,{width:200,margin:2,color:{dark:'#a855f7',light:'#111620'}});
+      QRCode.toCanvas(c, b.spoolId||b.spoolNo||b.id,{width:200,margin:2,color:{dark:'#a855f7',light:'#111620'}});
   },50);
 }
 
@@ -1233,6 +1243,29 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
+
+<!-- ═══ BÜKÜM ONAYI MODAL ═══ -->
+<div class="modal-ov" id="modalBukumOnayi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+  <div class="modal-box" style="max-width:400px;width:90%;background:var(--sur);border-radius:16px;padding:24px;border:1px solid var(--bor);">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--tx);margin-bottom:6px;">Büküm Tamamlandı mı?</div>
+    <div style="font-size:14px;color:var(--txm);margin-bottom:16px;">Bu işlem geri alınamaz. Büküm tamamlandı olarak işaretlenecek.</div>
+    <div id="bukumOnayi_detay" style="background:var(--sur2);border-radius:10px;padding:12px 14px;margin-bottom:20px;border-left:3px solid var(--leg);">
+      <div id="bukumOnayi_spool" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);margin-bottom:4px;">—</div>
+      <div id="bukumOnayi_bilgi" style="font-size:14px;color:var(--txm);">—</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('modalBukumOnayi').style.display='none'" 
+              style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--bor);background:transparent;color:var(--txm);font-size:14px;font-family:'Barlow',sans-serif;cursor:pointer;">
+        İptal
+      </button>
+      <button id="bukumOnayiBtn" onclick="buktuOnayla()"
+              style="flex:2;padding:12px;border-radius:10px;border:none;background:var(--gr);color:#fff;font-size:14px;font-weight:700;font-family:'Barlow',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Evet, Büküm Tamamlandı
+      </button>
+    </div>
+  </div>
+</div>
 </div><!-- /.main-content -->
 </div><!-- /.app-shell -->
 <!-- Sidebar toggle ve tema: ares-layout.js tarafından yönetilir -->
