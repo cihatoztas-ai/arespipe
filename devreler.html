@@ -318,6 +318,8 @@
       <option data-i18n="dr_opt_asit">Asit</option>
       <option data-i18n="dr_opt_galvaniz">Galvaniz</option>
       <option data-i18n="dr_opt_siyah">Siyah</option>
+      <option data-i18n="dr_opt_boyali">Boyalı</option>
+      <option data-i18n="dr_opt_siyah">Siyah</option>
     </select>
     <select class="fsel" id="fDurum">
       <option value="" data-i18n="dr_all_statuses">Tüm Durumlar</option>
@@ -1440,7 +1442,7 @@ function _doRender() {
       return '<span class="mat-badge ' + cls + '">' + label + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
-      var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : 'yb-siyah';
+      var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : y === 'Boyalı' ? 'yb-boyali' : 'yb-siyah';
       var key = 'dr_yuzey_' + y.toLowerCase();
       return '<span class="yuzey-badge ' + cls + '">' + esc(tv(key, y)) + '</span>';
     }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
