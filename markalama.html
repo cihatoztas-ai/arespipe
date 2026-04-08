@@ -374,18 +374,19 @@ async function veriYukle() {
       var trs = prj.tersaneler      || {};
       var spoolLabel = [prj.proje_no, sp.pipeline_no, sp.spool_no].filter(Boolean).join('-');
       return {
-        id:       k.id,
-        supaId:   k.id,
-        spoolNo:  spoolLabel       || sp.spool_no || '—',
-        spoolId:  sp.spool_id      || '',
-        tersane:  trs.ad           || '—',
-        isEmir:   prj.is_emri_no   || '—',
-        yuzey:    mal.tanim        || '—',
-        malzeme:  mal.malzeme      || '—',
-        kalite:   mal.kalite       || '—',
-        cap:      mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
-        tip:      k.tip            || 'otomatik',
-        durum:    k.markalandi     ? 'tamamlandi' : 'bekliyor'
+        id:         k.id,
+        supaId:     k.id,
+        spoolNo:    spoolLabel       || sp.spool_no || '—',
+        spoolId:    sp.spool_id      || '',
+        tersane:    trs.ad           || '—',
+        isEmir:     prj.is_emri_no   || '—',
+        malzemeAdi: k.malzeme_adi    || mal.tanim   || '',
+        yuzey:      k.malzeme_adi    || mal.tanim   || '—',
+        malzeme:    mal.malzeme      || '—',
+        kalite:     mal.kalite       || '—',
+        cap:        mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '',
+        tip:        k.tip            || 'otomatik',
+        durum:      k.markalandi     ? 'tamamlandi' : 'bekliyor'
       };
     });
     populateFilters();
@@ -517,7 +518,9 @@ function uniq(key){return[...new Set(markalamalar.map(function(x){return x[key];
 function populateFilters(){
   var fill=function(id,vals){var s=document.getElementById(id);var first=s.options[0];while(s.options.length>1)s.remove(1);vals.forEach(function(v){if(v)s.add(new Option(v,v));});};
   fill('fTersane', uniq('tersane').sort());
-  fill('fParca', [...new Set(markalamalar.map(function(m){return m.malzemeAdi||m.yuzey||'';}).filter(Boolean))].sort());
+  fill('fParca', [...new Set(markalamalar.map(function(m){
+    var v=m.malzemeAdi||m.yuzey||''; return v!=='—'?v:'';
+  }).filter(Boolean))].sort());
   fill('fKalite',  uniq('kalite').sort());
   fill('fCap',     uniq('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
   buildMs();
@@ -562,7 +565,7 @@ function applyFilters(){
   filtreData=markalamalar.filter(function(m){
     if(m.durum!=='bekliyor') return false;
     if(gv('fTersane')&&m.tersane!==gv('fTersane')) return false;
-    if(gv('fParca')&&(m.malzemeAdi||m.yuzey||'')!==gv('fParca')) return false;
+    if(gv('fParca')&&(m.malzemeAdi||m.yuzey||'—')!==gv('fParca')) return false;
     if(gv('fKalite')&&m.kalite!==gv('fKalite')) return false;
     if(gv('fCap')&&m.cap!==gv('fCap')) return false;
     if(secilenIsEmir.size>0&&!secilenIsEmir.has(m.isEmir)) return false;
@@ -703,8 +706,9 @@ function openModal(){
   if(!filtreData.length)return;
 
   // Homojenlik kontrolü: tüm kayıtlar aynı parça adı VE aynı çap olmalı
-  var parcalar=[...new Set(filtreData.map(function(m){return m.malzemeAdi||m.yuzey||'';}).filter(Boolean))];
-  var caplar  =[...new Set(filtreData.map(function(m){return m.cap||'';}).filter(Boolean))];
+  var _filt = function(v){ return v && v !== '—'; };
+  var parcalar=[...new Set(filtreData.map(function(m){return m.malzemeAdi||m.yuzey||'';}).filter(_filt))];
+  var caplar  =[...new Set(filtreData.map(function(m){return m.cap||'';}).filter(_filt))];
 
   if(parcalar.length>1||caplar.length>1){
     var satirlar=[];
