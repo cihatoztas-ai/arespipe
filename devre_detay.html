@@ -1928,7 +1928,7 @@ async function plMalzYukle() {
   var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
   if (!supa || !devreId) { plMalzRender(); return; }
   var res = await supa.from('pipeline_malzemeleri')
-    .select('id, pipeline_no, tip, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, sertifikali')
+    .select('id, pipeline_no, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, sertifikali')
     .eq('devre_id', devreId)
     .order('pipeline_no');
   if (res.error) { console.warn('Pipeline malzeme yükleme:', res.error); plMalzRender(); return; }
