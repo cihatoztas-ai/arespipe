@@ -303,18 +303,18 @@ function _aresDurum(mod, mesaj) {
   var text = document.getElementById('aresDurumText');
   var gear = document.getElementById('gearIcon');
   var dots = document.getElementById('thinkDots');
-  if (body) body.className = 'ares-body';
-  if (dot) dot.className = 'status-dot';
-  if (gear) gear.className = '';
-  if (dots) dots.className = 'think-dots';
+  if (body) { body.setAttribute("class", "ares-body"); }
+  if (dot) { dot.setAttribute("class", "status-dot"); }
+  if (gear) { gear.setAttribute("class", ""); }
+  if (dots) { dots.setAttribute("class", "think-dots"); }
   if (mod === 'thinking') {
-    if (body) body.classList.add('thinking');
-    if (dot) dot.classList.add('thinking');
-    if (gear) gear.classList.add('spinning');
-    if (dots) dots.classList.add('show');
+    if (body) body.setAttribute('class', 'ares-body thinking');
+    if (dot) dot.setAttribute('class', 'status-dot thinking');
+    if (gear) gear.setAttribute('class', 'spinning');
+    if (dots) dots.setAttribute('class', 'think-dots show');
     if (text) text.textContent = mesaj || 'Düşünüyorum...';
   } else if (mod === 'happy') {
-    if (body) { body.classList.add('happy'); setTimeout(function(){ body.className='ares-body'; }, 700); }
+    if (body) { body.classList.add('happy'); setTimeout(function(){ body.setAttribute('class', 'ares-body'); }, 700); }
     if (text) text.textContent = mesaj || 'İşte cevabınız!';
   } else if (mod === 'error') {
     if (text) text.textContent = mesaj || 'Bir sorun oluştu...';
