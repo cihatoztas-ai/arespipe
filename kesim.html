@@ -1378,7 +1378,7 @@ function kesimTamamla(){
     ARES.supabase().from('islem_log').insert({
       tenant_id:ARES.tenantId(),islem:'KESİM_TAMAMLA',
       aciklama:k.malzeme+' '+k.cap+' '+k.kesimOlcusu+'mm',
-      katman:'spool',spool_id:k.spoolId||null,yapan_id:ARES.oturumAl()?.id||null
+      katman:'spool',katman_id:k.supaId||null,spool_id:k.supaId||null,yapan_id:ARES.oturumAl()?.id||null
     }).then(function(){});
   }
   document.getElementById('kesimOnayModal').style.display='none';
