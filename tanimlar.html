@@ -152,8 +152,7 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
               <th style="width:52px;text-align:center;" data-i18n="tanim_sira">SIRA</th>
               <th data-i18n="tanim_sistem_adi">SİSTEM ADI</th>
               <th data-i18n="tanim_gorunen_ad">GÖRÜNEN AD</th>
-              <th style="text-align:center;" data-i18n="tanim_zorunlu">ZORUNLU</th>
-              <th data-i18n="genel_durum">DURUM</th>
+                            <th data-i18n="genel_durum">DURUM</th>
               <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
             </tr>
           </thead>
@@ -260,7 +259,7 @@ async function basamaklariYukle() {
   if (supa && ARES.mod === 'supabase') {
     var res = await supa
       .from('basamak_tanimlari')
-      .select('id, sira, sistem_adi, gorunen_ad, zorunlu, aktif, aciklama, renk')
+      .select('id, sira, sistem_adi, gorunen_ad, aktif')
       .eq('tenant_id', ARES.tenantId())
       .order('sira');
     if (res.error) {
@@ -276,7 +275,6 @@ async function basamaklariYukle() {
         ad:        b.sistem_adi,
         gorunenAd: b.gorunen_ad,
         sira:      b.sira,
-        zorunlu:   b.zorunlu  || false,
         aktif:     b.aktif    !== false,
       };
     });
@@ -379,10 +377,7 @@ function basamakRender(filtre) {
       '<td><input class="basamak-input" value="' + esc(x.gorunenAd) + '" ' +
         'onchange="basamakGorunenAdKaydet(\'' + esc(x.id) + '\',this.value)" ' +
         'title="' + tv('tanim_gorunen_ad_duzenle','Görünen adı düzenle') + '"></td>' +
-      '<td style="text-align:center;">' +
-        '<input type="checkbox" class="cb-zorunlu" ' + (x.zorunlu ? 'checked' : '') +
-        ' onchange="basamakZorunluKaydet(\'' + esc(x.id) + '\',this.checked)"></td>' +
-      '<td>' + durumBtn + '</td>' +
+            '<td>' + durumBtn + '</td>' +
       '<td><div class="td-eylem">' +
         '<button class="btn btn-g btn-sm" onclick="siraDegistir(\'' + esc(x.id) + '\',-1)" ' +
           (isFirst ? 'disabled' : '') + ' title="' + tv('tanim_yukari_tasi','Yukarı taşı') + '">\u2191</button>' +
@@ -441,24 +436,7 @@ async function basamakGorunenAdKaydet(id, val) {
 }
 
 // ─── Basamak: zorunlu kaydet ────────────────────────────────────
-async function basamakZorunluKaydet(id, val) {
-  var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
-  if (!b) return;
 
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('basamak_tanimlari')
-      .update({ zorunlu: val, guncelleme: new Date().toISOString() })
-      .eq('id', id);
-    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-  }
-
-  b.zorunlu = val;
-  toast(tv('genel_kaydedildi','Kaydedildi.'), 'ok');
-  ARES.logEkle('BASAMAK_ZORUNLU', 'Zorunlu güncellendi', 'basamak', id, {});
-}
-
-// ─── Basamak: aktif/pasif toggle ────────────────────────────────
 async function basamakToggleAktif(id) {
   var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
   if (!b) return;
