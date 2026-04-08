@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title data-i18n="ks_title">Kesim Yönetimi | AresPipe</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap&subset=latin" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script>
 // Tema hemen uygula — flash önleme
@@ -489,7 +489,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
@@ -504,7 +504,7 @@ async function veriYukle() {
       return {
         id:          k.id,
         supaId:      k.id,
-        isEmir:      prj.is_emri_no  || '—',
+        isEmir:      dv.is_emri_no   || '—',
         tersane:     trs.ad          || '—',
         spool:       spoolLabel      || sp.spool_no || '—',
         spoolId:     sp.spool_id      || '',
@@ -522,7 +522,7 @@ async function veriYukle() {
     });
 
     // Kesim listeleri
-    var klRes = await supa.from('kesim_listeleri').select('*').order('olusturma', {ascending:false});
+    var klRes = await supa.from('kesim_listeleri').select('id, no, olusturma, arsiv, kapali').order('olusturma', {ascending:false});
     (klRes.data || []).forEach(function(kl) {
       // Supabase'deki kapalı listeleri yükle
       kesimListeleri.push({

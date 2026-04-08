@@ -6,7 +6,7 @@
 <title>Büküm | AresPipe</title>
 <!-- ✅ Flash prevention — Kural FP-01 -->
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap&subset=latin" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -464,7 +464,7 @@ async function veriYukle() {
     if (!supa) return;
     var res = await supa
       .from('bukum_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
     if (res.error) { console.warn('[ARES] Büküm yükleme:', res.error); return; }
     bukumler = (res.data || []).map(function(k) {
@@ -478,7 +478,7 @@ async function veriYukle() {
         id:       k.id,
         supaId:   k.id,
         kaynak:   'spool',
-        ref:      prj.is_emri_no   || '—',
+        ref:      dv.is_emri_no    || '—',
         spoolNo:  spoolLabel       || sp.spool_no || '—',
         spoolId:  sp.spool_id      || '',
         tersane:  trs.ad           || '—',

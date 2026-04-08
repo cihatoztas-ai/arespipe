@@ -13,7 +13,7 @@
   document.documentElement.setAttribute('lang',l);
   document.documentElement.style.visibility='hidden';
 })()</script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap&subset=latin" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 /* === CSS DEĞİŞKENLERİ === */
@@ -1851,7 +1851,7 @@ async function spoolMalzYukle() {
 
   var res = await supa
     .from('spool_malzemeleri')
-    .select('*')
+    .select('id, spool_id, kod, tanim, aciklama, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, agirlik_kg, sertifikali, heat_no, tip')
     .in('spool_id', spoolIds)
     .order('spool_id');
   if (res.error) {
@@ -1928,7 +1928,7 @@ async function plMalzYukle() {
   var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
   if (!supa || !devreId) { plMalzRender(); return; }
   var res = await supa.from('pipeline_malzemeleri')
-    .select('*')
+    .select('id, pipeline_no, tip, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, sertifikali')
     .eq('devre_id', devreId)
     .order('pipeline_no');
   if (res.error) { console.warn('Pipeline malzeme yükleme:', res.error); plMalzRender(); return; }
