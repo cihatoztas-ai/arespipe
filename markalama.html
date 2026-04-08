@@ -397,7 +397,6 @@ async function veriYukle() {
         .eq('tenant_id', ARES.tenantId())
         .order('olusturma', {ascending: true});
       if (!mlRes.error && mlRes.data) {
-        mlSayac = mlRes.data.length + 1;
         markalamaListeleri = mlRes.data.map(function(lst) {
           var kalemIds = (lst.markalama_listesi_kalemleri || []).map(function(k){ return k.kalem_id; });
           var markalanmisIds = new Set(
@@ -436,6 +435,12 @@ async function veriYukle() {
         });
         applyFilters();
         updateStats();
+      }
+      // ML sayacı: sayac_tanimlari'ndan al
+      var sayacRes = await supa.from('sayac_tanimlari')
+        .select('son_no').eq('tip','markalama_listesi').eq('tenant_id',ARES.tenantId()).single();
+      if (!sayacRes.error && sayacRes.data) {
+        mlSayac = (sayacRes.data.son_no || 0) + 1;
       }
     } catch(mlErr) {
       console.warn('[ARES] markalama_listeleri yüklenemedi:', mlErr);
@@ -755,6 +760,16 @@ function createListe(){
       if(r.error){ console.warn('[ARES] ML oluşturma:', r.error.message); return; }
       var listeSupaId = r.data.id;
       mlObj.supaId = listeSupaId;
+      // sayac_tanimlari artır — select-then-update pattern
+      ARES.supabase().from('sayac_tanimlari')
+        .select('son_no').eq('tip','markalama_listesi').eq('tenant_id',ARES.tenantId()).single()
+        .then(function(sr){
+          if(sr.error || !sr.data) return;
+          ARES.supabase().from('sayac_tanimlari')
+            .update({son_no: sr.data.son_no + 1})
+            .eq('tip','markalama_listesi').eq('tenant_id',ARES.tenantId())
+            .then(function(ur){ if(ur.error) console.warn('[ARES] ML sayac:', ur.error.message); });
+        });
       // Junction: her kalem bu listeye bağlı
       var junctionRows = sec.map(function(m){
         return {
