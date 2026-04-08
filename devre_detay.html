@@ -1653,11 +1653,30 @@ function gonderHepsiniSec(val) {
   SPOOLS.filter(s=>!s.stopped&&!s.iptal).forEach(s=>{ _gonderSecili[s.spoolNo]=val; });
   gonderListesiRender();
 }
-function gonderKaydet() {
+async function gonderKaydet() {
   const secili = SPOOLS.filter(s=>_gonderSecili[s.spoolNo]);
   if(!secili.length) { showToast('En az bir spool secin','error'); return; }
   document.getElementById('gonderModal').style.display='none';
   const hedef = _gonderTip==='kk' ? 'Kalite Kontrol' : 'Sevkiyat';
+  const yeniBasamak = _gonderTip==='kk' ? 'on_kontrol' : 'sevkiyat';
+  const supa = ARES.supabase();
+  if (supa && ARES.mod==='supabase') {
+    const spoolIds = secili.map(s=>s.supaId).filter(Boolean);
+    if (spoolIds.length) {
+      const res = await supa.from('spooller')
+        .update({ aktif_basamak: yeniBasamak, guncelleme: new Date().toISOString() })
+        .in('id', spoolIds);
+      if (res.error) {
+        showToast('Güncelleme hatası: '+res.error.message,'error');
+        return;
+      }
+      // Local SPOOLS güncelle
+      secili.forEach(function(s) {
+        var sp = SPOOLS.find(function(x){ return x.supaId===s.supaId; });
+        if (sp) sp.aktifBasamak = yeniBasamak;
+      });
+    }
+  }
   devreLogEkle(_gonderTip==='kk'?'kk_daveti':'sevkiyata_gonderildi', secili.map(s=>s.spoolNo).join(', ')+' — '+hedef);
   showToast(secili.length+' spool '+hedef+' listesine eklendi','success');
 }
