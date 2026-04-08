@@ -390,11 +390,56 @@ async function veriYukle() {
     });
     populateFilters();
     applyFilters();
-    // ML sayacı: Supabase'den mevcut liste sayısına göre başlat
-    var mlRes = await supa.from('markalama_listeleri')
-      .select('id', {count:'exact'})
-      .eq('tenant_id', ARES.tenantId());
-    mlSayac = (mlRes.count || 0) + 1;
+    // ML sayacı + mevcut listeleri yükle
+    try {
+      var mlRes = await supa.from('markalama_listeleri')
+        .select('id, ml_no, durum, olusturma, kapanma, markalama_listesi_kalemleri(kalem_id, markalandi)')
+        .eq('tenant_id', ARES.tenantId())
+        .order('olusturma', {ascending: true});
+      if (!mlRes.error && mlRes.data) {
+        mlSayac = mlRes.data.length + 1;
+        markalamaListeleri = mlRes.data.map(function(lst) {
+          var kalemIds = (lst.markalama_listesi_kalemleri || []).map(function(k){ return k.kalem_id; });
+          var markalanmisIds = new Set(
+            (lst.markalama_listesi_kalemleri || []).filter(function(k){ return k.markalandi; }).map(function(k){ return k.kalem_id; })
+          );
+          // Durumu memory'deki kalemlere yansıt
+          kalemIds.forEach(function(kid) {
+            var m = markalamalar.find(function(x){ return x.id === kid; });
+            if (m) {
+              if (lst.durum === 'aktif') m.durum = 'listede';
+              else if (markalanmisIds.has(kid)) m.durum = 'tamamlandi';
+            }
+          });
+          var tarihStr = lst.olusturma
+            ? new Date(lst.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+            : '—';
+          var tersaneler = [...new Set(kalemIds.map(function(kid){
+            var m = markalamalar.find(function(x){ return x.id === kid; });
+            return m ? m.tersane : null;
+          }).filter(Boolean))];
+          var tipler = [...new Set(kalemIds.map(function(kid){
+            var m = markalamalar.find(function(x){ return x.id === kid; });
+            return m ? m.tip : null;
+          }).filter(Boolean))];
+          return {
+            id: lst.id,
+            supaId: lst.id,
+            no: lst.ml_no,
+            tarih: tarihStr,
+            markaIds: kalemIds,
+            markalanmisIds: markalanmisIds,
+            arsiv: [],
+            kapali: lst.durum !== 'aktif',
+            kriter: { tersaneler: tersaneler, tipler: tipler }
+          };
+        });
+        applyFilters();
+        updateStats();
+      }
+    } catch(mlErr) {
+      console.warn('[ARES] markalama_listeleri yüklenemedi:', mlErr);
+    }
   } catch(e) {
     console.warn('[ARES] veriYukle hatası:', e);
     applyFilters();
@@ -706,8 +751,21 @@ function createListe(){
       ml_no:listeNo,
       durum:'aktif',
       olusturan_id:ARES.oturumAl()?.id||null
-    }).then(function(r){
-      if(r.error) console.warn('[ARES] ML oluşturma:', r.error.message);
+    }).select('id').single().then(function(r){
+      if(r.error){ console.warn('[ARES] ML oluşturma:', r.error.message); return; }
+      var listeSupaId = r.data.id;
+      mlObj.supaId = listeSupaId;
+      // Junction: her kalem bu listeye bağlı
+      var junctionRows = sec.map(function(m){
+        return {
+          tenant_id: ARES.tenantId(),
+          liste_id: listeSupaId,
+          kalem_id: m.supaId || m.id,
+          markalandi: false
+        };
+      });
+      ARES.supabase().from('markalama_listesi_kalemleri').insert(junctionRows)
+        .then(function(jr){ if(jr.error) console.warn('[ARES] ML junction:', jr.error.message); });
     });
   }
   closeModal();applyFilters();updateStats();
@@ -826,16 +884,35 @@ function mlKaydet(mlId){
   // Supabase toplu güncelleme
   if(ARES.mod==='supabase'){
     var yapildiIds=yapildi.map(function(m){return m.supaId;}).filter(Boolean);
+    var yapilmadiIds=yapilmadi.map(function(m){return m.supaId;}).filter(Boolean);
+    var listeSupaId = ml.supaId;
+    if(listeSupaId){
+      // Junction tablosunda markalandi flag güncelle
+      if(yapildiIds.length){
+        ARES.supabase().from('markalama_listesi_kalemleri')
+          .update({markalandi:true})
+          .eq('liste_id',listeSupaId).in('kalem_id',yapildiIds)
+          .then(function(r){if(r.error)console.warn('[ARES] ML junction yapildi:',r.error.message);});
+      }
+      // Liste durumunu güncelle
+      ARES.supabase().from('markalama_listeleri')
+        .update({durum:kismi?'kismi':'tamamlandi',kapanma:new Date().toISOString()})
+        .eq('id',listeSupaId)
+        .then(function(r){if(r.error)console.warn('[ARES] ML durum:',r.error.message);});
+    }
+    // markalama_kalemleri ana flag (toplu)
     if(yapildiIds.length){
       ARES.supabase().from('markalama_kalemleri')
         .update({markalandi:true,guncelleme:new Date().toISOString()})
         .in('id',yapildiIds)
         .then(function(r){if(r.error)console.warn('[ARES] ML kaydet batch:',r.error.message);});
     }
-    ARES.supabase().from('markalama_listeleri')
-      .update({durum:kismi?'kismi':'tamamlandi',kapanma:new Date().toISOString()})
-      .eq('ml_no',ml.no).eq('tenant_id',ARES.tenantId())
-      .then(function(r){if(r.error)console.warn('[ARES] ML durum güncelleme:',r.error.message);});
+    // Yarım kalan kalemleri geri al (listeden çıkar)
+    if(yapilmadiIds.length && listeSupaId){
+      ARES.supabase().from('markalama_listesi_kalemleri')
+        .delete().eq('liste_id',listeSupaId).in('kalem_id',yapilmadiIds)
+        .then(function(r){if(r.error)console.warn('[ARES] ML junction geri:',r.error.message);});
+    }
   }
   applyFilters();updateStats();renderML();renderArc();
   toast(kismi?ml.no+' '+tv('mk_kismi','Kısmi')+' — '+yapildi.length+'/'+mlM.length+', '+yapilmadi.length+' '+tv('mk_geri','geri döndü'):ml.no+' '+tv('mk_tamamlandi','tamamlandı'),kismi?'info':'success');
