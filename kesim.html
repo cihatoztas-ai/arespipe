@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kesim Yönetimi | AresPipe</title>
+<title data-i18n="ks_title">Kesim Yönetimi | AresPipe</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script>
@@ -277,9 +277,9 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
   <!-- Stat Kartlar -->
   <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div><div style="flex:1;"><div class="stat-label">Toplam Bekleyen</div><div class="stat-value" id="stTop" style="color:var(--ac);">—</div><div class="prog-wrap"><div class="prog-fill" id="progTam" style="background:var(--gr);width:0%;"></div></div></div></div>
-    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div><div style="flex:1;"><div class="stat-label">Filtrelenen</div><div class="stat-value" id="stFiltre" style="color:var(--warn);">—</div></div></div>
-    <div class="stat-card cl-or"><div class="stat-icon si-or">📋</div><div style="flex:1;"><div class="stat-label">Listede Olan</div><div class="stat-value" id="stListede" style="color:var(--or);">—</div></div></div>
+    <div class="stat-card cl-ac"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div><div style="flex:1;"><div class="stat-label"><span data-i18n="ks_stat_bekleyen">Toplam Bekleyen</span></div><div class="stat-value" id="stTop" style="color:var(--ac);">—</div><div class="prog-wrap"><div class="prog-fill" id="progTam" style="background:var(--gr);width:0%;"></div></div></div></div>
+    <div class="stat-card cl-warn"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div><div style="flex:1;"><div class="stat-label"><span data-i18n="ks_stat_filtered">Filtrelenen</span></div><div class="stat-value" id="stFiltre" style="color:var(--warn);">—</div></div></div>
+    <div class="stat-card cl-or"><div class="stat-icon si-or">📋</div><div style="flex:1;"><div class="stat-label"><span data-i18n="ks_stat_inlist">Listede Olan</span></div><div class="stat-value" id="stListede" style="color:var(--or);">—</div></div></div>
   </div>
 
   <!-- Sekmeler -->
@@ -295,31 +295,31 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <div class="filter-card">
       <!-- Satır 1: Filtreler -->
       <div class="filter-row">
-        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value=""><span data-i18n="cmn_th_tersane">Tersane</span></option></select>
+        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value=""><span data-i18n="cmn_th_tersane"><span data-i18n="cmn_th_tersane">Tersane</span></span></option></select>
         <div class="ms-wrap">
           <div class="ms-trigger" id="msTrigger" onclick="toggleMs(event)">
-            <span class="ms-trigger-text" id="msTxt"><span data-i18n="cmn_th_is_emri">İş Emri</span></span>
+            <span class="ms-trigger-text" id="msTxt"><span data-i18n="cmn_th_is_emri"><span data-i18n="cmn_th_is_emri">İş Emri</span></span></span>
             <span class="ms-count" id="msCnt" style="display:none;"></span>
             <span class="ms-arrow">▾</span>
           </div>
           <div class="ms-dropdown" id="msDD" style="display:none;">
             <div class="ms-search"><input type="text" id="msQ" placeholder="İş emir ara..." oninput="buildMs()"></div>
-            <div class="ms-actions"><button class="ms-act" onclick="msAll()">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
+            <div class="ms-actions"><button class="ms-act" onclick="msAll()"><span data-i18n="cmn_sec_tumunu">Tümünü Seç</span></button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
             <div class="ms-list" id="msList"></div>
             <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
           </div>
         </div>
-        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value=""><span data-i18n="cmn_th_malzeme">Malzeme</span></option></select>
-        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value=""><span data-i18n="cmn_th_kalite">Kalite</span></option></select>
-        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value=""><span data-i18n="cmn_th_cap">Çap</span></option></select>
-        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value=""><span data-i18n="cmn_th_et">Et Kal.</span></option></select>
+        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value=""><span data-i18n="cmn_th_malzeme"><span data-i18n="cmn_th_malzeme">Malzeme</span></span></option></select>
+        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value=""><span data-i18n="cmn_th_kalite"><span data-i18n="cmn_th_kalite">Kalite</span></span></option></select>
+        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value=""><span data-i18n="cmn_th_cap"><span data-i18n="cmn_th_cap">Çap</span></span></option></select>
+        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value=""><span data-i18n="cmn_th_et"><span data-i18n="cmn_th_et">Et Kal.</span></span></option></select>
         <select class="filter-select" id="fSert" onchange="onFC()" title="Sertifika">
           <option value="">Sertifika</option>
-          <option value="evet">Sertifikalı</option>
-          <option value="hayir">Sertifikasız</option>
+          <option value="evet" data-i18n="ks_chip_cert">Sertifikalı</option>
+          <option value="hayir" data-i18n="ks_no_cert">Sertifikasız</option>
         </select>
         <div class="filter-spacer"></div>
-        <button class="btn-outline" onclick="resetAll()">↺ Sıfırla</button>
+        <button class="btn-outline" onclick="resetAll()"><span data-i18n="cmn_sifirla">↺ Sıfırla</span></button>
       </div>
       <!-- Satır 2: Arama + Oluştur -->
       <div class="filter-row" style="margin-top:10px;">
@@ -329,7 +329,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
         </div>
         <div class="filter-spacer"></div>
-        <button class="btn-green" id="btnOlustur" onclick="openListeModal()" disabled>📋 Kesim Listesi Oluştur</button>
+        <button class="btn-green" id="btnOlustur" onclick="openListeModal()" disabled><span data-i18n="ks_btn_olustur"><span data-i18n="ks_modal_list_title">📋 Kesim Listesi Oluştur</span></span></button>
       </div>
       <div class="active-chips" id="activeChips" style="display:none;"></div>
     </div>
@@ -340,17 +340,17 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th class="no-sort" style="width:36px;">#</th>
           <th onclick="sortBy('tersane')">Tersane</th>
           <th onclick="sortBy('isEmir')">İş Emri</th>
-          <th onclick="sortBy('spool')"><span data-i18n="cmn_th_spool_no">Spool No</span></th>
-          <th onclick="sortBy('spoolId')" style="color:var(--leg);"><span data-i18n="cmn_th_spool_id">Spool ID</span></th>
+          <th onclick="sortBy('spool')"><span data-i18n="cmn_th_spool_no"><span data-i18n="cmn_th_spool_no">Spool No</span></span></th>
+          <th onclick="sortBy('spoolId')" style="color:var(--leg);"><span data-i18n="cmn_th_spool_id"><span data-i18n="cmn_th_spool_id">Spool ID</span></span></th>
           <th onclick="sortBy('malzeme')">Malzeme</th>
           <th onclick="sortBy('kalite')">Kalite</th>
           <th onclick="sortBy('cap')">Çap</th>
           <th onclick="sortBy('kalinlik')">Et Kal.</th>
-          <th onclick="sortBy('kesimOlcusu')" style="color:var(--warn);">Kesim (mm)</th>
-          <th onclick="sortBy('ucA')">A Ucu</th>
-          <th onclick="sortBy('ucB')">B Ucu</th>
-          <th class="no-sort" style="text-align:center;">Sert.</th>
-          <th class="no-sort" style="text-align:center;width:80px;">İşlem</th>
+          <th onclick="sortBy('kesimOlcusu')" style="color:var(--warn);"><span data-i18n="ks_th_kesim_mm">Kesim (mm)</span></th>
+          <th onclick="sortBy('ucA')"><span data-i18n="ks_th_a_ucu">A Ucu</span></th>
+          <th onclick="sortBy('ucB')"><span data-i18n="ks_th_b_ucu">B Ucu</span></th>
+          <th class="no-sort" style="text-align:center;"><span data-i18n="ks_th_sert">Sert.</span></th>
+          <th class="no-sort" style="text-align:center;width:80px;"><span data-i18n="cmn_th_islem">İşlem</span></th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -388,15 +388,15 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 <!-- Liste Oluştur -->
 <div class="modal-ov" id="listeModal" style="display:none;">
   <div class="modal-box">
-    <div class="modal-title">📋 Kesim Listesi Oluştur</div>
+    <div class="modal-title"><span data-i18n="ks_btn_olustur"><span data-i18n="ks_modal_list_title">📋 Kesim Listesi Oluştur</span></span></div>
     <div class="modal-sub" id="listeModalSub"></div>
-    <label class="modal-label">Liste Numarası</label>
+    <label class="modal-label"><span data-i18n="ks_modal_list_no">Liste Numarası</span></label>
     <input class="modal-input" id="listeNoInput" placeholder="KL26-001" maxlength="30">
     <div class="modal-hint">Boş bırakırsanız otomatik numara atanır.</div>
     <div class="modal-preview" id="listeModalPreview"></div>
     <div class="modal-btns">
-      <button class="btn-outline" style="flex:1;" onclick="closeListeModal()">İptal</button>
-      <button class="btn-green" style="flex:2;" onclick="createListe()">✓ Listeyi Oluştur</button>
+      <button class="btn-outline" style="flex:1;" onclick="closeListeModal()"><span data-i18n="cmn_iptal">İptal</span></button>
+      <button class="btn-green" style="flex:2;" onclick="createListe()"><span data-i18n="ks_modal_list_create">✓ Listeyi Oluştur</span></button>
     </div>
   </div>
 </div>
@@ -432,7 +432,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:var(--txm);line-height:1.8;" id="kesimOnayIcerik"></div>
     <div style="display:flex;gap:10px;">
-      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('kesimOnayModal').style.display='none'">İptal</button>
+      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('kesimOnayModal').style.display='none'"><span data-i18n="cmn_iptal">İptal</span></button>
       <button class="btn-green" style="flex:2;" onclick="kesimTamamla()">✓ Evet, Kesildi</button>
     </div>
   </div>
@@ -455,7 +455,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <div id="fmStoklar" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
     <button onclick="fmAddStok()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;margin-bottom:20px;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
     <div style="display:flex;gap:10px;">
-      <button onclick="closeFormModal()" class="btn-outline" style="flex:1;">İptal</button>
+      <button onclick="closeFormModal()" class="btn-outline" style="flex:1;"><span data-i18n="cmn_iptal">İptal</span></button>
       <button onclick="runForm()" class="btn-green" style="flex:2;height:42px;font-size:14px;">✂️ Formu Oluştur &amp; İndir</button>
     </div>
   </div>
@@ -554,6 +554,7 @@ var _fmKlId = null, _fmArcIdx = null, _fmStokSayac = 0;
 var PG_BORU = 20, PG_KL = 10, PG_ARC = 10;
 var pgBoru = 1, pgKL = 1, pgArc = 1;
 
+function ucLabel(k){ var m={duz:tv('ks_uc_duz','Düz'),kaynak:tv('ks_uc_kaynak','Kaynak Ağzı'),yiv:tv('ks_uc_yiv','Yiv'),dis:tv('ks_uc_dis','Diş'),bukum:tv('ks_uc_bukum','Büküm Borusu')}; return m[k]||k; }
 const ucMap = {duz:'Düz',kaynak:'Kaynak Ağzı',yiv:'Yiv',dis:'Diş',bukum:'Büküm Borusu'};
 const ucCls = {duz:'uc-duz',kaynak:'uc-kaynak',yiv:'uc-yiv',dis:'uc-dis',bukum:'uc-bukum'};
 
@@ -634,7 +635,7 @@ function msAll(){allIsEmirList().forEach(v=>secilenIsEmir.add(v));buildMs();upda
 function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();}
 function updateMsTrig(){
   var trig=document.getElementById('msTrigger'),txt=document.getElementById('msTxt'),cnt=document.getElementById('msCnt'),n=secilenIsEmir.size;
-  if(!n){txt.textContent='İş Emir';cnt.style.display='none';trig.classList.remove('has-sel');}
+  if(!n){txt.textContent=tv('cmn_th_is_emri','İş Emri');cnt.style.display='none';trig.classList.remove('has-sel');}
   else{var a=[...secilenIsEmir];txt.textContent=n===1?a[0]:a[0]+' +'+(n-1)+' daha';cnt.textContent=n;cnt.style.display='inline';trig.classList.add('has-sel');}
 }
 function toggleMs(e){
@@ -674,7 +675,7 @@ function resetAll(){
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
   [{id:'fTersane',l:'Tersane'},{id:'fMalzeme',l:'Malzeme'},{id:'fKalite',l:'Kalite'},
-   {id:'fCap',l:'Çap'},{id:'fKalinlik',l:'Et Kal.'},{id:'fSert',l:'Sertifika',fmt:v=>v==='evet'?'Sertifikalı':'Sertifikasız'}]
+   {id:'fCap',l:tv('cmn_th_cap','Çap')},{id:'fKalinlik',l:tv('cmn_th_et','Et Kal.')},{id:'fSert',l:tv('cmn_sertifika','Sertifika'),fmt:v=>v==='evet'?'Sertifikalı':'Sertifikasız'}]
     .forEach(f=>{var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+f.l+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">✕</button></div>');});
   [...secilenIsEmir].forEach(ie=>chips.push('<div class="active-chip">İş Emir: <b>'+esc(ie)+'</b><button onclick="rmMs(\''+esc(ie)+'\')">✕</button></div>'));
   if(aramaMetni)chips.push('<div class="active-chip">Arama: <b>"'+esc(aramaMetni)+'"</b><button onclick="clearSearch()">✕</button></div>');
@@ -765,7 +766,7 @@ function renderTable(){
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucMap[k.ucA]||k.ucA)+'</span>':'')+'</td>'
       +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucMap[k.ucB]||k.ucB)+'</span>':'')+'</td>'
       +'<td style="text-align:center;">'+sertBadge+'</td>'
-      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="Kesim tamamlandı olarak işaretle" style="display:inline-flex;align-items:center;gap:5px;padding:0 10px;height:30px;border-radius:8px;border:1.5px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">✓ Kesildi</button></td>'
+      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="Kesim tamamlandı olarak işaretle" style="display:inline-flex;align-items:center;gap:5px;padding:0 10px;height:30px;border-radius:8px;border:1.5px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'"><span data-i18n="ks_cut_label">✓ Kesildi</span></button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('footerTxt').textContent=filtreData.length+' boru · Sayfa '+pgBoru+'/'+totalPages;
