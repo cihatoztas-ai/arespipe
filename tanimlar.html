@@ -132,10 +132,6 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
         <span>Kod Serileri</span>
         <span class="tc" id="tKod">0</span>
       </button>
-      <button class="tab-btn" data-tab="firma" onclick="tabSec('firma',this)">
-        <span>Fason Firmaları</span>
-        <span class="tc" id="tFirma">0</span>
-      </button>
     </div>
 
     <!-- ✅ İŞLEM BASAMAKLARI PANELİ — M-09 / Supabase: basamak_tanimlari -->
@@ -166,30 +162,6 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
       <span style="display:none;" data-i18n="tanim_silinemez">Bu basamak silinemez</span>
     </div>
 
-
-    <!-- FASON FİRMALARI PANELİ -->
-    <div class="panel" id="panelfirma">
-      <div class="filtre-bari cl-warn" style="margin-bottom:16px;">
-        <button class="btn btn-sm" style="background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.3);" onclick="firmaEkleModal()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Yeni Firma Ekle
-        </button>
-      </div>
-      <div class="tablo-kart cl-warn">
-        <table>
-          <thead>
-            <tr>
-              <th>FİRMA ADI</th>
-              <th>İL / BÖLGE</th>
-              <th>TELEFON</th>
-              <th>E-POSTA</th>
-              <th style="text-align:right;">EYLEM</th>
-            </tr>
-          </thead>
-          <tbody id="firmaTablo"></tbody>
-        </table>
-      </div>
-    </div>
 
     <!-- KOD SERİLERİ PANELİ -->
     <div class="panel" id="panelkod">
@@ -275,8 +247,7 @@ async function veriYukle() {
   // Paralel yükle — Promise.all
   await Promise.all([
     basamaklariYukle(),
-    kodSeriYukle(),
-    firmaYukle()
+    kodSeriYukle()
   ]);
 
   sayacGuncelle();
@@ -288,7 +259,7 @@ async function basamaklariYukle() {
   if (supa && ARES.mod === 'supabase') {
     var res = await supa
       .from('basamak_tanimlari')
-      .select('*')
+      .select('id, sira, sistem_adi, gorunen_ad, zorunlu, aktif, aciklama, renk')
       .eq('tenant_id', ARES.tenantId())
       .order('sira');
     if (res.error) {
@@ -631,10 +602,10 @@ document.addEventListener('DOMContentLoaded', function() {
       await new Promise(function(r){ setTimeout(r, 100); });
       _bekle++;
     }
+    document.documentElement.style.visibility='';
     try {
       await veriYukle();
     } catch(e){ console.error('[ARES]',e); }
-    finally { document.documentElement.style.visibility=''; }
   })();
 });
 
@@ -759,114 +730,3 @@ async function kodSeriEkle() {
   }
 }
 
-
-// ═══════════════════════════════════════════════════════════════════
-// FASON FİRMALARI — fason_firmalar CRUD
-// ═══════════════════════════════════════════════════════════════════
-var _firmaData = [];
-
-async function firmaYukle() {
-  if (typeof ARES === "undefined") return;
-  var supa = ARES.supabase();
-  if (!supa || ARES.mod !== 'supabase') { firmaRender(); return; }
-  var res = await supa
-    .from('fason_firmalar')
-    .select('id, ad, il, telefon, eposta, aktif')
-    .eq('tenant_id', ARES.tenantId())
-    .order('ad');
-  if (!res.error) {
-    _firmaData = res.data || [];
-  } else {
-    console.warn('Firma yükleme:', res.error.message);
-    _firmaData = [];
-  }
-  firmaRender();
-  var tF = document.getElementById('tFirma');
-  if (tF) tF.textContent = _firmaData.length;
-}
-
-function firmaRender() {
-  var tbody = document.getElementById('firmaTablo');
-  if (!tbody) return;
-  if (!_firmaData.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--txd);">Henüz firma eklenmemiş</td></tr>';
-    return;
-  }
-  tbody.innerHTML = _firmaData.map(function(f) {
-    return '<tr>'
-      + '<td style="font-weight:600;color:var(--tx);">' + esc(f.ad) + '</td>'
-      + '<td style="color:var(--txm);">' + esc(f.il||'—') + '</td>'
-      + '<td style="color:var(--txm);">' + esc(f.telefon||'—') + '</td>'
-      + '<td style="color:var(--txm);">' + esc(f.eposta||'—') + '</td>'
-      + '<td style="text-align:right;">'
-        + '<button onclick="firmaDuzenle(\''+ f.id +'\')" style="background:none;border:none;color:var(--ac);cursor:pointer;font-size:14px;font-family:Barlow,sans-serif;margin-right:8px;">Düzenle</button>'
-        + '<button onclick="firmaSil(\''+ f.id +'\')" style="background:none;border:none;color:var(--re);cursor:pointer;font-size:14px;font-family:Barlow,sans-serif;">Sil</button>'
-      + '</td>'
-      + '</tr>';
-  }).join('');
-}
-
-function firmaEkleModal(f) {
-  var isEdit = !!f;
-  var ov = document.createElement('div');
-  ov.className = 'modal-ov'; ov.id = 'firmaModalOv';
-  ov.innerHTML = '<div class="modal-box" style="max-width:440px;">'
-    + '<div style="font-family:\"Barlow Condensed\",sans-serif;font-size:20px;font-weight:800;color:var(--tx);margin-bottom:20px;">' + (isEdit ? 'Firma Düzenle' : 'Yeni Firma') + '</div>'
-    + '<div style="margin-bottom:12px;"><label class="modal-label">Firma Adı *</label><input id="fm_ad" class="modal-input" placeholder="Yılmaz Büküm San." value="' + esc(f&&f.ad||'') + '"></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'
-      + '<div><label class="modal-label">İl / Bölge</label><input id="fm_il" class="modal-input" placeholder="İzmir" value="' + esc(f&&f.il||'') + '"></div>'
-      + '<div><label class="modal-label">Telefon</label><input id="fm_tel" class="modal-input" placeholder="0232 xxx xx xx" value="' + esc(f&&f.telefon||'') + '"></div>'
-    + '</div>'
-    + '<div style="margin-bottom:20px;"><label class="modal-label">E-posta</label><input id="fm_eposta" class="modal-input" placeholder="info@firma.com" value="' + esc(f&&f.eposta||'') + '"></div>'
-    + '<div style="display:flex;gap:10px;">'
-    + '<button onclick="document.getElementById(\'firmaModalOv\').remove()" class="btn-outline" style="flex:1;">İptal</button>'
-      + '<button onclick="firmaKaydet(\''+ (f&&f.id||'')+'\')" style="flex:2;padding:10px;border-radius:10px;border:none;background:var(--warn);color:#fff;font-size:14px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;">' + (isEdit ? 'Güncelle' : 'Ekle') + '</button>'
-    + '</div>'
-    + '</div>';
-  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
-  document.body.appendChild(ov);
-  setTimeout(function(){ document.getElementById('fm_ad').focus(); }, 50);
-}
-
-async function firmaKaydet(editId) {
-  var ad = document.getElementById('fm_ad').value.trim();
-  var il = document.getElementById('fm_il').value.trim();
-  var tel = document.getElementById('fm_tel').value.trim();
-  var eposta = document.getElementById('fm_eposta').value.trim();
-  if (!ad) { toast('Firma adı zorunlu', 'er'); return; }
-  var supa = ARES.supabase();
-  if (!supa || ARES.mod !== 'supabase') { toast('Supabase bağlı değil', 'er'); return; }
-  var data = { ad: ad, il: il||null, telefon: tel||null, eposta: eposta||null, tenant_id: ARES.tenantId() };
-  var res;
-  if (editId) {
-    res = await supa.from('fason_firmalar').update(data).eq('id', editId);
-  } else {
-    res = await supa.from('fason_firmalar').insert(data);
-  }
-  if (res.error) { toast('Kayıt hatası: ' + res.error.message, 'er'); return; }
-  document.getElementById('firmaModalOv').remove();
-  await firmaYukle();
-  toast(editId ? 'Firma güncellendi' : 'Firma eklendi', 'ok');
-}
-
-function firmaDuzenle(id) {
-  var f = _firmaData.find(function(x){ return x.id === id; });
-  if (f) firmaEkleModal(f);
-}
-
-async function firmaSil(id) {
-  var f = _firmaData.find(function(x){ return x.id === id; });
-  if (!f) return;
-  if (!confirm(f.ad + ' silinsin mi?')) return;
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('fason_firmalar').delete().eq('id', id);
-    if (res.error) { toast('Silme hatası: ' + res.error.message, 'er'); return; }
-  }
-  await firmaYukle();
-  toast('Firma silindi', 'ok');
-}
-
-</script>
-</body>
-</html>
