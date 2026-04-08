@@ -902,9 +902,12 @@ async function sorgulaVeGoster() {
 
   function applyFilters(q) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
+    // Join filtreleri: Supabase nested filter syntax
     if (firma)   q = q.eq('projeler.tersaneler.ad', firma);
     if (proje)   q = q.eq('projeler.proje_no', proje);
     if (durum)   q = q.eq('durum', durum);
+    if (malzeme) q = q.eq('malzeme', malzeme);
+    if (yuzey)   q = q.eq('yuzey', yuzey);
     if (arama)   q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
     return q;
   }
@@ -914,7 +917,7 @@ async function sorgulaVeGoster() {
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
-                'projeler!inner(proje_no, is_emri_no, tersaneler(ad, kod)), ' +
+                'projeler!inner(proje_no, is_emri_no, tersaneler!inner(ad, kod)), ' +
                 'spooller(id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1)
