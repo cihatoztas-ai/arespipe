@@ -350,6 +350,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th onclick="sortBy('ucA')"><span data-i18n="ks_th_a_ucu">A Ucu</span></th>
           <th onclick="sortBy('ucB')"><span data-i18n="ks_th_b_ucu">B Ucu</span></th>
           <th class="no-sort" style="text-align:center;"><span data-i18n="ks_th_sert">Sert.</span></th>
+          <th onclick="sortBy('tarih')" data-i18n="cmn_th_eklenme">Eklenme</th>
           <th class="no-sort" style="text-align:center;width:80px;"><span data-i18n="cmn_th_islem">İşlem</span></th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
@@ -515,6 +516,7 @@ async function veriYukle() {
         ucA:         k.uc_a          || 'duz',
         ucB:         k.uc_b          || 'duz',
         sertifika:   mal.sertifikali || false,
+        tarih:       k.olusturma     ? new Date(k.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—',
         durum:       k.kesildi       ? 'tamamlandi' : 'bekliyor'
       };
     });
@@ -766,11 +768,12 @@ function renderTable(){
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucMap[k.ucA]||k.ucA)+'</span>':'')+'</td>'
       +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucMap[k.ucB]||k.ucB)+'</span>':'')+'</td>'
       +'<td style="text-align:center;">'+sertBadge+'</td>'
-      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="Kesim tamamlandı olarak işaretle" style="display:inline-flex;align-items:center;gap:5px;padding:0 10px;height:30px;border-radius:8px;border:1.5px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Barlow\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'"><span data-i18n="ks_cut_label">✓ Kesildi</span></button></td>'
+      +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(k.tarih||'—')+'</td>'
+      +'<td style="text-align:center;"><button onclick="kesimTamamlaOnay(\''+k.id+'\')" title="'+tv('ks_done_title','Kesim tamamlandı olarak işaretle')+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button></td>'
       +'</tr>';
   }).join('');
-  document.getElementById('footerTxt').textContent=filtreData.length+' boru · Sayfa '+pgBoru+'/'+totalPages;
-  document.getElementById('footerSum').innerHTML='Toplam: <span style="color:var(--warn);font-weight:700;">'+mm.toLocaleString('tr-TR')+' mm</span>';
+  document.getElementById('footerTxt').textContent=filtreData.length+' '+tv('bk_unit_boru','boru')+' · '+tv('ks_sayfa','Sayfa')+' '+pgBoru+'/'+totalPages;
+  document.getElementById('footerSum').innerHTML=tv('bk_toplam','Toplam')+': <span style="color:var(--warn);font-weight:700;">'+mm.toLocaleString('tr-TR')+' mm</span>';
   var pgEl=document.getElementById('tblPg');
   if(totalPages>1){pgEl.style.display='flex';pgEl.innerHTML=buildPgHtml(pgBoru,totalPages,'goBoru');}
   else pgEl.style.display='none';
@@ -815,7 +818,7 @@ function openListeModal(){
   }
   var mm=filtreData.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
   var tersaneler=[...new Set(filtreData.map(k=>k.tersane))];
-  document.getElementById('listeModalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' boru</b>';
+  document.getElementById('listeModalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' '+tv('bk_unit_boru','boru')+'</b>';
   // Sayacı Supabase'den al
   if (ARES.mod === 'supabase') {
     ARES.supabase().from('sayac_tanimlari')
@@ -841,7 +844,7 @@ function openListeModal(){
     '<b>Tersane:</b> '+esc(tersaneler.join(', '))+'<br>'
     +'<b>Malzeme:</b> '+esc(malzemeler[0])+' — <span style="color:var(--ac);">'+esc(kaliteler[0])+'</span><br>'
     +'<b>Çap:</b> Ø'+esc(capler[0])+' — et '+esc(kalinliklar[0])+'<br>'
-    +'<b>Toplam Kesim:</b> <span style="color:var(--warn);font-weight:700;">'+mm.toLocaleString('tr-TR')+' mm</span>';
+    +'<b>'+tv('ks_toplam_kesim','Toplam Kesim')+':</b> <span style="color:var(--warn);font-weight:700;">'+mm.toLocaleString('tr-TR')+' mm</span>';
   document.getElementById('listeModal').style.display='flex';
   setTimeout(()=>{var el=document.getElementById('listeNoInput');if(el)el.select();},50);
 }
@@ -899,7 +902,7 @@ function createListe(){
     });
   }
   closeListeModal();applyFilters();updateStats();
-  toast(listeNo+' oluşturuldu — '+sec.length+' boru','success');
+  toast(listeNo+' '+tv('ks_olusturuldu','oluşturuldu')+' — '+sec.length+' '+tv('bk_unit_boru','boru'),'success');
   switchTab('listeler');
 }
 
@@ -932,14 +935,14 @@ function renderKL(){
       +kl.kriter.kaliteler.map(v=>'<span class="kl-tag klt-kalite">'+esc(v)+'</span>').join('')
       +kl.kriter.capler.map(v=>'<span class="kl-tag klt-cap">Ø '+esc(v)+'</span>').join('')
       +kl.kriter.kalinliklar.map(v=>'<span class="kl-tag klt-kal">et '+esc(v)+'</span>').join('')
-      +'<span class="kl-tag klt-count" id="klcnt-'+kl.id+'">✂️ '+kesildi+'/'+toplam+' kesildi · '+mm.toLocaleString('tr-TR')+' mm</span>'
+      +'<span class="kl-tag klt-count" id="klcnt-'+kl.id+'">✂️ '+kesildi+'/'+toplam+' '+tv('ks_kesildi','kesildi')+' · '+mm.toLocaleString('tr-TR')+' mm</span>'
       +'</div>'
       +'<div class="kl-meta">'+esc(kl.tarih)+'</div>'
       +'</div>'
       +'<div class="kl-body" id="klbody-'+kl.id+'">'
       +'<div class="kl-action-bar">'
       +'<div class="kl-progress">'
-      +'<div class="kl-progress-label"><span>Kesim durumu</span><span id="klprog-lbl-'+kl.id+'" style="font-weight:700;color:'+(kesildi===toplam?'var(--gr)':'var(--warn)')+';">'+kesildi+' / '+toplam+' boru · %'+pct+'</span></div>'
+      +'<div class="kl-progress-label"><span>'+tv('ks_kesim_durum','Kesim durumu')+'</span><span id="klprog-lbl-'+kl.id+'" style="font-weight:700;color:'+(kesildi===toplam?'var(--gr)':'var(--warn)')+';">'+kesildi+' / '+toplam+' '+tv('bk_unit_boru','boru')+' · %'+pct+'</span></div>'
       +'<div class="kl-progress-bar"><div class="kl-progress-fill" id="klprog-'+kl.id+'" style="width:'+pct+'%;"></div></div>'
       +'</div>'
       +'<button class="btn-outline" onclick="klTumunuSec(\''+kl.id+'\',true)" style="height:34px;font-size:14px;">☑ Tümünü İşaretle</button>'
@@ -970,7 +973,7 @@ function renderKL(){
           +'</tr>';
       }).join('')
       +'</tbody></table></div>'
-      +'<div class="tbl-footer"><span style="color:var(--txm);">'+toplam+' boru</span><span style="font-weight:700;">Toplam: <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span></span></div>'
+      +'<div class="tbl-footer"><span style="color:var(--txm);">'+toplam+' '+tv('bk_unit_boru','boru')+'</span><span style="font-weight:700;">'+tv('bk_toplam','Toplam')+': <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span></span></div>'
       +'</div></div>';
   }).join('');
   var pgKLEl=document.getElementById('klPg');
@@ -989,11 +992,11 @@ function klToggleRow(klId,boruId,checked){
   var kes=klB.filter(k=>kl.kesilmisIds.has(k.id)).length;
   var top=klB.length,pct=top?Math.round(kes/top*100):0;
   var lbl=document.getElementById('klprog-lbl-'+klId);
-  if(lbl){lbl.textContent=kes+' / '+top+' boru · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
+  if(lbl){lbl.textContent=kes+' / '+top+' '+tv('bk_unit_boru','boru')+' · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
   var fill=document.getElementById('klprog-'+klId);if(fill)fill.style.width=pct+'%';
   var cnt=document.getElementById('klcnt-'+klId);
   var mm=klB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
-  if(cnt)cnt.textContent='✂️ '+kes+'/'+top+' kesildi · '+mm.toLocaleString('tr-TR')+' mm';
+  if(cnt)cnt.textContent='✂️ '+kes+'/'+top+' '+tv('ks_kesildi','kesildi')+' · '+mm.toLocaleString('tr-TR')+' mm';
 }
 
 function klTumunuSec(klId,checked){
@@ -1033,7 +1036,7 @@ function klKaydet(klId){
     }
   }
   applyFilters();updateStats();renderKL();renderArc();
-  toast(kismi?kl.no+' kısmi kaydedildi — '+kesilmisler.length+'/'+klB.length+' kesildi':kl.no+' tamamlandı',kismi?'info':'success');
+  toast(kismi?kl.no+' '+tv('ks_kismi_kaydedildi','kısmi kaydedildi')+' — '+kesilmisler.length+'/'+klB.length+' '+tv('ks_kesildi','kesildi'):kl.no+' '+tv('ks_tamamlandi','tamamlandı'),kismi?'info':'success');
   switchTab('tamamlandi');
 }
 
@@ -1071,15 +1074,15 @@ function renderArc(){
     var arcB=borular.filter(k=>arc.kesilmisIds.includes(k.id));
     var mm=arcB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
     var badge=arc.kismiMi
-      ?'<span class="arc-badge-kis">⚡ Kısmi · '+arc.kesilmisCount+'/'+arc.toplamCount+'</span>'
-      :'<span class="arc-badge-tam">✓ Tam · '+arc.kesilmisCount+' boru</span>';
+      ?'<span class="arc-badge-kis">⚡ '+tv('mk_kismi','Kısmi')+' · '+arc.kesilmisCount+'/'+arc.toplamCount+'</span>'
+      :'<span class="arc-badge-tam">✓ '+tv('mk_tam','Tam')+' · '+arc.kesilmisCount+' '+tv('bk_unit_boru','boru')+'</span>';
     return '<div class="arc-card" id="arccard-'+kl.id+'-'+ai+'">'
       +'<div class="arc-head" onclick="toggleArc(\''+kl.id+'-'+ai+'\')">'
       +'<span class="arc-arrow">▶</span>'
       +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--gr);min-width:120px;">'+esc(kl.no)+'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:8px;flex:1;align-items:center;">'+badge
       +kl.kriter.tersaneler.map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
-      +'<span class="kl-tag klt-count">✂️ '+arcB.length+' boru · '+mm.toLocaleString('tr-TR')+' mm</span>'
+      +'<span class="kl-tag klt-count">✂️ '+arcB.length+' '+tv('bk_unit_boru','boru')+' · '+mm.toLocaleString('tr-TR')+' mm</span>'
       +'</div>'
       +'<div style="font-size:14px;color:var(--txd);flex-shrink:0;">'+esc(arc.tarih)+'</div>'
       +'</div>'
@@ -1101,10 +1104,10 @@ function renderArc(){
         +'</tr>').join('')
       +'</tbody></table></div>'
       +'<div class="tbl-footer">'
-      +'<span style="color:var(--txm);">'+arcB.length+' boru · '+esc(arc.tarih)+'</span>'
+      +'<span style="color:var(--txm);">'+arcB.length+' '+tv('bk_unit_boru','boru')+' · '+esc(arc.tarih)+'</span>'
       +'<div style="display:flex;gap:12px;align-items:center;">'
       +'<button class="btn-outline" onclick="openFormModal(\''+kl.id+'\','+ai+')" style="height:32px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Kesim Formu İndir</button>'
-      +'<span style="font-weight:700;">Toplam: <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span></span>'
+      +'<span style="font-weight:700;">'+tv('bk_toplam','Toplam')+': <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span></span>'
       +'</div></div>'
       +'</div></div>';
   }).join('')).join('');
@@ -1127,7 +1130,7 @@ function renderTekil(){
   var badge=document.getElementById('badge-tekil');
   if(badge) badge.textContent=tekil.length||'';
   if(!tekil.length){
-    cont.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div style="font-size:16px;font-weight:600;">Henüz tekil kesilen yok</div><div style="font-size:14px;color:var(--txd);margin-top:6px;">Listeye dahil edilmeden kesildi işaretlenen parçalar burada görünür</div></div>';
+    cont.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div style="font-size:16px;font-weight:600;">'+tv('ks_bos_tekil','Henüz tekil kesilen yok')+'</div><div style="font-size:14px;color:var(--txd);margin-top:6px;">'+tv('ks_bos_tekil_hint','Listeye dahil edilmeden kesildi işaretlenen parçalar burada görünür')+'</div></div>';
     return;
   }
   cont.innerHTML='<div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">'

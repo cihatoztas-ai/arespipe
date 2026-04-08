@@ -291,6 +291,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
           <th onclick="sortBy('cap')" data-i18n="bk_col_diam">Çap</th>
           <th onclick="sortBy('kalinlik')" data-i18n="bk_col_thk">Et Kal.</th>
           <th onclick="sortBy('olcu')" style="color:var(--bukum-c);" data-i18n="bk_col_len">Büküm Uzunluğu</th>
+          <th onclick="sortBy('tarih')" data-i18n="cmn_th_eklenme">Eklenme</th>
           <th class="no-sort" style="text-align:center;width:120px;"><span data-i18n="cmn_th_islem">İşlem</span></th>
           <th class="no-sort" style="text-align:center;width:50px;">QR</th>
         </tr></thead>
@@ -486,6 +487,7 @@ async function veriYukle() {
         cap:      mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         kalinlik: mal.et_mm        ? String(mal.et_mm).replace('.',',') + ' mm' : '—',
         olcu:     k.olcu_mm        || 0,
+        tarih:    k.olusturma      ? new Date(k.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—',
         durum:    k.bukuldumu      ? 'tamamlandi' : 'bekliyor',
         fasonId:  null
       };
@@ -609,8 +611,9 @@ function renderRow(b,i){
     +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;color:var(--ac);">'+hl(b.cap)+'</td>'
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
     +'<td class="cell-kesim">'+b.olcu+' mm</td>'
+    +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(b.tarih||'—')+'</td>'
     +'<td style="text-align:center;">'
-      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu">&#10003; Büküldü</button>'
+      +'<button onclick="buktu(\''+b.id+'\')" title="'+tv('bk_done_title','Büküm tamamlandı olarak işaretle')+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button>'
     +'</td>'
     +'<td style="text-align:center;">'
       +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
@@ -680,10 +683,10 @@ function renderBekliyor(){
       document.getElementById('pgNext').disabled=mevcutSayfa>=toplamSayfa;
     }
   }
-  document.getElementById('footerTxt').textContent=filtreData.length+' boru ('
+  document.getElementById('footerTxt').textContent=filtreData.length+' '+tv('bk_unit_boru','boru')+' ('
     +filtreData.filter(function(b){return b.kaynak==='spool';}).length+' spool + '
     +filtreData.filter(function(b){return b.kaynak==='fason';}).length+' fason)';
-  document.getElementById('footerSum').innerHTML='Toplam: <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
+  document.getElementById('footerSum').innerHTML=tv('bk_toplam','Toplam')+': <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
 }
 
 var _bekleyenBukumId = null;
@@ -718,7 +721,7 @@ function buktuOnayla(){
   try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_TAMAMLA',kaynak:b.spoolNo||b.id,aciklama:b.malzeme+' '+b.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}
   applyFilters();updateStats();
   if(aktifFasonId&&aktifTab==='fason') openFasonDetay(aktifFasonId);
-  toast(b.spoolNo+' — '+b.olcu+'mm büküm tamamlandı','success');
+  toast(b.spoolNo+' — '+b.olcu+'mm '+tv('bk_toast_done','büküm tamamlandı'),'success');
 }
 
 function showQR(id){
@@ -781,7 +784,7 @@ function renderFasonListe(){
           +'<span style="font-size:14px;font-weight:600;color:var(--tx);">'+esc(firma.ad)+'</span>'
           +(fb.aciklama?'<span style="font-size:14px;color:var(--txd);">'+esc(fb.aciklama)+'</span>':'')
         +'</div>'
-        +'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(fb.tarih)+'&nbsp;·&nbsp;'+toplam+' boru'+(fb.belgeler&&fb.belgeler.length?'&nbsp;·&nbsp;&#128196; '+fb.belgeler.length+' belge':'')+'</div>'
+        +'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(fb.tarih)+'&nbsp;·&nbsp;'+toplam+' '+tv('bk_unit_boru','boru')+(fb.belgeler&&fb.belgeler.length?'&nbsp;·&nbsp;&#128196; '+fb.belgeler.length+' '+tv('bk_unit_belge','belge'):'')+'</div>'
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0;">'
         +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:800;color:'+dr+';">'+bukuldu+'/'+toplam+'</div>'
@@ -811,7 +814,7 @@ function openFasonDetay(id){
   document.getElementById('fdTarih').textContent=fb.tarih;
   document.getElementById('fdProg').style.width=pct+'%';
   document.getElementById('fdProg').style.background=durumRenk(pct);
-  document.getElementById('fdProgLbl').innerHTML='<span style="color:'+durumRenk(pct)+';font-weight:700;">'+bukuldu+'/'+toplam+' bukuldu (%'+pct+')</span>';
+  document.getElementById('fdProgLbl').innerHTML='<span style="color:'+durumRenk(pct)+';font-weight:700;">'+bukuldu+'/'+toplam+' '+tv('bk_bukuldu','büküldü')+' (%'+pct+')</span>';
 
   // Belgeler
   var bCont=document.getElementById('fdBelgeler');
@@ -827,7 +830,7 @@ function openFasonDetay(id){
   // Boru tablosu
   var tbody=document.getElementById('fdBoruBody');
   if(!borular.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--txd);">Henuz boru eklenmemis — boru ekle butonuna tiklayin</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--txd);">'+tv('bk_no_boru','Henüz boru eklenmemiş')+'</td></tr>';
     return;
   }
   tbody.innerHTML=borular.map(function(b,i){
@@ -842,7 +845,7 @@ function openFasonDetay(id){
       +'<td style="text-align:center;">'
         +(done
           ?'<span style="color:var(--gr);font-size:14px;">&#10003; Bukuldu</span><div style="font-size:14px;color:var(--txd);">'+esc(b.bukulduZaman||'')+'</div>'
-          :'<button onclick="fasonBuktu(\''+b.id+'\')" class="btn-buktu" style="font-size:14px;height:30px;padding:0 10px;">&#10003; Bukuldu</button>')
+          :'<button onclick="fasonBuktu(\''+b.id+'\')" title="'+tv('bk_done_title','Büküm tamamlandı olarak işaretle')+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button>')
       +'</td>'
       +'<td style="text-align:center;">'
         +(done?'':'<button onclick="fdBoruDuzenle(\''+b.id+'\')" style="width:26px;height:26px;border-radius:6px;background:rgba(14,165,233,.1);border:1px solid var(--ac);color:var(--ac);cursor:pointer;font-size:14px;">&#9998;</button>')
