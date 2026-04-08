@@ -861,8 +861,8 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       }).length : 0;
       var prj  = d.projeler || {};
       var trs  = prj.tersaneler || {};
-      var sonIslem = logByDevre[d.id]
-        ? new Date(logByDevre[d.id]).toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      var sonIslem = d.guncelleme
+        ? new Date(d.guncelleme).toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
         : '—';
       if (trs.ad)       tersaneSet[trs.ad]       = true;
       if (prj.proje_no) projeSet[prj.proje_no] = true;
@@ -882,7 +882,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         yuzeySapma:    yuzeySapma,
         ilerleme: avgIler,
         durum:    d.durum         || 'baslamadi',
-        sonIslem: '—',
+        sonIslem: sonIslem,
         caps:     caps
       };
 }
