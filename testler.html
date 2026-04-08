@@ -417,22 +417,113 @@ let testler = [
   },
 ];
 
-let testSayac = 19;
+let testSayac = 1;
+
+// ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
+async function veriYukle() {
+  var supa = ARES.supabase();
+  if (!supa || ARES.mod !== 'supabase') { init(); return; }
+  try {
+    var [testRes, spoolRes] = await Promise.all([
+      supa.from('testler')
+        .select('*, devreler(devre_no, is_emri_no, projeler(proje_no, gemi_adi, tersaneler(ad)))')
+        .eq('tenant_id', ARES.tenantId())
+        .order('olusturma', { ascending: false }),
+      supa.from('test_spooller')
+        .select('*, spooller(spool_no, spool_id)')
+        .eq('tenant_id', ARES.tenantId())
+    ]);
+
+    if (testRes.error) { console.warn('[ARES] testler yükleme:', testRes.error); init(); return; }
+
+    // spool sonuçlarını test_id'ye göre grupla
+    var spoolMap = {};
+    (spoolRes.data || []).forEach(function(ss) {
+      if (!spoolMap[ss.test_id]) spoolMap[ss.test_id] = [];
+      spoolMap[ss.test_id].push({
+        id:          ss.id,
+        supaId:      ss.id,
+        no:          (ss.spooller && ss.spooller.spool_no) || '—',
+        spoolId:     (ss.spooller && ss.spooller.spool_id) || '',
+        sonuc:       ss.sonuc       || 'bekliyor',
+        hataKaynagi: ss.hata_kaynagi || '',
+        spoolNot:    ss.not_        || ''
+      });
+    });
+
+    testler = (testRes.data || []).map(function(t) {
+      var dv  = t.devreler || {};
+      var prj = dv.projeler || {};
+      var trs = prj.tersaneler || {};
+      var tipBul = TEST_TIPLERI.find(function(x){ return x.kod === t.tip; });
+      return {
+        id:       t.id,
+        supaId:   t.id,
+        no:       t.test_no    || t.id.substring(0,8).toUpperCase(),
+        durum:    t.durum      || 'bekliyor',
+        tersane:  trs.ad       || '—',
+        projeNo:  prj.proje_no || '—',
+        gemi:     prj.gemi_adi || '',
+        devre:    dv.devre_no  || '—',
+        isEmri:   dv.is_emri_no || '—',
+        tip:      t.tip        || '',
+        tipAd:    (tipBul && tipBul.ad) || t.tip_ad || t.tip || '',
+        not:      t.not_       || '',
+        tarih:    t.tarih      ? new Date(t.tarih).toLocaleDateString('tr-TR') : '—',
+        firma:    t.firma      || '',
+        spooller: spoolMap[t.id] || [],
+        sonucBilgi: (t.sonuc_genel) ? {
+          tarih: t.sonuc_tarih ? new Date(t.sonuc_tarih).toLocaleDateString('tr-TR') : '',
+          bas:   t.sonuc_bas   || '',
+          bit:   t.sonuc_bit   || '',
+          kisi:  t.sonuc_kisi  || '',
+          genel: t.sonuc_genel || '',
+          not:   t.sonuc_not   || ''
+        } : null,
+        fotograflar: [],
+        belgeler:    []
+      };
+    });
+
+    testSayac = testler.length + 1;
+  } catch(e) {
+    console.warn('[ARES] testler hatası:', e);
+  }
+  init();
+}
 let secilenTip = '';
 
 // ===== BAŞLANGIÇ =====
-function init() {
-  // Filtreleri doldur
+async function init() {
+  // Test tipi filtresini doldur
   const fTip = document.getElementById('fTip');
   TEST_TIPLERI.forEach(t => {
     const o = document.createElement('option'); o.value=t.kod; o.textContent=t.kod+' — '+t.ad; fTip.appendChild(o);
   });
   const o2 = document.createElement('option'); o2.value='DIGER'; o2.textContent='Diğer'; fTip.appendChild(o2);
 
+  // Tersane filtresini mevcut testlerden doldur
   const fTersane = document.getElementById('fTersane');
-  [...new Set(testler.map(t=>t.tersane))].forEach(t=>{
+  [...new Set(testler.map(t=>t.tersane).filter(Boolean))].sort().forEach(t=>{
     const o=document.createElement('option');o.value=t;o.textContent=t;fTersane.appendChild(o);
   });
+
+  // Yeni test modalı tersane dropdown — Supabase'den
+  if (ARES.mod === 'supabase') {
+    const supa = ARES.supabase();
+    const tRes = await supa.from('tersaneler')
+      .select('id, ad')
+      .eq('tenant_id', ARES.tenantId())
+      .order('ad');
+    const yTersane = document.getElementById('yTersane');
+    if (yTersane && !tRes.error) {
+      (tRes.data || []).forEach(function(t) {
+        const o = document.createElement('option');
+        o.value = t.ad; o.textContent = t.ad;
+        yTersane.appendChild(o);
+      });
+    }
+  }
 
   renderTipGrid();
   renderHepsi();
@@ -579,17 +670,39 @@ function yeniTestAc() {
   document.getElementById('mYeni').style.display='flex';
 }
 
-function devreleriDoldur() {
+async function devreleriDoldur() {
   const t = document.getElementById('yTersane').value;
   const sel = document.getElementById('yDevre');
-  sel.innerHTML = '<option value="">Devre seçin...</option>';
-  (DEVRELER[t]||[]).forEach(d=>{
-    const o=document.createElement('option');
-    o.value=d.id;
-    o.textContent=d.ad+' ('+d.projeNo+')';
-    o.dataset.proje=d.projeNo; o.dataset.gemi=d.gemi; o.dataset.spooller=JSON.stringify(d.spooller);
-    sel.appendChild(o);
-  });
+  sel.innerHTML = '<option value="">Yükleniyor...</option>';
+
+  if (ARES.mod === 'supabase' && t) {
+    const supa = ARES.supabase();
+    const res = await supa.from('devreler')
+      .select('id, devre_no, is_emri_no, projeler(proje_no, gemi_adi), spooller(spool_no)')
+      .eq('tenant_id', ARES.tenantId())
+      .eq('silindi', false)
+      .order('devre_no');
+    sel.innerHTML = '<option value="">Devre seçin...</option>';
+    (res.data || []).forEach(function(d) {
+      const o = document.createElement('option');
+      o.value = d.id;
+      const prj = d.projeler || {};
+      o.textContent = d.devre_no + (d.is_emri_no ? ' — ' + d.is_emri_no : '') + (prj.proje_no ? ' (' + prj.proje_no + ')' : '');
+      o.dataset.proje = prj.proje_no || '';
+      o.dataset.gemi  = prj.gemi_adi || '';
+      o.dataset.spooller = JSON.stringify((d.spooller || []).map(function(s){ return s.spool_no; }));
+      sel.appendChild(o);
+    });
+  } else {
+    sel.innerHTML = '<option value="">Devre seçin...</option>';
+    (DEVRELER[t]||[]).forEach(function(d) {
+      const o=document.createElement('option');
+      o.value=d.id; o.textContent=d.ad+' ('+d.projeNo+')';
+      o.dataset.proje=d.projeNo; o.dataset.gemi=d.gemi; o.dataset.spooller=JSON.stringify(d.spooller);
+      sel.appendChild(o);
+    });
+  }
+
   sel.onchange = function() {
     const opt = sel.selectedOptions[0];
     document.getElementById('yProje').value = opt?.dataset.proje||'';
@@ -632,9 +745,9 @@ function testKaydet() {
   }
 
   const spoollar = JSON.parse(devreOpt?.dataset.spooller||'[]');
-  const no = 'T26-0'+String(testSayac).padStart(2,'0'); testSayac++;
+  const no = 'T'+new Date().getFullYear().toString().slice(-2)+'-'+String(testSayac).padStart(3,'0'); testSayac++;
 
-  testler.unshift({
+  const yeniTest = {
     id:no, no, durum:'bekleyen',
     tersane, projeNo:document.getElementById('yProje').value,
     gemi:document.getElementById('yGemi').value,
@@ -644,7 +757,35 @@ function testKaydet() {
     firma:document.getElementById('yFirma').value.trim(),
     spooller:spoollar.map(s=>({no:s,sonuc:'bekliyor',hataKaynagi:'',spoolNot:''})),
     sonucBilgi:null, fotograflar:[], belgeler:[]
-  });
+  };
+  testler.unshift(yeniTest);
+
+  // Supabase'e yaz
+  if (ARES.mod === 'supabase') {
+    const supa = ARES.supabase();
+    const devreId = devreSel.value || null;
+    supa.from('testler').insert({
+      tenant_id:   ARES.tenantId(),
+      test_no:     no,
+      devre_id:    devreId,
+      tip:         yeniTest.tip,
+      tip_ad:      tipAd,
+      firma:       yeniTest.firma || null,
+      durum:       'bekliyor',
+      not_:        yeniTest.not || null,
+      tarih:       document.getElementById('yTarih').value || null
+    }).select('id').single().then(function(r) {
+      if (r.error) { console.warn('[ARES] test insert:', r.error.message); return; }
+      yeniTest.supaId = r.data.id;
+      // Spool sonuçlarını ekle
+      if (spoollar.length) {
+        const spoolRows = spoollar.map(function(sNo) {
+          return { tenant_id: ARES.tenantId(), test_id: r.data.id, sonuc: 'bekliyor' };
+        });
+        supa.from('test_spooller').insert(spoolRows).then(function(){});
+      }
+    });
+  }
 
   document.getElementById('mYeni').style.display='none';
   renderHepsi(); guncelStatler();
@@ -715,6 +856,36 @@ function sonucKaydet() {
   else if (genel==='kaldi')  t.durum='hatali';
 
   document.getElementById('mSonuc').style.display='none';
+
+  // Supabase'e yaz
+  if (ARES.mod === 'supabase' && t.supaId) {
+    const supa = ARES.supabase();
+    const yeniDurum = (genel==='gecti') ? 'tamamlandi' : 'hatali';
+    supa.from('testler').update({
+      durum:        yeniDurum,
+      sonuc_tarih:  tarih || null,
+      sonuc_bas:    document.getElementById('mSonucBas').value || null,
+      sonuc_bit:    document.getElementById('mSonucBit').value || null,
+      sonuc_kisi:   kisi || null,
+      sonuc_genel:  genel || null,
+      sonuc_not:    document.getElementById('mSonucNot').value.trim() || null,
+      guncelleme:   new Date().toISOString()
+    }).eq('id', t.supaId).then(function(r){
+      if (r.error) console.warn('[ARES] test sonuç güncelleme:', r.error.message);
+    });
+    // Spool sonuçlarını güncelle
+    t.spooller.forEach(function(s) {
+      if (s.supaId) {
+        supa.from('test_spooller').update({
+          sonuc:        s.sonuc,
+          hata_kaynagi: s.hataKaynagi || null,
+          not_:         s.spoolNot || null
+        }).eq('id', s.supaId).then(function(){});
+      }
+    });
+    ARES.logEkle('TEST_SONUC', t.no + ' — ' + genel, 'test', t.supaId, {});
+  }
+
   renderHepsi(); guncelStatler();
   showToast(t.no+' test sonucu kaydedildi','success');
 }
@@ -816,12 +987,22 @@ document.addEventListener('DOMContentLoaded', function() {
         _bekle++;
       }
       if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
-      var _supa = ARES.supabase();
-      if (!_supa) { location.href = 'giris.html'; return; }
-      var _ses = await _supa.auth.getSession();
-      if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
+
+      // Supabase CDN + session hazır olana kadar bekle
+      _bekle = 0;
+      while (_bekle < 80) {
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
+      }
+
       if (window._applyI18n) _applyI18n();
-      init();
+      await veriYukle();
     } catch(e) { console.error('[ARES]', e); }
     finally {
       document.documentElement.style.visibility = '';
