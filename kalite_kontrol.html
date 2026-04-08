@@ -298,13 +298,21 @@ async function veriYukle() {
   if (!_supa) return;
   var supa = _supa;
   try {
-    // 1. KK hazır spooller — aktif_basamak = 'on_kontrol'
-    var spRes = await supa
-      .from('spooller')
-      .select('id, spool_no, spool_id, pipeline_no, agirlik, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad)))')
-      .eq('aktif_basamak', 'on_kontrol')
-      .eq('tenant_id', ARES.tenantId())
-      .order('pipeline_no').order('spool_no');
+    // Paralel sorgular — Promise.all
+    var tid = ARES.tenantId();
+    var results = await Promise.all([
+      supa.from('spooller')
+        .select('id, spool_no, spool_id, pipeline_no, agirlik, devre_id, devreler(devre_no, projeler(proje_no, is_emri_no, tersaneler(ad)))')
+        .eq('aktif_basamak', 'on_kontrol')
+        .eq('tenant_id', tid)
+        .order('pipeline_no').order('spool_no'),
+      supa.from('kk_davetler')
+        .select('*, kk_davet_spooller(*, spooller(spool_no, spool_id, pipeline_no, agirlik, devreler(devre_no, projeler(proje_no, tersaneler(ad, kod)))))')
+        .eq('tenant_id', tid)
+        .order('olusturma', {ascending: false})
+    ]);
+    var spRes = results[0];
+    var dvRes = results[1];
 
     HAZIR = (spRes.data || []).map(function(s) {
       var dv  = s.devreler || {};
@@ -323,34 +331,34 @@ async function veriYukle() {
       };
     });
 
-    // 2. KK davetleri
-    var dvRes = await supa
-      .from('kk_davetler')
-      .select('*, kk_davet_spooller(*, spooller(spool_no, spool_id, pipeline_no, agirlik, devreler(devre_no, projeler(proje_no, tersaneler(ad)))))')
-      .eq('tenant_id', ARES.tenantId())
-      .order('olusturma', {ascending: false});
-
     paketler = (dvRes.data || []).map(function(d) {
+      // spooller listesinden tersane/proje bilgisi al
+      var ilkSpool = (d.kk_davet_spooller||[])[0];
+      var ilkSp = ilkSpool ? (ilkSpool.spooller||{}) : {};
+      var ilkDv = ilkSp.devreler || {};
+      var ilkPrj = ilkDv.projeler || {};
+      var ilkTrs = ilkPrj.tersaneler || {};
       return {
         id:           d.id,
-        tersane:      d.tersane || '—',
-        projeNo:      d.proje_no || '—',
-        davetTarihi:  d.davet_tarihi ? new Date(d.davet_tarihi).toLocaleDateString('tr-TR') : '—',
-        kontrolTarihi:d.kontrol_tarihi ? new Date(d.kontrol_tarihi).toLocaleDateString('tr-TR') : '—',
-        not:          d.not || '',
-        mail:         d.mail || '',
+        davetNo:      d.davet_no || d.id.substring(0,8).toUpperCase(),
+        tersane:      ilkTrs.ad || '—',
+        projeNo:      ilkPrj.proje_no || '—',
+        davetTarihi:  d.tarih ? new Date(d.tarih).toLocaleDateString('tr-TR') : '—',
+        kontrolTarihi:'—',
+        not:          d.not_ || '',
+        mail:         '',
         durum:        d.durum || 'bekleyen',
-        onay:         d.onay_kisi ? {kisi:d.onay_kisi, tarih:d.onay_tarihi, not:d.onay_not, karar:d.durum} : null,
+        onay:         null,
         spooller:     (d.kk_davet_spooller || []).map(function(ks) {
           var sp = ks.spooller || {};
           var dv = sp.devreler || {};
           return {
             id:         ks.id,
-            spoolId:    ks.spool_id,
+            spoolId:    sp.spool_id || ks.spool_id,
             spool:      sp.spool_no || '—',
             devre:      dv.devre_no || '—',
             agirlik:    parseFloat(sp.agirlik) || 0,
-            durumOnay:  ks.durum || null
+            durumOnay:  ks.sonuc || null
           };
         })
       };
@@ -549,20 +557,16 @@ async function davetKaydet() {
   try {
     // kk_davetler'e yaz
     var dvRes = await supa.from('kk_davetler').insert({
-      tenant_id:      ARES.tenantId(),
-      tersane:        sl[0] ? sl[0].tersane : '—',
-      proje_no:       sl[0] ? sl[0].projeNo : '—',
-      davet_tarihi:   tarih,
-      kontrol_tarihi: document.getElementById('dKontrol').value || null,
-      not:            document.getElementById('dNot').value.trim() || null,
-      mail:           document.getElementById('dMail').value.trim() || null,
-      durum:          'bekleyen'
+      tenant_id: ARES.tenantId(),
+      tarih:     tarih,
+      durum:     'bekleyen',
+      not_:      document.getElementById('dNot').value.trim() || null
     }).select().single();
     if (dvRes.error) throw dvRes.error;
     var davetId = dvRes.data.id;
     // kk_davet_spooller'a yaz
     var spInserts = sl.map(function(h) {
-      return { tenant_id: ARES.tenantId(), kk_davet_id: davetId, spool_id: h.supaId, durum: null };
+      return { tenant_id: ARES.tenantId(), davet_id: davetId, spool_id: h.supaId };
     });
     await supa.from('kk_davet_spooller').insert(spInserts);
     // spooller aktif_basamak → 'kk'
@@ -598,7 +602,7 @@ function pkart(p) {
   var kg = p.spooller.reduce(function(a,s){ return a+(s.agirlik||0); },0).toFixed(1);
   var h = '<div class="pkart"><div class="phead">';
   h += '<div>';
-  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><div class="pno">'+p.id+'</div>'+(dm[p.durum]||'')+'</div>';
+  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><div class="pno">'+esc(p.davetNo||p.id.substring(0,8).toUpperCase())+'</div>'+(dm[p.durum]||'')+'</div>';
   h += '<div style="font-size:14px;color:var(--txm);">'+esc(p.tersane)+' &middot; <span style="color:var(--ac);">'+esc(p.projeNo)+'</span></div>';
   h += '<div style="font-size:14px;color:var(--txd);margin-top:4px;">Davet: <strong style="color:var(--tx);">'+p.davetTarihi+'</strong> &middot; Kontrol: <strong style="color:var(--tx);">'+p.kontrolTarihi+'</strong> &middot; '+p.spooller.length+' spool &middot; '+kg+' kg'+(p.not?' &middot; '+p.not:'')+'</div>';
   if (p.onay) h += '<div style="font-size:14px;margin-top:5px;color:'+(p.durum==='onaylandi'?'var(--gr)':'var(--re)')+';">'+(p.durum==='onaylandi'?'&check;':'&cross;')+' '+p.onay.kisi+' &mdash; '+p.onay.tarih+(p.onay.not?' &mdash; '+p.onay.not:'')+'</div>';
@@ -657,13 +661,11 @@ async function onayKaydet() {
     var notFinal  = karar==='ret' ? ret+(not?' / '+not:'') : not;
     // kk_davetler güncelle
     await supa.from('kk_davetler').update({
-      durum:       yeniDurum,
-      onay_kisi:   kisi,
-      onay_tarihi: new Date(tarih).toLocaleDateString('tr-TR'),
-      onay_not:    notFinal || null
+      durum: yeniDurum,
+      not_:  notFinal || null
     }).eq('id', id);
     // kk_davet_spooller güncelle
-    await supa.from('kk_davet_spooller').update({ durum: karar }).eq('kk_davet_id', id);
+    await supa.from('kk_davet_spooller').update({ sonuc: karar }).eq('davet_id', id);
     // spooller aktif_basamak güncelle
     var p = paketler.find(function(x){ return x.id===id; });
     if (p && p.spooller) {
