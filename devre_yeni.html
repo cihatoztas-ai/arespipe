@@ -1113,6 +1113,35 @@ function izoOnayla() {
   izoTemizle();
 }
 
+// ── İŞ EMRİ PREVIEW — sayfa açılınca sonraki numarayı göster ─
+async function isEmriPreviewGoster() {
+  var el = document.getElementById('isEmri');
+  if (!el) return;
+  try {
+    if (typeof ARES === 'undefined' || ARES.mod !== 'supabase') return;
+    var supa = ARES.supabase();
+    if (!supa) return;
+    var res = await supa
+      .from('sayac_tanimlari')
+      .select('prefix, yil_ekle, digits, son_no')
+      .eq('tip', 'is_emri')
+      .eq('tenant_id', ARES.tenantId())
+      .single();
+    if (res.error || !res.data) return;
+    var r = res.data;
+    var yil = r.yil_ekle ? new Date().getFullYear().toString().slice(-2) : '';
+    var sep  = (r.prefix && yil) ? '' : '';
+    var digits = r.digits || 3;
+    var sonraki = (r.son_no || 0) + 1;
+    var preview = (r.prefix || '') + yil + '-' + String(sonraki).padStart(digits, '0');
+    el.textContent = preview;
+    el.style.color = 'var(--txd)';
+    el.title = 'Kayıt sırasında kesinleşir';
+  } catch(e) {
+    console.warn('[ARES] isEmriPreview:', e);
+  }
+}
+
 // ── KAYDET — ✅ Supabase + M-09 + G-07 ──────────────────────
 async function kaydet() {
   if (!validate()) { toast(tv('dny_required_fields','Zorunlu alanları doldurun'), 'er'); return; }
