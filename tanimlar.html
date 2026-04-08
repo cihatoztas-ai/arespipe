@@ -588,21 +588,20 @@ window._onLangChange = function() { _applyI18n(); };
 // ═══════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
-    var _bekle = 0;
-    while (_bekle < 80) {
-      if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
-      var _supa = ARES.supabase();
-      if (_supa) {
-        var _ses = await _supa.auth.getSession();
-        if (_ses.data && _ses.data.session) {
-          await ARES.oturumKontrol();
-          break;
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
         }
-        if (_bekle > 20) { location.href = 'giris.html'; return; }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
       }
-      await new Promise(function(r){ setTimeout(r, 100); });
-      _bekle++;
-    }
+    } catch(e) { /* offline */ }
     document.documentElement.style.visibility='';
     try {
       await veriYukle();
