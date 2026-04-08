@@ -878,5 +878,7 @@
   "dr_modal_ml_pdf": "PDF",
   "dr_modal_ml_both": "Both",
   "dr_modal_ml_create": "Create",
-  "dr_modal_ml_cancel": "Cancel"
+  "dr_modal_ml_cancel": "Cancel",
+  "dr_mat_bakir": "Copper Alloy",
+  "dr_mat_alum": "Aluminum"
 }
