@@ -815,7 +815,27 @@ function openListeModal(){
   var mm=filtreData.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
   var tersaneler=[...new Set(filtreData.map(k=>k.tersane))];
   document.getElementById('listeModalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' boru</b>';
-  document.getElementById('listeNoInput').value='KL'+new Date().getFullYear().toString().slice(-2)+'-'+String(klSayac).padStart(3,'0');
+  // Sayacı Supabase'den al
+  if (ARES.mod === 'supabase') {
+    ARES.supabase().from('sayac_tanimlari')
+      .select('son_no, prefix, yil_ekle, digits')
+      .eq('tenant_id', ARES.tenantId())
+      .eq('tip', 'kesim_listesi')
+      .single()
+      .then(function(sr) {
+        if (sr.data) {
+          var d = sr.data;
+          var yil = d.yil_ekle ? new Date().getFullYear().toString().slice(-2) : '';
+          var sep = d.yil_ekle ? '-' : '';
+          var no = String((d.son_no||0)+1).padStart(d.digits||3,'0');
+          var listeNoEl = document.getElementById('listeNoInput');
+          if (listeNoEl) listeNoEl.value = (d.prefix||'KL') + yil + sep + no;
+          klSayac = (d.son_no||0) + 1;
+        }
+      });
+  } else {
+    document.getElementById('listeNoInput').value='KL'+new Date().getFullYear().toString().slice(-2)+'-'+String(klSayac).padStart(3,'0');
+  }
   document.getElementById('listeModalPreview').innerHTML=
     '<b>Tersane:</b> '+esc(tersaneler.join(', '))+'<br>'
     +'<b>Malzeme:</b> '+esc(malzemeler[0])+' — <span style="color:var(--ac);">'+esc(kaliteler[0])+'</span><br>'
@@ -851,7 +871,22 @@ function createListe(){
   sec.forEach(k=>k.durum='listede');
   // Supabase'e kaydet
   if (ARES.mod === 'supabase') {
-    ARES.supabase().from('kesim_listeleri').insert({
+    // Sayacı güncelle
+    var supa = ARES.supabase();
+    supa.from('sayac_tanimlari')
+      .select('id, son_no')
+      .eq('tenant_id', ARES.tenantId())
+      .eq('tip', 'kesim_listesi')
+      .single()
+      .then(function(sr) {
+        if (sr.data) {
+          supa.from('sayac_tanimlari')
+            .update({ son_no: (sr.data.son_no || 0) + 1 })
+            .eq('id', sr.data.id)
+            .then(function(){});
+        }
+      });
+    supa.from('kesim_listeleri').insert({
       tenant_id: ARES.tenantId(),
       no: listeNo,
       kriter: kriter,
