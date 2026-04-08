@@ -106,6 +106,9 @@
     .mat-badge  { display:inline-block; padding:2px 6px; border-radius:10px; font-size:14px; font-weight:500; margin:1px; }
     .mb-celik   { background:rgba(45,142,255,.1); color:var(--ac); }
     .mb-pas     { background:rgba(124,58,237,.1); color:var(--leg); }
+    .mb-bakir   { background:rgba(217,119,6,.1);  color:var(--warn); }
+    .mb-alum    { background:rgba(22,163,110,.1);  color:var(--gr); }
+    .mb-diger   { background:var(--sur2);          color:var(--txd); }
     .yuzey-badge { display:inline-block; padding:2px 6px; border-radius:10px; font-size:14px; font-weight:500; margin:1px; }
     .yb-asit     { background:rgba(45,142,255,.1); color:var(--ac); }
     .yb-galvaniz { background:rgba(22,163,110,.1); color:var(--gr); }
@@ -835,7 +838,16 @@ async function veriYukle() {
       // Malzeme ve yüzey — spool listesinden unique değerler
       var malzemeSet = {}, yuzeySet = {};
       spools.forEach(function(s) {
-        if (s.malzeme) malzemeSet[s.malzeme.toLowerCase()] = true;
+        if (s.malzeme) {
+          var _m = s.malzeme.toLowerCase();
+          var _mKey;
+          if (_m.indexOf('karbon') !== -1 || _m === 'celik' || _m.indexOf('karbon') !== -1) _mKey = 'Karbon Çelik';
+          else if (_m.indexOf('paslanmaz') !== -1) _mKey = 'Paslanmaz';
+          else if (_m.indexOf('bakır') !== -1 || _m.indexOf('bakir') !== -1 || _m.indexOf('cuni') !== -1) _mKey = 'Bakır Alaşım';
+          else if (_m.indexOf('alüm') !== -1 || _m.indexOf('alum') !== -1) _mKey = 'Alüminyum';
+          else _mKey = s.malzeme;
+          malzemeSet[_mKey] = true;
+        }
         if (s.yuzey)   yuzeySet[s.yuzey]                   = true;
       });
       var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['celik'];
@@ -1334,8 +1346,20 @@ function renderTable(sayfaReset) {
     var iptalBilgi = getIptalMap()[d.id];
     var dur = DURUM_MAP[d.durum] || {cls:'sb-baslamadi', text: d.durum};
     var matBadge = d.malzeme.map(function(m) {
-      var label = m === 'celik' ? tv('dr_mat_celik', 'Çelik') : tv('dr_mat_paslanmaz', 'Paslanmaz');
-      return '<span class="mat-badge ' + (m === 'celik' ? 'mb-celik' : 'mb-pas') + '">' + esc(label) + '</span>';
+      var ml = (m||'').toLowerCase();
+      var label, cls;
+      if (ml.indexOf('karbon') !== -1 || ml === 'celik') {
+        label = tv('dr_mat_celik','Karbon Çelik'); cls = 'mb-celik';
+      } else if (ml.indexOf('paslanmaz') !== -1) {
+        label = tv('dr_mat_paslanmaz','Paslanmaz'); cls = 'mb-pas';
+      } else if (ml.indexOf('bakır') !== -1 || ml.indexOf('bakir') !== -1 || ml.indexOf('cuni') !== -1) {
+        label = tv('dr_mat_bakir','Bakır Alaşım'); cls = 'mb-bakir';
+      } else if (ml.indexOf('alüm') !== -1 || ml.indexOf('alum') !== -1) {
+        label = tv('dr_mat_alum','Alüminyum'); cls = 'mb-alum';
+      } else {
+        label = esc(m); cls = 'mb-diger';
+      }
+      return '<span class="mat-badge ' + cls + '">' + label + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
       var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : 'yb-siyah';
