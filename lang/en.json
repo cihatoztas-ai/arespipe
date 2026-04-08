@@ -941,5 +941,22 @@
   "cmn_pdf": "PDF",
   "cmn_yukleniyor": "⏳ Loading...",
   "dr_yuzey_boyali": "Painted",
-  "dr_opt_boyali": "Painted"
+  "dr_opt_boyali": "Painted",
+  "ks_title": "Cutting Management | AresPipe",
+  "ks_tab_bekleyen": "Pending Cuts",
+  "ks_tab_listeler": "Cut Lists",
+  "ks_tab_kesilmis": "Cut Lists Done",
+  "ks_tab_tekil": "Individual Cuts",
+  "ks_stat_bekleyen": "Total Pending",
+  "ks_btn_olustur": "📋 Create Cut List",
+  "ks_th_a_ucu": "End A",
+  "ks_th_b_ucu": "End B",
+  "ks_th_sert": "Cert.",
+  "ks_th_kesim_mm": "Cut (mm)",
+  "ks_no_cert": "Non-certified",
+  "ks_uc_duz": "Flat",
+  "ks_uc_kaynak": "Weld End",
+  "ks_uc_yiv": "Grooved",
+  "ks_uc_dis": "Threaded",
+  "ks_uc_bukum": "Bend Pipe"
 }

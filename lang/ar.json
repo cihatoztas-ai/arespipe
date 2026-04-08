@@ -941,5 +941,22 @@
   "cmn_pdf": "PDF",
   "cmn_yukleniyor": "⏳ جارٍ التحميل...",
   "dr_yuzey_boyali": "مطلي",
-  "dr_opt_boyali": "مطلي"
+  "dr_opt_boyali": "مطلي",
+  "ks_title": "إدارة القطع | AresPipe",
+  "ks_tab_bekleyen": "قيد الانتظار",
+  "ks_tab_listeler": "قوائم القطع",
+  "ks_tab_kesilmis": "قوائم منتهية",
+  "ks_tab_tekil": "قطع فردية",
+  "ks_stat_bekleyen": "إجمالي الانتظار",
+  "ks_btn_olustur": "📋 إنشاء قائمة قطع",
+  "ks_th_a_ucu": "الطرف A",
+  "ks_th_b_ucu": "الطرف B",
+  "ks_th_sert": "شهادة",
+  "ks_th_kesim_mm": "القطع (مم)",
+  "ks_no_cert": "غير معتمد",
+  "ks_uc_duz": "مستوٍ",
+  "ks_uc_kaynak": "طرف لحام",
+  "ks_uc_yiv": "مخدد",
+  "ks_uc_dis": "مسنن",
+  "ks_uc_bukum": "أنبوب انحناء"
 }
