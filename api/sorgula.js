@@ -126,7 +126,7 @@ function semaFormatla(kolonlar) {
 function semaFallback() {
   return `
 devreler: id, tenant_id, proje_id, devre_no, ad, zone, is_emri_no, durum, termin_tarihi, toplam_agirlik, ilerleme_yuzdesi, silindi, olusturma
-spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, aktif_basamak, agirlik_kg, malzeme, kalite, dis_cap_mm, et_kalinligi_mm, durduruldu, silindi, olusturma
+spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, aktif_basamak, agirlik (ağırlık kg cinsinden - BU KOLONU KULLAN agirlik_kg değil), malzeme, kalite, kalite_standart, dis_cap_mm, et_kalinligi_mm, yuzey, yuzey_islemi, durduruldu, aktif_basamak, silindi, olusturma
 projeler: id, tenant_id, tersane_id, proje_no, gemi_adi, baslangic_tarihi, bitis_tarihi, durum, olusturma
 tersaneler: id, tenant_id, ad, ulke, sehir, aktif
 testler: id, tenant_id, devre_id, test_no, tip, tip_ad, firma, durum, tarih, sonuc_genel, olusturma
@@ -155,6 +155,9 @@ KURALLAR:
 6. Maksimum 100 satır dön: LIMIT 100
 7. Tablo adlarını doğru kullan, şemada olmayan tablo kullanma
 8. JOIN kullanırken tenant_id kontrolü yap
+9. spooller tablosunda ağırlık için 'agirlik' kolonunu kullan (agirlik_kg değil)
+10. spooller tablosunda kalite için 'kalite' kolonunu kullan (kalite_standart değil)
+11. spooller tablosunda yüzey için 'yuzey' kolonunu kullan (yuzey_islemi değil)
 
 CEVAP FORMATI (sadece JSON, başka hiçbir şey yazma):
 {
