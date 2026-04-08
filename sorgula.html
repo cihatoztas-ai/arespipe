@@ -180,16 +180,15 @@ async function sorguGonder() {
 
   try {
     if (typeof ARES === 'undefined') throw new Error('ARES yüklenmedi');
-    var oturum = ARES.oturumAl();
-    var supaConf = ARES.supabaseKonfig ? ARES.supabaseKonfig() : null;
-    if (!supaConf) throw new Error('Supabase yapılandırması bulunamadı');
+    var tenantId = ARES.tenantId();
+    if (!tenantId) throw new Error('Oturum bulunamadı');
 
     var res = await fetch('/api/sorgula', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         soru:      soru,
-        tenant_id: ARES.tenantId()
+        tenant_id: tenantId
       })
     });
 
