@@ -7,7 +7,7 @@
 <!-- ✅ Flash prevention — Kural FP-01 -->
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 /* tema değişkenleri aşağıda tanımlı */
@@ -610,7 +610,7 @@ function renderRow(b,i){
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
     +'<td class="cell-kesim">'+b.olcu+' mm</td>'
     +'<td style="text-align:center;">'
-      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Büküm Tamamla</button>'
+      +'<button onclick="buktu(\''+b.id+'\')" class="btn-buktu">&#10003; Büküldü</button>'
     +'</td>'
     +'<td style="text-align:center;">'
       +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
@@ -730,7 +730,7 @@ function showQR(id){
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;color:var(--bukum-c);">'+tv('bk_qr_title','QR — Büküm Borusu')+'</div>'
     +'<div style="font-size:14px;font-weight:700;margin-bottom:3px;"><span class="ref-badge '+(b.kaynak==='fason'?'ref-fason':'ref-emir')+'">'+esc(ref)+'</span></div>'
     +'<div style="font-size:14px;color:var(--txd);margin-bottom:4px;">'+esc(alt)+'</div>'+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:var(--leg);margin-bottom:12px;">'+esc(b.spoolId||'—')+'</div>'
-    +'<canvas id="qrBig" style="border-radius:6px;margin-bottom:14px;"></canvas>'
+    +'<div id="qrBig" style="margin:0 auto 14px;width:200px;height:200px;"></div>'
     +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(b.malzeme)+' '+esc(b.kalite)+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
     +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">Kapat</button>'
@@ -739,9 +739,16 @@ function showQR(id){
   document.body.appendChild(ov);
   setTimeout(function(){
     var c=document.getElementById('qrBig');
-    if(c&&typeof QRCode!=='undefined')
-      QRCode.toCanvas(c, b.spoolId||b.spoolNo||b.id,{width:200,margin:2,color:{dark:'#a855f7',light:'#111620'}});
-  },50);
+    if(c&&typeof QRCode!=='undefined'){
+      c.innerHTML='';
+      new QRCode(c,{
+        text: b.spoolId||b.spoolNo||b.id,
+        width:200,height:200,
+        colorDark:'#a855f7',colorLight:'#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  },100);
 }
 
 // ════ FASON LİSTE ════
@@ -933,12 +940,13 @@ function nbMalzemeGoster(){
 }
 
 function boruEkleKaydet(editId){
-  var mlId=document.getElementById('nb_malzeme_id').value;
-  var ml=malzemeListesi.find(function(x){return x.id===mlId;});
+  var malzeme=document.getElementById('nb_malzeme').value.trim();
+  var kalite=document.getElementById('nb_kalite').value.trim();
+  var cap=document.getElementById('nb_cap').value.trim();
+  var kalinlik=document.getElementById('nb_kalinlik').value.trim();
   var olcu=parseInt(document.getElementById('nb_olcu').value);
-  if(!ml){toast('Malzeme seciniz','error');return;}
-  if(!olcu||olcu<=0){toast('Gecerli bir uzunluk giriniz','error');return;}
-  var malzeme=ml.malzeme,kalite=ml.kalite,cap=ml.cap,kalinlik=ml.kalinlik;
+  if(!malzeme){toast('Malzeme giriniz','error');return;}
+  if(!olcu||olcu<=0){toast('Geçerli bir uzunluk giriniz','error');return;}
 
   if(editId){
     var b=bukumler.find(function(x){return x.id===editId;});
