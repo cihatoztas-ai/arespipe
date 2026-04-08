@@ -741,8 +741,10 @@ function takvimKapat() {
 // Her cap elemanı = bir spool'un çapı (DN veya mm). Ağırlık spool listesinden gelecek.
 // Supabase'den yüklenecek — başlangıçta boş
 var DEVRELER = [];
-var _supaIdMap = {}; // uiId → supabase UUID
-var _ssTotal   = 0;  // sunucudaki toplam filtrelenmiş kayıt sayısı
+var _supaIdMap     = {}; // uiId → supabase UUID
+var _ssTotal       = 0;
+var _projeIdMap    = {}; // proje_no → proje_id
+var _firmaProjeIds = {}; // tersane_ad → [proje_id, ...]  // sunucudaki toplam filtrelenmiş kayıt sayısı
 
 var RENKLER = ['#2D8EFF','#e53e3e','#d97706','#16a36e','#7c3aed','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6'];
 
@@ -780,11 +782,22 @@ async function veriYukle() {
     // Filtre dropdown'ları için tersane ve proje listesi — hafif sorgu
     var results = await Promise.all([
       supa.from('tersaneler').select('ad').eq('tenant_id', ARES.tenantId()),
-      supa.from('projeler').select('proje_no').eq('tenant_id', ARES.tenantId())
+      supa.from('projeler').select('id, proje_no, tersaneler(ad)').eq('tenant_id', ARES.tenantId())
     ]);
     var tersaneSet = {}, projeSet = {};
     (results[0].data||[]).forEach(function(t){ tersaneSet[t.ad]=true; });
-    (results[1].data||[]).forEach(function(p){ projeSet[p.proje_no]=true; });
+    _projeIdMap = {};
+    _firmaProjeIds = {};
+    (results[1].data||[]).forEach(function(p){
+      projeSet[p.proje_no] = true;
+      _projeIdMap[p.proje_no] = p.id;
+      var tad = p.tersaneler ? p.tersaneler.ad : null;
+      if (tad) {
+        if (!_firmaProjeIds[tad]) _firmaProjeIds[tad] = [];
+        _firmaProjeIds[tad].push(p.id);
+        tersaneSet[tad] = true;
+      }
+    });
 
     // Filtre dropdownlarını güncelle
     var fFirma = document.getElementById('fFirma');
@@ -902,12 +915,12 @@ async function sorgulaVeGoster() {
 
   function applyFilters(q) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
-    // Join filtreleri: Supabase nested filter syntax
-    if (firma)   q = q.eq('projeler.tersaneler.ad', firma);
-    if (proje)   q = q.eq('projeler.proje_no', proje);
     if (durum)   q = q.eq('durum', durum);
     if (malzeme) q = q.eq('malzeme', malzeme);
     if (yuzey)   q = q.eq('yuzey', yuzey);
+    if (proje && _projeIdMap[proje])  q = q.eq('proje_id', _projeIdMap[proje]);
+    if (firma && _firmaProjeIds[firma] && _firmaProjeIds[firma].length)
+      q = q.in('proje_id', _firmaProjeIds[firma]);
     if (arama)   q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
     return q;
   }
@@ -917,7 +930,7 @@ async function sorgulaVeGoster() {
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
-                'projeler!inner(proje_no, is_emri_no, tersaneler!inner(ad, kod)), ' +
+                'projeler(proje_no, is_emri_no, tersaneler(ad, kod)), ' +
                 'spooller(id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1)
