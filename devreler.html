@@ -2098,6 +2098,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e) { /* offline modu — devam */ }
 
+  try {
   // Modal kapama
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal-ov')) { e.target.classList.remove('open'); return; }
