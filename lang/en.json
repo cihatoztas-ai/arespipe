@@ -938,5 +938,6 @@
   "cmn_proje": "Project",
   "cmn_devre": "Circuit",
   "cmn_spool": "Spool",
-  "cmn_pdf": "PDF"
+  "cmn_pdf": "PDF",
+  "cmn_yukleniyor": "⏳ Loading..."
 }
