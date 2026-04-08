@@ -281,10 +281,11 @@
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
 // ── VERİ ────────────────────────────────────────────────────
-var HAZIR    = [];  // aktif_basamak = 'on_kontrol' spool'ları
-var paketler = [];  // kk_davetler tablosundan
+var HAZIR    = [];
+var paketler = [];
 var sec      = {};
 var karar    = '';
+var _supa    = null;  // init'te set edilir
 
 function secHas(id){ return !!sec[id]; }
 function secAdd(id){ sec[id] = true; }
@@ -294,8 +295,8 @@ function secClear(){ sec = {}; }
 
 // ── FİLTRE ──────────────────────────────────────────────────
 async function veriYukle() {
-  var supa = ARES.supabase();
-  if (!supa) return;
+  if (!_supa) return;
+  var supa = _supa;
   try {
     // 1. KK hazır spooller — aktif_basamak = 'on_kontrol'
     var spRes = await supa
@@ -543,8 +544,8 @@ async function davetKaydet() {
   if (!tarih) { showToast('Davet tarihi zorunlu','error'); return; }
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var fmt = function(d){ return d ? new Date(d).toLocaleDateString('tr-TR') : '-'; };
-  var supa = ARES.supabase();
-  if (!supa) { showToast('Bağlantı hatası','error'); return; }
+  if (!_supa) { showToast('Bağlantı hatası','error'); return; }
+  var supa = _supa;
   try {
     // kk_davetler'e yaz
     var dvRes = await supa.from('kk_davetler').insert({
@@ -649,8 +650,8 @@ async function onayKaydet() {
   var p = null;
   paketler.forEach(function(x){ if(x.id===id) p=x; });
   if (!p) return;
-  var supa = ARES.supabase();
-  if (!supa) { showToast('Bağlantı hatası','error'); return; }
+  if (!_supa) { showToast('Bağlantı hatası','error'); return; }
+  var supa = _supa;
   try {
     var yeniDurum = karar==='onay' ? 'onaylandi' : 'reddedildi';
     var notFinal  = karar==='ret' ? ret+(not?' / '+not:'') : not;
@@ -724,29 +725,29 @@ function showToast(msg, type) {
 }
 
 // ── BAŞLAT ───────────────────────────────────────────────────
-// ── Dil değişince yeniden render ────────────────────────────────
-window._onLangChange = function() {
-  if (window._applyI18n) _applyI18n();
-  renderBekle();
-  renderOnay();
-};
-
-// ── SB-01: Auth + finally ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
     try {
-      var _bekle = 0;
-      while (_bekle < 80 && typeof ARES === 'undefined') {
+      // Diğer sayfalarla aynı auth pattern — ARES + session bekleme döngüsü
+      var _b = 0;
+      while (_b < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){setTimeout(r,100);}); _b++; continue; }
+        _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_b > 20) { location.href = 'giris.html'; return; }
+        }
         await new Promise(function(r){ setTimeout(r, 100); });
-        _bekle++;
+        _b++;
       }
-      if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
-      var _supa = ARES.supabase();
-      if (!_supa) { location.href = 'giris.html'; return; }
-      var _ses = await _supa.auth.getSession();
-      if (!_ses.data || !_ses.data.session) { location.href = 'giris.html'; return; }
       if (window._applyI18n) _applyI18n();
       await veriYukle();
+      window._onLangChange = function() {
+        if (window._applyI18n) _applyI18n();
+        renderBekle();
+        renderOnay();
+      };
     } catch(e) { console.error('[ARES]', e); }
     finally {
       document.documentElement.style.visibility = '';
