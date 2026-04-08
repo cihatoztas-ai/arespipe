@@ -1400,7 +1400,8 @@ function _doRender() {
     sevke_hazir:    {cls:'sb-sevkehazir',get text() { return tv('dr_status_ready', 'Sevke Hazır'); }}
   };
 
-  tbody.innerHTML = sayfaListesi.map(function(d, i) {
+  var baslangic = (_sayfa - 1) * _sayfaBasi;
+  tbody.innerHTML = liste.map(function(d, i) {
     var globalIdx = baslangic + i;
     var starState = _starCache[d.supaId] || 0;
     var starCfg = _STAR_CFG[starState];
