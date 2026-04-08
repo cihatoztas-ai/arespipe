@@ -1745,11 +1745,31 @@ function markTipGuncelle(){
 function markKaydet(){
   var tip=(document.querySelector('input[name="mTip"]:checked')||{}).value||'otomatik';
   var entry={id:String(Date.now()),tip,markalandi:false};
-  if(tip==='otomatik'){var m=MALZEME.find(function(x){return x.id==(T('mm_malz')||{}).value;});if(!m){toast('Malzeme seçin','er');return;}entry.ad=m.ac;entry.malzId=m.id;}
-  else if(tip==='plaka'){entry.ad='Plaka ('+SP.malzeme+' '+SP.kalite+')';}
-  else{entry.ad='Manuel';}
+  var yuzeyAdi='', etMm=null;
+  if(tip==='otomatik'){
+    var m=MALZEME.find(function(x){return x.id==(T('mm_malz')||{}).value;});
+    if(!m){toast('Malzeme seçin','er');return;}
+    entry.ad=m.ac;
+    entry.malzId=m.id;
+    yuzeyAdi=m.ac;
+  } else if(tip==='plaka'){
+    entry.ad='Plaka ('+SP.malzeme+' '+SP.kalite+')';
+    yuzeyAdi='Plaka';
+    // et_mm: SP.kalinlik'ten parse et (örn: "3,20 mm" → 3.2)
+    var etStr=SP.kalinlik?SP.kalinlik.replace(/\s*mm\s*/i,'').replace(',','.').trim():'';
+    etMm=etStr&&!isNaN(parseFloat(etStr))?parseFloat(etStr):null;
+  } else {
+    entry.ad='Manuel';
+    yuzeyAdi='Manuel';
+  }
   MARKALAR.push(entry);
-  _supaInsert('markalama_kalemleri',{malzeme_id:entry.malzId||null,tip:entry.tip,markalandi:false});
+  _supaInsert('markalama_kalemleri',{
+    malzeme_id: entry.malzId||null,
+    tip:        entry.tip,
+    yuzey:      yuzeyAdi||null,
+    et_mm:      etMm,
+    markalandi: false
+  });
   T('markModal').style.display='none';renderMarkalar();
   logEkle('Markalama Eklendi',entry.ad);
   toast(entry.ad+' eklendi','ok');
