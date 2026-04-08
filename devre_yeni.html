@@ -253,6 +253,10 @@ textarea.fi{resize:vertical;min-height:72px;}
       <span data-i18n="dny_tab_ifs">🏭 IFS Malzeme Listesi</span>
       <span style="background:rgba(16,185,129,0.2);color:var(--gr);font-size:14px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">TERSAN</span>
     </button>
+    <button class="spool-tab" id="tabIZO" onclick="spoolTabSec('izo')">
+      <span>🤖 İzometri PDF</span>
+      <span style="background:rgba(99,102,241,.2);color:#6366f1;font-size:14px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">AI</span>
+    </button>
     <button class="spool-tab" id="tabManuel" onclick="spoolTabSec('manuel')">
       <span data-i18n="dny_tab_manual">✏️ Manuel Giriş</span>
     </button>
@@ -311,7 +315,61 @@ textarea.fi{resize:vertical;min-height:72px;}
     </div>
   </div>
 
-  <!-- Spool tablosu -->
+  <!-- PDF İZOMETRİ SEKMESİ — AI destekli -->
+  <div id="panelIZO" style="display:none;">
+    <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:14px;color:var(--txm);">
+      <strong style="color:#6366f1;">🤖 AI İzometri Okuma</strong> — İzometri PDF'inizi yükleyin, Claude otomatik olarak spool listesini çıkarsın. Önizleme tablosunda kontrol edip düzelttikten sonra aktarın.
+    </div>
+    <div class="excel-alan" id="pdfAlan" onclick="document.getElementById('izoInput').click()" style="border-color:rgba(99,102,241,.4);">
+      <input type="file" id="izoInput" accept=".pdf" style="display:none;" onchange="izoYukle(this)">
+      <div class="excel-ikon">📐</div>
+      <div class="excel-baslik" id="pdfBaslik">İzometri PDF'ini sürükleyin veya tıklayın</div>
+      <div class="excel-aciklama">Pipeline No · Spool No · Çap · Malzeme · Kalite · Et Kalınlığı · Ağırlık</div>
+    </div>
+
+    <!-- AI işleniyor durumu -->
+    <div id="izoYukleniyor" style="display:none;text-align:center;padding:32px;color:#6366f1;">
+      <div style="font-size:32px;margin-bottom:12px;animation:spin 1.2s linear infinite;display:inline-block;">⏳</div>
+      <div style="font-size:14px;font-weight:600;">Claude PDF'i analiz ediyor...</div>
+      <div style="font-size:14px;color:var(--txd);margin-top:6px;" id="izoDosyaAd"></div>
+    </div>
+
+    <!-- Önizleme tablosu -->
+    <div id="izoOnizleme" style="display:none;margin-top:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:var(--tx);" id="izoOzet"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-g btn-sm" onclick="izoTemizle()">↺ Yeni PDF</button>
+          <button class="btn btn-ac btn-sm" style="background:#6366f1;" onclick="izoOnayla()">✓ Listeye Aktar</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;border:1px solid var(--bor);border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="background:var(--sur2);">
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">#</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Pipeline</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Spool No</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Çap (mm)</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Malzeme</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Kalite</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Et (mm)</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Ağırlık (kg)</th>
+              <th style="padding:8px 10px;text-align:left;color:var(--txd);font-size:14px;border-bottom:1px solid var(--bor);">Rev</th>
+            </tr>
+          </thead>
+          <tbody id="izoSpoolTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Hata durumu -->
+    <div id="izoHata" style="display:none;margin-top:14px;background:rgba(229,62,62,.06);border:1px solid rgba(229,62,62,.2);border-radius:10px;padding:14px 16px;">
+      <div style="font-size:14px;font-weight:700;color:var(--re);margin-bottom:4px;">⚠ PDF okunamadı</div>
+      <div style="font-size:14px;color:var(--txm);" id="izoHataMesaj"></div>
+      <button class="btn btn-g btn-sm" onclick="izoTemizle()" style="margin-top:10px;">Tekrar Dene</button>
+    </div>
+  </div>
   <div class="spool-table-wrap" id="spoolTableWrap" style="display:none;">
     <table class="spool-table">
       <thead>
@@ -371,7 +429,7 @@ textarea.fi{resize:vertical;min-height:72px;}
   <!-- PDF sürükle bırak -->
   <div class="excel-alan" id="pdfAlan"
        ondrop="pdfDrop(event)" ondragover="pdfDragOver(event)" ondragleave="pdfDragLeave(event)"
-       onclick="document.getElementById('pdfInput').click()"
+       onclick="document.getElementById('izoInput').click()"
        style="border-color:rgba(239,68,68,0.3);">
     <input type="file" id="pdfInput" accept=".pdf" multiple style="display:none;" onchange="pdfYukle(this)">
     <div class="excel-ikon">📄</div>
@@ -482,7 +540,7 @@ async function tersaneSecildi() {
 let aktifSpoolTab = 'standart';
 function spoolTabSec(tab) {
   aktifSpoolTab = tab;
-  ['Standart','IFS','Manuel'].forEach(t => {
+  ['Standart','IFS','IZO','Manuel'].forEach(t => {
     const btn = document.getElementById('tab' + t);
     const key = t.toLowerCase();
     const panel = document.getElementById('panel' + t);
@@ -922,6 +980,139 @@ function ozetGuncelle() {
   ozet.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
+// ── PDF İZOMETRİ — AI destekli ───────────────────────────────
+var _izoSpooller = []; // AI'dan gelen önizleme verisi
+
+function izoYukle(inp) {
+  if (!inp.files[0]) return;
+  const file = inp.files[0];
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    toast(tv('dny_pdf_only','Sadece PDF dosyası kabul edilir'),'er'); return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    toast(tv('dny_pdf_too_large','PDF 20MB\'dan küçük olmalı'),'er'); return;
+  }
+  _izoOku(file);
+}
+
+async function _izoOku(file) {
+  // UI: yükleniyor
+  document.getElementById('izoAlan').style.display = 'none';
+  document.getElementById('izoOnizleme').style.display = 'none';
+  document.getElementById('izoHata').style.display = 'none';
+  document.getElementById('izoYukleniyor').style.display = 'block';
+  document.getElementById('izoDosyaAd').textContent = file.name;
+
+  try {
+    // PDF → base64
+    const base64 = await new Promise(function(resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function(e) { resolve(e.target.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Vercel Edge Function'a gönder
+    const res = await fetch('/api/izometri-oku', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdf_base64: base64, dosya_adi: file.name })
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.ok) {
+      throw new Error(json.error || 'Sunucu hatası');
+    }
+
+    _izoSpooller = json.data.spooller || [];
+
+    // Proje/tersane bilgisi varsa otomatik doldur
+    if (json.data.proje_no) {
+      document.getElementById('izoOzet').textContent =
+        _izoSpooller.length + ' spool bulundu' +
+        (json.data.proje_no ? ' — ' + json.data.proje_no : '') +
+        (json.data.tersane ? ' / ' + json.data.tersane : '');
+    }
+
+    _izoRenderOnizleme();
+    document.getElementById('izoYukleniyor').style.display = 'none';
+    document.getElementById('izoOnizleme').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('izoYukleniyor').style.display = 'none';
+    document.getElementById('izoAlan').style.display = 'flex';
+    document.getElementById('izoHata').style.display = 'block';
+    document.getElementById('izoHataMesaj').textContent = e.message;
+    console.warn('[ARES] PDF okuma:', e);
+  }
+}
+
+function _izoRenderOnizleme() {
+  const tbody = document.getElementById('izoSpoolTbody');
+  if (!_izoSpooller.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--txd);">Spool bulunamadı</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _izoSpooller.map(function(s, i) {
+    var idx = i;
+    return '<tr style="border-bottom:1px solid var(--bor);">'
+      + '<td style="padding:6px 10px;color:var(--txd);">' + (i+1) + '</td>'
+      + '<td style="padding:6px 10px;"><input style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;" value="' + esc(s.pipeline_no||'') + '" onchange="_izoGuncelle(' + idx + ',\'pipeline_no\',this.value)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--leg);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;" value="' + esc(s.spool_no||'') + '" onchange="_izoGuncelle(' + idx + ',\'spool_no\',this.value)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--ac);" value="' + esc(s.cap_mm!=null?s.cap_mm:'') + '" onchange="_izoGuncelle(' + idx + ',\'cap_mm\',parseFloat(this.value)||null)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:120px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.malzeme||'') + '" onchange="_izoGuncelle(' + idx + ',\'malzeme\',this.value)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:100px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.kalite||'') + '" onchange="_izoGuncelle(' + idx + ',\'kalite\',this.value)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:70px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.et_mm!=null?s.et_mm:'') + '" onchange="_izoGuncelle(' + idx + ',\'et_mm\',parseFloat(this.value)||null)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.agirlik_kg!=null?s.agirlik_kg:'') + '" onchange="_izoGuncelle(' + idx + ',\'agirlik_kg\',parseFloat(this.value)||null)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:50px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.rev||'') + '" onchange="_izoGuncelle(' + idx + ',\'rev\',this.value||null)"></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function _izoGuncelle(idx, alan, deger) {
+  if (_izoSpooller[idx]) _izoSpooller[idx][alan] = deger;
+}
+
+function izoTemizle() {
+  _izoSpooller = [];
+  document.getElementById('izoInput').value = '';
+  document.getElementById('izoAlan').style.display = 'flex';
+  document.getElementById('izoOnizleme').style.display = 'none';
+  document.getElementById('izoHata').style.display = 'none';
+  document.getElementById('izoYukleniyor').style.display = 'none';
+}
+
+function izoOnayla() {
+  if (!_izoSpooller.length) { toast('Spool listesi boş','er'); return; }
+  // Mevcut Excel akışıyla aynı formata çevir
+  var yeniSpooller = _izoSpooller
+    .filter(function(s) { return s.pipeline_no && s.spool_no; })
+    .map(function(s) {
+      return {
+        pipeline:   String(s.pipeline_no || '').trim(),
+        spoolNo:    String(s.spool_no || '').trim(),
+        rev:        s.rev || '',
+        malzeme:    normalizeMalzeme(s.malzeme || ''),
+        kalite:     s.kalite || '',
+        cap:        s.cap_mm ? parseFloat(s.cap_mm) : null,
+        et:         s.et_mm  ? parseFloat(s.et_mm)  : null,
+        agirlik:    s.agirlik_kg ? parseFloat(s.agirlik_kg) : null,
+        boy:        s.boy_mm ? parseFloat(s.boy_mm) : null,
+        yuzey:      document.querySelector('input[name="yuzey"]:checked')?.value || ''
+      };
+    });
+
+  if (!yeniSpooller.length) { toast('Geçerli spool yok (pipeline_no ve spool_no zorunlu)','er'); return; }
+
+  // Mevcut listeye ekle
+  yeniSpooller.forEach(function(s) { spooller.push(s); });
+  spoolTableGoster();
+  spoolTabSec('standart');
+  toast(yeniSpooller.length + ' spool listeye aktarıldı ✓','ok');
+  izoTemizle();
+}
+
 // ── KAYDET — ✅ Supabase + M-09 + G-07 ──────────────────────
 async function kaydet() {
   if (!validate()) { toast(tv('dny_required_fields','Zorunlu alanları doldurun'), 'er'); return; }
@@ -1209,11 +1400,11 @@ async function kaydet() {
 // ── PDF YÜKLEME ───────────────────────────────────────────────
 let pdfDosyalar = []; // [{fileName, pipeline, spoolNo, matched, dataUrl}]
 
-function pdfDragOver(e) { e.preventDefault(); document.getElementById('pdfAlan').classList.add('drag'); }
-function pdfDragLeave()  { document.getElementById('pdfAlan').classList.remove('drag'); }
+function pdfDragOver(e) { e.preventDefault(); document.getElementById('izoAlan').classList.add('drag'); }
+function pdfDragLeave()  { document.getElementById('izoAlan').classList.remove('drag'); }
 function pdfDrop(e) {
   e.preventDefault();
-  document.getElementById('pdfAlan').classList.remove('drag');
+  document.getElementById('izoAlan').classList.remove('drag');
   if (e.dataTransfer.files.length) pdfOku([...e.dataTransfer.files]);
 }
 function pdfYukle(inp) { if (inp.files.length) pdfOku([...inp.files]); }
