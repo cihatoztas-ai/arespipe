@@ -841,20 +841,49 @@ async function spoolYukle(supaId) {
 
     // Malzeme listesi
     MALZEME = (s.spool_malzemeleri || []).map(function(m, i) {
+      // Ağırlık hesabı — gerçek değer yoksa tahmin et
+      var agr_gercek = m.agirlik_kg ? parseFloat(m.agirlik_kg) : null;
+      var agr_tahmin = null;
+      var agr_tahmin_mi = false;
+
+      if (!agr_gercek) {
+        var D = m.dis_cap_mm ? parseFloat(m.dis_cap_mm) : null;
+        var t = m.et_mm      ? parseFloat(m.et_mm)      : null;
+        var L = m.boy_mm     ? parseFloat(m.boy_mm)     : null;
+        var tip = (m.tip || '').toLowerCase();
+
+        if (tip === 'boru' && D && t && L) {
+          // Boru formülü: π × (D-t) × t × L × 7.85 / 1,000,000
+          agr_tahmin = Math.PI * (D - t) * t * L * 7.85 / 1000000;
+          agr_tahmin_mi = true;
+        } else if (D && t) {
+          // Fitting tahmini — DN bazında yaklaşık katsayı
+          var dn = Math.round(D);
+          var katsayi = dn <= 25 ? 0.3 : dn <= 50 ? 0.8 : dn <= 80 ? 1.8 : dn <= 100 ? 3.5 : dn <= 150 ? 7.5 : dn <= 200 ? 15 : dn <= 250 ? 28 : 45;
+          agr_tahmin = katsayi;
+          agr_tahmin_mi = true;
+        }
+        if (agr_tahmin) agr_tahmin = Math.round(agr_tahmin * 100) / 100;
+      }
+
+      var agr_val = agr_gercek || agr_tahmin;
+      var agr_text = agr_val ? String(agr_val.toFixed(2)).replace('.',',') + ' kg' : '--';
+
       return {
-        id:     m.id,
-        supaId: m.id,
-        kod:    m.kod        || ('M' + (i+1)),
-        ac:     m.tanim      || m.aciklama || '—',
-        malz:   m.malzeme    || '—',
-        kal:    m.kalite     || '—',
-        cap:    m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
-        et:     m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
-        boy:    m.boy_mm     ? m.boy_mm + ' mm' : '--',
-        adet:   m.adet       || null,
-        agr:    m.agirlik_kg ? String(parseFloat(m.agirlik_kg).toFixed(2)).replace('.',',') + ' kg' : '--',
-        heat:   m.heat_no    || '',
-        sert:   m.sertifikali || false
+        id:          m.id,
+        supaId:      m.id,
+        kod:         m.kod        || ('M' + (i+1)),
+        ac:          m.tanim      || m.aciklama || '—',
+        malz:        m.malzeme    || '—',
+        kal:         m.kalite     || '—',
+        cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
+        et:          m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
+        boy:         m.boy_mm     ? m.boy_mm + ' mm' : '--',
+        adet:        m.adet       || null,
+        agr:         agr_text,
+        agr_tahmin:  agr_tahmin_mi,
+        heat:        m.heat_no    || '',
+        sert:        m.sertifikali || false
       };
     });
 
@@ -1422,7 +1451,7 @@ function renderMalzeme(){
     return'<tr><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+esc(m.ac)+'</td>'
     +'<td style="color:var(--txm);">'+esc(m.malz)+'</td><td style="color:var(--ac);font-weight:700;">'+esc(m.kal)+'</td>'
     +'<td>'+esc(m.cap)+'</td><td>'+esc(m.et)+'</td><td>'+esc(m.boy)+'</td>'
-    +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td><td>'+esc(m.agr)+'</td>'
+    +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td>'+(m.agr_tahmin?'<td><span style="color:var(--warn);font-weight:600;" title="Tahmini ağırlık">~'+esc(m.agr)+'</span></td>':'<td>'+esc(m.agr)+'</td>')
     +'<td><input class="ei" style="width:85px;font-family:monospace;font-size:13px;" value="'+esc(m.heat||'')+'" data-mid="'+esc(m.id)+'" onblur="heatKaydet(this.dataset.mid,this.value)" placeholder="Heat No"></td>'
     +'<td style="text-align:center;"><input type="checkbox"'+(m.sert?' checked':'')+' data-mid="'+esc(m.id)+'" onchange="sertToggle(this.dataset.mid,this.checked)" style="width:14px;height:14px;accent-color:var(--gr);cursor:pointer;"></td>'
     +'<td><button data-eid="'+esc(m.id)+'" onclick="malzSil(this.dataset.eid)" class="ctx ctx-re" title="Sil">✕</button></td></tr>';

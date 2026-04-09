@@ -1439,7 +1439,24 @@ async function kaydet() {
                 var capMm = dn ? (DN_MM[dn] || null) : null;
                 var kat = (item.kategori || '').toUpperCase();
                 var tip = kat.includes('PIPE') || kat.includes('TUBE') ? 'boru' : 'fitting';
-                var miktarSayi = parseFloat(item.miktar_adet || String(item.miktar || '').replace(/[^0-9.,]/g,'').replace(',','.')) || 1;
+                var miktar_str = String(item.miktar || item.miktar_adet || '');
+                var boy_mm_val = null;
+                var adet_val = 1;
+                var miktar_val = 1;
+
+                if (tip === 'boru') {
+                  // "0.7m" → 700mm, "1.5m" → 1500mm, "700" → 700mm
+                  if (miktar_str.toLowerCase().includes('m')) {
+                    boy_mm_val = Math.round(parseFloat(miktar_str) * 1000);
+                  } else if (parseFloat(miktar_str) > 0) {
+                    boy_mm_val = Math.round(parseFloat(miktar_str));
+                  }
+                  miktar_val = boy_mm_val ? boy_mm_val / 1000 : 1;
+                } else {
+                  // Fitting/flange → adet
+                  adet_val = Math.round(parseFloat(miktar_str)) || 1;
+                  miktar_val = adet_val;
+                }
                 malzemeRows.push({
                   tenant_id:   ARES.tenantId(),
                   spool_id:    dbSpool.id,
@@ -1451,9 +1468,9 @@ async function kaydet() {
                   kalite:      item.kalite_kodu   || null,
                   dis_cap_mm:  capMm,
                   et_mm:       item.et_kalinlik   ? parseFloat(item.et_kalinlik) : null,
-                  boy_mm:      item.boy_mm        ? parseFloat(item.boy_mm) : null,
-                  adet:        Math.round(miktarSayi) || 1,
-                  miktar:      miktarSayi         || 1,
+                  boy_mm:      boy_mm_val,
+                  adet:        adet_val,
+                  miktar:      miktar_val,
                   sertifikali: false,
                 });
               });
