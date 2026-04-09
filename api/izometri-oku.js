@@ -9,14 +9,15 @@ Sana bir izometri PDF'i verilecek. Bu PDF'den spool (boru demeti) listesini çı
 
 PIPELINE NO VE SPOOL NO FORMATLAMASI:
 Pipeline no şu kurala göre oluşturulur:
-1. Pembe/kırmızı çerçeveli proje çizim numarasından son 5+6 haneli kısmı al (örn: 52900-101540)
-2. Zone numarasını al — "Zone 10_001" yazıyorsa sadece "10" kısmını al → "Z10"
+1. Pembe/kırmızı çerçeveli proje çizim numarasından son kısmı al (örn: 52900-101540)
+2. Zone numarasını al — "Zone 10_001" yazıyorsa sadece "10" kısmını al, "Zone 11_001" → "11" → "Z11". Asla üç haneli yapma.
 3. SPOOL bölümünde kaç spool olduğunu say: [1] [2] → 2 spool
-4. Her spool için: [çizim_no]-Z[zone]-[toplam_spool]-[sıra]
+4. Pipeline no formatı: [çizim_no]-Z[zone]-[toplam_spool]
 
 Örnek: 52900-101540, Zone 10_001, 2 spool:
-→ Spool 1: pipeline_no = "52900-101540-Z10-2-1", spool_no = "S01"
-→ Spool 2: pipeline_no = "52900-101540-Z10-2-2", spool_no = "S02"
+→ pipeline_no = "52900-101540-Z10-2" (her iki spool için aynı)
+→ Spool 1: spool_no = "S01"
+→ Spool 2: spool_no = "S02"
 
 MALZEME LİSTESİ:
 - "FABRICATION MATERIAL LIST" bölümündeki malzemeleri "malzeme_listesi" alanına ekle
@@ -67,7 +68,7 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
 {
   "spooller": [
     {
-      "pipeline_no": "52900-101540-Z10-2-1",
+      "pipeline_no": "52900-101540-Z10-2",
       "spool_no": "S01",
       "cap_mm": 168.3,
       "malzeme": "Karbon Çelik",
@@ -84,7 +85,7 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
       ]
     },
     {
-      "pipeline_no": "52900-101540-Z10-2-2",
+      "pipeline_no": "52900-101540-Z10-2",
       "spool_no": "S02",
       "cap_mm": 168.3,
       "malzeme": "Karbon Çelik",
