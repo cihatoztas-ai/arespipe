@@ -184,6 +184,21 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 /* MARK TIP */
 .mark-tip{text-align:center;padding:10px 6px;border-radius:10px;border:2px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;color:var(--txm);cursor:pointer;transition:all .15s;}
 .mark-tip.aktif{border-color:var(--ac);background:rgba(45,142,255,.08);color:var(--tx);}
+/* 3D MODEL */
+.m3d-wrap{position:relative;background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;}
+.m3d-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bor);background:var(--sur2);flex-wrap:wrap;}
+.m3d-canvas{width:100%;height:520px;display:block;cursor:grab;outline:none;}
+.m3d-canvas:active{cursor:grabbing;}
+.m3d-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sur);z-index:10;}
+.m3d-loading-ring{width:40px;height:40px;border:3px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:m3d-spin .8s linear infinite;}
+@keyframes m3d-spin{to{transform:rotate(360deg)}}
+.m3d-popup{position:absolute;background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--ac);border-radius:10px;padding:11px 13px;font-size:13px;pointer-events:none;z-index:20;min-width:160px;max-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:none;}
+.m3d-popup.show{display:block;}
+.m3d-footer{padding:10px 14px;border-top:1px solid var(--bor);display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--sur2);}
+.m3d-legend{display:flex;gap:12px;flex-wrap:wrap;}
+.m3d-li{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--txm);}
+.m3d-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+.m3d-hint{margin-left:auto;font-size:12px;color:var(--txd);}
 </style>
 <script src="../ares-store.js"></script>
 <script src="../ares-lang.js"></script>
@@ -284,6 +299,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
   <button class="tab-btn active" data-tab="genel" data-i18n="sp_tab_general">📋 Genel Bilgiler</button>
   <button class="tab-btn" data-tab="malzeme" data-i18n="sp_tab_material">📦 Malzeme Listesi</button>
   <button class="tab-btn" data-tab="log" data-i18n="sp_tab_log">🕐 İşlem Kayıtları</button>
+  <button class="tab-btn" data-tab="model3d">🧊 3D Model</button>
 </div>
 
 <!-- ══ GENEL BİLGİLER ══ -->
@@ -498,6 +514,66 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
         <tbody id="logBody"></tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<!-- ══ 3D MODEL ══ -->
+<div class="tab-panel" id="tabModel3d">
+  <div class="m3d-wrap">
+
+    <!-- Toolbar -->
+    <div class="m3d-toolbar">
+      <span style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;">🧊 3D Görünüm</span>
+      <span id="m3SpoolAd" style="font-size:13px;color:var(--txm);"></span>
+      <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="m3Izometrik()">◈ İzometrik</button>
+        <button class="btn btn-sm" onclick="m3Yukari()">⬆ Üstten</button>
+        <button class="btn btn-sm" onclick="m3On()">⬛ Önden</button>
+        <button class="btn btn-sm" onclick="m3Reset()">⟳ Sıfırla</button>
+        <button class="btn btn-sm" id="m3WireBtn" onclick="m3ToggleWire()">⬚ Wireframe</button>
+        <button class="btn btn-sm" id="m3GridBtn" onclick="m3ToggleGrid()" style="color:var(--ac);">⊞ Grid</button>
+      </div>
+    </div>
+
+    <!-- Canvas alanı (relative — loading overlay + popup içindir) -->
+    <div style="position:relative;">
+      <!-- Loading overlay -->
+      <div class="m3d-loading" id="m3Loading">
+        <div class="m3d-loading-ring"></div>
+        <div id="m3LoadingTxt" style="font-size:14px;color:var(--txm);">Three.js yükleniyor…</div>
+      </div>
+      <!-- Canvas -->
+      <canvas id="m3canvas" class="m3d-canvas"></canvas>
+      <!-- Parça bilgi popup -->
+      <div class="m3d-popup" id="m3Popup" style="display:none;position:absolute;top:60px;left:14px;">
+        <div id="m3PopupBaslik" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);margin-bottom:8px;"></div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;gap:8px;"><span style="color:var(--txd);font-size:12px;min-width:56px;">Malzeme</span><span id="m3PopupMalz" style="color:var(--txm);font-size:12px;"></span></div>
+          <div style="display:flex;gap:8px;"><span style="color:var(--txd);font-size:12px;min-width:56px;">Kalite</span><span id="m3PopupKal"  style="color:var(--txm);font-size:12px;"></span></div>
+          <div style="display:flex;gap:8px;border-top:1px solid var(--bor);padding-top:4px;"><span style="color:var(--txd);font-size:12px;min-width:56px;">Çap</span><span id="m3PopupCap"  style="color:var(--ac);font-size:12px;font-weight:700;"></span></div>
+          <div style="display:flex;gap:8px;"><span style="color:var(--txd);font-size:12px;min-width:56px;">Et</span><span id="m3PopupEt"   style="color:var(--txm);font-size:12px;"></span></div>
+          <div style="display:flex;gap:8px;"><span style="color:var(--txd);font-size:12px;min-width:56px;">Boy</span><span id="m3PopupBoy"  style="color:var(--txm);font-size:12px;"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer: legend + kontrol ipuçları -->
+    <div class="m3d-footer">
+      <div class="m3d-legend">
+        <div class="m3d-li"><div class="m3d-dot" style="background:#7a7d82;"></div>Karbon Çelik</div>
+        <div class="m3d-li"><div class="m3d-dot" style="background:#b0b8c1;"></div>Paslanmaz Çelik</div>
+        <div class="m3d-li"><div class="m3d-dot" style="background:#b87333;"></div>Bakır Alaşım</div>
+        <div class="m3d-li"><div class="m3d-dot" style="background:#5c6070;"></div>Flanş</div>
+        <div class="m3d-li"><div class="m3d-dot" style="background:#4a90d9;border:2px solid #6aabf7;"></div>Seçili</div>
+      </div>
+      <div class="m3d-hint">Sol tık: döndür · Sağ tık: kaydır · Tekerlek: zoom · Parçaya tıkla: bilgi</div>
+    </div>
+
+    <!-- Test verisi uyarısı -->
+    <div style="padding:8px 14px;font-size:12px;color:var(--txd);background:rgba(217,119,6,.04);border-top:1px solid rgba(217,119,6,.15);">
+      ⚠️ <strong style="color:var(--warn);">Test Geometrisi</strong> — Supabase'de <code>x_mm, y_mm, z_mm</code> kolonları hazır olunca gerçek izometri koordinatları buradan görünecek.
+    </div>
+
   </div>
 </div>
 
@@ -1979,15 +2055,348 @@ function gonderKaydet(){
 
 // ── SEKMELER ─────────────────────────────────────────────────
 function initTabs(){
-  var map={genel:'tabGenel',malzeme:'tabMalzeme',log:'tabLog'};
+  var map={genel:'tabGenel',malzeme:'tabMalzeme',log:'tabLog',model3d:'tabModel3d'};
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click',function(){
       document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
       Object.values(map).forEach(function(id){var e=T(id);if(e)e.classList.remove('on');});
       btn.classList.add('active');
       var e=T(map[btn.dataset.tab]);if(e)e.classList.add('on');
+      if(btn.dataset.tab==='model3d') m3LazyInit();
     });
   });
+}
+
+// ══ 3D MODEL ═════════════════════════════════════════════════
+var _m3 = {
+  ready: false, loading: false,
+  scene: null, camera: null, renderer: null, controls: null,
+  meshes: [], selectedMesh: null,
+  wireframe: false, gridVisible: true,
+  animId: null
+};
+
+// Malzeme renkleri
+var M3_RENK = {
+  'Karbon Çelik':  0x7a7d82,
+  'Paslanmaz Çelik': 0xb0b8c1,
+  'Bakır Alaşım':  0xb87333,
+  '_flans':        0x5c6070,
+  '_reduktor':     0x6e7178,
+  '_dirsek':       0x7a7d82,
+  '_default':      0x8888aa
+};
+var M3_RENK_SECILI = 0x4a90d9;
+
+// Test verisi — Supabase'de x_mm, y_mm, z_mm kolonları hazır olunca buradan beslenecek
+function m3TestData() {
+  var capMm = parseFloat(SP.cap) || 114.3;
+  var etMm  = parseFloat(SP.kalinlik) || 4.5;
+  var malz  = SP.malzeme || 'Karbon Çelik';
+  var kal   = SP.kalite  || 'ST37';
+  var r = capMm / 2;
+
+  return [
+    // Segment 1 — yatay boru
+    { tip:'boru',  tanim:'Düz Boru #1',
+      p1:[0,0,0], p2:[800,0,0],
+      cap_mm:capMm, et_mm:etMm, malzeme:malz, kalite:kal, boy_mm:800 },
+    // Segment 2 — flans (başlangıç)
+    { tip:'flans', tanim:'Flanş (Giriş)',
+      p:[0,0,0], yon:[-1,0,0],
+      cap_mm:capMm*1.6, et_mm:etMm, kalinlik_mm:capMm*0.15,
+      malzeme:malz, kalite:kal },
+    // Segment 3 — dirsek 90° (800,0,0) → (800,600,0)
+    { tip:'dirsek', tanim:'90° Dirsek',
+      merkez:[800,0,0], yon1:[1,0,0], yon2:[0,1,0],
+      yaricap:capMm*1.5,
+      cap_mm:capMm, et_mm:etMm, malzeme:malz, kalite:kal },
+    // Segment 4 — dikey boru
+    { tip:'boru',  tanim:'Düz Boru #2',
+      p1:[800,capMm*1.5,0], p2:[800,700,0],
+      cap_mm:capMm, et_mm:etMm, malzeme:malz, kalite:kal, boy_mm:700-capMm*1.5 },
+    // Segment 5 — redüktör
+    { tip:'reduktor', tanim:'Redüktör',
+      p1:[800,700,0], p2:[800,850,0],
+      cap1_mm:capMm, cap2_mm:capMm*0.6,
+      et_mm:etMm, malzeme:malz, kalite:kal },
+    // Segment 6 — küçük boru
+    { tip:'boru',  tanim:'Düz Boru #3',
+      p1:[800,850,0], p2:[800,1200,0],
+      cap_mm:capMm*0.6, et_mm:etMm, malzeme:malz, kalite:kal, boy_mm:350 },
+    // Segment 7 — flans (son)
+    { tip:'flans', tanim:'Flanş (Çıkış)',
+      p:[800,1200,0], yon:[0,1,0],
+      cap_mm:capMm*0.6*1.6, et_mm:etMm, kalinlik_mm:capMm*0.6*0.15,
+      malzeme:malz, kalite:kal }
+  ];
+}
+
+function m3LazyInit() {
+  if (_m3.ready || _m3.loading) return;
+  _m3.loading = true;
+
+  function loadScript(url, cb) {
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = cb;
+    s.onerror = function(){ T('m3LoadingTxt').textContent = 'Yükleme hatası — internet bağlantısını kontrol edin.'; };
+    document.head.appendChild(s);
+  }
+
+  T('m3LoadingTxt').textContent = 'Three.js yükleniyor...';
+
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', function() {
+    T('m3LoadingTxt').textContent = 'OrbitControls yükleniyor...';
+    loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js', function() {
+      T('m3LoadingTxt').textContent = 'Sahne oluşturuluyor...';
+      setTimeout(function(){ m3Build(); }, 100);
+    });
+  });
+}
+
+function m3Build() {
+  var canvas = T('m3canvas');
+  var wrap   = canvas.parentElement;
+  var W = wrap.clientWidth;
+  var H = wrap.clientHeight || 520;
+
+  // Renderer
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  var bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0d1117';
+  renderer.setClearColor(bgColor === '#0d1117' ? 0x0d1117 : 0xd8dde4, 1);
+
+  // Scene
+  var scene = new THREE.Scene();
+
+  // Camera
+  var camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 50000);
+  camera.position.set(1200, 900, 1400);
+
+  // Lights
+  var ambient = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambient);
+  var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  dirLight.position.set(2000, 3000, 2000);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+  var fillLight = new THREE.DirectionalLight(0x8899ff, 0.3);
+  fillLight.position.set(-1000, 500, -1000);
+  scene.add(fillLight);
+
+  // Axes helper
+  var axes = new THREE.AxesHelper(200);
+  scene.add(axes);
+
+  // Grid
+  var grid = new THREE.GridHelper(3000, 30, 0x262f3e, 0x1c2333);
+  grid.position.y = -50;
+  scene.add(grid);
+  _m3.grid = grid;
+
+  // OrbitControls
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 100;
+  controls.maxDistance = 10000;
+  controls.target.set(400, 400, 0);
+  controls.update();
+
+  _m3.scene    = scene;
+  _m3.camera   = camera;
+  _m3.renderer = renderer;
+  _m3.controls = controls;
+  _m3.meshes   = [];
+
+  // Segmentleri oluştur
+  var segs = m3TestData();
+  segs.forEach(function(seg){ m3AddSegment(seg); });
+
+  // Toolbar spool adı
+  var spoolAd = [SP._tersane, SP.pipeline, SP.spoolNo].filter(Boolean).join(' / ');
+  T('m3SpoolAd').textContent = spoolAd || 'Test Spolu';
+
+  // Render döngüsü
+  function animate() {
+    _m3.animId = requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Resize
+  window.addEventListener('resize', function() {
+    var W2 = wrap.clientWidth;
+    var H2 = wrap.clientHeight || 520;
+    camera.aspect = W2/H2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W2, H2);
+  });
+
+  // Click (raycasting)
+  canvas.addEventListener('click', function(e) { m3Click(e); });
+
+  _m3.ready = true;
+  _m3.loading = false;
+  T('m3Loading').style.display = 'none';
+}
+
+function m3Mat(malzeme, tip) {
+  var hex = M3_RENK[malzeme] || M3_RENK['_' + (tip||'')] || M3_RENK['_default'];
+  return new THREE.MeshStandardMaterial({
+    color: hex, metalness: 0.55, roughness: 0.4
+  });
+}
+
+function m3AddSegment(seg) {
+  var mesh = null;
+
+  if (seg.tip === 'boru') {
+    var p1 = new THREE.Vector3(...seg.p1);
+    var p2 = new THREE.Vector3(...seg.p2);
+    var dir = new THREE.Vector3().subVectors(p2, p1);
+    var len = dir.length();
+    if (len < 0.1) return;
+    var geo = new THREE.CylinderGeometry(seg.cap_mm/2, seg.cap_mm/2, len, 32, 1, false);
+    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'boru'));
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    // Pozisyon ve rotasyon
+    var mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+    mesh.position.copy(mid);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+    mesh.userData = seg;
+    _m3.scene.add(mesh);
+    _m3.meshes.push(mesh);
+
+  } else if (seg.tip === 'flans') {
+    var pos = new THREE.Vector3(...seg.p);
+    var r   = seg.cap_mm / 2;
+    var t   = seg.kalinlik_mm || r * 0.2;
+    var geo = new THREE.CylinderGeometry(r, r, t, 40);
+    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'flans'));
+    mesh.castShadow = true;
+    mesh.position.copy(pos);
+    // Yönlendirme
+    var yon = new THREE.Vector3(...seg.yon);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), yon);
+    mesh.userData = seg;
+    _m3.scene.add(mesh);
+    _m3.meshes.push(mesh);
+
+  } else if (seg.tip === 'reduktor') {
+    var p1 = new THREE.Vector3(...seg.p1);
+    var p2 = new THREE.Vector3(...seg.p2);
+    var dir = new THREE.Vector3().subVectors(p2, p1);
+    var len = dir.length();
+    if (len < 0.1) return;
+    var geo = new THREE.CylinderGeometry(seg.cap2_mm/2, seg.cap1_mm/2, len, 32);
+    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'reduktor'));
+    mesh.castShadow = true;
+    var mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+    mesh.position.copy(mid);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+    mesh.userData = seg;
+    _m3.scene.add(mesh);
+    _m3.meshes.push(mesh);
+
+  } else if (seg.tip === 'dirsek') {
+    // Torus ile 90° dirsek
+    var r_boru = seg.cap_mm / 2;
+    var r_kavis = seg.yaricap || seg.cap_mm * 1.5;
+    // Torus — tam çember, sadece çeyreği göstereceğiz
+    // THREE.TorusGeometry(radius, tube, radialSegs, tubularSegs, arc)
+    var geo = new THREE.TorusGeometry(r_kavis, r_boru, 16, 32, Math.PI / 2);
+    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
+    mesh.castShadow = true;
+    // Dirsek merkezi ve yönlendirme
+    var mk = new THREE.Vector3(...seg.merkez);
+    // Varsayılan: yon1=[1,0,0], yon2=[0,1,0] → dirsek XY düzleminde
+    // Torus varsayılan olarak XY düzleminde — Y ekseninde dönme gerekiyor
+    // Başlangıç noktası (+X), bitiş (+Y): torus doğal hali bunu yapar
+    mesh.position.set(mk.x, mk.y + r_kavis, mk.z);
+    mesh.rotation.z = Math.PI; // 180° Z ekseni etrafında döndür
+    mesh.userData = seg;
+    _m3.scene.add(mesh);
+    _m3.meshes.push(mesh);
+  }
+}
+
+function m3Click(e) {
+  if (!_m3.ready) return;
+  var canvas = T('m3canvas');
+  var rect = canvas.getBoundingClientRect();
+  var mouse = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width)  * 2 - 1,
+   -((e.clientY - rect.top)  / rect.height) * 2 + 1
+  );
+  var raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, _m3.camera);
+  var hits = raycaster.intersectObjects(_m3.meshes);
+
+  // Önceki seçimi sıfırla
+  if (_m3.selectedMesh) {
+    _m3.selectedMesh.material.color.setHex(
+      M3_RENK[_m3.selectedMesh.userData.malzeme] ||
+      M3_RENK['_' + (_m3.selectedMesh.userData.tip||'')] ||
+      M3_RENK['_default']
+    );
+    _m3.selectedMesh = null;
+  }
+
+  var popup = T('m3Popup');
+  if (!hits.length) { popup.classList.remove('show'); return; }
+
+  var hit  = hits[0];
+  var mesh = hit.object;
+  var seg  = mesh.userData;
+
+  // Seç — rengi değiştir
+  mesh.material.color.setHex(M3_RENK_SECILI);
+  _m3.selectedMesh = mesh;
+
+  // Popup doldur
+  T('m3PopupBaslik').textContent = seg.tanim || seg.tip || '—';
+  T('m3PopupMalz').textContent   = seg.malzeme || '—';
+  T('m3PopupKal').textContent    = seg.kalite  || '—';
+  T('m3PopupCap').textContent    = seg.cap_mm  ? seg.cap_mm + ' mm' : '—';
+  T('m3PopupEt').textContent     = seg.et_mm   ? seg.et_mm  + ' mm' : '—';
+  T('m3PopupBoy').textContent    = seg.boy_mm  ? seg.boy_mm + ' mm' : (seg.cap2_mm ? 'Redüktör' : '—');
+
+  // Popup konumu
+  var canvasRect = canvas.getBoundingClientRect();
+  var px = e.clientX - canvasRect.left + 12;
+  var py = e.clientY - canvasRect.top  - 10;
+  // Sağ/alt taşma önle
+  if (px + 200 > canvas.clientWidth)  px = canvas.clientWidth  - 210;
+  if (py + 140 > canvas.clientHeight) py = canvas.clientHeight - 150;
+  popup.style.left = Math.max(8, px) + 'px';
+  popup.style.top  = Math.max(8, py) + 'px';
+  popup.classList.add('show');
+}
+
+// Kamera pozisyon yardımcıları
+function m3Reset()      { if(!_m3.ready)return; _m3.camera.position.set(1200,900,1400); _m3.controls.target.set(400,400,0); _m3.controls.update(); T('m3Popup').classList.remove('show'); }
+function m3Yukari()     { if(!_m3.ready)return; _m3.camera.position.set(400,3000,1);    _m3.controls.target.set(400,400,0); _m3.controls.update(); }
+function m3On()         { if(!_m3.ready)return; _m3.camera.position.set(400,400,2500);  _m3.controls.target.set(400,400,0); _m3.controls.update(); }
+function m3Izometrik()  { if(!_m3.ready)return; _m3.camera.position.set(1500,1200,1500);_m3.controls.target.set(400,400,0); _m3.controls.update(); }
+
+function m3ToggleWire() {
+  if(!_m3.ready)return;
+  _m3.wireframe = !_m3.wireframe;
+  _m3.meshes.forEach(function(m){ m.material.wireframe = _m3.wireframe; });
+  T('m3WireBtn').style.color = _m3.wireframe ? 'var(--ac)' : '';
+}
+function m3ToggleGrid() {
+  if(!_m3.ready||!_m3.grid)return;
+  _m3.gridVisible = !_m3.gridVisible;
+  _m3.grid.visible = _m3.gridVisible;
+  T('m3GridBtn').style.color = _m3.gridVisible ? 'var(--ac)' : '';
 }
 
 document.addEventListener('change',function(e){if(e.target.name==='mTip')markTipGuncelle();});
