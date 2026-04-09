@@ -191,10 +191,6 @@
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>'
     },
     {
-      type: 'item', key: 'sorgula', label: '🤖 AI Sorgu', href: 'sorgula.html',
-      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>'
-    },
-    {
       type: 'item', key: 'log', label: 'İşlem Logu', i18n: 'nav_islem_logu', href: 'log.html',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
     },
@@ -635,6 +631,11 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         </div>
       </div>
 
+      <button id="tb-ai" title="AI Sorgu & Analiz" onclick="window._tbAiClick && window._tbAiClick()"
+        style="width:36px;height:36px;border-radius:9px;border:1px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;background:transparent;border-color:rgba(99,102,241,.4);color:#6366f1;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+
       <a href="uyarilar.html" id="tb-bell" title="Uyarılar"
         style="position:relative;width:36px;height:36px;border-radius:9px;border:1px solid;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s;flex-shrink:0;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
@@ -685,6 +686,22 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
       if (confirm('Çıkış yapmak istiyor musunuz?')) {
         localStorage.removeItem('ares_oturum');
         window.location.href = 'giris.html';
+      }
+    };
+
+    // AI butonu — sayfa context'ine göre davran
+    window._tbAiClick = function() {
+      if (window._aresAnaliz) {
+        // Sayfa analiz context'i tanımlamış → analiz modalı aç
+        if (typeof window._aresAnalizAc === 'function') {
+          window._aresAnalizAc();
+        } else {
+          // Fallback: sorgu sayfasına git
+          window.location.href = 'sorgula.html';
+        }
+      } else {
+        // Context yok → genel sorgu sayfası
+        window.location.href = 'sorgula.html';
       }
     };
 
