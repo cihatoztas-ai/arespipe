@@ -67,7 +67,25 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .log-tablo td{padding:9px 12px;border-bottom:1px solid var(--bor);vertical-align:top;color:var(--txm);}
 .log-tablo tr:last-child td{border-bottom:none;}
 .bos{text-align:center;padding:40px 20px;color:var(--txd);font-size:14px;}
-/* PERFORMANS PLACEHOLDER */
+/* YETKİ SATIRLARI */
+.yetki-satir{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);}
+.yetki-satir.aktif{border-color:rgba(22,163,110,.25);background:rgba(22,163,110,.05);}
+.yetki-satir.pasif{border-color:rgba(229,62,62,.2);background:rgba(229,62,62,.04);opacity:.7;}
+.yetki-satir-ad{font-size:13px;font-weight:500;color:var(--tx);}
+.yetki-satir-kat{font-size:11px;color:var(--txd);margin-top:1px;}
+.yetki-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;}
+.yc-ac{background:rgba(22,163,110,.1);color:var(--gr);}
+.yc-kapat{background:rgba(229,62,62,.1);color:var(--re);}
+.yc-varsayilan{background:rgba(45,142,255,.1);color:var(--ac);}
+/* YETKI EKLE MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.mov.open{display:flex;}
+.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:16px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bor);}
+.mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
+.mclose{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;}
+.mbody{padding:20px;}
+.mfoot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--bor);}
 .perf-yakin{background:rgba(99,102,241,.04);border:1px dashed rgba(99,102,241,.3);border-radius:12px;padding:32px;text-align:center;color:var(--txd);}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px;z-index:9999;animation:tin .3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
 .t-ok{border-left:3px solid var(--gr);}.t-er{border-left:3px solid var(--re);}.t-in{border-left:3px solid var(--ac);}
@@ -115,8 +133,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 <!-- SEKMELER -->
 <div class="tabs">
   <button class="tab-btn active" data-tab="genel">👤 Genel Bilgiler</button>
+  <button class="tab-btn" data-tab="yetki">🔐 Yetkiler</button>
   <button class="tab-btn" data-tab="log">🕐 İşlem Kayıtları</button>
-  <button class="tab-btn" id="tabPerf" data-tab="perf" style="display:none;">📊 Performans</button>
+  <button class="tab-btn" id="tabPerfBtn" data-tab="perf" style="display:none;">📊 Performans</button>
 </div>
 
 <!-- GENEL BİLGİLER -->
@@ -208,6 +227,41 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
   </div>
 </div>
 
+<!-- YETKİLER -->
+<div class="tab-panel" id="tabYetki">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+    <!-- SOL: Rol bilgisi + açıklama -->
+    <div>
+      <div class="fcard">
+        <div class="fcard-title">Rol Yetkileri</div>
+        <div style="font-size:13px;color:var(--txd);margin-bottom:14px;line-height:1.6;">
+          Bu kullanıcının rolünden gelen <strong style="color:var(--tx);">varsayılan yetkiler</strong> aşağıda gösterilmektedir.
+          Sağ taraftan kişiye özel yetki ekleyebilir veya kaldırabilirsiniz.
+        </div>
+        <div id="rolYetkiListesi" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+    </div>
+
+    <!-- SAĞ: Kişi bazlı override'lar -->
+    <div>
+      <div class="fcard">
+        <div class="fcard-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Kişiye Özel Yetkiler</span>
+          <button class="btn btn-ac" style="height:28px;font-size:12px;padding:0 10px;" onclick="yetkiEkleAc()">+ Ekle</button>
+        </div>
+        <div style="font-size:12px;color:var(--txd);margin-bottom:12px;">
+          Rolün varsayılanına ek yetki açabilir veya varsayılan yetkileri kapatabilirsiniz.
+        </div>
+        <div id="kisiYetkiListesi" style="display:flex;flex-direction:column;gap:6px;">
+          <div class="bos" id="kisiYetkiBos">Henüz kişiye özel yetki yok</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- İŞLEM KAYITLARI -->
 <div class="tab-panel" id="tabLog">
   <div style="background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--ac);border-radius:12px;overflow:hidden;">
@@ -233,6 +287,43 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 </div>
 
 </div></div></div>
+
+<!-- YETKİ EKLE MODAL -->
+<div class="mov" id="yetkiModal" onclick="if(event.target===this)yetkiModalKapat()">
+  <div class="mbox">
+    <div class="mhead">
+      <span class="mtitle">🔐 Kişiye Özel Yetki</span>
+      <button class="mclose" onclick="yetkiModalKapat()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fg">
+        <label class="fl">Yetki</label>
+        <select class="fi" id="yYetki"></select>
+      </div>
+      <div class="fg" style="margin-top:12px;">
+        <label class="fl">İşlem</label>
+        <div style="display:flex;gap:8px;">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--bor);border-radius:8px;cursor:pointer;background:var(--sur2);">
+            <input type="radio" name="yIslem" value="ac" checked>
+            <span style="font-size:13px;"><strong style="color:var(--gr);">+ Yetki Ekle</strong><br><span style="font-size:11px;color:var(--txd);">Rolde olmasa bile ver</span></span>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--bor);border-radius:8px;cursor:pointer;background:var(--sur2);">
+            <input type="radio" name="yIslem" value="kapat">
+            <span style="font-size:13px;"><strong style="color:var(--re);">− Yetki Kapat</strong><br><span style="font-size:11px;color:var(--txd);">Rolde olsa bile alma</span></span>
+          </label>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:12px;">
+        <label class="fl">Açıklama</label>
+        <input class="fi" id="yAciklama" placeholder="Neden eklendi / kaldırıldı? (opsiyonel)">
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="yetkiModalKapat()" style="flex:1;">İptal</button>
+      <button class="btn btn-ac" onclick="yetkiKaydet()" style="flex:2;" id="yetkiKaydetBtn">Kaydet</button>
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -452,6 +543,7 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
     btn.classList.add('active');
     var panel = T('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1));
     if (panel) panel.classList.add('on');
+    if (btn.dataset.tab === 'yetki' && _tumYetkiler.length === 0) yetkiYukle();
   });
 });
 
@@ -464,6 +556,176 @@ function toast(msg, tip) {
   b.addEventListener('click',function(){t.remove();});
   t.appendChild(s); t.appendChild(b); document.body.appendChild(t);
   setTimeout(function(){if(t.parentNode)t.remove();},4000);
+}
+
+// ── YETKİLER ──────────────────────────────────────────────
+var _tumYetkiler = [];
+var _kisiYetkiler = [];
+
+var _ROL_YETKILER = {
+  yonetici:  ['dashboard_gor','proje_gor','proje_yonet','devre_gor','devre_yonet','spool_gor','spool_olustur','spool_duzenle','spool_sil','malzeme_gor','malzeme_duzenle','basamak_ilerlet','kaynak_onayla','kk_onayla','sevkiyat_onayla','kesim_isle','bukum_isle','markalama_isle','fotograf_yukle','belge_yukle','kalite_gor','kalite_duzenle','rapor_gor','rapor_indir','kullanici_gor','kullanici_yonet','tersane_yonet','tanimlar_duzenle','uyari_gor','log_gor'],
+  kk_uzmani: ['dashboard_gor','proje_gor','devre_gor','spool_gor','spool_duzenle','malzeme_gor','basamak_ilerlet','kk_onayla','fotograf_yukle','belge_yukle','kalite_gor','kalite_duzenle','rapor_gor','uyari_gor'],
+  operator:  ['dashboard_gor','proje_gor','devre_gor','spool_gor','malzeme_gor','basamak_ilerlet','fotograf_yukle','uyari_gor'],
+  izleyici:  ['dashboard_gor','proje_gor','devre_gor','spool_gor','malzeme_gor','kalite_gor','rapor_gor'],
+};
+
+async function yetkiYukle() {
+  var supa = ARES.supabase();
+  if (!supa) return;
+
+  // Tüm yetki tanımlarını yükle
+  var res1 = await supa.from('yetki_tanimlari').select('*').order('sira');
+  _tumYetkiler = res1.data || [];
+
+  // Kişi bazlı override'ları yükle
+  var res2 = await supa.from('kullanici_yetkileri').select('*').eq('kullanici_id', _userId);
+  _kisiYetkiler = res2.data || [];
+
+  renderRolYetkiler();
+  renderKisiYetkiler();
+  yetkiSelectDoldur();
+}
+
+function renderRolYetkiler() {
+  var el = T('rolYetkiListesi');
+  if (!el || !_kullanici) return;
+  el.textContent = '';
+  var rol = _kullanici.rol;
+  var rolYetkiler = _ROL_YETKILER[rol] || [];
+
+  if (rol === 'super_admin') {
+    var d = document.createElement('div');
+    d.style.cssText = 'padding:10px;background:rgba(229,62,62,.08);border-radius:8px;font-size:13px;color:var(--re);';
+    d.textContent = '★ Süper Admin — tüm yetkilere sahip';
+    el.appendChild(d); return;
+  }
+  if (!rolYetkiler.length) {
+    var d2 = document.createElement('div');
+    d2.style.color = 'var(--txd)'; d2.style.fontSize = '13px';
+    d2.textContent = 'Bu rol için yetki tanımlanmamış';
+    el.appendChild(d2); return;
+  }
+
+  var katMap = {uretim:'⚙️ Üretim', kalite:'✅ Kalite', yonetim:'📊 Yönetim', sistem:'🔧 Sistem'};
+  var katlar = {};
+  _tumYetkiler.forEach(function(y) {
+    if (!rolYetkiler.includes(y.kod)) return;
+    if (!katlar[y.kategori]) katlar[y.kategori] = [];
+    katlar[y.kategori].push(y);
+  });
+
+  Object.keys(katlar).forEach(function(kat) {
+    var katBaslik = document.createElement('div');
+    katBaslik.style.cssText = 'font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;';
+    katBaslik.textContent = katMap[kat] || kat;
+    el.appendChild(katBaslik);
+    katlar[kat].forEach(function(y) {
+      var row = document.createElement('div');
+      row.className = 'yetki-satir aktif';
+      row.innerHTML = '<div><div class="yetki-satir-ad">✓ ' + esc(y.ad) + '</div></div>' +
+        '<span class="yetki-chip yc-varsayilan">Rol</span>';
+      el.appendChild(row);
+    });
+  });
+}
+
+function renderKisiYetkiler() {
+  var el = T('kisiYetkiListesi');
+  var bos = T('kisiYetkiBos');
+  if (!el) return;
+
+  // Bos mesajını kaldır
+  var eskiler = el.querySelectorAll('.yetki-satir');
+  eskiler.forEach(function(e){ e.remove(); });
+
+  if (!_kisiYetkiler.length) {
+    if (bos) bos.style.display = '';
+    return;
+  }
+  if (bos) bos.style.display = 'none';
+
+  _kisiYetkiler.forEach(function(ky) {
+    var yetki = _tumYetkiler.find(function(y){ return y.kod === ky.yetki_kodu; });
+    var ad = yetki ? yetki.ad : ky.yetki_kodu;
+    var row = document.createElement('div');
+    row.className = 'yetki-satir ' + (ky.aktif ? 'aktif' : 'pasif');
+    row.innerHTML =
+      '<div><div class="yetki-satir-ad">' + esc(ad) + '</div>' +
+        (ky.aciklama ? '<div class="yetki-satir-kat">' + esc(ky.aciklama) + '</div>' : '') +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<span class="yetki-chip ' + (ky.aktif ? 'yc-ac' : 'yc-kapat') + '">' + (ky.aktif ? '+ Açık' : '− Kapalı') + '</span>' +
+        '<button class="icon-btn" title="Kaldır" onclick="yetkiSil(\'' + ky.id + '\')">' +
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
+      '</div>';
+    el.insertBefore(row, bos);
+  });
+}
+
+function yetkiSelectDoldur() {
+  var sel = T('yYetki');
+  if (!sel) return;
+  sel.textContent = '';
+  var katMap = {uretim:'⚙️ Üretim', kalite:'✅ Kalite', yonetim:'📊 Yönetim', sistem:'🔧 Sistem'};
+  var katlar = {};
+  _tumYetkiler.forEach(function(y){ if(!katlar[y.kategori])katlar[y.kategori]=[]; katlar[y.kategori].push(y); });
+  Object.keys(katlar).forEach(function(kat) {
+    var og = document.createElement('optgroup');
+    og.label = katMap[kat] || kat;
+    katlar[kat].forEach(function(y){
+      var o = document.createElement('option');
+      o.value = y.kod; o.textContent = y.ad;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function yetkiEkleAc() {
+  T('yAciklama').value = '';
+  document.querySelector('input[name="yIslem"][value="ac"]').checked = true;
+  T('yetkiModal').classList.add('open');
+}
+
+function yetkiModalKapat() { T('yetkiModal').classList.remove('open'); }
+
+async function yetkiKaydet() {
+  var kod      = T('yYetki').value;
+  var islem    = document.querySelector('input[name="yIslem"]:checked').value;
+  var aciklama = T('yAciklama').value.trim();
+  if (!kod) { toast('Yetki seçin', 'er'); return; }
+
+  var btn = T('yetkiKaydetBtn');
+  btn.disabled = true; btn.textContent = '⏳';
+
+  try {
+    var supa = ARES.supabase();
+    var res = await supa.from('kullanici_yetkileri').upsert({
+      tenant_id:    ARES.tenantId(),
+      kullanici_id: _userId,
+      yetki_kodu:   kod,
+      aktif:        islem === 'ac',
+      aciklama:     aciklama || null,
+      ekleyen_id:   ARES.oturumAl() ? ARES.oturumAl().id : null
+    }, {onConflict: 'kullanici_id,yetki_kodu'});
+    if (res.error) throw new Error(res.error.message);
+    toast('Yetki kaydedildi', 'ok');
+    yetkiModalKapat();
+    await yetkiYukle();
+  } catch(e) {
+    toast('Hata: ' + e.message, 'er');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Kaydet';
+  }
+}
+
+async function yetkiSil(yetkiId) {
+  var supa = ARES.supabase();
+  var res = await supa.from('kullanici_yetkileri').delete().eq('id', yetkiId);
+  if (res.error) { toast('Silinemedi', 'er'); return; }
+  toast('Yetki kaldırıldı', 'ok');
+  await yetkiYukle();
 }
 
 // ── INIT ──────────────────────────────────────────────────
