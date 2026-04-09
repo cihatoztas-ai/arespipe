@@ -1435,21 +1435,24 @@ async function kaydet() {
             if (localSpool && localSpool.malzeme_listesi && localSpool.malzeme_listesi.length) {
               var DN_MM = {15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4};
               localSpool.malzeme_listesi.forEach(function(item) {
-                var dn = parseInt(item.nbore_dn) || null;
+                var dn = parseInt(item.cap_dn || item.nbore_dn) || null;
                 var capMm = dn ? (DN_MM[dn] || null) : null;
                 var kat = (item.kategori || '').toUpperCase();
                 var tip = kat.includes('PIPE') || kat.includes('TUBE') ? 'boru' : 'fitting';
                 var miktarSayi = parseFloat(String(item.miktar || '').replace(/[^0-9.,]/g,'').replace(',','.')) || null;
                 malzemeRows.push({
-                  tenant_id:  ARES.tenantId(),
-                  spool_id:   dbSpool.id,
-                  kod:        item.dpn    || null,
-                  tip:        tip,
-                  tanim:      item.tanim  || null,
-                  aciklama:   item.tanim  || null,
-                  dis_cap_mm: capMm,
-                  adet:       Number.isInteger(miktarSayi) ? miktarSayi : null,
-                  miktar:     miktarSayi  || 0,
+                  tenant_id:   ARES.tenantId(),
+                  spool_id:    dbSpool.id,
+                  kod:         item.dpn       || null,
+                  tip:         tip,
+                  tanim:       item.tanim      || null,
+                  aciklama:    item.tanim      || null,
+                  malzeme:     item.malzeme_cinsi || null,
+                  kalite:      item.kalite_kodu   || null,
+                  dis_cap_mm:  capMm,
+                  et_mm:       item.et_kalinlik   ? parseFloat(item.et_kalinlik) : null,
+                  adet:        Number.isInteger(miktarSayi) ? miktarSayi : null,
+                  miktar:      miktarSayi     || 0,
                   sertifikali: false,
                 });
               });
