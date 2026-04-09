@@ -320,7 +320,7 @@ textarea.fi{resize:vertical;min-height:72px;}
     <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:14px;color:var(--txm);">
       <strong style="color:#6366f1;">🤖 AI İzometri Okuma</strong> — İzometri PDF'inizi yükleyin, Claude otomatik olarak spool listesini çıkarsın. Önizleme tablosunda kontrol edip düzelttikten sonra aktarın.
     </div>
-    <div class="excel-alan" id="pdfAlan" onclick="document.getElementById('izoInput').click()" style="border-color:rgba(99,102,241,.4);">
+    <div class="excel-alan" id="izoAlan" ondrop="izoDrop(event)" ondragover="izoDragOver(event)" ondragleave="izoDragLeave(event)" onclick="document.getElementById('izoInput').click()" style="border-color:rgba(99,102,241,.4);">
       <input type="file" id="izoInput" accept=".pdf" style="display:none;" onchange="izoYukle(this)">
       <div class="excel-ikon">📐</div>
       <div class="excel-baslik" id="pdfBaslik">İzometri PDF'ini sürükleyin veya tıklayın</div>
@@ -1429,8 +1429,15 @@ async function kaydet() {
 // ── PDF YÜKLEME ───────────────────────────────────────────────
 let pdfDosyalar = []; // [{fileName, pipeline, spoolNo, matched, dataUrl}]
 
-function pdfDragOver(e) { e.preventDefault(); document.getElementById('izoAlan').classList.add('drag'); }
-function pdfDragLeave()  { document.getElementById('izoAlan').classList.remove('drag'); }
+function pdfDragOver(e) { e.preventDefault(); var el=document.getElementById('pdfAlan'); if(el) el.classList.add('drag'); }
+function pdfDragLeave()  { var el=document.getElementById('pdfAlan'); if(el) el.classList.remove('drag'); }
+function izoDragOver(e) { e.preventDefault(); var el=document.getElementById('izoAlan'); if(el) el.classList.add('drag'); }
+function izoDragLeave()  { var el=document.getElementById('izoAlan'); if(el) el.classList.remove('drag'); }
+function izoDrop(e) {
+  e.preventDefault();
+  var el=document.getElementById('izoAlan'); if(el) el.classList.remove('drag');
+  if (e.dataTransfer.files[0]) izoYukle({files: e.dataTransfer.files});
+}
 function pdfDrop(e) {
   e.preventDefault();
   document.getElementById('izoAlan').classList.remove('drag');
