@@ -2106,28 +2106,29 @@ function m3TestData() {
       p:[0,0,0], yon:[-1,0,0],
       cap_mm:capMm*1.6, et_mm:etMm, kalinlik_mm:capMm*0.15,
       malzeme:malz, kalite:kal },
-    // Segment 3 — dirsek 90°: merkez=[800,0,0], yaricap=R
-    // Torus center: (800-R, 0, 0)  →  start: (800,0,0)  end: (800-R, R, 0)
+    // Segment 3 — dirsek 90°: pipe1 (800,0,0)'de biter
+    // center=(800, R, 0), rotation.z=-PI/2
+    // arc start: (800,0,0) ✓  arc end: (800+R, R, 0)
     { tip:'dirsek', tanim:'90° Dirsek',
       merkez:[800,0,0], yon1:[1,0,0], yon2:[0,1,0],
       yaricap:capMm*1.5,
       cap_mm:capMm, et_mm:etMm, malzeme:malz, kalite:kal },
-    // Segment 4 — dikey boru: torus bitişinden başlar (800-R, R, 0)
+    // Segment 4 — dikey boru: arc end'den başlar
     { tip:'boru',  tanim:'Düz Boru #2',
-      p1:[800-capMm*1.5, capMm*1.5, 0], p2:[800-capMm*1.5, 700, 0],
+      p1:[800+capMm*1.5, capMm*1.5, 0], p2:[800+capMm*1.5, 700, 0],
       cap_mm:capMm, et_mm:etMm, malzeme:malz, kalite:kal, boy_mm:700-capMm*1.5 },
     // Segment 5 — redüktör
     { tip:'reduktor', tanim:'Redüktör',
-      p1:[800-capMm*1.5, 700, 0], p2:[800-capMm*1.5, 850, 0],
+      p1:[800+capMm*1.5, 700, 0], p2:[800+capMm*1.5, 850, 0],
       cap1_mm:capMm, cap2_mm:capMm*0.6,
       et_mm:etMm, malzeme:malz, kalite:kal },
     // Segment 6 — küçük boru
     { tip:'boru',  tanim:'Düz Boru #3',
-      p1:[800-capMm*1.5, 850, 0], p2:[800-capMm*1.5, 1200, 0],
+      p1:[800+capMm*1.5, 850, 0], p2:[800+capMm*1.5, 1200, 0],
       cap_mm:capMm*0.6, et_mm:etMm, malzeme:malz, kalite:kal, boy_mm:350 },
     // Segment 7 — flans (son)
     { tip:'flans', tanim:'Flanş (Çıkış)',
-      p:[800-capMm*1.5, 1200, 0], yon:[0,1,0],
+      p:[800+capMm*1.5, 1200, 0], yon:[0,1,0],
       cap_mm:capMm*0.6*1.6, et_mm:etMm, kalinlik_mm:capMm*0.6*0.15,
       malzeme:malz, kalite:kal }
   ];
@@ -2307,20 +2308,22 @@ function m3AddSegment(seg) {
     _m3.meshes.push(mesh);
 
   } else if (seg.tip === 'dirsek') {
-    // Torus ile 90° dirsek
-    // TorusGeometry default: XY düzleminde, açı 0'da (+R,0,0), PI/2'de (0,+R,0)
-    // X→Y dönüşü için: merkez = (pipe1_bitis.x - r_kavis, pipe1_bitis.y, z)
-    // Böylece: torus başlangıcı (merkez.x + r_kavis) = pipe1 bitişi ✓
-    //           torus sonu (merkez.x, merkez.y + r_kavis) = pipe2 başlangıcı ✓
-    var r_boru = seg.cap_mm / 2;
+    // TorusGeometry tangent analizi:
+    // θ açısında tangent = (-sin(θ), cos(θ), 0)
+    // rotation.z = -PI/2 uygulanınca:
+    //   θ=0 tangent (0,1,0) → (+1,0,0) = +X ✓  (pipe1 yönü)
+    //   θ=PI/2 tangent (-1,0,0) → (0,+1,0) = +Y ✓  (pipe2 yönü)
+    // Torus merkezi = pipe1_bitis + (0, r_kavis, 0)
+    // Arc start (rotated θ=0): center + (0,-R,0) = pipe1_bitis ✓
+    // Arc end   (rotated θ=PI/2): center + (R,0,0) = pipe2_baslangic ✓
+    var r_boru  = seg.cap_mm / 2;
     var r_kavis = seg.yaricap || seg.cap_mm * 1.5;
-    var geo = new THREE.TorusGeometry(r_kavis, r_boru, 16, 32, Math.PI / 2);
+    var geo  = new THREE.TorusGeometry(r_kavis, r_boru, 16, 32, Math.PI / 2);
     mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
     mesh.castShadow = true;
     var mk = new THREE.Vector3(...seg.merkez);
-    // Merkezi: boru1'in bittiği noktadan r_kavis kadar sola
-    mesh.position.set(mk.x - r_kavis, mk.y, mk.z);
-    // Rotasyon yok — varsayılan torus yönü zaten +X→+Y
+    mesh.position.set(mk.x, mk.y + r_kavis, mk.z);
+    mesh.rotation.z = -Math.PI / 2;
     mesh.userData = seg;
     _m3.scene.add(mesh);
     _m3.meshes.push(mesh);
