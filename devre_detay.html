@@ -210,6 +210,9 @@
       <button class="btn-outline" onclick="history.back()" data-i18n="btn_back">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Geri
       </button>
+      <button class="btn-outline" onclick="devreDuzenle()" style="border-color:rgba(45,142,255,.4);color:var(--ac);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle
+      </button>
       <button class="btn-outline" onclick="etiketModalAc()" style="border-color:rgba(124,58,237,.4);color:var(--leg);" data-i18n="dv_labels_btn">&#127991; Etiketler</button>
       <button class="btn-outline" onclick="exportModalAc()" data-i18n="dv_export_btn">&#11015; Aktar</button>
       <button class="btn-outline" id="btnDurdur" onclick="durdurModalAc()" style="border-color:rgba(229,62,62,.35);color:var(--re);" data-i18n="sp_btn_stop">&#9646;&#9646; Durdur</button>
@@ -876,6 +879,13 @@
 'use strict';
 // G-01: XSS sanitizer
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+// ── DEVRE DÜZENLE ───────────────────────────────────────────────
+function devreDuzenle() {
+  var id = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
+  if (!id) { alert('Devre ID bulunamadı'); return; }
+  window.location.href = 'devre_duzenle.html?id=' + id;
+}
+
 // ── DİL ANAHTARLARI — ares-lang.js sistemi ─────────────────────
 if (typeof ARES !== 'undefined' && ARES.lang && ARES.lang.extend) {
   // Çeviriler lang/en.json ve lang/ar.json dosyalarından gelir
