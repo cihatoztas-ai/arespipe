@@ -184,7 +184,37 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 /* MARK TIP */
 .mark-tip{text-align:center;padding:10px 6px;border-radius:10px;border:2px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;color:var(--txm);cursor:pointer;transition:all .15s;}
 .mark-tip.aktif{border-color:var(--ac);background:rgba(45,142,255,.08);color:var(--tx);}
-/* 3D MODEL */
+/* AI FOTOĞRAF SİSTEMİ */
+.ai-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--bor);background:var(--sur2);flex-wrap:wrap;}
+.ai-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:700;}
+.ai-b-bekle{background:var(--sur);border:1px solid var(--bor);color:var(--txd);}
+.ai-b-analiz{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818cf8;}
+.ai-b-iyi{background:rgba(22,163,110,.12);border:1px solid rgba(22,163,110,.3);color:var(--gr);}
+.ai-b-uyari{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.3);color:var(--warn);}
+.ai-b-hata{background:rgba(229,62,62,.12);border:1px solid rgba(229,62,62,.3);color:var(--re);}
+.ai-skor-bar{flex:1;height:5px;background:var(--bor);border-radius:99px;overflow:hidden;min-width:60px;}
+.ai-skor-fill{height:100%;border-radius:99px;transition:width .4s;}
+.ai-panel{border-top:1px solid var(--bor);background:var(--sur);padding:12px 14px;display:none;}
+.ai-panel.open{display:block;}
+.ai-bulgu{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:5px;font-size:13px;}
+.ai-bulgu-re{background:rgba(229,62,62,.06);border:1px solid rgba(229,62,62,.15);}
+.ai-bulgu-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.15);}
+.ai-bulgu-gr{background:rgba(22,163,110,.06);border:1px solid rgba(22,163,110,.15);}
+.ai-bulgu-ac{background:rgba(45,142,255,.06);border:1px solid rgba(45,142,255,.15);}
+.ai-bulgu-ikon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ai-bulgu-metin{color:var(--txm);line-height:1.5;flex:1;}
+.ai-bulgu-konum{font-size:11px;color:var(--txd);margin-top:2px;}
+/* ANNOTATION MODAL */
+.ann-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:5000;display:none;flex-direction:column;}
+.ann-modal.open{display:flex;}
+.ann-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0;flex-wrap:wrap;}
+.ann-canvas-wrap{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#111;}
+.ann-tools{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--sur);border-top:1px solid var(--bor);flex-shrink:0;flex-wrap:wrap;}
+.ann-color{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.ann-color.aktif{border-color:#fff;transform:scale(1.25);}
+.ann-shape{padding:4px 10px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:13px;cursor:pointer;font-family:'Barlow',sans-serif;}
+.ann-shape.aktif{border-color:var(--ac);color:var(--ac);background:rgba(45,142,255,.08);}
+</style>
 .m3d-wrap{position:relative;background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;}
 .m3d-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bor);background:var(--sur2);flex-wrap:wrap;}
 .m3d-canvas{width:100%;height:520px;display:block;cursor:grab;outline:none;}
@@ -330,6 +360,27 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
           <span data-i18n="sp_no_photos">Henüz fotoğraf eklenmemiş</span>
         </div>
       </div>
+      <!-- AI TOOLBAR — sayfa açılışında yük getirmez, buton tıklanınca çalışır -->
+      <div class="ai-toolbar" id="aiToolbar" style="display:none;">
+        <div id="aiBadgeWrap"></div>
+        <div class="ai-skor-bar" id="aiSkorBar" style="display:none;">
+          <div class="ai-skor-fill" id="aiSkorFill"></div>
+        </div>
+        <span id="aiSkorText" style="font-size:12px;color:var(--txd);display:none;"></span>
+        <button class="btn btn-sm" id="aiBtnAnaliz" onclick="aiAnalizEt()"
+          style="background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:#818cf8;margin-left:auto;">
+          🤖 Analiz Et
+        </button>
+        <button class="btn btn-sm" id="aiBtnAnn" onclick="annAc()"
+          style="border-color:rgba(45,142,255,.3);color:var(--ac);">
+          ✏️ Annotasyon
+        </button>
+        <button class="btn btn-sm" id="aiBtnOnay" onclick="aiOnayEt()" style="display:none;background:rgba(22,163,110,.1);border-color:rgba(22,163,110,.3);color:var(--gr);">
+          ✅ Onayla
+        </button>
+      </div>
+      <!-- AI SONUÇ PANELİ — display:none, analiz tamamlanınca açılır -->
+      <div class="ai-panel" id="aiPanel"></div>
     </div>
 
     <!-- SAĞ: Bilgi kutuları + üretim özeti -->
@@ -574,6 +625,39 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       ⚠️ <strong style="color:var(--warn);">Test Geometrisi</strong> — Supabase'de <code>x_mm, y_mm, z_mm</code> kolonları hazır olunca gerçek izometri koordinatları buradan görünecek.
     </div>
 
+  </div>
+</div>
+
+<!-- ANNOTATION MODAL -->
+<div class="ann-modal" id="annModal">
+  <div class="ann-header">
+    <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--tx);">✏️ Annotasyon</span>
+    <span id="annFotoAd" style="font-size:13px;color:var(--txd);"></span>
+    <button class="btn btn-sm btn-re" onclick="annKapat()" style="margin-left:auto;">✕ Kapat</button>
+    <button class="btn btn-sm" onclick="annTemizle()" style="border-color:rgba(217,119,6,.3);color:var(--warn);">↺ Temizle</button>
+    <button class="btn btn-sm btn-ac" onclick="annKaydet()">💾 Kaydet</button>
+  </div>
+  <div class="ann-canvas-wrap" id="annCanvasWrap">
+    <img id="annImg" style="max-width:100%;max-height:100%;display:block;user-select:none;" alt="">
+    <canvas id="annCanvas" style="cursor:crosshair;"></canvas>
+  </div>
+  <div class="ann-tools">
+    <span style="font-size:12px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Şekil</span>
+    <button class="ann-shape aktif" id="annShapeDaire" onclick="annSekil('daire',this)">⬤ Daire</button>
+    <button class="ann-shape" id="annShapeRect" onclick="annSekil('rect',this)">▬ Alan</button>
+    <button class="ann-shape" id="annShapeOk" onclick="annSekil('ok',this)">→ Ok</button>
+    <span style="width:1px;height:20px;background:var(--bor);margin:0 4px;"></span>
+    <span style="font-size:12px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Renk</span>
+    <div class="ann-color aktif" style="background:#ef4444;" onclick="annRenk('#ef4444',this)" title="Hata"></div>
+    <div class="ann-color" style="background:#f59e0b;" onclick="annRenk('#f59e0b',this)" title="Uyarı"></div>
+    <div class="ann-color" style="background:#10b981;" onclick="annRenk('#10b981',this)" title="İyi"></div>
+    <div class="ann-color" style="background:#3b82f6;" onclick="annRenk('#3b82f6',this)" title="Bilgi"></div>
+    <span style="width:1px;height:20px;background:var(--bor);margin:0 4px;"></span>
+    <input id="annNot" placeholder="Not ekle..." style="background:var(--sur2);border:1px solid var(--bor);border-radius:7px;padding:4px 10px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;width:180px;outline:none;">
+    <select id="annMalzSec" style="background:var(--sur2);border:1px solid var(--bor);border-radius:7px;padding:4px 10px;font-size:13px;color:var(--txm);font-family:'Barlow',sans-serif;max-width:160px;">
+      <option value="">— Malzeme bağla</option>
+    </select>
+    <span style="font-size:12px;color:var(--txd);margin-left:auto;" id="annSayac">0 annotasyon</span>
   </div>
 </div>
 
@@ -838,7 +922,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,olusturma), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad)))')
+      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad)))')
       .eq('id', supaId)
       .single();
 
@@ -862,6 +946,9 @@ async function spoolYukle(supaId) {
     SP.alistirma = s.alistirma         || null;
     SP._basamakSnapshot = s.basamak_snapshot || [];
     SP.devre_id  = s.devre_id          || null;
+    // 3D Model verileri (Lambda v4 ile dolan kolonlar)
+    SP.segmentler = s.segmentler_json  || null;
+    SP.bbox       = s.bbox_json        || null;
 
     // Tracker pozisyonu
     var _snap = s.basamak_snapshot || [];
@@ -966,12 +1053,17 @@ async function spoolYukle(supaId) {
     // Fotoğraflar
     FOTOLAR = (s.fotograflar || []).map(function(f) {
       return {
-        id:      f.id,
-        url:     f.dosya_url || '',
-        baslik:  f.baslik    || '',
-        aciklama:f.aciklama  || '',
-        kisi:    f.yapan_id  || '',
-        tarih:   f.olusturma ? new Date(f.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
+        id:           f.id,
+        url:          f.dosya_url    || '',
+        baslik:       f.baslik       || '',
+        aciklama:     f.aciklama     || '',
+        kisi:         f.yapan_id     || '',
+        tarih:        f.olusturma ? new Date(f.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '',
+        ai_skor:      f.ai_skor      || null,
+        ai_durum:     f.ai_durum     || null,
+        ai_uyari:     f.ai_uyari     || [],
+        ai_analiz:    f.ai_analiz    || null,
+        annotasyonlar:f.annotasyonlar|| []
       };
     });
 
@@ -1233,13 +1325,31 @@ async function sonrakiBasamakGec() {
   }
 }
 
+
 // ── FOTOĞRAF ─────────────────────────────────────────────────
+var _aiYukleniyor = false;
+var _annSecim = {sekil:'daire', renk:'#ef4444'};
+var _annCizimler = [];
+var _annCiziyorMu = false;
+var _annBaslangic = null;
+var _annFotoIdx = 0;
+
 function renderFotolar(){
   var w=T('swiperW'),em=T('photoEmpty'),outer=T('photoOuter'),cnt=T('fotoCnt'),band=T('slideBand');
   if(!w)return;
   if(cnt)cnt.textContent=FOTOLAR.length?FOTOLAR.length+' '+tv('sp_foto_unit','fotoğraf'):'';
-  if(!FOTOLAR.length){w.innerHTML='';if(outer)outer.style.display='none';if(band)band.style.display='none';if(em)em.style.display='flex';return;}
-  if(em)em.style.display='none';if(outer)outer.style.display='block';
+  var toolbar=T('aiToolbar');
+  if(!FOTOLAR.length){
+    w.innerHTML='';
+    if(outer)outer.style.display='none';
+    if(band)band.style.display='none';
+    if(em)em.style.display='flex';
+    if(toolbar)toolbar.style.display='none';
+    return;
+  }
+  if(em)em.style.display='none';
+  if(outer)outer.style.display='block';
+  if(toolbar)toolbar.style.display='flex';
   w.innerHTML=FOTOLAR.map(function(f,i){return'<div class="swiper-slide" onclick="lbAc('+i+')"><img src="'+f.url+'" alt="'+esc(f.baslik)+'" loading="lazy"></div>';}).join('');
   if(_swiper){try{_swiper.destroy(true,true);}catch(e){}_swiper=null;}
   setTimeout(function(){
@@ -1247,12 +1357,180 @@ function renderFotolar(){
       loop:FOTOLAR.length>1,
       navigation:{nextEl:'.swiper-button-next',prevEl:'.swiper-button-prev'},
       pagination:{el:'.swiper-pagination',clickable:true},
-      on:{slideChange:function(){bandGuncelle(this.realIndex);},init:function(){bandGuncelle(0);}}
+      on:{slideChange:function(){bandGuncelle(this.realIndex);aiToolbarGuncelle(this.realIndex);},init:function(){bandGuncelle(0);aiToolbarGuncelle(0);}}
     });
     if(band)band.style.display='flex';
   },0);
 }
 function bandGuncelle(i){var f=FOTOLAR[i]||FOTOLAR[0];if(!f)return;txc('slideBandT',f.baslik);txc('slideBandM',f.kisi+' — '+f.tarih);}
+
+// ── AI TOOLBAR ────────────────────────────────────────────────
+function aiToolbarGuncelle(idx) {
+  var f = FOTOLAR[idx]; if(!f) return;
+  var badgeWrap=T('aiBadgeWrap'), skorBar=T('aiSkorBar'), skorFill=T('aiSkorFill'), skorText=T('aiSkorText'), btnOnay=T('aiBtnOnay'), panel=T('aiPanel');
+  if(!badgeWrap) return;
+  badgeWrap.textContent='';
+  if(panel){panel.textContent='';panel.classList.remove('open');}
+  if(!f.ai_durum){
+    var b=document.createElement('span'); b.className='ai-badge ai-b-bekle'; b.textContent='○ Analiz yok'; badgeWrap.appendChild(b);
+    if(skorBar)skorBar.style.display='none'; if(skorText)skorText.style.display='none'; if(btnOnay)btnOnay.style.display='none'; return;
+  }
+  var durumMap={analiz_edildi:{cls:'ai-b-analiz',lbl:'🤖 Analiz edildi'},onaylandi:{cls:'ai-b-iyi',lbl:'✅ Onaylı'},uyari:{cls:'ai-b-uyari',lbl:'⚠️ Uyarı'},hata:{cls:'ai-b-hata',lbl:'🔴 Hata'}};
+  var d=durumMap[f.ai_durum]||{cls:'ai-b-bekle',lbl:'○'};
+  var b=document.createElement('span'); b.className='ai-badge '+d.cls; b.textContent=d.lbl; badgeWrap.appendChild(b);
+  if(f.ai_skor!=null&&skorBar&&skorFill&&skorText){
+    var skor=Math.max(0,Math.min(100,f.ai_skor));
+    var renk=skor>=80?'var(--gr)':skor>=50?'var(--warn)':'var(--re)';
+    skorBar.style.display='block'; skorFill.style.width=skor+'%'; skorFill.style.background=renk;
+    skorText.textContent=skor+'/100'; skorText.style.display='inline'; skorText.style.color=renk;
+  }
+  if(btnOnay)btnOnay.style.display=f.ai_durum==='analiz_edildi'?'inline-flex':'none';
+  if(f.ai_analiz)aiPanelRender(f);
+}
+
+function aiPanelRender(f) {
+  var panel=T('aiPanel'); if(!panel||!f.ai_analiz) return;
+  var a=f.ai_analiz; panel.textContent='';
+  if(a.genel){var g=document.createElement('div');g.style.cssText='font-size:13px;color:var(--txm);margin-bottom:10px;line-height:1.6;';g.textContent=a.genel;panel.appendChild(g);}
+  var ikonMap={hata:'🔴',uyari:'⚠️',iyi:'✅',bilgi:'🔵'};
+  var clsMap={hata:'ai-bulgu-re',uyari:'ai-bulgu-warn',iyi:'ai-bulgu-gr',bilgi:'ai-bulgu-ac'};
+  (a.bulgular||[]).forEach(function(b){
+    var row=document.createElement('div'); row.className='ai-bulgu '+(clsMap[b.tip]||'ai-bulgu-ac');
+    var ikon=document.createElement('span'); ikon.className='ai-bulgu-ikon'; ikon.textContent=ikonMap[b.tip]||'○';
+    var ic=document.createElement('div');
+    var met=document.createElement('div'); met.className='ai-bulgu-metin'; met.textContent=b.aciklama||'';
+    ic.appendChild(met);
+    if(b.konum){var kon=document.createElement('div');kon.className='ai-bulgu-konum';kon.textContent='📍 '+b.konum;ic.appendChild(kon);}
+    row.appendChild(ikon); row.appendChild(ic); panel.appendChild(row);
+  });
+  if(a.malzeme_oneri){var mo=document.createElement('div');mo.style.cssText='font-size:12px;color:var(--txd);margin-top:8px;padding-top:8px;border-top:1px solid var(--bor);';mo.textContent='🔗 '+a.malzeme_oneri;panel.appendChild(mo);}
+  panel.classList.add('open');
+}
+
+// ── AI ANALİZ ET ──────────────────────────────────────────────
+async function aiAnalizEt() {
+  if(_aiYukleniyor) return;
+  var idx=_swiper?_swiper.realIndex:0;
+  var f=FOTOLAR[idx]; if(!f||!f.url){toast('Fotoğraf bulunamadı','er');return;}
+  _aiYukleniyor=true;
+  var btn=T('aiBtnAnaliz'); if(btn){btn.disabled=true;btn.textContent='⏳ Analiz ediliyor...';}
+  try{
+    var b64=await urlToBase64(f.url);
+    var mediaType=b64.split(';')[0].split(':')[1]||'image/jpeg';
+    var b64data=b64.split(',')[1];
+    var malzCtx=(MALZEME||[]).slice(0,10).map(function(m,i){return(i+1)+'. '+(m.tanim||'')+' — '+(m.malzeme||'')+' '+(m.kalite||'');}).join('\n');
+    var sistem='Sen tersane boru imalat kalite kontrol asistanısın. Spool fotoğrafını analiz et. '+
+      'Spool: Çap='+(SP.cap||'?')+', Malzeme='+(SP.malzeme||'?')+', Kalite='+(SP.kalite||'?')+', Yüzey='+(SP.yuzey||'?')+'. '+
+      'Kontrol et: kaynak kalitesi, yüzey durumu, flanş hizalaması, markalama, hasar. '+
+      'Sadece JSON döndür — başka hiçbir şey yazma:\n{"skor":85,"genel":"...","bulgular":[{"tip":"hata|uyari|iyi|bilgi","konum":"...","aciklama":"..."}],"malzeme_oneri":"..."}';
+    var apiKey=ARES.anthropicKey?ARES.anthropicKey():'';
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1024,system:sistem,messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:b64data}},
+        {type:'text',text:malzCtx?'Malzeme listesi:\n'+malzCtx+'\n\nFotoğrafı analiz et.':'Fotoğrafı analiz et.'}
+      ]}]})
+    });
+    if(!res.ok) throw new Error('API '+res.status);
+    var data=await res.json();
+    var text=(data.content&&data.content[0]&&data.content[0].text)||'';
+    var clean=text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    var m=clean.match(/\{[\s\S]*\}/); if(m)clean=m[0];
+    var analiz=JSON.parse(clean);
+    f.ai_analiz=analiz; f.ai_skor=analiz.skor||null; f.ai_durum='analiz_edildi';
+    f.ai_uyari=(analiz.bulgular||[]).filter(function(b){return b.tip==='hata'||b.tip==='uyari';}).map(function(b){return b.aciklama;});
+    var supa=ARES.supabase();
+    if(supa&&f.id){supa.from('fotograflar').update({ai_analiz:analiz,ai_skor:f.ai_skor,ai_durum:'analiz_edildi',ai_uyari:f.ai_uyari}).eq('id',f.id).then(function(r){if(r.error)console.warn('AI kayıt:',r.error);});}
+    aiToolbarGuncelle(idx);
+    toast('Analiz tamamlandı — Skor: '+(analiz.skor||'?')+'/100','ok');
+  }catch(e){console.error('AI analiz:',e);toast('Analiz hatası: '+e.message,'er');}
+  finally{_aiYukleniyor=false;if(btn){btn.disabled=false;btn.textContent='🤖 Analiz Et';}}
+}
+
+async function aiOnayEt() {
+  var idx=_swiper?_swiper.realIndex:0;
+  var f=FOTOLAR[idx]; if(!f||!f.ai_analiz) return;
+  f.ai_durum='onaylandi';
+  var supa=ARES.supabase();
+  if(supa&&f.id){
+    supa.from('fotograflar').update({ai_durum:'onaylandi'}).eq('id',f.id).then(function(){});
+    if(SP.supaId){supa.from('egitim_verisi').insert({tenant_id:ARES.tenantId(),spool_id:SP.supaId,foto_id:f.id,foto_url:f.url,ai_analiz:f.ai_analiz,annotasyonlar:f.annotasyonlar||[],olusturma:new Date().toISOString()}).then(function(r){if(r.error)console.warn('Eğitim:',r.error);});}
+  }
+  aiToolbarGuncelle(idx);
+  toast('Onaylandı — eğitim verisine eklendi','ok');
+}
+
+function urlToBase64(url){
+  return new Promise(function(resolve,reject){
+    var img=new Image(); img.crossOrigin='anonymous';
+    img.onload=function(){var c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);resolve(c.toDataURL('image/jpeg',0.85));};
+    img.onerror=reject; img.src=url;
+  });
+}
+
+// ── ANNOTASYON ────────────────────────────────────────────────
+function annAc(){
+  var idx=_swiper?_swiper.realIndex:0; _annFotoIdx=idx;
+  var f=FOTOLAR[idx]; if(!f||!f.url){toast('Fotoğraf bulunamadı','er');return;}
+  _annCizimler=JSON.parse(JSON.stringify(f.annotasyonlar||[]));
+  var img=T('annImg'); var fotoAd=T('annFotoAd');
+  if(fotoAd)fotoAd.textContent=f.baslik||('Fotoğraf '+(idx+1));
+  img.onload=function(){
+    var canvas=T('annCanvas');
+    canvas.width=img.naturalWidth; canvas.height=img.naturalHeight;
+    canvas.style.width=img.offsetWidth+'px'; canvas.style.height=img.offsetHeight+'px';
+    canvas.style.left=img.offsetLeft+'px'; canvas.style.top=img.offsetTop+'px';
+    annCizimYenile(); annOlaylariEkle();
+  };
+  img.src=f.url;
+  var sel=T('annMalzSec');
+  if(sel){sel.textContent='';var o0=document.createElement('option');o0.value='';o0.textContent='— Malzeme bağla';sel.appendChild(o0);(MALZEME||[]).forEach(function(m){var o=document.createElement('option');o.value=m.id||'';o.textContent=(m.tanim||'').substring(0,40);sel.appendChild(o);});}
+  T('annModal').classList.add('open'); annSayacGuncelle();
+}
+function annKapat(){T('annModal').classList.remove('open');annOlaylariKaldir();}
+function annSekil(s,btn){_annSecim.sekil=s;document.querySelectorAll('.ann-shape').forEach(function(b){b.classList.remove('aktif');});if(btn)btn.classList.add('aktif');}
+function annRenk(r,el){_annSecim.renk=r;document.querySelectorAll('.ann-color').forEach(function(c){c.classList.remove('aktif');});if(el)el.classList.add('aktif');}
+function annSayacGuncelle(){var el=T('annSayac');if(el)el.textContent=_annCizimler.length+' annotasyon';}
+function annOlaylariEkle(){
+  var canvas=T('annCanvas');
+  canvas._md=function(e){var r=canvas.getBoundingClientRect();var sx=canvas.width/r.width;var sy=canvas.height/r.height;_annCiziyorMu=true;_annBaslangic={x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};};
+  canvas._mu=function(e){
+    if(!_annCiziyorMu||!_annBaslangic)return; _annCiziyorMu=false;
+    var r=canvas.getBoundingClientRect();var sx=canvas.width/r.width;var sy=canvas.height/r.height;
+    var ex=(e.clientX-r.left)*sx;var ey=(e.clientY-r.top)*sy;
+    var dx=ex-_annBaslangic.x;var dy=ey-_annBaslangic.y;
+    if(Math.abs(dx)<5&&Math.abs(dy)<5){_annBaslangic=null;return;}
+    var not=(T('annNot')||{}).value||'';
+    var sel=T('annMalzSec');var malzId=sel?sel.value||null:null;var malzAd=malzId&&sel?(sel.options[sel.selectedIndex]||{}).text||'':'';
+    _annCizimler.push({sekil:_annSecim.sekil,renk:_annSecim.renk,x:_annBaslangic.x,y:_annBaslangic.y,w:dx,h:dy,not:not,malz_id:malzId,malz_ad:malzAd});
+    if(T('annNot'))T('annNot').value='';
+    annCizimYenile(); annSayacGuncelle(); _annBaslangic=null;
+  };
+  canvas.addEventListener('mousedown',canvas._md); canvas.addEventListener('mouseup',canvas._mu);
+}
+function annOlaylariKaldir(){var c=T('annCanvas');if(!c)return;if(c._md)c.removeEventListener('mousedown',c._md);if(c._mu)c.removeEventListener('mouseup',c._mu);}
+function annCizimYenile(){
+  var canvas=T('annCanvas');if(!canvas)return;
+  var ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+  _annCizimler.forEach(function(c){
+    ctx.strokeStyle=c.renk;ctx.lineWidth=3;ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=4;
+    if(c.sekil==='daire'){ctx.beginPath();ctx.ellipse(c.x+c.w/2,c.y+c.h/2,Math.abs(c.w/2)||20,Math.abs(c.h/2)||20,0,0,Math.PI*2);ctx.stroke();}
+    else if(c.sekil==='rect'){ctx.strokeRect(c.x,c.y,c.w,c.h);}
+    else if(c.sekil==='ok'){var ang=Math.atan2(c.h,c.w);ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(c.x+c.w,c.y+c.h);ctx.stroke();ctx.beginPath();ctx.moveTo(c.x+c.w,c.y+c.h);ctx.lineTo(c.x+c.w-18*Math.cos(ang-0.4),c.y+c.h-18*Math.sin(ang-0.4));ctx.moveTo(c.x+c.w,c.y+c.h);ctx.lineTo(c.x+c.w-18*Math.cos(ang+0.4),c.y+c.h-18*Math.sin(ang+0.4));ctx.stroke();}
+    ctx.shadowBlur=0;
+    if(c.not){ctx.fillStyle=c.renk;ctx.font='bold 13px Barlow,sans-serif';ctx.fillText(c.not,c.x+c.w/2-ctx.measureText(c.not).width/2,c.y-6);}
+  });
+}
+function annTemizle(){if(!confirm('Tüm annotasyonlar silinsin mi?'))return;_annCizimler=[];annCizimYenile();annSayacGuncelle();}
+async function annKaydet(){
+  var f=FOTOLAR[_annFotoIdx];if(!f)return;
+  f.annotasyonlar=_annCizimler;
+  var supa=ARES.supabase();
+  if(supa&&f.id){var r=await supa.from('fotograflar').update({annotasyonlar:_annCizimler}).eq('id',f.id);if(r.error){toast('Kayıt hatası: '+r.error.message,'er');return;}}
+  annKapat(); toast(_annCizimler.length+' annotasyon kaydedildi','ok');
+}
+
 
 var _fotoFiles=[];
 function fotoEkle(){
@@ -2215,9 +2493,33 @@ function m3Build() {
   _m3.controls = controls;
   _m3.meshes   = [];
 
-  // Segmentleri oluştur
-  var segs = m3TestData();
+  // Segmentleri belirle: Supabase'den gelen gerçek veri varsa onu kullan
+  var segs = null;
+  if (SP.segmentler && SP.segmentler.length) {
+    segs = SP.segmentler;
+    // Test verisi uyarısını gizle
+    var uyari = document.querySelector('.m3d-wrap [style*="warn"]');
+    if (uyari) uyari.style.display = 'none';
+  } else {
+    segs = m3TestData(); // fallback: test geometrisi
+  }
+
   segs.forEach(function(seg){ m3AddSegment(seg); });
+
+  // Kamera: bbox varsa ortalara
+  if (SP.bbox) {
+    var cx = (SP.bbox.minX + SP.bbox.maxX) / 2;
+    var cy = (SP.bbox.minY + SP.bbox.maxY) / 2;
+    var cz = (SP.bbox.minZ + SP.bbox.maxZ) / 2;
+    var diag = Math.sqrt(
+      Math.pow(SP.bbox.maxX - SP.bbox.minX, 2) +
+      Math.pow(SP.bbox.maxY - SP.bbox.minY, 2) +
+      Math.pow(SP.bbox.maxZ - SP.bbox.minZ, 2)
+    );
+    controls.target.set(cx, cy, cz);
+    camera.position.set(cx + diag, cy + diag * 0.7, cz + diag);
+    controls.update();
+  }
 
   // Toolbar spool adı
   var spoolAd = [SP._tersane, SP.pipeline, SP.spoolNo].filter(Boolean).join(' / ');
