@@ -321,7 +321,7 @@ textarea.fi{resize:vertical;min-height:72px;}
       <strong style="color:#6366f1;">🤖 AI İzometri Okuma</strong> — İzometri PDF'inizi yükleyin, Claude otomatik olarak spool listesini çıkarsın. Önizleme tablosunda kontrol edip düzelttikten sonra aktarın.
     </div>
     <div class="excel-alan" id="izoAlan" ondrop="izoDrop(event)" ondragover="izoDragOver(event)" ondragleave="izoDragLeave(event)" onclick="document.getElementById('izoInput').click()" style="border-color:rgba(99,102,241,.4);">
-      <input type="file" id="izoInput" accept=".pdf" style="display:none;" onchange="izoYukle(this)">
+      <input type="file" id="izoInput" accept=".pdf" multiple style="display:none;" onchange="izoYukle(this)">
       <div class="excel-ikon">📐</div>
       <div class="excel-baslik" id="pdfBaslik">İzometri PDF'ini sürükleyin veya tıklayın</div>
       <div class="excel-aciklama">Pipeline No · Spool No · Çap · Malzeme · Kalite · Et Kalınlığı · Ağırlık</div>
@@ -984,15 +984,62 @@ function ozetGuncelle() {
 var _izoSpooller = []; // AI'dan gelen önizleme verisi
 
 function izoYukle(inp) {
-  if (!inp.files[0]) return;
-  const file = inp.files[0];
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    toast(tv('dny_pdf_only','Sadece PDF dosyası kabul edilir'),'er'); return;
+  if (!inp.files || !inp.files.length) return;
+  var files = Array.from(inp.files).filter(function(f) {
+    return f.name.toLowerCase().endsWith('.pdf');
+  });
+  if (!files.length) { toast(tv('dny_pdf_only','Sadece PDF dosyası kabul edilir'),'er'); return; }
+  var buyuk = files.find(function(f){ return f.size > 20 * 1024 * 1024; });
+  if (buyuk) { toast(buyuk.name + ' — 20MB\'dan büyük','er'); return; }
+  _izoCokluOku(files);
+}
+
+async function _izoCokluOku(files) {
+  _izoSpooller = [];
+  document.getElementById('izoAlan').style.display = 'none';
+  document.getElementById('izoOnizleme').style.display = 'none';
+  document.getElementById('izoHata').style.display = 'none';
+  document.getElementById('izoYukleniyor').style.display = 'block';
+  document.getElementById('izoDosyaAd').textContent = files.length + ' dosya işleniyor...';
+
+  var hatalar = [];
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    document.getElementById('izoDosyaAd').textContent = (i+1) + '/' + files.length + ' — ' + file.name;
+    try {
+      var base64 = await new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result.split(',')[1]); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      var res = await fetch('/api/izometri-oku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_base64: base64, dosya_adi: file.name })
+      });
+      var json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || 'Sunucu hatası');
+      (json.data.spooller || []).forEach(function(s){ _izoSpooller.push(s); });
+    } catch(e) {
+      hatalar.push(file.name + ': ' + e.message);
+    }
   }
-  if (file.size > 20 * 1024 * 1024) {
-    toast(tv('dny_pdf_too_large','PDF 20MB\'dan küçük olmalı'),'er'); return;
+
+  document.getElementById('izoYukleniyor').style.display = 'none';
+
+  if (!_izoSpooller.length) {
+    document.getElementById('izoAlan').style.display = 'flex';
+    document.getElementById('izoHata').style.display = 'block';
+    document.getElementById('izoHataMesaj').textContent = hatalar.join('\n') || 'Spool bulunamadı';
+    return;
   }
-  _izoOku(file);
+
+  var ozet = _izoSpooller.length + ' spool bulundu (' + files.length + ' dosya)';
+  if (hatalar.length) ozet += ' — ' + hatalar.length + ' dosyada hata';
+  document.getElementById('izoOzet').textContent = ozet;
+  _izoRenderOnizleme();
+  document.getElementById('izoOnizleme').style.display = 'block';
 }
 
 async function _izoOku(file) {
