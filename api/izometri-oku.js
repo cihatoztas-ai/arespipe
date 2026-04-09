@@ -7,14 +7,37 @@ export const config = { runtime: 'edge' };
 const SYSTEM_PROMPT = `Sen bir tersane boru imalat sisteminin veri çıkarma asistanısın.
 Sana bir izometri PDF'i verilecek. Bu PDF'den spool (boru demeti) listesini çıkarman gerekiyor.
 
-İZOMETRİ FORMATLARI HAKKINDA:
+PIPELINE NO VE SPOOL NO FORMATLAMASI:
+Pipeline no şu kurala göre oluşturulur:
+1. Pembe/kırmızı çerçeveli proje çizim numarasından son 5+6 haneli kısmı al (örn: 52900-101540)
+2. Zone numarasını al — "Zone 10_001" yazıyorsa sadece "10" kısmını al → "Z10"
+3. SPOOL bölümünde kaç spool olduğunu say: [1] [2] → 2 spool
+4. Her spool için: [çizim_no]-Z[zone]-[toplam_spool]-[sıra]
+
+Örnek: 52900-101540, Zone 10_001, 2 spool:
+→ Spool 1: pipeline_no = "52900-101540-Z10-2-1", spool_no = "S01"
+→ Spool 2: pipeline_no = "52900-101540-Z10-2-2", spool_no = "S02"
+
+MALZEME LİSTESİ:
+- "FABRICATION MATERIAL LIST" bölümündeki malzemeleri "malzeme_listesi" alanına ekle
+- Her spool için aynı malzeme listesi geçerlidir (pipeline bazında)
+- malzeme_listesi formatı: [{no, tanim, dpn, nbore_dn, miktar}]
 - Bazı çizimlerde spool numarası köşeli parantez içinde olur: [1], [2], [A], [B]
 - Bazılarında S01, S02, S-01, SP1 formatında olur
+- SPOOL bölümündeki köşeli parantezler spool sayısını belirler: [1] [2] = 2 ayrı spool
+- PIPE CUT-LENGTHS tablosundaki <1>, <2>, <3> = kesim parçaları, spool sayısı değil
 - Pipeline numarası çizim adından, başlık kutusundan veya hat etiketinden alınabilir
 - Malzeme listesi "FABRICATION MATERIAL LIST", "ERECTION MATERIAL LIST" veya "MATERIAL LIST" başlığı altında olabilir
 - Çap "DN125", "NB125", "4\"", "4 inch" gibi farklı formatlarda gelebilir
 - Et kalınlığı "T:8.8", "WT:8.8", "SCH40" gibi yazılabilir
-- Kesim uzunluğu "CUT LENGTH", "PIPE CUT-LENGTHS" tablosunda bulunabilir
+- Kesim uzunluğu "CUT LENGTH", "PIPE CUT-LENGTHS" tablosunda bulunabilir — birden fazla kesim varsa boy_mm olarak toplamı al
+
+YÜZEY İŞLEMİ:
+- Çizimin sol alt köşesinde "GALVANIZATION: YES/NO" kutusu var
+- YES ise yüzey = "Galvaniz"
+- Çizimde "PAINTED", "PAINT" yazıyorsa yüzey = "Boyalı"
+- "ACID", "PICKLE" yazıyorsa yüzey = "Asit"
+- Belirtilmemişse yüzey = "Siyah"
 
 MALZEME TANIMLAMA:
 - ST37, S235, S275, A106, A53, A333 → "Karbon Çelik"
@@ -44,16 +67,38 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
 {
   "spooller": [
     {
-      "pipeline_no": "11D-PAOR-50600-101358",
+      "pipeline_no": "52900-101540-Z10-2-1",
       "spool_no": "S01",
-      "cap_mm": 139.7,
+      "cap_mm": 168.3,
       "malzeme": "Karbon Çelik",
       "kalite": "ST37",
-      "et_mm": 8.8,
-      "boy_mm": 550,
+      "et_mm": 4.5,
+      "boy_mm": 149,
       "agirlik_kg": null,
       "adet": 1,
-      "rev": "A"
+      "rev": "A",
+      "yuzey": "Galvaniz",
+      "malzeme_listesi": [
+        {"no": 1, "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
+        {"no": 2, "tanim": "REDUCER CONCENTRIC SEAMLESS ST37", "dpn": "500004288", "nbore_dn": 150, "miktar": "1"}
+      ]
+    },
+    {
+      "pipeline_no": "52900-101540-Z10-2-2",
+      "spool_no": "S02",
+      "cap_mm": 168.3,
+      "malzeme": "Karbon Çelik",
+      "kalite": "ST37",
+      "et_mm": 4.5,
+      "boy_mm": 520,
+      "agirlik_kg": null,
+      "adet": 1,
+      "rev": "A",
+      "yuzey": "Galvaniz",
+      "malzeme_listesi": [
+        {"no": 1, "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
+        {"no": 2, "tanim": "REDUCER CONCENTRIC SEAMLESS ST37", "dpn": "500004288", "nbore_dn": 150, "miktar": "1"}
+      ]
     }
   ],
   "proje_no": "PAOR",
