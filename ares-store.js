@@ -511,6 +511,143 @@ const ARES = (function () {
     console.log('[ARES] Store sıfırlandı');
   }
 
+  // ── YETKİ SİSTEMİ ────────────────────────────────────────
+  //
+  // İki katmanlı:
+  //   1) Rol varsayılanları  — her rol hangi yetkilere sahip
+  //   2) Kişi override'ları  — kullanici_yetkileri tablosundan
+  //      aktif:true  → ek yetki aç (varsayılana yoksa ekle)
+  //      aktif:false → yetkiyi kapat (varsayılana rağmen)
+
+  let _yetkiCache = null; // oturum başına bir kez yüklenir
+
+  const _ROL_YETKILER = {
+    // super_admin firma içinde görünmez, sistem yöneticisi
+    super_admin: ['*'],
+
+    yonetici: [
+      'dashboard_gor',
+      'proje_gor',       'proje_yonet',
+      'devre_gor',       'devre_yonet',
+      'spool_gor',       'spool_olustur',   'spool_duzenle',   'spool_sil',
+      'malzeme_gor',     'malzeme_duzenle',
+      'basamak_ilerlet',
+      'kaynak_onayla',   'kk_onayla',       'sevkiyat_onayla',
+      'kesim_isle',      'bukum_isle',      'markalama_isle',
+      'fotograf_yukle',  'belge_yukle',
+      'kalite_gor',      'kalite_duzenle',
+      'rapor_gor',       'rapor_indir',
+      'kullanici_gor',   'kullanici_yonet',
+      'tersane_yonet',   'tanimlar_duzenle',
+      'uyari_gor',       'log_gor',
+    ],
+
+    kk_uzmani: [
+      'dashboard_gor',
+      'proje_gor',
+      'devre_gor',
+      'spool_gor',       'spool_duzenle',
+      'malzeme_gor',
+      'basamak_ilerlet',
+      'kk_onayla',
+      'fotograf_yukle',  'belge_yukle',
+      'kalite_gor',      'kalite_duzenle',
+      'rapor_gor',
+      'uyari_gor',
+    ],
+
+    operator: [
+      'dashboard_gor',
+      'proje_gor',
+      'devre_gor',
+      'spool_gor',
+      'malzeme_gor',
+      'basamak_ilerlet',
+      'fotograf_yukle',
+      'uyari_gor',
+    ],
+
+    izleyici: [
+      'dashboard_gor',
+      'proje_gor',
+      'devre_gor',
+      'spool_gor',
+      'malzeme_gor',
+      'kalite_gor',
+      'rapor_gor',
+    ],
+  };
+
+  async function _yetkiYukle() {
+    if (_yetkiCache) return _yetkiCache;
+    const rol = _oturum?.rol;
+    if (!rol) { _yetkiCache = []; return []; }
+
+    // 1) Rol varsayılan yetkileri
+    let yetkiler = [...(_ROL_YETKILER[rol] || [])];
+
+    // 2) Kişi bazlı override'lar (DB'den)
+    if (_supa && _oturum?.id) {
+      const { data } = await _supa
+        .from('kullanici_yetkileri')
+        .select('yetki_kodu, aktif')
+        .eq('kullanici_id', _oturum.id)
+        .eq('tenant_id', tenantId());
+      (data || []).forEach(function (ky) {
+        if (ky.aktif && !yetkiler.includes(ky.yetki_kodu)) {
+          yetkiler.push(ky.yetki_kodu); // Ek yetki aç
+        } else if (!ky.aktif) {
+          yetkiler = yetkiler.filter(function (y) { return y !== ky.yetki_kodu; }); // Yetkiyi kapat
+        }
+      });
+    }
+
+    _yetkiCache = yetkiler;
+    return yetkiler;
+  }
+
+  function yetkiCacheSifirla() { _yetkiCache = null; }
+
+  // Yetki var mı? (async — DB override'larını bekler)
+  async function yetkiVar(yetki_kodu) {
+    const yetkiler = await _yetkiYukle();
+    if (yetkiler.includes('*')) return true; // super_admin
+    return yetkiler.includes(yetki_kodu);
+  }
+
+  // Senkron versiyon — sadece rol bazlı, override'lar dahil değil
+  // Hızlı UI kontrolü için kullan, kritik işlemler için yetkiVar() kullan
+  function yetkiVarHizli(yetki_kodu) {
+    const rol = _oturum?.rol;
+    if (!rol) return false;
+    const yetkiler = _ROL_YETKILER[rol] || [];
+    return yetkiler.includes('*') || yetkiler.includes(yetki_kodu);
+  }
+
+  // Mevcut kullanıcının rolünü döndür
+  function rolAl() { return _oturum?.rol || null; }
+
+  // Sayfa yetki kontrolü — izinli roller listesine sahip değilse yönlendir
+  async function sayfaYetkiKontrol(izinliRoller, yonlendir) {
+    if (!_oturum) {
+      location.href = 'giris.html';
+      return false;
+    }
+    const mevcutRol = _oturum.rol;
+    if (mevcutRol === 'super_admin') return true; // her yere girebilir
+    if (!izinliRoller.includes(mevcutRol)) {
+      location.href = yonlendir || 'index.html';
+      return false;
+    }
+    return true;
+  }
+
+  // Müşteri portalı yönlendirmesi
+  async function portalKontrol() {
+    if (!_oturum) { location.href = 'giris.html'; return; }
+    if (_oturum.rol === 'musteri') { location.href = '/portal/index.html'; }
+  }
+
   // ── INIT ─────────────────────────────────────────────────
   (function _init() {
     if (typeof window !== 'undefined') {
@@ -538,6 +675,9 @@ const ARES = (function () {
 
     // Oturum
     girisYap, cikisYap, oturumKontrol, oturumAl, tenantId,
+
+    // Yetki
+    yetkiVar, yetkiVarHizli, rolAl, sayfaYetkiKontrol, portalKontrol, yetkiCacheSifirla,
 
     // Veri
     tersaneleriGetir,
