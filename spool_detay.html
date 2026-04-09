@@ -2499,20 +2499,10 @@ function m3Build() {
 
   segs.forEach(function(seg){ m3AddSegment(seg); });
 
-  // Kamera: bbox varsa ortalara
-  if (SP.bbox) {
-    var cx = (SP.bbox.minX + SP.bbox.maxX) / 2;
-    var cy = (SP.bbox.minY + SP.bbox.maxY) / 2;
-    var cz = (SP.bbox.minZ + SP.bbox.maxZ) / 2;
-    var diag = Math.sqrt(
-      Math.pow(SP.bbox.maxX - SP.bbox.minX, 2) +
-      Math.pow(SP.bbox.maxY - SP.bbox.minY, 2) +
-      Math.pow(SP.bbox.maxZ - SP.bbox.minZ, 2)
-    );
-    controls.target.set(cx, cy, cz);
-    camera.position.set(cx + diag, cy + diag * 0.7, cz + diag);
-    controls.update();
-  }
+  // Kamera: bbox'a göre otomatik konumlandır
+  _m3.ready = true;
+  _m3.loading = false;
+  m3CameraFit();
 
   // Toolbar spool adı
   var spoolAd = [SP._tersane, SP.pipeline, SP.spoolNo].filter(Boolean).join(' / ');
@@ -2538,8 +2528,6 @@ function m3Build() {
   // Click (raycasting)
   canvas.addEventListener('click', function(e) { m3Click(e); });
 
-  _m3.ready = true;
-  _m3.loading = false;
   T('m3Loading').style.display = 'none';
 }
 
@@ -2603,22 +2591,51 @@ function m3AddSegment(seg) {
     _m3.meshes.push(mesh);
 
   } else if (seg.tip === 'dirsek') {
-    // TorusGeometry tangent analizi:
-    // θ açısında tangent = (-sin(θ), cos(θ), 0)
-    // rotation.z = -PI/2 uygulanınca:
-    //   θ=0 tangent (0,1,0) → (+1,0,0) = +X ✓  (pipe1 yönü)
-    //   θ=PI/2 tangent (-1,0,0) → (0,+1,0) = +Y ✓  (pipe2 yönü)
-    // Torus merkezi = pipe1_bitis + (0, r_kavis, 0)
-    // Arc start (rotated θ=0): center + (0,-R,0) = pipe1_bitis ✓
-    // Arc end   (rotated θ=PI/2): center + (R,0,0) = pipe2_baslangic ✓
+    // GENEL QUATERNION YAKLAŞIMI — herhangi yon1→yon2 kombinasyonu çalışır
+    //
+    // Geometri:
+    //   merkez = giriş_noktası + R * yon2
+    //   arc_start = merkez + R*(-yon2) = giriş_noktası  ✓
+    //   arc_end   = merkez + R*(yon1)                   ← pipe2 başlangıcı
+    //
+    // Torus default: ring axis=Z, arc θ=0'da tube at (R,0,0), tangent=(0,1,0)
+    // Hedef: arc başında tangent=yon1, ring axis=cross(yon1,yon2)
     var r_boru  = seg.cap_mm / 2;
     var r_kavis = seg.yaricap || seg.cap_mm * 1.5;
     var geo  = new THREE.TorusGeometry(r_kavis, r_boru, 16, 32, Math.PI / 2);
     mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
     mesh.castShadow = true;
-    var mk = new THREE.Vector3(...seg.merkez);
-    mesh.position.set(mk.x, mk.y + r_kavis, mk.z);
-    mesh.rotation.z = -Math.PI / 2;
+
+    var mk   = new THREE.Vector3(...seg.merkez);
+    var yon1 = new THREE.Vector3(...(seg.yon1 || [1,0,0])).normalize();
+    var yon2 = new THREE.Vector3(...(seg.yon2 || [0,1,0])).normalize();
+
+    // Merkez pozisyonu
+    var center = mk.clone().addScaledVector(yon2, r_kavis);
+    mesh.position.copy(center);
+
+    // Ring axis = cross(yon1, yon2)
+    var ringAxis = yon1.clone().cross(yon2).normalize();
+    if (ringAxis.length() < 0.001) ringAxis.set(0, 0, 1); // fallback
+
+    // Adım 1: Z eksenini ring axis'e döndür
+    var q1 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), ringAxis);
+
+    // Adım 2: q1 sonrasında X ekseni nereye gitti?
+    var startDir = new THREE.Vector3(1,0,0).applyQuaternion(q1);
+
+    // Arc başı merkez + R*(-yon2) = mk olması için startDir = -yon2 olmalı
+    var wantStart = yon2.clone().negate();
+
+    // Ring axis etrafında gerekli açı
+    var cosA = startDir.dot(wantStart);
+    var sinA = startDir.clone().cross(wantStart).dot(ringAxis);
+    var angle = Math.atan2(sinA, cosA);
+    var q2 = new THREE.Quaternion().setFromAxisAngle(ringAxis, angle);
+
+    // Toplam rotasyon: önce q1, sonra q2
+    mesh.quaternion.copy(new THREE.Quaternion().multiplyQuaternions(q2, q1));
+
     mesh.userData = seg;
     _m3.scene.add(mesh);
     _m3.meshes.push(mesh);
@@ -2679,10 +2696,35 @@ function m3Click(e) {
 }
 
 // Kamera pozisyon yardımcıları
-function m3Reset()      { if(!_m3.ready)return; _m3.camera.position.set(1200,900,1400); _m3.controls.target.set(400,400,0); _m3.controls.update(); T('m3Popup').classList.remove('show'); }
-function m3Yukari()     { if(!_m3.ready)return; _m3.camera.position.set(400,3000,1);    _m3.controls.target.set(400,400,0); _m3.controls.update(); }
-function m3On()         { if(!_m3.ready)return; _m3.camera.position.set(400,400,2500);  _m3.controls.target.set(400,400,0); _m3.controls.update(); }
-function m3Izometrik()  { if(!_m3.ready)return; _m3.camera.position.set(1500,1200,1500);_m3.controls.target.set(400,400,0); _m3.controls.update(); }
+// Bbox'a göre kamera konumlandır
+function m3CameraFit() {
+  if (!_m3.camera || !_m3.controls) return;
+  var bbox = SP.bbox;
+  var cx, cy, cz, dist;
+  if (bbox && (bbox.maxX !== bbox.minX || bbox.maxY !== bbox.minY || bbox.maxZ !== bbox.minZ)) {
+    cx = (bbox.minX + bbox.maxX) / 2;
+    cy = (bbox.minY + bbox.maxY) / 2;
+    cz = (bbox.minZ + bbox.maxZ) / 2;
+    var dx = bbox.maxX - bbox.minX;
+    var dy = bbox.maxY - bbox.minY;
+    var dz = bbox.maxZ - bbox.minZ;
+    dist = Math.sqrt(dx*dx + dy*dy + dz*dz) * 1.5 || 2000;
+  } else {
+    cx=400; cy=400; cz=0; dist=2500;
+  }
+  _m3.controls.target.set(cx, cy, cz);
+  _m3.camera.position.set(cx + dist*0.65, cy + dist*0.45, cz + dist*0.65);
+  _m3.camera.far = dist * 20;
+  _m3.camera.updateProjectionMatrix();
+  _m3.controls.maxDistance = dist * 10;
+  _m3.controls.update();
+  if (T('m3Popup')) T('m3Popup').classList.remove('show');
+}
+
+function m3Reset()     { m3CameraFit(); }
+function m3Yukari()    { if(!_m3.ready||!SP.bbox)return; var b=SP.bbox; var cx=(b.minX+b.maxX)/2; var cz=(b.minZ+b.maxZ)/2; var dist=Math.max(b.maxX-b.minX,b.maxZ-b.minZ)*2||3000; _m3.controls.target.set(cx,(b.minY+b.maxY)/2,cz); _m3.camera.position.set(cx,(b.minY+b.maxY)/2+dist,cz+1); _m3.controls.update(); }
+function m3On()        { if(!_m3.ready||!SP.bbox)return; var b=SP.bbox; var cx=(b.minX+b.maxX)/2; var cy=(b.minY+b.maxY)/2; var dist=Math.max(b.maxX-b.minX,b.maxY-b.minY)*2||3000; _m3.controls.target.set(cx,cy,(b.minZ+b.maxZ)/2); _m3.camera.position.set(cx,cy,(b.minZ+b.maxZ)/2+dist); _m3.controls.update(); }
+function m3Izometrik() { m3CameraFit(); }
 
 function m3ToggleWire() {
   if(!_m3.ready)return;
