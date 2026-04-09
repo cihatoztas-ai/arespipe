@@ -131,16 +131,25 @@ function semaFormatla(kolonlar) {
 
 function semaFallback() {
   return `
-devreler: id, tenant_id, proje_id, devre_no, ad, zone, is_emri_no, durum, termin_tarihi, silindi, olusturma
-spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, aktif_basamak, agirlik (ağırlık kg - agirlik_kg değil), malzeme, kalite, dis_cap_mm, et_kalinligi_mm, yuzey, durduruldu, silindi, olusturma
-projeler: id, tenant_id, tersane_id, proje_no, gemi_adi, baslangic_tarihi, bitis_tarihi, durum, olusturma [NOT: silindi kolonu YOK]
-tersaneler: id, tenant_id, ad, ulke, sehir, aktif [NOT: silindi kolonu YOK]
-testler: id, tenant_id, devre_id, test_no, tip, tip_ad, firma, durum, tarih, sonuc_genel, olusturma
-sevkiyatlar: id, tenant_id, tersane_id, sevk_no, tip, tarih, arac_plaka, irsaliye_no, teslim_alan, olusturma
-personel: id, tenant_id, ad_soyad, brans, ise_giris_tarihi, aktif
-kesim_kalemleri: id, tenant_id, spool_id, olcu_mm, kesildi, olusturma
-bukum_kalemleri: id, tenant_id, spool_id, olcu_mm, bukuldu, olusturma
-islem_log: id, tenant_id, spool_id, islem, aciklama, yapan_id, ad_soyad, olusturma
+devreler: id, tenant_id, proje_id, devre_no, ad, zone, zone_no, is_emri_no, durum, aktif_basamak, termin (tarih), agirlik (numeric), malzeme, yuzey, notlar, ilerleme (integer 0-100), silindi, olusturma, guncelleme
+[NOT: devreler tablosunda silindi=true olanları hariç tut]
+
+spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, dis_cap_mm, et_kalinligi_mm, agirlik_kg, malzeme, kalite_standart, yuzey_islemi, aktif_basamak, durduruldu, alistirma, imalat_kg, imalat_di, argon_di, gazalti_di, olusturma
+[NOT: spooller tablosunda silindi kolonu YOK]
+[NOT: ağırlık için agirlik_kg kullan]
+[NOT: kalite için kalite_standart kullan]
+[NOT: yüzey için yuzey_islemi kullan]
+
+projeler: id, tenant_id, tersane_id, proje_no, gemi_adi, proje_tipi, ana_yuklenici, teslim_tarihi, aktif, olusturma
+[NOT: projeler tablosunda silindi kolonu YOK]
+
+tersaneler: id, tenant_id, ad, ulke, sehir, aktif
+[NOT: tersaneler tablosunda silindi kolonu YOK]
+
+kesim_kalemleri: id, tenant_id, spool_id, malzeme_id, olcu_mm, uc_a, uc_b, bukum_borusu, kesildi, kesim_listesi_no, olusturma
+bukum_kalemleri: id, tenant_id, spool_id, malzeme_id, kesim_id, olcu_mm, bukuldu, olusturma
+islem_log: id, tenant_id, katman, katman_id, islem, yapan_id, aciklama, meta, spool_id, devre_id, proje_id, olusturma
+sevkiyatlar: id, tenant_id, tersane_id, sevk_no, tip, tarih, arac_plaka, irsaliye_no, teslim_alan, not_, olusturma
   `.trim();
 }
 
@@ -161,13 +170,13 @@ KURALLAR:
 6. Maksimum 100 satır dön: LIMIT 100
 7. Tablo adlarını doğru kullan, şemada olmayan tablo kullanma
 8. JOIN kullanırken tenant_id kontrolü yap
-9. spooller tablosunda ağırlık için 'agirlik' kolonunu kullan (agirlik_kg değil)
-10. spooller tablosunda kalite için 'kalite' kolonunu kullan (kalite_standart değil)
-11. spooller tablosunda yüzey için 'yuzey' kolonunu kullan (yuzey_islemi değil)
-12. 'olusturma' bir kolon adıdır, tablo adı değildir — FROM olusturma gibi kullanma
-13. Alias kullanırken tablo adlarıyla karıştırma
-12. projeler tablosunda 'silindi' kolonu YOK — bu filtreyi projeler için kullanma
-13. tersaneler tablosunda 'silindi' kolonu YOK — bu filtreyi tersaneler için kullanma
+9. spooller: ağırlık='agirlik_kg', kalite='kalite_standart', yüzey='yuzey_islemi' (başka isim kullanma)
+10. devreler: termin tarihi='termin', zone='zone', silindi=true olanları hariç tut: AND (d.silindi IS NULL OR d.silindi = false)
+11. projeler ve tersaneler tablolarında 'silindi' kolonu YOK — bu filtreyi kullanma
+12. spooller tablosunda 'silindi' kolonu YOK — spooller için silindi filtresi KULLANMA
+13. 'olusturma' bir kolon adıdır, tablo adı değildir
+14. Alias kullanırken tablo adlarıyla karıştırma
+15. Tersane adı aramasında ILIKE kullan: t.ad ILIKE '%ada%' (= değil, büyük/küçük harf duyarsız)
 
 CEVAP FORMATI (sadece JSON, başka hiçbir şey yazma):
 {
