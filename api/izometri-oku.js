@@ -9,19 +9,27 @@ Sana bir izometri PDF'i verilecek. Bu PDF'den spool (boru demeti) listesini çı
 
 PIPELINE NO VE SPOOL NO FORMATLAMASI:
 Pipeline no şu kurala göre oluşturulur:
-1. Pembe/kırmızı çerçeveli proje çizim numarasından son kısmı al (örn: 52900-101540)
-2. Zone numarasını al — "Zone 10_001" yazıyorsa sadece "10" kısmını al, "Zone 11_001" → "11" → "Z11". Asla üç haneli yapma.
+1. Çizim numarasından SADECE son iki parçayı al: 5 haneli sayı - 6 haneli sayı (örn: 50600-101540)
+   - "11D-PAOR-50600-101540" → "50600-101540" (11D-PAOR kısmını ATLA)
+   - "52900-101540" → "52900-101540" (zaten doğru)
+2. Zone numarasını al — "Zone 10_001" → sadece "10" → "Z10", "Zone 1_001" → "Z1"
+   - Zone numarası 2 haneli ise: Zone 01 → "Z01", Zone 10 → "Z10"
+   - Zone numarası 1 haneli ise: Zone 1 → "Z1"
+   - Asla 3 haneli yapma
 3. SPOOL bölümünde kaç spool olduğunu say: [1] [2] → 2 spool
 4. Pipeline no formatı: [çizim_no]-Z[zone]-[toplam_spool]
 
-Örnek: 52900-101540, Zone 10_001, 2 spool:
-→ pipeline_no = "52900-101540-Z10-2" (her iki spool için aynı)
+Örnek: "11D-PAOR-50600-101540", Zone 10_001, 2 spool:
+→ pipeline_no = "50600-101540-Z10-2" (her iki spool için aynı)
 → Spool 1: spool_no = "S01"
 → Spool 2: spool_no = "S02"
 
-MALZEME LİSTESİ ÇIKARMA:
-SADECE FABRICATION MATERIAL LIST bölümündeki kalemleri çıkar.
-ERECTION MATERIAL LIST bölümünü TAMAMEN ATLA — bolt, nut, washer, sleeve, u-bolt, plate, gasket gibi montaj malzemeleri dahil edilmez.
+MALZEME LİSTESİ ÇIKARMA — ÇOK ÖNEMLİ:
+SADECE "FABRICATION MATERIAL LIST" başlığı altındaki kalemleri çıkar.
+"ERECTION MATERIAL LIST" başlığı altındaki TÜM kalemleri TAMAMEN ATLA — bu bölümdeki hiçbir kalem malzeme_listesine GİRMEZ.
+
+ERECTION bölümünde olanlar (ATLA): BOLT, NUT, WASHER, SLEEVE, U-BOLT, PLATE, GASKET, AIRVENT, PENETRATION
+FABRICATION bölümünde olanlar (AL): PIPE, REDUCER, ELBOW, TEE, FLANGE, CAP, BEND
 
 FABRICATION listesindeki her kalem için:
 - NO: sıra numarası
