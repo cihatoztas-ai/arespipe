@@ -42,7 +42,12 @@ tanim alanındaki açıklamayı parse ederek şu alanları da doldur:
 → malzeme_cinsi: "Karbon Çelik", kalite_kodu: "ST37", cap_dn: 150, et_kalinlik: 4.5
 - Bazı çizimlerde spool numarası köşeli parantez içinde olur: [1], [2], [A], [B]
 - Bazılarında S01, S02, S-01, SP1 formatında olur
-- SPOOL bölümündeki köşeli parantezler spool sayısını belirler: [1] [2] = 2 ayrı spool
+- SPOOL SAYISI ÇOK ÖNEMLİ:
+SPOOL bölümünde köşeli parantezleri say:
+- "[1]" = 1 spool
+- "[1] [2]" = 2 AYRI spool — ikisini de çıkar
+- "[1] [2] [3]" = 3 AYRI spool — hepsini çıkar
+Her spool için ayrı bir JSON objesi oluştur. Spool sayısını asla eksik çıkarma!
 - PIPE CUT-LENGTHS tablosundaki <1>, <2>, <3> = kesim parçaları, spool sayısı değil
 - Pipeline numarası çizim adından, başlık kutusundan veya hat etiketinden alınabilir
 - Malzeme listesi "FABRICATION MATERIAL LIST", "ERECTION MATERIAL LIST" veya "MATERIAL LIST" başlığı altında olabilir
