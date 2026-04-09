@@ -202,7 +202,7 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
             <th>Dosya</th>
             <th>Pipeline No</th>
             <th>Spool No</th>
-            <th>Çap (mm)</th>
+            <th>DN</th><th>Çap (mm)</th>
             <th>Malzeme</th>
             <th>Kalite</th>
             <th>Et (mm)</th>
@@ -223,6 +223,17 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 
 <script>
 'use strict';
+
+var DN_MM = {21.3:15,26.9:20,33.7:25,42.4:32,48.3:40,60.3:50,76.1:65,88.9:80,114.3:100,139.7:125,168.3:150,219.1:200,273:250,323.9:300,355.6:350,406.4:400};
+function capToDN(mm) {
+  if (!mm) return '—';
+  var closest = null, minDiff = 999;
+  Object.keys(DN_MM).forEach(function(k) {
+    var diff = Math.abs(parseFloat(k) - parseFloat(mm));
+    if (diff < minDiff) { minDiff = diff; closest = DN_MM[k]; }
+  });
+  return minDiff < 3 ? 'DN' + closest : '~DN' + closest;
+}
 
 var _dosyalar = []; // {file, durum, spooller, hata}
 var _tumSpooller = [];
@@ -345,7 +356,7 @@ async function basla() {
 
     try {
       var base64 = await dosyaBase64(d.file);
-      var res = await fetch('/api/izometri-oku', {
+      var res = await fetch('https://g6ipvrd6vv3npl2nd6v367y4by0mihbe.lambda-url.eu-central-1.on.aws/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_base64: base64, dosya_adi: d.file.name })
@@ -419,6 +430,7 @@ function renderSonucTablo() {
       + '<td class="dosya-cell">' + esc((s._dosya || '').replace('.pdf','').replace('.PDF','')) + '</td>'
       + '<td class="pipeline-cell">' + esc(s.pipeline_no || '—') + '</td>'
       + '<td class="spool-cell">' + esc(s.spool_no || '—') + '</td>'
+      + '<td style="text-align:right;color:var(--warn);font-weight:600;">' + capToDN(s.cap_mm) + '</td>'
       + '<td style="text-align:right;">' + (s.cap_mm || '—') + '</td>'
       + '<td>' + esc(s.malzeme || '—') + '</td>'
       + '<td style="color:var(--ac);">' + esc(s.kalite || '—') + '</td>'
@@ -435,7 +447,7 @@ function renderSonucTablo() {
 function excelIndir() {
   if (!_tumSpooller.length) return;
 
-  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
+  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
 
   _tumSpooller.forEach(function(s, i) {
     rows.push([
@@ -443,6 +455,7 @@ function excelIndir() {
       (s._dosya || '').replace('.pdf','').replace('.PDF',''),
       s.pipeline_no || '',
       s.spool_no    || '',
+      capToDN(s.cap_mm),
       s.cap_mm      || '',
       s.malzeme     || '',
       s.kalite      || '',
@@ -478,7 +491,7 @@ function excelIndir() {
   var ws2 = XLSX.utils.aoa_to_sheet(malzRows);
 
   // Kolon genişlikleri
-  ws1['!cols'] = [{wch:4},{wch:30},{wch:25},{wch:10},{wch:10},{wch:14},{wch:12},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6}];
+  ws1['!cols'] = [{wch:4},{wch:30},{wch:25},{wch:10},{wch:7},{wch:10},{wch:14},{wch:12},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6}];
   ws2['!cols'] = [{wch:25},{wch:22},{wch:10},{wch:4},{wch:10},{wch:50},{wch:12},{wch:6},{wch:8},{wch:8}];
 
   XLSX.utils.book_append_sheet(wb, ws1, 'Spool Listesi');

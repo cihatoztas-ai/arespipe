@@ -1013,7 +1013,7 @@ async function _izoCokluOku(files) {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      var res = await fetch('/api/izometri-oku', {
+      var res = await fetch('https://g6ipvrd6vv3npl2nd6v367y4by0mihbe.lambda-url.eu-central-1.on.aws/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_base64: base64, dosya_adi: file.name })
@@ -1060,7 +1060,7 @@ async function _izoOku(file) {
     });
 
     // Vercel Edge Function'a gönder
-    const res = await fetch('/api/izometri-oku', {
+    const res = await fetch('https://g6ipvrd6vv3npl2nd6v367y4by0mihbe.lambda-url.eu-central-1.on.aws/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pdf_base64: base64, dosya_adi: file.name })
@@ -1270,6 +1270,7 @@ async function kaydet() {
             malzeme:       s.malzeme  || null,
             kalite:        s.kalite   || null,
             dis_cap_mm:    capMm,
+            et_kalinligi_mm: s.et ? parseFloat(String(s.et).replace(',','.')) || null : null,
             agirlik:       s.agirlik  || 0,
             yuzey:         s.yuzey    || null,
             durum:            'Bekliyor',
