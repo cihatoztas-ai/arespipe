@@ -37,6 +37,8 @@ tanim alanındaki açıklamayı parse ederek şu alanları da doldur:
 - kalite_kodu: ST37, A106-B, TP316L vb.
 - cap_dn: DN değeri (DN150 → 150)
 - et_kalinlik: T: veya WT: sonrasındaki değer (T:4.5 → 4.5)
+- boy_mm: L: veya uzunluk bilgisi varsa mm cinsinden (L:100 MM → 100), yoksa null
+- miktar_adet: QTY sütunundaki sayısal değer (0.7m → 0.7, "1" → 1, "8" → 8)
 
 Örnek: "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM"
 → malzeme_cinsi: "Karbon Çelik", kalite_kodu: "ST37", cap_dn: 150, et_kalinlik: 4.5
@@ -102,10 +104,10 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
       "rev": "A",
       "yuzey": "Galvaniz",
       "malzeme_listesi": [
-        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5},
-        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 200, "et_kalinlik": 6.3},
-        {"no": 3, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5},
-        {"no": 4, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": null}
+        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5, "boy_mm": null, "miktar_adet": 1},
+        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 200, "et_kalinlik": 6.3, "boy_mm": null, "miktar_adet": 1},
+        {"no": 3, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5, "boy_mm": null, "miktar_adet": 1},
+        {"no": 4, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": null, "boy_mm": null, "miktar_adet": 1}
       ]
     },
     {
@@ -121,10 +123,10 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
       "rev": "A",
       "yuzey": "Galvaniz",
       "malzeme_listesi": [
-        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5},
-        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 200, "et_kalinlik": 6.3},
-        {"no": 3, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5},
-        {"no": 4, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": null}
+        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5, "boy_mm": null, "miktar_adet": 1},
+        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 200, "et_kalinlik": 6.3, "boy_mm": null, "miktar_adet": 1},
+        {"no": 3, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": 4.5, "boy_mm": null, "miktar_adet": 1},
+        {"no": 4, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1", "malzeme_cinsi": "Karbon Çelik", "kalite_kodu": "ST37", "cap_dn": 150, "et_kalinlik": null, "boy_mm": null, "miktar_adet": 1}
       ]
     }
   ],
