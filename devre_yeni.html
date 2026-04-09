@@ -1439,7 +1439,7 @@ async function kaydet() {
                 var capMm = dn ? (DN_MM[dn] || null) : null;
                 var kat = (item.kategori || '').toUpperCase();
                 var tip = kat.includes('PIPE') || kat.includes('TUBE') ? 'boru' : 'fitting';
-                var miktarSayi = parseFloat(String(item.miktar || '').replace(/[^0-9.,]/g,'').replace(',','.')) || null;
+                var miktarSayi = parseFloat(item.miktar_adet || String(item.miktar || '').replace(/[^0-9.,]/g,'').replace(',','.')) || 1;
                 malzemeRows.push({
                   tenant_id:   ARES.tenantId(),
                   spool_id:    dbSpool.id,
@@ -1452,7 +1452,7 @@ async function kaydet() {
                   dis_cap_mm:  capMm,
                   et_mm:       item.et_kalinlik   ? parseFloat(item.et_kalinlik) : null,
                   boy_mm:      item.boy_mm        ? parseFloat(item.boy_mm) : null,
-                  adet:        miktarSayi && Number.isInteger(miktarSayi) ? miktarSayi : 1,
+                  adet:        Math.round(miktarSayi) || 1,
                   miktar:      miktarSayi         || 1,
                   sertifikali: false,
                 });
