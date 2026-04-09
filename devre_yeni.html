@@ -1137,16 +1137,17 @@ function izoOnayla() {
     .filter(function(s) { return s.pipeline_no && s.spool_no; })
     .map(function(s) {
       return {
-        pipeline:   String(s.pipeline_no || '').trim(),
-        spoolNo:    String(s.spool_no || '').trim(),
-        rev:        s.rev || '',
-        malzeme:    normalizeMalzeme(s.malzeme || ''),
-        kalite:     s.kalite || '',
-        cap:        s.cap_mm ? parseFloat(s.cap_mm) : null,
-        et:         s.et_mm  ? parseFloat(s.et_mm)  : null,
-        agirlik:    s.agirlik_kg ? parseFloat(s.agirlik_kg) : null,
-        boy:        s.boy_mm ? parseFloat(s.boy_mm) : null,
-        yuzey:      document.querySelector('input[name="yuzey"]:checked')?.value || ''
+        pipeline:        String(s.pipeline_no || '').trim(),
+        spoolNo:         String(s.spool_no || '').trim(),
+        rev:             s.rev || '',
+        malzeme:         normalizeMalzeme(s.malzeme || ''),
+        kalite:          s.kalite || '',
+        cap:             s.cap_mm ? parseFloat(s.cap_mm) : null,
+        et:              s.et_mm  ? parseFloat(s.et_mm)  : null,
+        agirlik:         s.agirlik_kg ? parseFloat(s.agirlik_kg) : null,
+        boy:             s.boy_mm ? parseFloat(s.boy_mm) : null,
+        yuzey:           s.yuzey || document.querySelector('input[name="yuzey"]:checked')?.value || '',
+        malzeme_listesi: s.malzeme_listesi || []
       };
     });
 
@@ -1426,6 +1427,30 @@ async function kaydet() {
                   agirlik_kg:  item.agirlik || 0,
                   ifs_kod:     item.ifsKod  || null,
                   sertifikali: _srt,
+                });
+              });
+            }
+
+            // İzometri PDF'den gelen malzeme_listesi
+            if (localSpool && localSpool.malzeme_listesi && localSpool.malzeme_listesi.length) {
+              var DN_MM = {15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4};
+              localSpool.malzeme_listesi.forEach(function(item) {
+                var dn = parseInt(item.nbore_dn) || null;
+                var capMm = dn ? (DN_MM[dn] || null) : null;
+                var kat = (item.kategori || '').toUpperCase();
+                var tip = kat.includes('PIPE') || kat.includes('TUBE') ? 'boru' : 'fitting';
+                var miktarSayi = parseFloat(String(item.miktar || '').replace(/[^0-9.,]/g,'').replace(',','.')) || null;
+                malzemeRows.push({
+                  tenant_id:  ARES.tenantId(),
+                  spool_id:   dbSpool.id,
+                  kod:        item.dpn    || null,
+                  tip:        tip,
+                  tanim:      item.tanim  || null,
+                  aciklama:   item.tanim  || null,
+                  dis_cap_mm: capMm,
+                  adet:       Number.isInteger(miktarSayi) ? miktarSayi : null,
+                  miktar:     miktarSayi  || 0,
+                  sertifikali: false,
                 });
               });
             }
