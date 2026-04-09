@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Devre Düzenle | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
+<style>
+:root[data-theme="dark"]  {--bg:#0f1117;--sur:#1a1d27;--sur2:#22263a;--bor:#2d3148;--tx:#e8eaf6;--txm:#9095b4;--txd:#5a5f7a;--ac:#2d8eff;--gr:#10b981;--re:#e53e3e;--warn:#f59e0b;--leg:#a78bfa;}
+:root[data-theme="light"] {--bg:#f0f2f8;--sur:#ffffff;--sur2:#f5f6fa;--bor:#dde1f0;--tx:#1a1d27;--txm:#5a5f7a;--txd:#9095b4;--ac:#2d8eff;--gr:#059669;--re:#dc2626;--warn:#d97706;--leg:#7c3aed;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+.page{max-width:780px;margin:0 auto;padding:28px 20px 60px;}
+.breadcrumb{font-size:13px;color:var(--txd);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}
+.breadcrumb a:hover{color:var(--ac);}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:4px;}
+.page-sub{font-size:14px;color:var(--txm);margin-bottom:24px;}
+
+.form-kart{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:22px;margin-bottom:18px;}
+.form-kart-baslik{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.tek{grid-template-columns:1fr;}
+.form-grup{display:flex;flex-direction:column;gap:6px;}
+.form-label{font-size:13px;font-weight:600;color:var(--txm);}
+.form-label .req{color:var(--re);margin-left:2px;}
+.fi{background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--tx);width:100%;transition:border-color .15s;}
+.fi:focus{outline:none;border-color:var(--ac);}
+.fi:disabled{opacity:.5;cursor:not-allowed;}
+select.fi{cursor:pointer;}
+textarea.fi{resize:vertical;min-height:80px;}
+
+.malzeme-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.radio-btn{display:none;}
+.radio-btn+label{padding:7px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--txm);}
+.radio-btn:checked+label{border-color:var(--ac);background:rgba(45,142,255,.12);color:var(--ac);}
+
+.yuzey-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.yuzey-btn{display:none;}
+.yuzey-btn+label{padding:7px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--txm);}
+.yuzey-btn:checked+label{border-color:var(--warn);background:rgba(245,158,11,.12);color:var(--warn);}
+
+.btn-row{display:flex;gap:10px;margin-top:24px;}
+.btn{padding:11px 22px;border-radius:10px;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-kaydet{background:var(--ac);color:#fff;flex:1;}
+.btn-kaydet:hover:not(:disabled){opacity:.85;}
+.btn-iptal{background:var(--sur2);color:var(--txm);border:1px solid var(--bor);}
+.btn-iptal:hover{color:var(--tx);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:9999;display:flex;align-items:center;gap:10px;}
+.toast.t-ok{border-color:rgba(16,185,129,.4);color:var(--gr);}
+.toast.t-er{border-color:rgba(229,62,62,.4);color:var(--re);}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<div class="main-content">
+<div class="page">
+
+  <div class="breadcrumb">
+    <a href="index.html">Ana Sayfa</a> ›
+    <a href="devreler.html">Aktif Devreler</a> ›
+    <a href="#" id="bcDevre" onclick="geriDon()">Devre Detay</a> ›
+    <span>Düzenle</span>
+  </div>
+
+  <div class="page-title">✏️ Devre Düzenle</div>
+  <div class="page-sub" id="pageSub">Yükleniyor...</div>
+
+  <!-- Proje Bilgileri -->
+  <div class="form-kart">
+    <div class="form-kart-baslik">📋 Proje Bilgileri</div>
+    <div class="form-grid">
+      <div class="form-grup">
+        <label class="form-label">Tersane</label>
+        <input class="fi" id="fTersane" disabled placeholder="—">
+      </div>
+      <div class="form-grup">
+        <label class="form-label">Proje / Gemi</label>
+        <input class="fi" id="fProje" disabled placeholder="—">
+      </div>
+    </div>
+  </div>
+
+  <!-- Devre Bilgileri -->
+  <div class="form-kart">
+    <div class="form-kart-baslik">⚡ Devre Bilgileri</div>
+    <div class="form-grid">
+      <div class="form-grup">
+        <label class="form-label">Devre Adı / Kodu <span class="req">*</span></label>
+        <input class="fi" id="fDevreAdi" placeholder="örn: 265-overboard" oninput="validateForm()">
+      </div>
+      <div class="form-grup">
+        <label class="form-label">Bölge / Zone <span class="req">*</span></label>
+        <input class="fi" id="fZone" placeholder="örn: Z01, A-Deck" oninput="validateForm()">
+      </div>
+      <div class="form-grup">
+        <label class="form-label">İş Emri No</label>
+        <input class="fi" id="fIsEmri" disabled placeholder="—">
+      </div>
+      <div class="form-grup">
+        <label class="form-label">Termin Tarihi</label>
+        <input class="fi" type="date" id="fTermin">
+      </div>
+    </div>
+  </div>
+
+  <!-- Malzeme & Yüzey -->
+  <div class="form-kart">
+    <div class="form-kart-baslik">🔧 Malzeme & Yüzey</div>
+    <div class="form-grid">
+      <div class="form-grup">
+        <label class="form-label">Ana Malzeme</label>
+        <div class="malzeme-grid">
+          <input type="radio" name="malzeme" id="mKarbon" value="Karbon Çelik" class="radio-btn">
+          <label for="mKarbon">Karbon Çelik</label>
+          <input type="radio" name="malzeme" id="mPaslanmaz" value="Paslanmaz" class="radio-btn">
+          <label for="mPaslanmaz">Paslanmaz</label>
+          <input type="radio" name="malzeme" id="mBakir" value="Bakır Alaşım" class="radio-btn">
+          <label for="mBakir">Bakır Alaşım</label>
+          <input type="radio" name="malzeme" id="mAlum" value="Alüminyum" class="radio-btn">
+          <label for="mAlum">Alüminyum</label>
+          <input type="radio" name="malzeme" id="mDiger" value="Diğer" class="radio-btn">
+          <label for="mDiger">Diğer</label>
+        </div>
+      </div>
+      <div class="form-grup">
+        <label class="form-label">Yüzey İşlemi</label>
+        <div class="yuzey-grid">
+          <input type="radio" name="yuzey" id="yAsit" value="Asit" class="yuzey-btn">
+          <label for="yAsit">Asit</label>
+          <input type="radio" name="yuzey" id="yGalvaniz" value="Galvaniz" class="yuzey-btn">
+          <label for="yGalvaniz">Galvaniz</label>
+          <input type="radio" name="yuzey" id="ySiyah" value="Siyah" class="yuzey-btn">
+          <label for="ySiyah">Siyah</label>
+          <input type="radio" name="yuzey" id="yBoyali" value="Boyalı" class="yuzey-btn">
+          <label for="yBoyali">Boyalı</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notlar -->
+  <div class="form-kart">
+    <div class="form-kart-baslik">📝 Notlar</div>
+    <div class="form-grid tek">
+      <div class="form-grup">
+        <label class="form-label">Açıklama / Notlar</label>
+        <textarea class="fi" id="fNot" placeholder="Opsiyonel notlar..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-iptal" onclick="geriDon()">← İptal</button>
+    <button class="btn btn-kaydet" id="btnKaydet" onclick="kaydet()" disabled>💾 Kaydet</button>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script>
+'use strict';
+
+var _devreId = null;
+var _devre = {};
+
+function tv(k, fb) {
+  if (typeof window._tv === 'function') return window._tv(k, fb);
+  return fb || k;
+}
+
+function toast(msg, tip) {
+  var old = document.querySelector('.toast'); if (old) old.remove();
+  var t = document.createElement('div');
+  t.className = 'toast t-' + (tip || 'ok');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { if (t.parentNode) t.remove(); }, 3000);
+}
+
+function geriDon() {
+  if (_devreId) {
+    localStorage.setItem('ares_aktif_devre_id', _devreId);
+  }
+  history.back();
+}
+
+function validateForm() {
+  var ok = (document.getElementById('fDevreAdi').value || '').trim() &&
+           (document.getElementById('fZone').value || '').trim();
+  document.getElementById('btnKaydet').disabled = !ok;
+}
+
+function formDoldur(d) {
+  document.getElementById('fTersane').value  = d.tersane  || '';
+  document.getElementById('fProje').value    = d.gemi     || d.proje_no || '';
+  document.getElementById('fDevreAdi').value = d.devre_no || d.ad || '';
+  document.getElementById('fZone').value     = d.zone     || '';
+  document.getElementById('fIsEmri').value   = d.is_emri_no || '';
+  document.getElementById('fNot').value      = d.not_     || '';
+
+  if (d.termin_tarihi) {
+    document.getElementById('fTermin').value = d.termin_tarihi.substring(0, 10);
+  }
+
+  // Malzeme seç
+  var malzeme = (d.malzeme || '').toLowerCase();
+  var malzMap = {
+    'karbon': 'mKarbon', 'paslanmaz': 'mPaslanmaz',
+    'bakır': 'mBakir', 'bakir': 'mBakir',
+    'alüm': 'mAlum', 'alum': 'mAlum'
+  };
+  Object.keys(malzMap).forEach(function(k) {
+    if (malzeme.includes(k)) {
+      var el = document.getElementById(malzMap[k]);
+      if (el) el.checked = true;
+    }
+  });
+
+  // Yüzey seç
+  var yuzey = (d.yuzey || '').toLowerCase();
+  var yuzMap = { 'asit': 'yAsit', 'galvaniz': 'yGalvaniz', 'siyah': 'ySiyah', 'boyal': 'yBoyali' };
+  Object.keys(yuzMap).forEach(function(k) {
+    if (yuzey.includes(k)) {
+      var el = document.getElementById(yuzMap[k]);
+      if (el) el.checked = true;
+    }
+  });
+
+  document.getElementById('pageSub').textContent = d.devre_no + (d.zone ? ' — ' + d.zone : '');
+  validateForm();
+}
+
+async function kaydet() {
+  var btn = document.getElementById('btnKaydet');
+  btn.disabled = true;
+  btn.textContent = '⏳ Kaydediliyor...';
+
+  try {
+    var supa = ARES.supabase();
+    if (!supa) throw new Error('Bağlantı yok');
+
+    var malzeme = (document.querySelector('input[name="malzeme"]:checked') || {}).value || null;
+    var yuzey   = (document.querySelector('input[name="yuzey"]:checked')   || {}).value || null;
+    var termin  = document.getElementById('fTermin').value || null;
+
+    var guncelleme = {
+      ad:             document.getElementById('fDevreAdi').value.trim(),
+      devre_no:       document.getElementById('fDevreAdi').value.trim(),
+      zone:           document.getElementById('fZone').value.trim(),
+      termin_tarihi:  termin || null,
+      not_:           document.getElementById('fNot').value.trim() || null,
+      guncelleme:     new Date().toISOString(),
+    };
+
+    // Malzeme ve yüzey — spooller tablosunda değil devreler tablosunda yok
+    // Ama not olarak kaydedelim, spoollar kendi malzeme/yüzeyine sahip
+
+    var res = await supa.from('devreler')
+      .update(guncelleme)
+      .eq('id', _devreId)
+      .eq('tenant_id', ARES.tenantId());
+
+    if (res.error) throw new Error(res.error.message);
+
+    await ARES.logEkle('DEVRE_GUNCELLE', guncelleme.devre_no + ' güncellendi', 'devreler', _devreId, {});
+
+    toast('✅ Devre güncellendi', 'ok');
+    setTimeout(function() { geriDon(); }, 1000);
+
+  } catch(e) {
+    console.error('[ARES] Kaydet hatası:', e);
+    toast('⚠ ' + e.message, 'er');
+    btn.disabled = false;
+    btn.textContent = '💾 Kaydet';
+  }
+}
+
+// ── BAŞLATMA ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r,100); });
+        _bekle++;
+      }
+
+      // URL'den devre ID al
+      var params = new URLSearchParams(window.location.search);
+      _devreId = params.get('id') || localStorage.getItem('ares_aktif_devre_id');
+
+      if (!_devreId) {
+        toast('Devre ID bulunamadı', 'er');
+        setTimeout(function(){ history.back(); }, 1500);
+        return;
+      }
+
+      // Devre bilgilerini çek
+      var supa = ARES.supabase();
+      var res = await supa.from('devreler')
+        .select('*, projeler(proje_no, gemi_adi, tersaneler(ad))')
+        .eq('id', _devreId)
+        .eq('tenant_id', ARES.tenantId())
+        .single();
+
+      if (res.error || !res.data) {
+        toast('Devre bulunamadı', 'er');
+        setTimeout(function(){ history.back(); }, 1500);
+        return;
+      }
+
+      var d = res.data;
+      var prj = d.projeler || {};
+      var trs = prj.tersaneler || {};
+
+      _devre = {
+        devre_no:     d.devre_no   || '',
+        ad:           d.ad         || '',
+        zone:         d.zone       || '',
+        is_emri_no:   d.is_emri_no || '',
+        termin_tarihi:d.termin_tarihi || '',
+        not_:         d.not_       || '',
+        malzeme:      d.malzeme    || '',
+        yuzey:        d.yuzey      || '',
+        tersane:      trs.ad       || '',
+        gemi:         prj.gemi_adi || '',
+        proje_no:     prj.proje_no || '',
+      };
+
+      // localStorage'daki aktif devre ile breadcrumb için
+      localStorage.setItem('ares_aktif_devre_id', _devreId);
+
+      formDoldur(_devre);
+
+    } catch(e) {
+      console.error('[ARES]', e);
+      toast('Hata: ' + e.message, 'er');
+    } finally {
+      document.documentElement.style.visibility = '';
+    }
+  })();
+});
+</script>
+</body>
+</html>
