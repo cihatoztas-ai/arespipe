@@ -1443,16 +1443,17 @@ async function kaydet() {
                 malzemeRows.push({
                   tenant_id:   ARES.tenantId(),
                   spool_id:    dbSpool.id,
-                  kod:         item.dpn       || null,
+                  kod:         item.dpn          || null,
                   tip:         tip,
-                  tanim:       item.tanim      || null,
-                  aciklama:    item.tanim      || null,
+                  tanim:       item.tanim         || null,
+                  aciklama:    item.tanim         || null,
                   malzeme:     item.malzeme_cinsi || null,
                   kalite:      item.kalite_kodu   || null,
                   dis_cap_mm:  capMm,
                   et_mm:       item.et_kalinlik   ? parseFloat(item.et_kalinlik) : null,
-                  adet:        Number.isInteger(miktarSayi) ? miktarSayi : null,
-                  miktar:      miktarSayi     || 0,
+                  boy_mm:      item.boy_mm        ? parseFloat(item.boy_mm) : null,
+                  adet:        miktarSayi && Number.isInteger(miktarSayi) ? miktarSayi : 1,
+                  miktar:      miktarSayi         || 1,
                   sertifikali: false,
                 });
               });
