@@ -28,8 +28,6 @@ FABRICATION MATERIAL LIST bölümündeki tüm kalemleri çıkar:
 - miktar: QTY sütunundaki değer — "0.7m", "1", "8" gibi tam olarak al
 - kategori: PIPES, FITTINGS, FLANGES, BOLTS & NUTS vb. grup başlığı
 
-ERECTION MATERIAL LIST'i de aynı formatta "erection_malzeme_listesi" olarak ayrıca çıkar.
-
 Her spool için malzeme_listesi aynıdır (pipeline bazında tüm spooller aynı listeyi paylaşır).
 - Bazı çizimlerde spool numarası köşeli parantez içinde olur: [1], [2], [A], [B]
 - Bazılarında S01, S02, S-01, SP1 formatında olur
@@ -93,8 +91,7 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
         {"no": 3, "kategori": "FITTINGS", "tanim": "SLEEVE ST37 Ø193.7 T:11 L:100 MM", "dpn": "500033454", "nbore_dn": 150, "miktar": "1"},
         {"no": 4, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1"},
         {"no": 5, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1"}
-      ],
-      "erection_malzeme_listesi": []
+      ]
     },
     {
       "pipeline_no": "52900-101540-Z10-2",
@@ -114,8 +111,7 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
         {"no": 3, "kategori": "FITTINGS", "tanim": "SLEEVE ST37 Ø193.7 T:11 L:100 MM", "dpn": "500033454", "nbore_dn": 150, "miktar": "1"},
         {"no": 4, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1"},
         {"no": 5, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1"}
-      ],
-      "erection_malzeme_listesi": []
+      ]
     }
   ],
   "proje_no": "PAOR",
@@ -211,14 +207,17 @@ export default async function handler(req) {
     const claudeData = await claudeRes.json();
     const text = claudeData.content?.[0]?.text || '';
 
-    // JSON'u parse et — kod bloğu varsa temizle
+    // JSON'u parse et — kod bloğu varsa temizle, JSON objesi içinde bul
     let parsed;
     try {
-      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      let clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // JSON objesi bulmaya çalış
+      const jsonMatch = clean.match(/\{[\s\S]*\}/);
+      if (jsonMatch) clean = jsonMatch[0];
       parsed = JSON.parse(clean);
     } catch (e) {
       return new Response(JSON.stringify({
-        error: 'JSON parse hatası',
+        error: 'Claude JSON üretemedi: ' + text.substring(0, 200),
         raw: text
       }), {
         status: 422,
