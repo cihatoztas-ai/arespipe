@@ -19,10 +19,18 @@ Pipeline no şu kurala göre oluşturulur:
 → Spool 1: spool_no = "S01"
 → Spool 2: spool_no = "S02"
 
-MALZEME LİSTESİ:
-- "FABRICATION MATERIAL LIST" bölümündeki malzemeleri "malzeme_listesi" alanına ekle
-- Her spool için aynı malzeme listesi geçerlidir (pipeline bazında)
-- malzeme_listesi formatı: [{no, tanim, dpn, nbore_dn, miktar}]
+MALZEME LİSTESİ ÇIKARMA:
+FABRICATION MATERIAL LIST bölümündeki tüm kalemleri çıkar:
+- NO: sıra numarası
+- tanim: MATERIAL DESCRIPTION sütunundaki tam açıklama
+- dpn: DPN sütunundaki malzeme kodu (sarı sütun)
+- nbore_dn: N.BORE (DN) sütunundaki değer — sayısal al, "200 x 150" gibi ise büyüğünü al
+- miktar: QTY sütunundaki değer — "0.7m", "1", "8" gibi tam olarak al
+- kategori: PIPES, FITTINGS, FLANGES, BOLTS & NUTS vb. grup başlığı
+
+ERECTION MATERIAL LIST'i de aynı formatta "erection_malzeme_listesi" olarak ayrıca çıkar.
+
+Her spool için malzeme_listesi aynıdır (pipeline bazında tüm spooller aynı listeyi paylaşır).
 - Bazı çizimlerde spool numarası köşeli parantez içinde olur: [1], [2], [A], [B]
 - Bazılarında S01, S02, S-01, SP1 formatında olur
 - SPOOL bölümündeki köşeli parantezler spool sayısını belirler: [1] [2] = 2 ayrı spool
@@ -80,9 +88,13 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
       "rev": "A",
       "yuzey": "Galvaniz",
       "malzeme_listesi": [
-        {"no": 1, "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
-        {"no": 2, "tanim": "REDUCER CONCENTRIC SEAMLESS ST37", "dpn": "500004288", "nbore_dn": 150, "miktar": "1"}
-      ]
+        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
+        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1"},
+        {"no": 3, "kategori": "FITTINGS", "tanim": "SLEEVE ST37 Ø193.7 T:11 L:100 MM", "dpn": "500033454", "nbore_dn": 150, "miktar": "1"},
+        {"no": 4, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1"},
+        {"no": 5, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1"}
+      ],
+      "erection_malzeme_listesi": []
     },
     {
       "pipeline_no": "52900-101540-Z10-2",
@@ -97,9 +109,13 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
       "rev": "A",
       "yuzey": "Galvaniz",
       "malzeme_listesi": [
-        {"no": 1, "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
-        {"no": 2, "tanim": "REDUCER CONCENTRIC SEAMLESS ST37", "dpn": "500004288", "nbore_dn": 150, "miktar": "1"}
-      ]
+        {"no": 1, "kategori": "PIPES", "tanim": "PIPE SEAMLESS ST37 DIN 2448 DN150 T:4.5 MM", "dpn": "500000157", "nbore_dn": 150, "miktar": "0.7m"},
+        {"no": 2, "kategori": "FITTINGS", "tanim": "REDUCER CONCENTRIC SEAMLESS ST37 DIN 2616 DN200XDN150 T:6.3X4.5 MM", "dpn": "500004288", "nbore_dn": 200, "miktar": "1"},
+        {"no": 3, "kategori": "FITTINGS", "tanim": "SLEEVE ST37 Ø193.7 T:11 L:100 MM", "dpn": "500033454", "nbore_dn": 150, "miktar": "1"},
+        {"no": 4, "kategori": "FITTINGS", "tanim": "ELBOW SEAMLESS ST37 DIN 2605 1.5D 90° DN150 T:4.5 MM", "dpn": "500001468", "nbore_dn": 150, "miktar": "1"},
+        {"no": 5, "kategori": "FLANGES", "tanim": "FLANGE SLIP-ON ST37 EN 1092-1 TYPE01 DN150 PN16", "dpn": "500020242", "nbore_dn": 150, "miktar": "1"}
+      ],
+      "erection_malzeme_listesi": []
     }
   ],
   "proje_no": "PAOR",
