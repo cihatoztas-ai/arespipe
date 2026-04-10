@@ -1021,6 +1021,7 @@ async function _izoCokluOku(files) {
       var json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || 'Sunucu hatası');
       (json.data.spooller || []).forEach(function(s){ _izoSpooller.push(s); });
+      console.log('[ARES] Lambda', file.name, '— segmentler:', json.data.spooller?.[0]?.segmentler?.length, 'bbox:', !!json.data.spooller?.[0]?.bbox);
     } catch(e) {
       hatalar.push(file.name + ': ' + e.message);
     }
@@ -1148,7 +1149,9 @@ function izoOnayla() {
         agirlik:         s.agirlik_kg ? parseFloat(s.agirlik_kg) : null,
         boy:             s.boy_mm ? parseFloat(s.boy_mm) : null,
         yuzey:           s.yuzey || document.querySelector('input[name="yuzey"]:checked')?.value || '',
-        malzeme_listesi: s.malzeme_listesi || []
+        malzeme_listesi: s.malzeme_listesi || [],
+        segmentler:      s.segmentler || null,
+        bbox:            s.bbox       || null,
       };
     });
 
