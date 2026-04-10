@@ -611,11 +611,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       </div>
       <div class="m3d-hint">Sol tık: döndür · Sağ tık: kaydır · Tekerlek: zoom · Parçaya tıkla: bilgi</div>
     </div>
-
-    <!-- Test verisi uyarısı -->
-    <div style="padding:8px 14px;font-size:12px;color:var(--txd);background:rgba(217,119,6,.04);border-top:1px solid rgba(217,119,6,.15);">
-      ⚠️ <strong style="color:var(--warn);">Test Geometrisi</strong> — Supabase'de <code>x_mm, y_mm, z_mm</code> kolonları hazır olunca gerçek izometri koordinatları buradan görünecek.
-    </div>
+    <div id="m3Alt" style="display:none;padding:7px 14px;font-size:12px;color:var(--txd);border-top:1px solid var(--bor);"></div>
 
   </div>
 </div>
@@ -2490,11 +2486,14 @@ function m3Build() {
   var segs = null;
   if (SP.segmentler && SP.segmentler.length) {
     segs = SP.segmentler;
-    // Test verisi uyarısını gizle
-    var uyari = document.querySelector('.m3d-wrap [style*="warn"]');
-    if (uyari) uyari.style.display = 'none';
   } else {
-    segs = m3TestData(); // fallback: test geometrisi
+    segs = m3TestData(); // fallback: izometri henüz parse edilmemiş
+    // Bilgi mesajı göster
+    var m3alt = document.getElementById('m3Alt');
+    if (m3alt) {
+      m3alt.style.display = '';
+      m3alt.textContent = 'ℹ️ Gerçek geometri için izometri PDF\'i yükleyin.';
+    }
   }
 
   segs.forEach(function(seg){ m3AddSegment(seg); });
