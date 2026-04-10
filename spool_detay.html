@@ -2704,24 +2704,18 @@ function m3AddSegment(seg) {
     var yon1 = new THREE.Vector3(...(seg.yon1 || [1,0,0])).normalize();
     var yon2 = new THREE.Vector3(...(seg.yon2 || [0,1,0])).normalize();
 
-    // Custom arc curve — Three.js Curve subclass
-    var ArcCurve = function(c, v1, v2, r, a) {
-      THREE.Curve.call(this);
-      this.c=c; this.v1=v1; this.v2=v2; this.r=r; this.a=a;
-    };
-    ArcCurve.prototype = Object.create(THREE.Curve.prototype);
-    ArcCurve.prototype.constructor = ArcCurve;
-    ArcCurve.prototype.getPoint = function(t) {
-      var theta = t * this.a;
-      return new THREE.Vector3(
-        this.c.x + this.r*(-this.v2.x*Math.cos(theta) + this.v1.x*Math.sin(theta)),
-        this.c.y + this.r*(-this.v2.y*Math.cos(theta) + this.v1.y*Math.sin(theta)),
-        this.c.z + this.r*(-this.v2.z*Math.cos(theta) + this.v1.z*Math.sin(theta))
-      );
-    };
-
-    var curve = new ArcCurve(mk, yon1, yon2, r_kavis, aci_rad);
-    var segments = Math.max(12, Math.round(aci_rad * 20)); // açıya göre segment sayısı
+    // Arc noktalarını elle üret — Curve subclass yok, doğrudan CatmullRomCurve3
+    var segments = Math.max(16, Math.round(aci_rad * 24));
+    var arcPoints = [];
+    for (var i = 0; i <= segments; i++) {
+      var theta = (i / segments) * aci_rad;
+      arcPoints.push(new THREE.Vector3(
+        mk.x + r_kavis * (-yon2.x * Math.cos(theta) + yon1.x * Math.sin(theta)),
+        mk.y + r_kavis * (-yon2.y * Math.cos(theta) + yon1.y * Math.sin(theta)),
+        mk.z + r_kavis * (-yon2.z * Math.cos(theta) + yon1.z * Math.sin(theta))
+      ));
+    }
+    var curve = new THREE.CatmullRomCurve3(arcPoints);
     var geo = new THREE.TubeGeometry(curve, segments, r_boru, 16, false);
     mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
     mesh.castShadow = true;
@@ -2876,5 +2870,3 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 </body></html>
-
-
