@@ -2609,9 +2609,8 @@ function m3AddSegment(seg) {
     var yon1 = new THREE.Vector3(...(seg.yon1 || [1,0,0])).normalize();
     var yon2 = new THREE.Vector3(...(seg.yon2 || [0,1,0])).normalize();
 
-    // Merkez pozisyonu
-    var center = mk.clone().addScaledVector(yon2, r_kavis);
-    mesh.position.copy(center);
+    // mk = elbow merkezi (Lambda'dan geliyor: center = p1 + r * yon2)
+    mesh.position.copy(mk);
 
     // Ring axis = cross(yon1, yon2)
     var ringAxis = yon1.clone().cross(yon2).normalize();
