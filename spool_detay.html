@@ -2688,44 +2688,44 @@ function m3AddSegment(seg) {
     //
     // Torus default: ring axis=Z, arc θ=0'da tube at (R,0,0), tangent=(0,1,0)
     // Hedef: arc başında tangent=yon1, ring axis=cross(yon1,yon2)
-    // Açı — Lambda'dan gelen dirsek_aci kullan, fallback 90°
-    var aci_deg = seg.dirsek_aci || 90;
-    var aci_rad = aci_deg * Math.PI / 180;
+    // ── DİRSEK: TubeGeometry + custom arc curve ─────────────────────────────
+    // Rotasyon matrixi yok — doğrudan 3D'de arc noktaları hesaplanıyor.
+    //
+    // Arc formülü:
+    //   P(t) = merkez + r * (-yon2*cos(t*aci) + yon1*sin(t*aci))
+    //   t=0 → merkez + r*(-yon2) = p1  ✓
+    //   t=1 → merkez + r*(-yon2*cos(aci) + yon1*sin(aci)) = p2  ✓
 
-    var r_boru  = seg.cap_mm / 2;
+    var aci_rad = (seg.dirsek_aci || 90) * Math.PI / 180;
     var r_kavis = seg.yaricap || seg.yaricap_mm || seg.cap_mm * 1.5;
-
-    // Torus: ring axis=Z, arc θ=0'da tube (R,0,0)'da, tangent Y yönünde
-    var geo = new THREE.TorusGeometry(r_kavis, r_boru, 16, 48, aci_rad);
-    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
-    mesh.castShadow = true;
+    var r_boru  = seg.cap_mm / 2;
 
     var mk   = new THREE.Vector3(...seg.merkez);
     var yon1 = new THREE.Vector3(...(seg.yon1 || [1,0,0])).normalize();
     var yon2 = new THREE.Vector3(...(seg.yon2 || [0,1,0])).normalize();
 
-    // Torus merkezi = dirsek merkezi (p1 + r*yon2)
-    mesh.position.copy(mk);
+    // Custom arc curve — Three.js Curve subclass
+    var ArcCurve = function(c, v1, v2, r, a) {
+      THREE.Curve.call(this);
+      this.c=c; this.v1=v1; this.v2=v2; this.r=r; this.a=a;
+    };
+    ArcCurve.prototype = Object.create(THREE.Curve.prototype);
+    ArcCurve.prototype.constructor = ArcCurve;
+    ArcCurve.prototype.getPoint = function(t) {
+      var theta = t * this.a;
+      return new THREE.Vector3(
+        this.c.x + this.r*(-this.v2.x*Math.cos(theta) + this.v1.x*Math.sin(theta)),
+        this.c.y + this.r*(-this.v2.y*Math.cos(theta) + this.v1.y*Math.sin(theta)),
+        this.c.z + this.r*(-this.v2.z*Math.cos(theta) + this.v1.z*Math.sin(theta))
+      );
+    };
 
-    // Torus Three.js default davranışı:
-    //   Ring XY düzleminde, Z = ring axis
-    //   θ=0'da tube merkezi local +X yönünde (yani center + R*localX)
-    //   θ artarken counterclockwise, tangent başlangıçta +Y yönünde
-    //
-    // Bizim istediğimiz:
-    //   θ=0'da tube = p1 = merkez + R*(-yon2)  →  localX = -yon2
-    //   θ=0'da tangent = yon1                  →  localY = yon1
-    //   ring axis = localX × localY             →  localZ = (-yon2) × yon1 = yon1 × yon2
-    //
-    // Doğrulama: θ=dirsek_aci sonunda tube = merkez + R*(localX*cosθ + localY*sinθ)
-    //           = merkez + R*(-yon2*cosθ + yon1*sinθ)  →  p2 ✓
-
-    var lX = yon2.clone().negate();              // -yon2  (arc başı yönü)
-    var lY = yon1.clone();                       // yon1   (giriş teğeti)
-    var lZ = yon1.clone().cross(yon2);           // ring eksen
-
-    var mat = new THREE.Matrix4().makeBasis(lX, lY, lZ);
-    mesh.setRotationFromMatrix(mat);
+    var curve = new ArcCurve(mk, yon1, yon2, r_kavis, aci_rad);
+    var segments = Math.max(12, Math.round(aci_rad * 20)); // açıya göre segment sayısı
+    var geo = new THREE.TubeGeometry(curve, segments, r_boru, 16, false);
+    mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
+    mesh.castShadow = true;
+    // TubeGeometry zaten world space'de → position/rotation gerekmez
 
     mesh.userData = seg;
     _m3.scene.add(mesh);
