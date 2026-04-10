@@ -2560,15 +2560,16 @@ function m3AddSegment(seg) {
 
   } else if (seg.tip === 'flans') {
     var pos = new THREE.Vector3(...seg.p);
-    var r   = seg.cap_mm / 2;
-    var t   = seg.kalinlik_mm || r * 0.2;
+    var r   = (seg.cap_mm / 2) * 1.5; // flanş borudan %50 daha geniş
+    var t   = seg.kalinlik_mm || seg.uzunluk_mm || (seg.cap_mm * 0.25);
+    if (t < 10) t = seg.cap_mm * 0.25; // minimum kalınlık
     var geo = new THREE.CylinderGeometry(r, r, t, 40);
     mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'flans'));
     mesh.castShadow = true;
     mesh.position.copy(pos);
-    // Yönlendirme
-    var yon = new THREE.Vector3(...seg.yon);
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), yon);
+    var yon = new THREE.Vector3(...(Array.isArray(seg.yon) ? seg.yon : [1,0,0]));
+    if (yon.length() < 0.001) yon.set(1,0,0);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), yon.normalize());
     mesh.userData = seg;
     _m3.scene.add(mesh);
     _m3.meshes.push(mesh);
