@@ -1073,6 +1073,7 @@ async function _izoOku(file) {
     }
 
     _izoSpooller = json.data.spooller || [];
+    console.log('[ARES] Lambda spooller[0] segmentler:', _izoSpooller[0]?.segmentler?.length, 'bbox:', !!_izoSpooller[0]?.bbox);
 
     // Proje/tersane bilgisi varsa otomatik doldur
     if (json.data.proje_no) {
