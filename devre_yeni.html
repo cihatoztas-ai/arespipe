@@ -1284,6 +1284,10 @@ async function kaydet() {
         // insert — conflict olsa da SELECT her zaman çalışır
         const spoolRes = await supa.from('spooller').insert(spoolRows);
         // 23505 = unique constraint — önceki denemeden kalan kayıt, sorun değil
+        if (spoolRes.error) {
+          console.error('[ARES] Spool insert hatası:', JSON.stringify(spoolRes.error));
+          console.error('[ARES] İlk spool row:', JSON.stringify(spoolRows[0]));
+        }
 
         // Her zaman SELECT — insert hatası olsa bile mevcut kayıtları al
         const spoolFetch = await supa.from('spooller')
