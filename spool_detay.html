@@ -2688,9 +2688,15 @@ function m3AddSegment(seg) {
     //
     // Torus default: ring axis=Z, arc θ=0'da tube at (R,0,0), tangent=(0,1,0)
     // Hedef: arc başında tangent=yon1, ring axis=cross(yon1,yon2)
+    // Açı — Lambda'dan gelen dirsek_aci kullan, fallback 90°
+    var aci_deg = seg.dirsek_aci || 90;
+    var aci_rad = aci_deg * Math.PI / 180;
+
     var r_boru  = seg.cap_mm / 2;
-    var r_kavis = seg.yaricap || seg.cap_mm * 1.5;
-    var geo  = new THREE.TorusGeometry(r_kavis, r_boru, 16, 32, Math.PI / 2);
+    var r_kavis = seg.yaricap || seg.yaricap_mm || seg.cap_mm * 1.5;
+
+    // Torus: ring axis=Z, arc θ=0'da tube (R,0,0)'da, tangent Y yönünde
+    var geo = new THREE.TorusGeometry(r_kavis, r_boru, 16, 48, aci_rad);
     mesh = new THREE.Mesh(geo, m3Mat(seg.malzeme, 'dirsek'));
     mesh.castShadow = true;
 
@@ -2698,30 +2704,28 @@ function m3AddSegment(seg) {
     var yon1 = new THREE.Vector3(...(seg.yon1 || [1,0,0])).normalize();
     var yon2 = new THREE.Vector3(...(seg.yon2 || [0,1,0])).normalize();
 
-    // mk = elbow merkezi (Lambda'dan geliyor: center = p1 + r * yon2)
+    // Torus merkezi = dirsek merkezi (p1 + r*yon2)
     mesh.position.copy(mk);
 
-    // Ring axis = cross(yon1, yon2)
-    var ringAxis = yon1.clone().cross(yon2).normalize();
-    if (ringAxis.length() < 0.001) ringAxis.set(0, 0, 1); // fallback
+    // Torus Three.js default davranışı:
+    //   Ring XY düzleminde, Z = ring axis
+    //   θ=0'da tube merkezi local +X yönünde (yani center + R*localX)
+    //   θ artarken counterclockwise, tangent başlangıçta +Y yönünde
+    //
+    // Bizim istediğimiz:
+    //   θ=0'da tube = p1 = merkez + R*(-yon2)  →  localX = -yon2
+    //   θ=0'da tangent = yon1                  →  localY = yon1
+    //   ring axis = localX × localY             →  localZ = (-yon2) × yon1 = yon1 × yon2
+    //
+    // Doğrulama: θ=dirsek_aci sonunda tube = merkez + R*(localX*cosθ + localY*sinθ)
+    //           = merkez + R*(-yon2*cosθ + yon1*sinθ)  →  p2 ✓
 
-    // Adım 1: Z eksenini ring axis'e döndür
-    var q1 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), ringAxis);
+    var lX = yon2.clone().negate();              // -yon2  (arc başı yönü)
+    var lY = yon1.clone();                       // yon1   (giriş teğeti)
+    var lZ = yon1.clone().cross(yon2);           // ring eksen
 
-    // Adım 2: q1 sonrasında X ekseni nereye gitti?
-    var startDir = new THREE.Vector3(1,0,0).applyQuaternion(q1);
-
-    // Arc başı merkez + R*(-yon2) = mk olması için startDir = -yon2 olmalı
-    var wantStart = yon2.clone().negate();
-
-    // Ring axis etrafında gerekli açı
-    var cosA = startDir.dot(wantStart);
-    var sinA = startDir.clone().cross(wantStart).dot(ringAxis);
-    var angle = Math.atan2(sinA, cosA);
-    var q2 = new THREE.Quaternion().setFromAxisAngle(ringAxis, angle);
-
-    // Toplam rotasyon: önce q1, sonra q2
-    mesh.quaternion.copy(new THREE.Quaternion().multiplyQuaternions(q2, q1));
+    var mat = new THREE.Matrix4().makeBasis(lX, lY, lZ);
+    mesh.setRotationFromMatrix(mat);
 
     mesh.userData = seg;
     _m3.scene.add(mesh);
