@@ -1277,6 +1277,8 @@ async function kaydet() {
             aktif_basamak:    ilkBasamak,
             basamak_snapshot: basamakSnapshot,
             alistirma:        (document.getElementById('alistirmaDevresi')||{}).checked ? 'VAR' : 'YOK',
+            segmentler_json:  s.segmentler ? s.segmentler : null,
+            bbox_json:        s.bbox       ? s.bbox       : null,
           };
         });
         // insert — conflict olsa da SELECT her zaman çalışır
