@@ -109,7 +109,7 @@ const ARES = (function () {
     // Süper admin paneline yönlendir
     if (_oturum.rol === 'super_admin') {
       modDegistir('supabase');
-      return { kullanici: _oturum, yonlendir: '/panel.html' };
+      return { kullanici: _oturum, yonlendir: 'admin/panel.html' };
     }
 
     // Mod supabase'e geç
