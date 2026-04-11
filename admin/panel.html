@@ -404,7 +404,27 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <!-- Temel Bilgiler -->
     <div class="form-row">
       <label class="form-label">Firma Adı *</label>
-      <input class="form-input" id="fAd" placeholder="ABC Tersane A.Ş.">
+      <input class="form-input" id="fAd" placeholder="ABC Tersane A.S.">
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0;">
+        <label class="form-label">Firma Tipi *</label>
+        <select class="form-input form-select" id="fTip" onchange="firmaTipiDegisti()">
+          <option value="imalat">Imalat Firması</option>
+          <option value="montaj">Montaj Firması</option>
+          <option value="tersane">Tersane</option>
+          <option value="diger">Diger</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin:0;">
+        <label class="form-label">Hesap Tipi</label>
+        <select class="form-input form-select" id="fHesapTipi">
+          <option value="demo">Demo</option>
+          <option value="pilot">Pilot</option>
+          <option value="production">Production</option>
+          <option value="dev">Gelistirici</option>
+        </select>
+      </div>
     </div>
     <div class="form-row-2">
       <div class="form-row" style="margin:0;">
@@ -417,7 +437,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </select>
       </div>
       <div class="form-row" style="margin:0;">
-        <label class="form-label">Aylık Ücret (₺)</label>
+        <label class="form-label">Aylik Ucret (TL)</label>
         <input class="form-input" type="number" id="fUcret" placeholder="0">
       </div>
     </div>
@@ -637,11 +657,21 @@ function firmaFiltrele() {
   firmaRender(q?_firmalar.filter(f=>(f.ad||'').toLowerCase().includes(q)):_firmalar);
 }
 
+function firmaTipiDegisti() {
+  var tip = T('fTip').value;
+  // Tersane tipinde modüller farklı
+  var modulRow = T('fModullerRow');
+  if (tip === 'tersane') {
+    modulRow.innerHTML = '<label class="form-label">Açik Modüller</label><p style="font-size:12px;color:var(--txd);margin-top:4px;">Tersane tüm süreçleri koordine eder -- modüller otomatik ayarlanır.</p>';
+  }
+}
+
 function firmaModalAc() {
   _duzenFirmaId = null;
   T('firmaModalBaslik').textContent = ' Yeni Firma';
   ['fAd','fEmail','fTel','fNotlar','fAdminAd','fAdminEmail','fAdminSifre'].forEach(id => T(id).value = '');
   T('fPlan').value = 'demo'; T('fUcret').value = ''; T('fDemoBitis').value = '';
+  T('fTip').value = 'imalat'; T('fHesapTipi').value = 'demo';
   // Tüm modülleri açık yap
   ['fm_uretim','fm_kalite','fm_sevkiyat','fm_raporlar','fm_yonetim'].forEach(id => T(id).checked = true);
   // Admin kullanıcı satırını göster
@@ -678,6 +708,8 @@ async function firmaKaydet() {
 
   var veri = {
     ad,
+    firma_tipi: T('fTip').value,
+    hesap_tipi: T('fHesapTipi').value,
     plan: T('fPlan').value,
     aylik_ucret: parseFloat(T('fUcret').value) || 0,
     demo_bitis: T('fDemoBitis').value || null,
