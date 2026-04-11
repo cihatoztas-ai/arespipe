@@ -182,6 +182,13 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
 <script src="ares-layout.js"></script>
 </head>
 <body>
+<!-- VIEW AS BAR -->
+<div id="viewAsBar" style="display:none;background:#1d4ed8;color:#fff;padding:8px 20px;font-size:13px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:9999;">
+  <span style="font-weight:700;">GOZETLEME MODU:</span>
+  <span id="viewAsAd">--</span>
+  <span style="flex:1;"></span>
+  <button onclick="ARES.viewAsCik()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;">Cik</button>
+</div>
 <div class="app-shell">
 <div class="main-content">
 <div class="page">
@@ -348,6 +355,14 @@ document.addEventListener('DOMContentLoaded', function() {
           var _ses = await _supa.auth.getSession();
           if (_ses.data && _ses.data.session) {
             await ARES.oturumKontrol();
+            // View As bar goster
+            if (ARES.viewAsAktif && ARES.viewAsAktif()) {
+              var bar = document.getElementById('viewAsBar');
+              var o = ARES.oturumAl();
+              if (bar) { bar.style.display = 'flex'; }
+              var adEl = document.getElementById('viewAsAd');
+              if (adEl) adEl.textContent = o?.view_as_ad || 'Firma';
+            }
             break;
           }
           if (_bekle > 20) { location.href = 'giris.html'; return; }

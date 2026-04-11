@@ -139,6 +139,7 @@ const ARES = (function () {
       tenant_id: appMeta.tenant_id || claims.tenant_id || null,
       rol:       appMeta.rol       || claims.rol       || null,
       ad_soyad:  session.user.user_metadata?.ad_soyad || session.user.email,
+      gercek_rol: appMeta.rol || claims.rol || null,
     };
 
     // Claims dolu değilse (eski token) DB'den tamamla
@@ -155,8 +156,26 @@ const ARES = (function () {
       }
     }
 
+    // View As modu -- super_admin baska firma gozunden bakiyor
+    const viewAs = sessionStorage.getItem('ares_view_as');
+    if (viewAs && _oturum.gercek_rol === 'super_admin') {
+      try {
+        const va = JSON.parse(viewAs);
+        _oturum.view_as = true;
+        _oturum.view_as_ad = va.ad;
+        _oturum.tenant_id = va.tenant_id;
+        _oturum.rol = 'firma_admin';
+      } catch(e) {}
+    }
+
     modDegistir('supabase');
     return _oturum;
+  }
+
+  function viewAsAktif() { return !!(_oturum?.view_as); }
+  function viewAsCik() {
+    sessionStorage.removeItem('ares_view_as');
+    window.location.href = 'admin/panel.html';
   }
 
   function oturumAl()  { return _oturum; }
@@ -683,6 +702,7 @@ const ARES = (function () {
 
     // Oturum
     girisYap, cikisYap, oturumKontrol, oturumAl, tenantId,
+    viewAsAktif, viewAsCik,
 
     // Yetki
     yetkiVar, yetkiVarHizli, rolAl, sayfaYetkiKontrol, portalKontrol, yetkiCacheSifirla,
