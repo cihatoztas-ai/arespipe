@@ -332,7 +332,8 @@ async function girisYap() {
     }
     document.getElementById('bilgiKutu').textContent = tv('giris_basarili','Giriş başarılı, yönlendiriliyorsunuz\u2026');
     document.getElementById('bilgiKutu').classList.add('goster');
-    setTimeout(function(){ window.location.href = 'index.html'; }, 600);
+    var hedef = sonuc.yonlendir || 'index.html';
+    setTimeout(function(){ window.location.href = hedef; }, 600);
   } catch(e) {
     yukleniyorKapat();
     hataGoster(tv('giris_hata_genel','Beklenmeyen hata: ') + esc(e.message));

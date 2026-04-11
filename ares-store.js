@@ -94,16 +94,23 @@ const ARES = (function () {
     const { data, error } = await _supa.auth.signInWithPassword({ email, password: sifre });
     if (error) return { hata: error.message };
 
-    // G-06: JWT claims'den tenant_id ve rol oku
+    // G-06: JWT claims'den tenant_id ve rol oku (app_metadata'dan)
     const jwt     = data.session?.access_token;
     const claims  = jwt ? JSON.parse(atob(jwt.split('.')[1])) : {};
+    const appMeta = claims.app_metadata || {};
 
     _oturum = {
       id:        data.user.id,
-      tenant_id: claims.tenant_id || null,
-      rol:       claims.rol       || null,
+      tenant_id: appMeta.tenant_id || claims.tenant_id || null,
+      rol:       appMeta.rol       || claims.rol       || null,
       ad_soyad:  data.user.user_metadata?.ad_soyad || email,
     };
+
+    // Süper admin paneline yönlendir
+    if (_oturum.rol === 'super_admin') {
+      modDegistir('supabase');
+      return { kullanici: _oturum, yonlendir: '/panel.html' };
+    }
 
     // Mod supabase'e geç
     modDegistir('supabase');
@@ -126,10 +133,11 @@ const ARES = (function () {
     const jwt    = session.access_token;
     const claims = jwt ? JSON.parse(atob(jwt.split('.')[1])) : {};
 
+    const appMeta = claims.app_metadata || {};
     _oturum = {
       id:        session.user.id,
-      tenant_id: claims.tenant_id || null,
-      rol:       claims.rol       || null,
+      tenant_id: appMeta.tenant_id || claims.tenant_id || null,
+      rol:       appMeta.rol       || claims.rol       || null,
       ad_soyad:  session.user.user_metadata?.ad_soyad || session.user.email,
     };
 
