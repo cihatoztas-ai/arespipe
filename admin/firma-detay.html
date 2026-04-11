@@ -169,7 +169,12 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="form-row-2">
         <div class="form-row" style="margin:0">
           <label class="form-label">Demo Bitis Tarihi</label>
-          <input class="form-input" type="date" id="fDemoBitis">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="form-input" type="date" id="fDemoBitis" style="flex:1;">
+            <button class="btn btn-outline btn-sm" onclick="demoUzat(7)" title="+7 gun">+7g</button>
+            <button class="btn btn-outline btn-sm" onclick="demoUzat(30)" title="+30 gun">+30g</button>
+            <button class="btn btn-outline btn-sm" onclick="demoUzat(90)" title="+90 gun">+90g</button>
+          </div>
         </div>
         <div class="form-row" style="margin:0">
           <label class="form-label">Aylik Ucret (TL)</label>
@@ -484,6 +489,15 @@ async function featureGuncelle(feature, aktif) {
     .upsert({ tenant_id: _firmaId, feature_kod: feature, aktif: aktif }, { onConflict: 'tenant_id,feature_kod' });
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
   toast(feature + ' ozelligi ' + (aktif ? 'acildi' : 'kapatildi'));
+}
+
+function demoUzat(gun) {
+  var el = T('fDemoBitis');
+  var baslangic = el.value ? new Date(el.value) : new Date();
+  if (baslangic < new Date()) baslangic = new Date(); // gecmisse bugundan uzat
+  baslangic.setDate(baslangic.getDate() + gun);
+  el.value = baslangic.toISOString().split('T')[0];
+  toast(gun + ' gun uzatildi — kaydetmeyi unutmayin', 'ok');
 }
 
 async function bilgileriKaydet() {
