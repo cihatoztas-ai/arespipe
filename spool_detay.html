@@ -2783,25 +2783,32 @@ function m3Click(e) {
 // Kamera pozisyon yardımcıları
 // Bbox'a göre kamera konumlandır
 function m3CameraFit() {
-  if (!_m3.camera || !_m3.controls) return;
-  var bbox = SP.bbox;
-  var cx, cy, cz, dist;
-  if (bbox && (bbox.maxX !== bbox.minX || bbox.maxY !== bbox.minY || bbox.maxZ !== bbox.minZ)) {
-    cx = (bbox.minX + bbox.maxX) / 2;
-    cy = (bbox.minY + bbox.maxY) / 2;
-    cz = (bbox.minZ + bbox.maxZ) / 2;
-    var dx = bbox.maxX - bbox.minX;
-    var dy = bbox.maxY - bbox.minY;
-    var dz = bbox.maxZ - bbox.minZ;
-    dist = Math.sqrt(dx*dx + dy*dy + dz*dz) * 1.5 || 2000;
-  } else {
-    cx=400; cy=400; cz=0; dist=2500;
-  }
-  _m3.controls.target.set(cx, cy, cz);
-  _m3.camera.position.set(cx + dist*0.65, cy + dist*0.45, cz + dist*0.65);
+  if (!_m3.camera || !_m3.controls || !_m3.meshes.length) return;
+
+  // Sahnedeki tüm mesh'lerin gerçek bbox'ını hesapla
+  var box = new THREE.Box3();
+  _m3.meshes.forEach(function(m) {
+    m.geometry.computeBoundingBox();
+    var mb = new THREE.Box3().copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld);
+    box.union(mb);
+  });
+
+  var center = new THREE.Vector3();
+  box.getCenter(center);
+  var size = new THREE.Vector3();
+  box.getSize(size);
+  var dist = Math.max(size.x, size.y, size.z) * 2 || 2000;
+
+  _m3.controls.target.copy(center);
+  _m3.camera.position.set(
+    center.x + dist * 0.65,
+    center.y + dist * 0.55,
+    center.z + dist * 0.65
+  );
   _m3.camera.far = dist * 20;
   _m3.camera.updateProjectionMatrix();
-  _m3.controls.maxDistance = dist * 10;
+  _m3.controls.minDistance = dist * 0.05;
+  _m3.controls.maxDistance = dist * 8;
   _m3.controls.update();
   if (T('m3Popup')) T('m3Popup').classList.remove('show');
 }
