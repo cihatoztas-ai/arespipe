@@ -116,13 +116,15 @@ const ARES = (function () {
       return { kullanici: _oturum, yonlendir: 'admin/firma.html' };
     }
     // Musteri portal kullanicisi — customer_kullanicilar tablosunda kayitli
-    if (!_oturum.tenant_id) {
+    // tenant_id yoksa veya rol yoksa musteri olabilir
+    if (!_oturum.tenant_id || !_oturum.rol) {
       const { data: musteriKul } = await _supa
         .from('customer_kullanicilar')
         .select('id')
         .eq('id', _oturum.id)
         .single();
       if (musteriKul) {
+        _oturum.rol = 'musteri';
         modDegistir('supabase');
         return { kullanici: _oturum, yonlendir: 'portal/index.html' };
       }
