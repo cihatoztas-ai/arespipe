@@ -890,7 +890,7 @@ async function firmaToggle(id, aktif) {
 
 // -- KULLANICILAR -----------------------------------------------
 function kulRolBadge(rol) {
-  var map = { super_admin:'badge-super', firma_admin:'badge-admin', yonetici:'badge-starter', kk_uzmani:'badge-ac', 'operatör':'badge-pasif' };
+  var map = { super_admin:'badge-super', firma_admin:'badge-admin', yonetici:'badge-starter', kk_uzmani:'badge-ac' };
   return '<span class="badge ' + (map[rol]||'badge-pasif') + '">' + (rol||'--') + '</span>';
 }
 
@@ -911,27 +911,32 @@ async function kulDurumDegistir(kulId, aktif) {
 function kulRender(liste) {
   var el=T('kulTbody');
   if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Kullanici yok</div></div></td></tr>';return;}
-  el.innerHTML=liste.map(function(k) {
+  var html = '';
+  var roller = ['super_admin','firma_admin','yonetici','kk_uzmani','operatör'];
+  liste.forEach(function(k) {
     var firma=_firmalar.find(function(f){return f.id===k.tenant_id;});
-    var roller = ['super_admin','firma_admin','yonetici','kk_uzmani','operatör'];
-    var rolSelect = '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" onchange="kulRolDegistir(\'' + k.id + '\',this.value)">' +
-      roller.map(function(r){ return '<option value="' + r + '"' + (k.rol===r?' selected':'') + '>' + r + '</option>'; }).join('') +
-      '</select>';
-    return '<tr>' +
-      '<td style="font-weight:600;">' + esc(k.ad_soyad||'--') + '</td>' +
-      '<td class="mono" style="font-size:12px;">' + esc(k.email||'--') + '</td>' +
-      '<td style="font-size:12px;"><a href="firma-detay.html?id=' + k.tenant_id + '" style="color:var(--ac);text-decoration:none;">' + esc(firma?.ad||'--') + '</a></td>' +
-      '<td>' + kulRolBadge(k.rol) + '</td>' +
-      '<td><span class="badge ' + (k.aktif?'badge-aktif':'badge-pasif') + '">' + (k.aktif?'Aktif':'Pasif') + '</span></td>' +
-      '<td class="mono" style="font-size:12px;">' + (tarih(k.son_giris)||'--') + '</td>' +
-      '<td><div class="actions">' +
-        rolSelect +
-        '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" onclick="kulDurumDegistir(\'' + k.id + '\',' + k.aktif + ')">' + (k.aktif?'Pasif':'Aktif') + '</button>' +
-        (k.email ? '<button class="btn btn-outline btn-sm" onclick="magicLinkAc(\'' + esc(k.email) + '\')">Link</button>' : '') +
-      '</div></td>' +
-    '</tr>';
-  }).join('');
+    var rolOpts = roller.map(function(r){
+      return '<option value="' + r + '"' + (k.rol===r?' selected':'') + '>' + r + '</option>';
+    }).join('');
+    html += '<tr>';
+    html += '<td style="font-weight:600;">' + esc(k.ad_soyad||'--') + '</td>';
+    html += '<td class="mono" style="font-size:12px;">' + esc(k.email||'--') + '</td>';
+    html += '<td style="font-size:12px;"><a href="firma-detay.html?id=' + k.tenant_id + '" style="color:var(--ac);text-decoration:none;">' + esc(firma ? firma.ad : '--') + '</a></td>';
+    html += '<td>' + kulRolBadge(k.rol) + '</td>';
+    html += '<td><span class="badge ' + (k.aktif?'badge-aktif':'badge-pasif') + '">' + (k.aktif?'Aktif':'Pasif') + '</span></td>';
+    html += '<td class="mono" style="font-size:12px;">' + (tarih(k.son_giris)||'--') + '</td>';
+    html += '<td><div class="actions">';
+    html += '<select class="form-input form-select" data-kul-id="' + k.id + '" style="padding:3px 8px;font-size:11px;width:auto;" onchange="_kulRolChange(this)">' + rolOpts + '</select>';
+    html += '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" data-kul-id="' + k.id + '" data-aktif="' + k.aktif + '" onclick="_kulDurumClick(this)">' + (k.aktif?'Pasif':'Aktif') + '</button>';
+    if (k.email) html += '<button class="btn btn-outline btn-sm" data-email="' + esc(k.email) + '" onclick="magicLinkAc(this.dataset.email)">Link</button>';
+    html += '</div></td>';
+    html += '</tr>';
+  });
+  el.innerHTML = html;
 }
+
+function _kulRolChange(el) { kulRolDegistir(el.dataset.kulId, el.value); }
+function _kulDurumClick(el) { kulDurumDegistir(el.dataset.kulId, el.dataset.aktif === 'true'); }
 
 function kulFiltrele() {
   var q=T('kulArama').value.toLowerCase();
@@ -1026,12 +1031,14 @@ async function flagFirmaYukle() {
       '<td style="font-weight:600;">' + f.ad + '</td>' +
       '<td style="text-align:center;">' +
         '<label style="display:inline-flex;align-items:center;cursor:pointer;">' +
-          '<input type="checkbox" ' + (aktif?'checked':'') + ' onchange="flagToggle('' + firmaId + '','' + f.kod + '',this.checked)" style="width:16px;height:16px;">' +
+          '<input type="checkbox" data-firma-id="' + firmaId + '" data-kod="' + f.kod + '" ' + (aktif?'checked':'') + ' onchange="_flagChange(this)" style="width:16px;height:16px;">' +
         '</label>' +
       '</td>' +
     '</tr>';
   }).join('');
 }
+
+function _flagChange(el) { flagToggle(el.dataset.firmaId, el.dataset.kod, el.checked); }
 
 async function flagToggle(firmaId, kod, aktif) {
   await _supa.from('feature_flags').upsert({kod:kod, ad:kod}, {onConflict:'kod'});
