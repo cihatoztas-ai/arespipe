@@ -511,7 +511,7 @@ async function durumDegistir(aktif) {
 
 async function rolDegistir(kulId, yeniRol) {
   await _supa.from('kullanicilar').update({ rol: yeniRol }).eq('id', kulId);
-  await _supa.auth.admin.updateUserById(kulId, { app_metadata: { rol: yeniRol } });
+  // app_metadata DB trigger ile otomatik guncelleniyor
   toast('Rol guncellendi');
 }
 
@@ -545,10 +545,7 @@ async function kulEkle() {
     id: authUser.user.id, tenant_id: _firmaId,
     email: email, ad_soyad: ad, rol: rol, aktif: true
   });
-  await _supa.auth.admin.updateUserById(authUser.user.id, {
-    app_metadata: { tenant_id: _firmaId, rol: rol }
-  });
-
+  // app_metadata DB trigger ile otomatik guncelleniyor
   T('kulModal').style.display = 'none';
   toast('Kullanici eklendi');
   await kullanicilariYukle();

@@ -870,12 +870,8 @@ async function firmaKaydet() {
       aktif: true
     });
 
-    // app_metadata güncelle
-    await _supa.auth.admin.updateUserById(authUser.user.id, {
-      app_metadata: { tenant_id: tenantId, rol: 'firma_admin' }
-    });
-
-    toast('Firma ve admin kullanıcı oluşturuldu');
+    // app_metadata DB trigger ile otomatik guncelleniyor
+    toast('Firma ve admin kullanici olusturuldu');
   }
 
   T('firmaModal').style.display = 'none';
