@@ -264,6 +264,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="nav-item active" onclick="goPan('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
   <div class="nav-item" onclick="goPan('firmalar',this)"><span class="nav-icon">🏢</span>Firmalar</div>
   <div class="nav-item" onclick="goPan('kullanicilar',this)"><span class="nav-icon">👥</span>Kullanıcılar</div>
+  <div class="nav-item" onclick="goPan('flags',this)"><span class="nav-icon">🚩</span>Feature Flags</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('loglar',this)"><span class="nav-icon">📋</span>Sistem Logları</div>
 </div>
@@ -599,7 +600,7 @@ async function cikisYap() {
 
 // -- VERİ YÜKLE --------------------------------------------------
 async function yukle() {
-  await Promise.all([firmalariYukle(), kullanicilariYukle(), loglariYukle()]);
+  await Promise.all([firmalariYukle(), kullanicilariYukle(), loglariYukle(), flaglariYukle()]);
   dashboardGuncelle();
 }
 
@@ -913,7 +914,7 @@ function kulRender(liste) {
   el.innerHTML=liste.map(function(k) {
     var firma=_firmalar.find(function(f){return f.id===k.tenant_id;});
     var roller = ['super_admin','firma_admin','yonetici','kk_uzmani','operatör'];
-    var rolSelect = '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" onchange="kulRolDegistir('' + k.id + '',this.value)">' +
+    var rolSelect = '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" onchange="kulRolDegistir(\'' + k.id + '\',this.value)">' +
       roller.map(function(r){ return '<option value="' + r + '"' + (k.rol===r?' selected':'') + '>' + r + '</option>'; }).join('') +
       '</select>';
     return '<tr>' +
@@ -976,6 +977,70 @@ function logRender(loglar) {
 }
 
 // -- NAV --------------------------------------------------------
+// -- FEATURE FLAGS --
+var _flagler = [];
+var _seciliFirmaId = null;
+
+async function flaglariYukle() {
+  var {data} = await _supa.from('feature_flags').select('*').order('kod');
+  _flagler = data || [];
+  var el = T('flagDefTbody');
+  if (!_flagler.length) {
+    el.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:20px;">Feature flag tanimli degil</td></tr>';
+    return;
+  }
+  el.innerHTML = _flagler.map(function(f) {
+    return '<tr>' +
+      '<td style="font-weight:600;">' + esc(f.ad||f.kod) + '</td>' +
+      '<td class="mono" style="font-size:12px;">' + esc(f.kod) + '</td>' +
+      '<td style="text-align:center;"><span class="badge ' + (f.varsayilan?'badge-aktif':'badge-pasif') + '">' + (f.varsayilan?'Acik':'Kapali') + '</span></td>' +
+      '<td style="font-size:12px;color:var(--txd);">' + esc(f.aciklama||'--') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // Firma dropdown doldur
+  var sel = T('flagFirmaFilter');
+  sel.innerHTML = '<option value="">Firma secin...</option>' +
+    _firmalar.map(function(f) { return '<option value="' + f.id + '">' + esc(f.ad) + '</option>'; }).join('');
+}
+
+async function flagFirmaYukle() {
+  var firmaId = T('flagFirmaFilter').value;
+  if (!firmaId) return;
+  _seciliFirmaId = firmaId;
+  var {data} = await _supa.from('tenant_features').select('*').eq('tenant_id', firmaId);
+  var map = {};
+  (data||[]).forEach(function(f) { map[f.feature_kod] = f.aktif; });
+  var el = T('flagFirmaTbody');
+  var FEATURES = [
+    {kod:'3d_model', ad:'3D Model Gorunumu'},
+    {kod:'ai_izometri', ad:'AI Izometri Okuma'},
+    {kod:'musteri_portal', ad:'Musteri Portali'},
+    {kod:'raporlar_gelismis', ad:'Gelismis Raporlar'},
+    {kod:'hakedis', ad:'Hakedis Modulu'},
+    {kod:'api_erisim', ad:'API Erisimi'}
+  ];
+  el.innerHTML = FEATURES.map(function(f) {
+    var aktif = map[f.kod] || false;
+    return '<tr>' +
+      '<td style="font-weight:600;">' + f.ad + '</td>' +
+      '<td style="text-align:center;">' +
+        '<label style="display:inline-flex;align-items:center;cursor:pointer;">' +
+          '<input type="checkbox" ' + (aktif?'checked':'') + ' onchange="flagToggle('' + firmaId + '','' + f.kod + '',this.checked)" style="width:16px;height:16px;">' +
+        '</label>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function flagToggle(firmaId, kod, aktif) {
+  await _supa.from('feature_flags').upsert({kod:kod, ad:kod}, {onConflict:'kod'});
+  var {error} = await _supa.from('tenant_features')
+    .upsert({tenant_id:firmaId, feature_kod:kod, aktif:aktif}, {onConflict:'tenant_id,feature_kod'});
+  if (error) { toast('Hata: '+error.message,'err'); return; }
+  toast(kod + ' ' + (aktif?'acildi':'kapatildi'));
+}
+
 function goPan(id, el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
