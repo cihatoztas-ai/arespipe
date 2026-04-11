@@ -398,7 +398,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <!-- FIRMA MODAL -->
 <div id="firmaModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal-box" style="max-width:560px;">
+  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto;">
     <div class="modal-title" id="firmaModalBaslik">🏢 Yeni Firma</div>
 
     <!-- Temel Bilgiler -->
@@ -418,7 +418,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       </div>
       <div class="form-row" style="margin:0;">
         <label class="form-label">Hesap Tipi</label>
-        <select class="form-input form-select" id="fHesapTipi">
+        <select class="form-input form-select" id="fHesapTipi" onchange="firmaTipiDegisti()">
           <option value="demo">Demo</option>
           <option value="pilot">Pilot</option>
           <option value="production">Production</option>
@@ -478,6 +478,31 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="fm_yonetim" checked> Yönetim
+        </label>
+      </div>
+    </div>
+
+    <!-- Feature Flags -->
+    <div class="form-row" id="fFeaturesRow">
+      <label class="form-label">Ozellikler (Feature Flags)</label>
+      <div id="fFeaturesList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_3d_model"> 3D Model Gorunumu
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_ai_izometri"> AI Izometri Okuma
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_musteri_portal"> Musteri Portali
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_raporlar_gelismis"> Gelismis Raporlar
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_hakedis"> Hakkedis Modulu
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ff_api_erisim"> API Erisimi
         </label>
       </div>
     </div>
@@ -659,11 +684,31 @@ function firmaFiltrele() {
 
 function firmaTipiDegisti() {
   var tip = T('fTip').value;
-  // Tersane tipinde modüller farklı
-  var modulRow = T('fModullerRow');
-  if (tip === 'tersane') {
-    modulRow.innerHTML = '<label class="form-label">Açik Modüller</label><p style="font-size:12px;color:var(--txd);margin-top:4px;">Tersane tüm süreçleri koordine eder -- modüller otomatik ayarlanır.</p>';
-  }
+  var hesap = T('fHesapTipi').value;
+
+  // Modül defaults
+  var modulDefaults = {
+    imalat:  { uretim:true, kalite:true, sevkiyat:true, raporlar:true, yonetim:true },
+    montaj:  { uretim:false, kalite:true, sevkiyat:true, raporlar:true, yonetim:true },
+    tersane: { uretim:false, kalite:false, sevkiyat:false, raporlar:true, yonetim:true },
+    diger:   { uretim:true, kalite:true, sevkiyat:true, raporlar:true, yonetim:true }
+  };
+  var md = modulDefaults[tip] || modulDefaults.imalat;
+  Object.keys(md).forEach(function(m) {
+    var el = T('fm_' + m);
+    if (el) el.checked = md[m];
+  });
+
+  // Feature flag defaults per hesap tipi
+  var ffDev  = ['ff_3d_model','ff_ai_izometri','ff_musteri_portal','ff_raporlar_gelismis','ff_hakedis','ff_api_erisim'];
+  var ffDemo = ['ff_3d_model'];
+  var ffPilot= ['ff_3d_model','ff_musteri_portal','ff_raporlar_gelismis'];
+  var ffProd = ['ff_3d_model','ff_musteri_portal','ff_raporlar_gelismis','ff_hakedis'];
+  var aktifFF = hesap === 'dev' ? ffDev : hesap === 'pilot' ? ffPilot : hesap === 'production' ? ffProd : ffDemo;
+  ['ff_3d_model','ff_ai_izometri','ff_musteri_portal','ff_raporlar_gelismis','ff_hakedis','ff_api_erisim'].forEach(function(id) {
+    var el = T(id);
+    if (el) el.checked = aktifFF.includes(id);
+  });
 }
 
 function firmaModalAc() {
@@ -672,9 +717,7 @@ function firmaModalAc() {
   ['fAd','fEmail','fTel','fNotlar','fAdminAd','fAdminEmail','fAdminSifre'].forEach(id => T(id).value = '');
   T('fPlan').value = 'demo'; T('fUcret').value = ''; T('fDemoBitis').value = '';
   T('fTip').value = 'imalat'; T('fHesapTipi').value = 'demo';
-  // Tüm modülleri açık yap
-  ['fm_uretim','fm_kalite','fm_sevkiyat','fm_raporlar','fm_yonetim'].forEach(id => T(id).checked = true);
-  // Admin kullanıcı satırını göster
+  firmaTipiDegisti(); // Modül ve feature defaults
   T('fAdminRow').style.display = '';
   T('firmaModal').style.display = 'flex';
 }
@@ -741,12 +784,32 @@ async function firmaKaydet() {
 
     // Seçilen modülleri ekle
     var moduller = ['uretim','kalite','sevkiyat','raporlar','yonetim'];
-    var modulInsert = moduller.map(m => ({
+    var modulInsert = moduller.map(function(m) { return {
       tenant_id: tenantId,
       modul_kodu: m,
-      aktif: T('fm_' + m)?.checked ?? true
-    }));
+      aktif: T('fm_' + m) ? T('fm_' + m).checked : true
+    }; });
     await _supa.from('firma_moduller').insert(modulInsert);
+
+    // Feature flags ekle
+    var featureMap = {
+      'ff_3d_model': '3d_model',
+      'ff_ai_izometri': 'ai_izometri',
+      'ff_musteri_portal': 'musteri_portal',
+      'ff_raporlar_gelismis': 'raporlar_gelismis',
+      'ff_hakedis': 'hakedis',
+      'ff_api_erisim': 'api_erisim'
+    };
+    var featureInsert = Object.keys(featureMap).map(function(id) { return {
+      tenant_id: tenantId,
+      feature_kod: featureMap[id],
+      aktif: T(id) ? T(id).checked : false
+    }; });
+    // Önce feature_flags tablosuna kodları ekle (yoksa)
+    for (var fk of Object.values(featureMap)) {
+      await _supa.from('feature_flags').upsert({ kod: fk, ad: fk }, { onConflict: 'kod' });
+    }
+    await _supa.from('tenant_features').insert(featureInsert);
 
     // Admin kullanıcı oluştur (Supabase Admin API üzerinden)
     var adminEmail = T('fAdminEmail').value.trim();
