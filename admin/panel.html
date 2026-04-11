@@ -481,7 +481,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 // Panel için tek Supabase instance — aynı storage key ile session paylaşılır
 const _panelSupa = supabase.createClient(
   'https://ochvbepfiatzvyknkvsn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NTc5NTIsImV4cCI6MjA1OTMzMzk1Mn0.lAIdEBEQiRonaxlZgEluPFRidQJMv8YzZgJMDVE9RLM',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',
   { auth: { storageKey: 'sb-ochvbepfiatzvyknkvsn-auth-token' } }
 );
 function _getSupa() { return _panelSupa; }
@@ -771,15 +771,21 @@ function goPan(id, el) {
   }
 
   var {data} = await supa.auth.getSession();
-  if(data?.session) {
+  if (data?.session) {
     var {data:kul} = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id',data.session.user.id).single();
-    if(kul?.rol==='super_admin') {
-      _oturum={id:data.session.user.id,email:data.session.user.email,ad:kul.ad_soyad,rol:kul.rol};
-      T('topbarUser').textContent=kul.ad_soyad||data.session.user.email;
-      T('loginScreen').style.display='none';
-      var app=T('appShell');app.style.display='flex';
+    if (kul?.rol === 'super_admin') {
+      _oturum = {id:data.session.user.id, email:data.session.user.email, ad:kul.ad_soyad, rol:kul.rol};
+      T('topbarUser').textContent = kul.ad_soyad || data.session.user.email;
+      T('loginScreen').style.display = 'none';
+      var app = T('appShell'); app.style.display = 'flex';
       await yukle();
+    } else {
+      // Giriş yapılmış ama süper admin değil
+      window.location.href = '../index.html';
     }
+  } else {
+    // Session yok — giriş sayfasına yönlendir, geri dön
+    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname);
   }
 })();
 </script>
