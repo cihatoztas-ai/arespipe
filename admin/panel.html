@@ -27,7 +27,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
 
-/* ── TOP BAR ── */
+/* -- TOP BAR -- */
 .topbar{
   display:flex;align-items:center;gap:16px;
   padding:0 24px;height:56px;
@@ -59,10 +59,10 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 }
 .btn-logout:hover{border-color:var(--re);color:var(--re);}
 
-/* ── LAYOUT ── */
+/* -- LAYOUT -- */
 .layout{display:flex;flex:1;min-height:0;}
 
-/* ── SIDEBAR ── */
+/* -- SIDEBAR -- */
 .sidebar{
   width:220px;flex-shrink:0;
   background:var(--sur);border-right:1px solid var(--bor);
@@ -80,12 +80,12 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .nav-icon{font-size:16px;width:20px;text-align:center;}
 .nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
 
-/* ── MAIN ── */
+/* -- MAIN -- */
 .main{flex:1;overflow-y:auto;padding:28px 32px;}
 .panel{display:none;}
 .panel.active{display:block;}
 
-/* ── PAGE HEADER ── */
+/* -- PAGE HEADER -- */
 .page-header{margin-bottom:28px;}
 .page-title{
   font-family:'Barlow Condensed',sans-serif;
@@ -94,7 +94,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 }
 .page-sub{font-size:13px;color:var(--txd);margin-top:4px;}
 
-/* ── STAT KARTLAR ── */
+/* -- STAT KARTLAR -- */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
 .stat-card{
   background:var(--sur);border:1px solid var(--bor);border-radius:14px;
@@ -104,7 +104,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;}
 .stat-sub{font-size:12px;color:var(--txd);}
 
-/* ── TABLO ── */
+/* -- TABLO -- */
 .tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
 .tbl-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -122,7 +122,7 @@ td{padding:12px 16px;border-bottom:1px solid rgba(35,39,48,.6);font-size:13px;}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:rgba(255,255,255,.02);}
 
-/* ── BADGE ── */
+/* -- BADGE -- */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
 .badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
 .badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
@@ -131,7 +131,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .badge-pro{background:rgba(168,85,247,.12);color:var(--leg);}
 .badge-super{background:rgba(249,115,22,.15);color:var(--admin);border:1px solid rgba(249,115,22,.3);}
 
-/* ── BUTONLAR ── */
+/* -- BUTONLAR -- */
 .btn{
   padding:7px 14px;border-radius:9px;border:none;cursor:pointer;
   font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;
@@ -147,7 +147,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .btn-danger:hover{background:rgba(239,68,68,.1);}
 .btn-sm{padding:4px 10px;font-size:11px;}
 
-/* ── MODAL ── */
+/* -- MODAL -- */
 .modal-ov{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   display:flex;align-items:center;justify-content:center;z-index:1000;
@@ -169,12 +169,12 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);}
 
-/* ── EMPTY ── */
+/* -- EMPTY -- */
 .empty{text-align:center;padding:48px 20px;color:var(--txd);}
 .empty-icon{font-size:32px;margin-bottom:10px;}
 .empty-text{font-size:14px;}
 
-/* ── ARAMA BAR ── */
+/* -- ARAMA BAR -- */
 .search-bar{
   display:flex;align-items:center;gap:10px;
   margin-bottom:16px;
@@ -188,7 +188,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .search-input:focus{border-color:var(--ac);}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txd);font-size:14px;}
 
-/* ── LOG ── */
+/* -- LOG -- */
 .log-item{
   display:flex;gap:12px;align-items:flex-start;
   padding:10px 0;border-bottom:1px solid var(--bor);
@@ -198,7 +198,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .log-meta{font-size:11px;color:var(--txd);margin-top:2px;}
 .log-msg{font-size:13px;color:var(--tx);}
 
-/* ── GİRİŞ EKRANI ── */
+/* -- GİRİŞ EKRANI -- */
 #loginScreen{
   position:fixed;inset:0;background:var(--bg);
   display:flex;align-items:center;justify-content:center;z-index:9999;
@@ -219,7 +219,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   margin-bottom:14px;display:none;
 }
 
-/* ── TOAST ── */
+/* -- TOAST -- */
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--sur2);border:1px solid var(--bor);border-radius:10px;
@@ -229,7 +229,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .toast-ok{border-color:rgba(34,197,94,.3);color:var(--gr);}
 .toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
 
-/* ── MONO ── */
+/* -- MONO -- */
 .mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
 
 .actions{display:flex;gap:6px;}
@@ -507,8 +507,8 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <script>
 'use strict';
 
-// ── SUPABASE ──────────────────────────────────────────────────
-// Panel için tek Supabase instance — aynı storage key ile session paylaşılır
+// -- SUPABASE --
+// Panel için tek Supabase instance -- aynı storage key ile session paylaşılır
 const _panelSupa = supabase.createClient(
   'https://ochvbepfiatzvyknkvsn.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',
@@ -518,12 +518,12 @@ function _getSupa() { return _panelSupa; }
 Object.defineProperty(window, '_supa', { get: _getSupa });
 
 
-// ── STATE ──────────────────────────────────────────────────────
+// -- STATE ------------------------------------------------------
 var _oturum = null;
 var _firmalar = [], _kullanicilar = [], _loglar = [];
 var _duzenFirmaId = null;
 
-// ── YARDIMCI ──────────────────────────────────────────────────
+// -- YARDIMCI --------------------------------------------------
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 function T(id){return document.getElementById(id);}
 function toast(msg, tip) {
@@ -535,7 +535,7 @@ function toast(msg, tip) {
   setTimeout(()=>t.remove(),3000);
 }
 function tarih(ts) {
-  if(!ts) return '—';
+  if(!ts) return '--';
   return new Date(ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 function planBadge(plan) {
@@ -543,7 +543,7 @@ function planBadge(plan) {
   return '<span class="badge '+(m[plan]||'badge-demo')+'">'+esc(plan||'demo').toUpperCase()+'</span>';
 }
 
-// ── GİRİŞ ──────────────────────────────────────────────────────
+// -- GİRİŞ ------------------------------------------------------
 
 
 async function cikisYap() {
@@ -551,7 +551,7 @@ async function cikisYap() {
   location.reload();
 }
 
-// ── VERİ YÜKLE ──────────────────────────────────────────────────
+// -- VERİ YÜKLE --------------------------------------------------
 async function yukle() {
   await Promise.all([firmalariYukle(), kullanicilariYukle(), loglariYukle()]);
   dashboardGuncelle();
@@ -580,7 +580,7 @@ async function loglariYukle() {
   dashLogRender(_loglar.slice(0,8));
 }
 
-// ── DASHBOARD ──────────────────────────────────────────────────
+// -- DASHBOARD --------------------------------------------------
 function dashboardGuncelle() {
   var aktifF = _firmalar.filter(f=>f.aktif).length;
   var demo   = _firmalar.filter(f=>f.plan==='demo'&&f.aktif).length;
@@ -598,33 +598,33 @@ function dashboardGuncelle() {
 
 function dashLogRender(loglar) {
   var el=T('dashLoglar');
-  if(!loglar.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Log yok</div></div>';return;}
+  if(!loglar.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div class="empty-text">Log yok</div></div>';return;}
   el.innerHTML=loglar.map(l=>`
     <div class="log-item">
       <div class="log-dot" style="background:${l.islem==='INSERT'?'var(--gr)':l.islem==='UPDATE'?'var(--ac)':'var(--re)'}"></div>
       <div>
-        <div class="log-msg">${esc(l.tablo_adi||'—')} — ${esc(l.islem||'—')}</div>
-        <div class="log-meta">${tarih(l.tarih)} · ${esc(l.yapan_id||'sistem')}</div>
+        <div class="log-msg">${esc(l.tablo_adi||'--')} -- ${esc(l.islem||'--')}</div>
+        <div class="log-meta">${tarih(l.tarih)} . ${esc(l.yapan_id||'sistem')}</div>
       </div>
     </div>
   `).join('');
 }
 
-// ── FİRMALAR ───────────────────────────────────────────────────
+// -- FİRMALAR ---------------------------------------------------
 function firmaRender(liste) {
   var el=T('firmaTbody');
-  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">🏢</div><div class="empty-text">Firma yok</div></div></td></tr>';return;}
+  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Firma yok</div></div></td></tr>';return;}
   el.innerHTML=liste.map(f=>`
     <tr>
       <td style="font-weight:600;">${esc(f.ad)}</td>
       <td>${planBadge(f.plan)}</td>
       <td><span class="badge ${f.aktif?'badge-aktif':'badge-pasif'}">${f.aktif?'Aktif':'Pasif'}</span></td>
-      <td style="font-size:12px;color:var(--txd);">${f.demo_bitis?tarih(f.demo_bitis):'—'}</td>
-      <td style="font-size:12px;">${f.aylik_ucret?'₺'+Number(f.aylik_ucret).toLocaleString('tr-TR'):'—'}</td>
+      <td style="font-size:12px;color:var(--txd);">${f.demo_bitis?tarih(f.demo_bitis):'--'}</td>
+      <td style="font-size:12px;">${f.aylik_ucret?'TL'+Number(f.aylik_ucret).toLocaleString('tr-TR'):'--'}</td>
       <td class="mono">${tarih(f.olusturma)}</td>
       <td>
         <div class="actions">
-          <button class="btn btn-outline btn-sm" onclick="firmaModalDuzenle('${f.id}')">✎</button>
+          <button class="btn btn-outline btn-sm" onclick="firmaModalDuzenle('${f.id}')">Düz</button>
           <button class="btn btn-sm ${f.aktif?'btn-danger':'btn-outline'}" onclick="firmaToggle('${f.id}',${!f.aktif})">${f.aktif?'Pasif Yap':'Aktifleştir'}</button>
         </div>
       </td>
@@ -639,7 +639,7 @@ function firmaFiltrele() {
 
 function firmaModalAc() {
   _duzenFirmaId = null;
-  T('firmaModalBaslik').textContent = '🏢 Yeni Firma';
+  T('firmaModalBaslik').textContent = ' Yeni Firma';
   ['fAd','fEmail','fTel','fNotlar','fAdminAd','fAdminEmail','fAdminSifre'].forEach(id => T(id).value = '');
   T('fPlan').value = 'demo'; T('fUcret').value = ''; T('fDemoBitis').value = '';
   // Tüm modülleri açık yap
@@ -653,7 +653,7 @@ function firmaModalDuzenle(id) {
   T('fAdminRow').style.display = 'none'; // Düzenleme modunda admin kullanıcı yok
   var f=_firmalar.find(x=>x.id===id); if(!f) return;
   _duzenFirmaId=id;
-  T('firmaModalBaslik').textContent='✎ Firma Düzenle';
+  T('firmaModalBaslik').textContent='Düz Firma Düzenle';
   T('fAd').value=f.ad||'';
   T('fPlan').value=f.plan||'demo';
   T('fUcret').value=f.aylik_ucret||'';
@@ -668,7 +668,7 @@ async function firmaKaydet() {
   var ad = T('fAd').value.trim();
   if (!ad) { toast('Firma adı zorunlu', 'err'); return; }
 
-  // Yeni firma — admin kullanıcı zorunlu
+  // Yeni firma -- admin kullanıcı zorunlu
   if (!_duzenFirmaId) {
     var adminEmail = T('fAdminEmail').value.trim();
     var adminSifre = T('fAdminSifre').value;
@@ -768,23 +768,23 @@ async function firmaToggle(id, aktif) {
   toast(aktif?'Firma aktifleştirildi':'Firma pasife alındı');
 }
 
-// ── KULLANICILAR ───────────────────────────────────────────────
+// -- KULLANICILAR -----------------------------------------------
 function kulRender(liste) {
   var el=T('kulTbody');
-  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Kullanıcı yok</div></div></td></tr>';return;}
+  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Kullanıcı yok</div></div></td></tr>';return;}
   el.innerHTML=liste.map(k=>{
     var firma=_firmalar.find(f=>f.id===k.tenant_id);
     return `
     <tr>
-      <td style="font-weight:600;">${esc(k.ad_soyad||'—')}</td>
-      <td class="mono" style="font-size:12px;">${esc(k.email||'—')}</td>
-      <td style="font-size:12px;color:var(--txm);">${esc(firma?.ad||'—')}</td>
-      <td><span class="badge ${k.rol==='super_admin'?'badge-super':'badge-starter'}">${esc(k.rol||'—')}</span></td>
+      <td style="font-weight:600;">${esc(k.ad_soyad||'--')}</td>
+      <td class="mono" style="font-size:12px;">${esc(k.email||'--')}</td>
+      <td style="font-size:12px;color:var(--txm);">${esc(firma?.ad||'--')}</td>
+      <td><span class="badge ${k.rol==='super_admin'?'badge-super':'badge-starter'}">${esc(k.rol||'--')}</span></td>
       <td><span class="badge ${k.aktif?'badge-aktif':'badge-pasif'}">${k.aktif?'Aktif':'Pasif'}</span></td>
-      <td class="mono" style="font-size:12px;">${tarih(k.son_giris)||'—'}</td>
+      <td class="mono" style="font-size:12px;">${tarih(k.son_giris)||'--'}</td>
       <td>
         <div class="actions">
-          ${k.email?`<button class="btn btn-outline btn-sm" onclick="magicLinkAc('${esc(k.email)}')">🔗 Link</button>`:''}
+          ${k.email?`<button class="btn btn-outline btn-sm" onclick="magicLinkAc('${esc(k.email)}')"> Link</button>`:''}
         </div>
       </td>
     </tr>`;
@@ -810,7 +810,7 @@ function magicLinkAc(email) {
 async function magicLinkGonder() {
   var email=T('mlEmail').value;
   var {error}=await _supa.auth.admin?.generateLink?.({type:'magiclink',email}) 
-    || {error:{message:'Admin API kullanılamıyor — Supabase Dashboard üzerinden gönderin.'}};
+    || {error:{message:'Admin API kullanılamıyor -- Supabase Dashboard üzerinden gönderin.'}};
   if(error){
     toast('Magic link Supabase Dashboard > Authentication > Users bölümünden gönderilebilir.','err');
     return;
@@ -819,22 +819,22 @@ async function magicLinkGonder() {
   toast('Magic link gönderildi');
 }
 
-// ── LOGLAR ─────────────────────────────────────────────────────
+// -- LOGLAR -----------------------------------------------------
 function logRender(loglar) {
   var el=T('logContainer');
-  if(!loglar.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Log yok</div></div>';return;}
+  if(!loglar.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div class="empty-text">Log yok</div></div>';return;}
   el.innerHTML=loglar.map(l=>`
     <div class="log-item">
       <div class="log-dot" style="background:${l.islem==='INSERT'?'var(--gr)':l.islem==='UPDATE'?'var(--ac)':'var(--re)'}"></div>
       <div style="flex:1;">
-        <div class="log-msg"><strong>${esc(l.tablo_adi||'—')}</strong> — ${esc(l.islem||'—')} <span class="mono">·  ${esc(l.kayit_id||'')}</span></div>
-        <div class="log-meta">${tarih(l.tarih)} · ${esc(l.yapan_id||'sistem')}</div>
+        <div class="log-msg"><strong>${esc(l.tablo_adi||'--')}</strong> -- ${esc(l.islem||'--')} <span class="mono">.  ${esc(l.kayit_id||'')}</span></div>
+        <div class="log-meta">${tarih(l.tarih)} . ${esc(l.yapan_id||'sistem')}</div>
       </div>
     </div>
   `).join('');
 }
 
-// ── NAV ────────────────────────────────────────────────────────
+// -- NAV --------------------------------------------------------
 function goPan(id, el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -842,7 +842,7 @@ function goPan(id, el) {
   el.classList.add('active');
 }
 
-// ── BAŞLANGIÇ ──────────────────────────────────────────────────
+// -- BAŞLANGIÇ --------------------------------------------------
 (async function() {
   var supa = _getSupa();
 
@@ -870,7 +870,7 @@ function goPan(id, el) {
       window.location.href = '../index.html';
     }
   } else {
-    // Session yok — giriş sayfasına yönlendir, geri dön
+    // Session yok -- giriş sayfasına yönlendir, geri dön
     window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname);
   }
 })();
