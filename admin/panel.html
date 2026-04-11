@@ -888,25 +888,47 @@ async function firmaToggle(id, aktif) {
 }
 
 // -- KULLANICILAR -----------------------------------------------
+function kulRolBadge(rol) {
+  var map = { super_admin:'badge-super', firma_admin:'badge-admin', yonetici:'badge-starter', kk_uzmani:'badge-ac', 'operatör':'badge-pasif' };
+  return '<span class="badge ' + (map[rol]||'badge-pasif') + '">' + (rol||'--') + '</span>';
+}
+
+async function kulRolDegistir(kulId, yeniRol) {
+  var {error} = await _supa.from('kullanicilar').update({rol: yeniRol}).eq('id', kulId);
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast('Rol guncellendi');
+  await kullanicilariYukle();
+}
+
+async function kulDurumDegistir(kulId, aktif) {
+  var {error} = await _supa.from('kullanicilar').update({aktif: !aktif}).eq('id', kulId);
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast(!aktif ? 'Kullanici aktiflestirildi' : 'Kullanici pasife alindi');
+  await kullanicilariYukle();
+}
+
 function kulRender(liste) {
   var el=T('kulTbody');
-  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Kullanıcı yok</div></div></td></tr>';return;}
-  el.innerHTML=liste.map(k=>{
-    var firma=_firmalar.find(f=>f.id===k.tenant_id);
-    return `
-    <tr>
-      <td style="font-weight:600;">${esc(k.ad_soyad||'--')}</td>
-      <td class="mono" style="font-size:12px;">${esc(k.email||'--')}</td>
-      <td style="font-size:12px;color:var(--txm);">${esc(firma?.ad||'--')}</td>
-      <td><span class="badge ${k.rol==='super_admin'?'badge-super':'badge-starter'}">${esc(k.rol||'--')}</span></td>
-      <td><span class="badge ${k.aktif?'badge-aktif':'badge-pasif'}">${k.aktif?'Aktif':'Pasif'}</span></td>
-      <td class="mono" style="font-size:12px;">${tarih(k.son_giris)||'--'}</td>
-      <td>
-        <div class="actions">
-          ${k.email?`<button class="btn btn-outline btn-sm" onclick="magicLinkAc('${esc(k.email)}')"> Link</button>`:''}
-        </div>
-      </td>
-    </tr>`;
+  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Kullanici yok</div></div></td></tr>';return;}
+  el.innerHTML=liste.map(function(k) {
+    var firma=_firmalar.find(function(f){return f.id===k.tenant_id;});
+    var roller = ['super_admin','firma_admin','yonetici','kk_uzmani','operatör'];
+    var rolSelect = '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" onchange="kulRolDegistir('' + k.id + '',this.value)">' +
+      roller.map(function(r){ return '<option value="' + r + '"' + (k.rol===r?' selected':'') + '>' + r + '</option>'; }).join('') +
+      '</select>';
+    return '<tr>' +
+      '<td style="font-weight:600;">' + esc(k.ad_soyad||'--') + '</td>' +
+      '<td class="mono" style="font-size:12px;">' + esc(k.email||'--') + '</td>' +
+      '<td style="font-size:12px;"><a href="firma-detay.html?id=' + k.tenant_id + '" style="color:var(--ac);text-decoration:none;">' + esc(firma?.ad||'--') + '</a></td>' +
+      '<td>' + kulRolBadge(k.rol) + '</td>' +
+      '<td><span class="badge ' + (k.aktif?'badge-aktif':'badge-pasif') + '">' + (k.aktif?'Aktif':'Pasif') + '</span></td>' +
+      '<td class="mono" style="font-size:12px;">' + (tarih(k.son_giris)||'--') + '</td>' +
+      '<td><div class="actions">' +
+        rolSelect +
+        '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" onclick="kulDurumDegistir('' + k.id + '',' + k.aktif + ')">' + (k.aktif?'Pasif':'Aktif') + '</button>' +
+        (k.email ? '<button class="btn btn-outline btn-sm" onclick="magicLinkAc('' + esc(k.email) + '')">Link</button>' : '') +
+      '</div></td>' +
+    '</tr>';
   }).join('');
 }
 
