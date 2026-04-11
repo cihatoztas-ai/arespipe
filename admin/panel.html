@@ -329,10 +329,11 @@ tr:hover td{background:rgba(255,255,255,.02);}
         <thead>
           <tr>
             <th>Firma Adı</th>
+            <th>Tip</th>
+            <th>Hesap</th>
             <th>Plan</th>
             <th>Durum</th>
             <th>Demo Bitiş</th>
-            <th>Aylık Ücret</th>
             <th>Kayıt</th>
             <th></th>
           </tr>
@@ -656,25 +657,52 @@ function dashLogRender(loglar) {
 }
 
 // -- FİRMALAR ---------------------------------------------------
+function firmaTipBadge(tip) {
+  var map = {
+    imalat: ['badge-ac', 'Imalat'],
+    montaj: ['badge-starter', 'Montaj'],
+    tersane: ['badge-super', 'Tersane'],
+    diger: ['badge-pasif', 'Diger']
+  };
+  var b = map[tip] || ['badge-pasif', tip||'--'];
+  return '<span class="badge ' + b[0] + '">' + b[1] + '</span>';
+}
+
+function hesapTipBadge(tip) {
+  var map = {
+    dev: ['badge-super', 'Dev'],
+    demo: ['badge-ac', 'Demo'],
+    pilot: ['badge-starter', 'Pilot'],
+    production: ['badge-aktif', 'Production']
+  };
+  var b = map[tip] || ['badge-pasif', tip||'--'];
+  return '<span class="badge ' + b[0] + '">' + b[1] + '</span>';
+}
+
 function firmaRender(liste) {
   var el=T('firmaTbody');
-  if(!liste.length){el.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Firma yok</div></div></td></tr>';return;}
+  if(!liste.length){el.innerHTML='<tr><td colspan="8"><div class="empty"><div class="empty-icon"></div><div class="empty-text">Firma yok</div></div></td></tr>';return;}
   el.innerHTML=liste.map(f=>`
-    <tr>
+    <tr style="cursor:pointer;" onclick="firmaDetayGit('${f.id}')">
       <td style="font-weight:600;">${esc(f.ad)}</td>
+      <td>${firmaTipBadge(f.firma_tipi)}</td>
+      <td>${hesapTipBadge(f.hesap_tipi)}</td>
       <td>${planBadge(f.plan)}</td>
       <td><span class="badge ${f.aktif?'badge-aktif':'badge-pasif'}">${f.aktif?'Aktif':'Pasif'}</span></td>
       <td style="font-size:12px;color:var(--txd);">${f.demo_bitis?tarih(f.demo_bitis):'--'}</td>
-      <td style="font-size:12px;">${f.aylik_ucret?'TL'+Number(f.aylik_ucret).toLocaleString('tr-TR'):'--'}</td>
-      <td class="mono">${tarih(f.olusturma)}</td>
-      <td>
+      <td class="mono" style="font-size:12px;">${tarih(f.olusturma)}</td>
+      <td onclick="event.stopPropagation()">
         <div class="actions">
-          <button class="btn btn-outline btn-sm" onclick="firmaModalDuzenle('${f.id}')">Düz</button>
+          <button class="btn btn-outline btn-sm" onclick="firmaModalDuzenle('${f.id}')">Düzenle</button>
           <button class="btn btn-sm ${f.aktif?'btn-danger':'btn-outline'}" onclick="firmaToggle('${f.id}',${!f.aktif})">${f.aktif?'Pasif Yap':'Aktifleştir'}</button>
         </div>
       </td>
     </tr>
   `).join('');
+}
+
+function firmaDetayGit(id) {
+  window.location.href = 'firma-detay.html?id=' + id;
 }
 
 function firmaFiltrele() {
