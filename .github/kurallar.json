@@ -127,7 +127,16 @@
       "qr_tara.html",
       "lang/en.json",
       "lang/ar.json",
-      "lang/tr.json"
+      "lang/tr.json",
+      "403.html",
+      "404.html",
+      "500.html",
+      "session-expired.html",
+      "ares-store.js",
+      "ares-lang.js",
+      "ares-layout.js",
+      "api/izometri-batch.html",
+      "api/sorgula.html"
     ]
   },
 
@@ -136,7 +145,8 @@
     "dosyalar": [
       "personel.html",
       "personel_yeni.html",
-      "senaryolar.html"
+      "senaryolar.html",
+      "sorgula.html"
     ]
   }
 }
