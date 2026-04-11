@@ -1,1 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AresPipe — Müşteri Portalı</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0a0b0e;--sur:#111318;--sur2:#1a1d24;--bor:#232730;--tx:#f0f2f7;--txm:#9aa0b4;--txd:#555c72;--ac:#3b82f6;--ac2:#1d4ed8;--gr:#22c55e;--re:#ef4444;--warn:#f59e0b;--leg:#a855f7;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
 
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--ac);}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;margin-left:8px;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+.main{padding:32px;max-width:1400px;margin:0 auto;}
+
+.page-header{margin-bottom:32px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:.5px;line-height:1;}
+.page-sub{font-size:13px;color:var(--txd);margin-top:4px;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 20px;}
+.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;}
+.stat-sub{font-size:12px;color:var(--txd);margin-top:4px;}
+
+.filter-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.search-wrap{position:relative;flex:1;max-width:320px;}
+.search-input{width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:9px;padding:8px 12px 8px 34px;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;}
+.search-input:focus{border-color:var(--ac);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txd);font-size:14px;}
+.filter-select{background:var(--sur);border:1px solid var(--bor);border-radius:9px;padding:8px 12px;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;appearance:none;}
+
+.firma-section{margin-bottom:32px;}
+.firma-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bor);}
+.firma-adi{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--tx);}
+.firma-meta{font-size:12px;color:var(--txd);}
+.firma-progress{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.progress-bar{width:120px;height:6px;background:var(--sur2);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--gr);border-radius:3px;transition:width .3s;}
+.progress-text{font-size:12px;color:var(--txm);white-space:nowrap;}
+
+.tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;padding:10px 16px;border-bottom:1px solid var(--bor);background:var(--sur2);}
+td{padding:11px 16px;border-bottom:1px solid rgba(35,39,48,.6);font-size:13px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
+.badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
+.badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
+.badge-warn{background:rgba(245,158,11,.12);color:var(--warn);}
+
+.prog-cell{display:flex;align-items:center;gap:8px;}
+.prog-mini{width:80px;height:4px;background:var(--sur2);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.prog-mini-fill{height:100%;border-radius:2px;}
+
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
+.empty{text-align:center;padding:40px;color:var(--txd);font-size:14px;}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--txd);}
+
+/* Giriş ekranı */
+.giris-ov{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.giris-box{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:40px;width:380px;}
+.giris-logo{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--ac);text-align:center;margin-bottom:4px;}
+.giris-sub{text-align:center;font-size:13px;color:var(--txd);margin-bottom:28px;}
+.form-label{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.form-input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;margin-bottom:14px;}
+.form-input:focus{border-color:var(--ac);}
+.btn-primary{width:100%;background:var(--ac);color:#fff;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;font-family:'Barlow',sans-serif;cursor:pointer;transition:background .15s;margin-top:4px;}
+.btn-primary:hover{background:var(--ac2);}
+.giris-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--re);margin-bottom:14px;display:none;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast-ok{border-color:rgba(34,197,94,.3);color:var(--gr);}
+.toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
+</style>
+</head>
+<body>
+
+<!-- ANA UYGULAMA -->
+<div id="app" style="display:none;visibility:hidden;">
+  <div class="topbar">
+    <div class="topbar-logo">AresPipe <span>/ Müşteri Portalı</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-user">
+      <span class="topbar-badge">MÜŞTERİ</span>
+      <span id="topbarUser">--</span>
+      <button class="btn-logout" onclick="cikis()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title" id="pageTitle">Hoş Geldiniz</div>
+      <div class="page-sub" id="pageSub">Spool durumlarını takip edin</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Toplam Spool</div>
+        <div class="stat-val" id="stToplam" style="color:var(--ac);">--</div>
+        <div class="stat-sub">Tüm projeler</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tamamlanan</div>
+        <div class="stat-val" id="stTamamlanan" style="color:var(--gr);">--</div>
+        <div class="stat-sub" id="stTamamPct">-- %</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Devam Eden</div>
+        <div class="stat-val" id="stDevam" style="color:var(--warn);">--</div>
+        <div class="stat-sub">İmalatta</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bekleyen</div>
+        <div class="stat-val" id="stBekleyen" style="color:var(--txm);">--</div>
+        <div class="stat-sub">Başlamadı</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="aramaInput" placeholder="Spool, devre, proje ara..." oninput="filtrele()">
+      </div>
+      <select class="filter-select" id="firmaFilter" onchange="filtrele()">
+        <option value="">Tüm Firmalar</option>
+      </select>
+      <select class="filter-select" id="durumFilter" onchange="filtrele()">
+        <option value="">Tüm Durumlar</option>
+        <option value="tamamlandi">Tamamlandı</option>
+        <option value="devam">Devam Ediyor</option>
+        <option value="bekliyor">Bekliyor</option>
+      </select>
+    </div>
+
+    <div id="icerik">
+      <div class="loading">Yükleniyor...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var _supa = supabase.createClient(
+  'https://ochvbepfiatzvyknkvsn.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU'
+);
+
+var _musteri = null;
+var _spooller = [];
+var _firmalar = {};
+
+function T(id) { return document.getElementById(id); }
+function esc(s) { var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML; }
+
+function toast(msg, tip) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (tip==='err'?'toast-err':'toast-ok');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function(){el.remove();}, 2500);
+}
+
+async function cikis() {
+  await _supa.auth.signOut();
+  T('girisEkrani').style.display = 'flex';
+  T('app').style.display = 'none';
+}
+
+async function init() {
+  var { data: { session } } = await _supa.auth.getSession();
+  if (!session) {
+    window.location.href = '../giris.html?redirect=' + encodeURIComponent(location.pathname);
+    return;
+  }
+
+  // Musteri kaydini bul
+  var { data: musteri } = await _supa
+    .from('customer_kullanicilar')
+    .select('*, customers(*)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (!musteri) {
+    await _supa.auth.signOut();
+    window.location.href = '../giris.html';
+    return;
+  }
+
+  _musteri = musteri;
+  T('topbarUser').textContent = musteri.ad_soyad || session.user.email;
+  T('pageTitle').textContent = musteri.customers?.ad || 'Hoş Geldiniz';
+  T('pageSub').textContent = (musteri.unvan || 'Müşteri') + ' — Spool takip portalı';
+
+  var app = T('app');
+  app.style.display = 'block';
+  app.style.visibility = 'visible';
+
+  await yukle();
+}
+
+async function yukle() {
+  var customerId = _musteri.customer_id;
+
+  // Erisim izni olan projeler
+  var { data: erisimler } = await _supa
+    .from('customer_project_access')
+    .select('proje_id, tenant_id')
+    .eq('customer_id', customerId);
+
+  if (!erisimler || !erisimler.length) {
+    T('icerik').innerHTML = '<div class="empty">Henüz erişim izni verilmemiş proje yok.</div>';
+    return;
+  }
+
+  // Benzersiz tenant'lar
+  var tenantIds = [...new Set(erisimler.map(function(e){return e.tenant_id;}))];
+  var projeIds = erisimler.map(function(e){return e.proje_id;});
+
+  // Firma bilgilerini al
+  var { data: tenants } = await _supa.from('tenants').select('id, ad, firma_tipi').in('id', tenantIds);
+  (tenants||[]).forEach(function(t){ _firmalar[t.id] = t; });
+
+  // Firma dropdown doldir
+  var sel = T('firmaFilter');
+  sel.innerHTML = '<option value="">Tüm Firmalar</option>' +
+    tenantIds.map(function(id){
+      return '<option value="' + id + '">' + esc(_firmalar[id]?.ad||id) + '</option>';
+    }).join('');
+
+  // Projeleri ve spoolları al
+  var { data: spooller } = await _supa
+    .from('spooller')
+    .select('id, spool_id, spool_no, aktif_basamak, basamak_snapshot, devre_id, tenant_id, silindi, malzeme, dis_cap_mm')
+    .in('tenant_id', tenantIds)
+    .eq('silindi', false)
+    .order('tenant_id');
+
+  _spooller = spooller || [];
+
+  // Devre bilgilerini al
+  var devreIds = [...new Set(_spooller.map(function(s){return s.devre_id;}).filter(Boolean))];
+  var _devreler = {};
+  if (devreIds.length) {
+    var { data: devreler } = await _supa.from('devreler').select('id, ad, proje_id').in('id', devreIds);
+    (devreler||[]).forEach(function(d){ _devreler[d.id] = d; });
+  }
+
+  // Proje bilgilerini al
+  var _projeler = {};
+  if (projeIds.length) {
+    var { data: projeler } = await _supa.from('projeler').select('id, ad, proje_no').in('id', projeIds);
+    (projeler||[]).forEach(function(p){ _projeler[p.id] = p; });
+  }
+
+  // Her spoola devre ve proje bilgisini ekle
+  _spooller.forEach(function(s) {
+    s._devre = _devreler[s.devre_id] || null;
+    s._proje = s._devre ? _projeler[s._devre.proje_id] : null;
+  });
+
+  guncelleStat();
+  render(_spooller);
+}
+
+function spoolDurum(s) {
+  var snap = s.basamak_snapshot || [];
+  if (!snap.length) return { durum:'bekliyor', pct:0 };
+  var aktif = s.aktif_basamak;
+  var idx = snap.findIndex(function(b){return b.sistem_adi===aktif;});
+  if (idx < 0) return { durum:'bekliyor', pct:0 };
+  if (idx === snap.length - 1) return { durum:'tamamlandi', pct:100 };
+  return { durum:'devam', pct: Math.round((idx / (snap.length-1)) * 100) };
+}
+
+function guncelleStat() {
+  var toplam = _spooller.length;
+  var tamamlanan = 0, devam = 0, bekliyor = 0;
+  _spooller.forEach(function(s) {
+    var d = spoolDurum(s);
+    if (d.durum==='tamamlandi') tamamlanan++;
+    else if (d.durum==='devam') devam++;
+    else bekliyor++;
+  });
+  T('stToplam').textContent = toplam;
+  T('stTamamlanan').textContent = tamamlanan;
+  T('stTamamPct').textContent = toplam ? Math.round(tamamlanan/toplam*100) + '%' : '0%';
+  T('stDevam').textContent = devam;
+  T('stBekleyen').textContent = bekliyor;
+}
+
+function filtrele() {
+  var q = T('aramaInput').value.toLowerCase();
+  var firma = T('firmaFilter').value;
+  var durum = T('durumFilter').value;
+  var liste = _spooller.filter(function(s) {
+    if (firma && s.tenant_id !== firma) return false;
+    if (durum && spoolDurum(s).durum !== durum) return false;
+    if (q) {
+      var hay = ((s.spool_no||'') + ' ' + (s.spool_id||'') + ' ' + (s._devre?.ad||'') + ' ' + (s._proje?.ad||'')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  render(liste);
+}
+
+function render(liste) {
+  if (!liste.length) { T('icerik').innerHTML = '<div class="empty">Sonuç bulunamadı</div>'; return; }
+
+  // Firma bazlı grupla
+  var gruplar = {};
+  liste.forEach(function(s) {
+    if (!gruplar[s.tenant_id]) gruplar[s.tenant_id] = [];
+    gruplar[s.tenant_id].push(s);
+  });
+
+  var html = '';
+  Object.keys(gruplar).forEach(function(tenantId) {
+    var firma = _firmalar[tenantId];
+    var spooller = gruplar[tenantId];
+    var tamamlanan = spooller.filter(function(s){return spoolDurum(s).durum==='tamamlandi';}).length;
+    var pct = spooller.length ? Math.round(tamamlanan/spooller.length*100) : 0;
+
+    html += '<div class="firma-section">';
+    html += '<div class="firma-header">';
+    html += '<div>';
+    html += '<div class="firma-adi">' + esc(firma?.ad||tenantId) + '</div>';
+    html += '<div class="firma-meta">' + spooller.length + ' spool &nbsp;·&nbsp; ' + tamamlanan + ' tamamlandı</div>';
+    html += '</div>';
+    html += '<div class="firma-progress">';
+    html += '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div class="progress-text">' + pct + '%</div>';
+    html += '</div></div>';
+
+    html += '<div class="tbl-wrap"><table><thead><tr>';
+    html += '<th>Spool No</th><th>Devre</th><th>Proje</th><th>Malzeme</th><th>Çap</th><th>Durum</th><th>İlerleme</th>';
+    html += '</tr></thead><tbody>';
+
+    spooller.forEach(function(s) {
+      var d = spoolDurum(s);
+      var renk = d.durum==='tamamlandi'?'var(--gr)':d.durum==='devam'?'var(--ac)':'var(--txd)';
+      var badge = d.durum==='tamamlandi'?'badge-aktif':d.durum==='devam'?'badge-warn':'badge-pasif';
+      var durumAd = d.durum==='tamamlandi'?'Tamamlandı':d.durum==='devam'?'Devam Ediyor':'Bekliyor';
+
+      html += '<tr>';
+      html += '<td style="font-weight:700;font-family:\'JetBrains Mono\',monospace;">' + esc(s.spool_no||s.spool_id||'--') + '</td>';
+      html += '<td style="font-size:12px;">' + esc(s._devre?.ad||'--') + '</td>';
+      html += '<td style="font-size:12px;color:var(--txm);">' + esc(s._proje?.ad||'--') + '</td>';
+      html += '<td style="font-size:12px;">' + esc(s.malzeme||'--') + '</td>';
+      html += '<td class="mono">' + (s.dis_cap_mm ? s.dis_cap_mm + 'mm' : '--') + '</td>';
+      html += '<td><span class="badge ' + badge + '">' + durumAd + '</span></td>';
+      html += '<td><div class="prog-cell"><div class="prog-mini"><div class="prog-mini-fill" style="width:' + d.pct + '%;background:' + renk + '"></div></div><span style="font-size:12px;color:var(--txm);">' + d.pct + '%</span></div></td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div></div>';
+  });
+
+  T('icerik').innerHTML = html;
+}
+
+// Başlat
+(async function() {
+  await init();
+})();
+</script>
+</body>
+</html>
