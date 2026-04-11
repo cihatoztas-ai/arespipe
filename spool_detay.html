@@ -2321,7 +2321,24 @@ function gonderKaydet(){
 }
 
 // ── SEKMELER ─────────────────────────────────────────────────
-function initTabs(){
+async function featureFlagKontrol(kod) {
+  try {
+    var supa = ARES.supabase();
+    if (!supa) return false;
+    var tenantId = ARES.tenantId();
+    if (!tenantId) return false;
+    var {data} = await supa.from('tenant_features')
+      .select('aktif').eq('tenant_id', tenantId).eq('feature_kod', kod).single();
+    return data?.aktif === true;
+  } catch(e) { return false; }
+}
+
+async function initTabs(){
+  var model3dAktif = await featureFlagKontrol('3d_model');
+  if (!model3dAktif) {
+    var btn3d = document.querySelector('.tab-btn[data-tab="model3d"]');
+    if (btn3d) btn3d.style.display = 'none';
+  }
   var map={genel:'tabGenel',malzeme:'tabMalzeme',log:'tabLog',model3d:'tabModel3d'};
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click',function(){
