@@ -115,6 +115,18 @@ const ARES = (function () {
       modDegistir('supabase');
       return { kullanici: _oturum, yonlendir: 'admin/firma.html' };
     }
+    // Musteri portal kullanicisi — customer_kullanicilar tablosunda kayitli
+    if (!_oturum.tenant_id) {
+      const { data: musteriKul } = await _supa
+        .from('customer_kullanicilar')
+        .select('id')
+        .eq('id', _oturum.id)
+        .single();
+      if (musteriKul) {
+        modDegistir('supabase');
+        return { kullanici: _oturum, yonlendir: 'portal/index.html' };
+      }
+    }
 
     // Mod supabase'e geç
     modDegistir('supabase');
