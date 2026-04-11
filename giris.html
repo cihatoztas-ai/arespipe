@@ -332,7 +332,10 @@ async function girisYap() {
     }
     document.getElementById('bilgiKutu').textContent = tv('giris_basarili','Giriş başarılı, yönlendiriliyorsunuz\u2026');
     document.getElementById('bilgiKutu').classList.add('goster');
-    var hedef = sonuc.yonlendir || 'index.html';
+    // redirect param varsa ona git, yoksa rol'e göre yönlendir
+    var urlParams = new URLSearchParams(window.location.search);
+    var redirect = urlParams.get('redirect');
+    var hedef = redirect || sonuc.yonlendir || 'index.html';
     setTimeout(function(){ window.location.href = hedef; }, 600);
   } catch(e) {
     yukleniyorKapat();
