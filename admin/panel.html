@@ -398,8 +398,10 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <!-- FIRMA MODAL -->
 <div id="firmaModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:560px;">
     <div class="modal-title" id="firmaModalBaslik">🏢 Yeni Firma</div>
+
+    <!-- Temel Bilgiler -->
     <div class="form-row">
       <label class="form-label">Firma Adı *</label>
       <input class="form-input" id="fAd" placeholder="ABC Tersane A.Ş.">
@@ -411,6 +413,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
           <option value="demo">Demo</option>
           <option value="starter">Starter</option>
           <option value="pro">Pro</option>
+          <option value="enterprise">Enterprise</option>
         </select>
       </div>
       <div class="form-row" style="margin:0;">
@@ -436,6 +439,48 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <label class="form-label">Notlar</label>
       <input class="form-input" id="fNotlar" placeholder="İsteğe bağlı not...">
     </div>
+
+    <!-- Modüller -->
+    <div class="form-row" id="fModullerRow">
+      <label class="form-label">Açık Modüller</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="fm_uretim" checked> Üretim
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="fm_kalite" checked> Kalite
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="fm_sevkiyat" checked> Sevkiyat
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="fm_raporlar" checked> Raporlar
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="fm_yonetim" checked> Yönetim
+        </label>
+      </div>
+    </div>
+
+    <!-- Firma Admin Kullanıcısı (sadece yeni firmada) -->
+    <div id="fAdminRow">
+      <div style="font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 8px;">Firma Admin Kullanıcısı</div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">Ad Soyad</label>
+          <input class="form-input" id="fAdminAd" placeholder="Ahmet Yılmaz">
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">E-posta *</label>
+          <input class="form-input" type="email" id="fAdminEmail" placeholder="admin@firma.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Şifre *</label>
+        <input class="form-input" type="password" id="fAdminSifre" placeholder="En az 8 karakter">
+      </div>
+    </div>
+
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="document.getElementById('firmaModal').style.display='none'">İptal</button>
       <button class="btn btn-admin" onclick="firmaKaydet()">Kaydet</button>
@@ -593,14 +638,19 @@ function firmaFiltrele() {
 }
 
 function firmaModalAc() {
-  _duzenFirmaId=null;
-  T('firmaModalBaslik').textContent='🏢 Yeni Firma';
-  ['fAd','fEmail','fTel','fNotlar'].forEach(id=>T(id).value='');
-  T('fPlan').value='demo'; T('fUcret').value=''; T('fDemoBitis').value='';
-  T('firmaModal').style.display='flex';
+  _duzenFirmaId = null;
+  T('firmaModalBaslik').textContent = '🏢 Yeni Firma';
+  ['fAd','fEmail','fTel','fNotlar','fAdminAd','fAdminEmail','fAdminSifre'].forEach(id => T(id).value = '');
+  T('fPlan').value = 'demo'; T('fUcret').value = ''; T('fDemoBitis').value = '';
+  // Tüm modülleri açık yap
+  ['fm_uretim','fm_kalite','fm_sevkiyat','fm_raporlar','fm_yonetim'].forEach(id => T(id).checked = true);
+  // Admin kullanıcı satırını göster
+  T('fAdminRow').style.display = '';
+  T('firmaModal').style.display = 'flex';
 }
 
 function firmaModalDuzenle(id) {
+  T('fAdminRow').style.display = 'none'; // Düzenleme modunda admin kullanıcı yok
   var f=_firmalar.find(x=>x.id===id); if(!f) return;
   _duzenFirmaId=id;
   T('firmaModalBaslik').textContent='✎ Firma Düzenle';
@@ -615,28 +665,99 @@ function firmaModalDuzenle(id) {
 }
 
 async function firmaKaydet() {
-  var ad=T('fAd').value.trim();
-  if(!ad){toast('Firma adı zorunlu','err');return;}
-  var veri={
-    ad, plan:T('fPlan').value,
-    aylik_ucret:parseFloat(T('fUcret').value)||0,
-    demo_bitis:T('fDemoBitis').value||null,
-    iletisim_email:T('fEmail').value.trim()||null,
-    iletisim_tel:T('fTel').value.trim()||null,
-    notlar:T('fNotlar').value.trim()||null,
-    aktif:true
-  };
-  var res;
-  if(_duzenFirmaId) {
-    res=await _supa.from('tenants').update(veri).eq('id',_duzenFirmaId);
-  } else {
-    res=await _supa.from('tenants').insert(veri);
+  var ad = T('fAd').value.trim();
+  if (!ad) { toast('Firma adı zorunlu', 'err'); return; }
+
+  // Yeni firma — admin kullanıcı zorunlu
+  if (!_duzenFirmaId) {
+    var adminEmail = T('fAdminEmail').value.trim();
+    var adminSifre = T('fAdminSifre').value;
+    if (!adminEmail) { toast('Admin e-posta zorunlu', 'err'); return; }
+    if (!adminSifre || adminSifre.length < 8) { toast('Şifre en az 8 karakter olmalı', 'err'); return; }
   }
-  if(res.error){toast('Hata: '+res.error.message,'err');return;}
-  T('firmaModal').style.display='none';
+
+  var veri = {
+    ad,
+    plan: T('fPlan').value,
+    aylik_ucret: parseFloat(T('fUcret').value) || 0,
+    demo_bitis: T('fDemoBitis').value || null,
+    iletisim_email: T('fEmail').value.trim() || null,
+    iletisim_tel: T('fTel').value.trim() || null,
+    notlar: T('fNotlar').value.trim() || null,
+    aktif: true
+  };
+
+  var res;
+  if (_duzenFirmaId) {
+    // Güncelle
+    res = await _supa.from('tenants').update(veri).eq('id', _duzenFirmaId);
+    if (res.error) { toast('Hata: ' + res.error.message, 'err'); return; }
+
+    // Modülleri güncelle
+    var moduller = ['uretim','kalite','sevkiyat','raporlar','yonetim'];
+    for (var m of moduller) {
+      var aktif = T('fm_' + m)?.checked ?? true;
+      await _supa.from('firma_moduller')
+        .upsert({ tenant_id: _duzenFirmaId, modul_kodu: m, aktif }, { onConflict: 'tenant_id,modul_kodu' });
+    }
+    toast('Firma güncellendi');
+  } else {
+    // Yeni firma oluştur
+    res = await _supa.from('tenants').insert(veri).select().single();
+    if (res.error) { toast('Hata: ' + res.error.message, 'err'); return; }
+    var tenantId = res.data.id;
+
+    // Seçilen modülleri ekle
+    var moduller = ['uretim','kalite','sevkiyat','raporlar','yonetim'];
+    var modulInsert = moduller.map(m => ({
+      tenant_id: tenantId,
+      modul_kodu: m,
+      aktif: T('fm_' + m)?.checked ?? true
+    }));
+    await _supa.from('firma_moduller').insert(modulInsert);
+
+    // Admin kullanıcı oluştur (Supabase Admin API üzerinden)
+    var adminEmail = T('fAdminEmail').value.trim();
+    var adminSifre = T('fAdminSifre').value;
+    var adminAd = T('fAdminAd').value.trim() || adminEmail;
+
+    // Supabase auth.admin.createUser - sadece service role ile çalışır
+    // Şimdilik kullanicilar tablosuna referans ekle, magic link ile aktif olacak
+    var { data: authUser, error: authErr } = await _supa.auth.admin.createUser({
+      email: adminEmail,
+      password: adminSifre,
+      email_confirm: true,
+      user_metadata: { ad_soyad: adminAd }
+    });
+
+    if (authErr) {
+      // Rollback: firma sil
+      await _supa.from('tenants').delete().eq('id', tenantId);
+      toast('Admin kullanıcı oluşturulamadı: ' + authErr.message, 'err');
+      return;
+    }
+
+    // kullanicilar tablosuna ekle
+    await _supa.from('kullanicilar').insert({
+      id: authUser.user.id,
+      tenant_id: tenantId,
+      email: adminEmail,
+      ad_soyad: adminAd,
+      rol: 'firma_admin',
+      aktif: true
+    });
+
+    // app_metadata güncelle
+    await _supa.auth.admin.updateUserById(authUser.user.id, {
+      app_metadata: { tenant_id: tenantId, rol: 'firma_admin' }
+    });
+
+    toast('Firma ve admin kullanıcı oluşturuldu');
+  }
+
+  T('firmaModal').style.display = 'none';
   await firmalariYukle();
   dashboardGuncelle();
-  toast(_duzenFirmaId?'Firma güncellendi':'Firma oluşturuldu');
 }
 
 async function firmaToggle(id, aktif) {
