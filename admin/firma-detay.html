@@ -552,8 +552,8 @@ async function kulEkle() {
 }
 
 function viewAs() {
-  sessionStorage.setItem('viewAs', JSON.stringify({ tenant_id: _firmaId, ad: _firma?.ad }));
-  window.open('../index.html?viewas=' + _firmaId, '_blank');
+  sessionStorage.setItem('ares_view_as', JSON.stringify({ tenant_id: _firmaId, ad: _firma?.ad }));
+  window.open('../index.html', '_blank');
 }
 
 init();
