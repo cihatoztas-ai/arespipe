@@ -478,18 +478,13 @@ tr:hover td{background:rgba(255,255,255,.02);}
 'use strict';
 
 // ── SUPABASE ──────────────────────────────────────────────────
-// Önce ares-store.js'deki client'ı dene (shared session)
-// yoksa bağımsız client oluştur
-const _supaBase = supabase.createClient(
+// Panel için tek Supabase instance — aynı storage key ile session paylaşılır
+const _panelSupa = supabase.createClient(
   'https://ochvbepfiatzvyknkvsn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NTc5NTIsImV4cCI6MjA1OTMzMzk1Mn0.lAIdEBEQiRonaxlZgEluPFRidQJMv8YzZgJMDVE9RLM'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NTc5NTIsImV4cCI6MjA1OTMzMzk1Mn0.lAIdEBEQiRonaxlZgEluPFRidQJMv8YzZgJMDVE9RLM',
+  { auth: { storageKey: 'sb-ochvbepfiatzvyknkvsn-auth-token' } }
 );
-// ARES.supabase() varsa onu kullan — session paylaşımı için
-function _getSupa() {
-  if (typeof ARES !== 'undefined' && ARES.supabase && ARES.supabase()) return ARES.supabase();
-  return _supaBase;
-}
-// _supa referansını ARES'e bağla
+function _getSupa() { return _panelSupa; }
 Object.defineProperty(window, '_supa', { get: _getSupa });
 
 
@@ -762,20 +757,22 @@ function goPan(id, el) {
 
 // ── BAŞLANGIÇ ──────────────────────────────────────────────────
 (async function() {
+  var supa = _getSupa();
+
   // URL'den magic link token'ını işle
   if (window.location.hash) {
-    const params = new URLSearchParams(window.location.hash.substring(1));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
+    var params = new URLSearchParams(window.location.hash.substring(1));
+    var access_token = params.get('access_token');
+    var refresh_token = params.get('refresh_token');
     if (access_token) {
-      await _supa.auth.setSession({ access_token, refresh_token });
+      await supa.auth.setSession({ access_token, refresh_token });
       window.location.hash = '';
     }
   }
 
-  var {data} = await _supa.auth.getSession();
+  var {data} = await supa.auth.getSession();
   if(data?.session) {
-    var {data:kul} = await _supa.from('kullanicilar').select('rol,ad_soyad').eq('id',data.session.user.id).single();
+    var {data:kul} = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id',data.session.user.id).single();
     if(kul?.rol==='super_admin') {
       _oturum={id:data.session.user.id,email:data.session.user.email,ad:kul.ad_soyad,rol:kul.rol};
       T('topbarUser').textContent=kul.ad_soyad||data.session.user.email;
