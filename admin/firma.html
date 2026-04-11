@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AresPipe — Firma Yönetimi</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../ares-store.js"></script>
+<style>
+:root{--bg:#0a0b0e;--sur:#111318;--sur2:#1a1d24;--bor:#232730;--tx:#f0f2f7;--txm:#9aa0b4;--txd:#555c72;--ac:#3b82f6;--ac2:#1d4ed8;--gr:#22c55e;--re:#ef4444;--warn:#f59e0b;--leg:#a855f7;--admin:#f97316;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
+
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-shrink:0;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--ac);display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+.layout{display:flex;flex:1;min-height:0;}
+.sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;}
+.nav-item:hover{background:var(--sur2);color:var(--tx);}
+.nav-item.active{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.2);color:var(--ac);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
+.nav-firma{padding:12px;margin-bottom:8px;border-bottom:1px solid var(--bor);}
+.nav-firma-ad{font-size:14px;font-weight:700;color:var(--tx);}
+.nav-firma-tip{font-size:11px;color:var(--txd);margin-top:2px;}
+
+.main{flex:1;overflow-y:auto;padding:28px 32px;}
+.panel{display:none;}.panel.active{display:block;}
+
+.page-header{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;letter-spacing:.5px;line-height:1;}
+.page-sub{font-size:13px;color:var(--txd);margin-top:4px;}
+
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:22px;margin-bottom:20px;}
+.card-title{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;}
+.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;}
+.stat-sub{font-size:12px;color:var(--txd);}
+
+.tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);}
+.tbl-title{font-size:13px;font-weight:700;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;padding:10px 16px;border-bottom:1px solid var(--bor);background:var(--sur2);}
+td{padding:12px 16px;border-bottom:1px solid rgba(35,39,48,.6);font-size:13px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
+.badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
+.badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
+.badge-rol{background:rgba(59,130,246,.12);color:var(--ac);}
+.badge-admin{background:rgba(249,115,22,.12);color:var(--admin);}
+
+.btn{padding:7px 14px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-primary{background:var(--ac);color:#fff;}.btn-primary:hover{background:var(--ac2);}
+.btn-outline{background:none;border:1px solid var(--bor);color:var(--txm);}.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+.btn-danger{background:none;border:1px solid rgba(239,68,68,.3);color:var(--re);}.btn-danger:hover{background:rgba(239,68,68,.1);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.actions{display:flex;gap:6px;}
+
+.form-row{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.form-input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--ac);}
+.form-select{appearance:none;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:28px;min-width:440px;max-width:540px;width:90%;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:20px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);}
+
+.basamak-list{display:flex;gap:0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;}
+.basamak-item{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.basamak-box{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.basamak-box:hover{border-color:var(--ac);color:var(--ac);}
+.basamak-box.aktif{border-color:var(--ac);background:rgba(59,130,246,.1);color:var(--ac);}
+.basamak-arrow{color:var(--txd);padding:0 6px;font-size:16px;}
+.basamak-ekle{background:none;border:1px dashed var(--bor);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--txd);cursor:pointer;transition:all .15s;}
+.basamak-ekle:hover{border-color:var(--ac);color:var(--ac);}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast-ok{border-color:rgba(34,197,94,.3);color:var(--gr);}
+.toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bor);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:13px;color:var(--tx);}
+.toggle-desc{font-size:11px;color:var(--txd);margin-top:2px;}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{position:absolute;inset:0;background:var(--bor);border-radius:11px;cursor:pointer;transition:background .2s;}
+.toggle input:checked + .toggle-track{background:var(--ac);}
+.toggle-thumb{position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(18px);}
+
+.empty{text-align:center;padding:40px;color:var(--txd);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">AresPipe <span id="firmaAdiTop">/ Firma</span></div>
+  <div class="topbar-sep"></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn btn-outline btn-sm" onclick="window.location.href='../index.html'">Ana Sayfa</button>
+  </div>
+  <div class="topbar-user">
+    <span class="topbar-badge">FIRMA ADMIN</span>
+    <span id="topbarUser">--</span>
+    <button class="btn-logout" onclick="cikis()">Cikis</button>
+  </div>
+</div>
+
+<div class="layout">
+<div class="sidebar">
+  <div class="nav-firma">
+    <div class="nav-firma-ad" id="sidebarFirmaAd">Yukleniyor...</div>
+    <div class="nav-firma-tip" id="sidebarFirmaTip">--</div>
+  </div>
+  <div class="nav-item active" onclick="goPan('dashboard',this)">Dashboard</div>
+  <div class="nav-item" onclick="goPan('kullanicilar',this)">Kullanicilar</div>
+  <div class="nav-item" onclick="goPan('basamaklar',this)">Basamaklar</div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" onclick="goPan('modüller',this)">Moduller ve Erisim</div>
+</div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="pan-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="dashFirmaAd">Dashboard</div>
+        <div class="page-sub">Firma genel durumu</div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Kullanicilar</div>
+        <div class="stat-val" id="stKul" style="color:var(--ac);">--</div>
+        <div class="stat-sub" id="stKulAktif">-- aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Toplam Spool</div>
+        <div class="stat-val" id="stSpool" style="color:var(--gr);">--</div>
+        <div class="stat-sub">Tum devreler</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Aktif Devreler</div>
+        <div class="stat-val" id="stDevre" style="color:var(--warn);">--</div>
+        <div class="stat-sub">Devam eden</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Basamaklar</div>
+        <div class="stat-val" id="stBasamak" style="color:var(--leg);">--</div>
+        <div class="stat-sub">Tanimi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KULLANICILAR -->
+  <div class="panel" id="pan-kullanicilar">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Kullanicilar</div>
+        <div class="page-sub">Firma kullanicilari ve rol yonetimi</div>
+      </div>
+      <button class="btn btn-primary" onclick="kulEkleModalAc()">+ Kullanici Ekle</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ad Soyad</th>
+            <th>E-posta</th>
+            <th>Rol</th>
+            <th>Durum</th>
+            <th>Son Giris</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="kulTbody">
+          <tr><td colspan="6" class="empty">Yukleniyor...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BASAMAKLAR -->
+  <div class="panel" id="pan-basamaklar">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Basamaklar</div>
+        <div class="page-sub">Uretim sureci basamaklari — siralayin ve ozellestirin</div>
+      </div>
+      <button class="btn btn-primary" onclick="basamakEkleModalAc()">+ Basamak Ekle</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Mevcut Basamaklar <span style="font-weight:400;text-transform:none;color:var(--txd);">Tersane sadece yuzde gorur, basamak adini degil</span></div>
+      <div class="basamak-list" id="basamakList">
+        <div class="empty">Yukleniyor...</div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head"><div class="tbl-title">Basamak Detaylari</div></div>
+      <table>
+        <thead>
+          <tr><th>Sira</th><th>Sistem Adi</th><th>Gorunen Ad</th><th>Durum</th><th></th></tr>
+        </thead>
+        <tbody id="basamakTbody">
+          <tr><td colspan="5" class="empty">Yukleniyor...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODULLER -->
+  <div class="panel" id="pan-modüller">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Moduller ve Erisim</div>
+        <div class="page-sub">Hangi moduller aktif — super admin tarafindan belirlenir</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Aktif Moduller</div>
+      <div id="modullerListesi">Yukleniyor...</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ozellikler</div>
+      <div id="featureListesi">Yukleniyor...</div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+</div><!-- /.layout -->
+
+<!-- Kullanici Ekle Modal -->
+<div id="kulModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-title">Kullanici Ekle</div>
+    <div class="form-row">
+      <label class="form-label">Ad Soyad</label>
+      <input class="form-input" id="kAd" placeholder="Ahmet Yilmaz">
+    </div>
+    <div class="form-row">
+      <label class="form-label">E-posta *</label>
+      <input class="form-input" type="email" id="kEmail" placeholder="kullanici@firma.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Sifre *</label>
+      <input class="form-input" type="password" id="kSifre" placeholder="En az 8 karakter">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Rol</label>
+      <select class="form-input form-select" id="kRol">
+        <option value="yonetici">Yonetici</option>
+        <option value="kk_uzmani">KK Uzmani</option>
+        <option value="operatör">Operatör</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="T('kulModal').style.display='none'">Iptal</button>
+      <button class="btn btn-primary" onclick="kulEkle()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Basamak Ekle Modal -->
+<div id="basamakModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-title" id="basamakModalBaslik">Basamak Ekle</div>
+    <div class="form-row">
+      <label class="form-label">Gorunen Ad *</label>
+      <input class="form-input" id="bAd" placeholder="Ön Kontrol">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Sistem Adi * (kucuk harf, alt cizgi)</label>
+      <input class="form-input" id="bSistemAd" placeholder="on_kontrol">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Sira</label>
+      <input class="form-input" type="number" id="bSira" placeholder="1">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="T('basamakModal').style.display='none'">Iptal</button>
+      <button class="btn btn-primary" onclick="basamakKaydet()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _tenantId = null;
+var _firma = null;
+var _oturum = null;
+var _supa = supabase.createClient(
+  'https://ochvbepfiatzvyknkvsn.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',
+  { auth: { storageKey: 'sb-ochvbepfiatzvyknkvsn-auth-token' } }
+);
+var _duzenlenenBasamakId = null;
+
+function T(id) { return document.getElementById(id); }
+
+function toast(msg, tip) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (tip==='err' ? 'toast-err' : 'toast-ok');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 2500);
+}
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+function tarih(ts) { if(!ts) return '--'; return new Date(ts).toLocaleDateString('tr-TR'); }
+
+function goPan(id, el) {
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  T('pan-'+id).classList.add('active');
+  if (el) el.classList.add('active');
+  if (id === 'kullanicilar') kullanicilariYukle();
+  if (id === 'basamaklar') basamaklariYukle();
+  if (id === 'modüller') modulleriYukle();
+}
+
+async function cikis() {
+  await _supa.auth.signOut();
+  window.location.href = '../giris.html';
+}
+
+async function init() {
+  var { data: { session } } = await _supa.auth.getSession();
+  if (!session) { window.location.href = '../giris.html?redirect=' + encodeURIComponent(location.pathname); return; }
+
+  var { data: kul } = await _supa.from('kullanicilar')
+    .select('rol, ad_soyad, tenant_id').eq('id', session.user.id).single();
+
+  if (!kul || !['firma_admin', 'yonetici', 'super_admin'].includes(kul.rol)) {
+    window.location.href = '../index.html'; return;
+  }
+
+  _oturum = { id: session.user.id, ad: kul.ad_soyad || session.user.email, rol: kul.rol };
+  _tenantId = kul.tenant_id;
+  T('topbarUser').textContent = _oturum.ad;
+
+  var { data: firma } = await _supa.from('tenants').select('*').eq('id', _tenantId).single();
+  _firma = firma;
+
+  var tipMap = { imalat:'Imalat Firmasi', montaj:'Montaj Firmasi', tersane:'Tersane', diger:'Diger' };
+  T('firmaAdiTop').textContent = '/ ' + (firma?.ad || 'Firma');
+  T('sidebarFirmaAd').textContent = firma?.ad || '--';
+  T('sidebarFirmaTip').textContent = tipMap[firma?.firma_tipi] || firma?.firma_tipi || '--';
+  T('dashFirmaAd').textContent = firma?.ad || 'Dashboard';
+
+  await dashboardGuncelle();
+}
+
+async function dashboardGuncelle() {
+  var [kulRes, spoolRes, devreRes, basRes] = await Promise.all([
+    _supa.from('kullanicilar').select('id,aktif', {count:'exact'}).eq('tenant_id', _tenantId),
+    _supa.from('spooller').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
+    _supa.from('devreler').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
+    _supa.from('basamak_tanimlari').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('aktif', true)
+  ]);
+
+  var kullar = kulRes.data || [];
+  T('stKul').textContent = kullar.length;
+  T('stKulAktif').textContent = kullar.filter(function(k){return k.aktif;}).length + ' aktif';
+  T('stSpool').textContent = spoolRes.count || 0;
+  T('stDevre').textContent = devreRes.count || 0;
+  T('stBasamak').textContent = basRes.count || 0;
+}
+
+async function kullanicilariYukle() {
+  var { data } = await _supa.from('kullanicilar').select('*').eq('tenant_id', _tenantId).order('olusturma');
+  var el = T('kulTbody');
+  if (!data || !data.length) { el.innerHTML = '<tr><td colspan="6" class="empty">Kullanici yok</td></tr>'; return; }
+  var roller = ['yonetici','kk_uzmani','operatör'];
+  var html = '';
+  data.forEach(function(k) {
+    var rolOpts = roller.map(function(r){
+      return '<option value="' + r + '"' + (k.rol===r?' selected':'') + '>' + r + '</option>';
+    }).join('');
+    html += '<tr>';
+    html += '<td style="font-weight:600;">' + esc(k.ad_soyad||'--') + '</td>';
+    html += '<td class="mono" style="font-size:12px;">' + esc(k.email||'--') + '</td>';
+    html += '<td><span class="badge ' + (k.rol==='firma_admin'?'badge-admin':'badge-rol') + '">' + esc(k.rol||'--') + '</span></td>';
+    html += '<td><span class="badge ' + (k.aktif?'badge-aktif':'badge-pasif') + '">' + (k.aktif?'Aktif':'Pasif') + '</span></td>';
+    html += '<td class="mono" style="font-size:12px;">' + tarih(k.son_giris) + '</td>';
+    html += '<td><div class="actions">';
+    if (k.rol !== 'firma_admin') {
+      html += '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" data-kul-id="' + k.id + '" onchange="_rolChange(this)">' + rolOpts + '</select>';
+    }
+    html += '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" data-kul-id="' + k.id + '" data-aktif="' + k.aktif + '" onclick="_durumClick(this)">' + (k.aktif?'Pasif':'Aktif') + '</button>';
+    html += '</div></td>';
+    html += '</tr>';
+  });
+  el.innerHTML = html;
+}
+
+function _rolChange(el) {
+  _supa.from('kullanicilar').update({rol: el.value}).eq('id', el.dataset.kulId).then(function() { toast('Rol guncellendi'); });
+}
+function _durumClick(el) {
+  var aktif = el.dataset.aktif === 'true';
+  _supa.from('kullanicilar').update({aktif: !aktif}).eq('id', el.dataset.kulId).then(function() {
+    toast(!aktif ? 'Kullanici aktiflestirildi' : 'Kullanici pasife alindi');
+    kullanicilariYukle();
+  });
+}
+
+function kulEkleModalAc() {
+  ['kAd','kEmail','kSifre'].forEach(function(id){T(id).value='';});
+  T('kRol').value = 'operatör';
+  T('kulModal').style.display = 'flex';
+}
+
+async function kulEkle() {
+  var email = T('kEmail').value.trim();
+  var sifre = T('kSifre').value;
+  var ad = T('kAd').value.trim();
+  var rol = T('kRol').value;
+  if (!email) { toast('E-posta zorunlu', 'err'); return; }
+  if (!sifre || sifre.length < 8) { toast('Sifre en az 8 karakter', 'err'); return; }
+
+  var { data: authUser, error } = await _supa.auth.admin.createUser({
+    email: email, password: sifre, email_confirm: true,
+    user_metadata: { ad_soyad: ad }
+  });
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+
+  await _supa.from('kullanicilar').insert({
+    id: authUser.user.id, tenant_id: _tenantId,
+    email: email, ad_soyad: ad, rol: rol, aktif: true
+  });
+
+  T('kulModal').style.display = 'none';
+  toast('Kullanici eklendi');
+  kullanicilariYukle();
+}
+
+async function basamaklariYukle() {
+  var { data } = await _supa.from('basamak_tanimlari')
+    .select('*').eq('tenant_id', _tenantId).order('sira');
+
+  if (!data || !data.length) {
+    // Sablondan yukle
+    var tip = _firma?.firma_tipi || 'imalat';
+    var { data: sablon } = await _supa.from('basamak_sablonlari').select('*').eq('firma_tipi', tip).order('sira');
+    data = sablon || [];
+  }
+
+  // Gorsel liste
+  var listEl = T('basamakList');
+  if (!data.length) { listEl.innerHTML = '<div class="empty">Basamak tanimlanmamis</div>'; }
+  else {
+    listEl.innerHTML = data.map(function(b, i) {
+      return (i > 0 ? '<div class="basamak-arrow">&#8594;</div>' : '') +
+        '<div class="basamak-item"><div class="basamak-box ' + (b.aktif!==false?'aktif':'') + '">' + esc(b.gorunen_ad) + '</div></div>';
+    }).join('');
+  }
+
+  // Detay tablosu
+  var tbEl = T('basamakTbody');
+  if (!data.length) { tbEl.innerHTML = '<tr><td colspan="5" class="empty">Basamak yok</td></tr>'; return; }
+  tbEl.innerHTML = data.map(function(b) {
+    var hasId = !!b.id && b.id.length > 10;
+    return '<tr>' +
+      '<td class="mono">' + (b.sira||'--') + '</td>' +
+      '<td class="mono">' + esc(b.sistem_adi) + '</td>' +
+      '<td style="font-weight:600;">' + esc(b.gorunen_ad) + '</td>' +
+      '<td><span class="badge ' + (b.aktif!==false?'badge-aktif':'badge-pasif') + '">' + (b.aktif!==false?'Aktif':'Pasif') + '</span></td>' +
+      '<td><div class="actions">' +
+        (hasId ? '<button class="btn btn-outline btn-sm" data-id="' + b.id + '" onclick="_basamakDuzenle(this)">Duzenle</button>' : '') +
+        (hasId ? '<button class="btn btn-danger btn-sm" data-id="' + b.id + '" onclick="_basamakSil(this)">Sil</button>' : '') +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function basamakEkleModalAc() {
+  _duzenlenenBasamakId = null;
+  T('basamakModalBaslik').textContent = 'Basamak Ekle';
+  ['bAd','bSistemAd','bSira'].forEach(function(id){T(id).value='';});
+  T('basamakModal').style.display = 'flex';
+}
+
+async function _basamakDuzenle(el) {
+  var id = el.dataset.id;
+  var {data} = await _supa.from('basamak_tanimlari').select('*').eq('id', id).single();
+  if (!data) return;
+  _duzenlenenBasamakId = id;
+  T('basamakModalBaslik').textContent = 'Basamak Duzenle';
+  T('bAd').value = data.gorunen_ad || '';
+  T('bSistemAd').value = data.sistem_adi || '';
+  T('bSira').value = data.sira || '';
+  T('basamakModal').style.display = 'flex';
+}
+
+async function _basamakSil(el) {
+  if (!confirm('Bu basamagi silmek istediginizden emin misiniz?')) return;
+  await _supa.from('basamak_tanimlari').delete().eq('id', el.dataset.id);
+  toast('Basamak silindi');
+  basamaklariYukle();
+}
+
+async function basamakKaydet() {
+  var ad = T('bAd').value.trim();
+  var sistemAd = T('bSistemAd').value.trim().replace(/\s+/g,'_').toLowerCase();
+  var sira = parseInt(T('bSira').value) || 1;
+  if (!ad) { toast('Gorunen ad zorunlu', 'err'); return; }
+
+  if (_duzenlenenBasamakId) {
+    await _supa.from('basamak_tanimlari').update({gorunen_ad:ad, sistem_adi:sistemAd, sira:sira}).eq('id', _duzenlenenBasamakId);
+    toast('Basamak guncellendi');
+  } else {
+    await _supa.from('basamak_tanimlari').insert({tenant_id:_tenantId, gorunen_ad:ad, sistem_adi:sistemAd, sira:sira, aktif:true, firma_tipi:_firma?.firma_tipi||'imalat'});
+    toast('Basamak eklendi');
+  }
+  T('basamakModal').style.display = 'none';
+  basamaklariYukle();
+}
+
+async function modulleriYukle() {
+  var [modRes, featRes] = await Promise.all([
+    _supa.from('firma_moduller').select('*').eq('tenant_id', _tenantId),
+    _supa.from('tenant_features').select('*').eq('tenant_id', _tenantId)
+  ]);
+
+  var modMap = {};
+  (modRes.data||[]).forEach(function(m){modMap[m.modul_kodu]=m.aktif;});
+  var MODULLER = [
+    {kod:'uretim', ad:'Uretim', aciklama:'Kesim, bukum, kaynak, markalama'},
+    {kod:'kalite', ad:'Kalite', aciklama:'KK davetler, onay surecleri'},
+    {kod:'sevkiyat', ad:'Sevkiyat', aciklama:'Sevkiyat olusturma ve takip'},
+    {kod:'raporlar', ad:'Raporlar', aciklama:'Rapor ve analiz ekranlari'},
+    {kod:'yonetim', ad:'Yonetim', aciklama:'Kullanici ve ayar yonetimi'}
+  ];
+  T('modullerListesi').innerHTML = MODULLER.map(function(m) {
+    var aktif = modMap[m.kod] !== false;
+    return '<div class="toggle-row">' +
+      '<div><div class="toggle-label">' + m.ad + '</div><div class="toggle-desc">' + m.aciklama + '</div></div>' +
+      '<span class="badge ' + (aktif?'badge-aktif':'badge-pasif') + '">' + (aktif?'Acik':'Kapali') + '</span>' +
+    '</div>';
+  }).join('');
+
+  var featMap = {};
+  (featRes.data||[]).forEach(function(f){featMap[f.feature_kod]=f.aktif;});
+  var FEATURES = [
+    {kod:'3d_model', ad:'3D Model Gorunumu'},
+    {kod:'ai_izometri', ad:'AI Izometri Okuma'},
+    {kod:'musteri_portal', ad:'Musteri Portali'},
+    {kod:'raporlar_gelismis', ad:'Gelismis Raporlar'},
+    {kod:'hakedis', ad:'Hakedis Modulu'},
+    {kod:'api_erisim', ad:'API Erisimi'}
+  ];
+  T('featureListesi').innerHTML = FEATURES.map(function(f) {
+    var aktif = featMap[f.kod] === true;
+    return '<div class="toggle-row">' +
+      '<div class="toggle-label">' + f.ad + '</div>' +
+      '<span class="badge ' + (aktif?'badge-aktif':'badge-pasif') + '">' + (aktif?'Acik':'Kapali') + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
