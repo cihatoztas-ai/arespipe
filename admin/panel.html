@@ -998,18 +998,43 @@ async function magicLinkGonder() {
 }
 
 // -- LOGLAR -----------------------------------------------------
+function logIslemRenk(islem) {
+  return islem==='INSERT'?'var(--gr)':islem==='UPDATE'?'var(--ac)':'var(--re)';
+}
+function logTabloAd(tablo) {
+  var map = {
+    spooller:'Spool', devreler:'Devre', kullanicilar:'Kullanici',
+    tenants:'Firma', is_kayitlari:'Is Kaydi', sevkiyatlar:'Sevkiyat',
+    kk_davetler:'KK Davet', fotograflar:'Fotograf', belgeler:'Belge'
+  };
+  return map[tablo] || tablo;
+}
+function logYapanAd(yapanId) {
+  if (!yapanId || yapanId === 'sistem') return 'Sistem';
+  var kul = _kullanicilar.find(function(k){return k.id===yapanId;});
+  return kul ? (kul.ad_soyad||kul.email||yapanId.slice(0,8)) : yapanId.slice(0,8)+'...';
+}
+function logTarihSaat(ts) {
+  if (!ts) return '--';
+  var d = new Date(ts);
+  return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+}
+
 function logRender(loglar) {
   var el=T('logContainer');
   if(!loglar.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div class="empty-text">Log yok</div></div>';return;}
-  el.innerHTML=loglar.map(l=>`
-    <div class="log-item">
-      <div class="log-dot" style="background:${l.islem==='INSERT'?'var(--gr)':l.islem==='UPDATE'?'var(--ac)':'var(--re)'}"></div>
-      <div style="flex:1;">
-        <div class="log-msg"><strong>${esc(l.tablo_adi||'--')}</strong> -- ${esc(l.islem||'--')} <span class="mono">.  ${esc(l.kayit_id||'')}</span></div>
-        <div class="log-meta">${tarih(l.tarih)} . ${esc(l.yapan_id||'sistem')}</div>
-      </div>
-    </div>
-  `).join('');
+  var html = '';
+  loglar.forEach(function(l) {
+    html += '<div class="log-item">';
+    html += '<div class="log-dot" style="background:' + logIslemRenk(l.islem) + '"></div>';
+    html += '<div style="flex:1;">';
+    html += '<div class="log-msg"><strong>' + esc(logTabloAd(l.tablo_adi)) + '</strong>';
+    html += ' <span style="color:' + logIslemRenk(l.islem) + ';font-size:11px;font-weight:700;">' + esc(l.islem||'--') + '</span>';
+    html += ' <span class="mono" style="font-size:11px;">' + esc((l.kayit_id||'').slice(0,8)) + '...</span></div>';
+    html += '<div class="log-meta">' + logTarihSaat(l.tarih) + ' &nbsp;·&nbsp; ' + esc(logYapanAd(l.yapan_id)) + '</div>';
+    html += '</div></div>';
+  });
+  el.innerHTML = html;
 }
 
 // -- NAV --------------------------------------------------------
