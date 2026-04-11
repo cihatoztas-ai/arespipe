@@ -190,12 +190,14 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 /* -- LOG -- */
 .log-item{
-  display:flex;gap:12px;align-items:flex-start;
-  padding:10px 0;border-bottom:1px solid var(--bor);
+  display:flex;gap:14px;align-items:flex-start;
+  padding:13px 20px;border-bottom:1px solid var(--bor);
+  transition:background .1s;
 }
+.log-item:hover{background:rgba(255,255,255,.02);}
 .log-item:last-child{border-bottom:none;}
-.log-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
-.log-meta{font-size:11px;color:var(--txd);margin-top:2px;}
+.log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.log-meta{font-size:11px;color:var(--txd);margin-top:3px;}
 .log-msg{font-size:13px;color:var(--tx);}
 
 /* -- GİRİŞ EKRANI -- */
@@ -388,8 +390,8 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="page-sub">Son 100 işlem kaydı</div>
     </div>
     <div class="tbl-wrap">
-      <div id="logContainer" style="padding:16px 20px;">
-        <div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>
+      <div id="logContainer" style="padding:8px 0;">
+        <div class="empty"><div class="empty-icon"></div><div class="empty-text">Yukleniyor...</div></div>
       </div>
     </div>
   </div>
