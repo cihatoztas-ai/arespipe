@@ -474,15 +474,17 @@ async function basamaklariYukle() {
 }
 
 async function modulGuncelle(modul, aktif) {
-  var { error } = await _supa.from('firma_moduller')
+  var supa = _supa || supabase.createClient('https://ochvbepfiatzvyknkvsn.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',{auth:{storageKey:'sb-ochvbepfiatzvyknkvsn-auth-token'}});
+  var { error } = await supa.from('firma_moduller')
     .upsert({ tenant_id: _firmaId, modul_kodu: modul, aktif: aktif }, { onConflict: 'tenant_id,modul_kodu' });
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
   toast(modul + ' modulu ' + (aktif ? 'acildi' : 'kapatildi'));
 }
 
 async function featureGuncelle(feature, aktif) {
-  await _supa.from('feature_flags').upsert({ kod: feature, ad: feature }, { onConflict: 'kod' });
-  var { error } = await _supa.from('tenant_features')
+  var supa = _supa || supabase.createClient('https://ochvbepfiatzvyknkvsn.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',{auth:{storageKey:'sb-ochvbepfiatzvyknkvsn-auth-token'}});
+  await supa.from('feature_flags').upsert({ kod: feature, ad: feature }, { onConflict: 'kod' });
+  var { error } = await supa.from('tenant_features')
     .upsert({ tenant_id: _firmaId, feature_kod: feature, aktif: aktif }, { onConflict: 'tenant_id,feature_kod' });
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
   toast(feature + ' ozelligi ' + (aktif ? 'acildi' : 'kapatildi'));
@@ -493,7 +495,7 @@ async function bilgileriKaydet() {
     ad: T('fAd').value.trim(),
     firma_tipi: T('fTip').value,
     hesap_tipi: T('fHesapTipi').value,
-    plan: T('fPlan').value,
+    plan: T('fPlan').value || null,
     aylik_ucret: parseFloat(T('fUcret').value) || 0,
     demo_bitis: T('fDemoBitis').value || null,
     iletisim_email: T('fEmail').value.trim() || null,
