@@ -260,7 +260,7 @@ async function yukle() {
   // Proje bilgilerini al
   var _projeler = {};
   if (projeIds.length) {
-    var { data: projeler } = await _supa.from('projeler').select('id, ad, proje_no').in('id', projeIds);
+    var { data: projeler } = await _supa.from('projeler').select('id, proje_no, gemi_adi').in('id', projeIds);
     (projeler||[]).forEach(function(p){ _projeler[p.id] = p; });
   }
 
@@ -356,8 +356,8 @@ function render(liste) {
 
       html += '<tr>';
       html += '<td style="font-weight:700;font-family:\'JetBrains Mono\',monospace;">' + esc(s.spool_no||s.spool_id||'--') + '</td>';
-      html += '<td style="font-size:12px;">' + esc(s._devre?.ad||'--') + '</td>';
-      html += '<td style="font-size:12px;color:var(--txm);">' + esc(s._proje?.ad||'--') + '</td>';
+      html += '<td style="font-size:12px;">' + esc(s._devre ? (s._devre.ad||s._devre.id?.slice(0,8)) : '--') + '</td>';
+      html += '<td style="font-size:12px;color:var(--txm);">' + esc(s._proje ? (s._proje.gemi_adi||s._proje.proje_no||'--') : '--') + '</td>';
       html += '<td style="font-size:12px;">' + esc(s.malzeme||'--') + '</td>';
       html += '<td class="mono">' + (s.dis_cap_mm ? s.dis_cap_mm + 'mm' : '--') + '</td>';
       html += '<td><span class="badge ' + badge + '">' + durumAd + '</span></td>';
