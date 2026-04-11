@@ -394,6 +394,37 @@ tr:hover td{background:rgba(255,255,255,.02);}
     </div>
   </div>
 
+  <!-- FEATURE FLAGS -->
+  <div class="panel" id="pan-flags">
+    <div class="page-header">
+      <div class="page-title">Feature Flags</div>
+      <div class="page-sub">Tum firmalarda ozellik erisim kontrolu</div>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:20px;">
+      <div class="tbl-head"><div class="tbl-title">Ozellik Tanimlari</div></div>
+      <table>
+        <thead><tr><th>Ozellik</th><th>Kod</th><th>Varsayilan</th></tr></thead>
+        <tbody id="flagDefTbody">
+          <tr><td colspan="3" style="text-align:center;color:var(--txd);padding:20px;">Yukleniyor...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head">
+        <div class="tbl-title">Firma Bazli Erisim</div>
+        <select class="form-input form-select" id="flagFirmaFilter" style="width:200px;" onchange="flagFirmaYukle()">
+          <option value="">Firma secin...</option>
+        </select>
+      </div>
+      <table>
+        <thead><tr><th>Ozellik</th><th style="text-align:center;">Aktif</th></tr></thead>
+        <tbody id="flagFirmaTbody">
+          <tr><td colspan="2" style="text-align:center;color:var(--txd);padding:20px;">Yukaridaki listeden firma secin</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div><!-- /.main -->
 </div><!-- /.layout -->
 </div><!-- /#appShell -->
