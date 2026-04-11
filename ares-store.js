@@ -106,10 +106,14 @@ const ARES = (function () {
       ad_soyad:  data.user.user_metadata?.ad_soyad || email,
     };
 
-    // Süper admin paneline yönlendir
+    // Role gore yonlendir
     if (_oturum.rol === 'super_admin') {
       modDegistir('supabase');
       return { kullanici: _oturum, yonlendir: 'admin/panel.html' };
+    }
+    if (_oturum.rol === 'firma_admin') {
+      modDegistir('supabase');
+      return { kullanici: _oturum, yonlendir: 'admin/firma.html' };
     }
 
     // Mod supabase'e geç
