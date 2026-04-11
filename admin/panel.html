@@ -238,25 +238,10 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <body>
 
 <!-- GİRİŞ EKRANI -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">⚙ AresPipe</div>
-    <div class="login-sub">Süper Admin Paneli</div>
-    <div class="login-err" id="loginErr"></div>
-    <div class="form-row">
-      <label class="form-label">E-posta</label>
-      <input class="form-input" type="email" id="loginEmail" placeholder="admin@arespipe.com">
-    </div>
-    <div class="form-row">
-      <label class="form-label">Şifre</label>
-      <input class="form-input" type="password" id="loginPass" placeholder="••••••••">
-    </div>
-    <button class="btn btn-admin" style="width:100%;margin-top:8px;height:42px;font-size:14px;" onclick="adminGiris()">Giriş Yap</button>
-  </div>
-</div>
+<!-- login screen kaldırıldı - giris.html üzerinden yönlendirme yapılıyor -->
 
 <!-- ANA UYGULAMA -->
-<div id="appShell" style="display:none;flex-direction:column;min-height:100vh;">
+<div id="appShell" style="display:none;flex-direction:column;min-height:100vh;visibility:hidden;">
 
 <!-- TOP BAR -->
 <div class="topbar">
@@ -777,7 +762,7 @@ function goPan(id, el) {
       _oturum = {id:data.session.user.id, email:data.session.user.email, ad:kul.ad_soyad, rol:kul.rol};
       T('topbarUser').textContent = kul.ad_soyad || data.session.user.email;
       T('loginScreen').style.display = 'none';
-      var app = T('appShell'); app.style.display = 'flex';
+      var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
       await yukle();
     } else {
       // Giriş yapılmış ama süper admin değil
