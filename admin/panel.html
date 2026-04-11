@@ -926,8 +926,8 @@ function kulRender(liste) {
       '<td class="mono" style="font-size:12px;">' + (tarih(k.son_giris)||'--') + '</td>' +
       '<td><div class="actions">' +
         rolSelect +
-        '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" onclick="kulDurumDegistir('' + k.id + '',' + k.aktif + ')">' + (k.aktif?'Pasif':'Aktif') + '</button>' +
-        (k.email ? '<button class="btn btn-outline btn-sm" onclick="magicLinkAc('' + esc(k.email) + '')">Link</button>' : '') +
+        '<button class="btn btn-sm ' + (k.aktif?'btn-danger':'btn-outline') + '" onclick="kulDurumDegistir(\'' + k.id + '\',' + k.aktif + ')">' + (k.aktif?'Pasif':'Aktif') + '</button>' +
+        (k.email ? '<button class="btn btn-outline btn-sm" onclick="magicLinkAc(\'' + esc(k.email) + '\')">Link</button>' : '') +
       '</div></td>' +
     '</tr>';
   }).join('');
