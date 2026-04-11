@@ -499,26 +499,7 @@ function planBadge(plan) {
 }
 
 // ── GİRİŞ ──────────────────────────────────────────────────────
-async function adminGiris() {
-  var email = T('loginEmail').value.trim();
-  var pass  = T('loginPass').value;
-  var err   = T('loginErr');
-  err.style.display='none';
-  if(!email||!pass){err.textContent='E-posta ve şifre zorunlu.';err.style.display='block';return;}
-  var {data, error} = await _supa.auth.signInWithPassword({email, password:pass});
-  if(error){err.textContent=error.message;err.style.display='block';return;}
-  // Rol kontrolü
-  var {data:kul} = await _supa.from('kullanicilar').select('rol,ad_soyad').eq('id',data.user.id).single();
-  if(!kul||kul.rol!=='super_admin'){
-    await _supa.auth.signOut();
-    err.textContent='Bu panele erişim yetkiniz yok.';err.style.display='block';return;
-  }
-  _oturum = {id:data.user.id, email:data.user.email, ad:kul.ad_soyad, rol:kul.rol};
-  T('topbarUser').textContent = kul.ad_soyad || email;
-  T('loginScreen').style.display='none';
-  var app=T('appShell');app.style.display='flex';
-  await yukle();
-}
+
 
 async function cikisYap() {
   await _supa.auth.signOut();
@@ -761,7 +742,6 @@ function goPan(id, el) {
     if (kul?.rol === 'super_admin') {
       _oturum = {id:data.session.user.id, email:data.session.user.email, ad:kul.ad_soyad, rol:kul.rol};
       T('topbarUser').textContent = kul.ad_soyad || data.session.user.email;
-      T('loginScreen').style.display = 'none';
       var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
       await yukle();
     } else {
