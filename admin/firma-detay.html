@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AresPipe — Firma Detay</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../ares-store.js"></script>
+<style>
+:root {
+  --bg:#0a0b0e;--sur:#111318;--sur2:#1a1d24;--bor:#232730;
+  --tx:#f0f2f7;--txm:#9aa0b4;--txd:#555c72;
+  --ac:#3b82f6;--ac2:#1d4ed8;--gr:#22c55e;--re:#ef4444;
+  --warn:#f59e0b;--leg:#a855f7;--admin:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+.main{padding:32px;max-width:1200px;margin:0 auto;}
+
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--txm);font-size:13px;cursor:pointer;margin-bottom:24px;text-decoration:none;transition:color .15s;}
+.back-link:hover{color:var(--tx);}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:.5px;line-height:1;}
+.page-meta{display:flex;gap:8px;margin-top:8px;align-items:center;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px;}
+
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:22px;}
+.card-title{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+
+.form-row{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.form-input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--ac);}
+.form-select{appearance:none;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bor);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:13px;color:var(--tx);}
+.toggle-desc{font-size:11px;color:var(--txd);margin-top:2px;}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{position:absolute;inset:0;background:var(--bor);border-radius:11px;cursor:pointer;transition:background .2s;}
+.toggle input:checked + .toggle-track{background:var(--ac);}
+.toggle-thumb{position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(18px);}
+
+.btn{padding:7px 14px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-admin{background:var(--admin);color:#fff;}
+.btn-admin:hover{background:#ea6c0a;}
+.btn-outline{background:none;border:1px solid var(--bor);color:var(--txm);}
+.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+.btn-danger{background:none;border:1px solid rgba(239,68,68,.3);color:var(--re);}
+.btn-danger:hover{background:rgba(239,68,68,.1);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--gr);}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
+.badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
+.badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
+.badge-admin{background:rgba(249,115,22,.12);color:var(--admin);}
+.badge-rol{background:rgba(59,130,246,.12);color:var(--ac);}
+
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;padding:10px 16px;border-bottom:1px solid var(--bor);background:var(--sur2);}
+td{padding:11px 16px;border-bottom:1px solid rgba(35,39,48,.6);font-size:13px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+.tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);}
+.tbl-title{font-size:13px;font-weight:700;}
+
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
+.actions{display:flex;gap:6px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .3s;}
+.toast-ok{border-color:rgba(34,197,94,.3);color:var(--gr);}
+.toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
+
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:28px;min-width:440px;max-width:560px;width:90%;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:20px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);}
+
+.view-as-bar{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.view-as-text{font-size:13px;color:var(--ac);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">AresPipe <span>/ Firma Detay</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-user">
+    <span class="topbar-badge">SUPER ADMIN</span>
+    <span id="topbarUser">--</span>
+    <button class="btn-logout" onclick="cikis()">Cikis</button>
+  </div>
+</div>
+
+<div class="main">
+  <a class="back-link" onclick="history.back()">&#8592; Firmalara Don</a>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="firmaAdi">Yukleniyor...</div>
+      <div class="page-meta" id="firmaMeta"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="viewAs()">Firma Gozunden Bak</button>
+      <button class="btn btn-admin" onclick="bilgileriKaydet()">Kaydet</button>
+    </div>
+  </div>
+
+  <!-- Temel Bilgiler + Hesap Tipleri -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Firma Bilgileri</div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Firma Adi</label>
+          <input class="form-input" id="fAd">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Firma Tipi</label>
+          <select class="form-input form-select" id="fTip">
+            <option value="imalat">Imalat Firmasi</option>
+            <option value="montaj">Montaj Firmasi</option>
+            <option value="tersane">Tersane</option>
+            <option value="diger">Diger</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Hesap Tipi</label>
+          <select class="form-input form-select" id="fHesapTipi">
+            <option value="demo">Demo</option>
+            <option value="pilot">Pilot</option>
+            <option value="production">Production</option>
+            <option value="dev">Gelistirici</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Plan</label>
+          <select class="form-input form-select" id="fPlan">
+            <option value="demo">Demo</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Demo Bitis Tarihi</label>
+          <input class="form-input" type="date" id="fDemoBitis">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label class="form-label">Aylik Ucret (TL)</label>
+          <input class="form-input" type="number" id="fUcret" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Iletisim E-posta</label>
+        <input class="form-input" type="email" id="fEmail">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Notlar</label>
+        <input class="form-input" id="fNotlar">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+        <span style="font-size:13px;color:var(--txm);">Firma Durumu</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" id="btnAktif" onclick="durumDegistir(true)">Aktifleştir</button>
+          <button class="btn btn-danger btn-sm" id="btnPasif" onclick="durumDegistir(false)">Pasife Al</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Modüller -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Moduller</div>
+        <div id="modullerListesi">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Uretim</div><div class="toggle-desc">Kesim, bukum, kaynak, markalama</div></div>
+            <label class="toggle"><input type="checkbox" id="mod_uretim" onchange="modulGuncelle('uretim',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Kalite</div><div class="toggle-desc">KK davetler, onay surecleri</div></div>
+            <label class="toggle"><input type="checkbox" id="mod_kalite" onchange="modulGuncelle('kalite',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Sevkiyat</div><div class="toggle-desc">Sevkiyat olusturma ve takip</div></div>
+            <label class="toggle"><input type="checkbox" id="mod_sevkiyat" onchange="modulGuncelle('sevkiyat',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Raporlar</div><div class="toggle-desc">Rapor ve analiz ekranlari</div></div>
+            <label class="toggle"><input type="checkbox" id="mod_raporlar" onchange="modulGuncelle('raporlar',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Yonetim</div><div class="toggle-desc">Kullanici ve ayar yonetimi</div></div>
+            <label class="toggle"><input type="checkbox" id="mod_yonetim" onchange="modulGuncelle('yonetim',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Flags -->
+      <div class="card">
+        <div class="card-title">Ozellikler (Feature Flags)</div>
+        <div id="featureListesi">
+          <div class="toggle-row">
+            <div><div class="toggle-label">3D Model Gorunumu</div><div class="toggle-desc">Spool 3D viewer</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_3d_model" onchange="featureGuncelle('3d_model',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">AI Izometri Okuma</div><div class="toggle-desc">PDF'den otomatik spool olusturma</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_ai_izometri" onchange="featureGuncelle('ai_izometri',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Musteri Portali</div><div class="toggle-desc">Tersane erisim portali</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_musteri_portal" onchange="featureGuncelle('musteri_portal',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Gelismis Raporlar</div><div class="toggle-desc">Detayli analiz ve export</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_raporlar_gelismis" onchange="featureGuncelle('raporlar_gelismis',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Hakedis Modulu</div><div class="toggle-desc">Hakedis hesaplama ve takip</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_hakedis" onchange="featureGuncelle('hakedis',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">API Erisimi</div><div class="toggle-desc">Harici API entegrasyonu</div></div>
+            <label class="toggle"><input type="checkbox" id="ff_api_erisim" onchange="featureGuncelle('api_erisim',this.checked)"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kullanıcılar -->
+  <div class="tbl-wrap" style="margin-bottom:20px;">
+    <div class="tbl-head">
+      <div class="tbl-title">Kullanicilar</div>
+      <button class="btn btn-outline btn-sm" onclick="kulEkleModalAc()">+ Kullanici Ekle</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Ad Soyad</th>
+          <th>E-posta</th>
+          <th>Rol</th>
+          <th>Durum</th>
+          <th>Son Giris</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="kulTbody">
+        <tr><td colspan="6" style="text-align:center;color:var(--txd);padding:24px;">Yukleniyor...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Basamak Sablonu -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">
+      Basamak Sablonu
+      <span style="font-size:11px;color:var(--txd);font-weight:400;text-transform:none;">Firma kendi basamaklarini ozellestirilebilir</span>
+    </div>
+    <div id="basamakListesi" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
+
+</div>
+
+<!-- Kullanici Ekleme Modal -->
+<div id="kulModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-title">Kullanici Ekle</div>
+    <div class="form-row">
+      <label class="form-label">Ad Soyad</label>
+      <input class="form-input" id="kAd" placeholder="Ahmet Yilmaz">
+    </div>
+    <div class="form-row">
+      <label class="form-label">E-posta *</label>
+      <input class="form-input" type="email" id="kEmail" placeholder="kullanici@firma.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Sifre *</label>
+      <input class="form-input" type="password" id="kSifre" placeholder="En az 8 karakter">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Rol</label>
+      <select class="form-input form-select" id="kRol">
+        <option value="firma_admin">Firma Admin</option>
+        <option value="yonetici">Yonetici</option>
+        <option value="kk_uzmani">KK Uzmani</option>
+        <option value="operatör">Operatör</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="T('kulModal').style.display='none'">Iptal</button>
+      <button class="btn btn-admin" onclick="kulEkle()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _firmaId = new URLSearchParams(location.search).get('id');
+var _firma = null;
+var _supa = null;
+var _oturum = null;
+
+function T(id) { return document.getElementById(id); }
+
+function toast(msg, tip) {
+  var el = document.createElement('div');
+  el.className = 'toast' + (tip === 'err' ? ' toast-err' : ' toast-ok');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 300); }, 2500);
+}
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+function tarih(ts) {
+  if (!ts) return '--';
+  var d = new Date(ts);
+  return d.toLocaleDateString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+async function cikis() {
+  await _supa.auth.signOut();
+  window.location.href = '../giris.html';
+}
+
+async function init() {
+  var bekle = 0;
+  while ((!window.ARES || !ARES.supabase || !ARES.supabase()) && bekle < 50) {
+    await new Promise(function(r) { setTimeout(r, 100); });
+    bekle++;
+  }
+  _supa = supabase.createClient(
+    'https://ochvbepfiatzvyknkvsn.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',
+    { auth: { storageKey: 'sb-ochvbepfiatzvyknkvsn-auth-token' } }
+  );
+
+  var { data: { session } } = await _supa.auth.getSession();
+  if (!session) { window.location.href = '../giris.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+
+  var { data: kul } = await _supa.from('kullanicilar').select('rol,ad_soyad').eq('id', session.user.id).single();
+  if (kul?.rol !== 'super_admin') { window.location.href = '../index.html'; return; }
+
+  _oturum = { id: session.user.id, ad: kul.ad_soyad || session.user.email };
+  T('topbarUser').textContent = _oturum.ad;
+
+  if (!_firmaId) { window.location.href = 'panel.html'; return; }
+
+  await yukle();
+}
+
+async function yukle() {
+  var { data: firma } = await _supa.from('tenants').select('*').eq('id', _firmaId).single();
+  if (!firma) { toast('Firma bulunamadi', 'err'); return; }
+  _firma = firma;
+
+  T('firmaAdi').textContent = firma.ad;
+  T('firmaMeta').innerHTML = firmaBadges(firma);
+  document.title = 'AresPipe -- ' + firma.ad;
+
+  T('fAd').value = firma.ad || '';
+  T('fTip').value = firma.firma_tipi || 'imalat';
+  T('fHesapTipi').value = firma.hesap_tipi || 'demo';
+  T('fPlan').value = firma.plan || 'demo';
+  T('fDemoBitis').value = firma.demo_bitis ? firma.demo_bitis.split('T')[0] : '';
+  T('fUcret').value = firma.aylik_ucret || '';
+  T('fEmail').value = firma.iletisim_email || '';
+  T('fNotlar').value = firma.notlar || '';
+
+  T('btnAktif').style.display = firma.aktif ? 'none' : '';
+  T('btnPasif').style.display = firma.aktif ? '' : 'none';
+
+  await Promise.all([modullerYukle(), featuresYukle(), kullanicilariYukle(), basamaklariYukle()]);
+}
+
+function firmaBadges(f) {
+  var tipMap = { imalat:'Imalat', montaj:'Montaj', tersane:'Tersane', diger:'Diger' };
+  var hesapMap = { dev:'Dev', demo:'Demo', pilot:'Pilot', production:'Production' };
+  return [
+    '<span class="badge ' + (f.aktif ? 'badge-aktif' : 'badge-pasif') + '">' + (f.aktif ? 'Aktif' : 'Pasif') + '</span>',
+    '<span class="badge badge-rol">' + (tipMap[f.firma_tipi] || f.firma_tipi || '--') + '</span>',
+    '<span class="badge badge-admin">' + (hesapMap[f.hesap_tipi] || f.hesap_tipi || '--') + '</span>'
+  ].join('');
+}
+
+async function modullerYukle() {
+  var { data } = await _supa.from('firma_moduller').select('*').eq('tenant_id', _firmaId);
+  var map = {};
+  (data || []).forEach(function(m) { map[m.modul_kodu] = m.aktif; });
+  ['uretim','kalite','sevkiyat','raporlar','yonetim'].forEach(function(m) {
+    var el = T('mod_' + m);
+    if (el) el.checked = map[m] !== undefined ? map[m] : true;
+  });
+}
+
+async function featuresYukle() {
+  var { data } = await _supa.from('tenant_features').select('*').eq('tenant_id', _firmaId);
+  var map = {};
+  (data || []).forEach(function(f) { map[f.feature_kod] = f.aktif; });
+  var features = ['3d_model','ai_izometri','musteri_portal','raporlar_gelismis','hakedis','api_erisim'];
+  features.forEach(function(f) {
+    var el = T('ff_' + f);
+    if (el) el.checked = map[f] || false;
+  });
+}
+
+async function kullanicilariYukle() {
+  var { data } = await _supa.from('kullanicilar').select('*').eq('tenant_id', _firmaId).order('olusturma');
+  var el = T('kulTbody');
+  if (!data || !data.length) {
+    el.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--txd);padding:24px;">Kullanici yok</td></tr>';
+    return;
+  }
+  el.innerHTML = data.map(function(k) {
+    return '<tr>' +
+      '<td style="font-weight:600;">' + esc(k.ad_soyad || '--') + '</td>' +
+      '<td class="mono" style="font-size:12px;">' + esc(k.email || '--') + '</td>' +
+      '<td><span class="badge badge-rol">' + esc(k.rol || '--') + '</span></td>' +
+      '<td><span class="badge ' + (k.aktif ? 'badge-aktif' : 'badge-pasif') + '">' + (k.aktif ? 'Aktif' : 'Pasif') + '</span></td>' +
+      '<td style="font-size:12px;color:var(--txd);">' + tarih(k.son_giris) + '</td>' +
+      '<td><div class="actions">' +
+        '<select class="form-input form-select" style="padding:3px 8px;font-size:11px;width:auto;" onchange="rolDegistir(\'' + k.id + '\',this.value)">' +
+          ['firma_admin','yonetici','kk_uzmani','operatör'].map(function(r) {
+            return '<option value="' + r + '"' + (k.rol === r ? ' selected' : '') + '>' + r + '</option>';
+          }).join('') +
+        '</select>' +
+        '<button class="btn btn-danger btn-sm" onclick="kulPasif(\'' + k.id + '\',' + k.aktif + ')">' + (k.aktif ? 'Pasif' : 'Aktif') + '</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function basamaklariYukle() {
+  var tip = _firma?.firma_tipi || 'imalat';
+  var { data } = await _supa.from('basamak_tanimlari').select('*').eq('tenant_id', _firmaId).eq('aktif', true).order('sira');
+  var el = T('basamakListesi');
+  if (!data || !data.length) {
+    var { data: sablon } = await _supa.from('basamak_sablonlari').select('*').eq('firma_tipi', tip).order('sira');
+    data = sablon || [];
+  }
+  if (!data.length) { el.innerHTML = '<span style="color:var(--txd);font-size:13px;">Basamak tanimi yok</span>'; return; }
+  el.innerHTML = data.map(function(b, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;">' +
+      (i > 0 ? '<span style="color:var(--txd);">&#8594;</span>' : '') +
+      '<span style="background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;">' + esc(b.gorunen_ad) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+async function modulGuncelle(modul, aktif) {
+  var { error } = await _supa.from('firma_moduller')
+    .upsert({ tenant_id: _firmaId, modul_kodu: modul, aktif: aktif }, { onConflict: 'tenant_id,modul_kodu' });
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast(modul + ' modulu ' + (aktif ? 'acildi' : 'kapatildi'));
+}
+
+async function featureGuncelle(feature, aktif) {
+  await _supa.from('feature_flags').upsert({ kod: feature, ad: feature }, { onConflict: 'kod' });
+  var { error } = await _supa.from('tenant_features')
+    .upsert({ tenant_id: _firmaId, feature_kod: feature, aktif: aktif }, { onConflict: 'tenant_id,feature_kod' });
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast(feature + ' ozelligi ' + (aktif ? 'acildi' : 'kapatildi'));
+}
+
+async function bilgileriKaydet() {
+  var { error } = await _supa.from('tenants').update({
+    ad: T('fAd').value.trim(),
+    firma_tipi: T('fTip').value,
+    hesap_tipi: T('fHesapTipi').value,
+    plan: T('fPlan').value,
+    aylik_ucret: parseFloat(T('fUcret').value) || 0,
+    demo_bitis: T('fDemoBitis').value || null,
+    iletisim_email: T('fEmail').value.trim() || null,
+    notlar: T('fNotlar').value.trim() || null
+  }).eq('id', _firmaId);
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast('Firma bilgileri kaydedildi');
+  await yukle();
+}
+
+async function durumDegistir(aktif) {
+  var { error } = await _supa.from('tenants').update({ aktif: aktif }).eq('id', _firmaId);
+  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  toast(aktif ? 'Firma aktiflestirildi' : 'Firma pasife alindi');
+  await yukle();
+}
+
+async function rolDegistir(kulId, yeniRol) {
+  await _supa.from('kullanicilar').update({ rol: yeniRol }).eq('id', kulId);
+  await _supa.auth.admin.updateUserById(kulId, { app_metadata: { rol: yeniRol } });
+  toast('Rol guncellendi');
+}
+
+async function kulPasif(kulId, aktif) {
+  await _supa.from('kullanicilar').update({ aktif: !aktif }).eq('id', kulId);
+  toast(!aktif ? 'Kullanici aktiflestirildi' : 'Kullanici pasife alindi');
+  await kullanicilariYukle();
+}
+
+function kulEkleModalAc() {
+  ['kAd','kEmail','kSifre'].forEach(function(id) { T(id).value = ''; });
+  T('kRol').value = 'operatör';
+  T('kulModal').style.display = 'flex';
+}
+
+async function kulEkle() {
+  var email = T('kEmail').value.trim();
+  var sifre = T('kSifre').value;
+  var ad = T('kAd').value.trim();
+  var rol = T('kRol').value;
+  if (!email) { toast('E-posta zorunlu', 'err'); return; }
+  if (!sifre || sifre.length < 8) { toast('Sifre en az 8 karakter', 'err'); return; }
+
+  var { data: authUser, error: authErr } = await _supa.auth.admin.createUser({
+    email: email, password: sifre, email_confirm: true,
+    user_metadata: { ad_soyad: ad }
+  });
+  if (authErr) { toast('Hata: ' + authErr.message, 'err'); return; }
+
+  await _supa.from('kullanicilar').insert({
+    id: authUser.user.id, tenant_id: _firmaId,
+    email: email, ad_soyad: ad, rol: rol, aktif: true
+  });
+  await _supa.auth.admin.updateUserById(authUser.user.id, {
+    app_metadata: { tenant_id: _firmaId, rol: rol }
+  });
+
+  T('kulModal').style.display = 'none';
+  toast('Kullanici eklendi');
+  await kullanicilariYukle();
+}
+
+function viewAs() {
+  sessionStorage.setItem('viewAs', JSON.stringify({ tenant_id: _firmaId, ad: _firma?.ad }));
+  window.open('../index.html?viewas=' + _firmaId, '_blank');
+}
+
+init();
+</script>
+</body>
+</html>
