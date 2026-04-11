@@ -136,7 +136,9 @@
       "ares-lang.js",
       "ares-layout.js",
       "api/izometri-batch.html",
-      "api/sorgula.html"
+      "api/sorgula.html",
+      "api/izometri-oku.js",
+      "api/sorgula.js"
     ]
   },
 
