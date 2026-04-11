@@ -600,7 +600,7 @@ async function cikisYap() {
 
 // -- VERİ YÜKLE --------------------------------------------------
 async function yukle() {
-  await Promise.all([firmalariYukle(), kullanicilariYukle(), loglariYukle(), flaglariYukle()]);
+  await Promise.all([firmalariYukle(), kullanicilariYukle(), loglariYukle()]);
   dashboardGuncelle();
 }
 
@@ -1049,6 +1049,7 @@ async function flagToggle(firmaId, kod, aktif) {
 }
 
 function goPan(id, el) {
+  if (id === 'flags') flaglariYukle();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   T('pan-'+id).classList.add('active');
