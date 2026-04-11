@@ -1,1 +1,31 @@
+name: AresPipe Kod Kalite Kontrolü
 
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  kalite-kontrol:
+    name: Kural Kontrolü
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Kontrol scriptini çalıştır
+        run: node .github/kontrol.js
+
+      - name: Sonuçları kaydet (hata olsa bile)
+        if: always()
+        run: |
+          echo "## AresPipe Kod Kalite Raporu" >> $GITHUB_STEP_SUMMARY
+          echo "Tarih: $(date '+%d/%m/%Y %H:%M')" >> $GITHUB_STEP_SUMMARY
+          node .github/kontrol.js 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY || true
