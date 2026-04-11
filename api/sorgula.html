@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Sorgu | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
+<style>
+:root[data-theme="dark"]  {
+  --bg:#0d0f1a;--sur:#14172a;--sur2:#1c2035;--bor:#252a45;
+  --tx:#e8eaf6;--txm:#8b90b8;--txd:#4a5070;
+  --ac:#3b82f6;--gr:#10b981;--re:#ef4444;--warn:#f59e0b;--leg:#a78bfa;
+  --ai:#6366f1;--ai2:#818cf8;
+}
+:root[data-theme="light"] {
+  --bg:#f0f2f8;--sur:#ffffff;--sur2:#f5f6fa;--bor:#dde1f0;
+  --tx:#1a1d27;--txm:#5a5f7a;--txd:#9095b4;
+  --ac:#2d8eff;--gr:#059669;--re:#dc2626;--warn:#d97706;--leg:#7c3aed;
+  --ai:#6366f1;--ai2:#4f46e5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+.sorgu-layout{display:grid;grid-template-columns:1fr 220px;gap:28px;max-width:1100px;margin:0 auto;padding:28px 20px 40px;align-items:start;}
+@media(max-width:720px){.sorgu-layout{grid-template-columns:1fr;}.ares-col{display:none;}}
+
+.page-header{margin-bottom:20px;}
+.breadcrumb{font-size:13px;color:var(--txd);margin-bottom:8px;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.3px;}
+.page-title span{color:var(--ai2);}
+.page-sub{font-size:14px;color:var(--txm);margin-top:4px;}
+
+.sorgu-card{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.sorgu-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(99,102,241,.05) 0%,transparent 60%);pointer-events:none;}
+
+.sorgu-input-wrap{display:flex;gap:10px;align-items:flex-end;position:relative;}
+textarea#sorguInput{flex:1;background:var(--sur2);border:1.5px solid var(--bor);border-radius:12px;padding:13px 16px;font-family:'Barlow',sans-serif;font-size:15px;color:var(--tx);resize:none;height:52px;line-height:1.4;transition:border-color .2s,box-shadow .2s;}
+textarea#sorguInput:focus{outline:none;border-color:var(--ai);box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+textarea#sorguInput::placeholder{color:var(--txd);}
+
+.sorgu-btn{background:linear-gradient(135deg,var(--ai),#4f46e5);color:#fff;border:none;border-radius:12px;padding:0 22px;height:52px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.3px;cursor:pointer;white-space:nowrap;transition:transform .15s,box-shadow .15s,opacity .15s;flex-shrink:0;box-shadow:0 4px 15px rgba(99,102,241,.35);}
+.sorgu-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.45);}
+.sorgu-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+.oneriler{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+.oneri-btn{background:var(--sur2);border:1px solid var(--bor);border-radius:99px;padding:5px 13px;font-size:13px;color:var(--txm);cursor:pointer;transition:all .15s;}
+.oneri-btn:hover{border-color:var(--ai);color:var(--ai2);background:rgba(99,102,241,.08);}
+
+.cevap-wrap{display:none;margin-bottom:16px;}
+.cevap-card{background:var(--sur);border:1px solid var(--bor);border-radius:18px;overflow:hidden;}
+.cevap-head{background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(99,102,241,.04));border-bottom:1px solid var(--bor);padding:12px 18px;display:flex;align-items:center;gap:10px;}
+.cevap-head-label{font-size:13px;font-weight:700;color:var(--ai2);text-transform:uppercase;letter-spacing:.8px;}
+.cevap-head-meta{margin-left:auto;font-size:13px;color:var(--txd);background:var(--sur2);padding:2px 10px;border-radius:99px;border:1px solid var(--bor);}
+.cevap-body{padding:20px;}
+.cevap-metin{font-size:15px;line-height:1.75;color:var(--tx);margin-bottom:16px;}
+
+.sql-toggle{font-size:13px;color:var(--txd);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);transition:all .15s;margin-bottom:12px;}
+.sql-toggle:hover{color:var(--ac);border-color:var(--ac);}
+.sql-kutu{display:none;background:#0a0c16;border:1px solid var(--bor);border-radius:10px;padding:14px;font-family:'Courier New',monospace;font-size:13px;color:#a5b4fc;overflow-x:auto;white-space:pre;margin-bottom:16px;line-height:1.6;}
+
+.veri-tablo-wrap{overflow-x:auto;border:1px solid var(--bor);border-radius:12px;}
+.veri-tablo{width:100%;border-collapse:collapse;font-size:14px;}
+.veri-tablo th{padding:9px 12px;text-align:left;background:var(--sur2);color:var(--txd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--bor);white-space:nowrap;}
+.veri-tablo td{padding:9px 12px;border-bottom:1px solid var(--bor);color:var(--tx);}
+.veri-tablo tr:last-child td{border-bottom:none;}
+.veri-tablo tr:hover td{background:rgba(99,102,241,.04);}
+
+.yukleniyor{display:none;text-align:center;padding:48px 20px;}
+.hata-kutu{display:none;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px;font-size:14px;color:var(--re);}
+.gecmis-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:18px;display:none;}
+.gecmis-baslik{font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.gecmis-item{padding:8px 10px;border-radius:8px;font-size:14px;color:var(--txm);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s,color .1s;}
+.gecmis-item:hover{background:var(--sur2);color:var(--tx);}
+.gecmis-icon{color:var(--txd);font-size:12px;flex-shrink:0;}
+
+/* ARES */
+.ares-col{position:sticky;top:28px;}
+.ares-card{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:20px 16px;text-align:center;background:linear-gradient(160deg,var(--sur) 60%,rgba(99,102,241,.06));}
+.ares-isim{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--ai2);letter-spacing:.5px;margin-top:12px;}
+.ares-unvan{font-size:12px;color:var(--txd);margin-top:2px;}
+.ares-durum{margin-top:12px;font-size:13px;color:var(--txm);background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:8px 10px;line-height:1.4;min-height:40px;transition:color .3s;}
+
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes blink{0%,90%,100%{transform:scaleY(1);}95%{transform:scaleY(.1);}}
+@keyframes think{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-5deg);}75%{transform:rotate(5deg);}}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.6);}}
+@keyframes happy-bounce{0%,100%{transform:translateY(0) rotate(0);}30%{transform:translateY(-12px) rotate(-4deg);}60%{transform:translateY(-6px) rotate(3deg);}}
+@keyframes spin-gear{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+.ares-body{animation:float 3s ease-in-out infinite;}
+.ares-body.thinking{animation:think .7s ease-in-out infinite;}
+.ares-body.happy{animation:happy-bounce .6s ease forwards;}
+.ares-eye-l,.ares-eye-r{animation:blink 4s ease-in-out infinite;}
+.ares-eye-r{animation-delay:.07s;}
+.think-dots{display:none;}
+.think-dots.show{display:block;}
+.think-dot-1{animation:pulse-dot .8s ease-in-out infinite;}
+.think-dot-2{animation:pulse-dot .8s ease-in-out .22s infinite;}
+.think-dot-3{animation:pulse-dot .8s ease-in-out .44s infinite;}
+#gearIcon{transform-origin:50% 50%;animation:spin-gear 5s linear infinite;animation-play-state:paused;}
+#gearIcon.spinning{animation-play-state:running;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--gr);display:inline-block;margin-right:5px;box-shadow:0 0 6px var(--gr);}
+.status-dot.thinking{background:var(--warn);box-shadow:0 0 6px var(--warn);animation:pulse-dot .6s infinite;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<div class="main-content">
+<div class="sorgu-layout">
+
+  <!-- SOL -->
+  <div>
+    <div class="page-header">
+      <div class="breadcrumb"><a href="index.html">Ana Sayfa</a> › AI Sorgu</div>
+      <div class="page-title">🤖 <span>ARES</span> ile Sorgula</div>
+      <div class="page-sub">Türkçe sorun, sistem veritabanından cevap bulsun</div>
+    </div>
+
+    <div class="sorgu-card">
+      <div class="sorgu-input-wrap">
+        <textarea id="sorguInput" placeholder="Örn: Bu ay teslim edilemeyen devreler hangileri?" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sorguGonder();}"></textarea>
+        <button class="sorgu-btn" id="sorguBtn" onclick="sorguGonder()">➤ Sor</button>
+      </div>
+      <div class="oneriler">
+        <span class="oneri-btn" onclick="sorguSec(this)">Bu ay kaç spool tamamlandı?</span>
+        <span class="oneri-btn" onclick="sorguSec(this)">Hangi devreler gecikmiş?</span>
+        <span class="oneri-btn" onclick="sorguSec(this)">En ağır 10 spool hangisi?</span>
+        <span class="oneri-btn" onclick="sorguSec(this)">Son haftada KK'ya gönderilen spooller?</span>
+        <span class="oneri-btn" onclick="sorguSec(this)">Kalite kontrolden geçemeyen testler?</span>
+        <span class="oneri-btn" onclick="sorguSec(this)">Tersane bazında spool dağılımı?</span>
+      </div>
+    </div>
+
+    <div class="yukleniyor" id="yukleniyor">
+      <div style="font-size:14px;color:var(--txd);">Ares analiz ediyor...</div>
+    </div>
+    <div class="hata-kutu" id="hataMesaj"></div>
+
+    <div class="cevap-wrap" id="cevapWrap">
+      <div class="cevap-card">
+        <div class="cevap-head">
+          <span style="font-size:16px;">🤖</span>
+          <span class="cevap-head-label">Ares'in Analizi</span>
+          <span class="cevap-head-meta" id="satirSayisi"></span>
+        </div>
+        <div class="cevap-body">
+          <div class="cevap-metin" id="cevapMetin"></div>
+          <div class="sql-toggle" onclick="sqlToggle()"><span id="sqlToggleIcon">▶</span> SQL sorgusunu göster</div>
+          <div class="sql-kutu" id="sqlKutu"></div>
+          <div id="veriTabloWrap"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gecmis-wrap" id="gecmisWrap">
+      <div class="gecmis-baslik">Son Sorgular</div>
+      <div id="gecmisListe"></div>
+    </div>
+  </div>
+
+  <!-- SAĞ: ARES -->
+  <div class="ares-col">
+    <div class="ares-card">
+      <div style="position:relative;display:inline-block;">
+        <svg width="160" height="195" viewBox="0 0 160 195" xmlns="http://www.w3.org/2000/svg">
+          <!-- Düşünme noktaları -->
+          <g class="think-dots" id="thinkDots">
+            <circle class="think-dot-1" cx="120" cy="52" r="4" fill="#6366f1"/>
+            <circle class="think-dot-2" cx="132" cy="39" r="5" fill="#818cf8"/>
+            <circle class="think-dot-3" cx="146" cy="25" r="6" fill="#a5b4fc"/>
+          </g>
+
+          <g class="ares-body" id="aresBody">
+            <!-- Baret -->
+            <ellipse cx="80" cy="43" rx="35" ry="7" fill="#f59e0b"/>
+            <rect x="53" y="36" width="54" height="9" rx="5" fill="#f59e0b"/>
+            <rect x="68" y="28" width="24" height="10" rx="5" fill="#fbbf24"/>
+            <!-- Lamba -->
+            <circle cx="80" cy="27" r="7" fill="#fef3c7" opacity=".9"/>
+            <circle cx="80" cy="27" r="4" fill="white"/>
+
+            <!-- Kafa -->
+            <rect x="56" y="43" width="48" height="44" rx="14" fill="#fde68a"/>
+
+            <!-- Gözler -->
+            <g class="ares-eye-l" style="transform-origin:72px 62px">
+              <rect x="63" y="56" width="18" height="13" rx="7" fill="white"/>
+              <circle cx="72" cy="62" r="5.5" fill="#1e1b4b"/>
+              <circle cx="74" cy="60" r="1.5" fill="white"/>
+            </g>
+            <g class="ares-eye-r" style="transform-origin:92px 62px">
+              <rect x="83" y="56" width="18" height="13" rx="7" fill="white"/>
+              <circle cx="92" cy="62" r="5.5" fill="#1e1b4b"/>
+              <circle cx="94" cy="60" r="1.5" fill="white"/>
+            </g>
+
+            <!-- Ağız -->
+            <path id="aresMouth" d="M70 79 Q80 87 90 79" stroke="#d97706" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+            <!-- Kulaklar -->
+            <rect x="43" y="55" width="13" height="19" rx="6.5" fill="#fde68a"/>
+            <rect x="104" y="55" width="13" height="19" rx="6.5" fill="#fde68a"/>
+
+            <!-- Boyun -->
+            <rect x="72" y="87" width="16" height="11" rx="5" fill="#fde68a"/>
+
+            <!-- Gövde -->
+            <rect x="43" y="98" width="74" height="62" rx="16" fill="#1e40af"/>
+            <path d="M72 98 L80 112 L88 98" fill="#2563eb"/>
+
+            <!-- Rozet -->
+            <rect x="49" y="108" width="26" height="14" rx="4" fill="#7c3aed"/>
+            <text x="62" y="119" font-family="'Barlow Condensed',sans-serif" font-size="7.5" font-weight="800" fill="white" text-anchor="middle">ARES</text>
+
+            <!-- Cep + dişli -->
+            <rect x="88" y="108" width="22" height="18" rx="5" fill="#1d4ed8" stroke="#3b82f6" stroke-width="1"/>
+            <g id="gearIcon" style="transform-origin:99px 117px">
+              <circle cx="99" cy="117" r="5.5" fill="none" stroke="#60a5fa" stroke-width="1.5"/>
+              <circle cx="99" cy="117" r="2" fill="#60a5fa"/>
+              <line x1="99" y1="110" x2="99" y2="112" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="99" y1="122" x2="99" y2="124" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="92" y1="117" x2="94" y2="117" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="104" y1="117" x2="106" y2="117" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="94" y1="112" x2="95.5" y2="113.5" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="102.5" y1="120.5" x2="104" y2="122" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="104" y1="112" x2="102.5" y2="113.5" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="95.5" y1="120.5" x2="94" y2="122" stroke="#60a5fa" stroke-width="1.5"/>
+            </g>
+
+            <!-- Sol kol + tablet -->
+            <rect x="20" y="100" width="23" height="46" rx="11" fill="#1e40af"/>
+            <rect x="6" y="108" width="28" height="36" rx="5" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+            <rect x="9" y="111" width="22" height="28" rx="3" fill="#1e3a8a"/>
+            <line x1="11" y1="116" x2="29" y2="116" stroke="#60a5fa" stroke-width="1" opacity=".7"/>
+            <line x1="11" y1="121" x2="26" y2="121" stroke="#60a5fa" stroke-width="1" opacity=".5"/>
+            <line x1="11" y1="126" x2="28" y2="126" stroke="#60a5fa" stroke-width="1" opacity=".5"/>
+            <line x1="11" y1="131" x2="24" y2="131" stroke="#60a5fa" stroke-width="1" opacity=".4"/>
+            <rect x="11" y="134" width="9" height="3" rx="1" fill="#6366f1" opacity=".9"/>
+
+            <!-- Sağ kol -->
+            <rect x="117" y="100" width="23" height="46" rx="11" fill="#1e40af"/>
+            <ellipse cx="128" cy="148" rx="10" ry="7" fill="#fde68a"/>
+
+            <!-- Bacaklar -->
+            <rect x="56" y="157" width="20" height="30" rx="10" fill="#1e3a8a"/>
+            <rect x="84" y="157" width="20" height="30" rx="10" fill="#1e3a8a"/>
+            <!-- Ayakkabılar -->
+            <ellipse cx="66" cy="188" rx="14" ry="6" fill="#0f172a"/>
+            <ellipse cx="94" cy="188" rx="14" ry="6" fill="#0f172a"/>
+            <ellipse cx="68" cy="186" rx="10" ry="3.5" fill="#1e293b"/>
+            <ellipse cx="96" cy="186" rx="10" ry="3.5" fill="#1e293b"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="ares-isim">ARES</div>
+      <div class="ares-unvan">Tersane AI Mühendisi</div>
+
+      <div class="ares-durum" id="aresDurum">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="aresDurumText">Sorunuzu bekliyorum...</span>
+      </div>
+
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:8px;text-align:center;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--ai2);" id="sorguSayac">0</div>
+          <div style="font-size:11px;color:var(--txd);">Sorgu</div>
+        </div>
+        <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:8px;text-align:center;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--gr);" id="basariSayac">0</div>
+          <div style="font-size:11px;color:var(--txd);">Başarılı</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script>
+'use strict';
+var _gecmis = JSON.parse(localStorage.getItem('ares_sorgu_gecmis') || '[]');
+var _sqlGoster = false;
+var _sorguSayac = parseInt(localStorage.getItem('ares_sorgu_sayac') || '0');
+var _basariSayac = parseInt(localStorage.getItem('ares_basari_sayac') || '0');
+
+function _sayacGuncelle() {
+  var el = document.getElementById('sorguSayac'); if (el) el.textContent = _sorguSayac;
+  var el2 = document.getElementById('basariSayac'); if (el2) el2.textContent = _basariSayac;
+}
+
+function _aresDurum(mod, mesaj) {
+  var body = document.getElementById('aresBody');
+  var dot = document.getElementById('statusDot');
+  var text = document.getElementById('aresDurumText');
+  var gear = document.getElementById('gearIcon');
+  var dots = document.getElementById('thinkDots');
+  if (body) { body.setAttribute("class", "ares-body"); }
+  if (dot) { dot.setAttribute("class", "status-dot"); }
+  if (gear) { gear.setAttribute("class", ""); }
+  if (dots) { dots.setAttribute("class", "think-dots"); }
+  if (mod === 'thinking') {
+    if (body) body.setAttribute('class', 'ares-body thinking');
+    if (dot) dot.setAttribute('class', 'status-dot thinking');
+    if (gear) gear.setAttribute('class', 'spinning');
+    if (dots) dots.setAttribute('class', 'think-dots show');
+    if (text) text.textContent = mesaj || 'Düşünüyorum...';
+  } else if (mod === 'happy') {
+    if (body) { body.classList.add('happy'); setTimeout(function(){ body.setAttribute('class', 'ares-body'); }, 700); }
+    if (text) text.textContent = mesaj || 'İşte cevabınız!';
+  } else if (mod === 'error') {
+    if (text) text.textContent = mesaj || 'Bir sorun oluştu...';
+  } else {
+    if (text) text.textContent = mesaj || 'Sorunuzu bekliyorum...';
+  }
+}
+
+function sorguSec(el) {
+  document.getElementById('sorguInput').value = el.textContent;
+  sorguGonder();
+}
+
+async function sorguGonder() {
+  var soru = (document.getElementById('sorguInput').value || '').trim();
+  if (!soru) return;
+  document.getElementById('yukleniyor').style.display = 'block';
+  document.getElementById('cevapWrap').style.display = 'none';
+  document.getElementById('hataMesaj').style.display = 'none';
+  document.getElementById('sorguBtn').disabled = true;
+  _aresDurum('thinking', 'SQL yazıyorum...');
+  _sorguSayac++;
+  localStorage.setItem('ares_sorgu_sayac', _sorguSayac);
+  _sayacGuncelle();
+  try {
+    if (typeof ARES === 'undefined') throw new Error('ARES yüklenmedi');
+    var tenantId = ARES.tenantId();
+    if (!tenantId) throw new Error('Oturum bulunamadı');
+    var res = await fetch('/api/sorgula', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ soru: soru, tenant_id: tenantId })
+    });
+    var data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Sunucu hatası');
+    _gecmisEkle(soru);
+    _basariSayac++;
+    localStorage.setItem('ares_basari_sayac', _basariSayac);
+    _sayacGuncelle();
+    document.getElementById('cevapMetin').textContent = data.cevap;
+    document.getElementById('satirSayisi').textContent = data.satir_sayisi + ' kayıt';
+    document.getElementById('sqlKutu').textContent = data.sql;
+    _sqlGoster = false;
+    document.getElementById('sqlKutu').style.display = 'none';
+    document.getElementById('sqlToggleIcon').textContent = '▶';
+    _veriTabloRender(data.veriler);
+    document.getElementById('cevapWrap').style.display = 'block';
+    _aresDurum('happy', data.satir_sayisi + ' kayıt buldum ✓');
+  } catch(e) {
+    var hata = document.getElementById('hataMesaj');
+    hata.textContent = '⚠ ' + e.message;
+    hata.style.display = 'block';
+    _aresDurum('error', 'Hata oluştu, tekrar dene');
+  } finally {
+    document.getElementById('yukleniyor').style.display = 'none';
+    document.getElementById('sorguBtn').disabled = false;
+  }
+}
+
+function sqlToggle() {
+  _sqlGoster = !_sqlGoster;
+  document.getElementById('sqlKutu').style.display = _sqlGoster ? 'block' : 'none';
+  document.getElementById('sqlToggleIcon').textContent = _sqlGoster ? '▼' : '▶';
+}
+
+function _veriTabloRender(veriler) {
+  var wrap = document.getElementById('veriTabloWrap');
+  if (!veriler || !veriler.length) { wrap.innerHTML = ''; return; }
+  var kolonlar = Object.keys(veriler[0]);
+  var html = '<div class="veri-tablo-wrap"><table class="veri-tablo"><thead><tr>'
+    + kolonlar.map(function(k){ return '<th>'+k+'</th>'; }).join('')
+    + '</tr></thead><tbody>'
+    + veriler.map(function(row){
+        return '<tr>'+kolonlar.map(function(k){
+          var v=row[k];
+          if(v===null||v===undefined) return '<td style="color:var(--txd);">—</td>';
+          return '<td>'+String(v)+'</td>';
+        }).join('')+'</tr>';
+      }).join('')
+    + '</tbody></table></div>';
+  if (veriler.length === 50) html += '<div style="font-size:13px;color:var(--txd);padding:8px 2px;">İlk 50 kayıt gösteriliyor.</div>';
+  wrap.innerHTML = html;
+}
+
+function _gecmisEkle(soru) {
+  _gecmis = _gecmis.filter(function(s){ return s !== soru; });
+  _gecmis.unshift(soru);
+  _gecmis = _gecmis.slice(0, 8);
+  localStorage.setItem('ares_sorgu_gecmis', JSON.stringify(_gecmis));
+  _gecmisRender();
+}
+
+function _gecmisRender() {
+  var wrap = document.getElementById('gecmisWrap');
+  var liste = document.getElementById('gecmisListe');
+  if (!_gecmis.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  liste.innerHTML = _gecmis.map(function(s){
+    return '<div class="gecmis-item" onclick="document.getElementById(\'sorguInput\').value=\''
+      + s.replace(/'/g,"\\'") + '\';sorguGonder();">'
+      + '<span class="gecmis-icon">↩</span>' + s + '</div>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r,100); });
+        _bekle++;
+      }
+    } catch(e) {}
+    _gecmisRender();
+    _sayacGuncelle();
+    var inp = document.getElementById('sorguInput');
+    inp.addEventListener('input', function() {
+      this.style.height = '52px';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  })();
+  document.documentElement.style.visibility = '';
+});
+</script>
+</body>
+</html>
