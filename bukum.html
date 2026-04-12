@@ -440,13 +440,16 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 'use strict';
 
 function matBadge(m) {
-  var ml = (m||'').toLowerCase();
-  var label, cls;
-  if (ml.indexOf('karbon')!==-1||ml==='celik') { label=tv('cmn_malzeme_karbon','Karbon Çelik'); cls='mb-celik'; }
-  else if (ml.indexOf('paslanmaz')!==-1) { label=tv('cmn_malzeme_paslanmaz','Paslanmaz'); cls='mb-pas'; }
-  else if (ml.indexOf('bakır')!==-1||ml.indexOf('cuni')!==-1) { label=tv('cmn_malzeme_bakir','Bakır Alaşım'); cls='mb-bakir'; }
-  else if (ml.indexOf('alüm')!==-1||ml.indexOf('alum')!==-1) { label=tv('cmn_malzeme_alum','Alüminyum'); cls='mb-alum'; }
-  else { label=m||'—'; cls='mb-diger'; }
+  // DB normalize kodları: karbon_celik, paslanmaz, bakir_alasim, aluminyum
+  var clsMap = {
+    'karbon_celik': 'mb-celik',
+    'paslanmaz':    'mb-pas',
+    'bakir_alasim': 'mb-bakir',
+    'aluminyum':    'mb-alum',
+  };
+  var cls = clsMap[m] || 'mb-diger';
+  // tvMalzeme() ares-lang.js'den geliyor — dile göre çevirir
+  var label = (typeof tvMalzeme === 'function') ? tvMalzeme(m) : (m || '—');
   return '<span class="'+cls+'">'+label+'</span>';
 }
 // ── D-01 DİL SİSTEMİ ─────────────────────────────────────────
