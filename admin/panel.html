@@ -638,10 +638,18 @@ function _getSupa() {
   if (_supa) return _supa;
   if (typeof ARES !== 'undefined' && ARES.supabase()) {
     _supa = ARES.supabase();
-    return _supa;
   }
-  return null;
+  return _supa;
 }
+// Proxy: _supaProxy.xxx çağrılarını otomatik _getSupa() üzerinden yönlendir
+var _supaProxy = new Proxy({}, {
+  get: function(t, prop) {
+    var s = _getSupa();
+    if (!s) throw new Error('Supabase hazır değil');
+    var val = s[prop];
+    return typeof val === 'function' ? val.bind(s) : val;
+  }
+});
 
 
 // -- STATE ------------------------------------------------------
@@ -673,7 +681,7 @@ function planBadge(plan) {
 
 
 async function cikisYap() {
-  await _supa.auth.signOut();
+  await _supaProxy.auth.signOut();
   location.reload();
 }
 
@@ -684,7 +692,7 @@ async function yukle() {
 }
 
 async function firmalariYukle() {
-  var {data} = await _supa.from('tenants').select('*').order('olusturma',{ascending:false});
+  var {data} = await _supaProxy.from('tenants').select('*').order('olusturma',{ascending:false});
   _firmalar = data || [];
   firmaRender(_firmalar);
   // Firma filter dropdown
@@ -694,13 +702,13 @@ async function firmalariYukle() {
 }
 
 async function kullanicilariYukle() {
-  var {data} = await _supa.from('kullanicilar').select('*').order('olusturma',{ascending:false});
+  var {data} = await _supaProxy.from('kullanicilar').select('*').order('olusturma',{ascending:false});
   _kullanicilar = data || [];
   kulRender(_kullanicilar);
 }
 
 async function loglariYukle() {
-  var {data} = await _supa.from('audit_log').select('*').order('tarih',{ascending:false}).limit(100);
+  var {data} = await _supaProxy.from('audit_log').select('*').order('tarih',{ascending:false}).limit(100);
   _loglar = data || [];
   logRender(_loglar);
   dashLogRender(_loglar.slice(0,8));
@@ -717,7 +725,7 @@ function dashboardGuncelle() {
   T('stKulAktif').textContent  = aktifK + ' aktif';
   T('stDemo').textContent   = demo;
   // Spool sayısı
-  _supa.from('spooller').select('id',{count:'exact',head:true}).then(function(r){
+  _supaProxy.from('spooller').select('id',{count:'exact',head:true}).then(function(r){
     T('stSpool').textContent = r.count||0;
   });
 }
@@ -873,20 +881,20 @@ async function firmaKaydet() {
   var res;
   if (_duzenFirmaId) {
     // Güncelle
-    res = await _supa.from('tenants').update(veri).eq('id', _duzenFirmaId);
+    res = await _supaProxy.from('tenants').update(veri).eq('id', _duzenFirmaId);
     if (res.error) { toast('Hata: ' + res.error.message, 'err'); return; }
 
     // Modülleri güncelle
     var moduller = ['uretim','kalite','sevkiyat','raporlar','yonetim'];
     for (var m of moduller) {
       var aktif = T('fm_' + m)?.checked ?? true;
-      await _supa.from('firma_moduller')
+      await _supaProxy.from('firma_moduller')
         .upsert({ tenant_id: _duzenFirmaId, modul_kodu: m, aktif }, { onConflict: 'tenant_id,modul_kodu' });
     }
     toast('Firma güncellendi');
   } else {
     // Yeni firma oluştur
-    res = await _supa.from('tenants').insert(veri).select().single();
+    res = await _supaProxy.from('tenants').insert(veri).select().single();
     if (res.error) { toast('Hata: ' + res.error.message, 'err'); return; }
     var tenantId = res.data.id;
 
@@ -897,7 +905,7 @@ async function firmaKaydet() {
       modul_kodu: m,
       aktif: T('fm_' + m) ? T('fm_' + m).checked : true
     }; });
-    await _supa.from('firma_moduller').insert(modulInsert);
+    await _supaProxy.from('firma_moduller').insert(modulInsert);
 
     // Feature flags ekle
     var featureMap = {
@@ -915,9 +923,9 @@ async function firmaKaydet() {
     }; });
     // Önce feature_flags tablosuna kodları ekle (yoksa)
     for (var fk of Object.values(featureMap)) {
-      await _supa.from('feature_flags').upsert({ kod: fk, ad: fk }, { onConflict: 'kod' });
+      await _supaProxy.from('feature_flags').upsert({ kod: fk, ad: fk }, { onConflict: 'kod' });
     }
-    await _supa.from('tenant_features').insert(featureInsert);
+    await _supaProxy.from('tenant_features').insert(featureInsert);
 
     // Admin kullanıcı oluştur (Supabase Admin API üzerinden)
     var adminEmail = T('fAdminEmail').value.trim();
@@ -926,7 +934,7 @@ async function firmaKaydet() {
 
     // Supabase auth.admin.createUser - sadece service role ile çalışır
     // Şimdilik kullanicilar tablosuna referans ekle, magic link ile aktif olacak
-    var { data: authUser, error: authErr } = await _supa.auth.admin.createUser({
+    var { data: authUser, error: authErr } = await _supaProxy.auth.admin.createUser({
       email: adminEmail,
       password: adminSifre,
       email_confirm: true,
@@ -935,13 +943,13 @@ async function firmaKaydet() {
 
     if (authErr) {
       // Rollback: firma sil
-      await _supa.from('tenants').delete().eq('id', tenantId);
+      await _supaProxy.from('tenants').delete().eq('id', tenantId);
       toast('Admin kullanıcı oluşturulamadı: ' + authErr.message, 'err');
       return;
     }
 
     // kullanicilar tablosuna ekle
-    await _supa.from('kullanicilar').insert({
+    await _supaProxy.from('kullanicilar').insert({
       id: authUser.user.id,
       tenant_id: tenantId,
       email: adminEmail,
@@ -960,7 +968,7 @@ async function firmaKaydet() {
 }
 
 async function firmaToggle(id, aktif) {
-  var {error}=await _supa.from('tenants').update({aktif}).eq('id',id);
+  var {error}=await _supaProxy.from('tenants').update({aktif}).eq('id',id);
   if(error){toast('Hata: '+error.message,'err');return;}
   await firmalariYukle();
   dashboardGuncelle();
@@ -974,14 +982,14 @@ function kulRolBadge(rol) {
 }
 
 async function kulRolDegistir(kulId, yeniRol) {
-  var {error} = await _supa.from('kullanicilar').update({rol: yeniRol}).eq('id', kulId);
+  var {error} = await _supaProxy.from('kullanicilar').update({rol: yeniRol}).eq('id', kulId);
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
   toast('Rol guncellendi');
   await kullanicilariYukle();
 }
 
 async function kulDurumDegistir(kulId, aktif) {
-  var {error} = await _supa.from('kullanicilar').update({aktif: !aktif}).eq('id', kulId);
+  var {error} = await _supaProxy.from('kullanicilar').update({aktif: !aktif}).eq('id', kulId);
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
   toast(!aktif ? 'Kullanici aktiflestirildi' : 'Kullanici pasife alindi');
   await kullanicilariYukle();
@@ -1035,7 +1043,7 @@ function magicLinkAc(email) {
 
 async function magicLinkGonder() {
   var email=T('mlEmail').value;
-  var {error}=await _supa.auth.admin?.generateLink?.({type:'magiclink',email}) 
+  var {error}=await _supaProxy.auth.admin?.generateLink?.({type:'magiclink',email}) 
     || {error:{message:'Admin API kullanılamıyor -- Supabase Dashboard üzerinden gönderin.'}};
   if(error){
     toast('Magic link Supabase Dashboard > Authentication > Users bölümünden gönderilebilir.','err');
@@ -1091,7 +1099,7 @@ var _flagler = [];
 var _seciliFirmaId = null;
 
 async function flaglariYukle() {
-  var {data} = await _supa.from('feature_flags').select('*').order('kod');
+  var {data} = await _supaProxy.from('feature_flags').select('*').order('kod');
   _flagler = data || [];
   var el = T('flagDefTbody');
   if (!_flagler.length) {
@@ -1117,7 +1125,7 @@ async function flagFirmaYukle() {
   var firmaId = T('flagFirmaFilter').value;
   if (!firmaId) return;
   _seciliFirmaId = firmaId;
-  var {data} = await _supa.from('tenant_features').select('*').eq('tenant_id', firmaId);
+  var {data} = await _supaProxy.from('tenant_features').select('*').eq('tenant_id', firmaId);
   var map = {};
   (data||[]).forEach(function(f) { map[f.feature_kod] = f.aktif; });
   var el = T('flagFirmaTbody');
@@ -1145,8 +1153,8 @@ async function flagFirmaYukle() {
 function _flagChange(el) { flagToggle(el.dataset.firmaId, el.dataset.kod, el.checked); }
 
 async function flagToggle(firmaId, kod, aktif) {
-  await _supa.from('feature_flags').upsert({kod:kod, ad:kod}, {onConflict:'kod'});
-  var {error} = await _supa.from('tenant_features')
+  await _supaProxy.from('feature_flags').upsert({kod:kod, ad:kod}, {onConflict:'kod'});
+  var {error} = await _supaProxy.from('tenant_features')
     .upsert({tenant_id:firmaId, feature_kod:kod, aktif:aktif}, {onConflict:'tenant_id,feature_kod'});
   if (error) { toast('Hata: '+error.message,'err'); return; }
   toast(kod + ' ' + (aktif?'acildi':'kapatildi'));
@@ -1162,7 +1170,7 @@ async function feedbackYukle() {
   container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>';
 
   try {
-    var q = _supa.from('feedback_kayitlari')
+    var q = _supaProxy.from('feedback_kayitlari')
       .select('*, kullanicilar(ad_soyad, email)')
       .order('olusturma', {ascending: false});
     if (durum) q = q.eq('durum', durum);
