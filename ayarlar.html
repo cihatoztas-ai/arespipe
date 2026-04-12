@@ -464,7 +464,7 @@ function firmaKaydet() {
     adres:    document.getElementById('firmaAdres').value.trim(),
   };
   if (!firma.adi) { showToast('Firma adı zorunludur', 'error'); return; }
-  localStorage.setItem('syos_firma', JSON.stringify(firma));
+  localStorage.setItem('ares_firma', JSON.stringify(firma));
   // Sidebar'ı güncelle
   updateSidebarLogo();
   showToast('Firma bilgileri kaydedildi', 'success');
@@ -473,7 +473,7 @@ function firmaKaydet() {
 // ── Firma bilgilerini yükle ───────────────────────────────────
 function firmaYukle() {
   try {
-    const f = JSON.parse(localStorage.getItem('syos_firma') || '{}');
+    const f = JSON.parse(localStorage.getItem('ares_firma') || '{}');
     if (f.adi)     document.getElementById('firmaAdi').value = f.adi;
     if (f.kisaAdi) document.getElementById('firmaKisaAdi').value = f.kisaAdi;
     if (f.vergi)   document.getElementById('firmaVergi').value = f.vergi;
@@ -495,7 +495,7 @@ function logoYukle(tip, input) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const dataUrl = e.target.result;
-    localStorage.setItem('syos_logo_' + tip, dataUrl);
+    localStorage.setItem('ares_logo_' + tip, dataUrl);
     const preview = document.getElementById(tip === 'firma' ? 'firmaLogoPreview' : 'aresLogoPreview');
     const area    = document.getElementById(tip === 'firma' ? 'firmaLogoArea'    : 'aresLogoArea');
     preview.src = dataUrl;
@@ -508,7 +508,7 @@ function logoYukle(tip, input) {
 
 function logoKaldir(tip, event) {
   event.stopPropagation();
-  localStorage.removeItem('syos_logo_' + tip);
+  localStorage.removeItem('ares_logo_' + tip);
   const preview = document.getElementById(tip === 'firma' ? 'firmaLogoPreview' : 'aresLogoPreview');
   const area    = document.getElementById(tip === 'firma' ? 'firmaLogoArea'    : 'aresLogoArea');
   preview.src = '';
@@ -520,7 +520,7 @@ function logoKaldir(tip, event) {
 // ── Mevcut logoları göster ────────────────────────────────────
 function logolariYukle() {
   ['firma', 'ares'].forEach(tip => {
-    const saved = localStorage.getItem('syos_logo_' + tip);
+    const saved = localStorage.getItem('ares_logo_' + tip);
     if (saved) {
       const preview = document.getElementById(tip === 'firma' ? 'firmaLogoPreview' : 'aresLogoPreview');
       const area    = document.getElementById(tip === 'firma' ? 'firmaLogoArea'    : 'aresLogoArea');
@@ -532,8 +532,8 @@ function logolariYukle() {
 
 // ── Sidebar logoyu güncelle ───────────────────────────────────
 function updateSidebarLogo() {
-  const aresLogo = localStorage.getItem('syos_logo_ares');
-  const firma    = JSON.parse(localStorage.getItem('syos_firma') || '{}');
+  const aresLogo = localStorage.getItem('ares_logo_ares');
+  const firma    = JSON.parse(localStorage.getItem('ares_firma') || '{}');
   const logoMark = document.getElementById('sidebarLogoMark');
   const logoText = document.getElementById('sidebarLogoText');
   if (aresLogo && logoMark) {
@@ -580,7 +580,7 @@ function veriExport() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k.startsWith('syos_')) data[k] = localStorage.getItem(k);
+    if (k.startsWith('ares_')) data[k] = localStorage.getItem(k);
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');

@@ -307,10 +307,10 @@ function raporOlustur() {
 // ── RAPOR: ÜRETİM ────────────────────────────────────────────────────────────
 function raporUretim(p) {
   var spooller = (typeof SYOS !== 'undefined') ? [] : [];
-  try { spooller = JSON.parse(localStorage.getItem('syos_spooller')) || []; } catch{}
+  try { spooller = JSON.parse(localStorage.getItem('ares_spooller')) || []; } catch{}
 
   var log = [];
-  try { log = JSON.parse(localStorage.getItem('syos_islemLog')) || []; } catch{}
+  try { log = JSON.parse(localStorage.getItem('ares_islemLog')) || []; } catch{}
 
   // Filtre
   var tersane = p.tersane && p.tersane !== 'Tümü' ? p.tersane : null;
@@ -350,7 +350,7 @@ function raporUretim(p) {
 // ── RAPOR: PROJE ─────────────────────────────────────────────────────────────
 function raporProje(p) {
   var spooller = [];
-  try { spooller = JSON.parse(localStorage.getItem('syos_spooller')) || []; } catch{}
+  try { spooller = JSON.parse(localStorage.getItem('ares_spooller')) || []; } catch{}
 
   var projeNo = (p.projeNo||'').trim();
   if (projeNo) spooller = spooller.filter(function(s){ return s.projeNo === projeNo; });
@@ -392,7 +392,7 @@ function raporProje(p) {
 // ── RAPOR: KALİTE ────────────────────────────────────────────────────────────
 function raporKalite(p) {
   var kkPaketler = [];
-  try { kkPaketler = JSON.parse(localStorage.getItem('syos_kkPaketler')) || []; } catch{}
+  try { kkPaketler = JSON.parse(localStorage.getItem('ares_kkPaketler')) || []; } catch{}
 
   var toplam   = kkPaketler.length;
   var onaylandi= kkPaketler.filter(function(k){ return k.karar==='onaylandi'; }).length;
@@ -432,7 +432,7 @@ function raporKalite(p) {
 // ── RAPOR: PERSONEL ──────────────────────────────────────────────────────────
 function raporPersonel(p) {
   var log = [];
-  try { log = JSON.parse(localStorage.getItem('syos_islemLog')) || []; } catch{}
+  try { log = JSON.parse(localStorage.getItem('ares_islemLog')) || []; } catch{}
 
   // Personel bazında grupla
   var personelMap = {};
@@ -473,7 +473,7 @@ function raporPersonel(p) {
 // ── RAPOR: TERSANE ───────────────────────────────────────────────────────────
 function raporTersane(p) {
   var spooller = [];
-  try { spooller = JSON.parse(localStorage.getItem('syos_spooller')) || []; } catch{}
+  try { spooller = JSON.parse(localStorage.getItem('ares_spooller')) || []; } catch{}
 
   // Tersane bazında grupla
   var tersaneMap = {};
