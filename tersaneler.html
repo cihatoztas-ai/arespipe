@@ -438,7 +438,7 @@ async function veriYukle() {
         sehir:            t.sehir      || '',
         ulke:             t.ulke       || 'Türkiye',
         tel:              t.tel        || '',
-        mail:             t.email      || '',
+        mail:             t.iletisim      || '',
         web:              t.web        || '',
         logoUrl:          t.logo_url   || '',
         aktif:            t.aktif !== false,
@@ -638,7 +638,7 @@ async function tersaneKaydet() {
     if (duzId) {
       // Güncelle
       var res = await supa.from('tersaneler').update({
-        ad: ad, sehir: sehir, ulke: ulke, tel: tel, email: mail, web: web,
+        ad: ad, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
         guncelleme: new Date().toISOString()
       }).eq('id', duzId);
       if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
@@ -649,7 +649,7 @@ async function tersaneKaydet() {
       // Ekle
       var res = await supa.from('tersaneler').insert({
         tenant_id: ARES.tenantId(),
-        ad: ad, sehir: sehir, ulke: ulke, tel: tel, email: mail, web: web,
+        ad: ad, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
         aktif: true, logo_url: null
       }).select().single();
       if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
