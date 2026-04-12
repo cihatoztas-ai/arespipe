@@ -113,7 +113,7 @@ const ARES = (function () {
     }
     if (_oturum.rol === 'firma_admin') {
       modDegistir('supabase');
-      return { kullanici: _oturum, yonlendir: 'admin/firma.html' };
+      return { kullanici: _oturum, yonlendir: 'index.html' };
     }
     // Musteri portal kullanicisi — customer_kullanicilar tablosunda kayitli
     // tenant_id yoksa veya rol yoksa musteri olabilir
