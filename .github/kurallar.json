@@ -153,7 +153,9 @@
       "admin/firma.html",
       "admin/firma-detay.html",
       "admin/index.html",
-      "portal/index.html"
+      "portal/index.html",
+      "izometri-batch.html",
+      "sorgula.html"
     ]
   },
 
@@ -162,8 +164,7 @@
     "dosyalar": [
       "personel.html",
       "personel_yeni.html",
-      "senaryolar.html",
-      "sorgula.html"
+      "senaryolar.html"
     ]
   }
 }
