@@ -521,7 +521,8 @@ document.addEventListener('DOMContentLoaded',function(){
       while(_b<80){
         if(typeof ARES==='undefined'){await new Promise(function(r){setTimeout(r,100);});_b++;continue;}
         var supa=ARES.supabase();
-        if(supa){var ses=await supa.auth.getSession();if(ses.data&&ses.data.session){await ARES.oturumKontrol();break;}if(_b>20){location.href='giris.html';return;}}
+        if(supa){var ses=await supa.auth.getSession();if(ses.data&&ses.data.session){await ARES.oturumKontrol();if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
+            break;}if(_b>20){location.href='giris.html';return;}}
         await new Promise(function(r){setTimeout(r,100);});_b++;
       }
     }catch(e){}

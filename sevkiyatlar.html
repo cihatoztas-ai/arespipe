@@ -1124,7 +1124,9 @@ function showToast(msg,type){
       var _supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
       if (_supa) {
         var _ses = await _supa.auth.getSession();
-        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+        if (_ses.data && _ses.data.session) { await ARES.oturumKontrol();
+            if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
+            break; }
         if (_bekle > 20) { location.href = 'giris.html'; return; }
       }
       await new Promise(function(r){ setTimeout(r, 100); });
