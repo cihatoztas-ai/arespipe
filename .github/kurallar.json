@@ -138,7 +138,12 @@
       "api/izometri-batch.html",
       "api/sorgula.html",
       "api/izometri-oku.js",
-      "api/sorgula.js"
+      "api/sorgula.js",
+      "admin/panel.html",
+      "admin/firma.html",
+      "admin/firma-detay.html",
+      "admin/index.html",
+      "portal/index.html"
     ]
   },
 
