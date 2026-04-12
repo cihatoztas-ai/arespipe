@@ -6,7 +6,15 @@
     "aciklama": "Bu stringler hiçbir HTML/JS dosyasında geçemez",
     "kurallar": [
       {
-        "desen": "syos_theme",
+        "desen": "api/izometri-batch.html",
+        "mesaj": "api/ klasöründe HTML dosyası olamaz — Vercel bu klasörü serverless function dizini olarak görür. Kök dizine taşı.",
+        "siddet": "hata"
+      },
+      {
+        "desen": "api/sorgula.html",
+        "mesaj": "api/ klasöründe HTML dosyası olamaz — Vercel bu klasörü serverless function dizini olarak görür. Kök dizine taşı.",
+        "siddet": "hata"
+      },
         "mesaj": "Eski tema sistemi kullanılıyor. 'ares_theme' olarak değiştir.",
         "siddet": "hata"
       },
