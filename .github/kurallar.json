@@ -15,6 +15,8 @@
         "mesaj": "api/ klasöründe HTML dosyası olamaz — Vercel bu klasörü serverless function dizini olarak görür. Kök dizine taşı.",
         "siddet": "hata"
       },
+      {
+        "desen": "syos_theme",
         "mesaj": "Eski tema sistemi kullanılıyor. 'ares_theme' olarak değiştir.",
         "siddet": "hata"
       },
