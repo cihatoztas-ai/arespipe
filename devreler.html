@@ -2162,7 +2162,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof _applyI18n === "function") _applyI18n();
 
   // Supabase modda Supabase'den yükle, yoksa boş tablo
-  if (ARES.mod === 'supabase') {
+  if (typeof ARES !== 'undefined' && ARES.mod === 'supabase') {
     await veriYukle();
   } else {
     renderTable();
