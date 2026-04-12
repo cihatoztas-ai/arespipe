@@ -1284,6 +1284,9 @@ async function feedbackDurumGuncelle(id, yeniDurum) {
     var {error} = await supa.from('feedback_kayitlari').update({durum: yeniDurum}).eq('id', id);
     if (error) throw new Error(error.message);
     toast('✅ Durum güncellendi: ' + yeniDurum, 'ok');
+    // Filtreyi güncellenen duruma çevir
+    var filtre = document.getElementById('fbDurumFilter');
+    if (filtre) filtre.value = yeniDurum;
     await feedbackYukle();
   } catch(e) {
     console.error('[FEEDBACK]', e);
