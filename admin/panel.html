@@ -1284,6 +1284,7 @@ function goPan(id, el) {
       _oturum = {id:data.session.user.id, email:data.session.user.email, ad:kul.ad_soyad, rol:kul.rol};
       T('topbarUser').textContent = kul.ad_soyad || data.session.user.email;
       var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
+      document.documentElement.style.visibility = '';
       await yukle();
     } else {
       // Giriş yapılmış ama süper admin değil
