@@ -1224,11 +1224,14 @@ async function feedbackYukle() {
 
 async function feedbackDurumGuncelle(id, yeniDurum) {
   try {
-    var {error} = await _supa.from('feedback_kayitlari').update({durum: yeniDurum}).eq('id', id);
+    var supa = _getSupa();
+    if (!supa) throw new Error('Bağlantı yok');
+    var {error} = await supa.from('feedback_kayitlari').update({durum: yeniDurum}).eq('id', id);
     if (error) throw new Error(error.message);
-    toast('Durum güncellendi', 'ok');
+    toast('✅ Durum güncellendi: ' + yeniDurum, 'ok');
     await feedbackYukle();
   } catch(e) {
+    console.error('[FEEDBACK]', e);
     toast('Hata: ' + e.message, 'err');
   }
 }
