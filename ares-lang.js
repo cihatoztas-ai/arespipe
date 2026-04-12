@@ -98,6 +98,61 @@
     Object.assign(_LANG[lang], keys);
   }
 
+
+  // ── ENUM ÇEVİRİ FONKSİYONLARI ────────────────────────────────
+  // DB'den gelen normalize kodları ekrana çevirir
+
+  function tvMalzeme(kod) {
+    var harita = {
+      'karbon_celik':  function(){ return tv('cmn_malzeme_karbon',  'Karbon Çelik'); },
+      'paslanmaz':     function(){ return tv('cmn_malzeme_paslanmaz','Paslanmaz'); },
+      'bakir_alasim':  function(){ return tv('cmn_malzeme_bakir',   'Bakır Alaşım'); },
+      'aluminyum':     function(){ return tv('cmn_malzeme_alum',    'Alüminyum'); },
+    };
+    return (harita[kod] ? harita[kod]() : kod) || kod;
+  }
+
+  function tvYuzey(kod) {
+    var harita = {
+      'asit':     function(){ return tv('cmn_yuzey_asit',    'Asit'); },
+      'boyali':   function(){ return tv('cmn_yuzey_boyali',  'Boyalı'); },
+      'galvaniz': function(){ return tv('cmn_yuzey_galvaniz','Galvaniz'); },
+      'siyah':    function(){ return tv('cmn_yuzey_siyah',   'Siyah'); },
+      'epoksi':   function(){ return tv('cmn_yuzey_epoksi',  'Epoksi'); },
+    };
+    return (harita[kod] ? harita[kod]() : kod) || kod;
+  }
+
+  function tvDurum(kod) {
+    var harita = {
+      'bekliyor':    function(){ return tv('cmn_bekliyor',    'Bekliyor'); },
+      'devam_ediyor':function(){ return tv('cmn_devam_ediyor','Devam Ediyor'); },
+      'tamamlandi':  function(){ return tv('cmn_tamamlandi',  'Tamamlandı'); },
+      'aktif':       function(){ return tv('cmn_aktif',       'Aktif'); },
+      'pasif':       function(){ return tv('cmn_pasif',       'Pasif'); },
+      'iptal':       function(){ return tv('cmn_iptal',       'İptal'); },
+      'kismi':       function(){ return tv('cmn_kismi',       'Kısmi'); },
+    };
+    return (harita[kod] ? harita[kod]() : kod) || kod;
+  }
+
+  function tvUcTipi(kod) {
+    var harita = {
+      'duz':    function(){ return tv('ks_uc_duz',    'Düz'); },
+      'kaynak': function(){ return tv('ks_uc_kaynak', 'Kaynak Ağzı'); },
+      'yiv':    function(){ return tv('ks_uc_yiv',    'Yiv'); },
+      'dis':    function(){ return tv('ks_uc_dis',    'Diş'); },
+      'bukum':  function(){ return tv('ks_uc_bukum',  'Büküm Borusu'); },
+    };
+    return (harita[kod] ? harita[kod]() : kod) || kod;
+  }
+
+  // Global export
+  w.tvMalzeme = tvMalzeme;
+  w.tvYuzey   = tvYuzey;
+  w.tvDurum   = tvDurum;
+  w.tvUcTipi  = tvUcTipi;
+
   // ── Global export ────────────────────────────────────────────
   w.tv         = tv;
   w._applyI18n = applyI18n;
