@@ -1300,5 +1300,6 @@
   "etiket_hata": "Error: ",
   "etiket_kayit_yok": "No records yet",
   "etiket_yukle_hata": "Loading error",
-  "cmn_reddedildi": "Rejected"
+  "cmn_reddedildi": "Rejected",
+  "nav_etiketleme": "Labeling"
 }
