@@ -383,5 +383,12 @@
   "sp_logs_unit": "kayıt",
   "bk_toplam_bk": "Toplam Büküm",
   "bk_projeler": "Projeler",
-  "bk_fason": "Fason Büküm"
+  "bk_fason": "Fason Büküm",
+  "cmn_yuzey_asit": "Asit",
+  "cmn_yuzey_boyali": "Boyalı",
+  "cmn_yuzey_galvaniz": "Galvaniz",
+  "cmn_yuzey_siyah": "Siyah",
+  "cmn_yuzey_epoksi": "Epoksi",
+  "cmn_devam_ediyor": "Devam Ediyor",
+  "cmn_pasif": "Pasif"
 }
