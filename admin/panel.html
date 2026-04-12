@@ -1245,7 +1245,15 @@ function goPan(id, el) {
 
 // -- BAŞLANGIÇ --------------------------------------------------
 (async function() {
+  // ARES ve Supabase hazır olana kadar bekle
+  var _b = 0;
+  while (_b < 80) {
+    if (_getSupa()) break;
+    await new Promise(function(r){ setTimeout(r, 100); });
+    _b++;
+  }
   var supa = _getSupa();
+  if (!supa) { window.location.href = '../giris.html'; return; }
 
   // URL'den magic link token'ını işle
   if (window.location.hash) {
