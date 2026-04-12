@@ -723,6 +723,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   }
 
   // ── Dil Dropdown ───────────────────────────────────────────
+  function setupLangDropdown() {
     var toggle = document.getElementById('lang-toggle');
     var menu   = document.getElementById('lang-menu');
     if (!toggle || !menu) return;
