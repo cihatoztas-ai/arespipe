@@ -51,7 +51,6 @@
   "nav_sevkiyatlar": "Sevkiyatlar",
   "nav_uyarilar": "Uyarılar",
   "nav_tersaneler": "Tersaneler",
-  "nav_personel": "Personel",
   "nav_tezgahlar": "Tezgahlar",
   "nav_tanimlar": "Tanımlar",
   "nav_islem_logu": "İşlem Logu",
@@ -265,7 +264,6 @@
   "kesim_devam": "Devam Eden",
   "kesim_tamamlandi": "Tamamlandı",
   "kesim_toplam": "Toplam",
-
   "cmn_th_eklenme": "Eklenme",
   "cmn_silme_onay": "silinsin mi?",
   "cmn_sifirla": "↺ Sıfırla",
@@ -298,7 +296,6 @@
   "cmn_belge": "Belge",
   "cmn_not": "Not",
   "cmn_ana_sayfa": "Ana Sayfa",
-
   "bk_done_title": "Büküm tamamlandı olarak işaretle",
   "bk_unit_boru": "boru",
   "bk_unit_belge": "belge",
@@ -306,7 +303,6 @@
   "bk_toast_done": "büküm tamamlandı",
   "bk_bukuldu": "büküldü",
   "bk_no_boru": "Henüz boru eklenmemiş",
-
   "ks_done_title": "Kesim tamamlandı olarak işaretle",
   "ks_sayfa": "Sayfa",
   "ks_toplam_kesim": "Toplam Kesim",
@@ -336,7 +332,6 @@
   "ks_uc_dis": "Diş",
   "ks_uc_bukum": "Büküm Borusu",
   "ks_cut_label": "✓ Kesildi",
-
   "mk_kayit": "kayıt",
   "mk_isle": "Markalandı olarak işaretle",
   "mk_serbest": "Serbest markalama",
@@ -362,7 +357,6 @@
   "mk_baslik": "Markalama Yönetimi",
   "mk_ara_placeholder": "Spool no, iş emir, malzeme... ara",
   "mk_bos_liste_hint": "Öğeleri seçin ve markalama listesi oluşturun",
-
   "sp_foto_unit": "fotoğraf",
   "sp_foto_secildi": "fotoğraf seçildi",
   "sp_no_cert_mat": "Sertifikalı malzeme yok",
