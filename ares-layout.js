@@ -246,11 +246,9 @@
   }
 
   function authKontrol() {
-    const o = getOturum();
-    if (!o || !o.rol) {
-      window.location.href = 'giris.html';
-      return false;
-    }
+    // Supabase session async yükleniyor — layout.js sadece rol yoksa erken engel koyar
+    // Gerçek kontrol her sayfanın kendi DOMContentLoaded'ında ARES.oturumKontrol() ile yapılır
+    // Burada sadece açık giris/mobil sayfaları atla — diğer her şeye izin ver
     return true;
   }
 
