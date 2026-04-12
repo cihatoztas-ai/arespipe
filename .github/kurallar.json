@@ -102,8 +102,8 @@
         "siddet": "hata"
       },
       {
-        "desen": "visibility:'hidden'",
-        "desene_alternatif": "visibility:hidden",
+        "desen": "visibility:hidden",
+        "desene_alternatif": "visibility:'hidden'",
         "mesaj": "Flash prevention eksik: visibility:hidden yok.",
         "siddet": "hata"
       },

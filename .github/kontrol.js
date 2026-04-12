@@ -50,7 +50,7 @@ function silinmisKontrol() {
 }
 
 function yasatKontrol(dosyaYolu, icerik) {
-  const goreceli = path.relative(process.cwd(), dosyaYolu).replace(/\\/g, '/');
+  if (dosyaIstisnasiMi(dosyaYolu)) return [];
   const hatalar = [];
 
   for (const kural of KURAL.yasak_string.kurallar) {
