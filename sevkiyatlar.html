@@ -18,9 +18,6 @@
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
 
 [data-theme="dark"] .icon-sun{display:block!important;}[data-theme="dark"] .icon-moon{display:none!important;}
-[data-theme="light"] .icon-sun{display:none!important;}[data-theme="light"] .icon-moon{display:block!important;}
-[data-theme="slate"] .icon-sun{display:block!important;}[data-theme="slate"] .icon-moon{display:none!important;}
-[data-theme="navy"] .icon-sun{display:block!important;}[data-theme="navy"] .icon-moon{display:none!important;}
 .page{padding:24px 28px;}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
 .page-title-label{font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
@@ -81,18 +78,18 @@
 /* SEVKİYAT KARTI — renkli sol kenar ile tip gösterimi */
 .skart{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:10px;display:flex;}
 .skart-tip{width:5px;flex-shrink:0;}
-.skart-tip.giden{background:#0ea5e9;}
-.skart-tip.gelen{background:#10b981;}
+.skart-tip.giden{background:#2D8EFF;}
+.skart-tip.gelen{background:#16a36e;}
 .skart-tip.serbest{background:#f59e0b;}
 .skart-ic{flex:1;padding:0;}
 .skart-head{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 .skart-body{padding:10px 18px 14px;border-top:1px solid var(--bor);background:var(--bg);}
 .sno{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
-.sno.giden{color:#0ea5e9;}
+.sno.giden{color:#2D8EFF;}
 .sno.gelen{color:#10b981;}
 .sno.serbest{color:#f59e0b;}
 .tip-rozet{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:14px;font-weight:700;}
-.tr-giden{background:rgba(14,165,233,0.12);color:#0ea5e9;}
+.tr-giden{background:rgba(14,165,233,0.12);color:#2D8EFF;}
 .tr-gelen{background:rgba(16,185,129,0.12);color:#10b981;}
 .tr-serbest{background:rgba(245,158,11,0.12);color:#f59e0b;}
 
@@ -148,7 +145,7 @@
 .tip-sec{display:flex;gap:8px;}
 .tip-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--bor);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow',sans-serif;}
 .tip-btn:hover{border-color:var(--txm);}
-.tip-btn.secili-giden{border-color:#0ea5e9;background:rgba(14,165,233,0.08);}
+.tip-btn.secili-giden{border-color:#2D8EFF;background:rgba(14,165,233,0.08);}
 .tip-btn.secili-gelen{border-color:#10b981;background:rgba(16,185,129,0.08);}
 .tip-btn.secili-serbest{border-color:#f59e0b;background:rgba(245,158,11,0.08);}
 .tip-btn-icon{font-size:22px;margin-bottom:4px;}
@@ -205,10 +202,10 @@
 <!-- RENK LEJANDı -->
 <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
-    <div style="width:14px;height:14px;border-radius:3px;background:#0ea5e9;"></div data-i18n="sev_lejand_giden"> Giden Sevkiyat (Spool)
+    <div style="width:14px;height:14px;border-radius:3px;background:#2D8EFF;"></div data-i18n="sev_lejand_giden"> Giden Sevkiyat (Spool)
   </div>
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
-    <div style="width:14px;height:14px;border-radius:3px;background:#10b981;"></div data-i18n="sev_lejand_gelen"> Gelen Sevkiyat
+    <div style="width:14px;height:14px;border-radius:3px;background:#16a36e;"></div data-i18n="sev_lejand_gelen"> Gelen Sevkiyat
   </div>
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
     <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;"></div data-i18n="sev_lejand_serbest"> Serbest Giden (Malzeme/İade)
@@ -322,7 +319,7 @@
     <div class="tip-sec">
       <button class="tip-btn" onclick="tipSec('giden')">
         <div class="tip-btn-icon">📦</div>
-        <div class="tip-btn-label" style="color:#0ea5e9;" data-i18n="sev_tip_giden_label">Giden Sevkiyat</div>
+        <div class="tip-btn-label" style="color:#2D8EFF;" data-i18n="sev_tip_giden_label">Giden Sevkiyat</div>
         <div class="tip-btn-sub" data-i18n="sev_tip_giden_acik">Spool paketi — kalite onaylı veya direkt</div>
       </button>
       <button class="tip-btn" onclick="tipSec('gelen')">
@@ -857,7 +854,7 @@ function paketOlusturAc(){
     var ozetSat=document.getElementById('mOzetSat');
     if(ozetSat)ozetSat.innerHTML='<span style="color:var(--txm);">'+tv('sev_sec_spool','Spool')+': <strong style="color:var(--tx);">'+sl.length+'</strong></span>'+
       '<span style="color:var(--txm);">Devre: <strong style="color:var(--tx);">'+devs.length+'</strong></span>'+
-      '<span style="color:var(--txm);">Toplam: <strong style="color:#0ea5e9;">'+kg+' kg</strong></span>';
+      '<span style="color:var(--txm);">Toplam: <strong style="color:#2D8EFF;">'+kg+' kg</strong></span>';
     var ozetListe=document.getElementById('mOzetListe');
     if(ozetListe)ozetListe.innerHTML=sl.map(function(h){
       return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bor);font-size:14px;">'+

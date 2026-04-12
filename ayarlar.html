@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ayarlar | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('syos_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})();</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="ares-store.js"></script>
 <script src="ares-layout.js"></script>
@@ -549,13 +549,13 @@ function updateSidebarLogo() {
 // ── Tema seçimi ───────────────────────────────────────────────
 function temaSec(tema) {
   document.documentElement.setAttribute('data-theme', tema);
-  localStorage.setItem('syos_theme', tema);
+  localStorage.setItem('ares_theme', tema);
   document.querySelectorAll('.tema-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tema-' + tema)?.classList.add('active');
 }
 
 function temaYukle() {
-  const tema = localStorage.getItem('syos_theme') || 'dark';
+  const tema = localStorage.getItem('ares_theme') || 'dark';
   document.getElementById('tema-' + tema)?.classList.add('active');
 }
 

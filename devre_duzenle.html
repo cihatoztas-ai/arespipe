@@ -11,8 +11,8 @@
 <script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 <style>
-:root[data-theme="dark"]  {--bg:#0f1117;--sur:#1a1d27;--sur2:#22263a;--bor:#2d3148;--tx:#e8eaf6;--txm:#9095b4;--txd:#5a5f7a;--ac:#2d8eff;--gr:#10b981;--re:#e53e3e;--warn:#f59e0b;--leg:#a78bfa;}
-:root[data-theme="light"] {--bg:#f0f2f8;--sur:#ffffff;--sur2:#f5f6fa;--bor:#dde1f0;--tx:#1a1d27;--txm:#5a5f7a;--txd:#9095b4;--ac:#2d8eff;--gr:#059669;--re:#dc2626;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]  {--bg:#0f1117;--sur:#1a1d27;--sur2:#22263a;--bor:#2d3148;--tx:#e8eaf6;--txm:#9095b4;--txd:#5a5f7a;--ac:#2d8eff;--gr:#16a36e;--re:#e53e3e;--warn:#f59e0b;--leg:#a78bfa;}
+[data-theme=light-anthracite] {--bg:#f0f2f8;--sur:#ffffff;--sur2:#f5f6fa;--bor:#dde1f0;--tx:#1a1d27;--txm:#5a5f7a;--txd:#9095b4;--ac:#2d8eff;--gr:#16a36e;--re:#dc2626;--warn:#d97706;--leg:#7c3aed;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
 
@@ -189,9 +189,10 @@ function toast(msg, tip) {
 
 function geriDon() {
   if (_devreId) {
-    localStorage.setItem('ares_aktif_devre_id', _devreId);
+    window.location.href = 'devre_detay.html?id=' + _devreId;
+  } else {
+    window.location.href = 'devreler.html';
   }
-  history.back();
 }
 
 function validateForm() {
@@ -308,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (!_devreId) {
         toast('Devre ID bulunamadı', 'er');
-        setTimeout(function(){ history.back(); }, 1500);
+        setTimeout(function(){ window.location.href = 'devreler.html'; }, 1500);
         return;
       }
 
@@ -322,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (res.error || !res.data) {
         toast('Devre bulunamadı', 'er');
-        setTimeout(function(){ history.back(); }, 1500);
+        setTimeout(function(){ window.location.href = 'devreler.html'; }, 1500);
         return;
       }
 
