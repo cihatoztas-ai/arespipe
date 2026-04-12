@@ -1370,11 +1370,35 @@ async function yolHaritasiYukle() {
   try {
     var supa = _getSupa();
     if (!supa) return;
-    var {data} = await supa.from('feature_flags').select('kod,ad').like('kod', 'yh_%');
-    if (data) {
-      data.forEach(function(r) { _YH_DURUM[r.kod] = r.aktif !== false; });
+
+    // Tik durumlarını yükle
+    var {data: flags} = await supa.from('feature_flags').select('kod,varsayilan').like('kod', 'yh_%');
+    if (flags) {
+      flags.forEach(function(r) { _YH_DURUM[r.kod] = r.varsayilan !== false; });
     }
-  } catch(e) {}
+
+    // Onaylanan feedbackleri yükle ve listeye ekle
+    var {data: fblar} = await supa.from('feedback_kayitlari')
+      .select('id,not_,kategori')
+      .eq('durum', 'onaylandi');
+
+    if (fblar && fblar.length) {
+      // Feedback grubunu bul veya oluştur
+      var fbGrup = _YOL_HARITASI.find(function(g){ return g.id === 'feedback_grubu'; });
+      if (!fbGrup) {
+        fbGrup = { id: 'feedback_grubu', grup: '💬 Geri Bildirimlerden', items: [] };
+        _YOL_HARITASI.push(fbGrup);
+      }
+      fbGrup.items = fblar.map(function(fb) {
+        var ikon = fb.kategori === 'hata' ? '🐛 ' : fb.kategori === 'eksik' ? '📋 ' : '💡 ';
+        return {
+          id: 'fb_' + fb.id.replace(/-/g, ''),
+          metin: ikon + (fb.not_ || '').substring(0, 120),
+          oncelik: fb.kategori === 'hata' ? 'acil' : 'orta'
+        };
+      });
+    }
+  } catch(e) { console.warn('[YH]', e); }
 }
 
 async function yolHaritasiToggle(id) {
@@ -1391,9 +1415,11 @@ async function yolHaritasiToggle(id) {
   yolHaritasiRender();
 }
 
-function yolHaritasiRender() {
+async function yolHaritasiRender() {
   var container = document.getElementById('yolHaritasiContainer');
   if (!container) return;
+  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>';
+  await yolHaritasiYukle();
 
   var toplam = 0, tamamlanan = 0, bekleyen = 0;
 
