@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AresPipe — Müşteri Portalı</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bg:#0a0b0e;--sur:#111318;--sur2:#1a1d24;--bor:#232730;--tx:#f0f2f7;--txm:#9aa0b4;--txd:#555c72;--ac:#3b82f6;--ac2:#1d4ed8;--gr:#22c55e;--re:#ef4444;--warn:#f59e0b;--leg:#a855f7;}
+:root{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
 
@@ -85,6 +85,9 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .toast-ok{border-color:rgba(34,197,94,.3);color:var(--gr);}
 .toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
 </style>
+<script src="../ares-store.js"></script>
+<script src="../ares-lang.js"></script>
+<script src="../ares-layout.js"></script>
 </head>
 <body>
 
@@ -174,7 +177,8 @@ function toast(msg, tip) {
 
 async function cikis() {
   await _supa.auth.signOut();
-  window.location.href = '../giris.html';
+  T('girisEkrani').style.display = 'flex';
+  T('app').style.display = 'none';
 }
 
 async function init() {
@@ -259,7 +263,7 @@ async function yukle() {
   // Proje bilgilerini al
   var _projeler = {};
   if (projeIds.length) {
-    var { data: projeler } = await _supa.from('projeler').select('id, proje_no, gemi_adi').in('id', projeIds);
+    var { data: projeler } = await _supa.from('projeler').select('id, ad, proje_no').in('id', projeIds);
     (projeler||[]).forEach(function(p){ _projeler[p.id] = p; });
   }
 
@@ -355,8 +359,8 @@ function render(liste) {
 
       html += '<tr>';
       html += '<td style="font-weight:700;font-family:\'JetBrains Mono\',monospace;">' + esc(s.spool_no||s.spool_id||'--') + '</td>';
-      html += '<td style="font-size:12px;">' + esc(s._devre ? (s._devre.ad||s._devre.id?.slice(0,8)) : '--') + '</td>';
-      html += '<td style="font-size:12px;color:var(--txm);">' + esc(s._proje ? (s._proje.gemi_adi||s._proje.proje_no||'--') : '--') + '</td>';
+      html += '<td style="font-size:12px;">' + esc(s._devre?.ad||'--') + '</td>';
+      html += '<td style="font-size:12px;color:var(--txm);">' + esc(s._proje?.ad||'--') + '</td>';
       html += '<td style="font-size:12px;">' + esc(s.malzeme||'--') + '</td>';
       html += '<td class="mono">' + (s.dis_cap_mm ? s.dis_cap_mm + 'mm' : '--') + '</td>';
       html += '<td><span class="badge ' + badge + '">' + durumAd + '</span></td>';
