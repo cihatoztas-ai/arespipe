@@ -17,12 +17,14 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 /* === CSS DEĞİŞKENLERİ === */
-:root,[data-theme="dark"]{
-  --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;
-  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+:root{
   --ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;
 }
-[data-theme="light-anthracite"]{
+[data-theme=dark]{
+  --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+}
+[data-theme=light-anthracite]{
   --bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;
   --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
 }
@@ -110,8 +112,8 @@
 /* === MİNİ BADGE === */
 .mini-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:14px;font-weight:600;}
 :root{--mb-yes-c:#0a7a52;--mb-no-c:#c0392b;--mb-partial-c:#a16207;}
-[data-theme="dark"]{--mb-yes-c:var(--gr);--mb-no-c:#fca5a5;--mb-partial-c:var(--warn);}
-[data-theme="light-anthracite"]{--mb-yes-c:#0a5c3c;--mb-no-c:#991b1b;--mb-partial-c:#92400e;}
+[data-theme=dark]{--mb-yes-c:var(--gr);--mb-no-c:#fca5a5;--mb-partial-c:var(--warn);}
+[data-theme=light-anthracite]{--mb-yes-c:#0a5c3c;--mb-no-c:#991b1b;--mb-partial-c:#92400e;}
 .mb-yes{background:rgba(22,163,110,.15);color:var(--mb-yes-c);}
 .mb-no{background:rgba(229,62,62,.15);color:var(--mb-no-c);}
 .mb-partial{background:rgba(217,119,6,.15);color:var(--mb-partial-c);}
@@ -2799,20 +2801,21 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderIslemler();
   initTabs();
   _applyI18n();
-  window._onLangChange = function(lang) {
-    if(lang) window._aresLang = lang;
-    _applyI18n();
-    sayfaYukle();
-    renderTable();
-    renderMalzeme();
-    renderDokumanlar();
-    renderGenelNotes();
-    renderIslemler();
-  };
   document.documentElement.style.visibility = '';
 
   })(); // async wrapper sonu
 });
+
+// Dil değişince data-i18n'leri ve dinamik içerikleri yenile
+window._onLangChange = function() {
+  if (typeof _applyI18n === 'function') _applyI18n();
+  if (typeof sayfaYukle === 'function') sayfaYukle();
+  if (typeof renderTable === 'function') renderTable();
+  if (typeof renderMalzeme === 'function') renderMalzeme();
+  if (typeof renderDokumanlar === 'function') renderDokumanlar();
+  if (typeof renderGenelNotes === 'function') renderGenelNotes();
+  if (typeof renderIslemler === 'function') renderIslemler();
+};
 </script>
 </body>
 </html>
