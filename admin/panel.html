@@ -268,6 +268,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="nav-item" onclick="goPan('kullanicilar',this)"><span class="nav-icon">👥</span>Kullanıcılar</div>
   <div class="nav-item" onclick="goPan('flags',this)"><span class="nav-icon">🚩</span>Feature Flags</div>
   <div class="nav-item" onclick="goPan('feedback',this)"><span class="nav-icon">💬</span>Geri Bildirimler</div>
+  <div class="nav-item" onclick="goPan('yolharitasi',this)"><span class="nav-icon">🗺️</span>Yol Haritası</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('loglar',this)"><span class="nav-icon">📋</span>Sistem Logları</div>
 </div>
@@ -426,6 +427,52 @@ tr:hover td{background:rgba(255,255,255,.02);}
         <div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Yükleniyor...</div></div>
       </div>
     </div>
+  </div>
+
+  <!-- YOL HARİTASI PANELİ -->
+  <div class="panel" id="pan-yolharitasi">
+    <div class="page-header">
+      <div class="page-title">Yol Haritası</div>
+      <div class="page-sub">Yapılanlar ve yapılacaklar — öncelik sırasına göre</div>
+    </div>
+
+    <style>
+      .yh-grup { margin-bottom: 28px; }
+      .yh-grup-baslik { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--tx); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+      .yh-item { display:flex; align-items:flex-start; gap:12px; padding:10px 16px; border-radius:10px; margin-bottom:4px; transition:background .15s; }
+      .yh-item:hover { background:var(--sur2); }
+      .yh-check { width:20px; height:20px; border-radius:6px; border:2px solid var(--bor); flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:2px; transition:all .15s; }
+      .yh-check.done { background:var(--gr); border-color:var(--gr); }
+      .yh-check.done::after { content:'✓'; color:#fff; font-size:12px; font-weight:800; }
+      .yh-metin { font-size:14px; line-height:1.5; }
+      .yh-metin.done { color:var(--txd); text-decoration:line-through; }
+      .yh-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; margin-left:8px; }
+      .yh-acil { background:rgba(229,62,62,.12); color:var(--re); }
+      .yh-orta { background:rgba(217,119,6,.12); color:var(--warn); }
+      .yh-dusuk { background:rgba(107,122,144,.12); color:var(--txd); }
+      .yh-stats { display:flex; gap:16px; margin-bottom:24px; }
+      .yh-stat { background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:14px 20px; flex:1; }
+      .yh-stat-val { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:800; line-height:1; }
+      .yh-stat-lbl { font-size:11px; color:var(--txd); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+    </style>
+
+    <!-- İstatistikler -->
+    <div class="yh-stats">
+      <div class="yh-stat">
+        <div class="yh-stat-val" id="yh-tamamlanan" style="color:var(--gr);">0</div>
+        <div class="yh-stat-lbl">Tamamlanan</div>
+      </div>
+      <div class="yh-stat">
+        <div class="yh-stat-val" id="yh-devam" style="color:var(--warn);">0</div>
+        <div class="yh-stat-lbl">Devam Eden</div>
+      </div>
+      <div class="yh-stat">
+        <div class="yh-stat-val" id="yh-bekleyen" style="color:var(--txm);">0</div>
+        <div class="yh-stat-lbl">Bekleyen</div>
+      </div>
+    </div>
+
+    <div id="yolHaritasiContainer"></div>
   </div>
 
   <div class="panel" id="pan-loglar">
@@ -1245,9 +1292,146 @@ async function feedbackDurumGuncelle(id, yeniDurum) {
 }
 
 
+// ── YOL HARİTASI ────────────────────────────────────────────────
+var _YOL_HARITASI = [
+  {
+    grup: '🔴 Acil',
+    items: [
+      { id: 'yh_panel_visibility', metin: 'Admin panel visibility sorunu düzelt', oncelik: 'acil' },
+      { id: 'yh_yolharitasi', metin: 'Admin panele yol haritası sekmesi ekle', oncelik: 'acil' },
+    ]
+  },
+  {
+    grup: '🏭 Üretim & Saha',
+    items: [
+      { id: 'yh_isbaslat', metin: 'is_baslat.html — operatör saha ekranı (önce tasarım)', oncelik: 'orta' },
+      { id: 'yh_qr_operator', metin: 'qr_tara.html → operator → is_baslat.html aktif et', oncelik: 'orta' },
+      { id: 'yh_rol_sidebar', metin: 'Rol bazlı sidebar — operatör yetkisiz linkleri görmesin', oncelik: 'orta' },
+    ]
+  },
+  {
+    grup: '⚙️ Sistem & Altyapı',
+    items: [
+      { id: 'yh_sayfa_yetki', metin: 'sayfaYetkiKontrol() tüm sayfalara ekle', oncelik: 'orta' },
+      { id: 'yh_firma_detay', metin: 'admin/firma-detay.html → tersane bağlantıları UI', oncelik: 'dusuk' },
+      { id: 'yh_storage', metin: 'Supabase Storage path kontrolü', oncelik: 'dusuk' },
+      { id: 'yh_magic_link', metin: 'Kullanıcı davet → service role key ile gerçek magic link', oncelik: 'orta' },
+      { id: 'yh_sidebar_personel', metin: 'ares-layout.js sidebar personel referansı kaldır', oncelik: 'dusuk' },
+    ]
+  },
+  {
+    grup: '📊 Raporlar & Finans',
+    items: [
+      { id: 'yh_hakedis', metin: 'hakedis.html → tablolar hazır, UI yok', oncelik: 'orta' },
+      { id: 'yh_raporlar', metin: 'raporlar.html → Supabase'den sıfırdan yaz', oncelik: 'orta' },
+    ]
+  },
+  {
+    grup: '🌍 Dil Coverage',
+    items: [
+      { id: 'yh_dil_anahtarlar', metin: 'ks_* bk_* mk_* kk_* ts_* log_* → en.json + ar.json', oncelik: 'dusuk' },
+      { id: 'yh_dil_attribute', metin: 'Sayfa içi metinlere data-i18n attribute ekle', oncelik: 'dusuk' },
+    ]
+  },
+  {
+    grup: '🤖 AI & Analiz',
+    items: [
+      { id: 'yh_ai_kuyruk', metin: 'ai_kuyruk tablosu kur', oncelik: 'dusuk' },
+      { id: 'yh_foto_analiz', metin: 'Fotoğraf analizi pipeline', oncelik: 'dusuk' },
+      { id: 'yh_rag', metin: 'RAG veritabanı (standartlar, DXF, videolar)', oncelik: 'dusuk' },
+      { id: 'yh_egitim', metin: 'egitim/ modülü — 4 sayfa', oncelik: 'dusuk' },
+      { id: 'yh_etiket', metin: 'etiketleme.html — AI eğitim veri girişi', oncelik: 'dusuk' },
+    ]
+  },
+  {
+    grup: '🌐 Web Sitesi',
+    items: [
+      { id: 'yh_landing', metin: 'Landing page tasarım ve geliştirme', oncelik: 'orta' },
+      { id: 'yh_demo_form', metin: 'Demo ve teklif talep formu', oncelik: 'orta' },
+      { id: 'yh_kesim_opt', metin: 'Ücretsiz araç: 1D Kesim Optimizasyonu', oncelik: 'orta' },
+      { id: 'yh_ucretsiz', metin: 'Ücretsiz araçlar: teknik tablolar, PDF kütüphane', oncelik: 'dusuk' },
+      { id: 'yh_web_kullanici', metin: 'Web kullanıcıları → tenant_type ile ayrıştır', oncelik: 'dusuk' },
+    ]
+  },
+  {
+    grup: '📱 Mobil',
+    items: [
+      { id: 'yh_expo', metin: 'Expo Go test + eksik ekranlar', oncelik: 'dusuk' },
+    ]
+  },
+];
+
+var _YH_DURUM = {};
+
+async function yolHaritasiYukle() {
+  try {
+    var supa = _getSupa();
+    if (!supa) return;
+    var {data} = await supa.from('feature_flags').select('kod,ad').like('kod', 'yh_%');
+    if (data) {
+      data.forEach(function(r) { _YH_DURUM[r.kod] = r.aktif !== false; });
+    }
+  } catch(e) {}
+}
+
+async function yolHaritasiToggle(id) {
+  _YH_DURUM[id] = !_YH_DURUM[id];
+  try {
+    var supa = _getSupa();
+    if (supa) {
+      await supa.from('feature_flags').upsert(
+        { kod: id, ad: id, varsayilan: _YH_DURUM[id] },
+        { onConflict: 'kod' }
+      );
+    }
+  } catch(e) {}
+  yolHaritasiRender();
+}
+
+function yolHaritasiRender() {
+  var container = document.getElementById('yolHaritasiContainer');
+  if (!container) return;
+
+  var toplam = 0, tamamlanan = 0, bekleyen = 0;
+
+  var html = _YOL_HARITASI.map(function(grup) {
+    var itemsHtml = grup.items.map(function(item) {
+      toplam++;
+      var done = !!_YH_DURUM[item.id];
+      if (done) tamamlanan++; else bekleyen++;
+      var oncelikBadge = item.oncelik === 'acil'
+        ? '<span class="yh-badge yh-acil">Acil</span>'
+        : item.oncelik === 'orta'
+        ? '<span class="yh-badge yh-orta">Orta</span>'
+        : '';
+      return '<div class="yh-item">' +
+        '<div class="yh-check ' + (done ? 'done' : '') + '" onclick="yolHaritasiToggle('' + item.id + '')"></div>' +
+        '<div class="yh-metin ' + (done ? 'done' : '') + '">' + esc(item.metin) + oncelikBadge + '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="yh-grup">' +
+      '<div class="yh-grup-baslik">' + grup.grup + '</div>' +
+      itemsHtml +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+
+  // İstatistikler
+  var tEl = document.getElementById('yh-tamamlanan');
+  var bEl = document.getElementById('yh-bekleyen');
+  var dEl = document.getElementById('yh-devam');
+  if (tEl) tEl.textContent = tamamlanan;
+  if (bEl) bEl.textContent = bekleyen;
+  if (dEl) dEl.textContent = 0;
+}
+
+
 function goPan(id, el) {
   if (id === 'flags') flaglariYukle();
   if (id === 'feedback') feedbackYukle();
+  if (id === 'yolharitasi') yolHaritasiRender();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   T('pan-'+id).classList.add('active');
