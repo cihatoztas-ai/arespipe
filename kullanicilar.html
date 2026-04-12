@@ -432,8 +432,30 @@ async function davetGonder() {
     var supa = ARES.supabase();
     if (!supa) throw new Error('Supabase bağlantısı yok');
 
-    // Kullanicilar tablosuna ekle (davet kaydı)
-    var res = await supa.from('kullanicilar').insert({
+    // 1. Supabase Auth'a davet maili gönder (magic link)
+    var { error: inviteErr } = await supa.auth.admin.inviteUserByEmail(email, {
+      data: { ad_soyad: ad }
+    });
+    // inviteUserByEmail sadece service role key ile çalışır
+    // Eğer çalışmazsa signInWithOtp ile magic link gönder
+    if (inviteErr) {
+      var { error: otpErr } = await supa.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: window.location.origin + '/index.html',
+          data: { ad_soyad: ad }
+        }
+      });
+      if (otpErr) throw new Error(otpErr.message);
+    }
+
+    // 2. Kullanicilar tablosuna kayıt ekle
+    var { data: authUser } = await supa.auth.admin.listUsers();
+    var newUser = authUser?.users?.find(function(u){ return u.email === email; });
+
+    var res = await supa.from('kullanicilar').upsert({
+      id:         newUser?.id || undefined,
       tenant_id:  ARES.tenantId(),
       ad_soyad:   ad,
       email:      email,
@@ -442,12 +464,18 @@ async function davetGonder() {
       brans:      brans || null,
       tel:        tel   || null,
       aktif:      true,
-      davet_eden: ARES.kullanici ? ARES.kullanici() : null
-    }).select().single();
+    }, { onConflict: 'email' }).select().single();
 
     if (res.error) throw new Error(res.error.message);
 
-    toast('Davet kaydı oluşturuldu — ' + email, 'ok');
+    // 3. app_metadata güncelle (rol ve tenant_id JWT'ye yansısın)
+    if (newUser?.id) {
+      await supa.auth.admin.updateUserById(newUser.id, {
+        app_metadata: { rol: rol, tenant_id: ARES.tenantId() }
+      });
+    }
+
+    toast('✅ Davet maili gönderildi — ' + email, 'ok');
     davetKapat();
     // Formu temizle
     ['dEmail','dAd','dFirma','dTel'].forEach(function(id){
