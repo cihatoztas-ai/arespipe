@@ -1405,7 +1405,7 @@ function yolHaritasiRender() {
         ? '<span class="yh-badge yh-orta">Orta</span>'
         : '';
       return '<div class="yh-item">' +
-        '<div class="yh-check ' + (done ? 'done' : '') + '" onclick="yolHaritasiToggle('' + item.id + '')"></div>' +
+        '<div class="yh-check ' + (done ? 'done' : '') + '" data-yh-id="' + item.id + '" onclick="yolHaritasiToggle(this.dataset.yhId)"></div>' +
         '<div class="yh-metin ' + (done ? 'done' : '') + '">' + esc(item.metin) + oncelikBadge + '</div>' +
       '</div>';
     }).join('');
