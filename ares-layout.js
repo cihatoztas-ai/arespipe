@@ -526,7 +526,17 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     const activeKey   = getActiveKey();
     const uyariSayisi = getUyariSayisi();
 
+    // Rol kontrolü
+    var _oturum2 = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
+    var _rol = _oturum2 ? _oturum2.rol : null;
+    var _OPERATOR_KEYS = ['index', 'uyari', 'tezgah'];
+
     return NAV.map(item => {
+      // Operatör sadece belirli sayfaları görsün
+      if (_rol === 'operator') {
+        if (item.type === 'sep') return '';
+        if (item.type === 'item' && !_OPERATOR_KEYS.includes(item.key)) return '';
+      }
       if (item.type === 'sep') {
         return `<div style="padding:12px 12px 4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;overflow:hidden;transition:opacity 0.15s;" class="nav-sep-label">${item.i18n && window.t(item.i18n) !== item.i18n ? window.t(item.i18n) : item.label}</div>`;
       }
