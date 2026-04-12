@@ -380,5 +380,8 @@
   "sp_no_marks": "Henüz markalama eklenmemiş",
   "sp_items_unit": "kalem",
   "sp_notes_unit": "not",
-  "sp_logs_unit": "kayıt"
+  "sp_logs_unit": "kayıt",
+  "bk_toplam_bk": "Toplam Büküm",
+  "bk_projeler": "Projeler",
+  "bk_fason": "Fason Büküm"
 }

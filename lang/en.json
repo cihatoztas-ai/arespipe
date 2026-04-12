@@ -1258,5 +1258,8 @@
   "kesim_bekleyen": "Pending",
   "kesim_devam": "In Progress",
   "kesim_tamamlandi": "Completed",
-  "kesim_toplam": "Total"
+  "kesim_toplam": "Total",
+  "bk_toplam_bk": "Total Bending",
+  "bk_projeler": "Projects",
+  "bk_fason": "Outsourced Bending"
 }

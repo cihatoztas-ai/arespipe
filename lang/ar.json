@@ -1259,5 +1259,8 @@
   "kesim_bekleyen": "قيد الانتظار",
   "kesim_devam": "جارٍ",
   "kesim_tamamlandi": "مكتمل",
-  "kesim_toplam": "الإجمالي"
+  "kesim_toplam": "الإجمالي",
+  "bk_toplam_bk": "إجمالي الثني",
+  "bk_projeler": "المشاريع",
+  "bk_fason": "ثني خارجي"
 }
