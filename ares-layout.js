@@ -69,7 +69,16 @@
       });
   }
 
-  // tv() fonksiyonu ares-lang.js'de tanımlı — buradan kaldırıldı
+  // t() — metin çeviri fonksiyonu (global)
+  window.t = function(key, params) {
+    var text = _langData[key] || key;
+    if (params) {
+      Object.keys(params).forEach(function(k){
+        text = text.replace('{' + k + '}', params[k]);
+      });
+    }
+    return text;
+  };
 
   function applyLang() {
     var isTr = Object.keys(_langData).length === 0;
@@ -134,7 +143,7 @@
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
     },
     {
-      type: 'item', key: 'izobatch', label: 'İzometri Batch', href: 'api/izometri-batch.html',
+      type: 'item', key: 'izobatch', label: 'İzometri Batch', href: 'izometri-batch.html',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>'
     },
     { type: 'sep', label: 'ÜRETİM', i18n: 'nav_uretim' },
@@ -214,6 +223,7 @@
     if (p.includes('uyari')) return 'uyari';
     if (p.includes('tersane')) return 'tersane';
     if (p.includes('kullanici')) return 'kullanici';
+    if (p.includes('personel')) return 'kullanici';
     if (p.includes('tezgah')) return 'tezgah';
     if (p.includes('tanim')) return 'tanim';
     if (p.includes('senaryo')) return 'senaryolar';
@@ -632,6 +642,11 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       </button>
 
+      <button id="tb-feedback" title="Geri Bildirim / Hata Bildir" onclick="window._feedbackAc && window._feedbackAc()"
+        style="width:36px;height:36px;border-radius:9px;border:1px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;background:transparent;border-color:rgba(217,119,6,.4);color:var(--warn);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </button>
+
       <a href="uyarilar.html" id="tb-bell" title="Uyarılar"
         style="position:relative;width:36px;height:36px;border-radius:9px;border:1px solid;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s;flex-shrink:0;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
@@ -692,24 +707,22 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     // AI butonu — sayfa context'ine göre davran
     window._tbAiClick = function() {
       if (window._aresAnaliz) {
-        // Sayfa analiz context'i tanımlamış → analiz modalı aç
         if (typeof window._aresAnalizAc === 'function') {
           window._aresAnalizAc();
         } else {
-          // Fallback: sorgu sayfasına git
-          window.location.href = 'api/sorgula.html';
+          window.location.href = 'sorgula.html';
         }
       } else {
-        // Context yok → genel sorgu sayfası
-        window.location.href = 'api/sorgula.html';
+        window.location.href = 'sorgula.html';
       }
     };
+
+    // Debug badge kaldırıldı (production)
 
     setupSearch();
   }
 
   // ── Dil Dropdown ───────────────────────────────────────────
-  function setupLangDropdown() {
     var toggle = document.getElementById('lang-toggle');
     var menu   = document.getElementById('lang-menu');
     if (!toggle || !menu) return;
@@ -855,6 +868,172 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 
     // Debug badge kaldırıldı (production)
 
+    // ── FEEDBACK SİSTEMİ ─────────────────────────────────────
+    setupFeedback();
+
   });
+
+  // ── FEEDBACK FONKSİYONU ────────────────────────────────────
+  function setupFeedback() {
+    // Modal HTML oluştur
+    var modal = document.createElement('div');
+    modal.id = 'ares-feedback-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:24px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">Geri Bildirim</div>
+          <button onclick="document.getElementById('ares-feedback-modal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">✕</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Kategori</label>
+          <div style="display:flex;gap:8px;">
+            <label style="flex:1;"><input type="radio" name="fb-kat" value="hata" checked style="display:none;">
+              <div class="fb-kat-btn" data-val="hata" style="padding:8px;border-radius:9px;border:2px solid var(--re);background:rgba(229,62,62,.08);color:var(--re);text-align:center;cursor:pointer;font-size:13px;font-weight:600;">🐛 Hata</div>
+            </label>
+            <label style="flex:1;"><input type="radio" name="fb-kat" value="eksik" style="display:none;">
+              <div class="fb-kat-btn" data-val="eksik" style="padding:8px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);text-align:center;cursor:pointer;font-size:13px;font-weight:600;">📋 Eksik</div>
+            </label>
+            <label style="flex:1;"><input type="radio" name="fb-kat" value="fikir" style="display:none;">
+              <div class="fb-kat-btn" data-val="fikir" style="padding:8px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);text-align:center;cursor:pointer;font-size:13px;font-weight:600;">💡 Fikir</div>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Not *</label>
+          <textarea id="fb-not" placeholder="Ne gördünüz? Hangi sayfada? Ne olmasını bekliyordunuz?" style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:90px;"></textarea>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Fotoğraf (opsiyonel)</label>
+          <div id="fb-foto-alan" style="border:2px dashed var(--bor);border-radius:9px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s;" onclick="document.getElementById('fb-foto-inp').click()">
+            <div style="font-size:13px;color:var(--txd);">📎 Fotoğraf seç veya sürükle</div>
+            <input type="file" id="fb-foto-inp" accept="image/*" style="display:none;" onchange="window._fbFotoSec(this)">
+          </div>
+          <div id="fb-foto-oniz" style="display:none;margin-top:8px;position:relative;">
+            <img id="fb-foto-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:9px;border:1px solid var(--bor);">
+            <button onclick="window._fbFotoKaldir()" style="position:absolute;top:6px;right:6px;background:rgba(229,62,62,.85);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;">✕</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button onclick="document.getElementById('ares-feedback-modal').style.display='none'" style="flex:1;padding:10px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer;">İptal</button>
+          <button id="fb-gonder-btn" onclick="window._fbGonder()" style="flex:2;padding:10px;border-radius:9px;border:none;background:var(--warn);color:#fff;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Gönder</button>
+        </div>
+        <div id="fb-hata" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);color:var(--re);font-size:13px;"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Kategori seçimi görsel
+    modal.querySelectorAll('.fb-kat-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        modal.querySelectorAll('.fb-kat-btn').forEach(function(b) {
+          b.style.border = '1px solid var(--bor)';
+          b.style.background = 'var(--sur2)';
+          b.style.color = 'var(--txm)';
+        });
+        var val = this.dataset.val;
+        var renk = val === 'hata' ? 'var(--re)' : val === 'eksik' ? 'var(--ac)' : 'var(--warn)';
+        var bgRenk = val === 'hata' ? 'rgba(229,62,62,.08)' : val === 'eksik' ? 'rgba(45,142,255,.08)' : 'rgba(217,119,6,.08)';
+        this.style.border = '2px solid ' + renk;
+        this.style.background = bgRenk;
+        this.style.color = renk;
+      });
+    });
+
+    var _fbFotoData = null;
+
+    window._fbFotoSec = function(inp) {
+      var file = inp.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        _fbFotoData = e.target.result;
+        document.getElementById('fb-foto-img').src = _fbFotoData;
+        document.getElementById('fb-foto-oniz').style.display = 'block';
+        document.getElementById('fb-foto-alan').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window._fbFotoKaldir = function() {
+      _fbFotoData = null;
+      document.getElementById('fb-foto-inp').value = '';
+      document.getElementById('fb-foto-oniz').style.display = 'none';
+      document.getElementById('fb-foto-alan').style.display = 'block';
+    };
+
+    window._fbGonder = async function() {
+      var not = (document.getElementById('fb-not').value || '').trim();
+      if (!not) {
+        document.getElementById('fb-hata').textContent = 'Not alanı zorunludur.';
+        document.getElementById('fb-hata').style.display = 'block';
+        return;
+      }
+      document.getElementById('fb-hata').style.display = 'none';
+      var btn = document.getElementById('fb-gonder-btn');
+      btn.disabled = true;
+      btn.textContent = 'Gönderiliyor...';
+
+      try {
+        var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+        if (!supa) throw new Error('Bağlantı yok');
+
+        var oturum = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
+        var kategori = document.querySelector('input[name="fb-kat"]:checked')?.value || 'hata';
+        var sayfa = window.location.pathname;
+
+        var fotograf_url = null;
+        if (_fbFotoData) {
+          var blob = await fetch(_fbFotoData).then(function(r){ return r.blob(); });
+          var dosyaAdi = 'feedback/' + Date.now() + '.jpg';
+          var yukle = await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi, blob, { contentType: 'image/jpeg' });
+          if (!yukle.error) {
+            var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAdi);
+            fotograf_url = urlData.publicUrl;
+          }
+        }
+
+        var kayit = {
+          tenant_id: oturum?.tenant_id || null,
+          kullanici_id: oturum?.id || null,
+          sayfa_url: sayfa,
+          kategori: kategori,
+          not_: not,
+          fotograf_url: fotograf_url,
+        };
+
+        var { error } = await supa.from('feedback_kayitlari').insert(kayit);
+        if (error) throw new Error(error.message);
+
+        // Başarılı — modalı kapat, not temizle
+        document.getElementById('fb-not').value = '';
+        window._fbFotoKaldir();
+        document.getElementById('ares-feedback-modal').style.display = 'none';
+
+        // Toast göster
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--gr);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;color:var(--gr);z-index:99999;animation:tin .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.2);';
+        toast.textContent = '✓ Geri bildirim gönderildi, teşekkürler!';
+        document.body.appendChild(toast);
+        setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 3000);
+
+      } catch(e) {
+        document.getElementById('fb-hata').textContent = 'Hata: ' + e.message;
+        document.getElementById('fb-hata').style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Gönder';
+      }
+    };
+
+    window._feedbackAc = function() {
+      document.getElementById('ares-feedback-modal').style.display = 'flex';
+      document.getElementById('fb-not').focus();
+    };
+  }
 
 })();
