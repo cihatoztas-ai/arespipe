@@ -69,16 +69,7 @@
       });
   }
 
-  // t() — metin çeviri fonksiyonu (global)
-  window.t = function(key, params) {
-    var text = _langData[key] || key;
-    if (params) {
-      Object.keys(params).forEach(function(k){
-        text = text.replace('{' + k + '}', params[k]);
-      });
-    }
-    return text;
-  };
+  // tv() fonksiyonu ares-lang.js'de tanımlı — buradan kaldırıldı
 
   function applyLang() {
     var isTr = Object.keys(_langData).length === 0;
@@ -143,7 +134,7 @@
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
     },
     {
-      type: 'item', key: 'izobatch', label: 'İzometri Batch', href: 'izometri-batch.html',
+      type: 'item', key: 'izobatch', label: 'İzometri Batch', href: 'api/izometri-batch.html',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>'
     },
     { type: 'sep', label: 'ÜRETİM', i18n: 'nav_uretim' },
@@ -223,7 +214,6 @@
     if (p.includes('uyari')) return 'uyari';
     if (p.includes('tersane')) return 'tersane';
     if (p.includes('kullanici')) return 'kullanici';
-    if (p.includes('personel')) return 'kullanici';
     if (p.includes('tezgah')) return 'tezgah';
     if (p.includes('tanim')) return 'tanim';
     if (p.includes('senaryo')) return 'senaryolar';
@@ -248,7 +238,8 @@
   function authKontrol() {
     const o = getOturum();
     if (!o || !o.rol) {
-      localStorage.setItem('ares_oturum', JSON.stringify({ tamAd: 'Demo Kullanıcı', rol: 'yonetici', id: 'demo' }));
+      window.location.href = 'giris.html';
+      return false;
     }
     return true;
   }
@@ -687,9 +678,13 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     }, 60);
 
     // Logout
-    document.getElementById('tb-logout').onclick = () => {
+    document.getElementById('tb-logout').onclick = async () => {
       if (confirm('Çıkış yapmak istiyor musunuz?')) {
-        localStorage.removeItem('ares_oturum');
+        if (typeof ARES !== 'undefined' && typeof ARES.cikisYap === 'function') {
+          await ARES.cikisYap();
+        } else {
+          localStorage.removeItem('ares_oturum');
+        }
         window.location.href = 'giris.html';
       }
     };
@@ -702,11 +697,11 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
           window._aresAnalizAc();
         } else {
           // Fallback: sorgu sayfasına git
-          window.location.href = 'sorgula.html';
+          window.location.href = 'api/sorgula.html';
         }
       } else {
         // Context yok → genel sorgu sayfası
-        window.location.href = 'sorgula.html';
+        window.location.href = 'api/sorgula.html';
       }
     };
 
@@ -858,52 +853,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
       });
     });
 
-    // ── DEBUG BADGE (SB-05) ───────────────────────────────────
-    // Sadece geliştirme ortamında gösterilir — production'da kaldırılacak
-    (function _debugBadge() {
-      var badge = document.createElement('div');
-      badge.id = 'ares-debug-badge';
-      badge.style.cssText = [
-        'position:fixed', 'bottom:14px', 'right:14px', 'z-index:99999',
-        'font-family:monospace', 'font-size:11px', 'font-weight:700',
-        'padding:5px 10px', 'border-radius:8px', 'cursor:pointer',
-        'border:1px solid', 'transition:opacity .2s', 'opacity:.85',
-        'box-shadow:0 2px 8px rgba(0,0,0,.3)', 'user-select:none'
-      ].join(';');
-
-      function _guncelle() {
-        var mod     = (typeof ARES !== 'undefined') ? ARES.mod : 'yükleniyor';
-        var oturum  = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
-        var tamam   = mod === 'supabase' && oturum;
-        badge.textContent = tamam
-          ? '🟢 Supabase · ' + (oturum.rol || '?')
-          : mod === 'supabase'
-            ? '🟡 Supabase · oturum yok'
-            : '🔴 Local mod';
-        badge.style.background  = tamam ? 'rgba(22,163,110,.15)'  : mod === 'supabase' ? 'rgba(217,119,6,.15)' : 'rgba(229,62,62,.15)';
-        badge.style.color       = tamam ? '#16a36e' : mod === 'supabase' ? '#d97706' : '#e53e3e';
-        badge.style.borderColor = tamam ? 'rgba(22,163,110,.35)' : mod === 'supabase' ? 'rgba(217,119,6,.35)' : 'rgba(229,62,62,.35)';
-      }
-
-      // Detay paneli
-      badge.addEventListener('click', function() {
-        var oturum = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
-        var mod    = (typeof ARES !== 'undefined') ? ARES.mod : '?';
-        var lines  = [
-          'MOD: ' + mod,
-          'TENANT: ' + (oturum?.tenant_id || '—'),
-          'ROL: '    + (oturum?.rol       || '—'),
-          'USER: '   + (oturum?.ad_soyad  || '—'),
-          'SUPA: '   + ((typeof ARES !== 'undefined' && ARES.supabase()) ? 'bağlı' : 'bağlı değil')
-        ];
-        alert('AresPipe Debug\n\n' + lines.join('\n'));
-      });
-
-      document.body.appendChild(badge);
-      _guncelle();
-      // Her 1 saniyede güncelle
-      setInterval(_guncelle, 1000);
-    })();
+    // Debug badge kaldırıldı (production)
 
   });
 
