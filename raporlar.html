@@ -552,6 +552,30 @@ function csvIndir() {
   a.download = 'arespipe-' + baslik.toLowerCase().replace(/\s+/g,'-') + '-' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    try {
+      var _b = 0;
+      while (_b < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){setTimeout(r,100);}); _b++; continue; }
+        var _s = ARES.supabase();
+        if (_s) {
+          var _ses = await _s.auth.getSession();
+          if (_ses.data && _ses.data.session) {
+            await ARES.oturumKontrol();
+            if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin'])) return;
+            break;
+          }
+          if (_b > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){setTimeout(r,100);}); _b++;
+      }
+    } catch(e) { console.error('[ARES]', e); }
+    finally { document.documentElement.style.visibility = ''; }
+  })();
+});
 </script>
 </body>
 </html>
