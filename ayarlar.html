@@ -453,7 +453,7 @@ function showSection(key) {
 }
 
 // ── Firma kaydet ──────────────────────────────────────────────
-function firmaKaydet() {
+async function firmaKaydet() {
   const firma = {
     adi:      document.getElementById('firmaAdi').value.trim(),
     kisaAdi:  document.getElementById('firmaKisaAdi').value.trim(),
@@ -464,24 +464,52 @@ function firmaKaydet() {
     adres:    document.getElementById('firmaAdres').value.trim(),
   };
   if (!firma.adi) { showToast('Firma adı zorunludur', 'error'); return; }
-  localStorage.setItem('ares_firma', JSON.stringify(firma));
-  // Sidebar'ı güncelle
-  updateSidebarLogo();
-  showToast('Firma bilgileri kaydedildi', 'success');
+
+  try {
+    var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+    if (supa && ARES.tenantId()) {
+      var { error } = await supa.from('tenants').update({
+        ad:       firma.adi,
+        kisa_ad:  firma.kisaAdi,
+        vergi_no: firma.vergi,
+        telefon:  firma.telefon,
+        email:    firma.email,
+        web:      firma.web,
+        adres:    firma.adres,
+      }).eq('id', ARES.tenantId());
+      if (error) throw new Error(error.message);
+    }
+    // Yerel cache güncelle
+    localStorage.setItem('ares_firma', JSON.stringify(firma));
+    updateSidebarLogo();
+    showToast('Firma bilgileri kaydedildi', 'success');
+  } catch(e) {
+    showToast('Hata: ' + e.message, 'error');
+  }
 }
 
 // ── Firma bilgilerini yükle ───────────────────────────────────
-function firmaYukle() {
+async function firmaYukle() {
   try {
-    const f = JSON.parse(localStorage.getItem('ares_firma') || '{}');
-    if (f.adi)     document.getElementById('firmaAdi').value = f.adi;
-    if (f.kisaAdi) document.getElementById('firmaKisaAdi').value = f.kisaAdi;
-    if (f.vergi)   document.getElementById('firmaVergi').value = f.vergi;
-    if (f.telefon) document.getElementById('firmaTelefon').value = f.telefon;
-    if (f.email)   document.getElementById('firmaEmail').value = f.email;
-    if (f.web)     document.getElementById('firmaWeb').value = f.web;
-    if (f.adres)   document.getElementById('firmaAdres').value = f.adres;
-  } catch(e) {}
+    var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+    var f = {};
+    if (supa && ARES.tenantId()) {
+      var { data } = await supa.from('tenants').select('ad,kisa_ad,vergi_no,telefon,email,web,adres').eq('id', ARES.tenantId()).single();
+      if (data) {
+        f = { adi: data.ad, kisaAdi: data.kisa_ad, vergi: data.vergi_no, telefon: data.telefon, email: data.email, web: data.web, adres: data.adres };
+        localStorage.setItem('ares_firma', JSON.stringify(f));
+      }
+    } else {
+      f = JSON.parse(localStorage.getItem('ares_firma') || '{}');
+    }
+    if (f.adi)     document.getElementById('firmaAdi').value = f.adi || '';
+    if (f.kisaAdi) document.getElementById('firmaKisaAdi').value = f.kisaAdi || '';
+    if (f.vergi)   document.getElementById('firmaVergi').value = f.vergi || '';
+    if (f.telefon) document.getElementById('firmaTelefon').value = f.telefon || '';
+    if (f.email)   document.getElementById('firmaEmail').value = f.email || '';
+    if (f.web)     document.getElementById('firmaWeb').value = f.web || '';
+    if (f.adres)   document.getElementById('firmaAdres').value = f.adres || '';
+  } catch(e) { console.warn('[ARES] firmaYukle:', e); }
 }
 
 // ── Logo yükleme ──────────────────────────────────────────────

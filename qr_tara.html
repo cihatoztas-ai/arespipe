@@ -210,7 +210,16 @@ async function spoolAra(spoolId) {
 
     durumGoster('bulundu', '✓ Bulundu — yönlendiriliyor…');
     setTimeout(function() {
-      gec('spool_detay.html?id=' + res.data.id);
+      // Rol bazlı yönlendirme
+      var oturum = ARES.oturumAl ? ARES.oturumAl() : null;
+      var rol = oturum ? oturum.rol : null;
+      if (rol === 'operator') {
+        // Operatör → iş başlatma ekranı (is_baslat.html yapıldığında aktif olacak)
+        // gec('is_baslat.html?id=' + res.data.id);
+        gec('spool_detay.html?id=' + res.data.id); // geçici
+      } else {
+        gec('spool_detay.html?id=' + res.data.id);
+      }
     }, 600);
 
   } catch(e) {
