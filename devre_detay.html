@@ -17,17 +17,9 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 /* === CSS DEĞİŞKENLERİ === */
-:root{
-  --ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;
-}
-[data-theme=dark]{
-  --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;
-  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
-}
-[data-theme=light-anthracite]{
-  --bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;
-  --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
-}
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
 /* === RESET (ares-layout.js global CSS'ini tamamlar) === */
 *{box-sizing:border-box;}
@@ -326,7 +318,7 @@
       <div class="dp-wrap" id="dpWrap">
         <button class="dp-btn" onclick="dpAc(event)" id="dpBtn">
           <span class="dp-icon">📅</span>
-          <span class="dp-val" id="dpVal">Tarih seç</span>
+          <span class="dp-val" id="dpVal" data-i18n="dv_date_pick">Tarih seç</span>
           <span class="dp-clear" id="dpClear" onclick="dpTemizle(event)" style="display:none;">✕</span>
         </button>
         <div class="dp-popup" id="dpPopup">
@@ -404,7 +396,7 @@
 
       <!-- Sol: Devre Bilgileri -->
       <div class="info-card cl-ac">
-        <div class="info-title">&#128203; Devre Bilgileri</div>
+        <div class="info-title" data-i18n="dv_circuit_info">&#128203; Devre Bilgileri</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bor);">
             <span style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.5px;" data-i18n="dv_lbl_tersane">Tersane</span>
@@ -492,30 +484,30 @@
     <div style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">
-          📦 Tüm Spool Malzemeleri
+          📦 <span data-i18n="dv_all_spool_mat">Tüm Spool Malzemeleri</span>
           <span id="spoolMalzBadge" style="font-size:14px;font-weight:400;color:var(--txd);margin-left:8px;"></span>
         </div>
-        <button class="btn btn-sm" onclick="spoolMalzExcel()" style="height:32px;font-size:14px;">📥 Excel</button>
+        <button class="btn btn-sm" onclick="spoolMalzExcel()" style="height:32px;font-size:14px;" data-i18n="dv_excel_btn">📥 Excel</button>
       </div>
       <div style="overflow-x:auto;border:1px solid var(--bor);border-radius:12px;background:var(--sur);">
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
           <thead>
             <tr style="background:var(--sur2);">
-              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);white-space:nowrap;">Spool</th>
-              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Kod</th>
-              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Açıklama</th>
-              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Malzeme</th>
-              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Kalite</th>
-              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Çap</th>
-              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Et</th>
-              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Boy/Adet</th>
-              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Ağırlık</th>
+              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);white-space:nowrap;" data-i18n="dv_mat_col_spool">Spool</th>
+              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="dv_mat_col_code">Kod</th>
+              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="dv_mat_col_desc">Açıklama</th>
+              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="sp_stat_material">Malzeme</th>
+              <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="th_quality">Kalite</th>
+              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="sp_stat_diameter">Çap</th>
+              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="sp_stat_thickness">Et</th>
+              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="dv_mat_col_qty">Boy/Adet</th>
+              <th style="padding:9px 12px;text-align:right;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="sp_stat_weight">Ağırlık</th>
               <th style="padding:9px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Heat No</th>
-              <th style="padding:9px 12px;text-align:center;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);">Sert.</th>
+              <th style="padding:9px 12px;text-align:center;font-size:14px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="dv_mat_col_cert">Sert.</th>
             </tr>
           </thead>
           <tbody id="spoolMalzBody">
-            <tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Yükleniyor...</td></tr>
+            <tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);" data-i18n="genel_yukleniyor">Yükleniyor...</td></tr>
           </tbody>
         </table>
       </div>
@@ -524,16 +516,16 @@
     <!-- Pipeline Malzeme Listeleri -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">
-        📐 Pipeline Malzeme Listeleri
+        📐 <span data-i18n="dv_pl_mat_title">Pipeline Malzeme Listeleri</span>
         <span id="plMalzToplamBadge" style="font-size:14px;font-weight:400;color:var(--txd);margin-left:8px;"></span>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-g btn-sm" onclick="plSablonIndir()" style="height:32px;font-size:14px;">📥 Şablon</button>
+        <button class="btn btn-g btn-sm" onclick="plSablonIndir()" style="height:32px;font-size:14px;" data-i18n="dv_pl_template_btn">📥 Şablon</button>
         <label class="btn btn-ac btn-sm" style="height:32px;font-size:14px;cursor:pointer;display:flex;align-items:center;">
-          📤 Excel Yükle
+          📤 <span data-i18n="dv_pl_excel_btn">Excel Yükle</span>
           <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="plExcelYukle(this)">
         </label>
-        <button class="btn-primary" onclick="plMalzEkleModal()" style="height:32px;font-size:14px;">+ Malzeme Ekle</button>
+        <button class="btn-primary" onclick="plMalzEkleModal()" style="height:32px;font-size:14px;" data-i18n="dv_pl_add_btn">+ Malzeme Ekle</button>
       </div>
     </div>
 
@@ -542,8 +534,8 @@
 
     <!-- Boş durum -->
     <div id="plMalzBos" style="display:none;padding:32px;text-align:center;color:var(--txd);font-size:14px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;">
-      Henüz pipeline malzeme listesi eklenmemiş.<br>
-      <span style="font-size:14px;opacity:.7;">+ Pipeline Malzeme Ekle butonu ile pipeline numarası ve malzeme listesini girin.</span>
+      <span data-i18n="dv_pl_empty">Henüz pipeline malzeme listesi eklenmemiş.</span><br>
+      <span style="font-size:14px;opacity:.7;" data-i18n="dv_pl_empty_hint">+ Pipeline Malzeme Ekle butonu ile pipeline numarası ve malzeme listesini girin.</span>
     </div>
 
   </div>
@@ -579,58 +571,58 @@
 <div id="plMalzModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);">📐 Pipeline Malzeme Ekle</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--tx);" data-i18n="dv_pl_modal_title">📐 Pipeline Malzeme Ekle</div>
       <button onclick="document.getElementById('plMalzModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Pipeline No *</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_pipeline">Pipeline No *</label>
           <select id="plModalPipelineSel" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;"></select>
         </div>
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Tür *</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_type">Tür *</label>
           <select id="plModalTip" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" onchange="plModalTipDegis(this.value)">
-            <option value="boru">Boru</option>
-            <option value="fitting">Fitting</option>
+            <option value="boru" data-i18n="dv_pl_form_pipe">Boru</option>
+            <option value="fitting" data-i18n="dv_pl_form_fitting">Fitting</option>
           </select>
         </div>
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Tanım *</label>
-        <input id="plModalTanim" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="ör: Pipe Seamless 114.3x3.05">
+        <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_desc">Tanım *</label>
+        <input id="plModalTanim" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" data-i18n-placeholder="dv_pl_form_desc_ph" placeholder="ör: Pipe Seamless 114.3x3.05">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Malzeme</label>
-          <input id="plModalMalzeme" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="Karbon Çelik">
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="sp_stat_material">Malzeme</label>
+          <input id="plModalMalzeme" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" data-i18n-placeholder="dv_pl_form_mat_ph" placeholder="Karbon Çelik">
         </div>
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Kalite</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="th_quality">Kalite</label>
           <input id="plModalKalite" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="316L">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Dış Çap (mm)</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_cap">Dış Çap (mm)</label>
           <input id="plModalCap" type="number" step="0.1" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="114.3">
         </div>
         <div>
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Et (mm)</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_et">Et (mm)</label>
           <input id="plModalEt" type="number" step="0.01" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="3.05">
         </div>
         <div id="plModalBoyDiv">
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Boy (mm)</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_length">Boy (mm)</label>
           <input id="plModalBoy" type="number" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="6000">
         </div>
         <div id="plModalAdetDiv" style="display:none;">
-          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;">Adet</label>
+          <label style="font-size:14px;font-weight:700;color:var(--txd);display:block;margin-bottom:4px;" data-i18n="dv_pl_form_qty">Adet</label>
           <input id="plModalAdet" type="number" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;" placeholder="4">
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <input type="checkbox" id="plModalSert" style="width:16px;height:16px;accent-color:var(--warn);cursor:pointer;">
-        <label for="plModalSert" style="font-size:14px;color:var(--txm);cursor:pointer;">Sertifikalı malzeme (3.2 / 3.3)</label>
+        <label for="plModalSert" style="font-size:14px;color:var(--txm);cursor:pointer;" data-i18n="dv_pl_form_cert">Sertifikalı malzeme (3.2 / 3.3)</label>
       </div>
     </div>
     <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--bor);justify-content:flex-end;">
@@ -647,27 +639,27 @@
 <div id="spoolDurdurModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Spool Durdur</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_spool_stop_title">Spool Durdur</div>
       <button onclick="document.getElementById('spoolDurdurModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Sebep</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_reason_label">Sebep</label>
         <select id="sdSebep" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;">
-          <option value="">Secin...</option>
-          <option value="revizyon">Revizyon / Yeniden Cizim</option>
-          <option value="malzeme">Malzeme Bekleniyor</option>
-          <option value="teknik">Teknik Sorun</option>
-          <option value="diger">Diger</option>
+          <option value="" data-i18n="dv_select_opt">Seçin...</option>
+          <option value="revizyon" data-i18n="dv_reason_revision">Revizyon / Yeniden Çizim</option>
+          <option value="malzeme" data-i18n="dv_reason_material">Malzeme Bekleniyor</option>
+          <option value="teknik" data-i18n="dv_reason_technical">Teknik Sorun</option>
+          <option value="diger" data-i18n="dv_reason_other">Diğer</option>
         </select>
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Aciklama *</label>
-        <textarea id="sdAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" placeholder="Durdurma sebebini aciklayin..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_desc_label">Açıklama *</label>
+        <textarea id="sdAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" data-i18n-placeholder="dv_stop_reason_ph" placeholder="Durdurma sebebini açıklayın..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
       </div>
       <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('spoolDurdurModal').style.display='none'" class="btn-outline" style="flex:1;">Iptal</button>
-        <button onclick="spoolDurdurKaydet()" class="btn-primary" style="flex:2;background:var(--re);">Durdur</button>
+        <button onclick="document.getElementById('spoolDurdurModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_cancel">İptal</button>
+        <button onclick="spoolDurdurKaydet()" class="btn-primary" style="flex:2;background:var(--re);" data-i18n="dv_ctx_stop">Durdur</button>
       </div>
     </div>
   </div>
@@ -677,29 +669,29 @@
 <div id="spoolIptalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Spool Iptal Et</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_spool_cancel_title">Spool İptal Et</div>
       <button onclick="document.getElementById('spoolIptalModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-      <div style="padding:12px 14px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.3);border-radius:10px;font-size:14px;color:var(--warn);">&#9888; Iptal islemi kalicidir ve spool arsive tasinir. Geri alinamaz.</div>
+      <div style="padding:12px 14px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.3);border-radius:10px;font-size:14px;color:var(--warn);" data-i18n="dv_cancel_warning">⚠ İptal işlemi kalıcıdır ve spool arşive taşınır. Geri alınamaz.</div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Iptal Sebebi</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_cancel_reason_label">İptal Sebebi</label>
         <select id="iptalSebep" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;">
-          <option value="">Secin...</option>
-          <option value="talep">Tersane Talebi</option>
-          <option value="revizyon">Revizyon / Yeniden Cizim</option>
-          <option value="proje">Proje Iptali</option>
-          <option value="yanlis">Yanlis Giris</option>
-          <option value="diger">Diger</option>
+          <option value="" data-i18n="dv_select_opt">Seçin...</option>
+          <option value="talep" data-i18n="dv_cancel_shipyard">Tersane Talebi</option>
+          <option value="revizyon" data-i18n="dv_reason_revision">Revizyon / Yeniden Çizim</option>
+          <option value="proje" data-i18n="dv_cancel_project">Proje İptali</option>
+          <option value="yanlis" data-i18n="dv_cancel_wrong">Yanlış Giriş</option>
+          <option value="diger" data-i18n="dv_reason_other">Diğer</option>
         </select>
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Aciklama *</label>
-        <textarea id="iptalAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" placeholder="Iptal sebebini aciklayin..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_desc_label">Açıklama *</label>
+        <textarea id="iptalAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" data-i18n-placeholder="dv_cancel_reason_ph" placeholder="İptal sebebini açıklayın..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
       </div>
       <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('spoolIptalModal').style.display='none'" class="btn-outline" style="flex:1;">Vazgec</button>
-        <button onclick="spoolIptalKaydet()" class="btn-primary" style="flex:2;background:var(--re);">Iptal Et</button>
+        <button onclick="document.getElementById('spoolIptalModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_go_back">Vazgeç</button>
+        <button onclick="spoolIptalKaydet()" class="btn-primary" style="flex:2;background:var(--re);" data-i18n="dv_ctx_cancel">İptal Et</button>
       </div>
     </div>
   </div>
@@ -708,17 +700,17 @@
 <!-- Spool Sil Modal -->
 <div id="spoolSilModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.5);padding:24px;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:14px;">Spool Sil</div>
-    <div style="padding:12px 14px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:10px;font-size:14px;color:var(--re);margin-bottom:16px;">
-      &#10060; Bu islem geri alinamaz. Spool tamamen silinecek.
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:14px;" data-i18n="dv_spool_delete_title">Spool Sil</div>
+    <div style="padding:12px 14px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:10px;font-size:14px;color:var(--re);margin-bottom:16px;" data-i18n="dv_delete_warning">
+      ❌ Bu işlem geri alınamaz. Spool tamamen silinecek.
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
       <input type="checkbox" id="silOnay" onchange="document.getElementById('silBtn').style.opacity=this.checked?'1':'0.4';document.getElementById('silBtn').style.cursor=this.checked?'pointer':'not-allowed';" style="width:16px;height:16px;accent-color:var(--re);cursor:pointer;">
-      <label for="silOnay" style="font-size:14px;color:var(--txm);cursor:pointer;">Silmek istedigimi onayliyorum</label>
+      <label for="silOnay" style="font-size:14px;color:var(--txm);cursor:pointer;" data-i18n="dv_delete_confirm_check">Silmek istediğimi onaylıyorum</label>
     </div>
     <div style="display:flex;gap:10px;">
-      <button onclick="document.getElementById('spoolSilModal').style.display='none'" class="btn-outline" style="flex:1;">Vazgec</button>
-      <button id="silBtn" onclick="spoolSilKaydet()" style="flex:2;padding:0 14px;height:36px;border-radius:8px;border:none;background:var(--re);color:#fff;font-size:14px;font-weight:600;cursor:not-allowed;opacity:.4;font-family:'Barlow',sans-serif;">Sil</button>
+      <button onclick="document.getElementById('spoolSilModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_go_back">Vazgeç</button>
+      <button id="silBtn" onclick="spoolSilKaydet()" style="flex:2;padding:0 14px;height:36px;border-radius:8px;border:none;background:var(--re);color:#fff;font-size:14px;font-weight:600;cursor:not-allowed;opacity:.4;font-family:'Barlow',sans-serif;" data-i18n="dv_ctx_delete">Sil</button>
     </div>
   </div>
 </div>
@@ -727,27 +719,27 @@
 <div id="durdurModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Devreyi Durdur</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_circuit_stop_title">Devreyi Durdur</div>
       <button onclick="document.getElementById('durdurModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Sebep *</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_reason_required_label">Sebep *</label>
         <select id="durdurSebep" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;">
-          <option value="">Secin...</option>
-          <option value="revizyon">Revizyon / Yeniden Cizim</option>
-          <option value="malzeme">Malzeme Bekleniyor</option>
-          <option value="teknik">Teknik Cizim Degisikligi</option>
-          <option value="diger">Diger</option>
+          <option value="" data-i18n="dv_select_opt">Seçin...</option>
+          <option value="revizyon" data-i18n="dv_reason_revision">Revizyon / Yeniden Çizim</option>
+          <option value="malzeme" data-i18n="dv_reason_material">Malzeme Bekleniyor</option>
+          <option value="teknik" data-i18n="dv_reason_drawing">Teknik Çizim Değişikliği</option>
+          <option value="diger" data-i18n="dv_reason_other">Diğer</option>
         </select>
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Aciklama *</label>
-        <textarea id="durdurAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" placeholder="Durdurma sebebini aciklayin..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_desc_required_label">Açıklama *</label>
+        <textarea id="durdurAciklama" rows="3" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" data-i18n-placeholder="dv_stop_reason_ph" placeholder="Durdurma sebebini açıklayın..." onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
       </div>
       <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('durdurModal').style.display='none'" class="btn-outline" style="flex:1;">Iptal</button>
-        <button onclick="durdurKaydet()" class="btn-primary" style="flex:2;background:var(--re);">Devreyi Durdur</button>
+        <button onclick="document.getElementById('durdurModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_cancel">İptal</button>
+        <button onclick="durdurKaydet()" class="btn-primary" style="flex:2;background:var(--re);" data-i18n="dv_circuit_stop_btn">Devreyi Durdur</button>
       </div>
     </div>
   </div>
@@ -757,26 +749,26 @@
 <div id="gonderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div id="gonderModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Gonder</div>
+      <div id="gonderModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_send_title">Gönder</div>
       <button onclick="document.getElementById('gonderModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
       <div style="font-size:14px;color:var(--txm);" id="gonderBilgi"></div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Spool Secimi</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_spool_select">Spool Seçimi</label>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn-sm" onclick="gonderHepsiniSec(true)">Tumu Sec</button>
-          <button class="btn-sm" onclick="gonderHepsiniSec(false)">Temizle</button>
+          <button class="btn-sm" onclick="gonderHepsiniSec(true)" data-i18n="dv_select_all">Tümü Seç</button>
+          <button class="btn-sm" onclick="gonderHepsiniSec(false)" data-i18n="dv_clear">Temizle</button>
         </div>
         <div id="gonderSpoolListe" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;"></div>
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Not (opsiyonel)</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_note_optional">Not (opsiyonel)</label>
         <textarea id="gonderNot" rows="2" style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 12px;font-size:14px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;resize:none;" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'"></textarea>
       </div>
       <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('gonderModal').style.display='none'" class="btn-outline" style="flex:1;">Iptal</button>
-        <button id="gonderOnayla" onclick="gonderKaydet()" class="btn-primary" style="flex:2;">Gonder</button>
+        <button onclick="document.getElementById('gonderModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_cancel">İptal</button>
+        <button id="gonderOnayla" onclick="gonderKaydet()" class="btn-primary" style="flex:2;" data-i18n="dv_send_title">Gönder</button>
       </div>
     </div>
   </div>
@@ -786,33 +778,33 @@
 <div id="dokumanYukleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Dokuman Ekle</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_dok_modal_title">Dokuman Ekle</div>
       <button onclick="document.getElementById('dokumanYukleModal').style.display='none'" style="background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Dosya</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;" data-i18n="dv_dok_file_label">Dosya</label>
         <label id="dokDosyaLabel" for="dokDosyaInput" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:18px;border:2px dashed var(--bor);border-radius:10px;cursor:pointer;font-size:14px;color:var(--txd);transition:border-color .2s;" onmouseenter="this.style.borderColor='var(--ac)'" onmouseleave="this.style.borderColor='var(--bor)'">
-          &#128193; Dosya sec veya buraya birak
+          &#128193; <span data-i18n="dv_dok_file_hint">Dosya seç veya buraya bırak</span>
         </label>
         <input type="file" id="dokDosyaInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.dwg,.dxf,.png,.jpg,.jpeg,.txt" onchange="dokumanDosyaSec(this)">
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Dokuman Adi *</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_dok_name_label">Dokuman Adı *</label>
         <input id="dokAdInput" type="text" style="width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'">
       </div>
       <div>
-        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Tur</label>
+        <label style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;" data-i18n="dv_pl_form_type">Tür</label>
         <select id="dokTurInput" style="width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bor)'">
-          <option value="izometri">Izometri Cizimi</option>
-          <option value="sertifika">Sertifika</option>
-          <option value="prosedur">Prosedur</option>
-          <option value="diger">Diger</option>
+          <option value="izometri" data-i18n="dv_dok_iso_opt">Izometri Cizimi</option>
+          <option value="sertifika" data-i18n="dv_dok_cert_opt">Sertifika</option>
+          <option value="prosedur" data-i18n="dv_dok_proc_opt">Prosedur</option>
+          <option value="diger" data-i18n="dv_dok_other_opt">Diger</option>
         </select>
       </div>
       <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('dokumanYukleModal').style.display='none'" class="btn-outline" style="flex:1;">Iptal</button>
-        <button onclick="dokumanYukleKaydet()" class="btn-primary" style="flex:2;background:var(--gr);">Ekle</button>
+        <button onclick="document.getElementById('dokumanYukleModal').style.display='none'" class="btn-outline" style="flex:1;" data-i18n="dv_cancel">İptal</button>
+        <button onclick="dokumanYukleKaydet()" class="btn-primary" style="flex:2;background:var(--gr);" data-i18n="sp_add_btn">Ekle</button>
       </div>
     </div>
   </div>
@@ -822,17 +814,17 @@
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)exportModalKapat()">
   <div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:320px;box-shadow:0 24px 64px rgba(0,0,0,.5);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bor);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">Disa Aktar</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;" data-i18n="dv_export_modal_title">Dışa Aktar</div>
       <button onclick="exportModalKapat()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;">
       <button onclick="exportExcel()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-family:'Barlow',sans-serif;text-align:left;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--gr)'" onmouseout="this.style.borderColor='var(--bor)'">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <div><div style="font-size:14px;font-weight:700;color:var(--tx);">Excel</div><div style="font-size:14px;color:var(--txd);">Spool + Malzeme listesi (.xlsx)</div></div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--tx);">Excel</div><div style="font-size:14px;color:var(--txd);" data-i18n="dv_export_excel_desc">Spool + Malzeme listesi (.xlsx)</div></div>
       </button>
       <button onclick="exportPdf()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-family:'Barlow',sans-serif;text-align:left;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--re)'" onmouseout="this.style.borderColor='var(--bor)'">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--re)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
-        <div><div style="font-size:14px;font-weight:700;color:var(--tx);">PDF</div><div style="font-size:14px;color:var(--txd);">A4 yatay, malzeme listeli</div></div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--tx);">PDF</div><div style="font-size:14px;color:var(--txd);" data-i18n="dv_export_pdf_desc">A4 yatay, malzeme listeli</div></div>
       </button>
     </div>
   </div>
@@ -844,8 +836,8 @@
     <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);">
       <div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;">&#127991; Toplu Etiket Yazdir</div>
-        <div style="font-size:14px;color:var(--txd);margin-top:2px;">Spollari secin, QR etiketleri toplu yazdirin veya PDF olarak alin</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;" data-i18n="dv_label_modal_title">&#127991; Toplu Etiket Yazdır</div>
+        <div style="font-size:14px;color:var(--txd);margin-top:2px;" data-i18n="dv_label_modal_sub">Spooları seçin, QR etiketleri toplu yazdırın veya PDF olarak alın</div>
       </div>
       <button onclick="etiketModalKapat()" style="background:none;border:none;color:var(--txd);font-size:24px;cursor:pointer;line-height:1;">&#10005;</button>
     </div>
@@ -853,26 +845,26 @@
     <div style="display:grid;grid-template-columns:220px 1fr;min-height:400px;">
       <!-- Sol: Seçim -->
       <div style="border-right:1px solid var(--bor);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Spool Secimi</div>
+        <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;" data-i18n="dv_spool_select">Spool Seçimi</div>
         <div style="display:flex;gap:5px;">
-          <button class="btn-sm" onclick="etiketHepsiniSec(true)" style="flex:1;font-size:14px;">Hepsini Sec</button>
-          <button class="btn-sm" onclick="etiketHepsiniSec(false)" style="flex:1;font-size:14px;">Temizle</button>
+          <button class="btn-sm" onclick="etiketHepsiniSec(true)" style="flex:1;font-size:14px;" data-i18n="dv_select_all">Hepsini Seç</button>
+          <button class="btn-sm" onclick="etiketHepsiniSec(false)" style="flex:1;font-size:14px;" data-i18n="dv_clear">Temizle</button>
         </div>
         <div id="etiketSecimListesi" style="display:flex;flex-direction:column;gap:5px;overflow-y:auto;flex:1;"></div>
       </div>
       <!-- Sağ: Önizleme -->
       <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span id="etiketSeciliSayi" style="font-size:14px;font-weight:600;color:var(--tx);">0 spool secili</span>
-          <span style="font-size:14px;color:var(--txd);">A4'te <b id="etiketSayfaSayi" style="color:var(--tx);">0</b> sayfa</span>
+          <span id="etiketSeciliSayi" style="font-size:14px;font-weight:600;color:var(--tx);">0 spool</span>
+          <span style="font-size:14px;color:var(--txd);">A4: <b id="etiketSayfaSayi" style="color:var(--tx);">0</b></span>
         </div>
         <div id="etiketOnizleme" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow-y:auto;max-height:340px;padding:4px;"></div>
       </div>
     </div>
     <!-- Footer -->
     <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--bor);">
-      <button onclick="etiketModalKapat()" class="btn-outline">Kapat</button>
-      <button onclick="etiketYazdir()" class="btn-primary" style="background:var(--leg);">&#128438; Yazdir / PDF</button>
+      <button onclick="etiketModalKapat()" class="btn-outline" data-i18n="dv_close">Kapat</button>
+      <button onclick="etiketYazdir()" class="btn-primary" style="background:var(--leg);" data-i18n="dv_label_print_btn">&#128438; Yazdır / PDF</button>
     </div>
   </div>
 </div>
@@ -983,9 +975,9 @@ async function spoolYukle() {
           _aktifGorunen = _basamakAdlari[_aktifStr] || _aktifStr;
         }
       }
-      var durumText = aktif < 0 ? 'Bekliyor'
-        : aktif >= total - 1 ? 'Tamamlandı'
-        : _aktifGorunen || 'Devam Ediyor';
+      var durumText = aktif < 0 ? tv('dv_status_waiting','Bekliyor')
+        : aktif >= total - 1 ? tv('dv_status_done','Tamamlandı')
+        : _aktifGorunen || tv('dv_status_progress','Devam Ediyor');
       // cap gösterimi
       var capVal = s.dis_cap_mm ? String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—';
       var agirlikVal = s.agirlik ? String(parseFloat(s.agirlik).toFixed(2)).replace('.',',') + ' kg' : '0 kg';
@@ -1311,7 +1303,7 @@ function inlineEdit(td, alan, spoolNo, tip, secenekler, mevcutDeger) {
       var guncelleme = { guncelleme: new Date().toISOString() };
       guncelleme[alan] = yeni || (alan === 'rev' ? '' : null);
       supa.from('spooller').update(guncelleme).eq('id', s.supaId)
-        .then(function(r){ if(r.error) showToast('Hata: '+r.error.message,'error'); });
+        .then(function(r){ if(r.error) showToast(tv('dv_error_prefix','Hata')+': '+r.error.message,'error'); });
     }
     renderTable();
   }
@@ -1424,21 +1416,21 @@ function spoolDurdur(spoolNo) {
 }
 function spoolDurdurKaydet() {
   const aciklama = document.getElementById('sdAciklama').value.trim();
-  if(!aciklama) { showToast('Aciklama zorunludur','error'); return; }
+  if(!aciklama) { showToast(tv('dv_desc_required','Açıklama zorunludur'),'error'); return; }
   if(!_ctxSpool) return;
   _ctxSpool.stopped = true;
   _ctxSpool.durdurmaAciklama = aciklama;
   document.getElementById('spoolDurdurModal').style.display='none';
   renderTable();
   devreLogEkle('durduruldu', _ctxSpool.spoolNo + ' — ' + aciklama);
-  showToast(_ctxSpool.spoolNo + ' durduruldu', 'info');
+  showToast(_ctxSpool.spoolNo + ' ' + tv('dv_stopped','durduruldu'), 'info');
 }
 function spoolKaldir(spoolNo) {
   const s = SPOOLS.find(x=>x.spoolNo===spoolNo); if(!s) return;
   s.stopped = false;
   renderTable();
-  devreLogEkle('yeniden_baslandi', spoolNo + ' — Durdurma kaldirildi');
-  showToast(spoolNo + ' yeniden aktif', 'success');
+  devreLogEkle('yeniden_baslandi', spoolNo + ' — ' + tv('dv_stop_removed','Durdurma kaldırıldı'));
+  showToast(spoolNo + ' ' + tv('dv_reactivated','yeniden aktif'), 'success');
 }
 function spoolIptalModal(spoolNo) {
   _ctxSpool = SPOOLS.find(s=>s.spoolNo===spoolNo);
@@ -1448,13 +1440,13 @@ function spoolIptalModal(spoolNo) {
 }
 function spoolIptalKaydet() {
   const aciklama = document.getElementById('iptalAciklama').value.trim();
-  if(!aciklama) { showToast('Aciklama zorunludur','error'); return; }
+  if(!aciklama) { showToast(tv('dv_desc_required','Açıklama zorunludur'),'error'); return; }
   if(!_ctxSpool) return;
   _ctxSpool.iptal = true; _ctxSpool.stopped = true;
   document.getElementById('spoolIptalModal').style.display='none';
   renderTable(); statGuncelle();
   devreLogEkle('spool_iptal', _ctxSpool.spoolNo + ' — ' + aciklama);
-  showToast(_ctxSpool.spoolNo + ' iptal edildi', 'info');
+  showToast(_ctxSpool.spoolNo + ' ' + tv('dv_cancelled','iptal edildi'), 'info');
 }
 function spoolSilOnay(spoolNo) {
   _ctxSpool = SPOOLS.find(s=>s.spoolNo===spoolNo);
@@ -1464,19 +1456,19 @@ function spoolSilOnay(spoolNo) {
 }
 function spoolSilKaydet() {
   const cb = document.getElementById('silOnay');
-  if(!cb||!cb.checked) { showToast('Onay kutucugunu isaretleyin','error'); return; }
+  if(!cb||!cb.checked) { showToast(tv('dv_confirm_check','Onay kutucuğunu işaretleyin'),'error'); return; }
   if(!_ctxSpool) return;
   SPOOLS = SPOOLS.filter(s=>s.spoolNo!==_ctxSpool.spoolNo);
   document.getElementById('spoolSilModal').style.display='none';
   renderTable(); statGuncelle();
-  showToast('Spool silindi','info');
+  showToast(tv('dv_spool_deleted','Spool silindi'),'info');
 }
 
 // ── SPOOL EKLE ──────────────────────────────────────────────────
 function spoolEkleBaslat() {
   const ekleBody = document.getElementById('spoolEkleBody');
   if(!ekleBody) return;
-  if(ekleBody.innerHTML.trim()) { showToast('Once acik satiri kaydedin veya iptal edin','info'); return; }
+  if(ekleBody.innerHTML.trim()) { showToast(tv('dv_save_or_cancel','Önce açık satırı kaydedin veya iptal edin'),'info'); return; }
   ekleBody.innerHTML = `
     <tr style="background:rgba(45,142,255,.04);">
       <td style="color:var(--ac);font-weight:700;text-align:center;">+</td>
@@ -1484,10 +1476,10 @@ function spoolEkleBaslat() {
       <td><input class="edit-cell-input" id="nr_spoolNo" placeholder="S04" style="min-width:55px;"></td>
       <td><input class="edit-cell-input" id="nr_cap" placeholder="323,9 mm" style="width:80px;"></td>
       <td><input class="edit-cell-input" id="nr_agirlik" placeholder="kg" style="width:80px;"></td>
-      <td><input class="edit-cell-input" id="nr_malzeme" placeholder="Paslanmaz" style="width:90px;"></td>
+      <td><input class="edit-cell-input" id="nr_malzeme" placeholder="${tv('sp_stat_material','Malzeme')}" style="width:90px;"></td>
       <td><input class="edit-cell-input" id="nr_kalite" placeholder="316L" style="width:55px;"></td>
-      <td><input class="edit-cell-input" id="nr_yuzey" placeholder="ASIT" style="width:60px;"></td>
-      <td colspan="9" style="color:var(--txd);font-size:14px;font-style:italic;">Diger alanlar kaydedince doldurulabilir</td>
+      <td><input class="edit-cell-input" id="nr_yuzey" placeholder="${tv('sp_stat_surface','Yüzey')}" style="width:60px;"></td>
+      <td colspan="9" style="color:var(--txd);font-size:14px;font-style:italic;">${tv('dv_other_fields_later','Diğer alanlar kaydedince doldurulabilir')}</td>
       <td>
         <div style="display:flex;gap:4px;">
           <button onclick="spoolEkleKaydet()" style="height:26px;padding:0 10px;border-radius:6px;background:var(--ac);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">&#10003;</button>
@@ -1500,20 +1492,20 @@ function spoolEkleBaslat() {
 function spoolEkleKaydet() {
   const g = id=>(document.getElementById(id)||{}).value?.trim()||'';
   const spoolNo = g('nr_spoolNo');
-  if(!spoolNo) { showToast('Spool No zorunludur','error'); return; }
-  if(SPOOLS.find(s=>s.spoolNo===spoolNo)) { showToast('Bu spool No zaten var','error'); return; }
+  if(!spoolNo) { showToast(tv('dv_spool_no_required','Spool No zorunludur'),'error'); return; }
+  if(SPOOLS.find(s=>s.spoolNo===spoolNo)) { showToast(tv('dv_spool_exists','Bu Spool No zaten var'),'error'); return; }
   SPOOLS.push({
     idx: SPOOLS.length+1, pipeline:g('nr_pipeline'), spoolNo,
     cap:g('nr_cap'), agirlik:g('nr_agirlik'), malzeme:g('nr_malzeme'),
     kalite:g('nr_kalite'), yuzey:g('nr_yuzey'),
-    durum:'waiting', durumText:'Bekliyor',
+    durum:'waiting', durumText:tv('dv_status_waiting','Bekliyor'),
     adimlar:[0,0,0,0,0,0], sonIslem:null, alistirma:null,
     bukum:{toplam:0,tamamlanan:0}, kesim:{toplam:0,tamamlanan:0},
     markalama:{toplam:0,tamamlanan:0}, test:{toplam:0,tamamlanan:0},
     durduruldu:'YOK', stopped:false, iptal:false
   });
   spoolEkleIptal(); renderTable(); statGuncelle();
-  showToast(spoolNo + ' eklendi','success');
+  showToast(spoolNo + ' ' + tv('dv_added','eklendi'),'success');
 }
 function spoolEkleIptal() {
   const el = document.getElementById('spoolEkleBody'); if(el) el.innerHTML='';
@@ -1534,7 +1526,7 @@ function spoolExcelImport(event) {
           idx:SPOOLS.length+1, pipeline:String(row['Pipeline No']||'').trim(),
           spoolNo, cap:String(row['Cap']||'').trim(), agirlik:String(row['Agirlik']||'').trim(),
           malzeme:String(row['Malzeme']||'').trim(), kalite:String(row['Kalite']||'').trim(),
-          yuzey:String(row['Yuzey']||'').trim(), durum:'waiting', durumText:'Bekliyor',
+          yuzey:String(row['Yuzey']||'').trim(), durum:'waiting', durumText:tv('dv_status_waiting','Bekliyor'),
           adimlar:[0,0,0,0,0,0], sonIslem:null, alistirma:null,
           bukum:{toplam:0,tamamlanan:0}, kesim:{toplam:0,tamamlanan:0},
           markalama:{toplam:0,tamamlanan:0}, test:{toplam:0,tamamlanan:0},
@@ -1543,8 +1535,8 @@ function spoolExcelImport(event) {
         added++;
       });
       renderTable(); statGuncelle();
-      showToast(added+' spool eklendi (Excel)','success');
-    } catch(err){ showToast('Excel okunamadi: '+err.message,'error'); }
+      showToast(added+' '+tv('dv_unit_spool','spool')+' '+tv('dv_added','eklendi')+' (Excel)','success');
+    } catch(err){ showToast(tv('dv_excel_read_error','Excel okunamadı')+': '+err.message,'error'); }
     event.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -1555,18 +1547,18 @@ function durdurModalAc() { document.getElementById('durdurModal').style.display=
 function durdurKaydet() {
   const sebep = document.getElementById('durdurSebep').value;
   const ac = document.getElementById('durdurAciklama').value.trim();
-  if(!ac) { showToast('Aciklama zorunludur','error'); return; }
+  if(!ac) { showToast(tv('dv_desc_required','Açıklama zorunludur'),'error'); return; }
   document.getElementById('durdurModal').style.display='none';
   const banner = document.getElementById('durdurBanner');
   if(banner) { banner.style.display='flex'; setText('bannerAciklama', ac); }
   devreLogEkle('durduruldu', sebep+' — '+ac);
-  showToast('Devre durduruldu','info');
+  showToast(tv('dv_circuit_stopped_toast','Devre durduruldu'),'info');
 }
 function durdurmaKaldir() {
   const banner = document.getElementById('durdurBanner');
   if(banner) banner.style.display='none';
-  devreLogEkle('yeniden_baslandi','Durdurma kaldirildi');
-  showToast('Devre yeniden aktif','success');
+  devreLogEkle('yeniden_baslandi', tv('dv_stop_removed','Durdurma kaldırıldı'));
+  showToast(tv('dv_circuit_reactivated','Devre yeniden aktif'),'success');
 }
 
 // ── KK / SEVKİYAT GÖNDER ────────────────────────────────────────
@@ -1602,22 +1594,22 @@ function _gonderAc(tip, tek) {
       uyari.innerHTML = `<div style="background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;">
         <div style="display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--bor);">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">${bitmemis.length} Bitmemis Spool Var</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;">${bitmemis.length} ${tv('dv_unfinished_spools','Bitmemiş Spool Var')}</div>
         </div>
         <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
           <div style="font-size:14px;color:var(--txm);line-height:1.6;">
-            Asagidaki spoollar henuz tamamlanmamis. Yine de <strong style="color:${renk};">${baslik}</strong> islemine devam etmek istiyor musunuz?
+            ${tv('dv_unfinished_msg','Aşağıdaki spooller henüz tamamlanmamış. Yine de')} <strong style="color:${renk};">${baslik}</strong> ${tv('dv_unfinished_msg2','işlemine devam etmek istiyor musunuz?')}
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto;">
             ${bitmemis.map(s=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--sur2);border-radius:8px;font-size:14px;">
               <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--ac);">${esc(s.spoolNo)}</span>
               <span style="color:var(--txd);">${esc(s.pipeline||'')}</span>
-              <span class="status-badge sb-${s.durum||'waiting'}" style="margin-left:auto;font-size:14px;">${esc(s.durumText||s.durum||'Bekliyor')}</span>
+              <span class="status-badge sb-${s.durum||'waiting'}" style="margin-left:auto;font-size:14px;">${esc(s.durumText||s.durum||tv('dv_status_waiting','Bekliyor'))}</span>
             </div>`).join('')}
           </div>
           <div style="display:flex;gap:10px;margin-top:4px;">
-            <button onclick="document.getElementById('gonderUyariModal').style.display='none'" class="btn-outline" style="flex:1;">Iptal</button>
-            <button onclick="document.getElementById('gonderUyariModal').style.display='none';_gonderAcDevam('${tip}');" class="btn-primary" style="flex:2;background:${renk};">Yine de Devam Et</button>
+            <button onclick="document.getElementById('gonderUyariModal').style.display='none'" class="btn-outline" style="flex:1;">${tv('dv_cancel','İptal')}</button>
+            <button onclick="document.getElementById('gonderUyariModal').style.display='none';_gonderAcDevam('${tip}');" class="btn-primary" style="flex:2;background:${renk};">${tv('dv_continue_anyway','Yine de Devam Et')}</button>
           </div>
         </div>
       </div>`;
@@ -1667,9 +1659,9 @@ function gonderHepsiniSec(val) {
 }
 async function gonderKaydet() {
   const secili = SPOOLS.filter(s=>_gonderSecili[s.spoolNo]);
-  if(!secili.length) { showToast('En az bir spool secin','error'); return; }
+  if(!secili.length) { showToast(tv('dv_select_one_spool','En az bir spool seçin'),'error'); return; }
   document.getElementById('gonderModal').style.display='none';
-  const hedef = _gonderTip==='kk' ? 'Kalite Kontrol' : 'Sevkiyat';
+  const hedef = _gonderTip==='kk' ? tv('sp_btn_qc','Kalite Kontrol') : tv('sp_btn_shipment','Sevkiyat');
   const yeniBasamak = _gonderTip==='kk' ? 'on_kontrol' : 'sevkiyat';
   const supa = ARES.supabase();
   if (supa && ARES.mod==='supabase') {
@@ -1679,7 +1671,7 @@ async function gonderKaydet() {
         .update({ aktif_basamak: yeniBasamak, guncelleme: new Date().toISOString() })
         .in('id', spoolIds);
       if (res.error) {
-        showToast('Güncelleme hatası: '+res.error.message,'error');
+        showToast(tv('dv_update_error','Güncelleme hatası')+': '+res.error.message,'error');
         return;
       }
       // Local SPOOLS güncelle
@@ -1690,7 +1682,7 @@ async function gonderKaydet() {
     }
   }
   devreLogEkle(_gonderTip==='kk'?'kk_daveti':'sevkiyata_gonderildi', secili.map(s=>s.spoolNo).join(', ')+' — '+hedef);
-  showToast(secili.length+' spool '+hedef+' listesine eklendi','success');
+  showToast(secili.length+' '+tv('dv_unit_spool','spool')+' '+hedef+' '+tv('dv_added_to_list','listesine eklendi'),'success');
 }
 
 // ── TERSANE IS EMRİ + TERMİN ────────────────────────────────────
@@ -1705,7 +1697,7 @@ async function tersaneIsEmriKaydet() {
   } else {
     try { const d=JSON.parse(localStorage.getItem('ares_aktif_devre')||'{}'); d.tersaneIsEmri=val; localStorage.setItem('ares_aktif_devre',JSON.stringify(d)); } catch(e){}
   }
-  showToast('Tersane is emri kaydedildi','success');
+  showToast(tv('dv_isemri_saved','Tersane iş emri kaydedildi'),'success');
 }
 
 // ── CUSTOM DATEPICKER ─────────────────────────────────────────
@@ -1754,9 +1746,13 @@ function dpNav(yon) {
 }
 
 function dpRender() {
-  var AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
-               'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  var GUNLER = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
+  var lang = document.documentElement.getAttribute('lang') || 'tr';
+  var AYLAR = Array.from({length:12}, function(_, i) {
+    return new Date(2000, i, 1).toLocaleDateString(lang, {month:'long'});
+  });
+  var GUNLER = Array.from({length:7}, function(_, i) {
+    return new Date(2000, 0, 3+i).toLocaleDateString(lang, {weekday:'short'}).substring(0,2);
+  });
   var y = _dpView.y, m = _dpView.m;
   document.getElementById('dpMonthYear').textContent = AYLAR[m] + ' ' + y;
 
@@ -1802,13 +1798,13 @@ function dpSec(y, m, d) {
 function dpTemizle(e) {
   e.stopPropagation();
   _dpDate = null;
-  document.getElementById('dpVal').textContent = 'Tarih seç';
+  document.getElementById('dpVal').textContent = tv('dv_date_pick','Tarih seç');
   document.getElementById('dpClear').style.display = 'none';
   terminKaydetVal('');
 }
 
 function dpDoldur(isoStr) {
-  if (!isoStr) { _dpDate=null; document.getElementById('dpVal').textContent='Tarih seç'; document.getElementById('dpClear').style.display='none'; return; }
+  if (!isoStr) { _dpDate=null; document.getElementById('dpVal').textContent=tv('dv_date_pick','Tarih seç'); document.getElementById('dpClear').style.display='none'; return; }
   var p = isoStr.split('-');
   if (p.length < 3) return;
   _dpDate = {y:parseInt(p[0]), m:parseInt(p[1])-1, d:parseInt(p[2])};
@@ -1829,7 +1825,7 @@ async function terminKaydetVal(val) {
   }
   setText('ddStatTermin', val ? tarihFormat(new Date(val)) : tv('sp_alist_none','Belirlenmemis'));
   devreLogEkle('termin_guncellendi','Yeni termin: '+val);
-  showToast('Termin tarihi guncellendi','success');
+  showToast(tv('dv_deadline_saved','Termin tarihi güncellendi'),'success');
 }
 
 // ── MALZEME LİSTESİ ─────────────────────────────────────────────
@@ -1845,7 +1841,7 @@ async function spoolMalzYukle() {
   var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
   var tbody = document.getElementById('spoolMalzBody');
   if (!supa || !devreId) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Bağlantı yok</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">'+tv('dv_no_conn','Bağlantı yok')+'</td></tr>';
     return;
   }
   // Önce devredeki spool ID'lerini al
@@ -1854,7 +1850,7 @@ async function spoolMalzYukle() {
     .eq('devre_id', devreId)
     .eq('silindi', false);
   if (spRes.error || !spRes.data || !spRes.data.length) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Bu devreye ait spool bulunamadı</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">'+tv('dv_no_spool_found','Bu devreye ait spool bulunamadı')+'</td></tr>';
     return;
   }
   var spoolIdMap = {};
@@ -1868,7 +1864,7 @@ async function spoolMalzYukle() {
     .order('spool_id');
   if (res.error) {
     console.warn('Spool malzeme yükleme:', res.error);
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--re);">Yükleme hatası: ' + res.error.message + '</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--re);">'+tv('dv_load_error','Yükleme hatası')+': ' + res.error.message + '</td></tr>';
     return;
   }
   // spooller bilgisini ekle
@@ -1876,9 +1872,9 @@ async function spoolMalzYukle() {
     return Object.assign({}, m, { spooller: spoolIdMap[m.spool_id] || {} });
   });
   var badge = document.getElementById('spoolMalzBadge');
-  if (badge) badge.textContent = _spoolMalzData.length + ' kalem';
+  if (badge) badge.textContent = _spoolMalzData.length + ' ' + tv('dv_unit_item','kalem');
   if (!_spoolMalzData.length) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">Henüz malzeme eklenmemiş</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--txd);">'+tv('dv_no_mat','Henüz malzeme eklenmemiş')+'</td></tr>';
     return;
   }
   // Aynı özellikteki malzemeleri grupla ve topla
@@ -1902,13 +1898,13 @@ async function spoolMalzYukle() {
     return (a.dis_cap_mm||0)-(b.dis_cap_mm||0) || (a.tanim||'').localeCompare(b.tanim||'');
   });
   var toplamAgirlik = gruplar.reduce(function(s,g){return s+g.agirlik_top;},0);
-  if (badge) badge.textContent = gruplar.length + ' kalem · ' + toplamAgirlik.toFixed(1).replace('.',',') + ' kg';
+  if (badge) badge.textContent = gruplar.length + ' ' + tv('dv_unit_item','kalem') + ' · ' + toplamAgirlik.toFixed(1).replace('.',',') + ' kg';
   if (tbody) tbody.innerHTML = gruplar.map(function(g) {
     var boyAdet = g.tip === 'boru'
       ? (g.boy_top ? (g.boy_top/1000).toFixed(3).replace('.',',') + ' m (' + g.boy_top.toFixed(0) + ' mm)' : '—')
-      : (g.adet_top ? g.adet_top + ' adet' : '—');
+      : (g.adet_top ? g.adet_top + ' ' + tv('dv_unit_qty','adet') : '—');
     return '<tr>' +
-      '<td style="padding:8px 12px;font-size:14px;color:var(--txd);">' + g.n + ' spool</td>' +
+      '<td style="padding:8px 12px;font-size:14px;color:var(--txd);">' + g.n + ' ' + tv('dv_unit_spool','spool') + '</td>' +
       '<td style="padding:8px 12px;font-size:14px;font-weight:600;">' + esc(g.kod||'—') + '</td>' +
       '<td style="padding:8px 12px;color:var(--txm);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(g.tanim||'') + '">' + esc(g.tanim||'—') + '</td>' +
       '<td style="padding:8px 12px;">' + esc(g.malzeme||'—') + '</td>' +
@@ -1971,7 +1967,7 @@ function plMalzRender() {
   if (bos) bos.style.display = 'none';
 
   var toplamKalem = PL_MALZEME.reduce(function(s, p) { return s + p.malzemeler.length; }, 0);
-  if (badge) badge.textContent = PL_MALZEME.length + ' pipeline · ' + toplamKalem + ' kalem';
+  if (badge) badge.textContent = PL_MALZEME.length + ' pipeline · ' + toplamKalem + ' ' + tv('dv_unit_item','kalem');
 
   el.innerHTML = PL_MALZEME.map(function(p, pi) {
     var spoollar = SPOOLS.filter(function(s) { return s.pipeline === p.pipeline_no; }).map(function(s) { return s.spoolNo; });
@@ -1980,7 +1976,7 @@ function plMalzRender() {
       var turClr = m.tip === 'boru' ? 'var(--ac)' : 'var(--leg)';
       return '<tr>' +
         '<td style="color:var(--txd);">' + (i+1) + '</td>' +
-        '<td><span style="padding:1px 7px;border-radius:4px;font-size:14px;font-weight:700;background:' + turBg + ';color:' + turClr + ';">' + esc(m.tip === 'boru' ? 'BORU' : 'FİTTİNG') + '</span></td>' +
+        '<td><span style="padding:1px 7px;border-radius:4px;font-size:14px;font-weight:700;background:' + turBg + ';color:' + turClr + ';">' + esc(m.tip === 'boru' ? tv('dv_mat_pipe','BORU') : tv('dv_mat_fitting','FITTING')) + '</span></td>' +
         '<td>' + esc(m.tanim || '—') + '</td>' +
         '<td>' + esc(m.malzeme || '—') + '</td>' +
         '<td style="color:var(--ac);font-weight:600;">' + esc(m.kalite || '—') + '</td>' +
@@ -1997,7 +1993,7 @@ function plMalzRender() {
       '<div class="pl-kart-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
         '<div style="flex:1;">' +
           '<div class="pl-pipeline-no">' + esc(p.pipeline_no) + '</div>' +
-          '<div class="pl-spooller">' + (spoollar.length ? spoollar.join(', ') + ' · ' : '') + p.malzemeler.length + ' kalem</div>' +
+          '<div class="pl-spooller">' + (spoollar.length ? spoollar.join(', ') + ' · ' : '') + p.malzemeler.length + ' ' + tv('dv_unit_item','kalem') + '</div>' +
         '</div>' +
         '<button class="btn btn-ac btn-sm" onclick="event.stopPropagation();plMalzSatirEkle(\'' + esc(p.pipeline_no) + '\')">+ Malzeme</button>' +
         '<span style="font-size:14px;color:var(--txd);margin-left:8px;">▼</span>' +
@@ -2050,7 +2046,7 @@ function plMalzSatirEkle(pipelineNo) {
 
 
 function plSablonIndir() {
-  if (typeof XLSX === 'undefined') { showToast('XLSX kütüphanesi yüklenmedi', 'error'); return; }
+  if (typeof XLSX === 'undefined') { showToast(tv('dv_xlsx_missing','Excel kütüphanesi yüklenemedi'), 'error'); return; }
   var ws = XLSX.utils.aoa_to_sheet([
     ['Pipeline No','Tür','Tanım','Malzeme','Kalite','Dış Çap (mm)','Et (mm)','Boy (mm)','Adet','Sertifikalı'],
     ['CF400-7321-099','boru','Pipe Seamless 114.3x3.05','Paslanmaz','316L',114.3,3.05,6000,'','hayır'],
@@ -2067,7 +2063,7 @@ async function plExcelYukle(input) {
   var file = input.files[0];
   if (!file) return;
   input.value = '';
-  if (typeof XLSX === 'undefined') { showToast('XLSX kütüphanesi yüklenmedi', 'error'); return; }
+  if (typeof XLSX === 'undefined') { showToast(tv('dv_xlsx_missing','Excel kütüphanesi yüklenemedi'), 'error'); return; }
 
   var reader = new FileReader();
   reader.onload = async function(e) {
@@ -2075,7 +2071,7 @@ async function plExcelYukle(input) {
       var wb = XLSX.read(e.target.result, {type:'array'});
       var ws = wb.Sheets[wb.SheetNames[0]];
       var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      if (rows.length < 2) { showToast('Dosya boş', 'error'); return; }
+      if (rows.length < 2) { showToast(tv('dv_file_empty','Dosya boş'), 'error'); return; }
 
       var h = rows[0].map(function(c){ return String(c).toLowerCase().trim(); });
       var idx = {
@@ -2093,7 +2089,7 @@ async function plExcelYukle(input) {
 
       var supa = ARES.supabase();
       var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
-      if (!supa || !devreId) { showToast('Supabase bağlantısı yok', 'error'); return; }
+      if (!supa || !devreId) { showToast(tv('dv_no_conn','Bağlantı yok'), 'error'); return; }
 
       var satirlar = [];
       for (var i = 1; i < rows.length; i++) {
@@ -2122,15 +2118,15 @@ async function plExcelYukle(input) {
         });
       }
 
-      if (!satirlar.length) { showToast('Geçerli satır bulunamadı', 'error'); return; }
+      if (!satirlar.length) { showToast(tv('dv_no_valid_row','Geçerli satır bulunamadı'), 'error'); return; }
 
       var res = await supa.from('pipeline_malzemeleri').insert(satirlar);
-      if (res.error) { showToast('Hata: ' + res.error.message, 'error'); return; }
+      if (res.error) { showToast(tv('dv_error_prefix','Hata')+': ' + res.error.message, 'error'); return; }
 
-      showToast(satirlar.length + ' satır yüklendi', 'success');
+      showToast(satirlar.length + ' ' + tv('dv_rows_loaded','satır yüklendi'), 'success');
       await plMalzYukle();
     } catch(err) {
-      showToast('Excel okunamadı: ' + err.message, 'error');
+      showToast(tv('dv_excel_read_error','Excel okunamadı')+': ' + err.message, 'error');
     }
   };
   reader.readAsArrayBuffer(file);
@@ -2154,7 +2150,7 @@ async function plMalzKaydet() {
   var agr   = parseFloat(((document.getElementById('plModalAgr') || {}).value || '').replace(',', '.')) || null;
   var sert  = (document.getElementById('plModalSert') || {}).checked || false;
 
-  if (!pipeline || !tanim) { showToast('Pipeline ve tanım zorunlu', 'error'); return; }
+  if (!pipeline || !tanim) { showToast(tv('dv_pipeline_required','Pipeline ve tanım zorunlu'), 'error'); return; }
 
   var supa = ARES.supabase();
   var devreId = DEVRE.supaId || localStorage.getItem('ares_aktif_devre_id');
@@ -2183,18 +2179,18 @@ async function plMalzKaydet() {
   });
   var sertEl = document.getElementById('plModalSert'); if (sertEl) sertEl.checked = false;
 
-  showToast('Malzeme eklendi', 'success');
+  showToast(tv('dv_mat_added','Malzeme eklendi'), 'success');
   await plMalzYukle();
 }
 
 async function plMalzSil(id, pipelineNo) {
-  if (!confirm(pipelineNo + ' — bu malzemeyi silmek istediğinizden emin misiniz?')) return;
+  if (!confirm(pipelineNo + ' — ' + tv('dv_confirm_delete_mat','bu malzemeyi silmek istediğinizden emin misiniz?'))) return;
   var supa = ARES.supabase();
   if (supa) {
     var res = await supa.from('pipeline_malzemeleri').delete().eq('id', id);
     if (res.error) { showToast('Hata: ' + res.error.message, 'error'); return; }
   }
-  showToast('Silindi', 'success');
+  showToast(tv('dv_deleted','Silindi'), 'success');
   await plMalzYukle();
 }
 
@@ -2214,12 +2210,12 @@ function renderMalzeme() {
   const tbody = document.getElementById('malzemeTableBody'); if(!tbody) return;
   const liste = birlesikMalzeme();
   const hasSert = liste.some(m=>m.sertifika);
-  setText('mlKalem', liste.length+' kalem');
+  setText('mlKalem', liste.length+' '+tv('dv_unit_item','kalem'));
   const boru = liste.filter(m=>m.tur==='boru').reduce((s,m)=>s+m.uzunluk_toplam,0);
   const fit  = liste.filter(m=>m.tur==='fitting').reduce((s,m)=>s+m.adet_toplam,0);
   setText('mlBoru', (boru/1000).toLocaleString('tr-TR',{minimumFractionDigits:2})+' m');
-  setText('mlFitting', fit+' adet');
-  setText('mlSertifika', liste.filter(m=>m.sertifika).length+' kalem');
+  setText('mlFitting', fit+' '+tv('dv_unit_qty','adet'));
+  setText('mlSertifika', liste.filter(m=>m.sertifika).length+' '+tv('dv_unit_item','kalem'));
   const note = document.getElementById('mlSertifikaNote'); if(note) note.style.display=hasSert?'block':'none';
   tbody.innerHTML = liste.map((m,i)=>{
     const stl = m.sertifika?'background:rgba(217,119,6,.05);':'';
@@ -2272,7 +2268,7 @@ function renderDokumanlar() {
   }).join('');
 }
 function dokumanYukleModalAc() {
-  document.getElementById('dokDosyaLabel').textContent='&#128193; Dosya sec veya buraya birak';
+  document.getElementById('dokDosyaLabel').querySelector('span').textContent = tv('dv_dok_file_hint','Dosya seç veya buraya bırak');
   document.getElementById('dokAdInput').value='';
   document.getElementById('dokTurInput').value='izometri';
   document.getElementById('dokDosyaInput').value='';
@@ -2280,24 +2276,24 @@ function dokumanYukleModalAc() {
 }
 function dokumanDosyaSec(input) {
   const file=input.files[0]; if(!file) return;
-  document.getElementById('dokDosyaLabel').textContent='&#10003; '+file.name;
+  document.getElementById('dokDosyaLabel').querySelector('span').textContent = '✓ ' + file.name;
   const ad=document.getElementById('dokAdInput'); if(ad&&!ad.value.trim()) ad.value=file.name.replace(/\.[^/.]+$/,'');
 }
 function dokumanYukleKaydet() {
   const ad=(document.getElementById('dokAdInput')||{}).value?.trim()||'';
   const tur=(document.getElementById('dokTurInput')||{}).value||'diger';
-  if(!ad){ showToast('Dokuman adi zorunludur','error'); return; }
+  if(!ad){ showToast(tv('dv_dok_name_required','Doküman adı zorunludur'),'error'); return; }
   const dosyaAdi=document.getElementById('dokDosyaInput')?.files[0]?.name||'';
   DOKUMANLAR.unshift({id:String(Date.now()),ad,tur,dosyaAdi,tarih:new Date().toLocaleDateString('tr-TR')});
   document.getElementById('dokumanYukleModal').style.display='none';
   renderDokumanlar();
-  showToast(ad+' eklendi','success');
+  showToast(ad+' '+tv('dv_added','eklendi'),'success');
 }
-function dokumanIndir(id) { const d=DOKUMANLAR.find(x=>x.id===id); if(d) showToast(d.ad+' — backend hazir olunca indirilecek','info'); }
+function dokumanIndir(id) { const d=DOKUMANLAR.find(x=>x.id===id); if(d) showToast(d.ad+' — '+tv('dv_dok_backend_ready','backend hazır olunca indirilecek'),'info'); }
 function dokumanSilOnay(id) {
-  if(!confirm('Dokuman silinsin mi?')) return;
+  if(!confirm(tv('dv_dok_confirm_delete','Doküman silinsin mi?'))) return;
   DOKUMANLAR=DOKUMANLAR.filter(x=>x.id!==id); renderDokumanlar();
-  showToast('Dokuman silindi','info');
+  showToast(tv('dv_dok_deleted','Doküman silindi'),'info');
 }
 
 // ── NOTLAR ──────────────────────────────────────────────────────
@@ -2316,15 +2312,15 @@ function renderGenelNotes() {
 }
 function addGenelNote() {
   const el=document.getElementById('genelNotInput'); if(!el) return;
-  const metin=el.value.trim(); if(!metin){ showToast('Not bos olamaz','error'); return; }
+  const metin=el.value.trim(); if(!metin){ showToast(tv('sp_note_empty','Not boş olamaz'),'error'); return; }
   genelNotlar.unshift({id:Date.now(),metin,tarih:new Date().toLocaleDateString('tr-TR'),kullanici:'Admin'});
   el.value=''; renderGenelNotes();
   devreLogEkle('not_eklendi',metin.substring(0,60)+(metin.length>60?'...':''));
-  showToast('Not eklendi','success');
+  showToast(tv('sp_note_added','Not eklendi'),'success');
 }
 function deleteGenelNote(id) {
   genelNotlar=genelNotlar.filter(n=>n.id!==id); renderGenelNotes();
-  showToast('Not silindi','info');
+  showToast(tv('sp_note_deleted','Not silindi'),'info');
 }
 
 // ── İŞLEM KAYITLARI ─────────────────────────────────────────────
@@ -2435,16 +2431,16 @@ function exportModalAc() { document.getElementById('exportModal').style.display=
 function exportModalKapat() { document.getElementById('exportModal').style.display='none'; }
 function exportExcel() {
   exportModalKapat();
-  if(typeof XLSX === 'undefined') { showToast('Excel kutuphanesi yuklenemedi','error'); return; }
+  if(typeof XLSX === 'undefined') { showToast(tv('dv_xlsx_missing','Excel kütüphanesi yüklenemedi'),'error'); return; }
   try {
     const wb = XLSX.utils.book_new();
     // Spool listesi
-    const spoolRows = [['#','Pipeline No','Spool No','Cap','Agirlik (kg)','Malzeme','Kalite','Yuzey','Durum','Alistirma','Bukum','Kesim','Markalama','Test']];
+    const spoolRows = [['#','Pipeline No','Spool No','Cap','Agirlik (kg)','Malzeme','Kalite','Yuzey',tv('dv_th_status','Durum'),tv('sp_alist_label','Alistirma'),tv('sp_bending','Bukum'),tv('sp_cutting','Kesim'),tv('sp_marking','Markalama'),tv('sp_tests','Test')]];
     SPOOLS.filter(s=>!s.iptal).forEach((s,i)=>{
       spoolRows.push([
         i+1, s.pipeline||'', s.spoolNo||'', s.cap||'', s.agirlik||'',
         s.malzeme||'', s.kalite||'', s.yuzey||'',
-        s.stopped?'Durduruldu':(s.durumText||s.durum||''),
+        s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||''),
         s.alistirma||'',
         s.bukum?(s.bukum.tamamlanan+'/'+s.bukum.toplam):'',
         s.kesim?(s.kesim.tamamlanan+'/'+s.kesim.toplam):'',
@@ -2457,15 +2453,15 @@ function exportExcel() {
     XLSX.utils.book_append_sheet(wb,ws1,'Spool Listesi');
     // Malzeme listesi
     const malz = birlesikMalzeme();
-    const malzRows=[['#','Tur','Aciklama','Malzeme','Kalite','Cap (mm)','Et (mm)','Toplam Uzunluk (mm)','Adet','Sertifika','Spooller']];
-    malz.forEach((m,i)=>{ malzRows.push([i+1,m.tur,m.aciklama,m.malzeme,m.kalite,m.cap,m.et||'',m.tur==='boru'?m.uzunluk_toplam:'',m.tur==='fitting'?m.adet_toplam:'',m.sertifika?'EVET':'',m.spooller.join(', ')]); });
+    const malzRows=[['#',tv('dv_pl_form_type','Tur'),'Aciklama','Malzeme','Kalite','Cap (mm)','Et (mm)','Toplam Uzunluk (mm)','Adet','Sertifika','Spooller']];
+    malz.forEach((m,i)=>{ malzRows.push([i+1,m.tur,m.aciklama,m.malzeme,m.kalite,m.cap,m.et||'',m.tur==='boru'?m.uzunluk_toplam:'',m.tur==='fitting'?m.adet_toplam:'',m.sertifika?tv('dv_yes','EVET'):'',m.spooller.join(', ')]); });
     const ws2 = XLSX.utils.aoa_to_sheet(malzRows);
     ws2['!cols']=[4,8,20,12,8,8,6,18,6,8,16].map(w=>({wch:w}));
     XLSX.utils.book_append_sheet(wb,ws2,'Malzeme Listesi');
     const dosyaAd = (DEVRE.devre||'Devre')+'_'+bugunTarih().replace(/\//g,'-')+'.xlsx';
     XLSX.writeFile(wb, dosyaAd);
-    showToast('Excel indirildi','success');
-  } catch(err){ showToast('Excel hatasi: '+err.message,'error'); }
+    showToast(tv('dv_excel_downloaded','Excel indirildi'),'success');
+  } catch(err){ showToast(tv('dv_excel_error','Excel hatası')+': '+err.message,'error'); }
 }
 function exportPdf() {
   exportModalKapat();
@@ -2477,7 +2473,7 @@ function exportPdf() {
       <td style="color:#666;">${s.pipeline||''}</td>
       <td>${s.cap||''}</td><td>${s.agirlik||''}</td><td>${s.malzeme||''}</td><td>${s.yuzey||''}</td>
       <td>${s.alistirma||'—'}</td>
-      <td><span style="padding:2px 8px;border-radius:99px;font-size:14px;font-weight:700;background:${s.stopped?'#fee2e2':'#dbeafe'};color:${s.stopped?'#b91c1c':'#1d4ed8'};">${s.stopped?'Durduruldu':(s.durumText||s.durum||'')}</span></td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:14px;font-weight:700;background:${s.stopped?'#fee2e2':'#dbeafe'};color:${s.stopped?'#b91c1c':'#1d4ed8'};">${s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||'')}</span></td>
     </tr>`).join('');
   const tarih = bugunTarih();
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${d.isEmri||''} — ${d.devre||''}</title>
@@ -2507,15 +2503,15 @@ function exportPdf() {
   <tbody>${spoolSatirlar}</tbody></table>
   </body></html>`;
   const w = window.open('','_blank','width=1200,height=800');
-  if(!w){ showToast('Popup engelleyici kapat ve tekrar deneyin','error'); return; }
+  if(!w){ showToast(tv('dv_popup_blocked','Popup engelleyici kapatın ve tekrar deneyin'),'error'); return; }
   w.document.write(html); w.document.close();
-  showToast('PDF onizlemesi acildi','success');
+  showToast(tv('dv_pdf_preview','PDF önizlemesi açıldı'),'success');
 }
 
 // ── EXCEL IMPORT ────────────────────────────────────────────────
 function spoolExcelImport(event) {
   const file = event.target.files[0]; if(!file) return;
-  if(typeof XLSX === 'undefined') { showToast('Excel kutuphanesi yuklenemedi — sayfayi yenileyip tekrar deneyin','error'); event.target.value=''; return; }
+  if(typeof XLSX === 'undefined') { showToast(tv('dv_xlsx_missing','Excel kütüphanesi yüklenemedi')+' — '+tv('dv_reload_retry','sayfayı yenileyip tekrar deneyin'),'error'); event.target.value=''; return; }
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -2537,7 +2533,7 @@ function spoolExcelImport(event) {
           malzeme:  String(row['Malzeme']||row['malzeme']||row['Material']||'').trim(),
           kalite:   String(row['Kalite']||row['kalite']||row['Grade']||'').trim(),
           yuzey:    String(row['Yuzey']||row['yuzey']||row['Surface']||'').trim(),
-          durum:'waiting', durumText:'Bekliyor',
+          durum:'waiting', durumText:tv('dv_status_waiting','Bekliyor'),
           adimlar:[0,0,0,0,0,0], sonIslem:null, alistirma:null,
           bukum:{toplam:0,tamamlanan:0}, kesim:{toplam:0,tamamlanan:0},
           markalama:{toplam:0,tamamlanan:0}, test:{toplam:0,tamamlanan:0},
@@ -2546,9 +2542,9 @@ function spoolExcelImport(event) {
         added++;
       });
       renderTable(); statGuncelle();
-      const msg = added+' spool eklendi'+(skip?' ('+skip+' atlandı)':'');
+      const msg = added+' '+tv('dv_unit_spool','spool')+' '+tv('dv_added','eklendi')+(skip?' ('+skip+' '+tv('dv_skipped','atlandı')+')':'');
       showToast(msg, added>0?'success':'info');
-    } catch(err){ showToast('Excel okunamadi: '+err.message,'error'); }
+    } catch(err){ showToast(tv('dv_excel_read_error','Excel okunamadı')+': '+err.message,'error'); }
     event.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -2556,7 +2552,7 @@ function spoolExcelImport(event) {
 
 // ── EXCEL ŞABLON ────────────────────────────────────────────────
 function sablonIndir() {
-  if(typeof XLSX === 'undefined') { showToast('Excel kutuphanesi yuklenemedi','error'); return; }
+  if(typeof XLSX === 'undefined') { showToast(tv('dv_xlsx_missing','Excel kütüphanesi yüklenemedi'),'error'); return; }
   try {
     const wb = XLSX.utils.book_new();
     const baslik = ['Pipeline No','Spool No','Cap','Agirlik','Malzeme','Kalite','Yuzey'];
@@ -2565,8 +2561,8 @@ function sablonIndir() {
     ws['!cols'] = [16,10,10,12,14,8,8].map(w=>({wch:w}));
     XLSX.utils.book_append_sheet(wb, ws, 'Spool Sablonu');
     XLSX.writeFile(wb, 'AresPipe_Spool_Sablonu.xlsx');
-    showToast('Sablon indirildi','success');
-  } catch(err){ showToast('Sablon hatasi: '+err.message,'error'); }
+    showToast(tv('dv_template_downloaded','Şablon indirildi'),'success');
+  } catch(err){ showToast(tv('dv_template_error','Şablon hatası')+': '+err.message,'error'); }
 }
 function qrCiz(canvas, data) {
   const ctx = canvas.getContext('2d'), s=3, size=96;
@@ -2649,11 +2645,11 @@ function _etiketKartiHTML(s, canvasId) {
 
 function _etiketOnizlemeRender() {
   const secili = SPOOLS.filter(s=>!s.iptal&&_etiketSecili[s.spoolNo]);
-  setText('etiketSeciliSayi', secili.length+' spool secili');
+  setText('etiketSeciliSayi', secili.length+' '+tv('dv_unit_spool','spool'));
   setText('etiketSayfaSayi', Math.ceil(secili.length/6)||0);
   const oniz = document.getElementById('etiketOnizleme'); if(!oniz) return;
   if(!secili.length) {
-    oniz.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--txd);font-size:14px;">Hicbir spool secilmedi</div>';
+    oniz.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--txd);font-size:14px;">'+tv('dv_no_spool_selected','Hiçbir spool seçilmedi')+'</div>';
     return;
   }
   const kartlar = secili.map((s,i)=>_etiketKartiHTML(s,'onizleme_cv_'+i));
@@ -2668,7 +2664,7 @@ function _etiketOnizlemeRender() {
 
 function etiketYazdir() {
   const secili = SPOOLS.filter(s=>!s.iptal&&_etiketSecili[s.spoolNo]);
-  if(!secili.length){ showToast('En az bir spool secin','error'); return; }
+  if(!secili.length){ showToast(tv('dv_select_one_spool','En az bir spool seçin'),'error'); return; }
 
   // Geçici canvas'lar oluştur ve QR çiz, sonra PNG al
   const tmp = document.createElement('div');
@@ -2692,7 +2688,7 @@ function etiketYazdir() {
       document.body.removeChild(tmp);
 
       const win=window.open('','_blank','width=850,height=680');
-      if(!win){ showToast('Popup engelleyici kapat ve tekrar deneyin','error'); return; }
+      if(!win){ showToast(tv('dv_popup_blocked','Popup engelleyici kapatın ve tekrar deneyin'),'error'); return; }
       win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'
         +'<title>Etiketler — '+(DEVRE.gemi||'')+'<\/title>'
         +'<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;padding:10mm;}'
@@ -2720,7 +2716,7 @@ function etiketYazdir() {
           +'<\/div>').join('')
         +'<\/div><\/body><\/html>');
       win.document.close();
-      showToast(etiketler.length+' etiket hazir','success');
+      showToast(etiketler.length+' '+tv('dv_labels_ready','etiket hazır'),'success');
     }, 120);
   }, 60);
 }
