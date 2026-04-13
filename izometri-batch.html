@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>İzometri Batch Okuma | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.visibility='hidden';})();</script>
+<title data-i18n="izb_title">İzometri Batch Okuma | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -12,8 +12,9 @@
 <script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 <style>
-:root[data-theme="dark"]  {--bg:#0d0f1a;--sur:#14172a;--sur2:#1c2035;--bor:#252a45;--tx:#e8eaf6;--txm:#8b90b8;--txd:#4a5070;--ac:#3b82f6;--gr:#10b981;--re:#ef4444;--warn:#f59e0b;--leg:#a78bfa;--ai:#6366f1;--ai2:#818cf8;}
-:root[data-theme="light"] {--bg:#f0f2f8;--sur:#ffffff;--sur2:#f5f6fa;--bor:#dde1f0;--tx:#1a1d27;--txm:#5a5f7a;--txd:#9095b4;--ac:#2d8eff;--gr:#059669;--re:#dc2626;--warn:#d97706;--leg:#7c3aed;--ai:#6366f1;--ai2:#4f46e5;}
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--ai:#6366f1;--ai2:#818cf8;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
 
@@ -120,9 +121,9 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 <div class="page">
 
   <div class="page-header">
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a> › İzometri Batch Okuma</div>
-    <div class="page-title">📐 <span>İzometri</span> Batch Okuma</div>
-    <div class="page-sub">Tüm PDF'leri seçin, sırayla Claude okusun, Excel'e aktarın</div>
+    <div class="breadcrumb"><a href="index.html" data-i18n="cmn_anasayfa">Ana Sayfa</a> › <span data-i18n="izb_breadcrumb">İzometri Batch Okuma</span></div>
+    <div class="page-title">📐 <span data-i18n="izb_page_title">İzometri Batch Okuma</span></div>
+    <div class="page-sub" data-i18n="izb_page_sub">Tüm PDF'leri seçin, sırayla Claude okusun, Excel'e aktarın</div>
   </div>
 
   <!-- Drop zone -->
@@ -131,27 +132,27 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
     ondrop="onDrop(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)">
     <input type="file" id="fileInput" accept=".pdf" multiple style="display:none" onchange="dosyaEkle(this.files)">
     <span class="drop-ikon">📂</span>
-    <div class="drop-baslik">PDF dosyalarını sürükleyin veya tıklayın</div>
-    <div class="drop-alt">Birden fazla izometri seçilebilir · Her biri sırayla işlenir</div>
+    <div class="drop-baslik" data-i18n="izb_drop_baslik">PDF dosyalarını sürükleyin veya tıklayın</div>
+    <div class="drop-alt" data-i18n="izb_drop_alt">Birden fazla izometri seçilebilir · Her biri sırayla işlenir</div>
   </div>
 
   <!-- Stats -->
   <div class="stat-row" id="statRow">
     <div class="stat-kart" id="statDosya">
       <div class="stat-val" id="statDosyaVal">0</div>
-      <div class="stat-lbl">Dosya</div>
+      <div class="stat-lbl" data-i18n="izb_stat_dosya">Dosya</div>
     </div>
     <div class="stat-kart" id="statTamam">
       <div class="stat-val" id="statTamamVal" style="color:var(--gr)">0</div>
-      <div class="stat-lbl">Tamamlandı</div>
+      <div class="stat-lbl" data-i18n="izb_stat_tamam">Tamamlandı</div>
     </div>
     <div class="stat-kart" id="statHata">
       <div class="stat-val" id="statHataVal" style="color:var(--re)">0</div>
-      <div class="stat-lbl">Hata</div>
+      <div class="stat-lbl" data-i18n="izb_stat_hata">Hata</div>
     </div>
     <div class="stat-kart" id="statSpool">
       <div class="stat-val" id="statSpoolVal" style="color:var(--ai2)">0</div>
-      <div class="stat-lbl">Toplam Spool</div>
+      <div class="stat-lbl" data-i18n="izb_stat_spool">Toplam Spool</div>
     </div>
   </div>
 
@@ -159,7 +160,7 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
   <div class="dosya-listesi" id="dosyaListesi" style="display:none;">
     <div class="dosya-listesi-header">
       <span class="dosya-listesi-baslik" id="dosyaListesiBaslik">Dosyalar</span>
-      <button class="btn btn-temizle" style="padding:5px 12px;font-size:13px;" onclick="temizle()">✕ Temizle</button>
+      <button class="btn btn-temizle" style="padding:5px 12px;font-size:13px;" onclick="temizle()" data-i18n="izb_btn_temizle">✕ Temizle</button>
     </div>
     <div id="dosyaItems"></div>
   </div>
@@ -168,18 +169,18 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
   <div class="btn-row" id="btnRow" style="display:none;">
     <button class="btn btn-basla" id="btnBasla" onclick="basla()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Batch Başlat
+      <span data-i18n="izb_btn_basla">Batch Başlat</span>
     </button>
     <button class="btn btn-excel" id="btnExcel" onclick="excelIndir()" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Excel İndir
+      <span data-i18n="izb_btn_excel">Excel İndir</span>
     </button>
   </div>
 
   <!-- Progress -->
   <div class="progress-wrap" id="progressWrap">
     <div class="progress-baslik">
-      <span id="progressText">Hazırlanıyor...</span>
+      <span id="progressText" data-i18n="izb_hazirlaniyor">Hazırlanıyor...</span>
       <span id="progressPct" style="color:var(--ai2);">0%</span>
     </div>
     <div class="progress-bar-bg">
@@ -191,7 +192,7 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
   <!-- Sonuç tablosu -->
   <div class="sonuc-wrap" id="sonucWrap">
     <div class="sonuc-header">
-      <span class="sonuc-baslik">🗂 Spool Listesi</span>
+      <span class="sonuc-baslik" data-i18n="izb_sonuc_baslik">🗂 Spool Listesi</span>
       <span class="sonuc-badge" id="sonucBadge">0 spool</span>
     </div>
     <div class="tablo-wrap">
@@ -199,16 +200,16 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
         <thead>
           <tr>
             <th>#</th>
-            <th>Dosya</th>
+            <th data-i18n="izb_th_dosya">Dosya</th>
             <th>Pipeline No</th>
             <th>Spool No</th>
             <th>DN</th><th>Çap (mm)</th>
-            <th>Malzeme</th>
-            <th>Kalite</th>
+            <th data-i18n="cmn_th_malzeme">Malzeme</th>
+            <th data-i18n="cmn_th_kalite">Kalite</th>
             <th>Et (mm)</th>
             <th>Boy (mm)</th>
             <th>Ağırlık (kg)</th>
-            <th>Yüzey</th>
+            <th data-i18n="izb_th_yuzey">Yüzey</th>
             <th>Rev</th>
           </tr>
         </thead>
@@ -304,15 +305,15 @@ function renderDosyalar() {
   document.getElementById('statSpoolVal').textContent  = toplamSpool;
   ['statDosya','statTamam','statHata','statSpool'].forEach(function(id){ document.getElementById(id).classList.add('show'); });
 
-  document.getElementById('dosyaListesiBaslik').textContent = _dosyalar.length + ' dosya seçildi';
+  document.getElementById('dosyaListesiBaslik').textContent = _dosyalar.length + ' ' + tv('izb_dosya_secildi','dosya seçildi');
 
   items.innerHTML = _dosyalar.map(function(d, i) {
     var durumClass = 'durum-' + d.durum;
-    var durumIcon = d.durum === 'bekliyor'   ? '<span class="d-bekliyor">⬜ Bekliyor</span>'
-                  : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ İşleniyor</span>'
-                  : d.durum === 'tamam'      ? '<span class="d-tamam">✅ Tamam</span>'
-                  : '<span class="d-hata" title="' + (d.hata||'') + '">❌ Hata</span>';
-    var spoolText = d.spooller.length ? d.spooller.length + ' spool' : '—';
+    var durumIcon = d.durum === 'bekliyor'   ? '<span class="d-bekliyor">⬜ '+tv('izb_durum_bekliyor','Bekliyor')+'</span>'
+                  : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ '+tv('izb_durum_isleniyor','İşleniyor')+'</span>'
+                  : d.durum === 'tamam'      ? '<span class="d-tamam">✅ '+tv('izb_durum_tamam','Tamam')+'</span>'
+                  : '<span class="d-hata" title="' + (d.hata||'') + '">❌ '+tv('izb_durum_hata','Hata')+'</span>';
+    var spoolText = d.spooller.length ? d.spooller.length + ' ' + tv('izb_spool','spool') : '—';
     var boyut = (d.file.size / 1024).toFixed(0) + ' KB';
 
     return '<div class="dosya-item">'
@@ -363,7 +364,7 @@ async function basla() {
       });
       var json = await res.json();
 
-      if (!res.ok || !json.ok) throw new Error(json.error || 'Sunucu hatası');
+      if (!res.ok || !json.ok) throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
 
       d.spooller = (json.data.spooller || []).map(function(s) {
         s._dosya = d.file.name;
@@ -396,8 +397,7 @@ async function basla() {
   }
 
   document.getElementById('progressDetail').textContent =
-    'Tamamlandı — ' + _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length + ' dosya başarılı, '
-    + _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length + ' hata';
+    tv('izb_tamamlandi','Tamamlandı') + ' — ' + _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length + ' ' + tv('izb_basarili','dosya başarılı') + ', ' + _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length + ' ' + tv('izb_stat_hata','hata');
 }
 
 function progressGuncelle(tamamlanan, toplam, dosyaAdi) {
@@ -406,7 +406,7 @@ function progressGuncelle(tamamlanan, toplam, dosyaAdi) {
   document.getElementById('progressPct').textContent = pct + '%';
   document.getElementById('progressText').textContent = dosyaAdi
     ? (tamamlanan + 1) + '/' + toplam + ' — ' + dosyaAdi
-    : tamamlanan + '/' + toplam + ' tamamlandı';
+    : tamamlanan + '/' + toplam + ' ' + tv('izb_tamamlandi_k','tamamlandı');
 }
 
 function dosyaBase64(file) {
@@ -421,7 +421,7 @@ function dosyaBase64(file) {
 // ── SONUÇ TABLO ───────────────────────────────────────────────
 function renderSonucTablo() {
   document.getElementById('sonucWrap').style.display = 'block';
-  document.getElementById('sonucBadge').textContent = _tumSpooller.length + ' spool';
+  document.getElementById('sonucBadge').textContent = _tumSpooller.length + ' ' + tv('izb_spool','spool');
 
   var tbody = document.getElementById('sonucTbody');
   tbody.innerHTML = _tumSpooller.map(function(s, i) {
