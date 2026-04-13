@@ -131,6 +131,7 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
 .yukleniyor{text-align:center;padding:48px;color:var(--txd);font-size:14px;}
 </style>
 <script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -360,8 +361,14 @@ var _I18N = {
   }
 };
 
-// ✅ C2: tv()
+// ✅ C2: tv() — ares-lang.js + yerel _I18N
 function tv(key,tr){
+  // Önce ares-lang.js'i dene (global anahtarlar: nav_*, cmn_* vb.)
+  if(typeof window._tv==='function'){
+    var r=window._tv(key,null);
+    if(r!==null&&r!==key)return r;
+  }
+  // Yerel _I18N (tr_* anahtarlar)
   var lang=document.documentElement.getAttribute('lang')||'tr';
   var dict=_I18N[lang];
   if(dict&&dict[key]!==undefined)return dict[key];
