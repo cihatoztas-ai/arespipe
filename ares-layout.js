@@ -1016,12 +1016,20 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 
         var fotograf_url = null;
         if (_fbFotoData) {
-          var blob = await fetch(_fbFotoData).then(function(r){ return r.blob(); });
-          var dosyaAdi = 'feedback/' + Date.now() + '.jpg';
-          var yukle = await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi, blob, { contentType: 'image/jpeg' });
-          if (!yukle.error) {
-            var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAdi);
-            fotograf_url = urlData.publicUrl;
+          try {
+            var blob = await fetch(_fbFotoData).then(function(r){ return r.blob(); });
+            var dosyaAdi = 'feedback/' + Date.now() + '.jpg';
+            var yukle = await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi, blob, { contentType: 'image/jpeg' });
+            if (!yukle.error) {
+              var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAdi);
+              fotograf_url = urlData.publicUrl;
+            } else {
+              // Storage başarısız — base64 data URL olarak kaydet
+              console.warn('[FB] Storage upload hatası, base64 kullanılıyor:', yukle.error.message);
+              fotograf_url = _fbFotoData;
+            }
+          } catch(uploadErr) {
+            fotograf_url = _fbFotoData; // her türlü hata — base64 fallback
           }
         }
 
