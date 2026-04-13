@@ -7,7 +7,9 @@
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+:root{--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
 
@@ -16,7 +18,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;margin-left:8px;}
 .topbar-sep{flex:1;}
 .topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
-.topbar-badge{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
+.topbar-badge{background:rgba(45,142,255,.15);border:1px solid rgba(45,142,255,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
 .btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
 .btn-logout:hover{border-color:var(--re);color:var(--re);}
 
@@ -155,10 +157,11 @@ tr:hover td{background:rgba(255,255,255,.02);}
 </div>
 
 <script>
-var _supa = supabase.createClient(
-  'https://ochvbepfiatzvyknkvsn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU'
-);
+var _supa = null;
+function _getSupa() {
+  if (!_supa && typeof ARES !== 'undefined') _supa = ARES.supabase();
+  return _supa;
+}
 
 var _musteri = null;
 var _spooller = [];
@@ -176,13 +179,13 @@ function toast(msg, tip) {
 }
 
 async function cikis() {
-  await _supa.auth.signOut();
+  await _getSupa().auth.signOut();
   T('girisEkrani').style.display = 'flex';
   T('app').style.display = 'none';
 }
 
 async function init() {
-  var { data: { session } } = await _supa.auth.getSession();
+  var { data: { session } } = await _getSupa().auth.getSession();
   if (!session) {
     window.location.href = '../giris.html?redirect=' + encodeURIComponent(location.pathname);
     return;
@@ -196,7 +199,7 @@ async function init() {
     .single();
 
   if (!musteri) {
-    await _supa.auth.signOut();
+    await _getSupa().auth.signOut();
     window.location.href = '../giris.html';
     return;
   }
@@ -232,7 +235,7 @@ async function yukle() {
   var projeIds = erisimler.map(function(e){return e.proje_id;});
 
   // Firma bilgilerini al
-  var { data: tenants } = await _supa.from('tenants').select('id, ad, firma_tipi').in('id', tenantIds);
+  var { data: tenants } = await _getSupa().from('tenants').select('id, ad, firma_tipi').in('id', tenantIds);
   (tenants||[]).forEach(function(t){ _firmalar[t.id] = t; });
 
   // Firma dropdown doldir
@@ -256,14 +259,14 @@ async function yukle() {
   var devreIds = [...new Set(_spooller.map(function(s){return s.devre_id;}).filter(Boolean))];
   var _devreler = {};
   if (devreIds.length) {
-    var { data: devreler } = await _supa.from('devreler').select('id, ad, proje_id').in('id', devreIds);
+    var { data: devreler } = await _getSupa().from('devreler').select('id, ad, proje_id').in('id', devreIds);
     (devreler||[]).forEach(function(d){ _devreler[d.id] = d; });
   }
 
   // Proje bilgilerini al
   var _projeler = {};
   if (projeIds.length) {
-    var { data: projeler } = await _supa.from('projeler').select('id, ad, proje_no').in('id', projeIds);
+    var { data: projeler } = await _getSupa().from('projeler').select('id, ad, proje_no').in('id', projeIds);
     (projeler||[]).forEach(function(p){ _projeler[p.id] = p; });
   }
 
