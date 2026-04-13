@@ -1677,5 +1677,17 @@
   "izb_basarili": "ملفات ناجحة",
   "izb_tamamlandi_k": "مكتمل",
   "nav_kullanicilar": "المستخدمون",
-  "nav_izobatch": "دفعة الإيزومتري"
+  "nav_izobatch": "دفعة الإيزومتري",
+  "qr_title": "مسح QR | AresPipe",
+  "qr_baslik": "مسح QR",
+  "qr_durum_baslangic": "ضع الكود داخل الإطار",
+  "qr_alt_yazi": "ضع رمز QR للبكرة داخل الإطار",
+  "qr_manuel": "إدخال يدوي",
+  "qr_kamera_yok": "تعذّر الوصول إلى الكاميرا. يمكنك استخدام الإدخال اليدوي.",
+  "qr_modal_baslik": "أدخل معرّف البكرة",
+  "qr_btn_bul": "البحث عن البكرة →",
+  "qr_araniyor": "جارٍ البحث…",
+  "qr_bulunamadi": "البكرة غير موجودة",
+  "qr_bulundu": "تم العثور عليها — جارٍ التحويل…",
+  "qr_baglanti_hatasi": "خطأ في الاتصال"
 }

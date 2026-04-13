@@ -1677,5 +1677,17 @@
   "izb_basarili": "files successful",
   "izb_tamamlandi_k": "completed",
   "nav_kullanicilar": "Users",
-  "nav_izobatch": "Isometric Batch"
+  "nav_izobatch": "Isometric Batch",
+  "qr_title": "QR Scan | AresPipe",
+  "qr_baslik": "QR Scan",
+  "qr_durum_baslangic": "Align code to frame",
+  "qr_alt_yazi": "Place the spool QR code inside the frame",
+  "qr_manuel": "Manual Entry",
+  "qr_kamera_yok": "Camera access unavailable. You can use manual entry.",
+  "qr_modal_baslik": "Enter Spool ID",
+  "qr_btn_bul": "Find Spool →",
+  "qr_araniyor": "searching…",
+  "qr_bulunamadi": "Spool not found",
+  "qr_bulundu": "Found — redirecting…",
+  "qr_baglanti_hatasi": "Connection error"
 }

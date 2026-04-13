@@ -1043,5 +1043,17 @@
   "izb_basarili": "dosya başarılı",
   "izb_tamamlandi_k": "tamamlandı",
   "nav_kullanicilar": "Kullanıcılar",
-  "nav_izobatch": "İzometri Batch"
+  "nav_izobatch": "İzometri Batch",
+  "qr_title": "QR Tara | AresPipe",
+  "qr_baslik": "QR Tara",
+  "qr_durum_baslangic": "Kodu çerçeveye hizala",
+  "qr_alt_yazi": "Spool QR kodunu çerçevenin içine alın",
+  "qr_manuel": "Manuel Giriş",
+  "qr_kamera_yok": "Kamera erişimi sağlanamadı. Manuel giriş kullanabilirsiniz.",
+  "qr_modal_baslik": "Spool ID Gir",
+  "qr_btn_bul": "Spool'u Bul →",
+  "qr_araniyor": "aranıyor…",
+  "qr_bulunamadi": "Spool bulunamadı",
+  "qr_bulundu": "Bulundu — yönlendiriliyor…",
+  "qr_baglanti_hatasi": "Bağlantı hatası"
 }
