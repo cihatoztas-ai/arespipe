@@ -376,7 +376,12 @@ const ARES = (function () {
   async function spoollariGetir(devreId) {
     if (mod === 'supabase' && _supa) {
       let q = _supa.from('spooller')
-        .select('*, devreler(devre_no, proje_id, projeler(proje_no, gemi_adi))')
+        .select(`*,
+          devreler(devre_no, proje_id, projeler(proje_no, gemi_adi)),
+          kesim_kalemleri(id, kesildi),
+          bukum_kalemleri(id, bukuldu),
+          markalama_kalemleri(id, markalandi)
+        `)
         .order('spool_no');
       if (devreId) q = q.eq('devre_id', devreId);
       const { data, error } = await q;

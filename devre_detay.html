@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-i18n="dv_baslik">Devre Detayı | AresPipe</title>
 <script>(function(){
-  var t=localStorage.getItem('ares_theme')||'dark';
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
   var l=localStorage.getItem('ares_lang')||'tr';
   document.documentElement.setAttribute('data-theme',t);
   document.documentElement.setAttribute('lang',l);
@@ -1193,7 +1193,7 @@ function goSpool(spoolNo){
   localStorage.setItem('ares_aktif_spool',JSON.stringify(Object.assign({},s,{
     _devre:DEVRE.devre,_gemi:DEVRE.gemi,_isEmri:DEVRE.isEmri,_tersane:DEVRE.tersane
   })));
-  window.location.href='spool_detay.html';
+  window.location.href='spool_detay.html?id='+(s.supaId||'');
 }
 function devreDuzenle(){var id=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');if(!id){alert(tv('dv_no_id','Devre ID bulunamadı'));return;}window.location.href='devre_duzenle.html?id='+id;}
 
