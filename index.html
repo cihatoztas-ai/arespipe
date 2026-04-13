@@ -561,32 +561,72 @@ function initDragDrop() {
   });
 }
 
+function _applyLayout(layout) {
+  if (!layout || !layout.length) return;
+  var con = document.getElementById('widgetContainer');
+  layout.forEach(function(item) {
+    var box = con.querySelector('[data-widget="' + item.id + '"]');
+    if (!box) return;
+    con.appendChild(box);
+    if (item.size) {
+      box.setAttribute('data-size', item.size);
+      box.querySelectorAll('.w-size-btn').forEach(function(btn) {
+        btn.classList.remove('aktif');
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + item.size + "'") > -1) btn.classList.add('aktif');
+      });
+    }
+    box.setAttribute('data-hidden', item.hidden ? '1' : '0');
+    if (item.id !== 'stats') { box.classList.remove('full','half'); box.classList.add(item.full ? 'full' : 'half'); }
+  });
+}
+
 function saveLayout() {
   var layout = Array.from(document.querySelectorAll('#widgetContainer > .widget-box')).map(function(b) {
     return { id: b.dataset.widget, size: b.dataset.size || 'buyuk', hidden: b.getAttribute('data-hidden') === '1', full: b.classList.contains('full') };
   });
+  // 1. localStorage — hızlı erişim
   localStorage.setItem('ares_widget_layout', JSON.stringify(layout));
+  // 2. Supabase — cihazlar arası senkron
+  try {
+    var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+    var oturum = typeof ARES !== 'undefined' && ARES.oturumAl ? ARES.oturumAl() : null;
+    if (supa && oturum && oturum.id) {
+      supa.from('kullanicilar')
+        .update({ ui_tercihleri: { widget_layout: layout } })
+        .eq('auth_id', oturum.id)
+        .then(function(r){ if(r.error) console.warn('[Widget] Kayıt hatası:', r.error.message); });
+    }
+  } catch(e) { console.warn('[Widget] saveLayout:', e); }
 }
 
 function loadLayout() {
+  // Önce localStorage'dan hızlı yükle
   try {
-    var layout = JSON.parse(localStorage.getItem('ares_widget_layout') || '[]');
-    if (!layout.length) return;
-    var con = document.getElementById('widgetContainer');
-    layout.forEach(function(item) {
-      var box = con.querySelector('[data-widget="' + item.id + '"]');
-      if (!box) return;
-      con.appendChild(box);
-      if (item.size) {
-        box.setAttribute('data-size', item.size);
-        box.querySelectorAll('.w-size-btn').forEach(function(btn) {
-          btn.classList.remove('aktif');
-          if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + item.size + "'") > -1) btn.classList.add('aktif');
+    var local = JSON.parse(localStorage.getItem('ares_widget_layout') || '[]');
+    if (local.length) _applyLayout(local);
+  } catch(e) {}
+
+  // Arka planda Supabase'den çek — farklıysa uygula
+  try {
+    var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+    var oturum = typeof ARES !== 'undefined' && ARES.oturumAl ? ARES.oturumAl() : null;
+    if (supa && oturum && oturum.id) {
+      supa.from('kullanicilar')
+        .select('ui_tercihleri')
+        .eq('auth_id', oturum.id)
+        .single()
+        .then(function(r) {
+          if (r.error || !r.data) return;
+          var remote = r.data.ui_tercihleri && r.data.ui_tercihleri.widget_layout;
+          if (!remote || !remote.length) return;
+          // localStorage ile karşılaştır
+          var local = localStorage.getItem('ares_widget_layout');
+          if (JSON.stringify(remote) !== local) {
+            localStorage.setItem('ares_widget_layout', JSON.stringify(remote));
+            _applyLayout(remote);
+          }
         });
-      }
-      box.setAttribute('data-hidden', item.hidden ? '1' : '0');
-      if (item.id !== 'stats') { box.classList.remove('full','half'); box.classList.add(item.full ? 'full' : 'half'); }
-    });
+    }
   } catch(e) {}
 }
 
