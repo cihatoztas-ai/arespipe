@@ -1675,5 +1675,7 @@
   "izb_sunucu_hatasi": "Server error",
   "izb_tamamlandi": "Completed",
   "izb_basarili": "files successful",
-  "izb_tamamlandi_k": "completed"
+  "izb_tamamlandi_k": "completed",
+  "nav_kullanicilar": "Users",
+  "nav_izobatch": "Isometric Batch"
 }

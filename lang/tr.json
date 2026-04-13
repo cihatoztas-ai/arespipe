@@ -1041,5 +1041,7 @@
   "izb_sunucu_hatasi": "Sunucu hatası",
   "izb_tamamlandi": "Tamamlandı",
   "izb_basarili": "dosya başarılı",
-  "izb_tamamlandi_k": "tamamlandı"
+  "izb_tamamlandi_k": "tamamlandı",
+  "nav_kullanicilar": "Kullanıcılar",
+  "nav_izobatch": "İzometri Batch"
 }

@@ -1675,5 +1675,7 @@
   "izb_sunucu_hatasi": "خطأ في الخادم",
   "izb_tamamlandi": "اكتمل",
   "izb_basarili": "ملفات ناجحة",
-  "izb_tamamlandi_k": "مكتمل"
+  "izb_tamamlandi_k": "مكتمل",
+  "nav_kullanicilar": "المستخدمون",
+  "nav_izobatch": "دفعة الإيزومتري"
 }
