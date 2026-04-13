@@ -834,6 +834,46 @@ function esc(s){
   var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;
 }
 
+// ── Türkçe DB değerlerini normalize et → tvMalzeme/tvYuzey için anahtar
+function _normKey(raw){
+  if(!raw)return '';
+  return String(raw).toLowerCase()
+    .replace(/ı/g,'i').replace(/İ/g,'i')
+    .replace(/ç/g,'c').replace(/Ç/g,'c')
+    .replace(/ğ/g,'g').replace(/Ğ/g,'g')
+    .replace(/ş/g,'s').replace(/Ş/g,'s')
+    .replace(/ü/g,'u').replace(/Ü/g,'u')
+    .replace(/ö/g,'o').replace(/Ö/g,'o')
+    .replace(/[\s\-]+/g,'_');
+}
+function _malzemeGoster(raw){
+  if(!raw||raw==='—')return raw||'—';
+  if(typeof tvMalzeme==='function'){var t=tvMalzeme(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
+  return raw;
+}
+function _yuzeyGoster(raw){
+  if(!raw||raw==='—')return raw||'—';
+  if(typeof tvYuzey==='function'){var t=tvYuzey(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
+  return raw;
+}
+// Dinamik adım etiketi — dil değişince doğru çeviriyi döndürür
+function _stepText(s){
+  if(s.stopped)return tv('dv_status_stopped','Durduruldu');
+  var lblMap={
+    on_imalat:tv('sp_stage_pre','Ön İmalat'),imalat:tv('sp_stage_fab','İmalat'),
+    kaynak:tv('sp_stage_weld','Kaynak'),on_kontrol:tv('sp_stage_inspect','Ön Kontrol'),
+    kk:tv('sp_stage_qc','Kalite Kontrol'),sevkiyat:tv('sp_stage_ship','Sevkiyat')
+  };
+  var d=s.durum;
+  if(d==='waiting')return tv('dv_status_waiting','Bekliyor');
+  if(d==='done')return tv('dv_status_done','Tamamlandı');
+  if(d==='qc')return lblMap['kk']||tv('dv_status_qc','Kalite Kontrol');
+  // Progress: önce lblMap[aktifBasamak], sonra snapshot adı, sonra genel
+  if(s._aktifBasamak&&lblMap[s._aktifBasamak])return lblMap[s._aktifBasamak];
+  if(s._aktGorLabel)return s._aktGorLabel;
+  return tv('dv_status_progress','Devam Ediyor');
+}
+
 // ── Demo/test verisi
 (function(){
   if(!localStorage.getItem('ares_aktif_devre')){
@@ -979,12 +1019,18 @@ function _spoolMap(s,i){
   if(s.durduruldu)dur='stopped';else if(akt>=total-1)dur='done';else if(akt>=4)dur='qc';else if(akt>0)dur='progress';
   var lblMap={on_imalat:tv('sp_stage_pre','Ön İmalat'),imalat:tv('sp_stage_fab','İmalat'),kaynak:tv('sp_stage_weld','Kaynak'),on_kontrol:tv('sp_stage_inspect','Ön Kontrol'),kk:tv('sp_stage_qc','Kalite Kontrol'),sevkiyat:tv('sp_stage_ship','Sevkiyat')};
   var aktGor='';
-  if(akt>=0){if(snap.length&&snap[akt])aktGor=snap[akt].gorunen_ad||lblMap[aktStr]||aktStr;else aktGor=lblMap[aktStr]||aktStr;}
+  if(akt>=0){
+    // lblMap (tv() ile) her zaman önce — snapshot gorunen_ad Türkçe olabilir
+    if(lblMap[aktStr])aktGor=lblMap[aktStr];
+    else if(snap.length&&snap[akt])aktGor=snap[akt].gorunen_ad||aktStr;
+    else aktGor=aktStr;
+  }
   var durumText=akt<0?tv('dv_status_waiting','Bekliyor'):akt>=total-1?tv('dv_status_done','Tamamlandı'):aktGor||tv('dv_status_progress','Devam Ediyor');
   var kesim={toplam:(s.kesim_kalemleri||[]).length,tamamlanan:(s.kesim_kalemleri||[]).filter(function(k){return k.kesildi;}).length};
   var bukum={toplam:(s.bukum_kalemleri||[]).length,tamamlanan:(s.bukum_kalemleri||[]).filter(function(k){return k.bukuldu;}).length};
   var mar={toplam:(s.markalama_kalemleri||[]).length,tamamlanan:(s.markalama_kalemleri||[]).filter(function(k){return k.markalandi;}).length};
   var agirlikHam=parseFloat(s.agirlik_kg||s.agirlik||0);
+  var _aktGorLabel=snap.length&&akt>=0&&snap[akt]?snap[akt].gorunen_ad||'':'';
   return{idx:i+1,supaId:s.id,pipeline:s.pipeline_no||'—',spoolNo:s.spool_no||'—',rev:s.rev||'',
     spoolId:s.spool_id||'',
     cap:s.dis_cap_mm?String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—',
@@ -994,7 +1040,9 @@ function _spoolMap(s,i){
     malzeme:(s.malzeme||'').toUpperCase(),
     kalite:s.kalite||s.kalite_standart||'—',
     yuzey:s.yuzey||s.yuzey_islemi||'—',
-    durum:dur,durumText:durumText,adimlar:adimlar,sonIslem:s.son_islem||null,
+    durum:dur,durumText:durumText,
+    _aktifBasamak:aktStr,_aktGorLabel:_aktGorLabel,
+    adimlar:adimlar,sonIslem:s.son_islem||null,
     alistirma:s.alistirma||null,bukum:bukum,kesim:kesim,markalama:mar,
     test:{toplam:0,tamamlanan:0},durduruldu:!!s.durduruldu,stopped:!!s.durduruldu,iptal:false};
 }
@@ -1019,14 +1067,14 @@ function statGuncelle(){
   var aktif=SPOOLS.filter(function(s){return!s.stopped;});
   setText('stSpool',aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('stAgirlik',Math.round(toplamAg()).toLocaleString(document.documentElement.getAttribute('lang')||'tr')+' kg');
-  setText('stMalzeme',(DEVRE.malzeme||[])[0]||'--');
-  setText('stYuzey',(DEVRE.yuzey||[])[0]||'--');
+  setText('stMalzeme',_malzemeGoster((DEVRE.malzeme||[])[0])||'--');
+  setText('stYuzey',_yuzeyGoster((DEVRE.yuzey||[])[0])||'--');
   setText('stTermin',DEVRE.terminTarihi?tarihFmt(new Date(DEVRE.terminTarihi)):tv('sp_alist_none','Belirlenmemiş'));
   setText('spoolSayi',aktif.length+' '+tv('dv_records','kayıt'));
   setText('gSpoolSayi',aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('gAgirlik',Math.round(toplamAg()).toLocaleString(document.documentElement.getAttribute('lang')||'tr')+' kg');
-  setText('gMalzeme',(DEVRE.malzeme||[])[0]||'--');
-  setText('gYuzey',(DEVRE.yuzey||[])[0]||'--');
+  setText('gMalzeme',_malzemeGoster((DEVRE.malzeme||[])[0])||'--');
+  setText('gYuzey',_yuzeyGoster((DEVRE.yuzey||[])[0])||'--');
   setText('barKK',tv('dv_status_waiting','Bekliyor'));
   setText('barSevk',tv('dv_not_shipped','Sevk Edilmedi'));
 }
@@ -1073,10 +1121,10 @@ function renderTable(){
       +'<td style="color:var(--txm);">'+esc(s.cap)+'</td>'
       +'<td style="color:var(--txd);">'+esc(s.et)+'</td>'
       +'<td style="color:var(--txm);">'+esc(s.agirlik)+'</td>'
-      +'<td onclick="event.stopPropagation();inlineEdit(this,\'malzeme\',\''+esc(s.spoolNo)+'\',\'select\',\'Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum\',\''+esc(s.malzeme)+'\')">'+esc(s.malzeme||'—')+'</td>'
+      +'<td onclick="event.stopPropagation();inlineEdit(this,\'malzeme\',\''+esc(s.spoolNo)+'\',\'select\',\'Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum\',\''+esc(s.malzeme)+'\')">'+esc(_malzemeGoster(s.malzeme)||'—')+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'kalite\',\''+esc(s.spoolNo)+'\',\'text\',\'\',\''+esc(s.kalite)+'\')" style="color:var(--ac);font-weight:600;">'+esc(s.kalite||'—')+'</td>'
-      +'<td onclick="event.stopPropagation();inlineEdit(this,\'yuzey\',\''+esc(s.spoolNo)+'\',\'select\',\'Galvaniz,Asit,Siyah,Epoksi,Boyalı\',\''+esc(s.yuzey)+'\')">'+esc(s.yuzey||'—')+'</td>'
-      +'<td><span class="sb '+d.cls+'">'+(s.stopped?tv('dv_status_stopped','Durduruldu'):esc(s.durumText||d.text))+'</span></td>'
+      +'<td onclick="event.stopPropagation();inlineEdit(this,\'yuzey\',\''+esc(s.spoolNo)+'\',\'select\',\'Galvaniz,Asit,Siyah,Epoksi,Boyalı\',\''+esc(s.yuzey)+'\')">'+esc(_yuzeyGoster(s.yuzey)||'—')+'</td>'
+      +'<td><span class="sb '+d.cls+'">'+esc(_stepText(s))+'</span></td>'
       +'<td><div class="steps" title="'+adimLbl().join(' → ')+'">'+s.adimlar.map(stepHtml).join('')+'</div>'
         +'<div style="font-size:11px;color:var(--txd);margin-top:2px;">'+s.adimlar.filter(function(v){return v===1;}).length+'/'+s.adimlar.length+'</div></td>'
       +'<td style="color:var(--txd);font-size:12px;">'+esc(s.sonIslem||'—')+'</td>'
