@@ -1843,9 +1843,23 @@ document.addEventListener('DOMContentLoaded', function() {
         await new Promise(function(r){ setTimeout(r,100); }); _b++;
       }
       console.log('[ARES init] bitti _b=',_b,'supa=',!!_supa());
-      // localStorage debug
-      var _lsKeys=['ares_aktif_devre_id','ares_devre_id','devreId','ares_aktif_devre'];
-      _lsKeys.forEach(function(k){console.log('[ARES localStorage]',k,'=',localStorage.getItem(k)?.substring(0,80));});
+      // ARES native method imzalarını anlamak için
+      try{
+        var _testSpool=await ARES.spoollariGetir(localStorage.getItem('ares_aktif_devre_id'));
+        console.log('[ARES.spoollariGetir] sonuç:', _testSpool?.length, 'ilk kayıt:', JSON.stringify(_testSpool?.[0]).substring(0,200));
+      }catch(e){console.warn('[ARES.spoollariGetir] hata:',e.message);}
+      try{
+        var _testDevre=await ARES.devreGetir(localStorage.getItem('ares_aktif_devre_id'));
+        console.log('[ARES.devreGetir] sonuç:', JSON.stringify(_testDevre).substring(0,200));
+      }catch(e){console.warn('[ARES.devreGetir] hata:',e.message);}
+      try{
+        var _testMalz=await ARES.malzemeleriGetir(localStorage.getItem('ares_aktif_devre_id'));
+        console.log('[ARES.malzemeleriGetir] sonuç:', _testMalz?.length, 'ilk:', JSON.stringify(_testMalz?.[0]).substring(0,150));
+      }catch(e){console.warn('[ARES.malzemeleriGetir] hata:',e.message);}
+      try{
+        var _testLog=await ARES.loguGetir({devreId:localStorage.getItem('ares_aktif_devre_id'),limit:3});
+        console.log('[ARES.loguGetir] sonuç:', _testLog?.length,'ilk:',JSON.stringify(_testLog?.[0]).substring(0,150));
+      }catch(e){console.warn('[ARES.loguGetir] hata:',e.message);}
       await devreYukle();
       sayfaDoldur();
       if (_supa()) {
