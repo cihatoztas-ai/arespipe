@@ -787,7 +787,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 
   // ── Tema ───────────────────────────────────────────────────
   function applyTheme(t) {
-    if (!['dark', 'light-anthracite'].includes(t)) t = 'dark';
+    if (!['dark', 'light-anthracite'].includes(t)) t = 'light-anthracite';
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem('ares_theme', t);
     const sun  = document.getElementById('ts-sun');
@@ -853,14 +853,14 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 
     authKontrol();
     injectGlobalCSS();
-    applyTheme(localStorage.getItem('ares_theme') || 'dark');
+    applyTheme(localStorage.getItem('ares_theme') || 'light-anthracite');
     buildSidebar();
     updateSidebar();
     buildTopbar();
     setupToggle();
     setupThemeSwitch();
     setupLangDropdown();
-    applyTheme(localStorage.getItem('ares_theme') || 'dark');
+    applyTheme(localStorage.getItem('ares_theme') || 'light-anthracite');
 
     // Dil yöneticisi
     window._setLang = setLang;
