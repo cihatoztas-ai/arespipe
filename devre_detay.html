@@ -807,7 +807,25 @@ if(typeof window.tv==='undefined'){
 }
 
 // ── ARES erişim yardımcıları (ARES yüklenememiş olabilir)
-function _supa(){return(typeof ARES!=='undefined'&&typeof ARES.supabase==='function')?ARES.supabase():null;}
+function _supa(){
+  if(typeof ARES==='undefined')return null;
+  // 1) ARES.supabase() — fonksiyon
+  if(typeof ARES.supabase==='function'){
+    var c=ARES.supabase();
+    if(c&&typeof c.from==='function')return c;
+  }
+  // 2) ARES.supabase — direkt client
+  if(ARES.supabase&&typeof ARES.supabase.from==='function')return ARES.supabase;
+  // 3) ARES.db
+  if(ARES.db&&typeof ARES.db.from==='function')return ARES.db;
+  // 4) ARES.client
+  if(ARES.client&&typeof ARES.client.from==='function')return ARES.client;
+  // 5) ARES.supa
+  if(ARES.supa&&typeof ARES.supa.from==='function')return ARES.supa;
+  // 6) window.supabase global
+  if(typeof window.supabase!=='undefined'&&typeof window.supabase.from==='function')return window.supabase;
+  return null;
+}
 function _mod(){return typeof ARES!=='undefined'?ARES.mod:'local';}
 function _tid(){return typeof ARES!=='undefined'&&typeof ARES.tenantId==='function'?ARES.tenantId():null;}
 
@@ -900,10 +918,24 @@ function DOK_TURLER(){return{
 // ── DEVRE YÜKLE
 async function devreYukle(){
   var supa=_supa();
-  var devreId=localStorage.getItem('ares_aktif_devre_id');
+  // ARES kendi metodlarından devre ID oku
+  var _aresDevreId=null;
+  if(typeof ARES!=='undefined'){
+    _aresDevreId=(typeof ARES.devreId==='function'?ARES.devreId():null)
+      ||ARES.aktifDevreId||ARES.devreId||(ARES.context&&ARES.context.devreId)
+      ||(ARES.state&&ARES.state.devreId)||(ARES.aktif&&ARES.aktif.devreId)||null;
+    console.log('[ARES] ARES keys:',Object.keys(ARES),'_aresDevreId:',_aresDevreId);
+  }
+  var devreId=new URLSearchParams(location.search).get('id')
+    ||_aresDevreId
+    ||localStorage.getItem('ares_aktif_devre_id')
+    ||localStorage.getItem('ares_devre_id')
+    ||localStorage.getItem('devreId');
+  console.log('[ARES devreYukle] devreId=',devreId,'supa=',!!supa,'url=',location.search);
   if(supa&&devreId){
     try{
       var res=await supa.from('devreler').select('*,projeler(id,proje_no,gemi_adi,tersaneler(id,ad,kod))').eq('id',devreId).single();
+      console.log('[ARES devreYukle] res.error=',res.error,'supaId=',res.data?.id);
       if(!res.error&&res.data){
         var d=res.data,pr=d.projeler||{},tr=(pr.tersaneler)||{};
         DEVRE={supaId:d.id,
@@ -931,15 +963,25 @@ async function devreYukle(){
 // ── SPOOL YÜKLE
 async function spoolYukle(){
   var supa=_supa();
-  var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
-  if(!supa||!devreId)return;
+  var devreId=DEVRE.supaId
+    ||new URLSearchParams(location.search).get('id')
+    ||localStorage.getItem('ares_aktif_devre_id')
+    ||localStorage.getItem('ares_devre_id');
+  console.log('[ARES spoolYukle] devreId=',devreId,'supaId=',DEVRE.supaId);
+  if(!supa){console.warn('[ARES spoolYukle] supa yok');return;}
+  if(!devreId){console.warn('[ARES spoolYukle] devreId yok');return;}
   try{
+    // silindi NULL-safe: true olmayanları getir
     var res=await supa.from('spooller')
       .select('*,kesim_kalemleri(id,kesildi),bukum_kalemleri(id,bukuldu),markalama_kalemleri(id,markalandi)')
-      .eq('devre_id',devreId).eq('silindi',false).order('pipeline_no').order('spool_no');
-    if(res.error){console.warn('Spool:',res.error);return;}
+      .eq('devre_id',devreId)
+      .not('silindi','eq',true)
+      .order('pipeline_no').order('spool_no');
+    console.log('[ARES spoolYukle] sonuç:', res.data?.length,'hata:',res.error);
+    if(res.error){console.error('Spool hata:',res.error);return;}
     SPOOLS=(res.data||[]).map(function(s,i){return _spoolMap(s,i);});
-  }catch(e){console.warn('spoolYukle:',e);}
+    console.log('[ARES spoolYukle] SPOOLS:',SPOOLS.length);
+  }catch(e){console.error('spoolYukle exception:',e);}
 }
 
 function _spoolMap(s,i){
@@ -1780,8 +1822,10 @@ document.addEventListener('DOMContentLoaded', function() {
   (async function() {
     try {
       var _b = 0;
-      while (_b < 80) {
-        if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _b++; continue; }
+      while (_b < 150) {
+        if (typeof ARES === 'undefined') {
+          await new Promise(function(r){ setTimeout(r,100); }); _b++; continue;
+        }
         var _s = _supa();
         if (_s) {
           var _ses = await _s.auth.getSession();
@@ -1789,17 +1833,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
             break;
           }
-          if (_b > 20) { location.href = 'giris.html'; return; }
-        } else {
-          // ARES yüklendi ama supabase yok — yerel mod, devam et
+          if (_b > 40) { location.href = 'giris.html'; return; }
+        } else if (_b > 20) {
+          // ARES yüklü ama supabase 2s sonra hâlâ null
+          // ARES kendi supabase referansını console'a yaz
+          console.warn('[ARES] supabase null, ARES keys:', Object.keys(ARES));
           break;
         }
         await new Promise(function(r){ setTimeout(r,100); }); _b++;
       }
+      console.log('[ARES init] bitti _b=',_b,'supa=',!!_supa());
+      // localStorage debug
+      var _lsKeys=['ares_aktif_devre_id','ares_devre_id','devreId','ares_aktif_devre'];
+      _lsKeys.forEach(function(k){console.log('[ARES localStorage]',k,'=',localStorage.getItem(k)?.substring(0,80));});
       await devreYukle();
-      if (_supa()) await spoolYukle();
       sayfaDoldur();
-      renderTable();
+      if (_supa()) {
+        await spoolYukle();
+        renderTable();
+        statGuncelle();
+      } else {
+        renderTable();
+        statGuncelle();
+      }
       await belgelerYukle();
       notRender();
       renderIslemler();
