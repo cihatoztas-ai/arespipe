@@ -1,170 +1,45 @@
 {
-  "version": "1.0",
-  "aciklama": "AresPipe kod kalite kuralları. Yeni kural eklemek için bu dosyayı düzenle.",
-
-  "yasak_string": {
-    "aciklama": "Bu stringler hiçbir HTML/JS dosyasında geçemez",
-    "kurallar": [
-      {
-        "desen": "api/izometri-batch.html",
-        "mesaj": "api/ klasöründe HTML dosyası olamaz — Vercel bu klasörü serverless function dizini olarak görür. Kök dizine taşı.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "api/sorgula.html",
-        "mesaj": "api/ klasöründe HTML dosyası olamaz — Vercel bu klasörü serverless function dizini olarak görür. Kök dizine taşı.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "syos_theme",
-        "mesaj": "Eski tema sistemi kullanılıyor. 'ares_theme' olarak değiştir.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "syos_lang",
-        "mesaj": "Eski dil sistemi kullanılıyor. 'ares_lang' olarak değiştir.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "px14px",
-        "mesaj": "Geçersiz CSS değeri. '14px' olarak düzelt.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#3b82f6",
-        "mesaj": "Admin renk sistemi. Ana uygulama rengi '#2D8EFF' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#22c55e",
-        "mesaj": "Admin renk sistemi. Ana uygulama rengi '#16a36e' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#0a0b0e",
-        "mesaj": "Admin arka plan rengi. Ana uygulama rengi '#0d1117' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#10b981",
-        "mesaj": "AI sayfa rengi. Ana uygulama rengi '#16a36e' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#0d0f1a",
-        "mesaj": "AI sayfa arka plan rengi. Ana uygulama rengi '#0d1117' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "data-theme=\"light\"",
-        "mesaj": "Geçersiz tema. 'light-anthracite' kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "data-theme=\"slate\"",
-        "mesaj": "Kaldırılmış tema. Bu satırı sil.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "data-theme=\"navy\"",
-        "mesaj": "Kaldırılmış tema. Bu satırı sil.",
-        "siddet": "hata"
-      },
-      {
-        "desen": ":root[data-theme=",
-        "mesaj": "Yanlış CSS sözdizimi. '[data-theme=dark]' formatını kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "localStorage.getItem('syos_",
-        "mesaj": "Eski localStorage anahtarı. 'ares_' prefix kullan.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "cdn.jsdelivr.net/npm/@supabase",
-        "mesaj": "CDN Supabase duplikasyonu. ares-store.js zaten yüklüyor, bu satırı kaldır.",
-        "siddet": "uyari"
-      },
-      {
-        "desen": "history.back()",
-        "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.",
-        "siddet": "uyari"
-      },
-      {
-        "desen": "nav_personel",
-        "mesaj": "Personel modülü iptal edildi. Bu anahtarı kaldır.",
-        "siddet": "hata"
-      }
-    ]
-  },
-
-  "zorunlu_her_html": {
-    "aciklama": "Her HTML sayfasında bu stringler bulunmalı (istisnalar hariç)",
-    "kurallar": [
-      {
-        "desen": "ares_theme",
-        "mesaj": "Flash prevention eksik: ares_theme yok.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "ares_lang",
-        "mesaj": "Flash prevention eksik: ares_lang yok.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "visibility='hidden'",
-        "desene_alternatif": "visibility=\"hidden\"",
-        "mesaj": "Flash prevention eksik: visibility:hidden yok.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "ares-store.js",
-        "mesaj": "ares-store.js yüklenmiyor.",
-        "siddet": "hata"
-      },
-      {
-        "desen": "ares-layout.js",
-        "mesaj": "ares-layout.js yüklenmiyor.",
-        "siddet": "hata"
-      }
-    ]
-  },
-
-  "istisnalar": {
-    "aciklama": "Bu dosyalarda zorunlu kontroller atlanır",
-    "dosyalar": [
-      "giris.html",
-      "qr_tara.html",
-      "lang/en.json",
-      "lang/ar.json",
-      "lang/tr.json",
-      "403.html",
-      "404.html",
-      "500.html",
-      "session-expired.html",
-      "ares-store.js",
-      "ares-lang.js",
-      "ares-layout.js",
-      "api/izometri-batch.html",
-      "api/sorgula.html",
-      "api/izometri-oku.js",
-      "api/sorgula.js",
-      "admin/panel.html",
-      "admin/firma.html",
-      "admin/firma-detay.html",
-      "admin/index.html",
-      "portal/index.html",
-      "izometri-batch.html",
-      "sorgula.html"
-    ]
-  },
-
-  "silinmis_dosyalar": {
-    "aciklama": "Bu dosyalar repoda olmamalı",
-    "dosyalar": [
-      "personel.html",
-      "personel_yeni.html",
-      "senaryolar.html"
-    ]
-  }
+  "kurallar": [
+    {
+      "id": "ares-layout-yukle",
+      "aciklama": "Her HTML sayfasında ares-layout.js yüklenmeli",
+      "kural": "ares-layout.js yuklenmiyor",
+      "istisna": [
+        "giris.html",
+        "qr_tara.html",
+        "admin/panel.html",
+        "admin/firma.html",
+        "admin/firma-detay.html",
+        "portal/index.html",
+        "mobile/"
+      ]
+    },
+    {
+      "id": "guvenli-geri-donus",
+      "aciklama": "history.back() yerine explicit URL kullan",
+      "kural": "history.back()",
+      "istisna": []
+    },
+    {
+      "id": "yasak-renkler",
+      "aciklama": "Yasak renk kodları kullanılmamalı",
+      "kural": "#3b82f6|#22c55e|#0a0b0e|#10b981|#0d0f1a",
+      "istisna": []
+    },
+    {
+      "id": "css-tirnak",
+      "aciklama": "CSS'te data-theme tırnak kullanılmamalı",
+      "kural": "data-theme=\"dark\"|data-theme=\"light\"",
+      "istisna": []
+    },
+    {
+      "id": "flash-prevention",
+      "aciklama": "Her sayfada flash prevention script olmalı",
+      "kural": "flash prevention eksik",
+      "istisna": [
+        "giris.html",
+        "mobile/"
+      ]
+    }
+  ]
 }
