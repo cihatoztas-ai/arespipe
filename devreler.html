@@ -75,6 +75,28 @@
     .data-table tbody tr { cursor:pointer; transition:background .12s; }
     .data-table tbody tr:hover td { background:rgba(45,142,255,.04); }
     .data-table tbody tr.row-stopped td { background:rgba(229,62,62,.03); }
+    @keyframes _cascadeIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+    .data-table tbody tr { opacity:0; animation:_cascadeIn .22s ease forwards; }
+    .data-table tbody tr[data-ci="0"]  { animation-delay:0ms; }
+    .data-table tbody tr[data-ci="1"]  { animation-delay:45ms; }
+    .data-table tbody tr[data-ci="2"]  { animation-delay:90ms; }
+    .data-table tbody tr[data-ci="3"]  { animation-delay:135ms; }
+    .data-table tbody tr[data-ci="4"]  { animation-delay:180ms; }
+    .data-table tbody tr[data-ci="5"]  { animation-delay:225ms; }
+    .data-table tbody tr[data-ci="6"]  { animation-delay:270ms; }
+    .data-table tbody tr[data-ci="7"]  { animation-delay:315ms; }
+    .data-table tbody tr[data-ci="8"]  { animation-delay:360ms; }
+    .data-table tbody tr[data-ci="9"]  { animation-delay:405ms; }
+    .data-table tbody tr[data-ci="10"] { animation-delay:450ms; }
+    .data-table tbody tr[data-ci="11"] { animation-delay:495ms; }
+    .data-table tbody tr[data-ci="12"] { animation-delay:540ms; }
+    .data-table tbody tr[data-ci="13"] { animation-delay:585ms; }
+    .data-table tbody tr[data-ci="14"] { animation-delay:630ms; }
+    .data-table tbody tr[data-ci="15"] { animation-delay:675ms; }
+    .data-table tbody tr[data-ci="16"] { animation-delay:720ms; }
+    .data-table tbody tr[data-ci="17"] { animation-delay:765ms; }
+    .data-table tbody tr[data-ci="18"] { animation-delay:810ms; }
+    .data-table tbody tr[data-ci="19"] { animation-delay:855ms; }
     .star-cell  { text-align:center; cursor:default; user-select:none; white-space:nowrap; padding:4px 6px !important; }
     .star-cell:hover .star-icon { transform:scale(1.25); }
     .star-icon  { display:inline-block; font-size:16px; transition:transform .15s, color .2s; cursor:pointer; }
@@ -1422,6 +1444,7 @@ function _doRender() {
   };
 
   var baslangic = (_sayfa - 1) * _sayfaBasi;
+  var _ci = 0;
   tbody.innerHTML = liste.map(function(d, i) {
     var globalIdx = baslangic + i;
     var starState = _starCache[d.supaId] || 0;
@@ -1453,7 +1476,7 @@ function _doRender() {
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
 
-    return '<tr' + rowCls + ' onclick="devreAc(\'' + d.supaId + '\')">' +
+    return '<tr' + rowCls + ' data-ci="' + Math.min(_ci++, 19) + '" onclick="devreAc(\'' + d.supaId + '\')">' +
       '<td class="star-cell" onclick="event.stopPropagation();">' +
         '<span id="star_' + d.supaId + '" class="star-icon ' + starCfg.cls + '" onclick="yildizToggle(\'' + d.supaId + '\')" title="' + esc(starCfg.label || 'Malzeme durumu') + '">' + starCfg.icon + '</span>' +
         '<input class="sira-input' + (_siraCache[d.supaId] ? ' has-val' : '') + '" id="sira_' + d.supaId + '" data-sid="' + d.supaId + '" type="text" maxlength="3" placeholder="—" value="' + esc(_siraCache[d.supaId] || '') + '" onclick="event.stopPropagation()" onchange="siraGuncelle(this.dataset.sid,this.value);this.classList.toggle(\'has-val\',this.value.trim()!==\'\')" onkeydown="if(event.key===\'Enter\')this.blur()" title="İmalat sıra numarası">' +
