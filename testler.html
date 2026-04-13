@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Testler | AresPipe</title>
+<title data-i18n="ts_title">Testler | AresPipe</title>
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -156,40 +156,40 @@
 
 <div class="page-header">
   <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Testler</span></div>
-    <h1 class="page-title">Test Yönetimi</h1>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="ts_breadcrumb">Testler</span></div>
+    <h1 class="page-title" data-i18n="ts_page_title">Test Yönetimi</h1>
   </div>
 
 </div>
 
 <!-- STAT -->
 <div class="stat-row">
-  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label">Bekleyen</div><div class="stat-value" id="sB">0</div></div></div>
-  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0H5m4 0h10M5 14a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg></div><div><div class="stat-label">Devam Eden</div><div class="stat-value" id="sD">0</div></div></div>
-  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label">Tamamlanan</div><div class="stat-value" id="sT">0</div></div></div>
-  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="stat-label">Hatalı / Tamir</div><div class="stat-value" id="sH">0</div></div></div>
-  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-label">Toplam Paket</div><div class="stat-value" id="sTop">0</div></div></div>
+  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_bekleyen">Bekleyen</div><div class="stat-value" id="sB">0</div></div></div>
+  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0H5m4 0h10M5 14a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_devam">Devam Eden</div><div class="stat-value" id="sD">0</div></div></div>
+  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_tamamlanan">Tamamlanan</div><div class="stat-value" id="sT">0</div></div></div>
+  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_hatali">Hatalı / Tamir</div><div class="stat-value" id="sH">0</div></div></div>
+  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-label" data-i18n="ts_stat_toplam">Toplam Paket</div><div class="stat-value" id="sTop">0</div></div></div>
 </div>
 
 <!-- SEKMELER -->
 <div class="tab-bar">
-  <button class="tab-btn active" data-tab="bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
-  <button class="tab-btn" data-tab="devam">Devam Eden <span class="tc" id="tD">0</span></button>
-  <button class="tab-btn" data-tab="tamamlanan">Tamamlanan <span class="tc" id="tT">0</span></button>
-  <button class="tab-btn" data-tab="hepsi">Tüm Testler <span class="tc" id="tHepsi">0</span></button>
+  <button class="tab-btn active" data-tab="bekleyen" data-i18n="ts_tab_bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
+  <button class="tab-btn" data-tab="devam" data-i18n="ts_tab_devam">Devam Eden <span class="tc" id="tD">0</span></button>
+  <button class="tab-btn" data-tab="tamamlanan" data-i18n="ts_tab_tamamlanan">Tamamlanan <span class="tc" id="tT">0</span></button>
+  <button class="tab-btn" data-tab="hepsi" data-i18n="ts_tab_hepsi">Tüm Testler <span class="tc" id="tHepsi">0</span></button>
 </div>
 
 <!-- FİLTRELER (hepsi için ortak) -->
 <div class="fbar cl-ac">
-  <button class="btn btn-p btn-sm" onclick="yeniTestAc()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Test</button>
+  <button class="btn btn-p btn-sm" data-i18n-after="ts_btn_yeni" onclick="yeniTestAc()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Test</button>
   <div style="flex:1"></div>
-  <select class="fsel" id="fTip" onchange="renderAktif()"><option value="">Tüm Test Türleri</option></select>
-  <select class="fsel" id="fTersane" onchange="renderAktif()"><option value="">Tüm Tersaneler</option></select>
+  <select class="fsel" id="fTip" onchange="renderAktif()"><option value="" data-i18n="ts_filter_all_tip">Tüm Test Türleri</option></select>
+  <select class="fsel" id="fTersane" onchange="renderAktif()"><option value="" data-i18n="ts_filter_all_tersane">Tüm Tersaneler</option></select>
   <div class="swrap">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="fAra" placeholder="Test no, devre, proje..." oninput="renderAktif()">
+    <input type="text" id="fAra" placeholder="Test no, devre, proje..." data-i18n-placeholder="ts_search_ph" oninput="renderAktif()">
   </div>
-  <button class="btn btn-g btn-sm" onclick="fSifirla()">Temizle</button>
+  <button class="btn btn-g btn-sm" onclick="fSifirla()" data-i18n="ts_btn_temizle">Temizle</button>
 </div>
 
 <div class="panel on" id="panelBekleyen"><div id="listeBekleyen"></div></div>
@@ -202,14 +202,14 @@
 <!-- ===== YENİ TEST MODAL ===== -->
 <div id="mYeni" class="mov" style="display:none;">
   <div class="mbox">
-    <div class="mhead"><div class="mtitle">Yeni Test Paketi</div><button class="mcl" onclick="document.getElementById('mYeni').style.display='none'">✕</button></div>
+    <div class="mhead"><div class="mtitle" data-i18n="ts_modal_yeni_title">Yeni Test Paketi</div><button class="mcl" onclick="document.getElementById('mYeni').style.display='none'">✕</button></div>
 
     <!-- Adım 1: Devre seç -->
     <div class="fg">
-      <label class="fl">Tersane & Devre <span style="color:var(--re)">*</span></label>
+      <label class="fl"><span data-i18n="ts_label_tersane_devre">Tersane & Devre</span> <span style="color:var(--re)">*</span></label>
       <div class="fr2" style="margin-bottom:8px;">
         <select class="fi" id="yTersane" onchange="devreleriDoldur()">
-          <option value="">Tersane seçin...</option>
+          <option value="" data-i18n="ts_opt_tersane_sec">Tersane seçin...</option>
           <option value="Sedef Tersanesi">Sedef Tersanesi</option>
           <option value="Tersan Tersanesi">Tersan Tersanesi</option>
           <option value="RMK Marine">RMK Marine</option>
@@ -219,29 +219,29 @@
         </select>
       </div>
       <div class="fr2">
-        <div><label class="fl" style="margin-bottom:4px;">Proje No</label><input class="fi" id="yProje" placeholder="Otomatik gelecek..." readonly style="opacity:0.6;"></div>
-        <div><label class="fl" style="margin-bottom:4px;">Gemi</label><input class="fi" id="yGemi" placeholder="Otomatik gelecek..." readonly style="opacity:0.6;"></div>
+        <div><label class="fl" style="margin-bottom:4px;" data-i18n="ts_label_proje_no">Proje No</label><input class="fi" id="yProje" placeholder="Otomatik gelecek..." data-i18n-placeholder="ts_ph_otomatik" readonly style="opacity:0.6;"></div>
+        <div><label class="fl" style="margin-bottom:4px;" data-i18n="ts_label_gemi">Gemi</label><input class="fi" id="yGemi" placeholder="Otomatik gelecek..." data-i18n-placeholder="ts_ph_otomatik" readonly style="opacity:0.6;"></div>
       </div>
     </div>
 
     <!-- Adım 2: Test türü -->
     <div class="fg">
-      <label class="fl">Test Türü <span style="color:var(--re)">*</span></label>
+      <label class="fl"><span data-i18n="ts_label_test_turu">Test Türü</span> <span style="color:var(--re)">*</span></label>
       <div class="tip-grid" id="tipGrid"></div>
       <div id="digerTipBlok" style="display:none;margin-top:8px;">
-        <input class="fi" id="digerTipAd" placeholder="Test türü adını girin...">
+        <input class="fi" id="digerTipAd" placeholder="Test türü adını girin..." data-i18n-placeholder="ts_ph_diger_tip">
       </div>
     </div>
 
     <!-- Açıklama / Özel Not -->
     <div class="fg">
-      <label class="fl">Açıklama / Özel Not</label>
+      <label class="fl" data-i18n="ts_label_aciklama">Açıklama / Özel Not</label>
       <textarea class="fta" id="yNot" placeholder="Örn: DN150–DN300 arası spool'larda %10 oranında RT istenmektedir. Kaynak dikişleri ISO 17636-1'e uygun olmalıdır."></textarea>
     </div>
 
     <div class="fr2 fg">
-      <div><label class="fl">Planlanan Tarih</label><input type="date" class="fi" id="yTarih"></div>
-      <div><label class="fl">Test Firması / Yetkili</label><input class="fi" id="yFirma" placeholder="Test yapacak firma veya kişi"></div>
+      <div><label class="fl" data-i18n="ts_label_tarih">Planlanan Tarih</label><input type="date" class="fi" id="yTarih"></div>
+      <div><label class="fl" data-i18n="ts_label_firma">Test Firması / Yetkili</label><input class="fi" id="yFirma" placeholder="Test yapacak firma veya kişi" data-i18n-placeholder="ts_ph_firma"></div>
     </div>
 
     <!-- Uyarı notu -->
@@ -250,8 +250,8 @@
     </div>
 
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mYeni').style.display='none'">İptal</button>
-      <button class="btn btn-p" style="flex:2;" onclick="testKaydet()">Test Paketini Oluştur</button>
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mYeni').style.display='none'" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn btn-p" style="flex:2;" onclick="testKaydet()" data-i18n="ts_btn_olustur">Test Paketini Oluştur</button>
     </div>
   </div>
 </div>
@@ -261,7 +261,7 @@
   <div class="mbox mbox-lg">
     <div class="mhead">
       <div>
-        <div class="mtitle" id="mSonucTitle">Test Sonucu Gir</div>
+        <div class="mtitle" id="mSonucTitle" data-i18n="ts_modal_sonuc_title">Test Sonucu Gir</div>
         <div style="font-size:12px;color:var(--txd);margin-top:2px;" id="mSonucSub"></div>
       </div>
       <button class="mcl" onclick="document.getElementById('mSonuc').style.display='none'">✕</button>
@@ -270,33 +270,33 @@
     <input type="hidden" id="mSonucId">
 
     <div class="fr3 fg">
-      <div><label class="fl">Test Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="mSonucTarih"></div>
-      <div><label class="fl">Başlangıç Saati</label><input type="time" class="fi" id="mSonucBas"></div>
-      <div><label class="fl">Bitiş Saati</label><input type="time" class="fi" id="mSonucBit"></div>
+      <div><label class="fl"><span data-i18n="ts_label_test_tarihi">Test Tarihi</span> <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="mSonucTarih"></div>
+      <div><label class="fl" data-i18n="ts_label_bas_saat">Başlangıç Saati</label><input type="time" class="fi" id="mSonucBas"></div>
+      <div><label class="fl" data-i18n="ts_label_bit_saat">Bitiş Saati</label><input type="time" class="fi" id="mSonucBit"></div>
     </div>
 
     <div class="fr2 fg">
-      <div><label class="fl">Test Onaylayan <span style="color:var(--re)">*</span></label><input class="fi" id="mSonucKisi" placeholder="Ad Soyad / Unvan"></div>
-      <div><label class="fl">Genel Sonuç <span style="color:var(--re)">*</span></label>
+      <div><label class="fl"><span data-i18n="ts_label_onaylayan">Test Onaylayan</span> <span style="color:var(--re)">*</span></label><input class="fi" id="mSonucKisi" placeholder="Ad Soyad / Unvan" data-i18n-placeholder="ts_ph_onaylayan"></div>
+      <div><label class="fl"><span data-i18n="ts_label_genel_sonuc">Genel Sonuç</span> <span style="color:var(--re)">*</span></label>
         <select class="fi" id="mSonucGenel">
-          <option value="">Seçin...</option>
-          <option value="gecti">✓ Tamamı Geçti</option>
-          <option value="kismi">⚠ Kısmen Geçti (Bazı Spooller Hatalı)</option>
-          <option value="kaldi">✗ Kaldı / Tamir Gerekli</option>
+          <option value="" data-i18n="ts_opt_secin">Seçin...</option>
+          <option value="gecti" data-i18n="ts_sonuc_gecti">✓ Tamamı Geçti</option>
+          <option value="kismi" data-i18n="ts_sonuc_kismi">⚠ Kısmen Geçti (Bazı Spooller Hatalı)</option>
+          <option value="kaldi" data-i18n="ts_sonuc_kaldi">✗ Kaldı / Tamir Gerekli</option>
         </select>
       </div>
     </div>
 
     <!-- Spool bazlı sonuç tablosu -->
     <div class="fg">
-      <label class="fl">Spool Bazlı Sonuçlar</label>
+      <label class="fl" data-i18n="ts_label_spool_sonuc">Spool Bazlı Sonuçlar</label>
       <div style="border:1px solid var(--bor);border-radius:10px;overflow:hidden;">
         <table class="sonuc-tablo">
           <thead><tr>
-            <th>Spool No</th>
-            <th>Test Sonucu</th>
-            <th>Hata Kaynağı</th>
-            <th>Not</th>
+            <th data-i18n="cmn_th_spool_no">Spool No</th>
+            <th data-i18n="ts_th_sonuc">Test Sonucu</th>
+            <th data-i18n="ts_th_hata">Hata Kaynağı</th>
+            <th data-i18n="cmn_th_not">Not</th>
           </tr></thead>
           <tbody id="sonucTablo"></tbody>
         </table>
@@ -304,8 +304,8 @@
     </div>
 
     <div class="fg">
-      <label class="fl">Genel Not / Rapor Özeti</label>
-      <textarea class="fta" id="mSonucNot" placeholder="Test sırasında gözlemlenen durumlar, öneriler..."></textarea>
+      <label class="fl" data-i18n="ts_label_genel_not">Genel Not / Rapor Özeti</label>
+      <textarea class="fta" id="mSonucNot" placeholder="Test sırasında gözlemlenen durumlar, öneriler..." data-i18n-placeholder="ts_ph_genel_not"></textarea>
     </div>
 
     <div class="fg">
@@ -557,7 +557,7 @@ function renderTab(tab) {
   liste = aktifFiltre(liste);
   const elId = {bekleyen:'listeBekleyen',devam:'listeDevam',tamamlanan:'listeTamamlanan',hepsi:'listeHepsi'}[tab];
   const el = document.getElementById(elId);
-  if (!liste.length) { el.innerHTML='<div class="bos"><div class="bos-icon">🧪</div>Gösterilecek test yok</div>'; return; }
+  if (!liste.length) { el.innerHTML='<div class="bos"><div class="bos-icon">🧪</div>'+tv('ts_bos_liste','Gösterilecek test yok')+'</div>'; return; }
   el.innerHTML = liste.map(testKartHtml).join('');
 }
 
@@ -567,10 +567,10 @@ function renderHepsi() {
 
 function testKartHtml(t) {
   const durumMap = {
-    bekleyen: '<span class="b ba">Bekliyor</span>',
-    devam:    '<span class="b bb">Devam Ediyor</span>',
-    tamamlandi:'<span class="b bg">Tamamlandı ✓</span>',
-    hatali:   '<span class="b br">Hatalı / Tamir</span>',
+    bekleyen: '<span class="b ba">'+tv('ts_durum_bekliyor','Bekliyor')+'</span>',
+    devam:    '<span class="b bb">'+tv('ts_durum_devam','Devam Ediyor')+'</span>',
+    tamamlandi:'<span class="b bg">'+tv('ts_durum_tamamlandi','Tamamlandı ✓')+'</span>',
+    hatali:   '<span class="b br">'+tv('ts_durum_hatali','Hatalı / Tamir')+'</span>',
   };
   const tipCls = {RT:'tip-rt',PT:'tip-pt',UT:'tip-ut',VT:'tip-vt'}[t.tip]||'tip-dg';
   const gecti = t.spooller.filter(s=>s.sonuc==='gecti').length;
@@ -587,18 +587,18 @@ function testKartHtml(t) {
         </div>
         <div style="font-size:13px;color:var(--txm);">${t.tersane} · ${t.projeNo} / ${t.devre}</div>
         <div style="font-size:12px;color:var(--txd);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
-          <span>Tarih: <strong style="color:var(--tx);">${t.tarih}</strong></span>
-          ${t.firma?`<span>Yetkili: <strong style="color:var(--tx);">${t.firma}</strong></span>`:''}
-          <span>${t.spooller.length} spool
-            ${gecti?` · <span style="color:var(--gr);">${gecti} geçti</span>`:''}
-            ${hatali?` · <span style="color:var(--re);">${hatali} hatalı</span>`:''}
-            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} bekliyor</span>`:''}
+          <span>${tv('ts_kart_tarih','Tarih')}: <strong style="color:var(--tx);">${t.tarih}</strong></span>
+          ${t.firma?`<span>${tv('ts_kart_yetkili','Yetkili')}: <strong style="color:var(--tx);">${t.firma}</strong></span>`:''}
+          <span>${t.spooller.length} ${tv('ts_kart_spool','spool')}
+            ${gecti?` · <span style="color:var(--gr);">${gecti} ${tv('ts_kart_gecti','geçti')}</span>`:''}
+            ${hatali?` · <span style="color:var(--re);">${hatali} ${tv('ts_kart_hatali_spool','hatalı')}</span>`:''}
+            ${bekliyor?` · <span style="color:var(--warn);">${bekliyor} ${tv('ts_kart_bekliyor','bekliyor')}</span>`:''}
           </span>
         </div>
         ${t.not?`<div style="font-size:12px;color:var(--txd);margin-top:4px;font-style:italic;">${t.not}</div>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">
-        ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">Sonuç Gir</button>` : ''}
+        ${t.durum==='bekleyen'||t.durum==='devam' ? `<button class="btn btn-p btn-sm" onclick="event.stopPropagation();sonucAc('${t.id}')">${tv('ts_btn_sonuc_gir','Sonuç Gir')}</button>` : ''}
         ${t.belgeler.length?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();showToast('PDF indiriliyor...','info')">PDF</button>`:''}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;margin-top:4px;" id="chev-${t.id}"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
@@ -606,10 +606,10 @@ function testKartHtml(t) {
     <div class="tkart-body" id="body-${t.id}">
       <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
         <div>
-          <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Sonuçları</div>
+          <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tv('ts_kart_spool_sonuclari','Spool Sonuçları')}</div>
           <table class="st">
             <thead><tr>
-              <th>Spool No</th><th>Sonuç</th><th>Hata Kaynağı</th><th>Not</th>
+              <th>${tv('cmn_th_spool_no','Spool No')}</th><th>${tv('ts_th_sonuc','Sonuç')}</th><th>${tv('ts_th_hata','Hata Kaynağı')}</th><th>${tv('cmn_th_not','Not')}</th>
             </tr></thead>
             <tbody>
               ${t.spooller.map(s=>`<tr>
@@ -623,15 +623,15 @@ function testKartHtml(t) {
         </div>
         <div style="min-width:180px;">
           ${t.sonucBilgi?`
-            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Test Bilgisi</div>
+            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${tv('ts_kart_test_bilgisi','Test Bilgisi')}</div>
             <div style="font-size:12px;color:var(--txm);line-height:1.8;">
-              <div>Tarih: <strong style="color:var(--tx);">${t.sonucBilgi.tarih}</strong></div>
-              ${t.sonucBilgi.bas?`<div>Süre: ${t.sonucBilgi.bas} – ${t.sonucBilgi.bit}</div>`:''}
-              <div>Onaylayan: <strong style="color:var(--tx);">${t.sonucBilgi.kisi}</strong></div>
+              <div>${tv('ts_kart_tarih','Tarih')}: <strong style="color:var(--tx);">${t.sonucBilgi.tarih}</strong></div>
+              ${t.sonucBilgi.bas?`<div>${tv('ts_kart_sure','Süre')}: ${t.sonucBilgi.bas} – ${t.sonucBilgi.bit}</div>`:''}
+              <div>${tv('ts_kart_onaylayan','Onaylayan')}: <strong style="color:var(--tx);">${t.sonucBilgi.kisi}</strong></div>
               ${t.sonucBilgi.not?`<div style="margin-top:6px;padding:8px;background:var(--sur2);border-radius:8px;font-style:italic;">${t.sonucBilgi.not}</div>`:''}
-            </div>` : '<div style="color:var(--txd);font-size:12px;">Sonuç henüz girilmedi</div>'}
+            </div>` : `<div style="color:var(--txd);font-size:12px;">${tv('ts_kart_sonuc_yok','Sonuç henüz girilmedi')}</div>`}
           ${t.belgeler.length?`
-            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-top:12px;margin-bottom:6px;">Belgeler</div>
+            <div style="font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-top:12px;margin-bottom:6px;">${tv('ts_kart_belgeler','Belgeler')}</div>
             ${t.belgeler.map(b=>`<div style="font-size:12px;color:var(--ac);padding:4px 0;cursor:pointer;" onclick="showToast('${b} indiriliyor...','info')">📄 ${b}</div>`).join('')}`:''}
         </div>
       </div>
@@ -640,7 +640,7 @@ function testKartHtml(t) {
 }
 
 function sonucBadge(s) {
-  const m={gecti:'<span class="b bg">✓ Geçti</span>',hatali:'<span class="b br">✗ Hatalı</span>',tamir:'<span class="b ba">⚠ Tamir</span>',bekliyor:'<span class="b bx">Bekliyor</span>'};
+  const m={gecti:`<span class="b bg">✓ ${tv('ts_sonuc_gecti_k','Geçti')}</span>`,hatali:`<span class="b br">✗ ${tv('ts_sonuc_hatali_k','Hatalı')}</span>`,tamir:`<span class="b ba">⚠ ${tv('ts_sonuc_tamir_k','Tamir')}</span>`,bekliyor:`<span class="b bx">${tv('ts_durum_bekliyor','Bekliyor')}</span>`};
   return m[s]||'<span class="b bx">—</span>';
 }
 
@@ -655,7 +655,7 @@ function kartToggle(id) {
 function yeniTestAc() {
   secilenTip = '';
   document.getElementById('yTersane').value='';
-  document.getElementById('yDevre').innerHTML='<option value="">Önce tersane seçin</option>';
+  document.getElementById('yDevre').innerHTML=`<option value="">${tv('ts_opt_once_tersane','Önce tersane seçin')}</option>`;
   document.getElementById('yProje').value='';
   document.getElementById('yGemi').value='';
   document.getElementById('yNot').value='';
@@ -670,7 +670,7 @@ function yeniTestAc() {
 async function devreleriDoldur() {
   const t = document.getElementById('yTersane').value;
   const sel = document.getElementById('yDevre');
-  sel.innerHTML = '<option value="">Yükleniyor...</option>';
+  sel.innerHTML = `<option value="">${tv('ts_opt_yukleniyor','Yükleniyor...')}</option>`;
 
   if (ARES.mod === 'supabase' && t) {
     const supa = ARES.supabase();
@@ -679,7 +679,7 @@ async function devreleriDoldur() {
       .eq('tenant_id', ARES.tenantId())
       .eq('silindi', false)
       .order('devre_no');
-    sel.innerHTML = '<option value="">Devre seçin...</option>';
+    sel.innerHTML = `<option value="">${tv('ts_opt_devre_sec','Devre seçin...')}</option>`;
     (res.data || []).forEach(function(d) {
       const o = document.createElement('option');
       o.value = d.id;
@@ -691,7 +691,7 @@ async function devreleriDoldur() {
       sel.appendChild(o);
     });
   } else {
-    sel.innerHTML = '<option value="">Devre seçin...</option>';
+    sel.innerHTML = `<option value="">${tv('ts_opt_devre_sec','Devre seçin...')}</option>`;
     (DEVRELER[t]||[]).forEach(function(d) {
       const o=document.createElement('option');
       o.value=d.id; o.textContent=d.ad+' ('+d.projeNo+')';
@@ -793,7 +793,7 @@ function testKaydet() {
 function sonucAc(id) {
   const t = testler.find(x=>x.id===id); if(!t) return;
   document.getElementById('mSonucId').value = id;
-  document.getElementById('mSonucTitle').textContent = t.no + ' — Sonuç Gir';
+  document.getElementById('mSonucTitle').textContent = t.no + ' — ' + tv('ts_modal_sonuc_title','Test Sonucu Gir');
   document.getElementById('mSonucSub').textContent = t.tipAd + ' · ' + t.tersane + ' · ' + t.devre;
   document.getElementById('mSonucTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('mSonucBas').value = '';
@@ -808,7 +808,7 @@ function sonucAc(id) {
       <td><span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--leg);">${s.no}</span></td>
       <td>
         <select class="sonuc-sel" id="sr-${t.id}-${s.no}">
-          <option value="bekliyor" ${s.sonuc==='bekliyor'?'selected':''}>Bekliyor</option>
+          <option value="bekliyor" ${s.sonuc==='bekliyor'?'selected':''}>${tv('ts_durum_bekliyor','Bekliyor')}</option>
           <option value="gecti"    ${s.sonuc==='gecti'?'selected':''}>✓ Geçti</option>
           <option value="hatali"   ${s.sonuc==='hatali'?'selected':''}>✗ Hatalı</option>
           <option value="tamir"    ${s.sonuc==='tamir'?'selected':''}>⚠ Tamir</option>
