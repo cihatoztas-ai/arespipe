@@ -1441,7 +1441,6 @@
   "sp_alist_partial": "PARTIAL",
   "sp_alist_none_short": "NONE",
   "dv_conn_error": "Could not connect to Supabase — please reload",
-  "nav_personel": "Personnel",
   "sp_btn_tamamla": "Complete",
   "sp_ai_done": "Analysis complete",
   "sp_ai_score": "Score",
