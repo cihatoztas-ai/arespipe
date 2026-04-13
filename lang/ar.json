@@ -1689,5 +1689,6 @@
   "qr_araniyor": "جارٍ البحث…",
   "qr_bulunamadi": "البكرة غير موجودة",
   "qr_bulundu": "تم العثور عليها — جارٍ التحويل…",
-  "qr_baglanti_hatasi": "خطأ في الاتصال"
+  "qr_baglanti_hatasi": "خطأ في الاتصال",
+  "sp_confirm_unstop": "هل تريد إزالة الإيقاف؟"
 }

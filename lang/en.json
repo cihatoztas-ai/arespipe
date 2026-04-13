@@ -1689,5 +1689,6 @@
   "qr_araniyor": "searching…",
   "qr_bulunamadi": "Spool not found",
   "qr_bulundu": "Found — redirecting…",
-  "qr_baglanti_hatasi": "Connection error"
+  "qr_baglanti_hatasi": "Connection error",
+  "sp_confirm_unstop": "Remove the stop?"
 }

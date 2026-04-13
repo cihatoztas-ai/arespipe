@@ -1055,5 +1055,6 @@
   "qr_araniyor": "aranıyor…",
   "qr_bulunamadi": "Spool bulunamadı",
   "qr_bulundu": "Bulundu — yönlendiriliyor…",
-  "qr_baglanti_hatasi": "Bağlantı hatası"
+  "qr_baglanti_hatasi": "Bağlantı hatası",
+  "sp_confirm_unstop": "Durdurma kaldırılsın mı?"
 }
