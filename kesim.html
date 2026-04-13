@@ -470,12 +470,15 @@ if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k
 if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
 
 function matBadge(m) {
-  var ml = (m||'').toLowerCase();
+  // Türkçe karakterleri normalize et
+  var ml = (m||'').toLowerCase()
+    .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ş/g,'s')
+    .replace(/ç/g,'c').replace(/ö/g,'o').replace(/ü/g,'u');
   var label, cls;
   if (ml.indexOf('karbon')!==-1||ml==='celik') { label=tv('cmn_malzeme_karbon','Karbon Çelik'); cls='mb-celik'; }
   else if (ml.indexOf('paslanmaz')!==-1) { label=tv('cmn_malzeme_paslanmaz','Paslanmaz'); cls='mb-pas'; }
-  else if (ml.indexOf('bakır')!==-1||ml.indexOf('cuni')!==-1) { label=tv('cmn_malzeme_bakir','Bakır Alaşım'); cls='mb-bakir'; }
-  else if (ml.indexOf('alüm')!==-1||ml.indexOf('alum')!==-1) { label=tv('cmn_malzeme_alum','Alüminyum'); cls='mb-alum'; }
+  else if (ml.indexOf('bakir')!==-1||ml.indexOf('cuni')!==-1) { label=tv('cmn_malzeme_bakir','Bakır Alaşım'); cls='mb-bakir'; }
+  else if (ml.indexOf('alum')!==-1) { label=tv('cmn_malzeme_alum','Alüminyum'); cls='mb-alum'; }
   else { label=m||'—'; cls='mb-diger'; }
   return '<span class="'+cls+'">'+label+'</span>';
 }
@@ -936,11 +939,11 @@ function renderKL(){
       +'<span class="kl-arrow">▶</span>'
       +'<div class="kl-no">'+esc(kl.no)+'</div>'
       +'<div class="kl-tags">'
-      +kl.kriter.tersaneler.map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
-      +kl.kriter.malzemeler.map(v=>'<span class="kl-tag klt-malzeme">'+esc(v)+'</span>').join('')
-      +kl.kriter.kaliteler.map(v=>'<span class="kl-tag klt-kalite">'+esc(v)+'</span>').join('')
-      +kl.kriter.capler.map(v=>'<span class="kl-tag klt-cap">Ø '+esc(v)+'</span>').join('')
-      +kl.kriter.kalinliklar.map(v=>'<span class="kl-tag klt-kal">et '+esc(v)+'</span>').join('')
+      +(kl.kriter.tersaneler||[]).map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
+      +(kl.kriter.malzemeler||[]).map(v=>'<span class="kl-tag klt-malzeme">'+esc(v)+'</span>').join('')
+      +(kl.kriter.kaliteler||[]).map(v=>'<span class="kl-tag klt-kalite">'+esc(v)+'</span>').join('')
+      +(kl.kriter.capler||[]).map(v=>'<span class="kl-tag klt-cap">Ø '+esc(v)+'</span>').join('')
+      +(kl.kriter.kalinliklar||[]).map(v=>'<span class="kl-tag klt-kal">et '+esc(v)+'</span>').join('')
       +'<span class="kl-tag klt-count" id="klcnt-'+kl.id+'">✂️ '+kesildi+'/'+toplam+' '+tv('ks_kesildi','kesildi')+' · '+mm.toLocaleString('tr-TR')+' mm</span>'
       +'</div>'
       +'<div class="kl-meta">'+esc(kl.tarih)+'</div>'
@@ -1087,7 +1090,7 @@ function renderArc(){
       +'<span class="arc-arrow">▶</span>'
       +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800;color:var(--gr);min-width:120px;">'+esc(kl.no)+'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:8px;flex:1;align-items:center;">'+badge
-      +kl.kriter.tersaneler.map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
+      +(kl.kriter.tersaneler||[]).map(v=>'<span class="kl-tag klt-tersane">🏭 '+esc(v)+'</span>').join('')
       +'<span class="kl-tag klt-count">✂️ '+arcB.length+' '+tv('bk_unit_boru','boru')+' · '+mm.toLocaleString('tr-TR')+' mm</span>'
       +'</div>'
       +'<div style="font-size:14px;color:var(--txd);flex-shrink:0;">'+esc(arc.tarih)+'</div>'
