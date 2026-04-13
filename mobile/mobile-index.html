@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light-anthracite">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>AresPipe</title>
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
+<link rel="stylesheet" href="ares-mobile.css">
+<script src="../ares-store.js"></script>
+<script src="../ares-lang.js"></script>
+<style>
+/* ── Ana Sayfa Özel ── */
+.hero {
+  background: var(--sur);
+  border-bottom: 1px solid var(--bor);
+  padding: 20px 16px 24px;
+}
+.hero-greeting {
+  font-size: 13px;
+  color: var(--txd);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.hero-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--tx);
+  line-height: 1;
+}
+.hero-meta {
+  font-size: 13px;
+  color: var(--txd);
+  margin-top: 6px;
+}
+
+.uyari-banner {
+  margin: 12px 16px 0;
+  background: var(--re2);
+  border: 1px solid var(--re);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.uyari-banner-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.uyari-banner-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--re);
+  line-height: 1.4;
+}
+.uyari-banner-arrow {
+  color: var(--re);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.quick-card {
+  background: var(--sur);
+  border: 1px solid var(--bor);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color .15s;
+  position: relative;
+  overflow: hidden;
+}
+.quick-card:active { opacity: .85; }
+.quick-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.quick-card.qc-blue::before { background: var(--ac); }
+.quick-card.qc-green::before { background: var(--gr); }
+.quick-card.qc-warn::before { background: var(--warn); }
+.quick-card.qc-red::before { background: var(--re); }
+.quick-card.qc-leg::before { background: var(--leg); }
+
+.quick-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--txd);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.quick-card-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--tx);
+}
+.quick-card-sub {
+  font-size: 12px;
+  color: var(--txd);
+  margin-top: -4px;
+}
+
+.son-aktivite-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bor);
+}
+.son-aktivite-item:last-child { border-bottom: none; }
+
+.sa-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.sa-dot.d-blue  { background: var(--ac); }
+.sa-dot.d-green { background: var(--gr); }
+.sa-dot.d-warn  { background: var(--warn); }
+.sa-dot.d-red   { background: var(--re); }
+
+.sa-body { flex: 1; min-width: 0; }
+.sa-title { font-size: 14px; font-weight: 600; color: var(--tx); }
+.sa-sub   { font-size: 12px; color: var(--txd); margin-top: 2px; }
+.sa-time  { font-size: 11px; color: var(--txd); flex-shrink: 0; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="m-topbar">
+  <div class="m-topbar-logo">AP</div>
+  <div class="m-topbar-title" id="mTopbarTitle">AresPipe</div>
+  <div class="m-topbar-actions">
+    <button class="m-topbar-btn" onclick="mDrawerAc()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Sayfa -->
+<div class="m-page" id="mPage" style="display:none;">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-greeting" id="heroGreeting">Günaydın</div>
+    <div class="hero-name" id="heroName">—</div>
+    <div class="hero-meta" id="heroMeta">—</div>
+  </div>
+
+  <!-- Uyarı Banner (varsa) -->
+  <div id="uyariBanner" style="display:none;">
+    <a class="uyari-banner" href="uyarilar.html">
+      <div class="uyari-banner-icon">⚠️</div>
+      <div class="uyari-banner-text" id="uyariBannerText">—</div>
+      <div class="uyari-banner-arrow">›</div>
+    </a>
+  </div>
+
+  <!-- İstatistikler -->
+  <div class="m-section-row">
+    <div class="m-section-title">Genel Durum</div>
+  </div>
+
+  <div class="quick-grid">
+    <a href="devreler.html" class="quick-card qc-blue">
+      <div class="quick-card-label">Aktif Devre</div>
+      <div class="quick-card-val" id="stDevre">—</div>
+      <div class="quick-card-sub">Devam eden</div>
+    </a>
+    <a href="ara.html?filtre=bekleyen" class="quick-card qc-warn">
+      <div class="quick-card-label">Bekleyen Spool</div>
+      <div class="quick-card-val" id="stBekleyen">—</div>
+      <div class="quick-card-sub">İşlem gerekiyor</div>
+    </a>
+    <a href="kk.html" class="quick-card qc-leg">
+      <div class="quick-card-label">KK Bekleyen</div>
+      <div class="quick-card-val" id="stKK">—</div>
+      <div class="quick-card-sub">Onay bekliyor</div>
+    </a>
+    <a href="sevkiyat.html" class="quick-card qc-green">
+      <div class="quick-card-label">Bu Ay Sevk</div>
+      <div class="quick-card-val" id="stSevk">—</div>
+      <div class="quick-card-sub">Tamamlandı</div>
+    </a>
+  </div>
+
+  <div class="m-sep" style="margin-top:20px;"></div>
+
+  <!-- Hızlı Erişim -->
+  <div class="m-section-row">
+    <div class="m-section-title">Hızlı Erişim</div>
+  </div>
+
+  <div class="m-card-list" style="padding-top:0;">
+    <a href="gemiler.html" class="m-card-item cl-ac">
+      <div class="m-card-icon ic-blue">🚢</div>
+      <div class="m-card-body">
+        <div class="m-card-title">Gemiler</div>
+        <div class="m-card-sub">Proje ve gemi listesi</div>
+      </div>
+      <div class="m-card-arrow">›</div>
+    </a>
+    <a href="devreler.html" class="m-card-item cl-ac">
+      <div class="m-card-icon ic-blue">🔗</div>
+      <div class="m-card-body">
+        <div class="m-card-title">Devreler</div>
+        <div class="m-card-sub">Aktif devreler</div>
+      </div>
+      <div class="m-card-arrow">›</div>
+    </a>
+    <a href="kk.html" class="m-card-item cl-leg">
+      <div class="m-card-icon" style="background:rgba(124,58,237,.12);">✅</div>
+      <div class="m-card-body">
+        <div class="m-card-title">Kalite Kontrol</div>
+        <div class="m-card-sub">KK talepleri ve durumlar</div>
+      </div>
+      <div class="m-card-arrow">›</div>
+    </a>
+    <a href="sevkiyat.html" class="m-card-item cl-gr">
+      <div class="m-card-icon ic-green">🚚</div>
+      <div class="m-card-body">
+        <div class="m-card-title">Sevkiyatlar</div>
+        <div class="m-card-sub">Giden ve gelen</div>
+      </div>
+      <div class="m-card-arrow">›</div>
+    </a>
+    <a href="tezgahlar.html" class="m-card-item cl-warn">
+      <div class="m-card-icon" style="background:rgba(217,119,6,.12);">⚙️</div>
+      <div class="m-card-body">
+        <div class="m-card-title">Tezgahlar</div>
+        <div class="m-card-sub">Tezgah ve kapasite</div>
+      </div>
+      <div class="m-card-arrow">›</div>
+    </a>
+  </div>
+
+  <div class="m-sep"></div>
+
+  <!-- Son Aktiviteler -->
+  <div class="m-section-row">
+    <div class="m-section-title">Son Aktiviteler</div>
+  </div>
+
+  <div class="m-card" style="margin: 0 16px 24px;" id="sonAktiviteWrap">
+    <div id="sonAktivite">
+      <div class="m-empty">
+        <div class="m-skeleton" style="width:180px;height:14px;margin-bottom:8px;"></div>
+        <div class="m-skeleton" style="width:140px;height:14px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Drawer & Nav -->
+<div id="mDrawerOverlay" class="m-drawer-overlay" onclick="mDrawerKapat()"></div>
+<div id="mDrawer" class="m-drawer"></div>
+<nav class="m-bottomnav" id="mBottomNav"></nav>
+
+<script src="../ares-store.js"></script>
+<script src="ares-mobile.js"></script>
+<script>
+'use strict';
+
+document.addEventListener('DOMContentLoaded', async function() {
+  var ok = await mInit();
+  if (!ok) return;
+
+  var oturum = mOturum();
+  var supa = mSupabase();
+  var tid = mTenantId();
+
+  // Hero
+  var saat = new Date().getHours();
+  var selamlama = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+  document.getElementById('heroGreeting').textContent = selamlama;
+  document.getElementById('heroName').textContent = oturum ? (oturum.ad_soyad || oturum.email || 'Kullanıcı') : '—';
+
+  var rolLabel = {
+    'super_admin': 'Süper Admin',
+    'yonetici': 'Yönetici',
+    'kk_uzmani': 'KK Uzmanı',
+    'operator': 'Operatör',
+    'izleyici': 'İzleyici'
+  }[oturum?.rol] || '';
+  document.getElementById('heroMeta').textContent = rolLabel;
+
+  document.getElementById('mPage').style.display = '';
+
+  if (!supa || !tid) return;
+
+  // İstatistikler
+  try {
+    var buAyBas = new Date(); buAyBas.setDate(1); buAyBas.setHours(0,0,0,0);
+
+    var [rDvr, rBek, rKK, rSvk, rUyari] = await Promise.all([
+      supa.from('devreler').select('id', {count:'exact',head:true}).eq('tenant_id',tid).or('silindi.is.null,silindi.eq.false'),
+      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('aktif_basamak','bekleyen'),
+      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('aktif_basamak','on_kontrol'),
+      supa.from('sevkiyatlar').select('id', {count:'exact',head:true}).eq('tenant_id',tid).gte('tarih', buAyBas.toISOString()),
+      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('durduruldu',true),
+    ]);
+
+    var txv = function(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = val !== null ? val : '—';
+    };
+    txv('stDevre', rDvr.count);
+    txv('stBekleyen', rBek.count);
+    txv('stKK', rKK.count);
+    txv('stSevk', rSvk.count);
+
+    // Uyarı banner
+    if (rUyari.count > 0) {
+      var banner = document.getElementById('uyariBanner');
+      var text = document.getElementById('uyariBannerText');
+      if (banner && text) {
+        banner.style.display = '';
+        text.textContent = rUyari.count + ' durdurulmuş spool var — detayları inceleyin';
+      }
+    }
+  } catch(e) { console.warn('[Ana]', e); }
+
+  // Son aktiviteler
+  try {
+    var {data: loglar} = await supa
+      .from('islem_log')
+      .select('islem, tablo_adi, olusturma, kullanici_id')
+      .eq('tenant_id', tid)
+      .order('olusturma', {ascending: false})
+      .limit(6);
+
+    var el = document.getElementById('sonAktivite');
+    if (!loglar || !loglar.length) {
+      el.innerHTML = '<div class="m-empty"><div class="m-empty-icon">📋</div><div class="m-empty-text">Henüz aktivite yok</div></div>';
+      return;
+    }
+
+    var renkMap = { 'insert': 'd-green', 'update': 'd-blue', 'delete': 'd-red' };
+    el.innerHTML = loglar.map(function(l) {
+      var renk = renkMap[l.islem] || 'd-warn';
+      var sure = mFormatSure(l.olusturma);
+      return `<div class="son-aktivite-item">
+        <div class="sa-dot ${renk}"></div>
+        <div class="sa-body">
+          <div class="sa-title">${esc(l.tablo_adi || '—')}</div>
+          <div class="sa-sub">${esc(l.islem || '—')}</div>
+        </div>
+        <div class="sa-time">${sure}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.warn('[Log]', e);
+  }
+});
+</script>
+</body>
+</html>
