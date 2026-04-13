@@ -174,6 +174,36 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--sur); border: 1px solid var(--bor); border-radius: 10px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; z-index: 1100; animation: slideIn 0.3s ease; font-size: 14px; }
 .toast-info { border-left: 3px solid var(--ac); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ── WIDGET DRAG & DROP ── */
+.widget-container { display: flex; flex-direction: column; gap: 20px; }
+.widget-box { position: relative; transition: opacity .2s, transform .2s; }
+.widget-box.dragging { opacity: .4; }
+.widget-box.drag-over { transform: translateY(4px); }
+.widget-handle {
+  position: absolute; top: 10px; right: 10px; z-index: 10;
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--sur2); border: 1px solid var(--bor);
+  display: none; align-items: center; justify-content: center;
+  cursor: grab; color: var(--txd); font-size: 14px;
+}
+.widget-handle:active { cursor: grabbing; }
+.edit-mode .widget-handle { display: flex; }
+.edit-mode .widget-box {
+  outline: 2px dashed var(--bor);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+.edit-mode-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--bor);
+  background: var(--sur2); color: var(--txm); font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif;
+  transition: all .15s;
+}
+.edit-mode-btn.aktif { background: var(--ac); color: #fff; border-color: var(--ac); }
+.stat-row { margin-bottom: 0; }
+.dashboard-grid { margin-top: 0; }
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
@@ -195,8 +225,14 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
       <div class="page-title-label" data-i18n="idx_subtitle">Tersane Yönetim Sistemi</div>
       <div class="page-title" data-i18n="idx_title">Ana Sayfa</div>
     </div>
-    <div style="font-size:14px;color:var(--txd);" id="clockDisplay"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✦ Düzenle</button>
+      <div style="font-size:14px;color:var(--txd);" id="clockDisplay"></div>
+    </div>
   </div>
+  <div class="widget-container" id="widgetContainer">
+  <div class="widget-box" data-widget="stats">
+    <div class="widget-handle" title="Taşı">⠿</div>
   <div class="stat-row">
     <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_proje">Aktif Proje</div><div class="stat-value" id="stProje">—</div></div></div>
     <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_devre">Aktif Devre</div><div class="stat-value" id="stDevre">—</div></div></div>
@@ -204,7 +240,10 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
     <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kk">KK Bekleyen</div><div class="stat-value" id="stKK" style="color:var(--re);">—</div></div></div>
     <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_sevk">Bu Ay Sevk</div><div class="stat-value" id="stSevk" style="color:var(--gr);">—</div></div></div>
   </div>
-  <div class="dashboard-grid">
+  </div><!-- /widget stats -->
+  <div class="widget-box" data-widget="spool">
+    <div class="widget-handle" title="Taşı">⠿</div>
+  <div class="dashboard-grid" style="grid-template-columns:1fr;">
     <div class="spool-block">
       <div class="sb-hdr"><div class="sb-title" data-i18n="idx_spool_baslik">Sistemdeki Toplam Spool Durumu</div></div>
       <div class="sb-body">
@@ -233,6 +272,10 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
         </div>
       </div>
     </div>
+  </div><!-- /spool-block -->
+  </div><!-- /widget spool -->
+  <div class="widget-box" data-widget="takvim">
+    <div class="widget-handle" title="Taşı">⠿</div>
     <div class="cal-wrap">
       <div class="cal-header">
         <div style="display:flex;align-items:center;gap:7px">
@@ -258,7 +301,8 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
       <div class="popup" id="popup"></div>
       <div class="legend"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);display:inline-block"></span>Etkinlik olan günler</span><span style="color:var(--text-muted);font-size:14px;margin-left:4px">· Çift tıklayarak not ekleyin</span></div>
     </div>
-  </div>
+  </div><!-- /widget takvim -->
+  </div><!-- /widget-container -->
 </div>
 </div>
 </div>
@@ -401,6 +445,82 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   })();
 });
+
+// ── WIDGET DRAG & DROP ────────────────────────────────────────
+var _editMode = false;
+var _dragSrc = null;
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  var btn = document.getElementById('editModeBtn');
+  var container = document.getElementById('widgetContainer');
+  if (_editMode) {
+    btn.textContent = '✓ Bitti';
+    btn.classList.add('aktif');
+    container.classList.add('edit-mode');
+    initDragDrop();
+  } else {
+    btn.textContent = '✦ Düzenle';
+    btn.classList.remove('aktif');
+    container.classList.remove('edit-mode');
+    saveWidgetOrder();
+  }
+}
+
+function initDragDrop() {
+  document.querySelectorAll('.widget-box').forEach(function(box) {
+    box.setAttribute('draggable', 'true');
+    box.addEventListener('dragstart', function(e) {
+      _dragSrc = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    box.addEventListener('dragend', function() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.widget-box').forEach(function(b){ b.classList.remove('drag-over'); });
+    });
+    box.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (_dragSrc !== this) this.classList.add('drag-over');
+    });
+    box.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over');
+    });
+    box.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      if (_dragSrc === this) return;
+      var container = document.getElementById('widgetContainer');
+      var boxes = Array.from(container.querySelectorAll('.widget-box'));
+      var srcIdx = boxes.indexOf(_dragSrc);
+      var tgtIdx = boxes.indexOf(this);
+      if (srcIdx < tgtIdx) {
+        container.insertBefore(_dragSrc, this.nextSibling);
+      } else {
+        container.insertBefore(_dragSrc, this);
+      }
+    });
+  });
+}
+
+function saveWidgetOrder() {
+  var order = Array.from(document.querySelectorAll('.widget-box')).map(function(b){ return b.dataset.widget; });
+  localStorage.setItem('ares_widget_order', JSON.stringify(order));
+}
+
+function loadWidgetOrder() {
+  try {
+    var order = JSON.parse(localStorage.getItem('ares_widget_order') || '[]');
+    if (!order.length) return;
+    var container = document.getElementById('widgetContainer');
+    order.forEach(function(id) {
+      var box = container.querySelector('[data-widget="' + id + '"]');
+      if (box) container.appendChild(box);
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() { loadWidgetOrder(); });
 </script>
 </body>
 </html>
