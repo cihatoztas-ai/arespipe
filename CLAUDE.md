@@ -181,7 +181,39 @@ Altyapı: Supabase multi-tenant hazır, `tenant_type` ile web/AresPipe kullanıc
 ## 9. i18n KURALLARI — SAYFA GÜNCELLEME REHBERİ
 
 > Bir sayfa güncellendiğinde bu kurallara göre kontrol yap.
-> Güncelleme büyükse **parçalara böl:** CSS+Init → Statik HTML → Dinamik HTML → Toast+Log
+> **Güncelleme büyükse parçalara böl — tek seferde yapma.**
+
+### 9.0 Sayfa Geldiğinde İlk Yapılacak: OTOMATİK TANI
+
+Sayfa yüklenince **önce analiz yap, listeyi sun, onay al, sonra uygula:**
+
+```
+TANI KONTROL LİSTESİ
+─────────────────────────────────────────────
+□ CSS: data-theme tırnaklı mı? ([data-theme="dark"] → hata)
+□ Init: while döngüsü mü? (→ Promise tabanlıya çevir)
+□ _onLangChange: DOMContentLoaded içinde mi? (→ dışına taşı)
+□ Global scope tv(): var mı? (→ Python scripti ile kontrol)
+□ tv() güvenlik fallback'i: script başında mı?
+□ Hardcoded Türkçe string sayısı (JS içi)
+□ data-i18n eksik HTML eleman sayısı
+□ matBadge/tvMalzeme: normalize ediyor mu?
+```
+
+Tanı sonrası **değişiklik listesi ve sırasını sun**, kullanıcı onaylarsa uygula.
+
+### 9.1 Değişiklik Öncelik Sırası
+
+Büyük güncellemelerde bu sıra korunur — her parça deploy edilip test edilmeden sonrakine geçilmez:
+
+| Sıra | Kapsam | Açıklama |
+|---|---|---|
+| 1 | **Kritik** | CSS tırnak, init döngüsü, global tv() hatası |
+| 2 | **Yapısal** | _onLangChange pozisyonu, tv() fallback, helper'lar |
+| 3 | **Statik HTML** | data-i18n ekleme, data-i18n-placeholder |
+| 4 | **Dinamik HTML** | innerHTML içi tv(), matBadge, ucMap vb. |
+| 5 | **Toast / Log** | showToast, logEkle Türkçe string'leri |
+| 6 | **DB değerleri** | _normKey, _malzemeGoster, _yuzeyGoster |
 
 ### 9.1 CSS
 ```css
