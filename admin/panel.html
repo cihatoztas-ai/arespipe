@@ -281,6 +281,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="nav-item" onclick="goPan('feedback',this)"><span class="nav-icon">💬</span>Geri Bildirimler</div>
   <div class="nav-item" onclick="goPan('yapilanlar',this)"><span class="nav-icon">✅</span>Yapılanlar</div>
   <div class="nav-item" onclick="goPan('yolharitasi',this)"><span class="nav-icon">🗺️</span>Yol Haritası</div>
+  <div class="nav-item" onclick="goPan('mobil',this)"><span class="nav-icon">📱</span>Mobil Önizleme</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('loglar',this)"><span class="nav-icon">📋</span>Sistem Logları</div>
 </div>
@@ -636,6 +637,73 @@ tr:hover td{background:rgba(255,255,255,.02);}
     </div>
 
     <div id="yolHaritasiContainer"></div>
+  </div>
+
+  <!-- MOBİL ÖNİZLEME -->
+  <div class="panel" id="pan-mobil">
+    <div class="page-header">
+      <div class="page-title">Mobil Önizleme</div>
+      <div class="page-sub">Mobil sayfaları telefon ve tablet çerçevesinde görüntüleyin</div>
+    </div>
+
+    <style>
+      .mob-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+      .mob-page-select{background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;cursor:pointer;}
+      .mob-device-btns{display:flex;gap:6px;}
+      .mob-dev-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur);color:var(--txm);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+      .mob-dev-btn.active{background:var(--ac);border-color:var(--ac);color:#fff;}
+      .mob-frame-wrap{display:flex;justify-content:center;align-items:flex-start;padding:20px 0;}
+      .mob-device{position:relative;background:#1a1a2e;border-radius:40px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);transition:all .3s;}
+      .mob-device.phone{width:390px;}
+      .mob-device.tablet{width:768px;}
+      .mob-notch{width:120px;height:28px;background:#1a1a2e;border-radius:0 0 18px 18px;margin:0 auto 8px;position:relative;z-index:2;}
+      .mob-screen{background:#fff;border-radius:28px;overflow:hidden;position:relative;}
+      .mob-device.phone .mob-screen{height:700px;}
+      .mob-device.tablet .mob-screen{height:600px;}
+      .mob-iframe{width:100%;height:100%;border:none;display:block;}
+      .mob-home-bar{width:120px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;margin:8px auto 0;}
+      .mob-url-bar{display:flex;align-items:center;gap:8px;background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--txd);margin-bottom:12px;}
+      .mob-url-bar svg{width:14px;height:14px;stroke:var(--txd);flex-shrink:0;}
+      .mob-reload{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--txd);}
+      .mob-reload svg{width:14px;height:14px;stroke:currentColor;}
+    </style>
+
+    <div class="mob-toolbar">
+      <div class="mob-url-bar" style="flex:1;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span id="mobUrlText">arespipe.vercel.app/mobile/index.html</span>
+        <button class="mob-reload" onclick="mobReload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="mob-toolbar">
+      <select class="mob-page-select" id="mobPageSelect" onchange="mobChangePage()">
+        <optgroup label="Mobil Sayfalar">
+          <option value="../mobile/index.html">Ana Sayfa</option>
+          <option value="../mobile/devreler.html">Devreler</option>
+          <option value="../mobile/devre_detay.html">Devre Detay</option>
+          <option value="../mobile/spool_detay.html">Spool Detay</option>
+          <option value="../mobile/qr.html">QR Tarayıcı</option>
+          <option value="../mobile/ara.html">Arama</option>
+        </optgroup>
+      </select>
+      <div class="mob-device-btns">
+        <button class="mob-dev-btn active" onclick="mobSetDevice('phone',this)">📱 Telefon</button>
+        <button class="mob-dev-btn" onclick="mobSetDevice('tablet',this)">📟 Tablet</button>
+      </div>
+    </div>
+
+    <div class="mob-frame-wrap">
+      <div class="mob-device phone" id="mobDevice">
+        <div class="mob-notch"></div>
+        <div class="mob-screen">
+          <iframe class="mob-iframe" id="mobIframe" src="../mobile/index.html"></iframe>
+        </div>
+        <div class="mob-home-bar"></div>
+      </div>
+    </div>
   </div>
 
   <div class="panel" id="pan-loglar">
@@ -1677,6 +1745,27 @@ function goPan(id, el) {
     window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname);
   }
 })();
+
+// ── MOBİL ÖNİZLEME ────────────────────────────────────
+function mobChangePage() {
+  var sel = document.getElementById('mobPageSelect');
+  var url = sel.value;
+  document.getElementById('mobIframe').src = url;
+  document.getElementById('mobUrlText').textContent = 'arespipe.vercel.app/' + url.replace('../', '');
+}
+
+function mobSetDevice(device, btn) {
+  document.querySelectorAll('.mob-dev-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var dev = document.getElementById('mobDevice');
+  dev.className = 'mob-device ' + device;
+}
+
+function mobReload() {
+  var iframe = document.getElementById('mobIframe');
+  iframe.src = iframe.src;
+}
+
 </script>
 </body>
 </html>
