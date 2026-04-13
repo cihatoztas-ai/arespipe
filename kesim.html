@@ -17,20 +17,20 @@
    TEMA (spool_detay ile eşleşir)
 ═══════════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;}
-:root,[data-theme="dark"]{
+:root,[data-theme=dark]{
   --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;
   --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
   --ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--or:#f97316;
 }
-[data-theme="light-anthracite"]{
+[data-theme=light-anthracite]{
   --bg:#f0f2f5;--sur:#ffffff;--sur2:#f4f6f8;--bor:#dde1e7;
   --tx:#1a2233;--txm:#4a5568;--txd:#8a96a8;
   --ac:#1a73e8;--gr:#0d8050;--re:#c0392b;--warn:#b7770d;--leg:#6200ea;--or:#e65100;
 }
-[data-theme="dark"] .icon-sun{display:block;}
-[data-theme="dark"] .icon-moon{display:none;}
-[data-theme="light-anthracite"] .icon-sun{display:none;}
-[data-theme="light-anthracite"] .icon-moon{display:block;}
+[data-theme=dark] .icon-sun{display:block;}
+[data-theme=dark] .icon-moon{display:none;}
+[data-theme=light-anthracite] .icon-sun{display:none;}
+[data-theme=light-anthracite] .icon-moon{display:block;}
 
 /* ═══════════════════════════════════════════
    LAYOUT
@@ -269,11 +269,11 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
   <!-- Breadcrumb -->
   <div style="margin-bottom:18px;">
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span class="cur">Kesim Yönetimi</span></div>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span class="cur" data-i18n="ks_breadcrumb">Kesim Yönetimi</span></div>
   </div>
 
   <!-- Başlık -->
-  <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--ac);letter-spacing:1px;line-height:1;margin-bottom:22px;">✂️ Kesim Yönetimi</h1>
+  <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:var(--ac);letter-spacing:1px;line-height:1;margin-bottom:22px;"data-i18n="ks_page_title">✂️ Kesim Yönetimi</h1>
 
   <!-- Stat Kartlar -->
   <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);">
@@ -314,7 +314,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value=""><span data-i18n="cmn_th_cap"><span data-i18n="cmn_th_cap">Çap</span></span></option></select>
         <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value=""><span data-i18n="cmn_th_et"><span data-i18n="cmn_th_et">Et Kal.</span></span></option></select>
         <select class="filter-select" id="fSert" onchange="onFC()" title="Sertifika">
-          <option value="">Sertifika</option>
+          <option value="" data-i18n="ks_filter_cert">Sertifika</option>
           <option value="evet" data-i18n="ks_chip_cert">Sertifikalı</option>
           <option value="hayir" data-i18n="ks_no_cert">Sertifikasız</option>
         </select>
@@ -338,14 +338,14 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       <table class="data-table">
         <thead><tr>
           <th class="no-sort" style="width:36px;">#</th>
-          <th onclick="sortBy('tersane')">Tersane</th>
-          <th onclick="sortBy('isEmir')">İş Emri</th>
+          <th onclick="sortBy('tersane')"><span data-i18n="cmn_th_tersane">Tersane</span></th>
+          <th onclick="sortBy('isEmir')"><span data-i18n="ks_chip_isemir">İş Emri</span></th>
           <th onclick="sortBy('spool')"><span data-i18n="cmn_th_spool_no"><span data-i18n="cmn_th_spool_no">Spool No</span></span></th>
           <th onclick="sortBy('spoolId')" style="color:var(--leg);"><span data-i18n="cmn_th_spool_id"><span data-i18n="cmn_th_spool_id">Spool ID</span></span></th>
-          <th onclick="sortBy('malzeme')">Malzeme</th>
-          <th onclick="sortBy('kalite')">Kalite</th>
-          <th onclick="sortBy('cap')">Çap</th>
-          <th onclick="sortBy('kalinlik')">Et Kal.</th>
+          <th onclick="sortBy('malzeme')"><span data-i18n="ks_filter_mat">Malzeme</span></th>
+          <th onclick="sortBy('kalite')"><span data-i18n="ks_filter_grade">Kalite</span></th>
+          <th onclick="sortBy('cap')"><span data-i18n="ks_chip_cap">Çap</span></th>
+          <th onclick="sortBy('kalinlik')"><span data-i18n="ks_chip_thk">Et Kal.</span></th>
           <th onclick="sortBy('kesimOlcusu')" style="color:var(--warn);"><span data-i18n="ks_th_kesim_mm">Kesim (mm)</span></th>
           <th onclick="sortBy('ucA')"><span data-i18n="ks_th_a_ucu">A Ucu</span></th>
           <th onclick="sortBy('ucB')"><span data-i18n="ks_th_b_ucu">B Ucu</span></th>
@@ -464,6 +464,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
 <script>
 'use strict';
+// ares-lang.js yüklenmeden tv() çağrılırsa patlamasın
+if (typeof tv === 'undefined') { window.tv = function(k,fb){ return fb!==undefined?fb:k; }; }
+if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k; }; }
+if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
 
 function matBadge(m) {
   var ml = (m||'').toLowerCase();
@@ -557,6 +561,7 @@ var PG_BORU = 20, PG_KL = 10, PG_ARC = 10;
 var pgBoru = 1, pgKL = 1, pgArc = 1;
 
 function ucLabel(k){ var m={duz:tv('ks_uc_duz','Düz'),kaynak:tv('ks_uc_kaynak','Kaynak Ağzı'),yiv:tv('ks_uc_yiv','Yiv'),dis:tv('ks_uc_dis','Diş'),bukum:tv('ks_uc_bukum','Büküm Borusu')}; return m[k]||k; }
+function getUcMap(){return {duz:tv('ks_uc_duz','Düz'),kaynak:tv('ks_uc_kaynak','Kaynak Ağzı'),yiv:tv('ks_uc_yiv','Yiv'),dis:tv('ks_uc_dis','Diş'),bukum:tv('ks_uc_bukum','Büküm Borusu')};}
 const ucMap = {duz:'Düz',kaynak:'Kaynak Ağzı',yiv:'Yiv',dis:'Diş',bukum:'Büküm Borusu'};
 const ucCls = {duz:'uc-duz',kaynak:'uc-kaynak',yiv:'uc-yiv',dis:'uc-dis',bukum:'uc-bukum'};
 
@@ -676,10 +681,10 @@ function resetAll(){
 }
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
-  [{id:'fTersane',l:'Tersane'},{id:'fMalzeme',l:'Malzeme'},{id:'fKalite',l:'Kalite'},
-   {id:'fCap',l:tv('cmn_th_cap','Çap')},{id:'fKalinlik',l:tv('cmn_th_et','Et Kal.')},{id:'fSert',l:tv('cmn_sertifika','Sertifika'),fmt:v=>v==='evet'?'Sertifikalı':'Sertifikasız'}]
-    .forEach(f=>{var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+f.l+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">✕</button></div>');});
-  [...secilenIsEmir].forEach(ie=>chips.push('<div class="active-chip">İş Emir: <b>'+esc(ie)+'</b><button onclick="rmMs(\''+esc(ie)+'\')">✕</button></div>'));
+  [{id:'fTersane',l:function(){return tv('cmn_th_tersane','Tersane');}},{id:'fMalzeme',l:function(){return tv('ks_filter_mat','Malzeme');}},{id:'fKalite',l:function(){return tv('ks_filter_grade','Kalite');}},
+   {id:'fCap',l:function(){return tv('cmn_th_cap','Çap');}},{id:'fKalinlik',l:function(){return tv('cmn_th_et','Et Kal.');}},{id:'fSert',l:function(){return tv('cmn_sertifika','Sertifika');},fmt:function(v){return v==='evet'?tv('ks_filter_cert_yes','Sertifikalı'):tv('ks_filter_cert_no','Sertifikasız');}}]
+    .forEach(f=>{var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+(typeof f.l==='function'?f.l():f.l)+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">✕</button></div>');});
+  [...secilenIsEmir].forEach(ie=>chips.push('<div class="active-chip">'+(typeof tv==='function'?tv('ks_chip_isemir','İş Emri'):('İş Emri'))+': <b>'+esc(ie)+'</b><button onclick="rmMs(\''+esc(ie)+'\')">✕</button></div>'));
   if(aramaMetni)chips.push('<div class="active-chip">Arama: <b>"'+esc(aramaMetni)+'"</b><button onclick="clearSearch()">✕</button></div>');
   cont.style.display=chips.length?'flex':'none';
   cont.innerHTML=chips.join('');
@@ -688,6 +693,7 @@ function clearChip(id){var el=document.getElementById(id);if(el){el.value='';el.
 function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();}
 
 function applyFilters(){
+  if(typeof tv === 'function') Object.assign(ucMap, getUcMap()); // dil değişince güncelle
   pgBoru=1;
   filtreData=borular.filter(k=>{
     if(k.durum!=='bekliyor') return false;
@@ -841,9 +847,9 @@ function openListeModal(){
     document.getElementById('listeNoInput').value='KL'+new Date().getFullYear().toString().slice(-2)+'-'+String(klSayac).padStart(3,'0');
   }
   document.getElementById('listeModalPreview').innerHTML=
-    '<b>Tersane:</b> '+esc(tersaneler.join(', '))+'<br>'
-    +'<b>Malzeme:</b> '+esc(malzemeler[0])+' — <span style="color:var(--ac);">'+esc(kaliteler[0])+'</span><br>'
-    +'<b>Çap:</b> Ø'+esc(capler[0])+' — et '+esc(kalinliklar[0])+'<br>'
+    '<b>'+tv('cmn_th_tersane','Tersane')+':</b> '+esc(tersaneler.join(', '))+'<br>'
+    +'<b>'+tv('ks_filter_mat','Malzeme')+':</b> '+esc(malzemeler[0])+' — <span style="color:var(--ac);">'+esc(kaliteler[0])+'</span><br>'
+    +'<b>'+tv('ks_chip_cap','Çap')+':</b> Ø'+esc(capler[0])+' — et '+esc(kalinliklar[0])+'<br>'
     +'<b>'+tv('ks_toplam_kesim','Toplam Kesim')+':</b> <span style="color:var(--warn);font-weight:700;">'+mm.toLocaleString('tr-TR')+' mm</span>';
   document.getElementById('listeModal').style.display='flex';
   setTimeout(()=>{var el=document.getElementById('listeNoInput');if(el)el.select();},50);
@@ -953,11 +959,11 @@ function renderKL(){
       +'<div style="overflow-x:auto;">'
       +'<table class="data-table" style="min-width:900px;">'
       +'<thead><tr>'
-      +'<th class="no-sort cb-cell">Kesildi</th>'
-      +'<th class="no-sort" style="width:36px;">#</th>'
-      +'<th>Spool No</th><th>Spool ID</th>'
-      +'<th style="color:var(--warn);">Kesim (mm)</th>'
-      +'<th>A Ucu</th><th>B Ucu</th>'
+      +'<th class="no-sort cb-cell">'+tv('ks_col_cut_done','Kesildi')+'</th>'
+      +'<th class="no-sort" style="width:36px;">'+tv('cmn_th_no','#')+'</th>'
+      +'<th>'+tv('cmn_th_spool_no','Spool No')+'</th><th>'+tv('cmn_th_spool_id','Spool ID')+'</th>'
+      +'<th style="color:var(--warn);">'+tv('ks_th_kesim_mm','Kesim (mm)')+'</th>'
+      +'<th>'+tv('ks_th_a_ucu','A Ucu')+'</th><th>'+tv('ks_th_b_ucu','B Ucu')+'</th>'
       +'</tr></thead>'
       +'<tbody>'
       +klB.map((k,i)=>{
@@ -1089,10 +1095,10 @@ function renderArc(){
       +'<div class="arc-body" id="arcbody-'+kl.id+'-'+ai+'">'
       +'<div style="overflow-x:auto;">'
       +'<table class="data-table" style="min-width:800px;"><thead><tr>'
-      +'<th class="no-sort" style="width:36px;">#</th>'
-      +'<th>Spool No</th><th>Spool ID</th>'
-      +'<th style="color:var(--warn);">Kesim (mm)</th>'
-      +'<th>A Ucu</th><th>B Ucu</th>'
+      +'<th class="no-sort" style="width:36px;">'+tv('cmn_th_no','#')+'</th>'
+      +'<th>'+tv('cmn_th_spool_no','Spool No')+'</th><th>'+tv('cmn_th_spool_id','Spool ID')+'</th>'
+      +'<th style="color:var(--warn);">'+tv('ks_th_kesim_mm','Kesim (mm)')+'</th>'
+      +'<th>'+tv('ks_th_a_ucu','A Ucu')+'</th><th>'+tv('ks_th_b_ucu','B Ucu')+'</th>'
       +'</tr></thead><tbody>'
       +arcB.map((k,i)=>'<tr>'
         +'<td class="cell-no">'+(i+1)+'</td>'
@@ -1135,11 +1141,11 @@ function renderTekil(){
   }
   cont.innerHTML='<div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">'
     +'<table class="data-table" style="min-width:700px;"><thead><tr>'
-    +'<th style="width:36px;">#</th><th>Spool No</th><th>Malzeme</th><th>Çap</th>'
-    +'<th style="color:var(--warn);">Kesim (mm)</th><th>Uç A</th><th>Uç B</th><th>Tarih</th>'
+    +'<th style="width:36px;">'+tv('cmn_th_no','#')+'</th><th>'+tv('cmn_th_spool_no','Spool No')+'</th><th>'+tv('ks_filter_mat','Malzeme')+'</th><th>'+tv('ks_chip_cap','Çap')+'</th>'
+    +'<th style="color:var(--warn);">'+tv('ks_th_kesim_mm','Kesim (mm)')+'</th><th>'+tv('ks_th_a_ucu','Uç A')+'</th><th>'+tv('ks_th_b_ucu','Uç B')+'</th><th>'+tv('cmn_th_tarih','Tarih')+'</th>'
     +'</tr></thead><tbody>'
     +tekil.map(function(k,i){
-      var ucMap={duz:'Düz',kaynak:'Kaynak',yiv:'Yiv',dis:'Diş',bukum:'Büküm'};
+      var ucMap=typeof tv==='function'?getUcMap():{duz:'Düz',kaynak:'Kaynak',yiv:'Yiv',dis:'Diş',bukum:'Büküm'};
       return '<tr>'
         +'<td style="color:var(--txd);font-size:14px;">'+(i+1)+'</td>'
         +'<td style="font-size:14px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
@@ -1348,7 +1354,7 @@ async function buildExcelJS(kl,klB,plans,kerf,trim,minArtik,dosyaAdi){
   var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=dosyaAdi+'.xlsx';
   a.click();URL.revokeObjectURL(a.href);
-  toast(dosyaAdi+'.xlsx indirildi','success');
+  toast(dosyaAdi+' '+tv('ks_downloaded','indirildi'),'success');
 }
 
 // ════════════════════════════════════
@@ -1388,7 +1394,7 @@ function kesimTamamla(){
   document.getElementById('kesimOnayModal').style.display='none';
   _kesimOnayId=null;
   applyFilters(); updateStats();
-  toast(esc(k.spool)+' kesimi tamamlandı','success');
+  toast(esc(k.spool)+' '+tv('ks_kesim_tamamlandi','kesimi tamamlandı'),'success');
 }
 
 function toast(msg,type){
@@ -1406,33 +1412,37 @@ function toast(msg,type){
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();
+  if (typeof renderTekil === 'function') renderTekil();
+  if (typeof renderListeler === 'function') renderListeler();
 };
 
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
     try {
-      var _bekle = 0;
-      while (_bekle < 80 && typeof ARES === 'undefined') {
-        await new Promise(function(r){ setTimeout(r, 100); });
-        _bekle++;
-      }
-      if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
-      // Supabase CDN async — hazır olana kadar bekle
-      _bekle = 0;
-      while (_bekle < 80) {
-        var _supa = ARES.supabase();
-        if (_supa) {
-          var _ses = await _supa.auth.getSession();
-          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol();
-            if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
-            break; }
-          if (_bekle > 20) { location.href = 'giris.html'; return; }
+      // ARES + Supabase hazır olana kadar bekle (maks 12 sn)
+      var _supaHazir = await new Promise(function(resolve) {
+        var _el = 0;
+        function _chk() {
+          if (typeof ARES !== 'undefined') {
+            var _s = typeof ARES.supabase === 'function' ? ARES.supabase() : null;
+            if (_s && typeof _s.from === 'function') { resolve(true); return; }
+          }
+          _el += 200; if (_el >= 12000) { resolve(false); return; }
+          setTimeout(_chk, 200);
         }
-        await new Promise(function(r){ setTimeout(r, 100); });
-        _bekle++;
+        _chk();
+      });
+
+      if (_supaHazir) {
+        var _ses = await ARES.supabase().auth.getSession();
+        if (_ses.data && _ses.data.session) {
+          await ARES.oturumKontrol();
+          if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
+        } else { location.href = 'giris.html'; return; }
       }
+
       if (window._applyI18n) _applyI18n();
-      if (ARES.mod === 'supabase') { await veriYukle(); }
+      if (typeof ARES !== 'undefined' && ARES.mod === 'supabase') { await veriYukle(); }
       else { populateFilters(); applyFilters(); }
       renderTekil();
       var lm = document.getElementById('listeModal');
@@ -1440,9 +1450,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var fm = document.getElementById('formModal');
       if (fm) fm.addEventListener('click', function(e){ if(e.target===e.currentTarget) closeFormModal(); });
     } catch(e) { console.error('[ARES]', e); }
-    finally {
-      document.documentElement.style.visibility = '';
-    }
+    finally { document.documentElement.style.visibility = ''; }
   })();
 });
 </script>
