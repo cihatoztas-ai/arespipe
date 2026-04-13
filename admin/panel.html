@@ -279,6 +279,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="nav-item" onclick="goPan('kullanicilar',this)"><span class="nav-icon">👥</span>Kullanıcılar</div>
   <div class="nav-item" onclick="goPan('flags',this)"><span class="nav-icon">🚩</span>Feature Flags</div>
   <div class="nav-item" onclick="goPan('feedback',this)"><span class="nav-icon">💬</span>Geri Bildirimler</div>
+  <div class="nav-item" onclick="goPan('yapilanlar',this)"><span class="nav-icon">✅</span>Yapılanlar</div>
   <div class="nav-item" onclick="goPan('yolharitasi',this)"><span class="nav-icon">🗺️</span>Yol Haritası</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('loglar',this)"><span class="nav-icon">📋</span>Sistem Logları</div>
@@ -286,6 +287,122 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <!-- MAIN -->
 <div class="main">
+
+  <!-- YAPILAN IŞLER -->
+  <div class="panel" id="pan-yapilanlar">
+    <div class="page-header">
+      <div class="page-title">Yapılanlar</div>
+      <div class="page-sub" id="yapilanlarTarih">Son geliştirme oturumu özeti</div>
+    </div>
+
+    <style>
+      .yp-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+      .yp-stat{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;text-align:center;}
+      .yp-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;}
+      .yp-stat-lbl{font-size:11px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+      .yp-faz{margin-bottom:20px;}
+      .yp-faz-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 0;border-bottom:1px solid var(--bor);}
+      .yp-faz-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);}
+      .yp-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
+      .yp-done{background:rgba(22,163,110,.12);color:var(--gr);}
+      .yp-wip{background:rgba(217,119,6,.12);color:var(--warn);}
+      .yp-item{display:flex;align-items:flex-start;gap:10px;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--txm);}
+      .yp-item:hover{background:var(--sur2);}
+      .yp-item-icon{flex-shrink:0;width:18px;text-align:center;margin-top:1px;}
+      .yp-lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+      .yp-lang{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;}
+      .yp-lang-name{font-size:12px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+      .yp-lang-count{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--tx);margin:2px 0;}
+      .yp-lang-delta{font-size:12px;color:var(--gr);}
+      .yp-section-title{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+    </style>
+
+    <!-- İstatistikler -->
+    <div class="yp-stat-grid">
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--ac);">30+</div><div class="yp-stat-lbl">Dosya</div></div>
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--gr);">4</div><div class="yp-stat-lbl">Faz tamamlandı</div></div>
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--warn);">230+</div><div class="yp-stat-lbl">Dil anahtarı</div></div>
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--leg);">2</div><div class="yp-stat-lbl">API düzeltildi</div></div>
+    </div>
+
+    <!-- Dil dosyaları -->
+    <div class="yp-section-title">Dil dosyaları</div>
+    <div class="yp-lang-grid">
+      <div class="yp-lang">
+        <div class="yp-lang-name">tr.json</div>
+        <div class="yp-lang-count">~1045</div>
+        <div class="yp-lang-delta">+257 eklendi</div>
+      </div>
+      <div class="yp-lang">
+        <div class="yp-lang-name">en.json</div>
+        <div class="yp-lang-count">~1658</div>
+        <div class="yp-lang-delta">+230 eklendi</div>
+      </div>
+      <div class="yp-lang">
+        <div class="yp-lang-name">ar.json</div>
+        <div class="yp-lang-count">~1658</div>
+        <div class="yp-lang-delta">+230 eklendi</div>
+      </div>
+    </div>
+
+    <!-- Fazlar -->
+    <div class="yp-section-title">Tamamlanan fazlar</div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 0 — Güvenlik</span>
+        <span class="yp-badge yp-done">Tamamlandı</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>authKontrol() → Supabase native token (sb-*-auth-token) kontrolü</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>Logout ve debug badge zaten düzeltilmişti</span></div>
+    </div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 1 — Renk sistemi</span>
+        <span class="yp-badge yp-done">Tamamlandı</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>admin/firma.html, admin/panel.html, admin/firma-detay.html</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>portal/index.html, sorgula.html, izometri-batch.html, devre_duzenle.html</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>supabase.createClient() → ARES.supabase() (admin/portal)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>api/izometri-oku.js + api/sorgula.js → edge → Node.js runtime</span></div>
+    </div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 2 — Flash + ares-lang.js</span>
+        <span class="yp-badge yp-done">Tamamlandı</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>proje_detay.html, uyarilar.html, ayarlar.html → ares-lang.js eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>tersaneler.html → yerel _I18N + ares-lang.js entegre</span></div>
+    </div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 3 — CSS + Dil sistemi</span>
+        <span class="yp-badge yp-done">Tamamlandı</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kesim.html → renk sistemi + dil analizi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>testler.html → sıfırdan dil sistemi (46 data-i18n, 26 tv())</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kalite_kontrol.html → renk + dil sistemi (38 data-i18n)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>sevkiyatlar.html → CSS tırnak + 76 dil anahtarı</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>log.html → CSS tırnak düzeltildi</span></div>
+    </div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 4 — Tekil düzeltmeler</span>
+        <span class="yp-badge yp-wip">Devam ediyor</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kullanicilar.html → magic link + dil sistemi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>izometri-batch.html → dil sistemi eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js → nav_izobatch eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>nav_kullanicilar + nav_izobatch → 3 dile eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">○</span><span style="color:var(--txd);">qr_tara.html → rol bazlı yönlendirme (sırada)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">○</span><span style="color:var(--txd);">spool_detay.html → URL param fix (sırada)</span></div>
+    </div>
+
+  </div>
 
   <!-- DASHBOARD -->
   <div class="panel active" id="pan-dashboard">
@@ -1477,6 +1594,7 @@ function goPan(id, el) {
   if (id === 'flags') flaglariYukle();
   if (id === 'feedback') feedbackYukle();
   if (id === 'yolharitasi') yolHaritasiRender();
+  if (id === 'yapilanlar') { var el2 = document.getElementById('yapilanlarTarih'); if(el2) el2.textContent = 'Son güncelleme: ' + new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'}); }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   T('pan-'+id).classList.add('active');
