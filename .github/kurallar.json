@@ -1,45 +1,84 @@
 {
-  "kurallar": [
-    {
-      "id": "ares-layout-yukle",
-      "aciklama": "Her HTML sayfasında ares-layout.js yüklenmeli",
-      "kural": "ares-layout.js yuklenmiyor",
-      "istisna": [
-        "giris.html",
-        "qr_tara.html",
-        "admin/panel.html",
-        "admin/firma.html",
-        "admin/firma-detay.html",
-        "portal/index.html",
-        "mobile/"
-      ]
-    },
-    {
-      "id": "guvenli-geri-donus",
-      "aciklama": "history.back() yerine explicit URL kullan",
-      "kural": "history.back()",
-      "istisna": []
-    },
-    {
-      "id": "yasak-renkler",
-      "aciklama": "Yasak renk kodları kullanılmamalı",
-      "kural": "#3b82f6|#22c55e|#0a0b0e|#10b981|#0d0f1a",
-      "istisna": []
-    },
-    {
-      "id": "css-tirnak",
-      "aciklama": "CSS'te data-theme tırnak kullanılmamalı",
-      "kural": "data-theme=\"dark\"|data-theme=\"light\"",
-      "istisna": []
-    },
-    {
-      "id": "flash-prevention",
-      "aciklama": "Her sayfada flash prevention script olmalı",
-      "kural": "flash prevention eksik",
-      "istisna": [
-        "giris.html",
-        "mobile/"
-      ]
-    }
-  ]
+  "silinmis_dosyalar": {
+    "dosyalar": []
+  },
+
+  "istisnalar": {
+    "dosyalar": [
+      "giris.html",
+      "qr_tara.html",
+      "admin/panel.html",
+      "admin/firma.html",
+      "admin/firma-detay.html",
+      "portal/index.html",
+      "mobile/index.html",
+      "mobile/devreler.html",
+      "mobile/devre_detay.html",
+      "mobile/spool_detay.html",
+      "mobile/qr.html",
+      "mobile/ara.html",
+      "mobile/kk.html",
+      "mobile/sevkiyat.html",
+      "mobile/tezgahlar.html",
+      "mobile/gemiler.html",
+      "mobile/gemi_detay.html",
+      "mobile/is_baslat.html"
+    ]
+  },
+
+  "yasak_string": {
+    "kurallar": [
+      {
+        "desen": "#3b82f6",
+        "mesaj": "Yasak renk kodu: #3b82f6 — var(--ac) kullan",
+        "siddet": "hata"
+      },
+      {
+        "desen": "#22c55e",
+        "mesaj": "Yasak renk kodu: #22c55e — var(--gr) kullan",
+        "siddet": "hata"
+      },
+      {
+        "desen": "#0a0b0e",
+        "mesaj": "Yasak renk kodu: #0a0b0e — var(--bg) kullan",
+        "siddet": "hata"
+      },
+      {
+        "desen": "#10b981",
+        "mesaj": "Yasak renk kodu: #10b981 — var(--gr) kullan",
+        "siddet": "hata"
+      },
+      {
+        "desen": "#0d0f1a",
+        "mesaj": "Yasak renk kodu: #0d0f1a — var(--bg) kullan",
+        "siddet": "hata"
+      },
+      {
+        "desen": "history.back()",
+        "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.",
+        "siddet": "uyari"
+      },
+      {
+        "desen": "data-theme=\"dark\"",
+        "mesaj": "CSS'te data-theme tırnak kullanılmamalı",
+        "siddet": "hata"
+      },
+      {
+        "desen": "data-theme=\"light\"",
+        "mesaj": "CSS'te data-theme tırnak kullanılmamalı",
+        "siddet": "hata"
+      }
+    ]
+  },
+
+  "zorunlu_her_html": {
+    "kurallar": [
+      {
+        "desen": "ares-layout.js",
+        "desene_alternatif": "ares-mobile.js",
+        "mesaj": "ares-layout.js yüklenmiyor.",
+        "siddet": "hata"
+      }
+    ]
+  }
 }
