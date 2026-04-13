@@ -688,6 +688,8 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         </div>
       </div>
 
+      <div id="tb-clock" style="font-size:12px;color:var(--sb-txd);font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.3px;flex-shrink:0;text-align:right;line-height:1.3;user-select:none;"></div>
+
       <button id="tb-logout" title="Çıkış Yap"
         style="width:36px;height:36px;border-radius:9px;border:1px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;background:transparent;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -745,6 +747,18 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     };
 
     // Debug badge kaldırıldı (production)
+
+    // Saat — her saniye güncelle
+    function _saatGuncelle() {
+      var el = document.getElementById('tb-clock');
+      if (!el) return;
+      var now = new Date();
+      var gun = now.toLocaleDateString(document.documentElement.getAttribute('lang')==='ar'?'ar-SA':'tr-TR', {weekday:'short',day:'numeric',month:'short'});
+      var saat = now.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+      el.innerHTML = gun + '<br>' + saat;
+    }
+    _saatGuncelle();
+    setInterval(_saatGuncelle, 1000);
 
     setupSearch();
   }
