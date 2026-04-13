@@ -1296,121 +1296,133 @@ async function feedbackDurumGuncelle(id, yeniDurum) {
 
 
 // ── YOL HARİTASI ────────────────────────────────────────────────
-var _YOL_HARITASI = [
-  {
-    grup: '🔴 Acil',
-    items: [
-      { id: 'yh_panel_visibility', metin: 'Admin panel visibility sorunu düzelt', oncelik: 'acil' },
-      { id: 'yh_yolharitasi', metin: 'Admin panele yol haritası sekmesi ekle', oncelik: 'acil' },
-    ]
-  },
-  {
-    grup: '🏭 Üretim & Saha',
-    items: [
-      { id: 'yh_isbaslat', metin: 'is_baslat.html — operatör saha ekranı (önce tasarım)', oncelik: 'orta' },
-      { id: 'yh_qr_operator', metin: 'qr_tara.html → operator → is_baslat.html aktif et', oncelik: 'orta' },
-      { id: 'yh_rol_sidebar', metin: 'Rol bazlı sidebar — operatör yetkisiz linkleri görmesin', oncelik: 'orta' },
-    ]
-  },
-  {
-    grup: '⚙️ Sistem & Altyapı',
-    items: [
-      { id: 'yh_sayfa_yetki', metin: 'sayfaYetkiKontrol() tüm sayfalara ekle', oncelik: 'orta' },
-      { id: 'yh_firma_detay', metin: 'admin/firma-detay.html → tersane bağlantıları UI', oncelik: 'dusuk' },
-      { id: 'yh_storage', metin: 'Supabase Storage path kontrolü', oncelik: 'dusuk' },
-      { id: 'yh_magic_link', metin: 'Kullanıcı davet → service role key ile gerçek magic link', oncelik: 'orta' },
-      { id: 'yh_sidebar_personel', metin: 'ares-layout.js sidebar personel referansı kaldır', oncelik: 'dusuk' },
-    ]
-  },
-  {
-    grup: '📊 Raporlar & Finans',
-    items: [
-      { id: 'yh_hakedis', metin: 'hakedis.html → tablolar hazır, UI yok', oncelik: 'orta' },
-      { id: 'yh_raporlar', metin: 'raporlar.html → Supabase uzerinden sifirdan yaz', oncelik: 'orta' },
-    ]
-  },
-  {
-    grup: '🌍 Dil Coverage',
-    items: [
-      { id: 'yh_dil_anahtarlar', metin: 'ks_* bk_* mk_* kk_* ts_* log_* → en.json + ar.json', oncelik: 'dusuk' },
-      { id: 'yh_dil_attribute', metin: 'Sayfa içi metinlere data-i18n attribute ekle', oncelik: 'dusuk' },
-    ]
-  },
-  {
-    grup: '🤖 AI & Analiz',
-    items: [
-      { id: 'yh_ai_kuyruk', metin: 'ai_kuyruk tablosu kur', oncelik: 'dusuk' },
-      { id: 'yh_foto_analiz', metin: 'Fotoğraf analizi pipeline', oncelik: 'dusuk' },
-      { id: 'yh_rag', metin: 'RAG veritabanı (standartlar, DXF, videolar)', oncelik: 'dusuk' },
-      { id: 'yh_egitim', metin: 'egitim/ modülü — 4 sayfa', oncelik: 'dusuk' },
-      { id: 'yh_etiket', metin: 'etiketleme.html — AI eğitim veri girişi', oncelik: 'dusuk' },
-    ]
-  },
-  {
-    grup: '🌐 Web Sitesi',
-    items: [
-      { id: 'yh_landing', metin: 'Landing page tasarım ve geliştirme', oncelik: 'orta' },
-      { id: 'yh_demo_form', metin: 'Demo ve teklif talep formu', oncelik: 'orta' },
-      { id: 'yh_kesim_opt', metin: 'Ücretsiz araç: 1D Kesim Optimizasyonu', oncelik: 'orta' },
-      { id: 'yh_ucretsiz', metin: 'Ücretsiz araçlar: teknik tablolar, PDF kütüphane', oncelik: 'dusuk' },
-      { id: 'yh_web_kullanici', metin: 'Web kullanıcıları → tenant_type ile ayrıştır', oncelik: 'dusuk' },
-    ]
-  },
-  {
-    grup: '📱 Mobil',
-    items: [
-      { id: 'yh_expo', metin: 'Expo Go test + eksik ekranlar', oncelik: 'dusuk' },
-    ]
-  },
-];
+// ── YOL HARİTASI — CLAUDE.md'den otomatik senkronize ──────────
+// Kaynak: https://raw.githubusercontent.com/cihatoztas-ai/arespipe/refs/heads/main/CLAUDE.md
+// [x] işaretli maddeler panel'de otomatik tamamlandı gösterilir.
+// [ ] maddelerin durumu feature_flags tablosundan okunur (toggle ile değiştirilebilir).
 
+var _YOL_HARITASI = []; // GitHub'dan doldurulur
 var _YH_DURUM = {};
+var _YH_CLAUDE_DONE = {}; // CLAUDE.md'de [x] olanlar
+var _YH_SON_GUNCELLEME = null;
+
+var CLAUDE_MD_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/refs/heads/main/CLAUDE.md';
+
+function _normYhId(metin) {
+  return 'yh_' + metin.toLowerCase()
+    .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/İ/g,'i')
+    .replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
+    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_')
+    .substring(0, 45).replace(/_$/,'');
+}
+
+function _oncelikBelirle(grupBaslik) {
+  if (grupBaslik.includes('🔴') || grupBaslik.toLowerCase().includes('acil')) return 'acil';
+  if (grupBaslik.includes('🏭') || grupBaslik.includes('⚙️') ||
+      grupBaslik.includes('📊') || grupBaslik.includes('🌍') ||
+      grupBaslik.includes('🔐')) return 'orta';
+  return 'dusuk';
+}
+
+function _parseCLAUDEmd(md) {
+  var groups = [];
+  // Yapılacaklar bölümünü bul (## N. YAPILACAKLAR veya ## YAPILACAKLAR)
+  var secMatch = md.match(/##\s+\d*\.?\s*YAPILACAKLAR([\s\S]*?)(?=\n##\s|\n---\s*\n|$)/i);
+  if (!secMatch) return [];
+
+  var icerik = secMatch[1];
+  // ### ile başlayan alt gruplara böl
+  var parcalar = icerik.split(/\n(?=###\s)/);
+
+  parcalar.forEach(function(parca) {
+    var satirlar = parca.trim().split('\n');
+    if (!satirlar.length) return;
+    var baslik = satirlar[0].replace(/^###\s*/, '').trim();
+    if (!baslik) return;
+
+    var items = [];
+    satirlar.slice(1).forEach(function(satir) {
+      var m = satir.match(/^-\s+\[([ xX])\]\s+(.+)/);
+      if (!m) return;
+      var claudeDone = m[1].toLowerCase() === 'x';
+      var metin = m[2].trim();
+      // Emdash ve italik markdown kaldır
+      metin = metin.replace(/\s*—\s*.*$/, '').replace(/`([^`]+)`/g, '$1').trim();
+      if (!metin) return;
+      var id = _normYhId(metin);
+      items.push({
+        id: id,
+        metin: metin,
+        oncelik: _oncelikBelirle(baslik),
+        claudeDone: claudeDone
+      });
+      if (claudeDone) _YH_CLAUDE_DONE[id] = true;
+    });
+
+    if (items.length) groups.push({ grup: baslik, items: items });
+  });
+
+  return groups;
+}
+
+async function _claudeMdCek() {
+  try {
+    var r = await fetch(CLAUDE_MD_URL + '?t=' + Date.now()); // cache buster
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var md = await r.text();
+    _YH_CLAUDE_DONE = {};
+    _YOL_HARITASI = _parseCLAUDEmd(md);
+    _YH_SON_GUNCELLEME = new Date();
+    return true;
+  } catch(e) {
+    console.warn('[YH] CLAUDE.md çekilemedi:', e);
+    return false;
+  }
+}
 
 async function yolHaritasiYukle() {
   try {
     var supa = _getSupa();
-    if (!supa) return;
 
-    // Tik durumlarını yükle
-    var {data: flags} = await supa.from('feature_flags').select('kod,varsayilan').like('kod', 'yh_%');
-    if (flags) {
-      flags.forEach(function(r) { _YH_DURUM[r.kod] = r.varsayilan !== false; });
+    // 1) CLAUDE.md'den parse et
+    await _claudeMdCek();
+
+    // 2) feature_flags toggle durumları
+    if (supa) {
+      var {data: flags} = await supa.from('feature_flags').select('kod,varsayilan').like('kod', 'yh_%');
+      if (flags) flags.forEach(function(r) { _YH_DURUM[r.kod] = r.varsayilan !== false; });
     }
 
-    // Onaylanan feedbackleri yükle ve listeye ekle
-    var {data: fblar} = await supa.from('feedback_kayitlari')
-      .select('id,not_,kategori')
-      .eq('durum', 'onaylandi');
-
-    if (fblar && fblar.length) {
-      // Feedback grubunu bul veya oluştur
-      var fbGrup = _YOL_HARITASI.find(function(g){ return g.id === 'feedback_grubu'; });
-      if (!fbGrup) {
-        fbGrup = { id: 'feedback_grubu', grup: '💬 Geri Bildirimlerden', items: [] };
-        _YOL_HARITASI.push(fbGrup);
-      }
-      fbGrup.items = fblar.map(function(fb) {
-        var ikon = fb.kategori === 'hata' ? '🐛 ' : fb.kategori === 'eksik' ? '📋 ' : '💡 ';
-        return {
-          id: 'fb_' + fb.id.replace(/-/g, ''),
-          metin: ikon + (fb.not_ || '').substring(0, 120),
-          oncelik: fb.kategori === 'hata' ? 'acil' : 'orta'
-        };
+    // 3) CLAUDE.md'de [x] olanları feature_flags'e de kaydet
+    if (supa) {
+      var upsertler = Object.keys(_YH_CLAUDE_DONE).map(function(id) {
+        return { kod: id, ad: id, varsayilan: true };
       });
+      if (upsertler.length) await supa.from('feature_flags').upsert(upsertler, { onConflict: 'kod' });
+    }
+    Object.assign(_YH_DURUM, _YH_CLAUDE_DONE);
+
+    // 4) Onaylanan feedbackler
+    if (supa) {
+      var {data: fblar} = await supa.from('feedback_kayitlari').select('id,not_,kategori').eq('durum', 'onaylandi');
+      if (fblar && fblar.length) {
+        var fbGrup = _YOL_HARITASI.find(function(g){ return g.id === 'feedback_grubu'; });
+        if (!fbGrup) { fbGrup = { id: 'feedback_grubu', grup: '💬 Geri Bildirimlerden', items: [] }; _YOL_HARITASI.push(fbGrup); }
+        fbGrup.items = fblar.map(function(fb) {
+          var ikon = fb.kategori === 'hata' ? '🐛 ' : fb.kategori === 'eksik' ? '📋 ' : '💡 ';
+          return { id: 'fb_' + fb.id.replace(/-/g, ''), metin: ikon + (fb.not_ || '').substring(0, 120), oncelik: fb.kategori === 'hata' ? 'acil' : 'orta', claudeDone: false };
+        });
+      }
     }
   } catch(e) { console.warn('[YH]', e); }
 }
 
 async function yolHaritasiToggle(id) {
+  if (_YH_CLAUDE_DONE[id]) return; // CLAUDE.md'de tamamlandı, değiştirilemez
   _YH_DURUM[id] = !_YH_DURUM[id];
   try {
     var supa = _getSupa();
-    if (supa) {
-      await supa.from('feature_flags').upsert(
-        { kod: id, ad: id, varsayilan: _YH_DURUM[id] },
-        { onConflict: 'kod' }
-      );
-    }
+    if (supa) await supa.from('feature_flags').upsert({ kod: id, ad: id, varsayilan: _YH_DURUM[id] }, { onConflict: 'kod' });
   } catch(e) {}
   yolHaritasiRender();
 }
@@ -1418,7 +1430,7 @@ async function yolHaritasiToggle(id) {
 async function yolHaritasiRender() {
   var container = document.getElementById('yolHaritasiContainer');
   if (!container) return;
-  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>';
+  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">CLAUDE.md yükleniyor...</div></div>';
   await yolHaritasiYukle();
 
   var toplam = 0, tamamlanan = 0, bekleyen = 0;
@@ -1428,29 +1440,22 @@ async function yolHaritasiRender() {
       toplam++;
       var done = !!_YH_DURUM[item.id];
       if (done) tamamlanan++; else bekleyen++;
-      var oncelikBadge = item.oncelik === 'acil'
-        ? '<span class="yh-badge yh-acil">Acil</span>'
-        : item.oncelik === 'orta'
-        ? '<span class="yh-badge yh-orta">Orta</span>'
-        : '';
-      return '<div class="yh-item">' +
-        '<div class="yh-check ' + (done ? 'done' : '') + '" data-yh-id="' + item.id + '" onclick="yolHaritasiToggle(this.dataset.yhId)"></div>' +
-        '<div class="yh-metin ' + (done ? 'done' : '') + '">' + esc(item.metin) + oncelikBadge + '</div>' +
-      '</div>';
+      var locked = !!_YH_CLAUDE_DONE[item.id];
+      var badge = item.oncelik === 'acil' ? '<span class="yh-badge yh-acil">Acil</span>' : item.oncelik === 'orta' ? '<span class="yh-badge yh-orta">Orta</span>' : '';
+      var lockNote = locked ? '<span style="font-size:11px;color:var(--txd);margin-left:6px;" title="CLAUDE.md&#39;de tamamland\u0131">&#10003; md</span>' : '';
+      var checkAttr = locked ? 'style="cursor:default;opacity:.7;" title="CLAUDE.md&#39;de tamamland\u0131"' : 'data-yh-id="' + esc(item.id) + '" onclick="yolHaritasiToggle(this.dataset.yhId)"';
+      return '<div class="yh-item"><div class="yh-check ' + (done ? 'done' : '') + '" ' + checkAttr + '></div><div class="yh-metin ' + (done ? 'done' : '') + '">' + esc(item.metin) + badge + lockNote + '</div></div>';
     }).join('');
-
-    return '<div class="yh-grup">' +
-      '<div class="yh-grup-baslik">' + grup.grup + '</div>' +
-      itemsHtml +
-    '</div>';
+    return '<div class="yh-grup"><div class="yh-grup-baslik">' + grup.grup + '</div>' + itemsHtml + '</div>';
   }).join('');
 
-  container.innerHTML = html;
+  var guncSat = _YH_SON_GUNCELLEME
+    ? '<div style="font-size:12px;color:var(--txd);margin-top:20px;text-align:right;">📡 CLAUDE.md: ' + _YH_SON_GUNCELLEME.toLocaleString('tr-TR') + ' &nbsp;<button onclick="yolHaritasiRender()" style="background:none;border:1px solid var(--bor);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--txd);cursor:pointer;">↻ Yenile</button></div>'
+    : '<div style="font-size:12px;color:var(--re);margin-top:20px;">⚠ CLAUDE.md yüklenemedi</div>';
 
-  // İstatistikler
-  var tEl = document.getElementById('yh-tamamlanan');
-  var bEl = document.getElementById('yh-bekleyen');
-  var dEl = document.getElementById('yh-devam');
+  container.innerHTML = html + guncSat;
+
+  var tEl = document.getElementById('yh-tamamlanan'), bEl = document.getElementById('yh-bekleyen'), dEl = document.getElementById('yh-devam');
   if (tEl) tEl.textContent = tamamlanan;
   if (bEl) bEl.textContent = bekleyen;
   if (dEl) dEl.textContent = 0;
