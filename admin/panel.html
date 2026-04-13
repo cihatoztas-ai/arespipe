@@ -9,13 +9,6 @@
 <script src="../ares-store.js"></script>
 <style>
 :root {
-  --bg:    #0d1117;
-  --sur:   #161b24;
-  --sur2:  #1c2333;
-  --bor:   #262f3e;
-  --tx:    #e6ecf4;
-  --txm:   #94a3b8;
-  --txd:   #6b7a90;
   --ac:    #2D8EFF;
   --ac2:   #1a75e8;
   --gr:    #16a36e;
@@ -23,6 +16,24 @@
   --warn:  #d97706;
   --leg:   #7c3aed;
   --admin: #f97316;
+}
+[data-theme=dark] {
+  --bg:    #0d1117;
+  --sur:   #161b24;
+  --sur2:  #1c2333;
+  --bor:   #262f3e;
+  --tx:    #e6ecf4;
+  --txm:   #94a3b8;
+  --txd:   #6b7a90;
+}
+[data-theme=light-anthracite] {
+  --bg:    #d8dde4;
+  --sur:   #e4e9ef;
+  --sur2:  #d0d7e0;
+  --bor:   #bcc5d0;
+  --tx:    #141e2b;
+  --txm:   #3a4f63;
+  --txd:   #637080;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
@@ -127,7 +138,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
 .badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
 .badge-demo{background:rgba(249,115,22,.12);color:var(--admin);}
-.badge-starter{background:rgba(59,130,246,.12);color:var(--ac);}
+.badge-starter{background:rgba(45,142,255,.12);color:var(--ac);}
 .badge-pro{background:rgba(168,85,247,.12);color:var(--leg);}
 .badge-super{background:rgba(249,115,22,.15);color:var(--admin);border:1px solid rgba(249,115,22,.3);}
 
