@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Kalite Kontrol | AresPipe</title>
+<title data-i18n="kk_title">Kalite Kontrol | AresPipe</title>
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap&subset=latin" rel="stylesheet">
 <style>
 /* ── TEMA DEĞİŞKENLERİ (flash önleme) ── */
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
-[data-theme="dark"]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
-[data-theme="light-anthracite"]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
 /* ── SAYFA LAYOUT ── */
 .page{padding:28px 28px 40px;}
@@ -139,12 +139,12 @@
 <!-- SAYFA BAŞLIĞI -->
 <div class="page-header">
   <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span>Kalite Kontrol</span></div>
-    <h1 class="page-title">Kalite Kontrol</h1>
+    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="kk_breadcrumb">Kalite Kontrol</span></div>
+    <h1 class="page-title" data-i18n="kk_page_title">Kalite Kontrol</h1>
   </div>
   <button class="btn btn-p" id="btnDavetUst" onclick="davetAc()" disabled>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Davet Paketi Oluştur
+    <span data-i18n="kk_btn_davet">Davet Paketi Oluştur</span>
   </button>
 </div>
 
@@ -152,40 +152,40 @@
 <div class="stat-row">
   <div class="stat-card cl-ac">
     <div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-    <div><div class="stat-label">Kaliteye Hazır</div><div class="stat-value" id="sH">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_hazir">Kaliteye Hazır</div><div class="stat-value" id="sH">0</div></div>
   </div>
   <div class="stat-card cl-leg">
     <div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-    <div><div class="stat-label">Davet Paketi</div><div class="stat-value" id="sD">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_davet">Davet Paketi</div><div class="stat-value" id="sD">0</div></div>
   </div>
   <div class="stat-card cl-warn">
     <div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div><div class="stat-label">Tersane Bekleniyor</div><div class="stat-value" id="sB">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_bekleyen">Tersane Bekleniyor</div><div class="stat-value" id="sB">0</div></div>
   </div>
   <div class="stat-card cl-gr">
     <div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div><div class="stat-label">Onaylanan</div><div class="stat-value" id="sO">0</div></div>
+    <div><div class="stat-label" data-i18n="kk_stat_onaylanan">Onaylanan</div><div class="stat-value" id="sO">0</div></div>
   </div>
 </div>
 
 <!-- SEÇİM BAR -->
 <div class="secim-bar" id="secBar">
-  <div><div class="sval" id="secD">0</div><div class="slbl">Devre</div></div>
+  <div><div class="sval" id="secD">0</div><div class="slbl" data-i18n="kk_sec_devre">Devre</div></div>
   <div class="ssep"></div>
-  <div><div class="sval" id="secS">0</div><div class="slbl">Spool</div></div>
+  <div><div class="sval" id="secS">0</div><div class="slbl" data-i18n="kk_sec_spool">Spool</div></div>
   <div class="ssep"></div>
   <div><div class="sval" id="secK">0</div><div class="slbl">kg</div></div>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button class="btn btn-g btn-sm" onclick="secTemizle()">Temizle</button>
-    <button class="btn btn-p btn-sm" onclick="davetAc()">Davet Paketi Oluştur</button>
+    <button class="btn btn-g btn-sm" onclick="secTemizle()" data-i18n="cmn_sifirla">Temizle</button>
+    <button class="btn btn-p btn-sm" onclick="davetAc()" data-i18n="kk_btn_davet">Davet Paketi Oluştur</button>
   </div>
 </div>
 
 <!-- SEKMELER -->
 <div class="tab-bar">
-  <button class="tab-btn active" data-tab="davet">Davet Oluştur <span class="tc" id="tD">0</span></button>
-  <button class="tab-btn" data-tab="bekleyen">Bekleyen <span class="tc" id="tB">0</span></button>
-  <button class="tab-btn" data-tab="onaylanan">Onaylananlar <span class="tc" id="tO">0</span></button>
+  <button class="tab-btn active" data-tab="davet"><span data-i18n="kk_tab_davet">Davet Oluştur</span> <span class="tc" id="tD">0</span></button>
+  <button class="tab-btn" data-tab="bekleyen"><span data-i18n="kk_tab_bekleyen">Bekleyen</span> <span class="tc" id="tB">0</span></button>
+  <button class="tab-btn" data-tab="onaylanan"><span data-i18n="kk_tab_onaylanan">Onaylananlar</span> <span class="tc" id="tO">0</span></button>
 </div>
 
 <!-- PANEL: DAVET OLUŞTUR -->
@@ -195,11 +195,11 @@
     <select class="fsel" id="fP" onchange="filtrele()"><option value="">Tüm Projeler</option></select>
     <div class="swrap">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--txd);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="fA" placeholder="Devre veya spool ara..." oninput="filtrele()">
+      <input type="text" id="fA" placeholder="Devre veya spool ara..." data-i18n-placeholder="kk_search_ph" oninput="filtrele()">
     </div>
-    <button class="btn btn-g btn-sm" onclick="filtreSifirla()">Temizle</button>
+    <button class="btn btn-g btn-sm" onclick="filtreSifirla()" data-i18n="cmn_sifirla">Temizle</button>
     <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);cursor:pointer;margin-left:auto;">
-      <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)"> Tümünü Seç
+      <input type="checkbox" id="ckAll" class="ck" onchange="hepsiniSec(this.checked)"><span data-i18n="cmn_sec_tumunu"> Tümünü Seç</span>
     </label>
   </div>
   <div id="hazirListe"></div>
@@ -223,24 +223,24 @@
 <div id="mDavet" class="mov" style="display:none;">
   <div class="mbox">
     <div class="mhead">
-      <div class="mtitle">Kalite Davet Paketi Oluştur</div>
+      <div class="mtitle" data-i18n="kk_modal_davet_title">Kalite Davet Paketi Oluştur</div>
       <button class="mcl" onclick="document.getElementById('mDavet').style.display='none'">&#x2715;</button>
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:14px;font-weight:600;color:var(--txd);margin-bottom:8px;">Seçilen Spooller</div>
+      <div style="font-size:14px;font-weight:600;color:var(--txd);margin-bottom:8px;"><span data-i18n="kk_secilen_spooller">Seçilen Spooller</span></div>
       <div id="mOzet" style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;font-size:14px;"></div>
       <div id="mListe" style="max-height:130px;overflow-y:auto;"></div>
     </div>
     <div class="fr fg">
-      <div><label class="fl">Davet Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="dTarih"></div>
-      <div><label class="fl">Tahmini Kontrol Tarihi</label><input type="date" class="fi" id="dKontrol"></div>
+      <div><label class="fl"><span data-i18n="kk_label_davet_tarihi">Davet Tarihi</span> <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="dTarih"></div>
+      <div><label class="fl" data-i18n="kk_label_kontrol_tarihi">Tahmini Kontrol Tarihi</label><input type="date" class="fi" id="dKontrol"></div>
     </div>
-    <div class="fg"><label class="fl">Kontakt / Not</label><input class="fi" id="dNot" placeholder="Tersane yetkilisi veya not..."></div>
-    <div class="fg"><label class="fl">Mail <span style="font-size:14px;color:var(--txd);font-weight:400;">(opsiyonel)</span></label><input type="email" class="fi" id="dMail" placeholder="quality@tersane.com.tr"></div>
+    <div class="fg"><label class="fl" data-i18n="kk_label_kontakt">Kontakt / Not</label><input class="fi" id="dNot" placeholder="Tersane yetkilisi veya not..." data-i18n-placeholder="kk_ph_kontakt"></div>
+    <div class="fg"><label class="fl"><span data-i18n="kk_label_mail">Mail</span> <span style="font-size:14px;color:var(--txd);font-weight:400;" data-i18n="kk_opsiyonel">(opsiyonel)</span></label><input type="email" class="fi" id="dMail" placeholder="quality@tersane.com.tr"></div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mDavet').style.display='none'">Iptal</button>
-      <button class="btn btn-s" onclick="showToast('PDF onizleme yakindan','info')">PDF Onizle</button>
-      <button class="btn btn-p" style="flex:2;" onclick="davetKaydet()">Paketi Olustur &amp; Kaydet</button>
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mDavet').style.display='none'" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn btn-s" onclick="showToast(tv('kk_pdf_preview_msg','PDF önizleme yakında'),'info')" data-i18n="kk_btn_pdf_onizle">PDF Önizle</button>
+      <button class="btn btn-p" style="flex:2;" onclick="davetKaydet()"><span data-i18n="kk_btn_paketi_kaydet">Paketi Oluştur &amp; Kaydet</span></button>
     </div>
   </div>
 </div>
@@ -249,29 +249,29 @@
 <div id="mOnay" class="mov" style="display:none;">
   <div class="mbox" style="max-width:480px;">
     <div class="mhead">
-      <div class="mtitle">Kalite Onayi Gir</div>
+      <div class="mtitle" data-i18n="kk_modal_onay_title">Kalite Onayı Gir</div>
       <button class="mcl" onclick="document.getElementById('mOnay').style.display='none'">&#x2715;</button>
     </div>
     <input type="hidden" id="oPaketId">
     <div class="fr fg">
-      <div><label class="fl">Kontrol Tarihi <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="oTarih"></div>
-      <div><label class="fl">Kontrol Eden <span style="color:var(--re)">*</span></label><input class="fi" id="oKisi" placeholder="Ad Soyad"></div>
+      <div><label class="fl"><span data-i18n="kk_label_kontrol_tarihi">Kontrol Tarihi</span> <span style="color:var(--re)">*</span></label><input type="date" class="fi" id="oTarih"></div>
+      <div><label class="fl"><span data-i18n="kk_label_kontrol_eden">Kontrol Eden</span> <span style="color:var(--re)">*</span></label><input class="fi" id="oKisi" placeholder="Ad Soyad" data-i18n-placeholder="kk_ph_ad_soyad"></div>
     </div>
     <div class="fg">
-      <label class="fl">Karar <span style="color:var(--re)">*</span></label>
+      <label class="fl"><span data-i18n="kk_label_karar">Karar</span> <span style="color:var(--re)">*</span></label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button class="btn btn-ok" id="bOnay" onclick="kararSec('onay')" style="justify-content:center;padding:12px;">Tamami Onaylandi</button>
-        <button class="btn btn-no" id="bRet"  onclick="kararSec('ret')"  style="justify-content:center;padding:12px;">Ret / Duzeltme</button>
+        <button class="btn btn-ok" id="bOnay" onclick="kararSec('onay')" style="justify-content:center;padding:12px;"><span data-i18n="kk_btn_onay">Tamamı Onaylandı</span></button>
+        <button class="btn btn-no" id="bRet"  onclick="kararSec('ret')"  style="justify-content:center;padding:12px;"><span data-i18n="kk_btn_ret">Ret / Düzeltme</span></button>
       </div>
     </div>
     <div id="retBlok" style="display:none;" class="fg">
-      <label class="fl">Ret Nedeni <span style="color:var(--re)">*</span></label>
-      <textarea class="fta" id="oRetNot" placeholder="Hangi spooller ret aldi, duzeltme talebi nedir?"></textarea>
+      <label class="fl"><span data-i18n="kk_label_ret_nedeni">Ret Nedeni</span> <span style="color:var(--re)">*</span></label>
+      <textarea class="fta" id="oRetNot" placeholder="Hangi spooller ret aldı, düzeltme talebi nedir?" data-i18n-placeholder="kk_ph_ret_nedeni"></textarea>
     </div>
-    <div class="fg"><label class="fl">Ek Not</label><input class="fi" id="oNot" placeholder="Opsiyonel..."></div>
+    <div class="fg"><label class="fl" data-i18n="kk_label_ek_not">Ek Not</label><input class="fi" id="oNot" placeholder="Opsiyonel..." data-i18n-placeholder="kk_ph_opsiyonel"></div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mOnay').style.display='none'">Iptal</button>
-      <button class="btn btn-p" style="flex:2;" onclick="onayKaydet()">Onayi Kaydet</button>
+      <button class="btn btn-g" style="flex:1;" onclick="document.getElementById('mOnay').style.display='none'" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn btn-p" style="flex:2;" onclick="onayKaydet()"><span data-i18n="kk_btn_onay_kaydet">Onayı Kaydet</span></button>
     </div>
   </div>
 </div>
@@ -417,7 +417,7 @@ function filtreSifirla() {
   document.getElementById('fT').value = '';
   document.getElementById('fA').value = '';
   var fP = document.getElementById('fP');
-  fP.innerHTML = '<option value="">Tum Projeler</option>';
+  fP.innerHTML = '<option value="">'+tv('kk_filter_all_projects','Tüm Projeler')+'</option>';
   var projSet = [];
   HAZIR.forEach(function(h){ if(projSet.indexOf(h.projeNo)<0) projSet.push(h.projeNo); });
   projSet.sort().forEach(function(s){
@@ -429,7 +429,7 @@ function filtreSifirla() {
 // ── HAZIR LİSTE RENDER ───────────────────────────────────────
 function renderHazir(liste) {
   var el = document.getElementById('hazirListe');
-  if (!liste.length) { el.innerHTML = '<div class="bos">Gosterilecek spool yok</div>'; return; }
+  if (!liste.length) { el.innerHTML = '<div class="bos">'+tv('kk_bos_spool','Gösterilecek spool yok')+'</div>'; return; }
   var G = {};
   liste.forEach(function(h) {
     var gk = h.tersane+'||'+h.projeNo;
@@ -588,13 +588,13 @@ async function davetKaydet() {
 function renderBekle() {
   var el = document.getElementById('bekleListe');
   var bl = paketler.filter(function(p){ return p.durum==='bekleyen'; });
-  el.innerHTML = bl.length ? bl.map(pkart).join('') : '<div class="bos">Bekleyen davet paketi yok</div>';
+  el.innerHTML = bl.length ? bl.map(pkart).join('') : '<div class="bos">'+tv('kk_bos_bekleyen','Bekleyen davet paketi yok')+'</div>';
 }
 
 function renderOnay() {
   var el = document.getElementById('onayListe');
   var ol = paketler.filter(function(p){ return p.durum==='onaylandi'||p.durum==='reddedildi'; });
-  el.innerHTML = ol.length ? ol.map(pkart).join('') : '<div class="bos">Henuz onaylanan paket yok</div>';
+  el.innerHTML = ol.length ? ol.map(pkart).join('') : '<div class="bos">'+tv('kk_bos_onaylanan','Henüz onaylanan paket yok')+'</div>';
 }
 
 function pkart(p) {
