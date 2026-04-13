@@ -1441,5 +1441,11 @@
   "sp_alist_has": "موجود",
   "sp_alist_partial": "جزئي",
   "sp_alist_none_short": "لا يوجد",
-  "dv_conn_error": "تعذّر الاتصال بـ Supabase — أعد تحميل الصفحة"
+  "dv_conn_error": "تعذّر الاتصال بـ Supabase — أعد تحميل الصفحة",
+  "sp_btn_tamamla": "أكمل",
+  "sp_ai_done": "اكتمل التحليل",
+  "sp_ai_score": "النقاط",
+  "sp_btn_ai_analiz": "تحليل",
+  "genel_basarili": "ناجح",
+  "genel_hatali": "فاشل"
 }
