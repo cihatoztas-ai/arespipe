@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QR Tara | AresPipe</title>
+<title data-i18n="qr_title">QR Tara | AresPipe</title>
 <script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
@@ -84,41 +84,41 @@ body{background:#000;color:var(--tx);font-family:'Barlow',sans-serif;min-height:
   <!-- Başlık -->
   <div class="header">
     <button class="header-geri" onclick="history.back()">←</button>
-    <span class="header-baslik">QR Tara</span>
+    <span class="header-baslik" data-i18n="qr_baslik">QR Tara</span>
   </div>
 
   <!-- Durum göstergesi -->
   <div class="durum" id="durumEl">
     <div class="durum-badge durum-tarama" id="durumBadge">
-      <span>⬡</span> <span id="durumYazi">Kodu çerçeveye hizala</span>
+      <span>⬡</span> <span id="durumYazi" data-i18n="qr_durum_baslangic">Kodu çerçeveye hizala</span>
     </div>
   </div>
 
   <!-- Alt bilgi -->
   <div class="alt-bilgi">
-    <div class="alt-yazi">Spool QR kodunu çerçevenin içine alın</div>
+    <div class="alt-yazi" data-i18n="qr_alt_yazi">Spool QR kodunu çerçevenin içine alın</div>
     <button class="alt-manuel" onclick="manuelAc()">
-      ⌨ Manuel Giriş
+      ⌨ <span data-i18n="qr_manuel">Manuel Giriş</span>
     </button>
   </div>
 
   <!-- Kamera yoksa -->
   <div class="kamera-yok" id="kameraYok" style="display:none;">
     <div class="kamera-yok-ikon">📵</div>
-    <div class="kamera-yok-yazi">Kamera erişimi sağlanamadı.<br>Manuel giriş kullanabilirsiniz.</div>
-    <button class="alt-manuel" onclick="manuelAc()">⌨ Manuel Giriş</button>
+    <div class="kamera-yok-yazi" data-i18n="qr_kamera_yok">Kamera erişimi sağlanamadı.<br>Manuel giriş kullanabilirsiniz.</div>
+    <button class="alt-manuel" onclick="manuelAc()">⌨ <span data-i18n="qr_manuel">Manuel Giriş</span></button>
   </div>
 </div>
 
 <!-- Manuel giriş modal -->
 <div class="modal-bg" id="manuelModal">
   <div class="modal-kart">
-    <div class="modal-baslik">Spool ID Gir</div>
+    <div class="modal-baslik" data-i18n="qr_modal_baslik">Spool ID Gir</div>
     <input class="modal-input" id="manuelInput" type="text" placeholder="0135" maxlength="10"
       autocomplete="off" autocorrect="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter')manuelAra()">
-    <button class="modal-btn" onclick="manuelAra()">Spool'u Bul →</button>
-    <button class="modal-iptal" onclick="manuelKapat()">İptal</button>
+    <button class="modal-btn" onclick="manuelAra()" data-i18n="qr_btn_bul">Spool'u Bul →</button>
+    <button class="modal-iptal" onclick="manuelKapat()" data-i18n="cmn_iptal">İptal</button>
   </div>
 </div>
 
@@ -177,7 +177,7 @@ function qrBulundu(spoolId) {
   _bulunan = true;
   _tarama = false;
 
-  durumGoster('arama', '🔍 ' + spoolId + ' aranıyor…');
+  durumGoster('arama', '🔍 ' + spoolId + ' ' + tv('qr_araniyor','aranıyor…'));
 
   // Titreşim (mobil)
   if (navigator.vibrate) navigator.vibrate(100);
@@ -203,12 +203,12 @@ async function spoolAra(spoolId) {
       .single();
 
     if (res.error || !res.data) {
-      durumGoster('hata', '❌ Spool bulunamadı: ' + spoolId);
+      durumGoster('hata', '❌ ' + tv('qr_bulunamadi','Spool bulunamadı') + ': ' + spoolId);
       setTimeout(function() { tekrarBaslat(); }, 2500);
       return;
     }
 
-    durumGoster('bulundu', '✓ Bulundu — yönlendiriliyor…');
+    durumGoster('bulundu', '✓ ' + tv('qr_bulundu','Bulundu — yönlendiriliyor…'));
     setTimeout(function() {
       // Rol bazlı yönlendirme
       var oturum = ARES.oturumAl ? ARES.oturumAl() : null;
@@ -223,7 +223,7 @@ async function spoolAra(spoolId) {
     }, 600);
 
   } catch(e) {
-    durumGoster('hata', '❌ Bağlantı hatası');
+    durumGoster('hata', '❌ ' + tv('qr_baglanti_hatasi','Bağlantı hatası'));
     setTimeout(function() { tekrarBaslat(); }, 2500);
   }
 }
@@ -231,7 +231,7 @@ async function spoolAra(spoolId) {
 function tekrarBaslat() {
   _bulunan = false;
   _tarama = true;
-  durumGoster('tarama', 'Kodu çerçeveye hizala');
+  durumGoster('tarama', tv('qr_durum_baslangic','Kodu çerçeveye hizala'));
   taramaBaslat();
 }
 
