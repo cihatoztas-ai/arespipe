@@ -1,8 +1,8 @@
-// api/izometri-oku.js — Vercel Edge Function
+// api/izometri-oku.js — Vercel Serverless Function (Node.js)
 // PDF izometri → Claude API → spool listesi JSON
 // API key frontend'e asla gitmez
 
-export const config = { runtime: 'edge' };
+export const config = { maxDuration: 60 };
 
 const SYSTEM_PROMPT = `Sen bir tersane boru imalat sisteminin veri çıkarma asistanısın.
 Sana bir izometri PDF'i verilecek. Bu PDF'den spool (boru demeti) listesini çıkarman gerekiyor.
@@ -145,42 +145,25 @@ Sadece JSON döndür, başka hiçbir şey yazma. Format:
 
 Eğer bir alan bulunamazsa null kullan. Sayısal alanlarda sadece sayı kullan, birim yazma.`;
 
-export default async function handler(req) {
-  // CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    });
-  }
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const body = await req.json();
+    const body = req.body;
     const { pdf_base64, dosya_adi } = body;
 
     if (!pdf_base64) {
-      return new Response(JSON.stringify({ error: 'pdf_base64 gerekli' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(400).json({ error: 'pdf_base64 gerekli' });
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'API key yapılandırılmamış' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(500).json({ error: 'API key yapılandırılmamış' });
     }
 
     // Claude API çağrısı
@@ -193,7 +176,7 @@ export default async function handler(req) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: SYSTEM_PROMPT,
         messages: [
           {
@@ -220,12 +203,9 @@ export default async function handler(req) {
     });
 
     if (!claudeRes.ok) {
-      const err = await claudeRes.text();
-      console.error('Claude API hatası:', err);
-      return new Response(JSON.stringify({ error: 'Claude API hatası: ' + claudeRes.status }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const errText = await claudeRes.text();
+      console.error('Claude API hatası:', claudeRes.status, errText);
+      return res.status(502).json({ error: 'Claude API hatası: ' + claudeRes.status, detail: errText.substring(0, 300) });
     }
 
     const claudeData = await claudeRes.json();
@@ -240,26 +220,13 @@ export default async function handler(req) {
       if (jsonMatch) clean = jsonMatch[0];
       parsed = JSON.parse(clean);
     } catch (e) {
-      return new Response(JSON.stringify({
-        error: 'Claude JSON üretemedi: ' + text.substring(0, 200),
-        raw: text
-      }), {
-        status: 422,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(422).json({ error: 'Claude JSON üretemedi: ' + text.substring(0, 200), raw: text });
     }
 
-    return new Response(JSON.stringify({ ok: true, data: parsed }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+    return res.json({ ok: true, data: parsed });
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('Handler hatası:', e);
+    return res.status(500).json({ error: e.message });
   }
 }
