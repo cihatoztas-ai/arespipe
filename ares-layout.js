@@ -251,11 +251,15 @@
   }
 
   function authKontrol() {
-    // localStorage'da geçerli oturum var mı? — hızlı, senkron kontrol
-    // Derin Supabase session kontrolü her sayfanın kendi ARES.oturumKontrol() ile yapılır
-    var oturum = null;
-    try { oturum = JSON.parse(localStorage.getItem('ares_oturum') || 'null'); } catch(e) {}
-    if (!oturum || !oturum.id) {
+    // Supabase native token'ını kontrol et (sb-*-auth-token)
+    var supaKey = Object.keys(localStorage).find(function(k) {
+      return k.startsWith('sb-') && k.endsWith('-auth-token');
+    });
+    var supaToken = null;
+    if (supaKey) {
+      try { supaToken = JSON.parse(localStorage.getItem(supaKey) || 'null'); } catch(e) {}
+    }
+    if (!supaToken || !supaToken.access_token) {
       window.location.href = (PAGE.includes('admin') || PAGE.includes('portal') ? '../' : '') + 'giris.html';
       return false;
     }
