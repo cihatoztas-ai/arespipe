@@ -251,23 +251,13 @@
   }
 
   function authKontrol() {
-    // 1. localStorage'da oturum var mı? — hızlı, senkron kontrol
+    // localStorage'da geçerli oturum var mı? — hızlı, senkron kontrol
+    // Derin Supabase session kontrolü her sayfanın kendi ARES.oturumKontrol() ile yapılır
     var oturum = null;
     try { oturum = JSON.parse(localStorage.getItem('ares_oturum') || 'null'); } catch(e) {}
     if (!oturum || !oturum.id) {
       window.location.href = (PAGE.includes('admin') || PAGE.includes('portal') ? '../' : '') + 'giris.html';
       return false;
-    }
-    // 2. Supabase session gerçekten geçerli mi? — asenkron kontrol
-    if (typeof ARES !== 'undefined' && typeof ARES.supabase === 'function') {
-      ARES.supabase().auth.getSession().then(function(result) {
-        if (!result.data || !result.data.session) {
-          localStorage.removeItem('ares_oturum');
-          window.location.href = (PAGE.includes('admin') || PAGE.includes('portal') ? '../' : '') + 'giris.html';
-        }
-      }).catch(function() {
-        // Supabase erişilemiyorsa localStorage oturumuna güven — sessizce geç
-      });
     }
     return true;
   }
