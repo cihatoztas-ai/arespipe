@@ -24,8 +24,8 @@
   --sb-ring:rgba(0,0,0,.04);--sb-cell-bg:#d0d7e0;--sb-btn-brd:#bcc5d0;--sb-btn-bg:rgba(0,0,0,.04);
   --sb-shadow:0 4px 24px rgba(0,0,0,.1);
 }
-[data-theme="dark"]  .icon-sun  { display: block !important; }
-[data-theme="dark"]  .icon-moon { display: none !important; }
+[data-theme=dark] .icon-sun { display: block !important; }
+[data-theme=dark] .icon-moon { display: none !important; }
 .page{padding:28px 28px 40px;}
 .page-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;}
 .page-title-label { font-size: 12px; color: var(--txd); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -192,21 +192,21 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
 <div class="page">
   <div class="page-header">
     <div>
-      <div class="page-title-label">Tersane Yönetim Sistemi</div>
-      <div class="page-title">Ana Sayfa</div>
+      <div class="page-title-label" data-i18n="idx_subtitle">Tersane Yönetim Sistemi</div>
+      <div class="page-title" data-i18n="idx_title">Ana Sayfa</div>
     </div>
     <div style="font-size:14px;color:var(--txd);" id="clockDisplay"></div>
   </div>
   <div class="stat-row">
-    <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label">Aktif Proje</div><div class="stat-value">5</div></div></div>
-    <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label">Aktif Devre</div><div class="stat-value">47</div></div></div>
-    <div class="stat-card"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg></div><div><div class="stat-label">Kesim Bekleyen</div><div class="stat-value" style="color:var(--warn);">83</div></div></div>
-    <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label">KK Bekleyen</div><div class="stat-value" style="color:var(--re);">12</div></div></div>
-    <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label">Bu Ay Sevk</div><div class="stat-value" style="color:var(--gr);">29</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_proje">Aktif Proje</div><div class="stat-value" id="stProje">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_devre">Aktif Devre</div><div class="stat-value" id="stDevre">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kesim">Kesim Bekleyen</div><div class="stat-value" id="stKesim" style="color:var(--warn);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kk">KK Bekleyen</div><div class="stat-value" id="stKK" style="color:var(--re);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_sevk">Bu Ay Sevk</div><div class="stat-value" id="stSevk" style="color:var(--gr);">—</div></div></div>
   </div>
   <div class="dashboard-grid">
     <div class="spool-block">
-      <div class="sb-hdr"><div class="sb-title">Sistemdeki Toplam Spool Durumu</div></div>
+      <div class="sb-hdr"><div class="sb-title" data-i18n="idx_spool_baslik">Sistemdeki Toplam Spool Durumu</div></div>
       <div class="sb-body">
         <div class="sb-left">
           <div class="sb-chart-box">
@@ -215,20 +215,20 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
               <g transform="rotate(-90 150 150)"><circle cx="150" cy="150" r="115" fill="none" stroke="var(--sb-ring)" stroke-width="28"/></g>
               <g id="sbSegs" transform="rotate(-90 150 150)"></g>
             </svg>
-            <div class="sb-center"><div id="sbNum" class="sb-cnum">0</div><div id="sbLbl" class="sb-clbl">TOPLAM ADET</div></div>
+            <div class="sb-center"><div id="sbNum" class="sb-cnum">0</div><div id="sbLbl" class="sb-clbl" data-i18n="idx_toplam_adet">TOPLAM ADET</div></div>
           </div>
           <div style="display:flex;justify-content:center;margin-top:10px;">
-            <div class="sb-utog"><button id="btnAdet" class="on">Adet</button><button id="btnKg">Kg</button></div>
+            <div class="sb-utog"><button id="btnAdet" class="on" data-i18n="idx_btn_adet">Adet</button><button id="btnKg" data-i18n="idx_btn_kg">Kg</button></div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
           <div class="sb-hm-scroll"><table class="sb-hm" id="sbHm"></table></div>
           <div class="sb-mat-row" style="justify-content:flex-start;margin-top:10px;padding:0 4px;">
-            <button class="mat-btn mt on" data-m="tumu">Tümü</button>
-            <button class="mat-btn mc" data-m="celik">Çelik</button>
-            <button class="mat-btn mp" data-m="paslanmaz">Paslanmaz</button>
-            <button class="mat-btn ma" data-m="aluminyum">Alüminyum</button>
-            <button class="mat-btn mf" data-m="cunife">Cunife</button>
+            <button class="mat-btn mt on" data-m="tumu" data-i18n="idx_mat_tumu">Tümü</button>
+            <button class="mat-btn mc" data-m="celik" data-i18n="idx_mat_celik">Çelik</button>
+            <button class="mat-btn mp" data-m="paslanmaz" data-i18n="idx_mat_paslanmaz">Paslanmaz</button>
+            <button class="mat-btn ma" data-m="aluminyum" data-i18n="idx_mat_alum">Alüminyum</button>
+            <button class="mat-btn mf" data-m="cunife" data-i18n="idx_mat_cunife">Cunife</button>
           </div>
         </div>
       </div>
@@ -239,11 +239,11 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
           <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
           <span class="cal-title" id="monthTitle"></span>
           <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
-          <button class="today-btn" onclick="goToday()">Bugün</button>
+          <button class="today-btn" onclick="goToday()" data-i18n="idx_bugun">Bugün</button>
         </div>
         <div class="hdr-right">
-          <button class="share-btn" onclick="openShare()">Takvimler</button>
-          <button class="full-link" onclick="openFull()">Tam ekran →</button>
+          <button class="share-btn" onclick="openShare()" data-i18n="idx_takvimler">Takvimler</button>
+          <button class="full-link" onclick="openFull()" data-i18n="idx_tam_ekran">Tam ekran →</button>
         </div>
       </div>
       <div style="padding:8px 12px;border-bottom:1px solid var(--border);position:relative">
@@ -368,6 +368,31 @@ document.addEventListener('DOMContentLoaded', function() {
         await new Promise(function(r){ setTimeout(r, 100); });
         _bekle++;
       }
+
+
+    // ── STAT YÜKLEME ──────────────────────────────────
+    try {
+      var _s = ARES.supabase();
+      var _tid = ARES.tenantId();
+      if (_s && _tid) {
+        var buAyBas = new Date(); buAyBas.setDate(1); buAyBas.setHours(0,0,0,0);
+
+        var [rPrj, rDvr, rKsm, rKK, rSvk] = await Promise.all([
+          _s.from('projeler').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif',true),
+          _s.from('devreler').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).or('silindi.is.null,silindi.eq.false'),
+          _s.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif_basamak','kesim'),
+          _s.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif_basamak','on_kontrol'),
+          _s.from('sevkiyatlar').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('tip','giden').gte('tarih', buAyBas.toISOString()),
+        ]);
+
+        var txv = function(id, val) { var el = document.getElementById(id); if(el) el.textContent = val !== null ? val : '—'; };
+        txv('stProje', rPrj.count);
+        txv('stDevre', rDvr.count);
+        txv('stKesim', rKsm.count);
+        txv('stKK',    rKK.count);
+        txv('stSevk',  rSvk.count);
+      }
+    } catch(e) { console.warn('[ARES] stat:', e); }
 
       if (window._applyI18n) _applyI18n();
     } catch(e) { console.error('[ARES]', e); }
