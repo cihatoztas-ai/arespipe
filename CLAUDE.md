@@ -2,354 +2,519 @@
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
 > Son güncelleme: Nisan 2026
-> Yeni sohbette: `CLAUDE.md'yi oku: https://raw.githubusercontent.com/cihatoztas-ai/arespipe/refs/heads/main/CLAUDE.md`
 
 ---
 
 ## 1. PROJE TANIMI
 
 **AresPipe** — Tersane boru imalat takip sistemi.
-**Stack:** Vanilla HTML/CSS/JS + Supabase + Vercel
-**GitHub:** cihatoztas-ai/arespipe | **URL:** arespipe.vercel.app
-**Multi-tenant:** Supabase RLS ile korunur.
+
+**Stack:** Vanilla HTML/CSS/JS + Supabase (backend/DB/auth/storage) + Vercel (hosting)
+
+**GitHub:** cihatoztas-ai/arespipe (public repo)
+
+**URL:** arespipe.vercel.app
+
+**Multi-tenant:** Her müşteri firma (`tenant`) kendi izole verisini görür. Supabase RLS ile korunur.
 
 **Temel iş akışı:**
+```
 Proje → Devre → Spool → [Kesim → Büküm → Markalama → KK → Test → Sevkiyat]
+```
 
 ---
 
 ## 2. MİMARİ KURALLAR
 
-### Flash Prevention — HER HTML'DE ZORUNLU
+### 2.1 Flash Prevention — HER HTML SAYFASINDA ZORUNLU
+
+`<head>` içinde, `<link>`'lerden ÖNCE:
+
 ```html
-<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'dark';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
 ```
 
-### Script Sırası
+**İstisnalar:** `giris.html`, `qr_tara.html` (kendi özel layout'u var)
+
+### 2.2 Script Yükleme Sırası — ZORUNLU
+
 ```html
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
 <script src="ares-layout.js"></script>
 ```
 
-### Renk Sistemi
-- `--ac:#2D8EFF` `--gr:#16a36e` `--re:#e53e3e` `--warn:#d97706` `--leg:#7c3aed`
-- `[data-theme=dark]` → `--bg:#0d1117`
-- `[data-theme=light-anthracite]` → `--bg:#d8dde4`
-- **YASAK:** `#3b82f6` `#22c55e` `#0a0b0e` `#10b981` `history.back()` `syos_theme` `px14px`
-- **CSS'te data-theme tırnak kullanılmaz:** `[data-theme=dark]` ✅ `[data-theme="dark"]` ❌
+Admin klasöründe: `../ares-store.js`, `../ares-lang.js`, `../ares-layout.js`
 
-### CI/CD
-- `.github/kurallar.json` — kural tanımları
-- `.github/kontrol.js` — tarama scripti
-- Her push'ta otomatik kontrol. Hata → Vercel'e gitmez.
+**ares-lang.js OLMADAN sayfaya çeviri çalışmaz.**
 
-### ÖNEMLİ KURALLAR
-- `api/` klasörüne HTML koymak yasak (Vercel serverless function dizini görür)
-- `history.back()` yasak → explicit URL kullan
-- Admin sayfaları (`admin/`, `portal/`) `ares-layout.js` yüklemiyor — visibility'i kendisi açmalı
+### 2.3 Renk Sistemi — TEK SİSTEM
 
----
-
-## 3. KULLANICI ROLLERİ
-
-| Rol | Giriş Sonrası |
-|---|---|
-| `super_admin` | `admin/panel.html` |
-| `firma_admin` | `index.html` |
-| `yonetici` | `index.html` |
-| `operator` | `index.html` (→ `is_baslat.html` yapılınca) |
-| `musteri` | `portal/index.html` |
-
-**Test hesapları:**
-- `cihatoztas77@gmail.com` → super_admin
-- `cihatoztas@gmail.com` → firma_admin (Demo Atölye, tenant: 00000000-0000-0000-0000-000000000001)
-
----
-
-## 4. FEEDBACK SİSTEMİ
-
-1. Kullanıcı topbar'daki 💬 butonuna basar → modal (Hata/Eksik/Fikir + not + fotoğraf)
-2. `feedback_kayitlari` tablosuna kaydolur (durum: `bekliyor`)
-3. Süper admin `admin/panel.html` → Geri Bildirimler sekmesinde görür, onaylar
-4. Onaylananlar `public_feedback` view'ına düşer (anon erişimli)
-5. Claude yeni sohbette view'ı okur, CLAUDE.md'ye ekler
-
-**Public view:** `https://ochvbepfiatzvyknkvsn.supabase.co/rest/v1/public_feedback`
-
----
-
-## 5. VERİTABANI
-
-**Aktif tablolar:** tenants, kullanicilar, tersaneler, projeler, devreler, spooller, spool_malzemeleri, pipeline_malzemeleri, kesim_kalemleri, kesim_listeleri, bukum_kalemleri, markalama_kalemleri, markalama_listeleri, fotograflar, belgeler, notlar, islem_log, audit_log, kk_davetler, kk_davet_spooller, sevkiyatlar, sevkiyat_spooller, testler, test_spooller, egitim_verisi, basamak_tanimlari, basamak_sablonlari, sayac_tanimlari, feature_flags, tenant_features, firma_moduller, is_kayitlari, kullanici_yetkileri, yetki_tanimlari, customer_kullanicilar, customer_project_access, feedback_kayitlari
-
-**Public view:** `public_feedback` — anon erişimli, sadece onaylı feedbackler
-
----
-
-## 6. YAPILACAKLAR
-
-> Panel `admin/panel.html` → Yol Haritası sekmesi bu bölümü GitHub'dan okur.
-> `[x]` = tamamlandı (panel'de kilitli ✓), `[ ]` = bekliyor (panel'de toggle edilebilir).
-> Her sohbet sonunda tamamlananları `[x]` yap, yenileri `[ ]` olarak ekle.
-
-### 🔴 ACİL
-- [x] Admin panel yol haritası sekmesi — CLAUDE.md ile senkronize
-- [ ] `admin/panel.html` visibility sorunu — html visibility:hidden kalıyor
-
-### 🏭 Üretim & Saha
-- [ ] `is_baslat.html` — operatör QR sonrası saha ekranı (önce tasarım)
-- [ ] `qr_tara.html` → operator → `is_baslat.html` yönlendirmesini aktif et
-- [ ] Rol bazlı sidebar → operatör yetkisiz linkleri görmesin
-
-### ⚙️ Sistem & Altyapı
-- [ ] Sayfa erişim kontrolü → `sayfaYetkiKontrol()` tüm sayfalara
-- [ ] `admin/firma-detay.html` → tersane bağlantıları UI
-- [ ] Supabase Storage path kontrolü
-- [ ] Kullanıcı davet → service role key ile gerçek magic link
-- [ ] `ares-layout.js` sidebar personel referansı kaldır
-
-### 📊 Raporlar & Finans
-- [ ] `hakedis.html` → tablolar hazır, UI yok
-- [ ] `raporlar.html` → Supabase'den sıfırdan
-
-### 🌍 Dil Coverage
-- [x] `devre_detay.html` — tam i18n
-- [x] `spool_detay.html` — tam i18n
-- [x] `kesim.html` — tam i18n
-- [x] `ar.json` + `en.json` + `tr.json` — 1428 anahtar, senkronize
-- [x] `ares-lang.js` — `tr` dili atlaması kaldırıldı
-- [ ] `bukum.html` `markalama.html` `kk.html` `sevkiyat.html` → i18n kontrol
-- [ ] Diğer sayfalar → güncelleme geldiğinde Bölüm 9 kurallarına göre düzelt
-
-### 🤖 AI & Analiz
-- [ ] `ai_kuyruk` tablosu
-- [ ] Fotoğraf analizi pipeline
-- [ ] RAG veritabanı
-- [ ] `egitim/` modülü — 4 sayfa
-- [ ] `etiketleme.html`
-- [ ] `tersaneler` tablosuna `format_profili` kolonu
-- [ ] `egitim_verisi` tablosuna yeni kolonlar
-- [ ] `ayarlar.html` → QR etiket fiziksel boyutu
-
-### 🌐 Web Sitesi
-- [ ] Landing page
-- [ ] Demo/teklif talep formu
-- [ ] Ücretsiz araçlar (1D Kesim, İzometri Batch, teknik tablolar, PDF kütüphane)
-- [ ] Web kullanıcıları → tenant_type ile ayrıştır
-
-### 📱 Mobil
-- [ ] Expo Go test + eksik ekranlar
-
-### 🤖 AI & Analiz
-- [ ] `ai_kuyruk` tablosu
-- [ ] Fotoğraf analizi pipeline
-- [ ] RAG veritabanı
-- [ ] `egitim/` modülü (4 sayfa)
-- [ ] `etiketleme.html`
-- [ ] `tersaneler` tablosuna `format_profili` kolonu
-- [ ] `egitim_verisi` tablosuna yeni kolonlar
-- [ ] `ayarlar.html` → QR etiket fiziksel boyutu
-
-### 🌐 Web Sitesi
-- [ ] Landing page
-- [ ] Demo/teklif talep formu
-- [ ] Ücretsiz araçlar (1D Kesim, İzometri Batch, teknik tablolar, PDF kütüphane)
-- [ ] Web kullanıcıları → tenant_type ile ayrıştır
-
-### 📱 Mobil
-- [ ] Expo Go test + eksik ekranlar
-
----
-
-## 7. AI SİSTEMİ PLANI
-
-**2 katmanlı:** Hızlı (anlık QR sonrası) + Derin (gece batch)
-**Veri kaynakları:** spool_foto, serbest_foto, tersane_geri_bildirim, arsiv, standart, dxf, video
-**Onay:** 1 yetkili → süper admin final kontrol
-**QR referans ölçü:** QR fiziksel boyutu AI kalibrasyonunda referans
-
----
-
-## 8. WEB SİTESİ VİZYONU
-
-Kullanıcılar web'de email ile kayıt → ücretsiz araçlara erişim → AresPipe demo/teklif talebi.
-Altyapı: Supabase multi-tenant hazır, `tenant_type` ile web/AresPipe kullanıcıları ayrışır.
-
----
-
-## 9. i18n KURALLARI — SAYFA GÜNCELLEME REHBERİ
-
-> Bir sayfa güncellendiğinde bu kurallara göre kontrol yap.
-> **Güncelleme büyükse parçalara böl — tek seferde yapma.**
-
-### 9.0 Sayfa Geldiğinde İlk Yapılacak: OTOMATİK TANI
-
-Sayfa yüklenince **önce analiz yap, listeyi sun, onay al, sonra uygula:**
-
-```
-TANI KONTROL LİSTESİ
-─────────────────────────────────────────────
-□ CSS: data-theme tırnaklı mı? ([data-theme="dark"] → hata)
-□ Init: while döngüsü mü? (→ Promise tabanlıya çevir)
-□ _onLangChange: DOMContentLoaded içinde mi? (→ dışına taşı)
-□ Global scope tv(): var mı? (→ Python scripti ile kontrol)
-□ tv() güvenlik fallback'i: script başında mı?
-□ Hardcoded Türkçe string sayısı (JS içi)
-□ data-i18n eksik HTML eleman sayısı
-□ matBadge/tvMalzeme: normalize ediyor mu?
-```
-
-Tanı sonrası **değişiklik listesi ve sırasını sun**, kullanıcı onaylarsa uygula.
-
-### 9.1 Değişiklik Öncelik Sırası
-
-Büyük güncellemelerde bu sıra korunur — her parça deploy edilip test edilmeden sonrakine geçilmez:
-
-| Sıra | Kapsam | Açıklama |
-|---|---|---|
-| 1 | **Kritik** | CSS tırnak, init döngüsü, global tv() hatası |
-| 2 | **Yapısal** | _onLangChange pozisyonu, tv() fallback, helper'lar |
-| 3 | **Statik HTML** | data-i18n ekleme, data-i18n-placeholder |
-| 4 | **Dinamik HTML** | innerHTML içi tv(), matBadge, ucMap vb. |
-| 5 | **Toast / Log** | showToast, logEkle Türkçe string'leri |
-| 6 | **DB değerleri** | _normKey, _malzemeGoster, _yuzeyGoster |
-
-### 9.1 CSS
 ```css
-[data-theme=dark]{ }          /* ✅ tırnaksız */
-[data-theme="dark"]{ }        /* ❌ tırnaklı — yasak */
+:root {
+  --ac: #2D8EFF;    /* Ana mavi */
+  --gr: #16a36e;    /* Yeşil */
+  --re: #e53e3e;    /* Kırmızı */
+  --warn: #d97706;  /* Amber */
+  --leg: #7c3aed;   /* Mor */
+}
+[data-theme=dark] {
+  --bg: #0d1117;
+  --sur: #161b24;
+  --sur2: #1c2333;
+  --bor: #262f3e;
+  --tx: #e6ecf4;
+  --txd: #6b7a90;
+  --txm: #94a3b8;
+}
+[data-theme=light-anthracite] {
+  --bg: #d8dde4;
+  --sur: #e4e9ef;
+  --sur2: #d0d7e0;
+  --bor: #bcc5d0;
+  --tx: #141e2b;
+  --txm: #3a4f63;
+  --txd: #637080;
+}
 ```
 
-### 9.2 tv() Güvenlik — Her sayfanın ana script bloğu başına
-```javascript
-if (typeof tv === 'undefined') { window.tv = function(k,fb){ return fb!==undefined?fb:k; }; }
-if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k; }; }
-if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
+**YASAK renkler:** `#3b82f6`, `#22c55e`, `#0a0b0e`, `#10b981`, `#0d0f1a`
+
+**YASAK tema seçiciler:**
+- `[data-theme="light"]`, `[data-theme="slate"]`, `[data-theme="navy"]`
+- `:root[data-theme="dark"]` sözdizimi — doğrusu `[data-theme=dark]`
+- CSS attribute seçicilerinde tırnak kullanma: `[data-theme="dark"]` değil `[data-theme=dark]`
+
+### 2.4 Sol Kenar Renk Sistemi (Kural B-01)
+
+```css
+.cl-ac  { border-left: 3px solid var(--ac)   !important; }
+.cl-gr  { border-left: 3px solid var(--gr)   !important; }
+.cl-re  { border-left: 3px solid var(--re)   !important; }
+.cl-warn{ border-left: 3px solid var(--warn) !important; }
+.cl-leg { border-left: 3px solid var(--leg)  !important; }
 ```
 
-**Global scope'ta tv() çağrısı yasak:**
-```javascript
-// ❌ Script parse anında tv() yok → ReferenceError
-const ucMap = { duz: tv('ks_uc_duz','Düz') };
-var STAGES = getSTAGES();
+### 2.5 Font Size Kuralı
 
-// ✅ Statik başlat, render fonksiyonunda güncelle
-const ucMap = { duz: 'Düz' };
-function getUcMap(){ return { duz: tv('ks_uc_duz','Düz') }; }
-function render(){ if(typeof tv==='function') Object.assign(ucMap, getUcMap()); }
+Minimum font-size: `14px`. `px14px` geçersiz CSS — tarayıcı yok sayar.
 
-// ✅ Nesne literal içinde de wrapper şart
-[{id:'fCap', l: function(){ return tv('cmn_th_cap','Çap'); }}]
+### 2.6 App Shell Yapısı
+
+```html
+<body>
+  <div class="app-shell">
+    <!-- sidebar ares-layout.js tarafından inject edilir -->
+    <div class="main-content">
+      <div class="page">
+        <!-- sayfa içeriği -->
+      </div>
+    </div>
+  </div>
+</body>
 ```
 
-**Global scope kontrol scripti:**
-```python
-python3 - << 'EOF'
-import re
-with open('sayfa.html') as f: content = f.read()
-for si,s in enumerate(re.findall(r'<script[^>]*>(.*?)</script>',content,re.DOTALL)):
-    d=0
-    for i,l in enumerate(s.split('\n'),1):
-        c=re.sub(r"'[^'\\]*(?:\\.[^'\\]*)*'|\"[^\"\\]*(?:\\.[^\"\\]*)*\"","''",l)
-        d+=c.count('{')-c.count('}')
-        if 'tv(' in l and d<=0: print(f"Blok {si+1}, satır {i}: {l.strip()[:100]}")
-EOF
+### 2.7 Auth Kontrolü (Kural A-01)
+
+`ares-layout.js`'deki `authKontrol()` Supabase native token'ını kontrol eder:
+- `sb-*-auth-token` localStorage key'ini arar
+- `access_token` yoksa `giris.html`'e yönlendirir
+- Admin/portal klasöründeyse `../giris.html`'e yönlendirir
+
+### 2.8 Supabase Bağlantısı (Kural S-01)
+
+- Admin/portal sayfalarında `supabase.createClient()` KULLANILMAZ
+- `ARES.supabase()` kullanılır — ares-store.js zaten yönetir
+- Sayfa yüklenirken değil, ilk kullanımda başlatılır (lazy init):
+
+```js
+var _supa = null;
+function _getSupa() {
+  if (!_supa && typeof ARES !== 'undefined') _supa = ARES.supabase();
+  return _supa;
+}
 ```
 
-### 9.3 Init Döngüsü — Promise tabanlı (while kullanma)
-```javascript
-var _supaHazir = await new Promise(function(resolve) {
-  var _el = 0;
-  function _chk() {
-    if (typeof ARES !== 'undefined') {
-      var _s = typeof ARES.supabase === 'function' ? ARES.supabase() : null;
-      if (_s && typeof _s.from === 'function') { resolve(true); return; }
-    }
-    _el += 200; if (_el >= 12000) { resolve(false); return; }
-    setTimeout(_chk, 200);
-  }
-  _chk();
-});
+### 2.9 data-i18n Kuralı (Kural D-02)
+
+Child elementi olan elementlere `data-i18n` konulmaz. `ares-lang.js` `textContent` set edince child elementler silinir.
+
+**YANLIŞ:**
+```html
+<button data-i18n="key">Metin <span id="badge">0</span></button>
 ```
 
-### 9.4 _onLangChange
-- DOMContentLoaded **dışında** tanımlanmalı
-- `_applyI18n()` ilk çağrı, ardından tüm dinamik render fonksiyonları
-```javascript
-window._onLangChange = function() {
-  if (typeof _applyI18n === 'function') _applyI18n();
-  if (typeof renderTable === 'function') renderTable();
-  // sayfaya özgü diğer render fonksiyonları...
-};
+**DOĞRU:**
+```html
+<button><span data-i18n="key">Metin</span> <span id="badge">0</span></button>
 ```
 
-### 9.5 ARES Metodları — Doğru İmzalar
-```javascript
-ARES.spoollariGetir(devreId)              // silindi filtrelemez → client'ta .filter(s=>!s.silindi)
-ARES.spoolDurdur(id, sebep, aciklama)     // 3 param
-ARES.loguGetir({devreId: id}, 50)         // limit ayrı param (object içinde değil)
-ARES.logEkle(islem, aciklama, katman, katmanId, meta)  // 5 param
-ARES.softSil('tablo', id)
-// ARES.devreGetir — BUG VAR (projeler.is_emri_no yok) → raw Supabase kullan
-.not('silindi','eq',true)                 // silindi filtresi — .eq(false) NULL'ları kaçırır
+---
+
+## 3. DİL SİSTEMİ
+
+### 3.1 Tek Fonksiyon: tv()
+
+```js
+tv('anahtar_adi', 'Türkçe fallback')
 ```
 
-### 9.6 DB Değer Normalizasyonu
-```javascript
-// Her sayfada bu 3 fonksiyon tanımlı olmalı:
-function _normKey(raw){ /* Türkçe → ASCII lowercase */ }
-function _malzemeGoster(raw){ return tvMalzeme(_normKey(raw)) || raw; }
-function _yuzeyGoster(raw){ return tvYuzey(_normKey(raw)) || raw; }
+`t()` fonksiyonu KULLANILMAZ — ares-layout.js içindeki eski sistem, kaldırılacak.
 
-// matBadge'de normalize et:
-var ml = (m||'').toLowerCase().replace(/ı/g,'i').replace(/ç/g,'c')...
-if (ml.indexOf('bakir') !== -1)  // 'bakır' değil 'bakir' ara
+### 3.2 Dil Dosyaları
 
-// Malzeme göster — her zaman matBadge veya _malzemeGoster
-esc(k.malzeme)       // ❌
-matBadge(k.malzeme)  // ✅
+```
+lang/
+  tr.json  — Türkçe (primary, implicit) — şu an 1043 anahtar
+  en.json  — İngilizce — şu an 1656 anahtar
+  ar.json  — Arapça — şu an 1656 anahtar (test amaçlı, RTL desteği yok)
 ```
 
-### 9.7 Dinamik HTML + Toast
-```javascript
-// innerHTML içinde tv():
-'<th>' + tv('cmn_th_tersane','Tersane') + '</th>'  // ✅
-'<th>Tersane</th>'                                  // ❌
+**tr.json notu:** Türkçe için ares-layout.js JSON yüklemez, HTML içi metinleri kullanır. tr.json referans ve ileri uyumluluk için tutulur.
 
-// Toast:
-toast(tv('ks_kesim_tamamlandi','Kesim tamamlandı'), 'success')  // ✅
+### 3.3 Anahtar Prefix Sistemi
 
-// logEkle — büyük harf kod:
-logEkle('KESIM_TAMAMLANDI', k.ad)  // ✅
-logEkle('Kesim Tamamlandı', k.ad)  // ❌
-
-// Adım metni — lblMap öncelikli (DB gorunen_ad Türkçe olabilir):
-aktGor = lblMap[aktStr] || snap[akt].gorunen_ad || aktStr;
+```
+nav_*   — Sidebar navigasyon
+cmn_*   — Ortak (malzeme, durum, buton, tablo başlıkları)
+sp_*    — spool_detay.html
+dv_*    — devre_detay.html
+ks_*    — kesim.html
+bk_*    — bukum.html
+mk_*    — markalama.html
+kk_*    — kalite_kontrol.html
+ts_*    — testler.html
+log_*   — log.html
+sev_*   — sevkiyatlar.html
+kul_*   — kullanicilar.html
+izb_*   — izometri-batch.html
 ```
 
-### 9.8 Güvenli Erişim
-```javascript
-(kl.kriter.tersaneler || []).map(...)  // ✅
-kl.kriter.tersaneler.map(...)          // ❌ kriter null olabilir
+### 3.4 Nav Anahtarları Kuralı
+
+NAV tanımında her item'ın `i18n` key'i olmalı. Eksik olursa o item hiç çevrilmez.
+
+```js
+{ type: 'item', key: 'izobatch', label: 'İzometri Batch', i18n: 'nav_izobatch', href: '...' }
 ```
 
-### 9.9 Dil Dosyaları
-- Yeni anahtar eklenince `ar.json` + `en.json` + `tr.json` hepsinde olmalı
-- `ares-lang.js` satır 1: `if (_LANG[lang]) return;` (tr atlaması kaldırıldı)
+### 3.5 Sidebar Çeviri Sistemi
+
+Sidebar `ares-layout.js`'in `window.t()` fonksiyonunu kullanır (ares-lang.js'in `window.tv()`'sinden farklı). Bu eski sistem — ileride `tv()`'ye geçilecek.
+
+### 3.6 vercel.json — Cache Kontrolü (YAPILACAK)
+
+`ares-lang.js` ve `lang/*.json` no-cache eklenecek. Şu an eksik.
+
+---
+
+## 4. VERİTABANI
+
+### 4.1 Aktif Tablolar
+
+`tenants`, `kullanicilar`, `tersaneler`, `projeler`, `devreler`, `spooller`, `spool_malzemeleri`, `pipeline_malzemeleri`, `kesim_kalemleri`, `kesim_listeleri`, `bukum_kalemleri`, `markalama_kalemleri`, `markalama_listeleri`, `markalama_listesi_kalemleri`, `fotograflar`, `belgeler`, `notlar`, `islem_log`, `audit_log`, `kk_davetler`, `kk_davet_spooller`, `sevkiyatlar`, `sevkiyat_spooller`, `testler`, `test_spooller`, `egitim_verisi`, `basamak_tanimlari`, `basamak_sablonlari`, `sayac_tanimlari`, `feature_flags`, `tenant_features`, `firma_moduller`, `is_kayitlari`, `kullanici_yetkileri`, `yetki_tanimlari`, `customer_kullanicilar`, `customer_project_access`
+
+### 4.2 Beklemedeki Tablolar
+
+| Tablo | Durum | Ne Zaman |
+|---|---|---|
+| `hakedis_paketleri/spooller/kriterleri` | UI yok | hakedis.html yazılınca |
+| `tarama_sonuclari` | 3D cihaz entegrasyonu | Cihaz gelince |
+| `tersane_firma_iliskileri` | Multi-tenant taşeron | Geliştirme listesinde |
+| `ai_analizler` | FAZ 2'de aktif olacak | Pipeline kurulunca |
+| `rol_sablonlari` | Yetki sistemi | Rol UI yazılınca |
+
+### 4.3 egitim_verisi Tablosu
+
+Mevcut kolonlara eklenecekler:
+```sql
+kaynak_tipi    -- 'spool_foto'|'serbest_foto'|'tersane_geri_bildirim'|'arsiv'|'standart'|'dxf'|'video'
+egitim_durumu  -- 'bekliyor'|'onaylandi'|'kullanildi'|'silinecek'
+dogrulayici_id -- yetkili kişi UUID
+onay_sayisi    -- 1 yeterli (1 yetkili + süper admin final kontrol)
+```
+
+### 4.4 tersaneler Tablosu
+
+Eklenecek kolon:
+```sql
+format_profili JSONB  -- tersane izometri format bilgisi
+```
+
+---
+
+## 5. SAYFA ENVANTERİ
+
+### 5.1 Aktif ve Temiz Sayfalar
+
+| Sayfa | Flash | lang.js | Renk | Dil | Durum |
+|---|---|---|---|---|---|
+| `giris.html` | ✅ | — | ✅ | — | Temiz |
+| `index.html` | ✅ | ✅ | ✅ | — | Ölü tema CSS var |
+| `devreler.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `devre_detay.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `devre_yeni.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `spool_detay.html` | ✅ | ✅ | ✅ | — | URL param fix gerekli |
+| `kesim.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `bukum.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `markalama.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `kalite_kontrol.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `sevkiyatlar.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `testler.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `log.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `tanimlar.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `tezgahlar.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `kullanicilar.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `kullanici_detay.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `qr_tara.html` | ✅ | ✅ | ✅ | — | Rol yönlendirmesi eklenecek |
+| `proje_liste.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `proje_detay.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `uyarilar.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `ayarlar.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `tersaneler.html` | ✅ | ✅ | ✅ | kısmi | Yerel _I18N + ares-lang entegre |
+| `izometri-batch.html` | ✅ | ✅ | ✅ | ✅ | Temiz |
+| `sorgula.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `devre_duzenle.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `admin/panel.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `admin/firma.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `admin/firma-detay.html` | ✅ | ✅ | ✅ | — | Temiz |
+| `portal/index.html` | ✅ | ✅ | ✅ | — | Temiz |
+
+### 5.2 Düzeltme Gereken Sayfalar
+
+| Sayfa | Sorun |
+|---|---|
+| `raporlar.html` | Sıfırdan yazılacak |
+| `index.html` | Ölü tema CSS var |
+
+### 5.3 Silinecek Sayfalar
+
+- `personel.html` — iptal edildi
+- `personel_yeni.html` — iptal edildi
+- `senaryolar.html` — gerek kalmadı
+
+---
+
+## 6. GÜVENLİK (TAMAMLANDI)
+
+### 6.1 Auth Kontrolü ✅
+`authKontrol()` Supabase native token (`sb-*-auth-token`) kontrolü yapıyor.
+
+### 6.2 Logout ✅
+`ARES.cikisYap()` çağrılıyor.
+
+### 6.3 Debug Badge ✅
+Kaldırıldı.
+
+### 6.4 Davet Sistemi ✅
+`kullanicilar.html` — `auth.admin.*` metodları kaldırıldı, sadece `signInWithOtp()` (magic link) kullanılıyor. Service role key gerektiren metodlar frontend'de kullanılmaz.
+
+---
+
+## 7. YAPILACAKLAR LİSTESİ
+
+### FAZ 0 — Güvenlik ✅ TAMAMLANDI
+- [x] `ares-layout.js` logout → `ARES.cikisYap()`
+- [x] `ares-layout.js` authKontrol() → Supabase token kontrolü
+- [x] `ares-layout.js` debug badge → kaldırıldı
+
+### FAZ 1 — Renk sistemi ✅ TAMAMLANDI
+- [x] `admin/panel.html`, `admin/firma.html`, `admin/firma-detay.html`
+- [x] `portal/index.html`
+- [x] `sorgula.html`, `izometri-batch.html`, `devre_duzenle.html`
+
+### FAZ 2 — Flash prevention + ares-lang.js ✅ TAMAMLANDI
+- [x] `proje_detay.html`, `uyarilar.html`, `ayarlar.html`
+- [x] `tersaneler.html` — yerel _I18N + ares-lang.js entegre
+- [ ] `raporlar.html` → sona bırakıldı, sıfırdan yazılacak
+
+### FAZ 3 — CSS + Dil Sistemi ✅ TAMAMLANDI
+- [x] `kesim.html` — renk + dil analizi
+- [x] `testler.html` — sıfırdan dil sistemi (46 data-i18n, 26 tv())
+- [x] `kalite_kontrol.html` — renk + dil sistemi
+- [x] `sevkiyatlar.html` — CSS tırnak + 76 dil anahtarı
+- [x] `log.html` — CSS tırnak
+
+### FAZ 4 — Tekil düzeltmeler (DEVAM EDİYOR)
+- [x] `kullanicilar.html` → davet → magic link + dil sistemi
+- [x] `izometri-batch.html` → dil sistemi eklendi
+- [x] `ares-layout.js` → `nav_izobatch` eklendi
+- [x] `nav_kullanicilar` + `nav_izobatch` → 3 dil dosyasına eklendi
+- [ ] `qr_tara.html` → rol bazlı yönlendirme
+- [ ] `spool_detay.html` → URL param localStorage'dan önce gelsin + `tarama_sonuclari` sorgusunu kaldır
+- [ ] `vercel.json` → `ares-lang.js` + `lang/*.json` no-cache ekle
+- [ ] `en.json` + `ar.json` → `nav_personel` sil
+- [ ] `ares-layout.js` → sidebar aktif sayfa tespiti iyileştir
+- [ ] `ares-layout.js` → `t()` kaldır, sadece `tv()` kullan
+
+### FAZ 5 — Silme
+- [ ] `personel.html` sil
+- [ ] `personel_yeni.html` sil
+- [ ] `senaryolar.html` sil
+- [ ] `ares-layout.js` NAV listesinden personel kaldır
+
+### FAZ 6 — İşlevsel geliştirme
+- [ ] `ayarlar.html` → `tenants` Supabase bağlantısı (zaten var, kontrol et)
+- [ ] `qr_tara.html` → rol bazlı yönlendirme
+- [ ] `is_baslat.html` → yeni sayfa
+- [ ] Sayfa erişim kontrolü → `sayfaYetkiKontrol()` tüm sayfalara
+- [ ] Rol bazlı sidebar → operatör yetkisiz linkleri görmemeli
+- [ ] `tersane_firma_iliskileri` → `admin/firma-detay.html` placeholder
+- [ ] `hakedis.html` → yeni sayfa
+- [ ] `raporlar.html` → Supabase'den sıfırdan
+- [ ] `ares-layout.js` dil sistemi → `t()` kaldır, sadece `tv()` kullan
+
+### FAZ 7 — AI Sistemi
+- [ ] `ai_kuyruk` tablosunu kur
+- [ ] `ayarlar.html`'e QR etiket fiziksel boyutu ekle
+- [ ] Fotoğraf yüklenince → hızlı analiz → anlık uyarı
+- [ ] Spool tamamlanınca → derin analiz → havuza ekle → onay/red
+- [ ] `egitim_verisi` tablosuna yeni kolonlar ekle
+
+### FAZ 8 — Eğitim Merkezi (yeni modül)
+- [ ] `egitim/index.html`, `yukle.html`, `dogrula.html`, `admin.html`
+- [ ] RAG veritabanı kurulumu
+- [ ] `tersaneler` tablosuna `format_profili` kolonu
+
+### API Düzeltmeleri ✅ TAMAMLANDI
+- [x] `api/izometri-oku.js` → edge → Node.js, max_tokens 8192
+- [x] `api/sorgula.js` → edge → Node.js
+- Not: Anthropic bakiye bitmişti, yükleme gerekiyor
+
+---
+
+## 8. KARAR VERİLMİŞ KONULAR
+
+### Auth Sistemi
+Supabase native token (`sb-*-auth-token`) localStorage'da tutulur. `ares_oturum` key'i kullanılmaz.
+
+### Davet Sistemi
+`auth.admin.*` metodları service role key gerektirir, frontend'de kullanılmaz. Sadece `signInWithOtp()` (magic link). Kullanıcı kaydı auth ID olmadan oluşturulur, ilk girişte bağlanır.
+
+### QR → Rol bazlı yönlendirme
+```js
+if (rol === 'operator') {
+  location.href = 'is_baslat.html?id=' + spoolId;
+} else {
+  location.href = 'spool_detay.html?id=' + spoolId;
+}
+```
+
+### is_baslat.html — Operatör Saha Ekranı
+- Spool özet (büyük font, sahada okunabilir)
+- Aktif basamak göstergesi
+- "İşi Başlat" / "İşi Tamamla" butonu
+- Hızlı fotoğraf çek
+- Spool durdurulmuşsa büyük kırmızı uyarı
+
+### Yetkilendirme Sistemi
+Altyapı hazır. Sadece UI eksik.
+
+### tarama_sonuclari
+3D lazer tarama cihazı için beklemede. `spool_detay.html`'deki sorgudan kaldırılacak.
+
+### Arapça RTL
+Test amaçlı. RTL CSS implementasyonu yapılmayacak. Tasarım bittikten sonra kaldırılacak.
+
+### AI Fotoğraf Analizi — 2 Katman
+| Katman | Tetikleyici | Amaç |
+|---|---|---|
+| Hızlı | Fotoğraf yüklenince | Anlık hata uyarısı |
+| Derin | Spool tamamlanınca | Bütünsel doğrulama + eğitim |
+
+### Dil Dosyası Durumu (Nisan 2026)
+| Dosya | Anahtar Sayısı |
+|---|---|
+| tr.json | ~1045 |
+| en.json | ~1658 |
+| ar.json | ~1658 |
+
+### ITHINKSO
+Önceki yazılım firmasının adı. Kodda geçen her yerde kaldırılacak.
+
+### CI/CD — GitHub Actions
+Her push'ta otomatik kural kontrolü. Kural dosyası: `.github/kurallar.json`
+
+---
+
+## 9. DOSYA YAPISI
+
+```
+/
+├── index.html
+├── giris.html
+├── devreler.html
+├── devre_detay.html
+├── devre_yeni.html
+├── devre_duzenle.html
+├── spool_detay.html
+├── kesim.html
+├── bukum.html
+├── markalama.html
+├── kalite_kontrol.html
+├── testler.html
+├── sevkiyatlar.html
+├── log.html
+├── tanimlar.html
+├── tezgahlar.html
+├── kullanicilar.html
+├── kullanici_detay.html
+├── tersaneler.html
+├── proje_liste.html
+├── proje_detay.html
+├── qr_tara.html
+├── sorgula.html
+├── izometri-batch.html
+├── uyarilar.html
+├── ayarlar.html
+├── raporlar.html          ← sıfırdan yazılacak
+├── is_baslat.html         ← yapılacak (yeni)
+├── ares-store.js
+├── ares-lang.js
+├── ares-layout.js
+├── vercel.json
+├── CLAUDE.md              ← bu dosya
+├── lang/
+│   ├── tr.json
+│   ├── en.json
+│   └── ar.json
+├── admin/
+│   ├── panel.html
+│   ├── firma.html
+│   └── firma-detay.html
+├── portal/
+│   └── index.html
+├── api/
+│   ├── izometri-oku.js    ← Node.js runtime, max_tokens 8192
+│   └── sorgula.js         ← Node.js runtime
+├── egitim/                ← yapılacak (yeni modül)
+│   ├── index.html
+│   ├── yukle.html
+│   ├── dogrula.html
+│   └── admin.html
+└── .github/
+    ├── kurallar.json
+    ├── kontrol.js
+    └── workflows/
+        └── kontrol.yml
+```
 
 ---
 
 ## 10. SOHBET SONU GÜNCELLEME PROTOKOLÜ
 
-Her sohbet bitiminde:
+Her sohbet bitiminde şu soruları sor:
 
-1. Tamamlanan iş var mı? → Bölüm 6'da `[ ]` → `[x]` yap
-2. Yeni yapılacak çıktı mı? → Bölüm 6'ya `[ ]` ekle
-3. Onaylanan feedback → Bölüm 6'ya uygun gruba ekle
-4. Yeni karar → İlgili bölüme ekle
-
-**Panel senkronizasyonu otomatik** — Bölüm 6 GitHub'a push edilince
-`admin/panel.html` Yol Haritası sekmesi → "↻ Yenile" ile anında güncellenir.
+1. Bu sohbette yeni karar alındı mı? → Bölüm 8'e ekle
+2. Yapılacaklar listesinde tamamlanan var mı? → Bölüm 7'de `[x]` yap
+3. Yeni sayfa eklendi mi? → Bölüm 5 ve 9'u güncelle
+4. Veritabanı değişikliği var mı? → Bölüm 4'ü güncelle
+5. Yeni kural belirlendi mi? → Bölüm 2'ye ekle
 
 **Bu dosya güncel değilse bir sonraki sohbet bağlamsız başlar.**
