@@ -8,7 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="../ares-store.js"></script>
 <style>
-:root{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--admin:#f97316;}
+:root{--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--admin:#f97316;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -17,7 +19,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;}
 .topbar-sep{flex:1;}
 .topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
-.topbar-badge{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.topbar-badge{background:rgba(45,142,255,.15);border:1px solid rgba(45,142,255,.3);color:var(--ac);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
 .btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
 .btn-logout:hover{border-color:var(--re);color:var(--re);}
 
@@ -25,7 +27,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;}
 .nav-item:hover{background:var(--sur2);color:var(--tx);}
-.nav-item.active{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.2);color:var(--ac);}
+.nav-item.active{background:rgba(45,142,255,.1);border-color:rgba(45,142,255,.2);color:var(--ac);}
 .nav-icon{font-size:16px;width:20px;text-align:center;}
 .nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
 .nav-firma{padding:12px;margin-bottom:8px;border-bottom:1px solid var(--bor);}
@@ -60,7 +62,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
 .badge-aktif{background:rgba(34,197,94,.12);color:var(--gr);}
 .badge-pasif{background:rgba(239,68,68,.12);color:var(--re);}
-.badge-rol{background:rgba(59,130,246,.12);color:var(--ac);}
+.badge-rol{background:rgba(45,142,255,.12);color:var(--ac);}
 .badge-admin{background:rgba(249,115,22,.12);color:var(--admin);}
 
 .btn{padding:7px 14px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;transition:all .15s;}
@@ -86,7 +88,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .basamak-item{display:flex;align-items:center;gap:0;flex-shrink:0;}
 .basamak-box{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .basamak-box:hover{border-color:var(--ac);color:var(--ac);}
-.basamak-box.aktif{border-color:var(--ac);background:rgba(59,130,246,.1);color:var(--ac);}
+.basamak-box.aktif{border-color:var(--ac);background:rgba(45,142,255,.1);color:var(--ac);}
 .basamak-arrow{color:var(--txd);padding:0 6px;font-size:16px;}
 .basamak-ekle{background:none;border:1px dashed var(--bor);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--txd);cursor:pointer;transition:all .15s;}
 .basamak-ekle:hover{border-color:var(--ac);color:var(--ac);}
@@ -307,11 +309,11 @@ tr:hover td{background:rgba(255,255,255,.02);}
 var _tenantId = null;
 var _firma = null;
 var _oturum = null;
-var _supa = supabase.createClient(
-  'https://ochvbepfiatzvyknkvsn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jaHZiZXBmaWF0enZ5a25rdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzc2MDIsImV4cCI6MjA5MDg1MzYwMn0.K4VQVQEC3V2dXyrFNYB8vi3cqNtwYDCGDWy_sAI_IEU',
-  { auth: { storageKey: 'sb-ochvbepfiatzvyknkvsn-auth-token' } }
-);
+var _supa = null;
+function _getSupa() {
+  if (!_supa && typeof ARES !== 'undefined') _supa = ARES.supabase();
+  return _supa;
+}
 var _duzenlenenBasamakId = null;
 
 function T(id) { return document.getElementById(id); }
@@ -338,15 +340,15 @@ function goPan(id, el) {
 }
 
 async function cikis() {
-  await _supa.auth.signOut();
+  await _getSupa().auth.signOut();
   window.location.href = '../giris.html';
 }
 
 async function init() {
-  var { data: { session } } = await _supa.auth.getSession();
+  var { data: { session } } = await _getSupa().auth.getSession();
   if (!session) { window.location.href = '../giris.html?redirect=' + encodeURIComponent(location.pathname); return; }
 
-  var { data: kul } = await _supa.from('kullanicilar')
+  var { data: kul } = await _getSupa().from('kullanicilar')
     .select('rol, ad_soyad, tenant_id').eq('id', session.user.id).single();
 
   if (!kul || !['firma_admin', 'yonetici', 'super_admin'].includes(kul.rol)) {
@@ -357,7 +359,7 @@ async function init() {
   _tenantId = kul.tenant_id;
   T('topbarUser').textContent = _oturum.ad;
 
-  var { data: firma } = await _supa.from('tenants').select('*').eq('id', _tenantId).single();
+  var { data: firma } = await _getSupa().from('tenants').select('*').eq('id', _tenantId).single();
   _firma = firma;
 
   var tipMap = { imalat:'Imalat Firmasi', montaj:'Montaj Firmasi', tersane:'Tersane', diger:'Diger' };
@@ -371,10 +373,10 @@ async function init() {
 
 async function dashboardGuncelle() {
   var [kulRes, spoolRes, devreRes, basRes] = await Promise.all([
-    _supa.from('kullanicilar').select('id,aktif', {count:'exact'}).eq('tenant_id', _tenantId),
-    _supa.from('spooller').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
-    _supa.from('devreler').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
-    _supa.from('basamak_tanimlari').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('aktif', true)
+    _getSupa().from('kullanicilar').select('id,aktif', {count:'exact'}).eq('tenant_id', _tenantId),
+    _getSupa().from('spooller').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
+    _getSupa().from('devreler').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('silindi', false),
+    _getSupa().from('basamak_tanimlari').select('id', {count:'exact', head:true}).eq('tenant_id', _tenantId).eq('aktif', true)
   ]);
 
   var kullar = kulRes.data || [];
@@ -386,7 +388,7 @@ async function dashboardGuncelle() {
 }
 
 async function kullanicilariYukle() {
-  var { data } = await _supa.from('kullanicilar').select('*').eq('tenant_id', _tenantId).order('olusturma');
+  var { data } = await _getSupa().from('kullanicilar').select('*').eq('tenant_id', _tenantId).order('olusturma');
   var el = T('kulTbody');
   if (!data || !data.length) { el.innerHTML = '<tr><td colspan="6" class="empty">Kullanici yok</td></tr>'; return; }
   var roller = ['yonetici','kk_uzmani','operatör'];
@@ -413,11 +415,11 @@ async function kullanicilariYukle() {
 }
 
 function _rolChange(el) {
-  _supa.from('kullanicilar').update({rol: el.value}).eq('id', el.dataset.kulId).then(function() { toast('Rol guncellendi'); });
+  _getSupa().from('kullanicilar').update({rol: el.value}).eq('id', el.dataset.kulId).then(function() { toast('Rol guncellendi'); });
 }
 function _durumClick(el) {
   var aktif = el.dataset.aktif === 'true';
-  _supa.from('kullanicilar').update({aktif: !aktif}).eq('id', el.dataset.kulId).then(function() {
+  _getSupa().from('kullanicilar').update({aktif: !aktif}).eq('id', el.dataset.kulId).then(function() {
     toast(!aktif ? 'Kullanici aktiflestirildi' : 'Kullanici pasife alindi');
     kullanicilariYukle();
   });
@@ -437,13 +439,13 @@ async function kulEkle() {
   if (!email) { toast('E-posta zorunlu', 'err'); return; }
   if (!sifre || sifre.length < 8) { toast('Sifre en az 8 karakter', 'err'); return; }
 
-  var { data: authUser, error } = await _supa.auth.admin.createUser({
+  var { data: authUser, error } = await _getSupa().auth.admin.createUser({
     email: email, password: sifre, email_confirm: true,
     user_metadata: { ad_soyad: ad }
   });
   if (error) { toast('Hata: ' + error.message, 'err'); return; }
 
-  await _supa.from('kullanicilar').insert({
+  await _getSupa().from('kullanicilar').insert({
     id: authUser.user.id, tenant_id: _tenantId,
     email: email, ad_soyad: ad, rol: rol, aktif: true
   });
@@ -454,13 +456,13 @@ async function kulEkle() {
 }
 
 async function basamaklariYukle() {
-  var { data } = await _supa.from('basamak_tanimlari')
+  var { data } = await _getSupa().from('basamak_tanimlari')
     .select('*').eq('tenant_id', _tenantId).order('sira');
 
   if (!data || !data.length) {
     // Sablondan yukle
     var tip = _firma?.firma_tipi || 'imalat';
-    var { data: sablon } = await _supa.from('basamak_sablonlari').select('*').eq('firma_tipi', tip).order('sira');
+    var { data: sablon } = await _getSupa().from('basamak_sablonlari').select('*').eq('firma_tipi', tip).order('sira');
     data = sablon || [];
   }
 
@@ -501,7 +503,7 @@ function basamakEkleModalAc() {
 
 async function _basamakDuzenle(el) {
   var id = el.dataset.id;
-  var {data} = await _supa.from('basamak_tanimlari').select('*').eq('id', id).single();
+  var {data} = await _getSupa().from('basamak_tanimlari').select('*').eq('id', id).single();
   if (!data) return;
   _duzenlenenBasamakId = id;
   T('basamakModalBaslik').textContent = 'Basamak Duzenle';
@@ -513,7 +515,7 @@ async function _basamakDuzenle(el) {
 
 async function _basamakSil(el) {
   if (!confirm('Bu basamagi silmek istediginizden emin misiniz?')) return;
-  await _supa.from('basamak_tanimlari').delete().eq('id', el.dataset.id);
+  await _getSupa().from('basamak_tanimlari').delete().eq('id', el.dataset.id);
   toast('Basamak silindi');
   basamaklariYukle();
 }
@@ -525,10 +527,10 @@ async function basamakKaydet() {
   if (!ad) { toast('Gorunen ad zorunlu', 'err'); return; }
 
   if (_duzenlenenBasamakId) {
-    await _supa.from('basamak_tanimlari').update({gorunen_ad:ad, sistem_adi:sistemAd, sira:sira}).eq('id', _duzenlenenBasamakId);
+    await _getSupa().from('basamak_tanimlari').update({gorunen_ad:ad, sistem_adi:sistemAd, sira:sira}).eq('id', _duzenlenenBasamakId);
     toast('Basamak guncellendi');
   } else {
-    await _supa.from('basamak_tanimlari').insert({tenant_id:_tenantId, gorunen_ad:ad, sistem_adi:sistemAd, sira:sira, aktif:true, firma_tipi:_firma?.firma_tipi||'imalat'});
+    await _getSupa().from('basamak_tanimlari').insert({tenant_id:_tenantId, gorunen_ad:ad, sistem_adi:sistemAd, sira:sira, aktif:true, firma_tipi:_firma?.firma_tipi||'imalat'});
     toast('Basamak eklendi');
   }
   T('basamakModal').style.display = 'none';
@@ -537,8 +539,8 @@ async function basamakKaydet() {
 
 async function modulleriYukle() {
   var [modRes, featRes] = await Promise.all([
-    _supa.from('firma_moduller').select('*').eq('tenant_id', _tenantId),
-    _supa.from('tenant_features').select('*').eq('tenant_id', _tenantId)
+    _getSupa().from('firma_moduller').select('*').eq('tenant_id', _tenantId),
+    _getSupa().from('tenant_features').select('*').eq('tenant_id', _tenantId)
   ]);
 
   var modMap = {};
