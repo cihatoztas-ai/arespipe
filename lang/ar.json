@@ -1646,5 +1646,6 @@
   "kul_rol_yonetici": "مدير",
   "kul_rol_kk_uzmani": "متخصص مراقبة الجودة",
   "kul_rol_operator": "مشغّل",
-  "kul_rol_izleyici": "مراقب"
+  "kul_rol_izleyici": "مراقب",
+  "kul_rol_firma_admin": "مدير الشركة"
 }

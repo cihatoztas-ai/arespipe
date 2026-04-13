@@ -1646,5 +1646,6 @@
   "kul_rol_yonetici": "Manager",
   "kul_rol_kk_uzmani": "QC Specialist",
   "kul_rol_operator": "Operator",
-  "kul_rol_izleyici": "Viewer"
+  "kul_rol_izleyici": "Viewer",
+  "kul_rol_firma_admin": "Company Admin"
 }

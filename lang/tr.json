@@ -1012,5 +1012,6 @@
   "kul_rol_yonetici": "Yönetici",
   "kul_rol_kk_uzmani": "KK Uzmanı",
   "kul_rol_operator": "Operatör",
-  "kul_rol_izleyici": "İzleyici"
+  "kul_rol_izleyici": "İzleyici",
+  "kul_rol_firma_admin": "Firma Admin"
 }
