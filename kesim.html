@@ -284,10 +284,10 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
   <!-- Sekmeler -->
   <div class="main-tabs">
-    <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')">✂️ Kesim Bekleyen <span class="mtbadge" id="badge-bekliyor" style="background:rgba(229,62,62,.15);color:var(--re);"></span></button>
-    <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')">📋 Kesim Listeleri <span class="mtbadge" id="badge-listeler" style="background:rgba(217,119,6,.15);color:var(--warn);"></span></button>
-    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')">✓ Kesilen Listeler <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(22,163,110,.12);color:var(--gr);"></span></button>
-    <button class="main-tab" id="tab-tekil" onclick="switchTab('tekil')">⚡ Tekil Kesilenler <span class="mtbadge" id="badge-tekil" style="background:rgba(45,142,255,.12);color:var(--ac);"></span></button>
+    <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')"><span data-i18n="ks_tab_bekleyen">✂️ Kesim Bekleyen</span> <span class="mtbadge" id="badge-bekliyor" style="background:rgba(229,62,62,.15);color:var(--re);"></span></button>
+    <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')"><span data-i18n="ks_tab_listeler">📋 Kesim Listeleri</span> <span class="mtbadge" id="badge-listeler" style="background:rgba(217,119,6,.15);color:var(--warn);"></span></button>
+    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')"><span data-i18n="ks_tab_kesilmis">✓ Kesilen Listeler</span> <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(22,163,110,.12);color:var(--gr);"></span></button>
+    <button class="main-tab" id="tab-tekil" onclick="switchTab('tekil')"><span data-i18n="ks_tab_tekil">⚡ Tekil Kesilenler</span> <span class="mtbadge" id="badge-tekil" style="background:rgba(45,142,255,.12);color:var(--ac);"></span></button>
   </div>
 
   <!-- PANEL: BEKLEYEN -->
@@ -303,7 +303,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
             <span class="ms-arrow">▾</span>
           </div>
           <div class="ms-dropdown" id="msDD" style="display:none;">
-            <div class="ms-search"><input type="text" id="msQ" placeholder="İş emir ara..." oninput="buildMs()"></div>
+            <div class="ms-search"><input type="text" id="msQ" data-i18n-placeholder="ks_search_ph" placeholder="İş emir ara..." oninput="buildMs()"></div>
             <div class="ms-actions"><button class="ms-act" onclick="msAll()"><span data-i18n="cmn_sec_tumunu">Tümünü Seç</span></button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
             <div class="ms-list" id="msList"></div>
             <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
@@ -325,7 +325,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       <div class="filter-row" style="margin-top:10px;">
         <div class="search-wrap" style="flex:1;max-width:520px;">
           <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="searchInput" placeholder="Spool no, iş emir, malzeme, kalite, çap..." oninput="onSearch()">
+          <input class="search-input" id="searchInput" data-i18n-placeholder="ks_search_ph" placeholder="Spool no, iş emir, malzeme, kalite, çap..." oninput="onSearch()">
           <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
         </div>
         <div class="filter-spacer"></div>
@@ -355,7 +355,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
-      <div id="emptyState" class="empty-state" style="display:none;"><div class="empty-icon">🔍</div><div style="font-size:15px;font-weight:600;margin-bottom:6px;">Kayıt bulunamadı</div><div style="font-size:14px;">Filtre veya arama kriterlerini değiştirin</div></div>
+      <div id="emptyState" class="empty-state" style="display:none;"><div class="empty-icon">🔍</div><div style="font-size:15px;font-weight:600;margin-bottom:6px;"><span data-i18n="ks_empty_notfound">Kayıt bulunamadı</span></div><div style="font-size:14px;"><span data-i18n="ks_empty_hint">Filtre veya arama kriterlerini değiştirin</span></div></div>
       <div id="tblFooter" class="tbl-footer" style="display:none;"><span id="footerTxt"></span><span id="footerSum"></span></div>
       <div id="tblPg" class="pg-wrap" style="display:none;"></div>
     </div>
@@ -363,20 +363,20 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
   <!-- PANEL: KESİM LİSTELERİ -->
   <div class="panel" id="panel-listeler">
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--warn);margin-bottom:20px;">📋 Kesim Listeleri</h2>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--warn);margin-bottom:20px;"><span data-i18n="ks_tab_listeler">📋 Kesim Listeleri</span></h2>
     <div id="klContainer"></div>
     <div id="klPg" class="pg-wrap" style="display:none;"></div>
   </div>
 
   <!-- PANEL: KESİLEN LİSTELER -->
   <div class="panel" id="panel-tamamlandi">
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);margin-bottom:20px;">✓ Kesilen Listeler</h2>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);margin-bottom:20px;"><span data-i18n="ks_tab_kesilmis">✓ Kesilen Listeler</span></h2>
     <div id="arcContainer"></div>
     <div id="arcPg" class="pg-wrap" style="display:none;"></div>
   </div>
 
   <div class="panel" id="panel-tekil">
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--ac);margin-bottom:20px;">⚡ Tekil Kesilenler</h2>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--ac);margin-bottom:20px;"><span data-i18n="ks_tab_tekil">⚡ Tekil Kesilenler</span></h2>
     <div id="tekilContainer"></div>
   </div>
 
@@ -922,7 +922,7 @@ function renderKL(){
   var cont=document.getElementById('klContainer');
   var aktif=kesimListeleri.filter(kl=>!kl.kapali);
   if(!aktif.length){
-    cont.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">Henüz kesim listesi oluşturulmadı</div><div style="font-size:14px;">Kesim Bekleyen sekmesinden liste oluşturun</div></div>';
+    cont.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">'+tv('ks_no_lists','Henüz kesim listesi oluşturulmadı')+'</div><div style="font-size:14px;">'+tv('ks_no_lists_hint','Kesim Bekleyen sekmesinden liste oluşturun')+'</div></div>';
     return;
   }
   var totalPagesKL=Math.ceil(aktif.length/PG_KL)||1;
@@ -1152,7 +1152,7 @@ function renderTekil(){
       return '<tr>'
         +'<td style="color:var(--txd);font-size:14px;">'+(i+1)+'</td>'
         +'<td style="font-size:14px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
-        +'<td style="font-size:14px;">'+esc(k.malzeme||'—')+'</td>'
+        +'<td style="font-size:14px;">'+matBadge(k.malzeme||'—')+'</td>'
         +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="font-size:14px;font-weight:700;color:var(--warn);">'+esc(String(k.kesimOlcusu||'—'))+' mm</td>'
         +'<td style="font-size:14px;">'+esc(ucMap[k.ucA]||k.ucA||'—')+'</td>'
