@@ -227,7 +227,6 @@
     if (p.includes('uyari')) return 'uyari';
     if (p.includes('tersane')) return 'tersane';
     if (p.includes('kullanici')) return 'kullanici';
-    if (p.includes('personel')) return 'kullanici';
     if (p.includes('tezgah')) return 'tezgah';
     if (p.includes('tanim')) return 'tanim';
     if (p.includes('senaryo')) return 'senaryolar';
@@ -237,6 +236,9 @@
     if (p.includes('rapor')) return 'raporlar';
     if (p.includes('etiketleme')) return 'etiketleme';
     if (p.includes('ayarlar')) return 'ayarlar';
+    if (p.includes('izometri') || p.includes('izobatch')) return 'izobatch';
+    if (p.includes('sorgula')) return ''; // sorgula — sidebar'da aktif öğe yok
+    if (p.includes('qr')) return ''; // qr_tara sayfası — sidebar aktif öğe yok
     return '';
   }
 
