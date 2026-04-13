@@ -1,8 +1,8 @@
-// api/sorgula.js — Vercel Edge Function
+// api/sorgula.js — Vercel Serverless Function (Node.js)
 // Doğal dil → SQL → Supabase → Türkçe cevap
 // Güvenlik: sadece SELECT, tenant_id zorunlu
 
-export const config = { runtime: 'edge' };
+export const config = { maxDuration: 30 };
 
 // Sorgulanmasına izin verilen tablolar
 const IZINLI_TABLOLAR = [
@@ -12,57 +12,50 @@ const IZINLI_TABLOLAR = [
   'markalama_kalemleri', 'islem_log'
 ];
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    });
-  }
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const body = await req.json();
+    const body = req.body;
     const { soru, tenant_id } = body;
 
     if (!soru || !tenant_id) {
-      return json({ error: 'soru ve tenant_id gerekli' }, 400);
+      return res.status(400).json({ error: 'soru ve tenant_id gerekli' });
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-    if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY yapılandırılmamış' }, 500);
-    if (!supabaseUrl || !supabaseKey) return json({ error: 'SUPABASE_URL veya SUPABASE_SERVICE_KEY yapılandırılmamış' }, 500);
+    if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY yapılandırılmamış' });
+    if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'SUPABASE_URL veya SUPABASE_SERVICE_KEY yapılandırılmamış' });
 
     // 1. Supabase'den şemayı çek
     const schema = await semaYukle(supabaseUrl, supabaseKey, tenant_id);
 
     // 2. Claude'a SQL ürettir
     const sqlSonuc = await sqlUret(apiKey, soru, schema, tenant_id);
-    if (sqlSonuc.error) return json({ error: sqlSonuc.error }, 422);
+    if (sqlSonuc.error) return res.status(422).json({ error: sqlSonuc.error });
 
     const { sql, aciklama } = sqlSonuc;
 
     // 3. Güvenlik kontrolü
     const guvensiz = guvenlikKontrol(sql, tenant_id);
-    if (guvensiz) return json({ error: guvensiz }, 403);
+    if (guvensiz) return res.status(403).json({ error: guvensiz });
 
     // 4. SQL çalıştır
     const veri = await sqlCalistir(supabaseUrl, supabaseKey, sql);
-    if (veri.error) return json({ error: 'Sorgu hatası: ' + veri.error }, 422);
+    if (veri.error) return res.status(422).json({ error: 'Sorgu hatası: ' + veri.error });
 
     // 5. Claude'a Türkçe cevap ürettir
     const cevap = await cevapUret(apiKey, soru, veri.rows, aciklama);
 
-    return json({
+    return res.json({
       ok: true,
       cevap,
       sql,
@@ -72,7 +65,7 @@ export default async function handler(req) {
 
   } catch (e) {
     console.error('sorgula hatası:', e);
-    return json({ error: e.message }, 500);
+    return res.status(500).json({ error: e.message });
   }
 }
 
@@ -318,13 +311,3 @@ Maksimum 3-4 cümle yaz.`,
   return data.content?.[0]?.text || `${veriler.length} kayıt bulundu.`;
 }
 
-// ── YARDIMCI ─────────────────────────────────────────────────
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
-  });
-}
