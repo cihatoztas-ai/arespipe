@@ -924,18 +924,15 @@ async function devreYukle(){
     _aresDevreId=(typeof ARES.devreId==='function'?ARES.devreId():null)
       ||ARES.aktifDevreId||ARES.devreId||(ARES.context&&ARES.context.devreId)
       ||(ARES.state&&ARES.state.devreId)||(ARES.aktif&&ARES.aktif.devreId)||null;
-    console.log('[ARES] ARES keys:',Object.keys(ARES),'_aresDevreId:',_aresDevreId);
   }
   var devreId=new URLSearchParams(location.search).get('id')
     ||_aresDevreId
     ||localStorage.getItem('ares_aktif_devre_id')
     ||localStorage.getItem('ares_devre_id')
     ||localStorage.getItem('devreId');
-  console.log('[ARES devreYukle] devreId=',devreId,'supa=',!!supa,'url=',location.search);
   if(supa&&devreId){
     try{
       var res=await supa.from('devreler').select('*,projeler(id,proje_no,gemi_adi,tersaneler(id,ad,kod))').eq('id',devreId).single();
-      console.log('[ARES devreYukle] res.error=',res.error,'supaId=',res.data?.id);
       if(!res.error&&res.data){
         var d=res.data,pr=d.projeler||{},tr=(pr.tersaneler)||{};
         DEVRE={supaId:d.id,
@@ -962,26 +959,14 @@ async function devreYukle(){
 
 // ── SPOOL YÜKLE
 async function spoolYukle(){
-  var supa=_supa();
-  var devreId=DEVRE.supaId
-    ||new URLSearchParams(location.search).get('id')
-    ||localStorage.getItem('ares_aktif_devre_id')
-    ||localStorage.getItem('ares_devre_id');
-  console.log('[ARES spoolYukle] devreId=',devreId,'supaId=',DEVRE.supaId);
-  if(!supa){console.warn('[ARES spoolYukle] supa yok');return;}
-  if(!devreId){console.warn('[ARES spoolYukle] devreId yok');return;}
+  var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(!devreId)return;
   try{
-    // silindi NULL-safe: true olmayanları getir
-    var res=await supa.from('spooller')
-      .select('*,kesim_kalemleri(id,kesildi),bukum_kalemleri(id,bukuldu),markalama_kalemleri(id,markalandi)')
-      .eq('devre_id',devreId)
-      .not('silindi','eq',true)
-      .order('pipeline_no').order('spool_no');
-    console.log('[ARES spoolYukle] sonuç:', res.data?.length,'hata:',res.error);
-    if(res.error){console.error('Spool hata:',res.error);return;}
-    SPOOLS=(res.data||[]).map(function(s,i){return _spoolMap(s,i);});
-    console.log('[ARES spoolYukle] SPOOLS:',SPOOLS.length);
-  }catch(e){console.error('spoolYukle exception:',e);}
+    var data=await ARES.spoollariGetir(devreId);
+    // ARES silindi filtrelemez — client'ta yap
+    data=(data||[]).filter(function(s){return !s.silindi;});
+    SPOOLS=data.map(function(s,i){return _spoolMap(s,i);});
+  }catch(e){console.warn('spoolYukle:',e);}
 }
 
 function _spoolMap(s,i){
@@ -1125,12 +1110,9 @@ function inlineEdit(td,alan,spoolNo,tip,seç,mevcut){
   var s=SPOOLS.find(function(x){return x.spoolNo===spoolNo;});if(!s)return;
   function _kaydet(yeni){
     yeni=(yeni||'').trim();s[alan]=yeni;
-    var supa=_supa();
-    if(supa&&s.supaId){
-      // spooller kolon adları: kalite→kalite, yuzey→yuzey, malzeme→malzeme, rev→rev
-      var dbAlan=alan==='kalite'?'kalite':alan==='yuzey'?'yuzey':alan==='malzeme'?'malzeme':alan==='rev'?'rev':alan;
-      var g={guncelleme:new Date().toISOString()};g[dbAlan]=yeni||null;
-      supa.from('spooller').update(g).eq('id',s.supaId).then(function(r){if(r.error)showToast(tv('dv_error_prefix','Hata')+': '+r.error.message,'e');});
+    if(s.supaId){
+      try{ARES.spoolGuncelle(s.supaId,{[alan]:yeni||null});}
+      catch(e){console.warn('spoolGuncelle:',e);}
     }
     renderTable();
   }
@@ -1202,27 +1184,21 @@ function spoolSilAc(spoolNo){_ctxSpool=SPOOLS.find(function(s){return s.spoolNo=
 
 async function spoolDurdurKaydet(){
   var ac=document.getElementById('sdAc').value.trim();
+  var sebep=document.getElementById('sdSebep').value||'diger';
   if(!ac){showToast(tv('dv_desc_required','Açıklama zorunludur'),'e');return;}
   if(!_ctxSpool)return;
-  var supa=_supa();
-  if(supa&&_ctxSpool.supaId){
-    var res=await supa.from('spooller').update({durduruldu:true,durdurma_sebebi:ac,durdurma_tarihi:new Date().toISOString(),guncelleme:new Date().toISOString()}).eq('id',_ctxSpool.supaId);
-    if(res.error){showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');return;}
-  }
-  _ctxSpool.stopped=true;_ctxSpool.durdurmaAc=ac;
+  try{await ARES.spoolDurdur(_ctxSpool.supaId, sebep, ac);}
+  catch(e){console.warn('spoolDurdur:',e);}
+  _ctxSpool.stopped=true;
   document.getElementById('mSpoolDur').style.display='none';
-  renderTable();logEkle('durduruldu',_ctxSpool.spoolNo+' — '+ac);
+  renderTable();
   showToast(_ctxSpool.spoolNo+' '+tv('dv_stopped','durduruldu'),'i');
 }
 async function spoolKaldir(spoolNo){
   var s=SPOOLS.find(function(x){return x.spoolNo===spoolNo;});if(!s)return;
-  var supa=_supa();
-  if(supa&&s.supaId){
-    var res=await supa.from('spooller').update({durduruldu:false,durdurma_sebebi:null,durdurma_tarihi:null,guncelleme:new Date().toISOString()}).eq('id',s.supaId);
-    if(res.error){showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');return;}
-  }
+  try{await ARES.spoolDurdurmaKaldir(s.supaId);}
+  catch(e){console.warn('spoolDurdurmaKaldir:',e);}
   s.stopped=false;renderTable();
-  logEkle('yeniden_baslandi',spoolNo+' — '+tv('dv_stop_removed','Durdurma kaldırıldı'));
   showToast(spoolNo+' '+tv('dv_reactivated','yeniden aktif'),'success');
 }
 function spoolIptalKaydet(){
@@ -1237,11 +1213,8 @@ function spoolIptalKaydet(){
 async function spoolSilKaydet(){
   var cb=document.getElementById('silOnay');if(!cb||!cb.checked){showToast(tv('dv_confirm_check','Onay kutucuğunu işaretleyin'),'e');return;}
   if(!_ctxSpool)return;
-  var supa=_supa();
-  if(supa&&_ctxSpool.supaId){
-    var res=await supa.from('spooller').update({silindi:true,silinme_tarihi:new Date().toISOString()}).eq('id',_ctxSpool.supaId);
-    if(res.error){showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');return;}
-  }
+  try{await ARES.softSil('spooller',_ctxSpool.supaId);}
+  catch(e){console.warn('softSil:',e);}
   SPOOLS=SPOOLS.filter(function(s){return s.spoolNo!==_ctxSpool.spoolNo;});
   document.getElementById('mSpoolSil').style.display='none';
   renderTable();statGuncelle();showToast(tv('dv_spool_deleted','Spool silindi'),'i');
@@ -1435,18 +1408,22 @@ async function terminKaydet(iso){
 // ── SPOOL MALZEME
 async function spoolMalzYukle(){
   var tbody=document.getElementById('spMalzBody');var badge=document.getElementById('spMalzBadge');
-  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
-  if(!supa||!devreId){if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--txd);">'+tv('dv_no_conn','Bağlantı yok')+'</td></tr>';return;}
-  var spRes=await supa.from('spooller').select('id,spool_no').eq('devre_id',devreId);
-  if(spRes.error||!spRes.data||!spRes.data.length){if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--txd);">'+tv('dv_no_spool_found','Spool bulunamadı')+'</td></tr>';return;}
-  var spMap={};spRes.data.forEach(function(s){spMap[s.id]=s;});
-  var spIds=spRes.data.map(function(s){return s.id;});
-  var res=await supa.from('spool_malzemeleri').select('id,spool_id,kod,aciklama,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,adet,agirlik_kg,heat_no,sertifikali,ifs_kod').in('spool_id',spIds);
-  if(res.error){if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--re);">'+tv('dv_load_error','Hata')+': '+res.error.message+'</td></tr>';return;}
-  _spoolMalzData=(res.data||[]).map(function(m){return Object.assign({},m,{spooller:spMap[m.spool_id]||{}});});
+  if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--txd);">'+tv('genel_yukleniyor','Yükleniyor...')+'</td></tr>';
+  if(!SPOOLS.length){if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--txd);">'+tv('dv_no_spool_found','Spool bulunamadı')+'</td></tr>';return;}
+  try{
+    // Her spool için ARES.malzemeleriGetir(spoolId)
+    var spoolIds=SPOOLS.map(function(s){return{id:s.supaId,sn:s.spoolNo};});
+    var tum=[];
+    for(var i=0;i<spoolIds.length;i++){
+      var malz=await ARES.malzemeleriGetir(spoolIds[i].id);
+      (malz||[]).forEach(function(m){tum.push(Object.assign({},m,{_spoolNo:spoolIds[i].sn}));});
+    }
+    _spoolMalzData=tum;
+  }catch(e){console.warn('malzemeleriGetir:',e);_spoolMalzData=[];}
+  var tanim_fn=function(m){return m.tanim||m.aciklama||'';};
   var grupler={};
   _spoolMalzData.forEach(function(m){
-    var tanim=m.tanim||m.aciklama||'';
+    var tanim=tanim_fn(m);
     var k=[m.kod||'',tanim,m.malzeme||'',m.kalite||'',String(m.dis_cap_mm||''),String(m.et_mm||'')].join('|');
     if(!grupler[k])grupler[k]={kod:m.kod,tanim:tanim,malzeme:m.malzeme,kalite:m.kalite,
       dis_cap_mm:m.dis_cap_mm,et_mm:m.et_mm,boy:0,adet:0,agirlik:0,sert:false,n:0};
@@ -1684,30 +1661,44 @@ function notSil(id){_notlar=_notlar.filter(function(n){return n.id!==id;});notRe
 
 // ── İŞLEM KAYITLARI
 function logEkle(tip,ac){
-  var devreId=DEVRE.supaId||DEVRE.id||'devre-001';
+  var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id')||'';
   var log=[];try{log=JSON.parse(localStorage.getItem('ares_dv_log_'+devreId)||'[]');}catch(e){}
   log.unshift({tip:tip,ac:ac,tarih:new Date().toLocaleString(document.documentElement.getAttribute('lang')||'tr'),kullanici:'Admin'});
   try{localStorage.setItem('ares_dv_log_'+devreId,JSON.stringify(log));}catch(e){}
-  if(typeof ARES==='object'&&typeof ARES.logEkle==='function')ARES.logEkle(tip.toUpperCase(),'devre',devreId,{});
+  // ARES.logEkle(islem, aciklama, katman, katmanId, meta)
+  if(typeof ARES!=='undefined'&&typeof ARES.logEkle==='function'){
+    ARES.logEkle(tip, ac||'', 'devre', devreId, {devre_id:devreId});
+  }
   renderIslemler();
 }
 function renderIslemler(){
   var tbody=document.getElementById('islemBody');if(!tbody)return;
-  var devreId=DEVRE.supaId||DEVRE.id||'';var log=[];
-  var supa=_supa();
-  if(supa&&devreId){
-    supa.from('islem_log').select('*,kullanicilar!yapan_id(ad_soyad)').eq('devre_id',devreId).order('olusturma',{ascending:false}).limit(50).then(function(res){
-      var kayitlar=res.data||[];var badge=document.getElementById('islemBadge');if(badge)badge.textContent=kayitlar.length+' '+tv('dv_records','kayıt');
-      var TIPL=TIPLER();
+  var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id')||'';
+  var lang=document.documentElement.getAttribute('lang')||'tr';
+  var TIPL=TIPLER();
+  if(devreId&&typeof ARES!=='undefined'&&typeof ARES.loguGetir==='function'){
+    ARES.loguGetir({devreId:devreId}, 50).then(function(kayitlar){
+      kayitlar=kayitlar||[];
+      var badge=document.getElementById('islemBadge');if(badge)badge.textContent=kayitlar.length+' '+tv('dv_records','kayıt');
       if(!kayitlar.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:20px;">'+tv('sp_no_logs','İşlem kaydı yok')+'</td></tr>';return;}
-      tbody.innerHTML=kayitlar.map(function(k,i){var cfg=TIPL[k.islem]||{renk:'var(--txd)',lbl:k.islem};var t=k.olusturma?new Date(k.olusturma).toLocaleString(document.documentElement.getAttribute('lang')||'tr',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';var u=(k.kullanicilar&&k.kullanicilar.ad_soyad)||'—';return'<tr style="'+(i%2?'background:rgba(255,255,255,.01)':'')+'"><td style="color:var(--txd);font-size:12px;white-space:nowrap;">'+esc(t)+'</td><td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:'+cfg.renk+';flex-shrink:0;display:inline-block;"></span><strong style="color:'+cfg.renk+';">'+esc(cfg.lbl)+'</strong></span></td><td style="color:var(--txm);font-size:12px;">'+esc(u)+'</td><td style="color:var(--txm);font-size:12px;">'+esc(k.aciklama||'')+'</td></tr>';}).join('');
-    });return;
+      tbody.innerHTML=kayitlar.map(function(k,i){
+        var cfg=TIPL[k.islem]||TIPL[k.tip]||{renk:'var(--txd)',lbl:k.islem||k.tip||'—'};
+        var t=k.olusturma?new Date(k.olusturma).toLocaleString(lang,{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+        var u=(k.kullanicilar&&k.kullanicilar.ad_soyad)||'—';
+        return'<tr style="'+(i%2?'background:rgba(255,255,255,.01)':'')+'"><td style="color:var(--txd);font-size:12px;white-space:nowrap;">'+esc(t)+'</td>'
+          +'<td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:'+cfg.renk+';display:inline-block;"></span>'
+          +'<strong style="color:'+cfg.renk+';">'+esc(cfg.lbl)+'</strong></span></td>'
+          +'<td style="color:var(--txm);font-size:12px;">'+esc(u)+'</td>'
+          +'<td style="color:var(--txm);font-size:12px;">'+esc(k.aciklama||'')+'</td></tr>';
+      }).join('');
+    }).catch(function(e){console.warn('loguGetir:',e);});
+    return;
   }
-  try{log=JSON.parse(localStorage.getItem('ares_dv_log_'+devreId)||'[]');}catch(e){}
+  // localStorage fallback
+  var log=[];try{log=JSON.parse(localStorage.getItem('ares_dv_log_'+devreId)||'[]');}catch(e){}
   var badge2=document.getElementById('islemBadge');if(badge2)badge2.textContent=log.length+' '+tv('dv_records','kayıt');
   if(!log.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:20px;">'+tv('sp_no_logs','İşlem kaydı yok')+'</td></tr>';return;}
-  var TIPL2=TIPLER();
-  tbody.innerHTML=log.map(function(k,i){var cfg=TIPL2[k.tip]||{renk:'var(--txd)',lbl:k.tip};return'<tr style="'+(i%2?'background:rgba(255,255,255,.01)':'')+'"><td style="color:var(--txd);font-size:12px;white-space:nowrap;">'+esc(k.tarih)+'</td><td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:'+cfg.renk+';flex-shrink:0;display:inline-block;"></span><strong style="color:'+cfg.renk+';">'+esc(cfg.lbl)+'</strong></span></td><td style="color:var(--txm);font-size:12px;">'+esc(k.kullanici)+'</td><td style="color:var(--txm);font-size:12px;">'+esc(k.ac||'')+'</td></tr>';}).join('');
+  tbody.innerHTML=log.map(function(k,i){var cfg=TIPL[k.tip]||{renk:'var(--txd)',lbl:k.tip};return'<tr style="'+(i%2?'background:rgba(255,255,255,.01)':'')+'"><td style="color:var(--txd);font-size:12px;white-space:nowrap;">'+esc(k.tarih)+'</td><td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:'+cfg.renk+';display:inline-block;"></span><strong style="color:'+cfg.renk+';">'+esc(cfg.lbl)+'</strong></span></td><td style="color:var(--txm);font-size:12px;">'+esc(k.kullanici||'')+'</td><td style="color:var(--txm);font-size:12px;">'+esc(k.ac||'')+'</td></tr>';}).join('');
 }
 
 // ── ETİKET MODAL
@@ -1821,45 +1812,29 @@ function exportPdf(){
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
     try {
-      var _b = 0;
-      while (_b < 150) {
-        if (typeof ARES === 'undefined') {
-          await new Promise(function(r){ setTimeout(r,100); }); _b++; continue;
+      // ARES + Supabase hazır olana kadar bekle (maks 12 sn)
+      // ARES.mod 'local'→'supabase' geçişi CDN yüklenince otomatik oluyor
+      var _supaHazir = await new Promise(function(resolve) {
+        var _elapsed = 0;
+        function _check() {
+          if (typeof ARES !== 'undefined' && _supa()) { resolve(true); return; }
+          _elapsed += 200;
+          if (_elapsed >= 12000) { resolve(false); return; }
+          setTimeout(_check, 200);
         }
+        _check();
+      });
+
+      if (_supaHazir) {
         var _s = _supa();
-        if (_s) {
-          var _ses = await _s.auth.getSession();
-          if (_ses.data && _ses.data.session) {
-            if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
-            break;
-          }
-          if (_b > 40) { location.href = 'giris.html'; return; }
-        } else if (_b > 20) {
-          // ARES yüklü ama supabase 2s sonra hâlâ null
-          // ARES kendi supabase referansını console'a yaz
-          console.warn('[ARES] supabase null, ARES keys:', Object.keys(ARES));
-          break;
+        var _ses = await _s.auth.getSession();
+        if (_ses.data && _ses.data.session) {
+          if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
+        } else if (typeof ARES !== 'undefined') {
+          location.href = 'giris.html'; return;
         }
-        await new Promise(function(r){ setTimeout(r,100); }); _b++;
       }
-      console.log('[ARES init] bitti _b=',_b,'supa=',!!_supa());
-      // ARES native method imzalarını anlamak için
-      try{
-        var _testSpool=await ARES.spoollariGetir(localStorage.getItem('ares_aktif_devre_id'));
-        console.log('[ARES.spoollariGetir] sonuç:', _testSpool?.length, 'ilk kayıt:', JSON.stringify(_testSpool?.[0]).substring(0,200));
-      }catch(e){console.warn('[ARES.spoollariGetir] hata:',e.message);}
-      try{
-        var _testDevre=await ARES.devreGetir(localStorage.getItem('ares_aktif_devre_id'));
-        console.log('[ARES.devreGetir] sonuç:', JSON.stringify(_testDevre).substring(0,200));
-      }catch(e){console.warn('[ARES.devreGetir] hata:',e.message);}
-      try{
-        var _testMalz=await ARES.malzemeleriGetir(localStorage.getItem('ares_aktif_devre_id'));
-        console.log('[ARES.malzemeleriGetir] sonuç:', _testMalz?.length, 'ilk:', JSON.stringify(_testMalz?.[0]).substring(0,150));
-      }catch(e){console.warn('[ARES.malzemeleriGetir] hata:',e.message);}
-      try{
-        var _testLog=await ARES.loguGetir({devreId:localStorage.getItem('ares_aktif_devre_id'),limit:3});
-        console.log('[ARES.loguGetir] sonuç:', _testLog?.length,'ilk:',JSON.stringify(_testLog?.[0]).substring(0,150));
-      }catch(e){console.warn('[ARES.loguGetir] hata:',e.message);}
+      // _supaHazir false ise demo verisiyle devam et (önizleme / offline)
       await devreYukle();
       sayfaDoldur();
       if (_supa()) {
