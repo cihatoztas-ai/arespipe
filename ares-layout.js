@@ -69,8 +69,10 @@
       });
   }
 
-  // t() — metin çeviri fonksiyonu (global)
+  // t() — geriye uyumluluk aliası → tv()'ye yönlendirir
+  // Yeni kodda tv() kullan, bu fonksiyon kaldırılacak
   window.t = function(key, params) {
+    if (typeof window.tv === 'function') return window.tv(key, params);
     var text = _langData[key] || key;
     if (params) {
       Object.keys(params).forEach(function(k){
@@ -87,21 +89,22 @@
       var key = el.getAttribute('data-i18n');
       // Orijinal Türkçe metni ilk seferinde kaydet
       if (!el.hasAttribute('data-i18n-tr')) el.setAttribute('data-i18n-tr', el.textContent.trim());
+      var _tv = typeof window.tv === 'function' ? window.tv : window.t;
       if (isTr) {
-        // Türkçeye dön — orijinal HTML metnini geri yükle
         el.textContent = el.getAttribute('data-i18n-tr');
       } else {
-        var text = window.t(key);
-        if (text !== key) el.textContent = text;
+        var text = _tv(key, el.getAttribute('data-i18n-tr'));
+        if (text && text !== key) el.textContent = text;
       }
     });
     // data-i18n-placeholder etiketli elementleri güncelle
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
       if (!el.hasAttribute('data-i18n-placeholder-tr')) el.setAttribute('data-i18n-placeholder-tr', el.placeholder || '');
+      var _tv2 = typeof window.tv === 'function' ? window.tv : window.t;
       if (isTr) { el.placeholder = el.getAttribute('data-i18n-placeholder-tr'); return; }
-      var text = window.t(key);
-      if (text !== key) el.placeholder = text;
+      var text = _tv2(key, el.getAttribute('data-i18n-placeholder-tr'));
+      if (text && text !== key) el.placeholder = text;
     });
     // NAV labellarını güncelle
     updateSidebar();
@@ -554,7 +557,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         if (item.type === 'item' && !_OPERATOR_KEYS.includes(item.key)) return '';
       }
       if (item.type === 'sep') {
-        return `<div style="padding:12px 12px 4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;overflow:hidden;transition:opacity 0.15s;" class="nav-sep-label">${item.i18n && window.t(item.i18n) !== item.i18n ? window.t(item.i18n) : item.label}</div>`;
+        return `<div style="padding:12px 12px 4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;overflow:hidden;transition:opacity 0.15s;" class="nav-sep-label">${(typeof window.tv === 'function' ? window.tv(item.i18n, item.label) : (window.t(item.i18n) !== item.i18n ? window.t(item.i18n) : item.label))}</div>`;
       }
       const active = activeKey === item.key;
       const badge  = item.badge && uyariSayisi > 0
@@ -562,7 +565,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         : '';
       return `<a class="nav-item${active ? ' active' : ''}" href="${item.href}" data-label="${item.label}">
         <span class="nav-icon">${item.icon}</span>
-        <span class="nav-label">${item.i18n && window.t(item.i18n) !== item.i18n ? window.t(item.i18n) : item.label}</span>
+        <span class="nav-label">${(typeof window.tv === 'function' ? window.tv(item.i18n, item.label) : (window.t(item.i18n) !== item.i18n ? window.t(item.i18n) : item.label))}</span>
         ${badge}
       </a>`;
     }).join('');
