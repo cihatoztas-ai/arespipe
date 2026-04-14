@@ -69,6 +69,11 @@
         "desen": "setAttribute('data-theme','light')",
         "mesaj": "data-theme 'light' olmamalı — 'light-anthracite' kullan",
         "siddet": "hata"
+      },
+      {
+        "desen": "⏳ Yükleniyor",
+        "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli.",
+        "siddet": "uyari"
       }
     ]
   },
