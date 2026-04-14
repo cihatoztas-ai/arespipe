@@ -353,9 +353,9 @@ function renderFoto() {
   document.getElementById('fotoCounter').style.display = _fotolar.length > 1 ? 'flex' : 'none';
   document.getElementById('fotoCnt').textContent = (_fotoIdx + 1) + '/' + _fotolar.length;
   document.getElementById('fotoMeta').style.display = 'flex';
-  document.getElementById('fotoDate').textContent = f.tarih ? mFormatTarih(f.tarih) : '—';
-  document.getElementById('fotoUser').textContent = f.kullanici_ad || '—';
-  document.getElementById('fotoStage').textContent = f.asamadi || f.asama || '—';
+  document.getElementById('fotoDate').textContent = f.olusturma ? mFormatTarih(f.olusturma) : '—';
+  document.getElementById('fotoUser').textContent = f.yukleyen_id || '—';
+  document.getElementById('fotoStage').textContent = f.islem_turu || '—';
 }
 
 // ── Badge ─────────────────────────────────────────────
@@ -579,7 +579,7 @@ async function yukle() {
 
     // Paralel yüklemeler
     var [rFoto, rKK, rSevk, rBelge, rMalz, rLog] = await Promise.all([
-      supa.from('fotograflar').select('dosya_url, olusturma, kullanici_id, asama').eq('spool_id', sp.id).order('olusturma', {ascending:false}).limit(20),
+      supa.from('fotograflar').select('dosya_url, olusturma, yukleyen_id, islem_turu').eq('spool_id', sp.id).order('olusturma', {ascending:false}).limit(20),
       supa.from('kk_davetler').select('kk_no, olusturma').eq('tenant_id', tid).contains('spool_ids', [sp.id]).order('olusturma', {ascending:false}).limit(1),
       supa.from('sevkiyat_spooller').select('sevkiyatlar(sevkiyat_no, tarih)').eq('spool_id', sp.id).limit(1),
       supa.from('belgeler').select('ad, dosya_adi, url, olusturma').eq('spool_id', sp.id).order('olusturma', {ascending:false}),
