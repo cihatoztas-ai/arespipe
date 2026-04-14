@@ -1261,16 +1261,16 @@ function yukle(){
   if(SP.stopped){var b=T('durdurBand');if(b)b.style.display='flex';txc('durdurAciklamaEl',SP.durdurmaAciklama);}
   renderAlistirma(SP.alistirma||null);
   renderDiainch();
-  // Cascade animasyon
+  // Wipe-down animasyon
   (function(){
-    var delay = 0;
-    document.querySelectorAll('.stat-kart').forEach(function(el) {
-      el.classList.add('cas'); el.style.animationDelay = delay + 'ms'; delay += 55;
-    });
-    var tb = document.querySelector('.tracker-bar');
-    if (tb) { tb.classList.add('cas'); tb.style.animationDelay = delay + 'ms'; delay += 55; }
-    document.querySelectorAll('.kart, .bk-box, .uretim-ozet, .proc-kart, .tablo-kart').forEach(function(el) {
-      el.classList.add('cas'); el.style.animationDelay = delay + 'ms'; delay += 55;
+    var secs = [
+      document.querySelector('.stat-grid'),
+      document.querySelector('.tracker-bar'),
+      document.querySelector('.tab-panel.on')
+    ].filter(Boolean);
+    secs.forEach(function(el, i) {
+      el.style.clipPath = 'inset(0 0 100% 0)';
+      el.style.animation = '_wipeDown .45s cubic-bezier(.4,0,.2,1) ' + (i * 120) + 'ms forwards';
     });
   })();
 
