@@ -1029,10 +1029,16 @@ async function yukle() {
       // Client-side aggregate
       _spoolAgg = {};
 
-      // Aşama → ilerleme yüzdesi (web ile aynı mantık)
+      // Aşama → ilerleme yüzdesi (gerçek aktif_basamak değerleri)
       var ASAMA_PCT = {
-        'bekliyor': 0, 'imalat': 17, 'kaynak': 33,
-        'on_kontrol': 50, 'kk': 67, 'sevkiyat': 83, 'tamamlandi': 100
+        'bekliyor':   0,
+        'on_imalat':  14,
+        'imalat':     28,
+        'kaynak':     43,
+        'on_kontrol': 57,
+        'kk':         71,
+        'sevkiyat':   86,
+        'tamamlandi': 100,
       };
 
       (spooller || []).forEach(function(s) {
@@ -1046,7 +1052,6 @@ async function yukle() {
         if (s.alistirma === 'VAR')   agg.varCount++;
         else if (s.alistirma === 'KISMI') agg.kismiCount++;
         else agg.yokCount++;
-      });
       });
 
       // Alıştırma durumu özeti
