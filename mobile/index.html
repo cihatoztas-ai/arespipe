@@ -350,7 +350,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     var {data: loglar} = await supa
       .from('islem_log')
       .select('islem, tablo_adi, olusturma, kullanici_id')
-      .eq('tenant_id', tid)
       .order('olusturma', {ascending: false})
       .limit(6);
 
