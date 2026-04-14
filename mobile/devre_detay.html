@@ -194,7 +194,7 @@
   <div class="m-topbar-back" onclick="location.href='devreler.html'">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
   </div>
-  <div class="m-topbar-title" id="topbarTitle">Devre</div>
+  <div class="m-topbar-title" id="topbarTitle" data-i18n="mob_dv_baslik">Devre</div>
   <div id="mDrawerOverlay" class="m-drawer-overlay" onclick="mDrawerKapat()"></div>
   <div id="mDrawer" class="m-drawer"></div>
 </div>
@@ -209,7 +209,7 @@
       <div class="devre-hdr" id="devreHdr" style="margin-bottom:0;flex:1;min-width:0;">
         <span style="color:var(--txd);">Yükleniyor...</span>
       </div>
-      <a href="devreler.html" style="font-size:11px;color:var(--ac);font-weight:600;white-space:nowrap;margin-left:10px;flex-shrink:0;">Tüm Devreler</a>
+      <a href="devreler.html" data-i18n="mob_dv_tum_devreler" style="font-size:11px;color:var(--ac);font-weight:600;white-space:nowrap;margin-left:10px;flex-shrink:0;">Tüm Devreler</a>
     </div>
 
     <!-- Arama + sayaçlar -->
@@ -222,7 +222,7 @@
         <div class="cnt-total" id="cntTotal">— <em>spool</em></div>
         <div class="cnt-stopped" id="cntStopped" style="display:none;">
           <div class="cnt-stopped-dot"></div>
-          <span id="cntStoppedN">0</span> durduruldu
+          <span id="cntStoppedN">0</span> <span data-i18n="mob_dv_durduruldu_n">durduruldu</span>
         </div>
       </div>
     </div>
@@ -231,38 +231,38 @@
     <div class="stage-track" id="stageTrack">
       <div class="st-step" data-stage="bekliyor" onclick="toggleStage(this)">
         <div class="st-pill sp-bekliyor"><span class="st-count" id="cnt-bekliyor">—</span><div class="st-dot"></div></div>
-        <div class="st-label">Bekliyor</div>
+        <div class="st-label" data-i18n="mob_dv_bekliyor">Bekliyor</div>
       </div>
       <div class="st-line"></div>
       <div class="st-step" data-stage="imalat" onclick="toggleStage(this)">
         <div class="st-pill sp-imalat"><span class="st-count" id="cnt-imalat">—</span><div class="st-dot"></div></div>
-        <div class="st-label">İmalat</div>
+        <div class="st-label" data-i18n="mob_dv_imalat">İmalat</div>
       </div>
       <div class="st-line"></div>
       <div class="st-step" data-stage="kaynak" onclick="toggleStage(this)">
         <div class="st-pill sp-kaynak"><span class="st-count" id="cnt-kaynak">—</span><div class="st-dot"></div></div>
-        <div class="st-label">Kaynak</div>
+        <div class="st-label" data-i18n="mob_dv_kaynak">Kaynak</div>
       </div>
       <div class="st-line"></div>
       <div class="st-step" data-stage="on_kontrol" onclick="toggleStage(this)">
         <div class="st-pill sp-on_kontrol"><span class="st-count" id="cnt-on_kontrol">—</span><div class="st-dot"></div></div>
-        <div class="st-label">Ön Kont.</div>
+        <div class="st-label" data-i18n="mob_dv_on_kont">Ön Kont.</div>
       </div>
       <div class="st-line"></div>
       <div class="st-step" data-stage="kk" onclick="toggleStage(this)">
         <div class="st-pill sp-kk"><span class="st-count" id="cnt-kk">—</span><div class="st-dot"></div></div>
-        <div class="st-label">KK</div>
+        <div class="st-label" data-i18n="mob_dv_kk">KK</div>
       </div>
       <div class="st-line"></div>
       <div class="st-step" data-stage="sevkiyat" onclick="toggleStage(this)">
         <div class="st-pill sp-sevkiyat"><span class="st-count" id="cnt-sevkiyat">—</span><div class="st-dot"></div></div>
-        <div class="st-label">Sevkiyat</div>
+        <div class="st-label" data-i18n="mob_dv_sevkiyat">Sevkiyat</div>
       </div>
     </div>
 
     <div class="filter-bar" id="filterBar" style="display:none;">
       <div class="filter-info" id="filterInfo"></div>
-      <button class="clear-btn" onclick="clearAll()">Temizle</button>
+      <button class="clear-btn" data-i18n="mob_filtre_temizle" onclick="clearAll()">Temizle</button>
     </div>
   </div>
 
@@ -312,7 +312,7 @@ function applyFilter() {
     document.getElementById('cntTotal').innerHTML = total + ' <em>spool</em>';
   } else {
     bar.style.display = 'flex';
-    document.getElementById('filterInfo').innerHTML = '<span>' + vis + '/' + total + '</span> spool gösteriliyor';
+    document.getElementById('filterInfo').innerHTML = '<span>' + vis + '/' + total + '</span> ' + tv('mob_dv_gosteriyor','spool gösteriliyor');
     document.getElementById('cntTotal').innerHTML = vis + '/' + total + ' <em>spool</em>';
   }
 }
@@ -417,7 +417,7 @@ function spoolAc(id) {
 async function yukle() {
   if (!_devreId) {
     document.getElementById('spoolList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Devre bulunamadı</div></div>';
+      '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">' + tv('mob_dv_bulunamadi','Devre bulunamadı') + '</div></div>';
     return;
   }
 
@@ -456,7 +456,7 @@ async function yukle() {
   } catch(e) {
     console.error('[Devre]', e);
     document.getElementById('spoolList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Veri yüklenemedi</div></div>';
+      '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">' + tv('mob_dv_veri_hata','Veri yüklenemedi') + '</div></div>';
   }
 }
 
@@ -489,7 +489,7 @@ function renderSpooller() {
 
   if (!sorted.length) {
     document.getElementById('spoolList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">Bu devreye ait spool bulunamadı</div></div>';
+      '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">' + tv('mob_dv_spool_yok','Bu devreye ait spool bulunamadı') + '</div></div>';
     return;
   }
 
@@ -501,6 +501,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   _devreId = mUrlParam('id');
   var ok = await mInit();
   if (!ok) return;
+  window._onLangChange = function() { applyFilter(); };
   await yukle();
 });
 </script>
