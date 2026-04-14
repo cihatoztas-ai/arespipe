@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AresPipe — Yeni Firma</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="../ares-store.js"></script>
+<style>
+:root {
+  --ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;
+  --warn:#d97706;--leg:#7c3aed;--admin:#f97316;
+}
+[data-theme=dark] {
+  --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;
+  --tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;
+}
+[data-theme=light-anthracite] {
+  --bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;
+  --tx:#141e2b;--txm:#3a4f63;--txd:#637080;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+/* Wizard Layout */
+.wizard-outer{padding:40px 24px;max-width:800px;margin:0 auto;}
+
+/* Steps Progress */
+.wizard-steps{display:flex;align-items:center;margin-bottom:44px;}
+.ws{display:flex;align-items:center;flex:1;}
+.ws:last-child{flex:0;}
+.ws-dot{width:34px;height:34px;border-radius:50%;border:2px solid var(--bor);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--txd);flex-shrink:0;transition:all .25s;background:var(--sur);}
+.ws-info{margin-left:10px;}
+.ws-num{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;}
+.ws-label{font-size:13px;font-weight:600;color:var(--txd);white-space:nowrap;}
+.ws-line{flex:1;height:2px;background:var(--bor);margin:0 14px;border-radius:2px;transition:background .25s;}
+/* States */
+.ws.done .ws-dot{border-color:var(--gr);background:rgba(22,163,110,.15);color:var(--gr);}
+.ws.done .ws-label,.ws.done .ws-num{color:var(--gr);}
+.ws.done .ws-line{background:var(--gr);}
+.ws.active .ws-dot{border-color:var(--admin);background:rgba(249,115,22,.15);color:var(--admin);}
+.ws.active .ws-label{color:var(--tx);}
+.ws.active .ws-num{color:var(--admin);}
+
+/* Step panels */
+.sp{display:none;animation:fadeIn .2s ease;}
+.sp.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+.step-header{margin-bottom:28px;}
+.step-title{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;letter-spacing:.3px;line-height:1.1;}
+.step-desc{font-size:14px;color:var(--txd);margin-top:6px;}
+
+/* Cards */
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:24px;margin-bottom:16px;}
+.card-title{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:18px;}
+
+/* Form */
+.form-row{margin-bottom:16px;}
+.form-row:last-child{margin-bottom:0;}
+.form-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+.form-input{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:10px 13px;color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--ac);}
+.form-select{appearance:none;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.form-grid .form-row{margin-bottom:0;}
+
+/* Toggles */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bor);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-info{}
+.toggle-label{font-size:14px;font-weight:500;color:var(--tx);}
+.toggle-desc{font-size:12px;color:var(--txd);margin-top:2px;}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{position:absolute;inset:0;background:var(--bor);border-radius:12px;cursor:pointer;transition:background .2s;}
+.toggle input:checked + .toggle-track{background:var(--ac);}
+.toggle-thumb{position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(18px);}
+
+/* Buttons */
+.btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-admin{background:var(--admin);color:#fff;}
+.btn-admin:hover{background:#ea6c0a;}
+.btn-admin:disabled{background:var(--bor);color:var(--txd);cursor:not-allowed;}
+.btn-outline{background:none;border:1px solid var(--bor);color:var(--txm);}
+.btn-outline:hover{border-color:var(--tx);color:var(--tx);}
+.btn-ghost{background:none;border:none;color:var(--txd);cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;padding:9px 4px;}
+.btn-ghost:hover{color:var(--txm);}
+
+/* Wizard footer */
+.wizard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:32px;padding-top:24px;border-top:1px solid var(--bor);}
+.foot-left{display:flex;align-items:center;gap:12px;}
+.foot-right{display:flex;align-items:center;gap:12px;}
+
+/* Info box */
+.info-box{background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.2);border-radius:10px;padding:13px 16px;font-size:13px;color:var(--txm);display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;}
+
+/* Summary card (step 4) */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.summary-item{background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:14px 16px;}
+.summary-key{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.summary-val{font-size:14px;font-weight:600;color:var(--tx);}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.chip{background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.2);color:var(--ac);border-radius:6px;padding:2px 10px;font-size:11px;font-weight:700;}
+.chip-green{background:rgba(22,163,110,.1);border-color:rgba(22,163,110,.2);color:var(--gr);}
+
+/* Success screen */
+.success-wrap{text-align:center;padding:48px 24px;}
+.success-icon{font-size:64px;margin-bottom:16px;}
+.success-title{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;margin-bottom:8px;color:var(--gr);}
+.success-sub{font-size:14px;color:var(--txd);margin-bottom:32px;}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .3s;}
+.toast-ok{border-color:rgba(22,163,110,.3);color:var(--gr);}
+.toast-err{border-color:rgba(239,68,68,.3);color:var(--re);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">AresPipe <span>/ Yeni Firma</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-user">
+    <span class="topbar-badge">SUPER ADMIN</span>
+    <span id="topbarUser">--</span>
+    <button class="btn-logout" onclick="cikis()">Cikis</button>
+  </div>
+</div>
+
+<div class="wizard-outer">
+
+  <!-- Steps progress indicator -->
+  <div class="wizard-steps" id="wizardSteps">
+    <div class="ws active" id="ws1">
+      <div class="ws-dot">1</div>
+      <div class="ws-info">
+        <div class="ws-num">Adim 1</div>
+        <div class="ws-label">Temel Bilgiler</div>
+      </div>
+      <div class="ws-line"></div>
+    </div>
+    <div class="ws" id="ws2">
+      <div class="ws-dot">2</div>
+      <div class="ws-info">
+        <div class="ws-num">Adim 2</div>
+        <div class="ws-label">Moduller</div>
+      </div>
+      <div class="ws-line"></div>
+    </div>
+    <div class="ws" id="ws3">
+      <div class="ws-dot">3</div>
+      <div class="ws-info">
+        <div class="ws-num">Adim 3</div>
+        <div class="ws-label">Ozellikler</div>
+      </div>
+      <div class="ws-line"></div>
+    </div>
+    <div class="ws" id="ws4">
+      <div class="ws-dot">4</div>
+      <div class="ws-info">
+        <div class="ws-num">Adim 4</div>
+        <div class="ws-label">Ilk Kullanici</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADIM 1: Temel Bilgiler ── -->
+  <div class="sp active" id="sp1">
+    <div class="step-header">
+      <div class="step-title">Firma Bilgileri</div>
+      <div class="step-desc">Temel bilgileri girin — sonradan duzenlenilebilir.</div>
+    </div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Firma Adi *</label>
+          <input class="form-input" id="nAd" placeholder="Ornek: Deniz Boru A.S." autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Firma Tipi</label>
+          <select class="form-input form-select" id="nTip">
+            <optgroup label="İmalat / Montaj Firmaları">
+              <option value="imalat">Spool İmalat Firması</option>
+              <option value="montaj">Spool Montaj Firması</option>
+              <option value="imalat_montaj">İmalat + Montaj Firması</option>
+            </optgroup>
+            <optgroup label="Tersane Senaryoları">
+              <option value="tersane_tam">Tersane — Tam Entegre (kendi üretir)</option>
+              <option value="tersane_taseron">Tersane — İmalat Taşerona Verilmiş</option>
+              <option value="tersane_karma">Tersane — Kısmi Taşeron</option>
+            </optgroup>
+            <optgroup label="Diğer">
+              <option value="diger">Diğer</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Hesap Tipi</label>
+          <select class="form-input form-select" id="nHesapTipi">
+            <option value="demo">Demo</option>
+            <option value="pilot">Pilot</option>
+            <option value="production">Production</option>
+            <option value="dev">Gelistirici</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Plan</label>
+          <select class="form-input form-select" id="nPlan">
+            <option value="demo">Demo</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Demo Bitis Tarihi</label>
+          <input class="form-input" type="date" id="nDemoBitis">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Aylik Ucret (TL)</label>
+          <input class="form-input" type="number" id="nUcret" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Iletisim E-posta</label>
+          <input class="form-input" type="email" id="nEmail" placeholder="firma@example.com">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Notlar</label>
+          <input class="form-input" id="nNotlar" placeholder="Opsiyonel">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADIM 2: Moduller ── -->
+  <div class="sp" id="sp2">
+    <div class="step-header">
+      <div class="step-title">Moduller</div>
+      <div class="step-desc">Bu firma hangi modullere erisebilir?</div>
+    </div>
+    <div class="card">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Uretim</div>
+          <div class="toggle-desc">Kesim, bukum, kaynak, markalama is akisi</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="mod_uretim" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Kalite Kontrol</div>
+          <div class="toggle-desc">KK davetleri, onay surecleri, denetim kayitlari</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="mod_kalite" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Sevkiyat</div>
+          <div class="toggle-desc">Sevkiyat paketleri olusturma ve takip</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="mod_sevkiyat" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Raporlar</div>
+          <div class="toggle-desc">Rapor ve analiz ekranlari</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="mod_raporlar"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Yonetim</div>
+          <div class="toggle-desc">Kullanici ve ayar yonetimi ekranlari</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="mod_yonetim" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADIM 3: Feature Flags ── -->
+  <div class="sp" id="sp3">
+    <div class="step-header">
+      <div class="step-title">Premium Ozellikler</div>
+      <div class="step-desc">Firma hangi ileri ozelliklere sahip olacak?</div>
+    </div>
+    <div class="card">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">3D Model Gorunumu</div>
+          <div class="toggle-desc">Spool detay sayfasinda interaktif 3D viewer</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_3d_model"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">AI Izometri Okuma</div>
+          <div class="toggle-desc">PDF izometri ciziminden otomatik spool olusturma</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_ai_izometri"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Musteri Portali</div>
+          <div class="toggle-desc">Tersane / musteri icin salt-okunur erisim portali</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_musteri_portal"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Gelismis Raporlar</div>
+          <div class="toggle-desc">Detayli analiz, grafik ve Excel/PDF export</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_raporlar_gelismis"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Hakedis Modulu</div>
+          <div class="toggle-desc">Hakedis paketi hesaplama ve yonetim ekrani</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_hakedis"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">API Erisimi</div>
+          <div class="toggle-desc">Harici sistemlerle REST API entegrasyonu</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="ff_api_erisim"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADIM 4: Ilk Kullanici ── -->
+  <div class="sp" id="sp4">
+    <div class="step-header">
+      <div class="step-title">Ilk Admin Kullanici</div>
+      <div class="step-desc">Firmaya ilk erisim saglayacak kullanicinin bilgileri.</div>
+    </div>
+
+    <div class="info-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Kullaniciya e-posta ile bir giris linki gonderilir. Linke tiklayarak sistemde hesabini aktiflestirir. Sifre belirlenmez.</span>
+    </div>
+
+    <div class="card">
+      <div class="form-row">
+        <label class="form-label">Ad Soyad</label>
+        <input class="form-input" id="kAd" placeholder="Ahmet Yilmaz">
+      </div>
+      <div class="form-row">
+        <label class="form-label">E-posta *</label>
+        <input class="form-input" type="email" id="kEmail" placeholder="admin@firma.com">
+      </div>
+      <div class="form-row" style="margin:0">
+        <label class="form-label">Rol</label>
+        <select class="form-input form-select" id="kRol">
+          <option value="firma_admin">Firma Admin — tam yonetim yetkisi</option>
+          <option value="yonetici">Yonetici — operasyonel yonetim</option>
+        </select>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--txd);text-align:center;">
+      Kullanici davetini simdi gondermek istemiyorsaniz bu adimi atlayabilirsiniz.
+      <br>Daha sonra <strong style="color:var(--txm)">Firma Detay</strong> sayfasindan kullanici ekleyebilirsiniz.
+    </p>
+  </div>
+
+  <!-- Wizard footer -->
+  <div class="wizard-foot">
+    <div class="foot-left">
+      <button class="btn btn-outline" id="btnGeri" onclick="adimGeri()" style="display:none">&#8592; Geri</button>
+    </div>
+    <div class="foot-right">
+      <button class="btn btn-ghost" id="btnAtla" onclick="adimIleri(true)" style="display:none">Bu adimi atla</button>
+      <button class="btn btn-admin" id="btnIleri" onclick="adimIleri(false)">Ileri &#8594;</button>
+    </div>
+  </div>
+
+</div><!-- /.wizard-outer -->
+
+<script>
+var _supa = null;
+var _adim = 1;
+var _olusturulanFirmaId = null;
+
+function _getSupa() {
+  if (!_supa && typeof ARES !== 'undefined') _supa = ARES.supabase();
+  return _supa;
+}
+function T(id) { return document.getElementById(id); }
+
+function toast(msg, tip) {
+  var el = document.createElement('div');
+  el.className = 'toast' + (tip === 'err' ? ' toast-err' : ' toast-ok');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 300); }, 2800);
+}
+
+async function cikis() {
+  await _getSupa().auth.signOut();
+  window.location.href = '../giris.html';
+}
+
+async function init() {
+  var bekle = 0;
+  while ((!window.ARES || !ARES.supabase || !ARES.supabase()) && bekle < 50) {
+    await new Promise(function(r) { setTimeout(r, 100); });
+    bekle++;
+  }
+  try {
+    var { data: { session } } = await _getSupa().auth.getSession();
+    if (!session) {
+      document.documentElement.style.visibility = '';
+      window.location.href = '../giris.html';
+      return;
+    }
+    var { data: kul } = await _getSupa().from('kullanicilar').select('rol,ad_soyad').eq('id', session.user.id).single();
+    if (kul?.rol !== 'super_admin') {
+      document.documentElement.style.visibility = '';
+      window.location.href = '../index.html';
+      return;
+    }
+    T('topbarUser').textContent = kul.ad_soyad || session.user.email;
+
+    // Demo bitis tarihi default: 30 gun
+    var d = new Date();
+    d.setDate(d.getDate() + 30);
+    T('nDemoBitis').value = d.toISOString().split('T')[0];
+
+  } catch(e) {
+    console.error('[init]', e);
+  } finally {
+    document.documentElement.style.visibility = '';
+  }
+}
+
+function stepGoster(n) {
+  // Paneller
+  for (var i = 1; i <= 4; i++) {
+    T('sp' + i).classList.toggle('active', i === n);
+    var ws = T('ws' + i);
+    ws.classList.remove('active','done');
+    if (i < n) ws.classList.add('done');
+    else if (i === n) ws.classList.add('active');
+  }
+
+  // Geri butonu
+  T('btnGeri').style.display = n > 1 ? '' : 'none';
+
+  // Son adimda Ileri yerine Olustur
+  var btnI = T('btnIleri');
+  if (n === 4) {
+    btnI.textContent = 'Firmay\u0131 Olu\u015ftur \u2713';
+  } else {
+    btnI.textContent = 'İleri →';
+  }
+
+  // Adim 4'te "atla" butonu goster
+  T('btnAtla').style.display = n === 4 ? '' : 'none';
+}
+
+function adimValidate() {
+  if (_adim === 1) {
+    var ad = T('nAd').value.trim();
+    if (!ad) { toast('Firma adi zorunlu', 'err'); T('nAd').focus(); return false; }
+    if (ad.length < 2) { toast('Firma adi en az 2 karakter olmali', 'err'); return false; }
+  }
+  return true;
+}
+
+async function adimIleri(atla) {
+  if (_adim < 4) {
+    if (!atla && !adimValidate()) return;
+    _adim++;
+    stepGoster(_adim);
+    window.scrollTo(0,0);
+    return;
+  }
+
+  // Son adim — firmayı olustur
+  await firmaOlustur(atla);
+}
+
+function adimGeri() {
+  if (_adim > 1) {
+    _adim--;
+    stepGoster(_adim);
+    window.scrollTo(0,0);
+  }
+}
+
+async function firmaOlustur(davetAtla) {
+  var btn = T('btnIleri');
+  btn.disabled = true;
+  btn.textContent = 'Olusturuluyor...';
+
+  try {
+    // 1. Tenant olustur
+    var tenantData = {
+      ad: T('nAd').value.trim(),
+      firma_tipi: T('nTip').value,
+      hesap_tipi: T('nHesapTipi').value,
+      plan: T('nPlan').value,
+      aylik_ucret: parseFloat(T('nUcret').value) || 0,
+      demo_bitis: T('nDemoBitis').value || null,
+      iletisim_email: T('nEmail').value.trim() || null,
+      notlar: T('nNotlar').value.trim() || null,
+      aktif: true
+    };
+
+    var { data: tenant, error: tenantErr } = await _getSupa().from('tenants').insert(tenantData).select().single();
+    if (tenantErr) throw new Error('Firma olusturulamadi: ' + tenantErr.message);
+    var firmaId = tenant.id;
+
+    // 2. Modulleri kaydet
+    var moduller = ['uretim','kalite','sevkiyat','raporlar','yonetim'];
+    var modInserts = moduller.map(function(m) {
+      return { tenant_id: firmaId, modul_kodu: m, aktif: T('mod_' + m).checked };
+    });
+    var { error: modErr } = await _getSupa().from('firma_moduller').insert(modInserts);
+    if (modErr) console.warn('[moduller]', modErr.message);
+
+    // 3. Feature flagleri kaydet
+    var features = ['3d_model','ai_izometri','musteri_portal','raporlar_gelismis','hakedis','api_erisim'];
+    // Once feature_flags tablosunda kayit var mi kontrol et
+    for (var fi = 0; fi < features.length; fi++) {
+      await _getSupa().from('feature_flags').upsert({ kod: features[fi], ad: features[fi] }, { onConflict: 'kod' });
+    }
+    var featInserts = features.map(function(f) {
+      return { tenant_id: firmaId, feature_kod: f, aktif: T('ff_' + f).checked };
+    });
+    var { error: featErr } = await _getSupa().from('tenant_features').insert(featInserts);
+    if (featErr) console.warn('[features]', featErr.message);
+
+    // 4. Ilk kullanici daveti (atlanmadiysa)
+    if (!davetAtla) {
+      var email = T('kEmail').value.trim();
+      if (email) {
+        var ad = T('kAd').value.trim();
+        var rol = T('kRol').value;
+
+        var { data: authData, error: authErr } = await _getSupa().auth.admin.inviteUserByEmail(email, {
+          data: { ad_soyad: ad }
+        });
+        if (authErr) {
+          toast('Firma olusturuldu ama davet gonderilemedi: ' + authErr.message, 'err');
+        } else {
+          await _getSupa().from('kullanicilar').insert({
+            id: authData.user.id,
+            tenant_id: firmaId,
+            email: email,
+            ad_soyad: ad || null,
+            rol: rol,
+            aktif: false
+          });
+          toast('Firma olusturuldu ve davet gonderildi.');
+        }
+      }
+    }
+
+    // Basarili — firma detay'a yonlendir
+    setTimeout(function() {
+      window.location.href = 'firma-detay.html?id=' + firmaId + '&yeni=1';
+    }, 1200);
+
+  } catch(e) {
+    toast(e.message || 'Bir hata olustu', 'err');
+    btn.disabled = false;
+    btn.textContent = 'Firmay\u0131 Olu\u015ftur \u2713';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

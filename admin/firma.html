@@ -135,7 +135,6 @@ tr:hover td{background:rgba(255,255,255,.02);}
   </div>
   <div class="nav-item active" onclick="goPan('dashboard',this)">Dashboard</div>
   <div class="nav-item" onclick="goPan('kullanicilar',this)">Kullanicilar</div>
-  <div class="nav-item" onclick="goPan('basamaklar',this)">Basamaklar</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('modüller',this)">Moduller ve Erisim</div>
 </div>
@@ -203,32 +202,6 @@ tr:hover td{background:rgba(255,255,255,.02);}
   </div>
 
   <!-- BASAMAKLAR -->
-  <div class="panel" id="pan-basamaklar">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Basamaklar</div>
-        <div class="page-sub">Uretim sureci basamaklari — siralayin ve ozellestirin</div>
-      </div>
-      <button class="btn btn-primary" onclick="basamakEkleModalAc()">+ Basamak Ekle</button>
-    </div>
-    <div class="card">
-      <div class="card-title">Mevcut Basamaklar <span style="font-weight:400;text-transform:none;color:var(--txd);">Tersane sadece yuzde gorur, basamak adini degil</span></div>
-      <div class="basamak-list" id="basamakList">
-        <div class="empty">Yukleniyor...</div>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <div class="tbl-head"><div class="tbl-title">Basamak Detaylari</div></div>
-      <table>
-        <thead>
-          <tr><th>Sira</th><th>Sistem Adi</th><th>Gorunen Ad</th><th>Durum</th><th></th></tr>
-        </thead>
-        <tbody id="basamakTbody">
-          <tr><td colspan="5" class="empty">Yukleniyor...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
   <!-- MODULLER -->
   <div class="panel" id="pan-modüller">
@@ -282,29 +255,6 @@ tr:hover td{background:rgba(255,255,255,.02);}
   </div>
 </div>
 
-<!-- Basamak Ekle Modal -->
-<div id="basamakModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal-box">
-    <div class="modal-title" id="basamakModalBaslik">Basamak Ekle</div>
-    <div class="form-row">
-      <label class="form-label">Gorunen Ad *</label>
-      <input class="form-input" id="bAd" placeholder="Ön Kontrol">
-    </div>
-    <div class="form-row">
-      <label class="form-label">Sistem Adi * (kucuk harf, alt cizgi)</label>
-      <input class="form-input" id="bSistemAd" placeholder="on_kontrol">
-    </div>
-    <div class="form-row">
-      <label class="form-label">Sira</label>
-      <input class="form-input" type="number" id="bSira" placeholder="1">
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="T('basamakModal').style.display='none'">Iptal</button>
-      <button class="btn btn-primary" onclick="basamakKaydet()">Kaydet</button>
-    </div>
-  </div>
-</div>
-
 <script>
 var _tenantId = null;
 var _firma = null;
@@ -314,7 +264,6 @@ function _getSupa() {
   if (!_supa && typeof ARES !== 'undefined') _supa = ARES.supabase();
   return _supa;
 }
-var _duzenlenenBasamakId = null;
 
 function T(id) { return document.getElementById(id); }
 
@@ -335,7 +284,6 @@ function goPan(id, el) {
   T('pan-'+id).classList.add('active');
   if (el) el.classList.add('active');
   if (id === 'kullanicilar') kullanicilariYukle();
-  if (id === 'basamaklar') basamaklariYukle();
   if (id === 'modüller') modulleriYukle();
 }
 
@@ -453,88 +401,6 @@ async function kulEkle() {
   T('kulModal').style.display = 'none';
   toast('Kullanici eklendi');
   kullanicilariYukle();
-}
-
-async function basamaklariYukle() {
-  var { data } = await _getSupa().from('basamak_tanimlari')
-    .select('*').eq('tenant_id', _tenantId).order('sira');
-
-  if (!data || !data.length) {
-    // Sablondan yukle
-    var tip = _firma?.firma_tipi || 'imalat';
-    var { data: sablon } = await _getSupa().from('basamak_sablonlari').select('*').eq('firma_tipi', tip).order('sira');
-    data = sablon || [];
-  }
-
-  // Gorsel liste
-  var listEl = T('basamakList');
-  if (!data.length) { listEl.innerHTML = '<div class="empty">Basamak tanimlanmamis</div>'; }
-  else {
-    listEl.innerHTML = data.map(function(b, i) {
-      return (i > 0 ? '<div class="basamak-arrow">&#8594;</div>' : '') +
-        '<div class="basamak-item"><div class="basamak-box ' + (b.aktif!==false?'aktif':'') + '">' + esc(b.gorunen_ad) + '</div></div>';
-    }).join('');
-  }
-
-  // Detay tablosu
-  var tbEl = T('basamakTbody');
-  if (!data.length) { tbEl.innerHTML = '<tr><td colspan="5" class="empty">Basamak yok</td></tr>'; return; }
-  tbEl.innerHTML = data.map(function(b) {
-    var hasId = !!b.id && b.id.length > 10;
-    return '<tr>' +
-      '<td class="mono">' + (b.sira||'--') + '</td>' +
-      '<td class="mono">' + esc(b.sistem_adi) + '</td>' +
-      '<td style="font-weight:600;">' + esc(b.gorunen_ad) + '</td>' +
-      '<td><span class="badge ' + (b.aktif!==false?'badge-aktif':'badge-pasif') + '">' + (b.aktif!==false?'Aktif':'Pasif') + '</span></td>' +
-      '<td><div class="actions">' +
-        (hasId ? '<button class="btn btn-outline btn-sm" data-id="' + b.id + '" onclick="_basamakDuzenle(this)">Duzenle</button>' : '') +
-        (hasId ? '<button class="btn btn-danger btn-sm" data-id="' + b.id + '" onclick="_basamakSil(this)">Sil</button>' : '') +
-      '</div></td>' +
-    '</tr>';
-  }).join('');
-}
-
-function basamakEkleModalAc() {
-  _duzenlenenBasamakId = null;
-  T('basamakModalBaslik').textContent = 'Basamak Ekle';
-  ['bAd','bSistemAd','bSira'].forEach(function(id){T(id).value='';});
-  T('basamakModal').style.display = 'flex';
-}
-
-async function _basamakDuzenle(el) {
-  var id = el.dataset.id;
-  var {data} = await _getSupa().from('basamak_tanimlari').select('*').eq('id', id).single();
-  if (!data) return;
-  _duzenlenenBasamakId = id;
-  T('basamakModalBaslik').textContent = 'Basamak Duzenle';
-  T('bAd').value = data.gorunen_ad || '';
-  T('bSistemAd').value = data.sistem_adi || '';
-  T('bSira').value = data.sira || '';
-  T('basamakModal').style.display = 'flex';
-}
-
-async function _basamakSil(el) {
-  if (!confirm('Bu basamagi silmek istediginizden emin misiniz?')) return;
-  await _getSupa().from('basamak_tanimlari').delete().eq('id', el.dataset.id);
-  toast('Basamak silindi');
-  basamaklariYukle();
-}
-
-async function basamakKaydet() {
-  var ad = T('bAd').value.trim();
-  var sistemAd = T('bSistemAd').value.trim().replace(/\s+/g,'_').toLowerCase();
-  var sira = parseInt(T('bSira').value) || 1;
-  if (!ad) { toast('Gorunen ad zorunlu', 'err'); return; }
-
-  if (_duzenlenenBasamakId) {
-    await _getSupa().from('basamak_tanimlari').update({gorunen_ad:ad, sistem_adi:sistemAd, sira:sira}).eq('id', _duzenlenenBasamakId);
-    toast('Basamak guncellendi');
-  } else {
-    await _getSupa().from('basamak_tanimlari').insert({tenant_id:_tenantId, gorunen_ad:ad, sistem_adi:sistemAd, sira:sira, aktif:true, firma_tipi:_firma?.firma_tipi||'imalat'});
-    toast('Basamak eklendi');
-  }
-  T('basamakModal').style.display = 'none';
-  basamaklariYukle();
 }
 
 async function modulleriYukle() {
