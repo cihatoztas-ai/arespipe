@@ -939,36 +939,31 @@ async function sorgulaVeGoster() {
   }
 
   try {
-    // Paralel: sayfalı liste + toplam count + stat aggregate
+    // Tüm devreleri çek — client-side pagination + filtre için
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
-        .range(offset, offset + _sayfaBasi - 1)
-    );
-    var countQ = applyFilters(
-      supa.from('devreler')
-        .select('id', {count: 'exact', head: true})
+        .limit(2000)
     );
     var statQ = applyFilters(
       supa.from('devreler')
         .select('spooller(agirlik, aktif_basamak, ilerleme)')
     );
 
-    var results = await Promise.all([listeQ, countQ, statQ]);
+    var results = await Promise.all([listeQ, statQ]);
     var devRes   = results[0];
-    var countRes = results[1];
-    var statRes  = results[2];
+    var statRes  = results[1];
 
     if (devRes.error) { console.warn('[Devreler]', devRes.error); return; }
 
-    _ssTotal = countRes.count || 0;
+    _ssTotal = devRes.data ? devRes.data.length : 0;
 
     // Stat kartları — tüm filtreli kayıtlardan
     var allSpools = [];
-    (statRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
+    (devRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
     var totalSpool   = allSpools.length;
     var totalAgirlik = allSpools.reduce(function(s,x){return s+(parseFloat(x.agirlik)||0);},0);
     var totalIler    = allSpools.length ? Math.round(
@@ -989,8 +984,8 @@ async function sorgulaVeGoster() {
     (devRes.data||[]).forEach(function(d){ spoolByDevre[d.id]=d.spooller||[]; });
     _supaIdMap = {};
     DEVRELER = (devRes.data||[]).map(function(d,i){
-      _supaIdMap[offset+i+1]=d.id;
-      return _mapDevre(d, i, spoolByDevre, offset);
+      _supaIdMap[i+1]=d.id;
+      return _mapDevre(d, i, spoolByDevre, 0);
     });
 
     // Malzeme/çap filtrelerini güncelle
@@ -1428,8 +1423,9 @@ function _doRender() {
   };
 
   var baslangic = (_sayfa - 1) * _sayfaBasi;
+  var sayfaListesi = liste.slice(baslangic, baslangic + _sayfaBasi);
   var _ci = 0;
-  tbody.innerHTML = liste.map(function(d, i) {
+  tbody.innerHTML = sayfaListesi.map(function(d, i) {
     var globalIdx = baslangic + i;
     var starState = _starCache[d.supaId] || 0;
     var starCfg = _STAR_CFG[starState];
