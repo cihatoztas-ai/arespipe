@@ -15,7 +15,8 @@
  * - soft_delete() entegrasyonu (G-12)
  */
 
-const ARES = (function () {
+if (typeof ARES !== 'undefined') { /* zaten yüklü — çift yüklemeyi önle */ }
+else var ARES = (function () {
   'use strict'; // ✅ A1
 
   // ── SUPABASE BAĞLANTI ────────────────────────────────────
