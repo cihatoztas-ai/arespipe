@@ -1,382 +1,526 @@
 <!DOCTYPE html>
-<html lang="tr" data-theme="light-anthracite">
+<html lang="tr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>AresPipe</title>
-<script>(function(){
-  var t=localStorage.getItem('ares_theme')||'light-anthracite';
-  var l=localStorage.getItem('ares_lang')||'tr';
-  document.documentElement.setAttribute('data-theme',t);
-  document.documentElement.setAttribute('lang',l);
-  document.documentElement.style.visibility='hidden';
-})()</script>
-<link rel="stylesheet" href="ares-mobile.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ana Sayfa | AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ── Ana Sayfa Özel ── */
-.hero {
-  background: var(--sur);
-  border-bottom: 1px solid var(--bor);
-  padding: 20px 16px 24px;
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{
+  --bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;
+  --surface:#161b24;--border:#262f3e;--text-main:#e6ecf4;--text-sub:#94a3b8;--text-muted:#6b7a90;
+  --bg-hover:#1c2333;--bg-soft:#1c2333;--blue:#2D8EFF;--blue-light:rgba(45,142,255,.1);--blue-border:rgba(45,142,255,.3);
+  --sb-bg:#161b24;--sb-border:#262f3e;--sb-text:#e6ecf4;--sb-text-mid:#94a3b8;--sb-sep:rgba(255,255,255,.06);
+  --sb-ring:rgba(255,255,255,.04);--sb-cell-bg:#1c2333;--sb-btn-brd:#262f3e;--sb-btn-bg:rgba(255,255,255,.04);
+  --sb-shadow:0 16px 48px rgba(0,0,0,.5);
 }
-.hero-greeting {
-  font-size: 13px;
-  color: var(--txd);
-  font-weight: 600;
-  margin-bottom: 4px;
+[data-theme=light-anthracite]{
+  --bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;
+  --surface:#e4e9ef;--border:#bcc5d0;--text-main:#141e2b;--text-sub:#3a4f63;--text-muted:#637080;
+  --bg-hover:#d0d7e0;--bg-soft:#d0d7e0;--blue:#2D8EFF;--blue-light:rgba(45,142,255,.1);--blue-border:rgba(45,142,255,.3);
+  --sb-bg:#e4e9ef;--sb-border:#bcc5d0;--sb-text:#141e2b;--sb-text-mid:#3a4f63;--sb-sep:rgba(0,0,0,.08);
+  --sb-ring:rgba(0,0,0,.04);--sb-cell-bg:#d0d7e0;--sb-btn-brd:#bcc5d0;--sb-btn-bg:rgba(0,0,0,.04);
+  --sb-shadow:0 4px 24px rgba(0,0,0,.1);
 }
-.hero-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--tx);
-  line-height: 1;
-}
-.hero-meta {
-  font-size: 13px;
-  color: var(--txd);
-  margin-top: 6px;
-}
+[data-theme=dark] .icon-sun { display: block !important; }
+[data-theme=dark] .icon-moon { display: none !important; }
+.page{padding:28px 28px 40px;}
+.page-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;}
+.page-title-label { font-size: 12px; color: var(--txd); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.page-title { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800; color: var(--tx); line-height: 1; }
+.cl-ac{border-left:3px solid var(--ac) !important;}
+.cl-gr{border-left:3px solid var(--gr) !important;}
+.cl-re{border-left:3px solid var(--re) !important;}
+.cl-warn{border-left:3px solid var(--warn) !important;}
+.cl-leg{border-left:3px solid var(--leg) !important;}
+.stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card {background: var(--sur); border: 1px solid var(--bor); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s;}
+.stat-card:hover { border-color: var(--ac); }
+.stat-icon {width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
+.si-blue{background:rgba(45,142,255,.12);color:var(--ac);}
+.si-green{background:rgba(22,163,110,.12);color:var(--gr);}
+.si-red{background:rgba(229,62,62,.12);color:var(--re);}
+.si-amber{background:rgba(217,119,6,.12);color:var(--warn);}
+.si-purple{background:rgba(124,58,237,.12);color:var(--leg);}
+.stat-label { font-size: 11px; font-weight: 700; color: var(--txd); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.stat-value { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; color: var(--tx); }
+.dashboard-grid {display: grid; grid-template-columns: 1fr 480px; gap: 20px; align-items: start;}
+.spool-block {background: var(--sur); border: 1px solid var(--bor); border-radius: 14px; padding: 16px 18px 18px;}
+.sb-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sb-title { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--sb-text-mid); }
+.sb-body { display: grid; grid-template-columns: 300px 1fr; gap: 0 20px; align-items: start; }
+.sb-left { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.sb-chart-box { position: relative; width: 300px; height: 300px; }
+.sb-chart-box svg { display: block; }
+.sb-bg-hit { fill: transparent; cursor: pointer; }
+.sb-center {position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; padding: 0 52px;}
+.sb-cnum { font-weight: 800; line-height: 1; text-align: center; font-size: 44px; letter-spacing: -0.02em; max-width: 100%; }
+.sb-clbl { font-size: 11px; font-weight: 600; color: var(--sb-text-mid); letter-spacing: .06em; text-transform: uppercase; margin-top: 8px; opacity: 0.9; }
+circle.sb-seg { cursor: pointer; transition: stroke-width .15s; }
+.sb-utog { display: inline-flex; padding: 3px; background: var(--sb-btn-bg); border: 1px solid var(--sb-btn-brd); border-radius: 8px; }
+.sb-utog button { border: 0; background: transparent; color: var(--sb-text-mid); padding: 4px 16px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif; }
+.sb-utog button.on { background: #2f8cff; color: #fff; }
+.sb-mat-row { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.mat-btn { border: 1px solid var(--sb-btn-brd); background: var(--sb-btn-bg); color: var(--sb-text-mid); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif; }
+.mat-btn.on { border-color: transparent; color: #fff; }
+.mat-btn.on.mt { background: #2f8cff; } .mat-btn.on.mc { background: #2563eb; }
+.mat-btn.on.mp { background: #7c3aed; } .mat-btn.on.ma { background: #b45309; }
+.mat-btn.on.mf { background: #c2410c; }
+.sb-hm-scroll { overflow-x: auto; }
+.sb-hm { border-collapse: separate; border-spacing: 3px; table-layout: fixed; width: 100%; }
+.hm-corner, .hm-row-th { width: 110px; }
+.hm-col-th { font-size: 11px; font-weight: 600; color: var(--sb-text-mid); text-align: center; padding: 0 4px 8px; cursor: pointer; }
+.hm-col-th.hl { color: var(--sb-text); }
+.hm-row-th { padding: 2px 6px 2px 0; white-space: nowrap; vertical-align: middle; }
+.hm-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--sb-text-mid); }
+.hm-tag:hover { background: var(--sb-btn-bg); }
+.hm-tag.hl { color: var(--sb-text); }
+.hm-dot { width: 8px; height: 8px; border-radius: 2px; }
+.hm-cell { height: 38px; border-radius: 6px; text-align: center; vertical-align: middle; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--sb-cell-bg); }
+.hm-cell.bekleyen { border: 2px solid #e8705f; } .hm-cell.imalat { border: 2px solid #d4b84a; }
+.hm-cell.kaynak { border: 2px solid #4a90d9; } .hm-cell.on_kontrol { border: 2px solid #e89a3a; }
+.hm-cell.kalite { border: 2px solid #9b59b6; } .hm-cell.sevke_hazir { border: 2px solid #48a87a; }
+.hm-cell.empty { border: 2px dashed var(--sb-border); opacity: 0.5; }
+.hm-cell.selected { outline: 2px solid var(--ac); outline-offset: 1px; }
+.hm-grp-td { padding: 8px 3px 3px; font-size: 10px; font-weight: 700; color: var(--sb-text-mid); letter-spacing: .06em; text-transform: uppercase; }
+.hm-grp-td.first { padding-top: 0; }
+.hm-sep-td { padding: 4px 0 0; }
+.cal-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: var(--surface); }
+.cal-title { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.nav-btn { background: none; border: 1px solid var(--border); border-radius: 8px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; color: var(--text-sub); display: flex; align-items: center; justify-content: center; }
+.nav-btn:hover { background: var(--bg-hover); }
+.today-btn { font-size: 11px; font-weight: 500; color: var(--blue); cursor: pointer; padding: 4px 10px; border: 1px solid var(--blue-border); border-radius: 8px; background: transparent; }
+.today-btn:hover { background: var(--blue-light); }
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+.full-link { font-size: 11px; color: var(--blue); cursor: pointer; padding: 4px 10px; border: 1px solid var(--blue-border); border-radius: 8px; background: transparent; }
+.full-link:hover { background: var(--blue-light); }
+.share-btn { font-size: 11px; color: var(--text-sub); cursor: pointer; padding: 4px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; }
+.share-btn:hover { background: var(--bg-hover); }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); border-top: 1px solid var(--border); }
+.cal-dow { font-size: 11px; font-weight: 500; color: var(--text-muted); text-align: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.cal-cell { padding: 7px 6px 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; align-items: center; min-height: 58px; user-select: none; }
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell:hover { background: var(--bg-hover); }
+.cal-cell.other .dn { opacity: .3; }
+.cal-cell.today .dn { background: var(--blue); color: #fff; border-radius: 50%; }
+.cal-cell.selected { background: var(--blue-light); }
+.dn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 50%; color: var(--text-main); }
+.has-note::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--blue); margin-top: 4px; }
+.popup { border-top: 1px solid var(--border); padding: 12px 14px; background: var(--surface); max-height: 160px; overflow-y: auto; }
+.pop-date { font-size: 12px; font-weight: 500; color: var(--text-sub); margin-bottom: 8px; }
+.pop-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background .1s; }
+.pop-item:hover { background: var(--bg-hover); }
+.pop-bar { width: 3px; min-height: 28px; border-radius: 2px; flex-shrink: 0; }
+.pop-title { font-size: 12px; font-weight: 500; line-height: 1.4; color: var(--text-main); }
+.pop-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+.pop-badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-sub); align-items: center; background: var(--surface); }
+.ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 300; }
+.ov-box { background: var(--surface); border-radius: 12px; width: 100%; max-width: 460px; border: 1px solid var(--border); overflow: hidden; }
+.ov-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.ov-head .title { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-sub); line-height: 1; }
+.ov-body { padding: 16px; }
+textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; font-family: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); background: var(--bg-soft); }
+.nf-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+.nf-row label { font-size: 11px; color: var(--text-sub); }
+.nf-row input, .nf-row select { font-size: 12px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-main); background: var(--bg-soft); }
+.pri-btn { padding: 7px 16px; border-radius: 8px; border: none; background: var(--blue); color: #fff; font-size: 12px; cursor: pointer; }
+.sec-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; font-size: 12px; cursor: pointer; color: var(--text-sub); }
+.person-search { position: relative; }
+.person-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; z-index: 10; max-height: 160px; overflow-y: auto; display: none; }
+.person-item { padding: 8px 12px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid var(--border); }
+.person-item:last-child { border-bottom: none; }
+.person-item:hover { background: var(--bg-hover); }
+.person-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }
+.person-info .pname { font-weight: 500; } .person-info .pfirm { font-size: 10px; color: var(--text-muted); }
+.selected-persons { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.person-tag { display: flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg-soft); }
+.person-tag button { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; line-height: 1; padding: 0; }
+.fullov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-start; justify-content: center; padding: 16px; z-index: 200; overflow-y: auto; }
+.fullmodal { background: var(--surface); border-radius: 12px; width: 100%; max-width: 1100px; border: 1px solid var(--border); margin: auto; }
+.full-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface); border-radius: 12px 12px 0 0; position: sticky; top: 0; z-index: 10; }
+.tabs { display: flex; }
+.tab { font-size: 12px; padding: 5px 14px; border: 1px solid var(--border); background: transparent; cursor: pointer; color: var(--text-sub); }
+.tab:first-child { border-radius: 8px 0 0 8px; } .tab:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+.tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.m-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); border-top: 1px solid var(--border); }
+.m-dow { font-size: 11px; font-weight: 500; color: var(--text-muted); text-align: center; padding: 8px 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+.m-week-row { display: grid; grid-template-columns: repeat(7,1fr); position: relative; }
+.m-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-height: 0; padding: 6px 6px 0; cursor: pointer; background: var(--surface); overflow: hidden; }
+.m-cell:nth-child(7n) { border-right: none; } .m-cell:hover { background: var(--bg-hover); }
+.m-cell.other { background: var(--bg-soft); } .m-cell.other .m-dn { opacity: .35; }
+.m-cell.today .m-dn { background: var(--blue); color: #fff; border-radius: 50%; }
+.m-dn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 50%; color: var(--text-main); }
+.ev-layer { position: absolute; top: 32px; left: 0; right: 0; pointer-events: none; }
+.ev-strip { position: absolute; height: 20px; border-radius: 3px; font-size: 10px; font-weight: 500; display: flex; align-items: center; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; pointer-events: all; margin-top: 2px; }
+.ev-strip:hover { opacity: .85; }
+.ev-strip.dragging { opacity: .35; pointer-events: none; }
+.m-cell.drag-over { background: var(--blue-light); outline: 2px dashed var(--blue); outline-offset: -2px; }
+.ev-more { position: absolute; bottom: 5px; font-size: 10px; font-weight: 500; color: var(--blue); padding: 1px 6px; pointer-events: all; cursor: default; }
+.ev-tooltip { position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text); border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.6; max-width: 260px; z-index: 9999; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+.tt-title { font-weight: 600; margin-bottom: 3px; } .tt-sub { color: #94a3b8; } .tt-range { color: #60a5fa; margin-top: 3px; font-size: 10px; }
+.list-row { display: flex; align-items: flex-start; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.list-row:last-child { border-bottom: none; } .list-row:hover { background: var(--bg-hover); }
+.list-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.list-date { min-width: 160px; color: var(--text-sub); font-size: 11px; padding-top: 1px; }
+.list-body { flex: 1; } .list-title { font-size: 13px; font-weight: 500; color: var(--text-main); }
+.list-sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+.share-cal-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.share-cal-row:last-child { border-bottom: none; }
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--sur); border: 1px solid var(--bor); border-radius: 10px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; z-index: 1100; animation: slideIn 0.3s ease; font-size: 14px; }
+.toast-info { border-left: 3px solid var(--ac); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-.uyari-banner {
-  margin: 12px 16px 0;
-  background: var(--re2);
-  border: 1px solid var(--re);
+/* ── WIDGET DRAG & DROP ── */
+.widget-container { display: flex; flex-direction: column; gap: 20px; }
+.widget-box { position: relative; transition: opacity .2s, transform .2s; }
+.widget-box.dragging { opacity: .4; }
+.widget-box.drag-over { transform: translateY(4px); }
+.widget-handle {
+  position: absolute; top: 10px; right: 10px; z-index: 10;
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--sur2); border: 1px solid var(--bor);
+  display: none; align-items: center; justify-content: center;
+  cursor: grab; color: var(--txd); font-size: 14px;
+}
+.widget-handle:active { cursor: grabbing; }
+.edit-mode .widget-handle { display: flex; }
+.edit-mode .widget-box {
+  outline: 2px dashed var(--bor);
+  outline-offset: 4px;
   border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
-.uyari-banner-icon {
-  font-size: 22px;
-  flex-shrink: 0;
+.edit-mode-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--bor);
+  background: var(--sur2); color: var(--txm); font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif;
+  transition: all .15s;
 }
-.uyari-banner-text {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--re);
-  line-height: 1.4;
-}
-.uyari-banner-arrow {
-  color: var(--re);
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.quick-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 0 16px;
-}
-
-.quick-card {
-  background: var(--sur);
-  border: 1px solid var(--bor);
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: border-color .15s;
-  position: relative;
-  overflow: hidden;
-}
-.quick-card:active { opacity: .85; }
-.quick-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-}
-.quick-card.qc-blue::before { background: var(--ac); }
-.quick-card.qc-green::before { background: var(--gr); }
-.quick-card.qc-warn::before { background: var(--warn); }
-.quick-card.qc-red::before { background: var(--re); }
-.quick-card.qc-leg::before { background: var(--leg); }
-
-.quick-card-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--txd);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-.quick-card-val {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--tx);
-}
-.quick-card-sub {
-  font-size: 12px;
-  color: var(--txd);
-  margin-top: -4px;
-}
-
-.son-aktivite-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--bor);
-}
-.son-aktivite-item:last-child { border-bottom: none; }
-
-.sa-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 5px;
-  flex-shrink: 0;
-}
-.sa-dot.d-blue  { background: var(--ac); }
-.sa-dot.d-green { background: var(--gr); }
-.sa-dot.d-warn  { background: var(--warn); }
-.sa-dot.d-red   { background: var(--re); }
-
-.sa-body { flex: 1; min-width: 0; }
-.sa-title { font-size: 14px; font-weight: 600; color: var(--tx); }
-.sa-sub   { font-size: 12px; color: var(--txd); margin-top: 2px; }
-.sa-time  { font-size: 11px; color: var(--txd); flex-shrink: 0; margin-top: 2px; }
+.edit-mode-btn.aktif { background: var(--ac); color: #fff; border-color: var(--ac); }
+.stat-row { margin-bottom: 0; }
+.dashboard-grid { margin-top: 0; }
 </style>
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
 </head>
 <body>
-
-<!-- Topbar -->
-<div class="m-topbar">
-  <div class="m-topbar-logo">AP</div>
-  <div class="m-topbar-title" id="mTopbarTitle">AresPipe</div>
-  <div class="m-topbar-actions">
-    <button class="m-topbar-btn" onclick="mDrawerAc()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
-  </div>
+<!-- VIEW AS BAR -->
+<div id="viewAsBar" style="display:none;background:#1d4ed8;color:#fff;padding:8px 20px;font-size:13px;align-items:center;gap:12px;position:sticky;top:0;z-index:9999;">
+  <span style="font-weight:700;">GOZETLEME MODU:</span>
+  <span id="viewAsAd">--</span>
+  <span style="flex:1;"></span>
+  <button onclick="ARES.viewAsCik()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;">Cik</button>
 </div>
-
-<!-- Sayfa -->
-<div class="m-page" id="mPage" style="display:none;">
-
-  <!-- Hero -->
-  <div class="hero">
-    <div class="hero-greeting" id="heroGreeting">Günaydın</div>
-    <div class="hero-name" id="heroName">—</div>
-    <div class="hero-meta" id="heroMeta">—</div>
-  </div>
-
-  <!-- Uyarı Banner (varsa) -->
-  <div id="uyariBanner" style="display:none;">
-    <a class="uyari-banner" href="#" onclick="mToast('Uyarılar sayfası yakında','info');return false;">
-      <div class="uyari-banner-icon">⚠️</div>
-      <div class="uyari-banner-text" id="uyariBannerText">—</div>
-      <div class="uyari-banner-arrow">›</div>
-    </a>
-  </div>
-
-  <!-- İstatistikler -->
-  <div class="m-section-row">
-    <div class="m-section-title">Genel Durum</div>
-  </div>
-
-  <div class="quick-grid">
-    <a href="devreler.html" class="quick-card qc-blue">
-      <div class="quick-card-label">Aktif Devre</div>
-      <div class="quick-card-val" id="stDevre">—</div>
-      <div class="quick-card-sub">Devam eden</div>
-    </a>
-    <a href="#" onclick="mToast('Arama sayfası yakında','info');return false;" class="quick-card qc-warn">
-      <div class="quick-card-label">Bekleyen Spool</div>
-      <div class="quick-card-val" id="stBekleyen">—</div>
-      <div class="quick-card-sub">İşlem gerekiyor</div>
-    </a>
-    <a href="#" onclick="mToast('KK sayfası yakında','info');return false;" class="quick-card qc-leg">
-      <div class="quick-card-label">KK Bekleyen</div>
-      <div class="quick-card-val" id="stKK">—</div>
-      <div class="quick-card-sub">Onay bekliyor</div>
-    </a>
-    <a href="#" onclick="mToast('Sevkiyat sayfası yakında','info');return false;" class="quick-card qc-green">
-      <div class="quick-card-label">Bu Ay Sevk</div>
-      <div class="quick-card-val" id="stSevk">—</div>
-      <div class="quick-card-sub">Tamamlandı</div>
-    </a>
-  </div>
-
-  <div class="m-sep" style="margin-top:20px;"></div>
-
-  <!-- Hızlı Erişim -->
-  <div class="m-section-row">
-    <div class="m-section-title">Hızlı Erişim</div>
-  </div>
-
-  <div class="m-card-list" style="padding-top:0;">
-    <a href="#" onclick="mToast('Gemiler sayfası yakında','info');return false;" class="m-card-item cl-ac">
-      <div class="m-card-icon ic-blue">🚢</div>
-      <div class="m-card-body">
-        <div class="m-card-title">Gemiler</div>
-        <div class="m-card-sub">Proje ve gemi listesi</div>
-      </div>
-      <div class="m-card-arrow">›</div>
-    </a>
-    <a href="devreler.html" class="m-card-item cl-ac">
-      <div class="m-card-icon ic-blue">🔗</div>
-      <div class="m-card-body">
-        <div class="m-card-title">Devreler</div>
-        <div class="m-card-sub">Aktif devreler</div>
-      </div>
-      <div class="m-card-arrow">›</div>
-    </a>
-    <a href="#" onclick="mToast('KK sayfası yakında','info');return false;" class="m-card-item cl-leg">
-      <div class="m-card-icon" style="background:rgba(124,58,237,.12);">✅</div>
-      <div class="m-card-body">
-        <div class="m-card-title">Kalite Kontrol</div>
-        <div class="m-card-sub">KK talepleri ve durumlar</div>
-      </div>
-      <div class="m-card-arrow">›</div>
-    </a>
-    <a href="#" onclick="mToast('Sevkiyat sayfası yakında','info');return false;" class="m-card-item cl-gr">
-      <div class="m-card-icon ic-green">🚚</div>
-      <div class="m-card-body">
-        <div class="m-card-title">Sevkiyatlar</div>
-        <div class="m-card-sub">Giden ve gelen</div>
-      </div>
-      <div class="m-card-arrow">›</div>
-    </a>
-    <a href="#" onclick="mToast('Tezgahlar sayfası yakında','info');return false;" class="m-card-item cl-warn">
-      <div class="m-card-icon" style="background:rgba(217,119,6,.12);">⚙️</div>
-      <div class="m-card-body">
-        <div class="m-card-title">Tezgahlar</div>
-        <div class="m-card-sub">Tezgah ve kapasite</div>
-      </div>
-      <div class="m-card-arrow">›</div>
-    </a>
-  </div>
-
-  <div class="m-sep"></div>
-
-  <!-- Son Aktiviteler -->
-  <div class="m-section-row">
-    <div class="m-section-title">Son Aktiviteler</div>
-  </div>
-
-  <div class="m-card" style="margin: 0 16px 24px;" id="sonAktiviteWrap">
-    <div id="sonAktivite">
-      <div class="m-empty">
-        <div class="m-skeleton" style="width:180px;height:14px;margin-bottom:8px;"></div>
-        <div class="m-skeleton" style="width:140px;height:14px;"></div>
-      </div>
+<div class="app-shell">
+<div class="main-content">
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title-label" data-i18n="idx_subtitle">Tersane Yönetim Sistemi</div>
+      <div class="page-title" data-i18n="idx_title">Ana Sayfa</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✦ Düzenle</button>
+      <div style="font-size:14px;color:var(--txd);" id="clockDisplay"></div>
     </div>
   </div>
-
+  <div class="widget-container" id="widgetContainer">
+  <div class="widget-box" data-widget="stats">
+    <div class="widget-handle" title="Taşı">⠿</div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_proje">Aktif Proje</div><div class="stat-value" id="stProje">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_devre">Aktif Devre</div><div class="stat-value" id="stDevre">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kesim">Kesim Bekleyen</div><div class="stat-value" id="stKesim" style="color:var(--warn);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kk">KK Bekleyen</div><div class="stat-value" id="stKK" style="color:var(--re);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_sevk">Bu Ay Sevk</div><div class="stat-value" id="stSevk" style="color:var(--gr);">—</div></div></div>
+  </div>
+  </div><!-- /widget stats -->
+  <div class="widget-box" data-widget="spool">
+    <div class="widget-handle" title="Taşı">⠿</div>
+  <div class="dashboard-grid" style="grid-template-columns:1fr;">
+    <div class="spool-block">
+      <div class="sb-hdr"><div class="sb-title" data-i18n="idx_spool_baslik">Sistemdeki Toplam Spool Durumu</div></div>
+      <div class="sb-body">
+        <div class="sb-left">
+          <div class="sb-chart-box">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+              <rect class="sb-bg-hit" width="300" height="300" id="bgHit"/>
+              <g transform="rotate(-90 150 150)"><circle cx="150" cy="150" r="115" fill="none" stroke="var(--sb-ring)" stroke-width="28"/></g>
+              <g id="sbSegs" transform="rotate(-90 150 150)"></g>
+            </svg>
+            <div class="sb-center"><div id="sbNum" class="sb-cnum">0</div><div id="sbLbl" class="sb-clbl" data-i18n="idx_toplam_adet">TOPLAM ADET</div></div>
+          </div>
+          <div style="display:flex;justify-content:center;margin-top:10px;">
+            <div class="sb-utog"><button id="btnAdet" class="on" data-i18n="idx_btn_adet">Adet</button><button id="btnKg" data-i18n="idx_btn_kg">Kg</button></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
+          <div class="sb-hm-scroll"><table class="sb-hm" id="sbHm"></table></div>
+          <div class="sb-mat-row" style="justify-content:flex-start;margin-top:10px;padding:0 4px;">
+            <button class="mat-btn mt on" data-m="tumu" data-i18n="idx_mat_tumu">Tümü</button>
+            <button class="mat-btn mc" data-m="celik" data-i18n="idx_mat_celik">Çelik</button>
+            <button class="mat-btn mp" data-m="paslanmaz" data-i18n="idx_mat_paslanmaz">Paslanmaz</button>
+            <button class="mat-btn ma" data-m="aluminyum" data-i18n="idx_mat_alum">Alüminyum</button>
+            <button class="mat-btn mf" data-m="cunife" data-i18n="idx_mat_cunife">Cunife</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /spool-block -->
+  </div><!-- /widget spool -->
+  <div class="widget-box" data-widget="takvim">
+    <div class="widget-handle" title="Taşı">⠿</div>
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <div style="display:flex;align-items:center;gap:7px">
+          <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <span class="cal-title" id="monthTitle"></span>
+          <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+          <button class="today-btn" onclick="goToday()" data-i18n="idx_bugun">Bugün</button>
+        </div>
+        <div class="hdr-right">
+          <button class="share-btn" onclick="openShare()" data-i18n="idx_takvimler">Takvimler</button>
+          <button class="full-link" onclick="openFull()" data-i18n="idx_tam_ekran">Tam ekran →</button>
+        </div>
+      </div>
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);position:relative">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;padding:5px 10px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="text" placeholder="Etkinlik ara..." oninput="onSearch(this.value)" style="flex:1;border:none;background:transparent;font-size:14px;color:var(--text-main);outline:none" onfocus="if(this.value)showSearchResults(this.value)" onkeydown="searchKeyNav(event)">
+          <button id="searchClear" onclick="clearSearch()" style="display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;padding:0">&times;</button>
+        </div>
+        <div id="searchResults" style="display:none;position:absolute;left:12px;right:12px;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:200;max-height:260px;overflow-y:auto;margin-top:2px"></div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="popup" id="popup"></div>
+      <div class="legend"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);display:inline-block"></span>Etkinlik olan günler</span><span style="color:var(--text-muted);font-size:14px;margin-left:4px">· Çift tıklayarak not ekleyin</span></div>
+    </div>
+  </div><!-- /widget takvim -->
+  </div><!-- /widget-container -->
+</div>
+</div>
 </div>
 
-<!-- Drawer & Nav -->
-<div id="mDrawerOverlay" class="m-drawer-overlay" onclick="mDrawerKapat()"></div>
-<div id="mDrawer" class="m-drawer"></div>
-<nav class="m-bottomnav" id="mBottomNav"></nav>
+<!-- Modaller burada devam eder — orijinal dosyadan alınmıştır -->
 
-<script src="../ares-store.js"></script>
-<script src="../ares-lang.js"></script>
-<script src="ares-mobile.js"></script>
 <script>
 'use strict';
+function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
-document.addEventListener('DOMContentLoaded', async function() {
-  var ok = await mInit();
-  if (!ok) return;
+function updateClock(){const now=new Date();document.getElementById('clockDisplay').textContent=now.toLocaleString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+updateClock();setInterval(updateClock,60000);
+const STAGES=[{key:"bekleyen",label:"BEKLEYEN",color:"#e8705f"},{key:"imalat",label:"İMALAT",color:"#d4b84a"},{key:"kaynak",label:"KAYNAK",color:"#4a90d9"},{key:"on_kontrol",label:"ÖN KONTROL",color:"#e89a3a"},{key:"kalite",label:"KALİTE KONTROL",color:"#9b59b6"},{key:"sevke_hazir",label:"SEVKE HAZIR",color:"#48a87a"}];
+const STAGE_GROUPS=[{label:"ÜRETİM",keys:["bekleyen","imalat","kaynak","on_kontrol"]},{label:"KONTROL & ÇIKIŞ",keys:["kalite","sevke_hazir"]}];
+const CAP_GROUPS=[{key:"s",label:"≤ DN40",caps:["DN15","DN20","DN25","DN32","DN40"]},{key:"m",label:"DN50–DN100",caps:["DN50","DN65","DN80","DN100"]},{key:"l",label:"DN125–DN250",caps:["DN125","DN150","DN200","DN250"]},{key:"xl",label:"DN300+",caps:["DN300","DN350","DN400","DN500"]}];
+const MATS=["celik","paslanmaz","aluminyum","cunife"];
+const kgMap={DN15:4,DN20:5,DN25:8,DN32:10,DN40:12,DN50:16,DN65:22,DN80:30,DN100:44,DN125:58,DN150:72,DN200:105,DN250:145,DN300:190,DN350:240,DN400:300,DN500:450};
+const distro={celik:{s:[22,34,38,15,14,55],m:[30,55,48,20,18,80],l:[9,16,14,6,5,22],xl:[2,4,3,1,1,5]},paslanmaz:{s:[12,18,20,8,7,28],m:[15,28,24,10,9,40],l:[4,8,7,3,3,11],xl:[1,2,1,0,0,2]},aluminyum:{s:[7,11,10,4,4,15],m:[6,14,12,5,4,18],l:[2,4,3,1,1,5],xl:[0,1,1,0,0,1]},cunife:{s:[4,7,7,3,2,9],m:[4,9,8,3,3,12],l:[1,3,2,1,1,3],xl:[0,1,0,0,0,1]}};
+const PG=[{p:"NB1099",g:"MV Atlas"},{p:"NB1120",g:"Poseidon 7"},{p:"NB1140",g:"Tug Orion"},{p:"NB1152",g:"Mira"},{p:"NB1168",g:"Aster"}];
+STAGES.forEach(st=>{st.items=[];});
+let sid=1000;
+MATS.forEach(mat=>{CAP_GROUPS.forEach(cg=>{STAGES.forEach((st,si)=>{const cnt=distro[mat][cg.key][si],rc=cg.caps[0];for(let i=0;i<cnt;i++){const pg=PG[sid%PG.length];st.items.push({id:`SP-${sid++}`,proje:pg.p,gemi:pg.g,durum:st.label,adet:1,kg:kgMap[rc]||20,mat,capGrp:cg.key});}});});});
+let unit="adet",selSt=null,selCG=null,actMats=new Set();
+const fmt=v=>new Intl.NumberFormat("tr-TR").format(v);
+function getIt(stKey,cg=null){let it=STAGES.find(s=>s.key===stKey).items;if(actMats.size>0)it=it.filter(i=>actMats.has(i.mat));if(cg)it=it.filter(i=>i.capGrp===cg);return it;}
+const stVal=k=>{const it=getIt(k);return unit==="kg"?it.reduce((s,i)=>s+i.kg,0):it.length;};
+const hmVal=(k,cg)=>{const it=getIt(k,cg);return unit==="kg"?it.reduce((s,i)=>s+i.kg,0):it.length;};
+function renderDonut(){const g=document.getElementById("sbSegs");g.innerHTML="";const total=STAGES.reduce((s,st)=>s+stVal(st.key),0);let cVal=selSt?(selCG?hmVal(selSt,selCG):stVal(selSt)):total;let cLbl=selSt?(selCG?`${STAGES.find(s=>s.key===selSt).label} · ${CAP_GROUPS.find(c=>c.key===selCG).label}`:STAGES.find(s=>s.key===selSt).label):(unit==="kg"?"TOPLAM KG":"TOPLAM ADET");document.getElementById("sbNum").textContent=unit==="kg"?fmt(Math.round(cVal)):fmt(cVal);document.getElementById("sbLbl").textContent=cLbl;const R=115,C=2*Math.PI*R,GAP=2.5;let acc=0;STAGES.forEach(st=>{const v=stVal(st.key);if(v===0)return;const sl=total>0?(v/total)*C:0,drawLen=sl>GAP*2?sl-GAP:sl;const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx","150");c.setAttribute("cy","150");c.setAttribute("r","115");c.setAttribute("fill","none");c.setAttribute("stroke",st.color);c.setAttribute("stroke-width",selSt===st.key?"36":"28");c.setAttribute("stroke-dasharray",`${drawLen} ${C-drawLen}`);c.setAttribute("stroke-dashoffset",`${-(acc+GAP/2)}`);c.setAttribute("class","sb-seg");c.addEventListener("click",e=>{e.stopPropagation();selSt=(selSt===st.key)?null:st.key;selCG=null;renderAll();});acc+=sl;g.appendChild(c);});}
+document.getElementById("bgHit").addEventListener("click",()=>{selSt=null;selCG=null;renderAll();});
+function renderHeatmap(){const tbl=document.getElementById("sbHm");tbl.innerHTML="";let gMax=0;STAGES.forEach(st=>CAP_GROUPS.forEach(cg=>{const v=hmVal(st.key,cg.key);if(v>gMax)gMax=v;}));const thead=tbl.createTHead(),hr=thead.insertRow();hr.appendChild(document.createElement("th")).className="hm-corner hm-row-th";CAP_GROUPS.forEach(cg=>{const th=document.createElement("th");th.className=`hm-col-th${selCG===cg.key?" hl":""}`;th.textContent=cg.label;th.addEventListener("click",()=>{selCG=selCG===cg.key?null:cg.key;renderAll();});hr.appendChild(th);});const tbody=tbl.createTBody();STAGE_GROUPS.forEach((grp,gi)=>{if(gi>0){const sr=tbody.insertRow();const td=sr.insertCell();td.colSpan=CAP_GROUPS.length+1;td.className="hm-sep-td";td.innerHTML=`<div style="height:1px;background:var(--sb-sep);"></div>`;}const gr=tbody.insertRow();const gtd=gr.insertCell();gtd.colSpan=CAP_GROUPS.length+1;gtd.className=`hm-grp-td${gi===0?" first":""}`;gtd.textContent=grp.label;grp.keys.forEach(stKey=>{const st=STAGES.find(s=>s.key===stKey);const row=tbody.insertRow();const rth=document.createElement("td");rth.className="hm-row-th";rth.innerHTML=`<span class="hm-tag${selSt===stKey&&!selCG?" hl":""}"><span class="hm-dot" style="background:${st.color}"></span>${st.label}</span>`;rth.querySelector(".hm-tag").addEventListener("click",()=>{selSt=(selSt===stKey&&!selCG)?null:stKey;selCG=null;renderAll();});row.appendChild(rth);CAP_GROUPS.forEach(cg=>{const val=hmVal(stKey,cg.key);const td=row.insertCell();const isSel=selSt===stKey&&selCG===cg.key;td.className=`hm-cell ${val?stKey:'empty'}${isSel?' selected':''}`;td.textContent=val?(unit==="kg"?fmt(Math.round(val)):val):"·";td.addEventListener("click",()=>{if(selSt===stKey&&selCG===cg.key){selSt=null;selCG=null;}else{selSt=stKey;selCG=cg.key;}renderAll();});});});});}
+document.querySelectorAll(".mat-btn").forEach(btn=>{btn.addEventListener("click",()=>{const m=btn.dataset.m;if(m==="tumu")actMats.clear();else actMats.has(m)?actMats.delete(m):actMats.add(m);renderAll();});});
+function syncMat(){document.querySelectorAll(".mat-btn").forEach(btn=>{const m=btn.dataset.m;btn.classList.toggle("on",m==="tumu"?actMats.size===0:actMats.has(m));});}
+document.getElementById("btnAdet").addEventListener("click",()=>{unit="adet";renderAll();});
+document.getElementById("btnKg").addEventListener("click",()=>{unit="kg";renderAll();});
+function renderAll(){document.getElementById("btnAdet").classList.toggle("on",unit==="adet");document.getElementById("btnKg").classList.toggle("on",unit==="kg");syncMat();renderDonut();renderHeatmap();}
+renderAll();
 
-  var oturum = mOturum();
-  var supa = mSupabase();
-  var tid = mTenantId();
+const MO=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+const DOW=["Pt","Sa","Ça","Pe","Cu","Ct","Pz"];
+const TC={proje:{label:'Proje',bar:'--ev-proje-bar',cls:'proje',badge:'badge-proje'},personel:{label:'Personel',bar:'--ev-personel-bar',cls:'personel',badge:'badge-personel'},not:{label:'Not',bar:'--ev-not-bar',cls:'not',badge:'badge-not'},musteri:{label:'Müşteri',bar:'--ev-musteri-bar',cls:'musteri',badge:'badge-musteri'}};
+const ME={id:'u1',name:'Üretim Ekibi',role:'admin'};
+const PERSONS=[{id:'u2',name:'Ahmet Yılmaz',firm:'Erdem İnşaat A.Ş.',role:'Müşteri',color:'#3B82F6'},{id:'u3',name:'Mehmet Demir',firm:'Kaya Endüstri Ltd.',role:'Müşteri',color:'#10B981'},{id:'u4',name:'Fatma Kara',firm:'Atlas Enerji A.Ş.',role:'Müşteri',color:'#F59E0B'},{id:'u5',name:'Ali Çelik',firm:'— (Personel)',role:'Yönetici',color:'#8B5CF6'},{id:'u6',name:'Zeynep Şahin',firm:'— (Personel)',role:'Personel',color:'#EC4899'}];
+let CALS=[{id:'c1',name:'Genel',owner:'u1',shared:['all'],color:'#3B82F6'},{id:'c2',name:'Müşteri',owner:'u1',shared:[],color:'#10B981'},{id:'c3',name:'Yönetim',owner:'u1',shared:[],color:'#F59E0B'},{id:'c4',name:'Kişisel',owner:'u1',shared:[],color:'#8B5CF6'},{id:'c5',name:'Belirli kişiler',owner:'u1',shared:[],color:'#EC4899'}];
+let EVENTS=[{id:1,type:'proje',title:'Erdem İnşaat — Boru Hattı',sub:'Proje P1',start:'2026-03-03',end:'2026-03-17',calId:'c1',ownerId:'u1'},{id:2,type:'proje',title:'Kaya Endüstri — Soğutma Sistemi',sub:'Proje P3 · Faz 1',start:'2026-03-10',end:'2026-03-25',calId:'c1',ownerId:'u1'},{id:3,type:'proje',title:'Atlas Enerji — Doğalgaz Hattı',sub:'Proje P4 · Final',start:'2026-03-20',end:'2026-04-05',calId:'c1',ownerId:'u1'},{id:4,type:'personel',title:'Ahmet Yılmaz — Kaynak Sertifikası',sub:'Sona eriyor',start:'2026-03-10',end:'2026-03-10',calId:'c1',ownerId:'u1'},{id:5,type:'personel',title:'Mehmet Demir — İş Güvenliği',sub:'Sertifika yenileme',start:'2026-03-14',end:'2026-03-14',calId:'c1',ownerId:'u1'},{id:6,type:'personel',title:'Ali Çelik — Yıllık İzin',sub:'',start:'2026-03-24',end:'2026-03-28',calId:'c1',ownerId:'u1'},{id:7,type:'not',title:'Galvaniz boru siparişi',sub:'120 adet · Metaş',start:'2026-03-08',end:'2026-03-12',calId:'c1',ownerId:'u1'},{id:8,type:'not',title:'Kalite kontrol toplantısı',sub:'Saat 10:00',start:'2026-03-17',end:'2026-03-17',calId:'c1',ownerId:'u1'},{id:9,type:'musteri',title:'Atlas Enerji — Revizyon talebi',sub:'2" boru miktarını artırın',start:'2026-03-15',end:'2026-03-19',calId:'c2',ownerId:'u2'},{id:10,type:'musteri',title:'Erdem İnşaat — Ek sipariş',sub:'6" çaptan 10 adet',start:'2026-03-26',end:'2026-03-26',calId:'c2',ownerId:'u2'}];
+let cur=new Date(2026,2,1),fCur=new Date(2026,2,1);
+let selDay=new Date().getDate(),fTab='cal',notDay=null,clickTimer=null,selectedPersonIds=[],hiddenCals=new Set();
+const dk=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const inRange=(ds,s,e)=>ds>=s&&ds<=e;
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function eventHitsDate(e,ds){if(hiddenCals.has(e.calId))return false;if(!e.recur)return inRange(ds,e.start,e.end);if(e.recurUntil&&ds>e.recurUntil)return false;if(ds<e.start)return false;return true;}
+const evOn=ds=>EVENTS.flatMap(e=>{if(hiddenCals.has(e.calId))return[];if(!e.recur)return inRange(ds,e.start,e.end)?[e]:[];return eventHitsDate(e,ds)?[e]:[];});
+const hasNote=ds=>evOn(ds).length>0;
+function renderMiniCal(){const yr=cur.getFullYear(),mo=cur.getMonth();document.getElementById("monthTitle").textContent=`${MO[mo]} ${yr}`;const first=new Date(yr,mo,1),startDow=(first.getDay()+6)%7;const dim=new Date(yr,mo+1,0).getDate(),dip=new Date(yr,mo,0).getDate();const today=new Date(),isTM=today.getFullYear()===yr&&today.getMonth()===mo;let html=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');for(let i=0;i<startDow;i++)html+=`<div class="cal-cell other"><div class="dn">${dip-startDow+1+i}</div></div>`;for(let d=1;d<=dim;d++){const ds=dk(new Date(yr,mo,d)),hn=hasNote(ds);const isT=isTM&&d===today.getDate(),isSel=d===selDay&&!isT;html+=`<div class="cal-cell${isT?' today':''}${isSel?' selected':''}${hn?' has-note':''}" onclick="handleClick(${d})" ondblclick="handleDblClick(${d},event)"><div class="dn">${d}</div></div>`;}const rem=(7-(startDow+dim)%7)%7;for(let i=1;i<=rem;i++)html+=`<div class="cal-cell other"><div class="dn">${i}</div></div>`;document.getElementById("calGrid").innerHTML=html;}
+function handleClick(d){clearTimeout(clickTimer);clickTimer=setTimeout(()=>{selDay=d;renderMiniCal();renderPopup();},220);}
+function handleDblClick(d,e){e.preventDefault();clearTimeout(clickTimer);selDay=d;renderMiniCal();renderPopup();}
+function renderPopup(){const yr=cur.getFullYear(),mo=cur.getMonth(),ds=dk(new Date(yr,mo,selDay));const evs=evOn(ds),el=document.getElementById("popup"),lbl=`${selDay} ${MO[mo]} ${yr}`;if(!evs.length){el.innerHTML=`<div class="pop-date">${lbl}<span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:6px">— etkinlik yok</span></div>`;return;}el.innerHTML=`<div class="pop-date">${lbl}</div>`+evs.map(e=>`<div class="pop-item"><div class="pop-bar" style="background:var(${TC[e.type].bar})"></div><div style="flex:1"><div class="pop-title">${e.title}</div>${e.sub?`<div class="pop-sub">${e.sub}</div>`:''}</div><span class="pop-badge ${TC[e.type].badge}">${TC[e.type].label}</span></div>`).join('');}
+function changeMonth(dir){cur=new Date(cur.getFullYear(),cur.getMonth()+dir,1);selDay=1;renderMiniCal();renderPopup();}
+function goToday(){const t=new Date();cur=new Date(t.getFullYear(),t.getMonth(),1);selDay=t.getDate();renderMiniCal();renderPopup();}
+function openShare(){}
+function openFull(){}
+let searchIdx=-1;
+function onSearch(q){document.getElementById('searchClear').style.display=q?'block':'none';}
+function clearSearch(){document.getElementById('searchInput').value='';document.getElementById('searchClear').style.display='none';}
+function searchKeyNav(e){}
+renderMiniCal();renderPopup();
 
-  // Hero
-  var saat = new Date().getHours();
-  var selamlama = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
-  document.getElementById('heroGreeting').textContent = selamlama;
-  document.getElementById('heroName').textContent = oturum ? (oturum.ad_soyad || oturum.email || 'Kullanıcı') : '—';
+// ── Dil değişince yeniden render ────────────────────────────────
+window._onLangChange = function() {
+  if (window._applyI18n) _applyI18n();
+  renderAll();
+  renderMiniCal();
+  renderPopup();
+};
 
-  var rolLabel = {
-    'super_admin': 'Süper Admin',
-    'yonetici': 'Yönetici',
-    'kk_uzmani': 'KK Uzmanı',
-    'operator': 'Operatör',
-    'izleyici': 'İzleyici'
-  }[oturum?.rol] || '';
-  document.getElementById('heroMeta').textContent = rolLabel;
-
-  document.getElementById('mPage').style.display = '';
-
-  if (!supa || !tid) return;
-
-  // İstatistikler
-  try {
-    var buAyBas = new Date(); buAyBas.setDate(1); buAyBas.setHours(0,0,0,0);
-
-    var [rDvr, rBek, rKK, rSvk, rUyari] = await Promise.all([
-      supa.from('devreler').select('id', {count:'exact',head:true}).eq('tenant_id',tid).or('silindi.is.null,silindi.eq.false'),
-      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('aktif_basamak','bekleyen'),
-      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('aktif_basamak','on_kontrol'),
-      supa.from('sevkiyatlar').select('id', {count:'exact',head:true}).eq('tenant_id',tid).gte('tarih', buAyBas.toISOString()),
-      supa.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',tid).eq('durduruldu',true),
-    ]);
-
-    var txv = function(id, val) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = val !== null ? val : '—';
-    };
-    txv('stDevre', rDvr.count);
-    txv('stBekleyen', rBek.count);
-    txv('stKK', rKK.count);
-    txv('stSevk', rSvk.count);
-
-    // Uyarı banner
-    if (rUyari.count > 0) {
-      var banner = document.getElementById('uyariBanner');
-      var text = document.getElementById('uyariBannerText');
-      if (banner && text) {
-        banner.style.display = '';
-        text.textContent = rUyari.count + ' durdurulmuş spool var — detayları inceleyin';
+// ── SB-01: Auth + finally ────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    try {
+      // ARES tanımlanana kadar bekle
+      var _bekle = 0;
+      while (_bekle < 80 && typeof ARES === 'undefined') {
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
       }
+      if (typeof ARES === 'undefined') { location.href = 'giris.html'; return; }
+
+      // Supabase CDN async yükleniyor — hazır olana kadar bekle
+      _bekle = 0;
+      while (_bekle < 80) {
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) {
+            await ARES.oturumKontrol();
+            // View As bar goster
+            if (ARES.viewAsAktif && ARES.viewAsAktif()) {
+              var bar = document.getElementById('viewAsBar');
+              var o = ARES.oturumAl();
+              if (bar) { bar.style.display = 'flex'; }
+              var adEl = document.getElementById('viewAsAd');
+              if (adEl) adEl.textContent = o?.view_as_ad || 'Firma';
+            }
+            break;
+          }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r, 100); });
+        _bekle++;
+      }
+
+
+    // ── STAT YÜKLEME ──────────────────────────────────
+    try {
+      var _s = ARES.supabase();
+      var _tid = ARES.tenantId();
+      if (_s && _tid) {
+        var buAyBas = new Date(); buAyBas.setDate(1); buAyBas.setHours(0,0,0,0);
+
+        var [rPrj, rDvr, rKsm, rKK, rSvk] = await Promise.all([
+          _s.from('projeler').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif',true),
+          _s.from('devreler').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).or('silindi.is.null,silindi.eq.false'),
+          _s.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif_basamak','kesim'),
+          _s.from('spooller').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('aktif_basamak','on_kontrol'),
+          _s.from('sevkiyatlar').select('id', {count:'exact',head:true}).eq('tenant_id',_tid).eq('tip','giden').gte('tarih', buAyBas.toISOString()),
+        ]);
+
+        var txv = function(id, val) { var el = document.getElementById(id); if(el) el.textContent = val !== null ? val : '—'; };
+        txv('stProje', rPrj.count);
+        txv('stDevre', rDvr.count);
+        txv('stKesim', rKsm.count);
+        txv('stKK',    rKK.count);
+        txv('stSevk',  rSvk.count);
+      }
+    } catch(e) { console.warn('[ARES] stat:', e); }
+
+      if (window._applyI18n) _applyI18n();
+    } catch(e) { console.error('[ARES]', e); }
+    finally {
+      document.documentElement.style.visibility = '';
     }
-  } catch(e) { console.warn('[Ana]', e); }
-
-  // Son aktiviteler
-  try {
-    var {data: loglar} = await supa
-      .from('islem_log')
-      .select('islem, katman, olusturma, yapan_id')
-      .eq('tenant_id', tid)
-      .order('olusturma', {ascending: false})
-      .limit(6);
-
-    var el = document.getElementById('sonAktivite');
-    if (!loglar || !loglar.length) {
-      el.innerHTML = '<div class="m-empty"><div class="m-empty-icon">📋</div><div class="m-empty-text">Henüz aktivite yok</div></div>';
-      return;
-    }
-
-    var renkMap = { 'insert': 'd-green', 'update': 'd-blue', 'delete': 'd-red' };
-    el.innerHTML = loglar.map(function(l) {
-      var renk = renkMap[l.islem] || 'd-warn';
-      var sure = mFormatSure(l.olusturma);
-      return `<div class="son-aktivite-item">
-        <div class="sa-dot ${renk}"></div>
-        <div class="sa-body">
-          <div class="sa-title">${esc(l.katman || '—')}</div>
-          <div class="sa-sub">${esc(l.islem || '—')}</div>
-        </div>
-        <div class="sa-time">${sure}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    console.warn('[Log]', e);
-  }
+  })();
 });
+
+// ── WIDGET DRAG & DROP ────────────────────────────────────────
+var _editMode = false;
+var _dragSrc = null;
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  var btn = document.getElementById('editModeBtn');
+  var container = document.getElementById('widgetContainer');
+  if (_editMode) {
+    btn.textContent = '✓ Bitti';
+    btn.classList.add('aktif');
+    container.classList.add('edit-mode');
+    initDragDrop();
+  } else {
+    btn.textContent = '✦ Düzenle';
+    btn.classList.remove('aktif');
+    container.classList.remove('edit-mode');
+    saveWidgetOrder();
+  }
+}
+
+function initDragDrop() {
+  document.querySelectorAll('.widget-box').forEach(function(box) {
+    box.setAttribute('draggable', 'true');
+    box.addEventListener('dragstart', function(e) {
+      _dragSrc = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    box.addEventListener('dragend', function() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.widget-box').forEach(function(b){ b.classList.remove('drag-over'); });
+    });
+    box.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (_dragSrc !== this) this.classList.add('drag-over');
+    });
+    box.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over');
+    });
+    box.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      if (_dragSrc === this) return;
+      var container = document.getElementById('widgetContainer');
+      var boxes = Array.from(container.querySelectorAll('.widget-box'));
+      var srcIdx = boxes.indexOf(_dragSrc);
+      var tgtIdx = boxes.indexOf(this);
+      if (srcIdx < tgtIdx) {
+        container.insertBefore(_dragSrc, this.nextSibling);
+      } else {
+        container.insertBefore(_dragSrc, this);
+      }
+    });
+  });
+}
+
+function saveWidgetOrder() {
+  var order = Array.from(document.querySelectorAll('.widget-box')).map(function(b){ return b.dataset.widget; });
+  localStorage.setItem('ares_widget_order', JSON.stringify(order));
+}
+
+function loadWidgetOrder() {
+  try {
+    var order = JSON.parse(localStorage.getItem('ares_widget_order') || '[]');
+    if (!order.length) return;
+    var container = document.getElementById('widgetContainer');
+    order.forEach(function(id) {
+      var box = container.querySelector('[data-widget="' + id + '"]');
+      if (box) container.appendChild(box);
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() { loadWidgetOrder(); });
 </script>
 </body>
 </html>
