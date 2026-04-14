@@ -929,7 +929,7 @@ async function sorgulaVeGoster() {
   if (!supa) return;
 
   var tbody = document.getElementById('tableBody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:40px;color:var(--txd);font-size:14px;">⏳ Yükleniyor...</td></tr>';
+  if (tbody) tbody.innerHTML = '';
 
   var firma   = gv('fFirma');
   var proje   = gv('fProje');
