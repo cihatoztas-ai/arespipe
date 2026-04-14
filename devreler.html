@@ -856,18 +856,10 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       _supaIdMap[uiId] = d.id;
       var spools = spoolByDevre[d.id] || [];
       var totalAg = spools.reduce(function(s, x) { return s + (parseFloat(x.agirlik) || 0); }, 0);
-      // İlerleme: aktif_basamak string → index dönüşümü
+      // İlerleme: spooller.ilerleme kolonu (puan bazlı, 0-100)
       var avgIler = spools.length ? Math.round(
         spools.reduce(function(s, x) {
-          var snap  = x.basamak_snapshot || [];
-          var total = snap.length || 6;
-          var aktifStr = x.aktif_basamak || '';
-          var aktif = 0;
-          if (aktifStr && snap.length) {
-            var idx = snap.findIndex(function(b){ return b.sistem_adi === aktifStr; });
-            aktif = idx >= 0 ? idx + 1 : 0;
-          }
-          return s + Math.round((aktif / total) * 100);
+          return s + (x.ilerleme || 0);
         }, 0) / spools.length
       ) : 0;
       var caps = spools.map(function(s) { return s.dis_cap_mm ? String(s.dis_cap_mm) : null; }).filter(Boolean);
@@ -957,7 +949,7 @@ async function sorgulaVeGoster() {
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
-                'spooller(id, spool_id, agirlik, aktif_basamak, basamak_snapshot, dis_cap_mm, malzeme, yuzey)')
+                'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1)
     );
@@ -967,7 +959,7 @@ async function sorgulaVeGoster() {
     );
     var statQ = applyFilters(
       supa.from('devreler')
-        .select('spooller(agirlik, aktif_basamak, basamak_snapshot)')
+        .select('spooller(agirlik, aktif_basamak, ilerleme)')
     );
 
     var results = await Promise.all([listeQ, countQ, statQ]);
@@ -985,12 +977,7 @@ async function sorgulaVeGoster() {
     var totalSpool   = allSpools.length;
     var totalAgirlik = allSpools.reduce(function(s,x){return s+(parseFloat(x.agirlik)||0);},0);
     var totalIler    = allSpools.length ? Math.round(
-      allSpools.reduce(function(s,x){
-        var snap=x.basamak_snapshot||[]; var total=snap.length||6;
-        var aktifStr=x.aktif_basamak||''; var aktif=0;
-        if(aktifStr&&snap.length){ var idx=snap.findIndex(function(b){return b.sistem_adi===aktifStr;}); aktif=idx>=0?idx+1:0; }
-        return s+Math.round((aktif/total)*100);
-      },0)/allSpools.length
+      allSpools.reduce(function(s,x){ return s+(x.ilerleme||0); },0)/allSpools.length
     ):0;
 
     var count = document.getElementById('tableCount');
