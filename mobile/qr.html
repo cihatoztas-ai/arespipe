@@ -13,7 +13,7 @@
   document.documentElement.style.visibility='hidden';
 })()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<!-- BarcodeDetector API — harici kütüphane gerekmez -->
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
@@ -141,8 +141,23 @@ var _bulunan = false;
 var video  = document.getElementById('video');
 var canvas = document.getElementById('canvas');
 var ctx    = canvas.getContext('2d');
+var _detector = null;
 
 async function kameraBaslat() {
+  // BarcodeDetector desteği kontrol et
+  if (!('BarcodeDetector' in window)) {
+    document.getElementById('kameraYok').style.display = 'flex';
+    document.getElementById('kameraYok').querySelector('.kamera-yok-yazi').textContent =
+      'Bu tarayıcı QR taramayı desteklemiyor. Manuel giriş kullanın.';
+    video.style.display = 'none';
+    document.querySelector('.cerceve-wrap').style.display = 'none';
+    document.querySelector('.alt-bilgi').style.display = 'none';
+    document.getElementById('durumEl').style.display = 'none';
+    return;
+  }
+
+  _detector = new BarcodeDetector({ formats: ['qr_code'] });
+
   try {
     var stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -167,19 +182,19 @@ function taramaBaslat() {
   requestAnimationFrame(taramaKare);
 }
 
-function taramaKare() {
+async function taramaKare() {
   if (!_tarama) return;
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: 'dontInvert'
-    });
-    if (code && code.data) {
-      qrBulundu(code.data.trim());
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    requestAnimationFrame(taramaKare);
+    return;
+  }
+  try {
+    var barcodes = await _detector.detect(video);
+    if (barcodes.length > 0) {
+      qrBulundu(barcodes[0].rawValue.trim());
       return;
     }
-  }
+  } catch(e) {}
   requestAnimationFrame(taramaKare);
 }
 
