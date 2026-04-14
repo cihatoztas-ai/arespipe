@@ -288,7 +288,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 </div>
 
 <!-- STAT KARTLAR -->
-<div class="stat-grid" id="statGrid">
+<div class="stat-grid">
   <div class="stat-kart cl-ac">
     <div class="stat-ikon si-ac"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
     <div><div class="stat-label" data-i18n="sp_stat_diameter">Dış Çap</div><div class="stat-val" id="stCap">--</div></div>
@@ -1261,19 +1261,6 @@ function yukle(){
   if(SP.stopped){var b=T('durdurBand');if(b)b.style.display='flex';txc('durdurAciklamaEl',SP.durdurmaAciklama);}
   renderAlistirma(SP.alistirma||null);
   renderDiainch();
-  // Wipe-down animasyon
-  (function(){
-    var secs = [
-      document.querySelector('.stat-grid'),
-      document.querySelector('.tracker-bar'),
-      document.querySelector('.tab-panel.on')
-    ].filter(Boolean);
-    secs.forEach(function(el, i) {
-      el.style.clipPath = 'inset(0 0 100% 0)';
-      el.style.animation = '_wipeDown .45s cubic-bezier(.4,0,.2,1) ' + (i * 120) + 'ms forwards';
-    });
-  })();
-
 }
 
 // ── TRACKER ───────────────────────────────────────────────────
