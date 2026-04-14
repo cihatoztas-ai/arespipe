@@ -751,3 +751,59 @@ input, select, textarea { font-family: inherit; }
 .font-bold { font-weight: 700; }
 .text-sm { font-size: 13px; }
 .text-xs { font-size: 11px; }
+
+/* ═══════════════════════════════════════════════════
+   RTL Desteği — Arapça ([dir=rtl])
+   ═══════════════════════════════════════════════════ */
+
+/* ── Genel yön ── */
+[dir=rtl] body { text-align: right; }
+
+/* ── Topbar ── */
+[dir=rtl] .m-topbar-actions { margin-left: 0; margin-right: auto; }
+[dir=rtl] .m-topbar-btn .badge { right: auto; left: -4px; }
+
+/* ── Drawer — sağdan değil soldan açılır ── */
+[dir=rtl] .m-drawer {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid var(--bor);
+  transform: translateX(-100%);
+}
+[dir=rtl] .m-drawer.open { transform: translateX(0); }
+
+/* ── Kart sol kenar çizgileri → sağa ── */
+[dir=rtl] .m-card-item.cl-ac   { border-left: none; border-right: 3px solid var(--ac); }
+[dir=rtl] .m-card-item.cl-gr   { border-left: none; border-right: 3px solid var(--gr); }
+[dir=rtl] .m-card-item.cl-re   { border-left: none; border-right: 3px solid var(--re); }
+[dir=rtl] .m-card-item.cl-warn { border-left: none; border-right: 3px solid var(--warn); }
+[dir=rtl] .m-card-item.cl-leg  { border-left: none; border-right: 3px solid var(--leg); }
+
+/* ── Toast kenar çizgisi → sağa ── */
+[dir=rtl] .m-toast.t-success { border-left: none; border-right: 3px solid var(--gr); }
+[dir=rtl] .m-toast.t-error   { border-left: none; border-right: 3px solid var(--re); }
+[dir=rtl] .m-toast.t-info    { border-left: none; border-right: 3px solid var(--ac); }
+
+/* ── Detay satırı değer hizalaması ── */
+[dir=rtl] .m-detail-val { text-align: left; }
+
+/* ── Filtre paneli — soldan açılır (devreler.html) ── */
+[dir=rtl] .filtre-panel {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid var(--bor);
+  transform: translateX(-100%);
+}
+[dir=rtl] .filtre-panel.open { transform: translateX(0); }
+
+/* ── Filtre overlay sol alanı (devreler.html) ── */
+[dir=rtl] .filtre-overlay-left { right: 0; left: auto; }
+
+/* ── Devreler kartları — çizgiler flex ile otomatik döner ── */
+/* dir=rtl ile flex row reverse olur: dk-sol sağda, dk-sag solda görünür */
+/* Bu semantik olarak doğru: Arapça'da önde olan sağ taraf */
+
+/* ── Breadcrumb ayırıcı ── */
+[dir=rtl] .breadcrumb span { transform: scaleX(-1); display: inline-block; }

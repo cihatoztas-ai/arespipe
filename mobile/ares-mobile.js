@@ -18,11 +18,15 @@ function mTemaDegistir(tema) { mTemaUygula(tema); }
 // ── Dil ───────────────────────────────────────────
 function mDilUygula(dil) {
   document.documentElement.setAttribute('lang', dil);
+  document.documentElement.setAttribute('dir', dil === 'ar' ? 'rtl' : 'ltr');
   localStorage.setItem('ares_lang', dil);
   document.querySelectorAll('.m-lang-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.dil === dil);
   });
   if (typeof window._applyI18n === 'function') window._applyI18n();
+  if (typeof window._onLangChange === 'function') window._onLangChange();
+  mDrawerRender();
+  mBottomnavRender();
 }
 
 // ── Drawer (Hamburger Menü) ───────────────────────
@@ -118,17 +122,20 @@ function mUrlParam(key) {
 // ── Drawer builder ────────────────────────────────
 function mDrawerRender() {
   var oturum = mOturum();
-  var ad = oturum ? (oturum.ad_soyad || oturum.email || 'Kullanıcı') : 'Kullanıcı';
+  var ad  = oturum ? (oturum.ad_soyad || oturum.email || 'Kullanıcı') : 'Kullanıcı';
   var rol = oturum ? (oturum.rol || '') : '';
   var tema = localStorage.getItem('ares_theme') || 'light-anthracite';
-  var dil = localStorage.getItem('ares_lang') || 'tr';
+  var dil  = localStorage.getItem('ares_lang')  || 'tr';
+
+  // tv() güvenli sarmalayıcı — ares-lang.js yüklenmediyse fallback kullan
+  var _tv = typeof tv === 'function' ? tv : function(k, f) { return f || k; };
 
   var rolLabel = {
     'super_admin': 'Süper Admin',
-    'yonetici': 'Yönetici',
-    'kk_uzmani': 'KK Uzmanı',
-    'operator': 'Operatör',
-    'izleyici': 'İzleyici'
+    'yonetici':    'Yönetici',
+    'kk_uzmani':   'KK Uzmanı',
+    'operator':    'Operatör',
+    'izleyici':    'İzleyici',
   }[rol] || rol;
 
   var html = `
@@ -138,45 +145,46 @@ function mDrawerRender() {
     </div>
 
     <div class="m-drawer-section">
-      <div class="m-drawer-section-title">Navigasyon</div>
+      <div class="m-drawer-section-title">${_tv('mob_navigasyon', 'Navigasyon')}</div>
       <a href="index.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">🏠</div>Ana Sayfa
+        <div class="m-drawer-item-icon">🏠</div>${_tv('mob_nav_anasayfa', 'Ana Sayfa')}
       </a>
       <a href="gemiler.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">🚢</div>Gemiler
+        <div class="m-drawer-item-icon">🚢</div>${_tv('nav_gemiler', 'Gemiler')}
       </a>
       <a href="devreler.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">🔗</div>Devreler
+        <div class="m-drawer-item-icon">🔗</div>${_tv('nav_aktif_devreler', 'Devreler')}
       </a>
       <a href="kk.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">✅</div>Kalite Kontrol
+        <div class="m-drawer-item-icon">✅</div>${_tv('nav_kalite', 'Kalite Kontrol')}
       </a>
       <a href="sevkiyat.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">🚚</div>Sevkiyatlar
+        <div class="m-drawer-item-icon">🚚</div>${_tv('nav_sevkiyat', 'Sevkiyatlar')}
       </a>
       <a href="tezgahlar.html" class="m-drawer-item">
-        <div class="m-drawer-item-icon">⚙️</div>Tezgahlar
+        <div class="m-drawer-item-icon">⚙️</div>${_tv('nav_tezgahlar', 'Tezgahlar')}
       </a>
     </div>
 
     <div class="m-drawer-footer">
       <div class="m-drawer-setting">
-        <span class="m-drawer-setting-label">Tema</span>
+        <span class="m-drawer-setting-label">${_tv('mob_tema', 'Tema')}</span>
         <div class="m-theme-toggle">
           <button class="m-theme-btn ${tema === 'light-anthracite' ? 'active' : ''}" data-tema="light-anthracite" onclick="mTemaDegistir('light-anthracite')">☀️</button>
           <button class="m-theme-btn ${tema === 'dark' ? 'active' : ''}" data-tema="dark" onclick="mTemaDegistir('dark')">🌙</button>
         </div>
       </div>
       <div class="m-drawer-setting">
-        <span class="m-drawer-setting-label">Dil</span>
+        <span class="m-drawer-setting-label">${_tv('mob_dil', 'Dil')}</span>
         <div class="m-lang-toggle">
           <button class="m-lang-btn ${dil === 'tr' ? 'active' : ''}" data-dil="tr" onclick="mDilUygula('tr')">TR</button>
           <button class="m-lang-btn ${dil === 'en' ? 'active' : ''}" data-dil="en" onclick="mDilUygula('en')">EN</button>
+          <button class="m-lang-btn ${dil === 'ar' ? 'active' : ''}" data-dil="ar" onclick="mDilUygula('ar')">AR</button>
         </div>
       </div>
       <button class="m-logout-btn" onclick="mCikis()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Çıkış Yap
+        ${_tv('mob_cikis', 'Çıkış Yap')}
       </button>
     </div>
   `;
@@ -195,13 +203,14 @@ function mDrawerRender() {
 // ── Bottomnav builder ─────────────────────────────
 function mBottomnavRender() {
   var path = location.pathname.split('/').pop() || 'index.html';
+  var _tv  = typeof tv === 'function' ? tv : function(k, f) { return f || k; };
 
   var items = [
-    { href: 'index.html',   icon: homeIcon(),   label: 'Ana Sayfa', key: 'index' },
-    { href: 'ara.html',     icon: searchIcon(), label: 'Ara',       key: 'ara' },
-    { href: 'qr.html',      icon: null,         label: '',          key: 'qr', isQR: true },
-    { href: 'bildirim.html', icon: bellIcon(),  label: 'Bildirim',  key: 'bildirim' },
-    { href: '#',            icon: menuIcon(),   label: 'Menü',      key: 'menu', isMenu: true },
+    { href: 'index.html',    icon: homeIcon(),   label: _tv('mob_nav_anasayfa', 'Ana Sayfa'), key: 'index' },
+    { href: 'ara.html',      icon: searchIcon(), label: _tv('mob_nav_ara',      'Ara'),        key: 'ara' },
+    { href: 'qr.html',       icon: null,         label: '',                                     key: 'qr',  isQR: true },
+    { href: 'bildirim.html', icon: bellIcon(),   label: _tv('mob_nav_bildirim', 'Bildirim'),   key: 'bildirim' },
+    { href: '#',             icon: menuIcon(),   label: _tv('mob_nav_menu',     'Menü'),       key: 'menu', isMenu: true },
   ];
 
   var html = items.map(function(item) {
@@ -235,18 +244,19 @@ function mBottomnavRender() {
   if (nav) nav.innerHTML = html;
 }
 
-// ── Durum Rengi ───────────────────────────────────
+// ── Durum Badge ───────────────────────────────────
 function mDurumBadge(durum) {
+  var _tv = typeof tv === 'function' ? tv : function(k, f) { return f || k; };
   var map = {
-    'bekleyen':    ['b-warn',  'Bekleyen'],
-    'imalat':      ['b-blue',  'İmalat'],
+    'bekleyen':    ['b-warn',  _tv('cmn_bekliyor',          'Bekleyen')],
+    'imalat':      ['b-blue',  _tv('mob_durum_imalatta',     'İmalat')],
     'kaynak':      ['b-blue',  'Kaynak'],
     'on_kontrol':  ['b-warn',  'Ön Kontrol'],
-    'kalite':      ['b-leg',   'Kalite'],
-    'sevke_hazir': ['b-green', 'Sevke Hazır'],
+    'kalite':      ['b-leg',   _tv('mob_durum_kk_davette',   'Kalite')],
+    'sevke_hazir': ['b-green', _tv('mob_durum_sevke_hazir',  'Sevke Hazır')],
     'sevk_edildi': ['b-gray',  'Sevk Edildi'],
-    'tamamlandi':  ['b-green', 'Tamamlandı'],
-    'durduruldu':  ['b-red',   'Durduruldu'],
+    'tamamlandi':  ['b-green', _tv('cmn_tamamlandi',         'Tamamlandı')],
+    'durduruldu':  ['b-red',   _tv('mob_durum_durduruldu',   'Durduruldu')],
   };
   var v = map[durum] || ['b-gray', durum || '—'];
   return `<span class="m-badge ${v[0]}">${v[1]}</span>`;
@@ -261,20 +271,22 @@ function esc(s) {
 
 function mFormatTarih(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+  var locale = { tr: 'tr-TR', en: 'en-GB', ar: 'ar-SA' }[localStorage.getItem('ares_lang') || 'tr'] || 'tr-TR';
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function mFormatSure(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  var locale = { tr: 'tr-TR', en: 'en-GB', ar: 'ar-SA' }[localStorage.getItem('ares_lang') || 'tr'] || 'tr-TR';
+  return new Date(iso).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 // ── SVG İkonlar ───────────────────────────────────
-function homeIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`; }
+function homeIcon()   { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`; }
 function searchIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`; }
-function bellIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>`; }
-function menuIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`; }
-function arrowIcon() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`; }
+function bellIcon()   { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>`; }
+function menuIcon()   { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`; }
+function arrowIcon()  { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`; }
 
 // ── Ortak HTML Blokları ───────────────────────────
 function mLayoutHtml(opts) {
@@ -290,11 +302,12 @@ function mLayoutHtml(opts) {
 async function mInit(opts) {
   opts = opts || {};
 
-  // Tema & Dil
+  // Tema & Dil & Yön (RTL for Arabic)
   var tema = localStorage.getItem('ares_theme') || 'light-anthracite';
-  var dil = localStorage.getItem('ares_lang') || 'tr';
+  var dil  = localStorage.getItem('ares_lang')  || 'tr';
   document.documentElement.setAttribute('data-theme', tema);
   document.documentElement.setAttribute('lang', dil);
+  document.documentElement.setAttribute('dir', dil === 'ar' ? 'rtl' : 'ltr');
 
   // Auth
   var ok = await mAuthKontrol();
