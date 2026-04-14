@@ -869,18 +869,12 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       var malzemeSet = {}, yuzeySet = {};
       spools.forEach(function(s) {
         if (s.malzeme) {
-          var _m = s.malzeme.toLowerCase();
-          var _mKey;
-          if (_m.indexOf('karbon') !== -1 || _m === 'celik' || _m.indexOf('karbon') !== -1) _mKey = 'Karbon Çelik';
-          else if (_m.indexOf('paslanmaz') !== -1) _mKey = 'Paslanmaz';
-          else if (_m.indexOf('bakır') !== -1 || _m.indexOf('bakir') !== -1 || _m.indexOf('cuni') !== -1) _mKey = 'Bakır Alaşım';
-          else if (_m.indexOf('alüm') !== -1 || _m.indexOf('alum') !== -1) _mKey = 'Alüminyum';
-          else _mKey = s.malzeme;
+          var _mKey = _normalizeMalzeme(s.malzeme) || s.malzeme;
           malzemeSet[_mKey] = true;
         }
-        if (s.yuzey)   yuzeySet[s.yuzey]                   = true;
+        if (s.yuzey) yuzeySet[s.yuzey] = true;
       });
-      var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['celik'];
+      var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['Karbon Çelik'];
       var yuzeyArr   = Object.keys(yuzeySet);
       // Sapma: devre genelinden farklı malzeme/yüzey olan spool sayısı
       var devreMalz = (d.malzeme || '').toLowerCase().trim();
@@ -936,8 +930,7 @@ async function sorgulaVeGoster() {
   function applyFilters(q) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
     if (durum)   q = q.eq('durum', durum);
-    if (malzeme) q = q.eq('malzeme', malzeme);
-    if (yuzey)   q = q.eq('yuzey', yuzey);
+    // malzeme ve yuzey client-side filtrelenir — devreler.malzeme kolonu spool verisini yansıtmıyor
     if (proje && _projeIdMap[proje])  q = q.eq('proje_id', _projeIdMap[proje]);
     if (firma && _firmaProjeIds[firma] && _firmaProjeIds[firma].length)
       q = q.in('proje_id', _firmaProjeIds[firma]);
@@ -1003,8 +996,8 @@ async function sorgulaVeGoster() {
     // Malzeme/çap filtrelerini güncelle
     var malzemeSet={}, yuzeySet={};
     DEVRELER.forEach(function(d){
-      d.malzeme.forEach(function(m){ malzemeSet[m]=true; });
-      d.yuzey.forEach(function(y){ yuzeySet[y]=true; });
+      (d.malzeme||[]).forEach(function(m){ var k=_normalizeMalzeme(m); if(k) malzemeSet[k]=true; });
+      (d.yuzey||[]).forEach(function(y){ yuzeySet[y]=true; });
     });
     ['fMalzeme','fYuzey'].forEach(function(fid){
       var el=document.getElementById(fid); if(!el||el.options.length>1) return;
@@ -1356,7 +1349,7 @@ function getFiltered() {
     if (oncelikFiltreAktif && oncelikler.indexOf(d.supaId) === -1) return false;
     if (firma   && d.tersane !== firma) return false;
     if (proje   && d.gemi    !== proje) return false;
-    if (malzeme && d.malzeme.indexOf(malzeme) === -1) return false;
+    if (malzeme && d.malzeme.map(function(m){return _normalizeMalzeme(m)||m;}).indexOf(malzeme) === -1) return false;
     if (yuzey   && d.yuzey.indexOf(yuzey) === -1) return false;
     if (durum   && d.durum   !== durum) return false;
     if (arama) {
@@ -1401,7 +1394,7 @@ function _doRender() {
 
   // Segmented bar — Malzeme
   var malzemeSayim = {};
-  liste.forEach(function(d) { d.malzeme.forEach(function(m) { malzemeSayim[m] = (malzemeSayim[m] || 0) + 1; }); });
+  liste.forEach(function(d) { (d.malzeme || []).forEach(function(m) { var k=_normalizeMalzeme(m); if(!k)return; malzemeSayim[k] = (malzemeSayim[k] || 0) + 1; }); });
   var malzemeItems = Object.keys(malzemeSayim).map(function(k, i) { return {label:k, val:malzemeSayim[k], color:RENKLER[i]}; });
   segBar('malzemeBar', malzemeItems);
 
@@ -1582,12 +1575,41 @@ function fullDonut(svgId, centerId, items, cols, centerLabel) {
 }
 
 // ── MALZEME MODAL ────────────────────────────────────────────────
+function _normalizeMalzeme(m) {
+  if (!m) return null;
+  var s = String(m).trim();
+  if (!s || s === '—' || s === '-') return null;
+  // Türkçe karakter ve büyük/küçük harf normalize
+  var n = s.toLowerCase()
+    .replace(/İ/g,'i').replace(/I/g,'i').replace(/ı/g,'i')
+    .replace(/Ğ/g,'g').replace(/ğ/g,'g')
+    .replace(/Ş/g,'s').replace(/ş/g,'s')
+    .replace(/Ü/g,'u').replace(/ü/g,'u')
+    .replace(/Ö/g,'o').replace(/ö/g,'o')
+    .replace(/Ç/g,'c').replace(/ç/g,'c')
+    .replace(/\s+/g,' ').trim();
+  // Kategori eşleştirme (yazım toleranslı)
+  if (n.indexOf('karbon') !== -1 || n === 'celik' || n === 'steel' || n === 'carbon') return 'Karbon Çelik';
+  if (n.indexOf('paslanmaz') !== -1 || n.indexOf('stainless') !== -1 || n.indexOf('inox') !== -1) return 'Paslanmaz';
+  if (n.indexOf('bakir') !== -1 || n.indexOf('copper') !== -1 || n.indexOf('cuni') !== -1 || n.indexOf('cunifer') !== -1) return 'Bakır Alaşım';
+  if (n.indexOf('alumin') !== -1 || n.indexOf('alum') !== -1) return 'Alüminyum';
+  if (n.indexOf('plastik') !== -1 || n.indexOf('pe') !== -1 || n.indexOf('pvc') !== -1 || n.indexOf('grp') !== -1) return 'Plastik/PE';
+  // Tanınmayan — baş harfi büyük ham değer
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function malzemeModalAc() {
   var liste = getFiltered();
   var sayim = {};
-  liste.forEach(function(d) { d.malzeme.forEach(function(m) { sayim[m] = (sayim[m] || 0) + 1; }); });
+  liste.forEach(function(d) {
+    (d.malzeme || []).forEach(function(m) {
+      var k = _normalizeMalzeme(m);
+      if (!k) return;
+      sayim[k] = (sayim[k] || 0) + 1;
+    });
+  });
   var items = Object.keys(sayim).map(function(k, i) {
-    return {label: k === 'celik' ? 'Çelik' : 'Paslanmaz', val: sayim[k], color: RENKLER[i]};
+    return {label: k, val: sayim[k], color: RENKLER[i]};
   });
   var cols = items.map(function(x) { return x.color; });
   var list = document.getElementById('malzemeList');
