@@ -135,7 +135,7 @@
 <body>
 
 <div class="m-topbar">
-  <div class="m-topbar-back" onclick="history.back()">
+  <div class="m-topbar-back" onclick="geriDon()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
   </div>
   <div class="tb-label" id="tbLabel">Spool Detay</div>
@@ -317,6 +317,15 @@ var _fotolar = [];
 var _fotoIdx = 0;
 var _fbKat = 'hata';
 var _fbFotoData = null;
+
+// ── Geri Dönüş ───────────────────────────────────────
+function geriDon() {
+  if (_SP && _SP.devre_id) {
+    location.href = 'devre_detay.html?id=' + _SP.devre_id;
+  } else {
+    location.href = 'devreler.html';
+  }
+}
 
 // ── Sekme ────────────────────────────────────────────
 function switchTab(btn) {
