@@ -831,6 +831,7 @@ function _tid(){return typeof ARES!=='undefined'&&typeof ARES.tenantId==='functi
 
 // Basamak gorunen_ad haritası — DB'den yüklenir, hardcoded lblMap yerine kullanılır
 var _basamakMap = {};
+var _basamakSirasi = []; // ['on_imalat','imalat','kaynak',...] — DB sırasıyla
 
 async function _basamakMapYukle(){
   var tid = _tid();
@@ -839,10 +840,12 @@ async function _basamakMapYukle(){
   if(!supa) return;
   try {
     var { data } = await supa.from('basamak_tanimlari')
-      .select('sistem_adi, gorunen_ad')
+      .select('sistem_adi, gorunen_ad, sira')
       .eq('tenant_id', tid)
-      .eq('aktif', true);
+      .eq('aktif', true)
+      .order('sira');
     if(data && data.length){
+      _basamakSirasi = data.map(function(b){ return b.sistem_adi; });
       data.forEach(function(b){ _basamakMap[b.sistem_adi] = b.gorunen_ad; });
     }
   } catch(e){ console.warn('_basamakMapYukle:', e); }
@@ -1025,10 +1028,13 @@ async function spoolYukle(){
 }
 
 function _spoolMap(s,i){
-  var snap=s.basamak_snapshot||[];var total=snap.length||6;
-  var aktStr=s.aktif_basamak||'';var akt=-1;
-  if(aktStr&&snap.length){var ix=snap.findIndex(function(b){return b.sistem_adi===aktStr;});akt=ix>=0?ix:-1;}
-  else if(aktStr){var stg=['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];var ix2=stg.indexOf(aktStr);akt=ix2>=0?ix2:-1;}
+  // Basamak sırası: önce DB'den yüklenen _basamakSirasi, yoksa snapshot, yoksa hardcoded
+  var stgList = _basamakSirasi.length ? _basamakSirasi
+    : (s.basamak_snapshot||[]).map(function(b){return b.sistem_adi;});
+  if(!stgList.length) stgList = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
+  var total = stgList.length;
+  var aktStr = s.aktif_basamak||''; var akt = -1;
+  if(aktStr) { var ix = stgList.indexOf(aktStr); akt = ix >= 0 ? ix : -1; }
   var adimlar=[];for(var a=0;a<total;a++){if(akt<0)adimlar.push(0);else if(a<akt)adimlar.push(1);else if(a===akt)adimlar.push(3);else adimlar.push(0);}
   var dur='waiting';
   if(s.durduruldu)dur='stopped';else if(akt>=total-1)dur='done';else if(akt>=4)dur='qc';else if(akt>0)dur='progress';
@@ -1037,7 +1043,7 @@ function _spoolMap(s,i){
   if(akt>=0){
     // Önce DB'den yüklenen map, sonra snapshot, sonra sistem adı
     if(_basamakMap[aktStr])aktGor=_basamakMap[aktStr];
-    else if(snap.length&&snap[akt])aktGor=snap[akt].gorunen_ad||aktStr;
+    else if(s.basamak_snapshot&&s.basamak_snapshot[akt])aktGor=s.basamak_snapshot[akt].gorunen_ad||aktStr;
     else aktGor=aktStr;
   }
   var durumText=akt<0?tv('dv_status_waiting','Bekliyor'):akt>=total-1?tv('dv_status_done','Tamamlandı'):aktGor||tv('dv_status_progress','Devam Ediyor');
@@ -1045,7 +1051,7 @@ function _spoolMap(s,i){
   var bukum={toplam:(s.bukum_kalemleri||[]).length,tamamlanan:(s.bukum_kalemleri||[]).filter(function(k){return k.bukuldu;}).length};
   var mar={toplam:(s.markalama_kalemleri||[]).length,tamamlanan:(s.markalama_kalemleri||[]).filter(function(k){return k.markalandi;}).length};
   var agirlikHam=parseFloat(s.agirlik_kg||s.agirlik||0);
-  var _aktGorLabel=snap.length&&akt>=0&&snap[akt]?snap[akt].gorunen_ad||'':'';
+  var _aktGorLabel=aktGor;
   return{idx:i+1,supaId:s.id,pipeline:s.pipeline_no||'—',spoolNo:s.spool_no||'—',rev:s.rev||'',
     spoolId:s.spool_id||'',
     cap:s.dis_cap_mm?String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—',
