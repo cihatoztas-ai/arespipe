@@ -935,18 +935,20 @@ async function spoolYukle(supaId) {
     SP.alistirma = s.alistirma         || null;
     SP._basamakSnapshot = s.basamak_snapshot || [];
     SP.devre_id  = s.devre_id          || null;
+    SP.ilerleme  = s.ilerleme          || 0;
     // 3D Model verileri (Lambda v4 ile dolan kolonlar)
     SP.segmentler = s.segmentler_json  || null;
     SP.bbox       = s.bbox_json        || null;
 
     // Tracker pozisyonu — önce dinamik STAGE_SISTEM (DB'den), sonra snapshot
     var _aktifStr = s.aktif_basamak || '';
+    var _snap = s.basamak_snapshot || [];
     if (_aktifStr && STAGE_SISTEM.length) {
       var _idx = STAGE_SISTEM.indexOf(_aktifStr);
       SP.trackerCurrent = _idx >= 0 ? _idx + 1 : 0;
     } else if (_aktifStr && _snap.length) {
-      var _idx = _snap.findIndex(function(b){ return b.sistem_adi === _aktifStr; });
-      SP.trackerCurrent = _idx >= 0 ? _idx + 1 : 0;
+      var _idx2 = _snap.findIndex(function(b){ return b.sistem_adi === _aktifStr; });
+      SP.trackerCurrent = _idx2 >= 0 ? _idx2 + 1 : 0;
     } else {
       SP.trackerCurrent = 0;
     }
@@ -1340,37 +1342,66 @@ function renderTracker(){
 
 // ── BASAMAK İLERLETME ─────────────────────────────────────────
 async function sonrakiBasamakGec() {
-  var cur=parseInt(SP.trackerCurrent,10)||0;
-  var snap=SP._basamakSnapshot||[];
-  if(!snap.length){
-    snap=STAGES.map(function(s,i){return{sistem_adi:STAGE_SISTEM[i],gorunen_ad:s,sira:i+1};});
+  var cur = parseInt(SP.trackerCurrent, 10) || 0;
+
+  // STAGE_SISTEM DB'den yüklendi, doğrudan kullan
+  if(cur >= STAGE_SISTEM.length){
+    toast(tv('sp_all_stages_done', 'Tüm basamaklar tamamlandı'), 'ok');
+    return;
   }
-  if(cur>=snap.length){toast(tv('sp_all_stages_done','Tüm basamaklar tamamlandı'),'ok');return;}
-  var hedefBasamak=snap[cur];
-  if(!hedefBasamak)return;
-  var btn=T('btnSonrakiBasamak');
-  if(btn){btn.disabled=true;btn.style.opacity='.5';}
+  var hedefSistemAdi = STAGE_SISTEM[cur];
+  var hedefGorunenAd = STAGES[cur] || hedefSistemAdi;
+  if(!hedefSistemAdi){ toast('Basamak bulunamadı', 'err'); return; }
+
+  var btn = T('btnSonrakiBasamak');
+  if(btn){ btn.disabled = true; btn.style.opacity = '.5'; }
+
   try {
-    var supa=ARES.supabase();
-    if(supa && SP.supaId){
-      var upRes=await supa.from('spooller')
-        .update({aktif_basamak:hedefBasamak.sistem_adi, guncelleme:new Date().toISOString()})
-        .eq('id',SP.supaId).select('id');
-      if(upRes.error||!upRes.data||!upRes.data.length){
-        toast('Güncelleme hatası: '+(upRes.error?.message||'Satır bulunamadı'),'err');return;
-      }
-      // ✅ FIX: Çift log kaldırıldı — logEkle() zaten ARES.logEkle ile Supabase'e yazıyor
+    var supa = ARES.supabase();
+    if(!supa || !SP.supaId){ toast('Bağlantı yok', 'err'); return; }
+
+    // Hedef basamağın ilerleme_puanını DB'den çek
+    var tid = typeof ARES.tenantId === 'function' ? ARES.tenantId() : null;
+    var ilerleme_puani = 0;
+    if(tid){
+      var bRes = await supa.from('basamak_tanimlari')
+        .select('ilerleme_puani')
+        .eq('tenant_id', tid)
+        .eq('sistem_adi', hedefSistemAdi)
+        .single();
+      if(bRes.data) ilerleme_puani = bRes.data.ilerleme_puani || 0;
     }
-    SP.trackerCurrent=cur+1;
-    SP._aktifBasamakStr=hedefBasamak.sistem_adi;
-    try{localStorage.setItem('ares_aktif_spool',JSON.stringify(SP));}catch(e){}
+
+    var yeniIlerleme = Math.min(100, (SP.ilerleme || 0) + ilerleme_puani);
+
+    var upRes = await supa.from('spooller')
+      .update({
+        aktif_basamak: hedefSistemAdi,
+        ilerleme:      yeniIlerleme,
+        guncelleme:    new Date().toISOString()
+      })
+      .eq('id', SP.supaId)
+      .select('id');
+
+    if(upRes.error || !upRes.data || !upRes.data.length){
+      toast('Güncelleme hatası: ' + (upRes.error?.message || 'Satır bulunamadı'), 'err');
+      return;
+    }
+
+    var oncekiAd = cur > 0 ? (STAGES[cur - 1] || STAGE_SISTEM[cur - 1]) : 'Başlangıç';
+    SP.trackerCurrent  = cur + 1;
+    SP.ilerleme        = yeniIlerleme;
+    SP._aktifBasamakStr = hedefSistemAdi;
+
+    try{ localStorage.setItem('ares_aktif_spool', JSON.stringify(SP)); }catch(e){}
     renderTracker();
-    logEkle('BASAMAK',(snap[cur-1]?snap[cur-1].gorunen_ad:'Başlangıç')+' → '+hedefBasamak.gorunen_ad);
-    toast(hedefBasamak.gorunen_ad+' aşamasına geçildi','ok');
+    logEkle('BASAMAK', oncekiAd + ' → ' + hedefGorunenAd);
+    toast(hedefGorunenAd + ' aşamasına geçildi' + (ilerleme_puani ? ' (+' + ilerleme_puani + ' puan)' : ''), 'ok');
+
   } catch(e){
-    toast('Hata: '+e.message,'err');
+    toast('Hata: ' + e.message, 'err');
   } finally {
-    if(btn){btn.disabled=false;btn.style.opacity='1';}
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
   }
 }
 

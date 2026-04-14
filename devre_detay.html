@@ -832,21 +832,25 @@ function _tid(){return typeof ARES!=='undefined'&&typeof ARES.tenantId==='functi
 // Basamak gorunen_ad haritası — DB'den yüklenir, hardcoded lblMap yerine kullanılır
 var _basamakMap = {};
 var _basamakSirasi = []; // ['on_imalat','imalat','kaynak',...] — DB sırasıyla
+var _basamakPuanlar = {}; // {on_imalat: 10, imalat: 20, ...} — ilerleme_puani
 
 async function _basamakMapYukle(){
-  var tid = _tid();
+  var tid = (typeof DEVRE !== 'undefined' && DEVRE.tenantId) || _tid();
   if(!tid) return;
   var supa = _supa();
   if(!supa) return;
   try {
     var { data } = await supa.from('basamak_tanimlari')
-      .select('sistem_adi, gorunen_ad, sira')
+      .select('sistem_adi, gorunen_ad, sira, ilerleme_puani')
       .eq('tenant_id', tid)
       .eq('aktif', true)
       .order('sira');
     if(data && data.length){
       _basamakSirasi = data.map(function(b){ return b.sistem_adi; });
-      data.forEach(function(b){ _basamakMap[b.sistem_adi] = b.gorunen_ad; });
+      data.forEach(function(b){
+        _basamakMap[b.sistem_adi] = b.gorunen_ad;
+        _basamakPuanlar[b.sistem_adi] = b.ilerleme_puani || 0;
+      });
     }
   } catch(e){ console.warn('_basamakMapYukle:', e); }
 }
@@ -1007,7 +1011,8 @@ async function devreYukle(){
           tersaneIsEmri:'',
           terminTarihi:d.termin||'',
           durum:d.durum||'aktif',
-          durdumaSebebi:d.durdurma_sebebi||''};
+          durdumaSebebi:d.durdurma_sebebi||'',
+          tenantId:d.tenant_id||null};
         return;
       }
     }catch(e){console.warn('devreYukle:',e);}
@@ -1905,9 +1910,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // _supaHazir false ise demo verisiyle devam et (önizleme / offline)
       await devreYukle();
+      if (_supa()) await _basamakMapYukle();
       sayfaDoldur();
       if (_supa()) {
-        await _basamakMapYukle();
         await spoolYukle();
         renderTable();
         statGuncelle();
@@ -1920,6 +1925,20 @@ document.addEventListener('DOMContentLoaded', function() {
       renderIslemler();
       initTabs();
       if (typeof _applyI18n === 'function') _applyI18n();
+
+      // Spool_detay'dan dönüldüğünde spoolları yenile
+      window.addEventListener('pageshow', function(e){
+        if(e.persisted && _supa()){
+          _basamakMapYukle().then(function(){
+            spoolYukle().then(function(){ renderTable(); statGuncelle(); });
+          });
+        }
+      });
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState === 'visible' && _supa()){
+          spoolYukle().then(function(){ renderTable(); statGuncelle(); });
+        }
+      });
     } catch(e) { console.error('[ARES]', e); }
     finally { document.documentElement.style.visibility = ''; }
   })();
