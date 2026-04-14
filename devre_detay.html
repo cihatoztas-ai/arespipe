@@ -878,13 +878,9 @@ function _yuzeyGoster(raw){
 // Dinamik adım etiketi — dil değişince doğru çeviriyi döndürür
 function _stepText(s){
   if(s.stopped)return tv('dv_status_stopped','Durduruldu');
-  var lblMap=_basamakMap;// DB'den yüklenen dinamik map
-
-
-
-
-
-
+  var lblMap=_basamakMap; // DB'den yüklenen dinamik map
+  var d=s.durum;
+  if(d==='waiting')return tv('dv_status_waiting','Bekliyor');
   if(d==='done')return tv('dv_status_done','Tamamlandı');
   if(d==='qc')return lblMap['kk']||tv('dv_status_qc','Kalite Kontrol');
   // Progress: önce lblMap[aktifBasamak], sonra snapshot adı, sonra genel
