@@ -142,21 +142,48 @@ var video  = document.getElementById('video');
 var canvas = document.getElementById('canvas');
 var ctx    = canvas.getContext('2d');
 var _detector = null;
+var _mod = null; // 'barcode' | 'jsqr'
+
+function jsQRYukle() {
+  return new Promise(function(resolve, reject) {
+    if (typeof jsQR !== 'undefined') { resolve(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
 
 async function kameraBaslat() {
-  // BarcodeDetector desteği kontrol et
-  if (!('BarcodeDetector' in window)) {
-    document.getElementById('kameraYok').style.display = 'flex';
-    document.getElementById('kameraYok').querySelector('.kamera-yok-yazi').textContent =
-      'Bu tarayıcı QR taramayı desteklemiyor. Manuel giriş kullanın.';
-    video.style.display = 'none';
-    document.querySelector('.cerceve-wrap').style.display = 'none';
-    document.querySelector('.alt-bilgi').style.display = 'none';
-    document.getElementById('durumEl').style.display = 'none';
-    return;
+  // 1) BarcodeDetector dene
+  if ('BarcodeDetector' in window) {
+    try {
+      var desteklenen = await BarcodeDetector.getSupportedFormats();
+      if (desteklenen.includes('qr_code')) {
+        _detector = new BarcodeDetector({ formats: ['qr_code'] });
+        _mod = 'barcode';
+      }
+    } catch(e) {}
   }
 
-  _detector = new BarcodeDetector({ formats: ['qr_code'] });
+  // 2) BarcodeDetector yoksa jsQR CDN'den yükle
+  if (!_mod) {
+    try {
+      await jsQRYukle();
+      _mod = 'jsqr';
+    } catch(e) {
+      // Her iki yöntem de başarısız
+      document.getElementById('kameraYok').style.display = 'flex';
+      document.getElementById('kameraYok').querySelector('.kamera-yok-yazi').textContent =
+        'QR tarama bu tarayıcıda desteklenmiyor. Manuel giriş kullanın.';
+      video.style.display = 'none';
+      document.querySelector('.cerceve-wrap').style.display = 'none';
+      document.querySelector('.alt-bilgi').style.display = 'none';
+      document.getElementById('durumEl').style.display = 'none';
+      return;
+    }
+  }
 
   try {
     var stream = await navigator.mediaDevices.getUserMedia({
@@ -188,13 +215,27 @@ async function taramaKare() {
     requestAnimationFrame(taramaKare);
     return;
   }
+
   try {
-    var barcodes = await _detector.detect(video);
-    if (barcodes.length > 0) {
-      qrBulundu(barcodes[0].rawValue.trim());
-      return;
+    if (_mod === 'barcode') {
+      var barcodes = await _detector.detect(video);
+      if (barcodes.length > 0) {
+        qrBulundu(barcodes[0].rawValue.trim());
+        return;
+      }
+    } else {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+      if (code && code.data) {
+        qrBulundu(code.data.trim());
+        return;
+      }
     }
   } catch(e) {}
+
   requestAnimationFrame(taramaKare);
 }
 
