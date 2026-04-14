@@ -75,13 +75,13 @@ async function mAuthKontrol() {
             if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
             return true;
           }
-          if (_b > 15) { location.href = '../giris.html'; return false; }
+          if (_b > 15) { location.href = 'giris.html'; return false; }
         }
       }
       await new Promise(function(r) { setTimeout(r, 100); });
       _b++;
     }
-    location.href = '../giris.html';
+    location.href = 'giris.html';
     return false;
   } catch(e) {
     console.error('[Mobile Auth]', e);
@@ -111,7 +111,7 @@ async function mCikis() {
       await ARES.cikisYap();
     }
   } catch(e) {}
-  location.href = '../giris.html';
+  location.href = 'giris.html';
 }
 
 // ── URL Params ────────────────────────────────────
