@@ -288,7 +288,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 </div>
 
 <!-- STAT KARTLAR -->
-<div class="stat-grid">
+<div class="stat-grid" id="statGrid">
   <div class="stat-kart cl-ac">
     <div class="stat-ikon si-ac"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
     <div><div class="stat-label" data-i18n="sp_stat_diameter">Dış Çap</div><div class="stat-val" id="stCap">--</div></div>
@@ -1261,6 +1261,18 @@ function yukle(){
   if(SP.stopped){var b=T('durdurBand');if(b)b.style.display='flex';txc('durdurAciklamaEl',SP.durdurmaAciklama);}
   renderAlistirma(SP.alistirma||null);
   renderDiainch();
+  // Cascade animasyon — stat kartlar
+  var sg = document.getElementById('statGrid');
+  if (sg) { Array.from(sg.children).forEach(function(el) { el.classList.add('cascade-item'); }); }
+  // Tracker
+  var tb = document.querySelector('.tracker-bar');
+  if (tb) { tb.style.opacity='0'; tb.style.animation='_cascadeIn .25s ease 300ms forwards'; }
+  // Tab içerik
+  var tabPanels = document.querySelectorAll('.kart, .proc-kart, .tablo-kart');
+  tabPanels.forEach(function(el, i) {
+    el.style.opacity='0';
+    el.style.animation='_cascadeIn .25s ease ' + (360 + i * 60) + 'ms forwards';
+  });
 }
 
 // ── TRACKER ───────────────────────────────────────────────────
