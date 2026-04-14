@@ -760,10 +760,10 @@ function statGuncelle(liste) {
 
   liste.forEach(function(d) {
     var agg = _spoolAgg[d.id] || {};
-    spoolCount += agg.count || 0;
-    toplamAgirlik += parseFloat(d.agirlik || 0);
-    if (d.ilerleme !== null && d.ilerleme !== undefined) {
-      toplamIlerleme += d.ilerleme;
+    spoolCount     += agg.count   || 0;
+    toplamAgirlik  += agg.agirlik || 0;
+    if (agg.count > 0) {
+      toplamIlerleme += Math.round((agg.ilerlemeToplam || 0) / agg.count);
       ilerlemeSayisi++;
     }
   });
@@ -1019,37 +1019,48 @@ async function yukle() {
 
     // 2) Spool aggregate — tüm devreler için tek sorguda
     var devreIds = _tumDevreler.map(function(d) { return d.id; });
-    var { data: spooller } = await supa
-      .from('spooller')
-      .select('devre_id, agirlik, alistirma')
-      .in('devre_id', devreIds)
-      .or('silindi.is.null,silindi.eq.false');
+    if (devreIds.length > 0) {
+      var { data: spooller } = await supa
+        .from('spooller')
+        .select('devre_id, agirlik, alistirma, aktif_basamak')
+        .in('devre_id', devreIds)
+        .or('silindi.is.null,silindi.eq.false');
 
-    // Client-side aggregate
-    _spoolAgg = {};
-    (spooller || []).forEach(function(s) {
-      if (!_spoolAgg[s.devre_id]) {
-        _spoolAgg[s.devre_id] = { count: 0, agirlik: 0, varCount: 0, kismiCount: 0, yokCount: 0 };
-      }
-      var agg = _spoolAgg[s.devre_id];
-      agg.count++;
-      agg.agirlik += parseFloat(s.agirlik || 0);
-      if (s.alistirma === 'VAR')   agg.varCount++;
-      else if (s.alistirma === 'KISMI') agg.kismiCount++;
-      else agg.yokCount++;
-    });
+      // Client-side aggregate
+      _spoolAgg = {};
 
-    // Alıştırma durumu özeti: VAR=tümü VAR, KISMI=karışık, YOK=hiç VAR yok
-    Object.keys(_spoolAgg).forEach(function(id) {
-      var agg = _spoolAgg[id];
-      if (agg.count > 0 && agg.varCount === agg.count) {
-        agg.alistirma = 'VAR';
-      } else if (agg.varCount > 0 || agg.kismiCount > 0) {
-        agg.alistirma = 'KISMI';
-      } else {
-        agg.alistirma = 'YOK';
-      }
-    });
+      // Aşama → ilerleme yüzdesi (web ile aynı mantık)
+      var ASAMA_PCT = {
+        'bekliyor': 0, 'imalat': 17, 'kaynak': 33,
+        'on_kontrol': 50, 'kk': 67, 'sevkiyat': 83, 'tamamlandi': 100
+      };
+
+      (spooller || []).forEach(function(s) {
+        if (!_spoolAgg[s.devre_id]) {
+          _spoolAgg[s.devre_id] = { count: 0, agirlik: 0, ilerlemeToplam: 0, varCount: 0, kismiCount: 0, yokCount: 0 };
+        }
+        var agg = _spoolAgg[s.devre_id];
+        agg.count++;
+        agg.agirlik += parseFloat(s.agirlik || 0);
+        agg.ilerlemeToplam += ASAMA_PCT[(s.aktif_basamak || 'bekliyor').toLowerCase()] || 0;
+        if (s.alistirma === 'VAR')   agg.varCount++;
+        else if (s.alistirma === 'KISMI') agg.kismiCount++;
+        else agg.yokCount++;
+      });
+      });
+
+      // Alıştırma durumu özeti
+      Object.keys(_spoolAgg).forEach(function(id) {
+        var agg = _spoolAgg[id];
+        if (agg.count > 0 && agg.varCount === agg.count) {
+          agg.alistirma = 'VAR';
+        } else if (agg.varCount > 0 || agg.kismiCount > 0) {
+          agg.alistirma = 'KISMI';
+        } else {
+          agg.alistirma = 'YOK';
+        }
+      });
+    } // end if devreIds.length > 0
 
     // 3) Filtre seçeneklerini oluştur ve render et
     filtreSecenekleriniOlustur();
@@ -1064,18 +1075,24 @@ async function yukle() {
 
 /* ── Başlatma ── */
 document.addEventListener('DOMContentLoaded', async function() {
-  var ok = await mInit();
-  if (!ok) return;
-  document.getElementById('mPage').style.display = '';
+  try {
+    var ok = await mInit();
+    document.documentElement.style.visibility = ''; // her durumda göster
+    if (!ok) return;
+    document.getElementById('mPage').style.display = '';
 
-  // Dil değişince listeyi ve filtreyi yeniden render et
-  window._onLangChange = function() {
-    filtreSecenekleriniOlustur();
-    render();
-    filtrePanelRender();
-  };
+    // Dil değişince listeyi ve filtreyi yeniden render et
+    window._onLangChange = function() {
+      filtreSecenekleriniOlustur();
+      render();
+      filtrePanelRender();
+    };
 
-  await yukle();
+    await yukle();
+  } catch(e) {
+    document.documentElement.style.visibility = '';
+    console.error('[Devreler init]', e);
+  }
 });
 </script>
 </body>
