@@ -699,7 +699,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="mob-device phone" id="mobDevice">
         <div class="mob-notch"></div>
         <div class="mob-screen">
-          <iframe class="mob-iframe" id="mobIframe" src="../mobile/index.html" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+          <iframe class="mob-iframe" id="mobIframe" src="../mobile/index.html"></iframe>
         </div>
         <div class="mob-home-bar"></div>
       </div>
@@ -1528,7 +1528,7 @@ async function feedbackDurumGuncelle(id, yeniDurum) {
 
 // ── YOL HARİTASI ────────────────────────────────────────────────
 // ── YOL HARİTASI — CLAUDE.md'den otomatik senkronize ──────────
-// Kaynak: https://raw.githubusercontent.com/cihatoztas-ai/arespipe/refs/heads/main/CLAUDE.md
+// Kaynak: https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/CLAUDE.md
 // [x] işaretli maddeler panel'de otomatik tamamlandı gösterilir.
 // [ ] maddelerin durumu feature_flags tablosundan okunur (toggle ile değiştirilebilir).
 
@@ -1537,7 +1537,7 @@ var _YH_DURUM = {};
 var _YH_CLAUDE_DONE = {}; // CLAUDE.md'de [x] olanlar
 var _YH_SON_GUNCELLEME = null;
 
-var CLAUDE_MD_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/refs/heads/main/CLAUDE.md';
+var CLAUDE_MD_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/CLAUDE.md';
 
 function _normYhId(metin) {
   return 'yh_' + metin.toLowerCase()
