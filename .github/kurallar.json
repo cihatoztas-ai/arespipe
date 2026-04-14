@@ -2,7 +2,6 @@
   "silinmis_dosyalar": {
     "dosyalar": []
   },
-
   "istisnalar": {
     "dosyalar": [
       "giris.html",
@@ -25,7 +24,6 @@
       "mobile/is_baslat.html"
     ]
   },
-
   "yasak_string": {
     "kurallar": [
       {
@@ -59,18 +57,17 @@
         "siddet": "uyari"
       },
       {
-        "desen": "data-theme=\"dark\"",
-        "mesaj": "CSS'te data-theme tırnak kullanılmamalı",
+        "desen": ")||'dark'",
+        "mesaj": "Flash prevention default 'dark' olmamalı — 'light-anthracite' kullan",
         "siddet": "hata"
       },
       {
-        "desen": "data-theme=\"light\"",
-        "mesaj": "CSS'te data-theme tırnak kullanılmamalı",
+        "desen": "setAttribute('data-theme','light')",
+        "mesaj": "data-theme 'light' olmamalı — 'light-anthracite' kullan",
         "siddet": "hata"
       }
     ]
   },
-
   "zorunlu_her_html": {
     "kurallar": [
       {
