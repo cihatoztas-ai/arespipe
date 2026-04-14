@@ -927,43 +927,80 @@ async function sorgulaVeGoster() {
   var arama   = ((document.getElementById('fArama')||{}).value||'').toLowerCase().trim();
   var offset  = (_sayfa - 1) * _sayfaBasi;
 
-  function applyFilters(q) {
+  // Malzeme → Supabase ilike pattern listesi
+  var MALZEME_PATTERNS = {
+    'Karbon Çelik': ['karbon','carbon','celik','çelik','steel','p235','p355','st37','s235','s275','s355','a106'],
+    'Paslanmaz':    ['paslanmaz','stainless','inox'],
+    'Bakır Alaşım': ['bakır','bakir','copper','cuni','cunifer'],
+    'Alüminyum':    ['alüm','alum'],
+    'Plastik/PE':   ['plastik','pe100','pvc','grp','instaflex','seadrain']
+  };
+
+  function applyFilters(q, devreIds) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
     if (durum)   q = q.eq('durum', durum);
-    // malzeme ve yuzey client-side filtrelenir — devreler.malzeme kolonu spool verisini yansıtmıyor
     if (proje && _projeIdMap[proje])  q = q.eq('proje_id', _projeIdMap[proje]);
     if (firma && _firmaProjeIds[firma] && _firmaProjeIds[firma].length)
       q = q.in('proje_id', _firmaProjeIds[firma]);
     if (arama)   q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
+    if (devreIds) q = q.in('id', devreIds.length ? devreIds : ['00000000-0000-0000-0000-000000000000']);
     return q;
   }
 
   try {
-    // Tüm devreleri çek — client-side pagination + filtre için
+    // Aşama 1: Malzeme/yuzey filtresi aktifse spooller'dan devre_id'leri bul
+    var devreIdFilter = null;
+    if (malzeme || yuzey) {
+      var spoolQ = supa.from('spooller').select('devre_id');
+      if (malzeme) {
+        var patterns = MALZEME_PATTERNS[malzeme];
+        if (patterns) {
+          var orStr = patterns.map(function(p){ return 'malzeme.ilike.%'+p+'%'; }).join(',');
+          spoolQ = spoolQ.or(orStr);
+        } else {
+          spoolQ = spoolQ.ilike('malzeme', '%'+malzeme+'%');
+        }
+      }
+      if (yuzey) spoolQ = spoolQ.ilike('yuzey', '%'+yuzey+'%');
+      var spoolRes = await spoolQ;
+      if (spoolRes.error) console.warn('[Devreler] spoolQ:', spoolRes.error);
+      var ids = (spoolRes.data||[]).map(function(s){ return s.devre_id; }).filter(Boolean);
+      devreIdFilter = [...new Set(ids)];
+    }
+
+    // Aşama 2: Server-side sayfalı ana sorgu + istatistik sorgusu
+    var countQ = applyFilters(
+      supa.from('devreler').select('id', {count:'exact', head:true}),
+      devreIdFilter
+    );
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
-        .limit(2000)
+        .range(offset, offset + _sayfaBasi - 1),
+      devreIdFilter
     );
+    // Stat sorgusu: tüm filtreli devreler, bar grafikler için
     var statQ = applyFilters(
       supa.from('devreler')
-        .select('spooller(agirlik, aktif_basamak, ilerleme)')
+        .select('spooller(agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme)'),
+      devreIdFilter
     );
 
-    var results = await Promise.all([listeQ, statQ]);
+    var results = await Promise.all([listeQ, countQ, statQ]);
     var devRes   = results[0];
-    var statRes  = results[1];
+    var countRes = results[1];
+    var statRes  = results[2];
 
     if (devRes.error) { console.warn('[Devreler]', devRes.error); return; }
 
-    _ssTotal = devRes.data ? devRes.data.length : 0;
+    _ssTotal = countRes.count || 0;
 
     // Stat kartları — tüm filtreli kayıtlardan
     var allSpools = [];
-    (devRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
+    (statRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
     var totalSpool   = allSpools.length;
     var totalAgirlik = allSpools.reduce(function(s,x){return s+(parseFloat(x.agirlik)||0);},0);
     var totalIler    = allSpools.length ? Math.round(
@@ -984,16 +1021,28 @@ async function sorgulaVeGoster() {
     (devRes.data||[]).forEach(function(d){ spoolByDevre[d.id]=d.spooller||[]; });
     _supaIdMap = {};
     DEVRELER = (devRes.data||[]).map(function(d,i){
-      _supaIdMap[i+1]=d.id;
-      return _mapDevre(d, i, spoolByDevre, 0);
+      _supaIdMap[offset+i+1]=d.id;
+      return _mapDevre(d, i, spoolByDevre, offset);
     });
 
-    // Malzeme/çap filtrelerini güncelle
-    var malzemeSet={}, yuzeySet={};
-    DEVRELER.forEach(function(d){
-      (d.malzeme||[]).forEach(function(m){ var k=_normalizeMalzeme(m); if(k) malzemeSet[k]=true; });
-      (d.yuzey||[]).forEach(function(y){ yuzeySet[y]=true; });
+    // Malzeme/çap filtrelerini ve bar grafikleri TÜM filtreli spoollardan güncelle
+    var malzemeSet={}, yuzeySet={}, capSayimAll={}, malzemeSayimAll={};
+    allSpools.forEach(function(s){
+      if(s.malzeme){ var mk=_normalizeMalzeme(s.malzeme); if(mk){ malzemeSet[mk]=true; malzemeSayimAll[mk]=(malzemeSayimAll[mk]||0)+1; } }
+      if(s.yuzey)   yuzeySet[s.yuzey]=true;
+      if(s.dis_cap_mm){ var cmm=String(s.dis_cap_mm); capSayimAll[cmm]=(capSayimAll[cmm]||0)+1; }
     });
+
+    // Bar — Malzeme (tüm filtreli spoollar)
+    var malzemeItems = Object.keys(malzemeSayimAll).map(function(k,i){ return {label:k,val:malzemeSayimAll[k],color:RENKLER[i]}; });
+    segBar('malzemeBar', malzemeItems);
+
+    // Bar — Çap (tüm filtreli spoollar)
+    var capItems = Object.keys(capSayimAll).sort(function(a,b){ return (capToMM(a)||9999)-(capToMM(b)||9999); })
+      .slice(0,8).map(function(k,i){ return {label:formatCapMM(k)+' mm',val:capSayimAll[k],color:RENKLER[i%RENKLER.length]}; });
+    segBar('capBar', capItems);
+
+    // Filtre dropdown seçenekleri (ilk yüklemede doldur)
     ['fMalzeme','fYuzey'].forEach(function(fid){
       var el=document.getElementById(fid); if(!el||el.options.length>1) return;
       var set=fid==='fMalzeme'?malzemeSet:yuzeySet;
@@ -1385,23 +1434,9 @@ function _doRender() {
   var _starCache  = getStarMap();
   var _siraCache  = getSiraMap();
   var _terminCache = getTerminMap();
-  var liste = getFiltered(); // client-side filtreler uygulanmış
+  var liste = DEVRELER; // server-side sayfalı + filtreli
 
-  // Segmented bar — Malzeme
-  var malzemeSayim = {};
-  liste.forEach(function(d) { (d.malzeme || []).forEach(function(m) { var k=_normalizeMalzeme(m); if(!k)return; malzemeSayim[k] = (malzemeSayim[k] || 0) + 1; }); });
-  var malzemeItems = Object.keys(malzemeSayim).map(function(k, i) { return {label:k, val:malzemeSayim[k], color:RENKLER[i]}; });
-  segBar('malzemeBar', malzemeItems);
-
-  // Segmented bar — Çap (mm olarak göster)
-  var capSayimDN = {};
-  liste.forEach(function(d) { (d.caps || []).forEach(function(c) { capSayimDN[c.mm] = (capSayimDN[c.mm] || 0) + 1; }); });
-  var capItems = Object.keys(capSayimDN).sort(function(a, b) {
-    return (capToMM(a) || 9999) - (capToMM(b) || 9999);
-  }).slice(0, 8).map(function(k, i) {
-    return {label: formatCapMM(k) + ' mm', val: capSayimDN[k], color: RENKLER[i % RENKLER.length]};
-  });
-  segBar('capBar', capItems);
+  // Bar grafikler sorgulaVeGoster'da allSpools'dan hesaplanıyor — burada sadece tablo
 
   if (!liste.length) {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--txd);font-size:14px;">' + tv('dr_no_results', tv('dr_no_results','Filtreyle eşleşen devre bulunamadı')) + '</td></tr>';
@@ -1423,9 +1458,8 @@ function _doRender() {
   };
 
   var baslangic = (_sayfa - 1) * _sayfaBasi;
-  var sayfaListesi = liste.slice(baslangic, baslangic + _sayfaBasi);
   var _ci = 0;
-  tbody.innerHTML = sayfaListesi.map(function(d, i) {
+  tbody.innerHTML = liste.map(function(d, i) {
     var globalIdx = baslangic + i;
     var starState = _starCache[d.supaId] || 0;
     var starCfg = _STAR_CFG[starState];
@@ -1488,8 +1522,8 @@ function _doRender() {
     '</tr>';
   }).join('');
 
-  paginationGuncelle(toplamFiltreli, _sayfa, Math.ceil(toplamFiltreli / _sayfaBasi));
-  if (count) count.textContent = '('+toplamFiltreli+' '+tv('cmn_devre','devre')+')';
+  paginationGuncelle(_ssTotal, _sayfa, Math.ceil(_ssTotal / _sayfaBasi));
+  if (count) count.textContent = '('+_ssTotal+' '+tv('cmn_devre','devre')+')';
   _updateSortHeaders();
   guncelleMLButonu();
 }
