@@ -347,7 +347,7 @@ function renderFoto() {
   var f = _fotolar[_fotoIdx];
   var img = document.getElementById('fotoImg');
   var empty = document.getElementById('fotoEmpty');
-  img.src = f.url;
+  img.src = f.dosya_url;
   img.style.display = 'block';
   empty.style.display = 'none';
   document.getElementById('fotoCounter').style.display = _fotolar.length > 1 ? 'flex' : 'none';
@@ -426,7 +426,7 @@ function renderMalzeme(malzemeler) {
     return '<tr>' +
       '<td>' + esc(m.malzeme || '—') + '</td>' +
       '<td>' + esc(m.kalite || '—') + '</td>' +
-      '<td>' + esc(m.cap_mm ? m.cap_mm + ' mm' : '—') + '</td>' +
+      '<td>' + esc(m.dis_cap_mm ? m.dis_cap_mm + ' mm' : '—') + '</td>' +
       '<td>' + esc(m.et_mm ? m.et_mm + ' mm' : '—') + '</td>' +
       '<td>' + esc(m.boy_mm ? m.boy_mm + ' mm' : '—') + '</td>' +
     '</tr>';
@@ -445,7 +445,7 @@ function renderLog(loglar) {
     return '<div class="log-r">' +
       '<div class="log-dot" style="background:' + (renkMap[l.islem] || 'var(--txd)') + '"></div>' +
       '<div class="log-body">' +
-        '<div class="log-title">' + esc(l.tablo_adi || '—') + ' · ' + esc(l.islem || '—') + '</div>' +
+        '<div class="log-title">' + esc(l.katman || '—') + ' · ' + esc(l.islem || '—') + '</div>' +
         '<div class="log-meta">' + mFormatSure(l.olusturma) + '</div>' +
       '</div></div>';
   }).join('');
@@ -525,7 +525,7 @@ async function yukle() {
     // Ana spool verisi
     var { data: sp } = await supa
       .from('spooller')
-      .select('*, devreler(devre_no, devre_adi, zone, projeler(proje_no, tersaneler(ad)))')
+      .select('*, devreler(devre_no, ad, zone, projeler(proje_no, tersaneler(ad)))')
       .eq('id', _spoolId)
       .single();
 
@@ -544,7 +544,7 @@ async function yukle() {
     if (sp.durduruldu) {
       var b = document.getElementById('stopBanner');
       b.style.display = 'flex';
-      document.getElementById('stopText').textContent = sp.durdurma_aciklama || 'Durduruldu';
+      document.getElementById('stopText').textContent = sp.durdurma_sebebi || 'Durduruldu';
     }
 
     // Genel bilgiler
@@ -553,38 +553,38 @@ async function yukle() {
       if (el) el.textContent = val || '—';
     };
     set('gPipeNo', sp.pipeline_no);
-    set('gRev', sp.revizyon);
-    set('gCap', sp.cap_mm ? sp.cap_mm + ' mm' : null);
-    set('gEt', sp.et_mm ? sp.et_mm + ' mm' : null);
-    set('gAgr', sp.agirlik_kg ? sp.agirlik_kg + ' kg' : null);
+    set('gRev', sp.rev);
+    set('gCap', sp.dis_cap_mm ? sp.dis_cap_mm + ' mm' : null);
+    set('gEt', sp.et_kalinligi_mm ? sp.et_kalinligi_mm + ' mm' : null);
+    set('gAgr', sp.agirlik ? sp.agirlik + ' kg' : null);
     set('gMalz', [sp.malzeme, sp.kalite].filter(Boolean).join(' / '));
     set('gYuz', sp.yuzey);
-    set('gKesimMm', sp.kesim_mm ? sp.kesim_mm + ' mm' : null);
-    set('gAUcu', sp.a_ucu);
-    set('gBUcu', sp.b_ucu);
+    // kesim_mm spooller'da yok
+    // a_ucu spooller'da yok
+    // b_ucu spooller'da yok
 
     document.getElementById('gAlist').innerHTML = alistBadge(sp.alistirma);
-    document.getElementById('gKesimD').innerHTML = islemDurum(sp.kesim_durum);
-    document.getElementById('gBukumD').innerHTML = islemDurum(sp.bukum_durum);
-    document.getElementById('gMarkaD').innerHTML = islemDurum(sp.markalama_durum);
-    document.getElementById('gTestD').innerHTML  = islemDurum(sp.test_durum);
+    // kesim_durum yok
+    // bukum_durum yok
+    // markalama_durum yok
+    // test_durum yok
 
     // KK & Sevkiyat paralel
     var devre = sp.devreler;
     if (devre) {
       set('gGemi', devre.projeler?.proje_no);
-      set('gDevre', devre.devre_adi || devre.devre_no);
+      set('gDevre', devre.ad || devre.devre_no);
       set('gZone', devre.zone);
     }
 
     // Paralel yüklemeler
     var [rFoto, rKK, rSevk, rBelge, rMalz, rLog] = await Promise.all([
-      supa.from('fotograflar').select('url, olusturma, kullanici_id, asama').eq('spool_id', sp.id).order('olusturma', {ascending:false}).limit(20),
+      supa.from('fotograflar').select('dosya_url, olusturma, kullanici_id, asama').eq('spool_id', sp.id).order('olusturma', {ascending:false}).limit(20),
       supa.from('kk_davetler').select('kk_no, olusturma').eq('tenant_id', tid).contains('spool_ids', [sp.id]).order('olusturma', {ascending:false}).limit(1),
       supa.from('sevkiyat_spooller').select('sevkiyatlar(sevkiyat_no, tarih)').eq('spool_id', sp.id).limit(1),
       supa.from('belgeler').select('ad, dosya_adi, url, olusturma').eq('spool_id', sp.id).order('olusturma', {ascending:false}),
-      supa.from('spool_malzemeleri').select('malzeme, kalite, cap_mm, et_mm, boy_mm').eq('spool_id', sp.id),
-      supa.from('islem_log').select('tablo_adi, islem, olusturma').eq('kayit_id', sp.id).order('olusturma', {ascending:false}).limit(30),
+      supa.from('spool_malzemeleri').select('malzeme, kalite, dis_cap_mm, et_mm, boy_mm').eq('spool_id', sp.id),
+      supa.from('islem_log').select('katman, islem, olusturma').eq('kayit_id', sp.id).order('olusturma', {ascending:false}).limit(30),
     ]);
 
     // Fotoğraflar

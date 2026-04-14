@@ -368,15 +368,11 @@ function badge(durum) {
 function spoolKart(s) {
   var stage = s.durduruldu ? 'durduruldu' : (s.aktif_basamak || 'bekliyor');
   var lClass = 'l-' + stage;
-  var rClass = s.alistirma === 'tam' ? 'r-tam' : s.alistirma === 'kismi' ? 'r-kismi' : 'r-none';
+  var rClass = s.alistirma === 'VAR' ? 'r-tam' : s.alistirma === 'KISMI' ? 'r-kismi' : 'r-none';
   var stopped = s.durduruldu ? 'stopped' : '';
 
-  var kesimD = s.kesim_durum || 'baslamadi';
-  var bukumD = s.bukum_durum || 'baslamadi';
-  var markaD = s.markalama_durum || 'baslamadi';
-
-  var stopNote = s.durduruldu && s.durdurma_aciklama
-    ? '<div class="mdot"></div><span class="mt al">⛔ ' + esc(s.durdurma_aciklama.substring(0,30)) + '</span>'
+  var stopNote = s.durduruldu && s.durdurma_sebebi
+    ? '<div class="mdot"></div><span class="mt al">⛔ ' + esc(s.durdurma_sebebi.substring(0,30)) + '</span>'
     : '';
 
   return '<div class="sc ' + stopped + '" data-stage="' + stage + '" onclick="spoolAc(\'' + s.id + '\')">' +
@@ -385,16 +381,13 @@ function spoolKart(s) {
       '<div class="sc-id-wrap">' +
         '<div class="sc-id">' + esc(s.spool_id || '—') + '</div>' +
         '<div class="sc-ops">' +
-          iconKesim(opClass(kesimD)) +
-          iconBukum(opClass(bukumD)) +
-          iconMarka(opClass(markaD)) +
         '</div>' +
       '</div>' +
       '<div class="sc-div"></div>' +
       '<div class="sc-body">' +
         '<div class="sc-name">' + esc(s.spool_no || '—') + '</div>' +
         '<div class="sc-meta">' +
-          '<span class="mt hi">Ø' + (s.cap_mm || '—') + '</span>' +
+          '<span class="mt hi">Ø' + (s.dis_cap_mm || '—') + '</span>' +
           '<div class="mdot"></div>' +
           '<span class="mt">' + esc(s.malzeme || '—') + '</span>' +
           (s.kalite ? '<div class="mdot"></div><span class="mt">' + esc(s.kalite) + '</span>' : '') +
@@ -429,13 +422,13 @@ async function yukle() {
     // Devre bilgisi
     var { data: devre } = await supa
       .from('devreler')
-      .select('id, devre_no, devre_adi, zone, projeler(id, proje_no, tersaneler(ad))')
+      .select('id, devre_no, ad, zone, projeler(id, proje_no, tersaneler(ad))')
       .eq('id', _devreId)
       .single();
 
     if (devre) {
       var gemi = devre.projeler?.proje_no || '—';
-      var sistem = devre.devre_adi || devre.devre_no || '—';
+      var sistem = devre.ad || devre.devre_no || '—';
       var _projeId = devre.projeler?.id || '';
       document.getElementById('devreHdr').innerHTML =
         '<a href="gemi_detay.html?id=' + esc(_projeId) + '" style="font-weight:600;color:var(--ac);">' + esc(gemi) + '</a><span style="color:var(--txd);margin:0 5px;">/</span>' + esc(sistem);
@@ -445,7 +438,7 @@ async function yukle() {
     // Spooller
     var { data: spooller } = await supa
       .from('spooller')
-      .select('id, spool_id, spool_no, aktif_basamak, durduruldu, durdurma_aciklama, cap_mm, malzeme, kalite, alistirma, kesim_durum, bukum_durum, markalama_durum')
+      .select('id, spool_id, spool_no, aktif_basamak, durduruldu, durdurma_sebebi, dis_cap_mm, malzeme, kalite, alistirma')
       .eq('tenant_id', tid)
       .eq('devre_id', _devreId)
       .order('spool_id', { ascending: true });
