@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ana Sayfa | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -176,34 +176,34 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
 /* ── WIDGET DRAG & DROP ── */
-.widget-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.widget-box { position: relative; min-width: 0; transition: opacity .2s; }
-.widget-box[data-widget="stats"], .widget-box.full { grid-column: 1 / -1; }
-.widget-box.half { grid-column: span 1; }
-.widget-box[data-hidden="1"] { display: none !important; }
-.edit-mode .widget-box[data-hidden="1"] { display: block !important; opacity: .3; }
+.widget-container { display: flex; flex-direction: column; gap: 20px; }
+.widget-box { position: relative; transition: opacity .2s, transform .2s; }
 .widget-box.dragging { opacity: .4; }
-.widget-box.drag-over { box-shadow: 0 0 0 2px var(--ac); border-radius: 16px; }
-.w-toolbar { position: absolute; top: 10px; right: 10px; z-index: 20; display: none; align-items: center; gap: 4px; }
-.edit-mode .w-toolbar { display: flex; }
-.w-btn { width: 26px; height: 26px; border-radius: 6px; background: var(--sur); border: 1px solid var(--bor); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--txm); font-size: 12px; font-weight: 700; transition: all .15s; flex-shrink: 0; }
-.w-btn.handle { cursor: grab; font-size: 15px; }
-.w-btn.handle:active { cursor: grabbing; }
-.w-btn:hover { border-color: var(--ac); color: var(--ac); }
-.w-size-grp { display: flex; gap: 2px; }
-.w-size-btn { padding: 0 7px; height: 26px; border-radius: 6px; background: var(--sur2); border: 1px solid var(--bor); font-size: 10px; font-weight: 800; color: var(--txd); cursor: pointer; display: flex; align-items: center; white-space: nowrap; transition: all .15s; font-family: 'Barlow Condensed', sans-serif; letter-spacing: .5px; }
-.w-size-btn.aktif { background: var(--ac); border-color: var(--ac); color: #fff; }
-.edit-mode .widget-box { outline: 1.5px dashed var(--bor); outline-offset: 3px; border-radius: 16px; }
-.edit-mode-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--bor); background: var(--sur2); color: var(--txm); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif; transition: all .15s; }
+.widget-box.drag-over { transform: translateY(4px); }
+.widget-handle {
+  position: absolute; top: 10px; right: 10px; z-index: 10;
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--sur2); border: 1px solid var(--bor);
+  display: none; align-items: center; justify-content: center;
+  cursor: grab; color: var(--txd); font-size: 14px;
+}
+.widget-handle:active { cursor: grabbing; }
+.edit-mode .widget-handle { display: flex; }
+.edit-mode .widget-box {
+  outline: 2px dashed var(--bor);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+.edit-mode-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--bor);
+  background: var(--sur2); color: var(--txm); font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif;
+  transition: all .15s;
+}
 .edit-mode-btn.aktif { background: var(--ac); color: #fff; border-color: var(--ac); }
-.wv { display: none; }
-[data-size="mini"] .wv-mini, [data-size="orta"] .wv-orta, [data-size="buyuk"] .wv-buyuk { display: block; }
-.stat-mini-row { display: flex; gap: 20px; flex-wrap: wrap; background: var(--sur); border: 1px solid var(--bor); border-radius: 14px; padding: 14px 18px; align-items: center; }
-.stat-mini-item { text-align: center; }
-.stat-mini-val { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; line-height: 1; }
-.stat-mini-lbl { font-size: 11px; color: var(--txd); margin-top: 2px; }
 .stat-row { margin-bottom: 0; }
-.dashboard-grid { margin-top: 0; grid-template-columns: 1fr !important; }
+.dashboard-grid { margin-top: 0; }
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
@@ -227,114 +227,55 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✦ Düzenle</button>
+      <div style="font-size:14px;color:var(--txd);" id="clockDisplay"></div>
     </div>
   </div>
   <div class="widget-container" id="widgetContainer">
-  <div class="widget-box" data-widget="stats" data-size="buyuk">
-    <div class="w-toolbar">
-      <div class="w-btn handle">⠿</div>
-      <div class="w-size-grp">
-        <div class="w-size-btn" onclick="wSize('stats','mini')">MİNİ</div>
-        <div class="w-size-btn aktif" onclick="wSize('stats','buyuk')">NORMAL</div>
-      </div>
-      <div class="w-btn" onclick="wGizle('stats')" title="Gizle">✕</div>
-    </div>
-    <div class="wv wv-mini">
-      <div class="stat-mini-row">
-        <div class="stat-mini-item"><div class="stat-mini-val" style="color:var(--ac);" id="stProjeM">—</div><div class="stat-mini-lbl">Proje</div></div>
-        <div class="stat-mini-item"><div class="stat-mini-val" style="color:var(--leg);" id="stDevreM">—</div><div class="stat-mini-lbl">Devre</div></div>
-        <div class="stat-mini-item"><div class="stat-mini-val" style="color:var(--warn);" id="stKesimM">—</div><div class="stat-mini-lbl">Kesim</div></div>
-        <div class="stat-mini-item"><div class="stat-mini-val" style="color:var(--re);" id="stKKM">—</div><div class="stat-mini-lbl">KK</div></div>
-        <div class="stat-mini-item"><div class="stat-mini-val" style="color:var(--gr);" id="stSevkM">—</div><div class="stat-mini-lbl">Sevk</div></div>
-      </div>
-    </div>
-    <div class="wv wv-buyuk">
-      <div class="stat-row">
-        <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_proje">Aktif Proje</div><div class="stat-value" id="stProje">—</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_devre">Aktif Devre</div><div class="stat-value" id="stDevre">—</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kesim">Kesim Bekleyen</div><div class="stat-value" id="stKesim" style="color:var(--warn);">—</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kk">KK Bekleyen</div><div class="stat-value" id="stKK" style="color:var(--re);">—</div></div></div>
-        <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_sevk">Bu Ay Sevk</div><div class="stat-value" id="stSevk" style="color:var(--gr);">—</div></div></div>
-      </div>
-    </div>
+  <div class="widget-box" data-widget="stats">
+    <div class="widget-handle" title="Taşı">⠿</div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-icon si-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_proje">Aktif Proje</div><div class="stat-value" id="stProje">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_devre">Aktif Devre</div><div class="stat-value" id="stDevre">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kesim">Kesim Bekleyen</div><div class="stat-value" id="stKesim" style="color:var(--warn);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_kk">KK Bekleyen</div><div class="stat-value" id="stKK" style="color:var(--re);">—</div></div></div>
+    <div class="stat-card"><div class="stat-icon si-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="idx_stat_sevk">Bu Ay Sevk</div><div class="stat-value" id="stSevk" style="color:var(--gr);">—</div></div></div>
   </div>
-  <div class="widget-box half" data-widget="spool" data-size="buyuk">
-    <div class="w-toolbar">
-      <div class="w-btn handle">⠿</div>
-      <div class="w-size-grp">
-        <div class="w-size-btn" onclick="wSize('spool','mini')">MİNİ</div>
-        <div class="w-size-btn" onclick="wSize('spool','orta')">ORTA</div>
-        <div class="w-size-btn aktif" onclick="wSize('spool','buyuk')">BÜYÜK</div>
-      </div>
-      <div class="w-btn" onclick="wGizle('spool')" title="Gizle">✕</div>
-    </div>
-    <div class="wv wv-mini">
-      <div class="spool-block" style="text-align:center;padding:28px 16px;">
-        <div style="font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Toplam Spool</div>
-        <div id="sbNumMini" style="font-family:'Barlow Condensed',sans-serif;font-size:60px;font-weight:800;color:var(--ac);line-height:1;">0</div>
-        <div style="font-size:12px;color:var(--txd);margin-top:8px;" data-i18n="idx_toplam_adet">ADET</div>
-      </div>
-    </div>
-    <div class="wv wv-orta">
-      <div class="spool-block" style="display:flex;flex-direction:column;align-items:center;padding:16px 12px;">
-        <div style="font-size:12px;font-weight:700;color:var(--txm);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;" data-i18n="idx_spool_baslik">Spool Durumu</div>
-        <div class="sb-chart-box">
-          <svg width="200" height="200" viewBox="0 0 300 300">
-            <g transform="rotate(-90 150 150)"><circle cx="150" cy="150" r="115" fill="none" stroke="var(--sb-ring)" stroke-width="28"/></g>
-            <g id="sbSegsOrta" transform="rotate(-90 150 150)"></g>
-          </svg>
-          <div class="sb-center"><div id="sbNumOrta" class="sb-cnum" style="font-size:26px;">0</div><div class="sb-clbl" style="font-size:9px;" data-i18n="idx_toplam_adet">TOPLAM</div></div>
-        </div>
-        <div class="sb-utog" style="margin-top:10px;"><button id="btnAdetOrta" class="on" data-i18n="idx_btn_adet">Adet</button><button id="btnKgOrta" data-i18n="idx_btn_kg">Kg</button></div>
-      </div>
-    </div>
-    <div class="wv wv-buyuk">
-      <div class="spool-block">
-        <div class="sb-hdr"><div class="sb-title" data-i18n="idx_spool_baslik">Sistemdeki Toplam Spool Durumu</div></div>
-        <div class="sb-body">
-          <div class="sb-left">
-            <div class="sb-chart-box">
-              <svg width="300" height="300" viewBox="0 0 300 300">
-                <rect class="sb-bg-hit" width="300" height="300" id="bgHit"/>
-                <g transform="rotate(-90 150 150)"><circle cx="150" cy="150" r="115" fill="none" stroke="var(--sb-ring)" stroke-width="28"/></g>
-                <g id="sbSegs" transform="rotate(-90 150 150)"></g>
-              </svg>
-              <div class="sb-center"><div id="sbNum" class="sb-cnum">0</div><div id="sbLbl" class="sb-clbl" data-i18n="idx_toplam_adet">TOPLAM ADET</div></div>
-            </div>
-            <div style="display:flex;justify-content:center;margin-top:10px;">
-              <div class="sb-utog"><button id="btnAdet" class="on" data-i18n="idx_btn_adet">Adet</button><button id="btnKg" data-i18n="idx_btn_kg">Kg</button></div>
-            </div>
+  </div><!-- /widget stats -->
+  <div class="widget-box" data-widget="spool">
+    <div class="widget-handle" title="Taşı">⠿</div>
+  <div class="dashboard-grid" style="grid-template-columns:1fr;">
+    <div class="spool-block">
+      <div class="sb-hdr"><div class="sb-title" data-i18n="idx_spool_baslik">Sistemdeki Toplam Spool Durumu</div></div>
+      <div class="sb-body">
+        <div class="sb-left">
+          <div class="sb-chart-box">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+              <rect class="sb-bg-hit" width="300" height="300" id="bgHit"/>
+              <g transform="rotate(-90 150 150)"><circle cx="150" cy="150" r="115" fill="none" stroke="var(--sb-ring)" stroke-width="28"/></g>
+              <g id="sbSegs" transform="rotate(-90 150 150)"></g>
+            </svg>
+            <div class="sb-center"><div id="sbNum" class="sb-cnum">0</div><div id="sbLbl" class="sb-clbl" data-i18n="idx_toplam_adet">TOPLAM ADET</div></div>
           </div>
-          <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
-            <div class="sb-hm-scroll"><table class="sb-hm" id="sbHm"></table></div>
-            <div class="sb-mat-row" style="justify-content:flex-start;margin-top:10px;padding:0 4px;">
-              <button class="mat-btn mt on" data-m="tumu" data-i18n="idx_mat_tumu">Tümü</button>
-              <button class="mat-btn mc" data-m="celik" data-i18n="idx_mat_celik">Çelik</button>
-              <button class="mat-btn mp" data-m="paslanmaz" data-i18n="idx_mat_paslanmaz">Paslanmaz</button>
-              <button class="mat-btn ma" data-m="aluminyum" data-i18n="idx_mat_alum">Alüminyum</button>
-              <button class="mat-btn mf" data-m="cunife" data-i18n="idx_mat_cunife">Cunife</button>
-            </div>
+          <div style="display:flex;justify-content:center;margin-top:10px;">
+            <div class="sb-utog"><button id="btnAdet" class="on" data-i18n="idx_btn_adet">Adet</button><button id="btnKg" data-i18n="idx_btn_kg">Kg</button></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
+          <div class="sb-hm-scroll"><table class="sb-hm" id="sbHm"></table></div>
+          <div class="sb-mat-row" style="justify-content:flex-start;margin-top:10px;padding:0 4px;">
+            <button class="mat-btn mt on" data-m="tumu" data-i18n="idx_mat_tumu">Tümü</button>
+            <button class="mat-btn mc" data-m="celik" data-i18n="idx_mat_celik">Çelik</button>
+            <button class="mat-btn mp" data-m="paslanmaz" data-i18n="idx_mat_paslanmaz">Paslanmaz</button>
+            <button class="mat-btn ma" data-m="aluminyum" data-i18n="idx_mat_alum">Alüminyum</button>
+            <button class="mat-btn mf" data-m="cunife" data-i18n="idx_mat_cunife">Cunife</button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="widget-box half" data-widget="takvim" data-size="buyuk">
-    <div class="w-toolbar">
-      <div class="w-btn handle">⠿</div>
-      <div class="w-size-grp">
-        <div class="w-size-btn" onclick="wSize('takvim','mini')">MİNİ</div>
-        <div class="w-size-btn aktif" onclick="wSize('takvim','buyuk')">TAM</div>
-      </div>
-      <div class="w-btn" onclick="wGizle('takvim')" title="Gizle">✕</div>
-    </div>
-    <div class="wv wv-mini">
-      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 12px;">
-        <div id="calMiniTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;margin-bottom:10px;color:var(--tx);text-align:center;"></div>
-        <div id="calMiniGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11px;text-align:center;"></div>
-      </div>
-    </div>
-    <div class="wv wv-buyuk">
+  </div><!-- /spool-block -->
+  </div><!-- /widget spool -->
+  <div class="widget-box" data-widget="takvim">
+    <div class="widget-handle" title="Taşı">⠿</div>
     <div class="cal-wrap">
       <div class="cal-header">
         <div style="display:flex;align-items:center;gap:7px">
@@ -360,8 +301,6 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
       <div class="popup" id="popup"></div>
       <div class="legend"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);display:inline-block"></span>Etkinlik olan günler</span><span style="color:var(--text-muted);font-size:14px;margin-left:4px">· Çift tıklayarak not ekleyin</span></div>
     </div>
-    </div><!-- /cal-wrap -->
-    </div><!-- /wv-buyuk -->
   </div><!-- /widget takvim -->
   </div><!-- /widget-container -->
 </div>
@@ -374,7 +313,8 @@ textarea.nf { width: 100%; min-height: 72px; resize: vertical; font-size: 12px; 
 'use strict';
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
-);}
+function updateClock(){const now=new Date();document.getElementById('clockDisplay').textContent=now.toLocaleString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+updateClock();setInterval(updateClock,60000);
 const STAGES=[{key:"bekleyen",label:"BEKLEYEN",color:"#e8705f"},{key:"imalat",label:"İMALAT",color:"#d4b84a"},{key:"kaynak",label:"KAYNAK",color:"#4a90d9"},{key:"on_kontrol",label:"ÖN KONTROL",color:"#e89a3a"},{key:"kalite",label:"KALİTE KONTROL",color:"#9b59b6"},{key:"sevke_hazir",label:"SEVKE HAZIR",color:"#48a87a"}];
 const STAGE_GROUPS=[{label:"ÜRETİM",keys:["bekleyen","imalat","kaynak","on_kontrol"]},{label:"KONTROL & ÇIKIŞ",keys:["kalite","sevke_hazir"]}];
 const CAP_GROUPS=[{key:"s",label:"≤ DN40",caps:["DN15","DN20","DN25","DN32","DN40"]},{key:"m",label:"DN50–DN100",caps:["DN50","DN65","DN80","DN100"]},{key:"l",label:"DN125–DN250",caps:["DN125","DN150","DN200","DN250"]},{key:"xl",label:"DN300+",caps:["DN300","DN350","DN400","DN500"]}];
@@ -506,162 +446,81 @@ document.addEventListener('DOMContentLoaded', function() {
   })();
 });
 
-// ── WIDGET SİSTEMİ ──────────────────────────────────────────
-var _editMode = false, _dragSrc = null;
+// ── WIDGET DRAG & DROP ────────────────────────────────────────
+var _editMode = false;
+var _dragSrc = null;
 
 function toggleEditMode() {
   _editMode = !_editMode;
   var btn = document.getElementById('editModeBtn');
-  var con = document.getElementById('widgetContainer');
+  var container = document.getElementById('widgetContainer');
   if (_editMode) {
-    btn.textContent = '✓ Bitti'; btn.classList.add('aktif');
-    con.classList.add('edit-mode'); initDragDrop();
+    btn.textContent = '✓ Bitti';
+    btn.classList.add('aktif');
+    container.classList.add('edit-mode');
+    initDragDrop();
   } else {
-    btn.textContent = '✦ Düzenle'; btn.classList.remove('aktif');
-    con.classList.remove('edit-mode'); saveLayout();
+    btn.textContent = '✦ Düzenle';
+    btn.classList.remove('aktif');
+    container.classList.remove('edit-mode');
+    saveWidgetOrder();
   }
 }
 
-function wSize(id, size) {
-  var box = document.querySelector('[data-widget="' + id + '"]');
-  if (!box) return;
-  box.setAttribute('data-size', size);
-  box.querySelectorAll('.w-size-btn').forEach(function(btn) {
-    btn.classList.remove('aktif');
-    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + size + "'") > -1) btn.classList.add('aktif');
-  });
-  if (id === 'spool' && (size === 'mini' || size === 'orta')) syncSpoolMini();
-  if (id === 'takvim' && size === 'mini') renderCalMini();
-  saveLayout();
-}
-
-function wGizle(id) {
-  var box = document.querySelector('[data-widget="' + id + '"]');
-  if (!box) return;
-  box.setAttribute('data-hidden', box.getAttribute('data-hidden') === '1' ? '0' : '1');
-  saveLayout();
-}
-
 function initDragDrop() {
-  document.querySelectorAll('#widgetContainer > .widget-box').forEach(function(box) {
+  document.querySelectorAll('.widget-box').forEach(function(box) {
     box.setAttribute('draggable', 'true');
-    box.addEventListener('dragstart', function(e) { _dragSrc = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-    box.addEventListener('dragend', function() { this.classList.remove('dragging'); document.querySelectorAll('.widget-box').forEach(function(b){ b.classList.remove('drag-over'); }); });
-    box.addEventListener('dragover', function(e) { e.preventDefault(); if (_dragSrc !== this) this.classList.add('drag-over'); });
-    box.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+    box.addEventListener('dragstart', function(e) {
+      _dragSrc = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    box.addEventListener('dragend', function() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.widget-box').forEach(function(b){ b.classList.remove('drag-over'); });
+    });
+    box.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (_dragSrc !== this) this.classList.add('drag-over');
+    });
+    box.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over');
+    });
     box.addEventListener('drop', function(e) {
-      e.preventDefault(); this.classList.remove('drag-over');
+      e.preventDefault();
+      this.classList.remove('drag-over');
       if (_dragSrc === this) return;
-      var con = document.getElementById('widgetContainer');
-      var all = Array.from(con.children);
-      if (all.indexOf(_dragSrc) < all.indexOf(this)) con.insertBefore(_dragSrc, this.nextSibling);
-      else con.insertBefore(_dragSrc, this);
-      saveLayout();
+      var container = document.getElementById('widgetContainer');
+      var boxes = Array.from(container.querySelectorAll('.widget-box'));
+      var srcIdx = boxes.indexOf(_dragSrc);
+      var tgtIdx = boxes.indexOf(this);
+      if (srcIdx < tgtIdx) {
+        container.insertBefore(_dragSrc, this.nextSibling);
+      } else {
+        container.insertBefore(_dragSrc, this);
+      }
     });
   });
 }
 
-function _applyLayout(layout) {
-  if (!layout || !layout.length) return;
-  var con = document.getElementById('widgetContainer');
-  layout.forEach(function(item) {
-    var box = con.querySelector('[data-widget="' + item.id + '"]');
-    if (!box) return;
-    con.appendChild(box);
-    if (item.size) {
-      box.setAttribute('data-size', item.size);
-      box.querySelectorAll('.w-size-btn').forEach(function(btn) {
-        btn.classList.remove('aktif');
-        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + item.size + "'") > -1) btn.classList.add('aktif');
-      });
-    }
-    box.setAttribute('data-hidden', item.hidden ? '1' : '0');
-    if (item.id !== 'stats') { box.classList.remove('full','half'); box.classList.add(item.full ? 'full' : 'half'); }
-  });
+function saveWidgetOrder() {
+  var order = Array.from(document.querySelectorAll('.widget-box')).map(function(b){ return b.dataset.widget; });
+  localStorage.setItem('ares_widget_order', JSON.stringify(order));
 }
 
-function saveLayout() {
-  var layout = Array.from(document.querySelectorAll('#widgetContainer > .widget-box')).map(function(b) {
-    return { id: b.dataset.widget, size: b.dataset.size || 'buyuk', hidden: b.getAttribute('data-hidden') === '1', full: b.classList.contains('full') };
-  });
-  // 1. localStorage — hızlı erişim
-  localStorage.setItem('ares_widget_layout', JSON.stringify(layout));
-  // 2. Supabase — cihazlar arası senkron
+function loadWidgetOrder() {
   try {
-    var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
-    var oturum = typeof ARES !== 'undefined' && ARES.oturumAl ? ARES.oturumAl() : null;
-    if (supa && oturum && oturum.id) {
-      supa.from('kullanicilar')
-        .update({ ui_tercihleri: { widget_layout: layout } })
-        .eq('auth_id', oturum.id)
-        .then(function(r){ if(r.error) console.warn('[Widget] Kayıt hatası:', r.error.message); });
-    }
-  } catch(e) { console.warn('[Widget] saveLayout:', e); }
-}
-
-function loadLayout() {
-  // Önce localStorage'dan hızlı yükle
-  try {
-    var local = JSON.parse(localStorage.getItem('ares_widget_layout') || '[]');
-    if (local.length) _applyLayout(local);
-  } catch(e) {}
-
-  // Arka planda Supabase'den çek — farklıysa uygula
-  try {
-    var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
-    var oturum = typeof ARES !== 'undefined' && ARES.oturumAl ? ARES.oturumAl() : null;
-    if (supa && oturum && oturum.id) {
-      supa.from('kullanicilar')
-        .select('ui_tercihleri')
-        .eq('auth_id', oturum.id)
-        .single()
-        .then(function(r) {
-          if (r.error || !r.data) return;
-          var remote = r.data.ui_tercihleri && r.data.ui_tercihleri.widget_layout;
-          if (!remote || !remote.length) return;
-          // localStorage ile karşılaştır
-          var local = localStorage.getItem('ares_widget_layout');
-          if (JSON.stringify(remote) !== local) {
-            localStorage.setItem('ares_widget_layout', JSON.stringify(remote));
-            _applyLayout(remote);
-          }
-        });
-    }
+    var order = JSON.parse(localStorage.getItem('ares_widget_order') || '[]');
+    if (!order.length) return;
+    var container = document.getElementById('widgetContainer');
+    order.forEach(function(id) {
+      var box = container.querySelector('[data-widget="' + id + '"]');
+      if (box) container.appendChild(box);
+    });
   } catch(e) {}
 }
 
-function syncSpoolMini() {
-  var n = document.getElementById('sbNum');
-  if (!n) return;
-  var val = n.textContent;
-  var m = document.getElementById('sbNumMini'); if (m) m.textContent = val;
-  var o = document.getElementById('sbNumOrta'); if (o) o.textContent = val;
-  var src = document.getElementById('sbSegs');
-  var dst = document.getElementById('sbSegsOrta');
-  if (src && dst) dst.innerHTML = src.innerHTML;
-}
-
-function renderCalMini() {
-  var titleEl = document.getElementById('calMiniTitle');
-  var gridEl = document.getElementById('calMiniGrid');
-  if (!titleEl || !gridEl) return;
-  var now = new Date(), y = now.getFullYear(), m = now.getMonth(), today = now.getDate();
-  titleEl.textContent = now.toLocaleDateString('tr-TR', {month:'long', year:'numeric'});
-  var firstDay = (new Date(y, m, 1).getDay() + 6) % 7;
-  var days = new Date(y, m+1, 0).getDate();
-  var html = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'].map(function(d){ return '<div style="color:var(--txd);font-weight:700;font-size:10px;">'+d+'</div>'; }).join('');
-  for (var i=0; i<firstDay; i++) html += '<div></div>';
-  for (var d=1; d<=days; d++) {
-    var isT = d === today;
-    html += '<div style="width:22px;height:22px;margin:auto;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (isT ? 'background:var(--ac);color:#fff;font-weight:700;' : 'color:var(--txm);') + 'font-size:11px;">' + d + '</div>';
-  }
-  gridEl.innerHTML = html;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  loadLayout();
-  setTimeout(syncSpoolMini, 2000);
-});
+document.addEventListener('DOMContentLoaded', function() { loadWidgetOrder(); });
 </script>
 </body>
 </html>

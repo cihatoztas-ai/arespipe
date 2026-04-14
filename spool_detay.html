@@ -6,7 +6,7 @@
 <title>Spool Detay | AresPipe</title>
 <!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility:hidden önce -->
 <script>(function(){
-  var t=localStorage.getItem('ares_theme')||'dark';
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
   var l=localStorage.getItem('ares_lang')||'tr';
   document.documentElement.setAttribute('data-theme',t);
   document.documentElement.setAttribute('lang',l);
@@ -230,9 +230,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .m3d-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
 .m3d-hint{margin-left:auto;font-size:12px;color:var(--txd);}
 </style>
-<script src="ares-store.js"></script>
-<script src="ares-lang.js"></script>
-<script src="ares-layout.js"></script>
+<script src="../ares-store.js"></script>
+<script src="../ares-lang.js"></script>
+<script src="../ares-layout.js"></script>
 </head>
 <body>
 <div class="app-shell"><div class="main-content"><div class="page">
@@ -241,9 +241,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 <div class="breadcrumb">
   <a href="../index.html" data-i18n="nav_home">Ana Sayfa</a><span>/</span>
   <a href="../devreler.html" data-i18n="nav_active_circuits">Aktif Devreler</a><span>/</span>
-  <a href="#" id="bcDevre" class="cur">--</a>
+  <span class="cur" id="bcDevre">--</span>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button class="btn btn-sm" onclick="window.location.href='devre_detay.html?id='+(SP.devre_id||'')" data-i18n="btn_back">← Geri</button>
+    <button class="btn btn-sm" onclick="window.location.href='devreler.html'" data-i18n="btn_back">← Geri</button>
     <button class="btn btn-sm" onclick="duzenleAc()" data-i18n="btn_edit">✎ Düzenle</button>
     <button class="btn btn-sm btn-leg" onclick="kkGonder()" data-i18n="sp_btn_qc">✓ Kalite Kontrole</button>
     <button class="btn btn-sm" style="border-color:rgba(45,142,255,.4);color:var(--ac);" onclick="sevkGonder()" data-i18n="sp_btn_shipment">🚚 Sevkiyata</button>
@@ -1251,8 +1251,6 @@ function yukle(){
 
   // ✅ FIX: bcDevre metni + href dinamik (devre_id URL param + ../ prefix)
   txc('bcDevre', SP._devre || '--');
-  var bcDevre = document.getElementById('bcDevre');
-  if (bcDevre && SP.devre_id) bcDevre.href = 'devre_detay.html?id=' + SP.devre_id;
 
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',_yuzeyGoster(SP.yuzey)); txc('stMalz',_malzemeGoster(SP.malzeme));
