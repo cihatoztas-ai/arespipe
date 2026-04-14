@@ -1,60 +1,87 @@
-# AresPipe Mobil — Claude Proje Bağlamı
+# AresPipe — Mobil Sistem Bağlamı
 
-> Bu dosya mobil sayfalar geliştirilirken okunur.
-> Ana sistem kuralları için CLAUDE.md'ye bak.
-> Son güncelleme: Nisan 2026
-
----
-
-## 1. MOBİL SİSTEM TANIMI
-
-**Amaç:** Salt görüntüleme + QR tarama + geri bildirim. Veri girişi YOK.
-
-**Hedef kullanıcı:** Yöneticiler ve KK uzmanları — sahada inceleme.
-
-**Klasör:** `mobile/` (root altında)
-
-**URL:** `arespipe.vercel.app/mobile/`
-
-**CI/CD istisnası:** `mobile/` klasörü `ares-layout.js` ve `flash-prevention` kurallarından muaf. `kurallar.json`'da kayıtlı.
+> Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
+> Son güncelleme: 14 Nisan 2026
 
 ---
 
-## 2. MİMARİ
+## 1. MOBİL MİMARİ
 
-### 2.1 Script Yükleme Sırası — ZORUNLU
+### 1.1 Klasör Yapısı
+
+```
+mobile/
+├── giris.html          ✅ Mobil giriş
+├── index.html          ✅ Ana sayfa
+├── devreler.html       ✅ Devre listesi
+├── devre_detay.html    ✅ Devre detay + spool listesi
+├── spool_detay.html    ✅ Spool detay + fotoğraflar
+├── qr.html             ✅ QR tarayıcı
+├── gemiler.html        ⏳
+├── gemi_detay.html     ⏳
+├── kk.html             ⏳
+├── sevkiyat.html       ⏳
+├── tezgahlar.html      ⏳
+├── ara.html            ⏳
+├── bildirim.html       ⏳
+├── is_baslat.html      ⏳ Operatör iş ekranı
+├── ares-mobile.js      ✅ Ortak JS
+└── ares-mobile.css     ✅ Ortak CSS + RTL
+```
+
+### 1.2 Web'den Bağımsızlık
+
+- `ares-layout.js` KULLANILMAZ — mobil kendi drawer/bottomnav'ını `ares-mobile.js` ile kurar
+- `ares-store.js` ve `ares-lang.js` `../` prefix ile root'tan yüklenir
+- Her sayfada `mInit()` çağrılır
+
+### 1.3 Script Yükleme Sırası — ZORUNLU
 
 ```html
+<!-- Body sonunda, HEAD'de ASLA -->
 <script src="../ares-store.js"></script>
 <script src="../ares-lang.js"></script>
 <script src="ares-mobile.js"></script>
 <script>
-  // Inline script — DOMContentLoaded içinde
-  document.addEventListener('DOMContentLoaded', async function() {
-    _spoolId = mUrlParam('id'); // URL param'ları burada al
-    var ok = await mInit();
-    if (!ok) return;
-    await yukle();
-  });
+  /* sayfa kodu */
 </script>
 ```
 
-**UYARI:** `mUrlParam()` gibi `ares-mobile.js` fonksiyonları DOMContentLoaded dışında çağrılamaz — script henüz yüklenmemiş olur.
+---
 
-**UYARI:** `ares-store.js` HEAD'de ayrıca yüklenmemeli — body sonunda bir kez yüklenir.
+## 2. KESİN KURALLAR (İHLAL EDİLMEZ)
 
-### 2.2 Sayfa Başlatma
+### M-01: history.back() YASAK
 
-Her sayfada `mInit()` çağrılır:
-- Tema + dil uygular
-- Auth kontrolü yapar (oturum yoksa `../giris.html`'e yönlendirir)
-- Drawer ve bottomnav render eder
-- `document.documentElement.style.visibility = ''` ile sayfayı görünür yapar
+```js
+// YANLIŞ
+onclick="history.back()"
 
-### 2.3 Flash Prevention
+// DOĞRU — explicit URL
+onclick="location.href='devreler.html'"
+onclick="geriDon()"  // _SP.devre_id varsa devre_detay'a, yoksa devreler'e
+```
 
-Mobil sayfalar kendi flash prevention bloğunu taşır (layout.js'den bağımsız):
+### M-02: Geri Dönüş Hiyerarşisi
 
+```
+giris.html → index.html → devreler.html → devre_detay.html → spool_detay.html
+```
+
+Her sayfa bir üstüne döner. `spool_detay.html`'de `geriDon()` fonksiyonu:
+```js
+function geriDon() {
+  if (_SP && _SP.devre_id) {
+    location.href = 'devre_detay.html?id=' + _SP.devre_id;
+  } else {
+    location.href = 'devreler.html';
+  }
+}
+```
+
+### M-03: Flash Prevention ZORUNLU
+
+`<head>` içinde `<link>`'lerden ÖNCE:
 ```html
 <script>(function(){
   var t=localStorage.getItem('ares_theme')||'light-anthracite';
@@ -65,238 +92,316 @@ Mobil sayfalar kendi flash prevention bloğunu taşır (layout.js'den bağımsı
 })()</script>
 ```
 
-### 2.4 Geri Dönüş — history.back() YASAK
-
-CI/CD kuralı: `history.back()` hata verir. Explicit URL kullan:
-
+`mInit()` başarılı olunca visibility açılır. Ayrıca try/catch ile de açılmalı:
 ```js
-// ✗ YANLIŞ
-onclick="history.back()"
-
-// ✓ DOĞRU
-onclick="location.href='devreler.html'"
-
-// Referrer'a göre akıllı geri dönüş (spool_detay gibi)
-function geriDon() {
-  var ref = document.referrer;
-  if (ref && ref.includes('devre_detay')) {
-    history.back();
-  } else {
-    location.href = 'devreler.html';
-  }
+try {
+  var ok = await mInit();
+  document.documentElement.style.visibility = '';
+  if (!ok) return;
+  ...
+} catch(e) {
+  document.documentElement.style.visibility = '';
 }
 ```
 
----
+### M-04: mPage Yapısı
 
-## 3. TASARIM SİSTEMİ
-
-### 3.1 CSS Dosyası
-
-`mobile/ares-mobile.css` — tüm sayfaların ortak CSS'i. Sayfa özel CSS'i `<style>` tag'i ile aynı dosyada.
-
-Renk değişkenleri web ile aynı: `--ac`, `--gr`, `--re`, `--warn`, `--leg`, `--bg`, `--sur`, `--sur2`, `--bor`, `--tx`, `--txm`, `--txd`
-
-### 3.2 Tipografi
-
-- Başlıklar: `'Barlow Condensed', sans-serif`
-- Gövde: `'Barlow', sans-serif`
-- Google Fonts link her sayfada
-
-### 3.3 Layout
-
-```
-[Topbar 52px — fixed]
-[Sayfa içeriği — padding-top:52px, padding-bottom:80px]
-[Bottomnav 64px — fixed]
+```html
+<div class="m-page" id="mPage" style="display:none;">
+  <!-- sayfa içeriği -->
+</div>
 ```
 
-### 3.4 Spool Kart Tasarımı (Devre Detay)
+`mInit()` sonrası: `document.getElementById('mPage').style.display = '';`
 
+### M-05: Auth Yönlendirmesi
+
+`mAuthKontrol()` başarısız olursa → `giris.html` (relative, `mobile/giris.html`)
+`../giris.html` KULLANILMAZ.
+
+### M-06: CSS Tırnak Kuralı
+
+```css
+/* YANLIŞ */
+[data-theme="dark"] { ... }
+
+/* DOĞRU */
+[data-theme=dark] { ... }
 ```
-[Sol çizgi 4px] [İçerik] [Sağ çizgi 4px]
-```
-
-**Sol çizgi = aktif aşama rengi:**
-- Bekliyor → `#B4B2A9` (gri)
-- İmalat → `var(--ac)` (mavi)
-- Kaynak → `#1D9E75` (teal)
-- Ön Kontrol → `var(--warn)` (amber)
-- KK → `var(--leg)` (mor)
-- Sevkiyat → `var(--gr)` (yeşil)
-- Durduruldu → `var(--re)` (kırmızı)
-
-**Sağ çizgi = alıştırma durumu:**
-- Yok → `var(--re)` (kırmızı)
-- Kısmi → `var(--warn)` (sarı)
-- Tam → `var(--gr)` (yeşil)
-
-**Spool ID altında 3 ikon (Kesim✂ / Büküm↩ / Markalama🏷):**
-- Başlamadı → kırmızı arka plan
-- Devam ediyor → sarı arka plan
-- Tamamlandı → yeşil arka plan
-
-### 3.5 Devre Kart Tasarımı (Devreler)
-
-```
-[Sol çizgi] [İş Emri | Devre Adı + meta] [İlerleme %] [Sağ çizgi]
-[Alt şerit: Durum badge | durduruldu uyarısı]
-```
-
-Sol çizgi: ilerleme/durum rengi
-Sağ çizgi: ilerleme yüzdesi rengi (0%=gri, <50%=sarı, <100%=mavi, 100%=yeşil)
-
-### 3.6 Aşama Tracker (Devre Detay üstü)
-
-6 oval filtre butonu: Bekliyor · İmalat · Kaynak · Ön Kontrol · KK · Sevkiyat
-
-- Her oval içinde o aşamadaki spool sayısı
-- Tıklayınca liste filtrelenir, tekrar tıklayınca tüm liste
-- Birden fazla seçilebilir
-- Durduruldu ayrı oval değil — arama yanında sayaç olarak
-
-### 3.7 Devre Detay Header Formatı
-
-```
-NB1124 / Overboard System-M120
-[Arama kutusu]          [14 spool]
-                        [⬤ 3 durduruldu]
-[Bekliyor][İmalat][Kaynak][Ön Kont.][KK][Sevkiyat]
-```
-
-### 3.8 Spool Detay Yapısı
-
-```
-[Topbar: ← Geri | Spool ID | Durum badge]
-[Durduruldu banner — varsa]
-[Fotoğraf carousel — tam genişlik]
-[Foto meta: tarih | kişi | aşama]
-[Spool No — ortalanmış]
-[Sekmeler: Genel | Malzeme | İşlem Kayıtları | 3D Model]
-[Sekme içeriği]
-[FAB: Geri bildirim butonu]
-```
-
-**Genel sekmesi bölümleri:**
-1. Spool Bilgileri (pipeline no, rev, çap, et, ağırlık, malzeme, yüzey, kesim mm, A/B ucu)
-2. İşlem Durumu (alıştırma badge + kesim/büküm/markalama/test durumları)
-3. KK & Sevkiyat
-4. Devre Bilgisi
-5. Belgeler
-
-**3D Model sekmesi:** "Yakında" placeholder — henüz hazır değil.
 
 ---
 
-## 4. NAVİGASYON
+## 3. ares-mobile.js FONKSİYONLARI
 
-### 4.1 Bottomnav (5 öğe)
-
-| İkon | Label | Sayfa |
-|------|-------|-------|
-| 🏠 | Ana Sayfa | index.html |
-| 🔍 | Ara | ara.html |
-| QR butonu (ortada, mavi) | — | qr.html |
-| 🔔 | Bildirim | bildirim.html |
-| ☰ | Menü | drawer açar |
-
-### 4.2 Hamburger Drawer (Sağdan açılır)
-
-İçerik:
-- Kullanıcı adı + rol
-- **Navigasyon:** Ana Sayfa, Gemiler, Devreler, KK, Sevkiyatlar, Tezgahlar
-- **Ayarlar:** Tema toggle (☀️/🌙), Dil toggle (TR/EN)
-- Çıkış butonu
-
-### 4.3 Sayfa Hiyerarşisi ve Geri Dönüş
-
-```
-index.html
-├── gemiler.html → gemi_detay.html → devreler.html
-├── devreler.html → devre_detay.html?id=X → spool_detay.html?id=Y
-├── kk.html
-├── sevkiyat.html
-├── tezgahlar.html
-├── qr.html → spool_detay.html?id=Y
-└── ara.html → spool_detay.html?id=Y
-```
-
-Geri dönüşler explicit URL ile, `history.back()` KULLANMA.
-
----
-
-## 5. VERİ KATMANI
-
-### 5.1 Ortak Fonksiyonlar (ares-mobile.js)
+### Temel Fonksiyonlar
 
 ```js
-mInit()          // Sayfa başlatma (auth + drawer + nav)
-mAuthKontrol()   // Oturum kontrolü
-mOturum()        // Mevcut oturumu döner
-mSupabase()      // Supabase client
-mTenantId()      // Aktif tenant ID
-mUrlParam(key)   // URL query param — DOMContentLoaded içinde çağır
-mToast(msg, tip) // Toast mesajı (info/success/error)
-mFormatTarih()   // Türkçe tarih formatı
-mFormatSure()    // Tarih + saat
-mDrawerAc/Kapat()
-mCikis()         // Oturumu kapat
-esc(str)         // XSS koruması
+mInit()           // Tema+dil ayarla, auth kontrol, drawer+nav kur, visibility aç
+mAuthKontrol()    // Supabase session kontrol → giris.html yönlendir
+mOturum()         // ARES.oturumAl() wrapper → {id, rol, ad_soyad, tenant_id}
+mSupabase()       // ARES.supabase() wrapper
+mTenantId()       // ARES.tenantId() wrapper
+mCikis()          // ARES.cikisYap() → giris.html
+mUrlParam(key)    // URLSearchParams ile URL parametresi al
+mToast(msg, tip, sure) // 'info'|'success'|'error'
+mDrawerAc()       // Hamburger menüyü aç
+mDrawerKapat()    // Hamburger menüyü kapat
 ```
 
-### 5.2 Supabase Sorgu Şablonu
+### Dil & Tema
+
+```js
+mDilUygula(dil)   // 'tr'|'en'|'ar' — dir=rtl/ltr, _onLangChange tetikler
+mTemaDegistir(tema) // 'dark'|'light-anthracite'
+```
+
+### Feature Flag
+
+```js
+mFeatureAktif(kod)  // async, ARES.featureVar() wrapper → boolean
+```
+
+Kullanım:
+```js
+var model3dAktif = await mFeatureAktif('3d_model');
+if (!model3dAktif) {
+  document.querySelector('[data-tab="model3d"]').style.display = 'none';
+}
+```
+
+### Yardımcılar
+
+```js
+esc(s)            // XSS koruması
+mFormatTarih(iso) // Locale'e göre tarih formatla
+mFormatSure(iso)  // Locale'e göre tarih+saat formatla
+mDurumBadge(durum) // HTML badge döner
+```
+
+---
+
+## 4. DİL SİSTEMİ (MOBİL)
+
+### 4.1 Standart Kullanım
+
+HTML'de:
+```html
+<div data-i18n="mob_nav_anasayfa">Ana Sayfa</div>
+```
+
+JS'de (dinamik içerik):
+```js
+'<div>' + tv('mob_stat_spool', 'Spool') + '</div>'
+```
+
+### 4.2 Dil Değişimi Hook'u
+
+Her sayfada `mInit()` sonrası:
+```js
+window._onLangChange = function() {
+  if (typeof window._applyI18n === 'function') window._applyI18n();
+  // Gerekirse dinamik içeriği yeniden render et
+  render();
+};
+```
+
+### 4.3 RTL (Arapça)
+
+`mDilUygula('ar')` → `dir=rtl` set eder. `ares-mobile.css`'de `[dir=rtl]` kuralları:
+- Drawer soldan açılır
+- Kart kenar çizgileri sağa taşır
+- Toast kenar çizgisi sağa
+- Filtre paneli soldan açılır
+
+### 4.4 Mobil Anahtar Prefix'leri
+
+```
+mob_nav_*      Ana sayfa navigasyon
+mob_filtre_*   Filtre paneli
+mob_stat_*     Stat kartları (Devre, Spool, Ağırlık, İlerleme)
+mob_durum_*    Durum etiketleri
+mob_dv_*       devre_detay.html'e özgü
+mob_sp_*       spool_detay.html'e özgü
+mob_alistirma_* Alıştırma durumu
+```
+
+---
+
+## 5. SUPABASE KOLONLARI (KESİNLEŞMİŞ)
+
+### spooller
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `dis_cap_mm` | float | cap_mm değil |
+| `et_kalinligi_mm` | float | et_mm değil |
+| `agirlik` | float | agirlik_kg boş, bunu kullan |
+| `rev` | text | revizyon değil |
+| `durdurma_sebebi` | text | durdurma_aciklama değil |
+| `alistirma` | text | `VAR`/`KISMI`/`YOK` (UPPERCASE) |
+| `aktif_basamak` | text | `on_imalat`, `on_kontrol`, `kaynak`, `imalat`, `kk`, `sevkiyat` |
+
+### fotograflar
+
+| Kolon | Not |
+|---|---|
+| `dosya_url` | url değil |
+| `yukleyen_id` | kullanici_id değil |
+| `islem_turu` | asama değil |
+| `spool_id` | UUID, eq ile filtrele |
+
+### islem_log
+
+| Kolon | Not |
+|---|---|
+| `katlan` | tablo_adi değil |
+
+### devreler
+
+| Kolon | Not |
+|---|---|
+| `ad` | devre_adi değil |
+| `durdurma_sebebi` | |
+| `ilerleme` | Hep 0, kullanılmıyor |
+| `agirlik` | Kullanılmıyor, spooller.agirlik toplamı kullan |
+
+---
+
+## 6. HESAPLAMA KURALLARI
+
+### 6.1 Ağırlık
+
+`devreler.agirlik` KULLANILMAZ. `spooller.agirlik` toplamı kullanılır.
+
+### 6.2 İlerleme
+
+`devreler.ilerleme` hep 0. `aktif_basamak`'tan hesap:
+
+```js
+var ASAMA_PCT = {
+  'bekliyor': 0, 'on_imalat': 14, 'imalat': 28,
+  'kaynak': 43, 'on_kontrol': 57, 'kk': 71,
+  'sevkiyat': 86, 'tamamlandi': 100
+};
+```
+
+Her devre için: spoollarının `aktif_basamak` değerlerinin ortalama yüzdesi.
+
+### 6.3 Alıştırma Agregasyonu (Devre bazında)
+
+```js
+// spooller aggregate
+if (agg.count > 0 && agg.varCount === agg.count) agg.alistirma = 'VAR';
+else if (agg.varCount > 0 || agg.kismiCount > 0) agg.alistirma = 'KISMI';
+else agg.alistirma = 'YOK';
+```
+
+---
+
+## 7. SAYFA BAŞLATMA ŞABLONU
 
 ```js
 document.addEventListener('DOMContentLoaded', async function() {
-  _spoolId = mUrlParam('id'); // Önce URL param'ı al
-  var ok = await mInit();     // Sonra init
-  if (!ok) return;
-
-  var supa = mSupabase();
-  var tid = mTenantId();
-  if (!supa || !tid) return;
-
   try {
-    var { data } = await supa
-      .from('tablo')
-      .select('...')
-      .eq('tenant_id', tid)
-      .eq('id', _spoolId)
-      .single();
+    var ok = await mInit();
+    document.documentElement.style.visibility = ''; // HER DURUMDA
+    if (!ok) return;
+    document.getElementById('mPage').style.display = '';
 
-    // render...
+    // Feature flag kontrolleri
+    var model3dAktif = await mFeatureAktif('3d_model');
+    if (!model3dAktif) {
+      var btn = document.querySelector('[data-tab="model3d"]');
+      if (btn) btn.style.display = 'none';
+    }
+
+    // Dil değişim hook'u
+    window._onLangChange = function() {
+      if (typeof window._applyI18n === 'function') window._applyI18n();
+      render(); // gerekirse
+    };
+
+    await yukle();
   } catch(e) {
-    mToast('Veri yüklenemedi', 'error');
+    document.documentElement.style.visibility = '';
+    console.error('[Sayfa init]', e);
   }
 });
 ```
 
 ---
 
-## 6. MEVCUT SAYFALAR
+## 8. KART TASARIM SİSTEMİ
 
-| Dosya | Durum | Notlar |
-|-------|-------|--------|
-| `mobile/ares-mobile.css` | ✅ | Ortak stil sistemi |
-| `mobile/ares-mobile.js` | ✅ | Ortak JS |
-| `mobile/index.html` | ✅ | Ana sayfa, stat kartları, son aktiviteler |
-| `mobile/devre_detay.html` | ✅ | Spool listesi, aşama filtresi |
-| `mobile/spool_detay.html` | ✅ | Fotoğraf carousel, 4 sekme, geri bildirim |
-| `mobile/devreler.html` | ⏳ | Mockup onaylandı, yazılmadı |
-| `mobile/qr.html` | ⏳ | Planlandı |
-| `mobile/ara.html` | ⏳ | Planlandı |
-| `mobile/gemiler.html` | ⏳ | Planlandı |
-| `mobile/gemi_detay.html` | ⏳ | Planlandı |
-| `mobile/kk.html` | ⏳ | Planlandı |
-| `mobile/sevkiyat.html` | ⏳ | Planlandı |
-| `mobile/tezgahlar.html` | ⏳ | Planlandı |
+### Devre Kartı
+
+```
+[Sol çizgi 4px] [İş Emri / Devre Adı + meta] [İlerleme %] [Sağ çizgi 4px]
+[Alt şerit: Durum badge | durduruldu notu | termin tarihi]
+```
+
+- **Sol çizgi** → durum rengi: `baslamadi=#B4B2A9`, `imalatta=--ac`, `kalite_davette=--leg`, `sevke_hazir=--gr`, `durduruldu=--re`
+- **Sağ çizgi** → ilerleme rengi: `0%=--bor`, `>0%=--warn`, `>=50%=--ac`, `100%=--gr`
+
+### Spool Kartı (devre_detay içinde)
+
+Aynı çizgi mantığı: sol çizgi=aktif basamak rengi, sağ çizgi=alıştırma durumu.
 
 ---
 
-## 7. BEKLEYENLER / NOTLAR
+## 9. QR AKIŞI
 
-- **Devre detay tablosu:** Kesim/büküm/markalama gösterim kuralları — web'deki tablo düzelince geri dönülecek
-- **3D Model sekmesi:** Hazır olunca entegre edilecek
-- **ares-store.js guard:** Admin panel iframe önizlemesinde `ARES already declared` hatası oluşuyor. `ares-store.js` başına `if (typeof ARES !== 'undefined') {}` guard eklenmeli
-- **Dil sistemi:** Mobil sayfalar `tv()` kullanır, web ile aynı `lang/tr.json`, `lang/en.json` dosyaları
-- **Admin panel mobil önizleme:** `admin/panel.html`'de 📱 Mobil Önizleme sekmesi var — iframe + telefon/tablet çerçevesi
+```
+QR tarama (qr.html)
+    ↓
+spool_id ile spooller tablosunu sorgula
+    ↓
+UUID bul
+    ↓
+    ├── operator rol → spool_detay.html?id=X (ileride is_baslat.html)
+    └── diğerleri  → spool_detay.html?id=X
+```
+
+**QR yöntem sırası:** BarcodeDetector API (Chrome/yeni Safari) → jsQR CDN fallback → Manuel giriş
+
+---
+
+## 10. YETKİLENDİRME PLANI (HAZIR DEĞİL)
+
+**İleride eklenecek — sayfalar bittikten sonra:**
+
+```js
+// ares-mobile.js'e eklenecek
+async function mSayfaKontrol(roller, featureKod) {
+  var oturum = mOturum();
+  if (roller && !roller.includes(oturum.rol)) {
+    location.href = 'index.html';
+    return false;
+  }
+  if (featureKod && !await mFeatureAktif(featureKod)) {
+    location.href = 'index.html';
+    return false;
+  }
+  return true;
+}
+```
+
+Kullanım (sayfalar bittikten sonra eklenecek):
+```js
+// mInit() SONRASINDA
+await mSayfaKontrol(['yonetici', 'kk_uzmani']); // kk.html için
+await mSayfaKontrol(['yonetici'], 'hakedis');    // hakedis sayfası için
+```
+
+**Sıralama:** Sayfaları bitir → yetki matrisini belirle → tek satır ekle → test.
+
+---
+
+## 11. CI/CD KURALLARI (Mobil)
+
+CI/CD `mobile/` klasöründe şunları kontrol eder:
+- `history.back()` → hata (M-01 ihlali)
+- `ares-layout.js` yüklemesi → hata (mobil klasörü muaf değilse)
+- `ares-mobile.js` eksik → hata
+
+**Not:** `mobile/` klasörü `ares-layout.js` kuralından muaftır.
