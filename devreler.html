@@ -862,7 +862,9 @@ function _mapDevre(d, i, spoolByDevre, offset) {
           return s + (x.ilerleme || 0);
         }, 0) / spools.length
       ) : 0;
-      var caps = spools.map(function(s) { return s.dis_cap_mm ? String(s.dis_cap_mm) : null; }).filter(Boolean);
+      var caps = spools.map(function(s) {
+        return s.dis_cap_mm ? { mm: String(s.dis_cap_mm), agirlik: parseFloat(s.agirlik) || 0 } : null;
+      }).filter(Boolean);
       // Malzeme ve yüzey — spool listesinden unique değerler
       var malzemeSet = {}, yuzeySet = {};
       spools.forEach(function(s) {
@@ -1067,7 +1069,7 @@ function yildizToggle(id) {
 // Supabase geçişinde gerçek spool malzeme verileriyle değiştirilecek.
 function mockMalzemeUret(devre) {
   var capK = {};
-  (devre.caps || []).forEach(function(c) { capK[c] = (capK[c] || 0) + 1; });
+  (devre.caps || []).forEach(function(c) { capK[c.mm] = (capK[c.mm] || 0) + 1; });
   var malStr = (devre.malzeme || []).map(function(m) { return m === 'celik' ? 'ÇELİK' : 'PASLANMAZ'; }).join('/');
   var kalite = malStr.indexOf('PASLANMAZ') !== -1 ? '316L' : 'ASTM A106 Gr.B';
   var kalemler = [];
@@ -1405,7 +1407,7 @@ function _doRender() {
 
   // Segmented bar — Çap (mm olarak göster)
   var capSayimDN = {};
-  liste.forEach(function(d) { (d.caps || []).forEach(function(c) { capSayimDN[c] = (capSayimDN[c] || 0) + 1; }); });
+  liste.forEach(function(d) { (d.caps || []).forEach(function(c) { capSayimDN[c.mm] = (capSayimDN[c.mm] || 0) + 1; }); });
   var capItems = Object.keys(capSayimDN).sort(function(a, b) {
     return (capToMM(a) || 9999) - (capToMM(b) || 9999);
   }).slice(0, 8).map(function(k, i) {
@@ -1603,11 +1605,10 @@ function capModalAc() {
   var capSayim = {}, capAgirlik = {};
   liste.forEach(function(d) {
     var caps = d.caps || [];
-    var adetBasiAgirlik = caps.length > 0 ? d.agirlik / caps.length : 0;
     caps.forEach(function(c) {
-      var mm = capToMM(c) || c;
+      var mm = capToMM(c.mm) || c.mm;
       capSayim[mm]   = (capSayim[mm] || 0) + 1;
-      capAgirlik[mm] = (capAgirlik[mm] || 0) + adetBasiAgirlik;
+      capAgirlik[mm] = (capAgirlik[mm] || 0) + (c.agirlik || 0);
     });
   });
 
