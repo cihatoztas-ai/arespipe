@@ -45,6 +45,24 @@
       ]
     },
     {
+      "source": "/mobile/ares-mobile.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/mobile/ares-mobile.css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/lang/(.*)\\.json",
       "headers": [
         {
