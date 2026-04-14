@@ -1390,7 +1390,7 @@ function _doRender() {
   var _starCache  = getStarMap();
   var _siraCache  = getSiraMap();
   var _terminCache = getTerminMap();
-  var liste = DEVRELER; // sunucudan gelen mevcut sayfa
+  var liste = getFiltered(); // client-side filtreler uygulanmış
 
   // Segmented bar — Malzeme
   var malzemeSayim = {};
@@ -1411,11 +1411,13 @@ function _doRender() {
   if (!liste.length) {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--txd);font-size:14px;">' + tv('dr_no_results', tv('dr_no_results','Filtreyle eşleşen devre bulunamadı')) + '</td></tr>';
     paginationGuncelle(0, 0, 0);
+    if (count) count.textContent = '(0 '+tv('cmn_devre','devre')+')';
     _updateSortHeaders();
     return;
   }
 
-  var sayfaListesi = liste; // sunucudan zaten sayfalı
+  var toplamFiltreli = liste.length;
+  var sayfaListesi = liste.slice((_sayfa-1)*_sayfaBasi, _sayfa*_sayfaBasi);
 
   var DURUM_MAP = {
     aktif:          {cls:'sb-imalatta',  get text() { return tv('cmn_aktif', 'Aktif'); }},
@@ -1490,7 +1492,8 @@ function _doRender() {
     '</tr>';
   }).join('');
 
-  paginationGuncelle(_ssTotal, _sayfa, Math.ceil(_ssTotal / _sayfaBasi));
+  paginationGuncelle(toplamFiltreli, _sayfa, Math.ceil(toplamFiltreli / _sayfaBasi));
+  if (count) count.textContent = '('+toplamFiltreli+' '+tv('cmn_devre','devre')+')';
   _updateSortHeaders();
   guncelleMLButonu();
 }
