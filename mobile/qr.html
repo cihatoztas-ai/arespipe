@@ -148,7 +148,7 @@ function jsQRYukle() {
   return new Promise(function(resolve, reject) {
     if (typeof jsQR !== 'undefined') { resolve(); return; }
     var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
     s.onload = resolve;
     s.onerror = reject;
     document.head.appendChild(s);
