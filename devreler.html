@@ -768,7 +768,8 @@ var DEVRELER = [];
 var _supaIdMap     = {}; // uiId → supabase UUID
 var _ssTotal       = 0;
 var _projeIdMap    = {}; // proje_no → proje_id
-var _firmaProjeIds = {}; // tersane_ad → [proje_id, ...]  // sunucudaki toplam filtrelenmiş kayıt sayısı
+var _firmaProjeIds = {}; // tersane_ad → [proje_id, ...]
+var _filterData    = []; // {devre_id, malzeme_norm, yuzey} — filtre için tüm spooller
 
 var RENKLER = ['#2D8EFF','#e53e3e','#d97706','#16a36e','#7c3aed','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6'];
 
@@ -796,6 +797,46 @@ function _logEkle(devre, islem, aciklama) {
     if (log.length > 1000) log = log.slice(0, 1000);
     localStorage.setItem('ares_islemLog', JSON.stringify(log));
   } catch(e) {}
+}
+
+// ── KADEMELİ FİLTRE SİSTEMİ ─────────────────────────────────────
+// _filterData: [{devre_id, malzeme_norm, yuzey}] — sayfa açılışında bir kez yüklenir
+
+function _filterDataUygula() {
+  // Aktif filtreler
+  var aktifMalzeme = gv('fMalzeme');
+  var aktifYuzey   = gv('fYuzey');
+
+  // Her dropdown için: diğer aktif filtreleri uygula, bu alan hariç
+  function getOptions(alan) {
+    var vals = {};
+    _filterData.forEach(function(s) {
+      // Bu alan dışındaki aktif filtreleri uygula
+      if (alan !== 'malzeme' && aktifMalzeme && s.malzeme_norm !== aktifMalzeme) return;
+      if (alan !== 'yuzey'   && aktifYuzey   && s.yuzey         !== aktifYuzey)   return;
+      var v = alan === 'malzeme' ? s.malzeme_norm : s.yuzey;
+      if (v) vals[v] = true;
+    });
+    return Object.keys(vals).sort();
+  }
+
+  function rebuildSelect(id, options) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    while (el.options.length > 1) el.remove(1);
+    options.forEach(function(v) {
+      var o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      el.appendChild(o);
+    });
+    // Seçili değer hâlâ mevcut mu?
+    if (cur && options.indexOf(cur) !== -1) el.value = cur;
+    else el.value = '';
+  }
+
+  rebuildSelect('fMalzeme', getOptions('malzeme'));
+  rebuildSelect('fYuzey',   getOptions('yuzey'));
 }
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────────
@@ -842,7 +883,12 @@ async function veriYukle() {
       });
     }
 
-    // İlk sayfalı sorgu
+    // İlk sayfalı sorgu + filtre verisi
+    var filterRes = await supa.from('spooller').select('devre_id, malzeme, yuzey');
+    _filterData = (filterRes.data||[]).map(function(s){
+      return { devre_id: s.devre_id, malzeme_norm: _normalizeMalzeme(s.malzeme)||null, yuzey: s.yuzey||null };
+    }).filter(function(s){ return s.malzeme_norm || s.yuzey; });
+    _filterDataUygula();
     await sorgulaVeGoster();
 
   } catch(e) {
@@ -1042,14 +1088,7 @@ async function sorgulaVeGoster() {
       .slice(0,8).map(function(k,i){ return {label:formatCapMM(k)+' mm',val:capSayimAll[k],color:RENKLER[i%RENKLER.length]}; });
     segBar('capBar', capItems);
 
-    // Filtre dropdown seçenekleri (ilk yüklemede doldur)
-    ['fMalzeme','fYuzey'].forEach(function(fid){
-      var el=document.getElementById(fid); if(!el||el.options.length>1) return;
-      var set=fid==='fMalzeme'?malzemeSet:yuzeySet;
-      Object.keys(set).sort().forEach(function(v){
-        var o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o);
-      });
-    });
+    // Filtre dropdown seçenekleri ilk yüklemede veriYukle'de _filterDataUygula ile doluyor
 
     // Tablo render
     _doRender();
@@ -1416,6 +1455,7 @@ function filtreleriSifirla() {
   var ara = document.getElementById('fArama'); if (ara) ara.value = '';
   oncelikFiltreAktif = false;
   var btn = document.getElementById('btnOncelik'); if (btn) btn.classList.remove('aktif');
+  _filterDataUygula(); // tüm seçenekleri geri getir
   _sayfa = 1; renderTable();
 }
 
@@ -2211,9 +2251,18 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Filtre değişimleri
-  ['fFirma','fProje','fMalzeme','fYuzey','fDurum'].forEach(function(id) {
+  ['fFirma','fProje','fDurum'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', function() { _sayfa = 1; renderTable(); });
+  });
+  // Malzeme ve yüzey: kademeli filtre güncelle, sonra tablo yenile
+  ['fMalzeme','fYuzey'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function() {
+      _filterDataUygula(); // diğer dropdown'ları güncelle
+      _sayfa = 1;
+      renderTable();
+    });
   });
   var aramaTimer;
   var aramaEl = document.getElementById('fArama');
