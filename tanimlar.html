@@ -19,23 +19,16 @@
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
-/* SAYFA */
 .page{padding:28px 28px 40px;}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;}
-/* ✅ B3: Tüm font-size değerleri 14px ve üzerinde */
 .breadcrumb{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 
-/* SEKMELER */
-.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--bor);margin-bottom:20px;overflow-x:auto;}
-.tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
-.tab-btn:hover{color:var(--tx);}
-.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;}
-.tc{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:99px;font-size:14px;font-weight:700;padding:0 5px;background:var(--sur2);color:var(--txd);}
-.tab-btn.active .tc{background:rgba(45,142,255,.12);color:var(--ac);}
-.panel{display:none;}.panel.on{display:block;}
+/* BİLGİ KUTUSU */
+.info-banner{display:flex;align-items:center;gap:12px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;color:var(--txm);}
+.info-banner svg{flex-shrink:0;color:var(--warn);}
 
-/* ✅ TABLO KARTI — B-01 */
+/* ✅ TABLO KARTI */
 .tablo-kart{background:var(--sur);border:1px solid var(--bor);border-radius:16px;overflow:hidden;}
 .tablo-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bor);}
 .tablo-baslik{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;}
@@ -46,8 +39,6 @@ tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:var(--sur2);}
 td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .td-kod{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ac);}
-.td-eylem{display:flex;gap:6px;justify-content:flex-end;}
-.td-readonly{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--txm);user-select:none;}
 
 /* BUTON */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;font-family:'Barlow',sans-serif;}
@@ -56,27 +47,6 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .btn-g:disabled{opacity:0.35;cursor:not-allowed;}.btn-g:disabled:hover{border-color:var(--bor);color:var(--tx);}
 .btn-re{background:rgba(229,62,62,.10);color:var(--re);border:1px solid rgba(229,62,62,.25);}.btn-re:hover{background:rgba(229,62,62,.18);}
 .btn-sm{padding:5px 10px;font-size:14px;}
-
-/* AKTİF / PASİF */
-.aktif-badge{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;padding:2px 8px;border-radius:99px;}
-.b-ak{background:rgba(22,163,110,.12);color:var(--gr);}
-.b-pa{background:rgba(100,116,139,0.12);color:var(--txd);}
-.aktif-toggle{cursor:pointer;border:none;font-family:'Barlow',sans-serif;transition:all 0.15s;}
-.aktif-toggle:hover{filter:brightness(1.2);}
-
-/* MODAL */
-.mov{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
-.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:18px;padding:24px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
-.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-.mtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;}
-.mcl{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;}.mcl:hover{color:var(--tx);}
-.fg{margin-bottom:14px;}
-.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
-.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;box-sizing:border-box;}
-.fi:focus{border-color:var(--ac);}
-.fta{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:60px;box-sizing:border-box;}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.mfooter{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);}
 
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:9999;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
@@ -91,17 +61,11 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .cl-leg{border-left:3px solid var(--leg) !important;}
 
 .bos{text-align:center;padding:40px 20px;color:var(--txd);font-size:14px;}
-.arama-fi{padding:7px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;width:220px;}
-.arama-fi:focus{border-color:var(--ac);}
 
-/* ✅ Filtre barı — F-01 */
+/* Filtre barı */
 .filtre-bari{display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px 14px;}
-.filtre-bari-bosluk{flex:1;}
-
-/* Basamak inline input */
-.basamak-input{padding:5px 9px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;width:160px;}
-.basamak-input:focus{border-color:var(--ac);}
-.cb-zorunlu{width:16px;height:16px;accent-color:var(--ac);cursor:pointer;}
+.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;box-sizing:border-box;}
+.fi:focus{border-color:var(--ac);}
 </style>
 <!-- ✅ Script sırası — SC-01 -->
 <script src="ares-store.js"></script>
@@ -118,82 +82,46 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
       <div class="breadcrumb">
         <a href="index.html" data-i18n="genel_ana_sayfa">Ana Sayfa</a>
         <span>/</span>
-        <span data-i18n="tanim_baslik">Tanımlar</span>
+        <span>Tanımlar</span>
       </div>
-      <h1 class="page-title" data-i18n="tanim_baslik">Tanımlar</h1>
+      <h1 class="page-title">Tanımlar</h1>
     </div>
 
-    <!-- ✅ SEKMELER -->
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="basamak" onclick="tabSec('basamak',this)">
-        <span data-i18n="tanim_islem_basamaklari">İşlem Basamakları</span>
-        <span class="tc" id="tBasamak">0</span>
+    <!-- Bilgi Banner -->
+    <div class="info-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>İşlem basamakları artık firma bazında süper admin tarafından yönetilmektedir. Erişim için: <strong>Admin Paneli → Firma Detay</strong></span>
+    </div>
+
+    <!-- KOD SERİLERİ -->
+    <div class="filtre-bari cl-leg" style="margin-bottom:16px;">
+      <button class="btn btn-sm" style="background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);" onclick="kodSeriEkle()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Yeni Seri Ekle
       </button>
-      <button class="tab-btn" data-tab="kod" onclick="tabSec('kod',this)">
-        <span>Kod Serileri</span>
-        <span class="tc" id="tKod">0</span>
-      </button>
+      <div style="flex:1"></div>
+      <span style="font-size:14px;color:var(--txd);">Prefix değişikliği geçmiş numaraları etkilemez.</span>
     </div>
-
-    <!-- ✅ İŞLEM BASAMAKLARI PANELİ — M-09 / Supabase: basamak_tanimlari -->
-    <div class="panel on" id="panelbasamak">
-      <div class="filtre-bari cl-warn">
-        <button class="btn btn-ac btn-sm" onclick="yeniBasamakEkle()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span data-i18n="tanim_basamak_yeni">Yeni Basamak</span>
-        </button>
-        <div class="filtre-bari-bosluk"></div>
-        <input class="arama-fi" placeholder="🔍 Ara…" data-i18n-placeholder="genel_ara" oninput="basamakRender(this.value)">
+    <div class="tablo-kart cl-leg">
+      <div class="tablo-header">
+        <div class="tablo-baslik">Kod Serileri &amp; Sayaçlar</div>
+        <div style="font-size:14px;color:var(--txd);">sayac_tanimlari</div>
       </div>
-      <div class="tablo-kart cl-ac">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:52px;text-align:center;" data-i18n="tanim_sira">SIRA</th>
-              <th data-i18n="tanim_sistem_adi">SİSTEM ADI</th>
-              <th data-i18n="tanim_gorunen_ad">GÖRÜNEN AD</th>
-                            <th data-i18n="genel_durum">DURUM</th>
-              <th style="text-align:right;" data-i18n="genel_eylem">EYLEM</th>
-            </tr>
-          </thead>
-          <tbody id="basamakTablo"></tbody>
-        </table>
-      </div>
-      <span style="display:none;" data-i18n="tanim_silinemez">Bu basamak silinemez</span>
-    </div>
-
-
-    <!-- KOD SERİLERİ PANELİ -->
-    <div class="panel" id="panelkod">
-      <div class="filtre-bari cl-leg" style="margin-bottom:16px;">
-        <button class="btn btn-sm" style="background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);" onclick="kodSeriEkle()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Yeni Seri Ekle
-        </button>
-        <div style="flex:1"></div>
-        <span style="font-size:14px;color:var(--txd);">Prefix değişikliği geçmiş numaraları etkilemez.</span>
-      </div>
-      <div class="tablo-kart cl-leg">
-        <div class="tablo-header">
-          <div class="tablo-baslik">Kod Serileri &amp; Sayaçlar</div>
-          <div style="font-size:14px;color:var(--txd);">sayac_tanimlari</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:120px;">Tip</th>
-              <th>Açıklama</th>
-              <th style="width:80px;">Prefix</th>
-              <th style="width:80px;text-align:center;">Yıl Ekle</th>
-              <th style="width:80px;text-align:center;">Basamak</th>
-              <th style="width:120px;">Örnek</th>
-              <th style="width:80px;text-align:right;">Son No</th>
-              <th style="width:90px;"></th>
-            </tr>
-          </thead>
-          <tbody id="kodSeriTablo"></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px;">Tip</th>
+            <th>Açıklama</th>
+            <th style="width:80px;">Prefix</th>
+            <th style="width:80px;text-align:center;">Yıl Ekle</th>
+            <th style="width:80px;text-align:center;">Basamak</th>
+            <th style="width:120px;">Örnek</th>
+            <th style="width:80px;text-align:right;">Son No</th>
+            <th style="width:90px;"></th>
+          </tr>
+        </thead>
+        <tbody id="kodSeriTablo"></tbody>
+      </table>
     </div>
 
   </div><!-- /page -->
@@ -201,34 +129,13 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 </div><!-- /app-shell -->
 
 <script>
-'use strict'; // ✅ A1
+'use strict';
 
-// Çeviriler ares-lang.js tarafından sağlanır (lang/en.json, lang/ar.json)
-// Yerel tv() override — global window.tv() kullanılır, yoksa TR fallback
 function tv(key, tr) {
   if (typeof window.tv === 'function' && window.tv !== tv) return window.tv(key, tr);
   return tr !== undefined ? tr : key;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// ✅ C2: _applyI18n() — JS ile oluşturulan içeriği yeniden render et (D-01)
-// ═══════════════════════════════════════════════════════════════════
-function _applyI18n() {
-  // Statik data-i18n elementleri ares-layout.js tarafından işlenir.
-  // Dinamik JS render burada tetiklenir.
-  basamakRender('');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// ✅ C2: MutationObserver — html[lang] değişimini yakala (D-01)
-// ═══════════════════════════════════════════════════════════════════
-new MutationObserver(function() {
-  _applyI18n();
-}).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-
-// ═══════════════════════════════════════════════════════════════════
-// ✅ D1: esc() — innerHTML için XSS koruması (G-01)
-// ═══════════════════════════════════════════════════════════════════
 function esc(s) {
   if (s === null || s === undefined) return '';
   return String(s)
@@ -239,310 +146,6 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// VERİ
-var veri = {};
-
-async function veriYukle() {
-  // Paralel yükle — Promise.all
-  await Promise.all([
-    basamaklariYukle(),
-    kodSeriYukle()
-  ]);
-
-  sayacGuncelle();
-}
-
-async function basamaklariYukle() {
-  if (typeof ARES === "undefined") return;
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa
-      .from('basamak_tanimlari')
-      .select('id, sira, sistem_adi, gorunen_ad, aktif')
-      .eq('tenant_id', ARES.tenantId())
-      .order('sira');
-    if (res.error) {
-      console.warn('[tanimlar] Basamak yükleme hatası:', res.error.message);
-      toast(tv('tanim_kayit_yuklenemedi', 'Kayıtlar yüklenemedi.'), 'er');
-      veri.basamak = [];
-      return;
-    }
-    // Supabase → UI alan eşlemesi
-    veri.basamak = (res.data || []).map(function(b) {
-      return {
-        id:        b.id,            // UUID — Supabase primary key
-        ad:        b.sistem_adi,
-        gorunenAd: b.gorunen_ad,
-        sira:      b.sira,
-        aktif:     b.aktif    !== false,
-      };
-    });
-  } else {
-    // Local mod fallback
-    if (!veri.basamak) {
-      veri.basamak = [
-        {id:'B001',ad:'on_imalat', gorunenAd:'Ön İmalat',  sira:1,zorunlu:false,aktif:true},
-        {id:'B002',ad:'imalat',    gorunenAd:'İmalat',      sira:2,zorunlu:false,aktif:true},
-        {id:'B003',ad:'kaynak',    gorunenAd:'Kaynak',      sira:3,zorunlu:true, aktif:true},
-        {id:'B004',ad:'on_kontrol',gorunenAd:'Ön Kontrol',  sira:4,zorunlu:false,aktif:true},
-        {id:'B005',ad:'kk',        gorunenAd:'KK',          sira:5,zorunlu:true, aktif:true},
-        {id:'B006',ad:'sevkiyat',  gorunenAd:'Sevkiyat',    sira:6,zorunlu:true, aktif:true},
-      ];
-    }
-  }
-}
-
-function sayacGuncelle() {
-  var tB = document.getElementById('tBasamak');
-  if (tB) tB.textContent = (veri.basamak||[]).filter(function(x){return x.aktif;}).length;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// TABLO RENDER — malzeme / kaynak / sertifika / çap
-// ✅ D1: esc() — XSS koruması | C6: tv() — çeviri
-// ═══════════════════════════════════════════════════════════════════
-var KOLON = {
-  malzeme:   ['kod','ad','standart','akma','notlar'],
-  kaynak:    ['kod','ad','awsNo','aciklama'],
-  sertifika: ['kod','ad','kurulus','gecerlilik','aciklama'],
-  cap:       ['dn','dis','sinif','et','aciklama'],
-};
-
-function tabloRender(tip, filtre) {
-  if (tip === 'basamak') { basamakRender(filtre || ''); return; }
-  var tbody = document.getElementById(tip + 'Tablo');
-  if (!tbody) return;
-  filtre = filtre || '';
-  var liste = (veri[tip]||[]).filter(function(x) {
-    if (!filtre) return true;
-    return Object.values(x).join(' ').toLowerCase().includes(filtre.toLowerCase());
-  });
-  if (!liste.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="bos">' + tv('genel_kayit_yok','Kayıt bulunamadı.') + '</td></tr>';
-    return;
-  }
-  tbody.innerHTML = liste.map(function(x) {
-    var aktifBadge = x.aktif
-      ? '<span class="aktif-badge b-ak">\u25cf ' + tv('genel_aktif','Aktif') + '</span>'
-      : '<span class="aktif-badge b-pa">\u25cb ' + tv('genel_pasif','Pasif') + '</span>';
-    return '<tr>' +
-      '<td class="td-kod">' + esc(x[KOLON[tip][0]]) + '</td>' +
-      KOLON[tip].slice(1).map(function(k){ return '<td>' + esc(x[k] !== undefined ? String(x[k]) : '\u2014') + '</td>'; }).join('') +
-      '<td>' + aktifBadge + '</td>' +
-      '<td><div class="td-eylem">' +
-        '<button class="btn btn-g btn-sm" onclick="duzenle(\'' + esc(tip) + '\',\'' + esc(x.id) + '\')">' + tv('genel_duzenle','Düzenle') + '</button>' +
-        '<button class="btn btn-re btn-sm" onclick="sil(\'' + esc(tip) + '\',\'' + esc(x.id) + '\')">' + tv('genel_sil','Sil') + '</button>' +
-      '</div></td>' +
-    '</tr>';
-  }).join('');
-}
-
-function tabloFiltre(tip, val) {
-  if (tip === 'basamak') { basamakRender(val); return; }
-  tabloRender(tip, val);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BASAMAK RENDER — M-09 / Supabase bağlı
-// ✅ D1: esc() | C6: tv()
-// ═══════════════════════════════════════════════════════════════════
-function basamakRender(filtre) {
-  filtre = filtre || '';
-  var tbody = document.getElementById('basamakTablo');
-  if (!tbody) return;
-  var tum   = veri.basamak || [];
-  var liste = tum.slice().sort(function(a, b){ return a.sira - b.sira; });
-  if (filtre) {
-    var f = filtre.toLowerCase();
-    liste = liste.filter(function(x){
-      return (x.gorunenAd||'').toLowerCase().includes(f) || (x.ad||'').toLowerCase().includes(f);
-    });
-  }
-  if (!liste.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="bos">' + tv('genel_kayit_yok','Kayıt bulunamadı.') + '</td></tr>';
-    return;
-  }
-  var maxSira = tum.length ? Math.max.apply(null, tum.map(function(b){return b.sira;})) : 1;
-  var minSira = tum.length ? Math.min.apply(null, tum.map(function(b){return b.sira;})) : 1;
-  tbody.innerHTML = liste.map(function(x) {
-    var isFirst  = x.sira === minSira;
-    var isLast   = x.sira === maxSira;
-    var durumBtn = x.aktif
-      ? '<button class="aktif-badge b-ak aktif-toggle" onclick="basamakToggleAktif(\'' + esc(x.id) + '\')">\u25cf ' + tv('genel_aktif','Aktif') + '</button>'
-      : '<button class="aktif-badge b-pa aktif-toggle" onclick="basamakToggleAktif(\'' + esc(x.id) + '\')">\u25cb ' + tv('genel_pasif','Pasif') + '</button>';
-    return '<tr>' +
-      '<td style="text-align:center;font-weight:700;color:var(--txd);width:52px;">' + esc(String(x.sira)) + '</td>' +
-      '<td><span class="td-readonly">' + esc(x.ad) + '</span></td>' +
-      '<td><input class="basamak-input" value="' + esc(x.gorunenAd) + '" ' +
-        'onchange="basamakGorunenAdKaydet(\'' + esc(x.id) + '\',this.value)" ' +
-        'title="' + tv('tanim_gorunen_ad_duzenle','Görünen adı düzenle') + '"></td>' +
-            '<td>' + durumBtn + '</td>' +
-      '<td><div class="td-eylem">' +
-        '<button class="btn btn-g btn-sm" onclick="siraDegistir(\'' + esc(x.id) + '\',-1)" ' +
-          (isFirst ? 'disabled' : '') + ' title="' + tv('tanim_yukari_tasi','Yukarı taşı') + '">\u2191</button>' +
-        '<button class="btn btn-g btn-sm" onclick="siraDegistir(\'' + esc(x.id) + '\',1)" ' +
-          (isLast  ? 'disabled' : '') + ' title="' + tv('tanim_asagi_tasi','Aşağı taşı') + '">\u2193</button>' +
-        '<button class="btn btn-re btn-sm" onclick="basamakSil(\'' + esc(x.id) + '\')" ' +
-          ' title="' + tv('tanim_sil','Sil') + '">\u2715</button>' +
-      '</div></td>' +
-    '</tr>';
-  }).join('');
-}
-
-// ─── Basamak: sıra değiştir ─────────────────────────────────────
-async function siraDegistir(id, yon) {
-  var list  = veri.basamak || [];
-  var cur   = list.find(function(x){ return x.id === id; });
-  if (!cur) return;
-  var hedef = list.find(function(x){ return x.sira === cur.sira + yon; });
-  if (!hedef) return;
-
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var now = new Date().toISOString();
-    var r1  = await supa.from('basamak_tanimlari').update({ sira: hedef.sira, guncelleme: now }).eq('id', cur.id);
-    var r2  = await supa.from('basamak_tanimlari').update({ sira: cur.sira,   guncelleme: now }).eq('id', hedef.id);
-    if (r1.error || r2.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-  }
-
-  var tmp    = hedef.sira;
-  hedef.sira = cur.sira;
-  cur.sira   = tmp;
-  basamakRender();
-  toast(tv('tanim_sira_guncellendi','Sıra güncellendi.'), 'ok');
-  ARES.logEkle('BASAMAK_SIRA', 'Sıra değiştirildi', 'basamak', id, {});
-}
-
-// ─── Basamak: görünen ad kaydet ─────────────────────────────────
-async function basamakGorunenAdKaydet(id, val) {
-  val = (val || '').trim();
-  if (!val) return;
-  var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
-  if (!b) return;
-
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('basamak_tanimlari')
-      .update({ gorunen_ad: val, guncelleme: new Date().toISOString() })
-      .eq('id', id);
-    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-  }
-
-  b.gorunenAd = val;
-  sayacGuncelle();
-  toast(tv('genel_kaydedildi','Kaydedildi.'), 'ok');
-  ARES.logEkle('BASAMAK_GUNCELLE', 'Görünen ad güncellendi', 'basamak', id, {});
-}
-
-// ─── Basamak: zorunlu kaydet ────────────────────────────────────
-
-async function basamakToggleAktif(id) {
-  var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
-  if (!b) return;
-  var yeniDeger = !b.aktif;
-
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('basamak_tanimlari')
-      .update({ aktif: yeniDeger, guncelleme: new Date().toISOString() })
-      .eq('id', id);
-    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-  }
-
-  b.aktif = yeniDeger;
-  basamakRender();
-  sayacGuncelle();
-  toast(yeniDeger ? tv('genel_kaydedildi','Kaydedildi.') : tv('tanim_basamak_pasif','Basamak pasife alındı.'), 'ok');
-  ARES.logEkle('BASAMAK_TOGGLE', yeniDeger ? 'Aktif edildi' : 'Pasif edildi', 'basamak', id, {});
-}
-
-// ─── Basamak: yeni ekle ─────────────────────────────────────────
-async function yeniBasamakEkle() {
-  var list    = veri.basamak || [];
-  var maxSira = list.length ? Math.max.apply(null, list.map(function(b){ return b.sira; })) : 0;
-  var yeniSira = maxSira + 1;
-  var ts       = String(Date.now()).slice(-6);
-  var sistemAdi = 'basamak_' + ts;
-
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('basamak_tanimlari').insert({
-      tenant_id:  ARES.tenantId(),
-      sistem_adi: sistemAdi,
-      gorunen_ad: tv('tanim_basamak_yeni','Yeni Basamak'),
-      sira:       yeniSira,
-      zorunlu:    false,
-      aktif:      true,
-    }).select().single();
-    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-    list.push({
-      id:        res.data.id,
-      ad:        res.data.sistem_adi,
-      gorunenAd: res.data.gorunen_ad,
-      sira:      res.data.sira,
-      zorunlu:   false,
-      aktif:     true,
-    });
-  } else {
-    list.push({
-      id:        'BX' + ts,
-      ad:        sistemAdi,
-      gorunenAd: tv('tanim_basamak_yeni','Yeni Basamak'),
-      sira:      yeniSira,
-      zorunlu:   false,
-      aktif:     true,
-    });
-  }
-
-  veri.basamak = list;
-  basamakRender();
-  sayacGuncelle();
-  toast(tv('genel_kaydedildi','Kaydedildi.'), 'ok');
-  ARES.logEkle('BASAMAK_EKLE', 'Yeni basamak eklendi', 'basamak', null, {});
-}
-
-// ─── Basamak: sil ───────────────────────────────────────────────
-async function basamakSil(id) {
-  var b = (veri.basamak||[]).find(function(x){ return x.id === id; });
-  if (!b) return;
-  // Sistem basamaklarını koruma: on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat
-  var korunanlar = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
-  if (korunanlar.indexOf(b.ad) !== -1) {
-    toast(tv('tanim_silinemez','Bu basamak silinemez — sistem tarafından kullanılıyor.'), 'er');
-    return;
-  }
-  if (!confirm(b.gorunenAd + ' — ' + tv('tanim_silme_onay','Bu kaydı silmek istediğinizden emin misiniz?'))) return;
-
-  var supa = ARES.supabase();
-  if (supa && ARES.mod === 'supabase') {
-    var res = await supa.from('basamak_tanimlari')
-      .update({ aktif: false, guncelleme: new Date().toISOString() })
-      .eq('id', id);
-    if (res.error) { toast(tv('tanim_db_hata','Veritabanı hatası.'), 'er'); return; }
-  }
-
-  veri.basamak = (veri.basamak||[]).filter(function(x){ return x.id !== id; });
-  basamakRender();
-  sayacGuncelle();
-  toast(tv('genel_silindi','Silindi.'), 'ok');
-  ARES.logEkle('BASAMAK_SIL', b.gorunenAd + ' silindi', 'basamak', id, {});
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// TAB GEÇİŞ
-// ═══════════════════════════════════════════════════════════════════
-function tabSec(tip, btn) {
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
-  btn.classList.add('active');
-  document.getElementById('panel' + tip).classList.add('on');
-  if (tip === 'basamak') basamakRender();
-  else if (tip === 'kod') kodSeriRender();
-  else tabloRender(tip);
-}
-
-// ─── TOAST ──────────────────────────────────────────────────────
 var _toastT = null;
 function toast(msg, tip) {
   tip = tip || 'ok';
@@ -556,13 +159,10 @@ function toast(msg, tip) {
   _toastT = setTimeout(function(){ el.remove(); }, 3500);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// ✅ C3: _onLangChange — dil değişince render'ı tetikle (D-01)
-// ═══════════════════════════════════════════════════════════════════
-window._onLangChange = function() { _applyI18n(); };
+window._onLangChange = function() {};
 
 // ═══════════════════════════════════════════════════════════════════
-// ✅ SB-01: Auth kontrolü + sayfa başlatma
+// ✅ SB-01: Auth kontrolü
 // ═══════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
@@ -573,27 +173,31 @@ document.addEventListener('DOMContentLoaded', function() {
         var _supa = ARES.supabase();
         if (_supa) {
           var _ses = await _supa.auth.getSession();
-          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin'])) return; break; }
+          if (_ses.data && _ses.data.session) {
+            await ARES.oturumKontrol();
+            if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin'])) return;
+            break;
+          }
           if (_bekle > 20) { location.href = 'giris.html'; return; }
         }
         await new Promise(function(r){ setTimeout(r, 100); });
         _bekle++;
       }
     } catch(e) { /* offline */ }
-    document.documentElement.style.visibility='';
+    document.documentElement.style.visibility = '';
     try {
-      await veriYukle();
-    } catch(e){ console.error('[ARES]',e); }
+      await kodSeriYukle();
+    } catch(e){ console.error('[ARES]', e); }
   })();
 });
 
 // ═══════════════════════════════════════════════════════════════════
 // KOD SERİLERİ — sayac_tanimlari CRUD
 // ═══════════════════════════════════════════════════════════════════
-var _kodSeriData = []; // { id, tip, aciklama, prefix, yil_ekle, digits, son_no }
+var _kodSeriData = [];
 
 async function kodSeriYukle() {
-  if (typeof ARES === "undefined") return;
+  if (typeof ARES === 'undefined') return;
   var supa = ARES.supabase();
   if (supa && ARES.mod === 'supabase') {
     var res = await supa
@@ -611,8 +215,6 @@ async function kodSeriYukle() {
     _kodSeriData = [];
   }
   kodSeriRender();
-  var tKod = document.getElementById('tKod');
-  if (tKod) tKod.textContent = _kodSeriData.length;
 }
 
 function _kodOrnek(row) {
@@ -663,12 +265,12 @@ async function kodSeriKaydet(id, alan, deger) {
   var row = _kodSeriData.find(function(r){ return r.id === id; });
   if (row) row[alan] = deger;
   kodSeriRender();
-  ARES.sayacConfigSifirla(); // store cache'i temizle
+  ARES.sayacConfigSifirla();
   toast('Kaydedildi.', 'ok');
 }
 
 async function kodSeriSifirla(id, tip) {
-  if (!confirm(tip + ' sayacını sıfırlamak istiyor musunuz? Sonraki numara 1den baslar.')) return;
+  if (!confirm(tip + ' sayacını sıfırlamak istiyor musunuz? Sonraki numara 1den başlar.')) return;
   var supa = ARES.supabase();
   if (supa && ARES.mod === 'supabase') {
     var res = await supa.from('sayac_tanimlari').update({ son_no: 0 }).eq('id', id);
@@ -701,8 +303,6 @@ async function kodSeriEkle() {
     if (res.error) { toast('Eklenemedi: ' + res.error.message, 'er'); return; }
     _kodSeriData.push(res.data);
     kodSeriRender();
-    var tKod = document.getElementById('tKod');
-    if (tKod) tKod.textContent = _kodSeriData.length;
     ARES.sayacConfigSifirla();
     toast(tip + ' serisi eklendi.', 'ok');
   }

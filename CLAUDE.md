@@ -210,10 +210,21 @@ Tüm `.html`, `ares-*.js`, `ares-mobile.*`, `lang/*.json` — no-cache.
 - `durdurma_sebebi` (durdurma_aciklama değil)
 - `alistirma` değerleri: `VAR` / `KISMI` / `YOK` (uppercase)
 - `aktif_basamak` değerleri: `on_imalat` (400), `on_kontrol` (68), `kaynak` (14), `imalat` (9), `kk` (5), `sevkiyat` (4)
+- `ilerleme INTEGER DEFAULT 0` — kümülatif puan (0-100), basamak geçişinde `+= basamak.ilerleme_puani`
+
+**tenants:**
+- `ilerleme_yontemi TEXT DEFAULT 'adet'` — `'adet'` veya `'agirlik'` (firma iç ekranları için)
+- `firma_tipi` genişletildi: `imalat`, `montaj`, `imalat_montaj`, `tersane_tam`, `tersane_taseron`, `tersane_karma`, `diger`
+
+**basamak_tanimlari:**
+- `ilerleme_puani INTEGER DEFAULT 0` — basamak tamamlanınca spool'a eklenecek puan (toplam 100 önerilir)
+
+**customer_kullanicilar:**
+- `ilerleme_yontemi TEXT DEFAULT 'adet'` — müşteri portalı için `'adet'` veya `'agirlik'`
 
 **devreler:**
 - `ad` (devre_adi değil), `durum`, `durdurma_sebebi`
-- `ilerleme` kolonu var ama hep 0 — kullanılmıyor
+- `ilerleme` kolonu — artık `spooller.ilerleme` ortalamasından (adet) veya ağırlık bazlı hesaplanacak
 - `agirlik` kolonu var ama yerine `spooller.agirlik` toplamı kullanılmalı
 
 **fotograflar:**
@@ -390,8 +401,17 @@ if (rol === 'operator') {
 `devreler.agirlik` kolonu değil → `spooller.agirlik` toplamı kullanılmalı
 
 ### İlerleme Hesabı
-`devreler.ilerleme` hep 0, `basamak_snapshot` tüm kayıtlarda null → İlerleme `aktif_basamak`'tan ASAMA_PCT ile hesaplanıyor:
-`on_imalat:14%, imalat:28%, kaynak:43%, on_kontrol:57%, kk:71%, sevkiyat:86%, tamamlandi:100%`
+`devreler.ilerleme` artık dinamik hesaplanıyor — hardcoded `ASAMA_PCT` kaldırıldı.
+
+**Adet bazlı (varsayılan):**
+`ORTALAMA(spooller.ilerleme)` — her spool eşit ağırlıklı
+
+**Ağırlık bazlı:**
+`Σ(spool.agirlik × spool.ilerleme) / Σ(spool.agirlik)`
+
+Hangi yöntemin kullanılacağı:
+- Firma iç ekranları → `tenants.ilerleme_yontemi`
+- Müşteri portali → `customer_kullanicilar.ilerleme_yontemi`
 
 ### Arapça RTL
 Mobilde aktif — `dir=rtl` HTML attribute + CSS `[dir=rtl]` kuralları `ares-mobile.css`'de.
@@ -408,6 +428,61 @@ Sayfaları bitir → yetki matrisini belirle → `mSayfaKontrol()` ekle → firm
 
 ### CI/CD — GitHub Actions
 Her push'ta otomatik kural kontrolü. Kural dosyası: `.github/kurallar.json`
+
+### İlerleme Hesaplama Sistemi (14 Nisan 2026)
+
+**Spool ilerleme puanı:**
+- `basamak_tanimlari` tablosuna `ilerleme_puani INTEGER DEFAULT 0` kolonu eklendi
+- Toplam 100 puan üzerinden firma kendi basamaklarına ağırlık atar
+- Spool bir basamaktan çıktığında → `spooller.ilerleme += basamak.ilerleme_puani`
+- Atlanılan basamakların puanı hesaba katılmaz (personel sonraki basamağı seçer)
+- Örnek: Ön İmalat=10, İmalat=20, Kaynak=25, Ön Kontrol=15, KK=15, Sevkiyat=15 → toplam 100
+
+**Devre ilerlemesi — iki yöntem:**
+- `tenants.ilerleme_yontemi TEXT DEFAULT 'adet'` → `'adet'` veya `'agirlik'`
+- Adet bazlı: `ORTALAMA(tüm spoolların ilerleme puanı)`
+- Ağırlık bazlı: `Σ(spool.agirlik × spool.ilerleme) / Σ(spool.agirlik)`
+- Firma iç ekranları daima `tenants.ilerleme_yontemi` kullanır
+
+**Müşteri portali için ayrı yöntem:**
+- `customer_kullanicilar.ilerleme_yontemi TEXT DEFAULT 'adet'`
+- Müşteri A adetten, Müşteri B ağırlıktan görebilir — aynı proje verisi üzerinden
+- Müşteri ağırlık üzerinden görse bile firma iç ekranı `tenants.ilerleme_yontemi` ile çalışır
+- Müşteri ekranı açılırken süper admin bu tercihi seçer, seçilmezse varsayılan `adet`
+
+**Kaynak basamağı:**
+Kaynak çeşidi (argon/gazaltı/orbital vb.) basamak sisteminde ayrıştırılmaz.
+Tüm kaynak türleri tek `kaynak` basamağı olarak gösterilir. Gelecekte yeni kaynak türleri gelse de bu yapı değişmez.
+
+**Personel iş akışı (is_baslat.html):**
+- QR okutunca spool mevcut basamağı görür
+- "İşi Tamamla" → sistem aktif basamakları listeler → personel seçer → puan eklenir
+- Basamak atlanabilir (örnek: imalat yok → ön imalattan ön kontrole direkt)
+
+### Firma Tipi Genişletme (14 Nisan 2026)
+`tenants.firma_tipi` değerleri genişletildi (text kolon, geriye dönük uyumlu):
+- `imalat` — Spool İmalat Firması
+- `montaj` — Spool Montaj Firması
+- `imalat_montaj` — İmalat + Montaj Firması
+- `tersane_tam` — Tersane (Tam Entegre)
+- `tersane_taseron` — Tersane (İmalat Taşerona Verilmiş)
+- `tersane_karma` — Tersane (Kısmi Taşeron)
+- `diger` — Diğer
+
+### Basamak Yönetimi Süper Admin'e Taşındı (14 Nisan 2026)
+- `tanimlar.html`'den İşlem Basamakları sekmesi kaldırıldı
+- `admin/firma.html`'den Basamaklar paneli kaldırılacak
+- Basamak CRUD artık sadece `admin/firma-detay.html`'de (süper admin)
+- Basamak silme: hard delete (soft delete değil) — aktif spoolların limbo'ya düşmemesi için silmeden önce kontrol gerekmez, sistem `ilerleme` kolonunu kümülatif tutuğundan etkilenmez
+- Şablon yükleme: 3 hazır şablon (İmalat / Montaj / Tersane Tam)
+
+### Firma Yönetimi — Yeni Dosyalar (14 Nisan 2026)
+- `admin/yeni-firma.html` — 4 adımlı wizard (yeni dosya)
+- `admin/firma-detay.html` — magic link davet + basamak yönetimi + genişletilmiş firma tipi
+- `tanimlar.html` — sadece Kod Serileri kaldı
+
+### Kullanıcı Daveti
+`firma-detay.html` ve `yeni-firma.html`'de kullanıcı ekleme artık `auth.admin.inviteUserByEmail()` ile yapılır (magic link). Şifre belirlenmez. Davet bekleyen kullanıcılar `aktif: false` + `son_giris: null` ile işaretlenir.
 
 ---
 
