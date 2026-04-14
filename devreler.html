@@ -12,8 +12,8 @@
   <style>
     /* ── Tema değişkenleri — her sayfada zorunlu ── */
     :root { --ac:#2D8EFF; --gr:#16a36e; --re:#e53e3e; --warn:#d97706; --leg:#7c3aed; }
-    [data-theme="dark"]             { --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e; --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90; }
-    [data-theme="light-anthracite"] { --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0; --tx:#141e2b; --txm:#3a4f63; --txd:#637080; }
+    [data-theme=dark]             { --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e; --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90; }
+    [data-theme=light-anthracite] { --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0; --tx:#141e2b; --txm:#3a4f63; --txd:#637080; }
 
     /* ── Sayfa layout ── */
     .page        { padding:28px; }
@@ -1520,7 +1520,7 @@ function devreAc(id) {
     localStorage.setItem('ares_aktif_devre', JSON.stringify(d));
     if (d.supaId) localStorage.setItem('ares_aktif_devre_id', d.supaId);
   } catch(e) {}
-  location.href = 'devre_detay.html';
+  location.href = 'devre_detay.html?id=' + d.supaId;
 }
 
 function devreDuzenle(e, id) {

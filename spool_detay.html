@@ -230,20 +230,21 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .m3d-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
 .m3d-hint{margin-left:auto;font-size:12px;color:var(--txd);}
 </style>
-<script src="../ares-store.js"></script>
-<script src="../ares-lang.js"></script>
-<script src="../ares-layout.js"></script>
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
 </head>
 <body>
 <div class="app-shell"><div class="main-content"><div class="page">
 
 <!-- BREADCRUMB -->
 <div class="breadcrumb">
-  <a href="../index.html" data-i18n="nav_home">Ana Sayfa</a><span>/</span>
-  <a href="../devreler.html" data-i18n="nav_active_circuits">Aktif Devreler</a><span>/</span>
-  <span class="cur" id="bcDevre">--</span>
+  <a href="index.html" data-i18n="nav_home">Ana Sayfa</a><span>/</span>
+  <a href="devreler.html" data-i18n="nav_active_circuits">Aktif Devreler</a><span>/</span>
+  <a href="#" id="bcDevre" style="color:var(--txd);text-decoration:none;">--</a><span>/</span>
+  <span class="cur" id="bcSpoolNo">--</span>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button class="btn btn-sm" onclick="window.location.href='devreler.html'" data-i18n="btn_back">← Geri</button>
+    <button class="btn btn-sm" onclick="geriDon()" data-i18n="btn_back">← Geri</button>
     <button class="btn btn-sm" onclick="duzenleAc()" data-i18n="btn_edit">✎ Düzenle</button>
     <button class="btn btn-sm btn-leg" onclick="kkGonder()" data-i18n="sp_btn_qc">✓ Kalite Kontrole</button>
     <button class="btn btn-sm" style="border-color:rgba(45,142,255,.4);color:var(--ac);" onclick="sevkGonder()" data-i18n="sp_btn_shipment">🚚 Sevkiyata</button>
@@ -257,7 +258,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
   <div style="flex:1;">
     <div style="font-size:14px;font-weight:700;color:var(--re);" data-i18n="sp_stopped_title">Bu Spool Durdurulmuştur</div>
     <div style="font-size:14px;color:var(--txm);margin-top:3px;" id="durdurAciklamaEl">--</div>
-    <div style="font-size:14px;color:var(--txd);margin-top:5px;" data-i18n="sp_stopped_qr_note">QR okutulduğunda: <strong style="color:var(--re);">"Yöneticiye başvurun"</strong> · Kesim/büküm/markalama engellenmiştir.</div>
+    <div style="font-size:14px;color:var(--txd);margin-top:5px;"><span data-i18n="sp_stopped_qr_note">QR okutulduğunda:</span> <strong style="color:var(--re);">"Yöneticiye başvurun"</strong> · Kesim/büküm/markalama engellenmiştir.</div>
   </div>
   <button class="btn btn-sm" style="border-color:rgba(22,163,110,.4);color:var(--gr);flex-shrink:0;" onclick="durdurmaKaldir()" data-i18n="sp_stop_remove">Durdurma Kaldır</button>
 </div>
@@ -1157,6 +1158,7 @@ async function spoolYukle(supaId) {
 // ── YARDIMCI ──────────────────────────────────────────────────
 function T(id){return document.getElementById(id);}
 function txc(id,v){var e=T(id);if(e)e.textContent=v||'--';}
+function geriDon(){if(SP.devre_id){location.href='devre_detay.html?id='+SP.devre_id;}else{location.href='devreler.html';}}
 // G-01: XSS sanitizer
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
@@ -1249,8 +1251,13 @@ function yukle(){
   if(shIdEl) shIdEl.textContent = SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : (SP.spoolId ? 'ID: '+SP.spoolId : 'ID: --');
   txc('shTersaneMarka', '');
 
-  // ✅ FIX: bcDevre metni + href dinamik (devre_id URL param + ../ prefix)
-  txc('bcDevre', SP._devre || '--');
+  // Breadcrumb: devre_detay linki + spool no
+  var bcDvEl = document.getElementById('bcDevre');
+  if (bcDvEl) {
+    bcDvEl.textContent = SP._devre || '--';
+    if (SP.devre_id) bcDvEl.href = 'devre_detay.html?id=' + SP.devre_id;
+  }
+  txc('bcSpoolNo', SP.spoolNo || '--');
 
   txc('stCap',SP.cap); txc('stKal',SP.kalinlik);
   txc('stAgr',SP.agirlik); txc('stYuzey',_yuzeyGoster(SP.yuzey)); txc('stMalz',_malzemeGoster(SP.malzeme));
