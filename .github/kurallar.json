@@ -9,6 +9,7 @@
       "admin/panel.html",
       "admin/firma.html",
       "admin/firma-detay.html",
+      "admin/yeni-firma.html",
       "portal/index.html",
       "mobile/index.html",
       "mobile/devreler.html",
