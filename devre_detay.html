@@ -829,6 +829,25 @@ function _supa(){
 function _mod(){return typeof ARES!=='undefined'?ARES.mod:'local';}
 function _tid(){return typeof ARES!=='undefined'&&typeof ARES.tenantId==='function'?ARES.tenantId():null;}
 
+// Basamak gorunen_ad haritası — DB'den yüklenir, hardcoded lblMap yerine kullanılır
+var _basamakMap = {};
+
+async function _basamakMapYukle(){
+  var tid = _tid();
+  if(!tid) return;
+  var supa = _supa();
+  if(!supa) return;
+  try {
+    var { data } = await supa.from('basamak_tanimlari')
+      .select('sistem_adi, gorunen_ad')
+      .eq('tenant_id', tid)
+      .eq('aktif', true);
+    if(data && data.length){
+      data.forEach(function(b){ _basamakMap[b.sistem_adi] = b.gorunen_ad; });
+    }
+  } catch(e){ console.warn('_basamakMapYukle:', e); }
+}
+
 // ── XSS koruma
 function esc(s){
   var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;
@@ -859,13 +878,13 @@ function _yuzeyGoster(raw){
 // Dinamik adım etiketi — dil değişince doğru çeviriyi döndürür
 function _stepText(s){
   if(s.stopped)return tv('dv_status_stopped','Durduruldu');
-  var lblMap={
-    on_imalat:tv('sp_stage_pre','Ön İmalat'),imalat:tv('sp_stage_fab','İmalat'),
-    kaynak:tv('sp_stage_weld','Kaynak'),on_kontrol:tv('sp_stage_inspect','Ön Kontrol'),
-    kk:tv('sp_stage_qc','Kalite Kontrol'),sevkiyat:tv('sp_stage_ship','Sevkiyat')
-  };
-  var d=s.durum;
-  if(d==='waiting')return tv('dv_status_waiting','Bekliyor');
+  var lblMap=_basamakMap;// DB'den yüklenen dinamik map
+
+
+
+
+
+
   if(d==='done')return tv('dv_status_done','Tamamlandı');
   if(d==='qc')return lblMap['kk']||tv('dv_status_qc','Kalite Kontrol');
   // Progress: önce lblMap[aktifBasamak], sonra snapshot adı, sonra genel
@@ -1017,11 +1036,11 @@ function _spoolMap(s,i){
   var adimlar=[];for(var a=0;a<total;a++){if(akt<0)adimlar.push(0);else if(a<akt)adimlar.push(1);else if(a===akt)adimlar.push(3);else adimlar.push(0);}
   var dur='waiting';
   if(s.durduruldu)dur='stopped';else if(akt>=total-1)dur='done';else if(akt>=4)dur='qc';else if(akt>0)dur='progress';
-  var lblMap={on_imalat:tv('sp_stage_pre','Ön İmalat'),imalat:tv('sp_stage_fab','İmalat'),kaynak:tv('sp_stage_weld','Kaynak'),on_kontrol:tv('sp_stage_inspect','Ön Kontrol'),kk:tv('sp_stage_qc','Kalite Kontrol'),sevkiyat:tv('sp_stage_ship','Sevkiyat')};
-  var aktGor='';
+  // lblMap kaldırıldı — _basamakMap (DB'den dinamik) kullanılıyor
+  var aktGor="";
   if(akt>=0){
-    // lblMap (tv() ile) her zaman önce — snapshot gorunen_ad Türkçe olabilir
-    if(lblMap[aktStr])aktGor=lblMap[aktStr];
+    // Önce DB'den yüklenen map, sonra snapshot, sonra sistem adı
+    if(_basamakMap[aktStr])aktGor=_basamakMap[aktStr];
     else if(snap.length&&snap[akt])aktGor=snap[akt].gorunen_ad||aktStr;
     else aktGor=aktStr;
   }
@@ -1886,6 +1905,7 @@ document.addEventListener('DOMContentLoaded', function() {
       await devreYukle();
       sayfaDoldur();
       if (_supa()) {
+        await _basamakMapYukle();
         await spoolYukle();
         renderTable();
         statGuncelle();
