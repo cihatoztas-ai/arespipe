@@ -349,7 +349,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   try {
     var {data: loglar} = await supa
       .from('islem_log')
-      .select('islem, tablo_adi, olusturma, kullanici_id')
+      .select('islem, katman, olusturma, yapan_id')
+      .eq('tenant_id', tid)
       .order('olusturma', {ascending: false})
       .limit(6);
 
@@ -366,7 +367,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       return `<div class="son-aktivite-item">
         <div class="sa-dot ${renk}"></div>
         <div class="sa-body">
-          <div class="sa-title">${esc(l.tablo_adi || '—')}</div>
+          <div class="sa-title">${esc(l.katman || '—')}</div>
           <div class="sa-sub">${esc(l.islem || '—')}</div>
         </div>
         <div class="sa-time">${sure}</div>
