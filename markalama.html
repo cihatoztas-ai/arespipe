@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Markalama Yönetimi | AresPipe</title>
-<script>(function(){var t=localStorage.getItem('ares_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap&subset=latin" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <style>
@@ -1171,11 +1171,11 @@ function toast(msg,type){
     var lbl=document.getElementById('themeLabel');
     if(lbl)lbl.textContent=t==='light-anthracite'?'Açık Tema':'Koyu Tema';
   }
-  var saved=localStorage.getItem('ares_theme')||'dark';
+  var saved=localStorage.getItem('ares_theme')||'light-anthracite';
   applyTheme(saved);
   var btn=document.getElementById('themeToggle');
   if(btn)btn.addEventListener('click',function(){
-    var cur=document.documentElement.getAttribute('data-theme')||'dark';
+    var cur=document.documentElement.getAttribute('data-theme')||'light-anthracite';
     applyTheme(cur==='dark'?'light-anthracite':'dark');
   });
 })();
