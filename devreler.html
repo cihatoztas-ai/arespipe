@@ -1100,6 +1100,9 @@ async function sorgulaVeGoster() {
     _allSpoolsCache._capDagilim     = stat.cap_dagilim     || [];
     _allSpoolsCache._malzemeDagilim = stat.malzeme_dagilim || [];
     _allSpoolsCache._yuzeyDagilim   = stat.yuzey_dagilim   || [];
+    _allSpoolsCache._capBosSpool    = stat.cap_bos_spool    || 0;
+    _allSpoolsCache._capBosAgirlik  = parseFloat(stat.cap_bos_agirlik) || 0;
+    _allSpoolsCache._malzemeBos     = stat.malzeme_bos_spool || 0;
 
     var count = document.getElementById('tableCount');
     if (count) count.textContent = '('+_ssTotal+' '+tv('cmn_devre','devre')+')';
@@ -1753,12 +1756,17 @@ function malzemeModalAc() {
     return {label: k, val: merged[k].val, agirlik: merged[k].agirlik, color: RENKLER[i%RENKLER.length]};
   });
   var cols = items.map(function(x) { return x.color; });
+  var malzemeBos = _allSpoolsCache._malzemeBos || 0;
   var list = document.getElementById('malzemeList');
   if (list) list.innerHTML = items.map(function(x, i) {
     return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div>' +
       '<div style="text-align:right;"><div style="font-weight:700;">' + x.val + ' spool</div>' +
       '<div style="font-size:12px;color:var(--txd);">' + Math.round(x.agirlik).toLocaleString('tr-TR') + ' kg</div></div></div>';
-  }).join('');
+  }).join('') +
+  (malzemeBos > 0 ?
+    '<div style="padding:8px 12px;font-size:12px;color:var(--warn);background:rgba(217,119,6,.06);border-radius:6px;margin-top:8px;">' +
+      '⚠ ' + malzemeBos + ' spoolun malzeme bilgisi eksik — dağılıma dahil değil' +
+    '</div>' : '');
   fullDonut('malzemeSvg', 'malzemeCenter', items, cols, 'spool');
   modal('modalMalzeme', true);
 }
@@ -1766,6 +1774,9 @@ function malzemeModalAc() {
 // ── ÇAP DAĞILIM MODAL ───────────────────────────────────────────
 function capModalAc() {
   var capDagilim = _allSpoolsCache._capDagilim || [];
+  var capBosSpool   = _allSpoolsCache._capBosSpool   || 0;
+  var capBosAgirlik = _allSpoolsCache._capBosAgirlik || 0;
+
   var sorted = capDagilim
     .map(function(r){ return {mm: parseFloat(r.mm)||0, val: parseInt(r.adet), agirlik: parseFloat(r.agirlik)||0}; })
     .sort(function(a,b){ return a.mm - b.mm; });
@@ -1791,7 +1802,11 @@ function capModalAc() {
       '<td style="font-weight:700;color:var(--tx);">' + topAdet + '</td>' +
       '<td style="font-weight:700;color:var(--tx);">' + Math.round(topAgirlik).toLocaleString('tr-TR') + ' kg</td>' +
       '<td style="font-weight:700;color:var(--tx);">%100</td>' +
-    '</tr>';
+    '</tr>' +
+    (capBosSpool > 0 ?
+      '<tr><td colspan="4" style="padding:8px 12px;font-size:12px;color:var(--warn);background:rgba(217,119,6,.06);">' +
+        '⚠ ' + capBosSpool + ' spoolun çap bilgisi eksik — ' + Math.round(capBosAgirlik).toLocaleString('tr-TR') + ' kg dahil değil' +
+      '</td></tr>' : '');
   }
 
   // Donut (legend yok)
