@@ -659,7 +659,7 @@ else var ARES = (function () {
     return yetkiler;
   }
 
-  function yetkiCacheSifirla() { _yetkiCache = null; }
+  function yetkiCacheSifirla() { _yetkiCache = null; _blokCache = null; }
 
   // Yetki var mı? (async — DB override'larını bekler)
   async function yetkiVar(yetki_kodu) {
@@ -680,19 +680,108 @@ else var ARES = (function () {
   // Mevcut kullanıcının rolünü döndür
   function rolAl() { return _oturum?.rol || null; }
 
-  // Sayfa yetki kontrolü — izinli roller listesine sahip değilse yönlendir
-  async function sayfaYetkiKontrol(izinliRoller, yonlendir) {
-    if (!_oturum) {
-      location.href = 'giris.html';
-      return false;
+  // ── BLOK YETKİ SİSTEMİ ──────────────────────────────────
+  let _blokCache = null;
+
+  async function _blokYukle() {
+    if (_blokCache) return _blokCache;
+
+    if (!_oturum) { _blokCache = { tamYetki: false, sayfalar: {} }; return _blokCache; }
+
+    // Yönetici / firma admini / super admin → her şeye erişir
+    if (_oturum.rol === 'super_admin' || _oturum.rol === 'yonetici' || _oturum.rol === 'firma_admin') {
+      _blokCache = { tamYetki: true, sayfalar: {} };
+      return _blokCache;
     }
-    const mevcutRol = _oturum.rol;
-    if (mevcutRol === 'super_admin') return true; // her yere girebilir
-    if (!izinliRoller.includes(mevcutRol)) {
-      location.href = yonlendir || 'index.html';
-      return false;
+
+    if (!_supa) { _blokCache = { tamYetki: false, sayfalar: {} }; return _blokCache; }
+
+    var res = await _supa
+      .from('kullanici_bloklar')
+      .select('yetki_bloklari(blok_sayfa_yetkileri(sayfa_kodu, gizli_bolumler))')
+      .eq('kullanici_id', _oturum.id)
+      .eq('tenant_id', tenantId());
+
+    // Her sayfa için gizli bölümleri birleştir
+    // Kural: bir bölüm TÜM bloklarda gizliyse → gizli, herhangi birinde açıksa → görünür
+    var ham = {};
+    (res.data || []).forEach(function (kb) {
+      var blok = kb.yetki_bloklari;
+      if (!blok) return;
+      (blok.blok_sayfa_yetkileri || []).forEach(function (bsy) {
+        if (!ham[bsy.sayfa_kodu]) ham[bsy.sayfa_kodu] = [];
+        ham[bsy.sayfa_kodu].push(bsy.gizli_bolumler || []);
+      });
+    });
+
+    var sayfalar = {};
+    Object.keys(ham).forEach(function (sayfa) {
+      var listeler = ham[sayfa];
+      var gizli = listeler[0].filter(function (b) {
+        return listeler.every(function (l) { return l.indexOf(b) !== -1; });
+      });
+      sayfalar[sayfa] = { gizli: gizli };
+    });
+
+    _blokCache = { tamYetki: false, sayfalar: sayfalar };
+    return _blokCache;
+  }
+
+  // Sayfa yetki kontrolü
+  // ESKİ kullanım: sayfaYetkiKontrol(['yonetici','kk_uzmani']) — mevcut sayfalar bozulmaz
+  // YENİ kullanım: sayfaYetkiKontrol('kesim') — blok sistemi
+  async function sayfaYetkiKontrol(arg, yonlendir) {
+    if (!_oturum) { location.href = 'giris.html'; return false; }
+    if (_oturum.rol === 'super_admin') return true;
+
+    // ESKİ SİSTEM: array → rol bazlı kontrol
+    if (Array.isArray(arg)) {
+      if (_oturum.rol === 'yonetici' || _oturum.rol === 'firma_admin') return true;
+      if (!arg.includes(_oturum.rol)) {
+        location.href = yonlendir || 'index.html';
+        return false;
+      }
+      return true;
     }
-    return true;
+
+    // YENİ SİSTEM: string → blok bazlı kontrol
+    var y = await _blokYukle();
+    if (y.tamYetki) return true;
+    if (y.sayfalar[arg]) return true;
+    location.href = yonlendir || 'index.html';
+    return false;
+  }
+
+  // Bölüm görünürlük kontrolü — yönlendirme yapmaz
+  // Kullanım: if (!await ARES.bolumGorunur('spool_detay','islem_log')) el.style.display='none'
+  async function bolumGorunur(sayfaKodu, bolumKodu) {
+    var y = await _blokYukle();
+    if (y.tamYetki) return true;
+    var s = y.sayfalar[sayfaKodu];
+    if (!s) return false;
+    return s.gizli.indexOf(bolumKodu) === -1;
+  }
+
+  // Kullanıcıya atanmış blokları döner — kullanici_detay Yetkiler sekmesi için
+  async function kullaniciBloklari(kullaniciId) {
+    if (!_supa) return [];
+    var res = await _supa
+      .from('kullanici_bloklar')
+      .select('id, blok_id, yetki_bloklari(id, ad, renk, sistem_preset, aciklama)')
+      .eq('kullanici_id', kullaniciId);
+    return res.data || [];
+  }
+
+  // Tenant'ın tüm bloklarını döner — blok seçim UI için
+  async function tumBloklar() {
+    if (!_supa) return [];
+    var res = await _supa
+      .from('yetki_bloklari')
+      .select('id, ad, aciklama, renk, sistem_preset')
+      .or('tenant_id.eq.' + tenantId() + ',sistem_preset.eq.true')
+      .order('sistem_preset', { ascending: false })
+      .order('ad');
+    return res.data || [];
   }
 
   // Müşteri portalı yönlendirmesi
@@ -730,8 +819,10 @@ else var ARES = (function () {
     girisYap, cikisYap, oturumKontrol, oturumAl, tenantId,
     viewAsAktif, viewAsCik,
 
-    // Yetki
+    // Yetki — rol bazlı (mevcut)
     yetkiVar, yetkiVarHizli, rolAl, sayfaYetkiKontrol, portalKontrol, yetkiCacheSifirla,
+    // Yetki — blok bazlı (yeni)
+    bolumGorunur, kullaniciBloklari, tumBloklar,
 
     // Veri
     tersaneleriGetir,
