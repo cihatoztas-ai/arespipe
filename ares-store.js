@@ -349,8 +349,9 @@ else var ARES = (function () {
   async function devreleriGetir(projeId) {
     if (mod === 'supabase' && _supa) {
       let q = _supa.from('devreler')
-        .select('*, projeler(proje_no, gemi_adi, tersaneler(ad))')
-        .order('devre_no');
+        .select('id, devre_no, ad, zone, durum, is_emri_no, guncelleme, proje_id, projeler(proje_no, gemi_adi, tersaneler(ad))')
+        .order('devre_no')
+        .limit(2000);
       if (projeId) q = q.eq('proje_id', projeId);
       const { data, error } = await q;
       if (error) { console.warn(error); return []; }
@@ -377,13 +378,17 @@ else var ARES = (function () {
   async function spoollariGetir(devreId) {
     if (mod === 'supabase' && _supa) {
       let q = _supa.from('spooller')
-        .select(`*,
+        .select(`
+          id, spool_no, spool_id, pipeline_no, rev, dis_cap_mm, et_kalinligi_mm,
+          agirlik, malzeme, kalite, yuzey, durum, aktif_basamak, ilerleme,
+          durduruldu, durdurma_sebebi, alistirma, son_islem, guncelleme, devre_id,
           devreler(devre_no, proje_id, projeler(proje_no, gemi_adi)),
           kesim_kalemleri(id, kesildi),
           bukum_kalemleri(id, bukuldu),
           markalama_kalemleri(id, markalandi)
         `)
-        .order('spool_no');
+        .order('spool_no')
+        .limit(5000);
       if (devreId) q = q.eq('devre_id', devreId);
       const { data, error } = await q;
       if (error) { console.warn(error); return []; }
