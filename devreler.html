@@ -966,6 +966,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         durum:         d.durum         || 'baslamadi',
         sonIslem:      sonIslem,
         terminTarihi:  d.termin_tarihi || null,
+        _iptalNeden:   d.durdurma_sebebi || null,
         caps:          caps
       };
 }
@@ -1057,7 +1058,7 @@ async function sorgulaVeGoster() {
     );
     var listeQ = applyFilters(
       supa.from('devreler')
-        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin_tarihi, ' +
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin_tarihi, durdurma_sebebi, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
@@ -1170,8 +1171,7 @@ function yildizToggle(id) {
     }
     guncelleMLButonu();
   } else {
-    // 2. tıklama (1/2/3) — modal aç, ML yoksa üret
-    if (!getML(id)) setML(id, mockMalzemeUret(d));
+    // 2. tıklama (1/2/3) — modal aç
     mlKontrolAc(id);
   }
 }
@@ -1179,56 +1179,52 @@ function yildizToggle(id) {
 // ── DEMO MALZEME ÜRETİCİ ─────────────────────────────────────────
 // Yıldıza ilk tıklandığında caps[] dizisinden otomatik malzeme listesi üretir.
 // Supabase geçişinde gerçek spool malzeme verileriyle değiştirilecek.
-function mockMalzemeUret(devre) {
-  var capK = {};
-  (devre.caps || []).forEach(function(c) { capK[c.mm] = (capK[c.mm] || 0) + 1; });
-  var malStr = (devre.malzeme || []).map(function(m) { return m === 'celik' ? 'ÇELİK' : 'PASLANMAZ'; }).join('/');
-  var kalite = malStr.indexOf('PASLANMAZ') !== -1 ? '316L' : 'ASTM A106 Gr.B';
-  var kalemler = [];
-  var idx = 1;
-  // DN sıralamasına göre
-  var DN_SIRA = ['DN40','DN50','DN65','DN80','DN100','DN125','DN150','DN200','DN250','DN300','DN350','DN400'];
-  Object.keys(capK).sort(function(a, b) {
-    return (DN_SIRA.indexOf(a) < 0 ? 99 : DN_SIRA.indexOf(a)) - (DN_SIRA.indexOf(b) < 0 ? 99 : DN_SIRA.indexOf(b));
-  }).forEach(function(cap) {
-    var adet = capK[cap];
-    var mmVal = capToMM(cap);
-    var capGoster = mmVal ? formatCapMM(cap) + ' mm' : cap;
-    // Boru kalemi
-    kalemler.push({id:'k'+idx++, tip:'boru', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Dikişsiz boru ' + capGoster, birim:'m', miktar:parseFloat((adet*2.5).toFixed(1)), hazir:false});
-    // Fitting kalemleri
-    if (adet >= 2) kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Dirsek 90° ' + capGoster, birim:tv('cmn_adet','adet'), miktar:adet, hazir:false});
-    kalemler.push({id:'k'+idx++, tip:'fitting', cap:cap, capMm:capGoster, malzeme:malStr, kalite:kalite, aciklama:'Flanş kaynaklı ' + capGoster + ' PN16', birim:tv('cmn_adet','adet'), miktar:Math.ceil(adet*1.5), hazir:false});
-  });
-  return {devreId:devre.id, isEmri:devre.isEmri, gemi:devre.gemi, devre:devre.devre, kalemler:kalemler};
-}
+// ── MALZEME LİSTESİ (Supabase) ───────────────────────────────────
 var _mlkAktifId = null;
 var _mlkKalemler = [];
 
-function getML(id) {
-  try { return JSON.parse(localStorage.getItem('ares_ml_' + id) || 'null'); } catch(e) { return null; }
-}
-function setML(id, data) {
-  try { localStorage.setItem('ares_ml_' + id, JSON.stringify(data)); } catch(e) {}
-}
-
-function mlKontrolAc(id) {
+async function mlKontrolAc(id) {
   var d = DEVRELER.find(function(x) { return x.supaId === id; });
   if (!d) return;
   _mlkAktifId = id;
-  // ML yoksa caps'ten otomatik üret
-  var ml = getML(id);
-  if (!ml) { ml = mockMalzemeUret(d); setML(id, ml); }
-  _mlkKalemler = JSON.parse(JSON.stringify(ml.kalemler));
-  var state = getStarState(id);
-  var cfg = _STAR_CFG[state > 0 ? state : 1];
-  var icon = document.getElementById('mlkIcon');
-  var renkler = ['','var(--re)','var(--warn)','var(--gr)'];
-  if (icon) icon.style.background = renkler[state > 0 ? state : 1];
+
   var bas = document.getElementById('mlkBaslik');
   if (bas) bas.textContent = d.isEmri + ' — ' + d.devre;
   var alt = document.getElementById('mlkAlt');
   if (alt) alt.textContent = d.gemi + ' / ' + d.zone;
+
+  // Supabase'den gerçek malzeme listesini çek
+  _mlkKalemler = [];
+  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+  if (supa) {
+    var { data, error } = await supa.from('pipeline_malzemeleri')
+      .select('id, kod, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, agirlik_kg, sertifikali, hazir')
+      .eq('devre_id', id)
+      .order('dis_cap_mm', { ascending: true });
+    if (!error && data) {
+      _mlkKalemler = data.map(function(k) {
+        var capMm = k.dis_cap_mm ? String(parseFloat(k.dis_cap_mm).toFixed(1)) + ' mm' : '—';
+        return {
+          id:       k.id,
+          tip:      k.kod || 'malzeme',
+          aciklama: k.tanim || k.kod || '—',
+          cap:      k.dis_cap_mm ? String(k.dis_cap_mm) : null,
+          capMm:    capMm,
+          malzeme:  k.malzeme || '—',
+          kalite:   k.kalite  || '—',
+          miktar:   k.adet    || null,
+          birim:    'adet',
+          agirlik:  k.agirlik_kg || null,
+          hazir:    !!k.hazir
+        };
+      });
+    }
+  }
+
+  var state = getStarState(id);
+  var icon = document.getElementById('mlkIcon');
+  var renkler = ['','var(--re)','var(--warn)','var(--gr)'];
+  if (icon) icon.style.background = renkler[state > 0 ? state : 1];
   mlkOzetGuncelle();
   mlkRender();
   modal('modalMlKontrol', true);
@@ -1276,23 +1272,25 @@ function mlHepsiniToggle(val) {
   mlkRender();
 }
 
-function mlKaydet() {
+async function mlKaydet() {
   if (_mlkAktifId === null) return;
-  var ml = getML(_mlkAktifId) || {kalemler:[]};
-  ml.kalemler = _mlkKalemler;
-  setML(_mlkAktifId, ml);
+
+  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+  if (supa && _mlkKalemler.length) {
+    // Her kalem için hazir durumunu güncelle
+    var updates = _mlkKalemler.map(function(k) {
+      return supa.from('pipeline_malzemeleri').update({ hazir: !!k.hazir }).eq('id', k.id);
+    });
+    await Promise.all(updates);
+  }
+
   var hazir = _mlkKalemler.filter(function(k) { return k.hazir; }).length;
   var top = _mlkKalemler.length;
   var m = getStarMap();
-  if (top === 0) {
-    m[_mlkAktifId] = 1;
-  } else if (hazir === top) {
-    m[_mlkAktifId] = 3;
-  } else if (hazir > 0) {
-    m[_mlkAktifId] = 2;
-  } else {
-    m[_mlkAktifId] = 1;
-  }
+  if (top === 0)        m[_mlkAktifId] = 1;
+  else if (hazir===top) m[_mlkAktifId] = 3;
+  else if (hazir > 0)   m[_mlkAktifId] = 2;
+  else                  m[_mlkAktifId] = 1;
   setStarMap(m);
   modal('modalMlKontrol', false);
   renderTable(false);
@@ -1363,7 +1361,13 @@ function silOnayla() {
 
 // ── İPTAL ────────────────────────────────────────────────────────
 var _iptalAktifId = null;
-function getIptalMap() { try { return JSON.parse(localStorage.getItem('ares_iptal_map') || '{}'); } catch(e) { return {}; } }
+function getIptalMap() {
+  var m = {};
+  DEVRELER.forEach(function(d){
+    if(d.durum === 'iptal' || d.durum === 'iptal_edildi') m[d.supaId] = { neden: d._iptalNeden || '' };
+  });
+  return m;
+}
 
 function iptalModal(e, id) {
   e.stopPropagation();
@@ -1376,21 +1380,26 @@ function iptalModal(e, id) {
   modal('modalIptal', true);
 }
 
-function iptalOnayla() {
+async function iptalOnayla() {
   if (_iptalAktifId === null) return;
   var neden = (document.getElementById('iptalNeden') || {}).value || '';
   if (!neden.trim()) { showToast('İptal nedeni zorunlu', 'error'); return; }
   var d = DEVRELER.find(function(x) { return x.supaId === _iptalAktifId; });
-  var map = getIptalMap();
-  map[_iptalAktifId] = {
-    tarih: new Date().toLocaleString('tr-TR'),
-    neden: neden.trim()
-  };
-  try { localStorage.setItem('ares_iptal_map', JSON.stringify(map)); } catch(e) {}
-  // L-01: İptal işlemi loglanır
-  if (d) _logEkle(d, 'İPTAL', neden.trim());
   modal('modalIptal', false);
+  var aktifId = _iptalAktifId;
   _iptalAktifId = null;
+
+  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+  if (supa && d) {
+    var { error } = await supa.from('devreler').update({
+      durum: 'iptal',
+      durdurma_sebebi: neden.trim()
+    }).eq('id', aktifId);
+    if (error) { showToast('İptal başarısız: ' + error.message, 'error'); return; }
+    d.durum = 'iptal';
+    d._iptalNeden = neden.trim();
+  }
+  if (d) _logEkle(d, 'İPTAL', neden.trim());
   renderTable();
   showToast('Devre iptal edildi', 'success');
 }
@@ -1837,8 +1846,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
 
   // İçerik — yıldız durumuna göre
   function devreIcerik(d) {
-    var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
-    var kalemler = ml ? ml.kalemler : [];
+    var kalemler = []; // pipeline_malzemeleri'nden mlKontrolAc ile yüklenir
     var state = starMap[d.supaId];
     var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
     var toplam = kalemler.length;
@@ -2006,8 +2014,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     var wb = XLSX.utils.book_new();
     var rows1 = [['#','Is Emri','Gemi','Devre','Zone','Spool','Agirlik (kg)','Malzeme Durumu','Tamamlanan','Toplam Kalem']];
     starred.forEach(function(d, i) {
-      var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
-      var kalemler = ml ? ml.kalemler : [];
+      var kalemler = [];
       var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
       rows1.push([i+1, d.isEmri, d.gemi, d.devre, d.zone, d.spool, Math.round(d.agirlik), DURUM_LABEL[starMap[d.supaId]] || '', hazir, kalemler.length]);
     });
@@ -2016,8 +2023,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     XLSX.utils.book_append_sheet(wb, ws1, 'Ozet');
     var rows2 = [['Is Emri','Gemi','Devre','Kalem No','Tip','Aciklama','Dis Cap (mm)','Malzeme','Kalite','Miktar','Birim','Durum']];
     starred.forEach(function(d) {
-      var ml = getML(d.supaId); if (!ml) { ml = mockMalzemeUret(d); setML(d.supaId, ml); }
-      var kalemler = ml ? ml.kalemler : [];
+      var kalemler = [];
       var state = starMap[d.supaId];
       var hazirEx = kalemler.filter(function(k) { return k.hazir; }).length;
       var tamamEx = (state === 3) || (kalemler.length > 0 && hazirEx === kalemler.length);
