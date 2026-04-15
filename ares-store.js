@@ -378,11 +378,7 @@ else var ARES = (function () {
   async function spoollariGetir(devreId) {
     if (mod === 'supabase' && _supa) {
       let q = _supa.from('spooller')
-        .select(`
-          id, spool_no, spool_id, pipeline_no, rev, dis_cap_mm, et_kalinligi_mm,
-          agirlik, agirlik_kg, malzeme, kalite, yuzey, durum, aktif_basamak, ilerleme,
-          durduruldu, durdurma_sebebi, alistirma, son_islem, guncelleme, devre_id,
-          silindi, basamak_snapshot,
+        .select(`*,
           devreler(devre_no, proje_id, projeler(proje_no, gemi_adi)),
           kesim_kalemleri(id, kesildi),
           bukum_kalemleri(id, bukuldu),
