@@ -79,6 +79,8 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .sb-qc{background:rgba(124,58,237,.12);color:var(--leg);}
 .sb-done{background:rgba(22,163,110,.12);color:var(--gr);}
 .sb-stop{background:rgba(229,62,62,.12);color:var(--re);}
+@keyframes sbPulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.sb-pulse-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:middle;animation:sbPulse 1.4s ease-in-out infinite;}
 
 /* Mini steps */
 .steps{display:flex;gap:3px;flex-wrap:wrap;}
@@ -1068,6 +1070,7 @@ function _spoolMap(s,i){
     yuzey:s.yuzey||s.yuzey_islemi||'—',
     durum:dur,durumText:durumText,
     _aktifBasamak:aktStr,_aktGorLabel:_aktGorLabel,
+    isDurumu:s.is_durumu||'bekliyor',
     adimlar:adimlar,sonIslem:s.son_islem||null,
     alistirma:s.alistirma||null,bukum:bukum,kesim:kesim,markalama:mar,
     test:{toplam:0,tamamlanan:0},durduruldu:!!s.durduruldu,stopped:!!s.durduruldu,iptal:false};
@@ -1161,7 +1164,7 @@ function renderTable(){
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'malzeme\',\''+esc(s.spoolNo)+'\',\'select\',\'Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum\',\''+esc(s.malzeme)+'\')">'+esc(_malzemeGoster(s.malzeme)||'—')+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'kalite\',\''+esc(s.spoolNo)+'\',\'text\',\'\',\''+esc(s.kalite)+'\')" style="color:var(--ac);font-weight:600;">'+esc(s.kalite||'—')+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'yuzey\',\''+esc(s.spoolNo)+'\',\'select\',\'Galvaniz,Asit,Siyah,Epoksi,Boyalı\',\''+esc(s.yuzey)+'\')">'+esc(_yuzeyGoster(s.yuzey)||'—')+'</td>'
-      +'<td><span class="sb '+d.cls+'">'+esc(_stepText(s))+'</span></td>'
+      +'<td><span class="sb '+d.cls+'">'+(s.isDurumu==='devam_ediyor'&&(s._aktifBasamak==='imalat'||s._aktifBasamak==='kaynak')?'<span class="sb-pulse-dot"></span>':'')+esc(_stepText(s))+'</span></td>'
       +'<td><div class="steps" title="'+adimLbl().join(' → ')+'">'+s.adimlar.map(stepHtml).join('')+'</div>'
         +'<div style="font-size:11px;color:var(--txd);margin-top:2px;">'+s.adimlar.filter(function(v){return v===1;}).length+'/'+s.adimlar.length+'</div></td>'
       +'<td style="color:var(--txd);font-size:12px;">'+esc(s.sonIslem||'—')+'</td>'
