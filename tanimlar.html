@@ -62,10 +62,40 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 
 .bos{text-align:center;padding:40px 20px;color:var(--txd);font-size:14px;}
 
-/* Filtre barı */
-.filtre-bari{display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px 14px;}
-.fi{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;outline:none;box-sizing:border-box;}
-.fi:focus{border-color:var(--ac);}
+/* SEKMELER */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--bor);margin-bottom:24px;}
+.tab-btn{padding:10px 20px;background:transparent;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.tab-btn:hover{color:var(--tx);}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:700;}
+.tab-panel{display:none;}.tab-panel.on{display:block;}
+
+/* BLOK YETKİLERİ */
+.blok-liste{display:flex;flex-direction:column;gap:8px;}
+.blok-satir{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;}
+.blok-satir.sistem{opacity:.85;}
+.blok-satir-ust{display:flex;align-items:center;gap:0;cursor:pointer;user-select:none;}
+.blok-renk-cubuk{width:4px;align-self:stretch;flex-shrink:0;}
+.blok-satir-bilgi{flex:1;padding:12px 14px;}
+.blok-satir-ad{font-size:15px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:8px;}
+.blok-satir-meta{font-size:12px;color:var(--txd);margin-top:2px;}
+.blok-satir-aksiyonlar{display:flex;align-items:center;gap:6px;padding:0 14px;}
+.blok-expand-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:12px;}
+.blok-expand-btn:hover{border-color:var(--ac);color:var(--ac);}
+.blok-detay{display:none;padding:12px 18px 16px;border-top:1px solid var(--bor);background:var(--sur2);}
+.blok-detay.open{display:block;}
+.blok-detay-baslik{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.blok-sayfa-listesi{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.blok-sayfa-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--sur);border:1px solid var(--bor);color:var(--txm);}
+.blok-sayfa-tag .sil-btn{background:none;border:none;color:var(--txd);cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:2px;}
+.blok-sayfa-tag .sil-btn:hover{color:var(--re);}
+.blok-sayfa-ekle{display:flex;gap:6px;margin-top:6px;}
+.sistem-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
+.grup-chip{font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(45,142,255,.1);color:var(--ac);font-weight:600;}
+.renk-picker{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);cursor:pointer;padding:0;}
+.blok-yeni-form{background:var(--sur);border:1px solid var(--ac);border-radius:12px;padding:16px;margin-bottom:8px;display:none;}
+.blok-yeni-form.open{display:block;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 </style>
 <!-- ✅ Script sırası — SC-01 -->
 <script src="ares-store.js"></script>
@@ -93,35 +123,78 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
       <span>İşlem basamakları artık firma bazında süper admin tarafından yönetilmektedir. Erişim için: <strong>Admin Paneli → Firma Detay</strong></span>
     </div>
 
-    <!-- KOD SERİLERİ -->
-    <div class="filtre-bari cl-leg" style="margin-bottom:16px;">
-      <button class="btn btn-sm" style="background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);" onclick="kodSeriEkle()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Yeni Seri Ekle
-      </button>
-      <div style="flex:1"></div>
-      <span style="font-size:14px;color:var(--txd);">Prefix değişikliği geçmiş numaraları etkilemez.</span>
+    <!-- SEKMELER -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="bloklar">🔐 Yetki Blokları</button>
+      <button class="tab-btn" data-tab="kodseriler">🔢 Kod Serileri</button>
     </div>
-    <div class="tablo-kart cl-leg">
-      <div class="tablo-header">
-        <div class="tablo-baslik">Kod Serileri &amp; Sayaçlar</div>
-        <div style="font-size:14px;color:var(--txd);">sayac_tanimlari</div>
+
+    <!-- YETKİ BLOKLARI -->
+    <div class="tab-panel on" id="tabBloklar">
+
+      <!-- Yeni blok formu -->
+      <div class="blok-yeni-form" id="yeniBlokForm">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:12px;">Yeni Yetki Bloğu</div>
+        <div class="fg2" style="margin-bottom:10px;">
+          <div><label class="fl">Blok Adı *</label><input class="fi" id="ybAd" placeholder="Büküm — Ölçü Girişi"></div>
+          <div><label class="fl">Grup</label><input class="fi" id="ybGrup" placeholder="Büküm, Kesim, Kalite..."></div>
+        </div>
+        <div class="fg2" style="margin-bottom:10px;">
+          <div><label class="fl">Açıklama</label><input class="fi" id="ybAciklama" placeholder="Bu bloğun ne işe yaradığı"></div>
+          <div><label class="fl">Renk</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px;"><input type="color" class="renk-picker" id="ybRenk" value="#2D8EFF"><span id="ybRenkLabel" style="font-size:12px;color:var(--txd);">#2D8EFF</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ac" onclick="yeniBlokKaydet()">Kaydet</button>
+          <button class="btn btn-g" onclick="yeniBlokFormKapat()">İptal</button>
+        </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:120px;">Tip</th>
-            <th>Açıklama</th>
-            <th style="width:80px;">Prefix</th>
-            <th style="width:80px;text-align:center;">Yıl Ekle</th>
-            <th style="width:80px;text-align:center;">Basamak</th>
-            <th style="width:120px;">Örnek</th>
-            <th style="width:80px;text-align:right;">Son No</th>
-            <th style="width:90px;"></th>
-          </tr>
-        </thead>
-        <tbody id="kodSeriTablo"></tbody>
-      </table>
+
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-ac btn-sm" onclick="yeniBlokFormAc()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Yeni Blok
+        </button>
+        <input class="fi" id="blokAraInput" style="max-width:220px;" placeholder="Blok ara..." oninput="blokFiltrele(this.value)">
+        <span id="blokSayisi" style="font-size:13px;color:var(--txd);margin-left:auto;"></span>
+      </div>
+
+      <!-- Blok listesi — gruplu -->
+      <div id="blokListesi"></div>
+
+    </div>
+
+    <!-- KOD SERİLERİ -->
+    <div class="tab-panel" id="tabKodseriler">
+      <div class="filtre-bari cl-leg" style="margin-bottom:16px;">
+        <button class="btn btn-sm" style="background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);" onclick="kodSeriEkle()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Yeni Seri Ekle
+        </button>
+        <div style="flex:1"></div>
+        <span style="font-size:14px;color:var(--txd);">Prefix değişikliği geçmiş numaraları etkilemez.</span>
+      </div>
+      <div class="tablo-kart cl-leg">
+        <div class="tablo-header">
+          <div class="tablo-baslik">Kod Serileri &amp; Sayaçlar</div>
+          <div style="font-size:14px;color:var(--txd);">sayac_tanimlari</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:120px;">Tip</th>
+              <th>Açıklama</th>
+              <th style="width:80px;">Prefix</th>
+              <th style="width:80px;text-align:center;">Yıl Ekle</th>
+              <th style="width:80px;text-align:center;">Basamak</th>
+              <th style="width:120px;">Örnek</th>
+              <th style="width:80px;text-align:right;">Son No</th>
+              <th style="width:90px;"></th>
+            </tr>
+          </thead>
+          <tbody id="kodSeriTablo"></tbody>
+        </table>
+      </div>
     </div>
 
   </div><!-- /page -->
@@ -159,7 +232,252 @@ function toast(msg, tip) {
   _toastT = setTimeout(function(){ el.remove(); }, 3500);
 }
 
-window._onLangChange = function() {};
+// ── SEKMELER ──────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('on'); });
+    btn.classList.add('active');
+    var id = 'tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
+    var panel = document.getElementById(id);
+    if (panel) panel.classList.add('on');
+    if (btn.dataset.tab === 'bloklar' && !_blokYuklendi && typeof ARES !== 'undefined') blokYukle();
+    if (btn.dataset.tab === 'kodseriler' && !_kodSeriData.length && typeof ARES !== 'undefined') kodSeriYukle();
+  });
+});
+
+// ── YETKİ BLOKLARI ────────────────────────────────────────
+var _blokData     = [];
+var _blokYuklendi = false;
+var _sayfaKodlari = [];
+
+async function blokYukle() {
+  if (typeof ARES === 'undefined') return;
+  _blokYuklendi = true;
+  var supa = ARES.supabase();
+  if (!supa) return;
+
+  // Tüm bloklar
+  var res = await supa
+    .from('yetki_bloklari')
+    .select('id, ad, aciklama, renk, sistem_preset, grup, sira')
+    .or('tenant_id.eq.' + ARES.tenantId() + ',sistem_preset.eq.true')
+    .order('grup').order('sira').order('ad');
+  _blokData = res.data || [];
+
+  // Sayfa kodları — ARES.SAYFA sabitinden al
+  _sayfaKodlari = typeof ARES.SAYFA === 'object'
+    ? Object.values(ARES.SAYFA)
+    : ['kesim','bukum','markalama','spool_detay','devre_detay','devreler',
+       'kk','sevkiyat','testler','malzeme','raporlar','kullanicilar',
+       'kullanici_detay','tanimlar','is_baslat',
+       'mobile/devreler','mobile/devre_detay','mobile/spool_detay',
+       'mobile/kk','mobile/sevkiyat','mobile/is_baslat'];
+
+  blokRender();
+}
+
+function blokFiltrele(val) { blokRender(val); }
+
+function blokRender(filtre) {
+  filtre = (filtre || '').toLowerCase().trim();
+  var listesi = document.getElementById('blokListesi');
+  var sayisi  = document.getElementById('blokSayisi');
+
+  var gorunenler = _blokData.filter(function(b) {
+    if (!filtre) return true;
+    return b.ad.toLowerCase().indexOf(filtre) !== -1 ||
+           (b.grup || '').toLowerCase().indexOf(filtre) !== -1 ||
+           (b.aciklama || '').toLowerCase().indexOf(filtre) !== -1;
+  });
+
+  if (sayisi) sayisi.textContent = gorunenler.length + ' blok';
+
+  if (!gorunenler.length) {
+    listesi.innerHTML = '<div class="bos">Blok bulunamadı</div>';
+    return;
+  }
+
+  // Gruplara ayır
+  var gruplar = {};
+  gorunenler.forEach(function(b) {
+    var g = b.grup || 'Diğer';
+    if (!gruplar[g]) gruplar[g] = [];
+    gruplar[g].push(b);
+  });
+
+  var html = Object.keys(gruplar).sort(function(a,b){ return a.localeCompare(b,'tr'); }).map(function(grup) {
+    var satirlar = gruplar[grup].map(function(b) { return blokSatirHtml(b); }).join('');
+    return '<div style="margin-bottom:20px;">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bor);">' +
+        esc(grup) + ' <span style="font-weight:400;opacity:.6;">(' + gruplar[grup].length + ')</span>' +
+      '</div>' +
+      '<div class="blok-liste">' + satirlar + '</div>' +
+    '</div>';
+  }).join('');
+
+  listesi.innerHTML = html;
+}
+
+function blokSatirHtml(b) {
+  var renk = b.renk || '#2D8EFF';
+  var sistemBadge = b.sistem_preset
+    ? '<span class="sistem-badge">Sistem</span>' : '';
+  var grupChip = b.grup
+    ? '<span class="grup-chip">' + esc(b.grup) + '</span>' : '';
+
+  return '<div class="blok-satir' + (b.sistem_preset ? ' sistem' : '') + '" id="blok_' + b.id + '">' +
+    '<div class="blok-satir-ust" onclick="blokToggleDetay(\'' + b.id + '\')">' +
+      '<div class="blok-renk-cubuk" style="background:' + renk + ';"></div>' +
+      '<div class="blok-satir-bilgi">' +
+        '<div class="blok-satir-ad">' + esc(b.ad) + ' ' + sistemBadge + '</div>' +
+        '<div class="blok-satir-meta">' + grupChip +
+          (b.aciklama ? ' <span style="margin-left:4px;">' + esc(b.aciklama) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="blok-satir-aksiyonlar">' +
+        (!b.sistem_preset ? '<button class="btn-re btn btn-sm" onclick="event.stopPropagation();blokSil(\'' + b.id + '\')" title="Bloğu sil">Sil</button>' : '') +
+        '<button class="blok-expand-btn" id="expand_' + b.id + '" title="Sayfaları göster">▼</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="blok-detay" id="detay_' + b.id + '">' +
+      '<div class="blok-detay-baslik">Erişim verilen sayfalar</div>' +
+      '<div class="blok-sayfa-listesi" id="sayfalar_' + b.id + '">Yükleniyor...</div>' +
+      (!b.sistem_preset ?
+        '<div class="blok-sayfa-ekle">' +
+          '<select class="fi" id="sayfaSec_' + b.id + '" style="max-width:260px;flex:1;">' +
+            _sayfaKodlari.map(function(s){ return '<option value="' + esc(s) + '">' + esc(s) + '</option>'; }).join('') +
+          '</select>' +
+          '<button class="btn btn-ac btn-sm" onclick="sayfaEkle(\'' + b.id + '\')">+ Ekle</button>' +
+        '</div>'
+      : '<div style="font-size:12px;color:var(--txd);margin-top:6px;">Sistem presetleri değiştirilemez.</div>') +
+    '</div>' +
+  '</div>';
+}
+
+var _acikDetaylar = {};
+
+async function blokToggleDetay(blokId) {
+  var detay  = document.getElementById('detay_' + blokId);
+  var expand = document.getElementById('expand_' + blokId);
+  if (!detay) return;
+
+  if (detay.classList.contains('open')) {
+    detay.classList.remove('open');
+    if (expand) expand.textContent = '▼';
+    delete _acikDetaylar[blokId];
+    return;
+  }
+
+  detay.classList.add('open');
+  if (expand) expand.textContent = '▲';
+  _acikDetaylar[blokId] = true;
+  await sayfaListesiYukle(blokId);
+}
+
+async function sayfaListesiYukle(blokId) {
+  var el = document.getElementById('sayfalar_' + blokId);
+  if (!el) return;
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri')
+    .select('id, sayfa_kodu, gizli_bolumler')
+    .eq('blok_id', blokId);
+
+  var blok = _blokData.find(function(b){ return b.id === blokId; });
+  var data = res.data || [];
+
+  if (!data.length) {
+    el.innerHTML = '<span style="font-size:13px;color:var(--txd);">Henüz sayfa eklenmemiş</span>';
+    return;
+  }
+
+  el.innerHTML = data.map(function(bsy) {
+    var silBtn = (!blok || !blok.sistem_preset)
+      ? '<button class="sil-btn" onclick="sayfaSil(\'' + bsy.id + '\',\'' + blokId + '\')" title="Kaldır">×</button>'
+      : '';
+    return '<span class="blok-sayfa-tag">' + esc(bsy.sayfa_kodu) + silBtn + '</span>';
+  }).join('');
+}
+
+async function sayfaEkle(blokId) {
+  var sel = document.getElementById('sayfaSec_' + blokId);
+  if (!sel || !sel.value) return;
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri').insert({
+    blok_id:    blokId,
+    sayfa_kodu: sel.value,
+    gizli_bolumler: []
+  });
+  if (res.error) {
+    if (res.error.code === '23505') { toast('Bu sayfa zaten ekli', 'er'); return; }
+    toast('Hata: ' + res.error.message, 'er'); return;
+  }
+  toast('Sayfa eklendi', 'ok');
+  await sayfaListesiYukle(blokId);
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
+}
+
+async function sayfaSil(bsyId, blokId) {
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri').delete().eq('id', bsyId);
+  if (res.error) { toast('Silinemedi: ' + res.error.message, 'er'); return; }
+  toast('Sayfa kaldırıldı', 'ok');
+  await sayfaListesiYukle(blokId);
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
+}
+
+async function blokSil(blokId) {
+  var blok = _blokData.find(function(b){ return b.id === blokId; });
+  if (!blok || blok.sistem_preset) { toast('Sistem presetleri silinemez', 'er'); return; }
+  if (!confirm('"' + blok.ad + '" bloğunu silmek istiyor musunuz?\nBu bloğa atanmış kullanıcılar yetkisini kaybeder.')) return;
+  var supa = ARES.supabase();
+  var res  = await supa.from('yetki_bloklari').delete().eq('id', blokId);
+  if (res.error) { toast('Silinemedi: ' + res.error.message, 'er'); return; }
+  _blokData = _blokData.filter(function(b){ return b.id !== blokId; });
+  blokRender();
+  toast('Blok silindi', 'ok');
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
+}
+
+function yeniBlokFormAc() {
+  document.getElementById('yeniBlokForm').classList.add('open');
+  document.getElementById('ybAd').focus();
+}
+
+function yeniBlokFormKapat() {
+  var f = document.getElementById('yeniBlokForm');
+  f.classList.remove('open');
+  document.getElementById('ybAd').value = '';
+  document.getElementById('ybGrup').value = '';
+  document.getElementById('ybAciklama').value = '';
+  document.getElementById('ybRenk').value = '#2D8EFF';
+}
+
+document.getElementById('ybRenk').addEventListener('input', function() {
+  document.getElementById('ybRenkLabel').textContent = this.value;
+});
+
+async function yeniBlokKaydet() {
+  var ad = document.getElementById('ybAd').value.trim();
+  if (!ad) { toast('Blok adı zorunlu', 'er'); return; }
+  var supa = ARES.supabase();
+  var res  = await supa.from('yetki_bloklari').insert({
+    tenant_id:     ARES.tenantId(),
+    ad:            ad,
+    aciklama:      document.getElementById('ybAciklama').value.trim() || null,
+    grup:          document.getElementById('ybGrup').value.trim() || null,
+    renk:          document.getElementById('ybRenk').value,
+    sistem_preset: false,
+    sira:          0
+  }).select().single();
+  if (res.error) { toast('Hata: ' + res.error.message, 'er'); return; }
+  _blokData.push(res.data);
+  yeniBlokFormKapat();
+  blokRender();
+  toast('"' + ad + '" bloğu oluşturuldu', 'ok');
+}
+
+
 
 // ═══════════════════════════════════════════════════════════════════
 // ✅ SB-01: Auth kontrolü
@@ -185,8 +503,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch(e) { /* offline */ }
     document.documentElement.style.visibility = '';
+    if (typeof ARES === 'undefined') return;
     try {
+      await blokYukle();
       await kodSeriYukle();
+      // URL'de ?tab=bloklar varsa o sekmeyi aç
+      var urlTab = new URLSearchParams(location.search).get('tab');
+      if (urlTab) {
+        var tabBtn = document.querySelector('[data-tab="' + urlTab + '"]');
+        if (tabBtn) tabBtn.click();
+      }
     } catch(e){ console.error('[ARES]', e); }
   })();
 });
