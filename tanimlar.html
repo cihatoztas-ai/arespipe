@@ -77,27 +77,27 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .blok-renk-cubuk{width:4px;align-self:stretch;flex-shrink:0;}
 .blok-satir-bilgi{flex:1;padding:12px 14px;}
 .blok-satir-ad{font-size:15px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:8px;}
-.blok-satir-meta{font-size:12px;color:var(--txd);margin-top:2px;}
+.blok-satir-meta{font-size:14px;color:var(--txd);margin-top:2px;}
 .blok-satir-aksiyonlar{display:flex;align-items:center;gap:6px;padding:0 14px;}
-.blok-expand-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:12px;}
+.blok-expand-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:14px;}
 .blok-expand-btn:hover{border-color:var(--ac);color:var(--ac);}
 .blok-detay{display:none;padding:12px 18px 16px;border-top:1px solid var(--bor);background:var(--sur2);}
 .blok-detay.open{display:block;}
-.blok-detay-baslik{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.blok-detay-baslik{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
 .blok-sayfa-listesi{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-.blok-sayfa-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--sur);border:1px solid var(--bor);color:var(--txm);}
+.blok-sayfa-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:14px;font-weight:600;background:var(--sur);border:1px solid var(--bor);color:var(--txm);}
 .blok-sayfa-tag .sil-btn{background:none;border:none;color:var(--txd);cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:2px;}
 .blok-sayfa-tag .sil-btn:hover{color:var(--re);}
 .blok-sayfa-ekle{display:flex;gap:6px;margin-top:6px;}
-.sistem-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
-.grup-chip{font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(45,142,255,.1);color:var(--ac);font-weight:600;}
+.sistem-badge{font-size:14px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
+.grup-chip{font-size:14px;padding:2px 7px;border-radius:4px;background:rgba(45,142,255,.1);color:var(--ac);font-weight:600;}
 .renk-picker{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);cursor:pointer;padding:0;}
 .blok-duzenle-form{display:none;padding:12px 18px 14px;border-top:1px solid var(--bor);background:var(--sur2);}
 .blok-duzenle-form.open{display:block;}
 .blok-yeni-form{background:var(--sur);border:1px solid var(--ac);border-radius:12px;padding:16px;margin-bottom:8px;display:none;}
 .blok-yeni-form.open{display:block;}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.fl{display:block;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 </style>
 <!-- ✅ Script sırası — SC-01 -->
 <script src="ares-store.js"></script>
@@ -329,15 +329,28 @@ function blokSatirHtml(b) {
     ? '<span class="grup-chip">' + esc(b.grup) + '</span>' : '';
 
   var aksiyonlar = '<div class="blok-satir-aksiyonlar">';
+  // Düzenle — tüm bloklarda var, sistem presetlerde sadece sayfa yönetimi
+  aksiyonlar += '<button class="btn btn-g btn-sm" onclick="event.stopPropagation();blokDuzenleAc(\'' + b.id + '\')" title="Düzenle">Düzenle</button>';
   if (!b.sistem_preset) {
-    aksiyonlar += '<button class="btn btn-g btn-sm" onclick="event.stopPropagation();blokDuzenleAc(\'' + b.id + '\')" title="Düzenle">Düzenle</button>';
     aksiyonlar += '<button class="btn-re btn btn-sm" onclick="event.stopPropagation();blokSil(\'' + b.id + '\')" title="Bloğu sil">Sil</button>';
   }
   aksiyonlar += '<button class="blok-expand-btn" id="expand_' + b.id + '" title="Sayfaları göster">▼</button>';
   aksiyonlar += '</div>';
 
-  // Inline düzenleme formu
-  var duzenleForm = !b.sistem_preset ? (
+  // Inline düzenleme formu — sistem presette sadece sayfa yönetimi
+  var duzenleForm = b.sistem_preset ? (
+    '<div class="blok-duzenle-form" id="duzenle_' + b.id + '">' +
+      '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:10px;">Sayfa Yönetimi</div>' +
+      '<div class="blok-sayfa-listesi" id="sayfalar2_' + b.id + '">Yükleniyor...</div>' +
+      '<div class="blok-sayfa-ekle">' +
+        '<select class="fi" id="sayfaSec2_' + b.id + '" style="max-width:260px;flex:1;">' +
+          _sayfaKodlari.map(function(s){ return '<option value="' + esc(s) + '">' + esc(s) + '</option>'; }).join('') +
+        '</select>' +
+        '<button class="btn btn-ac btn-sm" onclick="sayfaEkle2(\'' + b.id + '\')">+ Ekle</button>' +
+      '</div>' +
+      '<div style="margin-top:10px;"><button class="btn btn-g btn-sm" onclick="blokDuzenleKapat(\'' + b.id + '\')">Kapat</button></div>' +
+    '</div>'
+  ) : (
     '<div class="blok-duzenle-form" id="duzenle_' + b.id + '">' +
       '<div class="fg2" style="margin-bottom:8px;">' +
         '<div><label class="fl">Blok Adı</label>' +
@@ -352,7 +365,7 @@ function blokSatirHtml(b) {
           '<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">' +
             '<input type="color" class="renk-picker" id="dbRenk_' + b.id + '" value="' + esc(renk) + '" ' +
               'oninput="document.getElementById(\'dbRenkLabel_' + b.id + '\').textContent=this.value">' +
-            '<span id="dbRenkLabel_' + b.id + '" style="font-size:12px;color:var(--txd);">' + esc(renk) + '</span>' +
+            '<span id="dbRenkLabel_' + b.id + '" style="font-size:14px;color:var(--txd);">' + esc(renk) + '</span>' +
           '</div></div>' +
       '</div>' +
       '<div style="display:flex;gap:6px;">' +
@@ -360,7 +373,7 @@ function blokSatirHtml(b) {
         '<button class="btn btn-g btn-sm" onclick="blokDuzenleKapat(\'' + b.id + '\')">İptal</button>' +
       '</div>' +
     '</div>'
-  ) : '';
+  );
 
   return '<div class="blok-satir' + (b.sistem_preset ? ' sistem' : '') + '" id="blok_' + b.id + '">' +
     '<div class="blok-satir-ust" onclick="blokToggleDetay(\'' + b.id + '\')">' +
@@ -390,12 +403,61 @@ function blokSatirHtml(b) {
 }
 
 function blokDuzenleAc(blokId) {
-  // Diğer açık formları kapat
   document.querySelectorAll('.blok-duzenle-form.open').forEach(function(f) {
     if (f.id !== 'duzenle_' + blokId) f.classList.remove('open');
   });
   var form = document.getElementById('duzenle_' + blokId);
-  if (form) form.classList.toggle('open');
+  if (!form) return;
+  var wasOpen = form.classList.contains('open');
+  form.classList.toggle('open');
+  // Sistem preset formunda sayfa listesini yükle
+  var blok = _blokData.find(function(b){ return b.id === blokId; });
+  if (!wasOpen && blok && blok.sistem_preset) {
+    sayfaListesiYukle2(blokId);
+  }
+}
+
+async function sayfaListesiYukle2(blokId) {
+  var el = document.getElementById('sayfalar2_' + blokId);
+  if (!el) return;
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri')
+    .select('id, sayfa_kodu').eq('blok_id', blokId);
+  var data = res.data || [];
+  if (!data.length) {
+    el.innerHTML = '<span style="font-size:14px;color:var(--txd);">Henüz sayfa eklenmemiş</span>';
+    return;
+  }
+  el.innerHTML = data.map(function(bsy) {
+    return '<span class="blok-sayfa-tag">' + esc(bsy.sayfa_kodu) +
+      '<button class="sil-btn" onclick="sayfaSil2(\'' + bsy.id + '\',\'' + blokId + '\')" title="Kaldır">×</button>' +
+      '</span>';
+  }).join('');
+}
+
+async function sayfaEkle2(blokId) {
+  var sel = document.getElementById('sayfaSec2_' + blokId);
+  if (!sel || !sel.value) return;
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri').insert({
+    blok_id: blokId, sayfa_kodu: sel.value, gizli_bolumler: []
+  });
+  if (res.error) {
+    if (res.error.code === '23505') { toast('Bu sayfa zaten ekli', 'er'); return; }
+    toast('Hata: ' + res.error.message, 'er'); return;
+  }
+  toast('Sayfa eklendi', 'ok');
+  await sayfaListesiYukle2(blokId);
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
+}
+
+async function sayfaSil2(bsyId, blokId) {
+  var supa = ARES.supabase();
+  var res  = await supa.from('blok_sayfa_yetkileri').delete().eq('id', bsyId);
+  if (res.error) { toast('Silinemedi', 'er'); return; }
+  toast('Sayfa kaldırıldı', 'ok');
+  await sayfaListesiYukle2(blokId);
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
 }
 
 function blokDuzenleKapat(blokId) {
