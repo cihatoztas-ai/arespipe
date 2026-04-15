@@ -320,8 +320,8 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
     <!-- İstatistikler -->
     <div class="yp-stat-grid">
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--ac);">30+</div><div class="yp-stat-lbl">Dosya</div></div>
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--gr);">4</div><div class="yp-stat-lbl">Faz tamamlandı</div></div>
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--ac);">35+</div><div class="yp-stat-lbl">Dosya</div></div>
+      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--gr);">6</div><div class="yp-stat-lbl">Faz tamamlandı</div></div>
       <div class="yp-stat"><div class="yp-stat-val" style="color:var(--warn);">230+</div><div class="yp-stat-lbl">Dil anahtarı</div></div>
       <div class="yp-stat"><div class="yp-stat-val" style="color:var(--leg);">2</div><div class="yp-stat-lbl">API düzeltildi</div></div>
     </div>
@@ -454,6 +454,24 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/spool_detay.html → geriDon(), i18n, fotoğraf fix (dosya_url), feature flag 3D kontrolü</span></div>
       <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-store.js → featureVar() + featureCacheSifirla() eklendi (tenant_features tablosu)</span></div>
       <div class="yp-item"><span class="yp-item-icon">✓</span><span>vercel.json → ares-mobile.js ve ares-mobile.css no-cache eklendi</span></div>
+    </div>
+
+    <div class="yp-faz">
+      <div class="yp-faz-header">
+        <span class="yp-faz-title">FAZ 8 — İlerleme Sistemi + Veri Doğruluğu (15 Nisan 2026)</span>
+        <span class="yp-badge yp-done">Tamamlandı</span>
+      </div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → devre_istatistik RPC ile doğru aggregate (limit sorunu çözüldü)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → malzeme/çap dağılımı spool bazlı, eksik veri uyarısı eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → filtreler düzeltildi (firma, malzeme, yüzey kademeli filtre)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → termin/iptal Supabase'e bağlandı, malzeme listesi pipeline_malzemeleri'nden</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-store.js → spoollariGetir limit 5000, devreleriGetir limit 2000</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devre_detay.html → is_durumu pulse animasyonu (imalat/kaynak devam_ediyor)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>spooller.is_durumu kolonu eklendi (bekliyor/devam_ediyor)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devre_istatistik RPC Supabase'e eklendi</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>is_baslat.html mockup onaylandı (5 ekran akışı)</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>admin/firma-detay.html → ilerleme_puani alanı, siraDegistir index-based fix</span></div>
+      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.termin_tarihi kaldırıldı → termin kolonu kullanılıyor</span></div>
     </div>
 
   </div>
