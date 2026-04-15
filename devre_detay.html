@@ -1093,14 +1093,25 @@ function statGuncelle(){
   var aktif=SPOOLS.filter(function(s){return!s.stopped;});
   setText('stSpool',aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('stAgirlik',Math.round(toplamAg()).toLocaleString(document.documentElement.getAttribute('lang')||'tr')+' kg');
-  setText('stMalzeme',_malzemeGoster((DEVRE.malzeme||[])[0])||'--');
-  setText('stYuzey',_yuzeyGoster((DEVRE.yuzey||[])[0])||'--');
+
+  // Malzeme ve yüzey: spoollardan unique normalize değerler
+  var malzSet={}, yuzSet={};
+  aktif.forEach(function(s){
+    if(s.malzeme){ var m=String(s.malzeme).trim(); if(m) malzSet[m]=true; }
+    if(s.yuzey){ var y=String(s.yuzey).trim(); if(y) yuzSet[y]=true; }
+  });
+  var malzArr=Object.keys(malzSet), yuzArr=Object.keys(yuzSet);
+  var malzGoster = malzArr.length===1 ? malzArr[0] : malzArr.length>1 ? malzArr[0]+' +'+(malzArr.length-1) : (DEVRE.malzeme||[])[0]||'--';
+  var yuzGoster  = yuzArr.length===1  ? yuzArr[0]  : yuzArr.length>1  ? yuzArr[0]+' +'+(yuzArr.length-1)  : (DEVRE.yuzey||[])[0]||'--';
+
+  setText('stMalzeme', malzGoster||'--');
+  setText('stYuzey',   yuzGoster||'--');
   setText('stTermin',DEVRE.terminTarihi?tarihFmt(new Date(DEVRE.terminTarihi)):tv('sp_alist_none','Belirlenmemiş'));
   setText('spoolSayi',aktif.length+' '+tv('dv_records','kayıt'));
   setText('gSpoolSayi',aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('gAgirlik',Math.round(toplamAg()).toLocaleString(document.documentElement.getAttribute('lang')||'tr')+' kg');
-  setText('gMalzeme',_malzemeGoster((DEVRE.malzeme||[])[0])||'--');
-  setText('gYuzey',_yuzeyGoster((DEVRE.yuzey||[])[0])||'--');
+  setText('gMalzeme', malzGoster||'--');
+  setText('gYuzey',   yuzGoster||'--');
   setText('barKK',tv('dv_status_waiting','Bekliyor'));
   setText('barSevk',tv('dv_not_shipped','Sevk Edilmedi'));
 }

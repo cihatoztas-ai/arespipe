@@ -886,7 +886,7 @@ async function veriYukle() {
     // İlk sayfalı sorgu + filtre verisi
     var filterRes = await supa.from('spooller').select('devre_id, malzeme, yuzey');
     _filterData = (filterRes.data||[]).map(function(s){
-      return { devre_id: s.devre_id, malzeme_norm: _normalizeMalzeme(s.malzeme)||null, yuzey: s.yuzey||null };
+      return { devre_id: s.devre_id, malzeme_norm: _normalizeMalzeme(s.malzeme)||null, yuzey: _normalizeYuzey(s.yuzey)||null };
     }).filter(function(s){ return s.malzeme_norm || s.yuzey; });
     _filterDataUygula();
     await sorgulaVeGoster();
@@ -918,7 +918,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
           var _mKey = _normalizeMalzeme(s.malzeme) || s.malzeme;
           malzemeSet[_mKey] = true;
         }
-        if (s.yuzey) yuzeySet[s.yuzey] = true;
+        if (s.yuzey) { var yk=_normalizeYuzey(s.yuzey); if(yk) yuzeySet[yk]=true; }
       });
       var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['Karbon Çelik'];
       var yuzeyArr   = Object.keys(yuzeySet);
@@ -1081,7 +1081,7 @@ async function sorgulaVeGoster() {
     var malzemeSet={}, yuzeySet={}, capSayimAll={}, malzemeSayimAll={};
     allSpools.forEach(function(s){
       if(s.malzeme){ var mk=_normalizeMalzeme(s.malzeme); if(mk){ malzemeSet[mk]=true; malzemeSayimAll[mk]=(malzemeSayimAll[mk]||0)+1; } }
-      if(s.yuzey)   yuzeySet[s.yuzey]=true;
+      if(s.yuzey){ var yk=_normalizeYuzey(s.yuzey); if(yk) yuzeySet[yk]=true; }
       if(s.dis_cap_mm){ var cmm=String(s.dis_cap_mm); capSayimAll[cmm]=(capSayimAll[cmm]||0)+1; }
     });
 
@@ -1528,10 +1528,9 @@ function _doRender() {
       return '<span class="mat-badge ' + cls + '">' + label + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
-      var cls = y === 'Asit' ? 'yb-asit' : y === 'Galvaniz' ? 'yb-galvaniz' : y === 'Boyalı' ? 'yb-boyali' : 'yb-siyah';
-      var norm = y.toLowerCase().replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ö/g,'o').replace(/ü/g,'u');
-      var key = 'dr_yuzey_' + norm;
-      return '<span class="yuzey-badge ' + cls + '">' + esc(tv(key, y)) + '</span>';
+      var yn = _normalizeYuzey(y) || y;
+      var cls = yn === 'Asit' ? 'yb-asit' : yn === 'Galvaniz' ? 'yb-galvaniz' : yn === 'Boyalı' ? 'yb-boyali' : 'yb-siyah';
+      return '<span class="yuzey-badge ' + cls + '">' + esc(yn) + '</span>';
     }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
@@ -1675,6 +1674,24 @@ function _normalizeMalzeme(m) {
   if (n.indexOf('plastik') !== -1 || n.indexOf('pe') !== -1 || n.indexOf('pvc') !== -1 || n.indexOf('grp') !== -1) return 'Plastik/PE';
   // Tanınmayan — baş harfi büyük ham değer
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function _normalizeYuzey(y) {
+  if (!y) return null;
+  var s = String(y).trim();
+  if (!s || s === '—' || s === '-') return null;
+  // Bilinen yüzey işlem kategorileri
+  var n = s.toLowerCase()
+    .replace(/İ/g,'i').replace(/I/g,'ı').replace(/Ğ/g,'ğ')
+    .replace(/Ş/g,'ş').replace(/Ü/g,'ü').replace(/Ö/g,'ö').replace(/Ç/g,'ç');
+  if (n.indexOf('galvaniz') !== -1) return 'Galvaniz';
+  if (n.indexOf('asit') !== -1 || n.indexOf('acid') !== -1) return 'Asit';
+  if (n.indexOf('boya') !== -1 || n.indexOf('paint') !== -1) return 'Boyalı';
+  if (n.indexOf('siyah') !== -1 || n.indexOf('black') !== -1) return 'Siyah';
+  if (n.indexOf('ham') !== -1 || n.indexOf('raw') !== -1) return 'Ham';
+  if (n.indexOf('paslanmaz') !== -1) return 'Paslanmaz';
+  // Bilinmeyen — baş harf büyük
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
 function malzemeModalAc() {
