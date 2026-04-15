@@ -747,7 +747,7 @@ async function terminKaydet() {
   takvimKapat();
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa) {
-    var { error } = await supa.from('devreler').update({ termin_tarihi: val || null }).eq('id', _takvimAktifId);
+    var { error } = await supa.from('devreler').update({ termin: val || null }).eq('id', _takvimAktifId);
     if (error) { console.warn('Termin kaydet:', error); return; }
   }
   var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
@@ -759,7 +759,7 @@ async function terminTemizle() {
   takvimKapat();
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa) {
-    var { error } = await supa.from('devreler').update({ termin_tarihi: null }).eq('id', _takvimAktifId);
+    var { error } = await supa.from('devreler').update({ termin: null }).eq('id', _takvimAktifId);
     if (error) { console.warn('Termin temizle:', error); return; }
   }
   var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
@@ -961,7 +961,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         ilerleme:      avgIler,
         durum:         d.durum         || 'baslamadi',
         sonIslem:      sonIslem,
-        terminTarihi:  d.termin_tarihi || null,
+        terminTarihi:  d.termin || null,
         _iptalNeden:   d.durdurma_sebebi || null,
         caps:          caps
       };
@@ -1054,7 +1054,7 @@ async function sorgulaVeGoster() {
     );
     var listeQ = applyFilters(
       supa.from('devreler')
-        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin_tarihi, durdurma_sebebi, ' +
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
