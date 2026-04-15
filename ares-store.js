@@ -680,21 +680,51 @@ else var ARES = (function () {
   // Mevcut kullanıcının rolünü döndür
   function rolAl() { return _oturum?.rol || null; }
 
+  // ── SAYFA KODLARI — typo koruması ───────────────────────
+  const SAYFA = {
+    // Web
+    KESIM:           'kesim',
+    BUKUM:           'bukum',
+    MARKALAMA:       'markalama',
+    SPOOL_DETAY:     'spool_detay',
+    DEVRE_DETAY:     'devre_detay',
+    DEVRELER:        'devreler',
+    KK:              'kk',
+    SEVKIYAT:        'sevkiyat',
+    TESTLER:         'testler',
+    MALZEME:         'malzeme',
+    RAPORLAR:        'raporlar',
+    KULLANICILAR:    'kullanicilar',
+    KULLANICI_DETAY: 'kullanici_detay',
+    TANIMLAR:        'tanimlar',
+    IS_BASLAT:       'is_baslat',
+    // Mobil
+    MOB_DEVRELER:    'mobile/devreler',
+    MOB_DEVRE_DETAY: 'mobile/devre_detay',
+    MOB_SPOOL_DETAY: 'mobile/spool_detay',
+    MOB_KK:          'mobile/kk',
+    MOB_SEVKIYAT:    'mobile/sevkiyat',
+    MOB_MARKALAMA:   'mobile/markalama',
+    MOB_IS_BASLAT:   'mobile/is_baslat',
+  };
+
   // ── BLOK YETKİ SİSTEMİ ──────────────────────────────────
+  const _BLOK_TTL = 15 * 60 * 1000; // 15 dakika
   let _blokCache = null;
 
   async function _blokYukle() {
-    if (_blokCache) return _blokCache;
+    // TTL kontrolü — 15 dk geçtiyse yenile
+    if (_blokCache && (Date.now() - _blokCache._t) < _BLOK_TTL) return _blokCache;
 
-    if (!_oturum) { _blokCache = { tamYetki: false, sayfalar: {} }; return _blokCache; }
+    if (!_oturum) { _blokCache = { tamYetki: false, sayfalar: {}, _t: Date.now() }; return _blokCache; }
 
     // Yönetici / firma admini / super admin → her şeye erişir
     if (_oturum.rol === 'super_admin' || _oturum.rol === 'yonetici' || _oturum.rol === 'firma_admin') {
-      _blokCache = { tamYetki: true, sayfalar: {} };
+      _blokCache = { tamYetki: true, sayfalar: {}, _t: Date.now() };
       return _blokCache;
     }
 
-    if (!_supa) { _blokCache = { tamYetki: false, sayfalar: {} }; return _blokCache; }
+    if (!_supa) { _blokCache = { tamYetki: false, sayfalar: {}, _t: Date.now() }; return _blokCache; }
 
     var res = await _supa
       .from('kullanici_bloklar')
@@ -723,13 +753,13 @@ else var ARES = (function () {
       sayfalar[sayfa] = { gizli: gizli };
     });
 
-    _blokCache = { tamYetki: false, sayfalar: sayfalar };
+    _blokCache = { tamYetki: false, sayfalar: sayfalar, _t: Date.now() };
     return _blokCache;
   }
 
   // Sayfa yetki kontrolü
   // ESKİ kullanım: sayfaYetkiKontrol(['yonetici','kk_uzmani']) — mevcut sayfalar bozulmaz
-  // YENİ kullanım: sayfaYetkiKontrol('kesim') — blok sistemi
+  // YENİ kullanım: sayfaYetkiKontrol(ARES.SAYFA.KESIM) — blok sistemi
   async function sayfaYetkiKontrol(arg, yonlendir) {
     if (!_oturum) { location.href = 'giris.html'; return false; }
     if (_oturum.rol === 'super_admin') return true;
@@ -745,15 +775,28 @@ else var ARES = (function () {
     }
 
     // YENİ SİSTEM: string → blok bazlı kontrol
-    var y = await _blokYukle();
-    if (y.tamYetki) return true;
-    if (y.sayfalar[arg]) return true;
+    if (typeof arg === 'string') {
+      // Geçersiz sayfa kodu uyarısı
+      var gecerliKodlar = Object.values(SAYFA);
+      if (gecerliKodlar.indexOf(arg) === -1) {
+        console.warn('[ARES] sayfaYetkiKontrol: tanımsız sayfa kodu →', arg,
+          '— ARES.SAYFA listesine ekleyin');
+      }
+      var y = await _blokYukle();
+      if (y.tamYetki) return true;
+      if (y.sayfalar[arg]) return true;
+      location.href = yonlendir || 'index.html';
+      return false;
+    }
+
+    // Beklenmeyen tip
+    console.warn('[ARES] sayfaYetkiKontrol: geçersiz argüman tipi →', typeof arg);
     location.href = yonlendir || 'index.html';
     return false;
   }
 
   // Bölüm görünürlük kontrolü — yönlendirme yapmaz
-  // Kullanım: if (!await ARES.bolumGorunur('spool_detay','islem_log')) el.style.display='none'
+  // Kullanım: if (!await ARES.bolumGorunur(ARES.SAYFA.SPOOL_DETAY, 'islem_log')) el.style.display='none'
   async function bolumGorunur(sayfaKodu, bolumKodu) {
     var y = await _blokYukle();
     if (y.tamYetki) return true;
@@ -767,7 +810,7 @@ else var ARES = (function () {
     if (!_supa) return [];
     var res = await _supa
       .from('kullanici_bloklar')
-      .select('id, blok_id, yetki_bloklari(id, ad, renk, sistem_preset, aciklama)')
+      .select('id, blok_id, yetki_bloklari(id, ad, renk, sistem_preset, aciklama, grup, sira)')
       .eq('kullanici_id', kullaniciId);
     return res.data || [];
   }
@@ -777,9 +820,10 @@ else var ARES = (function () {
     if (!_supa) return [];
     var res = await _supa
       .from('yetki_bloklari')
-      .select('id, ad, aciklama, renk, sistem_preset')
+      .select('id, ad, aciklama, renk, sistem_preset, grup, sira')
       .or('tenant_id.eq.' + tenantId() + ',sistem_preset.eq.true')
-      .order('sistem_preset', { ascending: false })
+      .order('grup')
+      .order('sira')
       .order('ad');
     return res.data || [];
   }
@@ -823,6 +867,8 @@ else var ARES = (function () {
     yetkiVar, yetkiVarHizli, rolAl, sayfaYetkiKontrol, portalKontrol, yetkiCacheSifirla,
     // Yetki — blok bazlı (yeni)
     bolumGorunur, kullaniciBloklari, tumBloklar,
+    // Sayfa kodları sabit listesi
+    SAYFA,
 
     // Veri
     tersaneleriGetir,
