@@ -782,6 +782,7 @@ var _ssTotal       = 0;
 var _projeIdMap    = {}; // proje_no → proje_id
 var _firmaProjeIds = {}; // tersane_ad → [proje_id, ...]
 var _filterData    = []; // {devre_id, malzeme_norm, yuzey} — filtre için tüm spooller
+var _allSpoolsCache = []; // statQ'dan gelen tüm filtreli spooller — modal hesaplamaları için
 
 var RENKLER = ['#2D8EFF','#e53e3e','#d97706','#16a36e','#7c3aed','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6'];
 
@@ -923,25 +924,20 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       var caps = spools.map(function(s) {
         return s.dis_cap_mm ? { mm: String(s.dis_cap_mm), agirlik: parseFloat(s.agirlik) || 0 } : null;
       }).filter(Boolean);
-      // Malzeme ve yüzey — spool listesinden unique değerler
+      // Malzeme ve yüzey — spool listesinden normalize unique değerler
       var malzemeSet = {}, yuzeySet = {};
       spools.forEach(function(s) {
-        if (s.malzeme) {
-          var _mKey = _normalizeMalzeme(s.malzeme) || s.malzeme;
-          malzemeSet[_mKey] = true;
-        }
-        if (s.yuzey) { var yk=_normalizeYuzey(s.yuzey); if(yk) yuzeySet[yk]=true; }
+        if (s.malzeme) { var mk = _normalizeMalzeme(s.malzeme); if(mk) malzemeSet[mk] = true; }
+        if (s.yuzey)   { var yk = _normalizeYuzey(s.yuzey);     if(yk) yuzeySet[yk]   = true; }
       });
-      var malzemeArr = Object.keys(malzemeSet).length ? Object.keys(malzemeSet) : ['Karbon Çelik'];
+      var malzemeArr = Object.keys(malzemeSet);
       var yuzeyArr   = Object.keys(yuzeySet);
-      // Sapma: devre genelinden farklı malzeme/yüzey olan spool sayısı
-      var devreMalz = (d.malzeme || '').toLowerCase().trim();
-      var devreYuz  = (d.yuzey  || '').trim();
-      var malzemeSapma = devreMalz ? spools.filter(function(s){
-        return s.malzeme && s.malzeme.toLowerCase().trim() !== devreMalz;
+      // Sapma: normalize karşılaştırmayla — kaç spool farklı malzeme/yüzey taşıyor
+      var malzemeSapma = malzemeArr.length > 1 ? spools.length - spools.filter(function(s){
+        return _normalizeMalzeme(s.malzeme) === malzemeArr[0];
       }).length : 0;
-      var yuzeySapma = devreYuz ? spools.filter(function(s){
-        return s.yuzey && s.yuzey.trim() !== devreYuz;
+      var yuzeySapma = yuzeyArr.length > 1 ? spools.length - spools.filter(function(s){
+        return _normalizeYuzey(s.yuzey) === yuzeyArr[0];
       }).length : 0;
       var prj  = d.projeler || {};
       var trs  = prj.tersaneler || {};
@@ -958,8 +954,8 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         zone:     d.zone          || '—',
         spool:    spools.length,
         agirlik:  totalAg,
-        malzeme:       d.malzeme ? [d.malzeme] : malzemeArr,
-        yuzey:         d.yuzey   ? [d.yuzey]   : yuzeyArr,
+        malzeme:       malzemeArr.length ? malzemeArr : (d.malzeme ? [_normalizeMalzeme(d.malzeme)||d.malzeme] : []),
+        yuzey:         yuzeyArr.length   ? yuzeyArr   : (d.yuzey   ? [_normalizeYuzey(d.yuzey)||d.yuzey]       : []),
         malzemeSapma:  malzemeSapma,
         yuzeySapma:    yuzeySapma,
         ilerleme:      avgIler,
@@ -1068,7 +1064,7 @@ async function sorgulaVeGoster() {
     // Stat sorgusu: tüm filtreli devreler, bar grafikler için
     var statQ = applyFilters(
       supa.from('devreler')
-        .select('spooller(agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme)'),
+        .select('spooller(agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)'),
       devreIdFilter
     );
 
@@ -1084,6 +1080,7 @@ async function sorgulaVeGoster() {
     // Stat kartları — tüm filtreli kayıtlardan
     var allSpools = [];
     (statRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
+    _allSpoolsCache = allSpools; // modal hesaplamaları için sakla
     var totalSpool   = allSpools.length;
     var totalAgirlik = allSpools.reduce(function(s,x){return s+(parseFloat(x.agirlik)||0);},0);
     var totalIler    = allSpools.length ? Math.round(
@@ -1729,14 +1726,12 @@ function _normalizeYuzey(y) {
 }
 
 function malzemeModalAc() {
-  var liste = getFiltered();
+  // Tüm filtreli spoollardan spool bazlı malzeme dağılımı
   var sayim = {};
-  liste.forEach(function(d) {
-    (d.malzeme || []).forEach(function(m) {
-      var k = _normalizeMalzeme(m);
-      if (!k) return;
-      sayim[k] = (sayim[k] || 0) + 1;
-    });
+  _allSpoolsCache.forEach(function(s) {
+    var k = _normalizeMalzeme(s.malzeme);
+    if (!k) return;
+    sayim[k] = (sayim[k] || 0) + 1;
   });
   var items = Object.keys(sayim).map(function(k, i) {
     return {label: k, val: sayim[k], color: RENKLER[i]};
@@ -1744,24 +1739,21 @@ function malzemeModalAc() {
   var cols = items.map(function(x) { return x.color; });
   var list = document.getElementById('malzemeList');
   if (list) list.innerHTML = items.map(function(x, i) {
-    return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div><span style="font-weight:700;">' + x.val + ' devre</span></div>';
+    return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div><span style="font-weight:700;">' + x.val + ' spool</span></div>';
   }).join('');
-  fullDonut('malzemeSvg', 'malzemeCenter', items, cols, 'devre');
+  fullDonut('malzemeSvg', 'malzemeCenter', items, cols, 'spool');
   modal('modalMalzeme', true);
 }
 
 // ── ÇAP DAĞILIM MODAL ───────────────────────────────────────────
 function capModalAc() {
-  var liste = getFiltered();
-  // Çap sayımı ve ağırlık dağılımı (spool başına orantılı — Supabase'de gerçek spool verisinden gelecek)
+  // Tüm filtreli spoollardan gerçek ağırlık bazlı çap dağılımı
   var capSayim = {}, capAgirlik = {};
-  liste.forEach(function(d) {
-    var caps = d.caps || [];
-    caps.forEach(function(c) {
-      var mm = capToMM(c.mm) || c.mm;
-      capSayim[mm]   = (capSayim[mm] || 0) + 1;
-      capAgirlik[mm] = (capAgirlik[mm] || 0) + (c.agirlik || 0);
-    });
+  _allSpoolsCache.forEach(function(s) {
+    if (!s.dis_cap_mm) return;
+    var mm = String(parseFloat(s.dis_cap_mm));
+    capSayim[mm]   = (capSayim[mm] || 0) + 1;
+    capAgirlik[mm] = (capAgirlik[mm] || 0) + (parseFloat(s.agirlik) || 0);
   });
 
   var sorted = Object.keys(capSayim).map(function(k) {
