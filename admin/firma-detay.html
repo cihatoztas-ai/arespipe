@@ -724,9 +724,8 @@ async function siraDegistir(id, yon) {
   var hedef = sorted[idx + yon];
   if (!cur || !hedef) return;
 
-  var now = new Date().toISOString();
-  var r1 = await _getSupa().from('basamak_tanimlari').update({ sira: hedef.sira, guncelleme: now }).eq('id', cur.id);
-  var r2 = await _getSupa().from('basamak_tanimlari').update({ sira: cur.sira, guncelleme: now }).eq('id', hedef.id);
+  var r1 = await _getSupa().from('basamak_tanimlari').update({ sira: hedef.sira }).eq('id', cur.id);
+  var r2 = await _getSupa().from('basamak_tanimlari').update({ sira: cur.sira }).eq('id', hedef.id);
   if (r1.error || r2.error) { toast('Sıralama hatası', 'err'); return; }
 
   var tmp = hedef.sira; hedef.sira = cur.sira; cur.sira = tmp;
