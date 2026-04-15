@@ -240,6 +240,8 @@ mob_alistirma_* Alıştırma durumu
 | `durdurma_sebebi` | text | durdurma_aciklama değil |
 | `alistirma` | text | `VAR`/`KISMI`/`YOK` (UPPERCASE) |
 | `aktif_basamak` | text | `on_imalat`, `on_kontrol`, `kaynak`, `imalat`, `kk`, `sevkiyat` |
+| `ilerleme` | integer | 0-100 arası kümülatif puan — basamak geçişinde artar |
+| `is_durumu` | text | `bekliyor` (default) veya `devam_ediyor` — sadece imalat/kaynak'ta pulse gösterilir |
 
 ### fotograflar
 
@@ -262,8 +264,9 @@ mob_alistirma_* Alıştırma durumu
 |---|---|
 | `ad` | devre_adi değil |
 | `durdurma_sebebi` | |
-| `ilerleme` | Hep 0, kullanılmıyor |
-| `agirlik` | Kullanılmıyor, spooller.agirlik toplamı kullan |
+| `termin` | Termin tarihi (DATE). `termin_tarihi` kolonu silindi. |
+| `ilerleme` | Kullanılmıyor — spooller.ilerleme ortalamasından hesapla |
+| `agirlik` | Kullanılmıyor — spooller.agirlik toplamı kullan |
 
 ---
 
@@ -275,17 +278,16 @@ mob_alistirma_* Alıştırma durumu
 
 ### 6.2 İlerleme
 
-`devreler.ilerleme` hep 0. `aktif_basamak`'tan hesap:
+`devreler.ilerleme` hep 0. **`spooller.ilerleme` kolonunu kullan** (puan bazlı 0-100):
 
 ```js
-var ASAMA_PCT = {
-  'bekliyor': 0, 'on_imalat': 14, 'imalat': 28,
-  'kaynak': 43, 'on_kontrol': 57, 'kk': 71,
-  'sevkiyat': 86, 'tamamlandi': 100
-};
+// Devre ilerlemesi — adet bazlı
+var avgIler = spools.length
+  ? Math.round(spools.reduce(function(s,x){ return s+(x.ilerleme||0); },0) / spools.length)
+  : 0;
 ```
 
-Her devre için: spoollarının `aktif_basamak` değerlerinin ortalama yüzdesi.
+**Eski ASAMA_PCT tablosu artık kullanılmıyor.** Aggregate hesaplama için `devre_istatistik` RPC kullanılır (bkz. Bölüm 12).
 
 ### 6.3 Alıştırma Agregasyonu (Devre bazında)
 
@@ -352,14 +354,14 @@ Aynı çizgi mantığı: sol çizgi=aktif basamak rengi, sağ çizgi=alıştırm
 ## 9. QR AKIŞI
 
 ```
-QR tarama (qr.html)
+QR tarama (qr.html veya is_baslat.html)
     ↓
 spool_id ile spooller tablosunu sorgula
     ↓
 UUID bul
     ↓
-    ├── operator rol → spool_detay.html?id=X (ileride is_baslat.html)
-    └── diğerleri  → spool_detay.html?id=X
+    ├── is_baslat.html (operatör iş akışı — bkz. Bölüm 11)
+    └── spool_detay.html?id=X (görüntüleme)
 ```
 
 **QR yöntem sırası:** BarcodeDetector API (Chrome/yeni Safari) → jsQR CDN fallback → Manuel giriş
@@ -405,3 +407,66 @@ CI/CD `mobile/` klasöründe şunları kontrol eder:
 - `ares-mobile.js` eksik → hata
 
 **Not:** `mobile/` klasörü `ares-layout.js` kuralından muaftır.
+
+---
+
+## 11. İŞ BAŞLAT AKIŞI (is_baslat.html)
+
+Mockup onaylandı (15 Nisan 2026). Personel yetkilendirme netleşince kodlanacak.
+
+### Ekranlar
+1. **QR Tara** — kamera açık, jsQR ile okuma
+2. **Spool Bilgi** — spool yüklendi, mevcut basamak, butonlar
+3. **Devam Ediyor** — is_durumu=devam_ediyor, pulse animasyonu
+4. **Basamak Seç** — sonraki işlemi seç, opsiyonel fotoğraf
+5. **Tamamlandı** — başarı, 2 sn sonra QR'a dön
+
+### is_durumu Kuralı
+- `bekliyor` → default, hiç işlem yok
+- `devam_ediyor` → sadece `imalat` ve `kaynak` basamaklarında geçerli
+- Pulse animasyonu: sadece `imalat`/`kaynak` + `devam_ediyor` kombinasyonunda
+
+### Veritabanı Güncellemesi (İşe Başla)
+```js
+await supa.from('spooller').update({
+  is_durumu: 'devam_ediyor',
+  guncelleme: new Date().toISOString()
+}).eq('id', spoolId);
+```
+
+### Veritabanı Güncellemesi (İş Bitir)
+```js
+await supa.from('spooller').update({
+  aktif_basamak: secilenSistemAdi,
+  is_durumu: 'bekliyor',
+  ilerleme: Math.min(100, mevcutIlerleme + basamakPuani),
+  guncelleme: new Date().toISOString()
+}).eq('id', spoolId);
+```
+
+---
+
+## 12. RPC FONKSİYONLARI
+
+### devre_istatistik(devre_ids uuid[])
+Aggregate hesaplama — list sayfalarında kullanılır, nested join limiti yok.
+
+**Döndürür:**
+```json
+{
+  "toplam_spool": 524,
+  "toplam_agirlik": 12248.31,
+  "ort_ilerleme": 35,
+  "cap_bos_spool": 9,
+  "cap_bos_agirlik": 186.77,
+  "malzeme_bos_spool": 0,
+  "cap_dagilim": [{"mm":"114.3","adet":45,"agirlik":1200},...],
+  "malzeme_dagilim": [{"malzeme":"Karbon Çelik","adet":500,"agirlik":11000},...],
+  "yuzey_dagilim": [{"yuzey":"Galvaniz","adet":300},...]
+}
+```
+
+**Kullanım:**
+```js
+var { data } = await supa.rpc('devre_istatistik', { devre_ids: devreIdListesi });
+```

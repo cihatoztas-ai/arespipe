@@ -306,14 +306,22 @@ Güvenlik, renk sistemi, flash prevention, CSS/dil sistemi, silme işlemleri.
 - [x] `index.html` → widget sistemi ✅
 - [x] `ares-store.js` → `featureVar()` + `featureCacheSifirla()` eklendi ✅
 - [x] `devreler.html` (web) → kum saati metni kaldırıldı ✅
+- [x] `devreler.html` → RPC ile doğru aggregate, filtreler, termin/iptal Supabase'e bağlandı ✅
+- [x] `ares-store.js` → spoollariGetir limit 5000, devreleriGetir limit 2000 ✅
+- [x] `devre_detay.html` → is_durumu pulse animasyonu ✅
+- [x] `admin/firma-detay.html` → ilerleme_puani, siraDegistir fix ✅
+- [x] `admin/firma.html` → basamaklar paneli kaldırıldı ✅
+- [x] `admin/panel.html` → yeni firma butonu yeni-firma.html'e yönlendirildi ✅
 - [ ] `ayarlar.html` → tenants Supabase bağlantısı
-- [ ] `is_baslat.html` → operatör saha ekranı (yeni)
+- [ ] `is_baslat.html` → operatör saha ekranı (mockup hazır, personel rolleri netleşince)
+- [ ] Personel rolleri ve yetkilendirme — sahada kim hangi basamağı geçebilir?
 - [ ] `proje_liste.html`, `proje_detay.html` → Supabase entegrasyonu
 - [ ] Sayfa erişim kontrolü → `sayfaYetkiKontrol()` tüm sayfalara
 - [ ] Rol bazlı sidebar → operatör yetkisiz linkleri görmemeli
 - [ ] `kullanici_detay.html` → bireysel yetki yönetim UI'ı (kullanici_yetkileri tablosu)
 - [ ] `hakedis.html` → yeni sayfa
 - [ ] `raporlar.html` → Supabase'den sıfırdan
+- [ ] Mevcut spoolların `ilerleme=0` sorunu → SQL update (puan sistemi öncesi ilerleyenler)
 
 ### Geri Bildirimlerden — Onaylananlar
 
@@ -332,19 +340,20 @@ Güvenlik, renk sistemi, flash prevention, CSS/dil sistemi, silme işlemleri.
 
 ### FAZ 7 — Mobil sayfalar (DEVAM EDİYOR)
 
-- [x] `mobile/giris.html` ✅ Yeni
+- [x] `mobile/giris.html` ✅
 - [x] `mobile/index.html` ✅
 - [x] `mobile/devreler.html` ✅
 - [x] `mobile/devre_detay.html` ✅
 - [x] `mobile/spool_detay.html` ✅
 - [x] `mobile/qr.html` ✅
+- [ ] `mobile/is_baslat.html` → mockup hazır, personel rolleri netleşince
 - [ ] `mobile/gemiler.html`
 - [ ] `mobile/gemi_detay.html`
 - [ ] `mobile/kk.html`
 - [ ] `mobile/sevkiyat.html`
 - [ ] `mobile/tezgahlar.html`
 - [ ] `mobile/ara.html`
-- [ ] `mobile/is_baslat.html`
+- [ ] Mobil sayfalarda ilerleme hesabı → ASAMA_PCT kaldırıldı, spooller.ilerleme kullanılacak
 - [ ] Mobil sayfalara `mSayfaKontrol()` ekle (sayfalar bittikten sonra)
 - [ ] Mobil sayfalara feature flag kontrolleri yay
 
