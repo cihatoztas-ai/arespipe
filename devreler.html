@@ -984,12 +984,18 @@ async function sorgulaVeGoster() {
 
   function applyFilters(q, devreIds) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
-    if (durum)   q = q.eq('durum', durum);
-    if (proje && _projeIdMap[proje])  q = q.eq('proje_id', _projeIdMap[proje]);
-    if (firma && _firmaProjeIds[firma] && _firmaProjeIds[firma].length)
-      q = q.in('proje_id', _firmaProjeIds[firma]);
-    if (arama)   q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
-    if (devreIds) q = q.in('id', devreIds.length ? devreIds : ['00000000-0000-0000-0000-000000000000']);
+    if (durum) q = q.eq('durum', durum);
+    if (proje && _projeIdMap[proje]) q = q.eq('proje_id', _projeIdMap[proje]);
+    if (firma) {
+      var ids = _firmaProjeIds[firma] || [];
+      // Boş array → sıfır sonuç döndür (filtre bypass değil)
+      q = q.in('proje_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
+    }
+    if (arama) q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
+    if (devreIds !== null && devreIds !== undefined) {
+      // Boş array → sıfır sonuç döndür
+      q = q.in('id', devreIds.length ? devreIds : ['00000000-0000-0000-0000-000000000000']);
+    }
     return q;
   }
 
