@@ -535,6 +535,40 @@ Tüm kaynak türleri tek `kaynak` basamağı olarak gösterilir. Gelecekte yeni 
 
 ---
 
+## 11. 15 NİSAN 2026 OTURUMU — KARARLAR VE DURUM
+
+### Bu Oturumda Tamamlananlar
+- `devreler.html` — RPC ile doğru aggregate hesaplama, filtreler, termin/iptal Supabase'e bağlandı
+- `ares-store.js` — spoollariGetir limit 5000, devreleriGetir limit 2000 eklendi
+- `devre_detay.html` — is_durumu pulse animasyonu eklendi (imalat/kaynak basamaklarında)
+- `devre_istatistik` RPC fonksiyonu Supabase'e eklendi
+- `spooller.is_durumu` kolonu eklendi (bekliyor/devam_ediyor)
+- `devreler.termin_tarihi` kolonu silindi — `termin` kullanılıyor
+- `pipeline_malzemeleri.hazir` kolonu eklendi
+- `admin/yeni-firma.html` CI/CD istisna listesine eklendi
+- Test firmaları (6 adet) Supabase'e eklendi
+
+### Kritik Mimari Kararlar
+**RPC Kullanımı:** Aggregate hesaplama gereken yerlerde (liste sayfaları) RPC kullanılır. Detay sayfaları için gerekli değil.
+**Supabase limiti:** PostgREST default 1000 satır — nested join'den kaçın, direkt sorgu + limit kullan.
+**`devre_istatistik` RPC:** devreler.html'de tüm stat hesapları buradan gelir. Filtre parametresi: `devre_ids uuid[]`.
+
+### Bekleyen — Sıradaki Oturum
+1. **Personel rolleri ve yetkilendirme** — sahada kim hangi basamağı geçebilir? Roller netleşmeli.
+2. **`is_baslat.html`** — mockup onaylandı, personel yetkilendirme kararına bağlı. Akış: QR tara → spool bilgi → işe başla (is_durumu=devam_ediyor) → iş bitir → basamak seç → ilerlet.
+3. **Mobil sayfalar** — devreler, gemi_detay, kk, sevkiyat vb. web ile uyumlu değil.
+4. **Veri kalitesi uyarı sistemi** — eksik çap/malzeme bilgisi olan spooller için uyarı. CLAUDE.md'ye karar olarak eklendi, gelecek özellik.
+5. **`kurallar.html` satır 938 ve `lang/tr.json` satır 718** — CI/CD uyarıları, "Yükleniyor" metni kaldırılacak.
+6. **Mevcut spoolların `ilerleme=0` sorunu** — puan sistemi kurulmadan ilerlemiş spooller için SQL update gerekiyor.
+7. **CLAUDE-MOBILE.md** — mobil sistem kuralları güncellenmeli.
+
+### is_durumu Akışı (Onaylanan)
+```
+on_imalat (bekliyor) → imalat/kaynak başlatınca → imalat (devam_ediyor) [PULSE]
+                     → iş bitince → sonraki basamak (bekliyor)
+```
+Sadece `imalat` ve `kaynak` basamaklarında pulse animasyonu gösterilir.
+
 ## 10. SOHBET SONU GÜNCELLEME PROTOKOLÜ
 
 Her sohbet bitiminde:
