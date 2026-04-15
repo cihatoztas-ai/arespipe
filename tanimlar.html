@@ -92,6 +92,8 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .sistem-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
 .grup-chip{font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(45,142,255,.1);color:var(--ac);font-weight:600;}
 .renk-picker{width:28px;height:28px;border-radius:6px;border:1px solid var(--bor);cursor:pointer;padding:0;}
+.blok-duzenle-form{display:none;padding:12px 18px 14px;border-top:1px solid var(--bor);background:var(--sur2);}
+.blok-duzenle-form.open{display:block;}
 .blok-yeni-form{background:var(--sur);border:1px solid var(--ac);border-radius:12px;padding:16px;margin-bottom:8px;display:none;}
 .blok-yeni-form.open{display:block;}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -326,6 +328,40 @@ function blokSatirHtml(b) {
   var grupChip = b.grup
     ? '<span class="grup-chip">' + esc(b.grup) + '</span>' : '';
 
+  var aksiyonlar = '<div class="blok-satir-aksiyonlar">';
+  if (!b.sistem_preset) {
+    aksiyonlar += '<button class="btn btn-g btn-sm" onclick="event.stopPropagation();blokDuzenleAc(\'' + b.id + '\')" title="Düzenle">Düzenle</button>';
+    aksiyonlar += '<button class="btn-re btn btn-sm" onclick="event.stopPropagation();blokSil(\'' + b.id + '\')" title="Bloğu sil">Sil</button>';
+  }
+  aksiyonlar += '<button class="blok-expand-btn" id="expand_' + b.id + '" title="Sayfaları göster">▼</button>';
+  aksiyonlar += '</div>';
+
+  // Inline düzenleme formu
+  var duzenleForm = !b.sistem_preset ? (
+    '<div class="blok-duzenle-form" id="duzenle_' + b.id + '">' +
+      '<div class="fg2" style="margin-bottom:8px;">' +
+        '<div><label class="fl">Blok Adı</label>' +
+          '<input class="fi" id="dbAd_' + b.id + '" value="' + esc(b.ad) + '"></div>' +
+        '<div><label class="fl">Grup</label>' +
+          '<input class="fi" id="dbGrup_' + b.id + '" value="' + esc(b.grup || '') + '" placeholder="Büküm, Kesim..."></div>' +
+      '</div>' +
+      '<div class="fg2" style="margin-bottom:8px;">' +
+        '<div><label class="fl">Açıklama</label>' +
+          '<input class="fi" id="dbAciklama_' + b.id + '" value="' + esc(b.aciklama || '') + '"></div>' +
+        '<div><label class="fl">Renk</label>' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">' +
+            '<input type="color" class="renk-picker" id="dbRenk_' + b.id + '" value="' + esc(renk) + '" ' +
+              'oninput="document.getElementById(\'dbRenkLabel_' + b.id + '\').textContent=this.value">' +
+            '<span id="dbRenkLabel_' + b.id + '" style="font-size:12px;color:var(--txd);">' + esc(renk) + '</span>' +
+          '</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;">' +
+        '<button class="btn btn-ac btn-sm" onclick="blokDuzenleKaydet(\'' + b.id + '\')">Kaydet</button>' +
+        '<button class="btn btn-g btn-sm" onclick="blokDuzenleKapat(\'' + b.id + '\')">İptal</button>' +
+      '</div>' +
+    '</div>'
+  ) : '';
+
   return '<div class="blok-satir' + (b.sistem_preset ? ' sistem' : '') + '" id="blok_' + b.id + '">' +
     '<div class="blok-satir-ust" onclick="blokToggleDetay(\'' + b.id + '\')">' +
       '<div class="blok-renk-cubuk" style="background:' + renk + ';"></div>' +
@@ -335,11 +371,9 @@ function blokSatirHtml(b) {
           (b.aciklama ? ' <span style="margin-left:4px;">' + esc(b.aciklama) + '</span>' : '') +
         '</div>' +
       '</div>' +
-      '<div class="blok-satir-aksiyonlar">' +
-        (!b.sistem_preset ? '<button class="btn-re btn btn-sm" onclick="event.stopPropagation();blokSil(\'' + b.id + '\')" title="Bloğu sil">Sil</button>' : '') +
-        '<button class="blok-expand-btn" id="expand_' + b.id + '" title="Sayfaları göster">▼</button>' +
-      '</div>' +
+      aksiyonlar +
     '</div>' +
+    duzenleForm +
     '<div class="blok-detay" id="detay_' + b.id + '">' +
       '<div class="blok-detay-baslik">Erişim verilen sayfalar</div>' +
       '<div class="blok-sayfa-listesi" id="sayfalar_' + b.id + '">Yükleniyor...</div>' +
@@ -353,6 +387,44 @@ function blokSatirHtml(b) {
       : '<div style="font-size:12px;color:var(--txd);margin-top:6px;">Sistem presetleri değiştirilemez.</div>') +
     '</div>' +
   '</div>';
+}
+
+function blokDuzenleAc(blokId) {
+  // Diğer açık formları kapat
+  document.querySelectorAll('.blok-duzenle-form.open').forEach(function(f) {
+    if (f.id !== 'duzenle_' + blokId) f.classList.remove('open');
+  });
+  var form = document.getElementById('duzenle_' + blokId);
+  if (form) form.classList.toggle('open');
+}
+
+function blokDuzenleKapat(blokId) {
+  var form = document.getElementById('duzenle_' + blokId);
+  if (form) form.classList.remove('open');
+}
+
+async function blokDuzenleKaydet(blokId) {
+  var ad       = document.getElementById('dbAd_' + blokId).value.trim();
+  var grup     = document.getElementById('dbGrup_' + blokId).value.trim() || null;
+  var aciklama = document.getElementById('dbAciklama_' + blokId).value.trim() || null;
+  var renk     = document.getElementById('dbRenk_' + blokId).value;
+
+  if (!ad) { toast('Blok adı boş olamaz', 'er'); return; }
+
+  var supa = ARES.supabase();
+  var res  = await supa.from('yetki_bloklari')
+    .update({ ad: ad, grup: grup, aciklama: aciklama, renk: renk })
+    .eq('id', blokId);
+
+  if (res.error) { toast('Hata: ' + res.error.message, 'er'); return; }
+
+  // Lokal güncelle
+  var blok = _blokData.find(function(b){ return b.id === blokId; });
+  if (blok) { blok.ad = ad; blok.grup = grup; blok.aciklama = aciklama; blok.renk = renk; }
+
+  toast('Blok güncellendi', 'ok');
+  blokRender();
+  if (typeof ARES.yetkiCacheSifirla === 'function') ARES.yetkiCacheSifirla();
 }
 
 var _acikDetaylar = {};
