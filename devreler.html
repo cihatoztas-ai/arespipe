@@ -1061,31 +1061,45 @@ async function sorgulaVeGoster() {
         .range(offset, offset + _sayfaBasi - 1),
       devreIdFilter
     );
-    // Stat sorgusu: tüm filtreli devreler, bar grafikler için
-    var statQ = applyFilters(
-      supa.from('devreler')
-        .select('spooller(agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)'),
-      devreIdFilter
-    );
+    // Filtreli devre ID'lerini al (RPC için gerekli)
+    var allDevreIds;
+    if (devreIdFilter !== null) {
+      allDevreIds = devreIdFilter;
+    } else {
+      var idRes = await applyFilters(supa.from('devreler').select('id'), null);
+      allDevreIds = (idRes.data||[]).map(function(d){ return d.id; });
+    }
 
-    var results = await Promise.all([listeQ, countQ, statQ]);
+    var rpcIds = allDevreIds.length ? allDevreIds : ['00000000-0000-0000-0000-000000000000'];
+
+    // Paralel: liste + count + RPC istatistik
+    var results = await Promise.all([
+      listeQ,
+      countQ,
+      supa.rpc('devre_istatistik', { devre_ids: rpcIds })
+    ]);
     var devRes   = results[0];
     var countRes = results[1];
-    var statRes  = results[2];
+    var rpcRes   = results[2];
 
-    if (devRes.error) { console.warn('[Devreler]', devRes.error); return; }
+    if (devRes.error)  { console.warn('[Devreler] listeQ:', devRes.error); return; }
+    if (rpcRes.error)  { console.warn('[Devreler] rpcRes:', rpcRes.error); }
 
     _ssTotal = countRes.count || 0;
 
-    // Stat kartları — tüm filtreli kayıtlardan
-    var allSpools = [];
-    (statRes.data||[]).forEach(function(d){ allSpools=allSpools.concat(d.spooller||[]); });
-    _allSpoolsCache = allSpools; // modal hesaplamaları için sakla
-    var totalSpool   = allSpools.length;
-    var totalAgirlik = allSpools.reduce(function(s,x){return s+(parseFloat(x.agirlik)||0);},0);
-    var totalIler    = allSpools.length ? Math.round(
-      allSpools.reduce(function(s,x){ return s+(x.ilerleme||0); },0)/allSpools.length
-    ):0;
+    // RPC'den gelen istatistikler (veritabanında hesaplandı, limit sorunu yok)
+    var stat = rpcRes.data || {};
+    var totalSpool   = stat.toplam_spool   || 0;
+    var totalAgirlik = parseFloat(stat.toplam_agirlik) || 0;
+    var totalIler    = stat.ort_ilerleme   || 0;
+
+    // _allSpoolsCache: modal için cap+malzeme dağılımını RPC'den al
+    _allSpoolsCache = [];
+    (stat.cap_dagilim     || []).forEach(function(r){ _allSpoolsCache._capDagilim     = stat.cap_dagilim; });
+    (stat.malzeme_dagilim || []).forEach(function(r){ _allSpoolsCache._malzemeDagilim = stat.malzeme_dagilim; });
+    _allSpoolsCache._capDagilim     = stat.cap_dagilim     || [];
+    _allSpoolsCache._malzemeDagilim = stat.malzeme_dagilim || [];
+    _allSpoolsCache._yuzeyDagilim   = stat.yuzey_dagilim   || [];
 
     var count = document.getElementById('tableCount');
     if (count) count.textContent = '('+_ssTotal+' '+tv('cmn_devre','devre')+')';
@@ -1105,21 +1119,21 @@ async function sorgulaVeGoster() {
       return _mapDevre(d, i, spoolByDevre, offset);
     });
 
-    // Malzeme/çap filtrelerini ve bar grafikleri TÜM filtreli spoollardan güncelle
-    var malzemeSet={}, yuzeySet={}, capSayimAll={}, malzemeSayimAll={};
-    allSpools.forEach(function(s){
-      if(s.malzeme){ var mk=_normalizeMalzeme(s.malzeme); if(mk){ malzemeSet[mk]=true; malzemeSayimAll[mk]=(malzemeSayimAll[mk]||0)+1; } }
-      if(s.yuzey){ var yk=_normalizeYuzey(s.yuzey); if(yk) yuzeySet[yk]=true; }
-      if(s.dis_cap_mm){ var cmm=String(s.dis_cap_mm); capSayimAll[cmm]=(capSayimAll[cmm]||0)+1; }
+    // Bar grafikler — RPC'den gelen aggregate verilerden
+    var malzemeItems = (_allSpoolsCache._malzemeDagilim||[]).map(function(r,i){
+      return {label: _normalizeMalzeme(r.malzeme)||r.malzeme, val: r.adet, color: RENKLER[i%RENKLER.length]};
     });
-
-    // Bar — Malzeme (tüm filtreli spoollar)
-    var malzemeItems = Object.keys(malzemeSayimAll).map(function(k,i){ return {label:k,val:malzemeSayimAll[k],color:RENKLER[i]}; });
+    // Normalize edilmiş değerleri birleştir (aynı kategori farklı yazımla gelebilir)
+    var malzMerged = {};
+    malzemeItems.forEach(function(x){ malzMerged[x.label] = (malzMerged[x.label]||0) + x.val; });
+    malzemeItems = Object.keys(malzMerged).map(function(k,i){ return {label:k, val:malzMerged[k], color:RENKLER[i%RENKLER.length]}; });
     segBar('malzemeBar', malzemeItems);
 
-    // Bar — Çap (tüm filtreli spoollar)
-    var capItems = Object.keys(capSayimAll).sort(function(a,b){ return (capToMM(a)||9999)-(capToMM(b)||9999); })
-      .slice(0,8).map(function(k,i){ return {label:formatCapMM(k)+' mm',val:capSayimAll[k],color:RENKLER[i%RENKLER.length]}; });
+    var capItems = (_allSpoolsCache._capDagilim||[])
+      .sort(function(a,b){ return (parseFloat(a.mm)||9999)-(parseFloat(b.mm)||9999); })
+      .slice(0,8).map(function(r,i){
+        return {label: formatCapMM(r.mm)+' mm', val: parseInt(r.adet), color: RENKLER[i%RENKLER.length]};
+      });
     segBar('capBar', capItems);
 
     // Filtre dropdown seçenekleri ilk yüklemede veriYukle'de _filterDataUygula ile doluyor
@@ -1726,20 +1740,24 @@ function _normalizeYuzey(y) {
 }
 
 function malzemeModalAc() {
-  // Tüm filtreli spoollardan spool bazlı malzeme dağılımı
-  var sayim = {};
-  _allSpoolsCache.forEach(function(s) {
-    var k = _normalizeMalzeme(s.malzeme);
+  // RPC'den gelen aggregate malzeme dağılımı — normalize birleştirme
+  var merged = {};
+  (_allSpoolsCache._malzemeDagilim || []).forEach(function(r) {
+    var k = _normalizeMalzeme(r.malzeme) || r.malzeme;
     if (!k) return;
-    sayim[k] = (sayim[k] || 0) + 1;
+    if (!merged[k]) merged[k] = {val:0, agirlik:0};
+    merged[k].val     += parseInt(r.adet)         || 0;
+    merged[k].agirlik += parseFloat(r.agirlik)    || 0;
   });
-  var items = Object.keys(sayim).map(function(k, i) {
-    return {label: k, val: sayim[k], color: RENKLER[i]};
+  var items = Object.keys(merged).map(function(k, i) {
+    return {label: k, val: merged[k].val, agirlik: merged[k].agirlik, color: RENKLER[i%RENKLER.length]};
   });
   var cols = items.map(function(x) { return x.color; });
   var list = document.getElementById('malzemeList');
   if (list) list.innerHTML = items.map(function(x, i) {
-    return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div><span style="font-weight:700;">' + x.val + ' spool</span></div>';
+    return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div>' +
+      '<div style="text-align:right;"><div style="font-weight:700;">' + x.val + ' spool</div>' +
+      '<div style="font-size:12px;color:var(--txd);">' + Math.round(x.agirlik).toLocaleString('tr-TR') + ' kg</div></div></div>';
   }).join('');
   fullDonut('malzemeSvg', 'malzemeCenter', items, cols, 'spool');
   modal('modalMalzeme', true);
@@ -1747,23 +1765,13 @@ function malzemeModalAc() {
 
 // ── ÇAP DAĞILIM MODAL ───────────────────────────────────────────
 function capModalAc() {
-  // Tüm filtreli spoollardan gerçek ağırlık bazlı çap dağılımı
-  var capSayim = {}, capAgirlik = {};
-  _allSpoolsCache.forEach(function(s) {
-    if (!s.dis_cap_mm) return;
-    var mm = String(parseFloat(s.dis_cap_mm));
-    capSayim[mm]   = (capSayim[mm] || 0) + 1;
-    capAgirlik[mm] = (capAgirlik[mm] || 0) + (parseFloat(s.agirlik) || 0);
-  });
+  var capDagilim = _allSpoolsCache._capDagilim || [];
+  var sorted = capDagilim
+    .map(function(r){ return {mm: parseFloat(r.mm)||0, val: parseInt(r.adet), agirlik: parseFloat(r.agirlik)||0}; })
+    .sort(function(a,b){ return a.mm - b.mm; });
 
-  var sorted = Object.keys(capSayim).map(function(k) {
-    return {mm: parseFloat(k) || k, val: capSayim[k], agirlik: capAgirlik[k] || 0};
-  }).sort(function(a, b) {
-    return (parseFloat(a.mm) || 9999) - (parseFloat(b.mm) || 9999);
-  });
-
-  var topAdet   = sorted.reduce(function(s, x) { return s + x.val; }, 0);
-  var topAgirlik = sorted.reduce(function(s, x) { return s + x.agirlik; }, 0);
+  var topAdet    = sorted.reduce(function(s,x){ return s+x.val; }, 0);
+  var topAgirlik = sorted.reduce(function(s,x){ return s+x.agirlik; }, 0);
 
   // Tablo doldur
   var tbody = document.getElementById('capTbody');
