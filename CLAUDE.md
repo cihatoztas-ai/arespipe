@@ -325,16 +325,33 @@ Güvenlik, renk sistemi, flash prevention, CSS/dil sistemi, silme işlemleri.
 
 ### Geri Bildirimlerden — Onaylananlar
 
-- [ ] 🐛 Proje ilerleme sistemi doğru çalışmıyor — düzeltilecek
+Aşağıdaki görevler ilgili dosya açıkken birlikte yapılır.
+
+**`devre_detay.html`**
+- [ ] 📋 Başlık formatı: Tersane / Gemi No / Devre Adı / Zone — spool_detay gibi tek format
+
+**`kesim.html` / `devre_detay.html`**
 - [ ] 🐛 Kesim listesine geçişte hata veriyor
+
+**`proje_detay.html` / `proje_liste.html`**
+- [ ] 🐛 Proje ilerleme sistemi doğru çalışmıyor
+
+**`admin/panel.html`**
 - [ ] 🐛 Geri bildirim fotoğrafları süper admin'e iletilmiyor
+
+**Tüm sayfalar (global)**
 - [ ] 🐛 Sayfa üst bilgi kutularında yazı boyutu/tipi standardize edilecek
-- [ ] 🐛 `api/izometri-oku` → 502 Bad Gateway hatası araştırılacak
-- [ ] 📋 Devre detay sayfası başlık formatı: Tersane / Gemi No / Devre Adı / Zone (spool detay gibi tek format)
+
+**`api/izometri-oku.js`**
+- [ ] 🐛 502 Bad Gateway hatası araştırılacak
+
+**PDF/Etiket**
 - [ ] 📋 PDF çıktıları → firma ve program logoları, sayfa düzeni
-- [ ] 📋 Günlük/haftalık veri yedekleme sistemi (internet bağımsız depolama)
-- [ ] 📋 Tersane KK talebi oluştururken inspection formu da hazırlanacak
 - [ ] 📋 QR kod etiket boyutları netleştirilecek + etiket tasarımı
+- [ ] 📋 Tersane KK talebi oluştururken inspection formu da hazırlanacak
+
+**Altyapı**
+- [ ] 📋 Günlük/haftalık veri yedekleme sistemi (internet bağımsız depolama)
 - [ ] 💡 Kurulumda aktif dil seçimi — kullanıcılar sadece seçilen dilleri görür
 - [ ] 💡 GitHub yedek reposu stratejisi — veri koruması için plan
 
@@ -577,6 +594,46 @@ on_imalat (bekliyor) → imalat/kaynak başlatınca → imalat (devam_ediyor) [P
                      → iş bitince → sonraki basamak (bekliyor)
 ```
 Sadece `imalat` ve `kaynak` basamaklarında pulse animasyonu gösterilir.
+
+---
+
+## 12. DOSYA BAZINDA BEKLEYENLER
+
+Bir dosya üzerinde çalışılırken bu bölüm kontrol edilmeli. Hazır dosya elindeyken ilgili görevler birlikte yapılır.
+
+### devreler.html
+- [ ] Mobil devreler.html ile ilerleme/ağırlık hesabı uyumlu değil — web RPC'ye geçince mobil de güncellenmeli
+- [ ] Yüzey filtresi iyileştirmesi — galvaniz/boya/siyah/ham kategorileri genişletilebilir
+
+### devre_detay.html
+- [ ] 📋 Başlık formatı: Tersane / Gemi No / Devre Adı / Zone (spool_detay gibi)
+- [ ] 🐛 Kesim listesine geçişte hata veriyor
+
+### spool_detay.html
+- [ ] is_durumu alanı spool_detay tracker'ında da gösterilmeli
+
+### kesim.html
+- [ ] 🐛 Kesim listesine geçişte hata veriyor (devre_detay ile bağlantılı)
+
+### proje_liste.html / proje_detay.html
+- [ ] Supabase entegrasyonu yok — sıfırdan yazılacak
+- [ ] 🐛 Proje ilerleme sistemi doğru çalışmıyor
+
+### admin/panel.html
+- [ ] 🐛 Geri bildirim fotoğrafları süper admin'e iletilmiyor
+
+### api/izometri-oku.js
+- [ ] 🐛 502 Bad Gateway hatası araştırılacak
+
+### mobile/devreler.html
+- [ ] ASAMA_PCT kaldırılıp spooller.ilerleme kullanılmalı (web ile uyumlu)
+- [ ] devre_istatistik RPC'ye geçiş
+
+### mobile/devre_detay.html
+- [ ] is_durumu pulse animasyonu eklenmeli (web devre_detay ile uyumlu)
+
+### Tüm sayfalar
+- [ ] 🐛 Üst bilgi kutularında yazı boyutu/tipi standardize edilecek
 
 ## 10. SOHBET SONU GÜNCELLEME PROTOKOLÜ
 
