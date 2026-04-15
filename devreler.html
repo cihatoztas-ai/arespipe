@@ -696,11 +696,11 @@ function tarihFormat(str) {
 }
 
 // ── TERMİN TARİHİ ────────────────────────────────────────────────
-function getTerminMap() { try { return JSON.parse(localStorage.getItem('ares_termin_map') || '{}'); } catch(e) { return {}; } }
-function setTermin(id, isoDate) {
-  var m = getTerminMap();
-  if (isoDate) m[id] = isoDate; else delete m[id];
-  try { localStorage.setItem('ares_termin_map', JSON.stringify(m)); } catch(e) {}
+// Termin — Supabase'e kaydedilir, localStorage fallback yok
+function getTerminMap() {
+  var m = {};
+  DEVRELER.forEach(function(d){ if(d.terminTarihi) m[d.supaId] = d.terminTarihi; });
+  return m;
 }
 function terminRenk(isoDate) {
   if (!isoDate) return 'termin-yok';
@@ -728,9 +728,8 @@ function takvimAc(e, id) {
   var popup = document.getElementById('takvimPopup');
   var inp   = document.getElementById('takvimInput');
   if (!popup || !inp) return;
-  var m = getTerminMap();
-  inp.value = m[id] || '';
-  // Konumlandır
+  var d = DEVRELER.find(function(x){ return x.supaId === id; });
+  inp.value = d && d.terminTarihi ? d.terminTarihi.split('T')[0] : '';
   var rect = e.currentTarget.getBoundingClientRect();
   var top  = rect.bottom + 6;
   var left = rect.left;
@@ -741,17 +740,30 @@ function takvimAc(e, id) {
   popup.classList.add('open');
   setTimeout(function() { inp.focus(); }, 50);
 }
-function terminKaydet() {
+async function terminKaydet() {
   if (_takvimAktifId === null) return;
   var inp = document.getElementById('takvimInput');
-  setTermin(_takvimAktifId, inp ? inp.value : '');
+  var val = inp ? inp.value : '';
   takvimKapat();
+  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+  if (supa) {
+    var { error } = await supa.from('devreler').update({ termin_tarihi: val || null }).eq('id', _takvimAktifId);
+    if (error) { console.warn('Termin kaydet:', error); return; }
+  }
+  var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
+  if (d) d.terminTarihi = val || null;
   renderTable(false);
 }
-function terminTemizle() {
+async function terminTemizle() {
   if (_takvimAktifId === null) return;
-  setTermin(_takvimAktifId, '');
   takvimKapat();
+  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
+  if (supa) {
+    var { error } = await supa.from('devreler').update({ termin_tarihi: null }).eq('id', _takvimAktifId);
+    if (error) { console.warn('Termin temizle:', error); return; }
+  }
+  var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
+  if (d) d.terminTarihi = null;
   renderTable(false);
 }
 function takvimKapat() {
@@ -950,10 +962,11 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         yuzey:         d.yuzey   ? [d.yuzey]   : yuzeyArr,
         malzemeSapma:  malzemeSapma,
         yuzeySapma:    yuzeySapma,
-        ilerleme: avgIler,
-        durum:    d.durum         || 'baslamadi',
-        sonIslem: sonIslem,
-        caps:     caps
+        ilerleme:      avgIler,
+        durum:         d.durum         || 'baslamadi',
+        sonIslem:      sonIslem,
+        terminTarihi:  d.termin_tarihi || null,
+        caps:          caps
       };
 }
 
@@ -1002,6 +1015,15 @@ async function sorgulaVeGoster() {
   try {
     // Aşama 1: Malzeme/yuzey filtresi aktifse spooller'dan devre_id'leri bul
     var devreIdFilter = null;
+    var YUZEY_PATTERNS = {
+      'Galvaniz': ['galvaniz','galv'],
+      'Asit':     ['asit','acid','asid'],
+      'Boyalı':   ['boya','paint','boyali','boyalı'],
+      'Siyah':    ['siyah','black'],
+      'Ham':      ['ham','raw'],
+      'Paslanmaz':['paslanmaz','stainless']
+    };
+
     if (malzeme || yuzey) {
       var spoolQ = supa.from('spooller').select('devre_id');
       if (malzeme) {
@@ -1013,7 +1035,15 @@ async function sorgulaVeGoster() {
           spoolQ = spoolQ.ilike('malzeme', '%'+malzeme+'%');
         }
       }
-      if (yuzey) spoolQ = spoolQ.ilike('yuzey', '%'+yuzey+'%');
+      if (yuzey) {
+        var ypatterns = YUZEY_PATTERNS[yuzey];
+        if (ypatterns) {
+          var yorStr = ypatterns.map(function(p){ return 'yuzey.ilike.%'+p+'%'; }).join(',');
+          spoolQ = spoolQ.or(yorStr);
+        } else {
+          spoolQ = spoolQ.ilike('yuzey', '%'+yuzey+'%');
+        }
+      }
       var spoolRes = await spoolQ;
       if (spoolRes.error) console.warn('[Devreler] spoolQ:', spoolRes.error);
       var ids = (spoolRes.data||[]).map(function(s){ return s.devre_id; }).filter(Boolean);
@@ -1027,7 +1057,7 @@ async function sorgulaVeGoster() {
     );
     var listeQ = applyFilters(
       supa.from('devreler')
-        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, ' +
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin_tarihi, ' +
                 'projeler(proje_no, tersaneler(ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
@@ -1439,7 +1469,7 @@ function getFiltered() {
     if (firma   && d.tersane !== firma) return false;
     if (proje   && d.gemi    !== proje) return false;
     if (malzeme && d.malzeme.map(function(m){return _normalizeMalzeme(m)||m;}).indexOf(malzeme) === -1) return false;
-    if (yuzey   && d.yuzey.indexOf(yuzey) === -1) return false;
+    if (yuzey   && d.yuzey.map(function(y){return _normalizeYuzey(y)||y;}).indexOf(yuzey) === -1) return false;
     if (durum   && d.durum   !== durum) return false;
     if (arama) {
       var hay = [d.isEmri, d.tersane, d.gemi, d.devre, d.zone].join(' ').toLowerCase();
@@ -1512,19 +1542,14 @@ function _doRender() {
     var iptalBilgi = getIptalMap()[d.id];
     var dur = DURUM_MAP[d.durum] || {cls:'sb-baslamadi', text: d.durum};
     var matBadge = d.malzeme.map(function(m) {
-      var ml = (m||'').toLowerCase();
+      var mn = _normalizeMalzeme(m) || m;
       var label, cls;
-      if (ml.indexOf('karbon') !== -1 || ml === 'celik') {
-        label = tv('dr_mat_celik','Karbon Çelik'); cls = 'mb-celik';
-      } else if (ml.indexOf('paslanmaz') !== -1) {
-        label = tv('dr_mat_paslanmaz','Paslanmaz'); cls = 'mb-pas';
-      } else if (ml.indexOf('bakır') !== -1 || ml.indexOf('bakir') !== -1 || ml.indexOf('cuni') !== -1) {
-        label = tv('dr_mat_bakir','Bakır Alaşım'); cls = 'mb-bakir';
-      } else if (ml.indexOf('alüm') !== -1 || ml.indexOf('alum') !== -1) {
-        label = tv('dr_mat_alum','Alüminyum'); cls = 'mb-alum';
-      } else {
-        label = esc(m); cls = 'mb-diger';
-      }
+      if (mn === 'Karbon Çelik')  { label = mn; cls = 'mb-celik'; }
+      else if (mn === 'Paslanmaz')     { label = mn; cls = 'mb-pas'; }
+      else if (mn === 'Bakır Alaşım')  { label = mn; cls = 'mb-bakir'; }
+      else if (mn === 'Alüminyum')     { label = mn; cls = 'mb-alum'; }
+      else if (mn === 'Plastik/PE')    { label = mn; cls = 'mb-diger'; }
+      else                             { label = esc(mn); cls = 'mb-diger'; }
       return '<span class="mat-badge ' + cls + '">' + label + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
