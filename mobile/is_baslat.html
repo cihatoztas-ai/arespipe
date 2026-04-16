@@ -708,59 +708,10 @@ function rolSec(el, ad, renk) {
 async function rolDevam() {
   if (!_seciliRol) return;
 
-  /* Aktif iş kontrolü — sadece aynı rol için kilitle */
-  try {
-    var _lsKeyRol = 'ares_aktif_' + _seciliRol.ad;
-    var kayitliStr = localStorage.getItem(_lsKeyRol);
-    if (kayitliStr) {
-      var kayitli = JSON.parse(kayitliStr);
-      if (kayitli && kayitli.id) {
-        var supa = mSupabase();
-        var { data: aktifS } = await supa
-          .from('spooller')
-          .select('id, spool_no, spool_id, is_durumu')
-          .eq('id', kayitli.id)
-          .eq('tenant_id', mTenantId())
-          .single();
-
-        if (aktifS && aktifS.is_durumu === 'devam_ediyor') {
-          /* Aktif iş var — kilitli ekran göster */
-          if (kayitli.rol) _seciliRol = { ad: kayitli.rol, sistemAdi: kayitli.rol, renk: '#2D8EFF' };
-          aktifIsUyarisiGoster(aktifS);
-          return;
-        }
-      }
-    }
-    localStorage.removeItem('ares_aktif_spool');
-  } catch(e) {
-    console.warn('[aktif iş kontrol]', e);
-  }
-
   ekranGoster('ekranQr');
 }
 
-function aktifIsUyarisiGoster(spool) {
-  /* Rol seç ekranını uyarı olarak kullan */
-  var liste = document.getElementById('rolListesi');
-  var spoolGoster = spool.spool_no || ('#' + (spool.spool_id || ''));
 
-  liste.innerHTML =
-    '<div style="background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--warn);' +
-    'border-radius:12px;padding:16px 18px;margin-bottom:14px;">' +
-    '<div style="font-size:15px;font-weight:600;color:var(--tx);margin-bottom:6px;">' +
-    '⚠ Açık İş Var</div>' +
-    '<div style="font-size:14px;color:var(--txm);line-height:1.5;">' +
-    '<b>' + esc(spoolGoster) + '</b> üzerinde devam eden bir iş var.<br>' +
-    'Başka bir spool başlatmadan önce bu işi tamamlayın veya iptal edin.' +
-    '</div></div>';
-
-  var btn = document.getElementById('btnRolDevam');
-  btn.disabled = false;
-  btn.textContent = tv('mob_is_aktif_devam', 'Açık İşe Devam Et');
-  btn.onclick = function() { spoolYukle(spool.id); };
-
-  document.getElementById('rolTekAciklama').style.display = 'none';
-}
 
 /* ══════════════════════════════════════
    QR TARAMA
@@ -1171,8 +1122,7 @@ async function isBaslatDB() {
     _guncelSpool.is_durumu = 'devam_ediyor';
     _isBasladi = true;
     /* Aktif işi localStorage'a kaydet */
-    try { var _lsKey = 'ares_aktif_' + (_seciliRol ? _seciliRol.ad : 'genel');
-    localStorage.setItem(_lsKey, JSON.stringify({ id: _guncelSpool.id })); } catch(e) {}
+    try { localStorage.setItem('ares_is_aktif', JSON.stringify({ id: _guncelSpool.id })); } catch(e) {}
     spoolFootGuncelle();
     ekranGoster('ekranSpoolDetay');
     mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
@@ -1714,8 +1664,7 @@ function sifirlaVeQraDon() {
   _seciliBasamak = null;
   _isBasladi     = false;
   _qrKilidi      = false;
-  try { var _lsKey2 = 'ares_aktif_' + (_seciliRol ? _seciliRol.ad : 'genel');
-  localStorage.removeItem(_lsKey2); } catch(e) {}
+  try { localStorage.removeItem('ares_is_aktif'); } catch(e) {}
   document.getElementById('qrManuelInput').value = '';
   ekranGoster('ekranQr');
 }
@@ -1762,7 +1711,37 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (typeof window._applyI18n === 'function') window._applyI18n();
     };
 
-    /* Rol ekranını hazırla */
+    /* Aktif iş var mı? Varsa direkt o spoolü aç */
+    try {
+      var _aktifKayit = localStorage.getItem('ares_is_aktif');
+      if (_aktifKayit) {
+        var _aktifObj = JSON.parse(_aktifKayit);
+        if (_aktifObj && _aktifObj.id) {
+          var _supa = mSupabase();
+          var { data: _aktifS } = await _supa
+            .from('spooller')
+            .select('id, spool_no, spool_id, is_durumu')
+            .eq('id', _aktifObj.id)
+            .eq('tenant_id', mTenantId())
+            .single();
+          if (_aktifS && _aktifS.is_durumu === 'devam_ediyor') {
+            /* Rol bilgisini geri yükle */
+            if (_aktifObj.rol) {
+              _seciliRol = { ad: _aktifObj.rol, sistemAdi: _aktifObj.rol, renk: '#2D8EFF' };
+            }
+            console.log('[is_baslat] Aktif iş bulundu, direkt açılıyor:', _aktifS.spool_id || _aktifS.spool_no);
+            await spoolYukle(_aktifS.id);
+            return;
+          } else {
+            localStorage.removeItem('ares_is_aktif');
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[is_baslat aktif iş]', e);
+    }
+
+    /* Aktif iş yok — Rol ekranını hazırla */
     console.log('[is_baslat] rolEkraniHazirla başlıyor...');
     await rolEkraniHazirla();
     console.log('[is_baslat] Hazır.');
