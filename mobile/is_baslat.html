@@ -817,24 +817,34 @@ async function spoolYukle(spoolId) {
     var supa     = mSupabase();
     var tenantId = mTenantId();
 
-    var { data: s, error } = await supa
-      .from('spooller')
-      .select([
-        'id, spool_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, kalite,',
-        'yuzey_islem, rev, aktif_basamak, is_durumu, ilerleme,',
-        'durdurma_sebebi, alistirma,',
-        'devreler(id, ad, proje_kodu),',
-        'fotograflar(id, dosya_url, islem_turu, olusturma,',
-        '  kullanicilar(ad_soyad)),',
-        'spool_malzemeleri(id, tanim, malzeme, kalite,',
-        '  dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no),',
-        'kesim_kalemleri(id, kesildi),',
-        'bukum_kalemleri(id, bukuldu),',
-        'markalama_kalemleri(id, markalandi)'
-      ].join(''))
-      .eq('id', spoolId)
-      .eq('tenant_id', tenantId)
-      .single();
+    /* UUID mi spool_no mu diye kontrol et */
+    var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    var aramaKolonu = UUID_RE.test(spoolId.trim()) ? 'id' : 'spool_no';
+
+    var SELECT = [
+      'id, spool_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, kalite,',
+      ' yuzey_islem, rev, aktif_basamak, is_durumu, ilerleme,',
+      ' durdurma_sebebi, alistirma,',
+      ' devreler(id, ad, proje_kodu),',
+      ' fotograflar(id, dosya_url, islem_turu, olusturma, yukleyen_id),',
+      ' spool_malzemeleri(id, tanim, malzeme, kalite,',
+      '  dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no),',
+      ' kesim_kalemleri(id, kesildi),',
+      ' bukum_kalemleri(id, bukuldu),',
+      ' markalama_kalemleri(id, markalandi)'
+    ].join('');
+
+    var sorgu = supa.from('spooller').select(SELECT).eq('tenant_id', tenantId);
+
+    /* Birden fazla spool_no eşleşebilir — tek sonuç için limit 1 */
+    if (aramaKolonu === 'id') {
+      sorgu = sorgu.eq('id', spoolId.trim());
+    } else {
+      sorgu = sorgu.eq('spool_no', spoolId.trim());
+    }
+
+    var { data: s, error } = await sorgu.maybeSingle();
+    console.log('[spoolYukle]', aramaKolonu, '=', spoolId.trim(), '→', s ? 'bulundu' : 'yok', error);
 
     if (error || !s) {
       mToast(tv('mob_is_spool_bulunamadi', 'Spool bulunamadı'), 'error');
