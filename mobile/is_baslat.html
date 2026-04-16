@@ -563,6 +563,19 @@
    ✅ mSayfaKontrol() (G-01)
 ══════════════════════════════════════════════════════ */
 
+/* ══ mSayfaKontrol fallback ══
+   ares-mobile.js'e henüz eklenmemişse inline tanımlıyoruz */
+if (typeof mSayfaKontrol === 'undefined') {
+  window.mSayfaKontrol = async function(sayfaKodu) {
+    var oturum = mOturum ? mOturum() : null;
+    if (!oturum) { location.href = 'giris.html'; return false; }
+    if (typeof ARES !== 'undefined' && ARES.sayfaYetkiKontrol) {
+      return await ARES.sayfaYetkiKontrol(sayfaKodu);
+    }
+    return true; /* ARES yoksa geç — geliştirme modu */
+  };
+}
+
 /* ══ Durum Değişkenleri ══ */
 var _seciliRol    = null;   // { ad, sistemAdi, renk }
 var _kulBloklari  = [];     // ARES.kullaniciBloklari()
@@ -1547,11 +1560,15 @@ function sifirlaVeQraDon() {
    INIT — Sayfa Başlatma (CLAUDE-MOBILE.md §7)
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function() {
-  var eksikler = ['mInit','mSupabase','mTenantId','mOturum','mSayfaKontrol'].filter(function(fn) {
+  var eksikler = ['mInit','mSupabase','mTenantId','mOturum'].filter(function(fn) {
     return typeof window[fn] === 'undefined';
   });
   if (eksikler.length) {
     document.documentElement.style.visibility = '';
+    document.getElementById('mPage').style.display = '';
+    document.getElementById('rolListesi').innerHTML =
+      '<div style="padding:20px;font-size:14px;color:var(--re);">Yüklenemeyen modüller: ' +
+      eksikler.join(', ') + '<br><br>ares-mobile.js kontrol edin.</div>';
     console.error('[is_baslat] EKSİK:', eksikler);
     return;
   }
