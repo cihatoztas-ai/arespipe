@@ -627,14 +627,9 @@ async function rolEkraniHazirla() {
   var oturum = mOturum();
   if (!oturum) return;
 
-  /* Yönetici ise is_baslat'a girmez — ana sayfa üzerinden yönlendirilmeli */
-  var yoneticiRoller = ['super_admin', 'firma_admin', 'yonetici'];
-  if (yoneticiRoller.indexOf(oturum.rol) !== -1) {
-    /* Bu ekran yöneticilere görünmemeli — mSayfaKontrol zaten engelliyor */
-    location.href = 'index.html';
-    return;
-  }
-
+  /* Erişim kontrolü: rol değil blok belirler.
+     mSayfaKontrol('mobile/is_baslat') zaten blok kontrolü yapar.
+     Burada sadece işlem bloklarını filtrele. */
   _kulBloklari = await ARES.kullaniciBloklari(oturum.id);
 
   /* Sadece işlem bloklarını filtrele */
