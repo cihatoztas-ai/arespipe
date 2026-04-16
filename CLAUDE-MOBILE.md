@@ -1,466 +1,389 @@
-# AresPipe — Mobil Sistem Bağlamı
+# AresPipe — Mobil Sistem Bağlamı (React)
 
 > Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
-> Son güncelleme: 15 Nisan 2026
+> Son güncelleme: 16 Nisan 2026
+> **ÖNEMLİ:** 16 Nisan 2026'da vanilla HTML/JS'den React + Vite'a geçildi. Eski kurallar geçersiz.
 
 ---
 
-## 1. MOBİL MİMARİ
+## 1. MİMARİ
 
-### 1.1 Klasör Yapısı
+### 1.1 Stack
+
+- **Framework:** React 18 + Vite
+- **Router:** react-router-dom v6
+- **Backend:** Supabase (aynı proje, aynı DB)
+- **Deploy:** Vercel — `arespipe-mob.vercel.app` (ayrı proje, root: `mobile/`)
+- **Repo:** cihatoztas-ai/arespipe — `mobile/` klasörü
+
+### 1.2 Klasör Yapısı
 
 ```
 mobile/
-├── giris.html          ✅ Mobil giriş
-├── index.html          ✅ Ana sayfa
-├── devreler.html       ✅ Devre listesi (RPC geçişi bekliyor)
-├── devre_detay.html    ✅ Devre detay + spool listesi (pulse animasyonu bekliyor)
-├── spool_detay.html    ✅ Spool detay + fotoğraflar
-├── qr.html             ✅ QR tarayıcı
-├── is_baslat.html      ⏳ Operatör iş ekranı — mockup onaylandı, kodlanacak
-├── kk.html             ⏳
-├── sevkiyat.html       ⏳
-├── gemiler.html        ⏳
-├── gemi_detay.html     ⏳
-├── tezgahlar.html      ⏳
-├── ara.html            ⏳
-├── bildirim.html       ⏳
-├── ares-mobile.js      ✅ Ortak JS
-└── ares-mobile.css     ✅ Ortak CSS + RTL
+├── src/
+│   ├── main.jsx              ← BrowserRouter buraya sarılı
+│   ├── App.jsx               ← Routes + merkezi auth guard
+│   ├── index.css             ← CSS değişkenleri + global reset
+│   ├── lib/
+│   │   ├── supabase.js       ← createClient — TEK bağlantı noktası
+│   │   └── auth.js           ← getOturum(), getTenantId(), cikisYap()
+│   ├── screens/              ← Her ekran ayrı .jsx dosyası
+│   │   ├── Giris.jsx         ✅
+│   │   ├── Anasayfa.jsx      ⏳
+│   │   ├── Devreler.jsx      ⏳
+│   │   ├── DevrDetay.jsx     ⏳
+│   │   ├── SpoolDetay.jsx    ⏳
+│   │   ├── IsBaslat.jsx      ⏳
+│   │   └── QRTara.jsx        ⏳
+│   └── components/           ← Ortak componentler
+│       ├── RolKart.jsx        ⏳
+│       ├── StatKart.jsx       ⏳
+│       └── AlertKart.jsx      ⏳
+├── package.json
+└── vite.config.js
 ```
 
-### 1.2 Web'den Bağımsızlık
+### 1.3 Supabase Bağlantısı
 
-- `ares-layout.js` KULLANILMAZ — mobil kendi drawer/bottomnav'ını `ares-mobile.js` ile kurar
-- `ares-store.js` ve `ares-lang.js` `../` prefix ile root'tan yüklenir
-- Her sayfada `mInit()` çağrılır
+```js
+// mobile/src/lib/supabase.js
+import { createClient } from '@supabase/supabase-js'
+export const supabase = createClient(SUPA_URL, SUPA_KEY)
 
-### 1.3 Script Yükleme Sırası — ZORUNLU
+// Kullanım — her screen'de
+import { supabase } from '../lib/supabase'
+const { data, error } = await supabase.from('spooller').select('*')
+```
 
-```html
-<!-- Body sonunda, HEAD'de ASLA -->
-<script src="../ares-store.js"></script>
-<script src="../ares-lang.js"></script>
-<script src="ares-mobile.js"></script>
-<script>
-  /* sayfa kodu */
-</script>
+**Web tarafındaki `ARES.supabase()` veya `mSupabase()` KULLANILMAZ.**
+
+---
+
+## 2. TEMEL KURALLAR
+
+### R-01: State Yönetimi
+
+```jsx
+// YANLIŞ — global değişken
+var _aktifSpool = null;
+
+// DOĞRU — React state
+const [aktifSpool, setAktifSpool] = useState(null)
+```
+
+### R-02: Navigasyon
+
+```jsx
+// YANLIŞ
+location.href = 'devreler.html'
+history.back()
+
+// DOĞRU
+import { useNavigate } from 'react-router-dom'
+const navigate = useNavigate()
+navigate('/devreler')
+navigate(-1)  // geri için
+```
+
+### R-03: iOS Uyumluluk
+
+```jsx
+// File input — iOS'ta .click() çalışmaz, label kullan
+<label htmlFor="fotoInput">
+  <input type="file" id="fotoInput" accept="image/*" capture="environment" style={{display:'none'}} />
+  Fotoğraf Çek
+</label>
+
+// Input zoom önleme — iOS font-size 16px altında zoom yapar
+<input style={{ fontSize: '16px' }} />
+<textarea style={{ fontSize: '16px' }} />
+```
+
+### R-04: iOS Viewport
+
+```css
+/* index.css */
+html, body, #root {
+  height: 100%;
+  height: 100dvh;  /* dynamic viewport — iOS adres çubuğunu dahil etmez */
+  overflow: hidden;
+}
+```
+
+### R-05: Event Listener Temizliği
+
+```jsx
+useEffect(() => {
+  window.addEventListener('resize', handler)
+  return () => window.removeEventListener('resize', handler)  // cleanup şart
+}, [])
+```
+
+### R-06: Font Size
+
+Minimum `14px`. Input/textarea'larda `16px` (iOS zoom önleme).
+
+### R-07: Renk Sistemi
+
+CSS değişkenleri `index.css`'de tanımlı — aynı sistem:
+```
+var(--ac), var(--gr), var(--re), var(--warn), var(--leg)
+var(--bg), var(--sur), var(--bor), var(--tx), var(--txd), var(--txm)
 ```
 
 ---
 
-## 2. KESİN KURALLAR (İHLAL EDİLMEZ)
+## 3. ROUTER YAPISI
 
-### M-01: history.back() YASAK
-
-```js
-// YANLIŞ
-onclick="history.back()"
-
-// DOĞRU — explicit URL
-onclick="location.href='devreler.html'"
-onclick="geriDon()"  // _SP.devre_id varsa devre_detay'a, yoksa devreler'e
+```jsx
+// App.jsx
+<Routes>
+  <Route path="/giris" element={!oturum ? <Giris /> : <Navigate to="/" />} />
+  <Route path="/" element={oturum ? <Anasayfa /> : <Navigate to="/giris" />} />
+  <Route path="/devreler" element={oturum ? <Devreler /> : <Navigate to="/giris" />} />
+  <Route path="/devre/:id" element={oturum ? <DevrDetay /> : <Navigate to="/giris" />} />
+  <Route path="/spool/:id" element={oturum ? <SpoolDetay /> : <Navigate to="/giris" />} />
+  <Route path="/is-baslat" element={oturum ? <IsBaslat /> : <Navigate to="/giris" />} />
+</Routes>
 ```
 
-### M-02: Geri Dönüş Hiyerarşisi
+### Auth Guard
 
-```
-giris.html → index.html → devreler.html → devre_detay.html → spool_detay.html
-```
+`App.jsx`'te merkezi — `supabase.auth.onAuthStateChange()` ile oturum takip edilir. Her route `oturum` state'ine göre yönlendirir.
 
-Her sayfa bir üstüne döner. `spool_detay.html`'de `geriDon()`:
-```js
-function geriDon() {
-  if (_SP && _SP.devre_id) {
-    location.href = 'devre_detay.html?id=' + _SP.devre_id;
-  } else {
-    location.href = 'devreler.html';
+---
+
+## 4. SCREEN ŞABLONU
+
+```jsx
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+
+export default function OrnekEkran() {
+  const navigate = useNavigate()
+  const [veri, setVeri] = useState(null)
+  const [yukleniyor, setYukleniyor] = useState(true)
+  const [hata, setHata] = useState(null)
+
+  useEffect(() => {
+    yukle()
+  }, [])
+
+  async function yukle() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { navigate('/giris'); return }
+
+      const { data, error } = await supabase
+        .from('tablo')
+        .select('*')
+        .eq('tenant_id', session.user.id)
+
+      if (error) throw error
+      setVeri(data)
+    } catch(e) {
+      setHata(e.message)
+    } finally {
+      setYukleniyor(false)
+    }
   }
+
+  if (yukleniyor) return <div style={s.yukleniyor}>Yükleniyor...</div>
+  if (hata) return <div style={s.hata}>{hata}</div>
+
+  return (
+    <div style={s.sayfa}>
+      {/* İçerik */}
+    </div>
+  )
+}
+
+const s = {
+  sayfa: { height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' },
+  yukleniyor: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', color: 'var(--txd)' },
+  hata: { padding: 16, color: 'var(--re)' },
 }
 ```
 
-### M-03: Flash Prevention ZORUNLU
+---
 
-`<head>` içinde `<link>`'lerden ÖNCE:
-```html
-<script>(function(){
-  var t=localStorage.getItem('ares_theme')||'light-anthracite';
-  var l=localStorage.getItem('ares_lang')||'tr';
-  document.documentElement.setAttribute('data-theme',t);
-  document.documentElement.setAttribute('lang',l);
-  document.documentElement.style.visibility='hidden';
-})()</script>
-```
+## 5. SUPABASE KULLANIM KURALLARI
 
-`mInit()` sonrası visibility açılır:
-```js
-try {
-  var ok = await mInit();
-  document.documentElement.style.visibility = '';
-  if (!ok) return;
-  ...
-} catch(e) {
-  document.documentElement.style.visibility = '';
+### Tenant ID
+
+```jsx
+import { supabase } from '../lib/supabase'
+
+async function getTenantId() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return null
+  const { data } = await supabase
+    .from('kullanicilar')
+    .select('tenant_id')
+    .eq('id', session.user.id)
+    .single()
+  return data?.tenant_id
 }
 ```
 
-### M-04: mPage Yapısı
+### Paralel Sorgular
 
-```html
-<div class="m-page" id="mPage" style="display:none;">
-  <!-- sayfa içeriği -->
+```jsx
+const [spoolRes, fotoRes, notRes] = await Promise.all([
+  supabase.from('spooller').select('*').eq('id', spoolId).single(),
+  supabase.from('fotograflar').select('*').eq('spool_id', spoolId),
+  supabase.from('notlar').select('*').eq('spool_id', spoolId).eq('silindi', false),
+])
+```
+
+### Fotoğraf Yükleme
+
+```jsx
+const uzanti = dosya.name.split('.').pop()
+const yol = `${tenantId}/spooller/${spoolId}/${Date.now()}.${uzanti}`
+
+const { error } = await supabase.storage
+  .from('arespipe-dosyalar')
+  .upload(yol, dosya, { upsert: false })
+
+const { data } = supabase.storage
+  .from('arespipe-dosyalar')
+  .getPublicUrl(yol)
+
+// DB'ye kaydet
+await supabase.from('fotograflar').insert({
+  tenant_id: tenantId,
+  spool_id: spoolId,
+  dosya_url: data.publicUrl,
+  yukleyen_id: session.user.id,
+  islem_turu: islemTuru,
+  olusturma: new Date().toISOString(),
+})
+```
+
+---
+
+## 6. KRİTİK KOLON ADLARI
+
+**spooller:**
+- `spool_id TEXT` — kısa görüntü ID ("0431") — UUID değil
+- `dis_cap_mm`, `et_kalinligi_mm`, `agirlik`
+- `is_durumu` — `bekliyor` / `devam_ediyor`
+- `alistirma` — `VAR` / `KISMI` / `YOK`
+- `aktif_basamak` — `on_imalat`, `on_kontrol`, `kaynak`, `imalat`, `kk`, `sevkiyat`
+- `ilerleme INTEGER` — 0-100
+
+**notlar:** `metin` (icerik değil), `ekleyen_id` (yapan_id değil), `qr_goster`, `silindi`
+
+**fotograflar:** `dosya_url`, `yukleyen_id`, `islem_turu`, `spool_id`
+
+**Storage bucket:** `arespipe-dosyalar`
+
+---
+
+## 7. DEPLOYMENT
+
+```
+git push origin main
+→ Vercel otomatik algılar
+→ mobile/ klasörü build edilir (npm run build)
+→ arespipe-mob.vercel.app'e deploy olur
+```
+
+**Vercel Proje Adı:** `arespipe-mob`
+**Root Directory:** `mobile`
+**Build Command:** `npm run build` (override açık)
+**Install Command:** `npm install` (override açık)
+
+---
+
+## 8. EKRAN TASARIM KURALLARI
+
+### Genel Layout
+
+```jsx
+<div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+  {/* Topbar — flex-shrink: 0 */}
+  {/* Scroll alan — flex: 1, overflow-y: auto */}
+  {/* Alt buton bar — flex-shrink: 0, paddingBottom: safe-area */}
 </div>
 ```
 
-`mInit()` sonrası: `document.getElementById('mPage').style.display = '';`
-
-### M-05: Auth Yönlendirmesi
-
-`mAuthKontrol()` başarısız olursa → `giris.html` (relative)
-`../giris.html` KULLANILMAZ.
-
-### M-06: CSS Tırnak Kuralı
+### Scrollbar Gizleme
 
 ```css
-/* YANLIŞ */
-[data-theme="dark"] { ... }
-
-/* DOĞRU */
-[data-theme=dark] { ... }
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
 ```
 
-### M-07: Sayfa Teslim Kontrol Listesi (Kural G-01 — Mobil Eki)
+### Alt Buton Bar — 3'lü (İş Başlat devam durumu)
 
-Mobil sayfalar için CLAUDE.md Bölüm 2.12 kontrol listesi geçerlidir. **Ek olarak:**
-
-```
-□ history.back() yok (M-01)
-□ Geri dönüş hiyerarşisi doğru (M-02)
-□ Flash prevention var (M-03) — giris.html ve qr.html hariç
-□ mPage yapısı kullanıldı (M-04)
-□ Auth yönlendirmesi giris.html — ../giris.html değil (M-05)
-□ CSS tırnak kuralı [data-theme=dark] — tırnak yok (M-06)
-□ Script sırası body sonunda, HEAD'de değil (1.3)
-□ D-01: Tüm statik metinlere data-i18n eklendi
-□ D-01: Tüm dinamik JS metinlerde tv() kullanıldı
-□ F-01: Font-size 14px altı yok — 9px, 10px, 11px, 12px, 13px YASAK
-□ mSayfaKontrol() eklendi (yetki sistemi)
+```jsx
+<div style={{ display: 'flex', gap: 6 }}>
+  <button style={btnKirmizi}>İşi Tamamla</button>
+  <button style={btnGhostMavi}>Not Ekle</button>
+  <button style={btnGhostKirmizi}>İptal Et</button>
+</div>
 ```
 
-**Mobilde font kuralı özellikle kritik:** `ares-mobile.css` ve sayfa CSS'lerinde 14px altı çok sayıda ihlal mevcut. Yeni yazılan her satırda bu kural uygulanır.
+### Topbar Durumları (İş Başlat)
 
----
+- `bekliyor` → `background: var(--sur)`, normal başlık
+- `devam_ediyor` → `background: #fef3c7`, sarı, pulse nokta
+- `tamamlandı` → `background: #dcfce7`, yeşil
 
-## 3. ares-mobile.js FONKSİYONLARI
+### Kart Tasarım Sistemi
 
-### Temel Fonksiyonlar
-
-```js
-mInit()                    // Tema+dil, auth, drawer+nav, visibility
-mAuthKontrol()             // Session kontrol → giris.html
-mSayfaKontrol(sayfaKodu)  // Blok yetki kontrolü → index.html (yeni)
-mOturum()                  // → {id, rol, ad_soyad, tenant_id}
-mSupabase()
-mTenantId()
-mCikis()                   // → giris.html
-mUrlParam(key)
-mToast(msg, tip, sure)     // 'info'|'success'|'error'
-mDrawerAc()
-mDrawerKapat()
+**Rol kartı:**
+```jsx
+<div style={{ borderLeft: `4px solid ${renk}`, background: 'var(--sur)', borderRadius: 10, padding: '14px 13px' }}>
 ```
 
-### Mobil Sayfa Guard
-
-```js
-// mInit() SONRASINDA — blok tabanlı yetki kontrolü
-if (!await mSayfaKontrol('mobile/kk')) return;
-if (!await mSayfaKontrol('mobile/sevkiyat')) return;
+**Stat kartı (2'li grid):**
+```jsx
+<div style={{ borderLeft: `3px solid var(--ac)`, background: 'var(--sur)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
 ```
 
-`mSayfaKontrol()` → `ARES.sayfaYetkiKontrol(sayfaKodu)` wrapper'ı. Yetkisi yoksa `index.html`'e yönlendirir.
-
-### Dil & Tema
-
-```js
-mDilUygula(dil)       // 'tr'|'en'|'ar'
-mTemaDegistir(tema)   // 'dark'|'light-anthracite'
-```
-
-### Feature Flag
-
-```js
-mFeatureAktif(kod)  // async → boolean
-```
-
-### Yardımcılar
-
-```js
-esc(s)
-mFormatTarih(iso)
-mFormatSure(iso)
-mDurumBadge(durum)
+**Alert kartı:**
+```jsx
+// Kırmızı (alıştırma)
+{ background: '#fef2f2', border: '1px solid #fca5a5', borderLeft: '4px solid var(--re)' }
+// Amber (test)
+{ background: '#fffbeb', border: '1px solid #fcd34d', borderLeft: '4px solid var(--warn)' }
+// Mavi (not)
+{ background: '#eff6ff', border: '1px solid #93c5fd', borderLeft: '4px solid var(--ac)' }
 ```
 
 ---
 
-## 4. DİL SİSTEMİ (MOBİL)
-
-### 4.1 Standart Kullanım
-
-HTML'de:
-```html
-<div data-i18n="mob_nav_anasayfa">Ana Sayfa</div>
-```
-
-JS'de (dinamik içerik):
-```js
-'<div>' + tv('mob_stat_spool', 'Spool') + '</div>'
-```
-
-### 4.2 Dil Değişimi Hook'u
-
-```js
-window._onLangChange = function() {
-  if (typeof window._applyI18n === 'function') window._applyI18n();
-  render();
-};
-```
-
-### 4.3 RTL (Arapça)
-
-`mDilUygula('ar')` → `dir=rtl`. `ares-mobile.css`'de `[dir=rtl]` kuralları mevcut.
-
-### 4.4 Mobil Anahtar Prefix'leri
+## 9. SCREEN TESLIM KONTROL LİSTESİ
 
 ```
-mob_nav_*       Ana sayfa navigasyon
-mob_filtre_*    Filtre paneli
-mob_stat_*      Stat kartları
-mob_durum_*     Durum etiketleri
-mob_dv_*        devre_detay.html
-mob_sp_*        spool_detay.html
-mob_alistirma_* Alıştırma durumu
-mob_is_*        is_baslat.html (yeni)
+□ useState/useEffect doğru kullanıldı
+□ useEffect cleanup var (event listener varsa)
+□ iOS: file input label ile sarıldı
+□ iOS: input/textarea font-size 16px
+□ iOS: height 100dvh kullanıldı
+□ Navigasyon useNavigate ile yapıldı (location.href değil)
+□ Supabase sorguları try/catch içinde
+□ Tenant ID kontrolü var
+□ Oturum kontrolü var
+□ Renk değişkenleri kullanıldı (hardcode renk yok)
+□ Scrollbar gizlendi
+□ Alt buton bar safe-area padding'i var
 ```
 
 ---
 
-## 5. SUPABASE KOLONLARI (KESİNLEŞMİŞ)
+## 10. BEKLEYEN EKRANLAR
 
-### spooller
-
-| Kolon | Tip | Not |
+| Ekran | Dosya | Durum |
 |---|---|---|
-| `dis_cap_mm` | float | cap_mm değil |
-| `et_kalinligi_mm` | float | et_mm değil |
-| `agirlik` | float | agirlik_kg boş, bunu kullan |
-| `rev` | text | revizyon değil |
-| `durdurma_sebebi` | text | durdurma_aciklama değil |
-| `alistirma` | text | `VAR`/`KISMI`/`YOK` (UPPERCASE) |
-| `aktif_basamak` | text | `on_imalat`, `on_kontrol`, `kaynak`, `imalat`, `kk`, `sevkiyat` |
-| `ilerleme` | integer | 0-100 kümülatif puan |
-| `is_durumu` | text | `bekliyor` / `devam_ediyor` |
-
-### fotograflar
-
-| Kolon | Not |
-|---|---|
-| `dosya_url` | url değil |
-| `yukleyen_id` | kullanici_id değil |
-| `islem_turu` | asama değil |
-| `spool_id` | UUID |
-
-### devreler
-
-| Kolon | Not |
-|---|---|
-| `ad` | devre_adi değil |
-| `termin` | DATE — termin_tarihi silindi |
-| `ilerleme` | Kullanılmıyor — spooller ortalaması |
-| `agirlik` | Kullanılmıyor — spooller toplamı |
-
----
-
-## 6. HESAPLAMA KURALLARI
-
-### İlerleme
-
-`devreler.ilerleme` hep 0 → `spooller.ilerleme` ortalaması:
-
-```js
-var avgIler = spools.length
-  ? Math.round(spools.reduce(function(s,x){ return s+(x.ilerleme||0); },0) / spools.length)
-  : 0;
-```
-
-**ASAMA_PCT tablosu kaldırıldı.** Aggregate için `devre_istatistik` RPC kullanılır.
-
-### Alıştırma Agregasyonu
-
-```js
-if (agg.count > 0 && agg.varCount === agg.count) agg.alistirma = 'VAR';
-else if (agg.varCount > 0 || agg.kismiCount > 0) agg.alistirma = 'KISMI';
-else agg.alistirma = 'YOK';
-```
-
----
-
-## 7. SAYFA BAŞLATMA ŞABLONU
-
-```js
-document.addEventListener('DOMContentLoaded', async function() {
-  try {
-    var ok = await mInit();
-    document.documentElement.style.visibility = '';
-    if (!ok) return;
-    document.getElementById('mPage').style.display = '';
-
-    // Sayfa guard — blok yetki kontrolü
-    if (!await mSayfaKontrol('mobile/kk')) return; // örnek
-
-    // Feature flag
-    var model3dAktif = await mFeatureAktif('3d_model');
-    if (!model3dAktif) {
-      var btn = document.querySelector('[data-tab="model3d"]');
-      if (btn) btn.style.display = 'none';
-    }
-
-    // Dil değişim hook
-    window._onLangChange = function() {
-      if (typeof window._applyI18n === 'function') window._applyI18n();
-      render();
-    };
-
-    await yukle();
-  } catch(e) {
-    document.documentElement.style.visibility = '';
-    console.error('[Sayfa init]', e);
-  }
-});
-```
-
----
-
-## 8. KART TASARIM SİSTEMİ
-
-### Devre Kartı
-
-```
-[Sol çizgi 4px] [İş Emri / Devre Adı + meta] [İlerleme %] [Sağ çizgi 4px]
-[Alt şerit: Durum badge | durduruldu notu | termin tarihi]
-```
-
-- **Sol çizgi** → durum rengi: `baslamadi=#B4B2A9`, `imalatta=--ac`, `kalite_davette=--leg`, `sevke_hazir=--gr`, `durduruldu=--re`
-- **Sağ çizgi** → ilerleme rengi: `0%=--bor`, `>0%=--warn`, `>=50%=--ac`, `100%=--gr`
-
-### Spool Kartı
-
-Sol çizgi = aktif basamak rengi, sağ çizgi = alıştırma durumu.
-
----
-
-## 9. QR AKIŞI
-
-```
-QR tarama (qr.html veya is_baslat.html)
-    ↓
-spool_id ile spooller tablosunu sorgula
-    ↓
-    ├── is_baslat.html (operatör iş akışı)
-    └── spool_detay.html?id=X (görüntüleme)
-```
-
-**QR yöntem sırası:** BarcodeDetector API → jsQR CDN fallback → Manuel giriş
-
----
-
-## 10. YETKİLENDİRME — BLOK SİSTEMİ ✅
-
-Web ile aynı blok sistemi. `ares-store.js`'deki `ARES.sayfaYetkiKontrol()` kullanılır.
-
-### mSayfaKontrol()
-
-`ares-mobile.js`'e eklenmiş wrapper:
-
-```js
-async function mSayfaKontrol(sayfaKodu) {
-  var oturum = mOturum();
-  if (!oturum) { location.href = 'giris.html'; return false; }
-  return await ARES.sayfaYetkiKontrol(sayfaKodu);
-}
-```
-
-### Mobil Sayfa Kodları
-
-```
-mobile/devreler
-mobile/devre_detay
-mobile/spool_detay
-mobile/kk
-mobile/sevkiyat
-mobile/is_baslat
-mobile/markalama
-```
-
-### Kullanım
-
-```js
-// mInit() başarılı olduktan sonra
-if (!await mSayfaKontrol('mobile/kk')) return;
-```
-
----
-
-## 11. İŞ BAŞLAT AKIŞI (is_baslat.html)
-
-Mockup onaylandı (15 Nisan 2026). Kodlanacak.
-
-### Ekranlar
-1. **QR Tara** — jsQR ile okuma
-2. **Spool Bilgi** — mevcut basamak, butonlar
-3. **Devam Ediyor** — is_durumu=devam_ediyor, pulse
-4. **Basamak Seç** — sonraki işlemi seç, fotoğraf
-5. **Tamamlandı** — 2 sn sonra QR'a dön
-
-### is_durumu Kuralı
-- Pulse sadece `imalat`/`kaynak` + `devam_ediyor` kombinasyonunda
-
-### DB Güncellemeleri
-
-```js
-// İşe Başla
-await supa.from('spooller').update({
-  is_durumu: 'devam_ediyor',
-  guncelleme: new Date().toISOString()
-}).eq('id', spoolId);
-
-// İş Bitir
-await supa.from('spooller').update({
-  aktif_basamak: secilenSistemAdi,
-  is_durumu: 'bekliyor',
-  ilerleme: Math.min(100, mevcutIlerleme + basamakPuani),
-  guncelleme: new Date().toISOString()
-}).eq('id', spoolId);
-```
-
----
-
-## 12. RPC FONKSİYONLARI
-
-### devre_istatistik(devre_ids uuid[])
-
-```js
-var { data } = await supa.rpc('devre_istatistik', { devre_ids: devreIdListesi });
-```
-
-Döndürür: `toplam_spool`, `toplam_agirlik`, `ort_ilerleme`, `cap_dagilim`, `malzeme_dagilim`, `yuzey_dagilim`
-
----
-
-## 13. CI/CD KURALLARI (Mobil)
-
-- `history.back()` → hata (M-01)
-- `ares-layout.js` yüklemesi → hata
-- `ares-mobile.js` eksik → hata
-
-`mobile/` klasörü `ares-layout.js` kuralından muaftır.
+| Giriş | Giris.jsx | ✅ Tamamlandı |
+| Ana Sayfa | Anasayfa.jsx | ⏳ Placeholder |
+| Devreler | Devreler.jsx | ⏳ |
+| Devre Detay | DevrDetay.jsx | ⏳ |
+| Spool Detay | SpoolDetay.jsx | ⏳ |
+| İş Başlat | IsBaslat.jsx | ⏳ Mockup onaylandı |
+| QR Tara | QRTara.jsx | ⏳ |
