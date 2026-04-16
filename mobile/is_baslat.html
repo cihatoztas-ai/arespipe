@@ -1656,7 +1656,7 @@ async function fotoyukle(file, islemTuru) {
   var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAd);
   console.log('[fotoyukle] URL:', urlData.publicUrl);
 
-  var { error: dbErr } = await supa.from('arespipe-dosyalar').insert({
+  var { error: dbErr } = await supa.from('fotograflar').insert({
     tenant_id:   tenantId,
     spool_id:    spoolId,
     dosya_url:   urlData.publicUrl,
