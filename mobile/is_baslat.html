@@ -15,6 +15,11 @@
 })()</script>
 
 <link rel="stylesheet" href="ares-mobile.css">
+<link rel="manifest" href="/mobile/manifest.json">
+<meta name="theme-color" content="#2D8EFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AresPipe">
 <style>
 /* ── Ekran motoru ── */
 .ekran{display:none;flex-direction:column;min-height:calc(100vh - 56px);}
@@ -217,6 +222,39 @@
 .sf-bilgi-baslik{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:6px;}
 .sf-bilgi-txt{font-size:13px;color:var(--txd);line-height:1.5;}
 
+/* ── Loading overlay ── */
+.loading-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:9998;display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;
+}
+.loading-overlay.goster{display:flex;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-spinner{
+  width:44px;height:44px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.25);
+  border-top-color:#fff;
+  animation:spin .75s linear infinite;
+}
+.loading-label{font-size:14px;color:rgba(255,255,255,.85);font-weight:500;}
+
+/* ── Network durum banner ── */
+.network-banner{
+  position:fixed;top:0;left:0;right:0;z-index:9997;
+  background:var(--re);color:#fff;font-size:13px;font-weight:600;
+  text-align:center;padding:6px 12px;
+  transform:translateY(-100%);transition:transform .3s;
+  padding-top:calc(6px + env(safe-area-inset-top));
+}
+.network-banner.goster{transform:translateY(0);}
+
+/* ── iOS safe area ── */
+.m-topbar{padding-top:env(safe-area-inset-top);}
+.e-foot{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+
+/* ── iOS input zoom fix (16px altı zoom yapar) ── */
+.qr-input,.not-textarea,.manuel-input{font-size:16px!important;}
+
 /* ── Spool mini başlık (paylaşılan) ── */
 .sp-mini{background:var(--sur);border-radius:10px;border:1px solid var(--bor);
   border-left:4px solid var(--ac);margin:12px 14px 0;padding:10px 12px;}
@@ -229,6 +267,15 @@
 
 <!-- M-04: mPage -->
 <div class="m-page" id="mPage" style="display:none;">
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-label" id="loadingLabel" data-i18n="mob_is_yukleniyor">Yükleniyor...</div>
+  </div>
+
+  <!-- Network durum -->
+  <div class="network-banner" id="networkBanner" data-i18n="mob_offline">Bağlantı yok — offline moddasınız</div>
 
   <!-- Top bar — her ekranda aynı -->
   <div class="m-topbar">
@@ -576,6 +623,119 @@ if (typeof mSayfaKontrol === 'undefined') {
   };
 }
 
+/* ══════════════════════════════════════════
+   STABİLİTE KATMANLARI
+══════════════════════════════════════════ */
+
+/* ── Loading overlay ── */
+var _yukleniyor = false;
+function yukleniyorGoster(mesaj) {
+  _yukleniyor = true;
+  var el = document.getElementById('loadingOverlay');
+  var lbl = document.getElementById('loadingLabel');
+  if (el) el.classList.add('goster');
+  if (lbl && mesaj) lbl.textContent = mesaj;
+}
+function yukleniyorGizle() {
+  _yukleniyor = false;
+  var el = document.getElementById('loadingOverlay');
+  if (el) el.classList.remove('goster');
+}
+
+/* ── Button debounce — çift tıklama engeli ── */
+var _btnKilidi = {};
+function guvenliTikla(btnId, fn, bekleme) {
+  if (_btnKilidi[btnId]) return;
+  _btnKilidi[btnId] = true;
+  setTimeout(function() { delete _btnKilidi[btnId]; }, bekleme || 2000);
+  fn();
+}
+
+/* ── Supabase retry wrapper ── */
+async function supabaseGuvenlİstek(fn, deneme) {
+  deneme = deneme || 0;
+  try {
+    var sonuc = await fn();
+    if (sonuc && sonuc.error) {
+      var kod = sonuc.error.code || '';
+      /* Session süresi doldu */
+      if (kod === 'PGRST301' || sonuc.error.message.includes('JWT')) {
+        mToast('Oturum süresi doldu, yenileniyor...', 'info');
+        await new Promise(function(r){ setTimeout(r, 1000); });
+        location.href = 'giris.html';
+        return sonuc;
+      }
+      /* Network hatası — 1 kez tekrar dene */
+      if (deneme < 2 && (kod === 'NETWORK_ERROR' || !navigator.onLine)) {
+        await new Promise(function(r){ setTimeout(r, 1500 * (deneme + 1)); });
+        return supabaseGuvenlİstek(fn, deneme + 1);
+      }
+    }
+    return sonuc;
+  } catch(e) {
+    if (deneme < 2 && !navigator.onLine) {
+      await new Promise(function(r){ setTimeout(r, 1500 * (deneme + 1)); });
+      return supabaseGuvenlİstek(fn, deneme + 1);
+    }
+    throw e;
+  }
+}
+
+/* ── Network status ── */
+function networkDurumGuncelle() {
+  var banner = document.getElementById('networkBanner');
+  if (!banner) return;
+  if (navigator.onLine) {
+    banner.classList.remove('goster');
+  } else {
+    banner.classList.add('goster');
+  }
+}
+window.addEventListener('online',  networkDurumGuncelle);
+window.addEventListener('offline', networkDurumGuncelle);
+
+/* ── Global error handler — hiçbir zaman boş ekran ── */
+window.onerror = function(msg, src, line, col, err) {
+  yukleniyorGizle();
+  console.error('[GLOBAL]', msg, src, line);
+  /* Sadece kritik hataları kullanıcıya göster */
+  if (msg && !msg.includes('ResizeObserver') && !msg.includes('Script error')) {
+    if (typeof mToast === 'function') {
+      mToast('Beklenmedik hata oluştu. Lütfen sayfayı yenileyin.', 'error', 5000);
+    }
+  }
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  yukleniyorGizle();
+  var msg = e.reason && (e.reason.message || String(e.reason));
+  console.error('[UNHANDLED]', msg);
+  if (msg && msg.includes('JWT')) {
+    mToast && mToast('Oturum süresi doldu.', 'error');
+    setTimeout(function(){ location.href = 'giris.html'; }, 2000);
+  }
+});
+
+/* ── Service Worker kaydı ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
+      /* Yeni SW hazırsa haber ver */
+      reg.addEventListener('updatefound', function() {
+        var newWorker = reg.installing;
+        newWorker.addEventListener('statechange', function() {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.info('[SW] Güncelleme mevcut — sonraki açılışta aktif olacak');
+          }
+        });
+      });
+    }).catch(function(e) {
+      console.warn('[SW] Kayıt başarısız:', e.message);
+    });
+  });
+}
+
 /* ══ Durum Değişkenleri ══ */
 var _seciliRol    = null;   // { ad, sistemAdi, renk }
 var _kulBloklari  = [];     // ARES.kullaniciBloklari()
@@ -820,7 +980,7 @@ function manuelGir() {
 ══════════════════════════════════════ */
 async function spoolYukle(spoolId) {
   qrDurdur();
-  mToast(tv('mob_is_yukleniyor', 'Yükleniyor...'), 'info', 1500);
+  yukleniyorGoster(tv('mob_is_yukleniyor', 'Spool yükleniyor...'));
 
   try {
     var supa     = mSupabase();
@@ -860,17 +1020,20 @@ async function spoolYukle(spoolId) {
     _guncelSpool  = s;
     _isBasladi    = (s.is_durumu === 'devam_ediyor');
 
-    /* Paralel: foto + malzeme + sayaçlar + notlar */
+    /* Alt sorgular — her biri bağımsız, hata olursa boş dizi */
+    var _safe = function(p) { return p.catch(function(e){ console.warn('[spoolYukle alt]', e && e.message); return { data: [] }; }); };
+
     var [fotoRes, malzRes, kesimRes, bukumRes, markRes] = await Promise.all([
-      supa.from('fotograflar')
+      _safe(supa.from('fotograflar')
         .select('id, dosya_url, islem_turu, olusturma, yukleyen_id')
-        .eq('spool_id', s.id).order('olusturma', { ascending: false }).limit(20),
-      supa.from('spool_malzemeleri')
+        .eq('spool_id', s.id).eq('tenant_id', tenantId)
+        .order('olusturma', { ascending: false }).limit(20)),
+      _safe(supa.from('spool_malzemeleri')
         .select('id, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no')
-        .eq('spool_id', s.id),
-      supa.from('kesim_kalemleri').select('id, kesildi').eq('spool_id', s.id),
-      supa.from('bukum_kalemleri').select('id, bukuldu').eq('spool_id', s.id),
-      supa.from('markalama_kalemleri').select('id, markalandi').eq('spool_id', s.id)
+        .eq('spool_id', s.id)),
+      _safe(supa.from('kesim_kalemleri').select('id, kesildi').eq('spool_id', s.id)),
+      _safe(supa.from('bukum_kalemleri').select('id, bukuldu').eq('spool_id', s.id)),
+      _safe(supa.from('markalama_kalemleri').select('id, markalandi').eq('spool_id', s.id))
     ]);
 
     _spoolFotolar = fotoRes.data  || [];
@@ -884,7 +1047,6 @@ async function spoolYukle(spoolId) {
     _bukum     = { toplam: bList.length, tamamlanan: bList.filter(function(k){ return k.bukuldu;   }).length };
     _markalama = { toplam: mList.length, tamamlanan: mList.filter(function(k){ return k.markalandi;}).length };
 
-    /* Notları paralel zaten geldi */
     await notlariYukle(s.id);
 
     /* on_kontrol basamağındaysa → SF akışı */
@@ -898,6 +1060,7 @@ async function spoolYukle(spoolId) {
     ekranGoster('ekranSpoolDetay');
 
   } catch(e) {
+    yukleniyorGizle();
     mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
     _qrKilidi = false;
     qrBaslat();
@@ -909,6 +1072,7 @@ async function spoolYukle(spoolId) {
    SPOOL DETAY EKRANI
 ══════════════════════════════════════ */
 function spoolDetayHazirla() {
+  yukleniyorGizle();
   var s = _guncelSpool;
 
   /* Carousel */
@@ -1107,12 +1271,15 @@ function basamakRenkAl(kod) {
 async function isBaslat() {
   if (!_guncelSpool) return;
 
-  /* Önce uyarıları kontrol et */
-  var uyarilar = await uyarilariTopla();
-
-  if (uyarilar.length > 0) {
-    uyariEkraniGoster(uyarilar);
-  } else {
+  try {
+    var uyarilar = await uyarilariTopla();
+    if (uyarilar.length > 0) {
+      uyariEkraniGoster(uyarilar);
+    } else {
+      await isBaslatDB();
+    }
+  } catch(e) {
+    console.warn('[isBaslat] uyarı kontrolü hatası, direkt başlatılıyor:', e.message);
     await isBaslatDB();
   }
 }
@@ -1122,6 +1289,7 @@ async function uyariOnayla() {
 }
 
 async function isBaslatDB() {
+  yukleniyorGoster(tv('mob_is_baslatiyor', 'İş başlatılıyor...'));
   try {
     var supa = mSupabase();
     var { error } = await supa
@@ -1129,16 +1297,21 @@ async function isBaslatDB() {
       .update({ is_durumu: 'devam_ediyor', guncelleme: new Date().toISOString() })
       .eq('id', _guncelSpool.id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[isBaslatDB] UPDATE hatası:', error);
+      mToast('Başlatılamadı: ' + (error.message || error.code || 'RLS?'), 'error', 4000);
+      throw error;
+    }
 
     _guncelSpool.is_durumu = 'devam_ediyor';
     _isBasladi = true;
-    /* Aktif işi localStorage'a kaydet */
-    try { localStorage.setItem('ares_is_aktif', JSON.stringify({ id: _guncelSpool.id })); } catch(e) {}
-    spoolFootGuncelle();
+    try { localStorage.setItem('ares_is_aktif', JSON.stringify({
+      id: _guncelSpool.id, rol: _seciliRol ? _seciliRol.ad : '' })); } catch(e) {}
+    spoolDetayHazirla();
     ekranGoster('ekranSpoolDetay');
     mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
   } catch(e) {
+    yukleniyorGizle();
     mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
     console.error('[isBaslatDB]', e);
   }
@@ -1474,6 +1647,7 @@ async function isTamamla() {
   var btn = document.getElementById('btnTamamla');
   btn.disabled = true;
   btn.textContent = tv('mob_is_isleniyor', 'İşleniyor...');
+  yukleniyorGoster(tv('mob_is_kapatiliyor', 'İş kapatılıyor...'));
 
   try {
     var supa     = mSupabase();
@@ -1525,6 +1699,7 @@ async function isTamamla() {
     setTimeout(sifirlaVeQraDon, 2000);
 
   } catch(e) {
+    yukleniyorGizle();
     mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
     btn.disabled = false;
     btn.textContent = tv('mob_is_tamamla', 'Tamamla');
@@ -1678,6 +1853,7 @@ function sifirlaVeQraDon() {
   _seciliBasamak = null;
   _isBasladi     = false;
   _qrKilidi      = false;
+  yukleniyorGizle();
   try { localStorage.removeItem('ares_is_aktif'); } catch(e) {}
   document.getElementById('qrManuelInput').value = '';
   ekranGoster('ekranQr');
@@ -1693,6 +1869,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (eksikler.length) {
     document.documentElement.style.visibility = '';
     document.getElementById('mPage').style.display = '';
+    networkDurumGuncelle();
     document.getElementById('rolListesi').innerHTML =
       '<div style="padding:20px;font-size:14px;color:var(--re);">Yüklenemeyen modüller: ' +
       eksikler.join(', ') + '<br><br>ares-mobile.js kontrol edin.</div>';
