@@ -381,10 +381,10 @@
         </div>
         <div>
           <div class="not-label" data-i18n="mob_is_foto_baslik">Fotoğraf (opsiyonel)</div>
-          <div class="not-foto-drop" onclick="document.getElementById('notFotoInput').click()">
+          <label for="notFotoInput" class="not-foto-drop" style="display:block;cursor:pointer;">
             <div class="not-foto-ikon">📷</div>
             <div class="not-foto-txt" data-i18n="mob_is_foto_aciklama">Fotoğraf eklemek için dokunun</div>
-          </div>
+          </label>
           <input type="file" id="notFotoInput" accept="image/*" multiple
                  style="display:none;" onchange="notFotolarSec(this)">
           <div class="not-foto-onizleme" id="notFotoOnizleme"></div>
@@ -416,7 +416,7 @@
           <div style="font-size:13px;color:var(--txd);"
                data-i18n="mob_is_foto_kapat_aciklama">Tamamlanan işi fotoğraflayın</div>
         </div>
-        <div class="foto-bg" id="fotoKapatBg" onclick="fotoKapatSec()">
+        <label for="fotoKapatInput" class="foto-bg" id="fotoKapatBg" style="display:block;cursor:pointer;">
           <img id="fotoKapatOnizleme" src="" style="display:none;">
           <div id="fotoKapatPlaceholder" style="display:flex;flex-direction:column;align-items:center;">
             <div class="foto-cam-ring">
@@ -428,7 +428,7 @@
             <div class="foto-cam-hint" data-i18n="mob_is_foto_dokunun">Dokunun veya galeriden seçin</div>
             <div class="foto-shutter"></div>
           </div>
-        </div>
+        </label>
         <input type="file" id="fotoKapatInput" accept="image/*"
                style="display:none;" onchange="fotoKapatSecildi(this)">
         <div class="foto-zorunlu" data-i18n="mob_is_foto_zorunlu">Fotoğraf zorunludur</div>
@@ -487,7 +487,7 @@
         </div>
       </div>
       <div class="foto-kapat-wrap">
-        <div class="foto-bg" id="sfFotoBg" onclick="document.getElementById('sfFotoInput').click()">
+        <label for="sfFotoInput" class="foto-bg" id="sfFotoBg" style="display:block;cursor:pointer;">
           <img id="sfFotoOnizleme" src="" style="display:none;">
           <div id="sfFotoPlaceholder" style="display:flex;flex-direction:column;align-items:center;">
             <div class="foto-cam-ring">
@@ -499,7 +499,7 @@
             <div class="foto-cam-hint" data-i18n="mob_is_foto_dokunun">Dokunun veya galeriden seçin</div>
             <div class="foto-shutter"></div>
           </div>
-        </div>
+        </label>
         <input type="file" id="sfFotoInput" accept="image/*"
                style="display:none;" onchange="sfFotoSecildi(this)">
       </div>
@@ -686,6 +686,12 @@ async function rolEkraniHazirla() {
       '</div>';
   });
   document.getElementById('rolListesi').innerHTML = html;
+
+  document.getElementById('rolListesi').onclick = function(e) {
+    var item = e.target.closest('.rol-item');
+    if (!item) return;
+    rolSec(item, item.dataset.ad || '', item.dataset.renk || '#2D8EFF');
+  };
 }
 
 function rolSec(el, ad, renk) {
@@ -1449,16 +1455,17 @@ function basamakSecEkraniHazirla() {
   document.getElementById('btnTamamla').disabled = true;
 
   var html = '';
-  BASAMAK_TANIMLARI.forEach(function(b) {
+  BASAMAK_TANIMLARI.forEach(function(b, idx) {
     if (izinliSistemAdlari.indexOf(b.sistem_adi) === -1) return;
     var kaynak = (b.sistem_adi === 'argon_kaynagi' || b.sistem_adi === 'gazalti_kaynagi');
     var dis    = kaynatilmaz && kaynak;
 
-    html += '<div class="bsm-item' + (dis ? ' dis' : '') + '" ' +
-      (dis ? '' : 'onclick="basamakSec(this,\'' + esc(JSON.stringify(b)) + '\')"') + '>' +
+    /* data-idx ile index taşı — inline onclick YOK */
+    html += '<div class="bsm-item' + (dis ? ' dis' : '') + '"' +
+      ' data-idx="' + idx + '">' +
       '<div>' +
         '<div class="bsm-ad">' + esc(b.ad) + '</div>' +
-        (dis ? '<div class="bsm-dis-not" data-i18n="mob_is_alistirma_kaynatilmaz">' +
+        (dis ? '<div class="bsm-dis-not">' +
           tv('mob_is_alistirma_kaynatilmaz', 'Alıştırma — kaynatılmaz') + '</div>' : '') +
       '</div>' +
       '<div class="bsm-radio"></div>' +
@@ -1466,6 +1473,16 @@ function basamakSecEkraniHazirla() {
   });
 
   document.getElementById('basamakListesi').innerHTML = html;
+
+  /* Event delegation — inline onclick yerine, CSP uyumlu */
+  document.getElementById('basamakListesi').onclick = function(e) {
+    var item = e.target.closest('.bsm-item');
+    if (!item) return;
+    if (item.classList.contains('dis')) return;
+    var idx = item.getAttribute('data-idx');
+    if (idx === null || idx === '') return;
+    basamakSec(item, parseInt(idx, 10));
+  };
 }
 
 function basamakSec(el, idx) {
