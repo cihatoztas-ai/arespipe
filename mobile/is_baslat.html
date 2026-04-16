@@ -699,8 +699,33 @@ function rolSec(el, ad, renk) {
   document.getElementById('btnRolDevam').disabled = false;
 }
 
-function rolDevam() {
+async function rolDevam() {
   if (!_seciliRol) return;
+
+  /* Aktif iş var mı? */
+  try {
+    var kayitliStr = localStorage.getItem('ares_aktif_spool');
+    if (kayitliStr) {
+      var kayitli = JSON.parse(kayitliStr);
+      if (kayitli && kayitli.id) {
+        var supa = mSupabase();
+        var { data: aktifS } = await supa
+          .from('spooller')
+          .select('id, is_durumu')
+          .eq('id', kayitli.id)
+          .eq('tenant_id', mTenantId())
+          .single();
+        if (aktifS && aktifS.is_durumu === 'devam_ediyor') {
+          /* Aktif iş bulundu — devam moduna dön */
+          if (kayitli.rol) _seciliRol = { ad: kayitli.rol, sistemAdi: kayitli.rol, renk: '#2D8EFF' };
+          await spoolYukle(aktifS.id);
+          return;
+        }
+      }
+    }
+    localStorage.removeItem('ares_aktif_spool');
+  } catch(e) {}
+
   ekranGoster('ekranQr');
 }
 
@@ -930,7 +955,9 @@ function spoolFootGuncelle() {
       '<button class="btn-tam btn-re" onclick="isKapatBaslat()" data-i18n="mob_is_kapat">' +
       tv('mob_is_kapat', 'İşi Kapat') + '</button>' +
       '<button class="btn-tam btn-bos" onclick="notEkleEkraniAc()" data-i18n="mob_is_not_ekle">' +
-      tv('mob_is_not_ekle', 'Not Ekle') + '</button>';
+      tv('mob_is_not_ekle', 'Not Ekle') + '</button>' +
+      '<button class="btn-tam" style="background:transparent;border:1px solid var(--re);color:var(--re);margin-top:4px;" onclick="isIptalEt()" data-i18n="mob_is_iptal_et">' +
+      tv('mob_is_iptal_et', 'İşi İptal Et') + '</button>';
   } else {
     foot.innerHTML =
       '<button class="btn-tam btn-ac" onclick="isBaslat()" data-i18n="mob_is_baslat_btn">' +
@@ -1110,6 +1137,10 @@ async function isBaslatDB() {
 
     _guncelSpool.is_durumu = 'devam_ediyor';
     _isBasladi = true;
+    /* Aktif işi localStorage'a kaydet */
+    try { localStorage.setItem('ares_aktif_spool', JSON.stringify({
+      id: _guncelSpool.id, rol: _seciliRol ? _seciliRol.ad : ''
+    })); } catch(e) {}
     spoolFootGuncelle();
     ekranGoster('ekranSpoolDetay');
     mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
@@ -1247,15 +1278,21 @@ async function notKaydet() {
     var tenantId = mTenantId();
     var oturum   = mOturum();
 
-    /* Not kaydet */
+    /* Not kaydet — icerik veya metin kolonunu dene */
     if (metin) {
-      await supa.from('notlar').insert({
+      var notObj = {
         tenant_id: tenantId,
         spool_id:  _guncelSpool.id,
         icerik:    metin,
         yapan_id:  oturum.id,
         olusturma: new Date().toISOString()
-      });
+      };
+      var { error: notErr } = await supa.from('notlar').insert(notObj);
+      if (notErr) {
+        console.error('[notKaydet] insert hatası:', notErr);
+        mToast('Not kaydedilemedi: ' + (notErr.message || notErr.code), 'error');
+        return;
+      }
     }
 
     /* Fotoğrafları yükle */
@@ -1384,7 +1421,7 @@ function basamakSecEkraniHazirla() {
   document.getElementById('basamakListesi').innerHTML = html;
 }
 
-function basamakSec(el, basamakJson) {
+function basamakSec(el, idx) {
   document.querySelectorAll('.bsm-item:not(.dis)').forEach(function(b) {
     b.classList.remove('sel');
     var r = b.querySelector('.bsm-radio');
@@ -1393,7 +1430,7 @@ function basamakSec(el, basamakJson) {
   el.classList.add('sel');
   var radio = el.querySelector('.bsm-radio');
   if (radio) radio.classList.add('on');
-  try { _seciliBasamak = JSON.parse(basamakJson); } catch(e) { _seciliBasamak = null; }
+  _seciliBasamak = BASAMAK_TANIMLARI[idx] || null;
   document.getElementById('btnTamamla').disabled = !_seciliBasamak;
 }
 
@@ -1547,6 +1584,21 @@ async function fotoyukle(file, islemTuru) {
 /* ══════════════════════════════════════
    SIFIRLAMA
 ══════════════════════════════════════ */
+async function isIptalEt() {
+  if (!_guncelSpool) return;
+  if (!confirm(tv('mob_is_iptal_onay', 'İş iptal edilecek. Emin misiniz?'))) return;
+  try {
+    var supa = mSupabase();
+    await supa.from('spooller')
+      .update({ is_durumu: 'bekliyor', guncelleme: new Date().toISOString() })
+      .eq('id', _guncelSpool.id);
+    mToast(tv('mob_is_iptal_tamam', 'İş iptal edildi'), 'info');
+  } catch(e) {
+    console.error('[isIptalEt]', e);
+  }
+  sifirlaVeQraDon();
+}
+
 function sifirlaVeQraDon() {
   _guncelSpool   = null;
   _spoolFotolar  = [];
@@ -1558,6 +1610,7 @@ function sifirlaVeQraDon() {
   _seciliBasamak = null;
   _isBasladi     = false;
   _qrKilidi      = false;
+  try { localStorage.removeItem('ares_aktif_spool'); } catch(e) {}
   document.getElementById('qrManuelInput').value = '';
   ekranGoster('ekranQr');
 }
