@@ -698,13 +698,7 @@ window.addEventListener('offline', networkDurumGuncelle);
 window.onerror = function(msg, src, line, col, err) {
   yukleniyorGizle();
   console.error('[GLOBAL]', msg, src, line);
-  /* Sadece kritik hataları kullanıcıya göster */
-  if (msg && !msg.includes('ResizeObserver') && !msg.includes('Script error')) {
-    if (typeof mToast === 'function') {
-      mToast('Beklenmedik hata oluştu. Lütfen sayfayı yenileyin.', 'error', 5000);
-    }
-  }
-  return false;
+  return false; /* Hatayı yakala ama kullanıcıya gösterme */
 };
 
 window.addEventListener('unhandledrejection', function(e) {
@@ -718,23 +712,13 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 
 /* ── Service Worker kaydı ── */
+/* SW kayıt — stabil versiyonda aktif edilecek
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
-      /* Yeni SW hazırsa haber ver */
-      reg.addEventListener('updatefound', function() {
-        var newWorker = reg.installing;
-        newWorker.addEventListener('statechange', function() {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.info('[SW] Güncelleme mevcut — sonraki açılışta aktif olacak');
-          }
-        });
-      });
-    }).catch(function(e) {
-      console.warn('[SW] Kayıt başarısız:', e.message);
-    });
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .catch(function(e) { console.warn('[SW]', e.message); });
   });
-}
+} */
 
 /* ══ Durum Değişkenleri ══ */
 var _seciliRol    = null;   // { ad, sistemAdi, renk }
@@ -1021,11 +1005,16 @@ async function spoolYukle(spoolId) {
     _isBasladi    = (s.is_durumu === 'devam_ediyor');
 
     /* Alt sorgular — her biri bağımsız, hata olursa boş dizi */
-    var _safe = function(p) { return p.catch(function(e){ console.warn('[spoolYukle alt]', e && e.message); return { data: [] }; }); };
+    var _safe = function(p) {
+      return Promise.resolve(p).catch(function(e) {
+        console.warn('[spoolYukle alt]', e && e.message);
+        return { data: [] };
+      });
+    };
 
     var [fotoRes, malzRes, kesimRes, bukumRes, markRes] = await Promise.all([
       _safe(supa.from('fotograflar')
-        .select('id, dosya_url, islem_turu, olusturma, yukleyen_id')
+        .select('id, dosya_url, islem_turu, olusturma, yukleyen_id, kullanicilar(ad_soyad)')
         .eq('spool_id', s.id).eq('tenant_id', tenantId)
         .order('olusturma', { ascending: false }).limit(20)),
       _safe(supa.from('spool_malzemeleri')
@@ -1051,6 +1040,7 @@ async function spoolYukle(spoolId) {
 
     /* on_kontrol basamağındaysa → SF akışı */
     if (s.aktif_basamak === 'on_kontrol') {
+      yukleniyorGizle();
       sfEkraniHazirla();
       ekranGoster('ekranSonFoto');
       return;
