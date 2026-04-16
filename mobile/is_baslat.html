@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light-anthracite">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>İş Başlat — AresPipe</title>
+
+  <!-- M-03: Flash Prevention — giris.html ve qr.html hariç tüm mobil sayfalarda zorunlu -->
+  <script>(function(){
+    var t=localStorage.getItem('ares_theme')||'light-anthracite';
+    var l=localStorage.getItem('ares_lang')||'tr';
+    document.documentElement.setAttribute('data-theme',t);
+    document.documentElement.setAttribute('lang',l);
+    document.documentElement.style.visibility='hidden';
+  })()</script>
+
+  <link rel="stylesheet" href="ares-mobile.css">
+  <style>
+
+    /* ── Ekran sistemi ── */
+    .ekran { display: none; flex-direction: column; min-height: calc(100dvh - 56px); }
+    .ekran.aktif { display: flex; }
+
+    .ekran-icerik {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ekran-alt {
+      padding: 16px;
+      border-top: 1px solid var(--bor);
+      background: var(--sur);
+      flex-shrink: 0;
+    }
+
+    /* ── Butonlar ── */
+    .btn-full {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      box-sizing: border-box;
+      transition: opacity 0.15s;
+    }
+    .btn-full:active { opacity: 0.75; }
+    .btn-full:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--ac); color: #fff; }
+    .btn-danger  { background: var(--re); color: #fff; }
+    .btn-ghost   { background: transparent; border: 2px solid var(--bor); color: var(--tx); }
+    .btn-mt      { margin-top: 10px; }
+
+    /* ── QR Ekranı ── */
+    .qr-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    #qrVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .qr-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-cerceve {
+      width: 58%;
+      aspect-ratio: 1 / 1;
+      border: 3px solid var(--ac);
+      border-radius: 10px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+    }
+    .qr-ayrac {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .qr-ayrac-cizgi { flex: 1; height: 1px; background: var(--bor); }
+
+    /* ── Manuel giriş ── */
+    .manuel-wrap { display: flex; gap: 8px; }
+    .manuel-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--bor);
+      border-radius: 10px;
+      background: var(--sur);
+      color: var(--tx);
+      font-size: 15px;
+      outline: none;
+    }
+    .manuel-input:focus { border-color: var(--ac); }
+    .manuel-btn {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 2px solid var(--bor);
+      background: transparent;
+      color: var(--tx);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ── Spool Kart ── */
+    .spool-kart {
+      background: var(--sur);
+      border: 1px solid var(--bor);
+      border-left: 4px solid var(--ac);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .spool-kart-no {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+    .spool-kart-meta {
+      font-size: 14px;
+      color: var(--txm);
+      margin-top: 4px;
+    }
+    .bilgi-satiri {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--bor);
+      font-size: 15px;
+    }
+    .bilgi-satiri:last-child { border-bottom: none; }
+    .bilgi-lbl { color: var(--txd); }
+    .bilgi-val { color: var(--tx); font-weight: 500; }
+
+    /* ── İlerleme çubuğu ── */
+    .ilerleme-bar {
+      height: 6px;
+      background: var(--bor);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .ilerleme-dolu {
+      height: 100%;
+      background: var(--ac);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Pulse (Devam Ediyor) ── */
+    @keyframes ares-pulse {
+      0%   { transform: scale(1);   opacity: 0.75; }
+      70%  { transform: scale(1.7); opacity: 0; }
+      100% { transform: scale(1.7); opacity: 0; }
+    }
+    .pulse-wrap {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .pulse-halka {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--ac);
+      animation: ares-pulse 1.8s ease-out infinite;
+    }
+    .pulse-halka.durdur { animation-play-state: paused; }
+    .pulse-ikon {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--ac);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      z-index: 1;
+    }
+    .devam-merkez {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .devam-baslik {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--tx);
+      margin-bottom: 8px;
+    }
+    .devam-aciklama { font-size: 15px; color: var(--txm); }
+    .devam-spool-no { font-size: 14px; color: var(--txd); margin-top: 6px; }
+
+    /* ── Basamak seç ── */
+    .basamak-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--sur);
+      border: 2px solid var(--bor);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .basamak-item.secili {
+      border-color: var(--ac);
+      background: var(--sur2);
+    }
+    .basamak-ad {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--tx);
+    }
+    .basamak-puan {
+      font-size: 14px;
+      color: var(--txd);
+      background: var(--sur2);
+      padding: 4px 9px;
+      border-radius: 20px;
+    }
+
+    /* ── Fotoğraf yükleme ── */
+    .foto-baslik {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--tx);
+      margin-bottom: 10px;
+    }
+    .foto-drop {
+      border: 2px dashed var(--bor);
+      border-radius: 12px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--txm);
+      font-size: 14px;
+      transition: border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .foto-drop:active { border-color: var(--ac); }
+    .foto-drop-ikon { font-size: 28px; margin-bottom: 6px; }
+    .foto-onizleme {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .foto-kucuk {
+      width: 76px;
+      height: 76px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--bor);
+    }
+
+    /* ── Tamamlandı ekranı ── */
+    .tamam-merkez {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .tamam-ikon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--gr);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      margin: 0 auto 20px;
+    }
+    .tamam-baslik {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--tx);
+      margin-bottom: 8px;
+    }
+    .tamam-mesaj { font-size: 15px; color: var(--txm); }
+    .tamam-yonlendirme {
+      font-size: 14px;
+      color: var(--txd);
+      margin-top: 16px;
+    }
+    .tamam-detay {
+      margin-top: 20px;
+      background: var(--sur);
+      border: 1px solid var(--bor);
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    /* ── Bölüm başlığı ── */
+    .bolum-baslik {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+    .bolum-aciklama {
+      font-size: 14px;
+      color: var(--txd);
+      margin-top: 4px;
+    }
+
+    /* ── Yükleme göstergesi ── */
+    .yukleniyor-metin {
+      color: var(--txd);
+      font-size: 14px;
+      padding: 12px 0;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- M-04: mPage yapısı -->
+<div class="m-page" id="mPage" style="display:none;">
+
+  <!-- Top bar -->
+  <div class="m-topbar">
+    <!-- M-01: history.back() yasak — explicit URL -->
+    <button class="m-back-btn" onclick="geriDon()" aria-label="Geri">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <span class="m-topbar-title" data-i18n="mob_is_baslik">İş Başlat</span>
+    <div style="width:36px;"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       EKRAN 1 — QR TARA
+  ══════════════════════════════════════ -->
+  <div class="ekran aktif" id="ekranQr">
+    <div class="ekran-icerik">
+
+      <div>
+        <div class="bolum-baslik" data-i18n="mob_is_qr_baslik">QR Kodu Okut</div>
+        <div class="bolum-aciklama" data-i18n="mob_is_qr_aciklama">Spoolun üzerindeki QR kodu kameraya gösterin</div>
+      </div>
+
+      <div class="qr-wrap">
+        <video id="qrVideo" autoplay muted playsinline></video>
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+        <div class="qr-overlay">
+          <div class="qr-cerceve"></div>
+        </div>
+      </div>
+
+      <div id="qrKameraHata" style="display:none;">
+        <div style="background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--warn);border-radius:10px;padding:14px;">
+          <div style="font-size:15px;font-weight:600;color:var(--tx);margin-bottom:4px;" data-i18n="mob_is_kamera_hata_baslik">Kamera Erişilemiyor</div>
+          <div style="font-size:14px;color:var(--txm);" data-i18n="mob_is_kamera_hata_aciklama">Tarayıcı izni gerekli. Manuel giriş ile devam edebilirsiniz.</div>
+        </div>
+      </div>
+
+      <!-- Manuel giriş fallback -->
+      <div>
+        <div class="qr-ayrac">
+          <div class="qr-ayrac-cizgi"></div>
+          <span style="font-size:14px;color:var(--txd);" data-i18n="mob_is_yada">veya</span>
+          <div class="qr-ayrac-cizgi"></div>
+        </div>
+      </div>
+
+      <div class="manuel-wrap">
+        <input
+          type="text"
+          id="manuelInput"
+          class="manuel-input"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          onkeydown="if(event.key==='Enter')manuelGir()"
+          data-i18n-placeholder="mob_is_manuel_placeholder"
+          placeholder="Spool ID girin..."
+        >
+        <button class="manuel-btn" onclick="manuelGir()" data-i18n="mob_is_ara">Ara</button>
+      </div>
+
+    </div>
+  </div><!-- /ekranQr -->
+
+
+  <!-- ══════════════════════════════════════
+       EKRAN 2 — SPOOL BİLGİ
+  ══════════════════════════════════════ -->
+  <div class="ekran" id="ekranSpool">
+    <div class="ekran-icerik">
+
+      <!-- Spool kart -->
+      <div class="spool-kart" id="spoolKart">
+        <div class="spool-kart-no" id="spoolNo">—</div>
+        <div class="spool-kart-meta" id="spoolMeta">—</div>
+        <div class="ilerleme-bar">
+          <div class="ilerleme-dolu" id="spoolIlerlemeDolu" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <!-- Detay satırları -->
+      <div id="spoolDetaylar"></div>
+
+    </div>
+    <div class="ekran-alt" id="spoolButonlar">
+      <!-- Dinamik olarak doldurulur -->
+    </div>
+  </div><!-- /ekranSpool -->
+
+
+  <!-- ══════════════════════════════════════
+       EKRAN 3 — DEVAM EDİYOR
+  ══════════════════════════════════════ -->
+  <div class="ekran" id="ekranDevam">
+    <div class="devam-merkez">
+      <div class="pulse-wrap">
+        <div class="pulse-halka" id="pulseHalka"></div>
+        <div class="pulse-ikon" id="pulseIkon">⚙️</div>
+      </div>
+      <div class="devam-baslik" id="devamBaslikMetin"></div>
+      <div class="devam-aciklama" id="devamAciklamaMetin" data-i18n="mob_is_devam_aciklama">Bu spool üzerinde iş devam ediyor</div>
+      <div class="devam-spool-no" id="devamSpoolNo"></div>
+    </div>
+    <div class="ekran-alt">
+      <button class="btn-full btn-danger" onclick="isBitir()" data-i18n="mob_is_bitir">İşi Bitir</button>
+      <button class="btn-full btn-ghost btn-mt" onclick="ekranGoster('ekranQr')" data-i18n="mob_is_baska_tara">Başka Spool Tara</button>
+    </div>
+  </div><!-- /ekranDevam -->
+
+
+  <!-- ══════════════════════════════════════
+       EKRAN 4 — BASAMAK SEÇ
+  ══════════════════════════════════════ -->
+  <div class="ekran" id="ekranBasamak">
+    <div class="ekran-icerik">
+
+      <div>
+        <div class="bolum-baslik" data-i18n="mob_is_basamak_baslik">Sonraki İşlemi Seç</div>
+        <div class="bolum-aciklama" data-i18n="mob_is_basamak_aciklama">Tamamlanan iş basamağını seçin</div>
+      </div>
+
+      <div id="basamakListesi">
+        <div class="yukleniyor-metin" data-i18n="mob_is_yukleniyor">Yükleniyor...</div>
+      </div>
+
+      <!-- Fotoğraf yükleme — opsiyonel -->
+      <div>
+        <div class="foto-baslik" data-i18n="mob_is_foto_baslik">Fotoğraf Ekle (İsteğe Bağlı)</div>
+        <div class="foto-drop" onclick="document.getElementById('fotoInput').click()">
+          <div class="foto-drop-ikon">📷</div>
+          <div data-i18n="mob_is_foto_aciklama">Fotoğraf seçmek için dokunun</div>
+        </div>
+        <input type="file" id="fotoInput" accept="image/*" multiple style="display:none;" onchange="fotolarSec(this)">
+        <div class="foto-onizleme" id="fotoOnizleme"></div>
+      </div>
+
+    </div>
+    <div class="ekran-alt">
+      <button class="btn-full btn-primary" id="btnTamamla" onclick="isTamamla()" disabled data-i18n="mob_is_tamamla">Tamamla</button>
+      <button class="btn-full btn-ghost btn-mt" onclick="ekranGoster('ekranDevam')" data-i18n="mob_is_geri_devam">Geri Dön</button>
+    </div>
+  </div><!-- /ekranBasamak -->
+
+
+  <!-- ══════════════════════════════════════
+       EKRAN 5 — TAMAMLANDI
+  ══════════════════════════════════════ -->
+  <div class="ekran" id="ekranTamam">
+    <div class="tamam-merkez">
+      <div class="tamam-ikon">✅</div>
+      <div class="tamam-baslik" data-i18n="mob_is_tamam_baslik">Tamamlandı!</div>
+      <div class="tamam-mesaj" id="tamamMesaj"></div>
+      <div class="tamam-yonlendirme" data-i18n="mob_is_tamam_yonlendirme">QR ekranına yönlendiriliyorsunuz...</div>
+      <div class="tamam-detay" id="tamamDetay"></div>
+    </div>
+  </div><!-- /ekranTamam -->
+
+</div><!-- /mPage -->
+
+
+<!-- Script sırası: body sonunda — HEAD'de ASLA (CLAUDE-MOBILE.md 1.3) -->
+<script src="../ares-store.js"
+  onerror="console.error('[is_baslat] YÜKLENEMEDİ: ../ares-store.js')"></script>
+<script src="../ares-lang.js"
+  onerror="console.error('[is_baslat] YÜKLENEMEDİ: ../ares-lang.js')"></script>
+<script src="ares-mobile.js"
+  onerror="console.error('[is_baslat] YÜKLENEMEDİ: ares-mobile.js')"></script>
+<!-- jsQR CDN: lokal scriptlerden SONRA, gerektiğinde dinamik yüklenir -->
+<script>
+/* ══════════════════════════════════════════════════════════════
+   mobile/is_baslat.html — İş Başlat
+   Kural M-01: history.back() yok → explicit URL
+   Kural M-02: Geri → index.html
+   Kural M-03: Flash prevention yukarıda
+   Kural M-04: mPage yapısı
+   Kural M-05: Auth → giris.html (relative)
+   Kural M-06: CSS selector'larında tırnak yok
+   Kural F-01: font-size min 14px
+   Kural D-01: data-i18n + tv() her metin için
+   Kural G-01: mSayfaKontrol() eklendi
+══════════════════════════════════════════════════════════════ */
+
+/* ── Durum değişkenleri ── */
+var _guncelSpool   = null;  // Yüklenen spool objesi
+var _seciliBasamak = null;  // Seçilen basamak_tanimlari kaydı
+var _seciliFotolar = [];    // File[]
+
+/* ── M-02: Geri dönüş — is_baslat → index.html ── */
+function geriDon() {
+  qrDurdur();
+  location.href = 'index.html';
+}
+
+/* ── Ekran geçişi ── */
+function ekranGoster(ekranId) {
+  document.querySelectorAll('.ekran').forEach(function(e) {
+    e.classList.remove('aktif');
+  });
+  document.getElementById(ekranId).classList.add('aktif');
+
+  // QR ekranına geçince kamerayı yeniden başlat
+  if (ekranId === 'ekranQr') {
+    qrBaslat();
+  } else {
+    qrDurdur();
+  }
+}
+
+
+/* ══════════════════════════════════════
+   QR TARAMA
+   Öncelik: BarcodeDetector → jsQR → Manuel
+══════════════════════════════════════ */
+var _qrStream  = null;
+var _qrRaf     = null;
+var _qrAktif   = false;
+var _qrKilidi  = false; // çift okuma engeli
+
+async function qrBaslat() {
+  if (_qrAktif) return;
+  _qrAktif  = true;
+  _qrKilidi = false;
+
+  var video  = document.getElementById('qrVideo');
+  var canvas = document.getElementById('qrCanvas');
+  var hataEl = document.getElementById('qrKameraHata');
+
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }
+    });
+    video.srcObject = _qrStream;
+    hataEl.style.display = 'none';
+
+    if ('BarcodeDetector' in window) {
+      /* ── BarcodeDetector API (modern) ── */
+      var detector = new BarcodeDetector({ formats: ['qr_code'] });
+      var taramaBC = async function() {
+        if (!_qrAktif || _qrKilidi) return;
+        if (video.readyState >= video.HAVE_ENOUGH_DATA) {
+          try {
+            var kodlar = await detector.detect(video);
+            if (kodlar.length > 0) {
+              _qrKilidi = true;
+              await spoolYukle(kodlar[0].rawValue);
+              return;
+            }
+          } catch(e) { /* detector hatası — devam et */ }
+        }
+        _qrRaf = requestAnimationFrame(taramaBC);
+      };
+      video.addEventListener('loadeddata', function() {
+        _qrRaf = requestAnimationFrame(taramaBC);
+      }, { once: true });
+
+    } else {
+      /* ── jsQR fallback — gerektiğinde dinamik yükle ── */
+      jsQrYukle(function() {
+        video.addEventListener('loadeddata', function() {
+          canvas.width  = video.videoWidth;
+          canvas.height = video.videoHeight;
+          var ctx = canvas.getContext('2d');
+          var taramaJsQr = function() {
+            if (!_qrAktif || _qrKilidi) return;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var kod = jsQR(imgData.data, imgData.width, imgData.height, {
+              inversionAttempts: 'dontInvert'
+            });
+            if (kod && kod.data) {
+              _qrKilidi = true;
+              spoolYukle(kod.data);
+              return;
+            }
+            _qrRaf = requestAnimationFrame(taramaJsQr);
+          };
+          _qrRaf = requestAnimationFrame(taramaJsQr);
+        }, { once: true });
+      });
+    }
+
+  } catch(e) {
+    _qrAktif = false;
+    hataEl.style.display = 'block';
+    console.warn('[QR kamera]', e);
+  }
+}
+
+/* ── jsQR dinamik yükleyici ── */
+var _jsQrYuklendi = false;
+function jsQrYukle(callback) {
+  if (_jsQrYuklendi) { callback(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+  s.onload = function() { _jsQrYuklendi = true; callback(); };
+  s.onerror = function() {
+    mToast(tv('mob_is_kamera_hata', 'QR kütüphanesi yüklenemedi'), 'error');
+  };
+  document.head.appendChild(s);
+}
+
+function qrDurdur() {
+  _qrAktif = false;
+  if (_qrRaf) { cancelAnimationFrame(_qrRaf); _qrRaf = null; }
+  if (_qrStream) {
+    _qrStream.getTracks().forEach(function(t) { t.stop(); });
+    _qrStream = null;
+  }
+}
+
+/* Manuel giriş */
+function manuelGir() {
+  var val = document.getElementById('manuelInput').value.trim();
+  if (!val) {
+    mToast(tv('mob_is_id_gerekli', 'Lütfen bir Spool ID girin'), 'error');
+    return;
+  }
+  spoolYukle(val);
+}
+
+
+/* ══════════════════════════════════════
+   SPOOL YÜKLEME
+══════════════════════════════════════ */
+async function spoolYukle(spoolId) {
+  qrDurdur();
+  mToast(tv('mob_is_yukleniyor', 'Yükleniyor...'), 'info', 1500);
+
+  try {
+    var supa      = mSupabase();
+    var tenantId  = mTenantId();
+
+    var { data, error } = await supa
+      .from('spooller')
+      .select('id, spool_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, rev, aktif_basamak, is_durumu, ilerleme, durdurma_sebebi, alistirma, devreler(ad, proje_kodu)')
+      .eq('id', spoolId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (error || !data) {
+      mToast(tv('mob_is_spool_bulunamadi', 'Spool bulunamadı'), 'error');
+      _qrKilidi = false;
+      qrBaslat();
+      return;
+    }
+
+    _guncelSpool = data;
+    spoolEkraniDoldur(data);
+    ekranGoster('ekranSpool');
+
+  } catch(e) {
+    mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
+    _qrKilidi = false;
+    qrBaslat();
+    console.error('[spoolYukle]', e);
+  }
+}
+
+/* ── Spool Ekranı ── */
+function spoolEkraniDoldur(spool) {
+  /* Kart başlık */
+  document.getElementById('spoolNo').textContent   = spool.spool_no || spool.id;
+  document.getElementById('spoolMeta').textContent =
+    (spool.devreler ? spool.devreler.ad + ' · ' : '') +
+    (spool.dis_cap_mm ? 'DN ' + spool.dis_cap_mm : '') +
+    (spool.malzeme ? ' · ' + spool.malzeme : '');
+
+  /* İlerleme çubuğu */
+  document.getElementById('spoolIlerlemeDolu').style.width = (spool.ilerleme || 0) + '%';
+
+  /* Sol kenarlık — aktif basamak rengi (B-01) */
+  document.getElementById('spoolKart').style.borderLeftColor = basamakRenk(spool.aktif_basamak);
+
+  /* Detay satırları */
+  var html = '';
+  html += satir(tv('mob_is_basamak_lbl', 'Aktif Basamak'), mDurumBadge ? mDurumBadge(spool.aktif_basamak) : esc(basamakAd(spool.aktif_basamak)));
+  html += satir(tv('mob_is_ilerleme_lbl', 'İlerleme'), '<span style="font-weight:700;color:var(--ac);">' + (spool.ilerleme || 0) + '%</span>');
+
+  if (spool.agirlik) {
+    html += satir(tv('mob_is_agirlik_lbl', 'Ağırlık'), spool.agirlik + ' kg');
+  }
+  if (spool.dis_cap_mm) {
+    html += satir(tv('mob_is_cap_lbl', 'Çap'), 'DN ' + spool.dis_cap_mm);
+  }
+  if (spool.rev) {
+    html += satir(tv('mob_is_rev_lbl', 'Rev'), spool.rev);
+  }
+  if (spool.alistirma && spool.alistirma !== 'YOK') {
+    html += satir(tv('mob_is_alistirma_lbl', 'Alıştırma'), esc(spool.alistirma));
+  }
+  if (spool.durdurma_sebebi) {
+    html += satir(
+      tv('mob_is_durdurma_lbl', 'Durdurma'),
+      '<span style="color:var(--re);">' + esc(spool.durdurma_sebebi) + '</span>'
+    );
+  }
+  if (spool.is_durumu === 'devam_ediyor') {
+    html += satir(
+      tv('mob_is_durum_lbl', 'İş Durumu'),
+      '<span style="color:var(--warn);font-weight:600;" data-i18n="mob_is_devam_ediyor">' + tv('mob_is_devam_ediyor', 'Devam Ediyor') + '</span>'
+    );
+  }
+
+  document.getElementById('spoolDetaylar').innerHTML = html;
+
+  /* Butonlar */
+  var btns = document.getElementById('spoolButonlar');
+  if (spool.is_durumu === 'devam_ediyor') {
+    btns.innerHTML =
+      '<button class="btn-full btn-danger" onclick="devamEkraniGoster()">' +
+      tv('mob_is_devama_git', '⚡ İş Devam Ediyor →') +
+      '</button>' +
+      '<button class="btn-full btn-ghost btn-mt" onclick="ekranGoster(\'ekranQr\')">' +
+      tv('mob_is_baska', 'Başka Spool Tara') +
+      '</button>';
+  } else {
+    btns.innerHTML =
+      '<button class="btn-full btn-primary" onclick="isBaslat()">' +
+      tv('mob_is_baslat_btn', 'İşe Başla') +
+      '</button>' +
+      '<button class="btn-full btn-ghost btn-mt" onclick="ekranGoster(\'ekranQr\')">' +
+      tv('mob_is_baska', 'Başka Spool Tara') +
+      '</button>';
+  }
+}
+
+function satir(lbl, val) {
+  return '<div class="bilgi-satiri">' +
+    '<span class="bilgi-lbl">' + lbl + '</span>' +
+    '<span class="bilgi-val">' + val + '</span>' +
+    '</div>';
+}
+
+function basamakAd(kod) {
+  var map = {
+    'on_imalat':  tv('mob_is_bsm_on_imalat',  'Ön İmalat'),
+    'on_kontrol': tv('mob_is_bsm_on_kontrol', 'Ön Kontrol'),
+    'kaynak':     tv('mob_is_bsm_kaynak',     'Kaynak'),
+    'imalat':     tv('mob_is_bsm_imalat',     'İmalat'),
+    'kk':         tv('mob_is_bsm_kk',         'Kalite Kontrol'),
+    'sevkiyat':   tv('mob_is_bsm_sevkiyat',   'Sevkiyat')
+  };
+  return map[kod] || kod || '—';
+}
+
+/* B-01: sol kenar renk sistemi */
+function basamakRenk(kod) {
+  var map = {
+    'on_imalat':  'var(--txm)',
+    'on_kontrol': 'var(--warn)',
+    'kaynak':     'var(--warn)',
+    'imalat':     'var(--ac)',
+    'kk':         'var(--leg)',
+    'sevkiyat':   'var(--gr)'
+  };
+  return map[kod] || 'var(--bor)';
+}
+
+
+/* ══════════════════════════════════════
+   İŞE BAŞLA
+══════════════════════════════════════ */
+async function isBaslat() {
+  if (!_guncelSpool) return;
+  var btn = document.querySelector('#spoolButonlar .btn-primary');
+  if (btn) btn.disabled = true;
+
+  try {
+    var supa = mSupabase();
+    var { error } = await supa
+      .from('spooller')
+      .update({
+        is_durumu: 'devam_ediyor',
+        guncelleme: new Date().toISOString()
+      })
+      .eq('id', _guncelSpool.id);
+
+    if (error) throw error;
+
+    _guncelSpool.is_durumu = 'devam_ediyor';
+    mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
+    devamEkraniGoster();
+
+  } catch(e) {
+    mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
+    if (btn) btn.disabled = false;
+    console.error('[isBaslat]', e);
+  }
+}
+
+/* ── Devam Ediyor Ekranı ── */
+function devamEkraniGoster() {
+  var spool   = _guncelSpool;
+  var basamak = spool.aktif_basamak;
+  /* Pulse sadece imalat + kaynak (CLAUDE.md 8 - is_durumu akışı) */
+  var pulseMi = (basamak === 'imalat' || basamak === 'kaynak');
+
+  document.getElementById('devamBaslikMetin').textContent = basamakAd(basamak);
+  document.getElementById('devamSpoolNo').textContent     = spool.spool_no || spool.id;
+
+  var halka = document.getElementById('pulseHalka');
+  var ikon  = document.getElementById('pulseIkon');
+  var renk  = basamakRenk(basamak);
+
+  ikon.style.background  = renk;
+  halka.style.background = renk;
+
+  if (pulseMi) {
+    halka.classList.remove('durdur');
+    ikon.textContent = basamak === 'kaynak' ? '🔥' : '⚙️';
+  } else {
+    halka.classList.add('durdur');
+    ikon.textContent = '✔️';
+  }
+
+  ekranGoster('ekranDevam');
+}
+
+
+/* ══════════════════════════════════════
+   İŞİ BİTİR → BASAMAK SEÇ
+══════════════════════════════════════ */
+async function isBitir() {
+  _seciliBasamak = null;
+  _seciliFotolar = [];
+  document.getElementById('fotoOnizleme').innerHTML = '';
+  document.getElementById('btnTamamla').disabled = true;
+  ekranGoster('ekranBasamak');
+  await basamaklariYukle();
+}
+
+async function basamaklariYukle() {
+  var listEl   = document.getElementById('basamakListesi');
+  var tenantId = mTenantId();
+  listEl.innerHTML = '<div class="yukleniyor-metin" data-i18n="mob_is_yukleniyor">' +
+    tv('mob_is_yukleniyor', 'Yükleniyor...') + '</div>';
+
+  try {
+    var supa = mSupabase();
+    var { data, error } = await supa
+      .from('basamak_tanimlari')
+      .select('id, ad, sistem_adi, ilerleme_puani')
+      .eq('tenant_id', tenantId)
+      .order('sira', { ascending: true });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--txd);font-size:14px;">' +
+        tv('mob_is_basamak_yok', 'Tanımlı basamak bulunamadı') + '</div>';
+      return;
+    }
+
+    var html = '';
+    data.forEach(function(b) {
+      var puan = b.ilerleme_puani || 0;
+      html += '<div class="basamak-item" onclick="basamakSec(this,' + JSON.stringify(JSON.stringify(b)) + ')">';
+      html += '<div class="basamak-ad">' + esc(b.ad) + '</div>';
+      if (puan > 0) {
+        html += '<div class="basamak-puan">+' + puan + ' ' + tv('mob_is_puan', 'puan') + '</div>';
+      }
+      html += '</div>';
+    });
+    listEl.innerHTML = html;
+
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:var(--re);font-size:14px;">' +
+      tv('mob_is_hata', 'Bir hata oluştu') + '</div>';
+    console.error('[basamaklariYukle]', e);
+  }
+}
+
+function basamakSec(el, basamakJson) {
+  document.querySelectorAll('.basamak-item').forEach(function(b) {
+    b.classList.remove('secili');
+  });
+  el.classList.add('secili');
+  try {
+    _seciliBasamak = JSON.parse(basamakJson);
+  } catch(e) {
+    _seciliBasamak = null;
+  }
+  document.getElementById('btnTamamla').disabled = !_seciliBasamak;
+}
+
+
+/* ══════════════════════════════════════
+   FOTOĞRAF
+══════════════════════════════════════ */
+function fotolarSec(input) {
+  _seciliFotolar = Array.from(input.files);
+  var onizleme   = document.getElementById('fotoOnizleme');
+  onizleme.innerHTML = '';
+
+  _seciliFotolar.forEach(function(file) {
+    var reader  = new FileReader();
+    reader.onload = function(e) {
+      var img       = document.createElement('img');
+      img.src       = e.target.result;
+      img.className = 'foto-kucuk';
+      onizleme.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function fotograflariYukle(spoolId) {
+  if (_seciliFotolar.length === 0) return;
+  var supa      = mSupabase();
+  var oturum    = mOturum();
+  var tenantId  = mTenantId();
+  var islemTuru = _seciliBasamak ? (_seciliBasamak.sistem_adi || _seciliBasamak.ad) : null;
+
+  for (var i = 0; i < _seciliFotolar.length; i++) {
+    var file    = _seciliFotolar[i];
+    var uzanti  = file.name.split('.').pop();
+    var dosyaAd = tenantId + '/' + spoolId + '/' + Date.now() + '_' + i + '.' + uzanti;
+
+    try {
+      var { error: upErr } = await supa.storage
+        .from('fotograflar')
+        .upload(dosyaAd, file, { upsert: false });
+      if (upErr) { console.warn('[foto upload]', upErr); continue; }
+
+      var { data: urlData } = supa.storage.from('fotograflar').getPublicUrl(dosyaAd);
+
+      await supa.from('fotograflar').insert({
+        tenant_id:   tenantId,
+        spool_id:    spoolId,
+        dosya_url:   urlData.publicUrl,
+        yukleyen_id: oturum.id,
+        islem_turu:  islemTuru
+      });
+    } catch(e) {
+      console.warn('[fotograflariYukle]', e);
+    }
+  }
+}
+
+
+/* ══════════════════════════════════════
+   TAMAMLA
+══════════════════════════════════════ */
+async function isTamamla() {
+  if (!_guncelSpool || !_seciliBasamak) return;
+
+  var btn = document.getElementById('btnTamamla');
+  btn.disabled    = true;
+  btn.textContent = tv('mob_is_isleniyor', 'İşleniyor...');
+
+  try {
+    var supa         = mSupabase();
+    var eskiIlerleme = _guncelSpool.ilerleme || 0;
+    var eklenecek    = _seciliBasamak.ilerleme_puani || 0;
+    var yeniIlerleme = Math.min(100, eskiIlerleme + eklenecek);
+    var yeniBasamak  = _seciliBasamak.sistem_adi || _seciliBasamak.ad;
+
+    var { error } = await supa
+      .from('spooller')
+      .update({
+        aktif_basamak: yeniBasamak,
+        is_durumu:     'bekliyor',
+        ilerleme:      yeniIlerleme,
+        guncelleme:    new Date().toISOString()
+      })
+      .eq('id', _guncelSpool.id);
+
+    if (error) throw error;
+
+    /* Fotoğrafları yükle */
+    await fotograflariYukle(_guncelSpool.id);
+
+    /* İş kaydı — tablo varsa yazar, yoksa sessizce geçer */
+    try {
+      await supa.from('is_kayitlari').insert({
+        tenant_id:      mTenantId(),
+        spool_id:       _guncelSpool.id,
+        kullanici_id:   mOturum().id,
+        basamak:        yeniBasamak,
+        ilerleme_puani: eklenecek,
+        tarih:          new Date().toISOString()
+      });
+    } catch(e) { /* is_kayitlari opsiyonel */ }
+
+    /* Tamamlandı ekranı */
+    document.getElementById('tamamMesaj').textContent =
+      esc(_guncelSpool.spool_no || _guncelSpool.id) + ' · ' + esc(_seciliBasamak.ad);
+
+    var detayHtml = '';
+    detayHtml += satir(tv('mob_is_yeni_basamak', 'Yeni Basamak'), esc(_seciliBasamak.ad));
+    detayHtml += satir(
+      tv('mob_is_yeni_ilerleme', 'İlerleme'),
+      '<span style="color:var(--ac);font-weight:700;">' + yeniIlerleme + '%</span>'
+    );
+    if (_seciliFotolar.length > 0) {
+      detayHtml += satir(
+        tv('mob_is_foto_lbl', 'Fotoğraf'),
+        _seciliFotolar.length + ' ' + tv('mob_is_foto_adet', 'adet yüklendi')
+      );
+    }
+    document.getElementById('tamamDetay').innerHTML = detayHtml;
+
+    ekranGoster('ekranTamam');
+
+    /* 2 sn sonra QR ekranına dön (CLAUDE-MOBILE.md 11) */
+    setTimeout(function() {
+      _guncelSpool   = null;
+      _seciliBasamak = null;
+      _seciliFotolar = [];
+      document.getElementById('fotoOnizleme').innerHTML = '';
+      document.getElementById('manuelInput').value = '';
+      ekranGoster('ekranQr');
+    }, 2000);
+
+  } catch(e) {
+    mToast(tv('mob_is_hata', 'Bir hata oluştu'), 'error');
+    btn.disabled    = false;
+    btn.textContent = tv('mob_is_tamamla', 'Tamamla');
+    console.error('[isTamamla]', e);
+  }
+}
+
+
+/* ══════════════════════════════════════
+   INIT — Sayfa Başlatma Şablonu (CLAUDE-MOBILE.md 7)
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async function() {
+  /* Erken tanılama — hangi fonksiyonlar yüklendi? */
+  var eksikler = ['mInit','mSupabase','mTenantId','mOturum','mSayfaKontrol'].filter(function(fn) {
+    return typeof window[fn] === 'undefined';
+  });
+  if (eksikler.length) {
+    document.documentElement.style.visibility = '';
+    console.error('[is_baslat] EKSİK FONKSIYONLAR:', eksikler);
+    console.error('[is_baslat] Muhtemelen ares-mobile.js yüklenemedi. Network sekmesini kontrol edin.');
+    return;
+  }
+  try {
+    var ok = await mInit();
+    document.documentElement.style.visibility = '';
+    if (!ok) return;
+    document.getElementById('mPage').style.display = '';
+
+    /* M-05: Auth yönlendirmesi — mAuthKontrol() mInit içinde çalışır */
+    /* Blok yetki kontrolü */
+    if (!await mSayfaKontrol('mobile/is_baslat')) return;
+
+    /* Dil değişim hook'u (CLAUDE-MOBILE.md 4.2) */
+    window._onLangChange = function() {
+      if (typeof window._applyI18n === 'function') window._applyI18n();
+    };
+
+    /* QR kamerayı başlat */
+    await qrBaslat();
+
+  } catch(e) {
+    document.documentElement.style.visibility = '';
+    console.error('[is_baslat init]', e);
+  }
+});
+</script>
+</body>
+</html>
