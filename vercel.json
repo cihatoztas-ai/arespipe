@@ -1,6 +1,4 @@
 {
-  "buildCommand": "cd mobile && npm install && npm run build",
-  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)\\.html",
@@ -15,10 +13,10 @@
     {
       "source": "/ares-lang.js",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/lang/(.*)\\.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     }
-  ],
-  "rewrites": [
-    { "source": "/mobile/(.*)", "destination": "/mobile/dist/index.html" },
-    { "source": "/mobile", "destination": "/mobile/dist/index.html" }
   ]
 }
