@@ -627,15 +627,22 @@ async function rolEkraniHazirla() {
   var oturum = mOturum();
   if (!oturum) return;
 
-  /* Erişim kontrolü: rol değil blok belirler.
-     mSayfaKontrol('mobile/is_baslat') zaten blok kontrolü yapar.
-     Burada sadece işlem bloklarını filtrele. */
+  /* ARES.kullaniciBloklari() sadece {id, blok_id} döndürür —
+     yetki_bloklari join'i yok. tumBloklar ile manuel join yapıyoruz. */
   _kulBloklari = await ARES.kullaniciBloklari(oturum.id);
+  var _tumBloklar = await ARES.tumBloklar();
+
+  /* blok_id → blok detayı join */
+  var _blokMap = {};
+  _tumBloklar.forEach(function(b){ _blokMap[b.id] = b; });
 
   /* Sadece işlem bloklarını filtrele */
-  var islemBloklari = _kulBloklari.filter(function(kb) {
-    var blok = kb.yetki_bloklari || {};
-    return ISLEM_BLOKLARI.indexOf(blok.ad) !== -1;
+  var islemBloklari = _kulBloklari.map(function(kb) {
+    var blok = _blokMap[kb.blok_id];
+    return blok ? { id: kb.id, blok_id: kb.blok_id, yetki_bloklari: blok } : null;
+  }).filter(function(kb) {
+    if (!kb) return false;
+    return ISLEM_BLOKLARI.indexOf(kb.yetki_bloklari.ad) !== -1;
   });
 
   if (islemBloklari.length === 0) {
@@ -1550,13 +1557,24 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   try {
+    console.log('[is_baslat] mInit başlıyor...');
     var ok = await mInit();
     document.documentElement.style.visibility = '';
-    if (!ok) return;
+    console.log('[is_baslat] mInit:', ok);
+    if (!ok) {
+      console.warn('[is_baslat] mInit false döndü — oturum yok?');
+      return;
+    }
     document.getElementById('mPage').style.display = '';
 
-    /* Blok yetki kontrolü (G-01) */
-    if (!await mSayfaKontrol('mobile/is_baslat')) return;
+    /* Blok yetki kontrolü */
+    console.log('[is_baslat] mSayfaKontrol çağrılıyor: is_baslat');
+    var yetkiOk = await mSayfaKontrol('is_baslat');
+    console.log('[is_baslat] mSayfaKontrol sonucu:', yetkiOk);
+    if (!yetkiOk) {
+      console.warn('[is_baslat] Erişim reddedildi — is_baslat sayfası bloğa tanımlı değil?');
+      return;
+    }
 
     /* Dil değişim hook'u */
     window._onLangChange = function() {
@@ -1564,11 +1582,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
 
     /* Rol ekranını hazırla */
+    console.log('[is_baslat] rolEkraniHazirla başlıyor...');
     await rolEkraniHazirla();
+    console.log('[is_baslat] Hazır.');
 
   } catch(e) {
     document.documentElement.style.visibility = '';
-    console.error('[is_baslat init]', e);
+    console.error('[is_baslat init HATA]', e);
   }
 });
 </script>
