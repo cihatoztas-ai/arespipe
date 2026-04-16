@@ -1394,11 +1394,17 @@ function basamakSecEkraniHazirla() {
   var s   = _guncelSpool;
   var rol = (_seciliRol && _seciliRol.ad) || '';
 
+  console.log('[basamakSec] _seciliRol:', _seciliRol, 'rol:', rol, 'izinli:', izinliSistemAdlari);
   document.getElementById('basamakSpMini').innerHTML =
     '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
-    '<div class="sp-mini-sub">' + esc(rol) + '</div>';
+    '<div class="sp-mini-sub">' + esc(rol || '—') + '</div>';
 
-  var izinliSistemAdlari = ROL_BASAMAKLAR[rol] || ['on_kontrol'];
+  var izinliSistemAdlari = ROL_BASAMAKLAR[rol];
+  if (!izinliSistemAdlari) {
+    /* Rol bulunamadı — alıştırma varsa sadece ön kontrol, yoksa hepsi */
+    console.warn('[basamakSec] Rol bulunamadı:', rol, '— tümü gösteriliyor');
+    izinliSistemAdlari = ['argon_kaynagi', 'gazalti_kaynagi', 'on_kontrol'];
+  }
   var kaynatilmaz = (s.alistirma === 'VAR');
 
   _seciliBasamak = null;
