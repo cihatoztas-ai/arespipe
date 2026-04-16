@@ -702,9 +702,10 @@ function rolSec(el, ad, renk) {
 async function rolDevam() {
   if (!_seciliRol) return;
 
-  /* Aktif iş kontrolü — başka spool'a geçişi engelle */
+  /* Aktif iş kontrolü — sadece aynı rol için kilitle */
   try {
-    var kayitliStr = localStorage.getItem('ares_aktif_spool');
+    var _lsKeyRol = 'ares_aktif_' + _seciliRol.ad;
+    var kayitliStr = localStorage.getItem(_lsKeyRol);
     if (kayitliStr) {
       var kayitli = JSON.parse(kayitliStr);
       if (kayitli && kayitli.id) {
@@ -1164,9 +1165,8 @@ async function isBaslatDB() {
     _guncelSpool.is_durumu = 'devam_ediyor';
     _isBasladi = true;
     /* Aktif işi localStorage'a kaydet */
-    try { localStorage.setItem('ares_aktif_spool', JSON.stringify({
-      id: _guncelSpool.id, rol: _seciliRol ? _seciliRol.ad : ''
-    })); } catch(e) {}
+    try { var _lsKey = 'ares_aktif_' + (_seciliRol ? _seciliRol.ad : 'genel');
+    localStorage.setItem(_lsKey, JSON.stringify({ id: _guncelSpool.id })); } catch(e) {}
     spoolFootGuncelle();
     ekranGoster('ekranSpoolDetay');
     mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
@@ -1413,7 +1413,10 @@ function fotoKapatSecildi(input) {
 }
 
 function fotoKapatSonrasi() {
-  if (!_kapatFoto) return;
+  if (!_kapatFoto) {
+    mToast(tv('mob_is_foto_zorunlu_uyari', 'Lütfen önce fotoğraf çekin'), 'error');
+    return;
+  }
   basamakSecEkraniHazirla();
   ekranGoster('ekranBasamakSec');
 }
@@ -1484,7 +1487,15 @@ async function isTamamla() {
     var tenantId = mTenantId();
 
     /* Zorunlu kapanış fotoğrafını yükle */
-    await fotoyukle(_kapatFoto, _guncelSpool.aktif_basamak || 'imalat');
+    try {
+      await fotoyukle(_kapatFoto, _guncelSpool.aktif_basamak || 'imalat');
+    } catch(fotoErr) {
+      console.error('[isTamamla fotoğraf]', fotoErr);
+      mToast('Fotoğraf yüklenemedi: ' + fotoErr.message, 'error');
+      btn.disabled = false;
+      btn.textContent = tv('mob_is_tamamla', 'Tamamla');
+      return;
+    }
 
     /* Spoolı güncelle */
     var { error } = await supa
@@ -1596,16 +1607,24 @@ async function fotoyukle(file, islemTuru) {
   var tenantId = mTenantId();
   var oturum   = mOturum();
   var spoolId  = _guncelSpool.id;
-  var uzanti   = file.name.split('.').pop();
+  var uzanti   = (file.name || 'foto').split('.').pop() || 'jpg';
   var dosyaAd  = tenantId + '/' + spoolId + '/' + Date.now() + '_' + islemTuru + '.' + uzanti;
 
-  var { error: upErr } = await supa.storage
+  console.log('[fotoyukle] yükleniyor:', dosyaAd);
+
+  var { data: upData, error: upErr } = await supa.storage
     .from('fotograflar')
     .upload(dosyaAd, file, { upsert: false });
-  if (upErr) throw upErr;
+
+  if (upErr) {
+    console.error('[fotoyukle] storage hatası:', upErr);
+    throw new Error('Fotoğraf yüklenemedi: ' + (upErr.message || upErr.error || JSON.stringify(upErr)));
+  }
 
   var { data: urlData } = supa.storage.from('fotograflar').getPublicUrl(dosyaAd);
-  await supa.from('fotograflar').insert({
+  console.log('[fotoyukle] URL:', urlData.publicUrl);
+
+  var { error: dbErr } = await supa.from('fotograflar').insert({
     tenant_id:   tenantId,
     spool_id:    spoolId,
     dosya_url:   urlData.publicUrl,
@@ -1613,6 +1632,12 @@ async function fotoyukle(file, islemTuru) {
     islem_turu:  islemTuru,
     olusturma:   new Date().toISOString()
   });
+
+  if (dbErr) {
+    console.error('[fotoyukle] DB hatası:', dbErr);
+    throw new Error('Fotoğraf kaydedilemedi: ' + (dbErr.message || JSON.stringify(dbErr)));
+  }
+  console.log('[fotoyukle] OK');
 }
 
 /* ══════════════════════════════════════
@@ -1620,17 +1645,30 @@ async function fotoyukle(file, islemTuru) {
 ══════════════════════════════════════ */
 async function isIptalEt() {
   if (!_guncelSpool) return;
-  if (!confirm(tv('mob_is_iptal_onay', 'İş iptal edilecek. Emin misiniz?'))) return;
-  try {
+  /* confirm() iframe'de çalışmaz — doğrudan sor */
+  var onay = document.createElement('div');
+  onay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;';
+  onay.innerHTML = '<div style="background:var(--sur);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;box-sizing:border-box;">' +
+    '<div style="font-size:16px;font-weight:600;color:var(--tx);margin-bottom:8px;" data-i18n="mob_is_iptal_onay_baslik">İşi İptal Et</div>' +
+    '<div style="font-size:14px;color:var(--txm);margin-bottom:20px;" data-i18n="mob_is_iptal_onay_metin">Bu iş iptal edilecek ve sıfırlanacak. Emin misiniz?</div>' +
+    '<button id="_iptalEvet" style="width:100%;padding:13px;background:var(--re);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:600;margin-bottom:8px;cursor:pointer;" data-i18n="mob_is_iptal_evet">Evet, İptal Et</button>' +
+    '<button id="_iptalHayir" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--bor);color:var(--tx);border-radius:11px;font-size:15px;cursor:pointer;" data-i18n="mob_iptal">Vazgeç</button>' +
+    '</div>';
+  document.body.appendChild(onay);
+  document.getElementById('_iptalHayir').onclick = function() { document.body.removeChild(onay); };
+  document.getElementById('_iptalEvet').onclick = async function() {
+    document.body.removeChild(onay);
+    try {
     var supa = mSupabase();
     await supa.from('spooller')
       .update({ is_durumu: 'bekliyor', guncelleme: new Date().toISOString() })
       .eq('id', _guncelSpool.id);
-    mToast(tv('mob_is_iptal_tamam', 'İş iptal edildi'), 'info');
-  } catch(e) {
-    console.error('[isIptalEt]', e);
-  }
-  sifirlaVeQraDon();
+      mToast(tv('mob_is_iptal_tamam', 'İş iptal edildi'), 'info');
+    } catch(e) {
+      console.error('[isIptalEt]', e);
+    }
+    sifirlaVeQraDon();
+  };
 }
 
 function sifirlaVeQraDon() {
@@ -1644,7 +1682,8 @@ function sifirlaVeQraDon() {
   _seciliBasamak = null;
   _isBasladi     = false;
   _qrKilidi      = false;
-  try { localStorage.removeItem('ares_aktif_spool'); } catch(e) {}
+  try { var _lsKey2 = 'ares_aktif_' + (_seciliRol ? _seciliRol.ad : 'genel');
+  localStorage.removeItem(_lsKey2); } catch(e) {}
   document.getElementById('qrManuelInput').value = '';
   ekranGoster('ekranQr');
 }
