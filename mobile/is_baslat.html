@@ -1322,14 +1322,24 @@ async function notKaydet() {
       }
     }
 
-    /* Fotoğrafları yükle */
+    /* Fotoğrafları yükle — hata notu engellemesin */
+    var fotoHata = 0;
     for (var i = 0; i < _notFotolar.length; i++) {
-      await fotoyukle(_notFotolar[i], 'not_' + (_guncelSpool.aktif_basamak || 'imalat'));
+      try {
+        await fotoyukle(_notFotolar[i], 'not_' + (_guncelSpool.aktif_basamak || 'imalat'));
+      } catch(fe) {
+        fotoHata++;
+        console.error('[notKaydet foto]', fe.message);
+      }
     }
 
     /* Notları güncelle */
     await notlariYukle(_guncelSpool.id);
-    mToast(tv('mob_is_not_kaydedildi', 'Not kaydedildi'), 'success');
+    if (fotoHata > 0) {
+      mToast('Not kaydedildi — ' + fotoHata + ' fotoğraf yüklenemedi (bucket kontrol edin)', 'error', 4000);
+    } else {
+      mToast(tv('mob_is_not_kaydedildi', 'Not kaydedildi'), 'success');
+    }
     ekranGoster('ekranSpoolDetay');
 
   } catch(e) {
@@ -1580,7 +1590,12 @@ async function sfKaydet() {
   btn.textContent = tv('mob_is_isleniyor', 'Kaydediliyor...');
 
   try {
-    await fotoyukle(_sfFoto, 'on_kontrol');
+    try {
+      await fotoyukle(_sfFoto, 'on_kontrol');
+    } catch(fe) {
+      console.error('[sfKaydet foto]', fe.message);
+      mToast('Fotoğraf yüklenemedi: ' + fe.message, 'error');
+    }
 
     document.getElementById('sfTamamSpNo').textContent = _guncelSpool.spool_no || _guncelSpool.id;
     document.getElementById('sfTamamKart').innerHTML =
@@ -1613,7 +1628,7 @@ async function fotoyukle(file, islemTuru) {
   console.log('[fotoyukle] yükleniyor:', dosyaAd);
 
   var { data: upData, error: upErr } = await supa.storage
-    .from('fotograflar')
+    .from('arespipe-dosyalar')
     .upload(dosyaAd, file, { upsert: false });
 
   if (upErr) {
@@ -1621,10 +1636,10 @@ async function fotoyukle(file, islemTuru) {
     throw new Error('Fotoğraf yüklenemedi: ' + (upErr.message || upErr.error || JSON.stringify(upErr)));
   }
 
-  var { data: urlData } = supa.storage.from('fotograflar').getPublicUrl(dosyaAd);
+  var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAd);
   console.log('[fotoyukle] URL:', urlData.publicUrl);
 
-  var { error: dbErr } = await supa.from('fotograflar').insert({
+  var { error: dbErr } = await supa.from('arespipe-dosyalar').insert({
     tenant_id:   tenantId,
     spool_id:    spoolId,
     dosya_url:   urlData.publicUrl,
