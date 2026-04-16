@@ -702,7 +702,7 @@ function rolSec(el, ad, renk) {
 async function rolDevam() {
   if (!_seciliRol) return;
 
-  /* Aktif iş var mı? */
+  /* Aktif iş kontrolü — başka spool'a geçişi engelle */
   try {
     var kayitliStr = localStorage.getItem('ares_aktif_spool');
     if (kayitliStr) {
@@ -711,22 +711,48 @@ async function rolDevam() {
         var supa = mSupabase();
         var { data: aktifS } = await supa
           .from('spooller')
-          .select('id, is_durumu')
+          .select('id, spool_no, spool_id, is_durumu')
           .eq('id', kayitli.id)
           .eq('tenant_id', mTenantId())
           .single();
+
         if (aktifS && aktifS.is_durumu === 'devam_ediyor') {
-          /* Aktif iş bulundu — devam moduna dön */
+          /* Aktif iş var — kilitli ekran göster */
           if (kayitli.rol) _seciliRol = { ad: kayitli.rol, sistemAdi: kayitli.rol, renk: '#2D8EFF' };
-          await spoolYukle(aktifS.id);
+          aktifIsUyarisiGoster(aktifS);
           return;
         }
       }
     }
     localStorage.removeItem('ares_aktif_spool');
-  } catch(e) {}
+  } catch(e) {
+    console.warn('[aktif iş kontrol]', e);
+  }
 
   ekranGoster('ekranQr');
+}
+
+function aktifIsUyarisiGoster(spool) {
+  /* Rol seç ekranını uyarı olarak kullan */
+  var liste = document.getElementById('rolListesi');
+  var spoolGoster = spool.spool_no || ('#' + (spool.spool_id || ''));
+
+  liste.innerHTML =
+    '<div style="background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--warn);' +
+    'border-radius:12px;padding:16px 18px;margin-bottom:14px;">' +
+    '<div style="font-size:15px;font-weight:600;color:var(--tx);margin-bottom:6px;">' +
+    '⚠ Açık İş Var</div>' +
+    '<div style="font-size:14px;color:var(--txm);line-height:1.5;">' +
+    '<b>' + esc(spoolGoster) + '</b> üzerinde devam eden bir iş var.<br>' +
+    'Başka bir spool başlatmadan önce bu işi tamamlayın veya iptal edin.' +
+    '</div></div>';
+
+  var btn = document.getElementById('btnRolDevam');
+  btn.disabled = false;
+  btn.textContent = tv('mob_is_aktif_devam', 'Açık İşe Devam Et');
+  btn.onclick = function() { spoolYukle(spool.id); };
+
+  document.getElementById('rolTekAciklama').style.display = 'none';
 }
 
 /* ══════════════════════════════════════
@@ -1194,14 +1220,15 @@ async function uyarilariTopla() {
     } catch(e) { console.warn('[test kontrol]', e); }
   }
 
-  /* 3. Spool notları */
-  if (_notlar.length > 0) {
-    var notMetinleri = _notlar.slice(0, 3).map(function(n) {
-      return '· ' + (n.icerik || n.metin || '').substring(0, 80);
+  /* 3. Spool notları — sadece qr_goster=true olanlar */
+  var qrNotlar = _notlar.filter(function(n){ return n.qr_goster; });
+  if (qrNotlar.length > 0) {
+    var notMetinleri = qrNotlar.map(function(n) {
+      return '· ' + (n._metin || '').substring(0, 100);
     }).join('\n');
     liste.push({
       tip: 'sari',
-      baslik: tv('mob_uyari_not_baslik', 'Spool Notu'),
+      baslik: tv('mob_uyari_not_baslik', 'Dikkat Edilecekler'),
       metin:  notMetinleri
     });
   }
@@ -1283,8 +1310,8 @@ async function notKaydet() {
       var notObj = {
         tenant_id: tenantId,
         spool_id:  _guncelSpool.id,
-        icerik:    metin,
-        yapan_id:  oturum.id,
+        metin:     metin,
+        ekleyen_id: oturum.id,
         olusturma: new Date().toISOString()
       };
       var { error: notErr } = await supa.from('notlar').insert(notObj);
@@ -1316,12 +1343,19 @@ async function notlariYukle(spoolId) {
     var supa = mSupabase();
     var { data } = await supa
       .from('notlar')
-      .select('id, icerik, yapan_id, olusturma, kullanicilar(ad_soyad)')
+      .select('id, metin, qr_goster, ekleyen_id, olusturma')
       .eq('spool_id', spoolId)
       .order('olusturma', { ascending: false })
       .limit(10);
-    _notlar = data || [];
-  } catch(e) { _notlar = []; }
+    /* metin/icerik/aciklama — hangisi dolu ise onu kullan */
+    _notlar = (data || []).filter(function(n){ return !n.silindi; })
+      .map(function(n) {
+        return Object.assign(n, { _metin: n.metin || '' });
+      });
+  } catch(e) {
+    console.warn('[notlariYukle]', e);
+    _notlar = [];
+  }
 }
 
 function notGecmisGuncelle() {
@@ -1336,7 +1370,7 @@ function notGecmisGuncelle() {
     var kisi  = n.kullanicilar ? n.kullanicilar.ad_soyad : '';
     html += '<div class="not-item">' +
       '<div class="not-item-meta">' + esc(tarih) + (kisi ? ' · ' + esc(kisi) : '') + '</div>' +
-      '<div class="not-item-txt">' + esc(n.icerik || '') + '</div>' +
+      '<div class="not-item-txt">' + esc(n._metin || '') + '</div>' +
       '</div>';
   });
   liste.innerHTML = html;
