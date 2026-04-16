@@ -1,17 +1,24 @@
 {
-  "outputDirectory": "mobile/dist",
-  "buildCommand": "cd mobile && npm run build",
-  "installCommand": "cd mobile && npm install",
+  "buildCommand": "cd mobile && npm install && npm run build",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)\\.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
+    },
+    {
+      "source": "/ares-store.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/ares-lang.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     }
   ],
   "rewrites": [
-    { "source": "/mobile/:path*", "destination": "/index.html" },
-    { "source": "/mobile", "destination": "/index.html" }
+    { "source": "/mobile/(.*)", "destination": "/mobile/dist/index.html" },
+    { "source": "/mobile", "destination": "/mobile/dist/index.html" }
   ]
 }
