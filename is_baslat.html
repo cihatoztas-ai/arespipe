@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="ares-mobile.css">
 <style>
 /* ── Ekran motoru ── */
-.ekran{display:none;flex-direction:column;min-height:calc(100dvh - 56px);}
+.ekran{display:none;flex-direction:column;min-height:calc(100vh - 56px);}
 .ekran.aktif{display:flex;}
 .e-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
 .e-foot{background:var(--sur);border-top:1px solid var(--bor);padding:10px 14px;flex-shrink:0;}
@@ -65,7 +65,7 @@
   background:var(--sur);color:var(--tx);font-size:15px;font-weight:600;cursor:pointer;}
 
 /* ── Spool Detay ── */
-.foto-carousel{position:relative;height:150px;background:#111;flex-shrink:0;overflow:hidden;}
+.foto-carousel{position:relative;height:150px;background:#111;flex-shrink:0;overflow:hidden;will-change:transform;}
 .foto-carousel img{width:100%;height:100%;object-fit:cover;}
 .foto-yer-tutucu{width:100%;height:100%;display:flex;align-items:center;
   justify-content:center;background:#1c1c1c;}
@@ -381,10 +381,10 @@
         </div>
         <div>
           <div class="not-label" data-i18n="mob_is_foto_baslik">Fotoğraf (opsiyonel)</div>
-          <div class="not-foto-drop" onclick="document.getElementById('notFotoInput').click()">
+          <label for="notFotoInput" class="not-foto-drop" style="display:block;cursor:pointer;">
             <div class="not-foto-ikon">📷</div>
             <div class="not-foto-txt" data-i18n="mob_is_foto_aciklama">Fotoğraf eklemek için dokunun</div>
-          </div>
+          </label>
           <input type="file" id="notFotoInput" accept="image/*" multiple
                  style="display:none;" onchange="notFotolarSec(this)">
           <div class="not-foto-onizleme" id="notFotoOnizleme"></div>
@@ -416,7 +416,7 @@
           <div style="font-size:13px;color:var(--txd);"
                data-i18n="mob_is_foto_kapat_aciklama">Tamamlanan işi fotoğraflayın</div>
         </div>
-        <div class="foto-bg" id="fotoKapatBg" onclick="fotoKapatSec()">
+        <label for="fotoKapatInput" class="foto-bg" id="fotoKapatBg" style="display:block;cursor:pointer;">
           <img id="fotoKapatOnizleme" src="" style="display:none;">
           <div id="fotoKapatPlaceholder" style="display:flex;flex-direction:column;align-items:center;">
             <div class="foto-cam-ring">
@@ -428,7 +428,7 @@
             <div class="foto-cam-hint" data-i18n="mob_is_foto_dokunun">Dokunun veya galeriden seçin</div>
             <div class="foto-shutter"></div>
           </div>
-        </div>
+        </label>
         <input type="file" id="fotoKapatInput" accept="image/*"
                style="display:none;" onchange="fotoKapatSecildi(this)">
         <div class="foto-zorunlu" data-i18n="mob_is_foto_zorunlu">Fotoğraf zorunludur</div>
@@ -487,7 +487,7 @@
         </div>
       </div>
       <div class="foto-kapat-wrap">
-        <div class="foto-bg" id="sfFotoBg" onclick="document.getElementById('sfFotoInput').click()">
+        <label for="sfFotoInput" class="foto-bg" id="sfFotoBg" style="display:block;cursor:pointer;">
           <img id="sfFotoOnizleme" src="" style="display:none;">
           <div id="sfFotoPlaceholder" style="display:flex;flex-direction:column;align-items:center;">
             <div class="foto-cam-ring">
@@ -499,7 +499,7 @@
             <div class="foto-cam-hint" data-i18n="mob_is_foto_dokunun">Dokunun veya galeriden seçin</div>
             <div class="foto-shutter"></div>
           </div>
-        </div>
+        </label>
         <input type="file" id="sfFotoInput" accept="image/*"
                style="display:none;" onchange="sfFotoSecildi(this)">
       </div>
@@ -562,6 +562,19 @@
    ✅ Script sırası (1.3)
    ✅ mSayfaKontrol() (G-01)
 ══════════════════════════════════════════════════════ */
+
+/* ══ mSayfaKontrol fallback ══
+   ares-mobile.js'e henüz eklenmemişse inline tanımlıyoruz */
+if (typeof mSayfaKontrol === 'undefined') {
+  window.mSayfaKontrol = async function(sayfaKodu) {
+    var oturum = mOturum ? mOturum() : null;
+    if (!oturum) { location.href = 'giris.html'; return false; }
+    if (typeof ARES !== 'undefined' && ARES.sayfaYetkiKontrol) {
+      return await ARES.sayfaYetkiKontrol(sayfaKodu);
+    }
+    return true; /* ARES yoksa geç — geliştirme modu */
+  };
+}
 
 /* ══ Durum Değişkenleri ══ */
 var _seciliRol    = null;   // { ad, sistemAdi, renk }
@@ -673,6 +686,12 @@ async function rolEkraniHazirla() {
       '</div>';
   });
   document.getElementById('rolListesi').innerHTML = html;
+
+  document.getElementById('rolListesi').onclick = function(e) {
+    var item = e.target.closest('.rol-item');
+    if (!item) return;
+    rolSec(item, item.dataset.ad || '', item.dataset.renk || '#2D8EFF');
+  };
 }
 
 function rolSec(el, ad, renk) {
@@ -686,10 +705,13 @@ function rolSec(el, ad, renk) {
   document.getElementById('btnRolDevam').disabled = false;
 }
 
-function rolDevam() {
+async function rolDevam() {
   if (!_seciliRol) return;
+
   ekranGoster('ekranQr');
 }
+
+
 
 /* ══════════════════════════════════════
    QR TARAMA
@@ -804,24 +826,29 @@ async function spoolYukle(spoolId) {
     var supa     = mSupabase();
     var tenantId = mTenantId();
 
-    var { data: s, error } = await supa
-      .from('spooller')
-      .select([
-        'id, spool_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, kalite,',
-        'yuzey_islem, rev, aktif_basamak, is_durumu, ilerleme,',
-        'durdurma_sebebi, alistirma,',
-        'devreler(id, ad, proje_kodu),',
-        'fotograflar(id, dosya_url, islem_turu, olusturma,',
-        '  kullanicilar(ad_soyad)),',
-        'spool_malzemeleri(id, tanim, malzeme, kalite,',
-        '  dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no),',
-        'kesim_kalemleri(id, kesildi),',
-        'bukum_kalemleri(id, bukuldu),',
-        'markalama_kalemleri(id, markalandi)'
-      ].join(''))
-      .eq('id', spoolId)
-      .eq('tenant_id', tenantId)
-      .single();
+    /* Arama kolonu tespiti:
+       UUID → id, sadece rakam → spool_id, diğer → spool_no */
+    var val = spoolId.trim();
+    var UUID_RE  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    var aramaKolonu = UUID_RE.test(val) ? 'id'
+                    : /^[0-9]+$/.test(val) ? 'spool_id'
+                    : 'spool_no';
+
+    var SELECT = [
+      'id, spool_no, spool_id, pipeline_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, kalite,',
+      ' yuzey_islemi, rev, aktif_basamak, is_durumu, ilerleme,',
+      ' durdurma_sebebi, alistirma,',
+      ' devreler(id, ad),',
+      ' fotograflar(id, dosya_url, islem_turu, olusturma, yukleyen_id),',
+      ' spool_malzemeleri(id, tanim, malzeme, kalite,',
+      '  dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no),',
+      ' kesim_kalemleri(id, kesildi),',
+      ' bukum_kalemleri(id, bukuldu),',
+      ' markalama_kalemleri(id, markalandi)'
+    ].join('');
+
+    var sorgu = supa.from('spooller').select(SELECT).eq('tenant_id', tenantId).eq(aramaKolonu, val);
+    var { data: s, error } = await sorgu.maybeSingle();
 
     if (error || !s) {
       mToast(tv('mob_is_spool_bulunamadi', 'Spool bulunamadı'), 'error');
@@ -831,20 +858,35 @@ async function spoolYukle(spoolId) {
     }
 
     _guncelSpool  = s;
-    _spoolFotolar = s.fotograflar || [];
-    _fotoIndex    = 0;
-    _malzemeler   = s.spool_malzemeleri || [];
     _isBasladi    = (s.is_durumu === 'devam_ediyor');
 
-    /* İşlem sayaçları */
-    var kList = s.kesim_kalemleri     || [];
-    var bList = s.bukum_kalemleri     || [];
-    var mList = s.markalama_kalemleri || [];
+    /* Alt sorgular — her biri bağımsız, hata olursa boş dizi */
+    var _safe = function(p) { return p.catch(function(e){ console.warn('[spoolYukle alt]', e && e.message); return { data: [] }; }); };
+
+    var [fotoRes, malzRes, kesimRes, bukumRes, markRes] = await Promise.all([
+      _safe(supa.from('fotograflar')
+        .select('id, dosya_url, islem_turu, olusturma, yukleyen_id')
+        .eq('spool_id', s.id).eq('tenant_id', tenantId)
+        .order('olusturma', { ascending: false }).limit(20)),
+      _safe(supa.from('spool_malzemeleri')
+        .select('id, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, agirlik_kg, adet, sertifikali, heat_no')
+        .eq('spool_id', s.id)),
+      _safe(supa.from('kesim_kalemleri').select('id, kesildi').eq('spool_id', s.id)),
+      _safe(supa.from('bukum_kalemleri').select('id, bukuldu').eq('spool_id', s.id)),
+      _safe(supa.from('markalama_kalemleri').select('id, markalandi').eq('spool_id', s.id))
+    ]);
+
+    _spoolFotolar = fotoRes.data  || [];
+    _fotoIndex    = 0;
+    _malzemeler   = malzRes.data  || [];
+
+    var kList = kesimRes.data || [];
+    var bList = bukumRes.data || [];
+    var mList = markRes.data  || [];
     _kesim     = { toplam: kList.length, tamamlanan: kList.filter(function(k){ return k.kesildi;    }).length };
     _bukum     = { toplam: bList.length, tamamlanan: bList.filter(function(k){ return k.bukuldu;   }).length };
     _markalama = { toplam: mList.length, tamamlanan: mList.filter(function(k){ return k.markalandi;}).length };
 
-    /* Notları çek */
     await notlariYukle(s.id);
 
     /* on_kontrol basamağındaysa → SF akışı */
@@ -875,7 +917,7 @@ function spoolDetayHazirla() {
   carouselRender();
 
   /* Başlık */
-  document.getElementById('spoolNoText').textContent = s.spool_no || s.id;
+  document.getElementById('spoolNoText').textContent = s.spool_no || s.spool_id || s.id;
 
   var badgeRow = document.getElementById('spoolBadgeRow');
   var badges = '';
@@ -891,7 +933,7 @@ function spoolDetayHazirla() {
   if (_isBasladi) {
     badges += '<span class="badge b-dev" data-i18n="mob_is_devam_ediyor">● Devam Ediyor</span>';
   }
-  badges += '<span class="sp-id-txt">ID: ' + esc((s.id || '').substring(0,8).toUpperCase()) + '</span>';
+  badges += '<span class="sp-id-txt">ID: ' + esc(s.spool_id || (s.id||'').substring(0,8).toUpperCase()) + '</span>';
   badgeRow.innerHTML = badges;
 
   /* Genel panel */
@@ -911,7 +953,9 @@ function spoolFootGuncelle() {
       '<button class="btn-tam btn-re" onclick="isKapatBaslat()" data-i18n="mob_is_kapat">' +
       tv('mob_is_kapat', 'İşi Kapat') + '</button>' +
       '<button class="btn-tam btn-bos" onclick="notEkleEkraniAc()" data-i18n="mob_is_not_ekle">' +
-      tv('mob_is_not_ekle', 'Not Ekle') + '</button>';
+      tv('mob_is_not_ekle', 'Not Ekle') + '</button>' +
+      '<button class="btn-tam" style="background:transparent;border:1px solid var(--re);color:var(--re);margin-top:4px;" onclick="isIptalEt()" data-i18n="mob_is_iptal_et">' +
+      tv('mob_is_iptal_et', 'İşi İptal Et') + '</button>';
   } else {
     foot.innerHTML =
       '<button class="btn-tam btn-ac" onclick="isBaslat()" data-i18n="mob_is_baslat_btn">' +
@@ -1065,12 +1109,15 @@ function basamakRenkAl(kod) {
 async function isBaslat() {
   if (!_guncelSpool) return;
 
-  /* Önce uyarıları kontrol et */
-  var uyarilar = await uyarilariTopla();
-
-  if (uyarilar.length > 0) {
-    uyariEkraniGoster(uyarilar);
-  } else {
+  try {
+    var uyarilar = await uyarilariTopla();
+    if (uyarilar.length > 0) {
+      uyariEkraniGoster(uyarilar);
+    } else {
+      await isBaslatDB();
+    }
+  } catch(e) {
+    console.warn('[isBaslat] uyarı kontrolü hatası, direkt başlatılıyor:', e.message);
     await isBaslatDB();
   }
 }
@@ -1087,11 +1134,17 @@ async function isBaslatDB() {
       .update({ is_durumu: 'devam_ediyor', guncelleme: new Date().toISOString() })
       .eq('id', _guncelSpool.id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[isBaslatDB] UPDATE hatası:', error);
+      mToast('Başlatılamadı: ' + (error.message || error.code || 'RLS?'), 'error', 4000);
+      throw error;
+    }
 
     _guncelSpool.is_durumu = 'devam_ediyor';
     _isBasladi = true;
-    spoolFootGuncelle();
+    try { localStorage.setItem('ares_is_aktif', JSON.stringify({
+      id: _guncelSpool.id, rol: _seciliRol ? _seciliRol.ad : '' })); } catch(e) {}
+    spoolDetayHazirla();
     ekranGoster('ekranSpoolDetay');
     mToast(tv('mob_is_basladi', 'İş başlatıldı'), 'success');
   } catch(e) {
@@ -1144,14 +1197,15 @@ async function uyarilariTopla() {
     } catch(e) { console.warn('[test kontrol]', e); }
   }
 
-  /* 3. Spool notları */
-  if (_notlar.length > 0) {
-    var notMetinleri = _notlar.slice(0, 3).map(function(n) {
-      return '· ' + (n.icerik || n.metin || '').substring(0, 80);
+  /* 3. Spool notları — sadece qr_goster=true olanlar */
+  var qrNotlar = _notlar.filter(function(n){ return n.qr_goster; });
+  if (qrNotlar.length > 0) {
+    var notMetinleri = qrNotlar.map(function(n) {
+      return '· ' + (n._metin || '').substring(0, 100);
     }).join('\n');
     liste.push({
       tip: 'sari',
-      baslik: tv('mob_uyari_not_baslik', 'Spool Notu'),
+      baslik: tv('mob_uyari_not_baslik', 'Dikkat Edilecekler'),
       metin:  notMetinleri
     });
   }
@@ -1164,7 +1218,7 @@ function uyariEkraniGoster(uyarilar) {
 
   /* Mini başlık */
   document.getElementById('uyariSpMini').innerHTML =
-    '<div class="sp-mini-no">' + esc(s.spool_no || s.id) + '</div>' +
+    '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
     '<div class="sp-mini-sub">' + esc(s.aktif_basamak || '') + '</div>';
 
   /* Uyarılar */
@@ -1187,7 +1241,7 @@ var _notFotolar = [];
 function notEkleEkraniAc() {
   var s = _guncelSpool;
   document.getElementById('notSpMini').innerHTML =
-    '<div class="sp-mini-no">' + esc(s.spool_no || s.id) + '</div>' +
+    '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
     '<div class="sp-mini-sub">ID: ' + esc((s.id||'').substring(0,8).toUpperCase()) +
     ' · ' + tv('mob_is_devam_ediyor', 'Devam Ediyor') + '</div>';
 
@@ -1228,25 +1282,41 @@ async function notKaydet() {
     var tenantId = mTenantId();
     var oturum   = mOturum();
 
-    /* Not kaydet */
+    /* Not kaydet — icerik veya metin kolonunu dene */
     if (metin) {
-      await supa.from('notlar').insert({
+      var notObj = {
         tenant_id: tenantId,
         spool_id:  _guncelSpool.id,
-        icerik:    metin,
-        yapan_id:  oturum.id,
+        metin:     metin,
+        ekleyen_id: oturum.id,
         olusturma: new Date().toISOString()
-      });
+      };
+      var { error: notErr } = await supa.from('notlar').insert(notObj);
+      if (notErr) {
+        console.error('[notKaydet] insert hatası:', notErr);
+        mToast('Not kaydedilemedi: ' + (notErr.message || notErr.code), 'error');
+        return;
+      }
     }
 
-    /* Fotoğrafları yükle */
+    /* Fotoğrafları yükle — hata notu engellemesin */
+    var fotoHata = 0;
     for (var i = 0; i < _notFotolar.length; i++) {
-      await fotoyukle(_notFotolar[i], 'not_' + (_guncelSpool.aktif_basamak || 'imalat'));
+      try {
+        await fotoyukle(_notFotolar[i], 'not_' + (_guncelSpool.aktif_basamak || 'imalat'));
+      } catch(fe) {
+        fotoHata++;
+        console.error('[notKaydet foto]', fe.message);
+      }
     }
 
     /* Notları güncelle */
     await notlariYukle(_guncelSpool.id);
-    mToast(tv('mob_is_not_kaydedildi', 'Not kaydedildi'), 'success');
+    if (fotoHata > 0) {
+      mToast('Not kaydedildi — ' + fotoHata + ' fotoğraf yüklenemedi (bucket kontrol edin)', 'error', 4000);
+    } else {
+      mToast(tv('mob_is_not_kaydedildi', 'Not kaydedildi'), 'success');
+    }
     ekranGoster('ekranSpoolDetay');
 
   } catch(e) {
@@ -1260,12 +1330,19 @@ async function notlariYukle(spoolId) {
     var supa = mSupabase();
     var { data } = await supa
       .from('notlar')
-      .select('id, icerik, yapan_id, olusturma, kullanicilar(ad_soyad)')
+      .select('id, metin, qr_goster, ekleyen_id, olusturma')
       .eq('spool_id', spoolId)
       .order('olusturma', { ascending: false })
       .limit(10);
-    _notlar = data || [];
-  } catch(e) { _notlar = []; }
+    /* metin/icerik/aciklama — hangisi dolu ise onu kullan */
+    _notlar = (data || []).filter(function(n){ return !n.silindi; })
+      .map(function(n) {
+        return Object.assign(n, { _metin: n.metin || '' });
+      });
+  } catch(e) {
+    console.warn('[notlariYukle]', e);
+    _notlar = [];
+  }
 }
 
 function notGecmisGuncelle() {
@@ -1280,7 +1357,7 @@ function notGecmisGuncelle() {
     var kisi  = n.kullanicilar ? n.kullanicilar.ad_soyad : '';
     html += '<div class="not-item">' +
       '<div class="not-item-meta">' + esc(tarih) + (kisi ? ' · ' + esc(kisi) : '') + '</div>' +
-      '<div class="not-item-txt">' + esc(n.icerik || '') + '</div>' +
+      '<div class="not-item-txt">' + esc(n._metin || '') + '</div>' +
       '</div>';
   });
   liste.innerHTML = html;
@@ -1292,7 +1369,7 @@ function notGecmisGuncelle() {
 function isKapatBaslat() {
   var s = _guncelSpool;
   document.getElementById('kapatSpMini').innerHTML =
-    '<div class="sp-mini-no">' + esc(s.spool_no || s.id) + '</div>' +
+    '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
     '<div class="sp-mini-sub">' + esc((_seciliRol && _seciliRol.ad) || '') +
     ' · ' + tv('mob_is_devam_ediyor', 'Devam Ediyor') + '</div>';
 
@@ -1323,7 +1400,10 @@ function fotoKapatSecildi(input) {
 }
 
 function fotoKapatSonrasi() {
-  if (!_kapatFoto) return;
+  if (!_kapatFoto) {
+    mToast(tv('mob_is_foto_zorunlu_uyari', 'Lütfen önce fotoğraf çekin'), 'error');
+    return;
+  }
   basamakSecEkraniHazirla();
   ekranGoster('ekranBasamakSec');
 }
@@ -1336,26 +1416,32 @@ function basamakSecEkraniHazirla() {
   var rol = (_seciliRol && _seciliRol.ad) || '';
 
   document.getElementById('basamakSpMini').innerHTML =
-    '<div class="sp-mini-no">' + esc(s.spool_no || s.id) + '</div>' +
-    '<div class="sp-mini-sub">' + esc(rol) + '</div>';
+    '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
+    '<div class="sp-mini-sub">' + esc(rol || '—') + '</div>';
 
-  var izinliSistemAdlari = ROL_BASAMAKLAR[rol] || ['on_kontrol'];
+  var izinliSistemAdlari = ROL_BASAMAKLAR[rol];
+  if (!izinliSistemAdlari) {
+    /* Rol bulunamadı — alıştırma varsa sadece ön kontrol, yoksa hepsi */
+    console.warn('[basamakSec] Rol bulunamadı:', rol, '— tümü gösteriliyor');
+    izinliSistemAdlari = ['argon_kaynagi', 'gazalti_kaynagi', 'on_kontrol'];
+  }
   var kaynatilmaz = (s.alistirma === 'VAR');
 
   _seciliBasamak = null;
   document.getElementById('btnTamamla').disabled = true;
 
   var html = '';
-  BASAMAK_TANIMLARI.forEach(function(b) {
+  BASAMAK_TANIMLARI.forEach(function(b, idx) {
     if (izinliSistemAdlari.indexOf(b.sistem_adi) === -1) return;
     var kaynak = (b.sistem_adi === 'argon_kaynagi' || b.sistem_adi === 'gazalti_kaynagi');
     var dis    = kaynatilmaz && kaynak;
 
-    html += '<div class="bsm-item' + (dis ? ' dis' : '') + '" ' +
-      (dis ? '' : 'onclick="basamakSec(this,\'' + esc(JSON.stringify(b)) + '\')"') + '>' +
+    /* data-idx ile index taşı — inline onclick YOK */
+    html += '<div class="bsm-item' + (dis ? ' dis' : '') + '"' +
+      ' data-idx="' + idx + '">' +
       '<div>' +
         '<div class="bsm-ad">' + esc(b.ad) + '</div>' +
-        (dis ? '<div class="bsm-dis-not" data-i18n="mob_is_alistirma_kaynatilmaz">' +
+        (dis ? '<div class="bsm-dis-not">' +
           tv('mob_is_alistirma_kaynatilmaz', 'Alıştırma — kaynatılmaz') + '</div>' : '') +
       '</div>' +
       '<div class="bsm-radio"></div>' +
@@ -1363,9 +1449,19 @@ function basamakSecEkraniHazirla() {
   });
 
   document.getElementById('basamakListesi').innerHTML = html;
+
+  /* Event delegation — inline onclick yerine, CSP uyumlu */
+  document.getElementById('basamakListesi').onclick = function(e) {
+    var item = e.target.closest('.bsm-item');
+    if (!item) return;
+    if (item.classList.contains('dis')) return;
+    var idx = item.getAttribute('data-idx');
+    if (idx === null || idx === '') return;
+    basamakSec(item, parseInt(idx, 10));
+  };
 }
 
-function basamakSec(el, basamakJson) {
+function basamakSec(el, idx) {
   document.querySelectorAll('.bsm-item:not(.dis)').forEach(function(b) {
     b.classList.remove('sel');
     var r = b.querySelector('.bsm-radio');
@@ -1374,7 +1470,7 @@ function basamakSec(el, basamakJson) {
   el.classList.add('sel');
   var radio = el.querySelector('.bsm-radio');
   if (radio) radio.classList.add('on');
-  try { _seciliBasamak = JSON.parse(basamakJson); } catch(e) { _seciliBasamak = null; }
+  _seciliBasamak = BASAMAK_TANIMLARI[idx] || null;
   document.getElementById('btnTamamla').disabled = !_seciliBasamak;
 }
 
@@ -1394,7 +1490,15 @@ async function isTamamla() {
     var tenantId = mTenantId();
 
     /* Zorunlu kapanış fotoğrafını yükle */
-    await fotoyukle(_kapatFoto, _guncelSpool.aktif_basamak || 'imalat');
+    try {
+      await fotoyukle(_kapatFoto, _guncelSpool.aktif_basamak || 'imalat');
+    } catch(fotoErr) {
+      console.error('[isTamamla fotoğraf]', fotoErr);
+      mToast('Fotoğraf yüklenemedi: ' + fotoErr.message, 'error');
+      btn.disabled = false;
+      btn.textContent = tv('mob_is_tamamla', 'Tamamla');
+      return;
+    }
 
     /* Spoolı güncelle */
     var { error } = await supa
@@ -1447,7 +1551,7 @@ function tamamSatir(lbl, val) {
 function sfEkraniHazirla() {
   var s = _guncelSpool;
   document.getElementById('sfSpMini').innerHTML =
-    '<div class="sp-mini-no">' + esc(s.spool_no || s.id) + '</div>' +
+    '<div class="sp-mini-no">' + esc(s.spool_no || s.spool_id || s.id) + '</div>' +
     '<div class="sp-mini-sub">ID: ' + esc((s.id||'').substring(0,8).toUpperCase()) +
     ' · ' + tv('mob_sp_on_kontrol', 'Ön Kontrol') + '</div>';
 
@@ -1479,7 +1583,12 @@ async function sfKaydet() {
   btn.textContent = tv('mob_is_isleniyor', 'Kaydediliyor...');
 
   try {
-    await fotoyukle(_sfFoto, 'on_kontrol');
+    try {
+      await fotoyukle(_sfFoto, 'on_kontrol');
+    } catch(fe) {
+      console.error('[sfKaydet foto]', fe.message);
+      mToast('Fotoğraf yüklenemedi: ' + fe.message, 'error');
+    }
 
     document.getElementById('sfTamamSpNo').textContent = _guncelSpool.spool_no || _guncelSpool.id;
     document.getElementById('sfTamamKart').innerHTML =
@@ -1506,16 +1615,22 @@ async function fotoyukle(file, islemTuru) {
   var tenantId = mTenantId();
   var oturum   = mOturum();
   var spoolId  = _guncelSpool.id;
-  var uzanti   = file.name.split('.').pop();
+  var uzanti   = (file.name || 'foto').split('.').pop() || 'jpg';
   var dosyaAd  = tenantId + '/' + spoolId + '/' + Date.now() + '_' + islemTuru + '.' + uzanti;
 
-  var { error: upErr } = await supa.storage
-    .from('fotograflar')
-    .upload(dosyaAd, file, { upsert: false });
-  if (upErr) throw upErr;
 
-  var { data: urlData } = supa.storage.from('fotograflar').getPublicUrl(dosyaAd);
-  await supa.from('fotograflar').insert({
+  var { data: upData, error: upErr } = await supa.storage
+    .from('arespipe-dosyalar')
+    .upload(dosyaAd, file, { upsert: false });
+
+  if (upErr) {
+    console.error('[fotoyukle] storage hatası:', upErr);
+    throw new Error('Fotoğraf yüklenemedi: ' + (upErr.message || upErr.error || JSON.stringify(upErr)));
+  }
+
+  var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAd);
+
+  var { error: dbErr } = await supa.from('fotograflar').insert({
     tenant_id:   tenantId,
     spool_id:    spoolId,
     dosya_url:   urlData.publicUrl,
@@ -1523,11 +1638,44 @@ async function fotoyukle(file, islemTuru) {
     islem_turu:  islemTuru,
     olusturma:   new Date().toISOString()
   });
+
+  if (dbErr) {
+    console.error('[fotoyukle] DB hatası:', dbErr);
+    throw new Error('Fotoğraf kaydedilemedi: ' + (dbErr.message || JSON.stringify(dbErr)));
+  }
 }
 
 /* ══════════════════════════════════════
    SIFIRLAMA
 ══════════════════════════════════════ */
+async function isIptalEt() {
+  if (!_guncelSpool) return;
+  /* confirm() iframe'de çalışmaz — doğrudan sor */
+  var onay = document.createElement('div');
+  onay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;';
+  onay.innerHTML = '<div style="background:var(--sur);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;box-sizing:border-box;">' +
+    '<div style="font-size:16px;font-weight:600;color:var(--tx);margin-bottom:8px;" data-i18n="mob_is_iptal_onay_baslik">İşi İptal Et</div>' +
+    '<div style="font-size:14px;color:var(--txm);margin-bottom:20px;" data-i18n="mob_is_iptal_onay_metin">Bu iş iptal edilecek ve sıfırlanacak. Emin misiniz?</div>' +
+    '<button id="_iptalEvet" style="width:100%;padding:13px;background:var(--re);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:600;margin-bottom:8px;cursor:pointer;" data-i18n="mob_is_iptal_evet">Evet, İptal Et</button>' +
+    '<button id="_iptalHayir" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--bor);color:var(--tx);border-radius:11px;font-size:15px;cursor:pointer;" data-i18n="mob_iptal">Vazgeç</button>' +
+    '</div>';
+  document.body.appendChild(onay);
+  document.getElementById('_iptalHayir').onclick = function() { document.body.removeChild(onay); };
+  document.getElementById('_iptalEvet').onclick = async function() {
+    document.body.removeChild(onay);
+    try {
+    var supa = mSupabase();
+    await supa.from('spooller')
+      .update({ is_durumu: 'bekliyor', guncelleme: new Date().toISOString() })
+      .eq('id', _guncelSpool.id);
+      mToast(tv('mob_is_iptal_tamam', 'İş iptal edildi'), 'info');
+    } catch(e) {
+      console.error('[isIptalEt]', e);
+    }
+    sifirlaVeQraDon();
+  };
+}
+
 function sifirlaVeQraDon() {
   _guncelSpool   = null;
   _spoolFotolar  = [];
@@ -1539,6 +1687,7 @@ function sifirlaVeQraDon() {
   _seciliBasamak = null;
   _isBasladi     = false;
   _qrKilidi      = false;
+  try { localStorage.removeItem('ares_is_aktif'); } catch(e) {}
   document.getElementById('qrManuelInput').value = '';
   ekranGoster('ekranQr');
 }
@@ -1547,11 +1696,15 @@ function sifirlaVeQraDon() {
    INIT — Sayfa Başlatma (CLAUDE-MOBILE.md §7)
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function() {
-  var eksikler = ['mInit','mSupabase','mTenantId','mOturum','mSayfaKontrol'].filter(function(fn) {
+  var eksikler = ['mInit','mSupabase','mTenantId','mOturum'].filter(function(fn) {
     return typeof window[fn] === 'undefined';
   });
   if (eksikler.length) {
     document.documentElement.style.visibility = '';
+    document.getElementById('mPage').style.display = '';
+    document.getElementById('rolListesi').innerHTML =
+      '<div style="padding:20px;font-size:14px;color:var(--re);">Yüklenemeyen modüller: ' +
+      eksikler.join(', ') + '<br><br>ares-mobile.js kontrol edin.</div>';
     console.error('[is_baslat] EKSİK:', eksikler);
     return;
   }
@@ -1559,23 +1712,59 @@ document.addEventListener('DOMContentLoaded', async function() {
   try {
     var ok = await mInit();
     document.documentElement.style.visibility = '';
-    if (!ok) return;
+    if (!ok) {
+      console.warn('[is_baslat] mInit false döndü — oturum yok?');
+      return;
+    }
     document.getElementById('mPage').style.display = '';
 
-    /* Blok yetki kontrolü (G-01) */
-    if (!await mSayfaKontrol('mobile/is_baslat')) return;
+    /* Blok yetki kontrolü */
+    var yetkiOk = await mSayfaKontrol('is_baslat');
+    if (!yetkiOk) {
+      console.warn('[is_baslat] Erişim reddedildi — is_baslat sayfası bloğa tanımlı değil?');
+      return;
+    }
 
     /* Dil değişim hook'u */
     window._onLangChange = function() {
       if (typeof window._applyI18n === 'function') window._applyI18n();
     };
 
-    /* Rol ekranını hazırla */
+    /* Aktif iş var mı? Varsa direkt o spoolü aç */
+    try {
+      var _aktifKayit = localStorage.getItem('ares_is_aktif');
+      if (_aktifKayit) {
+        var _aktifObj = JSON.parse(_aktifKayit);
+        if (_aktifObj && _aktifObj.id) {
+          var _supa = mSupabase();
+          var { data: _aktifS } = await _supa
+            .from('spooller')
+            .select('id, spool_no, spool_id, is_durumu')
+            .eq('id', _aktifObj.id)
+            .eq('tenant_id', mTenantId())
+            .single();
+          if (_aktifS && _aktifS.is_durumu === 'devam_ediyor') {
+            /* Rol bilgisini geri yükle */
+            if (_aktifObj.rol) {
+              _seciliRol = { ad: _aktifObj.rol, sistemAdi: _aktifObj.rol, renk: '#2D8EFF' };
+            }
+                    await spoolYukle(_aktifS.id);
+            return;
+          } else {
+            localStorage.removeItem('ares_is_aktif');
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[is_baslat aktif iş]', e);
+    }
+
+    /* Aktif iş yok — Rol ekranını hazırla */
     await rolEkraniHazirla();
 
   } catch(e) {
     document.documentElement.style.visibility = '';
-    console.error('[is_baslat init]', e);
+    console.error('[is_baslat init HATA]', e);
   }
 });
 </script>
