@@ -24,9 +24,5 @@
       "source": "/lang/(.*)\\.json",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     }
-  ],
-  "rewrites": [
-    { "source": "/mobile", "destination": "/mobile/index.html" },
-    { "source": "/mobile/:path*", "destination": "/mobile/index.html" }
   ]
 }
