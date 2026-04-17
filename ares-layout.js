@@ -340,7 +340,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 }
 
 /* ── SHIPYARD DARK ── */
-[data-theme="dark"] {
+[data-theme=dark] {
   --bg:      #0d1117;
   --sur:     #161b24;
   --sur2:    #1c2333;
@@ -368,7 +368,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 }
 
 /* ── ANTRASİT AÇIK ── */
-[data-theme="light-anthracite"] {
+[data-theme=light-anthracite] {
   --bg:      #d8dde4;
   --sur:     #e4e9ef;
   --sur2:    #d0d7e0;
@@ -501,13 +501,13 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   background: rgba(0,0,0,0.20); border: 1px solid rgba(0,0,0,0.15);
   position: relative; cursor: pointer; transition: background 0.25s; flex-shrink: 0;
 }
-[data-theme="dark"] .theme-switch-track { background: rgba(45,142,255,0.35); border-color: rgba(45,142,255,0.3); }
+[data-theme=dark] .theme-switch-track { background: rgba(45,142,255,0.35); border-color: rgba(45,142,255,0.3); }
 .theme-switch-thumb {
   position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
   background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   transition: transform 0.22s cubic-bezier(.4,0,.2,1);
 }
-[data-theme="dark"] .theme-switch-thumb { transform: translateX(16px); }
+[data-theme=dark] .theme-switch-thumb { transform: translateX(16px); }
     `;
     document.head.appendChild(style);
   }
