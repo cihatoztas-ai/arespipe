@@ -1,7 +1,7 @@
 # AresPipe — Mobil Sistem Bağlamı (React)
 
 > Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
-> Son güncelleme: 17 Nisan 2026
+> Son güncelleme: 17 Nisan 2026 (2. oturum)
 > **ÖNEMLİ:** 16 Nisan 2026'da vanilla HTML/JS'den React + Vite'a geçildi. Eski kurallar geçersiz.
 
 ---
@@ -21,31 +21,33 @@
 ```
 mobile/
 ├── src/
-│   ├── main.jsx              ← BrowserRouter buraya sarılı
+│   ├── main.jsx              ← BrowserRouter + TemaProvider
 │   ├── App.jsx               ← Routes + I18nProvider + auth guard ✅
-│   ├── index.css             ← CSS değişkenleri + global reset
+│   ├── index.css             ← CSS değişkenleri + [data-theme=dark] + [data-theme=light-anthracite]
 │   ├── lib/
 │   │   ├── supabase.js       ← createClient — TEK bağlantı noktası (JWT anon key)
 │   │   ├── auth.js           ← getOturum(), getTenantId(), cikisYap()
 │   │   ├── i18n.jsx          ← I18nProvider + useT() hook ✅
 │   │   ├── yetki.js          ← Blok/grup/gizli_bolumler helper ✅
-│   │   └── gruplar.js        ← Grup → ikon/renk/hedef haritası ✅
-│   ├── lang/                 ← i18n JSON dosyaları ✅
+│   │   ├── gruplar.js        ← Grup → ikon/renk/hedef haritası ✅
+│   │   └── tema.jsx          ← TemaProvider + useTema Context ✅ (2. oturum)
+│   ├── lang/                 ← i18n JSON dosyaları ✅ (61 m_* anahtarı)
 │   │   ├── tr.json
 │   │   ├── en.json
 │   │   └── ar.json (RTL)
 │   ├── screens/              ← Her ekran ayrı .jsx dosyası
 │   │   ├── MGiris.jsx            ✅
 │   │   ├── MAnasayfa.jsx         ✅ Router: role göre yönlendirir
-│   │   ├── MAnasayfaYonetici.jsx ✅ Dashboard + İşlem Başlat btn
-│   │   ├── MIslemler.jsx         ✅ Grup bazlı büyük buton ekranı
-│   │   ├── MIsBaslat.jsx         ⏳ Yazılacak (eski is_baslat.html'den)
+│   │   ├── MAnasayfaYonetici.jsx ✅ Dashboard + İşlem Başlat + profil butonu
+│   │   ├── MIslemler.jsx         ✅ Grup bazlı büyük buton ekranı + profil butonu
+│   │   ├── MProfil.jsx           ⏳ YENİ — avatar yükleme + kişisel bilgi
+│   │   ├── MIsBaslat.jsx         ⏳ Yazılacak (mockup-first, eski is_baslat.html'den)
 │   │   ├── MDevreler.jsx         ⏳
 │   │   ├── MDevreDetay.jsx       ⏳
 │   │   ├── MSpoolDetay.jsx       ⏳
 │   │   └── MQRTara.jsx           ⏳
-│   └── components/           ← Ortak componentler
-│       └── MDrawer.jsx       ⏳ YAZILACAK — logout, dil, tema, menü
+│   └── components/
+│       └── MDrawer.jsx       ✅ Profil, tema toggle, dil dropdown, çıkış (2. oturum)
 ├── package.json
 └── vite.config.js
 ```
@@ -53,7 +55,7 @@ mobile/
 ### 1.3 İsimlendirme: "M" ön eki
 
 **Tüm mobil React component'leri "M" ön ekiyle başlar:**
-- `MGiris.jsx`, `MAnasayfa.jsx`, `MIslemler.jsx`, `MDrawer.jsx`
+- `MGiris.jsx`, `MAnasayfa.jsx`, `MIslemler.jsx`, `MDrawer.jsx`, `MProfil.jsx`
 
 **Neden:**
 - Web tarafındaki `mInit()`, `mSupabase()`, `m-topbar` pattern'i ile tutarlı
@@ -152,6 +154,8 @@ var(--bg), var(--sur), var(--bor), var(--tx), var(--txd), var(--txm)
 
 **YASAK:** Hardcode hex renk (`#2D8EFF` vb.) kullanma — sadece CSS değişkenleri.
 
+**Not (17 Nisan 2026 — 2. oturum):** `index.css`'te hem `[data-theme=dark]` hem `[data-theme=light-anthracite]` blokları tanımlı olmalı. `:root` içindeki değişkenler varsayılan (light) değerlerdir ama `[data-theme=...]` blokları tema toggle'ı için ZORUNLU — sadece `:root` olursa toggle çalışmaz.
+
 ### R-08: i18n (17 Nisan 2026)
 
 **KESİN KURAL:** Hiçbir string hardcode olmaz — hepsi `tv()` üzerinden:
@@ -174,6 +178,49 @@ function Ekran() {
 - `m_` prefix ile başlar (mobil anahtar)
 - `snake_case` kullanılır
 - Hiyerarşi: `m_<bolum>_<alt_bolum>` (örn. `m_giris_email`, `m_kart_is_baslat`)
+
+**Önemli:** Her yeni `m_*` anahtarı **tr/en/ar üçüne birden** eklenmelidir. Eksikse `tv()` fallback'e düşer ve dil değiştiğinde UI güncellenmez (hep Türkçe kalır).
+
+### R-09: Tema Yönetimi (17 Nisan 2026 — 2. oturum)
+
+Tema sadece `useTema()` hook'u üzerinden değiştirilir. Direct DOM manipulation (`document.documentElement.setAttribute`) YASAK.
+
+```jsx
+import { useTema } from '../lib/tema'
+
+function Bilesen() {
+  const { tema, setTema, tersCevir } = useTema()
+  // tema: 'dark' | 'light-anthracite'
+  return (
+    <button onClick={tersCevir}>
+      {tema === 'dark' ? '☀️' : '🌙'}
+    </button>
+  )
+}
+```
+
+`mobile/src/lib/tema.jsx` merkezi Context — uygulama kök'ünde `<TemaProvider>` ile sarılır (`main.jsx`). Tema değişikliği `localStorage.ares_theme`'ye otomatik yazılır ve `document.documentElement`'ın `data-theme` attribute'u güncellenir.
+
+**CSS tarafı:** `index.css`'te hem `[data-theme=dark]` hem `[data-theme=light-anthracite]` blokları tanımlı olmalı (tırnaksız!). Eksik blok varsa toggle çalışıyor gibi görünür ama UI değişmez.
+
+### R-10: Mockup-First Kuralı (17 Nisan 2026 — 2. oturum)
+
+Yeni ekran veya component yazılmadan ÖNCE mockup hazırlanır ve kullanıcıya onaylatılır:
+
+1. **Artifact olarak HTML/React mockup** (gerçek boyutlu, etkileşimsiz olabilir)
+   - Dark + light tema yan yana gösterilmesi tercih edilir
+   - Web tasarım diliyle tutarlı: Barlow Condensed başlıklar, pill badge'ler, renk sistemine uyum
+2. **Kullanıcı onayı veya revizyon talebi**
+   - Değişiklik isteği varsa yeni mockup iterasyonu yapılır
+   - v1→v2→v3 gibi sürümler, her iterasyon artifact'te net görünür
+3. **Onay sonrası React kod yazılır**
+   - Kodlama adım adım yapılır (tek Python script yerine parça parça)
+
+**İstisna:**
+- Basit utility componentleri (lib/ altındaki helper'lar)
+- Onaylanmış componentlere küçük patch'ler (bir satır stil, query düzeltmesi vb.)
+
+**Gerekçe:** Kodu yazıp sonra "şu değişsin" iterasyonu maliyetli. Mockup üzerinde değişim hem hızlı hem görsel. MDrawer örneği: 4 iterasyon, her biri 1-2 dakika, toplamda gidilip gelinen değişiklik kod olarak yazılsaydı saatler sürerdi.
 
 ---
 
@@ -387,6 +434,32 @@ INSERT INTO kullanici_bloklar (kullanici_id, blok_id, tenant_id)
 VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
 ```
 
+### Kullanıcı Bilgisi Sorgusu (17 Nisan 2026 — 2. oturum)
+
+**YANLIŞ:** `ad` kolonu yok, `tenants(ad)` JOIN 400 dönüyor
+```jsx
+// Bu 400 veriyor:
+await supabase.from('kullanicilar')
+  .select('id, ad, rol, tenant_id, tenants(ad)')
+  .eq('id', userId).single()
+```
+
+**DOĞRU:** `ad_soyad` + tenant ayrı sorgu
+```jsx
+const { data: kul } = await supabase
+  .from('kullanicilar')
+  .select('id, ad_soyad, email, rol, tenant_id, foto_url')
+  .eq('id', session.user.id)
+  .single()
+
+if (kul?.tenant_id) {
+  const { data: tnt } = await supabase
+    .from('tenants').select('ad')
+    .eq('id', kul.tenant_id).single()
+  setTenantAd(tnt?.ad || null)
+}
+```
+
 ---
 
 ## 7. KRİTİK KOLON ADLARI
@@ -402,6 +475,11 @@ VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
 **notlar:** `metin` (icerik değil), `ekleyen_id` (yapan_id değil), `qr_goster`, `silindi`
 
 **fotograflar:** `dosya_url`, `yukleyen_id`, `islem_turu`, `spool_id`
+
+**kullanicilar (17 Nisan 2026 — 2. oturum):**
+- `ad_soyad` (ad değil!), `email`, `rol`, `tenant_id`
+- `foto_url TEXT` — avatar için (upload UI henüz yok)
+- `firma`, `brans`, `tel`, `ui_tercihleri JSONB`
 
 **yetki_bloklari:** `ad`, `grup`, `renk`, `sistem_preset`, `sira`, `tenant_id` (NULL=sistem)
 
@@ -464,6 +542,22 @@ git push origin main
 - `devam_ediyor` → `background: #fef3c7`, sarı, pulse nokta
 - `tamamlandı` → `background: #dcfce7`, yeşil
 
+### Topbar Profil Butonu (17 Nisan 2026 — 2. oturum)
+
+Yönetici dashboard ve işlemler ekranında sağ üstte:
+
+```jsx
+<button
+  style={s.profilBtn}
+  onClick={() => setDrawerAcik(true)}
+  aria-label={tv('m_drawer_profil', 'Profil')}
+>
+  {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+</button>
+```
+
+Stil: 40x40 yuvarlak, `var(--sur2)` arka plan, `var(--bor)` border, baş harf içinde.
+
 ### Kart Tasarım Sistemi
 
 **Rol kartı:**
@@ -484,6 +578,18 @@ git push origin main
 { background: '#fffbeb', border: '1px solid #fcd34d', borderLeft: '4px solid var(--warn)' }
 // Mavi (not)
 { background: '#eff6ff', border: '1px solid #93c5fd', borderLeft: '4px solid var(--ac)' }
+```
+
+**Pill Badge (17 Nisan 2026 — 2. oturum):**
+```jsx
+// Rol/tenant badge — web stiliyle uyumlu
+<span style={{
+  padding: '4px 11px',
+  background: 'rgba(45,142,255,0.12)',  // rol rengine göre
+  color: 'var(--ac)',
+  fontSize: 14, fontWeight: 500,
+  borderRadius: 999,
+}}>Yönetici</span>
 ```
 
 ### Büyük Buton (İşlemler ekranı stili)
@@ -512,6 +618,14 @@ Operatör ekranında her grup için büyük buton. Minimum 72px yükseklik (eldi
 </button>
 ```
 
+### Tipografi (17 Nisan 2026 — 2. oturum)
+
+Web tasarımıyla bütünlük için:
+- **Başlıklar:** `'Barlow Condensed', sans-serif`, fontWeight 700, büyük boyut (24-40px)
+- **Normal metin:** system-ui, fontWeight 500
+- **Section başlıkları:** 11-14px, uppercase, letter-spacing 0.5-1px, `var(--txd)` veya `var(--txm)`
+- **Font weight max 700** — drawer gibi minimal alanlarda 500 tercih edilir
+
 ---
 
 ## 10. SCREEN TESLIM KONTROL LİSTESİ
@@ -532,6 +646,8 @@ Operatör ekranında her grup için büyük buton. Minimum 72px yükseklik (eldi
 □ i18n: TÜM metinler tv() üzerinden (hardcode string yok)
 □ i18n anahtarları tr/en/ar'ın üçüne de eklendi
 □ "M" ön ekiyle adlandırıldı
+□ R-09: Tema için useTema() kullanıldı (direct DOM yok)
+□ R-10: Ekran yazılmadan ÖNCE mockup yapıldı ve onaylandı
 ```
 
 ---
@@ -542,14 +658,15 @@ Operatör ekranında her grup için büyük buton. Minimum 72px yükseklik (eldi
 |---|---|---|
 | Giriş | MGiris.jsx | ✅ Tamamlandı (i18n'li) |
 | Ana Sayfa Router | MAnasayfa.jsx | ✅ Tamamlandı |
-| Yönetici Dashboard | MAnasayfaYonetici.jsx | ✅ Tamamlandı |
-| Operatör İşlemler | MIslemler.jsx | ✅ Tamamlandı (grup bazlı) |
-| **Drawer (menü)** | **MDrawer.jsx** | **⏳ ÖNCELİKLİ — logout yok** |
-| İş Başlat | MIsBaslat.jsx | ⏳ Eski is_baslat.html'den |
-| Devreler | MDevreler.jsx | ⏳ |
-| Devre Detay | MDevreDetay.jsx | ⏳ |
-| Spool Detay | MSpoolDetay.jsx | ⏳ |
-| QR Tara | MQRTara.jsx | ⏳ |
+| Yönetici Dashboard | MAnasayfaYonetici.jsx | ✅ Tamamlandı + profil butonu |
+| Operatör İşlemler | MIslemler.jsx | ✅ Tamamlandı + profil butonu |
+| Drawer (menü) | MDrawer.jsx | ✅ Tamamlandı (profil + tema + dil + çıkış) |
+| **Profil** | **MProfil.jsx** | **⏳ YENİ — avatar yükleme + kişisel bilgi** |
+| İş Başlat | MIsBaslat.jsx | ⏳ Eski is_baslat.html'den (mockup-first) |
+| Devreler | MDevreler.jsx | ⏳ (mockup-first) |
+| Devre Detay | MDevreDetay.jsx | ⏳ (mockup-first) |
+| Spool Detay | MSpoolDetay.jsx | ⏳ (mockup-first) |
+| QR Tara | MQRTara.jsx | ⏳ (mockup-first) |
 
 ---
 
@@ -561,8 +678,20 @@ Component adı, dosya adı, JSX kullanımı — hepsi "M" ile başlar.
 ### i18n — hiç istisna yok
 En basit "OK" butonunda bile `tv('m_tamam', 'Tamam')` kullan.
 
+### Tema — useTema() zorunlu (R-09)
+Direct DOM manipulation yok. Tema değişirse `lib/tema.jsx` halleder.
+`index.css`'te hem `[data-theme=dark]` hem `[data-theme=light-anthracite]` blokları ZORUNLU.
+
+### Mockup-First (R-10)
+Yeni ekran/component → önce mockup artifact'i → kullanıcı onayı → kod.
+MDrawer: 4 iterasyon (v1→v4) örneği.
+
 ### RLS ve tenant_id
 `kullanici_bloklar` INSERT'lerinde tenant_id mutlaka set et.
+
+### Kullanıcı sorgularında
+- `ad` değil → `ad_soyad` kullan
+- `tenants(ad)` JOIN yerine tenant ayrı sorgu
 
 ### Supabase key
 JWT anon key (eyJ...) kullan, `sb_publishable_` değil.
