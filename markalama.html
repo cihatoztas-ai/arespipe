@@ -191,6 +191,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 <body>
 
@@ -468,20 +469,18 @@ function tipLabelFn(tip){
 }
 const tipIcon = {otomatik:'AO', plaka:'PL', manuel:'MN'};
 
-// matBadge — malzeme kategorisi renkli badge
+// matBadge — malzeme kategorisi renkli badge (ARES_NORM ile kod bazlı, dil bağımsız)
 function matBadge(malzeme){
-  var m=String(malzeme||'');
-  var cls='cl-ac'; // default mavi
-  if(m.indexOf('Paslanmaz')!==-1) cls='cl-gr';
-  else if(m.indexOf(tv('cmn_malzeme_alum','Alüminyum'))!==-1) cls='cl-warn';
-  else if(m.indexOf(tv('cmn_malzeme_bakir','Bakır'))!==-1) cls='cl-leg';
+  var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(malzeme) : '';
+  var cls = { paslanmaz:'cl-gr', alum:'cl-warn', bakir:'cl-leg' }[kod] || 'cl-ac';
+  var label = kod ? ARES_NORM.tvMalzeme(kod, malzeme) : (malzeme||'—');
   var colors={
     'cl-ac':'background:rgba(45,142,255,.1);color:var(--ac);border:1px solid rgba(45,142,255,.25);',
     'cl-gr':'background:rgba(22,163,110,.1);color:var(--gr);border:1px solid rgba(22,163,110,.25);',
     'cl-warn':'background:rgba(217,119,6,.1);color:var(--warn);border:1px solid rgba(217,119,6,.25);',
     'cl-leg':'background:rgba(124,58,237,.1);color:var(--leg);border:1px solid rgba(124,58,237,.25);'
   };
-  return '<span style="display:inline-flex;padding:2px 8px;border-radius:6px;font-size:14px;font-weight:700;'+colors[cls]+'">'+esc(m||'—')+'</span>';
+  return '<span style="display:inline-flex;padding:2px 8px;border-radius:6px;font-size:14px;font-weight:700;'+colors[cls]+'">'+esc(label)+'</span>';
 }
 
 // progColor — ilerleme yüzdesine göre renk

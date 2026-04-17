@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 <style>
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -119,29 +120,29 @@ textarea.fi{resize:vertical;min-height:80px;}
       <div class="form-grup">
         <label class="form-label">Ana Malzeme</label>
         <div class="malzeme-grid">
-          <input type="radio" name="malzeme" id="mKarbon" value="Karbon Çelik" class="radio-btn">
-          <label for="mKarbon">Karbon Çelik</label>
-          <input type="radio" name="malzeme" id="mPaslanmaz" value="Paslanmaz" class="radio-btn">
-          <label for="mPaslanmaz">Paslanmaz</label>
-          <input type="radio" name="malzeme" id="mBakir" value="Bakır Alaşım" class="radio-btn">
-          <label for="mBakir">Bakır Alaşım</label>
-          <input type="radio" name="malzeme" id="mAlum" value="Alüminyum" class="radio-btn">
-          <label for="mAlum">Alüminyum</label>
-          <input type="radio" name="malzeme" id="mDiger" value="Diğer" class="radio-btn">
-          <label for="mDiger">Diğer</label>
+          <input type="radio" name="malzeme" id="mKarbon" value="karbon" class="radio-btn">
+          <label for="mKarbon" data-i18n="cmn_malzeme_karbon">Karbon Çelik</label>
+          <input type="radio" name="malzeme" id="mPaslanmaz" value="paslanmaz" class="radio-btn">
+          <label for="mPaslanmaz" data-i18n="cmn_malzeme_paslanmaz">Paslanmaz</label>
+          <input type="radio" name="malzeme" id="mBakir" value="bakir" class="radio-btn">
+          <label for="mBakir" data-i18n="cmn_malzeme_bakir">Bakır Alaşım</label>
+          <input type="radio" name="malzeme" id="mAlum" value="alum" class="radio-btn">
+          <label for="mAlum" data-i18n="cmn_malzeme_alum">Alüminyum</label>
+          <input type="radio" name="malzeme" id="mDiger" value="diger" class="radio-btn">
+          <label for="mDiger" data-i18n="cmn_malzeme_diger">Diğer</label>
         </div>
       </div>
       <div class="form-grup">
         <label class="form-label">Yüzey İşlemi</label>
         <div class="yuzey-grid">
-          <input type="radio" name="yuzey" id="yAsit" value="Asit" class="yuzey-btn">
-          <label for="yAsit">Asit</label>
-          <input type="radio" name="yuzey" id="yGalvaniz" value="Galvaniz" class="yuzey-btn">
-          <label for="yGalvaniz">Galvaniz</label>
-          <input type="radio" name="yuzey" id="ySiyah" value="Siyah" class="yuzey-btn">
-          <label for="ySiyah">Siyah</label>
-          <input type="radio" name="yuzey" id="yBoyali" value="Boyalı" class="yuzey-btn">
-          <label for="yBoyali">Boyalı</label>
+          <input type="radio" name="yuzey" id="yAsit" value="asit" class="yuzey-btn">
+          <label for="yAsit" data-i18n="cmn_yuzey_asit">Asit</label>
+          <input type="radio" name="yuzey" id="yGalvaniz" value="galvaniz" class="yuzey-btn">
+          <label for="yGalvaniz" data-i18n="cmn_yuzey_galvaniz">Galvaniz</label>
+          <input type="radio" name="yuzey" id="ySiyah" value="siyah" class="yuzey-btn">
+          <label for="ySiyah" data-i18n="cmn_yuzey_siyah">Siyah</label>
+          <input type="radio" name="yuzey" id="yBoyali" value="boyali" class="yuzey-btn">
+          <label for="yBoyali" data-i18n="cmn_yuzey_boyali">Boyalı</label>
         </div>
       </div>
     </div>
@@ -213,29 +214,23 @@ function formDoldur(d) {
     document.getElementById('fTermin').value = d.termin_tarihi.substring(0, 10);
   }
 
-  // Malzeme seç
-  var malzeme = (d.malzeme || '').toLowerCase();
-  var malzMap = {
-    'karbon': 'mKarbon', 'paslanmaz': 'mPaslanmaz',
-    'bakır': 'mBakir', 'bakir': 'mBakir',
-    'alüm': 'mAlum', 'alum': 'mAlum'
-  };
-  Object.keys(malzMap).forEach(function(k) {
-    if (malzeme.includes(k)) {
-      var el = document.getElementById(malzMap[k]);
-      if (el) el.checked = true;
-    }
-  });
+  // Malzeme seç — ARES_NORM hem kod hem legacy Türkçe'yi doğru kod'a çevirir
+  var malzKod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(d.malzeme) : '';
+  var malzRadioId = { karbon:'mKarbon', paslanmaz:'mPaslanmaz', bakir:'mBakir',
+                      alum:'mAlum', diger:'mDiger' }[malzKod];
+  if (malzRadioId) {
+    var elM = document.getElementById(malzRadioId);
+    if (elM) elM.checked = true;
+  }
 
   // Yüzey seç
-  var yuzey = (d.yuzey || '').toLowerCase();
-  var yuzMap = { 'asit': 'yAsit', 'galvaniz': 'yGalvaniz', 'siyah': 'ySiyah', 'boyal': 'yBoyali' };
-  Object.keys(yuzMap).forEach(function(k) {
-    if (yuzey.includes(k)) {
-      var el = document.getElementById(yuzMap[k]);
-      if (el) el.checked = true;
-    }
-  });
+  var yuzKod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.yuzeyKod(d.yuzey) : '';
+  var yuzRadioId = { asit:'yAsit', galvaniz:'yGalvaniz', siyah:'ySiyah',
+                     boyali:'yBoyali' }[yuzKod];
+  if (yuzRadioId) {
+    var elY = document.getElementById(yuzRadioId);
+    if (elY) elY.checked = true;
+  }
 
   document.getElementById('pageSub').textContent = d.devre_no + (d.zone ? ' — ' + d.zone : '');
   validateForm();

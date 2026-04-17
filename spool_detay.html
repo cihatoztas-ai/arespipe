@@ -232,6 +232,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -1163,27 +1164,15 @@ function geriDon(){if(SP.devre_id){location.href='devre_detay.html?id='+SP.devre
 // G-01: XSS sanitizer
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
-// ── DB değeri normalizasyon → tvMalzeme/tvYuzey için
-function _normKey(raw){
-  if(!raw)return '';
-  return String(raw).toLowerCase()
-    .replace(/ı/g,'i').replace(/İ/g,'i')
-    .replace(/ç/g,'c').replace(/Ç/g,'c')
-    .replace(/ğ/g,'g').replace(/Ğ/g,'g')
-    .replace(/ş/g,'s').replace(/Ş/g,'s')
-    .replace(/ü/g,'u').replace(/Ü/g,'u')
-    .replace(/ö/g,'o').replace(/Ö/g,'o')
-    .replace(/[\s\-]+/g,'_');
-}
+// ── Malzeme / yüzey gösterimi → ARES_NORM modülüne devredildi (ares-normalize.js)
+// Eski _normKey fonksiyonu silindi; ARES_NORM._ascii + malzemeKod/yuzeyKod aynı işi yapıyor.
 function _malzemeGoster(raw){
-  if(!raw||raw==='—')return raw||'—';
-  if(typeof tvMalzeme==='function'){var t=tvMalzeme(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
-  return raw;
+  if(typeof ARES_NORM!=='undefined') return ARES_NORM.malzemeEtiket(raw);
+  return raw||'—';
 }
 function _yuzeyGoster(raw){
-  if(!raw||raw==='—')return raw||'—';
-  if(typeof tvYuzey==='function'){var t=tvYuzey(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
-  return raw;
+  if(typeof ARES_NORM!=='undefined') return ARES_NORM.yuzeyEtiket(raw);
+  return raw||'—';
 }
 
 function toast(msg,tip){

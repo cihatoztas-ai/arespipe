@@ -17,6 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 <style>
 /* ── Tema değişkenleri ── */
@@ -203,21 +204,21 @@ textarea.fi{resize:vertical;min-height:72px;}
     <div class="fg">
       <label class="fl"><span data-i18n="dny_main_material">Ana Malzeme</span> <span class="req">*</span></label>
       <div class="radio-grup" id="malzemeGrup">
-        <label class="radio-btn aktif"><input type="radio" name="malzeme" value="Karbon Çelik" checked> <span data-i18n="dny_mat_carbon">Karbon Çelik</span></label>
-        <label class="radio-btn"><input type="radio" name="malzeme" value="Paslanmaz"> <span data-i18n="dny_mat_ss">Paslanmaz</span></label>
-        <label class="radio-btn"><input type="radio" name="malzeme" value="Bakır Alaşım"> <span data-i18n="dny_mat_copper">Bakır Alaşım</span></label>
-        <label class="radio-btn"><input type="radio" name="malzeme" value="Alüminyum"> <span>Alüminyum</span></label>
-        <label class="radio-btn"><input type="radio" name="malzeme" value="Diğer"> <span data-i18n="dny_mat_other">Diğer</span></label>
+        <label class="radio-btn aktif"><input type="radio" name="malzeme" value="karbon" checked> <span data-i18n="cmn_malzeme_karbon">Karbon Çelik</span></label>
+        <label class="radio-btn"><input type="radio" name="malzeme" value="paslanmaz"> <span data-i18n="cmn_malzeme_paslanmaz">Paslanmaz</span></label>
+        <label class="radio-btn"><input type="radio" name="malzeme" value="bakir"> <span data-i18n="cmn_malzeme_bakir">Bakır Alaşım</span></label>
+        <label class="radio-btn"><input type="radio" name="malzeme" value="alum"> <span data-i18n="cmn_malzeme_alum">Alüminyum</span></label>
+        <label class="radio-btn"><input type="radio" name="malzeme" value="diger"> <span data-i18n="cmn_malzeme_diger">Diğer</span></label>
       </div>
       <input class="fi" id="malzemeDiger" data-i18n-placeholder="dny_mat_other_ph" placeholder="Malzeme belirtin..." style="display:none;margin-top:8px;">
     </div>
     <div class="fg">
       <label class="fl" data-i18n="dny_surface">Yüzey İşlemi</label>
       <div class="radio-grup" id="yuzeyGrup">
-        <label class="radio-btn aktif"><input type="radio" name="yuzey" value="Asit" checked> <span data-i18n="dny_surf_acid">Asit</span></label>
-        <label class="radio-btn"><input type="radio" name="yuzey" value="Galvaniz"> <span data-i18n="dny_surf_galv">Galvaniz</span></label>
-        <label class="radio-btn"><input type="radio" name="yuzey" value="Siyah"> <span data-i18n="dny_surf_black">Siyah</span></label>
-        <label class="radio-btn"><input type="radio" name="yuzey" value="Boyalı"> <span data-i18n="dny_surf_paint">Boyalı</span></label>
+        <label class="radio-btn aktif"><input type="radio" name="yuzey" value="asit" checked> <span data-i18n="cmn_yuzey_asit">Asit</span></label>
+        <label class="radio-btn"><input type="radio" name="yuzey" value="galvaniz"> <span data-i18n="cmn_yuzey_galvaniz">Galvaniz</span></label>
+        <label class="radio-btn"><input type="radio" name="yuzey" value="siyah"> <span data-i18n="cmn_yuzey_siyah">Siyah</span></label>
+        <label class="radio-btn"><input type="radio" name="yuzey" value="boyali"> <span data-i18n="cmn_yuzey_boyali">Boyalı</span></label>
       </div>
     </div>
   </div>
@@ -477,15 +478,13 @@ textarea.fi{resize:vertical;min-height:72px;}
 <script>
 'use strict';
 
-// ── MALZEME NORMALİZASYONU (DB-01 / AI hazırlık) ─────────────────
+// ── MALZEME NORMALİZASYONU → ARES_NORM modülü (ares-normalize.js) ────
+// DB'ye artık KOD yazılır ('karbon', 'paslanmaz' vb.) — 17 Nisan 2026 kararı
 function normalizeMalzeme(ham) {
   if (!ham) return '';
-  var h = ham.toString().trim();
-  if (/ST37|S235|S275|A106|A53|A333|karbon|carbon|çelik|celik/i.test(h)) return 'Karbon Çelik';
-  if (/316|304|321|347|paslanmaz|stainless|inox/i.test(h)) return 'Paslanmaz';
-  if (/CuNi|Cu-Ni|bakır|copper|bronze|pirinç/i.test(h)) return 'Bakır Alaşım';
-  if (/alüm|alum|AL-/i.test(h)) return 'Alüminyum';
-  return h; // tanınamazsa ham değer — ileride AI ile işlenecek
+  if (typeof ARES_NORM==='undefined') return ham; // modül yüklenmezse ham değeri bırak
+  var kod = ARES_NORM.malzemeKod(ham);
+  return kod || ham; // tanınamazsa ham kalır (AI sonradan işler)
 }
 
 // ── ESC — XSS koruması ────────────────────────────────────────
@@ -691,7 +690,7 @@ function ifsSpoolListesiRender() {
                 <tr>
                   <td style="padding:3px 8px;">${it.desc||'—'}</td>
                   <td style="padding:3px 8px;color:var(--txm);">${it.dims||'—'}</td>
-                  <td style="padding:3px 8px;">${it.malzeme||'—'}</td>
+                  <td style="padding:3px 8px;">${(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(it.malzeme):it.malzeme)||'—'}</td>
                   <td style="padding:3px 8px;text-align:right;">${it.miktar||it.uzunluk||'—'} ${it.unit||''}</td>
                   <td style="padding:3px 8px;text-align:right;font-weight:600;">${it.agirlik?it.agirlik.toFixed(3):'—'}</td>
                 </tr>`).join('')}
@@ -746,9 +745,9 @@ function ifsOnayla() {
     }).filter(Boolean))];
     // Malzeme ve yüzey: devre formundan al (IFS raw string değil)
     const malzemeSeciliVal = (document.querySelector('input[name="malzeme"]:checked') || {}).value || '';
-    const malzemeFinalVal  = malzemeSeciliVal === 'Diğer'
-      ? (document.getElementById('malzemeDiger') || {}).value || 'Diğer'
-      : malzemeSeciliVal || 'Karbon Çelik';
+    const malzemeFinalVal  = malzemeSeciliVal === 'diger'
+      ? (document.getElementById('malzemeDiger') || {}).value || 'diger'
+      : malzemeSeciliVal || 'karbon';
     const yuzeyVal = (document.querySelector('input[name="yuzey"]:checked') || {}).value || '';
     spooller.push({
       pipeline, spoolNo, rev: revOtomatik,
@@ -776,7 +775,7 @@ document.querySelectorAll('.radio-btn').forEach(btn => {
       btn.classList.add('aktif');
       // Diğer alanı göster/gizle
       if (inp.name === 'malzeme') {
-        document.getElementById('malzemeDiger').style.display = inp.value === 'Diğer' ? 'block' : 'none';
+        document.getElementById('malzemeDiger').style.display = inp.value === 'diger' ? 'block' : 'none';
       }
     } else {
       // checkbox (gelecekte kullanılabilir)
@@ -915,11 +914,11 @@ function spoolTableGuncelle() {
         <td style="color:var(--txd);font-size:14px;">${esc(s.pipeline)||'—'}</td>
         <td><span class="spool-no-badge">${esc(s.spoolNo)||'—'}</span></td>
         <td style="color:var(--txd);font-size:14px;">${esc(s.rev)||'—'}</td>
-        <td style="font-size:14px;font-weight:600;">${esc(s.malzeme)||'—'}</td>
+        <td style="font-size:14px;font-weight:600;">${esc(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(s.malzeme):s.malzeme)||'—'}</td>
         <td style="font-size:14px;color:var(--txm);">${esc(s.kalite)||'—'}</td>
         <td style="font-size:14px;">${esc(s.cap)||'—'}</td>
         <td style="font-size:14px;font-weight:600;">${s.agirlik?s.agirlik.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—'}</td>
-        <td style="font-size:14px;color:var(--txm);">${esc(s.yuzey)||'—'}</td>
+        <td style="font-size:14px;color:var(--txm);">${esc(typeof ARES_NORM!=='undefined'?ARES_NORM.yuzeyEtiket(s.yuzey):s.yuzey)||'—'}</td>
         <td><button class="td-sil" onclick="spoolSil(${i})" title="Sil">✕</button></td>
       </tr>`).join('');
   }
@@ -1110,7 +1109,7 @@ function _izoRenderOnizleme() {
       + '<td style="padding:6px 10px;"><input style="width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;" value="' + esc(s.pipeline_no||'') + '" onchange="_izoGuncelle(' + idx + ',\'pipeline_no\',this.value)"></td>'
       + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--leg);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;" value="' + esc(s.spool_no||'') + '" onchange="_izoGuncelle(' + idx + ',\'spool_no\',this.value)"></td>'
       + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--ac);" value="' + esc(s.cap_mm!=null?s.cap_mm:'') + '" onchange="_izoGuncelle(' + idx + ',\'cap_mm\',parseFloat(this.value)||null)"></td>'
-      + '<td style="padding:6px 10px;"><input style="width:120px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.malzeme||'') + '" onchange="_izoGuncelle(' + idx + ',\'malzeme\',this.value)"></td>'
+      + '<td style="padding:6px 10px;"><input style="width:120px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(s.malzeme):(s.malzeme||'')) + '" onchange="_izoGuncelle(' + idx + ',\'malzeme\',this.value)"></td>'
       + '<td style="padding:6px 10px;"><input style="width:100px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.kalite||'') + '" onchange="_izoGuncelle(' + idx + ',\'kalite\',this.value)"></td>'
       + '<td style="padding:6px 10px;"><input style="width:70px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.et_mm!=null?s.et_mm:'') + '" onchange="_izoGuncelle(' + idx + ',\'et_mm\',parseFloat(this.value)||null)"></td>'
       + '<td style="padding:6px 10px;"><input style="width:80px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:4px 8px;font-size:14px;color:var(--tx);" value="' + esc(s.agirlik_kg!=null?s.agirlik_kg:'') + '" onchange="_izoGuncelle(' + idx + ',\'agirlik_kg\',parseFloat(this.value)||null)"></td>'
@@ -1203,7 +1202,7 @@ async function kaydet() {
 
   const malzemeSecili = document.querySelector('input[name="malzeme"]:checked')?.value || '';
   const yuzeySecili   = document.querySelector('input[name="yuzey"]:checked')?.value   || '';
-  const malzemeFinal  = malzemeSecili === 'Diğer' ? gv('malzemeDiger') : malzemeSecili;
+  const malzemeFinal  = malzemeSecili === 'diger' ? gv('malzemeDiger') : malzemeSecili;
 
   const supa = ARES.supabase();
 
@@ -1393,14 +1392,11 @@ async function kaydet() {
           // Tek sayı
           return { dis_cap: parseFloat(s.replace(',','.')) || null, et: null };
         }
-        // ── Malzeme tipi: kalite koddan türet
+        // ── Malzeme tipi: kalite koddan türet → ARES_NORM
         function _malzemeTipi(kalite) {
-          if (!kalite) return 'Karbon Çelik';
-          const k = kalite.toUpperCase();
-          if (k.includes('316') || k.includes('304') || k.includes('SS') || k.includes('INOX')) return 'Paslanmaz';
-          if (k.includes('ALUM')) return 'Alüminyum';
-          if (k.includes('CUNI') || k.includes('CU') || k.includes('BAKIR')) return 'Bakır Alaşım';
-          return 'Karbon Çelik';
+          if (!kalite) return 'karbon';
+          if (typeof ARES_NORM==='undefined') return kalite;
+          return ARES_NORM.malzemeKod(kalite) || 'karbon';
         }
 
         // 3. IFS malzeme kalemleri — sadece IFS spooller için

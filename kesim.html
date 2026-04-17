@@ -261,6 +261,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 </style>
   <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -472,16 +473,11 @@ if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k
 if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
 
 function matBadge(m) {
-  // Türkçe karakterleri normalize et
-  var ml = (m||'').toLowerCase()
-    .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ş/g,'s')
-    .replace(/ç/g,'c').replace(/ö/g,'o').replace(/ü/g,'u');
-  var label, cls;
-  if (ml.indexOf('karbon')!==-1||ml==='celik') { label=tv('cmn_malzeme_karbon','Karbon Çelik'); cls='mb-celik'; }
-  else if (ml.indexOf('paslanmaz')!==-1) { label=tv('cmn_malzeme_paslanmaz','Paslanmaz'); cls='mb-pas'; }
-  else if (ml.indexOf('bakir')!==-1||ml.indexOf('cuni')!==-1) { label=tv('cmn_malzeme_bakir','Bakır Alaşım'); cls='mb-bakir'; }
-  else if (ml.indexOf('alum')!==-1) { label=tv('cmn_malzeme_alum','Alüminyum'); cls='mb-alum'; }
-  else { label=m||'—'; cls='mb-diger'; }
+  // Malzeme normalize + çeviri → ARES_NORM
+  var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(m) : '';
+  var label = kod ? ARES_NORM.tvMalzeme(kod, m) : (m||'—');
+  var cls = { karbon:'mb-celik', paslanmaz:'mb-pas', bakir:'mb-bakir',
+              alum:'mb-alum', diger:'mb-diger' }[kod] || 'mb-diger';
   return '<span class="'+cls+'">'+label+'</span>';
 }
 // ════════════════════════════════════
@@ -1179,7 +1175,7 @@ function openFormModal(klId,arcIdx){
   var malz=klB[0]||{};
   document.getElementById('fmOzet').innerHTML=
     '<b style="color:var(--tx);">'+esc(kl.no)+'</b> &nbsp;·&nbsp; '
-    +esc(malz.malzeme||'')+' <span style="color:var(--ac);">'+esc(malz.kalite||'')+'</span> Ø'+esc(malz.cap||'')
+    +esc((typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(malz.malzeme):malz.malzeme)||'')+' <span style="color:var(--ac);">'+esc(malz.kalite||'')+'</span> Ø'+esc(malz.cap||'')
     +'<br><span style="color:var(--warn);font-weight:700;">'+klB.length+' parça</span>'
     +' &nbsp;·&nbsp; Toplam '+mm.toLocaleString('tr-TR')+' mm';
   document.getElementById('fmStokBoy').value=6000;
@@ -1374,7 +1370,7 @@ function kesimTamamlaOnay(id){
     '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:5px;">'
     +esc(k.spool)+'</div>'
     +'<div style="font-size:14px;color:var(--txd);">'
-    +'<span style="color:var(--ac);">'+esc(k.malzeme)+' '+esc(k.kalite)+'</span>'
+    +'<span style="color:var(--ac);">'+esc(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme)+' '+esc(k.kalite)+'</span>'
     +' &nbsp;·&nbsp; Ø'+esc(k.cap)
     +' &nbsp;·&nbsp; <span style="color:var(--warn);font-weight:700;">'+esc(k.kesimOlcusu)+' mm</span>'
     +'</div>';
