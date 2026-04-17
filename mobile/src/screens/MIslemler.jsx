@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { getKullaniciGruplari } from '../lib/yetki'
 import { getGrupBilgisi } from '../lib/gruplar'
+import MDrawer from '../components/MDrawer'
 
 export default function MIslemler({ kullanici }) {
   const navigate = useNavigate()
@@ -18,6 +19,7 @@ export default function MIslemler({ kullanici }) {
 
   const [gruplar, setGruplar] = useState(null)
   const [hata, setHata] = useState(null)
+  const [drawerAcik, setDrawerAcik] = useState(false)
 
   // Selamlama saate göre
   const saat = new Date().getHours()
@@ -56,15 +58,11 @@ export default function MIslemler({ kullanici }) {
         <div style={s.topbarLogo}>AP</div>
         <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
         <button
-          style={s.topbarBtn}
-          onClick={() => yakinda(tv('m_menu', 'Menü'))}
-          aria-label="menu"
+          style={s.profilBtn}
+          onClick={() => setDrawerAcik(true)}
+          aria-label={tv('m_drawer_profil', 'Profil')}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
+          {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
         </button>
       </div>
 
@@ -136,6 +134,8 @@ export default function MIslemler({ kullanici }) {
         {/* Alt boşluk safe-area */}
         <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} />
       </div>
+
+      <MDrawer acik={drawerAcik} kapat={() => setDrawerAcik(false)} />
     </div>
   )
 }
@@ -201,6 +201,16 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  profilBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    background: 'var(--sur2)',
+    border: '1px solid var(--bor)',
+    color: 'var(--tx)',
+    fontSize: 15, fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
   scroll: {
     flex: 1,
