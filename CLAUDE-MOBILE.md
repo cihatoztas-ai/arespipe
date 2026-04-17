@@ -1,7 +1,7 @@
 # AresPipe — Mobil Sistem Bağlamı (React)
 
 > Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
-> Son güncelleme: 16 Nisan 2026
+> Son güncelleme: 17 Nisan 2026
 > **ÖNEMLİ:** 16 Nisan 2026'da vanilla HTML/JS'den React + Vite'a geçildi. Eski kurallar geçersiz.
 
 ---
@@ -22,28 +22,45 @@
 mobile/
 ├── src/
 │   ├── main.jsx              ← BrowserRouter buraya sarılı
-│   ├── App.jsx               ← Routes + merkezi auth guard
+│   ├── App.jsx               ← Routes + I18nProvider + auth guard ✅
 │   ├── index.css             ← CSS değişkenleri + global reset
 │   ├── lib/
-│   │   ├── supabase.js       ← createClient — TEK bağlantı noktası
-│   │   └── auth.js           ← getOturum(), getTenantId(), cikisYap()
+│   │   ├── supabase.js       ← createClient — TEK bağlantı noktası (JWT anon key)
+│   │   ├── auth.js           ← getOturum(), getTenantId(), cikisYap()
+│   │   ├── i18n.jsx          ← I18nProvider + useT() hook ✅
+│   │   ├── yetki.js          ← Blok/grup/gizli_bolumler helper ✅
+│   │   └── gruplar.js        ← Grup → ikon/renk/hedef haritası ✅
+│   ├── lang/                 ← i18n JSON dosyaları ✅
+│   │   ├── tr.json
+│   │   ├── en.json
+│   │   └── ar.json (RTL)
 │   ├── screens/              ← Her ekran ayrı .jsx dosyası
-│   │   ├── Giris.jsx         ✅
-│   │   ├── Anasayfa.jsx      ⏳
-│   │   ├── Devreler.jsx      ⏳
-│   │   ├── DevrDetay.jsx     ⏳
-│   │   ├── SpoolDetay.jsx    ⏳
-│   │   ├── IsBaslat.jsx      ⏳
-│   │   └── QRTara.jsx        ⏳
+│   │   ├── MGiris.jsx            ✅
+│   │   ├── MAnasayfa.jsx         ✅ Router: role göre yönlendirir
+│   │   ├── MAnasayfaYonetici.jsx ✅ Dashboard + İşlem Başlat btn
+│   │   ├── MIslemler.jsx         ✅ Grup bazlı büyük buton ekranı
+│   │   ├── MIsBaslat.jsx         ⏳ Yazılacak (eski is_baslat.html'den)
+│   │   ├── MDevreler.jsx         ⏳
+│   │   ├── MDevreDetay.jsx       ⏳
+│   │   ├── MSpoolDetay.jsx       ⏳
+│   │   └── MQRTara.jsx           ⏳
 │   └── components/           ← Ortak componentler
-│       ├── RolKart.jsx        ⏳
-│       ├── StatKart.jsx       ⏳
-│       └── AlertKart.jsx      ⏳
+│       └── MDrawer.jsx       ⏳ YAZILACAK — logout, dil, tema, menü
 ├── package.json
 └── vite.config.js
 ```
 
-### 1.3 Supabase Bağlantısı
+### 1.3 İsimlendirme: "M" ön eki
+
+**Tüm mobil React component'leri "M" ön ekiyle başlar:**
+- `MGiris.jsx`, `MAnasayfa.jsx`, `MIslemler.jsx`, `MDrawer.jsx`
+
+**Neden:**
+- Web tarafındaki `mInit()`, `mSupabase()`, `m-topbar` pattern'i ile tutarlı
+- Dosya ağacında mobil component'ler hemen ayırt edilir
+- Web'teki aynı ekrandan karışıklık olmaz (örn. `Giris.html` ≠ `MGiris.jsx`)
+
+### 1.4 Supabase Bağlantısı
 
 ```js
 // mobile/src/lib/supabase.js
@@ -56,6 +73,8 @@ const { data, error } = await supabase.from('spooller').select('*')
 ```
 
 **Web tarafındaki `ARES.supabase()` veya `mSupabase()` KULLANILMAZ.**
+
+**ÖNEMLİ:** Anon key olarak **JWT formatı (eyJ...)** kullanılır — `sb_publishable_` formatı kullanılmaz (auth sorunlarına yol açıyor).
 
 ---
 
@@ -131,20 +150,110 @@ var(--ac), var(--gr), var(--re), var(--warn), var(--leg)
 var(--bg), var(--sur), var(--bor), var(--tx), var(--txd), var(--txm)
 ```
 
+**YASAK:** Hardcode hex renk (`#2D8EFF` vb.) kullanma — sadece CSS değişkenleri.
+
+### R-08: i18n (17 Nisan 2026)
+
+**KESİN KURAL:** Hiçbir string hardcode olmaz — hepsi `tv()` üzerinden:
+
+```jsx
+import { useT } from '../lib/i18n'
+
+function Ekran() {
+  const { tv } = useT()
+  return (
+    <div>
+      <h1>{tv('m_baslik', 'Türkçe fallback')}</h1>
+      <button>{tv('m_buton_kaydet', 'Kaydet')}</button>
+    </div>
+  )
+}
+```
+
+**Anahtar adlandırması:**
+- `m_` prefix ile başlar (mobil anahtar)
+- `snake_case` kullanılır
+- Hiyerarşi: `m_<bolum>_<alt_bolum>` (örn. `m_giris_email`, `m_kart_is_baslat`)
+
 ---
 
-## 3. ROUTER YAPISI
+## 3. YETKİ SİSTEMİ (17 Nisan 2026)
+
+### 3.1 Temel Mimari: Grup = Buton, Blok = Yetki
+
+**Kavramlar:**
+- `yetki_bloklari` → Her kullanıcı bir veya daha fazla bloğa sahiptir (teknik yetki)
+- **grup** kolonu → Ekrandaki buton adı (kullanıcıya görünen)
+- Her blok bir gruba aittir (şu an 1:1, gelecekte aynı grupta N blok olabilir)
+- Birden fazla blok aynı gruba aitse → tek buton (grup adıyla)
+
+### 3.2 yetki.js Helper Fonksiyonları
+
+```js
+import {
+  getKullaniciBloklari,     // → Array<{id, ad, grup, renk, ...}>
+  getKullaniciGruplari,     // → Array<{grup_adi, renk, sira, bloklar}>
+  getGizliBolumler,         // (sayfa_kodu) → Array<string>
+  sayfaErisimiVar,          // (sayfa_kodu) → boolean
+  yoneticiMi,               // (kullanici) → boolean
+} from '../lib/yetki'
+```
+
+### 3.3 Gizli Bölümler Mantığı
+
+Kullanıcının aynı sayfaya erişebilen birden fazla bloğu varsa:
+- Her bloğun `gizli_bolumler` listesi çekilir
+- **KESİŞİM** alınır (yani: bir blok bile gösteriyorsa, kullanıcı görür)
+
+```js
+// Örnek: Kullanıcı "Büküm" ve "Büküm-Ölçü" bloklarına sahip
+// Büküm bloğu: gizli_bolumler = ['olcu_girme']
+// Büküm-Ölçü bloğu: gizli_bolumler = []
+// Kesişim: [] (hiçbir şey gizli değil — kullanıcı ölçü girebilir)
+```
+
+### 3.4 Role Bazlı Anasayfa Yönlendirmesi
+
+`MAnasayfa.jsx` router olarak çalışır:
+
+```jsx
+if (yoneticiMi(kullanici)) return <MAnasayfaYonetici />
+return <MIslemler />  // Operatör direkt işlemler ekranı
+```
+
+- **Yönetici/super_admin** → Dashboard (istatistik + İşlem Başlat butonu)
+- **Herkes başka** → Direkt İşlemler ekranı (büyük butonlar)
+
+### 3.5 Grup Haritası (gruplar.js)
+
+Her grup için `ikon`, `renk`, `hedef`, `param`, `i18n` tanımlı:
+
+```js
+'Büküm': {
+  ikon: '↩️',
+  renk: 'var(--ac)',
+  hedef: '/is-baslat',
+  param: 'islem=bukum',
+  i18n: 'm_grup_bukum',
+}
+```
+
+Yeni grup eklenince **hem DB'ye hem `gruplar.js`'e hem dil dosyalarına** eklenmelidir.
+
+---
+
+## 4. ROUTER YAPISI
 
 ```jsx
 // App.jsx
-<Routes>
-  <Route path="/giris" element={!oturum ? <Giris /> : <Navigate to="/" />} />
-  <Route path="/" element={oturum ? <Anasayfa /> : <Navigate to="/giris" />} />
-  <Route path="/devreler" element={oturum ? <Devreler /> : <Navigate to="/giris" />} />
-  <Route path="/devre/:id" element={oturum ? <DevrDetay /> : <Navigate to="/giris" />} />
-  <Route path="/spool/:id" element={oturum ? <SpoolDetay /> : <Navigate to="/giris" />} />
-  <Route path="/is-baslat" element={oturum ? <IsBaslat /> : <Navigate to="/giris" />} />
-</Routes>
+<I18nProvider>
+  <Routes>
+    <Route path="/giris" element={!oturum ? <MGiris /> : <Navigate to="/" />} />
+    <Route path="/" element={oturum ? <MAnasayfa /> : <Navigate to="/giris" />} />
+    <Route path="/islemler" element={oturum ? <MIslemlerSayfasi /> : <Navigate to="/giris" />} />
+    <Route path="*" element={<Navigate to={oturum ? '/' : '/giris'} />} />
+  </Routes>
+</I18nProvider>
 ```
 
 ### Auth Guard
@@ -153,15 +262,17 @@ var(--bg), var(--sur), var(--bor), var(--tx), var(--txd), var(--txm)
 
 ---
 
-## 4. SCREEN ŞABLONU
+## 5. SCREEN ŞABLONU
 
 ```jsx
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useT } from '../lib/i18n'
 
-export default function OrnekEkran() {
+export default function MOrnekEkran() {
   const navigate = useNavigate()
+  const { tv } = useT()
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState(null)
@@ -189,11 +300,12 @@ export default function OrnekEkran() {
     }
   }
 
-  if (yukleniyor) return <div style={s.yukleniyor}>Yükleniyor...</div>
+  if (yukleniyor) return <div style={s.yukleniyor}>{tv('m_yukleniyor', 'Yükleniyor...')}</div>
   if (hata) return <div style={s.hata}>{hata}</div>
 
   return (
     <div style={s.sayfa}>
+      <h1>{tv('m_ornek_baslik', 'Örnek Başlık')}</h1>
       {/* İçerik */}
     </div>
   )
@@ -208,7 +320,7 @@ const s = {
 
 ---
 
-## 5. SUPABASE KULLANIM KURALLARI
+## 6. SUPABASE KULLANIM KURALLARI
 
 ### Tenant ID
 
@@ -262,9 +374,22 @@ await supabase.from('fotograflar').insert({
 })
 ```
 
+### RLS Kuralları (Kritik!)
+
+`kullanici_bloklar` tablosuna INSERT yaparken **`tenant_id` ZORUNLU** — aksi halde RLS filtreler ve satır görünmez.
+
+```sql
+-- YANLIŞ (tenant_id NULL olur)
+INSERT INTO kullanici_bloklar (kullanici_id, blok_id) VALUES (...);
+
+-- DOĞRU
+INSERT INTO kullanici_bloklar (kullanici_id, blok_id, tenant_id)
+VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
+```
+
 ---
 
-## 6. KRİTİK KOLON ADLARI
+## 7. KRİTİK KOLON ADLARI
 
 **spooller:**
 - `spool_id TEXT` — kısa görüntü ID ("0431") — UUID değil
@@ -278,11 +403,17 @@ await supabase.from('fotograflar').insert({
 
 **fotograflar:** `dosya_url`, `yukleyen_id`, `islem_turu`, `spool_id`
 
+**yetki_bloklari:** `ad`, `grup`, `renk`, `sistem_preset`, `sira`, `tenant_id` (NULL=sistem)
+
+**kullanici_bloklar:** `kullanici_id`, `blok_id`, **`tenant_id` (ZORUNLU — RLS kontrolü)**
+
+**blok_sayfa_yetkileri:** `blok_id`, `sayfa_kodu`, `gizli_bolumler TEXT[]`
+
 **Storage bucket:** `arespipe-dosyalar`
 
 ---
 
-## 7. DEPLOYMENT
+## 8. DEPLOYMENT
 
 ```
 git push origin main
@@ -298,7 +429,7 @@ git push origin main
 
 ---
 
-## 8. EKRAN TASARIM KURALLARI
+## 9. EKRAN TASARIM KURALLARI
 
 ### Genel Layout
 
@@ -355,9 +486,35 @@ git push origin main
 { background: '#eff6ff', border: '1px solid #93c5fd', borderLeft: '4px solid var(--ac)' }
 ```
 
+### Büyük Buton (İşlemler ekranı stili)
+
+Operatör ekranında her grup için büyük buton. Minimum 72px yükseklik (eldivenli el için):
+
+```jsx
+<button style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: 14,
+  padding: '16px 14px',
+  background: 'var(--sur)',
+  border: '1px solid var(--bor)',
+  borderLeft: `4px solid ${renk}`,
+  borderRadius: 12,
+  minHeight: 72,
+  width: '100%',
+}}>
+  <div style={{ width: 48, height: 48, borderRadius: 12, background: `${renk}22`, ...}}>{ikon}</div>
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: 16, fontWeight: 700 }}>{baslik}</div>
+    <div style={{ fontSize: 14, color: 'var(--txd)' }}>{alt}</div>
+  </div>
+  <div style={{ fontSize: 22 }}>›</div>
+</button>
+```
+
 ---
 
-## 9. SCREEN TESLIM KONTROL LİSTESİ
+## 10. SCREEN TESLIM KONTROL LİSTESİ
 
 ```
 □ useState/useEffect doğru kullanıldı
@@ -372,18 +529,43 @@ git push origin main
 □ Renk değişkenleri kullanıldı (hardcode renk yok)
 □ Scrollbar gizlendi
 □ Alt buton bar safe-area padding'i var
+□ i18n: TÜM metinler tv() üzerinden (hardcode string yok)
+□ i18n anahtarları tr/en/ar'ın üçüne de eklendi
+□ "M" ön ekiyle adlandırıldı
 ```
 
 ---
 
-## 10. BEKLEYEN EKRANLAR
+## 11. TAMAMLANAN / BEKLEYEN EKRANLAR
 
 | Ekran | Dosya | Durum |
 |---|---|---|
-| Giriş | Giris.jsx | ✅ Tamamlandı |
-| Ana Sayfa | Anasayfa.jsx | ⏳ Placeholder |
-| Devreler | Devreler.jsx | ⏳ |
-| Devre Detay | DevrDetay.jsx | ⏳ |
-| Spool Detay | SpoolDetay.jsx | ⏳ |
-| İş Başlat | IsBaslat.jsx | ⏳ Mockup onaylandı |
-| QR Tara | QRTara.jsx | ⏳ |
+| Giriş | MGiris.jsx | ✅ Tamamlandı (i18n'li) |
+| Ana Sayfa Router | MAnasayfa.jsx | ✅ Tamamlandı |
+| Yönetici Dashboard | MAnasayfaYonetici.jsx | ✅ Tamamlandı |
+| Operatör İşlemler | MIslemler.jsx | ✅ Tamamlandı (grup bazlı) |
+| **Drawer (menü)** | **MDrawer.jsx** | **⏳ ÖNCELİKLİ — logout yok** |
+| İş Başlat | MIsBaslat.jsx | ⏳ Eski is_baslat.html'den |
+| Devreler | MDevreler.jsx | ⏳ |
+| Devre Detay | MDevreDetay.jsx | ⏳ |
+| Spool Detay | MSpoolDetay.jsx | ⏳ |
+| QR Tara | MQRTara.jsx | ⏳ |
+
+---
+
+## 12. ÖNEMLİ HATIRLATMALAR
+
+### "M" ön eki — her yerde
+Component adı, dosya adı, JSX kullanımı — hepsi "M" ile başlar.
+
+### i18n — hiç istisna yok
+En basit "OK" butonunda bile `tv('m_tamam', 'Tamam')` kullan.
+
+### RLS ve tenant_id
+`kullanici_bloklar` INSERT'lerinde tenant_id mutlaka set et.
+
+### Supabase key
+JWT anon key (eyJ...) kullan, `sb_publishable_` değil.
+
+### Vercel deploy otomatik
+`git push origin main` → Vercel otomatik deploy. Vite config'de `base: './'` gibi göreli yol YOK (önceki hata).

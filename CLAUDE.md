@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 16 Nisan 2026
+> Son güncelleme: 17 Nisan 2026
 
 ---
 
@@ -122,6 +122,8 @@ Minimum font-size: `14px`. **14px altı hiçbir yerde kullanılmaz.**
 
 **Mobil React:** `import { supabase } from '../lib/supabase'` — `mobile/src/lib/supabase.js` merkezi bağlantı dosyası
 
+**ÖNEMLİ (17 Nisan 2026):** Supabase anon key olarak **JWT formatındaki (eyJ...) legacy anon key** kullanılır — `sb_publishable_...` formatı auth sorunlarına yol açıyordu, kullanılmaz.
+
 ### 2.9 Dil Kuralları (Web için)
 
 #### D-01: Çeviri Zorunluluğu
@@ -139,16 +141,25 @@ Child elementi olan elementlere `data-i18n` konulmaz.
 
 **Aktif feature flag kodları:** `3d_model`, `ai_izometri`, `hakedis`, `musteri_portal`, `raporlar_gelismis`
 
-### 2.11 Yetkilendirme Sistemi — Blok Tabanlı ✅
+### 2.11 Yetki Sistemi — Blok Tabanlı ✅
 
-**15 Nisan 2026'da tamamlandı.**
+**15 Nisan 2026'da tamamlandı. 17 Nisan 2026'da mimari rafine edildi.**
 
 #### DB Tabloları
 ```
 yetki_bloklari        — blok tanımları (sistem preset + firma özel)
 blok_sayfa_yetkileri  — blok → sayfa eşleştirmesi + gizli_bolumler[]
-kullanici_bloklar     — kullanıcı → blok atamaları
+kullanici_bloklar     — kullanıcı → blok atamaları (tenant_id ZORUNLU)
 ```
+
+#### Mimari: Grup = Buton
+
+**Kural (17 Nisan 2026):**
+- Her blok kendi grubuna aittir (1:1 veya N:1)
+- **Grup = ekrandaki buton adı** (kullanıcıya görünen)
+- **Blok = teknik yetki varyantı** (kullanıcıya atanır)
+- Aynı gruptaki birden fazla blok → **TEK buton** (grup adıyla)
+- Sayfa içinde `gizli_bolumler` KESİŞİMİ alınır (bir blok gösteriyorsa kullanıcı görür)
 
 #### Sistem Presetleri (Silinemez — Trigger Korumalı)
 
@@ -156,15 +167,36 @@ kullanici_bloklar     — kullanıcı → blok atamaları
 |---|---|
 | Kesim | Kesim |
 | İmalat | İmalat |
-| Kaynak | Kaynak |
+| Markalama | Markalama |
 | Büküm | Büküm |
-| Markalama | İmalat |
-| Kalite Kontrol | Kalite |
-| Malzeme | Lojistik |
-| Sevkiyat | Lojistik |
-| Raporlar | Yönetim |
-| Kullanıcı Yönetimi | Yönetim |
-| Tanımlar | Yönetim |
+| **Argon Kaynağı** | **Argon Kaynağı** |
+| **Gazaltı Kaynağı** | **Gazaltı Kaynağı** |
+| Kalite Kontrol | Kalite Kontrol |
+| Malzeme | Malzeme |
+| Sevkiyat | Sevkiyat |
+| Raporlar | Raporlar |
+| Kullanıcı Yönetimi | Kullanıcı Yönetimi |
+| Tanımlar | Tanımlar |
+
+**17 Nisan 2026 Değişiklikleri:**
+- "Kaynak" bloğu silindi, "Argon Kaynağı" ve "Gazaltı Kaynağı" olarak ayrıldı
+- Markalama, Malzeme, Sevkiyat, Raporlar, Kullanıcı Yönetimi, Tanımlar **kendi gruplarına** çıkarıldı
+- Her blok artık kendi grubunda (1:1) — ileride alt bloklar eklendiğinde aynı grupta toplanırlar
+
+#### RLS ve tenant_id (KRİTİK)
+
+`kullanici_bloklar` tablosunda RLS politikası:
+```sql
+tenant_id = kullanici.tenant_id
+```
+
+**tenant_id NULL olan satırlar RLS tarafından filtrelenir ve kullanıcıya görünmez!**
+
+Blok atarken MUTLAKA tenant_id set edilmeli:
+```sql
+INSERT INTO kullanici_bloklar (kullanici_id, blok_id, tenant_id)
+VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
+```
 
 ### 2.12 Sayfa Teslim Kontrol Listesi — ZORUNLU (Kural G-01)
 
@@ -189,20 +221,39 @@ kullanici_bloklar     — kullanıcı → blok atamaları
 
 ## 3. DİL SİSTEMİ
 
-### 3.1 Tek Fonksiyon: tv()
+### 3.1 Web: tv()
 
 ```js
 tv('anahtar_adi', 'Türkçe fallback')
 ```
 
-### 3.2 Dil Dosyaları
+### 3.2 Mobil React: useT() hook
+
+```jsx
+import { useT } from '../lib/i18n'
+const { tv, dil, setDil } = useT()
+tv('anahtar_adi', 'Türkçe fallback')
+```
+
+**Mobil'de dil dosyaları:** `mobile/src/lang/{tr,en,ar}.json` — Vite bundle'a dahil eder (fetch yok, hızlı).
+
+### 3.3 Dil Dosyaları
 
 ```
 lang/
-  tr.json  — Türkçe
-  en.json  — İngilizce
-  ar.json  — Arapça (RTL destekli)
+  tr.json  — Türkçe (web)
+  en.json  — İngilizce (web)
+  ar.json  — Arapça (RTL destekli, web)
 ```
+
+```
+mobile/src/lang/
+  tr.json  — Türkçe (mobil)
+  en.json  — İngilizce (mobil)
+  ar.json  — Arapça (RTL destekli, mobil)
+```
+
+**Senkron tutma:** Web ve mobil ayrı JSON'ları var. İleride senkronize edilmesi için npm script eklenebilir.
 
 ---
 
@@ -237,6 +288,15 @@ lang/
 - `termin` (DATE) — `termin_tarihi` silindi
 - `ilerleme` kullanılmıyor — spooller.ilerleme ortalaması
 
+**yetki_bloklari:**
+- `ad`, `grup`, `renk`, `sistem_preset`, `sira`, `tenant_id` (NULL = sistem preset)
+
+**blok_sayfa_yetkileri:**
+- `blok_id`, `sayfa_kodu` (ör: `bukum`, `mobile/spool_detay`), `gizli_bolumler TEXT[]`
+
+**kullanici_bloklar:**
+- `kullanici_id`, `blok_id`, `tenant_id` (ZORUNLU, RLS bunu kontrol eder)
+
 ### 4.3 Storage
 
 **Bucket adı: `arespipe-dosyalar`**
@@ -262,6 +322,12 @@ if (agg.count > 0 && agg.varCount === agg.count) agg.alistirma = 'VAR';
 else if (agg.varCount > 0 || agg.kismiCount > 0) agg.alistirma = 'KISMI';
 else agg.alistirma = 'YOK';
 ```
+
+### Kaynak basamağı ilerleme mantığı (17 Nisan 2026)
+
+- `spooller.aktif_basamak` değeri `kaynak` olarak tek kalır
+- Argon ve Gazaltı aynı basamağı ilerletir (ekrandaki buton farklı, DB'deki basamak aynı)
+- Kaynak ilerleme yüzdesi tüm kaynak işlemleri bitince hesaplanır (kaynak türü fark etmez)
 
 ---
 
@@ -289,17 +355,23 @@ var { data } = await supa.rpc('devre_istatistik', { devre_ids: devreIdListesi })
 ├── mobile/                          ← React uygulaması (arespipe-mob.vercel.app)
 │   ├── src/
 │   │   ├── main.jsx                 ← BrowserRouter
-│   │   ├── App.jsx                  ← Routes + auth guard
+│   │   ├── App.jsx                  ← Routes + auth guard + I18nProvider
 │   │   ├── index.css                ← CSS değişkenleri + reset
 │   │   ├── lib/
-│   │   │   ├── supabase.js          ← Supabase client
-│   │   │   └── auth.js              ← getOturum(), getTenantId()
+│   │   │   ├── supabase.js          ← Supabase client (JWT anon key)
+│   │   │   ├── auth.js              ← getOturum(), getTenantId()
+│   │   │   ├── i18n.jsx             ✅ useT() hook + I18nProvider
+│   │   │   ├── yetki.js             ✅ blok/grup/gizli_bolumler helper
+│   │   │   └── gruplar.js           ✅ grup → ikon/renk/hedef haritası
+│   │   ├── lang/                    ✅ tr.json, en.json, ar.json
 │   │   ├── screens/
-│   │   │   ├── Giris.jsx            ✅ Tamamlandı
-│   │   │   ├── Anasayfa.jsx         ⏳ Placeholder
-│   │   │   ├── Devreler.jsx         ⏳ Placeholder
-│   │   │   └── IsBaslat.jsx         ⏳ Placeholder
-│   │   └── components/              ← Ortak componentler
+│   │   │   ├── MGiris.jsx            ✅ Giriş ekranı
+│   │   │   ├── MAnasayfa.jsx         ✅ Router: role göre yönlendirir
+│   │   │   ├── MAnasayfaYonetici.jsx ✅ Dashboard + İşlem Başlat btn
+│   │   │   ├── MIslemler.jsx         ✅ Grup bazlı büyük buton ekranı
+│   │   │   ├── Devreler.jsx         ⏳ Placeholder (henüz React değil)
+│   │   │   └── IsBaslat.jsx         ⏳ Placeholder (henüz React değil)
+│   │   └── components/              ← Ortak componentler (boş şu an)
 │   ├── package.json
 │   └── vite.config.js
 ├── admin/
@@ -310,21 +382,7 @@ var { data } = await supa.rpc('devre_istatistik', { devre_ids: devreIdListesi })
 
 ## 8. KARARLAR VE MİMARİ NOTLAR
 
-### Blok Tabanlı Yetki Sistemi (15 Nisan 2026)
-
-Eski rol bazlı sistem korunuyor. Yeni sayfalar string kod ile kullanır.
-
-**Demo kullanıcılar (Demo Atölye tenant):**
-| Email | Şifre | Bloklar |
-|---|---|---|
-| demo.yonetici@arespipe.dev | Demo1234! | Tüm bloklar |
-| demo.imalatci@arespipe.dev | Demo1234! | İmalat + Markalama + Kesim |
-| demo.testereci@arespipe.dev | Demo1234! | Kesim |
-| demo.bukumcu@arespipe.dev | Demo1234! | Büküm |
-| demo.kk@arespipe.dev | Demo1234! | KK + Sevkiyat |
-| demo.malzeme@arespipe.dev | Demo1234! | Malzeme |
-
-### Mobil React Mimarisine Geçiş (16 Nisan 2026)
+### Mobil React Mimarisi (16 Nisan 2026)
 
 **Karar:** Mobil taraf vanilla HTML/JS'den React + Vite'a geçirildi.
 
@@ -338,10 +396,66 @@ Eski rol bazlı sistem korunuyor. Yeni sayfalar string kod ile kullanır.
 - Mobil taraf (`arespipe-mob.vercel.app`) ayrı Vercel projesi — React
 - Aynı Supabase, aynı DB, aynı renk sistemi
 
-**Deployment:**
-- Mobil için ayrı Vercel projesi: `arespipe-mob`
-- Root Directory: `mobile/`
-- Her `git push` → otomatik deploy
+### Blok Tabanlı Yetki Sistemi (15 Nisan 2026)
+
+Eski rol bazlı sistem korunuyor. Yeni sayfalar blok kodu ile kullanır.
+
+**Demo kullanıcılar (Demo Atölye tenant):**
+| Email | Şifre | Bloklar |
+|---|---|---|
+| demo.yonetici@arespipe.dev | Demo1234! | Tüm bloklar |
+| demo.imalatci@arespipe.dev | Demo1234! | İmalat, Markalama, Kesim, Argon Kaynağı, Gazaltı Kaynağı |
+| demo.testereci@arespipe.dev | Demo1234! | Kesim |
+| demo.bukumcu@arespipe.dev | Demo1234! | Büküm |
+| demo.kk@arespipe.dev | Demo1234! | KK + Sevkiyat |
+| demo.malzeme@arespipe.dev | Demo1234! | Malzeme |
+
+### Yetki Mimarisi Rafine Edilmesi (17 Nisan 2026)
+
+**Karar:** "Grup = Buton, Blok = Yetki Varyantı" mimarisi.
+
+**Nedenler:**
+- Aynı işlevin (örn. Büküm) farklı varyasyonları olabilir — bir operatör temel büküm yapar, diğeri ölçü de girer
+- DB'de bu ayrım blok düzeyinde yapılır, ekranda grup düzeyinde gösterilir
+- Kullanıcıya atanmış tüm blokların izinleri `gizli_bolumler` kesişimi ile birleştirilir
+
+**Kural:**
+- Her blok kendi grubunda (1:1) — ileride aynı grupta birden çok blok olabilir
+- Mobilde İşlemler ekranı grupları listeler, blokları değil
+- Sayfaya girince: kullanıcının o gruba ait tüm blokları kesiştirip gizli bölümleri hesaplar
+
+### Kaynak İşlemleri Ayrıştırması (17 Nisan 2026)
+
+**Karar:** "Kaynak" tek blok yerine "Argon Kaynağı" ve "Gazaltı Kaynağı" ayrı bloklar olarak tanımlandı.
+
+**Nedenler:**
+- Gerçek işleyişte argon ve gazaltı kaynakçıları farklı olabilir
+- Bir operatör sadece argon, diğeri hem argon hem gazaltı yapabilir
+- İleride başka kaynak türleri (tig, mig, vb.) eklenebilir
+
+**Etki:**
+- `aktif_basamak = 'kaynak'` değişmedi — DB'deki işlem basamağı tek
+- Ekranda 2 farklı buton çıkıyor, ilerleme hesabı aynı
+
+### Supabase Auth Sorunu Çözümü (17 Nisan 2026)
+
+**Sorun:** `sb_publishable_...` formatındaki yeni anon key auth'u başlatabiliyordu ama sonraki schema query'lerde 500 hatası veriyordu ("Database error querying schema").
+
+**Asıl sebep:** `auth.users` tablosunda eski kullanıcıların `confirmation_token`, `email_change`, `recovery_token` gibi kolonları NULL kalmıştı. GoTrue'nun güncel versiyonu NULL toleransı kaldırdığı için login'de patlıyordu.
+
+**Çözüm (SQL):**
+```sql
+UPDATE auth.users SET confirmation_token = '' WHERE confirmation_token IS NULL;
+UPDATE auth.users SET email_change = '' WHERE email_change IS NULL;
+UPDATE auth.users SET email_change_token_new = '' WHERE email_change_token_new IS NULL;
+UPDATE auth.users SET recovery_token = '' WHERE recovery_token IS NULL;
+UPDATE auth.users SET email_change_token_current = '' WHERE email_change_token_current IS NULL;
+UPDATE auth.users SET reauthentication_token = '' WHERE reauthentication_token IS NULL;
+UPDATE auth.users SET phone_change = '' WHERE phone_change IS NULL;
+UPDATE auth.users SET phone_change_token = '' WHERE phone_change_token IS NULL;
+```
+
+**Ek karar:** Mobil ve web'de JWT anon key (eyJ... formatı) kullanılır, `sb_publishable_` değil.
 
 ### is_durumu Akışı
 ```
@@ -350,6 +464,12 @@ bekliyor → işe başlayınca → devam_ediyor → iş bitince → bekliyor
 
 ### Mükerrer İş Önleme (Planlandı)
 Spool tarandığında `is_durumu === 'devam_ediyor'` ise uyarı göster, işe başlatma.
+
+### Açık İş Kartı (17 Nisan 2026 — planlandı)
+Kullanıcının açık işi varken:
+- Üstte sabit kart olarak görünür (alta değil)
+- Farklı bir iş başlatmayı BLOKLAMAZ (kullanıcı imalatta açık işi varken markalama başlatabilir)
+- Birden fazla açık iş olabilir
 
 ### PWA + Capacitor Yol Haritası
 ```
@@ -383,29 +503,56 @@ Her sohbet bitiminde:
 - [ ] `proje_liste.html` / `proje_detay.html` — Supabase entegrasyonu yok
 - [ ] `malzeme.html` — yazılacak
 - [ ] `api/izometri-oku.js` — 502 Bad Gateway
+- [ ] **Yeni kaynak blokları UI'ya yansıma kontrolü** — Tanımlar sayfasında Argon/Gazaltı görünüyor mu?
 
 ### Mobil React sayfaları
-- [ ] `Anasayfa.jsx` — gerçek içerik yazılacak
-- [ ] `Devreler.jsx` — devre listesi
-- [ ] `IsBaslat.jsx` — operatör iş akışı (mockup onaylandı)
-- [ ] `DeveDetay.jsx`, `SpoolDetay.jsx`, `QRTara.jsx` — yazılacak
-- [ ] Tema/dil state'i React Context'e taşınacak
-- [ ] `useNavigate` hook'u ile navigasyon
+- [x] MGiris.jsx — tamamlandı, i18n'li
+- [x] MAnasayfa.jsx — router olarak çalışıyor
+- [x] MAnasayfaYonetici.jsx — dashboard + İşlem Başlat
+- [x] MIslemler.jsx — grup bazlı buton ekranı
+- [ ] **MDrawer.jsx** — logout, dil, tema, menü (ÖNCELİKLİ — şu an logout yok)
+- [ ] `MIsBaslat.jsx` — operatör iş akışı (mockup onaylandı, eski is_baslat.html'den React'a)
+- [ ] `MDevreDetay.jsx`, `MSpoolDetay.jsx`, `MQRTara.jsx`
+- [ ] Tema state'i React Context'e taşınacak (şu an localStorage + direct DOM)
+- [ ] Rol etiketinde bazen anahtar adı görünüyor (örn. `operatör` küçük) — i18n eşleşme kontrolü
 
 ---
 
-## 11. SON OTURUM — 16 NİSAN 2026
+## 11. SON OTURUM — 17 NİSAN 2026
 
 ### Tamamlananlar
-- Mobil mimari React + Vite'a geçirildi
-- `arespipe-mob.vercel.app` ayrı Vercel projesi kuruldu
-- `mobile/src/lib/supabase.js` — Supabase client
-- `mobile/src/lib/auth.js` — auth helpers
-- `mobile/src/screens/Giris.jsx` — giriş ekranı (eski tasarımla uyumlu, çalışıyor)
-- Vercel deployment pipeline kuruldu (git push → otomatik deploy)
-- PWA/App Store yol haritası netleştirildi
+- **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)
+- **MGiris.jsx** güncellendi — tüm metinler tv() üzerinden
+- **Yetki DB düzenlemesi:**
+  - Markalama, Malzeme, Sevkiyat, Raporlar, Kullanıcı Yönetimi, Tanımlar kendi gruplarına çıkarıldı
+  - "Kaynak" bloğu "Argon Kaynağı" olarak yeniden adlandırıldı
+  - Yeni "Gazaltı Kaynağı" bloğu eklendi
+  - Her iki yeni bloğun `blok_sayfa_yetkileri` kayıtları mevcut Kaynak'ınkiyle aynı
+- **Yetki mimarisi rafine edildi:** Grup = Buton, Blok = Teknik yetki varyantı
+- **mobile/src/lib/yetki.js:** getKullaniciBloklari, getKullaniciGruplari, getGizliBolumler, sayfaErisimiVar, yoneticiMi
+- **mobile/src/lib/gruplar.js:** Grup → ikon/renk/hedef/i18n haritası
+- **MAnasayfa.jsx** router'a dönüştürüldü (role göre yönlendirir)
+- **MAnasayfaYonetici.jsx** oluşturuldu (eski dashboard + İşlem Başlat butonu)
+- **MIslemler.jsx** oluşturuldu (grup bazlı büyük butonlar, blokları dinamik çeker)
+- **Supabase auth sorunu çözüldü:** `auth.users` tablosundaki NULL token kolonları boş string'e güncellendi
+- **Supabase anon key değiştirildi:** JWT formatı (eyJ...) kullanılıyor
+- **App.jsx güncellendi:** /islemler route'u + I18nProvider
+- **Git push + Vercel deploy:** Hem web (arespipe.vercel.app) hem mobil (arespipe-mob.vercel.app) canlıda
+- **End-to-end test edildi:**
+  - Yönetici girişi → Dashboard + İşlem Başlat butonu ✅
+  - Operatör girişi → Direkt İşlemler ekranı ✅
+  - 6 buton (İmalat, Kesim, Markalama, Argon, Gazaltı, QR) ✅
+
+### Önemli Öğrenmeler
+- **RLS ve tenant_id:** `kullanici_bloklar`'a INSERT yaparken tenant_id belirtmek zorunlu, NULL bırakılırsa RLS filtreler ve blok görünmez
+- **Sistem preset koruması:** `yetki_bloklari`'nda silme trigger'ı var — sistem presetleri silmek için bypass gerekir (veya yeniden adlandırma kullanılır)
+- **Supabase publishable key ≠ anon key:** Publishable key auth için yeterli değil, tam erişim için JWT anon key gerekir
+- **auth.users NULL kolonları:** Eski kullanıcıların confirmation_token vs. NULL kalabilir, güncel GoTrue bunu kabul etmez
 
 ### Bekleyen
-- `Anasayfa.jsx`, `Devreler.jsx`, `IsBaslat.jsx` ekranlarının yazılması
-- Tema/dil yönetimi React Context'e alınması
-- Tüm web sayfalarına `data-sayfa` eklenmesi
+- **MDrawer** (öncelikli — logout, dil/tema/menü yok)
+- **MIsBaslat** (eski is_baslat.html'den React'a)
+- MDevreler, MDevreDetay, MSpoolDetay, MQRTara
+- Tema/dil state'i React Context'e alınması (şu an direct DOM)
+- Rol etiketi i18n mapping düzeltmeleri
+- Dil dosyaları (web/mobil) senkronizasyon scripti
