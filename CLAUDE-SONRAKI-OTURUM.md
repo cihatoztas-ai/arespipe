@@ -1,7 +1,7 @@
 # Sonraki Oturum İçin Gündem
 
-**Hazırlanma tarihi:** 17 Nisan 2026 (3. oturum sonu)
-**Son durum:** Enum anti-pattern temizlendi — ares-normalize.js canlıda, 6 HTML patch'li, 3 dil dosyası 1340 anahtar, markalama bug fix yapıldı
+**Hazırlanma tarihi:** 19 Nisan 2026 (4. oturum sonu)
+**Son durum:** Enum anti-pattern tamamen temizlendi — DB migration bitti, ARES_NORM canonical liste kilitli (4+4+diger), devreler.html+kesim.html refactor bitti, dil dosyaları 1338 anahtar.
 
 ---
 
@@ -13,25 +13,50 @@ Yeni sohbet açınca şu 4 dosyayı yükle:
 3. `CLAUDE-SONRAKI-OTURUM.md` — bu dosya (öncelikli iş listesi)
 4. `CLAUDE-SON-OTURUM.md` — en son oturumun deploy/test özeti (deploy bittiyse atlayabilir, ama referans için faydalı)
 
-**Not:** Bu 4 dosya repo'da kök dizinde duruyor. Versiyon numarası yok — her oturumda üzerine yazılırlar. Uzun vadeli oturum tarihçesi `CLAUDE.md` Bölüm 11/11A/11B'de birikir.
+**Not:** Bu 4 dosya repo'da kök dizinde duruyor. Versiyon numarası yok — her oturumda üzerine yazılırlar. Uzun vadeli oturum tarihçesi `CLAUDE.md` Bölüm 11/11A/11B/11C'de birikir.
 
 ---
 
-## Öncelik 1 — Dropdown Filter Etiket Gösterimi (kısa iş)
+## Öncelik 1 — Malzeme-Yüzey Uyum Kontrolü (YENİ — kullanıcı talebi)
 
-**Sorun:** devreler.html, kesim.html, markalama.html sayfalarındaki malzeme/yüzey filter dropdown'larında option metni KOD olarak görünüyor ("karbon_celik") — ekrandaki tablo ise "Karbon Çelik" gösteriyor. Tutarsız ve çirkin.
+**Sorun:** Bazı malzeme-yüzey kombinasyonları anlamsız:
+- Paslanmaz + galvaniz ❌ (paslanmaz galvanize edilmez)
+- Paslanmaz + boya ❌ (paslanmaz boyanmaz, zaten yüzeyi parlak)
+- Diğer kombinasyonlar için kullanıcı netleştirecek (bakır alaşımı / alüminyum için hangi yüzeyler uygun?)
+
+**Kural Matrisi (kullanıcı ile doldurulacak):**
+
+| Malzeme | Galvaniz | Asit | Siyah | Boya |
+|---|:-:|:-:|:-:|:-:|
+| Karbon Çelik | ✅ | ? | ✅ | ✅ |
+| Paslanmaz | ❌ | ✅ | ? | ❌ |
+| Bakır Alaşım | ? | ? | ? | ? |
+| Alüminyum | ? | ? | ? | ? |
+| Diğer | ✅ | ✅ | ✅ | ✅ (serbest) |
 
 **Yapılacak:**
-- Her sayfada filter dropdown oluşturma fonksiyonunu bul (örn. `populateFilters`)
-- `[...new Set(data.map(d => d.malzeme))]` ile kod'ları topla ama option text'ine `ARES_NORM.malzemeEtiket(kod)` koy
-- Option value'da kod kalsın (filter mantığı kod ile karşılaştırır)
-- devreler.html'in dil dosyasındaki `karbon_celik` gibi kendi kod'u var mı kontrol et — ARES_NORM'un `karbon` kod'una map edilmeli
+1. Kural matrisini kullanıcıyla birlikte tam doldur (4 malzeme × 4 yüzey = 16 hücre)
+2. `devre_yeni.html` — malzeme radio `change` event'inde uygun olmayan yüzey radio'ları disable et (gri göster), tooltip: "Paslanmaz malzemeye galvaniz uygulanmaz"
+3. `devre_duzenle.html` — aynı kural (spool düzenleme)
+4. DB CHECK constraint:
+   ```sql
+   ALTER TABLE spooller ADD CONSTRAINT malzeme_yuzey_uyumu
+   CHECK (
+     malzeme IS NULL OR yuzey IS NULL OR
+     NOT (malzeme = 'paslanmaz' AND yuzey IN ('galvaniz','boyali'))
+   );
+   ```
+5. Mevcut veri kontrolü (constraint'ten önce):
+   ```sql
+   SELECT COUNT(*) FROM spooller 
+   WHERE malzeme='paslanmaz' AND yuzey IN ('galvaniz','boyali');
+   ```
 
-**Süre tahmini:** 1 oturum — 3 sayfada benzer mantık
+**Süre tahmini:** 1 oturum (mockup-first kuralı R-10 uygulanacak)
 
 ---
 
-## Öncelik 2 — Şema Kolon Adları Düzeltmesi (EN KRITIK)
+## Öncelik 2 — Şema Kolon Adları Düzeltmesi (EN KRITIK — 3. oturumdan aktarılan)
 
 **Sorun:** CLAUDE.md "kritik kolon adları" bölümü var ama kodda hâlâ eski isimler → sessiz bug'lar.
 
@@ -54,43 +79,7 @@ Yeni sohbet açınca şu 4 dosyayı yükle:
 
 ---
 
-## Öncelik 3 — Faz 2: SQL Migration (opsiyonel, kısa)
-
-**Durum:** Enum anti-pattern temizliği yapıldı, **Faz 1 canlıda**. Yeni kayıtlar KOD yazılıyor ama eski satırlar hâlâ Türkçe etiketler içeriyor. Okuma tarafı her ikisini de tolere ediyor.
-
-**Faz 2'yi yapmak istersen:**
-
-```sql
--- ÖNCE SPOOLLER TABLOSU YEDEKLENMELİ
-BEGIN;
-
--- Malzeme migration
-UPDATE spooller SET malzeme = 'karbon'    WHERE malzeme ~* '(karbon|çelik|st37|carbon)' AND malzeme NOT IN ('karbon','paslanmaz','bakir','alum','plastik','diger');
-UPDATE spooller SET malzeme = 'paslanmaz' WHERE malzeme ~* '(paslanmaz|stainless|inox|316|304|321|347)';
-UPDATE spooller SET malzeme = 'bakir'     WHERE malzeme ~* '(bakır|cuni|copper|bronze|pirinç)';
-UPDATE spooller SET malzeme = 'alum'      WHERE malzeme ~* '(alüm|alum|aluminum)';
-UPDATE spooller SET malzeme = 'plastik'   WHERE malzeme ~* '(plastik|plastic|\bpe\b|pvc|ppr)';
-
--- Yüzey migration
-UPDATE spooller SET yuzey = 'asit'     WHERE yuzey ~* 'asit';
-UPDATE spooller SET yuzey = 'galvaniz' WHERE yuzey ~* 'galvan';
-UPDATE spooller SET yuzey = 'siyah'    WHERE yuzey ~* 'siyah';
-UPDATE spooller SET yuzey = 'boyali'   WHERE yuzey ~* 'boyal';
-UPDATE spooller SET yuzey = 'epoksi'   WHERE yuzey ~* 'epoksi';
-
--- Kontrol: Hâlâ kod dışı değerler var mı?
-SELECT DISTINCT malzeme FROM spooller WHERE malzeme NOT IN ('karbon','paslanmaz','bakir','alum','plastik','diger') AND malzeme IS NOT NULL;
-SELECT DISTINCT yuzey FROM spooller WHERE yuzey NOT IN ('asit','galvaniz','siyah','boyali','epoksi','diger') AND yuzey IS NOT NULL;
-
--- Sorun yoksa COMMIT, varsa ROLLBACK
-COMMIT; -- veya ROLLBACK
-```
-
-**Süre tahmini:** 20 dakika (yedek + SQL + test)
-
----
-
-## Öncelik 4 — Mobil: MProfil.jsx
+## Öncelik 3 — Mobil: MProfil.jsx
 
 **Neden önce MProfil:**
 - MDrawer'daki "Profili Düzenle" döngüsü tamamlanmamış (`/profil` route var, sayfa yok)
@@ -107,7 +96,7 @@ COMMIT; -- veya ROLLBACK
 
 ---
 
-## Öncelik 5 — Mobil: MIsBaslat + Zaman Takibi
+## Öncelik 4 — Mobil: MIsBaslat + Zaman Takibi
 
 **Araştırma gereken:** Bilgisayardan Supabase SQL Editor'de bu sorguları çalıştır ve çıktıları paylaş:
 
@@ -148,7 +137,7 @@ ORDER BY ordinal_position;
 
 ---
 
-## Öncelik 6 — i18n Linter Script
+## Öncelik 5 — i18n Linter Script
 
 **Neden:** 2. oturumdaki "sessizce anahtar silme" hatasını bir daha yaşamamak için.
 
@@ -163,6 +152,26 @@ ORDER BY ordinal_position;
 
 ---
 
+## Öncelik 6 — Diğer Sayfaların Enum Refactor'ü (YENİ)
+
+**Sorun:** 3. ve 4. oturumlarda `spool_detay`, `devre_yeni`, `devre_duzenle`, `kesim`, `markalama`, `is_baslat`, `devreler` sayfaları ARES_NORM'a entegre edildi. Ama sistemin başka sayfaları da var ve taranmadı:
+
+**Taranacak sayfalar:**
+- `bukum.html` — malzeme/yüzey badge var mı?
+- `sevkiyat.html` — listeleme/filtreleme yapıyor mu?
+- `kalite_kontrol.html` — enum display var mı?
+- `raporlar.html` — agregasyon yapıyorsa çok önemli
+- `proje_detay.html`, `devre_detay.html` — Supabase entegrasyonu henüz yok ama geldiğinde ARES_NORM kullanılsın
+
+**Yapılacak:**
+1. Her sayfada `grep -E "malzeme|yuzey|_normalize"` ile tara
+2. Enum display yerleri ARES_NORM'a bağla
+3. Hard-coded Türkçe etiket var mı kontrol et
+
+**Süre tahmini:** 1-2 oturum (sayfa sayısına ve karmaşıklığa göre)
+
+---
+
 ## Öncelik 7 — Ortak Modüller Çıkarma
 
 **Sorun:** spool_detay.html 132 fonksiyon, çoğu diğer sayfalarla kopya
@@ -171,7 +180,7 @@ ORDER BY ordinal_position;
 - `ares-spool.js` — spool ile ilgili ortak fonksiyonlar (kesim, büküm, kaynak iş yönetimi)
 - `ares-devre.js` — devre hesaplama, filtre, sıralama
 - `ares-ui.js` — ortak UI helper'ları (badge render, alert, modal)
-- `ares-normalize.js` ✅ bitti (3. oturumda)
+- `ares-normalize.js` ✅ bitti (3. + 4. oturum)
 
 **Süre tahmini:** 2-3 oturum
 
@@ -181,15 +190,45 @@ ORDER BY ordinal_position;
 
 **Sorun:** kesim.html'de Excel export hâlâ hardcode Türkçe:
 - Başlıklar: 'KULLANILACAK MALZEME', 'STOK (mm)', 'KESIM (mm)' vb.
-- Satır 1302: `malzAdi = 'O ' + cap + ' x ' + kalinlik + ' - ' + malzeme + ' ' + kalite`
+- Satır 1302: `malzAdi = 'O ' + cap + ' x ' + kalinlik + ' - ' + malzeme + ' ' + kalite` *(4. oturumda malzeme lokalize edildi, başlıklar hâlâ hardcode)*
 
 **Yapılacak (opsiyonel):**
 - Excel başlıklarını `tv()` ile sar
-- malzAdi'da ARES_NORM.malzemeEtiket ile çeviri
+- Diğer islem_log noktalarını da tara (4. oturumda sadece kesim.html düzeltildi)
 
-**Not:** Excel export muhtemelen Türkçe kalacak — sorun değil. Ama islem_log aciklamaları da benzer şekilde kod görüyor (`karbon 48.3 2000mm`) — log format'ı insan okunabilir kalmalıysa bu da refactor edilmeli.
+**Not:** Excel export muhtemelen Türkçe kalacak — sorun değil. Ama i18n hedefi varsa düzeltilmeli.
 
 **Süre tahmini:** 1 oturum
+
+---
+
+## Öncelik 9 — Form Davranışı Araştırması (YENİ)
+
+**Sorun:** 4. oturumda `spool_malzemeleri.kalite='diger'` olan 2 orphaned kayıt bulundu (silindi). Ama bu kayıtların nasıl oluştuğu tam anlaşılmadı:
+- Operatör malzeme olarak "Diğer" seçmiş
+- Kalite alanına "diger" yazmış (serbest metin)
+- İki aynı kayıt oluşmuş (mükerrer submit?)
+
+**Yapılacak:**
+1. devre_yeni.html form submit mantığını incele
+2. Kalite alanı serbest metin yerine önerilen seçenekler (304, 316, S235, A106 Gr.B, vb.) veya dropdown olmalı mı?
+3. Mükerrer submit engellemesi var mı?
+4. "Diğer" malzeme seçildiğinde ek açıklama alanı gerekli mi?
+
+**Süre tahmini:** 1 oturum (araştırma + UX iyileştirme)
+
+---
+
+## Öncelik 10 — devre_yeni.html Yüzey "Diğer" Eklenmesi (YENİ — küçük iş)
+
+**Sorun:** Yüzey radio'larında 4 seçenek var (asit/galvaniz/siyah/boyali), "Diğer" yok. Nadir yüzey işlemleri için gerekiyor.
+
+**Yapılacak:**
+- `devre_yeni.html` yüzey radio group'una "Diğer" seçeneği ekle (value=`diger`)
+- `devre_duzenle.html` aynı şekilde
+- Belki "Diğer" seçilince ek açıklama input'u göster
+
+**Süre tahmini:** 1 saat (Öncelik 1 ile birlikte yapılabilir)
 
 ---
 
@@ -198,26 +237,32 @@ ORDER BY ordinal_position;
 - [ ] `_status.json` i18n yönetimi — Freeze & Translate stratejisi benimsendi
 - [ ] spool_detay.html yeniden yazma — büyük iş, revizyon geldiğinde yapılacak
 - [ ] devre_detay.html yeniden yazma — aynı şekilde
-- [ ] Admin paneli dil yönetim ekranı — gereksiz
+- [ ] Admin paneli enum yönetim ekranı — gereksiz (4. oturumda karar verildi)
 
 ---
 
 ## Kural Hatırlatmaları (Bir Sonraki Oturum için Claude'a)
 
-- **Toplu silme yapmadan önce dry-run + kullanıcı onayı** (2. oturumda 2 kere yandık, 3. oturumda hassaslık korundu)
+- **Toplu silme/değişiklik yapmadan önce dry-run + kullanıcı onayı** (2. oturumda 2 kere yandık, 3-4. oturumlarda hassaslık korundu)
 - **Tarama kapsamı:** HTML + JS + JSX hepsi birlikte. Pattern'ler: `tv()`, `data-i18n`, `i18n:`, dinamik `prefix_`
 - **Mockup-first (R-10):** Yeni mobil ekran yazılmadan önce artifact mockup + onay
 - **Tema için useTema (R-09):** Direct DOM manipulation yasak
 - **Enum için ARES_NORM (E-01):** Malzeme/yüzey/durum değerleri her zaman ARES_NORM'dan geçer — hardcode Türkçe yazılmaz
 - **Kolon adı uyumu:** Her Supabase query'sinden önce şema referansına bak
-- **"Sadece X" istendiğinde sadece X verilir** — hepsini toplu verme (3. oturumda yanlış anlaşılma oldu)
+- **"Sadece X" istendiğinde sadece X verilir** — hepsini toplu verme
+
+### 4. Oturum Dersi: "UX vs Schema ayrımı"
+Kullanıcı "Paslanmaz her yerde aynı yazılsın" derken **UX**'ten bahsediyordu (ekrandaki tutarlılık). Claude ise başlangıçta bunu **DB schema**'sıyla karıştırdı ("DB'de nasıl saklayalım?"). Bu iki konu ayrı — DB'de kod, ekranda etiket, ikisi de ayrı değişken. Gelecekte benzer bir soru gelirse hemen ayrımı netleştir.
+
+### 4. Oturum Dersi: "DB gerçeğini konuşmadan karar verme"
+Başlangıçta "dropdown fix yeterli" zannedildi. DB'ye baktığımızda aslında **3 farklı kod sistemi** yan yana olduğu görüldü (`karbon` / `karbon_celik` / `Karbon Çelik`). Migration o oturumun asıl başarısı oldu, dropdown fix onun yan etkisi. **Ders:** Belge + kod okuması yeterli değil, DB'deki gerçek veri her zaman sürpriz içerebilir.
 
 ---
 
 ## Strateji Özeti (Üzerinde Anlaşıldı)
 
 **3 Katmanlı Hibrit Yaklaşım:**
-- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) — dil sistemi ✅, kolon adları ⏳, tırnaklı tema ✅, enum normalize ✅
+- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) — dil sistemi ✅, kolon adları ⏳, tırnaklı tema ✅, enum normalize ✅ (Faz 2 bitti)
 - **Katman 2:** Revizyon geldikçe sayfa yeniden yaz (yama değil) — strangler fig pattern
 - **Katman 3:** Küçük çalışan sayfalar dokunulmaz (ayarlar, tezgahlar, log vb.)
 
@@ -226,21 +271,25 @@ ORDER BY ordinal_position;
 - Profesyonel translator / CAT tool / Claude + terminoloji sözlüğü
 - Direkt kullan, admin panel yok
 
-**Enum Stratejisi: Kod bazlı DB + tv() wrapper**
-- DB'de kod saklanır (karbon, paslanmaz, asit vb.)
-- ARES_NORM modülü ham ↔ kod ↔ etiket dönüşümlerini tek yerden yönetir
-- Her yeni malzeme/yüzey/durum türü eklenirken: (1) ARES_NORM'a pattern ekle (2) 3 dil dosyasına `cmn_*` anahtarı ekle
+**Enum Stratejisi: Kod bazlı DB + tv() wrapper** ✅ TAMAMLANDI
+- DB'de kod saklanır (karbon, paslanmaz, asit vb.) ✅ Faz 2 migration bitti
+- ARES_NORM modülü ham ↔ kod ↔ etiket dönüşümlerini tek yerden yönetir ✅
+- Kanonik liste: 4 malzeme + 4 yüzey + `diger` ✅ (4. oturumda kilitlendi)
+- Yeni tür eklerken: (1) ARES_NORM regex'e sinonim (2) 3 dil dosyasına `cmn_*` anahtarı (3) Radio seçeneği
+- Admin UI yapılmadı — gerekirse ~10 dk iş
 
 ---
 
 ## Son Söz
 
-3. oturumda en kritik arka plan borçlarından biri kapatıldı: enum anti-pattern artık tarihte. Her yeni özellik artık doğru fundament üzerine kurulabilir.
+4. oturumda enum sistemi tam olarak kapandı. DB temiz, ARES_NORM canonical, dropdown'lar düzgün, badge'ler doğru renkte. Yeni kayıtlar doğru format yazıyor.
 
-**Öncelikli iki hızlı iş:**
-1. Dropdown filter fix (görsel tutarsızlığı gideriyor)
-2. spool_detay kolon adları (sessiz bug'ları gideriyor)
+**Öncelikli iki hızlı iş (1 oturumda biter):**
+1. **Malzeme-Yüzey uyum kontrolü** (kullanıcı talebi) — görsel + DB constraint
+2. **devre_yeni.html yüzey "Diğer" seçeneği** — küçük ama eksik parça
 
-Bu ikisi bir oturumda olabilir. Sonra mobil MProfil ile nefes al.
+Sonra Öncelik 2 (spool_detay kolon adları) — sessiz bug temizliği.
+
+Sonra mobil MProfil ile nefes al.
 
 İyi çalışmalar, iyi dinlenmeler. 🚀

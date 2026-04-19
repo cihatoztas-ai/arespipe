@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 17 Nisan 2026 (3. oturum)
+> Son güncelleme: 19 Nisan 2026 (4. oturum)
 
 ---
 
@@ -225,17 +225,27 @@ VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
 
 ### 2.13 Enum Normalize Sistemi — ZORUNLU (Kural E-01)
 
-**17 Nisan 2026 — 3. oturumda eklendi.**
+**17 Nisan 2026 — 3. oturumda eklendi. 19 Nisan 2026 — 4. oturumda kanonik liste kesinleşti.**
 
 Malzeme, yüzey ve durum değerleri **KOD** olarak saklanır. Ekrana basılırken `ARES_NORM` modülü üzerinden çevrilir.
 
-#### Standart Kodlar
+#### Standart Kodlar (KANONİK — 4. oturumda kilitlendi)
 
-| Alan | Kodlar |
-|---|---|
-| malzeme | `karbon`, `paslanmaz`, `bakir`, `alum`, `plastik`, `diger` |
-| yuzey | `asit`, `galvaniz`, `siyah`, `boyali`, `epoksi`, `diger` |
-| durum | `bekliyor`, `devam_ediyor`, `tamamlandi`, `iptal` |
+| Alan | Kodlar | TR Etiketi |
+|---|---|---|
+| malzeme | `karbon` | Karbon Çelik |
+| malzeme | `paslanmaz` | Paslanmaz |
+| malzeme | `bakir` | Bakır Alaşım |
+| malzeme | `alum` | Alüminyum |
+| malzeme | `diger` | Diğer |
+| yuzey | `asit` | Asit |
+| yuzey | `galvaniz` | Galvaniz |
+| yuzey | `siyah` | Siyah |
+| yuzey | `boyali` | Boya |
+| yuzey | `diger` | Diğer |
+| durum | `bekliyor`, `devam_ediyor`, `tamamlandi`, `iptal` | — |
+
+**Not:** Operasyonda şu anda `plastik` malzeme ve `epoksi` yüzey kullanılmıyor — 4. oturumda bu kodlar hem `ares-normalize.js`'ten hem dil dosyalarından kaldırıldı. İleride ihtiyaç olursa ARES_NORM regex'ine + 3 dil dosyasına `cmn_*` anahtarı ekleme yeterli (~10 dk iş).
 
 #### API (ares-normalize.js)
 
@@ -258,14 +268,28 @@ ARES_NORM.tvDurum(kod, fb)
 #### Kurallar
 
 - **DB'ye KOD yazılır.** Yeni kayıt oluştururken `malzemeKod()` ile ham veri kod'a çevrilir
-- **Okuma her iki formatı kabul eder.** Legacy Türkçe satırlar da doğru etikete dönüşür
+- **Okuma her iki formatı kabul eder.** Legacy Türkçe satırlar da doğru etikete dönüşür (regex-based fallback)
 - **Hardcode Türkçe ASLA yazılmaz** — form'larda, normalize fonksiyonlarında, default değerlerde hep kod
 - **Radio/select value'ları kod olmalı:** `<input value="karbon">`, `<label data-i18n="cmn_malzeme_karbon">`
 - **i18n anahtar şeması:** `cmn_malzeme_<kod>`, `cmn_yuzey_<kod>`, `cmn_durum_<kod>` — 3 dilde tanımlı
 
-#### Faz 2 (Planlanan SQL Migration)
+#### Yeni malzeme/yüzey ekleme prosedürü
 
-Eski satırlardaki Türkçe etiketler henüz kod'a dönüşmedi. Okuma tarafı bunu geriye uyumluluk ile hallediyor. İsteğe bağlı SQL migration CLAUDE-SONRAKI-OTURUM.md Öncelik 3'te.
+1. `ares-normalize.js` → regex pattern'e sinonim ekle (örn. `plastik|pe|pvc`)
+2. `lang/tr.json`, `lang/en.json`, `lang/ar.json` → `cmn_malzeme_yenituru` anahtarı ekle (3 dilde)
+3. Varsa `devre_yeni.html` radio listesine seçenek ekle
+4. Deploy
+
+**Admin UI yapılmadı** — gerektiğinde basit ve hızlı eklenebiliyor. 3 yılda 4-5 kez yapılacak iş için admin UI overengineering.
+
+#### Faz 2 Migration — TAMAMLANDI (19 Nisan 2026 — 4. oturum)
+
+DB'deki legacy yazımlar kod formatına çevrildi:
+- `spooller.malzeme`: `karbon_celik`, `Karbon Çelik`, `bakir_alasim` → `karbon`, `bakir`
+- `spooller.yuzey`: `Asit` → `asit`
+- `spool_malzemeleri.malzeme`: aynı temizlik yapıldı
+
+Sonuç: DB'de tek canonical format var. Yeni kayıtlar devre_yeni.html üzerinden zaten kod yazıyor (test edildi).
 
 ---
 
@@ -291,9 +315,9 @@ tv('anahtar_adi', 'Türkçe fallback')
 
 ```
 lang/
-  tr.json  — Türkçe (web) — 1340 anahtar (17 Nisan 2026 — 3. oturum)
-  en.json  — İngilizce (web) — 1340 anahtar
-  ar.json  — Arapça (RTL destekli, web) — 1340 anahtar
+  tr.json  — Türkçe (web) — 1338 anahtar (19 Nisan 2026 — 4. oturum, plastik/epoksi silindi)
+  en.json  — İngilizce (web) — 1338 anahtar
+  ar.json  — Arapça (RTL destekli, web) — 1338 anahtar
 ```
 
 ```
@@ -591,9 +615,12 @@ Her sohbet bitiminde:
 - [ ] `malzeme.html` — yazılacak
 - [ ] `api/izometri-oku.js` — 502 Bad Gateway
 - [ ] **Yeni kaynak blokları UI'ya yansıma kontrolü** — Tanımlar sayfasında Argon/Gazaltı görünüyor mu?
-- [ ] **Dropdown filter'lar enum kod gösteriyor** (devreler/kesim/markalama) — tvMalzeme/tvYuzey ile wrap edilmeli
+- [x] **Dropdown filter'lar enum kod gösteriyor** (devreler/kesim) — 4. oturumda düzeltildi
 - [ ] **Excel export i18n** — kesim.html'de 'KULLANILACAK MALZEME' vb. başlıklar hardcode Türkçe
-- [ ] **Faz 2 SQL migration** — eski Türkçe malzeme/yüzey satırlarını kod'a çevirme (opsiyonel)
+- [x] **Faz 2 SQL migration** — 4. oturumda tamamlandı (spooller + spool_malzemeleri)
+- [ ] **Malzeme-Yüzey uyum kontrolü** — Paslanmaz+galvaniz/boya engellenmesi (devre_yeni/devre_duzenle + DB constraint)
+- [ ] **devre_yeni.html yüzey radio'larında "Diğer" seçeneği yok** — eklenmeli
+- [ ] **`spool_malzemeleri.kalite='diger'` UX sorunu** — kalite alanı serbest metin, yanlış giriş mümkün
 
 ### Mobil React sayfaları
 - [x] MGiris.jsx — tamamlandı, i18n'li
@@ -612,7 +639,81 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 17 NİSAN 2026 (3. OTURUM)
+## 11. SON OTURUM — 19 NİSAN 2026 (4. OTURUM)
+
+### Bu oturumda tamamlananlar (Enum Refactor Tamamlama + DB Migration)
+
+3. oturumda enum anti-pattern temizliği başlatılmıştı ama iki büyük boşluk kalmıştı: (1) `devreler.html` ARES_NORM'a bağlanmamıştı — kendi normalize fonksiyonu farklı kodlar üretiyordu (`karbon_celik` vs.), (2) DB'de üç farklı yazım yan yana yaşıyordu. Bu oturumda ikisi de kapatıldı.
+
+**DB Migration ✅ (Faz 2 tamamlandı):**
+- `spooller.malzeme`: `karbon_celik`, `Karbon Çelik` → `karbon` (1005 kayıt)
+- `spooller.malzeme`: `bakir_alasim` → `bakir` (83 kayıt)
+- `spooller.yuzey`: `Asit` → `asit` (24 kayıt)
+- `spool_malzemeleri.malzeme`: aynı temizlik
+- 1 epoksi test kaydı silindi
+- **Sonuç:** DB'de canonical format tek başına
+
+**Kanonik enum listesi kesinleşti (Bölüm 2.13):**
+- 5 malzeme: `karbon`, `paslanmaz`, `bakir`, `alum`, `diger`
+- 5 yüzey: `asit`, `galvaniz`, `siyah`, `boyali`, `diger`
+- **`plastik`, `epoksi`, `ham` çıkarıldı** — operasyonda kullanılmıyor
+
+**Kod değişiklikleri:**
+- **`ares-normalize.js`** — yüzey regex temizliği, `tvYuzey` default "Boyalı" → **"Boya"**
+- **`devreler.html`** (6 nokta refactor):
+  - `ares-normalize.js` script tag eklendi
+  - `_normalizeMalzeme`/`_normalizeYuzey` → ARES_NORM delegasyonu
+  - `rebuildSelect` — alan parametresi ile lokalize option text
+  - Pie chart + malzeme modal label lokalize
+  - 🔴 **Kritik bug fix:** `matBadge`/`yuzeyBadge` eski kodları (`karbon_celik`, `bakir_alasim`, `aluminyum`, `plastik_pe`) karşılaştırıyordu — delegasyon sonrası `else` dalına düşecek, renk sınıfları kaybolacaktı. Yeni kodlara (`karbon`, `bakir`, `alum`, `diger`) güncellendi.
+- **`kesim.html`** (7 nokta):
+  - `borular` map'ine `malzemeKod` alanı
+  - `populateFilters.fill` — `labelFn` parametresi
+  - `applyFilters` — kod bazlı karşılaştırma
+  - Arama haystack — ham değer + lokalize etiket
+  - Sorting — lokalize etiket bazlı
+  - `openListeModal` — homojenlik kod bazlı, önizleme lokalize
+  - Excel `malzAdi` + `islem_log` aciklama — lokalize etiket
+
+**Dil dosyaları (3) — 1340 → 1338 anahtar:**
+- `cmn_malzeme_plastik` SİLİNDİ (3 dil)
+- `cmn_yuzey_epoksi` SİLİNDİ (3 dil)
+- TR `cmn_yuzey_boyali`: "Boyalı" → **"Boya"**
+
+### Verilen Anahtar Kararlar
+
+- **Çoklu dil hedefi korundu:** Yabancı çalışanlar olduğu için kod bazlı DB + dil bağımsız UI yaklaşımı sürer
+- **"Paslanmaz" (yalın), "Bakır Alaşım", "Boya"** — kesin TR etiketleri
+- **Admin UI ertelendi** — ihtiyaç açıkça doğana kadar overengineering (5 malzeme + 5 yüzey stabil)
+- **Bakır ve alüminyum için yüzey kuralları netleşmedi** — sonraki oturuma kaldı
+
+### Yan Bulgular (CLAUDE-SONRAKI-OTURUM'a not edildi)
+
+- **Malzeme-yüzey uyum kuralı (YENİ — Öncelik 1):** paslanmaz + galvaniz/boya yasak olmalı, DB constraint + frontend validation
+- `spool_malzemeleri.kalite='diger'` 2 kayıt — form UX sorunu
+- `devre_yeni.html` yüzey radio'da "Diğer" seçeneği yok
+- Excel export başlıkları hâlâ Türkçe hardcode
+- Diğer HTML sayfalarında (bukum/sevkiyat/KK/raporlar) enum kullanımı taranmadı
+
+### devre_yeni.html Canlı Test ✅
+
+19 Nisan 17:03 testinde: Paslanmaz+Asit seçimi → DB'ye `malzeme='paslanmaz'`, `yuzey='asit'` yazıldı. 3. oturum patch'i doğru çalışıyor.
+
+### Önemli Öğrenmeler
+
+1. **Belge ≠ gerçeklik:** CLAUDE.md "plastik/epoksi canonical" diyordu, operasyonda yoktu. Varsayım değil **DB sorgusu** ile doğrula.
+
+2. **DB sorgusu karar almanın en ucuz yolu:** 3 SQL (malzeme dist + yüzey dist + son kayıt tarihi) tüm varsayımları 30 dakikada çürüttü/doğruladı.
+
+3. **"Kör nokta" testi değerli:** devre_yeni test edilmemişti — 2 dakikalık test 3 oturumluk belirsizliği kapattı.
+
+4. **Delegasyon sırasında "switch-case bombası":** `_normalizeMalzeme`'yi ARES_NORM'a delege edince dönen değer formatı değişti, eski `matBadge` if koşulları eşleşmeyecekti. **Kural:** Delegasyon öncesi eski fonksiyonun tüm kullanım noktalarını grep'le tara.
+
+5. **Canonical sözlük: 5+5 yeter.** "İleride olabilir" gerekçesiyle geniş tutmak tuzak — gerçek ihtiyaç doğunca ekleme ucuz.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Anti-Pattern Temizliği)
 
@@ -651,7 +752,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
+## 11B. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
 
 ### Bu oturumda tamamlananlar (MDrawer + Tema Context)
 
@@ -696,7 +797,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11B. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
+## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
 
 ### Tamamlananlar
 - **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)
