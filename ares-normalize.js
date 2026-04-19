@@ -51,7 +51,7 @@
     if (/asit|acid/.test(h))         return 'asit';
     if (/galvaniz|galvan/.test(h))   return 'galvaniz';
     if (/siyah|black/.test(h))       return 'siyah';
-    if (/boyal|paint/.test(h))       return 'boyali';
+    if (/boyal|boya|paint/.test(h))  return 'boyali';
     return 'diger';
   }
 
@@ -81,7 +81,7 @@
     if (kod && !/^[a-z_]+$/.test(String(kod))) kod = yuzeyKod(kod);
     if (!kod) return fb || '—';
     var def = { asit:'Asit', galvaniz:'Galvaniz', siyah:'Siyah',
-                boyali:'Boyalı', diger:'Diğer' }[kod] || fb || kod;
+                boyali:'Boya', diger:'Diğer' }[kod] || fb || kod;
     return _tvFn()('cmn_yuzey_'+kod, def);
   }
 

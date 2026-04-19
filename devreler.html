@@ -247,6 +247,7 @@
 
   <script src="ares-store.js"></script>
   <script src="ares-lang.js"></script>
+  <script src="ares-normalize.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -833,14 +834,20 @@ function _filterDataUygula() {
     return Object.keys(vals).sort();
   }
 
-  function rebuildSelect(id, options) {
+  function rebuildSelect(id, options, alan) {
     var el = document.getElementById(id);
     if (!el) return;
     var cur = el.value;
     while (el.options.length > 1) el.remove(1);
+    // Etiketlendirme fonksiyonu — alana göre ARES_NORM'dan lokalize etiket
+    var labelFn = function(v){ return v; };
+    if (typeof ARES_NORM !== 'undefined') {
+      if (alan === 'malzeme') labelFn = function(v){ return ARES_NORM.tvMalzeme(v, v); };
+      else if (alan === 'yuzey') labelFn = function(v){ return ARES_NORM.tvYuzey(v, v); };
+    }
     options.forEach(function(v) {
       var o = document.createElement('option');
-      o.value = v; o.textContent = v;
+      o.value = v; o.textContent = labelFn(v);
       el.appendChild(o);
     });
     // Seçili değer hâlâ mevcut mu?
@@ -848,8 +855,8 @@ function _filterDataUygula() {
     else el.value = '';
   }
 
-  rebuildSelect('fMalzeme', getOptions('malzeme'));
-  rebuildSelect('fYuzey',   getOptions('yuzey'));
+  rebuildSelect('fMalzeme', getOptions('malzeme'), 'malzeme');
+  rebuildSelect('fYuzey',   getOptions('yuzey'),   'yuzey');
 }
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────────
@@ -1124,7 +1131,9 @@ async function sorgulaVeGoster() {
 
     // Bar grafikler — RPC'den gelen aggregate verilerden
     var malzemeItems = (_allSpoolsCache._malzemeDagilim||[]).map(function(r,i){
-      return {label: (function(k){ return k && typeof tvMalzeme==='function' ? tvMalzeme(k) : k; })(_normalizeMalzeme(r.malzeme)||r.malzeme), val: r.adet, color: RENKLER[i%RENKLER.length]};
+      var kod = _normalizeMalzeme(r.malzeme) || r.malzeme;
+      var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kod, kod) : kod;
+      return {label: label, val: r.adet, color: RENKLER[i%RENKLER.length]};
     });
     // Normalize edilmiş değerleri birleştir (aynı kategori farklı yazımla gelebilir)
     var malzMerged = {};
@@ -1566,22 +1575,21 @@ function _doRender() {
     var dur = DURUM_MAP[d.durum] || {cls:'sb-baslamadi', text: d.durum};
     var matBadge = d.malzeme.map(function(m) {
       var mn = _normalizeMalzeme(m) || m;
-      var label, cls;
-      // mn artık normalize kod: 'karbon_celik' / 'paslanmaz' / ...
-      // Ekrana çevrilmiş metin basılır (tvMalzeme ile)
-      if (mn === 'karbon_celik')       { label = tvMalzeme(mn); cls = 'mb-celik'; }
-      else if (mn === 'paslanmaz')     { label = tvMalzeme(mn); cls = 'mb-pas'; }
-      else if (mn === 'bakir_alasim')  { label = tvMalzeme(mn); cls = 'mb-bakir'; }
-      else if (mn === 'aluminyum')     { label = tvMalzeme(mn); cls = 'mb-alum'; }
-      else if (mn === 'plastik_pe')    { label = (window.tv ? tv('cmn_malzeme_plastik', 'Plastik/PE') : 'Plastik/PE'); cls = 'mb-diger'; }
-      else                              { label = esc(mn); cls = 'mb-diger'; }
-      return '<span class="mat-badge ' + cls + '">' + label + '</span>';
+      // mn artık ARES_NORM normalize kod: 'karbon' / 'paslanmaz' / 'bakir' / 'alum' / 'diger'
+      var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(mn, mn) : mn;
+      var cls;
+      if (mn === 'karbon')          cls = 'mb-celik';
+      else if (mn === 'paslanmaz')  cls = 'mb-pas';
+      else if (mn === 'bakir')      cls = 'mb-bakir';
+      else if (mn === 'alum')       cls = 'mb-alum';
+      else                          cls = 'mb-diger';
+      return '<span class="mat-badge ' + cls + '">' + esc(label) + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
     var yuzeyBadge = d.yuzey.map(function(y) {
       var yn = _normalizeYuzey(y) || y;
-      // yn artık normalize kod: 'asit' / 'galvaniz' / 'boyali' / 'siyah' / 'ham' / 'paslanmaz'
+      // yn artık ARES_NORM normalize kod: 'asit' / 'galvaniz' / 'boyali' / 'siyah' / 'diger'
       var cls = yn === 'asit' ? 'yb-asit' : yn === 'galvaniz' ? 'yb-galvaniz' : yn === 'boyali' ? 'yb-boyali' : 'yb-siyah';
-      var label = tvYuzey(yn);
+      var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(yn, yn) : yn;
       return '<span class="yuzey-badge ' + cls + '">' + esc(label) + '</span>';
     }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
     var pc = progColor(d.ilerleme);
@@ -1705,45 +1713,25 @@ function fullDonut(svgId, centerId, items, cols, centerLabel) {
 }
 
 // ── MALZEME MODAL ────────────────────────────────────────────────
+// _normalizeMalzeme / _normalizeYuzey — ARES_NORM'a delege edilir (Kural E-01).
+// ARES_NORM tek kaynak: karbon_celik/Karbon Çelik/ST37 hepsini 'karbon'a çevirir.
+// Fonksiyon imzası korundu — geri uyumluluk için (pie chart, modal, filter hepsi bunu çağırıyor).
 function _normalizeMalzeme(m) {
   if (!m) return null;
   var s = String(m).trim();
   if (!s || s === '—' || s === '-') return null;
-  // Türkçe karakter ve büyük/küçük harf normalize
-  var n = s.toLowerCase()
-    .replace(/İ/g,'i').replace(/I/g,'i').replace(/ı/g,'i')
-    .replace(/Ğ/g,'g').replace(/ğ/g,'g')
-    .replace(/Ş/g,'s').replace(/ş/g,'s')
-    .replace(/Ü/g,'u').replace(/ü/g,'u')
-    .replace(/Ö/g,'o').replace(/ö/g,'o')
-    .replace(/Ç/g,'c').replace(/ç/g,'c')
-    .replace(/\s+/g,' ').trim();
-  // Kategori eşleştirme → normalize KOD döner (tvMalzeme ile çevrilmeli)
-  if (n.indexOf('karbon') !== -1 || n === 'celik' || n === 'steel' || n === 'carbon') return 'karbon_celik';
-  if (n.indexOf('paslanmaz') !== -1 || n.indexOf('stainless') !== -1 || n.indexOf('inox') !== -1) return 'paslanmaz';
-  if (n.indexOf('bakir') !== -1 || n.indexOf('copper') !== -1 || n.indexOf('cuni') !== -1 || n.indexOf('cunifer') !== -1) return 'bakir_alasim';
-  if (n.indexOf('alumin') !== -1 || n.indexOf('alum') !== -1) return 'aluminyum';
-  if (n.indexOf('plastik') !== -1 || n.indexOf('pe') !== -1 || n.indexOf('pvc') !== -1 || n.indexOf('grp') !== -1) return 'plastik_pe';
-  // Tanınmayan — ham değeri aynen döndür (tvMalzeme onu da yakalar, yoksa kendisini döner)
-  return s;
+  if (typeof ARES_NORM === 'undefined') return s; // fallback: ham değer
+  var kod = ARES_NORM.malzemeKod(s);
+  return kod || s;
 }
 
 function _normalizeYuzey(y) {
   if (!y) return null;
   var s = String(y).trim();
   if (!s || s === '—' || s === '-') return null;
-  // Bilinen yüzey işlem kategorileri — normalize KOD döner (tvYuzey ile çevrilmeli)
-  var n = s.toLowerCase()
-    .replace(/İ/g,'i').replace(/I/g,'ı').replace(/Ğ/g,'ğ')
-    .replace(/Ş/g,'ş').replace(/Ü/g,'ü').replace(/Ö/g,'ö').replace(/Ç/g,'ç');
-  if (n.indexOf('galvaniz') !== -1) return 'galvaniz';
-  if (n.indexOf('asit') !== -1 || n.indexOf('acid') !== -1) return 'asit';
-  if (n.indexOf('boya') !== -1 || n.indexOf('paint') !== -1) return 'boyali';
-  if (n.indexOf('siyah') !== -1 || n.indexOf('black') !== -1) return 'siyah';
-  if (n.indexOf('ham') !== -1 || n.indexOf('raw') !== -1) return 'ham';
-  if (n.indexOf('paslanmaz') !== -1) return 'paslanmaz';
-  // Bilinmeyen — ham değeri aynen döndür
-  return s;
+  if (typeof ARES_NORM === 'undefined') return s;
+  var kod = ARES_NORM.yuzeyKod(s);
+  return kod || s;
 }
 
 function malzemeModalAc() {
@@ -1757,7 +1745,8 @@ function malzemeModalAc() {
     merged[k].agirlik += parseFloat(r.agirlik)    || 0;
   });
   var items = Object.keys(merged).map(function(k, i) {
-    return {label: k, val: merged[k].val, agirlik: merged[k].agirlik, color: RENKLER[i%RENKLER.length]};
+    var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(k, k) : k;
+    return {label: label, val: merged[k].val, agirlik: merged[k].agirlik, color: RENKLER[i%RENKLER.length]};
   });
   var cols = items.map(function(x) { return x.color; });
   var malzemeBos = _allSpoolsCache._malzemeBos || 0;
