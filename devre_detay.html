@@ -1349,7 +1349,8 @@ function spoolEkleBaslat(){
 function spoolEkleKaydet(){
   var g=function(id){return((document.getElementById(id)||{}).value||'').trim();};
   var sn=g('nr_sn');if(!sn){showToast(tv('dv_spool_no_required','Spool No zorunludur'),'e');return;}
-  if(SPOOLS.find(function(s){return s.spoolNo===sn;})){showToast(tv('dv_spool_exists','Bu Spool No zaten var'),'e');return;}
+  var _pl=g('nr_pl')||''; var _rev=g('nr_rev')||'';
+  if(SPOOLS.find(function(s){return s.spoolNo===sn&&s.pipeline===_pl&&(s.rev||'')===(  _rev||'');})){showToast(tv('dv_spool_exists','Bu Spool No zaten var'),'e');return;}
   SPOOLS.push({idx:SPOOLS.length+1,_lk:'new_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),pipeline:g('nr_pl'),spoolNo:sn,rev:'',spoolId:'',
     cap:g('nr_cap'),et:'—',agirlik:g('nr_ag'),malzeme:g('nr_ml'),kalite:g('nr_kl'),yuzey:g('nr_yz'),
     durum:'waiting',durumText:tv('dv_status_waiting','Bekliyor'),adimlar:[0,0,0,0,0,0],
@@ -1883,7 +1884,7 @@ function spoolExcelImport(event){
       var data=new Uint8Array(e.target.result);var wb=XLSX.read(data,{type:'array'});
       var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
       var added=0,skip=0;
-      rows.forEach(function(row){var sn=String(row['Spool No']||row['spoolNo']||row['SPOOL NO']||'').trim();if(!sn){skip++;return;}if(SPOOLS.find(function(s){return s.spoolNo===sn;})){skip++;return;}SPOOLS.push({idx:SPOOLS.length+1,_lk:'new_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),pipeline:String(row['Pipeline No']||'').trim(),spoolNo:sn,rev:'',spoolId:'',cap:String(row['Cap']||'').trim(),et:'—',agirlik:String(row['Agirlik']||'').trim(),malzeme:String(row['Malzeme']||'').trim(),kalite:String(row['Kalite']||'').trim(),yuzey:String(row['Yuzey']||'').trim(),durum:'waiting',durumText:tv('dv_status_waiting','Bekliyor'),adimlar:[0,0,0,0,0,0],sonIslem:null,alistirma:null,bukum:{toplam:0,tamamlanan:0},kesim:{toplam:0,tamamlanan:0},markalama:{toplam:0,tamamlanan:0},test:{toplam:0,tamamlanan:0},durduruldu:false,stopped:false});added++;});
+      rows.forEach(function(row){var sn=String(row['Spool No']||row['spoolNo']||row['SPOOL NO']||'').trim();if(!sn){skip++;return;}var _pl=String(row['Pipeline No']||'').trim();var _rev=String(row['Rev']||row['REV']||'').trim();if(SPOOLS.find(function(s){return s.spoolNo===sn&&s.pipeline===_pl&&(s.rev||'')===(  _rev||'');})){skip++;return;}SPOOLS.push({idx:SPOOLS.length+1,_lk:'new_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),pipeline:String(row['Pipeline No']||'').trim(),spoolNo:sn,rev:'',spoolId:'',cap:String(row['Cap']||'').trim(),et:'—',agirlik:String(row['Agirlik']||'').trim(),malzeme:String(row['Malzeme']||'').trim(),kalite:String(row['Kalite']||'').trim(),yuzey:String(row['Yuzey']||'').trim(),durum:'waiting',durumText:tv('dv_status_waiting','Bekliyor'),adimlar:[0,0,0,0,0,0],sonIslem:null,alistirma:null,bukum:{toplam:0,tamamlanan:0},kesim:{toplam:0,tamamlanan:0},markalama:{toplam:0,tamamlanan:0},test:{toplam:0,tamamlanan:0},durduruldu:false,stopped:false});added++;});
       renderTable();statGuncelle();showToast(added+' '+tv('dv_unit_spool','spool')+' '+tv('dv_added','eklendi')+(skip?' ('+skip+' '+tv('dv_skipped','atlandı')+')'  :''),added>0?'success':'i');
     }catch(err){showToast(tv('dv_excel_read_error','Excel okunamadı')+': '+err.message,'e');}
     event.target.value='';
