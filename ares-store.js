@@ -200,6 +200,32 @@ else var ARES = (function () {
   function oturumAl()  { return _oturum; }
   function tenantId()  { return _oturum?.tenant_id || null; }
 
+  // ── TENANT PREFIX (E-03) ─────────────────────────────────
+  // tenants.kod — spool_id prefix'i (A-0504 gibi). Cache _oturum.tenant_id'ye
+  // bağlı: tenant değişince (login, viewAs) otomatik tazelenir.
+  let _tenantKodCache = null; // { tenant_id, kod }
+  async function tenantKod() {
+    const tid = tenantId();
+    if (!tid) return null;
+    if (_tenantKodCache && _tenantKodCache.tenant_id === tid) {
+      return _tenantKodCache.kod;
+    }
+    if (!_supa) return null;
+    try {
+      const res = await _supa
+        .from('tenants')
+        .select('kod')
+        .eq('id', tid)
+        .single();
+      const kod = res?.data?.kod || null;
+      _tenantKodCache = { tenant_id: tid, kod };
+      return kod;
+    } catch (e) {
+      console.warn('[ARES] tenantKod hatası:', e.message);
+      return null;
+    }
+  }
+
   // ── LOCALSTORAGE YARDIMCILARI ────────────────────────────
   function _lget(key) {
     try { return JSON.parse(localStorage.getItem('ares_' + key)) || null; }
@@ -860,7 +886,7 @@ else var ARES = (function () {
     supabase: function () { return _supa; },
 
     // Oturum
-    girisYap, cikisYap, oturumKontrol, oturumAl, tenantId,
+    girisYap, cikisYap, oturumKontrol, oturumAl, tenantId, tenantKod,
     viewAsAktif, viewAsCik,
 
     // Yetki — rol bazlı (mevcut)

@@ -129,6 +129,7 @@
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -321,7 +322,7 @@ async function veriYukle() {
       return {
         id:       s.id,
         supaId:   s.id,
-        spool:    [prj.proje_no, s.pipeline_no, s.spool_no].filter(Boolean).join('-'),
+        spool:    ARES_NORM.marka(prj.proje_no, s.pipeline_no, s.spool_no),
         spoolId:  s.spool_id || '',
         devre:    dv.devre_no || '—',
         projeNo:  prj.proje_no || '—',
@@ -352,10 +353,11 @@ async function veriYukle() {
         spooller:     (d.kk_davet_spooller || []).map(function(ks) {
           var sp = ks.spooller || {};
           var dv = sp.devreler || {};
+          var pr = (dv.projeler || {});
           return {
             id:         ks.id,
             spoolId:    sp.spool_id || ks.spool_id,
-            spool:      sp.spool_no || '—',
+            spool:      ARES_NORM.marka(pr.proje_no, sp.pipeline_no, sp.spool_no) || (sp.spool_no || '—'),
             devre:      dv.devre_no || '—',
             agirlik:    parseFloat(sp.agirlik) || 0,
             durumOnay:  ks.sonuc || null

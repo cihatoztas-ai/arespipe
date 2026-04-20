@@ -428,7 +428,8 @@ textarea.fi{resize:vertical;min-height:72px;}
               <input class="fi" id="ySpoolNo"  data-i18n-placeholder="dny_ph_spool" placeholder="Spool No">
               <input class="fi" id="yRev"      placeholder="Rev" style="max-width:60px;">
               <input class="fi" id="yMalzeme"  data-i18n-placeholder="dny_ph_material" placeholder="Malzeme">
-              <input class="fi" id="yKalite"   data-i18n-placeholder="dny_ph_grade" placeholder="Kalite">
+              <input class="fi" id="yKalite"   list="kaliteListe" data-i18n-placeholder="dny_ph_grade" placeholder="Kalite" autocomplete="off">
+              <datalist id="kaliteListe"></datalist>
               <input class="fi" id="yCap"       data-i18n-placeholder="dny_ph_diam" placeholder="Çap (mm)">
               <input class="fi" id="yAgirlik"   data-i18n-placeholder="dny_ph_weight" placeholder="Ağırlık" type="number" step="0.01">
               <input class="fi" id="yYuzey"     data-i18n-placeholder="dny_ph_surface" placeholder="Yüzey">
@@ -1950,6 +1951,49 @@ async function tersaneleriDoldur() {
   // Local mod: HTML'de zaten hardcoded option var
 }
 
+// ── KALİTE AUTOCOMPLETE ──────────────────────────────────────
+// Kalite alanı (yKalite) için geçmiş doğru standart kodları datalist olarak yükler.
+// Bozuk değerler (malzeme türü, canonical kod, joker) filtrelenir — autocomplete'te görünmez.
+// Tenant-scoped: her firma kendi geçmiş kaliteleri görür.
+async function kaliteleriDoldur() {
+  try {
+    const supa = ARES.supabase();
+    if (!supa || ARES.mod !== 'supabase') return;
+    const res = await supa
+      .from('spool_malzemeleri')
+      .select('kalite')
+      .eq('tenant_id', ARES.tenantId())
+      .not('kalite', 'is', null);
+    if (res.error || !res.data) return;
+    // Bozuk listesi: malzeme türleri (canonical + Türkçe) + joker
+    const BOZUK = new Set([
+      'karbon','paslanmaz','bakir','alum','diger',
+      'Karbon Çelik','Paslanmaz','Bakır Alaşım','Alüminyum','Diğer'
+    ]);
+    const uniq = {};
+    res.data.forEach(function(row) {
+      let k = (row.kalite || '').trim();
+      if (!k) return;
+      if (BOZUK.has(k)) return;
+      if (k.indexOf('*') !== -1) return; // St* gibi jokerli olanlar
+      // Normalize: "AISI 316L" → "316L" (display-only, DB dokunulmaz)
+      k = k.replace(/^AISI\s+/i, '');
+      uniq[k] = (uniq[k] || 0) + 1;
+    });
+    const dl = document.getElementById('kaliteListe');
+    if (!dl) return;
+    dl.innerHTML = '';
+    // Kullanım sıklığına göre sırala — sık kullanılanlar üstte
+    Object.keys(uniq)
+      .sort(function(a,b) { return uniq[b] - uniq[a] || a.localeCompare(b); })
+      .forEach(function(k) {
+        const opt = document.createElement('option');
+        opt.value = k;
+        dl.appendChild(opt);
+      });
+  } catch(e) { console.warn('[kaliteleriDoldur]', e); }
+}
+
 // ── TOAST ────────────────────────────────────────────────────
 let toastT = null;
 function toast(msg, tip='ok') {
@@ -1981,6 +2025,7 @@ document.addEventListener('DOMContentLoaded', function() {
       _bekle++;
     }
     await tersaneleriDoldur();
+    kaliteleriDoldur(); // non-blocking: autocomplete yüklense de yüklemese de UI akışı bozulmaz
     isEmriPreviewGoster();
   })();
 });

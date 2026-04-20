@@ -171,39 +171,88 @@ function taramaKare() {
   requestAnimationFrame(taramaKare);
 }
 
+// ── QR PARSE (E-03 tenant prefix) ────────────────────────────────
+// 3 format desteklenir:
+//   1. Yeni:  "A-0504:f0cd6ae8-..."  → {prefix:"A", kisaKod:"0504", uuid:"f0cd...", tamKod:"A-0504"}
+//   2. Karma: "A-0504"                → {prefix:"A", kisaKod:"0504", uuid:null,     tamKod:"A-0504"}
+//   3. Eski:  "0504"                  → {prefix:null, kisaKod:"0504", uuid:null,    tamKod:"0504"}
+function parseQR(raw) {
+  var s = (raw||'').trim();
+  var uuid = null;
+  var kod = s;
+  // İki nokta varsa: kod:uuid
+  if (s.indexOf(':') !== -1) {
+    var p = s.split(':');
+    kod  = p[0];
+    uuid = p.slice(1).join(':'); // UUID'de : yok ama güvenli ol
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+      uuid = null; // UUID değilse yok say
+    }
+  }
+  // Kodu prefix + kısa kod'a böl (A-0504 → {A, 0504})
+  var prefix = null, kisaKod = kod;
+  if (kod.indexOf('-') !== -1) {
+    var q = kod.split('-');
+    if (/^[A-Z]{1,4}$/.test(q[0])) {
+      prefix  = q[0];
+      kisaKod = q.slice(1).join('-');
+    }
+  }
+  return { prefix: prefix, kisaKod: kisaKod, uuid: uuid, tamKod: kod };
+}
+
 // ── QR BULUNDU ───────────────────────────────────────────────────
-function qrBulundu(spoolId) {
+function qrBulundu(raw) {
   if (_bulunan) return;
   _bulunan = true;
   _tarama = false;
 
-  durumGoster('arama', '🔍 ' + spoolId + ' ' + tv('qr_araniyor','aranıyor…'));
+  var parsed = parseQR(raw);
+  durumGoster('arama', '🔍 ' + parsed.tamKod + ' ' + tv('qr_araniyor','aranıyor…'));
 
   // Titreşim (mobil)
   if (navigator.vibrate) navigator.vibrate(100);
 
-  spoolAra(spoolId);
+  spoolAra(parsed);
 }
 
-async function spoolAra(spoolId) {
+async function spoolAra(parsed) {
   var supa = ARES.supabase();
   if (!supa || ARES.mod !== 'supabase') {
-    // Demo mod — direkt yönlendir
-    gec('spool_detay.html?spoolId=' + encodeURIComponent(spoolId));
+    // Demo mod — direkt yönlendir (eski davranış)
+    gec('spool_detay.html?spoolId=' + encodeURIComponent(parsed.tamKod));
     return;
   }
 
+  // Cross-tenant kontrolü: prefix varsa ve kendi kodumuzla eşleşmiyorsa uyar
+  if (parsed.prefix && ARES.tenantKod) {
+    try {
+      var kendiKod = await ARES.tenantKod();
+      if (kendiKod && parsed.prefix !== kendiKod) {
+        var adRes = null;
+        try {
+          adRes = await supa.from('tenants').select('ad').eq('kod', parsed.prefix).single();
+        } catch(_e) {}
+        var firmaAdi = (adRes && adRes.data && adRes.data.ad) || parsed.prefix;
+        durumGoster('hata', '❌ ' + tv('qr_baska_firma','Bu spool başka firmaya ait') + ': ' + firmaAdi);
+        setTimeout(function() { tekrarBaslat(); }, 3000);
+        return;
+      }
+    } catch(_e) { /* kendi kodumuzu çekemediysek yine de lookup dene */ }
+  }
+
   try {
-    var res = await supa
-      .from('spooller')
-      .select('id, spool_id, spool_no, pipeline_no, devre_id')
-      .eq('spool_id', spoolId)
-      .eq('tenant_id', ARES.tenantId())
-      .limit(1)
-      .single();
+    // UUID varsa onunla lookup (hızlı + RLS güvenli); yoksa spool_id ile (eski QR'lar için)
+    var q = supa.from('spooller').select('id, spool_id, spool_no, pipeline_no, devre_id');
+    if (parsed.uuid) {
+      q = q.eq('id', parsed.uuid);
+    } else {
+      q = q.eq('spool_id', parsed.tamKod).eq('tenant_id', ARES.tenantId());
+    }
+    var res = await q.limit(1).single();
 
     if (res.error || !res.data) {
-      durumGoster('hata', '❌ ' + tv('qr_bulunamadi','Spool bulunamadı') + ': ' + spoolId);
+      durumGoster('hata', '❌ ' + tv('qr_bulunamadi','Spool bulunamadı') + ': ' + parsed.tamKod);
       setTimeout(function() { tekrarBaslat(); }, 2500);
       return;
     }

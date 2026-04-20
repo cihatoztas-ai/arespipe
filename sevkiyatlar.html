@@ -179,6 +179,7 @@
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -630,11 +631,11 @@ async function veriYukle() {
     // 1+2 paralel — hazır spooller + geçmiş sevkiyatlar
     var [hazirRes, sevkRes] = await Promise.all([
       supa.from('spooller')
-        .select('id, spool_no, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
+        .select('id, spool_no, pipeline_no, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
         .in('aktif_basamak', ['kk', 'sevkiyat'])
         .eq('silindi', false),
       supa.from('sevkiyatlar')
-        .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, agirlik_kg, devreler(devre_no)))')
+        .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, pipeline_no, agirlik_kg, devreler(devre_no)))')
         .order('olusturma', { ascending: false })
     ]);
 
@@ -645,7 +646,7 @@ async function veriYukle() {
       return {
         id:       s.id,
         supaId:   s.id,
-        spool:    s.spool_no || '—',
+        spool:    ARES_NORM.marka(s.pipeline_no, s.spool_no) || '—',
         devre:    dv.devre_no || '—',
         projeNo:  prj.proje_no || '—',
         gemi:     prj.gemi_adi || '—',
@@ -661,7 +662,7 @@ async function veriYukle() {
       var spoolList = (s.sevkiyat_spooller || []).map(function(ss) {
         var sp = ss.spooller || {};
         var dv = sp.devreler || {};
-        return { spool: sp.spool_no || '—', devre: dv.devre_no || '—', agirlik: parseFloat(sp.agirlik_kg) || 0 };
+        return { spool: ARES_NORM.marka(sp.pipeline_no, sp.spool_no) || '—', devre: dv.devre_no || '—', agirlik: parseFloat(sp.agirlik_kg) || 0 };
       });
       return {
         id:          s.id,

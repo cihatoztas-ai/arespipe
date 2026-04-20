@@ -761,7 +761,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
         <div class="fg"><label class="fl" data-i18n="sp_weight_label">Ağırlık (kg)</label><input class="fi" id="ed_agr" placeholder="26,82 kg"></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_surface">Yüzey İşlemi</label><select class="fi" id="ed_yuz"><option value="">Seçin...</option><option>Galvaniz</option><option>Asit</option><option>Siyah</option><option>Epoksi</option></select></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_material">Malzeme</label><select class="fi" id="ed_malz"><option value="">Seçin...</option><option>Karbon Çelik</option><option>Paslanmaz</option><option>Alüminyum</option><option>Bakır Alaşım</option></select></div>
-        <div class="fg"><label class="fl" data-i18n="sp_quality_label">Kalite / Standart</label><input class="fi" id="ed_kal" placeholder="St37, 316L, A106-B"></div>
+        <div class="fg"><label class="fl" data-i18n="sp_quality_label">Kalite / Standart</label><input class="fi" id="ed_kal" list="kaliteListe" placeholder="St37, 316L, A106-B" autocomplete="off"><datalist id="kaliteListe"></datalist></div>
       </div>
     </div>
     <div class="mfoot"><button class="btn" onclick="this.closest('.mov').style.display='none'" data-i18n="sp_cancel_btn">İptal</button><button class="btn btn-ac" onclick="duzenleKaydet()" data-i18n="sp_save_btn">Kaydet</button></div>
@@ -1195,6 +1195,46 @@ function toast(msg,tip){
   t.appendChild(sp);t.appendChild(cl);
   document.body.appendChild(t);
   setTimeout(function(){if(t.parentNode)t.remove();},3000);
+}
+
+// ── KALİTE AUTOCOMPLETE ──────────────────────────────────────
+// ed_kal input'u için geçmiş doğru standart kodları datalist olarak yükler.
+// Bozuk değerler (malzeme türü, canonical kod, joker) filtrelenir.
+// Tenant-scoped: her firma kendi geçmiş kaliteleri görür. DOMContentLoaded'da çağrılır.
+async function kaliteleriDoldur(){
+  try{
+    var supa=ARES.supabase();
+    if(!supa||ARES.mod!=='supabase') return;
+    var res=await supa
+      .from('spool_malzemeleri')
+      .select('kalite')
+      .eq('tenant_id',ARES.tenantId())
+      .not('kalite','is',null);
+    if(res.error||!res.data) return;
+    var BOZUK={
+      'karbon':1,'paslanmaz':1,'bakir':1,'alum':1,'diger':1,
+      'Karbon Çelik':1,'Paslanmaz':1,'Bakır Alaşım':1,'Alüminyum':1,'Diğer':1
+    };
+    var uniq={};
+    res.data.forEach(function(row){
+      var k=(row.kalite||'').trim();
+      if(!k) return;
+      if(BOZUK[k]) return;
+      if(k.indexOf('*')!==-1) return; // joker
+      k=k.replace(/^AISI\s+/i,''); // "AISI 316L" → "316L"
+      uniq[k]=(uniq[k]||0)+1;
+    });
+    var dl=T('kaliteListe');
+    if(!dl) return;
+    dl.innerHTML='';
+    Object.keys(uniq)
+      .sort(function(a,b){return uniq[b]-uniq[a]||a.localeCompare(b);})
+      .forEach(function(k){
+        var opt=document.createElement('option');
+        opt.value=k;
+        dl.appendChild(opt);
+      });
+  }catch(e){console.warn('[kaliteleriDoldur]',e);}
 }
 
 function ucLabel(v){
@@ -1735,8 +1775,12 @@ function lbKey(e){if(e.key==='Escape'){T('lb').classList.remove('open');document
 // ── QR ────────────────────────────────────────────────────────
 function renderQR(){
   var fmt=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join('-');
-  // QR içeriği: sadece spool_id (0135 gibi) — kısa, hızlı okunur
-  var qrIcerik = SP.spoolId || SP.supaId || 'ARES';
+  // QR içeriği (E-03 tenant prefix): spoolId + UUID birleşik — cross-tenant güvenli
+  // Format: "A-0504:f0cd6ae8-..." — qr_tara.html iki noktadan böler, prefix kontrolü yapar
+  // Fallback: ikisinden biri yoksa eski davranış (geriye uyumluluk)
+  var qrIcerik = (SP.spoolId && SP.supaId)
+    ? (SP.spoolId + ':' + SP.supaId)
+    : (SP.spoolId || SP.supaId || 'ARES');
   var c=T('qrBig');
   if(c){
     c.innerHTML='';
@@ -2985,6 +3029,7 @@ document.addEventListener('DOMContentLoaded',function(){
     renderTracker();renderFotolar();renderKesimler();renderBukumler();
     renderMarkalar();renderTestler();renderMalzeme();renderNotlar();
     renderLog();renderBelgeler();renderQR();initTabs();
+    kaliteleriDoldur(); // autocomplete — arkada yüklensin
     if(typeof _applyI18n==='function')_applyI18n();
     document.documentElement.style.visibility='';
   })();

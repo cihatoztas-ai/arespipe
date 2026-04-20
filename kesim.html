@@ -505,8 +505,8 @@ async function veriYukle() {
       var dv   = sp.devreler         || {};
       var prj  = dv.projeler         || {};
       var trs  = prj.tersaneler      || {};
-      var spoolLabel = [prj.proje_no, sp.pipeline_no, sp.spool_no].filter(Boolean).join('-');
-      var malzKod = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.malzemeKod(mal.malzeme) : '';
+      var spoolLabel = ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no);
+      var malzKod = ARES_NORM.malzemeKod(mal.malzeme);
       return {
         id:          k.id,
         supaId:      k.id,

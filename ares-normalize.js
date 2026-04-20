@@ -99,6 +99,22 @@
     return ['asit','galvaniz','siyah','boyali','diger'];
   }
 
+  // ── MARKA: parçalardan birleşik spool markası oluştur (6. oturum) ────
+  // Kullanım:
+  //   ARES_NORM.marka(sp.pipeline_no, sp.spool_no)
+  //     → "M100-262-302-47-S01"
+  //   ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no)
+  //     → "NB1137-M100-262-302-47-S01"
+  //   ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no, sp.rev)
+  //     → "NB1137-M100-262-302-47-S01-R2"
+  // Null/undefined/boş parçalar otomatik atlanır.
+  function marka(){
+    return Array.prototype.slice.call(arguments)
+      .map(function(p){ return (p == null ? '' : String(p)).trim(); })
+      .filter(Boolean)
+      .join('-');
+  }
+
   // ── tv() yardımcıları ─────────────────────────────────────────────
   function _tvFn(){ return g._tv || g.tv || function(k,f){return f||k;}; }
 
@@ -143,6 +159,7 @@
     durumEtiket:   durumEtiket,
     uyumlu: uyumlu,
     uyumluYuzeyler: uyumluYuzeyler,
+    marka: marka,
     _ascii: _ascii,
   };
 

@@ -374,7 +374,7 @@ async function veriYukle() {
       var dv  = sp.devreler         || {};
       var prj = dv.projeler         || {};
       var trs = prj.tersaneler      || {};
-      var spoolLabel = [prj.proje_no, sp.pipeline_no, sp.spool_no].filter(Boolean).join('-');
+      var spoolLabel = ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no);
       return {
         id:         k.id,
         supaId:     k.id,
