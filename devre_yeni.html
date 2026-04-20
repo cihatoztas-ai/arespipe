@@ -155,6 +155,7 @@ textarea.fi{resize:vertical;min-height:72px;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:10px;z-index:1100;animation:tin 0.3s ease;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
 .t-ok{border-left:3px solid var(--gr);}
 .t-er{border-left:3px solid var(--re);}
+.t-wa{border-left:3px solid var(--warn);}
 .t-in{border-left:3px solid var(--ac);}
 @keyframes tin{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 .tp-btn{width:26px;height:26px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all 0.15s;}
@@ -1101,13 +1102,13 @@ async function spoolCakismaBul(devreId, yeniSpooller) {
     mevcutKeys[k] = true;
   });
   const cakismalar = [];
-  (yeniSpooller || []).forEach(function(s) {
+  (yeniSpooller || []).forEach(function(s, i) {
     const pipeline = s.pipeline || '';
     const spoolNo  = s.spoolNo  || s.pipeline || '';
     const rev      = s.rev || '';
     const k = pipeline + '|' + spoolNo + '|' + rev;
     if (mevcutKeys[k]) {
-      cakismalar.push({ pipeline: pipeline, spoolNo: spoolNo, rev: rev });
+      cakismalar.push({ pipeline: pipeline, spoolNo: spoolNo, rev: rev, idx: i });
     }
   });
   return cakismalar;
@@ -1646,7 +1647,17 @@ async function kaydet() {
             btnKaydet.disabled = false;
             return;
           }
-          // 'devam' → INSERT'i dene, DB unique constraint varsa kendisi yakalar
+          if (sKarar === 'atla') {
+            // Çakışan spool'ları array'den çıkar, sadece yenileri INSERT edilecek
+            const atlaIdx = new Set(cakismalar.map(function(c) { return c.idx; }));
+            spooller = spooller.filter(function(_, i) { return !atlaIdx.has(i); });
+            if (!spooller.length) {
+              toast(tv('dny_dedup_s_bos','Eklenecek spool kalmadı (hepsi zaten kayıtlı)'), 'wa');
+              btnKaydet.disabled = false;
+              return;
+            }
+          }
+          // 'zorla' → INSERT'i dene, DB unique constraint varsa kendisi yakalar (duplicate oluşur, bilinçli seçim)
         }
       }
 
@@ -1692,6 +1703,7 @@ async function kaydet() {
         if (spoolRes.error) {
           console.error('[ARES] Spool insert hatası:', JSON.stringify(spoolRes.error));
           console.error('[ARES] İlk spool row:', JSON.stringify(spoolRows[0]));
+          toast(tv('dny_spool_insert_hata','⚠ Bazı spool\'lar kaydedilemedi: ') + (spoolRes.error.message || ''), 'er');
         }
 
         // Her zaman SELECT — insert hatası olsa bile mevcut kayıtları al
@@ -2262,7 +2274,10 @@ if (typeof _applyI18n === 'function') _applyI18n();
     </div>
     <div class="fp-foot">
       <button class="fp-btn" onclick="dedupSpoolKarar('iptal')" data-i18n="dny_dedup_iptal">İptal</button>
-      <button class="fp-btn fp-warn" onclick="dedupSpoolKarar('devam')" data-i18n="dny_dedup_s_devam">Yine de devam et</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="fp-btn fp-warn" onclick="dedupSpoolKarar('zorla')" data-i18n="dny_dedup_s_devam">Zorla ekle (duplicate oluştur)</button>
+        <button class="fp-btn" onclick="dedupSpoolKarar('atla')" data-i18n="dny_dedup_s_atla" style="border-color:var(--ac);color:var(--ac);">Çakışanları atla</button>
+      </div>
     </div>
   </div>
 </div>
