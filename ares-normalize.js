@@ -150,6 +150,23 @@
   function yuzeyEtiket(raw){   return raw ? tvYuzey(yuzeyKod(raw), raw)     : '—'; }
   function durumEtiket(raw){   return raw ? tvDurum(durumKod(raw), raw)     : '—'; }
 
+  // E-02 marka formatı: rev göstergesi
+  // Kurallar:
+  //   - boş / null / undefined     → ''  (marka'ya eklenmez)
+  //   - "0", "Rev0", "R0", "rev-0" → ''  (rev-0 yok-say)
+  //   - "2" veya "Rev2"            → "Rev2"
+  //   - "A" veya "RevA"            → "RevA"
+  // Kullanım: ARES_NORM.marka(gemi, pipeline, spool_no, ARES_NORM.revFmt(rev))
+  function revFmt(rev) {
+    if (rev === null || rev === undefined) return '';
+    var r = String(rev).trim();
+    if (!r) return '';
+    // "0", "Rev0", "R0", "rev-0", "rev_0", "rev 0" formatlarını yok say
+    if (/^(0+|rev[\s\-_]*0+|r[\s\-_]*0+)$/i.test(r)) return '';
+    // Zaten "Rev" ile başlıyorsa olduğu gibi, değilse "Rev" önüne ekle
+    return /^rev/i.test(r) ? r : 'Rev' + r;
+  }
+
   // Namespace
   g.ARES_NORM = {
     malzemeKod: malzemeKod,     yuzeyKod: yuzeyKod,     durumKod: durumKod,
@@ -160,6 +177,7 @@
     uyumlu: uyumlu,
     uyumluYuzeyler: uyumluYuzeyler,
     marka: marka,
+    revFmt: revFmt,
     _ascii: _ascii,
   };
 

@@ -1293,15 +1293,18 @@ function malzemeOpts(secili){
 // ── YÜKLEME ───────────────────────────────────────────────────
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
-  var markParts=[SP._projeNo||SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean);
-  if(SP.rev && SP.rev.trim()) markParts.push(SP.rev.trim().toUpperCase());
+  // E-02 marka formatı: gemi-pipeline-spool_no-RevN (rev-0 ise atlar)
+  var revEk = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
+  var markParts=[SP._projeNo||SP._gemi, SP.pipeline, SP.spoolNo, revEk].filter(Boolean);
   var markaYazisi = markParts.join('-');
   var tersaneKisa = SP._tersane ? SP._tersane.split(' ')[0].toUpperCase() : '';
   txc('shTersaneAd', tersaneKisa || SP._tersane || '—');
   txc('shBandBilgi', SP._devre || '');
   txc('shNo', markaYazisi || '—');
   var shIdEl = T('shId');
-  if(shIdEl) shIdEl.textContent = SP.spoolId ? 'ID: '+SP.spoolId : (SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : 'ID: --');
+  // E-03 tenant prefix: ARES.markaId ile runtime prefix
+  var idGoster = (typeof ARES !== 'undefined' && ARES.markaId) ? ARES.markaId(SP.spoolId) : (SP.spoolId || '');
+  if(shIdEl) shIdEl.textContent = idGoster ? 'ID: '+idGoster : (SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : 'ID: --');
   txc('shTersaneMarka', '');
 
   // Breadcrumb: devre_detay linki + spool no
@@ -1828,8 +1831,9 @@ function _etiketHTML(imgSrc) {
   var devre   = SP._devre    || '—';
   var tersane = SP._tersane  || '—';
   var idKod   = _idGoster();
-  // Marka: proje_no + pipeline + spool_no (3 parça) — spool_detay başlığıyla tutarlı
-  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+  // Marka: gemi + pipeline + spool_no + RevN (3-4 parça, E-02)
+  var revFmt  = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
+  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
   return '<div class="etiket">'+
     '<div class="etk-ust">'+
     '<div class="etk-qr">'+(imgSrc ? '<img src="'+imgSrc+'" alt="QR">' : '')+'</div>'+
@@ -1884,7 +1888,8 @@ function qrYazdir(){
   var img = qrImg ? qrImg.src : '';
   if (!img) { toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er'); return; }
 
-  var marka = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+  var revFmt = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
+  var marka = [SP._gemi, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
 
   var win = window.open('','_blank','width=520,height=360');
   if (!win) { toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er'); return; }
@@ -2302,8 +2307,8 @@ function markModalAc(){
   var mm=T('mm_malz');if(mm)mm.innerHTML=malzemeOpts('');
   var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
   markTipGuncelle();
-  var markParts=[SP._projeNo||SP._isEmri||SP._gemi,SP.pipeline,SP.spoolNo].filter(Boolean);
-  if(SP.rev&&SP.rev.trim())markParts.push(SP.rev.trim().toUpperCase());
+  var revEk2 = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
+  var markParts=[SP._projeNo||SP._isEmri||SP._gemi,SP.pipeline,SP.spoolNo,revEk2].filter(Boolean);
   var oniz=T('markOnizleme');
   if(oniz){
     oniz.textContent=markParts.join('-')||'—';
@@ -2487,14 +2492,16 @@ function duzenleKaydet(){
   SP.agirlik=((T('ed_agr')||{}).value||'').trim();SP.yuzey=((T('ed_yuz')||{}).value||'');
   SP.malzeme=((T('ed_malz')||{}).value||'');SP.kalite=((T('ed_kal')||{}).value||'').trim();
   txc('stCap',SP.cap);txc('stKal',SP.kalinlik);txc('stAgr',SP.agirlik);txc('stYuzey',_yuzeyGoster(SP.yuzey));txc('stMalz',_malzemeGoster(SP.malzeme));
-  var _mp2=[SP._projeNo||SP._gemi,SP.pipeline,SP.spoolNo].filter(Boolean);
-  if(SP.rev&&SP.rev.trim())_mp2.push(SP.rev.trim().toUpperCase());
+  var revEk3 = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
+  var _mp2=[SP._projeNo||SP._gemi,SP.pipeline,SP.spoolNo,revEk3].filter(Boolean);
   var _my2=_mp2.join('-');
   var tersaneKisa=SP._tersane?SP._tersane.split(' ')[0].toUpperCase():'';
   txc('shTersaneAd',tersaneKisa||SP._tersane||'—');
   txc('shBandBilgi',SP._devre||'');
   txc('shNo',_my2||'—');
-  var _shId2=T('shId');if(_shId2)_shId2.textContent='ID: '+(SP.spoolId||(SP.supaId?SP.supaId.substring(0,8).toUpperCase():'--'));
+  var _shId2=T('shId');
+  var _idG2 = (typeof ARES !== 'undefined' && ARES.markaId) ? ARES.markaId(SP.spoolId) : (SP.spoolId||'');
+  if(_shId2)_shId2.textContent='ID: '+(_idG2||(SP.supaId?SP.supaId.substring(0,8).toUpperCase():'--'));
   T('duzenleModal').style.display='none';renderQR();
   logEkle('Spool Düzenlendi',SP.pipeline+' / '+sno+(SP.rev?' rev:'+SP.rev:''));
   try{localStorage.setItem('ares_aktif_spool',JSON.stringify(SP));}catch(e){}

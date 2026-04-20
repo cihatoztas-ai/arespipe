@@ -1068,13 +1068,13 @@ function _spoolMap(s,i){
   var agirlikHam=parseFloat(s.agirlik_kg||s.agirlik||0);
   var _aktGorLabel=aktGor;
   return{idx:i+1,supaId:s.id,pipeline:s.pipeline_no||'—',spoolNo:s.spool_no||'—',rev:s.rev||'',
-    marka:ARES_NORM.marka(s.pipeline_no,s.spool_no)||(s.spool_no||'—'),
+    marka:ARES_NORM.marka(DEVRE.gemi,s.pipeline_no,s.spool_no,ARES_NORM.revFmt(s.rev))||(s.spool_no||'—'),
     spoolId:s.spool_id||'',
     cap:s.dis_cap_mm?String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—',
     et:s.et_kalinligi_mm?String(parseFloat(s.et_kalinligi_mm).toFixed(1)).replace('.',',')+' mm':'—',
     agirlik:agirlikHam?String(agirlikHam.toFixed(2)).replace('.',',')+' kg':'0 kg',
     agirlikHam:agirlikHam,
-    malzeme:(s.malzeme||'').toUpperCase(),
+    malzeme:s.malzeme||'',
     kalite:s.kalite||s.kalite_standart||'—',
     yuzey:s.yuzey||s.yuzey_islemi||'—',
     durum:dur,durumText:durumText,
@@ -1106,13 +1106,23 @@ function statGuncelle(){
   setText('stSpool',aktif.length+' '+tv('dv_unit_spool','spool'));
   setText('stAgirlik',Math.round(toplamAg()).toLocaleString(document.documentElement.getAttribute('lang')||'tr')+' kg');
 
-  // Malzeme ve yüzey: spoollardan unique normalize değerler
+  // Malzeme ve yüzey: spoollardan unique canonical set, sonra lokalize etiket
+  // DB'de "KARBON" + "karbon" + "Karbon Çelik" hepsi aynı canonical'a ("karbon") toplanır
   var malzSet={}, yuzSet={};
+  var hasNorm = typeof ARES_NORM !== 'undefined';
   aktif.forEach(function(s){
-    if(s.malzeme){ var m=String(s.malzeme).trim(); if(m) malzSet[m]=true; }
-    if(s.yuzey){ var y=String(s.yuzey).trim(); if(y) yuzSet[y]=true; }
+    if(s.malzeme){
+      var m = hasNorm ? ARES_NORM.malzemeKod(s.malzeme) : String(s.malzeme).trim();
+      if(m) malzSet[m]=true;
+    }
+    if(s.yuzey){
+      var y = hasNorm ? ARES_NORM.yuzeyKod(s.yuzey) : String(s.yuzey).trim();
+      if(y) yuzSet[y]=true;
+    }
   });
-  var malzArr=Object.keys(malzSet), yuzArr=Object.keys(yuzSet);
+  // Canonical kodları lokalize etikete çevir: "karbon" → "Karbon Çelik" / "Carbon Steel"
+  var malzArr = Object.keys(malzSet).map(function(k){ return hasNorm ? ARES_NORM.malzemeEtiket(k) : k; });
+  var yuzArr  = Object.keys(yuzSet).map(function(k){ return hasNorm ? ARES_NORM.yuzeyEtiket(k)  : k; });
   var malzGoster = malzArr.length===1 ? malzArr[0] : malzArr.length>1 ? malzArr[0]+' +'+(malzArr.length-1) : (DEVRE.malzeme||[])[0]||'--';
   var yuzGoster  = yuzArr.length===1  ? yuzArr[0]  : yuzArr.length>1  ? yuzArr[0]+' +'+(yuzArr.length-1)  : (DEVRE.yuzey||[])[0]||'--';
 
@@ -1163,7 +1173,7 @@ function renderTable(){
     var gi=(_page-1)*_perPage+i+1;
     return'<tr style="'+(s.stopped?'opacity:.55;':'')+';cursor:pointer;" onclick="goSpool(\''+esc(s.spoolNo)+'\')">'
       +'<td style="color:var(--txd);font-size:12px;">'+gi+'</td>'
-      +'<td onclick="event.stopPropagation();goSpool(\''+esc(s.spoolNo)+'\')" style="cursor:pointer;font-size:13px;"><span style="font-weight:700;color:var(--ac);">'+esc(ARES_NORM.marka(s.pipeline, s.spoolNo))+'</span></td>'
+      +'<td onclick="event.stopPropagation();goSpool(\''+esc(s.spoolNo)+'\')" style="cursor:pointer;font-size:13px;"><span style="font-weight:700;color:var(--ac);">'+esc(ARES_NORM.marka(DEVRE.gemi, s.pipeline, s.spoolNo, ARES_NORM.revFmt(s.rev)))+'</span></td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'rev\',\''+esc(s.spoolNo)+'\',\'text\',\'\',\''+esc(s.rev)+'\')">'+(s.rev?'<span style="font-size:12px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">'+esc(s.rev)+'</span>':'<span style="color:var(--txd);">—</span>')+'</td>'
       +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--leg);">'+esc(ARES.markaId(s.spoolId)||String(s.idx).padStart(4,'0'))+'</td>'
       +'<td style="color:var(--txm);">'+esc(s.cap)+'</td>'

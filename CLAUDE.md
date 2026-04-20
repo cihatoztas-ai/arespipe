@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (6. oturum — sessiz bug avı + tenant prefix temelleri)
+> Son güncelleme: 20 Nisan 2026 (7. oturum — marka formatı, etiket, malzeme tutarlılığı)
 
 ---
 
@@ -217,6 +217,10 @@ VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
 □ Flash prevention var
 □ data-sayfa body tagine eklendi
 □ E-01: Enum değerleri (malzeme/yüzey/durum) ARES_NORM üzerinden gösterildi
+□ E-02: Malzeme-yüzey uyum kontrolü yapıldı (kaydet öncesi)
+□ E-03: spool_id display'de ARES.markaId() ile gösterildi (eski prefix'siz kayıtlar için runtime prefix)
+□ E-04: Spool marka format standart: gemi-pipeline-spool_no[-RevN] — ARES_NORM.marka + revFmt kullanıldı
+□ E-05: QR etiket 90×40mm, mm cinsinden ölçüler, termal B/W uyumlu (eğer etiket basıyorsa)
 ```
 
 **Mobil React sayfaları için:** CLAUDE-MOBILE.md'deki checklist geçerlidir.
@@ -345,24 +349,126 @@ Mevcut 7 tenant'a atanan kodlar (6. oturum):
 
 Üretim yeri: `devre_yeni.html` satır 1491-1500. Tenant kodu yoksa graceful fallback (prefix eklenmez, eski davranış).
 
-#### QR Payload Formatı (planlandı, 7. oturumda implemente edilecek)
+#### QR Payload Formatı (7. oturumda implemente edildi ✅)
 
 ```
 <spool_id>:<UUID>
 Örnek: A-0504:f0cd6ae8-eddf-430b-aec0-ca637f7168f7
 ```
 
-QR okuma mantığı:
+QR okuma mantığı (`qr_tara.html` → `parseQR()`):
 1. `:` ile böl → kısa kod + UUID
 2. `-` ile böl → tenant prefix + sayı
 3. Prefix kendi tenant koduna eşit değilse: *"Bu spool [firma adı]'ne ait, görüntülenemiyor"* uyarısı
 4. UUID ile DB lookup (RLS ek güvenlik katmanı)
 
-#### Geriye Uyumluluk
+#### Geriye Uyumluluk + Display Helper (7. oturum)
 
-Eski "0504" formatındaki QR'lar bozulmaz — `qr_tara.html` her iki formatı da parse edebilir olmalı:
+Eski `0504` formatındaki spool'lar DB'de prefix'siz kalır (migration yapmıyoruz). Display katmanında runtime prefix eklenir:
+
+```js
+ARES.markaId("0074")    → "A-0074"   // cache varsa runtime ekler
+ARES.markaId("A-0512")  → "A-0512"   // zaten prefix'li, dokunmaz
+ARES.markaId(null)      → ""
+```
+
+**Kullanım kuralı:** Her sayfa yüklenirken `await ARES.tenantKod()` ile cache ısıtılır. Render'larda `ARES.markaId(s.spool_id)` senkron çalışır. Prefix cache yoksa raw değer döner (güvenli fallback).
+
+**Uygulanan sayfalar (7. oturum):** `devre_detay.html`, `spool_detay.html`, `kesim.html`, `markalama.html`, `kalite_kontrol.html`.
+
+`qr_tara.html` her iki formatı da parse eder:
 - Yeni: `A-0504:UUID`
 - Eski: `0504` (sadece kısa kod, prefix yok — kendi tenant içinde aranır)
+
+---
+
+### 2.15 Spool Marka Formatı — ZORUNLU (Kural E-04, 7. oturum)
+
+**Programın her yerinde tek tip spool marka formatı:**
+
+```
+<gemi/proje_no>-<pipeline_no>-<spool_no>[-Rev<N>]
+
+Örnek:
+  NB1137-M100-317-01-P2-S01              (rev yok)
+  NB1137-M100-317-01-P2-S01-Rev2         (rev var)
+  NB1099C-CF400-8033-029C-S01            (pipeline çok segmentli)
+```
+
+**Rev kuralı:**
+- Rev boş/null/`0`/`Rev0`/`R0` → ek parça yazılmaz
+- Rev `2`, `Rev2` → `Rev2` olarak eklenir
+- Rev `A`, `RevA` → `RevA` olarak eklenir
+
+**Helper'lar (`ares-normalize.js`):**
+
+```js
+ARES_NORM.marka(...parçalar)      // variadic join('-'), boş değerleri atar
+ARES_NORM.revFmt(rev)             // rev-0 yok-say, aksi "RevN"
+
+// Tipik kullanım:
+ARES_NORM.marka(
+  prj.proje_no,           // gemi/proje
+  sp.pipeline_no,         // pipeline (çok segmentli olabilir)
+  sp.spool_no,            // spool numarası
+  ARES_NORM.revFmt(sp.rev) // rev (opsiyonel)
+);
+```
+
+**DB select'lerinde `rev` kolonu çekilmeli** — aksi halde rev etiketi üretilemez. Yeni sorgu yazarken unutma:
+
+```sql
+SELECT id, spool_no, pipeline_no, rev, ... FROM spooller
+```
+
+**Uygulanan sayfalar (7. oturum):**
+- `devre_detay.html` — MARKA sütunu (eski "Pipeline No" + "Spool No" iki ayrı sütundu, birleştirildi)
+- `spool_detay.html` — başlık `shNo` + etiket alt marka + yazdır pencere başlığı
+- `kesim.html` — spool label
+- `markalama.html` — spool label
+- `kalite_kontrol.html` — spool + paket spool listesi
+- `sevkiyatlar.html` — hazır spoolS + sevkiyat detayları
+
+**UI tutarlılık kuralı:** "Pipeline No" ve "Spool No" artık ayrı sütun olarak gösterilmez — tek "Marka" sütunu. Excel export'ta analitik amaçlı ayrı tutulabilir (devre_detay Excel export böyle kalmıştır).
+
+---
+
+### 2.16 Etiket Standardı — ZORUNLU (Kural E-05, 7. oturum)
+
+**QR etiketi fiziksel standart:**
+
+```
+Boyut:       90mm × 40mm (yatay, termal etiket)
+QR:          25×25mm, sol kenardan 6mm içeride (yazıcı kesme toleransı)
+Metin alanı: QR sonu + 3mm'den itibaren, sağ kenarda 2mm pay
+Layout:      Üst blok (25mm): QR + 4 satır bilgi
+             Alt blok (tam satır): marka, 4mm bold
+Renk:        Sadece siyah (termal B/W), renk yok
+Font:        Arial sans-serif, tüm bilgiler 2.8mm (alt marka 4mm)
+```
+
+**Etiket içerik sırası (üst blok, QR sağı):**
+1. İş Emri (örn. P26-127)
+2. Devre (örn. "803-Bilge Sludge Hand. System — CF400") — **uzun olursa 2 satır wrap**
+3. Tersane (örn. "Tersan Tersanesi")
+4. ID (E-03 prefix'li — örn. "A-0074")
+
+**Alt blok:** Marka (E-04 kuralıyla — `NB1099C-CF400-8033-029C-S01[-Rev2]`), tam satır, bold 4mm, `white-space: nowrap; overflow: hidden;`
+
+**Shared helper'lar (`spool_detay.html` içinde):**
+```js
+_etiketCSS()       // mm cinsinden tüm CSS
+_etiketHTML(imgSrc) // etiket HTML string döner, hem modal hem yazdır window
+```
+
+**WYSIWYG modal kuralı:** QR modal'da gösterilen etiket, yazdırılacak olanla **birebir aynı** olmalı. Butonlar (Yazdır, İndir) etiket dışında, altta.
+
+**Yazdır kuralları:**
+```css
+@page { size: 90mm 40mm; margin: 0; }
+@media print { /* bar, hint gizlenir */ }
+```
+Tüm ölçüler **mm cinsinden** — browser scale/fit ayarlarına karşı dirençli. Kullanıcı "Ölçek %100" seçmelidir (etikete @screen mode'da uyarı notu konulmuş).
 
 ---
 

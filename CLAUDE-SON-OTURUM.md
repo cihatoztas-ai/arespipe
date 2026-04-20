@@ -1,163 +1,174 @@
-# AresPipe — Son Oturum Deploy Listesi
+# AresPipe — 7. Oturum Özeti (20 Nisan 2026)
 
-**Tarih:** 20 Nisan 2026 (6. oturum)
-**Risk seviyesi:** DÜŞÜK — hepsi küçük, lokalize fix'ler; her biri bağımsız test edilebilir; DB migration'ları canlıda ve geri dönüşlü değil
-
----
-
-## ⚡ Kaldığımız Yer (Özet)
-
-**DB tarafı:** ✅ Tamamlandı (3 migration bu oturumda)
-
-**Kod tarafı:** ✅ 2 dosya hazır, **deploy BEKLIYOR** (kullanıcı manuel push edecek)
-
-**Yarım kalan iş var mı?** Evet — **Tenant prefix sisteminin spool_detay + qr_tara tarafları kaldı** (kritik, sonraki oturum Öncelik 1). Detay CLAUDE-SONRAKI-OTURUM.md'de.
-
-**Sonraki oturumun ilk işi:** QR payload formatı + qr_tara.html cross-tenant kontrolü.
+> Bu dosya son oturumda yapılanları ve deploy gereken dosyaları listeler.
+> Yeni oturumda CLAUDE.md ile birlikte okunur.
 
 ---
 
-## Bu Oturumda Ne Yapıldı
+## Oturum Başlığı
 
-Bu oturumun ana teması: **spool_detay.html sessiz bug avı + tenant prefix sisteminin temelini atma.** 12 fix çıktı, tamamı DB'yle UI arasındaki senkron kopukluklarını kapatıyor.
-
-### 1. spool_detay.html — 11 fix
-
-#### Notlar bug'ları (2 fix)
-- Satır 1109 — `n.yapan_id` → `n.ekleyen_id` (map)
-- Satır 1829 — `yapan_id` → `ekleyen_id` (insert)
-
-**Canlı etkisi:** Kullanıcı not ekleyip sayfayı yeniliyordu → **not kayboluyordu.** DB'de `notlar.yapan_id` kolonu yok (sadece `ekleyen_id` var), insert silent fail oluyordu. Ayrıca okuma tarafında da yanlış kolon okunduğu için not kişisi UI'da hep "Admin" görünüyordu.
-
-#### Fotograflar migration (3 fix + 1 değişken ayrımı + 1 UI fallback)
-- Satır 915 — select'e `yukleyen_id` eklendi (legacy `yapan_id` de kalıyor)
-- Satır 1051 — map eski davranış korundu (`f.yapan_id`), UUID göstermemek için
-- Satır 1679 — `var yapan=_kullaniciAd()` → `yapanId` (UUID) + `yapanAd` (ad_soyad) ikisi ayrı
-- Satır 1696 — insert `yukleyen_id: yapanId` (UUID kolonuna UUID)
-- Satır 1700 — FOTOLAR.push `kisi: yapanAd` (UI için ad_soyad)
-
-**Arka plan:** DB'de hem `fotograflar.yapan_id` (TEXT, legacy) hem `yukleyen_id` (UUID, canonical) var — migration-in-progress. 32 kayıttan 11'i eski, 21'i yeni. Eski kod TEXT kolonuna email yazıyordu, canonical UUID'ye migrate edildi.
-
-**DB migration:** `UPDATE fotograflar SET yukleyen_id = k.id FROM kullanicilar k WHERE yukleyen_id IS NULL AND yapan_id = k.email` — 11 satır etkilendi, canlıda.
-
-#### Spool ağırlık — sessiz veri kaybı (1 fix)
-- Satır 2373-2377 — spooller UPDATE'e `agirlik:agrN` eklendi
-
-**Canlı etkisi:** Spool düzenleme modalında ağırlık değiştirilebiliyordu, "Güncellendi" toast'ı geliyordu, UI güncelleniyordu — **ama DB'ye yazılmıyordu.** Sayfa yenilenince eski değer geri geliyordu.
-
-#### Spool ID gösterim mantığı (2 fix)
-- Satır 922 — `SP.spoolId = s.spool_id` atandı (spoolYukle'de hiç okunmuyordu!)
-- Satır 1241, 2365 — Gösterim sırası ters (UUID[0-8] → kısa kod), düzeltildi
-
-**Canlı etkisi:** 
-- Sayfa başlığında "ID: 9D07969B" gibi UUID kısaltması görünüyordu — doğrusu "ID: A-0512" olmalıydı
-- **QR kodu yanlış spool_id içeriyordu** — bu en kritik: tersanedeki operatör QR okuttuğunda yanlış spool açma riski vardı
-
-#### Et kalınlığı header fallback (1 fix)
-- Satır 929-939 — spooller.et_kalinligi_mm NULL ise malzemelerden en yaygın et_mm'yi kullan
-
-**Canlı etkisi:** Spool detay header'ında "ET KALINLIĞI —" dash görünüyordu. Artık malzeme listesindeki en yaygın et değeri header'a yansıyor.
-
-### 2. devre_yeni.html — Tenant Prefix (1 fix)
-
-- Satır 1491-1500 — spooller insert'te tenant kodu + kısa kod birleşimi
-
-**Canlı etkisi:** Yeni oluşturulan spool'ların `spool_id` kolonu artık `A-0504` formatında. Test edildi, canlıda çalışıyor (A-0512, A-0513 oluşturuldu).
-
-**Graceful fallback:** Tenant kodu NULL ise eski davranış (prefix uygulanmaz). Geriye uyumlu.
-
-### 3. DB Migration — 3 blok
-
-**Blok A — Fotograflar UUID migration:**
-```sql
-UPDATE fotograflar f
-SET yukleyen_id = k.id
-FROM kullanicilar k
-WHERE f.yukleyen_id IS NULL 
-  AND f.yapan_id IS NOT NULL
-  AND k.email = f.yapan_id;
--- 11 satır etkilendi
-```
-
-**Blok B — Tenants kod kolonu:**
-```sql
-ALTER TABLE tenants ADD COLUMN kod VARCHAR(4);
-UPDATE tenants SET kod = 'A' WHERE id = '00000000-...-000000000001'; -- Demo Atölye
-UPDATE tenants SET kod = 'B' WHERE id = 'aaaaaaaa-0001-...'; -- Demo İmalat
-UPDATE tenants SET kod = 'C' WHERE id = 'aaaaaaaa-0002-...'; -- Demo Montaj
-UPDATE tenants SET kod = 'D' WHERE id = 'aaaaaaaa-0003-...'; -- Demo Komple Boru
-UPDATE tenants SET kod = 'E' WHERE id = 'aaaaaaaa-0004-...'; -- Demo Tersane
-UPDATE tenants SET kod = 'F' WHERE id = 'aaaaaaaa-0005-...'; -- Demo Taşeron
-UPDATE tenants SET kod = 'G' WHERE id = 'aaaaaaaa-0006-...'; -- Demo Karma
-ALTER TABLE tenants ALTER COLUMN kod SET NOT NULL;
-ALTER TABLE tenants ADD CONSTRAINT tenants_kod_unique UNIQUE (kod);
-ALTER TABLE tenants ADD CONSTRAINT tenants_kod_format CHECK (kod ~ '^[A-Z]{1,4}$');
-```
-
-**Blok C — DB keşifleri (kod değişmedi ama CLAUDE.md güncellenecek):**
-- `spool_malzemeleri` şeması: `dis_cap_mm`, `et_mm`, `boy_mm`, `agirlik_kg`, `kalite`, `malzeme`, `adet`, `boyut`, `kod`, `tip`, `tanim`, `heat_no`, `sertifikali` — hepsi canlıda
-- `markalama_kalemleri.et_mm` var (plaka markalama için — numeric)
-- `spooller.agirlik_kg` legacy kolon, 5/5 kayıt NULL (kullanılmıyor, DROP yapılabilir ileride)
-- `fotograflar.yapan_id` legacy TEXT kolon (11 kayıtta email vardı, migrate edildi)
+**Tarih:** 20 Nisan 2026
+**Süre:** Uzun oturum (birden fazla ana iş)
+**Ana tema:** Tenant prefix tamamlama + QR etiket sistemi + marka format standardı + veri tutarlılığı
 
 ---
 
-## Değişen Dosyalar (2)
+## Yapılanlar
 
-| Dosya | Değişim | Satır (önce → sonra) |
+### Öncelik 1 ✅ — Tenant Prefix Sistemi (E-03 tamamlandı)
+- `qr_tara.html` → `parseQR()` helper: 3 format destekler (yeni `A-0504:UUID`, karma `A-0504`, eski `0504`)
+- Cross-tenant kontrol: farklı prefix → tenants tablosundan firma adı çekilip uyarı
+- `ares-store.js` → `tenantKod()` async helper + `tenantKodSync()` senkron cache getter + `markaId()` display helper
+- `spool_detay.html` → QR payload `spoolId:UUID` formatı
+- `devre_yeni.html` → yeni spool'lara otomatik prefix (6. oturumdan zaten vardı, doğrulandı)
+
+### Öncelik 2 ✅ — Kalite UX + Veri Temizliği
+- `devre_yeni.html` + `spool_detay.html` → kalite için autocomplete datalist (frekans sıralı)
+- SQL temizlik: `spool_malzemeleri.kalite` → 341 bozuk kayıt NULL, 1 normalize (AISI 316L → 316L)
+- SQL temizlik: `spooller.kalite` → 46 kayıt NULL (malzeme adları kalite kolonundan temizlendi)
+- Sonuç: kalite sütunlarında sadece gerçek kalite değerleri (ST37, 316L, CuNi10Fe1.6Mn vb.)
+
+### Öncelik 3 ✅ — Spool Marka Birleşimi (E-04 temel atıldı)
+- Pipeline No + Spool No ayrı 2 sütun yerine tek "Marka" sütunu (devre_detay)
+- `ares-normalize.js` → `marka()` variadic helper eklendi
+- 5 sayfa refactor: `devre_detay.html`, `sevkiyatlar.html`, `kalite_kontrol.html`, `kesim.html`, `markalama.html`
+- 3 sayfada eksik olan `ares-normalize.js` script tag eklendi
+
+### Öncelik 4 ✅ — E-04 Marka Formatı Kural Olarak Formalleştirildi
+- Format: `gemi/proje_no-pipeline_no-spool_no[-RevN]`
+- Rev-0 yok-say: `ARES_NORM.revFmt()` helper (boş/null/"0"/"Rev0"/"R0" → "")
+- Her sayfada DB select'lerine `rev` kolonu eklendi
+- 6 sayfada tüm `ARES_NORM.marka()` çağrıları 4-parça + revFmt formatına geçti
+
+### Öncelik 5 ✅ — Etiket Sistemi (E-05 yeni kural)
+- `spool_detay.html` → QR modal canvas → div (fix: QR artık görünüyor)
+- Yeni yazdır sistemi: 90×40mm yatay etiket, mm cinsinden, termal B/W uyumlu
+- Shared helper'lar: `_etiketCSS()` + `_etiketHTML(imgSrc)` — modal ve yazdır pencere ikisi de kullanıyor (DRY)
+- Modal WYSIWYG: preview birebir yazdırılacakla aynı, butonlar etiket dışında altta
+- QR 25×25mm, sol kenar 6mm (yazıcı kesme toleransı)
+- Font hepsi 2.8mm (bilgi bloğu), marka 4mm (alt tam satır)
+
+### Öncelik 6 ✅ — Malzeme/Yüzey Tutarlılık Fix
+- `devre_detay.html` → `_malzemeGoster()` ve `_yuzeyGoster()` artık `ARES_NORM.malzemeEtiket`/`yuzeyEtiket`'e delege ediyor
+- `(s.malzeme||'').toUpperCase()` bug'ı kaldırıldı — DB canonical kod ("karbon") doğrudan gösterilmeye çalışılmıyordu
+- Stat kartları (üst 5 info-card) artık unique canonical set üzerinden lokalize etiket gösteriyor
+
+---
+
+## Deploy Listesi (10 Dosya)
+
+| Dosya | Değişiklik | Risk |
 |---|---|---|
-| `spool_detay.html` | 11 fix (notlar, fotograflar, ağırlık, spool ID, et kalınlığı) | 2996 → 3007 |
-| `devre_yeni.html` | 1 fix (tenant prefix) | 2009 → 2013 |
+| `ares-store.js` | `tenantKod`, `tenantKodSync`, `markaId` helper'ları | Düşük — additive |
+| `ares-normalize.js` | `marka()`, `revFmt()` helper'ları | Düşük — additive |
+| `qr_tara.html` | `parseQR()` + cross-tenant kontrol | Orta — QR akışı |
+| `devre_yeni.html` | Kalite autocomplete datalist | Düşük — UI |
+| `devre_detay.html` | MARKA sütunu, malzeme/yüzey fix, stat kartlar, spool ID prefix, rev | **Yüksek** — çok değişiklik |
+| `spool_detay.html` | QR modal WYSIWYG, etiket yazdır, kalite autocomplete, markaId, rev | **Yüksek** — çok değişiklik |
+| `sevkiyatlar.html` | `ares-normalize.js` tag + marka refactor + rev | Orta |
+| `kalite_kontrol.html` | Tutarlılık + markaId + rev | Orta |
+| `kesim.html` | Marka refactor + markaId + rev | Orta |
+| `markalama.html` | Marka refactor + markaId + rev | Orta |
 
 ---
 
-## Deploy Sırası (Önerilen)
+## SQL Çalıştırıldı (3 adet — hepsi başarılı)
 
-Bu oturumdaki değişiklikler **sıra-bağımsız** — her ikisi de bağımsız fix'ler:
+```sql
+-- 1) spool_malzemeleri.kalite bozuk kayıtları NULL (6. oturumda çalıştırıldı)
+UPDATE spool_malzemeleri SET kalite = NULL
+WHERE kalite IN ('karbon','bakir','diger','Karbon Çelik','Bakır Alaşım')
+   OR kalite LIKE '%*%';
 
-1. `devre_yeni.html` — yeni spool'lar doğru formatta doğar
-2. `spool_detay.html` — mevcut + yeni spool'ların görüntülenmesi düzelir
+-- 2) AISI 316L normalize (6. oturumda çalıştırıldı)
+UPDATE spool_malzemeleri SET kalite = '316L' WHERE kalite = 'AISI 316L';
 
-DB migration zaten canlıda.
+-- 3) spooller.kalite bozuk kayıtları NULL (7. oturum, 46 kayıt)
+UPDATE spooller SET kalite = NULL
+WHERE kalite IN (
+  'Karbon Çelik','Karbon çelik','karbon çelik','KARBON ÇELİK',
+  'Paslanmaz Çelik','paslanmaz çelik','PASLANMAZ ÇELİK',
+  'Bakır Alaşım','bakır alaşım','BAKIR ALAŞIM',
+  'karbon','Karbon','KARBON',
+  'paslanmaz','Paslanmaz','PASLANMAZ',
+  'bakir','bakır','Bakır','BAKIR',
+  'alum','Alum','ALUM','Alüminyum','alüminyum',
+  'diger','Diğer','DİĞER'
+);
+```
 
----
-
-## Test Önerileri
-
-### devre_yeni.html
-1. Yeni devre oluştur, 2 spool ekle, kaydet
-2. DB'den kontrol:
-   ```sql
-   SELECT spool_id, spool_no, olusturma 
-   FROM spooller ORDER BY olusturma DESC LIMIT 5;
-   ```
-   Yeni spool'lar `A-05XX` formatında olmalı. ✅ test edildi (A-0512, A-0513)
-
-### spool_detay.html
-1. **Not ekleme:** Spoola git → not ekle → F5 → **not kalmalı** (önceden kayboluyordu)
-2. **Fotoğraf yükleme:** Yeni fotoğraf yükle → `fotograflar.yukleyen_id` UUID dolu olmalı
-3. **Eski fotoğraflar:** Kişi bilgisi "cihatoztas@gmail.com" göstermeye devam etmeli (11 legacy kayıt)
-4. **Ağırlık kaydı:** Spool düzenle → ağırlık değiştir → kaydet → F5 → **yeni değer durmalı**
-5. **Spool ID gösterimi:** Başlıkta "ID: A-0512" görünmeli (UUID kısaltması değil)
-6. **QR kodu:** Aynı spool'dan QR üret → okut → aynı spool açılmalı
-7. **Et kalınlığı header:** Malzeme listesinde et değeri olan spoollar için header'da artık dash değil gerçek değer
+**Final kalite dağılımı (spooller):** ST37 (422), 316L (32), CuNi10Fe1.6Mn (22), A312-TP316L (4), 316 (3), 304 (3), A106GrB (1), 301 (1) — **toplam 488 temiz kayıt**.
 
 ---
 
-## Bilinen Açık Sorunlar (Sonraki Oturuma)
+## Dil Dosyası — Eklenecek Anahtarlar
 
-Detaylar CLAUDE-SONRAKI-OTURUM.md'de:
+Dil dosyasına (TR/EN/AR) şu anahtarlar eklenmeli:
 
-1. **Tenant prefix serisinin tamamlanması** — QR payload formatı `A-0504:UUID` + `qr_tara.html` cross-tenant kontrolü (Öncelik 1)
-2. **Kalite UX + veri temizliği** — Form'daki kalite alanı malzeme radio grubu gibi davranıyor, "karbon/paslanmaz" değerleri alıyor. Olması gereken: ST37, A106-B, CuNi10Fe1Mn gibi kalite standartları (Öncelik 2)
-3. **Spool No → marka gösterimi** — Tablolarda "S01" tek başına anlamsız, pipeline ile birleştirilmeli (Öncelik 3)
-4. **Admin UI — tenant kod yönetimi** — Yeni firma oluştururken kod girişi, çakışma uyarısı, iki aşamalı onay override
-5. **spool_detay.html performans** — 3000+ satır, 6-7 paralel SQL, 3D kod — optimize gerekli
-6. **devreler.malzeme canonical migration** (4. oturumdan devam)
-7. **CLAUDE.md güncellemesi** — spool_malzemeleri şeması + fotograflar.yapan_id legacy notu + tenants.kod kolonu
+```json
+{
+  "dv_th_marka":       { "tr": "Marka",  "en": "Mark" },
+  "qr_baska_firma":    { "tr": "Bu spool {firma} firmasına ait, görüntülenemiyor",
+                         "en": "This spool belongs to {firma}, cannot be viewed" },
+  "sp_qr_not_ready":   { "tr": "QR kod henüz hazır değil",
+                         "en": "QR code not ready yet" },
+  "sp_popup_blocked":  { "tr": "Popup engelleyici kapatın",
+                         "en": "Disable popup blocker" },
+  "sp_print_start":    { "tr": "Yazdırma penceresi açıldı",
+                         "en": "Print window opened" }
+}
+```
+
+**Not:** Tüm anahtarlar için `tv()` fallback çalışıyor (parametrenin 2. argümanı TR default), yani dil dosyası güncellenmese bile UI bozulmaz. Ama EN/AR kullanıcıları hâlâ TR görür.
 
 ---
 
-## Bu Dosyanın Ömrü
+## Test Kontrol Listesi (deploy sonrası)
 
-Bu dosya her oturum sonunda **üzerine yazılır**. Uzun vadeli proje tarihçesi `CLAUDE.md` Bölüm 11 / 11A / 11B / 11C / 11D'de yaşar — oraya bakılır.
+### Kritik Testler
+- [ ] `spool_detay.html` → QR modalı aç → QR görünüyor mu? (canvas→div fix)
+- [ ] QR modal → Yazdır → 90×40mm etiket preview, sonra yazıcıya gönder
+- [ ] Eski spool (örn. 0074) → devre_detay/spool_detay/kesim/markalama/kalite_kontrol hepsinde `A-0074` görünüyor mu?
+- [ ] Cross-tenant QR tarama: farklı tenant'tan spool okutunca uyarı çıkıyor mu?
+- [ ] Kalite autocomplete: devre_yeni + spool_detay edit modal'da çalışıyor mu?
+
+### Format Testleri (E-04)
+- [ ] devre_detay listesinde MARKA sütunu: `NB1137-M100-317-S01` (rev yoksa)
+- [ ] Rev'li spool: `NB1137-M100-317-S01-Rev2`
+- [ ] Rev='0' olan spool: `NB1137-M100-317-S01` (Rev0 gözükmez)
+- [ ] Etiketteki alt marka aynı format
+
+### Tutarlılık Testleri (E-01)
+- [ ] Malzeme sütununda: "Karbon Çelik", "Paslanmaz", "Alüminyum", "Bakır Alaşım" (ALUM/KARBON değil)
+- [ ] Yüzey sütununda: "Asit", "Galvaniz" (asit/galvaniz değil)
+- [ ] Üst stat kartı: "Malzeme Karbon Çelik", "Yüzey Asit"
+- [ ] Kalite sütununda: sadece gerçek kaliteler (ST37/316L vs.), malzeme adı yok
+
+### Regresyon Testleri
+- [ ] Sevkiyat oluştur → spool listesinde marka doğru
+- [ ] Kalite daveti oluştur → spool listesi doğru
+- [ ] Kesim/Markalama başlat → spool label doğru
+- [ ] Devre detay Excel export hâlâ çalışıyor
+
+---
+
+## Bu Oturumdan Dersler
+
+1. **Varsayımları DB ile doğrula** — "SP._gemi" değişken adı yanıltıcı, aslında proje_no tutuyor. Her değişkeni kod + DB ile doğrulamak lazım.
+2. **Aynı veri iki tabloda** — `spooller.malzeme/kalite` vs `spool_malzemeleri.malzeme/kalite` denormalizasyon borcu. "Bir yerde düzelir başka yerde bozulur" hissi böyle oluşuyor. Sonraki oturumda çözülmeli.
+3. **Yarım refactor tutarsızlık yaratır** — Marka formatı 5 sayfada farklı farklı (bazısı 2-parça, bazısı 3-parça, bazısı inline). Tek kural + merkezi helper çözdü.
+4. **WYSIWYG önemli** — modal preview ile yazdır çıktısı farklıysa kullanıcı deneyimi kötü. Shared HTML+CSS helper çözdü.
+5. **Migration-in-progress pattern yaygın** — fotograflar.yapan_id/yukleyen_id, spooller.agirlik/agirlik_kg, spool_id prefix'li/değil. Runtime display helper + DB migration ileride.
+6. **Değişken adları yalan söyleyebilir** — `SP._gemi` = proje_no. Git log'a güvenme, koda bak.
+
+---
+
+## Sonraki Oturum İçin Not
+
+Detaylar için `CLAUDE-SONRAKI-OTURUM.md`'ye bak. Özet:
+1. Admin UI tenant kod yönetimi (Öncelik 4 devam)
+2. `spooller` vs `spool_malzemeleri` sync sorunu (mimari borç)
+3. Değişken adlandırma temizliği (`SP._gemi` → `SP._projeNo`)
+4. `spool_detay.html` dropdown'ları (E-01 ihlali — satır 762-763)
+5. Devre detay inline edit KEY refactor (duplicate spool_no bug)
+6. Mobil işler rafta (MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara)

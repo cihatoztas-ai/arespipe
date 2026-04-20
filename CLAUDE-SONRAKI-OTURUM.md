@@ -1,366 +1,212 @@
-# Sonraki Oturum İçin Gündem
+# AresPipe — 8. Oturum Gündemi
 
-**Hazırlanma tarihi:** 20 Nisan 2026 (6. oturum sonu)
-**Son durum:** Tenant prefix sistemi yarım — DB + devre_yeni.html hazır. Yeni spool'lar `A-0504` formatında üretiliyor (test edildi). Ama QR tarafı ve qr_tara.html entegrasyonu **yapılmadı** — cross-tenant çakışma riski hâlâ mevcut.
-
----
-
-## 🎯 Bu Oturumda İlk İş: Öncelik 1 — Tenant Prefix Tamamlama (QR + qr_tara)
-
-Bu iş 6. oturumun yarım bıraktığı ana iş. Şu an:
-- ✅ `tenants.kod` kolonu var, 7 tenant'a kod atandı (A-G)
-- ✅ `devre_yeni.html` yeni spool'lara prefix ekliyor (`A-0504`)
-- ✅ `spool_detay.html` DB'den spool_id okuyor, başlıkta `A-0504` gösteriyor
-- ❌ **QR payload hâlâ sadece kısa kod** — cross-tenant okunursa çakışma riski
-- ❌ **qr_tara.html prefix'i bilmiyor** — cross-tenant kontrolü yok
-
-**Hedef format:** QR içeriği `A-0504:<UUID>` (prefix + kısa kod + iki nokta + UUID).
-
-Yeni sohbet açarken önce kullanıcıya sor: "Tenant prefix sistemini bitirelim mi, yoksa başka öncelik var mı?"
+> 7. oturumda biriken işler ve sonraki oturum öncelikleri.
+> Başlangıçta bu dosyayı + CLAUDE.md + CLAUDE-SON-OTURUM.md birlikte oku.
 
 ---
 
-## Başlarken — Yeni Sohbete Yükle
+## Oturum Başı Ritüeli
 
-Yeni sohbet açınca şu 4 dosyayı yükle:
-1. `CLAUDE.md` — ana proje bağlamı
-2. `CLAUDE-MOBILE.md` — mobil kurallar
-3. `CLAUDE-SONRAKI-OTURUM.md` — bu dosya (öncelikli iş listesi)
-4. `CLAUDE-SON-OTURUM.md` — en son oturumun deploy/test özeti
-
----
-
-## Öncelik 1 — Tenant Prefix Tamamlama (QR + qr_tara)
-
-### Bu iş için gerekli dosyalar
-- `spool_detay.html` (son 6. oturum çıktısı — 12 patch'li)
-- `qr_tara.html` (henüz yüklenmedi, bu oturumda ilk kez bakılacak)
-
-### Adım 1 — spool_detay.html: QR payload formatı
-Mevcut satır ~1730'da: `var qrIcerik = SP.spoolId || SP.supaId || 'ARES';`
-
-Hedef: `var qrIcerik = SP.spoolId && SP.supaId ? (SP.spoolId + ':' + SP.supaId) : (SP.spoolId || SP.supaId || 'ARES');`
-
-Yani yeni QR'ların içeriği: `A-0504:f0cd6ae8-eddf-430b-aec0-ca637f7168f7`
-Eski spool'ların QR'ları hâlâ `0504` (prefix yok) — bozmuyoruz, okuma tarafında iki formatı da parse edeceğiz.
-
-### Adım 2 — qr_tara.html: Parse + cross-tenant kontrol
-Parse mantığı:
-```js
-function parseQR(raw) {
-  // Format 1 (yeni): "A-0504:UUID" → {prefix, kisaKod, uuid}
-  // Format 2 (eski): "0504" → {uuid:null, kisaKod}
-  // Format 3 (hiçbiri): ham değer, spool_no olarak dene
-  
-  if (raw.includes(':')) {
-    var [kod, uuid] = raw.split(':');
-    var [prefix, kisa] = kod.includes('-') ? kod.split('-') : [null, kod];
-    return {prefix, kisaKod: kisa, uuid, tamKod: kod};
-  }
-  if (raw.match(/^\d{4}$/)) {
-    return {prefix: null, kisaKod: raw, uuid: null, tamKod: raw};
-  }
-  return {prefix: null, kisaKod: raw, uuid: null, tamKod: raw};
-}
-```
-
-Cross-tenant kontrolü:
-```js
-var parsed = parseQR(raw);
-if (parsed.prefix) {
-  var kendiTenantKod = await ARES.tenantKod(); // yeni helper - ares-store.js'e ekle
-  if (parsed.prefix !== kendiTenantKod) {
-    // Başka firmaya ait - adı çek ve uyarı göster
-    var res = await supa.from('tenants').select('ad').eq('kod', parsed.prefix).single();
-    var firmaAdi = res?.data?.ad || 'başka bir firmaya';
-    toast('Bu spool "' + firmaAdi + '" aittir, sisteminizde görüntülenemiyor.', 'er');
-    return;
-  }
-}
-// Normal lookup — UUID varsa onunla, yoksa spool_id ile
-```
-
-### Adım 3 — ARES.tenantKod() helper (ares-store.js)
-`ARES.tenantId()` gibi benzer pattern:
-```js
-var _tenantKodCache = null;
-async function tenantKod() {
-  if (_tenantKodCache) return _tenantKodCache;
-  var res = await ARES.supabase().from('tenants').select('kod').eq('id', ARES.tenantId()).single();
-  _tenantKodCache = res?.data?.kod || null;
-  return _tenantKodCache;
-}
-ARES.tenantKod = tenantKod;
-```
-
-Böylece `devre_yeni.html`'deki inline sorguyu da sadeleştirebiliriz (opsiyonel refactor).
-
-### Adım 4 — Dil dosyası güncellemesi (tr.json, en.json, ar.json)
-
-Tenant prefix + QR + cross-tenant mesajları için yeni anahtarlar eklenecek. Tahmini 12-15 anahtar, 3 dilde. Önerilen anahtar şeması:
-
-```
-qr_tenant_baska_firma     — "Bu spool {firma} firmasına aittir, sisteminizde görüntülenemiyor"
-qr_tenant_tanimsiz        — "QR kod formatı tanınmadı"
-qr_tenant_uuid_bulunamadi — "Spool bulunamadı (UUID eşleşmedi)"
-tnk_baslik                — "Firma Kodu"
-tnk_ph                    — "Örn: A, AR, BM..."
-tnk_cakisma_uyari         — "Bu kod '{firma}' tarafından kullanılıyor"
-tnk_override_onay         — "Çakışmaya rağmen kodu devralmak istediğinden emin misin?"
-tnk_eski_sahipten_al      — "Önce eski sahipten kodu geri al"
-tnk_format_gecersiz       — "Kod 1-4 büyük harf olmalı"
-tnk_yasak_uyari           — "Bu kod uygunsuz çağrışım listesinde"
-tnk_basarili              — "Kod atandı"
-```
-
-Mesajların nihai wording'i UI tasarımı netleştiğinde karar verilir — bu yüzden Adım 1-3 bitince yazılması daha doğru.
-
-**Süre tahmini:** 1-2 saat (4 adım toplam)
+1. **CLAUDE.md** oku — mimari, kurallar (E-01, E-02, E-03, E-04, E-05)
+2. **CLAUDE-SON-OTURUM.md** oku — önceki oturum ne yapıldı, deploy durumu
+3. Bu dosya (**CLAUDE-SONRAKI-OTURUM.md**) — ne yapılacak
+4. Kullanıcıya sor: "7. oturum deploy'u test ettin mi? Hangi öncelikten başlayalım?"
 
 ---
 
-## Öncelik 2 — Kalite UX + Veri Temizliği
+## ÖNCELİK 1 — Admin UI Tenant Kod Yönetimi
 
-### Sorun (6. oturumda tespit edildi)
-DB'de `spooller.kalite` alanı canonical malzeme kodları (`karbon`, `paslanmaz`, `diger`) tutuyor. Örnek kayıt:
-```
-spool_malzeme: "paslanmaz" ✓
-spool_kalite:  "karbon" ← YANLIŞ, kalite = alaşım standardı olmalı (ST37, A106-B, 304L...)
-```
+**Konu:** 6-7. oturumda tenant prefix sistemi kuruldu (E-03). Kodlar şu an DB'de manuel `INSERT`/`UPDATE` ile atanıyor. Admin UI yok. Yeni firma oluşturunca kod atama ekranı gerek.
 
-### Kaynak
-`devre_yeni.html`'deki form'da "kalite" alanı muhtemelen ikinci bir malzeme radio grubu olarak tasarlanmış. Benzer sorun IFS import (satır 786) ve PDF import (satır 1668) yollarında da var.
+**Yer:** `tanimlar.html` (veya yeni admin sayfası)
 
-### Karar gerektiren tasarım sorusu
+**Gereken özellikler:**
+- Firma (tenant) oluştururken "Kod" alanı (1-4 harf, A-Z, UPPERCASE zorlanır)
+- Çakışma kontrolü: gerçek zamanlı (keyup) veya submit öncesi
+- Çakışma durumunda iki aşamalı onay:
+  - "Bu kod zaten X firmasına atanmış"
+  - "Yine de atamak istiyor musun?" → "Evet" derse eski firmadan kodu çekip yeniye verir (atomic migration)
+- **Yasak kod listesi** (uygunsuz çağrışımlar):
+  ```js
+  const YASAK_KODLAR = ['AM', 'OC', 'GO', 'SI', 'KK', 'TC', 'PK']; // örnek
+  ```
+  Not: Liste kullanıcıyla birlikte genişletilmeli (tersane jargonuna göre)
+- Mevcut firmalar için "Kodu Değiştir" butonu (admin yetkisi gerekir)
+- Kod değiştirilirse UYARI: "Bu işlem geri alınamaz ve eski QR'lar çalışmaz" (aslında çalışır ama dikkat çek)
 
-**Seçenek A (serbest text + autocomplete):**
-- Form'da kalite metin kutusu
-- Geçmiş değerlerden autocomplete (ST37, A106-B, CuNi10Fe1Mn, 304L, 316L...)
-- Kullanıcı kendi bilgi tabanını büyütür
-- Esnek ama validasyon yok
+**Risk:** Düşük — yeni sayfa/yeni UI, mevcut akışları bozmaz. RLS ve E-03 altyapısı hazır.
 
-**Seçenek B (datalist + yeni ekleme):**
-- `<datalist>` ile sistemde kayıtlı kaliteler
-- "Listede yok → yeni ekle" akışı
-- `kalite_standartlari` diye bir tablo + tenant_id
-- Kontrollü ama daha fazla UI iş
-
-**Seçenek C (yapay zeka asistan):**
-- Kullanıcı serbest yazar
-- Sistem "bu ST37-A mı, yoksa A53-A mı?" diye sorar (gerekirse)
-- AI veya regex ile normalize
-- En gelişmiş ama karmaşık
-
-**Benim önerim:** Seçenek A ile başla — basit, esnek, kullanıcının gerçek kalite kodları zaman içinde ortaya çıkar. Sonra Seçenek B'ye migrate etmek kolay (`SELECT DISTINCT kalite FROM spooller` ile başlangıç verisi).
-
-### Yapılacaklar
-1. `devre_yeni.html` form tasarım değişikliği (kalite radio → text+autocomplete)
-2. `devre_duzenle.html` aynı değişiklik
-3. IFS import (satır 786) + PDF import (satır 1668) — kalite alanının doğru kaynaktan gelmesi
-4. DB temizliği:
-   ```sql
-   -- Önce dağılımı gör
-   SELECT kalite, COUNT(*) FROM spooller WHERE silindi = false GROUP BY kalite;
-   -- Bozuk değerleri NULL'a çek (karbon/paslanmaz gibi değerler)
-   UPDATE spooller SET kalite = NULL 
-   WHERE kalite IN ('karbon','paslanmaz','bakir','alum','diger');
-   -- Kullanıcı manuel yeniden girsin veya boş kalsın
-   ```
-5. spool_malzemeleri için aynı sorun var mı kontrol et (CLAUDE.md'de "kalite='diger' 2 kayıt UX sorunu" notu vardı)
-6. Dil dosyası güncellemesi (tr/en/ar): kalite input placeholder'ı, autocomplete hint mesajı, "yeni kalite ekle" gibi UI metinleri — 3-5 anahtar
-
-**Süre tahmini:** 2-3 saat (tasarım kararı + UI + veri + i18n)
+**Tahmini süre:** 1-2 saat
 
 ---
 
-## Öncelik 3 — Spool No → Marka Gösterimi
+## ÖNCELİK 2 — Denormalizasyon Borcu: spooller ↔ spool_malzemeleri Sync
 
-### Sorun
-Tablolarda "S01" tek başına anlamsız. Operatör bakınca bağlam yok.
-Şu an devre_detay.html spool listesinde:
+**Konu:** 7. oturumda fark edildi. Aynı bilgi iki tabloda saklanıyor, sync değil:
+
+| Kolon | spooller | spool_malzemeleri |
+|---|---|---|
+| malzeme | `spooller.malzeme` (aggregate) | `spool_malzemeleri.malzeme` (kalem-seviyesi) |
+| kalite  | `spooller.kalite` (baskın) | `spool_malzemeleri.kalite` (kalem-seviyesi) |
+
+**Semptomlar:**
+- `spool_malzemeleri.kalite` temizlendi ama `spooller.kalite` kirli kaldı (7. oturumda farkedildi, 46 kayıt düzeltildi)
+- Kullanıcı "bir yerde düzelir başka yerde bozulur" hissi yaşıyor
+- Hangi tablodan okunduğu belirsiz, her sayfa farklı kullanıyor
+
+**Çözüm seçenekleri:**
+- **Option A (önerilen):** `spooller.malzeme` ve `spooller.kalite` kolonlarını kaldır. UI her zaman `spool_malzemeleri`'den aggregate eder. En temiz. Ama devre_detay vs. sorguları refactor gerekir.
+- **Option B:** Kolonlar kalır ama trigger ile spool_malzemeleri INSERT/UPDATE/DELETE'te otomatik güncellenir. Daha invazif, PostgreSQL trigger gerekir.
+- **Option C:** Sadece UI konvansiyonu — "daima spool_malzemeleri'nden oku" kuralı ama sync problemi kalır.
+
+**Karar:** Option A en iyisi ama büyük refactor. Option C geçici. Option B PostgreSQL trigger'ı uzun vade sürdürülebilir değil.
+
+**Risk:** Yüksek — DB değişikliği + 5-6 sayfa refactor. Dikkatli planlanmalı.
+
+**Tahmini süre:** 3-4 saat (option A ile)
+
+---
+
+## ÖNCELİK 3 — Değişken Adlandırma Temizliği
+
+**Konu:** `spool_detay.html`'de `SP._gemi` değişkeni aslında `dv.projeler.proje_no` tutuyor (satır 994). Ad yanıltıcı, kod sahtekarlığı. 7. oturumda yorumlarla not düşüldü ama yeniden adlandırılmadı.
+
+**Yapılacak:**
+- `SP._gemi` → `SP._projeNo` (gerçek anlamını yansıtsın)
+- Eğer gerçek gemi adı istenirse `SP._gemiAdi = dv.projeler.gemi_adi` ayrı ekle
+- Tüm `SP._gemi` referanslarını değiştir (spool_detay + lokalStorage + eski code paths)
+
+**Dikkat:** `SP` localStorage'dan okunuyor (`ares_aktif_spool`). Migration gerekir: yeni kod eski formatı de okuyabilmeli.
+
+**Risk:** Orta — çoklu dosya etkisi, localStorage backward compat
+
+**Tahmini süre:** 1 saat
+
+---
+
+## ÖNCELİK 4 — spool_detay.html Dropdown E-01 İhlali
+
+**Konu:** 7. oturumda farkedildi, düzeltilmedi. `spool_detay.html` satır 762-763:
+
+```html
+<select id="ed_malz"><option>Karbon Çelik</option><option>Paslanmaz</option>...</select>
+<select id="ed_yuz"><option>Asit</option><option>Galvaniz</option><option>Epoksi</option>...</select>
 ```
-PIPELINE NO       SPOOL NO  REV  SPOOL ID
-M100-262-302-47   S01       —    A-0512
+
+**Sorunlar:**
+- Option value'ları Türkçe ("Karbon Çelik" vs canonical kod "karbon") — E-01 ihlali
+- "Epoksi" yüzey hâlâ var ama standart listede yok
+- "Diğer" ve "Boya" eksik
+
+**Yapılacak:**
+- ARES_NORM'dan canonical kod listesi çek (`_malzemeMap` ve `_yuzeyMap` keys)
+- Option'larda value=canonical, text=lokalize etiket
+- Saving'de canonical kod kaydet
+- Migrate mevcut varyantları (örn. "Epoksi" → "boya" veya "diger"?)
+
+**Risk:** Orta — edit modal, save path etkili
+
+**Tahmini süre:** 1-1.5 saat
+
+---
+
+## ÖNCELİK 5 — devre_detay Inline Edit Duplicate Bug
+
+**Konu:** `devre_detay.html`'de spool satırları için inline edit `s.spoolNo` KEY kullanıyor (satır ~1197-1271, ~10 fonksiyon). Duplicate spool_no varsa (aynı devrede iki kayıt "S01" gibi), ilkini düzenler ve ikinciyi atlar.
+
+**Çözüm:** `s.spoolNo` yerine `s.supaId` (UUID) kullan. DOM attribute olarak veya closure variable ile.
+
+**Dikkat:** 10+ fonksiyon etkili, dikkatli bir refactor gerekir. Test senaryosu hazırla (iki duplicate spool_no yaratıp edit dene).
+
+**Risk:** Orta-Yüksek — karmaşık state management
+
+**Tahmini süre:** 2-3 saat
+
+---
+
+## ÖNCELİK 6 — Mobil Ekranlar Rafta
+
+7. oturumda hiç dokunulmadı. Web işleri uzadıkça mobil geride kaldı.
+
+**Yapılacak ekranlar (mockup-first, R-10 kuralı):**
+- MProfil (kullanıcı profili)
+- MIsBaslat (iş başlatma wizardı)
+- MDevreler (devre listesi — zaten yarım implemente)
+- MDevreDetay (devre detayı)
+- MSpoolDetay (spool detayı)
+- MQRTara (QR tarama, kamera permissive)
+
+**Süreç:**
+1. Her ekran için önce SVG mockup (kullanıcı onayı)
+2. React component implementasyonu
+3. Route'lara ekleme
+4. Test (arespipe-mob.vercel.app üzerinden)
+
+**Risk:** Düşük — React tarafı izole, web'i etkilemez
+
+**Tahmini süre:** Her ekran ~1-2 saat, toplam 6-12 saat (birden fazla oturum)
+
+---
+
+## ÖNCELİK 7 — Düşük Öncelik / Teknik Borç
+
+### 7.1 Tüm Sayfalarda Malzeme/Yüzey Display Audit
+7. oturumda `devre_detay.html` düzeltildi. Diğer sayfalarda (`kesim.html`, `markalama.html`, `kalite_kontrol.html`, `sevkiyatlar.html`) malzeme/yüzey gösterimi düzgün mü?
+
+Kontrol:
+```bash
+grep -n "s\.malzeme\|s\.yuzey\|\.malzeme ||\|\.yuzey ||" *.html
 ```
+ARES_NORM'suz ham gösterim varsa düzelt.
 
-### Seçenekler
-**(a) SPOOL NO sütununu birleşik yap:** `M100-262-302-47-S01` — okunaklı ama uzun
-**(b) SPOOL NO sütununu kaldır** — PIPELINE NO + SPOOL ID yeter
-**(c) Ekran aynı, sadece Excel/PDF çıktılarda marka birleşsin**
-
-### Etkilenen sayfalar
-- `devre_detay.html` (ana liste)
-- `kesim.html`
-- `markalama.html`
-- `sevkiyat.html`
-- `kalite_kontrol.html`
-- `raporlar.html`
-
-Ayrıca spool_detay.html başlığında zaten `NB1137-M100-262-302-47-S01` formatında gösteriliyor — tutarlı olması için diğer sayfalara yayılmalı.
-
-**Süre tahmini:** 1-2 saat
-
----
-
-## Öncelik 4 — Admin UI: Tenant Kod Yönetimi
-
-### Kural özeti (6. oturumda karar verildi)
-- Kod admin tarafından manuel atanır
-- Sistem çakışma uyarısı verir ama override edilebilir (iki aşamalı onay)
-- Önce eski sahipten kodu al, sonra yenisine ver (çakışma sırasında)
-- Yasak kod listesi (AM, OC, GO, SI vb. uygunsuz çağrışımlı kodlar)
-- Format: 1-4 harf, A-Z (DB CHECK zaten var, gevşek bırakıldı)
-
-### Yapılacaklar
-1. `tanimlar.html` veya ayrı bir admin sayfası
-2. Yeni firma oluştururken kod input'u + "kullanılmış kodlar" listesi + uyarı
-3. Mevcut firmanın kodunu değiştirme (uyarı: "tüm spool_id'ler bozulur")
-4. Yasak kod tablosu (isterseniz):
-   ```sql
-   CREATE TABLE tenants_kod_yasak (kod VARCHAR(4) PRIMARY KEY, sebep TEXT);
-   INSERT INTO tenants_kod_yasak VALUES 
-     ('AM', 'Uygunsuz çağrışım'),
-     ('OC', 'Uygunsuz çağrışım'),
-     ('GO', 'Uygunsuz çağrışım');
-   ```
-5. UI tarafında yasak kod seçilmeye çalışılırsa uyarı
-
-**Süre tahmini:** 2 saat
-
----
-
-## Öncelik 5 — spool_detay.html Performans
-
-**Sorun:** 
-- 3007 satır tek dosya
-- Ana select: `spool_malzemeleri + fotograflar + belgeler + devreler + projeler + tersaneler` büyük join
-- 5 paralel ek query (islem_log, notlar, kesim, bukum, markalama)
-- 3D THREE.js render kodu (lazy load edilmeli)
-
-**Hedef:** Sayfa açılma süresi ~3s → <1s
-
-**Yapılacaklar:**
-1. Ana select'i böl — spool detayı önce, alt listeler lazy load
-2. 3D kodunu ayrı dosyaya çıkar + dinamik import (`ares-3d.js`)
-3. İşlem log + notlar: kullanıcı tab'a tıklayınca yükle (şu an hep yükleniyor)
-4. Fotoğraflar: thumbnail lazy load + infinite scroll
-
-**Süre tahmini:** Ayrı bir oturum (refactor işi)
-
----
-
-## Öncelik 6 — devreler.malzeme Canonical Migration (4. oturumdan devam)
-
-DB'de `devreler.malzeme` hâlâ Türkçe format ("Karbon Çelik", "Paslanmaz", "Bakır Alaşım"). spooller gibi canonical'e çekilmeli.
+### 7.2 devreler.malzeme Canonical Migration
+4. oturumdan devam, hâlâ Türkçe format. `spooller.malzeme` ve `spool_malzemeleri.malzeme` temizlendi ama `devreler.malzeme` hâlâ `['Karbon Çelik', 'Paslanmaz']` formatında. Array tip.
 
 ```sql
--- Dağılım
-SELECT malzeme, COUNT(*) FROM devreler WHERE silindi = false GROUP BY malzeme;
-
--- Canonical migration
-UPDATE devreler SET malzeme='karbon'    WHERE malzeme IN ('Karbon Çelik','karbon_celik');
-UPDATE devreler SET malzeme='paslanmaz' WHERE malzeme = 'Paslanmaz';
-UPDATE devreler SET malzeme='bakir'     WHERE malzeme IN ('Bakır Alaşım','bakir_alasim');
-UPDATE devreler SET malzeme='alum'      WHERE malzeme IN ('Alüminyum','aluminyum');
+-- Kontrol sorgusu:
+SELECT malzeme FROM devreler WHERE malzeme IS NOT NULL LIMIT 10;
 ```
 
-**Süre tahmini:** 30 dk
+Format canonical'a geçirilmeli: `['karbon', 'paslanmaz']`.
+
+### 7.3 QR İndir Butonu
+Şu an "ileride" toast mesajı (NOT-02). İsteğe bağlı PNG/SVG export. Kanvas'tan `toDataURL()` + download link.
+
+### 7.4 ares-store.js Supabase Key
+Hâlâ `sb_publishable_...` formatında. CLAUDE.md "JWT anon key kullan" diyor. Web auth problem vermiyor ama tutarsız. Supabase dashboard'dan anon key al ve değiştir.
+
+### 7.5 Search Haystack'te markaId
+`kesim.html`, `markalama.html`, `kalite_kontrol.html` search haystack'te `h.spoolId` raw kullanılıyor. Kullanıcı "0074" yazıp arıyorsa bulur, "A-0074" arıyorsa bulmayabilir. Düşük öncelik çünkü kullanıcılar genelde kısa kod arıyor.
+
+### 7.6 Dil Dosyası Güncelleme
+`CLAUDE-SON-OTURUM.md`'de listelendi. 5 yeni anahtar eklenecek (TR/EN).
 
 ---
 
-## Öncelik 7 — CLAUDE.md Güncellemesi
+## Yeni Oturumda Başlangıç Tavsiyeleri
 
-Bu oturumda öğrenilen şemaları CLAUDE.md'ye yansıt:
+**Kullanıcı deploy test etti mi kontrol et:**
+- QR etiket yazdırma çalışıyor mu?
+- Prefix her sayfada görünüyor mu?
+- Marka formatı tutarlı mı?
+- Rev-0 atıldı mı, Rev-2 görünüyor mu?
 
-### Bölüm 4.2 — Kritik Kolon Adları
-Ekle:
-- **spool_malzemeleri:** `dis_cap_mm`, `et_mm`, `boy_mm`, `agirlik_kg`, `kalite`, `malzeme`, `adet`, `boyut`, `kod`, `tip`, `tanim`, `heat_no`, `sertifikali` (önemli — `et_mm`, `agirlik_kg` spooller'la UYUMSUZ isimler ama bu tabloda CANONICAL)
-- **markalama_kalemleri.et_mm** (numeric, plaka markalama için)
-- **fotograflar.yapan_id:** legacy TEXT kolon — 11 eski kayıtta email tutuluyordu, 20 Nisan'da `yukleyen_id`'ye migrate edildi. Kolon silinmedi (iz olarak)
-- **tenants.kod:** VARCHAR(4) — tenant prefix, spool_id'nin başına gelir (A-0504 gibi)
-- **spooller.agirlik_kg:** legacy kolon, tüm kayıtlarda NULL — ileride DROP yapılabilir
-
-### Bölüm 2.13 — Enum Normalize (ekle)
-- Tenant prefix sistemi (E-03 diye yeni kural eklenebilir)
-- Format: `^[A-Z]{1,4}$`
-- Her firma kendi prefix'ini seçer, admin onaylar
-
-### Bölüm 11 — 6. oturum özeti
-CLAUDE-SON-OTURUM.md içeriği ana tarihçeye taşınır.
-
-**Süre tahmini:** 30 dk (dokümantasyon)
+**Sonrasında öncelik soruşması:**
+```
+7. oturum deploy'u nasıl gitti? Hangi öncelikten başlayalım?
+- Öncelik 1: Admin UI tenant kod (1-2 saat, düşük risk)
+- Öncelik 2: Denormalizasyon borcu (3-4 saat, yüksek risk)
+- Öncelik 6: Mobil ekranlar (1-2 saat/ekran)
+```
 
 ---
 
-## Mobil İşler (Rafta Bekliyor)
+## Bilinmesi Gereken Yan Bulgular
 
-Önceki oturumlardan devam eden:
-- **MProfil.jsx** — avatar + kişisel bilgi düzenleme (1 oturum)
-- **MIsBaslat.jsx** — operatör iş akışı (2-3 oturum)
-- **MDevreler, MDevreDetay, MSpoolDetay, MQRTara** — mockup-first ile
-
----
-
-## Kesinlikle BU OTURUMDA YAPILMAYACAKLAR
-
-- Sayfa yeniden yazma (spool_detay.html refactor gibi büyük işler — ayrı oturum)
-- Admin UI'nın tam implementasyonu — Öncelik 1 ile birlikte yapılırsa dağılırız
-- Mobil ekranlar — web tarafı öncelikli şu an
-
----
-
-## Kural Hatırlatmaları (Sonraki Oturum için Claude'a)
-
-- **Toplu silme/değişiklik yapmadan önce dry-run + kullanıcı onayı**
-- **DB şemasını varsayma, sorgu at** — 6. oturumun temel dersi: "canlı DB'yi sor, dokümantasyona güvenme"
-- **Sessiz fail arama:** `_supaInsert` ve benzer helper'lar console.warn atıyor, toast yok. Bu yüzden çoğu "ekleme başarılı" aslında başarısız olabiliyor. Benzer pattern'lere dikkat.
-- **Migration-in-progress durumları:** `fotograflar.yapan_id`/`yukleyen_id`, `spooller.agirlik`/`agirlik_kg` gibi ikili kolonlar. Yeni bir tane bulursan aynı pattern'le çöz (canonical'e yaz, fallback'i UI'da tut, legacy migration'ı ayrı yap).
-- **"Tamamlandı" skeptik oku:** 5. ve 6. oturumun dersi — oturum özetinde "X bitti" yazıyorsa bile **DB'den doğrula**. Önceki oturum özetleri hep iyimserdi.
-
----
-
-## 6. Oturum Dersleri
-
-**1. "78 yanlış referans" tahmini büyük ölçüde yanlıştı.** Gerçek: 5-6 net bug + 6 ek sessiz bug (ağırlık, spool ID, et kalınlığı). Bunlar kolon adı değil, **mantık eksikleri** veya **yarım kalmış migration'lar**. Yani "kolon adlarını düzelt" odağı yerine "her INSERT/UPDATE'in form state ile simetrik mi" bakışıyla tarama daha verimli.
-
-**2. DB şemasını varsayma, sorgu at.** CLAUDE.md Bölüm 4.2 eksikti — `spool_malzemeleri` şeması hiç yazılmamıştı. Kodu okurken sık sık "bu kolon gerçekten var mı" diye tereddüt yaşadım. Sorgu atmak 10 saniye, varsaymak bir bug yaratır.
-
-**3. Sessiz fail en sinsi düşman.** `_supaInsert` helper'ı console.warn atıyor ama toast yok — kullanıcıya "başarılı" gibi gösteriliyor, DB'ye yazılmıyor. Notlar, ağırlık, fotoğraflar hep bu pattern'in kurbanıydı. Sonraki oturumlarda benzer helper'lara dikkat.
-
-**4. Migration-in-progress pattern'i yaygın.** `fotograflar.yapan_id`/`yukleyen_id` dualizmi benzeri yerler olabilir. `spooller.agirlik`/`agirlik_kg` de öyle. Her yeni kolon bulunduğunda "bu yeni mi, eski mi, ikisi de dolu mu" sorgusu yapılmalı.
-
-**5. Tip uyumsuzluğu sessiz bug yaratır.** `fotograflar.yapan_id` TEXT, `yukleyen_id` UUID — tip değişimi göz ardı ederse INSERT patlıyor. 5. patch'imde bu hatayı yaptım, kullanıcı uyardı, düzelttim. Şemaya dikkat.
-
-**6. Oturum uzunluğu gerilim yaratıyor — özet dosyalar kritik.** Kullanıcı sürekli oturum değişmesinden yoruldu. Bu iki dosyanın her oturum sonunda tam yazılması, sonraki oturumun "hatırlamak" yerine "direkt koda gir" olmasını sağlıyor. İhmal edilmemeli.
-
----
-
-## Strateji Özeti (Değişmedi)
-
-**3 Katmanlı Hibrit Yaklaşım:**
-- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) ✅
-- **Katman 2:** Revizyon geldikçe sayfa yeniden yaz — strangler fig
-- **Katman 3:** Küçük çalışan sayfalar dokunulmaz
-
-**Dil Stratejisi: Freeze & Translate**
-- Proje stabil olunca `tr.json` freeze
-- Profesyonel translator / CAT tool
-
-**Enum Stratejisi: Kod bazlı DB + tv() wrapper** ✅
-- Kanonik liste kilitli: 5 malzeme + 5 yüzey + uyum matrisi
-
-**YENİ — Tenant Prefix Stratejisi** (6. oturumda başladı, 7. oturumda bitecek):
-- DB'de `tenants.kod` (1-4 harf)
-- Spool ID formatı: `A-0504` (prefix-kısakod)
-- QR payload: `A-0504:UUID` (cross-tenant güvenli)
-- Admin manuel kod atar, sistem çakışma kontrolü yapar
-
----
-
-## Son Söz
-
-6. oturumda 12 fix atıldı — 2 dosya, 3 DB migration. Ana tema: sessiz bug avı + tenant prefix temelleri. Kullanıcı formda ve motivasyonluydu, oturum sonunda oturum değişimi yorgunluğu nedeniyle biraz tansiyon arttı — bu tamamen makul, uzun iş.
-
-**Sıradaki en kritik iş — Öncelik 1:** QR payload formatı + qr_tara.html parse + cross-tenant kontrolü. `qr_tara.html`'i yüklemeden başlama. Sonra Öncelik 2 (kalite UX) — tasarım kararı istiyor, kullanıcıyla sakin tartışarak ilerle.
-
-İyi çalışmalar. 🚀
+- **`SP._gemi` = proje_no** (adı yalan söylüyor — bkz. Öncelik 3)
+- **Migration-in-progress pattern yaygın:**
+  - `fotograflar.yapan_id` / `yukleyen_id`
+  - `spooller.agirlik` / `agirlik_kg`
+  - `spooller.spool_id` (prefix'li / prefix'siz)
+- **RLS policy'leri hazır** — yeni işlere tenant_id eklemek şart
+- **Supabase key'i `sb_publishable_`** — tutarsız ama çalışıyor (Öncelik 7.4)

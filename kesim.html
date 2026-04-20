@@ -494,7 +494,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, rev, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
@@ -505,7 +505,7 @@ async function veriYukle() {
       var dv   = sp.devreler         || {};
       var prj  = dv.projeler         || {};
       var trs  = prj.tersaneler      || {};
-      var spoolLabel = ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no);
+      var spoolLabel = ARES_NORM.marka(prj.proje_no, sp.pipeline_no, sp.spool_no, ARES_NORM.revFmt(sp.rev));
       var malzKod = ARES_NORM.malzemeKod(mal.malzeme);
       return {
         id:          k.id,
