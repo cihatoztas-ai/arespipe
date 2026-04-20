@@ -1297,6 +1297,7 @@ function yukle(){
   if (SP._gemi !== undefined) {
     if (SP._projeNo === undefined) SP._projeNo = SP._gemi;
     delete SP._gemi;
+    try { localStorage.setItem('ares_aktif_spool', JSON.stringify(SP)); } catch(e) {}
   }
   // E-02 marka formatı: proje_no-pipeline-spool_no-RevN (rev-0 ise atlar)
   var revEk = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
@@ -1371,30 +1372,30 @@ function renderTracker(){
     var idx=i+1,done=idx<cur,aktif=idx===cur;
     var cls='tracker-stage'+(done?' ts-done':'')+(aktif?' ts-active':'');
     var inner=done?'<svg class="tracker-check" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="var(--gr)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'<div class="tracker-inner"></div>';
-    cont.innerHTML+='<div class="'+cls+'"><div class="tracker-ring">'+inner+'</div><div class="tracker-label">'+esc(s)+'</div></div>';
+    cont.innerHTML+='<div class="'+cls+'"><div class="tracker-ring">'+inner+'</div><div class="tracker-label">'+tv(STAGE_KEYS[i],s)+'</div></div>';
   });
   // Chip: dinamik — mevcut basamak adını göster
   var chip=T('trackerChip');
   if(chip){
     if(cur<=0){
       chip.style.background='var(--sur2)';chip.style.color='var(--txd)';
-      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:var(--txd);display:inline-block;margin-right:6px;"></span>Henüz başlanmadı';
+      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:var(--txd);display:inline-block;margin-right:6px;"></span>'+tv('sp_chip_not_started','Henüz başlanmadı');
     } else if(cur>STAGES.length){
       chip.style.background='rgba(22,163,110,.10)';chip.style.color='var(--gr)';
-      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:var(--gr);display:inline-block;margin-right:6px;"></span>Tamamlandı';
+      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:var(--gr);display:inline-block;margin-right:6px;"></span>'+tv('sp_chip_done','Tamamlandı');
     } else {
-      var stageAd=STAGES[cur-1]||'';
+      var stageAd=tv(STAGE_KEYS[cur-1]||'',STAGES[cur-1]||'');
       var isLast=cur>=STAGES.length;
       var clr=isLast?'var(--gr)':'var(--ac)';
       var bg=isLast?'rgba(22,163,110,.10)':'rgba(45,142,255,.10)';
       chip.style.background=bg;chip.style.color=clr;
-      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+clr+';display:inline-block;margin-right:6px;"></span>'+esc(stageAd)+' aşamasında';
+      chip.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+clr+';display:inline-block;margin-right:6px;"></span>'+tv('sp_chip_active','{stage} aşamasında').replace('{stage}',esc(stageAd));
     }
   }
   var btn=T('btnSonrakiBasamak'),lbl2=T('btnSonrakiLabel');
   if(btn){
     if(!SP.stopped && cur < STAGES.length){
-      if(lbl2)lbl2.textContent=STAGES[cur]+' Tamamla';
+      if(lbl2)lbl2.textContent=tv('sp_btn_complete','{stage} Tamamla').replace('{stage}',tv(STAGE_KEYS[cur]||'',STAGES[cur]||''));
       btn.style.display='inline-flex';
     } else {btn.style.display='none';}
   }
