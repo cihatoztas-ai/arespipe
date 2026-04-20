@@ -912,7 +912,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad)))')
+      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1106,7 +1106,7 @@ async function spoolYukle(supaId) {
       return {
         id:    n.id,
         metin: n.metin    || '',
-        kisi:  n.yapan_id || 'Admin',
+        kisi:  n.ekleyen_id || 'Admin',
         tarih: n.olusturma ? new Date(n.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
       };
     });
@@ -1676,7 +1676,8 @@ async function fotoKaydet(){
   var prog=T('fotoProgress'),bar=T('fotoProgressBar'),pLbl=T('fotoProgressLabel'),pPct=T('fotoProgressPct');
   if(prog)prog.style.display='block';
   var aciklama=(T('fotoAciklama')||{}).value||'';
-  var yapan=_kullaniciAd();
+  var yapanId=ARES.oturumAl()?.id||null;
+  var yapanAd=_kullaniciAd();
   var toplam=_fotoFiles.length,basarili=0,hatali=0;
   for(var i=0;i<toplam;i++){
     var f=_fotoFiles[i];
@@ -1693,10 +1694,10 @@ async function fotoKaydet(){
       var baslikStr=f.name.replace(/[.][^.]+$/,'');
       var dbRes=await supa.from('fotograflar').insert({
         tenant_id:ARES.tenantId(),spool_id:SP.supaId,
-        dosya_url:url,baslik:baslikStr,aciklama:aciklama||null,yapan_id:yapan,
+        dosya_url:url,baslik:baslikStr,aciklama:aciklama||null,yukleyen_id:yapanId,
       }).select().single();
       if(dbRes.error)throw new Error(dbRes.error.message);
-      FOTOLAR.push({id:dbRes.data.id,url:url,baslik:baslikStr,aciklama:aciklama,kisi:yapan,tarih:new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});
+      FOTOLAR.push({id:dbRes.data.id,url:url,baslik:baslikStr,aciklama:aciklama,kisi:yapanAd,tarih:new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});
       basarili++;
     }catch(err){hatali++;console.error(f.name,err);toast(f.name+' hatalı: '+err.message,'er');}
   }
@@ -1826,7 +1827,7 @@ function notEkle(){
   if(!m){toast(tv('sp_note_empty','Not boş olamaz'),'er');return;}
   var kisi=_kullaniciAd();
   NOTLAR.unshift({id:Date.now(),metin:m,kisi:kisi,tarih:bugun()});
-  _supaInsert('notlar',{metin:m,yapan_id:ARES.oturumAl()?.id||null});
+  _supaInsert('notlar',{metin:m,ekleyen_id:ARES.oturumAl()?.id||null});
   i.value='';renderNotlar();
   // ✅ FIX: Not ekleme loglandı
   logEkle('NOT_EKLENDI',m.length>50?m.substring(0,50)+'…':m);
