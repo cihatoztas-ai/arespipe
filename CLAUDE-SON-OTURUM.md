@@ -1,95 +1,152 @@
 # AresPipe — Son Oturum Deploy Listesi
 
-**Tarih:** 19 Nisan 2026 (4. oturum)
-**Risk seviyesi:** DÜŞÜK-ORTA — DB migration yapıldı (tamamlandı), kod refactor'ü adım adım doğrulandı, syntax check'ler temiz
+**Tarih:** 20 Nisan 2026 (5. oturum)
+**Risk seviyesi:** DÜŞÜK — DB migration+constraint sorunsuz geçti, kod refactor'leri adım adım doğrulandı, syntax check'ler temiz
 
 ---
 
 ## Bu Oturumda Ne Yapıldı
 
-İki büyük iş ve onlarla çevreli birkaç küçük temizlik:
+Tek başlık altında çok iş: **Malzeme-Yüzey Uyum Sistemi** (matris + popup + DB constraint). Buna eklenen 3 yan iş: devreler.html durum sütunu kaldırma, sapma mantığı çoğunluk-baz'a çevirme, aluminyum → alum migration.
 
-1. **DB Migration — Faz 2 TAMAMLANDI**
-   - 3. oturumdan sonra `spooller.malzeme` ve `spool_malzemeleri.malzeme` hâlâ 3 farklı formatta karışık veri tutuyordu: `karbon_celik` (841), `Karbon Çelik` (126), `bakir_alasim` (77), `paslanmaz` (20)
-   - Tek canonical formata dönüştürüldü: `karbon` (1005), `bakir` (83), `paslanmaz` (20)
-   - Yüzey de aynı şekilde: `Asit` (24) → `asit`, toplam 4 kod
-   - Test kaydı: `yuzey='epoksi'` silindi (7 Nisan 2026 test girişi)
-   - devre_yeni.html canlıda doğru kod formatında yazıyor — test edildi (17:03 spool'u: `malzeme='karbon', yuzey='galvaniz'`)
+### 1. Uyum Matrisi (Kural E-02)
 
-2. **devreler.html + kesim.html — Tam Refactor**
-   - `devreler.html` ARES_NORM'a entegre edildi (kendi `_normalizeMalzeme` fonksiyonu kod duplikasyonuydu, eski `karbon_celik` gibi kodlar dönüyordu)
-   - `matBadge` renk sınıfı karşılaştırmaları eski kodlara göreydi — delegasyon sonrası kaybolacaktı, yeni kodlara (`karbon`, `bakir`, `alum`) güncellendi
-   - `kesim.html` filter dropdown'u kod bazlı hale getirildi, tüm gösterimler lokalize edildi
-   - Dil dosyalarından `plastik` ve `epoksi` anahtarları kaldırıldı (operasyonda kullanılmıyor)
+| Malzeme | Asit | Galvaniz | Siyah | Boya | Diğer |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Karbon | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Paslanmaz | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Bakır Alaşım | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Alüminyum | ✅ | ❌ | ❌ | ✅ | ✅ |
+| Diğer | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+`yuzey='diger'` her malzemeyle uyumlu (özel işlem kaçışı).
+
+### 2. DB Migration — 3 Adım
+
+**Adım A:** `UPDATE spooller SET malzeme='alum' WHERE malzeme='aluminyum'` (83 kayıt — 4. oturumdan borç)
+
+**Adım B:** 8 uyumsuz kayıt asit'e çevrildi (hepsi 7 Nisan toplu test verisiydi — ilerleme=0, bekliyor):
+- 4 paslanmaz+galvaniz, 1 paslanmaz+siyah
+- 1 alum+galvaniz
+- 2 bakir+siyah
+
+**Adım C:** İki yeni kolon + CHECK constraint:
+```sql
+ALTER TABLE spooller ADD COLUMN yuzey_aciklama TEXT;
+ALTER TABLE devreler ADD COLUMN yuzey_aciklama TEXT;
+ALTER TABLE spooller ADD CONSTRAINT malzeme_yuzey_uyumu CHECK (
+  malzeme IS NULL OR yuzey IS NULL
+  OR malzeme = 'diger' OR yuzey = 'diger'
+  OR NOT (
+    (malzeme = 'paslanmaz' AND yuzey IN ('galvaniz','siyah','boyali')) OR
+    (malzeme = 'bakir'     AND yuzey IN ('galvaniz','siyah','boyali')) OR
+    (malzeme = 'alum'      AND yuzey IN ('galvaniz','siyah'))
+  )
+);
+```
+
+### 3. ares-normalize.js — +2 API
+
+```js
+ARES_NORM.uyumlu('paslanmaz','galvaniz')  // → false
+ARES_NORM.uyumluYuzeyler('paslanmaz')     // → ['asit','diger']
+```
+
+Her iki fonksiyon ham değerleri de kabul eder (`ARES_NORM.uyumlu('Paslanmaz','Galvaniz')` → `false`).
+
+### 4. Fark Tespit Popup (devre_yeni + devre_duzenle)
+
+Generic diff framework: **kaydet öncesi** form beyanı ↔ spool gerçeği.
+
+- Malzeme + yüzey için ayrı kartlar
+- Her kart: **Beyan** (mavi pill) → **Yüklenen** (kırmızı pill'ler) + uyumsuz spool listesi
+- 3 buton:
+  - **İptal et** — confirm + devreler.html'e dönüş
+  - **Düzelt** — popup kapan, formda kal, kaydet iptal
+  - **Yüklemeye devam et** — farkı kabul et, kayıt devam (amber)
+
+Neden kaydet'te değil de spool eklerken değil? Tüm import yolları (manuel + IFS Excel + AI PDF) tek noktadan geçer, güvenlik ağı oradadır.
+
+### 5. Yüzey "Diğer" + yuzey_aciklama
+
+- `devre_yeni.html` + `devre_duzenle.html` yüzey radio grubuna "Diğer" eklendi
+- Seçilince altında text input açılır (placeholder: "anodize, pasivasyon…")
+- DB'de `yuzey='diger'` + `yuzey_aciklama='açıklama'` çifti kaydedilir
+- devre_yeni spool INSERT'te fallback: `s.yuzeyAciklama || yuzeyAciklama` (devre geneli her spool'a miras)
+- `"Boyalı"` → `"Boya"` formlarında da düzeltildi
+
+### 6. Malzeme Değişince Uyum Disable
+
+`yuzeyUyumGuncelle()` fonksiyonu:
+- ARES_NORM.uyumluYuzeyler(malzeme) ile izinli yüzeyleri al
+- Diğer radio'ları disable + strikethrough + tooltip (`dny_uyum_uyari` mesajı)
+- Eğer seçili yüzey artık yasaksa Asit'e çek (varsayılan)
+
+**devre_duzenle'de grace period:** Sayfa açılınca mevcut uyumsuz seçim zorla değişmez (_formHazir flag'i false), sadece diğer radio'lar disable edilir. Kullanıcı manuel değişiklik yaptığında kural işler.
+
+### 7. devreler.html — Durum Sütunu + Sapma
+
+- **Durum sütunu + filter kaldırıldı** (75/75 kayıt 'aktif' idi, DURUM_MAP ölü kod)
+- **Sapma çoğunluk-baz:** Eski kod `Object.keys(malzemeSet)[0]` (ilk insert) baz alıyordu → 60 karbon + 1 paslanmaz ama paslanmaz ilk girdiyse "Paslanmaz ⚠ +60" yazabiliyordu. Yeni: `malzemeSayim[mk]++` sayım → en çok olan baz, badge sırası çoğunluktan aza.
+- İptal akışı korundu (`d.durum === 'iptal'` kontrolleri saklı)
 
 ---
 
-## Değişen Dosyalar (6)
+## Değişen Dosyalar (7)
 
-### 1. `ares-normalize.js` (116 satır)
-- `yuzeyKod` regex'ine `boya` kelimesi eklendi: `/boyal|boya|paint/`
-- Default etiket: `boyali: 'Boya'` (eski `'Boyalı'`)
-- **plastik ve epoksi pattern'leri kaldırıldı** (operasyonda yok)
+| Dosya | Değişim | Boyut |
+|---|---|---|
+| `ares-normalize.js` | +uyumlu, +uyumluYuzeyler | 116 → 164 satır |
+| `lang/tr.json` | +10 anahtar | 1338 → 1348 |
+| `lang/en.json` | +10 anahtar | 1338 → 1348 |
+| `lang/ar.json` | +10 anahtar | 1338 → 1348 |
+| `devre_yeni.html` | Popup + uyum + yüzey diger + yuzey_aciklama | 1751 → 2009 |
+| `devre_duzenle.html` | Popup + uyum + grace period + yüzey diger | 358 → 628 |
+| `devreler.html` | Durum sütunu − + sapma çoğunluk-baz | 2357 → 2340 |
 
-### 2. Dil Dosyaları (3) — 1340 → 1338 anahtar
-- `lang/tr.json` — 3 değişiklik:
-  - `cmn_malzeme_plastik` silindi
-  - `cmn_yuzey_epoksi` silindi
-  - `cmn_yuzey_boyali`: "Boyalı" → **"Boya"**
-- `lang/en.json` — 2 silinti (plastik + epoksi), "Painted" korundu
-- `lang/ar.json` — 2 silinti (plastik + epoksi), "مطلي" korundu
+---
 
-### 3. `devreler.html` (2357 satır) — 6 nokta, 106 satır fark
-- **Script tag:** `ares-normalize.js` eklendi (kural 2.2 sırası: store → lang → normalize → layout)
-- **`_normalizeMalzeme` / `_normalizeYuzey`:** 20 satırlık kendi gövdesi silindi, ARES_NORM'a delege edildi. Artık `karbon` formatında kod dönüyor (eski: `karbon_celik`)
-- **`rebuildSelect`:** `alan` parametresi eklendi, option text'i lokalize ediliyor (`ARES_NORM.tvMalzeme/tvYuzey`)
-- **Pie chart label'ları (2 yer):** `malzemeItems` ve `malzemeModalAc` — artık lokalize etiket gösteriyor
-- **🔴 Kritik bug fix:** `matBadge`/`yuzeyBadge` eski kodlarla (`karbon_celik`, `bakir_alasim`, `aluminyum`, `plastik_pe`) renk sınıfı kontrolü yapıyordu. Delegasyon sonrası hiçbir `if` eşleşmeyecek, tüm badge'ler `mb-diger` olacaktı. Yeni kodlara güncellendi (`karbon`, `paslanmaz`, `bakir`, `alum`).
+## Deploy Sırası (Önerilen)
 
-### 4. `kesim.html` (1476 satır) — 7 nokta, 69 satır fark
-- **`borular` map:** Her kayda `malzemeKod` alanı eklendi (`ARES_NORM.malzemeKod(mal.malzeme)`)
-- **`populateFilters.fill`:** `labelFn` parametresi desteği eklendi. `fMalzeme` için kod topluyor, text olarak lokalize etiket gösteriyor
-- **`applyFilters`:** `k.malzeme !== gv('fMalzeme')` → `k.malzemeKod !== gv('fMalzeme')` (kod-vs-kod karşılaştırma)
-- **Arama haystack:** Hem ham değer (`k.malzeme`) hem lokalize etiket (`malzEt`) dahil — kullanıcı "Karbon Çelik" arayabilir
-- **Sorting:** Malzeme sortu lokalize etiket bazlı (kullanıcının gördüğü sırayla)
-- **`openListeModal`:** Homojenlik kontrolü `malzemeKodlar` bazlı, önizleme lokalize etiket
-- **Excel export `malzAdi` + `islem_log` açıklama:** `ARES_NORM.malzemeEtiket()` ile lokalize
+**Aşama 1 — Risksiz altyapı:**
+1. `lang/tr.json`, `lang/en.json`, `lang/ar.json`
+2. `ares-normalize.js`
+
+Bu iki adım deploy edilince hiçbir şey bozulmaz (HTML'ler yeni anahtarları henüz kullanmıyor).
+
+**Aşama 2 — HTML'ler:**
+3. `devre_yeni.html`
+4. `devre_duzenle.html`
+5. `devreler.html`
+
+**Aşama 3 — DB (zaten yapıldı):**
+- ✅ `aluminyum → alum` migration
+- ✅ 8 uyumsuz kayıt düzeltildi
+- ✅ `spooller.yuzey_aciklama` kolonu
+- ✅ `devreler.yuzey_aciklama` kolonu
+- ✅ `malzeme_yuzey_uyumu` CHECK constraint
 
 ---
 
 ## Test Önerileri
 
-### 1. devreler.html — Dropdown ve Badge Testleri
+### devre_yeni.html
+1. **Uyum disable testi:** Malzeme "Paslanmaz" seç → Galvaniz/Siyah/Boya gri + üstü çizili olmalı, tıklanamaz
+2. **Yüzey Diğer:** "Diğer" seç → altında text input açılmalı
+3. **Fark popup:** Malzeme = Karbon, 1 spool ekle (manuel: malzeme="paslanmaz") → Kaydet → popup açılmalı
+4. **İptal/Düzelt/Devam:** 3 buton farklı davranmalı
+5. **Dil değişimi:** Tüm popup metinleri 3 dile çevrilmeli
 
-**Filtre dropdown:**
-- Malzeme dropdown'unu aç → "Karbon Çelik", "Paslanmaz", "Bakır Alaşım" görmelisin (kod değil, etiket)
-- Yüzey dropdown → "Asit", "Galvaniz", "Boya", "Siyah"
-- Birini seç → tablo filtrelensin
-- Dil değiştir (TR → EN → AR → TR) → dropdown metinleri çevrilsin
+### devre_duzenle.html
+1. **Grace period:** Mevcut uyumsuz kayıt (paslanmaz+galvaniz gibi eski kayıt olsaydı) açılırken radio'lar korunur
+2. **Manuel değişiklik:** Malzemeyi değiştir → yüzey uyumsuzsa Asit'e çekilmeli
+3. **Fark popup:** Devre beyanı değiştir (paslanmaz→karbon), altında karbon spool'lar yoksa popup → uyumsuzluk + 3 buton
+4. **yuzey_aciklama:** Yüzey "Diğer" seç + açıklama gir + kaydet → DB'de `devreler.yuzey_aciklama` doldu mu?
 
-**Tablo badge'leri (KRİTİK):**
-- Her devre satırında malzeme hücresinde renkli badge görünmeli
-- Karbon çelik = `mb-celik` (mavimsi), Paslanmaz = `mb-pas`, Bakır Alaşım = `mb-bakir`, Alüminyum = `mb-alum`, Diğer = `mb-diger`
-- **Dil değiştirince renk değişmemeli, sadece metin** — bu bug fix'in doğruluk kanıtı
-
-**Malzeme modal (üst stat karta tıkla):**
-- Pie chart'ta "Karbon Çelik — 1005 spool" görmeli (kod değil)
-
-### 2. kesim.html — Filter ve Liste Testleri
-
-- Malzeme filter dropdown → "Karbon Çelik" vb. görmeli
-- Seç → tablo doğru filtrelensin
-- Chip'te "Malzeme: Karbon Çelik" (kod değil)
-- Homojen bir grupla Liste Oluştur → Önizleme: "Malzeme: Karbon Çelik"
-- Farklı malzeme grubuyla → Uyarıda lokalize etiketler
-
-### 3. Dil testi — TR'de "Boya" görünmeli
-
-Web'de herhangi bir yüzey gösteren yerde (spool_detay, kesim, devreler) **"Boyalı" yerine "Boya"** görmeli.
-
-### 4. Yeni kayıt testi (opsiyonel doğrulama)
-
-devre_yeni.html'den yeni bir spool ekle → Supabase'e bak → malzeme/yüzey canonical kod formatında (`karbon`, `asit` vb.)
+### devreler.html
+1. **Durum sütunu yok:** Tabloda artık görünmemeli
+2. **Sapma:** Karma malzemeli devrelerde çoğunluk badge'i önce, "⚠ +N" doğru sayıyı göstermeli (test: `438cc33e` devresi — 9 karbon + 1 paslanmaz → "Karbon Çelik ⚠ +1")
+3. **İptal akışı:** Bir devreyi iptal et → row-iptal class'ı çalışmalı, ⊘ İptal badge görünmeli
 
 ---
 
@@ -97,78 +154,13 @@ devre_yeni.html'den yeni bir spool ekle → Supabase'e bak → malzeme/yüzey ca
 
 Hepsi CLAUDE-SONRAKI-OTURUM.md'de detaylı:
 
-1. **Malzeme-Yüzey uyum kontrolü yok:** Paslanmaz+galvaniz kombinasyonu DB'de kabul ediliyor, engellenmesi gerek (Öncelik 2A — kullanıcı bu oturumda gündeme getirdi)
-2. **devre_yeni.html yüzey radio'sunda "Diğer" yok:** Nadir yüzey işlemleri için
-3. **Excel export başlıkları hâlâ hardcode Türkçe:** `'KULLANILACAK MALZEME'` vb.
-4. **`spool_malzemeleri.kalite='diger'` formatı:** Kalite alanı serbest metin, yanlış giriş mümkün (2 orphaned kayıt bu oturumda silindi, gelecekteki giriş önlenmedi)
-5. **Diğer sayfaların enum refactor'ü yapılmadı:** `bukum.html`, `sevkiyat.html`, `raporlar.html` gibi diğer enum display yerleri taranmadı
-6. **spool_detay.html kolon adları hâlâ yanlış:** 78 yanlış referans (önceki oturumun planlanan ama yapılamamış işi)
-
----
-
-## Önemli Karar Özeti
-
-**Kanonik enum listesi kesinleşti:**
-
-| Alan | Kodlar |
-|---|---|
-| malzeme | `karbon`, `paslanmaz`, `bakir`, `alum`, `diger` |
-| yuzey | `asit`, `galvaniz`, `siyah`, `boyali`, `diger` |
-
-**Neden plastik/epoksi kaldırıldı?**
-- Operasyonda kullanılmıyor (kullanıcı onayladı)
-- DB'de sadece 1 test kaydı vardı (silindi)
-- Dil dosyasında anahtar + ARES_NORM'da pattern tutmak ölü kod
-- Gerektiğinde ~10 dakikada tekrar eklenebilir
-
-**Neden "Boyalı" → "Boya"?**
-- Kullanıcı tercihi (diğerleri de isim formu: galvaniz, asit, siyah)
-- Sadece TR etiketi değişti; EN "Painted", AR "مطلي" her dilin doğal kullanımı olarak kaldı
-
----
-
-## Deploy Sırası (Önerilen)
-
-1. **Önce dil dosyaları** (risksiz — hiçbir HTML henüz bunu sorgulamıyor, sadece fallback'ler gözüküyordu):
-   - `lang/tr.json`, `lang/en.json`, `lang/ar.json`
-
-2. **Sonra ares-normalize.js** (mevcut HTML'lerle uyumlu — sadece default "Boyalı" → "Boya" değişikliği):
-   - `ares-normalize.js`
-
-3. **Son olarak 2 HTML** (yeni davranış devreye girer):
-   - `devreler.html` — script tag yükleniyor, ARES_NORM entegrasyonu devreye giriyor
-   - `kesim.html` — kod bazlı filter aktif oluyor
-
-Adım 1 ve 2 deploy edildiğinde hiçbir şey bozulmaz. Adım 3'ten sonra iki sayfada dropdown'lar temizlenir, badge'ler doğru renkte gözükür.
-
-**Git commit önerisi:**
-```
-feat(enum): phase-2 migration + devreler/kesim full refactor
-
-DB Migration (Faz 2):
-- spooller.malzeme: karbon_celik, Karbon Çelik, bakir_alasim → karbon, bakir
-- spool_malzemeleri.malzeme: aynı temizlik
-- spooller.yuzey: Asit → asit
-- Tek canonical format (4 malzeme + 4 yüzey)
-
-Canonical list locked (Bölüm 2.13):
-- Malzeme: karbon, paslanmaz, bakir, alum, diger (5)
-- Yüzey: asit, galvaniz, siyah, boyali, diger (5)
-- plastik + epoksi removed (not used in operation)
-
-devreler.html refactor:
-- ARES_NORM integration (script tag + delegation)
-- matBadge color classes updated (CRITICAL BUG FIX)
-- Dropdowns now show localized labels
-
-kesim.html refactor:
-- Filter code-based (borular.malzemeKod)
-- All displays localized (chips, sorting, liste modal, excel, log)
-
-Lang files: 1340 → 1338 keys
-- Removed: cmn_malzeme_plastik, cmn_yuzey_epoksi
-- TR only: cmn_yuzey_boyali "Boyalı" → "Boya"
-```
+1. **spool_detay.html kolon adları (78 yanlış referans)** — en kritik, sessiz bug
+2. **`devreler.malzeme` legacy format** — hâlâ "Karbon Çelik" Türkçe formatında (spooller gibi canonical'e çekilmeli)
+3. **devre_yeni.html `devreler.yuzey_aciklama` yazmıyor** — sadece devre_duzenle yazıyor, tutarlılık için eklenebilir
+4. **devreler.html Excel export'ta hâlâ `d.durum` kolonu** — DURUM_MAP kaldırıldı ama export'ta veri çıkmaya devam ediyor
+5. **Dil dosyalarında ölü anahtarlar:** `cmn_aktif`, `cmn_th_durum`, `dr_status_*`, `dr_all_statuses` — i18n linter ile temizlenebilir
+6. **MProfil.jsx** — mobil, mockup-first
+7. **Diğer sayfalarda enum refactor** — bukum/sevkiyat/kk/raporlar taranmadı
 
 ---
 
@@ -176,4 +168,4 @@ Lang files: 1340 → 1338 keys
 
 Bu dosya her oturum sonunda **üzerine yazılır**. Versiyon numarası tutulmaz. Deploy tamamlandıktan sonra içerik çöp olur, ama Claude'a yeni oturumda yüklendiğinde bir önceki oturumun ne yaptığını görmesini sağlar.
 
-Uzun vadeli proje tarihçesi `CLAUDE.md` Bölüm 11 / 11A / 11B / 11C'de yaşar — oraya bakılır.
+Uzun vadeli proje tarihçesi `CLAUDE.md` Bölüm 11 / 11A / 11B / 11C / 11D'de yaşar — oraya bakılır.

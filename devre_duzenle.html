@@ -41,11 +41,15 @@ textarea.fi{resize:vertical;min-height:80px;}
 .radio-btn{display:none;}
 .radio-btn+label{padding:7px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--txm);}
 .radio-btn:checked+label{border-color:var(--ac);background:rgba(45,142,255,.12);color:var(--ac);}
+.radio-btn:disabled+label{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
+.radio-btn:disabled+label:hover{border-color:var(--bor);color:var(--txm);}
 
 .yuzey-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .yuzey-btn{display:none;}
 .yuzey-btn+label{padding:7px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--txm);}
 .yuzey-btn:checked+label{border-color:var(--warn);background:rgba(245,158,11,.12);color:var(--warn);}
+.yuzey-btn:disabled+label{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
+.yuzey-btn:disabled+label:hover{border-color:var(--bor);color:var(--txm);}
 
 .btn-row{display:flex;gap:10px;margin-top:24px;}
 .btn{padding:11px 22px;border-radius:10px;border:none;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
@@ -58,6 +62,33 @@ textarea.fi{resize:vertical;min-height:80px;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:9999;display:flex;align-items:center;gap:10px;}
 .toast.t-ok{border-color:rgba(16,185,129,.4);color:var(--gr);}
 .toast.t-er{border-color:rgba(229,62,62,.4);color:var(--re);}
+
+/* FARK POPUP */
+.fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+.fp-overlay.show{display:flex;}
+.fp-card{background:var(--sur);border:1px solid var(--bor);border-radius:12px;width:100%;max-width:540px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
+.fp-head{padding:16px 20px;border-bottom:1px solid var(--bor);display:flex;gap:12px;align-items:center;}
+.fp-ikon{width:32px;height:32px;border-radius:50%;background:rgba(217,119,6,.15);color:var(--warn);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:18px;}
+.fp-baslik{font-size:16px;font-weight:600;color:var(--tx);}
+.fp-alt{font-size:14px;color:var(--txd);margin-top:2px;}
+.fp-body{padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.fp-kart{border:1px solid var(--bor);border-left:3px solid var(--warn);border-radius:8px;padding:12px 14px;background:var(--sur2);}
+.fp-kart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.fp-kart-alan{font-size:14px;font-weight:600;color:var(--tx);}
+.fp-kart-sayi{font-size:14px;font-weight:600;color:var(--warn);}
+.fp-kart-diff{display:flex;gap:10px;align-items:center;font-size:14px;}
+.fp-kart-col{flex:1;min-width:0;}
+.fp-kart-lbl{font-size:14px;color:var(--txd);margin-bottom:3px;}
+.fp-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;margin-right:4px;margin-bottom:2px;}
+.fp-pill-b{background:rgba(14,165,233,.12);color:var(--ac);}
+.fp-pill-y{background:rgba(239,68,68,.12);color:var(--re);}
+.fp-ok{color:var(--txd);font-size:18px;flex-shrink:0;}
+.fp-spool-liste{margin-top:8px;font-size:14px;color:var(--txd);font-family:'Barlow Condensed',sans-serif;}
+.fp-foot{padding:14px 20px;border-top:1px solid var(--bor);background:var(--sur2);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.fp-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur);color:var(--tx);font-size:14px;font-weight:500;cursor:pointer;}
+.fp-btn:hover{border-color:var(--ac);color:var(--ac);}
+.fp-btn.fp-warn{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.4);color:var(--warn);}
+.fp-btn.fp-warn:hover{background:rgba(217,119,6,.2);border-color:var(--warn);color:var(--warn);}
 </style>
 </head>
 <body>
@@ -142,8 +173,11 @@ textarea.fi{resize:vertical;min-height:80px;}
           <input type="radio" name="yuzey" id="ySiyah" value="siyah" class="yuzey-btn">
           <label for="ySiyah" data-i18n="cmn_yuzey_siyah">Siyah</label>
           <input type="radio" name="yuzey" id="yBoyali" value="boyali" class="yuzey-btn">
-          <label for="yBoyali" data-i18n="cmn_yuzey_boyali">Boyalı</label>
+          <label for="yBoyali" data-i18n="cmn_yuzey_boyali">Boya</label>
+          <input type="radio" name="yuzey" id="yDiger" value="diger" class="yuzey-btn">
+          <label for="yDiger" data-i18n="cmn_yuzey_diger">Diğer</label>
         </div>
+        <input class="fi" id="fYuzeyAciklama" data-i18n-placeholder="dny_ph_yuzey_diger" placeholder="Yüzey açıklaması (anodize, pasivasyon…)" style="display:none;margin-top:8px;">
       </div>
     </div>
   </div>
@@ -166,6 +200,27 @@ textarea.fi{resize:vertical;min-height:80px;}
 
 </div>
 </div>
+</div>
+
+<!-- FARK TESPİT POPUP -->
+<div class="fp-overlay" id="farkPopup">
+  <div class="fp-card">
+    <div class="fp-head">
+      <div class="fp-ikon">!</div>
+      <div>
+        <div class="fp-baslik" data-i18n="dny_fark_title">Fark tespit edildi</div>
+        <div class="fp-alt" data-i18n="dny_fark_alt">Girilen ve yüklenen veriler arasında uyumsuzluk var</div>
+      </div>
+    </div>
+    <div class="fp-body" id="farkPopupBody"></div>
+    <div class="fp-foot">
+      <button class="fp-btn" onclick="farkIptal()" data-i18n="dny_fark_iptal_tam">İptal et</button>
+      <div style="display:flex;gap:8px;">
+        <button class="fp-btn" onclick="farkDuzelt()" data-i18n="dny_fark_duzelt">Düzelt</button>
+        <button class="fp-btn fp-warn" onclick="farkDevam()" data-i18n="dny_fark_devam">Yüklemeye devam et</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -202,6 +257,187 @@ function validateForm() {
   document.getElementById('btnKaydet').disabled = !ok;
 }
 
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Devre altındaki spool'lar (sayfa yüklenirken DB'den çekilir)
+var _devreSpools = [];
+
+// Sayfa ilk açılışta mevcut uyumsuzluğu ZORLA düzeltmez (grace period).
+// Kullanıcı malzeme veya yüzeyi manuel değiştirirse kural devreye girer.
+var _formHazir = false;
+
+// Malzeme değiştikçe yüzey radio'larının uyumlu/uyumsuzluğunu günceller
+function yuzeyUyumGuncelle() {
+  if (typeof ARES_NORM === 'undefined' || !ARES_NORM.uyumluYuzeyler) return;
+  var malRadio = document.querySelector('input[name="malzeme"]:checked');
+  if (!malRadio) return;
+  var izinli = ARES_NORM.uyumluYuzeyler(malRadio.value);
+  var seciliYuzey = document.querySelector('input[name="yuzey"]:checked');
+  var yasakSecili = false;
+  document.querySelectorAll('input[name="yuzey"]').forEach(function(r){
+    var ok = izinli.indexOf(r.value) !== -1;
+    r.disabled = !ok;
+    if (!ok) {
+      // Label'a uyum tooltip yaz
+      var lbl = document.querySelector('label[for="'+r.id+'"]');
+      if (lbl) {
+        var malEt = (typeof ARES_NORM !== 'undefined' && ARES_NORM.tvMalzeme)
+          ? ARES_NORM.tvMalzeme(malRadio.value) : malRadio.value;
+        lbl.title = tv('dny_uyum_uyari', '{mal} malzemeye bu yüzey uygulanmaz').replace('{mal}', malEt);
+      }
+      if (seciliYuzey && seciliYuzey.value === r.value) yasakSecili = true;
+    } else {
+      var lbl2 = document.querySelector('label[for="'+r.id+'"]');
+      if (lbl2) lbl2.title = '';
+    }
+  });
+  // Kullanıcı değiştirmişse (form hazır ise) yasak seçili yüzeyi Asit'e çek
+  if (_formHazir && yasakSecili && izinli.length) {
+    var yeni = document.querySelector('input[name="yuzey"][value="' + izinli[0] + '"]');
+    if (yeni) {
+      yeni.checked = true;
+      // "Diğer" açıklama alanı kapat
+      document.getElementById('fYuzeyAciklama').style.display = yeni.value === 'diger' ? 'block' : 'none';
+    }
+  }
+}
+
+// Malzeme & yüzey radio değişince tetikle
+document.addEventListener('change', function(e){
+  if (e.target.name === 'malzeme') {
+    yuzeyUyumGuncelle();
+  }
+  if (e.target.name === 'yuzey') {
+    document.getElementById('fYuzeyAciklama').style.display =
+      e.target.value === 'diger' ? 'block' : 'none';
+  }
+});
+
+// ── FARK TESPİT — form beyanı ↔ DB'deki spool'lar ────────────
+function farkTespit() {
+  var farklar = [];
+  if (!_devreSpools.length) return farklar;
+  if (typeof ARES_NORM === 'undefined') return farklar;
+
+  var malRadio = document.querySelector('input[name="malzeme"]:checked');
+  var malBeyanKod = malRadio ? malRadio.value : '';
+  if (malBeyanKod && malBeyanKod !== 'diger') {
+    var uyumsuz = [], yuklenen = {};
+    _devreSpools.forEach(function(s){
+      if (!s.malzeme) return;
+      var kod = ARES_NORM.malzemeKod(s.malzeme);
+      if (kod && kod !== malBeyanKod) { uyumsuz.push(s); yuklenen[kod] = (yuklenen[kod]||0) + 1; }
+    });
+    if (uyumsuz.length) {
+      farklar.push({
+        alan: 'malzeme',
+        alanEtiket: tv('cmn_th_malzeme', 'Malzeme'),
+        beyanKod: malBeyanKod,
+        beyanEtiket: ARES_NORM.tvMalzeme(malBeyanKod),
+        yuklenenKodlar: Object.keys(yuklenen),
+        uyumsuzSpoolNolar: uyumsuz.map(function(s){return s.spool_id || s.spool_no || '(?)';}).slice(0,20),
+        uyumsuzAdet: uyumsuz.length,
+      });
+    }
+  }
+
+  var yuzRadio = document.querySelector('input[name="yuzey"]:checked');
+  var yuzBeyanKod = yuzRadio ? yuzRadio.value : '';
+  if (yuzBeyanKod && yuzBeyanKod !== 'diger') {
+    var uyumsuz2 = [], yuklenen2 = {};
+    _devreSpools.forEach(function(s){
+      if (!s.yuzey) return;
+      var kod = ARES_NORM.yuzeyKod(s.yuzey);
+      if (kod && kod !== yuzBeyanKod) { uyumsuz2.push(s); yuklenen2[kod] = (yuklenen2[kod]||0) + 1; }
+    });
+    if (uyumsuz2.length) {
+      farklar.push({
+        alan: 'yuzey',
+        alanEtiket: tv('cmn_th_yuzey', 'Yüzey'),
+        beyanKod: yuzBeyanKod,
+        beyanEtiket: ARES_NORM.tvYuzey(yuzBeyanKod),
+        yuklenenKodlar: Object.keys(yuklenen2),
+        uyumsuzSpoolNolar: uyumsuz2.map(function(s){return s.spool_id || s.spool_no || '(?)';}).slice(0,20),
+        uyumsuzAdet: uyumsuz2.length,
+      });
+    }
+  }
+
+  return farklar;
+}
+
+function farkPopupGoster(farklar) {
+  var body = document.getElementById('farkPopupBody');
+  var altEl = document.querySelector('#farkPopup .fp-alt');
+  if (altEl) altEl.textContent = tv('dny_fark_alt','Girilen ve yüklenen veriler arasında uyumsuzluk var') + ' (' + farklar.length + ')';
+  body.innerHTML = farklar.map(function(f){
+    var yukPills = f.yuklenenKodlar.map(function(k){
+      var et = f.alan === 'malzeme' ? ARES_NORM.tvMalzeme(k) : ARES_NORM.tvYuzey(k);
+      return '<span class="fp-pill fp-pill-y">' + esc(et) + '</span>';
+    }).join('');
+    var spoolListe = f.uyumsuzSpoolNolar.length
+      ? esc(f.uyumsuzSpoolNolar.join(' · ')) + (f.uyumsuzAdet > f.uyumsuzSpoolNolar.length ? ' +' + (f.uyumsuzAdet - f.uyumsuzSpoolNolar.length) : '')
+      : '';
+    return '' +
+      '<div class="fp-kart">' +
+        '<div class="fp-kart-head">' +
+          '<div class="fp-kart-alan">' + esc(f.alanEtiket) + '</div>' +
+          '<div class="fp-kart-sayi">' + f.uyumsuzAdet + ' ' + tv('cmn_spool','Spool').toLowerCase() + '</div>' +
+        '</div>' +
+        '<div class="fp-kart-diff">' +
+          '<div class="fp-kart-col">' +
+            '<div class="fp-kart-lbl">' + tv('dny_fark_beyan','Beyan') + '</div>' +
+            '<span class="fp-pill fp-pill-b">' + esc(f.beyanEtiket) + '</span>' +
+          '</div>' +
+          '<div class="fp-ok">→</div>' +
+          '<div class="fp-kart-col">' +
+            '<div class="fp-kart-lbl">' + tv('dny_fark_yuklenen','Yüklenen') + '</div>' +
+            yukPills +
+          '</div>' +
+        '</div>' +
+        (spoolListe ? '<div class="fp-spool-liste">' + spoolListe + '</div>' : '') +
+      '</div>';
+  }).join('');
+  document.getElementById('farkPopup').classList.add('show');
+}
+
+function farkPopupKapat() {
+  document.getElementById('farkPopup').classList.remove('show');
+}
+
+var _farkResolver = null;
+
+function farkIptal() {
+  if (confirm(tv('dny_fark_iptal_confirm','Devre oluşturmayı iptal et?'))) {
+    geriDon();
+  }
+}
+
+function farkDuzelt() {
+  farkPopupKapat();
+  var btn = document.getElementById('btnKaydet');
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Kaydet'; }
+  var r = _farkResolver; _farkResolver = null; if (r) r(false);
+}
+
+function farkDevam() {
+  farkPopupKapat();
+  var r = _farkResolver; _farkResolver = null; if (r) r(true);
+}
+
+function farkKararAl() {
+  var farklar = farkTespit();
+  if (!farklar.length) return Promise.resolve(true);
+  return new Promise(function(resolve){
+    _farkResolver = resolve;
+    farkPopupGoster(farklar);
+  });
+}
+
 function formDoldur(d) {
   document.getElementById('fTersane').value  = d.tersane  || '';
   document.getElementById('fProje').value    = d.gemi     || d.proje_no || '';
@@ -226,19 +462,40 @@ function formDoldur(d) {
   // Yüzey seç
   var yuzKod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.yuzeyKod(d.yuzey) : '';
   var yuzRadioId = { asit:'yAsit', galvaniz:'yGalvaniz', siyah:'ySiyah',
-                     boyali:'yBoyali' }[yuzKod];
+                     boyali:'yBoyali', diger:'yDiger' }[yuzKod];
   if (yuzRadioId) {
     var elY = document.getElementById(yuzRadioId);
     if (elY) elY.checked = true;
   }
 
+  // "Diğer" yüzey ise açıklamayı input'a koy + aç
+  if (yuzKod === 'diger') {
+    var aciklamaEl = document.getElementById('fYuzeyAciklama');
+    aciklamaEl.value = d.yuzey_aciklama || '';
+    aciklamaEl.style.display = 'block';
+  }
+
+  // Mevcut malzeme-yüzey kombinasyonu için sadece disabled/enabled işaretleri uygula
+  // (grace period: _formHazir=false iken yasak yüzeyi zorla değiştirmez)
+  yuzeyUyumGuncelle();
+
   document.getElementById('pageSub').textContent = d.devre_no + (d.zone ? ' — ' + d.zone : '');
   validateForm();
+  // Form tamamen hazır — artık kullanıcı değişiklikleri kural işletir
+  _formHazir = true;
 }
 
 async function kaydet() {
   var btn = document.getElementById('btnKaydet');
   btn.disabled = true;
+
+  // 5. oturum: Fark tespit popup — form beyanı ↔ DB'deki spool'lar
+  var devam = await farkKararAl();
+  if (!devam) {
+    // Düzelt seçildi → buton zaten enable edildi, geri dön
+    return;
+  }
+
   btn.textContent = '⏳ Kaydediliyor...';
 
   try {
@@ -247,6 +504,7 @@ async function kaydet() {
 
     var malzeme = (document.querySelector('input[name="malzeme"]:checked') || {}).value || null;
     var yuzey   = (document.querySelector('input[name="yuzey"]:checked')   || {}).value || null;
+    var yuzeyAciklama = (yuzey === 'diger') ? (document.getElementById('fYuzeyAciklama').value || '').trim() || null : null;
     var termin  = document.getElementById('fTermin').value || null;
 
     var guncelleme = {
@@ -255,11 +513,11 @@ async function kaydet() {
       zone:           document.getElementById('fZone').value.trim(),
       termin_tarihi:  termin || null,
       not_:           document.getElementById('fNot').value.trim() || null,
+      malzeme:        malzeme,
+      yuzey:          yuzey,
+      yuzey_aciklama: yuzeyAciklama,
       guncelleme:     new Date().toISOString(),
     };
-
-    // Malzeme ve yüzey — spooller tablosunda değil devreler tablosunda yok
-    // Ama not olarak kaydedelim, spoollar kendi malzeme/yüzeyine sahip
 
     var res = await supa.from('devreler')
       .update(guncelleme)
@@ -326,18 +584,30 @@ document.addEventListener('DOMContentLoaded', function() {
       var prj = d.projeler || {};
       var trs = prj.tersaneler || {};
 
+      // Devre altındaki spool'ları çek — farkTespit için gerekli
+      try {
+        var spRes = await supa.from('spooller')
+          .select('id, spool_id, spool_no, malzeme, yuzey')
+          .eq('devre_id', _devreId)
+          .eq('tenant_id', ARES.tenantId());
+        if (!spRes.error && spRes.data) _devreSpools = spRes.data;
+      } catch(spE) {
+        console.warn('[ARES] Spool çekme:', spE);
+      }
+
       _devre = {
-        devre_no:     d.devre_no   || '',
-        ad:           d.ad         || '',
-        zone:         d.zone       || '',
-        is_emri_no:   d.is_emri_no || '',
-        termin_tarihi:d.termin_tarihi || '',
-        not_:         d.not_       || '',
-        malzeme:      d.malzeme    || '',
-        yuzey:        d.yuzey      || '',
-        tersane:      trs.ad       || '',
-        gemi:         prj.gemi_adi || '',
-        proje_no:     prj.proje_no || '',
+        devre_no:       d.devre_no   || '',
+        ad:             d.ad         || '',
+        zone:           d.zone       || '',
+        is_emri_no:     d.is_emri_no || '',
+        termin_tarihi:  d.termin_tarihi || '',
+        not_:           d.not_       || '',
+        malzeme:        d.malzeme    || '',
+        yuzey:          d.yuzey      || '',
+        yuzey_aciklama: d.yuzey_aciklama || '',
+        tersane:        trs.ad       || '',
+        gemi:           prj.gemi_adi || '',
+        proje_no:       prj.proje_no || '',
       };
 
       // localStorage'daki aktif devre ile breadcrumb için

@@ -70,7 +70,36 @@ textarea.fi{resize:vertical;min-height:72px;}
 .radio-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:14px;font-weight:500;color:var(--txm);transition:all 0.15s;user-select:none;}
 .radio-btn:hover{border-color:var(--ac);color:var(--ac);}
 .radio-btn.aktif{border-color:var(--ac);background:rgba(14,165,233,0.10);color:var(--ac);font-weight:600;}
+.radio-btn.dis{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
+.radio-btn.dis:hover{border-color:var(--bor);color:var(--txm);}
 .radio-btn input{display:none;}
+
+/* FARK POPUP */
+.fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+.fp-overlay.show{display:flex;}
+.fp-card{background:var(--sur);border:1px solid var(--bor);border-radius:12px;width:100%;max-width:540px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
+.fp-head{padding:16px 20px;border-bottom:1px solid var(--bor);display:flex;gap:12px;align-items:center;}
+.fp-ikon{width:32px;height:32px;border-radius:50%;background:rgba(217,119,6,.15);color:var(--warn);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:18px;}
+.fp-baslik{font-size:16px;font-weight:600;color:var(--tx);}
+.fp-alt{font-size:14px;color:var(--txd);margin-top:2px;}
+.fp-body{padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.fp-kart{border:1px solid var(--bor);border-left:3px solid var(--warn);border-radius:8px;padding:12px 14px;background:var(--sur2);}
+.fp-kart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.fp-kart-alan{font-size:14px;font-weight:600;color:var(--tx);}
+.fp-kart-sayi{font-size:14px;font-weight:600;color:var(--warn);}
+.fp-kart-diff{display:flex;gap:10px;align-items:center;font-size:14px;}
+.fp-kart-col{flex:1;min-width:0;}
+.fp-kart-lbl{font-size:14px;color:var(--txd);margin-bottom:3px;}
+.fp-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;margin-right:4px;margin-bottom:2px;}
+.fp-pill-b{background:rgba(14,165,233,.12);color:var(--ac);}
+.fp-pill-y{background:rgba(239,68,68,.12);color:var(--re);}
+.fp-ok{color:var(--txd);font-size:18px;flex-shrink:0;}
+.fp-spool-liste{margin-top:8px;font-size:14px;color:var(--txd);font-family:'Barlow Condensed',sans-serif;}
+.fp-foot{padding:14px 20px;border-top:1px solid var(--bor);background:var(--sur2);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.fp-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur);color:var(--tx);font-size:14px;font-weight:500;cursor:pointer;}
+.fp-btn:hover{border-color:var(--ac);color:var(--ac);}
+.fp-btn.fp-warn{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.4);color:var(--warn);}
+.fp-btn.fp-warn:hover{background:rgba(217,119,6,.2);border-color:var(--warn);color:var(--warn);}
 
 /* EXCEL YÜKLEME */
 .excel-alan{border:2px dashed var(--bor);border-radius:12px;padding:20px;text-align:center;transition:all 0.2s;cursor:pointer;position:relative;}
@@ -218,8 +247,10 @@ textarea.fi{resize:vertical;min-height:72px;}
         <label class="radio-btn aktif"><input type="radio" name="yuzey" value="asit" checked> <span data-i18n="cmn_yuzey_asit">Asit</span></label>
         <label class="radio-btn"><input type="radio" name="yuzey" value="galvaniz"> <span data-i18n="cmn_yuzey_galvaniz">Galvaniz</span></label>
         <label class="radio-btn"><input type="radio" name="yuzey" value="siyah"> <span data-i18n="cmn_yuzey_siyah">Siyah</span></label>
-        <label class="radio-btn"><input type="radio" name="yuzey" value="boyali"> <span data-i18n="cmn_yuzey_boyali">Boyalı</span></label>
+        <label class="radio-btn"><input type="radio" name="yuzey" value="boyali"> <span data-i18n="cmn_yuzey_boyali">Boya</span></label>
+        <label class="radio-btn"><input type="radio" name="yuzey" value="diger"> <span data-i18n="cmn_yuzey_diger">Diğer</span></label>
       </div>
+      <input class="fi" id="yuzeyDigerAciklama" data-i18n-placeholder="dny_ph_yuzey_diger" placeholder="Yüzey açıklaması (anodize, pasivasyon…)" style="display:none;margin-top:8px;">
     </div>
   </div>
   <div class="grid2">
@@ -768,14 +799,21 @@ function ifsOnayla() {
 document.querySelectorAll('.radio-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const inp = btn.querySelector('input');
+    // Disabled radio'ya tıklanırsa hiçbir şey yapma
+    if (inp.disabled) return;
     if (inp.type === 'radio') {
       document.querySelectorAll(`input[name="${inp.name}"]`).forEach(r => {
         r.closest('.radio-btn').classList.remove('aktif');
       });
       btn.classList.add('aktif');
-      // Diğer alanı göster/gizle
+      // "Diğer" alanları göster/gizle
       if (inp.name === 'malzeme') {
         document.getElementById('malzemeDiger').style.display = inp.value === 'diger' ? 'block' : 'none';
+        // Malzeme değişti → yüzey uyum radio'larını güncelle
+        yuzeyUyumGuncelle();
+      }
+      if (inp.name === 'yuzey') {
+        document.getElementById('yuzeyDigerAciklama').style.display = inp.value === 'diger' ? 'block' : 'none';
       }
     } else {
       // checkbox (gelecekte kullanılabilir)
@@ -785,6 +823,47 @@ document.querySelectorAll('.radio-btn').forEach(btn => {
     validate();
   });
 });
+
+// Malzeme değiştikçe yüzey radio'larının uyumlu/uyumsuzluğunu günceller
+// Uyumsuz yüzey seçili ise Asit'e (varsayılan) çevirir, kullanıcıya uyarı
+function yuzeyUyumGuncelle() {
+  if (typeof ARES_NORM === 'undefined' || !ARES_NORM.uyumluYuzeyler) return;
+  const malRadio = document.querySelector('input[name="malzeme"]:checked');
+  if (!malRadio) return;
+  const izinli = ARES_NORM.uyumluYuzeyler(malRadio.value);
+  const seciliYuzey = document.querySelector('input[name="yuzey"]:checked');
+  let yasakSecili = false;
+  document.querySelectorAll('input[name="yuzey"]').forEach(r => {
+    const ok = izinli.indexOf(r.value) !== -1;
+    r.disabled = !ok;
+    const btn = r.closest('.radio-btn');
+    btn.classList.toggle('dis', !ok);
+    if (!ok) {
+      // Tooltip: "Paslanmaz malzemeye bu yüzey uygulanmaz"
+      const malEt = (typeof ARES_NORM !== 'undefined' && ARES_NORM.tvMalzeme)
+        ? ARES_NORM.tvMalzeme(malRadio.value) : malRadio.value;
+      btn.title = tv('dny_uyum_uyari', '{mal} malzemeye bu yüzey uygulanmaz').replace('{mal}', malEt);
+      if (seciliYuzey && seciliYuzey.value === r.value) yasakSecili = true;
+    } else {
+      btn.title = '';
+    }
+  });
+  // Seçili yüzey artık yasak ise ilk izinli radio'ya çek (Asit)
+  if (yasakSecili && izinli.length) {
+    document.querySelectorAll('input[name="yuzey"]').forEach(r => {
+      r.closest('.radio-btn').classList.remove('aktif');
+    });
+    const yeni = document.querySelector('input[name="yuzey"][value="' + izinli[0] + '"]');
+    if (yeni) {
+      yeni.checked = true;
+      yeni.closest('.radio-btn').classList.add('aktif');
+      // "Diğer" açıklama alanını kapat
+      document.getElementById('yuzeyDigerAciklama').style.display = yeni.value === 'diger' ? 'block' : 'none';
+    }
+  }
+}
+// Sayfa açılırken ilk kez uygula (karbon+asit default uyumlu, ama yine de listener güvenliği)
+setTimeout(yuzeyUyumGuncelle, 0);
 
 // ── VALIDATE ─────────────────────────────────────────────────
 function validate() {
@@ -796,6 +875,153 @@ function gv(id) {
   const el = document.getElementById(id);
   if (!el) return '';
   return (el.value !== undefined ? el.value : el.textContent).trim();
+}
+
+// ── FARK TESPİT POPUP (5. oturum) ────────────────────────────────
+// Generic diff framework: form beyanı ↔ spool'larda gerçek değerler
+// farkTespit() → [{alan, beyan, yuklenenKodlar, uyumsuzSpoolNolar}, ...]
+function farkTespit() {
+  const farklar = [];
+  if (!spooller.length) return farklar;
+  if (typeof ARES_NORM === 'undefined') return farklar;
+
+  // Malzeme beyanı
+  const malRadio = document.querySelector('input[name="malzeme"]:checked');
+  const malBeyanKod = malRadio ? (malRadio.value === 'diger' ? 'diger' : malRadio.value) : '';
+  if (malBeyanKod && malBeyanKod !== 'diger') {
+    const uyumsuz = [];
+    const yuklenenSet = {};
+    spooller.forEach(s => {
+      if (!s.malzeme) return;
+      const kod = ARES_NORM.malzemeKod(s.malzeme);
+      if (kod && kod !== malBeyanKod) {
+        uyumsuz.push(s);
+        yuklenenSet[kod] = (yuklenenSet[kod] || 0) + 1;
+      }
+    });
+    if (uyumsuz.length) {
+      farklar.push({
+        alan: 'malzeme',
+        alanEtiket: tv('cmn_th_malzeme', 'Malzeme'),
+        beyanKod: malBeyanKod,
+        beyanEtiket: ARES_NORM.tvMalzeme(malBeyanKod),
+        yuklenenKodlar: Object.keys(yuklenenSet),
+        uyumsuzSpoolNolar: uyumsuz.map(s => s.spoolNo || '(?)').slice(0, 20),
+        uyumsuzAdet: uyumsuz.length,
+      });
+    }
+  }
+
+  // Yüzey beyanı
+  const yuzRadio = document.querySelector('input[name="yuzey"]:checked');
+  const yuzBeyanKod = yuzRadio ? yuzRadio.value : '';
+  if (yuzBeyanKod && yuzBeyanKod !== 'diger') {
+    const uyumsuz = [];
+    const yuklenenSet = {};
+    spooller.forEach(s => {
+      if (!s.yuzey) return;
+      const kod = ARES_NORM.yuzeyKod(s.yuzey);
+      if (kod && kod !== yuzBeyanKod) {
+        uyumsuz.push(s);
+        yuklenenSet[kod] = (yuklenenSet[kod] || 0) + 1;
+      }
+    });
+    if (uyumsuz.length) {
+      farklar.push({
+        alan: 'yuzey',
+        alanEtiket: tv('cmn_th_yuzey', 'Yüzey'),
+        beyanKod: yuzBeyanKod,
+        beyanEtiket: ARES_NORM.tvYuzey(yuzBeyanKod),
+        yuklenenKodlar: Object.keys(yuklenenSet),
+        uyumsuzSpoolNolar: uyumsuz.map(s => s.spoolNo || '(?)').slice(0, 20),
+        uyumsuzAdet: uyumsuz.length,
+      });
+    }
+  }
+
+  return farklar;
+}
+
+// Popup içeriğini hazırla + göster
+function farkPopupGoster(farklar) {
+  const body = document.getElementById('farkPopupBody');
+  const altEl = document.querySelector('#farkPopup .fp-alt');
+  if (altEl) {
+    altEl.textContent = tv('dny_fark_alt', 'Girilen ve yüklenen veriler arasında uyumsuzluk var') + ' (' + farklar.length + ')';
+  }
+  body.innerHTML = farklar.map(f => {
+    const yuklenenPills = f.yuklenenKodlar.map(k => {
+      const et = f.alan === 'malzeme' ? ARES_NORM.tvMalzeme(k) : ARES_NORM.tvYuzey(k);
+      return '<span class="fp-pill fp-pill-y">' + esc(et) + '</span>';
+    }).join('');
+    const spoolListe = f.uyumsuzSpoolNolar.length
+      ? esc(f.uyumsuzSpoolNolar.join(' · ')) + (f.uyumsuzAdet > f.uyumsuzSpoolNolar.length ? ' +' + (f.uyumsuzAdet - f.uyumsuzSpoolNolar.length) : '')
+      : '';
+    return '' +
+      '<div class="fp-kart">' +
+        '<div class="fp-kart-head">' +
+          '<div class="fp-kart-alan">' + esc(f.alanEtiket) + '</div>' +
+          '<div class="fp-kart-sayi">' + f.uyumsuzAdet + ' ' + tv('cmn_spool', 'Spool').toLowerCase() + '</div>' +
+        '</div>' +
+        '<div class="fp-kart-diff">' +
+          '<div class="fp-kart-col">' +
+            '<div class="fp-kart-lbl">' + tv('dny_fark_beyan', 'Beyan') + '</div>' +
+            '<span class="fp-pill fp-pill-b">' + esc(f.beyanEtiket) + '</span>' +
+          '</div>' +
+          '<div class="fp-ok">→</div>' +
+          '<div class="fp-kart-col">' +
+            '<div class="fp-kart-lbl">' + tv('dny_fark_yuklenen', 'Yüklenen') + '</div>' +
+            yuklenenPills +
+          '</div>' +
+        '</div>' +
+        (spoolListe ? '<div class="fp-spool-liste">' + spoolListe + '</div>' : '') +
+      '</div>';
+  }).join('');
+  document.getElementById('farkPopup').classList.add('show');
+}
+
+function farkPopupKapat() {
+  document.getElementById('farkPopup').classList.remove('show');
+}
+
+// Tek Promise resolver — 3 butondan biri çağrıldığında değer set edilir
+var _farkResolver = null;
+
+// "İptal et" — confirm sonra tüm devre oluşturmayı iptal (sayfa değişir)
+// Confirm'i iptal ederse popup açık kalır, promise bekler
+function farkIptal() {
+  if (confirm(tv('dny_fark_iptal_confirm', 'Devre oluşturmayı iptal et?'))) {
+    window.location.href = 'devreler.html';
+  }
+}
+
+// "Düzelt" — popup kapan, kaydet iptal, formda kal
+function farkDuzelt() {
+  farkPopupKapat();
+  const btn = document.getElementById('btnKaydet');
+  if (btn) btn.disabled = false;
+  const r = _farkResolver; _farkResolver = null;
+  if (r) r(false);
+}
+
+// "Yüklemeye devam et" — farkı yoksay, kaydet akışına devam
+function farkDevam() {
+  farkPopupKapat();
+  const r = _farkResolver; _farkResolver = null;
+  if (r) r(true);
+}
+
+// kaydet() başında çağrılır; fark varsa popup gösterir ve kullanıcı kararını bekler
+// true  → devam et
+// false → düzelt (form'da kal, kaydet iptal)
+// iptal → sayfa değişir (promise kalır, önemsiz)
+function farkKararAl() {
+  const farklar = farkTespit();
+  if (!farklar.length) return Promise.resolve(true);
+  return new Promise(function(resolve) {
+    _farkResolver = resolve;
+    farkPopupGoster(farklar);
+  });
 }
 
 // ── EXCEL YÜKLEME ─────────────────────────────────────────────
@@ -1200,9 +1426,18 @@ async function kaydet() {
   const btnKaydet    = document.getElementById('btnKaydet');
   btnKaydet.disabled = true;
 
+  // 5. oturum: Fark tespit popup — form beyanı ↔ spool gerçeği
+  const devam = await farkKararAl();
+  if (!devam) {
+    // Kullanıcı "Düzelt" veya "İptal et" seçti; kaydet iptal
+    // (farkDuzelt btnKaydet.disabled = false yapar, farkIptal sayfa değiştirir)
+    return;
+  }
+
   const malzemeSecili = document.querySelector('input[name="malzeme"]:checked')?.value || '';
   const yuzeySecili   = document.querySelector('input[name="yuzey"]:checked')?.value   || '';
   const malzemeFinal  = malzemeSecili === 'diger' ? gv('malzemeDiger') : malzemeSecili;
+  const yuzeyAciklama = yuzeySecili === 'diger' ? gv('yuzeyDigerAciklama') || null : null;
 
   const supa = ARES.supabase();
 
@@ -1276,6 +1511,7 @@ async function kaydet() {
             et_kalinligi_mm: s.et ? parseFloat(String(s.et).replace(',','.')) || null : null,
             agirlik:       s.agirlik  || 0,
             yuzey:         s.yuzey    || null,
+            yuzey_aciklama: (s.yuzey === 'diger') ? (s.yuzeyAciklama || yuzeyAciklama || null) : null,
             durum:            'Bekliyor',
             aktif_basamak:    ilkBasamak,
             basamak_snapshot: basamakSnapshot,
@@ -1747,5 +1983,27 @@ document.addEventListener('DOMContentLoaded', function() {
 document.documentElement.style.visibility = '';
 if (typeof _applyI18n === 'function') _applyI18n();
 </script>
+
+<!-- FARK TESPİT POPUP -->
+<div class="fp-overlay" id="farkPopup">
+  <div class="fp-card">
+    <div class="fp-head">
+      <div class="fp-ikon">!</div>
+      <div>
+        <div class="fp-baslik" data-i18n="dny_fark_title">Fark tespit edildi</div>
+        <div class="fp-alt" data-i18n="dny_fark_alt">Girilen ve yüklenen veriler arasında uyumsuzluk var</div>
+      </div>
+    </div>
+    <div class="fp-body" id="farkPopupBody"></div>
+    <div class="fp-foot">
+      <button class="fp-btn" onclick="farkIptal()" data-i18n="dny_fark_iptal_tam">İptal et</button>
+      <div style="display:flex;gap:8px;">
+        <button class="fp-btn" onclick="farkDuzelt()" data-i18n="dny_fark_duzelt">Düzelt</button>
+        <button class="fp-btn fp-warn" onclick="farkDevam()" data-i18n="dny_fark_devam">Yüklemeye devam et</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

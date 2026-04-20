@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 19 Nisan 2026 (4. oturum)
+> Son güncelleme: 20 Nisan 2026 (5. oturum)
 
 ---
 
@@ -263,7 +263,25 @@ ARES_NORM.durumEtiket(raw)
 ARES_NORM.tvMalzeme(kod, fb)
 ARES_NORM.tvYuzey(kod, fb)
 ARES_NORM.tvDurum(kod, fb)
+
+// Malzeme-yüzey uyum kontrolü (5. oturumda eklendi)
+ARES_NORM.uyumlu('paslanmaz','galvaniz')   // → false
+ARES_NORM.uyumluYuzeyler('paslanmaz')      // → ['asit','diger']
 ```
+
+#### Malzeme-Yüzey Uyum Matrisi (Kural E-02, 5. oturum)
+
+DB'de CHECK constraint + frontend radio disable + fark tespit popup:
+
+| Malzeme | Asit | Galvaniz | Siyah | Boya | Diğer |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Karbon Çelik | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Paslanmaz | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Bakır Alaşım | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Alüminyum | ✅ | ❌ | ❌ | ✅ | ✅ |
+| Diğer | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+`yuzey='diger'` her malzemeyle uyumlu (özel işlem açıklaması `yuzey_aciklama` alanına yazılır).
 
 #### Kurallar
 
@@ -315,9 +333,9 @@ tv('anahtar_adi', 'Türkçe fallback')
 
 ```
 lang/
-  tr.json  — Türkçe (web) — 1338 anahtar (19 Nisan 2026 — 4. oturum, plastik/epoksi silindi)
-  en.json  — İngilizce (web) — 1338 anahtar
-  ar.json  — Arapça (RTL destekli, web) — 1338 anahtar
+  tr.json  — Türkçe (web) — 1348 anahtar (20 Nisan 2026 — 5. oturum, fark popup + uyum uyarı anahtarları)
+  en.json  — İngilizce (web) — 1348 anahtar
+  ar.json  — Arapça (RTL destekli, web) — 1348 anahtar
 ```
 
 ```
@@ -348,6 +366,9 @@ mobile/src/lang/
 - `ilerleme INTEGER` — kümülatif puan (0-100)
 - `is_durumu TEXT` — `bekliyor` / `devam_ediyor`
 - `spool_id TEXT` — kısa görüntü ID (ör. "0431"), UUID değil
+- `yuzey_aciklama TEXT` — yuzey='diger' olduğunda özel işlem açıklaması (5. oturumda eklendi)
+- `olusturma TIMESTAMPTZ` — kayıt oluşturma tarihi (created_at DEĞİL!)
+- CHECK constraint `malzeme_yuzey_uyumu` — matris dışı kombinasyonu engeller (5. oturum)
 
 **fotograflar:**
 - `dosya_url` (url değil), `yukleyen_id` (kullanici_id değil)
@@ -361,6 +382,9 @@ mobile/src/lang/
 - `ad` (devre_adi değil)
 - `termin` (DATE) — `termin_tarihi` silindi
 - `ilerleme` kullanılmıyor — spooller.ilerleme ortalaması
+- `durum` — DB'de saklanıyor (iptal akışı için), **ama UI'dan 5. oturumda kaldırıldı** (tüm kayıtlar 'aktif' idi)
+- `yuzey_aciklama TEXT` — yuzey='diger' olduğunda (5. oturumda eklendi, devre_yeni'de henüz yazılmıyor — sadece devre_duzenle kullanıyor)
+- **Legacy format:** `malzeme` kolonu hâlâ Türkçe ("Karbon Çelik", "Paslanmaz" vb.) — ARES_NORM okurken normalize ediyor ama DB temiz değil (sonraki oturum işi)
 
 **kullanicilar (17 Nisan 2026 — 2. oturum notu):**
 - `ad_soyad` (ad değil!) — hata kaynağı, dikkat
@@ -618,9 +642,13 @@ Her sohbet bitiminde:
 - [x] **Dropdown filter'lar enum kod gösteriyor** (devreler/kesim) — 4. oturumda düzeltildi
 - [ ] **Excel export i18n** — kesim.html'de 'KULLANILACAK MALZEME' vb. başlıklar hardcode Türkçe
 - [x] **Faz 2 SQL migration** — 4. oturumda tamamlandı (spooller + spool_malzemeleri)
-- [ ] **Malzeme-Yüzey uyum kontrolü** — Paslanmaz+galvaniz/boya engellenmesi (devre_yeni/devre_duzenle + DB constraint)
-- [ ] **devre_yeni.html yüzey radio'larında "Diğer" seçeneği yok** — eklenmeli
-- [ ] **`spool_malzemeleri.kalite='diger'` UX sorunu** — kalite alanı serbest metin, yanlış giriş mümkün
+- [x] **Malzeme-Yüzey uyum kontrolü** — 5. oturumda tamamlandı (frontend disable + popup + DB CHECK constraint)
+- [x] **devre_yeni.html yüzey "Diğer" seçeneği** — 5. oturumda eklendi
+- [ ] **`spool_malzemeleri.kalite='diger'` UX sorunu** — kalite alanı serbest metin
+- [x] **devreler.html durum sütunu + filtresi** — 5. oturumda kaldırıldı (75/75 kayıt 'aktif' idi, ölü kod)
+- [x] **Sapma mantığı çoğunluk-baz** — 5. oturumda düzeltildi (ilk-insert → çoğunluk)
+- [ ] **devreler.malzeme DB migration** — hâlâ "Karbon Çelik" formatında (spooller gibi canonical'e çekilmeli)
+- [ ] **devreler Excel export'ta hâlâ d.durum** — ölü veri, temizlenebilir
 
 ### Mobil React sayfaları
 - [x] MGiris.jsx — tamamlandı, i18n'li
@@ -639,7 +667,78 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 19 NİSAN 2026 (4. OTURUM)
+## 11. SON OTURUM — 20 NİSAN 2026 (5. OTURUM)
+
+### Bu oturumda tamamlananlar (Malzeme-Yüzey Uyum + Fark Tespit + devreler.html refactor)
+
+Bu oturumda üç büyük iş bitti:
+
+**1. Malzeme-Yüzey Uyum Kontrolü (Kural E-02)**
+- Matris kilitlendi: paslanmaz/bakır → sadece asit, alüminyum → asit+boya, karbon/diger → hepsi (`yuzey=diger` her zaman serbest)
+- `ares-normalize.js` + `uyumlu()` ve `uyumluYuzeyler()` API'si
+- `devre_yeni.html` + `devre_duzenle.html`: Malzeme değişince uyumsuz yüzey radio'ları disable + strikethrough + tooltip (`dny_uyum_uyari`)
+- `devre_duzenle.html`'de grace period — sayfa açılınca mevcut uyumsuz seçimi zorla değiştirmez, kullanıcı manuel değiştirirse kural işler
+- DB CHECK constraint `malzeme_yuzey_uyumu` eklendi
+
+**2. "Diğer" Yüzey + yuzey_aciklama**
+- `cmn_yuzey_diger` radio 4. oturumda eklenmişti, bu oturumda forma da eklendi
+- `ALTER TABLE spooller ADD COLUMN yuzey_aciklama TEXT` (sadece INSERT yolu için)
+- `ALTER TABLE devreler ADD COLUMN yuzey_aciklama TEXT` (devre_duzenle için)
+- Frontend: radio "Diğer" seçilince text input görünür (`fYuzeyAciklama` / `yuzeyDigerAciklama`)
+- "Boyalı" → "Boya" etiket düzeltmesi devre_yeni ve devre_duzenle formlarında da uygulandı
+
+**3. Fark Tespit Popup (Generic Diff Framework)**
+- Kaydet öncesi form beyanı ↔ spool'larda gerçek değerler karşılaştırılır
+- Malzeme + yüzey için ayrı kartlar, her biri: beyan pill (mavi) → yüklenen pill'ler (kırmızı) + uyumsuz spool listesi
+- 3 buton: **İptal et** (confirm + devreler.html'e dönüş), **Düzelt** (popup kapan + formda kal), **Yüklemeye devam et** (farkı kabul et, kayıt devam)
+- Generic yapı: ileride yeni alanlar (kalite, çap toleransı vb.) kolayca eklenebilir
+- `devre_yeni.html`: in-memory `spooller[]` array'i ile karşılaştırır
+- `devre_duzenle.html`: DB'deki `_devreSpools` ile karşılaştırır
+
+**4. DB Migration — 8 uyumsuz kayıt + aluminyum → alum**
+- 4. oturumda gözden kaçan `aluminyum` → `alum` dönüşümü yapıldı (83 kayıt)
+- 8 uyumsuz kayıt (paslanmaz+galvaniz, bakir+siyah, alum+galvaniz) → `asit`'e çevrildi (hepsi 7 Nisan toplu test verisiydi, ilerleme=0, bekliyor)
+
+**5. devreler.html — Durum sütunu + sapma mantığı**
+- `devreler.durum` tüm 75 kayıtta `'aktif'` idi → `DURUM_MAP` ölü kod → **UI sütunu + filtresi kaldırıldı**
+- İptal akışı için DB kolonu korundu (`durum='iptal'`)
+- **Sapma mantığı çoğunluk-baz'a çevrildi:** Eski kod "ilk insert" baz alıyordu (kırılgan: 60 karbon + 1 paslanmaz ama paslanmaz ilk girdiyse "Paslanmaz ⚠ +60" yazabiliyordu). Yeni: `malzemeSayim[mk]++` → en çok olan baz, badge sırası çoğunluktan aza.
+
+### Dil Dosyaları (3) — 1338 → 1348 anahtar
+10 yeni anahtar (TR/EN/AR):
+- `dny_fark_title`, `dny_fark_alt`, `dny_fark_beyan`, `dny_fark_yuklenen`
+- `dny_fark_duzelt`, `dny_fark_devam`, `dny_fark_iptal_tam`, `dny_fark_iptal_confirm`
+- `dny_uyum_uyari` (placeholder: `{mal}`)
+- `dny_ph_yuzey_diger`
+
+### Değişen Dosyalar (7)
+- `ares-normalize.js` (+uyumlu, +uyumluYuzeyler, 116 → 164 satır)
+- `lang/{tr,en,ar}.json` (1338 → 1348)
+- `devre_yeni.html` (1751 → 2009, +258 satır)
+- `devre_duzenle.html` (358 → 628, +270 satır)
+- `devreler.html` (2357 → 2340, −17 satır net; ölü kod temizlendi)
+
+### Verilen Anahtar Kararlar
+- **Bakır için boya kapalı (dar)** — operasyonda hiç kullanılmamış
+- **Alüminyum için boya açık** — %65 oranında operasyonda kullanılıyor (54/83)
+- **Fark popup sadece kaydet()'te** — her spool ekleme anında değil (tek güvenlik ağı, tüm import yolları oradan geçer)
+- **`devreler.durum` DB'de kalıyor** — iptal akışı için gerekli, sadece UI sütunu kaldırıldı
+- **devre_yeni hâlâ `devreler.yuzey_aciklama` yazmıyor** — sadece devre_duzenle yazıyor; sonraki oturumda tutarlılık için devre_yeni'ye de eklenebilir
+
+### Önemli Öğrenmeler
+1. **"4. oturumda tamamlandı" tamamlandı mı?** 4. oturumun son özeti "Faz 2 bitti" diyordu ama `aluminyum → alum` dönüşümü yapılmamış, gözden kaçmış. **Ders:** Oturum özetinde "tamamlandı" ifadesi her zaman sorgulayarak kabul et, DB doğrulaması tekrar yap.
+
+2. **"İlk insert" sıralaması insertion-order bağımlı, kırılgan.** `Object.keys(malzemeSet)[0]` pattern'i browser'da insertion-order döner ama bu garanti değil. Çoğunluk-baz matematiksel olarak belirsizlik içermez.
+
+3. **Generic diff framework scope'u büyütür.** İlk mockup sadece malzeme üzerineydi. Kullanıcı "devre adı, zone vb. de dahil" deyince yaklaşım "her alan için kart" generic hâle geldi. Pratikte şimdi sadece 2 alan karşılaştırılıyor ama structure 10'dan fazla alanı destekler.
+
+4. **UX vs schema ayrımı (4. oturumun devamı).** `yuzey_aciklama` için: UI'da "Diğer" seçilince input açılması ayrı, DB'de kolonun olması ayrı. Mantıksal olarak eşlenmesi kolay ama implementation'da bile dikkat ettim — spool INSERT'te fallback pattern (`s.yuzeyAciklama || yuzeyAciklama`) devre geneli açıklamasını her spool'a miras yaptırıyor.
+
+5. **Grace period**: `devre_duzenle.html`'de mevcut uyumsuz kombinasyon varsa form açılırken zorla değiştirmez (_formHazir flag'i). Bu UX dostu — kullanıcı "mevcut kayıt neden değişti?" diye şaşırmaz. Ama kullanıcı manuel değişiklik yaparsa kural işler.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Refactor Tamamlama + DB Migration)
 
@@ -713,7 +812,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
+## 11B. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Anti-Pattern Temizliği)
 
@@ -752,7 +851,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11B. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
+## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
 
 ### Bu oturumda tamamlananlar (MDrawer + Tema Context)
 
@@ -797,7 +896,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
+## 11D. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
 
 ### Tamamlananlar
 - **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)

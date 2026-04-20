@@ -344,13 +344,6 @@
       <option data-i18n="dr_opt_boyali">Boyalı</option>
       <option data-i18n="dr_opt_siyah">Siyah</option>
     </select>
-    <select class="fsel" id="fDurum">
-      <option value="" data-i18n="dr_all_statuses">Tüm Durumlar</option>
-      <option value="baslamadi" data-i18n="dr_status_notstarted">Başlamadı</option>
-      <option value="imalatta" data-i18n="dr_status_production">İmalatta</option>
-      <option value="kalite_davette" data-i18n="dr_status_qc">Kalite Davette</option>
-      <option value="sevke_hazir" data-i18n="dr_status_ready">Sevke Hazır</option>
-    </select>
     <div class="filter-sep"></div>
     <div class="search-wrap">
       <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -405,7 +398,6 @@
             <th class="sort-th" data-sort="ilerleme" onclick="sortBy('ilerleme')" style="cursor:pointer;">
               <span data-i18n="cmn_th_ilerleme">İlerleme</span> <span class="sort-arrow-wrap"></span>
             </th>
-            <th><span data-i18n="cmn_th_durum">Durum</span></th>
             <th><span data-i18n="dr_th_sonislem">Son İşlem</span></th>
             <th style="cursor:pointer;" onclick="sortBy('termin')">
               <span>Termin</span> <span class="sort-arrow-wrap" data-sort-th="termin"></span>
@@ -931,21 +923,26 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       var caps = spools.map(function(s) {
         return s.dis_cap_mm ? { mm: String(s.dis_cap_mm), agirlik: parseFloat(s.agirlik) || 0 } : null;
       }).filter(Boolean);
-      // Malzeme ve yüzey — spool listesinden normalize unique değerler
-      var malzemeSet = {}, yuzeySet = {};
+      // Malzeme ve yüzey — spool listesinden normalize sayımlar
+      // (5. oturum: "ilk insert" yerine ÇOĞUNLUK baz alınır → badge sıralaması da çoğunluktan aza)
+      var malzemeSayim = {}, yuzeySayim = {};
+      var malzemeliSayi = 0, yuzeyliSayi = 0;
       spools.forEach(function(s) {
-        if (s.malzeme) { var mk = _normalizeMalzeme(s.malzeme); if(mk) malzemeSet[mk] = true; }
-        if (s.yuzey)   { var yk = _normalizeYuzey(s.yuzey);     if(yk) yuzeySet[yk]   = true; }
+        if (s.malzeme) {
+          var mk = _normalizeMalzeme(s.malzeme);
+          if (mk) { malzemeSayim[mk] = (malzemeSayim[mk] || 0) + 1; malzemeliSayi++; }
+        }
+        if (s.yuzey) {
+          var yk = _normalizeYuzey(s.yuzey);
+          if (yk) { yuzeySayim[yk] = (yuzeySayim[yk] || 0) + 1; yuzeyliSayi++; }
+        }
       });
-      var malzemeArr = Object.keys(malzemeSet);
-      var yuzeyArr   = Object.keys(yuzeySet);
-      // Sapma: normalize karşılaştırmayla — kaç spool farklı malzeme/yüzey taşıyor
-      var malzemeSapma = malzemeArr.length > 1 ? spools.length - spools.filter(function(s){
-        return _normalizeMalzeme(s.malzeme) === malzemeArr[0];
-      }).length : 0;
-      var yuzeySapma = yuzeyArr.length > 1 ? spools.length - spools.filter(function(s){
-        return _normalizeYuzey(s.yuzey) === yuzeyArr[0];
-      }).length : 0;
+      // Çoğunluktan aza sırala
+      var malzemeArr = Object.keys(malzemeSayim).sort(function(a,b){ return malzemeSayim[b] - malzemeSayim[a]; });
+      var yuzeyArr   = Object.keys(yuzeySayim).sort(function(a,b){ return yuzeySayim[b] - yuzeySayim[a]; });
+      // Sapma: çoğunluk DIŞINDA kalan spool adedi
+      var malzemeSapma = malzemeArr.length > 1 ? (malzemeliSayi - malzemeSayim[malzemeArr[0]]) : 0;
+      var yuzeySapma   = yuzeyArr.length   > 1 ? (yuzeyliSayi   - yuzeySayim[yuzeyArr[0]])     : 0;
       var prj  = d.projeler || {};
       var trs  = prj.tersaneler || {};
       var sonIslem = d.guncelleme
@@ -986,7 +983,6 @@ async function sorgulaVeGoster() {
   var proje   = gv('fProje');
   var malzeme = gv('fMalzeme');
   var yuzey   = gv('fYuzey');
-  var durum   = gv('fDurum');
   var arama   = ((document.getElementById('fArama')||{}).value||'').toLowerCase().trim();
   var offset  = (_sayfa - 1) * _sayfaBasi;
 
@@ -1001,7 +997,6 @@ async function sorgulaVeGoster() {
 
   function applyFilters(q, devreIds) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
-    if (durum) q = q.eq('durum', durum);
     if (proje && _projeIdMap[proje]) q = q.eq('proje_id', _projeIdMap[proje]);
     if (firma) {
       var ids = _firmaProjeIds[firma] || [];
@@ -1488,7 +1483,6 @@ function getFiltered() {
   var proje   = gv('fProje');
   var malzeme = gv('fMalzeme');
   var yuzey   = gv('fYuzey');
-  var durum   = gv('fDurum');
   var arama   = ((document.getElementById('fArama') || {}).value || '').toLowerCase().trim();
   var oncelikler = getOncelikler();
   var silinenler = getSilinenler();
@@ -1502,7 +1496,6 @@ function getFiltered() {
     if (proje   && d.gemi    !== proje) return false;
     if (malzeme && d.malzeme.map(function(m){return _normalizeMalzeme(m)||m;}).indexOf(malzeme) === -1) return false;
     if (yuzey   && d.yuzey.map(function(y){return _normalizeYuzey(y)||y;}).indexOf(yuzey) === -1) return false;
-    if (durum   && d.durum   !== durum) return false;
     if (arama) {
       var hay = [d.isEmri, d.tersane, d.gemi, d.devre, d.zone].join(' ').toLowerCase();
       if (hay.indexOf(arama) === -1) return false;
@@ -1517,7 +1510,7 @@ function getFiltered() {
 }
 
 function filtreleriSifirla() {
-  ['fFirma','fProje','fMalzeme','fYuzey','fDurum'].forEach(function(id) {
+  ['fFirma','fProje','fMalzeme','fYuzey'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
   var ara = document.getElementById('fArama'); if (ara) ara.value = '';
@@ -1557,14 +1550,6 @@ function _doRender() {
   var toplamFiltreli = liste.length;
   var sayfaListesi = liste.slice((_sayfa-1)*_sayfaBasi, _sayfa*_sayfaBasi);
 
-  var DURUM_MAP = {
-    aktif:          {cls:'sb-imalatta',  get text() { return tv('cmn_aktif', 'Aktif'); }},
-    baslamadi:      {cls:'sb-baslamadi', get text() { return tv('dr_status_notstarted', 'Başlamadı'); }},
-    imalatta:       {cls:'sb-imalatta',  get text() { return tv('dr_status_production', 'İmalatta'); }},
-    kalite_davette: {cls:'sb-kalite',    get text() { return tv('dr_status_qc', 'Kalite Davette'); }},
-    sevke_hazir:    {cls:'sb-sevkehazir',get text() { return tv('dr_status_ready', 'Sevke Hazır'); }}
-  };
-
   var baslangic = (_sayfa - 1) * _sayfaBasi;
   var _ci = 0;
   tbody.innerHTML = liste.map(function(d, i) {
@@ -1572,7 +1557,6 @@ function _doRender() {
     var starState = _starCache[d.supaId] || 0;
     var starCfg = _STAR_CFG[starState];
     var iptalBilgi = getIptalMap()[d.id];
-    var dur = DURUM_MAP[d.durum] || {cls:'sb-baslamadi', text: d.durum};
     var matBadge = d.malzeme.map(function(m) {
       var mn = _normalizeMalzeme(m) || m;
       // mn artık ARES_NORM normalize kod: 'karbon' / 'paslanmaz' / 'bakir' / 'alum' / 'diger'
@@ -1611,7 +1595,6 @@ function _doRender() {
       '<td>' + matBadge + '</td>' +
       '<td>' + yuzeyBadge + '</td>' +
       '<td><div class="prog-cell"><span class="prog-pct" style="color:' + pc + '">%' + d.ilerleme + '</span><div class="prog-mini"><div class="prog-fill" style="width:' + d.ilerleme + '%;background:' + pc + ';"></div></div></div></td>' +
-      '<td><span class="status-badge ' + dur.cls + '">' + esc(dur.text) + '</span></td>' +
       '<td style="font-size:14px;color:var(--txd);">' + tarihFormat(esc(d.sonIslem || '—')) + '</td>' +
       '<td class="termin-cell" onclick="event.stopPropagation();">' +
         '<button class="termin-btn ' + terminRenk(_terminCache[d.supaId]) + '" onclick="takvimAc(event,\'' + d.supaId + '\')">' +
@@ -1824,7 +1807,7 @@ function malzemeListesiModalAc() {
   var info = document.getElementById('mlInfo');
   if (info) {
     var topSpool = liste.reduce(function(s, d) { return s + d.spool; }, 0);
-    var filtreAktif = ['fFirma','fProje','fMalzeme','fYuzey','fDurum'].some(function(id) { return gv(id) !== ''; }) ||
+    var filtreAktif = ['fFirma','fProje','fMalzeme','fYuzey'].some(function(id) { return gv(id) !== ''; }) ||
       ((document.getElementById('fArama') || {}).value || '').trim();
     var filtreNotu = filtreAktif ? ' (aktif filtredeki)' : '';
     if (liste.length === 0) {
@@ -2313,7 +2296,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Filtre değişimleri
-  ['fFirma','fProje','fDurum'].forEach(function(id) {
+  ['fFirma','fProje'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', function() { _sayfa = 1; renderTable(); });
   });
