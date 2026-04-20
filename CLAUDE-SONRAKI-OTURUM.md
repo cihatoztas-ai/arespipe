@@ -95,7 +95,27 @@ ARES.tenantKod = tenantKod;
 
 Böylece `devre_yeni.html`'deki inline sorguyu da sadeleştirebiliriz (opsiyonel refactor).
 
-**Süre tahmini:** 1-2 saat
+### Adım 4 — Dil dosyası güncellemesi (tr.json, en.json, ar.json)
+
+Tenant prefix + QR + cross-tenant mesajları için yeni anahtarlar eklenecek. Tahmini 12-15 anahtar, 3 dilde. Önerilen anahtar şeması:
+
+```
+qr_tenant_baska_firma     — "Bu spool {firma} firmasına aittir, sisteminizde görüntülenemiyor"
+qr_tenant_tanimsiz        — "QR kod formatı tanınmadı"
+qr_tenant_uuid_bulunamadi — "Spool bulunamadı (UUID eşleşmedi)"
+tnk_baslik                — "Firma Kodu"
+tnk_ph                    — "Örn: A, AR, BM..."
+tnk_cakisma_uyari         — "Bu kod '{firma}' tarafından kullanılıyor"
+tnk_override_onay         — "Çakışmaya rağmen kodu devralmak istediğinden emin misin?"
+tnk_eski_sahipten_al      — "Önce eski sahipten kodu geri al"
+tnk_format_gecersiz       — "Kod 1-4 büyük harf olmalı"
+tnk_yasak_uyari           — "Bu kod uygunsuz çağrışım listesinde"
+tnk_basarili              — "Kod atandı"
+```
+
+Mesajların nihai wording'i UI tasarımı netleştiğinde karar verilir — bu yüzden Adım 1-3 bitince yazılması daha doğru.
+
+**Süre tahmini:** 1-2 saat (4 adım toplam)
 
 ---
 
@@ -147,8 +167,9 @@ spool_kalite:  "karbon" ← YANLIŞ, kalite = alaşım standardı olmalı (ST37,
    -- Kullanıcı manuel yeniden girsin veya boş kalsın
    ```
 5. spool_malzemeleri için aynı sorun var mı kontrol et (CLAUDE.md'de "kalite='diger' 2 kayıt UX sorunu" notu vardı)
+6. Dil dosyası güncellemesi (tr/en/ar): kalite input placeholder'ı, autocomplete hint mesajı, "yeni kalite ekle" gibi UI metinleri — 3-5 anahtar
 
-**Süre tahmini:** 2-3 saat (tasarım kararı + UI + veri)
+**Süre tahmini:** 2-3 saat (tasarım kararı + UI + veri + i18n)
 
 ---
 
