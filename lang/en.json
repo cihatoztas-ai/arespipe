@@ -1375,5 +1375,7 @@
   "ts_tab_tamamlanan": "Completed",
   "ts_th_hata": "Fault Source",
   "ts_th_sonuc": "Result",
-  "ts_title": "Test Management | AresPipe"
+  "ts_title": "Test Management | AresPipe",
+  "sp_chip_active": "In {stage} stage",
+  "sp_btn_complete": "Complete {stage}"
 }

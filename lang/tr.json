@@ -1375,5 +1375,7 @@
   "ts_tab_tamamlanan": "Tamamlanan",
   "ts_th_hata": "Hata Kaynağı",
   "ts_th_sonuc": "Test Sonucu",
-  "ts_title": "Test Yönetimi | AresPipe"
+  "ts_title": "Test Yönetimi | AresPipe",
+  "sp_chip_active": "{stage} aşamasında",
+  "sp_btn_complete": "{stage} Tamamla"
 }

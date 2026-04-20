@@ -1375,5 +1375,7 @@
   "ts_tab_tamamlanan": "مكتمل",
   "ts_th_hata": "مصدر الخطأ",
   "ts_th_sonuc": "النتيجة",
-  "ts_title": "إدارة الاختبارات | AresPipe"
+  "ts_title": "إدارة الاختبارات | AresPipe",
+  "sp_chip_active": "في مرحلة {stage}",
+  "sp_btn_complete": "إتمام {stage}"
 }
