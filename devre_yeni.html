@@ -774,16 +774,16 @@ function ifsOnayla() {
       if(md){const dnOD={15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4,450:457,500:508,600:609.6};const dn=parseInt(md[1]);return dn&&dnOD[dn]?dnOD[dn]+' mm':'';}
       return '';
     }).filter(Boolean))];
-    // Malzeme ve yüzey: devre formundan al (IFS raw string değil)
-    const malzemeSeciliVal = (document.querySelector('input[name="malzeme"]:checked') || {}).value || '';
-    const malzemeFinalVal  = malzemeSeciliVal === 'diger'
-      ? (document.getElementById('malzemeDiger') || {}).value || 'diger'
-      : malzemeSeciliVal || 'karbon';
+    // Malzeme: IFS'ten gelen ham string canonical koda çevrilir (fark popup için gerekli).
+    // Yüzey: IFS'te genelde yok, devre formundan alınır.
     const yuzeyVal = (document.querySelector('input[name="yuzey"]:checked') || {}).value || '';
+    const malzemeKodIFS = (typeof ARES_NORM !== 'undefined' && anaMalzeme)
+      ? (ARES_NORM.malzemeKod(anaMalzeme) || null)
+      : null;
     spooller.push({
       pipeline, spoolNo, rev: revOtomatik,
-      malzeme: malzemeFinalVal,  // devre geneli seçimi — IFS raw string değil
-      kalite:  anaMalzeme,       // kalite: IFS'ten (ST37, CuNi10... vb.)
+      malzeme: malzemeKodIFS,    // IFS'ten canonical (karbon, paslanmaz...) — form'dan değil!
+      kalite:  anaMalzeme,       // kalite: IFS'ten ham (ST37, CuNi10... vb.)
       cap: caplar[0] || '', agirlik: toplamKg, yuzey: yuzeyVal,
       ifsItems: items,
     });

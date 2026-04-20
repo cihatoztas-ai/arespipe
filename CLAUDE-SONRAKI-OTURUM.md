@@ -1,254 +1,345 @@
 # Sonraki Oturum İçin Gündem
 
-**Hazırlanma tarihi:** 20 Nisan 2026 (5. oturum sonu)
-**Son durum:** Malzeme-yüzey uyum sistemi tamamlandı — matris + CHECK constraint + fark tespit popup + yüzey "Diğer" + yuzey_aciklama kolonu. Generic diff framework gelecekte yeni alanlara genişletilebilir.
+**Hazırlanma tarihi:** 20 Nisan 2026 (6. oturum sonu)
+**Son durum:** Tenant prefix sistemi yarım — DB + devre_yeni.html hazır. Yeni spool'lar `A-0504` formatında üretiliyor (test edildi). Ama QR tarafı ve qr_tara.html entegrasyonu **yapılmadı** — cross-tenant çakışma riski hâlâ mevcut.
 
 ---
 
-## 🎯 Bu Oturumda İlk İş: Öncelik 1 — spool_detay.html kolon adları
+## 🎯 Bu Oturumda İlk İş: Öncelik 1 — Tenant Prefix Tamamlama (QR + qr_tara)
 
-5. oturum uyum sistemini bitirdi, artık en büyük teknik borç **spool_detay.html**'de 78 yanlış kolon referansı. Bu sessiz bug'lar — bir yerde veri görünmez olur, başka bir yerde insert hata verir. Hiçbir şey patlamaz ama hiçbir şey de doğru çalışmaz.
+Bu iş 6. oturumun yarım bıraktığı ana iş. Şu an:
+- ✅ `tenants.kod` kolonu var, 7 tenant'a kod atandı (A-G)
+- ✅ `devre_yeni.html` yeni spool'lara prefix ekliyor (`A-0504`)
+- ✅ `spool_detay.html` DB'den spool_id okuyor, başlıkta `A-0504` gösteriyor
+- ❌ **QR payload hâlâ sadece kısa kod** — cross-tenant okunursa çakışma riski
+- ❌ **qr_tara.html prefix'i bilmiyor** — cross-tenant kontrolü yok
 
-Yeni sohbet açarken kullanıcıya önce şunu sor: "spool_detay.html ile başlayalım mı, yoksa başka öncelik var mı?"
+**Hedef format:** QR içeriği `A-0504:<UUID>` (prefix + kısa kod + iki nokta + UUID).
+
+Yeni sohbet açarken önce kullanıcıya sor: "Tenant prefix sistemini bitirelim mi, yoksa başka öncelik var mı?"
 
 ---
 
 ## Başlarken — Yeni Sohbete Yükle
 
 Yeni sohbet açınca şu 4 dosyayı yükle:
-1. `CLAUDE.md` — ana proje bağlamı (mimari kurallar, DB şema, oturum arşivi Bölüm 11'de)
-2. `CLAUDE-MOBILE.md` — mobil React uygulamasının kuralları
+1. `CLAUDE.md` — ana proje bağlamı
+2. `CLAUDE-MOBILE.md` — mobil kurallar
 3. `CLAUDE-SONRAKI-OTURUM.md` — bu dosya (öncelikli iş listesi)
 4. `CLAUDE-SON-OTURUM.md` — en son oturumun deploy/test özeti
 
 ---
 
-## Öncelik 1 — spool_detay.html Kolon Adları (EN KRİTİK)
+## Öncelik 1 — Tenant Prefix Tamamlama (QR + qr_tara)
 
-**Sorun:** 78 yanlış referans → sessiz bug'lar. CLAUDE.md'deki "kritik kolon adları" listesinde dokümante, ama kodda eski isimler.
+### Bu iş için gerekli dosyalar
+- `spool_detay.html` (son 6. oturum çıktısı — 12 patch'li)
+- `qr_tara.html` (henüz yüklenmedi, bu oturumda ilk kez bakılacak)
 
-### Düzeltmeler
-- `cap_mm` → `dis_cap_mm` (18 kez)
-- `et_mm` → `et_kalinligi_mm` (25 kez)
-- `agirlik_kg` → `agirlik` (8 kez)
-- `yapan_id` → `ekleyen_id` (6 kez — notlar tablosu için)
-- `url` → `dosya_url` (21 kez — fotograflar için, dikkatli replace!)
+### Adım 1 — spool_detay.html: QR payload formatı
+Mevcut satır ~1730'da: `var qrIcerik = SP.spoolId || SP.supaId || 'ARES';`
 
-**Süre tahmini:** 1-2 oturum (her değişiklik kullanıcı tarafından test edilmeli)
+Hedef: `var qrIcerik = SP.spoolId && SP.supaId ? (SP.spoolId + ':' + SP.supaId) : (SP.spoolId || SP.supaId || 'ARES');`
 
----
+Yani yeni QR'ların içeriği: `A-0504:f0cd6ae8-eddf-430b-aec0-ca637f7168f7`
+Eski spool'ların QR'ları hâlâ `0504` (prefix yok) — bozmuyoruz, okuma tarafında iki formatı da parse edeceğiz.
 
-## Öncelik 2 — devreler.malzeme Legacy Format Migration
-
-**Sorun:** 4. oturumda `spooller.malzeme` + `spool_malzemeleri.malzeme` canonical'e çekilmişti ama `devreler.malzeme` atlanmış. 5. oturumda keşfedildi.
-
-Şu an DB'de:
-```
-devreler.malzeme = "Karbon Çelik", "Paslanmaz", "Bakır Alaşım"
-                   (Türkçe, kirli)
-```
-
-Olması gereken:
-```
-devreler.malzeme = "karbon", "paslanmaz", "bakir", "alum", "diger"
-                   (canonical)
-```
-
-Okuma tarafı (ARES_NORM) Türkçe'yi otomatik normalize ediyor, ekranda görünmez — ama DB temiz değil.
-
-### Migration SQL
-
-```sql
--- Önce dağılım
-SELECT malzeme, COUNT(*) FROM devreler 
-WHERE silindi = false 
-GROUP BY malzeme;
-
--- Sonra canonical'a çek
-UPDATE devreler SET malzeme='karbon'     WHERE malzeme IN ('Karbon Çelik','karbon_celik');
-UPDATE devreler SET malzeme='paslanmaz'  WHERE malzeme IN ('Paslanmaz');
-UPDATE devreler SET malzeme='bakir'      WHERE malzeme IN ('Bakır Alaşım','bakir_alasim');
-UPDATE devreler SET malzeme='alum'       WHERE malzeme IN ('Alüminyum','aluminyum');
-
--- Yuzey de gözden geçir
-SELECT yuzey, COUNT(*) FROM devreler WHERE silindi = false GROUP BY yuzey;
-```
-
-**Süre tahmini:** 1 saat (sadece SQL, frontend dokunulmaz)
-
----
-
-## Öncelik 3 — devre_yeni.html `devreler.yuzey_aciklama` Yazımı
-
-**Sorun:** 5. oturumda `devreler.yuzey_aciklama` kolonu eklendi ama **devre_yeni.html sadece spool'lara yazıyor, devreye yazmıyor**. devre_duzenle.html yazıyor. Tutarsızlık.
-
-### Yapılacak
-`devre_yeni.html` → `kaydet()` içinde `supa.from('devreler').insert({...})` bloğuna:
+### Adım 2 — qr_tara.html: Parse + cross-tenant kontrol
+Parse mantığı:
 ```js
-yuzey_aciklama: (yuzeySecili === 'diger') ? yuzeyAciklama : null,
+function parseQR(raw) {
+  // Format 1 (yeni): "A-0504:UUID" → {prefix, kisaKod, uuid}
+  // Format 2 (eski): "0504" → {uuid:null, kisaKod}
+  // Format 3 (hiçbiri): ham değer, spool_no olarak dene
+  
+  if (raw.includes(':')) {
+    var [kod, uuid] = raw.split(':');
+    var [prefix, kisa] = kod.includes('-') ? kod.split('-') : [null, kod];
+    return {prefix, kisaKod: kisa, uuid, tamKod: kod};
+  }
+  if (raw.match(/^\d{4}$/)) {
+    return {prefix: null, kisaKod: raw, uuid: null, tamKod: raw};
+  }
+  return {prefix: null, kisaKod: raw, uuid: null, tamKod: raw};
+}
 ```
 
-Tek satır ekleme. **Süre:** 5 dakika.
-
----
-
-## Öncelik 4 — devreler.html Excel Export'ta Ölü `d.durum`
-
-**Sorun:** 5. oturumda durum sütunu UI'dan kaldırıldı ama Excel export'ta hâlâ `d.durum` var:
-
+Cross-tenant kontrolü:
 ```js
-liste.forEach(function(d) { 
-  rows.push([d.isEmri, d.tersane, d.gemi, d.devre, d.zone, d.spool, 
-             Math.round(d.agirlik), d.ilerleme, d.durum, d.sonIslem]); 
-});
+var parsed = parseQR(raw);
+if (parsed.prefix) {
+  var kendiTenantKod = await ARES.tenantKod(); // yeni helper - ares-store.js'e ekle
+  if (parsed.prefix !== kendiTenantKod) {
+    // Başka firmaya ait - adı çek ve uyarı göster
+    var res = await supa.from('tenants').select('ad').eq('kod', parsed.prefix).single();
+    var firmaAdi = res?.data?.ad || 'başka bir firmaya';
+    toast('Bu spool "' + firmaAdi + '" aittir, sisteminizde görüntülenemiyor.', 'er');
+    return;
+  }
+}
+// Normal lookup — UUID varsa onunla, yoksa spool_id ile
 ```
 
-Tüm kayıtlarda "aktif" olacağı için Excel'de bilgi vermiyor. Kaldırıp başlığı da güncelle.
-
-**Süre:** 10 dakika.
-
----
-
-## Öncelik 5 — Dil Dosyası Ölü Anahtar Temizliği
-
-**Sorun:** 5. oturumda DURUM_MAP kaldırıldı ama dil anahtarları durdu:
-- `cmn_aktif` — DURUM_MAP'in fallback'iydi
-- `cmn_th_durum` — tablo başlığı
-- `dr_status_notstarted`, `dr_status_production`, `dr_status_qc`, `dr_status_ready`
-- `dr_all_statuses` — filter dropdown
-
-Kullanılmıyor (başka HTML'de grep'lenmeli kesin karar için).
-
-### Yapılacak
-```bash
-# Her anahtar için tüm HTML/JS/JSX'lerde arama
-grep -r "cmn_aktif" *.html mobile/src
-# Hiç kullanım yoksa → 3 dil dosyasından kaldır
+### Adım 3 — ARES.tenantKod() helper (ares-store.js)
+`ARES.tenantId()` gibi benzer pattern:
+```js
+var _tenantKodCache = null;
+async function tenantKod() {
+  if (_tenantKodCache) return _tenantKodCache;
+  var res = await ARES.supabase().from('tenants').select('kod').eq('id', ARES.tenantId()).single();
+  _tenantKodCache = res?.data?.kod || null;
+  return _tenantKodCache;
+}
+ARES.tenantKod = tenantKod;
 ```
 
-Ayrıca **i18n linter script'i** (Öncelik 9, 4. oturum gündeminden) — otomatik ölü anahtar tespiti:
-- `scripts/i18n-check.js`
-- GitHub Actions workflow
+Böylece `devre_yeni.html`'deki inline sorguyu da sadeleştirebiliriz (opsiyonel refactor).
 
-**Süre:** Linter ile 1 oturum; manuel taramayla 30 dakika.
+**Süre tahmini:** 1-2 saat
 
 ---
 
-## Öncelik 6 — Mobil: MProfil.jsx
+## Öncelik 2 — Kalite UX + Veri Temizliği
 
-**Neden önce MProfil:**
-- MDrawer'daki "Profili Düzenle" döngüsü tamamlanmamış (`/profil` route var, sayfa yok)
-- Avatar upload feature `kullanicilar.foto_url` kolonu hazır bekliyor
-- Küçük, odaklanmış iş (mockup-first kuralıyla)
+### Sorun (6. oturumda tespit edildi)
+DB'de `spooller.kalite` alanı canonical malzeme kodları (`karbon`, `paslanmaz`, `diger`) tutuyor. Örnek kayıt:
+```
+spool_malzeme: "paslanmaz" ✓
+spool_kalite:  "karbon" ← YANLIŞ, kalite = alaşım standardı olmalı (ST37, A106-B, 304L...)
+```
 
-**Yapılacak:**
-- MProfil.jsx ekranı mockup-first
-- Avatar upload (Supabase Storage `arespipe-dosyalar` bucket'ı)
-- ad_soyad, tel, brans, firma editing
-- ui_tercihleri JSONB alanı kullanımı
+### Kaynak
+`devre_yeni.html`'deki form'da "kalite" alanı muhtemelen ikinci bir malzeme radio grubu olarak tasarlanmış. Benzer sorun IFS import (satır 786) ve PDF import (satır 1668) yollarında da var.
 
-**Süre:** 1 oturum
+### Karar gerektiren tasarım sorusu
+
+**Seçenek A (serbest text + autocomplete):**
+- Form'da kalite metin kutusu
+- Geçmiş değerlerden autocomplete (ST37, A106-B, CuNi10Fe1Mn, 304L, 316L...)
+- Kullanıcı kendi bilgi tabanını büyütür
+- Esnek ama validasyon yok
+
+**Seçenek B (datalist + yeni ekleme):**
+- `<datalist>` ile sistemde kayıtlı kaliteler
+- "Listede yok → yeni ekle" akışı
+- `kalite_standartlari` diye bir tablo + tenant_id
+- Kontrollü ama daha fazla UI iş
+
+**Seçenek C (yapay zeka asistan):**
+- Kullanıcı serbest yazar
+- Sistem "bu ST37-A mı, yoksa A53-A mı?" diye sorar (gerekirse)
+- AI veya regex ile normalize
+- En gelişmiş ama karmaşık
+
+**Benim önerim:** Seçenek A ile başla — basit, esnek, kullanıcının gerçek kalite kodları zaman içinde ortaya çıkar. Sonra Seçenek B'ye migrate etmek kolay (`SELECT DISTINCT kalite FROM spooller` ile başlangıç verisi).
+
+### Yapılacaklar
+1. `devre_yeni.html` form tasarım değişikliği (kalite radio → text+autocomplete)
+2. `devre_duzenle.html` aynı değişiklik
+3. IFS import (satır 786) + PDF import (satır 1668) — kalite alanının doğru kaynaktan gelmesi
+4. DB temizliği:
+   ```sql
+   -- Önce dağılımı gör
+   SELECT kalite, COUNT(*) FROM spooller WHERE silindi = false GROUP BY kalite;
+   -- Bozuk değerleri NULL'a çek (karbon/paslanmaz gibi değerler)
+   UPDATE spooller SET kalite = NULL 
+   WHERE kalite IN ('karbon','paslanmaz','bakir','alum','diger');
+   -- Kullanıcı manuel yeniden girsin veya boş kalsın
+   ```
+5. spool_malzemeleri için aynı sorun var mı kontrol et (CLAUDE.md'de "kalite='diger' 2 kayıt UX sorunu" notu vardı)
+
+**Süre tahmini:** 2-3 saat (tasarım kararı + UI + veri)
 
 ---
 
-## Öncelik 7 — Mobil: MIsBaslat + Zaman Takibi
+## Öncelik 3 — Spool No → Marka Gösterimi
 
-(4. oturum gündeminden devam — değişmedi)
+### Sorun
+Tablolarda "S01" tek başına anlamsız. Operatör bakınca bağlam yok.
+Şu an devre_detay.html spool listesinde:
+```
+PIPELINE NO       SPOOL NO  REV  SPOOL ID
+M100-262-302-47   S01       —    A-0512
+```
 
-Önce DB şema araştırması (is_kayitlari, kesim/bukum/markalama kalemleri zaman alanları), sonra mockup, sonra kod.
+### Seçenekler
+**(a) SPOOL NO sütununu birleşik yap:** `M100-262-302-47-S01` — okunaklı ama uzun
+**(b) SPOOL NO sütununu kaldır** — PIPELINE NO + SPOOL ID yeter
+**(c) Ekran aynı, sadece Excel/PDF çıktılarda marka birleşsin**
 
-**Süre:** 2-3 oturum
-
----
-
-## Öncelik 8 — Diğer Sayfaların Enum + Kolon Adı Refactor'ü
-
-4. oturumda bazı sayfalar ARES_NORM'a bağlandı ama şunlar taranmadı:
-- `bukum.html`
+### Etkilenen sayfalar
+- `devre_detay.html` (ana liste)
+- `kesim.html`
+- `markalama.html`
 - `sevkiyat.html`
 - `kalite_kontrol.html`
-- `raporlar.html` (agregasyon varsa çok önemli)
-- `devre_detay.html` (Supabase entegrasyonu geldiğinde)
+- `raporlar.html`
 
-Her sayfada:
-1. `grep -E "malzeme|yuzey|_normalize|cap_mm|et_mm"` tara
-2. ARES_NORM'a bağla
-3. Kolon adı düzeltmeleri (Öncelik 1'in benzeri)
+Ayrıca spool_detay.html başlığında zaten `NB1137-M100-262-302-47-S01` formatında gösteriliyor — tutarlı olması için diğer sayfalara yayılmalı.
 
-**Süre:** 2-3 oturum
+**Süre tahmini:** 1-2 saat
 
 ---
 
-## Öncelik 9 — Ortak Modüller Çıkarma
+## Öncelik 4 — Admin UI: Tenant Kod Yönetimi
 
-**Sorun:** spool_detay.html 132 fonksiyon, çoğu diğer sayfalarla kopya
+### Kural özeti (6. oturumda karar verildi)
+- Kod admin tarafından manuel atanır
+- Sistem çakışma uyarısı verir ama override edilebilir (iki aşamalı onay)
+- Önce eski sahipten kodu al, sonra yenisine ver (çakışma sırasında)
+- Yasak kod listesi (AM, OC, GO, SI vb. uygunsuz çağrışımlı kodlar)
+- Format: 1-4 harf, A-Z (DB CHECK zaten var, gevşek bırakıldı)
 
-**Yapılacak:**
-- `ares-spool.js` — spool ortak fonksiyonları (kesim/büküm/kaynak iş yönetimi)
-- `ares-devre.js` — devre hesaplama, filtre, sıralama
-- `ares-ui.js` — ortak UI helper'ları (badge render, alert, modal)
-- `ares-normalize.js` ✅ bitti (3+4+5. oturumlar)
+### Yapılacaklar
+1. `tanimlar.html` veya ayrı bir admin sayfası
+2. Yeni firma oluştururken kod input'u + "kullanılmış kodlar" listesi + uyarı
+3. Mevcut firmanın kodunu değiştirme (uyarı: "tüm spool_id'ler bozulur")
+4. Yasak kod tablosu (isterseniz):
+   ```sql
+   CREATE TABLE tenants_kod_yasak (kod VARCHAR(4) PRIMARY KEY, sebep TEXT);
+   INSERT INTO tenants_kod_yasak VALUES 
+     ('AM', 'Uygunsuz çağrışım'),
+     ('OC', 'Uygunsuz çağrışım'),
+     ('GO', 'Uygunsuz çağrışım');
+   ```
+5. UI tarafında yasak kod seçilmeye çalışılırsa uyarı
 
-**Süre:** 2-3 oturum
+**Süre tahmini:** 2 saat
+
+---
+
+## Öncelik 5 — spool_detay.html Performans
+
+**Sorun:** 
+- 3007 satır tek dosya
+- Ana select: `spool_malzemeleri + fotograflar + belgeler + devreler + projeler + tersaneler` büyük join
+- 5 paralel ek query (islem_log, notlar, kesim, bukum, markalama)
+- 3D THREE.js render kodu (lazy load edilmeli)
+
+**Hedef:** Sayfa açılma süresi ~3s → <1s
+
+**Yapılacaklar:**
+1. Ana select'i böl — spool detayı önce, alt listeler lazy load
+2. 3D kodunu ayrı dosyaya çıkar + dinamik import (`ares-3d.js`)
+3. İşlem log + notlar: kullanıcı tab'a tıklayınca yükle (şu an hep yükleniyor)
+4. Fotoğraflar: thumbnail lazy load + infinite scroll
+
+**Süre tahmini:** Ayrı bir oturum (refactor işi)
+
+---
+
+## Öncelik 6 — devreler.malzeme Canonical Migration (4. oturumdan devam)
+
+DB'de `devreler.malzeme` hâlâ Türkçe format ("Karbon Çelik", "Paslanmaz", "Bakır Alaşım"). spooller gibi canonical'e çekilmeli.
+
+```sql
+-- Dağılım
+SELECT malzeme, COUNT(*) FROM devreler WHERE silindi = false GROUP BY malzeme;
+
+-- Canonical migration
+UPDATE devreler SET malzeme='karbon'    WHERE malzeme IN ('Karbon Çelik','karbon_celik');
+UPDATE devreler SET malzeme='paslanmaz' WHERE malzeme = 'Paslanmaz';
+UPDATE devreler SET malzeme='bakir'     WHERE malzeme IN ('Bakır Alaşım','bakir_alasim');
+UPDATE devreler SET malzeme='alum'      WHERE malzeme IN ('Alüminyum','aluminyum');
+```
+
+**Süre tahmini:** 30 dk
+
+---
+
+## Öncelik 7 — CLAUDE.md Güncellemesi
+
+Bu oturumda öğrenilen şemaları CLAUDE.md'ye yansıt:
+
+### Bölüm 4.2 — Kritik Kolon Adları
+Ekle:
+- **spool_malzemeleri:** `dis_cap_mm`, `et_mm`, `boy_mm`, `agirlik_kg`, `kalite`, `malzeme`, `adet`, `boyut`, `kod`, `tip`, `tanim`, `heat_no`, `sertifikali` (önemli — `et_mm`, `agirlik_kg` spooller'la UYUMSUZ isimler ama bu tabloda CANONICAL)
+- **markalama_kalemleri.et_mm** (numeric, plaka markalama için)
+- **fotograflar.yapan_id:** legacy TEXT kolon — 11 eski kayıtta email tutuluyordu, 20 Nisan'da `yukleyen_id`'ye migrate edildi. Kolon silinmedi (iz olarak)
+- **tenants.kod:** VARCHAR(4) — tenant prefix, spool_id'nin başına gelir (A-0504 gibi)
+- **spooller.agirlik_kg:** legacy kolon, tüm kayıtlarda NULL — ileride DROP yapılabilir
+
+### Bölüm 2.13 — Enum Normalize (ekle)
+- Tenant prefix sistemi (E-03 diye yeni kural eklenebilir)
+- Format: `^[A-Z]{1,4}$`
+- Her firma kendi prefix'ini seçer, admin onaylar
+
+### Bölüm 11 — 6. oturum özeti
+CLAUDE-SON-OTURUM.md içeriği ana tarihçeye taşınır.
+
+**Süre tahmini:** 30 dk (dokümantasyon)
+
+---
+
+## Mobil İşler (Rafta Bekliyor)
+
+Önceki oturumlardan devam eden:
+- **MProfil.jsx** — avatar + kişisel bilgi düzenleme (1 oturum)
+- **MIsBaslat.jsx** — operatör iş akışı (2-3 oturum)
+- **MDevreler, MDevreDetay, MSpoolDetay, MQRTara** — mockup-first ile
 
 ---
 
 ## Kesinlikle BU OTURUMDA YAPILMAYACAKLAR
 
-- [ ] `_status.json` i18n yönetimi — Freeze & Translate stratejisi benimsendi
-- [ ] spool_detay.html yeniden yazma — büyük iş, revizyon geldiğinde yapılacak
-- [ ] Admin paneli enum yönetim ekranı — gereksiz (4. oturumda karar verildi)
+- Sayfa yeniden yazma (spool_detay.html refactor gibi büyük işler — ayrı oturum)
+- Admin UI'nın tam implementasyonu — Öncelik 1 ile birlikte yapılırsa dağılırız
+- Mobil ekranlar — web tarafı öncelikli şu an
 
 ---
 
-## Kural Hatırlatmaları (Bir Sonraki Oturum için Claude'a)
+## Kural Hatırlatmaları (Sonraki Oturum için Claude'a)
 
 - **Toplu silme/değişiklik yapmadan önce dry-run + kullanıcı onayı**
-- **Tarama kapsamı:** HTML + JS + JSX hepsi birlikte
-- **Mockup-first (R-10):** Yeni mobil ekran yazılmadan önce artifact mockup + onay
-- **Tema için useTema (R-09):** Direct DOM manipulation yasak
-- **Enum için ARES_NORM (E-01):** Malzeme/yüzey/durum her zaman ARES_NORM'dan
-- **Malzeme-yüzey uyum (E-02, 5. oturum):** ARES_NORM.uyumlu + ARES_NORM.uyumluYuzeyler — form validation + DB CHECK constraint
-- **Kolon adı uyumu:** Her Supabase query'sinden önce şema referansına bak
-- **"Sadece X" istendiğinde sadece X verilir** — hepsini toplu verme
+- **DB şemasını varsayma, sorgu at** — 6. oturumun temel dersi: "canlı DB'yi sor, dokümantasyona güvenme"
+- **Sessiz fail arama:** `_supaInsert` ve benzer helper'lar console.warn atıyor, toast yok. Bu yüzden çoğu "ekleme başarılı" aslında başarısız olabiliyor. Benzer pattern'lere dikkat.
+- **Migration-in-progress durumları:** `fotograflar.yapan_id`/`yukleyen_id`, `spooller.agirlik`/`agirlik_kg` gibi ikili kolonlar. Yeni bir tane bulursan aynı pattern'le çöz (canonical'e yaz, fallback'i UI'da tut, legacy migration'ı ayrı yap).
+- **"Tamamlandı" skeptik oku:** 5. ve 6. oturumun dersi — oturum özetinde "X bitti" yazıyorsa bile **DB'den doğrula**. Önceki oturum özetleri hep iyimserdi.
 
-### 5. Oturum Dersleri
+---
 
-**"Tamamlandı" tamamlandı mı?** 4. oturumun özeti "Faz 2 migration bitti" diyordu ama `aluminyum → alum` dönüşümü gözden kaçmış. DB'de 83 kayıt hâlâ eski formatta. **Ders:** Oturum özeti ne derse desin, DB'yi tekrar sorgula.
+## 6. Oturum Dersleri
 
-**İnsertion-order baz alma kırılgandır.** `Object.keys({...})[0]` sırasına güvenip "baz malzeme" diye seçmek çalışır gibi görünür ama farklı tarayıcılarda/senaryolarda terslenir. Çoğunluk-baz (sayım + max) matematiksel olarak belirsizlik içermez.
+**1. "78 yanlış referans" tahmini büyük ölçüde yanlıştı.** Gerçek: 5-6 net bug + 6 ek sessiz bug (ağırlık, spool ID, et kalınlığı). Bunlar kolon adı değil, **mantık eksikleri** veya **yarım kalmış migration'lar**. Yani "kolon adlarını düzelt" odağı yerine "her INSERT/UPDATE'in form state ile simetrik mi" bakışıyla tarama daha verimli.
 
-**Generic framework scope'u büyütür.** Fark tespit popup başlangıçta sadece malzeme üzerineydi. Kullanıcı "her alan" deyince yapısal hâle geldi. Şu an 2 alan destekliyor ama 10+ alana kolayca genişler. Gelecekte yeni kural eklemek ucuz.
+**2. DB şemasını varsayma, sorgu at.** CLAUDE.md Bölüm 4.2 eksikti — `spool_malzemeleri` şeması hiç yazılmamıştı. Kodu okurken sık sık "bu kolon gerçekten var mı" diye tereddüt yaşadım. Sorgu atmak 10 saniye, varsaymak bir bug yaratır.
 
-**Grace period UX dostu çözümdür.** Mevcut verisi uyumsuz olan formda radio'ları zorla değiştirmek şaşırtıcı olur. `_formHazir` flag'i ile sadece kullanıcı eylemi olduğunda kural işler.
+**3. Sessiz fail en sinsi düşman.** `_supaInsert` helper'ı console.warn atıyor ama toast yok — kullanıcıya "başarılı" gibi gösteriliyor, DB'ye yazılmıyor. Notlar, ağırlık, fotoğraflar hep bu pattern'in kurbanıydı. Sonraki oturumlarda benzer helper'lara dikkat.
+
+**4. Migration-in-progress pattern'i yaygın.** `fotograflar.yapan_id`/`yukleyen_id` dualizmi benzeri yerler olabilir. `spooller.agirlik`/`agirlik_kg` de öyle. Her yeni kolon bulunduğunda "bu yeni mi, eski mi, ikisi de dolu mu" sorgusu yapılmalı.
+
+**5. Tip uyumsuzluğu sessiz bug yaratır.** `fotograflar.yapan_id` TEXT, `yukleyen_id` UUID — tip değişimi göz ardı ederse INSERT patlıyor. 5. patch'imde bu hatayı yaptım, kullanıcı uyardı, düzelttim. Şemaya dikkat.
+
+**6. Oturum uzunluğu gerilim yaratıyor — özet dosyalar kritik.** Kullanıcı sürekli oturum değişmesinden yoruldu. Bu iki dosyanın her oturum sonunda tam yazılması, sonraki oturumun "hatırlamak" yerine "direkt koda gir" olmasını sağlıyor. İhmal edilmemeli.
 
 ---
 
 ## Strateji Özeti (Değişmedi)
 
 **3 Katmanlı Hibrit Yaklaşım:**
-- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) — dil sistemi ✅, kolon adları ⏳ (Öncelik 1), enum normalize ✅, uyum kontrolü ✅
-- **Katman 2:** Revizyon geldikçe sayfa yeniden yaz — strangler fig pattern
+- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) ✅
+- **Katman 2:** Revizyon geldikçe sayfa yeniden yaz — strangler fig
 - **Katman 3:** Küçük çalışan sayfalar dokunulmaz
 
 **Dil Stratejisi: Freeze & Translate**
 - Proje stabil olunca `tr.json` freeze
 - Profesyonel translator / CAT tool
-- Direkt kullan, admin panel yok
 
-**Enum Stratejisi: Kod bazlı DB + tv() wrapper** ✅ TAMAMLANDI
-- DB'de kod saklanır ✅
-- ARES_NORM modülü ham ↔ kod ↔ etiket dönüşümlerini tek yerden yönetir ✅
-- Kanonik liste kilitli: 5 malzeme + 5 yüzey ✅
-- **Uyum matrisi kilitli** (5. oturum) ✅
-- Yeni tür eklerken: (1) ARES_NORM regex'e sinonim (2) 3 dil dosyasına `cmn_*` anahtarı (3) Radio seçeneği (4) Gerekirse uyum matrisine satır/sütun
+**Enum Stratejisi: Kod bazlı DB + tv() wrapper** ✅
+- Kanonik liste kilitli: 5 malzeme + 5 yüzey + uyum matrisi
+
+**YENİ — Tenant Prefix Stratejisi** (6. oturumda başladı, 7. oturumda bitecek):
+- DB'de `tenants.kod` (1-4 harf)
+- Spool ID formatı: `A-0504` (prefix-kısakod)
+- QR payload: `A-0504:UUID` (cross-tenant güvenli)
+- Admin manuel kod atar, sistem çakışma kontrolü yapar
 
 ---
 
 ## Son Söz
 
-5. oturumda üç büyük iş bitti: uyum matrisi, fark tespit popup, devreler.html refactor. DB temiz (aluminyum düzeltildi, uyumsuz kayıtlar asit'e çekildi, CHECK constraint aktif). Yeni kayıtlar doğru format yazıyor ve uyum kurallarına zorunlu uyuyor.
+6. oturumda 12 fix atıldı — 2 dosya, 3 DB migration. Ana tema: sessiz bug avı + tenant prefix temelleri. Kullanıcı formda ve motivasyonluydu, oturum sonunda oturum değişimi yorgunluğu nedeniyle biraz tansiyon arttı — bu tamamen makul, uzun iş.
 
-**Sıradaki en kritik iş — Öncelik 1:** spool_detay.html kolon adları. 78 yanlış referans, sessiz bug. Sonra Öncelik 2 (devreler.malzeme migration, 1 saat). Sonra mobil MProfil.jsx ile nefes al.
+**Sıradaki en kritik iş — Öncelik 1:** QR payload formatı + qr_tara.html parse + cross-tenant kontrolü. `qr_tara.html`'i yüklemeden başlama. Sonra Öncelik 2 (kalite UX) — tasarım kararı istiyor, kullanıcıyla sakin tartışarak ilerle.
 
 İyi çalışmalar. 🚀
