@@ -5,6 +5,14 @@
 
 ---
 
+## 🎯 Bu Oturumda İlk İş: Öncelik 1 — spool_detay.html kolon adları
+
+5. oturum uyum sistemini bitirdi, artık en büyük teknik borç **spool_detay.html**'de 78 yanlış kolon referansı. Bu sessiz bug'lar — bir yerde veri görünmez olur, başka bir yerde insert hata verir. Hiçbir şey patlamaz ama hiçbir şey de doğru çalışmaz.
+
+Yeni sohbet açarken kullanıcıya önce şunu sor: "spool_detay.html ile başlayalım mı, yoksa başka öncelik var mı?"
+
+---
+
 ## Başlarken — Yeni Sohbete Yükle
 
 Yeni sohbet açınca şu 4 dosyayı yükle:

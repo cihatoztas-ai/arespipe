@@ -5,6 +5,18 @@
 
 ---
 
+## ⚡ Kaldığımız Yer (Özet)
+
+**DB tarafı:** ✅ Tamamlandı (migration + 2 kolon + CHECK constraint — hepsi bu oturumda uygulandı)
+
+**Kod tarafı:** ✅ 7 dosya hazır, **deploy BEKLIYOR** (kullanıcı manuel push edecek)
+
+**Yarım kalan iş YOK.** 5. oturumun planladığı her şey bitti.
+
+**Sonraki oturumun ilk işi:** Öncelik 1 → `spool_detay.html` kolon adları (78 yanlış referans — sessiz bug). Detay CLAUDE-SONRAKI-OTURUM.md'de.
+
+---
+
 ## Bu Oturumda Ne Yapıldı
 
 Tek başlık altında çok iş: **Malzeme-Yüzey Uyum Sistemi** (matris + popup + DB constraint). Buna eklenen 3 yan iş: devreler.html durum sütunu kaldırma, sapma mantığı çoğunluk-baz'a çevirme, aluminyum → alum migration.
