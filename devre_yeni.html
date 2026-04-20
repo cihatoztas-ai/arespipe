@@ -1025,6 +1025,107 @@ function farkKararAl() {
   });
 }
 
+// ── DEDUP POPUPLARI (9. oturum) ────────────────────────────────
+// Devre seviyesi: (proje + devre_no + zone) aynıysa kullanıcıya sor
+// Spool seviyesi: (pipeline + spool_no + rev) aynıysa uyar
+let _dedupDevreResolver = null;
+let _dedupSpoolResolver = null;
+
+function dedupDevrePopupGoster(info) {
+  const infoEl = document.getElementById('dedupDevreInfo');
+  if (infoEl) {
+    const satirlar = [];
+    satirlar.push('<div class="fp-kart-head"><div class="fp-kart-alan">' + esc(info.projeNo || '-') + '</div></div>');
+    satirlar.push('<div style="font-size:14px;color:var(--tx);line-height:1.6;">');
+    satirlar.push('<b>' + tv('dny_dedup_devre','Devre') + ':</b> ' + esc(info.devreNo || '-'));
+    if (info.zone) satirlar.push('<br><b>' + tv('dny_dedup_zone','Zone') + ':</b> ' + esc(info.zone));
+    satirlar.push('</div>');
+    infoEl.innerHTML = satirlar.join('');
+  }
+  document.getElementById('dedupDevrePopup').classList.add('show');
+}
+
+function dedupDevrePopupKapat() {
+  document.getElementById('dedupDevrePopup').classList.remove('show');
+}
+
+function dedupDevreKarar(karar) {
+  dedupDevrePopupKapat();
+  const r = _dedupDevreResolver;
+  _dedupDevreResolver = null;
+  if (r) r(karar);
+}
+
+function dedupDevreKararAl(info) {
+  return new Promise(function(resolve) {
+    _dedupDevreResolver = resolve;
+    dedupDevrePopupGoster(info);
+  });
+}
+
+// Mevcut devredeki spool'larla yeni spool'ları kıyasla, çakışmaları döndür
+// Key: pipeline_no + spool_no + rev (rev boş sayılır "")
+async function spoolCakismaBul(devreId, yeniSpooller) {
+  const supa = ARES.supabase();
+  if (!supa || !devreId) return [];
+  const res = await supa.from('spooller')
+    .select('pipeline_no, spool_no, rev')
+    .eq('tenant_id', ARES.tenantId())
+    .eq('devre_id', devreId);
+  if (res.error || !res.data) return [];
+  const mevcutKeys = {};
+  res.data.forEach(function(s) {
+    const k = (s.pipeline_no || '') + '|' + (s.spool_no || '') + '|' + (s.rev || '');
+    mevcutKeys[k] = true;
+  });
+  const cakismalar = [];
+  (yeniSpooller || []).forEach(function(s) {
+    const pipeline = s.pipeline || '';
+    const spoolNo  = s.spoolNo  || s.pipeline || '';
+    const rev      = s.rev || '';
+    const k = pipeline + '|' + spoolNo + '|' + rev;
+    if (mevcutKeys[k]) {
+      cakismalar.push({ pipeline: pipeline, spoolNo: spoolNo, rev: rev });
+    }
+  });
+  return cakismalar;
+}
+
+function dedupSpoolPopupGoster(cakismalar) {
+  const altEl = document.querySelector('#dedupSpoolPopup .fp-alt');
+  if (altEl) {
+    altEl.textContent = tv('dny_dedup_s_alt','Aynı pipeline + spool no + rev kombinasyonu mevcut devrede bulunuyor') + ' (' + cakismalar.length + ')';
+  }
+  const listeEl = document.getElementById('dedupSpoolListe');
+  if (listeEl) {
+    listeEl.innerHTML = cakismalar.map(function(c) {
+      const rev = c.rev ? (' — Rev' + esc(c.rev)) : '';
+      return '<div style="padding:8px 12px;border:1px solid var(--bor);border-left:3px solid var(--warn);border-radius:6px;margin-bottom:6px;background:var(--sur2);font-family:Barlow Condensed,sans-serif;font-size:14px;color:var(--tx);">' +
+               esc(c.pipeline || '-') + ' — ' + esc(c.spoolNo || '-') + rev +
+             '</div>';
+    }).join('');
+  }
+  document.getElementById('dedupSpoolPopup').classList.add('show');
+}
+
+function dedupSpoolPopupKapat() {
+  document.getElementById('dedupSpoolPopup').classList.remove('show');
+}
+
+function dedupSpoolKarar(karar) {
+  dedupSpoolPopupKapat();
+  const r = _dedupSpoolResolver;
+  _dedupSpoolResolver = null;
+  if (r) r(karar);
+}
+
+function dedupSpoolKararAl(cakismalar) {
+  return new Promise(function(resolve) {
+    _dedupSpoolResolver = resolve;
+    dedupSpoolPopupGoster(cakismalar);
+  });
+}
+
 // ── EXCEL YÜKLEME ─────────────────────────────────────────────
 function excelDragOver(e) { e.preventDefault(); document.getElementById('excelAlan').classList.add('drag'); }
 function excelDragLeave()  { document.getElementById('excelAlan').classList.remove('drag'); }
@@ -1452,24 +1553,46 @@ async function kaydet() {
       const basamakSnapshot = await ARES.basamakSnapshotOlustur();
       const ilkBasamak = basamakSnapshot.length ? basamakSnapshot[0].sistem_adi : 'on_imalat';
 
-      // 1. Devre kaydet — partial index nedeniyle upsert kullanılamaz
-      // Önce mevcut kontrolü, yoksa insert
+      // 1. Devre kaydet — önce mevcut kontrolü (proje + devre_no + zone)
+      // 9. oturum: zone dedup'a eklendi, dedup hit'inde kullanıcıya popup çıkar
       let devreId = null;
+      let mevcutDevreyeEklendi = false; // log için flag
+      const zoneDeger = gv('devreZone') || '';
       const devreKontrol = await supa.from('devreler')
-        .select('id')
+        .select('id, devre_no, zone')
         .eq('tenant_id', ARES.tenantId())
         .eq('proje_id',  gv('selProje'))
         .eq('devre_no',  gv('devreAdi'))
+        .eq('zone',      zoneDeger)
         .eq('silindi',   false)
         .maybeSingle();
+
       if (devreKontrol.data) {
-        devreId = devreKontrol.data.id;
-      } else {
+        // Dedup hit — kullanıcıya sor: mevcuta ekle / yeni oluştur / iptal
+        const projeSel = document.getElementById('selProje');
+        const projeNoText = (projeSel.options[projeSel.selectedIndex] || {}).text || '';
+        const karar = await dedupDevreKararAl({
+          projeNo: projeNoText,
+          devreNo: devreKontrol.data.devre_no,
+          zone:    devreKontrol.data.zone
+        });
+        if (karar === 'iptal') {
+          btnKaydet.disabled = false;
+          return;
+        }
+        if (karar === 'mevcut') {
+          devreId = devreKontrol.data.id;
+          mevcutDevreyeEklendi = true;
+        }
+        // karar === 'yeni' → devreId null kalır, INSERT yolu çalışır (kullanıcı bilinçli)
+      }
+
+      if (!devreId) {
         const devreRes = await supa.from('devreler').insert({
           tenant_id:        ARES.tenantId(),
           proje_id:         gv('selProje'),
           devre_no:         gv('devreAdi'),
-          zone:             gv('devreZone') || null,
+          zone:             zoneDeger || null,
           termin:           gv('devreTermin') || null,
           malzeme:          malzemeFinal,
           yuzey:            yuzeySecili,
@@ -1484,9 +1607,23 @@ async function kaydet() {
         }).select('id').single();
         if (devreRes.error) {
           toast(tv('dny_db_hata','Veritabanı hatası: ') + devreRes.error.message, 'er');
+          btnKaydet.disabled = false;
           return;
         }
         devreId = devreRes.data.id;
+      }
+
+      // 1.5. Spool seviyesi dedup — mevcut devreye ekliyoruz VE çakışma varsa uyar
+      if (mevcutDevreyeEklendi && spooller.length) {
+        const cakismalar = await spoolCakismaBul(devreId, spooller);
+        if (cakismalar.length > 0) {
+          const sKarar = await dedupSpoolKararAl(cakismalar);
+          if (sKarar === 'iptal') {
+            btnKaydet.disabled = false;
+            return;
+          }
+          // 'devam' → INSERT'i dene, DB unique constraint varsa kendisi yakalar
+        }
       }
 
       // 2. Spooller insert
@@ -1730,10 +1867,16 @@ async function kaydet() {
         }
       }
 
-      // ✅ D3: ARES.logEkle
-      await ARES.logEkle('DEVRE_EKLE', gv('devreAdi') + ' — ' + spooller.length + ' spool', 'devre', devreId, { devre_id: devreId });
+      // ✅ D3: ARES.logEkle — dedup durumuna göre farklı log (9. oturum, Bug #4 fix)
+      if (mevcutDevreyeEklendi) {
+        await ARES.logEkle('SPOOL_EKLE_MEVCUT_DEVRE', gv('devreAdi') + ' — ' + spooller.length + ' spool eklendi', 'devre', devreId, { devre_id: devreId });
+      } else {
+        await ARES.logEkle('DEVRE_EKLE', gv('devreAdi') + ' — ' + spooller.length + ' spool', 'devre', devreId, { devre_id: devreId });
+      }
 
-      toast(tv('dny_saved','✅ Devre kaydedildi'), 'ok');
+      toast(mevcutDevreyeEklendi
+        ? tv('dny_saved_mevcut','✅ Mevcut devreye eklendi')
+        : tv('dny_saved','✅ Devre kaydedildi'), 'ok');
       setTimeout(function() { window.location.href = 'devreler.html'; }, 1200);
 
     } catch(err) {
@@ -2050,6 +2193,51 @@ if (typeof _applyI18n === 'function') _applyI18n();
         <button class="fp-btn" onclick="farkDuzelt()" data-i18n="dny_fark_duzelt">Düzelt</button>
         <button class="fp-btn fp-warn" onclick="farkDevam()" data-i18n="dny_fark_devam">Yüklemeye devam et</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dedup: Devre zaten var (9. oturum) -->
+<div class="fp-overlay" id="dedupDevrePopup">
+  <div class="fp-card">
+    <div class="fp-head">
+      <div class="fp-ikon">!</div>
+      <div>
+        <div class="fp-baslik" data-i18n="dny_dedup_d_title">Bu devre zaten var</div>
+        <div class="fp-alt" data-i18n="dny_dedup_d_alt">Aynı proje + devre adı + zone kombinasyonu mevcut</div>
+      </div>
+    </div>
+    <div class="fp-body">
+      <div id="dedupDevreInfo" class="fp-kart"></div>
+      <div style="font-size:14px;color:var(--txd);line-height:1.4;" data-i18n="dny_dedup_d_soru">Ne yapmak istersin? Mevcut devreye yeni spool'lar eklemek istiyorsan "Mevcuta ekle"yi seç. Bilinçli olarak aynı isimde ikinci bir devre oluşturmak istiyorsan "Yeni oluştur"u seç (kayıtlar karışabilir).</div>
+    </div>
+    <div class="fp-foot">
+      <button class="fp-btn" onclick="dedupDevreKarar('iptal')" data-i18n="dny_dedup_iptal">İptal</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="fp-btn fp-warn" onclick="dedupDevreKarar('yeni')" data-i18n="dny_dedup_yeni">Yeni devre oluştur</button>
+        <button class="fp-btn" onclick="dedupDevreKarar('mevcut')" data-i18n="dny_dedup_mevcut" style="border-color:var(--ac);color:var(--ac);">Mevcut devreye ekle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dedup: Spool çakışması (9. oturum) -->
+<div class="fp-overlay" id="dedupSpoolPopup">
+  <div class="fp-card">
+    <div class="fp-head">
+      <div class="fp-ikon">!</div>
+      <div>
+        <div class="fp-baslik" data-i18n="dny_dedup_s_title">Bu spool'lar zaten kayıtlı</div>
+        <div class="fp-alt" id="dedupSpoolAlt" data-i18n="dny_dedup_s_alt">Aynı pipeline + spool no + rev kombinasyonu mevcut devrede bulunuyor</div>
+      </div>
+    </div>
+    <div class="fp-body">
+      <div id="dedupSpoolListe"></div>
+      <div style="font-size:14px;color:var(--txd);line-height:1.4;margin-top:6px;" data-i18n="dny_dedup_s_ipucu">Aynı spool'un yeni versiyonunu ekliyorsan revizyon numarasını güncellemeyi unutma (Rev1 → Rev2). Değilse bu bir import hatası olabilir.</div>
+    </div>
+    <div class="fp-foot">
+      <button class="fp-btn" onclick="dedupSpoolKarar('iptal')" data-i18n="dny_dedup_iptal">İptal</button>
+      <button class="fp-btn fp-warn" onclick="dedupSpoolKarar('devam')" data-i18n="dny_dedup_s_devam">Yine de devam et</button>
     </div>
   </div>
 </div>
