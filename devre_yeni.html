@@ -1490,10 +1490,14 @@ async function kaydet() {
 
       // 2. Spooller insert
       if (spooller.length) {
-        // Her spool için global sayaçtan spool_id üret (P26-0001, P26-0002...)
+        // Tenant kodunu bir kez çek (spool_id prefix'i için: A-0504, B-0504 gibi)
+        const tnRes = await supa.from('tenants').select('kod').eq('id', ARES.tenantId()).single();
+        const tenantKod = (tnRes && tnRes.data && tnRes.data.kod) ? tnRes.data.kod : '';
+        // Her spool için global sayaçtan spool_id üret, tenant prefix'i eklenir
         const kisaKodlar = [];
         for (let _ki = 0; _ki < spooller.length; _ki++) {
-          kisaKodlar.push(await ARES.sonrakiNo('spool'));
+          const no = await ARES.sonrakiNo('spool');
+          kisaKodlar.push(tenantKod ? (tenantKod + '-' + no) : no);
         }
         const spoolRows = spooller.map(function(s, idx) {
           // ✅ Bug1: Türkçe virgüllü çap formatını düzelt (örn: "114,3" → 114.3)
