@@ -876,11 +876,19 @@ function _normKey(raw){
 }
 function _malzemeGoster(raw){
   if(!raw||raw==='—')return raw||'—';
+  // ARES_NORM.malzemeEtiket canonical kod + dil çevirisi yapar: "ALUM" → "alum" → "Alüminyum"
+  if (typeof ARES_NORM !== 'undefined' && typeof ARES_NORM.malzemeEtiket === 'function') {
+    return ARES_NORM.malzemeEtiket(raw) || raw;
+  }
+  // Fallback: ARES_NORM yok (offline/yükleme sorunu) → eski davranış
   if(typeof tvMalzeme==='function'){var t=tvMalzeme(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
   return raw;
 }
 function _yuzeyGoster(raw){
   if(!raw||raw==='—')return raw||'—';
+  if (typeof ARES_NORM !== 'undefined' && typeof ARES_NORM.yuzeyEtiket === 'function') {
+    return ARES_NORM.yuzeyEtiket(raw) || raw;
+  }
   if(typeof tvYuzey==='function'){var t=tvYuzey(_normKey(raw));if(t&&t!==_normKey(raw))return t;}
   return raw;
 }
