@@ -894,7 +894,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
       yuzey:'Galvaniz', malzeme:'Karbon Çelik', kalite:'St37',
       spoolId:'1277', stopped:false, durdurmaAciklama:'',
       alistirma:null, trackerCurrent:2,
-      _gemi:'NB1137', _devre:'Y100-817-007',
+      _projeNo:'NB1137', _devre:'Y100-817-007',
       _isEmri:'I26-010', _tersane:'TERSAN',
       sevkNo:'', sevkTarih:'', kkNo:'', kkTarih:'',
       diainch:{kg:null,imalat:null,argon:null,gazalti:null}
@@ -1002,7 +1002,7 @@ async function spoolYukle(supaId) {
         ? dv.devre_no + (dv.zone ? ' — ' + dv.zone : (dv.ad ? ' — ' + dv.ad : ''))
         : SP._devre;
       if (dv.projeler) {
-        SP._gemi   = dv.projeler.proje_no   || SP._gemi;
+        SP._projeNo = dv.projeler.proje_no || SP._projeNo;
         if (dv.projeler.tersaneler) {
           SP._tersane = dv.projeler.tersaneler.ad || SP._tersane;
         }
@@ -1293,9 +1293,14 @@ function malzemeOpts(secili){
 // ── YÜKLEME ───────────────────────────────────────────────────
 function yukle(){
   try{SP=JSON.parse(localStorage.getItem('ares_aktif_spool')||'{}');}catch(e){SP={};}
-  // E-02 marka formatı: gemi-pipeline-spool_no-RevN (rev-0 ise atlar)
+  // Legacy: eski localStorage kayıtlarında _gemi (aslında proje_no) olabilir → _projeNo'ya taşı (10. oturum — Öncelik 5)
+  if (SP._gemi !== undefined) {
+    if (SP._projeNo === undefined) SP._projeNo = SP._gemi;
+    delete SP._gemi;
+  }
+  // E-02 marka formatı: proje_no-pipeline-spool_no-RevN (rev-0 ise atlar)
   var revEk = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
-  var markParts=[SP._projeNo||SP._gemi, SP.pipeline, SP.spoolNo, revEk].filter(Boolean);
+  var markParts=[SP._projeNo, SP.pipeline, SP.spoolNo, revEk].filter(Boolean);
   var markaYazisi = markParts.join('-');
   var tersaneKisa = SP._tersane ? SP._tersane.split(' ')[0].toUpperCase() : '';
   txc('shTersaneAd', tersaneKisa || SP._tersane || '—');
@@ -1831,9 +1836,9 @@ function _etiketHTML(imgSrc) {
   var devre   = SP._devre    || '—';
   var tersane = SP._tersane  || '—';
   var idKod   = _idGoster();
-  // Marka: gemi + pipeline + spool_no + RevN (3-4 parça, E-02)
+  // Marka: proje_no + pipeline + spool_no + RevN (3-4 parça, E-02)
   var revFmt  = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
-  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
+  var marka   = [SP._projeNo, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
   return '<div class="etiket">'+
     '<div class="etk-ust">'+
     '<div class="etk-qr">'+(imgSrc ? '<img src="'+imgSrc+'" alt="QR">' : '')+'</div>'+
@@ -1889,7 +1894,7 @@ function qrYazdir(){
   if (!img) { toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er'); return; }
 
   var revFmt = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
-  var marka = [SP._gemi, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
+  var marka = [SP._projeNo, SP.pipeline, SP.spoolNo, revFmt].filter(Boolean).join('-') || SP.spoolNo || '—';
 
   var win = window.open('','_blank','width=520,height=360');
   if (!win) { toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er'); return; }
@@ -2308,7 +2313,7 @@ function markModalAc(){
   var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
   markTipGuncelle();
   var revEk2 = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
-  var markParts=[SP._projeNo||SP._isEmri||SP._gemi,SP.pipeline,SP.spoolNo,revEk2].filter(Boolean);
+  var markParts=[SP._projeNo||SP._isEmri,SP.pipeline,SP.spoolNo,revEk2].filter(Boolean);
   var oniz=T('markOnizleme');
   if(oniz){
     oniz.textContent=markParts.join('-')||'—';
@@ -2493,7 +2498,7 @@ function duzenleKaydet(){
   SP.malzeme=((T('ed_malz')||{}).value||'');SP.kalite=((T('ed_kal')||{}).value||'').trim();
   txc('stCap',SP.cap);txc('stKal',SP.kalinlik);txc('stAgr',SP.agirlik);txc('stYuzey',_yuzeyGoster(SP.yuzey));txc('stMalz',_malzemeGoster(SP.malzeme));
   var revEk3 = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
-  var _mp2=[SP._projeNo||SP._gemi,SP.pipeline,SP.spoolNo,revEk3].filter(Boolean);
+  var _mp2=[SP._projeNo,SP.pipeline,SP.spoolNo,revEk3].filter(Boolean);
   var _my2=_mp2.join('-');
   var tersaneKisa=SP._tersane?SP._tersane.split(' ')[0].toUpperCase():'';
   txc('shTersaneAd',tersaneKisa||SP._tersane||'—');
@@ -2526,13 +2531,13 @@ function duzenleKaydet(){
 function kkGonder(){
   _gonderTip='kk';var b=T('gmBtn');if(b){b.style.background='var(--leg)';b.textContent=tv('sp_btn_qc','Kalite Kontrole Gönder');}
   var t=T('gmBaslik');if(t){t.textContent=tv('dv_kk_modal_title','Kalite Kontrole Gönder');t.style.color='var(--leg)';}
-  var bi=T('gmBilgi');if(bi){var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');var noEl=document.createElement('strong');noEl.textContent=no;var infoEl=document.createElement('span');infoEl.style.cssText='font-size:14px;color:var(--txd);';infoEl.textContent=tv('dv_kk_modal_info','Bu spool kalite kontrol listesine eklenecek.');bi.textContent='';bi.appendChild(noEl);bi.appendChild(document.createElement('br'));bi.appendChild(infoEl);}
+  var bi=T('gmBilgi');if(bi){var no=[SP._projeNo,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');var noEl=document.createElement('strong');noEl.textContent=no;var infoEl=document.createElement('span');infoEl.style.cssText='font-size:14px;color:var(--txd);';infoEl.textContent=tv('dv_kk_modal_info','Bu spool kalite kontrol listesine eklenecek.');bi.textContent='';bi.appendChild(noEl);bi.appendChild(document.createElement('br'));bi.appendChild(infoEl);}
   var n=T('gmNot');if(n)n.value='';T('gonderModal').style.display='flex';
 }
 function sevkGonder(){
   _gonderTip='sevk';var b=T('gmBtn');if(b){b.style.background='var(--ac)';b.textContent=tv('sp_btn_shipment','Sevkiyata Gönder');}
   var t=T('gmBaslik');if(t){t.textContent=tv('dv_sevk_modal_title','Sevkiyata Gönder');t.style.color='var(--ac)';}
-  var bi=T('gmBilgi');if(bi){var no=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');var noEl=document.createElement('strong');noEl.textContent=no;var infoEl=document.createElement('span');infoEl.style.cssText='font-size:14px;color:var(--txd);';infoEl.textContent=tv('dv_sevk_modal_info','Bu spool sevkiyata hazır listesine eklenecek.');bi.textContent='';bi.appendChild(noEl);bi.appendChild(document.createElement('br'));bi.appendChild(infoEl);}
+  var bi=T('gmBilgi');if(bi){var no=[SP._projeNo,SP._devre,SP.spoolNo].filter(Boolean).join(' — ');var noEl=document.createElement('strong');noEl.textContent=no;var infoEl=document.createElement('span');infoEl.style.cssText='font-size:14px;color:var(--txd);';infoEl.textContent=tv('dv_sevk_modal_info','Bu spool sevkiyata hazır listesine eklenecek.');bi.textContent='';bi.appendChild(noEl);bi.appendChild(document.createElement('br'));bi.appendChild(infoEl);}
   var n=T('gmNot');if(n)n.value='';T('gonderModal').style.display='flex';
 }
 function gonderKaydet(){
