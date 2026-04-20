@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (10. oturum — 3-buton dedup + insert toast + zone_no DROP + SP.projeNo rename + dropdown E-01 + duplicate spoolNo stable key)
+> Son güncelleme: 20 Nisan 2026 (11. oturum — tracker i18n fix + migration localStorage fix + Kural B-02 + Öncelik 12 pipeline+spoolNo+rev validation)
 
 ---
 
@@ -516,6 +516,52 @@ _etiketHTML(imgSrc) // etiket HTML string döner, hem modal hem yazdır window
 ```
 Tüm ölçüler **mm cinsinden** — browser scale/fit ayarlarına karşı dirençli. Kullanıcı "Ölçek %100" seçmelidir (etikete @screen mode'da uyarı notu konulmuş).
 
+### 2.17 Stabil Local Key Pattern — ZORUNLU (Kural B-02)
+
+**20 Nisan 2026 — 10. oturumda eklendi.** `devre_detay.html` duplicate `spool_no` bug'ından (11 fonksiyon + 2 state + DOM ID zinciri) çıkarıldı.
+
+Client-side array'lerde domain alanları (`spool_no`, `pipeline_no`, `kod` vb.) **duplicate olabilir**. Bu alanlar find/filter/DELETE/selection state/DOM ID anahtarı olarak kullanılırsa sessiz bug yaratır:
+
+- `arr.find(x => x.spoolNo === sn)` → ilk eşleşeni döner, sonrakiler atlanır
+- `arr.filter(x => x.spoolNo !== sn)` → DELETE niyetinde hepsini birden siler
+- `_secili[spoolNo]` → iki kayıt aynı anahtarda çakışır
+- `id="pfx_${spoolNo}"` → duplicate DOM ID, querySelector kararsız
+
+#### Çözüm: `_lk` (local key)
+
+Her kaleme `_lk` alanı ekle. DB kaydıysa UUID, yeni/import kalemse rastgele string:
+
+```js
+// DB'den gelen kayıt:
+item._lk = item.id;  // UUID
+
+// Yeni / manuel / Excel import kalem:
+item._lk = 'new_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+
+// Find / filter / DELETE:
+arr.find(x => x._lk === lk)
+arr.filter(x => x._lk !== lk)
+
+// Selection state:
+_secili[item._lk] = true
+
+// DOM ID (UUID ve 'new_...' için güvenli):
+`prefix_${item._lk.replace(/[^a-z0-9]/gi, '_')}`
+```
+
+#### Ne zaman zorunlu
+
+- Aynı array'de domain alanı **duplicate olabilirse** (devre spool listesi, proje spool listesi vb.)
+- DB-level UNIQUE constraint yoksa her koşulda zorunlu
+
+#### Uygulanan dosyalar
+
+- `devre_detay.html` (10. oturum, 14 patch)
+
+#### Potansiyel uygulama noktaları
+
+- `proje_detay.html` spool listesi, `sevkiyatlar.html` spool seçimi, Excel import eden tüm ekranlar
+
 ---
 
 ## 3. DİL SİSTEMİ
@@ -540,9 +586,9 @@ tv('anahtar_adi', 'Türkçe fallback')
 
 ```
 lang/
-  tr.json  — Türkçe (web) — 1370 anahtar (20 Nisan 2026 — 10. oturum, Öncelik 10 çeviri + 7 TR placeholder bug fix)
-  en.json  — İngilizce (web) — 1370 anahtar ✅ tam çeviri (355 toplu çeviri uygulandı)
-  ar.json  — Arapça (RTL destekli, web) — 1370 anahtar ✅ tam çeviri (322 toplu çeviri uygulandı)
+  tr.json  — Türkçe (web) — 1379 anahtar (20 Nisan 2026 — 11. oturum, sp_chip_active + sp_btn_complete eklendi)
+  en.json  — İngilizce (web) — 1379 anahtar ✅ tam çeviri
+  ar.json  — Arapça (RTL destekli, web) — 1379 anahtar ✅ tam çeviri
 ```
 
 **Not:** EN'de 42, AR'da 8 anahtar TR ile aynı görünür ama bunlar **evrensel teknik terim** (Spool, Pipeline, Rev, PDF, Excel, kg, #, AresPipe, emoji'li başlıklar) — tüm dillerde aynı yazılır, "çevrilmemiş" değil.
@@ -932,7 +978,9 @@ Her sohbet bitiminde:
 - [x] **spool_detay dropdown E-01 ihlali** — 10. oturumda tamamlandı (5+5 canonical + "Epoksi" çıkarıldı, "Diğer" eklendi, `cmn_opt_sec` yeni anahtar)
 - [x] **devre_detay duplicate spoolNo bug** — 10. oturumda tamamlandı (`_lk` stable local key pattern, 11 fonksiyon + 2 state + DOM ID'ler)
 - [ ] **🔴 YENİ ÖNCELİK 11 (10. oturumda keşfedildi) — `DEVRE.gemi` → `DEVRE.projeNo` rename (`devre_detay.html`):** Öncelik 5 sadece spool tarafına (SP) dokundu, devre tarafı (DEVRE) hâlâ `gemi` kullanıyor (10+ satır: title, breadcrumb, ARES_NORM.marka, etiket basma, Excel export). 45-60 dk, orta risk
-- [ ] **🔴 YENİ ÖNCELİK 12 — Manuel/Excel ekleme UNIQUE check pipeline+spoolNo:** `devre_detay.html` satır 1352 (manuel) ve 1886 (Excel) sadece `spoolNo`'ya bakıyor, pipeline'ı ihmal ediyor — false positive. 15-20 dk
+- [x] **🔴 Öncelik 12 — Manuel/Excel ekleme UNIQUE check pipeline+spoolNo+rev:** `devre_detay.html` satır 1352 (manuel) ve 1886 (Excel) — **11. oturumda tamamlandı** (pipeline+spoolNo+rev birlikte kontrol)
+- [ ] **🔴 Öncelik 13 — `devreler.notlar` vs `notlar` tablosu ikiliği:** araştırma gerekiyor
+- [ ] **🟡 Öncelik 14 (yeni — 11. oturumda keşfedildi) — `basamak_tanimlari` çok dil desteği:** `gorunen_ad_en TEXT`, `gorunen_ad_ar TEXT` kolonları + `_basamaklariYukle()` dil bazlı seçim. Tracker AR/EN'de hâlâ TR görünüyor. 2-3 saat, orta-yüksek risk
 - [ ] **🟡 YENİ ÖNCELİK 13 — `devreler.notlar` vs `notlar` tablosu ikiliği:** `devreler` tablosunda `notlar TEXT` kolonu + ayrı `notlar` tablosu. Legacy mi, çift yazım mı belirsiz. SELECT + grep ile araştır, ölüyse DROP. 30-45 dk
 - [x] **🔴 Öncelik 10 — EN/AR dil dosyası toplu çeviri** — 10. oturum sonunda tamamlandı (355 EN + 322 AR batch çeviri + 7 TR placeholder bug fix bonus)
 
@@ -953,7 +1001,74 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 20 NİSAN 2026 (10. OTURUM)
+## 11. SON OTURUM — 20 NİSAN 2026 (11. OTURUM)
+
+### Bu oturumda tamamlananlar (Test + 3 Fix + 1 Kural)
+
+**Ana tema:** 10. oturum deploy borcu testi + QA bulunan eksik fix'ler
+
+**1. Küme A — Dil dosyaları testi ✅**
+- TR/EN/AR dil geçişi test edildi, placeholder bug'ları (7 adet) düzelmiş ✅
+- AR RTL düzeni doğru ✅
+
+**2. spool_detay Tracker i18n Fix ✅**
+- `renderTracker` fonksiyonu `STAGE_KEYS` array'ini biliyordu ama kullanmıyordu
+- `esc(s)` → `tv(STAGE_KEYS[i], s)` (tracker label'ları)
+- Chip metinleri hardcode TR → `tv('sp_chip_not_started')`, `tv('sp_chip_done')`, `tv('sp_chip_active', '{stage} aşamasında').replace()`
+- Buton: `STAGES[cur]+' Tamamla'` → `tv('sp_btn_complete', '{stage} Tamamla').replace()`
+- **Yeni bulgu:** `sp_chip_not_started` ve `sp_chip_done` zaten lang dosyasındaydı — sadece render'a bağlanmamıştı
+- 2 yeni lang anahtarı eklendi: `sp_chip_active`, `sp_btn_complete` (3 dil × 2 = 6 değişiklik)
+
+**3. spool_detay Migration localStorage Fix ✅**
+- `_gemi → _projeNo` migration bloğu vardı ama Supabase callback'i beklemeden hemen `localStorage.setItem` yapmıyordu
+- Supabase query başarısız olursa `_gemi` kalıcı kalıyordu
+- Fix: migration bloğunun hemen ardına `try { localStorage.setItem(...) } catch(e) {}` eklendi
+
+**4. Öncelik 12 — devre_detay Duplicate Validation ✅**
+- Manuel ekleme (satır 1352) + Excel import (satır 1886): sadece `spoolNo` kontrolü → `pipeline+spoolNo+rev` üçlü kontrole çevrildi
+- Excel import'ta `Rev`/`REV` kolonunu da okuma eklendi
+
+**5. Kural B-02 — CLAUDE.md Bölüm 2.17 ✅**
+- Stabil Local Key (`_lk`) pattern'i resmi kural olarak belgelendi
+
+### Değişen Dosyalar (3 HTML + 3 JSON)
+
+| Dosya | Değişiklik | Deploy |
+|---|---|---|
+| `spool_detay.html` | Tracker i18n (6 patch) + migration localStorage fix | **Bekliyor** |
+| `devre_detay.html` | Öncelik 12 — duplicate validation (2 patch) | **Bekliyor** |
+| `lang/tr.json` | 1377 → 1379 (sp_chip_active, sp_btn_complete) | **Bekliyor** |
+| `lang/en.json` | 1377 → 1379 | **Bekliyor** |
+| `lang/ar.json` | 1377 → 1379 | **Bekliyor** |
+
+### Test Durumu
+
+| Küme | Durum | Not |
+|---|---|---|
+| A — Dil dosyaları | ✅ Geçti | TR/EN/AR temiz |
+| B.1-B.3 — 3-buton dedup | ⏭ Atlandı | 12. oturuma |
+| C.1 — _projeNo başlık | ⏭ Kısmen | localStorage teyit edilemedi tam |
+| C.2 — Migration | ✅ Fix uygulandı | Deploy sonrası re-test |
+| C.3 — Dropdown | ✅ Geçti | Seçili geliyor |
+| C.4 — AR tracker | ⚠️ Kısmi | Fix doğru, basamak_tanimlari TR (Öncelik 14) |
+| D — _lk duplicate | ⏭ Atlandı | 12. oturuma |
+
+### Yeni Bulgular
+
+- **Öncelik 14 (yeni):** `basamak_tanimlari.gorunen_ad` sadece TR — tracker tam çok dil için `gorunen_ad_en`, `gorunen_ad_ar` kolonları gerekiyor. 2-3 saat, orta-yüksek risk
+- **Lang anahtar sayısı:** 1379 (önceki CLAUDE.md'de 1377 yazıyordu — düzeltildi)
+
+### Bu Oturumdan Dersler
+
+1. **"Oturum özetinde tamamlandı = gerçekten bitti" değil.** 10. oturum QA bulgu 2 "7 dil anahtarı + renderTracker i18n sarması" diyordu. Anahtarlar eklenmişti ama renderTracker'a bağlanmamıştı. Özet yazılırken "niyeti değil sonucu" yaz.
+
+2. **Migration fix eksikti.** `_gemi → _projeNo` bloğu localStorage'a hemen yazmıyordu. Supabase callback başarısız olursa eski veri kalırdı. Migration bloklarında hemen persist etmek kural olmalı.
+
+3. **`basamak_tanimlari` DB'den gelince i18n kırılıyor.** Dinamik tenant verisi statik lang dosyasıyla çevrilemez. DB'de çok dil desteği (gorunen_ad_en/ar) olmadan bu sorun çözümsüz. Öncelik 14 olarak eklendi.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (10. OTURUM)
 
 ### Bu oturumda tamamlananlar (6 Öncelik: 1+2+3+5+6+7)
 
@@ -1047,7 +1162,7 @@ Her sohbet bitiminde:
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (9. OTURUM)
+## 11B. ÖNCEKİ OTURUM — 20 NİSAN 2026 (9. OTURUM)
 
 ### Bu oturumda tamamlananlar (Devre Dedup Popup + Bug #3 Migration + Fark Popup İyileştirmesi)
 
@@ -1180,7 +1295,7 @@ WHERE malzeme IN ('Karbon Çelik','Paslanmaz','Paslanmaz Çelik','Bakır Alaşı
 
 ---
 
-## 11B. ÖNCEKİ OTURUM — 20 NİSAN 2026 (6. OTURUM)
+## 11C. ÖNCEKİ OTURUM — 20 NİSAN 2026 (6. OTURUM)
 
 ### Bu oturumda tamamlananlar (spool_detay.html sessiz bug avı + tenant prefix temelleri)
 
@@ -1267,7 +1382,7 @@ Blok C — DB keşifleri (kod değişmedi, sadece belgelendi):
 
 ---
 
-## 11C. ÖNCEKİ OTURUM — 20 NİSAN 2026 (5. OTURUM)
+## 11D. ÖNCEKİ OTURUM — 20 NİSAN 2026 (5. OTURUM)
 
 ### Bu oturumda tamamlananlar (Malzeme-Yüzey Uyum + Fark Tespit + devreler.html refactor)
 
@@ -1338,7 +1453,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11D. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
+## 11E. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Refactor Tamamlama + DB Migration)
 
@@ -1412,7 +1527,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11E. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
+## 11F. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Anti-Pattern Temizliği)
 
@@ -1451,7 +1566,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11F. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
+## 11G. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
 
 ### Bu oturumda tamamlananlar (MDrawer + Tema Context)
 
@@ -1496,7 +1611,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11G. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
+## 11H. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
 
 ### Tamamlananlar
 - **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)

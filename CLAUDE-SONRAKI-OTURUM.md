@@ -1,239 +1,155 @@
-# AresPipe — 11. Oturum Gündemi
+# AresPipe — 12. Oturum Gündemi
 
-> 10. oturumda biriken işler ve sonraki oturum öncelikleri.
+> 11. oturumda biriken işler ve sonraki oturum öncelikleri.
 > Başlangıçta bu dosyayı + CLAUDE.md + CLAUDE-SON-OTURUM.md birlikte oku.
 
 ---
 
 ## Oturum Başı Ritüeli
 
-1. **CLAUDE.md** oku — mimari, kurallar (E-01, E-02, E-03, E-04, E-05, B-01, F-01)
-2. **CLAUDE-SON-OTURUM.md** oku — 10. oturum ne yapıldı, deploy durumu
+1. **CLAUDE.md** oku — mimari, kurallar (E-01..E-05, B-01, B-02, F-01), DB şeması
+2. **CLAUDE-SON-OTURUM.md** oku — 11. oturum ne yapıldı, deploy durumu
 3. Bu dosya (**CLAUDE-SONRAKI-OTURUM.md**) — ne yapılacak
 4. `/mnt/user-data/outputs/` klasörünü tara — önceki AI'dan yarım iş var mı?
 5. **Kullanıcıya sor:**
-   - "8+9+10. oturum deploy'u test ettin mi?"
-   - "Devre detay'da inline edit + toplu seçim akışlarını duplicate spool ile denedin mi?"
-   - "Hangi iş? Öncelik 0 (test) mi, yeni kod mu?"
-
-## 10. Oturum Sonu QA Keşifleri (11. oturumda devam)
-
-Oturum sonu sprint'i sırasında 2 QA ekran görüntüsü gelmiş, iki sorun daha düzeltildi:
-
-### QA bulgu 1: Devre detay Malzeme Listesi tablosu
-- **Malzeme kolonu** E-01 ihlali: raw canonical kod (`bakir`, `diger`) görünüyordu
-- **Fix:** `ARES_NORM.malzemeEtiket()` sarması eklendi (satır 1549 — `_malzemeGoster` bu dosyada tanımlı değildi, direkt ARES_NORM çağrıldı)
-- **Kalite kolonu** ise **veri problemi**: DB'deki `spool_malzemeleri.kalite` alanında malzeme kodları (`bakir`, `diger`) yazılı — 6. oturumdan bilinen "kalite alanı malzeme gibi davranıyor" bug'ı. Devre_yeni formunda kalite alanı malzeme radio grubu gibi çalışıyor olabilir. **UI ile çözülemez**, DB temizliği + form validation gerekir (Öncelik 11 öneri)
-
-### QA bulgu 2: Spool detay AR dilde TR kalıntıları
-- STAGES progress tracker hardcode `['Ön İmalat', 'İmalat', ...]` kullanıyordu — STAGE_KEYS array'i tanımlıydı ama `renderTracker` i18n'e bağlamıyordu
-- Chip metinleri ("Henüz başlanmadı", "Tamamlandı", "X aşamasında") hardcode Türkçe
-- "X Tamamla" butonu Türkçe string concat
-- ALIST_CFG'nin `tr` fallback'i gösteriliyordu, anahtarlar (sp_alist_*_note) dil dosyasında yoktu
-- **Fix:** 7 yeni dil anahtarı (3 dil × 7 = 21), renderTracker i18n sarması, placeholder pattern `{stage}` ile replace
-
-### Öncelik 11 öneri (yeni) — Kalite alanı UX + veri temizliği
-6. oturumdaki "Kalite alanı malzeme radio gibi" bug'ı hâlâ duruyor:
-- `spool_malzemeleri.kalite` ve `spooller.kalite` kolonlarında canonical malzeme kodu (`bakir`, `diger`) yazılı kayıtlar var
-- Form validation eksik: kullanıcı "Bakır Alaşım" seçtikten sonra Kalite alanına aynı şeyi yazabiliyor
-- **Fix stratejisi:**
-  1. Form: Kalite alanına serbest text + autocomplete (ST37, A106-B, 304L, CuNi10Fe1.6Mn vb.)
-  2. Validation: canonical malzeme kodu girerse uyar
-  3. DB temizliği: `UPDATE ... SET kalite = NULL WHERE kalite IN ('karbon','paslanmaz','bakir','alum','diger')` — ama önce kullanıcıya danış, gerçek kalite değeri kaybolmasın
-- **Süre:** 1-2 saat
-- **Risk:** Orta (veri temizliği)
+   - "11. oturum dosyalarını deploy ettin mi? (spool_detay + devre_detay + lang ×3)"
+   - "Küme B testi (3-buton dedup) ve Küme D testi (devre_detay _lk) yapabilir misin?"
+   - "Hangi iş önce: test mi, yeni kod mu?"
 
 ---
 
-## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU TEMİZLE (YENİ KOD YOK)
+## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU TEMİZLE
 
-**Bu oturum yeni kod yazma zamanı değil. 3 oturumluk değişiklik birikti, test edilmedi.**
+### Deploy edilecek dosyalar (11. oturumda hazırlandı, henüz canlıda değil)
 
-### Deploy sırası
+1. **`lang/tr.json`, `en.json`, `ar.json`** — 1377 → 1379 (sp_chip_active + sp_btn_complete)
+2. **`devre_detay.html`** — Öncelik 12 duplicate validation (2 patch, düşük risk)
+3. **`spool_detay.html`** — Tracker i18n (6 patch) + migration localStorage fix
 
-1. **3 dil dosyası** (lang/tr.json, en.json, ar.json — 1366 → 1370 anahtar)
-2. **`devre_yeni.html`** (2271 → 2286, 3-buton popup)
-3. **`spool_detay.html`** (3139 → 3151, _projeNo rename + dropdown E-01)
-4. **`devre_detay.html`** (1994 satır, 14 patch — en riskli, sonuncuya bırak)
+```bash
+git add lang/tr.json lang/en.json lang/ar.json devre_detay.html spool_detay.html
+git commit -m "11. oturum: tracker i18n fix + migration localStorage + Öncelik 12 validation"
+git push origin main
+```
 
-### Test senaryoları — manuel QA
+### Test senaryoları — tamamlanmamış kümeler
 
-**8. oturum işleri:**
-- [ ] Admin → Yeni Firma → Firma Kodu alanı 2. kutu olarak görünüyor mu?
-- [ ] Firma Detay sayfasında kod turuncu mono badge olarak üstte mi?
-- [ ] Yeni spool oluştur → DB'de `A-000001` (6 hane padded), UI'da `A-0001` (4 hane kırpık) mı?
-- [ ] 10000+ spool → UI'da `A-10000` doğal uzunluk mu?
+**Küme B — 3-Buton Dedup (devre_yeni.html):**
+- [ ] Aynı Excel'i iki kez yükle → 3 buton popup çıkıyor mu? (İptal / Zorla ekle sarı / Çakışanları atla mavi)
+- [ ] "Çakışanları atla" → sadece yeniler INSERT, hepsi çakışıyorsa amber toast
+- [ ] "Zorla ekle" → duplicate oluşuyor (regresyon kontrol)
+- [ ] AR/EN dil değiştir → buton metinleri çevrilmiş mi?
 
-**9. oturum işleri:**
-- [ ] Aynı `proje + devre_no + zone` kombinasyonu gir → devre dedup popup çıkıyor mu?
-- [ ] Popup info kartında proje adı + iş emri (turuncu badge) + devre_no + zone görünüyor mu?
-- [ ] "Mevcut devreye ekle" seç → "5 spool bu devreye eklenecek" onay mesajı var mı?
-- [ ] Aynı `pipeline+spool_no+rev` girince spool dedup popup çıkıyor mu?
-- [ ] Fark popup'ta pill'lerde `Bakır Alaşım ×3` sayım var mı?
+**Küme C.1 — _projeNo (spool_detay.html):**
+- [ ] Spool başlığı `NB1124-K110-721-414C-S01` formatında mı?
+- [ ] `localStorage.getItem('ares_aktif_spool')` → `_projeNo` var, `_gemi` yok mu?
+- [ ] Migration: `localStorage`'a `{_gemi:'TEST'}` yaz → F5 → `_projeNo:'TEST'` görünmeli (anında, Supabase beklemeden)
 
-**10. oturum işleri (kritik):**
-- [ ] **Öncelik 1 — 3 buton:** Spool çakışmada 3 buton görünüyor mu? "Çakışanları atla" mavi vurgulu default mı?
-- [ ] "Çakışanları atla" bas → sadece yeni spool'lar INSERT edildi mi? (hepsi çakışıyorsa amber toast çıkıyor mu?)
-- [ ] "Zorla ekle" bas → eski davranış (duplicate oluşur) çalışıyor mu?
-- [ ] **Öncelik 2 — Toast:** Spool insert hatası durumunda amber toast gözüküyor mu? (DB manuel bozup test edebilirsin: örn. tenant_id NULL yap, RLS reddeder, toast çıkmalı)
-- [ ] **Öncelik 5 — Rename:** spool_detay aç → başlıkta marka formatı doğru mu? (`NB1137-M100-...`)
-- [ ] QR modalı aç, yazdır butonu, etiket marka → proje_no + pipeline + spool_no + RevN?
-- [ ] KK modal ve Sevk modal başlıkları "NB1137 — Y100-817-007 — S02" gibi görünüyor mu?
-- [ ] **localStorage migration:** Browser console'da `localStorage.getItem('ares_aktif_spool')` yaz — içinde `_projeNo` var, `_gemi` yok mu?
-- [ ] Eski kullanıcı senaryosu: Console'da manuel `localStorage.setItem('ares_aktif_spool', JSON.stringify({_gemi:'ESKI'}))` yaz, sayfayı yenile → console'da yine `_projeNo:'ESKI'` olmalı (migration çalıştı)
-- [ ] **Öncelik 6 — Dropdown:** Bir spool'u Düzenle → yüzey ve malzeme selectleri **seçili geliyor mu**? (eskiden boş görünürdü)
-- [ ] Malzemeyi değiştir, kaydet → DB'de `malzeme='paslanmaz'` canonical mı? ("Paslanmaz" DEĞİL)
-- [ ] Dil değiştir (TR→EN) → select option'ları "Carbon Steel" vb. oluyor mu?
-- [ ] Epoksi seçeneği yok mu? Diğer seçeneği var mı?
-- [ ] **Öncelik 7 — Duplicate spool_no:** Aynı devrede pipeline1+S01 ve pipeline2+S01 oluştur (manuel DB insert veya import). Devre detay aç:
-  - [ ] Inline edit: ikinci spool'un rev'ini güncelle → sadece o güncelleniyor mu?
-  - [ ] Sağ tık menü → Durdur → sadece doğru spool mu durdurulyor?
-  - [ ] Toplu KK/Sevkiyat modal → iki spool ayrı ayrı checkbox'layabiliyor mu?
-  - [ ] Etiket modal → iki spool ayrı ayrı seçilebiliyor mu? DOM'da `etc_UUID1`, `etc_UUID2` ayrı mı?
-  - [ ] Sil → sadece bir tanesi mi siliniyor?
-- [ ] Excel import: aynı spoolNo zaten varsa atla uyarısı hâlâ çalışıyor mu? (client-side validation — Öncelik 7 scope'u dışı, ama regresyon kontrol)
+**Küme C.4 — AR tracker re-test (deploy sonrası):**
+- [ ] AR dilinde spool_detay aç → F5 → tracker "ما قبل التصنيع" / "التصنيع" vb. görünmeli
+- [ ] NOT: `basamak_tanimlari`'ndan DB verisi geliyorsa hâlâ TR görünür (Öncelik 14) — bu beklenen
 
-### Eğer bug bulunursa
+**Küme D — devre_detay _lk Duplicate (devre_detay.html):**
 
-- **Küçük bug:** 11. oturumda hemen düzelt, sonraki test turu öncesi
-- **Büyük bug:** 11. oturumun tamamı bu bug'a ayrılabilir — yeni öncelik ekleme
-- **Hangi oturum kırdı belirsizse:** git diff ile son 3 oturumun değişiklik noktaları taranacak (6. oturum dersi #6)
+Önkoşul: Aynı devrede `pipeline1+S01` + `pipeline2+S01` oluştur (manuel DB insert veya 2 farklı pipeline'lı Excel).
+
+- [ ] Inline edit: 2. spool rev'ini güncelle → sadece o güncellensin
+- [ ] Sağ tık → Durdur → sadece doğru spool durdurulsun
+- [ ] Toplu KK/Sevkiyat → iki spool ayrı checkbox, ikisi de seçilebilsin
+- [ ] Etiket modal → `etc_UUID1`, `etc_UUID2` DOM'da ayrı mı?
+- [ ] Sil → sadece bir tanesi silinsin
+
+---
+
+## ÖNCELİK 5 DEVAMI — DEVRE.gemi → DEVRE.projeNo
+
+`devre_detay.html` içinde `DEVRE.gemi` 10+ yerde kullanılıyor (başlık, breadcrumb, Excel export, yazdır, etiket). Aslında `projeler.proje_no` tutuyor.
+
+**Önemli ayrım (CLAUDE.md 4.2):**
+- `DEVRE.gemi` = `projeler.proje_no` (NB1137 gibi proje kodu)
+- `projeler.gemi_adi` = gerçek gemi adı ("MV Ocean Star" gibi)
+
+**Fix:** `devre_detay.html` yükle, tüm `DEVRE.gemi` referanslarını `DEVRE.projeNo` yap + localStorage persist güncelle.
+
+**Süre:** 1.5-2 saat. Orta risk (localStorage cross-page persist var).
+
+---
+
+## ÖNCELİK 11 — DEVRE.gemi Rename Devamı (devreler.html + ares-store.js)
+
+`devre_detay.html`'deki rename tamamlanınca `devreler.html` ve `ares-store.js`'te de `gemi` → `projeNo` bakılmalı. Cross-file rename — önce `grep -rn "DEVRE.gemi\|\.gemi"` ile kapsam çıkar.
+
+---
+
+## ÖNCELİK 13 — `devreler.notlar` vs `notlar` Tablosu İkiliği
+
+`devreler` tablosunda `notlar TEXT` kolonu + ayrı `notlar` tablosu var. Hangisi canonical? İkisi birden mi kullanılıyor?
+
+**Araştırma planı:**
+1. `SELECT COUNT(*) FROM devreler WHERE notlar IS NOT NULL AND notlar != ''`
+2. `SELECT COUNT(*) FROM notlar WHERE devre_id IS NOT NULL`
+3. `grep -n "devreler.*notlar\|DEVRE\.notlar" *.html` — hangi sayfa ne kullanıyor?
+
+Sonuca göre: ya `devreler.notlar` kolonu DROP et, ya da `notlar` tablosuna yönlendir.
+
+**Süre:** 30-45 dk. Düşük-orta risk.
+
+---
+
+## ÖNCELİK 14 (YENİ) — basamak_tanimlari Çok Dil Desteği
+
+**Keşif (11. oturumda):** `basamak_tanimlari.gorunen_ad` sadece TR. Tracker AR/EN'de bu değerleri `tv('dyn_on_imalat', 'Ön İmalat')` ile dönüştürmeye çalışıyor ama `dyn_*` anahtarları lang dosyasında yok → TR fallback.
+
+**Fix stratejisi:**
+1. `ALTER TABLE basamak_tanimlari ADD COLUMN gorunen_ad_en TEXT`
+2. `ALTER TABLE basamak_tanimlari ADD COLUMN gorunen_ad_ar TEXT`
+3. Mevcut kayıtlara EN/AR karşılıkları yaz (İmalat → Manufacturing → التصنيع vb.)
+4. `_basamaklariYukle()` — dil bazlı kolon seç: `gorunen_ad` (TR), `gorunen_ad_en` (EN), `gorunen_ad_ar` (AR)
+5. STAGE_KEYS'i lang tabanlı üretmek yerine doğrudan çevrilmiş adları kullan
+
+**Süre:** 2-3 saat. Orta-yüksek risk (DB migration + tüm tenant kayıtlarını güncelleme).
 
 ---
 
 ## ÖNCELİK 4 — Denormalizasyon Borcu (spooller ↔ spool_malzemeleri)
 
-**Büyük iş, 3-4 saat, yüksek risk. Önerilen Option A:**
-- `spooller.malzeme/kalite` kolonlarını kaldır
-- UI her zaman `spool_malzemeleri`'nden aggregate etsin
-- Yeni `ARES_AGG.spoolMalzemeleri(spoolId)` helper'ı (en yaygın malzeme+kalite döner)
+`spooller.malzeme/kalite` kolonları ile `spool_malzemeleri.malzeme/kalite` ikiliği. Option A: `spooller.malzeme/kalite` kaldır, UI `spool_malzemeleri`'nden aggregate etsin.
 
-**Etki analizi gerekli — kullanım noktaları:**
-- `spooller.malzeme` SELECT eden dosyalar: `devre_detay.html`, `spool_detay.html`, `kesim.html`, `markalama.html`, `devreler.html`
-- `spool_malzemeleri.malzeme` SELECT eden dosyalar: `spool_detay.html` (zaten aggregate yapıyor)
+**Önce grep:** `spooller.malzeme` SELECT eden dosyalar: `devre_detay.html`, `spool_detay.html`, `kesim.html`, `markalama.html`, `devreler.html`. 10+ nokta → büyük iş, ayrı oturum.
 
-**Önce grep**, sonra mimari karar.
+**Süre:** 3-4 saat. Yüksek risk.
 
 ---
 
-## ÖNCELİK 5 DEVAMI — DEVRE.gemi → DEVRE.projeNo (Öncelik 5'in devamı)
+## ÖNCELİK 8 — Mobil Ekranlar (React)
 
-**`devre_detay.html` içinde:**
-- `DEVRE.gemi` 10+ satırda referans (başlık, breadcrumb, Excel export, yazdır window, etiket kart)
-- `devreler.html` → `devre_detay.html` arası localStorage persist var
-- `ares-store.js` satır 352: SELECT `projeler(proje_no, gemi_adi)` — `gemi_adi` AYRI alan
+- `MProfil.jsx` — avatar yükleme + kişisel bilgi (R-10 mockup-first)
+- `MIsBaslat.jsx` — operatör iş akışı (R-10 mockup-first)
+- `MDevreler.jsx`, `MDevreDetay.jsx`, `MSpoolDetay.jsx`, `MQRTara.jsx`
 
-**Önemli ayrım:**
-- `DEVRE.gemi` = `projeler.proje_no` (NB1137 gibi newbuild kodu)
-- `projeler.gemi_adi` = **gerçek gemi adı** ("MV Ocean Star" vs)
-- İkisi de "gemi" ama anlamları farklı — rename gerektiriyor
-
-**Tahmini süre:** 1.5-2 saat. Orta risk.
+**Not:** `MQRTara.jsx` yazılırken tenant prefix formatını (`A-0504:UUID`) parse etmeli, cross-tenant uyarı vermeli (CLAUDE.md Bölüm 8 / 2.14).
 
 ---
 
-## ÖNCELİK YENİ — Client-Side Duplicate Validation
+## Yeni Kural Hatırlatmaları (Bu Oturumda Eklendi)
 
-**10. oturumda keşfedildi:** `devre_detay.html` satır 1352 + 1886 — spool ekleme/import kontrolleri sadece `spoolNo` bakıyor:
-
-```js
-if(SPOOLS.find(function(s){return s.spoolNo===sn;})){showToast('Bu Spool No zaten var','e');return;}
-```
-
-Pipeline farklıysa aynı spoolNo meşru olabilir (pipeline1+S01, pipeline2+S01). Bu validation aşırı kısıtlayıcı.
-
-**Fix:** `pipeline+spoolNo+rev` birlikte bak:
-```js
-if(SPOOLS.find(function(s){return s.spoolNo===sn && s.pipeline===pl && (s.rev||'')===(rev||'');})){...}
-```
-
-**Süre:** 30 dk. Düşük risk.
+- **B-02:** Client-side array'lerde `_lk` stabil local key kullan — CLAUDE.md Bölüm 2.17
+- **Migration bloğu = hemen persist:** `if (_gemi)` gibi migration bloklarından sonra anında `localStorage.setItem` şart
+- **Oturum özeti = sonuç, niyet değil:** "bağlandı" değil "test edildi + X/Y sonuç verdi" yaz
 
 ---
 
-## ÖNCELİK YENİ — Kural B-02: Stabil Local Key Pattern'i
+## Özet — 12. Oturum Ne Beklenebilir
 
-**Öneri:** Öncelik 7'de `_lk` pattern'i çözüm oldu — CLAUDE.md'ye kural olarak ekle.
+**Kısa:** 11. oturumda 5 fix bitti ama 3 dosya deploy edilmedi ve Küme B+D testleri atlandı. 12. oturum **önce deploy + kalan testler**. Test temizse Öncelik 5 devamı (DEVRE.gemi rename) veya Öncelik 14 (basamak_tanimlari multilang).
 
-**Kural B-02 (taslak):**
-> Client-side array'lerde duplicate olabilecek domain alanlarını (`spool_no`, `kod`, `id`) **key olarak kullanma**. Bunun yerine her kalem için `_lk` (local key) alanı tanımla:
-> ```js
-> item._lk = item.id || ('new_' + Date.now() + '_' + Math.random().toString(36).slice(2,9));
-> ```
-> - find/filter/DELETE: `item._lk === lk`
-> - Selection state: `_secili[item._lk]`
-> - DOM ID: `prefix_${item._lk.replace(/[^a-z0-9]/gi,'_')}`
+**Risk uyarısı:**
+- `spool_detay.html` tracker fix deploy sonrası `basamak_tanimlari`'ndan veri gelen tenant'larda tracker TR kalır (beklenen, Öncelik 14)
+- `devre_detay.html` Öncelik 12 fix regex-free, düşük risk
 
-**Süre:** 15 dk (CLAUDE.md'ye ekle). Risk sıfır.
-
----
-
-## ÖNCELİK 10 ✅ — EN/AR Dil Dosyası Toplu Çeviri (10. oturum sonunda tamamlandı)
-
-**10. oturum sonu güncellemesi:**
-- EN: 355 çeviri uygulandı (348 → 42 kalan, hepsi evrensel terim)
-- AR: 322 çeviri uygulandı (319 → 8 kalan, hepsi evrensel terim)
-- Bonus: 7 TR placeholder bug'ı düzeltildi (TR'de yanlışlıkla İngilizce kalan metinler)
-- 3 dil simetri: 1370 anahtar
-
-**11. oturumda bu iş için bakılacak:**
-- [ ] Test: Dil değiştir (TR → EN → AR), rastgele 10 ekran tara. Yarım çeviri var mı?
-- [ ] Test: Arapça RTL doğru çalışıyor mu? (`السبول`, `خط الأنابيب` vb. doğru sağdan sola dizim)
-- [ ] Eğer rahatsız eden bir çeviri varsa, direkt JSON dosyasında düzelt (ufak manüel fix, yeni toplu iş gerektirmez)
-- [ ] Yeni anahtar eklerken **her üç dilde ekle** — 9. oturum dersi #3 hâlâ geçerli
-
-**Çeviri script'i referans:** `/home/claude/translate_batch.py` — terim tutarlılığı sağlamak için yeni çeviriler eklenirken bakılabilir.
-
----
-
-## ÖNCELİK 8-9 — Önceki Oturumlardan (değişmedi)
-
-### Öncelik 8: Mobil Ekranlar (React)
-- MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
-- Mockup-first (R-10)
-- **Risk:** Düşük her biri, toplam 6-12 saat
-
-### Öncelik 9: Düşük Öncelik / Teknik Borç
-- QR indir butonu PNG/SVG export
-- Search haystack markaId ekleme
-- `spooller` ve `devreler` UNIQUE constraint (DB-level koruma, JS'e güvenmeden)
-- **Toplam:** 1-2 saat
-
----
-
-## 10. Oturumdan Yan Bulgular (11. oturuma not)
-
-### Doğrulanan gözlemler
-- ✅ **`devreler.zone_no` DROP edildi** — migration-in-progress ikiliği temiz
-- ✅ **spool_detay legacy localStorage migration** çalışıyor — test senaryosuyla kontrol et
-- ✅ **14 patch devre_detay JS syntax temiz** — ama entegre test zorunlu
-
-### Yeni bulgular
-- **`SP._projeNo||SP._gemi` fallback kozmetikti** — atama yoksa OR pattern'i işlevsiz (öğrenme 9. oturum dersi #2'nin teyidi)
-- **`devreler.notlar` kolonu + `notlar` tablosu ikiliği** — ayrı araştırma: hangi canonical, neden ikisi var?
-- **`DEVRE.gemi` = `projeler.proje_no`** (devre_detay'da), **`projeler.gemi_adi` = gerçek gemi adı** — isim çakışması, rename gerek
-- **Client-side duplicate validation aşırı kısıtlı** (sadece spoolNo bakıyor)
-- **`_lk` pattern'i mükemmel çalıştı** — kural olarak yazılabilir (B-02 taslağı yukarıda)
-
-### Hâlâ Geçerli Eski Bulgular
-- **Migration-in-progress pattern yaygın:** `fotograflar.yapan_id/yukleyen_id`, `spooller.agirlik/agirlik_kg`
-- **RLS policy'leri hazır** — yeni işlere tenant_id eklemek şart
-- **Supabase key JWT format** — 2. oturumdan karar
-
----
-
-## Özet — 11. Oturum Ne Beklenebilir
-
-**Kısa:** 10. oturumda 6 öncelik bitti ama 3 oturumluk test borcu var. 11. oturum **önce deploy + test**. Yeni kod sadece bug çıkarsa. Test temizse, sonraki büyük iş **Öncelik 5 devamı (DEVRE.gemi rename)** veya **Öncelik 10 (EN/AR toplu çeviri)**.
-
-**Risk uyarısı:** 
-- `devre_detay.html` 14 patch, tam test edilmedi
-- `spool_detay.html` rename + dropdown iç içe, iki ayrı fix birlikte deploy
-- `devre_yeni.html` artık 2286 satır, karmaşık
-
-**Öneri oturum yapısı:**
-1. İlk 30 dk — deploy + smoke test (her dosya tek tek)
-2. Sonra 1-2 saat — tam test (yukarıdaki checklist)
-3. Bug varsa — düzelt
-4. Zaman kalırsa — Kural B-02'yi CLAUDE.md'ye ekle (hızlı kazanım)
-5. Gerisi sonraki oturuma
+**Önerilen oturum yapısı:**
+1. İlk 15 dk — deploy (3 lang + 2 HTML)
+2. Sonra 30 dk — Küme B + C.1 re-test + C.4 re-test
+3. Küme D için test verisi hazırla (duplicate spool ihtiyaç var)
+4. Bug yoksa — Öncelik 5 devamı veya Öncelik 13 (notlar ikiliği, hızlı)
+5. Zamanla Öncelik 14 başlangıcı (DB migration)
