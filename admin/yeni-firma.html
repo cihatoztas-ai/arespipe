@@ -184,29 +184,38 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
       <div class="step-desc">Temel bilgileri girin — sonradan duzenlenilebilir.</div>
     </div>
     <div class="card">
-      <div class="form-grid">
+      <!-- Satır 1: Firma Adı (geniş) + Firma Kodu (dar, 120px) — E-03 tenant prefix -->
+      <div class="form-grid" style="grid-template-columns: 1fr 120px;">
         <div class="form-row">
           <label class="form-label">Firma Adi *</label>
           <input class="form-input" id="nAd" placeholder="Ornek: Deniz Boru A.S." autocomplete="off">
         </div>
         <div class="form-row">
-          <label class="form-label">Firma Tipi</label>
-          <select class="form-input form-select" id="nTip">
-            <optgroup label="İmalat / Montaj Firmaları">
-              <option value="imalat">Spool İmalat Firması</option>
-              <option value="montaj">Spool Montaj Firması</option>
-              <option value="imalat_montaj">İmalat + Montaj Firması</option>
-            </optgroup>
-            <optgroup label="Tersane Senaryoları">
-              <option value="tersane_tam">Tersane — Tam Entegre (kendi üretir)</option>
-              <option value="tersane_taseron">Tersane — İmalat Taşerona Verilmiş</option>
-              <option value="tersane_karma">Tersane — Kısmi Taşeron</option>
-            </optgroup>
-            <optgroup label="Diğer">
-              <option value="diger">Diğer</option>
-            </optgroup>
-          </select>
+          <label class="form-label">Firma Kodu *</label>
+          <input class="form-input" id="nKod" placeholder="AB" maxlength="4" autocomplete="off"
+                 style="text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;font-size:15px;"
+                 onkeyup="kodTemizle(this)" onblur="kodCakismaKontrol(this.value)">
+          <div id="nKodUyari" style="font-size:11px;margin-top:4px;min-height:14px;color:var(--txd);">1-4 harf (A-Z)</div>
         </div>
+      </div>
+      <!-- Satır 2: Firma Tipi — kendi satırında -->
+      <div class="form-row">
+        <label class="form-label">Firma Tipi</label>
+        <select class="form-input form-select" id="nTip">
+          <optgroup label="İmalat / Montaj Firmaları">
+            <option value="imalat">Spool İmalat Firması</option>
+            <option value="montaj">Spool Montaj Firması</option>
+            <option value="imalat_montaj">İmalat + Montaj Firması</option>
+          </optgroup>
+          <optgroup label="Tersane Senaryoları">
+            <option value="tersane_tam">Tersane — Tam Entegre (kendi üretir)</option>
+            <option value="tersane_taseron">Tersane — İmalat Taşerona Verilmiş</option>
+            <option value="tersane_karma">Tersane — Kısmi Taşeron</option>
+          </optgroup>
+          <optgroup label="Diğer">
+            <option value="diger">Diğer</option>
+          </optgroup>
+        </select>
       </div>
       <div class="form-grid">
         <div class="form-row">
@@ -484,8 +493,73 @@ function adimValidate() {
     var ad = T('nAd').value.trim();
     if (!ad) { toast('Firma adi zorunlu', 'err'); T('nAd').focus(); return false; }
     if (ad.length < 2) { toast('Firma adi en az 2 karakter olmali', 'err'); return false; }
+
+    // E-03: Firma Kodu kontrolü
+    var kod = (T('nKod').value || '').trim().toUpperCase();
+    if (!kod) { toast('Firma kodu zorunlu', 'err'); T('nKod').focus(); return false; }
+    if (!/^[A-Z]{1,4}$/.test(kod)) { toast('Kod 1-4 harf olmali (A-Z)', 'err'); T('nKod').focus(); return false; }
+    // kodCakismaKontrol son durumu uyari elementinde tutar
+    var uyari = T('nKodUyari');
+    if (uyari && uyari.dataset.cakisma === '1') {
+      toast('Bu kod ' + (uyari.dataset.cakisanFirma || 'baska bir firma') + ' tarafindan kullaniliyor', 'err');
+      T('nKod').focus();
+      return false;
+    }
   }
   return true;
+}
+
+// E-03: Kod input temizleme — uppercase + sadece A-Z
+function kodTemizle(el) {
+  var v = (el.value || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (v !== el.value) el.value = v;
+  // Kullanıcı yazarken uyarıyı temizle (blur'da tekrar kontrol olur)
+  var uyari = T(el.id + 'Uyari') || T('nKodUyari');
+  if (uyari) {
+    uyari.dataset.cakisma = '0';
+    uyari.style.color = 'var(--txd)';
+    uyari.textContent = '1-4 harf (A-Z)';
+  }
+}
+
+// E-03: Kod çakışma kontrolü (onblur)
+async function kodCakismaKontrol(deger) {
+  var kod = (deger || '').trim().toUpperCase();
+  var uyari = T('nKodUyari');
+  if (!uyari) return;
+  uyari.dataset.cakisma = '0';
+  uyari.dataset.cakisanFirma = '';
+
+  if (!kod) {
+    uyari.style.color = 'var(--txd)';
+    uyari.textContent = '1-4 harf (A-Z)';
+    return;
+  }
+  if (!/^[A-Z]{1,4}$/.test(kod)) {
+    uyari.style.color = 'var(--re)';
+    uyari.textContent = '1-4 harf olmali (A-Z)';
+    return;
+  }
+
+  try {
+    var { data, error } = await _getSupa()
+      .from('tenants')
+      .select('id, ad')
+      .eq('kod', kod)
+      .maybeSingle();
+    if (error) { console.warn('[kod kontrol]', error.message); return; }
+    if (data) {
+      uyari.dataset.cakisma = '1';
+      uyari.dataset.cakisanFirma = data.ad || '';
+      uyari.style.color = 'var(--re)';
+      uyari.textContent = '⚠ Bu kod "' + (data.ad || 'baska firma') + '" icin kullaniliyor';
+    } else {
+      uyari.style.color = 'var(--gr)';
+      uyari.textContent = '✓ Kod uygun';
+    }
+  } catch(e) {
+    console.warn('[kod kontrol]', e.message);
+  }
 }
 
 async function adimIleri(atla) {
@@ -518,6 +592,7 @@ async function firmaOlustur(davetAtla) {
     // 1. Tenant olustur
     var tenantData = {
       ad: T('nAd').value.trim(),
+      kod: (T('nKod').value || '').trim().toUpperCase(),  // E-03: tenant prefix
       firma_tipi: T('nTip').value,
       hesap_tipi: T('nHesapTipi').value,
       plan: T('nPlan').value,
@@ -529,7 +604,13 @@ async function firmaOlustur(davetAtla) {
     };
 
     var { data: tenant, error: tenantErr } = await _getSupa().from('tenants').insert(tenantData).select().single();
-    if (tenantErr) throw new Error('Firma olusturulamadi: ' + tenantErr.message);
+    if (tenantErr) {
+      // 23505 = unique constraint violation (tenants.kod çakışması yarış durumu)
+      if (tenantErr.code === '23505' || /duplicate|unique/i.test(tenantErr.message || '')) {
+        throw new Error('Bu firma kodu artik baska firma tarafindan kullaniliyor, baska kod sec');
+      }
+      throw new Error('Firma olusturulamadi: ' + tenantErr.message);
+    }
     var firmaId = tenant.id;
 
     // 2. Modulleri kaydet
