@@ -128,6 +128,7 @@
   "dny_db_hata": "Veritabanı hatası: ",
   "dny_deadline": "Termin Tarihi",
   "dny_dedup_d_alt": "Same project + circuit name + zone combination exists",
+  "dny_dedup_d_onay": "{n} spool(s) will be added to this existing circuit. Do you confirm?",
   "dny_dedup_d_soru": "What would you like to do? Select \"Add to existing\" to add new spools to the existing circuit. Select \"Create new\" to intentionally create a second circuit with the same name (records may get mixed up).",
   "dny_dedup_d_title": "This circuit already exists",
   "dny_dedup_devre": "Circuit",

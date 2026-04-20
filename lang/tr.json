@@ -128,6 +128,7 @@
   "dny_db_hata": "Veritabanı hatası: ",
   "dny_deadline": "Termin Tarihi",
   "dny_dedup_d_alt": "Aynı proje + devre adı + zone kombinasyonu mevcut",
+  "dny_dedup_d_onay": "{n} spool bu mevcut devreye eklenecek. Onaylıyor musunuz?",
   "dny_dedup_d_soru": "Ne yapmak istersin? Mevcut devreye yeni spool'lar eklemek istiyorsan \"Mevcuta ekle\"yi seç. Bilinçli olarak aynı isimde ikinci bir devre oluşturmak istiyorsan \"Yeni oluştur\"u seç (kayıtlar karışabilir).",
   "dny_dedup_d_title": "Bu devre zaten var",
   "dny_dedup_devre": "Devre",
