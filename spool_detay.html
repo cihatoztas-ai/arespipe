@@ -1348,9 +1348,12 @@ async function _basamaklariYukle(){
       .select('sistem_adi,gorunen_ad,sira')
       .eq('tenant_id',tid).eq('aktif',true).order('sira');
     if(data&&data.length){
+      // sistem_adi → mevcut sp_stage_* anahtarlarına map et (lang dosyasında var)
+      // Bilinmeyenler için 'dyn_' prefix fallback (Öncelik 14: gorunen_ad_en/ar ile çözülecek)
+      var _STAGE_KEY_MAP={'on_imalat':'sp_stage_pre','imalat':'sp_stage_fab','kaynak':'sp_stage_weld','on_kontrol':'sp_stage_inspect','kk':'sp_stage_qc','sevkiyat':'sp_stage_ship'};
       STAGE_SISTEM=data.map(function(b){return b.sistem_adi;});
       STAGES=data.map(function(b){return b.gorunen_ad;});
-      STAGE_KEYS=data.map(function(b){return 'dyn_'+b.sistem_adi;});
+      STAGE_KEYS=data.map(function(b){return _STAGE_KEY_MAP[b.sistem_adi]||('dyn_'+b.sistem_adi);});
     }
   }catch(e){console.warn('_basamaklariYukle:',e);}
 }
