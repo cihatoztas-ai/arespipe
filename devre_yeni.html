@@ -907,6 +907,7 @@ function farkTespit() {
         beyanKod: malBeyanKod,
         beyanEtiket: ARES_NORM.tvMalzeme(malBeyanKod),
         yuklenenKodlar: Object.keys(yuklenenSet),
+        yuklenenDagilim: Object.keys(yuklenenSet).map(function(k) { return [k, yuklenenSet[k]]; }),
         uyumsuzSpoolNolar: uyumsuz.map(s => s.spoolNo || '(?)').slice(0, 20),
         uyumsuzAdet: uyumsuz.length,
       });
@@ -934,6 +935,7 @@ function farkTespit() {
         beyanKod: yuzBeyanKod,
         beyanEtiket: ARES_NORM.tvYuzey(yuzBeyanKod),
         yuklenenKodlar: Object.keys(yuklenenSet),
+        yuklenenDagilim: Object.keys(yuklenenSet).map(function(k) { return [k, yuklenenSet[k]]; }),
         uyumsuzSpoolNolar: uyumsuz.map(s => s.spoolNo || '(?)').slice(0, 20),
         uyumsuzAdet: uyumsuz.length,
       });
@@ -951,9 +953,13 @@ function farkPopupGoster(farklar) {
     altEl.textContent = tv('dny_fark_alt', 'Girilen ve yüklenen veriler arasında uyumsuzluk var') + ' (' + farklar.length + ')';
   }
   body.innerHTML = farklar.map(f => {
-    const yuklenenPills = f.yuklenenKodlar.map(k => {
+    // 9. oturum: yuklenenDagilim varsa ×N göster; geriye uyumluluk için kodlar fallback
+    const dagilim = f.yuklenenDagilim || (f.yuklenenKodlar || []).map(function(k){ return [k, null]; });
+    const yuklenenPills = dagilim.map(function(pair) {
+      const k = pair[0], n = pair[1];
       const et = f.alan === 'malzeme' ? ARES_NORM.tvMalzeme(k) : ARES_NORM.tvYuzey(k);
-      return '<span class="fp-pill fp-pill-y">' + esc(et) + '</span>';
+      const suffix = (n != null) ? ' <span style="opacity:.7;font-weight:500;">×' + n + '</span>' : '';
+      return '<span class="fp-pill fp-pill-y">' + esc(et) + suffix + '</span>';
     }).join('');
     const spoolListe = f.uyumsuzSpoolNolar.length
       ? esc(f.uyumsuzSpoolNolar.join(' · ')) + (f.uyumsuzAdet > f.uyumsuzSpoolNolar.length ? ' +' + (f.uyumsuzAdet - f.uyumsuzSpoolNolar.length) : '')
@@ -1035,12 +1041,28 @@ function dedupDevrePopupGoster(info) {
   const infoEl = document.getElementById('dedupDevreInfo');
   if (infoEl) {
     const satirlar = [];
-    satirlar.push('<div class="fp-kart-head"><div class="fp-kart-alan">' + esc(info.projeNo || '-') + '</div></div>');
+    satirlar.push('<div class="fp-kart-head">');
+    satirlar.push('<div class="fp-kart-alan">' + esc(info.projeNo || '-') + '</div>');
+    if (info.isEmriNo) {
+      satirlar.push('<div class="fp-kart-sayi" style="color:var(--ac);font-family:Barlow Condensed,sans-serif;">' + esc(info.isEmriNo) + '</div>');
+    }
+    satirlar.push('</div>');
     satirlar.push('<div style="font-size:14px;color:var(--tx);line-height:1.6;">');
     satirlar.push('<b>' + tv('dny_dedup_devre','Devre') + ':</b> ' + esc(info.devreNo || '-'));
     if (info.zone) satirlar.push('<br><b>' + tv('dny_dedup_zone','Zone') + ':</b> ' + esc(info.zone));
     satirlar.push('</div>');
     infoEl.innerHTML = satirlar.join('');
+  }
+  // 9. oturum: spool sayılı onay mesajı — "N spool bu devreye eklenecek. Onaylıyor musunuz?"
+  const onayEl = document.getElementById('dedupDevreOnay');
+  if (onayEl) {
+    if (info.spoolSayisi && info.spoolSayisi > 0) {
+      const tmpl = tv('dny_dedup_d_onay', '{n} spool bu mevcut devreye eklenecek. Onaylıyor musunuz?');
+      onayEl.textContent = tmpl.replace('{n}', info.spoolSayisi);
+      onayEl.style.display = '';
+    } else {
+      onayEl.style.display = 'none';
+    }
   }
   document.getElementById('dedupDevrePopup').classList.add('show');
 }
@@ -1559,7 +1581,7 @@ async function kaydet() {
       let mevcutDevreyeEklendi = false; // log için flag
       const zoneDeger = gv('devreZone') || '';
       const devreKontrol = await supa.from('devreler')
-        .select('id, devre_no, zone')
+        .select('id, devre_no, zone, is_emri_no')
         .eq('tenant_id', ARES.tenantId())
         .eq('proje_id',  gv('selProje'))
         .eq('devre_no',  gv('devreAdi'))
@@ -1572,9 +1594,11 @@ async function kaydet() {
         const projeSel = document.getElementById('selProje');
         const projeNoText = (projeSel.options[projeSel.selectedIndex] || {}).text || '';
         const karar = await dedupDevreKararAl({
-          projeNo: projeNoText,
-          devreNo: devreKontrol.data.devre_no,
-          zone:    devreKontrol.data.zone
+          projeNo:     projeNoText,
+          devreNo:     devreKontrol.data.devre_no,
+          zone:        devreKontrol.data.zone,
+          isEmriNo:    devreKontrol.data.is_emri_no,
+          spoolSayisi: spooller.length
         });
         if (karar === 'iptal') {
           btnKaydet.disabled = false;
@@ -2209,7 +2233,8 @@ if (typeof _applyI18n === 'function') _applyI18n();
     </div>
     <div class="fp-body">
       <div id="dedupDevreInfo" class="fp-kart"></div>
-      <div style="font-size:14px;color:var(--txd);line-height:1.4;" data-i18n="dny_dedup_d_soru">Ne yapmak istersin? Mevcut devreye yeni spool'lar eklemek istiyorsan "Mevcuta ekle"yi seç. Bilinçli olarak aynı isimde ikinci bir devre oluşturmak istiyorsan "Yeni oluştur"u seç (kayıtlar karışabilir).</div>
+      <div id="dedupDevreOnay" style="font-size:15px;font-weight:600;color:var(--tx);margin:6px 0 2px 0;padding:10px 12px;background:rgba(14,165,233,.08);border-left:3px solid var(--ac);border-radius:6px;"></div>
+      <div style="font-size:13px;color:var(--txd);line-height:1.4;" data-i18n="dny_dedup_d_soru">Ne yapmak istersin? Mevcut devreye yeni spool'lar eklemek istiyorsan "Mevcuta ekle"yi seç. Bilinçli olarak aynı isimde ikinci bir devre oluşturmak istiyorsan "Yeni oluştur"u seç (kayıtlar karışabilir).</div>
     </div>
     <div class="fp-foot">
       <button class="fp-btn" onclick="dedupDevreKarar('iptal')" data-i18n="dny_dedup_iptal">İptal</button>
