@@ -1546,7 +1546,7 @@ async function spoolMalzYukle(){
     return'<tr><td style="padding:8px 12px;color:var(--txd);">'+g.n+' sp</td>'
       +'<td style="padding:8px 12px;font-weight:600;">'+esc(g.kod||'—')+'</td>'
       +'<td style="padding:8px 12px;color:var(--txm);max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+esc(g.tanim||'—')+'</td>'
-      +'<td style="padding:8px 12px;">'+esc(g.malzeme||'—')+'</td>'
+      +'<td style="padding:8px 12px;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?ARES_NORM.malzemeEtiket(g.malzeme):(g.malzeme||'—'))+'</td>'
       +'<td style="padding:8px 12px;color:var(--ac);font-weight:600;">'+esc(g.kalite||'—')+'</td>'
       +'<td style="padding:8px 12px;text-align:right;">'+(g.dis_cap_mm?String(parseFloat(g.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—')+'</td>'
       +'<td style="padding:8px 12px;text-align:right;">'+(g.et_mm?String(g.et_mm).replace('.',',')+' mm':'—')+'</td>'

@@ -16,6 +16,33 @@
    - "Devre detay'da inline edit + toplu seçim akışlarını duplicate spool ile denedin mi?"
    - "Hangi iş? Öncelik 0 (test) mi, yeni kod mu?"
 
+## 10. Oturum Sonu QA Keşifleri (11. oturumda devam)
+
+Oturum sonu sprint'i sırasında 2 QA ekran görüntüsü gelmiş, iki sorun daha düzeltildi:
+
+### QA bulgu 1: Devre detay Malzeme Listesi tablosu
+- **Malzeme kolonu** E-01 ihlali: raw canonical kod (`bakir`, `diger`) görünüyordu
+- **Fix:** `ARES_NORM.malzemeEtiket()` sarması eklendi (satır 1549 — `_malzemeGoster` bu dosyada tanımlı değildi, direkt ARES_NORM çağrıldı)
+- **Kalite kolonu** ise **veri problemi**: DB'deki `spool_malzemeleri.kalite` alanında malzeme kodları (`bakir`, `diger`) yazılı — 6. oturumdan bilinen "kalite alanı malzeme gibi davranıyor" bug'ı. Devre_yeni formunda kalite alanı malzeme radio grubu gibi çalışıyor olabilir. **UI ile çözülemez**, DB temizliği + form validation gerekir (Öncelik 11 öneri)
+
+### QA bulgu 2: Spool detay AR dilde TR kalıntıları
+- STAGES progress tracker hardcode `['Ön İmalat', 'İmalat', ...]` kullanıyordu — STAGE_KEYS array'i tanımlıydı ama `renderTracker` i18n'e bağlamıyordu
+- Chip metinleri ("Henüz başlanmadı", "Tamamlandı", "X aşamasında") hardcode Türkçe
+- "X Tamamla" butonu Türkçe string concat
+- ALIST_CFG'nin `tr` fallback'i gösteriliyordu, anahtarlar (sp_alist_*_note) dil dosyasında yoktu
+- **Fix:** 7 yeni dil anahtarı (3 dil × 7 = 21), renderTracker i18n sarması, placeholder pattern `{stage}` ile replace
+
+### Öncelik 11 öneri (yeni) — Kalite alanı UX + veri temizliği
+6. oturumdaki "Kalite alanı malzeme radio gibi" bug'ı hâlâ duruyor:
+- `spool_malzemeleri.kalite` ve `spooller.kalite` kolonlarında canonical malzeme kodu (`bakir`, `diger`) yazılı kayıtlar var
+- Form validation eksik: kullanıcı "Bakır Alaşım" seçtikten sonra Kalite alanına aynı şeyi yazabiliyor
+- **Fix stratejisi:**
+  1. Form: Kalite alanına serbest text + autocomplete (ST37, A106-B, 304L, CuNi10Fe1.6Mn vb.)
+  2. Validation: canonical malzeme kodu girerse uyar
+  3. DB temizliği: `UPDATE ... SET kalite = NULL WHERE kalite IN ('karbon','paslanmaz','bakir','alum','diger')` — ama önce kullanıcıya danış, gerçek kalite değeri kaybolmasın
+- **Süre:** 1-2 saat
+- **Risk:** Orta (veri temizliği)
+
 ---
 
 ## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU TEMİZLE (YENİ KOD YOK)
