@@ -1819,13 +1819,14 @@ function qrYazdir(){
   if(!img){toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er');return;}
 
   // Etiket içeriği (tüm alanlar tek ebatta basılır)
-  // NOT: SP._gemi değişkeni aslında proje_no'yu tutuyor (dv.projeler.proje_no). Yanıltıcı ad, dokunmuyoruz.
+  // NOT: SP._gemi aslında proje_no tutuyor (dv.projeler.proje_no). Yanıltıcı ad, dokunmuyoruz.
   var isEmri  = SP._isEmri   || '—';
-  var projeNo = SP._gemi     || '—';  // proje no (ör. "NB1137")
-  var devre   = SP._devre    || '—';  // devre adı (ör. "803-Bilge Sludge Hand. System — CF400") — uzun olabilir
+  var devre   = SP._devre    || '—';  // devre adı — uzun olabilir, wrap edebilir
   var tersane = SP._tersane  || '—';
   var idKod   = SP.spoolId   || '—';
-  var marka   = [SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+  // Marka: proje_no + pipeline + spool_no (3 parça) — spool_detay başlığıyla tutarlı
+  // Örnek: "NB1099C-CF400-8033-029C-S01"
+  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
 
   var win=window.open('','_blank','width=520,height=360');
   if(!win){toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er');return;}
@@ -1844,9 +1845,9 @@ function qrYazdir(){
     '.ust{display:flex;flex:1;padding:2mm 2mm 1mm 6mm;gap:3mm;align-items:center;}'+
     '.qr{width:25mm;height:25mm;flex-shrink:0;}'+
     '.qr img{width:100%;height:100%;display:block;}'+
-    '.bilgi{flex:1;display:grid;grid-template-columns:auto 1fr;gap:0.6mm 3mm;align-content:center;min-width:0;}'+
-    '.lbl{font-size:2.6mm;font-weight:400;white-space:nowrap;}'+
-    '.val{font-size:2.6mm;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'+
+    '.bilgi{flex:1;display:grid;grid-template-columns:auto 1fr;gap:1mm 3mm;align-content:center;min-width:0;}'+
+    '.lbl{font-size:2.8mm;font-weight:400;white-space:nowrap;}'+
+    '.val{font-size:2.8mm;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'+
     '.val-wrap{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.15;}'+
     '.alt{border-top:0.4mm solid #000;padding:1.2mm 2mm;text-align:center;font-size:4.5mm;font-weight:800;letter-spacing:0.2mm;line-height:1;}'+
     '</style></head><body>');
@@ -1860,7 +1861,6 @@ function qrYazdir(){
     '<div class="qr"><img src="'+img+'" alt="QR"></div>'+
     '<div class="bilgi">'+
     '<span class="lbl">İş Emri</span><span class="val">'+esc(isEmri)+'</span>'+
-    '<span class="lbl">Proje</span><span class="val">'+esc(projeNo)+'</span>'+
     '<span class="lbl">Devre</span><span class="val val-wrap">'+esc(devre)+'</span>'+
     '<span class="lbl">Tersane</span><span class="val">'+esc(tersane)+'</span>'+
     '<span class="lbl">ID</span><span class="val">'+esc(idKod)+'</span>'+
