@@ -1789,12 +1789,17 @@ function lbKey(e){if(e.key==='Escape'){T('lb').classList.remove('open');document
 // ── QR ────────────────────────────────────────────────────────
 
 // ID display helper (E-03 tenant prefix):
-// - spoolId zaten prefix'liyse ("A-0504" gibi) olduğu gibi döner
-// - prefix yoksa ve SP.tenantKod biliniyorsa runtime'da ekler ("0074" → "A-0074")
-// - fallback: ham değer döner
+// ARES.markaId'a devreder (ares-store.js'de tanımlı) — tek merkezi kaynak
+// Cache SP.tenantKod veya ARES.tenantKodSync() ile — ikisi de fallback olarak çalışır
 function _idGoster() {
   var sid = SP.spoolId || '';
   if (!sid) return '—';
+  // Önce merkezi helper (cache'li, tutarlı)
+  if (typeof ARES !== 'undefined' && typeof ARES.markaId === 'function') {
+    var r = ARES.markaId(sid);
+    if (r) return r;
+  }
+  // Fallback: SP.tenantKod (spoolYukle'de yüklenir)
   if (sid.indexOf('-') !== -1) return sid;
   if (SP.tenantKod) return SP.tenantKod + '-' + sid;
   return sid;

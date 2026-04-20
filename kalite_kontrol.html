@@ -740,6 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (_supa) {
           var _ses = await _supa.auth.getSession();
           if (_ses.data && _ses.data.session) { await ARES.oturumKontrol();
+            if (ARES.tenantKod) await ARES.tenantKod();
             if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
             break; }
           if (_b > 20) { location.href = 'giris.html'; return; }

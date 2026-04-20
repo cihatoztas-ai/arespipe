@@ -379,7 +379,7 @@ async function veriYukle() {
         id:         k.id,
         supaId:     k.id,
         spoolNo:    spoolLabel       || sp.spool_no || '—',
-        spoolId:    sp.spool_id      || '',
+        spoolId:    ARES.markaId(sp.spool_id),
         tersane:    trs.ad           || '—',
         isEmir:     dv.is_emri_no    || '—',
         malzemeAdi: k.malzeme_adi    || k.yuzey    || mal.tanim   || '',
@@ -1200,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (_supa) {
           var _ses = await _supa.auth.getSession();
           if (_ses.data && _ses.data.session) { await ARES.oturumKontrol();
+            if (ARES.tenantKod) await ARES.tenantKod();
             if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
             break; }
           if (_bekle > 20) { location.href = 'giris.html'; return; }

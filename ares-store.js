@@ -226,6 +226,30 @@ else var ARES = (function () {
     }
   }
 
+  // Senkron cache getter — display'de kullanılır, async beklemez.
+  // Cache yoksa null döner (bu durumda markaId raw değeri döndürür).
+  function tenantKodSync() {
+    const tid = tenantId();
+    if (!tid || !_tenantKodCache) return null;
+    if (_tenantKodCache.tenant_id !== tid) return null;
+    return _tenantKodCache.kod;
+  }
+
+  // Display helper — eski spool'ların (prefix'siz "0074" gibi) başına
+  // tenant kodunu runtime'da ekler ("A-0074"). DB'deki değer değişmez.
+  //   ARES.markaId("0074")    → "A-0074"  (cache varsa)
+  //   ARES.markaId("A-0512")  → "A-0512"  (zaten prefix'li)
+  //   ARES.markaId(null)      → ""
+  // Kullanım: her sayfa render öncesi bir kez `await ARES.tenantKod()`
+  // çağırarak cache'i ısıtır, sonra render'larda senkron markaId kullanır.
+  function markaId(spoolId) {
+    if (!spoolId) return '';
+    const s = String(spoolId);
+    if (s.indexOf('-') !== -1) return s;  // zaten prefix'li
+    const kod = tenantKodSync();
+    return kod ? (kod + '-' + s) : s;      // fallback: raw değer
+  }
+
   // ── LOCALSTORAGE YARDIMCILARI ────────────────────────────
   function _lget(key) {
     try { return JSON.parse(localStorage.getItem('ares_' + key)) || null; }
@@ -886,7 +910,7 @@ else var ARES = (function () {
     supabase: function () { return _supa; },
 
     // Oturum
-    girisYap, cikisYap, oturumKontrol, oturumAl, tenantId, tenantKod,
+    girisYap, cikisYap, oturumKontrol, oturumAl, tenantId, tenantKod, tenantKodSync, markaId,
     viewAsAktif, viewAsCik,
 
     // Yetki — rol bazlı (mevcut)

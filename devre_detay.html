@@ -1157,7 +1157,7 @@ function renderTable(){
       +'<td style="color:var(--txd);font-size:12px;">'+gi+'</td>'
       +'<td onclick="event.stopPropagation();goSpool(\''+esc(s.spoolNo)+'\')" style="cursor:pointer;font-size:13px;"><span style="font-weight:700;color:var(--ac);">'+esc(ARES_NORM.marka(s.pipeline, s.spoolNo))+'</span></td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'rev\',\''+esc(s.spoolNo)+'\',\'text\',\'\',\''+esc(s.rev)+'\')">'+(s.rev?'<span style="font-size:12px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(217,119,6,.12);color:var(--warn);">'+esc(s.rev)+'</span>':'<span style="color:var(--txd);">—</span>')+'</td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--leg);">'+(s.spoolId||String(s.idx).padStart(4,'0'))+'</td>'
+      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--leg);">'+esc(ARES.markaId(s.spoolId)||String(s.idx).padStart(4,'0'))+'</td>'
       +'<td style="color:var(--txm);">'+esc(s.cap)+'</td>'
       +'<td style="color:var(--txd);">'+esc(s.et)+'</td>'
       +'<td style="color:var(--txm);">'+esc(s.agirlik)+'</td>'
@@ -1918,6 +1918,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var _ses = await _s.auth.getSession();
         if (_ses.data && _ses.data.session) {
           if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
+          if (typeof ARES.tenantKod === 'function') await ARES.tenantKod(); // markaId cache'i ısıt
         } else if (typeof ARES !== 'undefined') {
           location.href = 'giris.html'; return;
         }
