@@ -711,23 +711,34 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
   <div class="mbox" style="max-width:480px;">
     <div class="mhead"><span class="mtitle" data-i18n="sp_qr_modal_title">📱 QR & Personel Uyarıları</span><button class="mclose" onclick="this.closest('.mov').style.display='none'">✕</button></div>
     <div class="mbody" style="padding:16px;">
-      <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="background:#fff;border-radius:8px;padding:8px;flex-shrink:0;line-height:0;"><div id="qrBig" style="width:150px;height:150px;"></div></div>
-          <div style="flex:1;min-width:0;">
-            <div id="qrModalIsEmri" style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;"></div>
-            <div id="qrModalNo" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--tx);line-height:1.1;margin-bottom:6px;word-break:break-all;"></div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
-              <span id="qrModalTersane" style="font-size:14px;font-weight:700;background:var(--sur);border:1px solid var(--bor);color:var(--txm);padding:2px 8px;border-radius:6px;"></span>
-              <span id="qrModalId" style="font-size:14px;font-weight:700;background:rgba(124,58,237,.1);color:var(--leg);padding:2px 8px;border-radius:6px;border:1px solid rgba(124,58,237,.2);"></span>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-ac btn-sm" onclick="qrYazdir()" data-i18n="sp_qr_print">🖨️ Yazdır</button>
-              <button class="btn btn-sm" onclick="qrIndir()" data-i18n="sp_qr_download">⬇ İndir</button>
-            </div>
-          </div>
-        </div>
+      <!-- Gizli QR generator — image üretmek için (qrcodejs DIV içine img ekler) -->
+      <div id="qrGen" style="position:absolute;left:-9999px;top:-9999px;"></div>
+
+      <!-- Etiket önizlemesi (yazdırılacakla birebir aynı) -->
+      <style>
+        .etk-host { background: #fff; padding: 10px; border-radius: 10px; display: flex; justify-content: center; border: 1px solid var(--bor); margin-bottom: 12px; }
+        .etk-host .etk-root { font-family: Arial, sans-serif; color: #000; }
+        .etk-host .etk-root * { margin: 0; padding: 0; box-sizing: border-box; }
+        .etk-host .etiket { width: 90mm; height: 40mm; background: #fff; display: flex; flex-direction: column; border: 0.3mm solid #000; }
+        .etk-host .etk-ust { display: flex; flex: 1; padding: 2mm 2mm 1mm 6mm; gap: 3mm; align-items: center; }
+        .etk-host .etk-qr { width: 25mm; height: 25mm; flex-shrink: 0; }
+        .etk-host .etk-qr img { width: 100%; height: 100%; display: block; }
+        .etk-host .etk-bilgi { flex: 1; display: grid; grid-template-columns: auto 1fr; gap: 1mm 3mm; align-content: center; min-width: 0; }
+        .etk-host .etk-lbl { font-size: 2.8mm; font-weight: 400; white-space: nowrap; color: #000; }
+        .etk-host .etk-val { font-size: 2.8mm; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; color: #000; }
+        .etk-host .etk-val-wrap { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.15; }
+        .etk-host .etk-alt { border-top: 0.4mm solid #000; padding: 1mm 2mm; text-align: center; font-size: 4mm; font-weight: 800; letter-spacing: 0.15mm; line-height: 1; white-space: nowrap; overflow: hidden; color: #000; }
+      </style>
+      <div class="etk-host etk-root">
+        <div id="qrEtiketPreview"></div>
       </div>
+
+      <!-- Butonlar etiketin dışında, altta -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-ac" onclick="qrYazdir()" data-i18n="sp_qr_print" style="flex:1;">🖨️ Yazdır</button>
+        <button class="btn" onclick="qrIndir()" data-i18n="sp_qr_download" style="flex:1;">⬇ İndir</button>
+      </div>
+
       <div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;" data-i18n="sp_qr_personnel_label">📋 Personel QR Okutunca Görecekleri</div>
       <div id="qrOnizleme" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;"></div>
       <div style="margin-top:10px;padding:8px 12px;background:var(--sur2);border-radius:8px;font-size:14px;color:var(--txd);" data-i18n="sp_qr_hint">💡 Uyarıları değiştirmek için Genel sekmesindeki notlar ve alıştırma ayarını kullanın.</div>
@@ -998,6 +1009,9 @@ async function spoolYukle(supaId) {
       }
       SP._isEmri = dv.is_emri_no || SP._isEmri;
     }
+
+    // Tenant kodunu cache'le — E-03: spool_id'de prefix yoksa display'e eklenir
+    try { SP.tenantKod = (ARES.tenantKod ? await ARES.tenantKod() : null); } catch(e) { SP.tenantKod = null; }
 
     // localStorage güncelle
     try { localStorage.setItem('ares_aktif_spool', JSON.stringify(SP)); } catch(e) {}
@@ -1773,102 +1787,115 @@ function lbKapat(e){if(e&&e.target&&e.target.id!=='lb')return;T('lb').classList.
 function lbKey(e){if(e.key==='Escape'){T('lb').classList.remove('open');document.removeEventListener('keydown',lbKey);}if(e.key==='ArrowRight')lbNav(1);if(e.key==='ArrowLeft')lbNav(-1);}
 
 // ── QR ────────────────────────────────────────────────────────
+
+// ID display helper (E-03 tenant prefix):
+// - spoolId zaten prefix'liyse ("A-0504" gibi) olduğu gibi döner
+// - prefix yoksa ve SP.tenantKod biliniyorsa runtime'da ekler ("0074" → "A-0074")
+// - fallback: ham değer döner
+function _idGoster() {
+  var sid = SP.spoolId || '';
+  if (!sid) return '—';
+  if (sid.indexOf('-') !== -1) return sid;
+  if (SP.tenantKod) return SP.tenantKod + '-' + sid;
+  return sid;
+}
+
+// Etiket CSS (shared — hem modal önizlemede hem yazdır window'unda kullanılır)
+// Tüm ölçüler mm cinsinden. @page ve @media print kuralları yazdır için.
+function _etiketCSS() {
+  return '@page{size:90mm 40mm;margin:0;}'+
+    '.etk-root *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+    '.etk-root{font-family:Arial,sans-serif;color:#000;background:#fff;}'+
+    '.etiket{width:90mm;height:40mm;background:#fff;display:flex;flex-direction:column;border:0.3mm solid #000;}'+
+    '.etk-ust{display:flex;flex:1;padding:2mm 2mm 1mm 6mm;gap:3mm;align-items:center;}'+
+    '.etk-qr{width:25mm;height:25mm;flex-shrink:0;}'+
+    '.etk-qr img{width:100%;height:100%;display:block;}'+
+    '.etk-bilgi{flex:1;display:grid;grid-template-columns:auto 1fr;gap:1mm 3mm;align-content:center;min-width:0;}'+
+    '.etk-lbl{font-size:2.8mm;font-weight:400;white-space:nowrap;}'+
+    '.etk-val{font-size:2.8mm;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'+
+    '.etk-val-wrap{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.15;}'+
+    '.etk-alt{border-top:0.4mm solid #000;padding:1mm 2mm;text-align:center;font-size:4mm;font-weight:800;letter-spacing:0.15mm;line-height:1;white-space:nowrap;overflow:hidden;}';
+}
+
+// Etiket HTML (shared) — imgSrc: QR image src (data URL veya boş)
+function _etiketHTML(imgSrc) {
+  var isEmri  = SP._isEmri   || '—';
+  var devre   = SP._devre    || '—';
+  var tersane = SP._tersane  || '—';
+  var idKod   = _idGoster();
+  // Marka: proje_no + pipeline + spool_no (3 parça) — spool_detay başlığıyla tutarlı
+  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+  return '<div class="etiket">'+
+    '<div class="etk-ust">'+
+    '<div class="etk-qr">'+(imgSrc ? '<img src="'+imgSrc+'" alt="QR">' : '')+'</div>'+
+    '<div class="etk-bilgi">'+
+    '<span class="etk-lbl">İş Emri</span><span class="etk-val">'+esc(isEmri)+'</span>'+
+    '<span class="etk-lbl">Devre</span><span class="etk-val etk-val-wrap">'+esc(devre)+'</span>'+
+    '<span class="etk-lbl">Tersane</span><span class="etk-val">'+esc(tersane)+'</span>'+
+    '<span class="etk-lbl">ID</span><span class="etk-val">'+esc(idKod)+'</span>'+
+    '</div>'+
+    '</div>'+
+    '<div class="etk-alt">'+esc(marka)+'</div>'+
+    '</div>';
+}
+
 function renderQR(){
-  var fmt=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join('-');
   // QR içeriği (E-03 tenant prefix): spoolId + UUID birleşik — cross-tenant güvenli
-  // Format: "A-0504:f0cd6ae8-..." — qr_tara.html iki noktadan böler, prefix kontrolü yapar
-  // Fallback: ikisinden biri yoksa eski davranış (geriye uyumluluk)
   var qrIcerik = (SP.spoolId && SP.supaId)
     ? (SP.spoolId + ':' + SP.supaId)
     : (SP.spoolId || SP.supaId || 'ARES');
-  var c=T('qrBig');
-  if(c){
-    c.innerHTML='';
-    if(typeof QRCode !== 'undefined' && qrIcerik){
+
+  // 1) Önce gizli QR generator div'i doldur (image üretmek için)
+  var gen = T('qrGen');
+  if (gen) {
+    gen.innerHTML = '';
+    if (typeof QRCode !== 'undefined' && qrIcerik) {
       try {
-        // qrcodejs 1.0.0: DIV içine <img> ekler. Canvas olursa render edemez.
-        // Modal preview sabit 150×150px — baskıda farklı, yazdır window'unda mm cinsinden yeniden üretilir.
-        new QRCode(c, {
+        new QRCode(gen, {
           text: qrIcerik,
-          width: 150,
-          height: 150,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
+          width: 200, height: 200,
+          colorDark: '#000000', colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
-      } catch(e) {
-        c.textContent = qrIcerik;
-      }
-    } else {
-      // qrcode.js yüklenmediyse spool_id'yi yaz
-      c.style.cssText='display:flex;align-items:center;justify-content:center;width:150px;height:150px;font-size:18px;font-weight:800;color:#000;';
-      c.textContent = qrIcerik;
+      } catch(e) { /* sessiz */ }
     }
   }
-  txc('qrModalIsEmri',SP._isEmri||'');
-  txc('qrModalNo',fmt||'--');
-  txc('qrModalTersane',SP._tersane||'');
-  txc('qrModalId','ID: '+(SP.spoolId||'--'));
+
+  // 2) Etiket önizlemesini modal'a enjekte et (QR image'ı generator'dan kopyala)
+  var img = gen ? (gen.querySelector('img') || {}).src : '';
+  var preview = T('qrEtiketPreview');
+  if (preview) {
+    preview.innerHTML = _etiketHTML(img || '');
+  }
+
   renderQrOnizleme();
 }
+
 function qrModalAc(){T('qrModal').style.display='flex';}
+
 function qrYazdir(){
-  var c=T('qrBig');if(!c)return;
-  var qrImg=c.querySelector('img');
-  var img=qrImg?qrImg.src:'';
-  if(!img){toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er');return;}
+  var gen = T('qrGen');
+  var qrImg = gen ? gen.querySelector('img') : null;
+  var img = qrImg ? qrImg.src : '';
+  if (!img) { toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er'); return; }
 
-  // Etiket içeriği (tüm alanlar tek ebatta basılır)
-  // NOT: SP._gemi aslında proje_no tutuyor (dv.projeler.proje_no). Yanıltıcı ad, dokunmuyoruz.
-  var isEmri  = SP._isEmri   || '—';
-  var devre   = SP._devre    || '—';  // devre adı — uzun olabilir, wrap edebilir
-  var tersane = SP._tersane  || '—';
-  var idKod   = SP.spoolId   || '—';
-  // Marka: proje_no + pipeline + spool_no (3 parça) — spool_detay başlığıyla tutarlı
-  // Örnek: "NB1099C-CF400-8033-029C-S01"
-  var marka   = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+  var marka = [SP._gemi, SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
 
-  var win=window.open('','_blank','width=520,height=360');
-  if(!win){toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er');return;}
-  var d=win.document;d.open();
-  // Etiket: 90mm × 40mm yatay, termal B/W
-  // @page kuralı yazıcıya sabit boyut deklare eder — kullanıcı "ölçek %100" seçmeli
-  // Tüm ölçüler mm cinsinden — browser scale/fit ayarlarına karşı dirençli
+  var win = window.open('','_blank','width=520,height=360');
+  if (!win) { toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er'); return; }
+  var d = win.document; d.open();
+  // Ekran: etiket preview + yazdır butonu. Baskı: sadece etiket.
   d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+esc(marka)+'</title><style>'+
-    '@page{size:90mm 40mm;margin:0;}'+
-    '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
-    'html,body{font-family:Arial,sans-serif;color:#000;background:#fff;}'+
-    'body{width:90mm;height:40mm;}'+
-    '@media screen{body{width:auto;height:auto;padding:8mm;background:#e5e7eb;}.etiket{box-shadow:0 0 12px rgba(0,0,0,.12);}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6mm;background:#1e3a5f;color:#fff;padding:2mm 4mm;border-radius:1.5mm;font-size:3.2mm;}.bar button{border:0;padding:1mm 3mm;border-radius:1mm;cursor:pointer;font-weight:700;font-size:3mm;margin-left:1.5mm;}.hint{margin-top:5mm;font-size:3mm;color:#64748b;text-align:center;max-width:90mm;}}'+
-    '@media print{.bar,.hint{display:none !important;}body{padding:0;background:#fff;width:90mm;height:40mm;}}'+
-    '.etiket{width:90mm;height:40mm;background:#fff;display:flex;flex-direction:column;}'+
-    '.ust{display:flex;flex:1;padding:2mm 2mm 1mm 6mm;gap:3mm;align-items:center;}'+
-    '.qr{width:25mm;height:25mm;flex-shrink:0;}'+
-    '.qr img{width:100%;height:100%;display:block;}'+
-    '.bilgi{flex:1;display:grid;grid-template-columns:auto 1fr;gap:1mm 3mm;align-content:center;min-width:0;}'+
-    '.lbl{font-size:2.8mm;font-weight:400;white-space:nowrap;}'+
-    '.val{font-size:2.8mm;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'+
-    '.val-wrap{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.15;}'+
-    '.alt{border-top:0.4mm solid #000;padding:1.2mm 2mm;text-align:center;font-size:4.5mm;font-weight:800;letter-spacing:0.2mm;line-height:1;}'+
-    '</style></head><body>');
-  // Ekran gösteriminde kontrol çubuğu (yazdırırken gizlenir)
+    _etiketCSS()+
+    'body{margin:0;background:#fff;}'+
+    '@media screen{body{padding:8mm;background:#e5e7eb;}.etiket{box-shadow:0 0 12px rgba(0,0,0,.12);}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6mm;background:#1e3a5f;color:#fff;padding:2mm 4mm;border-radius:1.5mm;font-size:3.2mm;}.bar button{border:0;padding:1mm 3mm;border-radius:1mm;cursor:pointer;font-weight:700;font-size:3mm;margin-left:1.5mm;}.hint{margin-top:5mm;font-size:3mm;color:#64748b;text-align:center;max-width:90mm;}}'+
+    '@media print{.bar,.hint{display:none !important;}body{padding:0;width:90mm;height:40mm;}.etiket{box-shadow:none;border:0;}}'+
+    '</style></head><body class="etk-root">');
   d.write('<div class="bar"><span>'+esc(marka)+'</span><div>'+
     '<button onclick="window.close()">Kapat</button>'+
     '<button onclick="window.print()" style="background:#fff;color:#1e3a5f;">Yazdır</button>'+
     '</div></div>');
-  d.write('<div class="etiket">'+
-    '<div class="ust">'+
-    '<div class="qr"><img src="'+img+'" alt="QR"></div>'+
-    '<div class="bilgi">'+
-    '<span class="lbl">İş Emri</span><span class="val">'+esc(isEmri)+'</span>'+
-    '<span class="lbl">Devre</span><span class="val val-wrap">'+esc(devre)+'</span>'+
-    '<span class="lbl">Tersane</span><span class="val">'+esc(tersane)+'</span>'+
-    '<span class="lbl">ID</span><span class="val">'+esc(idKod)+'</span>'+
-    '</div>'+
-    '</div>'+
-    '<div class="alt">'+esc(marka)+'</div>'+
-    '</div>');
-  // Kullanıcı bilgilendirme (yazdırırken gizlenir)
+  d.write(_etiketHTML(img));
   d.write('<div class="hint">Yazdır dialogunda: <b>Ölçek %100</b> · <b>Kağıt boyutu 90×40 mm</b> · <b>Kenar boşluksuz</b> seçili olmalı. Aksi halde QR boyutu değişir ve fotoğrafta ölçek referansı yanlış çalışır.</div>');
   d.write('</body></html>');
   d.close();
