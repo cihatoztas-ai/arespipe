@@ -713,7 +713,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
     <div class="mbody" style="padding:16px;">
       <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:14px;">
-          <div style="background:#fff;border-radius:8px;padding:8px;flex-shrink:0;line-height:0;"><canvas id="qrBig" width="90" height="90"></canvas></div>
+          <div style="background:#fff;border-radius:8px;padding:8px;flex-shrink:0;line-height:0;"><div id="qrBig" style="width:150px;height:150px;"></div></div>
           <div style="flex:1;min-width:0;">
             <div id="qrModalIsEmri" style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;"></div>
             <div id="qrModalNo" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--tx);line-height:1.1;margin-bottom:6px;word-break:break-all;"></div>
@@ -1786,11 +1786,13 @@ function renderQR(){
     c.innerHTML='';
     if(typeof QRCode !== 'undefined' && qrIcerik){
       try {
+        // qrcodejs 1.0.0: DIV içine <img> ekler. Canvas olursa render edemez.
+        // Modal preview sabit 150×150px — baskıda farklı, yazdır window'unda mm cinsinden yeniden üretilir.
         new QRCode(c, {
           text: qrIcerik,
-          width: c.offsetWidth || 160,
-          height: c.offsetHeight || 160,
-          colorDark: '#0f172a',
+          width: 150,
+          height: 150,
+          colorDark: '#000000',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
@@ -1799,8 +1801,7 @@ function renderQR(){
       }
     } else {
       // qrcode.js yüklenmediyse spool_id'yi yaz
-      c.style.display='flex';c.style.alignItems='center';c.style.justifyContent='center';
-      c.style.fontSize='28px';c.style.fontWeight='800';c.style.color='#0f172a';
+      c.style.cssText='display:flex;align-items:center;justify-content:center;width:150px;height:150px;font-size:18px;font-weight:800;color:#000;';
       c.textContent = qrIcerik;
     }
   }
@@ -1812,19 +1813,66 @@ function renderQR(){
 }
 function qrModalAc(){T('qrModal').style.display='flex';}
 function qrYazdir(){
-  var fmt=[SP._gemi,SP._devre,SP.spoolNo].filter(Boolean).join('-');
   var c=T('qrBig');if(!c)return;
-  var qrImg=c.querySelector('img');var img=qrImg?qrImg.src:'';
-  var win=window.open('','_blank','width=440,height=320');if(!win)return;
+  var qrImg=c.querySelector('img');
+  var img=qrImg?qrImg.src:'';
+  if(!img){toast(tv('sp_qr_not_ready','QR kod henüz hazır değil'),'er');return;}
+
+  // Etiket içeriği (tüm alanlar tek ebatta basılır)
+  // NOT: SP._gemi değişkeni aslında proje_no'yu tutuyor (dv.projeler.proje_no). Yanıltıcı ad, dokunmuyoruz.
+  var isEmri  = SP._isEmri   || '—';
+  var projeNo = SP._gemi     || '—';  // proje no (ör. "NB1137")
+  var devre   = SP._devre    || '—';  // devre adı (ör. "803-Bilge Sludge Hand. System — CF400") — uzun olabilir
+  var tersane = SP._tersane  || '—';
+  var idKod   = SP.spoolId   || '—';
+  var marka   = [SP.pipeline, SP.spoolNo].filter(Boolean).join('-') || SP.spoolNo || '—';
+
+  var win=window.open('','_blank','width=520,height=360');
+  if(!win){toast(tv('sp_popup_blocked','Popup engelleyici kapatın'),'er');return;}
   var d=win.document;d.open();
-  d.write('<html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;padding:20px;}.bar{background:#1e3a5f;color:#fff;padding:7px 14px;display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:14px;border-radius:6px;}.et{display:flex;gap:12px;align-items:center;border:2px solid #1e3a5f;border-radius:8px;padding:14px;width:360px;}.no{font-size:14px;font-weight:900;color:#0f172a;word-break:break-all;margin-bottom:4px;}@media print{.bar{display:none;}}</style></head><body>');
-  d.write('<div class="bar"><span>'+fmt+'</span><div><button onclick="window.close()" style="border:none;padding:3px 10px;border-radius:4px;cursor:pointer;margin-right:5px;">Kapat</button><button onclick="window.print()" style="border:none;padding:3px 10px;border-radius:4px;cursor:pointer;background:#fff;font-weight:700;">Yazdır</button></div></div>');
-  d.write('<div class="et"><img src="'+img+'" width="80" height="80"><div>');
-  d.write('<div style="font-size:14px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px;">'+(SP._isEmri||'')+'</div>');
-  d.write('<div class="no">'+fmt+'</div>');
-  d.write('<div style="display:flex;gap:4px;flex-wrap:wrap;"><span style="font-size:14px;background:#f1f5f9;color:#475569;padding:1px 6px;border-radius:6px;">'+(SP._tersane||'')+'</span>');
-  d.write('<span style="font-size:14px;background:#ede9fe;color:#7c3aed;padding:1px 6px;border-radius:6px;">ID: '+(SP.spoolId||'')+'</span></div></div></div></body></html>');
-  d.close();toast(tv('sp_print_start','Yazdırma başlatıldı'),'ok');
+  // Etiket: 90mm × 40mm yatay, termal B/W
+  // @page kuralı yazıcıya sabit boyut deklare eder — kullanıcı "ölçek %100" seçmeli
+  // Tüm ölçüler mm cinsinden — browser scale/fit ayarlarına karşı dirençli
+  d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+esc(marka)+'</title><style>'+
+    '@page{size:90mm 40mm;margin:0;}'+
+    '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+    'html,body{font-family:Arial,sans-serif;color:#000;background:#fff;}'+
+    'body{width:90mm;height:40mm;}'+
+    '@media screen{body{width:auto;height:auto;padding:8mm;background:#e5e7eb;}.etiket{box-shadow:0 0 12px rgba(0,0,0,.12);}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6mm;background:#1e3a5f;color:#fff;padding:2mm 4mm;border-radius:1.5mm;font-size:3.2mm;}.bar button{border:0;padding:1mm 3mm;border-radius:1mm;cursor:pointer;font-weight:700;font-size:3mm;margin-left:1.5mm;}.hint{margin-top:5mm;font-size:3mm;color:#64748b;text-align:center;max-width:90mm;}}'+
+    '@media print{.bar,.hint{display:none !important;}body{padding:0;background:#fff;width:90mm;height:40mm;}}'+
+    '.etiket{width:90mm;height:40mm;background:#fff;display:flex;flex-direction:column;}'+
+    '.ust{display:flex;flex:1;padding:2mm 2mm 1mm 6mm;gap:3mm;align-items:center;}'+
+    '.qr{width:25mm;height:25mm;flex-shrink:0;}'+
+    '.qr img{width:100%;height:100%;display:block;}'+
+    '.bilgi{flex:1;display:grid;grid-template-columns:auto 1fr;gap:0.6mm 3mm;align-content:center;min-width:0;}'+
+    '.lbl{font-size:2.6mm;font-weight:400;white-space:nowrap;}'+
+    '.val{font-size:2.6mm;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'+
+    '.val-wrap{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.15;}'+
+    '.alt{border-top:0.4mm solid #000;padding:1.2mm 2mm;text-align:center;font-size:4.5mm;font-weight:800;letter-spacing:0.2mm;line-height:1;}'+
+    '</style></head><body>');
+  // Ekran gösteriminde kontrol çubuğu (yazdırırken gizlenir)
+  d.write('<div class="bar"><span>'+esc(marka)+'</span><div>'+
+    '<button onclick="window.close()">Kapat</button>'+
+    '<button onclick="window.print()" style="background:#fff;color:#1e3a5f;">Yazdır</button>'+
+    '</div></div>');
+  d.write('<div class="etiket">'+
+    '<div class="ust">'+
+    '<div class="qr"><img src="'+img+'" alt="QR"></div>'+
+    '<div class="bilgi">'+
+    '<span class="lbl">İş Emri</span><span class="val">'+esc(isEmri)+'</span>'+
+    '<span class="lbl">Proje</span><span class="val">'+esc(projeNo)+'</span>'+
+    '<span class="lbl">Devre</span><span class="val val-wrap">'+esc(devre)+'</span>'+
+    '<span class="lbl">Tersane</span><span class="val">'+esc(tersane)+'</span>'+
+    '<span class="lbl">ID</span><span class="val">'+esc(idKod)+'</span>'+
+    '</div>'+
+    '</div>'+
+    '<div class="alt">'+esc(marka)+'</div>'+
+    '</div>');
+  // Kullanıcı bilgilendirme (yazdırırken gizlenir)
+  d.write('<div class="hint">Yazdır dialogunda: <b>Ölçek %100</b> · <b>Kağıt boyutu 90×40 mm</b> · <b>Kenar boşluksuz</b> seçili olmalı. Aksi halde QR boyutu değişir ve fotoğrafta ölçek referansı yanlış çalışır.</div>');
+  d.write('</body></html>');
+  d.close();
+  toast(tv('sp_print_start','Yazdırma penceresi açıldı'),'ok');
 }
 function qrIndir(){toast('QR indirme — ileride eklenecek (NOT-02)','info');}
 
