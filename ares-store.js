@@ -235,19 +235,44 @@ else var ARES = (function () {
     return _tenantKodCache.kod;
   }
 
-  // Display helper — eski spool'ların (prefix'siz "0074" gibi) başına
-  // tenant kodunu runtime'da ekler ("A-0074"). DB'deki değer değişmez.
-  //   ARES.markaId("0074")    → "A-0074"  (cache varsa)
-  //   ARES.markaId("A-0512")  → "A-0512"  (zaten prefix'li)
-  //   ARES.markaId(null)      → ""
+  // Display helper — iki işi yapar:
+  // 1) Eski prefix'siz spool'ların ("0074") başına tenant kodunu runtime'da ekler
+  // 2) DB'deki 6-haneli padding'i ("A-000001") display için 4 haneye kırpar ("A-0001")
+  //    10000'den büyük sayılar doğal uzunlukta kalır ("A-10000", "A-100000")
+  //   ARES.markaId("0074")      → "A-0074"   (legacy + cache)
+  //   ARES.markaId("A-0074")    → "A-0074"   (eski 4-hane prefix'li, dokunma)
+  //   ARES.markaId("A-000001")  → "A-0001"   (yeni 6-hane, kırp min 4)
+  //   ARES.markaId("A-010000")  → "A-10000"  (5 hane, doğal uzunluk)
+  //   ARES.markaId(null)        → ""
   // Kullanım: her sayfa render öncesi bir kez `await ARES.tenantKod()`
   // çağırarak cache'i ısıtır, sonra render'larda senkron markaId kullanır.
   function markaId(spoolId) {
     if (!spoolId) return '';
     const s = String(spoolId);
-    if (s.indexOf('-') !== -1) return s;  // zaten prefix'li
-    const kod = tenantKodSync();
-    return kod ? (kod + '-' + s) : s;      // fallback: raw değer
+
+    let prefix = '';
+    let numStr = s;
+
+    // Zaten prefix'li mi? (örn: "A-000001" veya "A-0074" veya "AB-0512")
+    const m = s.match(/^([A-Z]{1,4})-(\d+)$/);
+    if (m) {
+      prefix = m[1];
+      numStr = m[2];
+    } else if (/^\d+$/.test(s)) {
+      // Legacy (prefix'siz, örn: "0074"): tenant cache'inden prefix ekle
+      const kod = tenantKodSync();
+      if (kod) prefix = kod;
+    } else {
+      // Farklı format (belki eski test verisi) — dokunma
+      return s;
+    }
+
+    // Sayıyı parse et, leading zero'ları kırp, min 4 hane
+    const n = parseInt(numStr, 10);
+    if (isNaN(n)) return s;
+    const display = n < 10000 ? String(n).padStart(4, '0') : String(n);
+
+    return prefix ? (prefix + '-' + display) : display;
   }
 
   // ── LOCALSTORAGE YARDIMCILARI ────────────────────────────
@@ -301,7 +326,7 @@ else var ARES = (function () {
     is_emri:    { prefix: 'P', yil_ekle: true,  digits: 3, aciklama: 'Is Emri Numarasi'  },
     hakedis_no: { prefix: 'H', yil_ekle: true,  digits: 3, aciklama: 'Hakedis Numarasi'  },
     sevkiyat:   { prefix: 'S', yil_ekle: true,  digits: 3, aciklama: 'Sevkiyat Numarasi' },
-    spool:      { prefix: '',  yil_ekle: false, digits: 4, aciklama: 'Spool Kisa Kod'    },
+    spool:      { prefix: '',  yil_ekle: false, digits: 6, aciklama: 'Spool Kisa Kod'    },
   };
 
   async function _sayacConfigYukle() {
