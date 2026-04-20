@@ -140,30 +140,39 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="grid-2">
     <div class="card">
       <div class="card-title">Firma Bilgileri</div>
-      <div class="form-row-2">
+      <!-- Satır 1: Firma Adı (geniş) + Firma Kodu (dar, 150px) — E-03 tenant prefix -->
+      <div style="display:grid;grid-template-columns:1fr 150px;gap:12px;margin-bottom:14px;">
         <div class="form-row" style="margin:0">
           <label class="form-label">Firma Adi</label>
           <input class="form-input" id="fAd">
         </div>
         <div class="form-row" style="margin:0">
-          <label class="form-label">Firma Tipi</label>
-          <select class="form-input form-select" id="fTip">
-            <optgroup label="İmalat / Montaj Firmaları">
-              <option value="imalat">Spool İmalat Firması</option>
-              <option value="montaj">Spool Montaj Firması</option>
-              <option value="imalat_montaj">İmalat + Montaj Firması</option>
-            </optgroup>
-            <optgroup label="Tersane Senaryoları">
-              <option value="tersane_tam">Tersane — Tam Entegre (kendi üretir)</option>
-              <option value="tersane_taseron">Tersane — İmalat Taşerona Verilmiş</option>
-              <option value="tersane_karma">Tersane — Kısmi Taşeron</option>
-            </optgroup>
-            <optgroup label="Diğer">
-              <option value="diger">Diğer</option>
-            </optgroup>
-          </select>
-          <div class="form-hint" id="firmaTipAciklama"></div>
+          <label class="form-label">Firma Kodu</label>
+          <input class="form-input" id="fKod" maxlength="4"
+                 style="text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;font-size:15px;"
+                 onkeyup="fKodTemizle(this)" onblur="fKodCakismaKontrol(this.value)">
+          <div id="fKodUyari" style="font-size:11px;margin-top:4px;min-height:14px;color:var(--txd);">1-4 harf (A-Z)</div>
         </div>
+      </div>
+      <!-- Satır 2: Firma Tipi — kendi satırında -->
+      <div class="form-row">
+        <label class="form-label">Firma Tipi</label>
+        <select class="form-input form-select" id="fTip">
+          <optgroup label="İmalat / Montaj Firmaları">
+            <option value="imalat">Spool İmalat Firması</option>
+            <option value="montaj">Spool Montaj Firması</option>
+            <option value="imalat_montaj">İmalat + Montaj Firması</option>
+          </optgroup>
+          <optgroup label="Tersane Senaryoları">
+            <option value="tersane_tam">Tersane — Tam Entegre (kendi üretir)</option>
+            <option value="tersane_taseron">Tersane — İmalat Taşerona Verilmiş</option>
+            <option value="tersane_karma">Tersane — Kısmi Taşeron</option>
+          </optgroup>
+          <optgroup label="Diğer">
+            <option value="diger">Diğer</option>
+          </optgroup>
+        </select>
+        <div class="form-hint" id="firmaTipAciklama"></div>
       </div>
       <div class="form-row-2">
         <div class="form-row" style="margin:0">
@@ -509,6 +518,15 @@ async function yukle() {
   document.title = 'AresPipe — ' + firma.ad;
 
   T('fAd').value = firma.ad || '';
+  T('fKod').value = firma.kod || '';
+  // Uyarı metnini başlangıca çek
+  var kodUyari = T('fKodUyari');
+  if (kodUyari) {
+    kodUyari.dataset.cakisma = '0';
+    kodUyari.dataset.cakisanFirma = '';
+    kodUyari.style.color = 'var(--txd)';
+    kodUyari.textContent = '1-4 harf (A-Z)';
+  }
   T('fTip').value = firma.firma_tipi || 'imalat';
   T('fHesapTipi').value = firma.hesap_tipi || 'demo';
   T('fPlan').value = firma.plan || 'demo';
@@ -530,7 +548,11 @@ function firmaBadges(f) {
     tersane_tam:'Tersane Tam', tersane_taseron:'Tersane Taşeron', tersane_karma:'Tersane Karma', diger:'Diğer'
   };
   var hesapMap = { dev:'Dev', demo:'Demo', pilot:'Pilot', production:'Production' };
+  var kodBadge = f.kod
+    ? '<span class="badge" style="background:rgba(249,115,22,.15);color:var(--admin);font-family:\'JetBrains Mono\',monospace;letter-spacing:1px;">' + esc(f.kod) + '</span>'
+    : '<span class="badge badge-pasif">Kod Yok</span>';
   return [
+    kodBadge,
     '<span class="badge ' + (f.aktif ? 'badge-aktif' : 'badge-pasif') + '">' + (f.aktif ? 'Aktif' : 'Pasif') + '</span>',
     '<span class="badge badge-rol">' + (tipMap[f.firma_tipi] || f.firma_tipi || '--') + '</span>',
     '<span class="badge badge-admin">' + (hesapMap[f.hesap_tipi] || f.hesap_tipi || '--') + '</span>',
@@ -798,10 +820,92 @@ async function sablonUygula() {
   toast(eklenecekler.length + ' basamak eklendi');
 }
 
+// ─── E-03: Firma Kodu Yardımcıları ────────────────────────────────
+// Kod input temizleme — uppercase + sadece A-Z
+function fKodTemizle(el) {
+  var v = (el.value || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (v !== el.value) el.value = v;
+  var uyari = T('fKodUyari');
+  if (uyari) {
+    uyari.dataset.cakisma = '0';
+    uyari.style.color = 'var(--txd)';
+    uyari.textContent = '1-4 harf (A-Z)';
+  }
+}
+
+// Çakışma kontrolü (onblur) — kendi kodunu hariç tut
+async function fKodCakismaKontrol(deger) {
+  var kod = (deger || '').trim().toUpperCase();
+  var uyari = T('fKodUyari');
+  if (!uyari) return;
+  uyari.dataset.cakisma = '0';
+  uyari.dataset.cakisanFirma = '';
+  uyari.dataset.cakisanId = '';
+
+  if (!kod) {
+    uyari.style.color = 'var(--txd)';
+    uyari.textContent = '1-4 harf (A-Z)';
+    return;
+  }
+  if (!/^[A-Z]{1,4}$/.test(kod)) {
+    uyari.style.color = 'var(--re)';
+    uyari.textContent = '1-4 harf olmali (A-Z)';
+    return;
+  }
+  // Değişmemişse (mevcut kod) sessiz ok
+  if (_firma && _firma.kod === kod) {
+    uyari.style.color = 'var(--txd)';
+    uyari.textContent = 'Mevcut kod';
+    return;
+  }
+  try {
+    var { data, error } = await _getSupa()
+      .from('tenants')
+      .select('id, ad')
+      .eq('kod', kod)
+      .neq('id', _firmaId)
+      .maybeSingle();
+    if (error) { console.warn('[kod kontrol]', error.message); return; }
+    if (data) {
+      uyari.dataset.cakisma = '1';
+      uyari.dataset.cakisanFirma = data.ad || '';
+      uyari.dataset.cakisanId = data.id || '';
+      uyari.style.color = 'var(--re)';
+      uyari.textContent = '⚠ "' + (data.ad || 'baska firma') + '" kullaniyor';
+    } else {
+      uyari.style.color = 'var(--gr)';
+      uyari.textContent = '✓ Kod uygun';
+    }
+  } catch(e) {
+    console.warn('[kod kontrol]', e.message);
+  }
+}
+
 // ─── Firma Bilgileri Kaydet ──────────────────────────────────────
 async function bilgileriKaydet() {
+  // E-03: Firma Kodu validasyonu
+  var yeniKod = (T('fKod').value || '').trim().toUpperCase();
+  var eskiKod = _firma && _firma.kod ? _firma.kod : '';
+
+  if (!yeniKod) { toast('Firma kodu zorunlu', 'err'); T('fKod').focus(); return; }
+  if (!/^[A-Z]{1,4}$/.test(yeniKod)) { toast('Kod 1-4 harf olmali (A-Z)', 'err'); T('fKod').focus(); return; }
+
+  // Kod değişiyorsa: çakışma kontrolü + çift onay
+  if (yeniKod !== eskiKod) {
+    if (!confirm('Firma kodunu "' + eskiKod + '" iken "' + yeniKod + '" yapiyorsun.\n\nBu firma icin yeni QR\'lar "' + yeniKod + '-" ile baslayacak. Eski kodla uretilmis QR\'lar calismaya devam eder (geriye uyumluluk var).\n\nDevam edilsin mi?')) return;
+
+    // Çakışma var mı? DB'den taze kontrol et (blur'daki bilgi bayat olabilir)
+    var cak = await _getSupa().from('tenants').select('id, ad').eq('kod', yeniKod).neq('id', _firmaId).maybeSingle();
+    if (cak.data) {
+      alert('"' + yeniKod + '" kodu "' + cak.data.ad + '" firmasina ait.\n\nOnce o firmanin kodunu degistir, sonra tekrar dene.\n\n(Otomatik devir almak icin admin paneline RPC eklemek gerekir — simdilik manuel cozum.)');
+      T('fKod').focus();
+      return;
+    }
+  }
+
   var { error } = await _getSupa().from('tenants').update({
     ad:               T('fAd').value.trim(),
+    kod:              yeniKod,
     firma_tipi:       T('fTip').value,
     hesap_tipi:       T('fHesapTipi').value,
     plan:             T('fPlan').value || null,
@@ -810,7 +914,14 @@ async function bilgileriKaydet() {
     iletisim_email:   T('fEmail').value.trim() || null,
     notlar:           T('fNotlar').value.trim() || null
   }).eq('id', _firmaId);
-  if (error) { toast('Hata: ' + error.message, 'err'); return; }
+  if (error) {
+    if (error.code === '23505' || /duplicate|unique/i.test(error.message || '')) {
+      toast('Bu kod baska firmada kullaniliyor, baska kod sec', 'err');
+    } else {
+      toast('Hata: ' + error.message, 'err');
+    }
+    return;
+  }
   toast('Firma bilgileri kaydedildi');
   await yukle();
 }
