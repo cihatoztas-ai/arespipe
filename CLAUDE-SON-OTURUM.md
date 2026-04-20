@@ -1,4 +1,4 @@
-# AresPipe — 11. Oturum Özeti (20 Nisan 2026)
+# AresPipe — 12. Oturum Özeti (20 Nisan 2026)
 
 > Bu dosya son oturumda yapılanları ve deploy gereken dosyaları listeler.
 > Yeni oturumda CLAUDE.md + CLAUDE-SONRAKI-OTURUM.md ile birlikte okunur.
@@ -7,115 +7,129 @@
 
 ## Oturum Başlığı
 
-**Tarih:** 20 Nisan 2026 (akşam — 10. oturumdan hemen sonra)
-**Süre:** ~3 saat
-**Ana tema:** 10. oturum deploy borcu testi + eksik fix'ler (QA bulgu 2 tracker i18n, migration localStorage, Öncelik 12 duplicate validation, Kural B-02)
+**Tarih:** 20 Nisan 2026 (akşam — 11. oturumdan hemen sonra)
+**Süre:** ~4 saat
+**Ana tema:** Öncelik 5+11 (DEVRE.gemi rename), Öncelik 13 (notlar persistence), Öncelik 14 (basamak_tanimlari multilang), Öncelik 4 araştırma (kapatıldı), devreler.html temizlik, geri bildirim bug triage
 
 ---
 
 ## Yapılanlar
 
-### 1. Küme A — Dil Dosyaları Testi ✅
+### 1. Öncelik 5 — `DEVRE.gemi → DEVRE.projeNo` (devre_detay.html) ✅
 
-TR/EN/AR dil geçişi test edildi:
-- 7 TR placeholder bug'ı düzelmiş ✅ (devre_duzenle, spool_detay, kesim placeholders)
-- EN genel çeviri temiz ✅
-- AR RTL düzeni doğru ✅
-- Konsol: `Object.keys(lang).length` → 1377 anahtar (CLAUDE.md'de 1370 yazıyordu — 11. oturumda düzeltildi, gerçek: 1377, oturum sonunda 1379)
+**14 patch:**
+- Init: `gemi:pr.proje_no` → `projeNo:pr.proje_no`
+- localStorage migration bloğu eklendi: `DEVRE.gemi` varsa → `projeNo`'ya kopyala, hemen persist et
+- 12× `DEVRE.gemi` → `DEVRE.projeNo` (document.title, breadcrumb, stat kart, marka build ×2, goSpool, etiket ×2, PDF ×2)
 
-### 2. spool_detay.html — Tracker i18n Fix ✅
+### 2. Öncelik 11 — devreler.html rename + migration temizliği ✅
 
-**Sorun:** `renderTracker` fonksiyonu `STAGE_KEYS` array'ini biliyordu ama hiç kullanmıyordu. `esc(s)` hardcode STAGES string'ini render ediyordu.
+**devreler.html — 14 patch:**
+- `gemi:` → `projeNo:` (obje tanımı, satır 956)
+- `data-sort="gemi"` + `sortBy('gemi')` → `projeNo`
+- sort ust objesi `devre.gemi` → `devre.projeNo`
+- 11× `d.gemi` → `d.projeNo` (sed ile toplu)
 
-**6 patch:**
-1. Tracker label: `esc(s)` → `tv(STAGE_KEYS[i], s)`
-2. Chip "Henüz başlanmadı": hardcode → `tv('sp_chip_not_started', 'Henüz başlanmadı')`
-3. Chip "Tamamlandı": hardcode → `tv('sp_chip_done', 'Tamamlandı')`
-4. Chip aktif stage: `STAGES[cur-1]+' aşamasında'` → `tv('sp_chip_active','{stage} aşamasında').replace('{stage}', tv(STAGE_KEYS[cur-1]||'', stageAd))`
-5. Buton: `STAGES[cur]+' Tamamla'` → `tv('sp_btn_complete','{stage} Tamamla').replace('{stage}', tv(STAGE_KEYS[cur]||'', STAGES[cur]||''))`
-6. Migration localStorage: hemen persist (aşağıda detay)
+**devre_detay.html — 1 patch:**
+- Migration bloğu kaldırıldı — artık `devreler.html` doğrudan `projeNo` yazıyor, migration gereksiz
 
-**Yeni bulgu:** `sp_chip_not_started` ve `sp_chip_done` zaten 3 dil dosyasında mevcuttu — sadece renderTracker bunları çağırmıyordu.
+**ares-store.js:** Değişiklik yok — `gemi_adi` sadece DB kolon adı, JS objesinde `gemi` key'i yok.
 
-**2 yeni lang anahtarı (3 dil × 2 = 6 satır):**
-- `sp_chip_active`: TR ""{stage} aşamasında"", EN "In {stage} stage", AR "في مرحلة {stage}"
-- `sp_btn_complete`: TR "{stage} Tamamla", EN "Complete {stage}", AR "إتمام {stage}"
+### 3. Öncelik 13 — notlar persistence ✅
 
-**Kısmi başarı notu:**
-`basamak_tanimlari` tablosundan DB'den stage yükleniyorsa `STAGE_KEYS = ['dyn_on_imalat', ...]` formatında üretiliyor. `dyn_*` anahtarları lang dosyasında yok → `tv()` TR fallback gösteriyor. Bu ayrı mimari sorun → Öncelik 14.
+**Keşif:** `devre_detay.html` notlar tamamen hafıza içiydi — `notEkle()` sadece local array'e yazıyor, sayfa yenilenince tüm notlar kayboluyor.
 
-### 3. spool_detay.html — Migration localStorage Fix ✅
+**DB:**
+- `notlar` tablosuna `devre_id UUID REFERENCES devreler(id)` eklendi
+- `devreler.notlar TEXT` kolonu DROP edildi (0 kayıt içeriyordu)
 
-**Sorun:** `_gemi → _projeNo` migration bloğu vardı (satır 1297-1300) ama localStorage'a anında yazmıyordu. Yalnızca Supabase callback içindeki `localStorage.setItem` (satır 1017) ile persist ediliyordu. Supabase başarısız olursa `_gemi` bir sonraki açılışta da kalıyordu.
+**Kod (4 patch):**
+- `notYukle()` async fonksiyonu eklendi: `notlar` tablosundan `devre_id` bazlı fetch
+- `notEkle()` → async: Supabase INSERT (`tenant_id`, `devre_id`, `metin`, `ekleyen_id`, `qr_goster:false`)
+- `notSil()` → async: soft-delete (`silindi:true`, `silinme_tarihi`)
+- Init: `notRender()` → `await notYukle()`
 
-**Fix:** Migration bloğunun hemen ardına:
-```js
-if (SP._gemi !== undefined) {
-    if (SP._projeNo === undefined) SP._projeNo = SP._gemi;
-    delete SP._gemi;
-    try { localStorage.setItem('ares_aktif_spool', JSON.stringify(SP)); } catch(e) {}  // ← EKLENDİ
-}
-```
+### 4. Öncelik 14 — basamak_tanimlari multilang ✅
 
-### 4. devre_detay.html — Öncelik 12: Duplicate Validation ✅
+**DB:**
+- `basamak_tanimlari` tablosuna `gorunen_ad_en TEXT` ve `gorunen_ad_ar TEXT` kolonları eklendi
+- 12 sistem_adi için EN + AR çevirileri yazıldı (on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat, alim_kontrol, montaj, son_kontrol, tasarim, tasima_test, gemi_teslim)
 
-**Sorun:** Manuel ekleme (satır ~1352) ve Excel import (satır ~1886) sadece `spoolNo` bakıyordu. `pipeline1+S01` ve `pipeline2+S01` → false positive "bu spool zaten var" hatası.
+**Kod — spool_detay.html (3 patch):**
+- `STAGES_DATA = []` değişkeni eklendi — `{tr, en, ar}` per stage
+- `_rebuildStages()` fonksiyonu eklendi — aktif dile göre `STAGES` array'ini yeniden oluşturur
+- `_basamaklariYukle()` güncellendi — `gorunen_ad_en/ar` çeker, `STAGES_DATA` doldurur, `_rebuildStages()` çağırır
+- `_onLangChange` güncellendi — `STAGES_DATA.length` varsa `_rebuildStages()` çağırır, sonra `renderTracker()`
 
-**Fix (2 patch):**
-- Manuel: `s.spoolNo===sn` → `s.spoolNo===sn && s.pipeline===_pl && (s.rev||'')===(  _rev||'')`
-- Excel: aynı üçlü kontrol + `Rev`/`REV` kolonunu okuma eklendi
+**Çalışma mantığı:**
+- Known stage (on_imalat, kk vb.): `tv('sp_stage_pre', 'Pre-Fabrication')` → lang dosyası EN döner ✅
+- Unknown stage (montaj, tasarim vb.): `tv('dyn_montaj', 'Assembly')` → key yok, DB'den gelen EN fallback döner ✅
+- `renderTracker`'a dokunulmadı — `tv(STAGE_KEYS[i], STAGES[i])` zaten doğru çalışır
 
-### 5. Kural B-02 — CLAUDE.md Bölüm 2.17 ✅
+### 5. Öncelik 4 — Denormalizasyon Araştırması → KAPATILDI ✅
 
-`_lk` (stabil local key) pattern'i resmi kural olarak CLAUDE.md'ye eklendi. Detay CLAUDE.md Bölüm 2.17'de.
+**Bulgular:**
+- Toplam 393 spool, 149'unun `spool_malzemeleri` kaydı yok (BOM henüz girilmemiş)
+- 188 "çelişki" aslında beklenen: alüminyum spool'da karbon çelik flanş/fitting bulunabilir
+- `spooller.malzeme` = spool kategori özeti (filtre, badge, etiket için)
+- `spool_malzemeleri.malzeme` = BOM kalemi malzemesi (kesim planı, malzeme reçetesi için)
+
+**Karar:** Bunlar farklı amaçlı veriler. `spooller.malzeme` DROP etmek hem veri kaybı hem kırılım yaratır. **Yapılacak iş yok.**
+
+### 6. devreler.html Temizlik ✅
+
+- `MALZEME_PATTERNS`'ten `'Plastik/PE'` kaldırıldı (canonical enum'dan 4. oturumda çıkarılmıştı)
+- `YUZEY_PATTERNS`'ten `'Ham'` kaldırıldı (canonical enum'dan çıkarılmıştı)
+- `fYuzey` dropdown'daki duplicate "Siyah" option silindi
+
+### 7. Geri Bildirim Bug Triage
+
+Kullanıcının 22 maddelik geri bildirim listesi incelendi:
+- 2 madde zaten yapılmış: QR etiket boyutu (E-05) + açılışta açık tema (flash prevention default)
+- 1 madde kısmen: devre detay üst format
+- Kesim.html incelendi — bariz crash noktası bulunamadı, tam hata mesajı olmadan teşhis yapılamıyor
+- Tüm liste 13. oturum gündemine eklendi
 
 ---
 
-## Deploy Listesi (3 HTML + 3 JSON — HENÜZ DEPLOY EDİLMEDİ)
+## Deploy Listesi (3 HTML — HENÜZ DEPLOY EDİLMEDİ)
 
 | Dosya | Değişiklik | Risk |
 |---|---|---|
-| `spool_detay.html` | Tracker i18n 6 patch + migration fix | Orta |
-| `devre_detay.html` | Öncelik 12 duplicate validation 2 patch | Düşük |
-| `lang/tr.json` | 1377 → 1379 (+sp_chip_active, +sp_btn_complete) | Düşük |
-| `lang/en.json` | 1377 → 1379 | Düşük |
-| `lang/ar.json` | 1377 → 1379 | Düşük |
+| `devre_detay.html` | gemi→projeNo (14 patch) + notlar persistence (4 patch) | Orta |
+| `devreler.html` | gemi→projeNo (14 patch) + pattern temizliği (3 patch) | Düşük |
+| `spool_detay.html` | basamak_tanimlari multilang (3 patch) | Düşük |
+
+**DB değişiklikleri zaten canlıda:**
+- `notlar.devre_id UUID` ✅
+- `devreler.notlar TEXT` DROP ✅
+- `basamak_tanimlari.gorunen_ad_en`, `gorunen_ad_ar` + 12 sistem_adi çevirileri ✅
 
 **Deploy sırası:**
-1. Lang dosyaları (risksiz)
-2. `devre_detay.html` (küçük fix)
-3. `spool_detay.html` (en kapsamlı değişiklik, son)
+1. `devreler.html` (en az riskli)
+2. `spool_detay.html`
+3. `devre_detay.html` (en kapsamlı)
 
 ---
 
-## Test Borcu (12. Oturuma)
+## Test Borcu (13. Oturuma)
 
 | Test | Durum | Not |
 |---|---|---|
-| B.1-B.3 — 3-buton dedup | ⏭ Atlandı | devre_yeni.html |
-| C.1 — _projeNo başlık | ⏭ Kısmen | localStorage tam teyit edilemedi |
-| C.2 — Migration | ✅ Fix uygulandı | Deploy sonrası re-test şart |
-| C.4 — AR tracker | ⚠️ Kısmi | Fix doğru ama basamak_tanimlari TR veri (Öncelik 14) |
-| D — _lk duplicate | ⏭ Atlandı | devre_detay.html test senaryosu hazır değildi |
-
----
-
-## Yeni Bulgular (12. Oturuma Not)
-
-1. **Öncelik 14:** `basamak_tanimlari.gorunen_ad` sadece TR. Tracker tam AR/EN için `gorunen_ad_en`, `gorunen_ad_ar` kolonları + `_basamaklariYukle()` dil bazlı seçim gerekiyor. 2-3 saat, orta-yüksek risk.
-
-2. **Lang anahtar sayısı: 1379.** CLAUDE.md'de 1370 yazıyordu — 11. oturumda gerçek sayı ölçüldü (1377) ve oturum sonunda 1379'a çıktı. CLAUDE.md güncellendi.
-
-3. **`sp_chip_not_started` / `sp_chip_done` zaten vardı:** 10. oturumda "7 dil anahtarı + renderTracker bağlandı" denmişti ama bağlama yapılmamıştı. Oturum özetinde niyet değil sonuç yazılmalı.
+| B.1-B.3 — 3-buton dedup | ⏭ Hâlâ atlandı | devre_yeni.html |
+| C.1 — _projeNo başlık | ⏭ Atlandı | localStorage teyit |
+| C.2 — Migration | ✅ devreler.html deploy sonrası geçerli | Deploy edilince re-test |
+| C.4 — AR tracker | ✅ Fix uygulandı | spool_detay deploy sonrası |
+| D — _lk duplicate | ⏭ Atlandı | Test verisi lazım |
+| **YENİ — notlar persistence** | ⏳ Deploy bekliyor | Not ekle → F5 → hâlâ durmalı |
+| **YENİ — kesim.html hatası** | ⏳ Tam hata mesajı bekleniyor | Konsol açık, hatayı üret |
 
 ---
 
 ## Bu Oturumdan Dersler
 
-1. **"Oturum özetinde tamamlandı = gerçekten bitti" değil.** 10. oturum "renderTracker i18n sarması yapıldı" diyordu. Anahtarlar eklenmişti ama `esc(s)` → `tv(STAGE_KEYS[i], s)` bağlantısı yapılmamıştı. Test etmeden "bitti" deme.
+1. **Araştırma = en ucuz iş.** Öncelik 4 "büyük refactor" olarak planlanmıştı — 3 SQL sorgusuyla "farklı amaçlı, yapılacak iş yok" kararı verildi. DB'ye bakmadan kod yazmaya başlamak pahalıya patlar.
 
-2. **Migration bloklarında hemen persist et.** Async callback'e bırakmak riskli — ağ hatası, RLS reddi, sayfa kapat... hepsi migration'ı kaybettirebilir.
+2. **"notlar" feature hafıza içiydi.** Sayfa her yenilendiğinde tüm notlar kayboluyordu, kimse fark etmemiş. Benzer pattern: localStorage'a bile yazılmayan ephemeral state. Kritik veriler (notlar, loglar) için Supabase write her zaman kontrol edilmeli.
 
-3. **DB'den gelen dinamik veri statik lang ile çevrilemez.** `basamak_tanimlari` öğretti: DB'de `gorunen_ad` TR ise kod ne kadar iyi olursa olsun AR görünemez. Bu mimari karar, lang dosyasıyla çözülmez.
-
-4. **Konsol sorguları tenant filter olmadan yazılırsa yanıltıcı sonuç.** `basamak_tanimlari` 45 satır gösterdi (tüm tenant'lar karışık). Sayfa ise `tenant_id` filtresiyle doğru çalışıyordu. Konsol sorularına tenant filter ekle.
+3. **DEVRE.gemi → projeNo migration bloğu artık gerek yok.** devreler.html artık projeNo yazıyor. Migration bloğunu devre_detay'da bırakmak zararsızdı ama temiz kod için kaldırıldı. Benzer migration bloklarını "geçici" değil "kalıcı gereklilik var mı?" diye değerlendirmek lazım.

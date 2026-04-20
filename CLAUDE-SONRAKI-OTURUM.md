@@ -1,155 +1,145 @@
-# AresPipe — 12. Oturum Gündemi
+# AresPipe — 13. Oturum Gündemi
 
-> 11. oturumda biriken işler ve sonraki oturum öncelikleri.
+> 12. oturumda biriken işler ve sonraki oturum öncelikleri.
 > Başlangıçta bu dosyayı + CLAUDE.md + CLAUDE-SON-OTURUM.md birlikte oku.
 
 ---
 
 ## Oturum Başı Ritüeli
 
-1. **CLAUDE.md** oku — mimari, kurallar (E-01..E-05, B-01, B-02, F-01), DB şeması
-2. **CLAUDE-SON-OTURUM.md** oku — 11. oturum ne yapıldı, deploy durumu
+1. **CLAUDE.md** oku — mimari, kurallar, DB şeması
+2. **CLAUDE-SON-OTURUM.md** oku — 12. oturum ne yapıldı, deploy durumu
 3. Bu dosya (**CLAUDE-SONRAKI-OTURUM.md**) — ne yapılacak
-4. `/mnt/user-data/outputs/` klasörünü tara — önceki AI'dan yarım iş var mı?
-5. **Kullanıcıya sor:**
-   - "11. oturum dosyalarını deploy ettin mi? (spool_detay + devre_detay + lang ×3)"
-   - "Küme B testi (3-buton dedup) ve Küme D testi (devre_detay _lk) yapabilir misin?"
-   - "Hangi iş önce: test mi, yeni kod mu?"
+4. **Kullanıcıya sor:**
+   - "12. oturum dosyalarını deploy ettin mi? (devre_detay + devreler + spool_detay)"
+   - "Test borçlarından hangilerini yapabildik?"
+   - "Geri bildirim listesindeki acil buglardan başlayalım mı, yoksa mobil mi?"
 
 ---
 
-## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU TEMİZLE
+## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU
 
-### Deploy edilecek dosyalar (11. oturumda hazırlandı, henüz canlıda değil)
-
-1. **`lang/tr.json`, `en.json`, `ar.json`** — 1377 → 1379 (sp_chip_active + sp_btn_complete)
-2. **`devre_detay.html`** — Öncelik 12 duplicate validation (2 patch, düşük risk)
-3. **`spool_detay.html`** — Tracker i18n (6 patch) + migration localStorage fix
+### Deploy edilecek dosyalar (12. oturumda hazırlandı)
 
 ```bash
-git add lang/tr.json lang/en.json lang/ar.json devre_detay.html spool_detay.html
-git commit -m "11. oturum: tracker i18n fix + migration localStorage + Öncelik 12 validation"
+git add devre_detay.html devreler.html spool_detay.html
+git commit -m "12. oturum: gemi→projeNo rename + notlar persistence + basamak multilang + pattern temizlik"
 git push origin main
 ```
 
-### Test senaryoları — tamamlanmamış kümeler
+### Test senaryoları
 
 **Küme B — 3-Buton Dedup (devre_yeni.html):**
-- [ ] Aynı Excel'i iki kez yükle → 3 buton popup çıkıyor mu? (İptal / Zorla ekle sarı / Çakışanları atla mavi)
-- [ ] "Çakışanları atla" → sadece yeniler INSERT, hepsi çakışıyorsa amber toast
-- [ ] "Zorla ekle" → duplicate oluşuyor (regresyon kontrol)
-- [ ] AR/EN dil değiştir → buton metinleri çevrilmiş mi?
+- [ ] Aynı Excel'i iki kez yükle → 3 buton popup çıkıyor mu?
+- [ ] "Çakışanları atla" → sadece yeniler INSERT
+- [ ] "Zorla ekle" → duplicate oluşuyor (regresyon)
+- [ ] AR/EN dil → buton metinleri çevrilmiş mi?
 
 **Küme C.1 — _projeNo (spool_detay.html):**
 - [ ] Spool başlığı `NB1124-K110-721-414C-S01` formatında mı?
-- [ ] `localStorage.getItem('ares_aktif_spool')` → `_projeNo` var, `_gemi` yok mu?
-- [ ] Migration: `localStorage`'a `{_gemi:'TEST'}` yaz → F5 → `_projeNo:'TEST'` görünmeli (anında, Supabase beklemeden)
+- [ ] `localStorage.getItem('ares_aktif_spool')` → `_projeNo` var, `_gemi` yok
 
-**Küme C.4 — AR tracker re-test (deploy sonrası):**
-- [ ] AR dilinde spool_detay aç → F5 → tracker "ما قبل التصنيع" / "التصنيع" vb. görünmeli
-- [ ] NOT: `basamak_tanimlari`'ndan DB verisi geliyorsa hâlâ TR görünür (Öncelik 14) — bu beklenen
+**Küme C.2 — Migration (devreler.html deploy sonrası):**
+- [ ] devreler.html'den bir devreye tıkla → devre_detay açılıyor mu?
+- [ ] localStorage'da `projeNo` var, `gemi` yok mu?
 
-**Küme D — devre_detay _lk Duplicate (devre_detay.html):**
+**Küme C.4 — AR tracker (spool_detay.html deploy sonrası):**
+- [ ] AR dilinde spool_detay → tracker "ما قبل التصنيع" / "التصنيع" vb. görünmeli
 
-Önkoşul: Aynı devrede `pipeline1+S01` + `pipeline2+S01` oluştur (manuel DB insert veya 2 farklı pipeline'lı Excel).
+**Küme D — _lk Duplicate (devre_detay.html):**
 
-- [ ] Inline edit: 2. spool rev'ini güncelle → sadece o güncellensin
-- [ ] Sağ tık → Durdur → sadece doğru spool durdurulsun
-- [ ] Toplu KK/Sevkiyat → iki spool ayrı checkbox, ikisi de seçilebilsin
-- [ ] Etiket modal → `etc_UUID1`, `etc_UUID2` DOM'da ayrı mı?
-- [ ] Sil → sadece bir tanesi silinsin
+Önkoşul: Aynı devrede `pipeline1+S01` + `pipeline2+S01` oluştur.
+- [ ] Inline edit → sadece o spool güncellenir
+- [ ] Sil → sadece bir tanesi silinir
+- [ ] Toplu seçim → iki spool ayrı checkbox
 
----
-
-## ÖNCELİK 5 DEVAMI — DEVRE.gemi → DEVRE.projeNo
-
-`devre_detay.html` içinde `DEVRE.gemi` 10+ yerde kullanılıyor (başlık, breadcrumb, Excel export, yazdır, etiket). Aslında `projeler.proje_no` tutuyor.
-
-**Önemli ayrım (CLAUDE.md 4.2):**
-- `DEVRE.gemi` = `projeler.proje_no` (NB1137 gibi proje kodu)
-- `projeler.gemi_adi` = gerçek gemi adı ("MV Ocean Star" gibi)
-
-**Fix:** `devre_detay.html` yükle, tüm `DEVRE.gemi` referanslarını `DEVRE.projeNo` yap + localStorage persist güncelle.
-
-**Süre:** 1.5-2 saat. Orta risk (localStorage cross-page persist var).
+**YENİ — notlar persistence:**
+- [ ] devre_detay → not ekle → F5 → not hâlâ görünüyor mu?
+- [ ] Not sil → Supabase'de `silindi=true` mu?
 
 ---
 
-## ÖNCELİK 11 — DEVRE.gemi Rename Devamı (devreler.html + ares-store.js)
+## 🔴 ACİL BUGLAR — Geri Bildirim Listesinden
 
-`devre_detay.html`'deki rename tamamlanınca `devreler.html` ve `ares-store.js`'te de `gemi` → `projeNo` bakılmalı. Cross-file rename — önce `grep -rn "DEVRE.gemi\|\.gemi"` ile kapsam çıkar.
+### A1 — Kesim listesine geçişte hata
+**Durum:** `kesim.html` incelendi, bariz crash noktası yok. Tam hata mesajı olmadan teşhis yapılamadı.
+**Aksiyon:** Konsolu açık tut, hatayı tekrar üret, mesajı kopyala. Olası: Supabase RLS, `parseFloat('—')` NaN birikimi, veya `sayfaYetkiKontrol` yönlendirme.
 
----
+**Bilinen potansiyel bug (hata mesajı gelmese bile fix edilebilir):**
+```js
+// kesim.html satır 944 — kesimOlcusu '—' ise NaN üretir
+var mm = klB.reduce((s,k) => s + parseFloat(k.kesimOlcusu), 0);
+// Fix:
+var mm = klB.reduce((s,k) => s + (parseFloat(k.kesimOlcusu) || 0), 0);
+```
 
-## ÖNCELİK 13 — `devreler.notlar` vs `notlar` Tablosu İkiliği
+### A2 — Geri bildirim fotoğrafları süper admin'e gitmiyor
+**Aksiyon:** `geri_bildirim.html` veya ilgili dosyayı at, Storage/email entegrasyonuna bak.
 
-`devreler` tablosunda `notlar TEXT` kolonu + ayrı `notlar` tablosu var. Hangisi canonical? İkisi birden mi kullanılıyor?
+### A3 — islem_log Supabase GET hatası
+```
+GET /rest/v1/islem_log?select=katman,islem,olusturma... 
+```
+**Aksiyon:** Hangi sayfada? Tam hata mesajı? Kolon adı değişmiş olabilir (CLAUDE.md 4.2'de canonical kolonlar var: `islem`, `katman`, `katman_id`).
 
-**Araştırma planı:**
-1. `SELECT COUNT(*) FROM devreler WHERE notlar IS NOT NULL AND notlar != ''`
-2. `SELECT COUNT(*) FROM notlar WHERE devre_id IS NOT NULL`
-3. `grep -n "devreler.*notlar\|DEVRE\.notlar" *.html` — hangi sayfa ne kullanıyor?
+### A4 — izometri-batch.html POST hatası
+```
+[ARES] Supabase bağlantısı kuruldu
+izometri-batch.html:359 POST https://arespipe... 
+```
+**Aksiyon:** `izometri-batch.html` dosyasını at, 359. satıra bak.
 
-Sonuca göre: ya `devreler.notlar` kolonu DROP et, ya da `notlar` tablosuna yönlendir.
+### A5 — Proje ilerleme sistemi çalışmıyor
+**Aksiyon:** Hangi sayfa? `proje_detay.html` mi? Dosyayı at.
 
-**Süre:** 30-45 dk. Düşük-orta risk.
-
----
-
-## ÖNCELİK 14 (YENİ) — basamak_tanimlari Çok Dil Desteği
-
-**Keşif (11. oturumda):** `basamak_tanimlari.gorunen_ad` sadece TR. Tracker AR/EN'de bu değerleri `tv('dyn_on_imalat', 'Ön İmalat')` ile dönüştürmeye çalışıyor ama `dyn_*` anahtarları lang dosyasında yok → TR fallback.
-
-**Fix stratejisi:**
-1. `ALTER TABLE basamak_tanimlari ADD COLUMN gorunen_ad_en TEXT`
-2. `ALTER TABLE basamak_tanimlari ADD COLUMN gorunen_ad_ar TEXT`
-3. Mevcut kayıtlara EN/AR karşılıkları yaz (İmalat → Manufacturing → التصنيع vb.)
-4. `_basamaklariYukle()` — dil bazlı kolon seç: `gorunen_ad` (TR), `gorunen_ad_en` (EN), `gorunen_ad_ar` (AR)
-5. STAGE_KEYS'i lang tabanlı üretmek yerine doğrudan çevrilmiş adları kullan
-
-**Süre:** 2-3 saat. Orta-yüksek risk (DB migration + tüm tenant kayıtlarını güncelleme).
-
----
-
-## ÖNCELİK 4 — Denormalizasyon Borcu (spooller ↔ spool_malzemeleri)
-
-`spooller.malzeme/kalite` kolonları ile `spool_malzemeleri.malzeme/kalite` ikiliği. Option A: `spooller.malzeme/kalite` kaldır, UI `spool_malzemeleri`'nden aggregate etsin.
-
-**Önce grep:** `spooller.malzeme` SELECT eden dosyalar: `devre_detay.html`, `spool_detay.html`, `kesim.html`, `markalama.html`, `devreler.html`. 10+ nokta → büyük iş, ayrı oturum.
-
-**Süre:** 3-4 saat. Yüksek risk.
+### A6 — Her sayfada üst bilgilendirme kutularında farklı yazı boyutu/tipi
+**Aksiyon:** Hangi sayfalar etkileniyor? Ekran görüntüsü veya dosyaları at. CSS standardizasyon — `stat-lbl` ve `stat-val` class'ları tüm sayfalarda aynı olmalı (CLAUDE.md 2.3).
 
 ---
 
-## ÖNCELİK 8 — Mobil Ekranlar (React)
+## Orta Öncelikli — Geri Bildirim Listesi
 
-- `MProfil.jsx` — avatar yükleme + kişisel bilgi (R-10 mockup-first)
-- `MIsBaslat.jsx` — operatör iş akışı (R-10 mockup-first)
-- `MDevreler.jsx`, `MDevreDetay.jsx`, `MSpoolDetay.jsx`, `MQRTara.jsx`
+Acil buglar çözüldükten sonra bunlara bakılacak:
 
-**Not:** `MQRTara.jsx` yazılırken tenant prefix formatını (`A-0504:UUID`) parse etmeli, cross-tenant uyarı vermeli (CLAUDE.md Bölüm 8 / 2.14).
-
----
-
-## Yeni Kural Hatırlatmaları (Bu Oturumda Eklendi)
-
-- **B-02:** Client-side array'lerde `_lk` stabil local key kullan — CLAUDE.md Bölüm 2.17
-- **Migration bloğu = hemen persist:** `if (_gemi)` gibi migration bloklarından sonra anında `localStorage.setItem` şart
-- **Oturum özeti = sonuç, niyet değil:** "bağlandı" değil "test edildi + X/Y sonuç verdi" yaz
+| Madde | Tip | Not |
+|---|---|---|
+| Giriş sayfasından yanlış yönlendirmeler | Bug | Hangi yönlendirme? Detay lazım |
+| devre detay üst format (tersane/gemi/devre/zone sırası) | Feature | Breadcrumb düzeni — devre_detay.html |
+| Sağ üst tarih/saat sayfa yenilemeden değişmiyor | Feature | `setInterval` ile her dakika güncelle |
+| Aktif devreler yüklenirken animasyon | UX | Skeleton loader veya fade-in animasyon |
+| Logout sayfadan çıkıyor uyarısı | UX | `beforeunload` event bastırılmalı |
+| İmalat/argon/gazaltı bekleyen spool sayısı | Feature | Dashboard widget — basamak bazlı sayaç |
 
 ---
 
-## Özet — 12. Oturum Ne Beklenebilir
+## ÖNCELİK 8 — Mobil Ekranlar (mockup-first)
 
-**Kısa:** 11. oturumda 5 fix bitti ama 3 dosya deploy edilmedi ve Küme B+D testleri atlandı. 12. oturum **önce deploy + kalan testler**. Test temizse Öncelik 5 devamı (DEVRE.gemi rename) veya Öncelik 14 (basamak_tanimlari multilang).
+Acil buglar temizlenince:
 
-**Risk uyarısı:**
-- `spool_detay.html` tracker fix deploy sonrası `basamak_tanimlari`'ndan veri gelen tenant'larda tracker TR kalır (beklenen, Öncelik 14)
-- `devre_detay.html` Öncelik 12 fix regex-free, düşük risk
+**MProfil.jsx (sıradaki):**
+- Avatar yükleme (Supabase Storage, `kullanicilar.foto_url`)
+- Kişisel bilgi düzenleme (`ad_soyad`, `tel`, `brans`)
+- R-10: önce mockup artifact → kullanıcı onayı → kod
 
-**Önerilen oturum yapısı:**
-1. İlk 15 dk — deploy (3 lang + 2 HTML)
-2. Sonra 30 dk — Küme B + C.1 re-test + C.4 re-test
-3. Küme D için test verisi hazırla (duplicate spool ihtiyaç var)
-4. Bug yoksa — Öncelik 5 devamı veya Öncelik 13 (notlar ikiliği, hızlı)
-5. Zamanla Öncelik 14 başlangıcı (DB migration)
+**Sonraki:** MIsBaslat.jsx, MDevreler.jsx, MDevreDetay.jsx, MSpoolDetay.jsx, MQRTara.jsx
+
+---
+
+## Bekleyen Küçük İşler
+
+| İş | Dosya | Süre |
+|---|---|---|
+| `parseFloat('—')` NaN fix | `kesim.html` satır 944 | 5 dk |
+| Excel export başlıkları i18n | `kesim.html` | 30 dk |
+| `devreler.malzeme` DB migration | SQL | 15 dk |
+| `fotograflar.yapan_id` DROP (legacy) | SQL | 5 dk |
+
+---
+
+## Özet — 13. Oturum Ne Beklenebilir
+
+**Kısa:** 12. oturumda 3 HTML + DB değişiklikleri hazır ama deploy edilmedi. 13. oturum **önce deploy + test borcu**, sonra **acil buglar** (en azından kesim hatası tam mesajıyla). Test temizse mobil (MProfil mockup).
+
+**Risk uyarıları:**
+- `devre_detay.html` en kapsamlı değişiklik — deploy sonrası sayfayı tam test et (başlık, breadcrumb, etiket, PDF, notlar)
+- `notlar` tablosuna `devre_id` eklendi ama eski notlar (varsa) `devre_id = NULL` kalır — bu beklenen davranış

@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (11. oturum — tracker i18n fix + migration localStorage fix + Kural B-02 + Öncelik 12 pipeline+spoolNo+rev validation)
+> Son güncelleme: 20 Nisan 2026 (12. oturum — DEVRE.gemi→projeNo rename + notlar persistence + basamak_tanimlari multilang + Öncelik 4 kapatıldı)
 
 ---
 
@@ -644,6 +644,8 @@ mobile/src/lang/
 **notlar:**
 - `metin` (icerik değil), `ekleyen_id` (yapan_id değil — 6. oturumda düzeltildi, eskiden silent fail oluyordu)
 - `qr_goster BOOLEAN`, `silindi BOOLEAN`
+- `spool_id UUID` — spool bazlı notlar (spool_detay.html)
+- `devre_id UUID` — devre bazlı notlar (devre_detay.html) — **12. oturumda eklendi**
 
 **devreler:**
 - `ad` (devre_adi değil)
@@ -652,10 +654,16 @@ mobile/src/lang/
 - `durum` — DB'de saklanıyor (iptal akışı için), **ama UI'dan 5. oturumda kaldırıldı** (tüm kayıtlar 'aktif' idi)
 - `yuzey_aciklama TEXT` — yuzey='diger' olduğunda (5. oturumda eklendi, devre_yeni'de henüz yazılmıyor — sadece devre_duzenle kullanıyor)
 - `zone TEXT` — canonical. **`zone_no` kolonu 10. oturumda DROP edildi** (ölü kolon, hiç kullanılmıyordu)
-- `notlar TEXT` — ⚠ `notlar` tablosu ile ikiliği var (11. oturum Öncelik 13 araştırması)
+- ~~`notlar TEXT`~~ — **12. oturumda DROP edildi** (0 kayıt, `notlar` tablosunun `devre_id` kolonuyla çözüldü)
 - **Legacy temizlik tamamlandı:** `malzeme` kolonu 9. oturumda canonical'e çevrildi (82 kayıt), artık DB temiz
 
-**tenants** (6. oturumda eklendi):
+**basamak_tanimlari (12. oturumda güncellendi):**
+- `sistem_adi TEXT` — canonical kod (on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat + tenant özeli)
+- `gorunen_ad TEXT` — TR görüntü adı
+- `gorunen_ad_en TEXT` — EN görüntü adı (**12. oturumda eklendi**)
+- `gorunen_ad_ar TEXT` — AR görüntü adı (**12. oturumda eklendi**)
+- `sira INTEGER`, `aktif BOOLEAN`, `tenant_id UUID`
+- Bilinen sistem_adi'leri: on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat, alim_kontrol, montaj, son_kontrol, tasarim, tasima_test, gemi_teslim
 - `ad`, `olusturma`, standart alanlar
 - `kod VARCHAR(4) NOT NULL UNIQUE` — tenant prefix, CHECK `^[A-Z]{1,4}$` (bkz. Bölüm 2.14)
 
@@ -977,12 +985,12 @@ Her sohbet bitiminde:
 - [x] **`SP._gemi` → `SP._projeNo` rename (spool_detay.html)** — 10. oturumda tamamlandı + localStorage migration bloğu
 - [x] **spool_detay dropdown E-01 ihlali** — 10. oturumda tamamlandı (5+5 canonical + "Epoksi" çıkarıldı, "Diğer" eklendi, `cmn_opt_sec` yeni anahtar)
 - [x] **devre_detay duplicate spoolNo bug** — 10. oturumda tamamlandı (`_lk` stable local key pattern, 11 fonksiyon + 2 state + DOM ID'ler)
-- [ ] **🔴 YENİ ÖNCELİK 11 (10. oturumda keşfedildi) — `DEVRE.gemi` → `DEVRE.projeNo` rename (`devre_detay.html`):** Öncelik 5 sadece spool tarafına (SP) dokundu, devre tarafı (DEVRE) hâlâ `gemi` kullanıyor (10+ satır: title, breadcrumb, ARES_NORM.marka, etiket basma, Excel export). 45-60 dk, orta risk
-- [x] **🔴 Öncelik 12 — Manuel/Excel ekleme UNIQUE check pipeline+spoolNo+rev:** `devre_detay.html` satır 1352 (manuel) ve 1886 (Excel) — **11. oturumda tamamlandı** (pipeline+spoolNo+rev birlikte kontrol)
-- [ ] **🔴 Öncelik 13 — `devreler.notlar` vs `notlar` tablosu ikiliği:** araştırma gerekiyor
-- [ ] **🟡 Öncelik 14 (yeni — 11. oturumda keşfedildi) — `basamak_tanimlari` çok dil desteği:** `gorunen_ad_en TEXT`, `gorunen_ad_ar TEXT` kolonları + `_basamaklariYukle()` dil bazlı seçim. Tracker AR/EN'de hâlâ TR görünüyor. 2-3 saat, orta-yüksek risk
-- [ ] **🟡 YENİ ÖNCELİK 13 — `devreler.notlar` vs `notlar` tablosu ikiliği:** `devreler` tablosunda `notlar TEXT` kolonu + ayrı `notlar` tablosu. Legacy mi, çift yazım mı belirsiz. SELECT + grep ile araştır, ölüyse DROP. 30-45 dk
-- [x] **🔴 Öncelik 10 — EN/AR dil dosyası toplu çeviri** — 10. oturum sonunda tamamlandı (355 EN + 322 AR batch çeviri + 7 TR placeholder bug fix bonus)
+- [x] **🔴 Öncelik 11 — `DEVRE.gemi` → `DEVRE.projeNo` (devre_detay.html + devreler.html)** — **12. oturumda tamamlandı** (14 patch her dosyada, migration bloğu kaldırıldı)
+- [x] **🔴 Öncelik 12 — Manuel/Excel ekleme UNIQUE check pipeline+spoolNo+rev** — **11. oturumda tamamlandı**
+- [x] **🔴 Öncelik 13 — `devreler.notlar` vs `notlar` tablosu ikiliği** — **12. oturumda tamamlandı** (devre_id eklendi, devreler.notlar DROP edildi, devre_detay notlar persistence eklendi)
+- [x] **🟡 Öncelik 14 — `basamak_tanimlari` çok dil desteği** — **12. oturumda tamamlandı** (gorunen_ad_en/ar + _rebuildStages + _onLangChange)
+- [x] **Öncelik 4 — Denormalizasyon araştırması** — **12. oturumda KAPATILDI** (spooller.malzeme = kategori özeti, spool_malzemeleri.malzeme = BOM kalemi, farklı amaçlı — yapılacak iş yok)
+- [x] **🔴 YENİ ÖNCELİK 11 (10. oturumda keşfedildi) — `DEVRE.gemi` → `DEVRE.projeNo` rename** — 12. oturumda tamamlandı
 
 ### Mobil React sayfaları
 - [x] MGiris.jsx — tamamlandı, i18n'li
@@ -1001,7 +1009,48 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 20 NİSAN 2026 (11. OTURUM)
+## 11. SON OTURUM — 20 NİSAN 2026 (12. OTURUM)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** DEVRE.gemi rename, notlar persistence, basamak_tanimlari multilang, Öncelik 4 araştırma
+
+**1. Öncelik 5+11 — DEVRE.gemi → DEVRE.projeNo ✅**
+- `devre_detay.html`: 14 patch (init, migration bloğu, document.title, breadcrumb, marka ×2, goSpool, etiket ×3, PDF ×2)
+- `devreler.html`: 14 patch (obje tanımı, sort header, 11× d.gemi)
+- `devre_detay.html` migration bloğu kaldırıldı (artık gereksiz)
+- `ares-store.js`: değişiklik yok (sadece DB kolon adları içeriyor)
+
+**2. Öncelik 13 — notlar persistence ✅**
+- DB: `notlar.devre_id UUID` eklendi; `devreler.notlar TEXT` DROP edildi (0 kayıt)
+- Kod: `notYukle()` + async `notEkle()` + async `notSil()` — Supabase'e yazıyor
+
+**3. Öncelik 14 — basamak_tanimlari multilang ✅**
+- DB: `gorunen_ad_en/ar` kolonları + 12 sistem_adi için çeviriler
+- Kod: `STAGES_DATA`, `_rebuildStages()`, güncellenen `_basamaklariYukle()`, `_onLangChange`
+
+**4. Öncelik 4 — Denormalizasyon araştırması → KAPATILDI ✅**
+- `spooller.malzeme` = spool kategori özeti; `spool_malzemeleri.malzeme` = BOM kalemi
+- "Çelişki" aslında teknik gerçeklik (alüm spool'da karbon flanş)
+- Yapılacak iş yok
+
+**5. devreler.html temizlik ✅**
+- `Plastik/PE` → MALZEME_PATTERNS'ten kaldırıldı
+- `Ham` → YUZEY_PATTERNS'ten kaldırıldı
+- Duplicate Siyah option silindi
+
+### Deploy Durumu
+
+| Dosya | Durum |
+|---|---|
+| `devre_detay.html` | **Deploy bekliyor** |
+| `devreler.html` | **Deploy bekliyor** |
+| `spool_detay.html` | **Deploy bekliyor** |
+| DB değişiklikleri | ✅ Canlıda |
+
+---
+
+## 11. ÖNCEKİ OTURUM — 20 NİSAN 2026 (11. OTURUM)
 
 ### Bu oturumda tamamlananlar (Test + 3 Fix + 1 Kural)
 
