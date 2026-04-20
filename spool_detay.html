@@ -920,12 +920,21 @@ async function spoolYukle(supaId) {
     var s = res.data;
 
     SP.supaId    = s.id;
+    SP.spoolId   = s.spool_id          || SP.spoolId;
     SP.spoolNo   = s.spool_no          || SP.spoolNo;
     SP.pipeline  = s.pipeline_no       || SP.pipeline;
     SP.rev       = s.rev               || SP.rev || '';
     SP.cap       = s.dis_cap_mm        ? String(parseFloat(s.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : SP.cap;
     // ✅ FIX: et_mm → et_kalinligi_mm
     SP.kalinlik  = s.et_kalinligi_mm   ? String(parseFloat(s.et_kalinligi_mm).toFixed(2)).replace('.',',') + ' mm' : SP.kalinlik;
+    // Fallback: spooller.et_kalinligi_mm boşsa, malzemelerden en yaygın et_mm değerini kullan
+    if (!s.et_kalinligi_mm && s.spool_malzemeleri && s.spool_malzemeleri.length) {
+      var _etSay = {};
+      s.spool_malzemeleri.forEach(function(m) { if (m.et_mm) _etSay[m.et_mm] = (_etSay[m.et_mm]||0)+1; });
+      var _maxEt = null, _maxC = 0;
+      for (var _k in _etSay) if (_etSay[_k] > _maxC) { _maxEt = parseFloat(_k); _maxC = _etSay[_k]; }
+      if (_maxEt) SP.kalinlik = String(_maxEt.toFixed(2)).replace('.',',') + ' mm';
+    }
     SP.agirlik   = s.agirlik           ? String(parseFloat(s.agirlik).toFixed(2)).replace('.',',') + ' kg' : SP.agirlik;
     SP.malzeme   = s.malzeme           || SP.malzeme;
     // ✅ FIX: kalite_standart → kalite
@@ -1238,7 +1247,7 @@ function yukle(){
   txc('shBandBilgi', SP._devre || '');
   txc('shNo', markaYazisi || '—');
   var shIdEl = T('shId');
-  if(shIdEl) shIdEl.textContent = SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : (SP.spoolId ? 'ID: '+SP.spoolId : 'ID: --');
+  if(shIdEl) shIdEl.textContent = SP.spoolId ? 'ID: '+SP.spoolId : (SP.supaId ? 'ID: '+SP.supaId.substring(0,8).toUpperCase() : 'ID: --');
   txc('shTersaneMarka', '');
 
   // Breadcrumb: devre_detay linki + spool no
@@ -2361,7 +2370,7 @@ function duzenleKaydet(){
   txc('shTersaneAd',tersaneKisa||SP._tersane||'—');
   txc('shBandBilgi',SP._devre||'');
   txc('shNo',_my2||'—');
-  var _shId2=T('shId');if(_shId2)_shId2.textContent='ID: '+(SP.supaId?SP.supaId.substring(0,8).toUpperCase():SP.spoolId||'--');
+  var _shId2=T('shId');if(_shId2)_shId2.textContent='ID: '+(SP.spoolId||(SP.supaId?SP.supaId.substring(0,8).toUpperCase():'--'));
   T('duzenleModal').style.display='none';renderQR();
   logEkle('Spool Düzenlendi',SP.pipeline+' / '+sno+(SP.rev?' rev:'+SP.rev:''));
   try{localStorage.setItem('ares_aktif_spool',JSON.stringify(SP));}catch(e){}
@@ -2370,10 +2379,11 @@ function duzenleKaydet(){
   if(supa && SP.supaId && ARES.mod==='supabase'){
     var capN=parseFloat(String(SP.cap).replace(',','.').replace(/[^0-9.]/g,''))||null;
     var etN=parseFloat(String(SP.kalinlik).replace(',','.').replace(/[^0-9.]/g,''))||null;
+    var agrN=parseFloat(String(SP.agirlik).replace(',','.').replace(/[^0-9.]/g,''))||null;
     supa.from('spooller').update({
       spool_no:SP.spoolNo||null,pipeline_no:SP.pipeline||null,rev:SP.rev||'',
       malzeme:SP.malzeme||null,kalite:SP.kalite||null,yuzey:SP.yuzey||null,
-      dis_cap_mm:capN,et_kalinligi_mm:etN,guncelleme:new Date().toISOString(),
+      dis_cap_mm:capN,et_kalinligi_mm:etN,agirlik:agrN,guncelleme:new Date().toISOString(),
     }).eq('id',SP.supaId).then(function(r){
       if(r.error)toast('Kayıt hatası: '+r.error.message,'er');
       else toast('Güncellendi','ok');
