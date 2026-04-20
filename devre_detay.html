@@ -1028,8 +1028,6 @@ async function devreYukle(){
     }catch(e){console.warn('devreYukle:',e);}
   }
   try{DEVRE=JSON.parse(localStorage.getItem('ares_aktif_devre')||'{}');}catch(e){DEVRE={};}
-  // Migration: DEVRE.gemi → DEVRE.projeNo (devreler.html henüz rename edilmedi — Öncelik 11)
-  if(DEVRE.gemi!==undefined){if(DEVRE.projeNo===undefined)DEVRE.projeNo=DEVRE.gemi;delete DEVRE.gemi;try{localStorage.setItem('ares_aktif_devre',JSON.stringify(DEVRE));}catch(e){}}
 }
 
 // ── SPOOL YÜKLE

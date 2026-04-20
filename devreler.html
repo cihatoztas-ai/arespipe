@@ -382,7 +382,7 @@
             <th class="sort-th" data-sort="tersane" onclick="sortBy('tersane')" style="cursor:pointer;">
               <span data-i18n="cmn_th_tersane">Tersane</span> <span class="sort-arrow-wrap"></span>
             </th>
-            <th class="sort-th" data-sort="gemi" onclick="sortBy('gemi')" style="cursor:pointer;">
+            <th class="sort-th" data-sort="projeNo" onclick="sortBy('projeNo')" style="cursor:pointer;">
               <span data-i18n="dr_th_gemi">Gemi</span> <span class="sort-arrow-wrap"></span>
             </th>
             <th><span data-i18n="cmn_devre">Devre</span></th>
@@ -797,7 +797,7 @@ function _logEkle(devre, islem, aciklama) {
       islem: islem,
       yapan: '—',
       aciklama: aciklama || '',
-      ust: { devre: devre.devre, proje: devre.gemi }
+      ust: { devre: devre.devre, proje: devre.projeNo }
     };
     log.unshift(kayit);
     if (log.length > 1000) log = log.slice(0, 1000);
@@ -953,7 +953,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         supaId:   d.id,
         isEmri:   d.is_emri_no   || '—',
         tersane:  trs.ad          || '—',
-        gemi:     prj.proje_no    || '—',
+        projeNo:  prj.proje_no    || '—',
         devre:    d.devre_no      || d.ad || '—',
         zone:     d.zone          || '—',
         spool:    spools.length,
@@ -1209,7 +1209,7 @@ async function mlKontrolAc(id) {
   var bas = document.getElementById('mlkBaslik');
   if (bas) bas.textContent = d.isEmri + ' — ' + d.devre;
   var alt = document.getElementById('mlkAlt');
-  if (alt) alt.textContent = d.gemi + ' / ' + d.zone;
+  if (alt) alt.textContent = d.projeNo + ' / ' + d.zone;
 
   // Supabase'den gerçek malzeme listesini çek
   _mlkKalemler = [];
@@ -1493,11 +1493,11 @@ function getFiltered() {
     if (iptalMap[d.id]) return false;
     if (oncelikFiltreAktif && oncelikler.indexOf(d.supaId) === -1) return false;
     if (firma   && d.tersane !== firma) return false;
-    if (proje   && d.gemi    !== proje) return false;
+    if (proje   && d.projeNo    !== proje) return false;
     if (malzeme && d.malzeme.map(function(m){return _normalizeMalzeme(m)||m;}).indexOf(malzeme) === -1) return false;
     if (yuzey   && d.yuzey.map(function(y){return _normalizeYuzey(y)||y;}).indexOf(yuzey) === -1) return false;
     if (arama) {
-      var hay = [d.isEmri, d.tersane, d.gemi, d.devre, d.zone].join(' ').toLowerCase();
+      var hay = [d.isEmri, d.tersane, d.projeNo, d.devre, d.zone].join(' ').toLowerCase();
       if (hay.indexOf(arama) === -1) return false;
     }
     return true;
@@ -1587,7 +1587,7 @@ function _doRender() {
       '<td style="color:var(--txd);font-size:14px;">' + (globalIdx + 1) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
       '<td style="font-size:14px;color:var(--txm);">' + esc(d.tersane) + '</td>' +
-      '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--ac);">' + esc(d.gemi) + '</td>' +
+      '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--ac);">' + esc(d.projeNo) + '</td>' +
       '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + esc(d.devre) + (iptalBilgi ? '<span class="iptal-badge" style="margin-left:8px;">⊘ İptal</span>' : '') + '</td>' +
       '<td style="font-size:14px;color:var(--txd);">' + esc(d.zone) + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + d.spool + '</td>' +
@@ -1923,7 +1923,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
           '<span style="font-size:14px;color:#64748b;">' + d.tersane + '</span>' +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
-          '<span style="font-size:14px;font-weight:700;color:#1e293b;">' + d.gemi + '</span>' +
+          '<span style="font-size:14px;font-weight:700;color:#1e293b;">' + d.projeNo + '</span>' +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
           '<span style="font-size:14px;font-weight:600;color:#1e293b;">' + d.devre + '</span>' +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
@@ -2007,7 +2007,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     starred.forEach(function(d, i) {
       var kalemler = [];
       var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
-      rows1.push([i+1, d.isEmri, d.gemi, d.devre, d.zone, d.spool, Math.round(d.agirlik), DURUM_LABEL[starMap[d.supaId]] || '', hazir, kalemler.length]);
+      rows1.push([i+1, d.isEmri, d.projeNo, d.devre, d.zone, d.spool, Math.round(d.agirlik), DURUM_LABEL[starMap[d.supaId]] || '', hazir, kalemler.length]);
     });
     var ws1 = XLSX.utils.aoa_to_sheet(rows1);
     ws1['!cols'] = [4,10,12,22,14,6,12,18,12,12].map(function(w) { return {wch:w}; });
@@ -2019,15 +2019,15 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
       var hazirEx = kalemler.filter(function(k) { return k.hazir; }).length;
       var tamamEx = (state === 3) || (kalemler.length > 0 && hazirEx === kalemler.length);
       if (tamamEx) {
-        rows2.push([d.isEmri, d.gemi, d.devre, '—', '—', '✓ Tüm Malzemeler Hazır', '—', '—', '—', '—', '—', 'TAMAMLANDI']);
+        rows2.push([d.isEmri, d.projeNo, d.devre, '—', '—', '✓ Tüm Malzemeler Hazır', '—', '—', '—', '—', '—', 'TAMAMLANDI']);
       } else {
         var eksikler = kalemler.filter(function(k) { return !k.hazir; });
         if (eksikler.length === 0 && kalemler.length === 0) {
-          rows2.push([d.isEmri, d.gemi, d.devre, '—', '—', 'Malzeme listesi henüz oluşturulmadı', '—', '—', '—', '—', '—', 'BEKLİYOR']);
+          rows2.push([d.isEmri, d.projeNo, d.devre, '—', '—', 'Malzeme listesi henüz oluşturulmadı', '—', '—', '—', '—', '—', 'BEKLİYOR']);
         } else {
           eksikler.forEach(function(k, ki) {
             rows2.push([
-              ki === 0 ? d.isEmri : '', ki === 0 ? d.gemi : '', ki === 0 ? d.devre : '',
+              ki === 0 ? d.isEmri : '', ki === 0 ? d.projeNo : '', ki === 0 ? d.devre : '',
               ki+1, k.tip === 'boru' ? 'Boru' : 'Fitting',
               k.aciklama, k.cap ? formatCapMM(k.cap) : '',
               k.malzeme, k.kalite, k.miktar, k.birim, 'EKSİK'
@@ -2151,7 +2151,7 @@ function _tabelaPdf() {
     return '<tr style="background:' + trRenk + ';">' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-size:14px;font-weight:700;color:#7c3aed;">' + d.isEmri + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">' + d.tersane + '</td>' +
-      '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#2D8EFF;">' + d.gemi + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#2D8EFF;">' + d.projeNo + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + d.devre + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#94a3b8;">' + d.zone + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;text-align:right;font-weight:600;">' + d.spool + '</td>' +
@@ -2286,7 +2286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var liste = getFiltered();
     if (typeof XLSX !== 'undefined') {
       var rows = [['Is Emri','Tersane','Gemi','Devre','Zone','Spool','Agirlik (kg)','Ilerleme %','Durum','Son Islem']];
-      liste.forEach(function(d) { rows.push([d.isEmri, d.tersane, d.gemi, d.devre, d.zone, d.spool, Math.round(d.agirlik), d.ilerleme, d.durum, d.sonIslem]); });
+      liste.forEach(function(d) { rows.push([d.isEmri, d.tersane, d.projeNo, d.devre, d.zone, d.spool, Math.round(d.agirlik), d.ilerleme, d.durum, d.sonIslem]); });
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(rows);
       XLSX.utils.book_append_sheet(wb, ws, 'Devreler');
