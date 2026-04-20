@@ -770,8 +770,8 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
         <div class="fg"><label class="fl" data-i18n="sp_stat_diameter">Dış Çap</label><input class="fi" id="ed_cap" placeholder="114,3 mm"></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_thickness">Et Kalınlığı</label><input class="fi" id="ed_et" placeholder="4,50 mm"></div>
         <div class="fg"><label class="fl" data-i18n="sp_weight_label">Ağırlık (kg)</label><input class="fi" id="ed_agr" placeholder="26,82 kg"></div>
-        <div class="fg"><label class="fl" data-i18n="sp_stat_surface">Yüzey İşlemi</label><select class="fi" id="ed_yuz"><option value="">Seçin...</option><option>Galvaniz</option><option>Asit</option><option>Siyah</option><option>Epoksi</option></select></div>
-        <div class="fg"><label class="fl" data-i18n="sp_stat_material">Malzeme</label><select class="fi" id="ed_malz"><option value="">Seçin...</option><option>Karbon Çelik</option><option>Paslanmaz</option><option>Alüminyum</option><option>Bakır Alaşım</option></select></div>
+        <div class="fg"><label class="fl" data-i18n="sp_stat_surface">Yüzey İşlemi</label><select class="fi" id="ed_yuz"><option value="" data-i18n="cmn_opt_sec">Seçin...</option><option value="asit" data-i18n="cmn_yuzey_asit">Asit</option><option value="galvaniz" data-i18n="cmn_yuzey_galvaniz">Galvaniz</option><option value="siyah" data-i18n="cmn_yuzey_siyah">Siyah</option><option value="boyali" data-i18n="cmn_yuzey_boyali">Boya</option><option value="diger" data-i18n="cmn_yuzey_diger">Diğer</option></select></div>
+        <div class="fg"><label class="fl" data-i18n="sp_stat_material">Malzeme</label><select class="fi" id="ed_malz"><option value="" data-i18n="cmn_opt_sec">Seçin...</option><option value="karbon" data-i18n="cmn_malzeme_karbon">Karbon Çelik</option><option value="paslanmaz" data-i18n="cmn_malzeme_paslanmaz">Paslanmaz</option><option value="alum" data-i18n="cmn_malzeme_alum">Alüminyum</option><option value="bakir" data-i18n="cmn_malzeme_bakir">Bakır Alaşım</option><option value="diger" data-i18n="cmn_malzeme_diger">Diğer</option></select></div>
         <div class="fg"><label class="fl" data-i18n="sp_quality_label">Kalite / Standart</label><input class="fi" id="ed_kal" list="kaliteListe" placeholder="St37, 316L, A106-B" autocomplete="off"><datalist id="kaliteListe"></datalist></div>
       </div>
     </div>
@@ -2485,8 +2485,15 @@ function duzenleAc(){
   var s=function(id,v){var e=T(id);if(e)e.value=v||'';};
   s('ed_pip',SP.pipeline);s('ed_sno',SP.spoolNo);s('ed_cap',SP.cap);
   s('ed_et',SP.kalinlik);s('ed_agr',SP.agirlik);s('ed_kal',SP.kalite);s('ed_rev',SP.rev);
-  var ey=T('ed_yuz');if(ey)ey.value=SP.yuzey||'';
-  var em=T('ed_malz');if(em)em.value=SP.malzeme||'';
+  // E-01: SP.yuzey/malzeme legacy Türkçe ("Asit", "Karbon Çelik") olabilir → canonical koda çevir, select option'la eşleşsin
+  var ey=T('ed_yuz');if(ey){
+    var _yKod = (typeof ARES_NORM!=='undefined' && ARES_NORM.yuzeyKod) ? ARES_NORM.yuzeyKod(SP.yuzey) : (SP.yuzey||'');
+    ey.value = _yKod || '';
+  }
+  var em=T('ed_malz');if(em){
+    var _mKod = (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeKod) ? ARES_NORM.malzemeKod(SP.malzeme) : (SP.malzeme||'');
+    em.value = _mKod || '';
+  }
   T('duzenleModal').style.display='flex';
 }
 function duzenleKaydet(){
