@@ -1335,8 +1335,19 @@ function yukle(){
 // ── TRACKER ───────────────────────────────────────────────────
 function getSTAGES(){return STAGES.slice();}
 var STAGES=['Ön İmalat','İmalat','Kaynak','Ön Kontrol','KK','Sevkiyat'];
+var STAGES_DATA=[]; // [{tr, en, ar}] — DB'den doldurulur, _rebuildStages() STAGES'i günceller
 var STAGE_KEYS=['sp_stage_pre','sp_stage_fab','sp_stage_weld','sp_stage_inspect','sp_stage_qc','sp_stage_ship'];
 var STAGE_SISTEM=['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
+
+// Mevcut dile göre STAGES array'ini yeniden oluşturur
+function _rebuildStages(){
+  var lang=document.documentElement.getAttribute('lang')||'tr';
+  STAGES=STAGES_DATA.map(function(b){
+    if(lang==='en') return b.en||b.tr;
+    if(lang==='ar') return b.ar||b.tr;
+    return b.tr;
+  });
+}
 
 // DB'den basamakları yükle — hardcoded listeler yerine kullanılır
 async function _basamaklariYukle(){
@@ -1345,15 +1356,14 @@ async function _basamaklariYukle(){
     var tid=typeof ARES.tenantId==='function'?ARES.tenantId():null;
     if(!supa||!tid)return;
     var {data}=await supa.from('basamak_tanimlari')
-      .select('sistem_adi,gorunen_ad,sira')
+      .select('sistem_adi,gorunen_ad,gorunen_ad_en,gorunen_ad_ar,sira')
       .eq('tenant_id',tid).eq('aktif',true).order('sira');
     if(data&&data.length){
-      // sistem_adi → mevcut sp_stage_* anahtarlarına map et (lang dosyasında var)
-      // Bilinmeyenler için 'dyn_' prefix fallback (Öncelik 14: gorunen_ad_en/ar ile çözülecek)
       var _STAGE_KEY_MAP={'on_imalat':'sp_stage_pre','imalat':'sp_stage_fab','kaynak':'sp_stage_weld','on_kontrol':'sp_stage_inspect','kk':'sp_stage_qc','sevkiyat':'sp_stage_ship'};
       STAGE_SISTEM=data.map(function(b){return b.sistem_adi;});
-      STAGES=data.map(function(b){return b.gorunen_ad;});
+      STAGES_DATA=data.map(function(b){return{tr:b.gorunen_ad,en:b.gorunen_ad_en||b.gorunen_ad,ar:b.gorunen_ad_ar||b.gorunen_ad};});
       STAGE_KEYS=data.map(function(b){return _STAGE_KEY_MAP[b.sistem_adi]||('dyn_'+b.sistem_adi);});
+      _rebuildStages();
     }
   }catch(e){console.warn('_basamaklariYukle:',e);}
 }
@@ -3142,6 +3152,7 @@ document.addEventListener('DOMContentLoaded',function(){
 window._onLangChange=function(){
   if(typeof _applyI18n==='function')_applyI18n();
   if(typeof yukle==='function')yukle();
+  if(STAGES_DATA.length)_rebuildStages();
   if(typeof renderTracker==='function')renderTracker();
   if(typeof renderKesimler==='function')renderKesimler();
   if(typeof renderBukumler==='function')renderBukumler();
