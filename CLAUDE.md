@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (5. oturum)
+> Son güncelleme: 20 Nisan 2026 (6. oturum — sessiz bug avı + tenant prefix temelleri)
 
 ---
 
@@ -311,6 +311,61 @@ Sonuç: DB'de tek canonical format var. Yeni kayıtlar devre_yeni.html üzerinde
 
 ---
 
+### 2.14 Tenant Prefix Sistemi — YENİ (Kural E-03, 6. oturumda başladı)
+
+Her firma (tenant) için kısa bir harf kodu atanır (1-4 harf, A-Z). Spool kısa ID'leri artık bu prefix'le başlar: `A-0504`, `B-0504`.
+
+**Amaç:** Cross-tenant QR çakışmasını önlemek. Atölyede üretilen spool gemide başka firmaya gidince, onların sisteminde aynı "0504" olabiliyordu. Prefix ile hangi firmanın spool'u olduğu net.
+
+#### DB Kolonu
+
+```sql
+tenants.kod VARCHAR(4) NOT NULL UNIQUE
+CHECK (kod ~ '^[A-Z]{1,4}$')
+```
+
+Mevcut 7 tenant'a atanan kodlar (6. oturum):
+- `A` — Demo Atölye
+- `B-G` — Diğer demo tenant'lar
+
+#### Kod Atama Kuralları (6. oturumda karar verildi)
+
+- **Kod admin tarafından manuel seçilir** — sistem otomatik atamaz
+- **Format gevşek (1-4 harf, A-Z)** — I/L/O/Q serbest (admin karar versin)
+- **Kalıcı** — atanan kod değişmez, sonsuza dek firmanınkidir
+- **Çakışma durumunda iki aşamalı onay:** Sistem uyarır, admin override ederse önce eski sahipten kodu alır, sonra yenisine verir
+- **Yasak kod listesi** (henüz implemente edilmedi): AM, OC, GO, SI vb. uygunsuz çağrışımlı kodlar
+
+#### Yeni Spool ID Formatı
+
+```
+<tenant_kod>-<4_haneli_sayı>
+Örnek: A-0504, B-0168, AB-0001
+```
+
+Üretim yeri: `devre_yeni.html` satır 1491-1500. Tenant kodu yoksa graceful fallback (prefix eklenmez, eski davranış).
+
+#### QR Payload Formatı (planlandı, 7. oturumda implemente edilecek)
+
+```
+<spool_id>:<UUID>
+Örnek: A-0504:f0cd6ae8-eddf-430b-aec0-ca637f7168f7
+```
+
+QR okuma mantığı:
+1. `:` ile böl → kısa kod + UUID
+2. `-` ile böl → tenant prefix + sayı
+3. Prefix kendi tenant koduna eşit değilse: *"Bu spool [firma adı]'ne ait, görüntülenemiyor"* uyarısı
+4. UUID ile DB lookup (RLS ek güvenlik katmanı)
+
+#### Geriye Uyumluluk
+
+Eski "0504" formatındaki QR'lar bozulmaz — `qr_tara.html` her iki formatı da parse edebilir olmalı:
+- Yeni: `A-0504:UUID`
+- Eski: `0504` (sadece kısa kod, prefix yok — kendi tenant içinde aranır)
+
+---
+
 ## 3. DİL SİSTEMİ
 
 ### 3.1 Web: tv()
@@ -359,23 +414,35 @@ mobile/src/lang/
 
 **spooller:**
 - `dis_cap_mm` (cap_mm değil), `et_kalinligi_mm` (et_mm değil)
-- `agirlik` (agirlik_kg boş), `rev` (revizyon değil)
+- `agirlik` (canonical — `agirlik_kg` legacy kolon da DB'de var ama hep NULL, sonraki temizlikte DROP edilebilir)
+- `rev` (revizyon değil)
 - `durdurma_sebebi` (durdurma_aciklama değil)
 - `alistirma` değerleri: `VAR` / `KISMI` / `YOK` (uppercase)
 - `aktif_basamak` değerleri: `on_imalat`, `on_kontrol`, `kaynak`, `imalat`, `kk`, `sevkiyat`
 - `ilerleme INTEGER` — kümülatif puan (0-100)
 - `is_durumu TEXT` — `bekliyor` / `devam_ediyor`
-- `spool_id TEXT` — kısa görüntü ID (ör. "0431"), UUID değil
+- `spool_id TEXT` — kısa görüntü ID. **20 Nisan 2026 itibarıyla tenant prefix'li** (ör. "A-0504"). Eski kayıtlar prefix'siz ("0504") kalabilir — geriye uyumluluk var.
 - `yuzey_aciklama TEXT` — yuzey='diger' olduğunda özel işlem açıklaması (5. oturumda eklendi)
 - `olusturma TIMESTAMPTZ` — kayıt oluşturma tarihi (created_at DEĞİL!)
 - CHECK constraint `malzeme_yuzey_uyumu` — matris dışı kombinasyonu engeller (5. oturum)
 
+**spool_malzemeleri** (6. oturumda DB'den doğrulandı):
+- `dis_cap_mm NUMERIC`, `et_mm NUMERIC` ⚠ **DİKKAT: spooller ile UYUMSUZ isimler — bu tabloda canonical `et_mm`'dir, `et_kalinligi_mm` değil**
+- `boy_mm NUMERIC`, `agirlik_kg NUMERIC` (spooller'dan farklı — burada canonical)
+- `kalite`, `malzeme`, `adet INTEGER`, `boyut TEXT`
+- `kod`, `tip`, `tanim`, `heat_no`, `sertifikali BOOLEAN`
+
+**markalama_kalemleri:**
+- `et_mm NUMERIC` — plaka markalamada kalınlık (6. oturumda doğrulandı)
+
 **fotograflar:**
-- `dosya_url` (url değil), `yukleyen_id` (kullanici_id değil)
+- `dosya_url` (url değil)
+- `yukleyen_id UUID` — canonical, kullanicilar'a FK (6. oturumda migrate edildi)
+- `yapan_id TEXT` — **LEGACY kolon**, 11 eski kayıtta email vardı, 20 Nisan'da migrate edildi. İz olarak duruyor, DROP yapılabilir ileride
 - `islem_turu` (asama değil), `spool_id` UUID
 
 **notlar:**
-- `metin` (icerik değil), `ekleyen_id` (yapan_id değil)
+- `metin` (icerik değil), `ekleyen_id` (yapan_id değil — 6. oturumda düzeltildi, eskiden silent fail oluyordu)
 - `qr_goster BOOLEAN`, `silindi BOOLEAN`
 
 **devreler:**
@@ -386,11 +453,19 @@ mobile/src/lang/
 - `yuzey_aciklama TEXT` — yuzey='diger' olduğunda (5. oturumda eklendi, devre_yeni'de henüz yazılmıyor — sadece devre_duzenle kullanıyor)
 - **Legacy format:** `malzeme` kolonu hâlâ Türkçe ("Karbon Çelik", "Paslanmaz" vb.) — ARES_NORM okurken normalize ediyor ama DB temiz değil (sonraki oturum işi)
 
+**tenants** (6. oturumda eklendi):
+- `ad`, `olusturma`, standart alanlar
+- `kod VARCHAR(4) NOT NULL UNIQUE` — tenant prefix, CHECK `^[A-Z]{1,4}$` (bkz. Bölüm 2.14)
+
 **kullanicilar (17 Nisan 2026 — 2. oturum notu):**
 - `ad_soyad` (ad değil!) — hata kaynağı, dikkat
 - `foto_url TEXT` — avatar için (upload UI henüz yok)
 - `email`, `rol`, `tenant_id`, `firma`, `brans`, `tel`, `ui_tercihleri JSONB`
 - `tenants(ad)` JOIN'i bazı RLS kombinasyonlarında 400 döndürür → tenant adını ayrı sorguyla çek
+
+**islem_log (6. oturumda not edildi, şema belirsiz):**
+- `yapan_id` kolonu muhtemelen TEXT (email formatında), spool_detay.html satır 1101 bu sayede çalışıyor
+- Tam şema CLAUDE.md'de henüz yok — ileride DB sorgusu ile doğrulanmalı
 
 **yetki_bloklari:**
 - `ad`, `grup`, `renk`, `sistem_preset`, `sira`, `tenant_id` (NULL = sistem preset)
@@ -600,6 +675,32 @@ bekliyor → işe başlayınca → devam_ediyor → iş bitince → bekliyor
 ### Mükerrer İş Önleme (Planlandı)
 Spool tarandığında `is_durumu === 'devam_ediyor'` ise uyarı göster, işe başlatma.
 
+### Tenant Prefix Sistemi (20 Nisan 2026 — 6. oturum)
+
+**Karar:** Her firmaya 1-4 harflik bir kod atanır (`tenants.kod`). Spool kısa ID'leri artık `A-0504` formatında üretilir. QR payload'ı ileride `A-0504:UUID` olacak.
+
+**Nedenler:**
+- Cross-tenant QR çakışması: Atölyede üretilen spool gemide başka firmanın AresPipe kullanan ekibine gidebilir. Kendi DB'lerinde "0504" varsa yanlış spool açılır veya "bulunamadı" der. Prefix ile hangi firmanın olduğu net
+- İnsan gözüyle de firma belli — etikette, sözlü iletişimde ("A-sıfır-beş-sıfır-dört"), matbu evrakta
+- UUID alternatifi daha güvenli ama insan okunamaz; hibrit formatla ikisi de
+
+**Mimari:**
+- DB: `tenants.kod VARCHAR(4) UNIQUE`, CHECK regex `^[A-Z]{1,4}$` (gevşek, admin karar verir)
+- Kod seçimi: Admin manuel yapar, sistem otomatik üretmez
+- Çakışma: İki aşamalı onay — önce eski sahipten kodu al, sonra yenisine ver
+- Kalıcı: Atanan kod değişmez, değiştirilirse eski QR'lar bozulur
+- Yasak liste: AM, OC, GO, SI gibi uygunsuz kodlar (henüz implemente edilmedi)
+- Geriye uyumluluk: Eski `0504` formatındaki QR'lar bozulmuyor; qr_tara her iki formatı da parse edecek
+
+**İlerleme:**
+- ✅ DB hazır (7 demo tenant'a A-G atandı)
+- ✅ `devre_yeni.html` yeni spool'ları prefix'li üretiyor (A-0504 gibi — test edildi)
+- ✅ `spool_detay.html` DB'den prefix'li kodu okuyor, UI'da gösteriyor
+- ❌ QR payload hâlâ sadece kısa kod — **7. oturumda tamamlanacak**
+- ❌ `qr_tara.html` prefix'i tanımıyor — **7. oturumda eklenecek**
+- ❌ Admin UI (kod atama) — sonraki oturumda
+- ❌ Yasak kod listesi UI'ı — sonraki oturumda
+
 ### Açık İş Kartı (17 Nisan 2026 — planlandı)
 Kullanıcının açık işi varken:
 - Üstte sabit kart olarak görünür (alta değil)
@@ -634,6 +735,7 @@ Her sohbet bitiminde:
 - [ ] `<body data-sayfa="...">` eklenmesi — toplu yapılacak
 - [ ] Sidebar'da yetkisiz linkleri gizleme
 - [ ] `tanimlar.html` — Yetki Blokları sekmesi i18n eksik
+- [ ] **Yeni:** `tanimlar.html` — tenant kod yönetimi UI (yeni firma oluştururken kod, çakışma uyarısı, iki aşamalı override — 6. oturumda karar alındı, implement bekliyor)
 - [ ] `kullanici_detay.html` — Yetkiler sekmesi i18n eksik
 - [ ] `proje_liste.html` / `proje_detay.html` — Supabase entegrasyonu yok
 - [ ] `malzeme.html` — yazılacak
@@ -644,11 +746,19 @@ Her sohbet bitiminde:
 - [x] **Faz 2 SQL migration** — 4. oturumda tamamlandı (spooller + spool_malzemeleri)
 - [x] **Malzeme-Yüzey uyum kontrolü** — 5. oturumda tamamlandı (frontend disable + popup + DB CHECK constraint)
 - [x] **devre_yeni.html yüzey "Diğer" seçeneği** — 5. oturumda eklendi
-- [ ] **`spool_malzemeleri.kalite='diger'` UX sorunu** — kalite alanı serbest metin
+- [ ] **`spool_malzemeleri.kalite='diger'` UX sorunu** — kalite alanı serbest metin (6. oturumda büyüdü — bkz. aşağıda "Kalite UX" notu)
 - [x] **devreler.html durum sütunu + filtresi** — 5. oturumda kaldırıldı (75/75 kayıt 'aktif' idi, ölü kod)
 - [x] **Sapma mantığı çoğunluk-baz** — 5. oturumda düzeltildi (ilk-insert → çoğunluk)
 - [ ] **devreler.malzeme DB migration** — hâlâ "Karbon Çelik" formatında (spooller gibi canonical'e çekilmeli)
 - [ ] **devreler Excel export'ta hâlâ d.durum** — ölü veri, temizlenebilir
+- [x] **spool_detay.html sessiz bug'ları** — 6. oturumda 11 fix (notlar insert+map, fotograflar migration, ağırlık UPDATE, spool_id okuma, ID gösterim sırası, et kalınlığı header fallback)
+- [x] **devre_yeni.html tenant prefix** — 6. oturumda yeni spool'lar `A-0504` formatında üretiliyor
+- [x] **fotograflar yapan_id → yukleyen_id migration** — 6. oturumda 11 legacy kayıt migrate edildi
+- [x] **tenants.kod kolonu + 7 tenant'a kod ataması** — 6. oturum
+- [ ] **Tenant prefix serisini tamamlama** — QR payload formatı (`A-0504:UUID`) ve `qr_tara.html` cross-tenant parse (7. oturum Öncelik 1)
+- [ ] **Kalite UX + veri temizliği** — Form'da kalite alanı malzeme radio grubu gibi davranıyor ("karbon/paslanmaz" değerleri alıyor). Olması gereken: ST37, A106-B, 304L gibi alaşım standartları. DB'de karışmış veriler var — serbest text + autocomplete tasarımı (7. oturum Öncelik 2)
+- [ ] **Spool no → marka gösterimi** — Tablolarda "S01" tek başına anlamsız, pipeline+spool_no birleştirilsin (devre_detay/kesim/markalama/sevkiyat/raporlar)
+- [ ] **spool_detay.html performans** — 3007 satır, 6-7 paralel SQL, 3D kodu — lazy load + 3D ayrı dosya refactor'u (ayrı oturum işi)
 
 ### Mobil React sayfaları
 - [x] MGiris.jsx — tamamlandı, i18n'li
@@ -667,7 +777,94 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 20 NİSAN 2026 (5. OTURUM)
+## 11. SON OTURUM — 20 NİSAN 2026 (6. OTURUM)
+
+### Bu oturumda tamamlananlar (spool_detay.html sessiz bug avı + tenant prefix temelleri)
+
+Ana tema: DB ile UI arasındaki senkron kopukluklarını kapatma. 12 fix, 2 dosya, 3 DB migration.
+
+**1. spool_detay.html — 11 fix, hepsi sessiz bug:**
+- **Notlar (2 fix):** `yapan_id` → `ekleyen_id`. DB'de `notlar.yapan_id` kolonu YOK (sadece `ekleyen_id` var), insert silent fail ediyordu. Kullanıcı not ekleyip sayfa yeniledi → not kayboluyordu. Map tarafında da yanlış kolon okunduğu için kişi bilgisi UI'da hep "Admin" görünüyordu.
+- **Fotograflar migration (5 değişiklik):** `fotograflar.yapan_id` (TEXT, legacy) → `yukleyen_id` (UUID, canonical). Tip uyumsuzluğunu çözmek için `yapan` değişkeni ikiye bölündü: `yapanId` (UUID, DB için), `yapanAd` (ad_soyad, UI için). DB'de de 11 legacy kayıt email lookup ile migrate edildi.
+- **Spool ağırlık UPDATE (1 fix):** `spooller.agirlik` UPDATE bloğunda yoktu — ağırlık değiştiriliyor, "güncellendi" toast'ı çıkıyor, DB'ye yazılmıyordu. Klasik "UI gösteriyor ama DB'ye düşmüyor" pattern'i.
+- **Spool ID okuma (1 fix):** `spoolYukle` fonksiyonu `s.spool_id`'yi hiç okumuyordu — başlıkta "ID: 9D07969B" (UUID[0-8]) görünüyordu. Satır 922'ye `SP.spoolId = s.spool_id` atandı.
+- **Spool ID gösterim sırası (2 fix):** 1241 ve 2365'te öncelik UUID'deydi, kısa kod asla görünmüyordu. Düzeltildi — şimdi `A-0512` gibi insan okunabilir kod önce gösteriliyor.
+- **QR kodu içeriği:** SP.spoolId atanınca QR payload artık doğru kısa kodu içeriyor. Önceden yanlış/eski değer içeriyordu → tersanedeki operatör yanlış spool açma riski vardı.
+- **Et kalınlığı header fallback:** `spooller.et_kalinligi_mm` NULL ise malzemelerden en yaygın `et_mm` değerini alıp header'a yansıt. Önceden "ET KALINLIĞI —" dash görünüyordu.
+
+**2. devre_yeni.html — Tenant Prefix (1 fix):**
+- Spooller INSERT bloğunda tenant kodu bir kez çekilip her `spool_id`'ye prefix eklendi
+- Yeni spool'lar artık `A-0504`, `A-0512` gibi formatta üretiliyor (test edildi)
+- Graceful fallback: tenant kod NULL ise eski davranış (prefix yok)
+
+**3. DB Migration — 3 blok:**
+
+Blok A — Fotograflar UUID migration:
+```sql
+UPDATE fotograflar f SET yukleyen_id = k.id
+FROM kullanicilar k
+WHERE f.yukleyen_id IS NULL AND f.yapan_id = k.email;
+-- 11 satır etkilendi (hepsi cihatoztas@gmail.com → UUID)
+```
+
+Blok B — Tenants.kod kolonu + 7 tenant'a atama:
+```sql
+ALTER TABLE tenants ADD COLUMN kod VARCHAR(4) NOT NULL UNIQUE;
+ALTER TABLE tenants ADD CHECK (kod ~ '^[A-Z]{1,4}$');
+-- Demo tenant'lara A-G atandı
+```
+
+Blok C — DB keşifleri (kod değişmedi, sadece belgelendi):
+- `spool_malzemeleri` tam şeması (daha önce CLAUDE.md'de yoktu)
+- `markalama_kalemleri.et_mm` varlığı
+- `spooller.agirlik_kg` legacy NULL
+- `fotograflar.yapan_id` legacy TEXT
+
+### Değişen Dosyalar (2)
+
+| Dosya | Değişim | Satır (önce → sonra) |
+|---|---|---|
+| `spool_detay.html` | 11 fix | 2996 → 3007 |
+| `devre_yeni.html` | Tenant prefix | 2009 → 2013 |
+
+### Verilen Anahtar Kararlar
+
+**Tenant prefix sistemi (E-03):**
+- Format: 1-4 harf, A-Z (Excel kolon mantığıyla genişler)
+- Admin manuel seçer, sistem otomatik vermez
+- Çakışma durumunda iki aşamalı onay (önce eski sahipten al, sonra yenisine ver)
+- I/L/O/Q kısıtı yok — admin karar versin
+- Kalıcı: atanan kod değişmez
+
+**QR payload formatı (planlandı, 7. oturumda implemente edilecek):**
+- Yeni: `A-0504:UUID`
+- Eski: `0504` (geriye uyumlu, qr_tara iki formatı da parse eder)
+- Cross-tenant okuma: uyarı mesajı gösterir ("Bu spool X firmasına aittir")
+
+**Kalite alanı sorunu (6. oturumda tespit edildi):**
+- Form'da kalite alanı ikinci bir malzeme radio grubu gibi davranıyor (canonical malzeme kodlarını alıyor)
+- DB'de `spool_kalite = "karbon"` gibi bozuk veriler var (olması gereken ST37, A106-B, 304L...)
+- Çözüm 7. oturuma bırakıldı — serbest text + autocomplete tasarımı
+
+### Önemli Öğrenmeler
+
+**1. "78 yanlış referans" tahmini büyük ölçüde yanlıştı.** Dosyada önceki oturumlardan kalan `✅ FIX` yorumları vardı — çoğu zaten düzeltilmişti. Gerçek bug sayısı kolon adı değişimi değil, **DB ile UI arasındaki senkron kopuklukları**: INSERT'te eksik alan, UPDATE'te yazılmayan kolon, okuma tarafında yanlış field adı. "78 referans düzelt" odağı yerine **"her INSERT/UPDATE'in form state ile simetrik mi"** bakışı daha verimli.
+
+**2. DB şemasını varsayma, sorgu at.** CLAUDE.md Bölüm 4.2 eksikti — `spool_malzemeleri` şeması hiç yazılmamıştı. `et_mm` mi `et_kalinligi_mm` mi belirsizdi. 10 saniyelik DB sorgusu saatlerce belirsizliği kapattı. 6. oturumun en kritik dersi.
+
+**3. Sessiz fail en sinsi düşman.** `_supaInsert` helper'ı `console.warn` atıyor ama toast yok. Kullanıcıya "başarılı" gibi gösteriliyor, DB'ye yazılmıyor. Notlar, ağırlık, fotoğraflar hep bu pattern'in kurbanıydı. Helper'ların error handling'i ciddi ele alınmalı.
+
+**4. Migration-in-progress pattern'i yaygın.** `fotograflar.yapan_id/yukleyen_id`, `spooller.agirlik/agirlik_kg` — ikili kolon durumları. Yeni bir tane bulunduğunda aynı pattern'le çözülmeli: canonical'e yaz, fallback'i UI'da tut, legacy migration'ı ayrı SQL ile yap.
+
+**5. Tip uyumsuzluğu sessiz bug yaratır.** `yapan_id` TEXT, `yukleyen_id` UUID — tip değişimini göz ardı ettim, INSERT patlayacaktı. Kullanıcı doğru soru ile yakaladı, düzelttim. 5. patch'im başlangıçta HATALIYDI. Şema detayları kritik.
+
+**6. Oturum özetlerini skeptik oku.** Önceki özet "78 yanlış referans" diyordu, gerçek çok farklıydı. "Tamamlandı" iddialarını DB'den doğrulamak lazım — 4. ve 5. oturumda da benzer durumlar yaşanmıştı.
+
+**7. Kullanıcı yorgunluğu + oturum uzunluğu.** Bu oturumda kullanıcı "sürekli oturum değişmek yorucu" dedi, haklıydı. CLAUDE-SON-OTURUM.md ve CLAUDE-SONRAKI-OTURUM.md'nin özenli yazılması sonraki oturumun "hatırlamak" yerine "direkt koda gir" olmasını sağlıyor — ihmal edilmemeli.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (5. OTURUM)
 
 ### Bu oturumda tamamlananlar (Malzeme-Yüzey Uyum + Fark Tespit + devreler.html refactor)
 
@@ -738,7 +935,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
+## 11B. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Refactor Tamamlama + DB Migration)
 
@@ -812,7 +1009,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11B. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
+## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Anti-Pattern Temizliği)
 
@@ -851,7 +1048,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
+## 11D. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
 
 ### Bu oturumda tamamlananlar (MDrawer + Tema Context)
 
@@ -896,7 +1093,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11D. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
+## 11E. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
 
 ### Tamamlananlar
 - **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)

@@ -1,7 +1,7 @@
 # AresPipe — Mobil Sistem Bağlamı (React)
 
 > Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
-> Son güncelleme: 17 Nisan 2026 (2. oturum)
+> Son güncelleme: 20 Nisan 2026 (6. oturum — web tarafı sessiz bug avı + tenant prefix temelleri; mobil tarafta değişiklik yok)
 > **ÖNEMLİ:** 16 Nisan 2026'da vanilla HTML/JS'den React + Vite'a geçildi. Eski kurallar geçersiz.
 
 ---
@@ -666,7 +666,7 @@ Web tasarımıyla bütünlük için:
 | Devreler | MDevreler.jsx | ⏳ (mockup-first) |
 | Devre Detay | MDevreDetay.jsx | ⏳ (mockup-first) |
 | Spool Detay | MSpoolDetay.jsx | ⏳ (mockup-first) |
-| QR Tara | MQRTara.jsx | ⏳ (mockup-first) |
+| QR Tara | MQRTara.jsx | ⏳ (mockup-first) — 20 Nisan notu: yazıldığında tenant prefix formatını (`A-0504:UUID`) parse etmeli, cross-tenant uyarı vermeli (detay CLAUDE.md Bölüm 8) |
 
 ---
 
