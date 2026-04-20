@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (7. oturum — marka formatı, etiket, malzeme tutarlılığı)
+> Son güncelleme: 20 Nisan 2026 (10. oturum — 3-buton dedup + insert toast + zone_no DROP + SP.projeNo rename + dropdown E-01 + duplicate spoolNo stable key)
 
 ---
 
@@ -332,13 +332,25 @@ Mevcut 7 tenant'a atanan kodlar (6. oturum):
 - `A` — Demo Atölye
 - `B-G` — Diğer demo tenant'lar
 
-#### Kod Atama Kuralları (6. oturumda karar verildi)
+#### Kod Atama Kuralları (6. oturumda karar verildi, 8. oturumda admin UI eklendi)
 
 - **Kod admin tarafından manuel seçilir** — sistem otomatik atamaz
 - **Format gevşek (1-4 harf, A-Z)** — I/L/O/Q serbest (admin karar versin)
 - **Kalıcı** — atanan kod değişmez, sonsuza dek firmanınkidir
-- **Çakışma durumunda iki aşamalı onay:** Sistem uyarır, admin override ederse önce eski sahipten kodu alır, sonra yenisine verir
-- **Yasak kod listesi** (henüz implemente edilmedi): AM, OC, GO, SI vb. uygunsuz çağrışımlı kodlar
+- **Çakışma durumunda iki aşamalı onay:** Sistem uyarır, admin override ederse önce eski sahipten kodu alır, sonra yenisine verir (manuel — otomatik swap RPC henüz yok)
+- **Yasak kod listesi yok** — admin bilinçli seçiyor, engelleme kaldırıldı (8. oturum kararı)
+
+#### Admin UI (8. oturumda eklendi ✅)
+
+- `admin/yeni-firma.html` → Adım 1'de Firma Kodu alanı (Firma Adı yanında 120px)
+  - `onkeyup` otomatik uppercase + A-Z filtresi
+  - `onblur` gerçek zamanlı çakışma kontrolü
+  - 23505 unique violation için yarış durumu yakalama
+- `admin/firma-detay.html` → Firma Bilgileri kartına Firma Kodu alanı (150px)
+  - Direkt editable (Değiştir butonu yok — admin kendi yazıyor)
+  - Üst page-header badge'lerinde kod turuncu mono font ile gösteriliyor
+  - Kod değişiyorsa çift onay + çakışma manuel çözüm
+- Yetki: Sadece `kul.rol === 'super_admin'` erişir (existing)
 
 #### Yeni Spool ID Formatı
 
@@ -367,10 +379,24 @@ QR okuma mantığı (`qr_tara.html` → `parseQR()`):
 Eski `0504` formatındaki spool'lar DB'de prefix'siz kalır (migration yapmıyoruz). Display katmanında runtime prefix eklenir:
 
 ```js
-ARES.markaId("0074")    → "A-0074"   // cache varsa runtime ekler
-ARES.markaId("A-0512")  → "A-0512"   // zaten prefix'li, dokunmaz
-ARES.markaId(null)      → ""
+// Legacy (prefix'siz → tenant cache ile prefix)
+ARES.markaId("0074")      → "A-0074"
+
+// Eski 4-hane prefix'li (dokunma)
+ARES.markaId("A-0512")    → "A-0512"
+
+// Yeni 6-hane padded (display için 4 haneye kırp — 8. oturum)
+ARES.markaId("A-000001")  → "A-0001"
+ARES.markaId("A-000074")  → "A-0074"
+
+// 10000+ doğal uzunluk
+ARES.markaId("A-010000")  → "A-10000"
+ARES.markaId("A-100000")  → "A-100000"
+
+ARES.markaId(null)        → ""
 ```
+
+**Önemli (8. oturum değişikliği):** `markaId()` artık iki iş yapar: legacy prefix ekleme + DB'deki 6-hane padding'i display için min 4 haneye kırpma. 10000'den büyük sayılar doğal uzunlukta kalır.
 
 **Kullanım kuralı:** Her sayfa yüklenirken `await ARES.tenantKod()` ile cache ısıtılır. Render'larda `ARES.markaId(s.spool_id)` senkron çalışır. Prefix cache yoksa raw değer döner (güvenli fallback).
 
@@ -420,6 +446,26 @@ ARES_NORM.marka(
 ```sql
 SELECT id, spool_no, pipeline_no, rev, ... FROM spooller
 ```
+
+#### Spool ID Üretimi (8. oturumda 4→6 hane geçti)
+
+Spool kısa kodları `sayac_tanimlari` tablosundan tenant bazında sayaçla üretilir:
+
+- **Üretim yeri:** `devre_yeni.html` satır ~1500 — `ARES.sonrakiNo('spool')` çağrısı
+- **RPC:** `sonraki_no(p_tip)` PostgreSQL fonksiyonu — son_no'yu `UPDATE ... RETURNING` ile atomik artırır, integer döndürür
+- **Format:** JavaScript `_noFormatla()` → `(cfg.prefix || '') + yil + sep + padStart(digits, '0')`
+- **Tenant kodu:** `devre_yeni.html` sayaç sonucuna `tenantKod + '-'` ekler
+
+**8. oturum değişikliği — digits 4 → 6:**
+- `sayac_tanimlari.digits = 6` (tüm tenant'larda UPDATE ile migrate edildi)
+- `_SAYAC_VARSAYILAN.spool.digits = 6` (yeni tenant'lar için fallback)
+- **DB'de:** `A-000001` (6 hane padded)
+- **Display:** `ARES.markaId()` min 4 haneye kırpar → `A-0001`
+- **10000+:** Doğal uzunluk → `A-10000`, `A-100000`
+
+**Sıfırlama:** `tanimlar.html > Kod Serileri` sekmesinden tek tıkla (`son_no = 0`). Test sonrası gerçek kullanıma geçerken sıfırlanır, `A-0001`'den başlar.
+
+**Ortalama kapasite:** 6 hane = 999.999 spool = büyük tersane için ~30 yıl (ayda 3.000 spool varsayımıyla).
 
 **Uygulanan sayfalar (7. oturum):**
 - `devre_detay.html` — MARKA sütunu (eski "Pipeline No" + "Spool No" iki ayrı sütundu, birleştirildi)
@@ -494,10 +540,12 @@ tv('anahtar_adi', 'Türkçe fallback')
 
 ```
 lang/
-  tr.json  — Türkçe (web) — 1348 anahtar (20 Nisan 2026 — 5. oturum, fark popup + uyum uyarı anahtarları)
-  en.json  — İngilizce (web) — 1348 anahtar
-  ar.json  — Arapça (RTL destekli, web) — 1348 anahtar
+  tr.json  — Türkçe (web) — 1370 anahtar (20 Nisan 2026 — 10. oturum, Öncelik 10 çeviri + 7 TR placeholder bug fix)
+  en.json  — İngilizce (web) — 1370 anahtar ✅ tam çeviri (355 toplu çeviri uygulandı)
+  ar.json  — Arapça (RTL destekli, web) — 1370 anahtar ✅ tam çeviri (322 toplu çeviri uygulandı)
 ```
+
+**Not:** EN'de 42, AR'da 8 anahtar TR ile aynı görünür ama bunlar **evrensel teknik terim** (Spool, Pipeline, Rev, PDF, Excel, kg, #, AresPipe, emoji'li başlıklar) — tüm dillerde aynı yazılır, "çevrilmemiş" değil.
 
 ```
 mobile/src/lang/
@@ -557,7 +605,9 @@ mobile/src/lang/
 - `ilerleme` kullanılmıyor — spooller.ilerleme ortalaması
 - `durum` — DB'de saklanıyor (iptal akışı için), **ama UI'dan 5. oturumda kaldırıldı** (tüm kayıtlar 'aktif' idi)
 - `yuzey_aciklama TEXT` — yuzey='diger' olduğunda (5. oturumda eklendi, devre_yeni'de henüz yazılmıyor — sadece devre_duzenle kullanıyor)
-- **Legacy format:** `malzeme` kolonu hâlâ Türkçe ("Karbon Çelik", "Paslanmaz" vb.) — ARES_NORM okurken normalize ediyor ama DB temiz değil (sonraki oturum işi)
+- `zone TEXT` — canonical. **`zone_no` kolonu 10. oturumda DROP edildi** (ölü kolon, hiç kullanılmıyordu)
+- `notlar TEXT` — ⚠ `notlar` tablosu ile ikiliği var (11. oturum Öncelik 13 araştırması)
+- **Legacy temizlik tamamlandı:** `malzeme` kolonu 9. oturumda canonical'e çevrildi (82 kayıt), artık DB temiz
 
 **tenants** (6. oturumda eklendi):
 - `ad`, `olusturma`, standart alanlar
@@ -569,9 +619,16 @@ mobile/src/lang/
 - `email`, `rol`, `tenant_id`, `firma`, `brans`, `tel`, `ui_tercihleri JSONB`
 - `tenants(ad)` JOIN'i bazı RLS kombinasyonlarında 400 döndürür → tenant adını ayrı sorguyla çek
 
-**islem_log (6. oturumda not edildi, şema belirsiz):**
-- `yapan_id` kolonu muhtemelen TEXT (email formatında), spool_detay.html satır 1101 bu sayede çalışıyor
-- Tam şema CLAUDE.md'de henüz yok — ileride DB sorgusu ile doğrulanmalı
+**islem_log (8. oturumda DB'den doğrulandı):**
+- `id UUID`, `tenant_id UUID`, `olusturma TIMESTAMPTZ`
+- `islem TEXT` — eylem kodu (DEVRE_EKLE, DURDURMA, DURDURMA_KALDIRILDI, vb.)
+- `katman TEXT` — kategori (devre, spool, proje, kesim, vb.)
+- `katman_id UUID` — ilgili kaydın UUID'si (polimorfik)
+- `yapan_id UUID` — `kullanicilar.id`'ye FK
+- `aciklama TEXT`, `meta JSONB`
+- `spool_id UUID`, `devre_id UUID`, `proje_id UUID` — opsiyonel FK'lar
+
+**Not:** Eski CLAUDE.md notu `yapan_id` kolonunu TEXT sanıyordu — 8. oturumda information_schema sorgusuyla UUID olduğu doğrulandı. Kolon adı ezbere `eylem/tablo/tablo_id` değil; gerçek adlar `islem/katman/katman_id`.
 
 **yetki_bloklari:**
 - `ad`, `grup`, `renk`, `sistem_preset`, `sira`, `tenant_id` (NULL = sistem preset)
@@ -865,6 +922,19 @@ Her sohbet bitiminde:
 - [ ] **Kalite UX + veri temizliği** — Form'da kalite alanı malzeme radio grubu gibi davranıyor ("karbon/paslanmaz" değerleri alıyor). Olması gereken: ST37, A106-B, 304L gibi alaşım standartları. DB'de karışmış veriler var — serbest text + autocomplete tasarımı (7. oturum Öncelik 2)
 - [ ] **Spool no → marka gösterimi** — Tablolarda "S01" tek başına anlamsız, pipeline+spool_no birleştirilsin (devre_detay/kesim/markalama/sevkiyat/raporlar)
 - [ ] **spool_detay.html performans** — 3007 satır, 6-7 paralel SQL, 3D kodu — lazy load + 3D ayrı dosya refactor'u (ayrı oturum işi)
+- [x] **Devre dedup sessiz birleşme bug'ı** — 9. oturumda popup eklendi (devre + spool seviyesi, iş emri numaralı onay mesajı)
+- [x] **devreler.malzeme Türkçe → canonical migration** — 9. oturumda 82 kayıt düzeltildi
+- [x] **Fark popup pill sayaçları** — 9. oturumda `Bakır Alaşım ×3` formatı eklendi
+- [x] **Spool çakışma 3-buton fix (İptal/Atla/Zorla)** — 10. oturumda tamamlandı, sessiz duplicate önlendi
+- [x] **Spool insert sessiz hatası toast** — 10. oturumda tamamlandı (`dny_spool_insert_hata`)
+- [x] **`devreler.zone_no` ölü kolon DROP** — 10. oturumda tamamlandı (kodda 0 referans, DB'den silindi)
+- [x] **`SP._gemi` → `SP._projeNo` rename (spool_detay.html)** — 10. oturumda tamamlandı + localStorage migration bloğu
+- [x] **spool_detay dropdown E-01 ihlali** — 10. oturumda tamamlandı (5+5 canonical + "Epoksi" çıkarıldı, "Diğer" eklendi, `cmn_opt_sec` yeni anahtar)
+- [x] **devre_detay duplicate spoolNo bug** — 10. oturumda tamamlandı (`_lk` stable local key pattern, 11 fonksiyon + 2 state + DOM ID'ler)
+- [ ] **🔴 YENİ ÖNCELİK 11 (10. oturumda keşfedildi) — `DEVRE.gemi` → `DEVRE.projeNo` rename (`devre_detay.html`):** Öncelik 5 sadece spool tarafına (SP) dokundu, devre tarafı (DEVRE) hâlâ `gemi` kullanıyor (10+ satır: title, breadcrumb, ARES_NORM.marka, etiket basma, Excel export). 45-60 dk, orta risk
+- [ ] **🔴 YENİ ÖNCELİK 12 — Manuel/Excel ekleme UNIQUE check pipeline+spoolNo:** `devre_detay.html` satır 1352 (manuel) ve 1886 (Excel) sadece `spoolNo`'ya bakıyor, pipeline'ı ihmal ediyor — false positive. 15-20 dk
+- [ ] **🟡 YENİ ÖNCELİK 13 — `devreler.notlar` vs `notlar` tablosu ikiliği:** `devreler` tablosunda `notlar TEXT` kolonu + ayrı `notlar` tablosu. Legacy mi, çift yazım mı belirsiz. SELECT + grep ile araştır, ölüyse DROP. 30-45 dk
+- [x] **🔴 Öncelik 10 — EN/AR dil dosyası toplu çeviri** — 10. oturum sonunda tamamlandı (355 EN + 322 AR batch çeviri + 7 TR placeholder bug fix bonus)
 
 ### Mobil React sayfaları
 - [x] MGiris.jsx — tamamlandı, i18n'li
@@ -883,7 +953,234 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 20 NİSAN 2026 (6. OTURUM)
+## 11. SON OTURUM — 20 NİSAN 2026 (10. OTURUM)
+
+### Bu oturumda tamamlananlar (6 Öncelik: 1+2+3+5+6+7)
+
+10. oturumda sırasıyla Öncelik 1, 2, 3, 5, 6, 7 kapatıldı. Toplam ~2.5 saat, 4 HTML + 3 JSON + 1 DB migration.
+
+**1. Öncelik 1 — Spool Çakışma 3-Buton Fix (devre_yeni.html):**
+- 9. oturumdaki "Yine de devam et" butonu sessiz duplicate oluşturuyordu
+- Yeni yapı: `[İptal] [Zorla ekle (sarı warn)] [Çakışanları atla (mavi, default)]`
+- `spoolCakismaBul` — `{..., idx: i}` array tracking
+- `kaydet()` — `'atla'` dalı: `new Set(cakismalar.map(c=>c.idx))` filter, boş kaldıysa `dny_dedup_s_bos` toast
+- 4 yeni anahtar: `dny_dedup_s_atla`, `dny_dedup_s_bos`, `dny_spool_insert_hata`, `cmn_opt_sec` + 1 güncelleme: `dny_dedup_s_devam`
+
+**2. Öncelik 2 — Spool Insert Toast:**
+- `spoolRes.error` dalında sadece `console.error` vardı → `toast(...'er')` eklendi
+- `.t-wa` CSS sınıfı (amber toast için) eklendi
+
+**3. Öncelik 3 — `devreler.zone_no` Ölü Kolon DROP:**
+- Grep: kodda 0 referans (node_modules hariç)
+- 4 SQL + kolon listesi doğrulaması → ölü
+- `ALTER TABLE devreler DROP COLUMN zone_no;` canlıda çalıştırıldı
+- Bölüm 4.2 `devreler` kolon listesi güncellendi (zone canonical, zone_no kaldırıldı)
+
+**4. Öncelik 5 — `SP._gemi` → `SP._projeNo` (spool_detay.html, 9 patch):**
+- **Kritik keşif:** Önceki AI 3 yerde `SP._projeNo||SP._gemi` fallback bırakmış ama **`SP._projeNo`'ya hiç atama yapmamış** — fallback kozmetikti
+- Demo data (897) + ASIL ATAMA (1005) + 6 okuma noktası düzeltildi
+- **Legacy localStorage migration bloğu** (1296-1299): `_gemi` varsa `_projeNo`'ya taşı ve sil
+- `devre_detay.html` goSpool bonus: localStorage'a `_projeNo:DEVRE.gemi` yaz (kaynak `DEVRE.gemi` hâlâ, 11. Öncelik)
+
+**5. Öncelik 6 — spool_detay Dropdown E-01 (Silent Bug Fix):**
+- **Silent DB corruption kaynağı:** Düzenle modal'ı `<option>` value'ları olmadan gelmişti, `.value` text döndürüyordu → DB'ye Türkçe yazılıyordu → 9. oturum Bug #3 migration'ı her düzenle'de geri alınıyordu
+- Yüzey + malzeme dropdown'lar → 5+5 canonical value + data-i18n
+- **"Epoksi" çıkarıldı** (CLAUDE.md 2.13 uyumu), **"Diğer" eklendi**, **"Boyalı" → `boyali` + etiket "Boya"**
+- `duzenleAc()` — legacy Türkçe SP.yuzey/malzeme → `ARES_NORM.yuzeyKod/malzemeKod` ile canonical'e çevir
+- `cmn_opt_sec` yeni anahtar (3 dil)
+
+**6. Öncelik 7 — devre_detay Duplicate spoolNo Bug (`_lk` Stable Key):**
+- Başta "tek fonksiyon" sandım, 11 fonksiyon + 2 state nesnesi + DOM ID'ler zincirine dönüştü
+- **Strateji:** Her SPOOLS kalemine `_lk` (stable local key): DB kayıtları için `s.id` (UUID), Excel/manuel import için `'new_'+Date.now()+'_'+random(7)`
+- Değişen: `_spoolMap`, Excel import, manuel ekleme, `renderTable` (6 onclick), `inlineEdit`, `goSpool`, `ctxAc` + zincir, `spoolDurdurAc/IptalAc/SilAc`, `spoolKaldir`, DELETE filter, `_gonderSecili`, `_etiketSecili`, DOM ID'ler
+- **Kritik bug fix:** Aynı devrede `pipeline1+S01` + `pipeline2+S01` olduğunda — eskiden inline edit ilkinden, sil ikisini de silerdi. Şimdi doğru
+
+### Değişen Dosyalar (4 HTML + 3 JSON + 1 SQL)
+
+| Dosya | Önce → Sonra | Risk |
+|---|---|---|
+| `devre_yeni.html` | 2271 → 2286 (Öncelik 1+2) | Orta |
+| `spool_detay.html` | 3139 → 3151 (Öncelik 5+6) | **Yüksek — 2 silent bug** |
+| `devre_detay.html` | 1994 satır (Öncelik 7) | **Yüksek — kapsamlı refactor** |
+| `lang/{tr,en,ar}.json` | 1366 → 1370 | Düşük |
+| SQL | `ALTER TABLE devreler DROP COLUMN zone_no;` | Geri alınamaz ama güvenli |
+
+### Verilen Anahtar Kararlar
+
+- **3-buton tercihi:** İptal / Zorla ekle / Çakışanları atla. Default "Atla" (güvenli), "Zorla" sarı warn (duplicate oluşturduğunu kullanıcıya hatırlatır)
+- **`zone_no` DROP:** Backup/rollback planı hazır (ADD COLUMN) ama gerekmedi, veri yoktu
+- **`SP._gemi` → `SP._projeNo` migration bloğu:** localStorage'da eski kaynak var ise yakalanır, sonsuza kadar geriye uyumlu
+- **Dropdown'da "Epoksi" kaldırıldı:** CLAUDE.md 2.13'e uygun (4. oturumda operasyonda kullanılmıyor kararı alınmıştı, kod henüz temizlenmemişti)
+- **`_lk` pattern tercihi:** `supaId` yoksa fallback `'new_'+random()` — Excel import ve manuel eklemeli kayıtları DB'ye gitmeden önce unique tutar
+
+### Keşfedilen Yeni Teknik Borçlar (11. oturuma)
+
+**🔴 YENİ Öncelik 11 — `DEVRE.gemi` → `DEVRE.projeNo` (Öncelik 5 devamı):**
+- `devre_detay.html` içinde `DEVRE.gemi` hâlâ proje_no anlamında (10+ satır)
+- Öncelik 5 sadece spool tarafına dokundu, devre tarafı kaldı
+- 45-60 dk, orta risk
+
+**🔴 YENİ Öncelik 12 — UNIQUE check pipeline dahil:**
+- `devre_detay.html` satır 1352 (manuel) + 1886 (Excel) sadece `spoolNo`'ya bakıyor
+- `pipeline1+S01` varken `pipeline2+S01` eklenmiyor (false positive)
+- Fix: `pipeline+spoolNo+rev` kombinasyonu
+- 15-20 dk
+
+**🟡 YENİ Öncelik 13 — `devreler.notlar` vs `notlar` tablosu:**
+- `devreler.notlar TEXT` kolonu + ayrı `notlar` tablosu
+- Legacy mi çift yazım mı belirsiz
+- SQL + grep ile araştır, 30-45 dk
+
+### Önemli Öğrenmeler
+
+1. **Önceki AI "proaktif gibi görünen yarım iş" bırakabilir.** spool_detay.html'de `_projeNo||_gemi` fallback vardı ama atama yoktu — fallback kozmetikti. **Ders:** Rename işlerinde yazma ↔ okuma simetrisi grep ile kontrol edilmeli.
+
+2. **Form save path'leri silent DB corruption üretebilir.** Düzenle modal her kullanıldığında DB'yi Türkçe ile kirletiyordu, 9. oturum migration'ı sürekli geri alınıyordu. **Ders:** E-01'de her form için round-trip test (açılış → seçim → kaydet → DB'de canonical?).
+
+3. **Refactor kapsamını baştan tam çıkar.** Öncelik 7 başta "tek fonksiyon" sandığımdı, 11 fonksiyon zincirine dönüştü. **Ders:** İlk grep ile tüm key-based find'lar, selection state'ler, DOM ID'leri listele, patch sırası planla.
+
+4. **Stable local key (`_lk`) pattern scalable.** `supaId || 'new_'+random()` — DB + client state aynı uzayda. Duplicate bug tek seferde çözüldü. Pattern akılda tut, başka liste sayfalarında (devreler.html, proje_detay.html) lazım olursa hazır.
+
+5. **"Ölü kolon" araştırması çok ucuz.** Öncelik 3: 4 SQL + 1 grep = 10 dk. `zone_no` 0 referans, DROP güvenli. **Ders:** Migration-in-progress ikilik şüphesinde DB + kod çift doğrulama, belgeye güvenme.
+
+6. **Uzun sohbet + büyük str_replace blokları = kapsam sarkması.** Bazı patch'lerim beklenenden fazla alanı etkilemiş gözüktü. **Ders:** Uzun dosyalarda dar patch serisi + sık grep doğrulaması.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (9. OTURUM)
+
+### Bu oturumda tamamlananlar (Devre Dedup Popup + Bug #3 Migration + Fark Popup İyileştirmesi)
+
+Ana tema: Öncelik 1 (devre dedup sessiz birleşme bug'ı) + biriken Bug #3 (devreler.malzeme legacy) + fark popup UX iyileştirmeleri. Kullanıcı test etmeden önce iki oturumluk deploy borcu birikmişti (8. + 9. oturum).
+
+**Kritik keşif — Önceki AI oturumunda JS+HTML zaten yazılmış:** Kullanıcı dosyayı yükleyince `devre_yeni.html`'de 2058→2247 satır (+189) olduğu, dedup popup altyapısının zaten kurulmuş olduğu görüldü. Önceki AI dil anahtarlarını eklemeden yarım bırakmış — bu oturumda tamamlandı. Ayrıca kullanıcının geri bildirimi doğrultusunda **iş emri numarası + spool sayısı onay mesajı** eklendi.
+
+**1. Devre Dedup Popup (Öncelik 1 — Ana İş):**
+- `devre_yeni.html` satır 1561'de SELECT güncellendi: `zone` + `is_emri_no` dahil, dedup key artık `(tenant + proje + devre_no + zone)` (önceden sadece `proje + devre_no` idi)
+- Dedup hit → popup çıkar: *"Bu devre zaten var — Mevcut devreye ekle / Yeni devre oluştur / İptal"*
+- Popup info kartı: proje adı + **iş emri numarası (P26-135) badge** + devre_no + zone
+- Onay mesajı: *"5 spool bu mevcut devreye eklenecek. Onaylıyor musunuz?"* (spool sayısı dinamik)
+- Önceki sessiz birleşme kaldırıldı — kullanıcı her durumda bilinçli karar verir
+- Fark popup CSS'i (`.fp-*`) reuse edildi, yeni CSS yazılmadı
+
+**2. Spool Dedup Popup (Öncelik 1 — Ek İş):**
+- "Mevcut devreye ekle" seçiminden sonra, mevcut devredeki spool'larla (pipeline_no + spool_no + rev) çakışma kontrolü
+- Çakışma varsa 2. popup: listeli, "Rev numarası güncellendi mi?" uyarısı
+- 2 seçenek: İptal / Yine de devam et
+- Kural: "proje + devre + zone + pipeline + spool_no hepsi aynı olamaz — ancak rev farklı olabilir" (kullanıcı iş modeli)
+
+**3. Log Flag (Bug #4 — Bonus):**
+- `mevcutDevreyeEklendi` flag'i eklendi
+- Dedup hit + "mevcuta ekle" → `islem_log.islem = 'SPOOL_EKLE_MEVCUT_DEVRE'`
+- Yeni devre veya "yeni oluştur" → eski `DEVRE_EKLE`
+- Toast da ayrıldı: `dny_saved_mevcut` ("✅ Mevcut devreye eklendi") vs `dny_saved`
+
+**4. Fark Popup Pill Sayaç (UX İyileştirmesi):**
+- `farkTespit`'te `yuklenenDagilim` eklendi — `[[kod, sayı], ...]` formatında
+- Pill rendering: `Bakır Alaşım ×3` gibi
+- Malzeme + yüzey için aynı mantık
+- Eski `yuklenenKodlar` fallback olarak korundu (geriye uyumluluk)
+
+**5. Bug #3 — `devreler.malzeme` Legacy Migration:**
+- 4. oturumdaki Faz 2 migration'da `devreler` tablosu **atlanmıştı** (sadece `spooller` + `spool_malzemeleri` yapılmış)
+- DB sorgusuyla 82 büyük harfli kayıt bulundu: 59 "Karbon Çelik", 12 "Paslanmaz/Paslanmaz Çelik", 8 "Bakır Alaşım", 4 "Alüminyum"
+- CASE WHEN mapping ile tek UPDATE: hepsi canonical'e çevrildi (`karbon`, `paslanmaz`, `bakir`, `alum`)
+- **Yeni bilgi:** "Paslanmaz Çelik" varyasyonu (3 kayıt, 9 Nisan) — ARES_NORM regex'inde `paslanmaz` altında `çelik` opsiyonel kelime olduğu için yakalar, ama DB canonical yazılımı için mapping'e eklendi
+
+**6. Dil Dosyaları (3 × 14 anahtar = 42 yeni):**
+- `dny_dedup_d_title`, `dny_dedup_d_alt`, `dny_dedup_d_soru`, `dny_dedup_d_onay` (devre popup)
+- `dny_dedup_s_title`, `dny_dedup_s_alt`, `dny_dedup_s_devam`, `dny_dedup_s_ipucu` (spool popup)
+- `dny_dedup_mevcut`, `dny_dedup_yeni`, `dny_dedup_iptal`, `dny_dedup_devre`, `dny_dedup_zone`
+- `dny_saved_mevcut` (toast)
+- **tr/en/ar: 1352 → 1366 anahtar, 3 dil simetrik**
+- Arapça'da "spool" = `السبول` (mevcut `dv_*` pattern'ine uygun, önceki AI'nın `الملف` önerisi düzeltildi)
+
+### Bug #5 — Aslında Bug Değilmiş
+
+Kullanıcı "form'da Karbon Çelik → popup Bakır → DB'ye Paslanmaz" senaryosu rapor etmişti. Kod analizinde:
+- `farkTespit` ve `farkDevam` fonksiyonları spool'ların malzemesini DEĞİŞTİRMİYOR — sadece uyumsuzluğu gösterip onay alıyor
+- `kaydet()` akışı: dedup hit → **devre INSERT atlanır**, yalnızca mevcut devrenin id'si kullanılır
+- Yani "Karbon" form beyanı, dedup hit olduğunda DB'ye **hiç yazılmaz**
+- Kullanıcı devreler.html'de eski "Paslanmaz" devresini görüp "yeni kayıt bu" sanmış
+
+**Sonuç:** Bug #5 aslında Bug #1'in türevi — Öncelik 1 popup'ı (kullanıcıya açık onay) bu karışıklığı kökten çözer. Kullanıcı bu senaryoyu oturumda onayladı.
+
+### Keşfedilen Yeni Teknik Borçlar (10. oturuma kalan)
+
+**🔴 YENİ ÖNCELİK 10 — EN/AR Dil Dosyası Eksik Çeviri (3-4 saat):**
+Dil dosyalarını güncellerken sistemik bir bug keşfedildi:
+- **`en.json`: 348 anahtar hâlâ Türkçe** (`dny_cancel`="İptal", `dny_active_circuits`="Aktif Devreler", vb.)
+- **`ar.json`: 319 anahtar hâlâ Türkçe** — aynı sorun
+- EN/AR kullanıcıları yarım çevrilmiş UI görüyor
+- Kaynak: önceki oturumlarda anahtar eklerken çeviri atlama
+- Toplu export + çeviri + import gerekli, ayrı oturum işi
+
+**🟡 Spooller tablosunda UNIQUE constraint YOK:**
+- Primary key sadece `id` (UUID) — duplicate spool'u DB reddetmiyor
+- Kodda `// 23505 = unique constraint` yorumu yanlış (hiç oluşmuyor)
+- Spool insert hatası `console.error` ile sessiz kalıyor (toast yok, satır 1668-1671)
+- Bug #5'in yan meselesi, Öncelik 2'ye taşındı
+
+**🟡 `devreler` tablosunda UNIQUE constraint YOK:**
+- Dedup tamamen JS tarafında. İki sekme aynı anda aynı devreyi oluşturabilir (çakışmaz ama duplicate olur)
+- Büyük değil çünkü popup zaten kullanıcıyı uyarıyor
+
+**🟡 `devreler` tablosunda `zone` + `zone_no` ikiliği:**
+- Tüm son kayıtlarda `zone` dolu, `zone_no` NULL
+- `zone_no` migration-in-progress mi yoksa ölü kolon mu belirsiz
+- Dedup kodu `zone` kullandı (doğrusu büyük olasılıkla bu)
+- 10. oturum keşfi: SELECT ile tam dağılım, ölü ise DROP, dolu ise merge kuralı
+
+### Değişen Dosyalar (4)
+
+| Dosya | Değişim | Satır/Anahtar |
+|---|---|---|
+| `devre_yeni.html` | Dedup popup + pill sayacı + is_emri_no | 2058 → 2271 |
+| `lang/tr.json` | 14 yeni dedup anahtarı | 1352 → 1366 |
+| `lang/en.json` | 14 yeni dedup anahtarı (İngilizce) | 1352 → 1366 |
+| `lang/ar.json` | 14 yeni dedup anahtarı (Arapça) | 1352 → 1366 |
+
+### DB Migration (1 blok)
+
+```sql
+-- Bug #3 — devreler.malzeme legacy Türkçe → canonical
+UPDATE devreler SET malzeme = CASE malzeme
+  WHEN 'Karbon Çelik'    THEN 'karbon'
+  WHEN 'Paslanmaz'       THEN 'paslanmaz'
+  WHEN 'Paslanmaz Çelik' THEN 'paslanmaz'
+  WHEN 'Bakır Alaşım'    THEN 'bakir'
+  WHEN 'Alüminyum'       THEN 'alum'
+  ELSE malzeme
+END
+WHERE malzeme IN ('Karbon Çelik','Paslanmaz','Paslanmaz Çelik','Bakır Alaşım','Alüminyum');
+-- 82 satır etkilendi (canlıda çalıştırıldı)
+```
+
+### Verilen Anahtar Kararlar
+
+- **Seçenek A+ (popup) tercih edildi:** `gemi_no` kolonu eklenmedi — çünkü `proje_no` zaten gemi numarasını tutuyor (NB1124, NB1137 newbuild prefix'leri). Veri modelinde değişiklik yerine UX popup'ı ile çözüldü.
+- **Zone dedup'a dahil edildi:** Farklı zone = farklı devre. Aynı ada ama M100 ve M200 zone'larında iki ayrı devre olabilir (iş modeline uygun).
+- **"Paslanmaz Çelik" → `paslanmaz`:** Mapping'e açık ekleme, gelecekte bu varyasyon tekrar görülürse yakalar.
+- **ARES_NORM doğru çalışıyor:** `malzemeKod("Paslanmaz Çelik")` regex ile `paslanmaz` döndürür — runtime tarafı zaten hazır, sadece DB canonical değildi.
+- **EN/AR 667 anahtar çevrilmemiş konusu 10. oturuma taşındı** — kapsam büyük, ayrı iş.
+
+### Önemli Öğrenmeler
+
+1. **"Silent corruption" sandığın şey tasarım gereği olabilir.** Bug #5 "form'da X → DB'de Y" klasik veri bozulması senaryosuydu. Kod analizinde aslında dedup hit'te form beyanı hiç yazılmadığı, kullanıcının eski kaydı yeni sandığı ortaya çıktı. **Ders:** Kullanıcı rapor ettiği bug'ı önce DB sorgusu + kod akış analizi ile doğrula, varsayıma hemen koda dalma.
+
+2. **Önceki AI oturumu bıraktığı iş: dikkat!** Yeni oturumda dosyayı gördüğümde JS+HTML zaten yazılmıştı ama dil anahtarları eksikti. `outputs/` klasörüne bakmak, `dil-anahtarlari-ekle.md` gibi dosyalar bulmak yarım işleri ortaya çıkarır. **Ders:** Her oturumun başında outputs'u tara.
+
+3. **Arapça çeviri kontrolü:** Önceki AI "spool" için `الملف` (dosya) önermişti — ama `dv_*` ve `sp_*` anahtarlarında pattern `السبول`. **Ders:** Çeviri eklerken pattern tutarlılığını grep ile kontrol et, körü körüne kopyalama.
+
+4. **Migration "tamamlandı" iddiası şüpheyle karşıla.** 4. oturum notu "Faz 2 migration bitti" diyordu, 5. oturum `aluminyum → alum` kaçağı bulmuştu, 9. oturum `devreler` tablosunun tamamen atlandığını buldu. **Ders:** "Tamamlandı" sonrası 3 sorgu (her tablo için dağılım) 10 saniye alır, kör bir köşeyi gösterir.
+
+5. **UX mesajları somut olmalı.** "Bu devre zaten var" genel → yanlış devre karıştırma riski. "5 spool P26-135 iş emirli devreye eklenecek" spesifik → kullanıcı tam olarak ne olduğunu bilir. **Ders:** Popup metinlerinde dinamik değerler (sayı, ID, kritik alanlar) göster.
+
+6. **Kullanıcının yanılma ihtimalini kabul et.** Bug #5 raporunda kullanıcı kendi kendine "acaba yanılmış mıyım" dedi ve senaryoyu yeniden düşündü. **Ders:** Kullanıcıyı küçük düşürmeden gerçek akışı açıkla — "siz haklısınız, sistem yanlış" demek her zaman doğru değil.
+
+---
+
+## 11B. ÖNCEKİ OTURUM — 20 NİSAN 2026 (6. OTURUM)
 
 ### Bu oturumda tamamlananlar (spool_detay.html sessiz bug avı + tenant prefix temelleri)
 
@@ -970,7 +1267,7 @@ Blok C — DB keşifleri (kod değişmedi, sadece belgelendi):
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (5. OTURUM)
+## 11C. ÖNCEKİ OTURUM — 20 NİSAN 2026 (5. OTURUM)
 
 ### Bu oturumda tamamlananlar (Malzeme-Yüzey Uyum + Fark Tespit + devreler.html refactor)
 
@@ -1041,7 +1338,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11B. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
+## 11D. ÖNCEKİ OTURUM — 19 NİSAN 2026 (4. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Refactor Tamamlama + DB Migration)
 
@@ -1115,7 +1412,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11C. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
+## 11E. ÖNCEKİ OTURUM — 17 NİSAN 2026 (3. OTURUM)
 
 ### Bu oturumda tamamlananlar (Enum Anti-Pattern Temizliği)
 
@@ -1154,7 +1451,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11D. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
+## 11F. ÖNCEKİ OTURUM — 17 NİSAN 2026 (2. OTURUM)
 
 ### Bu oturumda tamamlananlar (MDrawer + Tema Context)
 
@@ -1199,7 +1496,7 @@ Bu oturumda üç büyük iş bitti:
 
 ---
 
-## 11E. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
+## 11G. ÖNCEKİ OTURUM — 17 NİSAN 2026 (1. OTURUM)
 
 ### Tamamlananlar
 - **i18n altyapısı kuruldu:** `mobile/src/lib/i18n.jsx` (I18nProvider + useT), `mobile/src/lang/` (tr/en/ar)

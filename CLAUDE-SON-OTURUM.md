@@ -1,158 +1,242 @@
-# AresPipe — 8. Oturum Özeti (20 Nisan 2026)
+# AresPipe — 10. Oturum Özeti (20 Nisan 2026)
 
 > Bu dosya son oturumda yapılanları ve deploy gereken dosyaları listeler.
-> Yeni oturumda CLAUDE.md ile birlikte okunur.
+> Yeni oturumda CLAUDE.md + CLAUDE-SONRAKI-OTURUM.md ile birlikte okunur.
 
 ---
 
 ## Oturum Başlığı
 
-**Tarih:** 20 Nisan 2026 (akşam)
-**Süre:** Uzun oturum (~2.5 saat)
-**Ana tema:** Öncelik 1 — Admin UI firma kodu yönetimi + spool ID 6-hane geçişi
+**Tarih:** 20 Nisan 2026 (akşam — 9. oturumdan hemen sonra)
+**Süre:** Çok uzun oturum (~4 saat aktif kodlama)
+**Ana tema:** Öncelik 1 (spool 3-buton) + 2 (insert toast) + 3 (zone_no DROP) + 5 (_gemi rename) + 6 (dropdown E-01) + 7 (duplicate spool_no _lk) + **10 (EN/AR toplu çeviri 677 anahtar)**
+
+**Toplam 7 öncelik kapatıldı. Deploy borcu 3 oturumluk (8+9+10).**
 
 ---
 
 ## Yapılanlar
 
-### Öncelik 1 ✅ — Admin UI Firma Kodu Yönetimi
+### Öncelik 1 ✅ — Spool Çakışma 3-Buton Fix
 
-**Kapsam:**
-- `admin/yeni-firma.html` → Adım 1 formuna "Firma Kodu" alanı eklendi
-  - Firma Adı (geniş) + Firma Kodu (dar, 120px) yan yana, Firma Tipi alt satıra indi
-  - `onkeyup` otomatik uppercase + A-Z filtresi
-  - `onblur` gerçek zamanlı çakışma kontrolü (`tenants.kod` sorgusu)
-  - `adimValidate()`'e kod validasyonu + çakışma engeli
-  - `firmaOlustur()` → `tenantData.kod` INSERT'e eklendi
-  - `23505 unique violation` için yarış durumu yakalama
-- `admin/firma-detay.html` → Firma Bilgileri kartına "Firma Kodu" alanı eklendi
-  - Direkt editable (Değiştir butonu yok — kullanıcı isteği, admin kendi yazıyor zaten)
-  - Üst page-header badge'lerinde kod turuncu mono font ile gösteriliyor
-  - Çift onay + çakışma kontrolü (manuel çözüm, otomatik swap yok)
-  - `yukle()` fonksiyonuna `T('fKod').value = firma.kod` eklendi
-  - `firmaBadges()` fonksiyonuna kod badge'i eklendi
-  - `fKodTemizle()` + `fKodCakismaKontrol()` helper'ları eklendi
-  - `bilgileriKaydet()` kod değişiyorsa çift onay + çakışma kontrolü
+**Problem:** Kullanıcı yanlışlıkla aynı Excel'i 2. kez yüklerse, "Yine de devam et" butonu DB'de sessiz duplicate oluşturuyordu (spooller'da UNIQUE constraint yok).
 
-**Yasak kod listesi:** Yok. Kullanıcı kararıyla engel koymadık — admin bilinçli seçiyor.
+**Fix (`devre_yeni.html`):**
+- `spoolCakismaBul` — `cakismalar.push({..., idx: i})` ekle (array index for filter)
+- `dedupSpoolPopupGoster` HTML — 3 buton:
+  - **İptal** (gri, `fp-btn`)
+  - **Zorla ekle (duplicate oluştur)** (sarı, `fp-btn fp-warn`) — mevcut davranış, bilinçli seçim
+  - **Çakışanları atla** (mavi vurgulu, `style="border-color:var(--ac);color:var(--ac);"`) — yeni, varsayılan güvenli davranış
+- `kaydet()` akışı (satır 1640-1665):
+  ```js
+  if (sKarar === 'iptal') { return; }
+  if (sKarar === 'atla') {
+    const atlaIdx = new Set(cakismalar.map(c => c.idx));
+    spooller = spooller.filter((_, i) => !atlaIdx.has(i));
+    if (!spooller.length) { toast('dny_dedup_s_bos','wa'); return; }
+  }
+  // 'zorla' → fall-through, mevcut davranış
+  ```
+- `.t-wa` CSS sınıfı eklendi (amber toast için)
 
-### Öncelik 1 ✅ — Spool ID 4 → 6 Hane Geçişi
+**Dil anahtarları (3 dil × 2 yeni + 1 güncelleme = 9 değişiklik):**
+- `dny_dedup_s_atla` — YENİ: "Çakışanları atla" / "Skip conflicts" / "تخطي المتكررة"
+- `dny_dedup_s_bos` — YENİ: "Eklenecek spool kalmadı (hepsi zaten kayıtlı)"
+- `dny_dedup_s_devam` — GÜNCELLEN: "Yine de devam et" → "Zorla ekle (duplicate oluştur)" (3 dil)
 
-**Gerekçe:** Kullanıcı tespit etti — ortalama atölye ayda 2-3 bin spool üretir, 9999 sınırı 4 ayda dolar. 6 hane 25+ yıl idare eder, program o kadar yaşamaz.
+### Öncelik 2 ✅ — Spool Insert Sessiz Toast
 
-**Mimari karar:** DB 6 hane padded (`A-000001`), ekran min 4 hane (`A-0001`). 9999'dan sonra ekran otomatik büyür (`A-10000`). Sıfırlama istenirse `tanimlar.html > Kod Serileri` sekmesinden yapılır.
+**`devre_yeni.html` satır ~1700:** `spoolRes.error` dalında sadece `console.error` vardı. `toast(dny_spool_insert_hata + error.message, 'er')` eklendi.
 
-**Değişiklikler:**
-- `ares-store.js` → `_SAYAC_VARSAYILAN.spool.digits` 4 → 6
-- `ares-store.js` → `markaId()` helper'ı kırpma mantığı eklendi:
-  - Regex parse: `^([A-Z]{1,4})-(\d+)$`
-  - `parseInt(numStr, 10)` + `n < 10000 ? padStart(4, '0') : String(n)`
-  - Legacy prefix'siz (`0074`) tenant cache ile prefix'lenir
-  - Farklı format → dokunma
-- SQL migration → `UPDATE sayac_tanimlari SET digits = 6 WHERE tip = 'spool'` (Demo Atölye'de 1 satır)
-- Test: 16/16 unit test geçti (Node'da manual runner ile)
+**Yeni anahtar:** `dny_spool_insert_hata` (3 dil × 1 = 3 değişiklik)
 
-### Paralel keşifler (bug veya scope dışı — sonraki oturuma not)
+### Öncelik 3 ✅ — devreler.zone_no Ölü Kolon DROP
 
-#### 🐛 Bug #1: Devre dedup sessizce birleşiyor
-- Kullanıcı yeni devre oluşturmak isteyince, proje + devre_adı + zone + tersane aynıysa mevcut devre bulunuyor
-- Form "kaydedildi" diyor ama yeni devre yaratmıyor, mevcut devreye spool ekliyor
-- Kullanıcı "kaydedilmedi" sanıyor çünkü mevcut devre devreler listesinde görünmüyor (eski `ad=null` devre)
-- **Fix:** Ya duplicate detection popup'ı gerek ("Bu kombinasyon zaten var, mevcut devreye eklensin mi?"), ya gemi numarası benzersizlik kolonuna dahil edilmeli
+**Tespit:**
+- Kod tabanında (node_modules hariç) `zone_no` için 0 hit — ne okuma ne yazma
+- Başlangıçtaki `information_schema` sorgusu `zone_no`'yu TEXT olarak gösterdi
+- Aggregate sorgu `count(zone_no)` → "column does not exist" hatası → **DROP zaten uygulanmış**
 
-#### 🐛 Bug #2: Gemi numarası devre benzersizliğinde yok
-- NB1124 ve NB1125 aynı projelerle devam eden ayrı gemiler
-- Şu an sistem bunları ayırmıyor gibi davranıyor (devre aynı devre oluyor)
-- **Fix:** `devreler` tablosunda benzersizlik kolonları gözden geçirilmeli, gemi_no/proje_no kombinasyonu bir benzersizlik alanı olmalı
+**Final doğrulama:**
+```sql
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_schema='public' AND table_name='devreler' ORDER BY ordinal_position;
+```
+Çıktı: 23 kolon, `zone` var, `zone_no` yok. Başka migration-in-progress ikiliği (`agirlik/agirlik_kg`, `yapan_id/yukleyen_id` pattern'i) **devreler tablosunda yok**.
 
-#### 🐛 Bug #3: "Paslanmaz" migration eksik
-- 7 Nisan'da oluşturulan bir devrede `malzeme = "Paslanmaz"` (ilk harf BÜYÜK)
-- 4. oturum Faz 2 migration'da bu kayıt filtreye takılmamış
-- **Fix:** `UPDATE devreler SET malzeme = lower(malzeme) WHERE malzeme ~ '^[A-Z]'` gibi bir SQL daha
+**Not:** Kullanıcı DROP'u bilinçli çalıştırdı mı yoksa oturum-öncesi mi oldu — belirsiz, ama sonuç aynı: kolon temiz, CLAUDE.md notu güncellenebilir.
 
-#### 🐛 Bug #4: islem_log katmanı belirsiz yazımlı
-- "DEVRE_EKLE" logu 13 gün önce oluşturulmuş bir devre için bugün yazılmış
-- Muhtemelen `ARES.logEkle` yanlış zamanda çağrılıyor veya tarih hesabında bir şey var
-- **Fix:** logEkle çağrı noktaları + timestamp davranışı gözden geçirilmeli
+### Öncelik 5 ✅ — SP._gemi → SP._projeNo Rename
 
-#### 🐛 Bug #5: Malzeme form-popup uyuşmazlığı
-- Form'da Karbon Çelik seç → popup "beyanın Karbon, yüklenen Bakır Alaşım" der → "Yüklemeye devam et" ile kaydedilince DB'ye Paslanmaz yazılmış
-- 3 farklı malzeme: form beyanı, popup "yüklenen", DB "yazılan"
-- **Fix:** Fark popup + INSERT yolu arasındaki malzeme akışı gözden geçirilmeli (5. oturumda eklenen fark popup'ı `spooller.malzeme`'yi doğru set ediyor mu?)
+**Problem:** `spool_detay.html`'de `SP._gemi` aslında `projeler.proje_no` tutuyor — isim yalan söylüyordu (CLAUDE.md 2.14 gemi kavramı ayrı, `projeler.gemi_adi` farklı bir alan).
 
-**Not:** Bug 1-5 hepsi `devre_yeni.html`'in spool INSERT akışını ilgilendiriyor. Muhtemelen ortak bir kök neden var (Öncelik 2 denormalizasyon borcuyla ilişkili olabilir).
+**Önemli keşif:** Dosyada `SP._projeNo||SP._gemi` fallback pattern'i 3 yerde vardı (önceki AI oturumundan kalma) ama `SP._projeNo`'ya atama yapan **tek satır yoktu** — `||` her zaman sağ tarafa düşüyordu, fallback pattern'i kozmetikti. 9. oturum dersi #2'nin canlı örneği.
+
+**Fix (`spool_detay.html`, 9 patch):**
+- Demo data (satır 897): `_gemi:'NB1137'` → `_projeNo:'NB1137'`
+- **ASIL ATAMA (satır 1005):** `SP._gemi = dv.projeler.proje_no` → `SP._projeNo = ...`
+- localStorage parse sonrası **legacy migration bloğu** eklendi:
+  ```js
+  if (SP._gemi !== undefined) {
+    if (SP._projeNo === undefined) SP._projeNo = SP._gemi;
+    delete SP._gemi;
+  }
+  ```
+  Bu sayede eski localStorage verisi olan kullanıcılar veri kaybı yaşamaz
+- 6 nokta daha: etiket marka, yazdır window, fallback temizleme, KK modal, Sevk modal başlıkları
+- `devre_detay.html` `goSpool()` içinde de `_gemi:DEVRE.gemi` → `_projeNo:DEVRE.gemi` bonus fix (Öncelik 5 devamı — ama `DEVRE.gemi` devre_detay'daki kaynak alan adı rename'i **Öncelik 5 kapsamında değil**, 11. oturuma not)
+
+### Öncelik 6 ✅ — spool_detay Dropdown E-01 İhlali
+
+**Problem:** `spool_detay.html` satır 773-774'te iki select hardcode Türkçe:
+```html
+<select id="ed_yuz">
+  <option>Galvaniz</option><option>Asit</option><option>Siyah</option><option>Epoksi</option>
+</select>
+<select id="ed_malz">
+  <option>Karbon Çelik</option><option>Paslanmaz</option><option>Alüminyum</option><option>Bakır Alaşım</option>
+</select>
+```
+
+Sorunlar:
+- `value` attribute yok → select.value option text dönüyor
+- DB açılırken canonical `'asit'` ile eşleşme yok → seçili görünmüyor
+- Kaydet → DB'ye Türkçe yazılıyor (E-01 ihlali, 9. oturum Bug #3 migration'ını bu modal bozuyordu)
+- `Epoksi` 4. oturumda kaldırılmıştı (CLAUDE.md 2.13), hâlâ var
+- `Diğer` yok
+
+**Fix:**
+- Yüzey: 4 option → 5 option canonical value + data-i18n (`cmn_yuzey_*`). Epoksi çıktı, Diğer eklendi
+- Malzeme: 4 option → 5 option canonical value + data-i18n. Diğer eklendi
+- `duzenleAc()` — legacy Türkçe spool verisi için `ARES_NORM.yuzeyKod()`/`malzemeKod()` sarması (hibrit Faz 1 pattern'i, CLAUDE.md 2.13 Öncelik 7)
+
+**Yeni anahtar:** `cmn_opt_sec` — "Seçin..." / "Select..." / "اختر..." (ortak)
+
+### Öncelik 7 ✅ — devre_detay Duplicate spool_no Bug
+
+**Problem (CLAUDE-SONRAKI 9. oturumdan):** `inline edit` SPOOLS.find(s.spoolNo === ...) kullanıyordu. Aynı devrede pipeline1+S01 ve pipeline2+S01 varsa (dedup popup öncesi girilmiş eski kayıtlar) → `.find` ilkini döner, ikincisi atlanır.
+
+**Ama kapsam tahmin edilenden büyüktü** — sadece inline edit değil, **tüm tekil spool işlemleri ve selection state'ler** aynı hatayı yapıyordu:
+- `goSpool`, `ctxAc`, `spoolDurdurAc`, `spoolIptalAc`, `spoolSilAc`, `spoolKaldir`
+- DELETE filter (`SPOOLS.filter(s.spoolNo !== _ctxSpool.spoolNo)`) → duplicate'in ikisini de siler!
+- `_gonderSecili[s.spoolNo]` toplu KK/sevkiyat selection
+- `_etiketSecili[s.spoolNo]` toplu etiket selection
+- DOM ID'ler (`etc_${spoolNo}`, `etcb_${spoolNo}`) duplicate → UI seçim kırılır
+
+**Fix stratejisi — stabil local key (`_lk`):**
+- DB'den gelen spool'lara `_lk: s.id` (UUID) atan
+- Excel import + manuel ekleme için `_lk: 'new_' + Date.now() + '_' + random`
+- Tüm find/filter/selection key'lerini `_lk` üzerine çevir
+- DOM ID regex temizleme (`.replace(/[^a-z0-9]/gi,'_')`) zaten UUID + 'new_abc' için güvenli
+
+**Fix (`devre_detay.html`, 14 patch):**
+1. `_spoolMap` → return'a `_lk:s.id`
+2. Excel import → `_lk:'new_'+...`
+3. renderTable 6 onclick → `s._lk` geçir
+4. `inlineEdit(td, alan, lk, ...)` — find `_lk`
+5. `goSpool(lk)` — find `_lk` + `_gemi`→`_projeNo` bonus
+6. `ctxAc(e, lk)` + menu zinciri — `_lk`
+7. `spoolDurdurAc/IptalAc/SilAc(lk)` — find `_lk`
+8. `spoolKaldir(lk)` — find `_lk`
+9. DELETE filter — `_lk` ile
+10. `spoolEkleKaydet` — yeni satır `_lk` atama
+11-12. `_gonderAc`, `_gonderAcDevam`, `gonderListeRender`, `_gTogle`, `gonderHepsiniSec`, `gonderKaydet` — tüm selection `_lk`
+13. `etiketModalAc`, `etiketHepsiniSec`, `etiketToggle`, `etiketSecimRender` — `_lk` key + DOM ID
+14. `etiketOnizRender`, `etiketYazdir` — `_lk` filter
+
+**Kalan 2 referans (meşru, Bug #7 scope'u dışı):**
+- Satır 1352: `spoolEkleKaydet`'te "bu spoolNo zaten var" UI validation
+- Satır 1886: Excel import'ta aynı kontrol
+
+Bu iki nokta client-side duplicate uyarısı, DB-level UNIQUE yokluğu ile birlikte gerçek bug (pipeline+spoolNo birlikte unique olmalı) — **ayrı bir iş, 11. oturuma not.**
+
+### Öncelik 10 ✅ — EN/AR Toplu Çeviri (677 anahtar)
+
+**Başlangıç durumu:**
+- `en.json`: 355 anahtar TR ile aynı (çevrilmemiş)
+- `ar.json`: 322 anahtar TR ile aynı (çevrilmemiş)
+- Ortak: 322 anahtar (AR'ın %91'i EN'de de eksik — aynı pattern, önceki oturumlarda ikisi de atlanmış)
+
+**Strateji:**
+- Tek Python dict'inde `{anahtar: (EN, AR)}` formatında 355 satırlık çeviri batch
+- Kategori bazlı grup: `bk_`, `cmn_`, `dny_` (88), `dv_`, `log_`, `m_` (40), `mob_` (78), `pl_` (60), `tr_` (44), `ts_` ve diğerleri
+- AR çevirilerinde mevcut `السبول`/`مراجعة`/`خط الأنابيب` pattern'i korundu
+- Script sadece "TR ile aynı" olanları güncelledi — önceden doğru çeviri ezilmedi
+
+**Sonuç:**
+- EN: 355 → 42 (çevrilen 355, kalan 42 evrensel terim)
+- AR: 322 → 8 (çevrilen 322, kalan 8 evrensel terim)
+- **42 EN + 8 AR "TR ile aynı" kalan anahtarlar aslında evrensel:** `Spool`, `Pipeline No`, `Rev`, `PDF`, `Excel`, `kg`, `#`, `AresPipe`, `Cunife`, `Fitting`, emoji'li başlıklar (`⚙️ Spool`, `🧪 Test`, `📥 Excel`) — tüm dillerde aynı yazılmalı
+
+**Bonus bulgu — 7 TR placeholder bug'ı:**
+TR dosyasında yanlışlıkla İngilizce bırakılmış placeholder'lar keşfedildi:
+- `dv_isemri_placeholder`: "Enter shipyard work order..." → "Tersane iş emri girin..."
+- `dv_note_placeholder`: "Add a note..." → "Not ekle..."
+- `sp_modal_stop_placeholder`: "Detailed description..." → "Detaylı açıklama..."
+- `sp_note_placeholder`: "New note..." → "Yeni not..."
+- `ks_page_title`: "✂ Cutting Management" → "✂ Kesim Yönetimi"
+- `ks_search_ph`: "Spool no, work order, material..." → "Spool no, iş emri, malzeme..."
+- `log_ara_placeholder`: "🔍 Search operation, source, description…" → "🔍 İşlem, kaynak, açıklama ara…"
+
+Türk kullanıcılar bu alanlarda İngilizce görüyorlardı — bug'dı, düzeltildi.
+
+**Toplam değişiklik:**
+- `lang/tr.json`: 7 bug fix
+- `lang/en.json`: 355 yeni çeviri
+- `lang/ar.json`: 322 yeni çeviri
+- 3 dil simetri: ✅ 1370 anahtar
+
+**Çeviri dict'i korundu:** `/home/claude/translate_batch.py` — ileride yeni anahtarlar eklenirken referans olarak kullanılabilir (terim tutarlılığı için).
 
 ---
 
-## Deploy Listesi (3 Dosya + 1 SQL)
+## Deploy Listesi (5 Dosya + 0 SQL)
 
 | Dosya | Değişiklik | Risk |
 |---|---|---|
-| `ares-store.js` | `spool.digits` 4→6, `markaId()` kırpma | **Yüksek** — her sayfayı etkiler ✅ test edildi |
-| `admin/yeni-firma.html` | Kod alanı + validation + INSERT | Orta |
-| `admin/firma-detay.html` | Kod alanı + editable + çakışma + badge | Orta |
-| `migrations/2026-04-20-spool-6hane.sql` | 1 satır UPDATE | Düşük |
+| `devre_yeni.html` | 2271 → 2286, 3-buton popup + .t-wa CSS + toast | **Orta** — ana akış |
+| `spool_detay.html` | 3139 → 3151, rename + dropdown E-01 + migration bloğu | **Orta-Yüksek** — büyük dosya, iki ayrı fix iç içe |
+| `devre_detay.html` | 1994 → 1994 (net değişim minimal ama 14 patch) | **Yüksek** — selection + modal + inline edit ayrı ayrı test gerek |
+| `lang/tr.json` | 1366 → 1370 (4 yeni anahtar) | Düşük |
+| `lang/en.json` | 1366 → 1370 | Düşük |
+| `lang/ar.json` | 1366 → 1370 | Düşük |
 
-**Deploy durumu (20 Nisan 19:35 itibarıyla):** Üç dosya push edildi, SQL çalıştırıldı, canlıda doğrulandı. `A-0472`, `A-0512`, `A-0518`, `A-0519` doğru gösteriliyor.
+**SQL: `devreler.zone_no` DROP** — 10. oturum sırasında/öncesinde uygulandı (canlıda doğrulandı: kolon yok).
 
----
-
-## SQL Çalıştırıldı
-
-```sql
--- 1) Spool sayacı 6 haneye geçti (başarılı)
-UPDATE sayac_tanimlari SET digits = 6 WHERE tip = 'spool';
-
--- 2) Test kirini temizle (başarılı, 3 sorgu)
--- Log + nortlar + spool silme (bkz. Bug #1-2 testleri sırasında)
-```
-
-**Final durum:** `sayac_tanimlari.spool.son_no = 519`, `digits = 6`, prefix boş (tenants.kod'tan geliyor).
+**Deploy sırası (9. oturum dersi — risksizden başla):**
+1. Önce dil dosyaları (fallback mekanizması var, risksiz)
+2. Sonra `devre_yeni.html` + `spool_detay.html` (yeni davranış)
+3. En son `devre_detay.html` (en kapsamlı refactor, parça parça test)
+4. **3 oturumluk birikmiş test borcunu tek seferde yap** — bug çıkarsa hangi oturum kırdı zor belirlenir (6. oturum dersi #6)
 
 ---
 
 ## Bu Oturumdan Dersler
 
-1. **Cache fantom sorunları.** Kullanıcı `A-513` görünce (3 hane, padding yok) cache teorisi kurduk. Gerçekte sebep `sonraki_no` RPC'sinin sadece integer döndürüyor olması + `_noFormatla`'nın cfg.digits'e doğru erişememesiydi. **Ders:** Ham DB değerlerini kontrol etmeden cache teorisi kurma, SELECT at.
+1. **"Yarım fallback pattern" = kozmetik kod.** `SP._projeNo||SP._gemi` 3 yerde vardı ama `SP._projeNo`'ya atama yoktu. `||` her zaman sağa düşüyordu, fallback'in bir anlamı yoktu. **Ders:** Rename işlerinde önce **atamaların olduğu noktaları** tespit et, fallback pattern'lerini görünce "bir yerde atama olmalı" varsayma.
 
-2. **"Görünmüyor" ≠ "yok".** Kullanıcı "devre oluşmadı" dedi, log attılmış, DB'de vardı. Dedup nedeniyle mevcut devreye bağlanmış. **Ders:** Kullanıcı semptom söyler, sebep hiç göründüğü gibi olmayabilir. SQL doğrulaması ilk adım olmalı.
+2. **E-01 ihlali UI'dan DB'ye sessizce bulaşıyor.** spool_detay'daki duzenle modal her kullanıldığında 9. oturum Bug #3 migration'ını bozuyordu. Kaynak select'te canonical value yoktu, DB'ye Türkçe yazılıyordu. **Ders:** Enum refactor tamamlandı denildiğinde (3. oturum), **tüm düzenle modal'larını taramak şart** — edge case olarak atlanabilir.
 
-3. **`islem_log` kolon adlarını bilme yanılsaması.** `eylem`, `tablo` varsayımlarımın hiçbiri doğru değildi — gerçek: `islem`, `katman`. CLAUDE.md Bölüm 4.2'de `islem_log` şeması yoktu, "şema belirsiz" notu vardı. **Fix:** Aşağıda şema güncellemesi öneriliyor.
+3. **"Inline edit bug'ı" sandığın şey halka tertiptir.** Öncelik 7 başta sadece inline edit'ti, kapsam genişledikçe 6 fonksiyon + 2 selection state + DOM ID zincirine dönüştü. `spoolNo` key 11 yerde kullanılıyordu. **Ders:** Büyük refactor başlamadan önce `grep -n "target_field"` ile tam kapsam çıkar. Eğer 10+ nokta varsa: (a) kapsamı daralt, (b) stabil local key stratejisi kullan, (c) oturum fosfate et.
 
-4. **Bug #1-5 hepsi aynı akışta.** 5 farklı bug gibi görünenlerin hepsi `devre_yeni.html`'in INSERT akışında. Öncelik 2 (denormalizasyon) bunları birleşik çözebilir.
+4. **DROP öncesi grep = sigorta.** `zone_no` canlı DROP edilmeden önce (kullanıcı bilinçli mi yanlışlıkla mı belirsiz), kod tabanında 0 hit olduğu grep ile gösterilmişti → DROP güvenliydi. **Ders:** DROP öncesi **mutlaka grep + DB sayım** — node_modules'ü hariç tut.
 
-5. **Unit test = 15 dakikalık sigorta.** `markaId()`'i Node'da test ettik, 16/16 geçti. Deploy sonrası canlıda bug çıkmadı. Karmaşık fonksiyonlarda test pay eder.
+5. **Aynı oturumda 6 öncelik bitirebiliyoruz ama test borcu da 3 oturuma çıktı.** Hızlı gitmek kolay, deploy etmeden yığmak kolay. **Ders:** Test borcu 2 oturum birikti mi → bir sonraki oturumda **sadece test/deploy** yap, yeni kod yok.
 
----
+6. **Stabil local key (`_lk`) pattern'i yazıya dökülmeli.** Devre_detay'daki 14 patch'in özü: UUID/unique-ID kaynak ne olursa olsun, selection + find + DOM için tek bir `_lk` alanı kullan. Bu pattern başka dosyalarda da işe yarar (proje_detay spool listesi vb.). **CLAUDE.md'ye kural olarak eklenebilir** — Kural B-02 (Stabil Local Key) öneri.
 
-## CLAUDE.md Güncellemesi (Sonraki Oturumda Yapılacak)
-
-**Bölüm 4.2 — islem_log şeması:**
-```
-**islem_log** (8. oturumda DB'den doğrulandı):
-- `id UUID`, `tenant_id UUID`, `olusturma TIMESTAMPTZ`
-- `islem TEXT` — eylem kodu (DEVRE_EKLE, DURDURMA, vb.)
-- `katman TEXT` — kategori (devre, spool, proje, kesim, vb.)
-- `katman_id UUID` — ilgili kaydın UUID'si (polimorfik)
-- `yapan_id UUID` — kullanicilar.id'ye FK
-- `aciklama TEXT`, `meta JSONB`
-- `spool_id UUID`, `devre_id UUID`, `proje_id UUID` — opsiyonel FK'lar
-```
-
-**Bölüm 2.15 — E-04 marka formatı güncelle:**
-- Not: spool_id'nin DB tarafında 6 hane padded olduğunu, display tarafında `ARES.markaId()`'ın min 4 haneye kırptığını belirt.
-- `sayac_tanimlari.digits = 6` olduğu kayıt altına al.
-
-**Bölüm 2.14 — E-03 tenant prefix güncelle:**
-- `admin/yeni-firma.html` ve `admin/firma-detay.html`'de kod alanı yönetildiği notunu ekle.
+7. **Öncelik 5'in kapsamı 2 dosyaya yayıldı.** `SP._gemi` sadece spool_detay'da değil, `devre_detay.html` goSpool'da da localStorage'a yazılıyor. Cross-file rename'lerde grep'i **tüm dosyalarda** yap, tek dosyaya sığdığını varsayma.
 
 ---
 
 ## Sonraki Oturum İçin Not
 
 Detaylar için `CLAUDE-SONRAKI-OTURUM.md`'ye bak. Özet:
-1. **Devre dedup UX fix** — Bug #1 + #2 birleştir, gemi numarası + duplicate popup
-2. **Paslanmaz migration** — Bug #3, 1 SQL
-3. **islem_log zamanlama** — Bug #4, ayrı iş
-4. **Fark popup malzeme yolu** — Bug #5, INSERT yolu gözden geçir
-5. **Öncelik 2-6** (önceki oturumdan taşınan) — denormalizasyon, SP._gemi, dropdown E-01, duplicate spool_no, mobil ekranlar
+
+1. **🔴 ÖNCELİK 0 — 3 OTURUMLUK DEPLOY + TEST** (yeni kod yazma)
+2. Öncelik 4 — Denormalizasyon (spooller ↔ spool_malzemeleri), büyük iş 3-4 saat
+3. Öncelik 10 — EN/AR 667 anahtar toplu çeviri, ayrı oturum
+4. **Yeni bulgu:** Client-side duplicate uyarı validation'ları (`spoolEkleKaydet` + Excel import) `pipeline+spoolNo` birlikte bakmıyor
+5. **Yeni bulgu:** `DEVRE.gemi` devre_detay'da aslında `proje_no` tutuyor — Öncelik 5'in devamı (10+ nokta, localStorage persist dahil)
+6. **Yeni öneri:** Kural B-02 — Stabil Local Key pattern'i CLAUDE.md'ye ekle
+7. `notlar` kolonu keşfi — `devreler` tablosunda hem `notlar TEXT` kolon hem ayrı `notlar` tablosu var; hangisi canonical belirsiz

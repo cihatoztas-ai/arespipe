@@ -1,7 +1,7 @@
 # AresPipe — Mobil Sistem Bağlamı (React)
 
 > Bu dosya CLAUDE.md ile birlikte okunur. Mobil geliştirmeye özgü kurallar burada.
-> Son güncelleme: 20 Nisan 2026 (6. oturum — web tarafı sessiz bug avı + tenant prefix temelleri; mobil tarafta değişiklik yok)
+> Son güncelleme: 20 Nisan 2026 (10. oturum — web tarafı 6 öncelik; mobil tarafta değişiklik yok)
 > **ÖNEMLİ:** 16 Nisan 2026'da vanilla HTML/JS'den React + Vite'a geçildi. Eski kurallar geçersiz.
 
 ---

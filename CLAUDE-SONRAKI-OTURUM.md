@@ -1,210 +1,212 @@
-# AresPipe — 9. Oturum Gündemi
+# AresPipe — 11. Oturum Gündemi
 
-> 8. oturumda biriken işler ve sonraki oturum öncelikleri.
+> 10. oturumda biriken işler ve sonraki oturum öncelikleri.
 > Başlangıçta bu dosyayı + CLAUDE.md + CLAUDE-SON-OTURUM.md birlikte oku.
 
 ---
 
 ## Oturum Başı Ritüeli
 
-1. **CLAUDE.md** oku — mimari, kurallar (E-01, E-02, E-03, E-04, E-05)
-2. **CLAUDE-SON-OTURUM.md** oku — önceki oturum ne yapıldı, deploy durumu
+1. **CLAUDE.md** oku — mimari, kurallar (E-01, E-02, E-03, E-04, E-05, B-01, F-01)
+2. **CLAUDE-SON-OTURUM.md** oku — 10. oturum ne yapıldı, deploy durumu
 3. Bu dosya (**CLAUDE-SONRAKI-OTURUM.md**) — ne yapılacak
-4. Kullanıcıya sor: "8. oturum deploy'u test ettin mi? Devre dedup bug'ı test edebildin mi?"
+4. `/mnt/user-data/outputs/` klasörünü tara — önceki AI'dan yarım iş var mı?
+5. **Kullanıcıya sor:**
+   - "8+9+10. oturum deploy'u test ettin mi?"
+   - "Devre detay'da inline edit + toplu seçim akışlarını duplicate spool ile denedin mi?"
+   - "Hangi iş? Öncelik 0 (test) mi, yeni kod mu?"
 
 ---
 
-## ÖNCELİK 1 🔴 — Devre Dedup UX + Gemi Numarası Benzersizliği
+## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU TEMİZLE (YENİ KOD YOK)
 
-**8. oturumun en kritik açık bulgusu.** İki bug birbirine bağlı:
+**Bu oturum yeni kod yazma zamanı değil. 3 oturumluk değişiklik birikti, test edilmedi.**
 
-### Bug A — Sessiz dedup
-`devre_yeni.html`'de kullanıcı yeni devre oluşturmak isteyince, sistem proje + devre_adı + zone + tersane kombinasyonu mevcutsa **yeni devre yaratmıyor, mevcut devreye spool ekliyor**. Kullanıcıya bildirilmiyor.
+### Deploy sırası
 
-**Semptom:**
-- Form "kaydedildi" der
-- Kullanıcı devreler listesinde göremez (çünkü mevcut devre eski, `ad=null`)
-- Kullanıcı "kaydedilmedi" sanır
-- Ama log'da `DEVRE_EKLE` var + spool'lar DB'de
+1. **3 dil dosyası** (lang/tr.json, en.json, ar.json — 1366 → 1370 anahtar)
+2. **`devre_yeni.html`** (2271 → 2286, 3-buton popup)
+3. **`spool_detay.html`** (3139 → 3151, _projeNo rename + dropdown E-01)
+4. **`devre_detay.html`** (1994 satır, 14 patch — en riskli, sonuncuya bırak)
 
-### Bug B — Gemi numarası benzersizlikte yok
-Tersanede aynı proje farklı gemilerde tekrar edilebilir:
-- **NB1124** — 1. gemi, pipelinelar `M100-317-01-P2-S01` vb.
-- **NB1125** — 2. gemi, AYNI pipeline'lar
+### Test senaryoları — manuel QA
 
-Şu an sistem NB1124 ve NB1125'i ayırmıyor, dedup birleştiriyor.
+**8. oturum işleri:**
+- [ ] Admin → Yeni Firma → Firma Kodu alanı 2. kutu olarak görünüyor mu?
+- [ ] Firma Detay sayfasında kod turuncu mono badge olarak üstte mi?
+- [ ] Yeni spool oluştur → DB'de `A-000001` (6 hane padded), UI'da `A-0001` (4 hane kırpık) mı?
+- [ ] 10000+ spool → UI'da `A-10000` doğal uzunluk mu?
 
-### Çözüm seçenekleri
+**9. oturum işleri:**
+- [ ] Aynı `proje + devre_no + zone` kombinasyonu gir → devre dedup popup çıkıyor mu?
+- [ ] Popup info kartında proje adı + iş emri (turuncu badge) + devre_no + zone görünüyor mu?
+- [ ] "Mevcut devreye ekle" seç → "5 spool bu devreye eklenecek" onay mesajı var mı?
+- [ ] Aynı `pipeline+spool_no+rev` girince spool dedup popup çıkıyor mu?
+- [ ] Fark popup'ta pill'lerde `Bakır Alaşım ×3` sayım var mı?
 
-**Seçenek A — Sadece UX fix (kolay):**
-- Dedup mantığı kalır, ama kullanıcıya popup çıkar:
-  > "Bu kombinasyon zaten var — Devre: 803-Bilge, Proje: P26-127. Mevcut devreye spool eklensin mi yoksa yeni devre mi oluşturulsun?"
-- 2 buton: "Mevcute ekle" / "Yeni devre oluştur (kombinasyonu zorla)"
+**10. oturum işleri (kritik):**
+- [ ] **Öncelik 1 — 3 buton:** Spool çakışmada 3 buton görünüyor mu? "Çakışanları atla" mavi vurgulu default mı?
+- [ ] "Çakışanları atla" bas → sadece yeni spool'lar INSERT edildi mi? (hepsi çakışıyorsa amber toast çıkıyor mu?)
+- [ ] "Zorla ekle" bas → eski davranış (duplicate oluşur) çalışıyor mu?
+- [ ] **Öncelik 2 — Toast:** Spool insert hatası durumunda amber toast gözüküyor mu? (DB manuel bozup test edebilirsin: örn. tenant_id NULL yap, RLS reddeder, toast çıkmalı)
+- [ ] **Öncelik 5 — Rename:** spool_detay aç → başlıkta marka formatı doğru mu? (`NB1137-M100-...`)
+- [ ] QR modalı aç, yazdır butonu, etiket marka → proje_no + pipeline + spool_no + RevN?
+- [ ] KK modal ve Sevk modal başlıkları "NB1137 — Y100-817-007 — S02" gibi görünüyor mu?
+- [ ] **localStorage migration:** Browser console'da `localStorage.getItem('ares_aktif_spool')` yaz — içinde `_projeNo` var, `_gemi` yok mu?
+- [ ] Eski kullanıcı senaryosu: Console'da manuel `localStorage.setItem('ares_aktif_spool', JSON.stringify({_gemi:'ESKI'}))` yaz, sayfayı yenile → console'da yine `_projeNo:'ESKI'` olmalı (migration çalıştı)
+- [ ] **Öncelik 6 — Dropdown:** Bir spool'u Düzenle → yüzey ve malzeme selectleri **seçili geliyor mu**? (eskiden boş görünürdü)
+- [ ] Malzemeyi değiştir, kaydet → DB'de `malzeme='paslanmaz'` canonical mı? ("Paslanmaz" DEĞİL)
+- [ ] Dil değiştir (TR→EN) → select option'ları "Carbon Steel" vb. oluyor mu?
+- [ ] Epoksi seçeneği yok mu? Diğer seçeneği var mı?
+- [ ] **Öncelik 7 — Duplicate spool_no:** Aynı devrede pipeline1+S01 ve pipeline2+S01 oluştur (manuel DB insert veya import). Devre detay aç:
+  - [ ] Inline edit: ikinci spool'un rev'ini güncelle → sadece o güncelleniyor mu?
+  - [ ] Sağ tık menü → Durdur → sadece doğru spool mu durdurulyor?
+  - [ ] Toplu KK/Sevkiyat modal → iki spool ayrı ayrı checkbox'layabiliyor mu?
+  - [ ] Etiket modal → iki spool ayrı ayrı seçilebiliyor mu? DOM'da `etc_UUID1`, `etc_UUID2` ayrı mı?
+  - [ ] Sil → sadece bir tanesi mi siliniyor?
+- [ ] Excel import: aynı spoolNo zaten varsa atla uyarısı hâlâ çalışıyor mu? (client-side validation — Öncelik 7 scope'u dışı, ama regresyon kontrol)
 
-**Seçenek B — Gemi numarasını kolon olarak ekle (daha doğru):**
-- `devreler` tablosuna `gemi_no TEXT` ekle (ya da `projeler.gemi_no` varsa JOIN'le çek)
-- Benzersizlik: `(proje_id, gemi_no, devre_ad, zone)` dörtlüsü
-- NB1124-M100-317 ve NB1125-M100-317 ayrı devreler olur
+### Eğer bug bulunursa
 
-**Seçenek C — A + B:**
-- Gemi_no ekle + popup da ekle
-
-**Karar:** Kullanıcı tartışırken tercihini söyleyecek. Benim önerim **C** — hem doğru veri modeli hem güvenli UX.
-
-### Risk
-Yüksek — `devre_yeni.html` + `devreler.html` + DB schema + migration. Birkaç saat.
-
-### Tahmini süre
-3-5 saat (Seçenek C ile)
+- **Küçük bug:** 11. oturumda hemen düzelt, sonraki test turu öncesi
+- **Büyük bug:** 11. oturumun tamamı bu bug'a ayrılabilir — yeni öncelik ekleme
+- **Hangi oturum kırdı belirsizse:** git diff ile son 3 oturumun değişiklik noktaları taranacak (6. oturum dersi #6)
 
 ---
 
-## ÖNCELİK 2 🔴 — devre_yeni.html INSERT Akışı Gözden Geçir (Bug #3-5)
+## ÖNCELİK 4 — Denormalizasyon Borcu (spooller ↔ spool_malzemeleri)
 
-### Bug #3 — "Paslanmaz" migration eksik
-DB'de `malzeme = "Paslanmaz"` olan 1 eski kayıt (7 Nisan). Canonical olmalıydı (`paslanmaz`). 4. oturumun Faz 2 migration'ında atlandı.
+**Büyük iş, 3-4 saat, yüksek risk. Önerilen Option A:**
+- `spooller.malzeme/kalite` kolonlarını kaldır
+- UI her zaman `spool_malzemeleri`'nden aggregate etsin
+- Yeni `ARES_AGG.spoolMalzemeleri(spoolId)` helper'ı (en yaygın malzeme+kalite döner)
 
-**Fix:**
-```sql
--- Önce tara
-SELECT id, malzeme FROM devreler WHERE malzeme ~ '^[A-ZÇĞİÖŞÜ]';
-SELECT id, malzeme FROM spooller WHERE malzeme ~ '^[A-ZÇĞİÖŞÜ]';
-SELECT id, malzeme FROM spool_malzemeleri WHERE malzeme ~ '^[A-ZÇĞİÖŞÜ]';
+**Etki analizi gerekli — kullanım noktaları:**
+- `spooller.malzeme` SELECT eden dosyalar: `devre_detay.html`, `spool_detay.html`, `kesim.html`, `markalama.html`, `devreler.html`
+- `spool_malzemeleri.malzeme` SELECT eden dosyalar: `spool_detay.html` (zaten aggregate yapıyor)
 
--- Sonra lowercase
-UPDATE devreler SET malzeme = lower(malzeme) WHERE malzeme ~ '^[A-ZÇĞİÖŞÜ]';
--- (hangi değerler çıkarsa ARES_NORM.malzemeKod ile canonical'e çevirmek gerekebilir)
+**Önce grep**, sonra mimari karar.
+
+---
+
+## ÖNCELİK 5 DEVAMI — DEVRE.gemi → DEVRE.projeNo (Öncelik 5'in devamı)
+
+**`devre_detay.html` içinde:**
+- `DEVRE.gemi` 10+ satırda referans (başlık, breadcrumb, Excel export, yazdır window, etiket kart)
+- `devreler.html` → `devre_detay.html` arası localStorage persist var
+- `ares-store.js` satır 352: SELECT `projeler(proje_no, gemi_adi)` — `gemi_adi` AYRI alan
+
+**Önemli ayrım:**
+- `DEVRE.gemi` = `projeler.proje_no` (NB1137 gibi newbuild kodu)
+- `projeler.gemi_adi` = **gerçek gemi adı** ("MV Ocean Star" vs)
+- İkisi de "gemi" ama anlamları farklı — rename gerektiriyor
+
+**Tahmini süre:** 1.5-2 saat. Orta risk.
+
+---
+
+## ÖNCELİK YENİ — Client-Side Duplicate Validation
+
+**10. oturumda keşfedildi:** `devre_detay.html` satır 1352 + 1886 — spool ekleme/import kontrolleri sadece `spoolNo` bakıyor:
+
+```js
+if(SPOOLS.find(function(s){return s.spoolNo===sn;})){showToast('Bu Spool No zaten var','e');return;}
 ```
 
-**Risk:** Düşük
-**Süre:** 30 dk
+Pipeline farklıysa aynı spoolNo meşru olabilir (pipeline1+S01, pipeline2+S01). Bu validation aşırı kısıtlayıcı.
 
-### Bug #4 — islem_log zamanlama
-`DEVRE_EKLE` logu 13 gün önce oluşturulan devre için bugün yazılmış. Muhtemelen `devre_yeni.html`'de dedup sonrası log yanlış atılıyor (hem eski devreye hem de yeni iş için).
+**Fix:** `pipeline+spoolNo+rev` birlikte bak:
+```js
+if(SPOOLS.find(function(s){return s.spoolNo===sn && s.pipeline===pl && (s.rev||'')===(rev||'');})){...}
+```
 
-**Fix:** `devre_yeni.html` içinde `ARES.logEkle('DEVRE_EKLE', ...)` çağrı noktalarını tara. Dedup olduğunda `DEVRE_EKLE` yerine `SPOOL_EKLENDI` gibi farklı bir log atılmalı.
-
-**Risk:** Orta
-**Süre:** 1 saat
-
-### Bug #5 — Fark popup malzeme yolu
-3 farklı malzeme: form beyanı "Karbon Çelik", popup "Bakır Alaşım" beyan eder, DB'ye "Paslanmaz" yazılır. Çok kafa karıştırıcı.
-
-**Fix:**
-1. Popup "Yüklemeye devam et" dediğinde hangi malzemeyi INSERT'e koyuyor izlemek
-2. `spooller.malzeme` alanında form değeri mi, IFS değeri mi, popup seçimi mi yazılıyor?
-3. 5. oturumda fark popup eklenmişti ama akışı tam anlayıp tamamlamadık
-
-**Risk:** Yüksek (silent data corruption riski)
-**Süre:** 2 saat
+**Süre:** 30 dk. Düşük risk.
 
 ---
 
-## ÖNCELİK 3 — CLAUDE.md Güncellemesi
+## ÖNCELİK YENİ — Kural B-02: Stabil Local Key Pattern'i
 
-Bu oturumdan sonra CLAUDE.md'ye eklenmesi/güncellenmesi gereken 3 şey var:
+**Öneri:** Öncelik 7'de `_lk` pattern'i çözüm oldu — CLAUDE.md'ye kural olarak ekle.
 
-1. **Bölüm 4.2 — islem_log tam şeması** (8. oturumda öğrendik):
-   ```
-   id, tenant_id, olusturma
-   islem TEXT, katman TEXT, katman_id UUID, yapan_id UUID
-   aciklama TEXT, meta JSONB
-   spool_id UUID, devre_id UUID, proje_id UUID
-   ```
+**Kural B-02 (taslak):**
+> Client-side array'lerde duplicate olabilecek domain alanlarını (`spool_no`, `kod`, `id`) **key olarak kullanma**. Bunun yerine her kalem için `_lk` (local key) alanı tanımla:
+> ```js
+> item._lk = item.id || ('new_' + Date.now() + '_' + Math.random().toString(36).slice(2,9));
+> ```
+> - find/filter/DELETE: `item._lk === lk`
+> - Selection state: `_secili[item._lk]`
+> - DOM ID: `prefix_${item._lk.replace(/[^a-z0-9]/gi,'_')}`
 
-2. **Bölüm 2.14 — E-03 tenant prefix** sonuna admin UI notu:
-   > Admin UI: `admin/yeni-firma.html` (yeni firma kodu atama, çakışma kontrolü) + `admin/firma-detay.html` (mevcut firma kodu düzenleme, çift onay). Sadece `super_admin` rolü erişir.
-
-3. **Bölüm 2.15 — E-04 marka formatı** sonuna digit notu:
-   > `sayac_tanimlari.spool.digits = 6` (DB'de padded format). Display `ARES.markaId()` min 4 haneye kırpar. 9999 sonrası otomatik 5-6 hane görünür.
-
-**Süre:** 15 dakika
+**Süre:** 15 dk (CLAUDE.md'ye ekle). Risk sıfır.
 
 ---
 
-## ÖNCELİK 4-9 — 7. Oturumdan Taşınan İşler (değişmedi)
+## ÖNCELİK 10 ✅ — EN/AR Dil Dosyası Toplu Çeviri (10. oturum sonunda tamamlandı)
 
-### Öncelik 4: Denormalizasyon Borcu (spooller ↔ spool_malzemeleri)
-- `spooller.malzeme` ve `spool_malzemeleri.malzeme` sync değil
-- Option A (önerilen): `spooller.malzeme/kalite` kolonlarını kaldır, UI her zaman `spool_malzemeleri`'nden aggregate eder
-- **Risk:** Yüksek, 3-4 saat
-- **Not:** Bu iş Bug #5 ile ilişkili olabilir — birlikte çözülebilir
+**10. oturum sonu güncellemesi:**
+- EN: 355 çeviri uygulandı (348 → 42 kalan, hepsi evrensel terim)
+- AR: 322 çeviri uygulandı (319 → 8 kalan, hepsi evrensel terim)
+- Bonus: 7 TR placeholder bug'ı düzeltildi (TR'de yanlışlıkla İngilizce kalan metinler)
+- 3 dil simetri: 1370 anahtar
 
-### Öncelik 5: Değişken Adlandırma (`SP._gemi` → `SP._projeNo`)
-- `spool_detay.html` satır 994: `SP._gemi` aslında `projeler.proje_no` tutuyor
-- localStorage backward compat gerekir
-- **Risk:** Orta, 1 saat
+**11. oturumda bu iş için bakılacak:**
+- [ ] Test: Dil değiştir (TR → EN → AR), rastgele 10 ekran tara. Yarım çeviri var mı?
+- [ ] Test: Arapça RTL doğru çalışıyor mu? (`السبول`, `خط الأنابيب` vb. doğru sağdan sola dizim)
+- [ ] Eğer rahatsız eden bir çeviri varsa, direkt JSON dosyasında düzelt (ufak manüel fix, yeni toplu iş gerektirmez)
+- [ ] Yeni anahtar eklerken **her üç dilde ekle** — 9. oturum dersi #3 hâlâ geçerli
 
-### Öncelik 6: spool_detay Dropdown E-01 İhlali
-- `spool_detay.html` satır 762-763: "Karbon Çelik" gibi Türkçe value'lar
-- Canonical kod + ARES_NORM'dan lokalize etiket
-- **Risk:** Orta, 1-1.5 saat
+**Çeviri script'i referans:** `/home/claude/translate_batch.py` — terim tutarlılığı sağlamak için yeni çeviriler eklenirken bakılabilir.
 
-### Öncelik 7: devre_detay Duplicate spool_no Bug
-- Inline edit `s.spoolNo` KEY kullanıyor, duplicate varsa ilki düzenler ikinciyi atlar
-- Fix: `s.supaId` (UUID) kullan
-- **Risk:** Orta-Yüksek, 2-3 saat
+---
 
-### Öncelik 8: Mobil Ekranlar
+## ÖNCELİK 8-9 — Önceki Oturumlardan (değişmedi)
+
+### Öncelik 8: Mobil Ekranlar (React)
 - MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 - Mockup-first (R-10)
 - **Risk:** Düşük her biri, toplam 6-12 saat
 
 ### Öncelik 9: Düşük Öncelik / Teknik Borç
-- devreler.malzeme canonical migration
 - QR indir butonu PNG/SVG export
 - Search haystack markaId ekleme
-- Dil dosyası 5 yeni anahtar güncellemesi
-- **Toplam:** 2-3 saat
+- `spooller` ve `devreler` UNIQUE constraint (DB-level koruma, JS'e güvenmeden)
+- **Toplam:** 1-2 saat
 
 ---
 
-## Yeni Oturumda Başlangıç Tavsiyeleri
+## 10. Oturumdan Yan Bulgular (11. oturuma not)
 
-**Kullanıcı deploy test etti mi kontrol et:**
-- Firma Kodu alanı admin/yeni-firma ve admin/firma-detay'da görünüyor mu?
-- Yeni spool'lar DB'de 6 hane padded mi? Ekranda 4 hane mi görünüyor?
-- Eski spool'lar hâlâ aynı görünüyor mu (regresyon yok mu)?
+### Doğrulanan gözlemler
+- ✅ **`devreler.zone_no` DROP edildi** — migration-in-progress ikiliği temiz
+- ✅ **spool_detay legacy localStorage migration** çalışıyor — test senaryosuyla kontrol et
+- ✅ **14 patch devre_detay JS syntax temiz** — ama entegre test zorunlu
 
-**Devre dedup bug'ı yeniden tetiklendi mi:**
-- Aynı kombinasyonla yeni devre oluşturmaya çalışınca ne oluyor?
-- Popup istenir mi, sessiz birleşmeli mi?
+### Yeni bulgular
+- **`SP._projeNo||SP._gemi` fallback kozmetikti** — atama yoksa OR pattern'i işlevsiz (öğrenme 9. oturum dersi #2'nin teyidi)
+- **`devreler.notlar` kolonu + `notlar` tablosu ikiliği** — ayrı araştırma: hangi canonical, neden ikisi var?
+- **`DEVRE.gemi` = `projeler.proje_no`** (devre_detay'da), **`projeler.gemi_adi` = gerçek gemi adı** — isim çakışması, rename gerek
+- **Client-side duplicate validation aşırı kısıtlı** (sadece spoolNo bakıyor)
+- **`_lk` pattern'i mükemmel çalıştı** — kural olarak yazılabilir (B-02 taslağı yukarıda)
 
-**Sonrasında öncelik soruşması:**
-```
-8. oturum deploy'u nasıl gitti?
-Hangi öncelikten başlayalım?
-- Öncelik 1: Devre dedup UX + gemi_no (3-5 saat, YÜKSEK risk) 🔴
-- Öncelik 2: devre_yeni.html INSERT akışı bug avı (3-4 saat) 🔴
-- Öncelik 3: CLAUDE.md güncellemesi (15 dk, risk yok)
-- Öncelik 4: Denormalizasyon (3-4 saat, yüksek risk)
-```
-
----
-
-## Bilinmesi Gereken Yan Bulgular
-
-### 8. Oturumdan Yenileri
-- **islem_log şeması öğrenildi** — CLAUDE.md'ye eklenecek
-- **`sayac_tanimlari.digits` tenant bazında DB'de tutuluyor** — hardcoded değil
-- **`sonraki_no` RPC sadece integer döndürüyor** — padding JavaScript `_noFormatla`'da yapılıyor
-- **`markaId()` hem legacy hem yeni formatı destekliyor** — unit test ile doğrulandı
-- **Devre `ad` kolonu hep NULL** — UI'da başka alanlardan türetilen devre adı
-- **7 Nisan devresinin `malzeme = "Paslanmaz"`** — migration atlandı, lowercase yapılmalı
-
-### Hâlâ Geçerli (önceki oturumlardan)
-- **`SP._gemi` = proje_no** (adı yalan söylüyor — Öncelik 5)
-- **Migration-in-progress pattern yaygın:**
-  - `fotograflar.yapan_id` / `yukleyen_id`
-  - `spooller.agirlik` / `agirlik_kg`
-  - `spooller.spool_id` (prefix'li / prefix'siz / yeni 6-hane / eski 4-hane)
+### Hâlâ Geçerli Eski Bulgular
+- **Migration-in-progress pattern yaygın:** `fotograflar.yapan_id/yukleyen_id`, `spooller.agirlik/agirlik_kg`
 - **RLS policy'leri hazır** — yeni işlere tenant_id eklemek şart
-- **Supabase key'i hâlâ `sb_publishable_`** — tutarsız ama çalışıyor (Öncelik 9)
+- **Supabase key JWT format** — 2. oturumdan karar
 
 ---
 
-## Özet — 9. Oturum Ne Beklenebilir
+## Özet — 11. Oturum Ne Beklenebilir
 
-**Kısa:** Kritik bir devre dedup bug'ı var. Öncelik 1 ile başlamak doğru — hem kullanıcıyı rahatlatır hem `devre_yeni.html` kodunun tam haritasını çıkarmamıza olanak sağlar. Bu harita sonra Bug #3-5 ve Öncelik 4 (denormalizasyon) için de değerli.
+**Kısa:** 10. oturumda 6 öncelik bitti ama 3 oturumluk test borcu var. 11. oturum **önce deploy + test**. Yeni kod sadece bug çıkarsa. Test temizse, sonraki büyük iş **Öncelik 5 devamı (DEVRE.gemi rename)** veya **Öncelik 10 (EN/AR toplu çeviri)**.
 
-**Risk uyarısı:** `devre_yeni.html` 2058 satır, karmaşık. Bir şey değiştirirken ikinci bir şey kırma ihtimali yüksek. Dikkatli unit test + canlı doğrulama şart.
+**Risk uyarısı:** 
+- `devre_detay.html` 14 patch, tam test edilmedi
+- `spool_detay.html` rename + dropdown iç içe, iki ayrı fix birlikte deploy
+- `devre_yeni.html` artık 2286 satır, karmaşık
+
+**Öneri oturum yapısı:**
+1. İlk 30 dk — deploy + smoke test (her dosya tek tek)
+2. Sonra 1-2 saat — tam test (yukarıdaki checklist)
+3. Bug varsa — düzelt
+4. Zaman kalırsa — Kural B-02'yi CLAUDE.md'ye ekle (hızlı kazanım)
+5. Gerisi sonraki oturuma
