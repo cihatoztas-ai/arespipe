@@ -275,6 +275,11 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <div class="stat-pill-val" id="stSpool" style="color:var(--ac);">—</div>
         <div class="stat-pill-lbl" data-i18n="bk_stat_projeler">Projeler</div>
       </div>
+      <div class="stat-pill">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gr);border-radius:2px 0 0 2px;"></div>
+        <div class="stat-pill-val" id="stTam" style="color:var(--gr);">—</div>
+        <div class="stat-pill-lbl" data-i18n="bk_stat_tamamlanan">Bükülenler</div>
+      </div>
     </div>
   </div>
 
@@ -356,12 +361,6 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
   
   <div class="panel" id="panel-kesilenler">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="bk_tamamlanan_baslik">Tamamlanan Büküm</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);" data-i18n="bk_bukulenler">&#10003; Bükülenler</div>
-      </div>
-    </div>
 
     <!-- Filtreler -->
     <div class="filter-card cl-gr" style="margin-bottom:16px;">
@@ -748,7 +747,7 @@ function applyKesilenFilters(){
   var k=document.getElementById('kfKalite')? document.getElementById('kfKalite').value:'';
   var c=document.getElementById('kfCap')?    document.getElementById('kfCap').value:'';
   var s=document.getElementById('kfArama')?  document.getElementById('kfArama').value.toLowerCase().trim():'';
-  var src=document.getElementById('kfKaynak')?document.getElementById('kfKaynak').value:'';
+  var src='';
   kesilenenFiltreData=bukumler.filter(function(b){
     if(b.durum!=='tamamlandi') return false;
     if(m&&b.malzeme!==m) return false;
@@ -801,6 +800,7 @@ function updateStats(){
   var bek=bukumler.filter(function(b){return b.durum==='bekliyor';}).length;
   var tam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
   document.getElementById('badge-bekliyor').textContent=bek;
+  var _st=document.getElementById('stTam');if(_st)_st.textContent=tam;
   var badgeK=document.getElementById('badge-kesilenler');if(badgeK)badgeK.textContent=tam;
 }
 
