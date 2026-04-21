@@ -1377,5 +1377,22 @@
   "ts_th_sonuc": "Result",
   "ts_title": "Test Management | AresPipe",
   "sp_chip_active": "In {stage} stage",
-  "sp_btn_complete": "Complete {stage}"
+  "sp_btn_complete": "Complete {stage}",
+  "mk_arsiv": "Archive",
+  "mk_olusturulan_listeler": "Created Lists",
+  "mk_tamamlanan_listeler": "Completed Lists",
+  "mk_isaret_tarihi": "Stamp Date",
+  "mk_evet_markalandi": "Yes, Stamped",
+  "mk_filtreyi_duzelteceğim": "OK, I'll fix the filter",
+  "mk_listeyi_olustur": "Create List",
+  "bk_boru_ekle": "Add Pipe",
+  "bk_boru_duzenle": "Edit Pipe",
+  "bk_bukum_uzunlugu": "Bend Length (mm)",
+  "bk_hata_malzeme": "Please enter material",
+  "bk_hata_uzunluk": "Please enter a valid length",
+  "bk_boru_eklendi": "Pipe added",
+  "bk_boru_guncellendi": "Pipe updated",
+  "cmn_ekle": "Add",
+  "cmn_guncelle": "Update",
+  "cmn_et_kalinligi": "Wall Thickness (mm)"
 }

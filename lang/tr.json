@@ -1377,5 +1377,22 @@
   "ts_th_sonuc": "Test Sonucu",
   "ts_title": "Test Yönetimi | AresPipe",
   "sp_chip_active": "{stage} aşamasında",
-  "sp_btn_complete": "{stage} Tamamla"
+  "sp_btn_complete": "{stage} Tamamla",
+  "mk_arsiv": "Arşiv",
+  "mk_olusturulan_listeler": "Oluşturulan Listeler",
+  "mk_tamamlanan_listeler": "Tamamlanan Listeler",
+  "mk_isaret_tarihi": "İşaret Tarihi",
+  "mk_evet_markalandi": "Evet, Markalandı",
+  "mk_filtreyi_duzelteceğim": "Tamam, filtreyi düzelteceğim",
+  "mk_listeyi_olustur": "Listeyi Oluştur",
+  "bk_boru_ekle": "Boru Ekle",
+  "bk_boru_duzenle": "Boru Düzenle",
+  "bk_bukum_uzunlugu": "Büküm Uzunluğu (mm)",
+  "bk_hata_malzeme": "Malzeme giriniz",
+  "bk_hata_uzunluk": "Geçerli bir uzunluk giriniz",
+  "bk_boru_eklendi": "Boru eklendi",
+  "bk_boru_guncellendi": "Boru güncellendi",
+  "cmn_ekle": "Ekle",
+  "cmn_guncelle": "Güncelle",
+  "cmn_et_kalinligi": "Et Kalınlığı (mm)"
 }
