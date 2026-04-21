@@ -26,19 +26,29 @@
     /* ── Stat kartları ── */
     /* G-01 v2 (14. oturum): hero-left + pill stripe — kesim/bukum/markalama ile tutarlı */
     .stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
-    .hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:11px 14px; display:flex; align-items:center; gap:12px; flex-shrink:0; width:210px; box-sizing:border-box; }
-    .hero-left svg { width:28px; height:28px; flex-shrink:0; color:var(--leg); }
-    .hero-name { font-family:'Barlow Condensed',sans-serif; font-size:23px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--leg); }
+    .hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }
+    .hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--leg); }
+    .hero-name { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--leg); }
     .hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
-    .stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1; min-width:0; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
-    .stat-pill.wide { flex:1.35; }
+    .stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+    .stat-pill.wide { flex:1.5 1 0; min-width:170px; }
     .stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .stat-pill-ic svg { width:16px; height:16px; color:#fff; stroke-width:2.2; }
     .stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
     .stat-pill-lab { font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
     .stat-pill.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
     .stat-pill.clickable:hover { border-color:var(--ac); background:var(--sur2); }
+    @media (max-width: 1280px) {
+      .hero-left { width:170px; padding:9px 11px; gap:9px; }
+      .hero-left svg { width:24px; height:24px; }
+      .hero-name { font-size:19px; }
+      .stat-pill { padding:8px 10px; gap:8px; min-width:118px; }
+      .stat-pill.wide { min-width:156px; }
+      .stat-pill-ic { width:28px; height:28px; }
+      .stat-pill-ic svg { width:14px; height:14px; }
+      .stat-pill-num { font-size:18px; }
+    }
 
     /* ── İskelet (shimmer) — 14. oturum ── */
     @keyframes _skShimmer {
@@ -699,7 +709,7 @@ function tersaneBadge(ad){
   for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
   var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
   var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
-  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
 }
 
 
@@ -1879,10 +1889,10 @@ function malzemeModalAc() {
   if (list) list.innerHTML = items.map(function(x, i) {
     return '<div class="modal-item"><div class="modal-item-left"><div class="modal-dot" style="background:' + cols[i] + '"></div><span>' + esc(x.label) + '</span></div>' +
       '<div style="text-align:right;"><div style="font-weight:700;">' + x.val + ' spool</div>' +
-      '<div style="font-size:12px;color:var(--txd);">' + Math.round(x.agirlik).toLocaleString('tr-TR') + ' kg</div></div></div>';
+      '<div style="font-size:14px;color:var(--txd);">' + Math.round(x.agirlik).toLocaleString('tr-TR') + ' kg</div></div></div>';
   }).join('') +
   (malzemeBos > 0 ?
-    '<div style="padding:8px 12px;font-size:12px;color:var(--warn);background:rgba(217,119,6,.06);border-radius:6px;margin-top:8px;">' +
+    '<div style="padding:8px 12px;font-size:14px;color:var(--warn);background:rgba(217,119,6,.06);border-radius:6px;margin-top:8px;">' +
       '⚠ ' + malzemeBos + ' spoolun malzeme bilgisi eksik — dağılıma dahil değil' +
     '</div>' : '');
   fullDonut('malzemeSvg', 'malzemeCenter', items, cols, 'spool');
@@ -1922,7 +1932,7 @@ function capModalAc() {
       '<td style="font-weight:700;color:var(--tx);">%100</td>' +
     '</tr>' +
     (capBosSpool > 0 ?
-      '<tr><td colspan="4" style="padding:8px 12px;font-size:12px;color:var(--warn);background:rgba(217,119,6,.06);">' +
+      '<tr><td colspan="4" style="padding:8px 12px;font-size:14px;color:var(--warn);background:rgba(217,119,6,.06);">' +
         '⚠ ' + capBosSpool + ' spoolun çap bilgisi eksik — ' + Math.round(capBosAgirlik).toLocaleString('tr-TR') + ' kg dahil değil' +
       '</td></tr>' : '');
   }
