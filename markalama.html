@@ -1251,7 +1251,7 @@ function toast(msg,type){
 new MutationObserver(function(){if(typeof applyFilters==='function'&&markalamalar.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
-  applyFilters();
+  if (markalamalar.length > 0) applyFilters();
 };
 
 document.addEventListener('DOMContentLoaded', function() {

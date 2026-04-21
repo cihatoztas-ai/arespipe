@@ -677,7 +677,7 @@ function renderRow(b,i){
     ?('<td style="font-size:14px;color:var(--txd);">'+(function(){var fb=fasonlar.find(function(f){return f.id===b.fasonId;});return fb?(function(){var fr=firmalar.find(function(f){return f.id===fb.firmaId;});return fr?esc(fr.ad.split(' ')[0]):'—';})():'—';})()+'</td>')
     :'<td>'+tersaneBadge(b.tersane||'—')+'</td>';
   return '<tr data-ci="'+Math.min(_ci++,19)+'">'
-    <td class="cell-no">'+(i+1)+'</td>'
+    +'<td class="cell-no">'+(i+1)+'</td>'
     +tersaneCell
     +'<td>'+refBadge+'</td>'
     +spoolCell
