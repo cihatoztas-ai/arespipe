@@ -273,10 +273,13 @@
     @keyframes slideIn { from{transform:translateX(110%);opacity:0;} to{transform:translateX(0);opacity:1;} }
 
     /* ── Pagination ── */
-    .pg-btn { min-width:32px; height:32px; padding:0 8px; border-radius:7px; border:1px solid var(--bor); background:var(--sur2); color:var(--txm); font-size:14px; cursor:pointer; font-family:'Barlow',sans-serif; transition:all .15s; }
-    .pg-btn:hover:not(:disabled) { border-color:var(--ac); color:var(--ac); }
-    .pg-btn:disabled { opacity:.35; cursor:not-allowed; }
-    .pg-btn.pg-aktif { background:var(--ac); border-color:var(--ac); color:#fff; font-weight:700; }
+    .pg-btn { min-width:34px; height:32px; padding:0 10px; border-radius:7px; border:1px solid var(--bor); background:var(--sur2); color:var(--tx); font-size:15px; font-family:'Barlow Condensed',sans-serif; font-weight:600; letter-spacing:.2px; cursor:pointer; transition:all .15s; }
+    .pg-btn:hover:not(:disabled):not(.pg-aktif) { border-color:var(--ac); color:var(--ac); background:var(--sur); }
+    .pg-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .pg-btn.pg-aktif { background:var(--ac); border-color:var(--ac); color:#fff; font-weight:700; box-shadow:0 1px 3px rgba(45,142,255,.25); }
+    .pg-info { font-size:14px; color:var(--txd); }
+    .pg-info strong { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--tx); margin:0 2px; }
+    .pg-dots { color:var(--txd); padding:0 6px; letter-spacing:2px; user-select:none; font-size:14px; }
 
     /* ── Termin tarihi ── */
     .termin-cell { white-space:nowrap; }
@@ -2285,20 +2288,20 @@ function paginationGuncelle(toplam, aktifSayfa, topSayfa) {
   var baslangic = (aktifSayfa - 1) * _sayfaBasi + 1;
   var bitis = Math.min(aktifSayfa * _sayfaBasi, toplam);
   var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
-  html += '<span style="font-size:14px;color:var(--txd);">' + baslangic + '–' + bitis + ' / ' + toplam + ' devre</span>';
+  html += '<span class="pg-info"><strong>' + baslangic + '–' + bitis + '</strong> / <strong>' + toplam.toLocaleString('tr-TR') + '</strong> ' + tv('cmn_devre','devre') + '</span>';
   html += '<div style="display:flex;gap:4px;align-items:center;">';
-  html += '<button onclick="sayfaGit(1)" ' + (aktifSayfa===1?'disabled':'') + ' class="pg-btn" title="İlk sayfa">«</button>';
-  html += '<button onclick="sayfaGit(' + (aktifSayfa-1) + ')" ' + (aktifSayfa===1?'disabled':'') + ' class="pg-btn">‹</button>';
+  html += '<button onclick="sayfaGit(1)" ' + (aktifSayfa===1?'disabled':'') + ' class="pg-btn" title="' + tv('cmn_ilk_sayfa','İlk sayfa') + '">«</button>';
+  html += '<button onclick="sayfaGit(' + (aktifSayfa-1) + ')" ' + (aktifSayfa===1?'disabled':'') + ' class="pg-btn" title="' + tv('cmn_onceki_sayfa','Önceki sayfa') + '">‹</button>';
   var start = Math.max(1, aktifSayfa - 2);
   var end   = Math.min(topSayfa, aktifSayfa + 2);
-  if (start > 1) html += '<span style="color:var(--txd);padding:0 4px;">…</span>';
+  if (start > 1) html += '<span class="pg-dots">…</span>';
   for (var i = start; i <= end; i++) {
     var aktif = i === aktifSayfa;
     html += '<button onclick="sayfaGit(' + i + ')" class="pg-btn' + (aktif ? ' pg-aktif' : '') + '">' + i + '</button>';
   }
-  if (end < topSayfa) html += '<span style="color:var(--txd);padding:0 4px;">…</span>';
-  html += '<button onclick="sayfaGit(' + (aktifSayfa+1) + ')" ' + (aktifSayfa===topSayfa?'disabled':'') + ' class="pg-btn">›</button>';
-  html += '<button onclick="sayfaGit(' + topSayfa + ')" ' + (aktifSayfa===topSayfa?'disabled':'') + ' class="pg-btn" title="Son sayfa">»</button>';
+  if (end < topSayfa) html += '<span class="pg-dots">…</span>';
+  html += '<button onclick="sayfaGit(' + (aktifSayfa+1) + ')" ' + (aktifSayfa===topSayfa?'disabled':'') + ' class="pg-btn" title="' + tv('cmn_sonraki_sayfa','Sonraki sayfa') + '">›</button>';
+  html += '<button onclick="sayfaGit(' + topSayfa + ')" ' + (aktifSayfa===topSayfa?'disabled':'') + ' class="pg-btn" title="' + tv('cmn_son_sayfa','Son sayfa') + '">»</button>';
   html += '</div></div>';
   cont.innerHTML = html;
 }
