@@ -1401,5 +1401,12 @@
   "bk_kaynak": "Kaynak",
   "bk_col_tarih": "Büküm Tarihi",
   "bk_bos_bukulen": "Henüz bükülen boru yok",
-  "cmn_arama": "Arama"
+  "cmn_arama": "Arama",
+  "nav_boru_imalati": "Boru İmalatı",
+  "bk_hero_word": "Büküm",
+  "mk_hero_word": "Markalama",
+  "ks_hero_word": "Kesim",
+  "mk_stat_bekleyen": "Toplam Bekleyen",
+  "mk_stat_filtrelenen": "Filtrelenen",
+  "mk_stat_listede": "Listede Olan"
 }

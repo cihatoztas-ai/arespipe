@@ -1401,5 +1401,12 @@
   "bk_kaynak": "المصدر",
   "bk_col_tarih": "تاريخ الطي",
   "bk_bos_bukulen": "لا توجد أنابيب مثنية بعد",
-  "cmn_arama": "بحث"
+  "cmn_arama": "بحث",
+  "nav_boru_imalati": "تصنيع الأنابيب",
+  "bk_hero_word": "الطي",
+  "mk_hero_word": "الختم",
+  "ks_hero_word": "القطع",
+  "mk_stat_bekleyen": "إجمالي المعلق",
+  "mk_stat_filtrelenen": "المفلتر",
+  "mk_stat_listede": "في القائمة"
 }
