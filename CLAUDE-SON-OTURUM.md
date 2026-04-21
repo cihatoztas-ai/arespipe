@@ -1,4 +1,4 @@
-# AresPipe — 12. Oturum Özeti (20 Nisan 2026)
+# AresPipe — 13. Oturum Özeti (21 Nisan 2026)
 
 > Bu dosya son oturumda yapılanları ve deploy gereken dosyaları listeler.
 > Yeni oturumda CLAUDE.md + CLAUDE-SONRAKI-OTURUM.md ile birlikte okunur.
@@ -7,129 +7,128 @@
 
 ## Oturum Başlığı
 
-**Tarih:** 20 Nisan 2026 (akşam — 11. oturumdan hemen sonra)
-**Süre:** ~4 saat
-**Ana tema:** Öncelik 5+11 (DEVRE.gemi rename), Öncelik 13 (notlar persistence), Öncelik 14 (basamak_tanimlari multilang), Öncelik 4 araştırma (kapatıldı), devreler.html temizlik, geri bildirim bug triage
+**Tarih:** 21 Nisan 2026
+**Süre:** ~8 saat
+**Ana tema:** Tablo tasarımı standardizasyonu, tersane kısa adı (kisa_ad), görsel iyileştirmeler, büküm fason kaldırma, DB temizlik, scrollbar, animasyon
 
 ---
 
 ## Yapılanlar
 
-### 1. Öncelik 5 — `DEVRE.gemi → DEVRE.projeNo` (devre_detay.html) ✅
-
-**14 patch:**
-- Init: `gemi:pr.proje_no` → `projeNo:pr.proje_no`
-- localStorage migration bloğu eklendi: `DEVRE.gemi` varsa → `projeNo`'ya kopyala, hemen persist et
-- 12× `DEVRE.gemi` → `DEVRE.projeNo` (document.title, breadcrumb, stat kart, marka build ×2, goSpool, etiket ×2, PDF ×2)
-
-### 2. Öncelik 11 — devreler.html rename + migration temizliği ✅
-
-**devreler.html — 14 patch:**
-- `gemi:` → `projeNo:` (obje tanımı, satır 956)
-- `data-sort="gemi"` + `sortBy('gemi')` → `projeNo`
-- sort ust objesi `devre.gemi` → `devre.projeNo`
-- 11× `d.gemi` → `d.projeNo` (sed ile toplu)
-
-**devre_detay.html — 1 patch:**
-- Migration bloğu kaldırıldı — artık `devreler.html` doğrudan `projeNo` yazıyor, migration gereksiz
-
-**ares-store.js:** Değişiklik yok — `gemi_adi` sadece DB kolon adı, JS objesinde `gemi` key'i yok.
-
-### 3. Öncelik 13 — notlar persistence ✅
-
-**Keşif:** `devre_detay.html` notlar tamamen hafıza içiydi — `notEkle()` sadece local array'e yazıyor, sayfa yenilenince tüm notlar kayboluyor.
+### 1. Tersane Kısa Adı (`kisa_ad`) ✅
 
 **DB:**
-- `notlar` tablosuna `devre_id UUID REFERENCES devreler(id)` eklendi
-- `devreler.notlar TEXT` kolonu DROP edildi (0 kayıt içeriyordu)
+- `tersaneler.kisa_ad` kolonu zaten mevcuttu
+- `UPDATE tersaneler SET kisa_ad = split_part(ad, ' ', 1) WHERE kisa_ad IS NULL OR kisa_ad = ''` çalıştırıldı
+- Sonuç: Tersan, Ada, Sedef ✅
 
-**Kod (4 patch):**
-- `notYukle()` async fonksiyonu eklendi: `notlar` tablosundan `devre_id` bazlı fetch
-- `notEkle()` → async: Supabase INSERT (`tenant_id`, `devre_id`, `metin`, `ekleyen_id`, `qr_goster:false`)
-- `notSil()` → async: soft-delete (`silindi:true`, `silinme_tarihi`)
-- Init: `notRender()` → `await notYukle()`
+**Kod — 9 HTML:**
+- `tersaneler(ad,kisa_ad)` ile çekilir her yerde
+- `trs.kisa_ad || trs.ad || '—'` fallback pattern
+- Güncellenen: kesim, bukum, markalama, devreler, kalite_kontrol, sevkiyatlar, spool_detay, devre_duzenle
+- `tersaneler.html`: Yönetim formuna "Kısa Ad" zorunlu alanı eklendi (insert + update)
 
-### 4. Öncelik 14 — basamak_tanimlari multilang ✅
+### 2. Tersane Badge Tasarımı ✅
 
-**DB:**
-- `basamak_tanimlari` tablosuna `gorunen_ad_en TEXT` ve `gorunen_ad_ar TEXT` kolonları eklendi
-- 12 sistem_adi için EN + AR çevirileri yazıldı (on_imalat, imalat, kaynak, on_kontrol, kk, sevkiyat, alim_kontrol, montaj, son_kontrol, tasarim, tasima_test, gemi_teslim)
+`tersaneBadge(ad)` fonksiyonu tüm sayfalara eklendi:
+- 5 renkli hash-based palet (amber, mor, pembe, yeşil, kırmızı)
+- `text-transform: uppercase`, `letter-spacing: .8px`, pill shape (border-radius:99px)
+- MutationObserver (`data-theme`) ile tema değişince badge renkleri güncelleniyor
+- Uygulandığı: kesim, bukum, markalama, devreler, kalite_kontrol, sevkiyatlar, spool_detay
 
-**Kod — spool_detay.html (3 patch):**
-- `STAGES_DATA = []` değişkeni eklendi — `{tr, en, ar}` per stage
-- `_rebuildStages()` fonksiyonu eklendi — aktif dile göre `STAGES` array'ini yeniden oluşturur
-- `_basamaklariYukle()` güncellendi — `gorunen_ad_en/ar` çeker, `STAGES_DATA` doldurur, `_rebuildStages()` çağırır
-- `_onLangChange` güncellendi — `STAGES_DATA.length` varsa `_rebuildStages()` çağırır, sonra `renderTracker()`
+### 3. Tablo Tipografi Standardizasyonu ✅
 
-**Çalışma mantığı:**
-- Known stage (on_imalat, kk vb.): `tv('sp_stage_pre', 'Pre-Fabrication')` → lang dosyası EN döner ✅
-- Unknown stage (montaj, tasarim vb.): `tv('dyn_montaj', 'Assembly')` → key yok, DB'den gelen EN fallback döner ✅
-- `renderTracker`'a dokunulmadı — `tv(STAGE_KEYS[i], STAGES[i])` zaten doğru çalışır
+| Sütun | Eski | Yeni |
+|---|---|---|
+| Tersane | düz metin, mor | uppercase pill badge |
+| Spool ID | 20px/800 | 15px/700, accent rengi |
+| Kesim/Uzunluk | 18-20px/800 | 15px/700, accent rengi |
+| Kalite | mavi (--ac) | muted gri (--txd), boş ise — |
+| Çap | 13px/600 Condensed | 14px/500 normal |
+| İş emri (büküm) | ref-badge (mavi pill) | cell-emir (Condensed, txm) |
 
-### 5. Öncelik 4 — Denormalizasyon Araştırması → KAPATILDI ✅
+### 4. Cascade Animasyon — Kesim, Büküm, Markalama ✅
 
-**Bulgular:**
-- Toplam 393 spool, 149'unun `spool_malzemeleri` kaydı yok (BOM henüz girilmemiş)
-- 188 "çelişki" aslında beklenen: alüminyum spool'da karbon çelik flanş/fitting bulunabilir
-- `spooller.malzeme` = spool kategori özeti (filtre, badge, etiket için)
-- `spool_malzemeleri.malzeme` = BOM kalemi malzemesi (kesim planı, malzeme reçetesi için)
+- `@keyframes _cascadeIn` + `data-ci="0..19"` + 45ms delay arası
+- `_dataLoaded` flag: veri gelmeden observer/onLangChange tetiklemez
+- `_animDone` flag (markalama): iki aşamalı veri yüklemesinde animasyon sadece bir kez oynar
 
-**Karar:** Bunlar farklı amaçlı veriler. `spooller.malzeme` DROP etmek hem veri kaybı hem kırılım yaratır. **Yapılacak iş yok.**
+### 5. Scrollbar Stillemesi ✅
 
-### 6. devreler.html Temizlik ✅
+- `ares-layout.js` `injectGlobalCSS()` içine eklendi — tüm sayfalara otomatik
+- 6px genişlik, `var(--bor)` rengi, transparent track, 99px border-radius
+- Firefox: `scrollbar-width: thin; scrollbar-color: var(--bor) transparent`
+- Sol menü (`sidebar-nav`): `scrollbar-width: none; ::-webkit-scrollbar { display: none; }`
+- Tüm HTML'lerden duplicate scrollbar CSS temizlendi
 
-- `MALZEME_PATTERNS`'ten `'Plastik/PE'` kaldırıldı (canonical enum'dan 4. oturumda çıkarılmıştı)
-- `YUZEY_PATTERNS`'ten `'Ham'` kaldırıldı (canonical enum'dan çıkarılmıştı)
-- `fYuzey` dropdown'daki duplicate "Siyah" option silindi
+### 6. Stat Pill Genişlemesi ✅
 
-### 7. Geri Bildirim Bug Triage
+Kesim, büküm, markalama:
+- `hero-left`: `flex:1` kaldırıldı → `flex-shrink:0` (sabit genişlik)
+- `hero-stats`: `flex:1` eklendi (kalan alanı doldurur)
+- `stat-pill`: `min-width:88→120px`, `flex:1` (pill'ler eşit dağılır)
 
-Kullanıcının 22 maddelik geri bildirim listesi incelendi:
-- 2 madde zaten yapılmış: QR etiket boyutu (E-05) + açılışta açık tema (flash prevention default)
-- 1 madde kısmen: devre detay üst format
-- Kesim.html incelendi — bariz crash noktası bulunamadı, tam hata mesajı olmadan teşhis yapılamıyor
-- Tüm liste 13. oturum gündemine eklendi
+### 7. Fason Büküm Kaldırıldı — bukum.html ✅
+
+1385 → 814 satır (-571 satır). Silinen:
+- `panel-fason`, `tab-fason`, `stFason` stat pill
+- `firmalar`, `fasonlar`, `aktifFasonId` değişkenleri
+- `renderFasonListe`, `openFasonDetay`, `fasonBuktu`, `fdBoruSil`, `fdBoruDuzenle`, `geriDon`, `belgeSil`, `fdBoruEkleModal`, `yeniFasonModal`, `yeniFasonKaydet`, `excelSablonIndir`
+- `isFason` dalları `renderRow` ve `renderKesilenler`'den
+- Bükülenler filtresi "Kaynak" dropdown'u
+
+Düzeltilen/eklenen (bükülenler sekmesi):
+- Tersane badge + tersane filtresi (`kfTersane`) eklendi
+- "TAMAMLANAN BÜKÜM / ✓ Bükülenler" başlığı kaldırıldı (tab zaten gösteriyor)
+- `ref-badge` → `cell-emir` (tasarım tutarlılığı)
+- `applyFilters()` haystack'teki `fb?fb.no:''` ölü referans kaldırıldı
+- 3. stat pill: Bükülenler (yeşil, `stTam`)
+- DOMContentLoaded başlatma kodu restore edildi
+
+### 8. DB Temizlik ✅
+
+- `spool_malzemeleri.kalite` temizlendi: `UPDATE ... SET kalite = NULL WHERE kalite IN ('bakir','karbon','paslanmaz','alum','diger')`
+- Markalama plaka malzeme: `spooller.malzeme` esas alınıyor, `spool_malzemeleri.malzeme` değil — `select`'e `malzeme` eklendi, mapping güncellendi
+
+### 9. Kalite Filtresi Fix ✅
+
+- `kalite: mal.kalite || '—'` → `|| ''` (boş string) — `uniq()` artık `—` dropdown'a eklemez
+- Tabloda: `b.kalite ? hl(b.kalite) : '<span style="color:var(--txd)">—</span>'`
+
+### 10. Lang Dosyaları ✅
+
+1414 anahtar, 3 dil senkron. Yeni anahtarlar: `bk_stat_tamamlanan`, `tr_field_kisa_ad`, `tr_ph_kisa_ad`, `tr_hata_kisa_ad_zorunlu` ve diğerleri.
 
 ---
 
-## Deploy Listesi (3 HTML — HENÜZ DEPLOY EDİLMEDİ)
+## Deploy Listesi ✅ (Bu oturumda hazırlandı)
 
 | Dosya | Değişiklik | Risk |
 |---|---|---|
-| `devre_detay.html` | gemi→projeNo (14 patch) + notlar persistence (4 patch) | Orta |
-| `devreler.html` | gemi→projeNo (14 patch) + pattern temizliği (3 patch) | Düşük |
-| `spool_detay.html` | basamak_tanimlari multilang (3 patch) | Düşük |
+| `kesim.html` | tersane badge, font, animasyon | Düşük |
+| `bukum.html` | **KAPSAMLI** — fason kaldırma + tasarım | Orta |
+| `markalama.html` | tersane badge, animasyon, plaka fix | Düşük |
+| `devreler.html` | tersane badge, kisa_ad | Düşük |
+| `kalite_kontrol.html` | tersane badge, kisa_ad | Düşük |
+| `sevkiyatlar.html` | tersane badge, kisa_ad | Düşük |
+| `spool_detay.html` | tersane badge, kisa_ad | Düşük |
+| `tersaneler.html` | kisa_ad form | Düşük |
+| `devre_duzenle.html` | kisa_ad | Düşük |
+| `ares-layout.js` | scrollbar | Düşük |
+| `tr/en/ar.json` | 1414 anahtar | Düşük |
 
 **DB değişiklikleri zaten canlıda:**
-- `notlar.devre_id UUID` ✅
-- `devreler.notlar TEXT` DROP ✅
-- `basamak_tanimlari.gorunen_ad_en`, `gorunen_ad_ar` + 12 sistem_adi çevirileri ✅
-
-**Deploy sırası:**
-1. `devreler.html` (en az riskli)
-2. `spool_detay.html`
-3. `devre_detay.html` (en kapsamlı)
-
----
-
-## Test Borcu (13. Oturuma)
-
-| Test | Durum | Not |
-|---|---|---|
-| B.1-B.3 — 3-buton dedup | ⏭ Hâlâ atlandı | devre_yeni.html |
-| C.1 — _projeNo başlık | ⏭ Atlandı | localStorage teyit |
-| C.2 — Migration | ✅ devreler.html deploy sonrası geçerli | Deploy edilince re-test |
-| C.4 — AR tracker | ✅ Fix uygulandı | spool_detay deploy sonrası |
-| D — _lk duplicate | ⏭ Atlandı | Test verisi lazım |
-| **YENİ — notlar persistence** | ⏳ Deploy bekliyor | Not ekle → F5 → hâlâ durmalı |
-| **YENİ — kesim.html hatası** | ⏳ Tam hata mesajı bekleniyor | Konsol açık, hatayı üret |
+- `spool_malzemeleri.kalite` temizlendi ✅
+- `tersaneler.kisa_ad` dolduruldu ✅
 
 ---
 
 ## Bu Oturumdan Dersler
 
-1. **Araştırma = en ucuz iş.** Öncelik 4 "büyük refactor" olarak planlanmıştı — 3 SQL sorgusuyla "farklı amaçlı, yapılacak iş yok" kararı verildi. DB'ye bakmadan kod yazmaya başlamak pahalıya patlar.
+1. **Büyük kod silme işlemlerinde kapanış tag'lerini kontrol et.** Fason panelinin içinde `</script></body></html>` vardı — fasonla birlikte silindi, sayfa JS'i hiç parse etmedi. Silme sonrası `tail -10` ile kapanış kontrol edilmeli.
 
-2. **"notlar" feature hafıza içiydi.** Sayfa her yenilendiğinde tüm notlar kayboluyordu, kimse fark etmemiş. Benzer pattern: localStorage'a bile yazılmayan ephemeral state. Kritik veriler (notlar, loglar) için Supabase write her zaman kontrol edilmeli.
+2. **`_dataLoaded` flag pattern standart olsun.** `borular.length > 0` gibi array guard'lar yeterli değil — ares-lang.js `_onLangChange`'i veri gelmeden önce tetikleyebilir. `_dataLoaded = true` sadece `populateFilters()` sonrasına yaz.
 
-3. **DEVRE.gemi → projeNo migration bloğu artık gerek yok.** devreler.html artık projeNo yazıyor. Migration bloğunu devre_detay'da bırakmak zararsızdı ama temiz kod için kaldırıldı. Benzer migration bloklarını "geçici" değil "kalıcı gereklilik var mı?" diye değerlendirmek lazım.
+3. **`_animDone` flag çok aşamalı veri yüklemelerinde şart.** Markalama'da ana veri + markalama_listeleri iki ayrı `applyFilters()` tetikliyor. İlk render sonrası `_animDone = true` → sonraki render'lar `<tr>` (animasyonsuz) üretir.
+
+4. **Fason gibi büyük feature'lar silinirken bağımlılık haritası çıkar.** DOMContentLoaded, değişkenler, CSS, HTML paneli, JS fonksiyonları, filtre dropdown'ları, haystack referansları — hepsi ayrı ayrı greplenip temizlenmeli.

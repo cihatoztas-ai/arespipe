@@ -667,6 +667,16 @@ mobile/src/lang/
 - `ad`, `olusturma`, standart alanlar
 - `kod VARCHAR(4) NOT NULL UNIQUE` — tenant prefix, CHECK `^[A-Z]{1,4}$` (bkz. Bölüm 2.14)
 
+**tersaneler (13. oturumda güncellendi):**
+- `ad TEXT` — tam tersane adı (ör. "Tersan Tersanesi")
+- `kisa_ad TEXT` — kısa görüntü adı (ör. "Tersan") — **13. oturumda eklendi**, tüm sayfalarda `tersaneler(ad,kisa_ad)` ile çekilir, `trs.kisa_ad || trs.ad` fallback
+- `sehir`, `ulke`, `tel`, `iletisim`, `web`, `logo_url`, `aktif BOOLEAN`, `tenant_id UUID`
+
+**markalama_kalemleri (13. oturumda güncellendi):**
+- `et_mm NUMERIC` — plaka markalamada kalınlık (6. oturumda doğrulandı)
+- `malzeme TEXT` — kalem malzemesi. Tip=`plaka` için `spooller.malzeme` esas alınır (BOM kalemi değil), 13. oturumda kod tarafında düzeltildi
+- `malzeme_id UUID` — `spool_malzemeleri.id`'ye FK (bağlı BOM kalemi)
+
 **kullanicilar (17 Nisan 2026 — 2. oturum notu):**
 - `ad_soyad` (ad değil!) — hata kaynağı, dikkat
 - `foto_url TEXT` — avatar için (upload UI henüz yok)
@@ -1117,7 +1127,77 @@ Her sohbet bitiminde:
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (10. OTURUM)
+## 11A. ÖNCEKİ OTURUM — 21 NİSAN 2026 (13. OTURUM)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** Tablo tasarımı standardizasyonu, tersane kısa adı, görsel iyileştirmeler, büküm fason kaldırma, DB temizlik.
+
+**1. Tersane kısa adı (`kisa_ad`) — DB + Kod:**
+- `tersaneler` tablosuna `kisa_ad TEXT` kolonu eklendi (zaten mevcuttu)
+- `UPDATE tersaneler SET kisa_ad = split_part(ad, ' ', 1) WHERE kisa_ad IS NULL OR kisa_ad = ''`
+- Tüm sayfalarda `tersaneler(ad,kisa_ad)` + `trs.kisa_ad || trs.ad` — 9 dosya güncellendi
+- `tersaneler.html` yönetim formuna "Kısa Ad" zorunlu alanı eklendi
+
+**2. Tersane badge tasarımı:**
+- `tersaneBadge(ad)` fonksiyonu — hash-based 5 renkli palet, uppercase pill, tüm sayfalara eklendi
+- Eski: düz metin mor renk → Yeni: TERSAN(amber)/ADA(mor)/SEDEF(pembe) renkli pill
+
+**3. Tablo tipografi standardizasyonu (kesim, büküm, markalama + diğerleri):**
+- Spool ID: 20px/800 → 15px/700
+- Kesim/Büküm uzunluk: 18-20px/800 → 15px/700
+- Kalite: mavi → muted gri (`var(--txd)`)
+- Çap: 13px/600 Condensed → 14px/500 normal
+- İş emri: büküm'de `ref-badge` → `cell-emir` (kesim/markalama ile aynı)
+
+**4. Cascade animasyon — kesim, büküm, markalama:**
+- `@keyframes _cascadeIn` + `data-ci="0..19"` + 45ms delay
+- `_dataLoaded` ve `_animDone` flag'leriyle çift render önlendi
+
+**5. Scrollbar stillemesi:**
+- `ares-layout.js` `injectGlobalCSS()`'e eklendi — 6px, `var(--bor)` rengi, transparent track
+- Sol menü (`sidebar-nav`) scrollbar gizlendi
+- Tüm HTML'lerden duplicate scrollbar CSS temizlendi
+
+**6. Stat pill genişlemesi — kesim, büküm, markalama:**
+- `hero-left` flex:1 kaldırıldı (sabit), `hero-stats` flex:1 aldı
+- `stat-pill` min-width:88→120px, flex:1 (eşit dağılım)
+
+**7. Fason büküm kaldırıldı — bukum.html:**
+- 573 satır silindi (1385→812 satır)
+- Silinen: panel-fason, tab-fason, firmalar/fasonlar değişkenleri, renderFasonListe, openFasonDetay ve tüm fason fonksiyonları
+- Bükülenler: tersane badge + tersane filtresi eklendi, başlık kaldırıldı, isFason dalları temizlendi
+- DOMContentLoaded başlatma kodu restore edildi (fasonla birlikte silinmişti)
+
+**8. DB temizlik:**
+- `spool_malzemeleri.kalite`'deki malzeme kodları NULL'a çekildi (`UPDATE ... WHERE kalite IN ('bakir','karbon',...)`)
+- Plaka malzeme: `markalama_kalemleri.malzeme` → `spooller.malzeme` esas alınıyor (kod düzeltmesi)
+
+**9. Lang dosyaları:** 1414 anahtar, 3 dil senkron (`bk_stat_tamamlanan` vb. yeni anahtarlar)
+
+### Değişen Dosyalar (9 HTML + 1 JS + 3 JSON)
+
+| Dosya | Değişiklik |
+|---|---|
+| `kesim.html` | tersane badge, tablo font, animasyon, _dataLoaded |
+| `bukum.html` | **fason kaldırıldı**, tersane badge, tablo font, animasyon, bükülenler düzeltmeleri |
+| `markalama.html` | tersane badge, tablo font, animasyon, _dataLoaded/_animDone, plaka malzeme fix |
+| `devreler.html` | tersane badge, kisa_ad, filtre eşleşme fix |
+| `kalite_kontrol.html` | tersane badge, kisa_ad |
+| `sevkiyatlar.html` | tersane badge, kisa_ad |
+| `spool_detay.html` | tersane badge, kisa_ad |
+| `tersaneler.html` | kisa_ad form alanı |
+| `devre_duzenle.html` | kisa_ad |
+| `ares-layout.js` | scrollbar CSS, sidebar-nav scrollbar gizlendi |
+| `tr/en/ar.json` | 1414 anahtar |
+
+### DB Değişiklikleri (Canlıda)
+- `spool_malzemeleri.kalite` temizlendi (bakir/karbon vb. kodlar NULL'a çekildi)
+- `tersaneler.kisa_ad` dolduruldu (zaten mevcuttu, boş kayıtlar split_part ile dolduruldu)
+
+---
+
+## 11B. ÖNCEKİ OTURUM — 20 NİSAN 2026 (12. OTURUM)
 
 ### Bu oturumda tamamlananlar (6 Öncelik: 1+2+3+5+6+7)
 

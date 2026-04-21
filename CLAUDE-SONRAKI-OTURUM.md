@@ -1,6 +1,6 @@
-# AresPipe — 13. Oturum Gündemi
+# AresPipe — 14. Oturum Gündemi
 
-> 12. oturumda biriken işler ve sonraki oturum öncelikleri.
+> 13. oturumda biriken işler ve sonraki oturum öncelikleri.
 > Başlangıçta bu dosyayı + CLAUDE.md + CLAUDE-SON-OTURUM.md birlikte oku.
 
 ---
@@ -8,120 +8,85 @@
 ## Oturum Başı Ritüeli
 
 1. **CLAUDE.md** oku — mimari, kurallar, DB şeması
-2. **CLAUDE-SON-OTURUM.md** oku — 12. oturum ne yapıldı, deploy durumu
+2. **CLAUDE-SON-OTURUM.md** oku — 13. oturum ne yapıldı
 3. Bu dosya (**CLAUDE-SONRAKI-OTURUM.md**) — ne yapılacak
 4. **Kullanıcıya sor:**
-   - "12. oturum dosyalarını deploy ettin mi? (devre_detay + devreler + spool_detay)"
-   - "Test borçlarından hangilerini yapabildik?"
-   - "Geri bildirim listesindeki acil buglardan başlayalım mı, yoksa mobil mi?"
+   - "12. oturum dosyalarını (devre_detay + devreler + spool_detay) deploy ettin mi?"
+   - "13. oturum dosyalarını deploy ettikten sonra test borçlarını yaptın mı?"
+   - "Mobil mi, bug fix mi, yoksa başka öncelik mi?"
 
 ---
 
-## 🔴 ÖNCELİK 0 — DEPLOY + TEST BORCU
+## 🔴 ÖNCELİK 0 — DEPLOY BORCU
 
-### Deploy edilecek dosyalar (12. oturumda hazırlandı)
+### 12. Oturum (hâlâ deploy edilmedi mi?)
 
-```bash
-git add devre_detay.html devreler.html spool_detay.html
-git commit -m "12. oturum: gemi→projeNo rename + notlar persistence + basamak multilang + pattern temizlik"
-git push origin main
+```
+devre_detay.html, devreler.html, spool_detay.html
 ```
 
-### Test senaryoları
+Eğer deploy edilmediyse önce bunlar. 13. oturum dosyaları üzerlerine gider.
 
-**Küme B — 3-Buton Dedup (devre_yeni.html):**
-- [ ] Aynı Excel'i iki kez yükle → 3 buton popup çıkıyor mu?
-- [ ] "Çakışanları atla" → sadece yeniler INSERT
-- [ ] "Zorla ekle" → duplicate oluşuyor (regresyon)
-- [ ] AR/EN dil → buton metinleri çevrilmiş mi?
+### 13. Oturum Deploy
 
-**Küme C.1 — _projeNo (spool_detay.html):**
-- [ ] Spool başlığı `NB1124-K110-721-414C-S01` formatında mı?
-- [ ] `localStorage.getItem('ares_aktif_spool')` → `_projeNo` var, `_gemi` yok
-
-**Küme C.2 — Migration (devreler.html deploy sonrası):**
-- [ ] devreler.html'den bir devreye tıkla → devre_detay açılıyor mu?
-- [ ] localStorage'da `projeNo` var, `gemi` yok mu?
-
-**Küme C.4 — AR tracker (spool_detay.html deploy sonrası):**
-- [ ] AR dilinde spool_detay → tracker "ما قبل التصنيع" / "التصنيع" vb. görünmeli
-
-**Küme D — _lk Duplicate (devre_detay.html):**
-
-Önkoşul: Aynı devrede `pipeline1+S01` + `pipeline2+S01` oluştur.
-- [ ] Inline edit → sadece o spool güncellenir
-- [ ] Sil → sadece bir tanesi silinir
-- [ ] Toplu seçim → iki spool ayrı checkbox
-
-**YENİ — notlar persistence:**
-- [ ] devre_detay → not ekle → F5 → not hâlâ görünüyor mu?
-- [ ] Not sil → Supabase'de `silindi=true` mu?
+Tüm 13. oturum dosyaları kullanıcıya teslim edildi. Deploy sırası önerilmez — hepsi birlikte gitmeli çünkü `ares-layout.js` scrollbar CSS diğer HTML'lerin duplicate CSS'ini varsayar (temizlendi).
 
 ---
 
 ## 🔴 ACİL BUGLAR — Geri Bildirim Listesinden
 
 ### A1 — Kesim listesine geçişte hata
-**Durum:** `kesim.html` incelendi, bariz crash noktası yok. Tam hata mesajı olmadan teşhis yapılamadı.
-**Aksiyon:** Konsolu açık tut, hatayı tekrar üret, mesajı kopyala. Olası: Supabase RLS, `parseFloat('—')` NaN birikimi, veya `sayfaYetkiKontrol` yönlendirme.
-
-**Bilinen potansiyel bug (hata mesajı gelmese bile fix edilebilir):**
-```js
-// kesim.html satır 944 — kesimOlcusu '—' ise NaN üretir
-var mm = klB.reduce((s,k) => s + parseFloat(k.kesimOlcusu), 0);
-// Fix:
-var mm = klB.reduce((s,k) => s + (parseFloat(k.kesimOlcusu) || 0), 0);
-```
+**Durum:** 13. oturumda kısmen fix edildi (`parseFloat('—')` NaN guard'ları eklenmişti önceki oturumda). Ama tam hata mesajı alınamamıştı.
+**Aksiyon:** Deploy sonrası test et. Hata tekrar gelirse konsol ekran görüntüsü al.
 
 ### A2 — Geri bildirim fotoğrafları süper admin'e gitmiyor
-**Aksiyon:** `geri_bildirim.html` veya ilgili dosyayı at, Storage/email entegrasyonuna bak.
+**Aksiyon:** `geri_bildirim.html` dosyasını at, Storage/email entegrasyonuna bak.
 
 ### A3 — islem_log Supabase GET hatası
-```
-GET /rest/v1/islem_log?select=katman,islem,olusturma... 
-```
-**Aksiyon:** Hangi sayfada? Tam hata mesajı? Kolon adı değişmiş olabilir (CLAUDE.md 4.2'de canonical kolonlar var: `islem`, `katman`, `katman_id`).
+**Aksiyon:** Hangi sayfada olduğu belirlenmeli. `islem_log` kolon adları: `islem`, `katman`, `katman_id` (CLAUDE.md 4.2).
 
 ### A4 — izometri-batch.html POST hatası
-```
-[ARES] Supabase bağlantısı kuruldu
-izometri-batch.html:359 POST https://arespipe... 
-```
-**Aksiyon:** `izometri-batch.html` dosyasını at, 359. satıra bak.
+**Aksiyon:** `izometri-batch.html` dosyasını at, 359. satır civarına bak.
 
 ### A5 — Proje ilerleme sistemi çalışmıyor
-**Aksiyon:** Hangi sayfa? `proje_detay.html` mi? Dosyayı at.
-
-### A6 — Her sayfada üst bilgilendirme kutularında farklı yazı boyutu/tipi
-**Aksiyon:** Hangi sayfalar etkileniyor? Ekran görüntüsü veya dosyaları at. CSS standardizasyon — `stat-lbl` ve `stat-val` class'ları tüm sayfalarda aynı olmalı (CLAUDE.md 2.3).
+**Aksiyon:** Hangi sayfa? `proje_detay.html` büyük ihtimalle. Dosyayı at.
 
 ---
 
-## Orta Öncelikli — Geri Bildirim Listesi
-
-Acil buglar çözüldükten sonra bunlara bakılacak:
+## Orta Öncelikli
 
 | Madde | Tip | Not |
 |---|---|---|
-| Giriş sayfasından yanlış yönlendirmeler | Bug | Hangi yönlendirme? Detay lazım |
-| devre detay üst format (tersane/gemi/devre/zone sırası) | Feature | Breadcrumb düzeni — devre_detay.html |
-| Sağ üst tarih/saat sayfa yenilemeden değişmiyor | Feature | `setInterval` ile her dakika güncelle |
-| Aktif devreler yüklenirken animasyon | UX | Skeleton loader veya fade-in animasyon |
-| Logout sayfadan çıkıyor uyarısı | UX | `beforeunload` event bastırılmalı |
-| İmalat/argon/gazaltı bekleyen spool sayısı | Feature | Dashboard widget — basamak bazlı sayaç |
+| Giriş sayfasından yanlış yönlendirmeler | Bug | Detay lazım |
+| devre detay üst format | Feature | breadcrumb sırası |
+| Sağ üst tarih/saat güncellenmesi | Feature | `setInterval` 1dk |
+| Aktif devreler yüklenirken animasyon | UX | Skeleton loader |
+| İmalat/argon/gazaltı bekleyen sayısı | Feature | Dashboard widget |
 
 ---
 
-## ÖNCELİK 8 — Mobil Ekranlar (mockup-first)
+## Test Borçları
+
+**12. oturum test borçları (hâlâ bekliyor):**
+- [ ] Küme B — devre_yeni.html 3-buton dedup
+- [ ] Küme C.2 — migration (devreler.html deploy sonrası)
+- [ ] Küme C.4 — AR tracker (spool_detay deploy sonrası)
+- [ ] notlar persistence: not ekle → F5 → hâlâ var mı?
+
+**13. oturum test (deploy sonrası):**
+- [ ] büküm.html fason sekmesi görünmüyor mu?
+- [ ] bükülenler sekmesi açılıyor mu? Tersane filtresi çalışıyor mu?
+- [ ] Tüm sayfalarda tersane badge renkleri tutarlı mı?
+- [ ] markalama.html animasyon tek kez mi oynar?
+- [ ] kesim/büküm.html bükülecekler listesi doluyor mu?
+
+---
+
+## ÖNCELİK 8 — Mobil Ekranlar
 
 Acil buglar temizlenince:
-
-**MProfil.jsx (sıradaki):**
-- Avatar yükleme (Supabase Storage, `kullanicilar.foto_url`)
-- Kişisel bilgi düzenleme (`ad_soyad`, `tel`, `brans`)
-- R-10: önce mockup artifact → kullanıcı onayı → kod
-
-**Sonraki:** MIsBaslat.jsx, MDevreler.jsx, MDevreDetay.jsx, MSpoolDetay.jsx, MQRTara.jsx
+- **MProfil.jsx** — avatar yükleme, kişisel bilgi düzenleme
+- Sonraki: MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 
 ---
 
@@ -129,17 +94,7 @@ Acil buglar temizlenince:
 
 | İş | Dosya | Süre |
 |---|---|---|
-| `parseFloat('—')` NaN fix | `kesim.html` satır 944 | 5 dk |
-| Excel export başlıkları i18n | `kesim.html` | 30 dk |
 | `devreler.malzeme` DB migration | SQL | 15 dk |
 | `fotograflar.yapan_id` DROP (legacy) | SQL | 5 dk |
-
----
-
-## Özet — 13. Oturum Ne Beklenebilir
-
-**Kısa:** 12. oturumda 3 HTML + DB değişiklikleri hazır ama deploy edilmedi. 13. oturum **önce deploy + test borcu**, sonra **acil buglar** (en azından kesim hatası tam mesajıyla). Test temizse mobil (MProfil mockup).
-
-**Risk uyarıları:**
-- `devre_detay.html` en kapsamlı değişiklik — deploy sonrası sayfayı tam test et (başlık, breadcrumb, etiket, PDF, notlar)
-- `notlar` tablosuna `devre_id` eklendi ama eski notlar (varsa) `devre_id = NULL` kalır — bu beklenen davranış
+| Excel export başlıkları i18n | `kesim.html` | 30 dk |
+| `proje_liste.html`, `proje_detay.html` — kisa_ad | Bu dosyalarda tersane varsa | 15 dk |
