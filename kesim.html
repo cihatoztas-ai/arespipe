@@ -841,7 +841,7 @@ function renderTable(){
     var sertBadge=k.sertifika
       ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
       :'<span style="color:var(--txd);font-size:14px;">—</span>';
-    return '<tr data-ci="'+Math.min(_ci++,19)+'">
+    return '<tr data-ci="'+Math.min(_ci++,19)+'">'
       +'<td class="cell-no">'+(i+1)+'</td>'
       +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+hl(k.isEmir)+'</td>'
@@ -1494,7 +1494,7 @@ function toast(msg,type){
 // BAŞLAT
 // ════════════════════════════════════
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&borular.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();

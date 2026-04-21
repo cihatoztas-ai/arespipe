@@ -1248,7 +1248,7 @@ function toast(msg,type){
   });
 })();
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&markalamalar.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();

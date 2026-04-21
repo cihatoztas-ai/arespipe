@@ -676,7 +676,7 @@ function renderRow(b,i){
   var tersaneCell=isFason
     ?('<td style="font-size:14px;color:var(--txd);">'+(function(){var fb=fasonlar.find(function(f){return f.id===b.fasonId;});return fb?(function(){var fr=firmalar.find(function(f){return f.id===fb.firmaId;});return fr?esc(fr.ad.split(' ')[0]):'—';})():'—';})()+'</td>')
     :'<td>'+tersaneBadge(b.tersane||'—')+'</td>';
-  return '<tr data-ci="'+Math.min(_ci++,19)+'">
+  return '<tr data-ci="'+Math.min(_ci++,19)+'">'
     <td class="cell-no">'+(i+1)+'</td>'
     +tersaneCell
     +'<td>'+refBadge+'</td>'
@@ -1280,7 +1280,7 @@ function toast(msg,type){
   document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove();},4000);
 }
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&bukumler.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();
