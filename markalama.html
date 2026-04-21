@@ -411,6 +411,7 @@ function esc(s){var d=document.createElement('div');d.textContent=s==null?'':Str
 // durum: 'bekliyor' | 'listede' | 'tamamlandi'
 let markalamalar = []; // Supabase'den yüklenecek
 var _dataLoaded = false;
+var _animDone = false;
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
 async function veriYukle() {
@@ -723,7 +724,8 @@ function renderTable(){
       if(m.cap)    parts.push('&#216;'+esc(m.cap));
       altSatir=parts.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+parts.join(' &middot; ')+'</div>':'';
     }
-    return '<tr data-ci="'+Math.min(_ci++,19)+'">'
+    var trOpen=_animDone?'<tr>':'<tr data-ci="'+Math.min(_ci++,19)+'">';
+    return trOpen
       +'<td class="cell-no">'+(offset+i+1)+'</td>'
       +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+hl(m.isEmir)+'</td>'
@@ -736,6 +738,7 @@ function renderTable(){
       +'<td style="text-align:center;"><button onclick="manuelMarkala(\''+m.id+'\')" title="'+tv('mk_isle',tv('mk_isle','Markalandı olarak işaretle'))+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,100,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button></td>'
       +'</tr>';
   }).join('');
+  _animDone = true;
   document.getElementById('footerTxt').innerHTML=
     '<span>'+filtreData.length+' '+tv('mk_kayit','kayıt')+' · '+tv('ks_sayfa','Sayfa')+' '+bekPg+'/'+pages+'</span>'
     +pgHtml(bekPg, filtreData.length, 'goBekPg');
