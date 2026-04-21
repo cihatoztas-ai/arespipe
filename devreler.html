@@ -845,6 +845,7 @@ function takvimKapat() {
 // Her cap elemanı = bir spool'un çapı (DN veya mm). Ağırlık spool listesinden gelecek.
 // Supabase'den yüklenecek — başlangıçta boş
 var DEVRELER = [];
+var _allFilteredIds = [];  // Server-side pagination'dan bağımsız — export için tüm filtreli ID'ler
 var _supaIdMap     = {}; // uiId → supabase UUID
 var _ssTotal       = 0;
 var _projeIdMap    = {}; // proje_no → proje_id
@@ -983,6 +984,42 @@ function _animCount(el, hedef, opt) {
     if (p < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+}
+
+// ── EXPORT İÇİN TAM FİLTRELİ LİSTEYİ GETİR (pagination'dan bağımsız) ──
+// _allFilteredIds'i kullanır — sorgulaVeGoster her çalıştığında güncellenir.
+// Böylece Excel/PDF export sayfa başına 25 satırla sınırlı kalmaz, filtreli tüm devreleri alır.
+async function _tamFiltreliListe() {
+  if (typeof ARES === 'undefined') return [];
+  var supa = ARES.supabase();
+  if (!supa) return [];
+  if (!_allFilteredIds || !_allFilteredIds.length) return [];
+  try {
+    // Supabase .in() limit yaklaşık 1000-2000 civarı. Büyük veri için chunk'la.
+    var CHUNK = 500;
+    var tumRes = [];
+    for (var i = 0; i < _allFilteredIds.length; i += CHUNK) {
+      var chunk = _allFilteredIds.slice(i, i + CHUNK);
+      var res = await supa.from('devreler')
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, ' +
+                'projeler(proje_no, tersaneler(ad, kisa_ad, kod)), ' +
+                'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
+        .eq('tenant_id', ARES.tenantId())
+        .in('id', chunk)
+        .order('olusturma', {ascending: false});
+      if (res.error) { console.warn('[Export] _tamFiltreliListe chunk', i, ':', res.error); continue; }
+      tumRes = tumRes.concat(res.data || []);
+    }
+    // _mapDevre ile aynı formata çevir
+    return tumRes.map(function(d, i){
+      var spoolByDevre = {};
+      spoolByDevre[d.id] = d.spooller || [];
+      return _mapDevre(d, i, spoolByDevre, 0);
+    });
+  } catch(e) {
+    console.error('[Export] _tamFiltreliListe hata:', e);
+    return [];
+  }
 }
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────────
@@ -1129,6 +1166,41 @@ async function sorgulaVeGoster() {
     'Alüminyum':    ['alüm','alum']
   };
 
+  var YUZEY_PATTERNS = {
+    'Galvaniz': ['galvaniz','galv'],
+    'Asit':     ['asit','acid','asid'],
+    'Boyalı':   ['boya','paint','boyali','boyalı'],
+    'Siyah':    ['siyah','black'],
+    'Paslanmaz':['paslanmaz','stainless']
+  };
+
+  // Arama varsa client-cache'lerden ek eşleşmeleri topla
+  // (tersane adı + proje_no + spool malzeme/yüzey — ana devreler tablosunda olmayan alanlar)
+  var aramaProjeIds = [], aramaSpoolDevreIds = [];
+  if (arama) {
+    // Tersane adı eşleşen projeler (firma bazlı)
+    Object.keys(_firmaProjeIds || {}).forEach(function(trs){
+      if (trs.toLowerCase().indexOf(arama) !== -1) {
+        Array.prototype.push.apply(aramaProjeIds, _firmaProjeIds[trs] || []);
+      }
+    });
+    // Proje no eşleşen projeler
+    Object.keys(_projeIdMap || {}).forEach(function(pno){
+      if (pno.toLowerCase().indexOf(arama) !== -1) {
+        aramaProjeIds.push(_projeIdMap[pno]);
+      }
+    });
+    aramaProjeIds = Array.from(new Set(aramaProjeIds.filter(Boolean)));
+    // Spool malzeme/yüzey eşleşen devreler (etiket + kod dahil)
+    (_filterData || []).forEach(function(s){
+      var malzemeEt = (typeof ARES_NORM !== 'undefined' && s.malzeme_norm) ? ARES_NORM.tvMalzeme(s.malzeme_norm, s.malzeme_norm) : '';
+      var yuzeyEt   = (typeof ARES_NORM !== 'undefined' && s.yuzey)        ? ARES_NORM.tvYuzey(s.yuzey, s.yuzey)                : '';
+      var hay = [s.malzeme_norm, s.yuzey, malzemeEt, yuzeyEt].filter(Boolean).join(' ').toLowerCase();
+      if (hay.indexOf(arama) !== -1) aramaSpoolDevreIds.push(s.devre_id);
+    });
+    aramaSpoolDevreIds = Array.from(new Set(aramaSpoolDevreIds.filter(Boolean)));
+  }
+
   function applyFilters(q, devreIds) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
     if (proje && _projeIdMap[proje]) q = q.eq('proje_id', _projeIdMap[proje]);
@@ -1137,7 +1209,18 @@ async function sorgulaVeGoster() {
       // Boş array → sıfır sonuç döndür (filtre bypass değil)
       q = q.in('proje_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
     }
-    if (arama) q = q.or('devre_no.ilike.%'+arama+'%,ad.ilike.%'+arama+'%,is_emri_no.ilike.%'+arama+'%,zone.ilike.%'+arama+'%');
+    if (arama) {
+      // OR mantığı: devre metin alanları VEYA tersane/proje ID eşleşmesi VEYA spool devre ID eşleşmesi
+      var orParts = [
+        'devre_no.ilike.%'+arama+'%',
+        'ad.ilike.%'+arama+'%',
+        'is_emri_no.ilike.%'+arama+'%',
+        'zone.ilike.%'+arama+'%'
+      ];
+      if (aramaProjeIds.length)      orParts.push('proje_id.in.('+aramaProjeIds.join(',')+')');
+      if (aramaSpoolDevreIds.length) orParts.push('id.in.('+aramaSpoolDevreIds.join(',')+')');
+      q = q.or(orParts.join(','));
+    }
     if (devreIds !== null && devreIds !== undefined) {
       // Boş array → sıfır sonuç döndür
       q = q.in('id', devreIds.length ? devreIds : ['00000000-0000-0000-0000-000000000000']);
@@ -1148,13 +1231,6 @@ async function sorgulaVeGoster() {
   try {
     // Aşama 1: Malzeme/yuzey filtresi aktifse spooller'dan devre_id'leri bul
     var devreIdFilter = null;
-    var YUZEY_PATTERNS = {
-      'Galvaniz': ['galvaniz','galv'],
-      'Asit':     ['asit','acid','asid'],
-      'Boyalı':   ['boya','paint','boyali','boyalı'],
-      'Siyah':    ['siyah','black'],
-      'Paslanmaz':['paslanmaz','stainless']
-    };
 
     if (malzeme || yuzey) {
       var spoolQ = supa.from('spooller').select('devre_id');
@@ -1196,7 +1272,7 @@ async function sorgulaVeGoster() {
         .range(offset, offset + _sayfaBasi - 1),
       devreIdFilter
     );
-    // Filtreli devre ID'lerini al (RPC için gerekli)
+    // Filtreli devre ID'lerini al (RPC için gerekli + export için global cache)
     var allDevreIds;
     if (devreIdFilter !== null) {
       allDevreIds = devreIdFilter;
@@ -1204,6 +1280,7 @@ async function sorgulaVeGoster() {
       var idRes = await applyFilters(supa.from('devreler').select('id'), null);
       allDevreIds = (idRes.data||[]).map(function(d){ return d.id; });
     }
+    _allFilteredIds = allDevreIds;  // Export için tüm filtreli ID'ler
 
     var rpcIds = allDevreIds.length ? allDevreIds : ['00000000-0000-0000-0000-000000000000'];
 
@@ -1578,7 +1655,9 @@ var _sortKey = null, _sortDir = 0;
 function sortBy(key) {
   if (_sortKey === key) { _sortDir = (_sortDir + 1) % 3; if (_sortDir === 0) _sortKey = null; }
   else { _sortKey = key; _sortDir = 1; }
-  _sayfa = 1; renderTable();
+  // Sort client-side — server'a gitmek gerekmez, mevcut DEVRELER array'ini yeniden sırala
+  _doRender();
+  _updateSortHeaders();
 }
 function _sortArrow(key) {
   if (_sortKey !== key || _sortDir === 0) return '<span class="sort-arrow" style="font-size:14px;opacity:.4;">↕</span>';
@@ -1673,7 +1752,8 @@ function _doRender() {
   var _starCache  = getStarMap();
   var _siraCache  = getSiraMap();
   var _terminCache = getTerminMap();
-  var liste = DEVRELER; // server-side sayfalı + filtreli
+  // Client-side sort — mevcut sayfadaki satırları sıralar
+  var liste = _applySortTo(DEVRELER);
 
   // Bar grafikler sorgulaVeGoster'da allSpools'dan hesaplanıyor — burada sadece tablo
 
@@ -1738,7 +1818,7 @@ function _doRender() {
       '<td style="color:var(--txd);font-size:14px;">' + (globalIdx + 1) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
       '<td>' + tersaneBadge(d.tersane) + '</td>' +
-      '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--ac);">' + esc(d.projeNo) + '</td>' +
+      '<td style="font-family:\'Barlow\',sans-serif;font-size:15px;font-weight:600;color:var(--ac);letter-spacing:.2px;">' + esc(d.projeNo) + '</td>' +
       '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + esc(d.devre) + (iptalBilgi ? '<span class="iptal-badge" style="margin-left:8px;">⊘ İptal</span>' : '') + '</td>' +
       '<td style="font-size:14px;color:var(--txd);">' + esc(d.zone) + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + d.spool + '</td>' +
@@ -2260,8 +2340,10 @@ function navBadgeGuncelle() {
 
 // ── TABLO PDF (Dışa Aktar) ───────────────────────────────────────
 // PDF-01 + yatay sayfa kuralı: geniş tablolarda @page landscape
-function _tabelaPdf() {
-  var liste = getFiltered();
+async function _tabelaPdf() {
+  showToast(tv('dr_export_hazirlaniyor','Dışa aktarım hazırlanıyor...'), 'info');
+  var liste = await _tamFiltreliListe();
+  if (!liste.length) { showToast(tv('dr_export_bos','Dışa aktarılacak devre yok'), 'error'); return; }
   var tarihStr = new Date().toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'});
 
   // Stat satırı
@@ -2430,20 +2512,21 @@ document.addEventListener('DOMContentLoaded', function() {
   bagla('btnOncelik',     oncelikToggle);
   bagla('btnSifirla',     filtreleriSifirla);
   bagla('btnMLOlustur',   malzemeListesiOlustur);
-  bagla('btnExcelExport', function() {
+  bagla('btnExcelExport', async function() {
     var fmt = document.querySelector('input[name="exportFormat"]:checked');
     modal('modalExport', false);
-    if (fmt && fmt.value === 'pdf') { _tabelaPdf(); return; }
-    var liste = getFiltered();
-    if (typeof XLSX !== 'undefined') {
-      var rows = [['Is Emri','Tersane','Gemi','Devre','Zone','Spool','Agirlik (kg)','Ilerleme %','Durum','Son Islem']];
-      liste.forEach(function(d) { rows.push([d.isEmri, d.tersane, d.projeNo, d.devre, d.zone, d.spool, Math.round(d.agirlik), d.ilerleme, d.durum, d.sonIslem]); });
-      var wb = XLSX.utils.book_new();
-      var ws = XLSX.utils.aoa_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, 'Devreler');
-      XLSX.writeFile(wb, 'AresPipe_Devreler.xlsx');
-      showToast('Excel oluşturuldu', 'success');
-    }
+    if (fmt && fmt.value === 'pdf') { await _tabelaPdf(); return; }
+    if (typeof XLSX === 'undefined') { showToast(tv('dr_excel_lib_hata','Excel kütüphanesi yüklenemedi'), 'error'); return; }
+    showToast(tv('dr_export_hazirlaniyor','Dışa aktarım hazırlanıyor...'), 'info');
+    var liste = await _tamFiltreliListe();
+    if (!liste.length) { showToast(tv('dr_export_bos','Dışa aktarılacak devre yok'), 'error'); return; }
+    var rows = [['Is Emri','Tersane','Gemi','Devre','Zone','Spool','Agirlik (kg)','Ilerleme %','Durum','Son Islem']];
+    liste.forEach(function(d) { rows.push([d.isEmri, d.tersane, d.projeNo, d.devre, d.zone, d.spool, Math.round(d.agirlik), d.ilerleme, d.durum, d.sonIslem]); });
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Devreler');
+    XLSX.writeFile(wb, 'AresPipe_Devreler.xlsx');
+    showToast(tv('dr_excel_olusturuldu','Excel oluşturuldu') + ' (' + liste.length + ' ' + tv('cmn_devre','devre') + ')', 'success');
   });
 
   // Filtre değişimleri
