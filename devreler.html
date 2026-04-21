@@ -873,11 +873,11 @@ async function veriYukle() {
   try {
     // Filtre dropdown'ları için tersane ve proje listesi — hafif sorgu
     var results = await Promise.all([
-      supa.from('tersaneler').select('ad').eq('tenant_id', ARES.tenantId()),
+      supa.from('tersaneler').select('ad,kisa_ad').eq('tenant_id', ARES.tenantId()),
       supa.from('projeler').select('id, proje_no, tersaneler(ad,kisa_ad)').eq('tenant_id', ARES.tenantId())
     ]);
     var tersaneSet = {}, projeSet = {};
-    (results[0].data||[]).forEach(function(t){ tersaneSet[t.ad]=true; });
+    (results[0].data||[]).forEach(function(t){ var k=t.kisa_ad||t.ad; tersaneSet[k]=true; });
     _projeIdMap = {};
     _firmaProjeIds = {};
     (results[1].data||[]).forEach(function(p){
