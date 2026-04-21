@@ -1400,5 +1400,6 @@
   "bk_ara_placeholder_done": "Spool no, subcontract no, material...",
   "bk_kaynak": "Source",
   "bk_col_tarih": "Bend Date",
-  "bk_bos_bukulen": "No bent pipes yet"
+  "bk_bos_bukulen": "No bent pipes yet",
+  "cmn_arama": "Search"
 }
