@@ -115,10 +115,10 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .cl-or  {border-left:3px solid var(--or)  !important;}
 .cl-leg {border-left:3px solid var(--leg) !important;}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--txd);}
-.cell-tersane{font-size:14px;font-weight:500;color:var(--leg);}
+.cell-tersane{font-size:10px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
-.cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--marka-p);}
+.cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--marka-p);}
 mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 2px;}
 .qr-cell{display:flex;align-items:center;justify-content:center;}
 .qr-cell canvas{cursor:pointer;border-radius:4px;}
@@ -500,6 +500,21 @@ function tipLabelFn(tip){
 const tipIcon = {otomatik:'AO', plaka:'PL', manuel:'MN'};
 
 // matBadge — malzeme kategorisi renkli badge (ARES_NORM ile kod bazlı, dil bağımsız)
+
+function tersaneBadge(ad){
+  var palette=[
+    {lb:'rgba(217,119,6,.12)',lc:'#7c3a00',db:'rgba(217,119,6,.22)',dc:'#fbbf24'},
+    {lb:'rgba(124,58,237,.12)',lc:'#4c1d95',db:'rgba(124,58,237,.22)',dc:'#a78bfa'},
+    {lb:'rgba(236,72,153,.1)',lc:'#831843',db:'rgba(236,72,153,.2)',dc:'#f9a8d4'},
+    {lb:'rgba(22,163,110,.1)',lc:'#065f46',db:'rgba(22,163,110,.18)',dc:'#34d399'},
+    {lb:'rgba(239,68,68,.1)',lc:'#991b1b',db:'rgba(239,68,68,.18)',dc:'#fc8181'}
+  ];
+  var hash=0,s=ad||'';
+  for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
+  var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+}
 function matBadge(malzeme){
   var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(malzeme) : '';
   var cls = { paslanmaz:'cl-gr', alum:'cl-warn', bakir:'cl-leg' }[kod] || 'cl-ac';
@@ -684,13 +699,13 @@ function renderTable(){
     }
     return '<tr>'
       +'<td class="cell-no">'+(offset+i+1)+'</td>'
-      +'<td class="cell-tersane">'+hl(m.tersane)+'</td>'
+      +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+hl(m.isEmir)+'</td>'
       +'<td class="cell-spool">'+hl(m.spoolNo)+'</td>'
       +'<td class="cell-spoolid">'+hl(m.spoolId)+'</td>'
       +'<td style="font-size:14px;color:var(--tx);">'+hl(m.malzemeAdi||m.yuzey||'—')+'</td>'
       +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
       +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
       +'<td style="text-align:center;"><button onclick="manuelMarkala(\''+m.id+'\')" title="'+tv('mk_isle',tv('mk_isle','Markalandı olarak işaretle'))+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,100,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button></td>'
       +'</tr>';
@@ -882,17 +897,17 @@ function renderML(){
           var ch=ml.markalanmisIds.has(m.id);
           var altSatir='';
           if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
-          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
           return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mlrow-'+ml.id+'-'+m.id+'">'
             +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mlToggleRow(\''+ml.id+'\',\''+m.id+'\',this.checked)"></td>'
             +'<td class="cell-no">'+(offset+i+1)+'</td>'
-            +'<td class="cell-tersane">'+esc(m.tersane)+'</td>'
+            +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
             +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
             +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
             +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
             +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
             +'</tr>';
         }).join('');
@@ -1008,13 +1023,13 @@ function renderArc(){
         return manuelTam.slice(offset,offset+PG).map(function(m,i){
           return '<tr>'
             +'<td class="cell-no">'+(offset+i+1)+'</td>'
-            +'<td class="cell-tersane">'+esc(m.tersane)+'</td>'
+            +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
             +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
             +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
             +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
             +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);">'+esc(m.manuelTarih||'—')+'</td>'
             +'</tr>';
@@ -1061,16 +1076,16 @@ function renderArc(){
           return arcM.slice(offset,offset+PG).map(function(m,i){
             var altSatir='';
             if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
-            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
             return '<tr>'
               +'<td class="cell-no">'+(offset+i+1)+'</td>'
-              +'<td class="cell-tersane">'+esc(m.tersane)+'</td>'
+              +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
               +'<td class="cell-emir">'+esc(m.isEmir)+'</td>'
               +'<td class="cell-spool">'+esc(m.spoolNo)+'</td>'
               +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
               +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
               +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-              +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+              +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
               +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
               +'</tr>';
           }).join('');
@@ -1209,6 +1224,7 @@ function toast(msg,type){
   });
 })();
 // ── Dil değişince yeniden render ────────────────────────────────
+new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();

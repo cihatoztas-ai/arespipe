@@ -635,6 +635,21 @@
 <script>
 'use strict';
 
+function tersaneBadge(ad){
+  var palette=[
+    {lb:'rgba(217,119,6,.12)',lc:'#7c3a00',db:'rgba(217,119,6,.22)',dc:'#fbbf24'},
+    {lb:'rgba(124,58,237,.12)',lc:'#4c1d95',db:'rgba(124,58,237,.22)',dc:'#a78bfa'},
+    {lb:'rgba(236,72,153,.1)',lc:'#831843',db:'rgba(236,72,153,.2)',dc:'#f9a8d4'},
+    {lb:'rgba(22,163,110,.1)',lc:'#065f46',db:'rgba(22,163,110,.18)',dc:'#34d399'},
+    {lb:'rgba(239,68,68,.1)',lc:'#991b1b',db:'rgba(239,68,68,.18)',dc:'#fc8181'}
+  ];
+  var hash=0,s=ad||'';
+  for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
+  var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+}
+
 
 // Çeviriler ares-lang.js tarafından sağlanır (lang/en.json, lang/ar.json)
 
@@ -1583,7 +1598,7 @@ function _doRender() {
       '</td>' +
       '<td style="color:var(--txd);font-size:14px;">' + (globalIdx + 1) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
-      '<td style="font-size:14px;color:var(--txm);">' + esc(d.tersane) + '</td>' +
+      '<td>' + tersaneBadge(d.tersane) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--ac);">' + esc(d.projeNo) + '</td>' +
       '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + esc(d.devre) + (iptalBilgi ? '<span class="iptal-badge" style="margin-left:8px;">⊘ İptal</span>' : '') + '</td>' +
       '<td style="font-size:14px;color:var(--txd);">' + esc(d.zone) + '</td>' +
@@ -1918,7 +1933,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
           '<span style="font-family:monospace;font-size:15px;font-weight:800;color:#1e293b;">' + d.isEmri + '</span>' +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
-          '<span style="font-size:14px;color:#64748b;">' + d.tersane + '</span>' +
+          tersaneBadge(d.tersane) +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
           '<span style="font-size:14px;font-weight:700;color:#1e293b;">' + d.projeNo + '</span>' +
           '<span style="color:#cbd5e1;font-size:14px;">·</span>' +
@@ -2147,7 +2162,7 @@ function _tabelaPdf() {
 
     return '<tr style="background:' + trRenk + ';">' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-size:14px;font-weight:700;color:#7c3aed;">' + d.isEmri + '</td>' +
-      '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">' + d.tersane + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid var(--bor);">' + tersaneBadge(d.tersane) + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#2D8EFF;">' + d.projeNo + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + d.devre + '</td>' +
       '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#94a3b8;">' + d.zone + '</td>' +
@@ -2326,7 +2341,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // D-01: dil değişimi
-  window._onLangChange = function() { if (typeof _applyI18n === "function") _applyI18n(); renderTable(); };
+  new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+window._onLangChange = function() { if (typeof _applyI18n === "function") _applyI18n(); renderTable(); };
 
   } catch(e){ console.error('[ARES]',e); } finally { document.documentElement.style.visibility=''; }
   })();

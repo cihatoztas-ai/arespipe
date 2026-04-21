@@ -279,6 +279,21 @@
 
 <script>
 'use strict';
+
+function tersaneBadge(ad){
+  var palette=[
+    {lb:'rgba(217,119,6,.12)',lc:'#7c3a00',db:'rgba(217,119,6,.22)',dc:'#fbbf24'},
+    {lb:'rgba(124,58,237,.12)',lc:'#4c1d95',db:'rgba(124,58,237,.22)',dc:'#a78bfa'},
+    {lb:'rgba(236,72,153,.1)',lc:'#831843',db:'rgba(236,72,153,.2)',dc:'#f9a8d4'},
+    {lb:'rgba(22,163,110,.1)',lc:'#065f46',db:'rgba(22,163,110,.18)',dc:'#34d399'},
+    {lb:'rgba(239,68,68,.1)',lc:'#991b1b',db:'rgba(239,68,68,.18)',dc:'#fc8181'}
+  ];
+  var hash=0,s=ad||'';
+  for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
+  var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+}
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
 // ── VERİ ────────────────────────────────────────────────────
@@ -605,7 +620,7 @@ function pkart(p) {
   var h = '<div class="pkart"><div class="phead">';
   h += '<div>';
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><div class="pno">'+esc(p.davetNo||p.id.substring(0,8).toUpperCase())+'</div>'+(dm[p.durum]||'')+'</div>';
-  h += '<div style="font-size:14px;color:var(--txm);">'+esc(p.tersane)+' &middot; <span style="color:var(--ac);">'+esc(p.projeNo)+'</span></div>';
+  h += tersaneBadge(p.tersane)+' <span style="color:var(--txd);font-size:12px;">&middot;</span> <span style="color:var(--ac);font-size:13px;font-weight:600;">'+esc(p.projeNo)+'</span>';
   h += '<div style="font-size:14px;color:var(--txd);margin-top:4px;">Davet: <strong style="color:var(--tx);">'+p.davetTarihi+'</strong> &middot; Kontrol: <strong style="color:var(--tx);">'+p.kontrolTarihi+'</strong> &middot; '+p.spooller.length+' spool &middot; '+kg+' kg'+(p.not?' &middot; '+p.not:'')+'</div>';
   if (p.onay) h += '<div style="font-size:14px;margin-top:5px;color:'+(p.durum==='onaylandi'?'var(--gr)':'var(--re)')+';">'+(p.durum==='onaylandi'?'&check;':'&cross;')+' '+p.onay.kisi+' &mdash; '+p.onay.tarih+(p.onay.not?' &mdash; '+p.onay.not:'')+'</div>';
   h += '</div>';
@@ -750,7 +765,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (window._applyI18n) _applyI18n();
       await veriYukle();
-      window._onLangChange = function() {
+      new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+window._onLangChange = function() {
         if (window._applyI18n) _applyI18n();
         renderBekle();
         renderOnay();

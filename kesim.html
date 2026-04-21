@@ -97,11 +97,11 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .data-table tbody tr{transition:background .15s;}
 .data-table tbody tr:hover{background:var(--sur2);}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--txd);}
-.cell-tersane{font-size:14px;color:var(--leg);}
+.cell-tersane{font-size:10px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
-.cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--ks-c);}
-.cell-kesim{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--ks-c);}
+.cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks-c);}
+.cell-kesim{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks-c);}
 .uc-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:14px;white-space:nowrap;}
 .uc-duz{background:rgba(100,116,139,.15);color:var(--txm);}
 .uc-kaynak{background:rgba(229,62,62,.12);color:var(--re);}
@@ -502,6 +502,21 @@ if (typeof tv === 'undefined') { window.tv = function(k,fb){ return fb!==undefin
 if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k; }; }
 if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
 
+
+function tersaneBadge(ad){
+  var palette=[
+    {lb:'rgba(217,119,6,.12)',lc:'#7c3a00',db:'rgba(217,119,6,.22)',dc:'#fbbf24'},
+    {lb:'rgba(124,58,237,.12)',lc:'#4c1d95',db:'rgba(124,58,237,.22)',dc:'#a78bfa'},
+    {lb:'rgba(236,72,153,.1)',lc:'#831843',db:'rgba(236,72,153,.2)',dc:'#f9a8d4'},
+    {lb:'rgba(22,163,110,.1)',lc:'#065f46',db:'rgba(22,163,110,.18)',dc:'#34d399'},
+    {lb:'rgba(239,68,68,.1)',lc:'#991b1b',db:'rgba(239,68,68,.18)',dc:'#fc8181'}
+  ];
+  var hash=0,s=ad||'';
+  for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
+  var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+}
 function matBadge(m) {
   // Malzeme normalize + çeviri → ARES_NORM
   var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(m) : '';
@@ -804,13 +819,13 @@ function renderTable(){
       :'<span style="color:var(--txd);font-size:14px;">—</span>';
     return '<tr>'
       +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td class="cell-tersane">'+hl(k.tersane)+'</td>'
+      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+hl(k.isEmir)+'</td>'
       +'<td class="cell-spool">'+hl(k.spool)+'</td>'
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
       +'<td>'+matBadge(k.malzeme)+'</td>'
-      +'<td><span style="color:var(--ac);font-size:14px;">'+hl(k.kalite)+'</span></td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--ac);">'+hl(k.cap)+'</td>'
+      +'<td><span style="color:var(--txd);font-size:12px;">'+hl(k.kalite)+'</span></td>'
+      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+hl(k.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+hl(k.kesimOlcusu)+' mm</td>'
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucMap[k.ucA]||k.ucA)+'</span>':'')+'</td>'
@@ -1194,7 +1209,7 @@ function renderTekil(){
         +'<td style="color:var(--txd);font-size:14px;">'+(i+1)+'</td>'
         +'<td style="font-size:14px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
         +'<td style="font-size:14px;">'+matBadge(k.malzeme||'—')+'</td>'
-        +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+        +'<td style="font-size:13px;font-weight:600;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="font-size:14px;font-weight:700;color:var(--warn);">'+esc(String(k.kesimOlcusu||'—'))+' mm</td>'
         +'<td style="font-size:14px;">'+esc(ucMap[k.ucA]||k.ucA||'—')+'</td>'
         +'<td style="font-size:14px;">'+esc(ucMap[k.ucB]||k.ucB||'—')+'</td>'
@@ -1455,6 +1470,7 @@ function toast(msg,type){
 // BAŞLAT
 // ════════════════════════════════════
 // ── Dil değişince yeniden render ────────────────────────────────
+new MutationObserver(function(){if(typeof applyFilters==='function')applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
   applyFilters();
