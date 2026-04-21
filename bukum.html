@@ -585,8 +585,12 @@ function uniq(key){
   return vals;
 }
 function populateFilters(){
-  var fill=function(id,vals){var s=document.getElementById(id);while(s.options.length>1)s.remove(1);vals.forEach(function(v){s.add(new Option(v,v));});};
-  fill('fMalzeme', uniq('malzeme').sort());
+  var fill=function(id,vals,labelFn){var s=document.getElementById(id);while(s.options.length>1)s.remove(1);vals.forEach(function(v){s.add(new Option(labelFn?labelFn(v):v,v));});};
+  fill('fTersane', uniq('tersane').sort());
+  var malzemeKodlar=[...new Set(bukumler.map(function(b){return b.malzeme;}).filter(Boolean))].sort();
+  fill('fMalzeme', malzemeKodlar, function(kod){
+    return (typeof ARES_NORM!=='undefined') ? ARES_NORM.tvMalzeme(ARES_NORM.malzemeKod(kod), kod) : kod;
+  });
   fill('fKalite',  uniq('kalite').sort());
   fill('fCap',     uniq('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
   fill('fKalinlik',uniq('kalinlik').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
@@ -594,8 +598,8 @@ function populateFilters(){
 function gv(id){return document.getElementById(id).value;}
 function onSearch(){aramaMetni=document.getElementById('searchInput').value.toLowerCase().trim();document.getElementById('searchClear').classList.toggle('show',!!aramaMetni);applyFilters();}
 function clearSearch(){document.getElementById('searchInput').value='';aramaMetni='';document.getElementById('searchClear').classList.remove('show');applyFilters();}
-function onFC(){['fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',!!gv(id));});applyFilters();}
-function resetAll(){['fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');});clearSearch();}
+function onFC(){['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',!!gv(id));});applyFilters();}
+function resetAll(){['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');});clearSearch();}
 
 function renderRow(b,i){
   var isFason=b.kaynak==='fason';
@@ -632,6 +636,7 @@ function applyFilters(){
   mevcutSayfa=1;
   filtreData=bukumler.filter(function(b){
     if(b.durum!=='bekliyor') return false;
+    if(gv('fTersane') &&b.tersane !==gv('fTersane'))  return false;
     if(gv('fMalzeme') &&b.malzeme !==gv('fMalzeme'))  return false;
     if(gv('fKalite')  &&b.kalite  !==gv('fKalite'))   return false;
     if(gv('fCap')     &&b.cap     !==gv('fCap'))       return false;

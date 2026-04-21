@@ -588,10 +588,10 @@ function resetAll(){
 }
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
-  [{id:'fTersane',l:'Tersane'},{id:'fParca',l:tv('mk_parca_adi','Parça')},{id:'fKalite',l:'Kalite'},{id:'fCap',l:'Çap'}]
-    .forEach(function(f){var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+f.l+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">&#10005;</button></div>');});
-  [...secilenIsEmir].forEach(function(ie){chips.push('<div class="active-chip">Is Emir: <b>'+esc(ie)+'</b><button onclick="rmMs(\''+ie+'\')">&#10005;</button></div>');});
-  if(aramaMetni)chips.push('<div class="active-chip">Arama: <b>&quot;'+esc(aramaMetni)+'&quot;</b><button onclick="clearSearch()">&#10005;</button></div>');
+  [{id:'fTersane',l:function(){return tv('cmn_tersane','Tersane');}},{id:'fParca',l:function(){return tv('mk_parca_adi','Parça');}},{id:'fKalite',l:function(){return tv('cmn_kalite','Kalite');}},{id:'fCap',l:function(){return tv('cmn_cap','Çap');}}]
+    .forEach(function(f){var v=gv(f.id);if(v)chips.push('<div class="active-chip">'+(typeof f.l==='function'?f.l():f.l)+': <b>'+(f.fmt?f.fmt(v):esc(v))+'</b><button onclick="clearChip(\''+f.id+'\')">&#10005;</button></div>');});
+  [...secilenIsEmir].forEach(function(ie){chips.push('<div class="active-chip">'+tv('cmn_th_is_emri','İş Emri')+': <b>'+esc(ie)+'</b><button onclick="rmMs(\''+ie+'\')">&#10005;</button></div>');});
+  if(aramaMetni)chips.push('<div class="active-chip">'+tv('cmn_arama','Arama')+': <b>&quot;'+esc(aramaMetni)+'&quot;</b><button onclick="clearSearch()">&#10005;</button></div>');
   cont.style.display=chips.length?'flex':'none';cont.innerHTML=chips.join('');
 }
 function clearChip(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');applyFilters();}

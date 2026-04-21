@@ -298,24 +298,24 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <div class="filter-card">
       <!-- Satır 1: Filtreler -->
       <div class="filter-row">
-        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value=""><span data-i18n="cmn_th_tersane"><span data-i18n="cmn_th_tersane">Tersane</span></span></option></select>
+        <select class="filter-select" id="fTersane" onchange="onFC()" title="Tersane"><option value="" data-i18n="cmn_th_tersane">Tersane</option></select>
         <div class="ms-wrap">
           <div class="ms-trigger" id="msTrigger" onclick="toggleMs(event)">
-            <span class="ms-trigger-text" id="msTxt"><span data-i18n="cmn_th_is_emri"><span data-i18n="cmn_th_is_emri">İş Emri</span></span></span>
+            <span class="ms-trigger-text" id="msTxt" data-i18n="cmn_th_is_emri">İş Emri</span>
             <span class="ms-count" id="msCnt" style="display:none;"></span>
             <span class="ms-arrow">▾</span>
           </div>
           <div class="ms-dropdown" id="msDD" style="display:none;">
             <div class="ms-search"><input type="text" id="msQ" data-i18n-placeholder="ks_search_ph" placeholder="İş emir ara..." oninput="buildMs()"></div>
-            <div class="ms-actions"><button class="ms-act" onclick="msAll()"><span data-i18n="cmn_sec_tumunu">Tümünü Seç</span></button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
+            <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="cmn_sec_tumunu">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()" data-i18n="cmn_temizle">Temizle</button></div>
             <div class="ms-list" id="msList"></div>
-            <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
+            <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()" data-i18n="cmn_uygula">Uygula</button></div>
           </div>
         </div>
-        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value=""><span data-i18n="cmn_th_malzeme"><span data-i18n="cmn_th_malzeme">Malzeme</span></span></option></select>
-        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value=""><span data-i18n="cmn_th_kalite"><span data-i18n="cmn_th_kalite">Kalite</span></span></option></select>
-        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value=""><span data-i18n="cmn_th_cap"><span data-i18n="cmn_th_cap">Çap</span></span></option></select>
-        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value=""><span data-i18n="cmn_th_et"><span data-i18n="cmn_th_et">Et Kal.</span></span></option></select>
+        <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value="" data-i18n="cmn_th_malzeme">Malzeme</option></select>
+        <select class="filter-select" id="fKalite" onchange="onFC()" title="Kalite"><option value="" data-i18n="cmn_th_kalite">Kalite</option></select>
+        <select class="filter-select" id="fCap" onchange="onFC()" title="Çap"><option value="" data-i18n="cmn_th_cap">Çap</option></select>
+        <select class="filter-select" id="fKalinlik" onchange="onFC()" title="Et Kalınlığı"><option value="" data-i18n="cmn_th_et">Et Kal.</option></select>
         <select class="filter-select" id="fSert" onchange="onFC()" title="Sertifika">
           <option value="" data-i18n="ks_filter_cert">Sertifika</option>
           <option value="evet" data-i18n="ks_chip_cert">Sertifikalı</option>
@@ -738,7 +738,7 @@ var sortFns={
   kalite:(a,b)=>a.kalite.localeCompare(b.kalite),
   cap:(a,b)=>parseFloat(a.cap)-parseFloat(b.cap),
   kalinlik:(a,b)=>parseFloat(a.kalinlik)-parseFloat(b.kalinlik),
-  kesimOlcusu:(a,b)=>parseFloat(a.kesimOlcusu)-parseFloat(b.kesimOlcusu),
+  kesimOlcusu:(a,b)=>(parseFloat(a.kesimOlcusu)||0)-(parseFloat(b.kesimOlcusu)||0),
   ucA:(a,b)=>(a.ucA||'').localeCompare(b.ucA||''),
   ucB:(a,b)=>(a.ucB||'').localeCompare(b.ucB||'')
 };
@@ -766,7 +766,7 @@ function renderTable(){
   var totalPages=Math.ceil(filtreData.length/PG_BORU)||1;
   if(pgBoru>totalPages)pgBoru=totalPages;
   var start=(pgBoru-1)*PG_BORU, slice=filtreData.slice(start,start+PG_BORU);
-  var mm=filtreData.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+  var mm=filtreData.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   tbody.innerHTML=slice.map((k,idx)=>{
   var i=start+idx;
     var sertBadge=k.sertifika
@@ -836,7 +836,7 @@ function openListeModal(){
     document.getElementById('uyariModal').style.display='flex';
     return;
   }
-  var mm=filtreData.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+  var mm=filtreData.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   var tersaneler=[...new Set(filtreData.map(k=>k.tersane))];
   document.getElementById('listeModalSub').innerHTML='<b style="color:var(--gr);font-size:16px;">'+filtreData.length+' '+tv('bk_unit_boru','boru')+'</b>';
   // Sayacı Supabase'den al
@@ -941,7 +941,7 @@ function renderKL(){
   var sliceKL=aktif.slice((pgKL-1)*PG_KL,pgKL*PG_KL);
   cont.innerHTML=sliceKL.map(kl=>{
     var klB=borular.filter(k=>kl.boruIds.includes(k.id));
-    var mm=klB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+    var mm=klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
     var kesildi=klB.filter(k=>kl.kesilmisIds.has(k.id)).length;
     var toplam=klB.length;
     var pct=toplam?Math.round(kesildi/toplam*100):0;
@@ -1015,7 +1015,7 @@ function klToggleRow(klId,boruId,checked){
   if(lbl){lbl.textContent=kes+' / '+top+' '+tv('bk_unit_boru','boru')+' · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
   var fill=document.getElementById('klprog-'+klId);if(fill)fill.style.width=pct+'%';
   var cnt=document.getElementById('klcnt-'+klId);
-  var mm=klB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+  var mm=klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   if(cnt)cnt.textContent='✂️ '+kes+'/'+top+' '+tv('ks_kesildi','kesildi')+' · '+mm.toLocaleString('tr-TR')+' mm';
 }
 
@@ -1092,7 +1092,7 @@ function renderArc(){
   var sliceArc=kapalilar.slice((pgArc-1)*PG_ARC,pgArc*PG_ARC);
   cont.innerHTML=sliceArc.map(kl=>kl.arsiv.map((arc,ai)=>{
     var arcB=borular.filter(k=>arc.kesilmisIds.includes(k.id));
-    var mm=arcB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+    var mm=arcB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
     var badge=arc.kismiMi
       ?'<span class="arc-badge-kis">⚡ '+tv('mk_kismi','Kısmi')+' · '+arc.kesilmisCount+'/'+arc.toplamCount+'</span>'
       :'<span class="arc-badge-tam">✓ '+tv('mk_tam','Tam')+' · '+arc.kesilmisCount+' '+tv('bk_unit_boru','boru')+'</span>';
@@ -1184,7 +1184,7 @@ function openFormModal(klId,arcIdx){
   var klB=(arcIdx!==null&&arcIdx!==undefined)
     ?borular.filter(k=>kl.arsiv[arcIdx].kesilmisIds.includes(k.id))
     :borular.filter(k=>kl.boruIds.includes(k.id));
-  var mm=klB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+  var mm=klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   var malz=klB[0]||{};
   document.getElementById('fmOzet').innerHTML=
     '<b style="color:var(--tx);">'+esc(kl.no)+'</b> &nbsp;·&nbsp; '
@@ -1259,7 +1259,7 @@ async function runForm(){
   document.querySelectorAll('#fmStoklar input[type="number"]').forEach((inp,i)=>{
     var v=parseInt(inp.value);if(v>0)parcaBorular.push({id:'PARCA-'+(i+1),uzunluk:v});
   });
-  var pieces=klB.map(k=>({id:k.id,boy:parseFloat(k.kesimOlcusu),spool:k.spool,spoolId:k.spoolId,ucA:k.ucA,ucB:k.ucB}));
+  var pieces=klB.map(k=>({id:k.id,boy:(parseFloat(k.kesimOlcusu)||0),spool:k.spool,spoolId:k.spoolId,ucA:k.ucA,ucB:k.ucB}));
   var result=optimizeCuts(pieces,parcaBorular,standartLen,kerf,trim,minArtik);
   // matchedBorular
   var matched=new Set();
@@ -1267,7 +1267,7 @@ async function runForm(){
     var needed=plan.pieces.slice().sort((a,b)=>b.boy-a.boy);
     plan.matchedBorular=[];
     needed.forEach(need=>{
-      var found=klB.find(k=>!matched.has(k.id)&&parseFloat(k.kesimOlcusu)===need.boy);
+      var found=klB.find(k=>!matched.has(k.id)&&(parseFloat(k.kesimOlcusu)||0)===need.boy);
       if(found){plan.matchedBorular.push(found);matched.add(found.id);}
     });
   });
@@ -1298,7 +1298,7 @@ async function buildExcelJS(kl,klB,plans,kerf,trim,minArtik,dosyaAdi){
   }
   function mrg(r1,c1,r2,c2,o){ws.mergeCells(r1,c1,r2,c2);var c=ws.getCell(r1,c1);st(c,o||{});return c;}
   var malz=klB[0]||{};
-  var totalMM=klB.reduce((s,k)=>s+parseFloat(k.kesimOlcusu),0);
+  var totalMM=klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   var stokAdet=plans.length,parcaAdet=klB.length;
   var ucSay={bukum:0,kaynak:0,yiv:0,duz:0,dis:0};
   klB.forEach(k=>[k.ucA,k.ucB].forEach(u=>{if(u in ucSay)ucSay[u]++;}));
@@ -1347,7 +1347,7 @@ async function buildExcelJS(kl,klB,plans,kerf,trim,minArtik,dosyaAdi){
     (plan.matchedBorular||[]).forEach(k=>{
       sira++;ws.getRow(cur).height=24;
       var rbg=sira%2===0?'FFF0F0F0':'FFFFFFFF';
-      [[1,sira],[2,k.spool],[3,k.spoolId],[4,parseFloat(k.kesimOlcusu)],[5,ucLbl[k.ucA]||k.ucA||''],[6,ucLbl[k.ucB]||k.ucB||''],[7,'']].forEach(pair=>{
+      [[1,sira],[2,k.spool],[3,k.spoolId],[4,(parseFloat(k.kesimOlcusu)||0)],[5,ucLbl[k.ucA]||k.ucA||''],[6,ucLbl[k.ucB]||k.ucB||''],[7,'']].forEach(pair=>{
         var cc=ws.getCell(cur,pair[0]);cc.value=pair[1];
         st(cc,{sz:11,bg:rbg,h:pair[0]<=1?'center':'left',bold:pair[0]===4,color:pair[0]===4?'FF843C0C':'FF000000'});
       });
