@@ -410,6 +410,7 @@ function esc(s){var d=document.createElement('div');d.textContent=s==null?'':Str
 // yuzey: markanin vurulacagi malzeme (flans, boru, bilezik vb.)
 // durum: 'bekliyor' | 'listede' | 'tamamlandi'
 let markalamalar = []; // Supabase'den yüklenecek
+var _dataLoaded = false;
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
 async function veriYukle() {
@@ -447,6 +448,7 @@ async function veriYukle() {
       };
     });
     populateFilters();
+    _dataLoaded = true;
     applyFilters();
     // ML sayacı + mevcut listeleri yükle
     try {
@@ -1248,10 +1250,10 @@ function toast(msg,type){
   });
 })();
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function'&&markalamalar.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&_dataLoaded)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
-  if (markalamalar.length > 0) applyFilters();
+  if (_dataLoaded) applyFilters();
 };
 
 document.addEventListener('DOMContentLoaded', function() {

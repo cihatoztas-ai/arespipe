@@ -527,6 +527,7 @@ function matBadge(m) {
 // kaynak: 'spool' | 'fason'
 // durum: 'bekliyor' | 'tamamlandi'
 var bukumler = []; // Supabase'den yüklenecek
+var _dataLoaded = false;
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
 async function veriYukle() {
@@ -564,6 +565,7 @@ async function veriYukle() {
       };
     });
     populateFilters();
+    _dataLoaded = true;
     applyFilters();
   } catch(e) {
     console.warn('[ARES] veriYukle hatası:', e);
@@ -615,6 +617,7 @@ var aktifFasonId = null;
 
 // Filtre state
 var filtreData=[], aramaMetni='', sortKey='', sortDir=1;
+var _ci=0;
 
 // ════ YARDIMCILAR ════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -747,7 +750,7 @@ function renderBekliyor(){
   var start=(mevcutSayfa-1)*SAYFA_BOYUT, end=start+SAYFA_BOYUT;
   var sayfaData=filtreData.slice(start,end);
   // tbody sadece bu sayfayı göster
-  var _ci=0;
+  _ci=0;
   tbody.innerHTML=sayfaData.map(function(b,i){return renderRow(b,start+i);}).join('');
   // Pagination bar
   var pgWrap=document.getElementById('pgWrap');
@@ -1280,10 +1283,10 @@ function toast(msg,type){
   document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove();},4000);
 }
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function'&&bukumler.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&_dataLoaded)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
-  applyFilters();
+  if (_dataLoaded) applyFilters();
 };
 
 // ── Silme onay modalı ────────────────────────────────────────────

@@ -552,6 +552,7 @@ function matBadge(m) {
 // VERİ
 // ════════════════════════════════════
 var borular = []; // Supabase'den yüklenecek
+var _dataLoaded = false;
 
 // ── SUPABASE VERİ YÜKLEYİCİ ─────────────────────────────────
 async function veriYukle() {
@@ -615,6 +616,7 @@ async function veriYukle() {
     klSayac = kesimListeleri.length + 1;
 
     populateFilters();
+    _dataLoaded = true;
     applyFilters();
   } catch(e) {
     console.warn('[ARES] veriYukle hatası:', e);
@@ -1494,10 +1496,10 @@ function toast(msg,type){
 // BAŞLAT
 // ════════════════════════════════════
 // ── Dil değişince yeniden render ────────────────────────────────
-new MutationObserver(function(){if(typeof applyFilters==='function'&&borular.length>0)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(function(){if(typeof applyFilters==='function'&&_dataLoaded)applyFilters();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 window._onLangChange = function() {
   if (window._applyI18n) _applyI18n();
-  applyFilters();
+  if (_dataLoaded) applyFilters();
   if (typeof renderTekil === 'function') renderTekil();
   if (typeof renderListeler === 'function') renderListeler();
 };
