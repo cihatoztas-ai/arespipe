@@ -898,7 +898,6 @@ var kesimListeleri = [];
 var klSayac = 1;
 var aktifTab = 'bekliyor';
 var filtreData = [], secilenIsEmir = new Set(), aramaMetni = '', sortKey = '', sortDir = 1;
-var _fmKlId = null, _fmArcIdx = null, _fmStokSayac = 0;
 var PG_BORU = 20, PG_KL = 10, PG_ARC = 10;
 var pgBoru = 1, pgKL = 1, pgArc = 1;
 
@@ -1720,9 +1719,7 @@ function calculateCutOptimization(pieces, stocks, config) {
 // FORM MODAL — AÇMA / KAPAMA
 // ════════════════════════════════════
 var _fmKlId = null, _fmArcIdx = null, _fmStokSayac = 0;
-var _fmKlB = null;
-var _fmCurrentPlans = null;
-var _fmCurrentParams = null;
+var _fmKlB = null, _fmCurrentPlans = null, _fmCurrentParams = null;
 
 function openFormModal(klId, arcIdx){
   _fmKlId=klId; _fmArcIdx=arcIdx; _fmStokSayac=0;
@@ -2136,12 +2133,15 @@ async function buildExcelJS(kl,klB,plans,kerf,trim,minArtik,dosyaAdi){
   var PC=['FF5B2C6F','FF7D3C98'],YC=['FF1E5631','FF239B56'];
   var cur=8,sira=0,plnIdx=0;
   plans.forEach(plan=>{
-    var bgH=plan.tip==='parca'?PC[plnIdx%2]:YC[plnIdx%2];plnIdx++;
+    var isParca=(plan.stock&&plan.stock.type==='piece_stock');
+    var stockLen=(plan.stock&&plan.stock.length)||6000;
+    var bgH=isParca?PC[plnIdx%2]:YC[plnIdx%2];plnIdx++;
     ws.getRow(cur).height=22;
     var hdr=mrg(cur,1,cur,7,{bold:true,sz:12,color:'FFFFFFFF',bg:bgH,h:'left'});
     var kalan=plan.remaining;
-    var toplamCut=plan.pieces.reduce((s,p)=>s+p.boy,0)+plan.pieces.length*kerf;
-    hdr.value=(plan.tip==='parca'?'📦 PARCA BORU — ':'📏 YENI BOY BORU — ')+'Stok: '+plan.stockUzunluk+' mm  |  Toplam Kesim: '+Math.round(toplamCut)+' mm  |  Kalan Artık: '+Math.round(kalan)+' mm'+(kalan>=minArtik?' ✓ KULLANILABİLİR':'');
+    var cuts=plan.cuts||plan.pieces||[];
+    var toplamCut=cuts.reduce((s,c)=>s+(typeof c==='number'?c:(c.boy||0)),0)+cuts.length*kerf;
+    hdr.value=(isParca?'📦 PARCA BORU — ':'📏 YENI BOY BORU — ')+'Stok: '+stockLen+' mm  |  Toplam Kesim: '+Math.round(toplamCut)+' mm  |  Kalan Artık: '+Math.round(kalan)+' mm'+(kalan>=minArtik?' ✓ KULLANILABİLİR':'');
     cur++;
     (plan.matchedBorular||[]).forEach(k=>{
       sira++;ws.getRow(cur).height=24;
