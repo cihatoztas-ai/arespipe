@@ -544,8 +544,9 @@ async function veriYukle() {
             kriter: { tersaneler: tersaneler, tipler: tipler }
           };
         });
-        applyFilters();
-        updateStats();
+        // NOT: applyFilters/updateStats burada çağrılmaz — tablo zaten yüklendi (line 503).
+        // markalama_listeleri verisi sadece "Listeler" tab'ını etkiler, bekleyen tablosuyla ilgisi yok.
+        // (14. oturum sonrası hotfix: çift render flicker sorununu çözmek için kaldırıldı)
       }
       // ML sayacı: sayac_tanimlari'ndan al
       var sayacRes = await supa.from('sayac_tanimlari')
