@@ -1394,5 +1394,11 @@
   "bk_boru_guncellendi": "تم تحديث الأنبوب",
   "cmn_ekle": "إضافة",
   "cmn_guncelle": "تحديث",
-  "cmn_et_kalinligi": "سماكة الجدار (مم)"
+  "cmn_et_kalinligi": "سماكة الجدار (مم)",
+  "bk_tamamlanan_baslik": "الطي المكتمل",
+  "bk_bukulenler": "✓ الأنابيب المثنية",
+  "bk_ara_placeholder_done": "رقم البكرة، رقم المقاولة، المادة...",
+  "bk_kaynak": "المصدر",
+  "bk_col_tarih": "تاريخ الطي",
+  "bk_bos_bukulen": "لا توجد أنابيب مثنية بعد"
 }

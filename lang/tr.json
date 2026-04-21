@@ -1394,5 +1394,11 @@
   "bk_boru_guncellendi": "Boru güncellendi",
   "cmn_ekle": "Ekle",
   "cmn_guncelle": "Güncelle",
-  "cmn_et_kalinligi": "Et Kalınlığı (mm)"
+  "cmn_et_kalinligi": "Et Kalınlığı (mm)",
+  "bk_tamamlanan_baslik": "Tamamlanan Büküm",
+  "bk_bukulenler": "✓ Bükülenler",
+  "bk_ara_placeholder_done": "Spool no, fason no, malzeme...",
+  "bk_kaynak": "Kaynak",
+  "bk_col_tarih": "Büküm Tarihi",
+  "bk_bos_bukulen": "Henüz bükülen boru yok"
 }

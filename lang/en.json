@@ -1394,5 +1394,11 @@
   "bk_boru_guncellendi": "Pipe updated",
   "cmn_ekle": "Add",
   "cmn_guncelle": "Update",
-  "cmn_et_kalinligi": "Wall Thickness (mm)"
+  "cmn_et_kalinligi": "Wall Thickness (mm)",
+  "bk_tamamlanan_baslik": "Completed Bending",
+  "bk_bukulenler": "✓ Bent Pipes",
+  "bk_ara_placeholder_done": "Spool no, subcontract no, material...",
+  "bk_kaynak": "Source",
+  "bk_col_tarih": "Bend Date",
+  "bk_bos_bukulen": "No bent pipes yet"
 }
