@@ -26,23 +26,28 @@
     /* ── Stat kartları ── */
     /* G-01 v2 (14. oturum): hero-left + pill stripe — kesim/bukum/markalama ile tutarlı */
     .stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
-    .hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:200px; box-sizing:border-box; }
-    .hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--leg); }
-    .hero-name { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--leg); }
+    .hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:11px 14px; display:flex; align-items:center; gap:12px; flex-shrink:0; width:210px; box-sizing:border-box; }
+    .hero-left svg { width:28px; height:28px; flex-shrink:0; color:var(--leg); }
+    .hero-name { font-family:'Barlow Condensed',sans-serif; font-size:23px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--leg); }
     .hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
-    .stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:8px 11px; flex:1; min-width:0; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; gap:4px; }
-    .stat-pill.wide { flex:1.3; }
-    .stat-pill-lab { font-size:10px; color:var(--txd); letter-spacing:.5px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .stat-pill-num small { font-size:13px; font-weight:500; color:var(--txd); margin-left:2px; }
+    .stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1; min-width:0; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+    .stat-pill.wide { flex:1.35; }
+    .stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .stat-pill-ic svg { width:16px; height:16px; color:#fff; stroke-width:2.2; }
+    .stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .stat-pill-lab { font-size:11px; color:var(--txm); letter-spacing:.4px; line-height:1.2; text-transform:uppercase; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .stat-pill.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
     .stat-pill.clickable:hover { border-color:var(--ac); background:var(--sur2); }
     @media (max-width: 1200px) {
-      .hero-left { width:170px; padding:9px 11px; gap:9px; }
-      .hero-left svg { width:22px; height:22px; }
-      .hero-name { font-size:19px; }
-      .stat-pill { padding:7px 9px; }
-      .stat-pill-num { font-size:20px; }
+      .hero-left { width:180px; padding:9px 11px; gap:9px; }
+      .hero-left svg { width:24px; height:24px; }
+      .hero-name { font-size:20px; }
+      .stat-pill { padding:7px 9px; gap:8px; }
+      .stat-pill-ic { width:26px; height:26px; }
+      .stat-pill-ic svg { width:14px; height:14px; }
+      .stat-pill-num { font-size:19px; }
+      .stat-pill-lab { font-size:10px; }
     }
     .sc       { background:var(--sur); border:1px solid var(--bor); border-radius:14px; padding:14px 18px; display:flex; align-items:center; gap:12px; flex:1; min-width:150px; transition:border-color .18s; }
     .sc-icon  { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -297,29 +302,47 @@
     </div>
     <div class="hero-stats">
       <div class="stat-pill">
-        <div class="stat-pill-lab" data-i18n="dr_circuit_count">Devre Adedi</div>
-        <div class="stat-pill-num"><span id="stDevre">—</span></div>
+        <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="dr_circuit_count">Devre Adedi</div>
+          <div class="stat-pill-num"><span id="stDevre">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div class="stat-pill-lab" data-i18n="dr_spool_count">Spool Adedi</div>
-        <div class="stat-pill-num"><span id="stSpool">—</span></div>
+        <div class="stat-pill-ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="dr_spool_count">Spool Adedi</div>
+          <div class="stat-pill-num"><span id="stSpool">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div class="stat-pill-lab"><span data-i18n="dr_weight">Ağırlık</span> (kg)</div>
-        <div class="stat-pill-num"><span id="stAgirlik">—</span></div>
+        <div class="stat-pill-ic ic-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab"><span data-i18n="dr_weight">Ağırlık</span> (kg)</div>
+          <div class="stat-pill-num"><span id="stAgirlik">—</span></div>
+        </div>
       </div>
       <div class="stat-pill wide clickable" id="scMalzeme">
-        <div class="stat-pill-lab" data-i18n="dr_material">Malzeme</div>
-        <div class="seg-bar" id="malzemeBar"></div>
+        <div class="stat-pill-ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="dr_material">Malzeme</div>
+          <div class="seg-bar" id="malzemeBar"></div>
+        </div>
       </div>
       <div class="stat-pill wide clickable" id="scCap">
-        <div class="stat-pill-lab" data-i18n="dr_cap_dist">Çap Dağılımı</div>
-        <div class="seg-bar" id="capBar"></div>
+        <div class="stat-pill-ic ic-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="dr_cap_dist">Çap Dağılımı</div>
+          <div class="seg-bar" id="capBar"></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div class="stat-pill-lab" data-i18n="dr_progress">İlerleme</div>
-        <div class="stat-pill-num"><span id="stIlerleme">—</span></div>
-        <div class="sc-prog"><div class="sc-prog-fill" id="barIlerleme" style="width:0%"></div></div>
+        <div class="stat-pill-ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="dr_progress">İlerleme</div>
+          <div class="stat-pill-num"><span id="stIlerleme">—</span></div>
+          <div class="sc-prog"><div class="sc-prog-fill" id="barIlerleme" style="width:0%"></div></div>
+        </div>
       </div>
     </div>
   </div>
