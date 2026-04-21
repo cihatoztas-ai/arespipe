@@ -294,6 +294,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .stat-pill{display:flex;flex-direction:column;padding:9px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:88px;position:relative;overflow:hidden;}
 .stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
 .stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
@@ -585,7 +586,7 @@ async function veriYukle() {
         spoolId:     ARES.markaId(sp.spool_id),
         malzeme:     mal.malzeme     || '—',
         malzemeKod:  malzKod         || '',
-        kalite:      mal.kalite      || '—',
+        kalite:      mal.kalite      || '',
         cap:         mal.dis_cap_mm  ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         kalinlik:    mal.et_mm       ? String(mal.et_mm).replace('.',',') + ' mm' : '—',
         kesimOlcusu: k.olcu_mm       ? String(k.olcu_mm) : '—',
@@ -850,7 +851,7 @@ function renderTable(){
       +'<td class="cell-spool">'+hl(k.spool)+'</td>'
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
       +'<td>'+matBadge(k.malzeme)+'</td>'
-      +'<td><span style="color:var(--txd);font-size:12px;">'+hl(k.kalite)+'</span></td>'
+      +'<td><span style="color:var(--txd);font-size:12px;">'+(k.kalite?hl(k.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
       +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+hl(k.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+hl(k.kesimOlcusu)+' mm</td>'
