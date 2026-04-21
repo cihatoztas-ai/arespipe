@@ -94,6 +94,29 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .data-table thead th.sort-desc::after{content:' ↓';color:var(--ac);}
 .data-table td{padding:11px 12px;border-bottom:1px solid var(--bor);vertical-align:middle;white-space:nowrap;}
 .data-table tr:last-child td{border-bottom:none;}
+
+@keyframes _cascadeIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.data-table tbody tr{opacity:0;animation:_cascadeIn .22s ease forwards;}
+.data-table tbody tr[data-ci="0"]{animation-delay:0ms;}
+.data-table tbody tr[data-ci="1"]{animation-delay:45ms;}
+.data-table tbody tr[data-ci="2"]{animation-delay:90ms;}
+.data-table tbody tr[data-ci="3"]{animation-delay:135ms;}
+.data-table tbody tr[data-ci="4"]{animation-delay:180ms;}
+.data-table tbody tr[data-ci="5"]{animation-delay:225ms;}
+.data-table tbody tr[data-ci="6"]{animation-delay:270ms;}
+.data-table tbody tr[data-ci="7"]{animation-delay:315ms;}
+.data-table tbody tr[data-ci="8"]{animation-delay:360ms;}
+.data-table tbody tr[data-ci="9"]{animation-delay:405ms;}
+.data-table tbody tr[data-ci="10"]{animation-delay:450ms;}
+.data-table tbody tr[data-ci="11"]{animation-delay:495ms;}
+.data-table tbody tr[data-ci="12"]{animation-delay:540ms;}
+.data-table tbody tr[data-ci="13"]{animation-delay:585ms;}
+.data-table tbody tr[data-ci="14"]{animation-delay:630ms;}
+.data-table tbody tr[data-ci="15"]{animation-delay:675ms;}
+.data-table tbody tr[data-ci="16"]{animation-delay:720ms;}
+.data-table tbody tr[data-ci="17"]{animation-delay:765ms;}
+.data-table tbody tr[data-ci="18"]{animation-delay:810ms;}
+.data-table tbody tr[data-ci="19"]{animation-delay:855ms;}
 .data-table tbody tr{transition:background .15s;}
 .data-table tbody tr:hover{background:var(--sur2);}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--txd);}
@@ -812,12 +835,13 @@ function renderTable(){
   if(pgBoru>totalPages)pgBoru=totalPages;
   var start=(pgBoru-1)*PG_BORU, slice=filtreData.slice(start,start+PG_BORU);
   var mm=filtreData.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
+  var _ci=0;
   tbody.innerHTML=slice.map((k,idx)=>{
   var i=start+idx;
     var sertBadge=k.sertifika
       ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
       :'<span style="color:var(--txd);font-size:14px;">—</span>';
-    return '<tr>'
+    return '<tr data-ci="'+Math.min(_ci++,19)+'">
       +'<td class="cell-no">'+(i+1)+'</td>'
       +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+hl(k.isEmir)+'</td>'
