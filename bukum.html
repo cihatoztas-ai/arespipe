@@ -369,11 +369,12 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
           <svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input class="search-input" id="kfArama" data-i18n-placeholder="bk_ara_placeholder_done" placeholder="Spool no, fason no, malzeme..." oninput="applyKesilenFilters()">
         </div>
+        <select class="filter-select" id="kfTersane" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_th_tersane">Tersane</option></select>
         <div class="filter-group"><div class="filter-label" data-i18n="cmn_th_malzeme">Malzeme</div><select class="filter-select" id="kfMalzeme" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_th_malzeme">Malzeme</option></select></div>
         <div class="filter-group"><div class="filter-label" data-i18n="cmn_kalite">Kalite</div><select class="filter-select" id="kfKalite" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_kalite">Kalite</option></select></div>
         <div class="filter-group"><div class="filter-label" data-i18n="cmn_cap">Çap</div><select class="filter-select" id="kfCap" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_cap">Çap</option></select></div>
         <div class="filter-spacer"></div>
-        <button class="btn-outline" onclick="['kfMalzeme','kfKalite','kfCap'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();" data-i18n="cmn_sifirla">&#8635; Sıfırla</button>
+        <button class="btn-outline" onclick="['kfTersane','kfMalzeme','kfKalite','kfCap'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();" data-i18n="cmn_sifirla">&#8635; Sıfırla</button>
       </div>
     </div>
 
@@ -608,7 +609,7 @@ function applyFilters(){
     if(gv('fCap')     &&b.cap     !==gv('fCap'))       return false;
     if(gv('fKalinlik')&&b.kalinlik!==gv('fKalinlik')) return false;
     if(aramaMetni){
-          var h=[b.ref||'',b.spoolNo||'',b.spoolId||'',b.malzeme||'',b.kalite||'',b.cap||'',String(b.olcu),fb?fb.no:''].join(' ').toLowerCase();
+          var h=[b.ref||'',b.spoolNo||'',b.spoolId||'',b.malzeme||'',b.kalite||'',b.cap||'',String(b.olcu)].join(' ').toLowerCase();
       if(!h.includes(aramaMetni)) return false;
     }
     return true;
@@ -737,12 +738,14 @@ function populateKesilenFilters(){
   var fill=function(id,vals){var s=document.getElementById(id);if(!s)return;while(s.options.length>1)s.remove(1);vals.forEach(function(v){s.add(new Option(v,v));});};
   var tamam=bukumler.filter(function(b){return b.durum==='tamamlandi';});
   var uniqT=function(key){var v=[];tamam.forEach(function(b){var val=key==='ref'?refLabel(b):b[key];if(val&&v.indexOf(val)===-1)v.push(val);});return v;};
+  fill('kfTersane', uniqT('tersane').sort());
   fill('kfMalzeme', uniqT('malzeme').sort());
   fill('kfKalite',  uniqT('kalite').sort());
   fill('kfCap',     uniqT('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
 }
 
 function applyKesilenFilters(){
+  var t=document.getElementById('kfTersane')?document.getElementById('kfTersane').value:'';
   var m=document.getElementById('kfMalzeme')?document.getElementById('kfMalzeme').value:'';
   var k=document.getElementById('kfKalite')? document.getElementById('kfKalite').value:'';
   var c=document.getElementById('kfCap')?    document.getElementById('kfCap').value:'';
@@ -750,6 +753,7 @@ function applyKesilenFilters(){
   var src='';
   kesilenenFiltreData=bukumler.filter(function(b){
     if(b.durum!=='tamamlandi') return false;
+    if(t&&b.tersane!==t) return false;
     if(m&&b.malzeme!==m) return false;
     if(k&&b.kalite!==k) return false;
     if(c&&b.cap!==c) return false;
