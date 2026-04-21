@@ -930,8 +930,7 @@ function _filterDataUygula() {
   rebuildSelect('fYuzey',   getOptions('yuzey'),   'yuzey');
 }
 
-// ── İSKELET + SAYAÇ ANİMASYONU (14. oturum) ────────────────────
-var _ilkYukleme = true;
+// ── İSKELET (shimmer loading) — 14. oturum ────────────────────
 var _trFmt = new Intl.NumberFormat('tr-TR');
 
 function _skRender() {
@@ -966,27 +965,16 @@ function _skTemizle(el) {
   if (el.classList) el.classList.remove('sk', 'sk-num', 'sk-bar');
 }
 
+// Değer atama helper'ı — iskelet class'ını temizler, formatlı sayıyı direkt yazar.
+// (14. oturum: sayaç animasyonu kaldırıldı, direkt atama yapılıyor — daha profesyonel hissiyat)
 function _animCount(el, hedef, opt) {
   if (!el) return;
   opt = opt || {};
-  var sure = opt.sure || 650;
   var prefix = opt.prefix || '';
   var suffix = opt.suffix || '';
   var fmt = opt.fmt || _trFmt.format;
   _skTemizle(el);
-  // İlk yükleme değilse direkt ata
-  if (!_ilkYukleme) {
-    el.textContent = prefix + fmt(hedef) + suffix;
-    return;
-  }
-  var t0 = performance.now();
-  function tick(t) {
-    var p = Math.min((t - t0) / sure, 1);
-    var eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-    el.textContent = prefix + fmt(Math.round(hedef * eased)) + suffix;
-    if (p < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+  el.textContent = prefix + fmt(hedef) + suffix;
 }
 
 // ── EXPORT İÇİN TAM FİLTRELİ LİSTEYİ GETİR (pagination'dan bağımsız) ──
@@ -1363,8 +1351,6 @@ async function sorgulaVeGoster() {
 
     // Tablo render
     _doRender();
-    // İlk yükleme bitti — sonraki filtreler anında değer ataması yapsın
-    _ilkYukleme = false;
 
   } catch(e) {
     console.error('[Devreler] sorgulaVeGoster hatası:', e);
