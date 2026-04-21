@@ -641,6 +641,29 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <tbody id="klDetayTableBody"></tbody>
       </table>
     </div>
+    <!-- Kesim Planı önizleme (plan varsa gösterilir) -->
+    <div id="klDetayPlan" style="display:none;border-top:2px solid var(--bor);flex-shrink:0;">
+      <div style="padding:10px 20px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>
+          <span style="font-size:14px;font-weight:700;color:var(--gr);">Kesim Planı</span>
+          <span id="klDetayPlanTarih" style="font-size:14px;color:var(--txd);"></span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="klDetayExcelIndir()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;border-color:rgba(22,163,110,.4);color:var(--gr);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Excel
+          </button>
+          <button onclick="klDetayPdfYazdir()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;border-color:rgba(45,142,255,.4);color:var(--ac);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PDF
+          </button>
+        </div>
+      </div>
+      <div style="padding:12px 20px;overflow-x:auto;">
+        <div id="klDetayPlanSema"></div>
+      </div>
+    </div>
     <!-- Footer toplam -->
     <div class="tbl-footer" style="flex-shrink:0;border-top:1px solid var(--bor);">
       <span id="klDetayCount" style="color:var(--txm);"></span>
@@ -831,7 +854,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, rev, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad,kisa_ad))))')
+      .select('*, kesim_listesi_id, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, rev, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad,kisa_ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
@@ -860,29 +883,90 @@ async function veriYukle() {
         ucA:         k.uc_a          || 'duz',
         ucB:         k.uc_b          || 'duz',
         sertifika:   mal.sertifikali || false,
-        projeNo:     prj.proje_no    || '',
+        projeNo:         prj.proje_no       || '',
+        kesimListesiId:  k.kesim_listesi_id || null,
         tarih:       k.olusturma     ? new Date(k.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—',
         durum:       k.kesildi       ? 'tamamlandi' : 'bekliyor'
       };
     });
 
-    // Kesim listeleri
-    var klRes = await supa.from('kesim_listeleri').select('id, no, olusturma, arsiv, kapali').order('olusturma', {ascending:false});
+    // Kesim listeleri — kriter ve boru_ids dahil
+    var klRes = await supa.from('kesim_listeleri')
+      .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids')
+      .eq('tenant_id', ARES.tenantId())
+      .order('olusturma', {ascending:false});
+
+    // Önce listeyi oluştur (boruIds sonradan doldurulacak)
+    var klMap = {};
     (klRes.data || []).forEach(function(kl) {
-      // Supabase'deki kapalı listeleri yükle
-      kesimListeleri.push({
+      var obj = {
         id: kl.id,
         supaId: kl.id,
         no: kl.no,
         tarih: kl.olusturma ? new Date(kl.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—',
-        boruIds: [],
+        boruIds: kl.boru_ids || [],
         kesilmisIds: new Set(),
         arsiv: kl.arsiv || [],
         kriter: kl.kriter || {},
         kapali: kl.kapali || false
-      });
+      };
+      kesimListeleri.push(obj);
+      klMap[kl.id] = obj;
     });
+
+    // Fallback: boru_ids null olan listeler için kesim_listesi_id üzerinden eşleştir
+    // Bu eski veriler için kurtarma yoludur
+    var eksikListeler = kesimListeleri.filter(function(kl){ return !kl.kapali && (!kl.boruIds || kl.boruIds.length === 0); });
+    if(eksikListeler.length > 0){
+      borular.forEach(function(k){
+        if(k.kesimListesiId && klMap[k.kesimListesiId]){
+          var kl = klMap[k.kesimListesiId];
+          if(!kl.boruIds.includes(k.id)){
+            kl.boruIds.push(k.id);
+          }
+          // kriter yoksa borulardan yeniden oluştur
+          if(!kl.kriter || !kl.kriter.malzemeler){
+            if(!kl._kriterBuf) kl._kriterBuf = {tersaneler:new Set(),malzemeler:new Set(),kaliteler:new Set(),capler:new Set(),kalinliklar:new Set()};
+            kl._kriterBuf.tersaneler.add(k.tersane);
+            kl._kriterBuf.malzemeler.add(k.malzeme);
+            kl._kriterBuf.kaliteler.add(k.kalite);
+            kl._kriterBuf.capler.add(k.cap);
+            kl._kriterBuf.kalinliklar.add(k.kalinlik);
+          }
+        }
+      });
+      // _kriterBuf'ları kriter'e dönüştür ve DB'yi güncelle
+      eksikListeler.forEach(function(kl){
+        if(kl._kriterBuf){
+          kl.kriter = {
+            tersaneler:[...kl._kriterBuf.tersaneler].filter(Boolean),
+            malzemeler:[...kl._kriterBuf.malzemeler].filter(Boolean),
+            kaliteler:[...kl._kriterBuf.kaliteler].filter(Boolean),
+            capler:[...kl._kriterBuf.capler].filter(Boolean),
+            kalinliklar:[...kl._kriterBuf.kalinliklar].filter(Boolean)
+          };
+          delete kl._kriterBuf;
+        }
+        // Kurtarılan veriyi DB'ye yaz (bir kez)
+        if(kl.boruIds.length > 0 && kl.supaId){
+          supa.from('kesim_listeleri').update({
+            boru_ids: kl.boruIds,
+            kriter: kl.kriter
+          }).eq('id', kl.supaId).then(function(){});
+        }
+      });
+    }
+
     klSayac = kesimListeleri.length + 1;
+
+    // Aktif listelerdeki borulara 'listede' durumu ata
+    var listedeIds = new Set();
+    kesimListeleri.filter(function(kl){ return !kl.kapali; }).forEach(function(kl){
+      (kl.boruIds||[]).forEach(function(id){ listedeIds.add(id); });
+    });
+    borular.forEach(function(k){
+      if(listedeIds.has(k.id) && k.durum==='bekliyor') k.durum='listede';
+    });
 
     populateFilters();
     _dataLoaded = true;
@@ -1261,10 +1345,19 @@ function createListe(){
       tenant_id: ARES.tenantId(),
       no: listeNo,
       kriter: kriter,
+      boru_ids: sec.map(function(k){ return k.supaId||k.id; }),
       kapali: false,
       arsiv: []
     }).select('id').single().then(function(r) {
-      if (r.data) listeObj.supaId = r.data.id;
+      if (r.data) {
+        listeObj.supaId = r.data.id;
+        // Her kesim_kalemine bu listenin ID'sini yaz (kurtarma için)
+        var boruSupaIds = sec.map(function(k){ return k.supaId||k.id; });
+        supa.from('kesim_kalemleri')
+          .update({ kesim_listesi_id: r.data.id })
+          .in('id', boruSupaIds)
+          .then(function(ur){ if(ur.error) console.warn('[ARES] kesim_listesi_id yazma:', ur.error.message); });
+      }
       if (r.error) console.warn('[ARES] Liste kayıt hatası:', r.error.message);
     });
   }
@@ -1371,15 +1464,23 @@ function klKaydet(klId){
   kl.kapali=true;
   // Supabase'e yaz
   if (ARES.mod === 'supabase') {
-    // Kesilen boruları güncelle
+    var supa = ARES.supabase();
+    // Kesilen boruları güncelle (kesildi=true, listesi temizle)
     kesilmisler.forEach(function(k) {
       if (k.supaId) {
-        ARES.supabase().from('kesim_kalemleri').update({kesildi:true,guncelleme:new Date().toISOString()}).eq('id',k.supaId).then(function(){});
+        supa.from('kesim_kalemleri').update({kesildi:true,guncelleme:new Date().toISOString()}).eq('id',k.supaId).then(function(){});
       }
     });
+    // Kesilmeyenler havuza geri dönsün — kesim_listesi_id temizle
+    if(kesilmemis.length > 0){
+      var kesilmemisIds = kesilmemis.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
+      if(kesilmemisIds.length > 0){
+        supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',kesilmemisIds).then(function(){});
+      }
+    }
     // Listeyi güncelle
     if (kl.supaId) {
-      ARES.supabase().from('kesim_listeleri').update({
+      supa.from('kesim_listeleri').update({
         kapali: true,
         arsiv: kl.arsiv
       }).eq('id', kl.supaId).then(function(r){
@@ -1528,11 +1629,87 @@ function openKLDetay(klId){
   var mm2 = klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
   document.getElementById('klDetayCount').textContent = klB.length+' '+tv('bk_unit_boru','boru');
   document.getElementById('klDetaySum').innerHTML = tv('bk_toplam','Toplam')+': <span style="color:var(--warn);">'+mm2.toLocaleString('tr-TR')+' mm</span>';
+
+  // Kesim planı önizleme (varsa)
+  var planEl=document.getElementById('klDetayPlan');
+  var semaEl=document.getElementById('klDetayPlanSema');
+  var tarihEl=document.getElementById('klDetayPlanTarih');
+  if(kl.kesimPlani && kl.kesimPlani.plans && kl.kesimPlani.plans.length){
+    planEl.style.display='block';
+    tarihEl.textContent='('+kl.kesimPlani.tarih+')';
+    // Şematik için geçici olarak _fmKlB'yi ayarla
+    _fmCurrentPlans=kl.kesimPlani.plans;
+    _fmCurrentParams=kl.kesimPlani.params;
+    _fmKlB=klB;
+    // Şematik elemanlarını geçici olarak klDetayPlan'a yönlendir
+    _renderSemaToEl(kl.kesimPlani.plans, kl.kesimPlani.params, semaEl);
+  } else {
+    planEl.style.display='none';
+    tarihEl.textContent='';
+  }
+
   document.getElementById('klDetayModal').style.display='flex';
 }
 function closeKLDetay(){
   document.getElementById('klDetayModal').style.display='none';
   _mdlKlId=null;
+}
+
+function klDetayExcelIndir(){
+  if(!_mdlKlId) return;
+  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl||!kl.kesimPlani) return;
+  _fmKlId=kl.id; _fmKlB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  _fmCurrentPlans=kl.kesimPlani.plans; _fmCurrentParams=kl.kesimPlani.params;
+  fmExcelIndir();
+}
+function klDetayPdfYazdir(){
+  if(!_mdlKlId) return;
+  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl||!kl.kesimPlani) return;
+  _fmKlId=kl.id; _fmKlB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  _fmCurrentPlans=kl.kesimPlani.plans; _fmCurrentParams=kl.kesimPlani.params;
+  fmPdfYazdir();
+}
+
+// _renderSema'yı belirli bir elemente yönlendir (klDetayModal içi için)
+function _renderSemaToEl(plans, params, targetEl){
+  if(!targetEl) return;
+  var minRem=params.minArtik||1500;
+  var html='';
+  var BG_EVEN='rgba(45,142,255,.08)', BG_ODD='rgba(45,142,255,.14)';
+  plans.forEach(function(plan,pi){
+    var isParca=(plan.stock&&plan.stock.type==='piece_stock');
+    var tipIcon=isParca?'📦':'📏';
+    var tipRenk=isParca?'var(--leg)':'var(--gr)';
+    var stokLen=(plan.stock&&plan.stock.length)||6000;
+    var artik=plan.remaining;
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      +'<div style="flex-shrink:0;width:160px;font-size:14px;">'
+        +'<span style="color:'+tipRenk+';font-weight:700;">'+tipIcon+' '+stokLen.toLocaleString('tr-TR')+'mm</span>'
+        +'<div style="font-size:14px;color:var(--txd);">'+plan.cuts.length+' parça · Artık: <span style="color:'+(artik>=minRem?'var(--gr)':'var(--re)')+';">'+Math.round(artik).toLocaleString('tr-TR')+'mm</span></div>'
+      +'</div>'
+      +'<div style="flex:1;height:34px;display:flex;border-radius:5px;overflow:hidden;border:1px solid var(--bor);min-width:0;">';
+    plan.cuts.forEach(function(cut,ci){
+      var pct=(cut/stokLen*100).toFixed(2);
+      var kerfPct=((params.kerf||3)/stokLen*100).toFixed(2);
+      var ref=plan.matchedBorular&&plan.matchedBorular[ci];
+      var lbl=ref?esc(ref.spoolId||ref.spool||''):cut+'mm';
+      var bg=ci%2===0?BG_EVEN:BG_ODD;
+      html+='<div title="'+lbl+' — '+cut.toLocaleString('tr-TR')+'mm" style="width:'+pct+'%;background:'+bg+';border-right:1px solid rgba(45,142,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;min-width:2px;padding:0 2px;">'
+        +'<span style="font-size:10px;font-weight:600;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+lbl+'</span>'
+        +'<span style="font-size:9px;color:var(--txm);">'+cut.toLocaleString('tr-TR')+'</span>'
+        +'</div>';
+      if(params.kerf>0&&ci<plan.cuts.length-1)
+        html+='<div style="width:'+kerfPct+'%;background:var(--bor);flex-shrink:0;min-width:1px;"></div>';
+    });
+    if(artik>0){
+      var artPct=(artik/stokLen*100).toFixed(2);
+      html+='<div style="flex:1;min-width:'+artPct+'%;background:'+(artik>=minRem?'rgba(22,163,110,.07)':'rgba(229,62,62,.06)')+';border-left:1px dashed '+(artik>=minRem?'rgba(22,163,110,.2)':'rgba(229,62,62,.2)')+';display:flex;align-items:center;justify-content:center;overflow:hidden;">'
+        +'<span style="font-size:10px;color:var(--txd);white-space:nowrap;">'+Math.round(artik)+'mm'+(artik>=minRem?' ✓':'')+'</span>'
+        +'</div>';
+    }
+    html+='</div></div>';
+  });
+  targetEl.innerHTML=html||'<div style="color:var(--txd);font-size:14px;">Plan boş.</div>';
 }
 function _mdlRenderTable(klId){
   var kl=kesimListeleri.find(x=>x.id===klId);if(!kl)return;
