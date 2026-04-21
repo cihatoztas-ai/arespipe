@@ -1411,5 +1411,6 @@
   "mk_stat_listede": "Listede Olan",
   "tr_field_kisa_ad": "Kısa Ad",
   "tr_ph_kisa_ad": "örn. Tersan",
-  "tr_hata_kisa_ad_zorunlu": "Kısa ad zorunludur."
+  "tr_hata_kisa_ad_zorunlu": "Kısa ad zorunludur.",
+  "bk_stat_tamamlanan": "Bükülenler"
 }

@@ -1411,5 +1411,6 @@
   "mk_stat_listede": "In List",
   "tr_field_kisa_ad": "Short Name",
   "tr_ph_kisa_ad": "e.g. Tersan",
-  "tr_hata_kisa_ad_zorunlu": "Short name is required."
+  "tr_hata_kisa_ad_zorunlu": "Short name is required.",
+  "bk_stat_tamamlanan": "Bent"
 }

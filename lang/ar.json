@@ -1411,5 +1411,6 @@
   "mk_stat_listede": "في القائمة",
   "tr_field_kisa_ad": "الاسم المختصر",
   "tr_ph_kisa_ad": "مثال: Tersan",
-  "tr_hata_kisa_ad_zorunlu": "الاسم المختصر مطلوب."
+  "tr_hata_kisa_ad_zorunlu": "الاسم المختصر مطلوب.",
+  "bk_stat_tamamlanan": "المثنية"
 }
