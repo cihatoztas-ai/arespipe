@@ -9,7 +9,9 @@
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-/* tema değişkenleri aşağıda sidebar bölümünde tanımlı */
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--or:#ea580c;}
 body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-height:100vh;font-size:15px;}
 .page{padding:28px 36px;max-width:1800px;margin:0 auto;}
 @media(max-width:768px){.page{padding:16px;}}
@@ -280,7 +282,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <!-- PANEL: MARKALAMA LİSTELERİ -->
   <div class="panel" id="panel-listeler">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Oluşturulan Listeler</div>
+      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="mk_olusturulan_listeler">Oluşturulan Listeler</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--warn);">&#128203; Markalama Listeleri</div></div>
     </div>
     <div id="mlContainer"></div>
@@ -289,8 +291,8 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <!-- PANEL: TAMAMLANAN -->
   <div class="panel" id="panel-tamamlandi">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Arşiv</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);">&#10003; Tamamlanan Listeler</div></div>
+      <div><div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="mk_arsiv">Arşiv</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);" data-i18n="mk_tamamlanan_listeler">&#10003; Tamamlanan Listeler</div></div>
     </div>
     <div id="arcContainer"></div>
   </div>
@@ -310,8 +312,8 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     </div>
     <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="manuelMarkIcerik"></div>
     <div class="modal-btns">
-      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('manuelMarkModal').style.display='none'">İptal</button>
-      <button class="btn-green" style="flex:2;" id="manuelMarkOnayBtn" onclick="manuelMarkalaOnayla()">&#10003; Evet, Markalandı</button>
+      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('manuelMarkModal').style.display='none'" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn-green" style="flex:2;" id="manuelMarkOnayBtn" onclick="manuelMarkalaOnayla()" data-i18n="mk_evet_markalandi">&#10003; Evet, Markalandı</button>
     </div>
   </div>
 </div>
@@ -329,7 +331,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       </div>
     </div>
     <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;" id="uyariModalIcerik"></div>
-    <button class="btn-primary" style="width:100%;background:var(--re);" onclick="document.getElementById('uyariModal').style.display='none'">Tamam, filtreyi düzelteceğim</button>
+    <button class="btn-primary" style="width:100%;background:var(--re);" onclick="document.getElementById('uyariModal').style.display='none'" data-i18n="mk_filtreyi_duzelteceğim">Tamam, filtreyi düzelteceğim</button>
   </div>
 </div>
 
@@ -343,8 +345,8 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     <div class="modal-hint">Boş bırakırsanız otomatik numara atanır.</div>
     <div class="modal-preview" id="modalPreview"></div>
     <div class="modal-btns">
-      <button class="btn-outline" style="flex:1;" onclick="closeModal()">İptal</button>
-      <button class="btn-green" style="flex:2;" onclick="createListe()">&#10003; Listeyi Oluştur</button>
+      <button class="btn-outline" style="flex:1;" onclick="closeModal()" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn-green" style="flex:2;" onclick="createListe()" data-i18n="mk_listeyi_olustur">&#10003; Listeyi Oluştur</button>
     </div>
   </div>
 </div>
@@ -968,7 +970,7 @@ function renderArc(){
       +'<table class="data-table" style="min-width:900px;"><thead><tr>'
       +'<th class="no-sort" style="width:36px;">#</th>'
       +'<th>'+tv('cmn_th_tersane','Tersane')+'</th><th>'+tv('cmn_th_is_emri','İş Emir')+'</th><th>Spool No</th><th>Spool ID</th>'
-      +'<th>'+tv('mk_parca_adi',tv('mk_parca_adi','Parça Adı'))+'</th><th>'+tv('cmn_th_malzeme','Malzeme')+'</th><th>'+tv('cmn_th_cap','Çap')+'</th><th data-i18n="cmn_th_eklenme">'+tv('cmn_th_eklenme','Eklenme')+'</th><th>İşaret Tarihi</th>'
+      +'<th>'+tv('mk_parca_adi',tv('mk_parca_adi','Parça Adı'))+'</th><th>'+tv('cmn_th_malzeme','Malzeme')+'</th><th>'+tv('cmn_th_cap','Çap')+'</th><th data-i18n="cmn_th_eklenme">'+tv('cmn_th_eklenme','Eklenme')+'</th><th>'+tv('mk_isaret_tarihi','İşaret Tarihi')+'</th>'
       +'</tr></thead><tbody>'
       +(function(){
         if(!arcPg['manuel']) arcPg['manuel']=1;
@@ -1102,7 +1104,7 @@ async function buildExcel(listeNo, kayitlar){
   ws.getCell(2,8).value=kayitlar.length;st(ws.getCell(2,8),{bold:true,sz:14});
 
   ws.getRow(3).height=22;
-  var hdrs=['#','Tersane','Is Emir','Spool No','Spool ID','Parca Adi','Malzeme','Cap'];
+  var hdrs=['#',tv('cmn_th_tersane','Tersane'),tv('cmn_th_is_emri','İş Emir'),tv('cmn_th_spool_no','Spool No'),tv('cmn_th_spool_id','Spool ID'),tv('mk_parca_adi','Parça Adı'),tv('cmn_th_malzeme','Malzeme'),tv('cmn_cap','Çap')];
   var hbg={'Spool ID':'FF375623','Parca Adi':'FF2F5496','Cap':'FF1F5C2E'};
   hdrs.forEach(function(h,i){var cc=ws.getCell(3,i+1);cc.value=h;st(cc,{bold:true,sz:11,color:'FFFFFFFF',bg:hbg[h]||'FF1F3864',thick:true});});
 

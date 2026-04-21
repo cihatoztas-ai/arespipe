@@ -10,7 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-/* tema değişkenleri aşağıda tanımlı */
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--or:#ea580c;}
 body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-height:100vh;font-size:15px;}
 .page{padding:28px 36px;max-width:1800px;margin:0 auto;}
 @media(max-width:768px){.page{padding:16px;}}
@@ -205,6 +207,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 <body>
 
@@ -440,16 +443,16 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 'use strict';
 
 function matBadge(m) {
-  // DB normalize kodları: karbon_celik, paslanmaz, bakir_alasim, aluminyum
+  // Canonical kodlar (3. oturum — ares-normalize.js): karbon, paslanmaz, bakir, alum, diger
+  var kod = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.malzemeKod(m) : m;
   var clsMap = {
-    'karbon_celik': 'mb-celik',
-    'paslanmaz':    'mb-pas',
-    'bakir_alasim': 'mb-bakir',
-    'aluminyum':    'mb-alum',
+    'karbon':    'mb-celik',
+    'paslanmaz': 'mb-pas',
+    'bakir':     'mb-bakir',
+    'alum':      'mb-alum',
   };
-  var cls = clsMap[m] || 'mb-diger';
-  // tvMalzeme() ares-lang.js'den geliyor — dile göre çevirir
-  var label = (typeof tvMalzeme === 'function') ? tvMalzeme(m) : (m || '—');
+  var cls = clsMap[kod] || 'mb-diger';
+  var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kod, m) : (m || '—');
   return '<span class="'+cls+'">'+label+'</span>';
 }
 // ── D-01 DİL SİSTEMİ ─────────────────────────────────────────
@@ -912,21 +915,21 @@ function fdBoruEkleModal(editBoru){
   // Build form using DOM, no innerHTML string concat issues
   ov.innerHTML='<div class="modal-box" style="max-width:460px;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">'
-      +'<div class="modal-title" style="color:var(--bukum-c);">'+(isEdit?'Boru Duzenle':'Boru Ekle')+'</div>'
+      +'<div class="modal-title" style="color:var(--bukum-c);">'+(isEdit?tv('bk_boru_duzenle','Boru Düzenle'):tv('bk_boru_ekle','Boru Ekle'))+'</div>'
       +'<button id="boruEkleKapat" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">&#10005;</button>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">'
-      +'<div><label class="fm-label">Malzeme</label><input id="nb_malzeme" class="fm-input" placeholder="Karbon Celik" value="'+(isEdit?esc(editBoru.malzeme):'')+'"></div>'
-      +'<div><label class="fm-label">Kalite</label><input id="nb_kalite" class="fm-input" placeholder="St37" value="'+(isEdit?esc(editBoru.kalite):'')+'"></div>'
-      +'<div><label class="fm-label">Cap (mm)</label><input id="nb_cap" class="fm-input" placeholder="60,3 mm" value="'+(isEdit?esc(editBoru.cap):'')+'"></div>'
-      +'<div><label class="fm-label">Et Kalinligi (mm)</label><input id="nb_kalinlik" class="fm-input" placeholder="4,5 mm" value="'+(isEdit?esc(editBoru.kalinlik):'')+'"></div>'
+      +'<div><label class="fm-label">'+tv('cmn_th_malzeme','Malzeme')+'</label><input id="nb_malzeme" class="fm-input" placeholder="Karbon Celik" value="'+(isEdit?esc(editBoru.malzeme):'')+'"></div>'
+      +'<div><label class="fm-label">'+tv('cmn_kalite','Kalite')+'</label><input id="nb_kalite" class="fm-input" placeholder="St37" value="'+(isEdit?esc(editBoru.kalite):'')+'"></div>'
+      +'<div><label class="fm-label">'+tv('cmn_cap','Çap (mm)')+'</label><input id="nb_cap" class="fm-input" placeholder="60,3 mm" value="'+(isEdit?esc(editBoru.cap):'')+'"></div>'
+      +'<div><label class="fm-label">'+tv('cmn_et_kalinligi','Et Kalınlığı (mm)')+'</label><input id="nb_kalinlik" class="fm-input" placeholder="4,5 mm" value="'+(isEdit?esc(editBoru.kalinlik):'')+'"></div>'
     +'</div>'
-    +'<div style="margin-bottom:8px;"><label class="fm-label">Büküm Uzunlugu (mm)</label>'
+    +'<div style="margin-bottom:8px;"><label class="fm-label">'+tv('bk_bukum_uzunlugu','Büküm Uzunluğu (mm)')+'</label>'
       +'<input id="nb_olcu" class="fm-input" type="number" min="1" placeholder="ornek: 1450" value="'+(isEdit?editBoru.olcu:'')+'"></div>'
     +'<div style="font-size:14px;color:var(--txd);margin-bottom:20px;">'+tv('bk_bend_len_hint','Büküm yapılabilecek boru uzunluğu')+'</div>'
     +'<div style="display:flex;gap:10px;">'
-      +'<button id="boruEkleIptal" class="btn-outline" style="flex:1;">Iptal</button>'
-      +'<button id="boruEkleKaydetBtn" class="btn-green" style="flex:2;">'+(isEdit?'Guncelle':'Ekle')+'</button>'
+      +'<button id="boruEkleIptal" class="btn-outline" style="flex:1;">'+tv('cmn_iptal','İptal')+'</button>'
+      +'<button id="boruEkleKaydetBtn" class="btn-green" style="flex:2;">'+(isEdit?tv('cmn_guncelle','Güncelle'):tv('cmn_ekle','Ekle'))+'</button>'
     +'</div>'
     +'</div>';
 
@@ -951,13 +954,13 @@ function boruEkleKaydet(editId){
   var cap=document.getElementById('nb_cap').value.trim();
   var kalinlik=document.getElementById('nb_kalinlik').value.trim();
   var olcu=parseInt(document.getElementById('nb_olcu').value);
-  if(!malzeme){toast('Malzeme giriniz','error');return;}
-  if(!olcu||olcu<=0){toast('Geçerli bir uzunluk giriniz','error');return;}
+  if(!malzeme){toast(tv('bk_hata_malzeme','Malzeme giriniz'),'error');return;}
+  if(!olcu||olcu<=0){toast(tv('bk_hata_uzunluk','Geçerli bir uzunluk giriniz'),'error');return;}
 
   if(editId){
     var b=bukumler.find(function(x){return x.id===editId;});
     if(b){b.malzeme=malzeme;b.kalite=kalite;b.cap=cap;b.kalinlik=kalinlik;b.olcu=olcu;}
-    toast('Boru guncellendi','success');
+    toast(tv('bk_boru_guncellendi','Boru güncellendi'),'success');
   } else {
     bukumler.push({
       id:'FB'+Date.now(),kaynak:'fason',ref:null,
@@ -966,7 +969,7 @@ function boruEkleKaydet(editId){
       durum:'bekliyor',fasonId:aktifFasonId,
       bukulduZaman:null
     });
-    toast('Boru eklendi','success');
+    toast(tv('bk_boru_eklendi','Boru eklendi'),'success');
   }
   document.getElementById('boruEkleOv').remove();
   openFasonDetay(aktifFasonId);
@@ -1145,7 +1148,13 @@ async function excelSablonIndir(){
   }
   var wb=new ExcelJS.Workbook();
   var ws=wb.addWorksheet('Bukum Listesi');
-  ws.columns=[{header:'Malzeme',key:'malzeme',width:18},{header:'Kalite',key:'kalite',width:14},{header:'Cap (mm)',key:'cap',width:14},{header:'Et Kalinligi (mm)',key:'kalinlik',width:18},{header:'Bukum Uzunlugu (mm)',key:'olcu',width:22}];
+  ws.columns=[
+    {header:tv('cmn_th_malzeme','Malzeme'),key:'malzeme',width:18},
+    {header:tv('cmn_kalite','Kalite'),key:'kalite',width:14},
+    {header:tv('cmn_cap','Çap (mm)'),key:'cap',width:14},
+    {header:tv('cmn_et_kalinligi','Et Kalınlığı (mm)'),key:'kalinlik',width:18},
+    {header:tv('bk_bukum_uzunlugu','Büküm Uzunluğu (mm)'),key:'olcu',width:22}
+  ];
   var thin={style:'thin',color:{argb:'FF000000'}};
   var brd={top:thin,bottom:thin,left:thin,right:thin};
   ws.getRow(1).eachCell(function(cell){
