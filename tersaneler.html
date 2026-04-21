@@ -234,6 +234,10 @@ a{color:var(--ac);cursor:pointer;text-decoration:none;}
         <label><span data-i18n="tr_field_name">Tersane Adı</span> <span style="color:var(--re);">*</span></label>
         <input class="inp" id="fAd" type="text" data-i18n-placeholder="tr_ph_name" placeholder="örn. TERSAN Tersanesi">
       </div>
+      <div class="field">
+        <label><span data-i18n="tr_field_kisa_ad">Kısa Ad</span> <span style="color:var(--re);">*</span></label>
+        <input class="inp" id="fKisaAd" type="text" data-i18n-placeholder="tr_ph_kisa_ad" placeholder="örn. Tersan">
+      </div>
       <div class="field-row">
         <div class="field">
           <label><span data-i18n="tr_field_city">Şehir</span> <span style="color:var(--re);">*</span></label>
@@ -442,6 +446,7 @@ async function veriYukle() {
       return {
         id:               t.id,
         ad:               t.ad,
+        kisa_ad:          t.kisa_ad    || '',
         sehir:            t.sehir      || '',
         ulke:             t.ulke       || 'Türkiye',
         tel:              t.tel        || '',
@@ -615,12 +620,13 @@ function tersaneDuzenle(id) {
     drop.querySelector('small').style.display = 'none';
   }
   // form alanlarını sonra doldur (formSifirla sonrası)
-  document.getElementById('fAd').value    = t.ad;
-  document.getElementById('fSehir').value = t.sehir;
-  document.getElementById('fUlke').value  = t.ulke || 'Türkiye';
-  document.getElementById('fTel').value   = t.tel;
-  document.getElementById('fMail').value  = t.mail;
-  document.getElementById('fWeb').value   = t.web;
+  document.getElementById('fAd').value      = t.ad;
+  document.getElementById('fKisaAd').value  = t.kisa_ad || '';
+  document.getElementById('fSehir').value   = t.sehir;
+  document.getElementById('fUlke').value    = t.ulke || 'Türkiye';
+  document.getElementById('fTel').value     = t.tel;
+  document.getElementById('fMail').value    = t.mail;
+  document.getElementById('fWeb').value     = t.web;
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -628,10 +634,13 @@ function tersaneDuzenle(id) {
 // ── Tersane kaydet (insert / update) ─────────────────────────────
 async function tersaneKaydet() {
   var ad    = document.getElementById('fAd').value.trim();
+  var kisaAd = document.getElementById('fKisaAd').value.trim();
   var sehir = document.getElementById('fSehir').value.trim();
   if (!ad)    { document.getElementById('fAd').style.borderColor='var(--re)';   document.getElementById('fAd').focus();    toast(tv('tr_hata_ad_zorunlu','Tersane adı zorunludur.'), 'er'); return; }
+  if (!kisaAd){ document.getElementById('fKisaAd').style.borderColor='var(--re)';document.getElementById('fKisaAd').focus();toast(tv('tr_hata_kisa_ad_zorunlu','Kısa ad zorunludur.'), 'er'); return; }
   if (!sehir) { document.getElementById('fSehir').style.borderColor='var(--re)';document.getElementById('fSehir').focus(); toast(tv('tr_hata_sehir_zorunlu','Şehir zorunludur.'), 'er'); return; }
   document.getElementById('fAd').style.borderColor = '';
+  document.getElementById('fKisaAd').style.borderColor = '';
   document.getElementById('fSehir').style.borderColor = '';
 
   var ulke  = document.getElementById('fUlke').value.trim() || 'Türkiye';
@@ -645,23 +654,23 @@ async function tersaneKaydet() {
     if (duzId) {
       // Güncelle
       var res = await supa.from('tersaneler').update({
-        ad: ad, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
+        ad: ad, kisa_ad: kisaAd, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
         guncelleme: new Date().toISOString()
       }).eq('id', duzId);
       if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
       var t = veri.find(function(x){ return x.id === duzId; });
-      if (t) { t.ad=ad; t.sehir=sehir; t.ulke=ulke; t.tel=tel; t.mail=mail; t.web=web; }
+      if (t) { t.ad=ad; t.kisa_ad=kisaAd; t.sehir=sehir; t.ulke=ulke; t.tel=tel; t.mail=mail; t.web=web; }
       ARES.logEkle('TERSANE_DUZENLE', ad + ' güncellendi', 'tersane', duzId, {});
     } else {
       // Ekle
       var res = await supa.from('tersaneler').insert({
         tenant_id: ARES.tenantId(),
-        ad: ad, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
+        ad: ad, kisa_ad: kisaAd, sehir: sehir, ulke: ulke, tel: tel, iletisim: mail, web: web,
         aktif: true, logo_url: null
       }).select().single();
       if (res.error) { toast(tv('tr_db_hata','Veritabanı hatası.'), 'er'); return; }
       veri.push({
-        id: res.data.id, ad: ad, sehir: sehir, ulke: ulke, tel: tel, mail: mail, web: web,
+        id: res.data.id, ad: ad, kisa_ad: kisaAd, sehir: sehir, ulke: ulke, tel: tel, mail: mail, web: web,
         logoUrl: '', aktif: true, projeTopSayisi: 0, aktifProjeSayisi: 0
       });
       ARES.logEkle('TERSANE_EKLE', ad + ' eklendi', 'tersane', res.data.id, {});
