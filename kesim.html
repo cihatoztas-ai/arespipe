@@ -123,8 +123,8 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .cell-tersane{font-size:14px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
-.cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks-c);}
-.cell-kesim{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks-c);}
+.cell-spoolid{font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;letter-spacing:.2px;color:var(--ks-c);}
+.cell-kesim{font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;letter-spacing:.2px;color:var(--ks-c);}
 .uc-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:14px;white-space:nowrap;}
 .uc-duz{background:rgba(100,116,139,.15);color:var(--txm);}
 .uc-kaynak{background:rgba(229,62,62,.12);color:var(--re);}
@@ -428,6 +428,14 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
         </div>
         <div class="filter-spacer"></div>
+        <button class="btn-outline" id="btnExportXlsx" onclick="exportKesimExcel()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 10.5 16 8 19"/><polyline points="16 13 13.5 16 16 19"/><line x1="11" y1="16" x2="10.5" y2="16"/></svg>
+          <span data-i18n="cmn_excel">Excel</span>
+        </button>
+        <button class="btn-outline" id="btnExportPdf" onclick="exportKesimPdf()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span data-i18n="cmn_pdf">PDF</span>
+        </button>
         <button class="btn-green" id="btnOlustur" onclick="openListeModal()" disabled><span data-i18n="ks_btn_olustur"><span data-i18n="ks_modal_list_title">📋 Kesim Listesi Oluştur</span></span></button>
       </div>
       <div class="active-chips" id="activeChips" style="display:none;"></div>
@@ -649,6 +657,7 @@ async function veriYukle() {
         ucA:         k.uc_a          || 'duz',
         ucB:         k.uc_b          || 'duz',
         sertifika:   mal.sertifikali || false,
+        projeNo:     prj.proje_no    || '',
         tarih:       k.olusturma     ? new Date(k.olusturma).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—',
         durum:       k.kesildi       ? 'tamamlandi' : 'bekliyor'
       };
@@ -843,7 +852,7 @@ function applyFilters(){
     if(secilenIsEmir.size>0&&!secilenIsEmir.has(k.isEmir)) return false;
     if(aramaMetni){
       var malzEt = (typeof ARES_NORM!=='undefined' && k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod, k.malzeme) : k.malzeme;
-      var h=[k.isEmir,k.tersane,k.spool,k.spoolId,k.malzeme,malzEt,k.kalite,k.cap,k.kalinlik,String(k.kesimOlcusu)].join(' ').toLowerCase();
+      var h=[k.isEmir,k.tersane,k.projeNo,k.spool,k.spoolId,k.malzeme,malzEt,k.kalite,k.cap,k.kalinlik,String(k.kesimOlcusu)].join(' ').toLowerCase();
       if(!h.includes(aramaMetni)) return false;
     }
     return true;
@@ -888,6 +897,10 @@ function renderTable(){
   var footer=document.getElementById('tblFooter');
   var btn=document.getElementById('btnOlustur');
   btn.disabled=filtreData.length===0;
+  var btnXlsx=document.getElementById('btnExportXlsx');
+  var btnPdf=document.getElementById('btnExportPdf');
+  if(btnXlsx) btnXlsx.disabled=filtreData.length===0;
+  if(btnPdf) btnPdf.disabled=filtreData.length===0;
   if(!filtreData.length){
     tbody.innerHTML='';empty.style.display='block';footer.style.display='none';return;
   }
@@ -1503,8 +1516,153 @@ async function buildExcelJS(kl,klB,plans,kerf,trim,minArtik,dosyaAdi){
 }
 
 // ════════════════════════════════════
-// KESİM TAMAMLA (bekleyen tablosundan)
+// EXPORT — EXCEL
 // ════════════════════════════════════
+async function exportKesimExcel() {
+  if (!filtreData.length) { toast(tv('ks_export_bos','Dışa aktarılacak boru yok'),'error'); return; }
+  toast(tv('ks_export_hazirlaniyor','Dışa aktarım hazırlanıyor...'),'info');
+  var liste = filtreData; // Tüm filtreli veri (sayfalama bağımsız)
+  try {
+    if (typeof ExcelJS === 'undefined') { toast(tv('ks_excel_lib_hata','Excel kütüphanesi yüklenemedi'),'error'); return; }
+    var wb = new ExcelJS.Workbook();
+    wb.creator = 'AresPipe'; wb.created = new Date();
+    var ws = wb.addWorksheet(tv('ks_title','Kesim'), { views:[{state:'frozen',ySplit:1,activeCell:'A2'}] });
+    // Başlık satırı
+    ws.columns = [
+      {header:'#',              key:'no',      width:5},
+      {header:tv('cmn_th_tersane','Tersane'),  key:'tersane',  width:16},
+      {header:tv('ks_chip_isemir','İş Emri'),  key:'isEmir',   width:16},
+      {header:tv('cmn_th_spool_no','Spool No'),key:'spool',    width:34},
+      {header:tv('cmn_th_spool_id','Spool ID'),key:'spoolId',  width:10},
+      {header:tv('ks_filter_mat','Malzeme'),   key:'malzeme',  width:14},
+      {header:tv('ks_filter_grade','Kalite'),  key:'kalite',   width:10},
+      {header:tv('ks_chip_cap','Çap'),         key:'cap',      width:10},
+      {header:tv('cmn_th_et','Et Kal.'),       key:'kalinlik', width:10},
+      {header:tv('ks_th_kesim_mm','Kesim (mm)'),key:'kesim',   width:13},
+      {header:tv('ks_th_a_ucu','A Ucu'),       key:'ucA',      width:14},
+      {header:tv('ks_th_b_ucu','B Ucu'),       key:'ucB',      width:14},
+      {header:tv('ks_th_sert','Sert.'),        key:'sertifika',width:10},
+      {header:tv('cmn_th_eklenme','Eklenme'),  key:'tarih',    width:18},
+    ];
+    // Başlık stili
+    ws.getRow(1).eachCell(function(cell){
+      cell.font={bold:true,size:10,color:{argb:'FFFFFFFF'}};
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF843C0C'}};
+      cell.alignment={horizontal:'center',vertical:'middle'};
+      cell.border={bottom:{style:'thin',color:{argb:'FFCC6600'}}};
+    });
+    ws.getRow(1).height=20;
+    // Veri satırları
+    var ucLbl = getUcMap();
+    liste.forEach(function(k, i) {
+      var malzLabel = (typeof ARES_NORM!=='undefined' && k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod, k.malzeme) : k.malzeme;
+      var row = ws.addRow({
+        no:       i+1,
+        tersane:  k.tersane||'',
+        isEmir:   k.isEmir||'',
+        spool:    k.spool||'',
+        spoolId:  k.spoolId||'',
+        malzeme:  malzLabel||'',
+        kalite:   k.kalite||'',
+        cap:      k.cap||'',
+        kalinlik: k.kalinlik||'',
+        kesim:    k.kesimOlcusu||'',
+        ucA:      ucLbl[k.ucA]||k.ucA||'',
+        ucB:      ucLbl[k.ucB]||k.ucB||'',
+        sertifika:k.sertifika ? '★' : '',
+        tarih:    k.tarih||''
+      });
+      row.height = 18;
+      var bg = i%2===0 ? 'FFFFFFFF' : 'FFFFF8F5';
+      row.eachCell(function(cell){ cell.font={size:10}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}}; cell.alignment={vertical:'middle'}; });
+      row.getCell('kesim').font={size:10,bold:true,color:{argb:'FF843C0C'}};
+      row.getCell('sertifika').alignment={horizontal:'center'};
+      row.getCell('no').alignment={horizontal:'center'};
+    });
+    // Özet footer
+    var totalMm = liste.reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); },0);
+    ws.addRow({});
+    var sumRow = ws.addRow({no:'', tersane:'', isEmir:'', spool:tv('bk_toplam','Toplam')+': '+liste.length+' '+tv('bk_unit_boru','boru'), spoolId:'', malzeme:'', kalite:'', cap:'', kalinlik:'', kesim:Math.round(totalMm)+' mm', ucA:'', ucB:'', sertifika:'', tarih:''});
+    sumRow.eachCell(function(cell){ cell.font={bold:true,size:10,color:{argb:'FF843C0C'}}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF0E8'}}; });
+    ws.pageSetup={orientation:'landscape',paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0};
+    var tarihStr = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-');
+    var dosyaAdi = 'Kesim-Bekleyen-'+tarihStr;
+    var buf = await wb.xlsx.writeBuffer();
+    var blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=dosyaAdi+'.xlsx'; a.click(); URL.revokeObjectURL(a.href);
+    toast(tv('ks_excel_olusturuldu','Excel oluşturuldu')+' ('+liste.length+' '+tv('bk_unit_boru','boru')+')','success');
+  } catch(e) {
+    console.error('[ARES] exportKesimExcel:', e);
+    toast(tv('ks_excel_lib_hata','Excel oluşturma hatası'),'error');
+  }
+}
+
+// ════════════════════════════════════
+// EXPORT — PDF (print tabanlı)
+// ════════════════════════════════════
+function exportKesimPdf() {
+  if (!filtreData.length) { toast(tv('ks_export_bos','Dışa aktarılacak boru yok'),'error'); return; }
+  var liste = filtreData;
+  var ucLbl = getUcMap();
+  var tarihStr = new Date().toLocaleDateString('tr-TR');
+  var toplamMm = liste.reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); },0);
+  var satirlar = liste.map(function(k,i){
+    var malzLabel = (typeof ARES_NORM!=='undefined' && k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod, k.malzeme) : k.malzeme;
+    return '<tr style="background:'+(i%2===0?'#fff':'#fff8f5')+';">'
+      +'<td style="text-align:center;color:#999;">'+(i+1)+'</td>'
+      +'<td>'+esc(k.tersane||'')+'</td>'
+      +'<td>'+esc(k.isEmir||'')+'</td>'
+      +'<td style="font-size:9px;">'+esc(k.spool||'')+'</td>'
+      +'<td style="color:#c2410c;font-weight:600;">'+esc(k.spoolId||'')+'</td>'
+      +'<td>'+esc(malzLabel||'')+'</td>'
+      +'<td>'+esc(k.kalite||'')+'</td>'
+      +'<td style="text-align:right;">'+esc(k.cap||'')+'</td>'
+      +'<td style="text-align:right;">'+esc(k.kalinlik||'')+'</td>'
+      +'<td style="text-align:right;color:#c2410c;font-weight:700;">'+esc(k.kesimOlcusu||'')+'</td>'
+      +'<td>'+esc(ucLbl[k.ucA]||k.ucA||'')+'</td>'
+      +'<td>'+esc(ucLbl[k.ucB]||k.ucB||'')+'</td>'
+      +'<td style="text-align:center;">'+(k.sertifika?'★':'')+'</td>'
+      +'</tr>';
+  }).join('');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<title>Kesim Bekleyen — '+tarihStr+'</title>'
+    +'<style>'
+    +'@page{size:A4 landscape;margin:12mm 10mm;}'
+    +'body{font-family:Arial,sans-serif;font-size:10px;color:#222;margin:0;}'
+    +'.hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;border-bottom:2px solid #c2410c;padding-bottom:6px;}'
+    +'.hdr h1{font-size:14px;font-weight:700;color:#c2410c;margin:0;}'
+    +'.hdr span{font-size:10px;color:#666;}'
+    +'table{width:100%;border-collapse:collapse;}'
+    +'thead tr{background:#c2410c;color:#fff;}'
+    +'th{padding:5px 6px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;}'
+    +'td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:middle;white-space:nowrap;}'
+    +'.foot{margin-top:8px;font-size:9px;color:#999;display:flex;justify-content:space-between;}'
+    +'</style></head><body>'
+    +'<div class="hdr"><h1>✂️ '+tv('ks_tab_bekleyen','Kesim Bekleyen')+'</h1><span>'+tarihStr+' · '+liste.length+' boru · Toplam '+Math.round(toplamMm).toLocaleString('tr-TR')+' mm</span></div>'
+    +'<table><thead><tr>'
+    +'<th style="width:24px;">#</th>'
+    +'<th>'+tv('cmn_th_tersane','Tersane')+'</th>'
+    +'<th>'+tv('ks_chip_isemir','İş Emri')+'</th>'
+    +'<th>'+tv('cmn_th_spool_no','Spool No')+'</th>'
+    +'<th>ID</th>'
+    +'<th>'+tv('ks_filter_mat','Malzeme')+'</th>'
+    +'<th>'+tv('ks_filter_grade','Kalite')+'</th>'
+    +'<th>'+tv('ks_chip_cap','Çap')+'</th>'
+    +'<th>Et</th>'
+    +'<th>'+tv('ks_th_kesim_mm','Kesim (mm)')+'</th>'
+    +'<th>A Ucu</th><th>B Ucu</th>'
+    +'<th>'+tv('ks_th_sert','Sert.')+'</th>'
+    +'</tr></thead><tbody>'+satirlar+'</tbody></table>'
+    +'<div class="foot"><span>AresPipe — Kesim Yönetimi</span><span>Toplam: <b>'+Math.round(toplamMm).toLocaleString('tr-TR')+' mm</b></span></div>'
+    +'</body></html>';
+  var w = window.open('','_blank','width=1200,height=800');
+  if (!w) { toast('Popup engellendi. Tarayıcı izni verin.','error'); return; }
+  w.document.write(html); w.document.close(); w.focus();
+  setTimeout(function(){ w.print(); }, 500);
+  toast(tv('ks_pdf_hazirlandi','PDF hazırlandı')+' ('+liste.length+' '+tv('bk_unit_boru','boru')+')','info');
+}
+
+
 var _kesimOnayId = null;
 
 function kesimTamamlaOnay(id){
