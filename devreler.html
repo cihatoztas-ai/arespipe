@@ -1569,7 +1569,8 @@ function _doRender() {
     var starState = _starCache[d.supaId] || 0;
     var starCfg = _STAR_CFG[starState];
     var iptalBilgi = getIptalMap()[d.id];
-    var matBadge = d.malzeme.map(function(m) {
+    // Sadece çoğunluk (ilk) badge render edilir; diğerleri ⚠+N ile özetlenir, title'a yazılır.
+    var matBadge = d.malzeme.slice(0, 1).map(function(m) {
       var mn = _normalizeMalzeme(m) || m;
       // mn artık ARES_NORM normalize kod: 'karbon' / 'paslanmaz' / 'bakir' / 'alum' / 'diger'
       var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(mn, mn) : mn;
@@ -1580,14 +1581,26 @@ function _doRender() {
       else if (mn === 'alum')       cls = 'mb-alum';
       else                          cls = 'mb-diger';
       return '<span class="mat-badge ' + cls + '">' + esc(label) + '</span>';
-    }).join('') + (d.malzemeSapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme">⚠ +' + d.malzemeSapma + '</span>' : '');
-    var yuzeyBadge = d.yuzey.map(function(y) {
+    }).join('') + (d.malzemeSapma > 0 ? (function(){
+      var digerList = d.malzeme.slice(1).map(function(k){
+        var kn = _normalizeMalzeme(k) || k;
+        return (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kn, kn) : kn;
+      }).join(', ');
+      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.malzemeSapma + '</span>';
+    })() : '');
+    var yuzeyBadge = d.yuzey.slice(0, 1).map(function(y) {
       var yn = _normalizeYuzey(y) || y;
       // yn artık ARES_NORM normalize kod: 'asit' / 'galvaniz' / 'boyali' / 'siyah' / 'diger'
       var cls = yn === 'asit' ? 'yb-asit' : yn === 'galvaniz' ? 'yb-galvaniz' : yn === 'boyali' ? 'yb-boyali' : 'yb-siyah';
       var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(yn, yn) : yn;
       return '<span class="yuzey-badge ' + cls + '">' + esc(label) + '</span>';
-    }).join('') + (d.yuzeySapma > 0 ? '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey">⚠ +' + d.yuzeySapma + '</span>' : '');
+    }).join('') + (d.yuzeySapma > 0 ? (function(){
+      var digerList = d.yuzey.slice(1).map(function(k){
+        var kn = _normalizeYuzey(k) || k;
+        return (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(kn, kn) : kn;
+      }).join(', ');
+      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.yuzeySapma + '</span>';
+    })() : '');
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
 
