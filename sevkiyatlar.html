@@ -631,11 +631,11 @@ async function veriYukle() {
     // 1+2 paralel — hazır spooller + geçmiş sevkiyatlar
     var [hazirRes, sevkRes] = await Promise.all([
       supa.from('spooller')
-        .select('id, spool_no, pipeline_no, rev, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad)))')
+        .select('id, spool_no, pipeline_no, rev, aktif_basamak, agirlik_kg, devre_id, devreler(devre_no, projeler(proje_no, gemi_adi, tersaneler(id, ad, kisa_ad)))')
         .in('aktif_basamak', ['kk', 'sevkiyat'])
         .eq('silindi', false),
       supa.from('sevkiyatlar')
-        .select('*, tersaneler(ad), sevkiyat_spooller(spool_id, spooller(spool_no, pipeline_no, rev, agirlik_kg, devreler(devre_no, projeler(proje_no, gemi_adi))))')
+        .select('*, tersaneler(ad,kisa_ad), sevkiyat_spooller(spool_id, spooller(spool_no, pipeline_no, rev, agirlik_kg, devreler(devre_no, projeler(proje_no, gemi_adi))))')
         .order('olusturma', { ascending: false })
     ]);
 
@@ -650,7 +650,7 @@ async function veriYukle() {
         devre:    dv.devre_no || '—',
         projeNo:  prj.proje_no || '—',
         gemi:     prj.gemi_adi || '—',
-        tersane:  trs.ad || '—',
+        tersane:  trs.kisa_ad || trs.ad || '—',
         tersaneId:trs.id || null,
         agirlik:  parseFloat(s.agirlik_kg) || 0,
         kaynak:   'kalite'
@@ -671,7 +671,7 @@ async function veriYukle() {
         no:          s.sevk_no || '—',
         tip:         s.tip || 'giden',
         durum:       'gonderildi',
-        tersane:     (s.tersaneler && s.tersaneler.ad) || '—',
+        tersane:     (s.tersaneler && (s.tersaneler.kisa_ad || s.tersaneler.ad)) || '—',
         tersaneId:   s.tersane_id || null,
         arac:        s.arac_plaka || '',
         irsaliye:    s.irsaliye_no || '',

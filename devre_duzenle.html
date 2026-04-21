@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Devre bilgilerini çek
       var supa = ARES.supabase();
       var res = await supa.from('devreler')
-        .select('*, projeler(proje_no, gemi_adi, tersaneler(ad))')
+        .select('*, projeler(proje_no, gemi_adi, tersaneler(ad,kisa_ad))')
         .eq('id', _devreId)
         .eq('tenant_id', ARES.tenantId())
         .single();
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
         malzeme:        d.malzeme    || '',
         yuzey:          d.yuzey      || '',
         yuzey_aciklama: d.yuzey_aciklama || '',
-        tersane:        trs.ad       || '',
+        tersane:        trs.kisa_ad || trs.ad || '',
         gemi:           prj.gemi_adi || '',
         proje_no:       prj.proje_no || '',
       };

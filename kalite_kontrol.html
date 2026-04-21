@@ -303,12 +303,12 @@ async function veriYukle() {
     var tid = ARES.tenantId();
     var results = await Promise.all([
       supa.from('spooller')
-        .select('id, spool_no, spool_id, pipeline_no, rev, agirlik, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad)))')
+        .select('id, spool_no, spool_id, pipeline_no, rev, agirlik, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad,kisa_ad)))')
         .eq('aktif_basamak', 'on_kontrol')
         .eq('tenant_id', tid)
         .order('pipeline_no').order('spool_no'),
       supa.from('kk_davetler')
-        .select('*, kk_davet_spooller(*, spooller(spool_no, spool_id, pipeline_no, rev, agirlik, devreler(devre_no, projeler(proje_no, tersaneler(ad, kod)))))')
+        .select('*, kk_davet_spooller(*, spooller(spool_no, spool_id, pipeline_no, rev, agirlik, devreler(devre_no, projeler(proje_no, tersaneler(ad, kisa_ad, kod)))))')
         .eq('tenant_id', tid)
         .order('olusturma', {ascending: false})
     ]);
@@ -327,7 +327,7 @@ async function veriYukle() {
         devre:    dv.devre_no || '—',
         projeNo:  prj.proje_no || '—',
         isEmri:   dv.is_emri_no || '—',
-        tersane:  trs.ad || '—',
+        tersane:  trs.kisa_ad || trs.ad || '—',
         agirlik:  parseFloat(s.agirlik) || 0
       };
     });

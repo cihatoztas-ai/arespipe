@@ -859,7 +859,7 @@ async function veriYukle() {
     // Filtre dropdown'ları için tersane ve proje listesi — hafif sorgu
     var results = await Promise.all([
       supa.from('tersaneler').select('ad').eq('tenant_id', ARES.tenantId()),
-      supa.from('projeler').select('id, proje_no, tersaneler(ad)').eq('tenant_id', ARES.tenantId())
+      supa.from('projeler').select('id, proje_no, tersaneler(ad,kisa_ad)').eq('tenant_id', ARES.tenantId())
     ]);
     var tersaneSet = {}, projeSet = {};
     (results[0].data||[]).forEach(function(t){ tersaneSet[t.ad]=true; });
@@ -868,7 +868,7 @@ async function veriYukle() {
     (results[1].data||[]).forEach(function(p){
       projeSet[p.proje_no] = true;
       _projeIdMap[p.proje_no] = p.id;
-      var tad = p.tersaneler ? p.tersaneler.ad : null;
+      var tad = p.tersaneler ? (p.tersaneler.kisa_ad || p.tersaneler.ad) : null;
       if (tad) {
         if (!_firmaProjeIds[tad]) _firmaProjeIds[tad] = [];
         _firmaProjeIds[tad].push(p.id);
@@ -951,7 +951,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         id:       offset + i + 1,
         supaId:   d.id,
         isEmri:   d.is_emri_no   || '—',
-        tersane:  trs.ad          || '—',
+        tersane:  trs.kisa_ad || trs.ad || '—',
         projeNo:  prj.proje_no    || '—',
         devre:    d.devre_no      || d.ad || '—',
         zone:     d.zone          || '—',
@@ -1054,7 +1054,7 @@ async function sorgulaVeGoster() {
     var listeQ = applyFilters(
       supa.from('devreler')
         .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, ' +
-                'projeler(proje_no, tersaneler(ad, kod)), ' +
+                'projeler(proje_no, tersaneler(ad, kisa_ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
         .range(offset, offset + _sayfaBasi - 1),

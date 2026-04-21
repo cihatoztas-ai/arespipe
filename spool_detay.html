@@ -923,7 +923,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad)))')
+      .select('*, spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1004,7 +1004,7 @@ async function spoolYukle(supaId) {
       if (dv.projeler) {
         SP._projeNo = dv.projeler.proje_no || SP._projeNo;
         if (dv.projeler.tersaneler) {
-          SP._tersane = dv.projeler.tersaneler.ad || SP._tersane;
+          SP._tersane = dv.projeler.tersaneler.kisa_ad || dv.projeler.tersaneler.ad || SP._tersane;
         }
       }
       SP._isEmri = dv.is_emri_no || SP._isEmri;
