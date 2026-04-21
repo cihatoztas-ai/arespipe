@@ -1408,5 +1408,8 @@
   "ks_hero_word": "القطع",
   "mk_stat_bekleyen": "إجمالي المعلق",
   "mk_stat_filtrelenen": "المفلتر",
-  "mk_stat_listede": "في القائمة"
+  "mk_stat_listede": "في القائمة",
+  "tr_field_kisa_ad": "الاسم المختصر",
+  "tr_ph_kisa_ad": "مثال: Tersan",
+  "tr_hata_kisa_ad_zorunlu": "الاسم المختصر مطلوب."
 }

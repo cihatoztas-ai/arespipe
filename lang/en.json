@@ -1408,5 +1408,8 @@
   "ks_hero_word": "Cutting",
   "mk_stat_bekleyen": "Total Pending",
   "mk_stat_filtrelenen": "Filtered",
-  "mk_stat_listede": "In List"
+  "mk_stat_listede": "In List",
+  "tr_field_kisa_ad": "Short Name",
+  "tr_ph_kisa_ad": "e.g. Tersan",
+  "tr_hata_kisa_ad_zorunlu": "Short name is required."
 }

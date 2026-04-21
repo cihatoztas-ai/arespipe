@@ -1408,5 +1408,8 @@
   "ks_hero_word": "Kesim",
   "mk_stat_bekleyen": "Toplam Bekleyen",
   "mk_stat_filtrelenen": "Filtrelenen",
-  "mk_stat_listede": "Listede Olan"
+  "mk_stat_listede": "Listede Olan",
+  "tr_field_kisa_ad": "Kısa Ad",
+  "tr_ph_kisa_ad": "örn. Tersan",
+  "tr_hata_kisa_ad_zorunlu": "Kısa ad zorunludur."
 }
