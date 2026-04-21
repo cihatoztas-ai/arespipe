@@ -221,9 +221,164 @@ VALUES (?, ?, (SELECT tenant_id FROM kullanicilar WHERE id = ?));
 □ E-03: spool_id display'de ARES.markaId() ile gösterildi (eski prefix'siz kayıtlar için runtime prefix)
 □ E-04: Spool marka format standart: gemi-pipeline-spool_no[-RevN] — ARES_NORM.marka + revFmt kullanıldı
 □ E-05: QR etiket 90×40mm, mm cinsinden ölçüler, termal B/W uyumlu (eğer etiket basıyorsa)
+□ G-02: Hero + Pill standardı uygulandı (14. oturum sonrası yeni sayfalar için)
+□ G-02: Shimmer iskelet + _animCount helper var (sayaçsız, direkt atama)
+□ G-02: Pagination canlandırıldı (pg-aktif + pg-dots + Barlow Condensed)
+□ G-02: Tersane badge 14px (10px ihlali olmaması)
+□ G-02: Pill sayısında overflow:hidden YOK (sayı kesilmez)
 ```
 
 **Mobil React sayfaları için:** CLAUDE-MOBILE.md'deki checklist geçerlidir.
+
+---
+
+### 2.12.1 Hero + Pill Standardı — ZORUNLU (Kural G-02, 14. oturum)
+
+Her liste/takip sayfasının üst kısmında bulunan stat göstergeleri için ortak standart.
+Referans: `devreler.html` (altın standart), `kesim.html`, `bukum.html`, `markalama.html` (14. oturumda dönüştürüldü).
+
+#### Yapı
+
+```
+┌─────────────────┬──────┬──────┬──────┬──────┬──────┐
+│ [ICON] Hero     │ PILL │ PILL │ PILL │ PILL │ PILL │
+│ Sayfa Adı       │  1   │  2   │  3   │  4   │  N   │
+└─────────────────┴──────┴──────┴──────┴──────┴──────┘
+```
+
+- **Hero kart (sol, 190px sabit):** Lucide-stroke SVG ikon + Barlow Condensed 21px sayfa adı, sol kenar 4px renkli border.
+- **Pill'ler (esnek, min-width:128px):** renkli ikon kutusu (30×30, solid bg, beyaz stroke ikon) + body (label + num). Tüm pill'ler eşit boyut (`wide` class YOK).
+
+#### CSS block (kopyala yapıştır)
+
+```css
+.stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
+.hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }
+.hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--leg); }
+.hero-name { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--leg); }
+.hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
+.stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+.stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; }
+.stat-pill-ic svg { width:16px; height:16px; stroke-width:2.2; }
+.stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.stat-pill-lab { font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
+.stat-pill-num small { font-size:14px; font-weight:500; color:var(--txd); margin-left:3px; letter-spacing:0; text-transform:lowercase; font-family:system-ui,sans-serif; }
+.stat-pill.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
+.stat-pill.clickable:hover { border-color:var(--ac); background:var(--sur2); }
+@media (max-width: 1280px) {
+  .hero-left { width:170px; padding:9px 11px; gap:9px; }
+  .hero-left svg { width:24px; height:24px; }
+  .hero-name { font-size:19px; }
+  .stat-pill { padding:8px 10px; gap:8px; min-width:118px; }
+  .stat-pill-ic { width:28px; height:28px; }
+  .stat-pill-ic svg { width:14px; height:14px; }
+  .stat-pill-num { font-size:18px; }
+}
+
+/* Pill ikon renkleri — sabit paleti */
+.ic-blue   { background:#2D8EFF; }
+.ic-green  { background:var(--gr); }
+.ic-amber  { background:var(--warn); }
+.ic-red    { background:var(--re); }
+.ic-cyan   { background:#0891b2; }
+.ic-violet { background:var(--leg); }
+.ic-orange { background:#f97316; }
+
+/* Shimmer — pill sayı iskelet */
+@keyframes _skShimmer { 0% { background-position:-340px 0; } 100% { background-position:calc(340px + 100%) 0; } }
+.sk { display:inline-block; background:linear-gradient(90deg, var(--bor) 0%, var(--sur2) 50%, var(--bor) 100%); background-size:340px 100%; animation:_skShimmer 1.4s ease-in-out infinite; border-radius:4px; color:transparent !important; }
+.sk-num { min-width:48px; height:20px; }
+```
+
+#### HTML
+
+```html
+<div class="stat-row">
+  <div class="hero-left">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><!-- Lucide SVG path --></svg>
+    <div class="hero-name" data-i18n="sayfa_adi">Sayfa Adı</div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><!-- ikon --></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="...">Label</div>
+        <div class="stat-pill-num"><span id="stId" class="sk sk-num">—</span></div>
+      </div>
+    </div>
+    <!-- 2-5 pill daha -->
+  </div>
+</div>
+```
+
+#### JS helper (sayaçsız, direkt atama)
+
+```js
+var _trFmt = new Intl.NumberFormat('tr-TR');
+function _skTemizle(el) { if (el && el.classList) el.classList.remove('sk','sk-num','sk-bar'); }
+function _animCount(el, hedef, opt) {
+  if (!el) return;
+  opt = opt || {};
+  var prefix = opt.prefix || '';
+  var suffix = opt.suffix || '';
+  var fmt = opt.fmt || _trFmt.format;
+  _skTemizle(el);
+  el.textContent = prefix + fmt(hedef) + suffix;
+}
+```
+
+**Kritik:** Sayaç animasyonu YOKTUR. Veri gelince direkt yazılır. Shimmer iskelet yükleme sırasında kalır, veri geldiğinde `_skTemizle` ile kaldırılır.
+
+#### Pagination standardı (aynı G-02 kapsamında)
+
+```css
+.pg-btn { min-width:34px; height:32px; padding:0 10px; border-radius:7px; border:1px solid var(--bor); background:var(--sur2); color:var(--tx); font-size:15px; font-family:'Barlow Condensed',sans-serif; font-weight:600; letter-spacing:.2px; cursor:pointer; transition:all .15s; }
+.pg-btn:hover:not(:disabled):not(.pg-aktif) { border-color:var(--ac); color:var(--ac); background:var(--sur); }
+.pg-btn:disabled { opacity:.3; cursor:not-allowed; }
+.pg-btn.pg-aktif { background:var(--ac); border-color:var(--ac); color:#fff; font-weight:700; box-shadow:0 1px 3px rgba(45,142,255,.25); }
+.pg-info { font-size:14px; color:var(--txd); }
+.pg-info strong { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--tx); margin:0 2px; }
+.pg-dots { color:var(--txd); padding:0 6px; letter-spacing:2px; user-select:none; font-size:14px; }
+```
+
+- Aktif class adı: **`pg-aktif`** (İngilizce `active` KULLANMA, proje standardı Türkçe)
+- `«‹›»` 4 navigasyon butonu + sayı butonları + ellipsis için `<span class="pg-dots">…</span>`
+- Tooltip: `cmn_ilk_sayfa`, `cmn_onceki_sayfa`, `cmn_sonraki_sayfa`, `cmn_son_sayfa` i18n anahtarları
+
+#### Arama haystack genişletme pattern (sorgulaVeGoster içinde)
+
+Liste sayfalarında arama sadece 4-5 metin alanında değil, ilgili tüm sütunlarda çalışmalı. Client-cache'lenmiş `_firmaProjeIds`, `_projeIdMap`, `_filterData` üzerinden tersane adı + proje no + malzeme + yüzey eşleşmelerini topla, `applyFilters` fonksiyonunda OR mantığıyla `q.or('...,proje_id.in.(...),id.in.(...)')` şeklinde ekle. Detay: `devreler.html` (satır ~1116-1145).
+
+#### Export pattern (Excel + PDF tüm filtreli veri)
+
+- `_allFilteredIds` global'i `sorgulaVeGoster` her çalıştığında güncellenir
+- `_tamFiltreliListe()` helper 500'lük chunk'lar halinde tam veri çeker
+- Excel handler async — "Dışa aktarım hazırlanıyor..." toast → tam liste → XLSX → başarı toastında "(X devre)" göster
+- PDF aynı mantık — `_tabelaPdf()` async
+
+#### Renk kimlikleri (sayfa bazlı)
+
+| Sayfa | CSS değişkeni | Varsayılan renk |
+|---|---|---|
+| Devreler | `--leg` | `#7c3aed` (mor) |
+| Kesim | `--ks-c` | `#c2410c` (kızılkahve) |
+| Büküm | `--bukum-c` | `#7c3aed` (mor) |
+| Markalama | `--marka-p` | `#0e7490` (cyan) |
+| Kalite Kontrol | — (14. oturumda dönüştürülmedi) | — |
+| Sevkiyatlar | — (14. oturumda dönüştürülmedi) | — |
+
+#### Label kısaltma kuralı
+
+"Toplam X" ve "X Adedi" gibi ifadeler **yasak** — sayı zaten adet. Kısa formlar:
+- "Devre Adedi" → "Devreler"
+- "Spool Adedi" → "Spool"
+- "Toplam Bekleyen" → "Bekleyen"
+- "Listede Olan" → "Listede"
+- "Ağırlık (kg)" → "Ağırlık" (kg sayının yanında `<small>`)
+- "Çap Dağılımı" → "Çap"
+- "Toplam Büküm" → "Bekleyen"
+- "Bükülenler" → "Bükülen"
 
 ---
 
