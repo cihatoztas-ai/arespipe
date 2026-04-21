@@ -516,7 +516,47 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 </div><!-- /.main-content -->
 </div><!-- /.app-shell -->
 
-<!-- ═══ DIŞA AKTAR MODAL ═══ -->
+<!-- ═══ KESİM SONUÇ MODAL ═══ -->
+<div class="modal-ov" id="sonucModal" style="display:none;">
+  <div class="modal-box" style="max-width:92vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--bor);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:7px;background:rgba(22,163,110,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <span class="modal-title" style="font-size:17px;color:var(--gr);">Kesim Planı</span>
+          <span id="snListeAd" style="font-size:17px;font-weight:400;color:var(--txm);margin-left:8px;"></span>
+          <span id="snTarih" style="font-size:14px;color:var(--txd);margin-left:12px;"></span>
+        </div>
+      </div>
+      <button onclick="closeSonucModal()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <!-- İstatistikler -->
+      <div id="snStat" style="display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--bor);flex-wrap:wrap;background:var(--sur2);"></div>
+      <!-- Şematik -->
+      <div style="padding:14px 20px;border-bottom:1px solid var(--bor);">
+        <div style="font-size:14px;font-weight:600;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Kesim Şeması</div>
+        <div id="snSema"></div>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--bor);flex-shrink:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:14px;color:var(--txd);flex:1;min-width:0;" id="snAlt"></span>
+      <button onclick="fmExcelIndir()" class="btn-outline" style="border-color:rgba(22,163,110,.4);color:var(--gr);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Excel İndir
+      </button>
+      <button onclick="fmPdfYazdir()" class="btn-outline" style="border-color:rgba(45,142,255,.4);color:var(--ac);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        PDF Yazdır
+      </button>
+      <button onclick="closeSonucModal()" class="btn-primary" style="padding:0 20px;">Kapat</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-ov" id="exportModal" style="display:none;">
   <div class="modal-box" style="max-width:380px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
@@ -709,81 +749,26 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
   </div>
 </div>
 <div class="modal-ov" id="formModal" style="display:none;">
-  <div class="modal-box" style="max-width:820px;width:100%;max-height:92vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-
-    <!-- Başlık -->
-    <div style="padding:14px 20px;border-bottom:1px solid var(--bor);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:32px;height:32px;border-radius:8px;background:rgba(22,163,110,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-        </div>
-        <div>
-          <span class="modal-title" style="font-size:18px;color:var(--gr);">Kesim Planı</span>
-          <span id="fmListeAd" style="font-size:18px;font-weight:400;color:var(--txm);margin-left:8px;"></span>
-        </div>
-      </div>
-      <button onclick="closeFormModal()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;">✕</button>
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="modal-title" style="color:var(--gr);">📂 Boru Kesim Formu</div>
+      <button onclick="closeFormModal()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;">✕</button>
     </div>
-
-    <!-- Kaydırılabilir içerik -->
-    <div style="overflow-y:auto;flex:1;">
-
-      <!-- Özet -->
-      <div id="fmOzet" style="padding:10px 20px;background:var(--sur2);border-bottom:1px solid var(--bor);font-size:14px;color:var(--txm);"></div>
-
-      <!-- Parametreler -->
-      <div style="padding:16px 20px;border-bottom:1px solid var(--bor);">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
-          <div><label class="fm-label">Standart Stok (mm)</label><input class="fm-input" id="fmStokBoy" type="number" value="6000" min="100"></div>
-          <div><label class="fm-label">Testere Payı / Kerf (mm)</label><input class="fm-input" id="fmKerf" type="number" value="3" min="0"></div>
-          <div><label class="fm-label">Uç Fire / Trim (mm)</label><input class="fm-input" id="fmTrim" type="number" value="0" min="0"></div>
-          <div><label class="fm-label">Min. Kullanılabilir Artık (mm)</label><input class="fm-input" id="fmMinArtik" type="number" value="1500" min="0"></div>
-        </div>
-
-        <!-- Parça borular -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span class="fm-section" style="margin:0;">Elimizdeki Parça Borular <span style="font-size:14px;font-weight:400;color:var(--txd);text-transform:none;letter-spacing:0;margin-left:6px;">— opsiyonel</span></span>
-          <button onclick="fmAddStok()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;">+ Ekle</button>
-        </div>
-        <div id="fmStoklar" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
-
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-          <button onclick="closeFormModal()" class="btn-outline" style="height:36px;">İptal</button>
-          <button onclick="runForm()" class="btn-green" id="fmPlanlaBtn" style="height:36px;padding:0 22px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;"><circle cx="6" cy="6" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/></svg>
-            Planla &amp; Önizle
-          </button>
-        </div>
-      </div>
-
-      <!-- Sonuç alanı (başlangıçta gizli) -->
-      <div id="fmSonuc" style="display:none;">
-
-        <!-- Özet istatistikler -->
-        <div id="fmSonucStat" style="display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid var(--bor);flex-wrap:wrap;background:var(--sur2);"></div>
-
-        <!-- Şematik -->
-        <div style="padding:16px 20px;border-bottom:1px solid var(--bor);">
-          <div style="font-size:14px;font-weight:600;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Kesim Şeması</div>
-          <div id="fmSema"></div>
-        </div>
-
-        <!-- İndirme butonları -->
-        <div style="padding:14px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span id="fmPlanTarih" style="font-size:14px;color:var(--txd);flex:1;min-width:0;"></span>
-          <button onclick="fmExcelIndir()" class="btn-outline" style="border-color:rgba(22,163,110,.4);color:var(--gr);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Excel İndir
-          </button>
-          <button onclick="fmPdfYazdir()" class="btn-outline" style="border-color:rgba(45,142,255,.4);color:var(--ac);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            PDF Yazdır
-          </button>
-          <button onclick="closeFormModal()" class="btn-primary" style="padding:0 20px;">Kapat</button>
-        </div>
-
-      </div>
-    </div><!-- /.scroll -->
+    <div id="fmOzet" style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:14px;color:var(--txm);line-height:1.7;"></div>
+    <div class="fm-section">Kesim Parametreleri</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+      <div><label class="fm-label">Standart Stok Boyu (mm)</label><input class="fm-input" id="fmStokBoy" type="number" value="6000" min="100"></div>
+      <div><label class="fm-label">Testere Payı / Kerf (mm)</label><input class="fm-input" id="fmKerf" type="number" value="3" min="0"></div>
+      <div><label class="fm-label">Uç Fire / Trim (mm)</label><input class="fm-input" id="fmTrim" type="number" value="0" min="0"></div>
+      <div><label class="fm-label">Min. Kullanılabilir Artık (mm)</label><input class="fm-input" id="fmMinArtik" type="number" value="1500" min="0"></div>
+    </div>
+    <div class="fm-section" style="margin-top:20px;">Elimizdeki Parça Borular <span style="font-size:14px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;">— opsiyonel, mm</span></div>
+    <div id="fmStoklar" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+    <button onclick="fmAddStok()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;margin-bottom:20px;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeFormModal()" class="btn-outline" style="flex:1;"><span data-i18n="cmn_iptal">İptal</span></button>
+      <button onclick="runForm()" class="btn-green" id="fmPlanlaBtn" style="flex:2;height:42px;font-size:14px;">✂️ Formu Oluştur &amp; Önizle</button>
+    </div>
   </div>
 </div>
 
@@ -1712,7 +1697,8 @@ function calculateCutOptimization(pieces, stocks, config) {
       }
       if(!found){
         newAdded++;
-        currentStocks.push({ id:'AUTO-NEW-'+newAdded, length:parseInt(document.getElementById('fmStokBoy').value)||6000, type:'new_stock' });
+        var autoLen = window._fmStandartLen || 6000;
+        currentStocks.push({ id:'AUTO-NEW-'+newAdded, length:autoLen, type:'new_stock' });
       }
     }
 
@@ -1747,34 +1733,17 @@ function openFormModal(klId, arcIdx){
   var mm=_fmKlB.reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); },0);
   var malz=_fmKlB[0]||{};
   var malzLabel=(typeof ARES_NORM!=='undefined'&&malz.malzeme)?ARES_NORM.malzemeEtiket(malz.malzeme):malz.malzeme;
-  document.getElementById('fmListeAd').textContent='— '+kl.no;
-  document.getElementById('fmOzet').textContent=
-    esc(malzLabel||'')+' '+esc(malz.kalite||'')+' Ø'+esc(malz.cap||'')
-    +' · '+_fmKlB.length+' parça · Toplam '+mm.toLocaleString('tr-TR')+' mm';
-
-  // Kaydedilmiş plan varsa göster
-  if(kl.kesimPlani){
-    _fmCurrentPlans=kl.kesimPlani.plans;
-    _fmCurrentParams=kl.kesimPlani.params;
-    // Parametreleri yükle
-    document.getElementById('fmStokBoy').value=kl.kesimPlani.params.standartLen||6000;
-    document.getElementById('fmKerf').value=kl.kesimPlani.params.kerf||3;
-    document.getElementById('fmTrim').value=kl.kesimPlani.params.trim||0;
-    document.getElementById('fmMinArtik').value=kl.kesimPlani.params.minArtik||1500;
-    document.getElementById('fmStoklar').innerHTML='';
-    (kl.kesimPlani.params.parcaBorular||[]).forEach(function(pb){ fmAddStokVal(pb.uzunluk); });
-    document.getElementById('fmPlanTarih').textContent='Plan: '+kl.kesimPlani.tarih;
-    _renderSema(kl.kesimPlani.plans, kl.kesimPlani.params);
-    document.getElementById('fmSonuc').style.display='block';
-  } else {
-    document.getElementById('fmStokBoy').value=6000;
-    document.getElementById('fmKerf').value=3;
-    document.getElementById('fmTrim').value=0;
-    document.getElementById('fmMinArtik').value=1500;
-    document.getElementById('fmStoklar').innerHTML='';
-    document.getElementById('fmSonuc').style.display='none';
-    _fmCurrentPlans=null; _fmCurrentParams=null;
-  }
+  document.getElementById('fmOzet').innerHTML=
+    '<b style="color:var(--tx);">'+esc(kl.no)+'</b> &nbsp;·&nbsp; '
+    +esc(malzLabel||'')+' <span style="color:var(--ac);">'+esc(malz.kalite||'')+'</span> Ø'+esc(malz.cap||'')
+    +'<br><span style="color:var(--warn);font-weight:700;">'+_fmKlB.length+' parça</span>'
+    +' &nbsp;·&nbsp; Toplam '+mm.toLocaleString('tr-TR')+' mm';
+  document.getElementById('fmStokBoy').value=6000;
+  document.getElementById('fmKerf').value=3;
+  document.getElementById('fmTrim').value=0;
+  document.getElementById('fmMinArtik').value=1500;
+  document.getElementById('fmStoklar').innerHTML='';
+  _fmCurrentPlans=null; _fmCurrentParams=null;
   document.getElementById('formModal').style.display='flex';
 }
 
@@ -1810,38 +1779,37 @@ function runForm(){
   var trim=parseInt(document.getElementById('fmTrim').value)||0;
   var minArtik=parseInt(document.getElementById('fmMinArtik').value)||1500;
 
-  // Parça boruları topla
   var parcaBorular=[];
   document.querySelectorAll('#fmStoklar input[type="number"]').forEach(function(inp,i){
     var v=parseInt(inp.value); if(v>0) parcaBorular.push({id:'PARCA-'+(i+1),uzunluk:v});
   });
 
-  // Parçaları kesim ölçüsüne göre grupla: [{length, qty, refs}]
+  // Parçaları gruplara çevir: [{length, qty, refs}]
   var lengthMap={};
   klB.forEach(function(k){
-    var boy=parseFloat(k.kesimOlcusu)||0;
-    if(boy<=0) return;
+    var boy=parseFloat(k.kesimOlcusu)||0; if(boy<=0) return;
     if(!lengthMap[boy]) lengthMap[boy]={length:boy,qty:0,refs:[]};
-    lengthMap[boy].qty++;
-    lengthMap[boy].refs.push(k);
+    lengthMap[boy].qty++; lengthMap[boy].refs.push(k);
   });
   var pieces=Object.values(lengthMap);
   if(!pieces.length){ toast('Geçerli kesim ölçüsü olan boru bulunamadı','error'); return; }
 
-  // Stok listesi: parça borular önce, standart stok sonra
-  var stocks=parcaBorular.map(function(pb,i){
-    return {id:pb.id, length:pb.uzunluk, type:'piece_stock'};
-  });
-  // Başlangıçta standart stoklar eklenmez — algoritma otomatik ekler
+  var stocks=parcaBorular.map(function(pb){ return {id:pb.id,length:pb.uzunluk,type:'piece_stock'}; });
+  // standartLen butonundan okunmadan önce closure'a al
+  var _standartLen=standartLen;
+  var _origGetStandart=function(){ return _standartLen; };
 
   var btn=document.getElementById('fmPlanlaBtn');
   if(btn){ btn.disabled=true; btn.textContent='Hesaplanıyor...'; }
 
+  // Kısa timeout ile UI'ın "Hesaplanıyor" göstermesini sağla
   setTimeout(function(){
     try{
+      // Algoritmanın AUTO-NEW eklemesi için standartLen'i global'e taşı
+      window._fmStandartLen=standartLen;
       var result=calculateCutOptimization(pieces,stocks,{kerf:kerf,trim:trim,minRem:minArtik,iterations:300});
 
-      // Her plana matchedBorular ekle (refs üzerinden)
+      // matchedBorular — ID üzerinden refs ile eşleştir
       var usedRefs={};
       result.plans.forEach(function(plan){
         plan.matchedBorular=[];
@@ -1857,33 +1825,43 @@ function runForm(){
       var params={standartLen:standartLen,kerf:kerf,trim:trim,minArtik:minArtik,parcaBorular:parcaBorular};
       var tarihStr=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
       kl.kesimPlani={plans:result.plans,params:params,tarih:tarihStr};
-
       _fmCurrentPlans=result.plans;
       _fmCurrentParams=params;
 
-      document.getElementById('fmPlanTarih').textContent='Plan oluşturuldu: '+tarihStr;
-      _renderSema(result.plans, params);
-      document.getElementById('fmSonuc').style.display='block';
-      document.getElementById('fmSonuc').scrollIntoView({behavior:'smooth',block:'start'});
+      // Form modalı kapat, sonuç modalını aç
+      closeFormModal();
+      openSonucModal(kl, result.plans, params, tarihStr);
 
-      // Supabase'e kaydet (kolon varsa)
+      // Supabase kaydı
       if(typeof ARES!=='undefined'&&ARES.mod==='supabase'&&kl.supaId){
         ARES.supabase().from('kesim_listeleri').update({kesim_plani:{plans:result.plans,params:params,tarih:tarihStr}}).eq('id',kl.supaId).then(function(){});
       }
     }catch(e){
       console.error('[ARES] runForm:', e);
       toast('Plan oluşturma hatası: '+e.message,'error');
+      if(btn){ btn.disabled=false; btn.textContent='✂️ Formu Oluştur & Önizle'; }
     }
-    if(btn){ btn.disabled=false; btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;"><circle cx="6" cy="6" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/></svg>Planla &amp; Önizle'; }
+    if(btn){ btn.disabled=false; btn.textContent='✂️ Formu Oluştur & Önizle'; }
   }, 30);
 }
+
+// ════════════════════════════════════
+// SONUÇ MODAL — AÇMA / KAPAMA
+// ════════════════════════════════════
+function openSonucModal(kl, plans, params, tarih){
+  document.getElementById('snListeAd').textContent='— '+kl.no;
+  document.getElementById('snTarih').textContent=tarih||'';
+  _renderSema(plans, params);
+  document.getElementById('sonucModal').style.display='flex';
+}
+function closeSonucModal(){ document.getElementById('sonucModal').style.display='none'; }
 
 // ════════════════════════════════════
 // ŞEMATİK RENDER — kibar çizgi stili
 // ════════════════════════════════════
 function _renderSema(plans, params){
-  var semaEl=document.getElementById('fmSema');
-  var statEl=document.getElementById('fmSonucStat');
+  var semaEl=document.getElementById('snSema');
+  var statEl=document.getElementById('snStat');
   if(!semaEl||!statEl) return;
 
   var klB=_fmKlB||[];
@@ -1981,6 +1959,8 @@ function _renderSema(plans, params){
   });
 
   semaEl.innerHTML=html||'<div style="color:var(--txd);font-size:14px;">Plan boş.</div>';
+  var snAlt=document.getElementById('snAlt');
+  if(snAlt) snAlt.textContent=(_fmKlB?_fmKlB.length:0)+' parça · '+(yeniSayac)+' yeni boru'+(parcaSayac?' · '+parcaSayac+' parça boru':'');
 }
 
 function fmExcelIndir(){
@@ -2094,7 +2074,7 @@ function fmPdfYazdir(){
 }
 
 // Eski fmGerDon silindi — artık 2 faz yok
-function fmGerDon(){ document.getElementById('fmSonuc').style.display='none'; }
+function fmGerDon(){ /* artık kullanılmıyor — sonuç ayrı modalda */ }
 
 // KESIM FORMU EXCEL (algoritmadan)
 // ════════════════════════════════════
