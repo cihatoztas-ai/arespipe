@@ -120,7 +120,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .data-table tbody tr{transition:background .15s;}
 .data-table tbody tr:hover{background:var(--sur2);}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--txd);}
-.cell-tersane{font-size:10px;font-weight:700;}
+.cell-tersane{font-size:14px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
 .cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks-c);}
@@ -197,14 +197,16 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .fm-input:focus{outline:none;border-color:var(--ac);}
 .fm-section{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;margin-top:18px;}
 
-/* Sayfalama */
+/* Sayfalama — 14. oturum devreler.html standardı */
 .pg-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--bor);background:var(--sur);flex-wrap:wrap;gap:8px;}
 .pg-info{font-size:14px;color:var(--txd);}
+.pg-info strong{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--tx);margin:0 2px;}
 .pg-btns{display:flex;align-items:center;gap:4px;}
-.pg-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1.5px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Barlow',sans-serif;}
-.pg-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac);}
-.pg-btn.active{border-color:var(--ac);background:var(--ac);color:#fff;}
-.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-btn{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:15px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.2px;cursor:pointer;transition:all .15s;}
+.pg-btn:hover:not(:disabled):not(.pg-aktif){border-color:var(--ac);color:var(--ac);background:var(--sur);}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed;}
+.pg-btn.pg-aktif{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700;box-shadow:0 1px 3px rgba(45,142,255,.25);}
+.pg-dots{color:var(--txd);padding:0 6px;letter-spacing:2px;user-select:none;font-size:14px;}
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;z-index:4000;animation:slideIn .3s ease;font-size:15px;max-width:440px;}
 .toast-success{border-left:4px solid var(--gr);}
@@ -281,19 +283,56 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     .mb-bakir  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(217,119,6,.1);color:var(--warn); }
     .mb-alum   { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(22,163,110,.1);color:var(--gr); }
     .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--sur2);color:var(--txd); }
-/* ── Hero Row ─────────────────────────────── */
+/* ── Hero + Stat Pill — 14. oturum devreler.html standardı ─────── */
 :root{--ks-c:#c2410c;}
 [data-theme=light-anthracite]{--ks-c:#c2410c;}
 [data-theme=dark]{--ks-c:#fb923c;}
-.hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
-.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
-.hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
-.stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
-.stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+
+.stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
+.hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--ks-c); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }
+.hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--ks-c); }
+.hero-name { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--ks-c); }
+.hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
+.stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--ks-c); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+.stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; }
+.stat-pill-ic svg { width:16px; height:16px; stroke-width:2.2; }
+.stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.stat-pill-lab { font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
+.stat-pill-num small { font-size:14px; font-weight:500; color:var(--txd); margin-left:3px; letter-spacing:0; text-transform:lowercase; font-family:system-ui,sans-serif; }
+@media (max-width: 1280px) {
+  .hero-left { width:170px; padding:9px 11px; gap:9px; }
+  .hero-left svg { width:24px; height:24px; }
+  .hero-name { font-size:19px; }
+  .stat-pill { padding:8px 10px; gap:8px; min-width:118px; }
+  .stat-pill-ic { width:28px; height:28px; }
+  .stat-pill-ic svg { width:14px; height:14px; }
+  .stat-pill-num { font-size:18px; }
+}
+
+/* Pill ikon renkleri */
+.ic-blue   { background:#2D8EFF; }
+.ic-green  { background:var(--gr); }
+.ic-amber  { background:var(--warn); }
+.ic-red    { background:var(--re); }
+.ic-cyan   { background:#0891b2; }
+.ic-violet { background:var(--leg); }
+.ic-orange { background:#f97316; }
+
+/* ── İskelet (shimmer) ── */
+@keyframes _skShimmer {
+  0%   { background-position: -340px 0; }
+  100% { background-position: calc(340px + 100%) 0; }
+}
+.sk {
+  display:inline-block;
+  background:linear-gradient(90deg, var(--bor) 0%, var(--sur2) 50%, var(--bor) 100%);
+  background-size:340px 100%;
+  animation:_skShimmer 1.4s ease-in-out infinite;
+  border-radius:4px;
+  color:transparent !important;
+}
+.sk-num { min-width:48px; height:20px; }
 
 </style>
 <script src="ares-store.js"></script>
@@ -311,30 +350,33 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <a href="index.html">Ana Sayfa</a><span>/</span><span class="cur" data-i18n="ks_breadcrumb">Kesim</span>
   </div>
 
-  <!-- Hero Row -->
-  <div class="hero-row">
+  <!-- Hero + Stat Pill Row -->
+  <div class="stat-row">
     <div class="hero-left">
-      <div class="hero-icon" style="background:rgba(194,65,12,.12);">&#9986;&#65039;</div>
-      <div>
-        <div class="hero-eyebrow" data-i18n="nav_boru_imalati">Boru İmalatı</div>
-        <div class="hero-word" style="color:var(--ks-c);" data-i18n="ks_hero_word">Kesim</div>
-      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+      <div class="hero-name" data-i18n="ks_hero_word">Kesim</div>
     </div>
     <div class="hero-stats">
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ks-c);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stTop" style="color:var(--ks-c);">—</div>
-        <div class="stat-pill-lbl" data-i18n="ks_stat_bekleyen">Toplam Bekleyen</div>
+        <div class="stat-pill-ic ic-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="ks_stat_bekleyen_short">Bekleyen</div>
+          <div class="stat-pill-num"><span id="stTop" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stFiltre" style="color:var(--ac);">—</div>
-        <div class="stat-pill-lbl" data-i18n="ks_stat_filtered">Filtrelenen</div>
+        <div class="stat-pill-ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="ks_stat_filtered">Filtrelenen</div>
+          <div class="stat-pill-num"><span id="stFiltre" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gr);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stListede" style="color:var(--gr);">—</div>
-        <div class="stat-pill-lbl" data-i18n="ks_stat_inlist">Listede Olan</div>
+        <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="ks_stat_inlist_short">Listede</div>
+          <div class="stat-pill-num"><span id="stListede" class="sk sk-num">—</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -526,6 +568,20 @@ if (typeof tv === 'undefined') { window.tv = function(k,fb){ return fb!==undefin
 if (typeof tvMalzeme === 'undefined') { window.tvMalzeme = function(k){ return k; }; }
 if (typeof tvYuzey === 'undefined') { window.tvYuzey = function(k){ return k; }; }
 
+// ── İSKELET + DEĞER ATAMA HELPER'LARI (14. oturum devreler.html standardı) ──
+var _trFmt = new Intl.NumberFormat('tr-TR');
+function _skTemizle(el) { if (el && el.classList) el.classList.remove('sk','sk-num','sk-bar'); }
+// Değer atama — iskeleti temizler ve formatlı sayıyı yazar (sayaç animasyonu YOK, direkt atama)
+function _animCount(el, hedef, opt) {
+  if (!el) return;
+  opt = opt || {};
+  var prefix = opt.prefix || '';
+  var suffix = opt.suffix || '';
+  var fmt = opt.fmt || _trFmt.format;
+  _skTemizle(el);
+  el.textContent = prefix + fmt(hedef) + suffix;
+}
+
 
 function tersaneBadge(ad){
   var palette=[
@@ -539,7 +595,7 @@ function tersaneBadge(ad){
   for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
   var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
   var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
-  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
 }
 function matBadge(m) {
   // Malzeme normalize + çeviri → ARES_NORM
@@ -651,18 +707,20 @@ function uniq(key){return [...new Set(borular.map(x=>x[key]).filter(Boolean))];}
 // SAYFALAMA
 // ════════════════════════════════════
 function buildPgHtml(cur,total,fn){
-  var html='<span class="pg-info">'+cur+' / '+total+'</span><div class="pg-btns">';
-  html+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+fn+'('+(cur-1)+')">‹</button>';
+  var html='<span class="pg-info"><strong>'+cur+'</strong> / <strong>'+total.toLocaleString('tr-TR')+'</strong></span><div class="pg-btns">';
+  html+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+fn+'(1)" title="'+tv('cmn_ilk_sayfa','İlk sayfa')+'">«</button>';
+  html+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+fn+'('+(cur-1)+')" title="'+tv('cmn_onceki_sayfa','Önceki sayfa')+'">‹</button>';
   var pages=[];
   for(var p=1;p<=total;p++){
     if(p===1||p===total||Math.abs(p-cur)<=2) pages.push(p);
     else if(pages[pages.length-1]!=='...') pages.push('...');
   }
   pages.forEach(function(p){
-    if(p==='...') html+='<button class="pg-btn" disabled>…</button>';
-    else html+='<button class="pg-btn'+(p===cur?' active':'')+'" onclick="'+fn+'('+p+')">'+p+'</button>';
+    if(p==='...') html+='<span class="pg-dots">…</span>';
+    else html+='<button class="pg-btn'+(p===cur?' pg-aktif':'')+'" onclick="'+fn+'('+p+')">'+p+'</button>';
   });
-  html+='<button class="pg-btn" '+(cur===total?'disabled':'')+' onclick="'+fn+'('+(cur+1)+')">›</button>';
+  html+='<button class="pg-btn" '+(cur===total?'disabled':'')+' onclick="'+fn+'('+(cur+1)+')" title="'+tv('cmn_sonraki_sayfa','Sonraki sayfa')+'">›</button>';
+  html+='<button class="pg-btn" '+(cur===total?'disabled':'')+' onclick="'+fn+'('+total+')" title="'+tv('cmn_son_sayfa','Son sayfa')+'">»</button>';
   html+='</div>';
   return html;
 }
@@ -851,7 +909,7 @@ function renderTable(){
       +'<td class="cell-spool">'+hl(k.spool)+'</td>'
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
       +'<td>'+matBadge(k.malzeme)+'</td>'
-      +'<td><span style="color:var(--txd);font-size:12px;">'+(k.kalite?hl(k.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
+      +'<td><span style="color:var(--txd);font-size:14px;">'+(k.kalite?hl(k.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
       +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+hl(k.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+hl(k.kesimOlcusu)+' mm</td>'
@@ -877,9 +935,9 @@ function updateStats(){
   var bek=borular.filter(k=>k.durum==='bekliyor').length;
   var listede=borular.filter(k=>k.durum==='listede').length;
   var tam=borular.filter(k=>k.durum==='tamamlandi').length;
-  document.getElementById('stTop').textContent=bek;
-  document.getElementById('stFiltre').textContent=filtreData.length;
-  document.getElementById('stListede').textContent=listede;
+  _animCount(document.getElementById('stTop'), bek);
+  _animCount(document.getElementById('stFiltre'), filtreData.length);
+  _animCount(document.getElementById('stListede'), listede);
   var _pt=document.getElementById('progTam');if(_pt)_pt.style.width=(borular.length?Math.round(tam/borular.length*100):0)+'%';
   document.getElementById('badge-bekliyor').textContent=bek;
   document.getElementById('badge-listeler').textContent=kesimListeleri.filter(kl=>!kl.kapali).length;

@@ -138,7 +138,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .cl-or  {border-left:3px solid var(--or)  !important;}
 .cl-leg {border-left:3px solid var(--leg) !important;}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--txd);}
-.cell-tersane{font-size:10px;font-weight:700;}
+.cell-tersane{font-size:14px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
 .cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--marka-p);}
@@ -149,10 +149,13 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 .empty-icon{font-size:42px;margin-bottom:14px;opacity:.4;}
 .tbl-footer{padding:11px 16px;font-size:14px;color:var(--txd);border-top:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center;}
 .pagination{display:flex;align-items:center;gap:4px;}
-.pg-btn{min-width:32px;height:32px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0 8px;}
-.pg-btn:hover{border-color:var(--ac);color:var(--ac);}
-.pg-btn.active{background:var(--ac);border-color:var(--ac);color:#fff;}
-.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-info{font-size:14px;color:var(--txd);}
+.pg-info strong{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--tx);margin:0 2px;}
+.pg-btn{min-width:34px;height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:15px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.pg-btn:hover:not(:disabled):not(.pg-aktif){border-color:var(--ac);color:var(--ac);background:var(--sur);}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed;}
+.pg-btn.pg-aktif{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700;box-shadow:0 1px 3px rgba(45,142,255,.25);}
+.pg-dots{color:var(--txd);padding:0 6px;letter-spacing:2px;user-select:none;font-size:14px;}
 .kl-card{background:var(--sur);border:1px solid var(--bor);border-radius:16px;margin-bottom:12px;overflow:hidden;transition:border-color .2s;}
 .kl-card:hover{border-color:rgba(245,158,11,.4);}
 .kl-head{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .15s;}
@@ -213,15 +216,42 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 @keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
 :root{--marka-p:#0e7490;}.si-purple{background:rgba(168,85,247,.15);color:var(--marka-p);}.tip-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:14px;font-weight:700;white-space:nowrap;}.tip-oto{background:rgba(22,163,110,.12);color:var(--gr);}.tip-plaka{background:rgba(245,158,11,.12);color:var(--warn);}.tip-manuel{background:rgba(100,116,139,.12);color:var(--txm);}.klt-tip{background:rgba(14,116,144,.10);color:var(--marka-p);border-radius:20px;padding:4px 11px;font-size:14px;font-weight:600;}
 /* ── Hero Row ─────────────────────────────── */
-.hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
-.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
-.hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
-.stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
-.stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+/* ── Hero + Stat Pill — 14. oturum devreler.html standardı ─────── */
+.stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
+.hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--marka-p); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }
+.hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--marka-p); }
+.hero-name { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--marka-p); }
+.hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
+.stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--marka-p); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+.stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; }
+.stat-pill-ic svg { width:16px; height:16px; stroke-width:2.2; }
+.stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.stat-pill-lab { font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
+.stat-pill-num small { font-size:14px; font-weight:500; color:var(--txd); margin-left:3px; letter-spacing:0; text-transform:lowercase; font-family:system-ui,sans-serif; }
+@media (max-width: 1280px) {
+  .hero-left { width:170px; padding:9px 11px; gap:9px; }
+  .hero-left svg { width:24px; height:24px; }
+  .hero-name { font-size:19px; }
+  .stat-pill { padding:8px 10px; gap:8px; min-width:118px; }
+  .stat-pill-ic { width:28px; height:28px; }
+  .stat-pill-ic svg { width:14px; height:14px; }
+  .stat-pill-num { font-size:18px; }
+}
+
+/* Pill ikon renkleri */
+.ic-blue   { background:#2D8EFF; }
+.ic-green  { background:var(--gr); }
+.ic-amber  { background:var(--warn); }
+.ic-red    { background:var(--re); }
+.ic-cyan   { background:var(--marka-p); }
+.ic-violet { background:#7c3aed; }
+.ic-orange { background:#f97316; }
+
+/* ── İskelet (shimmer) ── */
+@keyframes _skShimmer { 0% { background-position:-340px 0; } 100% { background-position:calc(340px + 100%) 0; } }
+.sk { display:inline-block; background:linear-gradient(90deg, var(--bor) 0%, var(--sur2) 50%, var(--bor) 100%); background-size:340px 100%; animation:_skShimmer 1.4s ease-in-out infinite; border-radius:4px; color:transparent !important; }
+.sk-num { min-width:48px; height:20px; }
 
 
 </style>
@@ -241,30 +271,33 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     <a href="index.html" data-i18n="nav_anasayfa">Ana Sayfa</a><span>/</span><span class="cur" data-i18n="mk_baslik">Markalama</span>
   </div>
 
-  <!-- Hero Row -->
-  <div class="hero-row">
+  <!-- Hero + Stat Pill Row -->
+  <div class="stat-row">
     <div class="hero-left">
-      <div class="hero-icon" style="background:rgba(14,116,144,.12);">&#127991;&#65039;</div>
-      <div>
-        <div class="hero-eyebrow" data-i18n="nav_boru_imalati">Boru İmalatı</div>
-        <div class="hero-word" style="color:var(--marka-p);" data-i18n="mk_hero_word">Markalama</div>
-      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <div class="hero-name" data-i18n="mk_hero_word">Markalama</div>
     </div>
     <div class="hero-stats">
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--re);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stTop" style="color:var(--re);">&#8212;</div>
-        <div class="stat-pill-lbl" data-i18n="mk_stat_bekleyen">Toplam Bekleyen</div>
+        <div class="stat-pill-ic ic-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="mk_stat_bekleyen_short">Bekleyen</div>
+          <div class="stat-pill-num"><span id="stTop" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stFiltre" style="color:var(--ac);">&#8212;</div>
-        <div class="stat-pill-lbl" data-i18n="mk_stat_filtrelenen">Filtrelenen</div>
+        <div class="stat-pill-ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="mk_stat_filtrelenen">Filtrelenen</div>
+          <div class="stat-pill-num"><span id="stFiltre" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--marka-p);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stListede" style="color:var(--marka-p);">&#8212;</div>
-        <div class="stat-pill-lbl" data-i18n="mk_stat_listede">Listede Olan</div>
+        <div class="stat-pill-ic ic-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="mk_stat_listede_short">Listede</div>
+          <div class="stat-pill-num"><span id="stListede" class="sk sk-num">—</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -405,6 +438,20 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
 <script>
 'use strict';
+
+// ── İSKELET + DEĞER ATAMA HELPER'LARI (14. oturum devreler.html standardı) ──
+var _trFmt = new Intl.NumberFormat('tr-TR');
+function _skTemizle(el) { if (el && el.classList) el.classList.remove('sk','sk-num','sk-bar'); }
+function _animCount(el, hedef, opt) {
+  if (!el) return;
+  opt = opt || {};
+  var prefix = opt.prefix || '';
+  var suffix = opt.suffix || '';
+  var fmt = opt.fmt || _trFmt.format;
+  _skTemizle(el);
+  el.textContent = prefix + fmt(hedef) + suffix;
+}
+
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 // ════ VERİ ════
 // tip: 'otomatik' | 'plaka' | 'manuel'
@@ -542,7 +589,7 @@ function tersaneBadge(ad){
   for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
   var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
   var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
-  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
 }
 function matBadge(malzeme){
   var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(malzeme) : '';
@@ -677,12 +724,14 @@ function pgHtml(cur, total, onClickFn){
   var pages = Math.ceil(total/PG);
   if(pages<=1) return '';
   var btns='';
-  btns+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+onClickFn+'('+(cur-1)+')">&#8249;</button>';
+  btns+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+onClickFn+'(1)" title="'+tv('cmn_ilk_sayfa','İlk sayfa')+'">«</button>';
+  btns+='<button class="pg-btn" '+(cur===1?'disabled':'')+' onclick="'+onClickFn+'('+(cur-1)+')" title="'+tv('cmn_onceki_sayfa','Önceki sayfa')+'">‹</button>';
   for(var i=1;i<=pages;i++){
-    if(pages>7&&i>2&&i<pages-1&&Math.abs(i-cur)>1){if(i===3||i===pages-2)btns+='<span style="color:var(--txd);padding:0 4px;">…</span>';continue;}
-    btns+='<button class="pg-btn'+(i===cur?' active':'')+'" onclick="'+onClickFn+'('+i+')">'+i+'</button>';
+    if(pages>7&&i>2&&i<pages-1&&Math.abs(i-cur)>1){if(i===3||i===pages-2)btns+='<span class="pg-dots">…</span>';continue;}
+    btns+='<button class="pg-btn'+(i===cur?' pg-aktif':'')+'" onclick="'+onClickFn+'('+i+')">'+i+'</button>';
   }
-  btns+='<button class="pg-btn" '+(cur===pages?'disabled':'')+' onclick="'+onClickFn+'('+(cur+1)+')">&#8250;</button>';
+  btns+='<button class="pg-btn" '+(cur===pages?'disabled':'')+' onclick="'+onClickFn+'('+(cur+1)+')" title="'+tv('cmn_sonraki_sayfa','Sonraki sayfa')+'">›</button>';
+  btns+='<button class="pg-btn" '+(cur===pages?'disabled':'')+' onclick="'+onClickFn+'('+pages+')" title="'+tv('cmn_son_sayfa','Son sayfa')+'">»</button>';
   return '<div class="pagination">'+btns+'</div>';
 }
 var sortFns={
@@ -1213,9 +1262,9 @@ function updateStats(){
   var bek=markalamalar.filter(function(m){return m.durum==='bekliyor';}).length;
   var listede=markalamalar.filter(function(m){return m.durum==='listede';}).length;
   var tam=markalamalar.filter(function(m){return m.durum==='tamamlandi';}).length;
-  document.getElementById('stTop').textContent=bek;
-  document.getElementById('stFiltre').textContent=filtreData.length;
-  document.getElementById('stListede').textContent=listede;
+  _animCount(document.getElementById('stTop'), bek);
+  _animCount(document.getElementById('stFiltre'), filtreData.length);
+  _animCount(document.getElementById('stListede'), listede);
   document.getElementById('badge-bekliyor').textContent=bek;
   document.getElementById('badge-listeler').textContent=markalamaListeleri.filter(function(ml){return !ml.kapali;}).length;
   document.getElementById('badge-tamamlandi').textContent=markalamaListeleri.filter(function(ml){return ml.kapali;}).length;

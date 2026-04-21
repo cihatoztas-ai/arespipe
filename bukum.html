@@ -132,7 +132,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .data-table tbody tr{transition:background .15s;}
 .data-table tbody tr:hover{background:var(--sur2);}
 .cell-no{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--txd);}
-.cell-tersane{font-size:10px;font-weight:700;}
+.cell-tersane{font-size:14px;font-weight:700;}
 .cell-emir{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--txm);}
 .cell-spool{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:400;color:var(--ac);}
 .cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--bukum-c);}
@@ -227,16 +227,42 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     .mb-bakir  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(217,119,6,.1);color:var(--warn); }
     .mb-alum   { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(22,163,110,.1);color:var(--gr); }
     .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--sur2);color:var(--txd); }
-/* ── Hero Row ─────────────────────────────── */
-.hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
-.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
-.hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
-.stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
-.stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+/* ── Hero + Stat Pill — 14. oturum devreler.html standardı ─────── */
+.stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
+.hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--bukum-c); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }
+.hero-left svg { width:26px; height:26px; flex-shrink:0; color:var(--bukum-c); }
+.hero-name { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; line-height:1; letter-spacing:.3px; color:var(--bukum-c); }
+.hero-stats { display:flex; gap:6px; flex:1; min-width:0; }
+.stat-pill { background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bukum-c); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; align-items:center; gap:10px; }
+.stat-pill-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; }
+.stat-pill-ic svg { width:16px; height:16px; stroke-width:2.2; }
+.stat-pill-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.stat-pill-lab { font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-pill-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
+.stat-pill-num small { font-size:14px; font-weight:500; color:var(--txd); margin-left:3px; letter-spacing:0; text-transform:lowercase; font-family:system-ui,sans-serif; }
+@media (max-width: 1280px) {
+  .hero-left { width:170px; padding:9px 11px; gap:9px; }
+  .hero-left svg { width:24px; height:24px; }
+  .hero-name { font-size:19px; }
+  .stat-pill { padding:8px 10px; gap:8px; min-width:118px; }
+  .stat-pill-ic { width:28px; height:28px; }
+  .stat-pill-ic svg { width:14px; height:14px; }
+  .stat-pill-num { font-size:18px; }
+}
+
+/* Pill ikon renkleri */
+.ic-blue   { background:#2D8EFF; }
+.ic-green  { background:var(--gr); }
+.ic-amber  { background:var(--warn); }
+.ic-red    { background:var(--re); }
+.ic-cyan   { background:#0891b2; }
+.ic-violet { background:var(--bukum-c); }
+.ic-orange { background:#f97316; }
+
+/* ── İskelet (shimmer) ── */
+@keyframes _skShimmer { 0% { background-position:-340px 0; } 100% { background-position:calc(340px + 100%) 0; } }
+.sk { display:inline-block; background:linear-gradient(90deg, var(--bor) 0%, var(--sur2) 50%, var(--bor) 100%); background-size:340px 100%; animation:_skShimmer 1.4s ease-in-out infinite; border-radius:4px; color:transparent !important; }
+.sk-num { min-width:48px; height:20px; }
 
 </style>
 <script src="ares-store.js"></script>
@@ -255,30 +281,33 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     <a href="index.html" data-i18n="bk_home">Ana Sayfa</a><span>/</span><span class="cur" data-i18n="bk_breadcrumb">Büküm</span>
   </div>
 
-  <!-- Hero Row -->
-  <div class="hero-row">
+  <!-- Hero + Stat Pill Row -->
+  <div class="stat-row">
     <div class="hero-left">
-      <div class="hero-icon" style="background:rgba(124,58,237,.12);">&#128260;</div>
-      <div>
-        <div class="hero-eyebrow" data-i18n="nav_boru_imalati">Boru İmalatı</div>
-        <div class="hero-word" style="color:var(--bukum-c);" data-i18n="bk_hero_word">Büküm</div>
-      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-6 6-6 9 0s6 6 9 0"/></svg>
+      <div class="hero-name" data-i18n="bk_hero_word">Büküm</div>
     </div>
     <div class="hero-stats">
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bukum-c);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stTop" style="color:var(--bukum-c);">—</div>
-        <div class="stat-pill-lbl" data-i18n="bk_stat_top">Toplam Büküm</div>
+        <div class="stat-pill-ic ic-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="bk_stat_top_short">Bekleyen</div>
+          <div class="stat-pill-num"><span id="stTop" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stSpool" style="color:var(--ac);">—</div>
-        <div class="stat-pill-lbl" data-i18n="bk_stat_projeler">Projeler</div>
+        <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16l7-3 7 3z"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="bk_stat_projeler">Projeler</div>
+          <div class="stat-pill-num"><span id="stSpool" class="sk sk-num">—</span></div>
+        </div>
       </div>
       <div class="stat-pill">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gr);border-radius:2px 0 0 2px;"></div>
-        <div class="stat-pill-val" id="stTam" style="color:var(--gr);">—</div>
-        <div class="stat-pill-lbl" data-i18n="bk_stat_tamamlanan">Bükülenler</div>
+        <div class="stat-pill-ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="stat-pill-body">
+          <div class="stat-pill-lab" data-i18n="bk_stat_tamamlanan_short">Bükülen</div>
+          <div class="stat-pill-num"><span id="stTam" class="sk sk-num">—</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -404,6 +433,19 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 
 'use strict';
 
+// ── İSKELET + DEĞER ATAMA HELPER'LARI (14. oturum devreler.html standardı) ──
+var _trFmt = new Intl.NumberFormat('tr-TR');
+function _skTemizle(el) { if (el && el.classList) el.classList.remove('sk','sk-num','sk-bar'); }
+function _animCount(el, hedef, opt) {
+  if (!el) return;
+  opt = opt || {};
+  var prefix = opt.prefix || '';
+  var suffix = opt.suffix || '';
+  var fmt = opt.fmt || _trFmt.format;
+  _skTemizle(el);
+  el.textContent = prefix + fmt(hedef) + suffix;
+}
+
 
 function tersaneBadge(ad){
   var palette=[
@@ -417,7 +459,7 @@ function tersaneBadge(ad){
   for(var i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))%palette.length;
   var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
   var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
-  return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
 }
 function matBadge(m) {
   // Canonical kodlar (3. oturum — ares-normalize.js): karbon, paslanmaz, bakir, alum, diger
@@ -796,10 +838,11 @@ function renderKesilenler(){
 
 function updateStats(){
   var top=filtreData.length;
-  document.getElementById('stTop').textContent=top;
-  document.getElementById('stSpool').textContent=top;
+  _animCount(document.getElementById('stTop'), top);
+  _animCount(document.getElementById('stSpool'), top);
   var tumTop=bukumler.length;
   var tumTam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
+  _animCount(document.getElementById('stTam'), tumTam);
   var _pt=document.getElementById('progTam');if(_pt)_pt.style.width=(tumTop?Math.round(tumTam/tumTop*100):0)+'%';
   var bek=bukumler.filter(function(b){return b.durum==='bekliyor';}).length;
   var tam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
