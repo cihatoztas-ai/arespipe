@@ -390,8 +390,8 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
   <div class="panel" id="panel-kesilenler">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Tamamlanan Büküm</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);">&#10003; Bükülenler</div>
+        <div style="font-size:14px;color:var(--txd);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;" data-i18n="bk_tamamlanan_baslik">Tamamlanan Büküm</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--gr);" data-i18n="bk_bukulenler">&#10003; Bükülenler</div>
       </div>
     </div>
 
@@ -400,20 +400,20 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div class="filter-row" style="margin-top:0;">
         <div class="search-wrap" style="max-width:360px;">
           <svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="kfArama" placeholder="Spool no, fason no, malzeme..." oninput="applyKesilenFilters()">
+          <input class="search-input" id="kfArama" data-i18n-placeholder="bk_ara_placeholder_done" placeholder="Spool no, fason no, malzeme..." oninput="applyKesilenFilters()">
         </div>
-        <div class="filter-group"><div class="filter-label">Kaynak</div>
+        <div class="filter-group"><div class="filter-label" data-i18n="bk_kaynak">Kaynak</div>
           <select class="filter-select" id="kfKaynak" onchange="applyKesilenFilters()">
-            <option value="">Kaynak</option>
+            <option value="" data-i18n="bk_kaynak">Kaynak</option>
             <option value="spool">Spool</option>
             <option value="fason">Fason</option>
           </select>
         </div>
-        <div class="filter-group"><div class="filter-label">Malzeme</div><select class="filter-select" id="kfMalzeme" onchange="applyKesilenFilters()"><option value="">Malzeme</option></select></div>
-        <div class="filter-group"><div class="filter-label">Kalite</div><select class="filter-select" id="kfKalite" onchange="applyKesilenFilters()"><option value="">Kalite</option></select></div>
-        <div class="filter-group"><div class="filter-label">Çap</div><select class="filter-select" id="kfCap" onchange="applyKesilenFilters()"><option value="">Çap</option></select></div>
+        <div class="filter-group"><div class="filter-label" data-i18n="cmn_th_malzeme">Malzeme</div><select class="filter-select" id="kfMalzeme" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_th_malzeme">Malzeme</option></select></div>
+        <div class="filter-group"><div class="filter-label" data-i18n="cmn_kalite">Kalite</div><select class="filter-select" id="kfKalite" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_kalite">Kalite</option></select></div>
+        <div class="filter-group"><div class="filter-label" data-i18n="cmn_cap">Çap</div><select class="filter-select" id="kfCap" onchange="applyKesilenFilters()"><option value="" data-i18n="cmn_cap">Çap</option></select></div>
         <div class="filter-spacer"></div>
-        <button class="btn-outline" onclick="['kfMalzeme','kfKalite','kfCap','kfKaynak'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();">&#8635; Sıfırla</button>
+        <button class="btn-outline" onclick="['kfMalzeme','kfKalite','kfCap','kfKaynak'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('kfArama').value='';applyKesilenFilters();" data-i18n="cmn_sifirla">&#8635; Sıfırla</button>
       </div>
     </div>
 
@@ -422,18 +422,18 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
         <thead><tr>
           <th class="no-sort" style="width:36px;">#</th>
           <th data-i18n="bk_col_isemir_fb">İş Emir / FB No</th>
-          <th>Spool No</th>
-          <th style="color:var(--leg);">Spool ID</th>
-          <th>Malzeme</th>
-          <th>Kalite</th>
-          <th style="color:var(--ac);">Çap</th>
-          <th>Et Kal.</th>
-          <th style="color:var(--bukum-c);">Uzunluk</th>
-          <th style="color:var(--gr);">Büküm Tarihi</th>
+          <th data-i18n="bk_col_spool">Spool No</th>
+          <th style="color:var(--leg);" data-i18n="bk_col_spoolid">Spool ID</th>
+          <th data-i18n="bk_col_mat">Malzeme</th>
+          <th data-i18n="bk_col_grade">Kalite</th>
+          <th style="color:var(--ac);" data-i18n="bk_col_diam">Çap</th>
+          <th data-i18n="bk_col_thk">Et Kal.</th>
+          <th style="color:var(--bukum-c);" data-i18n="bk_col_len">Uzunluk</th>
+          <th style="color:var(--gr);" data-i18n="bk_col_tarih">Büküm Tarihi</th>
         </tr></thead>
         <tbody id="kesilenBody"></tbody>
       </table>
-      <div id="kesilenEmpty" class="empty-state" style="display:none;"><div class="empty-icon">&#10003;</div><div style="font-weight:600;">Henüz bükülen boru yok</div></div>
+      <div id="kesilenEmpty" class="empty-state" style="display:none;"><div class="empty-icon">&#10003;</div><div style="font-weight:600;" data-i18n="bk_bos_bukulen">Henüz bükülen boru yok</div></div>
       <div id="kesilenFooter" class="tbl-footer" style="display:none;"><span id="kesilenCount"></span></div>
     </div>
   </div>
