@@ -181,7 +181,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 /* ═══════════════════════════════════════════
    MODALLER
 ═══════════════════════════════════════════ */
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:28px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
 .modal-sub{font-size:14px;color:var(--txd);margin-bottom:20px;}
@@ -386,7 +386,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')"><span data-i18n="ks_tab_bekleyen">✂️ Kesim Bekleyen</span> <span class="mtbadge" id="badge-bekliyor" style="background:rgba(229,62,62,.15);color:var(--re);"></span></button>
     <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')"><span data-i18n="ks_tab_listeler">📋 Kesim Listeleri</span> <span class="mtbadge" id="badge-listeler" style="background:rgba(217,119,6,.15);color:var(--warn);"></span></button>
     <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')"><span data-i18n="ks_tab_kesilmis">✓ Kesilen Listeler</span> <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(22,163,110,.12);color:var(--gr);"></span></button>
-    <button class="main-tab" id="tab-tekil" onclick="switchTab('tekil')"><span data-i18n="ks_tab_tekil">⚡ Tekil Kesilenler</span> <span class="mtbadge" id="badge-tekil" style="background:rgba(45,142,255,.12);color:var(--ac);"></span></button>
+    <button class="main-tab" id="tab-tekil" onclick="switchTab('tekil')" style="display:none;"><span data-i18n="ks_tab_tekil">⚡ Tekil Kesilenler</span> <span class="mtbadge" id="badge-tekil" style="background:rgba(45,142,255,.12);color:var(--ac);"></span></button>
   </div>
 
   <!-- PANEL: BEKLEYEN -->
@@ -547,44 +547,56 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
 <!-- ═══ KESİM LİSTESİ DETAY MODAL ═══ -->
 <div class="modal-ov" id="klDetayModal" style="display:none;">
-  <div class="modal-box" style="max-width:900px;width:100%;max-height:87vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+  <div class="modal-box" style="max-width:95vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
     <!-- Başlık -->
-    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="padding:16px 24px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:34px;height:34px;border-radius:8px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
         <div>
-          <div class="modal-title" id="klDetayTitle" style="font-size:20px;"></div>
-          <div id="klDetayMeta" style="font-size:14px;color:var(--txd);margin-top:2px;"></div>
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <div class="modal-title" id="klDetayTitle" style="font-size:20px;"></div>
+            <div id="klDetayMeta" style="font-size:14px;color:var(--txd);"></div>
+          </div>
         </div>
       </div>
-      <button onclick="closeKLDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;">✕</button>
+      <button onclick="closeKLDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
     </div>
     <!-- İlerleme + Aksiyonlar -->
-    <div id="klDetayActionBar" style="padding:12px 20px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-shrink:0;">
+    <div style="padding:10px 20px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;">
-          <div class="kl-progress-label"><span data-i18n="ks_kesim_durum">Kesim durumu</span><span id="mdlProgLbl" style="font-weight:700;color:var(--warn);"></span></div>
-          <div class="kl-progress-bar"><div class="kl-progress-fill" id="mdlProgFill" style="width:0%;"></div></div>
+        <div style="flex:1;min-width:180px;">
+          <div class="kl-progress-label"><span style="font-size:14px;color:var(--txm);" data-i18n="ks_kesim_durum">Kesim durumu</span><span id="mdlProgLbl" style="font-weight:700;color:var(--warn);font-size:14px;"></span></div>
+          <div class="kl-progress-bar" style="margin-top:4px;"><div class="kl-progress-fill" id="mdlProgFill" style="width:0%;"></div></div>
         </div>
-        <button class="btn-outline" onclick="mdlTumunuSec(true)" style="height:34px;font-size:14px;">☑ Tümünü İşaretle</button>
+        <button class="btn-outline" onclick="mdlTumunuSec(true)" style="height:34px;font-size:14px;">☑ Tümünü Seç</button>
         <button class="btn-outline" onclick="mdlTumunuSec(false)" style="height:34px;font-size:14px;">☐ Tümünü Kaldır</button>
         <button class="btn-outline" onclick="mdlFormAc()" style="height:34px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Boru Kesim Formu</button>
-        <button class="btn-green" onclick="mdlKaydet()" style="height:34px;font-size:14px;padding:0 16px;border-radius:8px;">✓ Listeyi Kaydet &amp; Kapat</button>
+        <button class="btn-green" onclick="mdlKaydet()" style="height:34px;font-size:14px;padding:0 18px;border-radius:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Seçilileri Kesildi Kaydet
+        </button>
       </div>
     </div>
-    <!-- Tablo -->
-    <div style="overflow:auto;flex:1;padding:0;">
-      <table class="data-table" style="min-width:700px;">
+    <!-- Tablo — tüm sütunlar -->
+    <div style="overflow:auto;flex:1;">
+      <table class="data-table" style="min-width:1100px;">
         <thead><tr>
-          <th class="no-sort cb-cell" data-i18n="ks_col_cut_done">Kesildi</th>
+          <th class="no-sort cb-cell" style="width:40px;">✓</th>
           <th class="no-sort" style="width:36px;">#</th>
+          <th data-i18n="cmn_th_tersane">Tersane</th>
+          <th data-i18n="ks_chip_isemir">İş Emri</th>
           <th data-i18n="cmn_th_spool_no">Spool No</th>
           <th data-i18n="cmn_th_spool_id">Spool ID</th>
+          <th data-i18n="ks_filter_mat">Malzeme</th>
+          <th data-i18n="ks_filter_grade">Kalite</th>
+          <th data-i18n="ks_chip_cap">Çap</th>
+          <th data-i18n="cmn_th_et">Et Kal.</th>
           <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
           <th data-i18n="ks_th_a_ucu">A Ucu</th>
           <th data-i18n="ks_th_b_ucu">B Ucu</th>
+          <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
         </tr></thead>
         <tbody id="klDetayTableBody"></tbody>
       </table>
@@ -599,28 +611,37 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 
 <!-- ═══ KESİLEN DETAY MODAL ═══ -->
 <div class="modal-ov" id="arcDetayModal" style="display:none;">
-  <div class="modal-box" style="max-width:860px;width:100%;max-height:87vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+  <div class="modal-box" style="max-width:95vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+    <div style="padding:16px 24px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:34px;height:34px;border-radius:8px;background:rgba(22,163,110,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <div>
-          <div class="modal-title" id="arcDetayTitle" style="font-size:20px;"></div>
-          <div id="arcDetayMeta" style="font-size:14px;color:var(--txd);margin-top:2px;"></div>
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <div class="modal-title" id="arcDetayTitle" style="font-size:20px;"></div>
+            <div id="arcDetayMeta" style="font-size:14px;color:var(--txd);"></div>
+          </div>
         </div>
       </div>
-      <button onclick="closeArcDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;">✕</button>
+      <button onclick="closeArcDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
     </div>
     <div style="overflow:auto;flex:1;">
-      <table class="data-table" style="min-width:700px;">
+      <table class="data-table" style="min-width:1100px;">
         <thead><tr>
           <th class="no-sort" style="width:36px;">#</th>
+          <th data-i18n="cmn_th_tersane">Tersane</th>
+          <th data-i18n="ks_chip_isemir">İş Emri</th>
           <th data-i18n="cmn_th_spool_no">Spool No</th>
           <th data-i18n="cmn_th_spool_id">Spool ID</th>
+          <th data-i18n="ks_filter_mat">Malzeme</th>
+          <th data-i18n="ks_filter_grade">Kalite</th>
+          <th data-i18n="ks_chip_cap">Çap</th>
+          <th data-i18n="cmn_th_et">Et Kal.</th>
           <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
           <th data-i18n="ks_th_a_ucu">A Ucu</th>
           <th data-i18n="ks_th_b_ucu">B Ucu</th>
+          <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
         </tr></thead>
         <tbody id="arcDetayTableBody"></tbody>
       </table>
@@ -1480,14 +1501,25 @@ function _mdlRenderTable(klId){
   var ucLbl=getUcMap();
   document.getElementById('klDetayTableBody').innerHTML=klB.map(function(k,i){
     var ch=kl.kesilmisIds.has(k.id);
+    var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+    var sertBadge=k.sertifika
+      ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
+      :'<span style="color:var(--txd);font-size:14px;">—</span>';
     return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mdlrow-'+k.id+'">'
       +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mdlToggleRow(\''+k.id+'\',this.checked)"></td>'
       +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td class="cell-spool">'+esc(k.spool)+'</td>'
-      +'<td class="cell-spoolid">'+esc(k.spoolId)+'</td>'
-      +'<td class="cell-kesim">'+esc(k.kesimOlcusu)+' mm</td>'
+      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
+      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
+      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
+      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
+      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
+      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
       +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
+      +'<td style="text-align:center;">'+sertBadge+'</td>'
       +'</tr>';
   }).join('');
 }
@@ -1534,13 +1566,22 @@ function openArcDetay(klId, arcIdx){
   document.getElementById('arcDetayMeta').textContent=malz+' · '+cap+' · '+esc(arc.tarih)+' · '+durStr;
   var ucLbl=getUcMap();
   document.getElementById('arcDetayTableBody').innerHTML=arcB.map(function(k,i){
+    var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+    var sertBadge=k.sertifika?'<span style="color:var(--warn);font-size:16px;">★</span>':'<span style="color:var(--txd);font-size:14px;">—</span>';
     return '<tr>'
       +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td class="cell-spool">'+esc(k.spool)+'</td>'
-      +'<td class="cell-spoolid">'+esc(k.spoolId)+'</td>'
-      +'<td class="cell-kesim">'+esc(k.kesimOlcusu)+' mm</td>'
+      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
+      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
+      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
+      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
+      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
+      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
       +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
+      +'<td style="text-align:center;">'+sertBadge+'</td>'
       +'</tr>';
   }).join('');
   document.getElementById('arcDetayCount').textContent=arcB.length+' '+tv('bk_unit_boru','boru');
