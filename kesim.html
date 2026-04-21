@@ -524,7 +524,7 @@ async function veriYukle() {
     // kesim_kalemleri → spool_malzemeleri → spooller → devreler → projeler → tersaneler
     var res = await supa
       .from('kesim_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, rev, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm, sertifikali), spooller(id, spool_no, spool_id, pipeline_no, rev, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad,kisa_ad))))')
       .order('olusturma', { ascending: false });
 
     if (res.error) { console.warn('[ARES] Kesim yükleme:', res.error); return; }
@@ -541,7 +541,7 @@ async function veriYukle() {
         id:          k.id,
         supaId:      k.id,
         isEmir:      dv.is_emri_no   || '—',
-        tersane:     trs.ad          || '—',
+        tersane:     trs.kisa_ad || trs.ad || '—',
         spool:       spoolLabel      || sp.spool_no || '—',
         spoolId:     ARES.markaId(sp.spool_id),
         malzeme:     mal.malzeme     || '—',
@@ -838,7 +838,7 @@ function updateStats(){
   document.getElementById('stTop').textContent=bek;
   document.getElementById('stFiltre').textContent=filtreData.length;
   document.getElementById('stListede').textContent=listede;
-  document.getElementById('progTam').style.width=(borular.length?Math.round(tam/borular.length*100):0)+'%';
+  var _pt=document.getElementById('progTam');if(_pt)_pt.style.width=(borular.length?Math.round(tam/borular.length*100):0)+'%';
   document.getElementById('badge-bekliyor').textContent=bek;
   document.getElementById('badge-listeler').textContent=kesimListeleri.filter(kl=>!kl.kapali).length;
   document.getElementById('badge-tamamlandi').textContent=kesimListeleri.filter(kl=>kl.kapali).length;

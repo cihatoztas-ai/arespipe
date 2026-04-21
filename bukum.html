@@ -497,7 +497,7 @@ async function veriYukle() {
     if (!supa) return;
     var res = await supa
       .from('bukum_kalemleri')
-      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad))))')
+      .select('*, spool_malzemeleri(tanim, malzeme, kalite, dis_cap_mm, et_mm), spooller(id, spool_no, spool_id, pipeline_no, devre_id, devreler(devre_no, is_emri_no, projeler(proje_no, tersaneler(ad,kisa_ad))))')
       .order('olusturma', { ascending: false });
     if (res.error) { console.warn('[ARES] Büküm yükleme:', res.error); return; }
     bukumler = (res.data || []).map(function(k) {
@@ -514,7 +514,7 @@ async function veriYukle() {
         ref:      dv.is_emri_no    || '—',
         spoolNo:  spoolLabel       || sp.spool_no || '—',
         spoolId:  sp.spool_id      || '',
-        tersane:  trs.ad           || '—',
+        tersane:  trs.kisa_ad || trs.ad || '—',
         malzeme:  mal.malzeme      || '—',
         kalite:   mal.kalite       || '—',
         cap:      mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
@@ -1224,7 +1224,7 @@ function updateStats(){
   // Progress bar: tüm bükümlerde tamamlanma oranı
   var tumTop=bukumler.length;
   var tumTam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
-  document.getElementById('progTam').style.width=(tumTop?Math.round(tumTam/tumTop*100):0)+'%';
+  var _pt=document.getElementById('progTam');if(_pt)_pt.style.width=(tumTop?Math.round(tumTam/tumTop*100):0)+'%';
   // Badge'ler — filtresiz
   var bek=bukumler.filter(function(b){return b.durum==='bekliyor';}).length;
   var tam=bukumler.filter(function(b){return b.durum==='tamamlandi';}).length;
