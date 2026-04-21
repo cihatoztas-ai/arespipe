@@ -229,14 +229,15 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
     .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--sur2);color:var(--txd); }
 /* ── Hero Row ─────────────────────────────── */
 .hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{flex:1;display:flex;align-items:center;gap:12px;}
+.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
 .hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
 .hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:88px;position:relative;overflow:hidden;}
+.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
+.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
 .stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
 .stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+
 </style>
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
@@ -555,7 +556,7 @@ async function veriYukle() {
         spoolId:  sp.spool_id      || '',
         tersane:  trs.kisa_ad || trs.ad || '—',
         malzeme:  mal.malzeme      || '—',
-        kalite:   mal.kalite       || '—',
+        kalite:   mal.kalite       || '',
         cap:      mal.dis_cap_mm   ? String(parseFloat(mal.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         kalinlik: mal.et_mm        ? String(mal.et_mm).replace('.',',') + ' mm' : '—',
         olcu:     k.olcu_mm        || 0,
@@ -682,11 +683,11 @@ function renderRow(b,i){
   return '<tr data-ci="'+Math.min(_ci++,19)+'">'
     +'<td class="cell-no">'+(i+1)+'</td>'
     +tersaneCell
-    +'<td>'+refBadge+'</td>'
+    +'<td class="cell-emir">'+esc(ref)+'</td>'
     +spoolCell
     +'<td>'+matBadge(b.malzeme)+'</td>'
-    +'<td><span style="color:var(--txm);font-size:14px;">'+hl(b.kalite)+'</span></td>'
-    +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+hl(b.cap)+'</td>'
+    +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite?hl(b.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
+    +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+hl(b.cap)+'</td>'
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
     +'<td class="cell-kesim">'+b.olcu+' mm</td>'
     +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(b.tarih||'—')+'</td>'
@@ -918,8 +919,8 @@ function openFasonDetay(id){
     return '<tr style="'+(done?'opacity:.5;':'')+'">'
       +'<td class="cell-no">'+(i+1)+'</td>'
       +'<td>'+matBadge(b.malzeme)+'</td>'
-      +'<td><span style="color:var(--txm);font-size:14px;">'+esc(b.kalite)+'</span></td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+esc(b.cap)+'</td>'
+      +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite||'—')+'</span></td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(b.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+esc(b.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+b.olcu+' mm</td>'
       +'<td style="text-align:center;">'
@@ -1199,8 +1200,8 @@ function renderKesilenler(){
       +'<td><span class="ref-badge '+(isFason?'ref-fason':'ref-emir')+'">'+esc(ref)+'</span>'+(isFason&&firma?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(firma)+'</div>':'')+'</td>'
       +(isFason?'<td style="color:var(--txd);font-size:14px;">—</td><td style="color:var(--txd);font-size:14px;">—</td>':'<td class="cell-spool">'+esc(b.spoolNo||'')+'</td><td class="cell-spoolid">'+esc(b.spoolId||'')+'</td>')
       +'<td>'+matBadge(b.malzeme)+'</td>'
-      +'<td><span style="color:var(--txm);font-size:14px;">'+esc(b.kalite)+'</span></td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+esc(b.cap)+'</td>'
+      +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite||'—')+'</span></td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(b.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+esc(b.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+b.olcu+' mm</td>'
       +'<td style="font-size:14px;color:var(--gr);white-space:nowrap;">&#10003; '+esc(b.bukulduZaman||'')+'</td>'

@@ -214,14 +214,15 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 :root{--marka-p:#0e7490;}.si-purple{background:rgba(168,85,247,.15);color:var(--marka-p);}.tip-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:14px;font-weight:700;white-space:nowrap;}.tip-oto{background:rgba(22,163,110,.12);color:var(--gr);}.tip-plaka{background:rgba(245,158,11,.12);color:var(--warn);}.tip-manuel{background:rgba(100,116,139,.12);color:var(--txm);}.klt-tip{background:rgba(14,116,144,.10);color:var(--marka-p);border-radius:20px;padding:4px 11px;font-size:14px;font-weight:600;}
 /* ── Hero Row ─────────────────────────────── */
 .hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{flex:1;display:flex;align-items:center;gap:12px;}
+.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
 .hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
 .hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:88px;position:relative;overflow:hidden;}
+.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
+.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
 .stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
 .stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
+
 
 </style>
 <script src="ares-store.js"></script>
@@ -735,7 +736,7 @@ function renderTable(){
       +'<td class="cell-spoolid">'+hl(m.spoolId)+'</td>'
       +'<td style="font-size:14px;color:var(--tx);">'+hl(m.malzemeAdi||m.yuzey||'—')+'</td>'
       +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+(m.cap?hl(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
       +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
       +'<td style="text-align:center;"><button onclick="manuelMarkala(\''+m.id+'\')" title="'+tv('mk_isle',tv('mk_isle','Markalandı olarak işaretle'))+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,100,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button></td>'
       +'</tr>';
@@ -938,7 +939,7 @@ function renderML(){
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
             +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
             +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+            +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
             +'</tr>';
         }).join('');
@@ -1060,7 +1061,7 @@ function renderArc(){
             +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
             +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
             +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-            +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+            +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
             +'<td style="font-size:14px;color:var(--txd);">'+esc(m.manuelTarih||'—')+'</td>'
             +'</tr>';
@@ -1116,7 +1117,7 @@ function renderArc(){
               +'<td class="cell-spoolid">'+esc(m.spoolId)+'</td>'
               +'<td style="font-size:14px;color:var(--tx);">'+esc(m.malzemeAdi||m.yuzey||'—')+'</td>'
               +'<td>'+(m.tip==='manuel'?'<span style="color:var(--txd);font-size:14px;">—</span>':matBadge(m.malzeme))+'</td>'
-              +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
+              +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+(m.cap?esc(m.cap):'<span style="color:var(--txd);font-size:14px;">—</span>')+'</td>'
               +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(m.tarih||'—')+'</td>'
               +'</tr>';
           }).join('');

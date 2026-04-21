@@ -286,12 +286,12 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 [data-theme=light-anthracite]{--ks-c:#c2410c;}
 [data-theme=dark]{--ks-c:#fb923c;}
 .hero-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.hero-left{flex:1;display:flex;align-items:center;gap:12px;}
+.hero-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .hero-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
 .hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
 .hero-word{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.4px;line-height:1;}
-.hero-stats{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;}
-.stat-pill{display:flex;flex-direction:column;padding:9px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:88px;position:relative;overflow:hidden;}
+.hero-stats{display:flex;gap:8px;flex:1;flex-wrap:wrap;}
+.stat-pill{display:flex;flex-direction:column;padding:9px 18px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;min-width:120px;flex:1;position:relative;overflow:hidden;}
 .stat-pill-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
 .stat-pill-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txd);}
 
@@ -852,7 +852,7 @@ function renderTable(){
       +'<td class="cell-spoolid">'+hl(k.spoolId)+'</td>'
       +'<td>'+matBadge(k.malzeme)+'</td>'
       +'<td><span style="color:var(--txd);font-size:12px;">'+(k.kalite?hl(k.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
-      +'<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:600;color:var(--ac);">'+hl(k.cap)+'</td>'
+      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+hl(k.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+hl(k.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+hl(k.kesimOlcusu)+' mm</td>'
       +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucMap[k.ucA]||k.ucA)+'</span>':'')+'</td>'
@@ -1236,7 +1236,7 @@ function renderTekil(){
         +'<td style="color:var(--txd);font-size:14px;">'+(i+1)+'</td>'
         +'<td style="font-size:14px;font-weight:600;">'+esc(k.spool||k.spoolNo||'—')+'</td>'
         +'<td style="font-size:14px;">'+matBadge(k.malzeme||'—')+'</td>'
-        +'<td style="font-size:13px;font-weight:600;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+        +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="font-size:14px;font-weight:700;color:var(--warn);">'+esc(String(k.kesimOlcusu||'—'))+' mm</td>'
         +'<td style="font-size:14px;">'+esc(ucMap[k.ucA]||k.ucA||'—')+'</td>'
         +'<td style="font-size:14px;">'+esc(ucMap[k.ucB]||k.ucB||'—')+'</td>'
