@@ -127,10 +127,10 @@ function semaFallback() {
 devreler: id, tenant_id, proje_id, devre_no, ad, zone, zone_no, is_emri_no, durum, aktif_basamak, termin (tarih), agirlik (numeric), malzeme, yuzey, notlar, ilerleme (integer 0-100), silindi, olusturma, guncelleme
 [NOT: devreler tablosunda silindi=true olanları hariç tut]
 
-spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, dis_cap_mm, et_kalinligi_mm, agirlik_kg, malzeme, kalite_standart, yuzey_islemi, aktif_basamak, durduruldu, alistirma, imalat_kg, imalat_di, argon_di, gazalti_di, olusturma
+spooller: id, tenant_id, devre_id, spool_no, spool_id, pipeline_no, rev, dis_cap_mm, et_kalinligi_mm, agirlik_kg, malzeme, kalite, yuzey_islemi, aktif_basamak, durduruldu, alistirma, imalat_kg, imalat_di, argon_di, gazalti_di, olusturma
 [NOT: spooller tablosunda silindi kolonu YOK]
 [NOT: ağırlık için agirlik_kg kullan]
-[NOT: kalite için kalite_standart kullan]
+[NOT: kalite kolonu adı direkt 'kalite']
 [NOT: yüzey için yuzey_islemi kullan]
 
 projeler: id, tenant_id, tersane_id, proje_no, gemi_adi, proje_tipi, ana_yuklenici, teslim_tarihi, aktif, olusturma
@@ -163,7 +163,7 @@ KURALLAR:
 6. Maksimum 100 satır dön: LIMIT 100
 7. Tablo adlarını doğru kullan, şemada olmayan tablo kullanma
 8. JOIN kullanırken tenant_id kontrolü yap
-9. spooller: ağırlık='agirlik_kg', kalite='kalite_standart', yüzey='yuzey_islemi' (başka isim kullanma)
+9. spooller: ağırlık='agirlik_kg', kalite='kalite', yüzey='yuzey_islemi' (başka isim kullanma)
 10. devreler: termin tarihi='termin', zone='zone', silindi=true olanları hariç tut: AND (d.silindi IS NULL OR d.silindi = false)
 11. projeler ve tersaneler tablolarında 'silindi' kolonu YOK — bu filtreyi kullanma
 12. spooller tablosunda 'silindi' kolonu YOK — spooller için silindi filtresi KULLANMA
