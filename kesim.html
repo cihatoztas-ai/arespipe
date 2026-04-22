@@ -1925,9 +1925,12 @@ function calculateCutOptimization(pieces, stocks, config) {
         var capacity = s.length - trim;
         var remaining = currentRequired.slice();
         for(var j=0; j<remaining.length; j++){
-          if(remaining[j]+kerf <= capacity){
+          // Kerf kesimler ARASINDA olur — ilk parça kerf'siz, sonrakiler kerf'li
+          // (Sektörel: borunun ucu zaten kesik. Tek parça çıkarılıyorsa kerf gerekmez.)
+          var need = (pattern.length === 0) ? remaining[j] : (remaining[j] + kerf);
+          if(need <= capacity){
             pattern.push(remaining[j]);
-            capacity -= (remaining[j]+kerf);
+            capacity -= need;
           }
         }
         if(pattern.length > 0){
@@ -2735,7 +2738,7 @@ function kldHesapla(){
       kldPlanRender();
       kldUpdateStats();
 
-      // Kullanılmayan parça boruları tespit et — algoritma bazılarını sığdıramamış olabilir (kerf vb.)
+      // Kullanılmayan parça boruları tespit et — algoritma bazılarını sığdıramamış olabilir
       var usedStockIds = {};
       result.plans.forEach(function(p){ if(p.stock && p.stock.id) usedStockIds[p.stock.id] = true; });
       var unusedParca = parcaBorular.filter(function(pb){ return !usedStockIds[pb.id]; });
@@ -2746,7 +2749,7 @@ function kldHesapla(){
           warnEl.innerHTML = '<div class="kld-unused-warn">'
             +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
             +'<div><strong>'+unusedParca.length+' '+tv('kld_unused_count','parça boru kullanılamadı')+':</strong> '+esc(lensTxt)+'<br>'
-            +'<span style="font-size:12px;color:var(--txd);">'+tv('kld_unused_reason','Kerf payı dahil hiçbir kesim ölçüsü bu parça borulara sığmadı. Kerf değerini düşürmeyi veya parça boru uzunluğunu artırmayı deneyebilirsin.')+'</span></div>'
+            +'<span style="font-size:12px;color:var(--txd);">'+tv('kld_unused_reason','Bu parça boruya sığacak uygun bir kesim ölçüsü yok. Listede daha kısa kesim varsa parça boruya konabilir; yoksa parça boru atıl kalır.')+'</span></div>'
             +'</div>';
           warnEl.style.display = 'block';
         } else {
