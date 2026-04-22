@@ -239,18 +239,32 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .kld-status.cut{background:rgba(22,163,110,.12);color:var(--gr);}
 .kld-status.nocut{background:rgba(229,62,62,.12);color:var(--re);}
 /* Kesim Planı pane */
-.kld-param-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.kld-param-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
 .kld-param-item{padding:10px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;}
 .kld-param-item label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;font-weight:500;}
 .kld-param-item input{width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:6px 8px;font-size:14px;font-weight:600;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s;}
 .kld-param-item input:focus{border-color:var(--ac);}
-.kld-parca-btn{width:100%;padding:6px 10px;background:none;border:1.5px dashed var(--bor);border-radius:6px;color:var(--txd);font-size:13px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;height:30px;}
-.kld-parca-btn:hover{border-color:var(--leg);color:var(--leg);}
-.kld-parca-list{display:flex;flex-direction:column;gap:5px;}
-.kld-parca-row{display:flex;gap:5px;align-items:center;}
-.kld-parca-row input{flex:1;padding:5px 8px;border:1px solid var(--bor);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--tx);background:var(--sur);outline:none;}
-.kld-parca-row input:focus{border-color:var(--leg);}
-.kld-parca-row button{width:28px;height:28px;border-radius:6px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);color:var(--re);cursor:pointer;font-size:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+/* Parça Borular ayrı kart — görünürlük yüksek */
+.kld-parca-card{padding:12px 14px;background:linear-gradient(135deg,rgba(124,58,237,.04),rgba(124,58,237,.01));border:1.5px solid rgba(124,58,237,.3);border-radius:10px;margin-bottom:14px;}
+.kld-parca-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;}
+.kld-parca-title{display:flex;align-items:center;gap:8px;color:var(--leg);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.4px;}
+.kld-parca-title svg{width:16px;height:16px;}
+.kld-parca-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;border-radius:10px;background:var(--leg);color:#fff;font-size:11px;font-weight:700;padding:0 7px;}
+.kld-parca-btn{padding:6px 14px;background:var(--leg);border:none;border-radius:6px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:5px;height:30px;}
+.kld-parca-btn:hover{background:#6d28d9;transform:translateY(-1px);}
+.kld-parca-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.kld-parca-list{display:flex;flex-direction:column;gap:6px;}
+.kld-parca-row{display:flex;gap:6px;align-items:center;background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:5px 8px;}
+.kld-parca-row .pi{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:11px;background:rgba(124,58,237,.15);color:var(--leg);font-weight:700;font-size:11px;flex-shrink:0;}
+.kld-parca-row input{flex:1;border:none;background:transparent;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--tx);outline:none;font-weight:600;}
+.kld-parca-row .unit{font-size:11px;color:var(--txd);font-weight:500;}
+.kld-parca-row button{width:26px;height:26px;border-radius:6px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);color:var(--re);cursor:pointer;font-size:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.kld-parca-row button:hover{background:rgba(229,62,62,.18);}
+.kld-parca-empty{padding:14px 8px;text-align:center;color:var(--txd);font-size:12px;font-style:italic;border:1.5px dashed var(--bor);border-radius:7px;}
+/* Plan altı uyarı: kullanılmayan parça borular */
+.kld-unused-warn{margin-top:10px;padding:10px 14px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.3);border-left:3px solid var(--warn);border-radius:8px;display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--tx);}
+.kld-unused-warn svg{width:18px;height:18px;color:var(--warn);flex-shrink:0;margin-top:1px;}
+.kld-unused-warn strong{color:var(--warn);}
 /* Footer */
 .kld-foot{padding:12px 22px;border-top:1px solid var(--bor);background:var(--sur2);display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
 .kld-foot-info{flex:1;font-size:14px;color:var(--txd);min-width:200px;}
@@ -775,15 +789,28 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
             <label data-i18n="kld_param_minartik">Min. Artık (mm)</label>
             <input type="number" id="kldMinArtik" value="1500" min="0">
           </div>
-          <div class="kld-param-item" style="display:flex;flex-direction:column;gap:4px;">
-            <label data-i18n="kld_param_parca">Parça Borular</label>
-            <button class="kld-parca-btn" onclick="kldAddParca()" data-i18n="kld_param_parca_ekle">+ Ekle</button>
-          </div>
         </div>
-        <div class="kld-parca-list" id="kldParcalar" style="margin-bottom:14px;"></div>
+        <!-- Parça Borular — kart -->
+        <div class="kld-parca-card">
+          <div class="kld-parca-head">
+            <div class="kld-parca-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18M3 16h18"/><path d="M8 3v18M16 3v18"/></svg>
+              <span data-i18n="kld_param_parca">Parça Borular</span>
+              <span class="kld-parca-count" id="kldParcaCount">0</span>
+              <span style="font-size:12px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;" data-i18n="kld_parca_hint">— önceki kesimlerden artan boruları ekle, planda öncelikli kullanılır</span>
+            </div>
+            <button class="kld-parca-btn" id="kldBtnParcaEkle" onclick="kldAddParca()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span data-i18n="kld_param_parca_ekle">Parça Boru Ekle</span>
+            </button>
+          </div>
+          <div class="kld-parca-list" id="kldParcalar"></div>
+          <div class="kld-parca-empty" id="kldParcaEmpty" data-i18n="kld_parca_empty">Henüz parça boru eklenmedi. Önceki kesimlerden kalan kullanılabilir borular varsa ekle.</div>
+        </div>
         <!-- V3 kart render alanı — mevcut _renderV3 kullanılır -->
         <div id="kldStatStrip" style="display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--bor);border-radius:10px;overflow:hidden;margin-bottom:14px;"></div>
         <div id="kldCards" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <div id="kldUnusedWarn" style="display:none;"></div>
         <div id="kldPlanEmpty" style="display:none;padding:28px;text-align:center;color:var(--txd);font-size:14px;border:1.5px dashed var(--bor);border-radius:10px;">
           <span data-i18n="kld_plan_bos">Henüz kesim planı yok. Parametreleri girip <strong>Yeniden Hesapla</strong> butonuna bas.</span>
         </div>
@@ -1206,29 +1233,62 @@ function switchTab(tab){
 // ════════════════════════════════════
 // FİLTRE
 // ════════════════════════════════════
+// Cascade filter helper: belirtilen filtre HARİÇ tüm aktif filtreleri uygula, kalan boruları döndür
+// Sadece havuzdaki bekleyen boruları temel alır (listede/tamamlanmış olanlar dahil değil)
+function _havuzExcept(exclude){
+  return borular.filter(function(k){
+    if(k.durum !== 'bekliyor') return false;
+    if(exclude !== 'tersane'  && gv('fTersane')   && k.tersane    !== gv('fTersane'))   return false;
+    if(exclude !== 'malzeme'  && gv('fMalzeme')   && k.malzemeKod !== gv('fMalzeme'))   return false;
+    if(exclude !== 'kalite'   && gv('fKalite')    && k.kalite     !== gv('fKalite'))    return false;
+    if(exclude !== 'cap'      && gv('fCap')       && k.cap        !== gv('fCap'))       return false;
+    if(exclude !== 'kalinlik' && gv('fKalinlik')  && k.kalinlik   !== gv('fKalinlik'))  return false;
+    if(exclude !== 'sert'     && gv('fSert')==='evet'  && !k.sertifika) return false;
+    if(exclude !== 'sert'     && gv('fSert')==='hayir' &&  k.sertifika) return false;
+    if(exclude !== 'uc'       && gv('fUc')        && k.ucA !== gv('fUc') && k.ucB !== gv('fUc')) return false;
+    if(exclude !== 'isemir'   && secilenIsEmir.size > 0 && !secilenIsEmir.has(k.isEmir)) return false;
+    return true;
+  });
+}
+
 function populateFilters(){
-  function fill(id,vals,labelFn){
-    var s=document.getElementById(id);
-    var first=s.options[0];
-    while(s.options.length>1)s.remove(1);
-    vals.forEach(function(v){if(v){var t=labelFn?labelFn(v):v;s.add(new Option(t,v));}});
+  function fill(id, vals, labelFn){
+    var s = document.getElementById(id); if(!s) return;
+    var oldVal = s.value;
+    while(s.options.length > 1) s.remove(1);
+    vals.forEach(function(v){
+      if(v){
+        var t = labelFn ? labelFn(v) : v;
+        s.add(new Option(t, v));
+      }
+    });
+    // Eski seçim hala mevcutsa koru, değilse boş bırak
+    if(oldVal && vals.indexOf(oldVal) !== -1) s.value = oldVal;
   }
-  fill('fTersane',uniq('tersane').sort());
-  // fMalzeme: value = kod, text = lokalize etiket
-  var malzemeKodlar = [...new Set(borular.map(b => b.malzemeKod).filter(Boolean))].sort();
+
+  // Her filtre için kendisi hariç diğer aktif filtreler uygulanmış havuzdan benzersizleri al
+  fill('fTersane',  [...new Set(_havuzExcept('tersane') .map(k=>k.tersane) .filter(Boolean))].sort());
+
+  var malzemeKodlar = [...new Set(_havuzExcept('malzeme').map(k=>k.malzemeKod).filter(Boolean))].sort();
   fill('fMalzeme', malzemeKodlar, function(kod){
     return (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kod, kod) : kod;
   });
-  fill('fKalite',uniq('kalite').sort());
-  fill('fCap',uniq('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
-  fill('fKalinlik',uniq('kalinlik').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
-  // fUc: ucu değerlerini topla (ucA + ucB birleşimi)
-  var tumUclar=[...new Set(borular.flatMap(b=>[b.ucA,b.ucB]).filter(Boolean))].sort();
-  fill('fUc', tumUclar, function(k){ return getUcMap()[k]||k; });
+
+  fill('fKalite',   [...new Set(_havuzExcept('kalite')  .map(k=>k.kalite)  .filter(Boolean))].sort());
+  fill('fCap',      [...new Set(_havuzExcept('cap')     .map(k=>k.cap)     .filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+  fill('fKalinlik', [...new Set(_havuzExcept('kalinlik').map(k=>k.kalinlik).filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+
+  // Uç tipi: ucA + ucB birleşimi
+  var tumUclar = [...new Set(_havuzExcept('uc').flatMap(k=>[k.ucA,k.ucB]).filter(Boolean))].sort();
+  fill('fUc', tumUclar, function(k){ return getUcMap()[k] || k; });
+
   buildMs();
 }
 
-function allIsEmirList(){return [...new Set(borular.map(b=>b.isEmir))].sort();}
+function allIsEmirList(){
+  // İş emri multi-select için de cascade — diğer aktif filtreler uygulanmış havuzdan
+  return [...new Set(_havuzExcept('isemir').map(b=>b.isEmir).filter(Boolean))].sort();
+}
 function buildMs(){
   var q=(document.getElementById('msQ')||{}).value||'';q=q.toLowerCase();
   var el=document.getElementById('msList');if(!el)return;
@@ -1241,9 +1301,9 @@ function buildMs(){
       +esc(v)+'</div>';
   }).join('');
 }
-function toggleMsItem(v){secilenIsEmir.has(v)?secilenIsEmir.delete(v):secilenIsEmir.add(v);buildMs();updateMsTrig();applyFilters();}
-function msAll(){allIsEmirList().forEach(v=>secilenIsEmir.add(v));buildMs();updateMsTrig();applyFilters();}
-function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();}
+function toggleMsItem(v){secilenIsEmir.has(v)?secilenIsEmir.delete(v):secilenIsEmir.add(v);buildMs();updateMsTrig();applyFilters();populateFilters();}
+function msAll(){allIsEmirList().forEach(v=>secilenIsEmir.add(v));buildMs();updateMsTrig();applyFilters();populateFilters();}
+function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();populateFilters();}
 function updateMsTrig(){
   var trig=document.getElementById('msTrigger'),txt=document.getElementById('msTxt'),cnt=document.getElementById('msCnt'),n=secilenIsEmir.size;
   if(!n){txt.textContent=tv('cmn_th_is_emri','İş Emri');cnt.style.display='none';trig.classList.remove('has-sel');}
@@ -1275,6 +1335,7 @@ function onFC(){
     if(el)el.classList.toggle('has-val',el.value!=='');
   });
   applyFilters();
+  populateFilters(); // Cascade: diğer filtre seçeneklerini güncelle
 }
 function resetAll(){
   ['fTersane','fMalzeme','fKalite','fCap','fKalinlik','fUc','fSert'].forEach(id=>{
@@ -1282,6 +1343,7 @@ function resetAll(){
     if(el){el.value='';el.classList.remove('has-val');}
   });
   secilenIsEmir.clear();updateMsTrig();buildMs();pgBoru=1;clearSearch();
+  populateFilters(); // Reset sonrası tüm filtre seçeneklerini yeniden doldur
 }
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
@@ -1293,8 +1355,8 @@ function renderChips(){
   cont.style.display=chips.length?'flex':'none';
   cont.innerHTML=chips.join('');
 }
-function clearChip(id){var el=document.getElementById(id);if(el){el.value='';el.classList.remove('has-val');}applyFilters();}
-function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();}
+function clearChip(id){var el=document.getElementById(id);if(el){el.value='';el.classList.remove('has-val');}applyFilters();populateFilters();}
+function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();populateFilters();}
 
 function applyFilters(){
   if(typeof tv === 'function') Object.assign(ucMap, getUcMap()); // dil değişince güncelle
@@ -2306,6 +2368,10 @@ function openKLDetay(klId, opts){
     document.getElementById('kldMinArtik').value = 1500;
     document.getElementById('kldParcalar').innerHTML = '';
   }
+  kldUpdateParcaUI();
+  // Ekle butonu read-only modda disable
+  var btnEkle = document.getElementById('kldBtnParcaEkle');
+  if(btnEkle) btnEkle.disabled = _kldReadOnly;
 
   // Read-only modda parametre input'larını disable et
   ['kldStokBoy','kldKerf','kldTrim','kldMinArtik'].forEach(function(id){
@@ -2449,6 +2515,7 @@ function kldPlanRender(){
   var statEl = document.getElementById('kldStatStrip');
   var cardsEl = document.getElementById('kldCards');
   var emptyEl = document.getElementById('kldPlanEmpty');
+  var warnEl = document.getElementById('kldUnusedWarn');
 
   if(!_kldPlans || !_kldPlans.length){
     if(statEl) statEl.innerHTML = '';
@@ -2456,6 +2523,7 @@ function kldPlanRender(){
     if(statEl) statEl.style.display = 'none';
     if(cardsEl) cardsEl.style.display = 'none';
     if(emptyEl) emptyEl.style.display = 'block';
+    if(warnEl){ warnEl.style.display = 'none'; warnEl.innerHTML = ''; }
     return;
   }
   if(statEl) statEl.style.display = 'grid';
@@ -2565,18 +2633,48 @@ function kldUpdateStats(){
   }
 }
 
-// Parça boru ekleme
-function kldAddParca(){ kldAddParcaVal(''); }
+// Parça boru ekleme — yeni kart tasarımı
+function kldAddParca(){
+  if(_kldReadOnly) return;
+  kldAddParcaVal('');
+}
 function kldAddParcaVal(val){
   _kldParcaSayac++;
   var rowId = 'kldParca'+_kldParcaSayac;
   var row = document.createElement('div');
   row.id = rowId;
   row.className = 'kld-parca-row';
-  row.innerHTML = '<input type="number" placeholder="'+tv('kld_parca_ph','Uzunluk mm')+'" min="1" '+(val?'value="'+val+'"':'')+'>'
-    +'<button onclick="document.getElementById(\''+rowId+'\').remove()" title="'+tv('cmn_sil','Sil')+'">✕</button>';
+  var idxNum = document.querySelectorAll('#kldParcalar .kld-parca-row').length + 1;
+  var disabledAttr = _kldReadOnly ? ' disabled' : '';
+  var btnDisabledAttr = _kldReadOnly ? ' disabled style="opacity:.4;cursor:not-allowed;"' : '';
+  row.innerHTML = '<span class="pi">'+idxNum+'</span>'
+    +'<input type="number" placeholder="'+tv('kld_parca_ph','Uzunluk girin (örn: 2400)')+'" min="1" '+(val?'value="'+val+'"':'')+disabledAttr+'>'
+    +'<span class="unit">mm</span>'
+    +'<button onclick="kldRemoveParca(\''+rowId+'\')" title="'+tv('cmn_sil','Sil')+'"'+btnDisabledAttr+'>✕</button>';
   document.getElementById('kldParcalar').appendChild(row);
-  if(!val) row.querySelector('input').focus();
+  if(!val && !_kldReadOnly) row.querySelector('input').focus();
+  kldUpdateParcaUI();
+  // Mevcut plan stale olur (parça boru değişti)
+  if(_kldPlans && _kldPlans.length){ _kldPlanStale = true; kldUpdateStaleUI(); }
+}
+function kldRemoveParca(rowId){
+  if(_kldReadOnly) return;
+  var el = document.getElementById(rowId);
+  if(el) el.remove();
+  // Sıra numaralarını yeniden çiz
+  document.querySelectorAll('#kldParcalar .kld-parca-row .pi').forEach(function(pi, i){
+    pi.textContent = (i+1);
+  });
+  kldUpdateParcaUI();
+  if(_kldPlans && _kldPlans.length){ _kldPlanStale = true; kldUpdateStaleUI(); }
+}
+function kldUpdateParcaUI(){
+  var rows = document.querySelectorAll('#kldParcalar .kld-parca-row');
+  var n = rows.length;
+  var cnt = document.getElementById('kldParcaCount');
+  var emp = document.getElementById('kldParcaEmpty');
+  if(cnt) cnt.textContent = n;
+  if(emp) emp.style.display = n === 0 ? 'block' : 'none';
 }
 
 // Yeniden Hesapla — Sadece lokal state güncelle, DB'ye YAZMA (kaydet butonu yapar)
@@ -2636,13 +2734,40 @@ function kldHesapla(){
       _kldPlanStale = true;
       kldPlanRender();
       kldUpdateStats();
+
+      // Kullanılmayan parça boruları tespit et — algoritma bazılarını sığdıramamış olabilir (kerf vb.)
+      var usedStockIds = {};
+      result.plans.forEach(function(p){ if(p.stock && p.stock.id) usedStockIds[p.stock.id] = true; });
+      var unusedParca = parcaBorular.filter(function(pb){ return !usedStockIds[pb.id]; });
+      var warnEl = document.getElementById('kldUnusedWarn');
+      if(warnEl){
+        if(unusedParca.length){
+          var lensTxt = unusedParca.map(function(pb){ return pb.uzunluk+'mm'; }).join(', ');
+          warnEl.innerHTML = '<div class="kld-unused-warn">'
+            +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+            +'<div><strong>'+unusedParca.length+' '+tv('kld_unused_count','parça boru kullanılamadı')+':</strong> '+esc(lensTxt)+'<br>'
+            +'<span style="font-size:12px;color:var(--txd);">'+tv('kld_unused_reason','Kerf payı dahil hiçbir kesim ölçüsü bu parça borulara sığmadı. Kerf değerini düşürmeyi veya parça boru uzunluğunu artırmayı deneyebilirsin.')+'</span></div>'
+            +'</div>';
+          warnEl.style.display = 'block';
+        } else {
+          warnEl.style.display = 'none';
+          warnEl.innerHTML = '';
+        }
+      }
+
       // Hesaplama sonrası: Plan stale durumda → Kaydet görünür, Boru Listesi'ne Geç gizli
       var btnKaydet = document.getElementById('kldBtnPlanKaydet');
       var btnGec = document.getElementById('kldBtnBoruListGec');
       if(btnKaydet) btnKaydet.style.display = 'inline-flex';
       if(btnGec) btnGec.style.display = 'none';
       kldUpdateStaleUI();
-      toast(tv('kld_plan_hesaplandi','Plan hesaplandı — kaydetmek için "Planı Kaydet"'),'info');
+
+      // Toast — kullanılmayan parça boru varsa onu da bildir
+      if(unusedParca.length){
+        toast(tv('kld_plan_hesaplandi_uyari','Plan hesaplandı, ancak {n} parça boru kullanılamadı').replace('{n}', unusedParca.length),'warn');
+      } else {
+        toast(tv('kld_plan_hesaplandi','Plan hesaplandı — kaydetmek için "Planı Kaydet"'),'info');
+      }
     } catch(e){
       toast(tv('kld_plan_hata','Plan hatası')+': '+e.message,'error');
     }
