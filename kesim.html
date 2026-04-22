@@ -895,7 +895,7 @@ async function veriYukle() {
 
     // Kesim listeleri — kriter ve boru_ids dahil
     var klRes = await supa.from('kesim_listeleri')
-      .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids')
+      .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids, kesim_plani')
       .eq('tenant_id', ARES.tenantId())
       .order('olusturma', {ascending:false});
 
@@ -911,7 +911,8 @@ async function veriYukle() {
         kesilmisIds: new Set(),
         arsiv: kl.arsiv || [],
         kriter: kl.kriter || {},
-        kapali: kl.kapali || false
+        kapali: kl.kapali || false,
+        kesimPlani: kl.kesim_plani || null
       };
       kesimListeleri.push(obj);
       klMap[kl.id] = obj;
@@ -961,6 +962,23 @@ async function veriYukle() {
     }
 
     klSayac = kesimListeleri.length + 1;
+
+    // kesimPlani.matchedBorular yeniden kur (JSON'dan gelen ID'leri boru nesnelerine çevir)
+    var boruMap={};
+    borular.forEach(function(k){ boruMap[k.id]=k; });
+    kesimListeleri.forEach(function(kl){
+      if(!kl.kesimPlani||!kl.kesimPlani.plans) return;
+      kl.kesimPlani.plans.forEach(function(plan){
+        if(plan.matchedBorular && plan.matchedBorular.length){
+          plan.matchedBorular = plan.matchedBorular.map(function(item){
+            // Eğer zaten nesne ise doğrudan kullan, ID string ise lookup yap
+            if(item && typeof item === 'object' && item.id) return boruMap[item.id]||item;
+            if(typeof item === 'string') return boruMap[item]||null;
+            return null;
+          }).filter(Boolean);
+        }
+      });
+    });
 
     // Aktif listelerdeki borulara 'listede' durumu ata
     var listedeIds = new Set();
