@@ -478,7 +478,6 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th style="text-align:right;"><span data-i18n="bk_unit_boru">Boru</span></th>
           <th style="text-align:right;"><span data-i18n="ks_toplam_kesim">Toplam mm</span></th>
           <th><span data-i18n="cmn_th_tarih">Tarih</span></th>
-          <th style="text-align:center;"><span data-i18n="cmn_durum">Durum</span></th>
           <th class="no-sort" style="text-align:center;width:70px;"><span data-i18n="cmn_th_islem">İşlem</span></th>
         </tr></thead>
         <tbody id="klContainer"></tbody>
@@ -543,6 +542,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
     </div>
     <div style="padding:12px 20px;border-top:1px solid var(--bor);flex-shrink:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span style="font-size:14px;color:var(--txd);flex:1;min-width:0;" id="snAlt"></span>
+      <button onclick="closeSonucModal();openFormModalFresh();" class="btn-outline" style="font-size:14px;">↺ Yeniden Planla</button>
       <button onclick="fmExcelIndir()" class="btn-outline" style="border-color:rgba(22,163,110,.4);color:var(--gr);">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Excel İndir
@@ -1405,14 +1405,6 @@ function renderKL(){
       +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;">'+toplam+'</td>'
       +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--warn);font-weight:600;">'+mm.toLocaleString('tr-TR')+'</td>'
       +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(kl.tarih)+'</td>'
-      +'<td style="text-align:center;">'
-        +'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">'
-          +'<span style="font-size:14px;font-weight:700;color:'+progColor+';">%'+pct+'</span>'
-          +'<div style="width:60px;height:4px;background:var(--bor);border-radius:2px;">'
-            +'<div style="width:'+pct+'%;height:100%;background:'+progColor+';border-radius:2px;"></div>'
-          +'</div>'
-        +'</div>'
-      +'</td>'
       +'<td style="text-align:center;" onclick="event.stopPropagation()">'
         +'<button onclick="openKLDetay(\''+kl.id+'\')" title="Detay &amp; İşlemler" '
           +'style="width:30px;height:30px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" '
@@ -1765,7 +1757,12 @@ function mdlTumunuSec(checked){
   _mdlRenderTable(_mdlKlId);_mdlUpdateProg(_mdlKlId);
 }
 function mdlFormAc(){if(_mdlKlId)openFormModal(_mdlKlId,null);}
-function mdlKaydet(){if(_mdlKlId){closeKLDetay();klKaydet(_mdlKlId);}}
+function mdlKaydet(){
+  if(_mdlKlId){
+    closeKLDetay();
+    klKaydet(_mdlKlId);
+  }
+}
 
 // ════════════════════════════════════
 // KESİLEN DETAY POPUP
@@ -1904,6 +1901,15 @@ function openFormModal(klId, arcIdx){
   _fmKlB = (arcIdx!==null&&arcIdx!==undefined)
     ? borular.filter(function(k){ return kl.arsiv[arcIdx].kesilmisIds.includes(k.id); })
     : borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+
+  // Plan zaten varsa → sonuç önizlemesini aç, formu açma
+  if(kl.kesimPlani && kl.kesimPlani.plans && kl.kesimPlani.plans.length){
+    _fmCurrentPlans=kl.kesimPlani.plans;
+    _fmCurrentParams=kl.kesimPlani.params;
+    openSonucModal(kl, kl.kesimPlani.plans, kl.kesimPlani.params, kl.kesimPlani.tarih);
+    return;
+  }
+
   var mm=_fmKlB.reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); },0);
   var malz=_fmKlB[0]||{};
   var malzLabel=(typeof ARES_NORM!=='undefined'&&malz.malzeme)?ARES_NORM.malzemeEtiket(malz.malzeme):malz.malzeme;
@@ -2029,6 +2035,15 @@ function openSonucModal(kl, plans, params, tarih){
   document.getElementById('sonucModal').style.display='flex';
 }
 function closeSonucModal(){ document.getElementById('sonucModal').style.display='none'; }
+
+// Plan varsa bile formu sıfırdan aç (Yeniden Planla)
+function openFormModalFresh(){
+  if(!_fmKlId) return;
+  var kl=kesimListeleri.find(function(x){ return x.id===_fmKlId; }); if(!kl) return;
+  var savedPlan=kl.kesimPlani; kl.kesimPlani=null; // geçici sıfırla
+  openFormModal(_fmKlId, _fmArcIdx);
+  kl.kesimPlani=savedPlan; // geri koy
+}
 
 // ════════════════════════════════════
 // ŞEMATİK RENDER — kibar çizgi stili
