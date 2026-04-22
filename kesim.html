@@ -184,72 +184,108 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:28px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
 
-/* ── Wizard Modal ── */
-.wz-modal{background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:920px;max-height:91vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4);}
-.wz-head{padding:16px 22px 0;flex-shrink:0;}
-.wz-head-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.wz-kl{display:flex;align-items:center;gap:9px;}
-.wz-kl-icon{width:32px;height:32px;border-radius:8px;background:rgba(194,65,12,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.wz-kl-no{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:800;color:var(--ks);}
-.wz-kl-meta{font-size:13px;color:var(--txm);margin-left:4px;}
-.wz-close{width:30px;height:30px;border-radius:7px;background:none;border:1px solid var(--bor);color:var(--txd);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.wz-close:hover{background:var(--sur2);color:var(--tx);}
-/* Step bar */
-.wz-stepbar{display:flex;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--bor);}
-.wz-step{display:flex;align-items:center;gap:8px;flex:1;position:relative;}
-.wz-step:not(:last-child)::after{content:'';position:absolute;left:calc(16px + 8px);right:0;top:50%;transform:translateY(-50%);height:2px;background:var(--step-todo,#cbd5e1);z-index:0;transition:background .3s;}
-.wz-step.done::after{background:#16a34a;}
-.wz-step.active::after{background:linear-gradient(90deg,#16a34a 0%,var(--step-todo,#cbd5e1) 100%);}
-.wz-step:last-child{flex:0 0 auto;}
-.wz-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;flex-shrink:0;position:relative;z-index:1;border:2px solid;transition:all .3s;}
-.wz-step.done .wz-num{background:#16a34a;border-color:#16a34a;color:#fff;}
-.wz-step.active .wz-num{background:var(--ks);border-color:var(--ks);color:#fff;box-shadow:0 0 0 4px rgba(194,65,12,.15);}
-.wz-step.todo .wz-num{background:var(--sur);border-color:#cbd5e1;color:var(--txd);}
-.wz-step-lbl{display:flex;flex-direction:column;}
-.wz-step-title{font-size:13px;font-weight:700;transition:color .3s;}
-.wz-step.done .wz-step-title{color:#16a34a;}
-.wz-step.active .wz-step-title{color:var(--ks);}
-.wz-step.todo .wz-step-title{color:var(--txd);}
-.wz-step-sub{font-size:11px;color:var(--txd);}
-/* Body / steps */
-.wz-body{overflow-y:auto;flex:1;}
-.wz-sc{display:none;}
-.wz-sc.active{display:block;animation:wzFade .2s ease;}
-@keyframes wzFade{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:translateX(0);}}
-/* Step 1 */
-.wz-s1-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-shrink:0;}
-.wz-s1-prog{flex:1;min-width:0;}
-.wz-s1-prog-lbl{font-size:13px;color:var(--txm);display:flex;justify-content:space-between;margin-bottom:4px;}
-.wz-prog-bar{height:4px;background:var(--bor);border-radius:2px;overflow:hidden;}
-.wz-prog-fill{height:100%;border-radius:2px;transition:width .3s;}
-.wz-tbl-scroll{overflow-y:auto;max-height:360px;}
-.wz-s1-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(22,163,74,.05);border-top:1px solid rgba(22,163,74,.15);font-size:14px;color:var(--txm);}
-/* Step 2 */
-.wz-s2-wrap{padding:20px 24px;}
-.wz-param-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:4px;}
-.wz-param-item label{display:block;font-size:13px;color:var(--txm);margin-bottom:5px;font-weight:500;}
-.wz-parca-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
-.wz-parca-row{display:flex;gap:6px;align-items:center;}
-.wz-parca-input{flex:1;padding:8px 12px;border:1.5px solid var(--bor);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--tx);background:var(--sur);outline:none;transition:border-color .15s;}
-.wz-parca-input:focus{border-color:var(--leg);}
-.wz-hint{padding:10px 14px;border-radius:8px;background:rgba(45,142,255,.05);border:1px solid rgba(45,142,255,.15);font-size:13px;color:var(--txm);margin-top:12px;}
-/* Step 3 */
-.wz-s3-stat{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--bor);}
-.wz-s3-cell{padding:10px 14px;border-right:1px solid var(--bor);border-top:2px solid transparent;}
-.wz-s3-cell:last-child{border-right:none;}
-.wz-s3-cell-lbl{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
-.wz-s3-cell-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1;display:flex;align-items:baseline;gap:3px;}
-.wz-s3-cell-unit{font-size:12px;font-weight:400;color:var(--txd);}
-.wz-s3-cards{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+/* ── Kesim Listesi Detay Modal (iki tab) ── */
+.kld-modal{background:var(--sur);border:1px solid var(--bor);border-radius:14px;width:100%;max-width:1180px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4);}
+.kld-head{padding:16px 22px;border-bottom:1px solid var(--bor);display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.kld-head-icon{width:38px;height:38px;border-radius:9px;background:rgba(194,65,12,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.kld-head-icon svg{width:18px;height:18px;color:var(--ks);}
+.kld-head-txt{flex:1;min-width:0;}
+.kld-head-no{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--ks);line-height:1;}
+.kld-head-meta{font-size:13px;color:var(--txd);margin-top:3px;}
+.kld-head-meta strong{color:var(--tx);font-weight:600;}
+.kld-close{width:32px;height:32px;border-radius:8px;background:var(--sur2);border:1px solid var(--bor);color:var(--txd);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.kld-close:hover{background:var(--re);border-color:var(--re);color:#fff;}
+/* Tabs */
+.kld-tabs{display:flex;background:var(--sur2);border-bottom:1px solid var(--bor);padding:0 22px;flex-shrink:0;}
+.kld-tab{padding:12px 18px;font-size:14px;font-weight:600;color:var(--txm);cursor:pointer;border:none;border-bottom:3px solid transparent;background:none;transition:all .15s;display:flex;align-items:center;gap:8px;font-family:'Barlow',sans-serif;}
+.kld-tab:hover{color:var(--tx);}
+.kld-tab.active{color:var(--ks);border-bottom-color:var(--ks);background:var(--sur);}
+.kld-tab svg{width:14px;height:14px;}
+.kld-tab-count{padding:2px 8px;background:var(--bor);color:var(--tx);border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;line-height:1;min-width:22px;text-align:center;}
+.kld-tab.active .kld-tab-count{background:var(--ks);color:#fff;}
+/* Body */
+.kld-body{overflow-y:auto;flex:1;padding:18px 22px;}
+.kld-pane{display:none;}
+.kld-pane.active{display:block;animation:kldFade .2s ease;}
+@keyframes kldFade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+/* Boru Listesi pane */
+.kld-hint{margin-bottom:14px;padding:10px 14px;background:rgba(45,142,255,.06);border:1px solid rgba(45,142,255,.2);border-left:3px solid var(--ac);border-radius:8px;font-size:13px;color:var(--txm);display:flex;gap:10px;align-items:flex-start;line-height:1.5;}
+.kld-hint svg{width:16px;height:16px;color:var(--ac);flex-shrink:0;margin-top:2px;}
+.kld-hint strong{color:var(--tx);}
+.kld-info{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.kld-info-pill{padding:8px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;min-width:120px;}
+.kld-info-pill.ok{border-left:3px solid var(--gr);}
+.kld-info-pill.warn{border-left:3px solid var(--warn);}
+.kld-info-lab{font-size:12px;color:var(--txd);text-transform:uppercase;letter-spacing:.3px;font-weight:500;margin-bottom:2px;}
+.kld-info-num{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--tx);line-height:1;}
+.kld-info-pill.ok .kld-info-num{color:var(--gr);}
+.kld-info-pill.warn .kld-info-num{color:var(--warn);}
+.kld-info-num small{font-size:13px;color:var(--txd);font-weight:400;margin-left:2px;}
+.kld-tbl-wrap{border:1px solid var(--bor);border-radius:10px;overflow:hidden;background:var(--sur);}
+.kld-tbl-wrap .kld-tbl-scroll{max-height:48vh;overflow-y:auto;}
+.kld-tbl{width:100%;border-collapse:collapse;}
+.kld-tbl th{padding:10px 12px;background:var(--sur2);font-size:12px;font-weight:700;color:var(--txd);letter-spacing:.4px;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:1;}
+.kld-tbl th.c{text-align:center;}
+.kld-tbl td{padding:10px 12px;border-bottom:1px solid var(--bor);font-size:14px;color:var(--tx);}
+.kld-tbl tr:last-child td{border-bottom:none;}
+.kld-tbl tr.cut{background:rgba(22,163,110,.04);}
+.kld-tbl tr.nocut{background:rgba(229,62,62,.04);}
+.kld-cb{width:17px;height:17px;accent-color:var(--gr);cursor:pointer;}
+.kld-cell-num{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--txd);text-align:center;}
+.kld-cell-spoolid{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--ks);}
+.kld-cell-spool{font-size:13px;color:var(--txm);}
+.kld-cell-mm{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--warn);}
+.kld-status{font-size:12px;font-weight:600;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px;display:inline-block;white-space:nowrap;}
+.kld-status.cut{background:rgba(22,163,110,.12);color:var(--gr);}
+.kld-status.nocut{background:rgba(229,62,62,.12);color:var(--re);}
+/* Kesim Planı pane */
+.kld-param-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.kld-param-item{padding:10px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;}
+.kld-param-item label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;font-weight:500;}
+.kld-param-item input{width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:6px 8px;font-size:14px;font-weight:600;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s;}
+.kld-param-item input:focus{border-color:var(--ac);}
+.kld-parca-btn{width:100%;padding:6px 10px;background:none;border:1.5px dashed var(--bor);border-radius:6px;color:var(--txd);font-size:13px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;height:30px;}
+.kld-parca-btn:hover{border-color:var(--leg);color:var(--leg);}
+.kld-parca-list{display:flex;flex-direction:column;gap:5px;}
+.kld-parca-row{display:flex;gap:5px;align-items:center;}
+.kld-parca-row input{flex:1;padding:5px 8px;border:1px solid var(--bor);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--tx);background:var(--sur);outline:none;}
+.kld-parca-row input:focus{border-color:var(--leg);}
+.kld-parca-row button{width:28px;height:28px;border-radius:6px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);color:var(--re);cursor:pointer;font-size:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 /* Footer */
-.wz-foot{padding:12px 20px;border-top:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;background:var(--sur);}
-.wz-foot-left{display:flex;align-items:center;gap:10px;}
-.wz-foot-right{display:flex;align-items:center;gap:8px;}
-.wz-step-prog{font-size:13px;color:var(--txd);font-family:'JetBrains Mono',monospace;}
-.wz-step-prog strong{color:var(--tx);font-size:14px;}
-.wz-bar{height:3px;background:var(--bor);border-radius:2px;overflow:hidden;min-width:60px;flex:1;}
-.wz-bar-fill{height:100%;background:var(--ks);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
-/* ks color for wizard */
+.kld-foot{padding:12px 22px;border-top:1px solid var(--bor);background:var(--sur2);display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.kld-foot-info{flex:1;font-size:14px;color:var(--txd);min-width:200px;}
+.kld-foot-info strong{font-family:'Barlow Condensed',sans-serif;font-size:17px;color:var(--gr);font-weight:700;}
+.kld-foot-info .rem{color:var(--re);font-weight:600;}
+.kld-btn{display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:36px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--bor);background:var(--sur);color:var(--txm);font-family:'Barlow',sans-serif;white-space:nowrap;}
+.kld-btn:hover{border-color:var(--ac);color:var(--ac);}
+.kld-btn svg{width:13px;height:13px;}
+.kld-btn-excel{border-color:rgba(22,163,110,.4);color:var(--gr);}
+.kld-btn-excel:hover{background:rgba(22,163,110,.08);border-color:var(--gr);color:var(--gr);}
+.kld-btn-pdf{border-color:rgba(45,142,255,.4);color:var(--ac);}
+.kld-btn-pdf:hover{background:rgba(45,142,255,.08);border-color:var(--ac);}
+.kld-btn-primary{background:var(--gr);border-color:var(--gr);color:#fff;font-weight:700;padding:0 18px;}
+.kld-btn-primary:hover{background:#138a5c;border-color:#138a5c;color:#fff;}
+.kld-btn-cancel{border-color:rgba(229,62,62,.3);color:var(--re);background:transparent;}
+.kld-btn-cancel:hover{background:rgba(229,62,62,.08);border-color:var(--re);color:var(--re);}
+.kld-btn-recalc{border-color:rgba(194,65,12,.4);color:var(--ks);}
+.kld-btn-recalc:hover{background:rgba(194,65,12,.08);border-color:var(--ks);color:var(--ks);}
+/* Onay popup */
+.kld-cfm-wrap{background:var(--sur);border-radius:14px;width:100%;max-width:520px;box-shadow:0 30px 80px rgba(0,0,0,.4);padding:22px;border-top:4px solid var(--gr);}
+.kld-cfm-icon{width:46px;height:46px;border-radius:11px;background:rgba(22,163,110,.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.kld-cfm-icon svg{width:22px;height:22px;color:var(--gr);}
+.kld-cfm-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--tx);margin-bottom:6px;}
+.kld-cfm-desc{font-size:14px;color:var(--txm);line-height:1.5;margin-bottom:14px;}
+.kld-cfm-desc strong{color:var(--tx);}
+.kld-cfm-box{padding:12px 14px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;margin-bottom:16px;}
+.kld-cfm-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px;}
+.kld-cfm-row .lab{color:var(--txd);}
+.kld-cfm-row .val{font-weight:600;color:var(--tx);}
+.kld-cfm-row .val.big{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;}
+.kld-cfm-row .val.ok{color:var(--gr);}
+.kld-cfm-row .val.rem{color:var(--re);}
+.kld-cfm-sep{border-top:1px solid var(--bor);margin:6px 0;padding-top:6px;}
+.kld-cfm-foot{display:flex;gap:10px;justify-content:flex-end;}
+/* ks color değişkeni — _renderV3 ve diğer kesim ekranlarında kullanılır */
 [data-theme=dark]{--ks:#e05a1e;}
 [data-theme=light-anthracite]{--ks:#c2410c;}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
@@ -658,243 +694,149 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
   </div>
 </div>
 
-<!-- ═══ KESİM LİSTESİ DETAY MODAL ═══ -->
+<!-- ═══ KESİM LİSTESİ DETAY MODAL (iki tab) ═══ -->
 <div class="modal-ov" id="klDetayModal" style="display:none;">
-  <div class="modal-box" style="max-width:95vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-    <!-- Başlık -->
-    <div style="padding:16px 24px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:34px;height:34px;border-radius:8px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+  <div class="kld-modal">
+
+    <!-- HEADER -->
+    <div class="kld-head">
+      <div class="kld-head-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="kld-head-txt">
+        <div class="kld-head-no" id="kldHeadNo">—</div>
+        <div class="kld-head-meta" id="kldHeadMeta">—</div>
+      </div>
+      <button class="kld-close" onclick="closeKLDetay()" title="Kapat">✕</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="kld-tabs">
+      <button class="kld-tab" id="kldTabBoru" onclick="kldSwitchTab('boru')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span data-i18n="kld_tab_boru">Boru Listesi</span>
+        <span class="kld-tab-count" id="kldTabBoruCount">0</span>
+      </button>
+      <button class="kld-tab" id="kldTabPlan" onclick="kldSwitchTab('plan')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span data-i18n="kld_tab_plan">Kesim Planı</span>
+      </button>
+    </div>
+
+    <!-- BODY -->
+    <div class="kld-body">
+
+      <!-- ▶ Pane: Boru Listesi -->
+      <div class="kld-pane" id="kldPaneBoru">
+        <div class="kld-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span data-i18n="kld_hint_boru">Varsayılan olarak tümü <strong>kesildi</strong> sayılır. Tezgahta <strong>kesmediğin</strong> varsa tikini kaldır, ardından <strong>Kesimi Tamamla</strong> butonuna bas.</span>
         </div>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:12px;">
-            <div class="modal-title" id="klDetayTitle" style="font-size:20px;"></div>
-            <div id="klDetayMeta" style="font-size:14px;color:var(--txd);"></div>
+        <div class="kld-info" id="kldInfoRow"></div>
+        <div class="kld-tbl-wrap">
+          <div class="kld-tbl-scroll">
+            <table class="kld-tbl">
+              <thead>
+                <tr>
+                  <th class="c" style="width:40px;"><input type="checkbox" class="kld-cb" id="kldMasterCb" checked onchange="kldTumunuSec(this.checked)" title="Tümünü seç/kaldır"></th>
+                  <th class="c" style="width:36px;">#</th>
+                  <th data-i18n="cmn_th_spool_id">Spool ID</th>
+                  <th data-i18n="cmn_th_spool_no">Spool No</th>
+                  <th data-i18n="ks_filter_grade">Kalite</th>
+                  <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
+                  <th data-i18n="ks_th_a_ucu">A Ucu</th>
+                  <th data-i18n="ks_th_b_ucu">B Ucu</th>
+                  <th class="c" data-i18n="kld_th_durum">Durum</th>
+                </tr>
+              </thead>
+              <tbody id="kldBoruListBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
-      <button onclick="closeKLDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
-    </div>
-    <!-- İlerleme + Aksiyonlar -->
-    <div style="padding:10px 20px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:180px;">
-          <div class="kl-progress-label"><span style="font-size:14px;color:var(--txm);" data-i18n="ks_kesim_durum">Kesim durumu</span><span id="mdlProgLbl" style="font-weight:700;color:var(--warn);font-size:14px;"></span></div>
-          <div class="kl-progress-bar" style="margin-top:4px;"><div class="kl-progress-fill" id="mdlProgFill" style="width:0%;"></div></div>
-        </div>
-        <button class="btn-outline" onclick="mdlTumunuSec(true)" style="height:34px;font-size:14px;">☑ Tümünü Seç</button>
-        <button class="btn-outline" onclick="mdlTumunuSec(false)" style="height:34px;font-size:14px;">☐ Tümünü Kaldır</button>
-        <button class="btn-outline" onclick="mdlIptalOnayla()" style="height:34px;font-size:14px;border-color:rgba(229,62,62,.4);color:var(--re);">🗑 Paketi İptal Et</button>
-        <button class="btn-green" onclick="mdlKaydet()" style="height:34px;font-size:14px;padding:0 18px;border-radius:8px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Seçilileri Kesildi Kaydet
-        </button>
-      </div>
-    </div>
-    <!-- Tablo — tüm sütunlar -->
-    <div style="overflow:auto;flex:1;">
-      <table class="data-table" style="min-width:1100px;">
-        <thead><tr>
-          <th class="no-sort cb-cell" style="width:40px;">✓</th>
-          <th class="no-sort" style="width:36px;">#</th>
-          <th data-i18n="cmn_th_tersane">Tersane</th>
-          <th data-i18n="ks_chip_isemir">İş Emri</th>
-          <th data-i18n="cmn_th_spool_no">Spool No</th>
-          <th data-i18n="cmn_th_spool_id">Spool ID</th>
-          <th data-i18n="ks_filter_mat">Malzeme</th>
-          <th data-i18n="ks_filter_grade">Kalite</th>
-          <th data-i18n="ks_chip_cap">Çap</th>
-          <th data-i18n="cmn_th_et">Et Kal.</th>
-          <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
-          <th data-i18n="ks_th_a_ucu">A Ucu</th>
-          <th data-i18n="ks_th_b_ucu">B Ucu</th>
-          <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
-        </tr></thead>
-        <tbody id="klDetayTableBody"></tbody>
-      </table>
-    </div>
-    <!-- Kesim Planı önizleme (plan varsa gösterilir, yoksa oluştur butonu) -->
-    <div id="klDetayPlan" style="border-top:2px solid var(--bor);flex-shrink:0;">
-      <!-- Plan VAR -->
-      <div id="klDetayPlanView" style="display:none;">
-        <div style="padding:10px 20px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>
-            <span style="font-size:14px;font-weight:700;color:var(--gr);">Kesim Planı</span>
-            <span id="klDetayPlanTarih" style="font-size:14px;color:var(--txd);"></span>
+
+      <!-- ▶ Pane: Kesim Planı -->
+      <div class="kld-pane" id="kldPanePlan">
+        <div class="kld-param-grid">
+          <div class="kld-param-item">
+            <label data-i18n="kld_param_stok">Stok Boyu (mm)</label>
+            <input type="number" id="kldStokBoy" value="6000" min="100">
           </div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="klDetayExcelIndir()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;border-color:rgba(22,163,110,.4);color:var(--gr);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Excel
-            </button>
-            <button onclick="klDetayPdfYazdir()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;border-color:rgba(45,142,255,.4);color:var(--ac);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              PDF
-            </button>
-            <button onclick="mdlYenidenPlanla()" style="display:inline-flex;align-items:center;gap:5px;padding:0 12px;height:30px;border-radius:7px;background:none;border:1.5px solid var(--bor);color:var(--txm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;" onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txm)'">↺ Yeniden Planla</button>
+          <div class="kld-param-item">
+            <label data-i18n="kld_param_kerf">Testere Payı / Kerf (mm)</label>
+            <input type="number" id="kldKerf" value="3" min="0">
+          </div>
+          <div class="kld-param-item">
+            <label data-i18n="kld_param_trim">Uç Fire / Trim (mm)</label>
+            <input type="number" id="kldTrim" value="0" min="0">
+          </div>
+          <div class="kld-param-item">
+            <label data-i18n="kld_param_minartik">Min. Artık (mm)</label>
+            <input type="number" id="kldMinArtik" value="1500" min="0">
+          </div>
+          <div class="kld-param-item" style="display:flex;flex-direction:column;gap:4px;">
+            <label data-i18n="kld_param_parca">Parça Borular</label>
+            <button class="kld-parca-btn" onclick="kldAddParca()" data-i18n="kld_param_parca_ekle">+ Ekle</button>
           </div>
         </div>
-        <div style="padding:12px 20px;overflow-x:auto;">
-          <div id="klDetayPlanSema"></div>
+        <div class="kld-parca-list" id="kldParcalar" style="margin-bottom:14px;"></div>
+        <!-- V3 kart render alanı — mevcut _renderV3 kullanılır -->
+        <div id="kldStatStrip" style="display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--bor);border-radius:10px;overflow:hidden;margin-bottom:14px;"></div>
+        <div id="kldCards" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <div id="kldPlanEmpty" style="display:none;padding:28px;text-align:center;color:var(--txd);font-size:14px;border:1.5px dashed var(--bor);border-radius:10px;">
+          <span data-i18n="kld_plan_bos">Henüz kesim planı yok. Parametreleri girip <strong>Yeniden Hesapla</strong> butonuna bas.</span>
         </div>
       </div>
-      <!-- Plan YOK -->
-      <div id="klDetayPlanEmpty" style="padding:14px 20px;background:var(--sur2);display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span style="font-size:14px;color:var(--txm);">Bu liste için henüz kesim planı oluşturulmadı.</span>
-        </div>
-        <button onclick="mdlFormAc()" class="btn-green" style="height:34px;font-size:14px;padding:0 18px;flex-shrink:0;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;"><circle cx="6" cy="6" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/></svg>
-          Kesim Planı Oluştur
-        </button>
-      </div>
+
+    </div><!-- /kld-body -->
+
+    <!-- FOOTER -->
+    <div class="kld-foot">
+      <div class="kld-foot-info" id="kldFootInfo">—</div>
+      <!-- Sadece Boru Listesi tab'ında görünür -->
+      <button class="kld-btn kld-btn-cancel" id="kldBtnIptal" onclick="kldPaketiIptal()" title="Paketi iptal et - borular havuza döner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        <span data-i18n="kld_btn_iptal">Paketi İptal Et</span>
+      </button>
+      <!-- Sadece Kesim Planı tab'ında görünür -->
+      <button class="kld-btn kld-btn-recalc" id="kldBtnRecalc" onclick="kldHesapla()" style="display:none;" title="Parametrelere göre kesim planını yeniden hesapla">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+        <span data-i18n="kld_btn_recalc">Yeniden Hesapla</span>
+      </button>
+      <button class="kld-btn kld-btn-excel" onclick="kldExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Excel
+      </button>
+      <button class="kld-btn kld-btn-pdf" onclick="kldPdf()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        PDF
+      </button>
+      <!-- Primary — Sadece Boru Listesi tab'ında görünür -->
+      <button class="kld-btn kld-btn-primary" id="kldBtnTamamla" onclick="kldKesimTamamlaAc()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span data-i18n="kld_btn_tamamla">Kesimi Tamamla</span>
+      </button>
     </div>
-    <!-- Footer toplam -->
-    <div class="tbl-footer" style="flex-shrink:0;border-top:1px solid var(--bor);">
-      <span id="klDetayCount" style="color:var(--txm);"></span>
-      <span id="klDetaySum" style="font-weight:700;"></span>
-    </div>
+
   </div>
 </div>
 
-<!-- ═══ KESİM WIZARD MODAL (3 adım) ═══ -->
-<div class="modal-ov" id="wizardModal" style="display:none;">
-  <div class="wz-modal">
-
-    <!-- Başlık + step bar -->
-    <div class="wz-head">
-      <div class="wz-head-top">
-        <div class="wz-kl">
-          <div class="wz-kl-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ks)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <span class="wz-kl-no" id="wzKlNo"></span>
-          <span class="wz-kl-meta" id="wzKlMeta"></span>
-        </div>
-        <button class="wz-close" onclick="closeWizard()">✕</button>
-      </div>
-      <div class="wz-stepbar">
-        <div class="wz-step active" id="wzSi1">
-          <div class="wz-num"><span class="wz-ntxt">1</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="wz-step-lbl"><div class="wz-step-title">Boru Listesi</div><div class="wz-step-sub">Seçim & Onay</div></div>
-        </div>
-        <div class="wz-step todo" id="wzSi2">
-          <div class="wz-num"><span class="wz-ntxt">2</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="wz-step-lbl"><div class="wz-step-title">Parametreler</div><div class="wz-step-sub">Stok & Parça Borular</div></div>
-        </div>
-        <div class="wz-step todo" id="wzSi3">
-          <div class="wz-num"><span class="wz-ntxt">3</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="wz-step-lbl"><div class="wz-step-title">Kesim Planı</div><div class="wz-step-sub">Şematik & İndirme</div></div>
-        </div>
-      </div>
+<!-- ═══ KESİM TAMAMLA ONAY POPUP ═══ -->
+<div class="modal-ov" id="kldConfirmModal" style="display:none;">
+  <div class="kld-cfm-wrap">
+    <div class="kld-cfm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-
-    <!-- Body -->
-    <div class="wz-body">
-
-      <!-- ADIM 1: Boru listesi -->
-      <div class="wz-sc active" id="wzSc1">
-        <div class="wz-s1-bar">
-          <div class="wz-s1-prog">
-            <div class="wz-s1-prog-lbl"><span data-i18n="ks_kesim_durum">Kesim durumu</span><span id="wzProgLbl" style="font-weight:700;color:var(--warn);"></span></div>
-            <div class="wz-prog-bar"><div class="wz-prog-fill" id="wzProgFill" style="width:0%;"></div></div>
-          </div>
-          <button class="btn-outline" onclick="wzTumunuSec(true)" style="height:32px;font-size:13px;">☑ Tümünü Seç</button>
-          <button class="btn-outline" onclick="wzTumunuSec(false)" style="height:32px;font-size:13px;">☐ Tümünü Kaldır</button>
-          <button class="btn-outline" onclick="wzIptalOnayla()" style="height:32px;font-size:13px;border-color:rgba(229,62,62,.4);color:var(--re);">🗑 Paketi İptal Et</button>
-        </div>
-        <div class="wz-tbl-scroll">
-          <table class="data-table" style="min-width:1100px;">
-            <thead><tr>
-              <th class="no-sort cb-cell" style="width:40px;">✓</th>
-              <th class="no-sort" style="width:36px;">#</th>
-              <th data-i18n="cmn_th_tersane">Tersane</th>
-              <th data-i18n="ks_chip_isemir">İş Emri</th>
-              <th data-i18n="cmn_th_spool_no">Spool No</th>
-              <th data-i18n="cmn_th_spool_id">Spool ID</th>
-              <th data-i18n="ks_filter_mat">Malzeme</th>
-              <th data-i18n="ks_filter_grade">Kalite</th>
-              <th data-i18n="ks_chip_cap">Çap</th>
-              <th data-i18n="cmn_th_et">Et Kal.</th>
-              <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
-              <th data-i18n="ks_th_a_ucu">A Ucu</th>
-              <th data-i18n="ks_th_b_ucu">B Ucu</th>
-              <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
-            </tr></thead>
-            <tbody id="wzTableBody"></tbody>
-          </table>
-        </div>
-        <div class="wz-s1-foot" id="wzS1Foot">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="wzS1Info">—</span>
-        </div>
-      </div>
-
-      <!-- ADIM 2: Parametreler -->
-      <div class="wz-sc" id="wzSc2">
-        <div class="wz-s2-wrap">
-          <div class="fm-section" style="margin-top:0;">Kesim Parametreleri</div>
-          <div class="wz-param-grid">
-            <div class="wz-param-item"><label>Standart Stok Boyu (mm)</label><input class="fm-input" id="wzStokBoy" type="number" value="6000" min="100"></div>
-            <div class="wz-param-item"><label>Testere Payı / Kerf (mm)</label><input class="fm-input" id="wzKerf" type="number" value="3" min="0"></div>
-            <div class="wz-param-item"><label>Uç Fire / Trim (mm)</label><input class="fm-input" id="wzTrim" type="number" value="0" min="0"></div>
-            <div class="wz-param-item"><label>Min. Kullanılabilir Artık (mm)</label><input class="fm-input" id="wzMinArtik" type="number" value="1500" min="0"></div>
-          </div>
-          <div class="fm-section" style="margin-top:20px;">Elimizdeki Parça Borular <span style="font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;color:var(--txd);">— opsiyonel</span></div>
-          <div class="wz-parca-list" id="wzParcalar"></div>
-          <button onclick="wzAddParca()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;" onmouseover="this.style.borderColor='var(--leg)';this.style.color='var(--leg)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
-          <div class="wz-hint">💡 Parça borular öncelikli kullanılır. Artık ≥ min. kullanılabilir artık ise tekrar listeye eklenir.</div>
-        </div>
-      </div>
-
-      <!-- ADIM 3: Kesim Planı (v3) -->
-      <div class="wz-sc" id="wzSc3">
-        <div class="wz-s3-stat" id="wzStatStrip"></div>
-        <div class="wz-s3-cards" id="wzCards"></div>
-      </div>
-
-    </div><!-- /wz-body -->
-
-    <!-- Footer -->
-    <div class="wz-foot">
-      <div class="wz-foot-left">
-        <span class="wz-step-prog">Adım <strong id="wzStepNow">1</strong> / 3</span>
-        <div class="wz-bar"><div class="wz-bar-fill" id="wzBarFill" style="width:33.3%"></div></div>
-      </div>
-      <div class="wz-foot-right">
-        <button class="btn-outline" id="wzBtnBack" onclick="wzPrev()" style="display:none;">← Geri</button>
-        <span id="wzFootInfo" style="font-size:13px;color:var(--txd);"></span>
-        <!-- Step 3 ekstra butonlar -->
-        <button id="wzBtnExcel" onclick="wzExcel()" class="btn-outline" style="display:none;border-color:rgba(22,163,110,.4);color:var(--gr);">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Excel
-        </button>
-        <button id="wzBtnPdf" onclick="wzPdf()" class="btn-outline" style="display:none;border-color:rgba(45,142,255,.4);color:var(--ac);">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          PDF
-        </button>
-        <!-- Adım 1'de kaydet butonu -->
-        <button id="wzBtnKaydet" onclick="wzKaydet()" class="btn-green" style="height:38px;padding:0 16px;border-radius:9px;font-size:14px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <span data-i18n="ks_secili_kesildi_kaydet">Seçilileri Kesildi Kaydet</span>
-        </button>
-        <!-- Adım 3'te: Parçalı Kestim (Adım 1'e yönlendirir) -->
-        <button id="wzBtnParcali" onclick="wzParcaliKes()" class="btn-outline" style="display:none;height:38px;padding:0 14px;border-radius:9px;font-size:14px;border-color:rgba(45,142,255,.4);color:var(--ac);">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>
-          <span data-i18n="ks_parcali_kestim">Parçalı Kestim</span>
-        </button>
-        <!-- Adım 3'te: Tümünü Kesildi (DB'ye yazar + listeyi kapatır) -->
-        <button id="wzBtnKesTumu" onclick="wzKesTumu()" class="btn-green" style="display:none;height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:700;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <span data-i18n="ks_tumu_kesildi">Tümünü Kesildi</span>
-        </button>
-        <button class="btn-outline" id="wzBtnNext" onclick="wzNext()" style="height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;">İleri →</button>
-      </div>
+    <div class="kld-cfm-title" data-i18n="kld_cfm_title">Kesimi tamamla</div>
+    <div class="kld-cfm-desc" data-i18n="kld_cfm_desc">Bu işlem geri alınamaz. Liste <strong>Kesilen Listeler</strong> sekmesine taşınacak. Kesilmeyen borular havuza geri dönecek.</div>
+    <div class="kld-cfm-box" id="kldCfmBox"></div>
+    <div class="kld-cfm-foot">
+      <button class="kld-btn" onclick="closeKLConfirm()" data-i18n="cmn_vazgec">Vazgeç</button>
+      <button class="kld-btn kld-btn-primary" onclick="kldKesimTamamlaOnayla()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span data-i18n="kld_cfm_onayla">Onayla ve Tamamla</span>
+      </button>
     </div>
-
   </div>
 </div>
 <div class="modal-ov" id="arcDetayModal" style="display:none;">
@@ -2157,27 +2099,9 @@ function runForm(){
       // Form modalı kapat
       closeFormModal();
 
-      if(_fmFromDetay && _mdlKlId === _fmKlId) {
-        // klDetayModal içinden açıldı → planı o popup'ta göster
-        _fmFromDetay = false;
-        var planView=document.getElementById('klDetayPlanView');
-        var planEmpty=document.getElementById('klDetayPlanEmpty');
-        var semaEl=document.getElementById('klDetayPlanSema');
-        var tarihEl=document.getElementById('klDetayPlanTarih');
-        if(planView) planView.style.display='block';
-        if(planEmpty) planEmpty.style.display='none';
-        if(tarihEl) tarihEl.textContent='('+tarihStr+')';
-        _fmKlB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-        if(semaEl) _renderSemaToEl(result.plans, params, semaEl);
-        // klDetayModal'ı ön plana getir (zaten açık, sadece scroll)
-        var planEl=document.getElementById('klDetayPlan');
-        if(planEl) setTimeout(function(){ planEl.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
-        toast(kl.no+' kesim planı oluşturuldu ✓', 'success');
-      } else {
-        // Bağımsız açıldı → sonuç modalını aç
-        _fmFromDetay = false;
-        openSonucModal(kl, result.plans, params, tarihStr);
-      }
+      // Her durumda sonuç modalı ile göster (yeni sistemde klDetayModal entegrasyonu yok)
+      _fmFromDetay = false;
+      openSonucModal(kl, result.plans, params, tarihStr);
 
       // Supabase kaydı
       if(typeof ARES!=='undefined'&&ARES.mod==='supabase'&&kl.supaId){
@@ -2359,259 +2283,390 @@ function klIptal(klId){
   switchTab('bekliyor');
 }
 
-// WIZARD MODAL — JS
+// KESİM LİSTESİ DETAY — JS (iki tab modeli)
 // ════════════════════════════════════
-var _wzKlId = null, _wzStep = 1, _wzParcaSayac = 0;
-var _wzKlB = null, _wzPlans = null, _wzParams = null;
-var _wzKesilmisIds = new Set();
+var _kldKlId = null;
+var _kldBorular = null;        // Bu listenin boruları (cache)
+var _kldKesilmisIds = null;    // Set — varsayılan tümü dolu, kullanıcı tik çıkardıkça küçülür
+var _kldPlans = null, _kldParams = null;
+var _kldTab = 'boru';          // 'boru' | 'plan'
+var _kldParcaSayac = 0;
 
-function openWizard(klId, startStep) {
-  _wzKlId = klId; _wzParcaSayac = 0;
-  var kl = kesimListeleri.find(function(x){ return x.id === klId; }); if(!kl) return;
-  _wzKlB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  _wzKesilmisIds = new Set(kl.kesilmisIds || []);
-  _wzPlans  = kl.kesimPlani ? kl.kesimPlani.plans  : null;
-  _wzParams = kl.kesimPlani ? kl.kesimPlani.params : null;
-  var malz = _wzKlB[0] || {};
+// Akıllı açılış: plan var → Boru Listesi, plan yok → Kesim Planı
+function openKLDetay(klId){
+  var kl = kesimListeleri.find(function(x){ return x.id === klId; });
+  if(!kl) return;
+
+  _kldKlId = klId;
+  _kldParcaSayac = 0;
+  _kldBorular = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+
+  // Varsayılan: tümü kesildi (mevcut kesilmisIds varsa onu kullan, yoksa hepsini ekle)
+  if(kl.kesilmisIds && kl.kesilmisIds.size > 0) {
+    _kldKesilmisIds = new Set(kl.kesilmisIds);
+  } else {
+    _kldKesilmisIds = new Set(_kldBorular.map(function(k){ return k.id; }));
+  }
+
+  _kldPlans  = kl.kesimPlani ? kl.kesimPlani.plans  : null;
+  _kldParams = kl.kesimPlani ? kl.kesimPlani.params : null;
+
+  // Header: KL no + malzeme özeti
+  var malz = _kldBorular[0] || {};
   var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'');
-  document.getElementById('wzKlNo').textContent = kl.no;
-  document.getElementById('wzKlMeta').textContent = [malzLabel,malz.kalite,malz.cap?'Ø'+malz.cap:'',malz.kalinlik].filter(Boolean).join(' · ');
-  _wzRenderTable();
-  if(kl.kesimPlani && kl.kesimPlani.params) {
-    var p=kl.kesimPlani.params;
-    document.getElementById('wzStokBoy').value  = p.standartLen||6000;
-    document.getElementById('wzKerf').value     = p.kerf||3;
-    document.getElementById('wzTrim').value     = p.trim||0;
-    document.getElementById('wzMinArtik').value = p.minArtik||1500;
-    document.getElementById('wzParcalar').innerHTML='';
-    (p.parcaBorular||[]).forEach(function(pb){ wzAddParcaVal(pb.uzunluk); });
+  document.getElementById('kldHeadNo').textContent = kl.no;
+  var metaParts = [];
+  if(malzLabel) metaParts.push('<strong>'+esc(malzLabel)+'</strong>');
+  if(malz.kalite) metaParts.push(esc(malz.kalite));
+  if(malz.cap) metaParts.push('<strong>Ø'+esc(malz.cap)+'</strong>');
+  if(malz.kalinlik) metaParts.push(esc(malz.kalinlik));
+  metaParts.push(_kldBorular.length+' '+tv('ks_boru','boru'));
+  document.getElementById('kldHeadMeta').innerHTML = metaParts.join(' · ');
+
+  // Parametreleri set et (plan varsa oradan, yoksa default)
+  if(_kldParams){
+    document.getElementById('kldStokBoy').value  = _kldParams.standartLen || 6000;
+    document.getElementById('kldKerf').value     = _kldParams.kerf || 3;
+    document.getElementById('kldTrim').value     = _kldParams.trim || 0;
+    document.getElementById('kldMinArtik').value = _kldParams.minArtik || 1500;
+    document.getElementById('kldParcalar').innerHTML = '';
+    (_kldParams.parcaBorular || []).forEach(function(pb){ kldAddParcaVal(pb.uzunluk); });
   } else {
-    document.getElementById('wzStokBoy').value=6000; document.getElementById('wzKerf').value=3;
-    document.getElementById('wzTrim').value=0; document.getElementById('wzMinArtik').value=1500;
-    document.getElementById('wzParcalar').innerHTML='';
+    document.getElementById('kldStokBoy').value  = 6000;
+    document.getElementById('kldKerf').value     = 3;
+    document.getElementById('kldTrim').value     = 0;
+    document.getElementById('kldMinArtik').value = 1500;
+    document.getElementById('kldParcalar').innerHTML = '';
   }
-  document.getElementById('wizardModal').style.display='flex';
-  wzGoStep(startStep||1);
-}
-function closeWizard(){ document.getElementById('wizardModal').style.display='none'; _wzKlId=null; _wzStep=1; }
 
-function wzGoStep(n) {
-  _wzStep=n;
-  [1,2,3].forEach(function(i){
-    var sc=document.getElementById('wzSc'+i); var si=document.getElementById('wzSi'+i);
-    if(sc) sc.className='wz-sc'+(i===n?' active':'');
-    if(!si) return;
-    si.className='wz-step '+(i<n?'done':i===n?'active':'todo');
-    var nt=si.querySelector('.wz-ntxt'); var ck=si.querySelector('.wz-chk');
-    if(nt) nt.style.display=i<n?'none':'inline';
-    if(ck) ck.style.display=i<n?'block':'none';
-  });
-  document.getElementById('wzStepNow').textContent=n;
-  document.getElementById('wzBarFill').style.width=(n/3*100)+'%';
-  var bBack=document.getElementById('wzBtnBack'); var bNext=document.getElementById('wzBtnNext');
-  var bKay=document.getElementById('wzBtnKaydet'); var bExc=document.getElementById('wzBtnExcel'); var bPdf=document.getElementById('wzBtnPdf');
-  var bParcali=document.getElementById('wzBtnParcali'); var bKesTumu=document.getElementById('wzBtnKesTumu');
-  var fInfo=document.getElementById('wzFootInfo');
-  bBack.style.display=n>1?'inline-flex':'none';
-  bExc.style.display=n===3?'inline-flex':'none'; bPdf.style.display=n===3?'inline-flex':'none';
-  if(n===1){
-    bKay.style.display='inline-flex'; bNext.style.display='inline-flex';
-    if(bParcali) bParcali.style.display='none';
-    if(bKesTumu) bKesTumu.style.display='none';
-    bNext.textContent=tv('ks_plan_olustur','Kesim Planı Oluştur →');
-    bNext.style.cssText='height:38px;padding:0 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;border:1.5px solid var(--bor);color:var(--txm);cursor:pointer;';
-    _wzRenderTable(); // Adım 1'e dönüşte tabloyu tazele (checkbox state korunur)
-    var mm=(_wzKlB||[]).reduce(function(s,k){return s+(parseFloat(k.kesimOlcusu)||0);},0);
-    fInfo.textContent=(_wzKlB||[]).length+' '+tv('ks_boru','boru')+' · '+mm.toLocaleString('tr-TR')+' mm';
-  } else if(n===2){
-    bKay.style.display='none'; bNext.style.display='inline-flex';
-    if(bParcali) bParcali.style.display='none';
-    if(bKesTumu) bKesTumu.style.display='none';
-    bNext.textContent=_wzPlans?tv('ks_plani_goruntule','✓ Planı Görüntüle'):tv('ks_hesapla_onizle','Hesapla & Önizle →');
-    bNext.style.cssText='height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;background:var(--ac);color:#fff;border:none;cursor:pointer;';
-    fInfo.textContent='';
+  // Modal'ı aç
+  document.getElementById('klDetayModal').style.display = 'flex';
+
+  // Akıllı tab: plan varsa Boru Listesi, yoksa Kesim Planı
+  kldSwitchTab(_kldPlans && _kldPlans.length ? 'boru' : 'plan');
+
+  // Fm global'lerini de set et (Excel/PDF fonksiyonları kullanıyor)
+  _fmKlId = _kldKlId;
+  _fmKlB = _kldBorular;
+  if(_kldPlans){ _fmCurrentPlans = _kldPlans; _fmCurrentParams = _kldParams; }
+  _fmArcIdx = null;
+}
+
+function closeKLDetay(){
+  document.getElementById('klDetayModal').style.display = 'none';
+  _kldKlId = null;
+}
+
+function kldSwitchTab(tab){
+  _kldTab = tab;
+  var tBoru = document.getElementById('kldTabBoru');
+  var tPlan = document.getElementById('kldTabPlan');
+  var pBoru = document.getElementById('kldPaneBoru');
+  var pPlan = document.getElementById('kldPanePlan');
+  if(!tBoru || !tPlan || !pBoru || !pPlan) return;
+
+  if(tab === 'boru'){
+    tBoru.classList.add('active'); tPlan.classList.remove('active');
+    pBoru.classList.add('active'); pPlan.classList.remove('active');
+    document.getElementById('kldBtnIptal').style.display = 'inline-flex';
+    document.getElementById('kldBtnRecalc').style.display = 'none';
+    document.getElementById('kldBtnTamamla').style.display = 'inline-flex';
+    kldBoruListeRender();
   } else {
-    bKay.style.display='none';
-    bNext.style.display='none';
-    if(bParcali) bParcali.style.display='inline-flex';
-    if(bKesTumu) bKesTumu.style.display='inline-flex';
-    fInfo.textContent=''; _wzRenderPlan();
+    tPlan.classList.add('active'); tBoru.classList.remove('active');
+    pPlan.classList.add('active'); pBoru.classList.remove('active');
+    document.getElementById('kldBtnIptal').style.display = 'none';
+    document.getElementById('kldBtnRecalc').style.display = 'inline-flex';
+    document.getElementById('kldBtnTamamla').style.display = 'none';
+    kldPlanRender();
   }
+  kldUpdateStats();
 }
 
-function wzNext(){
-  if(_wzStep===1){ wzGoStep(2); }
-  else if(_wzStep===2){ if(_wzPlans){wzGoStep(3);}else{wzHesapla();} }
-  // Adım 3'te wzBtnNext gizli — bu dal tetiklenmez
-}
-function wzPrev(){ if(_wzStep>1) wzGoStep(_wzStep-1); }
+// Boru Listesi tab render
+function kldBoruListeRender(){
+  if(!_kldBorular) return;
+  var ucLbl = getUcMap();
+  var body = document.getElementById('kldBoruListBody');
+  if(!body) return;
 
-// Adım 3 → Adım 1: parçalı kesim (checkbox ile tek tek seçim)
-function wzParcaliKes(){
-  if(!_wzKlId) return;
-  wzGoStep(1);
-}
-
-// Adım 3 → Tüm listeyi kesildi işaretle + DB'ye kaydet + listeyi kapat
-function wzKesTumu(){
-  if(!_wzKlId) return;
-  if(!_wzKlB || !_wzKlB.length){ toast(tv('ks_liste_bos','Liste boş'),'error'); return; }
-  var n=_wzKlB.length;
-  var msg=tv('ks_tumu_kestim_onay','{n} borunun tamamı kesildi mi?\nListe Kesilen Listeler sekmesine taşınacak.').replace('{n}',n);
-  if(!confirm(msg)) return;
-  _wzKesilmisIds = new Set((_wzKlB||[]).map(function(k){ return k.id; }));
-  wzKaydet();
-}
-
-function _wzRenderTable(){
-  if(!_wzKlId) return;
-  var ucLbl=getUcMap();
-  document.getElementById('wzTableBody').innerHTML=(_wzKlB||[]).map(function(k,i){
-    var ch=_wzKesilmisIds.has(k.id);
-    var sert=k.sertifika?'<span style="color:var(--warn);font-size:16px;">★</span>':'<span style="color:var(--txd);font-size:14px;">—</span>';
-    return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="wzrow-'+k.id+'">'
-      +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="wzToggle(\''+k.id+'\',this.checked)"></td>'
-      +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
-      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
-      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
-      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
-      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
-      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
-      +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
-      +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
-      +'<td style="text-align:center;">'+sert+'</td>'+'</tr>';
+  body.innerHTML = _kldBorular.map(function(k, i){
+    var ch = _kldKesilmisIds.has(k.id);
+    var rowCls = ch ? 'cut' : 'nocut';
+    var statusCls = ch ? 'cut' : 'nocut';
+    var statusTxt = ch ? tv('kld_status_cut','✓ Kesildi') : tv('kld_status_nocut','○ Kesilmedi');
+    function ucBadge(u){ return u
+      ? '<span style="display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;background:rgba(124,58,237,.1);color:var(--leg);">'+esc(ucLbl[u]||u)+'</span>'
+      : '—'; }
+    return '<tr class="'+rowCls+'" id="kldrow-'+k.id+'">'
+      +'<td class="c"><input type="checkbox" class="kld-cb" '+(ch?'checked':'')+' onchange="kldToggleRow(\''+k.id+'\',this.checked)"></td>'
+      +'<td class="kld-cell-num">'+(i+1)+'</td>'
+      +'<td class="kld-cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
+      +'<td class="kld-cell-spool">'+esc(k.spool||'—')+'</td>'
+      +'<td style="font-size:13px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+      +'<td class="kld-cell-mm">'+esc(k.kesimOlcusu||'—')+'</td>'
+      +'<td>'+ucBadge(k.ucA)+'</td>'
+      +'<td>'+ucBadge(k.ucB)+'</td>'
+      +'<td class="c"><span class="kld-status '+statusCls+'">'+statusTxt+'</span></td>'
+      +'</tr>';
   }).join('');
-  _wzUpdateProg();
+
+  // Master checkbox: hepsi seçili mi?
+  var mc = document.getElementById('kldMasterCb');
+  if(mc) mc.checked = (_kldKesilmisIds.size === _kldBorular.length);
+
+  // Tab count
+  var tc = document.getElementById('kldTabBoruCount');
+  if(tc) tc.textContent = _kldBorular.length;
 }
-function wzToggle(id,ch){
-  ch?_wzKesilmisIds.add(id):_wzKesilmisIds.delete(id);
-  var row=document.getElementById('wzrow-'+id);
-  if(row){row.classList.toggle('kl-row-cut',ch);row.classList.toggle('kl-row-nocut',!ch);}
-  _wzUpdateProg();
+
+// Kesim Planı tab render
+function kldPlanRender(){
+  var statEl = document.getElementById('kldStatStrip');
+  var cardsEl = document.getElementById('kldCards');
+  var emptyEl = document.getElementById('kldPlanEmpty');
+
+  if(!_kldPlans || !_kldPlans.length){
+    if(statEl) statEl.innerHTML = '';
+    if(cardsEl) cardsEl.innerHTML = '';
+    if(statEl) statEl.style.display = 'none';
+    if(cardsEl) cardsEl.style.display = 'none';
+    if(emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if(statEl) statEl.style.display = 'grid';
+  if(cardsEl) cardsEl.style.display = 'flex';
+  if(emptyEl) emptyEl.style.display = 'none';
+
+  _renderV3(_kldPlans, _kldParams || {}, _kldBorular, { statEl: statEl, cardsEl: cardsEl });
 }
-function wzTumunuSec(ch){
-  (_wzKlB||[]).forEach(function(k){
-    ch?_wzKesilmisIds.add(k.id):_wzKesilmisIds.delete(k.id);
-    var row=document.getElementById('wzrow-'+k.id);
-    if(row){row.classList.toggle('kl-row-cut',ch);row.classList.toggle('kl-row-nocut',!ch);}
-    var cb=row&&row.querySelector('.kl-cb');if(cb)cb.checked=ch;
+
+// Checkbox işlemleri
+function kldToggleRow(id, ch){
+  if(ch) _kldKesilmisIds.add(id); else _kldKesilmisIds.delete(id);
+  var row = document.getElementById('kldrow-'+id);
+  if(row){
+    row.classList.toggle('cut', ch);
+    row.classList.toggle('nocut', !ch);
+    // Durum chip'i güncelle
+    var statusCell = row.querySelector('td:last-child .kld-status');
+    if(statusCell){
+      statusCell.className = 'kld-status ' + (ch ? 'cut' : 'nocut');
+      statusCell.textContent = ch ? tv('kld_status_cut','✓ Kesildi') : tv('kld_status_nocut','○ Kesilmedi');
+    }
+  }
+  // Master checkbox durumunu güncelle
+  var mc = document.getElementById('kldMasterCb');
+  if(mc) mc.checked = (_kldKesilmisIds.size === _kldBorular.length);
+  kldUpdateStats();
+}
+
+function kldTumunuSec(ch){
+  if(!_kldBorular) return;
+  _kldBorular.forEach(function(k){
+    if(ch) _kldKesilmisIds.add(k.id); else _kldKesilmisIds.delete(k.id);
+    var row = document.getElementById('kldrow-'+k.id);
+    if(row){
+      row.classList.toggle('cut', ch);
+      row.classList.toggle('nocut', !ch);
+      var cb = row.querySelector('.kld-cb');
+      if(cb) cb.checked = ch;
+      var statusCell = row.querySelector('td:last-child .kld-status');
+      if(statusCell){
+        statusCell.className = 'kld-status ' + (ch ? 'cut' : 'nocut');
+        statusCell.textContent = ch ? tv('kld_status_cut','✓ Kesildi') : tv('kld_status_nocut','○ Kesilmedi');
+      }
+    }
   });
-  _wzUpdateProg();
+  kldUpdateStats();
 }
-function _wzUpdateProg(){
-  var top=(_wzKlB||[]).length;
-  var kes=(_wzKlB||[]).filter(function(k){return _wzKesilmisIds.has(k.id);}).length;
-  var pct=top?Math.round(kes/top*100):0;
-  var lbl=document.getElementById('wzProgLbl'); var fill=document.getElementById('wzProgFill');
-  if(lbl){lbl.textContent=kes+' / '+top+' boru · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
-  if(fill){fill.style.width=pct+'%';fill.style.background=kes===top?'var(--gr)':'var(--warn)';}
-  var info=document.getElementById('wzS1Info');
-  var mm=(_wzKlB||[]).reduce(function(s,k){return s+(parseFloat(k.kesimOlcusu)||0);},0);
-  if(info) info.innerHTML=top+' boru · Toplam <strong style="color:var(--gr);">'+mm.toLocaleString('tr-TR')+' mm</strong>';
-  var fInfo=document.getElementById('wzFootInfo');
-  if(fInfo&&_wzStep===1) fInfo.textContent=top+' boru · '+mm.toLocaleString('tr-TR')+' mm';
+
+// Info pill'ler + footer info güncelle
+function kldUpdateStats(){
+  if(!_kldBorular) return;
+  var top = _kldBorular.length;
+  var kes = _kldBorular.filter(function(k){ return _kldKesilmisIds.has(k.id); }).length;
+  var kesilmedi = top - kes;
+  var mmKes = _kldBorular.filter(function(k){ return _kldKesilmisIds.has(k.id); })
+    .reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); }, 0);
+
+  // Info row (Boru Listesi tab)
+  var info = document.getElementById('kldInfoRow');
+  if(info){
+    var planTarih = '';
+    if(_kldKlId){
+      var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+      if(kl && kl.kesimPlani && kl.kesimPlani.tarih) planTarih = kl.kesimPlani.tarih;
+    }
+    var html = ''
+      +'<div class="kld-info-pill ok"><div class="kld-info-lab">'+tv('kld_info_kesildi','Kesildi')+'</div>'
+        +'<div class="kld-info-num">'+kes+' <small>/ '+top+'</small></div></div>';
+    if(kesilmedi > 0) {
+      html += '<div class="kld-info-pill warn"><div class="kld-info-lab">'+tv('kld_info_kesilmedi','Kesilmedi')+'</div>'
+        +'<div class="kld-info-num">'+kesilmedi+'</div></div>';
+    }
+    html += '<div class="kld-info-pill"><div class="kld-info-lab">'+tv('kld_info_toplam','Toplam Kesim')+'</div>'
+      +'<div class="kld-info-num">'+Math.round(mmKes).toLocaleString('tr-TR')+' <small>mm</small></div></div>';
+    if(planTarih) {
+      html += '<div class="kld-info-pill"><div class="kld-info-lab">'+tv('kld_info_plantarihi','Plan Tarihi')+'</div>'
+        +'<div style="font-size:13px;color:var(--tx);font-weight:600;line-height:1;padding-top:3px;">'+esc(planTarih)+'</div></div>';
+    }
+    info.innerHTML = html;
+  }
+
+  // Footer info
+  var fi = document.getElementById('kldFootInfo');
+  if(fi){
+    if(_kldTab === 'boru'){
+      var html2 = '<strong>'+kes+' / '+top+'</strong> '+tv('kld_foot_kesildi','boru kesildi olarak işaretli');
+      if(kesilmedi > 0) html2 += ' · <span class="rem">'+kesilmedi+' '+tv('kld_foot_havuza','boru havuza dönecek')+'</span>';
+      fi.innerHTML = html2;
+    } else {
+      if(_kldPlans && _kldPlans.length){
+        fi.innerHTML = '<span style="color:var(--ac);font-weight:600;">'+tv('kld_foot_plan_kayitli','Plan kayıtlı.')+'</span> '+tv('kld_foot_plan_hint','Parametre değiştirirsen "Yeniden Hesapla" ile güncelle.');
+      } else {
+        fi.innerHTML = tv('kld_foot_plan_yok','Parametreleri gir ve "Yeniden Hesapla" ile plan oluştur.');
+      }
+    }
+  }
 }
-function wzAddParca(){ wzAddParcaVal(''); }
-function wzAddParcaVal(val){
-  _wzParcaSayac++;
-  var id='wzParca'+_wzParcaSayac; var row=document.createElement('div');
-  row.id=id; row.className='wz-parca-row';
-  row.innerHTML='<input type="number" placeholder="Uzunluk mm" min="1" class="wz-parca-input" '+(val?'value="'+val+'"':'')+' style="flex:1;">'
-    +'<button onclick="document.getElementById(\''+id+'\').remove()" style="width:32px;height:32px;border-radius:8px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);color:var(--re);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>';
-  document.getElementById('wzParcalar').appendChild(row);
+
+// Parça boru ekleme
+function kldAddParca(){ kldAddParcaVal(''); }
+function kldAddParcaVal(val){
+  _kldParcaSayac++;
+  var rowId = 'kldParca'+_kldParcaSayac;
+  var row = document.createElement('div');
+  row.id = rowId;
+  row.className = 'kld-parca-row';
+  row.innerHTML = '<input type="number" placeholder="'+tv('kld_parca_ph','Uzunluk mm')+'" min="1" '+(val?'value="'+val+'"':'')+'>'
+    +'<button onclick="document.getElementById(\''+rowId+'\').remove()" title="'+tv('cmn_sil','Sil')+'">✕</button>';
+  document.getElementById('kldParcalar').appendChild(row);
   if(!val) row.querySelector('input').focus();
 }
-function wzHesapla(){
-  if(!_wzKlId||!_wzKlB) return;
-  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
-  var standartLen=parseInt(document.getElementById('wzStokBoy').value)||6000;
-  var kerf=parseInt(document.getElementById('wzKerf').value)||3;
-  var trim=parseInt(document.getElementById('wzTrim').value)||0;
-  var minArtik=parseInt(document.getElementById('wzMinArtik').value)||1500;
-  var parcaBorular=[];
-  document.querySelectorAll('#wzParcalar input[type="number"]').forEach(function(inp,i){
-    var v=parseInt(inp.value);if(v>0)parcaBorular.push({id:'PARCA-'+(i+1),uzunluk:v});
+
+// Yeniden Hesapla — eski wzHesapla mantığını kullanır
+function kldHesapla(){
+  if(!_kldKlId || !_kldBorular) return;
+  var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+  if(!kl) return;
+  var standartLen = parseInt(document.getElementById('kldStokBoy').value) || 6000;
+  var kerf = parseInt(document.getElementById('kldKerf').value) || 3;
+  var trim = parseInt(document.getElementById('kldTrim').value) || 0;
+  var minArtik = parseInt(document.getElementById('kldMinArtik').value) || 1500;
+  var parcaBorular = [];
+  document.querySelectorAll('#kldParcalar input[type="number"]').forEach(function(inp, i){
+    var v = parseInt(inp.value); if(v > 0) parcaBorular.push({id:'PARCA-'+(i+1), uzunluk:v});
   });
-  var lengthMap={};
-  _wzKlB.forEach(function(k){
-    var boy=parseFloat(k.kesimOlcusu)||0;if(boy<=0)return;
-    if(!lengthMap[boy])lengthMap[boy]={length:boy,qty:0,refs:[]};
-    lengthMap[boy].qty++;lengthMap[boy].refs.push(k);
+  var lengthMap = {};
+  _kldBorular.forEach(function(k){
+    var boy = parseFloat(k.kesimOlcusu) || 0;
+    if(boy <= 0) return;
+    if(!lengthMap[boy]) lengthMap[boy] = {length:boy, qty:0, refs:[]};
+    lengthMap[boy].qty++; lengthMap[boy].refs.push(k);
   });
-  var pieces=Object.values(lengthMap);
-  if(!pieces.length){toast('Geçerli kesim ölçüsü olan boru bulunamadı','error');return;}
-  var stocks=parcaBorular.map(function(pb){return{id:pb.id,length:pb.uzunluk,type:'piece_stock'};});
-  var btn=document.getElementById('wzBtnNext');
-  if(btn){btn.disabled=true;btn.textContent='Hesaplanıyor...';}
-  window._fmStandartLen=standartLen;
+  var pieces = Object.values(lengthMap);
+  if(!pieces.length){ toast(tv('kld_hesap_gecersiz','Geçerli kesim ölçüsü olan boru yok'),'error'); return; }
+  var stocks = parcaBorular.map(function(pb){ return {id:pb.id, length:pb.uzunluk, type:'piece_stock'}; });
+  var btn = document.getElementById('kldBtnRecalc');
+  if(btn){ btn.disabled = true; var origHtml = btn.innerHTML; btn.innerHTML = tv('kld_hesaplaniyor','Hesaplanıyor...'); }
+  window._fmStandartLen = standartLen;
   setTimeout(function(){
-    try{
-      var result=calculateCutOptimization(pieces,stocks,{kerf:kerf,trim:trim,minRem:minArtik,iterations:300});
-      var usedRefs={};
+    try {
+      var result = calculateCutOptimization(pieces, stocks, {kerf:kerf, trim:trim, minRem:minArtik, iterations:300});
+      var usedRefs = {};
       result.plans.forEach(function(plan){
-        plan.matchedBorular=[];
+        plan.matchedBorular = [];
         plan.cuts.forEach(function(cut){
-          var g=lengthMap[cut];if(g){var r=g.refs.find(function(x){return!usedRefs[x.id];});if(r){plan.matchedBorular.push(r);usedRefs[r.id]=true;}}
+          var g = lengthMap[cut];
+          if(g){ var r = g.refs.find(function(x){ return !usedRefs[x.id]; }); if(r){ plan.matchedBorular.push(r); usedRefs[r.id] = true; } }
         });
       });
-      var params={standartLen:standartLen,kerf:kerf,trim:trim,minArtik:minArtik,parcaBorular:parcaBorular};
-      var tarih=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      kl.kesimPlani={plans:result.plans,params:params,tarih:tarih};
-      _wzPlans=result.plans;_wzParams=params;
-      _fmKlId=_wzKlId;_fmKlB=_wzKlB;_fmCurrentPlans=_wzPlans;_fmCurrentParams=_wzParams;_fmArcIdx=null;
-      if(typeof ARES!=='undefined'&&ARES.mod==='supabase'&&kl.supaId){
-        ARES.supabase().from('kesim_listeleri').update({kesim_plani:{plans:result.plans,params:params,tarih:tarih}}).eq('id',kl.supaId).then(function(){});
+      var params = {standartLen:standartLen, kerf:kerf, trim:trim, minArtik:minArtik, parcaBorular:parcaBorular};
+      var tarih = new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      kl.kesimPlani = {plans:result.plans, params:params, tarih:tarih};
+      _kldPlans = result.plans; _kldParams = params;
+      // Fm global'leri de güncelle
+      _fmKlId = _kldKlId; _fmKlB = _kldBorular;
+      _fmCurrentPlans = _kldPlans; _fmCurrentParams = _kldParams; _fmArcIdx = null;
+      // DB'ye yaz
+      if(typeof ARES !== 'undefined' && ARES.mod === 'supabase' && kl.supaId){
+        ARES.supabase().from('kesim_listeleri')
+          .update({kesim_plani:{plans:result.plans, params:params, tarih:tarih}})
+          .eq('id', kl.supaId).then(function(){});
       }
-      wzGoStep(3);
-    }catch(e){toast('Plan hatası: '+e.message,'error');}
-    if(btn){btn.disabled=false;btn.textContent='Hesapla & Önizle →';}
-  },30);
+      kldPlanRender();
+      kldUpdateStats();
+      toast(tv('kld_plan_olusturuldu','Kesim planı oluşturuldu'),'success');
+    } catch(e){
+      toast(tv('kld_plan_hata','Plan hatası')+': '+e.message,'error');
+    }
+    if(btn){ btn.disabled = false; btn.innerHTML = origHtml; }
+  }, 30);
 }
-function _wzRenderPlan(){
-  if(!_wzPlans)return;
-  var p=_wzParams||(function(){var kl=_wzKlId&&kesimListeleri.find(function(x){return x.id===_wzKlId;});return kl&&kl.kesimPlani?kl.kesimPlani.params:{};})();
-  _fmKlId=_wzKlId;_fmKlB=_wzKlB;_fmCurrentPlans=_wzPlans;_fmCurrentParams=p;_fmArcIdx=null;
-  _renderV3(_wzPlans,p,_wzKlB,{statEl:document.getElementById('wzStatStrip'),cardsEl:document.getElementById('wzCards')});
+
+// Kesimi Tamamla — Onay popup aç
+function kldKesimTamamlaAc(){
+  if(!_kldKlId || !_kldBorular) return;
+  var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+  if(!kl) return;
+  var top = _kldBorular.length;
+  var kes = _kldBorular.filter(function(k){ return _kldKesilmisIds.has(k.id); }).length;
+  var kesilmedi = top - kes;
+  if(kes === 0){ toast(tv('kld_hic_yok','En az 1 boru kesildi işaretli olmalı'),'error'); return; }
+
+  // Onay kutusu içeriğini doldur
+  var malz = _kldBorular[0] || {};
+  var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'—');
+  var box = document.getElementById('kldCfmBox');
+  var rows = [
+    {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no), cls:''},
+    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : ''), cls:''},
+    {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—'), cls:''}
+  ];
+  var html = rows.map(function(r){
+    return '<div class="kld-cfm-row"><span class="lab">'+r.lab+'</span><span class="val">'+r.val+'</span></div>';
+  }).join('');
+  html += '<div class="kld-cfm-sep"></div>';
+  html += '<div class="kld-cfm-row"><span class="lab">'+tv('kld_cfm_kesildi','Kesildi')+'</span><span class="val big ok">'+kes+' / '+top+' '+tv('ks_boru','boru')+'</span></div>';
+  if(kesilmedi > 0){
+    html += '<div class="kld-cfm-row"><span class="lab">'+tv('kld_cfm_havuza','Havuza dönecek')+'</span><span class="val big rem">'+kesilmedi+' '+tv('ks_boru','boru')+'</span></div>';
+  }
+  box.innerHTML = html;
+
+  document.getElementById('kldConfirmModal').style.display = 'flex';
 }
-function wzKaydet(){
-  if(!_wzKlId)return;
-  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
-  kl.kesilmisIds=_wzKesilmisIds;
-  closeWizard();
-  klKaydet(_wzKlId);
+
+function closeKLConfirm(){ document.getElementById('kldConfirmModal').style.display = 'none'; }
+
+// Onay evet → DB'ye yaz, liste kapansın
+function kldKesimTamamlaOnayla(){
+  if(!_kldKlId) return;
+  var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+  if(!kl) return;
+  kl.kesilmisIds = _kldKesilmisIds;
+  closeKLConfirm();
+  closeKLDetay();
+  klKaydet(_kldKlId);
 }
-function wzIptalOnayla(){
-  if(!_wzKlId)return;
-  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
-  var klB=borular.filter(function(k){return kl.boruIds.includes(k.id);});
-  if(!confirm(kl.no+' paketini iptal etmek istediğinizden emin misiniz?\n'+klB.length+' boru havuza geri dönecek.'))return;
-  closeWizard();klIptal(_wzKlId);
+
+// Paketi iptal — mevcut klIptal'i kullan
+function kldPaketiIptal(){
+  if(!_kldKlId) return;
+  var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+  if(!kl) return;
+  var klB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  var msg = tv('kld_iptal_onay','{no} paketini iptal etmek istediğinizden emin misiniz?\n{n} boru havuza geri dönecek.')
+    .replace('{no}', kl.no).replace('{n}', klB.length);
+  if(!confirm(msg)) return;
+  closeKLDetay();
+  klIptal(_kldKlId);
 }
-function wzExcel(){fmExcelIndir();}
-function wzPdf(){fmPdfYazdir();}
-// Eski fonksiyonları wizard'a yönlendir
-function openKLDetay(klId){
-  var kl=kesimListeleri.find(function(x){return x.id===klId;});if(!kl)return;
-  openWizard(klId,(kl.kesimPlani&&kl.kesimPlani.plans&&kl.kesimPlani.plans.length)?3:1);
-}
-function closeKLDetay(){closeWizard();}
-function mdlFormAc(){if(_wzKlId)wzGoStep(2);}
-function mdlYenidenPlanla(){
-  if(!_wzKlId)return;
-  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
-  _wzPlans=null;_wzParams=null;kl.kesimPlani=null;
-  wzGoStep(2);
-}
-function mdlTumunuSec(ch){wzTumunuSec(ch);}
-function mdlToggleRow(id,ch){wzToggle(id,ch);}
-function mdlKaydet(){wzKaydet();}
-function mdlIptalOnayla(){wzIptalOnayla();}
-function _mdlUpdateProg(){_wzUpdateProg();}
-function _mdlRenderTable(){_wzRenderTable();}
+
+// Excel/PDF — mevcut form modal fonksiyonlarını kullan
+function kldExcel(){ fmExcelIndir(); }
+function kldPdf(){ fmPdfYazdir(); }
+
 
 function openSonucModal(kl, plans, params, tarih){
   var klB = _fmKlB || borular.filter(function(k){ return kl.boruIds.includes(k.id); });
