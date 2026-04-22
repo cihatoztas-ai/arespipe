@@ -1211,8 +1211,15 @@ async function veriYukle() {
     kesimListeleri.filter(function(kl){ return !kl.kapali; }).forEach(function(kl){
       (kl.boruIds||[]).forEach(function(id){ listedeIds.add(id); });
     });
+    // Kapalı listelerdeki borular — kesildi=false olsa bile tamamlandi say
+    // (DB yazma gecikmesi veya hatası durumunda güvenli fallback)
+    var kapaliListeIds = new Set(kesimListeleri.filter(function(kl){ return kl.kapali; }).map(function(kl){ return kl.id; }));
     borular.forEach(function(k){
-      if(listedeIds.has(k.id) && k.durum==='bekliyor') k.durum='listede';
+      if(k.kesimListesiId && kapaliListeIds.has(k.kesimListesiId)){
+        k.durum = 'tamamlandi';
+      } else if(listedeIds.has(k.id) && k.durum==='bekliyor') {
+        k.durum = 'listede';
+      }
     });
 
     populateFilters();
@@ -1609,6 +1616,8 @@ function createListe(){
         return;
       }
       listeObj.supaId = r.data.id;
+      // DB kaydı başarılı — toast burada
+      toast(listeNo+' '+tv('ks_olusturuldu','oluşturuldu')+' — '+sec.length+' '+tv('bk_unit_boru','boru'),'success');
 
       // boru_ids ayrıca güncelle (insert'te yazılmayabilir)
       supa.from('kesim_listeleri')
@@ -1630,9 +1639,8 @@ function createListe(){
       }
     });
   }
-  closeListeModal();applyFilters();updateStats();
-  toast(listeNo+' '+tv('ks_olusturuldu','oluşturuldu')+' — '+sec.length+' '+tv('bk_unit_boru','boru'),'success');
-  pgKL=1; // yeni liste en başta görünsün
+  closeListeModal(); applyFilters(); updateStats();
+  pgKL=1;
   switchTab('listeler');
 }
 
