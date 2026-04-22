@@ -812,10 +812,15 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         PDF
       </button>
-      <!-- Primary — Kesim Planı tab'ında: "Planı Kaydet" -->
+      <!-- Primary — Kesim Planı tab'ında: "Planı Kaydet" (stale iken) -->
       <button class="kld-btn kld-btn-primary" id="kldBtnPlanKaydet" onclick="kldPlanKaydet()" style="display:none;" title="Kesim planını kaydet ve boru listesine geç">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         <span data-i18n="kld_btn_plan_kaydet">Planı Kaydet & Devam</span>
+      </button>
+      <!-- "Boru Listesi'ne Geç" — plan kayıtlı ama stale değilse -->
+      <button class="kld-btn kld-btn-primary" id="kldBtnBoruListGec" onclick="kldSwitchTab('boru')" style="display:none;" title="Boru listesine geç, kesim sonrası işaretlemeye başla">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span data-i18n="kld_btn_boru_gec">Boru Listesi'ne Geç →</span>
       </button>
       <!-- Primary — Boru Listesi tab'ında: "Kesimi Tamamla" -->
       <button class="kld-btn kld-btn-primary" id="kldBtnTamamla" onclick="kldKesimTamamlaAc()">
@@ -2381,6 +2386,7 @@ function kldSwitchTab(tab){
     document.getElementById('kldBtnIptal').style.display = 'inline-flex';
     document.getElementById('kldBtnRecalc').style.display = 'none';
     document.getElementById('kldBtnPlanKaydet').style.display = 'none';
+    document.getElementById('kldBtnBoruListGec').style.display = 'none';
     document.getElementById('kldBtnTamamla').style.display = 'inline-flex';
     kldBoruListeRender();
   } else {
@@ -2388,9 +2394,14 @@ function kldSwitchTab(tab){
     pPlan.classList.add('active'); pBoru.classList.remove('active');
     document.getElementById('kldBtnIptal').style.display = 'none';
     document.getElementById('kldBtnRecalc').style.display = 'inline-flex';
-    // "Planı Kaydet" sadece lokal hesaplanmış ama henüz kaydedilmemiş plan varsa
-    document.getElementById('kldBtnPlanKaydet').style.display = (_kldPlans && _kldPlanStale) ? 'inline-flex' : 'none';
     document.getElementById('kldBtnTamamla').style.display = 'none';
+    // Plan durumu:
+    //  - Plan var + stale → "Planı Kaydet & Devam" (kullanıcı kaydetmeli)
+    //  - Plan var + stale değil → "Boru Listesi'ne Geç →" (plan zaten kayıtlı, kesim aşamasına geç)
+    //  - Plan yok → ikisi de gizli (sadece "Yeniden Hesapla" görünür)
+    var hasPlan = (_kldPlans && _kldPlans.length);
+    document.getElementById('kldBtnPlanKaydet').style.display = (hasPlan && _kldPlanStale) ? 'inline-flex' : 'none';
+    document.getElementById('kldBtnBoruListGec').style.display = (hasPlan && !_kldPlanStale) ? 'inline-flex' : 'none';
     kldPlanRender();
   }
   kldUpdateStats();
@@ -2647,9 +2658,12 @@ function kldHesapla(){
       _kldPlanStale = true;
       kldPlanRender();
       kldUpdateStats();
-      // Kaydet butonunu göster (plan hesaplandı, kaydedilmeyi bekliyor)
+      // Hesaplama sonrası: Plan stale durumda → Kaydet görünür, Boru Listesi'ne Geç gizli
       var btnKaydet = document.getElementById('kldBtnPlanKaydet');
+      var btnGec = document.getElementById('kldBtnBoruListGec');
       if(btnKaydet) btnKaydet.style.display = 'inline-flex';
+      if(btnGec) btnGec.style.display = 'none';
+      kldUpdateStaleUI();
       toast(tv('kld_plan_hesaplandi','Plan hesaplandı — kaydetmek için "Planı Kaydet"'),'info');
     } catch(e){
       toast(tv('kld_plan_hata','Plan hatası')+': '+e.message,'error');
@@ -2733,10 +2747,12 @@ function kldKesimTamamlaOnayla(){
   if(!_kldKlId) return;
   var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
   if(!kl) return;
+  // ID'yi lokal değişkende sakla — closeKLDetay() globals'ı temizliyor
+  var klId = _kldKlId;
   kl.kesilmisIds = _kldKesilmisIds;
   closeKLConfirm();
   closeKLDetay();
-  klKaydet(_kldKlId);
+  klKaydet(klId);
 }
 
 // Paketi iptal — mevcut klIptal'i kullan
@@ -2748,8 +2764,10 @@ function kldPaketiIptal(){
   var msg = tv('kld_iptal_onay','{no} paketini iptal etmek istediğinizden emin misiniz?\n{n} boru havuza geri dönecek.')
     .replace('{no}', kl.no).replace('{n}', klB.length);
   if(!confirm(msg)) return;
+  // ID'yi lokal değişkende sakla — closeKLDetay() globals'ı temizliyor
+  var klId = _kldKlId;
   closeKLDetay();
-  klIptal(_kldKlId);
+  klIptal(klId);
 }
 
 // Excel/PDF — mevcut form modal fonksiyonlarını kullan
