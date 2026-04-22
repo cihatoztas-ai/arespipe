@@ -496,6 +496,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th class="no-sort" style="width:36px;">#</th>
           <th><span data-i18n="ks_col_liste_no">Liste No / Spool</span></th>
           <th><span data-i18n="ks_filter_mat">Malzeme</span></th>
+          <th><span data-i18n="ks_filter_grade">Kalite</span></th>
           <th><span data-i18n="ks_chip_cap">Çap</span></th>
           <th style="text-align:right;"><span data-i18n="bk_unit_boru">Boru</span></th>
           <th style="text-align:right;"><span data-i18n="ks_toplam_kesim">Toplam mm</span></th>
@@ -614,6 +615,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <button class="btn-outline" onclick="mdlTumunuSec(true)" style="height:34px;font-size:14px;">☑ Tümünü Seç</button>
         <button class="btn-outline" onclick="mdlTumunuSec(false)" style="height:34px;font-size:14px;">☐ Tümünü Kaldır</button>
         <button class="btn-outline" onclick="mdlFormAc()" style="height:34px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Boru Kesim Formu</button>
+        <button class="btn-outline" onclick="mdlIptalOnayla()" style="height:34px;font-size:14px;border-color:rgba(229,62,62,.4);color:var(--re);">🗑 Paketi İptal Et</button>
         <button class="btn-green" onclick="mdlKaydet()" style="height:34px;font-size:14px;padding:0 18px;border-radius:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           Seçilileri Kesildi Kaydet
@@ -983,7 +985,7 @@ var kesimListeleri = [];
 var klSayac = 1;
 var aktifTab = 'bekliyor';
 var filtreData = [], secilenIsEmir = new Set(), aramaMetni = '', sortKey = '', sortDir = 1;
-var PG_BORU = 20, PG_KL = 10, PG_ARC = 10;
+var PG_BORU = 25, PG_KL = 25, PG_ARC = 25;
 var pgBoru = 1, pgKL = 1, pgArc = 1;
 
 function ucLabel(k){ var m={duz:tv('ks_uc_duz','Düz'),kaynak:tv('ks_uc_kaynak','Kaynak Ağzı'),yiv:tv('ks_uc_yiv','Yiv'),dis:tv('ks_uc_dis','Diş'),bukum:tv('ks_uc_bukum','Büküm Borusu')}; return m[k]||k; }
@@ -1561,7 +1563,8 @@ function renderArc(){
       return '<tr data-ci="'+Math.min(idx,19)+'">'
         +'<td class="cell-no">'+rowNum+'</td>'
         +'<td><span class="cell-spoolid">'+esc(s.no)+'</span><div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(k.spool||'')+'</div></td>'
-        +'<td>'+matBadge(k.malzeme||'—')+'<span style="font-size:14px;color:var(--txd);margin-left:5px;">'+esc(k.kalite||'')+'</span></td>'
+        +'<td>'+matBadge(k.malzeme||'—')+'</td>'
+        +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
         +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;">1</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--warn);font-weight:600;">'+s.mm.toLocaleString('tr-TR')+'</td>'
@@ -1570,7 +1573,9 @@ function renderArc(){
         +'<td style="text-align:center;">—</td>'
         +'</tr>';
     } else {
-      var malzStr=s.kriter&&s.kriter.malzemeler?s.kriter.malzemeler.join(', '):'—';
+      var malzArr=s.kriter&&s.kriter.malzemeler?s.kriter.malzemeler:[];
+      var malzStr=malzArr.map(function(m){ return (typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(m):(m||'—'); }).join(', ')||'—';
+      var kaliteStr=s.kriter&&s.kriter.kaliteler?s.kriter.kaliteler.filter(Boolean).join(', '):'—';
       var capStr=s.kriter&&s.kriter.capler?'Ø'+s.kriter.capler.join(', Ø'):'—';
       var durBadge=s.kismi
         ?'<span style="padding:3px 9px;border-radius:20px;font-size:14px;font-weight:600;background:rgba(217,119,6,.15);color:var(--warn);">⚡ Kısmi</span>'
@@ -1579,6 +1584,7 @@ function renderArc(){
         +'<td class="cell-no">'+rowNum+'</td>'
         +'<td><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:800;color:var(--gr);">'+esc(s.no)+'</span></td>'
         +'<td style="font-size:14px;">'+esc(malzStr)+'</td>'
+        +'<td style="font-size:14px;color:var(--txd);">'+esc(kaliteStr)+'</td>'
         +'<td style="font-size:14px;color:var(--ac);">'+esc(capStr)+'</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;">'+s.boruSayisi+'</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--warn);font-weight:600;">'+s.mm.toLocaleString('tr-TR')+'</td>'
@@ -1773,6 +1779,44 @@ function mdlKaydet(){
     closeKLDetay();
     klKaydet(_mdlKlId);
   }
+}
+
+function mdlIptalOnayla(){
+  if(!_mdlKlId) return;
+  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl) return;
+  var klB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  if(!confirm(kl.no+' paketini iptal etmek istediğinizden emin misiniz?\n'
+    +klB.length+' boru kesim havuzuna geri dönecek.')) return;
+  klIptal(_mdlKlId);
+}
+
+function klIptal(klId){
+  var kl=kesimListeleri.find(function(x){ return x.id===klId; }); if(!kl) return;
+  var klB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  // Borular havuza geri
+  klB.forEach(function(k){ k.durum='bekliyor'; });
+  // Listeden çıkar
+  var idx=kesimListeleri.findIndex(function(x){ return x.id===klId; });
+  if(idx!==-1) kesimListeleri.splice(idx,1);
+  closeKLDetay();
+  // Supabase
+  if(ARES.mod==='supabase'){
+    var supa=ARES.supabase();
+    // Borular havuza: kesim_listesi_id temizle
+    var boruSupaIds=klB.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
+    if(boruSupaIds.length){
+      supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',boruSupaIds).then(function(){});
+    }
+    // Listeyi sil
+    if(kl.supaId){
+      supa.from('kesim_listeleri').delete().eq('id',kl.supaId).then(function(r){
+        if(r.error) console.warn('[ARES] Liste silme:', r.error.message);
+      });
+    }
+  }
+  applyFilters(); updateStats(); renderKL(); renderArc();
+  toast(kl.no+' iptal edildi — '+klB.length+' boru havuza döndü','info');
+  switchTab('bekliyor');
 }
 
 // ════════════════════════════════════
