@@ -183,6 +183,75 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 ═══════════════════════════════════════════ */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:28px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+
+/* ── Wizard Modal ── */
+.wz-modal{background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:920px;max-height:91vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4);}
+.wz-head{padding:16px 22px 0;flex-shrink:0;}
+.wz-head-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.wz-kl{display:flex;align-items:center;gap:9px;}
+.wz-kl-icon{width:32px;height:32px;border-radius:8px;background:rgba(194,65,12,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.wz-kl-no{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:800;color:var(--ks);}
+.wz-kl-meta{font-size:13px;color:var(--txm);margin-left:4px;}
+.wz-close{width:30px;height:30px;border-radius:7px;background:none;border:1px solid var(--bor);color:var(--txd);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.wz-close:hover{background:var(--sur2);color:var(--tx);}
+/* Step bar */
+.wz-stepbar{display:flex;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--bor);}
+.wz-step{display:flex;align-items:center;gap:8px;flex:1;position:relative;}
+.wz-step:not(:last-child)::after{content:'';position:absolute;left:calc(16px + 8px);right:0;top:50%;transform:translateY(-50%);height:2px;background:var(--step-todo,#cbd5e1);z-index:0;transition:background .3s;}
+.wz-step.done::after{background:#16a34a;}
+.wz-step.active::after{background:linear-gradient(90deg,#16a34a 0%,var(--step-todo,#cbd5e1) 100%);}
+.wz-step:last-child{flex:0 0 auto;}
+.wz-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;flex-shrink:0;position:relative;z-index:1;border:2px solid;transition:all .3s;}
+.wz-step.done .wz-num{background:#16a34a;border-color:#16a34a;color:#fff;}
+.wz-step.active .wz-num{background:var(--ks);border-color:var(--ks);color:#fff;box-shadow:0 0 0 4px rgba(194,65,12,.15);}
+.wz-step.todo .wz-num{background:var(--sur);border-color:#cbd5e1;color:var(--txd);}
+.wz-step-lbl{display:flex;flex-direction:column;}
+.wz-step-title{font-size:13px;font-weight:700;transition:color .3s;}
+.wz-step.done .wz-step-title{color:#16a34a;}
+.wz-step.active .wz-step-title{color:var(--ks);}
+.wz-step.todo .wz-step-title{color:var(--txd);}
+.wz-step-sub{font-size:11px;color:var(--txd);}
+/* Body / steps */
+.wz-body{overflow-y:auto;flex:1;}
+.wz-sc{display:none;}
+.wz-sc.active{display:block;animation:wzFade .2s ease;}
+@keyframes wzFade{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:translateX(0);}}
+/* Step 1 */
+.wz-s1-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--sur2);border-bottom:1px solid var(--bor);flex-shrink:0;}
+.wz-s1-prog{flex:1;min-width:0;}
+.wz-s1-prog-lbl{font-size:13px;color:var(--txm);display:flex;justify-content:space-between;margin-bottom:4px;}
+.wz-prog-bar{height:4px;background:var(--bor);border-radius:2px;overflow:hidden;}
+.wz-prog-fill{height:100%;border-radius:2px;transition:width .3s;}
+.wz-tbl-scroll{overflow-y:auto;max-height:360px;}
+.wz-s1-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(22,163,74,.05);border-top:1px solid rgba(22,163,74,.15);font-size:14px;color:var(--txm);}
+/* Step 2 */
+.wz-s2-wrap{padding:20px 24px;}
+.wz-param-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:4px;}
+.wz-param-item label{display:block;font-size:13px;color:var(--txm);margin-bottom:5px;font-weight:500;}
+.wz-parca-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.wz-parca-row{display:flex;gap:6px;align-items:center;}
+.wz-parca-input{flex:1;padding:8px 12px;border:1.5px solid var(--bor);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--tx);background:var(--sur);outline:none;transition:border-color .15s;}
+.wz-parca-input:focus{border-color:var(--leg);}
+.wz-hint{padding:10px 14px;border-radius:8px;background:rgba(45,142,255,.05);border:1px solid rgba(45,142,255,.15);font-size:13px;color:var(--txm);margin-top:12px;}
+/* Step 3 */
+.wz-s3-stat{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--bor);}
+.wz-s3-cell{padding:10px 14px;border-right:1px solid var(--bor);border-top:2px solid transparent;}
+.wz-s3-cell:last-child{border-right:none;}
+.wz-s3-cell-lbl{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.wz-s3-cell-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1;display:flex;align-items:baseline;gap:3px;}
+.wz-s3-cell-unit{font-size:12px;font-weight:400;color:var(--txd);}
+.wz-s3-cards{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+/* Footer */
+.wz-foot{padding:12px 20px;border-top:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;background:var(--sur);}
+.wz-foot-left{display:flex;align-items:center;gap:10px;}
+.wz-foot-right{display:flex;align-items:center;gap:8px;}
+.wz-step-prog{font-size:13px;color:var(--txd);font-family:'JetBrains Mono',monospace;}
+.wz-step-prog strong{color:var(--tx);font-size:14px;}
+.wz-bar{height:3px;background:var(--bor);border-radius:2px;overflow:hidden;min-width:60px;flex:1;}
+.wz-bar-fill{height:100%;background:var(--ks);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+/* ks color for wizard */
+[data-theme=dark]{--ks:#e05a1e;}
+[data-theme=light-anthracite]{--ks:#c2410c;}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
 .modal-sub{font-size:14px;color:var(--txd);margin-bottom:20px;}
 .modal-label{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:block;}
@@ -385,7 +454,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
   <div class="main-tabs">
     <button class="main-tab active" id="tab-bekliyor" onclick="switchTab('bekliyor')"><span data-i18n="ks_tab_bekleyen">✂️ Kesim Bekleyen</span> <span class="mtbadge" id="badge-bekliyor" style="background:rgba(229,62,62,.15);color:var(--re);"></span></button>
     <button class="main-tab" id="tab-listeler" onclick="switchTab('listeler')"><span data-i18n="ks_tab_listeler">📋 Kesim Listeleri</span> <span class="mtbadge" id="badge-listeler" style="background:rgba(217,119,6,.15);color:var(--warn);"></span></button>
-    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')"><span data-i18n="ks_tab_kesilmis">✓ Kesilen Listeler</span> <span class="mtbadge" id="badge-tamamlandi" style="background:rgba(22,163,110,.12);color:var(--gr);"></span></button>
+    <button class="main-tab" id="tab-tamamlandi" onclick="switchTab('tamamlandi')"><span data-i18n="ks_tab_kesilmis">✓ Kesilen Listeler</span></button>
     <button class="main-tab" id="tab-tekil" onclick="switchTab('tekil')" style="display:none;"><span data-i18n="ks_tab_tekil">⚡ Tekil Kesilenler</span> <span class="mtbadge" id="badge-tekil" style="background:rgba(45,142,255,.12);color:var(--ac);"></span></button>
   </div>
 
@@ -691,7 +760,133 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
   </div>
 </div>
 
-<!-- ═══ KESİLEN DETAY MODAL ═══ -->
+<!-- ═══ KESİM WIZARD MODAL (3 adım) ═══ -->
+<div class="modal-ov" id="wizardModal" style="display:none;">
+  <div class="wz-modal">
+
+    <!-- Başlık + step bar -->
+    <div class="wz-head">
+      <div class="wz-head-top">
+        <div class="wz-kl">
+          <div class="wz-kl-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ks)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span class="wz-kl-no" id="wzKlNo"></span>
+          <span class="wz-kl-meta" id="wzKlMeta"></span>
+        </div>
+        <button class="wz-close" onclick="closeWizard()">✕</button>
+      </div>
+      <div class="wz-stepbar">
+        <div class="wz-step active" id="wzSi1">
+          <div class="wz-num"><span class="wz-ntxt">1</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="wz-step-lbl"><div class="wz-step-title">Boru Listesi</div><div class="wz-step-sub">Seçim & Onay</div></div>
+        </div>
+        <div class="wz-step todo" id="wzSi2">
+          <div class="wz-num"><span class="wz-ntxt">2</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="wz-step-lbl"><div class="wz-step-title">Parametreler</div><div class="wz-step-sub">Stok & Parça Borular</div></div>
+        </div>
+        <div class="wz-step todo" id="wzSi3">
+          <div class="wz-num"><span class="wz-ntxt">3</span><svg class="wz-chk" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="wz-step-lbl"><div class="wz-step-title">Kesim Planı</div><div class="wz-step-sub">Şematik & İndirme</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="wz-body">
+
+      <!-- ADIM 1: Boru listesi -->
+      <div class="wz-sc active" id="wzSc1">
+        <div class="wz-s1-bar">
+          <div class="wz-s1-prog">
+            <div class="wz-s1-prog-lbl"><span data-i18n="ks_kesim_durum">Kesim durumu</span><span id="wzProgLbl" style="font-weight:700;color:var(--warn);"></span></div>
+            <div class="wz-prog-bar"><div class="wz-prog-fill" id="wzProgFill" style="width:0%;"></div></div>
+          </div>
+          <button class="btn-outline" onclick="wzTumunuSec(true)" style="height:32px;font-size:13px;">☑ Tümünü Seç</button>
+          <button class="btn-outline" onclick="wzTumunuSec(false)" style="height:32px;font-size:13px;">☐ Tümünü Kaldır</button>
+          <button class="btn-outline" onclick="wzIptalOnayla()" style="height:32px;font-size:13px;border-color:rgba(229,62,62,.4);color:var(--re);">🗑 Paketi İptal Et</button>
+        </div>
+        <div class="wz-tbl-scroll">
+          <table class="data-table" style="min-width:1100px;">
+            <thead><tr>
+              <th class="no-sort cb-cell" style="width:40px;">✓</th>
+              <th class="no-sort" style="width:36px;">#</th>
+              <th data-i18n="cmn_th_tersane">Tersane</th>
+              <th data-i18n="ks_chip_isemir">İş Emri</th>
+              <th data-i18n="cmn_th_spool_no">Spool No</th>
+              <th data-i18n="cmn_th_spool_id">Spool ID</th>
+              <th data-i18n="ks_filter_mat">Malzeme</th>
+              <th data-i18n="ks_filter_grade">Kalite</th>
+              <th data-i18n="ks_chip_cap">Çap</th>
+              <th data-i18n="cmn_th_et">Et Kal.</th>
+              <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
+              <th data-i18n="ks_th_a_ucu">A Ucu</th>
+              <th data-i18n="ks_th_b_ucu">B Ucu</th>
+              <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
+            </tr></thead>
+            <tbody id="wzTableBody"></tbody>
+          </table>
+        </div>
+        <div class="wz-s1-foot" id="wzS1Foot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="wzS1Info">—</span>
+        </div>
+      </div>
+
+      <!-- ADIM 2: Parametreler -->
+      <div class="wz-sc" id="wzSc2">
+        <div class="wz-s2-wrap">
+          <div class="fm-section" style="margin-top:0;">Kesim Parametreleri</div>
+          <div class="wz-param-grid">
+            <div class="wz-param-item"><label>Standart Stok Boyu (mm)</label><input class="fm-input" id="wzStokBoy" type="number" value="6000" min="100"></div>
+            <div class="wz-param-item"><label>Testere Payı / Kerf (mm)</label><input class="fm-input" id="wzKerf" type="number" value="3" min="0"></div>
+            <div class="wz-param-item"><label>Uç Fire / Trim (mm)</label><input class="fm-input" id="wzTrim" type="number" value="0" min="0"></div>
+            <div class="wz-param-item"><label>Min. Kullanılabilir Artık (mm)</label><input class="fm-input" id="wzMinArtik" type="number" value="1500" min="0"></div>
+          </div>
+          <div class="fm-section" style="margin-top:20px;">Elimizdeki Parça Borular <span style="font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;color:var(--txd);">— opsiyonel</span></div>
+          <div class="wz-parca-list" id="wzParcalar"></div>
+          <button onclick="wzAddParca()" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s;" onmouseover="this.style.borderColor='var(--leg)';this.style.color='var(--leg)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">+ Parça Boru Ekle</button>
+          <div class="wz-hint">💡 Parça borular öncelikli kullanılır. Artık ≥ min. kullanılabilir artık ise tekrar listeye eklenir.</div>
+        </div>
+      </div>
+
+      <!-- ADIM 3: Kesim Planı (v3) -->
+      <div class="wz-sc" id="wzSc3">
+        <div class="wz-s3-stat" id="wzStatStrip"></div>
+        <div class="wz-s3-cards" id="wzCards"></div>
+      </div>
+
+    </div><!-- /wz-body -->
+
+    <!-- Footer -->
+    <div class="wz-foot">
+      <div class="wz-foot-left">
+        <span class="wz-step-prog">Adım <strong id="wzStepNow">1</strong> / 3</span>
+        <div class="wz-bar"><div class="wz-bar-fill" id="wzBarFill" style="width:33.3%"></div></div>
+      </div>
+      <div class="wz-foot-right">
+        <button class="btn-outline" id="wzBtnBack" onclick="wzPrev()" style="display:none;">← Geri</button>
+        <span id="wzFootInfo" style="font-size:13px;color:var(--txd);"></span>
+        <!-- Step 3 ekstra butonlar -->
+        <button id="wzBtnExcel" onclick="wzExcel()" class="btn-outline" style="display:none;border-color:rgba(22,163,110,.4);color:var(--gr);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Excel
+        </button>
+        <button id="wzBtnPdf" onclick="wzPdf()" class="btn-outline" style="display:none;border-color:rgba(45,142,255,.4);color:var(--ac);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF
+        </button>
+        <!-- Adım 1'de kaydet butonu -->
+        <button id="wzBtnKaydet" onclick="wzKaydet()" class="btn-green" style="height:38px;padding:0 16px;border-radius:9px;font-size:14px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Seçilileri Kesildi Kaydet
+        </button>
+        <button class="btn-outline" id="wzBtnNext" onclick="wzNext()" style="height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;">İleri →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 <div class="modal-ov" id="arcDetayModal" style="display:none;">
   <div class="modal-box" style="max-width:95vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
     <div style="padding:16px 24px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -1294,7 +1489,7 @@ function updateStats(){
   var _pt=document.getElementById('progTam');if(_pt)_pt.style.width=(borular.length?Math.round(tam/borular.length*100):0)+'%';
   document.getElementById('badge-bekliyor').textContent=bek;
   document.getElementById('badge-listeler').textContent=kesimListeleri.filter(kl=>!kl.kapali).length;
-  document.getElementById('badge-tamamlandi').textContent=kesimListeleri.filter(kl=>kl.kapali).length;
+
 }
 
 // ════════════════════════════════════
@@ -1617,7 +1812,7 @@ function renderArc(){
     if(empty)empty.style.display='block';
     var pgArcEl=document.getElementById('arcPg');if(pgArcEl)pgArcEl.style.display='none';
     // badge güncelle
-    var badgeTam=document.getElementById('badge-tamamlandi');if(badgeTam)badgeTam.textContent='';
+
     var badgeTekil=document.getElementById('badge-tekil');if(badgeTekil)badgeTekil.textContent='';
     return;
   }
@@ -1679,7 +1874,7 @@ function renderArc(){
   else pgArcEl.style.display='none';
 
   // Badge güncelle
-  var badgeTam=document.getElementById('badge-tamamlandi');
+
   if(badgeTam) badgeTam.textContent=satirlar.length||'';
 }
 function goArc(p){pgArc=p;renderArc();}
@@ -1689,183 +1884,6 @@ function renderTekil(){
   // Tekil kesilenler artık renderArc() içinde birleşik tabloda gösteriliyor
   var badgeTekil=document.getElementById('badge-tekil');
   if(badgeTekil) badgeTekil.textContent='';
-}
-// ════════════════════════════════════
-// KESİM LİSTESİ DETAY POPUP
-// ════════════════════════════════════
-var _mdlKlId = null;
-function openKLDetay(klId){
-  _mdlKlId = klId;
-  var kl = kesimListeleri.find(x=>x.id===klId); if(!kl) return;
-  var klB = borular.filter(k=>kl.boruIds.includes(k.id));
-  var mm = klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
-  var malz = kl.kriter&&kl.kriter.malzemeler?kl.kriter.malzemeler.join(', '):'—';
-  var cap  = kl.kriter&&kl.kriter.capler?'Ø'+kl.kriter.capler.join(', Ø'):'—';
-  // Başlık
-  document.getElementById('klDetayTitle').textContent = kl.no;
-  document.getElementById('klDetayMeta').textContent = malz+' · '+cap+' · '+esc(kl.tarih);
-  // İlerleme
-  _mdlUpdateProg(klId);
-  // Tablo
-  _mdlRenderTable(klId);
-  // Footer
-  var mm2 = klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
-  document.getElementById('klDetayCount').textContent = klB.length+' '+tv('bk_unit_boru','boru');
-  document.getElementById('klDetaySum').innerHTML = tv('bk_toplam','Toplam')+': <span style="color:var(--warn);">'+mm2.toLocaleString('tr-TR')+' mm</span>';
-
-  // Kesim planı bölümü — her zaman göster (plan varsa şematik, yoksa oluştur butonu)
-  var planEl=document.getElementById('klDetayPlan');
-  var planView=document.getElementById('klDetayPlanView');
-  var planEmpty=document.getElementById('klDetayPlanEmpty');
-  var semaEl=document.getElementById('klDetayPlanSema');
-  var tarihEl=document.getElementById('klDetayPlanTarih');
-  if(planEl) planEl.style.display='block';
-  if(kl.kesimPlani && kl.kesimPlani.plans && kl.kesimPlani.plans.length){
-    if(planView) planView.style.display='block';
-    if(planEmpty) planEmpty.style.display='none';
-    if(tarihEl) tarihEl.textContent='('+kl.kesimPlani.tarih+')';
-    _fmCurrentPlans=kl.kesimPlani.plans;
-    _fmCurrentParams=kl.kesimPlani.params;
-    _fmKlB=klB;
-    _renderSemaToEl(kl.kesimPlani.plans, kl.kesimPlani.params, semaEl);
-  } else {
-    if(planView) planView.style.display='none';
-    if(planEmpty) planEmpty.style.display='flex';
-    if(tarihEl) tarihEl.textContent='';
-  }
-
-  document.getElementById('klDetayModal').style.display='flex';
-}
-function closeKLDetay(){
-  document.getElementById('klDetayModal').style.display='none';
-  _mdlKlId=null;
-}
-
-function klDetayExcelIndir(){
-  if(!_mdlKlId) return;
-  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl||!kl.kesimPlani) return;
-  _fmKlId=kl.id; _fmKlB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  _fmCurrentPlans=kl.kesimPlani.plans; _fmCurrentParams=kl.kesimPlani.params;
-  fmExcelIndir();
-}
-function klDetayPdfYazdir(){
-  if(!_mdlKlId) return;
-  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl||!kl.kesimPlani) return;
-  _fmKlId=kl.id; _fmKlB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  _fmCurrentPlans=kl.kesimPlani.plans; _fmCurrentParams=kl.kesimPlani.params;
-  fmPdfYazdir();
-}
-function _mdlRenderTable(klId){
-  var kl=kesimListeleri.find(x=>x.id===klId);if(!kl)return;
-  var klB=borular.filter(k=>kl.boruIds.includes(k.id));
-  var ucLbl=getUcMap();
-  document.getElementById('klDetayTableBody').innerHTML=klB.map(function(k,i){
-    var ch=kl.kesilmisIds.has(k.id);
-    var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
-    var sertBadge=k.sertifika
-      ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
-      :'<span style="color:var(--txd);font-size:14px;">—</span>';
-    return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mdlrow-'+k.id+'">'
-      +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mdlToggleRow(\''+k.id+'\',this.checked)"></td>'
-      +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
-      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
-      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
-      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
-      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
-      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
-      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
-      +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
-      +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
-      +'<td style="text-align:center;">'+sertBadge+'</td>'
-      +'</tr>';
-  }).join('');
-}
-function _mdlUpdateProg(klId){
-  var kl=kesimListeleri.find(x=>x.id===klId);if(!kl)return;
-  var klB=borular.filter(k=>kl.boruIds.includes(k.id));
-  var kes=klB.filter(k=>kl.kesilmisIds.has(k.id)).length;
-  var top=klB.length;
-  var pct=top?Math.round(kes/top*100):0;
-  var lbl=document.getElementById('mdlProgLbl');
-  var fill=document.getElementById('mdlProgFill');
-  if(lbl){lbl.textContent=kes+' / '+top+' '+tv('bk_unit_boru','boru')+' · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
-  if(fill)fill.style.width=pct+'%';
-}
-function mdlToggleRow(boruId,checked){
-  if(!_mdlKlId)return;
-  var kl=kesimListeleri.find(x=>x.id===_mdlKlId);if(!kl)return;
-  checked?kl.kesilmisIds.add(boruId):kl.kesilmisIds.delete(boruId);
-  var row=document.getElementById('mdlrow-'+boruId);
-  if(row){row.classList.toggle('kl-row-cut',checked);row.classList.toggle('kl-row-nocut',!checked);}
-  _mdlUpdateProg(_mdlKlId);
-}
-function mdlTumunuSec(checked){
-  if(!_mdlKlId)return;
-  var kl=kesimListeleri.find(x=>x.id===_mdlKlId);if(!kl)return;
-  if(checked)kl.boruIds.forEach(id=>kl.kesilmisIds.add(id));else kl.kesilmisIds.clear();
-  _mdlRenderTable(_mdlKlId);_mdlUpdateProg(_mdlKlId);
-}
-function mdlFormAc(){
-  if(!_mdlKlId) return;
-  _fmFromDetay = true;
-  openFormModal(_mdlKlId, null);
-}
-function mdlYenidenPlanla(){
-  // Plan varsa geçici temizle → formu aç → plan geri koy (runForm üzerine yazar)
-  if(!_mdlKlId) return;
-  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl) return;
-  var savedPlan=kl.kesimPlani;
-  kl.kesimPlani=null;
-  _fmFromDetay=true;
-  openFormModal(_mdlKlId, null);
-  kl.kesimPlani=savedPlan; // runForm üzerine yazacak, ama iptal edilirse eski plan korunur
-}
-function mdlKaydet(){
-  if(_mdlKlId){
-    closeKLDetay();
-    klKaydet(_mdlKlId);
-  }
-}
-
-function mdlIptalOnayla(){
-  if(!_mdlKlId) return;
-  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl) return;
-  var klB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  if(!confirm(kl.no+' paketini iptal etmek istediğinizden emin misiniz?\n'
-    +klB.length+' boru kesim havuzuna geri dönecek.')) return;
-  klIptal(_mdlKlId);
-}
-
-function klIptal(klId){
-  var kl=kesimListeleri.find(function(x){ return x.id===klId; }); if(!kl) return;
-  var klB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  // Borular havuza geri
-  klB.forEach(function(k){ k.durum='bekliyor'; });
-  // Listeden çıkar
-  var idx=kesimListeleri.findIndex(function(x){ return x.id===klId; });
-  if(idx!==-1) kesimListeleri.splice(idx,1);
-  closeKLDetay();
-  // Supabase
-  if(ARES.mod==='supabase'){
-    var supa=ARES.supabase();
-    // Borular havuza: kesim_listesi_id temizle
-    var boruSupaIds=klB.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
-    if(boruSupaIds.length){
-      supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',boruSupaIds).then(function(){});
-    }
-    // Listeyi sil
-    if(kl.supaId){
-      supa.from('kesim_listeleri').delete().eq('id',kl.supaId).then(function(r){
-        if(r.error) console.warn('[ARES] Liste silme:', r.error.message);
-      });
-    }
-  }
-  applyFilters(); updateStats(); renderKL(); renderArc();
-  toast(kl.no+' iptal edildi — '+klB.length+' boru havuza döndü','info');
-  switchTab('bekliyor');
 }
 
 // ════════════════════════════════════
@@ -2303,6 +2321,254 @@ function _renderV3(plans, params, klB, opts) {
     opts.cardsEl.innerHTML = cardsHtml || '<div style="color:var(--txd);font-size:14px;padding:20px;text-align:center;">Plan boş.</div>';
   }
 }
+
+// ════════════════════════════════════
+// Paketi iptal — borular havuza döner, liste silinir
+function klIptal(klId){
+  var kl=kesimListeleri.find(function(x){ return x.id===klId; }); if(!kl) return;
+  var klB=borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  klB.forEach(function(k){ k.durum='bekliyor'; });
+  var idx=kesimListeleri.findIndex(function(x){ return x.id===klId; });
+  if(idx!==-1) kesimListeleri.splice(idx,1);
+  if(ARES.mod==='supabase'){
+    var supa=ARES.supabase();
+    var boruSupaIds=klB.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
+    if(boruSupaIds.length) supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',boruSupaIds).then(function(){});
+    if(kl.supaId) supa.from('kesim_listeleri').delete().eq('id',kl.supaId).then(function(r){ if(r.error) console.warn('[ARES] Liste silme:',r.error.message); });
+  }
+  applyFilters(); updateStats(); renderKL(); renderArc();
+  toast(kl.no+' iptal edildi — '+klB.length+' boru havuza döndü','info');
+  switchTab('bekliyor');
+}
+
+// WIZARD MODAL — JS
+// ════════════════════════════════════
+var _wzKlId = null, _wzStep = 1, _wzParcaSayac = 0;
+var _wzKlB = null, _wzPlans = null, _wzParams = null;
+var _wzKesilmisIds = new Set();
+
+function openWizard(klId, startStep) {
+  _wzKlId = klId; _wzParcaSayac = 0;
+  var kl = kesimListeleri.find(function(x){ return x.id === klId; }); if(!kl) return;
+  _wzKlB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  _wzKesilmisIds = new Set(kl.kesilmisIds || []);
+  _wzPlans  = kl.kesimPlani ? kl.kesimPlani.plans  : null;
+  _wzParams = kl.kesimPlani ? kl.kesimPlani.params : null;
+  var malz = _wzKlB[0] || {};
+  var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'');
+  document.getElementById('wzKlNo').textContent = kl.no;
+  document.getElementById('wzKlMeta').textContent = [malzLabel,malz.kalite,malz.cap?'Ø'+malz.cap:'',malz.kalinlik].filter(Boolean).join(' · ');
+  _wzRenderTable();
+  if(kl.kesimPlani && kl.kesimPlani.params) {
+    var p=kl.kesimPlani.params;
+    document.getElementById('wzStokBoy').value  = p.standartLen||6000;
+    document.getElementById('wzKerf').value     = p.kerf||3;
+    document.getElementById('wzTrim').value     = p.trim||0;
+    document.getElementById('wzMinArtik').value = p.minArtik||1500;
+    document.getElementById('wzParcalar').innerHTML='';
+    (p.parcaBorular||[]).forEach(function(pb){ wzAddParcaVal(pb.uzunluk); });
+  } else {
+    document.getElementById('wzStokBoy').value=6000; document.getElementById('wzKerf').value=3;
+    document.getElementById('wzTrim').value=0; document.getElementById('wzMinArtik').value=1500;
+    document.getElementById('wzParcalar').innerHTML='';
+  }
+  document.getElementById('wizardModal').style.display='flex';
+  wzGoStep(startStep||1);
+}
+function closeWizard(){ document.getElementById('wizardModal').style.display='none'; _wzKlId=null; _wzStep=1; }
+
+function wzGoStep(n) {
+  _wzStep=n;
+  [1,2,3].forEach(function(i){
+    var sc=document.getElementById('wzSc'+i); var si=document.getElementById('wzSi'+i);
+    if(sc) sc.className='wz-sc'+(i===n?' active':'');
+    if(!si) return;
+    si.className='wz-step '+(i<n?'done':i===n?'active':'todo');
+    var nt=si.querySelector('.wz-ntxt'); var ck=si.querySelector('.wz-chk');
+    if(nt) nt.style.display=i<n?'none':'inline';
+    if(ck) ck.style.display=i<n?'block':'none';
+  });
+  document.getElementById('wzStepNow').textContent=n;
+  document.getElementById('wzBarFill').style.width=(n/3*100)+'%';
+  var bBack=document.getElementById('wzBtnBack'); var bNext=document.getElementById('wzBtnNext');
+  var bKay=document.getElementById('wzBtnKaydet'); var bExc=document.getElementById('wzBtnExcel'); var bPdf=document.getElementById('wzBtnPdf');
+  var fInfo=document.getElementById('wzFootInfo');
+  bBack.style.display=n>1?'inline-flex':'none';
+  bExc.style.display=n===3?'inline-flex':'none'; bPdf.style.display=n===3?'inline-flex':'none';
+  if(n===1){
+    bKay.style.display='inline-flex'; bNext.style.display='inline-flex';
+    bNext.textContent='Kesim Planı Oluştur →'; bNext.style.cssText='height:38px;padding:0 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;border:1.5px solid var(--bor);color:var(--txm);cursor:pointer;';
+    var mm=(_wzKlB||[]).reduce(function(s,k){return s+(parseFloat(k.kesimOlcusu)||0);},0);
+    fInfo.textContent=(_wzKlB||[]).length+' boru · '+mm.toLocaleString('tr-TR')+' mm';
+  } else if(n===2){
+    bKay.style.display='none'; bNext.style.display='inline-flex';
+    bNext.textContent=_wzPlans?'✓ Planı Görüntüle':'Hesapla & Önizle →';
+    bNext.style.cssText='height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;background:var(--ac);color:#fff;border:none;cursor:pointer;';
+    fInfo.textContent='';
+  } else {
+    bKay.style.display='none'; bNext.style.display='inline-flex';
+    bNext.textContent='✓ Kapat';
+    bNext.style.cssText='height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;background:var(--gr);color:#fff;border:none;cursor:pointer;';
+    fInfo.textContent=''; _wzRenderPlan();
+  }
+}
+
+function wzNext(){
+  if(_wzStep===1){ wzGoStep(2); }
+  else if(_wzStep===2){ if(_wzPlans){wzGoStep(3);}else{wzHesapla();} }
+  else{ closeWizard(); }
+}
+function wzPrev(){ if(_wzStep>1) wzGoStep(_wzStep-1); }
+
+function _wzRenderTable(){
+  if(!_wzKlId) return;
+  var ucLbl=getUcMap();
+  document.getElementById('wzTableBody').innerHTML=(_wzKlB||[]).map(function(k,i){
+    var ch=_wzKesilmisIds.has(k.id);
+    var sert=k.sertifika?'<span style="color:var(--warn);font-size:16px;">★</span>':'<span style="color:var(--txd);font-size:14px;">—</span>';
+    return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="wzrow-'+k.id+'">'
+      +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="wzToggle(\''+k.id+'\',this.checked)"></td>'
+      +'<td class="cell-no">'+(i+1)+'</td>'
+      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
+      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
+      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
+      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
+      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
+      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
+      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
+      +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
+      +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
+      +'<td style="text-align:center;">'+sert+'</td>'+'</tr>';
+  }).join('');
+  _wzUpdateProg();
+}
+function wzToggle(id,ch){
+  ch?_wzKesilmisIds.add(id):_wzKesilmisIds.delete(id);
+  var row=document.getElementById('wzrow-'+id);
+  if(row){row.classList.toggle('kl-row-cut',ch);row.classList.toggle('kl-row-nocut',!ch);}
+  _wzUpdateProg();
+}
+function wzTumunuSec(ch){
+  (_wzKlB||[]).forEach(function(k){
+    ch?_wzKesilmisIds.add(k.id):_wzKesilmisIds.delete(k.id);
+    var row=document.getElementById('wzrow-'+k.id);
+    if(row){row.classList.toggle('kl-row-cut',ch);row.classList.toggle('kl-row-nocut',!ch);}
+    var cb=row&&row.querySelector('.kl-cb');if(cb)cb.checked=ch;
+  });
+  _wzUpdateProg();
+}
+function _wzUpdateProg(){
+  var top=(_wzKlB||[]).length;
+  var kes=(_wzKlB||[]).filter(function(k){return _wzKesilmisIds.has(k.id);}).length;
+  var pct=top?Math.round(kes/top*100):0;
+  var lbl=document.getElementById('wzProgLbl'); var fill=document.getElementById('wzProgFill');
+  if(lbl){lbl.textContent=kes+' / '+top+' boru · %'+pct;lbl.style.color=kes===top?'var(--gr)':'var(--warn)';}
+  if(fill){fill.style.width=pct+'%';fill.style.background=kes===top?'var(--gr)':'var(--warn)';}
+  var info=document.getElementById('wzS1Info');
+  var mm=(_wzKlB||[]).reduce(function(s,k){return s+(parseFloat(k.kesimOlcusu)||0);},0);
+  if(info) info.innerHTML=top+' boru · Toplam <strong style="color:var(--gr);">'+mm.toLocaleString('tr-TR')+' mm</strong>';
+  var fInfo=document.getElementById('wzFootInfo');
+  if(fInfo&&_wzStep===1) fInfo.textContent=top+' boru · '+mm.toLocaleString('tr-TR')+' mm';
+}
+function wzAddParca(){ wzAddParcaVal(''); }
+function wzAddParcaVal(val){
+  _wzParcaSayac++;
+  var id='wzParca'+_wzParcaSayac; var row=document.createElement('div');
+  row.id=id; row.className='wz-parca-row';
+  row.innerHTML='<input type="number" placeholder="Uzunluk mm" min="1" class="wz-parca-input" '+(val?'value="'+val+'"':'')+' style="flex:1;">'
+    +'<button onclick="document.getElementById(\''+id+'\').remove()" style="width:32px;height:32px;border-radius:8px;background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);color:var(--re);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>';
+  document.getElementById('wzParcalar').appendChild(row);
+  if(!val) row.querySelector('input').focus();
+}
+function wzHesapla(){
+  if(!_wzKlId||!_wzKlB) return;
+  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
+  var standartLen=parseInt(document.getElementById('wzStokBoy').value)||6000;
+  var kerf=parseInt(document.getElementById('wzKerf').value)||3;
+  var trim=parseInt(document.getElementById('wzTrim').value)||0;
+  var minArtik=parseInt(document.getElementById('wzMinArtik').value)||1500;
+  var parcaBorular=[];
+  document.querySelectorAll('#wzParcalar input[type="number"]').forEach(function(inp,i){
+    var v=parseInt(inp.value);if(v>0)parcaBorular.push({id:'PARCA-'+(i+1),uzunluk:v});
+  });
+  var lengthMap={};
+  _wzKlB.forEach(function(k){
+    var boy=parseFloat(k.kesimOlcusu)||0;if(boy<=0)return;
+    if(!lengthMap[boy])lengthMap[boy]={length:boy,qty:0,refs:[]};
+    lengthMap[boy].qty++;lengthMap[boy].refs.push(k);
+  });
+  var pieces=Object.values(lengthMap);
+  if(!pieces.length){toast('Geçerli kesim ölçüsü olan boru bulunamadı','error');return;}
+  var stocks=parcaBorular.map(function(pb){return{id:pb.id,length:pb.uzunluk,type:'piece_stock'};});
+  var btn=document.getElementById('wzBtnNext');
+  if(btn){btn.disabled=true;btn.textContent='Hesaplanıyor...';}
+  window._fmStandartLen=standartLen;
+  setTimeout(function(){
+    try{
+      var result=calculateCutOptimization(pieces,stocks,{kerf:kerf,trim:trim,minRem:minArtik,iterations:300});
+      var usedRefs={};
+      result.plans.forEach(function(plan){
+        plan.matchedBorular=[];
+        plan.cuts.forEach(function(cut){
+          var g=lengthMap[cut];if(g){var r=g.refs.find(function(x){return!usedRefs[x.id];});if(r){plan.matchedBorular.push(r);usedRefs[r.id]=true;}}
+        });
+      });
+      var params={standartLen:standartLen,kerf:kerf,trim:trim,minArtik:minArtik,parcaBorular:parcaBorular};
+      var tarih=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      kl.kesimPlani={plans:result.plans,params:params,tarih:tarih};
+      _wzPlans=result.plans;_wzParams=params;
+      _fmKlId=_wzKlId;_fmKlB=_wzKlB;_fmCurrentPlans=_wzPlans;_fmCurrentParams=_wzParams;_fmArcIdx=null;
+      if(typeof ARES!=='undefined'&&ARES.mod==='supabase'&&kl.supaId){
+        ARES.supabase().from('kesim_listeleri').update({kesim_plani:{plans:result.plans,params:params,tarih:tarih}}).eq('id',kl.supaId).then(function(){});
+      }
+      wzGoStep(3);
+    }catch(e){toast('Plan hatası: '+e.message,'error');}
+    if(btn){btn.disabled=false;btn.textContent='Hesapla & Önizle →';}
+  },30);
+}
+function _wzRenderPlan(){
+  if(!_wzPlans)return;
+  var p=_wzParams||(function(){var kl=_wzKlId&&kesimListeleri.find(function(x){return x.id===_wzKlId;});return kl&&kl.kesimPlani?kl.kesimPlani.params:{};})();
+  _fmKlId=_wzKlId;_fmKlB=_wzKlB;_fmCurrentPlans=_wzPlans;_fmCurrentParams=p;_fmArcIdx=null;
+  _renderV3(_wzPlans,p,_wzKlB,{statEl:document.getElementById('wzStatStrip'),cardsEl:document.getElementById('wzCards')});
+}
+function wzKaydet(){
+  if(!_wzKlId)return;
+  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
+  kl.kesilmisIds=_wzKesilmisIds;
+  closeWizard();
+  klKaydet(_wzKlId);
+}
+function wzIptalOnayla(){
+  if(!_wzKlId)return;
+  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
+  var klB=borular.filter(function(k){return kl.boruIds.includes(k.id);});
+  if(!confirm(kl.no+' paketini iptal etmek istediğinizden emin misiniz?\n'+klB.length+' boru havuza geri dönecek.'))return;
+  closeWizard();klIptal(_wzKlId);
+}
+function wzExcel(){fmExcelIndir();}
+function wzPdf(){fmPdfYazdir();}
+// Eski fonksiyonları wizard'a yönlendir
+function openKLDetay(klId){
+  var kl=kesimListeleri.find(function(x){return x.id===klId;});if(!kl)return;
+  openWizard(klId,(kl.kesimPlani&&kl.kesimPlani.plans&&kl.kesimPlani.plans.length)?3:1);
+}
+function closeKLDetay(){closeWizard();}
+function mdlFormAc(){if(_wzKlId)wzGoStep(2);}
+function mdlYenidenPlanla(){
+  if(!_wzKlId)return;
+  var kl=kesimListeleri.find(function(x){return x.id===_wzKlId;});if(!kl)return;
+  _wzPlans=null;_wzParams=null;kl.kesimPlani=null;
+  wzGoStep(2);
+}
+function mdlTumunuSec(ch){wzTumunuSec(ch);}
+function mdlToggleRow(id,ch){wzToggle(id,ch);}
+function mdlKaydet(){wzKaydet();}
+function mdlIptalOnayla(){wzIptalOnayla();}
+function _mdlUpdateProg(){_wzUpdateProg();}
+function _mdlRenderTable(){_wzRenderTable();}
 
 function openSonucModal(kl, plans, params, tarih){
   var klB = _fmKlB || borular.filter(function(k){ return kl.boruIds.includes(k.id); });
