@@ -894,13 +894,25 @@ async function veriYukle() {
     });
 
     // Kesim listeleri — kriter ve boru_ids dahil
-    var klRes = await supa.from('kesim_listeleri')
-      .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids, kesim_plani')
-      .eq('tenant_id', ARES.tenantId())
-      .order('olusturma', {ascending:false});
+    // kesim_plani kolonu yoksa hata vermemesi için önce dene, yoksa olmadan yükle
+    var klRes = await (async function(){
+      var r = await supa.from('kesim_listeleri')
+        .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids, kesim_plani')
+        .eq('tenant_id', ARES.tenantId())
+        .order('olusturma', {ascending:false});
+      if(r.error && r.error.code==='42703'){
+        // kolon yok — olmadan yükle
+        console.warn('[ARES] kesim_plani kolonu yok, olmadan yükleniyor');
+        return await supa.from('kesim_listeleri')
+          .select('id, no, olusturma, arsiv, kapali, kriter, boru_ids')
+          .eq('tenant_id', ARES.tenantId())
+          .order('olusturma', {ascending:false});
+      }
+      return r;
+    })();
 
     if(klRes.error){ console.error('[ARES] Kesim listeleri yükleme:', klRes.error); }
-    console.log('[ARES] Kesim listeleri:', (klRes.data||[]).length, 'liste. İlk boru_ids örneği:', (klRes.data||[])[0]?.boru_ids);
+    console.log('[ARES] Kesim listeleri:', (klRes.data||[]).length, 'liste');
 
     // Önce listeyi oluştur (boruIds sonradan doldurulacak)
     var klMap = {};
