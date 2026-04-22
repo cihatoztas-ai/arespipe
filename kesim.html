@@ -616,7 +616,6 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         </div>
         <button class="btn-outline" onclick="mdlTumunuSec(true)" style="height:34px;font-size:14px;">☑ Tümünü Seç</button>
         <button class="btn-outline" onclick="mdlTumunuSec(false)" style="height:34px;font-size:14px;">☐ Tümünü Kaldır</button>
-        <button class="btn-outline" onclick="mdlFormAc()" style="height:34px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Boru Kesim Formu</button>
         <button class="btn-outline" onclick="mdlIptalOnayla()" style="height:34px;font-size:14px;border-color:rgba(229,62,62,.4);color:var(--re);">🗑 Paketi İptal Et</button>
         <button class="btn-green" onclick="mdlKaydet()" style="height:34px;font-size:14px;padding:0 18px;border-radius:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -665,7 +664,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               PDF
             </button>
-            <button onclick="mdlFormAc()" class="btn-outline" style="height:30px;font-size:14px;padding:0 12px;">↺ Yeniden Planla</button>
+            <button onclick="mdlYenidenPlanla()" style="display:inline-flex;align-items:center;gap:5px;padding:0 12px;height:30px;border-radius:7px;background:none;border:1.5px solid var(--bor);color:var(--txm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;" onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txm)'">↺ Yeniden Planla</button>
           </div>
         </div>
         <div style="padding:12px 20px;overflow-x:auto;">
@@ -1813,6 +1812,16 @@ function mdlFormAc(){
   if(!_mdlKlId) return;
   _fmFromDetay = true;
   openFormModal(_mdlKlId, null);
+}
+function mdlYenidenPlanla(){
+  // Plan varsa geçici temizle → formu aç → plan geri koy (runForm üzerine yazar)
+  if(!_mdlKlId) return;
+  var kl=kesimListeleri.find(function(x){ return x.id===_mdlKlId; }); if(!kl) return;
+  var savedPlan=kl.kesimPlani;
+  kl.kesimPlani=null;
+  _fmFromDetay=true;
+  openFormModal(_mdlKlId, null);
+  kl.kesimPlani=savedPlan; // runForm üzerine yazacak, ama iptal edilirse eski plan korunur
 }
 function mdlKaydet(){
   if(_mdlKlId){
