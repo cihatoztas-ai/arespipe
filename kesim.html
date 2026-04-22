@@ -1849,7 +1849,11 @@ function mdlTumunuSec(checked){
   if(checked)kl.boruIds.forEach(id=>kl.kesilmisIds.add(id));else kl.kesilmisIds.clear();
   _mdlRenderTable(_mdlKlId);_mdlUpdateProg(_mdlKlId);
 }
-function mdlFormAc(){if(_mdlKlId)openFormModal(_mdlKlId,null);}
+function mdlFormAc(){
+  if(!_mdlKlId) return;
+  _fmFromDetay = true;
+  openFormModal(_mdlKlId, null);
+}
 function mdlKaydet(){
   if(_mdlKlId){
     closeKLDetay();
@@ -2025,9 +2029,14 @@ function calculateCutOptimization(pieces, stocks, config) {
 // ════════════════════════════════════
 var _fmKlId = null, _fmArcIdx = null, _fmStokSayac = 0;
 var _fmKlB = null, _fmCurrentPlans = null, _fmCurrentParams = null;
+var _fmFromDetay = false; // klDetayModal içinden mi açıldı
 
 function openFormModal(klId, arcIdx){
   _fmKlId=klId; _fmArcIdx=arcIdx; _fmStokSayac=0;
+  if(arcIdx === undefined || arcIdx === null) {
+    // klDetayModal'dan çağrılmıyorsa flag'i sıfırla
+    if(!_fmFromDetay) _fmFromDetay = false;
+  }
   var kl=kesimListeleri.find(function(x){ return x.id===klId; }); if(!kl) return;
   _fmKlB = (arcIdx!==null&&arcIdx!==undefined)
     ? borular.filter(function(k){ return kl.arsiv[arcIdx].kesilmisIds.includes(k.id); })
@@ -2037,6 +2046,7 @@ function openFormModal(klId, arcIdx){
   if(kl.kesimPlani && kl.kesimPlani.plans && kl.kesimPlani.plans.length){
     _fmCurrentPlans=kl.kesimPlani.plans;
     _fmCurrentParams=kl.kesimPlani.params;
+    _fmFromDetay = false;
     openSonucModal(kl, kl.kesimPlani.plans, kl.kesimPlani.params, kl.kesimPlani.tarih);
     return;
   }
@@ -2139,9 +2149,30 @@ function runForm(){
       _fmCurrentPlans=result.plans;
       _fmCurrentParams=params;
 
-      // Form modalı kapat, sonuç modalını aç
+      // Form modalı kapat
       closeFormModal();
-      openSonucModal(kl, result.plans, params, tarihStr);
+
+      if(_fmFromDetay && _mdlKlId === _fmKlId) {
+        // klDetayModal içinden açıldı → planı o popup'ta göster
+        _fmFromDetay = false;
+        var planView=document.getElementById('klDetayPlanView');
+        var planEmpty=document.getElementById('klDetayPlanEmpty');
+        var semaEl=document.getElementById('klDetayPlanSema');
+        var tarihEl=document.getElementById('klDetayPlanTarih');
+        if(planView) planView.style.display='block';
+        if(planEmpty) planEmpty.style.display='none';
+        if(tarihEl) tarihEl.textContent='('+tarihStr+')';
+        _fmKlB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+        if(semaEl) _renderSemaToEl(result.plans, params, semaEl);
+        // klDetayModal'ı ön plana getir (zaten açık, sadece scroll)
+        var planEl=document.getElementById('klDetayPlan');
+        if(planEl) setTimeout(function(){ planEl.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
+        toast(kl.no+' kesim planı oluşturuldu ✓', 'success');
+      } else {
+        // Bağımsız açıldı → sonuç modalını aç
+        _fmFromDetay = false;
+        openSonucModal(kl, result.plans, params, tarihStr);
+      }
 
       // Supabase kaydı
       if(typeof ARES!=='undefined'&&ARES.mod==='supabase'&&kl.supaId){
