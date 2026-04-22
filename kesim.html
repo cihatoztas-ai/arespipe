@@ -1575,7 +1575,7 @@ function createListe(){
     kesilmisIds: new Set(),
     arsiv: [], kriter
   };
-  kesimListeleri.push(listeObj);
+  kesimListeleri.unshift(listeObj); // en başa ekle — en yeni önce
   klSayac++;
   sec.forEach(k=>k.durum='listede');
   // Supabase'e kaydet
