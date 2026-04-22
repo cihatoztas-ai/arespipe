@@ -583,49 +583,71 @@ function switchTab(tab){
 }
 
 // ════ BÜKÜLECEKLER — FİLTRE ════
+// Cascade filter helper: belirtilen filtre HARİÇ tüm aktif filtreleri uygula, kalanları döndür
+// Sadece durum='bekliyor' olan havuzu temel alır (tamamlanmış olanlar hariç)
+function _havuzExcept(exclude){
+  return bukumler.filter(function(b){
+    if(b.durum !== 'bekliyor') return false;
+    if(exclude !== 'tersane'  && gv('fTersane')  && b.tersane  !== gv('fTersane'))  return false;
+    if(exclude !== 'malzeme'  && gv('fMalzeme')  && b.malzeme  !== gv('fMalzeme'))  return false;
+    if(exclude !== 'kalite'   && gv('fKalite')   && b.kalite   !== gv('fKalite'))   return false;
+    if(exclude !== 'cap'      && gv('fCap')      && b.cap      !== gv('fCap'))      return false;
+    if(exclude !== 'kalinlik' && gv('fKalinlik') && b.kalinlik !== gv('fKalinlik')) return false;
+    return true;
+  });
+}
+
 function uniq(key){
+  // Sadece bekleyen havuzdan benzersizler
   var vals=[];
-  bukumler.forEach(function(b){if(b[key]&&vals.indexOf(b[key])===-1)vals.push(b[key]);});
+  bukumler.forEach(function(b){
+    if(b.durum==='bekliyor' && b[key] && vals.indexOf(b[key])===-1) vals.push(b[key]);
+  });
   return vals;
 }
+
 function populateFilters(){
-  var fill=function(id,vals,labelFn){var s=document.getElementById(id);while(s.options.length>1)s.remove(1);vals.forEach(function(v){s.add(new Option(labelFn?labelFn(v):v,v));});};
-  fill('fTersane', uniq('tersane').sort());
-  var malzemeKodlar=[...new Set(bukumler.map(function(b){return b.malzeme;}).filter(Boolean))].sort();
+  var fill=function(id,vals,labelFn){
+    var s=document.getElementById(id); if(!s) return;
+    var oldVal = s.value;
+    while(s.options.length>1)s.remove(1);
+    vals.forEach(function(v){ if(v) s.add(new Option(labelFn?labelFn(v):v,v)); });
+    if(oldVal && vals.indexOf(oldVal) !== -1) s.value = oldVal;
+  };
+  // Her filtre için kendisi hariç diğer aktif filtreler uygulanmış havuzdan benzersizleri al
+  fill('fTersane', [...new Set(_havuzExcept('tersane').map(function(b){return b.tersane;}).filter(Boolean))].sort());
+  var malzemeKodlar=[...new Set(_havuzExcept('malzeme').map(function(b){return b.malzeme;}).filter(Boolean))].sort();
   fill('fMalzeme', malzemeKodlar, function(kod){
     return (typeof ARES_NORM!=='undefined') ? ARES_NORM.tvMalzeme(ARES_NORM.malzemeKod(kod), kod) : kod;
   });
-  fill('fKalite',  uniq('kalite').sort());
-  fill('fCap',     uniq('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
-  fill('fKalinlik',uniq('kalinlik').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+  fill('fKalite',  [...new Set(_havuzExcept('kalite')  .map(function(b){return b.kalite;})  .filter(Boolean))].sort());
+  fill('fCap',     [...new Set(_havuzExcept('cap')     .map(function(b){return b.cap;})     .filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+  fill('fKalinlik',[...new Set(_havuzExcept('kalinlik').map(function(b){return b.kalinlik;}).filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
 }
 function gv(id){return document.getElementById(id).value;}
 function onSearch(){aramaMetni=document.getElementById('searchInput').value.toLowerCase().trim();document.getElementById('searchClear').classList.toggle('show',!!aramaMetni);applyFilters();}
 function clearSearch(){document.getElementById('searchInput').value='';aramaMetni='';document.getElementById('searchClear').classList.remove('show');applyFilters();}
-function onFC(){['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',!!gv(id));});applyFilters();}
-function resetAll(){['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');});clearSearch();}
+function onFC(){
+  ['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',!!gv(id));});
+  applyFilters();
+  populateFilters(); // Cascade: diğer filtre seçeneklerini güncelle
+}
+function resetAll(){
+  ['fTersane','fMalzeme','fKalite','fCap','fKalinlik'].forEach(function(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');});
+  clearSearch();
+  populateFilters(); // Reset sonrası tüm filtre seçeneklerini yeniden doldur
+}
 
 function renderRow(b,i){
   var ref=refLabel(b);
+  // Malzeme etiketini lokalize et: 'karbon' → 'Karbon Çelik'
+  var malzEtiket = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : (b.malzeme||'—');
   return '<tr data-ci="'+Math.min(_ci++,19)+'">'
     +'<td class="cell-no">'+(i+1)+'</td>'
     +'<td>'+tersaneBadge(b.tersane||'—')+'</td>'
     +'<td class="cell-emir">'+esc(ref)+'</td>'
     +'<td class="cell-spool">'+hl(b.spoolNo||'')+'</td><td class="cell-spoolid">'+hl(b.spoolId||'')+'</td>'
-    +'<td>'+matBadge(b.malzeme)+'</td>'
-    +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite?hl(b.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
-    +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+hl(b.cap)+'</td>'
-    +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
-    +'<td class="cell-kesim">'+b.olcu+' mm</td>'
-    +'<td style="font-size:14px;color:var(--txd);white-space:nowrap;">'+esc(b.tarih||'—')+'</td>'
-    +'<td style="text-align:center;">'
-      +'<button onclick="buktu(\''+b.id+'\')" title="'+tv('bk_done_title','Büküm tamamlandı olarak işaretle')+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button>'
-    +'</td>'
-    +'<td style="text-align:center;">'
-      +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
-    +'</td>'
-    +'</tr>';
-    +'<td>'+matBadge(b.malzeme)+'</td>'
+    +'<td>'+matBadge(malzEtiket)+'</td>'
     +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite?hl(b.kalite):'<span style="color:var(--txd)">—</span>')+'</td>'
     +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+hl(b.cap)+'</td>'
     +'<td style="font-size:14px;color:var(--txm);">'+hl(b.kalinlik)+'</td>'
@@ -731,15 +753,34 @@ function buktuOnayla(){
     ARES.supabase().from('bukum_kalemleri').update({bukuldumu:true,guncelleme:new Date().toISOString()}).eq('id',b.supaId).then(function(r){
       if(r.error) console.warn('[ARES] Büküm güncelleme:',r.error.message);
     });
+    // İşlem log — spool detay sayfasında "Büküm Eklendi" label'ı olarak görünür
+    var malzEtLog = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : b.malzeme;
+    var aciklamaParts = [];
+    if(malzEtLog) aciklamaParts.push(malzEtLog);
+    if(b.kalite) aciklamaParts.push(b.kalite);
+    if(b.cap && b.cap !== '—') aciklamaParts.push('Ø'+b.cap);
+    if(b.olcu) aciklamaParts.push('- '+b.olcu+'mm');
+    var aciklama = aciklamaParts.join(' ');
     ARES.supabase().from('islem_log').insert({
-      tenant_id:ARES.tenantId(),islem:'BUKUM_TAMAMLA',
-      aciklama:b.malzeme+' '+b.cap+' '+b.olcu+'mm',
-      katman:'spool',katman_id:b.spoolId||null,
-      spool_id:b.spoolId||null,yapan_id:ARES.oturumAl()?.id||null
-    }).then(function(){});
+      tenant_id: ARES.tenantId(),
+      islem: 'BUKUM_EKLENDI',
+      aciklama: aciklama,
+      katman: 'spool',
+      katman_id: b.spoolId || null,
+      spool_id: b.spoolId || null,
+      yapan_id: ARES.oturumAl() ? ARES.oturumAl().id : null
+    }).then(function(r){
+      if(r.error) console.warn('[ARES] İşlem log:', r.error.message);
+      else console.log('[ARES] İşlem log yazıldı: BUKUM_EKLENDI');
+    });
   }
-  try{var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');_log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_TAMAMLA',kaynak:b.spoolNo||b.id,aciklama:b.malzeme+' '+b.cap+'mm'});localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));}catch(e){}
+  try{
+    var _log=JSON.parse(localStorage.getItem('ares_islemLog')||'[]');
+    _log.unshift({id:'L'+Date.now(),tarih:new Date().toLocaleString('tr-TR'),islem:'BUKUM_EKLENDI',kaynak:b.spoolNo||b.id,aciklama:aciklama});
+    localStorage.setItem('ares_islemLog',JSON.stringify(_log.slice(0,500)));
+  }catch(e){}
   applyFilters();updateStats();
+  populateFilters(); // Bekleyen havuz küçüldü — filtre seçeneklerini güncelle
   toast(b.spoolNo+' — '+b.olcu+'mm '+tv('bk_toast_done','büküm tamamlandı'),'success');
 }
 
@@ -747,13 +788,15 @@ function showQR(id){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
   var ref=refLabel(b);
   var alt='Spool ID '+esc(b.spoolId||'');
+  // Malzeme etiketini lokalize et
+  var malzEtiket = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : (b.malzeme||'—');
   var ov=document.createElement('div');ov.className='modal-ov';
   ov.innerHTML='<div class="modal-box" style="max-width:300px;text-align:center;">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;color:var(--bukum-c);">'+tv('bk_qr_title','QR — Büküm Borusu')+'</div>'
     
     +'<div style="font-size:14px;color:var(--txd);margin-bottom:4px;">'+esc(alt)+'</div>'+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:var(--leg);margin-bottom:12px;">'+esc(b.spoolId||'—')+'</div>'
     +'<div id="qrBig" style="margin:0 auto 14px;width:200px;height:200px;"></div>'
-    +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(b.malzeme)+' '+esc(b.kalite)+'</b> &#216;'+esc(b.cap)+'</div>'
+    +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(malzEtiket)+(b.kalite?' '+esc(b.kalite):'')+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
     +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">Kapat</button>'
     +'</div>';
@@ -776,14 +819,37 @@ function showQR(id){
 var kesilenenFiltreData = [];
 var kesilenArama = '', kesilenMalzeme = '', kesilenKalite = '', kesilenCap = '';
 
+// Kesilen havuz cascade helper — sadece tamamlandı havuzunu temel alır
+function _kesilenHavuzExcept(exclude){
+  var t=document.getElementById('kfTersane')?document.getElementById('kfTersane').value:'';
+  var m=document.getElementById('kfMalzeme')?document.getElementById('kfMalzeme').value:'';
+  var k=document.getElementById('kfKalite') ?document.getElementById('kfKalite').value:'';
+  var c=document.getElementById('kfCap')    ?document.getElementById('kfCap').value:'';
+  return bukumler.filter(function(b){
+    if(b.durum !== 'tamamlandi') return false;
+    if(exclude !== 'tersane' && t && b.tersane !== t) return false;
+    if(exclude !== 'malzeme' && m && b.malzeme !== m) return false;
+    if(exclude !== 'kalite'  && k && b.kalite  !== k) return false;
+    if(exclude !== 'cap'     && c && b.cap     !== c) return false;
+    return true;
+  });
+}
+
 function populateKesilenFilters(){
-  var fill=function(id,vals){var s=document.getElementById(id);if(!s)return;while(s.options.length>1)s.remove(1);vals.forEach(function(v){s.add(new Option(v,v));});};
-  var tamam=bukumler.filter(function(b){return b.durum==='tamamlandi';});
-  var uniqT=function(key){var v=[];tamam.forEach(function(b){var val=key==='ref'?refLabel(b):b[key];if(val&&v.indexOf(val)===-1)v.push(val);});return v;};
-  fill('kfTersane', uniqT('tersane').sort());
-  fill('kfMalzeme', uniqT('malzeme').sort());
-  fill('kfKalite',  uniqT('kalite').sort());
-  fill('kfCap',     uniqT('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+  var fill=function(id,vals,labelFn){
+    var s=document.getElementById(id); if(!s) return;
+    var oldVal = s.value;
+    while(s.options.length>1)s.remove(1);
+    vals.forEach(function(v){ if(v) s.add(new Option(labelFn?labelFn(v):v,v)); });
+    if(oldVal && vals.indexOf(oldVal) !== -1) s.value = oldVal;
+  };
+  fill('kfTersane', [...new Set(_kesilenHavuzExcept('tersane').map(function(b){return b.tersane;}).filter(Boolean))].sort());
+  var malzemeKodlar=[...new Set(_kesilenHavuzExcept('malzeme').map(function(b){return b.malzeme;}).filter(Boolean))].sort();
+  fill('kfMalzeme', malzemeKodlar, function(kod){
+    return (typeof ARES_NORM!=='undefined') ? ARES_NORM.tvMalzeme(ARES_NORM.malzemeKod(kod), kod) : kod;
+  });
+  fill('kfKalite', [...new Set(_kesilenHavuzExcept('kalite').map(function(b){return b.kalite;}).filter(Boolean))].sort());
+  fill('kfCap',    [...new Set(_kesilenHavuzExcept('cap')   .map(function(b){return b.cap;})   .filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
 }
 
 function applyKesilenFilters(){
@@ -806,6 +872,8 @@ function applyKesilenFilters(){
     }
     return true;
   });
+  // Cascade: filtre değişince diğer seçenekleri yeniden doldur
+  populateKesilenFilters();
   // Zaman damgasına göre en yeni önce
   kesilenenFiltreData.sort(function(a,b){return (b.bukulduZaman||'').localeCompare(a.bukulduZaman||'');});
   renderKesilenler();
@@ -820,12 +888,14 @@ function renderKesilenler(){
   empty.style.display='none';footer.style.display='flex';
   tbody.innerHTML=kesilenenFiltreData.map(function(b,i){
     var ref=refLabel(b);
+    // Malzeme etiketini lokalize et
+    var malzEtiket = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : (b.malzeme||'—');
     return '<tr>'
       +'<td class="cell-no">'+(i+1)+'</td>'
       +'<td>'+tersaneBadge(b.tersane||'—')+'</td>'
       +'<td class="cell-emir">'+esc(ref)+'</td>'
       +'<td class="cell-spool">'+esc(b.spoolNo||'')+'</td><td class="cell-spoolid">'+esc(b.spoolId||'')+'</td>'
-      +'<td>'+matBadge(b.malzeme)+'</td>'
+      +'<td>'+matBadge(malzEtiket)+'</td>'
       +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite||'—')+'</span></td>'
       +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(b.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+esc(b.kalinlik)+'</td>'

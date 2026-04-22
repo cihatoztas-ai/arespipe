@@ -639,17 +639,42 @@ function switchTab(tab){
 
 // ════ FİLTRE ════
 function uniq(key){return[...new Set(markalamalar.map(function(x){return x[key];}).filter(Boolean))];}
+
+// Cascade filter helper: belirtilen filtre HARİÇ tüm aktif filtreleri uygula
+// Sadece durum='bekliyor' olan havuzu temel alır
+function _havuzExcept(exclude){
+  return markalamalar.filter(function(m){
+    if(m.durum !== 'bekliyor') return false;
+    if(exclude !== 'tersane' && gv('fTersane') && m.tersane !== gv('fTersane')) return false;
+    if(exclude !== 'parca'   && gv('fParca')   && (m.malzemeAdi || m.yuzey || '—') !== gv('fParca')) return false;
+    if(exclude !== 'kalite'  && gv('fKalite')  && m.kalite !== gv('fKalite')) return false;
+    if(exclude !== 'cap'     && gv('fCap')     && m.cap !== gv('fCap')) return false;
+    if(exclude !== 'isEmir'  && secilenIsEmir.size>0 && !secilenIsEmir.has(m.isEmir)) return false;
+    return true;
+  });
+}
+
 function populateFilters(){
-  var fill=function(id,vals){var s=document.getElementById(id);var first=s.options[0];while(s.options.length>1)s.remove(1);vals.forEach(function(v){if(v)s.add(new Option(v,v));});};
-  fill('fTersane', uniq('tersane').sort());
-  fill('fParca', [...new Set(markalamalar.map(function(m){
+  var fill=function(id,vals){
+    var s=document.getElementById(id); if(!s) return;
+    var oldVal = s.value;
+    while(s.options.length>1)s.remove(1);
+    vals.forEach(function(v){ if(v) s.add(new Option(v,v)); });
+    if(oldVal && vals.indexOf(oldVal) !== -1) s.value = oldVal;
+  };
+  // Her filtre için kendisi hariç diğer aktif filtreler uygulanmış havuzdan benzersizleri al
+  fill('fTersane', [...new Set(_havuzExcept('tersane').map(function(m){return m.tersane;}).filter(Boolean))].sort());
+  fill('fParca',   [...new Set(_havuzExcept('parca').map(function(m){
     var v=m.malzemeAdi||m.yuzey||''; return v!=='—'?v:'';
   }).filter(Boolean))].sort());
-  fill('fKalite',  uniq('kalite').sort());
-  fill('fCap',     uniq('cap').sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
+  fill('fKalite',  [...new Set(_havuzExcept('kalite').map(function(m){return m.kalite;}).filter(Boolean))].sort());
+  fill('fCap',     [...new Set(_havuzExcept('cap').map(function(m){return m.cap;}).filter(Boolean))].sort(function(a,b){return parseFloat(a)-parseFloat(b);}));
   buildMs();
 }
-function allIsEmirList(){return[...new Set(markalamalar.map(function(m){return m.isEmir;}))].sort();}
+function allIsEmirList(){
+  // Cascade için: aktif filtreler uygulanmış havuzdan iş emirleri
+  return [...new Set(_havuzExcept('isEmir').map(function(m){return m.isEmir;}).filter(Boolean))].sort();
+}
 function buildMs(){
   var q=(document.getElementById('msQ')?document.getElementById('msQ').value:'').toLowerCase();
   var el=document.getElementById('msList');
@@ -660,9 +685,9 @@ function buildMs(){
     return '<div class="ms-item'+(on?' checked':'')+'" onclick="toggleMsItem(\''+v+'\')"><div class="ms-cb"><span>'+(on?'&#10003;':'')+'</span></div><div>'+esc(v)+'</div></div>';
   }).join('');
 }
-function toggleMsItem(v){secilenIsEmir.has(v)?secilenIsEmir.delete(v):secilenIsEmir.add(v);buildMs();updateMsTrig();applyFilters();}
-function msAll(){allIsEmirList().forEach(function(v){secilenIsEmir.add(v);});buildMs();updateMsTrig();applyFilters();}
-function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();}
+function toggleMsItem(v){secilenIsEmir.has(v)?secilenIsEmir.delete(v):secilenIsEmir.add(v);buildMs();updateMsTrig();applyFilters();populateFilters();}
+function msAll(){allIsEmirList().forEach(function(v){secilenIsEmir.add(v);});buildMs();updateMsTrig();applyFilters();populateFilters();}
+function msClearSel(){secilenIsEmir.clear();buildMs();updateMsTrig();applyFilters();populateFilters();}
 function updateMsTrig(){
   var trig=document.getElementById('msTrigger'),txt=document.getElementById('msTxt'),cnt=document.getElementById('msCnt'),n=secilenIsEmir.size;
   if(!n){txt.textContent='İş Emir';cnt.style.display='none';trig.classList.remove('has-sel');}
@@ -684,7 +709,11 @@ document.addEventListener('click',function(e){
 function onSearch(){aramaMetni=document.getElementById('searchInput').value.toLowerCase().trim();document.getElementById('searchClear').classList.toggle('show',aramaMetni.length>0);applyFilters();}
 function clearSearch(){document.getElementById('searchInput').value='';aramaMetni='';document.getElementById('searchClear').classList.remove('show');applyFilters();}
 function gv(id){return document.getElementById(id).value;}
-function onFC(){['fTersane','fParca','fKalite','fCap'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',gv(id)!=='');});applyFilters();}
+function onFC(){
+  ['fTersane','fParca','fKalite','fCap'].forEach(function(id){document.getElementById(id).classList.toggle('has-val',gv(id)!=='');});
+  applyFilters();
+  populateFilters(); // Cascade: diğer filtre seçeneklerini güncelle
+}
 function applyFilters(){
   filtreData=markalamalar.filter(function(m){
     if(m.durum!=='bekliyor') return false;
@@ -705,6 +734,7 @@ function applyFilters(){
 function resetAll(){
   ['fTersane','fParca','fKalite','fCap'].forEach(function(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');});
   secilenIsEmir.clear();updateMsTrig();buildMs();clearSearch();
+  populateFilters(); // Reset sonrası tüm filtre seçeneklerini yeniden doldur
 }
 function renderChips(){
   var cont=document.getElementById('activeChips'),chips=[];
@@ -714,8 +744,8 @@ function renderChips(){
   if(aramaMetni)chips.push('<div class="active-chip">'+tv('cmn_arama','Arama')+': <b>&quot;'+esc(aramaMetni)+'&quot;</b><button onclick="clearSearch()">&#10005;</button></div>');
   cont.style.display=chips.length?'flex':'none';cont.innerHTML=chips.join('');
 }
-function clearChip(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');applyFilters();}
-function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();}
+function clearChip(id){document.getElementById(id).value='';document.getElementById(id).classList.remove('has-val');applyFilters();populateFilters();}
+function rmMs(v){secilenIsEmir.delete(v);updateMsTrig();buildMs();applyFilters();populateFilters();}
 
 // ════ SIRALAMA ════
 var PG = 25; // sayfa başına kayıt
@@ -823,15 +853,31 @@ function manuelMarkalaOnayla(){
     ARES.supabase().from('markalama_kalemleri').update({markalandi:true,guncelleme:new Date().toISOString()}).eq('id',m.supaId).then(function(r){
       if(r.error) console.warn('[ARES] Markalama güncelleme:',r.error.message);
     });
+    // İşlem log — spool detay sayfasında "Markalama Eklendi" label'ı olarak görünür
+    var malzEtLog = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(m.malzeme) : m.malzeme;
+    var aciklamaParts = [];
+    if(m.malzemeAdi && m.malzemeAdi !== '—') aciklamaParts.push(m.malzemeAdi);
+    else if(m.yuzey && m.yuzey !== '—') aciklamaParts.push(m.yuzey);
+    if(malzEtLog && malzEtLog !== '—') aciklamaParts.push(malzEtLog);
+    if(m.kalite && m.kalite !== '—') aciklamaParts.push(m.kalite);
+    if(m.cap) aciklamaParts.push('Ø'+m.cap);
+    var aciklama = aciklamaParts.join(' ');
     ARES.supabase().from('islem_log').insert({
-      tenant_id:ARES.tenantId(),islem:'MARKALAMA_TAMAMLA',
-      aciklama:(m.yuzey||'')+(m.cap?' Ø'+m.cap:''),
-      katman:'spool',spool_id:m.supaId||null,yapan_id:ARES.oturumAl()?.id||null
-    }).then(function(){});
+      tenant_id: ARES.tenantId(),
+      islem: 'MARKALAMA_EKLENDI',
+      aciklama: aciklama,
+      katman: 'spool',
+      spool_id: m.supaId || null,
+      yapan_id: ARES.oturumAl() ? ARES.oturumAl().id : null
+    }).then(function(r){
+      if(r.error) console.warn('[ARES] İşlem log:', r.error.message);
+      else console.log('[ARES] İşlem log yazıldı: MARKALAMA_EKLENDI');
+    });
   }
   document.getElementById('manuelMarkModal').style.display='none';
   _manuelMarkId=null;
   applyFilters();updateStats();
+  populateFilters(); // Bekleyen havuz küçüldü — filtre seçeneklerini güncelle
   toast((m.malzemeAdi||m.yuzey||tv('mk_parca_adi','Parça'))+' markalandı olarak işaretlendi','success');
 }
 
