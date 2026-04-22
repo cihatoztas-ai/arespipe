@@ -1035,11 +1035,23 @@ async function spoolYukle(){
   var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!devreId)return;
   try{
-    var data=await ARES.spoollariGetir(devreId);
-    // ARES silindi filtrelemez — client'ta yap
-    data=(data||[]).filter(function(s){return !s.silindi;});
+    // Nested select ile kesim/büküm/markalama sayıları dahil
+    var supa=ARES.supabase();
+    var res=await supa.from('spooller')
+      .select('*, kesim_kalemleri(id,kesildi), bukum_kalemleri(id,bukuldu), markalama_kalemleri(id,markalandi)')
+      .eq('devre_id',devreId)
+      .eq('silindi',false)
+      .order('spool_no');
+    var data=(res.data||[]);
     SPOOLS=data.map(function(s,i){return _spoolMap(s,i);});
-  }catch(e){console.warn('spoolYukle:',e);}
+  }catch(e){
+    // Fallback: ARES helper (nested olmadan)
+    try{
+      var data=await ARES.spoollariGetir(devreId);
+      data=(data||[]).filter(function(s){return !s.silindi;});
+      SPOOLS=data.map(function(s,i){return _spoolMap(s,i);});
+    }catch(e2){console.warn('spoolYukle:',e2);}
+  }
 }
 
 function _spoolMap(s,i){

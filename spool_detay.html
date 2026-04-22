@@ -2248,7 +2248,15 @@ function kesimKaydet(){
   var ucA=(T('km_ucA')||{}).value||'duz',ucB=(T('km_ucB')||{}).value||'duz';
   var kesimId=String(Date.now());
   KESIMLER.push({id:kesimId,ad:m.ac,cap:m.cap,et:m.et,kal:m.kal,olcu,ucA,ucB,kesildi:false});
-  _supaInsert('kesim_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),uc_a:ucA,uc_b:ucB,kesildi:false,bukum_borusu:false});
+  _supaInsert('kesim_kalemleri',{
+    spool_id:    SP.supaId || null,
+    malzeme_id:  m.id,
+    olcu_mm:     parseFloat(olcu),
+    uc_a:        ucA,
+    uc_b:        ucB,
+    kesildi:     false,
+    bukum_borusu:false
+  });
   T('kesimModal').style.display='none';renderKesimler();
   logEkle('Kesim Eklendi',m.ac+' '+olcu+'mm');
   toast(m.ac+' eklendi','ok');
@@ -2295,8 +2303,8 @@ function bukumKaydet(){
   var m=MALZEME.find(function(x){return x.id===mId;});if(!m){toast(tv('sp_select_mat','Malzeme seçin'),'er');return;}
   BUKUMLER.push({id:String(Date.now()),ad:m.ac,cap:m.cap,olcu,bukuldu:false});
   KESIMLER.push({id:String(Date.now()+1),ad:m.ac,cap:m.cap,et:m.et,kal:m.kal,olcu,ucA:'bukum',ucB:'bukum',kesildi:false});
-  _supaInsert('bukum_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),bukuldu:false});
-  _supaInsert('kesim_kalemleri',{malzeme_id:m.id,olcu_mm:parseFloat(olcu),uc_a:'bukum',uc_b:'bukum',kesildi:false,bukum_borusu:true});
+  _supaInsert('bukum_kalemleri',{spool_id:SP.supaId||null,malzeme_id:m.id,olcu_mm:parseFloat(olcu),bukuldu:false});
+  _supaInsert('kesim_kalemleri',{spool_id:SP.supaId||null,malzeme_id:m.id,olcu_mm:parseFloat(olcu),uc_a:'bukum',uc_b:'bukum',kesildi:false,bukum_borusu:true});
   T('bukumModal').style.display='none';renderBukumler();renderKesimler();
   logEkle('Büküm Eklendi',m.ac+' '+olcu+'mm');
   toast(m.ac+' büküm eklendi','ok');
@@ -2385,6 +2393,7 @@ function markKaydet(){
   entry.malzemeAdi=malzemeAdi; // lokal gösterim için
   MARKALAR.push(entry);
   _supaInsert('markalama_kalemleri',{
+    spool_id:   SP.supaId||null,
     malzeme_id: entry.malzId||null,
     tip:        entry.tip,
     yuzey:      yuzeyAdi||null,
