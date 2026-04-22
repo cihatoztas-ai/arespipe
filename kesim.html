@@ -879,7 +879,17 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <!-- Adım 1'de kaydet butonu -->
         <button id="wzBtnKaydet" onclick="wzKaydet()" class="btn-green" style="height:38px;padding:0 16px;border-radius:9px;font-size:14px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Seçilileri Kesildi Kaydet
+          <span data-i18n="ks_secili_kesildi_kaydet">Seçilileri Kesildi Kaydet</span>
+        </button>
+        <!-- Adım 3'te: Parçalı Kestim (Adım 1'e yönlendirir) -->
+        <button id="wzBtnParcali" onclick="wzParcaliKes()" class="btn-outline" style="display:none;height:38px;padding:0 14px;border-radius:9px;font-size:14px;border-color:rgba(45,142,255,.4);color:var(--ac);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>
+          <span data-i18n="ks_parcali_kestim">Parçalı Kestim</span>
+        </button>
+        <!-- Adım 3'te: Tümünü Kesildi (DB'ye yazar + listeyi kapatır) -->
+        <button id="wzBtnKesTumu" onclick="wzKesTumu()" class="btn-green" style="display:none;height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:700;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span data-i18n="ks_tumu_kesildi">Tümünü Kesildi</span>
         </button>
         <button class="btn-outline" id="wzBtnNext" onclick="wzNext()" style="height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;">İleri →</button>
       </div>
@@ -2400,23 +2410,31 @@ function wzGoStep(n) {
   document.getElementById('wzBarFill').style.width=(n/3*100)+'%';
   var bBack=document.getElementById('wzBtnBack'); var bNext=document.getElementById('wzBtnNext');
   var bKay=document.getElementById('wzBtnKaydet'); var bExc=document.getElementById('wzBtnExcel'); var bPdf=document.getElementById('wzBtnPdf');
+  var bParcali=document.getElementById('wzBtnParcali'); var bKesTumu=document.getElementById('wzBtnKesTumu');
   var fInfo=document.getElementById('wzFootInfo');
   bBack.style.display=n>1?'inline-flex':'none';
   bExc.style.display=n===3?'inline-flex':'none'; bPdf.style.display=n===3?'inline-flex':'none';
   if(n===1){
     bKay.style.display='inline-flex'; bNext.style.display='inline-flex';
-    bNext.textContent='Kesim Planı Oluştur →'; bNext.style.cssText='height:38px;padding:0 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;border:1.5px solid var(--bor);color:var(--txm);cursor:pointer;';
+    if(bParcali) bParcali.style.display='none';
+    if(bKesTumu) bKesTumu.style.display='none';
+    bNext.textContent=tv('ks_plan_olustur','Kesim Planı Oluştur →');
+    bNext.style.cssText='height:38px;padding:0 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;border:1.5px solid var(--bor);color:var(--txm);cursor:pointer;';
+    _wzRenderTable(); // Adım 1'e dönüşte tabloyu tazele (checkbox state korunur)
     var mm=(_wzKlB||[]).reduce(function(s,k){return s+(parseFloat(k.kesimOlcusu)||0);},0);
-    fInfo.textContent=(_wzKlB||[]).length+' boru · '+mm.toLocaleString('tr-TR')+' mm';
+    fInfo.textContent=(_wzKlB||[]).length+' '+tv('ks_boru','boru')+' · '+mm.toLocaleString('tr-TR')+' mm';
   } else if(n===2){
     bKay.style.display='none'; bNext.style.display='inline-flex';
-    bNext.textContent=_wzPlans?'✓ Planı Görüntüle':'Hesapla & Önizle →';
+    if(bParcali) bParcali.style.display='none';
+    if(bKesTumu) bKesTumu.style.display='none';
+    bNext.textContent=_wzPlans?tv('ks_plani_goruntule','✓ Planı Görüntüle'):tv('ks_hesapla_onizle','Hesapla & Önizle →');
     bNext.style.cssText='height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;background:var(--ac);color:#fff;border:none;cursor:pointer;';
     fInfo.textContent='';
   } else {
-    bKay.style.display='none'; bNext.style.display='inline-flex';
-    bNext.textContent='✓ Kapat';
-    bNext.style.cssText='height:38px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:600;background:var(--gr);color:#fff;border:none;cursor:pointer;';
+    bKay.style.display='none';
+    bNext.style.display='none';
+    if(bParcali) bParcali.style.display='inline-flex';
+    if(bKesTumu) bKesTumu.style.display='inline-flex';
     fInfo.textContent=''; _wzRenderPlan();
   }
 }
@@ -2424,9 +2442,26 @@ function wzGoStep(n) {
 function wzNext(){
   if(_wzStep===1){ wzGoStep(2); }
   else if(_wzStep===2){ if(_wzPlans){wzGoStep(3);}else{wzHesapla();} }
-  else{ closeWizard(); }
+  // Adım 3'te wzBtnNext gizli — bu dal tetiklenmez
 }
 function wzPrev(){ if(_wzStep>1) wzGoStep(_wzStep-1); }
+
+// Adım 3 → Adım 1: parçalı kesim (checkbox ile tek tek seçim)
+function wzParcaliKes(){
+  if(!_wzKlId) return;
+  wzGoStep(1);
+}
+
+// Adım 3 → Tüm listeyi kesildi işaretle + DB'ye kaydet + listeyi kapat
+function wzKesTumu(){
+  if(!_wzKlId) return;
+  if(!_wzKlB || !_wzKlB.length){ toast(tv('ks_liste_bos','Liste boş'),'error'); return; }
+  var n=_wzKlB.length;
+  var msg=tv('ks_tumu_kestim_onay','{n} borunun tamamı kesildi mi?\nListe Kesilen Listeler sekmesine taşınacak.').replace('{n}',n);
+  if(!confirm(msg)) return;
+  _wzKesilmisIds = new Set((_wzKlB||[]).map(function(k){ return k.id; }));
+  wzKaydet();
+}
 
 function _wzRenderTable(){
   if(!_wzKlId) return;
