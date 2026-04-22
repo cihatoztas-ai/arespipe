@@ -720,6 +720,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
       <button class="kld-tab" id="kldTabPlan" onclick="kldSwitchTab('plan')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         <span data-i18n="kld_tab_plan">Kesim Planı</span>
+        <span id="kldTabPlanStale" style="display:none;color:var(--warn);font-size:16px;line-height:1;margin-left:2px;" title="Plan güncel değil">⚠</span>
       </button>
     </div>
 
@@ -811,7 +812,12 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         PDF
       </button>
-      <!-- Primary — Sadece Boru Listesi tab'ında görünür -->
+      <!-- Primary — Kesim Planı tab'ında: "Planı Kaydet" -->
+      <button class="kld-btn kld-btn-primary" id="kldBtnPlanKaydet" onclick="kldPlanKaydet()" style="display:none;" title="Kesim planını kaydet ve boru listesine geç">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span data-i18n="kld_btn_plan_kaydet">Planı Kaydet & Devam</span>
+      </button>
+      <!-- Primary — Boru Listesi tab'ında: "Kesimi Tamamla" -->
       <button class="kld-btn kld-btn-primary" id="kldBtnTamamla" onclick="kldKesimTamamlaAc()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span data-i18n="kld_btn_tamamla">Kesimi Tamamla</span>
@@ -2291,6 +2297,7 @@ var _kldKesilmisIds = null;    // Set — varsayılan tümü dolu, kullanıcı t
 var _kldPlans = null, _kldParams = null;
 var _kldTab = 'boru';          // 'boru' | 'plan'
 var _kldParcaSayac = 0;
+var _kldPlanStale = false;     // Boru seçimi değişti mi — plan güncel değil mi?
 
 // Akıllı açılış: plan var → Boru Listesi, plan yok → Kesim Planı
 function openKLDetay(klId){
@@ -2342,6 +2349,9 @@ function openKLDetay(klId){
   // Modal'ı aç
   document.getElementById('klDetayModal').style.display = 'flex';
 
+  // Plan yeni açılışta taze sayılır
+  _kldPlanStale = false;
+
   // Akıllı tab: plan varsa Boru Listesi, yoksa Kesim Planı
   kldSwitchTab(_kldPlans && _kldPlans.length ? 'boru' : 'plan');
 
@@ -2370,6 +2380,7 @@ function kldSwitchTab(tab){
     pBoru.classList.add('active'); pPlan.classList.remove('active');
     document.getElementById('kldBtnIptal').style.display = 'inline-flex';
     document.getElementById('kldBtnRecalc').style.display = 'none';
+    document.getElementById('kldBtnPlanKaydet').style.display = 'none';
     document.getElementById('kldBtnTamamla').style.display = 'inline-flex';
     kldBoruListeRender();
   } else {
@@ -2377,10 +2388,34 @@ function kldSwitchTab(tab){
     pPlan.classList.add('active'); pBoru.classList.remove('active');
     document.getElementById('kldBtnIptal').style.display = 'none';
     document.getElementById('kldBtnRecalc').style.display = 'inline-flex';
+    // "Planı Kaydet" sadece lokal hesaplanmış ama henüz kaydedilmemiş plan varsa
+    document.getElementById('kldBtnPlanKaydet').style.display = (_kldPlans && _kldPlanStale) ? 'inline-flex' : 'none';
     document.getElementById('kldBtnTamamla').style.display = 'none';
     kldPlanRender();
   }
   kldUpdateStats();
+  kldUpdateStaleUI();
+}
+
+// Plan "güncel değil" uyarısını UI'a yansıt
+function kldUpdateStaleUI(){
+  var staleSpan = document.getElementById('kldTabPlanStale');
+  var btnRecalc = document.getElementById('kldBtnRecalc');
+  if(_kldPlanStale){
+    if(staleSpan) staleSpan.style.display = 'inline';
+    if(btnRecalc){
+      btnRecalc.style.background = 'rgba(217,119,6,.15)';
+      btnRecalc.style.borderColor = 'var(--warn)';
+      btnRecalc.style.color = 'var(--warn)';
+    }
+  } else {
+    if(staleSpan) staleSpan.style.display = 'none';
+    if(btnRecalc){
+      btnRecalc.style.background = '';
+      btnRecalc.style.borderColor = '';
+      btnRecalc.style.color = '';
+    }
+  }
 }
 
 // Boru Listesi tab render
@@ -2438,7 +2473,9 @@ function kldPlanRender(){
   if(cardsEl) cardsEl.style.display = 'flex';
   if(emptyEl) emptyEl.style.display = 'none';
 
-  _renderV3(_kldPlans, _kldParams || {}, _kldBorular, { statEl: statEl, cardsEl: cardsEl });
+  // _renderV3 için planın içindeki borularla çalış (tikli olanlar)
+  var planBorulari = _kldBorular.filter(function(k){ return _kldKesilmisIds.has(k.id); });
+  _renderV3(_kldPlans, _kldParams || {}, planBorulari, { statEl: statEl, cardsEl: cardsEl });
 }
 
 // Checkbox işlemleri
@@ -2458,6 +2495,8 @@ function kldToggleRow(id, ch){
   // Master checkbox durumunu güncelle
   var mc = document.getElementById('kldMasterCb');
   if(mc) mc.checked = (_kldKesilmisIds.size === _kldBorular.length);
+  // Plan varsa artık stale (güncel değil)
+  if(_kldPlans && _kldPlans.length){ _kldPlanStale = true; kldUpdateStaleUI(); }
   kldUpdateStats();
 }
 
@@ -2478,6 +2517,8 @@ function kldTumunuSec(ch){
       }
     }
   });
+  // Plan varsa artık stale
+  if(_kldPlans && _kldPlans.length){ _kldPlanStale = true; kldUpdateStaleUI(); }
   kldUpdateStats();
 }
 
@@ -2523,7 +2564,11 @@ function kldUpdateStats(){
       fi.innerHTML = html2;
     } else {
       if(_kldPlans && _kldPlans.length){
-        fi.innerHTML = '<span style="color:var(--ac);font-weight:600;">'+tv('kld_foot_plan_kayitli','Plan kayıtlı.')+'</span> '+tv('kld_foot_plan_hint','Parametre değiştirirsen "Yeniden Hesapla" ile güncelle.');
+        if(_kldPlanStale){
+          fi.innerHTML = '<span style="color:var(--warn);font-weight:700;">⚠ '+tv('kld_foot_plan_stale','Plan güncel değil.')+'</span> '+tv('kld_foot_plan_stale_hint','Seçim/parametre değişti, "Planı Kaydet" ile yeniden kaydet.');
+        } else {
+          fi.innerHTML = '<span style="color:var(--gr);font-weight:600;">✓ '+tv('kld_foot_plan_kayitli','Plan kayıtlı.')+'</span> '+tv('kld_foot_plan_hint','Parametre değiştirirsen "Yeniden Hesapla" ile güncelle.');
+        }
       } else {
         fi.innerHTML = tv('kld_foot_plan_yok','Parametreleri gir ve "Yeniden Hesapla" ile plan oluştur.');
       }
@@ -2545,11 +2590,20 @@ function kldAddParcaVal(val){
   if(!val) row.querySelector('input').focus();
 }
 
-// Yeniden Hesapla — eski wzHesapla mantığını kullanır
+// Yeniden Hesapla — Sadece lokal state güncelle, DB'ye YAZMA (kaydet butonu yapar)
+// Sadece tikli (kesilecek) boruları hesaba kat
 function kldHesapla(){
   if(!_kldKlId || !_kldBorular) return;
   var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
   if(!kl) return;
+
+  // Sadece tikli boruları hesaba kat — tik kaldırılan kesilmeyecek
+  var hesapBorulari = _kldBorular.filter(function(k){ return _kldKesilmisIds.has(k.id); });
+  if(!hesapBorulari.length){
+    toast(tv('kld_hic_secili','En az 1 boru seçili olmalı'),'error');
+    return;
+  }
+
   var standartLen = parseInt(document.getElementById('kldStokBoy').value) || 6000;
   var kerf = parseInt(document.getElementById('kldKerf').value) || 3;
   var trim = parseInt(document.getElementById('kldTrim').value) || 0;
@@ -2559,7 +2613,7 @@ function kldHesapla(){
     var v = parseInt(inp.value); if(v > 0) parcaBorular.push({id:'PARCA-'+(i+1), uzunluk:v});
   });
   var lengthMap = {};
-  _kldBorular.forEach(function(k){
+  hesapBorulari.forEach(function(k){
     var boy = parseFloat(k.kesimOlcusu) || 0;
     if(boy <= 0) return;
     if(!lengthMap[boy]) lengthMap[boy] = {length:boy, qty:0, refs:[]};
@@ -2569,7 +2623,8 @@ function kldHesapla(){
   if(!pieces.length){ toast(tv('kld_hesap_gecersiz','Geçerli kesim ölçüsü olan boru yok'),'error'); return; }
   var stocks = parcaBorular.map(function(pb){ return {id:pb.id, length:pb.uzunluk, type:'piece_stock'}; });
   var btn = document.getElementById('kldBtnRecalc');
-  if(btn){ btn.disabled = true; var origHtml = btn.innerHTML; btn.innerHTML = tv('kld_hesaplaniyor','Hesaplanıyor...'); }
+  var origHtml = '';
+  if(btn){ btn.disabled = true; origHtml = btn.innerHTML; btn.innerHTML = tv('kld_hesaplaniyor','Hesaplanıyor...'); }
   window._fmStandartLen = standartLen;
   setTimeout(function(){
     try {
@@ -2583,26 +2638,60 @@ function kldHesapla(){
         });
       });
       var params = {standartLen:standartLen, kerf:kerf, trim:trim, minArtik:minArtik, parcaBorular:parcaBorular};
-      var tarih = new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      kl.kesimPlani = {plans:result.plans, params:params, tarih:tarih};
+      // SADECE lokal state — DB'ye yazma (kullanıcı "Planı Kaydet" ile kaydeder)
       _kldPlans = result.plans; _kldParams = params;
-      // Fm global'leri de güncelle
-      _fmKlId = _kldKlId; _fmKlB = _kldBorular;
+      // Fm global'leri güncelle (Excel/PDF için)
+      _fmKlId = _kldKlId; _fmKlB = hesapBorulari;
       _fmCurrentPlans = _kldPlans; _fmCurrentParams = _kldParams; _fmArcIdx = null;
-      // DB'ye yaz
-      if(typeof ARES !== 'undefined' && ARES.mod === 'supabase' && kl.supaId){
-        ARES.supabase().from('kesim_listeleri')
-          .update({kesim_plani:{plans:result.plans, params:params, tarih:tarih}})
-          .eq('id', kl.supaId).then(function(){});
-      }
+      // Plan hesaplandı ama henüz kaydedilmedi → Kaydet butonu ortaya çıksın
+      _kldPlanStale = true;
       kldPlanRender();
       kldUpdateStats();
-      toast(tv('kld_plan_olusturuldu','Kesim planı oluşturuldu'),'success');
+      // Kaydet butonunu göster (plan hesaplandı, kaydedilmeyi bekliyor)
+      var btnKaydet = document.getElementById('kldBtnPlanKaydet');
+      if(btnKaydet) btnKaydet.style.display = 'inline-flex';
+      toast(tv('kld_plan_hesaplandi','Plan hesaplandı — kaydetmek için "Planı Kaydet"'),'info');
     } catch(e){
       toast(tv('kld_plan_hata','Plan hatası')+': '+e.message,'error');
     }
     if(btn){ btn.disabled = false; btn.innerHTML = origHtml; }
   }, 30);
+}
+
+// Planı Kaydet & Devam — DB'ye yaz, Boru Listesi tab'ına geç, net onay
+function kldPlanKaydet(){
+  if(!_kldKlId || !_kldPlans || !_kldParams){ toast(tv('kld_plan_yok_kaydet','Önce plan hesaplamalısınız'),'error'); return; }
+  var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
+  if(!kl) return;
+
+  var tarih = new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  kl.kesimPlani = {plans:_kldPlans, params:_kldParams, tarih:tarih};
+
+  // DB'ye yaz
+  if(typeof ARES !== 'undefined' && ARES.mod === 'supabase' && kl.supaId){
+    var btnK = document.getElementById('kldBtnPlanKaydet');
+    var origHtmlK = '';
+    if(btnK){ btnK.disabled = true; origHtmlK = btnK.innerHTML; btnK.innerHTML = tv('kld_kaydediliyor','Kaydediliyor...'); }
+    ARES.supabase().from('kesim_listeleri')
+      .update({kesim_plani:{plans:_kldPlans, params:_kldParams, tarih:tarih}})
+      .eq('id', kl.supaId)
+      .then(function(r){
+        if(btnK){ btnK.disabled = false; btnK.innerHTML = origHtmlK; }
+        if(r.error){
+          toast(tv('kld_plan_kaydet_hata','Plan kaydedilemedi')+': '+r.error.message,'error');
+          return;
+        }
+        _kldPlanStale = false;
+        toast(kl.no+' — '+tv('kld_plan_kaydedildi','Kesim planı kaydedildi ✓'),'success');
+        // Otomatik Boru Listesi tab'ına geç (kesim akışının bir sonraki adımı)
+        kldSwitchTab('boru');
+      });
+  } else {
+    // DB yoksa local-only
+    _kldPlanStale = false;
+    toast(tv('kld_plan_kaydedildi','Kesim planı kaydedildi ✓'),'success');
+    kldSwitchTab('boru');
+  }
 }
 
 // Kesimi Tamamla — Onay popup aç
