@@ -899,6 +899,9 @@ async function veriYukle() {
       .eq('tenant_id', ARES.tenantId())
       .order('olusturma', {ascending:false});
 
+    if(klRes.error){ console.error('[ARES] Kesim listeleri yükleme:', klRes.error); }
+    console.log('[ARES] Kesim listeleri:', (klRes.data||[]).length, 'liste. İlk boru_ids örneği:', (klRes.data||[])[0]?.boru_ids);
+
     // Önce listeyi oluştur (boruIds sonradan doldurulacak)
     var klMap = {};
     (klRes.data || []).forEach(function(kl) {
@@ -1347,8 +1350,8 @@ function createListe(){
   sec.forEach(k=>k.durum='listede');
   // Supabase'e kaydet
   if (ARES.mod === 'supabase') {
-    // Sayacı güncelle
     var supa = ARES.supabase();
+    // Sayacı güncelle
     supa.from('sayac_tanimlari')
       .select('id, son_no')
       .eq('tenant_id', ARES.tenantId())
@@ -1362,24 +1365,46 @@ function createListe(){
             .then(function(){});
         }
       });
+
+    var boruSupaIds = sec.map(function(k){ return k.supaId||k.id; }).filter(function(id){ return id && !id.startsWith('L'); });
+
     supa.from('kesim_listeleri').insert({
       tenant_id: ARES.tenantId(),
       no: listeNo,
       kriter: kriter,
-      boru_ids: sec.map(function(k){ return k.supaId||k.id; }),
+      boru_ids: boruSupaIds,
       kapali: false,
       arsiv: []
     }).select('id').single().then(function(r) {
-      if (r.data) {
-        listeObj.supaId = r.data.id;
-        // Her kesim_kalemine bu listenin ID'sini yaz (kurtarma için)
-        var boruSupaIds = sec.map(function(k){ return k.supaId||k.id; });
+      if (r.error) {
+        console.error('[ARES] Liste kayıt hatası:', r.error);
+        toast('⚠ Liste DB kaydı başarısız: ' + r.error.message, 'error');
+        return;
+      }
+      if (!r.data) {
+        toast('⚠ Liste DB kaydından ID alınamadı', 'error');
+        return;
+      }
+      listeObj.supaId = r.data.id;
+
+      // boru_ids ayrıca güncelle (insert'te yazılmayabilir)
+      supa.from('kesim_listeleri')
+        .update({ boru_ids: boruSupaIds })
+        .eq('id', r.data.id)
+        .then(function(ur){
+          if(ur.error) console.warn('[ARES] boru_ids güncelleme:', ur.error.message);
+        });
+
+      // Her kesim_kalemine liste ID'sini yaz
+      if(boruSupaIds.length){
         supa.from('kesim_kalemleri')
           .update({ kesim_listesi_id: r.data.id })
           .in('id', boruSupaIds)
-          .then(function(ur){ if(ur.error) console.warn('[ARES] kesim_listesi_id yazma:', ur.error.message); });
+          .then(function(ur){
+            if(ur.error) console.warn('[ARES] kesim_listesi_id yazma:', ur.error.message);
+            else console.log('[ARES] kesim_listesi_id yazıldı:', boruSupaIds.length, 'boru');
+          });
       }
-      if (r.error) console.warn('[ARES] Liste kayıt hatası:', r.error.message);
     });
   }
   closeListeModal();applyFilters();updateStats();
