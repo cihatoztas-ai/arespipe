@@ -244,6 +244,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
 .kld-param-item label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;font-weight:500;}
 .kld-param-item input{width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:6px 8px;font-size:14px;font-weight:600;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s;}
 .kld-param-item input:focus{border-color:var(--ac);}
+.kld-param-item input:disabled{background:var(--sur2);color:var(--txd);cursor:not-allowed;opacity:.75;}
 /* Parça Borular ayrı kart — görünürlük yüksek */
 .kld-parca-card{padding:12px 14px;background:linear-gradient(135deg,rgba(124,58,237,.04),rgba(124,58,237,.01));border:1.5px solid rgba(124,58,237,.3);border-radius:10px;margin-bottom:14px;}
 .kld-parca-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;}
@@ -793,13 +794,13 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           </div>
         </div>
         <!-- Parça Borular — kart -->
-        <div class="kld-parca-card">
+        <div class="kld-parca-card" id="kldParcaCard">
           <div class="kld-parca-head">
             <div class="kld-parca-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18M3 16h18"/><path d="M8 3v18M16 3v18"/></svg>
               <span data-i18n="kld_param_parca">Parça Borular</span>
               <span class="kld-parca-count" id="kldParcaCount">0</span>
-              <span style="font-size:12px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;" data-i18n="kld_parca_hint">— önceki kesimlerden artan boruları ekle, planda öncelikli kullanılır</span>
+              <span id="kldParcaHint" style="font-size:12px;color:var(--txd);font-weight:400;text-transform:none;letter-spacing:0;" data-i18n="kld_parca_hint">— önceki kesimlerden artan boruları ekle, planda öncelikli kullanılır</span>
             </div>
             <button class="kld-parca-btn" id="kldBtnParcaEkle" onclick="kldAddParca()">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -2653,6 +2654,15 @@ function kldUpdateStats(){
   // Footer info
   var fi = document.getElementById('kldFootInfo');
   if(fi){
+    if(_kldReadOnly){
+      // Read-only modda sade bir bilgilendirme
+      if(_kldTab === 'boru'){
+        fi.innerHTML = '<span style="color:var(--gr);font-weight:600;">✓ '+tv('kld_foot_ro_boru','Kesim tamamlandı.')+'</span> '+tv('kld_foot_ro_boru_hint','Bu liste artık düzenlenemez, bilgi amaçlı görüntüleniyor.');
+      } else {
+        fi.innerHTML = '<span style="color:var(--gr);font-weight:600;">✓ '+tv('kld_foot_ro_plan','Kesim planı kayıtlı.')+'</span> '+tv('kld_foot_ro_plan_hint','Bu plan bilgi amaçlı görüntüleniyor, değiştirilemez.');
+      }
+      return;
+    }
     if(_kldTab === 'boru'){
       var html2 = '<strong>'+kes+' / '+top+'</strong> '+tv('kld_foot_kesildi','boru kesildi olarak işaretli');
       if(kesilmedi > 0) html2 += ' · <span class="rem">'+kesilmedi+' '+tv('kld_foot_havuza','boru havuza dönecek')+'</span>';
@@ -2711,8 +2721,27 @@ function kldUpdateParcaUI(){
   var n = rows.length;
   var cnt = document.getElementById('kldParcaCount');
   var emp = document.getElementById('kldParcaEmpty');
+  var card = document.getElementById('kldParcaCard');
+  var btnEkle = document.getElementById('kldBtnParcaEkle');
+  var hint = document.getElementById('kldParcaHint');
+
   if(cnt) cnt.textContent = n;
-  if(emp) emp.style.display = n === 0 ? 'block' : 'none';
+
+  if(_kldReadOnly){
+    // Read-only modda: parça boru YOKSA tüm kartı gizle, varsa düzenleme butonlarını gizle
+    if(card) card.style.display = (n === 0) ? 'none' : 'block';
+    if(emp) emp.style.display = 'none'; // "Henüz eklenmedi" yazısı read-only'de anlamsız
+    if(btnEkle) btnEkle.style.display = 'none'; // Ekle butonu gizli
+    if(hint) hint.textContent = '— '+tv('kld_parca_hint_readonly','bu kesimde kullanılan parça borular');
+    // Silme (✕) butonlarını gizle
+    document.querySelectorAll('#kldParcalar .kld-parca-row button').forEach(function(b){ b.style.display = 'none'; });
+  } else {
+    if(card) card.style.display = 'block';
+    if(emp) emp.style.display = n === 0 ? 'block' : 'none';
+    if(btnEkle) btnEkle.style.display = 'inline-flex';
+    if(hint) hint.textContent = '— '+tv('kld_parca_hint','önceki kesimlerden artan boruları ekle, planda öncelikli kullanılır');
+    document.querySelectorAll('#kldParcalar .kld-parca-row button').forEach(function(b){ b.style.display = 'flex'; });
+  }
 }
 
 // Yeniden Hesapla — Sadece lokal state güncelle, DB'ye YAZMA (kaydet butonu yapar)
