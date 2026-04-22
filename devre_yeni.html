@@ -1621,7 +1621,6 @@ async function kaydet() {
           termin:           gv('devreTermin') || null,
           malzeme:          malzemeFinal,
           yuzey:            yuzeySecili,
-          notlar:           gv('devreNot') || null,
           basamak_snapshot: basamakSnapshot,
           aktif_basamak:    ilkBasamak,
           durum:            'aktif',
@@ -1636,6 +1635,19 @@ async function kaydet() {
           return;
         }
         devreId = devreRes.data.id;
+
+        // Açıklama/Not varsa → notlar tablosuna yaz (devreler.notlar kolonu kaldırıldı)
+        const devreNotMetni = gv('devreNot');
+        if (devreNotMetni && devreNotMetni.trim()) {
+          supa.from('notlar').insert({
+            tenant_id:  ARES.tenantId(),
+            devre_id:   devreId,
+            metin:      devreNotMetni.trim(),
+            ekleyen_id: ARES.userId ? ARES.userId() : null,
+          }).then(function(nr) {
+            if (nr.error) console.warn('[ARES] Not kayıt hatası:', nr.error.message);
+          });
+        }
       }
 
       // 1.5. Spool seviyesi dedup — mevcut devreye ekliyoruz VE çakışma varsa uyar
