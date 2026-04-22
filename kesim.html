@@ -473,6 +473,7 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
           <th class="no-sort" style="width:36px;">#</th>
           <th><span data-i18n="ks_col_liste_no">Liste No</span></th>
           <th><span data-i18n="ks_filter_mat">Malzeme</span></th>
+          <th><span data-i18n="ks_filter_grade">Kalite</span></th>
           <th><span data-i18n="ks_chip_cap">Çap</span></th>
           <th><span data-i18n="cmn_th_et">Et</span></th>
           <th style="text-align:right;"><span data-i18n="bk_unit_boru">Boru</span></th>
@@ -1141,7 +1142,7 @@ function applyFilters(){
     if(gv('fUc')&&k.ucA!==gv('fUc')&&k.ucB!==gv('fUc')) return false;
     if(secilenIsEmir.size>0&&!secilenIsEmir.has(k.isEmir)) return false;
     if(aramaMetni){
-      var malzEt = (typeof ARES_NORM!=='undefined' && k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod, k.malzeme) : k.malzeme;
+      var malzEt = (typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
       var h=[k.isEmir,k.tersane,k.projeNo,k.spool,k.spoolId,k.malzeme,malzEt,k.kalite,k.cap,k.kalinlik,String(k.kesimOlcusu)].join(' ').toLowerCase();
       if(!h.includes(aramaMetni)) return false;
     }
@@ -1363,6 +1364,7 @@ function createListe(){
   }
   closeListeModal();applyFilters();updateStats();
   toast(listeNo+' '+tv('ks_olusturuldu','oluşturuldu')+' — '+sec.length+' '+tv('bk_unit_boru','boru'),'success');
+  pgKL=1; // yeni liste en başta görünsün
   switchTab('listeler');
 }
 
@@ -1373,7 +1375,8 @@ function renderKL(){
   var cont=document.getElementById('klContainer');
   var empty=document.getElementById('klEmpty');
   if(!cont)return;
-  var aktif=kesimListeleri.filter(kl=>!kl.kapali);
+  // En yeni önce (kesimListeleri DB'den eski→yeni geliyor, tersine çevir)
+  var aktif=kesimListeleri.filter(kl=>!kl.kapali).slice().reverse();
   if(!aktif.length){
     cont.innerHTML='';
     if(empty)empty.style.display='block';
@@ -1388,18 +1391,26 @@ function renderKL(){
   cont.innerHTML=sliceKL.map(function(kl,idx){
     var klB=borular.filter(k=>kl.boruIds.includes(k.id));
     var mm=klB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
-    var kesildi=klB.filter(k=>kl.kesilmisIds.has(k.id)).length;
     var toplam=klB.length;
-    var pct=toplam?Math.round(kesildi/toplam*100):0;
-    var malz=kl.kriter&&kl.kriter.malzemeler?kl.kriter.malzemeler.join(', '):'—';
-    var cap=kl.kriter&&kl.kriter.capler?'Ø'+kl.kriter.capler.join(', Ø'):'—';
-    var et=kl.kriter&&kl.kriter.kalinliklar?kl.kriter.kalinliklar.join('/'):'—';
-    var progColor=kesildi===toplam?'var(--gr)':'var(--warn)';
     var rowNum=(pgKL-1)*PG_KL+idx+1;
+
+    // Malzeme normalize: ham kod → Karbon Çelik, Paslanmaz Çelik vs.
+    var malzHam=kl.kriter&&kl.kriter.malzemeler?kl.kriter.malzemeler:[];
+    var malzLabel=malzHam.map(function(m){
+      return (typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(m):(m||'—');
+    }).filter(Boolean).join(', ')||'—';
+
+    // Kalite ayrı sütun
+    var kaliteLabel=kl.kriter&&kl.kriter.kaliteler?kl.kriter.kaliteler.filter(Boolean).join(', '):'—';
+
+    var cap=kl.kriter&&kl.kriter.capler?'Ø'+kl.kriter.capler.join(', Ø'):'—';
+    var et=kl.kriter&&kl.kriter.kalinliklar?kl.kriter.kalinliklar.filter(Boolean).join('/'):'—';
+
     return '<tr data-ci="'+Math.min(_ci++,19)+'" style="cursor:pointer;" onclick="openKLDetay(\''+kl.id+'\')">'
       +'<td class="cell-no">'+rowNum+'</td>'
       +'<td><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:800;color:var(--warn);">'+esc(kl.no)+'</span></td>'
-      +'<td style="font-size:14px;">'+esc(malz)+'</td>'
+      +'<td style="font-size:14px;">'+esc(malzLabel)+'</td>'
+      +'<td style="font-size:14px;color:var(--txd);">'+esc(kaliteLabel)+'</td>'
       +'<td style="font-size:14px;color:var(--ac);">'+esc(cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+esc(et)+'</td>'
       +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;">'+toplam+'</td>'
@@ -1546,7 +1557,7 @@ function renderArc(){
     var rowNum=(pgArc-1)*PG_ARC+idx+1;
     if(s.tip==='tekil'){
       var k=s.meta;
-      var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+      var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
       return '<tr data-ci="'+Math.min(idx,19)+'">'
         +'<td class="cell-no">'+rowNum+'</td>'
         +'<td><span class="cell-spoolid">'+esc(s.no)+'</span><div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(k.spool||'')+'</div></td>'
@@ -1709,7 +1720,7 @@ function _mdlRenderTable(klId){
   var ucLbl=getUcMap();
   document.getElementById('klDetayTableBody').innerHTML=klB.map(function(k,i){
     var ch=kl.kesilmisIds.has(k.id);
-    var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+    var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
     var sertBadge=k.sertifika
       ?'<span style="color:var(--warn);font-size:16px;" title="Sertifika gerekli">★</span>'
       :'<span style="color:var(--txd);font-size:14px;">—</span>';
@@ -1779,7 +1790,7 @@ function openArcDetay(klId, arcIdx){
   document.getElementById('arcDetayMeta').textContent=malz+' · '+cap+' · '+esc(arc.tarih)+' · '+durStr;
   var ucLbl=getUcMap();
   document.getElementById('arcDetayTableBody').innerHTML=arcB.map(function(k,i){
-    var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+    var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
     var sertBadge=k.sertifika?'<span style="color:var(--warn);font-size:16px;">★</span>':'<span style="color:var(--txd);font-size:14px;">—</span>';
     return '<tr>'
       +'<td class="cell-no">'+(i+1)+'</td>'
@@ -2211,7 +2222,7 @@ function fmPdfYazdir(){
       +'</td></tr>';
     (plan.matchedBorular||[]).forEach(function(k,i){
       gsira++;
-      var malzLabel=(typeof ARES_NORM!=='undefined'&&k.malzemeKod)?ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme):k.malzeme;
+      var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
       satirlar+='<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';">'
         +'<td style="text-align:center;">'+gsira+'</td>'
         +'<td>'+esc(k.tersane||'')+'</td>'
@@ -2402,7 +2413,7 @@ async function exportKesimExcel() {
     // Veri satırları
     var ucLbl = getUcMap();
     liste.forEach(function(k, i) {
-      var malzLabel = (typeof ARES_NORM!=='undefined' && k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod, k.malzeme) : k.malzeme;
+      var malzLabel = (typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
       var row = ws.addRow({
         no:       i+1,
         tersane:  k.tersane||'',
@@ -2455,7 +2466,7 @@ function exportKesimPdf() {
   var toplamMm = liste.reduce(function(s,k){ return s+(parseFloat(k.kesimOlcusu)||0); },0);
 
   var satirlar = liste.map(function(k,i){
-    var malzLabel = (typeof ARES_NORM!=='undefined'&&k.malzemeKod) ? ARES_NORM.tvMalzeme(k.malzemeKod,k.malzeme) : k.malzeme;
+    var malzLabel = (typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
     var trRenk = i%2===0 ? '#fff' : '#fff8f5';
     return '<tr style="background:'+trRenk+';">'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#999;text-align:center;">'+(i+1)+'</td>'
