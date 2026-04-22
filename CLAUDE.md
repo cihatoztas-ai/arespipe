@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 22 Nisan 2026 (17. oturum — kesim.html wizard UX, v3 kart, DB bug düzeltmeleri, spool_detay/devre_detay spool_id fix)
+> Son güncelleme: 22 Nisan 2026 (19. oturum — Malzeme Master Tablo: `malzeme_tanimlari` + trigger + 12 sistem preset + guard'lar. E-06 tamamen yenilendi.)
 
 ---
 
@@ -468,67 +468,110 @@ DB'deki legacy yazımlar kod formatına çevrildi:
 
 Sonuç: DB'de tek canonical format var. Yeni kayıtlar devre_yeni.html üzerinden zaten kod yazıyor (test edildi).
 
-#### Malzeme / Kalite Ayrımı — Altın Kural (Kural E-06, 18. oturum)
+#### Malzeme / Kalite Ayrımı — Master Tablo (Kural E-06, 19. oturumda tamamlandı)
 
-**18. oturumda tespit edildi:** 16 Nisan öncesi `normalizeMalzeme()` Türkçe etiket döndürüyordu, hata kamufleydi. 17 Nisan'da normalize modülü geldi, KOD dönmeye başladı — maske kalktı, gerçek hata açığa çıktı: `spool_malzemeleri.kalite` kolonuna yanlışlıkla malzeme kodu yazılıyordu.
+**Mimari:** `malzeme_tanimlari` master tablosu + `malzeme_ref_id` FK + DB-içi trigger. Kullanıcı ne yazarsa yazsın, DB canonical format'ta saklar.
 
-**DB Şeması — KESİN AYRIM:**
-| Kolon | İçerik | Örnek |
-|---|---|---|
-| `malzeme` | **Kategori kodu** (enum normalize) | `karbon`, `paslanmaz`, `bakir`, `alum`, `diger` |
-| `kalite`  | **Spesifik teknik string** (raw) | `ST37`, `316L`, `CuNi10Fe1.6Mn`, `A106-B` |
+**DB Şeması:**
 
-**Altın Kural:** IFS / PDF / Excel veri giriş noktalarında **ham değer korunur**. Kategori/kalite ayrımı **SADECE insert aşamasında** yapılır. Hiçbir okuma aşamasında normalize edilmez.
+```
+malzeme_tanimlari (
+  id uuid PK,
+  tenant_id uuid (NULL = sistem preset, dolu = firma özel),
+  kategori_kod text   -- 'karbon','paslanmaz','bakir','alum','diger'
+  kalite_kod text     -- 'ST37','316L','CUNI9010' (UPPERCASE, normalize)
+  kalite_goster text  -- 'St 37','316L','CuNi 90/10' (UI gösterimi)
+  standart text       -- 'DIN 17100','ASME SA-106',...
+  aciklama_tr/en/ar, notlar, aktif, sistem_preset, olusturma
+  UNIQUE(tenant_id, kategori_kod, kalite_kod)
+  + partial unique (kategori_kod, kalite_kod) WHERE tenant_id IS NULL
+)
 
-**Doğru Pattern:**
-```js
-// ✅ IFS okuma — ham saklanır
-ifsData[pipeline][spool].push({
-  malzeme: String(row[idx.mat] || '').trim(), // "ST37" raw
-  ...
-});
-
-// ✅ spool_malzemeleri insert — burada ayrılır
-malzemeRows.push({
-  malzeme: ARES_NORM.malzemeKod(item.malzeme), // "ST37" → "karbon" (kategori)
-  kalite:  item.malzeme,                        // "ST37" (spesifik kalite)
-});
+spool_malzemeleri.malzeme_ref_id   uuid FK
+pipeline_malzemeleri.malzeme_ref_id uuid FK
+-- spooller: FK yok, text kolonlar (denormalize özet) trigger ile senkronlanabilir
+-- kesim/bukum/markalama_kalemleri: zaten malzeme_id FK ile spool_malzemeleri'ne bağlı
 ```
 
-**Yanlış Pattern (tarihsel bug):**
+**Sistem preset (12 kalite — her firma okur, kimse silemez):**
+- karbon: `ST37`, `S235JR`, `A106B`, `A53`
+- paslanmaz: `316L`, `304L`, `316`, `304`, `14571`, `A312TP316L`
+- bakir: `CUNI9010`
+- alum: `6061T6`
+
+**Trigger davranışı — `BEFORE INSERT OR UPDATE`:**
+1. `malzeme_ref_id` boşsa: ham `malzeme`+`kalite` string'lerinden **`malzeme_ref_bul()`** ile master UUID bulur/ekler
+2. `malzeme_ref_id` doluysa: text kolonları (`malzeme`, `kalite`) master'dan otomatik yazar
+
+**`malzeme_ref_bul()` guards:**
+- Guard 1: `kalite = malzeme` → NULL (bozuk kayıt şüphesi)
+- Guard 2: `kalite_kod_normalize(kalite)` NULL dönerse → NULL (bilinmeyen/kategori ismi)
+- Öncelik sırası: sistem preset → tenant kaydı → tenant'a yeni ekle
+
+**`kalite_kod_normalize()` — DB fonksiyonu:**
+- Kategori isimleri (`karbon`, `paslanmaz`...) → NULL (kalite değiller)
+- `St37`, `ST-37`, `st 37` → `ST37`
+- `CuNi 90/10`, `CuNi10Fe1.6Mn`, `cuni90-10` → `CUNI9010`
+- `1.4571`, `1 4571`, `316Ti` → `14571`
+- Tanınmayan → NULL (admin UI'dan eklenecek)
+
+**JS tarafı (backward compat + gelecek):**
+- `ARES_NORM.kaliteKod(raw)` — DB `kalite_kod_normalize()` eşi
+- `ARES_NORM.kaliteGoster(kod_or_raw)` — master `kalite_goster` eşi (fetch'siz)
+- `ARES_NORM.malzemeEtiket(kod)` — dil bağımsız lokalize (Karbon Çelik / Carbon Steel / فولاذ كربوني)
+
+**Altın Kural (artık sadeleşti):**
+- Formdan ham değer DB'ye gönderilebilir (`"Karbon Çelik"` + `"ST37"`) — trigger canonical yapar
+- Tek yasak: okumadan önce JS tarafında normalize etme. `spool_malzemeleri.malzeme` zaten canonical, JOIN `malzeme_tanimlari.kalite_goster` ile UI'da gösterim hazır
+- Yeni kalite eklenmesi: admin UI (Faz 2) veya elle SQL INSERT
+
+**Doğru Pattern (yeni):**
 ```js
-// ❌ Okuma aşamasında normalize — BİLGİ KAYBI
-ifsData[pipeline][spool].push({
-  malzeme: normalizeMalzeme(row[idx.mat]), // "ST37" → "karbon" (kalite kayboldu!)
+// ✅ Ham değer DB'ye gönder, trigger canonicalize eder
+await supa.from('spool_malzemeleri').insert({
+  tenant_id: ARES.tenantId(),
+  spool_id:  SP.supaId,
+  malzeme:   'Karbon Çelik',  // trigger → 'karbon'
+  kalite:    'ST37',          // trigger → 'St 37'
+  // malzeme_ref_id otomatik dolar
 });
-malzemeRows.push({
-  malzeme: _malzemeTipi(item.malzeme),  // "karbon" → "karbon"
-  kalite:  item.malzeme || null,         // "karbon" → "karbon" (AYNI değer iki kolonda!)
-});
+
+// ✅ Okuma — text kolonlar canonical, JOIN ile görsel
+const { data } = await supa.from('spool_malzemeleri').select(`
+  kod, tanim, malzeme, kalite,
+  malzeme_tanimlari (kalite_goster, standart)
+`);
+// data[i].kalite = 'St 37' (canonical)
+// data[i].malzeme_tanimlari.standart = 'DIN 17100'
 ```
 
-**Veri Giriş Noktaları (18. oturumda düzeltildi):**
-- ✅ `devre_yeni.html` → `ifsOku` (satır 644): ham saklanır, insert aşamasında ayrılır
-- ✅ `devre_yeni.html` → İzometri PDF insert (satır 1900): `malzeme_cinsi` kategori koduna normalize
-- ✅ `spool_detay.html` → `pipelineAktar`: defensive normalize + `kalite==malzeme` durumunda kalite NULL
-
-**Hala kontrol edilmesi gereken (19. oturum gündemi):**
-- ⚠️ `pipeline_malzemeleri` tablosuna yazan kaynak dosya (muhtemelen `proje_detay.html` veya benzer)
-- ⚠️ `spool_detay.html` → `newRowKaydet` manuel giriş validation yok
-- ⚠️ `kesim_kalemleri` tablosuna yazan tüm noktalar
-
-**Opsiyonel DB seviyesi koruma:**
-```sql
-ALTER TABLE spool_malzemeleri
-  ADD CONSTRAINT check_kalite_different_from_malzeme
-  CHECK (LOWER(TRIM(kalite)) != LOWER(TRIM(malzeme)) OR kalite IS NULL);
+**Yanlış Pattern (tarihsel, artık olmamalı):**
+```js
+// ❌ JS tarafında normalize sonra insert — trigger zaten yapıyor, redundant
+malzemeRows.push({
+  malzeme: ARES_NORM.malzemeKod(item.malzeme),  // trigger ne yazacak kendi bilir
+  kalite:  item.malzeme,                         // BUG kaynağı (kalite=malzeme)
+});
 ```
 
 **Historical Timeline:**
-- 16 Nisan öncesi: `normalizeMalzeme` Türkçe etiket döndürüyordu (örn. `"ST37"` → `"Karbon Çelik"`). Kalite kolonuna da etiket yazıldığı için hata kamufleydi ("Karbon Çelik / Karbon Çelik").
-- 17 Nisan (3. oturum): `ares-normalize.js` eklendi, kategori kodu dönmeye başladı. Kamuflaj kalktı, `"karbon / karbon"` çirkin görünümü ortaya çıktı. Fix atlandı.
-- 19 / 20 Nisan (4. 5. oturum): Hiç dokunulmadı.
-- 22 Nisan (18. oturum): Tespit + devre_yeni/spool_detay tarafı düzeltildi, pipeline_malzemeleri kaynağı sonraki oturuma bırakıldı.
+- 16 Nisan öncesi: `normalizeMalzeme()` Türkçe etiket döndürüyordu, "Karbon Çelik / Karbon Çelik" kamufle bug
+- 17 Nisan (3. oturum): `ares-normalize.js` → kod döndürmeye başladı, "karbon / karbon" görünür bug
+- 18. oturum (22 Nisan): Tespit + kısmi düzeltme önerileri (uygulanmadı)
+- **19. oturum (22 Nisan): Master tablo altyapısı + trigger + guard'lar + sistem preset → Faz 1 tamamlandı**
+- Faz 2 (sonraki oturum): admin UI — `tanimlar.html`'de malzeme havuzu sekmesi
+- Faz 3 (sonraki): form refactor — autocomplete dropdown (free text yerine)
+- Faz 4 (son): IFS/Excel import fuzzy match
+
+**DB objelerinin listesi (Faz 1 çıktısı):**
+```
+Tablolar:     malzeme_tanimlari (yeni)
+Kolonlar:     spool_malzemeleri.malzeme_ref_id, pipeline_malzemeleri.malzeme_ref_id
+DROP:         spooller.kalite_standart (kullanılmayan ölü kolon)
+Fonksiyonlar: kategori_kod_normalize(), kalite_kod_normalize(), malzeme_ref_bul()
+Trigger'lar:  tg_spool_malzemeleri_ref_sync, tg_pipeline_malzemeleri_ref_sync
+RLS:          4 policy (SELECT/INSERT/UPDATE/DELETE)
+```
 
 ---
 

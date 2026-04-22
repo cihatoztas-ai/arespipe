@@ -17,7 +17,7 @@
 // Script yükleme sırası (CLAUDE.md):
 //   ares-store.js → ares-lang.js → ares-normalize.js → ares-layout.js
 //
-// Son güncelleme: 20 Nisan 2026 (5. oturum — malzeme-yüzey uyum matrisi)
+// Son güncelleme: 22 Nisan 2026 (19. oturum — Faz 1: kaliteKod + kaliteGoster eklendi, DB master tablo ile eş)
 
 (function(g){
   'use strict';
@@ -56,6 +56,67 @@
     if (/siyah|black/.test(h))       return 'siyah';
     if (/boyal|boya|paint/.test(h))  return 'boyali';
     return 'diger';
+  }
+
+  // ── KALİTE: ham → canonical kod (19. oturum — master tablo ile eş)
+  // DB'deki kalite_kod_normalize() fonksiyonunun JS karşılığı.
+  // Kategori isimleri (karbon, paslanmaz...) kalite DEĞİLDİR → null döner.
+  // Tanınmayan kalite → null (admin UI'dan master'a eklenmesi beklenir).
+  // Döndürülen canonical kodlar master tabloda sistem preset olarak kayıtlıdır.
+  function kaliteKod(raw){
+    if (raw == null) return null;
+    var h = String(raw).trim();
+    if (!h) return null;
+    h = h.toUpperCase()
+         .replace(/Ç/g,'C').replace(/Ğ/g,'G').replace(/İ/g,'I')
+         .replace(/Ö/g,'O').replace(/Ş/g,'S').replace(/Ü/g,'U');
+
+    // Kategori isimleri kalite değildir — kesin reddet
+    var kategoriIsimleri = [
+      'KARBON','PASLANMAZ','BAKIR','ALUM','ALUMINYUM','DIGER','DIĞER',
+      'KARBONCELIK','KARBON CELIK','CARBONSTEEL','CARBON STEEL',
+      'STAINLESS','COPPER','BAKIRALASIM','BAKIR ALASIM',
+      'ALUMINUM','ALUMINIUM','BRONZE','BRASS','PIRINC'
+    ];
+    if (kategoriIsimleri.indexOf(h) !== -1) return null;
+
+    if (/CUNI|CU-NI|CU NI/.test(h))                            return 'CUNI9010';
+    if (/^1[\.\s]?4571$/.test(h) || h==='316TI' || h==='316 TI') return '14571';
+    if (/^A\s?312[-\s]?TP?\s?316\s?L$/.test(h))                return 'A312TP316L';
+    if (/^A\s?106[-\s]?GR?\s?B$/.test(h) ||
+        /^A\s?106[-\s]?B$/.test(h) || h==='A106')               return 'A106B';
+    if (/^A\s?53([-\s]?[A-Z])?$/.test(h))                      return 'A53';
+    if (/^ST[-\s]?37$/.test(h))                                return 'ST37';
+    if (/^S235/.test(h))                                       return 'S235JR';
+    if (/^316\s?L$/.test(h))                                   return '316L';
+    if (/^304\s?L$/.test(h))                                   return '304L';
+    if (h === '316')                                           return '316';
+    if (h === '304')                                           return '304';
+    if (/^6061[-\s]?T6$/.test(h) || h==='6061')                return '6061T6';
+
+    return null; // Tanımsız kalite (admin UI'dan eklenecek)
+  }
+
+  // ── KALİTE: kod → görsel etiket (master tabloda kalite_goster karşılığı)
+  // DB fetch olmadan canonical formatı döndürür. Frontend hızlı gösterim için.
+  function kaliteGoster(kodOrRaw){
+    if (kodOrRaw == null) return '';
+    var kod = String(kodOrRaw).toUpperCase().trim();
+    if (!kod) return '';
+    // Eğer kod değilse önce kod'a çevir
+    if (!/^[A-Z0-9]+$/.test(kod.replace(/\s/g,''))) {
+      var k = kaliteKod(kodOrRaw);
+      if (!k) return String(kodOrRaw).trim(); // bilinmeyeni ham döndür
+      kod = k;
+    }
+    var goster = {
+      'ST37':'St 37', 'S235JR':'S235JR', 'A106B':'A106-B', 'A53':'A53',
+      '316L':'316L', '304L':'304L', '316':'316', '304':'304',
+      '14571':'1.4571', 'A312TP316L':'A312-TP316L',
+      'CUNI9010':'CuNi 90/10',
+      '6061T6':'6061-T6'
+    };
+    return goster[kod] || String(kodOrRaw).trim();
   }
 
   // ── DURUM: is_durumu zaten kod; normalize için ────────────────────
@@ -170,6 +231,7 @@
   // Namespace
   g.ARES_NORM = {
     malzemeKod: malzemeKod,     yuzeyKod: yuzeyKod,     durumKod: durumKod,
+    kaliteKod:  kaliteKod,      kaliteGoster: kaliteGoster,
     tvMalzeme:  tvMalzeme,      tvYuzey:  tvYuzey,      tvDurum:  tvDurum,
     malzemeEtiket: malzemeEtiket,
     yuzeyEtiket:   yuzeyEtiket,
