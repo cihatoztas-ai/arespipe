@@ -641,7 +641,10 @@ function ifsOku(file) {
         ifsData[pipeline][spool].push({
           desc:    idx.desc   >= 0 ? String(row[idx.desc]   || '') : '',
           dims:    idx.dims   >= 0 ? String(row[idx.dims]   || '') : '',
-          malzeme: normalizeMalzeme(idx.mat >= 0 ? String(row[idx.mat] || '') : ''),
+          // IFS'nin "Material" kolonu aslında kalite kodudur (ST37, 316L, CUNI9010...).
+          // HAM sakla — normalize sonradan _malzemeTipi() ile kategori türetimi için yapılır,
+          // kalite alanı bu ham değeri korur. (19. oturum E-06 Master Tablo akışı)
+          malzeme: idx.mat >= 0 ? String(row[idx.mat] || '').trim() : '',
           agirlik: idx.weight >= 0 ? parseFloat(row[idx.weight]) || 0 : 0,
           miktar:  idx.qty    >= 0 ? parseFloat(row[idx.qty])    || 0 : 0,
           uzunluk: idx.len    >= 0 ? parseFloat(row[idx.len])    || 0 : 0,

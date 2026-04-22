@@ -1192,7 +1192,7 @@ function renderTable(){
       +'<td style="color:var(--txd);">'+esc(s.et)+'</td>'
       +'<td style="color:var(--txm);">'+esc(s.agirlik)+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'malzeme\',\''+esc(s._lk)+'\',\'select\',\'Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum\',\''+esc(s.malzeme)+'\')">'+esc(_malzemeGoster(s.malzeme)||'—')+'</td>'
-      +'<td onclick="event.stopPropagation();inlineEdit(this,\'kalite\',\''+esc(s._lk)+'\',\'text\',\'\',\''+esc(s.kalite)+'\')" style="color:var(--ac);font-weight:600;">'+esc(s.kalite||'—')+'</td>'
+      +'<td onclick="event.stopPropagation();inlineEdit(this,\'kalite\',\''+esc(s._lk)+'\',\'text\',\'\',\''+esc(s.kalite)+'\')" style="color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||'—'):(s.kalite||'—'))+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'yuzey\',\''+esc(s._lk)+'\',\'select\',\'Galvaniz,Asit,Siyah,Epoksi,Boyalı\',\''+esc(s.yuzey)+'\')">'+esc(_yuzeyGoster(s.yuzey)||'—')+'</td>'
       +'<td><span class="sb '+d.cls+'">'+(s.isDurumu==='devam_ediyor'&&(s._aktifBasamak==='imalat'||s._aktifBasamak==='kaynak')?'<span class="sb-pulse-dot"></span>':'')+esc(_stepText(s))+'</span></td>'
       +'<td><div class="steps" title="'+adimLbl().join(' → ')+'">'+s.adimlar.map(stepHtml).join('')+'</div>'
@@ -1560,7 +1560,7 @@ async function spoolMalzYukle(){
       +'<td style="padding:8px 12px;font-weight:600;">'+esc(g.kod||'—')+'</td>'
       +'<td style="padding:8px 12px;color:var(--txm);max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+esc(g.tanim||'—')+'</td>'
       +'<td style="padding:8px 12px;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?ARES_NORM.malzemeEtiket(g.malzeme):(g.malzeme||'—'))+'</td>'
-      +'<td style="padding:8px 12px;color:var(--ac);font-weight:600;">'+esc(g.kalite||'—')+'</td>'
+      +'<td style="padding:8px 12px;color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(g.kalite)||g.kalite||'—'):(g.kalite||'—'))+'</td>'
       +'<td style="padding:8px 12px;text-align:right;">'+(g.dis_cap_mm?String(parseFloat(g.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—')+'</td>'
       +'<td style="padding:8px 12px;text-align:right;">'+(g.et_mm?String(g.et_mm).replace('.',',')+' mm':'—')+'</td>'
       +'<td style="padding:8px 12px;text-align:right;font-weight:700;">'+ba+'</td>'
@@ -1573,7 +1573,7 @@ function spoolMalzExcel(){
   if(!_spoolMalzData.length){showToast(tv('dv_no_data','Veri yok'),'i');return;}
   if(typeof XLSX==='undefined'){showToast(tv('dv_xlsx_missing','Excel yüklenemedi'),'e');return;}
   var rows=[[tv('dv_mat_col_spool','Spool'),'Kod',tv('dv_mat_col_desc','Açıklama'),tv('sp_stat_material','Malzeme'),tv('th_quality','Kalite'),'Çap (mm)','Et (mm)','Boy (mm)','Adet','Ağırlık (kg)','Heat No',tv('dv_mat_col_cert','Sertifikalı')]];
-  _spoolMalzData.forEach(function(m){var sp=m.spooller||{};rows.push([sp.spool_no||'',m.kod||'',m.tanim||'',m.malzeme||'',m.kalite||'',m.dis_cap_mm||'',m.et_mm||'',m.boy_mm||'',m.adet||'',m.agirlik_kg||'',m.heat_no||'',m.sertifikali?tv('dv_yes','Evet'):'']);});
+  _spoolMalzData.forEach(function(m){var sp=m.spooller||{};var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||'');rows.push([sp.spool_no||'',m.kod||'',m.tanim||'',m.malzeme||'',kg,m.dis_cap_mm||'',m.et_mm||'',m.boy_mm||'',m.adet||'',m.agirlik_kg||'',m.heat_no||'',m.sertifikali?tv('dv_yes','Evet'):'']);});
   var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Malzeme');XLSX.writeFile(wb,'malzeme_listesi.xlsx');
 }
 
@@ -1599,7 +1599,7 @@ function plMalzRender(){
       return'<tr><td style="color:var(--txd);">'+(i+1)+'</td>'
         +'<td>'+esc(m.kod||'—')+'</td>'
         +'<td>'+esc(m.tanim||'—')+'</td><td>'+esc(m.malzeme||'—')+'</td>'
-        +'<td style="color:var(--ac);font-weight:600;">'+esc(m.kalite||'—')+'</td>'
+        +'<td style="color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||'—'):(m.kalite||'—'))+'</td>'
         +'<td style="text-align:right;">'+(m.dis_cap_mm?String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—')+'</td>'
         +'<td style="text-align:right;">'+(m.et_mm?String(m.et_mm).replace('.',',')+' mm':'—')+'</td>'
         +'<td style="text-align:right;">'+(m.boy_mm?m.boy_mm+' mm':'—')+'</td>'
