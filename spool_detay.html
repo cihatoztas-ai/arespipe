@@ -963,7 +963,6 @@ async function spoolYukle(supaId) {
     }
     SP.agirlik   = s.agirlik           ? String(parseFloat(s.agirlik).toFixed(2)).replace('.',',') + ' kg' : SP.agirlik;
     SP.malzeme   = s.malzeme           || SP.malzeme;
-    // ✅ FIX: kalite_standart → kalite
     SP.kalite    = s.kalite            || SP.kalite;
     SP.yuzey     = s.yuzey             || SP.yuzey;
     SP.stopped   = s.durduruldu        || false;
