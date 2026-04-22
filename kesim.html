@@ -1378,7 +1378,7 @@ function renderKL(){
   var empty=document.getElementById('klEmpty');
   if(!cont)return;
   // En yeni önce (kesimListeleri DB'den eski→yeni geliyor, tersine çevir)
-  var aktif=kesimListeleri.filter(kl=>!kl.kapali).slice().reverse();
+  var aktif=kesimListeleri.filter(kl=>!kl.kapali);
   if(!aktif.length){
     cont.innerHTML='';
     if(empty)empty.style.display='block';
@@ -1535,8 +1535,11 @@ function renderArc(){
     });
   });
 
-  // En yeni önce
-  satirlar.sort(function(a,b){ return (b.tarih||'').localeCompare(a.tarih||''); });
+  // En yeni önce — tarih "DD.MM.YYYY HH:MM" formatını ISO'ya çevirerek karşılaştır
+  satirlar.sort(function(a,b){
+    function toISO(t){ if(!t||t==='—') return ''; var p=t.split(' '); var d=p[0]&&p[0].split('.'); return d&&d.length===3?d[2]+d[1]+d[0]+(p[1]||''):''; }
+    return toISO(b.tarih).localeCompare(toISO(a.tarih));
+  });
 
   if(!satirlar.length){
     cont.innerHTML='';
