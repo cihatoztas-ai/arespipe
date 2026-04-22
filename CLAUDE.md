@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 20 Nisan 2026 (12. oturum — DEVRE.gemi→projeNo rename + notlar persistence + basamak_tanimlari multilang + Öncelik 4 kapatıldı)
+> Son güncelleme: 22 Nisan 2026 (17. oturum — kesim.html wizard UX, v3 kart, DB bug düzeltmeleri, spool_detay/devre_detay spool_id fix)
 
 ---
 
@@ -1215,7 +1215,43 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. ÖNCEKİ OTURUM — 20 NİSAN 2026 (11. OTURUM)
+## 11. ÖNCEKİ OTURUM — 22 NİSAN 2026 (16-17. OTURUM)
+
+**Ana tema:** kesim.html tam refactor + wizard UX + spool_detay/devre_detay bug fix
+
+**Yapılanlar:**
+- `kesim_plani JSONB`, `boru_ids JSONB`, `kriter JSONB`, `kesim_listesi_id UUID` kolonları eklendi
+- **Wizard Modal** (tek popup, 3 adım): klDetayModal + formModal + sonucModal → `wizardModal`
+  - Adım 1: Boru listesi + seçim + kesildi kaydet
+  - Adım 2: Kesim parametreleri + parça borular
+  - Adım 3: V3 kart planı + Excel/PDF
+- **V3 kart tasarımı**: `_renderV3()` — istatistik grid + stok başına kart (çizgi şema + iç tablo)
+- **PDF**: v3 formatında, SVG çizgi şema, firma logo + footer
+- **Liste kaybolma bugı**: `kesim_plani` kolonu eksikti → fallback SELECT eklendi
+- **Sıralama**: `unshift` ile yeni liste başa, ISO date sort kesilen listeler
+- **Kapalı liste borularının havuzda görünmesi**: `kesimListesiId` → `kapaliListeIds` kontrolü
+- **Toast async fix**: DB save başarısından sonra çıkıyor
+- **Paketi İptal Et**: borular havuza, liste DB'den silinir
+- **`spool_detay.html`**: `kesimKaydet/bukumKaydet/markalama` insert'lerine `spool_id: SP.supaId` eklendi
+- **`devre_detay.html`**: `spoolYukle` nested select ile rewrite (kesim/büküm/markalama dahil)
+- **`devre_yeni.html`**: `devreler.notlar` insert'ten kaldırıldı → `notlar` tablosuna yazılıyor
+- **Dil dosyaları**: 11 yeni anahtar eklendi (cmn_disa_aktar, ks_bos_kesilen vb.)
+
+**DB Migrasyonlar:**
+```sql
+ALTER TABLE kesim_listeleri ADD COLUMN IF NOT EXISTS boru_ids JSONB DEFAULT '[]';
+ALTER TABLE kesim_listeleri ADD COLUMN IF NOT EXISTS kriter JSONB DEFAULT '{}';
+ALTER TABLE kesim_listeleri ADD COLUMN IF NOT EXISTS kesim_plani JSONB;
+ALTER TABLE kesim_kalemleri ADD COLUMN IF NOT EXISTS kesim_listesi_id UUID;
+ALTER TABLE kesim_listeleri ADD COLUMN IF NOT EXISTS kapali BOOLEAN DEFAULT false;
+ALTER TABLE kesim_listeleri ADD COLUMN IF NOT EXISTS arsiv JSONB DEFAULT '[]';
+```
+
+**Değişen dosyalar:** `kesim.html`, `spool_detay.html`, `devre_detay.html`, `devre_yeni.html`, `tr/en/ar.json`
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 20 NİSAN 2026 (11. OTURUM)
 
 ### Bu oturumda tamamlananlar (Test + 3 Fix + 1 Kural)
 
