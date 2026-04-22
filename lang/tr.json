@@ -1429,5 +1429,16 @@
   "tr_hata_kisa_ad_zorunlu": "Kısa ad zorunludur.",
   "bk_stat_tamamlanan": "Bükülenler",
   "bk_stat_top_short": "Bekleyen",
-  "bk_stat_tamamlanan_short": "Bükülen"
+  "bk_stat_tamamlanan_short": "Bükülen",
+  "cmn_disa_aktar": "Dışa Aktar",
+  "cmn_tur": "Tür",
+  "ks_bos_kesilen": "Henüz kesilen yok",
+  "ks_bos_listeler": "Henüz kesim listesi yok",
+  "ks_col_liste_no": "Liste No",
+  "ks_excel_lib_hata": "Excel kütüphanesi yüklenemedi",
+  "ks_excel_olusturuldu": "Excel oluşturuldu",
+  "ks_export_bos": "Dışa aktarılacak boru yok",
+  "ks_export_hazirlaniyor": "Dışa aktarım hazırlanıyor...",
+  "ks_filter_uc": "Uç Tipi",
+  "ks_pdf_hazirlandi": "PDF hazırlandı"
 }

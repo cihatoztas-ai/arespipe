@@ -1429,5 +1429,16 @@
   "tr_hata_kisa_ad_zorunlu": "الاسم المختصر مطلوب.",
   "bk_stat_tamamlanan": "المثنية",
   "bk_stat_top_short": "قيد الانتظار",
-  "bk_stat_tamamlanan_short": "منحني"
+  "bk_stat_tamamlanan_short": "منحني",
+  "cmn_disa_aktar": "تصدير",
+  "cmn_tur": "نوع",
+  "ks_bos_kesilen": "لا توجد قطعيات بعد",
+  "ks_bos_listeler": "لا توجد قوائم قطع بعد",
+  "ks_col_liste_no": "رقم القائمة",
+  "ks_excel_lib_hata": "فشل تحميل Excel",
+  "ks_excel_olusturuldu": "تم إنشاء Excel",
+  "ks_export_bos": "لا توجد أنابيب للتصدير",
+  "ks_export_hazirlaniyor": "جاري التصدير...",
+  "ks_filter_uc": "نوع الطرف",
+  "ks_pdf_hazirlandi": "جاهز PDF"
 }

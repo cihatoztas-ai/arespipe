@@ -1429,5 +1429,16 @@
   "tr_hata_kisa_ad_zorunlu": "Short name is required.",
   "bk_stat_tamamlanan": "Bent",
   "bk_stat_top_short": "Pending",
-  "bk_stat_tamamlanan_short": "Bent"
+  "bk_stat_tamamlanan_short": "Bent",
+  "cmn_disa_aktar": "Export",
+  "cmn_tur": "Type",
+  "ks_bos_kesilen": "No cuts yet",
+  "ks_bos_listeler": "No cutting lists yet",
+  "ks_col_liste_no": "List No",
+  "ks_excel_lib_hata": "Excel library failed",
+  "ks_excel_olusturuldu": "Excel created",
+  "ks_export_bos": "No pipes to export",
+  "ks_export_hazirlaniyor": "Preparing export...",
+  "ks_filter_uc": "End Type",
+  "ks_pdf_hazirlandi": "PDF ready"
 }
