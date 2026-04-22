@@ -2045,8 +2045,19 @@ function renderMalzeme(){
     sertGuncelle();return;
   }
   body.innerHTML=MALZEME.map(function(m,i){
+    // Malzeme etiketini lokalize et: 'karbon' → 'Karbon Çelik', 'diger' → 'Diğer' vb.
+    var malzEtiket = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeEtiket)
+      ? ARES_NORM.malzemeEtiket(m.malz || '')
+      : (m.malz || '—');
+    // Kalite raw olarak gösterilir (ST37, 316L gibi teknik string — lokalize edilmez)
+    var kalEtiket = m.kal || '—';
+    // Data bütünlük uyarısı: kalite == malzeme kodu ise DB yanlış dolduruldu
+    var kalAttrs = ' style="color:var(--ac);font-weight:700;"';
+    if(m.malz && m.kal && String(m.malz).toLowerCase() === String(m.kal).toLowerCase()){
+      kalAttrs = ' style="color:var(--warn);font-weight:600;font-style:italic;" title="⚠ Kalite ile malzeme aynı değer. DB kaydı yanlış doldurulmuş olabilir — kalite ST37 / 316L gibi bir değer olmalı."';
+    }
     return'<tr><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+esc(m.ac)+'</td>'
-    +'<td style="color:var(--txm);">'+esc(m.malz)+'</td><td style="color:var(--ac);font-weight:700;">'+esc(m.kal)+'</td>'
+    +'<td style="color:var(--txm);">'+esc(malzEtiket)+'</td><td'+kalAttrs+'>'+esc(kalEtiket)+'</td>'
     +'<td>'+esc(m.cap)+'</td><td>'+esc(m.et)+'</td><td>'+esc(m.boy)+'</td>'
     +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td>'+(m.agr_tahmin?'<td><span style="color:var(--warn);font-weight:600;" title="Tahmini ağırlık">~'+esc(m.agr)+'</span></td>':'<td>'+esc(m.agr)+'</td>')
     +'<td><input class="ei" style="width:85px;font-family:monospace;font-size:13px;" value="'+esc(m.heat||'')+'" data-mid="'+esc(m.id)+'" onblur="heatKaydet(this.dataset.mid,this.value)" placeholder="Heat No"></td>'
