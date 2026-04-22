@@ -832,71 +832,24 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
   </div>
 </div>
 
-<!-- ═══ KESİM TAMAMLA ONAY POPUP ═══ -->
+<!-- ═══ KESİM ONAY POPUP — GENERIC (Tamamla / İptal) ═══ -->
 <div class="modal-ov" id="kldConfirmModal" style="display:none;">
-  <div class="kld-cfm-wrap">
-    <div class="kld-cfm-icon">
+  <div class="kld-cfm-wrap" id="kldCfmWrap">
+    <div class="kld-cfm-icon" id="kldCfmIcon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-    <div class="kld-cfm-title" data-i18n="kld_cfm_title">Kesimi tamamla</div>
-    <div class="kld-cfm-desc" data-i18n="kld_cfm_desc">Bu işlem geri alınamaz. Liste <strong>Kesilen Listeler</strong> sekmesine taşınacak. Kesilmeyen borular havuza geri dönecek.</div>
+    <div class="kld-cfm-title" id="kldCfmTitle">Kesimi tamamla</div>
+    <div class="kld-cfm-desc" id="kldCfmDesc">Bu işlem geri alınamaz.</div>
     <div class="kld-cfm-box" id="kldCfmBox"></div>
     <div class="kld-cfm-foot">
       <button class="kld-btn" onclick="closeKLConfirm()" data-i18n="cmn_vazgec">Vazgeç</button>
-      <button class="kld-btn kld-btn-primary" onclick="kldKesimTamamlaOnayla()">
+      <button class="kld-btn kld-btn-primary" id="kldCfmOnayBtn" onclick="kldCfmOnayla()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span data-i18n="kld_cfm_onayla">Onayla ve Tamamla</span>
+        <span id="kldCfmOnayLbl">Onayla</span>
       </button>
     </div>
   </div>
 </div>
-<div class="modal-ov" id="arcDetayModal" style="display:none;">
-  <div class="modal-box" style="max-width:95vw;width:100%;max-height:91vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-    <div style="padding:16px 24px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:34px;height:34px;border-radius:8px;background:rgba(22,163,110,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:12px;">
-            <div class="modal-title" id="arcDetayTitle" style="font-size:20px;"></div>
-            <div id="arcDetayMeta" style="font-size:14px;color:var(--txd);"></div>
-          </div>
-        </div>
-      </div>
-      <button onclick="closeArcDetay()" style="background:none;border:none;color:var(--txd);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
-    </div>
-    <div style="overflow:auto;flex:1;">
-      <table class="data-table" style="min-width:1100px;">
-        <thead><tr>
-          <th class="no-sort" style="width:36px;">#</th>
-          <th data-i18n="cmn_th_tersane">Tersane</th>
-          <th data-i18n="ks_chip_isemir">İş Emri</th>
-          <th data-i18n="cmn_th_spool_no">Spool No</th>
-          <th data-i18n="cmn_th_spool_id">Spool ID</th>
-          <th data-i18n="ks_filter_mat">Malzeme</th>
-          <th data-i18n="ks_filter_grade">Kalite</th>
-          <th data-i18n="ks_chip_cap">Çap</th>
-          <th data-i18n="cmn_th_et">Et Kal.</th>
-          <th style="color:var(--warn);" data-i18n="ks_th_kesim_mm">Kesim (mm)</th>
-          <th data-i18n="ks_th_a_ucu">A Ucu</th>
-          <th data-i18n="ks_th_b_ucu">B Ucu</th>
-          <th class="no-sort" style="text-align:center;" data-i18n="ks_th_sert">Sert.</th>
-        </tr></thead>
-        <tbody id="arcDetayTableBody"></tbody>
-      </table>
-    </div>
-    <div class="tbl-footer" style="flex-shrink:0;border-top:1px solid var(--bor);">
-      <span id="arcDetayCount" style="color:var(--txm);"></span>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <button class="btn-outline" id="arcDetayFormBtn" style="height:32px;font-size:14px;border-color:rgba(22,163,110,.4);color:var(--gr);">📂 Kesim Formu İndir</button>
-        <span id="arcDetaySum" style="font-weight:700;"></span>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 <div class="modal-ov" id="listeModal" style="display:none;">
   <div class="modal-box">
     <div class="modal-title"><span data-i18n="ks_btn_olustur"><span data-i18n="ks_modal_list_title">📋 Kesim Listesi Oluştur</span></span></div>
@@ -1861,42 +1814,10 @@ function renderTekil(){
 // KESİLEN DETAY POPUP
 // ════════════════════════════════════
 function openArcDetay(klId, arcIdx){
-  var kl=kesimListeleri.find(x=>x.id===klId);if(!kl)return;
-  var arc=kl.arsiv[arcIdx];if(!arc)return;
-  var arcB=borular.filter(k=>arc.kesilmisIds.includes(k.id));
-  var mm=arcB.reduce((s,k)=>s+(parseFloat(k.kesimOlcusu)||0),0);
-  var malz=kl.kriter&&kl.kriter.malzemeler?kl.kriter.malzemeler.join(', '):'—';
-  var cap=kl.kriter&&kl.kriter.capler?'Ø'+kl.kriter.capler.join(', Ø'):'—';
-  var durStr=arc.kismiMi?'⚡ Kısmi — '+arc.kesilmisCount+'/'+arc.toplamCount+' boru':'✓ Tam — '+arc.kesilmisCount+' boru';
-  document.getElementById('arcDetayTitle').textContent=kl.no;
-  document.getElementById('arcDetayMeta').textContent=malz+' · '+cap+' · '+esc(arc.tarih)+' · '+durStr;
-  var ucLbl=getUcMap();
-  document.getElementById('arcDetayTableBody').innerHTML=arcB.map(function(k,i){
-    var malzLabel=(typeof ARES_NORM!=='undefined')?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme;
-    var sertBadge=k.sertifika?'<span style="color:var(--warn);font-size:16px;">★</span>':'<span style="color:var(--txd);font-size:14px;">—</span>';
-    return '<tr>'
-      +'<td class="cell-no">'+(i+1)+'</td>'
-      +'<td>'+tersaneBadge(k.tersane||'—')+'</td>'
-      +'<td class="cell-emir">'+esc(k.isEmir||'—')+'</td>'
-      +'<td class="cell-spool">'+esc(k.spool||'—')+'</td>'
-      +'<td class="cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
-      +'<td>'+matBadge(k.malzeme||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
-      +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
-      +'<td style="font-size:14px;color:var(--txm);">'+esc(k.kalinlik||'—')+'</td>'
-      +'<td class="cell-kesim">'+esc(k.kesimOlcusu||'—')+' mm</td>'
-      +'<td>'+(k.ucA?'<span class="uc-badge '+(ucCls[k.ucA]||'')+'">'+esc(ucLbl[k.ucA]||k.ucA)+'</span>':'—')+'</td>'
-      +'<td>'+(k.ucB?'<span class="uc-badge '+(ucCls[k.ucB]||'')+'">'+esc(ucLbl[k.ucB]||k.ucB)+'</span>':'—')+'</td>'
-      +'<td style="text-align:center;">'+sertBadge+'</td>'
-      +'</tr>';
-  }).join('');
-  document.getElementById('arcDetayCount').textContent=arcB.length+' '+tv('bk_unit_boru','boru');
-  document.getElementById('arcDetaySum').innerHTML=tv('bk_toplam','Toplam')+': <span style="color:var(--warn);">'+mm.toLocaleString('tr-TR')+' mm</span>';
-  var formBtn=document.getElementById('arcDetayFormBtn');
-  if(formBtn) formBtn.onclick=function(){ closeArcDetay(); openFormModal(klId,arcIdx); };
-  document.getElementById('arcDetayModal').style.display='flex';
+  // Yeni iki-tab modalı read-only modunda aç
+  openKLDetay(klId, {readOnly:true, arcIdx:arcIdx});
 }
-function closeArcDetay(){document.getElementById('arcDetayModal').style.display='none';}
+function closeArcDetay(){ closeKLDetay(); }
 
 // ════════════════════════════════════
 // DIŞA AKTAR MODAL
@@ -2286,8 +2207,20 @@ function klIptal(klId){
   if(ARES.mod==='supabase'){
     var supa=ARES.supabase();
     var boruSupaIds=klB.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
-    if(boruSupaIds.length) supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',boruSupaIds).then(function(){});
-    if(kl.supaId) supa.from('kesim_listeleri').delete().eq('id',kl.supaId).then(function(r){ if(r.error) console.warn('[ARES] Liste silme:',r.error.message); });
+    // ÖNCE kesim_kalemleri'ndeki FK referansını temizle, SONRA listeyi sil (FK violation önleme)
+    var doDelete = function(){
+      if(kl.supaId) supa.from('kesim_listeleri').delete().eq('id',kl.supaId).then(function(r){
+        if(r.error) console.warn('[ARES] Liste silme:',r.error.message);
+      });
+    };
+    if(boruSupaIds.length){
+      supa.from('kesim_kalemleri').update({kesim_listesi_id:null}).in('id',boruSupaIds).then(function(updRes){
+        if(updRes.error) console.warn('[ARES] kesim_kalemleri update:', updRes.error.message);
+        doDelete(); // update sonrası delete
+      });
+    } else {
+      doDelete(); // boru yok, direkt sil
+    }
   }
   applyFilters(); updateStats(); renderKL(); renderArc();
   toast(kl.no+' iptal edildi — '+klB.length+' boru havuza döndü','info');
@@ -2303,21 +2236,39 @@ var _kldPlans = null, _kldParams = null;
 var _kldTab = 'boru';          // 'boru' | 'plan'
 var _kldParcaSayac = 0;
 var _kldPlanStale = false;     // Boru seçimi değişti mi — plan güncel değil mi?
+var _kldReadOnly = false;      // Kesilen liste mi (read-only) — düzenleme/iptal/tamamla butonları gizli
+var _kldArcIdx = null;         // Eğer arşivden açıldıysa hangi arşiv kaydı
 
 // Akıllı açılış: plan var → Boru Listesi, plan yok → Kesim Planı
-function openKLDetay(klId){
+// opts: {readOnly:bool, arcIdx:int} — kesilen listelerden açılırsa
+function openKLDetay(klId, opts){
+  opts = opts || {};
   var kl = kesimListeleri.find(function(x){ return x.id === klId; });
   if(!kl) return;
 
   _kldKlId = klId;
   _kldParcaSayac = 0;
-  _kldBorular = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+  _kldReadOnly = !!opts.readOnly;
+  _kldArcIdx = (opts.arcIdx !== undefined && opts.arcIdx !== null) ? opts.arcIdx : null;
 
-  // Varsayılan: tümü kesildi (mevcut kesilmisIds varsa onu kullan, yoksa hepsini ekle)
-  if(kl.kesilmisIds && kl.kesilmisIds.size > 0) {
-    _kldKesilmisIds = new Set(kl.kesilmisIds);
+  // Read-only modda: arşivdeki kesilmiş borular gösterilir
+  if(_kldReadOnly && _kldArcIdx !== null){
+    var arc = kl.arsiv && kl.arsiv[_kldArcIdx];
+    if(arc){
+      _kldBorular = borular.filter(function(k){ return arc.kesilmisIds.includes(k.id); });
+      _kldKesilmisIds = new Set(_kldBorular.map(function(k){ return k.id; })); // hepsi kesildi (kayıtlı durum)
+    } else {
+      _kldBorular = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+      _kldKesilmisIds = new Set(_kldBorular.map(function(k){ return k.id; }));
+    }
   } else {
-    _kldKesilmisIds = new Set(_kldBorular.map(function(k){ return k.id; }));
+    _kldBorular = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
+    // Varsayılan: tümü kesildi (mevcut kesilmisIds varsa onu kullan)
+    if(kl.kesilmisIds && kl.kesilmisIds.size > 0) {
+      _kldKesilmisIds = new Set(kl.kesilmisIds);
+    } else {
+      _kldKesilmisIds = new Set(_kldBorular.map(function(k){ return k.id; }));
+    }
   }
 
   _kldPlans  = kl.kesimPlani ? kl.kesimPlani.plans  : null;
@@ -2326,6 +2277,11 @@ function openKLDetay(klId){
   // Header: KL no + malzeme özeti
   var malz = _kldBorular[0] || {};
   var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'');
+  var roSuffix = '';
+  if(_kldReadOnly){
+    var arcInfo = (kl.arsiv && _kldArcIdx !== null) ? kl.arsiv[_kldArcIdx] : null;
+    if(arcInfo) roSuffix = ' · <span style="color:var(--gr);font-weight:600;">'+(arcInfo.kismiMi?tv('kld_arc_kismi','Kısmi'):tv('kld_arc_tam','Tam'))+' — '+arcInfo.kesilmisCount+'/'+arcInfo.toplamCount+' '+tv('ks_boru','boru')+'</span> · '+esc(arcInfo.tarih);
+  }
   document.getElementById('kldHeadNo').textContent = kl.no;
   var metaParts = [];
   if(malzLabel) metaParts.push('<strong>'+esc(malzLabel)+'</strong>');
@@ -2333,7 +2289,7 @@ function openKLDetay(klId){
   if(malz.cap) metaParts.push('<strong>Ø'+esc(malz.cap)+'</strong>');
   if(malz.kalinlik) metaParts.push(esc(malz.kalinlik));
   metaParts.push(_kldBorular.length+' '+tv('ks_boru','boru'));
-  document.getElementById('kldHeadMeta').innerHTML = metaParts.join(' · ');
+  document.getElementById('kldHeadMeta').innerHTML = metaParts.join(' · ') + roSuffix;
 
   // Parametreleri set et (plan varsa oradan, yoksa default)
   if(_kldParams){
@@ -2351,20 +2307,32 @@ function openKLDetay(klId){
     document.getElementById('kldParcalar').innerHTML = '';
   }
 
+  // Read-only modda parametre input'larını disable et
+  ['kldStokBoy','kldKerf','kldTrim','kldMinArtik'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.disabled = _kldReadOnly;
+  });
+
   // Modal'ı aç
   document.getElementById('klDetayModal').style.display = 'flex';
 
   // Plan yeni açılışta taze sayılır
   _kldPlanStale = false;
 
-  // Akıllı tab: plan varsa Boru Listesi, yoksa Kesim Planı
-  kldSwitchTab(_kldPlans && _kldPlans.length ? 'boru' : 'plan');
+  // Akıllı tab: read-only ve plan varsa Kesim Planı, plan yok/normal ise Boru Listesi
+  var initTab;
+  if(_kldReadOnly){
+    initTab = (_kldPlans && _kldPlans.length) ? 'plan' : 'boru';
+  } else {
+    initTab = (_kldPlans && _kldPlans.length) ? 'boru' : 'plan';
+  }
+  kldSwitchTab(initTab);
 
   // Fm global'lerini de set et (Excel/PDF fonksiyonları kullanıyor)
   _fmKlId = _kldKlId;
   _fmKlB = _kldBorular;
   if(_kldPlans){ _fmCurrentPlans = _kldPlans; _fmCurrentParams = _kldParams; }
-  _fmArcIdx = null;
+  _fmArcIdx = _kldArcIdx;
 }
 
 function closeKLDetay(){
@@ -2383,25 +2351,21 @@ function kldSwitchTab(tab){
   if(tab === 'boru'){
     tBoru.classList.add('active'); tPlan.classList.remove('active');
     pBoru.classList.add('active'); pPlan.classList.remove('active');
-    document.getElementById('kldBtnIptal').style.display = 'inline-flex';
+    document.getElementById('kldBtnIptal').style.display = _kldReadOnly ? 'none' : 'inline-flex';
     document.getElementById('kldBtnRecalc').style.display = 'none';
     document.getElementById('kldBtnPlanKaydet').style.display = 'none';
     document.getElementById('kldBtnBoruListGec').style.display = 'none';
-    document.getElementById('kldBtnTamamla').style.display = 'inline-flex';
+    document.getElementById('kldBtnTamamla').style.display = _kldReadOnly ? 'none' : 'inline-flex';
     kldBoruListeRender();
   } else {
     tPlan.classList.add('active'); tBoru.classList.remove('active');
     pPlan.classList.add('active'); pBoru.classList.remove('active');
     document.getElementById('kldBtnIptal').style.display = 'none';
-    document.getElementById('kldBtnRecalc').style.display = 'inline-flex';
+    document.getElementById('kldBtnRecalc').style.display = _kldReadOnly ? 'none' : 'inline-flex';
     document.getElementById('kldBtnTamamla').style.display = 'none';
-    // Plan durumu:
-    //  - Plan var + stale → "Planı Kaydet & Devam" (kullanıcı kaydetmeli)
-    //  - Plan var + stale değil → "Boru Listesi'ne Geç →" (plan zaten kayıtlı, kesim aşamasına geç)
-    //  - Plan yok → ikisi de gizli (sadece "Yeniden Hesapla" görünür)
     var hasPlan = (_kldPlans && _kldPlans.length);
-    document.getElementById('kldBtnPlanKaydet').style.display = (hasPlan && _kldPlanStale) ? 'inline-flex' : 'none';
-    document.getElementById('kldBtnBoruListGec').style.display = (hasPlan && !_kldPlanStale) ? 'inline-flex' : 'none';
+    document.getElementById('kldBtnPlanKaydet').style.display = (!_kldReadOnly && hasPlan && _kldPlanStale) ? 'inline-flex' : 'none';
+    document.getElementById('kldBtnBoruListGec').style.display = (!_kldReadOnly && hasPlan && !_kldPlanStale) ? 'inline-flex' : 'none';
     kldPlanRender();
   }
   kldUpdateStats();
@@ -2436,6 +2400,20 @@ function kldBoruListeRender(){
   var body = document.getElementById('kldBoruListBody');
   if(!body) return;
 
+  // Hint metni mod'a göre
+  var hintEl = document.querySelector('#kldPaneBoru .kld-hint span');
+  if(hintEl){
+    if(_kldReadOnly){
+      hintEl.innerHTML = tv('kld_hint_readonly','Bu liste <strong>tamamlandı</strong>. Aşağıda kesilen borular ve detayları görüntülenmektedir.');
+    } else {
+      hintEl.innerHTML = tv('kld_hint_boru','Varsayılan olarak tümü <strong>kesildi</strong> sayılır. Tezgahta <strong>kesmediğin</strong> varsa tikini kaldır, ardından <strong>Kesimi Tamamla</strong> butonuna bas.');
+    }
+  }
+
+  // Master checkbox disable
+  var mc = document.getElementById('kldMasterCb');
+  if(mc) mc.disabled = _kldReadOnly;
+
   body.innerHTML = _kldBorular.map(function(k, i){
     var ch = _kldKesilmisIds.has(k.id);
     var rowCls = ch ? 'cut' : 'nocut';
@@ -2444,8 +2422,9 @@ function kldBoruListeRender(){
     function ucBadge(u){ return u
       ? '<span style="display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;background:rgba(124,58,237,.1);color:var(--leg);">'+esc(ucLbl[u]||u)+'</span>'
       : '—'; }
+    var disabledAttr = _kldReadOnly ? ' disabled' : '';
     return '<tr class="'+rowCls+'" id="kldrow-'+k.id+'">'
-      +'<td class="c"><input type="checkbox" class="kld-cb" '+(ch?'checked':'')+' onchange="kldToggleRow(\''+k.id+'\',this.checked)"></td>'
+      +'<td class="c"><input type="checkbox" class="kld-cb" '+(ch?'checked':'')+disabledAttr+' onchange="kldToggleRow(\''+k.id+'\',this.checked)"></td>'
       +'<td class="kld-cell-num">'+(i+1)+'</td>'
       +'<td class="kld-cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
       +'<td class="kld-cell-spool">'+esc(k.spool||'—')+'</td>'
@@ -2458,7 +2437,6 @@ function kldBoruListeRender(){
   }).join('');
 
   // Master checkbox: hepsi seçili mi?
-  var mc = document.getElementById('kldMasterCb');
   if(mc) mc.checked = (_kldKesilmisIds.size === _kldBorular.length);
 
   // Tab count
@@ -2708,7 +2686,62 @@ function kldPlanKaydet(){
   }
 }
 
-// Kesimi Tamamla — Onay popup aç
+// ═══ Generic onay popup (Tamamla / İptal vb.) ═══
+var _kldCfmCallback = null;
+
+function kldShowConfirm(opts){
+  // opts: {variant:'success|danger', title, desc, boxHtml, onayLbl, callback}
+  var isDanger = opts.variant === 'danger';
+  var iconColor = isDanger ? 'var(--re)' : 'var(--gr)';
+  var iconBg = isDanger ? 'rgba(229,62,62,.12)' : 'rgba(22,163,110,.12)';
+  var iconSvg = isDanger
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  var wrap = document.getElementById('kldCfmWrap');
+  if(wrap) wrap.style.borderTopColor = iconColor;
+
+  var iconEl = document.getElementById('kldCfmIcon');
+  if(iconEl){
+    iconEl.style.background = iconBg;
+    iconEl.style.color = iconColor;
+    iconEl.innerHTML = iconSvg;
+    var iconSvgEl = iconEl.querySelector('svg');
+    if(iconSvgEl) iconSvgEl.style.color = iconColor;
+  }
+
+  document.getElementById('kldCfmTitle').textContent = opts.title || '';
+  document.getElementById('kldCfmDesc').innerHTML = opts.desc || '';
+  document.getElementById('kldCfmBox').innerHTML = opts.boxHtml || '';
+
+  var onayBtn = document.getElementById('kldCfmOnayBtn');
+  if(onayBtn){
+    // Kırmızı varyant için stil değiştir
+    if(isDanger){
+      onayBtn.style.background = 'var(--re)';
+      onayBtn.style.borderColor = 'var(--re)';
+    } else {
+      onayBtn.style.background = '';
+      onayBtn.style.borderColor = '';
+    }
+    var onayLblEl = document.getElementById('kldCfmOnayLbl');
+    if(onayLblEl) onayLblEl.textContent = opts.onayLbl || tv('cmn_onayla','Onayla');
+  }
+
+  _kldCfmCallback = opts.callback;
+  document.getElementById('kldConfirmModal').style.display = 'flex';
+}
+
+function kldCfmOnayla(){
+  var cb = _kldCfmCallback;
+  _kldCfmCallback = null;
+  closeKLConfirm();
+  if(typeof cb === 'function') cb();
+}
+
+function closeKLConfirm(){ document.getElementById('kldConfirmModal').style.display = 'none'; }
+
+// Kesimi Tamamla — Onay popup aç (generic)
 function kldKesimTamamlaAc(){
   if(!_kldKlId || !_kldBorular) return;
   var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
@@ -2718,14 +2751,12 @@ function kldKesimTamamlaAc(){
   var kesilmedi = top - kes;
   if(kes === 0){ toast(tv('kld_hic_yok','En az 1 boru kesildi işaretli olmalı'),'error'); return; }
 
-  // Onay kutusu içeriğini doldur
   var malz = _kldBorular[0] || {};
   var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'—');
-  var box = document.getElementById('kldCfmBox');
   var rows = [
-    {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no), cls:''},
-    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : ''), cls:''},
-    {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—'), cls:''}
+    {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no)},
+    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : '')},
+    {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—')}
   ];
   var html = rows.map(function(r){
     return '<div class="kld-cfm-row"><span class="lab">'+r.lab+'</span><span class="val">'+r.val+'</span></div>';
@@ -2735,12 +2766,16 @@ function kldKesimTamamlaAc(){
   if(kesilmedi > 0){
     html += '<div class="kld-cfm-row"><span class="lab">'+tv('kld_cfm_havuza','Havuza dönecek')+'</span><span class="val big rem">'+kesilmedi+' '+tv('ks_boru','boru')+'</span></div>';
   }
-  box.innerHTML = html;
 
-  document.getElementById('kldConfirmModal').style.display = 'flex';
+  kldShowConfirm({
+    variant: 'success',
+    title: tv('kld_cfm_title','Kesimi tamamla'),
+    desc: tv('kld_cfm_desc','Bu işlem geri alınamaz. Liste <strong>Kesilen Listeler</strong> sekmesine taşınacak. Kesilmeyen borular havuza geri dönecek.'),
+    boxHtml: html,
+    onayLbl: tv('kld_cfm_onayla','Onayla ve Tamamla'),
+    callback: kldKesimTamamlaOnayla
+  });
 }
-
-function closeKLConfirm(){ document.getElementById('kldConfirmModal').style.display = 'none'; }
 
 // Onay evet → DB'ye yaz, liste kapansın
 function kldKesimTamamlaOnayla(){
@@ -2750,24 +2785,42 @@ function kldKesimTamamlaOnayla(){
   // ID'yi lokal değişkende sakla — closeKLDetay() globals'ı temizliyor
   var klId = _kldKlId;
   kl.kesilmisIds = _kldKesilmisIds;
-  closeKLConfirm();
   closeKLDetay();
   klKaydet(klId);
 }
 
-// Paketi iptal — mevcut klIptal'i kullan
+// Paketi İptal — Custom onay popup (browser confirm değil)
 function kldPaketiIptal(){
   if(!_kldKlId) return;
   var kl = kesimListeleri.find(function(x){ return x.id === _kldKlId; });
   if(!kl) return;
   var klB = borular.filter(function(k){ return kl.boruIds.includes(k.id); });
-  var msg = tv('kld_iptal_onay','{no} paketini iptal etmek istediğinizden emin misiniz?\n{n} boru havuza geri dönecek.')
-    .replace('{no}', kl.no).replace('{n}', klB.length);
-  if(!confirm(msg)) return;
-  // ID'yi lokal değişkende sakla — closeKLDetay() globals'ı temizliyor
-  var klId = _kldKlId;
-  closeKLDetay();
-  klIptal(klId);
+
+  var malz = _kldBorular && _kldBorular[0] ? _kldBorular[0] : {};
+  var malzLabel = (typeof ARES_NORM!=='undefined' && malz.malzeme) ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'—');
+  var rows = [
+    {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no)},
+    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : '')},
+    {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—')}
+  ];
+  var html = rows.map(function(r){
+    return '<div class="kld-cfm-row"><span class="lab">'+r.lab+'</span><span class="val">'+r.val+'</span></div>';
+  }).join('');
+  html += '<div class="kld-cfm-sep"></div>';
+  html += '<div class="kld-cfm-row"><span class="lab">'+tv('kld_iptal_havuza','Havuza dönecek')+'</span><span class="val big rem">'+klB.length+' '+tv('ks_boru','boru')+'</span></div>';
+
+  kldShowConfirm({
+    variant: 'danger',
+    title: tv('kld_iptal_title','Paketi iptal et'),
+    desc: tv('kld_iptal_desc','Bu liste tamamen silinecek. Tüm borular <strong>havuza</strong> geri dönecek. Kesim planı varsa o da silinecek. Bu işlem <strong>geri alınamaz</strong>.'),
+    boxHtml: html,
+    onayLbl: tv('kld_iptal_onayla','Evet, iptal et'),
+    callback: function(){
+      var klId = _kldKlId;
+      closeKLDetay();
+      klIptal(klId);
+    }
+  });
 }
 
 // Excel/PDF — mevcut form modal fonksiyonlarını kullan
@@ -2916,7 +2969,7 @@ function fmPdfYazdir(){
         +'</tr>';
     });
 
-    cardsHtml+='<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:10px;">'
+    cardsHtml+='<div class="cut-card" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:10px;">'
       +'<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">'
         +'<span style="font-size:12px;font-weight:600;color:'+tipColor+';white-space:nowrap;">'+tipAd+' — '+stokLen.toLocaleString('tr-TR')+'mm</span>'
         +svgStr
@@ -2941,45 +2994,70 @@ function fmPdfYazdir(){
   w.document.write(
     '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">'
     +'<title>Kesim Planı — '+esc(kl.no)+'</title>'
-    +'<style>@page{size:A4 landscape;margin:14mm 10mm;}body{margin:0;padding:80px 0 30px;font-family:Arial,sans-serif;color:#1e293b;background:#fff;}'
-    +'.tb{position:fixed;top:0;left:0;right:0;height:44px;background:#334155;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;gap:8px;z-index:9999;}'
-    +'.ph{position:fixed;top:44px;left:0;right:0;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 10mm;border-bottom:2px solid #c2410c;background:#fff;z-index:999;}'
-    +'.pf{position:fixed;bottom:0;left:0;right:0;height:24px;display:flex;align-items:center;justify-content:center;border-top:1px solid #e2e8f0;background:#fff;font-size:9px;color:#94a3b8;}'
-    +'.ic{padding:0 10mm;}'
-    +'@media print{.tb{display:none!important;}.ph{top:0;}body{padding:52px 0 28px;}}'
+    +'<style>'
+      +'@page{size:A4 landscape;margin:10mm;}'
+      +'*{box-sizing:border-box;}'
+      +'body{margin:0;font-family:Arial,sans-serif;color:#1e293b;background:#f1f5f9;}'
+      +'.toolbar{position:sticky;top:0;background:#334155;display:flex;align-items:center;justify-content:flex-end;padding:8px 16px;gap:8px;z-index:100;}'
+      +'.toolbar button{padding:6px 14px;border:none;border-radius:5px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit;}'
+      +'.btn-print{background:#c2410c;color:#fff;}'
+      +'.btn-print:hover{background:#9a3412;}'
+      +'.btn-close{background:transparent;color:#cbd5e1;border:1px solid #64748b;}'
+      +'.btn-close:hover{background:#475569;color:#fff;}'
+      +'.page{max-width:1100px;margin:14px auto;background:#fff;padding:18px 22px;box-shadow:0 2px 12px rgba(0,0,0,.08);}'
+      +'.head{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid #c2410c;margin-bottom:14px;}'
+      +'.head-left{display:flex;align-items:center;gap:14px;}'
+      +'.logo-box{width:90px;height:34px;border:1.5px dashed #cbd5e1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;flex-shrink:0;}'
+      +'.head-meta{display:flex;flex-direction:column;}'
+      +'.head-title{font-size:17px;font-weight:800;color:#1e293b;line-height:1.1;}'
+      +'.head-sub{font-size:10px;color:#64748b;margin-top:3px;}'
+      +'.brand{display:flex;align-items:center;gap:6px;}'
+      +'.brand-icon{width:24px;height:24px;background:#2D8EFF;border-radius:5px;display:flex;align-items:center;justify-content:center;}'
+      +'.brand-name{font-size:14px;font-weight:800;color:#2D8EFF;}'
+      +'.stat-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}'
+      +'.stat-pill{padding:6px 11px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;flex:1;min-width:110px;}'
+      +'.stat-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}'
+      +'.stat-val{font-family:"Barlow Condensed",Arial,sans-serif;font-size:18px;font-weight:800;line-height:1;}'
+      +'.stat-val small{font-size:10px;font-weight:400;color:#94a3b8;}'
+      +'.foot{margin-top:18px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center;}'
+      +'@media print{'
+        +'.toolbar{display:none!important;}'
+        +'body{background:#fff;}'
+        +'.page{margin:0;max-width:none;box-shadow:none;padding:0;}'
+        +'.cut-card{page-break-inside:avoid;break-inside:avoid;}'
+      +'}'
     +'</style></head><body>'
-    +'<div class="tb">'
-      +'<button onclick="window.print()" style="padding:5px 14px;background:#c2410c;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;font-weight:700;">🖨 Yazdır / PDF</button>'
-      +'<button onclick="window.close()" style="padding:5px 12px;background:transparent;color:#94a3b8;border:1px solid #475569;border-radius:5px;font-size:13px;cursor:pointer;">✕</button>'
+    +'<div class="toolbar">'
+      +'<button class="btn-print" onclick="window.print()">🖨 Yazdır / PDF</button>'
+      +'<button class="btn-close" onclick="window.close()">✕</button>'
     +'</div>'
-    +'<div class="ph">'
-      +'<div style="width:90px;height:32px;border:1.5px dashed #cbd5e1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;">FİRMA LOGOSU</div>'
-      +'<div style="display:flex;align-items:center;gap:5px;">'
-        +'<div style="width:22px;height:22px;background:#2D8EFF;border-radius:4px;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>'
-        +'<span style="font-size:13px;font-weight:800;color:#2D8EFF;">AresPipe</span>'
+    +'<div class="page">'
+      +'<div class="head">'
+        +'<div class="head-left">'
+          +'<div class="logo-box">FİRMA LOGOSU</div>'
+          +'<div class="head-meta">'
+            +'<div class="head-title">✂️ Kesim Planı — '+esc(kl.no)+'</div>'
+            +'<div class="head-sub">'+tarihStr+' · '+esc(malzLabel)+' '+esc(ilk.kalite||'')+' · Ø'+esc(ilk.cap||'')+' · et '+esc(ilk.kalinlik||'')+' · Stok '+params.standartLen+'mm · Kerf '+params.kerf+'mm</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="brand">'
+          +'<div class="brand-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>'
+          +'<span class="brand-name">AresPipe</span>'
+        +'</div>'
       +'</div>'
-    +'</div>'
-    +'<div class="pf">Bu belge AresPipe tarafından üretilmiştir.</div>'
-    +'<div class="ic">'
-      // Başlık + boru bilgileri
-      +'<div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:6px;margin-bottom:10px;">'
-        +'<div style="font-size:15px;font-weight:800;">✂️ Kesim Planı — '+esc(kl.no)+'</div>'
-        +'<div style="font-size:10px;color:#64748b;">'+tarihStr+' · '+esc(malzLabel)+' '+esc(ilk.kalite||'')+' Ø'+esc(ilk.cap||'')+' et '+esc(ilk.kalinlik||'')+' · Stok '+params.standartLen+'mm · Kerf '+params.kerf+'mm</div>'
-      +'</div>'
-      // İstatistik satırı
-      +'<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">'
+      +'<div class="stat-row">'
         +[['Parça',klB.length,'','#0f172a'],['Yeni Boru',yeniSay,'','#16a34a'],['Parça Boru',parcaSay,'','#7c3aed'],
           ['Toplam Kesim',Math.round(toplamMM).toLocaleString('tr-TR'),'mm','#c2410c'],
           ['Artan',Math.round(artan).toLocaleString('tr-TR'),'mm',artan>0?'#16a34a':'#94a3b8'],
           ['Fire',Math.round(fire).toLocaleString('tr-TR'),'mm',fire>0?'#dc2626':'#94a3b8']].map(function(s){
-          return '<div style="padding:5px 10px;border:1px solid #e2e8f0;border-left:2px solid '+s[3]+';border-radius:5px;background:#f8fafc;">'
-            +'<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;">'+s[0]+'</div>'
-            +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:800;color:'+s[3]+';">'+s[1]+'<span style="font-size:10px;font-weight:400;color:#94a3b8;"> '+s[2]+'</span></div>'
+          return '<div class="stat-pill" style="border-left:2.5px solid '+s[3]+';">'
+            +'<div class="stat-lbl">'+s[0]+'</div>'
+            +'<div class="stat-val" style="color:'+s[3]+';">'+s[1]+'<small> '+s[2]+'</small></div>'
             +'</div>';
         }).join('')
       +'</div>'
-      // Kartlar
       +cardsHtml
+      +'<div class="foot">Bu belge AresPipe tarafından üretilmiştir · '+tarihStr+'</div>'
     +'</div>'
     +'</body></html>'
   );
