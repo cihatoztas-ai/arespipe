@@ -755,6 +755,8 @@ mark{background:rgba(217,119,6,.3);color:var(--tx);border-radius:2px;padding:0 2
                 <tr>
                   <th class="c" style="width:40px;"><input type="checkbox" class="kld-cb" id="kldMasterCb" checked onchange="kldTumunuSec(this.checked)" title="Tümünü seç/kaldır"></th>
                   <th class="c" style="width:36px;">#</th>
+                  <th data-i18n="cmn_th_tersane">Tersane</th>
+                  <th data-i18n="ks_chip_isemir">İş Emri</th>
                   <th data-i18n="cmn_th_spool_id">Spool ID</th>
                   <th data-i18n="cmn_th_spool_no">Spool No</th>
                   <th data-i18n="ks_filter_grade">Kalite</th>
@@ -1728,6 +1730,33 @@ function klKaydet(klId){
         supa.from('kesim_kalemleri').update({kesildi:true,guncelleme:new Date().toISOString()}).eq('id',k.supaId).then(function(){});
       }
     });
+    // İşlem log — spool detay sayfasında "Kesim Eklendi" olarak görünür
+    var logKayitlari = kesilmisler
+      .filter(function(k){ return k.supaId; })
+      .map(function(k){
+        var malzEtLog = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(k.malzeme) : k.malzeme;
+        // k.cap zaten "168,3 mm" formatında; k.kesimOlcusu string sayı "3200"
+        var aciklamaParts = [];
+        if(malzEtLog) aciklamaParts.push(malzEtLog);
+        if(k.kalite) aciklamaParts.push(k.kalite);
+        if(k.cap && k.cap !== '—') aciklamaParts.push('Ø'+k.cap);
+        if(k.kesimOlcusu && k.kesimOlcusu !== '—') aciklamaParts.push('- '+k.kesimOlcusu+'mm');
+        var aciklama = aciklamaParts.join(' ') + ' ('+kl.no+')';
+        return {
+          tenant_id: ARES.tenantId(),
+          islem: 'KESIM_EKLENDI',
+          aciklama: aciklama,
+          katman: 'spool',
+          katman_id: k.supaId,
+          yapan_id: (ARES.oturumAl && ARES.oturumAl()) ? ARES.oturumAl().id : null
+        };
+      });
+    if(logKayitlari.length){
+      supa.from('islem_log').insert(logKayitlari).then(function(r){
+        if(r.error) console.warn('[ARES] İşlem log:', r.error.message);
+        else console.log('[ARES] İşlem log yazıldı:', logKayitlari.length, 'kayıt');
+      });
+    }
     // Kesilmeyenler havuza geri dönsün — kesim_listesi_id temizle
     if(kesilmemis.length > 0){
       var kesilmemisIds = kesilmemis.map(function(k){ return k.supaId||k.id; }).filter(Boolean);
@@ -2492,9 +2521,15 @@ function kldBoruListeRender(){
       ? '<span style="display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;background:rgba(124,58,237,.1);color:var(--leg);">'+esc(ucLbl[u]||u)+'</span>'
       : '—'; }
     var disabledAttr = _kldReadOnly ? ' disabled' : '';
+    // Tersane badge — eğer tersaneBadge fonksiyonu varsa kullan, yoksa düz metin
+    var tersaneCell = (typeof tersaneBadge === 'function')
+      ? tersaneBadge(k.tersane||'—')
+      : '<span style="font-size:13px;color:var(--txm);">'+esc(k.tersane||'—')+'</span>';
     return '<tr class="'+rowCls+'" id="kldrow-'+k.id+'">'
       +'<td class="c"><input type="checkbox" class="kld-cb" '+(ch?'checked':'')+disabledAttr+' onchange="kldToggleRow(\''+k.id+'\',this.checked)"></td>'
       +'<td class="kld-cell-num">'+(i+1)+'</td>'
+      +'<td>'+tersaneCell+'</td>'
+      +'<td style="font-size:13px;color:var(--txm);font-weight:600;">'+esc(k.isEmir||'—')+'</td>'
       +'<td class="kld-cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
       +'<td class="kld-cell-spool">'+esc(k.spool||'—')+'</td>'
       +'<td style="font-size:13px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
