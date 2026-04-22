@@ -468,6 +468,68 @@ DB'deki legacy yazımlar kod formatına çevrildi:
 
 Sonuç: DB'de tek canonical format var. Yeni kayıtlar devre_yeni.html üzerinden zaten kod yazıyor (test edildi).
 
+#### Malzeme / Kalite Ayrımı — Altın Kural (Kural E-06, 18. oturum)
+
+**18. oturumda tespit edildi:** 16 Nisan öncesi `normalizeMalzeme()` Türkçe etiket döndürüyordu, hata kamufleydi. 17 Nisan'da normalize modülü geldi, KOD dönmeye başladı — maske kalktı, gerçek hata açığa çıktı: `spool_malzemeleri.kalite` kolonuna yanlışlıkla malzeme kodu yazılıyordu.
+
+**DB Şeması — KESİN AYRIM:**
+| Kolon | İçerik | Örnek |
+|---|---|---|
+| `malzeme` | **Kategori kodu** (enum normalize) | `karbon`, `paslanmaz`, `bakir`, `alum`, `diger` |
+| `kalite`  | **Spesifik teknik string** (raw) | `ST37`, `316L`, `CuNi10Fe1.6Mn`, `A106-B` |
+
+**Altın Kural:** IFS / PDF / Excel veri giriş noktalarında **ham değer korunur**. Kategori/kalite ayrımı **SADECE insert aşamasında** yapılır. Hiçbir okuma aşamasında normalize edilmez.
+
+**Doğru Pattern:**
+```js
+// ✅ IFS okuma — ham saklanır
+ifsData[pipeline][spool].push({
+  malzeme: String(row[idx.mat] || '').trim(), // "ST37" raw
+  ...
+});
+
+// ✅ spool_malzemeleri insert — burada ayrılır
+malzemeRows.push({
+  malzeme: ARES_NORM.malzemeKod(item.malzeme), // "ST37" → "karbon" (kategori)
+  kalite:  item.malzeme,                        // "ST37" (spesifik kalite)
+});
+```
+
+**Yanlış Pattern (tarihsel bug):**
+```js
+// ❌ Okuma aşamasında normalize — BİLGİ KAYBI
+ifsData[pipeline][spool].push({
+  malzeme: normalizeMalzeme(row[idx.mat]), // "ST37" → "karbon" (kalite kayboldu!)
+});
+malzemeRows.push({
+  malzeme: _malzemeTipi(item.malzeme),  // "karbon" → "karbon"
+  kalite:  item.malzeme || null,         // "karbon" → "karbon" (AYNI değer iki kolonda!)
+});
+```
+
+**Veri Giriş Noktaları (18. oturumda düzeltildi):**
+- ✅ `devre_yeni.html` → `ifsOku` (satır 644): ham saklanır, insert aşamasında ayrılır
+- ✅ `devre_yeni.html` → İzometri PDF insert (satır 1900): `malzeme_cinsi` kategori koduna normalize
+- ✅ `spool_detay.html` → `pipelineAktar`: defensive normalize + `kalite==malzeme` durumunda kalite NULL
+
+**Hala kontrol edilmesi gereken (19. oturum gündemi):**
+- ⚠️ `pipeline_malzemeleri` tablosuna yazan kaynak dosya (muhtemelen `proje_detay.html` veya benzer)
+- ⚠️ `spool_detay.html` → `newRowKaydet` manuel giriş validation yok
+- ⚠️ `kesim_kalemleri` tablosuna yazan tüm noktalar
+
+**Opsiyonel DB seviyesi koruma:**
+```sql
+ALTER TABLE spool_malzemeleri
+  ADD CONSTRAINT check_kalite_different_from_malzeme
+  CHECK (LOWER(TRIM(kalite)) != LOWER(TRIM(malzeme)) OR kalite IS NULL);
+```
+
+**Historical Timeline:**
+- 16 Nisan öncesi: `normalizeMalzeme` Türkçe etiket döndürüyordu (örn. `"ST37"` → `"Karbon Çelik"`). Kalite kolonuna da etiket yazıldığı için hata kamufleydi ("Karbon Çelik / Karbon Çelik").
+- 17 Nisan (3. oturum): `ares-normalize.js` eklendi, kategori kodu dönmeye başladı. Kamuflaj kalktı, `"karbon / karbon"` çirkin görünümü ortaya çıktı. Fix atlandı.
+- 19 / 20 Nisan (4. 5. oturum): Hiç dokunulmadı.
+- 22 Nisan (18. oturum): Tespit + devre_yeni/spool_detay tarafı düzeltildi, pipeline_malzemeleri kaynağı sonraki oturuma bırakıldı.
+
 ---
 
 ### 2.14 Tenant Prefix Sistemi — YENİ (Kural E-03, 6. oturumda başladı)
