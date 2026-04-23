@@ -457,6 +457,32 @@ tr:hover td{background:rgba(255,255,255,.02);}
       .md-content th { background:var(--sur2); font-weight:700; }
 
       .pano-uyari { padding:12px 16px; background:var(--sur); border-radius:8px; margin-top:16px; border-left:3px solid var(--ac); font-size:13px; color:var(--txm); }
+
+      /* CI durumu kartları */
+      .ci-ozet { display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:10px; margin-bottom:14px; background:var(--sur); border-left:4px solid var(--gr); }
+      .ci-ozet.kirmizi { border-left-color:var(--re); }
+      .ci-ozet.sari { border-left-color:var(--warn); }
+      .ci-ozet-ikon { font-size:26px; }
+      .ci-ozet-durum { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; color:var(--tx); line-height:1; }
+      .ci-ozet-alt { font-size:12px; color:var(--txm); margin-top:3px; }
+      .ci-row { display:flex; align-items:center; gap:12px; padding:9px 14px; border:1px solid var(--bor); border-radius:8px; margin-bottom:5px; background:var(--sur); }
+      .ci-row.ci-success   { border-left:3px solid var(--gr); }
+      .ci-row.ci-failure   { border-left:3px solid var(--re); }
+      .ci-row.ci-cancelled { border-left:3px solid var(--txm); opacity:.7; }
+      .ci-row.ci-pending   { border-left:3px solid var(--warn); }
+      .ci-row.ci-skipped   { border-left:3px solid var(--txd); opacity:.6; }
+      .ci-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+      .ci-success .ci-dot   { background:var(--gr); }
+      .ci-failure .ci-dot   { background:var(--re); }
+      .ci-cancelled .ci-dot { background:var(--txm); }
+      .ci-pending .ci-dot   { background:var(--warn); }
+      .ci-skipped .ci-dot   { background:var(--txd); }
+      .ci-info { flex:1; min-width:0; }
+      .ci-no { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:11px; color:var(--txm); letter-spacing:.3px; }
+      .ci-msg { font-size:13px; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+      .ci-time { font-size:11px; color:var(--txd); flex-shrink:0; }
+      .ci-link { color:var(--ac); text-decoration:none; font-size:14px; padding:0 6px; }
+      .ci-link:hover { color:var(--ac2); }
     </style>
 
     <!-- Sekme barı -->
@@ -587,31 +613,53 @@ tr:hover td{background:rgba(255,255,255,.02);}
       </div>
     </div>
 
-    <!-- SEKME 3 — OTURUM PANOSU -->
+    <!-- SEKME 3 — OTURUM PANOSU (24. Oturum Saat 4) -->
     <div class="pano-pane" id="pano-pane-oturum">
-      <div class="pano-bolum">
-        <div class="pano-bolum-baslik">👤 Cihat Profili</div>
-        <div class="md-content" id="oturumProfilIc">
-          <div style="color:var(--txm);">Saat 4'te yüklenecek (docs/CIHAT-PROFIL.md)</div>
+
+      <!-- CI Durumu — ÜSTTE, EN GÖRÜNÜR -->
+      <div class="pano-bolum" id="pano-bolum-ci">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('ci')">▼</span>
+          <span onclick="panoBolumToggle('ci')" style="cursor:pointer;">📈 CI Durumu</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;">GitHub Actions · son 10 run</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div id="oturumCiIc">
+            <div style="color:var(--txm); padding:12px;">Yükleniyor...</div>
+          </div>
         </div>
       </div>
 
-      <div class="pano-bolum">
-        <div class="pano-bolum-baslik">📜 Oturum Geçmişi</div>
-        <div id="oturumGecmisIc">
-          <div style="color:var(--txm);">Saat 4'te yüklenecek (.github/son-durum.md)</div>
+      <!-- Cihat Profili -->
+      <div class="pano-bolum" id="pano-bolum-profil">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('profil')">▼</span>
+          <span onclick="panoBolumToggle('profil')" style="cursor:pointer;">👤 Cihat Profili</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;">docs/CIHAT-PROFIL.md</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div class="md-content" id="oturumProfilIc">
+            <div style="color:var(--txm);">Yükleniyor...</div>
+          </div>
         </div>
       </div>
 
-      <div class="pano-bolum">
-        <div class="pano-bolum-baslik">📈 CI Durumu</div>
-        <div id="oturumCiIc">
-          <div style="color:var(--txm);">Saat 4'te yüklenecek (GitHub Actions API)</div>
+      <!-- Oturum Geçmişi (başlangıçta kapalı — uzun içerik) -->
+      <div class="pano-bolum kapali" id="pano-bolum-gecmis">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('gecmis')">▼</span>
+          <span onclick="panoBolumToggle('gecmis')" style="cursor:pointer;">📜 Oturum Geçmişi</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;">.github/son-durum.md</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div class="md-content" id="oturumGecmisIc">
+            <div style="color:var(--txm);">Yükleniyor...</div>
+          </div>
         </div>
       </div>
 
-      <div class="pano-uyari">
-        ℹ️ <strong>Saat 4'te tamamlanacak:</strong> Profil markdown render, oturum geçmişi listesi, CI durum kartı.
+      <div class="pano-uyari" style="border-left-color:var(--gr);">
+        ✅ <strong>Saat 4 aktif:</strong> CI son durum + senin profil notların + oturum geçmişi canlı veriyle gösteriliyor. Her sekme açılışında yenilenir.
       </div>
     </div>
 
@@ -1694,6 +1742,9 @@ var _panoVeri = { gorevler: [], katmanlar: [], vizyonMd: '', roadmapMd: '' };
 
 var VIZYON_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/docs/SPOOL-AI-VIZYON.md';
 var ROADMAP_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/ROADMAP.md';
+var PROFIL_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/docs/CIHAT-PROFIL.md';
+var SONDUR_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/.github/son-durum.md';
+var GH_RUNS_URL = 'https://api.github.com/repos/cihatoztas-ai/arespipe/actions/runs?per_page=10';
 
 // Sekme geçişi
 function panoTabSwitch(tabAdi, elm) {
@@ -1709,8 +1760,9 @@ function panoTabSwitch(tabAdi, elm) {
     gorevYukle();
   } else if (tabAdi === 'feedback') {
     feedbackYukle();
+  } else if (tabAdi === 'oturum') {
+    panoOturumYukle();
   }
-  // oturum sekmesi Saat 4'te doldurulacak
 }
 
 // Bölüm aç/kapa
@@ -1927,6 +1979,123 @@ async function gorevSil() {
     toast('Hata: ' + e.message, 'err');
   }
 }
+
+// ── OTURUM PANOSU — 24. Oturum Saat 4 ──────────────────
+
+var _oturumYuklendi = { profil:false, gecmis:false, ci:false };
+
+function panoOturumYukle() {
+  // Her sekme açılışında CI yeniden yüklenir (dinamik)
+  // Profil ve geçmiş sadece ilk açılışta (statik md)
+  if (!_oturumYuklendi.profil) panoProfilYukle();
+  if (!_oturumYuklendi.gecmis) panoOturumGecmisYukle();
+  panoCiDurumYukle(); // her zaman yenile
+}
+
+async function panoProfilYukle() {
+  var el = T('oturumProfilIc');
+  if (!el) return;
+  try {
+    var res = await fetch(PROFIL_URL, {cache:'no-cache'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var md = await res.text();
+    if (window.marked && typeof window.marked.parse === 'function') {
+      el.innerHTML = window.marked.parse(md);
+    } else {
+      el.innerHTML = '<pre>' + esc(md) + '</pre>';
+    }
+    _oturumYuklendi.profil = true;
+  } catch(e) {
+    console.error('[oturum-profil]', e);
+    el.innerHTML = '<div style="color:var(--re);">Yüklenemedi: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function panoOturumGecmisYukle() {
+  var el = T('oturumGecmisIc');
+  if (!el) return;
+  try {
+    var res = await fetch(SONDUR_URL, {cache:'no-cache'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var md = await res.text();
+    if (window.marked && typeof window.marked.parse === 'function') {
+      el.innerHTML = window.marked.parse(md);
+    } else {
+      el.innerHTML = '<pre>' + esc(md) + '</pre>';
+    }
+    _oturumYuklendi.gecmis = true;
+  } catch(e) {
+    console.error('[oturum-gecmis]', e);
+    el.innerHTML = '<div style="color:var(--re);">Yüklenemedi: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function panoCiDurumYukle() {
+  var el = T('oturumCiIc');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--txm); padding:12px;">Yükleniyor...</div>';
+  try {
+    var res = await fetch(GH_RUNS_URL, {cache:'no-cache', headers:{'Accept':'application/vnd.github+json'}});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var json = await res.json();
+    var runs = (json && json.workflow_runs) || [];
+    if (!runs.length) {
+      el.innerHTML = '<div style="color:var(--txm); padding:12px;">Henüz workflow run yok.</div>';
+      return;
+    }
+
+    // En son completed run'ı özet için kullan
+    var sonTamamlanan = runs.find(function(r){ return r.status === 'completed'; }) || runs[0];
+    var ozetCls = 'ci-success';
+    var ozetIkon = '✅';
+    var ozetMetin = 'YEŞİL';
+    if (sonTamamlanan.conclusion === 'failure') {
+      ozetCls = 'kirmizi'; ozetIkon = '❌'; ozetMetin = 'KIRMIZI';
+    } else if (sonTamamlanan.conclusion === 'cancelled' || sonTamamlanan.conclusion === 'timed_out') {
+      ozetCls = 'sari'; ozetIkon = '⚠️'; ozetMetin = 'SARI';
+    } else if (sonTamamlanan.status !== 'completed') {
+      ozetCls = 'sari'; ozetIkon = '🔄'; ozetMetin = 'ÇALIŞIYOR';
+    }
+
+    var sonTarih = new Date(sonTamamlanan.updated_at || sonTamamlanan.created_at);
+    var ozet = '<div class="ci-ozet ' + ozetCls + '">' +
+      '<div class="ci-ozet-ikon">' + ozetIkon + '</div>' +
+      '<div>' +
+        '<div class="ci-ozet-durum">Son build: ' + ozetMetin + '</div>' +
+        '<div class="ci-ozet-alt">#' + sonTamamlanan.run_number + ' · ' +
+          sonTarih.toLocaleDateString('tr-TR', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) +
+        '</div>' +
+      '</div>' +
+      '<a class="ci-link" href="' + sonTamamlanan.html_url + '" target="_blank" style="margin-left:auto;" title="GitHub\'da aç">↗</a>' +
+    '</div>';
+
+    // Son 10 run listesi
+    var liste = runs.map(function(r) {
+      var cls = 'ci-pending';
+      if (r.status === 'completed') {
+        cls = 'ci-' + (r.conclusion || 'pending');
+      }
+      var tarih = new Date(r.updated_at || r.created_at).toLocaleDateString('tr-TR', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      var msg = (r.head_commit && r.head_commit.message) ? r.head_commit.message.split('\n')[0] : (r.display_title || r.name || '—');
+      return '<div class="ci-row ' + cls + '">' +
+        '<div class="ci-dot"></div>' +
+        '<div class="ci-info">' +
+          '<div class="ci-no">#' + r.run_number + ' · ' + esc(r.name || 'CI') + ' · ' + esc(r.head_branch || '') + '</div>' +
+          '<div class="ci-msg">' + esc(msg) + '</div>' +
+        '</div>' +
+        '<div class="ci-time">' + tarih + '</div>' +
+        '<a class="ci-link" href="' + r.html_url + '" target="_blank" title="Aç">↗</a>' +
+      '</div>';
+    }).join('');
+
+    el.innerHTML = ozet + liste;
+    _oturumYuklendi.ci = true;
+  } catch(e) {
+    console.error('[oturum-ci]', e);
+    el.innerHTML = '<div style="color:var(--re); padding:12px;">CI durumu yüklenemedi: ' + esc(e.message) + '<br><span style="color:var(--txm); font-size:12px;">GitHub API rate limit (60/saat) veya network sorunu olabilir.</span></div>';
+  }
+}
+
 
 function goPan(id, el) {
   if (id === 'flags') flaglariYukle();
