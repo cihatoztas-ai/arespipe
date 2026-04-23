@@ -5,7 +5,7 @@
 
 ---
 
-## Son Oturum: 23 (23 Nisan 2026) — Faz B ✅
+## Son Oturum: 23 (23 Nisan 2026) — Faz B ✅ + Pano Tasarımı ✅
 
 ### CI Durumu
 - **Son build:** YEŞİL ✅ (23/04/2026 09:40, commit #453)
@@ -20,30 +20,44 @@
 
 ### Açık Borç (24+ oturumlar temizleyecek)
 - **22 adet ARES_NORMALIZE_EKSIK uyarısı** — 11 sayfada `ares-normalize.js` script satırı eksik
-  - Sayfalar: sorgula, tersaneler, testler, tezgahlar, uyarilar, ...
-  - **Karar (23. oturum):** A seçeneği — fırsatta temizlenir, özel seans yok
-  - Her sayfaya dokunulduğunda o sayfanın uyarıları birlikte kapanır
+  - Karar: Fırsatta temizlenir, her sayfa dokunulduğunda kapanır
 
 ### Bu Oturumda Yapılanlar
-- `.github/kontrol.js` genişletildi: regex desteği + self-test modu + ham gösterim/i18n kontrolleri
+- `.github/kontrol.js` genişletildi: regex + self-test + ham gösterim/i18n kontrolleri
 - `.github/kurallar.json` genişletildi: 9 → 14 kural
-- `.github/bozuk-ornekler/` kuruldu: her yeni kural için kanıt dosyası
-- `.github/KONTROL-SISTEMI.md` yazıldı: kullanıcı rehberi
+- `.github/bozuk-ornekler/` kuruldu: her kural için kanıt dosyası
+- `.github/KONTROL-SISTEMI.md` yazıldı: kullanım rehberi
 - GitHub'a yüklendi, CI yeşil, baseline çıkarıldı
+- **`docs/SPOOL-AI-VIZYON.md`** — vizyon belgesi kalıcı yerine kondu
+- **`docs/PANO-TASARIM.md`** — Süper Admin Pano tasarım belgesi (24. oturumda implement)
+- **`docs/CIHAT-PROFIL.md`** — Claude'un Cihat'ı tanıması için dosya
 
 ### Kural Sağlık Kontrolü
-- **Son self-test:** 23 Nisan 2026, 08:47 (yerelde) — 3/3 başarılı ✅
-- **Sonraki self-test:** 28. oturum (5 oturum sonra) — Claude hatırlatacak
+- **Son self-test:** 23 Nisan 2026, 08:47 — 3/3 başarılı ✅
+- **Sonraki self-test:** 28. oturum — Claude hatırlatacak
 
-### Bekleyen Faz B Kalemleri (23. oturum kapandı, bunlar gelecek oturumlarda)
-- 🟡 CLAUDE.md split (2592 satır → 600 + docs/rules/ + docs/sessions/) — 26. oturum veya sonraya
-- 🟡 Şablonlar (docs/templates/yeni-sayfa-iskelet.html vs.) — 26. oturum
-- 🟡 Husky + package.json (yerel pre-commit) — opsiyonel, kullanıcı web'den yüklüyor
-- 🟡 `hedef_dosyalar` kural tipi (belirli sayfalarda olmalı kontrolü) — kullanıcı talebi geldi, ilk fırsatta eklenecek
+### Bekleyen Faz B Kalemleri
+- 🟡 CLAUDE.md split (2592 satır → 600 + docs/rules/ + docs/sessions/)
+- 🟡 Şablonlar (docs/templates/)
+- 🟡 Husky + package.json (opsiyonel)
+- 🟡 `hedef_dosyalar` kural tipi — 24. oturum panosunda ihtiyaç doğabilir
 
 ---
 
-## Bir Sonraki Oturumda Claude Bunları Yapacak (kritik)
+## 📖 Aktif Belgeler (Yaşayan — Her Oturumda Gündemde)
+
+### Vizyon: `docs/SPOOL-AI-VIZYON.md`
+Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü. Her yeni karar buraya değişiklik kaydıyla eklenir.
+
+### Pano Tasarımı: `docs/PANO-TASARIM.md`
+Süper Admin Yönetim Panosu. **24. oturumun ana işi.** 3 sekme: Görev Takibi, Geri Bildirim Yönetimi, Oturum Panosu. `panel_gorevler` tablosu kurulacak.
+
+### Kullanıcı Profili: `docs/CIHAT-PROFIL.md` ⚠ ZORUNLU
+Her oturum başı Claude bu dosyayı okur. Cihat'a "kimsin" diye sormaz. Çalışma tarzı, tercihler, allerjiler burada. Yeni öğrenilen şey olursa Claude dosyaya ekler (Cihat'a onaylatır).
+
+---
+
+## Bir Sonraki Oturumda Claude Bunları Yapacak
 
 **1. Oturum açılır açılmaz, ilk tool call'dan ÖNCE şunu söyle:**
 
@@ -55,19 +69,24 @@
 
 **2. Ritüel tamamlanmadan hiçbir teknik iş başlama.**
 
-**3. Eğer kullanıcı "atla, hemen başlayalım" derse:** 30 saniye sürer de, ısrarla ritüeli yaptır. Yetkin var — kendi söyledi: "bu sistemden sapmayalım".
+**3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.** Cihat'a kim olduğunu sormadan devam et.
 
-**4. Ritüelden sonra:** Kullanıcı hangi sayfayı açmak istediğini söylediğinde, O SAYFANIN açık uyarılarını göster. Bu uyarıları **bugün temizleyelim mi** sor, cevaba göre hareket et.
+**4. 24. oturumun ana işi: Pano implementasyonu.**
+- `docs/PANO-TASARIM.md` aç, saat-saat plan orada
+- Cihat'a "plana sadık kalalım mı, ayarlama lazım mı?" sor
+- 5 saatlik iş — saat saat ilerle, her saatin sonunda ara ver ve özet ver
 
 **5. Her 5 oturumda bir self-test hatırlat:** 28, 33, 38. oturumlar. Komut: `node .github/kontrol.js --self-test`
 
 ---
 
-## Oturumun kendisinde uyulacak disiplin
+## Oturum İçinde Uyulacak Disiplin
 
-- **Kural çakışması varsa dur, sor.** Önceki kuralla yeni dediğin ters düşüyorsa kullanıcıya söyle, A/B/C seçeneği sun.
-- **"Hatırlıyorum" deme.** Dosyaya bak. Bu dosya var, kurallar.json var, ARES_NORM kaynağı var.
-- **Yeni kural söylendiğinde** üç iş yap: kurallar.json'a ekle + bozuk-ornekler/'e kanıt yaz + self-test koştur. "Sonra bakarım" yok.
+- **Kural çakışması varsa dur, sor** (A/B/C seçeneği)
+- **"Hatırlıyorum" deme** — dosyaya bak
+- **Yeni kural söylendiğinde 3 iş:** kurallar.json + kanıt + self-test
+- **Komutları üst üste verme** — birer birer, açıklamalı (CIHAT-PROFIL.md'de yazılı)
+- **Büyük değişikliklerde tam dosya** — patch değil
 
 ---
 
