@@ -483,6 +483,36 @@ tr:hover td{background:rgba(255,255,255,.02);}
       .ci-time { font-size:11px; color:var(--txd); flex-shrink:0; }
       .ci-link { color:var(--ac); text-decoration:none; font-size:14px; padding:0 6px; }
       .ci-link:hover { color:var(--ac2); }
+
+      /* Sistem Sağlığı — 25. oturum */
+      .saglik-ozet { display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:10px; margin-bottom:14px; background:var(--sur); border-left:4px solid var(--gr); }
+      .saglik-ozet.kirmizi { border-left-color:var(--re); }
+      .saglik-ozet.sari { border-left-color:var(--warn); }
+      .saglik-ozet-ikon { font-size:26px; flex-shrink:0; }
+      .saglik-ozet-ad { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; color:var(--tx); line-height:1; }
+      .saglik-ozet-alt { font-size:12px; color:var(--txm); margin-top:4px; }
+
+      .saglik-kural { border:1px solid var(--bor); border-left:4px solid var(--warn); border-radius:8px; margin-bottom:8px; background:var(--sur); overflow:hidden; }
+      .saglik-kural.hata { border-left-color:var(--re); }
+      .saglik-kural-bas { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; user-select:none; transition:background .15s; }
+      .saglik-kural-bas:hover { background:var(--sur2); }
+      .saglik-kural-ok { color:var(--txm); transition:transform .2s; flex-shrink:0; font-size:10px; }
+      .saglik-kural.acik .saglik-kural-ok { transform:rotate(90deg); }
+      .saglik-kural-kod { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:var(--tx); flex-shrink:0; }
+      .saglik-kural-sayi { background:var(--sur2); padding:2px 10px; border-radius:10px; font-size:12px; font-weight:700; color:var(--tx); flex-shrink:0; }
+      .saglik-kural.hata .saglik-kural-sayi { background:rgba(229,62,62,.14); color:var(--re); }
+      .saglik-kural-mesaj { flex:1; min-width:0; font-size:12px; color:var(--txm); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .saglik-kural-ic { display:none; padding:0 14px 10px 38px; border-top:1px solid var(--bor); padding-top:8px; }
+      .saglik-kural.acik .saglik-kural-ic { display:block; }
+      .saglik-dosya { display:flex; align-items:center; gap:10px; padding:6px 10px; font-size:12px; border-radius:6px; color:var(--txm); transition:background .1s; }
+      .saglik-dosya:hover { background:var(--sur2); color:var(--tx); }
+      .saglik-dosya-ad { font-family:'JetBrains Mono',monospace; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .saglik-dosya-satir { font-size:11px; color:var(--txd); flex-shrink:0; }
+
+      .saglik-bos { padding:28px 20px; text-align:center; background:var(--sur); border-radius:10px; }
+      .saglik-bos-ikon { font-size:40px; margin-bottom:8px; }
+      .saglik-bos-ad { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--gr); }
+      .saglik-bos-alt { font-size:12px; color:var(--txm); margin-top:4px; }
     </style>
 
     <!-- Sekme barı -->
@@ -630,6 +660,20 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </div>
       </div>
 
+      <!-- Sistem Sağlığı — 25. Oturum -->
+      <div class="pano-bolum" id="pano-bolum-saglik">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('saglik')">▼</span>
+          <span onclick="panoBolumToggle('saglik')" style="cursor:pointer;">🩺 Sistem Sağlığı</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;" id="saglikMeta">son CI raporu</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div id="oturumSaglikIc">
+            <div style="color:var(--txm); padding:12px;">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Cihat Profili -->
       <div class="pano-bolum" id="pano-bolum-profil">
         <div class="pano-bolum-baslik">
@@ -659,7 +703,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       </div>
 
       <div class="pano-uyari" style="border-left-color:var(--gr);">
-        ✅ <strong>Saat 4 aktif:</strong> CI son durum + senin profil notların + oturum geçmişi canlı veriyle gösteriliyor. Her sekme açılışında yenilenir.
+        ✅ <strong>Sistem Sağlığı + CI + Profil + Geçmiş</strong> — hepsi canlı veriyle. Her sekme açılışında CI ve sağlık raporu yenilenir.
       </div>
     </div>
 
@@ -1745,6 +1789,7 @@ var ROADMAP_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main
 var PROFIL_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/docs/CIHAT-PROFIL.md';
 var SONDUR_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/.github/son-durum.md';
 var GH_RUNS_URL = 'https://api.github.com/repos/cihatoztas-ai/arespipe/actions/runs?per_page=10';
+var RAPOR_URL   = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/.github/ci-son-rapor.json';
 
 // Sekme geçişi
 function panoTabSwitch(tabAdi, elm) {
@@ -1982,14 +2027,15 @@ async function gorevSil() {
 
 // ── OTURUM PANOSU — 24. Oturum Saat 4 ──────────────────
 
-var _oturumYuklendi = { profil:false, gecmis:false, ci:false };
+var _oturumYuklendi = { profil:false, gecmis:false, ci:false, saglik:false };
 
 function panoOturumYukle() {
-  // Her sekme açılışında CI yeniden yüklenir (dinamik)
+  // Her sekme açılışında CI + Sistem Sağlığı yeniden yüklenir (dinamik)
   // Profil ve geçmiş sadece ilk açılışta (statik md)
   if (!_oturumYuklendi.profil) panoProfilYukle();
   if (!_oturumYuklendi.gecmis) panoOturumGecmisYukle();
   panoCiDurumYukle(); // her zaman yenile
+  panoSaglikYukle();  // her zaman yenile — 25. oturum
 }
 
 async function panoProfilYukle() {
@@ -2094,6 +2140,125 @@ async function panoCiDurumYukle() {
     console.error('[oturum-ci]', e);
     el.innerHTML = '<div style="color:var(--re); padding:12px;">CI durumu yüklenemedi: ' + esc(e.message) + '<br><span style="color:var(--txm); font-size:12px;">GitHub API rate limit (60/saat) veya network sorunu olabilir.</span></div>';
   }
+}
+
+// ── SİSTEM SAĞLIĞI — 25. Oturum ─────────────────────────
+// Kaynak: .github/ci-son-rapor.json (CI her main push'ta yazıyor)
+// CI'nın tarama sonucunu — hangi kuraldan kaç adet, hangi dosyalarda —
+// kural koduna göre gruplu olarak gösterir. Tık-aç dosya detayı.
+
+async function panoSaglikYukle() {
+  var el = T('oturumSaglikIc');
+  var metaEl = T('saglikMeta');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--txm); padding:12px;">Yükleniyor...</div>';
+
+  try {
+    // Cache bypass (CDN'deki eski raporu kaçırma)
+    var url = RAPOR_URL + '?t=' + Date.now();
+    var res = await fetch(url, {cache:'no-cache'});
+
+    if (res.status === 404) {
+      el.innerHTML =
+        '<div class="pano-uyari" style="border-left-color:var(--warn);">' +
+        '⚠ <strong>Rapor henüz oluşmamış.</strong> CI bir sonraki main push\'ta <code>.github/ci-son-rapor.json</code> üretecek.' +
+        '</div>';
+      if (metaEl) metaEl.textContent = 'rapor yok';
+      return;
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    var rapor = await res.json();
+    var ozet = rapor.ozet || {};
+
+    // Üst özet kart (YEŞİL / SARI / KIRMIZI)
+    var durum = ozet.durum || 'yesil';
+    var ozetCls = durum === 'kirmizi' ? 'kirmizi' : (durum === 'sari' ? 'sari' : '');
+    var ozetIkon = durum === 'kirmizi' ? '❌' : (durum === 'sari' ? '⚠️' : '✅');
+
+    var tarihStr = '';
+    if (rapor.tarih) {
+      var d = new Date(rapor.tarih);
+      tarihStr = d.toLocaleDateString('tr-TR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+    }
+    if (metaEl) {
+      metaEl.textContent = tarihStr ? ('son rapor: ' + tarihStr) : 'son CI raporu';
+    }
+
+    var ozetHTML = '<div class="saglik-ozet ' + ozetCls + '">' +
+      '<div class="saglik-ozet-ikon">' + ozetIkon + '</div>' +
+      '<div style="flex:1; min-width:0;">' +
+        '<div class="saglik-ozet-ad">' +
+          (ozet.hata || 0) + ' hata · ' + (ozet.uyari || 0) + ' uyarı' +
+        '</div>' +
+        '<div class="saglik-ozet-alt">' +
+          (ozet.sorunlu_dosya || 0) + ' dosyada sorun · ' +
+          (ozet.taranan_dosya || 0) + ' dosya tarandı' +
+          (rapor.workflow_run ? ' · run #' + rapor.workflow_run : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    // Hata + uyarı sıfırsa kutlama kartı
+    if ((ozet.hata || 0) === 0 && (ozet.uyari || 0) === 0) {
+      el.innerHTML = ozetHTML +
+        '<div class="saglik-bos">' +
+          '<div class="saglik-bos-ikon">✨</div>' +
+          '<div class="saglik-bos-ad">Sistem Sağlıklı</div>' +
+          '<div class="saglik-bos-alt">Tüm dosyalar temiz, hiçbir kural tetiklenmedi.</div>' +
+        '</div>';
+      _oturumYuklendi.saglik = true;
+      return;
+    }
+
+    // Kural grupları (hatalar önce, sonra sayıya göre)
+    var kurallar = rapor.kurallar || {};
+    var kodlar = Object.keys(kurallar).sort(function(a,b){
+      var at = kurallar[a].tip, bt = kurallar[b].tip;
+      if (at !== bt) return at === 'hata' ? -1 : 1;
+      return (kurallar[b].sayi || 0) - (kurallar[a].sayi || 0);
+    });
+
+    var kurallarHTML = kodlar.map(function(kod, idx) {
+      var k = kurallar[kod];
+      var sinifHata = k.tip === 'hata' ? ' hata' : '';
+      var kid = 'sk-' + idx;
+
+      var dosyalarHTML = (k.dosyalar || []).map(function(dsy) {
+        var satirEk = (dsy.satirlar && dsy.satirlar.length)
+          ? '<span class="saglik-dosya-satir">satır ' + dsy.satirlar.slice(0, 5).join(', ') +
+            (dsy.satirlar.length > 5 ? '…' : '') + '</span>'
+          : '';
+        var sayiEk = (dsy.sayi > 1) ? '<span class="saglik-dosya-satir">×' + dsy.sayi + '</span>' : '';
+        return '<div class="saglik-dosya">' +
+          '<span class="saglik-dosya-ad">' + esc(dsy.dosya) + '</span>' +
+          sayiEk + satirEk +
+        '</div>';
+      }).join('');
+
+      return '<div class="saglik-kural' + sinifHata + '" id="' + kid + '">' +
+        '<div class="saglik-kural-bas" onclick="saglikKuralToggle(\'' + kid + '\')">' +
+          '<span class="saglik-kural-ok">▶</span>' +
+          '<span class="saglik-kural-kod">' + esc(kod) + '</span>' +
+          '<span class="saglik-kural-sayi">' + (k.sayi || 0) + '</span>' +
+          '<span class="saglik-kural-mesaj">' + esc(k.mesaj || '') + '</span>' +
+        '</div>' +
+        '<div class="saglik-kural-ic">' + dosyalarHTML + '</div>' +
+      '</div>';
+    }).join('');
+
+    el.innerHTML = ozetHTML + kurallarHTML;
+    _oturumYuklendi.saglik = true;
+  } catch(e) {
+    console.error('[saglik]', e);
+    el.innerHTML = '<div style="color:var(--re); padding:12px;">Sağlık raporu yüklenemedi: ' + esc(e.message) +
+      '<br><span style="color:var(--txm); font-size:12px;">Henüz CI çalışmamış olabilir veya rapor JSON bozuk olabilir.</span></div>';
+  }
+}
+
+function saglikKuralToggle(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('acik');
 }
 
 
