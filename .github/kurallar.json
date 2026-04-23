@@ -1,7 +1,10 @@
 {
+  "_aciklama": "AresPipe kod kalite kuralları. Düzenleme için .github/KONTROL-SISTEMI.md okuyun. Yeni kurallar 'uyari' olarak başlar, 1-2 oturum gözlem sonrası 'hata' yapılır.",
+
   "silinmis_dosyalar": {
     "dosyalar": []
   },
+
   "istisnalar": {
     "dosyalar": [
       "giris.html",
@@ -29,63 +32,84 @@
       "session-expired.html"
     ]
   },
+
   "yasak_string": {
     "kurallar": [
+      { "kod": "YASAK_RENK_3B82F6", "desen": "#3b82f6", "mesaj": "Yasak renk kodu: #3b82f6 — var(--ac) kullan", "siddet": "hata" },
+      { "kod": "YASAK_RENK_22C55E", "desen": "#22c55e", "mesaj": "Yasak renk kodu: #22c55e — var(--gr) kullan", "siddet": "hata" },
+      { "kod": "YASAK_RENK_0A0B0E", "desen": "#0a0b0e", "mesaj": "Yasak renk kodu: #0a0b0e — var(--bg) kullan", "siddet": "hata" },
+      { "kod": "YASAK_RENK_10B981", "desen": "#10b981", "mesaj": "Yasak renk kodu: #10b981 — var(--gr) kullan", "siddet": "hata" },
+      { "kod": "YASAK_RENK_0D0F1A", "desen": "#0d0f1a", "mesaj": "Yasak renk kodu: #0d0f1a — var(--bg) kullan", "siddet": "hata" },
+      { "kod": "HISTORY_BACK",      "desen": "history.back()", "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.", "siddet": "uyari" },
+      { "kod": "FLASH_DARK",        "desen": ")||'dark'", "mesaj": "Flash prevention default 'dark' olmamalı — 'light-anthracite' kullan", "siddet": "hata" },
+      { "kod": "THEME_LIGHT",       "desen": "setAttribute('data-theme','light')", "mesaj": "data-theme 'light' olmamalı — 'light-anthracite' kullan", "siddet": "hata" },
+      { "kod": "YUKLENIYOR_KUMSAAT","desen": "⏳ Yükleniyor", "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli.", "siddet": "uyari" },
+
       {
-        "desen": "#3b82f6",
-        "mesaj": "Yasak renk kodu: #3b82f6 — var(--ac) kullan",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#22c55e",
-        "mesaj": "Yasak renk kodu: #22c55e — var(--gr) kullan",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#0a0b0e",
-        "mesaj": "Yasak renk kodu: #0a0b0e — var(--bg) kullan",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#10b981",
-        "mesaj": "Yasak renk kodu: #10b981 — var(--gr) kullan",
-        "siddet": "hata"
-      },
-      {
-        "desen": "#0d0f1a",
-        "mesaj": "Yasak renk kodu: #0d0f1a — var(--bg) kullan",
-        "siddet": "hata"
-      },
-      {
-        "desen": "history.back()",
-        "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.",
+        "kod": "G03_HAM_MALZEME",
+        "desen": "esc\\(\\s*\\w+\\.malzeme\\s*(\\|\\||,|\\))",
+        "regex": true,
+        "satirda_olmamalidir": ["ARES_NORM", "_malzemeGoster", "matBadge", "malzemeEtiket"],
+        "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)",
         "siddet": "uyari"
       },
       {
-        "desen": ")||'dark'",
-        "mesaj": "Flash prevention default 'dark' olmamalı — 'light-anthracite' kullan",
-        "siddet": "hata"
+        "kod": "G03_HAM_KALITE",
+        "desen": "esc\\(\\s*\\w+\\.kalite\\s*(\\|\\||,|\\))",
+        "regex": true,
+        "satirda_olmamalidir": ["ARES_NORM", "kaliteGoster"],
+        "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
+        "siddet": "uyari"
       },
       {
-        "desen": "setAttribute('data-theme','light')",
-        "mesaj": "data-theme 'light' olmamalı — 'light-anthracite' kullan",
-        "siddet": "hata"
+        "kod": "G03_HAM_YUZEY",
+        "desen": "esc\\(\\s*\\w+\\.yuzey\\s*(\\|\\||,|\\))",
+        "regex": true,
+        "satirda_olmamalidir": ["ARES_NORM", "_yuzeyGoster", "yuzeyEtiket"],
+        "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
+        "siddet": "uyari"
       },
       {
-        "desen": "⏳ Yükleniyor",
-        "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli.",
+        "kod": "G03_HAM_MALZEME_TEMPLATE",
+        "desen": "\\$\\{\\s*\\w+\\.malzeme\\s*\\}",
+        "regex": true,
+        "satirda_olmamalidir": ["ARES_NORM", "_malzemeGoster", "malzemeEtiket"],
+        "mesaj": "Ham malzeme template literal şüphesi — ARES_NORM.malzemeEtiket sarılmalı. (CLAUDE.md 2.18 — G-03)",
+        "siddet": "uyari"
+      },
+      {
+        "kod": "G03_HAM_KALITE_TEMPLATE",
+        "desen": "\\$\\{\\s*\\w+\\.kalite\\s*\\}",
+        "regex": true,
+        "satirda_olmamalidir": ["ARES_NORM", "kaliteGoster"],
+        "mesaj": "Ham kalite template literal şüphesi — ARES_NORM.kaliteGoster sarılmalı. (CLAUDE.md 2.18 — G-03)",
         "siddet": "uyari"
       }
     ]
   },
+
   "zorunlu_her_html": {
     "kurallar": [
       {
+        "kod": "ARES_LAYOUT_EKSIK",
         "desen": "ares-layout.js",
         "desene_alternatif": "ares-mobile.js",
         "mesaj": "ares-layout.js yüklenmiyor.",
         "siddet": "hata"
+      },
+      {
+        "kod": "ARES_NORMALIZE_EKSIK",
+        "desen": "ares-normalize.js",
+        "desene_alternatif": "ares-mobile.js",
+        "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)",
+        "siddet": "uyari"
       }
     ]
+  },
+
+  "i18n_senkron": {
+    "aktif": true,
+    "siddet": "uyari",
+    "aciklama": "tv('anahtar', 'fallback') çağrılarındaki anahtarın lang/tr.json'da var olduğunu kontrol eder. mobile/ altı atlanır (ayrı sözlük)."
   }
 }
