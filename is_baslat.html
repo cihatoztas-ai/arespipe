@@ -232,7 +232,7 @@
 
   <!-- Top bar — her ekranda aynı -->
   <div class="m-topbar">
-    <!-- M-01: history.back() yok -->
+    <!-- M-01: güvensiz geri dönüş kullanılmıyor, geriDon() ile explicit URL -->
     <button class="m-back-btn" onclick="geriDon()" aria-label="Geri">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -547,13 +547,13 @@
    ✅ F-01: font-size min 14px (CSS'de 13px sadece meta/chip — kabul edilebilir minimum)
    ✅ CSS tırnak: [data-theme=dark] yok, selector'da tırnak yok
    ✅ YASAK renkler yok
-   ✅ history.back() yok (M-01)
+   ✅ history.back yok (M-01)
    ✅ ARES.supabase() / mSupabase() (S-01)
    ✅ Script sırası body sonunda
    ✅ Flash prevention var (M-03)
    ✅ mSayfaKontrol() var (G-01)
    M-07 Checklist:
-   ✅ history.back() yok (M-01)
+   ✅ history.back yok (M-01)
    ✅ Geri → index.html (M-02)
    ✅ Flash prevention (M-03)
    ✅ mPage yapısı (M-04)

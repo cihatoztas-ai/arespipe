@@ -936,7 +936,7 @@
   <div class="kural-aciklama">Supabase modda veri yükleme fonksiyonları async'tir. Loading state gösterilir, hata olunca graceful fallback yapılır.</div>
   <div class="kod-blok">
     <span class="e">// 1. Loading göster</span><br>
-    tbody.innerHTML = <span class="v">'&lt;tr&gt;&lt;td&gt;⏳ Yükleniyor...&lt;/td&gt;&lt;/tr&gt;'</span>;<br><br>
+    tbody.innerHTML = <span class="v">'&lt;tr&gt;&lt;td&gt;&#x23F3; Yükleniyor...&lt;/td&gt;&lt;/tr&gt;'</span>;<br><br>
     <span class="e">// 2. Supabase'den çek</span><br>
     if (ARES.mod === <span class="v">'supabase'</span>) { await veriYukle(); }<br>
     else { renderTable(); } <span class="e">// local fallback</span><br><br>
