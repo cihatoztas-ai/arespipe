@@ -361,10 +361,11 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
     if (panel) panel.classList.add('on');
     if (btn.dataset.tab === 'bloklar' && !_blokYuklendi && typeof ARES !== 'undefined') blokYukle();
     if (btn.dataset.tab === 'kodseriler' && !_kodSeriData.length && typeof ARES !== 'undefined') kodSeriYukle();
+    if (btn.dataset.tab === 'malzemehavuzu' && !_kaliteYuklendi && typeof ARES !== 'undefined') { sistemKaliteYukle(); firmaKaliteYukle(); }
   });
 });
 
-// ── MALZEME HAVUZU (Mockup — JS Faz 2'de Supabase'e bağlanacak) ──
+// ── MALZEME HAVUZU — Supabase CRUD ────────────────────────
 // Alt-tab switching (sub-tab)
 document.querySelectorAll('.sub-tab').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -380,21 +381,12 @@ document.querySelectorAll('.sub-tab').forEach(function(btn){
   });
 });
 
-// Mockup sistem preset verisi — JS Faz 2'de Supabase'den gelecek
-var _mockSistemData = [
-  {kategori:'karbon',     kod:'ST37',        goster:'St 37',        standart:'DIN 17100'},
-  {kategori:'karbon',     kod:'S235JR',      goster:'S235JR',       standart:'EN 10025'},
-  {kategori:'karbon',     kod:'A106B',       goster:'A106 B',       standart:'ASME SA-106'},
-  {kategori:'karbon',     kod:'A53',         goster:'A53',          standart:'ASTM A53'},
-  {kategori:'paslanmaz',  kod:'316L',        goster:'316L',         standart:'ASTM A240'},
-  {kategori:'paslanmaz',  kod:'304L',        goster:'304L',         standart:'ASTM A240'},
-  {kategori:'paslanmaz',  kod:'316',         goster:'316',          standart:'ASTM A240'},
-  {kategori:'paslanmaz',  kod:'304',         goster:'304',          standart:'ASTM A240'},
-  {kategori:'paslanmaz',  kod:'14571',       goster:'1.4571',       standart:'EN 10088'},
-  {kategori:'paslanmaz',  kod:'A312TP316L',  goster:'A312 TP316L',  standart:'ASTM A312'},
-  {kategori:'bakir',      kod:'CUNI9010',    goster:'CuNi 90/10',   standart:'ASTM B466'},
-  {kategori:'alum',       kod:'6061T6',      goster:'6061-T6',      standart:'ASTM B221'},
-];
+// State
+var _sistemKaliteData    = [];
+var _firmaKaliteData     = [];
+var _kaliteYuklendi      = false;
+var _kaliteDuzenleId     = null;  // null = yeni ekleme, dolu = düzenleme modu
+var _kaliteKaydetKilit   = false; // çift tıklama koruması
 
 // G-03: ham kategori kodunu lokalize et (ARES_NORM yoksa ham değere düş)
 function _mhMalzEtiket(kod){
@@ -404,30 +396,106 @@ function _mhMalzEtiket(kod){
   return kod;
 }
 
+// kalite_kod_normalize() eşi — DB trigger ile simetrik olsun
+function _kaliteKodNormalize(raw){
+  if (!raw) return '';
+  return String(raw).toUpperCase().replace(/[^A-Z0-9]/g,'');
+}
+
+async function sistemKaliteYukle(){
+  if (typeof ARES === 'undefined') return;
+  var supa = ARES.supabase();
+  if (!supa) return;
+  var tbody = document.getElementById('sistemKaliteBody');
+  if (tbody && !_sistemKaliteData.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="bos">Yükleniyor…</td></tr>';
+  }
+  var res = await supa
+    .from('malzeme_tanimlari')
+    .select('id, kategori_kod, kalite_kod, kalite_goster, standart')
+    .is('tenant_id', null)
+    .eq('aktif', true)
+    .order('kategori_kod').order('kalite_kod');
+  if (res.error) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="bos" style="color:var(--re);">Yüklenemedi: ' + esc(res.error.message) + '</td></tr>';
+    toast('Sistem kaliteleri yüklenemedi: ' + res.error.message, 'er');
+    return;
+  }
+  _sistemKaliteData = res.data || [];
+  sistemKaliteRender();
+}
+
+async function firmaKaliteYukle(){
+  if (typeof ARES === 'undefined') return;
+  var supa = ARES.supabase();
+  if (!supa) return;
+  var tbody = document.getElementById('firmaKaliteBody');
+  if (tbody && !_firmaKaliteData.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="bos">Yükleniyor…</td></tr>';
+  }
+  var res = await supa
+    .from('malzeme_tanimlari')
+    .select('id, kategori_kod, kalite_kod, kalite_goster, standart, aciklama_tr, aciklama_en, aciklama_ar, notlar')
+    .eq('tenant_id', ARES.tenantId())
+    .eq('aktif', true)
+    .order('kategori_kod').order('kalite_kod');
+  if (res.error) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="bos" style="color:var(--re);">Yüklenemedi: ' + esc(res.error.message) + '</td></tr>';
+    toast('Firma kaliteleri yüklenemedi: ' + res.error.message, 'er');
+    return;
+  }
+  _firmaKaliteData = res.data || [];
+  _kaliteYuklendi  = true;
+  firmaKaliteRender();
+}
+
 function sistemKaliteRender(){
   var tbody = document.getElementById('sistemKaliteBody');
   if (!tbody) return;
-  tbody.innerHTML = _mockSistemData.map(function(r){
-    return '<tr>' +
-      '<td>' + esc(_mhMalzEtiket(r.kategori)) + '</td>' +
-      '<td class="td-kod">' + esc(r.kod) + '</td>' +
-      '<td>' + esc(r.goster) + '</td>' +
-      '<td><span class="std-chip">' + esc(r.standart || '—') + '</span></td>' +
-      '</tr>';
-  }).join('');
+  if (!_sistemKaliteData.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="bos">Sistem kaliteleri yüklenemedi.</td></tr>';
+  } else {
+    tbody.innerHTML = _sistemKaliteData.map(function(r){
+      return '<tr>' +
+        '<td>' + esc(_mhMalzEtiket(r.kategori_kod)) + '</td>' +
+        '<td class="td-kod">' + esc(r.kalite_kod) + '</td>' +
+        '<td>' + esc(r.kalite_goster) + '</td>' +
+        '<td>' + (r.standart ? '<span class="std-chip">' + esc(r.standart) + '</span>' : '<span style="color:var(--txd);">—</span>') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
   var sayac = document.getElementById('sistemKaliteSayi');
-  if (sayac) sayac.textContent = _mockSistemData.length;
+  if (sayac) sayac.textContent = _sistemKaliteData.length;
 }
 
 function firmaKaliteRender(){
   var tbody = document.getElementById('firmaKaliteBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" class="bos">Henüz firma kaliteniz yok. <b>+ Yeni Kalite</b> ile ekleyebilirsiniz.</td></tr>';
+  if (!_firmaKaliteData.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="bos">Henüz firma kaliteniz yok. <b>+ Yeni Kalite</b> ile ekleyebilirsiniz.</td></tr>';
+  } else {
+    tbody.innerHTML = _firmaKaliteData.map(function(r){
+      var id = esc(r.id);
+      var aciklama = r.aciklama_tr || '';
+      return '<tr>' +
+        '<td>' + esc(_mhMalzEtiket(r.kategori_kod)) + '</td>' +
+        '<td class="td-kod">' + esc(r.kalite_kod) + '</td>' +
+        '<td>' + esc(r.kalite_goster) + '</td>' +
+        '<td>' + (r.standart ? '<span class="std-chip">' + esc(r.standart) + '</span>' : '<span style="color:var(--txd);">—</span>') + '</td>' +
+        '<td class="aciklama-cell" title="' + esc(aciklama) + '">' + (aciklama ? esc(aciklama) : '<span style="color:var(--txd);">—</span>') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap;">' +
+          '<button class="btn btn-g btn-sm" onclick="kaliteDuzenleAc(&quot;' + id + '&quot;)" title="Düzenle" style="margin-right:4px;">✎</button>' +
+          '<button class="btn btn-re btn-sm" onclick="kaliteSil(&quot;' + id + '&quot;)" title="Sil">✕</button>' +
+        '</td>' +
+        '</tr>';
+    }).join('');
+  }
   var sayac = document.getElementById('firmaKaliteSayi');
-  if (sayac) sayac.textContent = '0';
+  if (sayac) sayac.textContent = _firmaKaliteData.length;
 }
 
 function kaliteFormAc(){
+  _kaliteDuzenleId = null;
   document.getElementById('kaliteFormBaslik').textContent = 'Yeni Kalite Ekle';
   ['kfKod','kfGoster','kfStandart','kfAciklamaTr'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
@@ -437,19 +505,118 @@ function kaliteFormAc(){
   setTimeout(function(){ var k = document.getElementById('kfKod'); if (k) k.focus(); }, 50);
 }
 
+function kaliteDuzenleAc(id){
+  var r = _firmaKaliteData.find(function(x){ return x.id === id; });
+  if (!r) { toast('Kayıt bulunamadı', 'er'); return; }
+  _kaliteDuzenleId = id;
+  document.getElementById('kaliteFormBaslik').textContent = 'Kaliteyi Düzenle';
+  document.getElementById('kfKategori').value     = r.kategori_kod || 'karbon';
+  document.getElementById('kfKod').value          = r.kalite_kod || '';
+  document.getElementById('kfGoster').value       = r.kalite_goster || '';
+  document.getElementById('kfStandart').value     = r.standart || '';
+  document.getElementById('kfAciklamaTr').value   = r.aciklama_tr || '';
+  var form = document.getElementById('kaliteYeniForm');
+  form.classList.add('open');
+  form.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(function(){ var k = document.getElementById('kfGoster'); if (k) k.focus(); }, 200);
+}
+
 function kaliteFormKapat(){
+  _kaliteDuzenleId = null;
   var f = document.getElementById('kaliteYeniForm');
   if (f) f.classList.remove('open');
 }
 
-function kaliteKaydet(){
-  // JS Faz 2'de Supabase insert burada olacak (UNIQUE çakışma + RLS)
-  toast('Kaydet butonu mockup aşamasında pasif — JS Faz 2 ile aktifleşecek', 'er');
+async function kaliteKaydet(){
+  if (_kaliteKaydetKilit) return;
+  if (typeof ARES === 'undefined') { toast('Sistem hazır değil', 'er'); return; }
+
+  var kategori = document.getElementById('kfKategori').value;
+  var kodRaw   = document.getElementById('kfKod').value.trim();
+  var kod      = _kaliteKodNormalize(kodRaw);
+  var goster   = document.getElementById('kfGoster').value.trim();
+  var standart = document.getElementById('kfStandart').value.trim();
+  var aciklama = document.getElementById('kfAciklamaTr').value.trim();
+
+  // Validasyon
+  if (!kategori) { toast('Kategori seçiniz', 'er'); return; }
+  if (!kod)      { toast('Kalite kodu zorunlu', 'er'); return; }
+  if (kod.length < 2) { toast('Kalite kodu en az 2 karakter olmalı', 'er'); return; }
+  if (!goster)   { toast('Gösterim zorunlu', 'er'); return; }
+
+  // Aynı koda sahip sistem preset kontrolü (uyarı, engel değil)
+  var sistemCakisma = _sistemKaliteData.find(function(x){
+    return x.kategori_kod === kategori && x.kalite_kod === kod;
+  });
+  if (sistemCakisma && !_kaliteDuzenleId) {
+    if (!confirm('Bu kod (' + kod + ') sistem kalitelerinde de var. Yine de firmaya özel eklemek istiyor musunuz?')) return;
+  }
+
+  var supa = ARES.supabase();
+  if (!supa) { toast('Bağlantı yok', 'er'); return; }
+
+  _kaliteKaydetKilit = true;
+  var payload = {
+    kategori_kod:  kategori,
+    kalite_kod:    kod,
+    kalite_goster: goster,
+    standart:      standart || null,
+    aciklama_tr:   aciklama || null,
+    aktif:         true,
+  };
+
+  var res;
+  if (_kaliteDuzenleId) {
+    // UPDATE
+    res = await supa.from('malzeme_tanimlari').update(payload).eq('id', _kaliteDuzenleId);
+  } else {
+    // INSERT — tenant_id + sistem_preset RLS için zorunlu
+    payload.tenant_id     = ARES.tenantId();
+    payload.sistem_preset = false;
+    res = await supa.from('malzeme_tanimlari').insert(payload);
+  }
+  _kaliteKaydetKilit = false;
+
+  if (res.error) {
+    if (res.error.code === '23505') {
+      toast('Bu kod kombinasyonu firmanızda zaten var', 'er');
+    } else {
+      toast((_kaliteDuzenleId ? 'Güncelleme' : 'Ekleme') + ' hatası: ' + res.error.message, 'er');
+    }
+    return;
+  }
+
+  kaliteFormKapat();
+  await firmaKaliteYukle();
+  toast(_kaliteDuzenleId ? 'Kalite güncellendi.' : 'Kalite eklendi.', 'ok');
 }
 
-// İlk render — mockup verileri (ARES_NORM sync yüklendiği için direkt çağrı güvenli)
-sistemKaliteRender();
-firmaKaliteRender();
+async function kaliteSil(id){
+  var r = _firmaKaliteData.find(function(x){ return x.id === id; });
+  if (!r) { toast('Kayıt bulunamadı', 'er'); return; }
+  if (typeof ARES === 'undefined') { toast('Sistem hazır değil', 'er'); return; }
+  var supa = ARES.supabase();
+  if (!supa) { toast('Bağlantı yok', 'er'); return; }
+
+  // FK violation ön-kontrol (spool_malzemeleri + pipeline_malzemeleri)
+  var k1 = await supa.from('spool_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
+  var k2 = await supa.from('pipeline_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
+  if (k1.error && k1.error.code !== 'PGRST116') { toast('Kullanım kontrolü hatası: ' + k1.error.message, 'er'); return; }
+  if (k2.error && k2.error.code !== 'PGRST116') { toast('Kullanım kontrolü hatası: ' + k2.error.message, 'er'); return; }
+  var toplam = (k1.count || 0) + (k2.count || 0);
+
+  if (toplam > 0) {
+    toast(r.kalite_goster + ' · ' + toplam + ' kayıtta kullanılıyor, silinemez', 'er');
+    return;
+  }
+
+  if (!confirm(r.kalite_goster + ' kalitesini silmek istiyor musunuz?\n\nBu işlem geri alınamaz.')) return;
+
+  var res = await supa.from('malzeme_tanimlari').delete().eq('id', id);
+  if (res.error) { toast('Silme hatası: ' + res.error.message, 'er'); return; }
+  await firmaKaliteYukle();
+  toast(r.kalite_goster + ' silindi.', 'ok');
+}
 
 // ── YETKİ BLOKLARI ────────────────────────────────────────
 var _blokData     = [];
@@ -844,6 +1011,8 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       await blokYukle();
       await kodSeriYukle();
+      await sistemKaliteYukle();
+      await firmaKaliteYukle();
       // URL'de ?tab=bloklar varsa o sekmeyi aç
       var urlTab = new URLSearchParams(location.search).get('tab');
       if (urlTab) {
