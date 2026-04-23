@@ -582,8 +582,8 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </div>
       </div>
 
-      <div class="pano-uyari">
-        ℹ️ <strong>Saat 3'te eklenecek:</strong> Yanıt yazma, göreve dönüştürme, yeni durum akışı (yeni → inceleniyor → yapılacak → yapıldı).
+      <div class="pano-uyari" style="border-left-color:var(--gr);">
+        ✅ <strong>Saat 3 aktif:</strong> Bildirime tıkla → yanıt yaz, durum değiştir veya "Göreve Dönüştür" ile Görev Takibi sekmesine kaydet.
       </div>
     </div>
 
@@ -734,23 +734,23 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <!-- GÖREV MODAL (24. Oturum — Pano) -->
 <div id="gorevModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal">
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
     <div class="modal-title" id="gorevModalBaslik">📋 Yeni Görev</div>
     <input type="hidden" id="gorevDuzenId">
 
     <div class="form-row">
-      <label class="form-lbl">Başlık *</label>
+      <label class="form-label">Başlık *</label>
       <input class="form-input" id="gBaslik" placeholder="Kısa, net başlık" maxlength="200">
     </div>
 
     <div class="form-row">
-      <label class="form-lbl">Açıklama</label>
+      <label class="form-label">Açıklama</label>
       <textarea class="form-input" id="gAciklama" rows="3" placeholder="Detay (opsiyonel)"></textarea>
     </div>
 
     <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
       <div>
-        <label class="form-lbl">Kategori</label>
+        <label class="form-label">Kategori</label>
         <select class="form-input form-select" id="gKategori">
           <option value="">— Seçiniz —</option>
           <option value="altyapi">Altyapı</option>
@@ -760,7 +760,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </select>
       </div>
       <div>
-        <label class="form-lbl">Öncelik</label>
+        <label class="form-label">Öncelik</label>
         <select class="form-input form-select" id="gOncelik">
           <option value="acil">Acil</option>
           <option value="yuksek">Yüksek</option>
@@ -772,7 +772,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
     <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
       <div>
-        <label class="form-lbl">Durum</label>
+        <label class="form-label">Durum</label>
         <select class="form-input form-select" id="gDurum">
           <option value="yeni" selected>Yeni</option>
           <option value="inceleniyor">İnceleniyor</option>
@@ -782,17 +782,17 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </select>
       </div>
       <div>
-        <label class="form-lbl">Katman / Faz</label>
+        <label class="form-label">Katman / Faz</label>
         <input class="form-input" id="gKatman" placeholder="L3, Faz B ...">
       </div>
     </div>
 
     <div class="form-row">
-      <label class="form-lbl">Notlar</label>
+      <label class="form-label">Notlar</label>
       <textarea class="form-input" id="gNotlar" rows="2" placeholder="İç notlar, bağlantılar..."></textarea>
     </div>
 
-    <div class="modal-btns">
+    <div class="modal-foot">
       <button class="btn btn-danger" id="gSilBtn" style="display:none;" onclick="gorevSil()">Sil</button>
       <button class="btn btn-ghost" onclick="T('gorevModal').style.display='none'">İptal</button>
       <button class="btn btn-primary" onclick="gorevKaydet()">Kaydet</button>
@@ -1486,12 +1486,15 @@ async function flagToggle(firmaId, kod, aktif) {
 }
 
 
-// ── FEEDBACK FONKSİYONLARI ──────────────────────────────────────
+// ── FEEDBACK FONKSİYONLARI (24. Oturum Saat 3 — yenilendi) ──
+
 var _feedbackVerisi = [];
+var _feedbackAcikId = null; // Şu an genişlemiş olan kartın id'si
 
 async function feedbackYukle() {
-  var durum = T('fbDurumFilter') ? T('fbDurumFilter').value : 'bekliyor';
+  var durum = T('fbDurumFilter') ? T('fbDurumFilter').value : 'yeni';
   var container = T('feedbackContainer');
+  if (!container) return;
   container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>';
 
   try {
@@ -1503,12 +1506,16 @@ async function feedbackYukle() {
     if (error) throw new Error(error.message);
     _feedbackVerisi = data || [];
 
-    // İstatistikler
-    var bekleyen = _feedbackVerisi.filter(function(f){return f.durum==='bekliyor';}).length;
-    var onay = _feedbackVerisi.filter(function(f){return f.durum==='onaylandi';}).length;
+    // Stat kartları — tüm feedback üzerinden say (filter bağımsız)
+    var statSorgu = await _supaProxy.from('feedback_kayitlari').select('durum');
+    var statVeri = statSorgu.data || [];
+    var stat = {yeni:0, inceleniyor:0, yapilacak:0, yapildi:0, reddedildi:0};
+    statVeri.forEach(function(f){ if (stat[f.durum] !== undefined) stat[f.durum]++; });
+    // "Bekleyen" = yeni + inceleniyor + yapilacak
+    var bekleyen = stat.yeni + stat.inceleniyor + stat.yapilacak;
     if (T('fb-stat-bekleyen')) T('fb-stat-bekleyen').textContent = bekleyen;
-    if (T('fb-stat-onay')) T('fb-stat-onay').textContent = onay;
-    if (T('fb-stat-toplam')) T('fb-stat-toplam').textContent = _feedbackVerisi.length;
+    if (T('fb-stat-onay'))     T('fb-stat-onay').textContent = stat.yapildi;
+    if (T('fb-stat-toplam'))   T('fb-stat-toplam').textContent = statVeri.length;
 
     if (!_feedbackVerisi.length) {
       container.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Kayıt bulunamadı</div></div>';
@@ -1517,61 +1524,169 @@ async function feedbackYukle() {
 
     var KAT_RENK = { hata: 'var(--re)', eksik: 'var(--ac)', fikir: 'var(--warn)' };
     var KAT_IKON = { hata: '🐛', eksik: '📋', fikir: '💡' };
+    var DURUM_ET  = { yeni:'Yeni', inceleniyor:'İnceleniyor', yapilacak:'Yapılacak', yapildi:'Yapıldı', reddedildi:'Reddedildi' };
+    var DURUM_CLS = { yeni:'var(--txm)', inceleniyor:'var(--ac)', yapilacak:'var(--warn)', yapildi:'var(--gr)', reddedildi:'var(--re)' };
 
     container.innerHTML = _feedbackVerisi.map(function(fb) {
       var kul = fb.kullanicilar;
       var tarih = new Date(fb.olusturma).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
       var katRenk = KAT_RENK[fb.kategori] || 'var(--txm)';
       var katIkon = KAT_IKON[fb.kategori] || '📝';
-      var durumBadge = fb.durum === 'bekliyor'
-        ? '<span class="badge" style="background:rgba(217,119,6,.12);color:var(--warn);">Bekliyor</span>'
-        : fb.durum === 'onaylandi'
-        ? '<span class="badge badge-aktif">Onaylandı</span>'
-        : '<span class="badge badge-pasif">Reddedildi</span>';
+      var durumEt = DURUM_ET[fb.durum] || fb.durum;
+      var durumClr = DURUM_CLS[fb.durum] || 'var(--txm)';
+      var gonderen = esc((kul && kul.ad_soyad) || (kul && kul.email) || fb.kullanici_id || '—');
+      var yanitVar = fb.yanit && fb.yanit.trim().length > 0;
+      var yanitTarihi = fb.yanit_tarihi ? new Date(fb.yanit_tarihi).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
 
-      return '<div style="padding:16px 20px;border-bottom:1px solid var(--bor);display:flex;gap:16px;align-items:flex-start;">' +
-        '<div style="font-size:24px;flex-shrink:0;margin-top:2px;">' + katIkon + '</div>' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">' +
-            '<span style="font-size:12px;font-weight:700;color:' + katRenk + ';text-transform:uppercase;">' + (fb.kategori||'—') + '</span>' +
-            durumBadge +
-            '<span class="mono">' + (fb.sayfa_url||'') + '</span>' +
-            '<span style="font-size:11px;color:var(--txd);margin-left:auto;">' + tarih + '</span>' +
+      // KART — üstte özet, tıklanınca aşağı açılan panel
+      return '<div style="border-bottom:1px solid var(--bor);">' +
+        '<div style="padding:14px 20px; display:flex; gap:14px; align-items:flex-start; cursor:pointer;" onclick="feedbackDetayAc(\'' + fb.id + '\')">' +
+          '<div style="font-size:22px; flex-shrink:0; margin-top:2px;">' + katIkon + '</div>' +
+          '<div style="flex:1; min-width:0;">' +
+            '<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">' +
+              '<span style="font-size:11px; font-weight:700; color:' + katRenk + '; text-transform:uppercase; letter-spacing:.3px;">' + (fb.kategori||'—') + '</span>' +
+              '<span style="font-size:11px; font-weight:700; color:' + durumClr + '; padding:2px 8px; border-radius:6px; background:' + durumClr + '1a;">' + durumEt + '</span>' +
+              (yanitVar ? '<span style="font-size:10px; color:var(--gr);">✓ Yanıtlandı</span>' : '') +
+              '<span class="mono" style="font-size:11px; color:var(--txd);">' + esc(fb.sayfa_url||'') + '</span>' +
+              '<span style="font-size:11px; color:var(--txd); margin-left:auto;">' + tarih + '</span>' +
+            '</div>' +
+            '<div style="font-size:13.5px; color:var(--tx); margin-bottom:4px; line-height:1.5;">' + esc(fb.not_||'') + '</div>' +
+            '<div style="font-size:11px; color:var(--txd);">Gönderen: ' + gonderen + '</div>' +
           '</div>' +
-          '<div style="font-size:14px;color:var(--tx);margin-bottom:6px;line-height:1.5;">' + esc(fb.not_||'') + '</div>' +
-          (fb.fotograf_url ? '<div style="margin-bottom:8px;"><img src="' + fb.fotograf_url + '" style="max-width:280px;max-height:160px;border-radius:8px;border:1px solid var(--bor);object-fit:cover;" onclick="window.open(this.src)" style="cursor:pointer;"></div>' : '') +
-          '<div style="font-size:11px;color:var(--txd);">Gönderen: ' + esc((kul && kul.ad_soyad) || (kul && kul.email) || fb.kullanici_id || '—') + '</div>' +
+          '<div style="flex-shrink:0; color:var(--txd); font-size:18px; align-self:center;" id="fb-ok-' + fb.id + '">' +
+            (_feedbackAcikId === fb.id ? '▲' : '▼') +
+          '</div>' +
         '</div>' +
-        (fb.durum === 'bekliyor' ? 
-          '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">' +
-            '<button class="btn btn-primary btn-sm" onclick="feedbackDurumGuncelle(\'' + fb.id + '\',\'onaylandi\')">✓ Onayla</button>' +
-            '<button class="btn btn-danger btn-sm" onclick="feedbackDurumGuncelle(\'' + fb.id + '\',\'reddedildi\')">✕ Reddet</button>' +
+        // AÇILIR PANEL — Yanıt + Durum + Göreve Dönüştür
+        '<div id="fb-detay-' + fb.id + '" style="display:' + (_feedbackAcikId === fb.id ? 'block' : 'none') + '; padding:0 20px 18px 58px; background:var(--sur2);">' +
+          (fb.fotograf_url ? '<div style="margin-bottom:10px;"><img src="' + fb.fotograf_url + '" style="max-width:340px; max-height:200px; border-radius:8px; border:1px solid var(--bor); object-fit:cover; cursor:pointer;" onclick="window.open(\'' + fb.fotograf_url + '\')"></div>' : '') +
+          // Mevcut yanıt (varsa)
+          (yanitVar ? '<div style="margin-bottom:12px; padding:10px 12px; background:var(--sur); border-left:3px solid var(--gr); border-radius:6px;">' +
+            '<div style="font-size:10px; color:var(--gr); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Mevcut Yanıt · ' + yanitTarihi + '</div>' +
+            '<div style="font-size:13px; color:var(--tx); line-height:1.5;">' + esc(fb.yanit) + '</div>' +
           '</div>' : '') +
+          // Yanıt textarea
+          '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:11px; font-weight:700; color:var(--txd); text-transform:uppercase; margin-bottom:4px;">' + (yanitVar ? 'Yanıtı güncelle' : 'Yanıt yaz (opsiyonel)') + '</label>' +
+            '<textarea id="fb-yanit-' + fb.id + '" rows="3" class="form-input" style="width:100%; resize:vertical;" placeholder="Kullanıcıya mesajınız...">' + esc(fb.yanit || '') + '</textarea>' +
+          '</div>' +
+          // Durum + aksiyon butonları
+          '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">' +
+            '<label style="font-size:11px; font-weight:700; color:var(--txd); text-transform:uppercase;">Durum:</label>' +
+            '<select id="fb-durum-' + fb.id + '" class="form-input form-select" style="width:160px;">' +
+              ['yeni','inceleniyor','yapilacak','yapildi','reddedildi'].map(function(d) {
+                return '<option value="' + d + '"' + (fb.durum === d ? ' selected' : '') + '>' + DURUM_ET[d] + '</option>';
+              }).join('') +
+            '</select>' +
+            '<button class="btn btn-primary btn-sm" onclick="feedbackYanitKaydet(\'' + fb.id + '\')">💾 Kaydet</button>' +
+            '<button class="btn btn-ghost btn-sm" onclick="feedbackGorevOlustur(\'' + fb.id + '\')" style="border:1px solid var(--leg); color:var(--leg);">↗ Göreve Dönüştür</button>' +
+          '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
 
   } catch(e) {
+    console.error('[FEEDBACK-YUKLE]', e);
     container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Hata: ' + esc(e.message) + '</div></div>';
   }
 }
 
-async function feedbackDurumGuncelle(id, yeniDurum) {
+// Tıkla aç/kapa — tek seferde sadece bir panel açık
+function feedbackDetayAc(id) {
+  var eski = _feedbackAcikId;
+  _feedbackAcikId = (eski === id) ? null : id;
+  // Eski kartı kapat
+  if (eski && eski !== id) {
+    var eD = T('fb-detay-' + eski);
+    if (eD) eD.style.display = 'none';
+    var eO = T('fb-ok-' + eski);
+    if (eO) eO.textContent = '▼';
+  }
+  // Yeni kartı aç/kapat
+  var yD = T('fb-detay-' + id);
+  var yO = T('fb-ok-' + id);
+  if (yD) yD.style.display = (_feedbackAcikId === id) ? 'block' : 'none';
+  if (yO) yO.textContent = (_feedbackAcikId === id) ? '▲' : '▼';
+}
+
+// Yanıt + durum kaydet
+async function feedbackYanitKaydet(id) {
+  var yanitEl = T('fb-yanit-' + id);
+  var durumEl = T('fb-durum-' + id);
+  if (!yanitEl || !durumEl) return;
+
+  var yanitMetin = yanitEl.value.trim();
+  var yeniDurum = durumEl.value;
+  var eskiKayit = _feedbackVerisi.find(function(f){ return f.id === id; });
+  if (!eskiKayit) { toast('Kayıt bulunamadı', 'err'); return; }
+
+  // Güncelleme paketi
+  var guncelle = { durum: yeniDurum };
+  // Yanıt değiştiyse yaz
+  if (yanitMetin !== (eskiKayit.yanit || '')) {
+    guncelle.yanit = yanitMetin || null;
+    guncelle.yanit_tarihi = yanitMetin ? new Date().toISOString() : null;
+    guncelle.yanit_veren_id = yanitMetin ? (_oturum ? _oturum.id : null) : null;
+  }
+
   try {
-    var supa = _getSupa();
-    if (!supa) throw new Error('Bağlantı yok');
-    var {error} = await supa.from('feedback_kayitlari').update({durum: yeniDurum}).eq('id', id);
+    var {error} = await _supaProxy.from('feedback_kayitlari').update(guncelle).eq('id', id);
     if (error) throw new Error(error.message);
-    toast('✅ Durum güncellendi: ' + yeniDurum, 'ok');
-    // Filtreyi güncellenen duruma çevir
-    var filtre = document.getElementById('fbDurumFilter');
-    if (filtre) filtre.value = yeniDurum;
+    toast('✅ Kaydedildi', 'ok');
+    _feedbackAcikId = null; // kapat
     await feedbackYukle();
   } catch(e) {
-    console.error('[FEEDBACK]', e);
+    console.error('[FB-KAYDET]', e);
     toast('Hata: ' + e.message, 'err');
   }
 }
 
+// Göreve dönüştür — panel_gorevler'e yeni kayıt
+async function feedbackGorevOlustur(id) {
+  var fb = _feedbackVerisi.find(function(f){ return f.id === id; });
+  if (!fb) { toast('Kayıt bulunamadı', 'err'); return; }
+
+  // Kategori eşleme: hata → hata, eksik/fikir → ozellik
+  var gorevKategori = (fb.kategori === 'hata') ? 'hata' : 'ozellik';
+  // Öncelik eşleme: hata → yuksek, eksik → orta, fikir → dusuk
+  var gorevOncelik = (fb.kategori === 'hata') ? 'yuksek' : (fb.kategori === 'fikir') ? 'dusuk' : 'orta';
+
+  var baslikOn = fb.not_ ? fb.not_.trim().split('\n')[0] : 'Geri bildirim';
+  if (baslikOn.length > 100) baslikOn = baslikOn.slice(0, 100) + '…';
+
+  var aciklama = 'Geri bildirimden oluşturuldu.\n\n' +
+    'Sayfa: ' + (fb.sayfa_url || '—') + '\n' +
+    'Kategori: ' + (fb.kategori || '—') + '\n' +
+    'Tarih: ' + new Date(fb.olusturma).toLocaleDateString('tr-TR') + '\n\n' +
+    '--- Orijinal ---\n' +
+    (fb.not_ || '');
+
+  try {
+    var veri = {
+      baslik: baslikOn,
+      aciklama: aciklama,
+      kategori: gorevKategori,
+      oncelik: gorevOncelik,
+      durum: 'yapilacak',
+      kaynak: 'feedback_donusumu',
+      kaynak_id: fb.id,
+      olusturan_id: _oturum ? _oturum.id : null
+    };
+    var {error: insErr} = await _supaProxy.from('panel_gorevler').insert(veri);
+    if (insErr) throw new Error('Görev oluşturulamadı: ' + insErr.message);
+
+    // Feedback durumunu yapilacak'a al
+    var {error: updErr} = await _supaProxy.from('feedback_kayitlari').update({durum: 'yapilacak'}).eq('id', id);
+    if (updErr) throw new Error('Feedback güncellenemedi: ' + updErr.message);
+
+    toast('✅ Göreve dönüştürüldü', 'ok');
+    _feedbackAcikId = null;
+    await feedbackYukle();
+  } catch(e) {
+    console.error('[FB-GOREV]', e);
+    toast('Hata: ' + e.message, 'err');
+  }
+}
 
 // ── PANO — Görev Takibi (24. Oturum) ──────────────────────────
 
