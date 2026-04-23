@@ -1,1 +1,44 @@
+<!DOCTYPE html>
+<!--
+  KASTEN BOZUK TEST DOSYASI
+  Beklenen kurallar:
+    - G03_HAM_MALZEME      (esc(m.malzeme) doğrudan yazılmış)
+    - G03_HAM_KALITE        (esc(x.kalite || '—'))
+    - G03_HAM_YUZEY         (esc(s.yuzey))
+    - G03_HAM_MALZEME_TEMPLATE (${item.malzeme} template literal)
+    - G03_HAM_KALITE_TEMPLATE  (${m.kalite})
 
+  Bu dosya .github/bozuk-ornekler/ altındadır ve KONTROL EDİLMEZ
+  (kontrol.js normal tarama modunda .github/ klasörünü atlar).
+
+  Sadece self-test modunda okunur: node .github/kontrol.js --self-test
+-->
+<html>
+<head>
+  <script src="ares-store.js"></script>
+  <script src="ares-lang.js"></script>
+  <script src="ares-normalize.js"></script>
+  <script src="ares-layout.js"></script>
+</head>
+<body>
+<script>
+  function renderBom(items) {
+    var html = '';
+    items.forEach(function(m) {
+      // BOZUK 1: ham esc(m.malzeme) — ARES_NORM.malzemeEtiket olmalı
+      html += '<tr><td>' + esc(m.malzeme) + '</td>';
+      // BOZUK 2: ham esc(x.kalite || '—')
+      html += '<td>' + esc(m.kalite || '—') + '</td>';
+      // BOZUK 3: ham esc(s.yuzey)
+      html += '<td>' + esc(m.yuzey) + '</td></tr>';
+    });
+    return html;
+  }
+
+  function excelRow(item) {
+    // BOZUK 4: template literal ham malzeme
+    return `${item.malzeme} — ham kalite: ${item.kalite}`;
+  }
+</script>
+</body>
+</html>

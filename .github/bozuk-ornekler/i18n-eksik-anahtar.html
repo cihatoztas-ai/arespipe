@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--
+  KASTEN BOZUK TEST DOSYASI
+  Beklenen kurallar:
+    - I18N_EKSIK (tv('xxx_bu_anahtar_hicbir_yerde_yok') lang/tr.json'da yok)
+
+  Bu dosya sadece self-test modunda okunur.
+-->
+<html>
+<head>
+  <script src="ares-store.js"></script>
+  <script src="ares-lang.js"></script>
+  <script src="ares-normalize.js"></script>
+  <script src="ares-layout.js"></script>
+</head>
+<body>
+<script>
+  function toastMesaji() {
+    // BOZUK: bu anahtar lang/tr.json'da yok, "uyari" olarak yakalanmalı
+    var mesaj = tv('xxx_bu_anahtar_hicbir_yerde_yok_olsun', 'Test mesaj');
+    toast(mesaj);
+
+    // BOZUK 2: başka bir eksik anahtar
+    var baska = tv('xxx_yine_olmayan_anahtar');
+    alert(baska);
+  }
+</script>
+</body>
+</html>
