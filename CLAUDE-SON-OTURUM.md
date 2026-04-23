@@ -1,167 +1,162 @@
-# AresPipe — 21. Oturum Özeti (22 Nisan 2026)
+# AresPipe — 22. Oturum Özeti (23 Nisan 2026)
 
 ## Ana Başlık
-**Sistem Çapında Render Standardizasyonu.** 20. oturumda kapatılan IFS import kök neden fix'i sonrası keşfedilen "UI'da ham `karbon` kategori kodu" yayılımı bu oturumda tamamen temizlendi. 11 HTML dosyasında ~30 render noktası lokalize edildi. G-03 kuralı CLAUDE.md Bölüm 2.18'de formalleştirildi. Sistemde artık kullanıcıya görünür ham enum kodu yok.
+**Faz A Faz 2 Tamamlanması — `tanimlar.html > Malzeme Havuzu` Admin UI.** E-06 master tablo altyapısı artık yazma (20. oturum), okuma/render (20-21. oturum) ve UI yönetimi (22. oturum) ekseninde tam tur çalışıyor. Admin artık firma özel kaliteyi UI'dan ekleyip yönetebiliyor. Yan olarak 2 teknik borç (M3_RENK, duplicate `<td>`) ve 1 bonus refactor (`kaliteleriDoldur()`) kapandı. Trigger Guard 1 gevşetildi.
 
 ## Strateji Kararı
-- 20. oturumun kapanışında kullanıcı `spool_detay.html > Büküm Ekle` popup'ında ham `karbon` gördü
-- 21. oturum gündemi bu temel üzerinden sistematik süpürme olarak belirlenmişti (CLAUDE-SONRAKI-OTURUM.md)
-- Yaklaşım: **ritüel → grep → harita → pilot → dalga dalga fix → CLAUDE.md formalize → zip**
-- Faz 2 (admin UI) 22. oturuma kaldı
+- Yol haritasında Faz A'nın son adımı (Faz 3 autocomplete 25, Faz 4 fuzzy match 26'ya kaldı)
+- Mockup-first (R-10): önce HTML+CSS iskelet, layout onayı, sonra JS Faz 2
+- Yaklaşım: **ritüel → mockup (görsel karşılaştırma) → JS Faz 2 → yan bug'lar → SQL → kapanış**
+- 23. oturumda Faz B (altyapı + lint) başlayacağı için bugün yazılan kodun G-01/G-02/G-03/B-01/E-01/A-01 kurallarına baştan uyumlu olması hedefi
 
 ## Akış
 
-### 1. Ritüel + Grep
+### 1. Ritüel + Dosya Analizi
 - CLAUDE.md + CLAUDE-SON-OTURUM okundu
-- `ares-normalize.js` helper imzaları teyit edildi:
-  - `malzemeEtiket(raw)`: boş → `'—'`, bilinmeyen → ham değer, bilinen kod → lokalize
-  - `kaliteGoster(kodOrRaw)`: boş → `''`, bilinmeyen → ham, bilinen → canonical (`'St 37'`)
-  - `yuzeyEtiket(raw)`: malzemeEtiket simetrisi
-- 3 grep komutu (malzeme/kalite/yüzey) + Excel/PDF export taraması:
-  - Malzeme render: 35 hit (state map hariç ~20 gerçek render)
-  - Kalite render: ~50 hit (state map hariç ~35 gerçek render)
-  - Yüzey render: ~20 hit
-  - Excel export: 10 dosya
+- `tanimlar.html` yüklendi, mevcut yapı analiz edildi:
+  - Sayfa-seviyesinde auth: `ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin'])` ✓
+  - `ares-normalize.js` YÜKLENMEDİĞİ keşfedildi (21. oturumda atlanan 3. sayfa — admin/portal fix'lenmişti ama tanimlar.html gözden kaçmıştı)
+  - Tab pattern: `.tab-btn[data-tab="x"]` → panel id `'tab' + capitalize(x)`
+  - Yerel `tv(key, tr)` wrapper i18n için
+  - Modal pattern yok (kodSeri için `prompt()` zinciri), inline expanding form pattern var (`blok-yeni-form`)
 
-### 2. Harita Çıkarıldı
-**"Dokunma" listesi:**
-- `matBadge(m)` — zaten `ARES_NORM.tvMalzeme` kullanıyor
-- `_malzemeGoster/_yuzeyGoster` — zaten wrap
-- `devreler.html:1768-1797` inline — zaten lokalize
-- State map'leri (`{malzeme: x.malzeme || '—'}`) — DB-facing ham
-- Arama filtre string'leri — kullanıcıya görünmez
-- AI chatbot prompt'ları — LLM'e
-- Dropdown value'ları + inlineEdit arg'ları — ham kalmalı
+### 2. Yetki Kararı
+- Kullanıcı: "yönetici yetkisindeki kişiler girebilsin"
+- **Çözüm:** Sayfa-seviyesi auth zaten var, sekmeye ek kontrol gereksiz. Bu bilgiyi ileride "yeni sayfa kontrol listesine" not edilecek.
 
-**Fix listesi:** 11 dosya × ~30 nokta
+### 3. Mockup (R-10) — Görsel Karşılaştırma
+- Kullanıcı "sen bunları görsel olarak verir misin" dedi
+- `visualize:show_widget` ile iki seçenek yan yana sunuldu:
+  - **Seçenek A:** Sistem/Firma alt-tab yapısı (sub-tabs)
+  - **Seçenek B:** İki tablo üst üste (stacked)
+- Her iki mockup tam AresPipe renklerinde (`#0d1117`, `#2D8EFF`, `#7c3aed`) render edildi
+- **Seçim: Seçenek A (alt-tab).**
 
-### 3. Dosya Dosya Fix
+### 4. Faz 1 — Mockup HTML/CSS Uygulaması
+- İlk denemede 5-patch yaklaşımı sunuldu
+- Kullanıcı "sen dosyayı iste vereyim sen güncelle bu şekilde uzun sürer" dedi — direct-file update approach'a geçildi
+- 5 patch tek dosyada uygulandı:
+  1. `ares-normalize.js` script sırasına eklendi
+  2. Alt-tab + inline form CSS (`.sub-tab`, `.sub-panel`, `.kalite-yeni-form`, `.std-chip`, `.aciklama-cell`)
+  3. Sekme butonu (`🧪 Malzeme Havuzu`)
+  4. Panel HTML (info banner + sub-tabs + iki tablo + inline form)
+  5. JS stub (sub-tab switching + 12 preset mock render + form aç/kapat stub)
+- **772 → 976 satır.**
 
-| Dosya | Noktalar | Değişiklik |
-|---|---|---|
-| `spool_detay.html` | 2253, 2309, 3065-3066 | `kmMalzInfo` (Kesim Ekle), `bmMalzInfo` (Büküm Ekle), 3D M3 popup |
-| `devre_detay.html` | 1576, 1601, 1948, 1954 | Excel BOM, pipeline `<td>`, Excel SPOOLS, PDF önizleme |
-| `devre_yeni.html` | 1272 | IFS önizleme kalite |
-| `bukum.html` | 799, 899 | QR etiket header, tablo `<td>` |
-| `kesim.html` | 1852, 2033, 2383, 2536, 2950, 2995, 3234, 3457, 3559 | Liste, özet, kld meta/row, 2× confirm, PDF head/detay, onay modal |
-| `markalama.html` | 621, 800, 806, 839, 1028, 1207, 1286 | malzInfoHtml, parts/parts2, modal, inline blocks, Excel |
-| `izometri-batch.html` | 435-440 + 452 block | HTML 3 alan + Excel 3 alan |
-| `is_baslat.html` | 1077, 1078 | Mobil chip |
-| `admin/index.html` | 364 + script | Özet + `ares-normalize.js` yükle |
-| `portal/index.html` | 367 + script | Özet + `ares-normalize.js` yükle |
-| `devreler.html` | 2079, 2110 | Pipeline BOM state=2 + state=kırmızı |
+### 5. Tasarım Tercihleri (Kullanıcı "[No preference]" dedi — Claude karar verdi)
+- **Açıklama sütunu:** Tabloda kalır, ellipsis + title="..." hover
+- **Ekleme UI'ı:** Inline expanding form (mevcut `blok-yeni-form` patterni)
 
-### 4. Güvenli Fallback Pattern
+### 6. Faz 2 — Gerçek Supabase CRUD
 
-CLAUDE.md 2.18'deki şablona uygun, her render noktasında inline uygulandı:
+**Eklenen/değişen fonksiyonlar:**
+- `sistemKaliteYukle()` — `SELECT WHERE tenant_id IS NULL AND aktif=true`
+- `firmaKaliteYukle()` — `SELECT WHERE tenant_id = ARES.tenantId() AND aktif=true`, açıklama dahil
+- `sistemKaliteRender()` + `firmaKaliteRender()` — ARES_NORM.malzemeEtiket() ile lokalize, satır aksiyonu butonları (Firma için)
+- `kaliteFormAc()` — yeni ekleme modu
+- `kaliteDuzenleAc(id)` — düzenleme modu, form pre-filled, scroll
+- `kaliteKaydet()` — insert/update toggle (`_kaliteDuzenleId` state'ine göre), `23505` UNIQUE özel toast, sistem preset çakışma onay popup'ı, çift tıklama kilidi (`_kaliteKaydetKilit`)
+- `kaliteSil(id)` — FK violation ön-kontrol (`spool_malzemeleri.malzeme_ref_id` + `pipeline_malzemeleri.malzeme_ref_id` `count:'exact', head:true`), kullanılıyorsa toast'la bildir, kullanılmıyorsa confirm + delete
+- `_kaliteKodNormalize(raw)` — DB `kalite_kod_normalize()` eşi (upcase + alphanumeric)
 
-```js
-esc(
-  (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeEtiket)
-    ? (ARES_NORM.malzemeEtiket(x.malzeme) || x.malzeme || '—')
-    : (x.malzeme || '—')
-)
-```
+**Lazy load + preload:**
+- Ana tab click handler'a `malzemehavuzu` için `!_kaliteYuklendi` guard eklendi
+- DOMContentLoaded auth bloğuna `await sistemKaliteYukle(); await firmaKaliteYukle();`
 
-Excel satırı için `esc()` çıkarılır, `forEach` başında local değişkene atanır:
+**Loading/error states:**
+- İlk yüklemede tbody "Yükleniyor…" chip'i
+- Error'da tbody `cl-re` renkli mesaj + toast
 
-```js
-rows.forEach(function(s, i){
-  var _me = (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)
-    ? (ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||'') : (s.malzeme||'');
-  var _kg = ...;
-  var _ye = ...;
-  rows.push([..., _me, _kg, _ye, ...]);
-});
-```
+**976 → 1145 satır.**
 
-### 5. CLAUDE.md G-03 Formalleştirme
+### 7. Sistem Preset Genişletme Sohbeti
+- Kullanıcı sordu: "bu listeyi sektörde çıkabilecek başka malzemeleride düşünerek büyütsek olmaz mı"
+- **Cevap:** "Gereksiz yük" değil ama "tahmin riski > yük riski". Preset'e 20 kalite eklemek performans sorunu yaratmaz ama:
+  - Claude'un sektörel tahmini firmanın günlük iş karışımına uymayabilir
+  - Feature'ın amacı zaten "firma kendi kalitesini eklesin" — preset'i şişirmek bu aşamayı sektülenir
+  - Operasyon verisi 3-6 ay sonra daha iyi rehber: "en çok eklenen kalite" → terfi
+- Sonuç: 12 preset kalsın, JS Faz 2'ye geç.
 
-**Bölüm 2.18** yazıldı:
-- Temel kural
-- DB/UI ayrım tablosu (4 alan × 3 sütun)
-- Güvenli fallback pattern (3 alan için)
-- Zorunlu uygulama kapsamı
-- İstisna listesi (8 madde — dropdown, inlineEdit, state map, arama, AI, de-dup hash, QR, mevcut helper'lar)
-- Mevcut helper envanteri (matBadge, _malzemeGoster, _yuzeyGoster, devreler.html inline)
-- Yeni sayfa kontrol listesi (G-01 ekine)
-- 21. oturum fix'lenen dosyalar referans tablosu
-- Anti-pattern örnekleri
+### 8. Yeni Sistem Preset Ekleme Metodolojisi (Öğretilen)
+- **Yol 1 (önerilen):** SQL migration dosyası `migrations/NN-oturum-sistem-preset.sql`, Supabase SQL editor'de çalıştır, repo'ya commit
+- **Yol 2 (tek seferlik):** Supabase Dashboard → Table Editor → Insert row
+- **Yol 3 (gelecek):** Super-admin UI — 29. oturum SaaS hazırlığında mantıklı
+- `kalite_kod_normalize()` regex genişletmesi preset ekleme ile bağımsız (IFS fuzzy match 26. oturumda)
 
-**Bölüm 10** güncellendi: 21. oturum checkbox kapatıldı, 22. oturum yönlendirmesi + 2 yan bug eklendi.
-**Bölüm 11** yazıldı (21. oturum); eski 20. oturum 11A'ya taşındı; eski 11A (19. oturum) → 11A1'e taşındı.
+### 9. SQL — Trigger Guard 1 Gevşetme
+- `22-oturum-trigger-guard-gevsetme.sql` hazırlandı (migration dosyası + rollback için orijinal fonksiyon yorum bloğu)
+- Supabase SQL editor'de çalıştırıldı
+- Dönen fonksiyon tanımı bizim yazdığımızla birebir aynı (Guard 1 kaldırıldı, Guard 2 aktif)
+- Kullanıcı çıktıyı paylaştı → ✅ doğrulandı
 
-## Dokunulmayan Yerler (kanıt)
+### 10. Yan Bug 1 — `spool_detay.html` M3_RENK
+- Sorun: 3D model renk haritası key'leri eski TR label'lardan (`'Karbon Çelik'`, `'Paslanmaz Çelik'`, `'Bakır Alaşım'`)
+- Gerçek data canonical kod (`'karbon'`, `'paslanmaz'`, `'bakir'`) geliyor → lookup fail → `_default` rengine düşüyor
+- Fix 4 noktada:
+  1. `M3_RENK` map key'leri canonical koda çevrildi, `'alum'` ve `'diger'` eklendi
+  2. `m3Mat(malzeme, tip)` fonksiyonu `ARES_NORM.malzemeKod()` normalize sarmasıyla korundu
+  3. selectedMesh color reset noktası aynı normalize'i kullanır
+  4. Test data fallback (`SP.malzeme || 'Karbon Çelik'`) → `'karbon'` yapıldı
 
-**Temiz olduğu teyit edilen helper'lar:**
-- `bukum.html:464` matBadge → `ARES_NORM.malzemeKod` + `tvMalzeme` ✓
-- `kesim.html:994` matBadge → aynı ✓
-- `markalama.html:595` matBadge → aynı ✓
-- `spool_detay.html:1206/1210` `_malzemeGoster`/`_yuzeyGoster` → `ARES_NORM.malzemeEtiket/yuzeyEtiket` wrap ✓
-- `devre_detay.html:877/887` aynı ✓
-- `devreler.html:1768-1797` inline matBadge + yuzeyBadge + sapma tooltip → `ARES_NORM.tvMalzeme/tvYuzey` ✓
+### 11. Yan Bug 2 — `devre_detay.html:1609-1611` duplicate `<td>`
+- İnceleme sonrası: Aslında görsel bug değil, ölü kod (unary plus ifade). Return satırı `</tr>';` ile kapanıyordu, JS ikinci bloku atıyordu.
+- Yine de temizlendi (lint hazırlığı). 2052 → 2051 satır.
 
-**Bilinçli dokunulmayan ham alanlar:**
-- State map'leri (`devre_detay:1089-1090`, `devre_duzenle:605-606`, `devre_yeni:1499`, `devreler:1435-1436`, `kesim:1037-1039/3401`, `bukum:511-512`, `markalama:491-493`, `spool_detay:1068-1069/1160/2116`) — DB yazım için
-- `devre_yeni.html:1467` — IFS preview input value (editable, DB yazım için ham)
-- `devre_detay.html:1194/1196` — inlineEdit `currentValue` arg'ı (düzenleme için ham)
-- Arama filtre/sort key'leri (`bukum:676/742/870`, `devre_detay:1546`, `kesim`, `markalama:668/721/890/774`) — kullanıcıya görünmez
-- `spool_detay.html:1590-1592` — AI chatbot prompt, LLM'e gider
-
-## 22. Oturuma Aktarılan Yan Bug'lar
-
-1. **`spool_detay.html` M3_RENK eski TR key'ler** (2657-2665). 3D model renk haritası `'Karbon Çelik'` key'li ama gerçek data `'karbon'`. Lookup fail → `_default`. Fix: key'leri kategori koduna çevir. ~5 dk.
-
-2. **`devre_detay.html:1609-1611` duplicate `<td>`.** Pipeline BOM tablosunda sertifika + silme buton hücreleri iki kez yazılmış. ~2 dk.
+### 12. Bonus — `kaliteleriDoldur()` Master Tablodan
+- Opsiyonel iş olarak plan edilmişti, kullanıcı Yol B'yi seçti (bitir)
+- Eski hali: `spool_malzemeleri.kalite` geçmişini BOZUK filtreleriyle işliyordu
+- Yeni hali: `malzeme_tanimlari` (sistem preset `tenant_id IS NULL` + tenant özeli) birleşik, `kalite_goster` canonical değer datalist'e
+- BOZUK + AISI prefix temizliği kaldırıldı (master zaten canonical)
+- 25. oturumda (Faz 3) master + geçmiş kayıt birleşik autocomplete haline getirilecek
+- 3225 → 3217 satır.
 
 ## Değişen Dosyalar
 
-| Dosya | Durum |
-|---|---|
-| `spool_detay.html` | 3 blok değişti |
-| `devre_detay.html` | 4 blok değişti |
-| `devre_yeni.html` | 1 blok değişti |
-| `bukum.html` | 2 blok değişti |
-| `kesim.html` | 9 blok değişti |
-| `markalama.html` | 7 blok değişti |
-| `izometri-batch.html` | 2 blok değişti (HTML + Excel) |
-| `is_baslat.html` | 1 blok (2 satır) değişti |
-| `admin/index.html` | 2 blok (fix + script) değişti |
-| `portal/index.html` | 2 blok (fix + script) değişti |
-| `devreler.html` | 2 blok değişti |
-| `CLAUDE.md` | Bölüm 2.18 eklendi + Bölüm 10 güncellendi + Bölüm 11/11A/11A1 restrukture |
+| Dosya | Satır değişimi | Özet |
+|---|---|---|
+| `tanimlar.html` | 772 → 1145 (+373) | Malzeme Havuzu sekmesi, sub-tab, CRUD form, FK koruması |
+| `spool_detay.html` | 3225 → 3217 (−8) | M3_RENK canonical fix + kaliteleriDoldur master |
+| `devre_detay.html` | 2052 → 2051 (−1) | Duplicate `<td>` ölü kod temizliği |
+| `22-oturum-trigger-guard-gevsetme.sql` | yeni | Guard 1 gevşetme migration |
+| `CLAUDE.md` | 2507 → 2592 (+85) | Üst bilgi + Bölüm 10 + Bölüm 2.13 Faz 2 + Bölüm 11 (22. oturum) + hiyerarşi kaydırma |
 
-## Deploy Kontrol Listesi
+## Deploy ve Test
 
-**Canlıya al:**
-- ✅ 11 HTML dosyası
-- ✅ `CLAUDE.md`
-
-**Canlı test matrisi (deploy sonrası):**
-1. spool_detay — Büküm Ekle seç → `Karbon Çelik — St 37 — 219,1 mm`
-2. spool_detay — Kesim Ekle seç → aynı
-3. spool_detay — 3D model parça tıkla → popup'ta `Karbon Çelik` + `St 37`
-4. kesim.html — liste, kesim planı PDF, confirm dialog → `Karbon Çelik`, `St 37`
-5. bukum.html — QR etiket + tablo → aynı
-6. markalama.html — alt satır + manuel modal + Excel → `St 37` (ham `ST37` değil)
-7. izometri-batch.html — tablo + Excel → 3 kolon lokalize
-8. is_baslat.html — mobil chip → `Karbon Çelik`, `St 37`
-9. admin/index + portal/index — özet tablo → `Karbon Çelik` (ham `karbon` değil)
-10. devreler.html — pipeline BOM (kırmızı + sarı durum) → `Karbon Çelik`
-11. devre_detay.html — Excel (malzeme + kalite + yüzey) + PDF önizleme → tümü canonical
+**Canlıya alma sırası:**
+1. `tanimlar.html` → push → 7 test senaryosu (ilk yükleme, boş firma, ekleme, UNIQUE çakışma, sistem preset uyarısı, düzenleme, kullanılan+kullanılmayan silme)
+2. `spool_detay.html` → push → 3D model renk testi (parçalar doğru renkte, tıklama/bırakma renk döngüsü)
+3. `devre_detay.html` → push → Pipeline BOM tablosu (görsel fark yok, sadece temiz kod)
+4. SQL migration ÇALIŞTIRILDI (test başarılı olduktan sonra yapıldı varsayımı ile)
+5. CLAUDE.md commit
 
 ## Öğrenilenler
 
-1. **Yeni helper → grep → tüm render noktaları.** 19. oturumda `kaliteGoster()` eklendi, 20. oturumda 4 nokta düzeltildi, ama 21. oturumda hâlâ 11 farklı dosyada ~35 hit vardı. Grep disiplinini oturum başına ritüel yaptık (G-03 kontrol listesi).
+1. **Mockup-first + görsel karşılaştırma** çifti çok güçlü. Visualizer widget ile seçenek A vs seçenek B yan yana göstermek, metin tarifinden yapılan kararı görsel karşılaştırmaya çevirdi — kullanıcı anında karar verdi. **Yeni kural adayı:** Layout/UI kararlarında "hangi seçenek" sorusu varsa, önce visualizer ile göster.
 
-2. **Güvenli fallback > wrapper.** `typeof ARES_NORM!=='undefined'` check'i ARES_NORM yüklenmemiş sayfalarda otomatik düşüş sağlar. `admin/index.html` ve `portal/index.html` ARES_NORM yüklemiyordu (21. oturumda keşfedildi) — fix yine de çalışıyordu, script eklenince canonical'e geçti.
+2. **Patches vs direct-file update.** 100+ satırlık değişiklikler için patches lens'lemek hem hatadan korunmak zorlaştırıyor hem kullanıcı tarafı yavaşlatıyor. **Yeni kural adayı:** Büyük değişiklikler için dosyayı iste → str_replace'lerle düzenle → `present_files` ile tek seferde ver.
 
-3. **Helper asimetrisi — dikkat.** `malzemeEtiket('')` → `'—'` ama `kaliteGoster('')` → `''`. Fallback `|| '—'` koymak şart, aksi halde boş `<td>` görünür.
+3. **`ares-normalize.js` yüklenme ihmali — 3. sayfa.** 21. oturum admin/portal'ı yakaladı, tanimlar.html 22. oturum sırasında farkedildi. Sessiz bir bug çünkü fallback `typeof ARES_NORM !== 'undefined'` devrede çalışıyor — ama canonical için şart. **Eylem:** 23. oturumda tüm HTML'lerde grep atalım: `grep -L "ares-normalize.js" *.html` (diğer eksikler varsa yakalasın).
 
-4. **İstisna listesi fix listesi kadar değerli.** Arama filtreleri, AI prompt'ları, state map'leri, dropdown value'ları lokalize ETMEMEK gerekir. G-03 bu istisnaları 8 maddeyle sayıyor.
+4. **Preset genişletmede tahmin riski.** "Önerirsem istediğini karıştırır" — benim sektörel tahminlerim firma bazında yanılabilir. Feature'ın kendisi (firma kendi kalitesini ekler) doğal çözüm. **Gelecek adım (23. oturum sonrası):** Her firma "en çok eklenen 5 kalite" metriği toplansın, 6 ay sonra terfi kararı verilsin.
 
-5. **Alt-dizin sayfaları script ihmali.** `admin/` ve `portal/` relative path yüklemeleri kolay unutulur. Yeni sayfa kontrol listesine eklendi.
+5. **Sayfa-seviyesi auth yeterli olduğunda, sekme-seviyesi gereksiz.** Yetki mimarisini kullanmadan "rol check" koymak karmaşa ekliyor. **Yeni sayfa kontrol listesine:** auth zaten sayfa-seviyesinde var mı diye kontrol et.
 
-6. **Yan bug fark etme.** 21. oturumda 2 yan bug keşfedildi (M3_RENK, duplicate `<td>`) — 22. oturuma not edildi.
+6. **Guard gevşetme — kabul edilebilir edge case.** Guard 1 kaldırılınca "admin yanlışlıkla kategori yazar" gibi durum Guard 2'ye düşüyor. Guard 2 NULL döner, `malzeme_ref_id` NULL kalır — veri yok olmuyor, sadece ilişki kopuk. Kabul edilebilir. SQL'de yorum bırakıldı.
 
-7. **Oturum protokolü çalışıyor.** Ritüel + grep + harita + pilot + dalga dalga + CLAUDE.md + zip formatı 21 oturumdur tekrarlanıyor; 21. oturum tamamlanması birkaç turda bitti.
+7. **Bonus `kaliteleriDoldur()` + 25. oturum planı uyumu.** 22. oturumda sadece master'dan okuyacak şekilde refactor edildi; 25. oturumda geçmiş kayıt önerisi de eklenerek birleşik autocomplete yapılacak. İki oturum arasındaki geçişte kullanıcı "bu kalite listede yoktu" şikayeti yapabilir → serbest metin input zaten devrede, önemsiz risk.
+
+## 23. oturum için hazırlık
+
+- **Ana tema:** Faz B — CLAUDE.md split + lint script'leri + CI + şablonlar
+- **İlk iş:** Bugün yazılan kodun lint uyumlu olduğunu doğrulamak (0 yeni ihlal beklentisi)
+- **Kritik doküman:** `docs/ROADMAP.md` güncel tutulmalı (Faz A kapanışı yazılmalı)
+- **Önceki oturumlar ana hat:** CLAUDE.md'nin Bölüm 11 zinciri (11 → 11A → 11A1 → 11A2 → 11B → ...) → 23. oturumda bu yapıyı korumak için çerçeve netleşsin (ya da tamamen `docs/sessions/` altına taşınsın — Faz B'nin kalemi)
+
+## Aktarılan Yan İşler (23+ oturumlar)
+
+1. **🟡 FK CASCADE eksikliği** — devreler → spooller → spool_malzemeleri + islem_log zinciri (admin panel "devre sil" özelliği planlandığında ele alınacak)
+2. **🟡 Spool no → marka gösterimi** — Tablolarda "S01" pipeline+spool_no birleşik görünsün
+3. **🟢 spool_detay.html performans** — 3217 satır, 6-7 paralel SQL, 3D kodu ayrı dosya refactor
+4. **🟢 Dil dosyaları senkronizasyon** — Web/mobil ayrı JSON'lar, npm script
+5. **🟢 proje_liste/proje_detay** — Supabase entegrasyonu hâlâ yok
+6. **🟢 malzeme.html** — hâlâ yazılmadı

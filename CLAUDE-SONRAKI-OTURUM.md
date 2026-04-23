@@ -1,427 +1,378 @@
-# AresPipe — 22. Oturum Gündemi
+# AresPipe — 23. Oturum Gündemi
 
-## 🗺️ Oturum Öncesi Not — Uzun Vadeli Plan Onayı
+## 🗺️ Oturum Öncesi Not — Faz B Başlangıcı
 
-**22. oturuma girmeden, 21. oturum sonunda AresPipe'ın uzun vadeli yol haritası üzerinde mutabakata varılmıştır.**
+**23. oturum Faz B'nin kalbi:** "kurallı geliştirme"den "zorla uyumlu geliştirme"ye geçiş. CLAUDE.md'de yazılı kuralları lint/CI'de kodlanmış kurallar haline çevirme oturumu.
 
-Detay: `docs/ROADMAP.md`. Özet:
-- Hedef: 1-2 yıl içinde çoklu tersane/firma SaaS
-- Faz A (22, 25, 26): Malzeme sistemi tamamlanması — **22 ŞU ANDA**
-- Faz B (23, 24): Altyapı güvencesi — dosya mimarisi + lint + şablon + mevcut kod temizliği
-- Faz C (27, 28, 29): SaaS hazırlığı — tenant izolasyon + performans + rollback
+**Bağlam:** 22 oturumdur CLAUDE.md her oturumda büyüdü ve karmaşıklaştı (2592 satır, 29 kural ailesi — G-01 i18n, G-02 tema+pill, G-03 render, B-01 sol kenar, B-02 local key, E-01 enum canonical, E-02 uyum matrisi, E-03 tenant prefix, E-04 marka, E-05 QR etiket, E-06 master tablo, F-01 font size, A-01 auth, S-01 supabase, SC-01 script sırası, R-10 mockup-first, D-01/D-02 i18n child, vb.). Bu sayıda kurala akılda tutarak uyum sağlamak insani sınırları zorluyor. 23. oturum bu yükü insan hafızasından çıkarıp **otomatik kontrollere** devredecek.
 
-**22. oturum Faz A'nın bir parçası** — Admin UI eklenerek malzeme sistemi işlevsel olarak tamamlanacak. 23. oturumda **Faz B başlayacak** (altyapı yatırımı), oradan sonra kod mimari disiplinine geçilecek.
+**Hedef:** 23. oturum sonunda her commit öncesi `bash scripts/health-check.sh` çalışıyor, 7 ayrı lint script kural ailelerini kontrol ediyor, CI'de deploy öncesi blok koyuluyor.
 
-Bu bağlam önemli çünkü 22. oturumda yazılan her kodun 23-24. oturumda lint'ten geçeceğini biliyoruz. Bu yüzden 22. oturumda yazılan tüm yeni kodlar (admin UI'nın yaklaşık 300-500 satırı) **G-01, G-02, G-03, B-01, E-01 kurallarının hepsine baştan uyumlu** olmalı. Üstelik sonradan lint geldiğinde yeni ihlal çıkmamalı.
+**Risk:** Mevcut 2500+ satırlık HTML/JS kodunda lint ilk çalıştığında muhtemelen 30-80 kural ihlali çıkacak (çoğu eski, birikmiş). 23. oturumda lint'i kurup çalıştıracağız ama ihlalleri temizlemeyeceğiz — o **24. oturum işi** (font-size refactor dahil).
 
 ---
 
 ## Oturum Başı Ritüeli
+
 1. **CLAUDE.md oku** — özellikle:
-   - Bölüm 2.13 → E-01 + E-06 Master Tablo (sistem tanıdığı)
-   - Bölüm 2.18 → **G-03 Render Standardı** (21. oturumda formalleştirildi — yeni sayfalar bu kurala tabi)
-   - Bölüm 4 → `malzeme_tanimlari` şeması ve RLS policy'leri
-2. **CLAUDE-SON-OTURUM.md oku** — 21. oturum özeti (render süpürmesi)
-3. **docs/ROADMAP.md oku (2 dk)** — hangi fazın içinde olduğumuzu hatırlat
+   - Üst bilgi → son güncelleme (22. oturum özeti)
+   - Bölüm 2 tamamı → tüm kural aileleri (lint yazılırken referans)
+   - Bölüm 7 → dosya yapısı (yeni `scripts/` ve `docs/` ekleneceği için)
+   - Bölüm 10 → bekleyen Faz B görevleri
+2. **CLAUDE-SON-OTURUM.md oku** — 22. oturum özeti (Admin UI + yan bug'lar)
+3. **docs/ROADMAP.md oku** — Faz B'nin ana hatları (2-3 dk)
 4. **Deploy durumu teyit:**
-   - 21. oturum 11 HTML + CLAUDE.md canlıda mı?
-   - DB: `SELECT COUNT(*) FROM malzeme_tanimlari WHERE tenant_id IS NULL;` → **12** (sistem preset)
-   - DB: `SELECT COUNT(*) FROM malzeme_tanimlari WHERE tenant_id IS NOT NULL;` → **0** (henüz tenant özel yok — 22. oturum bunu kullanmaya başlayacak)
-5. **Canlı render testi (1 dk):** `spool_detay.html > Büküm Ekle` → `Karbon Çelik — St 37 — 219,1 mm` görünmeli (ham `karbon` değil). Eğer hâlâ görünüyorsa 21. oturum deploy'u eksik.
+   - 22. oturum 4 dosya canlıda mı? (`tanimlar.html`, `spool_detay.html`, `devre_detay.html`, SQL)
+   - `SELECT COUNT(*) FROM malzeme_tanimlari WHERE tenant_id IS NOT NULL` sorgusu — canlıda admin eklemeler olduysa göstersin
+5. **Repo durum kontrolü:**
+   - `git status` — commitlenmemiş değişiklik var mı?
+   - Mevcut `scripts/` dizini var mı?
+   - Mevcut `.github/workflows/` var mı?
+   - `.husky/` var mı?
 
 ---
 
-## 🎯 ANA TEMA — Faz 2 Admin UI: `tanimlar.html` Malzeme Havuzu Sekmesi
+## 🎯 ANA TEMA — Faz B: Altyapı Güvencesi
 
 ### Hedef
-Firmanın kendi kalite kodlarını (master tabloya tenant-scoped) UI'dan ekleyip yönetebilmesi. 19. oturumda altyapı (tablo + trigger + 12 sistem preset) kuruldu; 20. oturumda yazma bug'ı çözüldü; 21. oturumda render tarafı standardize edildi. Sıra **CRUD UI**'da.
+CLAUDE.md'deki kural aileleri → otomatik lint scripts + CI + şablonlar. "Kurallı geliştirme"den "zorla uyumlu geliştirme"ye.
 
-### Kullanıcı Hikayeleri
+### Beklenen Süre: 3-4 saat
+- 1. saat: CLAUDE.md split + docs/ yapısı
+- 1. saat: 7 lint script
+- 1. saat: CI + hooks
+- 30-60 dk: şablonlar + health-check
 
-1. **Okuma:** Admin kullanıcı `tanimlar.html > Malzeme Havuzu` sekmesine gider; iki alt tab görür:
-   - **Sistem Kaliteleri** (read-only, 12 preset): `ST37`, `316L`, `CUNI9010`, ...
-   - **Firma Kaliteleri** (CRUD): başlangıçta boş, admin ekledikçe dolar
-2. **Ekleme:** Admin "+ Yeni Kalite Ekle" butonu → modal → kategori dropdown (karbon/paslanmaz/bakir/alum/diger) + kalite kodu input + gösterim input + standart input + açıklama (TR/EN/AR) → kaydet → yeni satır tabloya gelir
-3. **Düzenleme:** Admin satır yanındaki kalem simgesi → modal (pre-filled) → güncelle
-4. **Silme:** Admin ✕ simgesi → önce FK violation check (`spool_malzemeleri`, `pipeline_malzemeleri`'de kullanılıyor mu?) → eğer kullanılıyorsa "Bu kalite X spoolda kullanılıyor, silinemez. Önce kayıtları güncelleyin." → değilse onay → sil
-
-### Mockup-First (R-10 kuralı)
-- **Oturum başında** `tanimlar.html`'e yeni sekme (sadece HTML + CSS, fonksiyonsuz) ekle
-- Kullanıcıyla mockup üzerinden gez, layout onayı al
-- Onay sonrası JS fonksiyonları ve Supabase çağrıları eklenir
-
----
-
-## Öncelik 1 — Yetki Kontrolü
-
-`blok_tanimlar_malzeme` yeni izin anahtarı eklensin mi, yoksa mevcut `blok_tanimlar_kategori` altında mı çalışsın? 
-- **Öneri:** Mevcut `blok_tanimlar_kategori` altında, sadece admin + müdür rolleri erişebilsin
-- Karar: ilk 10 dk kullanıcıyla netleştir
-
-## Öncelik 2 — UI Yapısı
-
-### Yeni sekme (`tanimlar.html`)
-```html
-<div class="tab-content" id="t_malzeme_havuzu">
-  <!-- Alt tab bar -->
-  <div class="sub-tabs">
-    <button class="sub-tab active" data-subtab="sistem">Sistem Kaliteleri (12)</button>
-    <button class="sub-tab" data-subtab="firma">Firma Kaliteleri (<span id="firmaKaliteSayi">0</span>)</button>
-  </div>
-  
-  <!-- Sistem tab (read-only) -->
-  <div id="subtab_sistem">
-    <div class="info-box">Bu kaliteler tüm firmalar tarafından kullanılabilir. Düzenlenemez.</div>
-    <table>
-      <thead><tr><th>Kategori</th><th>Kod</th><th>Gösterim</th><th>Standart</th></tr></thead>
-      <tbody id="sistemKaliteBody"></tbody>
-    </table>
-  </div>
-  
-  <!-- Firma tab (CRUD) -->
-  <div id="subtab_firma" hidden>
-    <button class="btn btn-ac" onclick="kaliteEkleModalAc()">+ Yeni Kalite Ekle</button>
-    <table>
-      <thead><tr><th>Kategori</th><th>Kod</th><th>Gösterim</th><th>Standart</th><th>Açıklama</th><th></th></tr></thead>
-      <tbody id="firmaKaliteBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Ekleme/Düzenleme modal -->
-<div class="mov" id="kaliteModal">...</div>
-```
-
-### JS Fonksiyonları
-
-```js
-async function kalitelerYukle() {
-  var supa = ARES.supabase();
-  // Sistem preset (tenant_id IS NULL)
-  var sistem = await supa.from('malzeme_tanimlari').select('*')
-    .is('tenant_id', null).eq('aktif', true).order('kategori_kod').order('kalite_kod');
-  // Firma özel (tenant_id = current tenant)
-  var firma = await supa.from('malzeme_tanimlari').select('*')
-    .eq('tenant_id', ARES.tenantId()).eq('aktif', true).order('kategori_kod').order('kalite_kod');
-  // render...
-}
-
-async function kaliteKaydet(kaliteObj) {
-  var supa = ARES.supabase();
-  var insert = {
-    tenant_id: ARES.tenantId(),  // RLS policy bunu şart koşar
-    kategori_kod: kaliteObj.kategori,
-    kalite_kod: kaliteObj.kod.toUpperCase().replace(/\s+/g,''),
-    kalite_goster: kaliteObj.goster,
-    standart: kaliteObj.standart || null,
-    aciklama_tr: kaliteObj.aciklama_tr || null,
-    aciklama_en: kaliteObj.aciklama_en || null,
-    aciklama_ar: kaliteObj.aciklama_ar || null,
-    aktif: true,
-    sistem_preset: false
-  };
-  // UNIQUE(tenant_id, kategori_kod, kalite_kod) → çakışma kontrolü
-  var res = await supa.from('malzeme_tanimlari').insert(insert);
-  if (res.error) {
-    if (res.error.code === '23505') {
-      showToast('Bu kalite zaten eklenmiş', 'e');
-    } else {
-      showToast(res.error.message, 'e');
-    }
-    return;
-  }
-  await kalitelerYukle();
-  showToast('Kalite eklendi', 'success');
-}
-
-async function kaliteSil(id) {
-  var supa = ARES.supabase();
-  // FK violation ön-kontrol
-  var kullanim1 = await supa.from('spool_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
-  var kullanim2 = await supa.from('pipeline_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
-  var toplam = (kullanim1.count||0) + (kullanim2.count||0);
-  if (toplam > 0) {
-    showToast(`Bu kalite ${toplam} kayıtta kullanılıyor, silinemez`, 'e');
-    return;
-  }
-  if (!confirm('Silmek istediğine emin misin?')) return;
-  var res = await supa.from('malzeme_tanimlari').delete().eq('id', id);
-  if (res.error) { showToast(res.error.message, 'e'); return; }
-  await kalitelerYukle();
-  showToast('Kalite silindi', 'success');
-}
-```
-
-## Öncelik 3 — RLS Policy Teyidi
-
-19. oturumda 4 policy yazılmıştı:
-- `malzeme_tanimlari_select`: sistem preset (tenant_id NULL) + kendi tenant → herkes okur
-- `malzeme_tanimlari_insert`: sadece `tenant_id = auth.tenant_id()` INSERT edebilir (sistem preset kimse INSERT edemez)
-- `malzeme_tanimlari_update`: sadece kendi tenant'ını UPDATE edebilir
-- `malzeme_tanimlari_delete`: sadece kendi tenant'ını DELETE edebilir
-
-**Test (22. oturum başında):**
-```sql
--- Kendi tenant olarak giriş yap, bu komut başarılı olmalı:
-INSERT INTO malzeme_tanimlari (tenant_id, kategori_kod, kalite_kod, kalite_goster, standart, aktif, sistem_preset)
-VALUES (auth.tenant_id(), 'paslanmaz', '321', '321', 'ASTM A240', true, false);
-
--- Bu başarısız olmalı (sistem preset'e dokunma):
-DELETE FROM malzeme_tanimlari WHERE tenant_id IS NULL;  -- RLS reddeder
-```
-
-## Öncelik 4 — Trigger Guard 1 Gevşetme
-
-20. oturumda `20-oturum-trigger-guard-gevsetme.sql` hazırlanmıştı, ertelendi. 22. oturumda admin UI üzerinden yeni kalite eklenmeye başlayınca `kalite_kod = kategori_kod` olan meşru durumlar çıkabilir (örn. admin yanlışlıkla kategori kodu yazarsa). Guard 1 gereksiz, Guard 2 (kalite_kod_normalize NULL) zaten yeterli.
-
-**Karar:** 22. oturumda `tanimlar.html` UI çalışır hale geldikten sonra `20-oturum-trigger-guard-gevsetme.sql` çalıştır.
-
-## Öncelik 5 — Frontend Autocomplete (opsiyonel — zaman kalırsa)
-
-`spool_detay.html > kaliteleriDoldur()` fonksiyonu şu an geçmiş kayıtlardan tenant-scoped datalist dolduruyor. Master tablo geldiğine göre bu **artık `malzeme_tanimlari`'dan okumalı** — daha temiz + canonical. Fonksiyon 2-3 satır değişir.
-
-```js
-async function kaliteleriDoldur(){
-  var supa = ARES.supabase();
-  // Sistem preset + tenant özel birleşik
-  var res = await supa.from('malzeme_tanimlari')
-    .select('kalite_goster')
-    .or(`tenant_id.is.null,tenant_id.eq.${ARES.tenantId()}`)
-    .eq('aktif', true);
-  // datalist doldur...
-}
-```
-
-## Öncelik 6 — M3_RENK ve duplicate `<td>` yan bug'ları (21. oturumdan devir)
-
-Oturum sonunda (15 dk) 2 yan bug:
-
-1. **`spool_detay.html:2657-2665` M3_RENK.** Key'leri kategori koduna çevir:
-```js
-var M3_RENK = {
-  'karbon':     0x7a7d82,
-  'paslanmaz':  0xb0b8c1,
-  'bakir':      0xb87333,
-  'alum':       0xc0c0c8,
-  'diger':      0x8888aa,
-  '_flans':     0x5c6070,
-  '_reduktor':  0x6e7178,
-  '_dirsek':    0x7a7d82,
-  '_default':   0x8888aa
-};
-```
-ve `m3Mat(malzeme, tip)` fonksiyonu içinde `malzeme`'yi önce `ARES_NORM.malzemeKod(malzeme)` ile kategori koduna çevirsin.
-
-2. **`devre_detay.html:1609-1611` duplicate `<td>`.** Iki satır tekrarlanmış, ikincisi silinecek.
+### Teslim Kriteri
+- [ ] `bash scripts/health-check.sh` çalışıyor, 7 lint sonucunu konsola basıyor
+- [ ] `.husky/pre-commit` hook'u kuruldu, commit öncesi health-check çalışıyor
+- [ ] `.github/workflows/lint.yml` PR'larda CI kontrolü yapıyor
+- [ ] `docs/templates/` altında yeni sayfa/modal/SQL şablonları
+- [ ] CLAUDE.md'nin başında "ZORUNLU ilk tool call: `bash scripts/health-check.sh`" bloğu
+- [ ] 22. oturumda yazılan kod 0 yeni ihlalle geçiyor (mevcut ihlaller var ama 24. oturumda temizlenecek)
 
 ---
 
-## Oturum Planı
+## Öncelik 1 — CLAUDE.md Split (45 dk)
 
-**Tahmini süre: 90-120 dakika**
+**Hedef:** 2592 satırlık tek dosyadan → 600 satır ana CLAUDE.md + tematik docs/ dosyaları.
 
-1. **İlk 10 dk — Ritüel + mockup:**
-   - CLAUDE.md + CLAUDE-SON-OTURUM
-   - Deploy teyidi
-   - `tanimlar.html` HTML-only mockup ekle
-   - Kullanıcıyla gez, layout onayı
+### Hedef Yapı
+```
+/CLAUDE.md                    — 600 satır (proje tanımı + ritüel + aktif kural listesi + son 2 oturum)
+/docs/
+  /rules/
+    G-01-i18n.md              — D-01, D-02, G-01 (sayfa teslim listesi)
+    G-02-tema-pill.md         — 2.3, 2.4, 2.5, 2.12.1
+    G-03-render.md            — 2.18 tamamı
+    E-01-enum-master.md       — 2.13 tamamı (E-01 + E-02 + E-06)
+    B-01-sol-kenar.md         — 2.4
+    B-02-local-key.md         — 2.17
+    E-03-tenant-prefix.md     — 2.14
+    E-04-marka.md             — 2.15
+    E-05-qr-etiket.md         — 2.16
+    F-01-font-size.md         — 2.5
+    A-01-auth.md              — 2.7
+    S-01-supabase.md          — 2.8
+    SC-01-script-sirasi.md    — 2.2
+    R-10-mockup-first.md      — (yeni dosya, 22. oturumda tam kuralsallaştı)
+  /architecture/
+    db-schema.md              — Bölüm 4
+    rpc-fonksiyonlari.md      — Bölüm 6
+    yetki-sistemi.md          — 2.11
+    hesaplamalar.md           — Bölüm 5
+  /sessions/
+    22-malzeme-havuzu.md      — 22. oturum (şu an Bölüm 11)
+    21-render-standardizasyon.md — 21. oturum
+    20-ifs-kok-neden.md       — 20. oturum
+    ...                       — her oturum ayrı dosya
+  /templates/
+    yeni-sayfa-iskelet.html
+    yeni-modal-iskelet.html
+    migration-template.sql
+  /ROADMAP.md                 — zaten var
+```
 
-2. **30 dk — Sistem + Firma tabları:**
-   - `kalitelerYukle()` fonksiyonu
-   - Sistem tab render (read-only)
-   - Firma tab render (CRUD butonlu, başlangıçta boş)
-   - Yetki kontrolü (`blok_tanimlar_kategori`)
+### Adımlar
+1. `docs/` dizin yapısı oluştur
+2. Her kural dosyasını mevcut CLAUDE.md bölümünden kopyala, `rules/` altına yaz
+3. Her oturum özetini `sessions/NN-ana-tema.md` olarak ayır
+4. CLAUDE.md'de kalan: üst bilgi + roadmap özeti + aktif kural başlıkları (linkli) + son 2 oturum
+5. CLAUDE.md'nin başına "ZORUNLU ilk tool call: `bash scripts/health-check.sh`" bloğu
 
-3. **30 dk — Ekleme/Düzenleme modal:**
-   - `kaliteEkleModalAc()`, `kaliteDuzenleModalAc(id)`
-   - `kaliteKaydet()` — UNIQUE çakışma + `kalite_kod_normalize` doğrulama
-   - RLS canlı test
+### Risk
+Mevcut çakışan başlıklar (11, 11A, 11B birden fazla) yine de arşiv niteliğinde. Split sırasında session dosyalarına ayrı ayrı koyarak bu karmaşa kapanacak.
 
-4. **15 dk — Silme + FK koruması:**
-   - `kaliteSil()` + FK ön-kontrol
-   - Kullanılıyor toast mesajı
-   - Silme onay popup'ı
+---
 
-5. **15 dk — Yan işler:**
-   - Guard 1 gevşetme SQL çalıştır
-   - `spool_detay.html` `kaliteleriDoldur()` master tablodan oku
-   - M3_RENK + duplicate `<td>` fix
+## Öncelik 2 — Lint Script'leri (60-90 dk)
 
-6. **10 dk — Kapanış:**
-   - CLAUDE.md Bölüm 10 güncelle (Faz 2 checkbox kapat, Faz 3 bekleyen)
-   - CLAUDE-SON-OTURUM (22. oturum özeti)
-   - CLAUDE-SONRAKI-OTURUM (23. oturum — Faz 3 form refactor: autocomplete dropdown)
+Her biri bağımsız Node.js (veya bash) script, sıfır dış bağımlılık (yalnızca built-in regex + fs).
+
+### 1. `scripts/lint-g01-i18n.js`
+Kontrol edilen: HTML'de tüm metin (innerHTML, textContent, template literal, alert/confirm/toast mesajları) `tv(key, tr)` çağrısıyla mı yoksa hard-coded TR mi?
+
+Regex pattern: `/(\.innerHTML\s*=|\.textContent\s*=|toast\(|confirm\(|alert\()[^;]*['"][^'"]*(çe|ş|ğ|ü|ı|İ|Ç|Ş|Ğ|Ü|Ö|ö)/` (Türkçe karakter içeren string'ler direkt şüpheli)
+
+Çıktı: `[DOSYA:SATIR] hard-coded Türkçe: '<içerik>'`
+
+### 2. `scripts/lint-g02-tema-fontsize.js`
+Kontrol edilen:
+- CSS'de `font-size: Npx` hard-coded kullanımı (F-01 ihlali — değişken olmalı)
+- CSS'de yasak renkler: `#3b82f6`, `#22c55e`, `#0a0b0e`, `#10b981`, `#0d0f1a`
+- `[data-theme="dark"]` (tırnaklı) — doğrusu `[data-theme=dark]`
+
+### 3. `scripts/lint-g03-enum.js` ⭐
+Kontrol edilen: render noktalarında ham kategori/kalite/yüzey/durum kodu kullanımı.
+
+Pattern:
+- `esc(.*\.malzeme\s*\|\|)` → ham, `ARES_NORM.malzemeEtiket` olmalı
+- `esc(.*\.yuzey\s*\|\|)` → ham
+- `esc(.*\.durum\s*\|\|)` → ham
+- Template literal: `` `${...\.malzeme}` `` → ham
+
+İstisna: state map, arama filtresi, dropdown value, inlineEdit currentValue (2.18'deki 8 maddelik istisna listesi).
+
+### 4. `scripts/lint-b02-local-key.js`
+Kontrol edilen: Array manipülasyonunda `index` kullanımı. `s.pipeline` + `s.spoolNo` ile türetilen stable local key pattern olmalı.
+
+### 5. `scripts/lint-e01-canonical.js`
+Kontrol edilen: DB write noktalarında `<option value="...">` ham canonical kod olmalı (i18n çevirisi içerik'te).
+
+### 6. `scripts/lint-a01-error-handling.js`
+Kontrol edilen:
+- `supa.from(...).select()` sonrası `res.error` kontrolü var mı?
+- `async function` içinde `try/catch` var mı?
+- `toast(err.message)` pattern'i kullanılıyor mu?
+
+### 7. `scripts/lint-dead-code.js`
+Kontrol edilen:
+- Unary plus ölü kod (`return '...';\n  +'...'` gibi — 22. oturumda devre_detay.html'de yakalandı)
+- `'use strict'` sonrası tanımlanmamış global değişken kullanımı
+- Duplicate `<td>` / duplicate `id` attribute
+
+### Birleştirici: `scripts/health-check.sh`
+```bash
+#!/bin/bash
+set -e
+echo "🔍 AresPipe Health Check"
+node scripts/lint-g01-i18n.js
+node scripts/lint-g02-tema-fontsize.js
+node scripts/lint-g03-enum.js
+node scripts/lint-b02-local-key.js
+node scripts/lint-e01-canonical.js
+node scripts/lint-a01-error-handling.js
+node scripts/lint-dead-code.js
+echo "✅ Health check geçti"
+```
+
+Exit code: herhangi bir lint fail ederse exit 1.
+
+---
+
+## Öncelik 3 — CI/CD Entegrasyonu (30 dk)
+
+### `.husky/pre-commit`
+```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+bash scripts/health-check.sh
+```
+
+Kurulum: `npx husky install`, `npx husky add .husky/pre-commit "bash scripts/health-check.sh"`.
+
+### `.github/workflows/lint.yml`
+```yaml
+name: Lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: bash scripts/health-check.sh
+```
+
+### Vercel Deploy Entegrasyonu (opsiyonel)
+Vercel'de "Ignored Build Step" → `bash scripts/health-check.sh`. Exit 1 ise deploy iptal.
+
+---
+
+## Öncelik 4 — Şablonlar (30 dk)
+
+### `docs/templates/yeni-sayfa-iskelet.html`
+Yeni bir web HTML sayfa açarken kopyalanacak iskelet:
+- Flash prevention script
+- Script sırası (store → lang → normalize → layout)
+- `<body data-sayfa="...">`
+- Breadcrumb + page-title
+- Başlangıçta `ARES.sayfaYetkiKontrol(['...'])`
+- Tüm renkler var-sadece, tüm fontlar Barlow
+- data-i18n placeholder'ları
+
+### `docs/templates/yeni-modal-iskelet.html`
+Modal pattern:
+- `.mov` overlay
+- `.mod` içerik
+- ESC kapanma
+- Click-outside kapanma
+- Form validation pattern
+
+### `docs/templates/migration-template.sql`
+SQL migration dosyası şablonu:
+- Başlık yorum (oturum numarası, tarih, bağlam)
+- UP bölümü
+- Teyit sorgusu
+- DOWN (opsiyonel, rollback)
+
+---
+
+## Öncelik 5 — CLAUDE.md Başına "ZORUNLU İlk Tool Call" Bloğu (5 dk)
+
+```markdown
+# AresPipe — Claude Proje Bağlamı
+
+> **⚠️ ZORUNLU İLK ADIM:** Her oturum açıldığında ilk tool call `bash scripts/health-check.sh` olmalıdır.
+> Hiçbir değişiklik yapmadan önce sağlık kontrolünü çalıştır. İhlal varsa kullanıcıya bildir, istemeden temizlemeye kalkma.
+
+> Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
+> Son güncelleme: ...
+```
 
 ---
 
 ## Risk Yönetimi
 
-1. **RLS policy bug.** 19. oturumda yazılan policy'ler canlı test edilmedi (sadece preset seed'i çalıştı). 22. oturumun ilk INSERT'ü hata verirse policy'leri revize etmek gerekebilir.
+1. **Mevcut kod ihlal sayısı yüksek olacak.** 30-80 hit muhtemel, 100+ olabilir. **Çözüm:** 23. oturumda lint'i kur, ihlal sayısını raporla; 24. oturumda temizle. Bugün kapanışta "Lint kuruldu, baseline: X ihlal" yazılacak.
 
-2. **`kalite_kod_normalize` unrecognized döner.** Admin "custom" kalite girerse (örn. `A335-P91`), trigger bu kod için `kalite_kod_normalize` NULL dönebilir, `malzeme_ref_bul` başarısız olur. Çözüm: admin UI'dan gelen kalite için `kalite_kod_normalize` davranışı değiştirilsin — `malzeme_tanimlari`'da varsa o kodu kullansın.
+2. **CLAUDE.md split sırasında bilgi kaybı.** 2592 satır → 600 + ~15 dosya. **Çözüm:** Önce split şemasını yazılı yap, onay al, sonra uygula. Her satırın hedef dosyası netleşsin.
 
-3. **UNIQUE constraint** `(tenant_id, kategori_kod, kalite_kod)` — tenant aynı kodu farklı kategoride ekleyebilir mi? Evet (`paslanmaz/316L` vs `karbon/316L` farklı). Admin UI'da kategori dropdown bu yüzden şart.
+3. **Lint script'leri false-positive üretir.** Regex tabanlı kontroller karmaşık JS ifadelerini yanlış yakalar. **Çözüm:** Her lint'in ilk sürümü "şüpheli" flag'i üretsin, "hata" değil. Birkaç oturumda hassasiyet ayarlanır.
 
-4. **Dil dosyaları.** Yeni UI string'leri `lang/tr.json`, `en.json`, `ar.json`'a eklenmeli (`t_mh_sistem_tab`, `t_mh_firma_tab`, `t_mh_yeni_btn`, `t_mh_col_kategori`, vb.)
+4. **Husky/CI kurulumunda Node sürüm uyumsuzluğu.** `.nvmrc` dosyası ekleyerek sabitle.
 
-5. **Çakışma testleri.** Ayrı tenant'ta `ST37` eklemeye çalışınca sistem preset ile çakışmasın — partial UNIQUE zaten `tenant_id IS NULL` için ayrı.
+5. **Windows geliştirici ortamında bash script'leri çalışmayabilir.** Çare: Node.js ile birleştirici (`scripts/health-check.js`). Bugün bash versiyonu yeterli.
 
----
-
-## 23. Oturum (Sonraki) — Faz 3 Form Refactor
-
-22. oturum tamamlandıktan sonra 23. oturumda:
-- `devre_yeni.html` manuel ekleme formu — kalite `input` + datalist yerine **`<select>` (malzeme_tanimlari'dan doldur) + "Yeni ekle" opsiyonu**
-- `spool_detay.html` malzeme modal'ında aynı
-- Autocomplete Faz 3'ün içinde (admin tanım yapmasa bile geçmiş kayıtlardan öneri)
-
-## 24. Oturum — Faz 4 IFS Fuzzy Match
-
-- IFS Excel'indeki `Material` kolonundaki yazılımlar (örn. `St37`, `ST 37`, `st-37`) fuzzy match ile `malzeme_tanimlari`'daki canonical'e çekilsin
-- Bilinmeyen kod → admin'e bildirim + "manuel eşleştir" akışı
+6. **CLAUDE.md Bölüm 11 zinciri.** Mevcut 11/11A/11A1/11A2/11B/11C... katmanlı arşiv. Split'te her oturum `docs/sessions/NN.md` olarak ayrılınca ana CLAUDE.md'de sadece **son 2 oturum özeti** kalacak.
 
 ---
 
-## Hazır DB Objeleri (Referans — 19. oturumdan)
+## 24. Oturum — Mevcut Kod Temizliği + Font-Size Refactor (2-3 saat)
+
+23'ün ilk lint çalıştırmasının çıktısını temizle:
+
+1. **G-01 i18n ihlallleri:** Hard-coded TR'leri `tv(key, tr)` çağrısına çevir, lang dosyalarına yeni anahtar ekle.
+2. **F-01 font-size refactor:**
+   - `:root` içine `--fs-xs: 11px; --fs-sm: 12px; --fs-base: 14px; --fs-lg: 16px; --fs-xl: 20px;` tanımla
+   - Hard-coded `font-size: Npx` kullanımları grep'le, hepsini değişkene çevir
+   - "Karakter büyüklüğü sorununun köklü çözümü" olarak 11-14. oturumdan beri biriken borç
+3. **G-02 yasak renk temizliği:** Varsa `#3b82f6` vs.'yi `var(--ac)` yap.
+4. **A-01 error handling:** Supabase çağrılarında eksik `res.error` kontrolleri.
+5. **Dead code:** Unused variable, ölü blok, yorum satırı çöpleri.
+
+Lint hedefi: **0 ihlal** (baseline'dan temiz duruma).
+
+---
+
+## 25. Oturum — Faz A Faz 3: Form Refactor (1-2 saat)
+
+- `devre_yeni.html` manuel kalite input → `<select>` (master + "Yeni ekle" opsiyonu)
+- `spool_detay.html > kaliteleriDoldur()` master + geçmiş kayıt birleşik (22. oturumda sadece master yapıldı)
+- Seçilen kategoriye göre kalite filtrelemesi (`ed_malz` onchange → datalist filter)
+- Autocomplete Faz 3 içinde
+
+Lint destekli çalışır — 23-24 altyapı tamam olduğu için çok hızlı.
+
+---
+
+## 26. Oturum — Faz A Faz 4: IFS Fuzzy Match (1-2 saat)
+
+Malzeme sistemini sonlandır:
+- IFS `Material` kolonundaki `St37`, `ST 37`, `st-37`, `StE355` varyantları fuzzy match
+- `kalite_kod_normalize()` regex genişletmesi (`A335 Pxx`, `2205`, vb.)
+- Eşleşmeyen kodlar → admin bildirim + "manuel eşleştir" akışı
+- `ifs_material_alias` öğrenen tablo
+
+---
+
+## 27-29. Oturum — Faz C: SaaS Hazırlığı
+
+Planlandığı gibi ilerler. Detaylar `docs/ROADMAP.md`'de.
+
+---
+
+## 🎯 23. Oturum Başlangıç Mesajı Önerisi
+
+Kullanıcı "23. oturum başla" derse şöyle başlayabilirsin:
+
+```
+23. oturumdayız — Faz B altyapı kalbi. Ritüeli açıyorum, sonra split + lint + CI sırasıyla gideceğiz.
+
+Birkaç soru başta:
+1. Repo'da `scripts/` ve `.github/workflows/` dizinleri var mı, yoksa temizden mi?
+2. Node.js sürümü? (lint script'leri Node 18+ gerektirir)
+3. Husky kurulu mu? (package.json'da `husky` devDependency var mı?)
+4. CLAUDE.md split'i yaparken mevcut duplicate başlıkları (11, 11A zincirinin 2-3 farklı noktada tekrar etmesi) tamamen docs/sessions/ altına taşıyalım mı, yoksa CLAUDE.md'de son 2 oturum kalsın ve gerisi arşive mi?
+
+Bunlar gelince split şemasını yazıp onay alıp uygulamaya başlıyorum.
+```
+
+## Hazır DB Objeleri (Referans)
 
 ```sql
 -- Tablolar
-malzeme_tanimlari                -- 12 sistem preset
+malzeme_tanimlari (12 sistem + N tenant özel)
+spool_malzemeleri.malzeme_ref_id FK
+pipeline_malzemeleri.malzeme_ref_id FK
 
--- FK Kolonları  
-spool_malzemeleri.malzeme_ref_id
-pipeline_malzemeleri.malzeme_ref_id
-
--- Fonksiyonlar
+-- Fonksiyonlar (22. oturum sonrası)
 kategori_kod_normalize(text) → text
-kalite_kod_normalize(text) → text
-malzeme_ref_bul(uuid, text, text) → uuid   -- Guard 1 gevşetmesi opsiyonel
+kalite_kod_normalize(text) → text     -- Faz 4'te genişletilecek
+malzeme_ref_bul(uuid, text, text) → uuid   -- Guard 1 kaldırıldı
 
 -- Trigger'lar
-tg_spool_malzemeleri_ref_sync     ON spool_malzemeleri      BEFORE INSERT OR UPDATE
-tg_pipeline_malzemeleri_ref_sync  ON pipeline_malzemeleri   BEFORE INSERT OR UPDATE
+tg_spool_malzemeleri_ref_sync    ON spool_malzemeleri
+tg_pipeline_malzemeleri_ref_sync ON pipeline_malzemeleri
 
--- RLS Policies (4 adet)
+-- RLS Policies (4 adet, 22. oturumda canlıda doğrulandı)
 malzeme_tanimlari_select, _insert, _update, _delete
 ```
 
 ## JS API (Referans)
 
 ```js
-// RENDER (21. oturumda sistem çapında uygulandı — G-03)
-ARES_NORM.malzemeEtiket(kod)     // → "Karbon Çelik" (lokalize)
-ARES_NORM.kaliteGoster(kodOrRaw) // → "St 37" (canonical)
-ARES_NORM.yuzeyEtiket(kod)       // → "Asit" (lokalize)
-ARES_NORM.durumEtiket(kod)       // → "Bekliyor" (lokalize)
+// RENDER (G-03 zorunlu)
+ARES_NORM.malzemeEtiket(kod)     // → "Karbon Çelik"
+ARES_NORM.kaliteGoster(kodOrRaw) // → "St 37"
+ARES_NORM.yuzeyEtiket(kod)       // → "Asit"
+ARES_NORM.durumEtiket(kod)       // → "Bekliyor"
 
-// KOD (DB yazım için)
+// KOD (DB yazımı)
 ARES_NORM.malzemeKod(raw)        // → "karbon"
-ARES_NORM.kaliteKod(raw)         // → "ST37" veya NULL
+ARES_NORM.kaliteKod(raw)         // → "ST37"
 ARES_NORM.yuzeyKod(raw)          // → "asit"
 
-// UYUM (malzeme × yüzey)
+// UYUM (E-02)
 ARES_NORM.uyumlu('paslanmaz','galvaniz')  // → false
 ARES_NORM.uyumluYuzeyler('paslanmaz')     // → ['asit','diger']
 
-// MARKA + REV
+// MARKA + REV (E-04)
 ARES_NORM.marka(proje, pipeline, spool, ARES_NORM.revFmt(rev))
-// → "NB1137-M100-262-302-47-S01-Rev2"
 ```
 
-## G-03 Kontrol Listesi (Yeni Sayfa İçin)
+## Kapanış Beklentisi
 
-22. oturumda `tanimlar.html`'e yeni sekme eklerken G-03'ü unutma:
-- [ ] Kategori dropdown'da `<option value="karbon">Karbon Çelik</option>` (value ham, text lokalize)
-- [ ] Tablo render'larında `ARES_NORM.malzemeEtiket(kategori_kod)` çağrısı
-- [ ] `kalite_goster` alanı zaten canonical (DB'den öyle geliyor), render'da `esc()` yeterli
-- [ ] Standart (`DIN 17100`, `ASTM A240`) lokalize edilmez — uluslararası kod
-- [ ] Açıklama TR/EN/AR — aktif dile göre `ARES.lang`'e göre seçim
+23. oturum sonunda:
+- CLAUDE.md 2592 → 600 satır
+- docs/ yapısı kuruldu (15-20 dosya)
+- 7 lint script + health-check çalışıyor
+- Husky + CI devrede
+- Şablonlar hazır
+- Baseline lint raporu (X ihlal, 24. oturum işi)
 
----
-
-## 🗺️ Sonraki Oturumlar — Kısa Çerçeveler
-
-Her oturum için kendi detay dosyası olacak, ama mutabık kaldığımız planın hatırlatması:
-
-### 23. Oturum — Altyapı: Dosya Mimarisi + Lint + Şablon (3-4 saat)
-
-Faz B'nin kalbi. Detay `docs/ROADMAP.md`.
-
-**Ana kalemler:**
-1. CLAUDE.md'yi böl → CLAUDE.md (600 satır) + docs/rules/ (8 kural dosyası) + docs/sessions/ (arşiv) + docs/architecture/
-2. 7 lint script (G-01 i18n, G-02 tema+fontsize, G-03 enum, B-02 local key, E-01 canonical, A-01 error handling, dead-code)
-3. `scripts/health-check.sh` birleştirici
-4. `.husky/pre-commit` + `.github/workflows/lint.yml` + Vercel Deploy entegrasyonu
-5. `docs/templates/` — yeni sayfa/modal/SQL şablonları (kuralı pasif uygular)
-6. CLAUDE.md'nin başına "ZORUNLU ilk tool call: `bash scripts/health-check.sh`" bloğu
-
-**Hazırlık:** 22. oturum kapanışında `docs/` dizin yapısı için ön fikir yap, ROADMAP.md'yi yeniden oku.
-
-### 24. Oturum — Mevcut Kod Temizliği + Font-Size Refactor (2-3 saat)
-
-23'ün ilk lint çalıştırmasının çıktısını (muhtemelen 30-80 hit) temizle.
-
-**Kritik alt iş — font-size refactor:**
-- `--fs-xs: 11px`, `--fs-sm: 12px`, `--fs-base: 14px`, `--fs-lg: 16px`, `--fs-xl: 20px` değişkenleri tanımla
-- Hard-coded `font-size: Npx` kullanımlarını grep'le, hepsini değişkene dönüştür
-- Karakter büyüklüğü sorununun köklü çözümü
-
-### 25. Oturum — Faz A Faz 3: Form Refactor (1-2 saat)
-
-Malzeme sisteminin form tarafı iyileştirmesi:
-- `devre_yeni.html` manuel kalite input → master tablodan `<select>` + "Yeni ekle"
-- `spool_detay.html > kaliteleriDoldur()` master tablodan okusun (geçmiş kayıt yerine)
-- Autocomplete (geçmiş öneri + master birleşik)
-
-**Lint destekli çalışır** — 23-24 altyapı tamam olduğu için bu oturum çok hızlı geçer.
-
-### 26. Oturum — Faz A Faz 4: IFS Fuzzy Match (1-2 saat)
-
-Malzeme sistemini sonlandır:
-- IFS Excel'in `Material` kolonundaki `St37`, `ST 37`, `st-37`, `StE355` varyantları fuzzy match
-- Eşleşmeyen kodlar → admin bildirim + "manuel eşleştir" akışı
-- `ifs_material_alias` öğrenen tablo
-
-### 27. Oturum — SaaS: Tenant İzolasyon Testleri (3-4 saat)
-
-Faz C başlangıcı. SaaS için **ölümcül önem**:
-- Test tenant A + B migration
-- `tests/rls-isolation.sql` — A kullanıcısı B'nin verilerini göremiyor mu, her tablo için
-- CI'ye entegre et — izolasyon kırılması → deploy iptal
-- Her yeni tablo için izolasyon test şablonu
-
-### 28. Oturum — SaaS: Performans Bütçesi + Observability (2-3 saat)
-
-"Yavaşlık istemiyorum" hedefinin somutlaştırılması:
-- Sayfa açılış bütçeleri (spool_detay < 2s, devre_detay < 2s, kesim < 1.5s)
-- Supabase sorgu bütçesi (< 500ms p95)
-- Lighthouse CI
-- Sentry (veya alternatif) — canlı error tracking dashboard
-- Haftalık en yavaş sorgu raporu
-
-### 29. Oturum — SaaS: Rollback + Feature Flag (2-3 saat)
-
-Deploy bozulursa çok müşteri etkilenmesin:
-- Vercel rollback prosedürü yazılı
-- `ares_flags` tablosu — feature flag altyapısı
-- DB migration'lar up.sql + down.sql çifti
-- Canary deployment — 1 firma → 24 saat sonra hepsi
-
----
-
-## ❗ Önemli: 22. Oturumda Yazılacak Kodun Geleceği
-
-23-24. oturumda altyapı gelince ve `bash scripts/health-check.sh` ilk defa çalıştırılınca, 22. oturumda yazılan `tanimlar.html > malzeme havuzu sekmesi` kodu da lint'ten geçecek.
-
-**Bu yüzden 22. oturumda baştan dikkat:**
-- [ ] Yeni fonksiyonların hepsi `try/catch` + `res.error` kontrolü (A-01)
-- [ ] Hard-coded hex yok, hard-coded `font-size: Npx` yok (G-02)
-- [ ] Hard-coded TR string yok, her metin `tv('key', 'fallback')` (G-01)
-- [ ] Ham enum kodu render yok (G-03)
-- [ ] Destructive silme öncesi onay (B-01)
-- [ ] `<option value="kod">Türkçe</option>` pattern (E-01)
-- [ ] `innerHTML` kullanımda `esc()` (henüz lint yok ama alışkanlık)
-- [ ] `ares-normalize.js` script yüklendi (yeni sekme olduğu için tanimlar.html'de zaten var mı teyit)
-
-Bu titizlik **22. oturum sonrası lint çalışınca 0 yeni ihlal** demektir. Mevcut 30-80 hit sadece eski koddan gelecek, yeni kod onlara eklenmeyecek.
-
+24. oturum bunları temizlemekle başlayacak, Faz A Faz 3'ü (25. oturum) çok temiz bir zeminde yapacağız.

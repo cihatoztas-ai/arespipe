@@ -1607,8 +1607,6 @@ function plMalzRender(){
         +'<td style="text-align:right;">'+(m.agirlik_kg?String(parseFloat(m.agirlik_kg).toFixed(2)).replace('.',',')+' kg':'—')+'</td>'
         +'<td style="text-align:center;">'+(m.sertifikali?'<span style="color:var(--warn);font-weight:700;">⚠</span>':'—')+'</td>'
         +'<td onclick="event.stopPropagation()"><button class="btn btn-danger" style="height:22px;font-size:11px;padding:0 7px;" onclick="plSil(\''+esc(m.id)+'\',\''+esc(p.pipeline_no)+'\')">✕</button></td></tr>';
-        +'<td style="text-align:center;">'+(m.sertifikali?'<span style="color:var(--warn);font-weight:700;">⚠</span>':'—')+'</td>'
-        +'<td onclick="event.stopPropagation()"><button class="btn btn-danger" style="height:22px;font-size:11px;padding:0 7px;" onclick="plSil(\''+esc(m.id)+'\',\''+esc(p.pipeline_no)+'\')">✕</button></td></tr>';
     }).join('');
     return'<div class="pl-kart" id="plk_'+pi+'">'
       +'<div class="pl-head" onclick="this.parentElement.classList.toggle(\'open\')">'

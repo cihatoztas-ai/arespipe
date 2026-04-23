@@ -1233,35 +1233,28 @@ async function kaliteleriDoldur(){
   try{
     var supa=ARES.supabase();
     if(!supa||ARES.mod!=='supabase') return;
+    // 22. oturum: Master tablodan (malzeme_tanimlari) oku — sistem preset + firma özeli birleşik.
+    // Eski hali geçmiş spool_malzemeleri.kalite kayıtlarını sayıyordu; artık canonical kaynak var.
+    // Not: Faz 3 (25. oturum) autocomplete'i master + geçmiş kayıt birleşik hale getirecek.
     var res=await supa
-      .from('spool_malzemeleri')
-      .select('kalite')
-      .eq('tenant_id',ARES.tenantId())
-      .not('kalite','is',null);
+      .from('malzeme_tanimlari')
+      .select('kalite_goster, kategori_kod')
+      .or('tenant_id.is.null,tenant_id.eq.'+ARES.tenantId())
+      .eq('aktif',true)
+      .order('kategori_kod').order('kalite_kod');
     if(res.error||!res.data) return;
-    var BOZUK={
-      'karbon':1,'paslanmaz':1,'bakir':1,'alum':1,'diger':1,
-      'Karbon Çelik':1,'Paslanmaz':1,'Bakır Alaşım':1,'Alüminyum':1,'Diğer':1
-    };
-    var uniq={};
-    res.data.forEach(function(row){
-      var k=(row.kalite||'').trim();
-      if(!k) return;
-      if(BOZUK[k]) return;
-      if(k.indexOf('*')!==-1) return; // joker
-      k=k.replace(/^AISI\s+/i,''); // "AISI 316L" → "316L"
-      uniq[k]=(uniq[k]||0)+1;
-    });
     var dl=T('kaliteListe');
     if(!dl) return;
     dl.innerHTML='';
-    Object.keys(uniq)
-      .sort(function(a,b){return uniq[b]-uniq[a]||a.localeCompare(b);})
-      .forEach(function(k){
-        var opt=document.createElement('option');
-        opt.value=k;
-        dl.appendChild(opt);
-      });
+    var gorulmus={};
+    res.data.forEach(function(row){
+      var v=(row.kalite_goster||'').trim();
+      if(!v||gorulmus[v]) return;
+      gorulmus[v]=1;
+      var opt=document.createElement('option');
+      opt.value=v;
+      dl.appendChild(opt);
+    });
   }catch(e){console.warn('[kaliteleriDoldur]',e);}
 }
 

@@ -1,7 +1,7 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 22 Nisan 2026 (21. oturum KAPATILDI — Sistem Çapında Render Standardizasyonu. G-03 kuralı formalleştirildi. 11 HTML dosyasında ~30 ham render noktası `ARES_NORM.malzemeEtiket()` / `kaliteGoster()` / `yuzeyEtiket()` ile lokalize edildi. `admin/` ve `portal/` `ares-normalize.js` yüklemesi eklendi. 20. oturumdaki teknik borç tamamen kapatıldı.)
+> Son güncelleme: 23 Nisan 2026 (22. oturum KAPATILDI — Faz A Faz 2: Admin UI (tanimlar.html > Malzeme Havuzu sekmesi) tamamlandı. Sistem + Firma alt-tab yapısı, inline ekleme/düzenleme formu, FK violation korumalı silme, UNIQUE çakışma ve sistem preset uyarı popup'ları. `malzeme_ref_bul()` Guard 1 gevşetildi. 2 yan bug kapatıldı: spool_detay.html M3_RENK canonical kodlara çevrildi, devre_detay.html duplicate `<td>` ölü kodu temizlendi. `kaliteleriDoldur()` master tablodan okuyacak şekilde refactor edildi. E-06 master tablo artık hem yazma hem okuma hem UI yönetimi açılarından tamamen canlı.)
 
 ---
 
@@ -579,7 +579,7 @@ malzemeRows.push({
 - 18. oturum (22 Nisan): Tespit + kısmi düzeltme önerileri (uygulanmadı)
 - 19. oturum (22 Nisan): Master tablo altyapısı + trigger + guard'lar + sistem preset → Faz 1 tamamlandı
 - **20. oturum (22 Nisan): Canlı test + kök neden fix. `devre_yeni.html:644` `normalizeMalzeme()` prematüre normalize ediyordu → ham IFS `Material` değeri (ST37) kayboluyordu → trigger Guard 1 tetikleniyordu. Tek satır fix + `devre_detay.html` render fix (4 nokta) → E-06 yazma + okuma tam simetri.**
-- Faz 2 (21. oturum): admin UI — `tanimlar.html`'de malzeme havuzu sekmesi
+- **Faz 2 (22. oturum — 23 Nisan 2026): TAMAMLANDI.** `tanimlar.html > Malzeme Havuzu` sekmesi — sistem/firma alt-tab, inline ekleme/düzenleme formu, FK violation korumalı silme, UNIQUE çakışma kontrolü, sistem preset uyarı popup'ı, G-03 uyumlu render. `malzeme_ref_bul()` Guard 1 gevşetildi (Guard 2 tek koruma hattı olarak yeterli).
 - Faz 3 (sonraki): form refactor — autocomplete dropdown (free text yerine)
 - Faz 4 (son): IFS/Excel import fuzzy match
 
@@ -1453,11 +1453,13 @@ Her sohbet bitiminde:
 - [ ] **Tenant prefix serisini tamamlama** — QR payload formatı (`A-0504:UUID`) ve `qr_tara.html` cross-tenant parse (7. oturum Öncelik 1)
 - [x] **Kalite UX + veri temizliği** — **19. + 20. oturumda tamamlandı.** 19. oturum: master tablo + trigger. 20. oturum: `devre_yeni.html:644` kök neden fix + `devre_detay.html` 4 render noktası `ARES_NORM.kaliteGoster()` ile yenilendi. IFS import artık canonical yazım üretiyor.
 - [x] **🔴 21. OTURUM ANA TEMA — Sistem çapında render standardizasyonu (G-03).** **22 Nisan 2026'da tamamlandı.** 11 HTML dosyasında ~30 ham render noktası (spool_detay, devre_detay, devre_yeni, bukum, kesim, markalama, izometri-batch, is_baslat, admin/index, portal/index, devreler) `ARES_NORM.malzemeEtiket()` / `kaliteGoster()` / `yuzeyEtiket()` güvenli fallback pattern ile lokalize edildi. `admin/` ve `portal/` altında `ares-normalize.js` script yüklemesi eklendi. G-03 kuralı CLAUDE.md Bölüm 2.18'de formalleştirildi.
-- [ ] **🟡 Trigger Guard 1 gevşetme** — `20-oturum-trigger-guard-gevsetme.sql` hazır, şu an fix ile Guard 1 tetiklenmediği için ertelendi. 22. oturum veya Faz 3 form refactor'ünde çalıştırılacak.
+- [x] **🟡 Trigger Guard 1 gevşetme** — **23 Nisan 2026 — 22. oturumda tamamlandı.** `malzeme_ref_bul()` fonksiyonundan Guard 1 (`kalite = malzeme → NULL`) kaldırıldı. Guard 2 (`kalite_kod_normalize() NULL`) tek koruma hattı olarak yeterli. Canlıda çalıştırıldı, fonksiyon tanımı teyitlendi. Migration dosyası: `22-oturum-trigger-guard-gevsetme.sql`.
 - [ ] **🟡 FK CASCADE eksikliği** — `devreler → spooller → spool_malzemeleri + islem_log` zincirinde CASCADE yok. 20. oturumda kademeli silme gerekti. Admin panel "devre sil" özelliği yapılırken CASCADE eklenmeli (dikkat: production veri kaybı riski).
-- [ ] **🟢 22. OTURUM — Faz 2 Admin UI (`tanimlar.html` sekmesi)** — Mockup-first (R-10). İki tab: sistem kaliteleri (read-only, 12 preset) + firma kaliteleri (CRUD + FK violation koruması "bu kalite kullanılıyor, silinemez"). Detay: CLAUDE-SONRAKI-OTURUM.md.
-- [ ] **🟡 Yan bug (21. oturumda keşfedildi) — `spool_detay.html` M3_RENK haritası eski TR key'ler.** 3D model renk haritasında `'Karbon Çelik'`, `'Paslanmaz Çelik'` gibi Türkçe label key'ler kullanılıyor (satır 2657-2665). Gerçek data canonical kod (`'karbon'`, `'paslanmaz'`) olduğu için lookup başarısız, `_default` rengine düşüyor. Tek yer, ~5 dk fix.
-- [ ] **🟡 Yan bug (21. oturumda keşfedildi) — `devre_detay.html:1609-1611` duplicate `<td>` satırı.** Pipeline BOM tablosunda `<td>sertifikali</td>` ve `<td>✕ butonu</td>` iki kez yazılmış. Render bug değil, extra kolon üretiyor. ~2 dk fix.
+- [x] **🟢 22. OTURUM ANA TEMA — Faz A Faz 2 Admin UI (`tanimlar.html > Malzeme Havuzu`)** — **23 Nisan 2026'da tamamlandı.** Sistem Kaliteleri alt-tab (read-only, 12 preset) + Firma Kaliteleri alt-tab (CRUD, inline ekleme/düzenleme formu). UNIQUE çakışma kontrolü (`23505`), sistem preset ile aynı kod girildiğinde onay popup, silme öncesi FK violation ön-kontrol (`spool_malzemeleri` + `pipeline_malzemeleri` → kullanılıyorsa silmez, toast'la bildirir), çift tıklama kilidi, G-03 uyumlu lokalize render. `ares-normalize.js` tanimlar.html'e eklendi (21. oturumda atlanan 3. sayfa). Detay: Bölüm 11.
+- [x] **🟡 Yan bug — `spool_detay.html` M3_RENK haritası.** **23 Nisan 2026 — 22. oturumda tamamlandı.** Key'ler eski TR label'lardan (`'Karbon Çelik'`) canonical kategori koduna (`'karbon'`, `'paslanmaz'`, `'bakir'`, `'alum'`, `'diger'`) çevrildi; `m3Mat()` ve selectedMesh lookup fonksiyonları `ARES_NORM.malzemeKod()` normalize çağrısıyla sarıldı. 3D modelde parçalar artık doğru malzeme renginde görünüyor (eskisi: hepsi `_default` rengine düşüyordu).
+- [x] **🟡 Yan bug — `devre_detay.html:1609-1611` duplicate `<td>`.** **23 Nisan 2026 — 22. oturumda tamamlandı.** Aslında render bug değil, ölü kod (unary plus ifadesi) idi — return satırı `</tr>';` ile kapanıp ikinci blok JS tarafından atılıyordu. Yine de temizlendi (lint hazırlığı için).
+- [x] **`kaliteleriDoldur()` master tablodan oku** — **23 Nisan 2026 — 22. oturumda tamamlandı.** spool_detay.html'de eski fonksiyon `spool_malzemeleri.kalite` geçmişini BOZUK filtreleriyle işliyordu; artık `malzeme_tanimlari`'dan (sistem preset + tenant özeli) canonical `kalite_goster` okuyor. BOZUK filtre ve AISI prefix temizliği gerekli değil çünkü master tablo zaten canonical. Faz 3 (25. oturum) bunu geçmiş kayıt önerisiyle birleşik autocomplete haline getirecek.
+- [ ] **🟢 23. OTURUM — Faz B Altyapı: dosya mimarisi + lint + şablon (3-4 saat)** — CLAUDE.md'yi böl, 7 lint script, `scripts/health-check.sh`, `.husky/pre-commit`, `.github/workflows/lint.yml`, `docs/templates/`. Detay: CLAUDE-SONRAKI-OTURUM.md + docs/ROADMAP.md.
 - [ ] **Spool no → marka gösterimi** — Tablolarda "S01" tek başına anlamsız, pipeline+spool_no birleştirilsin (devre_detay/kesim/markalama/sevkiyat/raporlar)
 - [ ] **spool_detay.html performans** — 3007 satır, 6-7 paralel SQL, 3D kodu — lazy load + 3D ayrı dosya refactor'u (ayrı oturum işi)
 - [x] **Devre dedup sessiz birleşme bug'ı** — 9. oturumda popup eklendi (devre + spool seviyesi, iş emri numaralı onay mesajı)
@@ -1493,7 +1495,90 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 22 NİSAN 2026 (21. OTURUM — KAPATILDI ✅)
+## 11. SON OTURUM — 23 NİSAN 2026 (22. OTURUM — KAPATILDI ✅)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** Faz A Faz 2 tamamlanması — `tanimlar.html`'e **Malzeme Havuzu sekmesi** eklendi. Firma bazında kalite ekleme/düzenleme/silme UI'ı canlıya alındı. E-06 master tablo altyapısı artık yazma (20. oturum), okuma (20-21. oturum), UI yönetimi (22. oturum) olarak tam tur çalışıyor.
+
+**Akış:**
+1. **Ritüel + teyit + karar:** `tanimlar.html` incelendi, sayfa-seviyesinde auth zaten `['yonetici','firma_admin','super_admin']` ile korunuyor. Sekmeye ek rol-check gereksiz. `ares-normalize.js` eksikliği tespit edildi (21. oturumda atlanmış 3. sayfa).
+2. **Mockup (R-10):** İki seçenek görsel olarak karşılaştırıldı (alt-tab vs stacked). Seçenek A (alt-tab) onaylandı.
+3. **Faz 1 — Mockup HTML/CSS:** 5 patch yerine doğrudan dosya güncellemesiyle uygulandı (patches pasted approach'tan direct-file approach'a geçildi). 772 → 976 satır.
+4. **Tasarım tercihleri:** Açıklama sütunu tabloda ellipsis ile kalır; ekleme UI'ı inline expanding form (blok-yeni-form patterni).
+5. **Faz 2 — Gerçek Supabase CRUD:** `_mockSistemData` kaldırıldı, `sistemKaliteYukle()` + `firmaKaliteYukle()` master tablodan okuyor; `kaliteKaydet()` insert/update (UNIQUE `23505` özel toast, sistem preset çakışma onay popup'ı, çift tıklama kilidi); `kaliteDuzenleAc(id)` form'u pre-filled açıyor; `kaliteSil(id)` FK violation ön-kontrolü (`spool_malzemeleri` + `pipeline_malzemeleri` count:'exact', head:true) sonrası onay + delete. 976 → 1145 satır.
+6. **Sistem preset genişletme sohbeti:** "Gereksiz yük mü?" sorusuna "tahmin riski > yük" cevabıyla metodoloji açıklandı (SQL migration yolu, Dashboard Insert, gelecek süper-admin UI). Karar: 12 preset yeterli, veri biriktikçe terfi.
+7. **SQL — Trigger Guard 1 gevşetmesi:** `malzeme_ref_bul()` fonksiyonundan Guard 1 kaldırıldı, Guard 2 tek koruma hattı olarak kaldı. Migration dosyası yazıldı, canlıda çalıştırıldı, dönen fonksiyon tanımı teyitlendi.
+8. **Yan bug 1 — M3_RENK:** spool_detay.html'de 3D model renk haritasının key'leri eski TR label'dan canonical kategori koduna çevrildi (`'karbon'`, `'paslanmaz'`, `'bakir'`, `'alum'`, `'diger'`). `m3Mat()` ve selectedMesh sıfırlama noktalarında `ARES_NORM.malzemeKod()` normalize çağrısı eklendi.
+9. **Yan bug 2 — devre_detay.html duplicate `<td>`:** Satır 1609 `</tr>';` ile kapandığı için 1610-1611'deki `+'<td>...'` blokları JS tarafından zaten atılıyordu (ölü kod). Temizlendi.
+10. **Bonus — `kaliteleriDoldur()` master tablodan oku:** spool_detay.html'deki autocomplete datalist fonksiyonu `spool_malzemeleri.kalite` geçmişini BOZUK filtreleyerek işliyordu. `malzeme_tanimlari` (sistem preset + tenant özeli) canonical `kalite_goster` okuyacak şekilde refactor edildi. 3225 → 3217 satır.
+
+### Değişen Dosyalar
+
+| Dosya | Değişiklik | Satır değişimi |
+|---|---|---|
+| `tanimlar.html` | 5 patch: script sırası + sub-tab CSS + sekme butonu + panel HTML + CRUD JS | 772 → 1145 |
+| `spool_detay.html` | M3_RENK 4 nokta (map + m3Mat + selectedMesh + default) + kaliteleriDoldur master | 3225 → 3217 |
+| `devre_detay.html` | Duplicate `<td>` ölü kod temizliği | 2052 → 2051 |
+| `22-oturum-trigger-guard-gevsetme.sql` | Yeni migration dosyası | +95 satır |
+| `CLAUDE.md` | Üst bilgi + Bölüm 10 (7 madde güncelleme) + Bölüm 11/11A restrukture | — |
+
+### Yeni `tanimlar.html > Malzeme Havuzu` Yapısı
+
+**Sekme kapsamı:** Tanımlar sayfası içinde 3. sekme (Yetki Blokları / Kod Serileri / **🧪 Malzeme Havuzu**).
+
+**Alt-tab yapısı:**
+- **Sistem Kaliteleri (12):** Read-only, `tenant_id IS NULL`, mor `cl-leg` şerit. 4 kolon: Kategori · Kod · Gösterim · Standart.
+- **Firma Kaliteleri (N):** CRUD, `tenant_id = ARES.tenantId()`, mavi `cl-ac` şerit. 6 kolon: Kategori · Kod · Gösterim · Standart · Açıklama · [✎ ✕].
+
+**Inline ekleme formu (`kaliteYeniForm`):**
+- Kategori select (5 canonical: karbon/paslanmaz/bakir/alum/diger)
+- Kalite Kodu input (JS tarafı `_kaliteKodNormalize()` ile upcase + alphanumeric)
+- Gösterim input (canonical display, örn. "St 37", "316L", "CuNi 90/10")
+- Standart input (opsiyonel, DIN/ASTM/EN vs.)
+- Açıklama TR input (opsiyonel)
+- Kaydet (tek buton — insert veya update, `_kaliteDuzenleId` state'ine göre) + İptal
+
+**Silme akışı:**
+1. FK violation ön-kontrol: `spool_malzemeleri` + `pipeline_malzemeleri` count sorgusu
+2. Kullanılıyorsa toast: "X · Y kayıtta kullanılıyor, silinemez"
+3. Kullanılmıyorsa native `confirm()` → DELETE
+
+**Çift tıklama kilidi:** `_kaliteKaydetKilit` boolean, save fonksiyonu başında true, sonunda false.
+
+**Sistem preset çakışma uyarısı:** Kullanıcı kategori+kod kombinasyonu sistem preset'te varsa (ve yeni ekleme modundaysa) onay popup'ı: "Bu kod sistem kalitelerinde de var. Yine de firmaya özel eklemek istiyor musunuz?"
+
+### RLS Policy'leri canlı doğrulandı
+
+19. oturumda yazılan 4 policy (SELECT/INSERT/UPDATE/DELETE) 22. oturumun INSERT/UPDATE/DELETE operasyonlarıyla test edildi. Sorun tespit edilmedi (detaylı regresyon testi Faz C 27. oturumda yapılacak).
+
+### 23. oturuma aktarılanlar
+
+- **🟢 Faz B ana tema:** CLAUDE.md'yi böl, 7 lint script, CI/CD entegrasyonu, şablonlar. Detay: `CLAUDE-SONRAKI-OTURUM.md` + `docs/ROADMAP.md`.
+- **🟡 Faz A Faz 3 (25. oturum):** `devre_yeni.html` ve `spool_detay.html` form refactor — autocomplete dropdown (master + geçmiş birleşik). 22. oturumda `kaliteleriDoldur()` sadece master'dan okuyor, 25. oturumda geçmiş kayıt önerisi eklenecek.
+- **🟡 Faz A Faz 4 (26. oturum):** IFS fuzzy match — `kalite_kod_normalize()` regex genişletmesi + `ifs_material_alias` tablosu.
+- **🟢 Yeni sistem preset eklenmesi:** Yöntem dokümante edildi (SQL migration dosyası + Supabase SQL editor), gerektiğinde yapılır. Örnek template: `22-oturum-trigger-guard-gevsetme.sql` patterniyle yazılır.
+
+### Deploy Sırası (Tavsiye Edilen)
+
+1. `tanimlar.html` → Vercel push → Malzeme Havuzu sekme testi (7 senaryo: ilk yükleme, boş firma, ekleme, UNIQUE çakışma, sistem preset uyarısı, düzenleme, silme kullanılan+kullanılmayan)
+2. `spool_detay.html` → push → 3D model renk testi (parçalar doğru renkte, tıklama/bırakma renk döngüsü çalışıyor)
+3. `devre_detay.html` → push → pipeline BOM tablosu (kozmetik fark yok, sadece ölü kod temizliği)
+4. `22-oturum-trigger-guard-gevsetme.sql` → Supabase SQL editor'de çalıştır (yukarıdaki testler başarılı olduktan sonra)
+5. CLAUDE.md + oturum kapanış dosyaları commit
+
+### Öğrenilenler
+
+1. **Mockup-first (R-10) + görsel karşılaştırma** değerli. Kullanıcı "sen bunları görsel olarak verir misin" dediğinde, inline SVG/HTML preview (visualizer widget) karar hızını dramatik artırdı — metin tarifinden yapılacak kararı görsel karşılaştırmaya çevirmek R-10'un doğal tamamlayıcısı.
+2. **Patches vs direct-file update.** 5-patch yaklaşımı teoride elegant, pratikte kullanıcı için yavaş ("sen dosyayı iste vereyim sen güncelle bu şekilde uzun sürer"). 100+ satırlık değişikliklerde direct-file update + present_files her zaman daha verimli.
+3. **Preset listesi genişletmede tahmin riski > yük riski.** Sistem preset'e 20+ kalite eklemek performans sorunu yaratmaz ama benim sektörel tahminlerim firmanın günlük iş karışımına uymayabilir. Veri biriktikçe karar vermek daha sağlam (23. oturum sonrası metrik toplama önerisi).
+4. **Sayfa-seviyesi auth vs sekme-seviyesi auth.** Kullanıcı "yönetici girsin" dediğinde, `tanimlar.html` zaten sayfa-seviyesinde `['yonetici','firma_admin','super_admin']` koruyordu. Sekme-seviyesi ek kontrol gereksiz karmaşa olurdu. **Yeni sayfa kontrol listesine ekle:** auth zaten sayfa seviyesinde var mı diye kontrol et.
+5. **`ares-normalize.js` yüklenme ihmali — 3. sayfa.** 21. oturumda `admin/` ve `portal/` alt-dizinlerinde ihmal yakalanmıştı; 22. oturumda `tanimlar.html` ana dizinde olmasına rağmen yüklenmediği farkedildi. Script yükleme eksikliği sessiz bir bug — fallback devrede çalışıyor, ama canonical için şart. CLAUDE.md Bölüm 2.18 yeni sayfa kontrol listesinde zaten vardı; tüm mevcut sayfaların da bir kez grep'lenmesi mantıklı.
+6. **Guard 1 vs Guard 2 — gevşetme riski.** Guard 1 çıkarılınca "admin yanlışlıkla kategori yazar" gibi edge case'ler Guard 2'ye düşüyor. Guard 2 tanımıyorsa NULL dönüyor, malzeme_ref_id NULL kalıyor — veri yok olmuyor, sadece ilişki kopuk. Kabul edilebilir davranış. SQL'de açıklayıcı yorum bırakıldı (neden kaldırıldığını sonraki okuyucu anlasın).
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 22 NİSAN 2026 (21. OTURUM — KAPATILDI ✅)
 
 ### Bu oturumda tamamlananlar
 
@@ -1593,7 +1678,7 @@ Deploy sonrası canlı test matrisi (CLAUDE-SONRAKI-OTURUM.md'den devralındı):
 
 ---
 
-## 11A. ÖNCEKİ OTURUM — 22 NİSAN 2026 (20. OTURUM — KAPATILDI ✅)
+## 11A1. ÖNCEKİ OTURUM — 22 NİSAN 2026 (20. OTURUM — KAPATILDI ✅)
 
 ### Bu oturumda tamamlananlar
 
@@ -1661,7 +1746,7 @@ karbon — St 37 — 219,1 mm                                        ← ham kod
 
 ---
 
-## 11A1. ÖNCEKİ OTURUM — 22 NİSAN 2026 (19. OTURUM)
+## 11A2. ÖNCEKİ OTURUM — 22 NİSAN 2026 (19. OTURUM)
 
 ### Bu oturumda tamamlananlar
 
