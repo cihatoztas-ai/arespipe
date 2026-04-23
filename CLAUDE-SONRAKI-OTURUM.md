@@ -1,137 +1,102 @@
-# 25. Oturum Gündemi — Claude İçin Önizleme
+# 26. Oturum — Gündem Seçenekleri
 
-> Bu dosya 25. oturum açılışında Claude tarafından okunacak.
-> Amaç: gündemi Cihat'a seçenek olarak sunmak, "serbest kaldık, hangi işten başlayalım?" diye sormak.
-
----
-
-## 🎯 Durum Özeti (24. oturum sonunda)
-
-- ✅ **Süper Admin Pano canlıda** — 3 sekme, tüm CRUD'lar çalışıyor
-- ✅ **feedback_kayitlari** 5 durum akışına geçti, 26 kayıt eşlendi
-- ✅ **panel_gorevler** tablosu kuruldu, 3 seed görev + Saat 3'te dönüşmüş görevler
-- ✅ **CI yeşil** — 0 hata, 22 uyarı (baseline)
-- ✅ **Cihat tek yerden takip edebiliyor** — %80
-
-Kalan iş artık **altyapı değil, bakım + özellik.** Cihat serbesttir, sıra seçmelidir.
+25. oturumda 22 uyarı sıfıra indi. CI altyapısı kurulu, Sistem Sağlığı kartı canlı. Artık altyapı değil, ürüne dönme zamanı. Ama ciddi borç kalemleri de var — hangisini öne alacağımıza Cihat karar verecek.
 
 ---
 
-## 📋 25. Oturum — 4 Seçenek
+## Seçenek A: Operasyon Sayfalarını Bitirmek ⭐ (ürün odaklı, büyük değer)
 
-### A) Sistem Sağlığı Kartı (Pano'ya) — "%80 → %100"
+**Son-durum'dan:** "Operasyon sayfaları (kesim, büküm, markalama, KK, sevkiyat) %80-90'da duruyor, bitirilmeyi bekliyor"
 
-**Sorun:** "22 uyarı hangi 11 sayfada?" — Cihat hâlâ GitHub Actions log'una gitmek zorunda.
+**Neden bu:** AresPipe'ın tersane sorununu gerçekten çözmesi için operasyon sayfaları kritik. Pano'yu, sistem sağlığını, altyapıyı bitirdik — şimdi **imalat takibi** ana değeri için o %80-90'lık yarımı kapatmak mantıklı. Bir veya iki oturum içinde %100'e çıkabiliriz.
 
-**Çözüm:** Pano > Oturum Panosu'na yeni bir bölüm: **"🩺 Sistem Sağlığı"**
-- Son CI run'ının detay çıktısı (JSON)
-- Uyarı kategorileri: ARES_NORMALIZE_EKSIK (22), I18N_EKSIK, G03_HAM_*, vb.
-- Her kategori açılır → dosya + satır numarası + fix önerisi
-- "Fix kopyala" butonu (tek satır JS ekleme önerisi)
+**Ne yapılacak (önce keşif):**
+- Her bir sayfanın hangi %'de durduğunu görmek için tek tek açmak
+- Supabase tabloları tam mı, eksik FK/RLS var mı
+- UI/UX son dokunuşlar
+- Mobile responsive testi
 
-**Gerekli altyapı:**
-- `.github/kontrol.js` → JSON çıktı modu (`--json` flag veya default mode)
-- GitHub Actions artifact olarak yayınla (`actions/upload-artifact@v4`)
-- Pano'da artifact fetch (GitHub API) → parse → render
-
-**Süre:** 2-3 saat. Tamamlanınca "tek yerden takip" %100 olur.
-
-**Öncelik:** Cihat zaten 24. oturumda bu eksikliği dile getirdi. **Makul ilk tercih.**
+**Tahmini süre:** 1-2 oturum (sayfa başına ~1 saat)
 
 ---
 
-### B) CLAUDE.md Split — 23. Oturumdan Kalma Faz B Borcu
+## Seçenek B: Proje Listesi + Detay Sayfası Supabase'e Bağlamak
 
-**Sorun:** `CLAUDE.md` 2592 satır — büyük, yönetilmez. Oturum açılışında bütün dosyanın Claude'a yüklenmesi verimsiz.
+**Son-durum'dan:** "Proje listesi + detay sayfası hâlâ Supabase'e bağlanmadı"
 
-**Çözüm:**
-- `CLAUDE.md` ~600 satıra iner (sadece pointer + meta)
-- `docs/rules/` altına kural dosyaları (ör: `docs/rules/g03-render.md`, `docs/rules/g02-hero-pill.md`)
-- `docs/sessions/` altına oturum özetleri (ör: `docs/sessions/23.md`, `docs/sessions/24.md`)
-- Bu oturum sonrası artık `CLAUDE-SON-OTURUM.md` yerine `docs/sessions/{N}.md` formatı
+**Neden bu:** Eğer operasyon sayfalarından önce proje altyapısı zayıfsa, operasyonlar da eksik veriyle çalışır. Proje → Spool → Operasyon zinciri var; proje bacağı gerçek DB'ye oturmadan diğerleri sağlam durmaz.
 
-**Süre:** 2-3 saat (içerik bölme + link güncelleme + referans testleri).
+**Ne yapılacak:**
+- Mevcut proje listesi UI'ı (localStorage veya mock mu?) incele
+- Supabase `projeler` tablosu şema kontrol
+- CRUD operasyonları: liste + detay + oluştur + sil
+- RLS tenant bazlı policy
 
-**Etki:** Claude oturum açılışı hızlanır, ilgili kural dosyası on-demand okunur. Ama görünür bir kullanıcı getirisi yok — arka plan iyileştirmesi.
-
----
-
-### C) Profil In-App Edit — Pano'dan CIHAT-PROFIL.md Düzenleme
-
-**Sorun:** Cihat `CIHAT-PROFIL.md`'yi güncellemek istediğinde ya Claude'a yazmak ya da GitHub üzerinden düzenlemek zorunda.
-
-**Çözüm:**
-- Pano > Oturum Panosu > Cihat Profili bölümüne "✏️ Düzenle" butonu
-- Tıklayınca markdown metni textarea'ya düşer
-- "Kaydet" → GitHub Contents API → otomatik commit (`docs: profil güncelleme`)
-- Vercel deploy → 30 sn → panel yeniler, yeni profil görünür
-
-**Gerekli altyapı:**
-- GitHub Personal Access Token (repo write yetkisi) — Vercel env var olarak
-- Backend endpoint: `api/profil-guncelle.js` (Vercel Function, POST body = yeni markdown)
-- Frontend: textarea + Kaydet butonu + loading state
-
-**Süre:** 2 saat (token kurulumu + endpoint + UI).
-
-**Öncelik:** Kullanıcı rahatlığı için değerli ama günlük iş akışını çok değiştirmez.
+**Tahmini süre:** 1 oturum
 
 ---
 
-### D) Şablonlar (`docs/templates/`) — 23. Oturumdan Kalma Faz B Borcu
+## Seçenek C: CLAUDE.md Split (23. oturum borcu)
 
-**Sorun:** Yeni HTML sayfa eklenirken mevcut sayfalara bakıp kopyalıyoruz. Standartlara uyumsuzluk riski.
+**Son-durum'dan:** "CLAUDE.md split (2592 satır → 600 + `docs/rules/` + `docs/sessions/`)"
 
-**Çözüm:**
-- `docs/templates/sayfa-iskeleti.html` — G-02 Hero Pill + G-03 render + ARES_LAYOUT + ARES_NORMALIZE + i18n
-- `docs/templates/form-modal.html` — modal-box + modal-foot + form-row + form-label
-- `docs/templates/tablo-sayfasi.html` — stat-card + tbl-wrap + arama
-- `docs/templates/liste-sayfasi.html` — kart grid + filter
-- README ile kullanım örnekleri
+**Neden bu:** Her oturum başında Claude bu dosyayı okuyor. 2592 satır çok — context window'un ciddi bir kısmını tüketiyor, kendi kendini boğuyor. Split yapılırsa:
+- Ana `CLAUDE.md` özetler (600 satır) — her oturumda okunur
+- `docs/rules/` — her kural ayrı MD, sadece ihtiyaç olduğunda okunur
+- `docs/sessions/` — oturum özetleri, Claude "bu oturumda ne yapmıştık" diye bakar
 
-**Süre:** 2 saat (4 şablon + README).
+**Neden öne almamak:** Altyapı işi. Gözle görülür ürün değişmez. Ama uzun vadede her oturumu hızlandırır.
 
-**Etki:** Sonraki sayfa eklemelerinde lint hatası bir anda düşer, tutarlılık artar. Şu an acil olmadığı için ertelenebilir.
+**Tahmini süre:** 1 oturum
 
 ---
 
-## 🔀 Claude'un Önerisi
+## Seçenek D: Profil In-App Edit (24. oturum borcu)
 
-**A (Sistem Sağlığı Kartı)** öncelikli olmalı — sebepleri:
-1. Cihat bu ihtiyacı 24. oturumda dile getirdi, bekleniyor.
-2. Pano'nun "tek yerden takip" vaadini %100'e tamamlıyor.
-3. B/C/D altyapısı değil, direkt kullanıcı getirisi.
-4. 2-3 saat, 25. oturumun orta ağırlıkta tek işi.
+**Son-durum'dan:** "Profil in-app edit (Pano'dan CIHAT-PROFIL.md düzenleme + GitHub Contents API commit)"
 
-**B (CLAUDE.md Split)** 26. oturumda — altyapı borcu, gün geçtikçe ağırlaşır.
+**Neden bu:** Şu an Cihat profilini düzenlemek için GitHub'dan `docs/CIHAT-PROFIL.md`'yi açıp editlemesi gerek. Panodan textarea ile düzenleyip GitHub Contents API üzerinden commit atmak kolaylık.
 
-**C (Profil edit)** 27-28. oturum — A ile birlikte Pano'yu tam bağımsız kılar.
+**Neden öne almamak:** Güzel özellik ama şart değil. GitHub token yönetimi (Vercel env'e koyma) ek altyapı gerektiriyor.
 
-**D (Şablonlar)** sonra — yeni sayfa eklenmesi gündeme geldiğinde.
+**Tahmini süre:** 2-3 saat
 
 ---
 
-## 🚨 Oturum Başında Yapılacak (her zaman)
+## Seçenek E: Mobil React Uygulamasını İlerletmek
 
-**1. Zorunlu ritüel** (son-durum.md'de tam metin):
-- `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
-- GitHub Actions yeşil mi?
-- `docs/CIHAT-PROFIL.md` oku.
+**Son-durum'dan:** "Mobil React uygulaması %5'te kaldı (iki ekran yazıldı, geri kalan duruyor)"
 
-**2. 24. oturumun çıktılarını doğrula:**
-- Cihat Pano'yu aktif kullandı mı, sorun yaşadı mı?
-- `panel_gorevler`'de yeni el-ekli görevler var mı? (olabilir, Cihat "+Yeni Görev" deneyecek)
-- Feedback → Göreve Dönüştür'ün çalıştığını görev listesinde (↗ feedback_donusumu etiketi) doğrula.
+**Neden bu:** Tersanede mobil kullanım kritik — imalatçı elinde telefonla çalışır. Web pano yönetim içindir, mobil app operasyon için olacak.
 
-**3. Sonra:** Cihat'a 4 seçeneği göster → seçim al → Saat bölümleri tanımla → başla.
+**Neden öne almamak:** Büyük iş. 1 oturumda bitmez, 5-10 oturum olabilir. Web tarafı tam oturmadan açmak riskli.
 
 ---
 
-## 📌 Uzun Vadeli Hatırlatıcılar
+## Claude'un Önerisi
 
-- **28. oturum:** Self-test hatırlat (`node .github/kontrol.js --self-test`)
-- **Faz B tamamlanmaya yakın:** CLAUDE.md split + şablonlar bittiğinde Faz B ✅ kapanır
-- **Faz C:** Tenant izolasyon testleri (henüz konuşulmadı, ileride)
+**A → B → C sırası** mantıklı:
+1. **A** ürün değeri yaratır, Cihat'ı motive eder (yarım kalan şeyler biter)
+2. **B** ürünün temelini sağlamlaştırır (proje bacağı oturmalı)
+3. **C** altyapı borcu (bir sonraki 5-10 oturumu hızlandırır)
+
+Ama Cihat'ın tercihi önemli. Son 10 günde ileri-geri vardı, o yüzden "somut bir şeyi bitir" hissi şimdi çok değerli. A ile başlamak bunu verir.
 
 ---
 
-_Bu dosyayı her oturum sonu Claude yazar. 25. oturum açılışında Cihat gündemi buradan görür._
+## Oturum Başında Yapılacak
+
+1. Git pull + status + CI yeşil kontrolü (zorunlu ritüel)
+2. `CIHAT-PROFIL.md` okunur
+3. **Son-durum'daki "Öğrenilen Dersler (25. oturum)"u hatırla:**
+   - Workflow `.github/workflows/` klasörüne
+   - Sed idempotent değil — tekil test + toplu atlamanı ayarla
+   - CI kuralları bağlam görmez — yorum/kod ayrımı yapmaz
+4. Cihat'a bu dosyadaki seçenekleri sun → "hangisiyle başlayalım?"
+5. İş sırasına göre ilerle
+
+**Self-test hatırlatma:** 28. oturumda `node .github/kontrol.js --self-test` çalıştırılacak. 26, 27 geçilecek, 28'de Claude hatırlatır.
+
+---
+
+_Bu dosya her oturum sonu Claude tarafından yazılır. Kullanıcı sadece yükler ve bir sonraki oturumda Claude buradan başlar._
