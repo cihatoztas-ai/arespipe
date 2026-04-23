@@ -138,3 +138,4 @@ Her oturum başı Claude bu dosyayı okur. Cihat'a "kimsin" diye sormaz. Çalı�
 ---
 
 _Bu dosyayı her oturum sonu Claude günceller. Kullanıcı sadece yükler._
+
