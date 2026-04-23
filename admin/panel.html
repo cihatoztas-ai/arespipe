@@ -7,6 +7,7 @@
 <script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="../ares-store.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <style>
 :root {
   --ac:    #2D8EFF;
@@ -275,12 +276,10 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="nav-item active" onclick="goPan('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" onclick="goPan('pano',this)"><span class="nav-icon">📋</span>Pano</div>
   <div class="nav-item" onclick="goPan('firmalar',this)"><span class="nav-icon">🏢</span>Firmalar</div>
   <div class="nav-item" onclick="goPan('kullanicilar',this)"><span class="nav-icon">👥</span>Kullanıcılar</div>
   <div class="nav-item" onclick="goPan('flags',this)"><span class="nav-icon">🚩</span>Feature Flags</div>
-  <div class="nav-item" onclick="goPan('feedback',this)"><span class="nav-icon">💬</span>Geri Bildirimler</div>
-  <div class="nav-item" onclick="goPan('yapilanlar',this)"><span class="nav-icon">✅</span>Yapılanlar</div>
-  <div class="nav-item" onclick="goPan('yolharitasi',this)"><span class="nav-icon">🗺️</span>Yol Haritası</div>
   <div class="nav-item" onclick="goPan('mobil',this)"><span class="nav-icon">📱</span>Mobil Önizleme</div>
   <div class="nav-sep"></div>
   <div class="nav-item" onclick="goPan('loglar',this)"><span class="nav-icon">📋</span>Sistem Logları</div>
@@ -288,193 +287,6 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <!-- MAIN -->
 <div class="main">
-
-  <!-- YAPILAN IŞLER -->
-  <div class="panel" id="pan-yapilanlar">
-    <div class="page-header">
-      <div class="page-title">Yapılanlar</div>
-      <div class="page-sub" id="yapilanlarTarih">Son geliştirme oturumu özeti</div>
-    </div>
-
-    <style>
-      .yp-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
-      .yp-stat{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;text-align:center;}
-      .yp-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;}
-      .yp-stat-lbl{font-size:11px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
-      .yp-faz{margin-bottom:20px;}
-      .yp-faz-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 0;border-bottom:1px solid var(--bor);}
-      .yp-faz-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--tx);}
-      .yp-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
-      .yp-done{background:rgba(22,163,110,.12);color:var(--gr);}
-      .yp-wip{background:rgba(217,119,6,.12);color:var(--warn);}
-      .yp-item{display:flex;align-items:flex-start;gap:10px;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--txm);}
-      .yp-item:hover{background:var(--sur2);}
-      .yp-item-icon{flex-shrink:0;width:18px;text-align:center;margin-top:1px;}
-      .yp-lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
-      .yp-lang{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;}
-      .yp-lang-name{font-size:12px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-      .yp-lang-count{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--tx);margin:2px 0;}
-      .yp-lang-delta{font-size:12px;color:var(--gr);}
-      .yp-section-title{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
-    </style>
-
-    <!-- İstatistikler -->
-    <div class="yp-stat-grid">
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--ac);">35+</div><div class="yp-stat-lbl">Dosya</div></div>
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--gr);">6</div><div class="yp-stat-lbl">Faz tamamlandı</div></div>
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--warn);">230+</div><div class="yp-stat-lbl">Dil anahtarı</div></div>
-      <div class="yp-stat"><div class="yp-stat-val" style="color:var(--leg);">2</div><div class="yp-stat-lbl">API düzeltildi</div></div>
-    </div>
-
-    <!-- Dil dosyaları -->
-    <div class="yp-section-title">Dil dosyaları</div>
-    <div class="yp-lang-grid">
-      <div class="yp-lang">
-        <div class="yp-lang-name">tr.json</div>
-        <div class="yp-lang-count">~1045</div>
-        <div class="yp-lang-delta">+257 eklendi</div>
-      </div>
-      <div class="yp-lang">
-        <div class="yp-lang-name">en.json</div>
-        <div class="yp-lang-count">~1658</div>
-        <div class="yp-lang-delta">+230 eklendi</div>
-      </div>
-      <div class="yp-lang">
-        <div class="yp-lang-name">ar.json</div>
-        <div class="yp-lang-count">~1658</div>
-        <div class="yp-lang-delta">+230 eklendi</div>
-      </div>
-    </div>
-
-    <!-- Fazlar -->
-    <div class="yp-section-title">Tamamlanan fazlar</div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 0 — Güvenlik</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>authKontrol() → Supabase native token (sb-*-auth-token) kontrolü</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>Logout ve debug badge zaten düzeltilmişti</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 1 — Renk sistemi</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>admin/firma.html, admin/panel.html, admin/firma-detay.html</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>portal/index.html, sorgula.html, izometri-batch.html, devre_duzenle.html</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>supabase.createClient() → ARES.supabase() (admin/portal)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>api/izometri-oku.js + api/sorgula.js → edge → Node.js runtime</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 2 — Flash + ares-lang.js</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>proje_detay.html, uyarilar.html, ayarlar.html → ares-lang.js eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>tersaneler.html → yerel _I18N + ares-lang.js entegre</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 3 — CSS + Dil sistemi</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kesim.html → renk sistemi + dil analizi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>testler.html → sıfırdan dil sistemi (46 data-i18n, 26 tv())</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kalite_kontrol.html → renk + dil sistemi (38 data-i18n)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>sevkiyatlar.html → CSS tırnak + 76 dil anahtarı</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>log.html → CSS tırnak düzeltildi</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 4 — Tekil düzeltmeler</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kullanicilar.html → magic link + dil sistemi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>izometri-batch.html → dil sistemi eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>qr_tara.html → rol bazlı yönlendirme + dil sistemi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>spool_detay.html → URL param fix + tarama_sonuclari kaldırıldı</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>nav_kullanicilar + nav_izobatch → 3 dile eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>vercel.json → no-cache tüm kritik dosyalar ✅</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>nav_personel → en.json + ar.json'dan silindi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js → sidebar aktif sayfa tespiti iyileştirildi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js → t() → tv() alias geçişi</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 5 — Silme</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>personel.html, personel_yeni.html, senaryolar.html silindi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js NAV listesinden personel kaldırıldı</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 6 — İşlevsel geliştirme</span>
-        <span class="yp-badge yp-wip">Devam ediyor</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js → default tema light-anthracite</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-layout.js → topbar'a canlı saat eklendi (her sayfada)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>index.html → stat kartları Supabase'den yükleniyor</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>index.html → widget sistemi (mini/orta/büyük, drag&amp;drop)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>kullanicilar tablosuna ui_tercihleri JSONB kolonu eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>widget layout → localStorage + Supabase senkron</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">Geri Bildirim Düzeltmeleri</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>Feedback fotoğraf upload → Storage policy eklendi + base64 fallback</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>Açılışta tema light-anthracite olsun</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>Sağ üst köşede tarih/saat → topbar'a taşındı, her sayfada görünür</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → kum saati kaldırıldı, iskelet animasyonu</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 7 — Mobil Sistem (14 Nisan 2026)</span>
-        <span class="yp-badge yp-wip">Devam ediyor</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/giris.html → yeni mobil giriş sayfası (tema+dil toggle, RTL)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/qr.html → yeni QR tarayıcı (BarcodeDetector + jsQR CDN fallback)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-mobile.js → RTL desteği, tv() entegrasyonu, mFeatureAktif(), AR dil butonu</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-mobile.css → RTL kuralları (drawer, kart çizgileri, toast, filtre paneli)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>lang/tr+en+ar.json → 52 yeni mob_dv_* ve mob_sp_* anahtarı eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/devreler.html → ağırlık/ilerleme düzeltildi (spooller.agirlik), syntax fix</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/devre_detay.html → history.back() kaldırıldı, i18n, kolon düzeltmeleri</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>mobile/spool_detay.html → geriDon(), i18n, fotoğraf fix (dosya_url), feature flag 3D kontrolü</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-store.js → featureVar() + featureCacheSifirla() eklendi (tenant_features tablosu)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>vercel.json → ares-mobile.js ve ares-mobile.css no-cache eklendi</span></div>
-    </div>
-
-    <div class="yp-faz">
-      <div class="yp-faz-header">
-        <span class="yp-faz-title">FAZ 8 — İlerleme Sistemi + Veri Doğruluğu (15 Nisan 2026)</span>
-        <span class="yp-badge yp-done">Tamamlandı</span>
-      </div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → devre_istatistik RPC ile doğru aggregate (limit sorunu çözüldü)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → malzeme/çap dağılımı spool bazlı, eksik veri uyarısı eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → filtreler düzeltildi (firma, malzeme, yüzey kademeli filtre)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.html → termin/iptal Supabase'e bağlandı, malzeme listesi pipeline_malzemeleri'nden</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>ares-store.js → spoollariGetir limit 5000, devreleriGetir limit 2000</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devre_detay.html → is_durumu pulse animasyonu (imalat/kaynak devam_ediyor)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>spooller.is_durumu kolonu eklendi (bekliyor/devam_ediyor)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devre_istatistik RPC Supabase'e eklendi</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>is_baslat.html mockup onaylandı (5 ekran akışı)</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>admin/firma-detay.html → ilerleme_puani alanı, siraDegistir index-based fix</span></div>
-      <div class="yp-item"><span class="yp-item-icon">✓</span><span>devreler.termin_tarihi kaldırıldı → termin kolonu kullanılıyor</span></div>
-    </div>
-
-  </div>
 
   <!-- DASHBOARD -->
   <div class="panel active" id="pan-dashboard">
@@ -586,94 +398,225 @@ tr:hover td{background:rgba(255,255,255,.02);}
   </div>
 
   <!-- LOGLAR -->
-  <!-- FEEDBACK PANELİ -->
-  <div class="panel" id="pan-feedback">
-    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
-      <div>
-        <div class="page-title">Geri Bildirimler</div>
-        <div class="page-sub">Kullanıcı bildirimleri — onayla veya reddet</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <select class="form-input form-select" id="fbDurumFilter" style="width:160px;" onchange="feedbackYukle()">
-          <option value="bekliyor">Bekleyenler</option>
-          <option value="onaylandi">Onaylananlar</option>
-          <option value="reddedildi">Reddedilenler</option>
-          <option value="">Tümü</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- İstatistikler -->
-    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
-      <div class="stat-card">
-        <div class="stat-label">Bekleyen</div>
-        <div class="stat-val" id="fb-stat-bekleyen" style="color:var(--warn);">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Onaylanan</div>
-        <div class="stat-val" id="fb-stat-onay" style="color:var(--gr);">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Toplam</div>
-        <div class="stat-val" id="fb-stat-toplam" style="color:var(--ac);">—</div>
-      </div>
-    </div>
-
-    <div class="tbl-wrap">
-      <div class="tbl-head">
-        <div class="tbl-title">Bildirimler</div>
-      </div>
-      <div id="feedbackContainer">
-        <div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Yükleniyor...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- YOL HARİTASI PANELİ -->
-  <div class="panel" id="pan-yolharitasi">
+  <!-- PANO PANELİ (24. Oturum) -->
+  <div class="panel" id="pan-pano">
     <div class="page-header">
-      <div class="page-title">Yol Haritası</div>
-      <div class="page-sub">Yapılanlar ve yapılacaklar — öncelik sırasına göre</div>
+      <div class="page-title">Pano</div>
+      <div class="page-sub">Görev takibi · Geri bildirimler · Oturum notları</div>
     </div>
 
     <style>
-      .yh-grup { margin-bottom: 28px; }
-      .yh-grup-baslik { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--tx); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
-      .yh-item { display:flex; align-items:flex-start; gap:12px; padding:10px 16px; border-radius:10px; margin-bottom:4px; transition:background .15s; }
-      .yh-item:hover { background:var(--sur2); }
-      .yh-check { width:20px; height:20px; border-radius:6px; border:2px solid var(--bor); flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:2px; transition:all .15s; }
-      .yh-check.done { background:var(--gr); border-color:var(--gr); }
-      .yh-check.done::after { content:'✓'; color:#fff; font-size:12px; font-weight:800; }
-      .yh-metin { font-size:14px; line-height:1.5; }
-      .yh-metin.done { color:var(--txd); text-decoration:line-through; }
-      .yh-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; margin-left:8px; }
-      .yh-acil { background:rgba(229,62,62,.12); color:var(--re); }
-      .yh-orta { background:rgba(217,119,6,.12); color:var(--warn); }
-      .yh-dusuk { background:rgba(107,122,144,.12); color:var(--txd); }
-      .yh-stats { display:flex; gap:16px; margin-bottom:24px; }
-      .yh-stat { background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:14px 20px; flex:1; }
-      .yh-stat-val { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:800; line-height:1; }
-      .yh-stat-lbl { font-size:11px; color:var(--txd); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+      .pano-tabs { display:flex; gap:4px; border-bottom:1px solid var(--bor); margin-bottom:20px; }
+      .pano-tab { padding:10px 18px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; color:var(--txm); cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; }
+      .pano-tab:hover { color:var(--tx); background:var(--sur2); }
+      .pano-tab.active { color:var(--ac); border-bottom-color:var(--ac); }
+      .pano-pane { display:none; }
+      .pano-pane.active { display:block; }
+
+      .pano-bolum { margin-bottom:20px; }
+      .pano-bolum-baslik { display:flex; align-items:center; gap:8px; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:800; color:var(--tx); margin-bottom:10px; user-select:none; }
+      .pano-bolum-baslik .ok { color:var(--txm); cursor:pointer; transition:transform .2s; }
+      .pano-bolum.kapali .ok { transform:rotate(-90deg); }
+      .pano-bolum.kapali .pano-bolum-ic { display:none; }
+
+      .gorev-item { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border-left:4px solid var(--bor); background:var(--sur); border-radius:8px; margin-bottom:8px; transition:all .15s; cursor:pointer; }
+      .gorev-item:hover { background:var(--sur2); transform:translateX(2px); }
+      .gorev-item[data-durum="yeni"] { border-left-color:var(--txm); }
+      .gorev-item[data-durum="inceleniyor"] { border-left-color:var(--ac); }
+      .gorev-item[data-durum="yapilacak"] { border-left-color:var(--warn); }
+      .gorev-item[data-durum="yapildi"] { border-left-color:var(--gr); opacity:.7; }
+      .gorev-item[data-durum="reddedildi"] { border-left-color:var(--re); opacity:.5; }
+      .gorev-baslik { font-weight:700; font-size:14px; color:var(--tx); }
+      .gorev-baslik.done { text-decoration:line-through; color:var(--txd); }
+      .gorev-meta { font-size:11px; color:var(--txd); margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+      .oncelik-badge { display:inline-flex; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+      .oncelik-acil   { background:rgba(229,62,62,.14); color:var(--re); }
+      .oncelik-yuksek { background:rgba(217,119,6,.15); color:var(--warn); }
+      .oncelik-orta   { background:rgba(45,142,255,.12); color:var(--ac); }
+      .oncelik-dusuk  { background:rgba(107,122,144,.14); color:var(--txd); }
+
+      .katman-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+      .katman-card { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--leg); border-radius:10px; padding:12px 14px; }
+      .katman-kod { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; color:var(--leg); letter-spacing:.5px; }
+      .katman-ad { font-size:14px; font-weight:700; color:var(--tx); margin-top:2px; line-height:1.3; }
+
+      .md-content { padding:8px 0; color:var(--tx); font-size:14px; line-height:1.6; max-height:500px; overflow-y:auto; }
+      .md-content h1,.md-content h2,.md-content h3 { font-family:'Barlow Condensed',sans-serif; color:var(--tx); margin:14px 0 6px; }
+      .md-content h1 { font-size:20px; }
+      .md-content h2 { font-size:17px; color:var(--ac); }
+      .md-content h3 { font-size:15px; }
+      .md-content p { margin:6px 0; }
+      .md-content ul,.md-content ol { margin:6px 0 6px 20px; }
+      .md-content li { margin:3px 0; }
+      .md-content code { background:var(--sur2); padding:1px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+      .md-content pre { background:var(--sur2); padding:10px; border-radius:8px; overflow-x:auto; margin:10px 0; }
+      .md-content pre code { background:transparent; padding:0; }
+      .md-content blockquote { border-left:3px solid var(--ac); padding:4px 12px; color:var(--txm); margin:8px 0; }
+      .md-content table { border-collapse:collapse; margin:10px 0; width:100%; }
+      .md-content th,.md-content td { padding:6px 10px; border:1px solid var(--bor); font-size:12px; text-align:left; }
+      .md-content th { background:var(--sur2); font-weight:700; }
+
+      .pano-uyari { padding:12px 16px; background:var(--sur); border-radius:8px; margin-top:16px; border-left:3px solid var(--ac); font-size:13px; color:var(--txm); }
     </style>
 
-    <!-- İstatistikler -->
-    <div class="yh-stats">
-      <div class="yh-stat">
-        <div class="yh-stat-val" id="yh-tamamlanan" style="color:var(--gr);">0</div>
-        <div class="yh-stat-lbl">Tamamlanan</div>
+    <!-- Sekme barı -->
+    <div class="pano-tabs">
+      <div class="pano-tab active" data-tab="gorev"    onclick="panoTabSwitch('gorev',this)">📋 Görev Takibi</div>
+      <div class="pano-tab"        data-tab="feedback" onclick="panoTabSwitch('feedback',this)">💬 Geri Bildirim</div>
+      <div class="pano-tab"        data-tab="oturum"   onclick="panoTabSwitch('oturum',this)">👤 Oturum Panosu</div>
+    </div>
+
+    <!-- SEKME 1 — GÖREV TAKİBİ -->
+    <div class="pano-pane active" id="pano-pane-gorev">
+
+      <div class="stat-grid" style="grid-template-columns:repeat(5,1fr); margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label">Yeni</div>
+          <div class="stat-val" id="pgStat-yeni" style="color:var(--txm);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">İnceleniyor</div>
+          <div class="stat-val" id="pgStat-inceleniyor" style="color:var(--ac);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Yapılacak</div>
+          <div class="stat-val" id="pgStat-yapilacak" style="color:var(--warn);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Yapıldı</div>
+          <div class="stat-val" id="pgStat-yapildi" style="color:var(--gr);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Toplam</div>
+          <div class="stat-val" id="pgStat-toplam" style="color:var(--ac);">0</div>
+        </div>
       </div>
-      <div class="yh-stat">
-        <div class="yh-stat-val" id="yh-devam" style="color:var(--warn);">0</div>
-        <div class="yh-stat-lbl">Devam Eden</div>
+
+      <!-- Spool AI Katman Haritası -->
+      <div class="pano-bolum" id="pano-bolum-katman">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('katman')">▼</span>
+          <span onclick="panoBolumToggle('katman')" style="cursor:pointer;">🗺️ Spool AI Katman Haritası</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;">SPOOL-AI-VIZYON.md</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div class="katman-grid" id="katmanGrid">
+            <div style="grid-column:1/-1; padding:16px; text-align:center; color:var(--txm);">Yükleniyor...</div>
+          </div>
+        </div>
       </div>
-      <div class="yh-stat">
-        <div class="yh-stat-val" id="yh-bekleyen" style="color:var(--txm);">0</div>
-        <div class="yh-stat-lbl">Bekleyen</div>
+
+      <!-- ROADMAP (başlangıçta kapalı) -->
+      <div class="pano-bolum kapali" id="pano-bolum-roadmap">
+        <div class="pano-bolum-baslik">
+          <span class="ok" onclick="panoBolumToggle('roadmap')">▼</span>
+          <span onclick="panoBolumToggle('roadmap')" style="cursor:pointer;">📅 Roadmap</span>
+          <span style="font-weight:400; font-size:12px; color:var(--txd); margin-left:auto;">ROADMAP.md</span>
+        </div>
+        <div class="pano-bolum-ic">
+          <div class="md-content" id="roadmapIcerik">
+            <div style="color:var(--txm);">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manuel Görevler -->
+      <div class="pano-bolum" id="pano-bolum-gorev">
+        <div class="pano-bolum-baslik">
+          <span style="visibility:hidden;">▼</span>
+          <span>📌 Görevler</span>
+          <select class="form-input form-select" id="gorevDurumFilter" style="width:160px; margin-left:12px;" onchange="gorevYukle()">
+            <option value="">Tümü</option>
+            <option value="yeni">Yeni</option>
+            <option value="inceleniyor">İnceleniyor</option>
+            <option value="yapilacak">Yapılacak</option>
+            <option value="yapildi">Yapıldı</option>
+            <option value="reddedildi">Reddedildi</option>
+          </select>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="gorevYeniAc()">+ Yeni Görev</button>
+        </div>
+        <div class="pano-bolum-ic">
+          <div id="gorevContainer">
+            <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Yükleniyor...</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SEKME 2 — GERİ BİLDİRİM -->
+    <div class="pano-pane" id="pano-pane-feedback">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px;">
+        <div style="font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800;">Kullanıcı Geri Bildirimleri</div>
+        <select class="form-input form-select" id="fbDurumFilter" style="width:160px;" onchange="feedbackYukle()">
+          <option value="yeni">Yeni</option>
+          <option value="inceleniyor">İnceleniyor</option>
+          <option value="yapilacak">Yapılacak</option>
+          <option value="yapildi">Yapıldı</option>
+          <option value="reddedildi">Reddedildi</option>
+          <option value="">Tümü</option>
+        </select>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label">Yeni / Bekleyen</div>
+          <div class="stat-val" id="fb-stat-bekleyen" style="color:var(--warn);">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Yapıldı</div>
+          <div class="stat-val" id="fb-stat-onay" style="color:var(--gr);">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Toplam</div>
+          <div class="stat-val" id="fb-stat-toplam" style="color:var(--ac);">—</div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <div class="tbl-head">
+          <div class="tbl-title">Bildirimler</div>
+        </div>
+        <div id="feedbackContainer">
+          <div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Sekme seçildiğinde yüklenir</div></div>
+        </div>
+      </div>
+
+      <div class="pano-uyari">
+        ℹ️ <strong>Saat 3'te eklenecek:</strong> Yanıt yazma, göreve dönüştürme, yeni durum akışı (yeni → inceleniyor → yapılacak → yapıldı).
       </div>
     </div>
 
-    <div id="yolHaritasiContainer"></div>
+    <!-- SEKME 3 — OTURUM PANOSU -->
+    <div class="pano-pane" id="pano-pane-oturum">
+      <div class="pano-bolum">
+        <div class="pano-bolum-baslik">👤 Cihat Profili</div>
+        <div class="md-content" id="oturumProfilIc">
+          <div style="color:var(--txm);">Saat 4'te yüklenecek (docs/CIHAT-PROFIL.md)</div>
+        </div>
+      </div>
+
+      <div class="pano-bolum">
+        <div class="pano-bolum-baslik">📜 Oturum Geçmişi</div>
+        <div id="oturumGecmisIc">
+          <div style="color:var(--txm);">Saat 4'te yüklenecek (.github/son-durum.md)</div>
+        </div>
+      </div>
+
+      <div class="pano-bolum">
+        <div class="pano-bolum-baslik">📈 CI Durumu</div>
+        <div id="oturumCiIc">
+          <div style="color:var(--txm);">Saat 4'te yüklenecek (GitHub Actions API)</div>
+        </div>
+      </div>
+
+      <div class="pano-uyari">
+        ℹ️ <strong>Saat 4'te tamamlanacak:</strong> Profil markdown render, oturum geçmişi listesi, CI durum kartı.
+      </div>
+    </div>
+
   </div>
+  <!-- /#pan-pano -->
 
   <!-- MOBİL ÖNİZLEME -->
   <div class="panel" id="pan-mobil">
@@ -788,6 +731,74 @@ tr:hover td{background:rgba(255,255,255,.02);}
 </div><!-- /.main -->
 </div><!-- /.layout -->
 </div><!-- /#appShell -->
+
+<!-- GÖREV MODAL (24. Oturum — Pano) -->
+<div id="gorevModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-title" id="gorevModalBaslik">📋 Yeni Görev</div>
+    <input type="hidden" id="gorevDuzenId">
+
+    <div class="form-row">
+      <label class="form-lbl">Başlık *</label>
+      <input class="form-input" id="gBaslik" placeholder="Kısa, net başlık" maxlength="200">
+    </div>
+
+    <div class="form-row">
+      <label class="form-lbl">Açıklama</label>
+      <textarea class="form-input" id="gAciklama" rows="3" placeholder="Detay (opsiyonel)"></textarea>
+    </div>
+
+    <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <label class="form-lbl">Kategori</label>
+        <select class="form-input form-select" id="gKategori">
+          <option value="">— Seçiniz —</option>
+          <option value="altyapi">Altyapı</option>
+          <option value="ozellik">Özellik</option>
+          <option value="hata">Hata</option>
+          <option value="bakim">Bakım</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-lbl">Öncelik</label>
+        <select class="form-input form-select" id="gOncelik">
+          <option value="acil">Acil</option>
+          <option value="yuksek">Yüksek</option>
+          <option value="orta" selected>Orta</option>
+          <option value="dusuk">Düşük</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <label class="form-lbl">Durum</label>
+        <select class="form-input form-select" id="gDurum">
+          <option value="yeni" selected>Yeni</option>
+          <option value="inceleniyor">İnceleniyor</option>
+          <option value="yapilacak">Yapılacak</option>
+          <option value="yapildi">Yapıldı</option>
+          <option value="reddedildi">Reddedildi</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-lbl">Katman / Faz</label>
+        <input class="form-input" id="gKatman" placeholder="L3, Faz B ...">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-lbl">Notlar</label>
+      <textarea class="form-input" id="gNotlar" rows="2" placeholder="İç notlar, bağlantılar..."></textarea>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-danger" id="gSilBtn" style="display:none;" onclick="gorevSil()">Sil</button>
+      <button class="btn btn-ghost" onclick="T('gorevModal').style.display='none'">İptal</button>
+      <button class="btn btn-primary" onclick="gorevKaydet()">Kaydet</button>
+    </div>
+  </div>
+</div>
 
 <!-- FIRMA MODAL -->
 <div id="firmaModal" class="modal-ov" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
@@ -1562,178 +1573,254 @@ async function feedbackDurumGuncelle(id, yeniDurum) {
 }
 
 
-// ── YOL HARİTASI ────────────────────────────────────────────────
-// ── YOL HARİTASI — CLAUDE.md'den otomatik senkronize ──────────
-// Kaynak: https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/CLAUDE.md
-// [x] işaretli maddeler panel'de otomatik tamamlandı gösterilir.
-// [ ] maddelerin durumu feature_flags tablosundan okunur (toggle ile değiştirilebilir).
+// ── PANO — Görev Takibi (24. Oturum) ──────────────────────────
 
-var _YOL_HARITASI = []; // GitHub'dan doldurulur
-var _YH_DURUM = {};
-var _YH_CLAUDE_DONE = {}; // CLAUDE.md'de [x] olanlar
-var _YH_SON_GUNCELLEME = null;
+var _panoVeri = { gorevler: [], katmanlar: [], vizyonMd: '', roadmapMd: '' };
 
-var CLAUDE_MD_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/CLAUDE.md';
+var VIZYON_URL  = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/docs/SPOOL-AI-VIZYON.md';
+var ROADMAP_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/ROADMAP.md';
 
-function _normYhId(metin) {
-  return 'yh_' + metin.toLowerCase()
-    .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/İ/g,'i')
-    .replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
-    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_')
-    .substring(0, 45).replace(/_$/,'');
+// Sekme geçişi
+function panoTabSwitch(tabAdi, elm) {
+  document.querySelectorAll('.pano-pane').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.pano-tab').forEach(function(t){ t.classList.remove('active'); });
+  var pane = T('pano-pane-' + tabAdi);
+  if (pane) pane.classList.add('active');
+  if (elm) elm.classList.add('active');
+
+  if (tabAdi === 'gorev') {
+    if (!_panoVeri.katmanlar.length) panoVizyonYukle();
+    if (!_panoVeri.roadmapMd) panoRoadmapYukle();
+    gorevYukle();
+  } else if (tabAdi === 'feedback') {
+    feedbackYukle();
+  }
+  // oturum sekmesi Saat 4'te doldurulacak
 }
 
-function _oncelikBelirle(grupBaslik) {
-  if (grupBaslik.includes('🔴') || grupBaslik.toLowerCase().includes('acil')) return 'acil';
-  if (grupBaslik.includes('🏭') || grupBaslik.includes('⚙️') ||
-      grupBaslik.includes('📊') || grupBaslik.includes('🌍') ||
-      grupBaslik.includes('🔐')) return 'orta';
-  return 'dusuk';
+// Bölüm aç/kapa
+function panoBolumToggle(bolumId) {
+  var el = T('pano-bolum-' + bolumId);
+  if (el) el.classList.toggle('kapali');
 }
 
-function _parseCLAUDEmd(md) {
-  var groups = [];
-  // Yapılacaklar bölümünü bul (## N. YAPILACAKLAR veya ## YAPILACAKLAR)
-  var secMatch = md.match(/##\s+\d*\.?\s*YAPILACAKLAR([\s\S]*?)(?=\n##\s|\n---\s*\n|$)/i);
-  if (!secMatch) return [];
-
-  var icerik = secMatch[1];
-  // ### ile başlayan alt gruplara böl
-  var parcalar = icerik.split(/\n(?=###\s)/);
-
-  parcalar.forEach(function(parca) {
-    var satirlar = parca.trim().split('\n');
-    if (!satirlar.length) return;
-    var baslik = satirlar[0].replace(/^###\s*/, '').trim();
-    if (!baslik) return;
-
-    var items = [];
-    satirlar.slice(1).forEach(function(satir) {
-      var m = satir.match(/^-\s+\[([ xX])\]\s+(.+)/);
-      if (!m) return;
-      var claudeDone = m[1].toLowerCase() === 'x';
-      var metin = m[2].trim();
-      // Emdash ve italik markdown kaldır
-      metin = metin.replace(/\s*—\s*.*$/, '').replace(/`([^`]+)`/g, '$1').trim();
-      if (!metin) return;
-      var id = _normYhId(metin);
-      items.push({
-        id: id,
-        metin: metin,
-        oncelik: _oncelikBelirle(baslik),
-        claudeDone: claudeDone
-      });
-      if (claudeDone) _YH_CLAUDE_DONE[id] = true;
-    });
-
-    if (items.length) groups.push({ grup: baslik, items: items });
-  });
-
-  return groups;
-}
-
-async function _claudeMdCek() {
+// ── Vizyon + katman render ──────────────────────────────
+async function panoVizyonYukle() {
   try {
-    var r = await fetch(CLAUDE_MD_URL + '?t=' + Date.now()); // cache buster
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    var md = await r.text();
-    _YH_CLAUDE_DONE = {};
-    _YOL_HARITASI = _parseCLAUDEmd(md);
-    _YH_SON_GUNCELLEME = new Date();
-    return true;
+    var res = await fetch(VIZYON_URL, {cache:'no-cache'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var md = await res.text();
+    _panoVeri.vizyonMd = md;
+
+    // Katmanları regex ile çıkar: "## L1 — Ad" veya "## L1 - Ad"
+    var katRegex = /##\s+(L\d+)\s*[—\-–]\s*([^\n]+)/g;
+    var katmanlar = [];
+    var m;
+    while ((m = katRegex.exec(md)) !== null) {
+      katmanlar.push({ kod: m[1].trim(), ad: m[2].trim().replace(/\*+$/,'').trim() });
+    }
+    _panoVeri.katmanlar = katmanlar;
+
+    var grid = T('katmanGrid');
+    if (!grid) return;
+    if (!katmanlar.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1; padding:16px; color:var(--txm);">Katman tespit edilemedi. Vizyon dosyasında "## L1 — ..." formatı bekleniyor.</div>';
+      return;
+    }
+    grid.innerHTML = katmanlar.map(function(k) {
+      return '<div class="katman-card">' +
+        '<div class="katman-kod">' + esc(k.kod) + '</div>' +
+        '<div class="katman-ad">' + esc(k.ad) + '</div>' +
+      '</div>';
+    }).join('');
   } catch(e) {
-    console.warn('[YH] CLAUDE.md çekilemedi:', e);
-    return false;
+    console.error('[pano-vizyon]', e);
+    var g = T('katmanGrid');
+    if (g) g.innerHTML = '<div style="grid-column:1/-1; padding:16px; color:var(--re);">Yüklenemedi: ' + esc(e.message) + '</div>';
   }
 }
 
-async function yolHaritasiYukle() {
+// ── ROADMAP md render ──────────────────────────────────
+async function panoRoadmapYukle() {
   try {
-    var supa = _getSupa();
+    var res = await fetch(ROADMAP_URL, {cache:'no-cache'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var md = await res.text();
+    _panoVeri.roadmapMd = md;
 
-    // 1) CLAUDE.md'den parse et
-    await _claudeMdCek();
-
-    // 2) feature_flags toggle durumları
-    if (supa) {
-      var {data: flags} = await supa.from('feature_flags').select('kod,varsayilan').like('kod', 'yh_%');
-      if (flags) flags.forEach(function(r) { _YH_DURUM[r.kod] = r.varsayilan !== false; });
+    var el = T('roadmapIcerik');
+    if (!el) return;
+    if (window.marked && typeof window.marked.parse === 'function') {
+      el.innerHTML = window.marked.parse(md);
+    } else {
+      el.innerHTML = '<pre>' + esc(md) + '</pre>';
     }
-
-    // 3) CLAUDE.md'de [x] olanları feature_flags'e de kaydet
-    if (supa) {
-      var upsertler = Object.keys(_YH_CLAUDE_DONE).map(function(id) {
-        return { kod: id, ad: id, varsayilan: true };
-      });
-      if (upsertler.length) await supa.from('feature_flags').upsert(upsertler, { onConflict: 'kod' });
-    }
-    Object.assign(_YH_DURUM, _YH_CLAUDE_DONE);
-
-    // 4) Onaylanan feedbackler
-    if (supa) {
-      var {data: fblar} = await supa.from('feedback_kayitlari').select('id,not_,kategori').eq('durum', 'onaylandi');
-      if (fblar && fblar.length) {
-        var fbGrup = _YOL_HARITASI.find(function(g){ return g.id === 'feedback_grubu'; });
-        if (!fbGrup) { fbGrup = { id: 'feedback_grubu', grup: '💬 Geri Bildirimlerden', items: [] }; _YOL_HARITASI.push(fbGrup); }
-        fbGrup.items = fblar.map(function(fb) {
-          var ikon = fb.kategori === 'hata' ? '🐛 ' : fb.kategori === 'eksik' ? '📋 ' : '💡 ';
-          return { id: 'fb_' + fb.id.replace(/-/g, ''), metin: ikon + (fb.not_ || '').substring(0, 120), oncelik: fb.kategori === 'hata' ? 'acil' : 'orta', claudeDone: false };
-        });
-      }
-    }
-  } catch(e) { console.warn('[YH]', e); }
+  } catch(e) {
+    console.error('[pano-roadmap]', e);
+    var el2 = T('roadmapIcerik');
+    if (el2) el2.innerHTML = '<div style="color:var(--re);">Yüklenemedi: ' + esc(e.message) + '</div>';
+  }
 }
 
-async function yolHaritasiToggle(id) {
-  if (_YH_CLAUDE_DONE[id]) return; // CLAUDE.md'de tamamlandı, değiştirilemez
-  _YH_DURUM[id] = !_YH_DURUM[id];
-  try {
-    var supa = _getSupa();
-    if (supa) await supa.from('feature_flags').upsert({ kod: id, ad: id, varsayilan: _YH_DURUM[id] }, { onConflict: 'kod' });
-  } catch(e) {}
-  yolHaritasiRender();
-}
-
-async function yolHaritasiRender() {
-  var container = document.getElementById('yolHaritasiContainer');
+// ── Görev listesi ──────────────────────────────────────
+async function gorevYukle() {
+  var container = T('gorevContainer');
   if (!container) return;
-  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">CLAUDE.md yükleniyor...</div></div>';
-  await yolHaritasiYukle();
+  var durum = T('gorevDurumFilter') ? T('gorevDurumFilter').value : '';
+  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Yükleniyor...</div></div>';
 
-  var toplam = 0, tamamlanan = 0, bekleyen = 0;
+  try {
+    var q = _supaProxy.from('panel_gorevler').select('*').order('olusturma', {ascending: false});
+    if (durum) q = q.eq('durum', durum);
+    var {data, error} = await q;
+    if (error) throw new Error(error.message);
+    _panoVeri.gorevler = data || [];
 
-  var html = _YOL_HARITASI.map(function(grup) {
-    var itemsHtml = grup.items.map(function(item) {
-      toplam++;
-      var done = !!_YH_DURUM[item.id];
-      if (done) tamamlanan++; else bekleyen++;
-      var locked = !!_YH_CLAUDE_DONE[item.id];
-      var badge = item.oncelik === 'acil' ? '<span class="yh-badge yh-acil">Acil</span>' : item.oncelik === 'orta' ? '<span class="yh-badge yh-orta">Orta</span>' : '';
-      var lockNote = locked ? '<span style="font-size:11px;color:var(--txd);margin-left:6px;" title="CLAUDE.md&#39;de tamamland\u0131">&#10003; md</span>' : '';
-      var checkAttr = locked ? 'style="cursor:default;opacity:.7;" title="CLAUDE.md&#39;de tamamland\u0131"' : 'data-yh-id="' + esc(item.id) + '" onclick="yolHaritasiToggle(this.dataset.yhId)"';
-      return '<div class="yh-item"><div class="yh-check ' + (done ? 'done' : '') + '" ' + checkAttr + '></div><div class="yh-metin ' + (done ? 'done' : '') + '">' + esc(item.metin) + badge + lockNote + '</div></div>';
+    // Stat kartları — toplam için ayrı sorgu (filter bağımsız)
+    var toplamSorgu = await _supaProxy.from('panel_gorevler').select('id', {count:'exact', head:true});
+    var toplam = toplamSorgu.count != null ? toplamSorgu.count : _panoVeri.gorevler.length;
+
+    // Stat için durumlara göre say — tam sayıları almak için filtersiz ayrı sorgu
+    var statVeri = durum ? null : _panoVeri.gorevler;
+    if (!statVeri) {
+      var ts = await _supaProxy.from('panel_gorevler').select('durum');
+      statVeri = ts.data || [];
+    }
+    var stat = {yeni:0, inceleniyor:0, yapilacak:0, yapildi:0, reddedildi:0};
+    statVeri.forEach(function(g){ if (stat[g.durum] !== undefined) stat[g.durum]++; });
+
+    if (T('pgStat-yeni'))         T('pgStat-yeni').textContent = stat.yeni;
+    if (T('pgStat-inceleniyor'))  T('pgStat-inceleniyor').textContent = stat.inceleniyor;
+    if (T('pgStat-yapilacak'))    T('pgStat-yapilacak').textContent = stat.yapilacak;
+    if (T('pgStat-yapildi'))      T('pgStat-yapildi').textContent = stat.yapildi;
+    if (T('pgStat-toplam'))       T('pgStat-toplam').textContent = toplam;
+
+    if (!_panoVeri.gorevler.length) {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Kayıt yok</div></div>';
+      return;
+    }
+
+    container.innerHTML = _panoVeri.gorevler.map(function(g) {
+      var tarih = new Date(g.olusturma).toLocaleDateString('tr-TR', {day:'2-digit',month:'short'});
+      var oncelikCls = 'oncelik-' + (g.oncelik || 'orta');
+      var done = (g.durum === 'yapildi' || g.durum === 'reddedildi');
+      var katmanMeta = g.katman ? ('<span>🗺️ ' + esc(g.katman) + '</span>') : '';
+      var kategoriMeta = g.kategori ? ('<span>🏷️ ' + esc(g.kategori) + '</span>') : '';
+      var kaynakMeta = (g.kaynak && g.kaynak !== 'manuel') ? ('<span style="color:var(--leg);">↗ ' + esc(g.kaynak) + '</span>') : '';
+      var durumEt = { yeni:'Yeni', inceleniyor:'İnceleniyor', yapilacak:'Yapılacak', yapildi:'Yapıldı', reddedildi:'Reddedildi' }[g.durum] || g.durum;
+
+      return '<div class="gorev-item" data-durum="' + esc(g.durum) + '" onclick="gorevDuzenleAc(\'' + esc(g.id) + '\')">' +
+        '<div style="flex:1; min-width:0;">' +
+          '<div class="gorev-baslik' + (done?' done':'') + '">' + esc(g.baslik) + '</div>' +
+          (g.aciklama ? '<div style="font-size:12px; color:var(--txm); margin-top:4px; line-height:1.4;">' + esc(g.aciklama.length>140 ? g.aciklama.slice(0,140)+'…' : g.aciklama) + '</div>' : '') +
+          '<div class="gorev-meta">' +
+            '<span class="oncelik-badge ' + oncelikCls + '">' + esc(g.oncelik || 'orta') + '</span>' +
+            '<span style="color:var(--txm);">' + esc(durumEt) + '</span>' +
+            '<span>📅 ' + tarih + '</span>' +
+            kategoriMeta +
+            katmanMeta +
+            kaynakMeta +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
-    return '<div class="yh-grup"><div class="yh-grup-baslik">' + grup.grup + '</div>' + itemsHtml + '</div>';
-  }).join('');
 
-  var guncSat = _YH_SON_GUNCELLEME
-    ? '<div style="font-size:12px;color:var(--txd);margin-top:20px;text-align:right;">📡 CLAUDE.md: ' + _YH_SON_GUNCELLEME.toLocaleString('tr-TR') + ' &nbsp;<button onclick="yolHaritasiRender()" style="background:none;border:1px solid var(--bor);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--txd);cursor:pointer;">↻ Yenile</button></div>'
-    : '<div style="font-size:12px;color:var(--re);margin-top:20px;">⚠ CLAUDE.md yüklenemedi</div>';
-
-  container.innerHTML = html + guncSat;
-
-  var tEl = document.getElementById('yh-tamamlanan'), bEl = document.getElementById('yh-bekleyen'), dEl = document.getElementById('yh-devam');
-  if (tEl) tEl.textContent = tamamlanan;
-  if (bEl) bEl.textContent = bekleyen;
-  if (dEl) dEl.textContent = 0;
+  } catch(e) {
+    console.error('[gorev-yukle]', e);
+    container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Hata: ' + esc(e.message) + '</div></div>';
+  }
 }
 
+// ── Modal: yeni ────────────────────────────────────────
+function gorevYeniAc() {
+  T('gorevModalBaslik').textContent = '📋 Yeni Görev';
+  T('gorevDuzenId').value = '';
+  T('gBaslik').value = '';
+  T('gAciklama').value = '';
+  T('gKategori').value = '';
+  T('gOncelik').value = 'orta';
+  T('gDurum').value = 'yeni';
+  T('gKatman').value = '';
+  T('gNotlar').value = '';
+  T('gSilBtn').style.display = 'none';
+  T('gorevModal').style.display = 'flex';
+}
+
+// ── Modal: düzenle ─────────────────────────────────────
+function gorevDuzenleAc(id) {
+  var g = _panoVeri.gorevler.find(function(x){ return x.id === id; });
+  if (!g) { toast('Görev bulunamadı', 'err'); return; }
+  T('gorevModalBaslik').textContent = '✏️ Görev Düzenle';
+  T('gorevDuzenId').value = g.id;
+  T('gBaslik').value = g.baslik || '';
+  T('gAciklama').value = g.aciklama || '';
+  T('gKategori').value = g.kategori || '';
+  T('gOncelik').value = g.oncelik || 'orta';
+  T('gDurum').value = g.durum || 'yeni';
+  T('gKatman').value = g.katman || '';
+  T('gNotlar').value = g.notlar || '';
+  T('gSilBtn').style.display = '';
+  T('gorevModal').style.display = 'flex';
+}
+
+// ── Kaydet ─────────────────────────────────────────────
+async function gorevKaydet() {
+  var id = T('gorevDuzenId').value;
+  var veri = {
+    baslik:   T('gBaslik').value.trim(),
+    aciklama: T('gAciklama').value.trim() || null,
+    kategori: T('gKategori').value || null,
+    oncelik:  T('gOncelik').value,
+    durum:    T('gDurum').value,
+    katman:   T('gKatman').value.trim() || null,
+    notlar:   T('gNotlar').value.trim() || null
+  };
+  if (!veri.baslik) { toast('Başlık gerekli', 'err'); return; }
+
+  try {
+    var res;
+    if (id) {
+      res = await _supaProxy.from('panel_gorevler').update(veri).eq('id', id);
+    } else {
+      veri.olusturan_id = _oturum ? _oturum.id : null;
+      veri.kaynak = 'manuel';
+      res = await _supaProxy.from('panel_gorevler').insert(veri);
+    }
+    if (res.error) throw new Error(res.error.message);
+    toast(id ? '✅ Görev güncellendi' : '✅ Görev eklendi', 'ok');
+    T('gorevModal').style.display = 'none';
+    await gorevYukle();
+  } catch(e) {
+    console.error('[gorev-kaydet]', e);
+    toast('Hata: ' + e.message, 'err');
+  }
+}
+
+// ── Sil ────────────────────────────────────────────────
+async function gorevSil() {
+  var id = T('gorevDuzenId').value;
+  if (!id) return;
+  if (!confirm('Bu görevi silmek istediğine emin misin?')) return;
+  try {
+    var {error} = await _supaProxy.from('panel_gorevler').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    toast('✅ Görev silindi', 'ok');
+    T('gorevModal').style.display = 'none';
+    await gorevYukle();
+  } catch(e) {
+    console.error('[gorev-sil]', e);
+    toast('Hata: ' + e.message, 'err');
+  }
+}
 
 function goPan(id, el) {
   if (id === 'flags') flaglariYukle();
-  if (id === 'feedback') feedbackYukle();
-  if (id === 'yolharitasi') yolHaritasiRender();
-  if (id === 'yapilanlar') { var el2 = document.getElementById('yapilanlarTarih'); if(el2) el2.textContent = 'Son güncelleme: ' + new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'}); }
+  if (id === 'pano') {
+    // Pano açıldığında aktif sekmeyi yükle (ilk açılışta "gorev")
+    if (!_panoVeri.katmanlar.length) panoVizyonYukle();
+    if (!_panoVeri.roadmapMd) panoRoadmapYukle();
+    gorevYukle();
+  }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   T('pan-'+id).classList.add('active');
