@@ -2146,45 +2146,84 @@ async function tersaneleriDoldur() {
 }
 
 // ── KALİTE AUTOCOMPLETE ──────────────────────────────────────
-// Kalite alanı (yKalite) için geçmiş doğru standart kodları datalist olarak yükler.
-// Bozuk değerler (malzeme türü, canonical kod, joker) filtrelenir — autocomplete'te görünmez.
-// Tenant-scoped: her firma kendi geçmiş kaliteleri görür.
+// 26. oturum (Faz A-3): İki kaynak birleşik dropdown —
+//   1) MASTER: malzeme_tanimlari (sistem preset + firma özel) — canonical
+//   2) GEÇMİŞ: spool_malzemeleri.kalite (tenant'ın yazdıkları) — sıklık sayacı
+// Sıra: master (sistem → firma) önce, sonra geçmiş (sıklığa göre, master'da olan tekrarlanmaz).
+// <option label> ile kaynak ipucu: "sistem" / "firma" / "geçmiş · ×N" (tarayıcı gösterirse).
+// Tenant-scoped. Hata olursa datalist boş kalır, form akışı bozulmaz.
 async function kaliteleriDoldur() {
   try {
     const supa = ARES.supabase();
     if (!supa || ARES.mod !== 'supabase') return;
-    const res = await supa
+    const tenant = ARES.tenantId();
+
+    // 1) MASTER — sistem preset (tenant_id IS NULL) + firma özel (tenant_id = tenant)
+    const masterRes = await supa
+      .from('malzeme_tanimlari')
+      .select('kalite_goster, tenant_id')
+      .or('tenant_id.is.null,tenant_id.eq.' + tenant)
+      .eq('aktif', true)
+      .order('kategori_kod').order('kalite_kod');
+
+    // 2) GEÇMİŞ — tenant'ın kendi yazdıkları
+    const gecRes = await supa
       .from('spool_malzemeleri')
       .select('kalite')
-      .eq('tenant_id', ARES.tenantId())
+      .eq('tenant_id', tenant)
       .not('kalite', 'is', null);
-    if (res.error || !res.data) return;
+
     // Bozuk listesi: malzeme türleri (canonical + Türkçe) + joker
     const BOZUK = new Set([
       'karbon','paslanmaz','bakir','alum','diger',
       'Karbon Çelik','Paslanmaz','Bakır Alaşım','Alüminyum','Diğer'
     ]);
-    const uniq = {};
-    res.data.forEach(function(row) {
-      let k = (row.kalite || '').trim();
-      if (!k) return;
-      if (BOZUK.has(k)) return;
-      if (k.indexOf('*') !== -1) return; // St* gibi jokerli olanlar
-      // Normalize: "AISI 316L" → "316L" (display-only, DB dokunulmaz)
-      k = k.replace(/^AISI\s+/i, '');
-      uniq[k] = (uniq[k] || 0) + 1;
-    });
+
+    const sirali = [];
+    const gorulmus = Object.create(null);
+
+    // 1. Master — sistem önce, firma sonra (master sıralamasıyla)
+    if (masterRes && masterRes.data) {
+      masterRes.data.forEach(function(row) {
+        const v = (row.kalite_goster || '').trim();
+        if (!v || gorulmus[v]) return;
+        gorulmus[v] = 1;
+        sirali.push({ kod: v, kaynak: row.tenant_id ? 'firma' : 'sistem' });
+      });
+    }
+
+    // 2. Geçmiş — sıklığa göre say, master'da olanı tekrarlama
+    if (gecRes && gecRes.data) {
+      const sayim = {};
+      gecRes.data.forEach(function(row) {
+        let k = (row.kalite || '').trim();
+        if (!k) return;
+        if (BOZUK.has(k)) return;
+        if (k.indexOf('*') !== -1) return; // St* gibi jokerli
+        k = k.replace(/^AISI\s+/i, ''); // "AISI 316L" → "316L"
+        sayim[k] = (sayim[k] || 0) + 1;
+      });
+      Object.keys(sayim)
+        .sort(function(a, b) { return sayim[b] - sayim[a] || a.localeCompare(b); })
+        .forEach(function(k) {
+          if (gorulmus[k]) return; // master'da zaten var
+          gorulmus[k] = 1;
+          sirali.push({ kod: k, kaynak: 'geçmiş', sayi: sayim[k] });
+        });
+    }
+
+    // Datalist'e yaz
     const dl = document.getElementById('kaliteListe');
     if (!dl) return;
     dl.innerHTML = '';
-    // Kullanım sıklığına göre sırala — sık kullanılanlar üstte
-    Object.keys(uniq)
-      .sort(function(a,b) { return uniq[b] - uniq[a] || a.localeCompare(b); })
-      .forEach(function(k) {
-        const opt = document.createElement('option');
-        opt.value = k;
-        dl.appendChild(opt);
-      });
+    sirali.forEach(function(item) {
+      const opt = document.createElement('option');
+      opt.value = item.kod;
+      opt.label = item.kaynak === 'geçmiş'
+        ? 'geçmiş · ×' + item.sayi
+        : item.kaynak;
+      dl.appendChild(opt);
+    });
   } catch(e) { console.warn('[kaliteleriDoldur]', e); }
 }
 

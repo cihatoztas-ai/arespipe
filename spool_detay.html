@@ -1226,33 +1226,82 @@ function toast(msg,tip){
 }
 
 // ── KALİTE AUTOCOMPLETE ──────────────────────────────────────
-// ed_kal input'u için geçmiş doğru standart kodları datalist olarak yükler.
-// Bozuk değerler (malzeme türü, canonical kod, joker) filtrelenir.
-// Tenant-scoped: her firma kendi geçmiş kaliteleri görür. DOMContentLoaded'da çağrılır.
+// 26. oturum (Faz A-3): İki kaynak birleşik dropdown —
+//   1) MASTER: malzeme_tanimlari (sistem preset + firma özel) — canonical
+//   2) GEÇMİŞ: spool_malzemeleri.kalite (tenant'ın yazdıkları) — sıklık sayacı
+// Sıra: master (sistem → firma) önce, sonra geçmiş (sıklığa göre, master'da olan tekrarlanmaz).
+// <option label> ile kaynak ipucu: "sistem" / "firma" / "geçmiş · ×N" (tarayıcı gösterirse).
+// Tenant-scoped. Hata olursa datalist boş kalır, form akışı bozulmaz.
 async function kaliteleriDoldur(){
   try{
     var supa=ARES.supabase();
     if(!supa||ARES.mod!=='supabase') return;
-    // 22. oturum: Master tablodan (malzeme_tanimlari) oku — sistem preset + firma özeli birleşik.
-    // Eski hali geçmiş spool_malzemeleri.kalite kayıtlarını sayıyordu; artık canonical kaynak var.
-    // Not: Faz 3 (25. oturum) autocomplete'i master + geçmiş kayıt birleşik hale getirecek.
-    var res=await supa
+    var tenant=ARES.tenantId();
+
+    // 1) MASTER — sistem preset (tenant_id IS NULL) + firma özel (tenant_id = tenant)
+    var masterRes=await supa
       .from('malzeme_tanimlari')
-      .select('kalite_goster, kategori_kod')
-      .or('tenant_id.is.null,tenant_id.eq.'+ARES.tenantId())
+      .select('kalite_goster, tenant_id')
+      .or('tenant_id.is.null,tenant_id.eq.'+tenant)
       .eq('aktif',true)
       .order('kategori_kod').order('kalite_kod');
-    if(res.error||!res.data) return;
+
+    // 2) GEÇMİŞ — tenant'ın kendi yazdıkları
+    var gecRes=await supa
+      .from('spool_malzemeleri')
+      .select('kalite')
+      .eq('tenant_id',tenant)
+      .not('kalite','is',null);
+
+    // Bozuk listesi: malzeme türleri (canonical + Türkçe) + joker
+    var BOZUK=new Set([
+      'karbon','paslanmaz','bakir','alum','diger',
+      'Karbon Çelik','Paslanmaz','Bakır Alaşım','Alüminyum','Diğer'
+    ]);
+
+    var sirali=[];
+    var gorulmus=Object.create(null);
+
+    // 1. Master — sistem önce, firma sonra (master sıralamasıyla)
+    if(masterRes && masterRes.data){
+      masterRes.data.forEach(function(row){
+        var v=(row.kalite_goster||'').trim();
+        if(!v||gorulmus[v]) return;
+        gorulmus[v]=1;
+        sirali.push({kod:v, kaynak: row.tenant_id ? 'firma' : 'sistem'});
+      });
+    }
+
+    // 2. Geçmiş — sıklığa göre, master'da olanı tekrarlama
+    if(gecRes && gecRes.data){
+      var sayim={};
+      gecRes.data.forEach(function(row){
+        var k=(row.kalite||'').trim();
+        if(!k) return;
+        if(BOZUK.has(k)) return;
+        if(k.indexOf('*')!==-1) return; // St* gibi jokerli
+        k=k.replace(/^AISI\s+/i,''); // "AISI 316L" → "316L"
+        sayim[k]=(sayim[k]||0)+1;
+      });
+      Object.keys(sayim)
+        .sort(function(a,b){return sayim[b]-sayim[a]||a.localeCompare(b);})
+        .forEach(function(k){
+          if(gorulmus[k]) return;
+          gorulmus[k]=1;
+          sirali.push({kod:k, kaynak:'geçmiş', sayi:sayim[k]});
+        });
+    }
+
+    // Datalist'e yaz
     var dl=T('kaliteListe');
     if(!dl) return;
     dl.innerHTML='';
-    var gorulmus={};
-    res.data.forEach(function(row){
-      var v=(row.kalite_goster||'').trim();
-      if(!v||gorulmus[v]) return;
-      gorulmus[v]=1;
+    sirali.forEach(function(item){
       var opt=document.createElement('option');
-      opt.value=v;
+      opt.value=item.kod;
+      opt.label=item.kaynak==='geçmiş'
+        ? 'geçmiş · ×'+item.sayi
+        : item.kaynak;
       dl.appendChild(opt);
     });
   }catch(e){console.warn('[kaliteleriDoldur]',e);}
