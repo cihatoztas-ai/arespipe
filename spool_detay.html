@@ -2653,11 +2653,13 @@ var _m3 = {
   animId: null
 };
 
-// Malzeme renkleri
+// Malzeme renkleri — G-03: canonical kategori kodu key olarak (20. oturum DB migration sonrası)
 var M3_RENK = {
-  'Karbon Çelik':  0x7a7d82,
-  'Paslanmaz Çelik': 0xb0b8c1,
-  'Bakır Alaşım':  0xb87333,
+  'karbon':        0x7a7d82,
+  'paslanmaz':     0xb0b8c1,
+  'bakir':         0xb87333,
+  'alum':          0xc0c0c8,
+  'diger':         0x8888aa,
   '_flans':        0x5c6070,
   '_reduktor':     0x6e7178,
   '_dirsek':       0x7a7d82,
@@ -2669,7 +2671,7 @@ var M3_RENK_SECILI = 0x4a90d9;
 function m3TestData() {
   var capMm = parseFloat(SP.cap) || 114.3;
   var etMm  = parseFloat(SP.kalinlik) || 4.5;
-  var malz  = SP.malzeme || 'Karbon Çelik';
+  var malz  = SP.malzeme || 'karbon';
   var kal   = SP.kalite  || 'ST37';
   var r = capMm / 2;
 
@@ -2842,7 +2844,12 @@ function m3Build() {
 }
 
 function m3Mat(malzeme, tip) {
-  var hex = M3_RENK[malzeme] || M3_RENK['_' + (tip||'')] || M3_RENK['_default'];
+  // G-03: malzeme legacy TR label ('Karbon Çelik') veya canonical kod ('karbon') olabilir.
+  // ARES_NORM.malzemeKod() her ikisini de canonical'a çeker.
+  var kod = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeKod)
+    ? (ARES_NORM.malzemeKod(malzeme) || malzeme)
+    : malzeme;
+  var hex = M3_RENK[kod] || M3_RENK['_' + (tip||'')] || M3_RENK['_default'];
   return new THREE.MeshStandardMaterial({
     color: hex, metalness: 0.55, roughness: 0.4
   });
@@ -3051,8 +3058,13 @@ function m3Click(e) {
 
   // Önceki seçimi sıfırla
   if (_m3.selectedMesh) {
+    // G-03: userData.malzeme ham veya canonical olabilir → normalize et
+    var _seciliMalz = _m3.selectedMesh.userData.malzeme;
+    var _seciliKod  = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeKod)
+      ? (ARES_NORM.malzemeKod(_seciliMalz) || _seciliMalz)
+      : _seciliMalz;
     _m3.selectedMesh.material.color.setHex(
-      M3_RENK[_m3.selectedMesh.userData.malzeme] ||
+      M3_RENK[_seciliKod] ||
       M3_RENK['_' + (_m3.selectedMesh.userData.tip||'')] ||
       M3_RENK['_default']
     );
