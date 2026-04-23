@@ -4,10 +4,13 @@
 // ─────────────────────────────────────
 // Çalışma modları:
 //   node kontrol.js              → Repo'yu tarar, hata/uyarı raporlar, exit code ile CI'ı kırabilir
+//   node kontrol.js --json       → Normal taramaya ek olarak .github/ci-son-rapor.json yazar
+//                                  (pano Sistem Sağlığı kartının kaynağı — 25. oturum)
 //   node kontrol.js --self-test  → .github/bozuk-ornekler/ klasörünü tarar, kuralların ÇALIŞTIĞINI doğrular
 //
 // Kurallar: .github/kurallar.json
 // Bozuk örnekler: .github/bozuk-ornekler/
+// JSON rapor: .github/ci-son-rapor.json (sadece --json modunda)
 //
 // Kural tipleri:
 //   1. yasak_string   → dosyada bulunmamalı (desen + satirda_olmamalidir opsiyonel istisna)
@@ -15,7 +18,7 @@
 //   3. ham_gosterim    → ARES_NORM yoksa raw malzeme/kalite/yüzey pattern'i uyarı
 //   4. i18n_senkron    → tv() anahtarları lang/tr.json'da olmalı
 //
-// Son güncelleme: 23 Nisan 2026 (23. oturum — Faz B: regex, ham gösterim, i18n senkron, self-test eklendi)
+// Son güncelleme: 25. oturum — --json bayrağı (pano Sistem Sağlığı kartı için)
 
 const fs = require('fs');
 const path = require('path');
@@ -23,9 +26,11 @@ const path = require('path');
 const KURALLAR_DOSYA = path.join(__dirname, 'kurallar.json');
 const BOZUK_DIZIN    = path.join(__dirname, 'bozuk-ornekler');
 const BEKLENEN_DOSYA = path.join(BOZUK_DIZIN, 'beklenen-hatalar.json');
+const RAPOR_DOSYA    = path.join(__dirname, 'ci-son-rapor.json');
 
 const KURAL = JSON.parse(fs.readFileSync(KURALLAR_DOSYA, 'utf8'));
 const SELF_TEST = process.argv.includes('--self-test');
+const JSON_MODU = process.argv.includes('--json');
 
 let hataSayisi = 0;
 let uyariSayisi = 0;
@@ -249,6 +254,82 @@ function silinmisKontrol() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// JSON RAPOR ÜRET (--json modu için — 25. oturum)
+// ─────────────────────────────────────────────────────────────
+//
+// Çıktı formatı pano Sistem Sağlığı kartı tarafından fetch'lenir.
+// Kural koduna göre gruplu + tam dosya detayı. İki farklı görünüm için
+// hem "kurallar" özeti (kaç adet, hangi dosyalarda) hem de "dosyalar"
+// listesi (her dosyanın hataları) birlikte veriliyor.
+
+function jsonRaporuYaz(tumDosyalar, dosyaRaporlari, hataSay, uyariSay) {
+  // Kural bazlı özet — hangi kuralden kaç adet, hangi dosyalarda?
+  const kuralOzet = {};
+  for (const rapor of dosyaRaporlari) {
+    for (const h of rapor.hatalar) {
+      const kod = h.kod || 'BILINMEYEN';
+      if (!kuralOzet[kod]) {
+        kuralOzet[kod] = {
+          tip: h.tip,
+          mesaj: h.mesaj,
+          sayi: 0,
+          dosyalar: []
+        };
+      }
+      kuralOzet[kod].sayi++;
+      const varOlan = kuralOzet[kod].dosyalar.find(d => d.dosya === rapor.dosya);
+      if (varOlan) {
+        varOlan.sayi++;
+        if (h.satir && !varOlan.satirlar.includes(h.satir)) {
+          varOlan.satirlar.push(h.satir);
+        }
+      } else {
+        kuralOzet[kod].dosyalar.push({
+          dosya: rapor.dosya,
+          sayi: 1,
+          satirlar: h.satir ? [h.satir] : []
+        });
+      }
+    }
+  }
+
+  const rapor = {
+    tarih: new Date().toISOString(),
+    commit_sha: process.env.GITHUB_SHA || null,
+    commit_ref: process.env.GITHUB_REF_NAME || process.env.GITHUB_REF || null,
+    workflow_run: process.env.GITHUB_RUN_NUMBER
+      ? parseInt(process.env.GITHUB_RUN_NUMBER, 10)
+      : null,
+    ozet: {
+      hata: hataSay,
+      uyari: uyariSay,
+      taranan_dosya: tumDosyalar.length,
+      sorunlu_dosya: dosyaRaporlari.length,
+      durum: hataSay > 0 ? 'kirmizi' : (uyariSay > 0 ? 'sari' : 'yesil')
+    },
+    kurallar: kuralOzet,
+    dosyalar: dosyaRaporlari.map(r => ({
+      dosya: r.dosya,
+      hata_sayisi: r.hatalar.filter(h => h.tip === 'hata').length,
+      uyari_sayisi: r.hatalar.filter(h => h.tip === 'uyari').length,
+      hatalar: r.hatalar.map(h => ({
+        kod: h.kod,
+        tip: h.tip,
+        satir: h.satir,
+        mesaj: h.mesaj
+      }))
+    }))
+  };
+
+  try {
+    fs.writeFileSync(RAPOR_DOSYA, JSON.stringify(rapor, null, 2) + '\n', 'utf8');
+    log(`\n📄 JSON rapor yazıldı: ${path.relative(process.cwd(), RAPOR_DOSYA)}`);
+  } catch (err) {
+    log(`\n⚠  JSON rapor yazılamadı: ${err.message}`);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // NORMAL TARAMA MODU
 // ─────────────────────────────────────────────────────────────
 
@@ -256,7 +337,9 @@ function normalTarama() {
   log('╔════════════════════════════════════════╗');
   log('║     AresPipe Kod Kalite Kontrolü       ║');
   log('╚════════════════════════════════════════╝');
-  log(`📅 ${new Date().toLocaleString('tr-TR')}\n`);
+  log(`📅 ${new Date().toLocaleString('tr-TR')}`);
+  if (JSON_MODU) log('📄 JSON rapor modu aktif (--json)');
+  log('');
 
   silinmisKontrol();
 
@@ -310,13 +393,18 @@ function normalTarama() {
   log(`📊 Sonuç: ${hataSayisi} hata, ${uyariSayisi} uyarı`);
   log(`📁 Taranan dosya: ${dosyalar.length}`);
 
+  // JSON rapor yazımı — exit'ten ÖNCE (kırmızı CI'da bile rapor olsun)
+  if (JSON_MODU) {
+    jsonRaporuYaz(dosyalar, dosyaRaporlari, hataSayisi, uyariSayisi);
+  }
+
   if (hataSayisi > 0) {
     log('\n❌ KALİTE KONTROLÜ BAŞARISIZ — Deploy engellendi.');
     log('════════════════════════════════════════\n');
     process.exit(1);
   } else if (uyariSayisi > 0) {
     log('\n⚠️  Uyarılar var ama deploy devam ediyor.');
-    log('    (Uyarılar 24. oturumda temizlenecek — Faz B baseline.)');
+    log('    (Pano > Sistem Sağlığı kartında detay görülebilir.)');
     log('════════════════════════════════════════\n');
     process.exit(0);
   } else {
