@@ -1499,7 +1499,7 @@ async function feedbackYukle() {
 
   try {
     var q = _supaProxy.from('feedback_kayitlari')
-      .select('*, kullanicilar(ad_soyad, email)')
+      .select('*, kullanicilar!kullanici_id(ad_soyad, email)')
       .order('olusturma', {ascending: false});
     if (durum) q = q.eq('durum', durum);
     var {data, error} = await q;
