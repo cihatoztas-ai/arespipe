@@ -1,162 +1,135 @@
-# AresPipe — 22. Oturum Özeti (23 Nisan 2026)
+# AresPipe — 23. Oturum Özeti (23 Nisan 2026)
 
 ## Ana Başlık
-**Faz A Faz 2 Tamamlanması — `tanimlar.html > Malzeme Havuzu` Admin UI.** E-06 master tablo altyapısı artık yazma (20. oturum), okuma/render (20-21. oturum) ve UI yönetimi (22. oturum) ekseninde tam tur çalışıyor. Admin artık firma özel kaliteyi UI'dan ekleyip yönetebiliyor. Yan olarak 2 teknik borç (M3_RENK, duplicate `<td>`) ve 1 bonus refactor (`kaliteleriDoldur()`) kapandı. Trigger Guard 1 gevşetildi.
+**Faz B — Sapmama Sistemi Kuruldu.** 16 Nisan'dan beri repo'da boş duran CI altyapısı gerçekten çalışır hale getirildi. 14 aktif kural, 3 self-test dosyası, başlangıç/kapanış ritüelleri. 20 oturumluk "yazılı kurala güven, kontrol etmeye gerek yok" dönemi bitti — artık her commit otomatik kontrol ediliyor.
 
 ## Strateji Kararı
-- Yol haritasında Faz A'nın son adımı (Faz 3 autocomplete 25, Faz 4 fuzzy match 26'ya kaldı)
-- Mockup-first (R-10): önce HTML+CSS iskelet, layout onayı, sonra JS Faz 2
-- Yaklaşım: **ritüel → mockup (görsel karşılaştırma) → JS Faz 2 → yan bug'lar → SQL → kapanış**
-- 23. oturumda Faz B (altyapı + lint) başlayacağı için bugün yazılan kodun G-01/G-02/G-03/B-01/E-01/A-01 kurallarına baştan uyumlu olması hedefi
+- **"Kurallı geliştirme"den "zorla uyumlu geliştirme"ye geçiş başarıyla tamamlandı.**
+- Temel tespit: 20 oturumluk iş boyunca CLAUDE.md 558 → 2592 satıra çıktı ama kuralların gerçek kontrolü `.github/kurallar.json`'da sadece **3 basit kontrol** ile sınırlıydı. Yazılı iddia ile kanıt arasındaki uçurum fark edilmemişti.
+- **Kritik keşif (oturum başında):** Repo'da üç paralel gerçeklik vardı — (1) yerel klon 17 Nisan'da donmuş, (2) canlı kod GitHub'da web'den upload ile, (3) kullanıcının Downloads'taki zip'lerde 21. oturum dosyaları. `git pull origin main` ile senkronize edildi: 35 dosya, +13.333 satır indi.
+- **Tasarım kararı A:** Baseline'daki 22 uyarı tek seansla temizlenmez, **fırsatta** (her sayfaya dokunulduğunda) giderilir. "Kural geldi hurra bırakalım başka şey yapmayalım" yaklaşımı reddedildi.
 
-## Akış
+## Akış (kronolojik)
 
-### 1. Ritüel + Dosya Analizi
-- CLAUDE.md + CLAUDE-SON-OTURUM okundu
-- `tanimlar.html` yüklendi, mevcut yapı analiz edildi:
-  - Sayfa-seviyesinde auth: `ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin'])` ✓
-  - `ares-normalize.js` YÜKLENMEDİĞİ keşfedildi (21. oturumda atlanan 3. sayfa — admin/portal fix'lenmişti ama tanimlar.html gözden kaçmıştı)
-  - Tab pattern: `.tab-btn[data-tab="x"]` → panel id `'tab' + capitalize(x)`
-  - Yerel `tv(key, tr)` wrapper i18n için
-  - Modal pattern yok (kodSeri için `prompt()` zinciri), inline expanding form pattern var (`blok-yeni-form`)
+### 1. Senkronizasyon (kritik, saat 1)
+- `git fetch origin` → 17 Nisan'dan sonra 15+ upload tespit edildi
+- `CLAUDE-MOBILE.md`'de yerel stash (17 Nisan R-09/R-10 kalıntısı) bulundu, stash'lenip pull sonrası iptal edildi (GitHub'da zaten vardı)
+- `git pull origin main` → 35 dosya sync, repo güncel. `CLAUDE.md` 558 → 2592, `docs/ROADMAP.md` + `ares-normalize.js` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` yerel klona indi.
 
-### 2. Yetki Kararı
-- Kullanıcı: "yönetici yetkisindeki kişiler girebilsin"
-- **Çözüm:** Sayfa-seviyesi auth zaten var, sekmeye ek kontrol gereksiz. Bu bilgiyi ileride "yeni sayfa kontrol listesine" not edilecek.
+### 2. Mevcut CI incelemesi (sürpriz)
+- `.github/kontrol.yml` + `.github/kontrol.js` + `.github/kurallar.json` zaten vardı (16 Nisan kuruldu)
+- Ama `kurallar.json`'da sadece: 5 yasak renk + history.back + flash prev + 1 zorunlu var (`ares-layout.js`) = **8 kural**, CLAUDE.md'deki 20+ kural ailesinin çoğu kontrol edilmiyordu
+- Karar: Sıfırdan yazmak yerine mevcut altyapıyı **genişlet**
 
-### 3. Mockup (R-10) — Görsel Karşılaştırma
-- Kullanıcı "sen bunları görsel olarak verir misin" dedi
-- `visualize:show_widget` ile iki seçenek yan yana sunuldu:
-  - **Seçenek A:** Sistem/Firma alt-tab yapısı (sub-tabs)
-  - **Seçenek B:** İki tablo üst üste (stacked)
-- Her iki mockup tam AresPipe renklerinde (`#0d1117`, `#2D8EFF`, `#7c3aed`) render edildi
-- **Seçim: Seçenek A (alt-tab).**
+### 3. kontrol.js Yeniden Yazıldı
+**Eklenen özellikler:**
+- **Regex desteği** — `kural.regex === true` ile
+- **Satır istisnası** — `kural.satirda_olmamalidir: ["ARES_NORM"]` ile false positive önleme
+- **i18n senkron kontrolü** — `tv('anahtar')` çağrıları `lang/tr.json`'da var mı?
+- **Kod (ID) alanı** — her kural bir `kod`'a sahip (örn. `G03_HAM_MALZEME`), self-test bunu kullanıyor
+- **Self-test modu** — `--self-test` flag'iyle `.github/bozuk-ornekler/`'i tarar, beklenen kuralların yakalandığını doğrular
 
-### 4. Faz 1 — Mockup HTML/CSS Uygulaması
-- İlk denemede 5-patch yaklaşımı sunuldu
-- Kullanıcı "sen dosyayı iste vereyim sen güncelle bu şekilde uzun sürer" dedi — direct-file update approach'a geçildi
-- 5 patch tek dosyada uygulandı:
-  1. `ares-normalize.js` script sırasına eklendi
-  2. Alt-tab + inline form CSS (`.sub-tab`, `.sub-panel`, `.kalite-yeni-form`, `.std-chip`, `.aciklama-cell`)
-  3. Sekme butonu (`🧪 Malzeme Havuzu`)
-  4. Panel HTML (info banner + sub-tabs + iki tablo + inline form)
-  5. JS stub (sub-tab switching + 12 preset mock render + form aç/kapat stub)
-- **772 → 976 satır.**
+### 4. kurallar.json Genişletildi (8 → 14 kural)
+**Mevcut kurallar korundu, yeni eklenenler:**
+| Kod | Seviye | Açıklama |
+|---|---|---|
+| G03_HAM_MALZEME | uyari | `esc(x.malzeme)` ham → `ARES_NORM.malzemeEtiket` |
+| G03_HAM_KALITE | uyari | `esc(x.kalite)` ham → `ARES_NORM.kaliteGoster` |
+| G03_HAM_YUZEY | uyari | `esc(x.yuzey)` ham → `ARES_NORM.yuzeyEtiket` |
+| G03_HAM_MALZEME_TEMPLATE | uyari | `${x.malzeme}` template literal ham |
+| G03_HAM_KALITE_TEMPLATE | uyari | `${x.kalite}` template literal ham |
+| ARES_NORMALIZE_EKSIK | uyari | `zorunlu_her_html` altında, `ares-normalize.js` yüklemesi eksik |
+| I18N_EKSIK | uyari | `tv()` anahtarı `lang/tr.json`'da yok |
 
-### 5. Tasarım Tercihleri (Kullanıcı "[No preference]" dedi — Claude karar verdi)
-- **Açıklama sütunu:** Tabloda kalır, ellipsis + title="..." hover
-- **Ekleme UI'ı:** Inline expanding form (mevcut `blok-yeni-form` patterni)
+Mevcut renk/theme kurallarına `kod` alanları eklendi (önceden yoktu), böylece self-test onları da doğrulayabiliyor.
 
-### 6. Faz 2 — Gerçek Supabase CRUD
+### 5. Self-Test Altyapısı
+`.github/bozuk-ornekler/` oluşturuldu:
+- `g03-ham-gosterim.html` — 5 G-03 kuralını tetikler
+- `ares-normalize-eksik.html` — script yüklemesi eksik
+- `i18n-eksik-anahtar.html` — `tv('xxx_yok')` kullanır
+- `beklenen-hatalar.json` — her dosyadan hangi kural kodu çıkmalı
 
-**Eklenen/değişen fonksiyonlar:**
-- `sistemKaliteYukle()` — `SELECT WHERE tenant_id IS NULL AND aktif=true`
-- `firmaKaliteYukle()` — `SELECT WHERE tenant_id = ARES.tenantId() AND aktif=true`, açıklama dahil
-- `sistemKaliteRender()` + `firmaKaliteRender()` — ARES_NORM.malzemeEtiket() ile lokalize, satır aksiyonu butonları (Firma için)
-- `kaliteFormAc()` — yeni ekleme modu
-- `kaliteDuzenleAc(id)` — düzenleme modu, form pre-filled, scroll
-- `kaliteKaydet()` — insert/update toggle (`_kaliteDuzenleId` state'ine göre), `23505` UNIQUE özel toast, sistem preset çakışma onay popup'ı, çift tıklama kilidi (`_kaliteKaydetKilit`)
-- `kaliteSil(id)` — FK violation ön-kontrol (`spool_malzemeleri.malzeme_ref_id` + `pipeline_malzemeleri.malzeme_ref_id` `count:'exact', head:true`), kullanılıyorsa toast'la bildir, kullanılmıyorsa confirm + delete
-- `_kaliteKodNormalize(raw)` — DB `kalite_kod_normalize()` eşi (upcase + alphanumeric)
+`node .github/kontrol.js --self-test` → 3/3 başarılı (yerelde ve CI'da doğrulandı).
 
-**Lazy load + preload:**
-- Ana tab click handler'a `malzemehavuzu` için `!_kaliteYuklendi` guard eklendi
-- DOMContentLoaded auth bloğuna `await sistemKaliteYukle(); await firmaKaliteYukle();`
+### 6. GitHub'a Deploy + Baseline
+Kullanıcı dosyaları GitHub web arayüzünden yükledi. CI otomatik çalıştı, commit #453 **yeşil tik**:
+- **0 hata, 22 uyarı, 74 dosya**
+- Tüm 22 uyarı tek tip: `ARES_NORMALIZE_EKSIK` — 11 sayfada `ares-normalize.js` script satırı eksik (sorgula, tersaneler, testler, tezgahlar, uyarilar, ... diğer 6 sayfa)
+- Sürpriz iyi haber: G-03 ham gösterim kuralı **0 hit** — 21. oturumdaki render fix'leri tam tutmuş
+- I18N_EKSIK da 0 — `tv()` anahtarları senkron
 
-**Loading/error states:**
-- İlk yüklemede tbody "Yükleniyor…" chip'i
-- Error'da tbody `cl-re` renkli mesaj + toast
+### 7. Sapmama Sistemi (oturum sonu)
+Kullanıcının "öyle birşey olsun ki bu sistemden sapmayalım" talebine karşılık **mekanik disiplin**:
+- `.github/son-durum.md` — her oturum sonu güncellenir, her oturum başı zorunlu okunur
+- CLAUDE.md üst bloğu — "ZORUNLU OTURUM BAŞLANGIÇ RİTÜELİ" (4 soru), "KAPANIŞ PROTOKOLÜ", "KURAL ÇAKIŞMASI", "YENİ KURAL EKLEME", "5 OTURUMDA SAĞLIK KONTROLÜ"
+- Her kural çakışmasında A/B/C seçeneği zorunlu
+- Yeni kurallar daima `uyari` seviyesinde başlar (deploy kırılmaz)
+- Her 5. oturumda self-test zorunlu hatırlatılır
 
-**976 → 1145 satır.**
-
-### 7. Sistem Preset Genişletme Sohbeti
-- Kullanıcı sordu: "bu listeyi sektörde çıkabilecek başka malzemeleride düşünerek büyütsek olmaz mı"
-- **Cevap:** "Gereksiz yük" değil ama "tahmin riski > yük riski". Preset'e 20 kalite eklemek performans sorunu yaratmaz ama:
-  - Claude'un sektörel tahmini firmanın günlük iş karışımına uymayabilir
-  - Feature'ın amacı zaten "firma kendi kalitesini eklesin" — preset'i şişirmek bu aşamayı sektülenir
-  - Operasyon verisi 3-6 ay sonra daha iyi rehber: "en çok eklenen kalite" → terfi
-- Sonuç: 12 preset kalsın, JS Faz 2'ye geç.
-
-### 8. Yeni Sistem Preset Ekleme Metodolojisi (Öğretilen)
-- **Yol 1 (önerilen):** SQL migration dosyası `migrations/NN-oturum-sistem-preset.sql`, Supabase SQL editor'de çalıştır, repo'ya commit
-- **Yol 2 (tek seferlik):** Supabase Dashboard → Table Editor → Insert row
-- **Yol 3 (gelecek):** Super-admin UI — 29. oturum SaaS hazırlığında mantıklı
-- `kalite_kod_normalize()` regex genişletmesi preset ekleme ile bağımsız (IFS fuzzy match 26. oturumda)
-
-### 9. SQL — Trigger Guard 1 Gevşetme
-- `22-oturum-trigger-guard-gevsetme.sql` hazırlandı (migration dosyası + rollback için orijinal fonksiyon yorum bloğu)
-- Supabase SQL editor'de çalıştırıldı
-- Dönen fonksiyon tanımı bizim yazdığımızla birebir aynı (Guard 1 kaldırıldı, Guard 2 aktif)
-- Kullanıcı çıktıyı paylaştı → ✅ doğrulandı
-
-### 10. Yan Bug 1 — `spool_detay.html` M3_RENK
-- Sorun: 3D model renk haritası key'leri eski TR label'lardan (`'Karbon Çelik'`, `'Paslanmaz Çelik'`, `'Bakır Alaşım'`)
-- Gerçek data canonical kod (`'karbon'`, `'paslanmaz'`, `'bakir'`) geliyor → lookup fail → `_default` rengine düşüyor
-- Fix 4 noktada:
-  1. `M3_RENK` map key'leri canonical koda çevrildi, `'alum'` ve `'diger'` eklendi
-  2. `m3Mat(malzeme, tip)` fonksiyonu `ARES_NORM.malzemeKod()` normalize sarmasıyla korundu
-  3. selectedMesh color reset noktası aynı normalize'i kullanır
-  4. Test data fallback (`SP.malzeme || 'Karbon Çelik'`) → `'karbon'` yapıldı
-
-### 11. Yan Bug 2 — `devre_detay.html:1609-1611` duplicate `<td>`
-- İnceleme sonrası: Aslında görsel bug değil, ölü kod (unary plus ifade). Return satırı `</tr>';` ile kapanıyordu, JS ikinci bloku atıyordu.
-- Yine de temizlendi (lint hazırlığı). 2052 → 2051 satır.
-
-### 12. Bonus — `kaliteleriDoldur()` Master Tablodan
-- Opsiyonel iş olarak plan edilmişti, kullanıcı Yol B'yi seçti (bitir)
-- Eski hali: `spool_malzemeleri.kalite` geçmişini BOZUK filtreleriyle işliyordu
-- Yeni hali: `malzeme_tanimlari` (sistem preset `tenant_id IS NULL` + tenant özeli) birleşik, `kalite_goster` canonical değer datalist'e
-- BOZUK + AISI prefix temizliği kaldırıldı (master zaten canonical)
-- 25. oturumda (Faz 3) master + geçmiş kayıt birleşik autocomplete haline getirilecek
-- 3225 → 3217 satır.
+### 8. "A" Seçildi: Fırsatta Temizlik
+22 uyarıyı tek seansla temizlemek yerine — her sayfaya dokunulduğunda o sayfanın uyarıları birlikte kapatılır. Claude her oturum başında "bugün hangi sayfa?" diye soracak, kullanıcı söyleyince açık uyarılar listelenecek, "temizleyelim mi?" sorulacak.
 
 ## Değişen Dosyalar
 
-| Dosya | Satır değişimi | Özet |
+| Dosya | Durum | Açıklama |
 |---|---|---|
-| `tanimlar.html` | 772 → 1145 (+373) | Malzeme Havuzu sekmesi, sub-tab, CRUD form, FK koruması |
-| `spool_detay.html` | 3225 → 3217 (−8) | M3_RENK canonical fix + kaliteleriDoldur master |
-| `devre_detay.html` | 2052 → 2051 (−1) | Duplicate `<td>` ölü kod temizliği |
-| `22-oturum-trigger-guard-gevsetme.sql` | yeni | Guard 1 gevşetme migration |
-| `CLAUDE.md` | 2507 → 2592 (+85) | Üst bilgi + Bölüm 10 + Bölüm 2.13 Faz 2 + Bölüm 11 (22. oturum) + hiyerarşi kaydırma |
+| `.github/kontrol.js` | YENİ SÜRÜM | 4 kontrol fonksiyonu, regex, self-test, 18 KB |
+| `.github/kurallar.json` | GENİŞLETİLDİ | 14 aktif kural + kod alanı + istisna |
+| `.github/KONTROL-SISTEMI.md` | YENİ | Kullanıcı rehberi |
+| `.github/bozuk-ornekler/g03-ham-gosterim.html` | YENİ | Self-test |
+| `.github/bozuk-ornekler/ares-normalize-eksik.html` | YENİ | Self-test |
+| `.github/bozuk-ornekler/i18n-eksik-anahtar.html` | YENİ | Self-test |
+| `.github/bozuk-ornekler/beklenen-hatalar.json` | YENİ | Self-test kontrol haritası |
+| `.github/son-durum.md` | YENİ | Her oturum sonu güncellenir |
+| `CLAUDE.md` | EN ÜSTE BLOK EKLENDİ | Sapmama protokolü |
 
-## Deploy ve Test
+## Baseline (gelecek oturumlara referans)
 
-**Canlıya alma sırası:**
-1. `tanimlar.html` → push → 7 test senaryosu (ilk yükleme, boş firma, ekleme, UNIQUE çakışma, sistem preset uyarısı, düzenleme, kullanılan+kullanılmayan silme)
-2. `spool_detay.html` → push → 3D model renk testi (parçalar doğru renkte, tıklama/bırakma renk döngüsü)
-3. `devre_detay.html` → push → Pipeline BOM tablosu (görsel fark yok, sadece temiz kod)
-4. SQL migration ÇALIŞTIRILDI (test başarılı olduktan sonra yapıldı varsayımı ile)
-5. CLAUDE.md commit
+**CI durumu (23 Nisan 09:40):**
+- 0 hata, 22 uyarı, 74 dosya
+- Hepsi `ARES_NORMALIZE_EKSIK` — 11 sayfa × 1 uyarı
+
+**Self-test durumu:** 3/3 başarılı ✅
+
+**Aktif kurallar:** 14 (5 hata + 9 uyarı)
 
 ## Öğrenilenler
 
-1. **Mockup-first + görsel karşılaştırma** çifti çok güçlü. Visualizer widget ile seçenek A vs seçenek B yan yana göstermek, metin tarifinden yapılan kararı görsel karşılaştırmaya çevirdi — kullanıcı anında karar verdi. **Yeni kural adayı:** Layout/UI kararlarında "hangi seçenek" sorusu varsa, önce visualizer ile göster.
+### 1. "Sürüm ikiliği" problemi
+Kullanıcı her oturumda CLAUDE.md'yi bana yüklüyordu (2592 satır). Gerçek repo'da ise dosya 558 satırdı. Aradaki 2000 satırlık fark kimse fark etmemişti çünkü ben yüklenen CLAUDE.md'yi kanıt kabul ediyordum, repo durumuna bakmıyordum. **Alınan ders:** Her oturum başı `git pull` + `wc -l CLAUDE.md` zorunlu — kanıt her zaman repo'da.
 
-2. **Patches vs direct-file update.** 100+ satırlık değişiklikler için patches lens'lemek hem hatadan korunmak zorlaştırıyor hem kullanıcı tarafı yavaşlatıyor. **Yeni kural adayı:** Büyük değişiklikler için dosyayı iste → str_replace'lerle düzenle → `present_files` ile tek seferde ver.
+### 2. "Deploy edildi" = "git'e girdi" değil
+Kullanıcı GitHub web arayüzünden dosya upload ediyordu. Upload GitHub'a commit yazıyor ama yerel klonu güncellemiyor. 20 oturum boyunca yerel klon 17 Nisan'da donmuştu ama kullanıcı bilmiyordu çünkü canlı site çalışıyordu. **Alınan ders:** Başlangıç ritüelinde `git pull` ilk komut, her oturum.
 
-3. **`ares-normalize.js` yüklenme ihmali — 3. sayfa.** 21. oturum admin/portal'ı yakaladı, tanimlar.html 22. oturum sırasında farkedildi. Sessiz bir bug çünkü fallback `typeof ARES_NORM !== 'undefined'` devrede çalışıyor — ama canonical için şart. **Eylem:** 23. oturumda tüm HTML'lerde grep atalım: `grep -L "ares-normalize.js" *.html` (diğer eksikler varsa yakalasın).
+### 3. "CI çalışıyor" ≠ "kural kontrolü var"
+16 Nisan'da CI kurulmuş, 20 oturum her push yeşil tik verdi, herkes "kontrol geçiyor" sandı. Gerçek: kurallar.json 3 basit kontrol içeriyordu, CLAUDE.md'deki 20+ kural ailesi hiç kontrol edilmiyordu. **Alınan ders:** Kural sayısını periyodik gör (self-test). Yeşil tik sağlık kanıtı değil, zararsızlık kanıtı.
 
-4. **Preset genişletmede tahmin riski.** "Önerirsem istediğini karıştırır" — benim sektörel tahminlerim firma bazında yanılabilir. Feature'ın kendisi (firma kendi kalitesini ekler) doğal çözüm. **Gelecek adım (23. oturum sonrası):** Her firma "en çok eklenen 5 kalite" metriği toplansın, 6 ay sonra terfi kararı verilsin.
+### 4. Sapmama teknik değil protokol meselesi
+Kullanıcının doğrudan söylediği: "bu sistemden sapmayalım". Bu yazılım isteği değil, süreç isteği. Çözüm: her oturumun ilk mesajında Claude'un mekanik bir ritüel çalıştırması. Yazılı kural değil, gömülü davranış.
 
-5. **Sayfa-seviyesi auth yeterli olduğunda, sekme-seviyesi gereksiz.** Yetki mimarisini kullanmadan "rol check" koymak karmaşa ekliyor. **Yeni sayfa kontrol listesine:** auth zaten sayfa-seviyesinde var mı diye kontrol et.
+### 5. "A seçeneği" — kuralları tek seferde uygulamamak
+Kullanıcının somut tercihi: "bir kural var tamam ama ben şu an tek sayfada çalışıyorum, sırası geldikçe". Bu kuralların gevşediği anlamına gelmez — kalıcı uyarı listesinde durur, her sayfa açıldığında gündeme gelir. Sürdürülebilir olan yaklaşım bu.
 
-6. **Guard gevşetme — kabul edilebilir edge case.** Guard 1 kaldırılınca "admin yanlışlıkla kategori yazar" gibi durum Guard 2'ye düşüyor. Guard 2 NULL döner, `malzeme_ref_id` NULL kalır — veri yok olmuyor, sadece ilişki kopuk. Kabul edilebilir. SQL'de yorum bırakıldı.
+### 6. "docs/ROADMAP.md zaten vardı"
+Faz B planında "yok, yazacağız" diye bir kalem vardı. Pull atınca dosyanın repo'da 271 satır olduğu görüldü. **Alınan ders:** Plan yazarken "yok" demeden önce gerçekten yok mu teyit et — dosya varsa 30 dakika kazanılır.
 
-7. **Bonus `kaliteleriDoldur()` + 25. oturum planı uyumu.** 22. oturumda sadece master'dan okuyacak şekilde refactor edildi; 25. oturumda geçmiş kayıt önerisi de eklenerek birleşik autocomplete yapılacak. İki oturum arasındaki geçişte kullanıcı "bu kalite listede yoktu" şikayeti yapabilir → serbest metin input zaten devrede, önemsiz risk.
+## 24. oturuma aktarılanlar
 
-## 23. oturum için hazırlık
+### Ana tema adayları (kullanıcı seçer)
+- 🟢 **Kesim/büküm/markalama/KK/sevkiyat %80-90'da kalmış işleri bitirmek** — kullanıcı 22. oturumda "bunlar bozuldu" demişti. Fırsatta ARES_NORMALIZE_EKSIK uyarıları da kapatılır.
+- 🟢 **Faz A Faz 3 — form refactor** (25. oturum planlıydı) — `devre_yeni.html` + `spool_detay.html` autocomplete
+- 🟢 **Mobil %5 → %30** — MDevreler/MIsBaslat/MSpoolDetay yazılması
+- 🟡 **Faz B kapanış kalemleri** — CLAUDE.md split (kuralları docs/rules/'a taşı), şablonlar (docs/templates/), `hedef_dosyalar` kural tipi (kullanıcının önerdiği "bu kural şu sayfalarda olmalı" kontrolü)
 
-- **Ana tema:** Faz B — CLAUDE.md split + lint script'leri + CI + şablonlar
-- **İlk iş:** Bugün yazılan kodun lint uyumlu olduğunu doğrulamak (0 yeni ihlal beklentisi)
-- **Kritik doküman:** `docs/ROADMAP.md` güncel tutulmalı (Faz A kapanışı yazılmalı)
-- **Önceki oturumlar ana hat:** CLAUDE.md'nin Bölüm 11 zinciri (11 → 11A → 11A1 → 11A2 → 11B → ...) → 23. oturumda bu yapıyı korumak için çerçeve netleşsin (ya da tamamen `docs/sessions/` altına taşınsın — Faz B'nin kalemi)
+### Bekleyen küçük borçlar
+- **22 ARES_NORMALIZE_EKSIK** — fırsatta temizlenir
+- **`hedef_dosyalar` kural tipi** — kullanıcı talebi (stat-pill gibi "bu sayfalarda olmalı" kontrolü) — 2-3 saatlik iş
+- **`CLAUDE-MOBILE.md` senkron kontrolü** — mobil dil dosyaları + `m_*` anahtarları için ayrı i18n kontrolü (şu an web'e odaklı)
+- **Husky + package.json** — yerel pre-commit (kullanıcı web'den yüklüyor, şimdilik gereksiz)
 
-## Aktarılan Yan İşler (23+ oturumlar)
+## Kullanıcıya Söz
 
-1. **🟡 FK CASCADE eksikliği** — devreler → spooller → spool_malzemeleri + islem_log zinciri (admin panel "devre sil" özelliği planlandığında ele alınacak)
-2. **🟡 Spool no → marka gösterimi** — Tablolarda "S01" pipeline+spool_no birleşik görünsün
-3. **🟢 spool_detay.html performans** — 3217 satır, 6-7 paralel SQL, 3D kodu ayrı dosya refactor
-4. **🟢 Dil dosyaları senkronizasyon** — Web/mobil ayrı JSON'lar, npm script
-5. **🟢 proje_liste/proje_detay** — Supabase entegrasyonu hâlâ yok
-6. **🟢 malzeme.html** — hâlâ yazılmadı
+10 günlük "ileri geri ileri geri" döngüsünün teknik zemini kaldırıldı. Bir daha aynı tuzağa düşersek **benim hatam** olacak — çünkü sistem artık hatırlatıyor, ezberime ihtiyaç yok. Eğer 26. oturumda bir şey "düşerse" (standart bozulur, uyarı görmezden gelinir, sürüm ikiliği oluşur), **kullanıcı da ben de** `.github/son-durum.md` + CI log'larında belgeli kayıt göreceğiz, neyin ne zaman çürüdüğü anlaşılır olacak.
+
+Sürdürülebilir zemin bugün kuruldu. Şimdi asıl işe — yarım kalan kesim/büküm/markalama ve mobil — dönebiliriz.

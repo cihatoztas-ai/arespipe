@@ -1,7 +1,106 @@
 # AresPipe — Claude Proje Bağlamı
 
+> **⚠️ OTURUM BAŞLANGICI — BU BLOK ATLANMAZ**
+>
+> Bu dosya her oturum başında okunuyor. İlk 40 satır mekanik bir ritüel — Claude dahil kimse atlamıyor. Sebep: 22 oturumluk çalışmada "hatırlıyorum, kontrol etmeme gerek yok" tutumu 10 günlük yerinde sayma yarattı (detay: `.github/son-durum.md`). Artık makineye güveniyoruz, ezbere değil.
+
+---
+
+## 🔒 ZORUNLU OTURUM BAŞLANGIÇ RİTÜELİ
+
+**Claude:** Oturumun ilk mesajında, başka hiçbir iş yapmadan önce aşağıdaki 4 soruyu kullanıcıya sor. Cevaplar gelmeden teknik iş başlamaz. Kullanıcı "atla, acelem var" dese bile ısrar et — 30 saniyelik iş, kurulmuş disiplin.
+
+```
+Oturum başlangıç ritüeli. 4 kısa kontrol:
+
+1. Şunu çalıştırır mısın ve çıktıyı yapıştırır mısın:
+   cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+
+2. GitHub Actions sekmesinde son build rengi nedir? (yeşil / sarı / kırmızı)
+
+3. .github/son-durum.md dosyasını bana yükler misin veya içeriğini yapıştırır mısın?
+
+4. Bugün hangi sayfayla çalışacağız? (Sayfayı söyle, açık uyarıları göstereyim.)
+```
+
+**Bu 4 cevap geldikten sonra Claude şunu yapar:**
+- Git durumu temiz mi kontrol eder (stash kalıntısı, commitlenmemiş değişiklik yok mu)
+- CI rengi yeşil değilse önce onu düzeltir
+- son-durum.md'den son oturum özetini + açık borçları okur
+- Kullanıcı söylediği sayfa için açık uyarı listesini `kurallar.json`'dan eşleştirir, "bugün bu uyarıları da düzeltelim mi?" diye sorar
+
+---
+
+## 🔒 OTURUM SONU KAPANIŞI (her oturum bitiminde)
+
+**Claude:** Oturumun kapanırken **mutlaka** şunu yapar:
+1. `.github/son-durum.md`'i günceller (CI son durum, kural sayısı, açık borç, yapılanlar, sonraki oturum notu)
+2. `CLAUDE-SON-OTURUM.md` yazar (detaylı özet)
+3. `CLAUDE-SONRAKI-OTURUM.md` yazar (bir sonraki oturum gündemi)
+4. Bu 3 dosyayı `present_files` ile kullanıcıya verir
+5. Kullanıcıya şu cümleyi söyler: **"Bu 3 dosyayı GitHub'a yükle, CI çalışsın, yeşil göresin. Sonra molana gidebilirsin."**
+
+---
+
+## 🔒 KURAL ÇAKIŞMASI DURUMU
+
+**Claude:** Kullanıcı yeni bir istek söylediğinde, Claude bu istek **önceki bir kural ile çelişiyor mu** diye kontrol eder. Kontrol yolu:
+- `kurallar.json`'a bakar
+- `docs/rules/` altındaki (varsa) ilgili dosyaya bakar
+- Önceki 2 oturum özetine bakar (`son-durum.md` + `CLAUDE-SON-OTURUM.md`)
+
+Çakışma varsa **sessizce eski kuralı çiğneyerek yeni iş yapmaz.** Şunu söyler:
+
+> "Dikkat: isteğin X kuralıyla çelişiyor. Üç seçenek var:
+> (A) X kuralını güncelleyelim (eski uygulanmış yerlere etkisi olabilir, kontrol edelim)
+> (B) Bu sayfa için istisna ekleyelim (X kuralı genel kalır)
+> (C) İsteği iptal edelim (X kuralı doğru kalır)
+> Hangisi?"
+
+---
+
+## 🔒 YENİ KURAL EKLEME PROTOKOLÜ
+
+**Claude:** Oturumda "bundan sonra hep şöyle olsun" ifadesi geçerse yeni kural işareti. Claude üç iş yapar:
+1. `.github/kurallar.json`'a kural ekler (yeni kurallar `"siddet": "uyari"` ile başlar)
+2. `.github/bozuk-ornekler/` altına kasten ihlal eden test dosyası yazar + `beklenen-hatalar.json`'u günceller
+3. Yerel self-test koşturur: `node .github/kontrol.js --self-test`
+
+Self-test yeşil olmadan "tamam, ekledim" demez.
+
+---
+
+## 🔒 HER 5 OTURUMDA BİR SAĞLIK KONTROLÜ
+
+**Claude:** Son oturum sayısı 5'in katıysa (28, 33, 38...) kullanıcıya söyle:
+
+> "Bu 5. oturum — self-test günü. Lütfen çalıştır: `node .github/kontrol.js --self-test`. Çıktısında '3/3 başarılı' olmasını bekliyoruz."
+
+Çıktı temiz değilse o oturum Faz B kuralları bozulmuş demektir — diğer işleri bırak, önce kuralları tamir et.
+
+---
+
+## 🔒 ACİL DURUM BYPASS (nadiren)
+
+Kritik bir hata varsa ve CI kırmızıyken yükleme zorunluysa: commit mesajına `[skip ci]` yazılır. Ama bu acil durum özelliği — bir oturumda 1 defadan fazla kullanılırsa sistemde bir şey bozuk demektir, Claude kullanıcıya söyler.
+
+---
+
+## 🔒 RİTÜEL TESTİ
+
+Bu bloğu gören Claude, kullanıcının ilk "merhaba"sından sonra ritüeli başlatırsa sistem çalışıyor demektir. Aksi halde bu blok okunmadı demek — kullanıcı şöyle der: **"Ritüeli atladın, başlama."**
+
+---
+
+> Son güncelleme: 23 Nisan 2026 — 23. oturum (Faz B kurucu oturum) — CLAUDE sapmama protokolü aktif edildi.
+
+---
+
+_(Aşağıda proje bağlamı devam eder — Bölüm 1, 2, 3, ...)_
+
+
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 23 Nisan 2026 (22. oturum KAPATILDI — Faz A Faz 2: Admin UI (tanimlar.html > Malzeme Havuzu sekmesi) tamamlandı. Sistem + Firma alt-tab yapısı, inline ekleme/düzenleme formu, FK violation korumalı silme, UNIQUE çakışma ve sistem preset uyarı popup'ları. `malzeme_ref_bul()` Guard 1 gevşetildi. 2 yan bug kapatıldı: spool_detay.html M3_RENK canonical kodlara çevrildi, devre_detay.html duplicate `<td>` ölü kodu temizlendi. `kaliteleriDoldur()` master tablodan okuyacak şekilde refactor edildi. E-06 master tablo artık hem yazma hem okuma hem UI yönetimi açılarından tamamen canlı.)
+> Son güncelleme: 23 Nisan 2026 (23. oturum KAPATILDI — Faz B: Sapmama sistemi kuruldu. `.github/kontrol.js` regex + self-test + i18n destekli yeniden yazıldı, 14 aktif kural, 3 bozuk-örnek test dosyası, `.github/son-durum.md` kurumu. CI baseline: 0 hata / 22 uyarı / 74 dosya. Tüm uyarılar ARES_NORMALIZE_EKSIK — 11 sayfada script satırı eksik, "A" kararı: fırsatta temizlenecek. Sapmama protokolü CLAUDE.md'nin tepesine ZORUNLU RİTÜEL olarak gömüldü. 22. oturum [Faz A Faz 2 — tanimlar.html Malzeme Havuzu] geçen oturum kapanmıştı, Bölüm 11'de detayı duruyor.)
 
 ---
 
