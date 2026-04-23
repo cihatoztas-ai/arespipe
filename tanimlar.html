@@ -69,6 +69,25 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 .tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:700;}
 .tab-panel{display:none;}.tab-panel.on{display:block;}
 
+/* ALT SEKMELER — Malzeme Havuzu */
+.sub-tabs{display:flex;gap:6px;margin-bottom:16px;}
+.sub-tab{padding:6px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;color:var(--txd);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.sub-tab:hover{border-color:var(--ac);color:var(--tx);}
+.sub-tab.active{background:rgba(45,142,255,.12);border-color:var(--ac);color:var(--ac);font-weight:700;}
+.sub-tab .cnt{font-size:14px;padding:1px 7px;border-radius:10px;background:var(--bor);color:var(--txm);font-weight:700;}
+.sub-tab.active .cnt{background:var(--ac);color:#fff;}
+.sub-panel{display:none;}.sub-panel.on{display:block;}
+
+/* MALZEME HAVUZU — yardımcılar */
+.std-chip{font-family:'Barlow Condensed',sans-serif;font-size:14px;padding:2px 7px;border-radius:4px;background:var(--sur2);color:var(--txm);font-weight:600;white-space:nowrap;}
+.aciklama-cell{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txm);font-size:14px;}
+.kalite-yeni-form{background:var(--sur);border:1px solid var(--ac);border-radius:12px;padding:16px;margin-bottom:12px;display:none;}
+.kalite-yeni-form.open{display:block;}
+.kalite-yeni-form .fg3{display:grid;grid-template-columns:180px 1fr 1fr;gap:10px;}
+.kalite-yeni-form .fi,.kalite-yeni-form select{width:100%;padding:7px 10px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--tx);font-family:'Barlow',sans-serif;font-size:14px;}
+.kalite-yeni-form .fi:focus,.kalite-yeni-form select:focus{outline:none;border-color:var(--ac);}
+.kalite-yeni-form label.fl{display:block;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+
 /* BLOK YETKİLERİ */
 .blok-liste{display:flex;flex-direction:column;gap:8px;}
 .blok-satir{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;}
@@ -102,6 +121,7 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
 <!-- ✅ Script sırası — SC-01 -->
 <script src="ares-store.js"></script>
 <script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -129,6 +149,7 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
     <div class="tabs">
       <button class="tab-btn active" data-tab="bloklar">🔐 Yetki Blokları</button>
       <button class="tab-btn" data-tab="kodseriler">🔢 Kod Serileri</button>
+      <button class="tab-btn" data-tab="malzemehavuzu">🧪 Malzeme Havuzu</button>
     </div>
 
     <!-- YETKİ BLOKLARI -->
@@ -199,6 +220,101 @@ td{padding:12px 16px;font-size:14px;vertical-align:middle;}
       </div>
     </div>
 
+    <!-- MALZEME HAVUZU -->
+    <div class="tab-panel" id="tabMalzemehavuzu">
+
+      <div class="info-banner" style="background:rgba(45,142,255,.06);border-color:rgba(45,142,255,.22);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Sistem kaliteleri tüm firmalar için ortak ve değiştirilemez; firmaya özel kaliteler buradan eklenir.</span>
+      </div>
+
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="sistem">Sistem Kaliteleri <span class="cnt" id="sistemKaliteSayi">12</span></button>
+        <button class="sub-tab" data-subtab="firma">Firma Kaliteleri <span class="cnt" id="firmaKaliteSayi">0</span></button>
+      </div>
+
+      <!-- SİSTEM ALT PANEL -->
+      <div class="sub-panel on" id="subSistem">
+        <div class="tablo-kart cl-leg">
+          <div class="tablo-header">
+            <div class="tablo-baslik">Sistem Kaliteleri</div>
+            <div style="font-size:14px;color:var(--txd);">read-only · tenant_id IS NULL</div>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:160px;">Kategori</th>
+              <th style="width:130px;">Kod</th>
+              <th style="width:160px;">Gösterim</th>
+              <th>Standart</th>
+            </tr></thead>
+            <tbody id="sistemKaliteBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FİRMA ALT PANEL -->
+      <div class="sub-panel" id="subFirma">
+
+        <!-- INLINE EKLEME FORMU — blok-yeni-form patterniyle aynı -->
+        <div class="kalite-yeni-form" id="kaliteYeniForm">
+          <div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;" id="kaliteFormBaslik">Yeni Kalite Ekle</div>
+          <div class="fg3" style="margin-bottom:10px;">
+            <div>
+              <label class="fl">Kategori</label>
+              <select id="kfKategori">
+                <option value="karbon">Karbon Çelik</option>
+                <option value="paslanmaz">Paslanmaz</option>
+                <option value="bakir">Bakır Alaşım</option>
+                <option value="alum">Alüminyum</option>
+                <option value="diger">Diğer</option>
+              </select>
+            </div>
+            <div>
+              <label class="fl">Kalite Kodu</label>
+              <input type="text" class="fi" id="kfKod" placeholder="örn: 321, A335P91" maxlength="40">
+            </div>
+            <div>
+              <label class="fl">Gösterim</label>
+              <input type="text" class="fi" id="kfGoster" placeholder="örn: 321, A335 P91" maxlength="60">
+            </div>
+          </div>
+          <div class="fg2" style="margin-bottom:10px;">
+            <div>
+              <label class="fl">Standart (ops.)</label>
+              <input type="text" class="fi" id="kfStandart" placeholder="örn: ASTM A240, DIN 17175" maxlength="60">
+            </div>
+            <div>
+              <label class="fl">Açıklama (TR, ops.)</label>
+              <input type="text" class="fi" id="kfAciklamaTr" placeholder="örn: Yüksek sıcaklık buhar hattı için" maxlength="200">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-ac btn-sm" onclick="kaliteKaydet()">Kaydet</button>
+            <button class="btn btn-g btn-sm" onclick="kaliteFormKapat()">İptal</button>
+          </div>
+        </div>
+
+        <div class="tablo-kart cl-ac">
+          <div class="tablo-header">
+            <div class="tablo-baslik">Firma Kaliteleri</div>
+            <button class="btn btn-ac btn-sm" onclick="kaliteFormAc()">+ Yeni Kalite</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:160px;">Kategori</th>
+              <th style="width:130px;">Kod</th>
+              <th style="width:160px;">Gösterim</th>
+              <th style="width:180px;">Standart</th>
+              <th>Açıklama</th>
+              <th style="width:90px;text-align:right;"></th>
+            </tr></thead>
+            <tbody id="firmaKaliteBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
   </div><!-- /page -->
 </div><!-- /main-content -->
 </div><!-- /app-shell -->
@@ -247,6 +363,93 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
     if (btn.dataset.tab === 'kodseriler' && !_kodSeriData.length && typeof ARES !== 'undefined') kodSeriYukle();
   });
 });
+
+// ── MALZEME HAVUZU (Mockup — JS Faz 2'de Supabase'e bağlanacak) ──
+// Alt-tab switching (sub-tab)
+document.querySelectorAll('.sub-tab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var parent = btn.closest('#tabMalzemehavuzu');
+    if (!parent) return;
+    parent.querySelectorAll('.sub-tab').forEach(function(b){ b.classList.remove('active'); });
+    parent.querySelectorAll('.sub-panel').forEach(function(p){ p.classList.remove('on'); });
+    btn.classList.add('active');
+    var sub = btn.dataset.subtab;
+    var id = 'sub' + sub.charAt(0).toUpperCase() + sub.slice(1);
+    var panel = document.getElementById(id);
+    if (panel) panel.classList.add('on');
+  });
+});
+
+// Mockup sistem preset verisi — JS Faz 2'de Supabase'den gelecek
+var _mockSistemData = [
+  {kategori:'karbon',     kod:'ST37',        goster:'St 37',        standart:'DIN 17100'},
+  {kategori:'karbon',     kod:'S235JR',      goster:'S235JR',       standart:'EN 10025'},
+  {kategori:'karbon',     kod:'A106B',       goster:'A106 B',       standart:'ASME SA-106'},
+  {kategori:'karbon',     kod:'A53',         goster:'A53',          standart:'ASTM A53'},
+  {kategori:'paslanmaz',  kod:'316L',        goster:'316L',         standart:'ASTM A240'},
+  {kategori:'paslanmaz',  kod:'304L',        goster:'304L',         standart:'ASTM A240'},
+  {kategori:'paslanmaz',  kod:'316',         goster:'316',          standart:'ASTM A240'},
+  {kategori:'paslanmaz',  kod:'304',         goster:'304',          standart:'ASTM A240'},
+  {kategori:'paslanmaz',  kod:'14571',       goster:'1.4571',       standart:'EN 10088'},
+  {kategori:'paslanmaz',  kod:'A312TP316L',  goster:'A312 TP316L',  standart:'ASTM A312'},
+  {kategori:'bakir',      kod:'CUNI9010',    goster:'CuNi 90/10',   standart:'ASTM B466'},
+  {kategori:'alum',       kod:'6061T6',      goster:'6061-T6',      standart:'ASTM B221'},
+];
+
+// G-03: ham kategori kodunu lokalize et (ARES_NORM yoksa ham değere düş)
+function _mhMalzEtiket(kod){
+  if (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeEtiket) {
+    return ARES_NORM.malzemeEtiket(kod) || kod;
+  }
+  return kod;
+}
+
+function sistemKaliteRender(){
+  var tbody = document.getElementById('sistemKaliteBody');
+  if (!tbody) return;
+  tbody.innerHTML = _mockSistemData.map(function(r){
+    return '<tr>' +
+      '<td>' + esc(_mhMalzEtiket(r.kategori)) + '</td>' +
+      '<td class="td-kod">' + esc(r.kod) + '</td>' +
+      '<td>' + esc(r.goster) + '</td>' +
+      '<td><span class="std-chip">' + esc(r.standart || '—') + '</span></td>' +
+      '</tr>';
+  }).join('');
+  var sayac = document.getElementById('sistemKaliteSayi');
+  if (sayac) sayac.textContent = _mockSistemData.length;
+}
+
+function firmaKaliteRender(){
+  var tbody = document.getElementById('firmaKaliteBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="bos">Henüz firma kaliteniz yok. <b>+ Yeni Kalite</b> ile ekleyebilirsiniz.</td></tr>';
+  var sayac = document.getElementById('firmaKaliteSayi');
+  if (sayac) sayac.textContent = '0';
+}
+
+function kaliteFormAc(){
+  document.getElementById('kaliteFormBaslik').textContent = 'Yeni Kalite Ekle';
+  ['kfKod','kfGoster','kfStandart','kfAciklamaTr'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var ktg = document.getElementById('kfKategori'); if (ktg) ktg.value = 'karbon';
+  document.getElementById('kaliteYeniForm').classList.add('open');
+  setTimeout(function(){ var k = document.getElementById('kfKod'); if (k) k.focus(); }, 50);
+}
+
+function kaliteFormKapat(){
+  var f = document.getElementById('kaliteYeniForm');
+  if (f) f.classList.remove('open');
+}
+
+function kaliteKaydet(){
+  // JS Faz 2'de Supabase insert burada olacak (UNIQUE çakışma + RLS)
+  toast('Kaydet butonu mockup aşamasında pasif — JS Faz 2 ile aktifleşecek', 'er');
+}
+
+// İlk render — mockup verileri (ARES_NORM sync yüklendiği için direkt çağrı güvenli)
+sistemKaliteRender();
+firmaKaliteRender();
 
 // ── YETKİ BLOKLARI ────────────────────────────────────────
 var _blokData     = [];
