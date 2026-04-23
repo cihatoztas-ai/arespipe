@@ -1,0 +1,453 @@
+{
+  "tarih": "2026-04-23T19:28:14.773Z",
+  "commit_sha": "17bde8947b4139e14d06fa7ff759cb02123bc19d",
+  "commit_ref": "main",
+  "workflow_run": 475,
+  "ozet": {
+    "hata": 0,
+    "uyari": 22,
+    "taranan_dosya": 74,
+    "sorunlu_dosya": 21,
+    "durum": "sari"
+  },
+  "kurallar": {
+    "I18N_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "tv('cmn_yuzey_epoksi') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 2,
+      "dosyalar": [
+        {
+          "dosya": "ares-lang.js",
+          "sayi": 1,
+          "satirlar": [
+            121
+          ]
+        },
+        {
+          "dosya": "devre_detay.html",
+          "sayi": 1,
+          "satirlar": [
+            1804
+          ]
+        }
+      ]
+    },
+    "ARES_NORMALIZE_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)",
+      "sayi": 16,
+      "dosyalar": [
+        {
+          "dosya": "ayarlar.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "etiketleme.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "index.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "izometri-batch.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "kullanici_detay.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "kullanicilar.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "kurallar.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "log.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "proje_detay.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "proje_liste.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "raporlar.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "sorgula.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "tersaneler.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "testler.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "tezgahlar.html",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "uyarilar.html",
+          "sayi": 1,
+          "satirlar": []
+        }
+      ]
+    },
+    "G03_HAM_KALITE": {
+      "tip": "uyari",
+      "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "devre_yeni.html",
+          "sayi": 1,
+          "satirlar": [
+            1467
+          ]
+        }
+      ]
+    },
+    "HISTORY_BACK": {
+      "tip": "uyari",
+      "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "is_baslat.html",
+          "sayi": 1,
+          "satirlar": [
+            235
+          ]
+        }
+      ]
+    },
+    "YUKLENIYOR_KUMSAAT": {
+      "tip": "uyari",
+      "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli.",
+      "sayi": 2,
+      "dosyalar": [
+        {
+          "dosya": "kurallar.html",
+          "sayi": 1,
+          "satirlar": [
+            938
+          ]
+        },
+        {
+          "dosya": "lang/tr.json",
+          "sayi": 1,
+          "satirlar": [
+            116
+          ]
+        }
+      ]
+    }
+  },
+  "dosyalar": [
+    {
+      "dosya": "ares-lang.js",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 121,
+          "mesaj": "tv('cmn_yuzey_epoksi') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "ayarlar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "devre_detay.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1804,
+          "mesaj": "tv('sp_note_confirm_delete') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "devre_yeni.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "G03_HAM_KALITE",
+          "tip": "uyari",
+          "satir": 1467,
+          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
+        }
+      ]
+    },
+    {
+      "dosya": "etiketleme.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "index.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "is_baslat.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "HISTORY_BACK",
+          "tip": "uyari",
+          "satir": 235,
+          "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan."
+        }
+      ]
+    },
+    {
+      "dosya": "izometri-batch.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "kullanici_detay.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "kullanicilar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "kurallar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "YUKLENIYOR_KUMSAAT",
+          "tip": "uyari",
+          "satir": 938,
+          "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli."
+        },
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "lang/tr.json",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "YUKLENIYOR_KUMSAAT",
+          "tip": "uyari",
+          "satir": 116,
+          "mesaj": "Kum saati yükleniyor metni kullanılmamalı — tablo boş bırakılsın, animasyon yeterli."
+        }
+      ]
+    },
+    {
+      "dosya": "log.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "proje_detay.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "proje_liste.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "raporlar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "sorgula.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "tersaneler.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "testler.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "tezgahlar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    },
+    {
+      "dosya": "uyarilar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
+        }
+      ]
+    }
+  ]
+}
