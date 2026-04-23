@@ -27,6 +27,9 @@ Oturum başlangıç ritüeli. 4 kısa kontrol:
 - Git durumu temiz mi kontrol eder (stash kalıntısı, commitlenmemiş değişiklik yok mu)
 - CI rengi yeşil değilse önce onu düzeltir
 - son-durum.md'den son oturum özetini + açık borçları okur
+- **`docs/CIHAT-PROFIL.md`'yi okur** (kullanıcının çalışma tarzını, tercihlerini, allerjilerini hatırlamak için — Cihat'a "nasıl çalışıyoruz" diye sordurmaz, kendi okur)
+- **`docs/SPOOL-AI-VIZYON.md`'yi hatırlar** (gündelik iş vizyona hizmet ediyor mu?)
+- **`docs/PANO-TASARIM.md`'yi kontrol eder** (24+ oturumda pano implementasyonu gündemde)
 - Kullanıcı söylediği sayfa için açık uyarı listesini `kurallar.json`'dan eşleştirir, "bugün bu uyarıları da düzeltelim mi?" diye sorar
 
 ---
@@ -100,7 +103,7 @@ _(Aşağıda proje bağlamı devam eder — Bölüm 1, 2, 3, ...)_
 
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 23 Nisan 2026 (23. oturum KAPATILDI — Faz B: Sapmama sistemi kuruldu. `.github/kontrol.js` regex + self-test + i18n destekli yeniden yazıldı, 14 aktif kural, 3 bozuk-örnek test dosyası, `.github/son-durum.md` kurumu. CI baseline: 0 hata / 22 uyarı / 74 dosya. Tüm uyarılar ARES_NORMALIZE_EKSIK — 11 sayfada script satırı eksik, "A" kararı: fırsatta temizlenecek. Sapmama protokolü CLAUDE.md'nin tepesine ZORUNLU RİTÜEL olarak gömüldü. 22. oturum [Faz A Faz 2 — tanimlar.html Malzeme Havuzu] geçen oturum kapanmıştı, Bölüm 11'de detayı duruyor.)
+> Son güncelleme: 23 Nisan 2026 (23. oturum KAPATILDI — Faz B: Sapmama sistemi kuruldu, Pano tasarımı yapıldı. `.github/kontrol.js` regex + self-test + i18n destekli yeniden yazıldı, 14 aktif kural, 3 bozuk-örnek test dosyası, `.github/son-durum.md` kurumu. CI baseline: 0 hata / 22 uyarı / 74 dosya. Sapmama protokolü CLAUDE.md'nin tepesine ZORUNLU RİTÜEL olarak gömüldü. **Yeni belgeler:** `docs/SPOOL-AI-VIZYON.md` (ürün vizyonu), `docs/PANO-TASARIM.md` (Süper Admin Yönetim Panosu — 24. oturumda implement), `docs/CIHAT-PROFIL.md` (Cihat'ı tanımak için Claude'un not dosyası). 22. oturum [Faz A Faz 2 — tanimlar.html Malzeme Havuzu] Bölüm 11'de duruyor.)
 
 ---
 

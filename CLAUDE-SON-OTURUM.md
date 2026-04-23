@@ -1,135 +1,101 @@
 # AresPipe — 23. Oturum Özeti (23 Nisan 2026)
 
 ## Ana Başlık
-**Faz B — Sapmama Sistemi Kuruldu.** 16 Nisan'dan beri repo'da boş duran CI altyapısı gerçekten çalışır hale getirildi. 14 aktif kural, 3 self-test dosyası, başlangıç/kapanış ritüelleri. 20 oturumluk "yazılı kurala güven, kontrol etmeye gerek yok" dönemi bitti — artık her commit otomatik kontrol ediliyor.
+**Faz B — Sapmama Sistemi Kuruldu + Süper Admin Pano Tasarımı Netleşti.** 16 Nisan'dan beri repo'da boş duran CI altyapısı gerçekten çalışır hale getirildi. 14 aktif kural, 3 self-test dosyası, başlangıç/kapanış ritüelleri. Ayrıca Cihat'ın 3 ağrısı (feedback yönetimi, her oturum teknik seviye anlatma, vizyon-günlük iş bağlantısı görememek) tek bir tasarımda birleştirildi: Süper Admin Yönetim Panosu.
 
-## Strateji Kararı
-- **"Kurallı geliştirme"den "zorla uyumlu geliştirme"ye geçiş başarıyla tamamlandı.**
-- Temel tespit: 20 oturumluk iş boyunca CLAUDE.md 558 → 2592 satıra çıktı ama kuralların gerçek kontrolü `.github/kurallar.json`'da sadece **3 basit kontrol** ile sınırlıydı. Yazılı iddia ile kanıt arasındaki uçurum fark edilmemişti.
-- **Kritik keşif (oturum başında):** Repo'da üç paralel gerçeklik vardı — (1) yerel klon 17 Nisan'da donmuş, (2) canlı kod GitHub'da web'den upload ile, (3) kullanıcının Downloads'taki zip'lerde 21. oturum dosyaları. `git pull origin main` ile senkronize edildi: 35 dosya, +13.333 satır indi.
-- **Tasarım kararı A:** Baseline'daki 22 uyarı tek seansla temizlenmez, **fırsatta** (her sayfaya dokunulduğunda) giderilir. "Kural geldi hurra bırakalım başka şey yapmayalım" yaklaşımı reddedildi.
+## Strateji Kararları
+1. **"Kurallı geliştirme"den "zorla uyumlu geliştirme"ye geçiş** Faz B ile tamamlandı.
+2. **Baseline 0 hata / 22 uyarı kabul edildi.** Uyarılar fırsatta temizlenir.
+3. **Pano süper admin sayfası altında yaşayacak.** Mevcut süper admin sayfası çöpe atılmıyor — sadece çökmüş "Yol Haritası" ve "Geri Bildirimler" bölümleri sökülüyor, yerine 3 sekmeli Pano geliyor.
+4. **Görev kaynağı hibrit (C seçeneği):** Statik dosyalardan + yeni `panel_gorevler` tablosundan manuel.
+5. **Pano 24. oturumda implement edilecek.** Kesim/büküm/markalama 25-26. oturuma kaldı.
+6. **Cihat profili kalıcı belgeye dönüştü.** `docs/CIHAT-PROFIL.md` — her oturum başı okunur.
 
-## Akış (kronolojik)
+## Akış (Kronolojik)
 
-### 1. Senkronizasyon (kritik, saat 1)
-- `git fetch origin` → 17 Nisan'dan sonra 15+ upload tespit edildi
-- `CLAUDE-MOBILE.md`'de yerel stash (17 Nisan R-09/R-10 kalıntısı) bulundu, stash'lenip pull sonrası iptal edildi (GitHub'da zaten vardı)
-- `git pull origin main` → 35 dosya sync, repo güncel. `CLAUDE.md` 558 → 2592, `docs/ROADMAP.md` + `ares-normalize.js` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` yerel klona indi.
+### 1. Sürprizli Başlangıç — Sürüm Kayması
+`git fetch origin` → 17 Nisan'dan sonra 15+ upload tespit edildi, yerel klon donmuştu. `git pull` ile 35 dosya indi, repo güncel.
 
-### 2. Mevcut CI incelemesi (sürpriz)
-- `.github/kontrol.yml` + `.github/kontrol.js` + `.github/kurallar.json` zaten vardı (16 Nisan kuruldu)
-- Ama `kurallar.json`'da sadece: 5 yasak renk + history.back + flash prev + 1 zorunlu var (`ares-layout.js`) = **8 kural**, CLAUDE.md'deki 20+ kural ailesinin çoğu kontrol edilmiyordu
-- Karar: Sıfırdan yazmak yerine mevcut altyapıyı **genişlet**
+### 2. Mevcut CI'in Sınırlarını Görmek
+`.github/kontrol.yml` 16 Nisan'da kurulmuş, 20 oturum her push yeşil tik vermiş. Ama kurallar.json'da sadece 8 kural vardı — CLAUDE.md'deki 20+ kural ailesinin çoğu kontrol edilmiyordu.
 
-### 3. kontrol.js Yeniden Yazıldı
-**Eklenen özellikler:**
-- **Regex desteği** — `kural.regex === true` ile
-- **Satır istisnası** — `kural.satirda_olmamalidir: ["ARES_NORM"]` ile false positive önleme
-- **i18n senkron kontrolü** — `tv('anahtar')` çağrıları `lang/tr.json`'da var mı?
-- **Kod (ID) alanı** — her kural bir `kod`'a sahip (örn. `G03_HAM_MALZEME`), self-test bunu kullanıyor
-- **Self-test modu** — `--self-test` flag'iyle `.github/bozuk-ornekler/`'i tarar, beklenen kuralların yakalandığını doğrular
+### 3. kontrol.js Genişletildi
+Regex desteği, satır istisnası, i18n senkron kontrolü, kural kodu alanı, self-test modu eklendi.
 
-### 4. kurallar.json Genişletildi (8 → 14 kural)
-**Mevcut kurallar korundu, yeni eklenenler:**
-| Kod | Seviye | Açıklama |
-|---|---|---|
-| G03_HAM_MALZEME | uyari | `esc(x.malzeme)` ham → `ARES_NORM.malzemeEtiket` |
-| G03_HAM_KALITE | uyari | `esc(x.kalite)` ham → `ARES_NORM.kaliteGoster` |
-| G03_HAM_YUZEY | uyari | `esc(x.yuzey)` ham → `ARES_NORM.yuzeyEtiket` |
-| G03_HAM_MALZEME_TEMPLATE | uyari | `${x.malzeme}` template literal ham |
-| G03_HAM_KALITE_TEMPLATE | uyari | `${x.kalite}` template literal ham |
-| ARES_NORMALIZE_EKSIK | uyari | `zorunlu_her_html` altında, `ares-normalize.js` yüklemesi eksik |
-| I18N_EKSIK | uyari | `tv()` anahtarı `lang/tr.json`'da yok |
-
-Mevcut renk/theme kurallarına `kod` alanları eklendi (önceden yoktu), böylece self-test onları da doğrulayabiliyor.
+### 4. 14 Aktif Kural
+Yeni eklenenler: G03_HAM_MALZEME, G03_HAM_KALITE, G03_HAM_YUZEY, G03_HAM_MALZEME_TEMPLATE, G03_HAM_KALITE_TEMPLATE, ARES_NORMALIZE_EKSIK, I18N_EKSIK.
 
 ### 5. Self-Test Altyapısı
-`.github/bozuk-ornekler/` oluşturuldu:
-- `g03-ham-gosterim.html` — 5 G-03 kuralını tetikler
-- `ares-normalize-eksik.html` — script yüklemesi eksik
-- `i18n-eksik-anahtar.html` — `tv('xxx_yok')` kullanır
-- `beklenen-hatalar.json` — her dosyadan hangi kural kodu çıkmalı
+3 kasten bozuk dosya + beklenen-hatalar.json. `--self-test` yerelde ve CI'da 3/3 başarılı.
 
-`node .github/kontrol.js --self-test` → 3/3 başarılı (yerelde ve CI'da doğrulandı).
+### 6. Deploy ve Baseline
+Cihat 7 dosyayı yükledi. CI #453 yeşil tik: **0 hata, 22 uyarı, 74 dosya.** G-03 0 hit, I18N 0 hit — 21. oturum fix'leri tam tutmuş.
 
-### 6. GitHub'a Deploy + Baseline
-Kullanıcı dosyaları GitHub web arayüzünden yükledi. CI otomatik çalıştı, commit #453 **yeşil tik**:
-- **0 hata, 22 uyarı, 74 dosya**
-- Tüm 22 uyarı tek tip: `ARES_NORMALIZE_EKSIK` — 11 sayfada `ares-normalize.js` script satırı eksik (sorgula, tersaneler, testler, tezgahlar, uyarilar, ... diğer 6 sayfa)
-- Sürpriz iyi haber: G-03 ham gösterim kuralı **0 hit** — 21. oturumdaki render fix'leri tam tutmuş
-- I18N_EKSIK da 0 — `tv()` anahtarları senkron
+### 7. Sapmama Sistemi
+`.github/son-durum.md` + CLAUDE.md ritüel bloğu + kural çakışma protokolü + 5 oturumda self-test zorunluluğu.
 
-### 7. Sapmama Sistemi (oturum sonu)
-Kullanıcının "öyle birşey olsun ki bu sistemden sapmayalım" talebine karşılık **mekanik disiplin**:
-- `.github/son-durum.md` — her oturum sonu güncellenir, her oturum başı zorunlu okunur
-- CLAUDE.md üst bloğu — "ZORUNLU OTURUM BAŞLANGIÇ RİTÜELİ" (4 soru), "KAPANIŞ PROTOKOLÜ", "KURAL ÇAKIŞMASI", "YENİ KURAL EKLEME", "5 OTURUMDA SAĞLIK KONTROLÜ"
-- Her kural çakışmasında A/B/C seçeneği zorunlu
-- Yeni kurallar daima `uyari` seviyesinde başlar (deploy kırılmaz)
-- Her 5. oturumda self-test zorunlu hatırlatılır
+### 8. Vizyon Belgesi Kayıptan Dönüş
+Cihat'ın HTML formunda paylaştığı Spool AI vizyon belgesi Markdown'a çevrilip `docs/SPOOL-AI-VIZYON.md` olarak repo'ya girdi.
 
-### 8. "A" Seçildi: Fırsatta Temizlik
-22 uyarıyı tek seansla temizlemek yerine — her sayfaya dokunulduğunda o sayfanın uyarıları birlikte kapatılır. Claude her oturum başında "bugün hangi sayfa?" diye soracak, kullanıcı söyleyince açık uyarılar listelenecek, "temizleyelim mi?" sorulacak.
+### 9. Üç Ağrıyı Tek Panoda Birleştirme
+Cihat eteğindeki taşları döktü:
+- **a)** Geri bildirim not defteri gibi (yönetim arayüzü yok)
+- **b)** Her oturumda teknik seviye anlatmak yoruyor
+- **c)** Gündelik iş vizyona hizmet ediyor mu görünmüyor
+
+**Tespit:** Üçü aynı kök — **görünürlük eksikliği.**
+
+**Çözüm:** Tek pano, 3 sekme (Görev Takibi + Geri Bildirim + Oturum Panosu). Detay `docs/PANO-TASARIM.md`.
+
+### 10. Profil Dosyası
+`docs/CIHAT-PROFIL.md` — Cihat'ın çalışma tarzı, tercihleri, allerjileri. Her oturum başı Claude okur. Cihat'ın "yazılımcı değilim"i bir daha tekrarlanmaz.
 
 ## Değişen Dosyalar
 
-| Dosya | Durum | Açıklama |
-|---|---|---|
-| `.github/kontrol.js` | YENİ SÜRÜM | 4 kontrol fonksiyonu, regex, self-test, 18 KB |
-| `.github/kurallar.json` | GENİŞLETİLDİ | 14 aktif kural + kod alanı + istisna |
-| `.github/KONTROL-SISTEMI.md` | YENİ | Kullanıcı rehberi |
-| `.github/bozuk-ornekler/g03-ham-gosterim.html` | YENİ | Self-test |
-| `.github/bozuk-ornekler/ares-normalize-eksik.html` | YENİ | Self-test |
-| `.github/bozuk-ornekler/i18n-eksik-anahtar.html` | YENİ | Self-test |
-| `.github/bozuk-ornekler/beklenen-hatalar.json` | YENİ | Self-test kontrol haritası |
-| `.github/son-durum.md` | YENİ | Her oturum sonu güncellenir |
-| `CLAUDE.md` | EN ÜSTE BLOK EKLENDİ | Sapmama protokolü |
+| Dosya | Durum |
+|---|---|
+| `.github/kontrol.js` | YENİ SÜRÜM (regex + self-test + i18n) |
+| `.github/kurallar.json` | GENİŞLETİLDİ (14 kural) |
+| `.github/KONTROL-SISTEMI.md` | YENİ |
+| `.github/bozuk-ornekler/*` | YENİ (4 dosya) |
+| `.github/son-durum.md` | YENİ — her oturum güncellenir |
+| `CLAUDE.md` | ÜSTE RİTÜEL BLOK + profil okuma talimatı |
+| `CLAUDE-SON-OTURUM.md` | (bu dosya) |
+| `CLAUDE-SONRAKI-OTURUM.md` | 24. oturum güncellenmiş gündem |
+| `docs/SPOOL-AI-VIZYON.md` | YENİ — ürün vizyonu |
+| `docs/PANO-TASARIM.md` | YENİ — 24. oturum tasarım belgesi |
+| `docs/CIHAT-PROFIL.md` | YENİ — kullanıcı profili |
 
-## Baseline (gelecek oturumlara referans)
+## Baseline
 
-**CI durumu (23 Nisan 09:40):**
-- 0 hata, 22 uyarı, 74 dosya
-- Hepsi `ARES_NORMALIZE_EKSIK` — 11 sayfa × 1 uyarı
-
-**Self-test durumu:** 3/3 başarılı ✅
-
-**Aktif kurallar:** 14 (5 hata + 9 uyarı)
+- CI: 0 hata, 22 uyarı, 74 dosya
+- Uyarılar: tümü ARES_NORMALIZE_EKSIK (fırsatta temizlenir)
+- Self-test: 3/3 ✅
+- Aktif kurallar: 14
 
 ## Öğrenilenler
 
-### 1. "Sürüm ikiliği" problemi
-Kullanıcı her oturumda CLAUDE.md'yi bana yüklüyordu (2592 satır). Gerçek repo'da ise dosya 558 satırdı. Aradaki 2000 satırlık fark kimse fark etmemişti çünkü ben yüklenen CLAUDE.md'yi kanıt kabul ediyordum, repo durumuna bakmıyordum. **Alınan ders:** Her oturum başı `git pull` + `wc -l CLAUDE.md` zorunlu — kanıt her zaman repo'da.
-
-### 2. "Deploy edildi" = "git'e girdi" değil
-Kullanıcı GitHub web arayüzünden dosya upload ediyordu. Upload GitHub'a commit yazıyor ama yerel klonu güncellemiyor. 20 oturum boyunca yerel klon 17 Nisan'da donmuştu ama kullanıcı bilmiyordu çünkü canlı site çalışıyordu. **Alınan ders:** Başlangıç ritüelinde `git pull` ilk komut, her oturum.
-
-### 3. "CI çalışıyor" ≠ "kural kontrolü var"
-16 Nisan'da CI kurulmuş, 20 oturum her push yeşil tik verdi, herkes "kontrol geçiyor" sandı. Gerçek: kurallar.json 3 basit kontrol içeriyordu, CLAUDE.md'deki 20+ kural ailesi hiç kontrol edilmiyordu. **Alınan ders:** Kural sayısını periyodik gör (self-test). Yeşil tik sağlık kanıtı değil, zararsızlık kanıtı.
-
-### 4. Sapmama teknik değil protokol meselesi
-Kullanıcının doğrudan söylediği: "bu sistemden sapmayalım". Bu yazılım isteği değil, süreç isteği. Çözüm: her oturumun ilk mesajında Claude'un mekanik bir ritüel çalıştırması. Yazılı kural değil, gömülü davranış.
-
-### 5. "A seçeneği" — kuralları tek seferde uygulamamak
-Kullanıcının somut tercihi: "bir kural var tamam ama ben şu an tek sayfada çalışıyorum, sırası geldikçe". Bu kuralların gevşediği anlamına gelmez — kalıcı uyarı listesinde durur, her sayfa açıldığında gündeme gelir. Sürdürülebilir olan yaklaşım bu.
-
-### 6. "docs/ROADMAP.md zaten vardı"
-Faz B planında "yok, yazacağız" diye bir kalem vardı. Pull atınca dosyanın repo'da 271 satır olduğu görüldü. **Alınan ders:** Plan yazarken "yok" demeden önce gerçekten yok mu teyit et — dosya varsa 30 dakika kazanılır.
+1. **Sürüm ikiliği tuzağı** — yerel/remote fark 20 oturum boyunca görünmemişti. `git pull` her oturumun ilk komutu.
+2. **CI çalışıyor ≠ kural var** — yeşil tik sağlık değil zararsızlık. Self-test periyodik.
+3. **Sapmama protokol meselesi** — yazılım değil, süreç. Ritüel CLAUDE.md'nin tepesinde gömülü.
+4. **A seçeneği — fırsatta temizlik** sürdürülebilir olan yaklaşım.
+5. **docs/ROADMAP.md zaten vardı** — "yok" demeden önce teyit et.
+6. **Üç ağrı tek çözüm** — Cihat birden fazla şikayet söylediğinde hemen kod yazmaya koşmak yerine kökleri eşleştir.
+7. **"Kimse okumasın" sinyali** — özel alan talebi. Profil dosyası saygılı tonla yazıldı.
 
 ## 24. oturuma aktarılanlar
 
-### Ana tema adayları (kullanıcı seçer)
-- 🟢 **Kesim/büküm/markalama/KK/sevkiyat %80-90'da kalmış işleri bitirmek** — kullanıcı 22. oturumda "bunlar bozuldu" demişti. Fırsatta ARES_NORMALIZE_EKSIK uyarıları da kapatılır.
-- 🟢 **Faz A Faz 3 — form refactor** (25. oturum planlıydı) — `devre_yeni.html` + `spool_detay.html` autocomplete
-- 🟢 **Mobil %5 → %30** — MDevreler/MIsBaslat/MSpoolDetay yazılması
-- 🟡 **Faz B kapanış kalemleri** — CLAUDE.md split (kuralları docs/rules/'a taşı), şablonlar (docs/templates/), `hedef_dosyalar` kural tipi (kullanıcının önerdiği "bu kural şu sayfalarda olmalı" kontrolü)
+### Ana tema: Süper Admin Pano Implementasyonu (~5 saat)
+**Kaynak:** `docs/PANO-TASARIM.md`
 
-### Bekleyen küçük borçlar
-- **22 ARES_NORMALIZE_EKSIK** — fırsatta temizlenir
-- **`hedef_dosyalar` kural tipi** — kullanıcı talebi (stat-pill gibi "bu sayfalarda olmalı" kontrolü) — 2-3 saatlik iş
-- **`CLAUDE-MOBILE.md` senkron kontrolü** — mobil dil dosyaları + `m_*` anahtarları için ayrı i18n kontrolü (şu an web'e odaklı)
-- **Husky + package.json** — yerel pre-commit (kullanıcı web'den yüklüyor, şimdilik gereksiz)
+1. `panel_gorevler` SQL migration
+2. Sekme 1 — Görev Takibi
+3. Sekme 2 — Geri Bildirim Yönetimi
+4. Sekme 3 — Oturum Panosu
+5. Eski "Yol Haritası" + "Geri Bildirimler" bölümlerini sil
+6. Test + lint
 
-## Kullanıcıya Söz
-
-10 günlük "ileri geri ileri geri" döngüsünün teknik zemini kaldırıldı. Bir daha aynı tuzağa düşersek **benim hatam** olacak — çünkü sistem artık hatırlatıyor, ezberime ihtiyaç yok. Eğer 26. oturumda bir şey "düşerse" (standart bozulur, uyarı görmezden gelinir, sürüm ikiliği oluşur), **kullanıcı da ben de** `.github/son-durum.md` + CI log'larında belgeli kayıt göreceğiz, neyin ne zaman çürüdüğü anlaşılır olacak.
-
-Sürdürülebilir zemin bugün kuruldu. Şimdi asıl işe — yarım kalan kesim/büküm/markalama ve mobil — dönebiliriz.
+### Sonraki oturumlar
+- 25. oturum: Faz A Faz 3 (autocomplete) veya kesim/büküm
+- 26. oturum: Kesim/büküm/markalama bitirme
+- 27-29. oturum: Faz C (SaaS hazırlığı)
