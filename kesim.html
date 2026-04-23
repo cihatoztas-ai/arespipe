@@ -1849,7 +1849,7 @@ function renderArc(){
         +'<td class="cell-no">'+rowNum+'</td>'
         +'<td><span class="cell-spoolid">'+esc(s.no)+'</span><div style="font-size:14px;color:var(--txd);margin-top:2px;">'+esc(k.spool||'')+'</div></td>'
         +'<td>'+matBadge(k.malzeme||'—')+'</td>'
-        +'<td style="font-size:14px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+        +'<td style="font-size:14px;color:var(--txd);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(k.kalite)||k.kalite||'—'):(k.kalite||'—'))+'</td>'
         +'<td style="font-size:14px;color:var(--ac);">'+esc(k.cap||'—')+'</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;">1</td>'
         +'<td style="text-align:right;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;color:var(--warn);font-weight:600;">'+s.mm.toLocaleString('tr-TR')+'</td>'
@@ -2030,7 +2030,7 @@ function openFormModal(klId, arcIdx){
   var malzLabel=(typeof ARES_NORM!=='undefined'&&malz.malzeme)?ARES_NORM.malzemeEtiket(malz.malzeme):malz.malzeme;
   document.getElementById('fmOzet').innerHTML=
     '<b style="color:var(--tx);">'+esc(kl.no)+'</b> &nbsp;·&nbsp; '
-    +esc(malzLabel||'')+' <span style="color:var(--ac);">'+esc(malz.kalite||'')+'</span> Ø'+esc(malz.cap||'')
+    +esc(malzLabel||'')+' <span style="color:var(--ac);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(malz.kalite)||malz.kalite||''):(malz.kalite||''))+'</span> Ø'+esc(malz.cap||'')
     +'<br><span style="color:var(--warn);font-weight:700;">'+_fmKlB.length+' parça</span>'
     +' &nbsp;·&nbsp; Toplam '+mm.toLocaleString('tr-TR')+' mm';
   document.getElementById('fmStokBoy').value=6000;
@@ -2380,7 +2380,7 @@ function openKLDetay(klId, opts){
   document.getElementById('kldHeadNo').textContent = kl.no;
   var metaParts = [];
   if(malzLabel) metaParts.push('<strong>'+esc(malzLabel)+'</strong>');
-  if(malz.kalite) metaParts.push(esc(malz.kalite));
+  if(malz.kalite) metaParts.push(esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(malz.kalite)||malz.kalite||''):(malz.kalite||'')));
   if(malz.cap) metaParts.push('<strong>Ø'+esc(malz.cap)+'</strong>');
   if(malz.kalinlik) metaParts.push(esc(malz.kalinlik));
   metaParts.push(_kldBorular.length+' '+tv('ks_boru','boru'));
@@ -2533,7 +2533,7 @@ function kldBoruListeRender(){
       +'<td style="font-size:13px;color:var(--txm);font-weight:600;">'+esc(k.isEmir||'—')+'</td>'
       +'<td class="kld-cell-spoolid">'+esc(k.spoolId||'—')+'</td>'
       +'<td class="kld-cell-spool">'+esc(k.spool||'—')+'</td>'
-      +'<td style="font-size:13px;color:var(--txd);">'+esc(k.kalite||'—')+'</td>'
+      +'<td style="font-size:13px;color:var(--txd);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(k.kalite)||k.kalite||'—'):(k.kalite||'—'))+'</td>'
       +'<td class="kld-cell-mm">'+esc(k.kesimOlcusu||'—')+'</td>'
       +'<td>'+ucBadge(k.ucA)+'</td>'
       +'<td>'+ucBadge(k.ucB)+'</td>'
@@ -2945,9 +2945,10 @@ function kldKesimTamamlaAc(){
 
   var malz = _kldBorular[0] || {};
   var malzLabel = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'—');
+  var _kg = (typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(malz.kalite)||malz.kalite||''):(malz.kalite||'');
   var rows = [
     {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no)},
-    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : '')},
+    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(_kg) : '')},
     {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—')}
   ];
   var html = rows.map(function(r){
@@ -2990,9 +2991,10 @@ function kldPaketiIptal(){
 
   var malz = _kldBorular && _kldBorular[0] ? _kldBorular[0] : {};
   var malzLabel = (typeof ARES_NORM!=='undefined' && malz.malzeme) ? ARES_NORM.malzemeEtiket(malz.malzeme) : (malz.malzeme||'—');
+  var _kg2 = (typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(malz.kalite)||malz.kalite||''):(malz.kalite||'');
   var rows = [
     {lab: tv('kld_cfm_liste','Liste'), val: esc(kl.no)},
-    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(malz.kalite) : '')},
+    {lab: tv('kld_cfm_malzeme','Malzeme'), val: esc(malzLabel) + (malz.kalite ? ' · '+esc(_kg2) : '')},
     {lab: tv('kld_cfm_capet','Çap · Et'), val: (malz.cap?'Ø'+esc(malz.cap):'—') + ' · ' + (malz.kalinlik?esc(malz.kalinlik):'—')}
   ];
   var html = rows.map(function(r){
@@ -3229,7 +3231,7 @@ function fmPdfYazdir(){
           +'<div class="logo-box">FİRMA LOGOSU</div>'
           +'<div class="head-meta">'
             +'<div class="head-title">✂️ Kesim Planı — '+esc(kl.no)+'</div>'
-            +'<div class="head-sub">'+tarihStr+' · '+esc(malzLabel)+' '+esc(ilk.kalite||'')+' · Ø'+esc(ilk.cap||'')+' · et '+esc(ilk.kalinlik||'')+' · Stok '+params.standartLen+'mm · Kerf '+params.kerf+'mm</div>'
+            +'<div class="head-sub">'+tarihStr+' · '+esc(malzLabel)+' '+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(ilk.kalite)||ilk.kalite||''):(ilk.kalite||''))+' · Ø'+esc(ilk.cap||'')+' · et '+esc(ilk.kalinlik||'')+' · Stok '+params.standartLen+'mm · Kerf '+params.kerf+'mm</div>'
           +'</div>'
         +'</div>'
         +'<div class="brand">'
@@ -3452,7 +3454,7 @@ function exportKesimPdf() {
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:12px;">'+esc(k.spool||'')+'</td>'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#c2410c;">'+esc(k.spoolId||'')+'</td>'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;">'+esc(malzLabel||'')+'</td>'
-      +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;">'+esc(k.kalite||'')+'</td>'
+      +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(k.kalite)||k.kalite||''):(k.kalite||''))+'</td>'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;text-align:right;">'+esc(k.cap||'')+'</td>'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;text-align:right;font-weight:700;color:#c2410c;">'+esc(k.kesimOlcusu||'')+'</td>'
       +'<td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-size:14px;">'+esc(ucLbl[k.ucA]||k.ucA||'')+'</td>'
@@ -3554,7 +3556,7 @@ function kesimTamamlaOnay(id){
     '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:5px;">'
     +esc(k.spool)+'</div>'
     +'<div style="font-size:14px;color:var(--txd);">'
-    +'<span style="color:var(--ac);">'+esc(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme)+' '+esc(k.kalite)+'</span>'
+    +'<span style="color:var(--ac);">'+esc(typeof ARES_NORM!=='undefined'?ARES_NORM.malzemeEtiket(k.malzeme):k.malzeme)+' '+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(k.kalite)||k.kalite||''):(k.kalite||''))+'</span>'
     +' &nbsp;·&nbsp; Ø'+esc(k.cap)
     +' &nbsp;·&nbsp; <span style="color:var(--warn);font-weight:700;">'+esc(k.kesimOlcusu)+' mm</span>'
     +'</div>';

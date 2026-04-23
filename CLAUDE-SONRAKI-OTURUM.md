@@ -1,128 +1,301 @@
-# AresPipe — 20. Oturum Gündemi
+# AresPipe — 22. Oturum Gündemi
+
+## 🗺️ Oturum Öncesi Not — Uzun Vadeli Plan Onayı
+
+**22. oturuma girmeden, 21. oturum sonunda AresPipe'ın uzun vadeli yol haritası üzerinde mutabakata varılmıştır.**
+
+Detay: `docs/ROADMAP.md`. Özet:
+- Hedef: 1-2 yıl içinde çoklu tersane/firma SaaS
+- Faz A (22, 25, 26): Malzeme sistemi tamamlanması — **22 ŞU ANDA**
+- Faz B (23, 24): Altyapı güvencesi — dosya mimarisi + lint + şablon + mevcut kod temizliği
+- Faz C (27, 28, 29): SaaS hazırlığı — tenant izolasyon + performans + rollback
+
+**22. oturum Faz A'nın bir parçası** — Admin UI eklenerek malzeme sistemi işlevsel olarak tamamlanacak. 23. oturumda **Faz B başlayacak** (altyapı yatırımı), oradan sonra kod mimari disiplinine geçilecek.
+
+Bu bağlam önemli çünkü 22. oturumda yazılan her kodun 23-24. oturumda lint'ten geçeceğini biliyoruz. Bu yüzden 22. oturumda yazılan tüm yeni kodlar (admin UI'nın yaklaşık 300-500 satırı) **G-01, G-02, G-03, B-01, E-01 kurallarının hepsine baştan uyumlu** olmalı. Üstelik sonradan lint geldiğinde yeni ihlal çıkmamalı.
+
+---
 
 ## Oturum Başı Ritüeli
-1. **CLAUDE.md oku** (özellikle **Bölüm 2.13 → E-06 Malzeme Master Tablo**)
-2. **CLAUDE-SON-OTURUM.md oku** (19. oturum özeti — Faz 1 tamamlandı)
-3. **Canlı test durumunu sor:**
-   - 19. oturum dosyaları deploy edildi mi? (ares-normalize.js, api/sorgula.js, devre_detay, spool_detay, CLAUDE.md)
-   - `devre_yeni.html` üzerinden test spool + malzeme eklendi mi? Trigger gerçek UI'dan çalışıyor mu?
-4. **DB durumunu teyit et:**
-   ```sql
-   SELECT sistem_preset, COUNT(*) FROM malzeme_tanimlari GROUP BY sistem_preset;
-   -- Beklenen: sistem_preset=true → 12, sistem_preset=false → 0 (henüz tenant özel yok)
-   ```
+1. **CLAUDE.md oku** — özellikle:
+   - Bölüm 2.13 → E-01 + E-06 Master Tablo (sistem tanıdığı)
+   - Bölüm 2.18 → **G-03 Render Standardı** (21. oturumda formalleştirildi — yeni sayfalar bu kurala tabi)
+   - Bölüm 4 → `malzeme_tanimlari` şeması ve RLS policy'leri
+2. **CLAUDE-SON-OTURUM.md oku** — 21. oturum özeti (render süpürmesi)
+3. **docs/ROADMAP.md oku (2 dk)** — hangi fazın içinde olduğumuzu hatırlat
+4. **Deploy durumu teyit:**
+   - 21. oturum 11 HTML + CLAUDE.md canlıda mı?
+   - DB: `SELECT COUNT(*) FROM malzeme_tanimlari WHERE tenant_id IS NULL;` → **12** (sistem preset)
+   - DB: `SELECT COUNT(*) FROM malzeme_tanimlari WHERE tenant_id IS NOT NULL;` → **0** (henüz tenant özel yok — 22. oturum bunu kullanmaya başlayacak)
+5. **Canlı render testi (1 dk):** `spool_detay.html > Büküm Ekle` → `Karbon Çelik — St 37 — 219,1 mm` görünmeli (ham `karbon` değil). Eğer hâlâ görünüyorsa 21. oturum deploy'u eksik.
 
-## 🎯 ÖNCELİK 1 — Faz 2: Admin UI (`tanimlar.html`)
+---
 
-### Amaç
-Operatör/admin'in master tabloya yeni kalite ekleyebilmesi, mevcut sistem preset'leri görüntüleyebilmesi, kendi tenant'ına özel kaliteleri yönetebilmesi.
+## 🎯 ANA TEMA — Faz 2 Admin UI: `tanimlar.html` Malzeme Havuzu Sekmesi
 
-### Neden Öncelik
-- Şu anda bir kullanıcı `ZZ99-EXOTIC` gibi tanınmayan bir kalite girse, trigger NULL döner → `malzeme_ref_id = NULL` kalır. Admin UI'dan bu kaliteler manuel olarak master'a eklenebilir olmalı.
-- Sistem preset listesi (12 kalite) şeffaf gösterilmeli — hangi standartların hazır olduğu operatör görsün.
+### Hedef
+Firmanın kendi kalite kodlarını (master tabloya tenant-scoped) UI'dan ekleyip yönetebilmesi. 19. oturumda altyapı (tablo + trigger + 12 sistem preset) kuruldu; 20. oturumda yazma bug'ı çözüldü; 21. oturumda render tarafı standardize edildi. Sıra **CRUD UI**'da.
 
-### Mockup-First (Kural R-10 uygulanacak)
-Yeni admin ekran → **önce artifact mockup**, kullanıcı onayı, sonra kod. İki sekme önerisi:
-- **Sekme 1: Sistem Kaliteleri** (read-only, 12 preset listesi + standart referansı)
-- **Sekme 2: Firma Kaliteleri** (CRUD — yeni ekle, düzenle, pasif yap)
+### Kullanıcı Hikayeleri
 
-### DB İşleri (Faz 2)
-- Büyük ihtimal yeni tablo/kolon gerekmez (Faz 1'de hepsi kuruldu)
-- Yeni kalite eklemek için RLS INSERT policy zaten hazır
-- Silme: `sistem_preset=false AND tenant_id IS NOT NULL` şartı RLS'de
-- UI tarafında: "bu kalite X kayıtta kullanılıyor, silme" uyarısı (FK violation'ı önceden yakala)
+1. **Okuma:** Admin kullanıcı `tanimlar.html > Malzeme Havuzu` sekmesine gider; iki alt tab görür:
+   - **Sistem Kaliteleri** (read-only, 12 preset): `ST37`, `316L`, `CUNI9010`, ...
+   - **Firma Kaliteleri** (CRUD): başlangıçta boş, admin ekledikçe dolar
+2. **Ekleme:** Admin "+ Yeni Kalite Ekle" butonu → modal → kategori dropdown (karbon/paslanmaz/bakir/alum/diger) + kalite kodu input + gösterim input + standart input + açıklama (TR/EN/AR) → kaydet → yeni satır tabloya gelir
+3. **Düzenleme:** Admin satır yanındaki kalem simgesi → modal (pre-filled) → güncelle
+4. **Silme:** Admin ✕ simgesi → önce FK violation check (`spool_malzemeleri`, `pipeline_malzemeleri`'de kullanılıyor mu?) → eğer kullanılıyorsa "Bu kalite X spoolda kullanılıyor, silinemez. Önce kayıtları güncelleyin." → değilse onay → sil
 
-### Form Alanları (tahmini)
-- Kategori (dropdown: karbon, paslanmaz, bakir, alum, diger)
-- Kalite kodu (text, canonical — ör: `TP304H`)
-- Kalite gösterim (text, ör: `TP304H`, `1.4571`)
-- Standart (text, opsiyonel — ör: `ASME SA-312`)
-- Açıklama TR/EN/AR (text, opsiyonel)
-- Aktif (checkbox, default true)
+### Mockup-First (R-10 kuralı)
+- **Oturum başında** `tanimlar.html`'e yeni sekme (sadece HTML + CSS, fonksiyonsuz) ekle
+- Kullanıcıyla mockup üzerinden gez, layout onayı al
+- Onay sonrası JS fonksiyonları ve Supabase çağrıları eklenir
 
-### Kod Yerleşimi
-- Yeni sekme: `tanimlar.html` — mevcut tanımlar sayfasına entegre (tersaneler, projeler, basamak_tanimlari gibi sekmelerle yan yana)
-- JS fonksiyonları: aynı dosyada, `malzemeKaliteYonetimi` namespace'i altında
-- Yetki: `super_admin` ve `firma_admin` yazabilir; diğerleri sadece okur
+---
 
-## 🟡 ÖNCELİK 2 — Faz 3 Hazırlık: Kod Tabanında Escape Noktalarını Tespit
+## Öncelik 1 — Yetki Kontrolü
 
-Faz 3 formları refactor edecek (autocomplete dropdown). Öncesinde tüm yazma noktalarının haritası temiz olsun:
+`blok_tanimlar_malzeme` yeni izin anahtarı eklensin mi, yoksa mevcut `blok_tanimlar_kategori` altında mı çalışsın? 
+- **Öneri:** Mevcut `blok_tanimlar_kategori` altında, sadece admin + müdür rolleri erişebilsin
+- Karar: ilk 10 dk kullanıcıyla netleştir
 
-### Mevcut Yazma Noktaları (19. oturumda tespit edildi)
-| Dosya | Satır | Tablo | Durum |
-|---|---|---|---|
-| `devre_detay.html` | 1652 | `pipeline_malzemeleri` | Manuel tek satır — trigger bastırıyor |
-| `devre_detay.html` | 1700 | `pipeline_malzemeleri` | Excel toplu — trigger bastırıyor |
-| `devre_yeni.html` | 1846 | `spool_malzemeleri` | IFS — trigger bastırıyor |
-| `devre_yeni.html` | 1893 | `spool_malzemeleri` | İzometri PDF — trigger bastırıyor |
-| `devre_yeni.html` | 1713 | `spooller` | Spool oluşturma — FK yok, denormalize |
-| `spool_detay.html` | 2096 | `spool_malzemeleri` | pipelineAktar — trigger bastırıyor |
-| `spool_detay.html` | 2181 | `spool_malzemeleri` | Manuel — trigger bastırıyor |
+## Öncelik 2 — UI Yapısı
 
-**Faz 3'te** bu noktalarda form'lara **autocomplete dropdown** gelecek. Free text alanları kaldırılacak. Kullanıcı sadece master'dan seçebilecek (veya admin panelinden yeni ekleyebilecek).
+### Yeni sekme (`tanimlar.html`)
+```html
+<div class="tab-content" id="t_malzeme_havuzu">
+  <!-- Alt tab bar -->
+  <div class="sub-tabs">
+    <button class="sub-tab active" data-subtab="sistem">Sistem Kaliteleri (12)</button>
+    <button class="sub-tab" data-subtab="firma">Firma Kaliteleri (<span id="firmaKaliteSayi">0</span>)</button>
+  </div>
+  
+  <!-- Sistem tab (read-only) -->
+  <div id="subtab_sistem">
+    <div class="info-box">Bu kaliteler tüm firmalar tarafından kullanılabilir. Düzenlenemez.</div>
+    <table>
+      <thead><tr><th>Kategori</th><th>Kod</th><th>Gösterim</th><th>Standart</th></tr></thead>
+      <tbody id="sistemKaliteBody"></tbody>
+    </table>
+  </div>
+  
+  <!-- Firma tab (CRUD) -->
+  <div id="subtab_firma" hidden>
+    <button class="btn btn-ac" onclick="kaliteEkleModalAc()">+ Yeni Kalite Ekle</button>
+    <table>
+      <thead><tr><th>Kategori</th><th>Kod</th><th>Gösterim</th><th>Standart</th><th>Açıklama</th><th></th></tr></thead>
+      <tbody id="firmaKaliteBody"></tbody>
+    </table>
+  </div>
+</div>
 
-## 🟢 ÖNCELİK 3 — Faz 4 Taslak: IFS/Excel Import Fuzzy Match
+<!-- Ekleme/Düzenleme modal -->
+<div class="mov" id="kaliteModal">...</div>
+```
 
-### Senaryo
-Kullanıcı yeni bir IFS Excel yüklüyor. Dosyada hiç görülmemiş bir kalite var (ör: `TP347H`). Ne olacak?
+### JS Fonksiyonları
 
-### 3 Opsiyon
-1. **Şu anki davranış (Faz 1 sonrası):** Trigger NULL döndürür, `malzeme_ref_id` boş kalır. Kullanıcı daha sonra elle master'a ekler.
-2. **Fuzzy match:** Import sırasında "Bu kalite tanımsız — eklemek ister misiniz?" diye operatör onayı istenir.
-3. **Otomatik tenant ekleme:** Her yeni kalite otomatik tenant kaydı olur (riskli — çöp üretebilir, Faz 1'de kaldırdığımız davranış).
+```js
+async function kalitelerYukle() {
+  var supa = ARES.supabase();
+  // Sistem preset (tenant_id IS NULL)
+  var sistem = await supa.from('malzeme_tanimlari').select('*')
+    .is('tenant_id', null).eq('aktif', true).order('kategori_kod').order('kalite_kod');
+  // Firma özel (tenant_id = current tenant)
+  var firma = await supa.from('malzeme_tanimlari').select('*')
+    .eq('tenant_id', ARES.tenantId()).eq('aktif', true).order('kategori_kod').order('kalite_kod');
+  // render...
+}
 
-**Tercih:** Opsiyon 2 — Faz 4'te implement edilecek.
+async function kaliteKaydet(kaliteObj) {
+  var supa = ARES.supabase();
+  var insert = {
+    tenant_id: ARES.tenantId(),  // RLS policy bunu şart koşar
+    kategori_kod: kaliteObj.kategori,
+    kalite_kod: kaliteObj.kod.toUpperCase().replace(/\s+/g,''),
+    kalite_goster: kaliteObj.goster,
+    standart: kaliteObj.standart || null,
+    aciklama_tr: kaliteObj.aciklama_tr || null,
+    aciklama_en: kaliteObj.aciklama_en || null,
+    aciklama_ar: kaliteObj.aciklama_ar || null,
+    aktif: true,
+    sistem_preset: false
+  };
+  // UNIQUE(tenant_id, kategori_kod, kalite_kod) → çakışma kontrolü
+  var res = await supa.from('malzeme_tanimlari').insert(insert);
+  if (res.error) {
+    if (res.error.code === '23505') {
+      showToast('Bu kalite zaten eklenmiş', 'e');
+    } else {
+      showToast(res.error.message, 'e');
+    }
+    return;
+  }
+  await kalitelerYukle();
+  showToast('Kalite eklendi', 'success');
+}
 
-## 🔵 Teknik Borçlar (yeri geldikçe)
+async function kaliteSil(id) {
+  var supa = ARES.supabase();
+  // FK violation ön-kontrol
+  var kullanim1 = await supa.from('spool_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
+  var kullanim2 = await supa.from('pipeline_malzemeleri').select('id', {count:'exact', head:true}).eq('malzeme_ref_id', id);
+  var toplam = (kullanim1.count||0) + (kullanim2.count||0);
+  if (toplam > 0) {
+    showToast(`Bu kalite ${toplam} kayıtta kullanılıyor, silinemez`, 'e');
+    return;
+  }
+  if (!confirm('Silmek istediğine emin misin?')) return;
+  var res = await supa.from('malzeme_tanimlari').delete().eq('id', id);
+  if (res.error) { showToast(res.error.message, 'e'); return; }
+  await kalitelerYukle();
+  showToast('Kalite silindi', 'success');
+}
+```
 
-### G-02 Hero+Pill Uyumu Eksik Sayfalar (18. oturumdan devraldık)
-anasayfa → kalite_kontrol → sevkiyatlar → tersaneler → uyarilar → kullanicilar
+## Öncelik 3 — RLS Policy Teyidi
 
-### Export
-`bukum.html` ve `markalama.html` için Excel + PDF export
+19. oturumda 4 policy yazılmıştı:
+- `malzeme_tanimlari_select`: sistem preset (tenant_id NULL) + kendi tenant → herkes okur
+- `malzeme_tanimlari_insert`: sadece `tenant_id = auth.tenant_id()` INSERT edebilir (sistem preset kimse INSERT edemez)
+- `malzeme_tanimlari_update`: sadece kendi tenant'ını UPDATE edebilir
+- `malzeme_tanimlari_delete`: sadece kendi tenant'ını DELETE edebilir
 
-### Kesilmiş Borular Global Arama (18. oturumdan devraldık)
-`kesim.html`'e "Kesilmiş Borular" tab'ı (4. sekme veya mevcut "Kesilen Listeler"e arama)
+**Test (22. oturum başında):**
+```sql
+-- Kendi tenant olarak giriş yap, bu komut başarılı olmalı:
+INSERT INTO malzeme_tanimlari (tenant_id, kategori_kod, kalite_kod, kalite_goster, standart, aktif, sistem_preset)
+VALUES (auth.tenant_id(), 'paslanmaz', '321', '321', 'ASTM A240', true, false);
 
-### 3 Sayfada Ham Kod Gösterimi
-`portal/index.html`, `admin/index.html`, `izometri-batch.html` → `esc(s.malzeme)` ile "karbon" ham kodu gösteriyor. Faz 2 ile birlikte `ARES_NORM.malzemeEtiket()`e çevirilecek.
+-- Bu başarısız olmalı (sistem preset'e dokunma):
+DELETE FROM malzeme_tanimlari WHERE tenant_id IS NULL;  -- RLS reddeder
+```
 
-## Oturum Planı Önerisi
+## Öncelik 4 — Trigger Guard 1 Gevşetme
 
-**Faz 2 odaklı oturum yapısı:**
+20. oturumda `20-oturum-trigger-guard-gevsetme.sql` hazırlanmıştı, ertelendi. 22. oturumda admin UI üzerinden yeni kalite eklenmeye başlayınca `kalite_kod = kategori_kod` olan meşru durumlar çıkabilir (örn. admin yanlışlıkla kategori kodu yazarsa). Guard 1 gereksiz, Guard 2 (kalite_kod_normalize NULL) zaten yeterli.
 
-1. **İlk 10 dk:** Ritüel + deploy/test durumu
-2. **Sonra 20-30 dk:** Mockup'lar (artifact olarak 2 tab + form) — kullanıcı onayı
-3. **Sonra 30-45 dk:** `tanimlar.html` içine yeni sekme + CRUD işlemleri
-4. **Sonra 15 dk:** Test — yeni kalite ekle, listele, düzenle, sil (FK'li durumu dahil)
-5. **Son 10 dk:** CLAUDE.md güncellemesi + CLAUDE-SON-OTURUM + 21. oturum gündemi
+**Karar:** 22. oturumda `tanimlar.html` UI çalışır hale geldikten sonra `20-oturum-trigger-guard-gevsetme.sql` çalıştır.
 
-**Kritik:** Bu oturum **UI odaklı** olacak, Faz 1'in "sadece backend" disiplininin aksine. Mockup-first disiplinini koru.
+## Öncelik 5 — Frontend Autocomplete (opsiyonel — zaman kalırsa)
 
-## Senaryo Notu
+`spool_detay.html > kaliteleriDoldur()` fonksiyonu şu an geçmiş kayıtlardan tenant-scoped datalist dolduruyor. Master tablo geldiğine göre bu **artık `malzeme_tanimlari`'dan okumalı** — daha temiz + canonical. Fonksiyon 2-3 satır değişir.
 
-Eğer 20. oturuma başlarken canlı testlerde **başarısız sonuç** varsa (örn: `devre_yeni.html`'den girilen malzeme master'a bağlanmıyor):
+```js
+async function kaliteleriDoldur(){
+  var supa = ARES.supabase();
+  // Sistem preset + tenant özel birleşik
+  var res = await supa.from('malzeme_tanimlari')
+    .select('kalite_goster')
+    .or(`tenant_id.is.null,tenant_id.eq.${ARES.tenantId()}`)
+    .eq('aktif', true);
+  // datalist doldur...
+}
+```
 
-- Muhtemel sebep: `devre_yeni.html:644` hâlâ `normalizeMalzeme(row[idx.mat])` çağırıyor. Trigger geldiğinde `malzeme='karbon'`, `kalite='karbon'` olur — guard çalışır, master'a bağlanmaz.
-- Hızlı fix: O satırı `String(row[idx.mat] || '').trim()` yap (ham sakla)
-- Aynı şey satır 1206 ve 1495 için de geçerli
-- Bu fix'i ritüel sonrası ilk iş olarak yap, sonra Faz 2'ye geç
+## Öncelik 6 — M3_RENK ve duplicate `<td>` yan bug'ları (21. oturumdan devir)
 
-## Hazır DB Objeleri (Referans)
+Oturum sonunda (15 dk) 2 yan bug:
+
+1. **`spool_detay.html:2657-2665` M3_RENK.** Key'leri kategori koduna çevir:
+```js
+var M3_RENK = {
+  'karbon':     0x7a7d82,
+  'paslanmaz':  0xb0b8c1,
+  'bakir':      0xb87333,
+  'alum':       0xc0c0c8,
+  'diger':      0x8888aa,
+  '_flans':     0x5c6070,
+  '_reduktor':  0x6e7178,
+  '_dirsek':    0x7a7d82,
+  '_default':   0x8888aa
+};
+```
+ve `m3Mat(malzeme, tip)` fonksiyonu içinde `malzeme`'yi önce `ARES_NORM.malzemeKod(malzeme)` ile kategori koduna çevirsin.
+
+2. **`devre_detay.html:1609-1611` duplicate `<td>`.** Iki satır tekrarlanmış, ikincisi silinecek.
+
+---
+
+## Oturum Planı
+
+**Tahmini süre: 90-120 dakika**
+
+1. **İlk 10 dk — Ritüel + mockup:**
+   - CLAUDE.md + CLAUDE-SON-OTURUM
+   - Deploy teyidi
+   - `tanimlar.html` HTML-only mockup ekle
+   - Kullanıcıyla gez, layout onayı
+
+2. **30 dk — Sistem + Firma tabları:**
+   - `kalitelerYukle()` fonksiyonu
+   - Sistem tab render (read-only)
+   - Firma tab render (CRUD butonlu, başlangıçta boş)
+   - Yetki kontrolü (`blok_tanimlar_kategori`)
+
+3. **30 dk — Ekleme/Düzenleme modal:**
+   - `kaliteEkleModalAc()`, `kaliteDuzenleModalAc(id)`
+   - `kaliteKaydet()` — UNIQUE çakışma + `kalite_kod_normalize` doğrulama
+   - RLS canlı test
+
+4. **15 dk — Silme + FK koruması:**
+   - `kaliteSil()` + FK ön-kontrol
+   - Kullanılıyor toast mesajı
+   - Silme onay popup'ı
+
+5. **15 dk — Yan işler:**
+   - Guard 1 gevşetme SQL çalıştır
+   - `spool_detay.html` `kaliteleriDoldur()` master tablodan oku
+   - M3_RENK + duplicate `<td>` fix
+
+6. **10 dk — Kapanış:**
+   - CLAUDE.md Bölüm 10 güncelle (Faz 2 checkbox kapat, Faz 3 bekleyen)
+   - CLAUDE-SON-OTURUM (22. oturum özeti)
+   - CLAUDE-SONRAKI-OTURUM (23. oturum — Faz 3 form refactor: autocomplete dropdown)
+
+---
+
+## Risk Yönetimi
+
+1. **RLS policy bug.** 19. oturumda yazılan policy'ler canlı test edilmedi (sadece preset seed'i çalıştı). 22. oturumun ilk INSERT'ü hata verirse policy'leri revize etmek gerekebilir.
+
+2. **`kalite_kod_normalize` unrecognized döner.** Admin "custom" kalite girerse (örn. `A335-P91`), trigger bu kod için `kalite_kod_normalize` NULL dönebilir, `malzeme_ref_bul` başarısız olur. Çözüm: admin UI'dan gelen kalite için `kalite_kod_normalize` davranışı değiştirilsin — `malzeme_tanimlari`'da varsa o kodu kullansın.
+
+3. **UNIQUE constraint** `(tenant_id, kategori_kod, kalite_kod)` — tenant aynı kodu farklı kategoride ekleyebilir mi? Evet (`paslanmaz/316L` vs `karbon/316L` farklı). Admin UI'da kategori dropdown bu yüzden şart.
+
+4. **Dil dosyaları.** Yeni UI string'leri `lang/tr.json`, `en.json`, `ar.json`'a eklenmeli (`t_mh_sistem_tab`, `t_mh_firma_tab`, `t_mh_yeni_btn`, `t_mh_col_kategori`, vb.)
+
+5. **Çakışma testleri.** Ayrı tenant'ta `ST37` eklemeye çalışınca sistem preset ile çakışmasın — partial UNIQUE zaten `tenant_id IS NULL` için ayrı.
+
+---
+
+## 23. Oturum (Sonraki) — Faz 3 Form Refactor
+
+22. oturum tamamlandıktan sonra 23. oturumda:
+- `devre_yeni.html` manuel ekleme formu — kalite `input` + datalist yerine **`<select>` (malzeme_tanimlari'dan doldur) + "Yeni ekle" opsiyonu**
+- `spool_detay.html` malzeme modal'ında aynı
+- Autocomplete Faz 3'ün içinde (admin tanım yapmasa bile geçmiş kayıtlardan öneri)
+
+## 24. Oturum — Faz 4 IFS Fuzzy Match
+
+- IFS Excel'indeki `Material` kolonundaki yazılımlar (örn. `St37`, `ST 37`, `st-37`) fuzzy match ile `malzeme_tanimlari`'daki canonical'e çekilsin
+- Bilinmeyen kod → admin'e bildirim + "manuel eşleştir" akışı
+
+---
+
+## Hazır DB Objeleri (Referans — 19. oturumdan)
 
 ```sql
 -- Tablolar
-malzeme_tanimlari                -- 12 preset (sistem_preset=true), tenant kayıtları henüz yok
+malzeme_tanimlari                -- 12 sistem preset
 
--- FK Kolonları
+-- FK Kolonları  
 spool_malzemeleri.malzeme_ref_id
 pipeline_malzemeleri.malzeme_ref_id
 
 -- Fonksiyonlar
 kategori_kod_normalize(text) → text
 kalite_kod_normalize(text) → text
-malzeme_ref_bul(uuid, text, text) → uuid
+malzeme_ref_bul(uuid, text, text) → uuid   -- Guard 1 gevşetmesi opsiyonel
 
 -- Trigger'lar
 tg_spool_malzemeleri_ref_sync     ON spool_malzemeleri      BEFORE INSERT OR UPDATE
@@ -130,23 +303,125 @@ tg_pipeline_malzemeleri_ref_sync  ON pipeline_malzemeleri   BEFORE INSERT OR UPD
 
 -- RLS Policies (4 adet)
 malzeme_tanimlari_select, _insert, _update, _delete
-
--- CHECK Constraint
-check_sistem_preset_tenant       -- sistem_preset=true ⟹ tenant_id IS NULL
-malzeme_tanimlari_kategori_kod_check  -- kategori ∈ {karbon,paslanmaz,bakir,alum,diger}
-
--- Unique/Index
-malzeme_tanimlari_tenant_id_kategori_kod_kalite_kod_key  -- UNIQUE (3-tuple)
-malzeme_tanimlari_preset_unique_idx                       -- PARTIAL UNIQUE (tenant_id IS NULL)
-malzeme_tanimlari_tenant_idx                              -- performans
-malzeme_tanimlari_kategori_idx                            -- performans
 ```
 
 ## JS API (Referans)
 
 ```js
-ARES_NORM.kaliteKod(raw)         // → canonical kod veya null
-ARES_NORM.kaliteGoster(kodOrRaw) // → UI gösterimi ("St 37", "CuNi 90/10")
-ARES_NORM.malzemeEtiket(kod)     // → lokalize ("Karbon Çelik"/"Carbon Steel"/...)
-ARES_NORM.malzemeKod(raw)        // → kategori kodu ("karbon", "paslanmaz"...)
+// RENDER (21. oturumda sistem çapında uygulandı — G-03)
+ARES_NORM.malzemeEtiket(kod)     // → "Karbon Çelik" (lokalize)
+ARES_NORM.kaliteGoster(kodOrRaw) // → "St 37" (canonical)
+ARES_NORM.yuzeyEtiket(kod)       // → "Asit" (lokalize)
+ARES_NORM.durumEtiket(kod)       // → "Bekliyor" (lokalize)
+
+// KOD (DB yazım için)
+ARES_NORM.malzemeKod(raw)        // → "karbon"
+ARES_NORM.kaliteKod(raw)         // → "ST37" veya NULL
+ARES_NORM.yuzeyKod(raw)          // → "asit"
+
+// UYUM (malzeme × yüzey)
+ARES_NORM.uyumlu('paslanmaz','galvaniz')  // → false
+ARES_NORM.uyumluYuzeyler('paslanmaz')     // → ['asit','diger']
+
+// MARKA + REV
+ARES_NORM.marka(proje, pipeline, spool, ARES_NORM.revFmt(rev))
+// → "NB1137-M100-262-302-47-S01-Rev2"
 ```
+
+## G-03 Kontrol Listesi (Yeni Sayfa İçin)
+
+22. oturumda `tanimlar.html`'e yeni sekme eklerken G-03'ü unutma:
+- [ ] Kategori dropdown'da `<option value="karbon">Karbon Çelik</option>` (value ham, text lokalize)
+- [ ] Tablo render'larında `ARES_NORM.malzemeEtiket(kategori_kod)` çağrısı
+- [ ] `kalite_goster` alanı zaten canonical (DB'den öyle geliyor), render'da `esc()` yeterli
+- [ ] Standart (`DIN 17100`, `ASTM A240`) lokalize edilmez — uluslararası kod
+- [ ] Açıklama TR/EN/AR — aktif dile göre `ARES.lang`'e göre seçim
+
+---
+
+## 🗺️ Sonraki Oturumlar — Kısa Çerçeveler
+
+Her oturum için kendi detay dosyası olacak, ama mutabık kaldığımız planın hatırlatması:
+
+### 23. Oturum — Altyapı: Dosya Mimarisi + Lint + Şablon (3-4 saat)
+
+Faz B'nin kalbi. Detay `docs/ROADMAP.md`.
+
+**Ana kalemler:**
+1. CLAUDE.md'yi böl → CLAUDE.md (600 satır) + docs/rules/ (8 kural dosyası) + docs/sessions/ (arşiv) + docs/architecture/
+2. 7 lint script (G-01 i18n, G-02 tema+fontsize, G-03 enum, B-02 local key, E-01 canonical, A-01 error handling, dead-code)
+3. `scripts/health-check.sh` birleştirici
+4. `.husky/pre-commit` + `.github/workflows/lint.yml` + Vercel Deploy entegrasyonu
+5. `docs/templates/` — yeni sayfa/modal/SQL şablonları (kuralı pasif uygular)
+6. CLAUDE.md'nin başına "ZORUNLU ilk tool call: `bash scripts/health-check.sh`" bloğu
+
+**Hazırlık:** 22. oturum kapanışında `docs/` dizin yapısı için ön fikir yap, ROADMAP.md'yi yeniden oku.
+
+### 24. Oturum — Mevcut Kod Temizliği + Font-Size Refactor (2-3 saat)
+
+23'ün ilk lint çalıştırmasının çıktısını (muhtemelen 30-80 hit) temizle.
+
+**Kritik alt iş — font-size refactor:**
+- `--fs-xs: 11px`, `--fs-sm: 12px`, `--fs-base: 14px`, `--fs-lg: 16px`, `--fs-xl: 20px` değişkenleri tanımla
+- Hard-coded `font-size: Npx` kullanımlarını grep'le, hepsini değişkene dönüştür
+- Karakter büyüklüğü sorununun köklü çözümü
+
+### 25. Oturum — Faz A Faz 3: Form Refactor (1-2 saat)
+
+Malzeme sisteminin form tarafı iyileştirmesi:
+- `devre_yeni.html` manuel kalite input → master tablodan `<select>` + "Yeni ekle"
+- `spool_detay.html > kaliteleriDoldur()` master tablodan okusun (geçmiş kayıt yerine)
+- Autocomplete (geçmiş öneri + master birleşik)
+
+**Lint destekli çalışır** — 23-24 altyapı tamam olduğu için bu oturum çok hızlı geçer.
+
+### 26. Oturum — Faz A Faz 4: IFS Fuzzy Match (1-2 saat)
+
+Malzeme sistemini sonlandır:
+- IFS Excel'in `Material` kolonundaki `St37`, `ST 37`, `st-37`, `StE355` varyantları fuzzy match
+- Eşleşmeyen kodlar → admin bildirim + "manuel eşleştir" akışı
+- `ifs_material_alias` öğrenen tablo
+
+### 27. Oturum — SaaS: Tenant İzolasyon Testleri (3-4 saat)
+
+Faz C başlangıcı. SaaS için **ölümcül önem**:
+- Test tenant A + B migration
+- `tests/rls-isolation.sql` — A kullanıcısı B'nin verilerini göremiyor mu, her tablo için
+- CI'ye entegre et — izolasyon kırılması → deploy iptal
+- Her yeni tablo için izolasyon test şablonu
+
+### 28. Oturum — SaaS: Performans Bütçesi + Observability (2-3 saat)
+
+"Yavaşlık istemiyorum" hedefinin somutlaştırılması:
+- Sayfa açılış bütçeleri (spool_detay < 2s, devre_detay < 2s, kesim < 1.5s)
+- Supabase sorgu bütçesi (< 500ms p95)
+- Lighthouse CI
+- Sentry (veya alternatif) — canlı error tracking dashboard
+- Haftalık en yavaş sorgu raporu
+
+### 29. Oturum — SaaS: Rollback + Feature Flag (2-3 saat)
+
+Deploy bozulursa çok müşteri etkilenmesin:
+- Vercel rollback prosedürü yazılı
+- `ares_flags` tablosu — feature flag altyapısı
+- DB migration'lar up.sql + down.sql çifti
+- Canary deployment — 1 firma → 24 saat sonra hepsi
+
+---
+
+## ❗ Önemli: 22. Oturumda Yazılacak Kodun Geleceği
+
+23-24. oturumda altyapı gelince ve `bash scripts/health-check.sh` ilk defa çalıştırılınca, 22. oturumda yazılan `tanimlar.html > malzeme havuzu sekmesi` kodu da lint'ten geçecek.
+
+**Bu yüzden 22. oturumda baştan dikkat:**
+- [ ] Yeni fonksiyonların hepsi `try/catch` + `res.error` kontrolü (A-01)
+- [ ] Hard-coded hex yok, hard-coded `font-size: Npx` yok (G-02)
+- [ ] Hard-coded TR string yok, her metin `tv('key', 'fallback')` (G-01)
+- [ ] Ham enum kodu render yok (G-03)
+- [ ] Destructive silme öncesi onay (B-01)
+- [ ] `<option value="kod">Türkçe</option>` pattern (E-01)
+- [ ] `innerHTML` kullanımda `esc()` (henüz lint yok ama alışkanlık)
+- [ ] `ares-normalize.js` script yüklendi (yeni sekme olduğu için tanimlar.html'de zaten var mı teyit)
+
+Bu titizlik **22. oturum sonrası lint çalışınca 0 yeni ihlal** demektir. Mevcut 30-80 hit sadece eski koddan gelecek, yeni kod onlara eklenmeyecek.
+

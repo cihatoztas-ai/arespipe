@@ -1573,7 +1573,7 @@ function spoolMalzExcel(){
   if(!_spoolMalzData.length){showToast(tv('dv_no_data','Veri yok'),'i');return;}
   if(typeof XLSX==='undefined'){showToast(tv('dv_xlsx_missing','Excel yüklenemedi'),'e');return;}
   var rows=[[tv('dv_mat_col_spool','Spool'),'Kod',tv('dv_mat_col_desc','Açıklama'),tv('sp_stat_material','Malzeme'),tv('th_quality','Kalite'),'Çap (mm)','Et (mm)','Boy (mm)','Adet','Ağırlık (kg)','Heat No',tv('dv_mat_col_cert','Sertifikalı')]];
-  _spoolMalzData.forEach(function(m){var sp=m.spooller||{};var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||'');rows.push([sp.spool_no||'',m.kod||'',m.tanim||'',m.malzeme||'',kg,m.dis_cap_mm||'',m.et_mm||'',m.boy_mm||'',m.adet||'',m.agirlik_kg||'',m.heat_no||'',m.sertifikali?tv('dv_yes','Evet'):'']);});
+  _spoolMalzData.forEach(function(m){var sp=m.spooller||{};var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malzeme)||m.malzeme||''):(m.malzeme||'');var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||'');rows.push([sp.spool_no||'',m.kod||'',m.tanim||'',me,kg,m.dis_cap_mm||'',m.et_mm||'',m.boy_mm||'',m.adet||'',m.agirlik_kg||'',m.heat_no||'',m.sertifikali?tv('dv_yes','Evet'):'']);});
   var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Malzeme');XLSX.writeFile(wb,'malzeme_listesi.xlsx');
 }
 
@@ -1598,7 +1598,7 @@ function plMalzRender(){
     var rows=p.malzemeler.map(function(m,i){
       return'<tr><td style="color:var(--txd);">'+(i+1)+'</td>'
         +'<td>'+esc(m.kod||'—')+'</td>'
-        +'<td>'+esc(m.tanim||'—')+'</td><td>'+esc(m.malzeme||'—')+'</td>'
+        +'<td>'+esc(m.tanim||'—')+'</td><td>'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malzeme)||m.malzeme||'—'):(m.malzeme||'—'))+'</td>'
         +'<td style="color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||'—'):(m.kalite||'—'))+'</td>'
         +'<td style="text-align:right;">'+(m.dis_cap_mm?String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',')+' mm':'—')+'</td>'
         +'<td style="text-align:right;">'+(m.et_mm?String(m.et_mm).replace('.',',')+' mm':'—')+'</td>'
@@ -1945,13 +1945,24 @@ function exportExcel(){
   if(typeof XLSX==='undefined'){showToast(tv('dv_xlsx_missing','Excel yüklenemedi'),'e');return;}
   var wb=XLSX.utils.book_new();
   var rows=[['#','Pipeline No','Spool No','Çap','Ağırlık','Malzeme','Kalite','Yüzey',tv('dv_th_status','Durum'),tv('sp_alist_label','Alıştırma'),tv('sp_bending','Büküm'),tv('sp_cutting','Kesim'),tv('sp_marking','Markalama'),tv('sp_tests','Test')]];
-  SPOOLS.filter(function(s){return!s.stopped;}).forEach(function(s,i){rows.push([i+1,s.pipeline||'',s.spoolNo||'',s.cap||'',s.agirlik||'',s.malzeme||'',s.kalite||'',s.yuzey||'',s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||''),s.alistirma||'',s.bukum?(s.bukum.tamamlanan+'/'+s.bukum.toplam):'',s.kesim?(s.kesim.tamamlanan+'/'+s.kesim.toplam):'',s.markalama?(s.markalama.tamamlanan+'/'+s.markalama.toplam):'',s.test?(s.test.tamamlanan+'/'+s.test.toplam):'']);});
+  SPOOLS.filter(function(s){return!s.stopped;}).forEach(function(s,i){
+    // G-03: malzeme + kalite + yüzey lokalize
+    var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
+    var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||''):(s.kalite||'');
+    var ye=(typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||''):(s.yuzey||'');
+    rows.push([i+1,s.pipeline||'',s.spoolNo||'',s.cap||'',s.agirlik||'',me,kg,ye,s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||''),s.alistirma||'',s.bukum?(s.bukum.tamamlanan+'/'+s.bukum.toplam):'',s.kesim?(s.kesim.tamamlanan+'/'+s.kesim.toplam):'',s.markalama?(s.markalama.tamamlanan+'/'+s.markalama.toplam):'',s.test?(s.test.tamamlanan+'/'+s.test.toplam):'']);
+  });
   var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[4,16,10,10,12,14,8,8,16,10,8,8,10,8].map(function(w){return{wch:w};});XLSX.utils.book_append_sheet(wb,ws,tv('dv_spool_list','Spool Listesi'));
   XLSX.writeFile(wb,(DEVRE.devre||'Devre')+'_'+bugunStr().replace(/\//g,'-')+'.xlsx');showToast(tv('dv_excel_downloaded','Excel indirildi'),'success');
 }
 function exportPdf(){
   document.getElementById('mExport').style.display='none';
-  var satirlar=SPOOLS.filter(function(s){return!s.stopped;}).map(function(s,i){return'<tr><td>'+(i+1)+'</td><td style="font-weight:700;color:#2D8EFF;">'+esc(s.marka||s.spoolNo||'')+'</td><td>'+esc(s.cap||'')+'</td><td>'+esc(s.agirlik||'')+'</td><td>'+esc(s.malzeme||'')+'</td><td>'+esc(s.yuzey||'')+'</td><td>'+esc(s.alistirma||'—')+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:'+(s.stopped?'#fee2e2':'#dbeafe')+';color:'+(s.stopped?'#b91c1c':'#1d4ed8')+'">'+(s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||''))+'</span></td></tr>';}).join('');
+  var satirlar=SPOOLS.filter(function(s){return!s.stopped;}).map(function(s,i){
+    // G-03: malzeme + yüzey lokalize (kalite bu tabloda yok)
+    var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
+    var ye=(typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||''):(s.yuzey||'');
+    return'<tr><td>'+(i+1)+'</td><td style="font-weight:700;color:#2D8EFF;">'+esc(s.marka||s.spoolNo||'')+'</td><td>'+esc(s.cap||'')+'</td><td>'+esc(s.agirlik||'')+'</td><td>'+esc(me)+'</td><td>'+esc(ye)+'</td><td>'+esc(s.alistirma||'—')+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:'+(s.stopped?'#fee2e2':'#dbeafe')+';color:'+(s.stopped?'#b91c1c':'#1d4ed8')+'">'+(s.stopped?tv('dv_status_stopped','Durduruldu'):(s.durumText||s.durum||''))+'</span></td></tr>';
+  }).join('');
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;padding:10mm;}h1{font-size:18px;margin-bottom:6px;}table{width:100%;border-collapse:collapse;}th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#475569;border-bottom:1px solid #e2e8f0;}td{padding:6px 8px;border-bottom:1px solid #f1f5f9;}.bar{background:#1e3a5f;color:#fff;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-radius:6px;}.bar button{border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;}@media print{.bar{display:none;}}@page{size:A4 landscape;margin:8mm}</style></head><body>'
     +'<div class="bar"><span>'+(DEVRE.projeNo||'')+' / '+(DEVRE.devre||'')+' — '+bugunStr()+'</span><div style="display:flex;gap:6px;"><button onclick="window.close()" style="background:rgba(255,255,255,.2);color:#fff;">'+tv('dv_close','Kapat')+'</button><button onclick="window.print()" style="background:#fff;color:#1e3a5f;font-weight:700;">'+tv('dv_label_print_btn','Yazdır')+'</button></div></div>'
     +'<h1>'+(DEVRE.projeNo||'')+' — '+(DEVRE.devre||'')+'</h1>'

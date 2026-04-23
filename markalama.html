@@ -618,7 +618,7 @@ function hl(text){
 function malzInfoHtml(m){
   if(m.tip==='manuel') return '<div style="font-size:14px;color:var(--txd);">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
   var parts=[];
-  if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
+  if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span>');
   if(m.cap)    parts.push('&#216;'+esc(m.cap));
   return parts.length?'<div style="font-size:14px;color:var(--txm);">'+parts.join(' &nbsp;&middot;&nbsp; ')+'</div>':'';
 }
@@ -797,13 +797,13 @@ function renderTable(){
       altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
     } else if(m.tip==='plaka'){
       var parts2=[];
-      if(m.kalite) parts2.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
+      if(m.kalite) parts2.push('<span style="color:var(--ac);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span>');
       if(m.et)     parts2.push('e='+esc(m.et));
       else if(m.cap) parts2.push('&#216;'+esc(m.cap));
       altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_tip_plaka','Plaka')+' &middot; '+parts2.join(' &middot; ')+'</div>':'';
     } else {
       var parts=[];
-      if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc(m.kalite)+'</span>');
+      if(m.kalite) parts.push('<span style="color:var(--ac);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span>');
       if(m.cap)    parts.push('&#216;'+esc(m.cap));
       altSatir=parts.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+parts.join(' &middot; ')+'</div>':'';
     }
@@ -836,7 +836,7 @@ function manuelMarkala(id){
   document.getElementById('manuelMarkIcerik').innerHTML=
     '<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:6px;">'+(esc(m.malzemeAdi||m.yuzey||'—'))+'</div>'
     +'<div style="font-size:14px;color:var(--txd);">'
-    +(m.kalite?'<span style="color:var(--ac);">'+esc(m.kalite)+'</span> &nbsp;':'')
+    +(m.kalite?'<span style="color:var(--ac);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span> &nbsp;':'')
     +(m.cap?'&#216;'+esc(m.cap)+' &nbsp;':'')
     +'<span>Spool: '+esc(m.spoolNo)+'</span>'
     +'</div>';
@@ -1025,7 +1025,7 @@ function renderML(){
           var ch=ml.markalanmisIds.has(m.id);
           var altSatir='';
           if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
-          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+          else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
           return '<tr class="'+(ch?'kl-row-cut':'kl-row-nocut')+'" id="mlrow-'+ml.id+'-'+m.id+'">'
             +'<td class="cb-cell"><input type="checkbox" class="kl-cb" '+(ch?'checked':'')+' onchange="mlToggleRow(\''+ml.id+'\',\''+m.id+'\',this.checked)"></td>'
             +'<td class="cell-no">'+(offset+i+1)+'</td>'
@@ -1204,7 +1204,7 @@ function renderArc(){
           return arcM.slice(offset,offset+PG).map(function(m,i){
             var altSatir='';
             if(m.tip==='manuel') altSatir='<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+tv('mk_serbest',tv('mk_serbest','Serbest markalama'))+'</div>';
-            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc(m.kalite)+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
+            else { var parts2=[]; if(m.kalite)parts2.push('<span style="color:var(--txd);">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))+'</span>'); if(m.cap)parts2.push('&#216;'+esc(m.cap)); altSatir=parts2.length?'<div style="font-size:14px;color:var(--txd);margin-top:2px;">'+(m.tip==='plaka'?tv('mk_tip_plaka','Plaka')+' &middot; ':'')+parts2.join(' &middot; ')+'</div>':''; }
             return '<tr>'
               +'<td class="cell-no">'+(offset+i+1)+'</td>'
               +'<td>'+tersaneBadge(m.tersane||'—')+'</td>'
@@ -1283,7 +1283,8 @@ async function buildExcel(listeNo, kayitlar){
     var row=4+i; ws.getRow(row).height=26;
     var rbg=i%2===0?'FFFDFEFE':'FFEBF5FB';
     var malzAdi=m.malzemeAdi||m.yuzey||'—';
-    var malzeme=m.tip==='manuel'?'—':(m.kalite||'—');
+    var _kgE=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||'—'):(m.kalite||'—');
+    var malzeme=m.tip==='manuel'?'—':_kgE;
     var cap=m.cap||'—';
     [i+1,m.tersane,m.isEmir,m.spoolNo,m.spoolId,malzAdi,malzeme,cap].forEach(function(val,ci){
       var cc=ws.getCell(row,ci+1);cc.value=val;

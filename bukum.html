@@ -796,7 +796,7 @@ function showQR(id){
     
     +'<div style="font-size:14px;color:var(--txd);margin-bottom:4px;">'+esc(alt)+'</div>'+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:var(--leg);margin-bottom:12px;">'+esc(b.spoolId||'—')+'</div>'
     +'<div id="qrBig" style="margin:0 auto 14px;width:200px;height:200px;"></div>'
-    +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(malzEtiket)+(b.kalite?' '+esc(b.kalite):'')+'</b> &#216;'+esc(b.cap)+'</div>'
+    +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(malzEtiket)+(b.kalite?' '+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(b.kalite)||b.kalite||''):(b.kalite||'')):'')+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
     +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">Kapat</button>'
     +'</div>';
@@ -896,7 +896,7 @@ function renderKesilenler(){
       +'<td class="cell-emir">'+esc(ref)+'</td>'
       +'<td class="cell-spool">'+esc(b.spoolNo||'')+'</td><td class="cell-spoolid">'+esc(b.spoolId||'')+'</td>'
       +'<td>'+matBadge(malzEtiket)+'</td>'
-      +'<td><span style="color:var(--txm);font-size:14px;">'+(b.kalite||'—')+'</span></td>'
+      +'<td><span style="color:var(--txm);font-size:14px;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(b.kalite)||b.kalite||'—'):(b.kalite||'—'))+'</span></td>'
       +'<td style="font-size:14px;font-weight:500;color:var(--ac);">'+esc(b.cap)+'</td>'
       +'<td style="font-size:14px;color:var(--txm);">'+esc(b.kalinlik)+'</td>'
       +'<td class="cell-kesim">'+b.olcu+' mm</td>'

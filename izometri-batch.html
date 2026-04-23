@@ -432,12 +432,12 @@ function renderSonucTablo() {
       + '<td class="spool-cell">' + esc(s.spool_no || '—') + '</td>'
       + '<td style="text-align:right;color:var(--warn);font-weight:600;">' + capToDN(s.cap_mm) + '</td>'
       + '<td style="text-align:right;">' + (s.cap_mm || '—') + '</td>'
-      + '<td>' + esc(s.malzeme || '—') + '</td>'
-      + '<td style="color:var(--ac);">' + esc(s.kalite || '—') + '</td>'
+      + '<td>' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||'—'):(s.malzeme||'—')) + '</td>'
+      + '<td style="color:var(--ac);">' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||'—'):(s.kalite||'—')) + '</td>'
       + '<td style="text-align:right;">' + (s.et_mm || '—') + '</td>'
       + '<td style="text-align:right;">' + (s.boy_mm || '—') + '</td>'
       + '<td style="text-align:right;">' + (s.agirlik_kg || '—') + '</td>'
-      + '<td>' + esc(s.yuzey || '—') + '</td>'
+      + '<td>' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||'—'):(s.yuzey||'—')) + '</td>'
       + '<td>' + esc(s.rev || '—') + '</td>'
       + '</tr>';
   }).join('');
@@ -450,6 +450,10 @@ function excelIndir() {
   var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
 
   _tumSpooller.forEach(function(s, i) {
+    // G-03: Excel satırı da lokalize
+    var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
+    var _kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||''):(s.kalite||'');
+    var _ye=(typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||''):(s.yuzey||'');
     rows.push([
       i + 1,
       (s._dosya || '').replace('.pdf','').replace('.PDF',''),
@@ -457,12 +461,12 @@ function excelIndir() {
       s.spool_no    || '',
       capToDN(s.cap_mm),
       s.cap_mm      || '',
-      s.malzeme     || '',
-      s.kalite      || '',
+      _me,
+      _kg,
       s.et_mm       || '',
       s.boy_mm      || '',
       s.agirlik_kg  || '',
-      s.yuzey       || '',
+      _ye,
       s.rev         || ''
     ]);
   });

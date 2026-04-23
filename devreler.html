@@ -2071,12 +2071,13 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
     if (state === 2) {
       var eksikler = kalemler.filter(function(k) { return !k.hazir; });
       var satirlar = eksikler.map(function(k, i) {
+        var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(k.malzeme)||k.malzeme||'—'):(k.malzeme||'—');
         return '<tr style="background:' + (i % 2 === 0 ? '#fafafa' : '#fff') + ';">' +
           '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;color:#64748b;">' + (i+1) + '</td>' +
           '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.tip === 'boru' ? 'Boru' : 'Fitting') + '</td>' +
           '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.aciklama || '—') + '</td>' +
           '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;font-weight:600;">' + (k.cap ? formatCapMM(k.cap) + ' mm' : '—') + '</td>' +
-          '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.malzeme || '—') + '</td>' +
+          '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + esc(_me) + '</td>' +
           '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;">' + (k.miktar ? k.miktar + ' ' + (k.birim || '') : '—') + '</td>' +
         '</tr>';
       }).join('');
@@ -2102,12 +2103,13 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
       return '<div style="padding:14px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:0 0 8px 8px;font-size:14px;color:#dc2626;">Malzeme listesi henüz oluşturulmadı</div>';
     }
     var satirlarTumu = kalemler.map(function(k, i) {
+      var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(k.malzeme)||k.malzeme||'—'):(k.malzeme||'—');
       return '<tr style="background:' + (i % 2 === 0 ? '#fafafa' : '#fff') + ';">' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;color:#64748b;">' + (i+1) + '</td>' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.tip === 'boru' ? 'Boru' : 'Fitting') + '</td>' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.aciklama || '—') + '</td>' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;font-weight:600;">' + (k.cap ? formatCapMM(k.cap) + ' mm' : '—') + '</td>' +
-        '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + (k.malzeme || '—') + '</td>' +
+        '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;">' + esc(_me) + '</td>' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;">' + (k.miktar ? k.miktar + ' ' + (k.birim || '') : '—') + '</td>' +
         '<td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:14px;text-align:center;color:#e53e3e;font-weight:700;">✗ Eksik</td>' +
       '</tr>';

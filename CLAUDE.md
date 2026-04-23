@@ -1,7 +1,26 @@
 # AresPipe — Claude Proje Bağlamı
 
 > Bu dosya her sohbet başında okunur. Güncel tutulması şarttır.
-> Son güncelleme: 22 Nisan 2026 (19. oturum — Malzeme Master Tablo: `malzeme_tanimlari` + trigger + 12 sistem preset + guard'lar. E-06 tamamen yenilendi.)
+> Son güncelleme: 22 Nisan 2026 (21. oturum KAPATILDI — Sistem Çapında Render Standardizasyonu. G-03 kuralı formalleştirildi. 11 HTML dosyasında ~30 ham render noktası `ARES_NORM.malzemeEtiket()` / `kaliteGoster()` / `yuzeyEtiket()` ile lokalize edildi. `admin/` ve `portal/` `ares-normalize.js` yüklemesi eklendi. 20. oturumdaki teknik borç tamamen kapatıldı.)
+
+---
+
+## 🗺️ UZUN VADELİ YOL HARİTASI — docs/ROADMAP.md
+
+**23 Nisan 2026 itibarıyla AresPipe'ın SaaS hedefi için 29 oturumluk kalıcı altyapı planı mutabık kalınmıştır.**
+
+Hedef: 1-2 yıl içinde çoklu tersane/firma satacak, bug'sız ve hızlı bir SaaS ürünü.
+Ekip: Solo geliştirici + AI asistanlar.
+Kalite hedefi: Sıfır regresyon toleransı.
+
+**Üç faz:**
+- **Faz A (22, 25, 26. oturumlar):** Malzeme sisteminin tamamlanması (devam eden iş)
+- **Faz B (23, 24. oturumlar):** Altyapı güvencesi — dosya mimarisi + lint + şablon + mevcut kod temizliği (SAĞLAM PLANIN KALBİ)
+- **Faz C (27, 28, 29. oturumlar):** SaaS hazırlığı — tenant izolasyon testleri + performans bütçesi + rollback/feature flag
+
+**Temel zihniyet değişimi:** "Kurallı geliştirme"den (CLAUDE.md'de yazılı, akılda tut) "zorla uyumlu geliştirme"ye (lint/test/CI'de kodlanmış, bypass edilemez).
+
+Detay: `docs/ROADMAP.md`. Her oturum başında ROADMAP'e kısa göz atılır, mevcut faz teyit edilir.
 
 ---
 
@@ -558,10 +577,49 @@ malzemeRows.push({
 - 16 Nisan öncesi: `normalizeMalzeme()` Türkçe etiket döndürüyordu, "Karbon Çelik / Karbon Çelik" kamufle bug
 - 17 Nisan (3. oturum): `ares-normalize.js` → kod döndürmeye başladı, "karbon / karbon" görünür bug
 - 18. oturum (22 Nisan): Tespit + kısmi düzeltme önerileri (uygulanmadı)
-- **19. oturum (22 Nisan): Master tablo altyapısı + trigger + guard'lar + sistem preset → Faz 1 tamamlandı**
-- Faz 2 (sonraki oturum): admin UI — `tanimlar.html`'de malzeme havuzu sekmesi
+- 19. oturum (22 Nisan): Master tablo altyapısı + trigger + guard'lar + sistem preset → Faz 1 tamamlandı
+- **20. oturum (22 Nisan): Canlı test + kök neden fix. `devre_yeni.html:644` `normalizeMalzeme()` prematüre normalize ediyordu → ham IFS `Material` değeri (ST37) kayboluyordu → trigger Guard 1 tetikleniyordu. Tek satır fix + `devre_detay.html` render fix (4 nokta) → E-06 yazma + okuma tam simetri.**
+- Faz 2 (21. oturum): admin UI — `tanimlar.html`'de malzeme havuzu sekmesi
 - Faz 3 (sonraki): form refactor — autocomplete dropdown (free text yerine)
 - Faz 4 (son): IFS/Excel import fuzzy match
+
+**IFS/Excel Import Altın Kuralı (20. oturumda kesinleşti):**
+- IFS'nin `Material` kolonu = **kalite kodudur** (ST37, 316L, CUNI9010) — malzeme kategorisi değil
+- Import'ta HAM sakla, normalize ETME
+- Kategori türetimi **insert noktasında** `_malzemeTipi()` veya `ARES_NORM.malzemeKod()` ile
+- `malzeme` ve `kalite` alanları **asla aynı değerle** doldurulmaz (Guard 1 false-positive önlemi)
+- Trigger canonical'e çevirir + `malzeme_ref_id` doldurur
+
+**Anti-pattern (20. oturum sonrası asla):**
+```js
+// ❌ YANLIŞ — idempotent değil, veri yok eder
+items.push({ malzeme: normalizeMalzeme(ham), ... });
+// Sonra: kalite: item.malzeme → her iki alan da 'karbon' → Guard 1 tetikler
+
+// ✅ DOĞRU
+items.push({ malzeme: String(ham).trim(), ... });
+// Insert: malzeme: _malzemeTipi(item.malzeme), kalite: item.malzeme
+```
+
+**Render Simetrisi Kuralı (20. oturum sonu bulgu, 21. oturumda tam süpürülecek):**
+Her gösterim noktası (tablo sütunu, popup satırı, template literal, string concatenation) ham kategori/kalite/yüzey kodunu değil, normalize helper çıktısını göstermelidir:
+
+```js
+// ❌ YANLIŞ — kullanıcıya 'karbon' ham kategori kodu görünür
+`${m.malzeme} — ${m.kalite} — ${cap}`
+esc(m.malzeme || '—')
+
+// ✅ DOĞRU — lokalize etiket + canonical kalite
+`${ARES_NORM.malzemeEtiket(m.malzeme)||m.malzeme} — ${ARES_NORM.kaliteGoster(m.kalite)||m.kalite} — ${cap}`
+esc(ARES_NORM.malzemeEtiket(m.malzeme) || m.malzeme || '—')
+```
+
+**Hedef görünümler:**
+- Malzeme: `Karbon Çelik` / `Paslanmaz` / `Bakır Alaşım` / `Alüminyum` (lokalize TR/EN/AR)
+- Kalite: `St 37` / `316L` / `CuNi 90/10` / `1.4571` (canonical gösterim)
+- Yüzey: `Asit` / `Galvaniz` / `Siyah` / `Boya` (lokalize)
+
+**ASLA kullanıcıya görünmeyecek ham kodlar:** `karbon`, `paslanmaz`, `bakir`, `alum`, `siyah`, `galvaniz`, `asit`, `boyali`, `bekliyor`, `devam_ediyor`, `tamamlandi`, `iptal`.
 
 **DB objelerinin listesi (Faz 1 çıktısı):**
 ```
@@ -572,6 +630,36 @@ Fonksiyonlar: kategori_kod_normalize(), kalite_kod_normalize(), malzeme_ref_bul(
 Trigger'lar:  tg_spool_malzemeleri_ref_sync, tg_pipeline_malzemeleri_ref_sync
 RLS:          4 policy (SELECT/INSERT/UPDATE/DELETE)
 ```
+
+#### Render Kuralı (G-03 — 21. oturumda kuralsallaşacak)
+
+**Ham kategori/kalite/yüzey kodu kullanıcıya gösterilmez.** Tüm render'lar `ARES_NORM` helper'ı üzerinden lokalize edilir.
+
+| Alan | DB'de | UI'da | Helper |
+|---|---|---|---|
+| malzeme | `karbon`, `paslanmaz`, `bakir` | `Karbon Çelik`, `Paslanmaz`, `Bakır Alaşım` | `ARES_NORM.malzemeEtiket(kod)` |
+| kalite | `ST37`, `St 37`, `316L` (canonical) | `St 37`, `316L`, `CuNi 90/10` | `ARES_NORM.kaliteGoster(kodOrRaw)` |
+| yuzey | `asit`, `galvaniz`, `siyah` | `Asit`, `Galvaniz`, `Siyah` | `ARES_NORM.yuzeyEtiket(kod)` |
+| durum | `bekliyor`, `devam_ediyor` | `Bekliyor`, `Devam Ediyor` | `ARES_NORM.durumEtiket(kod)` |
+
+**Güvenli fallback pattern (21. oturum standardı):**
+```js
+// Malzeme
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeEtiket)
+    ? (ARES_NORM.malzemeEtiket(x.malzeme) || x.malzeme || '—')
+    : (x.malzeme || '—')
+)
+
+// Kalite
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.kaliteGoster)
+    ? (ARES_NORM.kaliteGoster(x.kalite) || x.kalite || '—')
+    : (x.kalite || '—')
+)
+```
+
+**Uygulanacak:** Excel/PDF export'ları dahil tüm kullanıcı görünür yerlere (QR etiket istisna — case-by-case). Dropdown value'ları ham kod olarak kalır (DB'ye yazılır), text içeriği lokalize. inlineEdit() çağrılarına ham değer gönderilir (düzenleme için), gösterim lokalize olur — 20. oturumda `devre_detay.html:1195`'te uygulanan pattern.
 
 ---
 
@@ -821,6 +909,126 @@ _secili[item._lk] = true
 #### Potansiyel uygulama noktaları
 
 - `proje_detay.html` spool listesi, `sevkiyatlar.html` spool seçimi, Excel import eden tüm ekranlar
+
+---
+
+### 2.18 Enum/Master-Tablo Render Standardı — ZORUNLU (Kural G-03)
+
+**22 Nisan 2026 — 21. oturumda formalleştirildi.** 19-20. oturumdaki E-06 master tablo altyapısının yazma tarafı tamamdı, ama okuma/gösterim tarafında ham kategori kodları (`karbon`, `paslanmaz`) hâlâ UI'da görünüyordu. G-03 bu simetri boşluğunu kapatır.
+
+#### Temel kural
+
+**Ham kategori/kalite/yüzey/durum kodları kullanıcıya ASLA görünmez.** Tüm render noktaları (HTML tablo, popup, modal, chip, PDF head, Excel export satırı, konsol toast'ı, template literal) `ARES_NORM` helper'ı üzerinden lokalize/canonical gösterime çevrilir.
+
+| Alan | DB'de (canonical) | UI'da (gösterim) | Helper |
+|---|---|---|---|
+| malzeme | `karbon`, `paslanmaz`, `bakir`, `alum`, `diger` | `Karbon Çelik` / `Carbon Steel` / `فولاذ كربوني` (lokalize) | `ARES_NORM.malzemeEtiket(kod)` |
+| kalite  | `ST37`, `St 37`, `316L`, `CUNI9010` (canonical) | `St 37`, `316L`, `CuNi 90/10` | `ARES_NORM.kaliteGoster(kodOrRaw)` |
+| yuzey   | `asit`, `galvaniz`, `siyah`, `boyali`, `diger` | `Asit` / `Galvaniz` / `Siyah` / `Boya` (lokalize) | `ARES_NORM.yuzeyEtiket(kod)` |
+| durum   | `bekliyor`, `devam_ediyor`, `tamamlandi`, `iptal` | `Bekliyor` / `Devam Ediyor` / `Tamamlandı` / `İptal` | `ARES_NORM.durumEtiket(kod)` |
+
+#### Güvenli fallback pattern — tek standart
+
+Üçüncü bir yardımcı wrapper tanımlamak yerine **her render noktasında inline fallback** kullanılır (ARES_NORM yüklü değilken ham değere düşer):
+
+```js
+// MALZEME
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeEtiket)
+    ? (ARES_NORM.malzemeEtiket(x.malzeme) || x.malzeme || '—')
+    : (x.malzeme || '—')
+)
+
+// KALİTE
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.kaliteGoster)
+    ? (ARES_NORM.kaliteGoster(x.kalite) || x.kalite || '—')
+    : (x.kalite || '—')
+)
+
+// YÜZEY
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.yuzeyEtiket)
+    ? (ARES_NORM.yuzeyEtiket(x.yuzey) || x.yuzey || '—')
+    : (x.yuzey || '—')
+)
+```
+
+Excel export satır içinde `esc()` yok (XLSX zaten string alır); parantez içindeki üçlü fallback koşulu `forEach` başında bir local değişkene atanıp satıra o değişken geçirilir. Pattern 21. oturumda `devre_detay.html:1948`, `izometri-batch.html:452`, `markalama.html:1282` gibi yerlerde uygulandı.
+
+#### Kapsam
+
+**Zorunlu uygulama:**
+- HTML tablo `<td>` render
+- Popup/modal alanları (ör. `spool_detay.html` Büküm/Kesim/Markalama bilgi kutuları)
+- Chip/badge içerikleri
+- Excel (XLSX) satır değerleri
+- PDF/print önizleme HTML'i
+- Toast mesajları (eğer kod gösteriliyorsa)
+- Search highlight (`hl()` çağrısı) — önce lokalize, sonra hl
+
+**İstisna (dokunulmaz):**
+- Dropdown/select `<option value="...">` → ham kod DB'ye yazılır, `<option>` içeriği lokalize
+- `inlineEdit(el, alan, lk, 'select', options, currentValue)` çağrısında `currentValue` ham kalır (düzenleme için)
+- State map'leri (`obj.malzeme = x.malzeme || '—'`) — DB'ye yazılacak ham değeri tutar, render değildir
+- Arama filtresi birleştirme string'leri (`[a,b,c].join(' ').toLowerCase()`) — kullanıcıya gösterilmez
+- AI/LLM prompt'ları (ör. `spool_detay.html:1590` malzCtx) — kullanıcıya DEĞİL modele gider
+- De-dup hash key'leri (`[kod,tanim,malzeme,kalite].join('|')`) — kullanıcıya gösterilmez
+- QR etiket / izometri PDF fiziksel çıktı → case-by-case
+
+#### Mevcut dosya-helper helper'ları (21. oturum öncesi)
+
+21. oturumda **dokunulmadı**, zaten ARES_NORM kullanıyorlar:
+- `_malzemeGoster(raw)` — `spool_detay.html:1206`, `devre_detay.html:877` (wrap around ARES_NORM.malzemeEtiket)
+- `_yuzeyGoster(raw)` — aynı yerler
+- `matBadge(m)` — `bukum.html:464`, `kesim.html:994`, `markalama.html:595` (renkli badge + ARES_NORM.tvMalzeme)
+- `devreler.html:1768-1797` inline matBadge + yuzeyBadge + sapma tooltip
+
+#### Yeni sayfa kontrol listesi (G-01 ekine — sayfa teslim öncesi)
+
+- [ ] Her `esc(x.malzeme)` / `esc(x.kalite)` / `esc(x.yuzey)` → fallback pattern ile lokalize
+- [ ] Her `x.malzeme || '—'` (state map değilse) → lokalize
+- [ ] Excel export header'ları: `Malzeme` ✓, satır değerleri lokalize ✓
+- [ ] PDF/print HTML head ve gövde: lokalize ✓
+- [ ] Chip/badge içeriği: lokalize ✓ (matBadge zaten yapıyor)
+- [ ] `ares-normalize.js` yüklemesi script sırasında var mı? (admin/portal gibi alt-dizin sayfalarında unutulmasın)
+
+#### 21. oturum fix'lenen dosyalar (referans)
+
+| Dosya | Noktalar |
+|---|---|
+| `spool_detay.html` | `kmMalzInfo` (2253), `bmMalzInfo` (2309), 3D M3 popup (3065-3066) |
+| `devre_detay.html` | Excel BOM (1576), pipeline `<td>` (1601), Excel SPOOLS (1948), PDF önizleme (1954) |
+| `devre_yeni.html` | IFS önizleme kalite sütunu (1272) |
+| `bukum.html` | QR header (799), tablo `<td>` kalite (899) |
+| `kesim.html` | Tekil liste (1852), özet (2033), kld meta (2383), kld row (2536), confirm dialog'ları (2950/2995), PDF head (3234), PDF detay (3457), onay modal (3559) |
+| `markalama.html` | malzInfoHtml (621), plaka/otomatik parts (800/806), manuel modal (839), ml inline (1028), arc inline (1207), Excel satır (1286) |
+| `izometri-batch.html` | HTML tablo 3 alan (435/436/440), Excel satır 3 alan (460-465) |
+| `is_baslat.html` | Mobil chip malzeme + kalite (1077-1078) |
+| `admin/index.html` | Özet tablo malzeme (364) + script yüklemesi |
+| `portal/index.html` | Özet tablo malzeme (367) + script yüklemesi |
+| `devreler.html` | BOM eksik satırı (2079), BOM tümü satırı (2110) |
+
+Toplam: **11 dosya × ~30 render noktası.**
+
+#### Anti-pattern'ler (asla tekrarlanmayacak)
+
+```js
+// ❌ Ham kategori kodu
+'<td>' + esc(m.malzeme) + '</td>'
+
+// ❌ OR fallback ham
+esc(x.kalite || '—')
+
+// ❌ Template literal ham
+`${m.malzeme} — ${m.kalite}`
+
+// ❌ Excel satırına ham
+rows.push([..., s.malzeme, s.kalite, s.yuzey, ...]);
+
+// ❌ Toast'ta ham
+toast(m.malzeme + ' eklendi', 'ok');
+```
 
 ---
 
@@ -1243,7 +1451,13 @@ Her sohbet bitiminde:
 - [x] **fotograflar yapan_id → yukleyen_id migration** — 6. oturumda 11 legacy kayıt migrate edildi
 - [x] **tenants.kod kolonu + 7 tenant'a kod ataması** — 6. oturum
 - [ ] **Tenant prefix serisini tamamlama** — QR payload formatı (`A-0504:UUID`) ve `qr_tara.html` cross-tenant parse (7. oturum Öncelik 1)
-- [ ] **Kalite UX + veri temizliği** — Form'da kalite alanı malzeme radio grubu gibi davranıyor ("karbon/paslanmaz" değerleri alıyor). Olması gereken: ST37, A106-B, 304L gibi alaşım standartları. DB'de karışmış veriler var — serbest text + autocomplete tasarımı (7. oturum Öncelik 2)
+- [x] **Kalite UX + veri temizliği** — **19. + 20. oturumda tamamlandı.** 19. oturum: master tablo + trigger. 20. oturum: `devre_yeni.html:644` kök neden fix + `devre_detay.html` 4 render noktası `ARES_NORM.kaliteGoster()` ile yenilendi. IFS import artık canonical yazım üretiyor.
+- [x] **🔴 21. OTURUM ANA TEMA — Sistem çapında render standardizasyonu (G-03).** **22 Nisan 2026'da tamamlandı.** 11 HTML dosyasında ~30 ham render noktası (spool_detay, devre_detay, devre_yeni, bukum, kesim, markalama, izometri-batch, is_baslat, admin/index, portal/index, devreler) `ARES_NORM.malzemeEtiket()` / `kaliteGoster()` / `yuzeyEtiket()` güvenli fallback pattern ile lokalize edildi. `admin/` ve `portal/` altında `ares-normalize.js` script yüklemesi eklendi. G-03 kuralı CLAUDE.md Bölüm 2.18'de formalleştirildi.
+- [ ] **🟡 Trigger Guard 1 gevşetme** — `20-oturum-trigger-guard-gevsetme.sql` hazır, şu an fix ile Guard 1 tetiklenmediği için ertelendi. 22. oturum veya Faz 3 form refactor'ünde çalıştırılacak.
+- [ ] **🟡 FK CASCADE eksikliği** — `devreler → spooller → spool_malzemeleri + islem_log` zincirinde CASCADE yok. 20. oturumda kademeli silme gerekti. Admin panel "devre sil" özelliği yapılırken CASCADE eklenmeli (dikkat: production veri kaybı riski).
+- [ ] **🟢 22. OTURUM — Faz 2 Admin UI (`tanimlar.html` sekmesi)** — Mockup-first (R-10). İki tab: sistem kaliteleri (read-only, 12 preset) + firma kaliteleri (CRUD + FK violation koruması "bu kalite kullanılıyor, silinemez"). Detay: CLAUDE-SONRAKI-OTURUM.md.
+- [ ] **🟡 Yan bug (21. oturumda keşfedildi) — `spool_detay.html` M3_RENK haritası eski TR key'ler.** 3D model renk haritasında `'Karbon Çelik'`, `'Paslanmaz Çelik'` gibi Türkçe label key'ler kullanılıyor (satır 2657-2665). Gerçek data canonical kod (`'karbon'`, `'paslanmaz'`) olduğu için lookup başarısız, `_default` rengine düşüyor. Tek yer, ~5 dk fix.
+- [ ] **🟡 Yan bug (21. oturumda keşfedildi) — `devre_detay.html:1609-1611` duplicate `<td>` satırı.** Pipeline BOM tablosunda `<td>sertifikali</td>` ve `<td>✕ butonu</td>` iki kez yazılmış. Render bug değil, extra kolon üretiyor. ~2 dk fix.
 - [ ] **Spool no → marka gösterimi** — Tablolarda "S01" tek başına anlamsız, pipeline+spool_no birleştirilsin (devre_detay/kesim/markalama/sevkiyat/raporlar)
 - [ ] **spool_detay.html performans** — 3007 satır, 6-7 paralel SQL, 3D kodu — lazy load + 3D ayrı dosya refactor'u (ayrı oturum işi)
 - [x] **Devre dedup sessiz birleşme bug'ı** — 9. oturumda popup eklendi (devre + spool seviyesi, iş emri numaralı onay mesajı)
@@ -1279,7 +1493,232 @@ Her sohbet bitiminde:
 
 ---
 
-## 11. SON OTURUM — 20 NİSAN 2026 (12. OTURUM)
+## 11. SON OTURUM — 22 NİSAN 2026 (21. OTURUM — KAPATILDI ✅)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** Sistem çapında render standardizasyonu. Kural G-03 formalleştirildi. 20. oturumda keşfedilen "UI'da ham `karbon` gözüküyor" teknik borcu tamamen kapatıldı.
+
+**Akış:**
+1. **Ritüel + grep** — `ares-normalize.js` helper imzaları teyit edildi, 3 grep komutu (malzeme/kalite/yüzey) + Excel/PDF export taraması çalıştırıldı, master harita çıkarıldı.
+2. **"Dokunma" listesi netleşti** — matBadge, `_malzemeGoster`, state map'leri, AI prompt'ları, arama filtre string'leri, dropdown value'ları, inlineEdit arg'ları.
+3. **11 HTML dosyasında ~30 render noktası fix'lendi** (güvenli fallback pattern ile — `ARES_NORM.malzemeEtiket()` / `kaliteGoster()` / `yuzeyEtiket()`).
+4. **`admin/index.html` ve `portal/index.html`'de `ares-normalize.js` yüklemesi eklendi** (eksikti — fallback devreye girdiği için eski görünüm çalışıyordu, ama canonical için script şart).
+5. **G-03 kuralı Bölüm 2.18'e bağımsız bölüm olarak yazıldı** — temel kural + güvenli fallback pattern + kapsam tablosu + istisna listesi + mevcut helper'lar + yeni sayfa kontrol listesi + 21. oturum fix referansı + anti-pattern'ler.
+
+### Değişen Dosyalar
+
+| Dosya | Noktalar | Açıklama |
+|---|---|---|
+| `spool_detay.html` | 2253, 2309, 3065-3066 | `kmMalzInfo` (Kesim Ekle popup), `bmMalzInfo` (Büküm Ekle popup), 3D M3 popup |
+| `devre_detay.html` | 1576, 1601, 1948, 1954 | Excel BOM satırı, pipeline BOM `<td>`, Excel SPOOLS (3 alan), PDF önizleme (2 alan) |
+| `devre_yeni.html` | 1272 | IFS önizleme tablosu kalite sütunu |
+| `bukum.html` | 799, 899 | QR etiket header, tablo `<td>` kalite |
+| `kesim.html` | 1852, 2033, 2383, 2536, 2950, 2995, 3234, 3457, 3559 | Tekil liste, özet, kld meta, kld row, iki confirm dialog, PDF head, PDF detay tablosu, onay modal |
+| `markalama.html` | 621, 800, 806, 839, 1028, 1207, 1286 | malzInfoHtml, plaka/otomatik parts, manuel modal, ml inline, arc inline, Excel satır |
+| `izometri-batch.html` | 435, 436, 440, 452 (Excel block) | HTML tablo 3 alan + Excel satır 3 alan |
+| `is_baslat.html` | 1077, 1078 | Mobil chip malzeme + kalite |
+| `admin/index.html` | 364 + script | Özet tablo malzeme + `ares-normalize.js` yükleme |
+| `portal/index.html` | 367 + script | Özet tablo malzeme + `ares-normalize.js` yükleme |
+| `devreler.html` | 2079, 2110 | Pipeline BOM state=2 ve state=kırmızı satırları |
+| `CLAUDE.md` | — | Bölüm 2.18 G-03 kuralı + Bölüm 10 güncelleme + Bölüm 11/11A |
+
+### Güvenli Fallback Pattern (21. oturumun imzası)
+
+```js
+esc(
+  (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeEtiket)
+    ? (ARES_NORM.malzemeEtiket(x.malzeme) || x.malzeme || '—')
+    : (x.malzeme || '—')
+)
+```
+
+Bu pattern her render noktasında **inline** uygulandı. Neden wrapper fonksiyon yerine inline seçildi:
+1. `typeof ARES_NORM` kontrolü ARES_NORM yüklenmemiş sayfalarda (admin/portal eskisi gibi) güvenli düşüş
+2. `|| x.malzeme || '—'` bilinmeyen kategori kodlarında ham değeri gösterir (`malzemeEtiket('xyz')` → `'xyz'` zaten döner, belt-and-suspenders)
+3. Wrapper yerine inline → her dosyanın bağımsız kalması (CLAUDE.md 2.18'deki standarda uyum)
+
+### Dokunulmayan yerler (teyit edildi — standarda uygun)
+
+- `matBadge(m)` — `bukum.html:464`, `kesim.html:994`, `markalama.html:595` → zaten `ARES_NORM.tvMalzeme` kullanıyor
+- `_malzemeGoster` / `_yuzeyGoster` — `spool_detay.html:1206/1210`, `devre_detay.html:877/887` → `ARES_NORM.malzemeEtiket/yuzeyEtiket` wrap
+- `devreler.html:1768-1797` inline matBadge + yuzeyBadge + sapma tooltip → `ARES_NORM.tvMalzeme/tvYuzey` ile zaten lokalize
+- **State map'leri** (`{malzeme: x.malzeme || '—'}`) → DB-facing ham değer, trigger canonicalize edecek
+- **Arama filtre string'leri** (`[a,b,c].join(' ').toLowerCase()`) → kullanıcıya gösterilmez
+- **AI chatbot prompt'ları** (`spool_detay.html:1590-1592`) → LLM'e gönderilir, kullanıcıya değil
+- **De-dup hash** (`devre_detay.html:1546`) → kullanıcıya gösterilmez
+- **Dropdown value'ları** (`<option value="karbon">Karbon Çelik</option>`) → value ham (DB yazımı), text lokalize (zaten lokalize)
+- **inlineEdit arg'ları** (`devre_detay.html:1196`) → `currentValue` ham kalmalı (düzenleme için)
+
+### 22. oturuma aktarılan yan bug'lar (21. oturumda keşfedildi)
+
+1. **`spool_detay.html` M3_RENK haritası eski TR key'ler** (satır 2657-2665). 3D model renk haritasında `'Karbon Çelik'`, `'Paslanmaz Çelik'` gibi Türkçe label key'ler kullanılıyor. Gerçek data canonical kod (`'karbon'`, `'paslanmaz'`) olduğu için `M3_RENK['karbon']` lookup başarısız, `_default` rengine düşüyor. Fix: key'leri kategori koduna çevir (`'karbon': 0x7a7d82, 'paslanmaz': 0xb0b8c1, ...`). Tek yer, ~5 dk.
+
+2. **`devre_detay.html:1609-1611` duplicate `<td>` satırı.** Pipeline BOM tablosunda `<td>sertifikali</td>` ve `<td>silme butonu</td>` iki kez yazılmış. Bir render bug değil, fazladan kolon üretiyor. ~2 dk.
+
+### Deploy Durumu
+
+21. oturum sonu: 11 HTML + CLAUDE.md düzenlenip canlıya deploy edilecek.
+
+Deploy sonrası canlı test matrisi (CLAUDE-SONRAKI-OTURUM.md'den devralındı):
+
+| # | Sayfa | Test | Beklenen |
+|---|---|---|---|
+| 1 | spool_detay | Büküm Ekle popup'ta malzeme seç | `Karbon Çelik — St 37 — 219,1 mm` |
+| 2 | spool_detay | Kesim Ekle popup'ta malzeme seç | Aynı |
+| 3 | spool_detay | 3D model parça tıkla → popup | `Karbon Çelik` (ham değil) |
+| 4 | kesim.html | Liste kalite sütunu | `St 37` |
+| 5 | kesim.html | Kesim Planı PDF head | `Karbon Çelik St 37 Ø...` |
+| 6 | bukum.html | QR etiket + tablo | `Karbon Çelik St 37` |
+| 7 | markalama.html | Alt satır chip | `St 37` (ham `ST37` değil) |
+| 8 | izometri-batch | Tablo + Excel | 3 kolon lokalize |
+| 9 | is_baslat | Mobil chip | `Karbon Çelik`, `St 37` |
+| 10 | admin özet + portal özet | Tablo | `Karbon Çelik` (ham `karbon` değil) |
+| 11 | devreler | Pipeline BOM | Malzeme kolonu lokalize |
+| 12 | devre_detay Excel export | İndir + aç | Tüm kolonlar canonical |
+
+### Öğrenilenler
+
+1. **Sistematik grep master tablo kuralı:** Yeni bir helper çıkınca tüm render noktalarını grep'le süpür. 19. oturumda `kaliteGoster()` eklendi ama `devre_detay.html` 4 noktası gözden kaçtı (20. oturumda fix). 20. oturumda da keşfedilen ham `karbon` sorunu 11 farklı dosyaya yayılmıştı. G-03 kuralının formal kontrol listesi bu sürüklemeyi engelleyecek.
+
+2. **Güvenli fallback > wrapper.** Her dosyaya `kgLoc()` gibi helper eklemek yerine inline `typeof ARES_NORM!=='undefined'` check'i — ARES_NORM yüklenmemiş sayfa gibi edge case'leri otomatik karşılar (admin/portal bunu kanıtladı). Wrapper helper sadece tek dosyada 3+ kez tekrar ediyorsa değer katar.
+
+3. **`ARES_NORM.malzemeEtiket(bilinmeyen)` zaten ham döner** — belt-and-suspenders için ek `|| x.malzeme` koymak zararsız ama çoğu durumda çift koruma. Ancak `kaliteGoster('')` boş string dönerken `malzemeEtiket('')` `'—'` döner — bu asimetri fallback zinciri için kritik (kalite'de `|| '—'` olmadan boş satır çıkar).
+
+4. **Alt-dizin sayfaları script ihmali.** `admin/` ve `portal/` altındaki HTML'ler relative path (`../ares-normalize.js`) ile yüklemeli. 21. oturumda keşfedildi — sessizce fallback'te çalışıyorlardı.
+
+5. **Dokunulmaz listesi fix listesi kadar önemli.** Arama filtre string'leri, AI prompt'ları, state map'leri, dropdown value'ları lokalize ETMEMEK gerekir — aksi halde DB yazım / arama / model davranışı bozulur. G-03 bu istisnaları açıkça sayıyor.
+
+6. **Deploy-test-kapanış protokolü.** Her oturum `CLAUDE.md son güncelleme` + `Bölüm 10 bekleyenler` + `Bölüm 11 son oturum` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` beşlisi. Bu disiplin 21 oturumdur hayatta tutuyor bu projeyi.
+
+---
+
+## 11A. ÖNCEKİ OTURUM — 22 NİSAN 2026 (20. OTURUM — KAPATILDI ✅)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** 19. oturum canlı test + IFS import kök neden fix + `devre_detay.html` render E-06 tamamlaması + DB temizlik + canlı re-import başarısı
+
+**Akış:**
+1. **Deploy teyidi** — `ARES_NORM.kaliteGoster('CUNI9010') → 'CuNi 90/10'` ✅, DB 12 preset ✅
+2. **Canlı test** — kullanıcı `devre_detay.html` IFS Excel yükledi, `Kalite = karbon` bozuk gösterim
+3. **DB teşhis** — `spool_malzemeleri`: 42 kayıt, 0 bağlı, hepsi `malzeme=karbon, kalite=karbon` (trigger Guard 1 doğru çalışmış, master'a sahte kayıt yok ✅)
+4. **IFS Excel analizi** — `Material` kolonu = ST37 (kalite kodu, kategori değil); HAM değer kayboluyordu
+5. **Kök neden tespiti** — `devre_yeni.html:644` `normalizeMalzeme()` prematüre normalize
+6. **Fix paketi**:
+   - `devre_yeni.html`: satır 644 → `String(row[idx.mat]||'').trim()` (ham sakla)
+   - `devre_detay.html`: 4 render noktası → `ARES_NORM.kaliteGoster()` (1195, 1563, 1576, 1602)
+7. **DB temizlik** — 42 malzeme + 8 spool + log + 1 devre kademeli silindi (FK CASCADE eksikliği nedeniyle transaction + islem_log eklemesi)
+8. **Canlı re-import testi** — Aynı IFS yüklendi, SELECT teyidi: `malzeme='karbon', kalite='St 37', bagli=true, kalite_goster='St 37', standart='DIN 17100', kayit=42` ✅
+
+### Değişen Dosyalar
+
+| Dosya | Öncesi | Sonrası | Değişiklik |
+|---|---:|---:|---|
+| `devre_yeni.html` | 2298 | 2301 | Satır 644 `normalizeMalzeme()` kaldırıldı, ham sakla (+3 yorum satırı) |
+| `devre_detay.html` | 2041 | 2041 | E-06 render fix — 4 inline değişiklik |
+| `CLAUDE.md` | — | — | E-06 Historical Timeline + IFS import altın kuralı + anti-pattern + G-03 render kuralı adayı |
+
+### Hazır SQL Paketleri (Arşiv)
+- `20-oturum-db-temizlik.sql` — 42 bozuk kayıt temizliği (kademeli + islem_log dahil)
+- `20-oturum-trigger-guard-gevsetme.sql` — Guard 1 opsiyonel kaldırılması (ertelendi)
+
+### Yeni Teknik Borç (21. oturuma aktarıldı)
+
+**UI'da ham kategori kodu gösteriliyor.** Kullanıcı `spool_detay.html > Büküm Ekle` popup'ında fark etti:
+```
+Pipe Seamless Steel Tube - 3.1 Certificate — St 37 — 219,1 mm   ← doğru
+karbon — St 37 — 219,1 mm                                        ← ham kod!
+```
+
+`ARES_NORM.malzemeEtiket('karbon') → 'Karbon Çelik'` çağrısı eksik. Muhtemelen sistem çapında yayılmış (spool_detay, kesim, bukum, markalama, portal, admin, izometri-batch, raporlar...).
+
+**Kullanıcı talebi:** *"Başka bir yerde hatalı gösterim görmek istemiyorum — tam olarak standartlaştıralım."* → 21. oturum ANA TEMA: sistem çapında render süpürmesi + G-03 kural formalleşmesi.
+
+### Deploy Durumu ✅
+
+| Dosya | Durum |
+|---|---|
+| `devre_yeni.html` | ✅ Canlıda |
+| `devre_detay.html` | ✅ Canlıda |
+| DB temizlik + re-import | ✅ Doğrulandı |
+
+### Öğrenilenler
+
+1. **Idempotent değil sessiz veri kayıpçı.** `normalizeMalzeme('ST37')→'karbon'` ilk çağrı sağlıksızdır. Saklayan fonksiyon HAM tutmalı, normalize **kullanım anında**.
+
+2. **Yeni ARES_NORM helper → grep tüm render'ı.** `kaliteGoster()` 19. oturumda eklendi, 4 render noktası unutulmuştu. `malzemeEtiket()` için aynı grep 21. oturum işi. Ders: yeni helper ekle → `grep` → tüm gösterim noktalarını dolaş.
+
+3. **FK CASCADE olmayan DB = kademeli silme.** `devreler → spooller → spool_malzemeleri + islem_log` zincirinde CASCADE yok. `islem_log.devre_id` ve `islem_log.spool_id` FK'ları kolayca unutulur. Transaction (`BEGIN...COMMIT`) atomik güvence sağlar.
+
+4. **Trigger Guard'ı UX'e zarar verebilir.** Guard 1 (`kalite = malzeme`) meşru `ST37=ST37` senaryosunu reddeder. Guard 2 (`kalite_kod_normalize NULL`) zaten yeterli. 20. oturum kod fix'i ile Guard 1 tetiklenmiyor, SQL gevşetme opsiyonel.
+
+5. **Deploy-test-Faz2 sırası bozulamaz.** Gündem Faz 2 olarak geldi, ama canlı test bozuk çıktı → fix öne alındı. Faz 2 artık 22. oturuma (21. oturum render süpürmesi).
+
+6. **Bug izinde tersten oku.** Kök sıklıkla prematüre normalize'dadır.
+
+7. **_malzemeTipi() doğru tasarlanmış, sadece girdisi bozuk geliyordu.** Mevcut kodun niyetini oku, doğru tasarlanmış olabilir.
+
+---
+
+## 11A1. ÖNCEKİ OTURUM — 22 NİSAN 2026 (19. OTURUM)
+
+### Bu oturumda tamamlananlar
+
+**Ana tema:** Faz 1 Malzeme Master Tablo altyapısı — `malzeme_tanimlari` + FK + DB trigger + guard'lar + 12 sistem preset seed
+
+**1. `malzeme_tanimlari` master tablo — DB şema tamamlama ✅**
+- Tablo zaten vardı (önceki yarım çalışmadan, koda bağlı değildi), %90 şema uyumluydu
+- Eklenen kolonlar: `kalite_goster text` (UI gösterimi: "St 37", "CuNi 90/10"), `standart text` (DIN 17100, ASME SA-106)
+- FK kolonları zaten vardı: `spool_malzemeleri.malzeme_ref_id`, `pipeline_malzemeleri.malzeme_ref_id`
+- `spooller` tablosuna FK **eklenmedi** — spool'un birden fazla malzemesi olabilir, text kolonlar denormalize özet kalır
+- `spooller.kalite_standart` DROP edildi (567 kayıttan 0 kullanım, ölü kolon)
+
+**2. RLS (4 policy) + CHECK + Partial Unique Index ✅**
+- SELECT: sistem preset + kendi tenant
+- INSERT/UPDATE/DELETE: sadece kendi tenant (sistem preset dokunulamaz)
+- CHECK `check_sistem_preset_tenant`: `sistem_preset=true ⟹ tenant_id IS NULL`
+- Partial unique `malzeme_tanimlari_preset_unique_idx ON (kategori_kod, kalite_kod) WHERE tenant_id IS NULL`
+
+**3. 12 Sistem Preset ✅**
+- karbon: `ST37`, `S235JR`, `A106B`, `A53`
+- paslanmaz: `316L`, `304L`, `316`, `304`, `14571`, `A312TP316L`
+- bakir: `CUNI9010` · alum: `6061T6`
+
+**4. DB Fonksiyonları + Trigger'lar ✅**
+- `kategori_kod_normalize(text)`, `kalite_kod_normalize(text)`, `malzeme_ref_bul(uuid, text, text)`
+- Guard 1: `kalite = malzeme` → NULL (bozuk kayıt şüphesi) — 20. oturumda false-positive ürettiği keşfedildi, gevşetme SQL'i hazır
+- Guard 2: `kalite_kod_normalize NULL` → NULL (kategori adı veya bilinmeyen)
+- Trigger'lar: `tg_spool_malzemeleri_ref_sync`, `tg_pipeline_malzemeleri_ref_sync` (BEFORE INSERT OR UPDATE)
+
+**5. Trigger Test (4/4 temiz) ✅**
+- Test verisi kaybı: tüm `spool_malzemeleri` + `pipeline_malzemeleri` boşaldı (test verisiydi, migration gereksiz kaldı)
+
+**6. JS Tarafı (`ares-normalize.js`) ✅**
+- `kaliteKod(raw)` — DB `kalite_kod_normalize()` eşi
+- `kaliteGoster(kodOrRaw)` — master `kalite_goster` eşi
+
+**7. 18. Oturum Gerçeklik Kontrolü ✅**
+- CLAUDE-SON-OTURUM.md 18. oturum raporu 3 fix'i "yapıldı" diyordu, zip'te yoktular (commit eksik kalmış). Bu aslında 19. oturuma temiz başlangıç verdi — yarım çözüm kalıntısı yok.
+
+### Deploy Durumu (19. oturumdan 20. oturuma)
+
+| Dosya | Durum |
+|---|---|
+| `ares-normalize.js` | ✅ Deploy edildi (20. oturum `kaliteGoster('CUNI9010')` console test teyit etti) |
+| `api/sorgula.js` | ✅ Deploy |
+| `devre_detay.html` | ✅ Deploy |
+| `spool_detay.html` | ✅ Deploy |
+| `CLAUDE.md` | ✅ E-06 yenilenmiş |
+| DB altyapı (tablo + trigger + preset) | ✅ Canlıda |
+
+### 19. Oturumdan Devralınan Teknik Borç (20. oturumda çözüldü)
+- **IFS import canlı testi başarısız** → `devre_yeni.html:644` prematüre normalize → 20. oturumda tek satır fix
+- **`devre_detay.html` render'da E-06 eksik** → 4 nokta `ARES_NORM.kaliteGoster()` çağırmıyordu → 20. oturumda tamamlandı
+
+---
+
+## 11B. ÖNCEKİ OTURUM — 20 NİSAN 2026 (12. OTURUM)
 
 ### Bu oturumda tamamlananlar
 

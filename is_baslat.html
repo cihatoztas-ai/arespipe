@@ -1074,8 +1074,8 @@ function panelMalzemeRender() {
   var html = '';
   _malzemeler.forEach(function(m) {
     var chips = '';
-    if (m.malzeme) chips += '<span class="chip">' + esc(m.malzeme) + '</span>';
-    if (m.kalite)  chips += '<span class="chip">' + esc(m.kalite)  + '</span>';
+    if (m.malzeme) chips += '<span class="chip">' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malzeme)||m.malzeme||''):(m.malzeme||'')) + '</span>';
+    if (m.kalite)  chips += '<span class="chip">' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||''):(m.kalite||''))  + '</span>';
     if (m.dis_cap_mm) chips += '<span class="chip">Ø' + m.dis_cap_mm + (m.et_mm ? ' · et ' + m.et_mm : '') + '</span>';
     if (m.boy_mm)  chips += '<span class="chip">' + m.boy_mm + ' mm</span>';
     if (m.adet)    chips += '<span class="chip">' + m.adet + ' adet</span>';

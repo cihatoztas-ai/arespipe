@@ -2250,7 +2250,12 @@ function kesimModalAc(){
   T('km_eid').value='';var ko=T('km_olcu');if(ko)ko.value='';
   kmMalzInfo();T('kesimModal').style.display='flex';
 }
-function kmMalzInfo(){var s=T('km_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('km_info');if(i)i.innerHTML=m?('<strong>'+esc(m.malz)+'</strong> — <span style="color:var(--ac);font-weight:700;">'+esc(m.kal)+'</span> — '+esc(m.cap)+' — et: '+esc(m.et)):'Malzeme seçin';}
+function kmMalzInfo(){var s=T('km_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('km_info');if(!i)return;if(!m){i.innerHTML='Malzeme seçin';return;}
+  // G-03: malzeme lokalize ('karbon' → 'Karbon Çelik'), kalite canonical ('ST37' → 'St 37')
+  var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malz)||m.malz||'—'):(m.malz||'—');
+  var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kal)||m.kal||'—'):(m.kal||'—');
+  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);font-weight:700;">'+esc(kg)+'</span> — '+esc(m.cap)+' — et: '+esc(m.et);
+}
 function kesimKaydet(){
   var mId=(T('km_malz')||{}).value||'',olcu=String((T('km_olcu')||{}).value||'').trim();
   if(!olcu||isNaN(olcu)||+olcu<=0){toast(tv('sp_valid_len','Geçerli uzunluk girin'),'er');return;}
@@ -2306,7 +2311,12 @@ function renderBukumler(){
   if(el)el.innerHTML=html;
 }
 function bukumModalAc(){var bm=T('bm_malz');if(bm)bm.innerHTML=malzemeOpts('');var bo=T('bm_olcu');if(bo)bo.value='';bmMalzInfo();T('bukumModal').style.display='flex';}
-function bmMalzInfo(){var s=T('bm_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('bm_info');if(i)i.innerHTML=m?('<strong>'+esc(m.malz)+'</strong> — <span style="color:var(--ac);">'+esc(m.kal)+'</span> — '+esc(m.cap)):'Malzeme seçin';}
+function bmMalzInfo(){var s=T('bm_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('bm_info');if(!i)return;if(!m){i.innerHTML='Malzeme seçin';return;}
+  // G-03: malzeme lokalize, kalite canonical
+  var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malz)||m.malz||'—'):(m.malz||'—');
+  var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kal)||m.kal||'—'):(m.kal||'—');
+  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);">'+esc(kg)+'</span> — '+esc(m.cap);
+}
 function bukumKaydet(){
   var mId=(T('bm_malz')||{}).value||'',olcu=String((T('bm_olcu')||{}).value||'').trim();
   if(!olcu||isNaN(olcu)||+olcu<=0){toast(tv('sp_valid_len','Geçerli uzunluk girin'),'er');return;}
@@ -3062,8 +3072,9 @@ function m3Click(e) {
 
   // Popup doldur
   T('m3PopupBaslik').textContent = seg.tanim || seg.tip || '—';
-  T('m3PopupMalz').textContent   = seg.malzeme || '—';
-  T('m3PopupKal').textContent    = seg.kalite  || '—';
+  // G-03: 3D popup — malzeme lokalize, kalite canonical
+  T('m3PopupMalz').textContent   = (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(seg.malzeme)||seg.malzeme||'—'):(seg.malzeme||'—');
+  T('m3PopupKal').textContent    = (typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(seg.kalite)||seg.kalite||'—'):(seg.kalite||'—');
   T('m3PopupCap').textContent    = seg.cap_mm  ? seg.cap_mm + ' mm' : '—';
   T('m3PopupEt').textContent     = seg.et_mm   ? seg.et_mm  + ' mm' : '—';
   T('m3PopupBoy').textContent    = seg.boy_mm  ? seg.boy_mm + ' mm' : (seg.cap2_mm ? 'Redüktör' : '—');
