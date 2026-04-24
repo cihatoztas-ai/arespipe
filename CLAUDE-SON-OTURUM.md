@@ -1,190 +1,184 @@
-# CLAUDE — 28. Oturum Raporu
+# CLAUDE — 29. Oturum Kapanış Raporu
 
-**Tarih:** 24 Nisan 2026  
-**Süre:** ~3 saat  
-**Tema:** 27'den devredilen kuyruğu temizle + migrations kontrolünü ana sisteme entegre et  
-**CI Durumu (Kapanış):** YEŞİL ✅ (10s, tek workflow)  
-**Self-test (Kapanış):** 4/4 başarılı ✅
-
----
-
-## Bu Oturumun Hikayesi
-
-27. oturum yedeklemeyi kurmuş, migrations baseline'ını koymuştu — büyük işti. Ama bir kuyruk bırakmıştı: 4 küçük-orta iş "28'de yapılacak" diye not düşülmüştü. 28 bu kuyruğun temizlendiği oturum oldu. Ayrıca bir bonus çıktı: Cihat'ın müşteri öncesi altyapıyı tamamen bitirme kararı verdiğimiz oturum oldu.
-
-İlk teknik engelle ritüel sırasında karşılaştık: Self-test Mac'te koşunca CommonJS/ESM çakışması yüzünden patladı. HOME klasöründeki `package.json` ESM dayatıyordu, `kontrol.js` ise `require` kullanıyordu. `.github/package.json` ile lokal scope override'la 2 dakikada çözdük. Basit bir tuzaktı ama sistemli çözüm gerektirdi.
-
-Sonra 27'nin kuyruğunu işe koyulduk. **Birinci iş** bir PAT token'ın iptaliydi — 2 dakikalık "temizlik" işi. **İkinci iş** Vercel env variables'daydı: hem hangi formatın kullanıldığını denetlemek (eski vs yeni Supabase key) hem plaintext secret sorununu çözmekti. İki sürpriz çıktı:
-
-1. Legacy/yeni format ikiliği yok — tek key var, yeni formatta zaten. 27'nin endişesi fantomdu.
-2. Ama başka bir sorun vardı: Hem `SUPABASE_SERVICE_KEY` hem `ANTHROPIC_API_KEY` plaintext saklanıyordu ("Needs Attention" uyarısıyla). İkisini de Sensitive'e çevirdik — 3 adımlı process (Copy → Delete → Add+Sensitive), her biri için ~1-3 dk downtime.
-
-Bu sırada üçüncü bir sürpriz: Vercel deploy logunda `api/izometri-oku.js` compile edildiğini gördük. Yani ANTHROPIC_API_KEY ölü variable değildi — Spool AI vizyonunun 1. katmanı (izometri okuma) canlıda aktif çalışıyordu. Belgede kaydedilmiş ama Claude'un konuşmaya girişinde farkında olmadığı bir şey ortaya çıktı.
-
-**Üçüncü iş** aslında iş değildi: 27, "migrations/README.md markdown render'ı bozuk" raporu düşmüştü. Gidip baktık — dosya düzgündü. Fantom bir borç. Bu bize önemli bir ders verdi: devralınan borcu doğrulamadan planlama yapmak riskli.
-
-**Dördüncü iş** oturumun asıl teknik dibiydi: 27'nin eklediği `migrations-check.yml` workflow'u ayrı bir silo olarak duruyordu. Onu ana `kontrol.js` sistemine entegre edecektik. Mimari karar kritikti — migrations kontrolü doğası gereği klasör-bazlı (duplicate numara için tüm dosyaları bir arada görmek gerek), mevcut sistem dosya-bazlı. İki yaklaşım tarttık:
-
-- **A1 (üst-seviye klasör):** Ayrı fonksiyon, iterate sonrasında inject
-- **A2 (dosya-bazlı):** Her dosyada iterate + duplicate cache
-
-A1'i seçtik — temiz, risk düşük. Kodu yazdıktan sonra sandbox'ta 4 bozuk dosyalık test ortamı kurup self-test'i koşturduk. 4/4 başarılı. Regression testi için gerçek `migrations/` altına bozuk bir SQL attık — yakalandı, deploy engellendi. Gönderime hazır.
-
-Cihat dosyaları GitHub'a yükledi. Bir an panik yaşadı — "sıralı yap" talimatını okumadan hepsini birden yüklemişti. Aslında bu daha iyiydi: tek commit'te atomik geçiş, CI hiç kırılmadı. İşte ders: atomik commit aşamalı commit'ten her zaman güvenli.
-
-Sonra eski `migrations-check.yml` silindi. Artık tek motor var — `kontrol.yml` + `kontrol.js`. 15 aktif kural, 4/4 self-test.
-
-**Bonus bölüm:** Oturumun sonunda Cihat "başka altyapı işim var mı yapmam gereken" diye sordu — sonrası yazılımcıya devir senaryosu, belgelerin dinamik mi statik mi olacağı, hibrit yapı kararı. Plan netleşti: 29-34. oturumlar boyunca **altyapı kapanış günleri**, 35'ten itibaren ürün dönemine geçiş. Bu karar oturumun en büyük çıktısı olabilir.
+**Tarih:** 24 Nisan 2026
+**Süre:** ~4 saat
+**Tema:** Devredilebilirlik Günü — Hibrit Dokümanlar
+**Durum:** ✅ TAMAMLANDI (6 belge canlıda, motor çalışıyor, race condition düzeltildi)
 
 ---
 
-## Kronolojik Akış
+## 🎯 Oturum Özeti
 
-| Zaman | İş | Not |
-|---|---|---|
-| 0:00 | Oturum başlangıç ritüeli | Windows'tan Mac'e geçiş, git pull |
-| 0:15 | Self-test lokal patladı | `ReferenceError: require is not defined` |
-| 0:20 | `.github/package.json` fix | CommonJS override, 2 dk |
-| 0:25 | Self-test 3/3 başarılı | Sistem sağlıklı, teknik iş başlayabilir |
-| 0:30 | PAT token silindi | İş 1 ✅ |
-| 0:35 | Vercel env teşhisi | 3 variable, 2'si "Needs Attention" |
-| 0:45 | SUPABASE_SERVICE_KEY Sensitive | Copy → Delete → Add |
-| 1:00 | Deploy ve teyit | Yeşil, 7s |
-| 1:05 | ANTHROPIC_API_KEY sensitive | Aynı 3 adım |
-| 1:20 | Deploy log → izometri-oku.js keşfi | Anthropic key kullanım yeri |
-| 1:30 | Migrations README teyit | Fantom borç, dosya zaten düzgün |
-| 1:40 | Migrations entegrasyonu planı | A1 onaylandı |
-| 1:45 | 4 dosya okundu (kurallar, kontrol, beklenen, workflow) | Sistem taslağı netleşti |
-| 2:00 | kontrol.js + kurallar.json + 4 SQL + beklenen-hatalar yazıldı | Sandbox'ta test edildi, 4/4 |
-| 2:15 | Cihat GitHub'a yükledi | Tek commit, atomik |
-| 2:20 | CI yeşil, migrations-check.yml silindi | İş 4 ✅ |
-| 2:30 | "Altyapı işim var mı?" sohbeti | 35. oturuma kadar plan oturdu |
-| 3:00 | Kapanış dosyaları yazıldı | Bu dosya dahil |
+AresPipe'ı **yazılımcıya devredilebilir** hale getirme günü. 28'de onaylanan "Hibrit Dokümanlar" planı uygulandı: 6 belge yazıldı, AUTO bölüm güncelleme motoru kuruldu, production'da race condition yakalanıp düzeltildi. Yeni bir yazılımcı artık repo'yu açtığında `docs/ONBOARDING.md` ile başlayabilir.
 
 ---
 
-## Teknik Detaylar
+## 📦 Teslim Edilenler
 
-### 1. `.github/package.json` (yeni, CommonJS override)
+### Motor Dosyaları (canlıda, workflow yeşil)
 
-```json
-{"type":"commonjs"}
+| Dosya | Satır | Görev |
+|---|---:|---|
+| `.github/docs-uret.js` | ~290 | AUTO bölüm üretici (6 fonksiyon, try/catch, exit 0) |
+| `.github/workflows/docs-uret.yml` | ~75 | Push tetiklemeli, [skip ci] + rebase retry |
+
+### Dokümantasyon (6 belge, 1515 satır)
+
+| Dosya | Satır | Manuel/AUTO |
+|---|---:|---|
+| `README.md` | 92 | %100 manuel |
+| `docs/ONBOARDING.md` | 210 | %95 / %5 |
+| `docs/ARCHITECTURE.md` | 395 | %80 / %20 |
+| `docs/DATABASE.md` | 293 | %30 / %70 |
+| `docs/API.md` | 329 | %20 / %80 |
+| `docs/LOCAL-DEV.md` | 196 | %100 manuel |
+
+### Fix + Keşifler
+
+- `.github/package.json` fantom borç — 28'de lokal oluşmuş, push edilmemişti → düzeltildi
+- ARCHITECTURE.md'deki AUTO-sınır örneği script tarafından gerçek sınır sanılıyordu → Türkçe karakter trick'i ile çözüldü
+- docs-uret.yml race condition (kontrol.yml ile paralel) → rebase + 3x retry eklendi
+
+---
+
+## 🧪 Sandbox Testleri (7 edge case geçti)
+
+Production'a göndermeden önce `/home/claude/29-test/` altında mini repo kuruldu:
+
+1. ✅ Mutlu yol — 2 AUTO bölümlü dosya güncellendi, manuel metin korundu
+2. ✅ AUTO sınırı yok olan dosyaya dokunulmadı
+3. ✅ AUTO-START var AUTO-END yoksa dokunulmadı + uyarı verildi
+4. ✅ Dosya yoksa geçildi, hata yok
+5. ✅ İdempotent — ikinci run'da 0 güncelleme (sonsuz döngü imkansız)
+6. ✅ Yorumsuz endpoint için fallback mesajı ("açıklama yok — yorum başlığı ekle")
+7. ✅ Sayım doğruluğu — 4 sayfa, 3 mobil, 5 tablo, 3 endpoint, 7 kural, 2 migration
+
+Ama **paralel workflow race condition sandbox'ta simüle edilemedi** — production'da ilk push'ta keşfedildi.
+
+---
+
+## 🐛 Production'da Yakalanan Buglar ve Çözümleri
+
+### Bug 1 — Race Condition: kontrol.yml vs docs-uret.yml
+
+**Belirti:** İkinci push sonrası docs-uret workflow'u "non-fast-forward rejected" verdi.
+
+**Kök neden:** İki workflow paralel tetiklenir. kontrol.yml bitip `ci-son-rapor.json` auto-commit'i push ederken, docs-uret.yml de AUTO bölüm commit'ini push etmek istiyor — remote'ta yeni commit olduğu için docs-uret'in push'u reddediliyor.
+
+**Çözüm:** docs-uret.yml'in "Auto-commit + push" step'ine rebase retry eklendi:
+```bash
+for i in 1 2 3; do
+  git pull --rebase origin main && git push && exit 0
+  echo "Push denemesi $i başarısız, tekrar deneniyor..."
+  sleep 2
+done
 ```
 
-**Niye gerek:** Cihat'ın HOME'daki `/Users/cihatoztas/package.json` dosyasında `"type":"module"` var, Node `.github/kontrol.js`'i ESM sanıyor. Bu yeni dosya lokal scope override yapıyor — `.github/` altındaki tüm `.js` dosyaları CommonJS. HOME'daki dosyaya dokunulmadı (başka işler için orada olabilir).
+**Ders (son-durum.md disipline eklendi):** CI auto-commit pattern'i her zaman "commit → pull --rebase → push (3x retry)" olmalı. Sandbox tek process olduğu için bu bug orada yakalanamaz.
 
-### 2. Vercel Env Variables (Sensitive Geçiş)
+### Bug 2 — AUTO Sınır Örneği Parse Ediliyor
 
-| Variable | Format | Eski | Yeni |
-|---|---|---|---|
-| `SUPABASE_URL` | URL | plaintext | plaintext (URL zaten public) |
-| `SUPABASE_SERVICE_KEY` | `sb_secret_*` | plaintext ⚠️ | **Sensitive** 🔒 |
-| `ANTHROPIC_API_KEY` | `sk-ant-*` | plaintext ⚠️ | **Sensitive** 🔒 |
+**Belirti:** ARCHITECTURE.md ilk push'tan sonra `bolumadi(?)` uyarısı verdi.
 
-**Downtime:** Her variable için ~1-3 dk (delete + add arası). Müşteri yok, etkisiz.
+**Kök neden:** Dokümantasyonda "AUTO sınırı şöyle yazılır" örneği olarak verdiğim `<!-- AUTO-START:bolumadi -->` bloğu script'in regex'i tarafından gerçek sınır sanıldı, "bilinmeyen bölüm" uyarısı çıktı.
 
-**Dev ortam:** Sensitive variable'lar Development ortamında kilitli. `vercel dev` CLI kullanılmadığı için sorun değil. Production + Preview aktif.
+**Çözüm:** Örneği Türkçe karakterli yaptım (`BÖLÜM_ADI`) — regex `[\w-]+` Türkçe karakterleri yakalamaz.
 
-### 3. `kurallar.json` — Yeni `migrations` Bölümü
-
-```json
-"migrations": {
-  "aktif": true,
-  "klasor": "migrations",
-  "kurallar": [
-    { "kod": "MIG_ISIM_BOZUK", "siddet": "hata", "desen_regex": "^[0-9]{3}_[a-z0-9_]+\\.sql$", ... },
-    { "kod": "MIG_NUMARA_TEKRAR", "siddet": "hata", ... },
-    { "kod": "MIG_HEADER_EKSIK", "siddet": "uyari", ... }
-  ]
-}
-```
-
-Toplam kural sayısı: 14 → 15.
-
-### 4. `kontrol.js` — Yeni Fonksiyon
-
-- `migrationsKontrol(kokDizin)` — klasör-bazlı, 3 kuralı topluca tarar
-- Dönen yapı: `[{ dosya, kod, tip, satir, mesaj }]`
-- `normalTarama()`: iterate sonrasında çağrılır, `dosyaRaporlari`'na inject edilir
-- `selfTest()`: `/` ile biten anahtar klasör-bazlı test olarak yorumlanır, `KURAL.migrations.klasor` geçici override
-- Backward compat: Tüm önceki davranışlar korundu, eski 3 self-test dosyası hâlâ çalışır
-
-### 5. Test Dosyaları (`bozuk-ornekler/migrations-bozuk/`)
-
-| Dosya | Ne tetikler |
-|---|---|
-| `abc_yanlis_isim.sql` | MIG_ISIM_BOZUK (rakam yok) |
-| `001_ilk_dosya.sql` | Numara 001 kaydeder (tek başına OK) |
-| `001_ikinci_dosya.sql` | MIG_NUMARA_TEKRAR (001 çift) |
-| `002_headersiz.sql` | MIG_HEADER_EKSIK (header yok) |
-
-Yakalanan kodlar: MIG_ISIM_BOZUK + MIG_NUMARA_TEKRAR + MIG_HEADER_EKSIK = 3'ü de ✅
-
-### 6. Silinen: `.github/workflows/migrations-check.yml`
-
-27'de eklenen ayrı workflow. Artık `kontrol.yml` içinde `kontrol.js` aynı işi yapıyor. Paralel sistem bakım borcu demekti — kaldırıldı.
+**Ders:** Parser'a öğretirken parser'ın kurallarına uy; eskape yerine "regex dışı karakter kullan" daha temiz.
 
 ---
 
-## 28. Oturumda Öğrenilen 6 Ders
+## 🎓 Bu Oturumdan 5 Önemli Öğrenme
 
-### 1. Devralınan borcu doğrulamadan planlama yapma
-27'nin son-durum.md'si "README markdown bozuk" diyordu. Gidip bakmadan "bugün düzeltelim" diye listeye aldım. Gerçekten bakınca dosya düzgündü. Fantom bir borç. **Kuralı güncel:** Bir borcu planladan önce "hâlâ gerçekten borç mu?" teyidi yapılmalı.
+1. **Sandbox tek process, production çok process.** Paralel workflow race condition sandbox'ta simüle edilemez. CI pattern'i baştan "senkron push" şeklinde yazılmalı.
 
-### 2. Vercel "Needs Attention" = plaintext secret uyarısı
-Plaintext env variable'lar Vercel dashboard'da görünür — ekibin her üyesi, "View History" yapan herkes okur. Sensitive flag ile variable dashboard'da bile gizli, sadece build/runtime'da kullanılır. Secret key'ler için Sensitive ŞART. Geçiş yolu: Copy → Delete → Add with toggle.
+2. **Atomik commit dersi yeniden doğrulandı.** 6 belge tek upload'da gitti, hepsi birbirine referans veriyor (README → docs/, ONBOARDING → diğer 4 belge). Aşamalı atsak ara durumlarda kırık link'ler olurdu.
 
-### 3. Deploy logları değerli
-"Bu env variable nerede kullanılıyor?" sorusunun cevabı kod tabanında aramakla kolay bulunmuyor. Vercel build log'u her deploy'da `api/*.js` dosyalarını compile ederken isimlerini yazıyor — hangi endpoint'in var olduğunu, hangi kütüphaneyi kullandığını görüyorsun. `ANTHROPIC_API_KEY`'in `api/izometri-oku.js`'de kullanıldığını bu şekilde bulduk.
+3. **Dürüst dokümantasyon faydalı.** LOCAL-DEV.md "lokal çalışmıyor" diyor, yazılımcıya yalan söylemiyor. Varsayımsal "lokal kurulum" yazsaydık yanıltıcı olurdu.
 
-### 4. A1 yaklaşımı — mimariyi veriye uydur
-Migrations kontrolü doğası gereği klasör-bazlı (duplicate numara tüm dosyaları ister). Mevcut sistem dosya-bazlı iterate yapıyor. İki seçenek vardı: A1 (ayrı üst-seviye fonksiyon) veya A2 (dosya-bazlı iterate içine cache + flag). A2 zorlamaydı, kodu karmaşıklaştırırdı. A1 temiz — ayrı fonksiyon, iterate sonrasında inject. **Ders:** Mimari veriye uyum sağlar, veriyi mimariye zorlama.
+4. **AUTO sınır regex kendi örneğinin kurbanı olur.** Dokümanda örnek gösterirken parser'ın dışında kalması için eskape veya karakter trick'i gerekli.
 
-### 5. Atomik commit aşamalıdan güvenli
-"Önce test dosyalarını yükle, sonra kuralları" şeklinde aşamalı plan vermiştim. Cihat okumadan hepsini tek seferde yükledi. Sonuç: CI hiç kırılmadı, tek commit'te tüm parçalar bir arada gitti. **Ders:** İlişkili değişiklikleri atomik olarak tek commit'te yollamak her zaman daha güvenli. "Şunu yükle, diğerini sonra" demek geçici bozulma riski yaratır.
-
-### 6. Karmaşık refactor öncesi sandbox testi
-Bu sefer yanılmadık çünkü `/home/claude/28oturum/test-env/` altında minimal bir repo kurdum, self-test'i orada koşturdum, 4/4 gördükten sonra paylaştım. CI'a gidince ilk push'ta yeşil. Bu disiplin özellikle migration tarzı yapısal kod değişikliklerinde kritik. **Ders:** "Bu çalışmalı" değil, "çalıştığını gördüm" ile gönder.
+5. **Vercel free tier günlük deploy kotası var.** Yoğun push günlerinde "rate limited" yersin. Kod sorunu değil, plan sınırı. Pro geçişi ürün dönemi öncesi değerlendirilmeli.
 
 ---
 
-## Önemli Kararlar (Oturum İçinde Alındı)
+## 🗓️ İşlem Tarihçesi (kronolojik)
 
-### Karar 1 — Altyapı Kapanış Planı (35. oturuma kadar)
-Cihat "altyapı işi kalmasın ki programa devam ederken geri dönmeyelim" dedi. 29-34 altyapı, 35+ ürün.
-
-| # | Oturum | İş |
+| Saat | İş | Sonuç |
 |---|---|---|
-| 29 | Devredilebilirlik Günü | Hibrit dokümanlar + auto-update |
-| 30 | Güvenlik | Bucket PRIVATE |
-| 31 | Observability | Sentry |
-| 32 | İletişim | Email (Resend/SendGrid) |
-| 33 | Staging | 2. Supabase + migration runner |
-| 34 | Güvenlik 2 | Tenant izolasyon testi + feature flag |
-
-### Karar 2 — Dokümanlar Hibrit (A2)
-- Manuel bölümler: anlatım, tasarım kararları, "niye böyle"
-- Otomatik bölümler (`AUTO-START`/`AUTO-END` arası): sayaçlar, listeler, istatistikler
-- `.github/docs-uret.js` her push'ta AUTO kısımları günceller
-- Hibrit yapı 29'da kurulacak
-
-### Karar 3 — `migrations-check.yml` Silindi
-Paralel sistem bakım borcu demekti. Artık tek motor: `kontrol.yml` + `kontrol.js`.
+| 0:00-0:15 | Ritüel (git pull, CI yeşil teyit) | Temiz giriş |
+| 0:15-0:30 | Fantom borç keşfi + `.github/package.json` push | ✅ |
+| 0:30-1:30 | docs-uret.js + workflow yazımı, sandbox'ta 7 test | ✅ |
+| 1:30-1:45 | Motor dosyaları GitHub'a yüklendi, ikisi de yeşil | ✅ |
+| 1:45-2:00 | Cihat'tan 3 soru cevabı (kitle, dil, local dev) + API format teyit | ✅ |
+| 2:00-3:30 | 6 belge yazımı (iskelet → onay → tam dosya sırasıyla) | ✅ |
+| 3:30-3:45 | ARCHITECTURE.md AUTO örnek bug düzeltme | ✅ |
+| 3:45-4:00 | 6 belge GitHub'a upload (tek atomik commit) | ✅ |
+| 4:00-4:20 | Race condition bulundu, workflow düzeltildi, canlıda yeşil | ✅ |
+| 4:20-4:30 | Cihat'ın "fotoğraf arşiv kaydı" sorusu → borca eklendi | Not |
+| 4:30-... | Oturum kapanış dosyaları (bu) | ✅ |
 
 ---
 
-## Sayısal Özet
+## 📝 Borca Eklenen Yeni Notlar
 
-- **Yapılan iş:** 4/4 (+1 bonus plan)
-- **Yeni kural:** 3 (toplam 14 → 15)
-- **Yeni test dosyası:** 4 (migrations-bozuk/)
-- **Self-test durumu:** 3/3 → 4/4
-- **Silinen dosya:** 1 (`migrations-check.yml`)
-- **Güvenlik iyileştirmesi:** 2 env variable Sensitive'e geçti
-- **Keşif:** `api/izometri-oku.js` Spool AI 1. katman — canlıda
-- **Fantom borç kapatıldı:** 1 (Migrations README)
-- **CI build süresi:** 10s (önceki gibi, etkilenmedi)
+### Fotoğraf / Belge Yaşam Döngüsü (Cihat kaydı istedi)
+
+**Kayıt:** Aktif devrede fotoğraflar/belgeler gerçek boyutta görüntülenir. Devre tamamlanıp aktif listeden arşive (bağlı olduğu proje) taşınırken **sıkıştırılıp** depolanır. Amaç: storage maliyetini düşürmek + aktif iş akışında görsel kaliteyi korumak.
+
+**Şu anki durum:**
+- `fotograflar` tablosu var, `dosya_url`, `yukleyen_id`, `islem_turu`, `spool_id` kolonları mevcut
+- `arespipe-dosyalar` bucket'ında orijinal boyutta yükleniyor
+- **Sıkıştırma/arşivleme mekanizması YOK** — devre "tamamlandı" durumuna geçtiğinde hiçbir otomatik iş tetiklenmiyor
+
+**Ne gerekiyor (taslak):**
+- `devreler.durum = 'tamamlandi'` transition'ında trigger veya API endpoint
+- Görsel sıkıştırma (muhtemelen Vercel function + Sharp veya benzeri)
+- Yeni sıkıştırılmış dosyaları ayrı storage yolu altında (arşiv klasörü)
+- Eski URL'lerin yeniden yazılması veya DB'deki `dosya_url` güncellenmesi
+- Veri kaybı riski minimize — orijinali belki N gün saklı tutulmalı
+
+**Ne zaman:** 30-34 aralığının birinde (muhtemelen 30 Bucket PRIVATE ile birlikte çünkü Storage altyapısına dokunulacak, ya da 33 staging ile çünkü migration + data lifecycle ilişkili). Karar 30'un sonunda verilecek.
+
+**Öncelik:** 🟢 Orta — acil değil (storage maliyeti şu an kritik değil) ama müşteri artışından önce kurulmalı (çok proje = çok foto).
+
+### Diğer Borçlar
+- 🟡 Vercel `ci-son-rapor.json` auto-commit'inin Vercel'i tetiklememesi için "ignored build step"
+- 🟡 `actions/checkout@v4` + `setup-node@v4` v5 geçişi (Node 20 deprecated warning)
+- 🟡 Supabase `arespipe-dev` projesi incelemesi — eski deneme mi, canlı bir kullanımı var mı?
 
 ---
 
-**Sonraki oturum:** 29 — Devredilebilirlik Günü. Detay: `CLAUDE-SONRAKI-OTURUM.md`
+## 🚀 30. Oturum İçin Hazırlık
+
+**Tema:** Bucket PRIVATE Geçişi + Signed URL Altyapısı
+
+**Neden acil:** `arespipe-dosyalar` bucket'ı şu an PUBLIC. URL'i bilen herkes (rastgele veya bilerek) her firmanın her dosyasına erişebilir. **Müşteri öncesi bu kritik güvenlik açığı.**
+
+**Kapsam (tahmini):**
+1. Mevcut bucket envanter — kaç dosya, hangi yollar, toplam boyut
+2. `public: false` ayarı ve mevcut dosya erişim modelini anlama
+3. Signed URL (imzalı link) API endpoint'i: `api/dosya-url-al.js`
+   - Yetki kontrolü (kullanıcı kendi tenant'ının dosyasına mı istiyor?)
+   - Süre-sınırlı link üretimi (örn. 1 saat geçerli)
+4. Frontend'de `dosya_url` doğrudan kullanımı yerine bu endpoint'i çağırma akışı
+5. Hangi sayfalar etkilenir — envanter + migration planı (muhtemelen spool_detay, devre_detay, kesim, büküm, kalite_kontrol)
+6. Test — başka tenant'ın dosyasına URL almaya çalışıldığında reddediliyor mu
+
+**Tahmini süre:** 3-4 saat
+
+**Risk:** Orta — yanlış yapılırsa mevcut dosya gösterimleri kırılır (tüm operasyon sayfalarında foto). **Önce sandbox** + önce feature flag ile bir sayfada test + sonra yaygınlaştırma önerilir.
+
+---
+
+## 🏁 Kapanış Notu
+
+29'un başında korktuğum şey: 6 belge × ~250 satır = büyük iş, zaman yetmez. Gerçekte: motor dosyası en çok vakti aldı (~1.5 saat sandbox dahil), belgeler sırayla akıcı yazıldı. 28'in kurduğu atomik commit disiplini (PAT + Vercel Sensitive birlikte) bugün 6 belgenin birlikte gitmesine doğal refleks verdi.
+
+Race condition bulduğumuzda paniğe kapılmak yerine log okumak (27'nin dersi) işe yaradı — 2 dakikada sebebi bulduk, 5 dakikada çözdük, canlıda yeşil. 29 başarılı bir oturum.
+
+**30 için hazır.** Cihat ertesi gün geldiğinde `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` açık ve net: Bucket PRIVATE.
+
+---
+
+_Oturum kapandı — 24 Nisan 2026, 29. oturum._
