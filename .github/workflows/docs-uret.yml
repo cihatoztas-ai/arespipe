@@ -1,0 +1,59 @@
+name: Dokümantasyon Auto-Update
+
+# Her main push'unda çalışır.
+# docs-uret.js AUTO bölümleri günceller, değişiklik varsa [skip ci] ile commit atar.
+# [skip ci] commit tag'i kendisini de yeniden tetiklemez — sonsuz döngü yok.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write  # Auto-commit için gerekli
+
+jobs:
+  docs-uret:
+    # Kendi auto-commit'i ve kontrol.yml'nin ci-son-rapor.json auto-commit'i
+    # [skip ci] içerir → bu job tekrar tetiklenmez.
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repo'yu al
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: docs-uret çalıştır
+        run: node .github/docs-uret.js
+        # Script kendi içinde try/catch ile güvenli, exit 0 döndürür.
+        # Yine de burada da continue-on-error — CI asla bu adımda kırılmasın.
+        continue-on-error: true
+
+      - name: Değişiklik var mı kontrol et
+        id: kontrol
+        run: |
+          if git diff --quiet; then
+            echo "degisti=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Değişiklik yok — commit atılmayacak."
+          else
+            echo "degisti=true" >> $GITHUB_OUTPUT
+            echo "📝 Değişiklik var:"
+            git diff --stat
+          fi
+
+      - name: Auto-commit + push
+        if: steps.kontrol.outputs.degisti == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: AUTO bölümleri güncellendi [skip ci]'
+          git push
