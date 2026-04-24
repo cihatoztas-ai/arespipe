@@ -1,5 +1,5 @@
 {
-  "_aciklama": "Her bozuk örnek dosyadan hangi kural kodlarının ÇIKMASI gerektiğini listeler. Self-test bu beklentileri doğrular. Bir kod eksik yakalanırsa kural bozulmuş demektir.",
+  "_aciklama": "Her bozuk örnek dosyadan hangi kural kodlarının ÇIKMASI gerektiğini listeler. Self-test bu beklentileri doğrular. Bir kod eksik yakalanırsa kural bozulmuş demektir. Anahtar '/' ile biterse klasör-bazlı test olarak yorumlanır (28. oturum — migrations).",
 
   "g03-ham-gosterim.html": [
     "G03_HAM_MALZEME",
@@ -15,5 +15,11 @@
 
   "i18n-eksik-anahtar.html": [
     "I18N_EKSIK"
+  ],
+
+  "migrations-bozuk/": [
+    "MIG_ISIM_BOZUK",
+    "MIG_NUMARA_TEKRAR",
+    "MIG_HEADER_EKSIK"
   ]
 }
