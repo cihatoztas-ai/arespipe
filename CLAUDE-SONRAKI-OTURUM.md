@@ -1,102 +1,171 @@
-# 26. Oturum — Gündem Seçenekleri
+# CLAUDE — Sonraki Oturum Gündemi (28. oturum)
 
-25. oturumda 22 uyarı sıfıra indi. CI altyapısı kurulu, Sistem Sağlığı kartı canlı. Artık altyapı değil, ürüne dönme zamanı. Ama ciddi borç kalemleri de var — hangisini öne alacağımıza Cihat karar verecek.
-
----
-
-## Seçenek A: Operasyon Sayfalarını Bitirmek ⭐ (ürün odaklı, büyük değer)
-
-**Son-durum'dan:** "Operasyon sayfaları (kesim, büküm, markalama, KK, sevkiyat) %80-90'da duruyor, bitirilmeyi bekliyor"
-
-**Neden bu:** AresPipe'ın tersane sorununu gerçekten çözmesi için operasyon sayfaları kritik. Pano'yu, sistem sağlığını, altyapıyı bitirdik — şimdi **imalat takibi** ana değeri için o %80-90'lık yarımı kapatmak mantıklı. Bir veya iki oturum içinde %100'e çıkabiliriz.
-
-**Ne yapılacak (önce keşif):**
-- Her bir sayfanın hangi %'de durduğunu görmek için tek tek açmak
-- Supabase tabloları tam mı, eksik FK/RLS var mı
-- UI/UX son dokunuşlar
-- Mobile responsive testi
-
-**Tahmini süre:** 1-2 oturum (sayfa başına ~1 saat)
+> **Tarih:** Belirsiz (27. oturumdan sonra, 24 Nisan 2026 bu oturum)
+> **Tema:** Temiz kafa gereken işler — entegrasyon + detay + karar
 
 ---
 
-## Seçenek B: Proje Listesi + Detay Sayfası Supabase'e Bağlamak
+## ⚠️ Oturum Başı ZORUNLU
 
-**Son-durum'dan:** "Proje listesi + detay sayfası hâlâ Supabase'e bağlanmadı"
+### 1. Oturum Ritüeli
+```
+cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+```
++ GitHub Actions yeşil mi
++ `arespipe-backups/backups/` klasöründe yeni yedekler var mı (**bu önemli** — 27'de kurulum yapıldı, ertesi gece otomatik yedek alınmış olmalı)
 
-**Neden bu:** Eğer operasyon sayfalarından önce proje altyapısı zayıfsa, operasyonlar da eksik veriyle çalışır. Proje → Spool → Operasyon zinciri var; proje bacağı gerçek DB'ye oturmadan diğerleri sağlam durmaz.
+### 2. `docs/CIHAT-PROFIL.md` oku
 
-**Ne yapılacak:**
-- Mevcut proje listesi UI'ı (localStorage veya mock mu?) incele
-- Supabase `projeler` tablosu şema kontrol
-- CRUD operasyonları: liste + detay + oluştur + sil
-- RLS tenant bazlı policy
-
-**Tahmini süre:** 1 oturum
-
----
-
-## Seçenek C: CLAUDE.md Split (23. oturum borcu)
-
-**Son-durum'dan:** "CLAUDE.md split (2592 satır → 600 + `docs/rules/` + `docs/sessions/`)"
-
-**Neden bu:** Her oturum başında Claude bu dosyayı okuyor. 2592 satır çok — context window'un ciddi bir kısmını tüketiyor, kendi kendini boğuyor. Split yapılırsa:
-- Ana `CLAUDE.md` özetler (600 satır) — her oturumda okunur
-- `docs/rules/` — her kural ayrı MD, sadece ihtiyaç olduğunda okunur
-- `docs/sessions/` — oturum özetleri, Claude "bu oturumda ne yapmıştık" diye bakar
-
-**Neden öne almamak:** Altyapı işi. Gözle görülür ürün değişmez. Ama uzun vadede her oturumu hızlandırır.
-
-**Tahmini süre:** 1 oturum
+### 3. 🚨 Self-Test KOŞTUR
+- Son self-test: 23. oturum
+- Şimdi 28. oturum → **5 oturum geçti**, kural disiplini zorunlu
+- Komut: `node .github/kontrol.js --self-test`
+- Beklenen: 3/3 başarılı (veya mevcut kural sayısına göre hepsi yeşil)
+- **Başarısızsa önce onu düzelt, sonra diğer işler**
 
 ---
 
-## Seçenek D: Profil In-App Edit (24. oturum borcu)
+## Seçim: 28. Oturum Odağı (A-F arası)
 
-**Son-durum'dan:** "Profil in-app edit (Pano'dan CIHAT-PROFIL.md düzenleme + GitHub Contents API commit)"
+### A. 27'den Devredilen Temizlik İşleri (1.5 saat)
+Acil ve küçük — önce bunları bitirmek iyi bir başlangıç.
 
-**Neden bu:** Şu an Cihat profilini düzenlemek için GitHub'dan `docs/CIHAT-PROFIL.md`'yi açıp editlemesi gerek. Panodan textarea ile düzenleyip GitHub Contents API üzerinden commit atmak kolaylık.
+1. **Migrations README markdown fix** (15 dk)
+   - `migrations/README.md` GitHub render'ında bozuk
+   - Çözüm: Mevcut dosyayı sil, **Upload files** ile yeniden yükle (paste yapmadan)
+   - Kaynak dosya Claude artifact'ında hâlâ var
 
-**Neden öne almamak:** Güzel özellik ama şart değil. GitHub token yönetimi (Vercel env'e koyma) ek altyapı gerektiriyor.
+2. **PAT token iptali** (2 dk)
+   - `https://github.com/settings/personal-access-tokens`
+   - `arespipe-backups-writer` → Delete
+   - 27'de oluşturuldu, kullanılmadı
 
-**Tahmini süre:** 2-3 saat
+3. **Vercel env kontrolü** (15 dk)
+   - Aç: `https://vercel.com/dashboard` → arespipe → Settings → Environment Variables
+   - İsim listesi al (değerler değil, sadece isimler)
+   - Supabase key'lerinin formatını belirle:
+     - Eski: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (JWT, `eyJ...` formatı)
+     - Yeni: `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (`sb_*` formatı)
+   - Karar:
+     - Legacy kullanıyorsa → yeni formata geçiş planla (ayrı oturum)
+     - Yeni kullanıyorsa → işlem yok
+
+4. **kontrol.js entegrasyonu** (45 dk)
+   - `migrations-check.yml` ayrı workflow olarak duruyor
+   - Proje tarzı: `kurallar.json` + `kontrol.js` + `bozuk-ornekler/` + self-test
+   - Yapılacaklar:
+     - `kontrol.js`'i oku, mevcut kural pattern'ini anla
+     - `M-01: Migration Adlandırma` kuralı ekle (regex NNN_*.sql)
+     - `M-02: Migration Sıra Çakışması` kuralı ekle (duplicate numara)
+     - `bozuk-ornekler/` altına ihlal eden test dosyaları
+     - `beklenen-hatalar.json` güncelle
+     - Self-test koştur, hepsi yeşil bekleniyor
+
+5. **Vercel Analytics eklemek** (15 dk, kolay)
+   - 24.5 notunun küçük ama değerli maddesi
+   - `arespipe` repo → Vercel dashboard → Analytics → Enable
+
+### B. Tablo Render Standardı (G-06) — 26'dan Devredilen Ana İş (3-4 saat)
+Cihat'ın orijinal 27. oturum hedefi, yedekleme öne geçti. Şimdi olgun bir denetim yapılabilir.
+
+**Kapsam:**
+- 7 sayfa × kolonlar haritası çıkar
+- Spool no: mono font, bold, `--ac` mavi (4 sayfada farklı)
+- Tarih: tek format standardı
+- Tersane adı, proje no, durum pill — standardize
+- İş planı: denetim raporu → `ares-render.js` helper → sayfa dönüşümü
+- G-06 kural taslağı
+
+### C. Sentry Entegrasyonu (2 saat)
+Müşteri öncesi zorunlu. Runtime hata toplama.
+- Sentry hesap aç (free tier, 5000 hata/ay)
+- `<script>` tag HTML'lere
+- Pano'ya yeni kart: "Son 7 Gün Hataları: N"
+- 24.5 notundan
+
+### D. Operasyon Sayfaları %100 (2-3 saat)
+Kesim / Büküm / Markalama eksikleri bitirme. Orta öncelik, teknik borç.
+
+### E. Migration Runner Workflow + Staging (2-3 saat)
+Staging Supabase projesi aç + migration runner workflow. Gerçek kullanım: staging'e migration'ları sırayla uygula. Uzun vadeli değer ama şu an staging ihtiyacı düşük.
+
+### F. Bucket PRIVATE Geçişi (1-1.5 saat)
+`arespipe-dosyalar` bucket şu an PUBLIC. İçinde müşteri verisi olduğunda özel olmalı. Müşteri öncesi yapılacak ama teknik olarak şimdi de yapılabilir (izometri URL'lerini signed URL'e geçirmek kod değişikliği gerektirir).
 
 ---
 
-## Seçenek E: Mobil React Uygulamasını İlerletmek
+## Önerim
 
-**Son-durum'dan:** "Mobil React uygulaması %5'te kaldı (iki ekran yazıldı, geri kalan duruyor)"
+**Opsiyon A** ile başla — küçük, acil, tamamlanması zevkli. 1.5 saat, oturum ısınır, sonra Cihat karar verebilir ikinci iş için.
 
-**Neden bu:** Tersanede mobil kullanım kritik — imalatçı elinde telefonla çalışır. Web pano yönetim içindir, mobil app operasyon için olacak.
+Özellikle **kontrol.js entegrasyonu** teknik borcu azaltır — `migrations-check.yml` ayrı durmaz, ana sistem içine girer. Proje disiplinine tam uyum.
 
-**Neden öne almamak:** Büyük iş. 1 oturumda bitmez, 5-10 oturum olabilir. Web tarafı tam oturmadan açmak riskli.
-
----
-
-## Claude'un Önerisi
-
-**A → B → C sırası** mantıklı:
-1. **A** ürün değeri yaratır, Cihat'ı motive eder (yarım kalan şeyler biter)
-2. **B** ürünün temelini sağlamlaştırır (proje bacağı oturmalı)
-3. **C** altyapı borcu (bir sonraki 5-10 oturumu hızlandırır)
-
-Ama Cihat'ın tercihi önemli. Son 10 günde ileri-geri vardı, o yüzden "somut bir şeyi bitir" hissi şimdi çok değerli. A ile başlamak bunu verir.
+Opsiyon A biterse kalan zamanda:
+- **Cihat seçer** — B (render), C (Sentry), D (operasyon), E (staging), F (bucket private)
+- Hepsi değerli, biri diğerinden üstün değil
 
 ---
 
-## Oturum Başında Yapılacak
+## 24.5 Notunun Durumu
 
-1. Git pull + status + CI yeşil kontrolü (zorunlu ritüel)
-2. `CIHAT-PROFIL.md` okunur
-3. **Son-durum'daki "Öğrenilen Dersler (25. oturum)"u hatırla:**
-   - Workflow `.github/workflows/` klasörüne
-   - Sed idempotent değil — tekil test + toplu atlamanı ayarla
-   - CI kuralları bağlam görmez — yorum/kod ayrımı yapmaz
-4. Cihat'a bu dosyadaki seçenekleri sun → "hangisiyle başlayalım?"
-5. İş sırasına göre ilerle
+27. oturum kapanışında:
 
-**Self-test hatırlatma:** 28. oturumda `node .github/kontrol.js --self-test` çalıştırılacak. 26, 27 geçilecek, 28'de Claude hatırlatır.
+✅ **Tamamlanan:**
+- Yedekleme Katman 1 (DB + Storage, her gece)
+- Migrations klasörü (baseline + CI)
+
+⏳ **Kalan (28+ oturumlar):**
+- Sentry (runtime hata) — Opsiyon C
+- Uptime monitör (Better Stack) — 30 dk'lık kolay iş
+- Environment ayrımı (dev/prod) — Opsiyon E ile birlikte
+- Görev sistemi sayfa görünümü (panel_gorevler.ilgili_sayfalar)
+- Audit Log pano sekmesi
+- Vercel Analytics — Opsiyon A'ya dahil
+- help.html son kullanıcı dokümantasyonu
 
 ---
 
-_Bu dosya her oturum sonu Claude tarafından yazılır. Kullanıcı sadece yükler ve bir sonraki oturumda Claude buradan başlar._
+## Bekleyen Büyük Konular (27. oturum öncesinden)
+
+- **Tablo Render Standardı (G-06)** — Opsiyon B
+- **Operasyon sayfaları %100** — Opsiyon D
+- **Profil in-app edit** (Pano'dan CIHAT-PROFIL.md) — 24'ten borç
+- **G-05 CI lint kuralı** — `.mb-*` hardcode yasağı
+- **Rol etiketi küçük harf bug'ı** — hangi ekranda netleşince
+
+---
+
+## Yedek Sistem Doğrulama (Oturum başında 5 dk)
+
+Bu oturum yedek kurulduğundan 1+ gün sonra olacak. Kontroller:
+
+1. **Yedek klasörü büyüdü mü?**
+   ```
+   https://github.com/cihatoztas-ai/arespipe-backups/tree/main/backups
+   ```
+   - Olması gereken: En az 1 yeni TIMESTAMP klasörü (27'de manuel aldığımız + ertesi gün otomatik)
+
+2. **Dosya boyutları anlamlı mı?**
+   - `database.sql.gz` — birkaç yüz KB
+   - `storage.tar.gz` — ~23 MB civarı (artıyor olabilir)
+
+3. **Cron saatinde çalıştı mı?**
+   - Actions → Supabase Full Backup → #6 veya sonrası
+   - Başlama zamanı: UTC 00:00 civarı (03:00 TR)
+
+**Sorun varsa** 28. oturumun ilk önceliği cron debug olur.
+
+---
+
+## Kritik Hatırlatmalar
+
+- ⚠️ **Her DB değişikliği = migrations dosyası** (27'de eklenen disiplin)
+- ⚠️ **Self-test her 5 oturumda bir** (23 → 28 → 33 → ...)
+- ⚠️ **"Hatırlıyorum" deme, dosyaya bak**
+- ⚠️ **Uzun markdown için Upload files kullan** (Create+paste bozar)
+- ⚠️ **Plan değişikliği anında söyle**
+
+---
+
+_Bu dosya 28. oturumun başında Cihat tarafından okunacak veya referans alınacak._
+_Son güncelleme: 27. oturum kapanışı (24 Nisan 2026)_

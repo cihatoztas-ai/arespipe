@@ -1,227 +1,236 @@
-# 25. Oturum — Sistem Sağlığı Kartı + Sıfır Uyarı Temizliği ✅
+# CLAUDE — 27. Oturum Raporu (24 Nisan 2026)
 
-**Tarih:** 23 Nisan 2026
-**Süre:** ~5 saat
-**Sonuç:** 22 CI uyarısı → 0, Sistem Sağlığı kartı canlıda, JSON rapor altyapısı kuruldu
+> **Oturum konusu:** Yedekleme Sistemi (DB + Storage) + Migrations Altyapısı
+> **Süre:** ~4.5 saat
+> **Sonuç:** Büyük başarı — 2 ana altyapı taşı yerine oturdu
 
 ---
 
-## Ne Yapıldı — Kronolojik
+## Başlangıç Bağlamı
 
-### Saat 1 — `kontrol.js`'e `--json` bayrağı (altyapı)
+27. oturum, 26. oturumun kapanışından devir alındı. Başlangıçta 5 opsiyon (A-E) masadaydı: Tablo Render Standardı, G-05 CI lint, Operasyon sayfaları, Rol etiketi bug, Faz B tenant izolasyon.
 
-**Sorun:** CI sadece stdout'a log basıyordu, Workflow summary'ye `tail -20` ile 20 satır kırpılıyordu. Detay kayboluyordu. Pano için veri kaynağı yoktu.
+**Cihat yeni bir liste getirdi** — 24.5 notu (25. oturum öncesi yan sohbetten gelen, uygulanmamış bir plan). Not 5 ana konu içeriyordu:
+1. Görev sistemi sayfa görünümü
+2. Sistem sağlığı 3 katman (sapma + runtime + audit)
+3. **Yedekleme** (kritik, ransomware hikayesine dayalı)
+4. Olması gerekenler durum değerlendirmesi
+5. 26+ oturum gündem adayları
 
-**Çözüm:** Yeni `--json` bayrağı eklendi. Bayraksız davranış **bire bir aynı** kalır (backward compat). Bayrak varsa tarama sonunda `.github/ci-son-rapor.json` yazılır.
+Claude'un önerisi: **3. madde — yedekleme — en kritik ve veri kaybı riski en yüksek.** Kabul edildi, oturum buraya odaklandı.
 
-**Rapor formatı:**
-```json
-{
-  "tarih": "ISO 8601",
-  "commit_sha": "...",
-  "workflow_run": 477,
-  "ozet": { "hata": 0, "uyari": 0, "taranan_dosya": 74, "sorunlu_dosya": 0, "durum": "yesil" },
-  "kurallar": {
-    "ARES_NORMALIZE_EKSIK": {
-      "tip": "uyari",
-      "mesaj": "...",
-      "sayi": 16,
-      "dosyalar": [ { "dosya": "index.html", "sayi": 1, "satirlar": [] }, ... ]
-    }
-  },
-  "dosyalar": [ ... ]
-}
+---
+
+## Saat 1: DB Yedekleme Sistemi
+
+### Kurulum adımları
+1. `cihatoztas-ai/arespipe-backups` private repo açıldı
+2. Supabase Settings → Connection String → **Session Pooler** seçildi (IPv4 uyumluluğu için, GitHub Actions IPv4 kullanır)
+3. DB şifresi Cihat tarafından bulundu (kişisel not yerinden)
+4. GitHub Secrets → `SUPABASE_DB_URL` eklendi (tam connection string)
+
+### PAT drama
+- İlk plan: Workflow ana `arespipe` repo'sunda, yedek yazar `arespipe-backups`'a (cross-repo için PAT gerekli)
+- Alternatif fark edildi: Workflow zaten `arespipe-backups`'ta olursa PAT gerekmez (kendi repo'suna yazar)
+- PAT oluşturuldu ama kullanılmadı — plan değişikliği sonrası durumu Cihat'a açıkça söylendi. Şu an boşta duruyor, 28. oturumda iptal edilecek.
+
+### Workflow iterasyonları
+
+**Deneme 1 — Fail (version mismatch):**
+```
+pg_dump: error: aborting because of server version mismatch
+pg_dump: detail: server version: 17.6; pg_dump version: 16.13
+```
+Supabase server 17.6, Ubuntu default pg_dump 16.13. apt-get install -y postgresql-client-17 yazdık ama pin olmadığı için 16 kuruldu.
+
+**Deneme 2 — Fail (aşırı savunmacı):**
+`apt-get remove -y postgresql-client` satırı ekledik, Ubuntu "PostgreSQL version 16 is not installed" mesajı verdi, benim `if grep "17"` kontrolüm bunu fail sandı. Aslında postgresql-client-17 düzgün kuruldu ama benim script false positive verdi.
+
+Cihat bu noktada "sıkıldım artık neden olmuyor" dedi. Kritik moment. Log'a daha dikkatli bakılınca gerçek durum netleşti: kurulum başarılı, sadece benim script aşırı katı.
+
+**Deneme 3 — Başarılı:**
+```yaml
+sudo apt-get install -y postgresql-client-17
+echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
+```
+Pin kaldırıldı, PATH'e explicit ekleme, basit doğrulama. Çalıştı.
+
+### Sonuç
+- **Supabase Full Backup #4** ✅ — 1m 18s
+- Her gece 03:00 TR otomatik
+- 30 gün rolling retention
+- Manuel tetikleme (`workflow_dispatch`)
+
+---
+
+## Saat 2: Storage Yedeklemesi
+
+### Durum tespiti
+Cihat "ransomware hikayesi" anlatmıştı — sadece DB değil, kullanıcı yüklenmiş dosyalar da kritik.
+
+- **1 bucket:** `arespipe-dosyalar` (**PUBLIC**, 50 MB file limit)
+- **Toplam:** 23 MB (test verisi seviyesi)
+- **İçerik:** tenant UUID klasörleri, spooller altında operasyon fotoğrafları (tamamla_*.png)
+- **Alt klasörler:** feedback, fotograflar, notlar, spooller
+
+### API key sistemi değişmiş
+Supabase 2025-2026 arasında key sistemini yenilemiş:
+- Eski: `anon` (public) + `service_role` (secret)
+- Yeni: `publishable` (public) + `secret` (secret, `sb_secret_*` formatı)
+
+Yeni `sb_secret_*` key'i `SUPABASE_SERVICE_KEY` olarak Secrets'a eklendi.
+
+**⚠️ Açık soru:** AresPipe Vercel'de hangisini kullanıyor? Legacy (`SUPABASE_SERVICE_ROLE_KEY`) mi yeni (`sb_secret_*`) mi? 28. oturumda kontrol edilecek.
+
+### Workflow tasarımı
+Çift katmanlı yaklaşım:
+1. **S3 API** (birincil) — Supabase S3-uyumlu endpoint, rclone ile bulk download
+2. **Python fallback** — urllib ile HTTP API, recursive list + download
+
+Fallback ile güvence: Supabase API değişikliklerine karşı dayanıklılık.
+
+### İlk tam yedek (Supabase Full Backup #5)
+- Süre: **2m 56s**
+- Çıktı: `backups/2026-04-24_XX-XX-XX/database.sql.gz` + `storage.tar.gz`
+- **İlk denemede başarılı** — karmaşık workflow için beklenmeyen başarı
+
+---
+
+## Saat 3: Migrations Altyapısı
+
+### Durum tespiti
+Cihat'a "SQL değişikliklerini bir yerde saklıyor musun?" sorusu: **Hayır, SQL editor'de yazıp run.**
+
+Yani DB'nin geçmişi yok. Felaket anında yedekten dönüş çalışır, ama yeni staging ortamı kurmak veya değişiklik geçmişi takip etmek imkansız.
+
+### Önerilen strateji
+3 yaklaşım tartışıldı:
+- **Sıfırdan yaz** — son 1 ay taranır, hatırlananlar yazılır (eksik kalır)
+- **Schema dump** — mevcut DB'den otomatik çıkarım (baseline)
+- **Karışım** — baseline + sonraki her değişiklik disiplinli migration
+
+Seçilen: **Tam kurulum, baseline schema dump ile.**
+
+### Schema Extraction
+- Yeni tek seferlik workflow: `arespipe-backups/.github/workflows/extract-schema.yml`
+- `pg_dump --schema-only` + artifact upload
+- Başarılı çıktı:
+  - **6029 satır, 23.6 KB**
+  - **51 tablo, 85 index, 17 trigger, 18 fonksiyon, 90 RLS policy**
+  - public + storage schemas
+  - auth/realtime/supabase_* şemaları dahil değil (Supabase auto-create)
+
+### Migrations Klasör Yapısı
+`arespipe/` ana repo'da:
+```
+migrations/
+├── README.md                ← Disiplin + adlandırma + kurulum sırası
+└── 000_initial_schema.sql   ← Sıfır noktası (header + pg_dump)
 ```
 
-**Önemli karar:** Rapor exit code'tan ÖNCE yazılır. Yani kırmızı CI'da bile rapor üretilir — pano "neden kırmızı" diyebilsin.
-
-**Testler:** Node syntax check + sahte repo üzerinde yasak renk örneği + gerçek panel.html kurallar üzerinde tarama. Hiçbir false-positive yok.
+README **Create file** ile yapıştırıldı — markdown format bozuldu (GitHub paste'i newline'ları siliyor). Dosya içeriği doğru, sadece render bozuk. 28. oturumda **Upload files** ile yeniden yüklenecek.
 
 ---
 
-### Saat 2 — `kontrol.yml` güncellemesi
+## Saat 4: CI Kontrolü
 
-**Eklenen step'ler:**
-1. Kontrol scriptini `--json` ile çalıştır, çıktıyı `/tmp/ci-cikti.txt`'ye yakala, `continue-on-error: true` (hata olsa bile sonraki step'ler çalışsın)
-2. Sadece main push'ta: bot kullanıcı olarak `ci-son-rapor.json`'u commit + push
-3. Özet step'i `$GITHUB_STEP_SUMMARY`'ye yazar
-4. Kontrol step'i hata vermişse `exit 1` ile workflow kırmızılaştır
+### Scope revize edildi
+Başlangıçta "CI kuralı + migration runner" planlandı. Ama incelenince:
+- **Migration runner:** Şu an staging yok, production'a risk. 28. oturuma ertelendi.
+- **kontrol.js entegrasyonu:** İçerik incelenmeden dokunmak riskli, proje tarzına tam entegrasyon 45 dk ek iş. 28. oturuma ertelendi.
 
-**Loop koruması — üç katman:**
-- `paths-ignore: [.github/ci-son-rapor.json]` (workflow kendi yazdığı rapor'da tetiklenmesin)
-- Commit mesajında `[skip ci]`
-- GitHub'ın `GITHUB_TOKEN` default güvenlik kuralı (token ile yazılan commit workflow tetiklemez)
+### Basit CI workflow
+`arespipe/.github/workflows/migrations-check.yml`:
+- Tetikleme: `migrations/**` path değişikliği
+- 4 kontrol:
+  1. `migrations/` klasörü var mı (zorunlu)
+  2. Dosya adı regex `^[0-9]{3}_[a-z0-9_]+\.sql$` (fail)
+  3. Sıra numarası çakışması (fail)
+  4. Header yorumu ilk 10 satırda `--` (uyarı, build kırmaz)
+- Özet çıktı: toplam dosya + son dosya
 
-**Permission:**
-- Workflow dosyasında: `permissions: contents: write`
-- Repo seviyesinde: GitHub Settings → Actions → General → "Read and write permissions" (ilk kez kurarken bu da gerekir)
-
-**Yaşanan hata (ders çıkaracağımız):** İlk yüklemede workflow dosyası yanlışlıkla `.github/` kök seviyesine yüklendi, `.github/workflows/` yerine. GitHub yanlış yerdeki dosyayı görmez, eski versiyonu çalıştırmaya devam etti. Step listesinde "CI raporunu commit'le" yokluğundan tanı konuldu. Doğru klasöre yeniden yüklendi, aynı anda eski kök seviyedeki kopya silindi.
-
----
-
-### Saat 3 — Panel.html'e 🩺 Sistem Sağlığı kartı
-
-**Yer:** Pano sekmesi > Oturum Panosu alt-sekmesi > CI Durumu'nun hemen altı
-
-**Pattern:** Mevcut `pano-bolum` yapısıyla tam uyum — açılır-kapanır, cihat profili ve oturum geçmişi kartlarıyla aynı görsel dil.
-
-**Özellikler:**
-- **Üst özet kart:** "X hata · Y uyarı", yeşil/sarı/kırmızı sol kenar
-- **Meta bilgi:** "son rapor: 23 Nis 20:09", run numarası
-- **Kural grupları:** Hatalar önce, sonra uyarı sayısına göre azalan — her kuralda: `JetBrains Mono` font'la kod + yuvarlak rozette sayı + mesaj özeti
-- **Tık-aç dosya detayı:** Her kurala tıklayınca dosya listesi açılır, satır numaralarıyla
-- **Sıfır uyarıda:** ✨ "Sistem Sağlıklı" kutlama kartı — üst kart + alt boşluk
-
-**Kaynak:** `raw.githubusercontent.com/cihatoztas-ai/arespipe/main/.github/ci-son-rapor.json?t=` (timestamp cache-bypass)
-
-**Hata toleransı:**
-- 404 → "Rapor henüz oluşmamış" uyarısı (CI bir sonraki main push'ta üretir)
-- Parse hatası → "JSON bozuk olabilir" mesajı
-
-**Yeni kod:**
-- `RAPOR_URL` sabiti (diğer URL'lerle birlikte)
-- `_oturumYuklendi.saglik` (cache flag)
-- `panoOturumYukle` → `panoSaglikYukle()` çağrısı eklendi (her açılışta yenilenir)
-- `panoSaglikYukle()` async fonksiyonu (~150 satır, fetch + render)
-- `saglikKuralToggle(id)` (kural satırı tık-aç)
-- Yeni CSS sınıfları: `.saglik-ozet`, `.saglik-kural`, `.saglik-dosya`, `.saglik-bos` ve alt versiyonları
-
-**Dosya:** `admin/panel.html` 2178 → 2343 satır (+165)
+Yumuşak başlangıç — header kontrolü fail yerine warning. İleride güçlendirilir.
 
 ---
 
-### Saat 4 — 22 Uyarı Temizliği
+## Değişen/Yeni Dosyalar
 
-Sistem Sağlığı kartı gösterdi: **0 hata · 22 uyarı**. Hedef sıfır. Beş aşamaya ayırıldı.
+### arespipe-backups repo (yeni, private)
+- `.github/workflows/db-backup.yml` — DB + Storage yedek, günlük cron
+- `.github/workflows/extract-schema.yml` — tek seferlik schema dump (oturum sonrası silinebilir)
+- GitHub Secrets: `SUPABASE_DB_URL`, `SUPABASE_SERVICE_KEY`
+- `backups/2026-04-24_*/` — ilk yedekler
 
-#### 4A — ARES_NORMALIZE_EKSIK (16 uyarı → 0)
+### arespipe repo (ana)
+- `migrations/README.md` (⚠️ render bozuk, 28'de fix)
+- `migrations/000_initial_schema.sql` (baseline)
+- `.github/workflows/migrations-check.yml` (CI kontrol)
 
-11 sayfada `ares-normalize.js` script tag eksik demiş son-durum.md. Pano gerçek rakamı söyledi: **16 dosya**. Liste:
-`ayarlar, etiketleme, index, izometri-batch, kullanici_detay, kullanicilar, kurallar, log, proje_detay, proje_liste, raporlar, sorgula, tersaneler, testler, tezgahlar, uyarilar` (16 × `.html`)
-
-**Yöntem:** Mac sed ile `ares-layout.js` script tag'inin altına `ares-normalize.js` satırı eklendi.
-
-**Küçük tuzak:** Tek dosya (`index.html`) üzerinde önce test ettim, sonra 16 dosyalık toplu komutu çalıştırdım. Tahmin ettiğim idempotent değilmiş — `index.html`'de iki kopya oluştu (211 ve 212). `sed '212d'` ile temizlendi, geri kalan 15 dosyada tek kopya oldu, 16 dosyanın hepsi tamamdı.
-
-**Commit:** `fix: 16 sayfaya ares-normalize.js script tag ekle (25. oturum)`
-
-**Push:** İlk denemede "fetch first" reddi (bot bu arada rapor commit'i attı). `git pull --rebase origin main && git push` ile çözüldü, çakışma yok.
-
-**Sonuç:** 22 → 6
-
-#### 4B — YUKLENIYOR_KUMSAAT (2 → 0)
-
-İki dosya:
-- `kurallar.html:939` — kod örneği dokümantasyonunda `⏳ Yükleniyor` (false-positive)
-- `lang/tr.json:116` — `cmn_yukleniyor` anahtarı (ve en/ar karşılıkları)
-
-**Keşif:** `cmn_yukleniyor` anahtarı kodda hiçbir yerde `tv(...)` ile çağrılmıyor. Ölü kod — üç dil dosyasından silindi.
-
-**`kurallar.html` için:** `⏳` karakteri `&#x23F3;` HTML entity'sine çevrildi. Tarayıcı aynı emoji'yi render eder, CI string eşleşmesi kurtulur. İstisnaya ekleme yerine bu yöntem tercih edildi (kural kendini korur).
-
-**Not:** `kurallar.html:1605`'te başka bir `⏳` var ama o `⏳ Supabase` — CI kuralına takılmaz, dokuma olarak kaldı.
-
-**Sonuç:** 6 → 4
-
-#### 4C — HISTORY_BACK (1 → 0)
-
-`is_baslat.html:235, 550, 556` — üç kod yorumu hep `history.back() yok (M-01)` şeklinde. Fonksiyon **kullanılmıyor**, "kullanmadığımızı" belirtmek için yazılmış dokümantasyon.
-
-**Çözüm:** `history.back() yok` → `history.back yok` (parantez kaldırıldı). Metin okunabilir, CI stringi bulamaz.
-
-**Satır 235 için** ayrıca daha açıklayıcı bir yorum yazıldı: `<!-- M-01: güvensiz geri dönüş kullanılmıyor, geriDon() ile explicit URL -->`
-
-**Sonuç:** 4 → 3
-
-#### 4D — G03_HAM_KALITE (1 → 0)
-
-`devre_yeni.html:1467` — izometri düzenleme tablosunda inline `<input>` element, `value="' + esc(s.kalite||'') + '"`. Hemen bir üstündeki malzeme satırında (1466) zaten `ARES_NORM.malzemeEtiket` sarmalaması var. Kalite satırında unutulmuş.
-
-**Çözüm:** Kalite satırı malzeme satırıyla aynı pattern'a getirildi:
-```js
-esc(typeof ARES_NORM!=='undefined' ? ARES_NORM.kaliteGoster(s.kalite) : (s.kalite||''))
-```
-
-**UI/UX notu:** Kullanıcı input'u ekranda etiketli ("St 37") görür, düzenlediğinde de etiket üzerinde düzenler, kaydederken etiket hali DB'ye gider. Malzeme için bu pattern zaten kabul edilmiş; kalite de artık tutarlı.
-
-**Sonuç:** 3 → 2
-
-#### 4E — I18N_EKSIK (2 → 0)
-
-İki eksik anahtar:
-- `cmn_yuzey_epoksi` (ares-lang.js:121) — yüzey tipi sözlüğünde atlanmış, yanında `asit, boyali, galvaniz, siyah` var
-- `sp_note_confirm_delete` (devre_detay.html:1804) — spool not silme onay diyaloğu
-
-**Keşif:** Node tek satır script'le dosya gezilerek hangi `tv('...')` çağrılarının `lang/tr.json`'da olmadığını listeledim. CI'ın kendi kuralı olan `i18n_senkron`'un taklidi — tutarlı bir ayna.
-
-**Çözüm:** İki anahtar üç dile de eklendi:
-| Anahtar | TR | EN | AR |
-|---|---|---|---|
-| `cmn_yuzey_epoksi` | Epoksi | Epoxy | إيبوكسي |
-| `sp_note_confirm_delete` | Not silinsin mi? | Delete note? | حذف الملاحظة؟ |
-
-Sed'in `a\` (append after pattern) komutuyla yerleştirildi — `cmn_yuzey_diger`'in altı (grup içinde) ve `sp_note_added`'in altı (mantıksal sıra: önce confirm, sonra delete).
-
-**Doğrulama:**
-- `python3 -c "json.load(...)"` — üç JSON geçerli ✓
-- Node tekrar: eksik anahtar yok ✓
-
-**Sonuç:** 2 → 0 ✨
+### Beklemede
+- PAT token `arespipe-backups-writer` — oluşturuldu, kullanılmadı, 28'de iptal
 
 ---
 
-### Saat 5 — Kapanış ve commit
+## Önemli Kararlar
 
-**Commit:** `fix: kalan 6 CI uyarısı temizliği (25. oturum)` — multi-line mesaj, her aşamanın ne yaptığını belgeliyor.
-
-**Push + rebase:** Yine bot JSON rapor commit'i araya girdi, rebase ile aşıldı. Clean push.
-
-**CI çalıştı, run #477 yeşil:**
-- 0 hata, 0 uyarı
-- 74 dosya tarandı
-- Tüm dosyalar temiz
-- JSON rapor yazıldı, bot commit'ledi
-
-**Pano canlı:** Hard refresh sonrası Sistem Sağlığı kartı yeşil özet + ✨ "Sistem Sağlıklı" kutlama kartı gösteriyor. Kural listesi tamamen boş.
+1. **Storage & DB tek workflow'da** — Ayrı workflow yerine tek workflow, tek TIMESTAMP klasörü, tutarlı yedek.
+2. **Session Pooler seçimi** — Direct Connection IPv6 only, GitHub Actions IPv4. Pooler ücretsiz IPv4 proxy.
+3. **Shared Pooler kabul edildi** — Supabase paylaşımlı sistem, performans ihmal edilebilir (yedek gece çalışır, kimse canlı değil)
+4. **Yedeklerde retention 30 gün** — Müşteri büyüdüğünde 14'e düşürülür
+5. **Migration runner ertelendi** — Staging olmadan anlamsız, risk yüksek
+6. **kontrol.js entegrasyonu ertelendi** — Basit workflow yeter, detaylı entegrasyon taze kafayla
 
 ---
 
-## Değişen Dosyalar
+## Çıkarılan Dersler
 
-| Dosya | Değişiklik |
-|---|---|
-| `.github/kontrol.js` | `--json` bayrağı, `jsonRaporuYaz()` fonksiyonu (+~60 satır) |
-| `.github/workflows/kontrol.yml` | 4 yeni step (commit + permissions + paths-ignore + final exit) |
-| `admin/panel.html` | Sistem Sağlığı kartı (+165 satır) |
-| `ayarlar.html` + 15 HTML | `ares-normalize.js` script tag (her birine +1 satır) |
-| `kurallar.html` | `⏳` → `&#x23F3;` entity |
-| `is_baslat.html` | 3 yorum satırında parantez temizliği |
-| `devre_yeni.html` | G-03 sarmalaması (izometri tablosu kalite satırı) |
-| `lang/tr.json`, `lang/en.json`, `lang/ar.json` | `cmn_yukleniyor` silindi, `cmn_yuzey_epoksi` + `sp_note_confirm_delete` eklendi |
-| `.github/ci-son-rapor.json` | **YENİ DOSYA** — CI her main push'ta otomatik günceller |
+### D-27.1: Plan değişikliği erken kabul edilmeli
+PAT token oluşturulup kullanılmayınca Cihat "bu ne için" diye sordu. Plan değişikliğini anında duyurmak daha iyi olurdu.
 
----
+### D-27.2: Failure anında log'u oku, iyi haberi bul
+Cihat "sıkıldım" dediği anda gerçek durum: kurulum başarılı, sadece script fail verdi. Paniğe katılmak yerine "iyi haber var" demek oturumu kurtardı.
 
-## Öğrenilen Dersler (25. Oturum)
+### D-27.3: Uzun markdown için Upload files kullan
+GitHub Create file + paste markdown'u bozuyor. Dosyayı direkt yüklemek (Upload files) formatı korur.
 
-1. **Workflow dosyası path:** `.github/workflows/` (çoğul). Kök seviyeye yüklenirse GitHub görmez, sessiz fail. GitHub web Upload arayüzü bulunduğun klasöre yükler — doğru klasöre girip oradan yüklemek şart.
+### D-27.4: Supabase ürün güncellemeleri takip edilmeli
+API key sistem değişikliği (`publishable/secret`), IPv6-only direct connection — dashboard değişiklikleri projeyi etkileyebilir. Her oturumun ritüeline "Supabase dashboard'ta değişiklik var mı" eklenebilir mi?
 
-2. **`sed` idempotent değil:** Aynı pattern iki kez çalışırsa aynı işi iki kez yapabilir. Tek dosyada test edip toplu sed'e geçerken test edilmiş dosya listeden düşmeli, veya idempotent pattern seçilmeli (örn. "satır zaten varsa atla").
+### D-27.5: Yeni kritik kuralı (D-27.5): Her DB değişikliği artık migrations dosyası demek
+Supabase SQL editor'de yazıp run yapmak yeterli değil. Değişiklik + migration dosyası = çift kayıt. İkisi olmadan "yapılmış" sayılmaz.
 
-3. **CI kuralları bağlam görmez:** String/regex tabanlı kurallar yorum/dokümantasyon/gerçek kod ayırt etmez. Bu oturumda 3 false-positive temizlendi (kurallar.html, is_baslat.html). Tercih sırası: (a) entity/escape ile kaçır, (b) metni yeniden yaz, (c) dosyayı istisnaya ekle. (c) en son çare — kuralı körleştiriyor.
+### D-27.6: Over-engineering ile future-proof arası denge
+Cihat "Supabase büyürse ne olur" diye sordu. Cevap: şu an 23 MB, Pro plan $25/ay 100 GB, GitHub repo 5 GB pratik. Aşamalı strateji. **Bugün için en basit, değişim kolay olsun diye.**
 
-4. **CDN cache gerçektir:** `raw.githubusercontent.com` 2-5 dk gecikmeyle yeni commit'leri sunar. Panoda cache-bypass timestamp ile çoğu zaman aşılır, bazen hard refresh gerekir. Kullanıcıya kısaca açıklamak yeterli.
-
-5. **Bot commit'leri lokal'e yansımaz:** Her main push sonrası bot `ci-son-rapor.json`'u commit'ler. Lokal kendi commit'ini push etmek isteyince "fetch first" reddi alır. `git pull --rebase origin main && git push` sessiz çözer — çakışma nadir.
+### D-27.7: Kullanıcı yorgunluğunu takip et
+4. saatin sonunda Cihat "teknik olarak sıkıntı yoksa devam, yorulursam kendim mola veririm" dedi. Bu tür açık iletişim değerli. Ama Claude da proaktif olmalı — scope küçültme önerisi (Aşama 4'te migration runner'ı ertelemek) bu prensibe uyuyordu.
 
 ---
 
-## 25. Oturum Sonu Durumu
+## Bu Oturumda Sürülmeyen Kanallar
 
-- ✅ Git temiz, working tree clean
-- ✅ CI yeşil (run #477)
-- ✅ 0 hata, 0 uyarı
-- ✅ Bot rapor commit'i otomatik çalışıyor
-- ✅ Sistem Sağlığı kartı canlı, ✨ kutlama görünür
-- ✅ 3 kapanış dosyası güncellendi
+- **24.5 notunun diğer maddeleri** (Sentry, Uptime, Environment ayrımı, Görev sayfa görünümü, Audit Log pano, Vercel Analytics, help.html) — 28+ oturumlar
+- **Migration runner workflow** — Staging Supabase projesi ile birlikte 28+
+- **kontrol.js entegrasyonu** — 28
+- **Legacy Supabase key temizliği** — 28
+- **Bucket PRIVATE geçişi** — Müşteri öncesi
+- **Tablo Render Standardı (G-06)** — 26'dan devir, müşteriden bağımsız öncelik
+
+---
+
+## Kapanış Notu
+
+27. oturum, AresPipe'ın **felaket senaryolarına karşı savunması olan ilk oturumu** oldu. Bu oturumdan önce:
+- DB ransomware/hesap çökmesi ile silinirse → projeyi sıfırdan kurmak zorunda
+- Storage silinirse → yüklenen tüm izometri fotoğrafları kaybedilir
+- Schema değişikliği geri alınamazsa → dokümantasyon yok
+
+Bu oturumdan sonra:
+- Her gece otomatik DB + Storage yedek (30 gün)
+- Schema sıfır noktası kayıtlı (6029 satır)
+- Migration disiplini CI ile korunuyor
+- Yeni ortam kurulumu (staging) teorik olarak mümkün
+
+Cihat'ın sabrı ve net iletişimi bu oturumun sonucuna doğrudan katkı sağladı. "Sıkıldım" anında vazgeçmemesi, "yorulursam kendim mola veririm" güveni oluşturması kritik.
+
+Sonraki oturumda kısa bir doğrulama (yedekler alınmış mı, CI yeşil mi) ve 28. oturumun gündem seçimi gerekiyor. Detay: `CLAUDE-SONRAKI-OTURUM.md`.
