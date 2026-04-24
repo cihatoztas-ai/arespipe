@@ -5,97 +5,77 @@
 
 ---
 
-## Son Oturum: 28 (24 Nisan 2026) — 27'nin Kuyruğunu Temizleme + Migrations Entegrasyonu ✅
+## Son Oturum: 29 (24 Nisan 2026) — Devredilebilirlik Günü ✅
 
 ### CI Durumu
-- **Son build:** YEŞİL ✅ (10s, tek workflow — `kontrol.yml`)
-- **Aktif kural sayısı:** 15 (14'ten arttı, migrations 3 yeni kural eklendi)
-- **Self-test:** 4/4 başarılı ✅ (28. oturumda zorunluluk yerine getirildi)
-- **Silinen workflow:** `migrations-check.yml` (kontrol.js'e entegre edildi, paralel sistem kalmadı)
+- **Son build:** YEŞİL ✅ (kontrol.yml + docs-uret.yml, ikisi de yeşil)
+- **Aktif kural sayısı:** 15 (değişmedi)
+- **Self-test:** Koşturulmadı — sonraki zorunlu 33. oturum
+- **Yeni workflow:** `docs-uret.yml` — AUTO bölüm güncelleme motoru, race condition korumalı (rebase + retry 3x)
 
-### Bu Oturumda Yapılanlar (~3 saat)
+### Bu Oturumda Yapılanlar (~4 saat)
 
-**Saat 0.5 — Oturum Başlangıç Ritüeli + Local Fix** ✅
-- Cihat Mac'ten çalışıyor (Windows'ta git yok). `cd ~/Desktop/arespipe && git pull && git status && git log`
-- Self-test yerel koşunca `ReferenceError: require is not defined in ES module scope` hatası
-- Kök sebep: Cihat'ın HOME'daki `package.json`'ında `"type":"module"` var, Node `.github/kontrol.js`'i ESM sanıyor
-- Çözüm: `.github/package.json` oluşturuldu, içinde `{"type":"commonjs"}` — lokal scope override
-- Dosya push edildi, CI yeşil, self-test 3/3 başarılı (o an)
+**İş 0 — Fantom Borç Temizliği** ✅
+- `.github/package.json` 28'de lokal oluşmuştu ama push edilmemiş — son-durum.md yanlış raporluyordu
+- GitHub'a yüklendi, commit'lendi, lokal/remote tutarlı
 
-**İş 1 — PAT Token İptal** ✅
-- 27'de oluşturulan `arespipe-backups-writer` fine-grained PAT silindi (kullanılmamıştı)
-- github.com/settings/personal-access-tokens → Delete
+**İş 1 — Hibrit Doküman Motoru** ✅ (~1.5 saat)
+- `.github/docs-uret.js` (~290 satır, CommonJS) — 6 üretici fonksiyon (sayfa/mobil/tablo/endpoint/kural/migration)
+- AUTO-START / AUTO-END sınırları arasını yeniden yazar, dışındaki manuel metne dokunmaz
+- Her fonksiyon try/catch'li, script `exit 0` garantisi — CI asla kırılmaz
+- `.github/workflows/docs-uret.yml` — push tetiklemeli, `[skip ci]` ile sonsuz döngü önleme
+- Sandbox'ta 7 edge case test geçti (mutlu yol, AUTO yok, bozuk sınır, dosya yok, idempotent, yorumsuz endpoint, sayım doğruluğu)
+- **Production'da race condition yakalandı** — kontrol.yml ile paralel auto-commit çakışması → `git pull --rebase` + 3x retry eklendi, canlıda yeşil
 
-**İş 2 — Vercel Env Variables Sensitive Geçişi** ✅
-- Mevcut 3 variable teşhisi: `SUPABASE_SERVICE_KEY`, `SUPABASE_URL`, `ANTHROPIC_API_KEY`
-- **Sürpriz bulgu 1:** Legacy vs yeni format ikiliği yok — tek `SUPABASE_SERVICE_KEY` var (yeni `sb_secret_*` formatında). 27'nin "ikiliği tespit et" endişesi fantomdu.
-- **Sürpriz bulgu 2:** Hem `SUPABASE_SERVICE_KEY` hem `ANTHROPIC_API_KEY` "Needs Attention" uyarılı — Vercel diyor ki "bu secret görünür, rotate et veya Sensitive yap"
-- Uygulanan çözüm: İkisi de 3 adımda Sensitive'e çevrildi (Copy → Delete → Add with Sensitive toggle)
-- Development ortamında Sensitive variable kilitli — `vercel dev` CLI kullanılmadığı için sorun değil
-- Her geçişte ~1-3 dk kısa downtime, sonra yeni deploy otomatik
-- **Sürpriz bulgu 3:** Deploy loglarında `api/izometri-oku.js` compile edildiğini gördük — `ANTHROPIC_API_KEY` bu endpoint'te kullanılıyor, yani **Spool AI vizyonunun 1. katmanı (izometri okuma) canlıda aktif.** Ölü variable değildi.
+**İş 2 — 6 Belge Yazıldı ve Yüklendi** ✅ (~2 saat)
+Toplam 1515 satır, hibrit dokümantasyon yapısı:
 
-**İş 3 — Migrations README Markdown** ✅ (fantom borç)
-- 27'nin "GitHub render bozuk" raporu kontrol edildi
-- Aslında dosya gayet düzgün render oluyordu — raporlama hatası
-- Borç listesinden düşürüldü, yeni dosya yüklenmedi
+| Dosya | Satır | Manuel/AUTO | İçerik |
+|---|---:|---|---|
+| `README.md` | 92 | %100 manuel | Repo kapak, docs linkleri, teknoloji özeti |
+| `docs/ONBOARDING.md` | 210 | %95 / %5 | Yeni yazılımcı rehberi, 30dk sistem haritası, 5 günlük plan, 10 kritik kural |
+| `docs/ARCHITECTURE.md` | 395 | %80 / %20 | ASCII sistem diyagramı, 10 bölüm, 7 tasarım kararı "niye"si, Spool AI özeti |
+| `docs/DATABASE.md` | 293 | %30 / %70 | Multi-tenant, RLS şablonu SQL, migration disiplini, AUTO tablo listesi |
+| `docs/API.md` | 329 | %20 / %80 | Endpoint ekleme rehberi, güvenlik, tenant_id uyarıları, AUTO endpoint listesi |
+| `docs/LOCAL-DEV.md` | 196 | %100 manuel | "Lokal yok, push-to-deploy" dürüst akış |
 
-**İş 4 — migrations-check.yml → kontrol.js Entegrasyonu** ✅ (asıl iş, ~1.5 saat)
-- Mimari karar: A1 yaklaşımı (üst-seviye klasör kontrolü, dosya-bazlı iterate yerine)
-- `kurallar.json`'a yeni `migrations` bölümü (3 kural):
-  - `MIG_ISIM_BOZUK` (hata) — regex `^[0-9]{3}_[a-z0-9_]+\.sql$`
-  - `MIG_NUMARA_TEKRAR` (hata) — duplicate 3-haneli numara
-  - `MIG_HEADER_EKSIK` (uyari) — ilk 10 satırda `--` yok
-- `kontrol.js`'e `migrationsKontrol()` fonksiyonu eklendi — `normalTarama()` ve `selfTest()`'e entegre
-- `selfTest()` yeni özellik: anahtar `/` ile biterse klasör-bazlı test
-- `.github/bozuk-ornekler/migrations-bozuk/` altına 4 SQL test dosyası:
-  - `abc_yanlis_isim.sql` → MIG_ISIM_BOZUK tetikler
-  - `001_ilk_dosya.sql` + `001_ikinci_dosya.sql` → MIG_NUMARA_TEKRAR
-  - `002_headersiz.sql` → MIG_HEADER_EKSIK
-- `beklenen-hatalar.json`'a `"migrations-bozuk/": [3 kod]` eklendi
-- Eski `.github/workflows/migrations-check.yml` **silindi** — artık tek sistem (kontrol.yml)
-- Final self-test: **4/4 başarılı** (g03-ham + ares-normalize + i18n + migrations)
-- Regression testi: `migrations/` altına bozuk SQL eklendiğinde gerçekten yakalıyor, Deploy engelleniyor
+### 29. Oturumda Bitenler (borçtan düşenler)
+- ✅ Devredilebilirlik Günü (28'den devir) — 6 belge + 2 motor dosyası
+- ✅ `.github/package.json` fantom borç kapatıldı
+- ✅ Docs-uret.yml race condition bugfix canlıda
 
-### Bugün Planlanan Ama Yapılmayan
-Yok — 4/4 iş tamamlandı. 27'nin tüm kuyruğu temizlendi.
+### Bugünkü Önemli Öğrenmeler (29. Oturum)
 
-### 28. Oturumda Bitenler (borçtan düşenler)
-- ✅ PAT token iptali (27'den devir)
-- ✅ Vercel env denetimi + Sensitive geçiş (27'den devir) — Hem güvenlik hem legacy/yeni ikilik fantom olduğu ortaya çıktı
-- ✅ kontrol.js'e migrations kontrolü entegrasyonu (27'den devir) — 15 kural, 4/4 self-test
-- ✅ Migrations README markdown fantom borç kapatıldı
-- ✅ `migrations-check.yml` silindi — paralel sistem çakışması önlendi
+1. **Sandbox tek process; production'da paralel workflow race condition çıkar.** docs-uret.yml ilk sürümü push öncesi rebase yapmıyordu — kontrol.yml ile aynı anda tetiklenince "non-fast-forward" reject. Sandbox'ta tek process çalıştığı için test edilemez. **Ders:** CI workflow'larına `git pull --rebase origin main && git push` retry'lı pattern'i baştan koy.
 
-### Bugünkü Önemli Öğrenmeler (28. Oturum)
+2. **Atomik commit dersi bir kez daha doğrulandı.** 6 belge tek upload'da gitti, hepsi birbirine referanslı — aşamalı atsak ara durumlarda kırık linkler olurdu. 28'in dersi 29'da uygulama buldu.
 
-1. **Devralınan borcu doğrulamadan üstüne iş planlama.** 27'nin son-durum.md'si "README markdown bozuk" diyordu — gerçekte dosya düzgündü, rapor hatalıydı. Bir borcu planladan önce "hâlâ gerçekten borç mu?" kontrolü yapmak gerekiyor. Aksi halde fantom işler birikir. **Ders:** Kuyruk maddelerini teyit etmeden plana almayın.
+3. **"Dürüst dokümantasyon" daha faydalı.** LOCAL-DEV.md "lokal çalışmaz" diyor, yazılımcıya dürüst; varsayımsal "lokal kurulum adımları" yazsaydık yanıltıcı olurdu.
 
-2. **Vercel "Needs Attention" = plaintext secret uyarısı.** İki tip env variable var: plaintext (dashboard'da görünür) ve Sensitive (görünmez). Secret key'lerin plaintext saklanması güvenlik açığı. Sensitive'e çevirme tek tık değil — delete + add döngüsü ile. Ama kısa downtime tolere edilebilir (1-3 dk, müşteri yokken sıfır etki).
+4. **AUTO sınır regex'i kendi örneğinin kurbanı olur.** ARCHITECTURE.md'deki `<!-- AUTO-START:bolumadi -->` örneği script tarafından gerçek sınır sanıldı — Türkçe karakter (`BÖLÜM_ADI`) trick'i ile çözüldü. **Ders:** Script'in kendi kurallarını dokümante ederken örneklerin parser'a yakalanmaması için eskape et.
 
-3. **Deploy logları değerli.** ANTHROPIC_API_KEY'in nerede kullanıldığını belge arayarak bulamazdık — Vercel build log'unda `Compiling api/izometri-oku.js` satırını görünce anladık. **Ders:** "Bu değişken nerede kullanılıyor?" sorusunda ilk bakılacak yer deploy log'u.
-
-4. **A1 yaklaşımı (üst-seviye klasör kontrolü) dosya-bazlı iterate'ten daha temiz.** Migrations duplicate numara kontrolü için tüm dosyaları bir arada değerlendirmek gerek — dosya-dosya iterate'e zorlamak cache + flag + karmaşa üretirdi. Ayrı fonksiyon olarak ekleyip dosyaRaporlari'na sonradan inject etmek temiz çözüm. **Ders:** Mimariyi veriye uydur, veriyi mimariye değil.
-
-5. **Kullanıcının "sıralı yap" talimatını okumaması daha iyi sonuç verdi.** Claude "önce test dosyalarını, sonra kuralları" demişti. Cihat hepsini tek seferde yükleyince tek commit'te tüm parçalar bir arada gitti, CI hiç kırılmadı. **Ders:** Atomik commit her zaman aşamalı commit'ten güvenli — "bir değişiklik seti bir commit" kuralını daha ciddiye al.
-
-6. **Test edilmemiş kod gönderme = yanılma riski.** Bu sefer farklıydı — `/home/claude/28oturum/test-env/` altında tam self-test koştuk, 4/4 başarılı gördükten sonra paylaştık. Sonuç: CI'a gidince ilk push'ta yeşil. **Ders:** Karmaşık refactor öncesi her zaman sandbox testi yap.
+5. **Vercel free tier günlük deploy kotası var.** Bugün sırayla 4-5 push attık, "Deployment rate limited — retry in 24 hours" yedik. CI yeşil ama Vercel kırmızı. Kod/doküman sorunu değil, plan sınırı. **Ders:** Yoğun push günü öncesi Vercel Pro'yu düşün (30+ oturum notu).
 
 ### Bekleyen Borçlar
 
-**Acil (29. oturum için):**
-- 🔴 **Devredilebilirlik Günü — Hibrit Dokümanlar** (A2 onaylandı) — ONBOARDING.md + ARCHITECTURE.md + DATABASE.md + API.md + LOCAL-DEV.md + README.md + auto-update script + workflow
-- 🟡 **CommonJS uyarısı temizleme** — Vercel deploy log'unda her seferinde uyarı (15 dk)
+**29'da keşfedilen yeni borçlar (yarına/30'a):**
+- 🟡 **Vercel rate limit + ci-son-rapor.json auto-commit** — Vercel'i tetiklemesin diye "ignored build step" eklenmeli (30 dk)
+- 🟡 **`actions/checkout@v4` + `setup-node@v4` deprecation warning** — v5'e geçiş (Node 20 deprecated), düşük öncelik
+- 🟡 **Supabase `arespipe-dev` projesi** — production ayrı, bu eski deneme gibi duruyor — gözden geçir, sil veya belgelendir
+- 🟢 **Fotoğraf/belge yaşam döngüsü** — Cihat'ın kaydını istediği iş: "Aktif devrede fotoğraflar/belgeler gerçek boyutta; devre tamamlanıp proje arşivine geçerken sıkıştırılıp saklanacak." **Şu an implementasyon YOK, mekanizma tasarlanmamış.** Fotoğraflar güvende (`fotograflar` tablosu + `arespipe-dosyalar` bucket'ında), sadece arşivleme-sıkıştırma kuralı henüz kodlanmamış. 30-34 aralığının birinde ele alınacak (muhtemelen 30 veya 33 ile birlikte çünkü Storage + lifecycle bağlantılı).
+
+**Acil (30. oturum için):**
+- 🔴 **Bucket PRIVATE Geçişi** (onaylı plan) — `arespipe-dosyalar` şu an PUBLIC, müşteri öncesi ŞART
 
 **Orta vade (30-34. oturum — ALTYAPI KAPANIŞ PLANI ✅ ONAYLANDI):**
-- 🔴 **30. oturum — Bucket PRIVATE geçişi** — `arespipe-dosyalar` şu an PUBLIC, müşteri öncesi ŞART
-- 🔴 **31. oturum — Sentry entegrasyonu** — Runtime hata toplama, olmadan müşteriyle iletişim kopar
-- 🔴 **32. oturum — Email sistemi** — Şifre sıfırlama, Resend/SendGrid, zorunlu
-- 🟡 **33. oturum — Staging Supabase projesi + migration runner** — İkinci proje, otomatik migration
-- 🟡 **34. oturum — Tenant izolasyon testleri + feature flag** — `tests/rls-isolation.sql` + rollback
+- 🔴 **30. oturum — Bucket PRIVATE geçişi + signed URL altyapısı**
+- 🔴 **31. oturum — Sentry entegrasyonu** — Runtime hata toplama
+- 🔴 **32. oturum — Email sistemi** — Şifre sıfırlama, Resend/SendGrid
+- 🟡 **33. oturum — Staging Supabase projesi + migration runner**
+- 🟡 **34. oturum — Tenant izolasyon testleri + feature flag**
 
 **35'ten sonra ÜRÜN DÖNEMİ:**
-- 🟡 Tablo Render Standardı (G-06) — 26'dan devir, Cihat'ın asıl sorusu
+- 🟡 Tablo Render Standardı (G-06) — 26'dan devir
 - 🟡 Operasyon sayfaları %100 — Kesim/Büküm/Markalama bitirme
 - 🟡 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 - 🟡 G-05 CI lint kuralı — `.mb-*` hardcode rgba/hex yasağı
@@ -107,11 +87,18 @@ Yok — 4/4 iş tamamlandı. 27'nin tüm kuyruğu temizlendi.
 - **Son self-test:** 24 Nisan 2026, 28. oturum — **4/4 başarılı** ✅
 - **⚠️ Sonraki zorunlu self-test:** 33. oturum (28→33, 5 oturum)
 - **Komut:** `node .github/kontrol.js --self-test`
-- **Not:** Migrations kontrolü artık self-test kapsamında. Bir sonraki sağlık kontrolünde 15 kuralın hepsi test edilecek.
 
 ---
 
 ## 📖 Aktif Belgeler (Yaşayan — Her Oturumda Gündemde)
+
+### **🆕 Dokümantasyon Sistemi** (29. oturum)
+Repo kökünde `README.md` + `docs/` altında 6 belge (ONBOARDING, ARCHITECTURE, DATABASE, API, LOCAL-DEV + mevcut SPOOL-AI-VIZYON, PANO-TASARIM, CIHAT-PROFIL, ROADMAP). Hibrit: manuel + AUTO sınırları.
+
+- **Motor:** `.github/docs-uret.js`
+- **Workflow:** `.github/workflows/docs-uret.yml`
+- **AUTO bölümler:** `istatistikler`, `tablolar`, `endpointler`, `kurallar`
+- **Kullanım:** Yeni yazılımcı `docs/ONBOARDING.md` ile başlar
 
 ### Vizyon: `docs/SPOOL-AI-VIZYON.md`
 Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü.
@@ -157,6 +144,12 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - `ANTHROPIC_API_KEY` (🔒 Sensitive — `sk-ant-*`, `api/izometri-oku.js`'de kullanılıyor)
 - Development ortamı Sensitive variable'larda kilitli — lokal CLI kullanılmadığı için sorun değil
 
+### **Storage Bucket** (⚠️ 30. oturumda PRIVATE olacak)
+- **Bucket:** `arespipe-dosyalar`
+- **Şu anki durum:** PUBLIC — URL bilen herkes erişir
+- **Kullanım:** İzometri PDF'leri, spool fotoğrafları
+- **Müşteri öncesi şart:** PRIVATE + signed URL sistemi (30. oturumun konusu)
+
 ---
 
 ## Bir Sonraki Oturumda Claude Bunları Yapacak
@@ -165,22 +158,21 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 
 > "Oturum başlangıç ritüeli. Şunu çalıştır ve çıktıyı yapıştır:
 > ```
-> cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+> cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
 > ```
 > Ayrıca GitHub Actions sekmesinde son build yeşil mi kontrol et.
-> `arespipe-backups` repo'sunda son 24 saat içinde yeni yedek düşmüş mü — bugün ilk gerçek otomatik yedek (03:00 TR) denenmiş olmalı."
+> `arespipe-backups` repo'sunda son 24 saat içinde yeni yedek düşmüş mü (03:00 TR otomatik)."
 
 **2. Ritüel tamamlanmadan hiçbir teknik iş başlama.**
 
 **3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.**
 
-**4. 29. OTURUMUN TEK GÜNDEMİ — ONAYLANDI:** Devredilebilirlik Günü (Hibrit Dokümanlar)
-- Alternatif öneri sunma — 28. oturum sonunda plan netleştirildi
-- 6 belge + 1 auto-update script + 1 workflow dosyası
+**4. 30. OTURUMUN GÜNDEMİ — ONAYLANDI:** Bucket PRIVATE Geçişi
 - Detaylı içerik: `CLAUDE-SONRAKI-OTURUM.md`
-- 30-34. oturumlar için altyapı kapanış planı oturdu — 35'ten itibaren ürün
+- Müşteri öncesi en kritik güvenlik adımı
+- Beklenen süre: 3-4 saat
 
-**5. Self-test bu oturumda koşturulmayacak.** Son 28. oturumda yapıldı (4/4). Sonraki zorunlu kontrol 33. oturumda.
+**5. Self-test bu oturumda koşturulmayacak.** Sonraki zorunlu kontrol 33. oturum.
 
 ---
 
@@ -204,6 +196,7 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - **Devralınan borcu doğrulamadan iş planlama** — 27'nin fantom README borcu gibi (28. oturum dersi)
 - **Atomik commit aşamalı commit'ten güvenli** — ilişkili dosyaları tek seferde yolla (28. oturum dersi)
 - **Karmaşık refactor öncesi sandbox testi zorunlu** — production push öncesi lokal simülasyon (28. oturum dersi)
+- **CI auto-commit pattern'i: commit → pull --rebase → push (3x retry)** — paralel workflow race condition için (29. oturum dersi)
 
 ---
 
