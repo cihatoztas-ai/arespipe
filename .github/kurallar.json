@@ -111,5 +111,29 @@
     "aktif": true,
     "siddet": "uyari",
     "aciklama": "tv('anahtar', 'fallback') çağrılarındaki anahtarın lang/tr.json'da var olduğunu kontrol eder. mobile/ altı atlanır (ayrı sözlük)."
+  },
+
+  "migrations": {
+    "aktif": true,
+    "klasor": "migrations",
+    "aciklama": "migrations/ klasörü kontrolü — dosya adı formatı, duplicate sıra numarası, header yorumu. 28. oturumda kontrol.js'e entegre edildi (önce ayrı workflow idi).",
+    "kurallar": [
+      {
+        "kod": "MIG_ISIM_BOZUK",
+        "siddet": "hata",
+        "desen_regex": "^[0-9]{3}_[a-z0-9_]+\\.sql$",
+        "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql."
+      },
+      {
+        "kod": "MIG_NUMARA_TEKRAR",
+        "siddet": "hata",
+        "mesaj": "Aynı 3 haneli sıra numarası birden fazla dosyada kullanılmış. Her numara tek dosyaya ait olmalı — son eklenen sonraki numarayı almalı."
+      },
+      {
+        "kod": "MIG_HEADER_EKSIK",
+        "siddet": "uyari",
+        "mesaj": "Migration dosyasının ilk 10 satırında '--' ile başlayan header yorumu yok. Şablon: docs/templates/yeni-migration-sablonu.sql."
+      }
+    ]
   }
 }

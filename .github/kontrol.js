@@ -13,12 +13,14 @@
 // JSON rapor: .github/ci-son-rapor.json (sadece --json modunda)
 //
 // Kural tipleri:
-//   1. yasak_string   → dosyada bulunmamalı (desen + satirda_olmamalidir opsiyonel istisna)
+//   1. yasak_string    → dosyada bulunmamalı (desen + satirda_olmamalidir opsiyonel istisna)
 //   2. zorunlu_her_html → HTML'lerde bulunmalı
 //   3. ham_gosterim    → ARES_NORM yoksa raw malzeme/kalite/yüzey pattern'i uyarı
 //   4. i18n_senkron    → tv() anahtarları lang/tr.json'da olmalı
+//   5. migrations      → migrations/ klasöründe dosya adı + duplicate numara + header kontrolü
+//                        (28. oturum — önceden .github/workflows/migrations-check.yml'deydi, kaldırıldı)
 //
-// Son güncelleme: 25. oturum — --json bayrağı (pano Sistem Sağlığı kartı için)
+// Son güncelleme: 28. oturum — migrations kontrolü entegre edildi (A1 yaklaşımı: üst-seviye klasör taraması)
 
 const fs = require('fs');
 const path = require('path');
@@ -224,7 +226,118 @@ function i18nSenkronKontrol(dosyaYolu, icerik) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// DOSYA TARAMA
+// KONTROL 5 — MIGRATIONS (28. oturum)
+// ─────────────────────────────────────────────────────────────
+//
+// migrations/ klasöründeki .sql dosyalarını topluca inceler:
+//  (a) Dosya adı NNN_aciklama.sql formatında mı          → MIG_ISIM_BOZUK (hata)
+//  (b) Aynı 3 haneli sıra numarası iki dosyada var mı   → MIG_NUMARA_TEKRAR (hata)
+//  (c) İlk 10 satırda '--' yorumu var mı                → MIG_HEADER_EKSIK (uyari)
+//
+// Dönen yapı: [{ dosya, kod, tip, satir, mesaj }]. Klasör bazlı çalışır — test ortamında
+// kurallar.klasor override edilebilir (self-test bunu kullanır).
+
+function migrationsKontrol(kokDizin) {
+  if (!KURAL.migrations || !KURAL.migrations.aktif) return [];
+  const klasorGoreceli = KURAL.migrations.klasor || 'migrations';
+  const klasor = path.isAbsolute(klasorGoreceli)
+    ? klasorGoreceli
+    : path.join(kokDizin, klasorGoreceli);
+
+  if (!fs.existsSync(klasor)) return []; // klasör yoksa sessiz geç
+  if (!fs.statSync(klasor).isDirectory()) return [];
+
+  const kurallar = KURAL.migrations.kurallar || [];
+  const isimKural    = kurallar.find(k => k.kod === 'MIG_ISIM_BOZUK');
+  const tekrarKural  = kurallar.find(k => k.kod === 'MIG_NUMARA_TEKRAR');
+  const headerKural  = kurallar.find(k => k.kod === 'MIG_HEADER_EKSIK');
+
+  const hatalar = [];
+  let dosyalar;
+  try {
+    dosyalar = fs.readdirSync(klasor).filter(f => f.endsWith('.sql'));
+  } catch (e) {
+    return [];
+  }
+
+  const numaraMap = {}; // { "001": ["001_foo.sql", "001_bar.sql"] }
+
+  for (const dosya of dosyalar) {
+    const tamYol = path.join(klasor, dosya);
+    const goreceli = path.relative(process.cwd(), tamYol).replace(/\\/g, '/');
+
+    // (a) İsim formatı
+    if (isimKural) {
+      let regex;
+      try {
+        regex = new RegExp(isimKural.desen_regex);
+      } catch (e) {
+        log(`⚠  Bozuk migrations regex (${isimKural.kod}): ${e.message}`);
+        regex = null;
+      }
+      if (regex && !regex.test(dosya)) {
+        hatalar.push({
+          dosya: goreceli,
+          kod: isimKural.kod,
+          tip: isimKural.siddet,
+          satir: null,
+          mesaj: `${isimKural.mesaj} — bulunan: ${dosya}`
+        });
+      }
+    }
+
+    // Numara topla (isim formatı geçerli olmasa bile baştaki 3 rakamı yakalamayı dene)
+    const numaraMatch = dosya.match(/^([0-9]{3})_/);
+    if (numaraMatch) {
+      const num = numaraMatch[1];
+      if (!numaraMap[num]) numaraMap[num] = [];
+      numaraMap[num].push(dosya);
+    }
+
+    // (c) Header yorumu
+    if (headerKural) {
+      try {
+        const icerik = fs.readFileSync(tamYol, 'utf8');
+        const ilk10 = icerik.split('\n').slice(0, 10).join('\n');
+        if (!/^\s*--/m.test(ilk10)) {
+          hatalar.push({
+            dosya: goreceli,
+            kod: headerKural.kod,
+            tip: headerKural.siddet,
+            satir: 1,
+            mesaj: `${headerKural.mesaj} — dosya: ${dosya}`
+          });
+        }
+      } catch (e) {
+        // okuma hatası — sessiz geç
+      }
+    }
+  }
+
+  // (b) Duplicate numara
+  if (tekrarKural) {
+    for (const [num, dosyaListesi] of Object.entries(numaraMap)) {
+      if (dosyaListesi.length > 1) {
+        for (const dosya of dosyaListesi) {
+          const tamYol = path.join(klasor, dosya);
+          const goreceli = path.relative(process.cwd(), tamYol).replace(/\\/g, '/');
+          hatalar.push({
+            dosya: goreceli,
+            kod: tekrarKural.kod,
+            tip: tekrarKural.siddet,
+            satir: null,
+            mesaj: `${tekrarKural.mesaj} — numara ${num}: ${dosyaListesi.join(', ')}`
+          });
+        }
+      }
+    }
+  }
+
+  return hatalar;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOSYA TARAMA (HTML/JS/JSX/JSON)
 // ─────────────────────────────────────────────────────────────
 
 function dosyayiTara(dosyaYolu) {
@@ -256,11 +369,6 @@ function silinmisKontrol() {
 // ─────────────────────────────────────────────────────────────
 // JSON RAPOR ÜRET (--json modu için — 25. oturum)
 // ─────────────────────────────────────────────────────────────
-//
-// Çıktı formatı pano Sistem Sağlığı kartı tarafından fetch'lenir.
-// Kural koduna göre gruplu + tam dosya detayı. İki farklı görünüm için
-// hem "kurallar" özeti (kaç adet, hangi dosyalarda) hem de "dosyalar"
-// listesi (her dosyanın hataları) birlikte veriliyor.
 
 function jsonRaporuYaz(tumDosyalar, dosyaRaporlari, hataSay, uyariSay) {
   // Kural bazlı özet — hangi kuralden kaç adet, hangi dosyalarda?
@@ -367,6 +475,32 @@ function normalTarama() {
     }
   }
 
+  // MIGRATIONS KONTROLÜ (28. oturum) — üst-seviye klasör taraması, dosya iterate edilmez
+  const migHatalari = migrationsKontrol('.');
+  if (migHatalari.length > 0) {
+    // Dosya bazında grupla ve dosyaRaporlari yapısına ekle
+    const migDosyaMap = {};
+    for (const h of migHatalari) {
+      if (!migDosyaMap[h.dosya]) migDosyaMap[h.dosya] = [];
+      migDosyaMap[h.dosya].push({
+        kod: h.kod,
+        tip: h.tip,
+        satir: h.satir,
+        mesaj: h.mesaj
+      });
+      if (h.tip === 'hata') hataSayisi++;
+      else uyariSayisi++;
+    }
+    for (const [dosya, hatalar] of Object.entries(migDosyaMap)) {
+      const mevcut = dosyaRaporlari.find(r => r.dosya === dosya);
+      if (mevcut) {
+        mevcut.hatalar.push(...hatalar);
+      } else {
+        dosyaRaporlari.push({ dosya, hatalar });
+      }
+    }
+  }
+
   if (dosyaRaporlari.length === 0) {
     log('\n✅ Tüm dosyalar temiz!\n');
   } else {
@@ -422,6 +556,10 @@ function normalTarama() {
 // .github/bozuk-ornekler/ klasöründeki her dosya kasten bozuktur.
 // beklenen-hatalar.json her dosyadan hangi kural kodlarının çıkması
 // gerektiğini listeler. Gerçekte çıkanlarla beklenenler karşılaştırılır.
+//
+// 28. oturum: "/" ile biten anahtarlar klasör-bazlı test olarak
+// yorumlanır (migrations tarzı). Bu durumda migrations kuralı için
+// kurallar.klasor geçici olarak bozuk-ornekler/<anahtar> yapılır.
 
 function selfTest() {
   log('╔════════════════════════════════════════╗');
@@ -446,26 +584,39 @@ function selfTest() {
     if (dosyaAd.startsWith('_')) continue; // meta anahtarlar (_aciklama vb.) atlanır
     const tamYol = path.join(BOZUK_DIZIN, dosyaAd);
     if (!fs.existsSync(tamYol)) {
-      log(`❌ ${dosyaAd} — Dosya yok`);
+      log(`❌ ${dosyaAd} — Dosya/klasör yok`);
       basarisiz++;
       continue;
     }
 
-    // Kontrollerin bu bozuk dosyayı görebilmesi için "istisna kontrolünü" atla
-    // Bu amaçla bozuk-ornekler/ altındaki dosyaları dosyaIstisnasiMi atlatmasın
-    // diye ...path.basename ile direkt okuyup kontrol fonksiyonlarını manuel çağırıyoruz.
-    const icerik = fs.readFileSync(tamYol, 'utf8');
+    let yakalananKodlar;
 
-    // Sahte yol ver ki istisna listesi bozuk örneği vurmasın
-    const sahteYol = dosyaAd.replace(/^/, 'bozuk-ornek-test-');
+    if (dosyaAd.endsWith('/')) {
+      // KLASÖR BAZLI TEST — migrations tarzı
+      if (!KURAL.migrations) {
+        log(`❌ ${dosyaAd} — Klasör bazlı test ama kurallar.json'da migrations bölümü yok`);
+        basarisiz++;
+        continue;
+      }
+      // Geçici klasör override
+      const eskiKlasor = KURAL.migrations.klasor;
+      KURAL.migrations.klasor = path.join('.github', 'bozuk-ornekler', dosyaAd);
+      const migHatalari = migrationsKontrol('.');
+      KURAL.migrations.klasor = eskiKlasor;
+      yakalananKodlar = new Set(migHatalari.map(h => h.kod).filter(Boolean));
+    } else {
+      // DOSYA BAZLI TEST — mevcut davranış
+      const icerik = fs.readFileSync(tamYol, 'utf8');
+      // Sahte yol ver ki istisna listesi bozuk örneği vurmasın
+      const sahteYol = dosyaAd.replace(/^/, 'bozuk-ornek-test-');
+      const tumHatalar = [
+        ...yasakStringKontrol(sahteYol, icerik),
+        ...(dosyaAd.endsWith('.html') ? zorunluKontrol(sahteYol, icerik) : []),
+        ...i18nSenkronKontrol(sahteYol, icerik),
+      ];
+      yakalananKodlar = new Set(tumHatalar.map(h => h.kod).filter(Boolean));
+    }
 
-    const tumHatalar = [
-      ...yasakStringKontrol(sahteYol, icerik),
-      ...(dosyaAd.endsWith('.html') ? zorunluKontrol(sahteYol, icerik) : []),
-      ...i18nSenkronKontrol(sahteYol, icerik),
-    ];
-
-    const yakalananKodlar = new Set(tumHatalar.map(h => h.kod).filter(Boolean));
     const eksikler = beklenenKodlar.filter(k => !yakalananKodlar.has(k));
 
     if (eksikler.length === 0) {
