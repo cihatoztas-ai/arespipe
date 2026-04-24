@@ -5,106 +5,154 @@
 
 ---
 
-## Son Oturum: 25 (23 Nisan 2026) — Sistem Sağlığı Kartı + Sıfır Uyarı ✅✨
+## Son Oturum: 26 (24 Nisan 2026) — Faz A Kapanışı + Altyapı Borçları + G-05 ✅
 
 ### CI Durumu
-- **Son build:** YEŞİL ✅ (23/04/2026, run #477 sonrası)
-- **Sonuç:** **0 hata, 0 uyarı** (22'den 0'a — baseline değil, mükemmel)
-- **Taranan dosya:** 74
+- **Son build:** YEŞİL ✅ (25. oturumdan devir)
+- **Sonuç:** 0 hata, 0 uyarı (25'te bitirilen temizlik korunuyor)
 
-### Aktif Kural Sayısı (değişmedi)
-- **Hata seviyesi:** 5 (yasak renkler 3 + flash prev 1 + theme 1)
-- **Uyarı seviyesi:** 9 (history.back, kumsaat, ARES_NORMALIZE_EKSIK, G03_HAM_MALZEME, G03_HAM_KALITE, G03_HAM_YUZEY, G03_HAM_MALZEME_TEMPLATE, G03_HAM_KALITE_TEMPLATE, I18N_EKSIK)
-- **Zorunlu her HTML:** 2 (ARES_LAYOUT_EKSIK hata, ARES_NORMALIZE_EKSIK uyarı)
-- **TOPLAM:** 14 ayrı kural aktif
+### Bu Oturumda Yapılanlar (~4 saat)
 
-### Bu Oturumda Yapılanlar
+**Saat 1 — Faz A Faz 3: Form Autocomplete** ✅
+- `devre_yeni.html` + `spool_detay.html` — `kaliteleriDoldur()` yeniden yazıldı
+- İki kaynak birleşik: MASTER (sistem preset + firma özel) + GEÇMİŞ (sıklık sayacı)
+- `<option label>` ile kaynak ipucu (sistem / firma / geçmiş · ×N)
+- Her iki dosya canlıya alındı, test edildi
+- devre_yeni: 2301 → 2340 satır (+39), spool_detay: 3217 → 3266 satır (+49)
 
-**Saat 1 — `kontrol.js` → `--json` bayrağı eklendi**
-- Yeni bayrak: `node .github/kontrol.js --json` → `.github/ci-son-rapor.json` yazar
-- Rapor formatı: kural koduna göre gruplu (pano için) + dosya bazlı detay
-- Commit SHA, workflow run no, yeşil/sarı/kırmızı durum ile birlikte
-- Mevcut console çıktısı + exit code bire bir korundu
-- Self-test dokunulmadı
-- Test: sahte repo üzerinde JSON yazımı + syntax doğrulandı
+**Saat 2 — Faz A Faz 4: IFS Fuzzy Match** ✅
+- Migration: `26-oturum-faz-a4-ifs-fuzzy.sql` uygulandı
+- `kalite_kod_normalize()` — 8 yeni pattern: ST52, S355JR, P235GH, P265GH, 321, 321H, 304H, 316H, 2205, 2507
+- `ifs_material_alias` tablosu + 3 index + 4 RLS policy (malzeme_tanimlari pattern'i)
+- `malzeme_ref_bul()` — alias fallback katmanı (regex NULL → tenant alias → sistem alias → NULL)
+- 7/7 regex test geçti; canlı veride 0 bağlanmamış kayıt (sistem temiz)
+- **Sonuç: Faz A TAMAMEN BİTTİ** — malzeme sistemi tam kapalı döngü
 
-**Saat 2 — `kontrol.yml` güncellendi**
-- `--json` bayrağıyla çalıştırma
-- Rapor dosyası main push'ta otomatik commit + push
-- `paths-ignore: [.github/ci-son-rapor.json]` + `[skip ci]` commit mesajı ile **infinite loop kapalı**
-- `permissions: contents: write` eklendi
-- Kırmızı CI'da bile rapor commit'lenir (önce rapor, sonra fail)
-- Not: İlk yüklemede yanlışlıkla `.github/workflows/` yerine `.github/` kök seviyesine yüklendi, sonra düzeltildi — 26. oturum öğrenilen dersler listesine
+**Saat 3 — CLAUDE.md Split + docs/templates/** ✅
+- CLAUDE.md: 2694 → 1611 satır (%40 küçültme)
+- Bölüm 11 + 11A-11H (14 eski oturum, ~1100 satır) → `docs/sessions/archive-01-22.md`
+- Yerine yeni Bölüm 11: 3 satır referans (son-durum.md + archive + protokol notu)
+- `docs/templates/` oluşturuldu:
+  - `README.md` — şablon indeksi
+  - `yeni-sayfa-sablonu.md` — yeni HTML sayfası iskeleti (zorunlu script'ler + tema + i18n)
+  - `yeni-migration-sablonu.sql` — BEGIN/COMMIT + header + RLS pattern + test blokları
+- Dört dosya tek commit'e yüklendi (atomik koruma)
 
-**Saat 3 — `admin/panel.html` → 🩺 Sistem Sağlığı kartı eklendi**
-- Oturum Panosu sekmesine yeni `pano-bolum`: CI Durumu'nun hemen altına
-- Özet kart (X hata · Y uyarı), yeşil/sarı/kırmızı renk kodu
-- Kural grupları: kod + sayı + mesaj, tık-aç dosya listesi (satır numaralarıyla)
-- Sıfır uyarıda ✨ "Sistem Sağlıklı" kutlama kartı
-- Kaynak: `raw.githubusercontent.com/.../.github/ci-son-rapor.json` (cache-bypass timestamp'lı)
-- 404 toleransı: "Rapor henüz oluşmamış" uyarısı
-- `panoOturumYukle` → her sekme açılışında yenilenir
-- Panel.html: 2178 → 2343 satır (+165)
+**Saat 4 — Malzeme Renk Denetimi + G-05 + 4 Dosya Güncellemesi** ✅
+- Yanlış alarm temizliği: M3_RENK bug'ı yok (22. oturum notu hatalı, doğrulandı)
+- **Denetim sonucu:** 4 sayfada renk pattern'i var, 1'i (`markalama.html`) **tamamen kaymış**:
+  - Paslanmaz yeşildi (olmalı: mor)
+  - Bakır mordu (olmalı: turuncu)
+  - Alüminyum turuncuydu (olmalı: yeşil)
+  - Karbon + Diğer aynı maviye düşüyor (olmalı: farklı)
+- **Kök neden:** Kod 4 farklı yerde kopya; tek kaynak doğrusu yok
+- **Çözüm: G-05 — Malzeme Renk Standardı** (yeni kural)
+  - `:root`'a merkezi `--mat-karbon-*`, `--mat-paslanmaz-*`, `--mat-bakir-*`, `--mat-alum-*`, `--mat-diger-*` değişken bloğu
+  - `[data-theme=dark]` override: alpha %10 → %18 (kontrast)
+  - `.mb-celik / .mb-pas / .mb-bakir / .mb-alum / .mb-diger` CSS değişken kullanıyor
+  - `matBadge()` 4 sayfada aynı pattern, aynı class isimleri
+- **Güncelleneceğine yapıldı: 4 dosya** — `markalama.html`, `devreler.html`, `bukum.html`, `kesim.html`
+- Karbon'u kırmızı yapmak istenirse: 4 dosyada `--mat-karbon-bg` + `--mat-karbon-fg` güncellenir → 4 sayfa anında değişir
 
-**Saat 4 — 22 uyarı temizliği (22 → 0)**
+### Bugün Ele Alınmayan Büyük Konu
 
-| Kural | Adet | Nasıl |
-|---|---|---|
-| ARES_NORMALIZE_EKSIK | 16 | 16 sayfaya `<script src="ares-normalize.js"></script>` eklendi (sed + git push) |
-| YUKLENIYOR_KUMSAAT | 2 | `cmn_yukleniyor` ölü anahtarı 3 dilden silindi; `kurallar.html`'de dokümantasyon emojisi `&#x23F3;` entity'ye çevrildi |
-| HISTORY_BACK | 1 | `is_baslat.html`'deki 3 yorum satırında `history.back()` → `history.back` (parantez kaldırıldı, false-positive temizliği) |
-| G03_HAM_KALITE | 1 | `devre_yeni.html` izometri tablosunda `esc(s.kalite)` → malzeme satırıyla aynı pattern (`typeof ARES_NORM!=='undefined'?ARES_NORM.kaliteGoster(...):...`) |
-| I18N_EKSIK | 2 | `cmn_yuzey_epoksi` + `sp_note_confirm_delete` anahtarları 3 dile eklendi (tr/en/ar) |
+Cihat'ın yakaladığı sistemsel tutarlılık sorunu: **"Tablolardaki tüm sütunlar farklı sayfalarda farklı görünüyor"** (spool no mavi mi siyah mı, tarih format farkları, tersane adı bold mı vs.). Bu malzeme rengi değil, **sistem-seviyesi render tutarlılık borcu**. 4-5 oturumluk iş, parçalara ayrılmalı.
 
-**Saat 5 — Kapanış**
-- Pano canlı: "0 hata · 0 uyarı · Sistem Sağlıklı ✨"
-- Bot `ci-son-rapor.json` commit'i otomatik çalışıyor
-- 3 kapanış dosyası güncellendi
+**Ne yaptık:** Bugün sadece malzeme rengi düzeltildi (markalama bug + 4 dosyada merkezi değişkenler). Gerisi — spool no render, tarih formatı, tersane adı, proje no, durum pill vs. — sonraki oturumlara kaldı.
 
-### Öğrenilen Dersler (25. Oturum)
+### G-05 — Yeni Kural (detay)
 
-1. **Workflow dosyası path:** `.github/workflows/` klasörüne yüklenmeli (çoğul, `workflows/`). Kök seviyedeki `.github/kontrol.yml` GitHub tarafından görülmez. GitHub web arayüzünde "Upload files" her zaman bulunduğun klasöre yükler — doğru klasöre girip oradan yüklemek şart. Aksi halde yüklenmiş görünür ama çalışmaz.
+**Kural adı:** Malzeme Renk Standardı
 
-2. **`sed` idempotent DEĞİL:** Aynı pattern iki kez sed'e girerse, ilk seferde eklenen satır ikinci seferde yeniden tetiklenebilir. 25. oturumda index.html'de iki kopya ares-normalize.js oluştu, `sed '212d'` ile temizlendi. Ders: toplu sed'den önce tek dosyada test etmek lazım; test edilmiş dosyayı toplu komuttan dışarıda bırakmak veya idempotent pattern seçmek (örn. "bu satır zaten varsa atla") güvenli.
+**Zorunluluklar:**
+1. Karbon → mavi (`--ac`) ― Paslanmaz → mor (`--leg`) ― Bakır → turuncu (`--warn`) ― Alüminyum → yeşil (`--gr`) ― Diğer → gri (`--txd`)
+2. Renk değerleri `:root > --mat-*` değişkenleri üzerinden okunur, hardcode yazılmaz
+3. Karanlık tema için `[data-theme=dark]` alpha override eklenir (kontrast)
+4. CSS class isimleri standart: `.mb-celik / .mb-pas / .mb-bakir / .mb-alum / .mb-diger`
+5. `matBadge()` inline style kullanmaz, sadece class döndürür
+6. Aynı renk değişken bloğu tüm sayfalarda bulunur — tek yerden güncellenince hepsi değişir
+7. Yeni bir malzeme kategorisi eklenirse 4 sayfaya paralel eklenmeli (ileride `ares-layout.js > injectGlobalCSS()` merkezileştirmesi düşünülebilir)
 
-3. **CI kuralları bağlam görmez:** Bu oturumda 3 false-positive temizledik — `kurallar.html`'de dokümantasyon emojisi, `is_baslat.html`'de kod yorumları, her ikisi de gerçek ihlal değildi. CI kuralları string/regex arar, "bu yorum mu kod mu?" ayırt etmez. Gelecekte buna karar vermek gerekecek: (a) yorumları HTML entity/escape ile kaçırmak, (b) yorumu yeniden yazmak, (c) dosyayı istisnaya eklemek. Tercih genelde (a) ya da (b) — (c) kuralı körleştirir.
+**CI lint eklenmesi (gelecek):** "G-05_MALZEME_RENK_HARDCODE" — `.mb-*` CSS'inde `rgba(` veya hex kullanımı yasak, sadece `var(--mat-*)` kabul.
 
-4. **CDN cache CI rapor'unu gecikmeli yansıtır:** `raw.githubusercontent.com` commit'lenen bir dosyayı genelde 2-5 dk gecikmeyle sunar. Pano cache-bypass timestamp (`?t=` query param) ile bunu çoğu zaman aşıyor ama bazen hard refresh gerekebiliyor. Sorun değil, kullanıcı da anlaşılabilir süre içinde günceli görür.
+### Bugün Kapatılan Açık Borçlar
+- ✅ CLAUDE.md split — 23. oturumdan beri borç
+- ✅ `docs/templates/` — 23. oturumdan beri borç
+- ✅ Markalama renk bug'ı — bilinen ama isimlendirilmemiş borç (denetimde ortaya çıktı)
+- ✅ Malzeme renk tutarsızlığı (4 dosya) — bugün tespit + çözüm
+- ✅ M3_RENK yanlış alarm notu — 22. oturumdan kalma, temizlendi
+
+### Öğrenilen Dersler (26. Oturum)
+
+1. **"Yanlış alarm" notları dosyalarda birikir:** 22. oturumda M3_RENK için "eski TR key'ler" notu düşülmüş ama o oturumda zaten çözülmüştü. Bugün "açık borç" zannedip baktık — kod temiz çıktı. Ders: Kapatılan borç aynı oturumda checklist'ten silinmeli; "tamamlandı" notu açıklayıcı olmalı. CLAUDE.md'deki Bölüm 10 (dosya bazında bekleyenler) periyodik temizlenmeli.
+
+2. **Bir bug sorulduğunda genelde altında sistem-seviyesi soru vardır:** Cihat "M3_RENK bug'ı" diye başladı, kısa sürede "tablolardaki tüm sütunlar standart olmalı" gerçek sorusuna geldi. Ders: Bug teknik olarak doğrulanmadan önce "aslında ne arıyorsun?" sorusu sorulmalı — özellikle kullanıcının önceki oturumdan hatırladığı not varsa.
+
+3. **Denetim > hızlı düzeltme:** Markalama'yı tek başına düzeltmek 10 dk'lık bir işti, ama tek başına yapılsa 3 sayfada aynı hatanın farklı varyasyonu kalırdı. Önce 7 dosyayı denetleyip haritayı çıkardık, sonra sistemik çözüm ürettik (G-05). Bugünden sonra kural CI'da kodlanabilir hale geldi. Ders: Bir bug gördüğünde "kaç yerde tekrarlanabilir bu pattern?" sorusu, her zaman.
+
+4. **Merkezi değişken + sayfa-yerel kopya gerçekçi orta yol:** Tam merkezi (ares-layout.js enjekte) en temiz çözüm ama JS yüklenene kadar renk eksik. Tamamen sayfa-yerel (her sayfa kendi blokları) bakım cehennemi. **Orta yol:** Aynı değişken bloğu her sayfada var, ama blok 4 yerde tek kaynak gibi çalışıyor (sed/find-replace ile tek işlem). JS enjekte gerekmiyor, yine de "tek yerden değiştirilir" hedefine çok yakın.
 
 ### Kural Sağlık Kontrolü
 - **Son self-test:** 23 Nisan 2026, 08:47 (23. oturum) — 3/3 başarılı ✅
 - **Sonraki self-test:** 28. oturum — Claude hatırlatacak
 - Komut: `node .github/kontrol.js --self-test`
 
-### Bekleyen Faz B Kalemleri (ve sonrası)
-- 🟡 **CLAUDE.md split** (2592 satır → 600 + `docs/rules/` + `docs/sessions/`) — 23. oturumdan kalma
-- 🟡 **Şablonlar** (`docs/templates/`) — 23. oturumdan kalma
-- 🟡 **Husky + package.json** (opsiyonel) — 23. oturumdan kalma
-- 🟡 **Profil in-app edit** (Pano'dan `CIHAT-PROFIL.md` düzenleme) — 24. oturumdan kalma
+### Bekleyen Borçlar
 
-### 25. Oturumda Bitenler (borçtan düşenler)
-- ✅ Sistem Sağlığı kartı (Pano > Oturum Panosu altında) — 24'ten borç
-- ✅ 22 ARES_NORMALIZE_EKSIK uyarısı (ve diğerleri) — 24'ten borç
-- ✅ CI JSON rapor altyapısı (yeni — gelecekte başka kartların da kaynağı olabilir)
+**Acil (sonraki 1-2 oturumda):**
+- 🔴 **G-05 CI lint kuralı** — `.mb-*` CSS'inde hardcode rgba/hex yasağı
+- 🟡 **Spool_detay + devre_detay'a matBadge ekleme** — şu an malzemeyi düz metin gösteriyorlar, renk yok
+
+**Orta vade (27-30. oturum):**
+- 🟡 **Tablo Render Standardı** (Cihat'ın yakaladığı büyük konu) — G-06 olarak tasarlanabilir
+  - Spool no: mono font, bold, `--ac` mavi (4 sayfada farklı görünüyor)
+  - Tarih: tek format standardı (14px, `--txd`)
+  - Tersane adı, proje no, durum pill — standardize
+  - İş planı: 27. oturumda 7 sayfa denetim raporu, 28'de `ares-render.js` helper kütüphanesi, 29-30'da sayfa dönüşümü
+- 🟡 **Operasyon sayfaları %100** — Kesim/Büküm/Markalama bitirme (2-3 saat)
+- 🟡 **Profil in-app edit** (Pano'dan CIHAT-PROFIL.md düzenleme) — 24. oturumdan borç
+- 🟡 **Rol etiketi küçük harf bug'ı** — "operatör" küçük harf görünüyor; hangi ekranda olduğu Cihat'tan netleşecek
+
+**Uzun vade (ROADMAP Faz B-C):**
+- 🟢 **docs/rules/** kural ayrıştırması — G-01 i18n, G-02 tema, G-03 enum-render, G-05 malzeme renk ayrı dosyalara
+- 🟢 **Lint script'leri** (5 adet) + pre-commit hook
+- 🟢 **Tenant izolasyon testleri** (`tests/rls-isolation.sql`) — 27. oturum hedefi
+- 🟢 **Performans bütçesi + observability** — 28. oturum hedefi
+- 🟢 **Rollback + feature flag** — 29. oturum hedefi
+- 🟢 **Mobil sayfalar**: MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara (ayrı sprint)
+
+### 26. Oturumda Bitenler (borçtan düşenler)
+- ✅ Faz A Faz 3 (Form Autocomplete) — Faz A planından
+- ✅ Faz A Faz 4 (IFS Fuzzy Match) — Faz A planından; **Faz A tamamen bitti**
+- ✅ CLAUDE.md split — 23. oturumdan
+- ✅ `docs/templates/` — 23. oturumdan
+- ✅ G-05 Malzeme Renk Standardı (yeni kural, 4 dosya güncellemesi)
+- ✅ M3_RENK yanlış alarm notu temizlendi
 
 ---
 
 ## 📖 Aktif Belgeler (Yaşayan — Her Oturumda Gündemde)
 
 ### Vizyon: `docs/SPOOL-AI-VIZYON.md`
-Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü. **Katman regex'i:** `## L1 — Ad` formatı — Pano bu formata bağlı parse ediyor, format korunmalı.
+Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü.
 
 ### Pano Tasarımı: `docs/PANO-TASARIM.md`
-Süper Admin Yönetim Panosu. 24. oturumda implement edildi, 25. oturumda Sistem Sağlığı kartı eklendi. 3 sekme + 4 bölüm canlıda.
+Süper Admin Yönetim Panosu. 24-25. oturumda implement edildi.
 
 ### Kullanıcı Profili: `docs/CIHAT-PROFIL.md` ⚠ ZORUNLU
 Her oturum başı Claude bu dosyayı okur. Cihat'a "kimsin" diye sormaz.
 
 ### Pano (canlı): `admin/panel.html`
-Süper admin çalışma merkezi. Tek yerden: görev, geri bildirim, CI durumu, **Sistem Sağlığı**, profil, oturum geçmişi.
+Süper admin çalışma merkezi. Tek yerden: görev, geri bildirim, CI durumu, Sistem Sağlığı, profil, oturum geçmişi.
 
-### CI Rapor (yeni): `.github/ci-son-rapor.json`
-CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyayı okur. Format: `ozet`, `kurallar` (koda göre gruplu), `dosyalar` (dosya bazlı detay).
+### CI Rapor: `.github/ci-son-rapor.json`
+CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyayı okur.
+
+### Oturum Arşivi: `docs/sessions/archive-01-22.md` (YENİ — 26. oturum)
+1-22. oturumların CLAUDE.md'den ayıklanmış özetleri.
+
+### Şablonlar: `docs/templates/` (YENİ — 26. oturum)
+Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 
 ---
 
@@ -122,11 +170,16 @@ CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyay
 
 **3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.**
 
-**4. 26. oturumun gündemi:**
-- `CLAUDE-SONRAKI-OTURUM.md` aç — 26. oturum için seçenekler var
-- Cihat'a "hangisiyle başlayalım?" sor
+**4. 27. oturumun gündemi — Cihat'a seçenek sun:**
+- **Opsiyon A:** Tablo Render Standardı denetimi (Cihat'ın asıl sorusu) — 7 sayfa × kolonlar haritası çıkar, sonraki oturumlar için plan yap
+- **Opsiyon B:** G-05 CI lint kuralı ekle — `.mb-*` hardcode yasağı, kontrol.js'e pattern ekle
+- **Opsiyon C:** Operasyon sayfaları bitirme (Kesim/Büküm/Markalama %100)
+- **Opsiyon D:** Rol etiketi küçük harf bug'ı (hangi ekranda olduğu netleşirse)
+- **Opsiyon E:** ROADMAP Faz B başlat (27. oturum tenant izolasyon testleri)
 
-**5. Her 5 oturumda bir self-test hatırlat:** 28, 33, 38. oturumlar.
+**5. 28. oturumda self-test HATIRLAT:**
+- 26'dan sonra 28 geliyor (her 5 oturumda bir)
+- Komut: `node .github/kontrol.js --self-test`
 
 ---
 
@@ -135,12 +188,14 @@ CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyay
 - **Kural çakışması varsa dur, sor** (A/B/C seçeneği)
 - **"Hatırlıyorum" deme** — dosyaya bak
 - **Yeni kural söylendiğinde 3 iş:** `kurallar.json` + kanıt + self-test
-- **Komutları üst üste verme** — birer birer, açıklamalı (CIHAT-PROFIL.md'de yazılı)
+- **Komutları üst üste verme** — birer birer, açıklamalı
 - **Büyük değişikliklerde tam dosya** — patch değil
 - **CHECK değişiminde:** DROP → UPDATE → ADD sırası
 - **FK eklerken:** Mevcut embed sorgularını `table!fk_kolonu` ile disambiguate et
 - **Workflow dosyaları `.github/workflows/` altına** — kök seviyeye değil (25. oturum dersi)
 - **Toplu sed öncesi tek dosyada test** — idempotent değil (25. oturum dersi)
+- **Bug sorulduğunda "aslında ne arıyorsun" sor** — özellikle önceki oturumdan not varsa (26. oturum dersi)
+- **Bir bug gördüğünde "kaç yerde tekrarlanabilir?" sor** — tek-düzeltme yerine denetim + sistemik çözüm (26. oturum dersi)
 
 ---
 
