@@ -1,236 +1,190 @@
-# CLAUDE — 27. Oturum Raporu (24 Nisan 2026)
+# CLAUDE — 28. Oturum Raporu
 
-> **Oturum konusu:** Yedekleme Sistemi (DB + Storage) + Migrations Altyapısı
-> **Süre:** ~4.5 saat
-> **Sonuç:** Büyük başarı — 2 ana altyapı taşı yerine oturdu
-
----
-
-## Başlangıç Bağlamı
-
-27. oturum, 26. oturumun kapanışından devir alındı. Başlangıçta 5 opsiyon (A-E) masadaydı: Tablo Render Standardı, G-05 CI lint, Operasyon sayfaları, Rol etiketi bug, Faz B tenant izolasyon.
-
-**Cihat yeni bir liste getirdi** — 24.5 notu (25. oturum öncesi yan sohbetten gelen, uygulanmamış bir plan). Not 5 ana konu içeriyordu:
-1. Görev sistemi sayfa görünümü
-2. Sistem sağlığı 3 katman (sapma + runtime + audit)
-3. **Yedekleme** (kritik, ransomware hikayesine dayalı)
-4. Olması gerekenler durum değerlendirmesi
-5. 26+ oturum gündem adayları
-
-Claude'un önerisi: **3. madde — yedekleme — en kritik ve veri kaybı riski en yüksek.** Kabul edildi, oturum buraya odaklandı.
+**Tarih:** 24 Nisan 2026  
+**Süre:** ~3 saat  
+**Tema:** 27'den devredilen kuyruğu temizle + migrations kontrolünü ana sisteme entegre et  
+**CI Durumu (Kapanış):** YEŞİL ✅ (10s, tek workflow)  
+**Self-test (Kapanış):** 4/4 başarılı ✅
 
 ---
 
-## Saat 1: DB Yedekleme Sistemi
+## Bu Oturumun Hikayesi
 
-### Kurulum adımları
-1. `cihatoztas-ai/arespipe-backups` private repo açıldı
-2. Supabase Settings → Connection String → **Session Pooler** seçildi (IPv4 uyumluluğu için, GitHub Actions IPv4 kullanır)
-3. DB şifresi Cihat tarafından bulundu (kişisel not yerinden)
-4. GitHub Secrets → `SUPABASE_DB_URL` eklendi (tam connection string)
+27. oturum yedeklemeyi kurmuş, migrations baseline'ını koymuştu — büyük işti. Ama bir kuyruk bırakmıştı: 4 küçük-orta iş "28'de yapılacak" diye not düşülmüştü. 28 bu kuyruğun temizlendiği oturum oldu. Ayrıca bir bonus çıktı: Cihat'ın müşteri öncesi altyapıyı tamamen bitirme kararı verdiğimiz oturum oldu.
 
-### PAT drama
-- İlk plan: Workflow ana `arespipe` repo'sunda, yedek yazar `arespipe-backups`'a (cross-repo için PAT gerekli)
-- Alternatif fark edildi: Workflow zaten `arespipe-backups`'ta olursa PAT gerekmez (kendi repo'suna yazar)
-- PAT oluşturuldu ama kullanılmadı — plan değişikliği sonrası durumu Cihat'a açıkça söylendi. Şu an boşta duruyor, 28. oturumda iptal edilecek.
+İlk teknik engelle ritüel sırasında karşılaştık: Self-test Mac'te koşunca CommonJS/ESM çakışması yüzünden patladı. HOME klasöründeki `package.json` ESM dayatıyordu, `kontrol.js` ise `require` kullanıyordu. `.github/package.json` ile lokal scope override'la 2 dakikada çözdük. Basit bir tuzaktı ama sistemli çözüm gerektirdi.
 
-### Workflow iterasyonları
+Sonra 27'nin kuyruğunu işe koyulduk. **Birinci iş** bir PAT token'ın iptaliydi — 2 dakikalık "temizlik" işi. **İkinci iş** Vercel env variables'daydı: hem hangi formatın kullanıldığını denetlemek (eski vs yeni Supabase key) hem plaintext secret sorununu çözmekti. İki sürpriz çıktı:
 
-**Deneme 1 — Fail (version mismatch):**
-```
-pg_dump: error: aborting because of server version mismatch
-pg_dump: detail: server version: 17.6; pg_dump version: 16.13
-```
-Supabase server 17.6, Ubuntu default pg_dump 16.13. apt-get install -y postgresql-client-17 yazdık ama pin olmadığı için 16 kuruldu.
+1. Legacy/yeni format ikiliği yok — tek key var, yeni formatta zaten. 27'nin endişesi fantomdu.
+2. Ama başka bir sorun vardı: Hem `SUPABASE_SERVICE_KEY` hem `ANTHROPIC_API_KEY` plaintext saklanıyordu ("Needs Attention" uyarısıyla). İkisini de Sensitive'e çevirdik — 3 adımlı process (Copy → Delete → Add+Sensitive), her biri için ~1-3 dk downtime.
 
-**Deneme 2 — Fail (aşırı savunmacı):**
-`apt-get remove -y postgresql-client` satırı ekledik, Ubuntu "PostgreSQL version 16 is not installed" mesajı verdi, benim `if grep "17"` kontrolüm bunu fail sandı. Aslında postgresql-client-17 düzgün kuruldu ama benim script false positive verdi.
+Bu sırada üçüncü bir sürpriz: Vercel deploy logunda `api/izometri-oku.js` compile edildiğini gördük. Yani ANTHROPIC_API_KEY ölü variable değildi — Spool AI vizyonunun 1. katmanı (izometri okuma) canlıda aktif çalışıyordu. Belgede kaydedilmiş ama Claude'un konuşmaya girişinde farkında olmadığı bir şey ortaya çıktı.
 
-Cihat bu noktada "sıkıldım artık neden olmuyor" dedi. Kritik moment. Log'a daha dikkatli bakılınca gerçek durum netleşti: kurulum başarılı, sadece benim script aşırı katı.
+**Üçüncü iş** aslında iş değildi: 27, "migrations/README.md markdown render'ı bozuk" raporu düşmüştü. Gidip baktık — dosya düzgündü. Fantom bir borç. Bu bize önemli bir ders verdi: devralınan borcu doğrulamadan planlama yapmak riskli.
 
-**Deneme 3 — Başarılı:**
-```yaml
-sudo apt-get install -y postgresql-client-17
-echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
-```
-Pin kaldırıldı, PATH'e explicit ekleme, basit doğrulama. Çalıştı.
+**Dördüncü iş** oturumun asıl teknik dibiydi: 27'nin eklediği `migrations-check.yml` workflow'u ayrı bir silo olarak duruyordu. Onu ana `kontrol.js` sistemine entegre edecektik. Mimari karar kritikti — migrations kontrolü doğası gereği klasör-bazlı (duplicate numara için tüm dosyaları bir arada görmek gerek), mevcut sistem dosya-bazlı. İki yaklaşım tarttık:
 
-### Sonuç
-- **Supabase Full Backup #4** ✅ — 1m 18s
-- Her gece 03:00 TR otomatik
-- 30 gün rolling retention
-- Manuel tetikleme (`workflow_dispatch`)
+- **A1 (üst-seviye klasör):** Ayrı fonksiyon, iterate sonrasında inject
+- **A2 (dosya-bazlı):** Her dosyada iterate + duplicate cache
+
+A1'i seçtik — temiz, risk düşük. Kodu yazdıktan sonra sandbox'ta 4 bozuk dosyalık test ortamı kurup self-test'i koşturduk. 4/4 başarılı. Regression testi için gerçek `migrations/` altına bozuk bir SQL attık — yakalandı, deploy engellendi. Gönderime hazır.
+
+Cihat dosyaları GitHub'a yükledi. Bir an panik yaşadı — "sıralı yap" talimatını okumadan hepsini birden yüklemişti. Aslında bu daha iyiydi: tek commit'te atomik geçiş, CI hiç kırılmadı. İşte ders: atomik commit aşamalı commit'ten her zaman güvenli.
+
+Sonra eski `migrations-check.yml` silindi. Artık tek motor var — `kontrol.yml` + `kontrol.js`. 15 aktif kural, 4/4 self-test.
+
+**Bonus bölüm:** Oturumun sonunda Cihat "başka altyapı işim var mı yapmam gereken" diye sordu — sonrası yazılımcıya devir senaryosu, belgelerin dinamik mi statik mi olacağı, hibrit yapı kararı. Plan netleşti: 29-34. oturumlar boyunca **altyapı kapanış günleri**, 35'ten itibaren ürün dönemine geçiş. Bu karar oturumun en büyük çıktısı olabilir.
 
 ---
 
-## Saat 2: Storage Yedeklemesi
+## Kronolojik Akış
 
-### Durum tespiti
-Cihat "ransomware hikayesi" anlatmıştı — sadece DB değil, kullanıcı yüklenmiş dosyalar da kritik.
-
-- **1 bucket:** `arespipe-dosyalar` (**PUBLIC**, 50 MB file limit)
-- **Toplam:** 23 MB (test verisi seviyesi)
-- **İçerik:** tenant UUID klasörleri, spooller altında operasyon fotoğrafları (tamamla_*.png)
-- **Alt klasörler:** feedback, fotograflar, notlar, spooller
-
-### API key sistemi değişmiş
-Supabase 2025-2026 arasında key sistemini yenilemiş:
-- Eski: `anon` (public) + `service_role` (secret)
-- Yeni: `publishable` (public) + `secret` (secret, `sb_secret_*` formatı)
-
-Yeni `sb_secret_*` key'i `SUPABASE_SERVICE_KEY` olarak Secrets'a eklendi.
-
-**⚠️ Açık soru:** AresPipe Vercel'de hangisini kullanıyor? Legacy (`SUPABASE_SERVICE_ROLE_KEY`) mi yeni (`sb_secret_*`) mi? 28. oturumda kontrol edilecek.
-
-### Workflow tasarımı
-Çift katmanlı yaklaşım:
-1. **S3 API** (birincil) — Supabase S3-uyumlu endpoint, rclone ile bulk download
-2. **Python fallback** — urllib ile HTTP API, recursive list + download
-
-Fallback ile güvence: Supabase API değişikliklerine karşı dayanıklılık.
-
-### İlk tam yedek (Supabase Full Backup #5)
-- Süre: **2m 56s**
-- Çıktı: `backups/2026-04-24_XX-XX-XX/database.sql.gz` + `storage.tar.gz`
-- **İlk denemede başarılı** — karmaşık workflow için beklenmeyen başarı
+| Zaman | İş | Not |
+|---|---|---|
+| 0:00 | Oturum başlangıç ritüeli | Windows'tan Mac'e geçiş, git pull |
+| 0:15 | Self-test lokal patladı | `ReferenceError: require is not defined` |
+| 0:20 | `.github/package.json` fix | CommonJS override, 2 dk |
+| 0:25 | Self-test 3/3 başarılı | Sistem sağlıklı, teknik iş başlayabilir |
+| 0:30 | PAT token silindi | İş 1 ✅ |
+| 0:35 | Vercel env teşhisi | 3 variable, 2'si "Needs Attention" |
+| 0:45 | SUPABASE_SERVICE_KEY Sensitive | Copy → Delete → Add |
+| 1:00 | Deploy ve teyit | Yeşil, 7s |
+| 1:05 | ANTHROPIC_API_KEY sensitive | Aynı 3 adım |
+| 1:20 | Deploy log → izometri-oku.js keşfi | Anthropic key kullanım yeri |
+| 1:30 | Migrations README teyit | Fantom borç, dosya zaten düzgün |
+| 1:40 | Migrations entegrasyonu planı | A1 onaylandı |
+| 1:45 | 4 dosya okundu (kurallar, kontrol, beklenen, workflow) | Sistem taslağı netleşti |
+| 2:00 | kontrol.js + kurallar.json + 4 SQL + beklenen-hatalar yazıldı | Sandbox'ta test edildi, 4/4 |
+| 2:15 | Cihat GitHub'a yükledi | Tek commit, atomik |
+| 2:20 | CI yeşil, migrations-check.yml silindi | İş 4 ✅ |
+| 2:30 | "Altyapı işim var mı?" sohbeti | 35. oturuma kadar plan oturdu |
+| 3:00 | Kapanış dosyaları yazıldı | Bu dosya dahil |
 
 ---
 
-## Saat 3: Migrations Altyapısı
+## Teknik Detaylar
 
-### Durum tespiti
-Cihat'a "SQL değişikliklerini bir yerde saklıyor musun?" sorusu: **Hayır, SQL editor'de yazıp run.**
+### 1. `.github/package.json` (yeni, CommonJS override)
 
-Yani DB'nin geçmişi yok. Felaket anında yedekten dönüş çalışır, ama yeni staging ortamı kurmak veya değişiklik geçmişi takip etmek imkansız.
-
-### Önerilen strateji
-3 yaklaşım tartışıldı:
-- **Sıfırdan yaz** — son 1 ay taranır, hatırlananlar yazılır (eksik kalır)
-- **Schema dump** — mevcut DB'den otomatik çıkarım (baseline)
-- **Karışım** — baseline + sonraki her değişiklik disiplinli migration
-
-Seçilen: **Tam kurulum, baseline schema dump ile.**
-
-### Schema Extraction
-- Yeni tek seferlik workflow: `arespipe-backups/.github/workflows/extract-schema.yml`
-- `pg_dump --schema-only` + artifact upload
-- Başarılı çıktı:
-  - **6029 satır, 23.6 KB**
-  - **51 tablo, 85 index, 17 trigger, 18 fonksiyon, 90 RLS policy**
-  - public + storage schemas
-  - auth/realtime/supabase_* şemaları dahil değil (Supabase auto-create)
-
-### Migrations Klasör Yapısı
-`arespipe/` ana repo'da:
-```
-migrations/
-├── README.md                ← Disiplin + adlandırma + kurulum sırası
-└── 000_initial_schema.sql   ← Sıfır noktası (header + pg_dump)
+```json
+{"type":"commonjs"}
 ```
 
-README **Create file** ile yapıştırıldı — markdown format bozuldu (GitHub paste'i newline'ları siliyor). Dosya içeriği doğru, sadece render bozuk. 28. oturumda **Upload files** ile yeniden yüklenecek.
+**Niye gerek:** Cihat'ın HOME'daki `/Users/cihatoztas/package.json` dosyasında `"type":"module"` var, Node `.github/kontrol.js`'i ESM sanıyor. Bu yeni dosya lokal scope override yapıyor — `.github/` altındaki tüm `.js` dosyaları CommonJS. HOME'daki dosyaya dokunulmadı (başka işler için orada olabilir).
+
+### 2. Vercel Env Variables (Sensitive Geçiş)
+
+| Variable | Format | Eski | Yeni |
+|---|---|---|---|
+| `SUPABASE_URL` | URL | plaintext | plaintext (URL zaten public) |
+| `SUPABASE_SERVICE_KEY` | `sb_secret_*` | plaintext ⚠️ | **Sensitive** 🔒 |
+| `ANTHROPIC_API_KEY` | `sk-ant-*` | plaintext ⚠️ | **Sensitive** 🔒 |
+
+**Downtime:** Her variable için ~1-3 dk (delete + add arası). Müşteri yok, etkisiz.
+
+**Dev ortam:** Sensitive variable'lar Development ortamında kilitli. `vercel dev` CLI kullanılmadığı için sorun değil. Production + Preview aktif.
+
+### 3. `kurallar.json` — Yeni `migrations` Bölümü
+
+```json
+"migrations": {
+  "aktif": true,
+  "klasor": "migrations",
+  "kurallar": [
+    { "kod": "MIG_ISIM_BOZUK", "siddet": "hata", "desen_regex": "^[0-9]{3}_[a-z0-9_]+\\.sql$", ... },
+    { "kod": "MIG_NUMARA_TEKRAR", "siddet": "hata", ... },
+    { "kod": "MIG_HEADER_EKSIK", "siddet": "uyari", ... }
+  ]
+}
+```
+
+Toplam kural sayısı: 14 → 15.
+
+### 4. `kontrol.js` — Yeni Fonksiyon
+
+- `migrationsKontrol(kokDizin)` — klasör-bazlı, 3 kuralı topluca tarar
+- Dönen yapı: `[{ dosya, kod, tip, satir, mesaj }]`
+- `normalTarama()`: iterate sonrasında çağrılır, `dosyaRaporlari`'na inject edilir
+- `selfTest()`: `/` ile biten anahtar klasör-bazlı test olarak yorumlanır, `KURAL.migrations.klasor` geçici override
+- Backward compat: Tüm önceki davranışlar korundu, eski 3 self-test dosyası hâlâ çalışır
+
+### 5. Test Dosyaları (`bozuk-ornekler/migrations-bozuk/`)
+
+| Dosya | Ne tetikler |
+|---|---|
+| `abc_yanlis_isim.sql` | MIG_ISIM_BOZUK (rakam yok) |
+| `001_ilk_dosya.sql` | Numara 001 kaydeder (tek başına OK) |
+| `001_ikinci_dosya.sql` | MIG_NUMARA_TEKRAR (001 çift) |
+| `002_headersiz.sql` | MIG_HEADER_EKSIK (header yok) |
+
+Yakalanan kodlar: MIG_ISIM_BOZUK + MIG_NUMARA_TEKRAR + MIG_HEADER_EKSIK = 3'ü de ✅
+
+### 6. Silinen: `.github/workflows/migrations-check.yml`
+
+27'de eklenen ayrı workflow. Artık `kontrol.yml` içinde `kontrol.js` aynı işi yapıyor. Paralel sistem bakım borcu demekti — kaldırıldı.
 
 ---
 
-## Saat 4: CI Kontrolü
+## 28. Oturumda Öğrenilen 6 Ders
 
-### Scope revize edildi
-Başlangıçta "CI kuralı + migration runner" planlandı. Ama incelenince:
-- **Migration runner:** Şu an staging yok, production'a risk. 28. oturuma ertelendi.
-- **kontrol.js entegrasyonu:** İçerik incelenmeden dokunmak riskli, proje tarzına tam entegrasyon 45 dk ek iş. 28. oturuma ertelendi.
+### 1. Devralınan borcu doğrulamadan planlama yapma
+27'nin son-durum.md'si "README markdown bozuk" diyordu. Gidip bakmadan "bugün düzeltelim" diye listeye aldım. Gerçekten bakınca dosya düzgündü. Fantom bir borç. **Kuralı güncel:** Bir borcu planladan önce "hâlâ gerçekten borç mu?" teyidi yapılmalı.
 
-### Basit CI workflow
-`arespipe/.github/workflows/migrations-check.yml`:
-- Tetikleme: `migrations/**` path değişikliği
-- 4 kontrol:
-  1. `migrations/` klasörü var mı (zorunlu)
-  2. Dosya adı regex `^[0-9]{3}_[a-z0-9_]+\.sql$` (fail)
-  3. Sıra numarası çakışması (fail)
-  4. Header yorumu ilk 10 satırda `--` (uyarı, build kırmaz)
-- Özet çıktı: toplam dosya + son dosya
+### 2. Vercel "Needs Attention" = plaintext secret uyarısı
+Plaintext env variable'lar Vercel dashboard'da görünür — ekibin her üyesi, "View History" yapan herkes okur. Sensitive flag ile variable dashboard'da bile gizli, sadece build/runtime'da kullanılır. Secret key'ler için Sensitive ŞART. Geçiş yolu: Copy → Delete → Add with toggle.
 
-Yumuşak başlangıç — header kontrolü fail yerine warning. İleride güçlendirilir.
+### 3. Deploy logları değerli
+"Bu env variable nerede kullanılıyor?" sorusunun cevabı kod tabanında aramakla kolay bulunmuyor. Vercel build log'u her deploy'da `api/*.js` dosyalarını compile ederken isimlerini yazıyor — hangi endpoint'in var olduğunu, hangi kütüphaneyi kullandığını görüyorsun. `ANTHROPIC_API_KEY`'in `api/izometri-oku.js`'de kullanıldığını bu şekilde bulduk.
 
----
+### 4. A1 yaklaşımı — mimariyi veriye uydur
+Migrations kontrolü doğası gereği klasör-bazlı (duplicate numara tüm dosyaları ister). Mevcut sistem dosya-bazlı iterate yapıyor. İki seçenek vardı: A1 (ayrı üst-seviye fonksiyon) veya A2 (dosya-bazlı iterate içine cache + flag). A2 zorlamaydı, kodu karmaşıklaştırırdı. A1 temiz — ayrı fonksiyon, iterate sonrasında inject. **Ders:** Mimari veriye uyum sağlar, veriyi mimariye zorlama.
 
-## Değişen/Yeni Dosyalar
+### 5. Atomik commit aşamalıdan güvenli
+"Önce test dosyalarını yükle, sonra kuralları" şeklinde aşamalı plan vermiştim. Cihat okumadan hepsini tek seferde yükledi. Sonuç: CI hiç kırılmadı, tek commit'te tüm parçalar bir arada gitti. **Ders:** İlişkili değişiklikleri atomik olarak tek commit'te yollamak her zaman daha güvenli. "Şunu yükle, diğerini sonra" demek geçici bozulma riski yaratır.
 
-### arespipe-backups repo (yeni, private)
-- `.github/workflows/db-backup.yml` — DB + Storage yedek, günlük cron
-- `.github/workflows/extract-schema.yml` — tek seferlik schema dump (oturum sonrası silinebilir)
-- GitHub Secrets: `SUPABASE_DB_URL`, `SUPABASE_SERVICE_KEY`
-- `backups/2026-04-24_*/` — ilk yedekler
-
-### arespipe repo (ana)
-- `migrations/README.md` (⚠️ render bozuk, 28'de fix)
-- `migrations/000_initial_schema.sql` (baseline)
-- `.github/workflows/migrations-check.yml` (CI kontrol)
-
-### Beklemede
-- PAT token `arespipe-backups-writer` — oluşturuldu, kullanılmadı, 28'de iptal
+### 6. Karmaşık refactor öncesi sandbox testi
+Bu sefer yanılmadık çünkü `/home/claude/28oturum/test-env/` altında minimal bir repo kurdum, self-test'i orada koşturdum, 4/4 gördükten sonra paylaştım. CI'a gidince ilk push'ta yeşil. Bu disiplin özellikle migration tarzı yapısal kod değişikliklerinde kritik. **Ders:** "Bu çalışmalı" değil, "çalıştığını gördüm" ile gönder.
 
 ---
 
-## Önemli Kararlar
+## Önemli Kararlar (Oturum İçinde Alındı)
 
-1. **Storage & DB tek workflow'da** — Ayrı workflow yerine tek workflow, tek TIMESTAMP klasörü, tutarlı yedek.
-2. **Session Pooler seçimi** — Direct Connection IPv6 only, GitHub Actions IPv4. Pooler ücretsiz IPv4 proxy.
-3. **Shared Pooler kabul edildi** — Supabase paylaşımlı sistem, performans ihmal edilebilir (yedek gece çalışır, kimse canlı değil)
-4. **Yedeklerde retention 30 gün** — Müşteri büyüdüğünde 14'e düşürülür
-5. **Migration runner ertelendi** — Staging olmadan anlamsız, risk yüksek
-6. **kontrol.js entegrasyonu ertelendi** — Basit workflow yeter, detaylı entegrasyon taze kafayla
+### Karar 1 — Altyapı Kapanış Planı (35. oturuma kadar)
+Cihat "altyapı işi kalmasın ki programa devam ederken geri dönmeyelim" dedi. 29-34 altyapı, 35+ ürün.
 
----
+| # | Oturum | İş |
+|---|---|---|
+| 29 | Devredilebilirlik Günü | Hibrit dokümanlar + auto-update |
+| 30 | Güvenlik | Bucket PRIVATE |
+| 31 | Observability | Sentry |
+| 32 | İletişim | Email (Resend/SendGrid) |
+| 33 | Staging | 2. Supabase + migration runner |
+| 34 | Güvenlik 2 | Tenant izolasyon testi + feature flag |
 
-## Çıkarılan Dersler
+### Karar 2 — Dokümanlar Hibrit (A2)
+- Manuel bölümler: anlatım, tasarım kararları, "niye böyle"
+- Otomatik bölümler (`AUTO-START`/`AUTO-END` arası): sayaçlar, listeler, istatistikler
+- `.github/docs-uret.js` her push'ta AUTO kısımları günceller
+- Hibrit yapı 29'da kurulacak
 
-### D-27.1: Plan değişikliği erken kabul edilmeli
-PAT token oluşturulup kullanılmayınca Cihat "bu ne için" diye sordu. Plan değişikliğini anında duyurmak daha iyi olurdu.
-
-### D-27.2: Failure anında log'u oku, iyi haberi bul
-Cihat "sıkıldım" dediği anda gerçek durum: kurulum başarılı, sadece script fail verdi. Paniğe katılmak yerine "iyi haber var" demek oturumu kurtardı.
-
-### D-27.3: Uzun markdown için Upload files kullan
-GitHub Create file + paste markdown'u bozuyor. Dosyayı direkt yüklemek (Upload files) formatı korur.
-
-### D-27.4: Supabase ürün güncellemeleri takip edilmeli
-API key sistem değişikliği (`publishable/secret`), IPv6-only direct connection — dashboard değişiklikleri projeyi etkileyebilir. Her oturumun ritüeline "Supabase dashboard'ta değişiklik var mı" eklenebilir mi?
-
-### D-27.5: Yeni kritik kuralı (D-27.5): Her DB değişikliği artık migrations dosyası demek
-Supabase SQL editor'de yazıp run yapmak yeterli değil. Değişiklik + migration dosyası = çift kayıt. İkisi olmadan "yapılmış" sayılmaz.
-
-### D-27.6: Over-engineering ile future-proof arası denge
-Cihat "Supabase büyürse ne olur" diye sordu. Cevap: şu an 23 MB, Pro plan $25/ay 100 GB, GitHub repo 5 GB pratik. Aşamalı strateji. **Bugün için en basit, değişim kolay olsun diye.**
-
-### D-27.7: Kullanıcı yorgunluğunu takip et
-4. saatin sonunda Cihat "teknik olarak sıkıntı yoksa devam, yorulursam kendim mola veririm" dedi. Bu tür açık iletişim değerli. Ama Claude da proaktif olmalı — scope küçültme önerisi (Aşama 4'te migration runner'ı ertelemek) bu prensibe uyuyordu.
+### Karar 3 — `migrations-check.yml` Silindi
+Paralel sistem bakım borcu demekti. Artık tek motor: `kontrol.yml` + `kontrol.js`.
 
 ---
 
-## Bu Oturumda Sürülmeyen Kanallar
+## Sayısal Özet
 
-- **24.5 notunun diğer maddeleri** (Sentry, Uptime, Environment ayrımı, Görev sayfa görünümü, Audit Log pano, Vercel Analytics, help.html) — 28+ oturumlar
-- **Migration runner workflow** — Staging Supabase projesi ile birlikte 28+
-- **kontrol.js entegrasyonu** — 28
-- **Legacy Supabase key temizliği** — 28
-- **Bucket PRIVATE geçişi** — Müşteri öncesi
-- **Tablo Render Standardı (G-06)** — 26'dan devir, müşteriden bağımsız öncelik
+- **Yapılan iş:** 4/4 (+1 bonus plan)
+- **Yeni kural:** 3 (toplam 14 → 15)
+- **Yeni test dosyası:** 4 (migrations-bozuk/)
+- **Self-test durumu:** 3/3 → 4/4
+- **Silinen dosya:** 1 (`migrations-check.yml`)
+- **Güvenlik iyileştirmesi:** 2 env variable Sensitive'e geçti
+- **Keşif:** `api/izometri-oku.js` Spool AI 1. katman — canlıda
+- **Fantom borç kapatıldı:** 1 (Migrations README)
+- **CI build süresi:** 10s (önceki gibi, etkilenmedi)
 
 ---
 
-## Kapanış Notu
-
-27. oturum, AresPipe'ın **felaket senaryolarına karşı savunması olan ilk oturumu** oldu. Bu oturumdan önce:
-- DB ransomware/hesap çökmesi ile silinirse → projeyi sıfırdan kurmak zorunda
-- Storage silinirse → yüklenen tüm izometri fotoğrafları kaybedilir
-- Schema değişikliği geri alınamazsa → dokümantasyon yok
-
-Bu oturumdan sonra:
-- Her gece otomatik DB + Storage yedek (30 gün)
-- Schema sıfır noktası kayıtlı (6029 satır)
-- Migration disiplini CI ile korunuyor
-- Yeni ortam kurulumu (staging) teorik olarak mümkün
-
-Cihat'ın sabrı ve net iletişimi bu oturumun sonucuna doğrudan katkı sağladı. "Sıkıldım" anında vazgeçmemesi, "yorulursam kendim mola veririm" güveni oluşturması kritik.
-
-Sonraki oturumda kısa bir doğrulama (yedekler alınmış mı, CI yeşil mi) ve 28. oturumun gündem seçimi gerekiyor. Detay: `CLAUDE-SONRAKI-OTURUM.md`.
+**Sonraki oturum:** 29 — Devredilebilirlik Günü. Detay: `CLAUDE-SONRAKI-OTURUM.md`

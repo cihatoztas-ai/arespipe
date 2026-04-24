@@ -1,171 +1,204 @@
-# CLAUDE — Sonraki Oturum Gündemi (28. oturum)
+# CLAUDE — 29. Oturum Gündemi
 
-> **Tarih:** Belirsiz (27. oturumdan sonra, 24 Nisan 2026 bu oturum)
-> **Tema:** Temiz kafa gereken işler — entegrasyon + detay + karar
+**Tema:** Devredilebilirlik Günü — Hibrit Dokümanlar  
+**Tahmini süre:** 3-4 saat  
+**Öncelik:** 🔴 Yüksek (altyapı kapanış planının ilk adımı)  
+**Durum:** 28. oturum sonunda onaylandı, alternatif sunulmayacak
 
 ---
 
-## ⚠️ Oturum Başı ZORUNLU
+## 🎯 Bu Oturumun Amacı
 
-### 1. Oturum Ritüeli
+AresPipe'ı **yazılımcıya devredilebilir** hale getirmek. Şu an sistem çalışıyor ama "nereden başla, ne nerede, niye böyle" sorusunun cevabı 8 farklı dosyaya dağılmış. Yeni gelen biri kod tabanına girmeden 2-3 saat belge okumakta kaybolur.
+
+Ayrıca **2 ay sonra Cihat bile unutur** — kendi yazdığı sistemi yeniden öğrenmek zorunda kalır. Bu belgeler asıl ona hizmet edecek.
+
+---
+
+## 📐 Karar Verilen Yapı — Hibrit (A2)
+
+Her doküman **iki katmanlı** olacak:
+
 ```
-cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+Manuel bölüm (Claude veya Cihat günceller)
+├─ "Nereden başla", "Niye böyle tasarlandı", "Neye dikkat et"
+├─ 2 oturumda bir gözden geçirilir
+└─ Anlatım, hikâye, nedensellik
+
+Otomatik bölüm (AUTO-START ... AUTO-END yorumları arası)
+├─ Sayaçlar: "Şu an 51 tablo, 40 sayfa, 15 kural"
+├─ Listeler: Tablo listesi, endpoint listesi
+├─ Her push'ta .github/docs-uret.js günceller
+└─ Kuru veri, her zaman güncel, hiç eskimeyecek
 ```
-+ GitHub Actions yeşil mi
-+ `arespipe-backups/backups/` klasöründe yeni yedekler var mı (**bu önemli** — 27'de kurulum yapıldı, ertesi gece otomatik yedek alınmış olmalı)
-
-### 2. `docs/CIHAT-PROFIL.md` oku
-
-### 3. 🚨 Self-Test KOŞTUR
-- Son self-test: 23. oturum
-- Şimdi 28. oturum → **5 oturum geçti**, kural disiplini zorunlu
-- Komut: `node .github/kontrol.js --self-test`
-- Beklenen: 3/3 başarılı (veya mevcut kural sayısına göre hepsi yeşil)
-- **Başarısızsa önce onu düzelt, sonra diğer işler**
 
 ---
 
-## Seçim: 28. Oturum Odağı (A-F arası)
+## 📋 Oluşturulacak 6 Belge + 2 Motor Dosya
 
-### A. 27'den Devredilen Temizlik İşleri (1.5 saat)
-Acil ve küçük — önce bunları bitirmek iyi bir başlangıç.
-
-1. **Migrations README markdown fix** (15 dk)
-   - `migrations/README.md` GitHub render'ında bozuk
-   - Çözüm: Mevcut dosyayı sil, **Upload files** ile yeniden yükle (paste yapmadan)
-   - Kaynak dosya Claude artifact'ında hâlâ var
-
-2. **PAT token iptali** (2 dk)
-   - `https://github.com/settings/personal-access-tokens`
-   - `arespipe-backups-writer` → Delete
-   - 27'de oluşturuldu, kullanılmadı
-
-3. **Vercel env kontrolü** (15 dk)
-   - Aç: `https://vercel.com/dashboard` → arespipe → Settings → Environment Variables
-   - İsim listesi al (değerler değil, sadece isimler)
-   - Supabase key'lerinin formatını belirle:
-     - Eski: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (JWT, `eyJ...` formatı)
-     - Yeni: `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (`sb_*` formatı)
-   - Karar:
-     - Legacy kullanıyorsa → yeni formata geçiş planla (ayrı oturum)
-     - Yeni kullanıyorsa → işlem yok
-
-4. **kontrol.js entegrasyonu** (45 dk)
-   - `migrations-check.yml` ayrı workflow olarak duruyor
-   - Proje tarzı: `kurallar.json` + `kontrol.js` + `bozuk-ornekler/` + self-test
-   - Yapılacaklar:
-     - `kontrol.js`'i oku, mevcut kural pattern'ini anla
-     - `M-01: Migration Adlandırma` kuralı ekle (regex NNN_*.sql)
-     - `M-02: Migration Sıra Çakışması` kuralı ekle (duplicate numara)
-     - `bozuk-ornekler/` altına ihlal eden test dosyaları
-     - `beklenen-hatalar.json` güncelle
-     - Self-test koştur, hepsi yeşil bekleniyor
-
-5. **Vercel Analytics eklemek** (15 dk, kolay)
-   - 24.5 notunun küçük ama değerli maddesi
-   - `arespipe` repo → Vercel dashboard → Analytics → Enable
-
-### B. Tablo Render Standardı (G-06) — 26'dan Devredilen Ana İş (3-4 saat)
-Cihat'ın orijinal 27. oturum hedefi, yedekleme öne geçti. Şimdi olgun bir denetim yapılabilir.
-
-**Kapsam:**
-- 7 sayfa × kolonlar haritası çıkar
-- Spool no: mono font, bold, `--ac` mavi (4 sayfada farklı)
-- Tarih: tek format standardı
-- Tersane adı, proje no, durum pill — standardize
-- İş planı: denetim raporu → `ares-render.js` helper → sayfa dönüşümü
-- G-06 kural taslağı
-
-### C. Sentry Entegrasyonu (2 saat)
-Müşteri öncesi zorunlu. Runtime hata toplama.
-- Sentry hesap aç (free tier, 5000 hata/ay)
-- `<script>` tag HTML'lere
-- Pano'ya yeni kart: "Son 7 Gün Hataları: N"
-- 24.5 notundan
-
-### D. Operasyon Sayfaları %100 (2-3 saat)
-Kesim / Büküm / Markalama eksikleri bitirme. Orta öncelik, teknik borç.
-
-### E. Migration Runner Workflow + Staging (2-3 saat)
-Staging Supabase projesi aç + migration runner workflow. Gerçek kullanım: staging'e migration'ları sırayla uygula. Uzun vadeli değer ama şu an staging ihtiyacı düşük.
-
-### F. Bucket PRIVATE Geçişi (1-1.5 saat)
-`arespipe-dosyalar` bucket şu an PUBLIC. İçinde müşteri verisi olduğunda özel olmalı. Müşteri öncesi yapılacak ama teknik olarak şimdi de yapılabilir (izometri URL'lerini signed URL'e geçirmek kod değişikliği gerektirir).
+| # | Dosya | Manuel % | Otomatik % | Açıklama |
+|---|---|---|---|---|
+| 1 | `README.md` (repo kök) | 100 | 0 | Kapak sayfası, kısa tanıtım, linkler |
+| 2 | `docs/ONBOARDING.md` | 90 | 10 | "İlk gün" rehberi, sistem özeti |
+| 3 | `docs/ARCHITECTURE.md` | 80 | 20 | Mimari, tasarım kararları, katman şeması |
+| 4 | `docs/DATABASE.md` | 30 | 70 | Tablo listesi (auto), multi-tenant/RLS (manuel) |
+| 5 | `docs/API.md` | 20 | 80 | Endpoint listesi (auto), usage notes (manuel) |
+| 6 | `docs/LOCAL-DEV.md` | 100 | 0 | Repo klon, .env, deploy, debug |
+| — | `.github/docs-uret.js` | — | — | Auto bölümleri üreten script |
+| — | `.github/workflows/docs-uret.yml` | — | — | Script'i her push'ta koşturan workflow |
 
 ---
 
-## Önerim
+## 🗂️ Oturum Akışı (Tahmini)
 
-**Opsiyon A** ile başla — küçük, acil, tamamlanması zevkli. 1.5 saat, oturum ısınır, sonra Cihat karar verebilir ikinci iş için.
+### Faz 1 — Hazırlık ve Envanter (~30 dk)
+- [ ] Git pull + ritüel + profil oku
+- [ ] Mevcut belge envanteri: `ls docs/` + kök dizin + `.github/`
+- [ ] Cihat'tan 4 soruya cevap al (aşağıda listelendi)
+- [ ] Sabit bir iskelet plan: hangi dosyada ne yazılacak
 
-Özellikle **kontrol.js entegrasyonu** teknik borcu azaltır — `migrations-check.yml` ayrı durmaz, ana sistem içine girer. Proje disiplinine tam uyum.
+### Faz 2 — Auto-uret Script Yaz (~45 dk)
+- [ ] `.github/docs-uret.js` — Node script
+- [ ] Fonksiyonlar:
+  - `sayfaSayisi()` — `*.html` dosya sayısı (mobile/ hariç)
+  - `mobileSayfaSayisi()` — `mobile/*.html` sayısı
+  - `tabloListesi()` — `migrations/000_initial_schema.sql`'dan `CREATE TABLE public.*` çıkar
+  - `apiEndpointListesi()` — `api/*.js` dosyalarını tara, dosya adından endpoint çıkar, JSDoc varsa oku
+  - `kuralListesi()` — `.github/kurallar.json`'dan kural sayısı ve kategorileri
+  - `migrationSayisi()` — `migrations/*.sql` dosya sayısı
+- [ ] Her markdown dosyasında `<!-- AUTO-START:bolumadi -->` ... `<!-- AUTO-END:bolumadi -->` arasını yeniden yaz
+- [ ] Sandbox testi: Yerel Node'da koştur, görmeden göndermem
 
-Opsiyon A biterse kalan zamanda:
-- **Cihat seçer** — B (render), C (Sentry), D (operasyon), E (staging), F (bucket private)
-- Hepsi değerli, biri diğerinden üstün değil
+### Faz 3 — Workflow Yaz (~15 dk)
+- [ ] `.github/workflows/docs-uret.yml`
+- [ ] Tetikleme: `push` + belgenin kendisini değiştirmemek için `paths` filtresi
+- [ ] Script'i koştur, değişiklik varsa auto-commit + push
+- [ ] Commit mesajı: `docs: auto-update [skip ci]` (sonsuz döngüyü önle)
 
----
+### Faz 4 — 6 Belgeyi Yaz (~90 dk)
+- [ ] `README.md` — 10-15 satır, hızlı tanıtım + doc link'leri
+- [ ] `docs/LOCAL-DEV.md` — adım adım kurulum (en kolay, manuel)
+- [ ] `docs/DATABASE.md` — çerçeve + AUTO tablo listesi
+- [ ] `docs/API.md` — çerçeve + AUTO endpoint listesi
+- [ ] `docs/ARCHITECTURE.md` — en uzun, mimari kararları dahil
+- [ ] `docs/ONBOARDING.md` — diğer 5 belgeyi bağlayan omurga
 
-## 24.5 Notunun Durumu
+### Faz 5 — Teyit (~30 dk)
+- [ ] Cihat dosyaları GitHub'a yükler
+- [ ] CI çalışır, docs-uret auto-commit atar, CI tekrar çalışır (skip ci ile ikinci kırılma olmaz)
+- [ ] Yaşam kontrolü: Bir mock değişiklik yap (örn. yeni test dosyası), auto-update tetikleniyor mu
+- [ ] Belgeler GitHub'da render ediliyor mu (görsel kontrol)
 
-27. oturum kapanışında:
-
-✅ **Tamamlanan:**
-- Yedekleme Katman 1 (DB + Storage, her gece)
-- Migrations klasörü (baseline + CI)
-
-⏳ **Kalan (28+ oturumlar):**
-- Sentry (runtime hata) — Opsiyon C
-- Uptime monitör (Better Stack) — 30 dk'lık kolay iş
-- Environment ayrımı (dev/prod) — Opsiyon E ile birlikte
-- Görev sistemi sayfa görünümü (panel_gorevler.ilgili_sayfalar)
-- Audit Log pano sekmesi
-- Vercel Analytics — Opsiyon A'ya dahil
-- help.html son kullanıcı dokümantasyonu
-
----
-
-## Bekleyen Büyük Konular (27. oturum öncesinden)
-
-- **Tablo Render Standardı (G-06)** — Opsiyon B
-- **Operasyon sayfaları %100** — Opsiyon D
-- **Profil in-app edit** (Pano'dan CIHAT-PROFIL.md) — 24'ten borç
-- **G-05 CI lint kuralı** — `.mb-*` hardcode yasağı
-- **Rol etiketi küçük harf bug'ı** — hangi ekranda netleşince
-
----
-
-## Yedek Sistem Doğrulama (Oturum başında 5 dk)
-
-Bu oturum yedek kurulduğundan 1+ gün sonra olacak. Kontroller:
-
-1. **Yedek klasörü büyüdü mü?**
-   ```
-   https://github.com/cihatoztas-ai/arespipe-backups/tree/main/backups
-   ```
-   - Olması gereken: En az 1 yeni TIMESTAMP klasörü (27'de manuel aldığımız + ertesi gün otomatik)
-
-2. **Dosya boyutları anlamlı mı?**
-   - `database.sql.gz` — birkaç yüz KB
-   - `storage.tar.gz` — ~23 MB civarı (artıyor olabilir)
-
-3. **Cron saatinde çalıştı mı?**
-   - Actions → Supabase Full Backup → #6 veya sonrası
-   - Başlama zamanı: UTC 00:00 civarı (03:00 TR)
-
-**Sorun varsa** 28. oturumun ilk önceliği cron debug olur.
+### Faz 6 — Kapanış (~15 dk)
+- [ ] `son-durum.md` güncelle, 30. oturum → Bucket PRIVATE
+- [ ] `CLAUDE-SON-OTURUM.md` raporla
+- [ ] `CLAUDE-SONRAKI-OTURUM.md` (30. için) yaz
 
 ---
 
-## Kritik Hatırlatmalar
+## ❓ Cihat'tan İsteyeceğim 4 Soru (Faz 1)
 
-- ⚠️ **Her DB değişikliği = migrations dosyası** (27'de eklenen disiplin)
-- ⚠️ **Self-test her 5 oturumda bir** (23 → 28 → 33 → ...)
-- ⚠️ **"Hatırlıyorum" deme, dosyaya bak**
-- ⚠️ **Uzun markdown için Upload files kullan** (Create+paste bozar)
-- ⚠️ **Plan değişikliği anında söyle**
+Belgeler yazılmadan cevabı benim bilmediğim 4 şey var. Oturumun başında soracağım:
+
+### Soru 1 — Hedef Kitle
+Bu belgeler kim için yazılacak?
+- (a) Sadece sen, unutma korkusu — kişisel not
+- (b) Yakın gelecekte bir yazılımcı alacaksan o kişi
+- (c) Açık kaynak / herkese — GitHub'da public repo
+
+**Neye etki ediyor:** Üslup. (a) konuşma dili, (b) profesyonel, (c) örneklerle dolu.
+
+### Soru 2 — İngilizce mi Türkçe mi
+Belgeler Türkçe mi İngilizce mi olsun?
+
+**Profil diyor ki:** Cihat Türk, proje Türkçe. Ama SaaS vizyonu varsa İngilizce daha geniş kitleye açılır.
+
+### Soru 3 — Local Geliştirme Gerçekten Çalışıyor mu
+`LOCAL-DEV.md` yazmak için: Sen Mac'inde repo klon + `.env` dosyası + canlı Supabase bağlantısıyla çalıştırabilir misin? Yoksa her şey Vercel üzerinden mi?
+
+**Neye etki ediyor:** Yazılımcı gelse local'de çalıştırabilir mi? Eğer çalıştıramıyorsan bunun da dokümantasyonu lazım — "local çalışmaz, sadece Vercel'e push ile test edersin" bile olsa.
+
+### Soru 4 — API Endpoint JSDoc'u Hangi Formatta
+`api/*.js` dosyalarının başında bir yorum bloğu var mı? Yoksa boş mu başlıyor? Varsa format ne?
+
+**Neye etki ediyor:** Script bu yorumları parse edip `API.md`'ye taşıyacak. Format yoksa her dosyanın ilk satırlarına minimum bir başlık yorumu eklenmeli (Claude hazır verir, Cihat yükler).
 
 ---
 
-_Bu dosya 28. oturumun başında Cihat tarafından okunacak veya referans alınacak._
-_Son güncelleme: 27. oturum kapanışı (24 Nisan 2026)_
+## 📦 Sandbox Testi (Production'dan Önce Zorunlu)
+
+28. oturumun 6. dersi: **"Bu çalışmalı" değil, "çalıştığını gördüm" ile gönder.**
+
+Auto-uret script'ini ve workflow'u göndermeden önce:
+
+1. Lokal sandbox'ta mini bir repo kur (~5 dakika)
+2. Script'i koştur, bir markdown dosyasının AUTO bölümü güncelleniyor mu gör
+3. Edge case'leri test et: AUTO-START/END yoksa ne oluyor, script crash olursa CI nasıl davranıyor
+4. Ancak sonra GitHub'a paylaş
+
+---
+
+## ⚠️ Potansiyel Riskler ve Kaçınma Yolları
+
+### Risk 1 — Sonsuz Döngü
+Docs-uret workflow auto-commit atıyor → CI tekrar tetikleniyor → docs-uret tekrar koşuyor → sonsuz loop.  
+**Çözüm:** Commit mesajında `[skip ci]` tag'i + workflow `paths` filtresiyle kendi değişikliklerini dışla.
+
+### Risk 2 — Script Hatası CI'ı Kırar
+`docs-uret.js` bir hata atarsa tüm CI kırmızı olur.  
+**Çözüm:** Workflow'da `continue-on-error: true` veya script içinde try/catch + sessiz fail + log yazma.
+
+### Risk 3 — Auto Bölümü Manuel Metni Siliyor
+AUTO-START/END sınırları yanlış yazılırsa manuel yazdığın metin silinir.  
+**Çözüm:** Script sadece AUTO işaretleri ARASINDAKİ kısmı değiştirir, başka yere dokunmaz. Unit test: bir örnek dosyada sınırların üstü ve altı sabit kaldı mı kontrol et.
+
+### Risk 4 — 4 Saat Yetmez, Yarım Kalır
+Belge yazımı her zaman tahminden uzun sürer.  
+**Çözüm:** Faz sıralaması öncelikli. Eğer zaman biterse:
+- Öncelik: `README.md` + `ONBOARDING.md` + auto-uret script (bunlar ZORUNLU)
+- Ertelenebilir: `DATABASE.md`, `API.md`, `ARCHITECTURE.md` detayları (iskelet yeter, içi 30'da doldurulur)
+
+---
+
+## 📊 Başarı Kriterleri (29 Sonu)
+
+- [ ] 6 belge oluşturuldu ve GitHub'da render ediliyor
+- [ ] `docs-uret.js` + workflow çalışıyor, AUTO bölümler otomatik güncelleniyor
+- [ ] `README.md` repo ana sayfasında görünüyor, `docs/` link'leri çalışıyor
+- [ ] Yeni bir yazılımcı 1 saatte sistemin %80'ini anlayabilir seviyede detay
+- [ ] CI hâlâ yeşil, sonsuz loop yok
+- [ ] Self-test hâlâ 4/4 (yeni belge eklemek kural sisteminin bozulmasına neden olmasın)
+
+---
+
+## 🔗 30-34 Oturum Bağlantısı (Hatırlatma)
+
+28'de mutabık kalınan altyapı kapanış planı:
+
+| Oturum | Tema |
+|---|---|
+| **29** | **Devredilebilirlik (bu oturum)** |
+| 30 | Bucket PRIVATE geçişi (güvenlik — müşteri öncesi şart) |
+| 31 | Sentry entegrasyonu (observability) |
+| 32 | Email sistemi (iletişim) |
+| 33 | Staging Supabase + migration runner |
+| 34 | Tenant izolasyon testleri + feature flag |
+
+35'ten itibaren: Tablo Render Standardı, operasyon sayfaları, mobil, Spool AI döngüsü.
+
+Her oturum sonunda bu planın hâlâ geçerli olup olmadığı Cihat'a teyit ettirilecek. Altyapı biter bitmez ürüne geçmek Cihat'ın motivasyonu için kritik.
+
+---
+
+## 🎯 Oturum İçi Disiplin (Cihat'ın Profiline Göre)
+
+- Her belge yazımında mockup-first: iskelet → onay → içerik
+- Komutları birer birer, açıklamalı (PAT/Vercel oturumundaki gibi)
+- Sandbox testi olmadan paylaşma (28. oturumun 6. dersi)
+- Görsel karşılaştırma: "bu belge böyle görünecek" diye örnek paragraf göster
+- Plan değişikliğinde dur, sor, onaylat (27. oturumun dersi)
+- 29'da sabit plan var — alternatif opsiyon sunma, direkt işe giriş
+
+---
+
+**28. oturum sonu, 24 Nisan 2026.** 29 için her şey hazır. Cihat yarın bu belgeleri GitHub'a yükleyip, CI yeşil görüp molasına gidecek.
