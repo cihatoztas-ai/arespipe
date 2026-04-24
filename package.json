@@ -1,1 +1,11 @@
 
+{
+  "name": "arespipe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AresPipe — Tersane boru imalat takip sistemi",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
