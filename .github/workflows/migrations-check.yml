@@ -1,1 +1,134 @@
+name: Migrations Check
 
+# Migrations klasöründeki SQL dosyaları formatını ve sıra numaralarını kontrol eder.
+# - Dosya adı NNN_aciklama.sql formatında mı
+# - Sıra numarası çakışması var mı
+# - Header yorumu var mı
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'migrations/**'
+  pull_request:
+    paths:
+      - 'migrations/**'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check migrations folder exists
+        run: |
+          if [ ! -d "migrations" ]; then
+            echo "❌ migrations/ klasörü yok"
+            exit 1
+          fi
+          echo "✅ migrations/ klasörü mevcut"
+
+      - name: Check SQL file naming (NNN_aciklama.sql)
+        run: |
+          echo "Checking migration file names..."
+          INVALID_FILES=""
+
+          for file in migrations/*.sql; do
+            # Dosya yoksa atla (glob eşleşmedi)
+            [ -e "$file" ] || continue
+
+            basename=$(basename "$file")
+
+            # NNN_aciklama.sql regex kontrolü
+            # 3 rakam + underscore + snake_case + .sql
+            if ! echo "$basename" | grep -qE '^[0-9]{3}_[a-z0-9_]+\.sql$'; then
+              INVALID_FILES="${INVALID_FILES}\n  ❌ $basename"
+            fi
+          done
+
+          if [ -n "$INVALID_FILES" ]; then
+            echo "❌ Hatalı isimlendirilmiş dosyalar (NNN_aciklama.sql olmalı):"
+            echo -e "$INVALID_FILES"
+            echo ""
+            echo "Doğru örnekler:"
+            echo "  000_initial_schema.sql"
+            echo "  001_zone_no_dusur.sql"
+            echo "  042_kullanici_rolu_ekle.sql"
+            exit 1
+          fi
+
+          echo "✅ Tüm dosya adları doğru formatta"
+
+      - name: Check for duplicate numbers
+        run: |
+          echo "Checking duplicate sequence numbers..."
+
+          # Tüm migration dosyalarının ilk 3 karakterini (numara) al
+          NUMBERS=$(ls migrations/*.sql 2>/dev/null | xargs -n1 basename | cut -c1-3 | sort)
+
+          if [ -z "$NUMBERS" ]; then
+            echo "⚠️  migrations/ klasöründe SQL dosyası yok"
+            exit 0
+          fi
+
+          # Duplicate numara var mı?
+          DUPLICATES=$(echo "$NUMBERS" | uniq -d)
+
+          if [ -n "$DUPLICATES" ]; then
+            echo "❌ Çakışan sıra numaraları:"
+            for num in $DUPLICATES; do
+              echo "  Numara $num çakışan dosyalar:"
+              ls migrations/${num}_*.sql 2>/dev/null | sed 's/^/    /'
+            done
+            echo ""
+            echo "Her numara tek dosyaya ait olmalı. Son eklenen migration sonraki numarayı almalı."
+            exit 1
+          fi
+
+          echo "✅ Tüm sıra numaraları benzersiz"
+
+      - name: Check header comments exist
+        run: |
+          echo "Checking header comments..."
+          MISSING_HEADER=""
+
+          for file in migrations/*.sql; do
+            [ -e "$file" ] || continue
+            basename=$(basename "$file")
+
+            # İlk 10 satırda "--" yorumu var mı?
+            first10=$(head -10 "$file")
+
+            if ! echo "$first10" | grep -q '^--'; then
+              MISSING_HEADER="${MISSING_HEADER}\n  ⚠️  $basename"
+            fi
+          done
+
+          if [ -n "$MISSING_HEADER" ]; then
+            echo "⚠️  Header yorumu eksik olan dosyalar:"
+            echo -e "$MISSING_HEADER"
+            echo ""
+            echo "Her migration ilk 10 satırda '--' ile başlayan header yorumu içermeli."
+            echo "Örnek: docs/templates/yeni-migration-sablonu.sql"
+            echo ""
+            echo "UYARI: Bu kontrol şimdilik sadece uyarı, build kırmıyor."
+            # exit 0 — warning, not failure (yumuşak başlangıç)
+          else
+            echo "✅ Tüm dosyalarda header yorumu var"
+          fi
+
+      - name: Summary
+        run: |
+          TOTAL=$(ls migrations/*.sql 2>/dev/null | wc -l)
+          echo ""
+          echo "============================================"
+          echo "📊 Migrations özet:"
+          echo "   Toplam dosya: $TOTAL"
+          echo "   Son dosya:    $(ls -1 migrations/*.sql 2>/dev/null | tail -1 | xargs basename)"
+          echo "============================================"
