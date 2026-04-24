@@ -5,129 +5,128 @@
 
 ---
 
-## Son Oturum: 26 (24 Nisan 2026) — Faz A Kapanışı + Altyapı Borçları + G-05 ✅
+## Son Oturum: 27 (24 Nisan 2026) — Yedekleme Sistemi + Migrations Altyapısı ✅
 
 ### CI Durumu
-- **Son build:** YEŞİL ✅ (25. oturumdan devir)
-- **Sonuç:** 0 hata, 0 uyarı (25'te bitirilen temizlik korunuyor)
+- **Son build:** YEŞİL ✅
+- **Yeni workflow'lar:** `migrations-check.yml` (arespipe), `db-backup.yml` + `extract-schema.yml` (arespipe-backups)
+- **Yeni repo:** `arespipe-backups` (private) — DB ve Storage yedeklerini barındırır
 
-### Bu Oturumda Yapılanlar (~4 saat)
+### Bu Oturumda Yapılanlar (~4.5 saat)
 
-**Saat 1 — Faz A Faz 3: Form Autocomplete** ✅
-- `devre_yeni.html` + `spool_detay.html` — `kaliteleriDoldur()` yeniden yazıldı
-- İki kaynak birleşik: MASTER (sistem preset + firma özel) + GEÇMİŞ (sıklık sayacı)
-- `<option label>` ile kaynak ipucu (sistem / firma / geçmiş · ×N)
-- Her iki dosya canlıya alındı, test edildi
-- devre_yeni: 2301 → 2340 satır (+39), spool_detay: 3217 → 3266 satır (+49)
+**Saat 1 — DB Yedekleme Sistemi** ✅
+- Yeni private repo: `cihatoztas-ai/arespipe-backups`
+- GitHub Secrets: `SUPABASE_DB_URL` (Session pooler IPv4 uyumlu)
+- Workflow: `.github/workflows/db-backup.yml`
+- 3 iterasyon gerekti:
+  1. İlk çalışma: PostgreSQL 16 vs 17 version mismatch (server 17.6, apt default 16.13)
+  2. İkinci çalışma: Aşırı savunmacı script false positive verdi (`remove` komutu 16 yok diye fail)
+  3. Üçüncü çalışma: PATH'e `/usr/lib/postgresql/17/bin` eklemek + pin kaldırmak ile başarılı
+- **Sonuç:** Her gece 03:00 TR (UTC 00:00) otomatik DB dump, 30 gün rolling retention
+- Manuel tetikleme: `workflow_dispatch` ile istenince çalıştırılabilir
 
-**Saat 2 — Faz A Faz 4: IFS Fuzzy Match** ✅
-- Migration: `26-oturum-faz-a4-ifs-fuzzy.sql` uygulandı
-- `kalite_kod_normalize()` — 8 yeni pattern: ST52, S355JR, P235GH, P265GH, 321, 321H, 304H, 316H, 2205, 2507
-- `ifs_material_alias` tablosu + 3 index + 4 RLS policy (malzeme_tanimlari pattern'i)
-- `malzeme_ref_bul()` — alias fallback katmanı (regex NULL → tenant alias → sistem alias → NULL)
-- 7/7 regex test geçti; canlı veride 0 bağlanmamış kayıt (sistem temiz)
-- **Sonuç: Faz A TAMAMEN BİTTİ** — malzeme sistemi tam kapalı döngü
+**Saat 2 — Storage Yedeklemesi** ✅
+- Supabase Storage durumu tespit edildi:
+  - 1 bucket: `arespipe-dosyalar` (PUBLIC, 50 MB file limit, 23 MB toplam)
+  - İçerik: tenant_id/spooller/spool_uuid/operasyon_fotograf.png yapısı + feedback, fotograflar, notlar alt klasörleri
+- Supabase API key sistem değişikliği fark edildi: eski `anon`/`service_role` → yeni `publishable`/`secret`
+- GitHub Secrets: `SUPABASE_SERVICE_KEY` (yeni `sb_secret_...` formatı)
+- Workflow güncellendi — DB + Storage birlikte:
+  - S3 API dene (Supabase S3-compat endpoint'i)
+  - Fallback: Python + urllib ile HTTP API (list + download recursive)
+  - Çıktı: `backups/TIMESTAMP/database.sql.gz` + `backups/TIMESTAMP/storage.tar.gz`
+- İlk tam yedek başarılı (#5): 2m 56s, tüm 23 MB yedeklendi
 
-**Saat 3 — CLAUDE.md Split + docs/templates/** ✅
-- CLAUDE.md: 2694 → 1611 satır (%40 küçültme)
-- Bölüm 11 + 11A-11H (14 eski oturum, ~1100 satır) → `docs/sessions/archive-01-22.md`
-- Yerine yeni Bölüm 11: 3 satır referans (son-durum.md + archive + protokol notu)
-- `docs/templates/` oluşturuldu:
-  - `README.md` — şablon indeksi
-  - `yeni-sayfa-sablonu.md` — yeni HTML sayfası iskeleti (zorunlu script'ler + tema + i18n)
-  - `yeni-migration-sablonu.sql` — BEGIN/COMMIT + header + RLS pattern + test blokları
-- Dört dosya tek commit'e yüklendi (atomik koruma)
+**Saat 3 — Migrations Altyapısı: Schema Dump + Klasör** ✅
+- Yeni workflow: `arespipe-backups/.github/workflows/extract-schema.yml`
+- Tek seferlik schema dump artifact'ı üretildi (23.6 KB, 6029 satır)
+- İçerik: **51 tablo, 85 index, 17 trigger, 18 fonksiyon, 90 RLS policy** (public + storage schemas)
+- `arespipe` ana repo'ya `migrations/` klasörü kuruldu:
+  - `migrations/README.md` — adlandırma, disiplin, kurulum sırası, yedekleme ile ilişkisi
+  - `migrations/000_initial_schema.sql` — sıfır noktası (header + pg_dump çıktısı)
+- `docs/templates/yeni-migration-sablonu.sql` zaten 26. oturumda hazırdı, referans olarak kullanılıyor
+- **⚠️ Bilinen küçük sorun:** `migrations/README.md` markdown formatlaması GitHub render'ında bozuk (newline'lar paragraf olarak birleşmiş). Dosya içeriği doğru, sadece görsel. 28. oturumda düzeltilecek.
 
-**Saat 4 — Malzeme Renk Denetimi + G-05 + 4 Dosya Güncellemesi** ✅
-- Yanlış alarm temizliği: M3_RENK bug'ı yok (22. oturum notu hatalı, doğrulandı)
-- **Denetim sonucu:** 4 sayfada renk pattern'i var, 1'i (`markalama.html`) **tamamen kaymış**:
-  - Paslanmaz yeşildi (olmalı: mor)
-  - Bakır mordu (olmalı: turuncu)
-  - Alüminyum turuncuydu (olmalı: yeşil)
-  - Karbon + Diğer aynı maviye düşüyor (olmalı: farklı)
-- **Kök neden:** Kod 4 farklı yerde kopya; tek kaynak doğrusu yok
-- **Çözüm: G-05 — Malzeme Renk Standardı** (yeni kural)
-  - `:root`'a merkezi `--mat-karbon-*`, `--mat-paslanmaz-*`, `--mat-bakir-*`, `--mat-alum-*`, `--mat-diger-*` değişken bloğu
-  - `[data-theme=dark]` override: alpha %10 → %18 (kontrast)
-  - `.mb-celik / .mb-pas / .mb-bakir / .mb-alum / .mb-diger` CSS değişken kullanıyor
-  - `matBadge()` 4 sayfada aynı pattern, aynı class isimleri
-- **Güncelleneceğine yapıldı: 4 dosya** — `markalama.html`, `devreler.html`, `bukum.html`, `kesim.html`
-- Karbon'u kırmızı yapmak istenirse: 4 dosyada `--mat-karbon-bg` + `--mat-karbon-fg` güncellenir → 4 sayfa anında değişir
+**Saat 4 — CI Kontrolü: migrations-check.yml** ✅
+- Yeni workflow: `arespipe/.github/workflows/migrations-check.yml`
+- Tetikleme: `migrations/**` path'inde değişiklik
+- Kontrolleri:
+  1. Dosya adı `NNN_aciklama.sql` regex: `^[0-9]{3}_[a-z0-9_]+\.sql$` — ihlal fail
+  2. Sıra numarası çakışması — ihlal fail
+  3. Header yorumu ilk 10 satırda `--` var mı — uyarı (build kırmaz)
+  4. Özet: toplam dosya sayısı + son dosya
+- Mevcut `kontrol.js` ana lint sistemine entegrasyon **28. oturuma ertelendi** (iki sebeple: riski azaltmak, taze kafa gerektirmek)
 
-### Bugün Ele Alınmayan Büyük Konu
+### Bugün Planlanan Ama Yapılmayan
 
-Cihat'ın yakaladığı sistemsel tutarlılık sorunu: **"Tablolardaki tüm sütunlar farklı sayfalarda farklı görünüyor"** (spool no mavi mi siyah mı, tarih format farkları, tersane adı bold mı vs.). Bu malzeme rengi değil, **sistem-seviyesi render tutarlılık borcu**. 4-5 oturumluk iş, parçalara ayrılmalı.
+**Migration Runner Workflow** — 28. oturuma ertelendi. Sebep: Şu an **staging ortamı yok**, sadece production var. Production'a "sırayla migration fırlatan" bir buton risk taşır. Staging geldiğinde anlamlı olacak.
 
-**Ne yaptık:** Bugün sadece malzeme rengi düzeltildi (markalama bug + 4 dosyada merkezi değişkenler). Gerisi — spool no render, tarih formatı, tersane adı, proje no, durum pill vs. — sonraki oturumlara kaldı.
+**kontrol.js Entegrasyonu** — 28. oturuma ertelendi. Sebep: Mevcut `kontrol.js` içeriği incelenmeden kural eklemek risk taşır. Proje tarzına uygun (kurallar.json + bozuk-ornekler + self-test) tam entegrasyon 45 dk ek iş. Basit workflow şu an yeterli.
 
-### G-05 — Yeni Kural (detay)
+### 24.5 Notundan Yapılanlar / Kalanlar
 
-**Kural adı:** Malzeme Renk Standardı
+26. oturum öncesi Cihat'ın yan sohbetten getirdiği 24.5 notu vardı. 27. oturumda önemli bir kısmı kapandı:
 
-**Zorunluluklar:**
-1. Karbon → mavi (`--ac`) ― Paslanmaz → mor (`--leg`) ― Bakır → turuncu (`--warn`) ― Alüminyum → yeşil (`--gr`) ― Diğer → gri (`--txd`)
-2. Renk değerleri `:root > --mat-*` değişkenleri üzerinden okunur, hardcode yazılmaz
-3. Karanlık tema için `[data-theme=dark]` alpha override eklenir (kontrast)
-4. CSS class isimleri standart: `.mb-celik / .mb-pas / .mb-bakir / .mb-alum / .mb-diger`
-5. `matBadge()` inline style kullanmaz, sadece class döndürür
-6. Aynı renk değişken bloğu tüm sayfalarda bulunur — tek yerden güncellenince hepsi değişir
-7. Yeni bir malzeme kategorisi eklenirse 4 sayfaya paralel eklenmeli (ileride `ares-layout.js > injectGlobalCSS()` merkezileştirmesi düşünülebilir)
+**✅ Yapılanlar:**
+- 🔴 Yedekleme Katman 1 (GitHub Actions + pg_dump) — tamamı + Storage bonusu
+- 🔴 Migrations klasörü kurulumu — baseline + README + CI kontrolü
 
-**CI lint eklenmesi (gelecek):** "G-05_MALZEME_RENK_HARDCODE" — `.mb-*` CSS'inde `rgba(` veya hex kullanımı yasak, sadece `var(--mat-*)` kabul.
+**⏳ Kalanlar (28+ oturum için):**
+- 🟡 Sentry entegrasyonu (runtime hata toplama) — müşteri öncesi zorunlu
+- 🟡 Uptime monitör (Better Stack / UptimeRobot ücretsiz)
+- 🟡 Environment ayrımı (dev/prod) — staging Supabase projesi
+- 🟡 Görev sistemi sayfa görünümü (panel_gorevler.ilgili_sayfalar)
+- 🟡 Audit Log pano sekmesi
+- 🟡 Vercel Analytics
+- 🟢 help.html son kullanıcı dokümantasyonu
 
-### Bugün Kapatılan Açık Borçlar
-- ✅ CLAUDE.md split — 23. oturumdan beri borç
-- ✅ `docs/templates/` — 23. oturumdan beri borç
-- ✅ Markalama renk bug'ı — bilinen ama isimlendirilmemiş borç (denetimde ortaya çıktı)
-- ✅ Malzeme renk tutarsızlığı (4 dosya) — bugün tespit + çözüm
-- ✅ M3_RENK yanlış alarm notu — 22. oturumdan kalma, temizlendi
+### Bugünkü Önemli Öğrenmeler (27. Oturum)
 
-### Öğrenilen Dersler (26. Oturum)
+1. **Plan değişikliği erken kabul edilmeli.** PAT token'ı (Personal Access Token) workflow planı için oluşturuldu, sonra daha temiz yaklaşım bulunca kullanılmadı. 2 yaklaşım karşılaştırması yapıp seçmek, uygulamadan önce olmalı. Boşa 5 dk harcandı ama daha kötüsü kullanıcıyı "ne yaptık da kullanmadık" endişesiyle baş başa bıraktı. Ders: Plan değişikliği anında ve açık iletişim.
 
-1. **"Yanlış alarm" notları dosyalarda birikir:** 22. oturumda M3_RENK için "eski TR key'ler" notu düşülmüş ama o oturumda zaten çözülmüştü. Bugün "açık borç" zannedip baktık — kod temiz çıktı. Ders: Kapatılan borç aynı oturumda checklist'ten silinmeli; "tamamlandı" notu açıklayıcı olmalı. CLAUDE.md'deki Bölüm 10 (dosya bazında bekleyenler) periyodik temizlenmeli.
+2. **Supabase ürün değişiklikleri fark edilmeli.** Dashboard'da "Legacy anon, service_role API keys" sekmesi var — yeni `sb_secret_*` ve `sb_publishable_*` formatı 2025-2026 arasında devreye alınmış. AresPipe henüz legacy key kullanıyor olabilir (Vercel env variables'ta kontrol edilmeli). 28. oturumda Vercel env ismi listesi alınıp hangi format kullanıldığı netleşmeli.
 
-2. **Bir bug sorulduğunda genelde altında sistem-seviyesi soru vardır:** Cihat "M3_RENK bug'ı" diye başladı, kısa sürede "tablolardaki tüm sütunlar standart olmalı" gerçek sorusuna geldi. Ders: Bug teknik olarak doğrulanmadan önce "aslında ne arıyorsun?" sorusu sorulmalı — özellikle kullanıcının önceki oturumdan hatırladığı not varsa.
+3. **Aşırı savunmacı script iyi değil.** 2. deneme, `apt-get remove` çıktısında "PostgreSQL version 16 is not installed" gördü ve fail etti — aslında bu Ubuntu'nun "yok, yapılacak bir şey yok" mesajıydı. Ders: Exit code'u doğru okumak yerine stderr/stdout pattern'i beklemek yanlıştır. Basit script, daha doğru script.
 
-3. **Denetim > hızlı düzeltme:** Markalama'yı tek başına düzeltmek 10 dk'lık bir işti, ama tek başına yapılsa 3 sayfada aynı hatanın farklı varyasyonu kalırdı. Önce 7 dosyayı denetleyip haritayı çıkardık, sonra sistemik çözüm ürettik (G-05). Bugünden sonra kural CI'da kodlanabilir hale geldi. Ders: Bir bug gördüğünde "kaç yerde tekrarlanabilir bu pattern?" sorusu, her zaman.
+4. **İş sırasında kullanıcıyı kaybetme riski var.** "Sıkıldım artık neden olmuyor" dediği an, 3. deneme fail olduğunda geldi. O noktada ben "iyi haber var, kurulum başarılı, sadece benim aşırı savunmacı script fail etti" demek yerine paniğe katılsaydım (tekrar karmaşık bir şey önersem) Cihat muhtemelen oturumu bırakacaktı. **Ders:** Failure anlarında **log'u oku, iyi haberi bul, sonra fix öner.** Yapılan 3 denemenin hepsi ilerleme idi — bunu kullanıcıya göster.
 
-4. **Merkezi değişken + sayfa-yerel kopya gerçekçi orta yol:** Tam merkezi (ares-layout.js enjekte) en temiz çözüm ama JS yüklenene kadar renk eksik. Tamamen sayfa-yerel (her sayfa kendi blokları) bakım cehennemi. **Orta yol:** Aynı değişken bloğu her sayfada var, ama blok 4 yerde tek kaynak gibi çalışıyor (sed/find-replace ile tek işlem). JS enjekte gerekmiyor, yine de "tek yerden değiştirilir" hedefine çok yakın.
+5. **Kritik kapasiteleri erken konuş.** Cihat "Supabase büyürse ne olur" diye sordu, yedek yaparken. Cevap: Free plan 1 GB, Pro $25/ay 100 GB; GitHub repo pratik ~5 GB, sert 100 GB; tek dosya 100 MB. Aşamalı strateji: **şimdi GitHub, 1 GB+'da retention azalt, 10 GB+'da R2/S3'e geç.** Over-engineering yapmamak ile future-proof olmamak arasında ince çizgi — önemli olan "değişim kolay mı" sorusuna evet demek. Mevcut workflow'da geçiş 1 saatlik iş olacak şekilde yazıldı.
 
-### Kural Sağlık Kontrolü
-- **Son self-test:** 23 Nisan 2026, 08:47 (23. oturum) — 3/3 başarılı ✅
-- **Sonraki self-test:** 28. oturum — Claude hatırlatacak
-- Komut: `node .github/kontrol.js --self-test`
+6. **Dosya formatı kaybı (markdown).** README.md'yi büyük metin bloğu olarak yapıştırınca GitHub render'ında newline'lar paragraf oldu. GitHub web editor bazı paste işlemlerinde markdown formatting'i korumuyor — işe yarayan yol "Upload files" ile dosyayı direkt atmak. **Ders:** Uzun markdown için Create file yerine Upload files tercih et.
 
 ### Bekleyen Borçlar
 
-**Acil (sonraki 1-2 oturumda):**
-- 🔴 **G-05 CI lint kuralı** — `.mb-*` CSS'inde hardcode rgba/hex yasağı
-- 🟡 **Spool_detay + devre_detay'a matBadge ekleme** — şu an malzemeyi düz metin gösteriyorlar, renk yok
+**Acil (28. oturum için):**
+- 🔴 **Migrations README markdown formatı** — GitHub render'ında bozuk, dosyayı Upload files ile yeniden yükle
+- 🔴 **kontrol.js entegrasyonu** — `migrations-check.yml` basit workflow, mevcut proje tarzına (kurallar.json + bozuk-ornekler + self-test) entegre edilmeli
+- 🟡 **Vercel env variable isim kontrolü** — AresPipe legacy (`SUPABASE_SERVICE_ROLE_KEY`) mı yeni (`sb_secret_*`) mi? Kullanılmayan format 28. oturumda iptal edilecek
+- 🟡 **PAT token iptali** — 27. oturumda oluşturuldu, kullanılmadı. `https://github.com/settings/personal-access-tokens` → `arespipe-backups-writer` → Delete
 
-**Orta vade (27-30. oturum):**
-- 🟡 **Tablo Render Standardı** (Cihat'ın yakaladığı büyük konu) — G-06 olarak tasarlanabilir
-  - Spool no: mono font, bold, `--ac` mavi (4 sayfada farklı görünüyor)
-  - Tarih: tek format standardı (14px, `--txd`)
-  - Tersane adı, proje no, durum pill — standardize
-  - İş planı: 27. oturumda 7 sayfa denetim raporu, 28'de `ares-render.js` helper kütüphanesi, 29-30'da sayfa dönüşümü
-- 🟡 **Operasyon sayfaları %100** — Kesim/Büküm/Markalama bitirme (2-3 saat)
-- 🟡 **Profil in-app edit** (Pano'dan CIHAT-PROFIL.md düzenleme) — 24. oturumdan borç
-- 🟡 **Rol etiketi küçük harf bug'ı** — "operatör" küçük harf görünüyor; hangi ekranda olduğu Cihat'tan netleşecek
+**Orta vade (28-30. oturum):**
+- 🟡 **Migration runner workflow** — Staging ortamı oluşturulunca anlamlı olur (Supabase 2. proje)
+- 🟡 **Sentry entegrasyonu** — Runtime hata toplama, müşteri öncesi zorunlu
+- 🟡 **Tablo Render Standardı (G-06)** — 26. oturumdan devir, Cihat'ın asıl sorusu
+- 🟡 **Operasyon sayfaları %100** — Kesim/Büküm/Markalama bitirme
+- 🟡 **G-05 CI lint kuralı** — `.mb-*` hardcode rgba/hex yasağı
 
 **Uzun vade (ROADMAP Faz B-C):**
-- 🟢 **docs/rules/** kural ayrıştırması — G-01 i18n, G-02 tema, G-03 enum-render, G-05 malzeme renk ayrı dosyalara
-- 🟢 **Lint script'leri** (5 adet) + pre-commit hook
-- 🟢 **Tenant izolasyon testleri** (`tests/rls-isolation.sql`) — 27. oturum hedefi
-- 🟢 **Performans bütçesi + observability** — 28. oturum hedefi
-- 🟢 **Rollback + feature flag** — 29. oturum hedefi
-- 🟢 **Mobil sayfalar**: MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara (ayrı sprint)
+- 🟢 **Bucket PRIVATE geçiş** — `arespipe-dosyalar` şu an PUBLIC. Müşteri verisi içerdiğinde özel olmalı
+- 🟢 **Audit Log pano sekmesi**
+- 🟢 **Görev sistemi sayfa görünümü**
+- 🟢 **docs/rules/** kural ayrıştırması
+- 🟢 **Tenant izolasyon testleri** (`tests/rls-isolation.sql`)
+- 🟢 **Mobil sayfalar**: MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 
-### 26. Oturumda Bitenler (borçtan düşenler)
-- ✅ Faz A Faz 3 (Form Autocomplete) — Faz A planından
-- ✅ Faz A Faz 4 (IFS Fuzzy Match) — Faz A planından; **Faz A tamamen bitti**
-- ✅ CLAUDE.md split — 23. oturumdan
-- ✅ `docs/templates/` — 23. oturumdan
-- ✅ G-05 Malzeme Renk Standardı (yeni kural, 4 dosya güncellemesi)
-- ✅ M3_RENK yanlış alarm notu temizlendi
+### 27. Oturumda Bitenler (borçtan düşenler)
+- ✅ Yedekleme Katman 1 (DB + Storage) — 24.5 notundan
+- ✅ Migrations klasörü baseline + CI kontrolü — 24.5 notundan
+- ✅ Schema dump sıfır noktası
+
+### Kural Sağlık Kontrolü
+- **Son self-test:** 23 Nisan 2026, 08:47 (23. oturum) — 3/3 başarılı ✅
+- **⚠️ Sonraki self-test:** 28. oturum **ZORUNLU** — 5 oturum geçti (23→28)
+- **Komut:** `node .github/kontrol.js --self-test`
+- **Not:** 27. oturumda `migrations-check.yml` eklendi, `kontrol.js`'e entegre değil — self-test sadece mevcut 14 kuralı kontrol eder, migrations kontrolü ayrı workflow
 
 ---
 
@@ -148,11 +147,26 @@ Süper admin çalışma merkezi. Tek yerden: görev, geri bildirim, CI durumu, S
 ### CI Rapor: `.github/ci-son-rapor.json`
 CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyayı okur.
 
-### Oturum Arşivi: `docs/sessions/archive-01-22.md` (YENİ — 26. oturum)
+### Oturum Arşivi: `docs/sessions/archive-01-22.md`
 1-22. oturumların CLAUDE.md'den ayıklanmış özetleri.
 
-### Şablonlar: `docs/templates/` (YENİ — 26. oturum)
+### Şablonlar: `docs/templates/`
 Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
+
+### **Yedekleme Sistemi** (YENİ — 27. oturum)
+- **Repo:** `cihatoztas-ai/arespipe-backups` (private)
+- **Workflow:** `.github/workflows/db-backup.yml` — her gece 03:00 TR, DB + Storage
+- **Secrets:** `SUPABASE_DB_URL`, `SUPABASE_SERVICE_KEY`
+- **Yedek yapısı:** `backups/TIMESTAMP/database.sql.gz` + `storage.tar.gz`
+- **Retention:** 30 gün rolling
+- **Manuel tetikleme:** Actions → Supabase Full Backup → Run workflow
+
+### **Migrations** (YENİ — 27. oturum)
+- **Klasör:** `migrations/` (arespipe ana repo)
+- **Baseline:** `000_initial_schema.sql` (6029 satır, 51 tablo)
+- **Kural:** `NNN_aciklama.sql` adlandırma, BEGIN/COMMIT, header yorumu
+- **CI:** `.github/workflows/migrations-check.yml`
+- **Şablon:** `docs/templates/yeni-migration-sablonu.sql`
 
 ---
 
@@ -164,22 +178,28 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 > ```
 > cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
 > ```
-> Ayrıca GitHub Actions sekmesinde son build yeşil mi kontrol et."
+> Ayrıca GitHub Actions sekmesinde son build yeşil mi kontrol et.
+> `backups/` klasöründe yeni yedekler görünüyor mu kontrol et (her gece yedek alınmalı)."
 
 **2. Ritüel tamamlanmadan hiçbir teknik iş başlama.**
 
 **3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.**
 
-**4. 27. oturumun gündemi — Cihat'a seçenek sun:**
-- **Opsiyon A:** Tablo Render Standardı denetimi (Cihat'ın asıl sorusu) — 7 sayfa × kolonlar haritası çıkar, sonraki oturumlar için plan yap
-- **Opsiyon B:** G-05 CI lint kuralı ekle — `.mb-*` hardcode yasağı, kontrol.js'e pattern ekle
-- **Opsiyon C:** Operasyon sayfaları bitirme (Kesim/Büküm/Markalama %100)
-- **Opsiyon D:** Rol etiketi küçük harf bug'ı (hangi ekranda olduğu netleşirse)
-- **Opsiyon E:** ROADMAP Faz B başlat (27. oturum tenant izolasyon testleri)
-
-**5. 28. oturumda self-test HATIRLAT:**
-- 26'dan sonra 28 geliyor (her 5 oturumda bir)
+**4. 28. OTURUMDA ZORUNLU: Self-test koştur.**
+- 23'ten 28'e 5 oturum geçti
 - Komut: `node .github/kontrol.js --self-test`
+- Beklenen: "3/3 başarılı" veya mevcut duruma göre yeşil
+- Bozuksa önce onu tamir et, sonra diğer işler
+
+**5. 28. oturumun gündemi — Cihat'a seçenek sun:**
+- **Opsiyon A:** 27'den devredilen acil işler (README markdown fix, kontrol.js entegrasyonu, PAT iptal, Vercel env kontrolü) — 1.5 saat
+- **Opsiyon B:** Tablo Render Standardı denetimi (26'dan devir) — 7 sayfa × kolonlar haritası, G-06 kuralı taslak
+- **Opsiyon C:** Sentry entegrasyonu (runtime hata toplama)
+- **Opsiyon D:** Operasyon sayfaları bitirme (Kesim/Büküm/Markalama)
+- **Opsiyon E:** Migration runner workflow + staging Supabase projesi
+- **Opsiyon F:** Bucket PRIVATE geçişi (müşteri öncesi)
+
+Detay: `CLAUDE-SONRAKI-OTURUM.md`
 
 ---
 
@@ -196,6 +216,10 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - **Toplu sed öncesi tek dosyada test** — idempotent değil (25. oturum dersi)
 - **Bug sorulduğunda "aslında ne arıyorsun" sor** — özellikle önceki oturumdan not varsa (26. oturum dersi)
 - **Bir bug gördüğünde "kaç yerde tekrarlanabilir?" sor** — tek-düzeltme yerine denetim + sistemik çözüm (26. oturum dersi)
+- **Plan değişikliği anında söyle** — seçenekleri baştan karşılaştır, uygulamadan önce onaylat (27. oturum dersi)
+- **Failure anında log'u oku, iyi haberi bul** — paniğe katılma, başarıyı göster (27. oturum dersi)
+- **Uzun markdown için Upload files kullan** — Create file/paste formatı bozabilir (27. oturum dersi)
+- **Yeni DB değişikliği = migrations dosyası** — Supabase SQL editor'de yazıp run yeterli değil, artık dosya da oluşur (27. oturum disiplini)
 
 ---
 
