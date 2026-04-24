@@ -56,4 +56,12 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add -A
           git commit -m 'docs: AUTO bölümleri güncellendi [skip ci]'
-          git push
+          # Race condition koruması: kontrol.yml paralel auto-commit atmış olabilir,
+          # push öncesi rebase ile senkronize et. Retry 3x, her deneme arası yeniden fetch.
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push denemesi $i başarısız, tekrar deneniyor..."
+            sleep 2
+          done
+          echo "3 denemede push başarısız, elle müdahale gerek."
+          exit 1
