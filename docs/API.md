@@ -99,10 +99,9 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 3 endpoint. Son güncelleme: 2026-04-24.
+> Toplam 2 endpoint. Son güncelleme: 2026-04-24.
 
-- **`api/legacy.js`** — _(açıklama yok — yorum başlığı ekle)_
-- **`api/ornek.js`** — Örnek endpoint — test için — _Güvenlik: sadece POST_
+- **`api/izometri-oku.js`** — PDF izometri → Claude API → spool listesi JSON — _API key frontend'e asla gitmez_
 - **`api/sorgula.js`** — Doğal dil → SQL → Supabase → Türkçe cevap — _Güvenlik: sadece SELECT, tenant_id zorunlu_
 <!-- AUTO-END:endpointler -->
 

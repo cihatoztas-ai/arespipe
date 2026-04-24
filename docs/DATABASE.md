@@ -190,13 +190,60 @@ Migration dosyaları CI'da kontrol edilir — `.github/kontrol.js` içinde `migr
 ## 5. Tablo Listesi
 
 <!-- AUTO-START:tablolar -->
-> Toplam 5 tablo. Son güncelleme: 2026-04-24.
+> Toplam 52 tablo. Son güncelleme: 2026-04-24.
 
+- `ai_analizler`
 - `audit_log`
+- `basamak_sablonlari`
+- `basamak_tanimlari`
+- `belgeler`
+- `blok_sayfa_yetkileri`
+- `bukum_kalemleri`
+- `customer_kullanicilar`
+- `customer_project_access`
+- `customers`
 - `devreler`
+- `egitim_verisi`
+- `feature_flags`
+- `feedback_kayitlari`
+- `firma_moduller`
+- `fotograflar`
+- `hakedis_kriterleri`
+- `hakedis_paketleri`
+- `hakedis_spooller`
+- `ifs_material_alias`
+- `is_kayitlari`
+- `islem_log`
+- `kesim_kalemleri`
+- `kesim_listeleri`
+- `kk_davet_spooller`
+- `kk_davetler`
+- `kullanici_bloklar`
+- `kullanici_yetkileri`
 - `kullanicilar`
+- `malzeme_tanimlari`
+- `markalama_kalemleri`
+- `markalama_listeleri`
+- `markalama_listesi_kalemleri`
+- `notlar`
+- `panel_gorevler`
+- `pipeline_malzemeleri`
 - `projeler`
+- `rol_sablonlari`
+- `sayac_tanimlari`
+- `sevkiyat_spooller`
+- `sevkiyatlar`
+- `spool_malzemeleri`
 - `spooller`
+- `tarama_sonuclari`
+- `tenant_features`
+- `tenants`
+- `tersane_firma_iliskileri`
+- `tersaneler`
+- `test_spooller`
+- `testler`
+- `yetki_bloklari`
+- `yetki_tanimlari`
 <!-- AUTO-END:tablolar -->
 
 ---
