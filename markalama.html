@@ -12,6 +12,42 @@
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--or:#ea580c;}
+
+/* ── MALZEME RENK STANDARDI (G-05, 26. oturumda eklendi) ──────────
+   Tek kaynak doğrusu: Karbon→mavi, Paslanmaz→mor, Bakır→turuncu, Alüm→yeşil, Diğer→gri.
+   Renk değiştirmek istenirse sadece aşağıdaki değişkenler güncellenir,
+   tüm matBadge çağrıları otomatik güncel hali alır.
+   [data-theme=dark] blokları alpha'yı biraz artırır — karanlıkta kontrast. */
+:root{
+  --mat-karbon-bg:    rgba(45,142,255,.10);
+  --mat-karbon-fg:    var(--ac);
+  --mat-karbon-bd:    rgba(45,142,255,.25);
+  --mat-paslanmaz-bg: rgba(124,58,237,.10);
+  --mat-paslanmaz-fg: var(--leg);
+  --mat-paslanmaz-bd: rgba(124,58,237,.25);
+  --mat-bakir-bg:     rgba(217,119,6,.10);
+  --mat-bakir-fg:     var(--warn);
+  --mat-bakir-bd:     rgba(217,119,6,.25);
+  --mat-alum-bg:      rgba(22,163,110,.10);
+  --mat-alum-fg:      var(--gr);
+  --mat-alum-bd:      rgba(22,163,110,.25);
+  --mat-diger-bg:     var(--sur2);
+  --mat-diger-fg:     var(--txd);
+  --mat-diger-bd:     var(--bor);
+}
+[data-theme=dark]{
+  --mat-karbon-bg:    rgba(45,142,255,.18);
+  --mat-paslanmaz-bg: rgba(124,58,237,.18);
+  --mat-bakir-bg:     rgba(217,119,6,.18);
+  --mat-alum-bg:      rgba(22,163,110,.18);
+}
+/* matBadge CSS sınıfları — bukum/kesim/devreler ile aynı isimler */
+.mb-celik{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-karbon-bg);color:var(--mat-karbon-fg);border:1px solid var(--mat-karbon-bd);}
+.mb-pas  {display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-paslanmaz-bg);color:var(--mat-paslanmaz-fg);border:1px solid var(--mat-paslanmaz-bd);}
+.mb-bakir{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-bakir-bg);color:var(--mat-bakir-fg);border:1px solid var(--mat-bakir-bd);}
+.mb-alum {display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-alum-bg);color:var(--mat-alum-fg);border:1px solid var(--mat-alum-bd);}
+.mb-diger{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-diger-bg);color:var(--mat-diger-fg);border:1px solid var(--mat-diger-bd);}
+
 body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-height:100vh;font-size:15px;}
 .page{padding:28px 36px;max-width:1800px;margin:0 auto;}
 @media(max-width:768px){.page{padding:16px;}}
@@ -593,16 +629,18 @@ function tersaneBadge(ad){
   return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+(s||'—')+'</span>';
 }
 function matBadge(malzeme){
+  // 26. oturum: Standart pattern (bukum/kesim/devreler ile aynı).
+  // Renkler :root'taki --mat-* değişkenlerinden gelir, CSS class'ları üzerinden uygulanır.
   var kod = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeKod(malzeme) : '';
-  var cls = { paslanmaz:'cl-gr', alum:'cl-warn', bakir:'cl-leg' }[kod] || 'cl-ac';
-  var label = kod ? ARES_NORM.tvMalzeme(kod, malzeme) : (malzeme||'—');
-  var colors={
-    'cl-ac':'background:rgba(45,142,255,.1);color:var(--ac);border:1px solid rgba(45,142,255,.25);',
-    'cl-gr':'background:rgba(22,163,110,.1);color:var(--gr);border:1px solid rgba(22,163,110,.25);',
-    'cl-warn':'background:rgba(217,119,6,.1);color:var(--warn);border:1px solid rgba(217,119,6,.25);',
-    'cl-leg':'background:rgba(124,58,237,.1);color:var(--leg);border:1px solid rgba(124,58,237,.25);'
+  var clsMap = {
+    karbon:    'mb-celik',
+    paslanmaz: 'mb-pas',
+    bakir:     'mb-bakir',
+    alum:      'mb-alum'
   };
-  return '<span style="display:inline-flex;padding:2px 8px;border-radius:6px;font-size:14px;font-weight:700;'+colors[cls]+'">'+esc(label)+'</span>';
+  var cls = clsMap[kod] || 'mb-diger';
+  var label = kod ? ARES_NORM.tvMalzeme(kod, malzeme) : (malzeme||'—');
+  return '<span class="'+cls+'">'+esc(label)+'</span>';
 }
 
 // progColor — ilerleme yüzdesine göre renk
