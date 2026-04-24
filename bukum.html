@@ -13,6 +13,34 @@
 [data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--or:#ea580c;}
+
+/* ── G-05 MALZEME RENK STANDARDI (26. oturumda eklendi) ──────────
+   Karbon→mavi, Paslanmaz→mor, Bakır→turuncu, Alüm→yeşil, Diğer→gri.
+   Blok 4 sayfada paralel: devreler, bukum, kesim, markalama. */
+:root{
+  --mat-karbon-bg:    rgba(45,142,255,.10);
+  --mat-karbon-fg:    var(--ac);
+  --mat-karbon-bd:    rgba(45,142,255,.25);
+  --mat-paslanmaz-bg: rgba(124,58,237,.10);
+  --mat-paslanmaz-fg: var(--leg);
+  --mat-paslanmaz-bd: rgba(124,58,237,.25);
+  --mat-bakir-bg:     rgba(217,119,6,.10);
+  --mat-bakir-fg:     var(--warn);
+  --mat-bakir-bd:     rgba(217,119,6,.25);
+  --mat-alum-bg:      rgba(22,163,110,.10);
+  --mat-alum-fg:      var(--gr);
+  --mat-alum-bd:      rgba(22,163,110,.25);
+  --mat-diger-bg:     var(--sur2);
+  --mat-diger-fg:     var(--txd);
+  --mat-diger-bd:     var(--bor);
+}
+[data-theme=dark]{
+  --mat-karbon-bg:    rgba(45,142,255,.18);
+  --mat-paslanmaz-bg: rgba(124,58,237,.18);
+  --mat-bakir-bg:     rgba(217,119,6,.18);
+  --mat-alum-bg:      rgba(22,163,110,.18);
+}
+
 body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-height:100vh;font-size:15px;}
 .page{padding:28px 36px;max-width:1800px;margin:0 auto;}
 @media(max-width:768px){.page{padding:16px;}}
@@ -222,11 +250,11 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
 .si-purple{background:rgba(168,85,247,.15);color:var(--bukum-c);}.ref-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:14px;font-weight:700;white-space:nowrap;font-family:"Barlow Condensed",sans-serif;letter-spacing:.3px;}.ref-emir{background:rgba(14,165,233,.12);color:var(--ac);}.ref-fason{background:rgba(168,85,247,.15);color:var(--bukum-c);}.btn-buktu{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1.5px solid rgba(16,185,129,.4);background:rgba(16,185,129,.06);color:var(--gr);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:"Barlow",sans-serif;}.btn-buktu:hover{background:rgba(16,185,129,.15);}.btn-qr{width:34px;height:34px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center;}.btn-qr:hover{border-color:var(--bukum-c);color:var(--bukum-c);}.fb-card{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:18px 22px;margin-bottom:10px;cursor:pointer;transition:all .2s;}.fb-card:hover{border-color:var(--bukum-c);transform:translateY(-1px);box-shadow:0 4px 20px rgba(168,85,247,.1);}.belge-chip{display:inline-flex;align-items:center;gap:6px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:5px 10px;font-size:14px;}
 
 
-    .mb-celik  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(45,142,255,.1);color:var(--ac); }
-    .mb-pas    { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(124,58,237,.1);color:var(--leg); }
-    .mb-bakir  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(217,119,6,.1);color:var(--warn); }
-    .mb-alum   { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:rgba(22,163,110,.1);color:var(--gr); }
-    .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--sur2);color:var(--txd); }
+    .mb-celik  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-karbon-bg);color:var(--mat-karbon-fg);border:1px solid var(--mat-karbon-bd); }
+    .mb-pas    { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-paslanmaz-bg);color:var(--mat-paslanmaz-fg);border:1px solid var(--mat-paslanmaz-bd); }
+    .mb-bakir  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-bakir-bg);color:var(--mat-bakir-fg);border:1px solid var(--mat-bakir-bd); }
+    .mb-alum   { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-alum-bg);color:var(--mat-alum-fg);border:1px solid var(--mat-alum-bd); }
+    .mb-diger  { display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:500;background:var(--mat-diger-bg);color:var(--mat-diger-fg);border:1px solid var(--mat-diger-bd); }
 /* ── Hero + Stat Pill — 14. oturum devreler.html standardı ─────── */
 .stat-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:nowrap; overflow-x:auto; }
 .hero-left { background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--bukum-c); border-radius:10px; padding:11px 13px; display:flex; align-items:center; gap:11px; flex-shrink:0; width:190px; box-sizing:border-box; }

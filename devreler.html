@@ -15,6 +15,35 @@
     [data-theme="dark"]             { --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e; --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90; }
     [data-theme="light-anthracite"] { --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0; --tx:#141e2b; --txm:#3a4f63; --txd:#637080; }
 
+    /* ── G-05 MALZEME RENK STANDARDI (26. oturumda eklendi) ─────────
+       Tek kaynak doğrusu: Karbon→mavi, Paslanmaz→mor, Bakır→turuncu, Alüm→yeşil, Diğer→gri.
+       Değiştirmek istenirse sadece aşağıdaki değişkenler güncellenir —
+       aynı blok 4 sayfada (devreler, bukum, kesim, markalama) paralel bulunur.
+       [data-theme=dark] alpha'yı artırır: %10 → %18, karanlıkta kontrast korunur. */
+    :root {
+      --mat-karbon-bg:    rgba(45,142,255,.10);
+      --mat-karbon-fg:    var(--ac);
+      --mat-karbon-bd:    rgba(45,142,255,.25);
+      --mat-paslanmaz-bg: rgba(124,58,237,.10);
+      --mat-paslanmaz-fg: var(--leg);
+      --mat-paslanmaz-bd: rgba(124,58,237,.25);
+      --mat-bakir-bg:     rgba(217,119,6,.10);
+      --mat-bakir-fg:     var(--warn);
+      --mat-bakir-bd:     rgba(217,119,6,.25);
+      --mat-alum-bg:      rgba(22,163,110,.10);
+      --mat-alum-fg:      var(--gr);
+      --mat-alum-bd:      rgba(22,163,110,.25);
+      --mat-diger-bg:     var(--sur2);
+      --mat-diger-fg:     var(--txd);
+      --mat-diger-bd:     var(--bor);
+    }
+    [data-theme="dark"] {
+      --mat-karbon-bg:    rgba(45,142,255,.18);
+      --mat-paslanmaz-bg: rgba(124,58,237,.18);
+      --mat-bakir-bg:     rgba(217,119,6,.18);
+      --mat-alum-bg:      rgba(22,163,110,.18);
+    }
+
     /* ── Sayfa layout ── */
     .page        { padding:28px; }
     .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:12px; }
@@ -182,11 +211,11 @@
     .sb-kalite     { background:rgba(124,58,237,.12); color:var(--leg); }
     .sb-sevkehazir { background:rgba(22,163,110,.12); color:var(--gr); }
     .mat-badge  { display:inline-block; padding:2px 6px; border-radius:10px; font-size:14px; font-weight:500; margin:1px; }
-    .mb-celik   { background:rgba(45,142,255,.1); color:var(--ac); }
-    .mb-pas     { background:rgba(124,58,237,.1); color:var(--leg); }
-    .mb-bakir   { background:rgba(217,119,6,.1);  color:var(--warn); }
-    .mb-alum    { background:rgba(22,163,110,.1);  color:var(--gr); }
-    .mb-diger   { background:var(--sur2);          color:var(--txd); }
+    .mb-celik   { background:var(--mat-karbon-bg);    color:var(--mat-karbon-fg);    border:1px solid var(--mat-karbon-bd); }
+    .mb-pas     { background:var(--mat-paslanmaz-bg); color:var(--mat-paslanmaz-fg); border:1px solid var(--mat-paslanmaz-bd); }
+    .mb-bakir   { background:var(--mat-bakir-bg);     color:var(--mat-bakir-fg);     border:1px solid var(--mat-bakir-bd); }
+    .mb-alum    { background:var(--mat-alum-bg);      color:var(--mat-alum-fg);      border:1px solid var(--mat-alum-bd); }
+    .mb-diger   { background:var(--mat-diger-bg);     color:var(--mat-diger-fg);     border:1px solid var(--mat-diger-bd); }
     .yuzey-badge { display:inline-block; padding:2px 6px; border-radius:10px; font-size:14px; font-weight:500; margin:1px; }
     .yb-asit     { background:rgba(45,142,255,.1); color:var(--ac); }
     .yb-galvaniz { background:rgba(22,163,110,.1); color:var(--gr); }
