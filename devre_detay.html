@@ -1123,6 +1123,7 @@ async function devreYukle(){
           terminTarihi:d.termin||'',
           durum:d.durum||'aktif',
           durdumaSebebi:d.durdurma_sebebi||'',
+          durdumaTarihi:d.durdurma_tarihi||null,
           tenantId:d.tenant_id||null};
         return;
       }
@@ -1515,7 +1516,7 @@ async function durdurKaydet(){
   // DB'ye kaydet
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(supa&&devreId){
-    var res=await supa.from('devreler').update({durum:'durduruldu',durdurma_sebebi:ac}).eq('id',devreId);
+    var res=await supa.from('devreler').update({durum:'durduruldu',durdurma_sebebi:ac,durdurma_tarihi:new Date().toISOString()}).eq('id',devreId);
     if(res.error){
       // Rollback — banner'ı geri kapat
       if(banner)banner.style.display='none';
@@ -1532,7 +1533,7 @@ async function durdurmaKaldir(){
   // DB'ye kaydet
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(supa&&devreId){
-    var res=await supa.from('devreler').update({durum:'aktif',durdurma_sebebi:null}).eq('id',devreId);
+    var res=await supa.from('devreler').update({durum:'aktif',durdurma_sebebi:null,durdurma_tarihi:null}).eq('id',devreId);
     if(res.error){
       // Rollback — banner'ı geri aç
       if(banner&&DEVRE.durdurmaSebebi){banner.style.display='flex';setText('bannerAc',DEVRE.durdurmaSebebi);}

@@ -1021,7 +1021,7 @@ async function _tamFiltreliListe() {
     for (var i = 0; i < _allFilteredIds.length; i += CHUNK) {
       var chunk = _allFilteredIds.slice(i, i + CHUNK);
       var res = await supa.from('devreler')
-        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, ' +
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, durdurma_tarihi, ' +
                 'projeler(proje_no, tersaneler(ad, kisa_ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .eq('tenant_id', ARES.tenantId())
@@ -1159,6 +1159,7 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         sonIslem:      sonIslem,
         terminTarihi:  d.termin || null,
         _iptalNeden:   d.durdurma_sebebi || null,
+        _durdurmaTarihi: d.durdurma_tarihi || null,
         caps:          caps
       };
 }
@@ -1285,7 +1286,7 @@ async function sorgulaVeGoster() {
     );
     var listeQ = applyFilters(
       supa.from('devreler')
-        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, ' +
+        .select('id, devre_no, ad, zone, durum, is_emri_no, malzeme, yuzey, guncelleme, termin, durdurma_sebebi, durdurma_tarihi, ' +
                 'projeler(proje_no, tersaneler(ad, kisa_ad, kod)), ' +
                 'spooller(id, spool_id, agirlik, aktif_basamak, ilerleme, dis_cap_mm, malzeme, yuzey)')
         .order('olusturma', {ascending: false})
@@ -1644,7 +1645,8 @@ async function iptalOnayla() {
   if (supa && d) {
     var { error } = await supa.from('devreler').update({
       durum: 'iptal',
-      durdurma_sebebi: neden.trim()
+      durdurma_sebebi: neden.trim(),
+      durdurma_tarihi: new Date().toISOString()
     }).eq('id', aktifId);
     if (error) { showToast('İptal başarısız: ' + error.message, 'error'); return; }
     d.durum = 'iptal';
