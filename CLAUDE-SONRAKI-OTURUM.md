@@ -1,214 +1,273 @@
-# CLAUDE — 30. Oturum Gündemi
+# CLAUDE — 31. Oturum Gündemi
 
-**Tema:** Bucket PRIVATE Geçişi + Signed URL Altyapısı
-**Tahmini süre:** 3-4 saat
-**Öncelik:** 🔴 Yüksek (müşteri öncesi KRİTİK güvenlik)
-**Durum:** 28. oturum sonunda onaylandı, plan net
+**Tema:** Bucket PRIVATE Geçişi — Faz 3-6 (30'dan devir)
+**Tahmini süre:** 2-3 saat
+**Öncelik:** 🔴 Yüksek (müşteri öncesi KRİTİK güvenlik, 30'dan yarım)
+**Durum:** Kod 30'da yazıldı, canlı test + bucket toggle + frontend migration kaldı
 
 ---
 
 ## 🎯 Bu Oturumun Amacı
 
-`arespipe-dosyalar` Supabase Storage bucket'ı şu an **PUBLIC** — URL'i bilen herkes (veya guess eden saldırgan) her tenant'ın her dosyasına (izometri PDF'leri, spool fotoğrafları, kalite kontrol resimleri) erişebilir. Multi-tenant izolasyonunun **en büyük açığı.**
-
-Bu oturumda:
-1. Bucket'ı PRIVATE'a çeviriyoruz
-2. Dosyalara erişim için **signed URL (imzalı link)** sistemi kuruyoruz — yetkili kullanıcı kendi tenant'ının dosyasına süre-sınırlı link alır
-3. Frontend'deki mevcut `dosya_url` doğrudan kullanımlarını signed URL akışına taşıyoruz
-
-Sonuç: B firmasının kullanıcısı A firmasının dosyasına **hiçbir yoldan erişemez.**
+30'da iki faz tamamlandı: (1) envanter + DB/bucket temizlik, (2) `api/dosya-url-al.js` yazıldı + GitHub'a yüklendi. Ama Vercel rate limit yüzünden canlı test yapılamadı. 31'de kaldığımız yerden devam: canlı test → bucket PRIVATE → frontend migration → test → kapanış.
 
 ---
 
-## 📐 Mimari — Mevcut vs Hedef
+## 🚦 Oturum Başı Kontroller (Ritüelden Sonra)
 
-### Mevcut (tehlikeli)
+**1. Vercel Rate Limit Durumu**
+- Dashboard → `arespipe` → Deployments sekmesi
+- Son deploy yeşil mi? Kota açıldı mı?
+- `vercel.json ignoreCommand` devreye girdi mi? (Sonraki `.md`-only commit Vercel'i tetiklememeli)
 
-```
-Kullanıcı → Sayfa → DB'den dosya_url oku → <img src="https://...supabase.co/storage/v1/object/public/..."> render
-```
+**2. Son Commit'lerin Vercel'de Durumu**
+- `package.json` commit'i build oldu mu?
+- `api/dosya-url-al.js` commit'i deploy oldu mu?
+- Hata varsa Functions logs'a bak
 
-- `dosya_url` sütununda public URL saklanıyor
-- URL'i ele geçiren herkes (ekran görüntüsü, log, network sniff) erişir
-- Tenant izolasyonu SIFIR
+---
 
-### Hedef
+## 📋 Planlanan 4 Fazlı Akış
 
-```
-Kullanıcı → Sayfa → DB'den dosya_url (veya yol) oku
-         → /api/dosya-url-al endpoint'ini çağır
-            → API: yetki kontrolü (kullanıcının tenant'ı mı?)
-            → API: Supabase signed URL üret (1 saat geçerli)
-            → API: signed URL geri döner
-         → <img src="https://...?token=<imza>"> render
+### Faz 3 — Canlı API Testi (~20 dk)
+
+**Önce endpoint'in varlığını teyit:**
+
+```bash
+curl -i https://arespipe.vercel.app/api/dosya-url-al -X OPTIONS
 ```
 
-- Bucket PRIVATE, public URL çalışmaz
-- Her dosya erişimi yetki kontrolünden geçer
-- URL saatlik süre doluyor, paylaşım/sızıntı riski sınırlı
+Beklenen: 200 OK + CORS header'ları.
+
+**Pozitif test — süper admin ile:**
+
+Tarayıcıda `arespipe.vercel.app`'e giriş yap (super_admin hesap). Console'da:
+
+```javascript
+const { data: { session } } = await ARES.supabase().auth.getSession();
+const token = session.access_token;
+const r = await fetch('/api/dosya-url-al', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ yol: '00000000-0000-0000-0000-000000000001/test.jpg' })
+});
+console.log(r.status, await r.json());
+```
+
+Beklenen: 404 DOSYA_YOK (yol formatı doğru ama bucket'ta dosya yok, temiz başladık).
+
+**Negatif test — yanlış tenant:**
+
+Body'yi değiştir: `{ yol: 'aaaa0000-0000-0000-0000-000000000001/test.jpg' }` (başka UUID)
+Beklenen: super_admin ise 404 (bypass aktif), normal user ise 403 TENANT_UYUSMAZLIGI.
+
+**Bozuk yol testi:**
+
+`{ yol: 'notauuid/test.jpg' }` → 400 YOL_GECERSIZ
+`{ yol: '' }` → 400 YOL_EKSIK
+Token olmadan → 401 YETKI_GEREKLI
+
+### Faz 4 — Bucket PRIVATE (~10 dk)
+
+Artık endpoint test edildi, çalışıyor. Bucket'ı PRIVATE'a çevirebiliriz.
+
+1. Supabase Dashboard → Storage → `arespipe-dosyalar` → Settings (⚙️)
+2. "Public bucket" toggle → OFF
+3. Save
+4. Teyit: Bucket ayarında "Private" yazmalı
+
+**⚠️ Rollback hazırlığı:** Bir şey ters giderse toggle'ı ON'a çevirmek yeterli. Veri kaybolmaz, sadece erişim yöntemi değişir.
+
+### Faz 5 — Frontend Migration (~60-90 dk)
+
+**Adım 1 — Helper fonksiyon yaz:**
+
+`assets/ares.js` (veya hangi dosya ana ARES namespace'i taşıyorsa) içine:
+
+```javascript
+ARES.dosyaUrlAl = async function(yol) {
+  // Cache kontrolü (1 saatlik TTL)
+  const cacheKey = 'dosya_url_' + yol;
+  const cached = ARES._dosyaUrlCache?.[cacheKey];
+  if (cached && cached.expiresAt > Date.now()) return cached.signedUrl;
+
+  // API çağrısı
+  const { data: { session } } = await ARES.supabase().auth.getSession();
+  if (!session) throw new Error('Oturum yok');
+
+  const r = await fetch('/api/dosya-url-al', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ yol })
+  });
+
+  if (!r.ok) {
+    const err = await r.json();
+    console.warn('[dosyaUrlAl]', err);
+    return null; // Kırık görsel yerine placeholder göstermek için
+  }
+
+  const { signedUrl, expiresAt } = await r.json();
+
+  // Cache
+  if (!ARES._dosyaUrlCache) ARES._dosyaUrlCache = {};
+  ARES._dosyaUrlCache[cacheKey] = { signedUrl, expiresAt: new Date(expiresAt).getTime() };
+
+  return signedUrl;
+};
+```
+
+**Adım 2 — DB'deki `dosya_url`'i YOL olarak kullanma kararı:**
+
+Mevcut: `dosya_url` tam public URL saklıyor (`https://...supabase.co/storage/v1/object/public/arespipe-dosyalar/YOL`)
+Yeni: Sadece YOL saklanmalı (`<tenant_id>/<kategori>/<parent_id>/<dosya>`)
+
+**Karar seçeneği 31'de:**
+- **(A)** DB'deki `dosya_url`'i yol'a migrate et (SQL UPDATE, regex ile public URL'den yolu çıkar)
+- **(B)** Yeni kayıtlar yol saklar, eski kayıtlar tam URL kalır (frontend her iki durumu handle eder)
+- **(C)** DB boşaltıldığı için konu yok — yeni yüklemeler direkt yol saklar
+
+**Tahmin:** (C) — 30'da bucket sıfırlandı, DB de boş. Bu karar 31'de hızlıca teyit edilip geçilir.
+
+**Adım 3 — Yükleme akışını değiştir:**
+
+Spool detay, devre detay gibi dosya yükleyen sayfalarda:
+- Şu an: `supabase.storage.from('arespipe-dosyalar').upload(...)` → sonra `getPublicUrl()` → DB'ye public URL yaz
+- Yeni: `supabase.storage.from('arespipe-dosyalar').upload(...)` → DB'ye SADECE YOL yaz (publicUrl çağrısı yok)
+
+**Adım 4 — Gösterim akışını değiştir:**
+
+Her sayfada `<img src="${foto.dosya_url}">` pattern'i var. Bunu:
+
+```javascript
+// Eski
+<img src="${foto.dosya_url}">
+
+// Yeni
+<img data-yol="${foto.dosya_url}" src="placeholder.png">
+// Sonra JS ile:
+document.querySelectorAll('img[data-yol]').forEach(async img => {
+  const url = await ARES.dosyaUrlAl(img.dataset.yol);
+  if (url) img.src = url;
+});
+```
+
+**Etkilenen sayfalar (sıra — ilk test, sonra yaygınlaştır):**
+
+1. `spool_detay.html` — en yoğun foto kullanıcısı, ilk burada test (muhtemelen 1 saat)
+2. `devre_detay.html` — not fotoğrafları
+3. `kesim.html`, `bukum.html`, `markalama.html` — operasyon sayfaları
+4. `kalite_kontrol.html` — KK fotoğrafları
+5. `sevkiyatlar.html` — sevkiyat belgeleri
+6. `admin/panel.html` — feedback fotoğrafları (13.04 tarihli bug'ın çözüm yeri)
+7. `mobile/src/screens/` — Spool detay ve fotoğraf gösteren component'ler (varsa)
+
+**Not:** Mobil React'te foto gösterimi çok sınırlı olabilir (%5 implementasyon). Mobil 31'in kapsamı içinde olmayabilir, 34+'a kayabilir. Cihat'la teyit edilecek.
+
+### Faz 6 — Kapsamlı Test (~30 dk)
+
+**Test 1 — Süper admin:**
+- Kendi tenant'ının fotoğrafı → görünür
+- Başka tenant'ın fotoğrafı (test için 2. tenant dosya yükle) → görünür (super_admin bypass)
+
+**Test 2 — Normal kullanıcı:**
+- Kendi tenant'ı → görünür
+- Başka tenant manipülasyonu (URL/body değiştir) → 403 TENANT_UYUSMAZLIGI
+
+**Test 3 — Expiration:**
+- Signed URL al, kopyala, 1 saat sonra tarayıcı adres çubuğuna yapıştır → kırık
+
+**Test 4 — Cache:**
+- Aynı sayfayı 2 kez aç → network tab'da 2. seferde `/api/dosya-url-al` çağrısı OLMAMALI (cache çalışıyor)
+
+**Test 5 — Feedback fotoğrafı:**
+- Bir sayfada geri bildirim ver + fotoğraf ekle
+- Süper admin panelinden o fotoğrafı görebilmeli (13.04 bug'ı çözüm teyidi)
+
+### Kapanış (~15 dk)
+
+- `son-durum.md` güncelle → 31. oturum tamamlandı, 32 Sentry olacak
+- `CLAUDE-SON-OTURUM.md` detay rapor
+- `CLAUDE-SONRAKI-OTURUM.md` → 32. Sentry gündemi (29'un orijinal plan + 1 kayma)
+- 3 dosya `present_files` ile ver
 
 ---
 
-## 📋 Planlanan 5 Adımlı Akış
+## ⚠️ Potansiyel Sorunlar ve Kaçınma
 
-### Faz 1 — Envanter ve Risk Analizi (~30 dk)
-- [ ] Git pull + ritüel + profil oku
-- [ ] Supabase Dashboard → Storage → `arespipe-dosyalar` bucket'ına bak
-  - Kaç dosya var (yaklaşık)
-  - Toplam boyut
-  - Yol yapısı (tenant_id/alt_kategori/... mı, karışık mı)
-- [ ] `fotograflar` + başka tablolardaki `dosya_url` kullanımını çıkar
-  - Kaç kayıt, hangi tablolar (muhtemelen `fotograflar`, belki başkası)
-- [ ] Frontend'de `dosya_url` kullanımını tara
-  - `grep -r "dosya_url" --include="*.html" --include="*.js"` (Mac'te)
-  - Muhtemelen sayfalar: spool_detay, devre_detay, kesim, büküm, markalama, kalite_kontrol, sevkiyat
-- [ ] Cihat'a rapor: kaç dosya, kaç sayfa dokunulacak, risk seviyesi
+### Sorun 1 — Vercel rate limit hâlâ açılmadı
+**Çözüm:** Oturumu ertele (32'ye), veya Vercel Pro satın al ($20/ay).
 
-### Faz 2 — Signed URL API Endpoint (~45 dk)
-- [ ] `api/dosya-url-al.js` yaz:
-  - Input: `{ yol: string, tenant_id: string }` (POST)
-  - Yetki: yoldaki tenant_id, body'deki tenant_id ile eşleşmeli
-  - Çağrı: `supabase.storage.from('arespipe-dosyalar').createSignedUrl(yol, 3600)` (1 saat)
-  - Çıktı: `{ signedUrl: string, expiresAt: timestamp }`
-- [ ] Dosya yorumu şablona uygun (3-satır header)
-- [ ] Hata durumları:
-  - `tenant_id` yok → 400
-  - Cross-tenant istek → 403
-  - Dosya yok → 404
-  - Supabase hata → 500 + log
-- [ ] Sandbox'ta test — curl ile başarı + 3 başarısız case
+### Sorun 2 — `api/dosya-url-al.js` canlıda çalışmıyor
+**Muhtemel sebep:**
+- `@supabase/supabase-js` install edilmedi → Vercel build logs kontrol
+- Env var eksik → Settings → Environment Variables kontrol
+- Import hatası → Functions log
 
-### Faz 3 — Bucket PRIVATE Geçişi (~15 dk, önce staging gibi bir deneme)
-- [ ] **⚠️ RİSKLİ ADIM** — Bucket'ı PRIVATE yapınca tüm mevcut dosya URL'leri anında kırılır. Öneri sıra:
-  1. Önce API endpoint canlıda test
-  2. Bir-iki sayfada frontend entegrasyonunu tamamla, kontrol et
-  3. Sonra bucket PRIVATE'a çevir
-  4. Kalan sayfalarda kırık URL'leri sırayla onar
-- [ ] Alternatif güvenli yol: feature flag ile geçici bypass — A testi sırasında diğer sayfalar hâlâ public URL kullanır
-- [ ] Karar 30'un başında verilecek (Cihat ile)
+**Rollback:** Dosyayı silmek + revert commit'i yeterli. Bucket hâlâ PUBLIC, üretim etkilenmez.
 
-### Faz 4 — Frontend Migration (~90 dk)
-- [ ] Bir "dosyaUrlAl(yol)" helper fonksiyonu yaz (muhtemelen `assets/ares.js` altına)
-  - Dahili cache (1 saat TTL, aynı dosyayı tekrar tekrar isteme)
-  - Hata durumunda placeholder dön
-- [ ] Sayfa sayfa migration:
-  - **İlk:** `spool_detay.html` (en çok foto kullanılan) — test sonrası yaygınlaştır
-  - Sonra: `devre_detay.html`, `kesim.html`, `bukum.html`, `markalama.html`, `kalite_kontrol.html`, `sevkiyatlar.html`
-  - Mobil: `mobile/src/screens/*` — fotoğraf gösteren component'ler
-- [ ] Her sayfa migration sonrası tarayıcıda gözle doğrula
+### Sorun 3 — Frontend migration'da bir sayfa unutuldu
+**Tespit:** Bucket PRIVATE olduktan sonra 403 hataları console'da görünür.
+**Önlem:** 
+- `grep -r "getPublicUrl\|public/arespipe-dosyalar" --include="*.html" --include="*.js"` ile tüm referansları tara
+- Sayfa sayfa gözle doğrula
 
-### Faz 5 — Test (~30 dk)
-- [ ] **Pozitif test:** Kendi tenant'ının dosyasına eriş — yeşil
-- [ ] **Negatif test:** İki tarayıcı aç, biri A firması biri B firması, A'nın dosyasının yolunu B'nin API çağrısında dene → 403 beklenen
-- [ ] **Expiration test:** Signed URL al, 1 saat sonra dene → artık çalışmamalı
-- [ ] **Cache test:** Aynı dosyayı 2 kez iste, 2. sefer API çağrısı gitmemeli (cache)
+### Sorun 4 — Eski DB kayıtlarında `dosya_url` tam URL
+**Durum:** 30'da DB boşaltıldı, bu sorun oluşmamalı.
+**Ama canlı kullanıcılar varsa** (Demo Atölye dışında), eski kayıtlar bulunabilir:
+```sql
+SELECT COUNT(*) FROM fotograflar WHERE dosya_url LIKE 'https://%';
+```
+0 değilse, migration SQL'i gerekir. Muhtemelen 0 çıkacak.
 
-### Faz 6 — Kapanış (~15 dk)
-- [ ] `son-durum.md` güncelle, 31. oturum → Sentry
-- [ ] `CLAUDE-SON-OTURUM.md` raporla
-- [ ] `CLAUDE-SONRAKI-OTURUM.md` (31. için — Sentry)
+### Sorun 5 — Mobil'de çalışmıyor
+**Muhtemel sebep:** CORS (mobil ayrı domain)
+**Çözüm:** `api/dosya-url-al.js`'de `Access-Control-Allow-Origin: *` zaten var, sorun olmamalı. Ama test edilmeli.
 
 ---
 
-## ❓ Cihat'tan Faz 1 Başında Alınacak Cevaplar
+## 📊 Başarı Kriterleri (31 Sonu)
 
-### Soru 1 — Bucket Yol Yapısı Bilinen mi?
-
-Şu anki dosyaların yolu nasıl:
-- (a) `tenant_id/spooller/spool_id/...` gibi tenant-prefixed
-- (b) `spool_id/...` gibi tenant-yoksun (eski kayıtlar)
-- (c) Karışık — bazıları (a), bazıları (b)
-
-**Neye etki ediyor:** Cross-tenant check'i yol analizinden yapacaksak, (a) gerekli. (b) veya (c) varsa önce veri migration.
-
-**Tahmin:** 6. oturumda tenant prefix sistemi eklendi ama Storage yol yapısı ayrı bir karar. Muhtemelen (c) — yeni yüklemeler (a), eski kayıtlar (b).
-
-### Soru 2 — Geçiş Stili: Big Bang mı Aşamalı mı?
-
-- (a) Big bang — bucket bir anda PRIVATE, tüm sayfalar aynı anda yeni API kullanmalı (1 güçlü push)
-- (b) Aşamalı — feature flag ile sayfa sayfa geçiş, eski sayfalar bir süre hâlâ public URL kullanır
-
-**Trade-off:** (a) hızlı ama kırılma riski yüksek; (b) güvenli ama 2 hafta boyunca yarı-güvenli
-
-**Tahmin:** (b) daha sağlıklı — 28'in "sandbox + aşamalı" dersi burada da geçerli.
-
-### Soru 3 — Mobil Uygulama?
-
-Mobil `mobile/` altında bazı ekranlar foto kullanıyor mu şu an? Eğer kullanıyorsa web ile aynı API çağrısını yapabilmeliler.
-
-**Neye etki ediyor:** API endpoint'inin CORS ayarı (mobil domain farklı), ve mobil React ekranlarında da `dosyaUrlAl(yol)` helper'ı çağrılmalı.
-
----
-
-## ⚠️ Potansiyel Riskler ve Kaçınma
-
-### Risk 1 — Mevcut Dosya URL'leri Bozulur
-Bucket PRIVATE olduğu anda DB'deki tüm `dosya_url`'ler 403 verir. Tüm sayfalarda foto kırık görünür.
-
-**Çözüm:** Aşamalı geçiş (Soru 2 (b)) + frontend migration önce, bucket değişikliği sonra.
-
-### Risk 2 — Signed URL API Endpoint Sızıntısı
-API çağrı endpoint'ine kimlik doğrulama yoksa, kullanıcı diğer tenant'ların dosya yollarını tarayarak bypass edebilir.
-
-**Çözüm:** `tenant_id` mutlaka JWT'den okunmalı (body'den değil). Şu an body'den alıyoruz — 30. oturumda JWT-bazlı auth'a geçiş.
-
-### Risk 3 — Performance Darboğazı
-Her dosya isteği için API'ye çağrı → yavaşlık.
-
-**Çözüm:** Frontend'de cache (1 saat TTL), batch API (birden fazla yol tek çağrıda).
-
-### Risk 4 — Veri Kaybı
-Yeni sistem kırılırsa eski sistem de PRIVATE → tamamen erişim yok.
-
-**Çözüm:** Bucket'ı PRIVATE yapmadan önce **veri yedeği** (bucket'ın tam kopyası) yerel veya ayrı bir güvenli bucket'ta saklanmalı. Rollback senaryosu hazır olmalı.
-
----
-
-## 📊 Başarı Kriterleri (30 Sonu)
-
+- [ ] Vercel'de `api/dosya-url-al.js` canlıda, tüm test case'leri geçiyor
 - [ ] `arespipe-dosyalar` bucket'ı PRIVATE
-- [ ] `api/dosya-url-al.js` canlıda, pozitif + negatif test geçti
 - [ ] Web tüm sayfalarda foto gösterimi çalışıyor (signed URL ile)
-- [ ] Mobil (varsa foto kullanan ekran) çalışıyor
 - [ ] Cross-tenant erişim denemesi 403 dönüyor
-- [ ] CI hâlâ yeşil, self-test (33'te zaten koşacak) bozulmadı
-- [ ] son-durum.md güncel, 31. oturum planı hazır
+- [ ] Cache çalışıyor (aynı fotoğraf için tek API çağrısı)
+- [ ] `ARES.dosyaUrlAl()` helper `assets/ares.js`'de canlı
+- [ ] CI yeşil, self-test bozulmadı
+- [ ] son-durum.md güncel, 32. oturum Sentry planı hazır
 
 ---
 
-## 🔗 31-34 Oturum Bağlantısı (Hatırlatma)
+## 🔗 32. Oturumdan Sonra (Güncel Plan)
 
-| Oturum | Tema |
-|---|---|
-| **30** | **Bucket PRIVATE (bu oturum)** |
-| 31 | Sentry entegrasyonu (observability) |
-| 32 | Email sistemi (iletişim) |
-| 33 | Staging Supabase + migration runner |
-| 34 | Tenant izolasyon testleri + feature flag |
+| Oturum | Tema | Durum |
+|---|---|---|
+| 30 | Bucket PRIVATE (Faz 1-2) | ✅ (yarım) |
+| **31** | **Bucket PRIVATE (Faz 3-6 devir)** | **Bu oturum** |
+| 32 | Sentry entegrasyonu | 29→30→**32'ye kaydı** |
+| 33 | Email sistemi | 1 kaydı |
+| 34 | Staging Supabase + migration runner | 1 kaydı |
+| 35 | Tenant izolasyon testleri + feature flag | 1 kaydı |
 
-35'ten itibaren: Tablo Render Standardı, operasyon sayfaları, mobil, Spool AI döngüsü.
-
----
-
-## 🎯 Oturum İçi Disiplin (Cihat'ın Profiline Göre)
-
-- **Mockup-first** (R-10 uygulanır, sandbox'ta test sonra yaygınlaştır)
-- **Komutları birer birer**, açıklamalı
-- **Sandbox testi olmadan paylaşma** (28. + 29. oturumun dersi tekrar tekrar)
-- **Plan değişikliğinde dur, sor, onaylat** (27. oturumun dersi)
-- **Failure anında log oku, iyi haberi bul** (27. oturumun dersi)
-- **CI auto-commit kullanırsa rebase retry pattern'i uygula** (29. oturumun dersi)
-- **Belgelemeyi ihmal etme** — 29'da kurduğumuz hibrit dokümantasyon, 30'un değişiklikleri için `docs/DATABASE.md` + `docs/API.md`'ye otomatik yansır
+**36'dan itibaren:** Ürün dönemi (render standardı, operasyon sayfaları, mobil, Spool AI döngüsü).
 
 ---
 
-## 📌 Ek Borçlar Hatırlatması (30'un gündemi değil ama unutulmasın)
+## 🎯 Oturum İçi Disiplin (30'un Dersleri)
 
-- 🟢 **Fotoğraf/belge yaşam döngüsü** — Cihat 29'un sonunda sordu. Aktif devre → gerçek boyut, arşivlenen proje → sıkıştırılmış. Mekanizma henüz yok. 30-34 aralığının birinde ele alınacak (muhtemelen 30 ile birlikte çünkü Storage dokunulacak, ya da 33 ile çünkü lifecycle).
-- 🟡 Vercel `ci-son-rapor.json` auto-commit Vercel'i tetiklemesin (ignored build step)
-- 🟡 `actions/checkout@v4` + `setup-node@v4` v5 geçişi
-- 🟡 Supabase `arespipe-dev` projesi incelemesi (canlı kullanımı var mı?)
+- **Vercel ayarları UI yerine `vercel.json`'da** — deterministik, repo-kontrollü
+- **UI debugging 10 dk'yı aşıyorsa kodla çözmeye geç** — dropdown döngüsü yerine dosya yaklaşımı
+- **Her iş bloğu sonunda "tamam/yarım" cümlesi** — kullanıcı yarım bilgiyle yatmasın
+- **"Hızlı iş" tahminlerinde 2x buffer** — özellikle UI-bağımlı işlerde
+- **Yanlış proje/ortam kontrolü** — URL bar'dan teyit standart adım
+- **Yorgun kullanıcıyı sıkıştırma** — alternatif yola hemen geç
+
+(+ 1-29'un tüm dersleri `son-durum.md` disiplin bölümünde)
 
 ---
 
-**29. oturum sonu, 24 Nisan 2026.** 30 için her şey hazır. Cihat ertesi gün geldiğinde ritüelden sonra direkt Faz 1 (envanter) ile başlayacak.
+**30. oturum sonu, 24 Nisan 2026.** Cihat yattı, Vercel kotası sabaha açılacak. 31'de ritüelden sonra direkt Faz 3 (canlı test) ile başla.

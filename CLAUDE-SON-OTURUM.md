@@ -1,184 +1,177 @@
-# CLAUDE — 29. Oturum Kapanış Raporu
+# 30. Oturum Özeti — 24 Nisan 2026
 
-**Tarih:** 24 Nisan 2026
-**Süre:** ~4 saat
-**Tema:** Devredilebilirlik Günü — Hibrit Dokümanlar
-**Durum:** ✅ TAMAMLANDI (6 belge canlıda, motor çalışıyor, race condition düzeltildi)
-
----
-
-## 🎯 Oturum Özeti
-
-AresPipe'ı **yazılımcıya devredilebilir** hale getirme günü. 28'de onaylanan "Hibrit Dokümanlar" planı uygulandı: 6 belge yazıldı, AUTO bölüm güncelleme motoru kuruldu, production'da race condition yakalanıp düzeltildi. Yeni bir yazılımcı artık repo'yu açtığında `docs/ONBOARDING.md` ile başlayabilir.
+**Tema:** Bucket PRIVATE Geçişi (Faz 1-2 tamamlandı, Faz 3-6 Vercel rate limit nedeniyle 31'e ertelendi)
+**Süre:** ~3.5 saat
+**Durum:** Kısmi başarı — kod hazır, canlı test yarına kaldı
 
 ---
 
-## 📦 Teslim Edilenler
+## 🎯 Oturumun Hedefi
 
-### Motor Dosyaları (canlıda, workflow yeşil)
+`arespipe-dosyalar` Supabase Storage bucket'ını PUBLIC'ten PRIVATE'a geçirmek + signed URL altyapısı kurmak. Multi-tenant izolasyonunun en büyük açığını kapamak.
 
-| Dosya | Satır | Görev |
-|---|---:|---|
-| `.github/docs-uret.js` | ~290 | AUTO bölüm üretici (6 fonksiyon, try/catch, exit 0) |
-| `.github/workflows/docs-uret.yml` | ~75 | Push tetiklemeli, [skip ci] + rebase retry |
-
-### Dokümantasyon (6 belge, 1515 satır)
-
-| Dosya | Satır | Manuel/AUTO |
-|---|---:|---|
-| `README.md` | 92 | %100 manuel |
-| `docs/ONBOARDING.md` | 210 | %95 / %5 |
-| `docs/ARCHITECTURE.md` | 395 | %80 / %20 |
-| `docs/DATABASE.md` | 293 | %30 / %70 |
-| `docs/API.md` | 329 | %20 / %80 |
-| `docs/LOCAL-DEV.md` | 196 | %100 manuel |
-
-### Fix + Keşifler
-
-- `.github/package.json` fantom borç — 28'de lokal oluşmuş, push edilmemişti → düzeltildi
-- ARCHITECTURE.md'deki AUTO-sınır örneği script tarafından gerçek sınır sanılıyordu → Türkçe karakter trick'i ile çözüldü
-- docs-uret.yml race condition (kontrol.yml ile paralel) → rebase + 3x retry eklendi
+Planlanan: 3-4 saat, 6 faz (envanter → API → bucket private → frontend migration → test → kapanış).
+Gerçekleşen: 3.5 saat, 2 faz tamamlandı, Vercel rate limit duvara vurdu.
 
 ---
 
-## 🧪 Sandbox Testleri (7 edge case geçti)
+## ✅ Yapılanlar
 
-Production'a göndermeden önce `/home/claude/29-test/` altında mini repo kuruldu:
+### Faz 1 — Envanter ve Temizlik
 
-1. ✅ Mutlu yol — 2 AUTO bölümlü dosya güncellendi, manuel metin korundu
-2. ✅ AUTO sınırı yok olan dosyaya dokunulmadı
-3. ✅ AUTO-START var AUTO-END yoksa dokunulmadı + uyarı verildi
-4. ✅ Dosya yoksa geçildi, hata yok
-5. ✅ İdempotent — ikinci run'da 0 güncelleme (sonsuz döngü imkansız)
-6. ✅ Yorumsuz endpoint için fallback mesajı ("açıklama yok — yorum başlığı ekle")
-7. ✅ Sayım doğruluğu — 4 sayfa, 3 mobil, 5 tablo, 3 endpoint, 7 kural, 2 migration
+**DB Taraması:**
+- `public` şemasında 18 kolon dosya/URL ilişkili çıktı
+- Ayıklama sonrası 8 kolon bucket referansı, 4 tanesi gerçek veri kaynağı:
+  - `fotograflar.dosya_url` — 34 dolu (test)
+  - `feedback_kayitlari.fotograf_url` — 1 dolu (test)
+  - `kullanicilar.foto_url` — 0 (şema hazır, kullanılmıyor)
+  - `belgeler.dosya_url` — 0 (Spool AI rezerv)
+- Diğer 4 kolon (`egitim_verisi`, `tarama_sonuclari`) tamamen boş — Spool AI gelecek döneminin hazırlığı
 
-Ama **paralel workflow race condition sandbox'ta simüle edilemedi** — production'da ilk push'ta keşfedildi.
+**Yol Yapısı Teyidi:**
+- Mevcut URL örnekleri: `<tenant_id>/<kategori>/<parent_id>/<timestamp_isim>`
+- Tüm kayıtlar Demo Atölye tenant'ında (`00000000-0000-0000-0000-000000000001`)
+- Tenant-prefix sistemi doğru kurulmuş, yetki kontrolü için yeterli
+- **Not:** Feedback yüklemeleri `feedback/` diye bucket kökünde ayrı klasörde duruyordu — yol konvansiyonu ihlali. Yeni sistemde `<tenant_id>/feedback/...` yoluna taşınacak (31'de uygulanacak)
 
----
+**FK Güvenlik Kontrolü:**
+- `ai_analizler.fotograf_id` — 0 referans
+- `is_kayitlari.fotograf_id` — 0 referans
+- TRUNCATE güvenli, FK ihlali riski yok
 
-## 🐛 Production'da Yakalanan Buglar ve Çözümleri
+**Karar — Temiz Başlangıç:**
+- 35 kayıt tamamen test verisi, migration tooling yazmak anlamsız
+- Temiz masa → canlıda ilk yüklemeden itibaren PRIVATE sistemde doğ
+- **Migration tooling borcu:** 34'te staging runner ile birlikte geri gelecek
 
-### Bug 1 — Race Condition: kontrol.yml vs docs-uret.yml
-
-**Belirti:** İkinci push sonrası docs-uret workflow'u "non-fast-forward rejected" verdi.
-
-**Kök neden:** İki workflow paralel tetiklenir. kontrol.yml bitip `ci-son-rapor.json` auto-commit'i push ederken, docs-uret.yml de AUTO bölüm commit'ini push etmek istiyor — remote'ta yeni commit olduğu için docs-uret'in push'u reddediliyor.
-
-**Çözüm:** docs-uret.yml'in "Auto-commit + push" step'ine rebase retry eklendi:
-```bash
-for i in 1 2 3; do
-  git pull --rebase origin main && git push && exit 0
-  echo "Push denemesi $i başarısız, tekrar deneniyor..."
-  sleep 2
-done
+**Temizlik:**
+```sql
+BEGIN;
+DELETE FROM fotograflar;  -- 34 satır
+UPDATE feedback_kayitlari SET fotograf_url = NULL WHERE fotograf_url IS NOT NULL;  -- 1 satır
+COMMIT;
 ```
+- Transaction'lı, 0/0 sonuç teyit edildi
+- Bucket'tan `00000000...01/` + `feedback/` klasörleri Dashboard'dan silindi → bucket boş
 
-**Ders (son-durum.md disipline eklendi):** CI auto-commit pattern'i her zaman "commit → pull --rebase → push (3x retry)" olmalı. Sandbox tek process olduğu için bu bug orada yakalanamaz.
+### Faz 2 — Signed URL API Endpoint (Kod)
 
-### Bug 2 — AUTO Sınır Örneği Parse Ediliyor
+**`api/dosya-url-al.js`** (yeni dosya, ~100 satır):
+- Vercel serverless function, `maxDuration: 10`
+- **Auth:** `Authorization: Bearer <JWT>` header → `supabase.auth.getUser(token)` ile verify
+- **Tenant kaynağı:** DB'den `kullanicilar.tenant_id` (JWT'den user_id → DB sorgusu) — JWT body'den DEĞİL
+- **Yetki:** Yolun ilk segmenti (`<tenant_id>`) JWT'deki tenant_id ile eşleşmeli
+- **Super admin bypass:** `rol='super_admin'` ise tenant kontrolünü atla (feedback paneli için gerekli)
+- **Yol doğrulama:** UUID regex ile ilk segment formatı kontrolü
+- **İmza:** `createSignedUrl(yol, 3600)` — 1 saatlik
+- **Hata kodları:** METOD_YANLIS, ENV_EKSIK, YETKI_GEREKLI, TOKEN_GECERSIZ, YOL_EKSIK, YOL_GECERSIZ, KULLANICI_YOK, TENANT_UYUSMAZLIGI, DOSYA_YOK, SUPABASE_HATASI, BEKLENMEDIK_HATA
+- **Yanıt:** 200 → `{ signedUrl, expiresAt }`, hata → `{ error, kod }` + uygun HTTP status
 
-**Belirti:** ARCHITECTURE.md ilk push'tan sonra `bolumadi(?)` uyarısı verdi.
+**`package.json`** (repo kök, yeni dosya):
+- `"type": "module"` (ESM)
+- `@supabase/supabase-js ^2.45.0` dependency
+- Vercel build sistemi otomatik install edecek
 
-**Kök neden:** Dokümantasyonda "AUTO sınırı şöyle yazılır" örneği olarak verdiğim `<!-- AUTO-START:bolumadi -->` bloğu script'in regex'i tarafından gerçek sınır sanıldı, "bilinmeyen bölüm" uyarısı çıktı.
+**Atomik Commit Stratejisi:**
+- İki dosya ayrı commit'te yüklendi ama SIRALI: önce `package.json`, sonra `api/dosya-url-al.js`
+- Sebep: Vercel ilk build'de dependency kurması, ikincide API'nin `import` ifadesinin patlaması riskini sıfırlar
+- GitHub Actions her iki commit'te de yeşil
 
-**Çözüm:** Örneği Türkçe karakterli yaptım (`BÖLÜM_ADI`) — regex `[\w-]+` Türkçe karakterleri yakalamaz.
+### Faz 2 — Canlı Test ⏸
 
-**Ders:** Parser'a öğretirken parser'ın kurallarına uy; eskape yerine "regex dışı karakter kullan" daha temiz.
+**Duvar: Vercel Rate Limit**
+- İki commit (`package.json` + `api/dosya-url-al.js`) Vercel'e tetikledi
+- Son 24 saatte 29'un dokümantasyon commit'leri + 30'un iki commit'i → free tier günlük kota doldu
+- "Deployment rate limited — retry in 24 hours" mesajı
+- Canlıda test imkansız → Faz 3-6 (bucket private, frontend migration, test) **tamamı 31'e kaldı**
 
----
+### Yan İşler
 
-## 🎓 Bu Oturumdan 5 Önemli Öğrenme
+**Vercel Rate Limit Önleme (`vercel.json` `ignoreCommand`):**
+- UI'dan Ignored Build Step kurma denemesi başarısız:
+  - Dropdown "Only build if there are changes in a folder" seçiliyken bash komut çalışmıyor
+  - "Run my Bash script" seçilince textbox Vercel tarafından beklenmedik şekilde davrandı (başına "bash" eklendi vb.)
+  - Yanlış proje (`arespipe-mob` vs `arespipe`) karışıklığı yaşandı
+- UI yerine repo yaklaşımı: `vercel.json`'a `ignoreCommand` eklendi
+- Komut: `git diff HEAD^ HEAD --quiet -- ':(exclude).github' ':(exclude)docs' ':(exclude)*.md' && exit 0 || exit 1`
+- Mevcut `headers` bloğu korundu, sadece başa `ignoreCommand` alanı eklendi
+- Vercel yarın kota açılınca bu ayarı otomatik okuyacak
+- **Etki:** `.github/`, `docs/`, `*.md` değişiklikleri artık Vercel'i tetiklemeyecek — rate limit problemi kalıcı çözüldü
 
-1. **Sandbox tek process, production çok process.** Paralel workflow race condition sandbox'ta simüle edilemez. CI pattern'i baştan "senkron push" şeklinde yazılmalı.
+**Ritüel 5. Soru:**
+- `CLAUDE.md` başındaki zorunlu ritüele eklendi:
+  > 5. admin/panel.html → Geri Bildirim sekmesinde açık (yeni + inceleniyor durumunda) kaç feedback var? Kritik olanları (veri kaybı / güvenlik / canlı hata) kısaca özetle.
+- Başlık sayısı 4 → 5'e güncellendi iki yerde
+- Sebep: 30'un başında Claude feedback kuyruğunu sormadı, Cihat hatırlatmak zorunda kaldı. Sistemik çözüm.
 
-2. **Atomik commit dersi yeniden doğrulandı.** 6 belge tek upload'da gitti, hepsi birbirine referans veriyor (README → docs/, ONBOARDING → diğer 4 belge). Aşamalı atsak ara durumlarda kırık link'ler olurdu.
-
-3. **Dürüst dokümantasyon faydalı.** LOCAL-DEV.md "lokal çalışmıyor" diyor, yazılımcıya yalan söylemiyor. Varsayımsal "lokal kurulum" yazsaydık yanıltıcı olurdu.
-
-4. **AUTO sınır regex kendi örneğinin kurbanı olur.** Dokümanda örnek gösterirken parser'ın dışında kalması için eskape veya karakter trick'i gerekli.
-
-5. **Vercel free tier günlük deploy kotası var.** Yoğun push günlerinde "rate limited" yersin. Kod sorunu değil, plan sınırı. Pro geçişi ürün dönemi öncesi değerlendirilmeli.
-
----
-
-## 🗓️ İşlem Tarihçesi (kronolojik)
-
-| Saat | İş | Sonuç |
-|---|---|---|
-| 0:00-0:15 | Ritüel (git pull, CI yeşil teyit) | Temiz giriş |
-| 0:15-0:30 | Fantom borç keşfi + `.github/package.json` push | ✅ |
-| 0:30-1:30 | docs-uret.js + workflow yazımı, sandbox'ta 7 test | ✅ |
-| 1:30-1:45 | Motor dosyaları GitHub'a yüklendi, ikisi de yeşil | ✅ |
-| 1:45-2:00 | Cihat'tan 3 soru cevabı (kitle, dil, local dev) + API format teyit | ✅ |
-| 2:00-3:30 | 6 belge yazımı (iskelet → onay → tam dosya sırasıyla) | ✅ |
-| 3:30-3:45 | ARCHITECTURE.md AUTO örnek bug düzeltme | ✅ |
-| 3:45-4:00 | 6 belge GitHub'a upload (tek atomik commit) | ✅ |
-| 4:00-4:20 | Race condition bulundu, workflow düzeltildi, canlıda yeşil | ✅ |
-| 4:20-4:30 | Cihat'ın "fotoğraf arşiv kaydı" sorusu → borca eklendi | Not |
-| 4:30-... | Oturum kapanış dosyaları (bu) | ✅ |
-
----
-
-## 📝 Borca Eklenen Yeni Notlar
-
-### Fotoğraf / Belge Yaşam Döngüsü (Cihat kaydı istedi)
-
-**Kayıt:** Aktif devrede fotoğraflar/belgeler gerçek boyutta görüntülenir. Devre tamamlanıp aktif listeden arşive (bağlı olduğu proje) taşınırken **sıkıştırılıp** depolanır. Amaç: storage maliyetini düşürmek + aktif iş akışında görsel kaliteyi korumak.
-
-**Şu anki durum:**
-- `fotograflar` tablosu var, `dosya_url`, `yukleyen_id`, `islem_turu`, `spool_id` kolonları mevcut
-- `arespipe-dosyalar` bucket'ında orijinal boyutta yükleniyor
-- **Sıkıştırma/arşivleme mekanizması YOK** — devre "tamamlandı" durumuna geçtiğinde hiçbir otomatik iş tetiklenmiyor
-
-**Ne gerekiyor (taslak):**
-- `devreler.durum = 'tamamlandi'` transition'ında trigger veya API endpoint
-- Görsel sıkıştırma (muhtemelen Vercel function + Sharp veya benzeri)
-- Yeni sıkıştırılmış dosyaları ayrı storage yolu altında (arşiv klasörü)
-- Eski URL'lerin yeniden yazılması veya DB'deki `dosya_url` güncellenmesi
-- Veri kaybı riski minimize — orijinali belki N gün saklı tutulmalı
-
-**Ne zaman:** 30-34 aralığının birinde (muhtemelen 30 Bucket PRIVATE ile birlikte çünkü Storage altyapısına dokunulacak, ya da 33 staging ile çünkü migration + data lifecycle ilişkili). Karar 30'un sonunda verilecek.
-
-**Öncelik:** 🟢 Orta — acil değil (storage maliyeti şu an kritik değil) ama müşteri artışından önce kurulmalı (çok proje = çok foto).
-
-### Diğer Borçlar
-- 🟡 Vercel `ci-son-rapor.json` auto-commit'inin Vercel'i tetiklememesi için "ignored build step"
-- 🟡 `actions/checkout@v4` + `setup-node@v4` v5 geçişi (Node 20 deprecated warning)
-- 🟡 Supabase `arespipe-dev` projesi incelemesi — eski deneme mi, canlı bir kullanımı var mı?
+**Feedback Kuyruğu Analizi:**
+- Pano → 28 açık feedback 5 gruba ayrıldı:
+  - **Grup 1 (3 kayıt):** Zaten yapılmış (yedekleme planı x2, izometri 502) — durumu güncellenmedi (Cihat: "gerek yok")
+  - **Grup 2 (1 kayıt):** Şifre sıfırlama/unuttum → 33. oturum Email planında
+  - **Grup 3 (1 kayıt):** Feedback fotoğrafları süper admin'e iletilmiyor → Bucket PRIVATE ile çakışıyor, 31'de birlikte halledilecek
+  - **Grup 4 (7 kayıt):** Doğrulama gerekli, 31 sonu veya sonraki oturumlarda taranacak
+  - **Grup 5 (13 kayıt):** Ürün dönemi (35+) → son-durum.md'ye kaydedildi
 
 ---
 
-## 🚀 30. Oturum İçin Hazırlık
+## 📊 Kod Değişiklikleri Özet
 
-**Tema:** Bucket PRIVATE Geçişi + Signed URL Altyapısı
+| Dosya | İşlem | Satır | Açıklama |
+|---|---|---:|---|
+| `api/dosya-url-al.js` | YENİ | ~100 | Signed URL endpoint, JWT auth |
+| `package.json` | YENİ | ~10 | Supabase JS client dependency |
+| `vercel.json` | UPDATE | +1 | `ignoreCommand` eklendi |
+| `CLAUDE.md` | UPDATE | +2 | Ritüel 5. soru |
+| `son-durum.md` | UPDATE | - | 30. oturum kapanış |
+| `CLAUDE-SON-OTURUM.md` | UPDATE | - | Bu dosya |
+| `CLAUDE-SONRAKI-OTURUM.md` | UPDATE | - | 31. oturum gündemi |
 
-**Neden acil:** `arespipe-dosyalar` bucket'ı şu an PUBLIC. URL'i bilen herkes (rastgele veya bilerek) her firmanın her dosyasına erişebilir. **Müşteri öncesi bu kritik güvenlik açığı.**
-
-**Kapsam (tahmini):**
-1. Mevcut bucket envanter — kaç dosya, hangi yollar, toplam boyut
-2. `public: false` ayarı ve mevcut dosya erişim modelini anlama
-3. Signed URL (imzalı link) API endpoint'i: `api/dosya-url-al.js`
-   - Yetki kontrolü (kullanıcı kendi tenant'ının dosyasına mı istiyor?)
-   - Süre-sınırlı link üretimi (örn. 1 saat geçerli)
-4. Frontend'de `dosya_url` doğrudan kullanımı yerine bu endpoint'i çağırma akışı
-5. Hangi sayfalar etkilenir — envanter + migration planı (muhtemelen spool_detay, devre_detay, kesim, büküm, kalite_kontrol)
-6. Test — başka tenant'ın dosyasına URL almaya çalışıldığında reddediliyor mu
-
-**Tahmini süre:** 3-4 saat
-
-**Risk:** Orta — yanlış yapılırsa mevcut dosya gösterimleri kırılır (tüm operasyon sayfalarında foto). **Önce sandbox** + önce feature flag ile bir sayfada test + sonra yaygınlaştırma önerilir.
+**DB Değişikliği:**
+- `fotograflar` tablosu: 34 kayıt silindi
+- `feedback_kayitlari`: 1 kayıtta `fotograf_url` null'landı
+- **Migration dosyası yazılmadı** — sebep: test verisi temizliği, kalıcı şema değişikliği yok (27'nin disiplini: şema değişirse migrations/ altında dosya oluşur; veri temizliği bu kurala girmez)
 
 ---
 
-## 🏁 Kapanış Notu
+## 🎓 Öğrenmeler
 
-29'un başında korktuğum şey: 6 belge × ~250 satır = büyük iş, zaman yetmez. Gerçekte: motor dosyası en çok vakti aldı (~1.5 saat sandbox dahil), belgeler sırayla akıcı yazıldı. 28'in kurduğu atomik commit disiplini (PAT + Vercel Sensitive birlikte) bugün 6 belgenin birlikte gitmesine doğal refleks verdi.
+1. **Vercel rate limit 29'un uyarısını canlı doğruladı.** 29'da "yoğun push günü öncesi Vercel Pro'yu düşün" notu vardı. 30'da yedik. Ders: Rate limit önleme standart hazırlık adımı olmalı.
 
-Race condition bulduğumuzda paniğe kapılmak yerine log okumak (27'nin dersi) işe yaradı — 2 dakikada sebebi bulduk, 5 dakikada çözdük, canlıda yeşil. 29 başarılı bir oturum.
+2. **UI-bazlı ayarlar deterministik değil.** Vercel Dashboard'da Ignored Build Step 20 dk döndü, çözüm olmadı. `vercel.json`'a 1 satır ekleme 2 dk sürdü. Ders: Mümkün olduğunca konfigürasyonu kodla yönet.
 
-**30 için hazır.** Cihat ertesi gün geldiğinde `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` açık ve net: Bucket PRIVATE.
+3. **Yanlış proje riskini önden kontrol et.** Cihat `arespipe-mob` projesinde ayar yapıyordu, `arespipe` projesini kastetmiştik. URL bar'dan teyit etmek standart adım.
+
+4. **"Hızlı çıkacak iş" algısı yanıltıcı olabilir.** Vercel Ignored Build Step 10 dk tahmin edildi, gerçekte 20+ dk. Ders: Tahminleri 2x buffer ile ver, özellikle UI-bağımlı işler için.
+
+5. **`sorgula.js` güvenlik açığı tespit edildi.** Mevcut endpoint `tenant_id`'yi body'den alıyor — manipüle edilebilir. Yeni endpoint JWT-bazlı yazıldı, ama eski açık hâlâ duruyor. Not: 31-32 aralığında sorgula.js refactor'u yapılmalı.
+
+6. **Feedback kuyruğu görünmez büyüyor.** Ritüelde sormak yerine Cihat'ın hatırlatmasına güvendik, kuyruk büyüdü. 5. soru ritüele eklendi, sistemik çözüm.
+
+7. **Yorgun Cihat'ı sıkıştırma.** "Uykum var" işaret geldi, UI debugging'den kod-yaklaşımına geçiş kararı hemen verildi. Doğru refleks.
 
 ---
 
-_Oturum kapandı — 24 Nisan 2026, 29. oturum._
+## 📉 Plan Kayması
+
+Orijinal altyapı kapanış planı (29'da mutabık):
+- 30 Bucket → 31 Sentry → 32 Email → 33 Staging → 34 Tenant test
+
+30'un yarım kalmasıyla güncel plan:
+- **31 Bucket (devir)** → 32 Sentry → 33 Email → 34 Staging → 35 Tenant test
+
+Tüm plan 1 oturum kaydı. Ürün dönemi 36+'dan başlayacak (daha önce 35+'dı).
+
+---
+
+## 🔗 31. Oturumda Devam
+
+`CLAUDE-SONRAKI-OTURUM.md`'de detay. Özet:
+1. Ritüel (5 soru artık)
+2. Vercel rate limit açık mı kontrol
+3. Faz 2 canlı test (`/api/dosya-url-al` endpoint çalışıyor mu)
+4. Faz 3 — Bucket PRIVATE Dashboard'dan
+5. Faz 4 — Frontend migration (`dosyaUrlAl()` helper + sayfa sayfa)
+6. Faz 5 — Pozitif/negatif/expiration/cache test
+7. Faz 6 — Kapanış
+
+Süre tahmini: 2-3 saat (envanter + kod 30'da bitti, kalan iş test + refactor).
