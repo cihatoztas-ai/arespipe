@@ -21,7 +21,7 @@
 2. 🟡 **G-08 görsel inceleme** — devre_detay'a skeleton+cascade pattern uyarlandı (devreler.html birebir referans alındı), Cihat "tam aynı değil" dedi ama somut fark belirtilmedi. 33. oturumda iki sayfayı yan yana açıp fark bulunacak.
 
 **Atlananlar / sonraya:**
-- `db-backup.yml` cron düzeltmesi (TR 03:00 hedef) — bu oturumda erteledik, defterde duruyor
+- `db-backup.yml` cron — dosya zaten 32'de düzeltilmiş (commit bb03127). 26 Nis sabahı yedek saatine bakılıp ✅ kapanır.
 
 ---
 
@@ -33,7 +33,7 @@
 - 🟡 **SBD-01 vs GitHub Issues kararı** — 32. oturumda atlandı, 33+ Cihat seçecek
 - 🟡 **G-08 yaygınlaştırma** — 21 sayfa eksik (15 yüksek öncelik), 33-34 oturumlarına dağıtılabilir
 - 🟢 **G-09 (filtre çubuğu) ve G-10 (üst aksiyon çubuğu)** — kural numaraları rezerve, teknik spec sonra
-- 🟡 **db-backup.yml cron düzeltmesi** — TR 05:55 yerine TR 03:00, tek satır iş, sonraki oturumda
+- 🟢 **db-backup.yml cron** — dosyada `0 0 * * *` (UTC 00:00 = TR 03:00). 32'de düzeltilmiş ama bugünkü yedek hâlâ TR 05:55'te düştü (cron dosya değişikliğini bir sonraki tetiklemeden okur). 26 Nis sabahı backups repo'da yedek saati kontrol → TR 03:00-03:30 ise ✅. Hâlâ 05:55 ise farklı sürükleyici aranır.
 
 **Önceki dönemlerden devreden:**
 - 🟡 ✅ `actions/checkout@v4` + `setup-node@v4` deprecation — **32'de v5'e güncellendi**
@@ -101,7 +101,7 @@ CI her main push'ta JSON rapor üretir.
 
 ### **Yedekleme Sistemi** (27. oturum)
 - **Repo:** `cihatoztas-ai/arespipe-backups` (private)
-- **Workflow:** `.github/workflows/db-backup.yml` — her gece UTC ~02:55 (TR 05:55) — **plana göre 3 saat geç**, 33+ düzeltilecek (`0 0 * * *` UTC = TR 03:00)
+- **Workflow:** `.github/workflows/db-backup.yml` — cron `0 0 * * *` (UTC 00:00 = TR 03:00). 32'de düzeltildi (commit bb03127). 25 Nis sabahki yedek hâlâ eski saatte (02:56 UTC) çünkü cron değişikliği bir sonraki tetiklemeden uygulanır. **26 Nis doğrulaması beklemede.**
 - **Yedek yapısı:** `backups/TIMESTAMP/database.sql.gz` + `storage.tar.gz`
 - **Retention:** 30 gün rolling
 
