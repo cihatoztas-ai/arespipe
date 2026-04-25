@@ -1614,6 +1614,23 @@ async function feedbackYukle() {
       return;
     }
 
+    // Foto URL'leri formata göre çöz (signed URL / base64 / eski public URL)
+    // Bucket PRIVATE — yeni kayıtlar path saklar, ARES.dosyaUrlAl ile signed URL alınır
+    await Promise.all(_feedbackVerisi.map(async function(fb) {
+      if (!fb.fotograf_url) return;
+      if (fb.fotograf_url.indexOf('data:') === 0) {
+        // base64 — doğrudan kullanılır
+        fb._displayUrl = fb.fotograf_url;
+      } else if (fb.fotograf_url.indexOf('https://') === 0) {
+        // Eski public URL formatı (migration öncesi) — bucket PRIVATE olduğu için artık kırık
+        fb._displayUrl = null;
+        fb._eskiFormat = true;
+      } else {
+        // Yeni path formatı — signed URL al
+        fb._displayUrl = await ARES.dosyaUrlAl(fb.fotograf_url) || null;
+      }
+    }));
+
     var KAT_RENK = { hata: 'var(--re)', eksik: 'var(--ac)', fikir: 'var(--warn)' };
     var KAT_IKON = { hata: '🐛', eksik: '📋', fikir: '💡' };
     var DURUM_ET  = { yeni:'Yeni', inceleniyor:'İnceleniyor', yapilacak:'Yapılacak', yapildi:'Yapıldı', reddedildi:'Reddedildi' };
@@ -1651,7 +1668,10 @@ async function feedbackYukle() {
         '</div>' +
         // AÇILIR PANEL — Yanıt + Durum + Göreve Dönüştür
         '<div id="fb-detay-' + fb.id + '" style="display:' + (_feedbackAcikId === fb.id ? 'block' : 'none') + '; padding:0 20px 18px 58px; background:var(--sur2);">' +
-          (fb.fotograf_url ? '<div style="margin-bottom:10px;"><img src="' + fb.fotograf_url + '" style="max-width:340px; max-height:200px; border-radius:8px; border:1px solid var(--bor); object-fit:cover; cursor:pointer;" onclick="window.open(\'' + fb.fotograf_url + '\')"></div>' : '') +
+          (fb._displayUrl
+            ? '<div style="margin-bottom:10px;"><img src="' + fb._displayUrl + '" style="max-width:340px; max-height:200px; border-radius:8px; border:1px solid var(--bor); object-fit:cover; cursor:pointer;" onclick="window.open(\'' + fb._displayUrl + '\')"></div>'
+            : (fb._eskiFormat ? '<div style="margin-bottom:10px; padding:8px 12px; background:rgba(229,62,62,.08); border:1px solid rgba(229,62,62,.25); border-radius:6px; font-size:11px; color:var(--re);">⚠ Eski format foto (bucket migration öncesi) — gösterilemiyor</div>' : '')
+          ) +
           // Mevcut yanıt (varsa)
           (yanitVar ? '<div style="margin-bottom:12px; padding:10px 12px; background:var(--sur); border-left:3px solid var(--gr); border-radius:6px;">' +
             '<div style="font-size:10px; color:var(--gr); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Mevcut Yanıt · ' + yanitTarihi + '</div>' +
