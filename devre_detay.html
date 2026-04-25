@@ -174,29 +174,51 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 /* Inline edit */
 .iec{width:100%;background:var(--sur2);border:1px solid var(--ac);border-radius:5px;padding:3px 6px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;}
 
-/* G-08 — Sayfa Açılış Ritüeli (skeleton + cascade) */
+/* G-08 — Sayfa Açılış Ritüeli (skeleton + cascade) — devreler.html referans */
 @keyframes _skShimmer { 0%{background-position:-340px 0;} 100%{background-position:calc(340px + 100%) 0;} }
 .sk{display:inline-block;background:linear-gradient(90deg,var(--bor) 0%,var(--sur2) 50%,var(--bor) 100%);background-size:340px 100%;animation:_skShimmer 1.4s ease-in-out infinite;border-radius:4px;color:transparent !important;vertical-align:middle;user-select:none;}
 .sk-num{width:56px;height:22px;}
 .sk-bar{width:100%;height:12px;margin-top:4px;display:block;}
 .sk-cell{width:78%;height:14px;}
 .sk-cell-s{width:42%;height:14px;}
-.sk-info{width:65%;height:14px;}
 .sk-row td{padding:12px !important;}
+.sk-row td:hover{background:transparent !important;cursor:default !important;}
 tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !important;}
+tr.sk-row:hover td{background:transparent !important;}
 @keyframes _cascadeIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
-.dt tbody tr[data-ci],.cascade-list>[data-ci]{opacity:0;animation:_cascadeIn .22s ease forwards;}
-[data-ci="0"]{animation-delay:0ms;}
-[data-ci="1"]{animation-delay:45ms;}
-[data-ci="2"]{animation-delay:90ms;}
-[data-ci="3"]{animation-delay:135ms;}
-[data-ci="4"]{animation-delay:180ms;}
-[data-ci="5"]{animation-delay:225ms;}
-[data-ci="6"]{animation-delay:270ms;}
-[data-ci="7"]{animation-delay:315ms;}
-[data-ci="8"]{animation-delay:360ms;}
-[data-ci="9"]{animation-delay:405ms;}
-[data-ci="10"]{animation-delay:450ms;}
+.dt tbody tr,.data-table tbody tr{opacity:0;animation:_cascadeIn .22s ease forwards;}
+.dt tbody tr[data-ci="0"],.data-table tbody tr[data-ci="0"]{animation-delay:0ms;}
+.dt tbody tr[data-ci="1"],.data-table tbody tr[data-ci="1"]{animation-delay:45ms;}
+.dt tbody tr[data-ci="2"],.data-table tbody tr[data-ci="2"]{animation-delay:90ms;}
+.dt tbody tr[data-ci="3"],.data-table tbody tr[data-ci="3"]{animation-delay:135ms;}
+.dt tbody tr[data-ci="4"],.data-table tbody tr[data-ci="4"]{animation-delay:180ms;}
+.dt tbody tr[data-ci="5"],.data-table tbody tr[data-ci="5"]{animation-delay:225ms;}
+.dt tbody tr[data-ci="6"],.data-table tbody tr[data-ci="6"]{animation-delay:270ms;}
+.dt tbody tr[data-ci="7"],.data-table tbody tr[data-ci="7"]{animation-delay:315ms;}
+.dt tbody tr[data-ci="8"],.data-table tbody tr[data-ci="8"]{animation-delay:360ms;}
+.dt tbody tr[data-ci="9"],.data-table tbody tr[data-ci="9"]{animation-delay:405ms;}
+.dt tbody tr[data-ci="10"],.data-table tbody tr[data-ci="10"]{animation-delay:450ms;}
+.dt tbody tr[data-ci="11"],.data-table tbody tr[data-ci="11"]{animation-delay:495ms;}
+.dt tbody tr[data-ci="12"],.data-table tbody tr[data-ci="12"]{animation-delay:540ms;}
+.dt tbody tr[data-ci="13"],.data-table tbody tr[data-ci="13"]{animation-delay:585ms;}
+.dt tbody tr[data-ci="14"],.data-table tbody tr[data-ci="14"]{animation-delay:630ms;}
+.dt tbody tr[data-ci="15"],.data-table tbody tr[data-ci="15"]{animation-delay:675ms;}
+.dt tbody tr[data-ci="16"],.data-table tbody tr[data-ci="16"]{animation-delay:720ms;}
+.dt tbody tr[data-ci="17"],.data-table tbody tr[data-ci="17"]{animation-delay:765ms;}
+.dt tbody tr[data-ci="18"],.data-table tbody tr[data-ci="18"]{animation-delay:810ms;}
+.dt tbody tr[data-ci="19"],.data-table tbody tr[data-ci="19"]{animation-delay:855ms;}
+.cascade-list>[data-ci]{opacity:0;animation:_cascadeIn .22s ease forwards;}
+.cascade-list>[data-ci="0"]{animation-delay:0ms;}
+.cascade-list>[data-ci="1"]{animation-delay:45ms;}
+.cascade-list>[data-ci="2"]{animation-delay:90ms;}
+.cascade-list>[data-ci="3"]{animation-delay:135ms;}
+.cascade-list>[data-ci="4"]{animation-delay:180ms;}
+.cascade-list>[data-ci="5"]{animation-delay:225ms;}
+.cascade-list>[data-ci="6"]{animation-delay:270ms;}
+.cascade-list>[data-ci="7"]{animation-delay:315ms;}
+.cascade-list>[data-ci="8"]{animation-delay:360ms;}
+.cascade-list>[data-ci="9"]{animation-delay:405ms;}
+.cascade-list>[data-ci="10"]{animation-delay:450ms;}
 </style>
 </head>
 <body>
@@ -267,25 +289,25 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
     <div class="stat-ikon ac">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
     </div>
-    <div><div class="stat-lbl" data-i18n="dv_stat_spools">Spool</div><div class="stat-val" id="stSpool">--</div></div>
+    <div><div class="stat-lbl" data-i18n="dv_stat_spools">Spool</div><div class="stat-val"><span id="stSpool" class="sk sk-num">—</span></div></div>
   </div>
   <div class="stat-kart" style="border-left:3px solid var(--gr);">
     <div class="stat-ikon gr">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
     </div>
-    <div><div class="stat-lbl" data-i18n="dv_stat_weight">Ağırlık</div><div class="stat-val" id="stAgirlik">--</div></div>
+    <div><div class="stat-lbl" data-i18n="dv_stat_weight">Ağırlık</div><div class="stat-val"><span id="stAgirlik" class="sk sk-num">—</span></div></div>
   </div>
   <div class="stat-kart" style="border-left:3px solid var(--warn);">
     <div class="stat-ikon warn">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     </div>
-    <div><div class="stat-lbl" data-i18n="sp_stat_material">Malzeme</div><div class="stat-val" id="stMalzeme" style="font-size:16px;">--</div></div>
+    <div><div class="stat-lbl" data-i18n="sp_stat_material">Malzeme</div><div class="stat-val" style="font-size:16px;"><span id="stMalzeme" class="sk sk-num">—</span></div></div>
   </div>
   <div class="stat-kart" style="border-left:3px solid var(--ac);">
     <div class="stat-ikon ac">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
     </div>
-    <div><div class="stat-lbl" data-i18n="sp_stat_surface">Yüzey</div><div class="stat-val" id="stYuzey" style="font-size:16px;">--</div></div>
+    <div><div class="stat-lbl" data-i18n="sp_stat_surface">Yüzey</div><div class="stat-val" style="font-size:16px;"><span id="stYuzey" class="sk sk-num">—</span></div></div>
   </div>
   <div class="stat-kart" style="border-left:3px solid var(--leg);">
     <div class="stat-ikon leg">
@@ -351,7 +373,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
     <div class="tablo-head">
       <div class="tablo-baslik">
         <span data-i18n="dv_spool_list">Spool Listesi</span>
-        <span id="spoolSayi" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:6px;"></span>
+        <span id="spoolSayi" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:6px;">—</span>
       </div>
       <div style="display:flex;gap:7px;">
         <button class="btn" onclick="spoolEkleBaslat()" data-i18n="dv_add_spool">+ Spool Ekle</button>
@@ -404,10 +426,10 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
       <div class="info-row"><span class="info-key" data-i18n="dv_lbl_ship">Gemi / Proje</span><span class="info-val" id="gGemi" style="color:var(--ac);">--</span></div>
       <div class="info-row"><span class="info-key" data-i18n="dv_lbl_circuit">Devre No</span><span class="info-val" id="gDevre" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;">--</span></div>
       <div class="info-row"><span class="info-key" data-i18n="dv_lbl_zone">Zone / Sistem</span><span class="info-val" id="gZone" style="color:var(--txm);">--</span></div>
-      <div class="info-row"><span class="info-key" data-i18n="dv_lbl_spool_count">Spool Sayısı</span><span class="info-val" id="gSpoolSayi">--</span></div>
-      <div class="info-row"><span class="info-key" data-i18n="dv_stat_weight">Toplam Ağırlık</span><span class="info-val" id="gAgirlik">--</span></div>
-      <div class="info-row"><span class="info-key" data-i18n="sp_stat_material">Malzeme</span><span class="info-val" id="gMalzeme">--</span></div>
-      <div class="info-row"><span class="info-key" data-i18n="sp_stat_surface">Yüzey</span><span class="info-val" id="gYuzey">--</span></div>
+      <div class="info-row"><span class="info-key" data-i18n="dv_lbl_spool_count">Spool Sayısı</span><span class="info-val sk sk-num" id="gSpoolSayi">—</span></div>
+      <div class="info-row"><span class="info-key" data-i18n="dv_stat_weight">Toplam Ağırlık</span><span class="info-val sk sk-num" id="gAgirlik">—</span></div>
+      <div class="info-row"><span class="info-key" data-i18n="sp_stat_material">Malzeme</span><span class="info-val sk sk-num" id="gMalzeme">—</span></div>
+      <div class="info-row"><span class="info-key" data-i18n="sp_stat_surface">Yüzey</span><span class="info-val sk sk-num" id="gYuzey">—</span></div>
       <div class="info-row"><span class="info-key" data-i18n="dv_lbl_work_order">İş Emri No</span><span class="info-val" id="gIsEmri" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--leg);">--</span></div>
     </div>
 
@@ -424,7 +446,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
       <div class="info-kart" style="border-left:3px solid var(--gr);flex:1;">
         <div class="info-title" style="display:flex;justify-content:space-between;align-items:center;">
           <span data-i18n="dv_notes_title">📌 Devre Notları</span>
-          <span id="notCount" style="font-size:12px;font-weight:400;color:var(--txd);"></span>
+          <span id="notCount" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);">—</span>
         </div>
         <div id="notListesi" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:160px;overflow-y:auto;"></div>
         <div style="display:flex;gap:7px;">
@@ -440,7 +462,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
   <!-- Dökümanlar -->
   <div class="tablo-kart" style="border-left:3px solid var(--gr);">
     <div class="tablo-head">
-      <div class="tablo-baslik"><span data-i18n="sp_docs_label">Dokümanlar</span> <span id="dokSayi" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:4px;"></span></div>
+      <div class="tablo-baslik"><span data-i18n="sp_docs_label">Dokümanlar</span> <span id="dokSayi" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:4px;">—</span></div>
       <button class="btn btn-primary" style="height:28px;font-size:12px;" onclick="dokModalAc()" data-i18n="sp_add_doc">+ Doküman Ekle</button>
     </div>
     <div id="dokListesi" style="padding:2px 0;"></div>
@@ -453,7 +475,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--tx);">
       📦 <span data-i18n="dv_all_spool_mat">Tüm Spool Malzemeleri</span>
-      <span id="spMalzBadge" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:7px;"></span>
+      <span id="spMalzBadge" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:7px;">—</span>
     </div>
     <button class="btn" onclick="spoolMalzExcel()" data-i18n="dv_excel_btn">📥 Excel</button>
   </div>
@@ -484,7 +506,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--tx);">
       📐 <span data-i18n="dv_pl_mat_title">Pipeline Malzeme Listeleri</span>
-      <span id="plMalzBadge" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:7px;"></span>
+      <span id="plMalzBadge" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:7px;">—</span>
     </div>
     <div style="display:flex;gap:7px;">
       <button class="btn" onclick="plSablonIndir()" data-i18n="dv_pl_template_btn">📥 Şablon</button>
@@ -507,7 +529,7 @@ tr.sk-row{animation:none !important;opacity:1 !important;cursor:default !importa
   <div class="tablo-kart" style="border-left:3px solid var(--ac);">
     <div class="tablo-head">
       <div class="tablo-baslik">🕗 <span data-i18n="dv_circuit_moves">Devre Hareketleri</span></div>
-      <span id="islemBadge" style="font-size:12px;color:var(--txd);"></span>
+      <span id="islemBadge" class="sk sk-num" style="font-size:12px;color:var(--txd);">—</span>
     </div>
     <div class="tablo-wrap">
       <table class="dt">
@@ -1012,8 +1034,8 @@ function _skNotlar(divId, rowCount){
 }
 function _skBaslat(){
   try{
-    // Ana spool tablosu (20 kolon, 8 fake satır)
-    _skTbody('spoolTBody', 20, 8);
+    // Ana spool tablosu (20 kolon, 15 fake satır — devreler.html referans)
+    _skTbody('spoolTBody', 20, 15);
     // Spool malzemeleri (11 kolon, 4 fake satır)
     _skTbody('spMalzBody', 11, 4);
     // Devre hareketleri (4 kolon, 4 fake satır)
@@ -1021,17 +1043,8 @@ function _skBaslat(){
     // Listeler
     _skList('dokListesi', 3);
     _skNotlar('notListesi', 2);
-    // Stat sayıları & badge'ler — başlangıç shimmer
-    var statIds=['gSpoolSayi','gAgirlik','gMalzeme','gYuzey','spoolSayi','dokSayi','notCount','spMalzBadge','plMalzBadge','islemBadge','stSpool','stAgirlik','stMalzeme','stYuzey'];
-    statIds.forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){el.classList.add('sk','sk-num');el.textContent='—';}
-    });
-    // KK & Sevk küçük metinler
-    ['barKK','barSevk'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){el.classList.add('sk','sk-num');el.textContent='—';}
-    });
+    // Stat & badge skeleton'ları HTML'de class="sk sk-num" ile zaten yazılı (devreler.html pattern)
+    // setText() çağrıları sınıfı otomatik temizler.
   }catch(e){console.warn('[G-08] skeleton:',e);}
 }
 function parseAg(s){return parseFloat(String(s).replace(',','.').replace(/[^0-9.]/g,''))||0;}
