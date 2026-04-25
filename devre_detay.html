@@ -1119,7 +1119,7 @@ async function devreYukle(){
           zone:d.zone||d.zone_no||'',
           malzeme:d.malzeme?[d.malzeme]:[],
           yuzey:d.yuzey?[d.yuzey]:[],
-          tersaneIsEmri:'',
+          tersaneIsEmri:d.tersane_is_emri||'',
           terminTarihi:d.termin||'',
           durum:d.durum||'aktif',
           durdumaSebebi:d.durdurma_sebebi||'',
@@ -1621,10 +1621,38 @@ async function gonderKaydet(){
 // ── TERSANESİ İŞ EMRİ + TERMİN
 async function tersaneIsEmriKaydet(){
   var val=((document.getElementById('tersaneIsEmriInput')||{}).value||'').trim();
+  var eski=DEVRE.tersaneIsEmri||'';
+  if(val===eski){showToast(tv('dv_no_change','Değişiklik yok'),'i');return;}
+
+  // Optimistic UI: önce uygula
   DEVRE.tersaneIsEmri=val;
-  // tersane_is_emri kolonu DB'de yok — sadece localStorage'da tut
-  try{var d=JSON.parse(localStorage.getItem('ares_aktif_devre')||'{}');d.tersaneIsEmri=val;localStorage.setItem('ares_aktif_devre',JSON.stringify(d));}catch(e){}
-  showToast(tv('dv_isemri_saved','Tersane iş emri kaydedildi'),'success');
+
+  var supa=_supa();
+  var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+
+  if(!supa||!devreId){
+    // Bağlantısız mod — eski davranış (sadece localStorage)
+    try{var d=JSON.parse(localStorage.getItem('ares_aktif_devre')||'{}');d.tersaneIsEmri=val;localStorage.setItem('ares_aktif_devre',JSON.stringify(d));}catch(e){}
+    showToast(tv('dv_isemri_saved','Tersane iş emri kaydedildi'),'success');
+    return;
+  }
+
+  try{
+    var r=await supa.from('devreler').update({
+      tersane_is_emri:val||null,
+      guncelleme:new Date().toISOString()
+    }).eq('id',devreId);
+    if(r.error)throw new Error(r.error.message);
+    logEkle('tersane_isemri_guncellendi',val||'—');
+    showToast(tv('dv_isemri_saved','Tersane iş emri kaydedildi'),'success');
+  }catch(e){
+    // Rollback: state + input geri al
+    DEVRE.tersaneIsEmri=eski;
+    var inp=document.getElementById('tersaneIsEmriInput');
+    if(inp)inp.value=eski;
+    console.warn('tersaneIsEmriKaydet:',e);
+    showToast(tv('dv_error_prefix','Hata')+': '+(e.message||e),'e');
+  }
 }
 
 // ── DATEPICKER
