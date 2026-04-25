@@ -45,7 +45,7 @@
 
 #### 🟡 Açık (sonraya bırakıldı)
 - **D4** — KK & Sevkiyat listeleri UI'da hiç dolmuyor (`kkListe`, `sevkListe` divleri 394, 398). Davetler/sevkiyatlar DB'ye yazılıyor ama geri okuma yok. Tahmin: 30-45 dk yeni `kkDavetlerYukle` + `sevkiyatlarYukle` fonksiyonları + render. Ürün dönemi (35+).
-- **D7** — `durdurma_tarihi` kolonu `devreler` tablosunda **yok** (`spooller`'da var). Devre durdurma tarihi takip edilemiyor. **33. oturum başında yapılabilir** (Vercel-bağımsız: migration + kod fix). Tahmin: 25-30 dk.
+- **D7** ✅ — `durdurma_tarihi` kolonu `devreler` tablosuna eklendi (33. oturum, 25 Nis 2026). Migration `002_devreler_durdurma_tarihi_ekle.sql`. devre_detay + devreler write/read uçtan uca tarandı, canlı test geçti (durdur → tarih dolu, kaldır → tarih null). Commit `ad9fb27`.
 
 ---
 
