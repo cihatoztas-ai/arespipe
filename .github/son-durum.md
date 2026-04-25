@@ -5,83 +5,122 @@
 
 ---
 
-## Son Oturum: 29 (24 Nisan 2026) — Devredilebilirlik Günü ✅
+## Son Oturum: 30 (24 Nisan 2026) — Bucket PRIVATE Faz 1-2 + Rate Limit Duvarı ⏸
 
 ### CI Durumu
-- **Son build:** YEŞİL ✅ (kontrol.yml + docs-uret.yml, ikisi de yeşil)
+- **Son build:** YEŞİL ✅ (kontrol.yml + docs-uret.yml)
 - **Aktif kural sayısı:** 15 (değişmedi)
 - **Self-test:** Koşturulmadı — sonraki zorunlu 33. oturum
-- **Yeni workflow:** `docs-uret.yml` — AUTO bölüm güncelleme motoru, race condition korumalı (rebase + retry 3x)
+- **Vercel:** ⚠️ Rate limit yedi (24 saat bekleme) — Faz 2 testi 31'e kaldı
 
-### Bu Oturumda Yapılanlar (~4 saat)
+### Bu Oturumda Yapılanlar (~3.5 saat)
 
-**İş 0 — Fantom Borç Temizliği** ✅
-- `.github/package.json` 28'de lokal oluşmuştu ama push edilmemiş — son-durum.md yanlış raporluyordu
-- GitHub'a yüklendi, commit'lendi, lokal/remote tutarlı
+**Faz 1 — Envanter + DB/Bucket Temizliği** ✅ (~45 dk)
+- DB taraması: 8 kolon bucket'a dokunuyor, 4'ü gerçek veri kaynağı (`fotograflar`, `belgeler`, `feedback_kayitlari.fotograf_url`, `kullanicilar.foto_url`)
+- Kayıt sayısı: `fotograflar` 34 (tümü test), `feedback_kayitlari.fotograf_url` 1 (test), diğerleri 0 dolu
+- Yol yapısı teyidi: `<tenant_id>/<kategori>/<parent_id>/<dosya>` — tenant-prefixed, doğru kurulmuş
+- **Karar:** 35 kayıt = test verisi → TRUNCATE et, baştan temiz başla
+- DB temizliği: `DELETE FROM fotograflar` + `UPDATE feedback_kayitlari SET fotograf_url=NULL` — transaction'lı, 0/0 teyit
+- Bucket fiziksel temizlik: Supabase Dashboard'dan `00000000...01/` ve `feedback/` klasörleri silindi → bucket boş
 
-**İş 1 — Hibrit Doküman Motoru** ✅ (~1.5 saat)
-- `.github/docs-uret.js` (~290 satır, CommonJS) — 6 üretici fonksiyon (sayfa/mobil/tablo/endpoint/kural/migration)
-- AUTO-START / AUTO-END sınırları arasını yeniden yazar, dışındaki manuel metne dokunmaz
-- Her fonksiyon try/catch'li, script `exit 0` garantisi — CI asla kırılmaz
-- `.github/workflows/docs-uret.yml` — push tetiklemeli, `[skip ci]` ile sonsuz döngü önleme
-- Sandbox'ta 7 edge case test geçti (mutlu yol, AUTO yok, bozuk sınır, dosya yok, idempotent, yorumsuz endpoint, sayım doğruluğu)
-- **Production'da race condition yakalandı** — kontrol.yml ile paralel auto-commit çakışması → `git pull --rebase` + 3x retry eklendi, canlıda yeşil
+**Faz 2 (Kod) — Signed URL API Endpoint** ✅ (~45 dk)
+- `api/dosya-url-al.js` yazıldı (~100 satır):
+  - POST + JWT-bazlı auth (Authorization: Bearer)
+  - `tenant_id` DB'den (JWT'den user_id → kullanicilar tablosu sorgusu)
+  - Yoldan tenant_id çıkar, JWT ile eşleştir, cross-tenant 403
+  - Super admin bypass (feedback paneli için)
+  - 1 saatlik signed URL (`createSignedUrl(yol, 3600)`)
+  - Hata kodları: YETKI_GEREKLI, TOKEN_GECERSIZ, YOL_GECERSIZ, TENANT_UYUSMAZLIGI, DOSYA_YOK, SUPABASE_HATASI
+- `package.json` repo köküne eklendi (`@supabase/supabase-js ^2.45.0`)
+- İki atomik commit: `package.json` → `api/dosya-url-al.js`
+- GitHub Actions CI yeşil ✅
 
-**İş 2 — 6 Belge Yazıldı ve Yüklendi** ✅ (~2 saat)
-Toplam 1515 satır, hibrit dokümantasyon yapısı:
+**Faz 2 (Test)** ⏸ **Vercel rate limit** — 24 saat bekleme, 31'e kaldı
 
-| Dosya | Satır | Manuel/AUTO | İçerik |
-|---|---:|---|---|
-| `README.md` | 92 | %100 manuel | Repo kapak, docs linkleri, teknoloji özeti |
-| `docs/ONBOARDING.md` | 210 | %95 / %5 | Yeni yazılımcı rehberi, 30dk sistem haritası, 5 günlük plan, 10 kritik kural |
-| `docs/ARCHITECTURE.md` | 395 | %80 / %20 | ASCII sistem diyagramı, 10 bölüm, 7 tasarım kararı "niye"si, Spool AI özeti |
-| `docs/DATABASE.md` | 293 | %30 / %70 | Multi-tenant, RLS şablonu SQL, migration disiplini, AUTO tablo listesi |
-| `docs/API.md` | 329 | %20 / %80 | Endpoint ekleme rehberi, güvenlik, tenant_id uyarıları, AUTO endpoint listesi |
-| `docs/LOCAL-DEV.md` | 196 | %100 manuel | "Lokal yok, push-to-deploy" dürüst akış |
+**Yan İş — Vercel Rate Limit Önleme** ✅
+- `vercel.json`'a `ignoreCommand` eklendi (mevcut headers korundu)
+- Komut: `git diff HEAD^ HEAD --quiet -- ':(exclude).github' ':(exclude)docs' ':(exclude)*.md' && exit 0 || exit 1`
+- `.github/`, `docs/`, `*.md` değişiklikleri Vercel'i tetiklemez → kota yenmez
+- Vercel UI'dan deneme başarısız (dropdown davranışı kafa karıştırıcı) → `vercel.json` yaklaşımı tercih edildi
+- Yarın kota açılınca otomatik devreye girecek
 
-### 29. Oturumda Bitenler (borçtan düşenler)
-- ✅ Devredilebilirlik Günü (28'den devir) — 6 belge + 2 motor dosyası
-- ✅ `.github/package.json` fantom borç kapatıldı
-- ✅ Docs-uret.yml race condition bugfix canlıda
+**Yan İş — Ritüel 5. Soru** ✅
+- `CLAUDE.md` başındaki zorunlu ritüele eklendi:
+  > 5. admin/panel.html → Geri Bildirim sekmesinde açık (yeni + inceleniyor) kaç feedback var? Kritik olanları özetle.
+- Neden: 30'un başında canlı feedback kuyruğu gündeme gelmedi, Cihat hatırlatmak zorunda kaldı → sistemik çözüm
 
-### Bugünkü Önemli Öğrenmeler (29. Oturum)
+**Yan İş — Feedback Kuyruğu Taraması** ✅
+- Pano → 28 açık feedback incelendi, 5 gruba ayrıldı
+- **Grup 1 (3 kayıt):** Zaten yapılmış (yedekleme x2, izometri 502) — pano'da durum güncellemesi yapılmadı (Cihat: "boşver, gerek yok")
+- **Grup 5 (13 kayıt):** Ürün dönemi (35+) — bu dosyanın altında kayıt edildi, referans olarak durur
 
-1. **Sandbox tek process; production'da paralel workflow race condition çıkar.** docs-uret.yml ilk sürümü push öncesi rebase yapmıyordu — kontrol.yml ile aynı anda tetiklenince "non-fast-forward" reject. Sandbox'ta tek process çalıştığı için test edilemez. **Ders:** CI workflow'larına `git pull --rebase origin main && git push` retry'lı pattern'i baştan koy.
+### 30. Oturumda Bitenler (borçtan düşenler)
+- ✅ Bucket Faz 1 (envanter + temizlik)
+- ✅ Bucket Faz 2 kodlaması (canlıda test 31'e)
+- ✅ Vercel ignored build step (kalıcı çözüm, `vercel.json` yaklaşımı)
+- ✅ Ritüel 5. feedback sorusu
 
-2. **Atomik commit dersi bir kez daha doğrulandı.** 6 belge tek upload'da gitti, hepsi birbirine referanslı — aşamalı atsak ara durumlarda kırık linkler olurdu. 28'in dersi 29'da uygulama buldu.
+### 30. Oturumda Devrilen Borçlar
+- 🔴 **Bucket PRIVATE Faz 3-6** — Vercel rate limit yüzünden 31'e ertelendi (normalde 30'da bitecekti)
+- 🟡 Plan 1 oturum kaydı: Sentry 31 → 32, Email 32 → 33, Staging 33 → 34, Tenant test 34 → 35
 
-3. **"Dürüst dokümantasyon" daha faydalı.** LOCAL-DEV.md "lokal çalışmaz" diyor, yazılımcıya dürüst; varsayımsal "lokal kurulum adımları" yazsaydık yanıltıcı olurdu.
+### Bugünkü Önemli Öğrenmeler (30. Oturum)
 
-4. **AUTO sınır regex'i kendi örneğinin kurbanı olur.** ARCHITECTURE.md'deki `<!-- AUTO-START:bolumadi -->` örneği script tarafından gerçek sınır sanıldı — Türkçe karakter (`BÖLÜM_ADI`) trick'i ile çözüldü. **Ders:** Script'in kendi kurallarını dokümante ederken örneklerin parser'a yakalanmaması için eskape et.
+1. **Vercel rate limit 29'un uyarısını canlı doğruladı.** 29'da "yoğun push günü öncesi Vercel Pro'yu düşün" notu vardı, 30'da yedik. **Ders:** Rate limit önleme her çok-push gününden önce standart adım olmalı, sadece problem çıkınca değil.
 
-5. **Vercel free tier günlük deploy kotası var.** Bugün sırayla 4-5 push attık, "Deployment rate limited — retry in 24 hours" yedik. CI yeşil ama Vercel kırmızı. Kod/doküman sorunu değil, plan sınırı. **Ders:** Yoğun push günü öncesi Vercel Pro'yu düşün (30+ oturum notu).
+2. **Vercel UI "Ignored Build Step" dropdown'u kafa karıştırıcı.** "Only build if there are changes in a folder" seçiliyken bash komut textbox'ı çalışmıyor. **Ders:** UI-öncelikli ayarlar yerine repo'da `vercel.json` ile kod olarak yönetmek daha deterministik. UI değil, dosya kaynak doğru.
+
+3. **`sorgula.js` tenant_id'yi body'den alıyor** — mevcut güvenlik açığı. Yeni endpoint JWT-bazlı yazıldı ama sorgula.js aynı açığı taşıyor. **Ders:** Eski endpoint'lerin auth pattern'ını oturum başında denetle, sessiz teknik borç birikmesin. (Not: `sorgula.js` refactor'u 31-32 aralığında ele alınacak)
+
+4. **"Tamam mı bitti mi?" sorusu kritik.** 30'un yarım kaldığı an (rate limit) Cihat sordu — yarım bilgiyle yatmamak. **Ders:** Her iş bloğunun sonunda "X tamamlandı/kaldı, yarına ne kalacak" cümlesi zorunlu.
+
+5. **Cihat yorgunluğu işaret.** Vercel UI dropdown turu 20+ dk döndü, Cihat "uykum var, yarım kalırsa uyuyamam" dedi. **Ders:** Uzun dropdown/debugging döngüleri 10 dk'dan sonra alternatif yola geç (kodla çöz, UI'da uğraşma).
 
 ### Bekleyen Borçlar
 
-**29'da keşfedilen yeni borçlar (yarına/30'a):**
-- 🟡 **Vercel rate limit + ci-son-rapor.json auto-commit** — Vercel'i tetiklemesin diye "ignored build step" eklenmeli (30 dk)
-- 🟡 **`actions/checkout@v4` + `setup-node@v4` deprecation warning** — v5'e geçiş (Node 20 deprecated), düşük öncelik
-- 🟡 **Supabase `arespipe-dev` projesi** — production ayrı, bu eski deneme gibi duruyor — gözden geçir, sil veya belgelendir
-- 🟢 **Fotoğraf/belge yaşam döngüsü** — Cihat'ın kaydını istediği iş: "Aktif devrede fotoğraflar/belgeler gerçek boyutta; devre tamamlanıp proje arşivine geçerken sıkıştırılıp saklanacak." **Şu an implementasyon YOK, mekanizma tasarlanmamış.** Fotoğraflar güvende (`fotograflar` tablosu + `arespipe-dosyalar` bucket'ında), sadece arşivleme-sıkıştırma kuralı henüz kodlanmamış. 30-34 aralığının birinde ele alınacak (muhtemelen 30 veya 33 ile birlikte çünkü Storage + lifecycle bağlantılı).
+**Acil (31. oturum için — 30'dan devir):**
+- 🔴 **Bucket PRIVATE Faz 2 test** — canlıda endpoint çalışıyor mu (Vercel açılınca)
+- 🔴 **Bucket PRIVATE Faz 3** — Bucket'ı Supabase Dashboard'dan PRIVATE yap
+- 🔴 **Bucket PRIVATE Faz 4** — Frontend migration: `dosyaUrlAl(yol)` helper + sayfa sayfa refactor (`spool_detay` ilk, sonra devre/kesim/bukum/markalama/KK/sevkiyat + mobil)
+- 🔴 **Bucket PRIVATE Faz 5** — Pozitif/negatif/expiration/cache test
+- 🔴 **Bucket PRIVATE Faz 6** — Kapanış
 
-**Acil (30. oturum için):**
-- 🔴 **Bucket PRIVATE Geçişi** (onaylı plan) — `arespipe-dosyalar` şu an PUBLIC, müşteri öncesi ŞART
+**Orta vade (1 oturum kaydı — ALTYAPI KAPANIŞ PLANI):**
+- 🔴 **31. oturum — Bucket PRIVATE Faz 3-6 (devir)**
+- 🔴 **32. oturum — Sentry entegrasyonu** — Runtime hata toplama
+- 🔴 **33. oturum — Email sistemi** — Şifre sıfırlama, Resend/SendGrid
+- 🟡 **34. oturum — Staging Supabase projesi + migration runner**
+- 🟡 **35. oturum — Tenant izolasyon testleri + feature flag**
 
-**Orta vade (30-34. oturum — ALTYAPI KAPANIŞ PLANI ✅ ONAYLANDI):**
-- 🔴 **30. oturum — Bucket PRIVATE geçişi + signed URL altyapısı**
-- 🔴 **31. oturum — Sentry entegrasyonu** — Runtime hata toplama
-- 🔴 **32. oturum — Email sistemi** — Şifre sıfırlama, Resend/SendGrid
-- 🟡 **33. oturum — Staging Supabase projesi + migration runner**
-- 🟡 **34. oturum — Tenant izolasyon testleri + feature flag**
+**29'dan devreden küçük borçlar:**
+- 🟡 `actions/checkout@v4` + `setup-node@v4` deprecation — v5 geçişi
+- 🟡 Supabase `arespipe-dev` projesi incelemesi (canlı mı, sil/belgele?)
+- 🟢 Fotoğraf/belge yaşam döngüsü (aktif-arşiv sıkıştırma) — 33-34
 
-**35'ten sonra ÜRÜN DÖNEMİ:**
+**36'dan sonra ÜRÜN DÖNEMİ:**
 - 🟡 Tablo Render Standardı (G-06) — 26'dan devir
 - 🟡 Operasyon sayfaları %100 — Kesim/Büküm/Markalama bitirme
 - 🟡 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 - 🟡 G-05 CI lint kuralı — `.mb-*` hardcode rgba/hex yasağı
+- 🟢 `sorgula.js` JWT-bazlı auth refactor (şu an body'den tenant_id alıyor — güvenlik açığı)
 - 🟢 Audit Log pano sekmesi
 - 🟢 help.html son kullanıcı dokümantasyonu
 - 🟢 docs/rules/ kural ayrıştırması
+
+**Ürün Dönemi Feedback Birikimi (35+) — 30. oturumda feedback kuyruğundan ayıklanan:**
+- Google takvim senkron (2 kayıt aynı istek)
+- Kesimci/bükümcü/markalama/malzeme için ayrı personel sayfaları
+- Parmak izi okuyucudan işe giriş-çıkış entegrasyonu
+- PDF çıktılarda firma/program logosu + sayfa düzeni
+- Kalite kontrol inspection formu
+- QR kod etiket boyut + tasarım
+- Index sayfası widget-layout (kullanıcı özelleştirebilsin)
+- İlk kurulumda dil seçimi (gereksiz dilleri gizle)
+- Devre detay başlık formatı (tersane/gemi/devre/zone) + barkod
+- Logout onay uyarısı (tarayıcı native yerine programdan)
+- Devreler listesi kum saati yerine animasyonlu açılım
+- Giriş sayfası yanlış yönlendirmeler (kalıcı çözüm)
+- İmalat/argon/gazaltı aşamalarında bekleyen spool+yoğunluk göstergesi
 
 ### Kural Sağlık Kontrolü
 - **Son self-test:** 24 Nisan 2026, 28. oturum — **4/4 başarılı** ✅
@@ -92,7 +131,7 @@ Toplam 1515 satır, hibrit dokümantasyon yapısı:
 
 ## 📖 Aktif Belgeler (Yaşayan — Her Oturumda Gündemde)
 
-### **🆕 Dokümantasyon Sistemi** (29. oturum)
+### **Dokümantasyon Sistemi** (29. oturum)
 Repo kökünde `README.md` + `docs/` altında 6 belge (ONBOARDING, ARCHITECTURE, DATABASE, API, LOCAL-DEV + mevcut SPOOL-AI-VIZYON, PANO-TASARIM, CIHAT-PROFIL, ROADMAP). Hibrit: manuel + AUTO sınırları.
 
 - **Motor:** `.github/docs-uret.js`
@@ -102,7 +141,7 @@ Repo kökünde `README.md` + `docs/` altında 6 belge (ONBOARDING, ARCHITECTURE,
 
 ### Vizyon: `docs/SPOOL-AI-VIZYON.md`
 Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü.
-**28. oturum teyidi:** 1. katman (izometri okuma) API endpoint'i (`api/izometri-oku.js`) canlıda, Anthropic key ile çalışıyor.
+**28. oturum teyidi:** 1. katman (izometri okuma) API endpoint'i (`api/izometri-oku.js`) canlıda.
 
 ### Pano Tasarımı: `docs/PANO-TASARIM.md`
 Süper Admin Yönetim Panosu. 24-25. oturumda implement edildi.
@@ -134,45 +173,42 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - **Klasör:** `migrations/` (arespipe ana repo)
 - **Baseline:** `000_initial_schema.sql` (6029 satır, 51 tablo)
 - **Kural:** `NNN_aciklama.sql` adlandırma, BEGIN/COMMIT, header yorumu
-- **CI:** `kontrol.yml` (28. oturumda entegre — ayrı workflow yok)
-- **Şablon:** `docs/templates/yeni-migration-sablonu.sql`
-- **Kural kodları:** `MIG_ISIM_BOZUK`, `MIG_NUMARA_TEKRAR`, `MIG_HEADER_EKSIK`
+- **CI:** `kontrol.yml` (28. oturumda entegre)
 
 ### **Vercel Env Variables** (28. oturum teyit)
-- `SUPABASE_URL` (public, plaintext — URL zaten public bilgi)
-- `SUPABASE_SERVICE_KEY` (🔒 Sensitive — `sb_secret_*` yeni format)
-- `ANTHROPIC_API_KEY` (🔒 Sensitive — `sk-ant-*`, `api/izometri-oku.js`'de kullanılıyor)
-- Development ortamı Sensitive variable'larda kilitli — lokal CLI kullanılmadığı için sorun değil
+- `SUPABASE_URL` (public)
+- `SUPABASE_SERVICE_KEY` (🔒 Sensitive — `sb_secret_*`)
+- `ANTHROPIC_API_KEY` (🔒 Sensitive — `sk-ant-*`)
 
-### **Storage Bucket** (⚠️ 30. oturumda PRIVATE olacak)
+### **Vercel Ignored Build Step** (30. oturum — YENİ)
+- **Yöntem:** `vercel.json` `ignoreCommand` alanı (UI yerine repo'da kod)
+- **Kural:** `.github/`, `docs/`, `*.md` değişiklikleri Vercel build'ini skip eder
+- **Amaç:** Free tier rate limit'inin yenmesini önler
+
+### **Storage Bucket** (🔴 31. oturumda PRIVATE olacak)
 - **Bucket:** `arespipe-dosyalar`
-- **Şu anki durum:** PUBLIC — URL bilen herkes erişir
-- **Kullanım:** İzometri PDF'leri, spool fotoğrafları
-- **Müşteri öncesi şart:** PRIVATE + signed URL sistemi (30. oturumun konusu)
+- **Şu anki durum:** PUBLIC + boş (30. oturumda test verisi temizlendi)
+- **API endpoint:** `api/dosya-url-al.js` (yazıldı, canlıda test 31'de)
+- **Müşteri öncesi şart:** Bucket PRIVATE + signed URL frontend migration (31. oturumun gündemi)
 
 ---
 
 ## Bir Sonraki Oturumda Claude Bunları Yapacak
 
-**1. Oturum açılır açılmaz, ilk tool call'dan ÖNCE ritüel:**
-
-> "Oturum başlangıç ritüeli. Şunu çalıştır ve çıktıyı yapıştır:
-> ```
-> cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
-> ```
-> Ayrıca GitHub Actions sekmesinde son build yeşil mi kontrol et.
-> `arespipe-backups` repo'sunda son 24 saat içinde yeni yedek düşmüş mü (03:00 TR otomatik)."
+**1. Oturum açılır açılmaz, ilk tool call'dan ÖNCE ritüel:** (5 soru — CLAUDE.md'de güncel)
 
 **2. Ritüel tamamlanmadan hiçbir teknik iş başlama.**
 
 **3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.**
 
-**4. 30. OTURUMUN GÜNDEMİ — ONAYLANDI:** Bucket PRIVATE Geçişi
+**4. 31. OTURUMUN GÜNDEMİ — Bucket PRIVATE Faz 3-6 (30'dan devir):**
 - Detaylı içerik: `CLAUDE-SONRAKI-OTURUM.md`
-- Müşteri öncesi en kritik güvenlik adımı
-- Beklenen süre: 3-4 saat
+- Beklenen süre: 2-3 saat
+- Canlıda `api/dosya-url-al.js` testi → Bucket PRIVATE → frontend migration → test → kapanış
 
-**5. Self-test bu oturumda koşturulmayacak.** Sonraki zorunlu kontrol 33. oturum.
+**5. Vercel kontrol:** Rate limit açıldı mı? `vercel.json ignoreCommand` devreye girdi mi?
+
+**6. Self-test bu oturumda koşturulmayacak.** Sonraki zorunlu kontrol 33. oturum.
 
 ---
 
@@ -197,6 +233,9 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - **Atomik commit aşamalı commit'ten güvenli** — ilişkili dosyaları tek seferde yolla (28. oturum dersi)
 - **Karmaşık refactor öncesi sandbox testi zorunlu** — production push öncesi lokal simülasyon (28. oturum dersi)
 - **CI auto-commit pattern'i: commit → pull --rebase → push (3x retry)** — paralel workflow race condition için (29. oturum dersi)
+- **Vercel ayarları UI yerine `vercel.json`'da** — deterministik, repo-kontrollü (30. oturum dersi)
+- **UI debugging 10 dk'yı aşıyorsa kodla çözmeye geç** — dropdown tekrar döngüsü çözüm değil (30. oturum dersi)
+- **Her iş bloğu sonunda "tamam/yarım" cümlesi** — kullanıcı yarım bilgiyle yatmasın (30. oturum dersi)
 
 ---
 
