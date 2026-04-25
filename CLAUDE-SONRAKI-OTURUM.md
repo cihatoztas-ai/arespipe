@@ -1,246 +1,280 @@
-# CLAUDE — 32. Oturum Gündemi
+# CLAUDE — 33. Oturum Gündemi
 
-**Tema:** Birikme Önleme Sistemi Kararı + Bekleyen Temizlik
-**Tahmini süre:** 1.5-2 saat (karara bağlı)
-**Öncelik:** 🟡 Orta — disiplin kuruluşu + altyapı temizliği
-**Durum:** 31'in sonunda iki açık karar var, ilk iş bunları çözmek
-
----
-
-## 🎯 Bu Oturumun Amacı
-
-31'de Bucket PRIVATE Migration tamamen bitirildi ve yeni bir disiplin (sayfa eksikleri defteri) tartışıldı ama karar 32'ye ertelendi. 32 önce iki kararı çözecek, sonra acil temizlikleri yapacak, kalan zaman kararın uygulamasına ayrılacak.
+**Tema:** Vercel-bağımsız iş kalemleri önde + Vercel açıldıktan sonra deferred testler
+**Tahmini süre:** 1.5-2.5 saat (kapsama bağlı)
+**Öncelik:** 🟢 Esnek — bekleyen testler hazır, yeni mekanik işler de hazır
 
 ---
 
-## 🚦 Oturum Başı Kontroller (Ritüelden Sonra)
+## ⚠️ ZORUNLU OKUMA — 32. Oturum Bağlamı
 
-**1. Üzerinden geçmesi gereken belgeler:**
-- `docs/SAYFA-EKSIKLERI.md` — defter, açık 6 madde + G-08 envanteri
-- son-durum.md "Borçlar" bölümü
-- Cihat'ın 31'de söylediği: *"birikme olmasın diye sistem"* + *"sonra düşünelim"*
+32. oturumda 6 SED kapatıldı + 2 yarım kapanış var:
 
-**2. Vercel ve CI durumu:**
-- 31'de yapılan 3 fix (S2, D1, D2) canlıda mı?
-- CI yeşil mi? — son commit yeşil olmalı
+**Tamamlandı:** orphan temizlik, GitHub Actions v5, S1, D5, D6
+**Yarım — DEPLOY BEKLİYOR:** D3 (Vercel rate limit)
+**Yarım — GÖRSEL İNCELEME BEKLİYOR:** G-08 devre_detay (Cihat "tam aynı değil" dedi, somut fark belirtilmedi)
 
-**3. Defter doğrulaması:**
-Cihat'a sor: "31'de açtığım defter dosyasını okuyup üstünden geçtin mi? Birinin önceliği hâlâ aynı mı?"
+Detay: `CLAUDE-SON-OTURUM.md`. Defter güncel: `docs/SAYFA-EKSIKLERI.md`.
 
 ---
 
-## ⚖️ İlk Karar — SBD-01 (Sayfa Borç Defteri) Yaklaşımı
+## 🎯 33. Oturum Stratejisi
 
-Cihat 31'de iki sistem önerdi, bir de Claude bir 3.'sünü sundu (GitHub Issues). 32 başında Cihat seçecek.
+**Cihat'ın talebi:** *"Vercel gerektirmeyen iş kalemlerini öne al. Yarın çalışamıyorum, bugün biraz ilerleyelim."*
 
-### Seçenek A — Mevcut Markdown Defter, Sayfa-Merkezli Yeniden Yapı
+→ Önce Vercel build'i tetiklemeyen klasörlerde iş yap (`.github/`, `docs/`, `migrations/`, `*.md`). Sonra Vercel açıldığında deferred testler ve UI değişiklikleri.
 
-**`docs/SAYFA-EKSIKLERI.md`** sayfa-merkezli olarak yeniden yapılandırılır:
-```
-### spool_detay.html
-#### Açık (3)
-- [SED] S1: belgeKaydet DB'ye yazmıyor (~15dk, 1 oturumdur açık)
-- [G-08] Açılış ritüeli yok (~25dk, 0 oturumdur açık)
-- ...
-#### Kapatılan
-- ✅ S2: egitim_verisi kolon adı (31)
-```
-
-Claude sayfa açıldığında bu dosyayı okur, sayfa bölümünü listeler.
-
-**Artılar:** Hızlı kurulum, mevcut dosya, bağımsız (network gerekmez).
-**Eksiler:** Şişerse yönetim zor, otomatik filtre yok, mobile bakış zor.
-
-### Seçenek B — GitHub Issues + Tech Debt Sprint
-
-Mevcut defter migration ile **GitHub Issues**'a aktarılır:
-- Etiketler: `page:spool_detay`, `category:G-08`, `priority:high`, `effort:25min`
-- Milestone: "Pre-Launch Tech Debt", "Spool Detay Cleanup"
-- Claude API ile `?labels=page:spool_detay&state=open` filtresiyle çeker
-
-**Artılar:** Profesyonel, ölçeklenebilir, mobile app, otomatik tarih, kapanış commit'le bağlı.
-**Eksiler:** Kurulum 30 dk (mevcut 9 madde aktarılacak), GitHub UI öğrenmek (Cihat için yeni), API entegrasyonu (her oturum bir komut).
-
-### Seçenek C — Hybrid
-
-Şu an **markdown defter** (B'ye geçmek için olgunluk yok). Defter sayfa-merkezli yapılır. **35+ ürün döneminde** GitHub Issues'a göç düşünülür (müşteri varsa zaten Issues şart olur).
-
-**Tavsiye:** **C** — geçişi şimdi yapma yükü almazsın, ama olgunlaştığında doğru sisteme geçebileceksin.
-
-### Karar İçin Cihat'a Tek Soru
-
-> "Markdown defter kalsın, sayfa-merkezli yeniden yapılandıralım. GitHub Issues 35+ ürün döneminde düşünelim. **Onaylıyor musun?**"
-
-Onaylarsa: 32'nin ilk yarısı sayfa-merkezli yeniden yapılandırma + SED-01 kuralı `kurallar.json`'a entegrasyon.
+**Vercel ignoreCommand zaten ignore ediyor:** `.github/`, `docs/`, `*.md`. Yani bu klasörlerdeki commit'ler hem hata vermez hem rate limit harcamaz.
 
 ---
 
-## ⚖️ İkinci Karar — 32-35 Sıralaması
+## 🚦 Oturum Başı Ritüeli (Standart)
 
-31'de planı 1 oturum kaydırdık. Şu anki sıra:
+Standart 5 soru ritüelinin yanında bu oturumda ek 2 kontrol:
 
-| 32 | KARAR + Birikme önleme uygulaması |
-| 33 | Sentry entegrasyonu |
-| 34 | Email sistemi |
-| 35 | Staging Supabase + migration runner |
-| 36 | Tenant izolasyon testleri |
+1. **Vercel rate limit hâlâ açık mı?**
+   - GitHub repo ana sayfasında "Vercel — arespipe" kontrolü
+   - Yeşil/passing → açık, deploy çalışır
+   - Hâlâ kırmızı → 24 saat dolmamış, Vercel-bağımsız işlerle devam
 
-**Ama** Cihat G-08 yaygınlaştırma istiyor (22 sayfa). Bu da 1.5 oturum.
-
-### Seçenek A — Sentry öncelikli (mevcut plan)
-- 32: Birikme önleme uygulaması
-- 33: Sentry
-- 34-35-36: Email/Staging/Tenant
-- 37+: G-08 yaygınlaştırma (ürün dönemi)
-
-**Mantık:** Hata izleme altyapısı önce, sonra UX iyileştirme. Production-ready öncelikli.
-
-### Seçenek B — G-08 öncelikli
-- 32: Birikme önleme uygulaması (yarım gün)
-- 32-33: G-08 15 yüksek öncelik sayfa
-- 34: Sentry
-- 35-36-37: Email/Staging/Tenant
-
-**Mantık:** Görsel standart şimdi yapılırsa yeni sayfalar standart pattern'le ekler. Sentry zaten Cumartesi gece kurulabilir, kritik değil.
-
-### Tavsiye
-
-Cihat'a sor:
-
-> "Lansman tarihin (müşteri demoya hazır olmak istediğin tarih) belli mi? Eğer 1-2 ay sonraysa (A), 3-4 ay sonraysa (B). Çünkü G-08 olmadan müşteriye gösterirsen 'dağınık' algısı yapışır."
+2. **D3 deploy doğrulaması:**
+   - Tarayıcıda canlı devre detay sayfası aç → F12 console
+   - Komut: `tersaneIsEmriKaydet.toString().includes('supa.from')`
+   - `true` → yeni kod canlıda, D3 testi yapılabilir
+   - `false` → cache temizle (Cmd+Shift+R), tekrar dene
 
 ---
 
-## 🧹 Acil Temizlik (15 dk)
+## 📋 ÖNCELİKLİ — Vercel Bağımsız İşler (sırayla)
 
-### Orphan bucket dosyaları
-31'de yapılan feedback foto testleri sırasında bucket'a 2 dosya düştü. Şimdi orphan:
-- `feedback/1777099713115.jpg`
-- `feedback/1777100014537.jpg`
+### A) D7 — devre_detay durdurma_tarihi migration + kod fix (~25-30 dk) ⭐
 
-Bunların DB kayıtları:
-- `cae5a8ab-c619-41ce-a733-67186d73b1e4` (eski format, kırık)
-- `f3d97dc2-54db-4b8d-b369-9725a6ac18d1` (eski format, kırık)
+**Defterde 32'den devir:** `durdurma_tarihi` kolonu `devreler` tablosunda yok (`spooller`'da var). Devre durdurma tarihi takip edilemiyor — audit/raporlama için kritik açık.
+
+**Pattern: D3'ün birebir aynısı.**
 
 **Adımlar:**
-1. SQL: `DELETE FROM feedback_kayitlari WHERE id IN ('cae5a8ab-...', 'f3d97dc2-...');`
-2. Supabase Dashboard → Storage → arespipe-dosyalar → feedback/ klasörü → 2 dosyayı sil
-
-### `db-backup.yml` cron düzeltmesi
-
-Şu an `0 3 * * *` — UTC 03:00 = TR 06:00 hedefli ama gerçekleşen ~02:56 UTC = TR 05:55. **Plana göre 3 saat kayma**.
-
-**Düzeltme:**
-```yaml
-# .github/workflows/db-backup.yml
-schedule:
-  - cron: '0 0 * * *'  # UTC 00:00 = TR 03:00 (yaz saati)
+1. Schema doğrulama:
+```sql
+SELECT column_name FROM information_schema.columns 
+WHERE table_name='devreler' AND column_name LIKE '%durdurma%';
 ```
+Beklenen: `durdurma_sebebi` var, `durdurma_tarihi` yok.
 
-PR ile aç, merge et, sonraki gece TR 03:00'da tetiklenecek.
+2. Migration dosyası: `migrations/002_devreler_durdurma_tarihi_ekle.sql`
+```sql
+BEGIN;
+ALTER TABLE devreler ADD COLUMN durdurma_tarihi TIMESTAMPTZ;
+COMMIT;
+```
++ Manuel SQL çalıştırma (Supabase Dashboard).
 
-> Yan not: TR yaz saati (TRT, GMT+3) → UTC 0 = TR 3. Kış saati uygulanırsa (Türkiye 2016'dan beri kullanmıyor ama dikkat) ayarlamak gerekebilir.
+3. Kod fix (`devre_detay.html`):
+   - `devreYukle`: `durdurmaTarihi:d.durdurma_tarihi||null` ekle
+   - `durdurKaydet` fonksiyonunda DB UPDATE'e `durdurma_tarihi:new Date().toISOString()` ekle
+   - `durdurmaKaldir` fonksiyonunda DB UPDATE'e `durdurma_tarihi:null` ekle (durdurma kalktığında temizle)
+   - UI'da gösterim opsiyonel (info paneline veya tooltip — Cihat'a sor)
+
+4. Test (Vercel açıldıktan sonra): bir spool durdur → DB'de durdurma_tarihi dolu mu kontrol et.
+
+**Vercel etkisi:** Migration dosyası `migrations/` altında — ignore edilmez ama rate limit'e tek deploy katar (kabul edilir). Asıl `devre_detay.html` push'u Vercel rate limit açıldıktan sonra atılabilir, ya da migration ile aynı commit'e konur (1 deploy daha).
 
 ---
 
-## 📋 Önerilen 32. Oturum Akışı
+### B) `kurallar.json` + `CLAUDE.md` güncellemeleri (~15-20 dk)
+
+**SED-01 kuralını formalize et** (defterde tarif var, lint'te yok):
+- `kurallar.json`'a yeni madde:
+  - id: SED-01
+  - tarif: "Sayfa eksiklerini defter'e (`docs/SAYFA-EKSIKLERI.md`) yaz"
+  - kapsam: yeni sayfa açıldığında Claude tarama yapar, eksikleri Cihat'a sunar
+  - test: defter dosyasının var olması yeterli (manual self-test, otomatik değil — yarın kafa yorulur)
+
+**32. oturum derslerini CLAUDE.md disiplin bölümüne ekle:**
+- Deploy doğrulama tekniği (`fnAdı.toString().includes(...)`)
+- Schema drift uçtan uca tarama (insert + read + render + map)
+- Vercel push tasarrufu (mob ignoreCommand)
+
+**Vercel etkisi:** Yok — `.github/` ve kök `*.md` ignore.
+
+---
+
+### C) `vercel.json` ignoreCommand genişletme (~10 dk) — Vercel açıldıktan sonra ilk push
+
+**Hedef:** `arespipe-mob` projesi için `mobile/` klasörü değişmedikçe build skip.
+
+**Mevcut `vercel.json`:**
+```json
+{
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- ':(exclude).github' ':(exclude)docs' ':(exclude)*.md'"
+}
+```
+
+**Düşünce:** İki proje aynı `vercel.json`'u mu kullanıyor, yoksa Vercel dashboard'da ayrı ayrı mı tanımlı? Karar: dashboard'a bak, ya da iki ayrı `vercel.json` mantığı kur.
+
+**En basit fix:** `arespipe-mob` Vercel dashboard'da **Settings → Git → Ignored Build Step**'e:
+```bash
+git diff HEAD^ HEAD --quiet -- mobile/ && exit 0 || exit 1
+```
+Bu kural sadece mobile/ klasörü değiştiğinde build eder. Mob hâlâ %5'te, hep build etmesi anlamsız.
+
+**Test:** Bir non-mobile değişiklik commit'le (ör. `docs/`). arespipe build olur, arespipe-mob skip edilir.
+
+**Vercel etkisi:** Tek seferlik kurulum, sonrası yok. Bu fix uzun vadede push başına 1 deploy düşer = limit yarıya iner.
+
+---
+
+### D) MProfil.jsx mockup-first (opsiyonel, ~30-45 dk)
+
+**Defterdeki yarım iş:** 23'ten beri açık. R-10 kuralı: "kod yazmadan önce mockup".
+
+**Bu oturumda kod YAZMA**, sadece mockup yap:
+- Avatar yükleme alanı (drag-drop + file picker)
+- Kişisel bilgi formu (ad, soyad, email, telefon)
+- Görsel: A vs B mockup (Cihat seç)
+
+**Vercel etkisi:** Yok — sadece görsel/markdown.
+
+**Mockup formatı:** Markdown + ASCII layout, ya da basit HTML preview. Kod sonraki oturumda yazılır.
+
+**Eğer Cihat'ın enerjisi varsa yapılır, yoksa atla.**
+
+---
+
+## 🟡 Vercel Açılmasını Bekleyenler (sırayla)
+
+### E) D3 canlı doğrulama (~5 dk)
+- Cihat tarayıcıda canlı devre_detay aç
+- F12 console: `tersaneIsEmriKaydet.toString().includes('supa.from')` → `true` doğrula
+- Tersane iş emri gir → kaydet → toast → F5 → değer durmalı
+- Sayfadan çıkıp gel → hâlâ orada
+- Boş yap, kaydet, F5 → boş kalır
+
+### F) G-08 görsel fark inceleme (~15-30 dk) ⚠ kritik
+- İki sayfa yan yana aç: `devreler.html` (referans) + `devre_detay.html` (uygulama)
+- Cihat'tan **somut fark** iste — neyin "aynı değil"i:
+  - Skeleton satır sayısı?
+  - Shimmer hızı/parlaklığı?
+  - Cascade gecikmesi (45ms farklı mı)?
+  - Cascade yönü (yukarıdan aşağı vs aşağıdan yukarı)?
+  - Stat shimmer renk tonu?
+  - Tablo class'ı (.dt vs .data-table) → CSS specificity sorunu?
+
+Cihat fark söyleyince fix uygulanır. Eğer "boş ver" derse defter'e "32+33'te yarım uygulama, görsel uyumsuzluk açık" notuyla bırakılır.
+
+### G) Vercel ignoreCommand commit (~5 dk)
+C maddesinin push aşaması. Test: push sonrası arespipe build olur, arespipe-mob "skipped" gösterir.
+
+---
+
+## ⚖️ 32'den Devir Karar Konuları (33'te tekrar gündem)
+
+Bu kararlar 32 başında atlandı, hâlâ Cihat'ın seçimini bekliyor:
+
+### Karar 1 — SBD-01 yaklaşımı
+- **A:** Mevcut markdown defter, sayfa-merkezli yeniden yapı
+- **B:** GitHub Issues + Tech Debt Sprint
+- **C:** Hybrid (şimdi A, 35+ ürün döneminde B)
+
+**Önceki tavsiye:** **C**.
+
+### Karar 2 — 33-35 sıralaması
+- **A:** Sentry öncelikli (33: Sentry, 34: Email, 35: Staging)
+- **B:** G-08 yaygınlaştırma öncelikli (33-34: G-08, 35: Sentry)
+
+**Cihat'a sorulacak tek soru:** *"Lansman tarihin (müşteri demoya hazır olmak istediğin tarih) belli mi? 1-2 ay sonraysa A, 3-4 ay sonraysa B."*
+
+Bu kararlar 33'te alınmazsa 34'e devreder.
+
+---
+
+## 📋 Önerilen 33. Oturum Akışı (Vercel kapalıyken başla)
 
 ```
-Saat 1 — Karar Aşaması
-  - Ritüel + son-durum okuma
-  - SBD-01 yaklaşımı kararı (5 dk Cihat)
-  - 32-35 sıralaması kararı (5 dk Cihat)
-  - Karar dökümana yazılır (son-durum.md güncellenir)
+Saat 1 — Vercel-bağımsız işler
+  ✓ Ritüel + son-durum okuma
+  ✓ A) D7 migration + kod fix (Vercel açılmadıysa fix dosyada bekler, sonra push)
+  ✓ B) kurallar.json + CLAUDE.md güncellemeleri
 
-Saat 2 — Acil Temizlik (15 dk)
-  - Orphan dosya silme (DB + bucket)
-  - db-backup.yml cron düzeltmesi (1 commit)
+Saat 1.5 — Vercel açılış kontrolü
+  → Açıldıysa: E (D3 doğrulama), F (G-08 görsel fark), G (vercel.json fix), D7 push
+  → Hâlâ kapalıysa: D (MProfil mockup) veya defter detayları
 
-Saat 2-3 — Karara Göre Uygulama
-  Seçenek A (Sentry öncelikli):
-    - SBD-01: defter sayfa-merkezli yeniden yapı (45 dk)
-    - kurallar.json'a SED-01 entegrasyonu (15 dk)
-    - CLAUDE.md ritüeline yeni soru ekle (5 dk)
-    - Sentry kurulum başlangıcı (kalan zaman)
+Saat 2 — Karar oturumu (zaman varsa)
+  ⚖ SBD-01 kararı
+  ⚖ Sentry vs G-08 sıralaması
 
-  Seçenek B (G-08 öncelikli):
-    - SBD-01: defter sayfa-merkezli yeniden yapı (45 dk)
-    - G-08 referans implementasyon (proje_liste.html veya admin/panel.html) (45 dk)
-    - Yaygınlaştırma örnek (1 sayfa daha) (30 dk)
-
-Saat son — Kapanış
+Saat sonu — Kapanış
 ```
 
 ---
 
-## 🎯 Başarı Kriterleri (32 Sonu)
+## 🎯 Başarı Kriterleri (33 sonu)
 
-- [ ] SBD-01 yaklaşımı net karar verildi (A/B/C)
-- [ ] 32-35 sıralaması net (Sentry'nin yeri kesin)
-- [ ] Orphan dosyalar temizlendi (DB + bucket)
-- [ ] db-backup cron düzeltildi
-- [ ] Defter sayfa-merkezli yapıya kavuştu (mevcut 6 madde + envanter sayfa-bazlı)
+**Minimum (Vercel kapalı kalsa bile):**
+- [ ] D7 kod hazır (migration + devre_detay.html), test deploy bekler
 - [ ] kurallar.json'a SED-01 eklendi
-- [ ] Bir sonraki sayfa açıldığında defter okuma akışı test edildi
-- [ ] CI yeşil
+- [ ] CLAUDE.md disiplin bölümüne 32 dersleri eklendi
+- [ ] Defter güncel
+
+**Vercel açılırsa:**
+- [ ] D3 canlı doğrulandı (`tersane_is_emri` kaydetme F5'te durur)
+- [ ] G-08 görsel fark tespit edildi (somut madde) ya da Cihat "boş ver" dedi
+- [ ] arespipe-mob build skip kuralı çalışıyor
+
+**Bonus:**
+- [ ] MProfil mockup hazır
+- [ ] Karar oturumu (SBD-01 + sıralama)
 
 ---
 
 ## ⚠️ Potansiyel Engeller
 
-### Engel 1: Cihat karar veremiyor
-Eğer Cihat "ikisi de iyi, hangisi daha iyi söyle" derse:
-- Net tavsiye **C** (markdown şimdilik) ve **A** (Sentry öncelikli) — defaultlar
-- Karar verilemezse defaultlarla devam, 33'te yeniden değerlendir
+### Engel 1: Vercel hâlâ kapalı
+**Plan:** Vercel-bağımsız işlere odaklan (A, B, D). Deferred testleri 34'e ya da bir sonraki oturuma kaydır. D7 kod hazır kalır, Vercel açılınca push edilir.
 
-### Engel 2: Sayfa-merkezli yeniden yapılandırma 45 dk'yı aşıyor
-Defter mevcut yapıdan kategori-merkezli, sayfa-merkezliye dönüşüm beklediğimden uzun sürebilir. Süre aşıyorsa:
-- Cihat'a 1 oturum ek ayır teklifi (33'ün ilk yarısı)
-- Veya önce sadece spool_detay + devre_detay yeniden yapılandır, kalan sayfalar 33'te
+### Engel 2: D7 schema doğrulamasında sürpriz
+Eğer `durdurma_tarihi` aslında zaten varsa (defter eski olabilir), kapatılır not: "D7 zaten kapalı, defter güncellendi".
 
-### Engel 3: Cron düzeltme bekleyen test
-Cron düzeltildikten sonra **bir gece beklemek lazım** TR 03:00 olduğunu görmek için. 33. oturum başında doğrulama yapılır.
+### Engel 3: G-08 görsel farkı tespit edilemiyor
+Tarayıcı dev tools ile bilek bükme: iki sayfayı yan yana aç, F12 → Computed CSS karşılaştır, animasyon timing'ini incele. Yoksa: Cihat'a "screen recording yapar mısın" sor, fark videodan netleşir.
 
-### Engel 4: Sayfa açıldığında defter listeleme entegrasyonu
-"Bir sonraki sayfa açıldığında Claude defter okusun" akışı test edilmedi. Bu akış için:
-- Cihat sayfa istediğinde Claude `docs/SAYFA-EKSIKLERI.md`'i project_knowledge_search ile bulup okumalı
-- Sayfa-merkezli yapıda ilgili bölümü çıkarmalı
-- Listelemeli, Cihat'a önceliklendirme sormalı
-- **Bu işin bir kez gerçekten test edilmesi 32 sonunda lazım** — bir sayfa açıp prova et
+### Engel 4: Cihat enerjisi düşük
+**Plan:** Sadece A (D7) yapılır, kapanış. Diğerleri 34'e.
 
 ---
 
-## 🔗 32'den Sonra (Güncel Plan)
+## 🔗 33'ten Sonra (Plan)
 
 | Oturum | Tema | Durum |
 |---|---|---|
-| 31 | Bucket PRIVATE Migration | ✅ |
-| **32** | **Karar + Temizlik + SBD-01 uygulama** | **Bu oturum** |
-| 33 | Sentry (A) veya G-08 (B) | 32 kararına bağlı |
+| 33 | **Vercel-bağımsız işler + deferred test + karar** | **Bu oturum** |
 | 34 | Email sistemi | Sırada |
-| 35 | Staging + migration runner | Sırada |
+| 35 | Staging Supabase + migration runner | Sırada |
 | 36 | Tenant izolasyon testleri | Sırada |
-
-**37+ ürün dönemi.** G-08 yaygınlaştırma B seçilirse 32-33, A seçilirse 37+.
-
----
-
-## 🎯 Oturum İçi Disiplin (31'in Dersleri)
-
-- **Plan dosyalarına ezbere uyma, gerçek kod tara** — 31'de 90 dk tasarruf
-- **Schema değişikliği planlarken information_schema sorgusu zorunlu** — S2 bug yakalandı
-- **Deploy zamanlamasını test öncesi doğrula** — feedback foto kafa karışıklığı
-- **Eager > lazy mümkünse** — kapsamı küçült, race azalt
-- **Görülen yarım akışı sessizce atlama, defter'e yaz** — SED-01 temeli
-
-(+ 1-30'un tüm dersleri `son-durum.md` disiplin bölümünde)
+| 37+ | ÜRÜN DÖNEMİ — G-08 yaygınlaştırma + müşteri demo | — |
 
 ---
 
-## 🔐 Bekleyen Testler (31'den devir)
+## 🎯 Oturum İçi Disiplin (32'nin Dersleri)
 
-**Cross-tenant blok kontrolü** — Normal user (super_admin değil) hesabıyla, başka bir tenant'ın yolunu çağırma testi. Endpoint kodu doğru kontrolü yapıyor (`if (!superAdmin && yoldanTenantId !== kullaniciTenantId)`) ama canlı kanıt yok. 32'de yapılması zor (2. test kullanıcısı gerekir), bekleyen test olarak kalır. 35-36 tenant izolasyon testleri oturumunda yapılacak.
+- **Plan dosyalarına ezbere uyma, gerçek schema/kod tara** — feedback kolon adları yanlıştı (32 tecrübe)
+- **Schema değişikliği planlarken information_schema sorgusu zorunlu**
+- **Schema drift uçtan uca tarama** — insert + read + render + map (S2 + tur/tip dersi)
+- **Yanıltıcı başarı toast'ı önle** — try/catch'te toast + erken return (D6 dersi)
+- **Deploy doğrulama tekniği** — `fnAdı.toString().includes(...)` (32 dersi)
+- **Vercel push tasarrufu** — mob ignoreCommand, gereksiz commit'i toplu yap
+
+(+ 1-31'in tüm dersleri `son-durum.md` disiplin bölümünde)
 
 ---
 
-**31. oturum sonu yazıldı, 25 Nisan 2026 Cumartesi öğle.** 32. oturum açılışında Cihat ilk önce iki karar (SBD-01 yaklaşımı + sıralama) verecek, sonra temizlik yapacağız.
+## 📌 Cihat'ın Talimatı (32 sonu, doğrudan alıntı)
+
+> "Sen sohbeti kapat, bir sonraki sohbete bana vercel gerektirmeyen iş kalemlerini öne al. Yarın zaten çalışamıyorum. Bugün biraz ilerleyelim."
+
+→ 33'ün ilk 90 dakikası A + B (Vercel-bağımsız), Vercel açılırsa E + F + G, kalan zaman D ya da kararlar.
+
+---
+
+**32. oturum kapanışı:** 25 Nisan 2026 Cumartesi. 33. oturum: aynı gün ilerisi ya da sonraki uygun zaman.
