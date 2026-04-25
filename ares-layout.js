@@ -1041,14 +1041,21 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         if (_fbFotoData) {
           try {
             var blob = await fetch(_fbFotoData).then(function(r){ return r.blob(); });
-            var dosyaAdi = 'feedback/' + Date.now() + '.jpg';
-            var yukle = await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi, blob, { contentType: 'image/jpeg' });
-            if (!yukle.error) {
-              var { data: urlData } = supa.storage.from('arespipe-dosyalar').getPublicUrl(dosyaAdi);
-              fotograf_url = urlData.publicUrl;
+            var fbTenantId = oturum?.tenant_id;
+            if (fbTenantId) {
+              // Bucket PRIVATE — yol UUID prefix'iyle başlar (helper yetki kontrolü için)
+              var dosyaAdi = fbTenantId + '/feedback/' + Date.now() + '.jpg';
+              var yukle = await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi, blob, { contentType: 'image/jpeg' });
+              if (!yukle.error) {
+                // Path saklanır — admin panel signed URL'i ARES.dosyaUrlAl ile alır
+                fotograf_url = dosyaAdi;
+              } else {
+                // Storage başarısız — base64 data URL olarak kaydet
+                console.warn('[FB] Storage upload hatası, base64 kullanılıyor:', yukle.error.message);
+                fotograf_url = _fbFotoData;
+              }
             } else {
-              // Storage başarısız — base64 data URL olarak kaydet
-              console.warn('[FB] Storage upload hatası, base64 kullanılıyor:', yukle.error.message);
+              // Tenant yok (anonim/giriş yapmamış) — base64 olarak sakla
               fotograf_url = _fbFotoData;
             }
           } catch(uploadErr) {
