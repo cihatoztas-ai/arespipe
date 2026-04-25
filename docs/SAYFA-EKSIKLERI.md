@@ -8,32 +8,44 @@
 
 ---
 
-## 31. Oturum Tarama Sonuçları (25 Nisan 2026)
+## 32. Oturum Tarama Sonuçları (25 Nisan 2026)
 
 ### `spool_detay.html`
+
+#### ✅ Kapatıldı (32. oturum)
+- **S1** — `belgeKaydet` artık DB'ye yazıyor (bucket upload + DB insert + optimistic UI rollback). Belge sayfa yenilemede kalıyor. F5 + sayfadan çıkıp gelme testi geçti.
+- **belgeSil DB bug (defter dışı bonus)** — Mevcut kod sadece BELGELER array'inden çıkarıyordu, F5'te belge geri geliyordu. Soft delete pattern (silindi=true + silinme_tarihi) ile kapatıldı.
+- **tur/tip drift bug (yan tespit)** — DB kolonu `tur` ama okuma+render kodu `b.tip` kullanıyordu. Belge türü ekranda hep boş görünüyordu. Tüm kod `tur`'a çevrildi. (S2'nin kardeş bug'ı — ders: schema değişiklikleri uçtan uca tarama gerek, sadece insert noktası değil.)
 
 #### ✅ Kapatıldı (31. oturum)
 - **S2** — `egitim_verisi` insert'inde kolon adı bug (`foto_url` → `fotograf_url`). Schema sorgusu doğruladı, kod tek kelime düzeltildi. Spool AI eğitim verisi artık gerçekten kayıt ediliyor (vizyon kazanımı).
 
 #### 🟡 Açık (sonraya bırakıldı)
-- **S1** — `belgeKaydet` fonksiyonu (satır 2553) Supabase'e yazmıyor, sadece `BELGELER.unshift()` in-memory. "Kaydedildi" toast'ı yalan, sayfa yenilenince kayıp. **Veri kaybı riski.** Tahmin: 15-20 dk fix. Ürün dönemi (35+) iş.
 - **S3** — AI toolbar gizli (satır 1562) — bilinçli, "Lambda hazır olunca açılacak". Spool AI faz planına bağlı.
 - **S4** — QR indirme (satır 1989) — bilinçli yarım, NOT-02 referansıyla biliniyor.
 
+---
+
 ### `devre_detay.html`
 
+#### ✅ Kapatıldı (32. oturum)
+- **D5** — `dokKaydet` artık bucket'a upload + DB'ye düzgün `dosya_url` (placeholder yerine gerçek path). Ek: render'a aç butonu (↗) eklendi, signed URL helper ile çalışıyor. Eski "pending:" kayıtlar için backward-compat (görünür kalır, açma yok). F5 + aç testi geçti.
+- **D6** — 10 sessiz `console.warn` toast bildirimine dönüştü:
+  - Kullanıcı action (kritik): `spoolGuncelle`, `spoolDurdur`, `spoolDurdurmaKaldir`, `softSil`, `terminKaydet` — hata olunca toast + erken `return` (yanıltıcı başarı toast'ı önlendi)
+  - Yükleme hataları: `devreYukle`, `spoolYukle`, `plMalzYukle`, `belgelerYukle`, `loguGetir`, `malzemeleriGetir` — "yüklenemedi" toast
+  - Dokunulmayan: `_basamakMapYukle`, `_skBaslat` (init), `dokKaydet` (zaten toast var)
+
+#### 🟡 Yarı kapatıldı — deploy bekliyor (32. oturum sonu)
+- **D3** — `tersane_is_emri` artık DB kolonu (001 migration eklendi, manuel SQL atıldı). Kod fix: `devreYukle` DB'den okur, `tersaneIsEmriKaydet` DB'ye yazar (optimistic UI + rollback). **Vercel rate limit nedeniyle son commit deploy edilemedi**, canlı doğrulama 33. oturumda yapılacak. Beklenen davranış: tersane iş emri gir → kaydet → F5 → değer durur. Test komutu: tarayıcı console'da `tersaneIsEmriKaydet.toString().includes('supa.from')` → `true` olmalı (deploy doğrulama).
+- **G-08** — Skeleton + cascade pattern uygulandı (CSS, JS helpers, render data-ci, HTML stat shimmer). Cihat "tam aynı değil" geri bildirimi verdi, somut fark belirtilmedi. **Görsel karşılaştırma + fark tespiti 33. oturuma**. devreler.html birebir referans alındı (CSS class isimleri, 15 satır skeleton, 0-19 cascade delays).
+
 #### ✅ Kapatıldı (31. oturum)
-- **D1** — `spoolEkleKaydet` Supabase'e yazıyor şimdi. Optimistic UI + rollback pattern. Veri kaybı riski kapatıldı.
-- **D2** — `durdurKaydet` ve `durdurmaKaldir` `devreler.durum` + `durdurma_sebebi` UPDATE yapıyor. Optimistic UI + rollback. Yanıltıcı banner sorunu kapatıldı.
+- **D1** — `spoolEkleKaydet` Supabase'e yazıyor şimdi. Optimistic UI + rollback pattern.
+- **D2** — `durdurKaydet` ve `durdurmaKaldir` `devreler.durum` + `durdurma_sebebi` UPDATE yapıyor.
 
 #### 🟡 Açık (sonraya bırakıldı)
-- **D3** — `tersaneIsEmriKaydet` DB'ye yazmıyor (satır 1465) — kod yorumu: *"tersane_is_emri kolonu DB'de yok — sadece localStorage'da tut"*. **DB schema migration gerekir** — kolonu ekle, kodu güncelle. Tahmin: 30 dk + test. Schema değişikliği nedeniyle migration runner ile birlikte (34. oturum) yapılmalı.
-- **D4** — KK & Sevkiyat listeleri UI'da hiç dolmuyor (`kkListe`, `sevkListe` divleri 394, 398). Davetler/sevkiyatlar DB'ye yazılıyor ama geri okuma yok, kullanıcı "kaydedildi mi?" şüphesinde kalıyor. Tahmin: 30-45 dk yeni `kkDavetlerYukle` + `sevkiyatlarYukle` fonksiyonları + render. Ürün dönemi (35+).
-- **D5** — `belgeKaydet` (`pending:` placeholder, satır 1745) — bucket'a hiç yüklemiyor. spool_detay'daki S1 ile aynı mantık ama belgeler için. 30+ dk. Ürün dönemi (35+).
-- **D6** — 8+ sessiz `console.warn` — DB hataları kullanıcıya bildirilmiyor (devreYukle, spoolYukle, spoolGuncelle, spoolDurdur, vs.). Audit log entegrasyonu + toast bildirimi. Tahmin: 20-30 dk. 36+ ürün dönemi (audit log pano sekmesi gündemiyle birlikte).
-
-#### 🟡 Bonus eksik tespiti (Eksik 31. oturumda kapsama girmedi ama görüldü)
-- **D7** — `durdurma_tarihi` kolonu `devreler` tablosunda **yok** (`spooller`'da var). Devre durdurma tarihi takip edilemiyor. Audit/raporlama için eksik. D3 ile birlikte schema migration paketinde (34. oturum).
+- **D4** — KK & Sevkiyat listeleri UI'da hiç dolmuyor (`kkListe`, `sevkListe` divleri 394, 398). Davetler/sevkiyatlar DB'ye yazılıyor ama geri okuma yok. Tahmin: 30-45 dk yeni `kkDavetlerYukle` + `sevkiyatlarYukle` fonksiyonları + render. Ürün dönemi (35+).
+- **D7** — `durdurma_tarihi` kolonu `devreler` tablosunda **yok** (`spooller`'da var). Devre durdurma tarihi takip edilemiyor. **33. oturum başında yapılabilir** (Vercel-bağımsız: migration + kod fix). Tahmin: 25-30 dk.
 
 ---
 
@@ -53,14 +65,26 @@ Her sayfa için Claude şu pattern'leri arar:
 1. **In-memory only akışlar:** `array.push/unshift/splice` var ama Supabase insert/update yok
 2. **Sessiz hatalar:** `console.warn`/`console.error` ile yutulan DB hataları (toast/audit yok)
 3. **Mock placeholder'lar:** `'pending:'`, `'TODO'`, `'mock'`, `'fake'`, `null` ile kaydedilen kalıcı değerler
-4. **Kod–schema uyumsuzluğu:** Insert/update'te kullanılan kolon adı schema'da yok (information_schema sorgusuyla doğrula)
+4. **Kod–schema uyumsuzluğu:** Insert/update/read/render'da kullanılan kolon adı schema'da yok ya da farklı (information_schema sorgusuyla doğrula — **uçtan uca**, sadece insert değil read/render dahil)
 5. **UI–data kopukluğu:** UI elementi var (`<div id="...">`) ama hiçbir fonksiyon doldurmuyor
 6. **Yorum kalıntıları:** `// şimdilik`, `// ileride`, `// henüz yok`, `// kolonsuz`, `// localStorage`
 7. **Kapatılmış kod:** `disabled`, `display:none`, `opacity:.5` + bilinçli yorum
+8. **Yanıltıcı başarı toast'ı:** Hata yutulduktan sonra "kaydedildi" toast atılıyorsa kritik (kullanıcıya yalan söylüyor) — try/catch'te toast + erken return olmalı
 
 ---
 
-**İlk yazım:** 25 Nisan 2026 — 31. oturum. Cihat'ın "her sayfa geldiğinde bir eksik kapatılmış olsa hem hissetmezdik hem de böyle birikme olmazdı" gözlemi sonrası kuruldu.
+## Yan Dersler — 32. Oturumdan
+
+1. **Deploy doğrulama tekniği:** "Yeni kod canlıda mı?" sorusunun en hızlı cevabı tarayıcı console'da `fnAdı.toString().includes('yeniEklendiSatır')`. Saat kaybetmeden cache mi/henüz yüklenmedi mi/RLS mi belirler.
+
+2. **Schema drift uçtan uca:** S2 (foto_url/fotograf_url) ve tur/tip bug'ı aynı dersi veriyor — schema değişikliklerinde sadece insert noktasına bakmak yetmez, **read + render + map** noktaları da taranmalı. `information_schema.columns` sorgusu kolayca yazılır, drift'i kanıtlar.
+
+3. **Vercel Hobby plan = 100 deploy/gün** — her push iki projeyi (arespipe + arespipe-mob) tetikliyorsa fiili limit 50 push/gün. Aktif çalışılan oturumlarda kolayca aşılır. `vercel.json` ignoreCommand'a `mobile/` dışındakiler için arespipe-mob'u devre dışı bırakacak kural eklenmeli (33+ önceliği).
+
+---
+
+**İlk yazım:** 25 Nisan 2026 — 31. oturum.
+**Son güncelleme:** 25 Nisan 2026 — 32. oturum sonu.
 
 ---
 
@@ -108,12 +132,11 @@ tr.sk-row { animation:none !important; opacity:1 !important; cursor:default !imp
 .data-table tbody tr { opacity:0; animation:_cascadeIn .22s ease forwards; }
 .data-table tbody tr[data-ci="0"]  { animation-delay:0ms; }
 .data-table tbody tr[data-ci="1"]  { animation-delay:45ms; }
-/* ... 9'a kadar, her artı 45ms ... */
+/* ... 19'a kadar, her artı 45ms ... */
 ```
 
 **JS gereksinimleri:**
 ```javascript
-// Sayfa yüklenir yüklenmez (DOMContentLoaded veya benzeri)
 function _skRender() {
   var tbody = document.getElementById('tableBody');
   var rows = '';
@@ -128,17 +151,9 @@ function _skTemizle(el) {
   if (el && el.classList) el.classList.remove('sk', 'sk-num', 'sk-bar');
 }
 
-// Veri geldiğinde stat sayıları için
-function _animCount(el, hedef, opt) {
-  if (!el) return;
-  // ... format ...
-  _skTemizle(el);
-  el.textContent = formatted;
-}
-
 // Veri render'ında her satıra data-ci index ekle (ilk 10 için stagger)
 data.forEach(function(item, i) {
-  var ci = i < 10 ? i : 10; // 10+ satır anında gelir, sadece ilk 10 stagger
+  var ci = i < 10 ? i : 10;
   rows += '<tr data-ci="' + ci + '">' + ...;
 });
 ```
@@ -160,7 +175,10 @@ data.forEach(function(item, i) {
 - `bukum.html` (sk:2, cascade:23)
 - `markalama.html` (sk:2, cascade:23)
 
-**❌ Eksik — sk:0, cascade:0 (22 sayfa, 31. oturumda taranmış):**
+**🟡 Yarı uygulandı (32. oturum):**
+- `devre_detay.html` — kod birebir uyarlandı (CSS, helpers, HTML class'lar) ama Cihat "tam aynı değil" geri bildirimi verdi. Görsel karşılaştırma + fark tespiti 33. oturumda.
+
+**❌ Eksik — sk:0, cascade:0 (21 sayfa, 31. oturumda taranmış):**
 
 **🔴 Yüksek öncelik (gerçek liste sayfası — Supabase'den veri çekiyor):**
 - `proje_liste.html` — proje listesi
@@ -181,7 +199,6 @@ data.forEach(function(item, i) {
 
 **🟡 Orta öncelik (detay sayfa — alt liste içeriyor):**
 - `spool_detay.html` — foto + belge + işlem listesi
-- `devre_detay.html` — spool tablosu, doküman, not, KK/sevk
 - `kullanici_detay.html` — yetki + log listesi
 
 **🟢 Düşük öncelik (form-ağırlıklı, tablo görsel grid):**
@@ -195,10 +212,10 @@ data.forEach(function(item, i) {
 | Öncelik | Sayfa | Tahmin |
 |---|---|---|
 | 🔴 Yüksek | 15 sayfa × 25 dk | ~6 saat (1.5 oturum) |
-| 🟡 Orta | 3 sayfa × 30 dk | ~1.5 saat |
+| 🟡 Orta | 2 sayfa × 30 dk | ~1 saat |
 | 🟢 Düşük | 4 sayfa (gerekirse) | ~2 saat |
 
-**Gerçekçi tahmin:** Sadece 🔴 yüksek öncelik = 1.5 oturum (örn. 32 + 33). 🟡 ve 🟢 ürün dönemine ertelenebilir.
+**Gerçekçi tahmin:** Sadece 🔴 yüksek öncelik = 1.5 oturum. 🟡 ve 🟢 ürün dönemine ertelenebilir. Önce 33. oturumda devre_detay görsel uyumsuzluğu çözülmeli, sonra yaygınlaştırma.
 
 ### Tarama komutu (her oturumda tekrarlanabilir)
 
@@ -215,19 +232,9 @@ cd ~/Desktop/arespipe && for f in *.html admin/*.html; do
 done
 ```
 
-### Tahmini iş kapsamı
-
-| Kapsam | Tahmin |
-|---|---|
-| Tek bir sayfaya G-08 ekleme | 20-30 dk |
-| Eğer sayfa zaten varsa (sadece eksikse) | 10-15 dk |
-| 10 sayfa × 25 dk | ~4 saat (1 oturum) |
-
 ### Önerilen plan
 
-- **32. veya 33. oturum** gündem değişikliği önerisi: Sentry yerine **G-08 yaygınlaştırma**
-- Veya: 32 hâlâ Sentry, 35 ürün dönemi ortasında G-08 sıkıştırılır
-- Karar Cihat'ta — kapanış toplantısında konuşulmalı
+- **33. oturum** önce devre_detay görsel fark tespiti (Cihat "tam aynı değil" dedi, somut fark görmedik). Sonra Sentry vs G-08 yaygınlaştırma kararı (32'den devir).
 
 ### Kapsam dışı
 
@@ -240,3 +247,4 @@ G-08 sadece **tablo/liste gösteren** sayfalar için. Aşağıdaki sayfalarda ge
 ---
 
 **G-08 ilk yazım:** 25 Nisan 2026 — 31. oturum, Cihat tarafından önerilmiştir.
+**Güncelleme:** 25 Nisan 2026 — 32. oturum, devre_detay yarım uygulama.
