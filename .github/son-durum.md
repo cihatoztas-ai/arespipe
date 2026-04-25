@@ -1,42 +1,39 @@
 # AresPipe — Son Durum
 
-**Son güncelleme:** 25 Nisan 2026 Cumartesi, 32. oturum sonu
+**Son güncelleme:** 25 Nisan 2026 Cumartesi, 33. oturum sonu
 
 ---
 
-## 32. Oturumda Olanlar (özet)
+## 33. Oturumda Olanlar (özet)
 
-**Tema:** Defter temizliği — bekleyen SED maddelerini sırayla kapatma + Vercel rate limit dersi
+**Tema:** Vercel-bağımsız işler — D7 + D4 kapatma, defter temizliği, self-test günü
 
-**Tamamlananlar (6):**
-1. ✅ **Orphan 2 feedback kaydı silindi** (DB + Storage) — 31'in test artıkları
-2. ✅ **GitHub Actions v4 → v5** (`actions/checkout` + `actions/setup-node`) — 29'dan beri açık deprecation borç
-3. ✅ **S1** spool_detay belge yükleme/silme DB'ye yazıyor — bucket upload + DB insert + soft delete + optimistic UI rollback. Yan tespit: `tur/tip` schema drift bug'ı (S2'nin kardeşi) kapatıldı. F5 + sayfadan çıkıp gelme testi geçti.
-4. ✅ **D5** devre_detay belge yükleme bucket'a yazıyor + aç butonu (↗) — signed URL helper, "pending:" eski kayıtlar için backward-compat. F5 testi geçti.
-5. ✅ **D6** devre_detay 10 sessiz `console.warn` toast bildirimine dönüştü — kullanıcı action'larında yanıltıcı başarı toast'ı önlendi (try/catch'te toast + erken return)
-6. ✅ **D3 kod hazırlığı** tersane_is_emri DB kolonu (001 migration eklendi, manuel SQL atıldı) + kod fix (`devreYukle` DB'den okur, `tersaneIsEmriKaydet` DB'ye yazar). **Vercel rate limit nedeniyle deploy 33. oturuma ertelendi**, kanıtlanmış: `tersaneIsEmriKaydet.toString().includes('supa.from')` → `false` (eski kod hâlâ canlıda).
+**Tamamlananlar (5):**
+1. ✅ **Self-test 4/4 başarılı** (33 = 5'in katı, zorunlu) — Faz B kuralları sağlıklı, sapmama sistemi 5 oturumdur ayakta. Sonraki zorunlu self-test: 38. oturum.
+2. ✅ **D7 — `durdurma_tarihi` kolonu** (`devreler` tablosu) — Migration `002_devreler_durdurma_tarihi_ekle.sql`, 7 patch (devre_detay state + 2 write, devreler write + 2 SELECT + state). Canlı test: AT110-Drencher-Galv'de durdur → tarih dolu, kaldır → tarih null. Schema drift dersi (S2/32) uygulandı: insert + read + render + map noktaları uçtan uca tarandı. Commit `ad9fb27`.
+3. ✅ **db-backup.yml cron defter güncellemesi** — Dosya zaten 32'de düzeltilmiş (commit bb03127), defter güncel değildi. 25 Nis sabahki yedek hâlâ eski saatte (02:56 UTC) düştü çünkü cron değişikliği bir sonraki tetiklemeden uygulanır (normal davranış). 26 Nis sabahı backups repo'da yedek saati kontrol → TR 03:00-03:30 ise ✅. Commit `d703742`.
+4. ✅ **D4 — KK ve Sevkiyat listeleri** (`devre_detay` sayfası) — Yeni `kkSevkYukle()` fonksiyonu: kk_davet_spooller ve sevkiyat_spooller'dan inverse sorgu, master tabloları çekiyor. `_kkRender()` + `_sevkRender()` helper'ları. DOMContentLoaded + pageshow + visibilitychange + gonderKaydet zincirlerinde otomatik yenileme (4 yer). Canlı test: KK-926323 daveti 8 spool ile listelendi. Defterin "ürün dönemi (35+)" tahmininden çok önce kapandı (~45 dk). Commit `7db5979`.
+5. ✅ **`.DS_Store` repo'dan temizlendi** — stash + drop ile macOS metadata commitler dışında kaldı.
 
-**Yarım kalan / 33'e devir (2):**
-1. 🟡 **D3 canlı doğrulama** — Vercel deploy bekliyor. Test komutu: tarayıcı console'da `tersaneIsEmriKaydet.toString().includes('supa.from')` → `true` olmalı, sonra "tersane iş emri gir → kaydet → F5 → durur mu" testi yapılır.
-2. 🟡 **G-08 görsel inceleme** — devre_detay'a skeleton+cascade pattern uyarlandı (devreler.html birebir referans alındı), Cihat "tam aynı değil" dedi ama somut fark belirtilmedi. 33. oturumda iki sayfayı yan yana açıp fark bulunacak.
-
-**Atlananlar / sonraya:**
-- `db-backup.yml` cron — dosya zaten 32'de düzeltilmiş (commit bb03127). 26 Nis sabahı yedek saatine bakılıp ✅ kapanır.
+**Yarım kalan / 34'e devir (3):**
+1. 🟡 **db-backup.yml cron canlı doğrulama** — 26 Nis sabahı backups repo commits'inde yedek saatine bakılır. TR 03:00-03:30 ise ✅, hâlâ 05:55 ise farklı sürükleyici aranır.
+2. 🟡 **D3 canlı doğrulama** — Vercel açıldığında. Test: tarayıcı console'da `tersaneIsEmriKaydet.toString().includes('supa.from')` → `true` olmalı.
+3. 🟡 **G-08 görsel inceleme** — devre_detay vs devreler.html yan yana, somut fark tespiti. 32'den devir.
 
 ---
 
-## ⚠ Aktif Borçlar — 33. Oturum Başında Dikkat
+## ⚠ Aktif Borçlar — 34. Oturum Başında Dikkat
 
-- 🟡 **D3 deploy doğrulama** + canlı test — Vercel açıldığında ilk iş
+- 🟡 **D3 deploy doğrulama** — Vercel açıldığında ilk iş
+- 🟡 **db-backup canlı doğrulama** — 26 Nis sabah yedek saati kontrolü (1 dk iş)
 - 🟡 **G-08 görsel fark tespiti** (devre_detay vs devreler) — Cihat onayı bekliyor
 - 🟡 **Vercel ignoreCommand fix** — `vercel.json`'a `arespipe-mob` için `mobile/` haricinde build engelleyen kural (Vercel Hobby 100 deploy/gün, fiili 50 push/gün — kapsam genişletmeli)
-- 🟡 **SBD-01 vs GitHub Issues kararı** — 32. oturumda atlandı, 33+ Cihat seçecek
-- 🟡 **G-08 yaygınlaştırma** — 21 sayfa eksik (15 yüksek öncelik), 33-34 oturumlarına dağıtılabilir
+- 🟡 **SBD-01 vs GitHub Issues kararı** — 32'de atlandı, 34+ Cihat seçecek
+- 🟡 **G-08 yaygınlaştırma** — 21 sayfa eksik (15 yüksek öncelik), 34-35 oturumlarına dağıtılabilir
 - 🟢 **G-09 (filtre çubuğu) ve G-10 (üst aksiyon çubuğu)** — kural numaraları rezerve, teknik spec sonra
-- 🟢 **db-backup.yml cron** — dosyada `0 0 * * *` (UTC 00:00 = TR 03:00). 32'de düzeltilmiş ama bugünkü yedek hâlâ TR 05:55'te düştü (cron dosya değişikliğini bir sonraki tetiklemeden okur). 26 Nis sabahı backups repo'da yedek saati kontrol → TR 03:00-03:30 ise ✅. Hâlâ 05:55 ise farklı sürükleyici aranır.
 
 **Önceki dönemlerden devreden:**
-- 🟡 ✅ `actions/checkout@v4` + `setup-node@v4` deprecation — **32'de v5'e güncellendi**
+- 🟡 ✅ `actions/checkout@v4` + `setup-node@v4` deprecation — 32'de v5'e güncellendi
 - 🟡 ✅ `arespipe-dev` proje incelemesi — kapatıldı (canlı üretim olduğu doğrulandı)
 - 🟢 `sorgula.js` JWT-bazlı auth refactor — body'den tenant_id alıyor (güvenlik açığı)
 - 🟢 Audit Log pano sekmesi
@@ -48,7 +45,8 @@
 
 **Defter'deki açık SED maddeleri (`docs/SAYFA-EKSIKLERI.md`):**
 - spool_detay: S3 (AI toolbar gizli — bilinçli), S4 (QR indirme yarım — bilinçli)
-- devre_detay: D4 (KK/Sevk listeleri dolmuyor — okuma yok), **D7 (durdurma_tarihi kolonu yok — 33. oturumda yapılabilir, Vercel-bağımsız)**
+- devre_detay: ~~D4~~ ✅ (33'te kapandı), ~~D7~~ ✅ (33'te kapandı)
+- **Yeni gözlem:** Spool numaraları KK listesinde "S01, S01, S01..." şeklinde tekrar ediyor. `spool_no` field formatı ayrı bir kalem (D8 olarak işaretlenebilir, 34+).
 
 ---
 
@@ -58,17 +56,26 @@
 |---|---|---|
 | 30 | Bucket PRIVATE Faz 1-2 | ✅ |
 | 31 | Bucket PRIVATE Faz 3-6 + SED başlangıç + G-08 envanter | ✅ |
-| **32** | **Defter temizliği — orphan, v5, S1, D5, D6 + D3/G-08 yarım** | **✅ TAMAMLANDI** |
-| **33** | **Vercel-bağımsız işler önde: D7, defter, kurallar.json + Vercel açıldığında D3/G-08 doğrulama + Sentry vs G-08 kararı** | **Sırada** |
-| 34 | Email sistemi | 1 kayma (32 dolu) |
-| 35 | Staging Supabase + migration runner | 1 kayma |
-| 36 | Tenant izolasyon testleri + feature flag | 1 kayma |
+| 32 | Defter temizliği — orphan, v5, S1, D5, D6 + D3/G-08 yarım | ✅ |
+| **33** | **Vercel-bağımsız işler: self-test, D7, db-backup defter, D4** | **✅ TAMAMLANDI** |
+| **34** | **26 Nis backup doğrulama + D3 Vercel test + G-08 görsel + kullanıcı değerine geçiş** | **Sırada** |
+| 35 | Email sistemi (1 kayma) | — |
+| 36 | Staging Supabase + migration runner | — |
+| 37 | Tenant izolasyon testleri + feature flag | — |
 
-**37'den itibaren ÜRÜN DÖNEMİ.**
+**38'den itibaren ÜRÜN DÖNEMİ.**
+
+### Cihat'ın 33'te Sorduğu Stratejik Soru
+
+> "Altyapı için yapılacak daha neyimiz var, normal sayfalara devam edebilir miyiz?"
+
+**Cevap özeti:** Kritik altyapının ~%70'i hazır. Açık 3 madde (email, tenant izolasyon testi, Sentry) **SaaS satışı öncesi** kritik — yani 2-3 ay sonra. **Bugün aciliyetleri yok.** Önerim: 34'ten itibaren **A yolu (kullanıcı değeri)** — operasyon sayfaları, açık SED'ler, mobil sayfalar, Spool AI prototipleri.
+
+---
 
 ### Kural Sağlık Kontrolü
-- **Son self-test:** 24 Nisan 2026, 28. oturum — **4/4 başarılı** ✅
-- **⚠️ Sonraki zorunlu self-test:** 33. oturum (28→33, 5 oturum)
+- **Son self-test:** 25 Nisan 2026, 33. oturum — **4/4 başarılı** ✅
+- **⚠️ Sonraki zorunlu self-test:** 38. oturum (33→38, 5 oturum)
 - **Komut:** `node .github/kontrol.js --self-test`
 
 ---
@@ -76,10 +83,10 @@
 ## 📖 Aktif Belgeler (Yaşayan)
 
 ### **`docs/SAYFA-EKSIKLERI.md`** — defter
-Sayfa-bazlı eksiklerin defterli takibi. SED-01 (backend) + G-08 (görsel ritüel) kurallarının kayıt yeri. **32'de:** S1, D5, D6 ✅ kapatıldı. D3/G-08 deferred. D7 sıradaki açık D maddesi.
+Sayfa-bazlı eksiklerin defterli takibi. SED-01 (backend) + G-08 (görsel ritüel) kurallarının kayıt yeri. **33'te:** D7, D4 ✅ kapatıldı. D3/G-08 33'ten 34'e devir. spool_detay S3/S4 bilinçli ertelenmiş.
 
-### **`migrations/001_devreler_tersane_is_emri_ekle.sql`** — yeni
-D3 fix migration'ı. Manuel SQL ile uygulandı (canlı), dosya repo'da tarihsel takip için.
+### **`migrations/002_devreler_durdurma_tarihi_ekle.sql`** — yeni
+D7 fix migration'ı. Manuel SQL ile uygulandı (canlı), dosya repo'da tarihsel takip için.
 
 ### Vizyon: `docs/SPOOL-AI-VIZYON.md`
 Spool AI ürün vizyonu. **31'de küçük kazanç:** S2 fix ile `egitim_verisi` insert artık çalışıyor.
@@ -108,7 +115,7 @@ CI her main push'ta JSON rapor üretir.
 ### **Migrations** (27-28. oturum)
 - **Klasör:** `migrations/`
 - **Baseline:** `000_initial_schema.sql` (6029 satır, 51 tablo)
-- **Yeni:** `001_devreler_tersane_is_emri_ekle.sql` (32. oturum)
+- **Yeni:** `001_devreler_tersane_is_emri_ekle.sql` (32. oturum), `002_devreler_durdurma_tarihi_ekle.sql` (33. oturum)
 - **Kural:** `NNN_aciklama.sql` adlandırma, BEGIN/COMMIT, header yorumu
 - **CI:** `kontrol.yml` (28. oturumda entegre)
 
@@ -120,7 +127,7 @@ CI her main push'ta JSON rapor üretir.
 ### **Vercel Ignored Build Step** (30. oturum)
 - **Yöntem:** `vercel.json` `ignoreCommand` alanı
 - **Kural:** `.github/`, `docs/`, `*.md` değişiklikleri Vercel build'ini skip eder
-- **⚠ 33+ planlanan:** `arespipe-mob` projesi için `mobile/` klasörü değişmedikçe build skip — Hobby plan rate limit yarıya iner
+- **⚠ 34+ planlanan:** `arespipe-mob` projesi için `mobile/` klasörü değişmedikçe build skip — Hobby plan rate limit yarıya iner
 
 ### **Storage Bucket** (✅ 31. oturumda PRIVATE doğrulandı)
 - **Bucket:** `arespipe-dosyalar`
@@ -144,7 +151,8 @@ CI her main push'ta JSON rapor üretir.
 - **Toplu sed öncesi tek dosyada test** — idempotent değil
 - **Bug sorulduğunda "aslında ne arıyorsun" sor**
 - **Schema değişikliği planlarken information_schema sorgusu zorunlu** (S2 + tur/tip dersi)
-- **Schema drift uçtan uca tarama** (insert + read + render + map noktaları) (32. oturum dersi)
+- **Schema drift uçtan uca tarama** (insert + read + render + map noktaları) (32+33. oturum dersi — D7'de tekrar uygulandı)
 - **Yanıltıcı başarı toast'ı önle** — try/catch'te toast + erken return (D6 dersi)
-- **Deploy doğrulama tekniği:** "Yeni kod canlıda mı?" sorusunun cevabı `fnAdı.toString().includes('yeniSatır')` (32. oturum dersi)
-- **Vercel push tasarrufu** — gereksiz commit'i toplu yap, mob projesi için ignoreCommand genişlet
+- **Deploy doğrulama tekniği:** "Yeni kod canlıda mı?"
+- **Defter notuna saygı, ama kullanıcı isteği üstün** (33. oturum dersi — D4 "ürün dönemi 35+" notluydu, Cihat istedi, yapıldı, çalıştı)
+- **Cron değişikliği bir sonraki tetiklemeden uygulanır** — yapılan değişiklikten hemen sonraki çalıştırmayı eski saatle yakalama (33. oturum dersi)
