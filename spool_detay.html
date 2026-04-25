@@ -1082,7 +1082,8 @@ async function spoolYukle(supaId) {
     FOTOLAR = (s.fotograflar || []).map(function(f) {
       return {
         id:           f.id,
-        url:          f.dosya_url    || '',
+        dosya_url:    f.dosya_url    || '',  // bucket path (signed URL'in kaynağı)
+        url:          '',                     // signed URL — Promise.all ile aşağıda doldurulur
         baslik:       f.baslik       || '',
         aciklama:     f.aciklama     || '',
         kisi:         f.yapan_id     || '',
@@ -1098,13 +1099,25 @@ async function spoolYukle(supaId) {
     // Belgeler
     BELGELER = (s.belgeler || []).map(function(b) {
       return {
-        id:    b.id,
-        ad:    b.ad        || '—',
-        tip:   b.tip       || 'diger',
-        url:   b.dosya_url || '',
-        tarih: b.olusturma ? new Date(b.olusturma).toLocaleString('tr-TR') : ''
+        id:        b.id,
+        ad:        b.ad        || '—',
+        tip:       b.tip       || 'diger',
+        dosya_url: b.dosya_url || '',  // bucket path
+        url:       '',                  // signed URL — Promise.all ile aşağıda doldurulur
+        tarih:     b.olusturma ? new Date(b.olusturma).toLocaleString('tr-TR') : ''
       };
     });
+
+    // Bucket PRIVATE — signed URL'leri paralel çek (cache hit'lerde anında döner)
+    await Promise.all([
+      Promise.all(FOTOLAR.map(async function(f) {
+        if (f.dosya_url) f.url = await ARES.dosyaUrlAl(f.dosya_url) || '';
+      })),
+      Promise.all(BELGELER.map(async function(b) {
+        if (b.dosya_url) b.url = await ARES.dosyaUrlAl(b.dosya_url) || '';
+      })),
+    ]);
+
 
     // İşlem logu, notlar, kesim, büküm, markalama — PARALEL
     var [logRes, notRes, kesimRes, bukumRes, markRes] = await Promise.all([
@@ -1666,7 +1679,7 @@ async function aiOnayEt() {
   var supa=ARES.supabase();
   if(supa&&f.id){
     supa.from('fotograflar').update({ai_durum:'onaylandi'}).eq('id',f.id).then(function(){});
-    if(SP.supaId){supa.from('egitim_verisi').insert({tenant_id:ARES.tenantId(),spool_id:SP.supaId,foto_id:f.id,foto_url:f.url,ai_analiz:f.ai_analiz,annotasyonlar:f.annotasyonlar||[],olusturma:new Date().toISOString()}).then(function(r){if(r.error)console.warn('Eğitim:',r.error);});}
+    if(SP.supaId){supa.from('egitim_verisi').insert({tenant_id:ARES.tenantId(),spool_id:SP.supaId,foto_id:f.id,foto_url:f.dosya_url,ai_analiz:f.ai_analiz,annotasyonlar:f.annotasyonlar||[],olusturma:new Date().toISOString()}).then(function(r){if(r.error)console.warn('Eğitim:',r.error);});}
   }
   aiToolbarGuncelle(idx);
   toast('Onaylandı — eğitim verisine eklendi','ok');
@@ -1831,14 +1844,16 @@ async function fotoKaydet(){
       var dosyaAdi=ARES.tenantId()+'/fotograflar/'+SP.supaId+'/'+Date.now()+'_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
       var upRes=await supa.storage.from('arespipe-dosyalar').upload(dosyaAdi,blob,{contentType:'image/jpeg',upsert:false});
       if(upRes.error)throw new Error(upRes.error.message);
-      var url=supa.storage.from('arespipe-dosyalar').getPublicUrl(upRes.data.path).data.publicUrl;
+      // Bucket PRIVATE — DB'ye path saklanır, signed URL helper'dan alınır
+      var path=upRes.data.path;
+      var signedUrl=await ARES.dosyaUrlAl(path) || '';
       var baslikStr=f.name.replace(/[.][^.]+$/,'');
       var dbRes=await supa.from('fotograflar').insert({
         tenant_id:ARES.tenantId(),spool_id:SP.supaId,
-        dosya_url:url,baslik:baslikStr,aciklama:aciklama||null,yukleyen_id:yapanId,
+        dosya_url:path,baslik:baslikStr,aciklama:aciklama||null,yukleyen_id:yapanId,
       }).select().single();
       if(dbRes.error)throw new Error(dbRes.error.message);
-      FOTOLAR.push({id:dbRes.data.id,url:url,baslik:baslikStr,aciklama:aciklama,kisi:yapanAd,tarih:new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});
+      FOTOLAR.push({id:dbRes.data.id,dosya_url:path,url:signedUrl,baslik:baslikStr,aciklama:aciklama,kisi:yapanAd,tarih:new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});
       basarili++;
     }catch(err){hatali++;console.error(f.name,err);toast(f.name+' hatalı: '+err.message,'er');}
   }
@@ -2522,7 +2537,7 @@ function logNotEkle(){var m=prompt('Not girin:');if(m&&m.trim())logEkle('Not',m.
 function renderBelgeler(){
   var el=T('belgeListe'),cnt=T('belCnt');
   var html=BELGELER.length?BELGELER.map(function(b){
-    var ext=(b.url||b.ad||'').split('.').pop().toUpperCase().slice(0,3)||'DOC';
+    var ext=(b.dosya_url||b.ad||'').split('.').pop().toUpperCase().slice(0,3)||'DOC';
     return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bor);">'
     +'<div style="width:32px;height:32px;border-radius:7px;background:rgba(22,163,110,.12);border:1px solid rgba(22,163,110,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gr);flex-shrink:0;">'+esc(ext)+'</div>'
     +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(b.ad)+'</div>'
