@@ -1765,9 +1765,24 @@ async function belgelerYukle(){
   var res=await supa.from('belgeler').select('id,ad,tur,dosya_url,dosya_boyut,olusturma').eq('devre_id',devreId).eq('silindi',false).order('olusturma',{ascending:false});
   if(res.error){console.warn('Belgeler:',res.error);return;}
   DOKUMANLAR=(res.data||[]).map(function(b){
-    var url=b.dosya_url||'';var dosyaAdi=url.split('/').pop().split('?')[0]||'';
-    return{id:b.id,ad:b.ad,tur:b.tur||'diger',dosyaAdi:dosyaAdi,dosyaUrl:url,tarih:b.olusturma?new Date(b.olusturma).toLocaleDateString(document.documentElement.getAttribute('lang')||'tr'):''};
+    var path=b.dosya_url||'';
+    // 'pending:' = D5 fix öncesi placeholder kayıtları (gerçek dosya yok, açılmaz)
+    var isPending=path.indexOf('pending:')===0;
+    var dosyaAdi=isPending?path.replace('pending:',''):(path.split('/').pop()||'');
+    return{
+      id:b.id,ad:b.ad,tur:b.tur||'diger',
+      dosyaAdi:dosyaAdi,
+      dosyaPath:isPending?'':path,
+      dosyaUrl:'',
+      tarih:b.olusturma?new Date(b.olusturma).toLocaleDateString(document.documentElement.getAttribute('lang')||'tr'):''
+    };
   });
+  // Bucket PRIVATE — signed URL'leri paralel çek (sadece gerçek path'liler)
+  await Promise.all(DOKUMANLAR.map(async function(d){
+    if(d.dosyaPath && typeof ARES!=='undefined' && typeof ARES.dosyaUrlAl==='function'){
+      d.dosyaUrl=await ARES.dosyaUrlAl(d.dosyaPath)||'';
+    }
+  }));
   renderDokumanlar();
 }
 function renderDokumanlar(){
@@ -1778,9 +1793,11 @@ function renderDokumanlar(){
   var DOK_EXT={pdf:'PDF',dwg:'DWG',dxf:'DXF',doc:'DOC',docx:'DOC',xls:'XLS',xlsx:'XLS',png:'IMG',jpg:'IMG',jpeg:'IMG',txt:'TXT'};
   el.innerHTML=DOKUMANLAR.map(function(d){
     var cfg=DT[d.tur]||DT.diger;var ext=(d.dosyaAdi||'').split('.').pop().toLowerCase();var ikon=DOK_EXT[ext]||'DOC';
+    var acBtn=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" target="_blank" rel="noopener" class="btn" style="color:var(--ac);border-color:rgba(54,127,236,.3);text-decoration:none;" title="'+tv('dv_dok_open','Aç')+'">↗</a>':'';
     return'<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--bor);">'
       +'<div style="width:34px;height:34px;border-radius:8px;background:'+cfg.bg+';border:1px solid '+cfg.bor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+cfg.renk+';flex-shrink:0;">'+esc(ikon)+'</div>'
       +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+esc(d.ad)+'</div><div style="font-size:12px;color:var(--txd);margin-top:1px;"><span style="padding:1px 6px;border-radius:6px;background:'+cfg.bg+';color:'+cfg.renk+';font-weight:700;font-size:11px;">'+esc(cfg.lbl)+'</span> '+esc(d.dosyaAdi||'')+'</div></div>'
+      +acBtn
       +'<button class="btn" onclick="dokSil(\''+esc(d.id)+'\')" style="color:var(--re);border-color:rgba(229,62,62,.3);">✕</button>'
       +'</div>';
   }).join('');
@@ -1788,26 +1805,69 @@ function renderDokumanlar(){
 function dokModalAc(){document.getElementById('dokLabel').querySelector('span').textContent=tv('dv_dok_file_hint','Dosya seç veya buraya bırak');document.getElementById('dokAd').value='';document.getElementById('dokTur').value='izometri';document.getElementById('dokInput').value='';document.getElementById('mDok').style.display='flex';}
 function dokDosyaSec(input){var f=input.files[0];if(!f)return;document.getElementById('dokLabel').querySelector('span').textContent='✓ '+f.name;var ad=document.getElementById('dokAd');if(ad&&!ad.value.trim())ad.value=f.name.replace(/\.[^/.]+$/,'');}
 async function dokKaydet(){
+  var inp=document.getElementById('dokInput');
+  var file=inp&&inp.files&&inp.files[0];
   var ad=(document.getElementById('dokAd')||{}).value?.trim()||'';
   var tur=(document.getElementById('dokTur')||{}).value||'diger';
+  if(!file){showToast(tv('dv_dok_file_required','Dosya seçin'),'e');return;}
   if(!ad){showToast(tv('dv_dok_name_required','Doküman adı zorunludur'),'e');return;}
   var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   var supa=_supa();
-  if(supa&&devreId&&_tid()){
-    var dosyaAdi=document.getElementById('dokInput')?.files[0]?.name||'';
-    var res=await supa.from('belgeler').insert({
-      tenant_id:_tid(),devre_id:devreId,ad:ad,tur:tur,
-      dosya_url:dosyaAdi?'pending:'+dosyaAdi:'pending'
-    });
-    if(res.error){showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');return;}
-    await belgelerYukle();
-  }else{
-    var dosya2=document.getElementById('dokInput')?.files[0]?.name||'';
-    DOKUMANLAR.unshift({id:String(Date.now()),ad:ad,tur:tur,dosyaAdi:dosya2,dosyaUrl:'',tarih:bugunStr()});
+  if(!supa||!devreId||!_tid()){
+    // Offline / bağlantısız mod — eski davranış (sadece UI)
+    DOKUMANLAR.unshift({id:String(Date.now()),ad:ad,tur:tur,dosyaAdi:file.name,dosyaPath:'',dosyaUrl:'',tarih:bugunStr()});
     renderDokumanlar();
+    document.getElementById('mDok').style.display='none';
+    showToast(ad+' '+tv('dv_added','eklendi'),'success');
+    return;
   }
+
+  // Optimistic UI: geçici kayıtla göster
+  var gecici={id:'tmp_'+Date.now(),ad:ad,tur:tur,dosyaAdi:file.name,dosyaPath:'',dosyaUrl:'',tarih:bugunStr()};
+  DOKUMANLAR.unshift(gecici);
   document.getElementById('mDok').style.display='none';
-  showToast(ad+' '+tv('dv_added','eklendi'),'success');
+  renderDokumanlar();
+
+  try{
+    // 1) Bucket upload (tenant_id/belgeler/devre_id/timestamp_filename)
+    var bucketPath=_tid()+'/belgeler/'+devreId+'/'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var upRes=await supa.storage.from('arespipe-dosyalar').upload(bucketPath,file,{contentType:file.type||'application/octet-stream',upsert:false});
+    if(upRes.error)throw new Error(upRes.error.message);
+    var path=upRes.data.path;
+
+    // 2) DB insert
+    var dbRes=await supa.from('belgeler').insert({
+      tenant_id:_tid(),devre_id:devreId,ad:ad,tur:tur,
+      dosya_url:path,dosya_boyut:file.size||null
+    }).select().single();
+    if(dbRes.error){
+      // Rollback: orphan bucket dosyası temizle
+      await supa.storage.from('arespipe-dosyalar').remove([path]);
+      throw new Error(dbRes.error.message);
+    }
+
+    // 3) Başarı: signed URL al + geçici kaydı gerçek kayıtla değiştir
+    var signedUrl='';
+    if(typeof ARES!=='undefined' && typeof ARES.dosyaUrlAl==='function'){
+      signedUrl=await ARES.dosyaUrlAl(path)||'';
+    }
+    var idx=DOKUMANLAR.findIndex(function(x){return x.id===gecici.id;});
+    if(idx>=0){
+      DOKUMANLAR[idx]={
+        id:dbRes.data.id,ad:ad,tur:tur,
+        dosyaAdi:file.name,dosyaPath:path,dosyaUrl:signedUrl,
+        tarih:new Date(dbRes.data.olusturma).toLocaleDateString(document.documentElement.getAttribute('lang')||'tr')
+      };
+    }
+    renderDokumanlar();
+    showToast(ad+' '+tv('dv_added','eklendi'),'success');
+  }catch(err){
+    // Rollback UI
+    DOKUMANLAR=DOKUMANLAR.filter(function(x){return x.id!==gecici.id;});
+    renderDokumanlar();
+    console.warn('dokKaydet hata:',err);
+    showToast(tv('dv_error_prefix','Hata')+': '+err.message,'e');
+  }
 }
 async function dokSil(id){
   if(!confirm(tv('dv_dok_confirm_delete','Doküman silinsin mi?')))return;
