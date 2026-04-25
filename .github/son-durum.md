@@ -1,126 +1,97 @@
-# AresPipe — Son Durum (her oturum sonunda güncellenir)
+# AresPipe Son Durum
 
-> Bu dosya her oturum açıldığında Claude tarafından **zorunlu olarak okunur.**
-> İçeriği hafıza değil kayıt. Unutma imkansız — dosya burada.
+> Bu dosya her oturum başı Claude tarafından okunur. Her oturum sonu güncellenir. Burası anlık gerçek — diğer dosyalardan farklı olarak burada **şu anki canlı durum** yazılıdır.
 
 ---
 
-## Son Oturum: 30 (24 Nisan 2026) — Bucket PRIVATE Faz 1-2 + Rate Limit Duvarı ⏸
+## 31. Oturum (25 Nisan 2026) — Bucket PRIVATE Migration + Disiplin Kuruluşu
 
-### CI Durumu
-- **Son build:** YEŞİL ✅ (kontrol.yml + docs-uret.yml)
-- **Aktif kural sayısı:** 15 (değişmedi)
-- **Self-test:** Koşturulmadı — sonraki zorunlu 33. oturum
-- **Vercel:** ⚠️ Rate limit yedi (24 saat bekleme) — Faz 2 testi 31'e kaldı
+### Yapılanlar
 
-### Bu Oturumda Yapılanlar (~3.5 saat)
+**Bucket PRIVATE Faz 3-6 (30'dan devir, tamamlandı) ✅**
+- `api/dosya-url-al.js` canlı testi: 5/5 başarılı (CORS, JWT, super_admin bypass, yol doğrulama, tokensız reddet)
+- Bucket PRIVATE durumu doğrulandı — zaten kapalıymış (son-durum.md'deki "PUBLIC + boş" varsayımı yanlıştı, bu kayıt düzeltildi)
+- `ares-store.js` v2.4 — `ARES.dosyaUrlAl(yol)` helper eklendi (private cache, 5dk buffer, signed URL TTL 1sa)
+- `spool_detay.html` migration — foto/belge yükleme + render signed URL akışına geçti, eager Promise.all pattern
+- `ares-layout.js` — feedback foto upload `<tenant_id>/feedback/<ts>.jpg` formatında, base64 fallback korundu
+- `admin/panel.html` — feedback render 3-yollu format ayrımı (path/base64/eski-public-URL)
+- Canlı test — gerçek foto yükleme + render başarılı
 
-**Faz 1 — Envanter + DB/Bucket Temizliği** ✅ (~45 dk)
-- DB taraması: 8 kolon bucket'a dokunuyor, 4'ü gerçek veri kaynağı (`fotograflar`, `belgeler`, `feedback_kayitlari.fotograf_url`, `kullanicilar.foto_url`)
-- Kayıt sayısı: `fotograflar` 34 (tümü test), `feedback_kayitlari.fotograf_url` 1 (test), diğerleri 0 dolu
-- Yol yapısı teyidi: `<tenant_id>/<kategori>/<parent_id>/<dosya>` — tenant-prefixed, doğru kurulmuş
-- **Karar:** 35 kayıt = test verisi → TRUNCATE et, baştan temiz başla
-- DB temizliği: `DELETE FROM fotograflar` + `UPDATE feedback_kayitlari SET fotograf_url=NULL` — transaction'lı, 0/0 teyit
-- Bucket fiziksel temizlik: Supabase Dashboard'dan `00000000...01/` ve `feedback/` klasörleri silindi → bucket boş
+**Sayfa Eksikleri Taraması (SED-01 ön çalışması)**
+- `spool_detay.html` ve `devre_detay.html` geniş tarandı, 9 backend eksik tespit edildi
+- 3 fix yapıldı (S2, D1, D2):
+  - **S2** — `egitim_verisi` insert kolon adı: `foto_url` → `fotograf_url` (Spool AI eğitim verisi artık kayıt ediliyor)
+  - **D1** — `spoolEkleKaydet` Supabase'e yazıyor (optimistic UI + rollback). Sayfa yenilendiğinde spool kaybolma bug'ı düzeldi.
+  - **D2** — `durdurKaydet` ve `durdurmaKaldir` `devreler.durum` UPDATE yapıyor. Yenilenince banner kalkma bug'ı düzeldi.
+- 6 eksik defter'e açık olarak yazıldı (`docs/SAYFA-EKSIKLERI.md`)
 
-**Faz 2 (Kod) — Signed URL API Endpoint** ✅ (~45 dk)
-- `api/dosya-url-al.js` yazıldı (~100 satır):
-  - POST + JWT-bazlı auth (Authorization: Bearer)
-  - `tenant_id` DB'den (JWT'den user_id → kullanicilar tablosu sorgusu)
-  - Yoldan tenant_id çıkar, JWT ile eşleştir, cross-tenant 403
-  - Super admin bypass (feedback paneli için)
-  - 1 saatlik signed URL (`createSignedUrl(yol, 3600)`)
-  - Hata kodları: YETKI_GEREKLI, TOKEN_GECERSIZ, YOL_GECERSIZ, TENANT_UYUSMAZLIGI, DOSYA_YOK, SUPABASE_HATASI
-- `package.json` repo köküne eklendi (`@supabase/supabase-js ^2.45.0`)
-- İki atomik commit: `package.json` → `api/dosya-url-al.js`
-- GitHub Actions CI yeşil ✅
+**G-08 Sayfa Açılış Ritüeli — kural tanımlandı + envanter çıkarıldı**
+- Mevcut `devreler.html`'deki shimmer + cascade pattern'i kural olarak yazıldı (CSS spec, JS spec, HTML spec)
+- Envanter: 4 sayfa tam (devreler, kesim, bukum, markalama), 22 sayfa eksik (15'i yüksek öncelik liste sayfası)
+- Yaygınlaştırma 32+ oturumlara borç olarak yazıldı
 
-**Faz 2 (Test)** ⏸ **Vercel rate limit** — 24 saat bekleme, 31'e kaldı
+**Yeni Defter: `docs/SAYFA-EKSIKLERI.md`**
+- Bucket migration kapsamı dışındaki sayfa-bazlı eksikler kayıt altında
+- SED-01 kuralı (backend eksiklerini tarama disiplini) ön çalışma
+- G-08, G-09, G-10 kural numaralarıyla genişleyebilir yapı
 
-**Yan İş — Vercel Rate Limit Önleme** ✅
-- `vercel.json`'a `ignoreCommand` eklendi (mevcut headers korundu)
-- Komut: `git diff HEAD^ HEAD --quiet -- ':(exclude).github' ':(exclude)docs' ':(exclude)*.md' && exit 0 || exit 1`
-- `.github/`, `docs/`, `*.md` değişiklikleri Vercel'i tetiklemez → kota yenmez
-- Vercel UI'dan deneme başarısız (dropdown davranışı kafa karıştırıcı) → `vercel.json` yaklaşımı tercih edildi
-- Yarın kota açılınca otomatik devreye girecek
+### 31'in Önemli Öğrenmeleri
 
-**Yan İş — Ritüel 5. Soru** ✅
-- `CLAUDE.md` başındaki zorunlu ritüele eklendi:
-  > 5. admin/panel.html → Geri Bildirim sekmesinde açık (yeni + inceleniyor) kaç feedback var? Kritik olanları özetle.
-- Neden: 30'un başında canlı feedback kuyruğu gündeme gelmedi, Cihat hatırlatmak zorunda kaldı → sistemik çözüm
+1. **`grep "getPublicUrl|.upload("` taraması büyük zaman tasarrufu** — Plan dosyası 7 sayfa migration diyordu. Gerçek koddan tarayınca **sadece spool_detay.html ve ares-layout.js** gerçek upload yapıyordu. 90 dk boşa migration kurtarıldı. **Ders:** plan dosyalarına ezbere uyma, gerçek kod kontrol et.
 
-**Yan İş — Feedback Kuyruğu Taraması** ✅
-- Pano → 28 açık feedback incelendi, 5 gruba ayrıldı
-- **Grup 1 (3 kayıt):** Zaten yapılmış (yedekleme x2, izometri 502) — pano'da durum güncellemesi yapılmadı (Cihat: "boşver, gerek yok")
-- **Grup 5 (13 kayıt):** Ürün dönemi (35+) — bu dosyanın altında kayıt edildi, referans olarak durur
+2. **Deploy zamanlaması yanıltıcı olabilir** — Feedback foto testi başlangıçta "yeni kod canlıda değil" gibi göründü. Gerçek: kullanıcı deploy'dan ÖNCE test yapmıştı. **Ders:** Test öncesi hard refresh + deploy zamanı doğrula.
 
-### 30. Oturumda Bitenler (borçtan düşenler)
-- ✅ Bucket Faz 1 (envanter + temizlik)
-- ✅ Bucket Faz 2 kodlaması (canlıda test 31'e)
-- ✅ Vercel ignored build step (kalıcı çözüm, `vercel.json` yaklaşımı)
-- ✅ Ritüel 5. feedback sorusu
+3. **Schema gerçeği — varsayım değil sorgu** — `egitim_verisi.foto_url` sandığım kolon, schema'da `fotograf_url` olarak vardı. information_schema sorgusu olmadan görülmezdi. **Ders:** DB değişikliği planlarken her zaman önce schema tara.
 
-### 30. Oturumda Devrilen Borçlar
-- 🔴 **Bucket PRIVATE Faz 3-6** — Vercel rate limit yüzünden 31'e ertelendi (normalde 30'da bitecekti)
-- 🟡 Plan 1 oturum kaydı: Sentry 31 → 32, Email 32 → 33, Staging 33 → 34, Tenant test 34 → 35
+4. **`arespipe-dev` proje ismi yanıltıcı** — "dev" diyor ama canlı üretim. Vercel env URL eşleştirmesi ile kanıtlandı. 28'den beri açık olan borç (`arespipe-dev incelemesi`) **çözüldü**: kanıt ile canlı üretim olduğu doğrulandı. Rename düşünülebilir, ama görece düşük öncelik.
 
-### Bugünkü Önemli Öğrenmeler (30. Oturum)
+5. **Cihat'ın "her sayfa için bir eksik kapatılmış olsa" gözlemi** — 22 oturumdur birikmenin sebebini netleştirdi. Yarım akışlar görülüyor ama "bu işin gündemi değil" diye atlanıyor. SED-01 / SBD-01 kuralı bu boşluğu doldurmak için tasarlanıyor. Karar 32'ye ertelendi (GitHub Issues vs markdown defter tercihi).
 
-1. **Vercel rate limit 29'un uyarısını canlı doğruladı.** 29'da "yoğun push günü öncesi Vercel Pro'yu düşün" notu vardı, 30'da yedik. **Ders:** Rate limit önleme her çok-push gününden önce standart adım olmalı, sadece problem çıkınca değil.
+6. **Eager vs lazy migration** — Plan dosyası `<img data-yol>` + lazy lookup öneriyordu. Eager Promise.all + field ayrımı (`dosya_url` path, `url` signed) seçildi. 4x daha az satır değişti, race condition yok, mevcut tüm `<img src=f.url>` kodu aynı kaldı. **Ders:** kapsamı düşük tutan tasarım her zaman iyi.
 
-2. **Vercel UI "Ignored Build Step" dropdown'u kafa karıştırıcı.** "Only build if there are changes in a folder" seçiliyken bash komut textbox'ı çalışmıyor. **Ders:** UI-öncelikli ayarlar yerine repo'da `vercel.json` ile kod olarak yönetmek daha deterministik. UI değil, dosya kaynak doğru.
+### Cross-Tenant Testi (Bekliyor)
 
-3. **`sorgula.js` tenant_id'yi body'den alıyor** — mevcut güvenlik açığı. Yeni endpoint JWT-bazlı yazıldı ama sorgula.js aynı açığı taşıyor. **Ders:** Eski endpoint'lerin auth pattern'ını oturum başında denetle, sessiz teknik borç birikmesin. (Not: `sorgula.js` refactor'u 31-32 aralığında ele alınacak)
+31'de süper admin testi yapıldı (bypass çalıştı). Cross-tenant blok kontrolü (normal user + başka tenant'ın yolunu çağırma) **henüz yapılmadı** — 2. test kullanıcısı gerekir. 32+ oturuma "bekleyen test" olarak not edildi, kritik değil çünkü endpoint kodu zaten `superAdmin` flag'ini explicit kontrol ediyor.
 
-4. **"Tamam mı bitti mi?" sorusu kritik.** 30'un yarım kaldığı an (rate limit) Cihat sordu — yarım bilgiyle yatmamak. **Ders:** Her iş bloğunun sonunda "X tamamlandı/kaldı, yarına ne kalacak" cümlesi zorunlu.
+### Bugünkü Borçlar (defter + son-durum)
 
-5. **Cihat yorgunluğu işaret.** Vercel UI dropdown turu 20+ dk döndü, Cihat "uykum var, yarım kalırsa uyuyamam" dedi. **Ders:** Uzun dropdown/debugging döngüleri 10 dk'dan sonra alternatif yola geç (kodla çöz, UI'da uğraşma).
+**Acil temizlik (kapanış sonrası, 5 dakika):**
+- 🔴 **Orphan bucket dosyaları (2 adet):** `feedback/1777099713115.jpg` ve `feedback/1777100014537.jpg` — Cihat migration testleri sırasında bucket'a düştü, DB'deki kayıtları silinebilir + bucket dosyaları manuel silinmeli (Supabase Dashboard)
 
-### Bekleyen Borçlar
+**31'den devreden orta vade:**
+- 🟡 **`db-backup.yml` cron** — `0 3 * * *` → `0 0 * * *` (UTC 00:00 = TR 03:00, plana hizala). Şu an saat kayması yapıyor (TR 05:55).
+- 🟡 **SBD-01 vs GitHub Issues kararı** — 32. oturum başında Cihat seçecek. Birikme önleme sistemi.
+- 🟡 **G-08 yaygınlaştırma** — 22 sayfa eksik (15 yüksek öncelik). 32-34 oturumlarına dağıtılabilir.
+- 🟢 **G-09 (filtre çubuğu) ve G-10 (üst aksiyon çubuğu)** — kural numaraları rezerve edildi, teknik spec sonra yazılacak.
 
-**Acil (31. oturum için — 30'dan devir):**
-- 🔴 **Bucket PRIVATE Faz 2 test** — canlıda endpoint çalışıyor mu (Vercel açılınca)
-- 🔴 **Bucket PRIVATE Faz 3** — Bucket'ı Supabase Dashboard'dan PRIVATE yap
-- 🔴 **Bucket PRIVATE Faz 4** — Frontend migration: `dosyaUrlAl(yol)` helper + sayfa sayfa refactor (`spool_detay` ilk, sonra devre/kesim/bukum/markalama/KK/sevkiyat + mobil)
-- 🔴 **Bucket PRIVATE Faz 5** — Pozitif/negatif/expiration/cache test
-- 🔴 **Bucket PRIVATE Faz 6** — Kapanış
-
-**Orta vade (1 oturum kaydı — ALTYAPI KAPANIŞ PLANI):**
-- 🔴 **31. oturum — Bucket PRIVATE Faz 3-6 (devir)**
-- 🔴 **32. oturum — Sentry entegrasyonu** — Runtime hata toplama
-- 🔴 **33. oturum — Email sistemi** — Şifre sıfırlama, Resend/SendGrid
-- 🟡 **34. oturum — Staging Supabase projesi + migration runner**
-- 🟡 **35. oturum — Tenant izolasyon testleri + feature flag**
-
-**29'dan devreden küçük borçlar:**
-- 🟡 `actions/checkout@v4` + `setup-node@v4` deprecation — v5 geçişi
-- 🟡 Supabase `arespipe-dev` projesi incelemesi (canlı mı, sil/belgele?)
-- 🟢 Fotoğraf/belge yaşam döngüsü (aktif-arşiv sıkıştırma) — 33-34
-
-**36'dan sonra ÜRÜN DÖNEMİ:**
-- 🟡 Tablo Render Standardı (G-06) — 26'dan devir
-- 🟡 Operasyon sayfaları %100 — Kesim/Büküm/Markalama bitirme
-- 🟡 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
-- 🟡 G-05 CI lint kuralı — `.mb-*` hardcode rgba/hex yasağı
-- 🟢 `sorgula.js` JWT-bazlı auth refactor (şu an body'den tenant_id alıyor — güvenlik açığı)
+**Önceki dönemlerden devreden (durum güncel):**
+- 🟡 `actions/checkout@v4` + `setup-node@v4` deprecation — v5 geçişi (29'dan)
+- 🟡 ✅ `arespipe-dev` proje incelemesi (28'den) — **çözüldü** (canlı üretim olduğu doğrulandı, rename gerekirse)
+- 🟢 `sorgula.js` JWT-bazlı auth refactor — body'den tenant_id alıyor (güvenlik açığı)
 - 🟢 Audit Log pano sekmesi
+- 🟢 Tablo Render Standardı (G-06) — 26'dan devir
+- 🟢 Operasyon sayfaları %100 — Kesim/Büküm/Markalama bitirme
+- 🟢 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
+- 🟢 G-05 CI lint kuralı — `.mb-*` hardcode rgba/hex yasağı
 - 🟢 help.html son kullanıcı dokümantasyonu
-- 🟢 docs/rules/ kural ayrıştırması
 
-**Ürün Dönemi Feedback Birikimi (35+) — 30. oturumda feedback kuyruğundan ayıklanan:**
-- Google takvim senkron (2 kayıt aynı istek)
-- Kesimci/bükümcü/markalama/malzeme için ayrı personel sayfaları
-- Parmak izi okuyucudan işe giriş-çıkış entegrasyonu
-- PDF çıktılarda firma/program logosu + sayfa düzeni
-- Kalite kontrol inspection formu
-- QR kod etiket boyut + tasarım
-- Index sayfası widget-layout (kullanıcı özelleştirebilsin)
-- İlk kurulumda dil seçimi (gereksiz dilleri gizle)
-- Devre detay başlık formatı (tersane/gemi/devre/zone) + barkod
-- Logout onay uyarısı (tarayıcı native yerine programdan)
-- Devreler listesi kum saati yerine animasyonlu açılım
-- Giriş sayfası yanlış yönlendirmeler (kalıcı çözüm)
-- İmalat/argon/gazaltı aşamalarında bekleyen spool+yoğunluk göstergesi
+**Defter'deki açık SED maddeleri (`docs/SAYFA-EKSIKLERI.md`):**
+- spool_detay: S1 (belgeKaydet DB'ye yazmıyor), S3 (AI toolbar gizli), S4 (QR indirme)
+- devre_detay: D3 (tersane iş emri DB kolonu yok), D4 (KK/Sevk listeleri dolmuyor), D5 (belge upload), D6 (sessiz console.warn'lar), D7 (durdurma_tarihi kolonu yok)
+
+### Plan / Roadmap
+
+| Oturum | Tema | Durum |
+|---|---|---|
+| 30 | Bucket PRIVATE Faz 1-2 | ✅ |
+| **31** | **Bucket PRIVATE Faz 3-6 + SED başlangıç + G-08 envanter** | **✅ TAMAMLANDI** |
+| 32 | **KARAR:** SBD-01/Issues + Sentry sıralaması (Cihat seçecek) | Beklemede |
+| 33 | Sentry ya da G-08 yaygınlaştırma (32 kararına bağlı) | Beklemede |
+| 34 | Email sistemi | 1 kayma |
+| 35 | Staging Supabase + migration runner | 1 kayma |
+| 36 | Tenant izolasyon testleri + feature flag | 1 kayma |
+
+**37'den itibaren ÜRÜN DÖNEMİ.**
 
 ### Kural Sağlık Kontrolü
 - **Son self-test:** 24 Nisan 2026, 28. oturum — **4/4 başarılı** ✅
@@ -129,86 +100,58 @@
 
 ---
 
-## 📖 Aktif Belgeler (Yaşayan — Her Oturumda Gündemde)
+## 📖 Aktif Belgeler (Yaşayan)
 
-### **Dokümantasyon Sistemi** (29. oturum)
-Repo kökünde `README.md` + `docs/` altında 6 belge (ONBOARDING, ARCHITECTURE, DATABASE, API, LOCAL-DEV + mevcut SPOOL-AI-VIZYON, PANO-TASARIM, CIHAT-PROFIL, ROADMAP). Hibrit: manuel + AUTO sınırları.
-
-- **Motor:** `.github/docs-uret.js`
-- **Workflow:** `.github/workflows/docs-uret.yml`
-- **AUTO bölümler:** `istatistikler`, `tablolar`, `endpointler`, `kurallar`
-- **Kullanım:** Yeni yazılımcı `docs/ONBOARDING.md` ile başlar
+### **Yeni: `docs/SAYFA-EKSIKLERI.md`** (31. oturum)
+Sayfa-bazlı eksiklerin defterli takibi. SED-01 (backend) + G-08 (görsel ritüel) kurallarının kayıt yeri. 9 madde + envanter.
 
 ### Vizyon: `docs/SPOOL-AI-VIZYON.md`
-Spool AI ürün vizyonu: 7 katman, 5 faz, prototipler, AI döngüsü.
-**28. oturum teyidi:** 1. katman (izometri okuma) API endpoint'i (`api/izometri-oku.js`) canlıda.
+Spool AI ürün vizyonu. **31'de küçük kazanç:** S2 fix ile `egitim_verisi` insert artık çalışıyor → eğitim verisi gerçekten toplanıyor.
 
 ### Pano Tasarımı: `docs/PANO-TASARIM.md`
 Süper Admin Yönetim Panosu. 24-25. oturumda implement edildi.
 
 ### Kullanıcı Profili: `docs/CIHAT-PROFIL.md` ⚠ ZORUNLU
-Her oturum başı Claude bu dosyayı okur. Cihat'a "kimsin" diye sormaz.
+Her oturum başı Claude bu dosyayı okur.
 
 ### Pano (canlı): `admin/panel.html`
-Süper admin çalışma merkezi. Tek yerden: görev, geri bildirim, CI durumu, Sistem Sağlığı, profil, oturum geçmişi.
+Süper admin çalışma merkezi. **31'de:** Feedback foto render 3-yollu format ayrımıyla güncellendi.
 
 ### CI Rapor: `.github/ci-son-rapor.json`
-CI her main push'ta JSON rapor üretir. Pano Sistem Sağlığı kartı bu dosyayı okur.
+CI her main push'ta JSON rapor üretir.
 
 ### Oturum Arşivi: `docs/sessions/archive-01-22.md`
 1-22. oturumların CLAUDE.md'den ayıklanmış özetleri.
 
-### Şablonlar: `docs/templates/`
-Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
-
 ### **Yedekleme Sistemi** (27. oturum)
 - **Repo:** `cihatoztas-ai/arespipe-backups` (private)
-- **Workflow:** `.github/workflows/db-backup.yml` — her gece 03:00 TR, DB + Storage
-- **Secrets:** `SUPABASE_DB_URL`, `SUPABASE_SERVICE_KEY`
+- **Workflow:** `.github/workflows/db-backup.yml` — her gece UTC 02:55 (TR 05:55) — **plana göre 3 saat geç** (cron `0 3` UTC = TR 06:00 hedefli ama gerçekleşen ~02:56 UTC)
+- **Düzeltme:** `0 0 * * *` UTC = TR 03:00 (orta vade borç)
 - **Yedek yapısı:** `backups/TIMESTAMP/database.sql.gz` + `storage.tar.gz`
 - **Retention:** 30 gün rolling
-- **Manuel tetikleme:** Actions → Supabase Full Backup → Run workflow
 
 ### **Migrations** (27-28. oturum)
-- **Klasör:** `migrations/` (arespipe ana repo)
+- **Klasör:** `migrations/`
 - **Baseline:** `000_initial_schema.sql` (6029 satır, 51 tablo)
 - **Kural:** `NNN_aciklama.sql` adlandırma, BEGIN/COMMIT, header yorumu
 - **CI:** `kontrol.yml` (28. oturumda entegre)
 
-### **Vercel Env Variables** (28. oturum teyit)
+### **Vercel Env Variables**
 - `SUPABASE_URL` (public)
-- `SUPABASE_SERVICE_KEY` (🔒 Sensitive — `sb_secret_*`)
-- `ANTHROPIC_API_KEY` (🔒 Sensitive — `sk-ant-*`)
+- `SUPABASE_SERVICE_KEY` (🔒 Sensitive)
+- `ANTHROPIC_API_KEY` (🔒 Sensitive)
 
-### **Vercel Ignored Build Step** (30. oturum — YENİ)
-- **Yöntem:** `vercel.json` `ignoreCommand` alanı (UI yerine repo'da kod)
+### **Vercel Ignored Build Step** (30. oturum)
+- **Yöntem:** `vercel.json` `ignoreCommand` alanı
 - **Kural:** `.github/`, `docs/`, `*.md` değişiklikleri Vercel build'ini skip eder
-- **Amaç:** Free tier rate limit'inin yenmesini önler
+- **31'de teyit:** Çalışıyor — son-durum.md push'unda Vercel tetiklenmedi
 
-### **Storage Bucket** (🔴 31. oturumda PRIVATE olacak)
+### **Storage Bucket** (✅ 31. oturumda PRIVATE doğrulandı)
 - **Bucket:** `arespipe-dosyalar`
-- **Şu anki durum:** PUBLIC + boş (30. oturumda test verisi temizlendi)
-- **API endpoint:** `api/dosya-url-al.js` (yazıldı, canlıda test 31'de)
-- **Müşteri öncesi şart:** Bucket PRIVATE + signed URL frontend migration (31. oturumun gündemi)
-
----
-
-## Bir Sonraki Oturumda Claude Bunları Yapacak
-
-**1. Oturum açılır açılmaz, ilk tool call'dan ÖNCE ritüel:** (5 soru — CLAUDE.md'de güncel)
-
-**2. Ritüel tamamlanmadan hiçbir teknik iş başlama.**
-
-**3. Ritüel biter bitmez `docs/CIHAT-PROFIL.md`'yi oku.**
-
-**4. 31. OTURUMUN GÜNDEMİ — Bucket PRIVATE Faz 3-6 (30'dan devir):**
-- Detaylı içerik: `CLAUDE-SONRAKI-OTURUM.md`
-- Beklenen süre: 2-3 saat
-- Canlıda `api/dosya-url-al.js` testi → Bucket PRIVATE → frontend migration → test → kapanış
-
-**5. Vercel kontrol:** Rate limit açıldı mı? `vercel.json ignoreCommand` devreye girdi mi?
-
-**6. Self-test bu oturumda koşturulmayacak.** Sonraki zorunlu kontrol 33. oturum.
+- **Durum:** PRIVATE (toggle KAPALI), 6 RLS politikası aktif
+- **API endpoint:** `api/dosya-url-al.js` — canlıda, 5/5 test geçti
+- **Helper:** `ARES.dosyaUrlAl(yol)` — `ares-store.js` v2.4'te
+- **Cache:** 1 saatlik signed URL + 5 dakika güvenlik payı
 
 ---
 
@@ -221,21 +164,26 @@ Yeni HTML sayfası ve SQL migration için başlangıç iskeletleri.
 - **Büyük değişikliklerde tam dosya** — patch değil
 - **CHECK değişiminde:** DROP → UPDATE → ADD sırası
 - **FK eklerken:** Mevcut embed sorgularını `table!fk_kolonu` ile disambiguate et
-- **Workflow dosyaları `.github/workflows/` altına** — kök seviyeye değil (25. oturum dersi)
-- **Toplu sed öncesi tek dosyada test** — idempotent değil (25. oturum dersi)
-- **Bug sorulduğunda "aslında ne arıyorsun" sor** — özellikle önceki oturumdan not varsa (26. oturum dersi)
-- **Bir bug gördüğünde "kaç yerde tekrarlanabilir?" sor** — tek-düzeltme yerine denetim + sistemik çözüm (26. oturum dersi)
-- **Plan değişikliği anında söyle** — seçenekleri baştan karşılaştır, uygulamadan önce onaylat (27. oturum dersi)
-- **Failure anında log'u oku, iyi haberi bul** — paniğe katılma, başarıyı göster (27. oturum dersi)
-- **Uzun markdown için Upload files kullan** — Create file/paste formatı bozabilir (27. oturum dersi)
-- **Yeni DB değişikliği = migrations dosyası** — Supabase SQL editor'de yazıp run yeterli değil, artık dosya da oluşur (27. oturum disiplini)
-- **Devralınan borcu doğrulamadan iş planlama** — 27'nin fantom README borcu gibi (28. oturum dersi)
-- **Atomik commit aşamalı commit'ten güvenli** — ilişkili dosyaları tek seferde yolla (28. oturum dersi)
-- **Karmaşık refactor öncesi sandbox testi zorunlu** — production push öncesi lokal simülasyon (28. oturum dersi)
-- **CI auto-commit pattern'i: commit → pull --rebase → push (3x retry)** — paralel workflow race condition için (29. oturum dersi)
-- **Vercel ayarları UI yerine `vercel.json`'da** — deterministik, repo-kontrollü (30. oturum dersi)
-- **UI debugging 10 dk'yı aşıyorsa kodla çözmeye geç** — dropdown tekrar döngüsü çözüm değil (30. oturum dersi)
-- **Her iş bloğu sonunda "tamam/yarım" cümlesi** — kullanıcı yarım bilgiyle yatmasın (30. oturum dersi)
+- **Workflow dosyaları `.github/workflows/` altına** — kök seviyeye değil (25)
+- **Toplu sed öncesi tek dosyada test** — idempotent değil (25)
+- **Bug sorulduğunda "aslında ne arıyorsun" sor** (26)
+- **Bir bug gördüğünde "kaç yerde tekrarlanabilir?" sor** (26)
+- **Plan değişikliği anında söyle** — uygulamadan önce onaylat (27)
+- **Failure anında log'u oku, iyi haberi bul** (27)
+- **Uzun markdown için Upload files kullan** (27)
+- **Yeni DB değişikliği = migrations dosyası** (27)
+- **Devralınan borcu doğrulamadan iş planlama** (28)
+- **Atomik commit aşamalı commit'ten güvenli** (28)
+- **Karmaşık refactor öncesi sandbox testi zorunlu** (28)
+- **CI auto-commit pattern'i: commit → pull --rebase → push (3x retry)** (29)
+- **Vercel ayarları UI yerine `vercel.json`'da** (30)
+- **UI debugging 10 dk'yı aşıyorsa kodla çözmeye geç** (30)
+- **Her iş bloğu sonunda "tamam/yarım" cümlesi** (30)
+- **Plan dosyalarına ezbere uyma, gerçek kod tara** — 31'de 90 dk tasarruf
+- **Schema değişikliği planlarken information_schema sorgusu zorunlu** — 31'de S2 bug'ını yakaladı
+- **Deploy zamanlamasını test öncesi doğrula** — 31'de feedback foto kafa karışıklığı
+- **Eager > lazy mümkünse** — kapsamı küçült, race azalt (31)
+- **Görülen yarım akışı sessizce atlama** — defter'e yaz (31)
 
 ---
 
