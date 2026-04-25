@@ -1,11 +1,11 @@
 {
-  "tarih": "2026-04-25T10:24:34.581Z",
-  "commit_sha": "a82a7be0de606ad4044227402ffafc031764edd8",
+  "tarih": "2026-04-25T10:25:04.887Z",
+  "commit_sha": "5b220cba87e5bfbd8aeb772169ca9b5d44d891d7",
   "commit_ref": "main",
-  "workflow_run": 535,
+  "workflow_run": 536,
   "ozet": {
     "hata": 0,
-    "uyari": 4,
+    "uyari": 5,
     "taranan_dosya": 76,
     "sorunlu_dosya": 2,
     "durum": "sari"
@@ -14,15 +14,16 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_load_error') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 4,
+      "sayi": 5,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
-          "sayi": 3,
+          "sayi": 4,
           "satirlar": [
             1129,
-            1901,
-            1917
+            1625,
+            1929,
+            1945
           ]
         },
         {
@@ -39,7 +40,7 @@
     {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 3,
+      "uyari_sayisi": 4,
       "hatalar": [
         {
           "kod": "I18N_EKSIK",
@@ -50,13 +51,19 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1901,
+          "satir": 1625,
+          "mesaj": "tv('dv_no_change') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1929,
           "mesaj": "tv('dv_dok_open') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1917,
+          "satir": 1945,
           "mesaj": "tv('dv_dok_file_required') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
