@@ -1126,7 +1126,7 @@ async function devreYukle(){
           tenantId:d.tenant_id||null};
         return;
       }
-    }catch(e){console.warn('devreYukle:',e);}
+    }catch(e){console.warn('devreYukle:',e);showToast(tv('dv_load_error','Devre yüklenemedi')+': '+(e.message||e),'e');}
   }
   try{DEVRE=JSON.parse(localStorage.getItem('ares_aktif_devre')||'{}');}catch(e){DEVRE={};}
 }
@@ -1151,7 +1151,7 @@ async function spoolYukle(){
       var data=await ARES.spoollariGetir(devreId);
       data=(data||[]).filter(function(s){return !s.silindi;});
       SPOOLS=data.map(function(s,i){return _spoolMap(s,i);});
-    }catch(e2){console.warn('spoolYukle:',e2);}
+    }catch(e2){console.warn('spoolYukle:',e2);showToast(tv('dv_load_error','Spool listesi yüklenemedi')+': '+(e2.message||e2),'e');}
   }
 }
 
@@ -1332,7 +1332,7 @@ function inlineEdit(td,alan,lk,tip,seç,mevcut){
     yeni=(yeni||'').trim();s[alan]=yeni;
     if(s.supaId){
       try{ARES.spoolGuncelle(s.supaId,{[alan]:yeni||null});}
-      catch(e){console.warn('spoolGuncelle:',e);}
+      catch(e){console.warn('spoolGuncelle:',e);showToast(tv('dv_error_prefix','Hata')+': '+(e.message||e),'e');}
     }
     renderTable();
   }
@@ -1408,7 +1408,7 @@ async function spoolDurdurKaydet(){
   if(!ac){showToast(tv('dv_desc_required','Açıklama zorunludur'),'e');return;}
   if(!_ctxSpool)return;
   try{await ARES.spoolDurdur(_ctxSpool.supaId, sebep, ac);}
-  catch(e){console.warn('spoolDurdur:',e);}
+  catch(e){console.warn('spoolDurdur:',e);showToast(tv('dv_error_prefix','Hata')+': '+(e.message||e),'e');return;}
   _ctxSpool.stopped=true;
   document.getElementById('mSpoolDur').style.display='none';
   renderTable();
@@ -1417,7 +1417,7 @@ async function spoolDurdurKaydet(){
 async function spoolKaldir(lk){
   var s=SPOOLS.find(function(x){return x._lk===lk;});if(!s)return;
   try{await ARES.spoolDurdurmaKaldir(s.supaId);}
-  catch(e){console.warn('spoolDurdurmaKaldir:',e);}
+  catch(e){console.warn('spoolDurdurmaKaldir:',e);showToast(tv('dv_error_prefix','Hata')+': '+(e.message||e),'e');return;}
   s.stopped=false;renderTable();
   showToast(s.spoolNo+' '+tv('dv_reactivated','yeniden aktif'),'success');
 }
@@ -1434,7 +1434,7 @@ async function spoolSilKaydet(){
   var cb=document.getElementById('silOnay');if(!cb||!cb.checked){showToast(tv('dv_confirm_check','Onay kutucuğunu işaretleyin'),'e');return;}
   if(!_ctxSpool)return;
   try{await ARES.softSil('spooller',_ctxSpool.supaId);}
-  catch(e){console.warn('softSil:',e);}
+  catch(e){console.warn('softSil:',e);showToast(tv('dv_error_prefix','Hata')+': '+(e.message||e),'e');return;}
   SPOOLS=SPOOLS.filter(function(s){return s._lk!==_ctxSpool._lk;});
   document.getElementById('mSpoolSil').style.display='none';
   renderTable();statGuncelle();showToast(tv('dv_spool_deleted','Spool silindi'),'i');
@@ -1675,7 +1675,7 @@ async function terminKaydet(iso){
   var supa=_supa();var id=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(supa&&id){
     var res=await supa.from('devreler').update({termin:iso||null,guncelleme:new Date().toISOString()}).eq('id',id);
-    if(res&&res.error)console.warn('Termin kayıt hatası:',res.error);
+    if(res&&res.error){console.warn('Termin kayıt hatası:',res.error);showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');return;}
   }
   setText('stTermin',iso?tarihFmt(new Date(iso)):tv('sp_alist_none','Belirlenmemiş'));
   logEkle('termin_guncellendi',iso||'—');showToast(tv('dv_deadline_saved','Termin tarihi güncellendi'),'success');
@@ -1695,7 +1695,7 @@ async function spoolMalzYukle(){
       (malz||[]).forEach(function(m){tum.push(Object.assign({},m,{_spoolNo:spoolIds[i].sn}));});
     }
     _spoolMalzData=tum;
-  }catch(e){console.warn('malzemeleriGetir:',e);_spoolMalzData=[];}
+  }catch(e){console.warn('malzemeleriGetir:',e);showToast(tv('dv_load_error','Malzeme verisi yüklenemedi')+': '+(e.message||e),'e');_spoolMalzData=[];}
   var tanim_fn=function(m){return m.tanim||m.aciklama||'';};
   var grupler={};
   _spoolMalzData.forEach(function(m){
@@ -1740,7 +1740,7 @@ async function plMalzYukle(){
   var supa=_supa();var id=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!id){plMalzRender();return;}
   var res=await supa.from('pipeline_malzemeleri').select('*').eq('devre_id',id).order('pipeline_no');
-  if(res.error){console.warn('PL Malzeme:',res.error);plMalzRender();return;}
+  if(res.error){console.warn('PL Malzeme:',res.error);showToast(tv('dv_load_error','Pipeline malzeme yüklenemedi')+': '+res.error.message,'e');plMalzRender();return;}
   var g={};(res.data||[]).forEach(function(m){if(!g[m.pipeline_no])g[m.pipeline_no]=[];g[m.pipeline_no].push(m);});
   PL_MALZEME=Object.entries(g).map(function(e){return{pipeline_no:e[0],malzemeler:e[1]};});
   plMalzRender();
@@ -1866,7 +1866,7 @@ async function belgelerYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!devreId)return;
   var res=await supa.from('belgeler').select('id,ad,tur,dosya_url,dosya_boyut,olusturma').eq('devre_id',devreId).eq('silindi',false).order('olusturma',{ascending:false});
-  if(res.error){console.warn('Belgeler:',res.error);return;}
+  if(res.error){console.warn('Belgeler:',res.error);showToast(tv('dv_load_error','Belgeler yüklenemedi')+': '+res.error.message,'e');return;}
   DOKUMANLAR=(res.data||[]).map(function(b){
     var path=b.dosya_url||'';
     // 'pending:' = D5 fix öncesi placeholder kayıtları (gerçek dosya yok, açılmaz)
@@ -2065,7 +2065,7 @@ function renderIslemler(){
           +'<td style="color:var(--txm);font-size:12px;">'+esc(u)+'</td>'
           +'<td style="color:var(--txm);font-size:12px;">'+esc(k.aciklama||'')+'</td></tr>';
       }).join('');
-    }).catch(function(e){console.warn('loguGetir:',e);});
+    }).catch(function(e){console.warn('loguGetir:',e);showToast(tv('dv_load_error','İşlem kayıtları yüklenemedi')+': '+(e.message||e),'e');});
     return;
   }
   // localStorage fallback
