@@ -1,273 +1,246 @@
-# CLAUDE — 31. Oturum Gündemi
+# CLAUDE — 32. Oturum Gündemi
 
-**Tema:** Bucket PRIVATE Geçişi — Faz 3-6 (30'dan devir)
-**Tahmini süre:** 2-3 saat
-**Öncelik:** 🔴 Yüksek (müşteri öncesi KRİTİK güvenlik, 30'dan yarım)
-**Durum:** Kod 30'da yazıldı, canlı test + bucket toggle + frontend migration kaldı
+**Tema:** Birikme Önleme Sistemi Kararı + Bekleyen Temizlik
+**Tahmini süre:** 1.5-2 saat (karara bağlı)
+**Öncelik:** 🟡 Orta — disiplin kuruluşu + altyapı temizliği
+**Durum:** 31'in sonunda iki açık karar var, ilk iş bunları çözmek
 
 ---
 
 ## 🎯 Bu Oturumun Amacı
 
-30'da iki faz tamamlandı: (1) envanter + DB/bucket temizlik, (2) `api/dosya-url-al.js` yazıldı + GitHub'a yüklendi. Ama Vercel rate limit yüzünden canlı test yapılamadı. 31'de kaldığımız yerden devam: canlı test → bucket PRIVATE → frontend migration → test → kapanış.
+31'de Bucket PRIVATE Migration tamamen bitirildi ve yeni bir disiplin (sayfa eksikleri defteri) tartışıldı ama karar 32'ye ertelendi. 32 önce iki kararı çözecek, sonra acil temizlikleri yapacak, kalan zaman kararın uygulamasına ayrılacak.
 
 ---
 
 ## 🚦 Oturum Başı Kontroller (Ritüelden Sonra)
 
-**1. Vercel Rate Limit Durumu**
-- Dashboard → `arespipe` → Deployments sekmesi
-- Son deploy yeşil mi? Kota açıldı mı?
-- `vercel.json ignoreCommand` devreye girdi mi? (Sonraki `.md`-only commit Vercel'i tetiklememeli)
+**1. Üzerinden geçmesi gereken belgeler:**
+- `docs/SAYFA-EKSIKLERI.md` — defter, açık 6 madde + G-08 envanteri
+- son-durum.md "Borçlar" bölümü
+- Cihat'ın 31'de söylediği: *"birikme olmasın diye sistem"* + *"sonra düşünelim"*
 
-**2. Son Commit'lerin Vercel'de Durumu**
-- `package.json` commit'i build oldu mu?
-- `api/dosya-url-al.js` commit'i deploy oldu mu?
-- Hata varsa Functions logs'a bak
+**2. Vercel ve CI durumu:**
+- 31'de yapılan 3 fix (S2, D1, D2) canlıda mı?
+- CI yeşil mi? — son commit yeşil olmalı
 
----
-
-## 📋 Planlanan 4 Fazlı Akış
-
-### Faz 3 — Canlı API Testi (~20 dk)
-
-**Önce endpoint'in varlığını teyit:**
-
-```bash
-curl -i https://arespipe.vercel.app/api/dosya-url-al -X OPTIONS
-```
-
-Beklenen: 200 OK + CORS header'ları.
-
-**Pozitif test — süper admin ile:**
-
-Tarayıcıda `arespipe.vercel.app`'e giriş yap (super_admin hesap). Console'da:
-
-```javascript
-const { data: { session } } = await ARES.supabase().auth.getSession();
-const token = session.access_token;
-const r = await fetch('/api/dosya-url-al', {
-  method: 'POST',
-  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ yol: '00000000-0000-0000-0000-000000000001/test.jpg' })
-});
-console.log(r.status, await r.json());
-```
-
-Beklenen: 404 DOSYA_YOK (yol formatı doğru ama bucket'ta dosya yok, temiz başladık).
-
-**Negatif test — yanlış tenant:**
-
-Body'yi değiştir: `{ yol: 'aaaa0000-0000-0000-0000-000000000001/test.jpg' }` (başka UUID)
-Beklenen: super_admin ise 404 (bypass aktif), normal user ise 403 TENANT_UYUSMAZLIGI.
-
-**Bozuk yol testi:**
-
-`{ yol: 'notauuid/test.jpg' }` → 400 YOL_GECERSIZ
-`{ yol: '' }` → 400 YOL_EKSIK
-Token olmadan → 401 YETKI_GEREKLI
-
-### Faz 4 — Bucket PRIVATE (~10 dk)
-
-Artık endpoint test edildi, çalışıyor. Bucket'ı PRIVATE'a çevirebiliriz.
-
-1. Supabase Dashboard → Storage → `arespipe-dosyalar` → Settings (⚙️)
-2. "Public bucket" toggle → OFF
-3. Save
-4. Teyit: Bucket ayarında "Private" yazmalı
-
-**⚠️ Rollback hazırlığı:** Bir şey ters giderse toggle'ı ON'a çevirmek yeterli. Veri kaybolmaz, sadece erişim yöntemi değişir.
-
-### Faz 5 — Frontend Migration (~60-90 dk)
-
-**Adım 1 — Helper fonksiyon yaz:**
-
-`assets/ares.js` (veya hangi dosya ana ARES namespace'i taşıyorsa) içine:
-
-```javascript
-ARES.dosyaUrlAl = async function(yol) {
-  // Cache kontrolü (1 saatlik TTL)
-  const cacheKey = 'dosya_url_' + yol;
-  const cached = ARES._dosyaUrlCache?.[cacheKey];
-  if (cached && cached.expiresAt > Date.now()) return cached.signedUrl;
-
-  // API çağrısı
-  const { data: { session } } = await ARES.supabase().auth.getSession();
-  if (!session) throw new Error('Oturum yok');
-
-  const r = await fetch('/api/dosya-url-al', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ yol })
-  });
-
-  if (!r.ok) {
-    const err = await r.json();
-    console.warn('[dosyaUrlAl]', err);
-    return null; // Kırık görsel yerine placeholder göstermek için
-  }
-
-  const { signedUrl, expiresAt } = await r.json();
-
-  // Cache
-  if (!ARES._dosyaUrlCache) ARES._dosyaUrlCache = {};
-  ARES._dosyaUrlCache[cacheKey] = { signedUrl, expiresAt: new Date(expiresAt).getTime() };
-
-  return signedUrl;
-};
-```
-
-**Adım 2 — DB'deki `dosya_url`'i YOL olarak kullanma kararı:**
-
-Mevcut: `dosya_url` tam public URL saklıyor (`https://...supabase.co/storage/v1/object/public/arespipe-dosyalar/YOL`)
-Yeni: Sadece YOL saklanmalı (`<tenant_id>/<kategori>/<parent_id>/<dosya>`)
-
-**Karar seçeneği 31'de:**
-- **(A)** DB'deki `dosya_url`'i yol'a migrate et (SQL UPDATE, regex ile public URL'den yolu çıkar)
-- **(B)** Yeni kayıtlar yol saklar, eski kayıtlar tam URL kalır (frontend her iki durumu handle eder)
-- **(C)** DB boşaltıldığı için konu yok — yeni yüklemeler direkt yol saklar
-
-**Tahmin:** (C) — 30'da bucket sıfırlandı, DB de boş. Bu karar 31'de hızlıca teyit edilip geçilir.
-
-**Adım 3 — Yükleme akışını değiştir:**
-
-Spool detay, devre detay gibi dosya yükleyen sayfalarda:
-- Şu an: `supabase.storage.from('arespipe-dosyalar').upload(...)` → sonra `getPublicUrl()` → DB'ye public URL yaz
-- Yeni: `supabase.storage.from('arespipe-dosyalar').upload(...)` → DB'ye SADECE YOL yaz (publicUrl çağrısı yok)
-
-**Adım 4 — Gösterim akışını değiştir:**
-
-Her sayfada `<img src="${foto.dosya_url}">` pattern'i var. Bunu:
-
-```javascript
-// Eski
-<img src="${foto.dosya_url}">
-
-// Yeni
-<img data-yol="${foto.dosya_url}" src="placeholder.png">
-// Sonra JS ile:
-document.querySelectorAll('img[data-yol]').forEach(async img => {
-  const url = await ARES.dosyaUrlAl(img.dataset.yol);
-  if (url) img.src = url;
-});
-```
-
-**Etkilenen sayfalar (sıra — ilk test, sonra yaygınlaştır):**
-
-1. `spool_detay.html` — en yoğun foto kullanıcısı, ilk burada test (muhtemelen 1 saat)
-2. `devre_detay.html` — not fotoğrafları
-3. `kesim.html`, `bukum.html`, `markalama.html` — operasyon sayfaları
-4. `kalite_kontrol.html` — KK fotoğrafları
-5. `sevkiyatlar.html` — sevkiyat belgeleri
-6. `admin/panel.html` — feedback fotoğrafları (13.04 tarihli bug'ın çözüm yeri)
-7. `mobile/src/screens/` — Spool detay ve fotoğraf gösteren component'ler (varsa)
-
-**Not:** Mobil React'te foto gösterimi çok sınırlı olabilir (%5 implementasyon). Mobil 31'in kapsamı içinde olmayabilir, 34+'a kayabilir. Cihat'la teyit edilecek.
-
-### Faz 6 — Kapsamlı Test (~30 dk)
-
-**Test 1 — Süper admin:**
-- Kendi tenant'ının fotoğrafı → görünür
-- Başka tenant'ın fotoğrafı (test için 2. tenant dosya yükle) → görünür (super_admin bypass)
-
-**Test 2 — Normal kullanıcı:**
-- Kendi tenant'ı → görünür
-- Başka tenant manipülasyonu (URL/body değiştir) → 403 TENANT_UYUSMAZLIGI
-
-**Test 3 — Expiration:**
-- Signed URL al, kopyala, 1 saat sonra tarayıcı adres çubuğuna yapıştır → kırık
-
-**Test 4 — Cache:**
-- Aynı sayfayı 2 kez aç → network tab'da 2. seferde `/api/dosya-url-al` çağrısı OLMAMALI (cache çalışıyor)
-
-**Test 5 — Feedback fotoğrafı:**
-- Bir sayfada geri bildirim ver + fotoğraf ekle
-- Süper admin panelinden o fotoğrafı görebilmeli (13.04 bug'ı çözüm teyidi)
-
-### Kapanış (~15 dk)
-
-- `son-durum.md` güncelle → 31. oturum tamamlandı, 32 Sentry olacak
-- `CLAUDE-SON-OTURUM.md` detay rapor
-- `CLAUDE-SONRAKI-OTURUM.md` → 32. Sentry gündemi (29'un orijinal plan + 1 kayma)
-- 3 dosya `present_files` ile ver
+**3. Defter doğrulaması:**
+Cihat'a sor: "31'de açtığım defter dosyasını okuyup üstünden geçtin mi? Birinin önceliği hâlâ aynı mı?"
 
 ---
 
-## ⚠️ Potansiyel Sorunlar ve Kaçınma
+## ⚖️ İlk Karar — SBD-01 (Sayfa Borç Defteri) Yaklaşımı
 
-### Sorun 1 — Vercel rate limit hâlâ açılmadı
-**Çözüm:** Oturumu ertele (32'ye), veya Vercel Pro satın al ($20/ay).
+Cihat 31'de iki sistem önerdi, bir de Claude bir 3.'sünü sundu (GitHub Issues). 32 başında Cihat seçecek.
 
-### Sorun 2 — `api/dosya-url-al.js` canlıda çalışmıyor
-**Muhtemel sebep:**
-- `@supabase/supabase-js` install edilmedi → Vercel build logs kontrol
-- Env var eksik → Settings → Environment Variables kontrol
-- Import hatası → Functions log
+### Seçenek A — Mevcut Markdown Defter, Sayfa-Merkezli Yeniden Yapı
 
-**Rollback:** Dosyayı silmek + revert commit'i yeterli. Bucket hâlâ PUBLIC, üretim etkilenmez.
-
-### Sorun 3 — Frontend migration'da bir sayfa unutuldu
-**Tespit:** Bucket PRIVATE olduktan sonra 403 hataları console'da görünür.
-**Önlem:** 
-- `grep -r "getPublicUrl\|public/arespipe-dosyalar" --include="*.html" --include="*.js"` ile tüm referansları tara
-- Sayfa sayfa gözle doğrula
-
-### Sorun 4 — Eski DB kayıtlarında `dosya_url` tam URL
-**Durum:** 30'da DB boşaltıldı, bu sorun oluşmamalı.
-**Ama canlı kullanıcılar varsa** (Demo Atölye dışında), eski kayıtlar bulunabilir:
-```sql
-SELECT COUNT(*) FROM fotograflar WHERE dosya_url LIKE 'https://%';
+**`docs/SAYFA-EKSIKLERI.md`** sayfa-merkezli olarak yeniden yapılandırılır:
 ```
-0 değilse, migration SQL'i gerekir. Muhtemelen 0 çıkacak.
+### spool_detay.html
+#### Açık (3)
+- [SED] S1: belgeKaydet DB'ye yazmıyor (~15dk, 1 oturumdur açık)
+- [G-08] Açılış ritüeli yok (~25dk, 0 oturumdur açık)
+- ...
+#### Kapatılan
+- ✅ S2: egitim_verisi kolon adı (31)
+```
 
-### Sorun 5 — Mobil'de çalışmıyor
-**Muhtemel sebep:** CORS (mobil ayrı domain)
-**Çözüm:** `api/dosya-url-al.js`'de `Access-Control-Allow-Origin: *` zaten var, sorun olmamalı. Ama test edilmeli.
+Claude sayfa açıldığında bu dosyayı okur, sayfa bölümünü listeler.
+
+**Artılar:** Hızlı kurulum, mevcut dosya, bağımsız (network gerekmez).
+**Eksiler:** Şişerse yönetim zor, otomatik filtre yok, mobile bakış zor.
+
+### Seçenek B — GitHub Issues + Tech Debt Sprint
+
+Mevcut defter migration ile **GitHub Issues**'a aktarılır:
+- Etiketler: `page:spool_detay`, `category:G-08`, `priority:high`, `effort:25min`
+- Milestone: "Pre-Launch Tech Debt", "Spool Detay Cleanup"
+- Claude API ile `?labels=page:spool_detay&state=open` filtresiyle çeker
+
+**Artılar:** Profesyonel, ölçeklenebilir, mobile app, otomatik tarih, kapanış commit'le bağlı.
+**Eksiler:** Kurulum 30 dk (mevcut 9 madde aktarılacak), GitHub UI öğrenmek (Cihat için yeni), API entegrasyonu (her oturum bir komut).
+
+### Seçenek C — Hybrid
+
+Şu an **markdown defter** (B'ye geçmek için olgunluk yok). Defter sayfa-merkezli yapılır. **35+ ürün döneminde** GitHub Issues'a göç düşünülür (müşteri varsa zaten Issues şart olur).
+
+**Tavsiye:** **C** — geçişi şimdi yapma yükü almazsın, ama olgunlaştığında doğru sisteme geçebileceksin.
+
+### Karar İçin Cihat'a Tek Soru
+
+> "Markdown defter kalsın, sayfa-merkezli yeniden yapılandıralım. GitHub Issues 35+ ürün döneminde düşünelim. **Onaylıyor musun?**"
+
+Onaylarsa: 32'nin ilk yarısı sayfa-merkezli yeniden yapılandırma + SED-01 kuralı `kurallar.json`'a entegrasyon.
 
 ---
 
-## 📊 Başarı Kriterleri (31 Sonu)
+## ⚖️ İkinci Karar — 32-35 Sıralaması
 
-- [ ] Vercel'de `api/dosya-url-al.js` canlıda, tüm test case'leri geçiyor
-- [ ] `arespipe-dosyalar` bucket'ı PRIVATE
-- [ ] Web tüm sayfalarda foto gösterimi çalışıyor (signed URL ile)
-- [ ] Cross-tenant erişim denemesi 403 dönüyor
-- [ ] Cache çalışıyor (aynı fotoğraf için tek API çağrısı)
-- [ ] `ARES.dosyaUrlAl()` helper `assets/ares.js`'de canlı
-- [ ] CI yeşil, self-test bozulmadı
-- [ ] son-durum.md güncel, 32. oturum Sentry planı hazır
+31'de planı 1 oturum kaydırdık. Şu anki sıra:
+
+| 32 | KARAR + Birikme önleme uygulaması |
+| 33 | Sentry entegrasyonu |
+| 34 | Email sistemi |
+| 35 | Staging Supabase + migration runner |
+| 36 | Tenant izolasyon testleri |
+
+**Ama** Cihat G-08 yaygınlaştırma istiyor (22 sayfa). Bu da 1.5 oturum.
+
+### Seçenek A — Sentry öncelikli (mevcut plan)
+- 32: Birikme önleme uygulaması
+- 33: Sentry
+- 34-35-36: Email/Staging/Tenant
+- 37+: G-08 yaygınlaştırma (ürün dönemi)
+
+**Mantık:** Hata izleme altyapısı önce, sonra UX iyileştirme. Production-ready öncelikli.
+
+### Seçenek B — G-08 öncelikli
+- 32: Birikme önleme uygulaması (yarım gün)
+- 32-33: G-08 15 yüksek öncelik sayfa
+- 34: Sentry
+- 35-36-37: Email/Staging/Tenant
+
+**Mantık:** Görsel standart şimdi yapılırsa yeni sayfalar standart pattern'le ekler. Sentry zaten Cumartesi gece kurulabilir, kritik değil.
+
+### Tavsiye
+
+Cihat'a sor:
+
+> "Lansman tarihin (müşteri demoya hazır olmak istediğin tarih) belli mi? Eğer 1-2 ay sonraysa (A), 3-4 ay sonraysa (B). Çünkü G-08 olmadan müşteriye gösterirsen 'dağınık' algısı yapışır."
 
 ---
 
-## 🔗 32. Oturumdan Sonra (Güncel Plan)
+## 🧹 Acil Temizlik (15 dk)
+
+### Orphan bucket dosyaları
+31'de yapılan feedback foto testleri sırasında bucket'a 2 dosya düştü. Şimdi orphan:
+- `feedback/1777099713115.jpg`
+- `feedback/1777100014537.jpg`
+
+Bunların DB kayıtları:
+- `cae5a8ab-c619-41ce-a733-67186d73b1e4` (eski format, kırık)
+- `f3d97dc2-54db-4b8d-b369-9725a6ac18d1` (eski format, kırık)
+
+**Adımlar:**
+1. SQL: `DELETE FROM feedback_kayitlari WHERE id IN ('cae5a8ab-...', 'f3d97dc2-...');`
+2. Supabase Dashboard → Storage → arespipe-dosyalar → feedback/ klasörü → 2 dosyayı sil
+
+### `db-backup.yml` cron düzeltmesi
+
+Şu an `0 3 * * *` — UTC 03:00 = TR 06:00 hedefli ama gerçekleşen ~02:56 UTC = TR 05:55. **Plana göre 3 saat kayma**.
+
+**Düzeltme:**
+```yaml
+# .github/workflows/db-backup.yml
+schedule:
+  - cron: '0 0 * * *'  # UTC 00:00 = TR 03:00 (yaz saati)
+```
+
+PR ile aç, merge et, sonraki gece TR 03:00'da tetiklenecek.
+
+> Yan not: TR yaz saati (TRT, GMT+3) → UTC 0 = TR 3. Kış saati uygulanırsa (Türkiye 2016'dan beri kullanmıyor ama dikkat) ayarlamak gerekebilir.
+
+---
+
+## 📋 Önerilen 32. Oturum Akışı
+
+```
+Saat 1 — Karar Aşaması
+  - Ritüel + son-durum okuma
+  - SBD-01 yaklaşımı kararı (5 dk Cihat)
+  - 32-35 sıralaması kararı (5 dk Cihat)
+  - Karar dökümana yazılır (son-durum.md güncellenir)
+
+Saat 2 — Acil Temizlik (15 dk)
+  - Orphan dosya silme (DB + bucket)
+  - db-backup.yml cron düzeltmesi (1 commit)
+
+Saat 2-3 — Karara Göre Uygulama
+  Seçenek A (Sentry öncelikli):
+    - SBD-01: defter sayfa-merkezli yeniden yapı (45 dk)
+    - kurallar.json'a SED-01 entegrasyonu (15 dk)
+    - CLAUDE.md ritüeline yeni soru ekle (5 dk)
+    - Sentry kurulum başlangıcı (kalan zaman)
+
+  Seçenek B (G-08 öncelikli):
+    - SBD-01: defter sayfa-merkezli yeniden yapı (45 dk)
+    - G-08 referans implementasyon (proje_liste.html veya admin/panel.html) (45 dk)
+    - Yaygınlaştırma örnek (1 sayfa daha) (30 dk)
+
+Saat son — Kapanış
+```
+
+---
+
+## 🎯 Başarı Kriterleri (32 Sonu)
+
+- [ ] SBD-01 yaklaşımı net karar verildi (A/B/C)
+- [ ] 32-35 sıralaması net (Sentry'nin yeri kesin)
+- [ ] Orphan dosyalar temizlendi (DB + bucket)
+- [ ] db-backup cron düzeltildi
+- [ ] Defter sayfa-merkezli yapıya kavuştu (mevcut 6 madde + envanter sayfa-bazlı)
+- [ ] kurallar.json'a SED-01 eklendi
+- [ ] Bir sonraki sayfa açıldığında defter okuma akışı test edildi
+- [ ] CI yeşil
+
+---
+
+## ⚠️ Potansiyel Engeller
+
+### Engel 1: Cihat karar veremiyor
+Eğer Cihat "ikisi de iyi, hangisi daha iyi söyle" derse:
+- Net tavsiye **C** (markdown şimdilik) ve **A** (Sentry öncelikli) — defaultlar
+- Karar verilemezse defaultlarla devam, 33'te yeniden değerlendir
+
+### Engel 2: Sayfa-merkezli yeniden yapılandırma 45 dk'yı aşıyor
+Defter mevcut yapıdan kategori-merkezli, sayfa-merkezliye dönüşüm beklediğimden uzun sürebilir. Süre aşıyorsa:
+- Cihat'a 1 oturum ek ayır teklifi (33'ün ilk yarısı)
+- Veya önce sadece spool_detay + devre_detay yeniden yapılandır, kalan sayfalar 33'te
+
+### Engel 3: Cron düzeltme bekleyen test
+Cron düzeltildikten sonra **bir gece beklemek lazım** TR 03:00 olduğunu görmek için. 33. oturum başında doğrulama yapılır.
+
+### Engel 4: Sayfa açıldığında defter listeleme entegrasyonu
+"Bir sonraki sayfa açıldığında Claude defter okusun" akışı test edilmedi. Bu akış için:
+- Cihat sayfa istediğinde Claude `docs/SAYFA-EKSIKLERI.md`'i project_knowledge_search ile bulup okumalı
+- Sayfa-merkezli yapıda ilgili bölümü çıkarmalı
+- Listelemeli, Cihat'a önceliklendirme sormalı
+- **Bu işin bir kez gerçekten test edilmesi 32 sonunda lazım** — bir sayfa açıp prova et
+
+---
+
+## 🔗 32'den Sonra (Güncel Plan)
 
 | Oturum | Tema | Durum |
 |---|---|---|
-| 30 | Bucket PRIVATE (Faz 1-2) | ✅ (yarım) |
-| **31** | **Bucket PRIVATE (Faz 3-6 devir)** | **Bu oturum** |
-| 32 | Sentry entegrasyonu | 29→30→**32'ye kaydı** |
-| 33 | Email sistemi | 1 kaydı |
-| 34 | Staging Supabase + migration runner | 1 kaydı |
-| 35 | Tenant izolasyon testleri + feature flag | 1 kaydı |
+| 31 | Bucket PRIVATE Migration | ✅ |
+| **32** | **Karar + Temizlik + SBD-01 uygulama** | **Bu oturum** |
+| 33 | Sentry (A) veya G-08 (B) | 32 kararına bağlı |
+| 34 | Email sistemi | Sırada |
+| 35 | Staging + migration runner | Sırada |
+| 36 | Tenant izolasyon testleri | Sırada |
 
-**36'dan itibaren:** Ürün dönemi (render standardı, operasyon sayfaları, mobil, Spool AI döngüsü).
-
----
-
-## 🎯 Oturum İçi Disiplin (30'un Dersleri)
-
-- **Vercel ayarları UI yerine `vercel.json`'da** — deterministik, repo-kontrollü
-- **UI debugging 10 dk'yı aşıyorsa kodla çözmeye geç** — dropdown döngüsü yerine dosya yaklaşımı
-- **Her iş bloğu sonunda "tamam/yarım" cümlesi** — kullanıcı yarım bilgiyle yatmasın
-- **"Hızlı iş" tahminlerinde 2x buffer** — özellikle UI-bağımlı işlerde
-- **Yanlış proje/ortam kontrolü** — URL bar'dan teyit standart adım
-- **Yorgun kullanıcıyı sıkıştırma** — alternatif yola hemen geç
-
-(+ 1-29'un tüm dersleri `son-durum.md` disiplin bölümünde)
+**37+ ürün dönemi.** G-08 yaygınlaştırma B seçilirse 32-33, A seçilirse 37+.
 
 ---
 
-**30. oturum sonu, 24 Nisan 2026.** Cihat yattı, Vercel kotası sabaha açılacak. 31'de ritüelden sonra direkt Faz 3 (canlı test) ile başla.
+## 🎯 Oturum İçi Disiplin (31'in Dersleri)
+
+- **Plan dosyalarına ezbere uyma, gerçek kod tara** — 31'de 90 dk tasarruf
+- **Schema değişikliği planlarken information_schema sorgusu zorunlu** — S2 bug yakalandı
+- **Deploy zamanlamasını test öncesi doğrula** — feedback foto kafa karışıklığı
+- **Eager > lazy mümkünse** — kapsamı küçült, race azalt
+- **Görülen yarım akışı sessizce atlama, defter'e yaz** — SED-01 temeli
+
+(+ 1-30'un tüm dersleri `son-durum.md` disiplin bölümünde)
+
+---
+
+## 🔐 Bekleyen Testler (31'den devir)
+
+**Cross-tenant blok kontrolü** — Normal user (super_admin değil) hesabıyla, başka bir tenant'ın yolunu çağırma testi. Endpoint kodu doğru kontrolü yapıyor (`if (!superAdmin && yoldanTenantId !== kullaniciTenantId)`) ama canlı kanıt yok. 32'de yapılması zor (2. test kullanıcısı gerekir), bekleyen test olarak kalır. 35-36 tenant izolasyon testleri oturumunda yapılacak.
+
+---
+
+**31. oturum sonu yazıldı, 25 Nisan 2026 Cumartesi öğle.** 32. oturum açılışında Cihat ilk önce iki karar (SBD-01 yaklaşımı + sıralama) verecek, sonra temizlik yapacağız.

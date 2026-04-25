@@ -1358,32 +1358,87 @@ function spoolEkleBaslat(){
     +'</div></td></tr>';
   setTimeout(function(){var e=document.getElementById('nr_pl');if(e)e.focus();},50);
 }
-function spoolEkleKaydet(){
+async function spoolEkleKaydet(){
   var g=function(id){return((document.getElementById(id)||{}).value||'').trim();};
   var sn=g('nr_sn');if(!sn){showToast(tv('dv_spool_no_required','Spool No zorunludur'),'e');return;}
   var _pl=g('nr_pl')||''; var _rev=g('nr_rev')||'';
   if(SPOOLS.find(function(s){return s.spoolNo===sn&&s.pipeline===_pl&&(s.rev||'')===(  _rev||'');})){showToast(tv('dv_spool_exists','Bu Spool No zaten var'),'e');return;}
-  SPOOLS.push({idx:SPOOLS.length+1,_lk:'new_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),pipeline:g('nr_pl'),spoolNo:sn,rev:'',spoolId:'',
+  // Optimistic UI — önce listeye ekle, async DB insert sonra
+  var _lk='new_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+  var yeniSpool={idx:SPOOLS.length+1,_lk:_lk,supaId:null,pipeline:g('nr_pl'),spoolNo:sn,rev:'',spoolId:'',
     cap:g('nr_cap'),et:'—',agirlik:g('nr_ag'),malzeme:g('nr_ml'),kalite:g('nr_kl'),yuzey:g('nr_yz'),
     durum:'waiting',durumText:tv('dv_status_waiting','Bekliyor'),adimlar:[0,0,0,0,0,0],
     sonIslem:null,alistirma:null,bukum:{toplam:0,tamamlanan:0},kesim:{toplam:0,tamamlanan:0},
     markalama:{toplam:0,tamamlanan:0},test:{toplam:0,tamamlanan:0},
-    durduruldu:false,stopped:false});
-  spoolEkleIptal();renderTable();statGuncelle();showToast(sn+' '+tv('dv_added','eklendi'),'success');
+    durduruldu:false,stopped:false};
+  SPOOLS.push(yeniSpool);
+  spoolEkleIptal();renderTable();statGuncelle();
+  // DB'ye kaydet
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(supa&&devreId&&_tid()){
+    var capN=parseFloat(String(g('nr_cap')).replace(',','.'));
+    var agN=parseFloat(String(g('nr_ag')).replace(',','.'));
+    var kayit={
+      tenant_id:_tid(),devre_id:devreId,spool_no:sn,
+      pipeline_no:_pl||null,rev:_rev,
+      dis_cap_mm:isFinite(capN)?capN:null,
+      agirlik_kg:isFinite(agN)?agN:null,
+      malzeme:g('nr_ml')||null,kalite:g('nr_kl')||null,yuzey:g('nr_yz')||null,
+      is_durumu:'bekliyor',ilerleme:0,durduruldu:false
+    };
+    var res=await supa.from('spooller').insert(kayit).select('id').single();
+    if(res.error){
+      // Rollback — listeden kaldır
+      SPOOLS=SPOOLS.filter(function(x){return x._lk!==_lk;});
+      renderTable();statGuncelle();
+      showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');
+      return;
+    }
+    // Başarılı — supaId'yi optimistic obje üstüne yaz
+    yeniSpool.supaId=res.data.id;
+  }
+  logEkle('spool_eklendi',sn);
+  showToast(sn+' '+tv('dv_added','eklendi'),'success');
 }
 function spoolEkleIptal(){var el=document.getElementById('spoolEkleBody');if(el)el.innerHTML='';}
 
 // ── DEVRE DURDUR
 function durdurModalAc(){document.getElementById('mDurdur').style.display='flex';}
-function durdurKaydet(){
+async function durdurKaydet(){
   var ac=document.getElementById('durAc').value.trim();
   if(!ac){showToast(tv('dv_desc_required','Açıklama zorunludur'),'e');return;}
   document.getElementById('mDurdur').style.display='none';
+  // Optimistic UI — banner hemen gözüksün
   var banner=document.getElementById('durBanner');if(banner){banner.style.display='flex';setText('bannerAc',ac);}
+  // DB'ye kaydet
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(supa&&devreId){
+    var res=await supa.from('devreler').update({durum:'durduruldu',durdurma_sebebi:ac}).eq('id',devreId);
+    if(res.error){
+      // Rollback — banner'ı geri kapat
+      if(banner)banner.style.display='none';
+      showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');
+      return;
+    }
+    DEVRE.durum='durduruldu';DEVRE.durdurmaSebebi=ac;
+  }
   logEkle('durduruldu',ac);showToast(tv('dv_circuit_stopped_toast','Devre durduruldu'),'i');
 }
-function durdurmaKaldir(){
+async function durdurmaKaldir(){
+  // Optimistic UI — banner hemen kapansın
   var banner=document.getElementById('durBanner');if(banner)banner.style.display='none';
+  // DB'ye kaydet
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(supa&&devreId){
+    var res=await supa.from('devreler').update({durum:'aktif',durdurma_sebebi:null}).eq('id',devreId);
+    if(res.error){
+      // Rollback — banner'ı geri aç
+      if(banner&&DEVRE.durdurmaSebebi){banner.style.display='flex';setText('bannerAc',DEVRE.durdurmaSebebi);}
+      showToast(tv('dv_error_prefix','Hata')+': '+res.error.message,'e');
+      return;
+    }
+    DEVRE.durum='aktif';DEVRE.durdurmaSebebi=null;
+  }
   logEkle('yeniden_baslandi',tv('dv_stop_removed','Durdurma kaldırıldı'));
   showToast(tv('dv_circuit_reactivated','Devre yeniden aktif'),'success');
 }

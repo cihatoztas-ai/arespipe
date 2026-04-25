@@ -1679,7 +1679,7 @@ async function aiOnayEt() {
   var supa=ARES.supabase();
   if(supa&&f.id){
     supa.from('fotograflar').update({ai_durum:'onaylandi'}).eq('id',f.id).then(function(){});
-    if(SP.supaId){supa.from('egitim_verisi').insert({tenant_id:ARES.tenantId(),spool_id:SP.supaId,foto_id:f.id,foto_url:f.dosya_url,ai_analiz:f.ai_analiz,annotasyonlar:f.annotasyonlar||[],olusturma:new Date().toISOString()}).then(function(r){if(r.error)console.warn('Eğitim:',r.error);});}
+    if(SP.supaId){supa.from('egitim_verisi').insert({tenant_id:ARES.tenantId(),spool_id:SP.supaId,foto_id:f.id,fotograf_url:f.dosya_url,ai_analiz:f.ai_analiz,annotasyonlar:f.annotasyonlar||[],olusturma:new Date().toISOString()}).then(function(r){if(r.error)console.warn('Eğitim:',r.error);});}
   }
   aiToolbarGuncelle(idx);
   toast('Onaylandı — eğitim verisine eklendi','ok');
