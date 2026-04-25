@@ -44,7 +44,7 @@
 - **D2** — `durdurKaydet` ve `durdurmaKaldir` `devreler.durum` + `durdurma_sebebi` UPDATE yapıyor.
 
 #### 🟡 Açık (sonraya bırakıldı)
-- **D4** — KK & Sevkiyat listeleri UI'da hiç dolmuyor (`kkListe`, `sevkListe` divleri 394, 398). Davetler/sevkiyatlar DB'ye yazılıyor ama geri okuma yok. Tahmin: 30-45 dk yeni `kkDavetlerYukle` + `sevkiyatlarYukle` fonksiyonları + render. Ürün dönemi (35+).
+- **D4** ✅ — KK ve Sevkiyat listeleri devre_detay sayfasında render ediliyor (33. oturum, 25 Nis 2026). Yeni `kkSevkYukle()` fonksiyonu: kk_davet_spooller ve sevkiyat_spooller'dan inverse sorgu, master tabloları çekiyor. DOMContentLoaded + pageshow + visibilitychange + gonderKaydet zincirlerinde otomatik yenileme. Canlı test: AT110-Drencher-Galv devresinde KK-926323 daveti 8 spool ile göründü. Commit `7db5979`. Defterin 35+ tahmininden çok önce kapandı (~45 dk).
 - **D7** ✅ — `durdurma_tarihi` kolonu `devreler` tablosuna eklendi (33. oturum, 25 Nis 2026). Migration `002_devreler_durdurma_tarihi_ekle.sql`. devre_detay + devreler write/read uçtan uca tarandı, canlı test geçti (durdur → tarih dolu, kaldır → tarih null). Commit `ad9fb27`.
 
 ---
