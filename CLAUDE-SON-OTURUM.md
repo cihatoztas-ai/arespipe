@@ -1,142 +1,200 @@
-# CLAUDE — 32. Oturum Detaylı Özet
+# CLAUDE — 33. Oturum Detaylı Özet
 
 **Tarih:** 25 Nisan 2026 Cumartesi
-**Süre:** ~5 saat (mola dahil)
-**Tema:** Defter temizliği — bekleyen SED maddelerini sırayla kapatma
+**Süre:** ~2.5 saat (14:00 - 16:30 TR)
+**Tema:** Vercel-bağımsız işler — D7 + D4 kapatma, defter temizliği, self-test
 
 ---
 
-## 🎯 Oturumun Hedefleri
+## 🎯 Oturum Hedefi
 
-Plan dosyası 32. oturumu "SBD-01 sistem kararı + temizlik + uygulama" olarak tanımlamıştı. Cihat oturum başında "kararları sonraya bırak, gözle gördüğün işleri yap" dedi → karar gerektirmeyen mekanik işlere odaklandık.
+32'den devir edilen Vercel-bağımsız işleri kapatmak. 33 = 5'in katı olduğu için zorunlu self-test günü.
+
+**Hedeflenen:** Self-test + D7 + db-backup defter
+**Bonus:** D4 (defterden "ürün dönemi 35+" işiydi, Cihat istedi, yapıldı)
 
 ---
 
-## ✅ Tamamlananlar (kronolojik)
+## ✅ Tamamlananlar
 
-### 1. Orphan feedback kayıtları temizliği (~15 dk)
-31'de yapılan feedback foto testlerinden 2 orphan DB kaydı + 2 bucket dosyası vardı. Doğrulama SELECT atıldı (test verisi olduğu kanıtlandı: `not_` "deneme" ve "dneme2"), sonra DELETE + Storage'dan manuel silme.
+### 1. Self-test 4/4 başarılı
 
-**Yan ders:** Plan dosyasındaki kolon adları (`sayfa`, `tip`, `mesaj`) gerçek schema'yla uyuşmuyordu (`sayfa_url`, `kategori`, `not_`). Plan dosyaları gerçek schema'yla doğrulanmadan yazıldığında drift oluyor. **information_schema** sorgusu hayat kurtardı.
-
-### 2. GitHub Actions deprecation: v4 → v5 (~15 dk)
-29'dan beri açık borç. `actions/checkout@v4` ve `actions/setup-node@v4` → v5'e güncellendi. Web search ile breaking change'ler doğrulandı (yok, sadece Node 24 runner — ubuntu-latest zaten destekliyor).
-
-İki dosya: `docs-uret.yml`, `kontrol.yml`. Tek commit, CI yeşil kaldı.
-
-### 3. S1 — spool_detay belge yükleme/silme (~25 dk)
-**Bug:** `belgeKaydet` sadece in-memory `BELGELER.unshift()` yapıyordu, Supabase'e hiç yazma yoktu. "Eklendi" toast'ı yalan, F5'te kayıp. Aynı şekilde `belgeSil` array'den çıkarıyor, DB'ye dokunmuyordu.
-
-**Yan tespit (defterde yoktu):** DB kolonu `tur` ama okuma+render kodu `b.tip` kullanıyordu. Belge türü ekranda hep boş görünüyordu — kullanıcı fark etmemiş ya da rapor edememiş. S2'nin (foto_url/fotograf_url) kardeş bug'ı.
-
-**Fix kapsamı (4 patch):**
-- A) BELGELER map: `tip` → `tur`, `silindi=false` filter
-- B) Render: `b.tip` → `b.tur`
-- C) `belgeKaydet`: async, dosya zorunlu kontrol, bucket upload (`tenant_id/belgeler/spool_id/timestamp_filename`), DB insert, optimistic UI + rollback (orphan bucket dosyası temizliği dahil)
-- D) `belgeSil`: async, soft delete (`silindi=true` + `silinme_tarihi`), optimistic UI + rollback
-
-**Test:** Belge ekle → F5 → kaldı. Sayfadan çıkıp gel → kaldı. Sil → F5 → gitti. **Davranış kanıtlandı**, SQL doğrulamasına gerek bile kalmadı.
-
-### 4. D5 — devre_detay belge yükleme + aç butonu (~25 dk)
-**Bug:** `dokKaydet` DB'ye yazıyordu **ama** `dosya_url:'pending:'+dosyaAdi` placeholder, bucket upload yok. Render'da Aç butonu yoktu — kullanıcı yüklediği belgeyi açamıyordu.
-
-**Fix kapsamı (3 patch):**
-- A) `belgelerYukle`: signed URL alma (`ARES.dosyaUrlAl`), "pending:" eski kayıtlar için backward-compat (görünür kalır, açma yok)
-- B) `renderDokumanlar`: aç butonu (↗) eklendi
-- C) `dokKaydet`: dosya zorunlu kontrol, bucket upload, DB insert (gerçek path + `dosya_boyut`), optimistic UI + rollback
-
-**Test:** Yükle, F5, aç, sil — hepsi çalıştı.
-
-### 5. G-08 — devre_detay skeleton + cascade (yarım, ~50 dk)
-**Hedef:** Sayfa açılışında shimmer iskelet, veri gelince yukarıdan aşağı stagger animasyonu. devreler.html standardı.
-
-**İlk yapım:** Generic helpers (`_skTbody`, `_skList`, `_skNotlar`), DOMContentLoaded başında `_skBaslat()`, render'lara `data-ci` cascade index, `setText` skeleton temizleyecek şekilde upgrade.
-
-**Cihat geri bildirimi:** "devreler.html ile aynı değil." → devreler.html'i inceleyip birebir uyarladım:
-- CSS class isimleri (`.dt` + `.data-table` ortak selector)
-- Cascade delays 0-19 (devre tablo 20 kolon)
-- Skeleton 15 satır (sekiz değil)
-- Stat shimmer HTML'de doğrudan `class="sk sk-num"` (JS DOMContentLoaded beklemeden)
-- `_skBaslat` sadeleştirildi (stat looping kaldırıldı, HTML'de var)
-
-**İkinci yapım sonrası:** Cihat "tam aynı değil ama sonra bakarız" dedi. **Somut fark belirtilmedi**, 33. oturumda iki sayfayı yan yana açıp inceleme yapılacak.
-
-### 6. D6 — devre_detay sessiz console.warn'lar (~25 dk)
-**Bug:** 14 noktada DB hatası `console.warn` ile yutuluyordu. Bazılarında kullanıcı action'ı sonrası "kaydedildi/silindi" yalan toast atılıyordu (`spoolDurdur`, `spoolDurdurmaKaldir`, `softSil`, `terminKaydet`).
-
-**Fix:** 10 noktada toast eklendi, 4'üne dokunulmadı (init helpers, zaten toast var).
-
-**Kategori 1 — Kullanıcı action'ı (kritik, erken return ekledi):**
-- `spoolGuncelle` (inline edit)
-- `spoolDurdur`
-- `spoolDurdurmaKaldir`
-- `softSil`
-- `terminKaydet`
-
-**Kategori 2 — Yükleme hataları (toast bilgilendirmesi):**
-- `devreYukle`, `spoolYukle`, `plMalzYukle`, `belgelerYukle`, `loguGetir`, `malzemeleriGetir`
-
-### 7. D3 — devre_detay tersane_is_emri (deferred, ~30 dk)
-**Bug:** Kod yorumu açıkça söylüyordu: *"tersane_is_emri kolonu DB'de yok — sadece localStorage'da tut"*. Kullanıcı tersane iş emri girer, "kaydet" der, F5'te kayıp olurdu.
-
-**Fix kapsamı:**
-- 001 migration dosyası: `ALTER TABLE devreler ADD COLUMN tersane_is_emri TEXT;` (Cihat manuel SQL atarak canlıya uyguladı)
-- `devreYukle`: `tersaneIsEmri:d.tersane_is_emri||''` (DB'den okur)
-- `tersaneIsEmriKaydet`: async + DB update + optimistic UI + rollback + bağlantısız fallback
-
-**Test sırasında ortaya çıkan ders:** Cihat "sayfadan çıkıp gelince değer kayboluyor" dedi. Önce DB sorgusu attım, gördüm ki UPDATE atılmamış (`guncelleme` kolonu eski tarih). RLS şüphesi → `pg_policies` sorgusu RLS'in doğru olduğunu gösterdi. Sonra **deploy doğrulama**:
-```js
-tersaneIsEmriKaydet.toString().includes('supa.from')
-// → false (eski kod canlıda)
 ```
-Yeni kod canlıda değildi.
-
-**Sebep:** **Vercel rate limit** — Hobby plan günde 100 deploy, her push iki projeyi (arespipe + arespipe-mob) tetikliyor. Son commit deploy edilemedi. 24 saat sonra açılır, 33. oturumda doğrulanacak.
-
----
-
-## 🎓 Yan Dersler (CLAUDE.md disiplinine eklendi)
-
-### 1. Deploy doğrulama tekniği
-"Yeni kod canlıda mı?" sorusu için en hızlı cevap: tarayıcı console'da
-```js
-fnAdı.toString().includes('yeniSatır')
+node .github/kontrol.js --self-test
+→ 4 başarılı, 0 başarısız
 ```
-- `true` → yeni kod var
-- `false` → eski kod cache'te ya da deploy edilmedi
 
-D3 testinde saatlerce yanlış yerde fix aramaktan kurtardı. Doğrudan "deploy yapılmamış" sebebine yöneldik.
-
-### 2. Schema drift uçtan uca tarama
-S2 (foto_url/fotograf_url, 31. oturum) ve tur/tip bug (32. oturum) aynı kategori. Schema değişikliklerinde:
-- ❌ Sadece insert noktasına bak ⇒ render/read'de hata kalır
-- ✅ `information_schema.columns` sorgusu + tüm `b.kolon`, `s.kolon` kullanımlarını grep'le tara
-
-### 3. Vercel Hobby plan rate limit
-- 100 deploy/gün, son 24 saat kayan pencere
-- Her push iki projeyi tetikliyor → fiili limit 50 push/gün
-- Aktif çalışılan oturumlarda kolayca aşılır
-- **33+ çözüm:** `vercel.json` ignoreCommand'a arespipe-mob için `mobile/` haricinde build engelleyen kural
-
-### 4. Plan dosyalarına ezbere güvenmeme
-SAYFA-EKSIKLERI.md'de feedback kolonları yanlış yazılıydı (`sayfa` vs `sayfa_url`). Plan dosyaları gerçeği bilmek için yazılır, ama gerçek değildir — schema sorgusu/dosya açıp okumak hep doğru kanıt.
+Sapmama sistemi 5 oturumdur ayakta. Faz B kuralları bozulmamış. **Sonraki zorunlu self-test: 38. oturum.**
 
 ---
 
-## 📊 Üretkenlik Notu
+### 2. D7 — `durdurma_tarihi` kolonu ✅
 
-**5 saatte 6 net kapatma + 2 yarım kapanış + 4 ders = oturum yoğun ama temiz.** Cihat profil notu "ilerleme olmadan geçen zaman onu yorar"a karşı bilinçli müdahale: kapsam genişletme/karar zorlamaktansa SED listesinden mekanik temizleme yapıldı, her madde ayrı commit + ayrı test.
+**Sorun:** `devreler` tablosunda `durdurma_sebebi` vardı ama `durdurma_tarihi` yoktu (`spooller`'da varken). Devre durdurma tarihi takip edilemiyor.
 
-**Vercel rate limit** sürpriz oldu. Önceki oturumlarda bu yoğunlukta push olmamıştı sanırım (her push 2 deploy). 33+ önlem alınacak.
+**Yapılanlar:**
+
+**a) Migration**
+- `migrations/002_devreler_durdurma_tarihi_ekle.sql` oluşturuldu
+- Manuel SQL ile canlıya uygulandı: `ALTER TABLE devreler ADD COLUMN IF NOT EXISTS durdurma_tarihi timestamptz;`
+- Doğrulama: `information_schema.columns` sorgusu → kolon var, `timestamp with time zone`, nullable
+
+**b) Kod patch'leri (7 değişiklik)**
+
+| Dosya | Yer | İş |
+|---|---|---|
+| `devre_detay.html` | state mapping (1125) | `durdumaTarihi: d.durdurma_tarihi \|\| null` eklendi |
+| `devre_detay.html` | `durdurKaydet` (1518) | UPDATE'e `durdurma_tarihi: new Date().toISOString()` |
+| `devre_detay.html` | `durdurmaKaldir` (1535) | UPDATE'e `durdurma_tarihi: null` |
+| `devreler.html` | write (1647) | INSERT'e `durdurma_tarihi: new Date().toISOString()` |
+| `devreler.html` | SELECT × 2 (1024, 1288) | Kolon listesine `durdurma_tarihi` eklendi |
+| `devreler.html` | state mapping (1161) | `_durdurmaTarihi: d.durdurma_tarihi \|\| null` eklendi |
+
+**c) Canlı test**
+
+`AT110-Drencher-Galv` (id `fb80d315-b9f5-4e37-b944-d1bda741eeb2`) üzerinde:
+- Durdur ("D7 test" sebebiyle) → SQL: `durdurma_tarihi: 2026-04-25 11:24:12.699+00` ✅
+- Durdurma kaldır → SQL: `durdurma_tarihi: null` ✅
+
+**d) Schema drift dersi uygulandı**
+
+S2/32 dersinde belirlenen kural: insert + read + render + map noktaları uçtan uca tarandı. Çıktı: `is_baslat.html`'de `durdurma_sebebi` geçti ama o spooller tarafı (devre değil), atlanmadı.
+
+**Commit:** `ad9fb27`
 
 ---
 
-## 🔁 33. Oturuma Devir
+### 3. db-backup.yml cron — defter temizliği
 
-**Cihat yarın çalışamıyor** — 33. oturum tarihi belirsiz, ama Vercel rate limit 24 saat sonra açıldığı için ne zaman 33'e başlasak Vercel hazır olur.
+**Beklenmedik bulgu:** Defter "TR 03:00 hedef, sonraki oturumda yapılır" diyordu ama dosya zaten 32'de düzeltilmiş (commit `bb03127`):
 
-**33'ün önerilen akışı:** Önce Vercel-bağımsız işler (D7, defter, kurallar), sonra Vercel açıldığında doğrulama (D3 + G-08). Detay: `CLAUDE-SONRAKI-OTURUM.md`.
+```yaml
+- cron: '0 0 * * *'   # UTC 00:00 = Türkiye 03:00
+```
+
+**Mesele:** Cron dosyada doğru, ama 25 Nis sabahki yedek hâlâ TR 05:55'te düştü (commit `835cf5d`, timestamp `2026-04-25_02-56-10 UTC`).
+
+**Açıklama:** GitHub Actions cron değişikliğini bir sonraki tetiklemeden okur. Düzeltme 24 Nis'te yapıldı, ama 25 Nis sabahki çalıştırma eski saati kullandı. **Normal davranış.**
+
+**Karar:** ✅ koymadık — 26 Nis sabah yedek saatine bakılıp ✅ verilecek. Defter notu bu durumu yansıtacak şekilde 3 yerde güncellendi.
+
+**Commit:** `d703742`
 
 ---
 
-**32. oturum kapanışı:** 25 Nisan 2026 Cumartesi öğleden sonra. Sonraki oturum açık.
+### 4. D4 — KK ve Sevkiyat listeleri ✅
+
+**Defter notu:** "Ürün dönemi (35+)". Cihat 33'te yapılmasını istedi, yapıldı.
+
+**Sorun:** `devre_detay.html` sayfasında `kkListe` (440) ve `sevkListe` (444) divleri her zaman boş. KK davetleri ve sevkiyatlar DB'ye yazılıyor ama geri okuma yoktu.
+
+**Mimari fark:** `kk_davetler` ve `sevkiyatlar` master tabloları **tersane bazında**, devre bazında değil. Bir KK daveti birden fazla devrenin spool'larını içerebilir. Bu yüzden **inverse sorgu** lazımdı.
+
+**Yapılanlar:**
+
+**a) Yeni `kkSevkYukle()` fonksiyonu** (`devre_detay.html:1160`)
+
+```javascript
+async function kkSevkYukle(){
+  // 1) DEVRE'nin spool ID'lerini topla
+  // 2) kk_davet_spooller'dan inverse: spool_id IN (...) → davet_id
+  // 3) kk_davetler master + JOIN ile spool_no'yu çek
+  // 4) Aynısını sevkiyatlar için yap
+  // 5) _kkRender / _sevkRender çağır
+}
+```
+
+**b) Render helper'ları**
+
+- `_kkRender(list)` — bekliyor/tamamlandi/reddedildi durumuna göre renkli badge, davet_no + tarih + spool sayısı
+- `_sevkRender(list)` — sevk_no + tarih + tip badge, spool sayısı
+
+**c) Trigger noktaları (4 yer)**
+
+| Yer | Tetik |
+|---|---|
+| DOMContentLoaded | Sayfa açılışında ilk yükleme |
+| `pageshow` | Spool detaydan dönünce |
+| `visibilitychange` | Tab geri aktif olunca |
+| `gonderKaydet` sonu | KK/Sevk gönderildikten sonra otomatik yenileme |
+
+**d) Canlı test**
+
+`AT110-Drencher-Galv`'de:
+- SQL ile cross-check: `KK-926323, 2026-04-25, bekliyor, 8 spool`
+- UI'da Genel Bilgiler tab'ında "✓ KALİTE KONTROL DAVETLERİ" bölümünde aynı veri görüldü
+- "SEVKİYATLAR" bölümü "Henüz sevkiyat gönderilmemiş" (DB'de yok, doğru)
+
+**Yan gözlem:** Spool numaraları "S01, S01, S01..." şeklinde tekrar ediyor. `spool_no` field formatı meselesi (D8 olabilir, 34+).
+
+**Süre:** ~45 dk. Defterin "30-45 dk" tahminine uydu.
+
+**Commit:** `7db5979`
+
+---
+
+### 5. .DS_Store temizlik
+
+macOS metadata dosyası repo'da sürükleniyordu. `git stash push .DS_Store` + `git stash drop` ile temizlendi. Repo "nothing to commit, working tree clean" durumuna geldi.
+
+---
+
+## 🎓 33. Oturumun Dersleri
+
+### Yeni Ders 1: Cron değişikliği bir sonraki tetiklemeden uygulanır
+
+GitHub Actions cron değişikliğini commit anında değil, bir sonraki çalıştırmaya geldiğinde okur. db-backup.yml örneği: 24 Nis düzeltme → 25 Nis sabahki çalıştırma hâlâ eski saatte.
+
+**Pratik etki:** Cron değişikliklerini doğrulamak için **24 saat beklemek** lazım, hemen kontrol yanıltıcı.
+
+### Yeni Ders 2: Defter notu "ileride yapılır" derken bile, kullanıcı isteği üstün
+
+D4 maddesi "ürün dönemi (35+)" notluydu. Cihat 33'te istedi, yapıldı, çalıştı. Defter not önerir, sıkı kural koymaz. **Açık iletişim:** "defter şöyle diyor, ama sen istiyorsan yapalım" demek doğru — ben uyardım, Cihat onayladı, devam edildi.
+
+### Pekiştirilen Ders: Schema drift uçtan uca tarama (S2/32)
+
+D7'de tekrar uygulandı: `grep -rn "durdurma_sebebi"` + `grep -rn "durdurma_tarihi"` + `information_schema` sorgusu. Yedi farklı yer bulundu (3 write + 4 SELECT/state). Hepsi düzeltildi. **Bu disiplin olmasa bug ortaya çıkardı.**
+
+### Pekiştirilen Ders: Atomik Python patch script'i
+
+Birden fazla yer değişiklik yaparken **errs listesi + write atlanır** modeli güvenli. Patch 2'de bir kalıp 0 kez bulundu, hiçbiri uygulanmadı, dosya bozulmadı, sadece yeniden tarayıp düzeltildik.
+
+---
+
+## 📊 Sayılar
+
+| Metrik | Değer |
+|---|---|
+| Commit | 5 (D7 + D7-defter, db-backup defter, D4 + D4-defter) |
+| Migration | 1 yeni (002) |
+| Patch | 11 toplam (D7: 7, D4: 3 + Patch 1) |
+| Test | 4 canlı test (D7×2, D4×1, self-test) |
+| Defter kapatma | 2 (D7 ✅, D4 ✅) |
+| CI çalıştırma | 5+ (her push'tan sonra yeşil) |
+
+---
+
+## 🤔 Cihat'ın Stratejik Sorusu
+
+> "Altyapı için yapılacak daha neyimiz var, normal sayfalara devam edebilir miyiz?"
+
+**Tartışıldı, kategori kategori cevap verildi:**
+
+1. **Altyapı durumu:** Faz B kuruldu ✅, Faz C %70 (backup, bucket, migrations, RLS hazır). Eksik 3 kritik: email, tenant izolasyon testi, Sentry. Bunlar **SaaS satışı öncesi** (2-3 ay sonra) yapılır.
+2. **Açık SED maddeleri:** D3, D4, S3, S4, G-08 yaygınlaştırma
+3. **Yeşil borçlar:** Operasyon sayfaları, mobil sayfalar, audit log, help.html, sorgula.js refactor
+
+**Önerilen yol:** A — kullanıcı değeri. 34'ten itibaren operasyon sayfaları + açık SED'ler + mobil + Spool AI prototipleri.
+
+**Sebep:** Altyapı zaten ayakta, kullanıcı değerine dönmek motivasyonu ve ürünü "satılır" çizgisine taşır.
+
+---
+
+## 🔚 Oturum Sonu Durumu
+
+- ✅ CI yeşil (son commit `dc33716`)
+- ✅ Repo temiz (working tree clean)
+- ✅ Defter güncel (D7, D4 ✅)
+- ✅ Self-test günü tamamlandı
+- ⏳ 26 Nis sabah backup doğrulaması beklemede
+- ⏳ Vercel açıldığında D3 deploy testi
