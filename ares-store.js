@@ -1,7 +1,11 @@
 /**
- * AresPipe Store — v2.3
+ * AresPipe Store — v2.4
  * Supabase entegrasyonlu veri katmanı.
  * Supabase CDN'i otomatik yükler — HTML'e ek script gerekmez.
+ *
+ * Değişiklikler v2.4 (31. oturum):
+ * - dosyaUrlAl(yol) eklendi — Storage signed URL helper (private bucket için).
+ *   API: POST /api/dosya-url-al · 1 saatlik signed URL · 5 dk güvenlik payıyla cache.
  *
  * Değişiklikler v2.3:
  * - is_emri prefix: I → P (P26-xxx formatı)
@@ -734,7 +738,7 @@ else var ARES = (function () {
     return yetkiler;
   }
 
-  function yetkiCacheSifirla() { _yetkiCache = null; _blokCache = null; }
+  function yetkiCacheSifirla() { _yetkiCache = null; _blokCache = null; _dosyaUrlCache = {}; }
 
   // Yetki var mı? (async — DB override'larını bekler)
   async function yetkiVar(yetki_kodu) {
@@ -909,6 +913,60 @@ else var ARES = (function () {
     if (_oturum.rol === 'musteri') { location.href = '/portal/index.html'; }
   }
 
+  // ── STORAGE (Private Bucket Signed URL) ──────────────────
+  // /api/dosya-url-al endpoint'inden 1 saatlik signed URL alır.
+  // Cache: yol → { signedUrl, expiresAt }, 5 dk güvenlik payı.
+  // Bucket PRIVATE olduğu için public URL çalışmaz, bu helper zorunlu.
+  let _dosyaUrlCache = {};
+  const _DOSYA_URL_BUFFER_MS = 5 * 60 * 1000; // 5 dakikalık buffer
+
+  async function dosyaUrlAl(yol) {
+    if (!yol || typeof yol !== 'string') return null;
+
+    // Cache hit (5 dk buffer'lı)
+    const cached = _dosyaUrlCache[yol];
+    if (cached && (cached.expiresAt - _DOSYA_URL_BUFFER_MS) > Date.now()) {
+      return cached.signedUrl;
+    }
+
+    // Oturum kontrolü
+    if (!_supa) return null;
+    const sessRes = await _supa.auth.getSession();
+    const session = sessRes?.data?.session;
+    if (!session) {
+      console.warn('[ARES.dosyaUrlAl] Oturum yok');
+      return null;
+    }
+
+    // API çağrısı
+    try {
+      const r = await fetch('/api/dosya-url-al', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ yol: yol }),
+      });
+
+      if (!r.ok) {
+        const err = await r.json().catch(function () { return {}; });
+        console.warn('[ARES.dosyaUrlAl]', r.status, err.kod || err.error || 'unknown');
+        return null;
+      }
+
+      const body = await r.json();
+      _dosyaUrlCache[yol] = {
+        signedUrl: body.signedUrl,
+        expiresAt: new Date(body.expiresAt).getTime(),
+      };
+      return body.signedUrl;
+    } catch (e) {
+      console.warn('[ARES.dosyaUrlAl] Hata:', e.message);
+      return null;
+    }
+  }
+
   // ── INIT ─────────────────────────────────────────────────
   (function _init() {
     if (typeof window !== 'undefined') {
@@ -937,6 +995,9 @@ else var ARES = (function () {
     // Oturum
     girisYap, cikisYap, oturumKontrol, oturumAl, tenantId, tenantKod, tenantKodSync, markaId,
     viewAsAktif, viewAsCik,
+
+    // Storage (private bucket signed URL)
+    dosyaUrlAl,
 
     // Yetki — rol bazlı (mevcut)
     yetkiVar, yetkiVarHizli, rolAl, sayfaYetkiKontrol, portalKontrol, yetkiCacheSifirla,
