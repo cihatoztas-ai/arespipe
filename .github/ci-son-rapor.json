@@ -1,15 +1,44 @@
 {
-  "tarih": "2026-04-25T08:39:44.396Z",
-  "commit_sha": "d29af2c6c0c3d28abdc02a5714691779f12f0796",
+  "tarih": "2026-04-25T09:28:36.688Z",
+  "commit_sha": "9636f93a82a829554213daeb8b8ac190677b074b",
   "commit_ref": "main",
-  "workflow_run": 529,
+  "workflow_run": 530,
   "ozet": {
     "hata": 0,
-    "uyari": 0,
+    "uyari": 1,
     "taranan_dosya": 76,
-    "sorunlu_dosya": 0,
-    "durum": "yesil"
+    "sorunlu_dosya": 1,
+    "durum": "sari"
   },
-  "kurallar": {},
-  "dosyalar": []
+  "kurallar": {
+    "I18N_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "spool_detay.html",
+          "sayi": 1,
+          "satirlar": [
+            2560
+          ]
+        }
+      ]
+    }
+  },
+  "dosyalar": [
+    {
+      "dosya": "spool_detay.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 2560,
+          "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    }
+  ]
 }
