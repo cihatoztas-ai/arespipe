@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-04-25T09:57:33.082Z",
-  "commit_sha": "a60262567aae61dce27fe43123e62d55a6cd6c33",
+  "tarih": "2026-04-25T10:09:19.257Z",
+  "commit_sha": "141b3b94d7bdcbc13465e40589fcd5023fade6ea",
   "commit_ref": "main",
-  "workflow_run": 532,
+  "workflow_run": 533,
   "ozet": {
     "hata": 0,
     "uyari": 3,
@@ -20,8 +20,8 @@
           "dosya": "devre_detay.html",
           "sayi": 2,
           "satirlar": [
-            1888,
-            1904
+            1901,
+            1917
           ]
         },
         {
@@ -43,13 +43,13 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1888,
+          "satir": 1901,
           "mesaj": "tv('dv_dok_open') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1904,
+          "satir": 1917,
           "mesaj": "tv('dv_dok_file_required') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
