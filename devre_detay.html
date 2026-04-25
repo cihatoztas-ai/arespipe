@@ -1156,6 +1156,77 @@ async function spoolYukle(){
   }
 }
 
+// D4 — Bu devreye ait KK davetlerini ve sevkiyatları çek + render
+async function kkSevkYukle(){
+  var supa=ARES.supabase&&ARES.supabase();
+  if(!supa) return;
+  var spoolIds=SPOOLS.filter(function(s){return s.supaId;}).map(function(s){return s.supaId;});
+  if(!spoolIds.length){ _kkRender([]); _sevkRender([]); return; }
+
+  // KK: kk_davet_spooller'dan davet_id'leri bul → kk_davetler master'ı çek
+  try{
+    var kk1=await supa.from('kk_davet_spooller').select('davet_id').in('spool_id',spoolIds);
+    var davetIds=Array.from(new Set((kk1.data||[]).map(function(r){return r.davet_id;}).filter(Boolean)));
+    var kkDavetler=[];
+    if(davetIds.length){
+      var kk2=await supa.from('kk_davetler')
+        .select('id,davet_no,tarih,durum,not_,kk_davet_spooller(spool_id,sonuc,spooller(spool_no))')
+        .in('id',davetIds).order('tarih',{ascending:false});
+      kkDavetler=kk2.data||[];
+    }
+    _kkRender(kkDavetler);
+  }catch(e){console.warn('kkSevkYukle/kk:',e); _kkRender([]);}
+
+  // Sevk: sevkiyat_spooller'dan sevkiyat_id'leri bul → sevkiyatlar master'ı çek
+  try{
+    var sv1=await supa.from('sevkiyat_spooller').select('sevkiyat_id').in('spool_id',spoolIds);
+    var sevkIds=Array.from(new Set((sv1.data||[]).map(function(r){return r.sevkiyat_id;}).filter(Boolean)));
+    var sevkler=[];
+    if(sevkIds.length){
+      var sv2=await supa.from('sevkiyatlar')
+        .select('id,sevk_no,tarih,tip,not_,sevkiyat_spooller(spool_id,spooller(spool_no))')
+        .in('id',sevkIds).order('tarih',{ascending:false});
+      sevkler=sv2.data||[];
+    }
+    _sevkRender(sevkler);
+  }catch(e){console.warn('kkSevkYukle/sevk:',e); _sevkRender([]);}
+}
+
+function _kkRender(list){
+  var el=document.getElementById('kkListe'); if(!el) return;
+  if(!list.length){ el.textContent=tv('dv_no_kk','Henüz KK daveti oluşturulmamış'); el.style.color='var(--txd)'; return; }
+  el.style.color='var(--tx)';
+  el.innerHTML=list.map(function(d){
+    var spools=(d.kk_davet_spooller||[]).map(function(x){return (x.spooller&&x.spooller.spool_no)||'—';}).join(', ');
+    var dRenk=d.durum==='tamamlandi'?'var(--gr)':d.durum==='reddedildi'?'var(--re)':'var(--warn)';
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--bor);">'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+      +'<strong style="color:var(--leg);">'+esc(d.davet_no||'—')+'</strong>'
+      +'<span style="color:var(--txd);">'+esc(d.tarih||'')+'</span>'
+      +'<span style="background:'+dRenk+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">'+esc(d.durum||'—')+'</span>'
+      +'</div>'
+      +'<div style="color:var(--txm);font-size:12px;margin-top:2px;">'+(list.length?'('+(d.kk_davet_spooller||[]).length+' spool) '+esc(spools):'')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function _sevkRender(list){
+  var el=document.getElementById('sevkListe'); if(!el) return;
+  if(!list.length){ el.textContent=tv('dv_no_sevk','Henüz sevkiyat gönderilmemiş'); el.style.color='var(--txd)'; return; }
+  el.style.color='var(--tx)';
+  el.innerHTML=list.map(function(d){
+    var spools=(d.sevkiyat_spooller||[]).map(function(x){return (x.spooller&&x.spooller.spool_no)||'—';}).join(', ');
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--bor);">'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+      +'<strong style="color:var(--ac);">'+esc(d.sevk_no||'—')+'</strong>'
+      +'<span style="color:var(--txd);">'+esc(d.tarih||'')+'</span>'
+      +'<span style="background:var(--ac);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">'+esc(d.tip||'—')+'</span>'
+      +'</div>'
+      +'<div style="color:var(--txm);font-size:12px;margin-top:2px;">'+'('+(d.sevkiyat_spooller||[]).length+' spool) '+esc(spools)+'</div>'
+      +'</div>';
+  }).join('');
+}
+
 function _spoolMap(s,i){
   // Basamak sırası: önce DB'den yüklenen _basamakSirasi, yoksa snapshot, yoksa hardcoded
   var stgList = _basamakSirasi.length ? _basamakSirasi
@@ -1617,6 +1688,7 @@ async function gonderKaydet(){
   }
   logEkle(_gonderTip==='kk'?'kk_daveti':'sevkiyata_gonderildi',secili.map(function(s){return s.spoolNo;}).join(', ')+' → '+hedef);
   showToast(secili.length+' '+tv('dv_unit_spool','spool')+' '+hedef+' '+tv('dv_added_to_list','listesine eklendi'),'success');
+  kkSevkYukle();
 }
 
 // ── TERSANESİ İŞ EMRİ + TERMİN
@@ -2259,6 +2331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         await spoolYukle();
         renderTable();
         statGuncelle();
+        kkSevkYukle();
       } else {
         renderTable();
         statGuncelle();
@@ -2273,13 +2346,13 @@ document.addEventListener('DOMContentLoaded', function() {
       window.addEventListener('pageshow', function(e){
         if(e.persisted && _supa()){
           _basamakMapYukle().then(function(){
-            spoolYukle().then(function(){ renderTable(); statGuncelle(); });
+            spoolYukle().then(function(){ renderTable(); statGuncelle(); kkSevkYukle(); });
           });
         }
       });
       document.addEventListener('visibilitychange', function(){
         if(document.visibilityState === 'visible' && _supa()){
-          spoolYukle().then(function(){ renderTable(); statGuncelle(); });
+          spoolYukle().then(function(){ renderTable(); statGuncelle(); kkSevkYukle(); });
         }
       });
     } catch(e) { console.error('[ARES]', e); }
