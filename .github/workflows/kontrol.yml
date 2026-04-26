@@ -50,11 +50,35 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "✓ Rapor değişmedi, commit yapılmadı."
-          else
-            git commit -m "chore(ci): ci-son-rapor.json güncelle [skip ci]"
-            git push
-            echo "✓ Rapor commit'lendi."
+            exit 0
           fi
+
+          git commit -m "chore(ci): ci-son-rapor.json güncelle [skip ci]"
+
+          # Push retry — paralel workflow'lar (örn. docs-uret) aynı anda push ederse
+          # remote ileri kayar ve "cannot lock ref" hatası alırız. Rebase + retry ile çözülür.
+          MAX_DENEME=5
+          for i in $(seq 1 $MAX_DENEME); do
+            if git push 2>&1; then
+              echo "✓ Rapor commit'lendi (deneme $i)."
+              exit 0
+            fi
+
+            echo "⚠  Push reddedildi (deneme $i/$MAX_DENEME) — rebase + tekrar dene."
+
+            # Remote'taki yeni commit'leri çek, kendi commit'imizi tepeye taşı.
+            # ci-son-rapor.json sadece bu workflow tarafından yazılıyor, çakışma olmaz.
+            if ! git pull --rebase --autostash origin main; then
+              echo "::error::Rebase başarısız — manuel müdahale gerek."
+              exit 1
+            fi
+
+            # Kısa bekleme — diğer workflow'a yer ver
+            sleep $((i * 2))
+          done
+
+          echo "::error::Push $MAX_DENEME denemeden sonra hâlâ başarısız."
+          exit 1
 
       - name: Özet kartı (GitHub Actions run sayfası)
         if: always()
