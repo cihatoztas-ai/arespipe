@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-04-26T18:00:10.646Z",
-  "commit_sha": "b8e5d3d1c383523dd0aa655006e03debe2fa2d2b",
+  "tarih": "2026-04-26T18:20:13.673Z",
+  "commit_sha": "433f9711019a2cb8f29cb0289d235c6f7897b1c3",
   "commit_ref": "main",
-  "workflow_run": 549,
+  "workflow_run": 550,
   "ozet": {
     "hata": 0,
     "uyari": 6,
@@ -36,8 +36,8 @@
           "satirlar": [
             1188,
             1756,
-            2060,
-            2076
+            2062,
+            2078
           ]
         },
         {
@@ -77,13 +77,13 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2060,
+          "satir": 2062,
           "mesaj": "tv('dv_dok_open') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2076,
+          "satir": 2078,
           "mesaj": "tv('dv_dok_file_required') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
