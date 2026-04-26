@@ -99,7 +99,7 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 3 endpoint. Son güncelleme: 2026-04-25.
+> Toplam 3 endpoint. Son güncelleme: 2026-04-26.
 
 - **`api/dosya-url-al.js`** — Supabase Storage dosyaları için signed URL üretir — _Yetki: JWT'den tenant_id okunur, yol ile eşleşmeli (cross-tenant bloklanır)_
 - **`api/izometri-oku.js`** — PDF izometri → Claude API → spool listesi JSON — _API key frontend'e asla gitmez_
