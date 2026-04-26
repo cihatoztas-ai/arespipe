@@ -520,7 +520,7 @@ tr.sk-row:hover td{background:transparent !important;}
     <button class="btn" onclick="spoolMalzExcel()" data-i18n="dv_excel_btn">📥 Excel</button>
   </div>
   <div style="overflow-x:auto;border:1px solid var(--bor);border-radius:12px;background:var(--sur);margin-bottom:24px;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead>
         <tr style="background:var(--sur2);">
           <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--txd);border-bottom:1px solid var(--bor);" data-i18n="dv_mat_col_spool">Spool</th>
@@ -1868,7 +1868,7 @@ async function spoolMalzYukle(){
   });
   var gl=Object.values(grupler).sort(function(a,b){return(a.dis_cap_mm||0)-(b.dis_cap_mm||0)||(a.tanim||'').localeCompare(b.tanim||'');});
   var topAg=gl.reduce(function(s,g){return s+g.agirlik;},0);
-  if(badge)badge.textContent=gl.length+' '+tv('dv_unit_item','kalem')+' · '+topAg.toFixed(1).replace('.',',')+' kg';
+  if(badge){badge.classList.remove('sk','sk-num','sk-bar','sk-info');badge.textContent=gl.length+' '+tv('dv_unit_item','kalem')+' · '+topAg.toFixed(1).replace('.',',')+' kg';}
   if(!gl.length){if(tbody)tbody.innerHTML='<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--txd);">'+tv('dv_no_mat','Malzeme yok')+'</td></tr>';return;}
   if(tbody)tbody.innerHTML=gl.map(function(g,i){
     var ci=i<10?i:10;
@@ -1906,6 +1906,7 @@ async function plMalzYukle(){
 }
 function plMalzRender(){
   var el=document.getElementById('plMalzListesi');var bos=document.getElementById('plMalzBos');var badge=document.getElementById('plMalzBadge');if(!el)return;
+  if(badge)badge.classList.remove('sk','sk-num','sk-bar','sk-info');
   if(!PL_MALZEME.length){el.innerHTML='';if(bos)bos.style.display='block';if(badge)badge.textContent='';return;}
   if(bos)bos.style.display='none';
   var topK=PL_MALZEME.reduce(function(s,p){return s+p.malzemeler.length;},0);
@@ -1913,7 +1914,8 @@ function plMalzRender(){
   el.innerHTML=PL_MALZEME.map(function(p,pi){
     var sp=SPOOLS.filter(function(s){return s.pipeline===p.pipeline_no;}).map(function(s){return s.spoolNo;});
     var rows=p.malzemeler.map(function(m,i){
-      return'<tr><td style="color:var(--txd);">'+(i+1)+'</td>'
+      var ci=i<10?i:10;
+      return'<tr data-ci="'+ci+'"><td style="color:var(--txd);">'+(i+1)+'</td>'
         +'<td>'+esc(m.kod||'—')+'</td>'
         +'<td>'+esc(m.tanim||'—')+'</td><td>'+_matBadge(m.malzeme)+'</td>'
         +'<td style="color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kalite)||m.kalite||'—'):(m.kalite||'—'))+'</td>'
@@ -1933,7 +1935,7 @@ function plMalzRender(){
       +'</div>'
       +'<button class="btn btn-primary" style="height:26px;font-size:12px;" onclick="event.stopPropagation();plSatirEkle(\''+esc(p.pipeline_no)+'\')">+ '+tv('sp_add_btn','Malzeme')+'</button>'
       +'</div>'
-      +'<div class="pl-body"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      +'<div class="pl-body"><div style="overflow-x:auto;"><table class="data-table" style="width:100%;border-collapse:collapse;font-size:13px;">'
       +'<thead><tr style="background:var(--sur2);">'
       +'<th style="padding:7px 12px;color:var(--txd);">#</th>'
       +'<th style="padding:7px 12px;color:var(--txd);" data-i18n="dv_mat_col_code">Kod</th>'
@@ -2211,7 +2213,7 @@ function renderIslemler(){
   if(devreId&&typeof ARES!=='undefined'&&typeof ARES.loguGetir==='function'){
     ARES.loguGetir({devreId:devreId}, 50).then(function(kayitlar){
       kayitlar=kayitlar||[];
-      var badge=document.getElementById('islemBadge');if(badge)badge.textContent=kayitlar.length+' '+tv('dv_records','kayıt');
+      var badge=document.getElementById('islemBadge');if(badge){badge.classList.remove('sk','sk-num','sk-bar','sk-info');badge.textContent=kayitlar.length+' '+tv('dv_records','kayıt');}
       if(!kayitlar.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:20px;">'+tv('sp_no_logs','İşlem kaydı yok')+'</td></tr>';return;}
       tbody.innerHTML=kayitlar.map(function(k,i){
         var ci=i<10?i:10;
@@ -2229,7 +2231,7 @@ function renderIslemler(){
   }
   // localStorage fallback
   var log=[];try{log=JSON.parse(localStorage.getItem('ares_dv_log_'+devreId)||'[]');}catch(e){}
-  var badge2=document.getElementById('islemBadge');if(badge2)badge2.textContent=log.length+' '+tv('dv_records','kayıt');
+  var badge2=document.getElementById('islemBadge');if(badge2){badge2.classList.remove('sk','sk-num','sk-bar','sk-info');badge2.textContent=log.length+' '+tv('dv_records','kayıt');}
   if(!log.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--txd);padding:20px;">'+tv('sp_no_logs','İşlem kaydı yok')+'</td></tr>';return;}
   tbody.innerHTML=log.map(function(k,i){var ci=i<10?i:10;var cfg=TIPL[k.tip]||{renk:'var(--txd)',lbl:k.tip};return'<tr data-ci="'+ci+'" style="'+(i%2?'background:rgba(255,255,255,.01)':'')+'"><td style="color:var(--txd);font-size:12px;white-space:nowrap;">'+esc(k.tarih)+'</td><td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:'+cfg.renk+';display:inline-block;"></span><strong style="color:'+cfg.renk+';">'+esc(cfg.lbl)+'</strong></span></td><td style="color:var(--txm);font-size:12px;">'+esc(k.kullanici||'')+'</td><td style="color:var(--txm);font-size:12px;">'+esc(k.ac||'')+'</td></tr>';}).join('');
 }
