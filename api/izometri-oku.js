@@ -220,9 +220,9 @@ async function batchOlustur({ tenant_id, kullanici_id, dosya_adi, dosya_toplami 
     body: {
       tenant_id, kullanici_id,
       dosya_sayisi: dosya_toplami,
-      dosyalar: [{ ad: dosya_adi, sira: 1, durum: 'isleniyor' }],
+      dosyalar: [{ ad: dosya_adi, sira: 1, durum: 'parse_ediliyor' }],
       format_durumu: 'taraniyor',
-      durum: 'isleniyor',
+      durum: 'parse_ediliyor',
       baslangic_at: new Date().toISOString(),
     },
   });
@@ -234,7 +234,7 @@ async function batchDosyaEkle({ batch_id, dosya_adi }) {
   const mevcut = await supaFetch(`izometri_batch_kayitlari?id=eq.${batch_id}&select=dosyalar`);
   const dosyalar = mevcut?.[0]?.dosyalar || [];
   const yeniSira = dosyalar.length + 1;
-  dosyalar.push({ ad: dosya_adi, sira: yeniSira, durum: 'isleniyor' });
+  dosyalar.push({ ad: dosya_adi, sira: yeniSira, durum: 'parse_ediliyor' });
 
   await supaFetch(`izometri_batch_kayitlari?id=eq.${batch_id}`, {
     method: 'PATCH',
@@ -272,14 +272,16 @@ async function batchSonucBirlestir({ batch_id, yeni_spoollar, format_id, dosya_a
 
   if (format_id && row.format_durumu === 'taraniyor') {
     guncelleme.format_id = format_id;
-    guncelleme.format_durumu = 'tanindi';
+    guncelleme.format_durumu = 'taninan';
   }
 
   if (sonDosyaMi) {
-    guncelleme.durum = 'tamamlandi';
+    // Toplam manuel onay sayisina gore durum karari
+    const toplamManuelOnay = (row.manuel_onay_sayisi || 0) + yeniManuelOnay;
+    guncelleme.durum = toplamManuelOnay > 0 ? 'manuel_onay_bekliyor' : 'tamamlandi';
     guncelleme.bitis_at = new Date().toISOString();
     if (row.format_durumu === 'taraniyor' && !format_id) {
-      guncelleme.format_durumu = 'yeni_format';
+      guncelleme.format_durumu = 'bilinmeyen';
     }
   }
 
