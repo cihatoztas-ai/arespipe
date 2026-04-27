@@ -114,14 +114,37 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .spool-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--bor);}
 
 /* Malzeme listesi (BOM) */
-.bom-baslik{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txd);margin:14px 0 8px;}
-.bom-tablo{width:100%;border-collapse:collapse;font-size:12px;background:var(--sur2);border-radius:8px;overflow:hidden;margin-bottom:14px;}
-.bom-tablo th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bor);}
-.bom-tablo td{padding:7px 10px;border-bottom:1px solid var(--bor);color:var(--tx);}
+/* Malzeme listesi (BOM) — spool_detay.html paterninden uyarlandi (38) */
+.bom-baslik{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txd);margin:14px 0 8px;display:flex;align-items:center;gap:8px;}
+.bom-baslik .bom-cnt{background:var(--sur2);padding:2px 8px;border-radius:10px;font-size:11px;color:var(--txm);}
+.bom-tablo{width:100%;border-collapse:collapse;font-size:12px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.bom-tablo th{text-align:left;padding:9px 10px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bor);background:var(--sur2);white-space:nowrap;}
+.bom-tablo td{padding:8px 10px;border-bottom:1px solid var(--bor);color:var(--tx);vertical-align:middle;}
 .bom-tablo tr:last-child td{border-bottom:none;}
-.bom-kat{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(45,142,255,.12);color:var(--ac);}
+.bom-tablo tr:hover td{background:var(--sur2);}
+.bom-tablo .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.bom-tablo .center{text-align:center;}
+.bom-tablo .kod{font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:var(--txm);}
+.bom-tablo .acikl{min-width:200px;}
+.bom-kat{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(45,142,255,.12);color:var(--ac);white-space:nowrap;}
 .bom-kat.fit{background:rgba(124,58,237,.12);color:var(--leg);}
 .bom-kat.flg{background:rgba(217,119,6,.12);color:var(--warn);}
+.bom-kalite{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;background:var(--sur2);border:1px solid var(--bor);font-size:11px;color:var(--ac);font-weight:600;}
+/* Sertifika rozeti -- 3.1 mavi, 3.2 turuncu (daha sıkı), PMI yeşil */
+.bom-sert{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;}
+.bom-sert.s31{background:rgba(45,142,255,.12);color:var(--ac);}
+.bom-sert.s32{background:rgba(217,119,6,.16);color:var(--warn);}
+.bom-sert.pmi{background:rgba(22,163,110,.12);color:var(--gr);}
+/* Ağırlık -- pdf'ten geldiyse normal, hesap/tabloyla doldurulmussa turuncu (altyapı hazır, bugün kullanılmıyor) */
+.bom-agr-hesap{color:var(--warn);font-weight:600;}
+.bom-agr-hesap::after{content:" *";font-size:10px;}
+/* Not -- kısa görünür, uzunsa tooltip */
+.bom-not{color:var(--txm);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;}
+/* Satır sil butonu (b şıkkı) */
+.bom-sil{background:none;border:none;color:var(--txd);font-size:13px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:all .15s;}
+.bom-sil:hover{color:var(--re);background:rgba(229,62,62,.08);}
+/* Boş hücre stili */
+.bom-bos{color:var(--txd);}
 
 /* AI bilgisi */
 .ai-bilgi{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--txd);padding:8px 0 14px;border-bottom:1px solid var(--bor);margin-bottom:14px;}
@@ -507,26 +530,77 @@ function spoolKartHTML(sp, idx){
   }
   if (sp.notlar) aiBilgi += '<span><strong>'+tv('izbi_ai_not','AI notu')+':</strong> '+esc(sp.notlar)+'</span>';
 
-  // BOM tablosu
+  // BOM tablosu — spool_detay.html paterni (38 / sertifika a, sil butonu b)
   var bomBlok = '';
   if (sp.malzeme_listesi && sp.malzeme_listesi.length>0) {
-    bomBlok = '<div class="bom-baslik" data-i18n="izbi_bom_baslik">Malzeme Listesi</div>'
+    bomBlok = '<div class="bom-baslik">'
+      + '  <span data-i18n="izbi_bom_baslik">Malzeme Listesi</span>'
+      + '  <span class="bom-cnt">'+sp.malzeme_listesi.length+' '+tv('izbi_bom_kalem','kalem')+'</span>'
+      + '</div>'
+      + '<div style="overflow-x:auto;">'
       + '<table class="bom-tablo"><thead><tr>'
+      + '<th class="center">#</th>'
+      + '<th data-i18n="izbi_bom_kod">Kod</th>'
       + '<th data-i18n="izbi_bom_kategori">Kategori</th>'
-      + '<th data-i18n="izbi_bom_tanim">Tanım</th>'
-      + '<th data-i18n="izbi_bom_dn">DN</th>'
-      + '<th data-i18n="izbi_bom_miktar">Miktar</th>'
+      + '<th class="acikl" data-i18n="izbi_bom_tanim">Açıklama</th>'
+      + '<th data-i18n="izbi_bom_malzeme">Malzeme</th>'
+      + '<th data-i18n="izbi_bom_kalite">Kalite</th>'
+      + '<th class="num" data-i18n="izbi_bom_dis_cap">Dış Çap</th>'
+      + '<th class="num" data-i18n="izbi_bom_et">Et (mm)</th>'
+      + '<th class="num" data-i18n="izbi_bom_boy">Boy</th>'
+      + '<th class="num" data-i18n="izbi_bom_adet">Adet</th>'
+      + '<th class="num" data-i18n="izbi_bom_agirlik">Ağırlık</th>'
+      + '<th data-i18n="izbi_bom_sertifika">Sertifika</th>'
+      + '<th data-i18n="izbi_bom_not">Not</th>'
+      + '<th class="center"></th>'
       + '</tr></thead><tbody>'
-      + sp.malzeme_listesi.map(function(m){
+      + sp.malzeme_listesi.map(function(m, mi){
           var katClass = m.kategori==='FITTINGS'?'fit':m.kategori==='FLANGES'?'flg':'';
+          // Malzeme normalize -- ARES_NORM helper'i (G-03 zorunlu)
+          var malzemeNorm = (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeEtiket)
+            ? ARES_NORM.malzemeEtiket(m.malzeme || '')
+            : (m.malzeme || '');
+          // Kalite normalize
+          var kaliteNorm = (typeof ARES_NORM!=='undefined' && ARES_NORM.kaliteGoster)
+            ? ARES_NORM.kaliteGoster(m.kalite || '')
+            : (m.kalite || '');
+          // Sertifika rozeti
+          var sertHTML = '<span class="bom-bos">—</span>';
+          if (m.sertifika_tipi) {
+            var sclass = m.sertifika_tipi==='3.1'?'s31':m.sertifika_tipi==='3.2'?'s32':'pmi';
+            sertHTML = '<span class="bom-sert '+sclass+'">'+esc(m.sertifika_tipi)+'</span>';
+          }
+          // Ağırlık -- pdf'ten geldiyse normal, hesap/tabloysa turuncu (altyapı, bugün siyah)
+          var agrHTML;
+          if (m.agirlik_kg!=null) {
+            var agrCls = (m.agirlik_kaynagi && m.agirlik_kaynagi!=='pdf') ? 'bom-agr-hesap' : '';
+            agrHTML = '<span class="'+agrCls+'">'+Number(m.agirlik_kg).toFixed(2)+' kg</span>';
+          } else {
+            agrHTML = '<span class="bom-bos">—</span>';
+          }
+          // Not (kısa metin, uzun ise title=tooltip)
+          var notHTML = m.malzeme_notu
+            ? '<span class="bom-not" title="'+esc(m.malzeme_notu)+'">'+esc(m.malzeme_notu)+'</span>'
+            : '<span class="bom-bos">—</span>';
+
           return '<tr>'
+            + '<td class="center num">'+(mi+1)+'</td>'
+            + '<td class="kod">'+esc(m.kod || '—')+'</td>'
             + '<td><span class="bom-kat '+katClass+'">'+esc(m.kategori||'?')+'</span></td>'
-            + '<td>'+esc(m.tanim||'')+'</td>'
-            + '<td>'+(m.dn||'-')+'</td>'
-            + '<td>'+esc(m.miktar||'-')+'</td>'
+            + '<td class="acikl">'+esc(m.tanim||'')+'</td>'
+            + '<td>'+esc(malzemeNorm) || '<span class="bom-bos">—</span>'+'</td>'
+            + '<td>'+(m.kalite ? '<span class="bom-kalite">'+esc(kaliteNorm)+'</span>' : '<span class="bom-bos">—</span>')+'</td>'
+            + '<td class="num">'+(m.dis_cap_mm!=null ? Number(m.dis_cap_mm).toFixed(1)+' mm' : (m.dn ? 'DN'+m.dn : '<span class="bom-bos">—</span>'))+'</td>'
+            + '<td class="num">'+(m.et_mm!=null ? Number(m.et_mm).toFixed(1) : '<span class="bom-bos">—</span>')+'</td>'
+            + '<td class="num">'+(m.boy_mm!=null ? Number(m.boy_mm).toFixed(0)+' mm' : '<span class="bom-bos">—</span>')+'</td>'
+            + '<td class="num">'+(m.adet!=null ? esc(String(m.adet)) : (m.miktar ? esc(m.miktar) : '<span class="bom-bos">—</span>'))+'</td>'
+            + '<td class="num">'+agrHTML+'</td>'
+            + '<td>'+sertHTML+'</td>'
+            + '<td>'+notHTML+'</td>'
+            + '<td class="center"><button class="bom-sil" onclick="bomSil('+idx+','+mi+')" title="'+tv('izbi_bom_sil','Bu satırı sil')+'">✕</button></td>'
             + '</tr>';
         }).join('')
-      + '</tbody></table>';
+      + '</tbody></table></div>';
   }
 
   // Aksiyon butonları
@@ -655,6 +729,25 @@ async function spoolGeriAl(idx){
   await batchPatchSonuc();
   render();
   toast(tv('izbi_geri_al_ok','Reddet geri alındı'),'s');
+}
+
+// BOM satır sil (38 -- b şıkkı)
+async function bomSil(spoolIdx, malzemeIdx){
+  if (!SPOOLLAR[spoolIdx] || !SPOOLLAR[spoolIdx].malzeme_listesi) return;
+  var bom = SPOOLLAR[spoolIdx].malzeme_listesi;
+  if (malzemeIdx<0 || malzemeIdx>=bom.length) return;
+  var silinen = bom[malzemeIdx];
+  if (!confirm(tv('izbi_bom_sil_onay','Bu malzeme satırı silinsin mi?')+'\n\n'+(silinen.kod||'#'+(malzemeIdx+1))+': '+(silinen.tanim||''))) return;
+  bom.splice(malzemeIdx, 1);
+  SPOOLLAR[spoolIdx]._duzenlendi = true;
+  await batchPatchSonuc();
+  render();
+  // Açık olan kartı tekrar aç (render kapattı olabilir)
+  setTimeout(function(){
+    var k = $('#spoolKart_'+spoolIdx);
+    if (k) k.classList.add('open');
+  }, 50);
+  toast(tv('izbi_bom_sil_ok','Malzeme satırı silindi'),'s');
 }
 
 // =========================================================
