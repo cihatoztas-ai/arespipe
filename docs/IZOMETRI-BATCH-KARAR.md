@@ -1,16 +1,51 @@
 # İzometri Batch — Mimari Karar Dokümanı
 
-> **Tarih:** 26 Nisan 2026 — 34. oturum (tasarım + Ekran 1 frontend)
-> **Statü:** Mimari kararlar tamam. Ekran 1 frontend iskeleti yazıldı (demo modu). Backend + Ekran 2-3 sonraki oturumlarda.
+> **İlk yazım:** 26 Nisan 2026 — 34. oturum (tasarım + Ekran 1 frontend)
+> **Son güncelleme:** 27 Nisan 2026 — 36. oturum (mimari sağlamlaştırma + halüsinasyon koruması)
+> **Statü:** Mimari kararlar net. K6 (34) iptal edildi → K5 (36) ile değiştirildi. K11-K14 (36) eklendi. Ekran 1 frontend iskeleti yazıldı (demo modu). Backend + Ekran 2-3 sonraki oturumlarda.
 > **Bağlantılı:** `docs/IZOMETRI-BATCH-NOTLARI.md` (brief, bu doküman onun üstüne inşa edildi)
+
+---
+
+## ⚠ 36. Oturum Güncellemeleri — Önce Oku
+
+37. oturum açılışında bu bölüm okunur. Eski Karar 1-10 hâlâ geçerli, ama 4 önemli değişiklik var:
+
+### Değişen Karar
+
+- **K6 (34) — İPTAL.** Eski karar: *"Mevcut `izometri-oku.js` refactor edilir, atılmaz."*
+  - **Sebep:** 36'da Cihat *"deneme için yapılmıştı, sıfırdan yazıp devam edelim"* dedi.
+  - **Yeni K5 (36)** geçerli: izometri-oku.js sıfırdan yazılır.
+
+### Yeni Kararlar (36'da alındı)
+
+- **K1 (36) — 8 maddeli sağlam mimari** (boru standartları): tablo adlandırma + standart sözlüğü + NPS↔DN eşleme + schedule iki kolona ayrıldı + tolerans alanları + edisyon takibi + hesaplı kolonlar + hub içeriği.
+- **K2 (36) — Çok-standart genişleme stratejisi:** 12 standart sözlüğü (4 aktif + 8 hazır tanım). Yeni standart eklemek = SQL INSERT, kod değişikliği yok.
+- **K3 (36) — Halüsinasyon koruması:** AI'ın PDF okurken uydurması (Cihat'ın PAOR örneğindeki gibi: "52900-101540" yerine "50600-101358") DB seviyesinde tespit edilir. 7 maddeli şüpheli satır kriterleri.
+- **K4 (36) — Yaklaşım Y:** AI'a "uydurma" demek yetersiz. Yapı: AI sadece **yazılı olanı okur**, hesaplama kod tarafında. Et/cap/ağırlık önce PDF'ten, yoksa `boru_olculer`'dan, yoksa manuel onay.
+- **K5 (36) — Eski `izometri-oku.js` atılır:** K6 (34) iptal. Pilot AVEVA-PAOR satırı `parser_kural` BOŞ olarak DB'de duruyor — 37'de Format Kaydet ile dolacak.
+
+### 7 Maddeli Şüpheli Satır Kriterleri (K3 detayı)
+
+1. DN bulunamadı (zorunlu alan boş)
+2. Çap-DN tutarsız (`boru_olculer` tablosunda eşleşmiyor)
+3. Et kalınlığı tolerans dışı (`et_min` ≤ pdf_et ≤ `et_max` sınırı)
+4. Boy negatif veya saçma (>50000 mm)
+5. **Pipeline_no formatı dosya adıyla uyuşmuyor** (HALÜSİNASYON KORUMASI — kritik)
+6. AI güven skoru düşük (<70%)
+7. Malzeme bilinmeyen (sözlükte yok)
+
+DB kolon: `izometri_batch_kayitlari.dogrulama_uyarilari JSONB` — spool başına liste tutulur.
 
 ---
 
 ## Bağlam
 
-İzometri PDF batch parser — farklı CAD program çıktılarını (AVEVA E3D, CAESAR II, Smart 3D, vb.) AresPipe sistemine otomatik çevirme özelliği. Mevcut yarım altyapı (`api/izometri-oku.js` + `izometri-batch.html`) tek formata kilitli (PAOR/AVEVA), 502 hatası veriyor. Bu doküman sıfırdan doğru mimariyi yazıya döker.
+İzometri PDF batch parser — farklı CAD program çıktılarını (AVEVA E3D, CAESAR II, Smart 3D, vb.) AresPipe sistemine otomatik çevirme özelliği. Mevcut yarım altyapı (`api/izometri-oku.js` + `izometri-batch.html`) tek formata kilitli (PAOR/AVEVA), 502 hatası vermiyor ama **yanlış sonuç üretiyor** (36'da Cihat keşfetti — AI uydurma davranışı). Bu doküman sıfırdan doğru mimariyi yazıya döker.
 
 **34. oturum disiplini:** Brief'in Madde 18'i gereği oturum tasarım oturumu olarak başladı. Cihat'ın açık talimatıyla son aşamada Ekran 1 frontend yazımına geçildi. Backend ve Ekran 2-3 sonraki oturumlara bırakıldı.
+
+**36. oturum disiplini:** Mimari sağlamlaştırma. 8 madde tespit, DB altyapısı kuruldu (3+3 = 6 yeni tablo). Kod yazımı 37'ye bilinçli erteleme.
 
 ---
 
@@ -65,7 +100,7 @@
 
 **Sebep:** Cihat hacmi henüz bilmiyor (*"sistem hayata geçince göreceğiz"*). Konservatif başla, sistem ölçsün, 3 ay sonra eşik gerçek kullanıma göre ayarlansın.
 
-**Maliyet/teknik göstergeler kullanıcı sayfasında YOK** — Cihat kararı: `admin/panel.html`'e yeni "AI API Kullanım" sekmesi eklenecek (39+ oturumda mockup).
+**Maliyet/teknik göstergeler kullanıcı sayfasında YOK** — Cihat kararı: `admin/panel.html`'e yeni "AI API Kullanım" sekmesi eklenecek (40+ oturumda mockup).
 
 ---
 
@@ -76,24 +111,20 @@
 **Reddedilen alternatif:** A2 (hardcoded başla, sonra refactor) — Cihat sağlamlığı hıza tercih etti.
 
 **Sonuç:**
-- **35. oturum:** ASME Lookup tam sistemi (DB tablosu, helper'lar, kapsamlı veri seti)
-- **36. oturum:** İzometri batch backend (DB tabloları, dispatcher, parser engine) + Ekran 2 (manuel onay) UI
-- **37+:** Ekran 3 (Format Kaydet) + diğer parçalar
+- **35. oturum:** ASME Lookup tam sistemi (DB tablosu, helper'lar, 358 satır veri) ✅
+- **36. oturum:** Mimari sağlamlaştırma (8 madde — K1/36) + İzometri Batch DB altyapısı ✅
+- **37. oturum:** Backend dispatcher (sıfırdan, K5/36) + Ekran 2 (manuel onay)
+- **38+:** Ekran 3 (Format Kaydet) + diğer parçalar
 
 ---
 
-## Karar 6 — Mevcut `izometri-oku.js`: Refactor edilir, atılmaz
+## Karar 6 — ⚠ İPTAL EDİLDİ (36'da)
 
-**Seçim:** Mevcut kod boşa atılmaz. Şu şekilde dönüştürülür:
-
-| Mevcut kod parçası | Yeni yer |
-|---|---|
-| Sistem prompt'u (DIN, ST37, FABRICATION/ERECTION ayrımı, DN→mm dönüşüm) | `izometri_format_tanimlari` tablosunda **AVEVA-E3D pilot satırının** `prompt_template` alanına geçer |
-| `pipeline_no` parsing kuralı (`11D-PAOR-50600-101540`) | Aynı satırın `parser_kural` JSONB alanına regex olarak |
-| API call infrastructure, hata yönetimi, base64 decoding | Sabit kod kalır (yeni dispatcher'ın altyapısı olur) |
-| 502 hatası | Yeni mimaride debug + timeout artırma + chunking ile çözülür |
-
-**Bonus:** AVEVA-PAOR formatı sistemin **ilk DB kaydı** olur — pilot, sıfırdan başlamıyoruz.
+> **Eski karar (34):** Mevcut `izometri-oku.js` refactor edilir, atılmaz. Sistem prompt'u DB'ye taşınır.
+>
+> **İPTAL nedeni (36):** Cihat *"mevcuttaki izometri-oku dosyası deneme için yapılmıştı, bunu düzeltmeye uğraşmayalım. Sıfırdan yazıp devam edelim"* dedi.
+>
+> **Yerine geçen:** **K5 (36)** — Yeni `api/izometri-oku.js` sıfırdan yazılır. Pilot AVEVA-PAOR satırı `parser_kural` BOŞ olarak DB'de durur, 37'de Format Kaydet ile dolacak.
 
 ---
 
@@ -112,8 +143,6 @@
 **Mimari etki:** Drop zone, batch sonuç ekranı, manuel onay ekranı **değişmez**. Yalnızca Ekran 3 (Format Kaydet) Excel upload alanı içerir.
 
 **Sebep:** Cihat'ın araştırması — IFS kullanan firmalarda Excel var (~%50), diğerlerinde yok. Sürekli çift kaynak modu yerine tek seferlik eğitim modu yeterli.
-
-**Veri kanıtı:** Yüklenen IFS Excel örneği `All` sheet'inde Pipeline No, SpoolNo, Description, Dimensions, Length, Weight (Kg), Material kesin değerler içeriyor — ground truth olmaya uygun.
 
 ---
 
@@ -150,8 +179,6 @@
 
 Her biri ayrı satır. `fingerprint` JSONB'si o şablonun tanıma kurallarını tutar. Parser dispatcher uygun olanı eşleştirir.
 
-**Brief'te netleştirilmemişti** — KARAR.md'de açıkça yazıldı.
-
 ---
 
 ## Karar 10 — Format Tanıtma: B + C Kombinasyonu
@@ -187,7 +214,181 @@ Her biri ayrı satır. `fingerprint` JSONB'si o şablonun tanıma kurallarını 
 - **C tek başına**: canvas drawing yeterli geliştirme süresi yok
 - **B tek başına**: AI yanlış öneri yaparsa düzeltme mekanizması olmaz
 
-**Geliştirme önceliği:** B önce (37. oturum), C sonra (38. oturum).
+**Geliştirme önceliği:** B önce (38. oturum), C sonra (39. oturum).
+
+---
+
+## Karar 11 (36) — 8 Maddeli Sağlam Boru Standart Mimarisi
+
+**Cihat'ın kritik sorusu:** *"Bu standartlar programın can damarı olacak, sistemi tam anlamıyla doğru kurmak için şu an eksik yaptığımız bir şey varsa düzeltelim."*
+
+**Tespit edilen 8 eksik (36'da çözüldü):**
+
+1. **Tablo adlandırma:** Boru ölçüleri için `boru_olculer`. Fitting/flanş için ayrı tablolar (37-38'de).
+2. **Standart sözlüğü zenginliği:** `olcu_sistemi` (metric/imperial/hybrid), `dn_sistemi` (DN/NPS/NB/NS), `materyal_kodu_listesi` JSONB. PDF'te "P235GH" geçerse → DIN/EN olduğu sözlükten anlaşılır.
+3. **NPS↔DN eşleme ayrı tabloda** (`boru_dn_isim_eslesme`): standart bazlı, hardcoded değil. ASME için 171 satır eklendi.
+4. **Schedule iki kolona ayrıldı:** `schedule_tipi` (SCH/PN/BAR/GRADE/CLASS) + `schedule_deger`. Görüntüleme için `schedule_kod` (örn. 'SCH40', '20bar', 'PN16').
+5. **Tolerans alanları:** `tolerans_et_yuzde` (default ±%12.5 ASME pratiği), `et_min_mm` ve `et_max_mm` GENERATED kolonlar.
+6. **Edisyon takibi:** `edisyon_yili`, `gecerlilik_basla`, `gecerlilik_bitis`. Eski/yeni edisyon farkları için kritik.
+7. **Hesaplı kolonlar GENERATED:** `ic_cap_mm`, `hacim_l_m`, `yuzey_alan_dis_m2_m`. Helper'da değil veride. Hub sayfasında SEO için zenginleştirilmiş.
+8. **Hub içeriği hazır:** `slug`, `aciklama_tr`, `aciklama_en`, `kullanim_sektor`. Yeni site açılınca SEO/lead gen sıfır iş.
+
+**Sonuç:** 358 satır boru ölçüsü + 12 standart sözlüğü + 171 NPS eşleme. Eski `asme_borular` ve `cuni_borular` tabloları korundu (35 helper'ı kırılmasın), 37-38'de helper yeni yapıya taşındıktan sonra silinecek (G-10).
+
+---
+
+## Karar 12 (36) — Çok-Standart Genişleme Stratejisi
+
+**Sebep:** Tersane her türlü gemiye hizmet veriyor. ASME, DIN, JIS, GOST, GB/T standartları sürekli karşılaşılır.
+
+**Çözüm:** Sözlüğe **önceden tanım** eklendi (veri yok ama PDF'te tanınır).
+
+**Aktif (veri yüklü):** 4 standart
+- ASME-B36.10M (karbon, 214 satır)
+- ASME-B36.19M (paslanmaz, 70 satır)
+- ASTM-B241 (alüminyum, 50 satır)
+- EEMUA-144 (cunife, 24 satır)
+
+**Hazır tanım (veri yok):** 8 standart
+- DIN-2448, EN-10220, JIS-G3452, JIS-G3454, GOST-3262, GOST-8732, GB/T-3091, GB/T-8163
+
+**Yeni standart eklemek:**
+```sql
+-- 1. Veri ekle
+INSERT INTO boru_olculer (standart, malzeme_grubu, dn, ...) VALUES ('JIS-G3452', ...);
+-- 2. Sözlükte aktif et
+UPDATE boru_standart_sozluk SET veri_var = true WHERE standart = 'JIS-G3452';
+```
+
+Kod değişikliği yok. PDF'te "JIS G3452" geçerse sistem tanır, doğru tabloyu sorgular.
+
+**G-11 defter:** Fitting (~9 standart kombinasyonu) ve flanş (~6) tabloları 37-38 oturumlarında.
+
+---
+
+## Karar 13 (36) — Halüsinasyon Koruması
+
+**Cihat'ın 36'da yaşadığı:** PAOR PDF'ini sisteme verdi, sistem **tamamen uydurma** sonuç döndürdü:
+- Pipeline: gerçek `52900-101540` → uydurma `50600-101358`
+- DN: gerçek 150 → S01 yanlış 100, S02 doğru
+- Boy: gerçek 149/141/379 cut → uydurma 1289/1314
+- Yüzey: gerçek "Galvaniz" → uydurma "Siyah/Asit"
+
+**Kök neden:** Few-shot leakage (prompt'taki örnek JSON'u kopyalamış) + AI'ın PDF'i okurken zorlandığında uydurması.
+
+**Çözüm — DB seviyesinde tespit:**
+
+7 maddeli şüpheli satır kriterleri (`izometri_batch_kayitlari.dogrulama_uyarilari` JSONB):
+1. DN bulunamadı (zorunlu alan boş)
+2. Çap-DN tutarsız (`boru_olculer` sorgusu eşleşmiyor)
+3. Et kalınlığı tolerans dışı (`et_min` ≤ pdf_et ≤ `et_max`)
+4. Boy negatif veya >50000 mm
+5. **Pipeline_no formatı dosya adıyla uyuşmuyor** (kritik — uydurma yakalama)
+6. AI güven skoru <70%
+7. Malzeme bilinmeyen (`materyal_kodu_listesi` sözlüğünde yok)
+
+**Sonuç:** Şüpheli satır manuel onaya düşer. AI uydurması canlıya çıkmaz.
+
+---
+
+## Karar 14 (36) — Yaklaşım Y: AI Sadece Okur, Hesaplama Kod Tarafında
+
+**Reddedilen yaklaşım X:** AI'a "DN, et, çap, ağırlık hepsini çıkar" demek. Sorun: PDF'te yazmayan alanları uyduruyor.
+
+**Yaklaşım Y (kabul):** AI'a "PDF'te ne yazılıysa onu döndür, yazılı değilse NULL yaz, **uydurma**" deriz.
+
+**Akış:**
+```
+AI çıkışı (Yaklaşım Y):
+  pipeline_no, spool_no, dn (sayı), malzeme, kalite_kodu, standart (raw), 
+  schedule_kod (raw), et_mm (PDF'te varsa), boy_mm_listesi, yuzey, rev
+
+Kod tarafı (deterministik):
+  1. PDF'te et_mm varsa onu kullan
+  2. Yoksa boru_olculer sorgu: (standart, malzeme_grubu, dn, schedule) → et/cap/agirlik
+  3. boru_olculer'da yoksa manuel onaya at
+  4. PDF'te yazılı et boru_olculer toleransı dışındaysa şüpheli işaretle (DIN olabilir, ASME tablosu yanlış cevap verir)
+```
+
+**Avantaj:** AI yalan söyleyemiyor (uydurma şansı kapatıldı). 35'te kurduğumuz `boru_olculer` yatırımı devreye girer (Karar 5'in karşılığı).
+
+**Genel prompt şablonu (37'de yazılır):**
+
+```
+Sen bir tersane boru imalat sistemine PDF izometri parse asistanısın.
+
+ÇOK ÖNEMLİ KURAL: PDF'te yazılı olmayan değer için NULL döndür. Tahmin yapma. Uydurma.
+
+Sadece şu alanları çıkar (PDF'te ne yazılıysa, yorum yapma):
+- pipeline_no, spool_no, spool_count
+- dn (sadece sayı: 150, "DN150" değil)
+- malzeme (Karbon Çelik | Paslanmaz Çelik | Alüminyum | Bakır Alaşım | Bilinmeyen)
+- kalite_kodu (raw: ST37, A106-B, 6061, CuNi 90/10 vb.)
+- standart (raw: DIN 2448, ASME B36.10, JIS G3452 — PDF'te ne yazılıysa)
+- schedule_kod (raw: SCH40, 40, STD, PN16, 20bar — null olabilir)
+- et_mm (PDF'te T:X.X yazılıysa al, yazılı değilse NULL)
+- boy_mm_listesi (CUT LENGTH değerleri)
+- yuzey (Galvaniz | Boyalı | Asit | Siyah)
+- rev
+
+ÖRNEK YOK — örnekleri verirsem AI onları kopyalıyor (few-shot leakage). Sadece şema.
+
+Çıktı sadece JSON.
+```
+
+**DIN tablosu eksikliği:** PDF'te "DIN 2448" geçtiğinde tablomuz yok (G-12 defter). Bu durumda PDF'te yazılı et değeri kabul edilir, ASME tablosu sorgu yapılmaz. Şüpheli işaretlenir, manuel onay verir.
+
+---
+
+## DB Şeması (36'da kuruldu — TAM hali)
+
+### Boru standart sistemi (3 tablo, 36'da)
+
+```
+boru_olculer              — 358 satır, 4 standart aktif
+boru_standart_sozluk      — 12 standart (4 aktif + 8 hazır)
+boru_dn_isim_eslesme      — 171 NPS yazımı (ASME ailesi)
+```
+
+Detay: bkz `migrations/004_standart_mimari.sql`
+
+### İzometri batch sistemi (3 tablo, 36'da)
+
+```
+izometri_format_tanimlari — Format kuralları (DB-driven)
+izometri_batch_kayitlari  — Batch yükleme + maliyet + sonuç + manuel onay
+ai_api_log                — Her AI çağrısı (debug + maliyet)
+```
+
+`izometri_format_tanimlari` ana alanları:
+- `id, ad, cad_program, cad_surum, firma_kodu`
+- `parser_kural JSONB` — `{alanlar:[{ad,regex,kaynak}], kolon_mapping:{...}}`
+- `prompt_template TEXT` — L3 Vision için (NULL ise genel prompt)
+- `fingerprint JSONB` — `{pdf_uretici_anahtar, baslik_regex, dosya_adi_regex}`
+- `egitim_kaynagi` — 'vision_only' | 'pdf_excel' (Karar 7)
+- `tenant_id UUID NULL` — NULL = sistem geneli (Karar 2)
+- `aktif, basari_orani, kullanim_sayisi, son_kullanim_at`
+
+`izometri_batch_kayitlari` ana alanları:
+- `tenant_id, kullanici_id, dosya_sayisi, dosyalar JSONB`
+- `format_id, format_durumu` ('taraniyor' | 'taninan' | 'bilinmeyen')
+- `durum` ('yukleniyor' | 'parse_ediliyor' | 'manuel_onay_bekliyor' | 'tamamlandi' | 'iptal' | 'hata')
+- `sonuc_spool_sayisi, manuel_onay_sayisi, onaylanan_sayisi, reddedilen_sayisi`
+- `sonuc_json JSONB, dogrulama_uyarilari JSONB, hata_detay`
+- `ai_cagri_sayisi, toplam_token_input, toplam_token_output, toplam_maliyet_usd`
+- `baslangic_at, bitis_at`
+
+`ai_api_log` ana alanları:
+- `tenant_id, kullanici_id, batch_id, format_id`
+- `kaynak` ('izometri_oku' | 'format_taniyici' | 'b_adim_oneri' | 'genel')
+- `cagri_tipi` ('L1_regex' | 'L2_haiku' | 'L3_vision'), `model`
+- `input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, maliyet_usd, sure_ms`
+- `basarili, http_status, hata_mesaji`
+- `istek_kisaltma, cevap_kisaltma, istek_full JSONB, cevap_full JSONB`
+
+**Pilot kayıt:** AVEVA E3D — Portuguese Navy AOR (PAOR). `parser_kural` ve `prompt_template` BOŞ, `fingerprint` dolu. 37'de Format Kaydet ile dolacak.
+
+Detay: bkz `migrations/005_izometri_batch_tablolari.sql`
 
 ---
 
@@ -196,45 +397,12 @@ Her biri ayrı satır. `fingerprint` JSONB'si o şablonun tanıma kurallarını 
 1. **Yeni PDF gelir** → `izometri-batch.html`'e yüklenir
 2. **Format dispatcher** `izometri_format_tanimlari`'ndaki tanıma kurallarını eşleştirir (PDF metadata, başlık paterni, ilk sayfa metni)
 3. **Eşleşme YOK** → otomatik **L3 — Vision AI** devreye girer (Claude API). Maliyet doğar.
-4. **Vision çıktısı manuel onay ekranında gösterilir** — tüm alanlar şüpheli, kullanıcı düzeltebilir (Madde 08)
-5. **Kullanıcı düzeltir + onaylar** → devre/spool oluşur, iş normal akışına girer
-6. **Sayfada buton:** *"Bu formatı kaydet, bir sonraki PDF'te ücretsiz parse et"* — sistem **B Adımı (Karar 10)** ile harita önerir, kullanıcı onaylar/düzeltir, **tenant-scope** kayıt oluşur (Karar 2). Excel referansı opsiyonel (Karar 7).
-7. **Aynı batch'in kalan PDF'leri otomatik tanınır** (Karar 8) → L1/L2 ile parse, sıfır API maliyeti
-8. **5+ başarılı kullanım sonrası** sistem Cihat'a sorar: *"genelleştirelim mi?"* — Cihat **tek tıklama** ile tüm firmalara açar veya bekletir
-
----
-
-## DB Şeması (34. oturumda netleşen tam hali)
-
-### `izometri_format_tanimlari`
-
-```sql
-CREATE TABLE izometri_format_tanimlari (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ad TEXT NOT NULL,                    -- "AVEVA E3D — Tersane X Şablonu"
-  cad_program TEXT,                    -- "AVEVA E3D" (Karar 9 — varyant gruplama)
-  cad_surum TEXT,                      -- "2.1" (sürüm farkları için)
-  firma_kodu TEXT,                     -- opsiyonel referans
-  parser_kural JSONB NOT NULL,         -- {alanlar: [{ad, regex, koordinat?, kaynak}], kolon_mapping: {...}}
-  prompt_template TEXT,                -- Vision için sistem prompt'u (L3 fallback)
-  fingerprint JSONB NOT NULL,          -- {pdf_uretici_regex, basliik_regex, dosya_adi_regex}
-  egitim_kaynagi TEXT DEFAULT 'vision_only', -- 'vision_only' | 'pdf_excel' (Karar 7)
-  tenant_id UUID NULL,                 -- NULL = sistem geneli, dolu = tenant-scope (Karar 2)
-  aktif BOOLEAN DEFAULT true,
-  basari_orani DECIMAL DEFAULT NULL,   -- otomatik hesaplanır
-  kullanim_sayisi INT DEFAULT 0,       -- genelleştirme tetikçisi (5+ ise sor)
-  son_kullanim TIMESTAMPTZ,
-  olusturan_id UUID,                   -- kim oluşturdu (kullanıcı ID)
-  olusturma TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE INDEX idx_format_tenant ON izometri_format_tanimlari(tenant_id) WHERE aktif = true;
-CREATE INDEX idx_format_cad ON izometri_format_tanimlari(cad_program);
-```
-
-### `izometri_batch_kayitlari` & `ai_api_log`
-
-Brief Madde 05 ve 06 — değişiklik yok.
+4. **Yaklaşım Y prompt'u** ile parse edilir (K14/36) — AI sadece okur, uydurmaz
+5. **Halüsinasyon kontrolü** (K13/36) — 7 madde tarayıcı. Şüpheli satırlar manuel onaya düşer.
+6. **Kullanıcı düzeltir + onaylar** → devre/spool oluşur, iş normal akışına girer
+7. **Sayfada buton:** *"Bu formatı kaydet, bir sonraki PDF'te ücretsiz parse et"* — sistem **B Adımı (Karar 10)** ile harita önerir, kullanıcı onaylar/düzeltir, **tenant-scope** kayıt oluşur (Karar 2). Excel referansı opsiyonel (Karar 7).
+8. **Aynı batch'in kalan PDF'leri otomatik tanınır** (Karar 8) → L1/L2 ile parse, sıfır API maliyeti
+9. **5+ başarılı kullanım sonrası** sistem Cihat'a sorar: *"genelleştirelim mi?"* — Cihat **tek tıklama** ile tüm firmalara açar veya bekletir
 
 ---
 
@@ -253,16 +421,16 @@ Brief Madde 05 ve 06 — değişiklik yok.
 - CSS yeni class'ları (G-05 uyumlu): `.stat-kart.man-onay`, `.yeni-format-banner`, `.format-badge.fb-eslesti/bilinmeyen/bekliyor`, `.satir-manuel`, `.btn-incele`, `.btn-manuel`
 
 **Demo modu (`_DEMO_MOD = true`):**
-- Backend henüz hazır değil (502 hatası)
+- Backend henüz hazır değil (502 yerine artık AI uydurma sorunu — 36'da keşfedildi)
 - Sahte gecikme (600-1500ms) + mock data ile akış test edilir
 - 3. dosya bilinmeyen format simülasyonu (banner + manuel onay tetikleyici)
 - Tanınmış formatta ~%15 spool şüpheli (sağlık uyarısı simülasyonu)
 - URL `?canli=1` ile gerçek API zorlanabilir (geliştirici için)
-- 36. oturumda backend hazır olduğunda `_DEMO_MOD = false` yapılacak
+- 37. oturumda backend hazır olduğunda `_DEMO_MOD = false` yapılacak
 
-**ASME bağımlısı yerler:** `et_mm`, `boy_mm`, `agirlik_kg` mock data'da elle yazılı. 35. oturumda ASME Lookup hazır olunca backend bu değerleri `ARES_BORU.etKalinligi()` + `ARES_AGIRLIK.hesapla()` ile dolduracak.
+**ASME bağımlısı yerler:** `et_mm`, `boy_mm`, `agirlik_kg` mock data'da elle yazılı. 35'te `boru_olculer` hazır olduğunda backend bu değerleri DB sorgusu ile dolduracak (K14/36 — Yaklaşım Y).
 
-**"İncele →" ve "Manuel Onay (X)" butonları:** Şu an alert ile *"Manuel onay sayfası 36. oturumda eklenecek"* gösteriyor. Ekran 2 yapılınca gerçek navigasyona dönüştürülecek.
+**"İncele →" ve "Manuel Onay (X)" butonları:** Şu an alert ile *"Manuel onay sayfası 37. oturumda eklenecek"* gösteriyor. Ekran 2 yapılınca gerçek navigasyona dönüştürülecek.
 
 ---
 
@@ -270,11 +438,12 @@ Brief Madde 05 ve 06 — değişiklik yok.
 
 | Oturum | İş | Önkoşul |
 |---|---|---|
-| **35** | ASME Lookup tam sistemi (`ares-asme.js` + `ares-agirlik.js` + `asme_olculer` DB tablosu) | Karar 5 (A1) |
-| **36** | DB tabloları (`izometri_format_tanimlari`, `izometri_batch_kayitlari`) + backend dispatcher (`api/izometri-oku.js` refactor + 502 fix) + UI Ekran 2 (manuel onay) | 35 ✓ |
-| **37** | UI Ekran 3 (Format Kaydet) — B Adımı (AI harita önerisi) + Excel upload (Karar 7) | 36 ✓ |
-| **38** | C Adımı (görsel işaretleme — canvas drawing) + genelleştirme bildirimleri + Cihat onay UI'ı + ZORUNLU SELF-TEST | 37 ✓ |
-| **39+** | Pilot AVEVA-PAOR canlıya alınır, 2-3 örnek PDF ile test, super_admin "AI API Kullanım" sekmesi | 38 ✓ + Cihat'ın PDF örneklerini yüklemesi |
+| **35** | ASME Lookup tam sistemi (`ares-asme.js` + 358 satır veri) | Karar 5 (A1) | ✅ |
+| **36** | **Mimari sağlamlaştırma (8 madde — K1/36) + İzometri Batch DB altyapısı (3 tablo)** | 35 ✓ | **✅** |
+| **37** | **Yeni `api/izometri-oku.js` (sıfırdan, K5/36) + Ekran 2 (manuel onay) + Ekran 1 demo kapatma** | 36 ✓ | **Sırada** |
+| **38** | UI Ekran 3 (Format Kaydet) — B Adımı (AI harita önerisi) + Excel upload (Karar 7) + ZORUNLU SELF-TEST | 37 ✓ |
+| **39** | C Adımı (görsel işaretleme — canvas drawing) + genelleştirme bildirimleri + Cihat onay UI'ı | 38 ✓ |
+| **40+** | Pilot AVEVA-PAOR canlıya alınır, 2-3 örnek PDF ile test, super_admin "AI API Kullanım" sekmesi | 39 ✓ + Cihat'ın PDF örneklerini yüklemesi |
 
 **Önemli:** 38. oturum aynı zamanda zorunlu self-test günü (33→38, 5 oturum). Self-test geçmezse o oturumda kural sistemi tamir edilir, izometri batch'e devam edilmez.
 
@@ -282,24 +451,9 @@ Brief Madde 05 ve 06 — değişiklik yok.
 
 ## Açık Sorular (Sonraki Oturumlarda Karar Verilecek)
 
-1. **Maliyet eşiği aşıldığında**: sadece uyarı mı, yoksa belli bir aşımdan sonra sert blok da mı? (38. oturumda)
-2. **Format kuralı önerisi mekanizması (B Adımı)**: Sistem ne kadar otomatik regex çıkarsın? (37. oturumda)
-3. **C Adımı canvas implementasyonu**: PDF.js + native canvas mı, yoksa fabric.js gibi kütüphane mi? (38. oturumda)
-4. **IFS Excel dönüşümü (Yol B)**: 39+ ürün dönemine bırakıldı
-5. **Kabuller motoru** (DN50 altı argon, slip-on flanş = 2 kaynak vb.): pilot kuralın içinde mi, ayrı helper mı? (36'da)
-6. **Süper admin "AI API Kullanım" sekmesi mockup**: 39'a bırakıldı
-
----
-
-## Kapsam Dışında Bırakılanlar (NET)
-
-- Süper admin test laboratuvarı sayfası (Karar 3 — iptal)
-- Format başına ayrı `.js` dosyaları (Karar 1 — reddedildi)
-- Doğrudan sistem geneli kaydetme (Karar 2 — reddedildi)
-- Hardcoded ASME tablosu (Karar 5 — reddedildi, A1 seçildi)
-- Sürekli çift kaynak modu (Karar 7 — sadece eğitim modu)
-- Çoklu format karışık batch desteği (Karar 8 — bir batch = bir format)
-
----
-
-> **Bu dokümanın amacı:** Sonraki oturumlar açıldığında Claude bu dosyayı okur, mimari kararları yeniden tartışmaz. Sadece bu kararları **uygulamaya** odaklanır. Yeni öneri çıkarsa açık sorular bölümüne eklenir, mevcut kararlar bozulmaz.
+1. **Maliyet eşiği aşıldığında**: sadece uyarı mı, yoksa belli bir aşımdan sonra sert blok da mı? (39. oturumda)
+2. **Format kuralı önerisi mekanizması (B Adımı)**: Sistem ne kadar otomatik regex çıkarsın? (38. oturumda)
+3. **C Adımı canvas implementasyonu**: PDF.js + native canvas mı, yoksa fabric.js gibi kütüphane mi? (39. oturumda)
+4. **Format-spesifik prompt VS genel prompt:** Pilot AVEVA-PAOR'da prompt_template şu an boş. Cihat PDF örneği yükleyince B Adımı ile dolar. O zamana kadar genel prompt yeter. Karar: 37'de tek genel prompt, format-spesifik 38'de.
+5. **DIN tablosu eksikliği** (G-12 defter): Şu an DIN borular için `boru_olculer`'da satır yok. PDF'te "DIN 2448" geçerse: PDF'te yazılı et değeri kabul edilir, ASME sorgusu yapılmaz, manuel onaya düşer. Tablo 38-40 oturumlarında eklenir.
+6. **Fitting/flanş tabloları** (G-11 defter): 9-15 standart kombinasyonu. 38-39 oturumlarında.
