@@ -1,7 +1,31 @@
 // Birim test — ares-asme.js helper doğrulama
-// Çalıştırma: node test-asme.js
+// Çalıştırma: node tests/asme-lookup.test.js
+//
+// ESM uyumlu yükleme: ares-asme.js bir IIFE ve globalThis.ARES_BORU'ya yazıyor.
+// Bu test ESM ortamında çalışırken dosyayı text olarak okuyup eval ediyor.
 
-const ARES_BORU = require('./ares-asme.js');
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// ares-asme.js'i yükle (kök dizinden)
+const helperPath = join(__dirname, '..', 'ares-asme.js');
+const helperKod = readFileSync(helperPath, 'utf-8');
+
+// IIFE'yi global scope'ta çalıştır → globalThis.ARES_BORU set olur
+// (ares-asme.js içinde "if (typeof globalThis !== 'undefined') globalThis.ARES_BORU = api;")
+// eslint-disable-next-line no-eval
+(0, eval)(helperKod);
+
+const ARES_BORU = globalThis.ARES_BORU;
+
+if (!ARES_BORU) {
+  console.error('✗ ARES_BORU yüklenmedi — ares-asme.js içinde globalThis.ARES_BORU export\'u kontrol et.');
+  process.exit(1);
+}
 
 let basari = 0;
 let hata = 0;
