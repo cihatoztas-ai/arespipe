@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-04-27T14:43:43.023Z",
-  "commit_sha": "e9e48426500e1c344d925856e4f1141c54e2704e",
+  "tarih": "2026-04-27T17:08:18.950Z",
+  "commit_sha": "77ae4b50ab33bd622b1806595041cf36e3d4192d",
   "commit_ref": "main",
-  "workflow_run": 586,
+  "workflow_run": 587,
   "ozet": {
     "hata": 0,
-    "uyari": 14,
+    "uyari": 18,
     "taranan_dosya": 79,
-    "sorunlu_dosya": 3,
+    "sorunlu_dosya": 4,
     "durum": "sari"
   },
   "kurallar": {
@@ -28,7 +28,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_load_error') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 13,
+      "sayi": 17,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -38,6 +38,16 @@
             1756,
             2062,
             2078
+          ]
+        },
+        {
+          "dosya": "izometri-batch-incele.html",
+          "sayi": 4,
+          "satirlar": [
+            538,
+            600,
+            740,
+            750
           ]
         },
         {
@@ -98,6 +108,37 @@
           "tip": "uyari",
           "satir": 2078,
           "mesaj": "tv('dv_dok_file_required') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "izometri-batch-incele.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 4,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 538,
+          "mesaj": "tv('izbi_bom_kalem') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 600,
+          "mesaj": "tv('izbi_bom_sil') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 740,
+          "mesaj": "tv('izbi_bom_sil_onay') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 750,
+          "mesaj": "tv('izbi_bom_sil_ok') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
