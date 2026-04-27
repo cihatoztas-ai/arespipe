@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="izbi_title">İzometri İncele | AresPipe</title>
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
+<script src="ares-layout.js"></script>
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-height:100vh;}
+.page{padding:0 28px 100px;}
+@media(max-width:768px){.page{padding:0 14px 100px;}}
+
+/* Butonlar (devre_detay paterni) */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:34px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:13px;font-weight:500;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;white-space:nowrap;}
+.btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-primary{border:none;background:var(--ac);color:#fff;font-weight:600;}
+.btn-primary:hover:not(:disabled){opacity:.85;color:#fff;border-color:transparent;}
+.btn-primary:disabled{background:var(--txd);}
+.btn-danger{border-color:rgba(229,62,62,.3);color:var(--re);background:rgba(229,62,62,.06);}
+.btn-danger:hover:not(:disabled){background:rgba(229,62,62,.12);border-color:var(--re);}
+.btn-green{border-color:rgba(22,163,110,.3);color:var(--gr);background:rgba(22,163,110,.06);}
+.btn-green:hover:not(:disabled){background:rgba(22,163,110,.12);border-color:var(--gr);}
+
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--txd);flex-wrap:wrap;}
+.breadcrumb a{color:var(--txd);text-decoration:none;}
+.breadcrumb a:hover{color:var(--ac);}
+.breadcrumb .cur{color:var(--tx);font-weight:500;}
+
+/* Stat kartları (G-02 hero+pill paterni) */
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
+@media(max-width:1100px){.stat-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-kart{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:border-color .2s;}
+.stat-kart:hover{border-color:var(--ac);}
+.stat-kart.alert{border-color:rgba(229,62,62,.5);background:rgba(229,62,62,.04);}
+.stat-ikon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.stat-ikon.ac{background:rgba(45,142,255,.1);color:var(--ac);}
+.stat-ikon.gr{background:rgba(22,163,110,.1);color:var(--gr);}
+.stat-ikon.re{background:rgba(229,62,62,.1);color:var(--re);}
+.stat-ikon.warn{background:rgba(217,119,6,.1);color:var(--warn);}
+.stat-ikon.leg{background:rgba(124,58,237,.1);color:var(--leg);}
+.stat-lbl{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--tx);line-height:1.1;}
+
+/* Filtre tabları */
+.filt-tabs{display:flex;gap:4px;border-bottom:2px solid var(--bor);margin-bottom:18px;flex-wrap:wrap;}
+.filt-tab{padding:10px 18px;border:none;background:none;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;color:var(--txd);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:8px;}
+.filt-tab:hover{color:var(--tx);}
+.filt-tab.active{color:var(--ac);border-bottom-color:var(--ac);}
+.filt-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;background:var(--sur2);border-radius:10px;font-size:11px;font-weight:700;color:var(--txm);}
+.filt-tab.active .filt-cnt{background:rgba(45,142,255,.15);color:var(--ac);}
+
+/* Spool kartı (Seçenek A — dikey akordeon) */
+.spool-kart{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--gr);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .15s;}
+.spool-kart.manuel{border-left-color:var(--warn);}
+.spool-kart.hata{border-left-color:var(--re);}
+.spool-kart.reddedildi{border-left-color:var(--txd);opacity:.6;}
+.spool-head{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .15s;}
+.spool-head:hover,.spool-kart.open .spool-head{background:var(--sur2);}
+.spool-head-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;background:rgba(22,163,110,.12);color:var(--gr);font-size:15px;font-weight:700;}
+.spool-kart.manuel .spool-head-icon{background:rgba(217,119,6,.12);color:var(--warn);}
+.spool-kart.hata .spool-head-icon{background:rgba(229,62,62,.12);color:var(--re);}
+.spool-kart.reddedildi .spool-head-icon{background:rgba(100,116,139,.12);color:var(--txd);}
+.spool-head-info{flex:1;min-width:0;}
+.spool-head-baslik{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--tx);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spool-head-alt{font-size:12px;color:var(--txm);display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.spool-head-arrow{color:var(--txd);font-size:12px;transition:transform .2s;flex-shrink:0;}
+.spool-kart.open .spool-head-arrow{transform:rotate(180deg);}
+.spool-body{display:none;border-top:1px solid var(--bor);padding:18px 22px;}
+.spool-kart.open .spool-body{display:block;}
+
+/* Status badge (devre_detay paterni) */
+.sb{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px;}
+.sb-done{background:rgba(22,163,110,.12);color:var(--gr);}
+.sb-prog{background:rgba(217,119,6,.12);color:var(--warn);}
+.sb-stop{background:rgba(229,62,62,.12);color:var(--re);}
+.sb-wait{background:rgba(100,116,139,.12);color:var(--txd);}
+
+/* Form alanları */
+.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+@media(max-width:768px){.form-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr;}}
+.fi{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--tx);font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;}
+.fi:focus{border-color:var(--ac);}
+.fi-lbl{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+
+/* Uyarı listesi */
+.uyari-list{background:var(--sur2);border-radius:10px;padding:12px 16px;margin-bottom:16px;}
+.uyari-it{display:flex;gap:10px;padding:5px 0;font-size:13px;align-items:flex-start;line-height:1.4;}
+.uyari-ikon{flex-shrink:0;width:18px;font-size:13px;}
+.uyari-kr{color:var(--re);}
+.uyari-or{color:var(--warn);}
+.uyari-mesaj{flex:1;color:var(--tx);}
+.uyari-kod{font-size:11px;color:var(--txd);font-family:'JetBrains Mono','Courier New',monospace;margin-top:2px;}
+
+/* Aksiyon bar */
+.spool-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--bor);}
+
+/* Malzeme listesi (BOM) */
+.bom-baslik{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txd);margin:14px 0 8px;}
+.bom-tablo{width:100%;border-collapse:collapse;font-size:12px;background:var(--sur2);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.bom-tablo th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bor);}
+.bom-tablo td{padding:7px 10px;border-bottom:1px solid var(--bor);color:var(--tx);}
+.bom-tablo tr:last-child td{border-bottom:none;}
+.bom-kat{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(45,142,255,.12);color:var(--ac);}
+.bom-kat.fit{background:rgba(124,58,237,.12);color:var(--leg);}
+.bom-kat.flg{background:rgba(217,119,6,.12);color:var(--warn);}
+
+/* AI bilgisi */
+.ai-bilgi{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--txd);padding:8px 0 14px;border-bottom:1px solid var(--bor);margin-bottom:14px;}
+.ai-bilgi span strong{color:var(--txm);font-weight:700;}
+
+/* Sabit alt bar */
+.alt-bar{position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bor);padding:12px 28px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 -8px 24px rgba(0,0,0,.25);z-index:100;}
+.alt-bar-bilgi{font-size:13px;color:var(--txm);}
+.alt-bar-aksiyonlar{display:flex;gap:10px;flex-wrap:wrap;}
+@media(max-width:640px){.alt-bar{padding:10px 14px;}.alt-bar-bilgi{font-size:12px;}}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;right:24px;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:12px;z-index:9999;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:ti .3s ease;max-width:340px;}
+.toast-s{border-left:3px solid var(--gr);}
+.toast-e{border-left:3px solid var(--re);}
+.toast-i{border-left:3px solid var(--ac);}
+@keyframes ti{from{transform:translateX(110%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bor);}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;}
+.modal-close{background:none;border:none;color:var(--txd);font-size:22px;cursor:pointer;line-height:1;padding:0;}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px;}
+.modal-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--bor);justify-content:flex-end;flex-wrap:wrap;}
+
+/* Boş durumlar */
+.bos-msg{padding:50px 20px;text-align:center;color:var(--txd);font-size:14px;}
+
+/* Pipeline yok / null bilgi */
+.bilgi-null{color:var(--re);font-style:italic;}
+.bilgi-doldu{color:var(--warn);font-size:11px;font-style:italic;margin-left:6px;}
+</style>
+</head>
+<body>
+<div class="app-shell"><div class="main-content"><div class="page">
+
+<!-- ÜST BAR -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 18px;flex-wrap:wrap;gap:10px;">
+  <div class="breadcrumb">
+    <a href="index.html" data-i18n="nav_home">Ana Sayfa</a><span>/</span>
+    <a href="izometri-batch.html" data-i18n="izbi_breadcrumb_batch">İzometri Batch</a><span>/</span>
+    <span class="cur" id="bcBatch">--</span>
+  </div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;">
+    <button class="btn" onclick="window.location.href='izometri-batch.html'">
+      ← <span data-i18n="btn_back">Geri</span>
+    </button>
+  </div>
+</div>
+
+<!-- BAŞLIK -->
+<div style="margin-bottom:18px;">
+  <div style="font-size:11px;color:var(--txd);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;" data-i18n="izbi_h1_pre">Manuel Onay Sayfası</div>
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--tx);" id="izbiH1">--</div>
+  <div style="font-size:13px;color:var(--txm);margin-top:4px;" id="izbiAlt">--</div>
+</div>
+
+<!-- STAT GRID (5 KART) -->
+<div class="stat-grid">
+  <div class="stat-kart">
+    <div class="stat-ikon ac">📋</div>
+    <div>
+      <div class="stat-lbl" data-i18n="izbi_stat_toplam">Toplam Spool</div>
+      <div class="stat-val" id="statToplam">0</div>
+    </div>
+  </div>
+  <div class="stat-kart">
+    <div class="stat-ikon gr">✓</div>
+    <div>
+      <div class="stat-lbl" data-i18n="izbi_stat_hazir">Hazır</div>
+      <div class="stat-val" id="statHazir">0</div>
+    </div>
+  </div>
+  <div class="stat-kart" id="statKartManuel">
+    <div class="stat-ikon warn">⚠</div>
+    <div>
+      <div class="stat-lbl" data-i18n="izbi_stat_manuel">Manuel Onay</div>
+      <div class="stat-val" id="statManuel">0</div>
+    </div>
+  </div>
+  <div class="stat-kart" id="statKartHata">
+    <div class="stat-ikon re">✕</div>
+    <div>
+      <div class="stat-lbl" data-i18n="izbi_stat_hata">Hata</div>
+      <div class="stat-val" id="statHata">0</div>
+    </div>
+  </div>
+  <div class="stat-kart">
+    <div class="stat-ikon leg">🤖</div>
+    <div>
+      <div class="stat-lbl" data-i18n="izbi_stat_guven">Ort. AI Güven</div>
+      <div class="stat-val" id="statGuven">--</div>
+    </div>
+  </div>
+</div>
+
+<!-- FİLTRE TABLARI -->
+<div class="filt-tabs" id="filtTabs">
+  <button class="filt-tab active" data-filt="hepsi" onclick="filtSec('hepsi')">
+    <span data-i18n="izbi_filt_hepsi">Hepsi</span>
+    <span class="filt-cnt" id="filtCntHepsi">0</span>
+  </button>
+  <button class="filt-tab" data-filt="manuel_onay" onclick="filtSec('manuel_onay')">
+    <span data-i18n="izbi_filt_manuel">Manuel Onay</span>
+    <span class="filt-cnt" id="filtCntManuel">0</span>
+  </button>
+  <button class="filt-tab" data-filt="hazir" onclick="filtSec('hazir')">
+    <span data-i18n="izbi_filt_hazir">Hazır</span>
+    <span class="filt-cnt" id="filtCntHazir">0</span>
+  </button>
+  <button class="filt-tab" data-filt="hata" onclick="filtSec('hata')">
+    <span data-i18n="izbi_filt_hata">Hata</span>
+    <span class="filt-cnt" id="filtCntHata">0</span>
+  </button>
+</div>
+
+<!-- SPOOL LİSTESİ -->
+<div id="spoolListe">
+  <div class="bos-msg" data-i18n="izbi_yukleniyor">Yükleniyor...</div>
+</div>
+
+</div></div></div>
+
+<!-- SABİT ALT BAR -->
+<div class="alt-bar">
+  <div class="alt-bar-bilgi" id="altBarBilgi">--</div>
+  <div class="alt-bar-aksiyonlar">
+    <button class="btn btn-green" id="btnTumOnayla" onclick="tumunuOnaylaModalAc()" disabled>
+      ✓ <span data-i18n="izbi_tum_onayla">Tümünü Onayla</span>
+    </button>
+    <button class="btn btn-primary" id="btnDevreOlustur" onclick="devreOlusturModalAc()" disabled>
+      🚢 <span data-i18n="izbi_devre_olustur">Devre/Spool Oluştur</span>
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: REDDET -->
+<div class="modal-bg" id="redModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" data-i18n="izbi_red_baslik">Spool'u Reddet</div>
+      <button class="modal-close" onclick="modalKapat('redModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px;color:var(--txm);" data-i18n="izbi_red_msg">Bu spool kayıtlardan çıkarılacak. Devre oluşturulurken dahil edilmeyecek. Emin misin?</div>
+      <div>
+        <label class="fi-lbl" data-i18n="izbi_red_neden">Reddet sebebi (opsiyonel)</label>
+        <input class="fi" id="redSebepInput" type="text" placeholder="Örn: çift sayım, dosya hatası">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="modalKapat('redModal')" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn btn-danger" onclick="redOnayla()" data-i18n="izbi_red_btn">Reddet</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TÜMÜNÜ ONAYLA -->
+<div class="modal-bg" id="tumOnayModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" data-i18n="izbi_tum_baslik">Toplu Onay</div>
+      <button class="modal-close" onclick="modalKapat('tumOnayModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px;color:var(--txm);" id="tumOnayMsg">--</div>
+      <div style="background:var(--sur2);padding:10px 14px;border-radius:8px;font-size:12px;color:var(--txd);" data-i18n="izbi_tum_uyari">⚠ Kritik uyarısı olan spool'lar bu işlemde atlanır, onları tek tek inceleyip onaylaman gerekir.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="modalKapat('tumOnayModal')" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn btn-green" onclick="tumOnayaUygula()" data-i18n="izbi_tum_onayla_btn">Hepsini Onayla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DEVRE OLUŞTUR (39'A KADAR PLACEHOLDER) -->
+<div class="modal-bg" id="olusturModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" data-i18n="izbi_olustur_baslik">Devre/Spool Oluştur</div>
+      <button class="modal-close" onclick="modalKapat('olusturModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px;color:var(--txm);" data-i18n="izbi_olustur_yakinda">Bu işlem 39. oturumda gelecek. Şu an sadece manuel onay yapısı çalışıyor — onaylanan spool'lar daha sonra otomatik devre/spool kaydına dönüştürülecek.</div>
+      <div style="font-size:13px;color:var(--txd);" data-i18n="izbi_olustur_simdilik">Şimdilik onaylanan spool'lar `izometri_batch_kayitlari.sonuc_json` içinde saklanır. Manuel devre oluşturma için `devre_yeni.html`'i kullanabilirsin.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="modalKapat('olusturModal')" data-i18n="cmn_tamam">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// STATE
+// =========================================================
+var BATCH = null;       // izometri_batch_kayitlari satırı
+var SPOOLLAR = [];      // sonuc_json.spoollar dizisi
+var FILT = 'hepsi';     // aktif filtre
+var REDDET_IDX = null;  // reddet modalı için aktif spool indexi
+
+// =========================================================
+// HELPERS
+// =========================================================
+function $(s,p){return (p||document).querySelector(s);}
+function $$(s,p){return Array.from((p||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[<>&"']/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];});}
+function tv(k,fb){return (typeof ARES!=='undefined' && ARES.lang && ARES.lang.tv) ? ARES.lang.tv(k,fb) : fb;}
+function _supa(){return (typeof ARES!=='undefined' && ARES.supabase) ? ARES.supabase() : null;}
+function getBatchId(){var u=new URLSearchParams(location.search);return u.get('batch')||u.get('id')||null;}
+
+// G-03 uyumlu yüzey gösterimi (ARES_NORM çağrısı)
+function yuzeyEtiketGuvenli(yuzeyDeger){
+  if (typeof ARES_NORM!=='undefined' && ARES_NORM.yuzeyEtiket) return ARES_NORM.yuzeyEtiket(yuzeyDeger||'');
+  return yuzeyDeger || '';
+}
+
+function toast(msg,tip){
+  tip = tip || 'i';
+  var el = document.createElement('div');
+  el.className = 'toast toast-'+tip;
+  el.innerHTML = (tip==='s'?'✓':tip==='e'?'✕':'ℹ')+' <span>'+esc(msg)+'</span>';
+  document.body.appendChild(el);
+  setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove();},300);},2800);
+}
+
+function modalAc(id){var m=$('#'+id);if(m)m.classList.add('open');}
+function modalKapat(id){var m=$('#'+id);if(m)m.classList.remove('open');}
+
+// =========================================================
+// BATCH YÜKLEME
+// =========================================================
+async function batchYukle(){
+  var s = _supa();
+  if (!s) { spoolListeBosMsg(tv('izbi_supa_yok','Supabase bağlantısı kurulamadı')); return; }
+
+  var batchId = getBatchId();
+  if (!batchId) { spoolListeBosMsg(tv('izbi_batch_eksik','URL\'de batch_id eksik (örn: ?batch=...)')); return; }
+
+  try {
+    var resp = await s.from('izometri_batch_kayitlari').select('*').eq('id', batchId).maybeSingle();
+    if (resp.error) throw resp.error;
+    if (!resp.data) { spoolListeBosMsg(tv('izbi_batch_yok','Batch bulunamadı: ')+batchId); return; }
+
+    BATCH = resp.data;
+    SPOOLLAR = (BATCH.sonuc_json && Array.isArray(BATCH.sonuc_json.spoollar)) ? BATCH.sonuc_json.spoollar.slice() : [];
+
+    // Reddedilmiş olanları işaretle (geri yükleme)
+    SPOOLLAR.forEach(function(sp){
+      if (sp._reddedildi) sp.durum = sp.durum || 'reddedildi';
+    });
+
+    // Başlık
+    var dosyaAd = (BATCH.dosyalar && BATCH.dosyalar[0] && BATCH.dosyalar[0].ad) || ('Batch '+batchId.substring(0,8));
+    $('#bcBatch').textContent = dosyaAd;
+    $('#izbiH1').textContent = dosyaAd;
+    var altMetin = (BATCH.dosya_sayisi||1) + ' ' + tv('izbi_alt_dosya','dosya') + ' · '
+                 + SPOOLLAR.length + ' ' + tv('cmn_spool','spool');
+    if (BATCH.toplam_maliyet_usd) altMetin += ' · ' + tv('izbi_alt_maliyet','AI maliyeti') + ' $' + Number(BATCH.toplam_maliyet_usd).toFixed(4);
+    $('#izbiAlt').textContent = altMetin;
+
+    render();
+  } catch(e) {
+    spoolListeBosMsg(tv('izbi_yukleme_hata','Yükleme hatası: ')+(e.message||e));
+  }
+}
+
+function spoolListeBosMsg(msg){
+  $('#spoolListe').innerHTML = '<div class="bos-msg">'+esc(msg)+'</div>';
+}
+
+// =========================================================
+// RENDER
+// =========================================================
+function render(){
+  statHesapla();
+  filtSayaclariniDoldur();
+  spoolListeRender();
+  altBarGuncelle();
+  if (typeof _applyI18n === 'function') _applyI18n();
+}
+
+function statHesapla(){
+  var hazir=0, manuel=0, hata=0, gvnSum=0, gvnCnt=0;
+  SPOOLLAR.forEach(function(sp){
+    if (sp.durum==='reddedildi') return; // reddedilenler sayılmaz
+    if (sp.durum==='hazir') hazir++;
+    else if (sp.durum==='manuel_onay') manuel++;
+    else if (sp.durum==='hata') hata++;
+    if (typeof sp.guven_skoru==='number') { gvnSum += sp.guven_skoru; gvnCnt++; }
+  });
+
+  $('#statToplam').textContent = SPOOLLAR.filter(function(s){return s.durum!=='reddedildi';}).length;
+  $('#statHazir').textContent = hazir;
+  $('#statManuel').textContent = manuel;
+  $('#statHata').textContent = hata;
+  $('#statGuven').textContent = gvnCnt>0 ? Math.round(gvnSum/gvnCnt*100)+'%' : '--';
+
+  // Kart highlight (varsa kırmızı/sarı parla)
+  $('#statKartManuel').classList.toggle('alert', manuel>0);
+  $('#statKartHata').classList.toggle('alert', hata>0);
+}
+
+function filtSayaclariniDoldur(){
+  var aktif = SPOOLLAR.filter(function(s){return s.durum!=='reddedildi';});
+  $('#filtCntHepsi').textContent = aktif.length;
+  $('#filtCntManuel').textContent = aktif.filter(function(s){return s.durum==='manuel_onay';}).length;
+  $('#filtCntHazir').textContent = aktif.filter(function(s){return s.durum==='hazir';}).length;
+  $('#filtCntHata').textContent = aktif.filter(function(s){return s.durum==='hata';}).length;
+}
+
+function spoolListeRender(){
+  var liste = $('#spoolListe');
+  var goster = SPOOLLAR
+    .map(function(sp,idx){return {sp:sp,idx:idx};})
+    .filter(function(o){
+      if (o.sp.durum==='reddedildi') return FILT==='hepsi'; // reddedilenler sadece "hepsi"de
+      if (FILT==='hepsi') return true;
+      return o.sp.durum===FILT;
+    });
+
+  if (goster.length===0) {
+    liste.innerHTML = '<div class="bos-msg" data-i18n="izbi_liste_bos">Bu filtreye uyan spool yok.</div>';
+    return;
+  }
+
+  liste.innerHTML = goster.map(function(o){return spoolKartHTML(o.sp, o.idx);}).join('');
+
+  // Manuel onay ve hata olanları default açık aç
+  goster.forEach(function(o){
+    if (o.sp.durum==='manuel_onay' || o.sp.durum==='hata') {
+      var k = $('#spoolKart_'+o.idx);
+      if (k) k.classList.add('open');
+    }
+  });
+}
+
+function spoolKartHTML(sp, idx){
+  var durum = sp.durum || 'hazir';
+  var durumClass = durum==='manuel_onay'?'manuel':durum==='hata'?'hata':durum==='reddedildi'?'reddedildi':'';
+  var ikon = durum==='manuel_onay'?'⚠':durum==='hata'?'✕':durum==='reddedildi'?'—':'✓';
+  var sbClass = durum==='hazir'?'sb-done':durum==='manuel_onay'?'sb-prog':durum==='hata'?'sb-stop':'sb-wait';
+  var pipeNo = sp.pipeline_no
+    ? esc(sp.pipeline_no)
+    : '<span class="bilgi-null">'+tv('izbi_pipeline_yok','Pipeline yok')+'</span>';
+  var spoolNo = esc(sp.spool_no || ('S'+(idx+1)));
+
+  // Üst satır info satırı
+  var dnInfo  = '<span><strong>'+tv('izbi_form_dn','DN')+':</strong> '+(sp.dn||'-')+'</span>';
+  var etInfo  = '<span><strong>'+tv('izbi_form_et','Et')+':</strong> '+(sp.et_mm||'-')+' mm</span>';
+  var aiInfo  = (typeof sp.guven_skoru==='number')
+    ? '<span style="color:var(--leg);"><strong>AI:</strong> %'+Math.round(sp.guven_skoru*100)+'</span>'
+    : '';
+
+  // Uyarılar
+  var uyariBlok = '';
+  if (sp.uyarilar && sp.uyarilar.length) {
+    uyariBlok = '<div class="uyari-list">'
+      + sp.uyarilar.map(function(u){
+          var sclass = u.agirlik==='kritik'?'uyari-kr':'uyari-or';
+          var sicon  = u.agirlik==='kritik'?'🔴':'🟡';
+          return '<div class="uyari-it">'
+            + '<span class="uyari-ikon '+sclass+'">'+sicon+'</span>'
+            + '<div style="flex:1;">'
+            + '  <div class="uyari-mesaj">'+esc(u.mesaj||'')+'</div>'
+            + '  <div class="uyari-kod">'+esc(u.kod||'')+'</div>'
+            + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  // AI bilgisi
+  var aiBilgi = '';
+  if (sp.dolduruldu && Object.keys(sp.dolduruldu).length>0) {
+    var dolduruldulist = Object.keys(sp.dolduruldu).map(function(k){
+      return '<strong>'+esc(k)+':</strong> '+esc(sp.dolduruldu[k]);
+    }).join(' · ');
+    aiBilgi += '<span>'+tv('izbi_ai_dolduruldu','Sistem doldurdu')+': '+dolduruldulist+'</span>';
+  }
+  if (sp.notlar) aiBilgi += '<span><strong>'+tv('izbi_ai_not','AI notu')+':</strong> '+esc(sp.notlar)+'</span>';
+
+  // BOM tablosu
+  var bomBlok = '';
+  if (sp.malzeme_listesi && sp.malzeme_listesi.length>0) {
+    bomBlok = '<div class="bom-baslik" data-i18n="izbi_bom_baslik">Malzeme Listesi</div>'
+      + '<table class="bom-tablo"><thead><tr>'
+      + '<th data-i18n="izbi_bom_kategori">Kategori</th>'
+      + '<th data-i18n="izbi_bom_tanim">Tanım</th>'
+      + '<th data-i18n="izbi_bom_dn">DN</th>'
+      + '<th data-i18n="izbi_bom_miktar">Miktar</th>'
+      + '</tr></thead><tbody>'
+      + sp.malzeme_listesi.map(function(m){
+          var katClass = m.kategori==='FITTINGS'?'fit':m.kategori==='FLANGES'?'flg':'';
+          return '<tr>'
+            + '<td><span class="bom-kat '+katClass+'">'+esc(m.kategori||'?')+'</span></td>'
+            + '<td>'+esc(m.tanim||'')+'</td>'
+            + '<td>'+(m.dn||'-')+'</td>'
+            + '<td>'+esc(m.miktar||'-')+'</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table>';
+  }
+
+  // Aksiyon butonları
+  var aksiyonlar = '';
+  if (durum==='manuel_onay' || durum==='hata') {
+    aksiyonlar += '<button class="btn btn-green" onclick="spoolOnayla('+idx+')">✓ <span data-i18n="cmn_onayla">Onayla</span></button>';
+  }
+  if (durum!=='reddedildi') {
+    aksiyonlar += '<button class="btn btn-danger" onclick="spoolReddetModalAc('+idx+')">✕ <span data-i18n="izbi_reddet">Reddet</span></button>';
+  } else {
+    aksiyonlar += '<button class="btn" onclick="spoolGeriAl('+idx+')">↺ <span data-i18n="izbi_geri_al">Geri Al</span></button>';
+  }
+
+  return ''
+    + '<div class="spool-kart '+durumClass+'" id="spoolKart_'+idx+'">'
+    + '  <div class="spool-head" onclick="spoolToggle('+idx+')">'
+    + '    <div class="spool-head-icon">'+ikon+'</div>'
+    + '    <div class="spool-head-info">'
+    + '      <div class="spool-head-baslik">'+spoolNo+' · '+pipeNo+'</div>'
+    + '      <div class="spool-head-alt">'
+    + '        <span class="sb '+sbClass+'">'+tv('izbi_durum_'+durum, durum)+'</span>'
+    + '        '+dnInfo+' '+etInfo+' '+aiInfo
+    + '      </div>'
+    + '    </div>'
+    + '    <div class="spool-head-arrow">▼</div>'
+    + '  </div>'
+    + '  <div class="spool-body">'
+    + (aiBilgi ? '<div class="ai-bilgi">'+aiBilgi+'</div>' : '')
+    + '    <div class="form-grid">'
+    +        formAlani(idx,'dn',tv('izbi_form_dn','DN'),sp.dn,'number')
+    +        formAlani(idx,'cap_mm',tv('izbi_form_cap','Çap (mm)'),sp.cap_mm,'number')
+    +        formAlani(idx,'et_mm',tv('izbi_form_et_mm','Et (mm)'),sp.et_mm,'number')
+    +        formAlani(idx,'boy_mm',tv('izbi_form_boy','Boy (mm)'),sp.boy_mm,'number')
+    +        formAlani(idx,'malzeme_en_kodu',tv('izbi_form_malzeme_en','Malzeme EN'),sp.malzeme_en_kodu,'text')
+    +        formAlani(idx,'malzeme_astm_kodu',tv('izbi_form_malzeme_astm','Malzeme ASTM'),sp.malzeme_astm_kodu,'text')
+    +        formAlani(idx,'yuzey',tv('izbi_form_yuzey','Yüzey'),yuzeyEtiketGuvenli(sp.yuzey),'text')
+    +        formAlani(idx,'rev',tv('izbi_form_rev','Rev'),sp.rev,'text')
+    + '    </div>'
+    +      uyariBlok
+    +      bomBlok
+    + '    <div class="spool-actions">'+aksiyonlar+'</div>'
+    + '  </div>'
+    + '</div>';
+}
+
+function formAlani(idx, alan, lbl, deger, tip){
+  var v = (deger==null) ? '' : deger;
+  return '<div>'
+    + '<label class="fi-lbl">'+esc(lbl)+'</label>'
+    + '<input class="fi" type="'+tip+'" data-spool="'+idx+'" data-alan="'+alan+'" value="'+esc(v)+'" oninput="spoolFormDegis('+idx+',\''+alan+'\',this.value)">'
+    + '</div>';
+}
+
+function altBarGuncelle(){
+  var manuel = SPOOLLAR.filter(function(s){return s.durum==='manuel_onay';});
+  var manuelKritiksiz = manuel.filter(function(s){return !s.kritik_uyari_var;});
+  var hazir = SPOOLLAR.filter(function(s){return s.durum==='hazir';}).length;
+  var toplam = SPOOLLAR.filter(function(s){return s.durum!=='reddedildi';}).length;
+
+  $('#altBarBilgi').textContent = hazir + ' / ' + toplam + ' ' + tv('izbi_altbar_hazir','hazır');
+
+  $('#btnTumOnayla').disabled = manuelKritiksiz.length===0;
+  // Devre Oluştur — onaylanan spool varsa aktif (39'da gerçek implementasyon)
+  $('#btnDevreOlustur').disabled = hazir===0;
+}
+
+// =========================================================
+// AKSIYONLAR
+// =========================================================
+function spoolToggle(idx){
+  var k = $('#spoolKart_'+idx);
+  if (k) k.classList.toggle('open');
+}
+
+function filtSec(f){
+  FILT = f;
+  $$('.filt-tab').forEach(function(t){t.classList.toggle('active', t.dataset.filt===f);});
+  spoolListeRender();
+  if (typeof _applyI18n === 'function') _applyI18n();
+}
+
+function spoolFormDegis(idx, alan, deger){
+  if (!SPOOLLAR[idx]) return;
+  if (alan==='dn'||alan==='cap_mm'||alan==='et_mm'||alan==='boy_mm') {
+    SPOOLLAR[idx][alan] = deger ? Number(deger) : null;
+  } else {
+    SPOOLLAR[idx][alan] = deger || null;
+  }
+  SPOOLLAR[idx]._duzenlendi = true;
+  altBarGuncelle();
+}
+
+async function spoolOnayla(idx){
+  if (!SPOOLLAR[idx]) return;
+  SPOOLLAR[idx].durum = 'hazir';
+  SPOOLLAR[idx]._lokal_onayli = true;
+  await batchPatchSonuc();
+  render();
+  toast(tv('izbi_onayli_msg','Spool onaylandı'),'s');
+}
+
+function spoolReddetModalAc(idx){
+  REDDET_IDX = idx;
+  $('#redSebepInput').value = '';
+  modalAc('redModal');
+}
+
+async function redOnayla(){
+  if (REDDET_IDX==null || !SPOOLLAR[REDDET_IDX]) { modalKapat('redModal'); return; }
+  SPOOLLAR[REDDET_IDX].durum = 'reddedildi';
+  SPOOLLAR[REDDET_IDX]._reddedildi = true;
+  SPOOLLAR[REDDET_IDX]._reddet_sebep = $('#redSebepInput').value || null;
+  await batchPatchSonuc();
+  modalKapat('redModal');
+  render();
+  toast(tv('izbi_red_msg_ok','Spool reddedildi'),'s');
+}
+
+async function spoolGeriAl(idx){
+  if (!SPOOLLAR[idx]) return;
+  // Reddedilmişse geri al — orijinal duruma dön
+  delete SPOOLLAR[idx]._reddedildi;
+  delete SPOOLLAR[idx]._reddet_sebep;
+  // Eski durum kaybolduğu için varsayılan olarak manuel_onay'a al (incele)
+  SPOOLLAR[idx].durum = SPOOLLAR[idx].kritik_uyari_var ? 'manuel_onay' : 'hazir';
+  await batchPatchSonuc();
+  render();
+  toast(tv('izbi_geri_al_ok','Reddet geri alındı'),'s');
+}
+
+// =========================================================
+// TOPLU AKSIYONLAR
+// =========================================================
+function tumunuOnaylaModalAc(){
+  var hedef = SPOOLLAR.filter(function(s){return s.durum==='manuel_onay' && !s.kritik_uyari_var;});
+  if (hedef.length===0) {
+    toast(tv('izbi_tum_yok','Toplu onaylanabilir spool yok (kritik uyarılar tek tek incelenmeli)'),'i');
+    return;
+  }
+  $('#tumOnayMsg').textContent = tv('izbi_tum_msg_pre','Tümünü Onayla:').replace('{n}',hedef.length)
+    + ' ' + hedef.length + ' ' + tv('cmn_spool','spool') + ' ' + tv('izbi_tum_msg_post','onaylanacak. Devam edilsin mi?');
+  modalAc('tumOnayModal');
+}
+
+async function tumOnayaUygula(){
+  var hedef = SPOOLLAR.filter(function(s){return s.durum==='manuel_onay' && !s.kritik_uyari_var;});
+  hedef.forEach(function(sp){
+    sp.durum = 'hazir';
+    sp._lokal_onayli = true;
+  });
+  await batchPatchSonuc();
+  modalKapat('tumOnayModal');
+  render();
+  toast(tv('izbi_tum_onay_ok','{n} spool onaylandı').replace('{n}',hedef.length),'s');
+}
+
+function devreOlusturModalAc(){
+  // 39. oturumda gerçek devre/spool oluşturma endpoint'i eklenecek
+  modalAc('olusturModal');
+}
+
+// =========================================================
+// BATCH PATCH
+// =========================================================
+async function batchPatchSonuc(){
+  var s = _supa();
+  if (!s || !BATCH) return;
+
+  var yeniSonuc = Object.assign({}, BATCH.sonuc_json||{}, { spoollar: SPOOLLAR });
+  var onaylananSayisi = SPOOLLAR.filter(function(sp){return sp.durum==='hazir';}).length;
+  var manuelSayisi = SPOOLLAR.filter(function(sp){return sp.durum==='manuel_onay';}).length;
+  var redSayisi = SPOOLLAR.filter(function(sp){return sp.durum==='reddedildi';}).length;
+
+  var resp = await s.from('izometri_batch_kayitlari').update({
+    sonuc_json: yeniSonuc,
+    onaylanan_sayisi: onaylananSayisi,
+    manuel_onay_sayisi: manuelSayisi,
+    reddedilen_sayisi: redSayisi,
+    guncelleme_at: new Date().toISOString(),
+  }).eq('id', BATCH.id);
+
+  if (resp.error) {
+    toast(tv('izbi_kayit_hata','Kayıt hatası: ')+resp.error.message,'e');
+    return;
+  }
+  BATCH.sonuc_json = yeniSonuc;
+}
+
+// =========================================================
+// INIT
+// =========================================================
+document.addEventListener('DOMContentLoaded', function(){
+  (async function(){
+    try {
+      var hazir = await new Promise(function(resolve){
+        var elapsed = 0;
+        function chk(){
+          if (typeof ARES !== 'undefined' && _supa()) { resolve(true); return; }
+          elapsed += 200;
+          if (elapsed >= 12000) { resolve(false); return; }
+          setTimeout(chk, 200);
+        }
+        chk();
+      });
+
+      if (hazir) {
+        var s = _supa();
+        var ses = await s.auth.getSession();
+        if (!ses.data || !ses.data.session) { location.href = 'giris.html'; return; }
+        if (typeof ARES.oturumKontrol === 'function') await ARES.oturumKontrol();
+      }
+
+      await batchYukle();
+
+      if (typeof _applyI18n === 'function') _applyI18n();
+    } catch(e) {
+      console.error('[izbi]', e);
+      spoolListeBosMsg(tv('izbi_init_hata','Başlatma hatası: ')+(e.message||e));
+    } finally {
+      document.documentElement.style.visibility = '';
+    }
+  })();
+});
+
+// Dil değişince yenile
+window._onLangChange = function(){
+  if (typeof _applyI18n === 'function') _applyI18n();
+  render();
+};
+</script>
+</body>
+</html>
