@@ -282,9 +282,8 @@ textarea.fi{resize:vertical;min-height:72px;}
     <button class="spool-tab aktif" id="tabStandart" onclick="spoolTabSec('standart')">
       <span data-i18n="dny_tab_standard">📊 Standart Excel</span>
     </button>
-    <button class="spool-tab" id="tabIFS" onclick="spoolTabSec('ifs')" style="display:none;">
+    <button class="spool-tab" id="tabIFS" onclick="spoolTabSec('ifs')">
       <span data-i18n="dny_tab_ifs">🏭 IFS Malzeme Listesi</span>
-      <span style="background:rgba(16,185,129,0.2);color:var(--gr);font-size:14px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">TERSAN</span>
     </button>
     <button class="spool-tab" id="tabIZO" onclick="spoolTabSec('izo')">
       <span>🤖 İzometri PDF</span>
@@ -308,10 +307,10 @@ textarea.fi{resize:vertical;min-height:72px;}
     </div>
   </div>
 
-  <!-- IFS SEKMESİ — sadece TERSAN seçilince -->
+  <!-- IFS SEKMESİ — Tersan IFS export ya da AresPipe izometri-batch'in IFS export'u -->
   <div id="panelIFS" style="display:none;">
     <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:14px;color:var(--txm);">
-      <strong style="color:var(--gr);">IFS Malzeme Listesi</strong> — Tersan IFS sisteminden export edilen <code>.xlsm</code> dosyasını yükleyin.
+      <strong style="color:var(--gr);">IFS Malzeme Listesi</strong> — Tersan IFS sisteminden ya da AresPipe izometri-batch sayfasından export edilen <code>.xlsm</code> / <code>.xlsx</code> dosyasını yükleyin.
       Spool listesi ve her spoolun malzeme detayları otomatik oluşturulur.
     </div>
     <div class="excel-alan" id="ifsAlan" ondrop="ifsDrop(event)" ondragover="excelDragOver(event)" ondragleave="excelDragLeave(event)" onclick="document.getElementById('ifsInput').click()">
@@ -555,16 +554,7 @@ async function tersaneSecildi() {
     });
   }
 
-  // IFS sekmesini göster/gizle (TERSAN adı içeriyorsa)
-  const tabIFS = document.getElementById('tabIFS');
-  const selEl  = document.getElementById('selTersane');
-  const selTxt = selEl.options[selEl.selectedIndex]?.text || '';
-  if (selTxt.toUpperCase().includes('TERSAN')) {
-    tabIFS.style.display = 'flex';
-  } else {
-    tabIFS.style.display = 'none';
-    if (aktifSpoolTab === 'ifs') spoolTabSec('standart');
-  }
+  // IFS sekmesi tüm tersanelerde aktif (izometri-batch IFS export her tersane için üretebiliyor)
   validate();
 }
 
