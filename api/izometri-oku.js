@@ -1,11 +1,14 @@
 // =====================================================================
 // api/izometri-oku.js -- Vercel Serverless Function (Node.js)
 // =====================================================================
-// Tarih: 27 Nisan 2026 -- 37. oturum
-// Mimari kararlar: K1-K6 (36)
+// Tarih: 28 Nisan 2026 -- 38. oturum (Pre-A.1 + Pre-A.2 eklendi)
+// Mimari kararlar: K1-K6 (36) + K11 (37 -- guvenlik)
 //   - K3: 7 maddeli halusinasyon koruması (DB seviyesinde)
 //   - K4: Yaklasim Y -- AI sadece yazili olani okur, hesap kod tarafinda
 //   - K5: Sifirdan yazildi (eski izometri-oku.js atildi)
+//   - K11/37: PDF guvenlik + prompt injection iki katmanli koruma
+//     - Pre-A.1: magic byte + boyut + uzanti (Anthropic kredisi yanmadan once erken don)
+//     - Pre-A.2: schema validation + suspicious keyword scan (madde 8 olarak halusinasyon filtresine entegre)
 //
 // Sozlesme:
 //   POST /api/izometri-oku
@@ -102,6 +105,31 @@ export default async function handler(req, res) {
 
     if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY yapılandırılmamış' });
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: 'Supabase env eksik' });
+
+    // --- 2.1.b PDF YAPISAL GUVENLIK (K11/37 -- Pre-A.1) ---
+    // Uzanti, boyut ve magic byte kontrolu. Anthropic kredisi yanmadan once erken don.
+
+    // (a) Uzanti kontrolu (case-insensitive)
+    if (!/\.pdf$/i.test(dosya_adi)) {
+      return res.status(400).json({ error: 'Sadece PDF dosyalari kabul ediliyor (uzanti kontrolu)' });
+    }
+
+    // (b) Boyut limiti -- 5MB PDF ~= 6.7MB base64. 7MB sinir guvenli.
+    const MAX_BASE64_LEN = 7 * 1024 * 1024;
+    if (pdf_base64.length > MAX_BASE64_LEN) {
+      const mb = (pdf_base64.length / 1024 / 1024).toFixed(1);
+      return res.status(400).json({ error: `PDF cok buyuk (${mb}MB > 7MB base64 limit, ~5MB PDF)` });
+    }
+
+    // (c) Magic byte -- base64 decode edilen ilk 4 byte "%PDF" olmali
+    try {
+      const ilk_4_byte = Buffer.from(pdf_base64.substring(0, 8), 'base64').toString('ascii', 0, 4);
+      if (ilk_4_byte !== '%PDF') {
+        return res.status(400).json({ error: 'PDF formatinda degil (magic byte uyusmadi)' });
+      }
+    } catch (e) {
+      return res.status(400).json({ error: 'PDF base64 cozumlenemedi: ' + e.message });
+    }
 
     console.log('[izometri-oku] Baslat:', { dosya_adi, dosya_sirasi, dosya_toplami, batch: batchIdGiris });
 
@@ -471,6 +499,45 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
     return { ok: false, error: 'Claude JSON donmedi: ' + cevap_text.substring(0, 200), http_status: 422 };
   }
 
+  // --- 5.1 PROMPT INJECTION KORUMASI (K11/37 -- Pre-A.2) ---
+  // (a) Schema validation: beklenen kok alanlar disinda alan varsa logla.
+  //     Veriyi reddetmeyiz (AI bazen extra alan dondurebilir) ama kayit altina aliriz.
+  const BEKLENEN_KOK_ALANLAR = ['spoollar', 'tespit_edilen_format_ipucu', 'genel_notlar'];
+  const yabanci_alanlar = Object.keys(parsed).filter(k => !BEKLENEN_KOK_ALANLAR.includes(k));
+  if (yabanci_alanlar.length > 0) {
+    console.warn('[izometri-oku] Yabanci kok alan(lar) tespit edildi:', yabanci_alanlar, 'dosya:', dosya_adi);
+  }
+
+  // (b) Suspicious keyword scan: PDF icindeki gorunmez metin AI'ya talimat enjekte etmis olabilir.
+  //     AI ciktisinda hassas terim varsa hem logla hem TUM spool'lari zorla manuel onaya dusur.
+  const SUSPICIOUS_KEYWORDS = [
+    'auth.users', 'drop table', 'drop database', 'truncate',
+    'pg_catalog', 'information_schema', 'pg_user', 'pg_roles',
+    'sifreler', 'api_key', 'anthropic_', 'supabase_', 'service_role',
+    'process.env', 'system_prompt', 'ignore previous', 'onceki talimatlar',
+    'tenant_id =', "tenant_id='", 'select * from kullanicilar',
+  ];
+  const cevap_tam_metin = JSON.stringify(parsed).toLowerCase();
+  const supheli_bulunan = SUSPICIOUS_KEYWORDS.filter(k => cevap_tam_metin.includes(k));
+  if (supheli_bulunan.length > 0) {
+    console.warn('[izometri-oku] PROMPT INJECTION SUPHESI:', supheli_bulunan, 'dosya:', dosya_adi);
+    if (Array.isArray(parsed.spoollar)) {
+      parsed.spoollar.forEach(s => {
+        s.uyari_prompt_injection = true;
+        s.supheli_keywords = supheli_bulunan;
+      });
+    }
+  }
+
+  // (c) Spoollar dizi mi, makul boyutta mi
+  if (parsed.spoollar && !Array.isArray(parsed.spoollar)) {
+    return { ok: false, error: 'AI cevabinda spoollar dizi formatinda degil', http_status: 422 };
+  }
+  if (Array.isArray(parsed.spoollar) && parsed.spoollar.length > 200) {
+    // Tek izometri PDF'inde 200 spool olmasi imkansiz -- olabildigi en buyuk: ~50
+    return { ok: false, error: `Anormal spool sayisi (${parsed.spoollar.length}) -- prompt injection olabilir`, http_status: 422 };
+  }
+
   // Loglama (basarili)
   await aiApiLogYaz({
     tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
@@ -776,6 +843,15 @@ async function halusinasyonFiltresi({ spoollar, dosya_adi }) {
       }
     } else {
       uyarilar.push({ kod: 'malzeme_bos', mesaj: 'Malzeme alani bos', agirlik: 'orta' });
+    }
+
+    // Madde 8: Prompt injection supheli kelime tespiti (Pre-A.2 / K11/37)
+    if (sp.uyari_prompt_injection === true) {
+      uyarilar.push({
+        kod: 'prompt_injection_supheli',
+        mesaj: `AI ciktisinda hassas kelime tespit edildi: ${(sp.supheli_keywords || []).join(', ')}`,
+        agirlik: 'kritik',
+      });
     }
 
     // Durum karari
