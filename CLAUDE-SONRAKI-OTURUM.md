@@ -1,153 +1,222 @@
-# 36. Oturum Gündemi — İzometri Batch Backend + 35 Canlı Doğrulama
+# 37. Oturum Gündemi — İzometri Batch Backend (Sıfırdan)
 
-> **Tarih:** 28 Nisan 2026 (veya sonrası)
-> **Tema:** İzometri Batch backend dispatcher + DB tabloları + Ekran 2 (manuel onay UI)
-> **Önkoşul:** 35'in canlı doğrulaması (4 dosya yüklü + migration çalıştı + test 50/50 + CI yeşil)
-> **Önkoşul belge:** `docs/IZOMETRI-BATCH-KARAR.md` (Karar 1-10)
+> **Tarih:** 28 Nisan 2026 veya sonrası
+> **Tema:** Yeni `api/izometri-oku.js` (sıfırdan) + Ekran 2 (manuel onay UI) + Ekran 1 demo kapatma
+> **Önkoşul:** 36 mimarisi (3 tablo + RLS + pilot AVEVA-PAOR) — ✅ kuruldu
+> **Önkoşul belge:** `docs/IZOMETRI-BATCH-KARAR.md` (Karar 1-10) + bu dosya
 
 ---
 
-## 36. Oturum Açılışı (~10 dk — 35 doğrulama)
+## 37. Oturum Açılışı (~10 dk)
 
 **Standart 5 soruluk ritüel** (CLAUDE.md), sonra:
 
-### 1. 35'in canlı doğrulaması (öncelikli)
+### 1. 36 mimarisinin canlı doğrulaması (~3 dk)
 
-> "35'te ASME Lookup veri katmanını yapmıştık. 4 dosyayı yüklediğini söylemiştin. Şimdi kontrol edelim:"
+Bu sorguyu çalıştır, çıktıyı yapıştır:
 
 ```sql
--- Supabase SQL editor'de çalıştır:
-SELECT 'asme_borular' AS tablo, COUNT(*) FROM asme_borular
-UNION ALL
-SELECT 'cuni_borular', COUNT(*) FROM cuni_borular;
+SELECT 'boru_olculer' AS tablo, COUNT(*) FROM boru_olculer
+UNION ALL SELECT 'boru_standart_sozluk', COUNT(*) FROM boru_standart_sozluk
+UNION ALL SELECT 'boru_dn_isim_eslesme', COUNT(*) FROM boru_dn_isim_eslesme
+UNION ALL SELECT 'izometri_format_tanimlari', COUNT(*) FROM izometri_format_tanimlari
+UNION ALL SELECT 'izometri_batch_kayitlari', COUNT(*) FROM izometri_batch_kayitlari
+UNION ALL SELECT 'ai_api_log', COUNT(*) FROM ai_api_log;
 ```
 
 **Beklenen:**
-- `asme_borular` → 334 satır (karbon 214 + paslanmaz 70 + alüm 50)
-- `cuni_borular` → 24 satır (cunife 20bar 12 + 16bar 12)
+- boru_olculer = 358
+- boru_standart_sozluk = 12
+- boru_dn_isim_eslesme = 171
+- izometri_format_tanimlari = 1 (pilot)
+- izometri_batch_kayitlari = 0
+- ai_api_log = 0
 
-**Birim test:**
-```bash
-node tests/asme-lookup.test.js
-```
-**Beklenen:** "50 başarılı, 0 başarısız"
+Tamamsa devam.
 
-**Spot check (Cihat sektörel değerlerle karşılaştırır):**
-- DN100 SCH40 karbon: et 6,02 mm — ağırlık 16,08 kg/m
-- DN200 SCH40 karbon: et 8,18 mm — ağırlık 42,55 kg/m
-- DN150 EEMUA 20bar cunife: OD 159 mm (ASME 168,3'ten farklı)
+### 2. Cihat'tan örnek PDF kontrolü (~2 dk)
 
-**Eğer doğrulama tamamsa:** 35 kapatılır, 36 ana işine geçilir.
-**Eğer hata varsa:** Önce hata düzeltilir, sonra ana iş.
+> *"36'nın sonunda 2-3 örnek PAOR/AVEVA PDF yüklemeni istemiştim. Pilot satırının parser_kural'ını öğretmek için lazım. Yükleyebildin mi?"*
 
-### 2. db-backup saat kontrolü
+- **Var:** 37 sonunda B Adımı (otomatik AI önerisi) → Cihat onaylar → AVEVA-PAOR pilot satırı dolar
+- **Yok:** 37 PDF'siz ilerler. PAOR PDF gelirse manuel onay akışı çalışır (Vision API + manuel onay), parser kuralı 38'e kalır
 
-> "27-30 Nis sabahları izlemeye almıştık. `arespipe-backups` repo Commits sekmesinde son commit saati TR 03:00-03:30 (UTC 00:00-00:30) mı?"
+### 3. db-backup saat kontrolü (~1 dk)
 
-- Doğru saatteyse: ✅ defter temizlenir, gözlem süresi biter
-- Hâlâ kayıksa: `arespipe-backups` repo'sundaki `db-backup.yml` cron syntax kontrolü
+> *"27-30 Nis sabahları izlemedeyiz. arespipe-backups repo Commits saati TR 03:00-03:30 (UTC 00:00-00:30) mı?"*
 
-### 3. Ekran 1 demo testi
+Doğru saatteyse defter temizlenir, gözlem süresi biter.
 
-> "izometri-batch.html'i tarayıcıda açıp demo modu test ettin mi? PDF yükleme + Batch Başlat + format badge'leri + manuel onay vurgusu görsel olarak çalışıyor mu?"
+### 4. Bugün hangi dosyalarla çalışacağız netleştir (~3 dk)
 
-- Çalışıyorsa: ✅ Ekran 1 frontend kapatıldı (34'te yazılmıştı)
-- Sorun varsa: kısa düzeltme, sonra 36 ana işine geç
-
-### 4. Cihat'tan örnek PDF
-
-> "2-3 örnek PAOR/AVEVA PDF yükleyebildin mi? 36-37'de format kuralı yazımı için lazım."
-
-- Varsa: 36 sonunda kısa inceleme (parser'ın hangi alanları çıkarması gerektiği)
-- Yoksa: 36 PDF'siz ilerler (genel yapı kurulur), 37'de PDF'ler gelirse format örneği hazırlanır
+- `api/izometri-oku.js` — sıfırdan (eski silinir, yenisi yazılır)
+- `izometri-batch.html` — demo modu kapatma + Ekran 2 alt sekmesi VEYA `izometri-batch-incele.html` ayrı dosya
+- `lang/{tr,en,ar}.json` — yeni i18n string'leri
+- (Cihat onaylarsa) Ekran 3 başlangıç (Format Kaydet diyalogu — B Adımı)
 
 ---
 
-## 36. Oturumun Ana İşi — İzometri Batch Backend
+## 37. Oturumun Ana İşi
 
 ### Hedef
 
-Ekran 1 (34'te yazılı, demo modunda) backend ile bağlanır. Mock data silinir, gerçek API çalışır. Manuel onay UI'sı (Ekran 2) yapılır.
+36'nın DB altyapısı koda bağlanır. Cihat'ın yaşadığı AI uydurma sorunu (PAOR yerine "50600-101358") yeni mimaride **çözülmüş** olarak çalışır. Manuel onay UI'sı şüpheli satırları operatöre düşürür. Demo modu kapatılır.
 
-### Çıktılar (büyük oturum, belki 2'ye bölünür)
+### Çıktılar
 
-#### **1. DB tabloları**
+#### **1. Yeni `api/izometri-oku.js`** (~1-1.5 saat)
 
-`migrations/36-oturum-izometri-batch.sql`:
+**Mimari:**
 
-```sql
-CREATE TABLE izometri_format_tanimlari (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ad TEXT NOT NULL,
-  cad_program TEXT,
-  cad_surum TEXT,
-  firma_kodu TEXT,
-  parser_kural JSONB NOT NULL,
-  prompt_template TEXT,
-  fingerprint JSONB NOT NULL,
-  egitim_kaynagi TEXT DEFAULT 'vision_only',
-  tenant_id UUID NULL,                  -- NULL = sistem geneli
-  aktif BOOLEAN DEFAULT true,
-  basari_orani DECIMAL DEFAULT NULL,
-  kullanim_sayisi INT DEFAULT 0,
-  son_kullanim TIMESTAMPTZ,
-  olusturan_id UUID,
-  olusturma TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE izometri_batch_kayitlari (
-  -- Brief Madde 05'teki şema, bkz docs/IZOMETRI-BATCH-KARAR.md
-);
-
--- ai_api_log tablosu (zaten varsa atla)
+```
+PDF gelir
+  ↓
+[Format Dispatcher] — fingerprint eşleştir, izometri_format_tanimlari'ndan format_id bul
+  ↓
+  ├─ Eşleşme + parser_kural dolu → L1 regex parser (sıfır token)
+  ├─ Eşleşme + parser_kural boş    → L3 Vision API + manuel onay
+  └─ Eşleşme YOK                   → L3 Vision API + tüm batch manuel onay
+  ↓
+[AI çağrısı varsa] — ai_api_log'a tam log (Yaklaşım Y prompt'u)
+  ↓
+[Sonuç doğrulayıcı] — 7 maddeli şüpheli satır kriterleri
+  ↓
+[ASME entegrasyonu] — boru_olculer'dan et/cap/iç çap/ağırlık doldur
+  ↓
+[Halüsinasyon kontrolü] — pipeline_no PDF dosya adı ile çapraz kontrol
+  ↓
+izometri_batch_kayitlari'na kaydet
+  ↓
+{ok, batch_id, sonuc_json, dogrulama_uyarilari, manuel_onay_sayisi}
 ```
 
-#### **2. Backend dispatcher refactor**
+**Yaklaşım Y prompt şablonu (genel/fallback):**
 
-`api/izometri-oku.js`:
-- 502 hatası fix (mevcut iş borcu, B katmanı önkoşulu)
-- Format dispatcher: hangi format tespit edilir, ona uygun parser çağrılır
-- L1 (regex), L2 (claude haiku), L3 (claude vision) cascade
-- ASME helper entegrasyonu — `ARES_BORU` ile et/dış çap/iç çap/ağırlık dolduruluyor
-- `ai_api_log` tablosuna her çağrı kaydı
+```
+Sen bir tersane boru imalat sistemine PDF izometri parse asistanısın.
 
-#### **3. Ekran 2 (Manuel Onay UI)**
+ÇOK ÖNEMLİ KURAL: PDF'te yazılı olmayan değer için NULL döndür. Tahmin yapma. Uydurma.
 
-`izometri-batch-incele.html` veya `izometri-batch.html`'in alt sekmesi:
+Sadece bu alanları çıkar:
+- pipeline_no (çizim no veya başlıktan, raw)
+- spool_no
+- spool_count (toplam kaç spool var)
+- dn (sadece sayı, DN yazısız: 150 değil "DN150")
+- malzeme (Karbon Çelik | Paslanmaz Çelik | Alüminyum | Bakır Alaşım | Bilinmeyen)
+- kalite_kodu (raw: ST37, A106-B, TP316L, 6061, CuNi 90/10 vb. — PDF'te ne yazılıysa)
+- standart (raw: DIN 2448, ASME B36.10, JIS G3452 vb. — PDF'te ne yazılıysa, yoksa null)
+- schedule_kod (PDF'te ne yazılıysa: 40, SCH40, STD, 10S, PN16, 20bar — null geçerli)
+- et_mm (PDF'te T:X.X yazılıysa al, yazılı değilse NULL)
+- boy_mm_listesi (CUT LENGTH değerleri — null geçerli)
+- yuzey (Galvaniz | Boyalı | Asit | Siyah, GALVANIZATION YES kutusundan veya yazıdan)
+- rev (revizyon harfi/kodu)
 
-- Şüpheli satırların listesi (sağlık uyarısı çıkanlar)
-- Her satır için: PDF orijinal görüntüsü + parser'ın çıkardığı değerler + düzeltme inputları
-- "Bu formatı kaydet, bir sonraki PDF'te ücretsiz parse et" butonu
-- Onaylanan satırlar yeşil, reddedilenler kırmızı, beklemedeler turuncu
+DİKKAT:
+- "DN150 T:4.5" gibi yazıyorsa: dn=150, et_mm=4.5
+- "DN150" yazıyor ama et yazılı değilse: dn=150, et_mm=null
+- Pipeline_no kuralı: dosya adı 11D-PAOR-52900-101540-A.pdf ise pipeline 52900-101540'tır
+- Spool numarası [1] [2] gibi köşeli parantez içindeyse: spool_count=2
 
-#### **4. Ekran 1 demo modu kapanışı**
+Çıktı sadece JSON, başka hiçbir şey yazma.
 
-`izometri-batch.html`:
+ÖRNEK YOK — örnekleri verirsem AI onları kopyalıyor (few-shot leakage). Sadece şema.
+```
+
+**Format-spesifik prompt:** Eğer `izometri_format_tanimlari.prompt_template` doluysa onu kullan. Boşsa yukarıdaki genel kullan.
+
+**Hesaplama tarafı (kod):**
+- `dn` + `kalite_kodu` (ST37→karbon, 316L→paslanmaz, vs) + `standart` (varsa) → `boru_olculer` sorgu
+- PDF'te `et_mm` varsa onu kullan, yoksa boru_olculer'dan al
+- `boru_olculer` toleransa uyuyor mu kontrol (et_min ≤ pdf_et ≤ et_max)
+- `dis_cap_mm`, `agirlik_kg_m`, `ic_cap_mm`, `hacim_l_m` boru_olculer'dan
+- Tutarsızlık varsa şüpheli işaretle
+
+**ai_api_log doldurma:**
+- Her L3 çağrısında tam istek+yanıt JSONB olarak
+- input/output tokens, maliyet (claude-haiku ≈ $0.25/1M input, $1.25/1M output)
+- batch_id, format_id, kaynak='izometri_oku', cagri_tipi='L3_vision'
+
+#### **2. Ekran 2 (Manuel Onay UI)** (~1 saat)
+
+**Dosya:** `izometri-batch-incele.html` (ayrı sayfa, yeni)
+
+**URL:** `/izometri-batch-incele.html?batch=<batch_id>`
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ← Geri (Batch Listesi)                                       │
+│ Manuel Onay — Batch #abc123                                  │
+│ Şüpheli Spool 3/9 [◀] [▶]                                    │
+├──────────────────────────────────────────────────────────────┤
+│ ┌────────────────────┬─────────────────────────────────────┐ │
+│ │ PDF Görüntüsü      │ AI Çıkardığı Veriler                │ │
+│ │ (canvas, sayfa N)  │ Pipeline: [52900-101540-Z10-2     ] │ │
+│ │                    │ Spool: [S01]                         │ │
+│ │                    │ DN: [150]                            │ │
+│ │                    │ Çap: 168.3 (boru_olculer'dan)        │ │
+│ │                    │ Et: [4.5] ⚠ ASME 6.02 — DIN olabilir │ │
+│ │                    │ Boy: [149+141+379]                   │ │
+│ │                    │ Malzeme: [Karbon ▼] Kalite: [ST37]   │ │
+│ │                    │ Yüzey: [Galvaniz ▼] Rev: [A]         │ │
+│ │                    │                                       │ │
+│ │                    │ Uyarılar:                             │ │
+│ │                    │ • Et tolerans dışı (DIN şüphesi)     │ │
+│ ├────────────────────┴─────────────────────────────────────┤ │
+│ │  [Onayla ✓]  [Reddet ✗]  [Düzelt ↺]                      │ │
+│ │                                                           │ │
+│ │  [Bu formatı kaydet — sonraki PDF'ler ücretsiz parse]    │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**API endpoint'leri:**
+- `GET /api/batch-detay?id=<batch_id>` — sonuc_json + uyarılar
+- `POST /api/spool-onayla` — manuel onay/red/düzeltme
+- `POST /api/format-kaydet` — Format Kaydet (B Adımı — 38'de tam, 37'de basit)
+
+#### **3. Ekran 1 demo modu kapanışı** (~30 dk)
+
+**Dosya:** `izometri-batch.html`
+
 - `_DEMO_MOD = true` → `false`
 - `_mockBatch()` fonksiyonu silinir
-- Gerçek API çağrıları aktif
-- Test: gerçek PDF yükle → backend ile parse et → sonuçları gör
+- Gerçek `/api/izometri-oku` çağrıları aktif
+- "İncele →" butonu → `izometri-batch-incele.html?batch=<id>` navigasyon
+- "Manuel Onay (X)" butonu → aynı navigasyon
+- Yeni format banner gerçek tetikleyici ile çalışır
+
+#### **4. i18n güncellemeleri**
+
+`lang/tr.json`, `lang/en.json`, `lang/ar.json`:
+- "Manuel onay bekliyor"
+- "Format kaydet"
+- "Bu spool şüpheli, kontrol edin"
+- "Et kalınlığı tolerans dışı"
+- "Pipeline numarası dosya adı ile uyuşmuyor"
+- vs.
 
 ### Yapılış Sırası (önerilen)
 
 | Saat | İş |
 |---|---|
-| 1 | 35 doğrulama (10dk) + DB tablo şeması + migration |
-| 2-3 | Backend dispatcher refactor + 502 fix |
-| 3-4 | ASME helper entegrasyonu — boru ağırlıkları otomatik |
-| 4-5 | Ekran 2 (manuel onay) iskelet + listeleme |
-| 5+ | Ekran 1 demo modu kapanışı + canlı test |
+| 1 | 36 mimarisi doğrulama (3 dk) + yeni `izometri-oku.js` iskeleti (format dispatcher + ai_api_log) |
+| 2 | `izometri-oku.js` Yaklaşım Y prompt + ASME entegrasyonu (boru_olculer sorgu) |
+| 3 | `izometri-oku.js` halüsinasyon kontrolü + 7 maddeli şüpheli satır kriterleri + batch_kayitlari yazma |
+| 4 | Ekran 2 (`izometri-batch-incele.html`) iskelet + listeleme |
+| 5 | Ekran 1 demo modu kapatma + canlı test (Cihat PDF yüklemiştir) |
 
-**Eğer 5 saatten uzun olur:** 37'ye bölünür. 36'da DB + dispatcher + 502 fix + ASME entegrasyonu, 37'de Ekran 2 + Format Kaydet (B Adımı).
+**Eğer 5 saatten uzun olur:** 38'e bölünür. 37'de izometri-oku + Ekran 2 listeleme, 38'de Ekran 2 düzeltme + Format Kaydet (B Adımı).
 
-### Kapsam Dışı (36'da yapılmaz)
+### Kapsam Dışı (37'de yapılmaz)
 
-- **B Adımı (AI harita önerisi)** — 37'de
-- **C Adımı (görsel işaretleme/canvas)** — 38'de
-- **Excel upload (IFS eğitim modu)** — 37'de
-- **Genelleştirme onay UI** — 38'de
-- **super_admin "AI API Kullanım" sekmesi** — 39'da
-- **Fitting/flanş tabloları** — 37-38
+- **Format Kaydet diyalogu (Ekran 3) tam hali** — 38'de
+- **B Adımı (AI harita önerisi)** — 38'de
+- **C Adımı (görsel işaretleme/canvas)** — 39'da
+- **Excel upload (IFS eğitim modu)** — 38'de
+- **Genelleştirme onay UI** — 39'da
+- **super_admin "AI API Kullanım" sekmesi** — 40'ta
+- **Fitting/flanş tabloları** — 38-39
 
 ---
 
@@ -155,54 +224,59 @@ CREATE TABLE izometri_batch_kayitlari (
 
 ### Sapmama Disiplini
 
-- **35 doğrulamadan önce 36 ana işine başlama.** Migration çalışmamışsa veya test başarısızsa önce o düzeltilir.
-- **PDF olmadan dispatcher kurabiliriz.** Cihat 36'ya kadar PDF yüklememişse, demo PDF veya generic test ile devam edilir.
-- **502 fix öncelikli.** Backend dispatcher kurulurken ilk düzeltilecek mevcut bug.
-- **ASME helper entegrasyonu Erken Adımda.** Backend boru parse ediyor → `ARES_BORU.etKalinligi(dn, sch, malzeme)` çağırıyor → ağırlık dolduruluyor. Bu test edilmeli.
+- **36 mimarisini doğrulamadan ana işe başlama.** SQL sorgusu ile 6 tablo da kontrolden geçmeli.
+- **PDF olmadan da dispatcher kurabiliriz.** Cihat 37'ye PDF yüklememişse, pilot AVEVA-PAOR satırı sayesinde generic test yapılabilir.
+- **Halüsinasyon koruması zorunlu.** Pipeline_no dosya adıyla çapraz kontrol, et tolerans kontrolü, malzeme sözlük kontrolü — bunlar dispatcher'ın **çıkış filtresi**.
+- **ASME entegrasyonu kritik.** Yaklaşım Y'nin kalbi: AI sadece okur, kod hesaplar. boru_olculer sorgusu her batch'te çalışır.
 
-### Veri Kaynakları
+### Veri Kaynakları (37'de hazır)
 
-- ASME helper zaten hazır (35'te yapıldı)
-- Demo PDF: brief'te referans var (`docs/IZOMETRI-BATCH-NOTLARI.md`)
-- Cihat'ın PAOR PDF'si gelmeden de bir genel parser kurulabilir
-
-### Statik vs DB
-
-- `izometri_format_tanimlari` DB'de — runtime sorgu OK (her batch başlangıcında 1 kez fetch)
-- ASME helper statik (35'te karar alındı, korunur)
-- `ai_api_log` DB'de — her çağrı kayıt
+- ✅ `boru_olculer` — 358 satır, 4 standart aktif
+- ✅ `boru_standart_sozluk` — 12 standart, PDF tanıma için
+- ✅ `boru_dn_isim_eslesme` — 171 NPS yazımı
+- ✅ `izometri_format_tanimlari` — 1 pilot (parser boş, fingerprint dolu)
+- ✅ `izometri_batch_kayitlari`, `ai_api_log` — boş tablolar, kullanıma hazır
+- 🟡 PAOR PDF örneği — Cihat yüklerse 37'de format öğrenilir
+- 🟡 IFS Excel — Cihat yüklerse cross-check yapılır (Karar 7)
 
 ### Sayfa Teslim Kontrol Listesi
 
 - Lint geçer mi? `node .github/kontrol.js`
-- G-08 yaygınlaştırma — yeni sayfa varsa standart uygula
+- G-08 yaygınlaştırma — yeni `izometri-batch-incele.html` standart uygula
 - i18n — yeni metinler `tv()` ile, lang/{tr,en,ar}.json güncel
-- RLS — yeni tablolar için tenant izolasyonu doğru mu?
+- RLS — izometri_batch_kayitlari ve ai_api_log policy'leri test edildi mi
+- Halüsinasyon korumasının canlı testi — gerçek PDF ile
 
 ---
 
-## Açık Sorular (36'da kararlaştırılır)
+## Açık Sorular (37'de kararlaştırılır)
 
-1. **Şüpheli satır kriteri net mi?** Brief Madde 06'da var ama operasyonel: "DN yok" / "OD ölçüsüne uymuyor" / "ağırlık DN'den çok farklı" gibi tetikleyiciler.
-2. **Format fingerprint nasıl oluşuyor?** PDF'in ilk sayfasındaki başlık + üretici metadata + dosya adı pattern. Net algoritma 36'da yazılır.
-3. **Vision API maliyet eşiği soft uyarı mı, sert blok mu?** Brief tenant başına 50 PDF/ay default — aşılırsa ne olur?
+1. **Format fingerprint algoritması:** Şu an pilot AVEVA-PAOR'ın fingerprint'i `dosya_adi_regex` + `baslik_regex`. Yeterli mi? Yoksa PDF metadata + ilk sayfa metni de mi? (37 başında karar)
+
+2. **Maliyet eşiği aşıldığında:** 50 PDF/ay default. Aşılırsa sert blok mu, sadece uyarı mı? (Brief Madde 04 → 38'de karar)
+
+3. **Format-spesifik prompt VS genel prompt:** Pilot AVEVA-PAOR'da prompt_template şu an boş. Cihat PDF örneği yükleyince B Adımı ile dolar. O zamana kadar **genel prompt** yeter. Karar: 37'de tek genel prompt, format-spesifik 38'de.
+
+4. **Ekran 2 navigasyonu — tek sayfa scroll mu, sayfa-sayfa mı?** Karar 8 (aynı batch tek format) → "Şüpheli Spool 3/9" pattern'i öneriliyor. 37'de bu uygulanır.
 
 ---
 
 ## Olası Risk
 
-- **502 fix beklenenden uzun sürebilir.** Cors, payload size, timeout sebepleri var. Eğer 1 saatten uzun sürerse Cihat'a ara verilir, alternatif yaklaşım tartışılır.
-- **PDF'sız dispatcher demo amaçlı kalır.** Cihat PAOR PDF'i 37'ye gelirse 37'de gerçek format eklenir.
-- **ASME helper'da bug çıkabilir.** 35'te 50/50 test geçti ama gerçek izometri parse'ında edge case'ler olabilir. Yeni keşif → defter, hızlı düzeltme.
+- **Prompt'ta few-shot leakage tekrarlanabilir.** AI'a "uydurma" demek yetmeyebilir. Test: gerçek PAOR PDF ile sonuç doğrulanmalı. Eğer hâlâ uyduruyor: prompt'a "GERÇEKTEN PDF'TEN OKU, EZBERDEN UYDURMA" gibi sertleştirme + sıcaklık 0.0.
+
+- **boru_olculer sorgusu yanlış sonuç verebilir.** ASME B36.10M ile DIN 2448 farklı. PDF'te "DIN 2448" yazılıysa **kod B36.10M kullanmamalı**. Çözüm: standart sözlüğünden eşleme yap, yoksa null + manuel onay.
+
+- **Vercel timeout 60s yetmeyebilir.** Büyük PDF + Vision API çağrısı uzayabilir. `maxDuration: 60` zaten var. Aşılırsa chunking veya 90s upgrade.
+
+- **PDF base64 boyutu 4.5MB üstü olabilir.** Vercel body limit. Çözüm: PDF'i istemci tarafında küçült veya direct upload + URL.
 
 ---
 
-## 37. Oturum Hatırlatıcı (yapılmadan biten önemli iş)
+## 38. Oturum Hatırlatıcı (37 bitince Cihat'a hatırlat)
 
-36 bitince Cihat'a hatırlat:
-
-> **37. oturum:** Ekran 3 (Format Kaydet) — B Adımı (AI harita önerisi) + Excel upload (IFS eğitim modu, Karar 7) + fittings tabloları (eğer 36'da yetiştiremezsek). PAOR/AVEVA PDF örnekleri lazım — yüklediysen 37'de gerçek format kayıtları yapılır.
+> **38. oturum:** Ekran 3 (Format Kaydet) tam hali — B Adımı (AI harita önerisi) + Excel upload (IFS eğitim modu, Karar 7) + fittings tablo şeması. ZORUNLU SELF-TEST günü (33→38, 5 oturum).
 
 ---
 
-> **Bu doküman 36. oturum açıldığında okunur. Önce 35 doğrulama, sonra İzometri Batch backend.**
+> **Bu doküman 37. oturum açıldığında okunur. Önce 36 mimarisi doğrulama (5 dk), sonra İzometri Batch backend kodu.**
