@@ -288,16 +288,6 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 <script>
 'use strict';
 
-// ─────────────────────────────────────────────────────────────
-// DEMO MODU — Backend dispatcher (api/izometri-oku.js) henüz hazır değil.
-// Sayfa görsel/akış testi için mock data ile çalışır.
-// 36. oturumda backend hazır olunca _DEMO_MOD=false yapılacak.
-// ─────────────────────────────────────────────────────────────
-var _DEMO_MOD = true;
-
-// URL'den ?canli=1 ile gerçek API zorlaması (geliştirici için)
-if (typeof location !== 'undefined' && location.search.indexOf('canli=1') >= 0) _DEMO_MOD = false;
-
 var DN_MM = {21.3:15,26.9:20,33.7:25,42.4:32,48.3:40,60.3:50,76.1:65,88.9:80,114.3:100,139.7:125,168.3:150,219.1:200,273:250,323.9:300,355.6:350,406.4:400};
 function capToDN(mm) {
   if (!mm) return '—';
@@ -309,9 +299,10 @@ function capToDN(mm) {
   return minDiff < 3 ? 'DN' + closest : '~DN' + closest;
 }
 
-var _dosyalar = []; // {file, durum, format, spooller, hata}
+var _dosyalar = []; // {file, durum, format, spooller, hata, batch_id}
 var _tumSpooller = [];
 var _calisıyor = false;
+var _batchId = null; // İlk PDF response'undan dolar, sonraki PDF'lerde tekrar gönderilir
 
 // ── DRAG DROP ─────────────────────────────────────────────────
 function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
@@ -346,6 +337,7 @@ function temizle() {
   if (_calisıyor) return;
   _dosyalar = [];
   _tumSpooller = [];
+  _batchId = null;
   renderDosyalar();
   document.getElementById('sonucWrap').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
@@ -438,9 +430,19 @@ async function basla() {
   // Sadece bekleyenleri sıfırla, tamam olanları koruma (yeniden çalıştırma için)
   var bekleyenler = _dosyalar.filter(function(d){ return d.durum === 'bekliyor' || d.durum === 'hata'; });
   if (!bekleyenler.length) {
-    // Hepsini sıfırla ve yeniden başlat
-    _dosyalar.forEach(function(d){ d.durum = 'bekliyor'; d.spooller = []; d.hata = null; });
+    // Hepsini sıfırla ve yeniden başlat — yeni batch açılacak
+    _dosyalar.forEach(function(d){ d.durum = 'bekliyor'; d.spooller = []; d.hata = null; d.batch_id = null; });
     _tumSpooller = [];
+    _batchId = null;
+  }
+
+  // Oturum bilgisi (tenant_id, kullanici_id) — backend zorunlu bekliyor
+  var _tid = (typeof ARES !== 'undefined' && ARES.tenantId) ? ARES.tenantId() : null;
+  var _otr = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
+  var _kid = _otr && _otr.id ? _otr.id : null;
+  if (!_tid || !_kid) {
+    alert(tv('izb_oturum_hata', 'Oturum bilgisi alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.'));
+    return;
   }
 
   _calisıyor = true;
@@ -451,6 +453,7 @@ async function basla() {
 
   var toplam = _dosyalar.length;
   var tamamlanan = 0;
+  var sira = 0;
 
   for (var i = 0; i < _dosyalar.length; i++) {
     var d = _dosyalar[i];
@@ -461,38 +464,42 @@ async function basla() {
     progressGuncelle(tamamlanan, toplam, d.file.name);
 
     try {
-      if (_DEMO_MOD) {
-        // Mock data — gerçek API yerine sahte cevap (sayfa testi için)
-        await new Promise(function(r){ setTimeout(r, 600 + Math.random()*900); });
-        var mock = _mockBatchSonuc(d.file.name, i);
-        d.format = mock.format;
-        d.spooller = mock.spooller.map(function(s) {
-          s._dosya = d.file.name;
-          return s;
-        });
-        d.durum = 'tamam';
-      } else {
-        // Gerçek API çağrısı (36. oturumda dispatcher hazır olunca)
-        var base64 = await dosyaBase64(d.file);
-        var res = await fetch('/api/izometri-oku', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdf_base64: base64, dosya_adi: d.file.name })
-        });
-        var json = await res.json();
+      var base64 = await dosyaBase64(d.file);
+      sira++;
 
-        if (!res.ok || !json.ok) throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
+      var res = await fetch('/api/izometri-oku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id:     _tid,
+          kullanici_id:  _kid,
+          batch_id:      _batchId,           // İlk dosyada null → backend yeni batch açar
+          pdf_base64:    base64,
+          dosya_adi:     d.file.name,
+          dosya_sirasi:  sira,
+          dosya_toplami: toplam
+        })
+      });
+      var json = await res.json();
 
-        d.format = json.data.format || null;
-        d.spooller = (json.data.spooller || []).map(function(s) {
-          s._dosya = d.file.name;
-          return s;
-        });
-        d.durum = 'tamam';
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
       }
+
+      // İlk başarılı dosyada batch_id'yi yakala — sonraki dosyalar aynı batch'e eklenecek
+      if (!_batchId && json.batch_id) _batchId = json.batch_id;
+
+      d.format    = json.format || null;
+      d.batch_id  = json.batch_id || _batchId;
+      d.spooller  = (json.spoollar || []).map(function(s) {
+        s._dosya    = d.file.name;
+        s._batch_id = d.batch_id;
+        return s;
+      });
+      d.durum = 'tamam';
     } catch(e) {
       d.durum = 'hata';
-      d.hata = e.message;
+      d.hata  = e.message;
     }
 
     tamamlanan++;
@@ -575,44 +582,22 @@ function renderSonucTablo() {
   }).join('');
 }
 
-// ── MANUEL ONAY (Ekran 2 - sonraki oturumda) ─────────────────
+// ── İNCELE / MANUEL ONAY (Ekran 2'ye yönlendirme) ────────────
 function inceleAc(idx) {
   var s = _tumSpooller[idx];
-  alert(tv('izb_yakinda_msg','Manuel onay sayfası 36. oturumda eklenecek.\n\nŞu an demo modu — sayfa görsel/akış testi için. Spool: ') + (s ? (s.pipeline_no + ' / ' + s.spool_no) : '?'));
+  var bid = (s && s._batch_id) || _batchId;
+  if (!bid) {
+    alert(tv('izb_batch_yok', 'Bu spool için batch bilgisi bulunamadı. Lütfen yeniden işleyin.'));
+    return;
+  }
+  window.location.href = 'izometri-batch-incele.html?batch=' + encodeURIComponent(bid);
 }
 function manuelOnayAc() {
-  var manuel = _tumSpooller.filter(function(s){ return s._manuel_onay === true; });
-  alert(tv('izb_yakinda_man','Manuel onay sayfası (Ekran 2) 36. oturumda eklenecek.\n\nŞu anda ') + manuel.length + tv('izb_yakinda_spool',' spool manuel onay bekliyor. Demo modu aktif.'));
-}
-
-// ── MOCK DATA (demo modu) ─────────────────────────────────────
-function _mockBatchSonuc(dosyaAdi, indeks) {
-  // 3. dosya bilinmeyen format simülasyonu (demo)
-  var bilinmeyen = (indeks % 3 === 2);
-  var format = bilinmeyen ? 'bilinmeyen' : 'AVEVA E3D';
-
-  // Her dosya için 2-4 mock spool üret
-  var spoolSayisi = 2 + Math.floor(Math.random() * 3);
-  var spooller = [];
-  for (var j = 0; j < spoolSayisi; j++) {
-    var mockSpool = {
-      pipeline_no: bilinmeyen ? 'YENI-CIZIM-A' + (indeks+1) : ('11D-PAOR-' + (50600 + indeks*10) + '-' + (101540 + j)),
-      spool_no: bilinmeyen ? ('SP-' + String(j+1).padStart(3,'0')) : ('S' + String(j+1).padStart(2,'0')),
-      cap_mm: [114.3, 168.3, 219.1, 88.9][j % 4],
-      malzeme: ['karbon', 'paslanmaz', 'karbon', 'bakir'][j % 4],
-      kalite: bilinmeyen ? 'ST37' : ['P235GH','316L','P265GH','CuNi10Fe1.6Mn'][j % 4],
-      et_mm: [4.5, 6.3, 8.0, 5.6][j % 4],
-      boy_mm: 800 + Math.floor(Math.random() * 1500),
-      agirlik_kg: parseFloat((10 + Math.random() * 30).toFixed(2)),
-      yuzey: ['siyah','asitlenmis','siyah','siyah'][j % 4],
-      rev: bilinmeyen ? 'A' : '0',
-      // Demo: bilinmeyen format → tüm spoollar manuel onay
-      // Tanınmış format → ~%15 ihtimalle bir spool şüpheli (sağlık uyarısı simülasyonu)
-      _manuel_onay: bilinmeyen ? true : (Math.random() < 0.15)
-    };
-    spooller.push(mockSpool);
+  if (!_batchId) {
+    alert(tv('izb_batch_yok_man', 'Önce bir PDF işle, sonra inceleyebilirsin.'));
+    return;
   }
-  return { format: format, spooller: spooller };
+  window.location.href = 'izometri-batch-incele.html?batch=' + encodeURIComponent(_batchId);
 }
 
 // ── EXCEL İNDİR ───────────────────────────────────────────────
