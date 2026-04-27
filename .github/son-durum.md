@@ -1,204 +1,216 @@
 # AresPipe — Son Durum
 
-> **Son güncelleme:** 27 Nisan 2026 — 37. oturum kapandı
-> **CI:** YEŞİL (0 hata, 22 uyarı)
-> **Aktif oturum sayısı:** 37
+> **Son güncelleme:** 27 Nisan 2026 — 38. oturum kapandı
+> **CI:** YEŞİL
+> **Aktif oturum sayısı:** 38
 
 ---
 
-## 37. Oturum Özeti
+## 38. Oturum Özeti
 
-**Tema:** İzometri Batch Backend (sıfırdan) + Endüstri Malzeme Eşleme (hub-hazır)
+**Tema:** Güvenlik sertleştirmesi (Pre-A) + PAOR canlı testi (Aşama A) + Manuel onay UI (Aşama B / Ekran 2)
 
-**Toplam süre:** ~3 saat (yoğun, mimari + kod + DB + entegrasyon + test)
+**Toplam süre:** ~6 saat (Vercel sürpriz problemleri ile uzadı)
 
 **Çıktılar:**
-- `migrations/006a_yapi.sql` — 102 satır (3 yeni tablo + RLS + indexler)
-- `migrations/006b_seed.sql` — 679 satır (4 ürün formu + 36 malzeme + 78 form-ASTM)
-- `api/izometri-oku.js` — 827 satır (sıfırdan, ARES_BORU entegre, halüsinasyon korumalı)
-- `son-durum.md` — bu güncelleme
-- `CLAUDE-SON-OTURUM.md` — 37 detaylı arşivi
-- `CLAUDE-SONRAKI-OTURUM.md` — 38 gündemi
+- `api/izometri-oku.js` — 962 satır (827 → 962, +135). Pre-A.1, Pre-A.2, Pre-A.4, Pre-A.5
+- `izometri-batch-incele.html` — 854 satır (yeni dosya, manuel onay UI)
+- `lang/tr.json` — 1592 anahtar (1512 → 1592, +80) **(henüz commit'lenmemiş, teknik borç)**
+- `lang/en.json` — 1592 anahtar
+- `lang/ar.json` — 1592 anahtar
+- `vercel.json` — `ignoreCommand` geçici devre dışı
+- `migrations/006_endustri_yapi.sql` (rename: 006a) ve `migrations/007_endustri_seed.sql` (rename: 006b)
 
-**Önemli karar:** MILFIT BORU 2024 başucu kartı incelenip C+ planı uygulandı — endüstri malzeme tablosu **hem AresPipe iç dispatcher hem halka açık hub** için tek DB üzerinden çalışacak. Cihat'ın stratejik müdahalesi: *"sektördeki bir kullanıcı gelip aradığı veriyi bulamazsa tekrar gelmez."*
-
----
-
-## Yapılan İşler — 37 Detayı
-
-### Faz 1 — Açılış (~10 dk)
-- 5 soruluk ritüel ✓
-- 36 mimarisi canlı doğrulama: 358 / 12 / 180 / 1 / 0 / 0 (`boru_dn_isim_eslesme` 9 fazla — sürpriz değil, segment dağılımı 60/60/60)
-
-### Faz 2 — MILFIT Kartı Analizi (~20 dk)
-Cihat 2 görsel yükledi (boru et kalınlığı + malzeme karşılaştırma).
-8 maddeli mimari sağlamlaştırmada eksik kalan kısımlar bulundu:
-- E1 — DIN/EN Seri 1-8 verisi
-- E2 — EN Seri ↔ ASME schedule köprüsü
-- **E3 — Ürün formu ayrımı (boru/flanş/fitting) — kritik** ✓
-- **E4 — Werkstoff No ↔ EN ↔ ASTM eşleme — kritik** ✓
-- E5 — Malzeme alt-grubu sözlük
-
-Karar: C+ (E3 ve E4 şimdi, E1 + E2 38'e). Hub vizyonu nedeniyle veri kapsamı genişletildi (50→78 form-ASTM eşleme).
-
-### Faz 3 — Migration 006 (~30 dk)
-İlk denemede tek dosya (848 satır) yapıldı, ASCII encoding sorunu yüzünden Supabase parser hata verdi.
-**Ders:** Migration dosyalarında Türkçe karakter ve em-dash (—) kullanma. Yorumlar ASCII olmalı.
-
-Çözüm: 2 dosyaya bölündü:
-- `006a_yapi.sql` — 102 satır, sadece tablo yapısı + RLS + indexler
-- `006b_seed.sql` — 679 satır, sadece INSERT'ler
-
-İkisi de temiz çalıştı. Sonuç: 4 / 36 / 78.
-
-### Faz 4 — Backend Yazımı (~45 dk)
-`api/izometri-oku.js` sıfırdan yazıldı.
-
-**Yapı (9 bölüm):**
-1. Setup & constants (env vars, model fiyatlandırma, halüsinasyon eşikleri)
-2. Ana handler (POST endpoint, validasyon, akış orkestrasyon)
-3. Supabase helpers (batch CRUD, ai_api_log, token sayaçları)
-4. Format dispatcher (fingerprint eşleme — şu an dosya adı, 38'de PDF metni)
-5. Vision AI parser (Claude API + Yaklaşım Y prompt)
-6. Yaklaşım Y prompt (6 kritik kural — uydurma yapma, pipeline_no dosya adıyla uyuşmalı vb.)
-7. ASME helper entegrasyonu (ARES_BORU + boru_olculer fallback)
-8. Halüsinasyon filtresi (7 madde — kritik/orta uyarı ağırlığı)
-9. Maliyet hesabı (model başına input/output USD)
-
-**Eski izometri-oku.js'ten korunanlar:** ERECTION vs FABRICATION ayrımı, yüzey işlemi keşfi, pipeline_no formatlama mantığı, spool sayısını köşeli parantez okuma. Bunlar 38'de format-spesifik prompt'a (parser_kural) taşınacak.
-
-### Faz 5 — ARES_BORU Entegrasyonu (~15 dk)
-Cihat ares-asme.js'i yükledi. **Önemli keşif:** dosya IIFE pattern'inde, 3 farklı export yöntemi var (window/module.exports/globalThis).
-ESM ortamında doğru import: side-effect import + `globalThis.ARES_BORU`.
-
-```js
-import '../ares-asme.js';
-const ARES_BORU = globalThis.ARES_BORU;
-```
-
-`boruOlcuBul` fonksiyonu helper-first (in-memory hızlı) + boru_olculer fallback (DIN/EN için).
-Et tolerans için ayrı `boruEtTolerans` (et_min/et_max generated kolonlar boru_olculer'da).
-
-### Faz 6 — Canlıya Çıkış + Test (~30 dk)
-- Validasyon testi: `curl -d '{}'` → `400 tenant_id zorunlu` ✓
-- Vercel Logs: 0 warning, 0 error → ARES_BORU temiz import edildi ✓
-- PAOR PDF testi: ilk denemede `Supabase 400 durum_check` hatası
-
-**Sebep:** 005 migration'da CHECK constraint izinli değerler `'parse_ediliyor', 'manuel_onay_bekliyor', 'tamamlandi', 'iptal', 'hata'` ve `format_durumu` için `'taraniyor', 'taninan', 'bilinmeyen'`. Ben kodda `'isleniyor'` ve `'tanindi'` kullanmıştım.
-
-Düzeltildi: 4 noktada string değişti + bonus olarak son dosyada manuel onay varsa batch durumu `'manuel_onay_bekliyor'` (sadece `'tamamlandi'` değil).
-
-İkinci PAOR testi: Anthropic API'ye gitti, ama **kredi yetersiz**. Backend kusursuz çalıştı, hata mesajı temiz parse oldu, Cihat'a anlamlı yanıt döndü.
-
-**Sonuç:** Backend yapısal olarak %100 doğrulandı. Gerçek PDF→JSON çıktısı 38'in başında görülecek (kredi yüklendikten sonra).
+**Önemli karar:** Manuel onay UI dikey akordeon + 5 stat kartı + 12 sütunluk profesyonel BOM tablosu. Sertifika alanı ayrı (3.1/3.2/PMI rozetleri), sil butonu satır bazında, ağırlık altyapısı turuncu işaretleme için hazır.
 
 ---
 
-## Yarım Kalan / 38'e Devir
+## Yapılan İşler — 38 Detayı
 
-1. 🔴 **Pre-A.1 — Yapısal güvenlik (A+B+C)** — magic byte + boyut + uzantı kontrolü. ~10 dk.
-2. 🔴 **Pre-A.2 — Prompt injection koruması** — strict JSON schema + suspicious keyword scan. ~15 dk.
-3. 🔴 **Pre-A.3 — Çoklu sayfa PDF dispatch (K12)** — `pdf-lib` + akıllı katmanlı (≤3/4-15/16+). ~45 dk.
-4. 🟡 **PAOR PDF gerçek testi** — Anthropic kredisi yüklendikten sonra. test_paor.json zaten Cihat'ın Downloads'ında, curl komutu hazır.
-5. 🔴 **Ekran 2 (manuel onay UI)** — `izometri-batch-incele.html` yeni dosya. ~1.5 saat.
-6. 🔴 **Ekran 1 demo modu kapanışı** — `_DEMO_MOD = false`, mock data sil + çoklu sayfa progress bar. ~30 dk.
-7. 🟡 **Format Kaydet (Ekran 3) — B Adımı** — AI harita önerisi + Cihat onay. 38 sonu veya 39.
-8. 🟡 **Excel referansı (IFS) — Karar 7** — Eğitim modu opsiyonel destek. Cihat AresPipe_Izometri_2026-04-27.xlsx'i yükledi, 38'de kullanılacak.
-9. 🟡 **DIN/EN Seri 1-8 verisi (E1)** + **EN Seri ↔ ASME köprüsü (E2)** — MILFIT kartının orta bloğu, ~200 satır INSERT.
-10. 🟡 **006 ek malzemeler** — alaşımsız grup geri kalanı (St 35.8/I, P235GH TC1/TC2 vb.) + 1.4547 + 1.8972 + dogrulama_bekliyor 3 satırın doğrulanması.
+### Faz 1 — Açılış Ritüeli (~10 dk)
+- 7 soruluk ritüel (38'e özel kredi + backend sağlık ek soruları)
+- CI yeşil, kredi var, magic byte testi geçti
+- Migration isim çakışması farkedildi: `006a_yapi.sql` ve `006b_seed.sql` regex'e (`^\d{3}_.+\.sql$`) takılıyordu — kırmızıydı
+
+### Faz 2 — CI Düzeltmesi (~5 dk)
+- Karar: dosyaları yeniden adlandır (B seçeneği) — 006'yı 006/007 yap
+- Sebep: ASCII sınırı (G-12 dersi) gelecekte yine bölme zorunluluğu yaratabilir, ama o zaman kalıcı regex genişletmesi yapılır
+- 39'a teknik borç: regex genişletme (`^\d{3}[a-z]?_.+\.sql$`)
+
+### Faz 3 — Pre-A.1 + Pre-A.2 (~25 dk)
+**Pre-A.1 — PDF yapısal güvenlik:**
+- Uzantı (.pdf), boyut (≤7MB base64 ~ 5MB PDF), magic byte (`%PDF`) kontrolü
+- Anthropic kredisi yanmadan erken döner
+- Canlı test: `{"error":"PDF formatinda degil (magic byte uyusmadi)"}` ✓
+
+**Pre-A.2 — Prompt injection koruması:**
+- Schema validation (yabancı kök alan log)
+- Suspicious keyword scan: `auth.users`, `DROP TABLE`, `system_prompt`, `ignore previous`, vb.
+- Spool sayısı sanity (>200 reddet)
+- Halüsinasyon filtresine **madde 8** eklendi: `uyari_prompt_injection: true` → kritik uyarı
+
+### Faz 4 — PAOR Canlı Testi (Aşama A) (~5 dk)
+İlk gerçek PDF→JSON çıktısı 37'den beri bekliyordu. **Sonuç temiz:**
+- `ok: true`, `spool_sayisi: 2`, `pipeline_no: "52900-101540"` (halüsinasyon yok)
+- `et_mm: 7.11, et_kaynagi: "ares_boru (SCH 40)"` — **Yaklaşım Y kanıtlandı**
+- AI notu: *"PIPE CUT-LENGTHS tablosunda 4 kesim parcasi (TUBE-150, TUBE-200) goruldu ancak bunlar spool sayisi degil"* — prompt'a uydu, kesim parçalarını spool sanmadı
+- Maliyet: $0.0296
+
+### Faz 5 — Pre-A.4 (~30 dk)
+**Asıl mesele:** `ai_api_log` tablosuna 37'de hiç kayıt yazılmamıştı. Sebep tahmini RLS'ti, ama:
+- RLS açık ama INSERT policy `with_check = true` (herkese açık)
+- Gerçek sebep: **CHECK constraint uyumsuzluğu**
+  - `cagri_tipi` kolonu CHECK: `('L1_regex' | 'L2_haiku' | 'L3_vision')` izinli
+  - Kod yazıyor: `'vision_pdf_parse'` — REDDEDİLİYOR
+  - Aynı şekilde `kaynak`: `'izometri_oku' | 'format_taniyici' | 'b_adim_oneri' | 'genel'` izinli, kod `'izometri-batch'` yazıyor
+
+**Çözüm:** Kodu CHECK'e uydur. 4 çağrı noktasında `kaynak: 'izometri-batch'` → `'izometri_oku'`, `cagri_tipi: 'vision_pdf_parse'` → `'L3_vision'`.
+
+**Sonuç:** İlk gerçek `ai_api_log` kaydı yazıldı → `kaynak: izometri_oku, cagri_tipi: L3_vision, basarili: true, http_status: 200, $0.0296`. Süper admin AI Kullanım sekmesi için veri akmaya başladı.
+
+### Faz 6 — Aşama B / Ekran 2 (~1.5 saat — yazım + 1.5 saat Vercel uğraşı)
+**`izometri-batch-incele.html` sıfırdan yazıldı** (devre_detay paterninden uyarlandı):
+- 5 stat kartı (Toplam, Hazır, Manuel, Hata, AI Güven)
+- Filtre tabları (Hepsi/Manuel/Hazır/Hata, sayaçlı)
+- **Dikey akordeon** spool kartları (Cihat'ın seçimi: A + 5 kart)
+- 8 form alanı (DN/Çap/Et/Boy/Malzeme EN+ASTM/Yüzey/Rev) düzenlenebilir
+- Aksiyon: Onayla / Reddet (modal) / Geri Al
+- Toplu Onay (kritik uyarısı olmayanlar)
+- Sabit alt bar (Tümünü Onayla + Devre/Spool Oluştur — placeholder 39)
+
+**Vercel sürprizi (~1.5 saat zaman kaybı):**
+- Ekran 2 commit'lendi ama Vercel build atladı
+- Sebep: `vercel.json`'daki `ignoreCommand` mantığı — eski deploy'larda `40a93f2` (üzerinde, "Current") olarak kaldı
+- Önce empty commit denendi → işe yaramadı
+- GitHub-Vercel webhook listesi boş (App entegrasyonu kullanıyor — webhook görünmez)
+- Çözüm: `vercel.json` içindeki `ignoreCommand` satırını **geçici devre dışı** bırakıldı (yer tutucu satır)
+- Sonra Settings/Git'te Disconnect/Reconnect yapıldı (bağlantı yenilendi)
+- Sonunda: `802 / 854 / 962` satır canlıda
+
+**Kalıcı düzeltme:** `vercel.json`'daki ignoreCommand mantığının doğru regex ile yeniden yazılması — 39 oturumuna borç.
+
+### Faz 7 — Cihat Geri Bildirimi + Pre-A.5 (~50 dk)
+Mola sonrası Cihat `spool_detay.html`'i referans gösterdi: 12 sütunlu profesyonel BOM tablosu istedi.
+
+**Karar matrisi (1a 2b):**
+- **1a — Sertifika alanı ayrı sütun:** AI prompt'una `sertifika_tipi` (3.1/3.2/PMI/null) + `malzeme_notu` (serbest metin)
+- **2b — Sil butonu (b şıkkı):** Her satırda ✕, AI yanlış satır eklerse silebilir, Excel import yok
+- **Heat No tablodan çıkarıldı:** Operatör manuel onayda Heat No bilmez
+- **Spool numarası NB138... formatı:** Eski parser'da yok, teknik borç
+- **Ağırlık:** Bugün PDF'ten yazılı olanları siyah göster, hesap altyapısı (`agirlik_kaynagi` field'ı) hazır — boru/fitting ağırlık tabloları geldiğinde turuncu otomatik devreye girecek
+
+**Pre-A.5:**
+- AI prompt'unda `malzeme_listesi` yapısı 4 alandan **12 alana** çıktı: kod, kategori, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, agirlik_kg, agirlik_kaynagi, sertifika_tipi, malzeme_notu
+- Spool seviyesinde `kalite` alanı eklendi
+- Prompt sonuna 7 maddeli özel talimat (uydurma yasakları)
+- Frontend BOM tablosu yeniden yazıldı, ARES_NORM her yerde, 14 yeni i18n anahtar
+
+### Faz 8 — i18n Genişletme (~15 dk)
+- `tr.json`: 80 yeni anahtar (66 izbi_* + cmn_tamam + 14 izbi_bom_*) → 1592 toplam
+- `en.json`: 80 yeni anahtar İngilizce çeviri → 1592 toplam
+- `ar.json`: 80 yeni anahtar Arapça çeviri → 1592 toplam
+
+**Not:** `tr.json` web yüklemesi henüz yapılmadı — 38 borcu (lint uyarı, hata değil, sayfa fallback ile çalışıyor).
 
 ---
 
-## Aktif Borçlar — 38. Oturum Başında Dikkat
+## Pilot Hattı Durumu (38 Sonu)
 
-- 🔴 **38. oturum:** Kredi yükle → PAOR canlı test → Ekran 2 + demo kapatma. Belki 39'a bölünür.
-- 🟡 **db-backup saat kontrolü** — 27 Nis bugün yapılmış (4 nisan ayı sonu kalan günler 28-30 Nis). Test devam ediyor.
-- 🟡 **G-08 yaygınlaştırma** — 21 sayfa, devre_detay pattern hazır.
-- 🟡 **Vercel ignoreCommand fix** — `vercel.json`.
-- 🟡 **SBD-01 vs GitHub Issues kararı** — Cihat seçecek.
-
-**Önceki dönemlerden devreden:**
-- 🟢 `sorgula.js` JWT-bazlı auth refactor (güvenlik açığı)
-- 🟢 Audit Log pano sekmesi
-- 🟢 Tablo Render Standardı (G-06)
-- 🟢 Operasyon sayfaları %100 — Kesim/Büküm/Markalama bitirme
-- 🟢 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
-- 🟢 G-05 CI lint kuralı
-- 🟢 help.html
-- 🟢 **G-09 — JS klasör refactor:** `ares-*.js` dosyaları kök dizinde. Sektörel standart `js/`. Yeni site açılınca uygun zaman.
-- 🟢 **G-10 (36):** Eski `asme_borular` ve `cuni_borular` tabloları silinecek. Yeni `boru_olculer` aktif.
-- 🟢 **G-11 (36):** Fitting ve flanş tabloları (~2000 satır, 9 standart kombinasyonu). 38-39 oturumlarında.
-- 🟢 **G-12 (37 — yeni):** Migration dosyalarında ASCII disiplini. Türkçe karakter ve em-dash yorum içinde Supabase parser'ını şaşırtıyor.
-- 🟢 **G-13 (37 — yeni):** Schema sorgusunu yapmadan INSERT pattern yazma. CHECK constraint'leri her zaman `pg_constraint`'ten kontrol et.
-
----
-
-## Plan / Roadmap
-
-| Oturum | Tema | Durum |
+| Aşama | Tanım | Durum |
 |---|---|---|
-| 30 | Bucket PRIVATE Faz 1-2 | ✅ |
-| 31 | Bucket PRIVATE Faz 3-6 + SED + G-08 envanter | ✅ |
-| 32 | Defter temizliği — orphan, v5, S1, D5, D6 + D3/G-08 | ✅ |
-| 33 | Vercel-bağımsız işler: self-test, D7, db-backup, D4 | ✅ |
-| 34 | CI fix + D3 + db-backup + G-08 + İzometri Batch tasarım + Ekran 1 frontend | ✅ |
-| 35 | ASME Lookup tam sistemi (B1 önkoşulu) | ✅ |
-| 36 | Mimari sağlamlaştırma (8 madde) + İzometri Batch DB altyapı | ✅ |
-| **37** | **Migration 006 (endüstri malzeme hub-hazır) + izometri-oku.js sıfırdan + ARES_BORU entegrasyonu** | **✅ KAPANDI** |
-| **38** | **PAOR canlı test + Ekran 2 (manuel onay) + Ekran 1 demo kapatma + Pre-A güvenlik (K11) + çoklu sayfa (K12) + (kalırsa) Format Kaydet B Adımı** | **Sırada — ~6 saat** |
-| 39 | C Adımı (görsel işaretleme — canvas) + genelleştirme bildirimleri + DIN/EN Seri verisi | — |
+| **Pre-A.1** | PDF yapısal güvenlik | ✅ Canlı, test edildi |
+| **Pre-A.2** | Prompt injection koruması | ✅ Kodda, gerçek injection geldiğinde devreye girer |
+| **Pre-A.3** | Çoklu sayfa dispatcher | ❌ 39'a |
+| **Pre-A.4** | ai_api_log CHECK uyumu | ✅ İlk kayıt yazıldı |
+| **Pre-A.5** | BOM yapısı genişletme + sertifika | ✅ Backend + frontend canlı |
+| **A** | PAOR canlı testi | ✅ 2 spool, halüsinasyon yok, $0.0296 |
+| **B** | Ekran 2 manuel onay UI | ✅ Canlı, 12 sütunlu BOM, sil butonu |
+| **C** | Ekran 1 demo modu kapatma + İncele linki | ❌ 39'a |
+| **D** | i18n eksiklerini topluca toplama | 🟡 Kısmen (yeni anahtarlar eklendi, eski I18N_EKSIK uyarıları hâlâ var) |
+
+---
+
+## Açık Borçlar (39 ve Sonrasına)
+
+### Yüksek Öncelik (39 Başında)
+1. **`tr.json` web yükleme** — 80 yeni anahtar `lang/tr.json`'a eklenmiş ama commit'lenmemiş. Web upload ile çözülür (5 dk). Şimdilik sayfa fallback metinlerle çalışıyor.
+2. **Aşama C — Ekran 1 demo modu kapatma + İncele linki** — Kullanıcı yeni batch oluşturduğunda Ekran 2'ye gitmesi için "İncele →" butonu gerekli (~40 dk).
+3. **Aşama D — i18n eksiklerini topla** — CI'da hâlâ ~30 I18N_EKSIK uyarısı var (devre_detay, izometri-batch, spool_detay). Toplu temizlik gerekli.
+
+### Orta Öncelik (39'da Yapılabilir)
+4. **`vercel.json` ignoreCommand kalıcı düzeltme** — Şu an devre dışı, build her commit'te tetikleniyor (gereksiz çalışıyor ama zarar yok). Doğru regex: `git diff HEAD^ HEAD --quiet -- ':(exclude).github' ':(exclude)docs' ':(exclude)*.md'` (mevcut hali aslında doğru, ama logic karışık olabilir — yeniden test edilmeli).
+5. **Pre-A.3 çoklu sayfa dispatcher** — 16+ sayfa kenar durumu için pdf-lib ile bölme. Şu an PAOR (3 sayfa) zaten çalışıyor. Üretimde 50 sayfa izometri yok.
+6. **Migration regex genişletmesi** — `^\d{3}[a-z]?_.+\.sql$` (006a, 007b vb. sıralı bölmelere izin ver).
+7. **Devre/Spool Oluştur endpoint'i** — Ekran 2'deki buton şu an placeholder modal. `/api/izometri-onayla` endpoint'i yazılacak: onaylanan spool'lar `devre_kayitlari` + `spool_kayitlari` tablolarına dönüştürülecek.
+
+### Düşük Öncelik (40+ Oturuma)
+8. **Spool numarası NB138... formatı** — Tersane içi kodlama formatı. Cihat'tan tam format alınacak. Düzeltme yeri: AI prompt + `spool-head-baslik` render.
+9. **Boru ağırlık tablosu** — DN×SCH→kg/m. Tedarik edilecek.
+10. **Fitting ağırlık tablosu** — DN×tip×malzeme→kg. Tedarik edilecek.
+11. **Ağırlık otomatik hesap + turuncu işaretleme** — Tablolar gelince hızlı (1 saat). Frontend altyapısı hazır.
+12. **Eski izometri-oku.js'in bazı zenginlikleri** — FABRICATION/ERECTION ayrımı, DPN kodu, çap dönüşüm tablosu. 37'de sıfırdan yazılırken kayboldu. Prompt zenginleştirme borcu.
+13. **Tekrar Parse butonu** — Manuel onayda AI'ya tekrar sor. Kredi yakacağı için dikkatli düşünülmesi gereken bir özellik.
+
+### Hub Vizyonu (Site Kurulduktan Sonra)
+14. **ASME hub sayfası** — `tools/asme-lookup.html` + `tools/malzeme-eslesme.html` halka açık (37'den geliyor)
+
+---
+
+## 40+ Ürün Yol Haritası (37'den Devam)
+
+| Oturum | İş | Durum |
+|---|---|---|
+| 38 | Pre-A güvenlik + Aşama A canlı + Aşama B Ekran 2 + Pre-A.5 BOM | ✅ TAMAM |
+| 39 | Aşama C demo kapatma + Aşama D i18n + Pre-A.3 çoklu sayfa + Format Kaydet B | — |
 | 40 | Pilot AVEVA-PAOR canlıya alınır + super_admin "AI API Kullanım" sekmesi | — |
 | **Yeni site** | **ASME hub sayfası** (`tools/asme-lookup.html` + `tools/malzeme-eslesme.html` halka açık) | Site kurulduktan sonra |
-
-**40+ ÜRÜN DÖNEMİ.**
 
 ---
 
 ## Bu Oturumun Dersleri
 
-1. **Hub vizyonu mimariyi büyüttü** — Cihat'ın "sektördeki kullanıcı veriyi bulamazsa tekrar gelmez" demesi C planını C+'ya çevirdi. Veri kapsamı 50 satırdan 78'e çıktı, malzeme tabloları hem iç dispatcher hem halka açık hub için tasarlandı. Tek DB, çift kullanım — Cihat'ın "kod değiştirmeden iş büyüsün" felsefesinin doğal uzantısı.
+1. **Yanlış dosya yüklemesi felaket potansiyeli** — `mv ~/Downloads/izometri-oku.js` komutu Downloads'ta eski bir versiyonu kapıp `api/izometri-oku.js` üzerine yazdı (827 satır → 232 satır). Lokal'de fark edildi (`wc -l`), commit edilmeden geri alındı (`git reset --soft HEAD~1` + `git checkout origin/main`). **Pattern:** Yeni isimle dosya teslim et (`EKRAN2-incele-v1.html` gibi tarihli isim), `mv` öncesi `wc -l` ile boyut kontrolü, `git diff --stat` ile insertion/deletion sayılarını **commit etmeden önce** doğrula. Felaket sayıları (`792 deletions`) görünce commit'leme, geri al.
 
-2. **ASCII disiplini migration'larda zorunlu (G-12)** — İlk 006 migration 848 satırdı, Türkçe karakter + em-dash yüzünden Supabase parser hata verdi. 2 dosyaya bölündü, ASCII'ye çevrildi, temiz çalıştı. **Pattern:** Migration yorumlarında em-dash yerine `--`, Türkçe karakter yerine ASCII karşılığı kullan.
+2. **CHECK constraint kontrolü zorunlu (G-13 yaygınlaştırması)** — `ai_api_log.cagri_tipi` ve `kaynak` kolonlarında CHECK constraint vardı, ben kod yazarken kontrol etmedim. RLS sandım, gerçekte CHECK uyumsuzluğu olduğu çıktı. **Pattern:** Yeni tabloya yazan fonksiyon yazmadan önce sadece şema değil, CHECK ve enum sınırlarını da kontrol et. 39'da `docs/SCHEMA-CHECKS.md` özet dosyası açılabilir.
 
-3. **Schema kontrolü tahmin etmeye karşı (G-13)** — `izometri_batch_kayitlari.durum` ve `format_durumu` için CHECK constraint vardı, ben tahmin ederek `'isleniyor'` ve `'tanindi'` yazdım. Hata aldık. **Pattern:** Yeni tabloya INSERT yazmadan önce `pg_constraint`'ten CHECK kuralını kontrol et:
-   ```sql
-   SELECT conname, pg_get_constraintdef(oid)
-   FROM pg_constraint
-   WHERE conrelid = 'tablo_adi'::regclass AND contype = 'c';
-   ```
+3. **Vercel ignoreCommand mantık tuzağı** — `git diff HEAD^ HEAD --quiet -- :(exclude)... && exit 0 || exit 1` mantığı kafayı karıştırıyor. Empty commit ile bypass yapılamadı. Sonunda komutu devre dışı bıraktık. **Pattern:** Vercel build mantığı için `--prod` flag, manuel redeploy butonu, `ignoreCommand` regex'i — üçü de farklı kuralla çalışıyor. 39'da kalıcı çözüm.
 
-4. **ESM/CommonJS interop için side-effect import** — ares-asme.js IIFE pattern'inde, sonunda `globalThis.ARES_BORU = api`. ESM modülde `import * from` çalışmadı çünkü dosya `module.exports` kullanıyor. Çözüm: side-effect import + globalThis'ten oku. Bu pattern AresPipe'taki diğer ares-*.js dosyaları için de geçerli (ileride api/'den çağrılırsa).
+4. **GitHub-Vercel webhook ≠ webhook listesi** — Vercel App entegrasyonu kullanıyor, GitHub Settings/Webhooks'ta görünmüyor. Settings/Installations'ta "Vercel" altında. Disconnect/Reconnect Settings/Git üzerinden yapılır. Env vars proje seviyesinde, git bağlantısından bağımsız.
 
-5. **Backend yapısal doğrulama ≠ uçtan uca test** — Anthropic kredisi yetmediği için PDF→JSON canlı testi yapılamadı. Ama backend tüm yolu yürüdü: validasyon → batch oluşturma → format dispatcher → Anthropic API isteği → hata yakalama → temiz response. Yapısal doğrulama %100 ama Yaklaşım Y'nin gerçek PDF üzerinde halüsinasyon koruduğunu kanıtlamadı. **38'in ilk işi.**
+5. **Yaklaşım Y kanıtlandı** — PAOR canlı testinde AI et kalınlığını PDF'te bulamadı, `null` bıraktı, kod ARES_BORU'dan SCH 40 = 7.11mm doldurdu. AI uydurmadı, sistem hesap yaptı. AI notunda *"kesim parçaları spool sayısı değil"* yazdı — prompt'a uydu. K4/36 kararı yaşıyor.
 
-6. **CIHAT-PROFIL pattern doğrulandı** — Cihat strateji sorularıyla yön değiştirdi (MILFIT kartı incelemesi → C+ planı). Net karar talebi anlık verildi (1 c 2 a tek satırlık cevap). Aceleci olunca uzun ritüele direnmedi (curl çıktısını paylaşırken minimum yorum). Profil dosyası bu oturumda **canlı yararlı** oldu.
+6. **Cihat'ın stratejik geri bildirimi** — Mola sonrası `spool_detay.html` ile karşılaştırarak BOM tablosunu profesyonelleştirme talebi. "Heat No çıkar, sertifika ekle, ağırlık altyapısını şimdi hazırla" — 1a 2b tek satır karar. Ağırlık altyapısının **şimdi hazırlanması** önemli: tablolar geldiğinde kod değişikliği gerektirmeyecek, sadece veri eklenecek. Cihat'ın "kod değişmeden iş büyüsün" felsefesinin doğal uygulaması.
+
+7. **CIHAT-PROFIL pattern tekrar doğrulandı** — Vercel uğraşırken Cihat sabırlı kaldı, ama "kafam karışıyor" dediğinde direkt en hızlı yola gidildi (web upload). Karar talebi anlık (1a 2b), uzun ritüele direnmedi (curl çıktısı yapıştır, devam). Profil dosyası bu oturumda **tekrar canlı yararlı**.
 
 ---
 
-## Üretilen Dosyalar (5 toplam)
+## Üretilen Dosyalar (8 toplam)
 
 | Dosya | Tip | Boyut | İçerik |
 |---|---|---|---|
-| `migrations/006a_yapi.sql` | Yeni | ~5 KB | 3 tablo + 8 index + RLS, ASCII |
-| `migrations/006b_seed.sql` | Yeni | ~25 KB | 4 + 36 + 78 INSERT, ASCII |
-| `api/izometri-oku.js` | Yeniden yazıldı | ~32 KB / 827 satır | Sıfırdan, ARES_BORU entegre, halüsinasyon korumalı |
+| `api/izometri-oku.js` | Genişletme | 962 satır | +135 satır: Pre-A.1 + Pre-A.2 + Pre-A.4 + Pre-A.5 |
+| `izometri-batch-incele.html` | **Yeni** | 854 satır | Manuel onay UI (devre_detay paterni) |
+| `lang/tr.json` | Güncelleme | 1592 anahtar | +80 anahtar (66 izbi_* + cmn_tamam + 14 izbi_bom_*) **— web upload borçlu** |
+| `lang/en.json` | Güncelleme | 1592 anahtar | +80 İngilizce çeviri |
+| `lang/ar.json` | Güncelleme | 1592 anahtar | +80 Arapça çeviri |
+| `vercel.json` | Geçici | — | `ignoreCommand` devre dışı (kalıcı fix 39'a) |
+| `migrations/006_endustri_yapi.sql` | Rename | 102 satır | (eski 006a, isim formatı uyumu için) |
+| `migrations/007_endustri_seed.sql` | Rename | 679 satır | (eski 006b) |
 | `son-durum.md` | Güncelleme | — | Bu dosya |
-| `CLAUDE-SON-OTURUM.md` | Yeni | — | 37 detaylı arşivi |
-| `CLAUDE-SONRAKI-OTURUM.md` | Yeni | — | 38 gündemi |
+| `CLAUDE-SON-OTURUM.md` | Yeni | — | 38 detaylı arşivi |
+| `CLAUDE-SONRAKI-OTURUM.md` | Yeni | — | 39 gündemi |
 
 ---
 
-## Mimari Kararlar (Toplam 6 yeni — K7-K12/37)
+## Mimari Kararlar (Toplam 3 yeni — K13-K15/38)
 
 | # | Karar | Detay |
 |---|---|---|
-| **K7 (37)** | Hub-hazır endüstri malzeme tabloları | `endustri_urun_formlari` + `endustri_malzemeler` + `endustri_form_astm`. Tek DB, hem AresPipe iç hem halka açık hub. RLS: tüm tenant okur (public), super_admin yazar. |
-| **K8 (37)** | MILFIT 2024 referansı | Veri kaynağı `kaynak = 'milfit-2024'`. Şüpheli satırlar `dogrulama_durumu = 'dogrulama_bekliyor'`. Hub açılmadan önce %100 doğrulama gerekecek. |
-| **K9 (37)** | ASCII migration disiplini | Migration dosyalarında Türkçe karakter ve em-dash kullanma. CIHAT-PROFIL'e G-12 eklendi. |
-| **K10 (37)** | ESM side-effect import pattern | ares-*.js dosyaları için `import '../ares-X.js'` + `globalThis.ARES_X` pattern. ares-store, ares-lang, ares-normalize için de kullanılacak (web tarafı). |
-| **K11 (37)** | Zararlı PDF + prompt injection koruması | Mimari doğal bağışıklık (PDF sunucuda parse edilmiyor). Ek: magic byte + boyut + uzantı + JSON schema + keyword scan. 38 Pre-A.1 ve Pre-A.2. |
-| **K12 (37)** | Çoklu sayfa PDF akıllı dispatch | ≤3 tek istek, 4-15 paralel, 16+ sıralı. `pdf-lib` ile sunucu-side bölme. 38 Pre-A.3. |
+| **K13 (38)** | Manuel onay UI dikey akordeon (A pattern) | Tablo + drawer (B pattern) yerine. Sebep: operatör akışı, mobil uyum, hazır CSS sınıfları, filtre tabı ile uzun liste yönetimi. 50+ spool nadir, B pattern sapması yok. |
+| **K14 (38)** | BOM tablosu spool_detay paterni + sertifika ayrı sütun | 12 sütun: # / Kod / Kategori / Açıklama / Malzeme / Kalite / Dış Çap / Et / Boy / Adet / Ağırlık / Sertifika / Not / [✕]. Heat No yok (operatör bilmez). Sertifika rozetli (3.1 mavi, 3.2 turuncu, PMI yeşil). |
+| **K15 (38)** | Ağırlık `agirlik_kaynagi` field'ı (turuncu altyapı) | `agirlik_kg` her zaman var, kaynağı `pdf` ise siyah, `hesap` veya `tablo` ise turuncu + yıldız. Bugün hep PDF (siyah), tablolar geldiğinde otomatik turuncu. K4/36 (Yaklaşım Y) genişletmesi. |
 
 ---
 
-> Bu dosya GitHub'a yüklenince 37. oturum kapanmış sayılır.
+> Bu dosya GitHub'a yüklenince 38. oturum kapanmış sayılır.
