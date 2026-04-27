@@ -2556,8 +2556,12 @@
   if (typeof window !== 'undefined') {
     window.ARES_BORU = api;
   }
-  // Node.js / test ortamı
+  // Node.js CommonJS uyumluluğu
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
+  }
+  // Node ESM uyumluluğu — globalThis üzerinden eriş
+  if (typeof globalThis !== 'undefined') {
+    globalThis.ARES_BORU = api;
   }
 })();
