@@ -1,159 +1,208 @@
-# 35. Oturum Gündemi — ASME Lookup Tam Sistemi
+# 36. Oturum Gündemi — İzometri Batch Backend + 35 Canlı Doğrulama
 
-> **Tarih:** 27 Nisan 2026 (veya sonrası)
-> **Tema:** B1 (İzometri Batch) önkoşulu — ASME standart boru ölçü modülü
-> **Önkoşul belge:** `docs/IZOMETRI-BATCH-KARAR.md` (Karar 5 — A1)
+> **Tarih:** 28 Nisan 2026 (veya sonrası)
+> **Tema:** İzometri Batch backend dispatcher + DB tabloları + Ekran 2 (manuel onay UI)
+> **Önkoşul:** 35'in canlı doğrulaması (4 dosya yüklü + migration çalıştı + test 50/50 + CI yeşil)
+> **Önkoşul belge:** `docs/IZOMETRI-BATCH-KARAR.md` (Karar 1-10)
 
 ---
 
-## Oturum Açılışı
+## 36. Oturum Açılışı (~10 dk — 35 doğrulama)
 
 **Standart 5 soruluk ritüel** (CLAUDE.md), sonra:
 
-1. **db-backup saat kontrolü** — `arespipe-backups` repo Commits sekmesi → 27 Nis sabah commit saati. Beklenen: TR 03:00-03:30 (UTC 00:00-00:30). Hâlâ UTC 03:00+ ise `arespipe-backups` repo'sundaki workflow yml dosyasına bakılmalı (cron syntax veya alternatif tetikçi).
+### 1. 35'in canlı doğrulaması (öncelikli)
 
-2. **Cihat'tan örnek PDF kontrolü:** "*34'te 2-3 örnek PAOR/AVEVA PDF yükleyeceğini söylemiştin. Yüklediğin var mı?*"
-   - Varsa: 35'te kısa inceleme (ASME tablosu için referans çap/et değerleri çıkarılır)
-   - Yoksa: sorun değil, ASME genel standart, PDF'siz çalışılır
+> "35'te ASME Lookup veri katmanını yapmıştık. 4 dosyayı yüklediğini söylemiştin. Şimdi kontrol edelim:"
 
-3. **Ekran 1 demo testi sorgu:** "*izometri-batch.html'i yükleyip demo modu test ettin mi? PDF yükleme → 'Batch Başlat' → format badge'leri + manuel onay vurgusu görsel olarak çalışıyor mu?*"
-   - Cihat onaylarsa: Ekran 1 frontend kapatıldı ✓
-   - Sorun varsa: 35'te kısa düzeltme, sonra ASME'ye geç
+```sql
+-- Supabase SQL editor'de çalıştır:
+SELECT 'asme_borular' AS tablo, COUNT(*) FROM asme_borular
+UNION ALL
+SELECT 'cuni_borular', COUNT(*) FROM cuni_borular;
+```
 
-4. **G-08 yaygınlaştırma kısa kontrol:** 21 sayfa hâlâ açık, devre_detay pattern hazır. Bu oturumda mı (zaman varsa) yoksa 36+ mı?
+**Beklenen:**
+- `asme_borular` → 334 satır (karbon 214 + paslanmaz 70 + alüm 50)
+- `cuni_borular` → 24 satır (cunife 20bar 12 + 16bar 12)
+
+**Birim test:**
+```bash
+node tests/asme-lookup.test.js
+```
+**Beklenen:** "50 başarılı, 0 başarısız"
+
+**Spot check (Cihat sektörel değerlerle karşılaştırır):**
+- DN100 SCH40 karbon: et 6,02 mm — ağırlık 16,08 kg/m
+- DN200 SCH40 karbon: et 8,18 mm — ağırlık 42,55 kg/m
+- DN150 EEMUA 20bar cunife: OD 159 mm (ASME 168,3'ten farklı)
+
+**Eğer doğrulama tamamsa:** 35 kapatılır, 36 ana işine geçilir.
+**Eğer hata varsa:** Önce hata düzeltilir, sonra ana iş.
+
+### 2. db-backup saat kontrolü
+
+> "27-30 Nis sabahları izlemeye almıştık. `arespipe-backups` repo Commits sekmesinde son commit saati TR 03:00-03:30 (UTC 00:00-00:30) mı?"
+
+- Doğru saatteyse: ✅ defter temizlenir, gözlem süresi biter
+- Hâlâ kayıksa: `arespipe-backups` repo'sundaki `db-backup.yml` cron syntax kontrolü
+
+### 3. Ekran 1 demo testi
+
+> "izometri-batch.html'i tarayıcıda açıp demo modu test ettin mi? PDF yükleme + Batch Başlat + format badge'leri + manuel onay vurgusu görsel olarak çalışıyor mu?"
+
+- Çalışıyorsa: ✅ Ekran 1 frontend kapatıldı (34'te yazılmıştı)
+- Sorun varsa: kısa düzeltme, sonra 36 ana işine geç
+
+### 4. Cihat'tan örnek PDF
+
+> "2-3 örnek PAOR/AVEVA PDF yükleyebildin mi? 36-37'de format kuralı yazımı için lazım."
+
+- Varsa: 36 sonunda kısa inceleme (parser'ın hangi alanları çıkarması gerektiği)
+- Yoksa: 36 PDF'siz ilerler (genel yapı kurulur), 37'de PDF'ler gelirse format örneği hazırlanır
 
 ---
 
-## 35. Oturumun Ana İşi — ASME Lookup
+## 36. Oturumun Ana İşi — İzometri Batch Backend
 
 ### Hedef
 
-Boru sektörünün standart ölçüm tablolarını AresPipe'a kalıcı veri olarak getirmek. İzometri parser bu tablodan okuyarak DN+SCH'ten et kalınlığı, dış çap, ağırlık hesaplayacak.
+Ekran 1 (34'te yazılı, demo modunda) backend ile bağlanır. Mock data silinir, gerçek API çalışır. Manuel onay UI'sı (Ekran 2) yapılır.
 
-### Çıktılar
+### Çıktılar (büyük oturum, belki 2'ye bölünür)
 
-**1. DB tablosu — `asme_olculer`**
+#### **1. DB tabloları**
+
+`migrations/36-oturum-izometri-batch.sql`:
 
 ```sql
-CREATE TABLE asme_olculer (
-  id SERIAL PRIMARY KEY,
-  nps TEXT NOT NULL,           -- "1/2", "1", "4", "12" (NPS standart)
-  dn INT NOT NULL,             -- 15, 25, 100, 300 (metric eşdeğer)
-  dis_cap_mm DECIMAL(6,2) NOT NULL,    -- 21.34, 33.40, 114.30
-  schedule TEXT NOT NULL,      -- "5S","10","10S","20","30","40","STD","60","80","XS","100","120","140","160","XXS"
-  et_mm DECIMAL(5,2) NOT NULL,
-  ic_cap_mm DECIMAL(6,2) NOT NULL,     -- (dis_cap - 2*et)
-  agirlik_kg_m DECIMAL(7,3),   -- karbon çelik nominal (referans)
-  notlar TEXT,
-  UNIQUE (dn, schedule)
+CREATE TABLE izometri_format_tanimlari (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad TEXT NOT NULL,
+  cad_program TEXT,
+  cad_surum TEXT,
+  firma_kodu TEXT,
+  parser_kural JSONB NOT NULL,
+  prompt_template TEXT,
+  fingerprint JSONB NOT NULL,
+  egitim_kaynagi TEXT DEFAULT 'vision_only',
+  tenant_id UUID NULL,                  -- NULL = sistem geneli
+  aktif BOOLEAN DEFAULT true,
+  basari_orani DECIMAL DEFAULT NULL,
+  kullanim_sayisi INT DEFAULT 0,
+  son_kullanim TIMESTAMPTZ,
+  olusturan_id UUID,
+  olusturma TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_asme_dn ON asme_olculer(dn);
-CREATE INDEX idx_asme_dn_sch ON asme_olculer(dn, schedule);
+CREATE TABLE izometri_batch_kayitlari (
+  -- Brief Madde 05'teki şema, bkz docs/IZOMETRI-BATCH-KARAR.md
+);
+
+-- ai_api_log tablosu (zaten varsa atla)
 ```
 
-**Kapsam:** DN15-DN400 (NPS 1/2 - NPS 16) × SCH 10/20/30/40/STD/60/80/XS/100/120/140/160/XXS. Yaklaşık **150-200 satır seed data**.
+#### **2. Backend dispatcher refactor**
 
-**2. Helper modülleri**
+`api/izometri-oku.js`:
+- 502 hatası fix (mevcut iş borcu, B katmanı önkoşulu)
+- Format dispatcher: hangi format tespit edilir, ona uygun parser çağrılır
+- L1 (regex), L2 (claude haiku), L3 (claude vision) cascade
+- ASME helper entegrasyonu — `ARES_BORU` ile et/dış çap/iç çap/ağırlık dolduruluyor
+- `ai_api_log` tablosuna her çağrı kaydı
 
-`js/ares-asme.js`:
-```js
-window.ARES_BORU = {
-  // Et kalınlığı: DN100 + SCH40 → 6.02 mm
-  etKalinligi: function(dn, schedule, malzeme) { ... },
-  
-  // Dış çap: DN100 → 114.30 mm
-  disCap: function(dn) { ... },
-  
-  // İç çap: DN100 + SCH40 → 102.26 mm
-  icCap: function(dn, schedule) { ... },
-  
-  // Schedule belirsizse default kuralı (DN ≤ 250 → SCH40, DN > 250 → STD)
-  varsayilanSchedule: function(dn) { ... },
-  
-  // NPS ↔ DN dönüşümü (1" ↔ DN25)
-  npsToDn: function(nps) { ... },
-  dnToNps: function(dn) { ... }
-};
-```
+#### **3. Ekran 2 (Manuel Onay UI)**
 
-`js/ares-agirlik.js`:
-```js
-window.ARES_AGIRLIK = {
-  // Boru ağırlığı: DN100 + SCH40 + 1000mm karbon çelik → 16.06 kg
-  boruHesapla: function(dn, schedule, boy_mm, malzeme) { ... },
-  
-  // Fitting ağırlığı (yaklaşık): tip + DN + SCH'e göre tablo
-  fittingHesapla: function(tip, dn, schedule, malzeme) { ... },
-  
-  // Toplam: array ver, toplam kg dön
-  topla: function(parcalar) { ... }
-};
-```
+`izometri-batch-incele.html` veya `izometri-batch.html`'in alt sekmesi:
 
-**3. Migration dosyası:** `migrations/003_asme_olculer.sql` (CREATE + INSERT seed data)
+- Şüpheli satırların listesi (sağlık uyarısı çıkanlar)
+- Her satır için: PDF orijinal görüntüsü + parser'ın çıkardığı değerler + düzeltme inputları
+- "Bu formatı kaydet, bir sonraki PDF'te ücretsiz parse et" butonu
+- Onaylanan satırlar yeşil, reddedilenler kırmızı, beklemedeler turuncu
 
-**4. Test dosyası:** `tests/asme-lookup.test.js` veya benzer — 5-10 birim test:
-- DN100 SCH40 → et_mm=6.02 ✓
-- DN50 SCH40 + 1000mm karbon → 5.44 kg ✓
-- DN300 SCH40 → STD'ye fallback (uyarı gerekirse) ✓
-- Bilinmeyen DN → exception veya null + console.warn ✓
-- NPS "4" → DN 100 ✓
+#### **4. Ekran 1 demo modu kapanışı**
+
+`izometri-batch.html`:
+- `_DEMO_MOD = true` → `false`
+- `_mockBatch()` fonksiyonu silinir
+- Gerçek API çağrıları aktif
+- Test: gerçek PDF yükle → backend ile parse et → sonuçları gör
 
 ### Yapılış Sırası (önerilen)
 
-1. **Saat 1 — Veri toplama:** ASME B36.10 / B36.19 standart tablosundan DN15-DN400 × SCH değerleri toplanır. Çoğu PDF/Excel tablosundan rahat çıkarılır. Karbon çelik ağırlıkları nominal (referans).
-2. **Saat 2 — Migration yazımı:** `003_asme_olculer.sql` — CREATE TABLE + 150 INSERT satırı.
-3. **Saat 3 — Helper modülleri:** `ares-asme.js` + `ares-agirlik.js`. DB'den okumak yerine modülün içine **statik object** olarak yazılır (browser-side, DB'ye gidip gelmek pahalı, veri statik).
-4. **Saat 4 — Test:** Birim testler + manuel doğrulama (3-4 spot check).
-5. **Saat 5 — Migration uygula + commit + push:** Canlıda doğrulama.
+| Saat | İş |
+|---|---|
+| 1 | 35 doğrulama (10dk) + DB tablo şeması + migration |
+| 2-3 | Backend dispatcher refactor + 502 fix |
+| 3-4 | ASME helper entegrasyonu — boru ağırlıkları otomatik |
+| 4-5 | Ekran 2 (manuel onay) iskelet + listeleme |
+| 5+ | Ekran 1 demo modu kapanışı + canlı test |
 
-### Kapsam Dışı (35'te yapılmaz)
+**Eğer 5 saatten uzun olur:** 37'ye bölünür. 36'da DB + dispatcher + 502 fix + ASME entegrasyonu, 37'de Ekran 2 + Format Kaydet (B Adımı).
 
-- İzometri batch entegrasyonu — 36+
-- ASME B16 (fittings) tam kütüphanesi — kabuller motoru içinde, 36-37
-- Pattern fallback (Schedule belirsiz → varsayılan) — sadece basit kural, otomatik öğrenme yok
-- Ağırlık hesabında flanş/braket korreksiyonu — kabuller motoru, 36+
-- Malzeme bazlı yoğunluk farklılıkları (paslanmaz vs karbon yoğunluk farkı %3) — şimdilik hep karbon çelik referansı, flag eklenmez
+### Kapsam Dışı (36'da yapılmaz)
+
+- **B Adımı (AI harita önerisi)** — 37'de
+- **C Adımı (görsel işaretleme/canvas)** — 38'de
+- **Excel upload (IFS eğitim modu)** — 37'de
+- **Genelleştirme onay UI** — 38'de
+- **super_admin "AI API Kullanım" sekmesi** — 39'da
+- **Fitting/flanş tabloları** — 37-38
 
 ---
 
 ## Açılış Notları (Claude için)
 
-- **Sapmama disiplini:** ASME Lookup tek hedef. İzometri batch'e atlama. KARAR.md Karar 5 net diyor: önce ASME, sonra B1.
-- **Veri kaynağı:** ASME tabloları açık standart, internet'te rahat bulunur. Cihat'a "veriyi nereden alıyoruz" diye sorma — ben web search ile bulurum, doğrulukları kontrol ederim.
-- **Statik vs DB tartışması:** Helper'lar **modülün içine gömülü statik object** kullansın. DB tablo migration tarihsel takip + API entegrasyonu için, ama runtime sorgu DB'ye gitmez (yavaş, 200 satır = 5 KB JS, hafif).
-- **i18n:** Boru/Schedule terimi sektörel, Türkçeleştirme YOK. "Schedule" ve "DN" kalır.
-- **G-01 (i18n) kontrolü:** Yeni hata mesajları/console.warn'lar varsa `tv()` ile i18n'lenmeli (eğer kullanıcıya görünür string ise).
-- **Sayfa Teslim Kontrol Listesi:** ASME modülü UI'a temas etmez (helper). Bu yüzden checklist'in çoğu uygulanmaz, ama lint geçer mi kontrol edilmeli (`node .github/kontrol.js`).
+### Sapmama Disiplini
+
+- **35 doğrulamadan önce 36 ana işine başlama.** Migration çalışmamışsa veya test başarısızsa önce o düzeltilir.
+- **PDF olmadan dispatcher kurabiliriz.** Cihat 36'ya kadar PDF yüklememişse, demo PDF veya generic test ile devam edilir.
+- **502 fix öncelikli.** Backend dispatcher kurulurken ilk düzeltilecek mevcut bug.
+- **ASME helper entegrasyonu Erken Adımda.** Backend boru parse ediyor → `ARES_BORU.etKalinligi(dn, sch, malzeme)` çağırıyor → ağırlık dolduruluyor. Bu test edilmeli.
+
+### Veri Kaynakları
+
+- ASME helper zaten hazır (35'te yapıldı)
+- Demo PDF: brief'te referans var (`docs/IZOMETRI-BATCH-NOTLARI.md`)
+- Cihat'ın PAOR PDF'si gelmeden de bir genel parser kurulabilir
+
+### Statik vs DB
+
+- `izometri_format_tanimlari` DB'de — runtime sorgu OK (her batch başlangıcında 1 kez fetch)
+- ASME helper statik (35'te karar alındı, korunur)
+- `ai_api_log` DB'de — her çağrı kayıt
+
+### Sayfa Teslim Kontrol Listesi
+
+- Lint geçer mi? `node .github/kontrol.js`
+- G-08 yaygınlaştırma — yeni sayfa varsa standart uygula
+- i18n — yeni metinler `tv()` ile, lang/{tr,en,ar}.json güncel
+- RLS — yeni tablolar için tenant izolasyonu doğru mu?
 
 ---
 
-## Açık Sorular (35'te kararlaştırılır)
+## Açık Sorular (36'da kararlaştırılır)
 
-1. **NPS imperial gösterimi de gerekli mi?** AresPipe metric (DN) kullanıyor, ama PAOR PDF'de NPS de geçebilir → dönüşüm helper'ı kesin lazım.
-2. **Schedule "NULL" çıkarsa default ne?** Önerim: `dn <= 250 ? "40" : "STD"` — ama Cihat'ın sektör bilgisi devreye girebilir.
-3. **Ağırlık tablosunda yoğunluk farkı** (paslanmaz/karbon/alüminyum/bakır)? Karbon × 1.0, paslanmaz × 1.02, alüm × 0.34, bakır × 1.13 katsayıları (yaklaşık) — şimdilik eklenir mi yoksa hep karbon mu?
+1. **Şüpheli satır kriteri net mi?** Brief Madde 06'da var ama operasyonel: "DN yok" / "OD ölçüsüne uymuyor" / "ağırlık DN'den çok farklı" gibi tetikleyiciler.
+2. **Format fingerprint nasıl oluşuyor?** PDF'in ilk sayfasındaki başlık + üretici metadata + dosya adı pattern. Net algoritma 36'da yazılır.
+3. **Vision API maliyet eşiği soft uyarı mı, sert blok mu?** Brief tenant başına 50 PDF/ay default — aşılırsa ne olur?
 
 ---
 
 ## Olası Risk
 
-ASME tablosu büyük ve hata payı düşük olmalı. **Yanlış et kalınlığı = yanlış ağırlık = yanlış sevkiyat hesabı.** Veri tek kez yazılır, sonsuza kadar referans olur. Bu yüzden:
-- En az **iki ASME kaynağından** çapraz kontrol (web search + Wikipedia + sektörel referans)
-- Cihat'a göstermeden push yok — 4-5 spot doğrulama (DN50, DN100, DN200 SCH40 değerleri)
-- Migration `[skip ci]` değil — CI çalışsın, lint geçsin
+- **502 fix beklenenden uzun sürebilir.** Cors, payload size, timeout sebepleri var. Eğer 1 saatten uzun sürerse Cihat'a ara verilir, alternatif yaklaşım tartışılır.
+- **PDF'sız dispatcher demo amaçlı kalır.** Cihat PAOR PDF'i 37'ye gelirse 37'de gerçek format eklenir.
+- **ASME helper'da bug çıkabilir.** 35'te 50/50 test geçti ama gerçek izometri parse'ında edge case'ler olabilir. Yeni keşif → defter, hızlı düzeltme.
 
 ---
 
-## 36. Oturum Hatırlatıcı (yapılmadan biten önemli iş)
+## 37. Oturum Hatırlatıcı (yapılmadan biten önemli iş)
 
-35'in ana işi ASME ama 35 bitince Cihat'a hatırlat:
+36 bitince Cihat'a hatırlat:
 
-> **36. oturum:** Backend dispatcher (`api/izometri-oku.js`) refactor + 502 fix + DB tabloları (`izometri_format_tanimlari`, `izometri_batch_kayitlari`) + Ekran 2 (manuel onay) UI. Bu oturum büyüktür — belki 2 oturuma bölünür.
->
-> Ekran 1'in `_DEMO_MOD = true` sabiti `false`'a çekilecek. Mock data fonksiyonu silinecek.
+> **37. oturum:** Ekran 3 (Format Kaydet) — B Adımı (AI harita önerisi) + Excel upload (IFS eğitim modu, Karar 7) + fittings tabloları (eğer 36'da yetiştiremezsek). PAOR/AVEVA PDF örnekleri lazım — yüklediysen 37'de gerçek format kayıtları yapılır.
 
 ---
 
-> **Bu doküman 35. oturum açıldığında okunur. ASME Lookup'ın bitirme kriterleri burada belli, açık sorular da kararlaştırma sırasını gösterir.**
+> **Bu doküman 36. oturum açıldığında okunur. Önce 35 doğrulama, sonra İzometri Batch backend.**

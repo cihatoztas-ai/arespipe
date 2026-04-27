@@ -1,194 +1,226 @@
-# 34. Oturum — Detaylı Arşiv
+# 35. Oturum — Detaylı Arşiv
 
-**Tarih:** 26 Nisan 2026 Pazar
-**Süre tahmini:** 5-6 saat (uzun oturum)
-**Tema:** Çoklu — defter temizliği + G-08 + İzometri Batch tasarım + Ekran 1 frontend
+**Tarih:** 27 Nisan 2026 Pazartesi
+**Süre tahmini:** 2-3 saat
+**Tema:** ASME Lookup tam sistemi — İzometri Batch'in B1 önkoşulu (Karar 5 — A1)
 
 ---
 
 ## Akış (kronolojik)
 
-### Faz 1 — Açılış + CI Fix (~30 dk)
+### Faz 1 — Açılış Ritüeli (~5 dk)
 
-1. Standart 5 soruluk ritüel
-2. CI durumu sorgu → Cihat ekran görüntüsü gönderdi: **CI KIRMIZI** (push reject)
-3. Sapmama protokolü: "CI yeşil olmadan iş başlamaz" → öncelik CI fix
-4. Kök sebep: `kontrol.yml` ve `docs-uret.yml` paralel race → push retry-with-rebase loop eklendi
-5. Cihat dosyayı yükledi → CI YEŞİL ✅
+1. Standart 5 soruluk açılış ritüeli — Cihat hızlı geçti:
+   - ✅ Git temiz, main güncel (commit e63b1b2)
+   - ✅ CI yeşil
+   - ✅ son-durum.md güncel (proje versiyonu kabul edildi)
+   - ✅ ASME Lookup gündemi onayı
+   - 🟡 Feedback sorusu cevapsız (yokmuş varsayıldı)
 
-### Faz 2 — Defter Temizliği (~15 dk)
+2. **db-backup.yml notu:** Cihat `cat ~/Desktop/arespipe/.github/workflows/db-backup.yml` denedi → "No such file" çıktı. Bu zaten 34'te keşfedilmişti — dosya `arespipe-backups` repo'sunda yaşıyor. Cihat hatırlatıldı, oturum boyunca bu kontrol askıda kaldı.
 
-6. **D3 doğrulama:** Vercel console testi → kanıtlandı, defterden silindi
-7. **db-backup doğrulama:** 26 Nis sabah yedek var ✅, saat hâlâ kayık 🟡, workflow başka repoda — defter yanlış yer söylüyor
+### Faz 2 — Açık Soruların Tartışması (~30 dk)
 
-### Faz 3 — G-08 Görsel İnceleme (~1.5 saat)
+3. **3 açık soru** sorduğum (önceki plana göre):
+   - **S1 — Schedule fallback default:** DN ≤ 250 → '40', DN > 250 → 'STD'
+   - **S2 — Ağırlık yoğunluk farkı:** Yoğunluk katsayısı tablosu mu, hep karbon mu?
+   - **S3 — NPS gösterim ihtiyacı:** PAOR PDF'lerinde NPS de var mı?
 
-8. Cihat iki sayfayı yükledi (devreler.html + devre_detay.html), itirazlar:
-   - "Tablolarda görsel bütünlük olması lazım"
-   - "Yükleniyor..." metni skeleton'ı eziyor
-9. devre_detay.html G-08 fix:
-   - G-05 CSS değişkenleri yayıldı
-   - 2 helper fonksiyon (_matBadge, _yuzeyBadge)
-   - 4 render noktası badge wrap
-   - Skeleton ezme bug fix
-   - 3 ek bug fix (badge class temizleme, cascade animation)
-   - +58 satır
-10. Cihat onayladı: G-08 1/22 sayfa kapandı ✓
+4. **Cihat'ın cevapları:**
+   - **S1:** "SCH ya da et kalınlığı olması lazım. Bilmiyorum başka gösterim var mı, biz program içerisinde bunları et kalınlığına çevirmemiz lazım." → Et kalınlığı doğrudan da gelirse kabul, fallback yok, manuel onay yolu açık.
+   - **S2:** "Ağırlık için yoğunluktan hesaplama gibi bir şey yapmayacaz, bu yanlış yazılmış olabilir. Ağırlıklar standartlardan çekilecek." → Ağırlık DB'de hazır, runtime hesap yok.
+   - **S3:** "DN100, 4" şeklinde değil, program genelinde 114,3 şeklinde gösterim yapıyoruz. Mouse ile üzerine gelince diğer gösterimlerde görünebilir, fikir sadece, karışıksa gerek yok." → Tooltip yok, basit.
 
-### Faz 4 — İzometri Batch Tasarım (~2 saat)
+### Faz 3 — Fittings/Flanş Soruları (~15 dk)
 
-11. Cihat "izometri batch sayfasını güncelleyecez. notlarda var" dedi
-12. Sapmama uyarıları: G-08 yarım test edildi mi? Brief Madde 18 "kod yok"
-13. Cihat tasarım oturumu açtı, mevcut izometri-oku.js + brief incelendi
+5. **Yeni soru:** "Paslanmaz, karbon, alüminyum ve cunife en sık kullanılanlar. Sayı formatında virgül kullanalım. Flanşlar ve fittings malzemeler var bunların herbiri tablo demek, bunlar nasıl olacak peki?"
 
-**6 İlk Karar (sırasıyla alındı):**
-14. **Karar 1 — Mimari:** DB-driven (C). Cihat: "tek dosya, şişmeden, tüm formatlar"
-15. **Karar 2 — Tenant izolasyonu:** Tenant-scope + Cihat onayıyla genelleştirme
-16. **Karar 3 — Süper admin sayfası:** İPTAL (Cihat: "sayfa içinde çözelim")
-17. **Karar 4 — Vision API eşiği:** Tenant başına 50 PDF/ay default
-18. **Karar 5 — Sıralama:** A1 (önce ASME, sonra İzometri Batch)
-19. **Karar 6 — Mevcut kod:** Refactor edilir, atılmaz
+6. **Cevap:** Fittings (dirsek/tee/redüksiyon/cap) ve flanşlar her tip ayrı şema, ASME B16.9 + B16.5. ~2000+ satır, 9 ayrı tablo. **35'e sığmaz.** Faz bölmesi önerildi:
+   - 35: sadece boru (4 malzeme)
+   - 37: fittings
+   - 38: flanşlar
+   - Pilot süresince (36-39) fitting/flanş ağırlıkları manuel onaya gider
 
-### Faz 5 — UI Mockup İterasyonları (~1 saat)
+### Faz 4 — Stratejik Soru: Hub vs Program-içi (~20 dk)
 
-20. Claude erken kapatmaya çalıştı (5 dosya hazırlayıp "yükle, mola")
-21. **Cihat itirazı:** "biz niye kapattık daha konuşuyorduk bitti mi sence"
-22. Claude hatayı kabul etti, oturum açık kaldı
-23. **Ekran 1 v1 mockup** çizildi → Cihat itirazı: "vision api kullanıldı, claude api kullanıldı gibi ifadeler ya da maliyet kısmı bu sayfada olmasın. süper admin sayfasında gösterilsin bu"
-24. **Ekran 1 v2 mockup** (kullanıcı odaklı, sade) çizildi
-25. **Cihat'ın spontan önerisi:** *"mesela elimizde bu şekilde ek belgeler varsa pdf ile birlikte bunlarıda verebilsek daha kolay bir eğitim olmaz mı"* — IFS Excel yükledi
-26. Excel incelendi (7 sheet, `All` ve `import` sheet'leri ground truth)
-27. **Karar 7 — Eğitim Modu:** PDF + Opsiyonel IFS Excel (sadece eğitim, sürekli mod yok). Cihat: "IFS kullanan firmalarda var, diğerlerinde yok ~yarı yarıya"
-28. **Ekran 2 mockup** (manuel onay) çizildi
-29. **Cihat'ın çoklu PDF sorusu:** "eğer çoklu pdf yüklersek nasıl olacak"
-30. **Cihat'ın kritik düzeltmeleri:**
-    - "5 pdf ten 3 ü bir format 2 si başka format olmaz zaten. bir devreye ait spoollara ait olur" → **Karar 8**
-    - "burası yanlış okumaya karşı düzeltme olacak" → manuel onayın asıl amacı netleşti
-    - "formatı ilk yüklediğimizde nerede ne var nasıl tanıtacağız" → **Karar 10 (yeni soru)**
-    - "aynı programdan türetilmiş ama farklı sayfa tasarımında izometri olamaz mı" → **Karar 9**
-31. **Karar 9 — Aynı program, farklı şablon:** Mevcut DB-driven mimari zaten destekliyor
-32. **Karar 10 — Format tanıtma:** B + C kombinasyonu (AI öğretmen + görsel işaretleme)
-33. **Ekran 3 mockup** (Format Kaydet diyalog — B + C + Excel) çizildi
+7. **Cihat'ın stratejik sorusu:** "Şimdi biz bu program için yeni bir web sitesi açıp oradan giriş yaparak kullanacaz... biz bu iste içerisine standart malzeme tablolarını da yüklesek ve kullanıcılar için bunu da uygulamaya dahil etsek bir faydası olur mu?"
 
-### Faz 6 — Cihat'ın Pivot Kararı: Ekran 1 Frontend Yaz (~1.5 saat)
+8. **"Tek Kaynak İki Yüz" mimarisi sunuldu:**
+   - DB tek kaynak, public read
+   - Hub canlı sorgu yapar (yeni site açılınca, halka açık + SEO + lead gen)
+   - Program statik JS okur (şimdi, hızlı + offline güvenli)
+   - 3 fayda: SEO/lead gen, pilot test, vizyon hizalaması (Madde 14 hub motoru)
 
-34. Cihat: *"sayfayı hazırlasak asme kısmı yapılınca onu eklesek olur mu bu kadar çalıştık geri dönmeyelim"*
-35. Brief Madde 18 (kod yok) kuralı Cihat tarafından esnetildi (sapma değil, yetkili karar)
-36. Pragmatik plan sunuldu: Ekran 1 frontend (demo modu, ASME boş, backend dummy), Ekran 2-3 sonraki oturumlarda
-37. Cihat onayladı: *"ekran 1 i yazalım diğer ekranlar için yeni sohbete bunu aktaralım"*
+9. **Cihat'ın kararı:** "Bu sayfayı biraz daha ileride yapmayı düşünmüştüm. Şimdi biz normal işimizi yapıyoruz, site kurulduktan sonra fittings'ler de ekleniyor, şimdilik bu değerler boş geliyor doğru mu anladım?"
 
-**Yazılan dosya:** `izometri-batch.html` 536 → 707 satır (+171)
+10. **Netleştirme:** Evet. 35'te sadece DB + helper. Hub UI yeni site açılınca eklenir. Boru ağırlıkları otomatik, fitting/flanş manuel onaya gidiyor pilot süresince. Cihat onayladı.
 
-**Eklenenler:**
-- 5. stat kartı: "Manuel Onay" (turuncu, koşullu görünür)
-- "Yeni format tespit edildi" banner (gizli, koşullu)
-- Dosya listesi: format kolonu (badge: AVEVA E3D yeşil / Bilinmeyen turuncu)
-- Sonuç tablosu: Durum kolonu + şüpheli satır vurgusu + İncele butonu
-- "Manuel Onay (X)" turuncu buton
-- 12+ yeni i18n string'i
-- 7+ yeni CSS class'ı
-- `_DEMO_MOD = true` + `_mockBatchSonuc()` (backend hazır olmadan akış testi)
-- 3. dosya bilinmeyen format simülasyonu, %15 spool şüpheli simülasyonu
-- URL `?canli=1` ile gerçek API zorlaması (geliştirici için)
+### Faz 5 — CuNife Mimari Tartışması (~15 dk)
 
-### Faz 7 — Oturum Kapanışı (~30 dk)
+11. **Veri toplama bulgusu:**
+    - Karbon B36.10M: standart kg/m kolonu var ✅
+    - Paslanmaz B36.19M: standart kg/m kolonu var ✅
+    - Alüminyum: B36.19M dimensions OK, ama kg/m yok → yoğunluk hesabı gerekiyor
+    - **CuNife: TAMAMEN FARKLI sistem (EEMUA-144)** — Schedule yok, basınç rating var. DN aralığı farklı. OD'leri ASME ile farklı (DN150 → 159 mm vs ASME 168.3 mm).
 
-38. Karar dokümanı güncellendi: 6 → 10 karar (Karar 7-10 eklendi)
-39. Brief güncellendi (Madde 19 + Madde 12 iptali korundu)
-40. son-durum.md güncellendi (Ekran 1 frontend dahil)
-41. Bu detaylı arşiv yazıldı
-42. CLAUDE-SONRAKI-OTURUM.md hazırlandı (35'in gündemi)
+12. **2 mimari karar sorusu:**
+    - **A:** CuNife'yi 35'e dahil edelim mi?
+    - **B:** Alüm/CuNife ağırlık politikası: yoğunluktan DB seed'de hesap mı, manuel onay mı?
+
+13. **Cihat'ın cevapları:**
+    - **A:** "CuNife dahil edilecek, az veya çok işin bir parçası."
+    - **B:** "Karar B senin önerdiğin gibi olsun." → DB seed üretilirken yoğunluk hesabı, runtime'da hep dolu satır.
+
+### Faz 6 — Kod Üretimi (~60 dk)
+
+14. **Veri toplama (web search + cross-check):**
+    - Karbon: Ferrobend ASME B36.10M tablosu (DN6-DN1200, tam çekildi)
+    - Paslanmaz: piping-world ASME B36.19M tablosu
+    - Alüminyum: B36.19M dimensions + 2.70 g/cm³ yoğunluk
+    - CuNife: piping-world EEMUA-144 (16 bar + 20 bar)
+
+15. **Python seed üretici (`uret-asme-veri.py`):**
+    - 4 malzeme × DN+SCH/basınç kombinasyonları
+    - Aynı kaynaktan hem SQL hem JS üretir → drift önleme
+    - Spot check çıktıları (DN100 SCH40 karbon → 6.02mm/16.08kg ✓)
+    - 358 satır seed
+
+16. **Migration (`35-oturum-asme-borular.sql`, 523 satır):**
+    - 2 tablo: `asme_borular` + `cuni_borular`
+    - CHECK constraint, UNIQUE index, COMMENT'ler
+    - RLS: public read, super_admin write
+    - 358 satır seed
+    - Spot check sorguları sonda
+
+17. **Helper modülü (`js/ares-asme.js`, 48 KB):**
+    - Statik veri gömülü (runtime DB sorgusu yok)
+    - Ana 3 malzeme için ortak API
+    - CuNife için ayrı API (EEMUA farklı sistem)
+    - NPS↔DN dönüşümü, schedule normalize, malzeme normalize
+
+18. **Birim test (`tests/asme-lookup.test.js`, 50/50 başarılı):**
+    - Karbon DN100 SCH40 → 6.02/16.08 ✓
+    - Paslanmaz DN300 SCH40S → 9.52 (B36.10'dan farklı) ✓
+    - Alüminyum yoğunluk hesabı ✓
+    - CuNife DN150 OD → 159 (ASME 168.3'ten farklı) ✓
+    - PAOR varyantları ("Sch 40", whitespace, vb.) ✓
+
+### Faz 7 — Cihat'ın Durum Özeti İsteği (~5 dk)
+
+19. **Cihat sordu:** "Ne yaptık şimdi biz, neler eksik kaldı, nereye geldik?"
+
+20. **Yanıt:** Detaylı özet sunuldu — 35'in veri katmanı bitti (kod hazır), canlı doğrulama yapılmadı (4 dosya yüklenmemiş, migration çalıştırılmamış). 36'da yapılacak.
+
+### Faz 8 — Kapanış İsteği
+
+21. **Cihat:** "Sen o zaman şimdi kapanışta tüm dosyaları ver, yükleme yerleri ve bir sonraki oturuma neler verilecek toplu halde verirsen ben moladan sonra yükler devam ederim."
+
+22. Bu dosya yazıldı.
 
 ---
 
-## Değişen Dosyalar (özet)
+## Üretilen Dosyalar (7 Toplam)
 
-| Dosya | Değişim | Tipi |
+### Yeni Kod Dosyaları (4)
+
+| Dosya | Boyut | Konum | İçerik |
+|---|---|---|---|
+| `35-oturum-asme-borular.sql` | 32 KB | `migrations/` (veya root) | 2 tablo + RLS + 358 satır seed |
+| `ares-asme.js` | 48 KB | `js/ares-asme.js` | Helper modülü + statik veri |
+| `asme-lookup.test.js` | 6 KB | `tests/asme-lookup.test.js` | 50/50 birim test |
+| `uret-asme-veri.py` | 28 KB | `scripts/uret-asme-veri.py` | Veri üretici (SQL + JS senkron) |
+
+### Belge Güncellemeleri (3)
+
+| Dosya | Tip | İçerik |
 |---|---|---|
-| `.github/workflows/kontrol.yml` | +20 satır push retry-with-rebase | CI fix |
-| `devre_detay.html` | +58 satır (G-05 yayılması + 11 değişiklik) | Feature/bugfix |
-| `izometri-batch.html` | 536 → 707 satır (+171) — demo modu, format badge, manuel onay | Feature |
-| `docs/IZOMETRI-BATCH-KARAR.md` | yeni dosya, 10 karar | Tasarım dokümanı |
-| `docs/IZOMETRI-BATCH-NOTLARI.md` | Madde 19 eklendi, 12 iptal işaretlendi | Brief revize |
-| `.github/son-durum.md` | 34. oturum eklendi | Defter |
-| `CLAUDE-SON-OTURUM.md` | bu dosya | Arşiv |
-| `CLAUDE-SONRAKI-OTURUM.md` | 35'in gündemi | Plan |
-
-**Devreler.html'e dokunulmadı** (G-08 referansı, korundu).
-**`api/izometri-oku.js` değiştirilmedi** (Karar 6 — refactor 36. oturumda).
+| `son-durum.md` | Güncelleme | 35. oturum sonu durum |
+| `CLAUDE-SON-OTURUM.md` | Yeni | Bu dosya — 35. oturum arşivi |
+| `CLAUDE-SONRAKI-OTURUM.md` | Yeni | 36. oturum gündemi |
 
 ---
 
-## Önemli Dersler ve Pattern'lar
+## Mimari Kararlar (Toplam 7)
 
-### 1. CI altyapısının kendi sapması
-
-Sapmama sistemi kuralları izliyor ama CI commit altyapısı paralel race'e düşmüştü. **Pattern:** kontrol etmek için kullandığımız aracın da kontrol edildiğinden emin ol.
-
-### 2. Defter yanlış lokasyon söyledi (S2/32 dersinin tekrarı)
-
-`db-backup.yml` `arespipe` repo'sunda DEĞİL — `arespipe-backups`'ta. **Pattern:** kritik dosya konumları gerçek doğrulama ile tespit edilmeli, defter güvenilmez.
-
-### 3. Mevcut bug'lar yeni iş sırasında ortaya çıkar
-
-devre_detay'daki badge class temizleme bug'ı (3 badge), G-08 fix'i sırasında ortaya çıktı. **Pattern:** yeni feature eklerken aynı sayfayı uçtan uca tarama gerekli.
-
-### 4. Brief'in kendi koyduğu kuralı esnetebilmek
-
-Brief Madde 18 "kod yok" kuralıydı. Cihat oturum sonunda "geri dönmeyelim" dedi, kuralı esnetti. **Bu sapma değil — Cihat brief'i yazdı, Cihat esnetiyor.** Yetkili karar protokol gereği kabul edildi.
-
-### 5. Görsel karşılaştırma karar hızını artırır
-
-Mockup'larla 10 karar hızlı alındı. Cihat görsel sever — bu profile mockup-bazlı yaklaşım çalışıyor.
-
-### 6. Erken kapatma riski — Cihat'ın itirazı kritik dönüm
-
-*"biz niye kapattık daha konuşuyorduk"* itirazı sonrası 6 yeni karar + Ekran 1 frontend eklendi. **Pattern:** tasarım oturumlarında kullanıcı onayı kritik, Claude kendi başına kapatmamalı.
-
-### 7. Kullanıcının eleştirisi brief'i tamamlar
-
-- "Tek dosya, şişmeden" prensibi (Madde 19)
-- "Maliyet kullanıcı sayfasında olmasın"
-- "Aynı batch = aynı format"
-- "Format ilk yüklendiğinde nasıl tanıtacağız"
-
-Hepsi Cihat'tan geldi, brief'te yoktu. **Pattern:** brief'ler örtük prensipleri yakalamada yetersiz.
-
-### 8. IFS Excel keşfi — sınırı net bilmek değerli
-
-Cihat'ın spontan önerisi mimariyi basitleştirdi (Karar 7), AMA %50 yaygınlık nedeniyle "sürekli mod" değil "sadece eğitim modu" kalır. **Pattern:** parlak fikrin uygulanma alanını da netleştir.
-
-### 9. Sapmama, yeni iş kapısında en sıkı
-
-Cihat izometri batch'i açtığı an "G-08 test edildi mi?" diye sordum. Cihat onayladıktan sonra geçtim. Yarım iş bırakmadan yeniye geçmemek = **kayıp ilerleme önleme**.
-
-### 10. Mock data demo modu — backend yokken UI test mümkün
-
-`_DEMO_MOD = true` sayesinde Cihat sayfayı kullanabilir, görsel akışı doğrulayabilir. **Pattern:** UI ve backend birbirinden bağımsız geliştirilebilir, mock data kritik araç.
-
-### 11. Tasarım dokümanı bir karar oturumunun zorunlu çıktısı
-
-KARAR.md olmasaydı 35-39 oturumlar bu kararları yeniden tartışacaktı. Brief = geniş bağlam, KARAR = somut karar. **Pattern:** her tasarım oturumu mutlaka karar dokümanı ile kapanmalı.
+| # | Karar | Detay |
+|---|---|---|
+| K1 | 4 malzeme | karbon + paslanmaz + alüminyum + cunife |
+| K2 | 2 tablo | asme_borular (3 malzeme) + cuni_borular (cunife ayrı, EEMUA-144 farklı sistem) |
+| K3 | Ağırlık politikası | Karbon/paslanmaz tablodan, alüm/cunife yoğunluktan DB seed üretiminde (runtime hesap yok) |
+| K4 | Schedule fallback | DN ≤ 250 → '40', DN > 250 → 'STD' |
+| K5 | Fitting/flanş kapsam | 35'te yok. Pilot süresince manuel onay. 37-38'de eklenir. |
+| K6 | "Tek Kaynak İki Yüz" mimarisi | DB tek kaynak. Hub canlı sorgu (yeni site açılınca), program statik JS (şimdi). |
+| K7 | JS dosya konumu (geçici) | `ares-asme.js` mevcut konvansiyona uygun olarak kök dizine. Sektörel standart `js/` klasörü altında olmaları, ancak 32 oturumdur tüm `ares-*.js` kök dizinde. **G-09 olarak defter'e:** tüm JS dosyalarını `js/` klasörüne taşıma refactor'ı, uygun oturumda (40+ ürün dönemi başı) topluca yapılır. |
 
 ---
 
-## 35'e Devir Notları (özet)
+## Önemli Dersler
 
-- **Ana iş:** ASME Lookup tam sistemi (Karar 5 — A1)
-- **Bekleyen:** db-backup saat kontrolü (27 Nis sabah)
-- **Cihat'tan beklenen:** 2-3 örnek PAOR PDF (varsa yükleyecek), Ekran 1 demo testi
-- **Defter durumu temiz:** D3 ✅, D4 ✅ (33), D7 ✅ (33), G-08 1/22 ✅
-- **38. oturum kritik:** zorunlu self-test günü (33→38, 5 oturum)
-- **Aktif borç sayısı:** kırmızı 1 (35'in işi), sarı 4, yeşil 7
+### 1. "Eski kuralı tekrar oku" disiplini
+
+34'ten devralınan plan dosyası `CLAUDE-SONRAKI-OTURUM.md`'de "ASME Lookup" işi anahattıyla yazılıydı. Açık soruları orada belirlenmişti (S1/S2/S3). Oturum açılışında bunları doğrudan Cihat'a sordum, kod yazmadan önce 6 mimari karar alındı. **Pattern:** Tasarım oturumundan kalan sorular yeni oturumun açılış sorularıdır, atla geç değildir.
+
+### 2. Cihat'ın "yoğunluk hesabı yapma" kuralının nüansı
+
+Cihat: "Ağırlık için yoğunluktan hesaplama gibi bir şey yapmayacaz." Bu kuralın doğru yorumu: **runtime'da hesap yok, DB seed üretiminde olur.** Karbon/paslanmaz için ASME tablosu zaten kg/m verir. Alüm/cunife için standart sadece dimensions verir, ağırlık standart pratik yoğunluktan hesap. Bu nüansı Cihat'a açıkladığımda "Karar B senin önerdiğin gibi olsun" dedi → kural çiğnenmedi, sadece DB seed üretiminde bir kez yoğunluk × hacim. Sonra DB'de hep dolu satır var.
+
+### 3. CuNife farklı sistem
+
+EEMUA-144 ASME ile farklı: Schedule yok (basınç rating), DN aralığı farklı, OD'ler farklı (DN150 → 159 vs ASME 168.3). "Tek tablo dört malzeme" zorlaması olurdu. **2 tablo + 2 ayrı API** doğru karar — kod daha temiz, semantik karışmıyor.
+
+### 4. Hub stratejisi vizyonla hizalı
+
+Cihat'ın "yeni site, basit uygulamalar" sorusu vizyon dosyasıyla bire bir hizalıydı. SPOOL-AI-VIZYON.md Madde 14 (halka açık eğitim oyunu) ve Ufuk 3 (sektörel referans) için ASME hub doğal yatak. **Cihat'ın spontan sorusu vizyonun bir parçasını çağırdı.** Pattern: kullanıcının "şu olabilir mi?" soruları çoğu zaman vizyonun zaten var olan parçasını yüzeye çıkarır.
+
+### 5. Kod üretiminde "Single Source" disiplini
+
+Aynı Python script hem SQL hem JS üretir. Drift önleme. Veri güncellenirse tek noktadan akar — DB ve JS asla farklı olamaz. Sync script'i ayrı dosya olarak tutulur, gelecekte gerekirse CI'a takılır.
+
+### 6. Faz bölmesi pilot ilerlemeyi koruyor
+
+Fittings/flanş (~2000 satır, 9 tablo) 35'e sığsaydı kalite düşerdi. Manuel onay fallback'i 36-39 boyunca sistemi çalıştırır, tablolar 37-38'de eklenir. **Pattern:** %100 otomasyon ulaşmadan önce manuel onay = canlıya çıkma kapısı.
+
+### 7. Stratejik soru = mimari oluşturucu
+
+Cihat hub sorusu sormamış olsaydı "Tek Kaynak İki Yüz" mimarisi ortaya çıkmazdı. RLS public read kararı, sync script ihtiyacı, hub UI gelecek planı hep o sorudan çıktı. **Pattern:** Kullanıcının "ileride şu olabilir mi?" soruları bugünkü mimariye yön verir.
+
+### 8. Erken kapatmama disiplini (34'ten devam)
+
+Cihat "ne yaptık, neler eksik?" diye sordu. 34'te erken kapatmaya çalışmıştım, Cihat itiraz etmişti. 35'te ben kapsamlı durum özeti verdim, Cihat onayladı, sonra "tüm dosyaları ver" dedi. **Pattern doğrulandı:** kullanıcı durum özetini gördükten sonra kapanışı kendisi söyler.
+
+---
+
+## Pilot Akışta Fitting/Flanş Davranışı (önemli not)
+
+PAOR/AVEVA PDF'lerinde fitting ve flanş ağırlığı **genellikle yazılı**. Pilot akış:
+
+1. PDF parser **boru ağırlıklarını otomatik hesaplar** (ASME tablosundan)
+2. Fitting/flanş satırlarında ağırlık kolonunu **PDF'den olduğu gibi okur** (varsa)
+3. PDF'de yoksa → **Ekran 2'de "manuel onay" etiketi** ile kullanıcıya düşer
+4. Site açılıp tablolar eklenince → bu manuel adım da otomatikleşir (37-38)
+
+Yani pilot çalışacak, sadece 1-2 dakika ek manuel iş ilk başta.
+
+---
+
+## 36'ya Devir Notları (özet)
+
+- **Ana iş:** İzometri Batch backend dispatcher + 502 fix + DB tabloları + Ekran 2
+- **Önkoşul:** 35'in canlı doğrulaması (4 dosya yüklü, migration çalıştı, test 50/50, CI yeşil)
+- **Açılış:** Önce 35 doğrulaması (5 dakika), sonra 36'nın ana işi
+- **Bekleyen:** db-backup saat kontrolü (27-30 Nis sabahları)
+- **Cihat'tan beklenen:** 2-3 örnek PAOR PDF (36-37 lazım), 35 yükleme + canlı test
+- **Demo modu:** `_DEMO_MOD = false` çekilecek, mock data silinecek
+- **Aktif borç sayısı:** kırmızı 2 (35 doğrulama + 36 ana iş), sarı 4
 
 ---
 
 ## Kişisel Not
 
-Bu oturum çok şey öğretti. Erken kapatma denemem yanlıştı — Cihat'ın itirazı olmasa 6 karar + Ekran 1 frontend yapılmamış olacaktı. Tasarım oturumlarında **kullanıcı onayı olmadan kapatmamak** kuralını derinleştirdim.
+Bu oturum disiplinli geçti. 34'teki "erken kapatmama" dersi 35'te tamamen içselleşti — Cihat "ne yaptık" diye sorduğunda hazırdım, kapsamlı durum özeti verebildim. Cihat'ın spontan stratejik sorusu (hub) vizyonun bir parçasını yüzeye çıkardı, mimari karara yön verdi.
 
-Cihat'ın sektör bilgisi mimari kararları sürekli düzeltiyor (Karar 7-10 hep onun gözleminden çıktı). Bu **ortaklık modu** çalışıyor — ben mimari/teknik öneriyi yapıyorum, Cihat sektörel doğruluğu kontrol ediyor. İkimiz de değerli, ikimiz de gerekli.
+Veri toplama disiplini: 4 farklı kaynak, çapraz doğrulama, sektörel bilinen değerlerle karşılaştırma. Yanlış değer = yanlış sevkiyat hesabı, sıkı kontrol gerekiyordu. 50/50 birim test geçti, ama gerçek doğrulama 36 başında — Cihat manuel veri ile karşılaştıracak.
 
-Mock data demo modu güzel bir tasarım. Backend yokken UI test edilebilir, Cihat sayfayı eline alabilir, akışı doğrulayabilir. Bu pattern başka yarım kalan sayfalarda da kullanılabilir.
+Cihat hızlı ve net karar veriyor. "Karar B senin önerdiğin gibi olsun", "CuNife dahil edilecek, az veya çok işin bir parçası" — bu netlik oturum hızını dramatik artırıyor. Açık sorular sektörel bilgi gerektirdiğinde Cihat 1-2 cümlede cevaplıyor, ben kod tarafına geçebiliyorum.
 
-Oturum **uzun** ama **disiplinli** geçti. Cihat ilerleme hissetti — 6 + 4 = 10 karar + Ekran 1 frontend somut çıktı. 35-39 için sağlam zemin oluştu.
+36 büyük olacak (backend + DB + UI). Belki ikiye bölünür. 35'in canlı doğrulamasını oturum başında 5 dakikada yaparsak, geri kalan zaman ana işe kalır.
