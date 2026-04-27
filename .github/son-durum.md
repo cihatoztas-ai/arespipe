@@ -1,70 +1,111 @@
 # AresPipe — Son Durum
 
-**Son güncelleme:** 27 Nisan 2026 Pazartesi, 35. oturum sonu
+> **Son güncelleme:** 27 Nisan 2026 — 36. oturum kapanışı (mimari oturumu)
+> **Yaşayan dosya** — her oturum sonunda güncellenir.
 
 ---
 
-## 35. Oturumda Olanlar (özet)
+## 36. Oturum Özeti — Mimari Sağlamlaştırma
 
-**Tema:** ASME Lookup tam sistemi — İzometri Batch'in B1 önkoşulu (Karar 5 — A1)
+**Tema:** Boru standart sistemi sağlam mimariye geçirildi (8 madde) + İzometri Batch DB altyapısı kuruldu + AI halüsinasyon kök nedeni tespit edildi.
 
-**Tamamlananlar (5):**
+**Süre:** ~3 saat. Mimari oturumu olarak temiz kapandı.
 
-1. ✅ **Veri toplama + çapraz doğrulama** — 4 malzeme için ASME/EEMUA standart tabloları toplandı.
-   - Karbon: ASME B36.10M (Ferrobend resmi tablo) — 214 satır
-   - Paslanmaz: ASME B36.19M (piping-world) — 70 satır
-   - Alüminyum: B36.19M dimensions + 2.70 g/cm³ yoğunluk hesabı — 50 satır
-   - Cunife: EEMUA-144 (16 bar + 20 bar rating) — 24 satır
-   - **Toplam: 358 satır seed**
+### Yapılanlar (4 ana iş)
 
-2. ✅ **Migration dosyası** — `35-oturum-asme-borular.sql` (523 satır)
-   - 2 tablo: `asme_borular` (karbon+paslanmaz+alüm) + `cuni_borular` (cunife ayrı, EEMUA-144 farklı sistem)
-   - RLS: public read (sektör ortak veri, gelecek hub için), super_admin write
-   - CHECK constraint, UNIQUE index, COMMENT'ler
-   - Spot check sorguları sonda (manuel doğrulama için)
+1. **35 canlı doğrulama** — 358 satır + birim test 50/50 + CI yeşil ✅
+2. **Boru standart mimarisi** — 8 madde, 3 yeni tablo, eski 35 verisi göç ettirildi
+3. **İzometri Batch DB altyapısı** — 3 yeni tablo, RLS, pilot AVEVA-PAOR
+4. **AI halüsinasyon teşhisi** — Cihat'ın yüklediği örnek üzerinden kök neden bulundu
 
-3. ✅ **Helper modülü** — `js/ares-asme.js` (48 KB, 50/50 birim test başarılı)
-   - Statik veri modülün içine gömülü, runtime'da DB'ye gitmiyor
-   - API: `etKalinligi`, `disCap`, `icCap`, `agirlikKgM`, `boruAgirligiKg` (ana 3 malzeme)
-   - CuNife için ayrı API (`cunifeEtKalinligi(dn, basinc_bar)` vb. — EEMUA-144 schedule kullanmıyor)
-   - NPS↔DN dönüşümü, varsayılan schedule fallback, schedule normalize ("Sch 40"/"SCH40"/"40")
-   - Malzeme normalize ("316L"→paslanmaz, "6061"→aluminyum, "cuni9010"→cunife)
+### CI Durumu
 
-4. ✅ **Birim test** — `tests/asme-lookup.test.js` (50/50 başarılı)
-   - 4 malzeme için kritik DN+SCH kombinasyonları
-   - Sektörel bilinen değerlerle karşılaştırma (DN100 SCH40 karbon → 6.02mm/16.08kg)
-   - PAOR PDF varyantları test edildi ("Sch 40", whitespace, vb.)
+🟢 **YEŞİL** — 0 hata, 22 uyarı, 74 dosya. (35 sonundan değişmedi, kod yazılmadı.)
 
-5. ✅ **Veri üretici script** — `scripts/uret-asme-veri.py`
-   - Aynı kaynaktan hem SQL hem JS üretir → drift önleme
-   - Gelecekte tablo güncellenirse tek seferde her ikisi senkron yenilenir
+### Kural Sayısı
 
-**Mimari Kararlar (kod yazmadan alındı, 6 karar):**
-
-- **K1 — 4 malzeme:** karbon + paslanmaz + alüminyum + cunife (Cihat onayı)
-- **K2 — Tablo yapısı:** İki tablo (asme_borular + cuni_borular). CuNife şeması farklı (DN+basınç_rating, schedule yok), tek tabloda zorlama olur.
-- **K3 — Ağırlık politikası:** Karbon/paslanmaz tablodan, alüm/cunife yoğunluktan (DB seed üretiminde, runtime hesap yok). Cihat'ın "ağırlıklar standartlardan çekilecek" kuralına uyum.
-- **K4 — Schedule fallback:** DN ≤ 250 → '40', DN > 250 → 'STD'. Sektörel pratik.
-- **K5 — Fitting/flanş:** 35'te yok. Pilot süresince manuel onaya gider (PAOR PDF'lerinde genelde yazılı). 37-38'de eklenir.
-- **K6 — "Tek Kaynak İki Yüz" mimarisi:** DB tek kaynak. Hub canlı sorgu yapacak (yeni site açılınca), program statik JS okuyor (şimdi). Cihat'ın hub sorusu üzerine: "şimdilik veri katmanı, hub site açılınca eklenir."
-
-**Yarım kalan / 36'ya devir:**
-
-1. 🔴 **Canlı doğrulama** — 4 dosya hazır ama henüz GitHub'a yüklenmedi, Supabase'de migration çalıştırılmadı. Cihat moladan dönünce yapacak. **36. oturumun açılışı bunun kontrolü.**
-2. 🟡 **db-backup saat kontrolü** — bugün 27 Nis sabah, hâlâ yapılmadı. `arespipe-backups` repo Commits sekmesi.
-3. 🟡 **G-08 yaygınlaştırma** — 21 sayfa, devre_detay pattern hazır
-4. 🟡 **Cihat'tan 2-3 örnek PAOR/AVEVA PDF** — 36-37 oturumlarında lazım
+14 aktif kural (35'ten değişmedi).
 
 ---
 
-## ⚠ Aktif Borçlar — 36. Oturum Başında Dikkat
+## 36. Oturumun Mimari Kararları (yeni)
 
-- 🔴 **35. oturum canlı doğrulama** — 4 dosya yükle, migration çalıştır, satır sayısı kontrolü (334 + 24), test 50/50, CI yeşil. **36'nın ilk işi.**
-- 🔴 **36. oturum: İzometri Batch backend** — `api/izometri-oku.js` refactor + 502 fix + DB tabloları (`izometri_format_tanimlari`, `izometri_batch_kayitlari`) + Ekran 2 (manuel onay UI). Büyük oturum, belki 2'ye bölünür.
-- 🟡 **db-backup saat kontrolü** — 27-30 Nis sabahları izlenecek
-- 🟡 **G-08 yaygınlaştırma** — 21 sayfa, pattern hazır
-- 🟡 **Vercel ignoreCommand fix** — `vercel.json`
-- 🟡 **SBD-01 vs GitHub Issues kararı** — Cihat seçecek
+- **K1 (36) — 8 madde sağlam mimari:** Boru ölçüleri için `boru_olculer` (yerine eski `asme_borular`/`cuni_borular` korunuyor şimdilik), `boru_standart_sozluk`, `boru_dn_isim_eslesme` tabloları. Schedule iki kolona ayrıldı (tipi + değeri), tolerans alanları eklendi, edisyon takibi, hesaplı kolonlar (ic_cap, hacim, yüzey alanı), hub içeriği (slug, açıklama, sektör).
+- **K2 (36) — 12 standart sözlüğü:** ASME (3), ASTM (1), EEMUA (1), DIN, EN, JIS (2), GOST (2), GB/T (2). 4'ünde veri var, 8'i tanıma için hazır.
+- **K3 (36) — Halüsinasyon koruması:** AI'ın PDF okurken uydurması (Cihat'ın PAOR örneğindeki gibi) DB seviyesinde tespit edilebilir. `dogrulama_uyarilari` JSONB alanı + 7 maddeli şüpheli satır kriterleri (DN yok, çap-DN tutarsız, et tolerans dışı, boy saçma, pipeline_no dosya adıyla uyuşmuyor, AI güveni düşük, malzeme bilinmeyen).
+- **K4 (36) — Yaklaşım Y:** AI'a "uydurma" demek yerine "sadece yazılı olanı oku" diyeceğiz. Et/cap/ağırlık önce PDF'ten, yoksa ASME tablosundan, yoksa manuel onaya. Yeni `izometri-oku.js` 37'de bu mantıkla yazılacak.
+- **K5 (36) — Eski izometri-oku.js atılacak, sıfırdan:** Cihat netti — "deneme için yapılmıştı, düzeltmeye uğraşmayalım." Karar 6 (refactor) iptal, K5 (sıfırdan) geçerli. AVEVA-PAOR pilot satırı parser_kural BOŞ olarak DB'de duruyor, 37'de gerçek PDF örneklerinden öğrenilerek dolacak.
+- **K6 (36) — Çoklu standart genişleme stratejisi:** DIN, JIS, GOST, GB/T standartları sözlüğe önceden tanım eklendi (veri yok ama PDF'te tanınabilir). Veri eklenince satır INSERT, kod değişikliği yok.
+
+---
+
+## Yapılan İşler — 36 Detayı
+
+### Oturum Açılışı (~5 dk)
+- Standart 5 soruluk ritüel ✓
+- 35 canlı doğrulama ✓ (yerel git stash gerektirdi — `ares-asme.js` ve `tests/asme-lookup.test.js` yereli güncel olmadığı için)
+- Asıl beklenmedik: pull yaparken çakışma → stash → temiz pull
+- Birim test 50/50 ✓
+
+### Faz 1 — AI Sorunu Teşhis (~20 dk)
+
+Cihat eski `izometri-oku.js`'i ve sistemin ürettiği yanlış Excel'i yükledi. PAOR PDF gerçek değerleri ile sistem çıktısı yan yana karşılaştırıldı:
+
+| Alan | Doğru | Sistem | Durum |
+|---|---|---|---|
+| Pipeline | 52900-101540-Z10-2 | 11D-PAOR-50600-101540 | ❌ |
+| DN | 150 | 100/150 (S01 yanlış) | ❌ |
+| Çap | 168.3 | 114.3/168.3 | ❌ |
+| Kalite | ST37 | P235GH/316L | ❌ |
+| Boy | 149+141+379 | 1289/1314 | ❌ uydurma |
+| Yüzey | Galvaniz | Siyah/Asit | ❌ |
+| Rev | A | 0 | ❌ |
+
+**Kök neden:** Few-shot leakage (prompt'taki örnek JSON'u kopyalamış) + AI'ın PDF okurken zorlandığında uydurması.
+
+### Faz 2 — Yapı Sağlamlaştırma (~30 dk)
+
+Cihat'ın stratejik sorusu: "Bu standartlar programın can damarı, eksik var mı?" → 8 madde tespit:
+1. Tablo adı netleşsin (boru/fitting/flanş ayrı)
+2. Standart sözlüğü zenginleşsin (ölçü sistemi + DN sistemi + materyal kodu)
+3. NPS↔DN eşleme ayrı tabloda
+4. Schedule kodu tek kolonda olmaz (tipi + değeri)
+5. Tolerans alanları (et_min/et_max generated)
+6. Edisyon takibi
+7. Hesaplı kolonlar (ic_cap, hacim, yüzey alanı)
+8. Hub içeriği (slug, açıklama, sektör)
+
+8'in hepsi onaylandı, tek SQL'de uygulandı.
+
+### Faz 3 — Boru Standart Migration (~30 dk)
+
+İlk denemede kolon adı sürprizi: ben `od_mm` yazdım, gerçek `dis_cap_mm`. Ayrıca `olusturma_at` convention (ben `olusturma` yazdım). Cihat kolon listesini paylaştı, dosya v2 ile düzeltildi → temiz çalıştı.
+
+### Faz 4 — İzometri Batch DB (~30 dk)
+
+3 tablo: `izometri_format_tanimlari`, `izometri_batch_kayitlari`, `ai_api_log`. RLS düzgün, pilot AVEVA-PAOR satırı eklendi (parser boş, fingerprint dolu).
+
+İlk denemede `BEGIN;` syntax hatası → BEGIN/COMMIT kaldırıldı, IF NOT EXISTS ile idempotent yapıldı → temiz çalıştı.
+
+---
+
+## Yarım Kalan / 37'ye Devir
+
+1. 🔴 **Yeni `api/izometri-oku.js`** — sıfırdan, yaklaşım Y, format dispatcher, AI uydurma korumalı, yeni `boru_olculer` ile entegrasyon. ~1-1.5 saat.
+2. 🔴 **Ekran 2 (manuel onay UI)** — şüpheli spool listesi + düzeltme inputları + "Format Kaydet" butonu. ~1 saat.
+3. 🔴 **Ekran 1 demo modu kapanışı** — `_DEMO_MOD = false`, mock data sil, gerçek API'ye bağla. ~30 dk.
+4. 🟡 **Cihat'tan 2-3 örnek PAOR/AVEVA PDF** — 37'de format kuralı (B Adımı) öğretmek için.
+5. 🟡 **Format Kaydet diyalogu (Ekran 3)** — B Adımı (AI harita önerisi). 37'de eğer süre yetmezse 38'e.
+
+---
+
+## Aktif Borçlar — 37. Oturum Başında Dikkat
+
+- 🔴 **37. oturum:** Yeni `izometri-oku.js` (sıfırdan) + Ekran 2 + Ekran 1 demo kapatma. Belki 38'e bölünür.
+- 🟡 **db-backup saat kontrolü** — 27 Nis bugün yapılmış (4 nisan ayı sonu kalan günler 28-30 Nis). Test devam ediyor.
+- 🟡 **G-08 yaygınlaştırma** — 21 sayfa, devre_detay pattern hazır.
+- 🟡 **Vercel ignoreCommand fix** — `vercel.json`.
+- 🟡 **SBD-01 vs GitHub Issues kararı** — Cihat seçecek.
 
 **Önceki dönemlerden devreden:**
 - 🟢 `sorgula.js` JWT-bazlı auth refactor (güvenlik açığı)
@@ -74,12 +115,9 @@
 - 🟢 Mobil sayfalar — MProfil, MIsBaslat, MDevreler, MDevreDetay, MSpoolDetay, MQRTara
 - 🟢 G-05 CI lint kuralı
 - 🟢 help.html
-- 🟢 **G-09 — JS klasör refactor (35'te eklendi):** Tüm `ares-*.js` dosyaları kök dizinde. Sektörel standart `js/` klasörü altında olmaları. Yeni site açılınca uygun zaman olabilir (40+ ürün dönemi başlangıcı). Refactor sırasında: tüm HTML'lerin `<script src="...">` satırları + `admin/`, `portal/` alt-dizinlerin relative path'leri (`../js/...`) güncellenmeli. Risk: bir sayfada güncelleme atlanırsa sessiz bug. Süre: ~1-1.5 saat + test.
-
-**Defter'deki açık SED maddeleri:**
-- spool_detay: S3 (AI toolbar gizli — bilinçli), S4 (QR indirme yarım — bilinçli)
-- D8 (spool_no formatı KK'da S01 tekrar) — defter
-- devre_detay badge class temizleme bug pattern'i diğer sayfalarda taranacak (G-08 yaygınlaştırma sırasında)
+- 🟢 **G-09 — JS klasör refactor:** `ares-*.js` dosyaları kök dizinde. Sektörel standart `js/`. Yeni site açılınca uygun zaman.
+- 🟢 **G-10 (yeni — 36):** Eski `asme_borular` ve `cuni_borular` tabloları silinecek. 37+'da yeni helper canlıda doğrulandıktan sonra. Şimdi 35 helper'ı eski tablolara bakmaya devam ediyor.
+- 🟢 **G-11 (yeni — 36):** Fitting ve flanş tabloları (~2000 satır, 9 standart kombinasyonu). 37-38 oturumlarında.
 
 ---
 
@@ -88,25 +126,30 @@
 | Oturum | Tema | Durum |
 |---|---|---|
 | 30 | Bucket PRIVATE Faz 1-2 | ✅ |
-| 31 | Bucket PRIVATE Faz 3-6 + SED başlangıç + G-08 envanter | ✅ |
-| 32 | Defter temizliği — orphan, v5, S1, D5, D6 + D3/G-08 yarım | ✅ |
-| 33 | Vercel-bağımsız işler: self-test, D7, db-backup defter, D4 | ✅ |
-| 34 | CI fix + D3 + db-backup + G-08 (devre_detay) + İzometri Batch tasarım + Ekran 1 frontend | ✅ |
-| **35** | **ASME Lookup tam sistemi (B1 önkoşulu)** | **✅ KOD HAZIR — Canlı doğrulama 36 açılışında** |
-| **36** | **İzometri Batch: 35 doğrulama + DB tabloları + dispatcher + 502 fix + Ekran 2 (manuel onay)** | **Sırada** |
-| 37 | İzometri Batch: Ekran 3 (Format Kaydet) — B Adımı + Excel upload | — |
-| **38** | **İzometri Batch: C Adımı (görsel işaretleme) + genelleştirme + ZORUNLU SELF-TEST** | — |
-| 39 | İzometri Batch: pilot AVEVA-PAOR canlıya + super_admin "AI API Kullanım" sekmesi | — |
+| 31 | Bucket PRIVATE Faz 3-6 + SED + G-08 envanter | ✅ |
+| 32 | Defter temizliği — orphan, v5, S1, D5, D6 + D3/G-08 | ✅ |
+| 33 | Vercel-bağımsız işler: self-test, D7, db-backup, D4 | ✅ |
+| 34 | CI fix + D3 + db-backup + G-08 + İzometri Batch tasarım + Ekran 1 frontend | ✅ |
+| 35 | ASME Lookup tam sistemi (B1 önkoşulu) | ✅ |
+| **36** | **Mimari sağlamlaştırma (8 madde) + Izometri Batch DB altyapı** | **✅ KAPANDI** |
+| **37** | **Yeni izometri-oku.js (sıfırdan, format dispatcher) + Ekran 2 (manuel onay) + Ekran 1 demo kapatma** | **Sırada** |
+| 38 | Ekran 3 (Format Kaydet) — B Adımı (AI harita önerisi) + Excel upload + ZORUNLU SELF-TEST | — |
+| 39 | C Adımı (görsel işaretleme — canvas) + genelleştirme bildirimleri | — |
+| 40 | Pilot AVEVA-PAOR canlıya alınır + super_admin "AI API Kullanım" sekmesi | — |
 | **Yeni site** | **ASME hub sayfası** (`tools/asme-lookup.html` halka açık, aynı DB'den canlı sorgu) | Site kurulduktan sonra |
 
 **40+ ÜRÜN DÖNEMİ.**
 
 ---
 
-### Cihat'ın 35'te Sorduğu Stratejik Soru
+## Bu Oturumun Dersleri
 
-> "Şimdi biz bu program için yeni bir web sitesi açıp oradan giriş yaparak kullanacaz. Siteden ulaşılabilecek birkaç basit uygulama da düşünmüştük... biz bu iste içerisine standart malzeme tablolarını da yüklesek ve kullanıcılar için bunu da uygulamaya dahil etsek... bir faydası olur mu yoksa ben zaten uygun bir yerden çekerim mi diyorsun"
+1. **Cihat'ın stratejik müdahalesi mimarinin yönünü değiştirdi** — "Bu standartlar can damarı, eksik var mı?" sorusu olmasa, ben ilk SQL'i (yetersiz) yapmış olacaktık. **Pattern:** Cihat hızlanmayı bırakıp doğru kurmak istiyor. Hızlı çıkış değil, sağlam çıkış.
 
-**Cevap özeti:** Evet, çok faydası var — ama doğru mimariyle. "Tek Kaynak İki Yüz" mimarisi: DB tek kaynak, hub canlı sorgu yapar (yeni site açılınca, halka açık + SEO + lead gen), program statik JS okur (şimdi, hızlı ve offline güvenli). Veri katmanı 35'te (bugün), hub UI yeni site açılınca eklenir. Bu yaklaşım `spool_usta.html` ve `spool_3d_montaj.html` ile birlikte sektörel hub'ın çekirdeğini oluşturur (SPOOL-AI-VIZYON.md Madde 14 — halka açık eğitim oyunu motoru).
+2. **Convention öğrenmesi maliyetli** — Ben kolon adı tahmin ettim (`od_mm`), gerçek `dis_cap_mm`. Bu bir tur ekstra alıp götürdü. CIHAT-PROFIL.md'e convention listesi eklemek lazım.
 
-**Cihat'ın kararı:** "Bu sayfayı biraz daha ileride yapmayı düşünmüştüm. Şimdi biz normal işimizi yapıyoruz, site kurulduktan sonra fittings'ler de ekleniyor." → 35'te SADECE veri katmanı, hub yazılmıyor. Fittings/flanş 37-38'e.
+3. **AI halüsinasyon kök nedeni teşhis edildi** — few-shot leakage + zorlandığında uydurma. Yaklaşım Y: AI'a sadece yazılı olanı oku, hesaplama kod tarafına. ASME helper bu yatırım için kuruldu (35).
+
+4. **DB-driven mimari kanıtlandı** — Yeni standart eklemek = SQL INSERT, kod değişikliği yok. Cihat 12 standart sözlüğüne önceden tanım koydu, ileride veri eklenince anında çalışır.
+
+5. **"Mimari oturumu" bilinçli karar** — Cihat C seçeneğini seçti (DB tablolarını şimdi, kodu 37'ye). Bu doğru karar: kod yazımına yorgun başlamak yerine, mimari net olarak 37'ye giriş.
