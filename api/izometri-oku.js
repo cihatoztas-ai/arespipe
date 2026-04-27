@@ -332,11 +332,26 @@ async function batchHataYaz({ batch_id, hata }) {
 }
 
 async function aiApiLogYaz(kayit) {
+  // Pre-A.4 (38): return=minimal kullan -- log icin geri donus satira ihtiyacimiz yok.
+  // Bu ayni zamanda SELECT policy super_admin only oldugu icin olabilecek
+  // "row dondurulemedi" hatasini onler.
   try {
-    await supaFetch('ai_api_log', { method: 'POST', body: kayit });
+    await supaFetch('ai_api_log', {
+      method: 'POST',
+      body: kayit,
+      prefer: 'return=minimal',
+    });
   } catch (e) {
-    // Loglama hatasi ana akisi bozmaz
-    console.error('[aiApiLogYaz] hata (yutuldu):', e.message);
+    // Loglama hatasi ana akisi bozmaz, ama Vercel logs'ta tam sebebi gor
+    console.error('[aiApiLogYaz] HATA (yutuldu):', {
+      mesaj: e.message,
+      stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+      kayit_alanlari: Object.keys(kayit),
+      kaynak: kayit.kaynak,
+      cagri_tipi: kayit.cagri_tipi,
+      basarili: kayit.basarili,
+      http_status: kayit.http_status,
+    });
   }
 }
 
