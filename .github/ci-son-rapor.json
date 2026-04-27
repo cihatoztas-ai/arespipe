@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-04-27T07:05:39.748Z",
-  "commit_sha": "32ab18a219af6f6c19e311a64cbb90a9c4645b37",
+  "tarih": "2026-04-27T07:12:06.870Z",
+  "commit_sha": "4b81988f5ede973fdf7294b75c0cbf85f6c319c4",
   "commit_ref": "main",
-  "workflow_run": 561,
+  "workflow_run": 562,
   "ozet": {
-    "hata": 1,
+    "hata": 0,
     "uyari": 14,
     "taranan_dosya": 78,
-    "sorunlu_dosya": 4,
-    "durum": "kirmizi"
+    "sorunlu_dosya": 3,
+    "durum": "sari"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -59,18 +59,6 @@
           "satirlar": [
             2560
           ]
-        }
-      ]
-    },
-    "MIG_ISIM_BOZUK": {
-      "tip": "hata",
-      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 35-oturum-asme-borular.sql",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "migrations/35-oturum-asme-borular.sql",
-          "sayi": 1,
-          "satirlar": []
         }
       ]
     }
@@ -178,19 +166,6 @@
           "tip": "uyari",
           "satir": 2560,
           "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "migrations/35-oturum-asme-borular.sql",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 0,
-      "hatalar": [
-        {
-          "kod": "MIG_ISIM_BOZUK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 35-oturum-asme-borular.sql"
         }
       ]
     }
