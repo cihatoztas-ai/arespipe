@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-04-27T09:19:39.953Z",
-  "commit_sha": "2eedd70b0ead8c4e8f9503ad019fba137c938674",
+  "tarih": "2026-04-27T09:20:14.005Z",
+  "commit_sha": "99776cf1d264c1137b72b2cfcbafa09929e6a1c8",
   "commit_ref": "main",
-  "workflow_run": 567,
+  "workflow_run": 568,
   "ozet": {
-    "hata": 0,
+    "hata": 2,
     "uyari": 14,
     "taranan_dosya": 78,
-    "sorunlu_dosya": 3,
-    "durum": "sari"
+    "sorunlu_dosya": 5,
+    "durum": "kirmizi"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -59,6 +59,23 @@
           "satirlar": [
             2560
           ]
+        }
+      ]
+    },
+    "MIG_ISIM_BOZUK": {
+      "tip": "hata",
+      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-izometri-batch-tablolari.sql",
+      "sayi": 2,
+      "dosyalar": [
+        {
+          "dosya": "migrations/36-oturum-izometri-batch-tablolari.sql",
+          "sayi": 1,
+          "satirlar": []
+        },
+        {
+          "dosya": "migrations/36-oturum-standart-mimari.sql",
+          "sayi": 1,
+          "satirlar": []
         }
       ]
     }
@@ -166,6 +183,32 @@
           "tip": "uyari",
           "satir": 2560,
           "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "migrations/36-oturum-izometri-batch-tablolari.sql",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 0,
+      "hatalar": [
+        {
+          "kod": "MIG_ISIM_BOZUK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-izometri-batch-tablolari.sql"
+        }
+      ]
+    },
+    {
+      "dosya": "migrations/36-oturum-standart-mimari.sql",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 0,
+      "hatalar": [
+        {
+          "kod": "MIG_ISIM_BOZUK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-standart-mimari.sql"
         }
       ]
     }
