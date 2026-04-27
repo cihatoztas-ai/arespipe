@@ -1,7 +1,7 @@
 // =====================================================================
 // api/izometri-oku.js -- Vercel Serverless Function (Node.js)
 // =====================================================================
-// Tarih: 28 Nisan 2026 -- 38. oturum (Pre-A.1 + Pre-A.2 eklendi)
+// Tarih: 28 Nisan 2026 -- 38. oturum (Pre-A.1 + Pre-A.2 + Pre-A.4 + Pre-A.5)
 // Mimari kararlar: K1-K6 (36) + K11 (37 -- guvenlik)
 //   - K3: 7 maddeli halusinasyon koruması (DB seviyesinde)
 //   - K4: Yaklasim Y -- AI sadece yazili olani okur, hesap kod tarafinda
@@ -9,6 +9,9 @@
 //   - K11/37: PDF guvenlik + prompt injection iki katmanli koruma
 //     - Pre-A.1: magic byte + boyut + uzanti (Anthropic kredisi yanmadan once erken don)
 //     - Pre-A.2: schema validation + suspicious keyword scan (madde 8 olarak halusinasyon filtresine entegre)
+//     - Pre-A.4: ai_api_log CHECK constraint uyumu (kaynak/cagri_tipi isimleri)
+//     - Pre-A.5: malzeme_listesi yapisi genisletildi -- kod, kalite, dis_cap_mm, et_mm, boy_mm,
+//                adet, agirlik_kg, agirlik_kaynagi, sertifika_tipi, malzeme_notu
 //
 // Sozlesme:
 //   POST /api/izometri-oku
@@ -632,16 +635,26 @@ CIKTI FORMATI (sadece JSON, baska hicbir sey yazma):
       "agirlik_kg": null | sayisal,
       "malzeme_en_kodu": "P235GH" | null,
       "malzeme_astm_kodu": "A 106 Grade B" | null,
+      "kalite": "ST37" | null,
       "yuzey": "Galvaniz" | "Boyali" | "Asit" | null,
       "rev": "A" | null,
       "guven_skoru": 0.85,
       "uyari_dosya_adi": false,
       "malzeme_listesi": [
         {
+          "kod": "M1",
           "kategori": "PIPES" | "FITTINGS" | "FLANGES",
           "tanim": "PIPE SEAMLESS A106 GR.B DN150",
-          "dn": 150,
-          "miktar": "0.7m"
+          "malzeme": "Karbon Celik" | "Paslanmaz Celik" | "Bakir Alasim" | null,
+          "kalite": "ST37" | null,
+          "dis_cap_mm": 168.3 | null,
+          "et_mm": 4.5 | null,
+          "boy_mm": null | sayisal,
+          "adet": 1 | sayisal,
+          "agirlik_kg": null | sayisal,
+          "agirlik_kaynagi": "pdf" | null,
+          "sertifika_tipi": "3.1" | "3.2" | "PMI" | null,
+          "malzeme_notu": null | "ozel sertifika notu, hidrojen testi, vb."
         }
       ],
       "notlar": "AI tarafindan eklenen kisa not (varsa)"
@@ -651,7 +664,38 @@ CIKTI FORMATI (sadece JSON, baska hicbir sey yazma):
   "genel_notlar": null
 }
 
-UNUTMA: Yazili olmayan alani UYDURMAK, manuel onay icin sebep degildir, kullanici icin tehlikedir. null don.`;
+UNUTMA: Yazili olmayan alani UYDURMAK, manuel onay icin sebep degildir, kullanici icin tehlikedir. null don.
+
+MALZEME LISTESI ALANLARI ICIN OZEL TALIMATLAR (Pre-A.5 -- 38. oturum):
+
+1. "kod": Malzeme listesindeki sira numarasi/kodu (M1, M2, M3...). Yoksa null.
+
+2. "boy_mm": "L=", "T=", "L:", uzunluk gibi ifadelerden mm cinsinden boy. PDF'te yazili degilse NULL.
+   ASLA hesaplama, ASLA tahmin etme, ASLA "miktar"daki "0.7m" gibi degeri buraya yazma.
+
+3. "agirlik_kg": SADECE PDF tablosunda agirlik sutunu varsa ve sayisal degeri yaziliysa al.
+   Eger yaziliysa "agirlik_kaynagi": "pdf" yaz. Yaziliysa NULL DON, agirlik_kaynagi de NULL.
+   ASLA hesaplama, ASLA tahmin etme. Standart tablodan doldurma kod tarafinda olur.
+
+4. "sertifika_tipi": Malzeme tanim metninde "3.1", "3.2", "EN 10204 3.1", "EN 10204 3.2",
+   "PMI", "PMI test", "Mill Cert", "Material Cert" gibi sertifika referansi varsa cikar.
+   - "3.1 Certificate", "EN 10204 3.1" -> "3.1"
+   - "3.2 Certificate", "EN 10204 3.2" -> "3.2"
+   - "PMI test required", "with PMI" -> "PMI"
+   - Yoksa null. ASLA varsayim yapma.
+
+5. "malzeme_notu": Yukarida sertifika_tipi ile yakalanmayan, malzeme tanimi disindaki ek notlar
+   icin (ornegin: "hardness test required", "hidrojen test", "minimum charpy", "ultrasonic test",
+   "with heat treatment", vb.). Spesifik teknik gereksinimler varsa kisa metin olarak al.
+   - Standart malzeme tanimini buraya YAZMA (o "tanim" alaninda).
+   - Sertifika tipini buraya YAZMA (o "sertifika_tipi" alaninda).
+   - Yoksa null.
+
+6. "kalite": Malzeme grade/kalite kodu. "ST37", "P235GH", "A106 Gr.B", "TP316L" gibi.
+   Genellikle malzeme tanimindan cikarilabilir. Yoksa null.
+
+7. SPOOL SEVIYESINDEKI "kalite" alani: Bu spool'un genel kalitesi. Spool'daki malzeme listesinin
+   cogunlugunda gecen kalite kodu. Karisikta null don.`;
 
 // =====================================================================
 // 7. ASME LOOKUP -- boru_olculer fallback (K4/36)
