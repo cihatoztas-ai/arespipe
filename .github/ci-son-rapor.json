@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-04-27T18:03:54.544Z",
-  "commit_sha": "90915fc3da96e3cf83a6560e18720b8ca35b191d",
+  "tarih": "2026-04-27T18:13:59.214Z",
+  "commit_sha": "8a5b485fb4b2377cec2b2f733625d0272c7560f9",
   "commit_ref": "main",
-  "workflow_run": 592,
+  "workflow_run": 593,
   "ozet": {
     "hata": 0,
-    "uyari": 14,
+    "uyari": 1,
     "taranan_dosya": 79,
-    "sorunlu_dosya": 3,
+    "sorunlu_dosya": 1,
     "durum": "sari"
   },
   "kurallar": {
@@ -24,149 +24,19 @@
           ]
         }
       ]
-    },
-    "I18N_EKSIK": {
-      "tip": "uyari",
-      "mesaj": "tv('dv_load_error') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 13,
-      "dosyalar": [
-        {
-          "dosya": "devre_detay.html",
-          "sayi": 4,
-          "satirlar": [
-            1188,
-            1756,
-            2062,
-            2078
-          ]
-        },
-        {
-          "dosya": "izometri-batch.html",
-          "sayi": 8,
-          "satirlar": [
-            408,
-            444,
-            552,
-            560,
-            561,
-            563,
-            590,
-            597
-          ]
-        },
-        {
-          "dosya": "spool_detay.html",
-          "sayi": 1,
-          "satirlar": [
-            2560
-          ]
-        }
-      ]
     }
   },
   "dosyalar": [
     {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 5,
+      "uyari_sayisi": 1,
       "hatalar": [
         {
           "kod": "G03_HAM_YUZEY",
           "tip": "uyari",
           "satir": 1428,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 1188,
-          "mesaj": "tv('dv_load_error') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 1756,
-          "mesaj": "tv('dv_no_change') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 2062,
-          "mesaj": "tv('dv_dok_open') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 2078,
-          "mesaj": "tv('dv_dok_file_required') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "izometri-batch.html",
-      "hata_sayisi": 0,
-      "uyari_sayisi": 8,
-      "hatalar": [
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 408,
-          "mesaj": "tv('izb_format_bilinmeyen') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 444,
-          "mesaj": "tv('izb_oturum_hata') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 552,
-          "mesaj": "tv('izb_man_onay_kucuk') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 560,
-          "mesaj": "tv('izb_durum_man_onay') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 561,
-          "mesaj": "tv('izb_durum_hazir') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 563,
-          "mesaj": "tv('izb_btn_incele') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 590,
-          "mesaj": "tv('izb_batch_yok') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 597,
-          "mesaj": "tv('izb_batch_yok_man') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "spool_detay.html",
-      "hata_sayisi": 0,
-      "uyari_sayisi": 1,
-      "hatalar": [
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 2560,
-          "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     }
