@@ -469,7 +469,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   } catch (e) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
-      kaynak: 'izometri-batch', cagri_tipi: 'vision_pdf_parse', model: VISION_MODEL,
+      kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       basarili: false, http_status: 0, hata_mesaji: e.message,
       sure_ms: Date.now() - baslangic,
     });
@@ -479,7 +479,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   if (!claudeRes.ok) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
-      kaynak: 'izometri-batch', cagri_tipi: 'vision_pdf_parse', model: VISION_MODEL,
+      kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       basarili: false, http_status: claudeRes.status,
       hata_mesaji: typeof data === 'object' ? JSON.stringify(data).substring(0, 500) : text.substring(0, 500),
       sure_ms: Date.now() - baslangic,
@@ -505,7 +505,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   } catch (e) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
-      kaynak: 'izometri-batch', cagri_tipi: 'vision_pdf_parse', model: VISION_MODEL,
+      kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       input_tokens, output_tokens, maliyet_usd, sure_ms,
       basarili: false, http_status: 200,
       hata_mesaji: 'JSON parse: ' + e.message,
@@ -556,7 +556,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   // Loglama (basarili)
   await aiApiLogYaz({
     tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
-    kaynak: 'izometri-batch', cagri_tipi: 'vision_pdf_parse', model: VISION_MODEL,
+    kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
     input_tokens, output_tokens, maliyet_usd, sure_ms,
     basarili: true, http_status: 200,
     cevap_kisaltma: JSON.stringify(parsed).substring(0, 500),
