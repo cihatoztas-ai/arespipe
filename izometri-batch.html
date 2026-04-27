@@ -109,8 +109,54 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 .stat-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
 .stat-kart{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 18px;flex:1;min-width:120px;display:none;}
 .stat-kart.show{display:block;}
+.stat-kart.man-onay{background:rgba(217,119,6,.08);border-color:rgba(217,119,6,.35);}
+[data-theme=light-anthracite] .stat-kart.man-onay{background:rgba(217,119,6,.10);}
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;}
 .stat-lbl{font-size:12px;color:var(--txd);margin-top:2px;}
+
+/* Yeni format banner */
+.yeni-format-banner{
+  background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.35);
+  border-left:4px solid var(--warn);border-radius:12px;
+  padding:14px 18px;margin-bottom:20px;display:none;
+}
+[data-theme=light-anthracite] .yeni-format-banner{background:rgba(217,119,6,.10);}
+.yeni-format-banner.show{display:block;}
+.yeni-format-baslik{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--warn);margin-bottom:4px;}
+.yeni-format-metin{font-size:13px;color:var(--txm);}
+
+/* Format badge (dosya listesi) */
+.format-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.fb-eslesti{background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);}
+.fb-bilinmeyen{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.4);}
+.fb-bekliyor{background:rgba(107,122,144,.12);color:var(--txd);border:1px solid var(--bor);}
+
+/* Dosya listesi grid - format kolonu eklendi */
+.dosya-item{
+  grid-template-columns:28px 1fr 130px 120px 100px 32px;
+}
+
+/* Sonuç tablosu — durum kolonu + manuel onay vurgusu */
+.durum-cell{font-size:12px;font-weight:700;text-align:center;}
+.durum-hazir{color:var(--gr);}
+.durum-manuel{color:var(--warn);}
+.satir-manuel{background:rgba(217,119,6,.06)!important;}
+.satir-manuel:hover td{background:rgba(217,119,6,.10)!important;}
+.btn-incele{
+  padding:4px 10px;border-radius:6px;border:1px solid var(--warn);
+  background:rgba(217,119,6,.10);color:var(--warn);
+  font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.btn-incele:hover{background:var(--warn);color:#fff;}
+
+/* Manuel onay butonu */
+.btn-manuel{
+  background:linear-gradient(135deg,var(--warn),#b45309);color:#fff;
+  box-shadow:0 4px 15px rgba(217,119,6,.3);
+}
+.btn-manuel:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(217,119,6,.45);}
+.btn-manuel.gizli{display:none;}
 
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 .isleniyor-dot{animation:pulse .8s infinite;}
@@ -137,6 +183,12 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
     <div class="drop-alt" data-i18n="izb_drop_alt">Birden fazla izometri seçilebilir · Her biri sırayla işlenir</div>
   </div>
 
+  <!-- Yeni format banner (gizli, bilinmeyen format çıkarsa açılır) -->
+  <div class="yeni-format-banner" id="yeniFormatBanner">
+    <div class="yeni-format-baslik">⚠ <span data-i18n="izb_yeni_format_basligi">Yeni format tespit edildi</span></div>
+    <div class="yeni-format-metin" id="yeniFormatMetin"><span data-i18n="izb_yeni_format_metni">Bilinmeyen formatta dosya var. Manuel onay sonrası "Format kaydet" diyebilirsin — bir sonraki aynı format otomatik tanınır.</span></div>
+  </div>
+
   <!-- Stats -->
   <div class="stat-row" id="statRow">
     <div class="stat-kart" id="statDosya">
@@ -155,6 +207,10 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
       <div class="stat-val" id="statSpoolVal" style="color:var(--ai2)">0</div>
       <div class="stat-lbl" data-i18n="izb_stat_spool">Toplam Spool</div>
     </div>
+    <div class="stat-kart man-onay" id="statManOnay">
+      <div class="stat-val" id="statManOnayVal" style="color:var(--warn)">0</div>
+      <div class="stat-lbl" data-i18n="izb_stat_man_onay">Manuel Onay</div>
+    </div>
   </div>
 
   <!-- Dosya listesi -->
@@ -171,6 +227,10 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
     <button class="btn btn-basla" id="btnBasla" onclick="basla()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       <span data-i18n="izb_btn_basla">Batch Başlat</span>
+    </button>
+    <button class="btn btn-manuel gizli" id="btnManuel" onclick="manuelOnayAc()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2 L2 22 L22 22 Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="18" r="0.5"/></svg>
+      <span data-i18n="izb_btn_manuel">Manuel Onay</span> (<span id="btnManuelSayi">0</span>)
     </button>
     <button class="btn btn-excel" id="btnExcel" onclick="excelIndir()" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -212,6 +272,8 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
             <th>Ağırlık (kg)</th>
             <th data-i18n="izb_th_yuzey">Yüzey</th>
             <th>Rev</th>
+            <th data-i18n="izb_th_durum" style="text-align:center;">Durum</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="sonucTbody"></tbody>
@@ -226,6 +288,16 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 <script>
 'use strict';
 
+// ─────────────────────────────────────────────────────────────
+// DEMO MODU — Backend dispatcher (api/izometri-oku.js) henüz hazır değil.
+// Sayfa görsel/akış testi için mock data ile çalışır.
+// 36. oturumda backend hazır olunca _DEMO_MOD=false yapılacak.
+// ─────────────────────────────────────────────────────────────
+var _DEMO_MOD = true;
+
+// URL'den ?canli=1 ile gerçek API zorlaması (geliştirici için)
+if (typeof location !== 'undefined' && location.search.indexOf('canli=1') >= 0) _DEMO_MOD = false;
+
 var DN_MM = {21.3:15,26.9:20,33.7:25,42.4:32,48.3:40,60.3:50,76.1:65,88.9:80,114.3:100,139.7:125,168.3:150,219.1:200,273:250,323.9:300,355.6:350,406.4:400};
 function capToDN(mm) {
   if (!mm) return '—';
@@ -237,7 +309,7 @@ function capToDN(mm) {
   return minDiff < 3 ? 'DN' + closest : '~DN' + closest;
 }
 
-var _dosyalar = []; // {file, durum, spooller, hata}
+var _dosyalar = []; // {file, durum, format, spooller, hata}
 var _tumSpooller = [];
 var _calisıyor = false;
 
@@ -257,7 +329,7 @@ function dosyaEkle(files) {
     // Duplikat kontrolü
     var var_mi = _dosyalar.find(function(d){ return d.file.name === f.name; });
     if (!var_mi) {
-      _dosyalar.push({ file: f, durum: 'bekliyor', spooller: [], hata: null });
+      _dosyalar.push({ file: f, durum: 'bekliyor', format: null, spooller: [], hata: null });
     }
   });
   renderDosyalar();
@@ -278,17 +350,21 @@ function temizle() {
   document.getElementById('sonucWrap').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
   document.getElementById('btnExcel').disabled = true;
+  document.getElementById('btnManuel').classList.add('gizli');
+  document.getElementById('yeniFormatBanner').classList.remove('show');
 }
 
 function renderDosyalar() {
   var liste = document.getElementById('dosyaListesi');
   var items = document.getElementById('dosyaItems');
   var btnRow = document.getElementById('btnRow');
+  var statIds = ['statDosya','statTamam','statHata','statSpool','statManOnay'];
 
   if (!_dosyalar.length) {
     liste.style.display = 'none';
     btnRow.style.display = 'none';
-    ['statDosya','statTamam','statHata','statSpool'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
+    statIds.forEach(function(id){ document.getElementById(id).classList.remove('show'); });
+    document.getElementById('yeniFormatBanner').classList.remove('show');
     return;
   }
 
@@ -299,17 +375,32 @@ function renderDosyalar() {
   var tamam = _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length;
   var hata  = _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length;
   var toplamSpool = _dosyalar.reduce(function(s,d){ return s + d.spooller.length; }, 0);
+  var manOnay = _tumSpooller.filter(function(s){ return s._manuel_onay === true; }).length;
 
   document.getElementById('statDosyaVal').textContent  = _dosyalar.length;
   document.getElementById('statTamamVal').textContent  = tamam;
   document.getElementById('statHataVal').textContent   = hata;
   document.getElementById('statSpoolVal').textContent  = toplamSpool;
-  ['statDosya','statTamam','statHata','statSpool'].forEach(function(id){ document.getElementById(id).classList.add('show'); });
+  document.getElementById('statManOnayVal').textContent = manOnay;
+  statIds.forEach(function(id){ document.getElementById(id).classList.add('show'); });
+
+  // Manuel onay butonu görünürlüğü
+  var btnMan = document.getElementById('btnManuel');
+  if (manOnay > 0) {
+    btnMan.classList.remove('gizli');
+    document.getElementById('btnManuelSayi').textContent = manOnay;
+  } else {
+    btnMan.classList.add('gizli');
+  }
+
+  // Yeni format banner görünürlüğü
+  var bilinmeyenVar = _dosyalar.some(function(d){ return d.durum === 'tamam' && d.format === 'bilinmeyen'; });
+  var banner = document.getElementById('yeniFormatBanner');
+  if (bilinmeyenVar) banner.classList.add('show'); else banner.classList.remove('show');
 
   document.getElementById('dosyaListesiBaslik').textContent = _dosyalar.length + ' ' + tv('izb_dosya_secildi','dosya seçildi');
 
   items.innerHTML = _dosyalar.map(function(d, i) {
-    var durumClass = 'durum-' + d.durum;
     var durumIcon = d.durum === 'bekliyor'   ? '<span class="d-bekliyor">⬜ '+tv('izb_durum_bekliyor','Bekliyor')+'</span>'
                   : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ '+tv('izb_durum_isleniyor','İşleniyor')+'</span>'
                   : d.durum === 'tamam'      ? '<span class="d-tamam">✅ '+tv('izb_durum_tamam','Tamam')+'</span>'
@@ -317,9 +408,22 @@ function renderDosyalar() {
     var spoolText = d.spooller.length ? d.spooller.length + ' ' + tv('izb_spool','spool') : '—';
     var boyut = (d.file.size / 1024).toFixed(0) + ' KB';
 
+    // Format badge
+    var formatHtml;
+    if (d.durum === 'bekliyor' || d.durum === 'isleniyor') {
+      formatHtml = '<span class="format-badge fb-bekliyor">—</span>';
+    } else if (d.format === 'bilinmeyen') {
+      formatHtml = '<span class="format-badge fb-bilinmeyen">⚠ '+tv('izb_format_bilinmeyen','Bilinmeyen')+'</span>';
+    } else if (d.format) {
+      formatHtml = '<span class="format-badge fb-eslesti" title="'+esc(d.format)+'">'+esc(d.format)+'</span>';
+    } else {
+      formatHtml = '<span class="format-badge fb-bekliyor">—</span>';
+    }
+
     return '<div class="dosya-item">'
       + '<span class="dosya-no">' + (i+1) + '</span>'
       + '<span class="dosya-ad" title="' + esc(d.file.name) + '">' + esc(d.file.name) + '<br><small style="color:var(--txd);font-size:11px;">' + boyut + '</small></span>'
+      + '<span>' + formatHtml + '</span>'
       + '<span class="dosya-durum">' + durumIcon + '</span>'
       + '<span class="dosya-spool">' + spoolText + '</span>'
       + (_calisıyor ? '<span></span>' : '<button class="dosya-sil" onclick="dosyaSil(' + i + ')">✕</button>')
@@ -357,21 +461,35 @@ async function basla() {
     progressGuncelle(tamamlanan, toplam, d.file.name);
 
     try {
-      var base64 = await dosyaBase64(d.file);
-      var res = await fetch('/api/izometri-oku', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdf_base64: base64, dosya_adi: d.file.name })
-      });
-      var json = await res.json();
+      if (_DEMO_MOD) {
+        // Mock data — gerçek API yerine sahte cevap (sayfa testi için)
+        await new Promise(function(r){ setTimeout(r, 600 + Math.random()*900); });
+        var mock = _mockBatchSonuc(d.file.name, i);
+        d.format = mock.format;
+        d.spooller = mock.spooller.map(function(s) {
+          s._dosya = d.file.name;
+          return s;
+        });
+        d.durum = 'tamam';
+      } else {
+        // Gerçek API çağrısı (36. oturumda dispatcher hazır olunca)
+        var base64 = await dosyaBase64(d.file);
+        var res = await fetch('/api/izometri-oku', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pdf_base64: base64, dosya_adi: d.file.name })
+        });
+        var json = await res.json();
 
-      if (!res.ok || !json.ok) throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
+        if (!res.ok || !json.ok) throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
 
-      d.spooller = (json.data.spooller || []).map(function(s) {
-        s._dosya = d.file.name;
-        return s;
-      });
-      d.durum = 'tamam';
+        d.format = json.data.format || null;
+        d.spooller = (json.data.spooller || []).map(function(s) {
+          s._dosya = d.file.name;
+          return s;
+        });
+        d.durum = 'tamam';
+      }
     } catch(e) {
       d.durum = 'hata';
       d.hata = e.message;
@@ -422,11 +540,22 @@ function dosyaBase64(file) {
 // ── SONUÇ TABLO ───────────────────────────────────────────────
 function renderSonucTablo() {
   document.getElementById('sonucWrap').style.display = 'block';
-  document.getElementById('sonucBadge').textContent = _tumSpooller.length + ' ' + tv('izb_spool','spool');
+  var manSayi = _tumSpooller.filter(function(s){ return s._manuel_onay === true; }).length;
+  var badgeText = _tumSpooller.length + ' ' + tv('izb_spool','spool');
+  if (manSayi > 0) badgeText += ' · ' + manSayi + ' ' + tv('izb_man_onay_kucuk','manuel onay');
+  document.getElementById('sonucBadge').textContent = badgeText;
 
   var tbody = document.getElementById('sonucTbody');
   tbody.innerHTML = _tumSpooller.map(function(s, i) {
-    return '<tr>'
+    var manuel = s._manuel_onay === true;
+    var trClass = manuel ? ' class="satir-manuel"' : '';
+    var durumHtml = manuel
+      ? '<span class="durum-cell durum-manuel">⚠ '+tv('izb_durum_man_onay','Manuel onay')+'</span>'
+      : '<span class="durum-cell durum-hazir">✓ '+tv('izb_durum_hazir','Hazır')+'</span>';
+    var inceleHtml = manuel
+      ? '<button class="btn-incele" onclick="inceleAc('+i+')">'+tv('izb_btn_incele','İncele')+' →</button>'
+      : '';
+    return '<tr'+trClass+'>'
       + '<td style="color:var(--txd);">' + (i+1) + '</td>'
       + '<td class="dosya-cell">' + esc((s._dosya || '').replace('.pdf','').replace('.PDF','')) + '</td>'
       + '<td class="pipeline-cell">' + esc(s.pipeline_no || '—') + '</td>'
@@ -440,8 +569,50 @@ function renderSonucTablo() {
       + '<td style="text-align:right;">' + (s.agirlik_kg || '—') + '</td>'
       + '<td>' + esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||'—'):(s.yuzey||'—')) + '</td>'
       + '<td>' + esc(s.rev || '—') + '</td>'
+      + '<td>' + durumHtml + '</td>'
+      + '<td>' + inceleHtml + '</td>'
       + '</tr>';
   }).join('');
+}
+
+// ── MANUEL ONAY (Ekran 2 - sonraki oturumda) ─────────────────
+function inceleAc(idx) {
+  var s = _tumSpooller[idx];
+  alert(tv('izb_yakinda_msg','Manuel onay sayfası 36. oturumda eklenecek.\n\nŞu an demo modu — sayfa görsel/akış testi için. Spool: ') + (s ? (s.pipeline_no + ' / ' + s.spool_no) : '?'));
+}
+function manuelOnayAc() {
+  var manuel = _tumSpooller.filter(function(s){ return s._manuel_onay === true; });
+  alert(tv('izb_yakinda_man','Manuel onay sayfası (Ekran 2) 36. oturumda eklenecek.\n\nŞu anda ') + manuel.length + tv('izb_yakinda_spool',' spool manuel onay bekliyor. Demo modu aktif.'));
+}
+
+// ── MOCK DATA (demo modu) ─────────────────────────────────────
+function _mockBatchSonuc(dosyaAdi, indeks) {
+  // 3. dosya bilinmeyen format simülasyonu (demo)
+  var bilinmeyen = (indeks % 3 === 2);
+  var format = bilinmeyen ? 'bilinmeyen' : 'AVEVA E3D';
+
+  // Her dosya için 2-4 mock spool üret
+  var spoolSayisi = 2 + Math.floor(Math.random() * 3);
+  var spooller = [];
+  for (var j = 0; j < spoolSayisi; j++) {
+    var mockSpool = {
+      pipeline_no: bilinmeyen ? 'YENI-CIZIM-A' + (indeks+1) : ('11D-PAOR-' + (50600 + indeks*10) + '-' + (101540 + j)),
+      spool_no: bilinmeyen ? ('SP-' + String(j+1).padStart(3,'0')) : ('S' + String(j+1).padStart(2,'0')),
+      cap_mm: [114.3, 168.3, 219.1, 88.9][j % 4],
+      malzeme: ['karbon', 'paslanmaz', 'karbon', 'bakir'][j % 4],
+      kalite: bilinmeyen ? 'ST37' : ['P235GH','316L','P265GH','CuNi10Fe1.6Mn'][j % 4],
+      et_mm: [4.5, 6.3, 8.0, 5.6][j % 4],
+      boy_mm: 800 + Math.floor(Math.random() * 1500),
+      agirlik_kg: parseFloat((10 + Math.random() * 30).toFixed(2)),
+      yuzey: ['siyah','asitlenmis','siyah','siyah'][j % 4],
+      rev: bilinmeyen ? 'A' : '0',
+      // Demo: bilinmeyen format → tüm spoollar manuel onay
+      // Tanınmış format → ~%15 ihtimalle bir spool şüpheli (sağlık uyarısı simülasyonu)
+      _manuel_onay: bilinmeyen ? true : (Math.random() < 0.15)
+    };
+    spooller.push(mockSpool);
+  }
+  return { format: format, spooller: spooller };
 }
 
 // ── EXCEL İNDİR ───────────────────────────────────────────────

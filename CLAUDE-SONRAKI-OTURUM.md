@@ -1,147 +1,159 @@
-# CLAUDE — 34. Oturum Gündemi
+# 35. Oturum Gündemi — ASME Lookup Tam Sistemi
 
-**Hazırlanma tarihi:** 25 Nisan 2026 — 33. oturum sonu
-**Beklenen tarih:** 26 Nisan 2026 (yarın) veya sonrası
-
----
-
-## 🎯 34. Oturumun Teması
-
-**Geçiş oturumu:** Vercel-bağımsız son işleri kapat + **kullanıcı değeri moduna geç**
-
-33'te Cihat sordu: "altyapı için yapılacak daha neyimiz var, normal sayfalara devam edebilir miyiz?". Cevap: %70 hazır, kalan kritik 3 madde (email, tenant izolasyon, Sentry) **SaaS satışı öncesi** yapılır. **Şimdi kullanıcı değerine dönüş zamanı.**
+> **Tarih:** 27 Nisan 2026 (veya sonrası)
+> **Tema:** B1 (İzometri Batch) önkoşulu — ASME standart boru ölçü modülü
+> **Önkoşul belge:** `docs/IZOMETRI-BATCH-KARAR.md` (Karar 5 — A1)
 
 ---
 
-## 🔥 İlk 5 dakika — hızlı kontroller
+## Oturum Açılışı
 
-### 1. Backup doğrulama (1 dk)
+**Standart 5 soruluk ritüel** (CLAUDE.md), sonra:
 
-26 Nis ise mutlaka kontrol et:
+1. **db-backup saat kontrolü** — `arespipe-backups` repo Commits sekmesi → 27 Nis sabah commit saati. Beklenen: TR 03:00-03:30 (UTC 00:00-00:30). Hâlâ UTC 03:00+ ise `arespipe-backups` repo'sundaki workflow yml dosyasına bakılmalı (cron syntax veya alternatif tetikçi).
 
+2. **Cihat'tan örnek PDF kontrolü:** "*34'te 2-3 örnek PAOR/AVEVA PDF yükleyeceğini söylemiştin. Yüklediğin var mı?*"
+   - Varsa: 35'te kısa inceleme (ASME tablosu için referans çap/et değerleri çıkarılır)
+   - Yoksa: sorun değil, ASME genel standart, PDF'siz çalışılır
+
+3. **Ekran 1 demo testi sorgu:** "*izometri-batch.html'i yükleyip demo modu test ettin mi? PDF yükleme → 'Batch Başlat' → format badge'leri + manuel onay vurgusu görsel olarak çalışıyor mu?*"
+   - Cihat onaylarsa: Ekran 1 frontend kapatıldı ✓
+   - Sorun varsa: 35'te kısa düzeltme, sonra ASME'ye geç
+
+4. **G-08 yaygınlaştırma kısa kontrol:** 21 sayfa hâlâ açık, devre_detay pattern hazır. Bu oturumda mı (zaman varsa) yoksa 36+ mı?
+
+---
+
+## 35. Oturumun Ana İşi — ASME Lookup
+
+### Hedef
+
+Boru sektörünün standart ölçüm tablolarını AresPipe'a kalıcı veri olarak getirmek. İzometri parser bu tablodan okuyarak DN+SCH'ten et kalınlığı, dış çap, ağırlık hesaplayacak.
+
+### Çıktılar
+
+**1. DB tablosu — `asme_olculer`**
+
+```sql
+CREATE TABLE asme_olculer (
+  id SERIAL PRIMARY KEY,
+  nps TEXT NOT NULL,           -- "1/2", "1", "4", "12" (NPS standart)
+  dn INT NOT NULL,             -- 15, 25, 100, 300 (metric eşdeğer)
+  dis_cap_mm DECIMAL(6,2) NOT NULL,    -- 21.34, 33.40, 114.30
+  schedule TEXT NOT NULL,      -- "5S","10","10S","20","30","40","STD","60","80","XS","100","120","140","160","XXS"
+  et_mm DECIMAL(5,2) NOT NULL,
+  ic_cap_mm DECIMAL(6,2) NOT NULL,     -- (dis_cap - 2*et)
+  agirlik_kg_m DECIMAL(7,3),   -- karbon çelik nominal (referans)
+  notlar TEXT,
+  UNIQUE (dn, schedule)
+);
+
+CREATE INDEX idx_asme_dn ON asme_olculer(dn);
+CREATE INDEX idx_asme_dn_sch ON asme_olculer(dn, schedule);
 ```
-https://github.com/cihatoztas-ai/arespipe-backups/commits/main
+
+**Kapsam:** DN15-DN400 (NPS 1/2 - NPS 16) × SCH 10/20/30/40/STD/60/80/XS/100/120/140/160/XXS. Yaklaşık **150-200 satır seed data**.
+
+**2. Helper modülleri**
+
+`js/ares-asme.js`:
+```js
+window.ARES_BORU = {
+  // Et kalınlığı: DN100 + SCH40 → 6.02 mm
+  etKalinligi: function(dn, schedule, malzeme) { ... },
+  
+  // Dış çap: DN100 → 114.30 mm
+  disCap: function(dn) { ... },
+  
+  // İç çap: DN100 + SCH40 → 102.26 mm
+  icCap: function(dn, schedule) { ... },
+  
+  // Schedule belirsizse default kuralı (DN ≤ 250 → SCH40, DN > 250 → STD)
+  varsayilanSchedule: function(dn) { ... },
+  
+  // NPS ↔ DN dönüşümü (1" ↔ DN25)
+  npsToDn: function(nps) { ... },
+  dnToNps: function(dn) { ... }
+};
 ```
 
-Son `backup: 2026-04-26_*` commit'inin saatine bak:
-- **TR 03:00-03:30 arası** ise ✅ kapat, defterden çıkar
-- **TR 05:55** ise sürükleyici aranır (timeout? queue gecikmesi?)
-
-### 2. D3 Vercel test
-
-Vercel açıldıysa (rate limit sıfırlandıysa):
-
-```javascript
-// Tarayıcı console'da
-tersaneIsEmriKaydet.toString().includes('supa.from')
-// → true olmalı (yeni kod canlıda)
+`js/ares-agirlik.js`:
+```js
+window.ARES_AGIRLIK = {
+  // Boru ağırlığı: DN100 + SCH40 + 1000mm karbon çelik → 16.06 kg
+  boruHesapla: function(dn, schedule, boy_mm, malzeme) { ... },
+  
+  // Fitting ağırlığı (yaklaşık): tip + DN + SCH'e göre tablo
+  fittingHesapla: function(tip, dn, schedule, malzeme) { ... },
+  
+  // Toplam: array ver, toplam kg dön
+  topla: function(parcalar) { ... }
+};
 ```
 
-Eğer `true` ise:
-- Devre aç, "tersane iş emri" gir, kaydet, F5 → kalıcı mı?
-- Kalıcıysa D3 ✅ defterde kapat
+**3. Migration dosyası:** `migrations/003_asme_olculer.sql` (CREATE + INSERT seed data)
 
-Eğer `false` ise: deploy hâlâ yapılmamış, ileri ertele.
+**4. Test dosyası:** `tests/asme-lookup.test.js` veya benzer — 5-10 birim test:
+- DN100 SCH40 → et_mm=6.02 ✓
+- DN50 SCH40 + 1000mm karbon → 5.44 kg ✓
+- DN300 SCH40 → STD'ye fallback (uyarı gerekirse) ✓
+- Bilinmeyen DN → exception veya null + console.warn ✓
+- NPS "4" → DN 100 ✓
 
----
+### Yapılış Sırası (önerilen)
 
-## 📋 34. Oturum İçin Önerilen Gündem
+1. **Saat 1 — Veri toplama:** ASME B36.10 / B36.19 standart tablosundan DN15-DN400 × SCH değerleri toplanır. Çoğu PDF/Excel tablosundan rahat çıkarılır. Karbon çelik ağırlıkları nominal (referans).
+2. **Saat 2 — Migration yazımı:** `003_asme_olculer.sql` — CREATE TABLE + 150 INSERT satırı.
+3. **Saat 3 — Helper modülleri:** `ares-asme.js` + `ares-agirlik.js`. DB'den okumak yerine modülün içine **statik object** olarak yazılır (browser-side, DB'ye gidip gelmek pahalı, veri statik).
+4. **Saat 4 — Test:** Birim testler + manuel doğrulama (3-4 spot check).
+5. **Saat 5 — Migration uygula + commit + push:** Canlıda doğrulama.
 
-### Sırayla (önerilen):
+### Kapsam Dışı (35'te yapılmaz)
 
-**A — Defter kapanışları (10-15 dk)**
-1. db-backup ✅ (eğer 26 Nis sabah saati doğruysa)
-2. D3 ✅ (eğer Vercel deploy temizse)
-
-**B — G-08 görsel fark tespiti (20 dk)**
-- 32'den devir. devre_detay.html ve devreler.html'i yan yana iki sekmede aç
-- Cihat'ın "tam aynı değil" gözlemini somutlaştır
-- Üç ihtimal:
-  1. Somut bir CSS farkı bulunur → tek satır düzeltilir
-  2. Fark yok, "kapatıyoruz" denir
-  3. Cihat'ın aklındaki şey başka bir şey, beraber gözden geçirilir
-
-**C — KULLANICI DEĞERİ MODU başlat (asıl iş)**
-
-Üç yol var, Cihat seçecek:
-
-#### Yol 1: Operasyon sayfalarını bitir
-- **Kesim sayfası** (14. oturumda %80 idi) — eksik: tablo export, manuel parça ekleme validasyonu, KK entegrasyonu
-- **Büküm + Markalama** — benzer eksikler
-- Bitirilince operasyon akışı uçtan uca çalışır → kullanıcılar tek bir spoolu sıfırdan sevkiyata kadar takip edebilir
-
-#### Yol 2: Mobil sayfaları aç
-- **MProfil** (avatar yükleme + kişisel bilgi) — mockup-first kuralıyla
-- **MIsBaslat** (operatör iş akışı) — eski is_baslat.html'den uyarlanır
-- Mobil kullanıcılar operatörler — bu sayfalar kritik
-
-#### Yol 3: Spool AI vizyonuna geçiş
-- **Katman 3 — Parça Kütüphanesi** — DN25-DN300, ASME B36.10 ölçüleri
-- 31'de kazanç var (egitim_verisi insert çalışıyor)
-- Vizyon dokümanına göre Katman 1 (spool_usta.html) ve Katman 2 (spool_3d_montaj.html) hazır
+- İzometri batch entegrasyonu — 36+
+- ASME B16 (fittings) tam kütüphanesi — kabuller motoru içinde, 36-37
+- Pattern fallback (Schedule belirsiz → varsayılan) — sadece basit kural, otomatik öğrenme yok
+- Ağırlık hesabında flanş/braket korreksiyonu — kabuller motoru, 36+
+- Malzeme bazlı yoğunluk farklılıkları (paslanmaz vs karbon yoğunluk farkı %3) — şimdilik hep karbon çelik referansı, flag eklenmez
 
 ---
 
-## ⚠ Aktif Borçlar (33'ten devir)
+## Açılış Notları (Claude için)
 
-- 🟡 **D3 deploy doğrulama** — Vercel açıldığında ilk iş
-- 🟡 **db-backup canlı doğrulama** — 26 Nis sabah yedek saati
-- 🟡 **G-08 görsel fark tespiti** — 32'den
-- 🟡 **Vercel ignoreCommand fix** — `arespipe-mob` için `mobile/` haricinde build skip
-- 🟡 **SBD-01 vs GitHub Issues kararı** — 32'de atlandı, Cihat seçecek
-- 🟡 **G-08 yaygınlaştırma** — 21 sayfa eksik, 34-35'e dağıtılabilir
-
-**Ürün dönemi öncesi (37+ için):**
-- 🟢 Email sistemi — şifre sıfırlama, davet, bildirim
-- 🟢 Tenant izolasyon testleri — RLS yazıyor, kanıt yok
-- 🟢 Sentry / error tracking
-- 🟢 Staging Supabase
-
-**Yeşil borçlar:**
-- 🟢 sorgula.js JWT-bazlı auth refactor
-- 🟢 Audit Log pano sekmesi
-- 🟢 Tablo Render Standardı (G-06) — 26'dan
-- 🟢 G-05 CI lint kuralı — `.mb-*` hardcode rgba/hex yasağı
-- 🟢 help.html son kullanıcı dokümantasyonu
+- **Sapmama disiplini:** ASME Lookup tek hedef. İzometri batch'e atlama. KARAR.md Karar 5 net diyor: önce ASME, sonra B1.
+- **Veri kaynağı:** ASME tabloları açık standart, internet'te rahat bulunur. Cihat'a "veriyi nereden alıyoruz" diye sorma — ben web search ile bulurum, doğrulukları kontrol ederim.
+- **Statik vs DB tartışması:** Helper'lar **modülün içine gömülü statik object** kullansın. DB tablo migration tarihsel takip + API entegrasyonu için, ama runtime sorgu DB'ye gitmez (yavaş, 200 satır = 5 KB JS, hafif).
+- **i18n:** Boru/Schedule terimi sektörel, Türkçeleştirme YOK. "Schedule" ve "DN" kalır.
+- **G-01 (i18n) kontrolü:** Yeni hata mesajları/console.warn'lar varsa `tv()` ile i18n'lenmeli (eğer kullanıcıya görünür string ise).
+- **Sayfa Teslim Kontrol Listesi:** ASME modülü UI'a temas etmez (helper). Bu yüzden checklist'in çoğu uygulanmaz, ama lint geçer mi kontrol edilmeli (`node .github/kontrol.js`).
 
 ---
 
-## 🆕 33'te Doğan Açık Konular
+## Açık Sorular (35'te kararlaştırılır)
 
-### D8 — Spool numara formatı (potansiyel)
-
-D4 testinde gözlemlendi: KK listesinde spool numaraları "S01, S01, S01, S02, S03, S04, S05, S06" şeklinde tekrar ediyor. `spool_no` field'ı kısaltılmış formatta tutulu olabilir. Tam formatı (örn. `NB1137-AT110-816-026-S01`) görmek istiyorsa render mantığı düzeltilebilir.
-
-**Karar 34'te:** Cihat'a sor — kısa "S01" gösterimi tercih mi (mevcut), tam isim mi gösterilmeli?
+1. **NPS imperial gösterimi de gerekli mi?** AresPipe metric (DN) kullanıyor, ama PAOR PDF'de NPS de geçebilir → dönüşüm helper'ı kesin lazım.
+2. **Schedule "NULL" çıkarsa default ne?** Önerim: `dn <= 250 ? "40" : "STD"` — ama Cihat'ın sektör bilgisi devreye girebilir.
+3. **Ağırlık tablosunda yoğunluk farkı** (paslanmaz/karbon/alüminyum/bakır)? Karbon × 1.0, paslanmaz × 1.02, alüm × 0.34, bakır × 1.13 katsayıları (yaklaşık) — şimdilik eklenir mi yoksa hep karbon mu?
 
 ---
 
-## 📐 Disiplin Hatırlatmaları
+## Olası Risk
 
-- **Self-test:** 38'de zorunlu (33→38, 5 oturum)
-- **Schema değişikliklerinde:** information_schema sorgusu + uçtan uca tarama (S2/32 + D7/33 dersi)
-- **Atomik patch script'i:** errs listesi + write koşullu — yarım yamalak değişiklik bırakma
-- **Cron değişikliği:** Bir sonraki tetiklemeden uygulanır, hemen kontrol etme (33 dersi)
-- **Defter notuna saygı, ama kullanıcı isteği üstün** — uyar, sonra uygula
-- **Commit zinciri kırılırsa:** `git pull --rebase origin main && git push` — CI bot ci-son-rapor.json basar, normal
+ASME tablosu büyük ve hata payı düşük olmalı. **Yanlış et kalınlığı = yanlış ağırlık = yanlış sevkiyat hesabı.** Veri tek kez yazılır, sonsuza kadar referans olur. Bu yüzden:
+- En az **iki ASME kaynağından** çapraz kontrol (web search + Wikipedia + sektörel referans)
+- Cihat'a göstermeden push yok — 4-5 spot doğrulama (DN50, DN100, DN200 SCH40 değerleri)
+- Migration `[skip ci]` değil — CI çalışsın, lint geçsin
 
 ---
 
-## 💡 34. Oturum Başlangıç Önerisi (Claude için)
+## 36. Oturum Hatırlatıcı (yapılmadan biten önemli iş)
 
-5 ritüel sorusunu sor + şunları ek olarak dahil et:
+35'in ana işi ASME ama 35 bitince Cihat'a hatırlat:
 
-1. "26 Nis sabah backup saati nedir?" (backups repo commits)
-2. "Vercel deploy açıldı mı? D3 kod canlıda mı?" (console testi)
-3. "Bugün hangi yola gitmek istiyorsun: A (defter kapanışı) → B (G-08) → C (kullanıcı değeri)?"
-
-Cihat'ın yorgunluk seviyesini dikkate al — 33 yoğun bir oturumdu (~2.5 saat, 5 commit). Eğer "hızlı + somut" istiyorsa A+B 30 dk'da bitirilir, C için yeni bir oturum açılır.
+> **36. oturum:** Backend dispatcher (`api/izometri-oku.js`) refactor + 502 fix + DB tabloları (`izometri_format_tanimlari`, `izometri_batch_kayitlari`) + Ekran 2 (manuel onay) UI. Bu oturum büyüktür — belki 2 oturuma bölünür.
+>
+> Ekran 1'in `_DEMO_MOD = true` sabiti `false`'a çekilecek. Mock data fonksiyonu silinecek.
 
 ---
 
-## 🎯 34'ün Başarı Kriteri
-
-- ✅ db-backup ve D3 (Vercel açıksa) defterde kapanmış
-- ✅ G-08 ya kapanmış ya da somut karara bağlanmış
-- ✅ Bir sonraki adımın hangi yol olduğu (Kesim? MProfil? Spool AI?) net karara bağlanmış
-- ✅ CI yeşil, commit zinciri temiz
+> **Bu doküman 35. oturum açıldığında okunur. ASME Lookup'ın bitirme kriterleri burada belli, açık sorular da kararlaştırma sırasını gösterir.**
