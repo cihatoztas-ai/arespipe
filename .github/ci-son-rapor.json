@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-04-27T18:13:59.214Z",
-  "commit_sha": "8a5b485fb4b2377cec2b2f733625d0272c7560f9",
+  "tarih": "2026-04-27T19:13:48.666Z",
+  "commit_sha": "aa11c42f128606d96203e36a82e1335c32211627",
   "commit_ref": "main",
-  "workflow_run": 593,
+  "workflow_run": 594,
   "ozet": {
     "hata": 0,
-    "uyari": 1,
+    "uyari": 4,
     "taranan_dosya": 79,
-    "sorunlu_dosya": 1,
+    "sorunlu_dosya": 2,
     "durum": "sari"
   },
   "kurallar": {
@@ -24,6 +24,22 @@
           ]
         }
       ]
+    },
+    "I18N_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "tv('izbi_ifs_lib_yok') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 3,
+      "dosyalar": [
+        {
+          "dosya": "izometri-batch-incele.html",
+          "sayi": 3,
+          "satirlar": [
+            765,
+            771,
+            828
+          ]
+        }
+      ]
     }
   },
   "dosyalar": [
@@ -37,6 +53,31 @@
           "tip": "uyari",
           "satir": 1428,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
+        }
+      ]
+    },
+    {
+      "dosya": "izometri-batch-incele.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 3,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 765,
+          "mesaj": "tv('izbi_ifs_lib_yok') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 771,
+          "mesaj": "tv('izbi_ifs_yok') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 828,
+          "mesaj": "tv('izbi_ifs_bom_yok') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     }
