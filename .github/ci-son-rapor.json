@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-04-27T09:20:14.005Z",
-  "commit_sha": "99776cf1d264c1137b72b2cfcbafa09929e6a1c8",
+  "tarih": "2026-04-27T09:25:11.999Z",
+  "commit_sha": "6ff2b7c5549cc3373a5b002c3eb2414c29e9fcab",
   "commit_ref": "main",
-  "workflow_run": 568,
+  "workflow_run": 569,
   "ozet": {
-    "hata": 2,
+    "hata": 1,
     "uyari": 14,
     "taranan_dosya": 78,
-    "sorunlu_dosya": 5,
+    "sorunlu_dosya": 4,
     "durum": "kirmizi"
   },
   "kurallar": {
@@ -64,14 +64,9 @@
     },
     "MIG_ISIM_BOZUK": {
       "tip": "hata",
-      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-izometri-batch-tablolari.sql",
-      "sayi": 2,
+      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-standart-mimari.sql",
+      "sayi": 1,
       "dosyalar": [
-        {
-          "dosya": "migrations/36-oturum-izometri-batch-tablolari.sql",
-          "sayi": 1,
-          "satirlar": []
-        },
         {
           "dosya": "migrations/36-oturum-standart-mimari.sql",
           "sayi": 1,
@@ -183,19 +178,6 @@
           "tip": "uyari",
           "satir": 2560,
           "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "migrations/36-oturum-izometri-batch-tablolari.sql",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 0,
-      "hatalar": [
-        {
-          "kod": "MIG_ISIM_BOZUK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 36-oturum-izometri-batch-tablolari.sql"
         }
       ]
     },
