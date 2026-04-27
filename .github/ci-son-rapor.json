@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-04-27T12:53:18.052Z",
-  "commit_sha": "3ff3e89aac4c78c29aa04756f7445eeb381341dc",
+  "tarih": "2026-04-27T13:03:31.823Z",
+  "commit_sha": "7111397e268d598ed3f784fc86fc8800339d44b5",
   "commit_ref": "main",
-  "workflow_run": 577,
+  "workflow_run": 578,
   "ozet": {
-    "hata": 2,
+    "hata": 1,
     "uyari": 14,
     "taranan_dosya": 78,
-    "sorunlu_dosya": 5,
+    "sorunlu_dosya": 4,
     "durum": "kirmizi"
   },
   "kurallar": {
@@ -64,14 +64,9 @@
     },
     "MIG_ISIM_BOZUK": {
       "tip": "hata",
-      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 006a_yapi.sql",
-      "sayi": 2,
+      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 006b_seed.sql",
+      "sayi": 1,
       "dosyalar": [
-        {
-          "dosya": "migrations/006a_yapi.sql",
-          "sayi": 1,
-          "satirlar": []
-        },
         {
           "dosya": "migrations/006b_seed.sql",
           "sayi": 1,
@@ -183,19 +178,6 @@
           "tip": "uyari",
           "satir": 2560,
           "mesaj": "tv('sp_doc_file_req') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "migrations/006a_yapi.sql",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 0,
-      "hatalar": [
-        {
-          "kod": "MIG_ISIM_BOZUK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 006a_yapi.sql"
         }
       ]
     },
