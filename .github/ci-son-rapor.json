@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-04-27T17:27:04.033Z",
-  "commit_sha": "517651b6cb9f5e5bd114deec192d9c2d8887cfa3",
+  "tarih": "2026-04-27T18:03:54.544Z",
+  "commit_sha": "90915fc3da96e3cf83a6560e18720b8ca35b191d",
   "commit_ref": "main",
-  "workflow_run": 591,
+  "workflow_run": 592,
   "ozet": {
     "hata": 0,
     "uyari": 14,
@@ -44,13 +44,14 @@
           "dosya": "izometri-batch.html",
           "sayi": 8,
           "satirlar": [
-            416,
-            545,
-            553,
-            554,
-            556,
-            581,
-            585
+            408,
+            444,
+            552,
+            560,
+            561,
+            563,
+            590,
+            597
           ]
         },
         {
@@ -109,50 +110,50 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 416,
+          "satir": 408,
           "mesaj": "tv('izb_format_bilinmeyen') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 545,
+          "satir": 444,
+          "mesaj": "tv('izb_oturum_hata') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 552,
           "mesaj": "tv('izb_man_onay_kucuk') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 553,
+          "satir": 560,
           "mesaj": "tv('izb_durum_man_onay') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 554,
+          "satir": 561,
           "mesaj": "tv('izb_durum_hazir') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 556,
+          "satir": 563,
           "mesaj": "tv('izb_btn_incele') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 581,
-          "mesaj": "tv('izb_yakinda_msg') kullanılıyor ama lang/tr.json'da yok"
+          "satir": 590,
+          "mesaj": "tv('izb_batch_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 585,
-          "mesaj": "tv('izb_yakinda_man') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 585,
-          "mesaj": "tv('izb_yakinda_spool') kullanılıyor ama lang/tr.json'da yok"
+          "satir": 597,
+          "mesaj": "tv('izb_batch_yok_man') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
