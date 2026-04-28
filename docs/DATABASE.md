@@ -190,7 +190,7 @@ Migration dosyaları CI'da kontrol edilir — `.github/kontrol.js` içinde `migr
 ## 5. Tablo Listesi
 
 <!-- AUTO-START:tablolar -->
-> Toplam 52 tablo. Son güncelleme: 2026-04-27.
+> Toplam 52 tablo. Son güncelleme: 2026-04-28.
 
 - `ai_analizler`
 - `audit_log`
