@@ -1,24 +1,20 @@
-# CLAUDE — 41. OTURUM GÜNDEMİ
+# CLAUDE — 42. OTURUM GÜNDEMİ
 
-> **Bu dosya 40 kapanışında oluşturuldu. 41 başında ilk okunacak.**
+> **Bu dosya 41 kapanışında oluşturuldu. 42 başında ilk okunacak.**
 
 ---
 
-## 41 Açılış Mottosu
+## 42 Açılış Mottosu
 
-40'ta iki büyük şey oldu:
+41'de **kütüphane altyapısı canlıya çıktı** — Parça Kimliği Prensibi'nin temel altyapısı kuruldu, A105 flanş pilot çalışıyor. Vizyondan kapsama alınan tek madde, gerisi vizyonda kaldı.
 
-**A. Teknik:** 4 operasyon sayfası standartlaştı, markalama listeler akordeon→tablo+modal'a çevrildi, 46 i18n eklendi.
-
-**B. Vizyon:** Cihat ile uzun kahve sohbeti — 9 farklı damar konuşuldu, **vizyon belgesi yazıldı**. *"Parça Kimliği Prensibi"* ana karar olarak çıktı.
-
-41'de en önemli şey: **Faz B'deki sohbeti hatırlama**. Vizyon belgesini açılışta oku.
+42'de en önemli şey: **40 canlı test borcunu kapatmak**. Bu borç 41 başında parking edildi, henüz ödenmedi. Disiplin meselesi — yapılan iş test edilmeden başka iş başlamaz prensibi.
 
 ---
 
 ## 1. Açılış Ritüeli (~5 dk)
 
-5 soru zorunlu:
+5 cevap zorunlu (CLAUDE.md):
 
 ```
 Oturum başlangıç ritüeli. 5 kısa kontrol:
@@ -29,7 +25,7 @@ Oturum başlangıç ritüeli. 5 kısa kontrol:
 
 3. .github/son-durum.md içeriği?
 
-4. 40'ta yüklenecek 12 dosya yüklendi mi (4 HTML + 3 JSON + 5 MD)?
+4. 41'de yüklenecek 5 dosya yüklendi mi (4 SQL + spool_detay.html + 3 MD)?
 
 5. admin/panel.html → Geri Bildirim sekmesinde kaç açık feedback var?
 ```
@@ -38,179 +34,131 @@ Oturum başlangıç ritüeli. 5 kısa kontrol:
 - Git temiz mi
 - CI yeşil mi
 - son-durum.md borçları oku
-- **`docs/CIHAT-PROFIL.md`'yi oku** (40'ta upload=seçim, korku=uyarı pattern'leri eklenmeli)
-- **`docs/VIZYON-VE-MODULER-MIMARI.md`'yi oku** ⭐ (40'ta yazıldı, prensipler burada)
-- **`docs/KUTUPHANE-KAPSAM.md`'yi göz at** (Vizyon 9 destekleyici)
+- **`docs/CIHAT-PROFIL.md`'yi oku**
+- **`docs/VIZYON-VE-MODULER-MIMARI.md`'yi oku** (vizyon disiplini için kritik — 41'de kapsam değişti)
+- **`docs/KUTUPHANE-KAPSAM.md`'ye göz at** (sonraki kapsam genişletme için)
 
 ---
 
-## 2. 40 Sonrası Doğrulama (~15 dk)
+## 2. 41 Doğrulama (~10 dk)
 
-40'ta 12 dosya yüklendi. CI yeşil ve canlıda çalıştığı teyit edilmeli.
+41'de yapılan kütüphane altyapısı canlıda çalışıyor mu kontrol et:
 
-```bash
-cd ~/Desktop/arespipe && git pull origin main
+### Frontend doğrulama
+1. https://arespipe.vercel.app/spool_detay.html?id=9a54bcec-76a5-4f40-99bd-d3a536c1a04e
+2. Malzeme Listesi sekmesi → 3. satır (F-001 / WN 150# RF Flanş / A105) sol kenar mavi mi?
+3. Tıklayınca modal açılıyor mu?
+4. Modal'da çizim alanı boş ama yer tutucu kart görünüyor mu?
+5. Tablo değerleri doğru mu (O=229, tf=22.4, X=135, Y=32, B=102.4, W=190.5, 8×5/8")?
+6. PDF İndir butonu yeni sekme açıyor mu, A4 dikey baskı?
+7. Heat No / Sertifika checkbox / Sil butonu tıklayınca modal açılmamalı (eski davranış korunsun)
 
-# Lint
-node .github/kontrol.js --self-test 2>&1 | tail -10
-
-# Anahtar sayısı 1651 mi (3 dilde eşit)
-node -e "for(const f of ['tr','en','ar']) console.log(f+':', Object.keys(JSON.parse(require('fs').readFileSync('lang/'+f+'.json'))).length)"
-
-# I18N_EKSIK uyarı sayısı (40 hedefi: 0)
-node .github/kontrol.js 2>&1 | grep -c "I18N_EKSIK"
+### DB doğrulama
+```sql
+SELECT count(*) FROM flansh_olculer;        -- 1
+SELECT count(*) FROM fitting_malzeme_uyum;  -- 1
+SELECT count(*) FROM spool_flansh_eslesme;  -- 1
+SELECT count(*) FROM tenant_features WHERE feature_kod = 'kutuphane_parca_kimligi'; -- 7
 ```
 
-Beklenen: ✓ 3/3 self-test, 1651 anahtar 3 dilde, 0 I18N_EKSIK.
+Bir sorun varsa **42'nin önceliği** kütüphane düzeltmesi olur, sonra 40 borcuna geçilir.
 
 ---
 
-## 3. Canlı Uçtan Uca Test (~45 dk — EN YÜKSEK ÖNCELİK)
+## 3. 40 Canlı Test Borcu (~1-1.5 saat — EN YÜKSEK ÖNCELİK)
 
-40'ta yapılan işler hâlâ canlı test edilmedi. Açılışta öncelik bu olmalı.
+40'ta yapılan operasyon sayfası standardizasyonları henüz canlıda uçtan uca test edilmedi. 41 başında **Grup 1 ✓ markalama tablo+modal** test edildi, gerisi parking.
 
-### A. Markalama Listeler — Yeni Modal Akışı (10 dk)
-1. https://arespipe.vercel.app/markalama.html
-2. Bekleyen sekmesinde 5+ kayıt seç (aynı parça adı + çap)
-3. "Markalama Listesi Oluştur" → numarayı boş bırak → Oluştur
-4. **Kontrol:** Akordeon değil tablo görünmeli. Liste 1 satır.
-5. Satıra tıkla → modal açılsın (mlDetayModal)
-6. Modal: progress bar + 4 buton + checkbox tablo
-7. "Tümünü İşaretle" → satırlar işaretlensin
-8. "Kaydet & Kapat" → modal kapansın → Tamamlanan'a geçsin
+### A. Markalama (15 dk)
+- ✅ Grup 1 (41'de yapıldı)
+- Grup 2 — modal açılışı, progress bar, 4 buton
+- Grup 3 — manuel ekleme akışı (manuelMarkModal)
+- Grup 4 — arşiv görünümü
+- Grup 5 — i18n geçişleri (TR/EN/AR)
 
-### B. Tamamlanan + Manuel Modal (10 dk)
-- Tamamlanan satırına tıkla → view-only modal (Excel İndir butonu var, checkbox yok)
-- Manuel kayıt için bekleyen'de "manuel işaretle" → Tamamlanan'da "Manuel" liste no ile görünsün
-- Manuel satırına tıkla → İşaret Tarihi sütunlu modal
+### B. Bukum (10 dk)
+- modalBukumOnayi açılıyor mu (40'ta null bug fix yapıldı)
+- aciklama scope bug fix doğrula (Supabase modu kapalıyken hata yok mu)
 
-### C. Bukum Modal (5 dk)
-- bukum.html → bekleyen kalemde ✓ butonuna tıkla
-- modalBukumOnayi açılsın (önceden null hata veriyordu)
-- "Evet, Büküldü" → Bükülenler'e geçsin
+### C. Kalite Kontrol (10 dk)
+- Yeni hero+pill standardı görsel onay (yeşil --kk-c)
+- TR yazım fix kontrolü (Agirlik→Ağırlık vb.)
 
-### D. KK + Sevkiyat Görsel (5 dk)
-- KK: hero+stat-pill row, yeşil tema
-- Sevkiyat: hero+stat-pill row, mavi tema, renk lejandı doğru (broken HTML değil)
-- Mobile responsive
+### D. Sevkiyatlar (10 dk)
+- Renk lejandı broken HTML fix doğrulaması
+- 2 textarea i18n çalışıyor mu
 
-### E. 39'un PAOR Akışı (15 dk — geçen oturumdan kalan)
-- izometri-batch → PDF yükle → AI okusun
-- "İncele →" → izometri-batch-incele.html
-- Spool onayla → IFS Excel İndir enable
-- Excel indir → 92 sütun
-- devre_yeni.html → IFS sürükle-bırak → toast: "✅ N satır · M pipeline · K spool"
+### E. 39 PAOR Akışı (15 dk)
+40 öncesinden kalan canlı test borcu — 39'da yapılan PAOR (proje, aktivite, organizasyon, raporlama) akışı.
 
-### Test Sonucu
-- Hepsi geçer: ana işe geç
-- Bir adım kırılır: ekran görüntüsü iste, fix
-- Beklenmeyen davranışlar: feedback'e kaydet
+**Eğer hata bulunursa:** O hatayı çöz, sonra teste devam et. *"Sonra düzeltirim"* deme — borç birikmesin.
 
 ---
 
-## 4. Sırada — Ne Yapacağız (Cihat'ın Korku Dengesine Saygı)
+## 4. Kütüphane Genişletme — Süper Admin UI (~30-45 dk, opsiyonel)
 
-Cihat 40'ta dedi ki: *"Onu da yapalım bunu yapalım derken elimizden de olmayalım."*
+40 borcu bittiyse ve süre kalırsa Cihat'ın istediği iş:
 
-Bu yüzden 41-50 arasında **vizyondan sıfır madde** alıyoruz. Sadece:
+> *"süper admin sayfasından bazı firmalara açık bazılarına kapalı olacak"*
 
-### Kategori A — Pilot Hazırlığı (Ana Odak)
+`admin/super-admin.html` (varsa) veya yeni sayfa:
+- Tenant listesi + her birinin yanında feature flag toggle'ları
+- Toggle değişince `tenant_features` UPDATE
+- "Hangi tenant hangi feature'ı kullanıyor" matrix görünüm
 
-**Test Yönetimi sayfası** (~1 saat)
-- bl-ac (mavi), 5 pill: BEKLEYEN / DEVAM / TAMAMLANAN / HATALI/TAMİR / TOPLAM
-- DB tablosu: testler
-- Hero+stat-pill standardı
+**R-10 kuralı:** Önce mockup, sonra kod.
 
-**4 yönetim sayfası** (~2-3 saat)
-- Uyarılar (turuncu, 4 pill)
-- Tersaneler (yeşil, 4 pill)
-- Kullanıcılar (mavi, 4 pill)
-- Atölye Takip (yeşil, 5 pill)
+---
 
-### Kategori A — Mevcut Borçlar
+## 5. Sonraki Kapsam Genişletmeleri (sıralı parking)
 
-| Borç | Süre | Notu |
+Bunlar 42'de yapılmaz, ama 43+ için gündemde:
+
+### Kısa vade (1-2 oturum)
+1. **Çizim klasör organizasyonu:** `/cizimler/flans/` standardı, isim formatı (`wn-b16.5-150-4.svg` gibi), Cihat AutoCAD'inden çıkardıkça yüklenecek
+2. **Diğer flanş tipleri kataloğu:** SO, BL, LJ, SW, TH için kayıtlar (Cihat PDF'leri elinde mi, yoksa AutoCAD'den mi?)
+3. **Diğer basınç sınıfları:** 300, 600, 900, 1500, 2500
+
+### Orta vade (3-5 oturum)
+4. **Boru tablosu:** `boru_olculer` (B36.10M + B36.19M + EN 10220), aynı pattern
+5. **Dirsek/T/Redüksiyon:** `fitting_olculer` veya tip başına ayrı tablolar
+6. **Eşleştirme UI:** Kullanıcı yeni A105 girince sistem otomatik kütüphane öneri sunar (auto_exact: tam eşleşme önerisi)
+
+### Uzun vade (50. oturum sonrası)
+7. **AI fuzzy match:** IFS'den gelen yazım varyasyonları (`A106-B`, `ASTM A106 Gr B`, `SA106B`) → kanonik `A106B` eşleşmesi
+8. **3D yön çıkarımı:** kütüphane DN+tip biliyorsa B16.5 spec'inden geometri zaten hazır, AI'a topology kalır
+9. **Foto hata analizi:** Beklenen geometri kütüphaneden, foto ile diff
+
+---
+
+## 6. Vizyon Disiplini Hatırlatması
+
+41'de kütüphane altyapısı vizyondan kapsama alındı. Bu **tek istisna**, presedan değil.
+
+42-50 arası **vizyondan SIFIR madde** sözü hâlâ geçerli:
+- ❌ Pasif öğrenme — vizyonda kalır
+- ❌ Tier'lı servis modeli — vizyonda kalır
+- ❌ Lazer tarama pipeline — vizyonda kalır
+- ❌ STEP koordinat çıkarımı — vizyonda kalır
+- ❌ Klasör yükleme + format tanıma — vizyonda kalır
+- ❌ Çapraz validasyon (3 katman) — vizyonda kalır
+
+Cihat *"bunu da yapalım sistemin can damarı"* derse: cevap *"Bunu 41'de bir kez yaptık. İkinci kez yapmak presedan, disiplini erit. 50. oturumdan sonra konuşalım."*
+
+---
+
+## 7. 42 Gündemi Özet
+
+| Adım | Süre | Öncelik |
 |---|---|---|
-| Pre-A.3 çoklu sayfa dispatcher | 1.5 saat | pdf-lib + parallel/sequential |
-| vercel.json ignoreCommand fix | 30 dk | Sadece kod değişince build |
-| Pano implementasyonu | 3-4 saat | 23'ten beri tasarım hazır |
-| Sevkiyat "Bu Yıl Spool" yıl filtresi | 15 dk | Yıl filtresi eksik |
-| Markalama eski toggleArc temizlik | 5 dk | Boş fonksiyon |
-| Kesim son %10 | 1 saat | Excel TR temizliği |
-| proje_liste/detay Supabase | 1.5 saat | Hâlâ dummy |
-| malzeme.html sıfırdan | 2 saat | Hiç yok |
-| MIG_ISIM_BOZUK regex | 15 dk | Genişletme |
+| Açılış ritüeli | 5 dk | 🔴 |
+| 41 doğrulama | 10 dk | 🔴 |
+| 40 canlı test borcu | 60-90 dk | 🔴 |
+| Süper admin UI (opsiyonel) | 30-45 dk | 🟡 |
+| Kapanış (3 dosya) | 10 dk | 🔴 |
 
-### Kategori B — Pilot Tetikli (Vizyon)
-
-**Bunlar 41'de yapılmaz**, ama tetik gelince hızla başlanabilir:
-
-- **Kütüphane DB schema** (Vizyon 9 — Aşama 1, 1 oturum) — pilot sözleşmesi öncesi altyapı kurulur
-- AI yön çıkarımı (Vizyon 1 — 3D iyileştirme, 2-3 oturum) — pilot 3D'yi gördüğünde
-- Klasör yükleme + format tanıma (Vizyon 2) — ikinci pilot tersane geldiğinde
-
-### Kategori C — Çok Sonra
-
-Diğer 6 vizyon (STEP, çapraz validasyon, 3-görünüş, thumbnail, lazer tarama, pasif öğrenme, tier model) **çok sonra**. Tetik koşulları vizyon belgesinde yazılı.
+**Toplam:** ~2-2.5 saat oturum.
 
 ---
 
-## 5. Stratejik Hatırlatmalar (40'tan)
-
-### Parça Kimliği Prensibi (K22)
-Sisteme giren her malzeme **yazı değil nesne** olarak tanımlanır. Yeni iş yaparken:
-- Yeni tablo eklerken parça referansı düşün, string değil
-- AI prompt'larında çıktıyı parametrik iste
-- spool_malzemeleri'ne yeni kolon eklenirken referans yapısı korunsun
-
-### Vizyon Karar Çerçevesi (K23)
-Tetik koşulu olmadan iş yok. Vizyondaki bir madde "şimdi yapalım" diye iç güdüsel başlama. Müşteri sinyali şart.
-
-### Kütüphane Organik Dolar (K24)
-12.000 satırı önceden manuel girmek yerine pilot kullanılınca büyür. Boş tablolarla başla, kullanılan parçalar eklensin.
-
-### Cihat Profili Hatırlatmalar
-- **Upload = seçim sinyali** — Metin yerine dosya yükledi mi, o yöne karar vermiş demektir
-- **Korku ifadeleri = scope drift uyarısı** — Ciddiye al, çerçeve oluştur
-- **Stratejik soru = sezgi sinyali** — *"X harcar mı?"*, *"Y sağlam mı?"* yapısal sorun sezisi
-- **Tahammülü az** — Uzun teknik açıklama içinde sıkışmış talimat verme, 3+ aynı anda soru sorma
-
-### Tahmin Yasağı
-- Tablo adı: information_schema'dan gör
-- Kolon adı: information_schema'dan gör
-- API field adı: backend kodundan gör
-
-### Backend Canlı Test ≠ Frontend Canlı Test
-"X canlıda" denilen şey curl ile mi yoksa frontend ile mi test edildi — netleşmeli.
-
----
-
-## 6. Açılış Mesajı Önerisi (41 İlk Mesaja)
-
-```
-41 başlıyor. 40'ta iki büyük şey oldu — teknik (4 sayfa standardı + markalama
-dönüşümü + 46 i18n) ve vizyon (kahve sohbeti, vizyon belgesi yazıldı, Parça
-Kimliği Prensibi ana karar olarak kabul edildi).
-
-Bu oturumda öncelik canlı test (40 işleri henüz frontend'den doğrulanmadı).
-Ondan sonra Test Yönetimi veya yönetim sayfaları.
-
-Vizyon işleri 41-50 arasında kapalı — Cihat'ın korku dengesine saygı.
-
-[5 soru]
-```
-
----
-
-## 7. Kapanış Hedefi (41 Sonu)
-
-41 başarılı sayılır eğer:
-- ✅ Canlı uçtan uca test geçti (40 + 39 işleri)
-- ✅ I18N_EKSIK uyarı 0 (CI'da teyit)
-- ✅ En az 1 yeni operasyon sayfası standartlaştı (Test Yönetimi veya yönetim)
-- ✅ Sevkiyat "Bu Yıl Spool" yıl filtresi (15 dk)
-- ✅ Vizyondan **sıfır madde** dokunulmadı (disiplin testi)
-
----
-
-> Bu dosya 40 kapanışında oluşturuldu. 41 başında ilk okunacak.
+> 41 kapanışında yazıldı. 42 başında okunacak. 42 sonunda 43 için yenisi yazılacak.
