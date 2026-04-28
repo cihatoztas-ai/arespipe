@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ARES_KALITE Normalize Testi</title>
+<style>
+  body {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 { color: #4a9eff; font-family: 'Barlow Condensed', sans-serif; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #333; }
+  th { background: #2a2a2a; color: #4a9eff; font-weight: normal; }
+  .ok { color: #4ade80; }
+  .fail { color: #f87171; }
+  .girdi { color: #fbbf24; }
+  .beklenen { color: #94a3b8; }
+  .sonuc { font-weight: bold; }
+  h2 { font-family: 'Barlow Condensed', sans-serif; color: #94a3b8; margin-top: 32px; }
+  .ozet { padding: 12px; background: #2a2a2a; border-radius: 6px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h1>ARES_KALITE Normalize Testi</h1>
+<p>Bu sayfa <code>ares-kalite-normalize.js</code> dosyasının doğru çalıştığını test eder. Tüm satırlar yeşil ✓ olmalı.</p>
+
+<div class="ozet" id="ozet">Yükleniyor...</div>
+
+<h2>1. normalize() — yazım varyasyonu birleştirme</h2>
+<table id="tabloNormalize">
+  <tr><th>Girdi</th><th>Beklenen</th><th>Sonuç</th><th></th></tr>
+</table>
+
+<h2>2. eslesir() — pattern eşleşme</h2>
+<table id="tabloEslesir">
+  <tr><th>Kalite</th><th>Pattern</th><th>Tip</th><th>Beklenen</th><th>Sonuç</th><th></th></tr>
+</table>
+
+<h2>3. enIyiEslesme() — birden fazla aday içinden seçim</h2>
+<table id="tabloEnIyi">
+  <tr><th>Kalite</th><th>Adaylar (pattern + tip)</th><th>Beklenen Pattern</th><th>Sonuç</th><th></th></tr>
+</table>
+
+<script src="ares-kalite-normalize.js"></script>
+<script>
+  const K = globalThis.ARES_KALITE;
+  let toplam = 0, gecen = 0;
+
+  // -------- Test 1: normalize --------
+  const testlerNormalize = [
+    ['ST37',                'ST37'],
+    ['St37',                'ST37'],
+    ['ST 37',               'ST37'],
+    ['ST-37',               'ST37'],
+    ['st-37',               'ST37'],
+    ['A106',                'A106'],
+    ['A106B',               'A106B'],
+    ['A106 Gr.B',           'A106GRB'],
+    ['A106 GR.B',           'A106GRB'],
+    ['A 106 Grade B',       'A106GRB'],
+    ['ASTM A106 Gr.B',      'A106GRB'],
+    ['ASTM A 106 Grade B',  'A106GRB'],
+    ['A105',                'A105'],
+    ['316L',                '316L'],
+    ['TP316L',              'TP316L'],
+    ['TP 316L',             'TP316L'],
+    ['316 L',               '316L'],
+    ['P235GH',              'P235GH'],
+    ['S235JR',              'S235JR'],
+    ['',                    null],
+    [null,                  null],
+    [undefined,             null],
+    ['  ',                  null],
+  ];
+
+  const tNorm = document.getElementById('tabloNormalize');
+  testlerNormalize.forEach(([girdi, beklenen]) => {
+    toplam++;
+    const sonuc = K.normalize(girdi);
+    const ok = sonuc === beklenen;
+    if (ok) gecen++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="girdi">${JSON.stringify(girdi)}</td>
+      <td class="beklenen">${JSON.stringify(beklenen)}</td>
+      <td class="sonuc">${JSON.stringify(sonuc)}</td>
+      <td class="${ok?'ok':'fail'}">${ok?'✓':'✗'}</td>
+    `;
+    tNorm.appendChild(tr);
+  });
+
+  // -------- Test 2: eslesir --------
+  const testlerEslesir = [
+    ['A106 Gr.B',  'A106',  'baslar', true],
+    ['A106B',      'A106',  'baslar', true],
+    ['A105',       'A106',  'baslar', false],
+    ['ST37',       'ST37',  'tam',    true],
+    ['ST 37',      'ST37',  'tam',    true],
+    ['ST371',      'ST37',  'tam',    false],
+    ['TP316L',     '316L',  'icerir', true],
+    ['A312TP316L', '316L',  'icerir', true],
+    ['304L',       '316L',  'icerir', false],
+    ['316L',       '316L',  'tam',    true],
+    ['',           'A106',  'baslar', false],
+    ['A106',       '',      'baslar', false],
+  ];
+
+  const tEsl = document.getElementById('tabloEslesir');
+  testlerEslesir.forEach(([kalite, pattern, tipi, beklenen]) => {
+    toplam++;
+    const sonuc = K.eslesir(kalite, pattern, tipi);
+    const ok = sonuc === beklenen;
+    if (ok) gecen++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="girdi">${JSON.stringify(kalite)}</td>
+      <td>${JSON.stringify(pattern)}</td>
+      <td>${tipi}</td>
+      <td class="beklenen">${beklenen}</td>
+      <td class="sonuc">${sonuc}</td>
+      <td class="${ok?'ok':'fail'}">${ok?'✓':'✗'}</td>
+    `;
+    tEsl.appendChild(tr);
+  });
+
+  // -------- Test 3: enIyiEslesme --------
+  // Senaryo: "A106 Gr.B" geldi, DB'de hem "A106" baslar hem "A105" tam var.
+  // "A106" eslesmeli, "A105" degil.
+  const adaylar1 = [
+    { kalite_kodu_pattern: 'A105', pattern_tipi: 'tam' },
+    { kalite_kodu_pattern: 'A106', pattern_tipi: 'baslar' },
+    { kalite_kodu_pattern: 'A53',  pattern_tipi: 'baslar' },
+  ];
+
+  // Senaryo: "316L" geldi, hem "316L" tam hem "316" baslar var.
+  // Tam tercih edilmeli (oncelik: tam > baslar > icerir).
+  const adaylar2 = [
+    { kalite_kodu_pattern: '316',  pattern_tipi: 'baslar' },
+    { kalite_kodu_pattern: '316L', pattern_tipi: 'tam' },
+  ];
+
+  // Senaryo: "TP316L" geldi, hem "316L" icerir hem "TP316L" tam var.
+  const adaylar3 = [
+    { kalite_kodu_pattern: '316L',   pattern_tipi: 'icerir' },
+    { kalite_kodu_pattern: 'TP316L', pattern_tipi: 'tam' },
+  ];
+
+  // Senaryo: hicbir aday eslesmiyor.
+  const adaylar4 = [
+    { kalite_kodu_pattern: 'A106', pattern_tipi: 'baslar' },
+  ];
+
+  const testlerEnIyi = [
+    ['A106 Gr.B', adaylar1, 'A106'],
+    ['316L',      adaylar2, '316L'],
+    ['TP316L',    adaylar3, 'TP316L'],
+    ['ST37',      adaylar4, null],     // hic eslesme yok
+  ];
+
+  const tEnIyi = document.getElementById('tabloEnIyi');
+  testlerEnIyi.forEach(([kalite, adaylar, beklenen]) => {
+    toplam++;
+    const sonuc = K.enIyiEslesme(kalite, adaylar);
+    const sonucPattern = sonuc ? sonuc.kalite_kodu_pattern : null;
+    const ok = sonucPattern === beklenen;
+    if (ok) gecen++;
+    const tr = document.createElement('tr');
+    const adayMetni = adaylar.map(a => `${a.kalite_kodu_pattern}/${a.pattern_tipi}`).join(', ');
+    tr.innerHTML = `
+      <td class="girdi">${JSON.stringify(kalite)}</td>
+      <td style="font-size:11px;">${adayMetni}</td>
+      <td class="beklenen">${JSON.stringify(beklenen)}</td>
+      <td class="sonuc">${JSON.stringify(sonucPattern)}</td>
+      <td class="${ok?'ok':'fail'}">${ok?'✓':'✗'}</td>
+    `;
+    tEnIyi.appendChild(tr);
+  });
+
+  // -------- Ozet --------
+  const ozetEl = document.getElementById('ozet');
+  if (gecen === toplam) {
+    ozetEl.innerHTML = `<span class="ok">✓ Tum testler gecti (${gecen}/${toplam})</span>`;
+    ozetEl.style.background = '#0d2818';
+  } else {
+    ozetEl.innerHTML = `<span class="fail">✗ ${toplam - gecen} test basarisiz (${gecen}/${toplam} gecti)</span>`;
+    ozetEl.style.background = '#2d0d0d';
+  }
+</script>
+
+</body>
+</html>
