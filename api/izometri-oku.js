@@ -2,7 +2,8 @@
 // api/izometri-oku.js -- Vercel Serverless Function (Node.js)
 // =====================================================================
 // Tarih: 28 Nisan 2026 -- 38. oturum (Pre-A.1 + Pre-A.2 + Pre-A.4 + Pre-A.5)
-// Mimari kararlar: K1-K6 (36) + K11 (37 -- guvenlik)
+//        + 42. oturum (boyut_standardi + malzeme_standardi alanlari)
+// Mimari kararlar: K1-K6 (36) + K11 (37 -- guvenlik) + K12 (42 -- standart)
 //   - K3: 7 maddeli halusinasyon koruması (DB seviyesinde)
 //   - K4: Yaklasim Y -- AI sadece yazili olani okur, hesap kod tarafinda
 //   - K5: Sifirdan yazildi (eski izometri-oku.js atildi)
@@ -12,6 +13,9 @@
 //     - Pre-A.4: ai_api_log CHECK constraint uyumu (kaynak/cagri_tipi isimleri)
 //     - Pre-A.5: malzeme_listesi yapisi genisletildi -- kod, kalite, dis_cap_mm, et_mm, boy_mm,
 //                adet, agirlik_kg, agirlik_kaynagi, sertifika_tipi, malzeme_notu
+//   - K12/42: malzeme_listesi yapisina 2 alan eklendi -- boyut_standardi, malzeme_standardi
+//             AI cikarsama yapmaz, sadece PDF'te yaziliyi alir; cikarsama yazilim tarafinda
+//             (malzeme_standart_ipucu tablosu + ARES_KALITE normalize)
 //
 // Sozlesme:
 //   POST /api/izometri-oku
@@ -580,7 +584,7 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
 }
 
 // =====================================================================
-// 6. YAKLASIM Y PROMPT (K4/36)
+// 6. YAKLASIM Y PROMPT (K4/36 + K12/42)
 // =====================================================================
 
 const YAKLASIM_Y_PROMPT = `Sen bir tersane boru imalat sisteminin veri cikarma asistanisin.
@@ -654,7 +658,9 @@ CIKTI FORMATI (sadece JSON, baska hicbir sey yazma):
           "agirlik_kg": null | sayisal,
           "agirlik_kaynagi": "pdf" | null,
           "sertifika_tipi": "3.1" | "3.2" | "PMI" | null,
-          "malzeme_notu": null | "ozel sertifika notu, hidrojen testi, vb."
+          "malzeme_notu": null | "ozel sertifika notu, hidrojen testi, vb.",
+          "boyut_standardi": "ASME B36.10M" | "DIN 2448" | "EN 10216-1" | null,
+          "malzeme_standardi": "ASTM A106 Gr.B" | "EN 10216-1 P235GH" | null
         }
       ],
       "notlar": "AI tarafindan eklenen kisa not (varsa)"
@@ -695,7 +701,24 @@ MALZEME LISTESI ALANLARI ICIN OZEL TALIMATLAR (Pre-A.5 -- 38. oturum):
    Genellikle malzeme tanimindan cikarilabilir. Yoksa null.
 
 7. SPOOL SEVIYESINDEKI "kalite" alani: Bu spool'un genel kalitesi. Spool'daki malzeme listesinin
-   cogunlugunda gecen kalite kodu. Karisikta null don.`;
+   cogunlugunda gecen kalite kodu. Karisikta null don.
+
+8. "boyut_standardi": Boyut/geometri spesifikasyon kodu. SADECE PDF tanim metninde
+   acikca yaziliysa al. Sik karsilasan kodlar:
+   - Boru: "ASME B36.10M", "ASME B36.19M", "EN 10220", "EN 10216-1", "DIN 2448"
+   - Flansh: "ASME B16.5", "ASME B16.47", "EN 1092-1", "DIN 86087"
+   - Fitting: "ASME B16.9", "ASME B16.11", "EN 10253-2"
+   PDF'te yazili degilse: null. ASLA kalite kodundan ("ST37"den "EN 10216-1" gibi)
+   cikarsama yapma -- bunu yazilim tarafi yapacak (malzeme_standart_ipucu tablosu).
+
+9. "malzeme_standardi": Malzeme spec referansi. SADECE PDF'te yaziliysa al.
+   - "ASTM A106 Gr.B", "ASTM A105", "ASTM A234 WPB", "ASTM A312 TP316L"
+   - "EN 10216-1 P235GH" (kombo geldiyse)
+   PDF'te yazili degilse: null. ASLA varsayim yapma.
+
+   Not: Madde 8 ve 9 farkli seylerdir. "PIPE A106 GR.B DN150" -> boyut_standardi=null
+   (B36.10M yazili degil), malzeme_standardi="ASTM A106 Gr.B". "PIPE DIN 2448 ST37" ->
+   boyut_standardi="DIN 2448", malzeme_standardi=null (ST37 sadece kalite, spec degil).`;
 
 // =====================================================================
 // 7. ASME LOOKUP -- boru_olculer fallback (K4/36)
