@@ -1,16 +1,62 @@
 {
-  "tarih": "2026-04-27T19:15:52.143Z",
-  "commit_sha": "87fb80a7531d4f58f57e6d1f366e0ed7676015bf",
+  "tarih": "2026-04-28T06:55:43.314Z",
+  "commit_sha": "890b82298fc8e0f3df0acfa59b771bd07390848a",
   "commit_ref": "main",
-  "workflow_run": 597,
+  "workflow_run": 598,
   "ozet": {
     "hata": 0,
-    "uyari": 1,
+    "uyari": 18,
     "taranan_dosya": 79,
-    "sorunlu_dosya": 1,
+    "sorunlu_dosya": 5,
     "durum": "sari"
   },
   "kurallar": {
+    "I18N_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "tv('bk_qr_al') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 17,
+      "dosyalar": [
+        {
+          "dosya": "bukum.html",
+          "sayi": 2,
+          "satirlar": [
+            711,
+            956
+          ]
+        },
+        {
+          "dosya": "kalite_kontrol.html",
+          "sayi": 5,
+          "satirlar": [
+            523,
+            585,
+            658
+          ]
+        },
+        {
+          "dosya": "markalama.html",
+          "sayi": 8,
+          "satirlar": [
+            779,
+            780,
+            968,
+            987,
+            1087,
+            1099,
+            1134,
+            1135
+          ]
+        },
+        {
+          "dosya": "sevkiyatlar.html",
+          "sayi": 2,
+          "satirlar": [
+            1112,
+            1152
+          ]
+        }
+      ]
+    },
     "G03_HAM_YUZEY": {
       "tip": "uyari",
       "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
@@ -28,6 +74,25 @@
   },
   "dosyalar": [
     {
+      "dosya": "bukum.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 711,
+          "mesaj": "tv('bk_qr_al') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 956,
+          "mesaj": "tv('bk_unit_kayit') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
       "uyari_sayisi": 1,
@@ -37,6 +102,117 @@
           "tip": "uyari",
           "satir": 1428,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
+        }
+      ]
+    },
+    {
+      "dosya": "kalite_kontrol.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 5,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 523,
+          "mesaj": "tv('cmn_th_spool') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 585,
+          "mesaj": "tv('kk_toast_secim_yok') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 658,
+          "mesaj": "tv('kk_durum_bekleyen') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 658,
+          "mesaj": "tv('kk_durum_onaylandi') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 658,
+          "mesaj": "tv('kk_durum_reddedildi') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "markalama.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 8,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 779,
+          "mesaj": "tv('mk_isemir_label') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 780,
+          "mesaj": "tv('cmn_daha') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 968,
+          "mesaj": "tv('mk_toast_markalandi') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 987,
+          "mesaj": "tv('mk_uyari_aciklama') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1087,
+          "mesaj": "tv('mk_tip_spool') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1099,
+          "mesaj": "tv('cmn_detay') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1134,
+          "mesaj": "tv('cmn_excel_indir') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1135,
+          "mesaj": "tv('mk_listeyi_kaydet') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "sevkiyatlar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1112,
+          "mesaj": "tv('cmn_detay') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1152,
+          "mesaj": "tv('cmn_fotograflar') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     }
