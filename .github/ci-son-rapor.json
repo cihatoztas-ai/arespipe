@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-04-28T17:05:24.406Z",
-  "commit_sha": "4525a8ea6ced79abd74022be79393e697d5d8a04",
+  "tarih": "2026-04-28T17:27:11.866Z",
+  "commit_sha": "bd45ed0c962fe68eba234016dc01e4e045cb3cdd",
   "commit_ref": "main",
-  "workflow_run": 610,
+  "workflow_run": 611,
   "ozet": {
-    "hata": 1,
-    "uyari": 11,
-    "taranan_dosya": 81,
-    "sorunlu_dosya": 3,
-    "durum": "kirmizi"
+    "hata": 0,
+    "uyari": 10,
+    "taranan_dosya": 80,
+    "sorunlu_dosya": 2,
+    "durum": "sari"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -44,30 +44,6 @@
             3470,
             3472
           ]
-        }
-      ]
-    },
-    "ARES_LAYOUT_EKSIK": {
-      "tip": "hata",
-      "mesaj": "ares-layout.js yüklenmiyor.",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "test-kalite-normalize.html",
-          "sayi": 1,
-          "satirlar": []
-        }
-      ]
-    },
-    "ARES_NORMALIZE_EKSIK": {
-      "tip": "uyari",
-      "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "test-kalite-normalize.html",
-          "sayi": 1,
-          "satirlar": []
         }
       ]
     }
@@ -144,25 +120,6 @@
           "tip": "uyari",
           "satir": 3472,
           "mesaj": "tv('flansh_agirlik') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "test-kalite-normalize.html",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 1,
-      "hatalar": [
-        {
-          "kod": "ARES_LAYOUT_EKSIK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "ares-layout.js yüklenmiyor."
-        },
-        {
-          "kod": "ARES_NORMALIZE_EKSIK",
-          "tip": "uyari",
-          "satir": null,
-          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
         }
       ]
     }
