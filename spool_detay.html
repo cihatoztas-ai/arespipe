@@ -244,7 +244,7 @@ tr.malz-tiklanabilir td:first-child{padding-left:9px;}
 .flansh-mod-x{width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;color:var(--txm);border:1px solid var(--bor);background:transparent;}
 .flansh-mod-x:hover{color:var(--tx);border-color:var(--ac);}
 .flansh-mod-body{padding:18px 18px 14px;}
-.flansh-cizim{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:14px;margin-bottom:14px;}
+.flansh-cizim{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:14px;margin-bottom:14px;min-height:180px;display:flex;align-items:center;justify-content:center;}
 .flansh-tablo{width:100%;font-size:14px;border-collapse:collapse;}
 .flansh-tablo td{padding:8px 0;border-bottom:1px solid var(--bor);}
 .flansh-tablo tr:last-child td{border-bottom:none;}
@@ -3440,14 +3440,13 @@ function flanshModalAc(spoolMalzemeId){
   var ozet = ozetMalz + ' · ' + (f.flansh_tipi||'—') + ' ' + (f.basinc_sinifi||'') + '# · ' + capStr + (f.yuzey_tipi ? ' · ' + f.yuzey_tipi : '');
   document.getElementById('flanshModalOzet').textContent = ozet;
   document.getElementById('flanshModalMeta').textContent = (tv('flansh_meta','flanş bilgisi') + ' · ASME ' + (f.geometri_std||'B16.5')).toLowerCase();
-  // Çizim — dosya yüklendikçe görünür, yoksa kutu hiç görünmez
+  // Çizim — dosya yüklendikçe görünür, yoksa kart boş kalır (yer tutucu)
   var cizimEl = document.getElementById('flanshCizim');
+  cizimEl.style.display = '';
   if(f.cizim_path){
-    cizimEl.innerHTML = '<img src="'+esc(f.cizim_path)+'" alt="'+esc(f.flansh_tipi||'flanş')+' çizimi" style="width:100%;height:auto;display:block;" onerror="this.parentNode.style.display=\'none\'">';
-    cizimEl.style.display = '';
+    cizimEl.innerHTML = '<img src="'+esc(f.cizim_path)+'" alt="'+esc(f.flansh_tipi||'flanş')+' çizimi" style="width:100%;height:auto;display:block;" onerror="this.parentNode.innerHTML=\'\'">';
   } else {
     cizimEl.innerHTML = '';
-    cizimEl.style.display = 'none';
   }
   // Tablo
   var tablo = document.getElementById('flanshTablo');
@@ -3559,11 +3558,12 @@ function flanshPdf(){
   }
   if(f.agirlik_kg) tabloHtml += _trSat('Birim ağırlık', _kg(f.agirlik_kg));
 
-  // Çizim PDF'te — dosya varsa img, yoksa kart hiç eklenmez
-  var cizimKartHtml = '';
+  // Çizim PDF'te — dosya varsa img, yoksa boş kart (yer tutucu)
+  var cizimKartHtml = '<div class="cizim-kart" style="min-height:180px;">';
   if(f.cizim_path){
-    cizimKartHtml = '<div class="cizim-kart"><img src="'+esc(f.cizim_path)+'" alt="çizim" style="width:100%;height:auto;display:block;" onerror="this.parentNode.style.display=\'none\'"></div>';
+    cizimKartHtml += '<img src="'+esc(f.cizim_path)+'" alt="çizim" style="width:100%;height:auto;display:block;" onerror="this.parentNode.innerHTML=\'\'">';
   }
+  cizimKartHtml += '</div>';
 
   var w = window.open('', '_blank', 'width=900,height=1100');
   if(!w){ toast('Popup engellendi — tarayıcı izni gerekli','er'); return; }
