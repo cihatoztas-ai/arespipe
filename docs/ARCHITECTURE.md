@@ -282,7 +282,7 @@ Belge yazımı maliyetli. Hiçbir insan "51 tablomuz var" kısmını sürekli g�
 - **Tablo:** 52
 - **API endpoint:** 3
 - **CI kural:** 170 (7 kategori)
-- **Migration dosyası:** 8
+- **Migration dosyası:** 10
 <!-- AUTO-END:istatistikler -->
 
 ---
