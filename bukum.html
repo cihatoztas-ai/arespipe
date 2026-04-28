@@ -356,7 +356,7 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div class="filter-row" style="margin-top:0;align-items:center;">
         <div class="search-wrap" style="max-width:280px;flex:1;">
           <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" id="searchInput" placeholder="Spool no, malzeme, iş emir, cap... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
+          <input class="search-input" id="searchInput" data-i18n-placeholder="bk_search_pending_ph" placeholder="Spool no, malzeme, iş emir, çap... ara" oninput="onSearch()" style="padding:8px 32px 8px 36px;font-size:14px;">
           <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
         </div>
         
@@ -369,9 +369,9 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
             </div>
             <div class="ms-dropdown" id="msDD" style="display:none;">
               <div class="ms-search"><input type="text" id="msQ" data-i18n-placeholder="bk_search_ph" placeholder="İş emir ara..." oninput="buildMs()"></div>
-              <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="bk_select_all">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()">Temizle</button></div>
+              <div class="ms-actions"><button class="ms-act" onclick="msAll()" data-i18n="bk_select_all">Tümünü Seç</button><span style="color:var(--bor);">·</span><button class="ms-act" onclick="msClearSel()" data-i18n="cmn_temizle">Temizle</button></div>
               <div class="ms-list" id="msList"></div>
-              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()">Uygula</button></div>
+              <div class="ms-footer"><button class="btn-primary" style="height:32px;font-size:14px;" onclick="closeMs()" data-i18n="cmn_uygula">Uygula</button></div>
             </div>
           </div>
         <select class="filter-select" id="fMalzeme" onchange="onFC()" title="Malzeme"><option value=""><span data-i18n="cmn_th_malzeme">Malzeme</span></option></select>
@@ -456,6 +456,29 @@ mark{background:rgba(245,158,11,.3);color:var(--tx);border-radius:2px;padding:0 
       <div id="kesilenFooter" class="tbl-footer" style="display:none;"><span id="kesilenCount"></span></div>
     </div>
   </div>
+
+<!-- BÜKÜM ONAY MODAL — buktu() butonu için -->
+<div class="modal-ov" id="modalBukumOnayi" style="display:none;">
+  <div class="modal-box" style="max-width:400px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bukum-c)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-6 6-6 9 0s6 6 9 0"/></svg>
+      </div>
+      <div>
+        <div class="modal-title" style="font-size:17px;margin-bottom:2px;" data-i18n="bk_onay_baslik">Bükümü Tamamlandı Olarak İşaretle</div>
+        <div style="font-size:14px;color:var(--txd);" data-i18n="bk_onay_alt">Bu boru manuel olarak büküldü mü?</div>
+      </div>
+    </div>
+    <div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:18px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--bukum-c);margin-bottom:4px;" id="bukumOnayi_spool">—</div>
+      <div style="font-size:14px;color:var(--txm);" id="bukumOnayi_bilgi">—</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-outline" style="flex:1;" onclick="document.getElementById('modalBukumOnayi').style.display='none';_bekleyenBukumId=null;" data-i18n="cmn_iptal">İptal</button>
+      <button class="btn-green" style="flex:2;" onclick="buktuOnayla()" data-i18n="bk_evet_bukuldu">&#10003; Evet, Büküldü</button>
+    </div>
+  </div>
+</div>
 
 <script>
 
@@ -685,7 +708,7 @@ function renderRow(b,i){
       +'<button onclick="buktu(\''+b.id+'\')" title="'+tv('bk_done_title','Büküm tamamlandı olarak işaretle')+'" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(22,163,110,.4);background:rgba(22,163,110,.06);color:var(--gr);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background=\'rgba(22,163,110,.18)\'" onmouseout="this.style.background=\'rgba(22,163,110,.06)\'">&#10003;</button>'
     +'</td>'
     +'<td style="text-align:center;">'
-      +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="QR Al">&#9638;</button>'
+      +'<button onclick="showQR(\''+b.id+'\')" class="btn-qr" title="'+tv('bk_qr_al','QR Al')+'">&#9638;</button>'
     +'</td>'
     +'</tr>';
 }
@@ -753,9 +776,7 @@ function renderBekliyor(){
       document.getElementById('pgNext').disabled=mevcutSayfa>=toplamSayfa;
     }
   }
-  document.getElementById('footerTxt').textContent=filtreData.length+' '+tv('bk_unit_boru','boru')+' ('
-    +filtreData.filter(function(b){return b.kaynak==='spool';}).length+' spool + '
-    +')';
+  document.getElementById('footerTxt').textContent=filtreData.length+' '+tv('bk_unit_boru','boru');
   document.getElementById('footerSum').innerHTML=tv('bk_toplam','Toplam')+': <span style="color:var(--bukum-c);">'+toplamMM.toLocaleString('tr-TR')+' mm</span>';
 }
 
@@ -777,18 +798,19 @@ function buktuOnayla(){
   var b=bukumler.find(function(x){return x.id===id;});if(!b)return;
   b.durum='tamamlandi';
   b.bukulduZaman=new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  // İşlem log açıklaması — hem Supabase'e hem localStorage'a yazılır
+  var malzEtLog = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : b.malzeme;
+  var aciklamaParts = [];
+  if(malzEtLog) aciklamaParts.push(malzEtLog);
+  if(b.kalite) aciklamaParts.push(b.kalite);
+  if(b.cap && b.cap !== '—') aciklamaParts.push('Ø'+b.cap);
+  if(b.olcu) aciklamaParts.push('- '+b.olcu+'mm');
+  var aciklama = aciklamaParts.join(' ');
   if(b.supaId && ARES.mod==='supabase'){
     ARES.supabase().from('bukum_kalemleri').update({bukuldumu:true,guncelleme:new Date().toISOString()}).eq('id',b.supaId).then(function(r){
       if(r.error) console.warn('[ARES] Büküm güncelleme:',r.error.message);
     });
     // İşlem log — spool detay sayfasında "Büküm Eklendi" label'ı olarak görünür
-    var malzEtLog = (typeof ARES_NORM!=='undefined') ? ARES_NORM.malzemeEtiket(b.malzeme) : b.malzeme;
-    var aciklamaParts = [];
-    if(malzEtLog) aciklamaParts.push(malzEtLog);
-    if(b.kalite) aciklamaParts.push(b.kalite);
-    if(b.cap && b.cap !== '—') aciklamaParts.push('Ø'+b.cap);
-    if(b.olcu) aciklamaParts.push('- '+b.olcu+'mm');
-    var aciklama = aciklamaParts.join(' ');
     ARES.supabase().from('islem_log').insert({
       tenant_id: ARES.tenantId(),
       islem: 'BUKUM_EKLENDI',
@@ -826,7 +848,7 @@ function showQR(id){
     +'<div id="qrBig" style="margin:0 auto 14px;width:200px;height:200px;"></div>'
     +'<div style="font-size:14px;color:var(--txm);margin-bottom:4px;"><b>'+esc(malzEtiket)+(b.kalite?' '+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(b.kalite)||b.kalite||''):(b.kalite||'')):'')+'</b> &#216;'+esc(b.cap)+'</div>'
     +'<div style="font-size:24px;font-weight:800;color:var(--bukum-c);margin-bottom:20px;">'+b.olcu+' mm</div>'
-    +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">Kapat</button>'
+    +'<button onclick="this.closest(\'.modal-ov\').remove()" class="btn-outline" style="width:100%;height:42px;">'+tv('cmn_kapat','Kapat')+'</button>'
     +'</div>';
   ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
   document.body.appendChild(ov);
@@ -931,7 +953,7 @@ function renderKesilenler(){
       +'<td style="font-size:14px;color:var(--gr);white-space:nowrap;">&#10003; '+esc(b.bukulduZaman||'')+'</td>'
       +'</tr>';
   }).join('');
-  document.getElementById('kesilenCount').textContent=kesilenenFiltreData.length+' kayit';
+  document.getElementById('kesilenCount').textContent=kesilenenFiltreData.length+' '+tv('bk_unit_kayit','kayıt');
 }
 
 function updateStats(){

@@ -26,8 +26,35 @@
 .cl-warn{border-left:3px solid var(--warn) !important;}
 .cl-leg {border-left:3px solid var(--leg)  !important;}
 
-/* ── STAT KARTLAR ── */
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+/* ── HERO + STAT PILL (14. oturum standardı, --kk-c yeşil) ── */
+:root{--kk-c:#16a36e;}
+[data-theme=light-anthracite]{--kk-c:#0f8a5c;}
+.stat-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;}
+.hero-left{background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--kk-c);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;flex-shrink:0;width:200px;box-sizing:border-box;}
+.hero-left svg{width:26px;height:26px;flex-shrink:0;color:var(--kk-c);}
+.hero-name{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;line-height:1;letter-spacing:.3px;color:var(--kk-c);}
+.hero-stats{display:flex;gap:6px;flex:1;min-width:0;}
+.stat-pill{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--kk-c);border-radius:8px;padding:9px 11px;flex:1 1 0;min-width:128px;box-sizing:border-box;display:flex;align-items:center;gap:10px;}
+.stat-pill-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
+.stat-pill-ic svg{width:16px;height:16px;stroke-width:2.2;}
+.stat-pill-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.stat-pill-lab{font-size:14px;color:var(--txm);letter-spacing:.3px;line-height:1.2;text-transform:uppercase;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-pill-num{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;line-height:1;color:var(--tx);letter-spacing:.3px;white-space:nowrap;}
+.ic-green{background:var(--gr);}
+.ic-blue{background:var(--ac);}
+.ic-amber{background:var(--warn);}
+.ic-violet{background:var(--leg);}
+@media(max-width:1280px){
+  .hero-left{width:170px;padding:9px 11px;gap:9px;}
+  .hero-left svg{width:24px;height:24px;}
+  .hero-name{font-size:19px;}
+  .stat-pill{padding:8px 10px;gap:8px;min-width:118px;}
+  .stat-pill-ic{width:28px;height:28px;}
+  .stat-pill-ic svg{width:14px;height:14px;}
+  .stat-pill-num{font-size:18px;}
+}
+
+/* ── ESKİ STAT KARTLAR (kalır, başka yerlerde kullanılıyor olabilir) ── */
 .stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
 .stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .si-b{background:rgba(45,142,255,.12);color:var(--ac);}
@@ -137,36 +164,49 @@
 <div class="main-content">
 <div class="page">
 
-<!-- SAYFA BAŞLIĞI -->
-<div class="page-header">
-  <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="kk_breadcrumb">Kalite Kontrol</span></div>
-    <h1 class="page-title" data-i18n="kk_page_title">Kalite Kontrol</h1>
+<!-- BREADCRUMB -->
+<div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="kk_breadcrumb">Kalite Kontrol</span></div>
+
+<!-- HERO + STAT PILL ROW (14. oturum standardı) -->
+<div class="stat-row">
+  <div class="hero-left">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+    <div class="hero-name" data-i18n="kk_hero_word">Kalite Kontrol</div>
   </div>
-  <button class="btn btn-p" id="btnDavetUst" onclick="davetAc()" disabled>
+  <div class="hero-stats">
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="kk_stat_hazir">Kaliteye Hazır</div>
+        <div class="stat-pill-num"><span id="sH">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="kk_stat_davet">Davet Paketi</div>
+        <div class="stat-pill-num"><span id="sD">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="kk_stat_bekleyen">Tersane Bekleniyor</div>
+        <div class="stat-pill-num"><span id="sB">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="kk_stat_onaylanan">Onaylanan</div>
+        <div class="stat-pill-num"><span id="sO">0</span></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-p" id="btnDavetUst" onclick="davetAc()" disabled style="flex-shrink:0;align-self:center;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <span data-i18n="kk_btn_davet">Davet Paketi Oluştur</span>
   </button>
-</div>
-
-<!-- STAT KARTLAR -->
-<div class="stat-row">
-  <div class="stat-card cl-ac">
-    <div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-    <div><div class="stat-label" data-i18n="kk_stat_hazir">Kaliteye Hazır</div><div class="stat-value" id="sH">0</div></div>
-  </div>
-  <div class="stat-card cl-leg">
-    <div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-    <div><div class="stat-label" data-i18n="kk_stat_davet">Davet Paketi</div><div class="stat-value" id="sD">0</div></div>
-  </div>
-  <div class="stat-card cl-warn">
-    <div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div><div class="stat-label" data-i18n="kk_stat_bekleyen">Tersane Bekleniyor</div><div class="stat-value" id="sB">0</div></div>
-  </div>
-  <div class="stat-card cl-gr">
-    <div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div><div class="stat-label" data-i18n="kk_stat_onaylanan">Onaylanan</div><div class="stat-value" id="sO">0</div></div>
-  </div>
 </div>
 
 <!-- SEÇİM BAR -->
@@ -192,8 +232,8 @@
 <!-- PANEL: DAVET OLUŞTUR -->
 <div class="panel on" id="panelDavet">
   <div class="fbar cl-warn">
-    <select class="fsel" id="fT" onchange="filtrele()"><option value="">Tüm Tersaneler</option></select>
-    <select class="fsel" id="fP" onchange="filtrele()"><option value="">Tüm Projeler</option></select>
+    <select class="fsel" id="fT" onchange="filtrele()"><option value="" data-i18n="kk_filter_all_yards">Tüm Tersaneler</option></select>
+    <select class="fsel" id="fP" onchange="filtrele()"><option value="" data-i18n="kk_filter_all_projects">Tüm Projeler</option></select>
     <div class="swrap">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--txd);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="fA" placeholder="Devre veya spool ara..." data-i18n-placeholder="kk_search_ph" oninput="filtrele()">
@@ -480,7 +520,7 @@ function renderHazir(liste) {
       var spls = g.devs[dev];
       html += '<div style="border-bottom:1px solid var(--bor);">';
       html += '<div style="padding:8px 18px;background:var(--sur2);font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;">'+dev+'</div>';
-      html += '<table class="st"><thead><tr><th style="width:32px;"></th><th>Spool</th><th style="text-align:right;">Agirlik</th></tr></thead><tbody>';
+      html += '<table class="st"><thead><tr><th style="width:32px;"></th><th>'+tv('cmn_th_spool','Spool')+'</th><th style="text-align:right;">'+tv('cmn_th_agirlik','Ağırlık')+'</th></tr></thead><tbody>';
       spls.forEach(function(s) {
         html += '<tr>';
         html += '<td><input type="checkbox" class="ck" '+(secHas(s.id)?'checked':'')+' onchange="spSec(\''+s.id+'\',this.checked)"></td>';
@@ -542,7 +582,7 @@ function guncelSecBar() {
 
 // ── DAVET ────────────────────────────────────────────────────
 function davetAc() {
-  if (!secSize()) { showToast('Once spool secin','error'); return; }
+  if (!secSize()) { showToast(tv('kk_toast_secim_yok','Önce spool seçin'),'error'); return; }
   var sl = HAZIR.filter(function(h){ return secHas(h.id); });
   var kg = sl.reduce(function(a,h){ return a+h.agirlik; },0).toFixed(1);
   var devSet = {};
@@ -615,7 +655,7 @@ function renderOnay() {
 }
 
 function pkart(p) {
-  var dm = {bekleyen:'<span class="b ba">Tersane Bekleniyor</span>',onaylandi:'<span class="b bg">Onaylandi</span>',reddedildi:'<span class="b br">Ret / Duzeltme</span>'};
+  var dm = {bekleyen:'<span class="b ba">'+tv('kk_durum_bekleyen','Tersane Bekleniyor')+'</span>',onaylandi:'<span class="b bg">'+tv('kk_durum_onaylandi','Onaylandı')+'</span>',reddedildi:'<span class="b br">'+tv('kk_durum_reddedildi','Ret / Düzeltme')+'</span>'};
   var kg = p.spooller.reduce(function(a,s){ return a+(s.agirlik||0); },0).toFixed(1);
   var h = '<div class="pkart"><div class="phead">';
   h += '<div>';

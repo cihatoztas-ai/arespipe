@@ -26,7 +26,36 @@
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 
 /* STAT */
-.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+/* ── HERO + STAT PILL (14. oturum standardı, --sev-c mavi) ── */
+:root{--sev-c:#2D8EFF;}
+[data-theme=light-anthracite]{--sev-c:#1d6fd8;}
+.stat-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;}
+.hero-left{background:var(--sur);border:1px solid var(--bor);border-left:4px solid var(--sev-c);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;flex-shrink:0;width:200px;box-sizing:border-box;}
+.hero-left svg{width:26px;height:26px;flex-shrink:0;color:var(--sev-c);}
+.hero-name{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;line-height:1;letter-spacing:.3px;color:var(--sev-c);}
+.hero-stats{display:flex;gap:6px;flex:1;min-width:0;}
+.stat-pill{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--sev-c);border-radius:8px;padding:9px 11px;flex:1 1 0;min-width:118px;box-sizing:border-box;display:flex;align-items:center;gap:10px;}
+.stat-pill-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
+.stat-pill-ic svg{width:16px;height:16px;stroke-width:2.2;}
+.stat-pill-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.stat-pill-lab{font-size:14px;color:var(--txm);letter-spacing:.3px;line-height:1.2;text-transform:uppercase;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-pill-num{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;line-height:1;color:var(--tx);letter-spacing:.3px;white-space:nowrap;}
+.ic-blue{background:var(--ac);}
+.ic-green{background:var(--gr);}
+.ic-amber{background:var(--warn);}
+.ic-violet{background:var(--leg);}
+.ic-red{background:var(--re);}
+@media(max-width:1280px){
+  .hero-left{width:170px;padding:9px 11px;gap:9px;}
+  .hero-left svg{width:24px;height:24px;}
+  .hero-name{font-size:19px;}
+  .stat-pill{padding:8px 10px;gap:8px;min-width:108px;}
+  .stat-pill-ic{width:28px;height:28px;}
+  .stat-pill-ic svg{width:14px;height:14px;}
+  .stat-pill-num{font-size:18px;}
+}
+
+/* ── ESKİ STAT KARTLAR (kalır, çakışma yok) ── */
 .stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
 .stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .si-b{background:rgba(45,142,255,.12);color:var(--ac);}
@@ -188,38 +217,72 @@
 
 <div class="main-content"><div class="page">
 
-<!-- BAŞLIK -->
-<div class="page-header">
-  <div>
-    <div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="sev_baslik">Sevkiyat</span></div>
-    <h1 class="page-title" data-i18n="sev_baslik">Sevkiyat</h1>
+<!-- BREADCRUMB -->
+<div class="breadcrumb"><a href="index.html">Ana Sayfa</a><span>/</span><span data-i18n="sev_baslik">Sevkiyat</span></div>
+
+<!-- HERO + STAT PILL ROW (14. oturum standardı) -->
+<div class="stat-row">
+  <div class="hero-left">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+    <div class="hero-name" data-i18n="sev_hero_word">Sevkiyat</div>
   </div>
-  <button class="btn btn-p" onclick="yeniSevkAc()">
+  <div class="hero-stats">
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="sev_stat_hazir">Sevkiyata Hazır</div>
+        <div class="stat-pill-num"><span id="sH">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="sev_stat_gonderildi">Gönderildi</div>
+        <div class="stat-pill-num"><span id="sG">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="sev_stat_gelen">Gelen</div>
+        <div class="stat-pill-num"><span id="sGelen">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="sev_stat_toplam">Toplam Paket</div>
+        <div class="stat-pill-num"><span id="sT">0</span></div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-ic ic-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="stat-pill-body">
+        <div class="stat-pill-lab" data-i18n="sev_stat_spool">Bu Yıl Spool</div>
+        <div class="stat-pill-num"><span id="sSpool">0</span></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-p" onclick="yeniSevkAc()" style="flex-shrink:0;align-self:center;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Yeni Sevkiyat
+    <span data-i18n="sev_yeni">Yeni Sevkiyat</span>
   </button>
 </div>
 
-<!-- RENK LEJANDı -->
+<!-- RENK LEJANDI -->
 <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
-    <div style="width:14px;height:14px;border-radius:3px;background:#2D8EFF;"></div data-i18n="sev_lejand_giden"> Giden Sevkiyat (Spool)
+    <div style="width:14px;height:14px;border-radius:3px;background:#2D8EFF;"></div>
+    <span data-i18n="sev_lejand_giden">Giden Sevkiyat (Spool)</span>
   </div>
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
-    <div style="width:14px;height:14px;border-radius:3px;background:#16a36e;"></div data-i18n="sev_lejand_gelen"> Gelen Sevkiyat
+    <div style="width:14px;height:14px;border-radius:3px;background:#16a36e;"></div>
+    <span data-i18n="sev_lejand_gelen">Gelen Sevkiyat</span>
   </div>
   <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txm);">
-    <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;"></div data-i18n="sev_lejand_serbest"> Serbest Giden (Malzeme/İade)
+    <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;"></div>
+    <span data-i18n="sev_lejand_serbest">Serbest Giden (Malzeme/İade)</span>
   </div>
-</div>
-
-<!-- STAT -->
-<div class="stat-row">
-  <div class="stat-card cl-warn"><div class="stat-icon si-a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-label" data-i18n="sev_stat_hazir">Sevkiyata Hazır</div><div class="stat-value" id="sH">0</div></div></div>
-  <div class="stat-card cl-ac"><div class="stat-icon si-b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8l5 2v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="stat-label" data-i18n="sev_stat_gonderildi">Gönderildi</div><div class="stat-value" id="sG">0</div></div></div>
-  <div class="stat-card cl-gr"><div class="stat-icon si-g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-label" data-i18n="sev_stat_gelen">Gelen</div><div class="stat-value" id="sGelen">0</div></div></div>
-  <div class="stat-card cl-leg"><div class="stat-icon si-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div><div class="stat-label" data-i18n="sev_stat_toplam">Toplam Paket</div><div class="stat-value" id="sT">0</div></div></div>
-  <div class="stat-card cl-re"><div class="stat-icon si-r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-label" data-i18n="sev_stat_spool">Bu Yıl Spool</div><div class="stat-value" id="sSpool">0</div></div></div>
 </div>
 
 <!-- SEKMELER -->
@@ -371,11 +434,11 @@
     </div>
     <div class="fg" id="pSerbIcerikBlok" style="display:none;">
       <label class="fl"><span data-i18n="sev_form_icerik">İçerik / Açıklama</span> <span style="color:var(--re);">*</span></label>
-      <textarea class="fta" id="pIcerik" placeholder="Ne gönderildiğini açıklayın: malzeme adı, miktar, iade nedeni..."></textarea>
+      <textarea class="fta" id="pIcerik" data-i18n-placeholder="sev_pIcerik_ph" placeholder="Ne gönderildiğini açıklayın: malzeme adı, miktar, iade nedeni..."></textarea>
     </div>
     <div class="fg">
       <label class="fl" data-i18n="sev_form_not">Teslim Tutanağı / Not</label>
-      <textarea class="fta" id="pNot" placeholder="Teslimat notu, özel durum..."></textarea>
+      <textarea class="fta" id="pNot" data-i18n-placeholder="sev_pNot_ph" placeholder="Teslimat notu, özel durum..."></textarea>
     </div>
     <div class="fg">
       <label class="fl"><span data-i18n="sev_form_foto">Fotoğraf Ekle</span> <span style="font-size:14px;color:var(--txd);font-weight:400;" data-i18n="sev_form_foto_not">(gerçek uygulamada yükleme çalışacak)</span></label>
@@ -1046,7 +1109,7 @@ function sevkKartHtml(s){
         '</div>'+
         '<div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start;">'+
           '<button class="btn btn-g btn-sm" onclick="showToast(\'PDF hazırlanıyor...\',\'info\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Liste</button>'+
-          '<button class="btn btn-g btn-sm" onclick="sevkDetayAc(\''+esc(s.id)+'\')">Detay</button>'+
+          '<button class="btn btn-g btn-sm" onclick="sevkDetayAc(\''+esc(s.id)+'\')">'+tv('cmn_detay','Detay')+'</button>'+
         '</div>'+
       '</div>'+
       (s.spooller.length?'<div class="skart-body"><div class="chips">'+s.spooller.map(function(x){return '<span class="chip">'+esc(x.spool)+' <span style="opacity:0.5;font-size:14px;">/ '+esc(x.devre)+'</span></span>';}).join('')+'</div></div>':'')+
@@ -1086,7 +1149,7 @@ function sevkDetayAc(id){
     (s.icerik?'<div style="background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">İçerik</div><div style="font-size:14px;color:var(--tx);">'+esc(s.icerik)+'</div></div>':'')+
     (s.spooller.length?'<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Spool Listesi</div><div class="chips">'+s.spooller.map(function(x){return '<span class="chip">'+esc(x.spool)+' <span style="opacity:0.5;font-size:14px;">/ '+esc(x.devre)+'</span> <span style="color:var(--txd);font-size:14px;">'+esc(x.agirlik)+'kg</span></span>';}).join('')+'</div></div>':'')+
     (s.not?'<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Not / Teslim Tutanağı</div><div style="font-size:14px;color:var(--tx);">'+esc(s.not)+'</div></div>':'')+
-    '<div><div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Fotoğraflar</div><div class="foto-grid">'+
+    '<div><div style="font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">'+tv('cmn_fotograflar','Fotoğraflar')+'</div><div class="foto-grid">'+
       s.fotograflar.map(function(f){return '<div class="foto-item"><img src="'+esc(f)+'" alt="foto"></div>';}).join('')+
       '<div class="foto-ekle foto-item" onclick="showToast(\'Fotoğraf yükleme: gerçek uygulamada aktif\',\'info\')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>'+
     '</div></div>';

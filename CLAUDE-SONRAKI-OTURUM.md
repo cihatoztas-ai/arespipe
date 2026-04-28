@@ -1,247 +1,216 @@
-# CLAUDE — 40. OTURUM GÜNDEMİ
+# CLAUDE — 41. OTURUM GÜNDEMİ
 
-> **Bu dosya 39 kapanışında oluşturuldu. 40 başında ilk okunacak.**
-
----
-
-## 40 Açılış Mottosu
-
-39'da öğrenilen kritik ders: **plan dosyasına körü körüne güvenme.** Bu dosya yazılırken makul bir gündem var, ama Cihat'ın 40 başında öncelikleri farklı olabilir. **Plan değişti mi sor, sonra başla.**
-
-5 oturumda bir self-test günü → 40 değil 41 olur. Bu oturum sadece açılış ritüeli.
+> **Bu dosya 40 kapanışında oluşturuldu. 41 başında ilk okunacak.**
 
 ---
 
-## 1. Açılış Ritüeli (CLAUDE.md gereği) (~5 dk)
+## 41 Açılış Mottosu
 
-5 soru zorunlu — atla yok:
+40'ta iki büyük şey oldu:
+
+**A. Teknik:** 4 operasyon sayfası standartlaştı, markalama listeler akordeon→tablo+modal'a çevrildi, 46 i18n eklendi.
+
+**B. Vizyon:** Cihat ile uzun kahve sohbeti — 9 farklı damar konuşuldu, **vizyon belgesi yazıldı**. *"Parça Kimliği Prensibi"* ana karar olarak çıktı.
+
+41'de en önemli şey: **Faz B'deki sohbeti hatırlama**. Vizyon belgesini açılışta oku.
+
+---
+
+## 1. Açılış Ritüeli (~5 dk)
+
+5 soru zorunlu:
 
 ```
 Oturum başlangıç ritüeli. 5 kısa kontrol:
 
-1. Şunu çalıştırır mısın ve çıktıyı yapıştırır mısın:
-   cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
+1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -10
 
-2. GitHub Actions sekmesinde son build rengi nedir? (yeşil / sarı / kırmızı)
+2. GitHub Actions sekmesinde son build rengi?
 
-3. .github/son-durum.md dosyasını bana yükler misin veya içeriğini yapıştırır mısın?
+3. .github/son-durum.md içeriği?
 
-4. Bugün hangi sayfayla çalışacağız? (Sayfayı söyle, açık uyarıları göstereyim.)
+4. 40'ta yüklenecek 12 dosya yüklendi mi (4 HTML + 3 JSON + 5 MD)?
 
-5. admin/panel.html → Geri Bildirim sekmesinde açık (yeni + inceleniyor durumunda) kaç feedback var? Kritik olanları (veri kaybı / güvenlik / canlı hata) kısaca özetle.
+5. admin/panel.html → Geri Bildirim sekmesinde kaç açık feedback var?
 ```
 
 5 cevap geldikten sonra:
-- Git temiz mi (untracked yedek dosya yok mu)
+- Git temiz mi
 - CI yeşil mi
-- son-durum.md son halinden borçları oku
-- **`docs/CIHAT-PROFIL.md`'yi oku** (özellikle 39'da eklenen "yapılan iş listesi savunma olarak okunabilir" pattern'ı)
-- **`docs/SPOOL-AI-VIZYON.md`'yi hatırla** — bu işin vizyona katkısı ne
-- **`docs/PANO-TASARIM.md`'yi gözden geçir** — Pano implementasyonu hâlâ borçlu
+- son-durum.md borçları oku
+- **`docs/CIHAT-PROFIL.md`'yi oku** (40'ta upload=seçim, korku=uyarı pattern'leri eklenmeli)
+- **`docs/VIZYON-VE-MODULER-MIMARI.md`'yi oku** ⭐ (40'ta yazıldı, prensipler burada)
+- **`docs/KUTUPHANE-KAPSAM.md`'yi göz at** (Vizyon 9 destekleyici)
 
 ---
 
-## 2. 39 Sonrası İlk Doğrulama (~10 dk)
+## 2. 40 Sonrası Doğrulama (~15 dk)
 
-39 oturumunda 5 dosya yüklendi/yüklenecek (bkz. son-durum.md). Bunların CI'da yeşil olduğunu ve canlı çalıştığını teyit et.
+40'ta 12 dosya yüklendi. CI yeşil ve canlıda çalıştığı teyit edilmeli.
 
-### Kontrol komutları
 ```bash
-# 1. Lokal güncel mi
 cd ~/Desktop/arespipe && git pull origin main
 
-# 2. Lint hatasız mı
+# Lint
 node .github/kontrol.js --self-test 2>&1 | tail -10
 
-# 3. I18N_EKSIK uyarı sayısı (39 hedefi: 0)
-node .github/kontrol.js 2>&1 | grep -c "I18N_EKSIK"
+# Anahtar sayısı 1651 mi (3 dilde eşit)
+node -e "for(const f of ['tr','en','ar']) console.log(f+':', Object.keys(JSON.parse(require('fs').readFileSync('lang/'+f+'.json'))).length)"
 
-# 4. Anahtar sayısı 1605 mi
-grep -c '":' lang/tr.json && grep -c '":' lang/en.json && grep -c '":' lang/ar.json
+# I18N_EKSIK uyarı sayısı (40 hedefi: 0)
+node .github/kontrol.js 2>&1 | grep -c "I18N_EKSIK"
 ```
 
-Beklediğim:
-- self-test: ✓ 3/3 başarılı
-- I18N_EKSIK: 0
-- 3 dilde 1605 anahtar
-
-Sapma varsa önce onu düzelt, sonra ana işe geç.
+Beklenen: ✓ 3/3 self-test, 1651 anahtar 3 dilde, 0 I18N_EKSIK.
 
 ---
 
-## 3. Canlı Uçtan Uca Test (~30 dk — YÜKSEK ÖNCELİK)
+## 3. Canlı Uçtan Uca Test (~45 dk — EN YÜKSEK ÖNCELİK)
 
-39'da 5 büyük değişiklik yapıldı, hiçbiri **uçtan uca** test edilmedi. Bu test 40'ın ilk işi olmalı.
+40'ta yapılan işler hâlâ canlı test edilmedi. Açılışta öncelik bu olmalı.
 
-### Test Adımları
+### A. Markalama Listeler — Yeni Modal Akışı (10 dk)
+1. https://arespipe.vercel.app/markalama.html
+2. Bekleyen sekmesinde 5+ kayıt seç (aynı parça adı + çap)
+3. "Markalama Listesi Oluştur" → numarayı boş bırak → Oluştur
+4. **Kontrol:** Akordeon değil tablo görünmeli. Liste 1 satır.
+5. Satıra tıkla → modal açılsın (mlDetayModal)
+6. Modal: progress bar + 4 buton + checkbox tablo
+7. "Tümünü İşaretle" → satırlar işaretlensin
+8. "Kaydet & Kapat" → modal kapansın → Tamamlanan'a geçsin
 
-**A. izometri-batch akışı:**
-1. https://arespipe.vercel.app/izometri-batch.html
-2. Bir PAOR PDF yükle (Cihat'ın test PDF'i)
-3. "Başla" tıkla → ~30 sn bekle
-4. Beklenen: spool listesi gözüksün, format "AVEVA E3D" görünsün
-5. **Kritik:** Sayfa hata vermesin, demo modu kalıntısı yok
+### B. Tamamlanan + Manuel Modal (10 dk)
+- Tamamlanan satırına tıkla → view-only modal (Excel İndir butonu var, checkbox yok)
+- Manuel kayıt için bekleyen'de "manuel işaretle" → Tamamlanan'da "Manuel" liste no ile görünsün
+- Manuel satırına tıkla → İşaret Tarihi sütunlu modal
 
-**B. Ekran 2 yönlendirme:**
-6. Sonuç tablosunda "İncele →" butonuna tıkla (manuel onay gereken bir spool için)
-7. `izometri-batch-incele.html?batch=...` doğru batch_id ile açılsın
-8. Spool listesi (dikey akordeon) doğru gözüksün
+### C. Bukum Modal (5 dk)
+- bukum.html → bekleyen kalemde ✓ butonuna tıkla
+- modalBukumOnayi açılsın (önceden null hata veriyordu)
+- "Evet, Büküldü" → Bükülenler'e geçsin
 
-**C. Spool onayı:**
-9. Bir spool'u onayla (durum 'hazir' olsun)
-10. Üstteki "📦 IFS Excel İndir" butonu enable olsun
+### D. KK + Sevkiyat Görsel (5 dk)
+- KK: hero+stat-pill row, yeşil tema
+- Sevkiyat: hero+stat-pill row, mavi tema, renk lejandı doğru (broken HTML değil)
+- Mobile responsive
 
-**D. IFS Excel export:**
-11. Butona tıkla → `IFS_Malzeme_Listesi_xxxxxxxx.xlsx` indir
-12. Excel'i aç, kontrol et:
-    - Sayfa adı: `All`
-    - 92 sütun
-    - İlk 12 sütun dolu (Pipeline No, SpoolNo, Description, Dimensions, Material, vb.)
-    - Geri kalan 80 sütun boş
-    - Onaylanan spool'ların malzeme listesi satır satır gözüksün
-
-**E. devre_yeni.html import:**
-13. https://arespipe.vercel.app/devre_yeni.html
-14. Bir tersane seç (TERSAN OLMAYAN — örn. CIBAR, etc.)
-15. **IFS sekmesi görünüyor mu?** (39'un ana fix'i)
-16. Tab'a tıkla, indirdiğin Excel'i sürükle-bırak
-17. Beklenen toast: `✅ N satır · M pipeline · K spool`
-18. Pipeline filtresi, spool listesi doğru render olsun
-19. "Tümünü Aktar" tıkla → spool'lar standart sekmesine geçsin
+### E. 39'un PAOR Akışı (15 dk — geçen oturumdan kalan)
+- izometri-batch → PDF yükle → AI okusun
+- "İncele →" → izometri-batch-incele.html
+- Spool onayla → IFS Excel İndir enable
+- Excel indir → 92 sütun
+- devre_yeni.html → IFS sürükle-bırak → toast: "✅ N satır · M pipeline · K spool"
 
 ### Test Sonucu
-- Hepsi geçerse: 39 başarılı sayılır, 40 ana işine geç (Madde 4)
-- Bir adım kırılırsa: Cihat'tan ekran görüntüsü iste, hızla fix
-- Beklenmeyen davranış varsa kayıt et (`.github/feedback/` klasörü?)
+- Hepsi geçer: ana işe geç
+- Bir adım kırılır: ekran görüntüsü iste, fix
+- Beklenmeyen davranışlar: feedback'e kaydet
 
 ---
 
-## 4. Pre-A.3 — Çoklu Sayfa Dispatcher (~1.5 saat — ORTA ÖNCELİK)
+## 4. Sırada — Ne Yapacağız (Cihat'ın Korku Dengesine Saygı)
 
-**Bağlam:** 37'de tasarlandı, 38-39'da bırakıldı. PAOR'un 1-3 sayfalık olması yetiyor ama gerçek tersane PDF'leri 10-50+ sayfa olabilir.
+Cihat 40'ta dedi ki: *"Onu da yapalım bunu yapalım derken elimizden de olmayalım."*
 
-**Akış:**
-- ≤3 sayfa: tek istek (mevcut)
-- 4-15 sayfa: paralel (Promise.all, max 5 eşzamanlı)
-- 16+ sayfa: sıralı (rate limit koruması)
+Bu yüzden 41-50 arasında **vizyondan sıfır madde** alıyoruz. Sadece:
 
-**Kullanılacak kütüphane:** `pdf-lib` (K12 mimari kararı)
+### Kategori A — Pilot Hazırlığı (Ana Odak)
 
-```js
-import { PDFDocument } from 'pdf-lib';
+**Test Yönetimi sayfası** (~1 saat)
+- bl-ac (mavi), 5 pill: BEKLEYEN / DEVAM / TAMAMLANAN / HATALI/TAMİR / TOPLAM
+- DB tablosu: testler
+- Hero+stat-pill standardı
 
-async function pdfBol(pdfBase64) {
-  const pdfDoc = await PDFDocument.load(Buffer.from(pdfBase64, 'base64'));
-  const sayfaSayisi = pdfDoc.getPageCount();
-  const sayfalar = [];
-  for (let i = 0; i < sayfaSayisi; i++) {
-    const yeniDoc = await PDFDocument.create();
-    const [sayfa] = await yeniDoc.copyPages(pdfDoc, [i]);
-    yeniDoc.addPage(sayfa);
-    sayfalar.push(Buffer.from(await yeniDoc.save()).toString('base64'));
-  }
-  return sayfalar;
-}
-```
+**4 yönetim sayfası** (~2-3 saat)
+- Uyarılar (turuncu, 4 pill)
+- Tersaneler (yeşil, 4 pill)
+- Kullanıcılar (mavi, 4 pill)
+- Atölye Takip (yeşil, 5 pill)
 
-Dispatch politikası:
-```js
-if (sayfalar.length <= 3) {
-  return await tekIstekDispatch(pdfBase64);
-} else if (sayfalar.length <= 15) {
-  return await paralelDispatch(sayfalar, 5);
-} else {
-  return await siraliDispatch(sayfalar);
-}
-```
+### Kategori A — Mevcut Borçlar
 
-**Test:** 5 sayfalık bir test PDF (Cihat sağlamalı) ile paralel dispatch'i doğrula.
+| Borç | Süre | Notu |
+|---|---|---|
+| Pre-A.3 çoklu sayfa dispatcher | 1.5 saat | pdf-lib + parallel/sequential |
+| vercel.json ignoreCommand fix | 30 dk | Sadece kod değişince build |
+| Pano implementasyonu | 3-4 saat | 23'ten beri tasarım hazır |
+| Sevkiyat "Bu Yıl Spool" yıl filtresi | 15 dk | Yıl filtresi eksik |
+| Markalama eski toggleArc temizlik | 5 dk | Boş fonksiyon |
+| Kesim son %10 | 1 saat | Excel TR temizliği |
+| proje_liste/detay Supabase | 1.5 saat | Hâlâ dummy |
+| malzeme.html sıfırdan | 2 saat | Hiç yok |
+| MIG_ISIM_BOZUK regex | 15 dk | Genişletme |
 
-**Backend tarafı (`api/izometri-oku.js`):** Şu anki sözleşme her dosyada `dosya_sirasi`/`dosya_toplami` zaten alıyor — multipart batch yapısı hazır. Sadece dispatcher mantığı eklenecek.
+### Kategori B — Pilot Tetikli (Vizyon)
 
----
+**Bunlar 41'de yapılmaz**, ama tetik gelince hızla başlanabilir:
 
-## 5. vercel.json ignoreCommand Kalıcı Fix (~30 dk — ORTA ÖNCELİK)
+- **Kütüphane DB schema** (Vizyon 9 — Aşama 1, 1 oturum) — pilot sözleşmesi öncesi altyapı kurulur
+- AI yön çıkarımı (Vizyon 1 — 3D iyileştirme, 2-3 oturum) — pilot 3D'yi gördüğünde
+- Klasör yükleme + format tanıma (Vizyon 2) — ikinci pilot tersane geldiğinde
 
-**Bağlam:** 38'de devre dışı bırakıldı (`"$schema": "..."` yer tutucu). Şu an her commit'te build çalışıyor — gereksiz ama zarar yok.
+### Kategori C — Çok Sonra
 
-**İstenen davranış:** Sadece `.github/`, `docs/`, `*.md` değişikliklerinde build atla.
-
-**Doğru regex:**
-```json
-{
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!.github' ':!docs' ':!*.md'"
-}
-```
-
-Mantık: `git diff --quiet` → eğer fark **yok** ise exit 0 (skip), eğer fark **var** ise exit 1 (build).
-
-**Test:**
-1. `docs/test.md` dosyası oluştur, commit, push → build atla mı (skip log)
-2. `index.html`'e dummy değişiklik, commit, push → build çalışsın
+Diğer 6 vizyon (STEP, çapraz validasyon, 3-görünüş, thumbnail, lazer tarama, pasif öğrenme, tier model) **çok sonra**. Tetik koşulları vizyon belgesinde yazılı.
 
 ---
 
-## 6. Diğer Borçlar (~bekle, 41+'a)
+## 5. Stratejik Hatırlatmalar (40'tan)
 
-- **MIG_ISIM_BOZUK regex genişletme** — `^\d{3}_.+\.sql$` → `^\d{3}[a-z]?_.+\.sql$`. 38'de `006a/006b` rename ile geçici çözüldü, kalıcı çözüm bekliyor.
-- **Eski izometri-batch yorumları temizlik** — `_yakinda` placeholder yorumları artık alakasız.
-- **Pano implementasyonu** — `docs/PANO-TASARIM.md` 23. oturumda detaylı tasarlandı, hâlâ implementasyon bekliyor. Görev takibi + geri bildirim + oturum panosu üç sekmesi.
+### Parça Kimliği Prensibi (K22)
+Sisteme giren her malzeme **yazı değil nesne** olarak tanımlanır. Yeni iş yaparken:
+- Yeni tablo eklerken parça referansı düşün, string değil
+- AI prompt'larında çıktıyı parametrik iste
+- spool_malzemeleri'ne yeni kolon eklenirken referans yapısı korunsun
 
----
+### Vizyon Karar Çerçevesi (K23)
+Tetik koşulu olmadan iş yok. Vizyondaki bir madde "şimdi yapalım" diye iç güdüsel başlama. Müşteri sinyali şart.
 
-## Açılış Mesajı Önerisi (40 İlk Mesajına)
+### Kütüphane Organik Dolar (K24)
+12.000 satırı önceden manuel girmek yerine pilot kullanılınca büyür. Boş tablolarla başla, kullanılan parçalar eklensin.
 
-Cihat tipik açılışını yapacak (`yeni oturuma geçelim` veya `selam claude`).
+### Cihat Profili Hatırlatmalar
+- **Upload = seçim sinyali** — Metin yerine dosya yükledi mi, o yöne karar vermiş demektir
+- **Korku ifadeleri = scope drift uyarısı** — Ciddiye al, çerçeve oluştur
+- **Stratejik soru = sezgi sinyali** — *"X harcar mı?"*, *"Y sağlam mı?"* yapısal sorun sezisi
+- **Tahammülü az** — Uzun teknik açıklama içinde sıkışmış talimat verme, 3+ aynı anda soru sorma
 
-Cevap şablonu:
-```
-40 başlıyor. Önce ritüel — 39'da öğrendiğim ders: plan dosyasına körü körüne
-güvenme. Bu yüzden sıralı 5 cevaptan sonra "bugün gündem ne" sorusunu da
-soracağım.
-
-[Sonra 5 soru]
-```
-
-Sonra:
-- 39 sonu durum kontrolü (CI yeşil, 5 dosya canlı)
-- Canlı uçtan uca test (varsa Cihat zaten yapmıştır, raporunu iste)
-- Sonraki iş: ya Pre-A.3 (çoklu sayfa) ya Cihat'ın yeni önceliği
-
----
-
-## Önemli Hatırlatmalar (40'ta)
-
-### CHECK Constraint G-13 Uyarısı
-38'de `ai_api_log` örneği gibi sürpriz olmasın — yeni tabloya yazan kod yazmadan önce CHECK constraint'leri kontrol et.
-
-### Tahmin Yasağı (39 dersi pekişti)
-- Tablo adı: `information_schema.tables` ile gör
-- Kolon adı: `information_schema.columns` ile gör
-- API field adı: backend kodundan gör (Sözleşme yorum satırı / response oluşturma noktası)
-- ARES.* helper signature'ı: `ares-store.js` görmeden tahmin etme
-
-### Yapılan İş Listesi = Savunma (39'da öğrenilen)
-Cihat "az iş yapıldı" dediğinde detaylı liste yapma. Bir sonraki adıma geç. İlerleme bilgisi gerekirse 1 cümle.
+### Tahmin Yasağı
+- Tablo adı: information_schema'dan gör
+- Kolon adı: information_schema'dan gör
+- API field adı: backend kodundan gör
 
 ### Backend Canlı Test ≠ Frontend Canlı Test
-"X canlıda" denilen şey curl ile mi yoksa frontend ile mi test edildi — netleşmeli. 38'in PAOR canlı testi sadece curl idi, 39'da frontend uyumsuzlukları çıktı.
-
-### Cihat'ın Stratejik Soruları Sezgi Sinyalidir
-"X harcar mı?", "Y eksik mi?", "Z sağlam mı?" — bu sorular yapısal bir şey sezdiğinin işaretidir. Hemen "yok" deme, listele, açıkla, karar sorusu sor.
+"X canlıda" denilen şey curl ile mi yoksa frontend ile mi test edildi — netleşmeli.
 
 ---
 
-## Kapanış Hedefi (40 Sonu)
+## 6. Açılış Mesajı Önerisi (41 İlk Mesaja)
 
-Bu maddeler tamamlanırsa 40 başarılı:
-- ✅ Canlı uçtan uca test geçti (PDF→AI→onay→IFS→devre_yeni)
+```
+41 başlıyor. 40'ta iki büyük şey oldu — teknik (4 sayfa standardı + markalama
+dönüşümü + 46 i18n) ve vizyon (kahve sohbeti, vizyon belgesi yazıldı, Parça
+Kimliği Prensibi ana karar olarak kabul edildi).
+
+Bu oturumda öncelik canlı test (40 işleri henüz frontend'den doğrulanmadı).
+Ondan sonra Test Yönetimi veya yönetim sayfaları.
+
+Vizyon işleri 41-50 arasında kapalı — Cihat'ın korku dengesine saygı.
+
+[5 soru]
+```
+
+---
+
+## 7. Kapanış Hedefi (41 Sonu)
+
+41 başarılı sayılır eğer:
+- ✅ Canlı uçtan uca test geçti (40 + 39 işleri)
 - ✅ I18N_EKSIK uyarı 0 (CI'da teyit)
-- ✅ Pre-A.3 çoklu sayfa dispatcher çalışıyor
-- ✅ vercel.json ignoreCommand kalıcı çözümlü
-
-Bu olunca tersane gerçek PDF'leri akabilir → 41 oturumu canlı pilot olabilir.
+- ✅ En az 1 yeni operasyon sayfası standartlaştı (Test Yönetimi veya yönetim)
+- ✅ Sevkiyat "Bu Yıl Spool" yıl filtresi (15 dk)
+- ✅ Vizyondan **sıfır madde** dokunulmadı (disiplin testi)
 
 ---
 
-> Bu dosya 39 kapanışında oluşturuldu. 40 başında ilk okunacak.
+> Bu dosya 40 kapanışında oluşturuldu. 41 başında ilk okunacak.
