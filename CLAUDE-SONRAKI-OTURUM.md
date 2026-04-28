@@ -1,164 +1,112 @@
-# CLAUDE — 42. OTURUM GÜNDEMİ
+Claude — 43. Oturum Gundemi
 
-> **Bu dosya 41 kapanışında oluşturuldu. 42 başında ilk okunacak.**
+Bu dosya 42 kapanisinda olusturuldu. 43 basinda ilk okunacak.
 
----
 
-## 42 Açılış Mottosu
+43 Acilis Mottosu
+42'de AI standart cikarimi altyapisi tamamlandi. Ama 40 canli test borcu hala acik — 3. oturumdur. 41'de parking, 42'de parking. Disiplin meselesi.
+Cihat 42 kapanisinda soz aldi: "birakmayacan yoksa pesimi." — 43 basi 40 borcu en yuksek oncelik. Vizyondan SIFIR madde, kutuphane'den de kapsam genisletilmez.
 
-41'de **kütüphane altyapısı canlıya çıktı** — Parça Kimliği Prensibi'nin temel altyapısı kuruldu, A105 flanş pilot çalışıyor. Vizyondan kapsama alınan tek madde, gerisi vizyonda kaldı.
-
-42'de en önemli şey: **40 canlı test borcunu kapatmak**. Bu borç 41 başında parking edildi, henüz ödenmedi. Disiplin meselesi — yapılan iş test edilmeden başka iş başlamaz prensibi.
-
----
-
-## 1. Açılış Ritüeli (~5 dk)
-
+1. Acilis Ritueli (~5 dk)
 5 cevap zorunlu (CLAUDE.md):
+Oturum baslangic ritueli. 5 kisa kontrol:
 
-```
-Oturum başlangıç ritüeli. 5 kısa kontrol:
-
-1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -10
-
-2. GitHub Actions sekmesinde son build rengi?
-
-3. .github/son-durum.md içeriği?
-
-4. 41'de yüklenecek 5 dosya yüklendi mi (4 SQL + spool_detay.html + 3 MD)?
-
-5. admin/panel.html → Geri Bildirim sekmesinde kaç açık feedback var?
-```
-
+1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
+2. GitHub Actions sekmesinde son build rengi nedir?
+3. .github/son-durum.md dosyasini yukle veya icerigini yapistir
+4. Bugun hangi sayfayla calisilacak?
+5. admin/panel.html → Geri Bildirim sekmesinde acik feedback?
 5 cevap geldikten sonra:
-- Git temiz mi
-- CI yeşil mi
-- son-durum.md borçları oku
-- **`docs/CIHAT-PROFIL.md`'yi oku**
-- **`docs/VIZYON-VE-MODULER-MIMARI.md`'yi oku** (vizyon disiplini için kritik — 41'de kapsam değişti)
-- **`docs/KUTUPHANE-KAPSAM.md`'ye göz at** (sonraki kapsam genişletme için)
 
----
+Git durumu temiz mi (stash kalintisi, commitlenmemis degisiklik yok mu)
+CI rengi yesil degilse once onu duzelt
+son-durum.md'den 40 borcu detayini oku
+docs/CIHAT-PROFIL.md'yi oku
+docs/SPOOL-AI-VIZYON.md'yi hatirlamak
 
-## 2. 41 Doğrulama (~10 dk)
 
-41'de yapılan kütüphane altyapısı canlıda çalışıyor mu kontrol et:
+2. 40 Canli Test Borcu (~1.5-2 saat — EN YUKSEK ONCELIK, KIRMIZI)
+40'ta yapilan operasyon sayfasi standardizasyonlari hala canlida uctan uca test edilmedi. 41 basinda Grup 1 ✓ test edildi, sonrasi parking edildi.
+A. Markalama (15-20 dk)
 
-### Frontend doğrulama
-1. https://arespipe.vercel.app/spool_detay.html?id=9a54bcec-76a5-4f40-99bd-d3a536c1a04e
-2. Malzeme Listesi sekmesi → 3. satır (F-001 / WN 150# RF Flanş / A105) sol kenar mavi mi?
-3. Tıklayınca modal açılıyor mu?
-4. Modal'da çizim alanı boş ama yer tutucu kart görünüyor mu?
-5. Tablo değerleri doğru mu (O=229, tf=22.4, X=135, Y=32, B=102.4, W=190.5, 8×5/8")?
-6. PDF İndir butonu yeni sekme açıyor mu, A4 dikey baskı?
-7. Heat No / Sertifika checkbox / Sil butonu tıklayınca modal açılmamalı (eski davranış korunsun)
+✅ Grup 1 (41'de yapildi)
+Grup 2: modal acilis, progress bar, 4 buton
+Grup 3: manuel ekleme akisi (manuelMarkModal)
+Grup 4: arsiv gorunumu
+Grup 5: i18n gecisleri (TR/EN/AR)
 
-### DB doğrulama
-```sql
-SELECT count(*) FROM flansh_olculer;        -- 1
-SELECT count(*) FROM fitting_malzeme_uyum;  -- 1
-SELECT count(*) FROM spool_flansh_eslesme;  -- 1
-SELECT count(*) FROM tenant_features WHERE feature_kod = 'kutuphane_parca_kimligi'; -- 7
-```
+B. Bukum (10 dk)
 
-Bir sorun varsa **42'nin önceliği** kütüphane düzeltmesi olur, sonra 40 borcuna geçilir.
+modalBukumOnayi aciliyor mu (40'ta null bug fix yapildi)
+aciklama scope bug fix dogrula (Supabase modu kapaliyken hata yok mu)
 
----
+C. Kalite Kontrol (10 dk)
 
-## 3. 40 Canlı Test Borcu (~1-1.5 saat — EN YÜKSEK ÖNCELİK)
+Yeni hero+pill standardi gorsel onay (yesil --kk-c)
+TR yazim fix kontrolu (Agirlik→Agirlik vb.)
 
-40'ta yapılan operasyon sayfası standardizasyonları henüz canlıda uçtan uca test edilmedi. 41 başında **Grup 1 ✓ markalama tablo+modal** test edildi, gerisi parking.
+D. Sevkiyatlar (10 dk)
 
-### A. Markalama (15 dk)
-- ✅ Grup 1 (41'de yapıldı)
-- Grup 2 — modal açılışı, progress bar, 4 buton
-- Grup 3 — manuel ekleme akışı (manuelMarkModal)
-- Grup 4 — arşiv görünümü
-- Grup 5 — i18n geçişleri (TR/EN/AR)
+Renk lejandi broken HTML fix dogrulamasi
+2 textarea i18n calisiyor mu
 
-### B. Bukum (10 dk)
-- modalBukumOnayi açılıyor mu (40'ta null bug fix yapıldı)
-- aciklama scope bug fix doğrula (Supabase modu kapalıyken hata yok mu)
+E. 39 PAOR Akisi (15-20 dk)
 
-### C. Kalite Kontrol (10 dk)
-- Yeni hero+pill standardı görsel onay (yeşil --kk-c)
-- TR yazım fix kontrolü (Agirlik→Ağırlık vb.)
+40 oncesinden kalan canli test borcu
+39'da yapilan PAOR (proje, aktivite, organizasyon, raporlama) akisi
 
-### D. Sevkiyatlar (10 dk)
-- Renk lejandı broken HTML fix doğrulaması
-- 2 textarea i18n çalışıyor mu
+Eger hata bulunursa: O hatayi coz, sonra teste devam et. "Sonra duzeltirim" deme — borc birikmesin.
 
-### E. 39 PAOR Akışı (15 dk)
-40 öncesinden kalan canlı test borcu — 39'da yapılan PAOR (proje, aktivite, organizasyon, raporlama) akışı.
+3. Kutuphane Icerik Doldurma (~30-45 dk, opsiyonel — 40 borcu bittikten sonra)
+42'de altyapi kuruldu ama kutuphane %95 bos. Sirayla doldurulmali:
+Bence en yararli baslangic: flansh_olculer'a daha fazla A105 kaydi.
 
-**Eğer hata bulunursa:** O hatayı çöz, sonra teste devam et. *"Sonra düzeltirim"* deme — borç birikmesin.
+DN50, 80, 100, 150, 200, 250, 300 × 150#/300#/600# × WN/SO/BL
+Her satir bir kayit, ASME B16.5 PDF'inden elle giris (Cihat'ta varsa) ya da pilot deger
 
----
+Veya: boru_olculer'da paslanmaz EN kayitlari (EN 10216-5 ailesi)
 
-## 4. Kütüphane Genişletme — Süper Admin UI (~30-45 dk, opsiyonel)
+DN15-DN200 × yaygin et × X2CrNiMo17-12-2
 
-40 borcu bittiyse ve süre kalırsa Cihat'ın istediği iş:
+Cihat hangisini tercih ederse o yapilir. Eger 40 borcu uzun surduyse bu adim 44'e kayar.
 
-> *"süper admin sayfasından bazı firmalara açık bazılarına kapalı olacak"*
+4. Sonraki Kapsam Genisletmeleri (44+ icin parking)
+Kisa vade (44-45)
 
-`admin/super-admin.html` (varsa) veya yeni sayfa:
-- Tenant listesi + her birinin yanında feature flag toggle'ları
-- Toggle değişince `tenant_features` UPDATE
-- "Hangi tenant hangi feature'ı kullanıyor" matrix görünüm
+Frontend cascade UI — spool_detay modal'inda kutuphane lookup gorunumu (gercek veri olunca anlamli)
+Super admin UI — feature flag tenant yonetim sayfasi
+Cizim klasor organizasyonu — /cizimler/flans/ standardi, isim formati
 
-**R-10 kuralı:** Önce mockup, sonra kod.
+Orta vade (46-50)
 
----
+boru_olculer paslanmaz EN — EN 10216-5 ailesi
+fitting tablolari — A234 dirsek, B16.9 T, reduksiyon
+Esleme UI — kullanici A105 girdiginde sistem otomatik oneri sunsun (auto_exact)
+42 prompt'unun gercek dunya testi — yeni boyut_standardi/malzeme_standardi alanlari kac PDF'te dolu geliyor analiz
 
-## 5. Sonraki Kapsam Genişletmeleri (sıralı parking)
+Uzun vade (50+)
 
-Bunlar 42'de yapılmaz, ama 43+ için gündemde:
+AI fuzzy match — IFS yazim varyasyonlari (A106-B, ASTM A106 Gr B, SA106B → A106B)
+3D yon cikarimi — kutuphane DN+tip biliyorsa B16.5 spec'inden geometri zaten hazir
+Foto hata analizi — beklenen geometri kutuphaneden, foto ile diff
+Pasif ogrenme + tier'li servis (vizyonun asil maddeleri)
 
-### Kısa vade (1-2 oturum)
-1. **Çizim klasör organizasyonu:** `/cizimler/flans/` standardı, isim formatı (`wn-b16.5-150-4.svg` gibi), Cihat AutoCAD'inden çıkardıkça yüklenecek
-2. **Diğer flanş tipleri kataloğu:** SO, BL, LJ, SW, TH için kayıtlar (Cihat PDF'leri elinde mi, yoksa AutoCAD'den mi?)
-3. **Diğer basınç sınıfları:** 300, 600, 900, 1500, 2500
 
-### Orta vade (3-5 oturum)
-4. **Boru tablosu:** `boru_olculer` (B36.10M + B36.19M + EN 10220), aynı pattern
-5. **Dirsek/T/Redüksiyon:** `fitting_olculer` veya tip başına ayrı tablolar
-6. **Eşleştirme UI:** Kullanıcı yeni A105 girince sistem otomatik kütüphane öneri sunar (auto_exact: tam eşleşme önerisi)
+5. Vizyon Disiplini Hatirlatmasi
+42 sonunda hala vizyondan SIFIR madde kapsama almama sozu gecerli:
 
-### Uzun vade (50. oturum sonrası)
-7. **AI fuzzy match:** IFS'den gelen yazım varyasyonları (`A106-B`, `ASTM A106 Gr B`, `SA106B`) → kanonik `A106B` eşleşmesi
-8. **3D yön çıkarımı:** kütüphane DN+tip biliyorsa B16.5 spec'inden geometri zaten hazır, AI'a topology kalır
-9. **Foto hata analizi:** Beklenen geometri kütüphaneden, foto ile diff
+❌ Pasif ogrenme — vizyonda kalir
+❌ Tier'li servis modeli — vizyonda kalir
+❌ Lazer tarama pipeline — vizyonda kalir
+❌ STEP koordinat cikarimi — vizyonda kalir
+❌ Klasor yukleme + format tanima — vizyonda kalir
+❌ Capraz validasyon (3 katman) — vizyonda kalir
 
----
+Cihat "bunu da yapalim sistemin can damari" derse: cevap "41-42'de iki kez istisna yaptik. Ucuncusu presedan. 50. oturumdan sonra konusalim."
 
-## 6. Vizyon Disiplini Hatırlatması
+6. 43 Gundemi Ozet
+AdimSureOncelikAcilis ritueli5 dk🔴40 canli test borcu90-120 dk🔴Kapanis (3 dosya)10 dk🔴Kutuphane icerik doldurma30-45 dk🟡 (opsiyonel)
+Toplam: ~2-3 saat oturum.
 
-41'de kütüphane altyapısı vizyondan kapsama alındı. Bu **tek istisna**, presedan değil.
 
-42-50 arası **vizyondan SIFIR madde** sözü hâlâ geçerli:
-- ❌ Pasif öğrenme — vizyonda kalır
-- ❌ Tier'lı servis modeli — vizyonda kalır
-- ❌ Lazer tarama pipeline — vizyonda kalır
-- ❌ STEP koordinat çıkarımı — vizyonda kalır
-- ❌ Klasör yükleme + format tanıma — vizyonda kalır
-- ❌ Çapraz validasyon (3 katman) — vizyonda kalır
-
-Cihat *"bunu da yapalım sistemin can damarı"* derse: cevap *"Bunu 41'de bir kez yaptık. İkinci kez yapmak presedan, disiplini erit. 50. oturumdan sonra konuşalım."*
-
----
-
-## 7. 42 Gündemi Özet
-
-| Adım | Süre | Öncelik |
-|---|---|---|
-| Açılış ritüeli | 5 dk | 🔴 |
-| 41 doğrulama | 10 dk | 🔴 |
-| 40 canlı test borcu | 60-90 dk | 🔴 |
-| Süper admin UI (opsiyonel) | 30-45 dk | 🟡 |
-| Kapanış (3 dosya) | 10 dk | 🔴 |
-
-**Toplam:** ~2-2.5 saat oturum.
-
----
-
-> 41 kapanışında yazıldı. 42 başında okunacak. 42 sonunda 43 için yenisi yazılacak.
+42 kapanisinda yazildi. 43 basinda okunacak. 43 sonunda 44 icin yenisi yazilacak.
