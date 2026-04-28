@@ -3440,8 +3440,15 @@ function flanshModalAc(spoolMalzemeId){
   var ozet = ozetMalz + ' · ' + (f.flansh_tipi||'—') + ' ' + (f.basinc_sinifi||'') + '# · ' + capStr + (f.yuzey_tipi ? ' · ' + f.yuzey_tipi : '');
   document.getElementById('flanshModalOzet').textContent = ozet;
   document.getElementById('flanshModalMeta').textContent = (tv('flansh_meta','flanş bilgisi') + ' · ASME ' + (f.geometri_std||'B16.5')).toLowerCase();
-  // Şematik çizim — şimdilik standart B16.5 WN şablonu (ileride cizim_path ile özelleşir)
-  document.getElementById('flanshCizim').innerHTML = _flanshCizimSvg();
+  // Çizim — dosya yüklendikçe görünür, yoksa kutu hiç görünmez
+  var cizimEl = document.getElementById('flanshCizim');
+  if(f.cizim_path){
+    cizimEl.innerHTML = '<img src="'+esc(f.cizim_path)+'" alt="'+esc(f.flansh_tipi||'flanş')+' çizimi" style="width:100%;height:auto;display:block;" onerror="this.parentNode.style.display=\'none\'">';
+    cizimEl.style.display = '';
+  } else {
+    cizimEl.innerHTML = '';
+    cizimEl.style.display = 'none';
+  }
   // Tablo
   var tablo = document.getElementById('flanshTablo');
   function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+esc(v)+'</td></tr>'; }
@@ -3552,6 +3559,12 @@ function flanshPdf(){
   }
   if(f.agirlik_kg) tabloHtml += _trSat('Birim ağırlık', _kg(f.agirlik_kg));
 
+  // Çizim PDF'te — dosya varsa img, yoksa kart hiç eklenmez
+  var cizimKartHtml = '';
+  if(f.cizim_path){
+    cizimKartHtml = '<div class="cizim-kart"><img src="'+esc(f.cizim_path)+'" alt="çizim" style="width:100%;height:auto;display:block;" onerror="this.parentNode.style.display=\'none\'"></div>';
+  }
+
   var w = window.open('', '_blank', 'width=900,height=1100');
   if(!w){ toast('Popup engellendi — tarayıcı izni gerekli','er'); return; }
   w.document.write(
@@ -3600,7 +3613,7 @@ function flanshPdf(){
     '<div class="pf"><span>Bu belge ARESPIPE tarafından üretilmiştir.</span><span>arespipe.com · sayfa 1/1</span></div>' +
     '<div class="ic">' +
       '<div class="ozet"><p class="ozet-lbl">Tanım</p><p class="ozet-val">'+esc(tanim)+'</p></div>' +
-      '<div class="cizim-kart">' + _flanshCizimSvgPrint() + '</div>' +
+      cizimKartHtml +
       '<table><thead><tr><th>Parametre</th><th class="r">Değer</th></tr></thead><tbody>' +
       tabloHtml +
       '</tbody></table>' +
