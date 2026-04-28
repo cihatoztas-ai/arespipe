@@ -1,206 +1,117 @@
-# CLAUDE — 41. OTURUM ARŞİVİ
+# Claude — 42. Oturum (28 Nisan 2026)
 
-> **Tarih:** 28 Nisan 2026
-> **Süre:** ~5 saat
-> **Tema:** Kütüphane altyapısı — Parça Kimliği Prensibi pilot canlıya çıktı
-> **Kapanış kararı:** Cihat — *"tamam kapatalım o zaman"*
+> **Tema:** AI Standart Cikarimi altyapisi — 41 pilotunun gercek dunya testinde ortaya cikan eksik halka
 
 ---
 
-## Açılış (5 dk)
+## Oturumun Hikayesi
 
-5 cevap ritüeli yapılmadı — Cihat doğrudan markalama testine geçti, geri kalan kontrolleri parking ettik. 40 borcu olan canlı test gündemine A bloğu (Markalama Grup 1) ile başladık.
+### Baslangic
+41 sonunda Cihat gercek bir izometri yukledi (G200-303-BS15). PDF'te kutuphane lookup yapilamadi cunku PDF'ler **standart adi tasimiyor** — sadece kalite kodu (ST37, A106 vb.) var. Sistem standart cikarsama yapmadan kutuphane lookup imkansiz.
 
-**Markalama Grup 1 — geçti ✓** *(40'ta yapılan tablo+modal dönüşümü canlıda çalışıyor)*
+42 acilisinda iki secenek vardi:
+1. AI ile spec PDF tarama (ayri cagri, ek maliyet)
+2. Sistem kurallari ile cikarsama (deterministik, ucretsiz)
 
-Cihat: *"bunla oyalanmayalım bizim önceki konuşmamızda malzemelerin sisteme tanımlanmasıyla ilgili çalışma yapalım"* → kütüphane konusuna pivot.
+### Cihat'in Kritik Mudahalesi
+"İzometri PDF parsel den veri alabiliriz, ifs ten de veri alabiliriz... biz pdf formatini sisteme yanitincaya kadar token harciyoruz... orda yoksa burdan bak icin ai sorgu gerekir mi gercekten."
 
----
+Bu cumle mimari karari verdi: **Ayri AI cagrisi yapilmaz.** Izometri parser zaten Claude'a gidiyor, prompt'a 2 alan eklendi. Boylece:
+- Maliyet: ~$0.0002/parse ek (50 output token)
+- Yeni tablo yok (mevcut ai_api_log kullanildi)
+- Halusinasyon riski sifir (AI cikarsama yapmaz, sadece yaziliyi okur)
 
-## Faz A — Vizyon Yeniden Çerçeveleme (~30 dk)
-
-### Cihat'ın 3 sezgisel argümanı
-
-**1.** *"sisteme giren malzemeyi parça olarak ilgili standarta bağlarsak Faz 4'ten %50'de kalabilir kafamda oturmadı"*
-→ **Doğru.** IFS fuzzy match kütüphane kurulduğunda %95 otomatik kapanır. Faz 4 kategorisi gereksiz.
-
-**2.** *"3D yön çıkarımı, lazer tarama, pasif öğrenme... bunlar bizim kütüphane altyapımızla ilgili değil mi?"*
-→ **Kısmen doğru.** Üç tane var:
-- ✅ 3D yön çıkarımı: kütüphane DN+tip biliyorsa B16.5'ten geometri zaten hazır, AI'a sadece topology kalır
-- ✅ Foto hata analizi: beklenen geometri kütüphaneden, foto ile diff
-- ⚪ Lazer tarama: kütüphane yarısını verir, pipeline ayrı
-- ❌ Pasif öğrenme: kütüphane statik, pasif öğrenme dinamik (ortogonal)
-- ❌ Tier'lı servis: iş modeli, teknik altyapı değil
-
-**3.** *"bunu yapmakta geç kalırsak sonradan çok geriye döneriz"*
-→ **Disiplin gerekçesi.** 41-50 disiplin sözü yenildi mi? Hayır, **kapsam yeniden çizildi**:
-- Kütüphane = "can damarı", kapsam dışına alınıyor
-- Pasif öğrenme, tier'lı servis, lazer pipeline, STEP koordinat çıkarımı, klasör yükleme = vizyonda kalıyor
-- Söz çiğnenmedi, **netleştirildi**
-
-### Mimari karar 1 — kolon ekleme yok, cross-reference
-
-Cihat'ın yapısal sorusu: *"bizim mevcut tablomuza kolon mu ekliyoruz... sistemi yavaşlatma riskimiz olmaz mı?"*
-
-İlk SQL taslağım `malzeme_tanimlari`'ya `spec_kodu` + `grade` kolon ekliyordu. Cihat sezgisi haklı çıktı:
-- Mevcut `kalite_kod = 'A106B'` zaten "spec=A106 + grade=B" bilgisini taşıyor (redundant kolon)
-- Cross-reference tablo daha temiz: mevcut tablolar değişmez, audit trail bonus, eski kayıtlar etkilenmez
-
-**Yeni mimari:**
-```
-spool_malzemeleri ──FK──> spool_flansh_eslesme ──FK──> flansh_olculer
-(mevcut, hiç                (YENİ — eşleştirme)         (YENİ — geometri)
- değişmiyor)
-```
-
-### Mimari karar 2 — buton var/yok sinyal, çizim opsiyonel
-
-Cihat'ın UX sezgisi: *"parça standart değilse buton da olmaz gibi düşündüm"*
-
-Üç katmanlı kimlik kartı:
-- Buton var/yok → tanınıyor mu (zarif sinyal)
-- Modal içeriği → geometri tablosu (sayılar)
-- Modal görseli → çizim (görsel onay)
-
-Çizim ileride doldurulacak (telif sebebi: kataloglardan kırpma uzun vadede risk, AutoCAD'inden temiz çizim çıkar).
+Ben bunu kacirmistim — 2 ayri AI cagrisi planliyordum. Cihat'in sorusu mimaride gercek bir hatayi yakaladi.
 
 ---
 
-## Faz B — SQL + Pilot Veri (~1 saat)
+## Yapilanlar (Sira ile)
 
-### SQL migration 1 — kütüphane altyapısı (288 satır)
-**Tablo 1:** `flansh_olculer` (24 kolon — ASME B16.5/B16.47 + EN 1092-1 + DIN 86087 hepsi sığar)
-- Standart referansı (geometri_std, flansh_tipi, basinc_sinifi, yuzey_tipi)
-- Boyut (cap_nps, cap_dn, cap_mm)
-- Geometri (flansh_od_mm, flansh_kalinlik_mm, hub_od/uzunluk, bore_min/std, socket_depth, raised_face)
-- Bolt (circle, count, holes_inch, cap_inch, uzunluk_stud/machine)
-- agirlik_kg, cizim_path, notlar
+### Faz A — Mimari Tashihat (~30 dk)
+- ai_cagri_log tablosunu actim → mevcut ai_api_log varmis, gereksiz duplika oldu, DROP edildi
+- izometri-oku.js'in zaten ai_api_log'a yazip maliyet hesapladigini gordum (38'den beri)
+- Yeni mimari: tek AI cagrisi, prompt genisletme
 
-**Tablo 2:** `fitting_malzeme_uyum` — flanş ↔ malzeme çapraz (forged/cast/welded)
+### Faz B — Altyapi SQL'leri (~1 saat)
+- **011:** malzeme_standart_ipucu tablosu (RLS aktif, sistem preset + tenant)
+- **013:** boru_olculer'a 48 DIN-2448 + EN-10216-1 kayit (DN15-DN200, ET schedule sistemi yeni eklendi)
+- **012:** 18 pilot kalite ipucu kaydi (boru:12, flansh:3, fitting:3)
 
-**Tablo 3:** `spool_flansh_eslesme` — cross-reference (manuel/auto_exact/auto_fuzzy)
+### Faz C — Normalize Modulu (~30 dk)
+- ares-kalite-normalize.js (3 fonksiyon: normalize, eslesir, enIyiEslesme)
+- "A106 Gr.B" / "A 106 Grade B" / "ASTM A106 Gr.B" → hepsi "A106GRB"
+- Test sayfasi 39/39 yesil
 
-**RLS:** sistem preset herkese SELECT, tenant kayıtları sadece kendi tenant'ına.
+### Faz D — Prompt Guncelleme (~30 dk)
+- izometri-oku.js'in YAKLASIM_Y_PROMPT'una 2 madde eklendi
+- JSON sema malzeme_listesi'ne 2 alan eklendi
+- AI sadece yazili olani cekiyor, cikarsama yazilim tarafinda
 
-**A105 sistem preset:** 13. preset olarak eklendi (eskiler ST37, S235JR, A106B, A53 — A105 eksikti).
-
-### SQL migration 2 — pilot test verisi
-**flansh_olculer kayıt:** A105 · WN · 150# · 4" / DN100 · RF (Cihat'ın paylaştığı PDF tablosundan birebir değerler — O=229, tf=22.4, X=135, Y=32, B=102.4, W=190.5, 8×5/8" cıvata, 5.99 kg)
-
-**fitting_malzeme_uyum kayıt:** A105 ↔ B16.5 WN 150# 4" (forged uyum)
-
-### SQL migration 3 — feature flag
-İki adımda yapıldı çünkü `tenant_features` master tabloya FK ile bağlıymış:
-1. `feature_flags` master kayıt: `kutuphane_parca_kimligi` (varsayılan kapalı)
-2. `tenant_features` 7 tenant'a aktif: A, B, C, D, E, F, G
-
-**Cihat:** *"süper admin sayfasından bazı firmalara açık bazılarına kapalı olacak"* — şimdilik 7 demo tenant'ın hepsine açık, süper admin UI sonra.
-
-### SQL migration 4 — manuel eşleştirme
-Cihat UI'dan F-001 (WN 150# RF Flanş, A105, 114.3mm) malzemesini bir test spool'una ekledi.
-Spool ID: `9a54bcec-76a5-4f40-99bd-d3a536c1a04e`
-Eşleşme INSERT'i o spool'un F-001'i ile B16.5 WN 150# 4" kaydını bağladı.
-
-### Yaşanan SQL hataları (öğrenme)
-1. ❌ `tenant_features.notlar` kolonu yok — varsaymıştım, doğrulamamıştım
-2. ❌ `tenants.kisa_ad` kolonu yok — tahmin
-3. ❌ `tenant_features` → `feature_flags` FK constraint — bilmiyordum
-4. **Ders:** CLAUDE.md tahmin yasağı — her şema sorgusu önce `information_schema.columns` ile doğrulanır.
+### Faz E — Deploy + CI Cikismasi (~30 dk)
+- GitHub web upload yontemi kullanildi
+- Cihat yanlislikla ares-normalize.js'i sildi (isim benzerligi: ares-normalize vs ares-kalite-normalize) → git restore ile geri alindi (kritik kaza, 6 sayfa kirilirdi)
+- test-kalite-normalize.html yanlislikla repo'ya yuklendi → CI kirmizi → silindi
+- Sonunda CI yesil, Vercel iki deploy da basariili
 
 ---
 
-## Faz C — Frontend Entegrasyonu (~1.5 saat)
+## Cihat'in Onemli Cumleleri
 
-### Mockup iterasyonları (R-10 mockup-first)
-1. **v1:** Anthropic palette ile genel mockup → Cihat: *"programın genel tasarımına uygun renk ve tasarımda olsun"*
-2. **v2:** Program tasarım dilinde (--ac mavi sol kenar, Barlow Condensed, dark tema) → Cihat: *"bu oldu gibi"*
-3. **v3:** PDF butonu modal alt çubuğa eklendi + A4 PDF önizleme → Cihat: *"onaylıyorum"*
-
-### spool_detay.html — 5 değişiklik noktası
-
-**1. CSS (~30 satır):** modal stilleri, tıklanabilir satır accent (`tr.malz-tiklanabilir`)
-
-**2. Global değişkenler:** `KUTUPHANE_AKTIF`, `FLANSH_MAP`
-
-**3. renderMalzeme():** Eşleşmiş satıra class + onclick. Heat No / Sertifika / Sil butonlarına `event.stopPropagation()` (tıklayınca modal açılmasın).
-
-**4. JS fonksiyonları (~250 satır):**
-- `flanshKutuphaneYukle()` — feature flag kontrolü + supabase fetch + FLANSH_MAP doldurma
-- `flanshModalAc(spoolMalzemeId)` — modal'ı doldur, göster
-- `flanshModalKapat()` — kapatma (ESC + overlay click + X butonu)
-- `flanshPdf()` — devreler.html `_tabelaPdf` pattern'i ile A4 print sayfası
-- `_flanshCizimSvg()` + `_flanshCizimSvgPrint()` — programatik şablon (kullanılmıyor, ileride esneklik için duruyor)
-- `yukle` hook'u — orijinal yukle çağrısından sonra otomatik kütüphane yükle
-
-**5. Modal HTML container:** `</body>` öncesi.
-
-### Çizim alanı UX dansı
-- v1: `cizim_path` NULL → programatik SVG fallback
-- v2: NULL → kart hiç görünmesin (Cihat: *"çizim alanı komple uçtu"*)
-- v3 (final): NULL → kart görünür, içi boş, min-height 180px (Cihat onayladı)
-
-### Toplam değişiklik
-3361 → 3684 satır (+323), 5 noktada str_replace, hep aynı dosyada.
+- "Pdf parse edebiliyoruz, formatini sisteme yanitincaya kadar token harciyoruz... orda yoksa burdan bak icin ai sorgu gerekir mi gercekten" (mimari karari)
+- "Halusinasyon riskini sifirlama ve prompt guncelleme onemli" (AI cikarsama yapmasin onayi)
+- "Bunu kontrol altinda tutabilmek gerekir... cok kullanim olursa bu ozelligi super adminden kapatabilsek iyi olur" (feature flag karari)
+- "Hicbiryerden bulunmazsa malzeme modali bos kalacak" (graceful degrade)
+- "Bırakmayacan yoksa pesimi" (40 canli test borcu sozu, 43 basi)
 
 ---
 
-## Anahtar Öğrenmeler
+## Anahtar Ogrenmeler
 
-1. **Cross-reference > kolon ekleme.** Mevcut tablolar şişmesin, ayrı tablo + FK + audit trail. Cihat sezgisi yapısal sorularda hep haklı çıkıyor.
+1. **Tahmin yasagi etkili oldu.** 36'da kolon adi tahmin etmistim, fail. 41'de tekrar, fail. 42'de feature_flags.varsayilan_aktif tahmin etmistim, fail (gercek: varsayilan). information_schema.columns ile dogrulama refleksimi gelistiriyorum.
 
-2. **Şema sorgusu yapmadan SQL yazmak hata.** 3 kez şema tahmininden hata aldım — `information_schema.columns` her zaman önce çalıştırılmalı.
+2. **Mevcut altyapiyi kontrol et, duplicate olusturma.** ai_cagri_log gereksiz tablomuz oldu cunku ai_api_log zaten 38'den beri vardi ve maliyet hesabi cozulmustu. izometri-oku.js'i okumadan tablo acmak hata.
 
-3. **Feature flag = master tablo + kayıt tablosu.** Tek tablo yetmedi, pattern: `feature_flags` (kod tanımı) + `tenant_features` (kim açık).
+3. **AI cikarsama yapmasin prensibi.** Cihat 36'da halusinasyon yedi, hala dersi taze. AI sadece yaziliyi okur, hesap/cikarsama kod tarafinda. 42'de bu prensip standart cikarimi icin tekrar uygulandi.
 
-4. **Vizyon kapsamı keskin değil.** "Kütüphane altyapısı vizyon" mu "altyapı" mı tartışılır. Cihat'ın "can damarı" gerekçesi makul, ama 50. oturuma kadar bu mantıkla yeni vizyon maddeleri kapsama alınmaması gerek (presedan tehlikesi).
+4. **Isim benzerligi tehlikesi.** ares-normalize.js (mevcut, kritik) ile ares-kalite-normalize.js (yeni) karistirilabilir. 42'de bu yuzden bir kaza oldu (yanlislikla silindi). 43+'da yeni dosya isimlendirmede "normalize" kelimesini ayri tutmak gerek.
 
-5. **Buton/sinyal yaklaşımı zarif.** Modal açılmıyorsa "veri yok" değil "tanınmıyor" anlamına geliyor — tek bakışta okunur.
+5. **GitHub web upload + lokal git senkronizasyonu.** Web'den upload yapilinca lokal "behind" kalir. git pull ile senkronlama gerek. Bu basit ama Cihat icin yeni bir akis — ileride her oturumda gorulebilir.
 
-6. **PDF için window.print yeterli.** jsPDF/html2canvas eklemeye gerek yok, devreler.html pattern'i sadeliğiyle çalışıyor.
+6. **CI test dosyasini repo'ya almaz.** test-kalite-normalize.html ARES_LAYOUT_EKSIK kuralina takildi. Test dosyalari ya repo disinda kalmali ya da .ciignore benzeri bir dosyada listelenmeli.
 
----
-
-## 41'de Cihat'ın Söylediği Önemli Cümleler
-
-- *"sisteme giren malzemeyi parça olarak tanıması sistemin can damarı"*
-- *"bizim normalde kullandığımız tablolarımızı değiştirmiyoruz"*
-- *"parça standart değilse buton da olmaz gibi düşündüm"*
-- *"bunlar [3D, foto hata vb.] kütüphane altyapımızla ilgili değil mi"*
-- *"süper admin sayfasından bazı firmalara açık bazılarına kapalı olacak"*
-- *"3d yada diğer materyalleri ai eğitimi için kullanırız"* (çizim klasörü ile AI training klasörü ayrımı)
-- *"çizim alanı boş kalacaktı sadece"* (UX hassasiyeti)
+7. **Mimari onerileri Cihat'tan gelir.** Cihat yazilimci degil ama yapisal sorunlari sezgisel goruyor. "Token harciyor zaten" sezgisi mimaride dogru karari verdi.
 
 ---
 
-## Bu Oturumda Üretilen Dosyalar (8)
+## Bu Oturumda Uretilen Dosyalar
 
 | Dosya | Yer | Boyut |
 |---|---|---|
-| `41-oturum-kutuphane-altyapi.sql` | repo (yeni) | 288 satır |
-| `41-pilot-test-verisi.sql` | repo (yeni) | 145 satır |
-| `41-feature-flag.sql` | (chat içinde, repo'da değil) | inline |
-| `41-eslesme.sql` | (chat içinde, repo'da değil) | inline |
-| `spool_detay.html` | repo | 3361 → 3684 satır |
-| `son-durum.md` | repo | bu oturum güncellemesi |
+| `migrations/011_malzeme_standart_ipucu.sql` | repo (yeni) | ~150 satir |
+| `migrations/013_din_en_boru_kayitlari.sql` | repo (yeni) | ~80 satir |
+| `ares-kalite-normalize.js` | repo (yeni) | 125 satir |
+| `api/izometri-oku.js` | repo | 963 → 985 satir |
+| `son-durum.md` | repo | bu oturum guncellemesi |
 | `CLAUDE-SON-OTURUM.md` | repo | bu dosya |
-| `CLAUDE-SONRAKI-OTURUM.md` | repo | 42 gündemi |
+| `CLAUDE-SONRAKI-OTURUM.md` | repo | 43 gundemi |
+
+(Not: 012 SQL idempotent yazildi ama Supabase Editor unicode bug yuzunden chat icinden VALUES bloku ile elle yapildi — repo'da 012 dosyasi yok, sadece DB'de.)
 
 ---
 
-## 41 Sonu Durum
+## 42 Sonu Durum
 
-✅ Kütüphane altyapısı canlı (4 tablo, RLS aktif)
-✅ Pilot kayıt: A105 4" 150# WN flanş
-✅ Cihat'ın test spool'unda eşleşme kuruldu
-✅ Feature flag açık (7 tenant)
-✅ spool_detay.html modal + PDF entegrasyonu canlı, tıklayınca açılıyor, sayılar PDF spec ile birebir
-✅ Çizim alanı boş yer tutucu (organik dolacak)
+✅ AI standart cikarimi altyapisi kurulu
+✅ izometri-oku.js prompt guncellendi
+✅ Vercel iki deploy yesil
+✅ CI yesil
+✅ 424 yeni kayit DB'de (48 boru + 18 ipucu + diger)
+✅ ares-kalite-normalize.js test 39/39
 
-🔴 40 canlı test borcu açık (markalama Grup 2-5, bukum, KK, sevkiyat, 39 PAOR)
-🟡 Süper admin UI feature flag yönetimi açık
-🟡 Çizim klasörü organizasyonu (`/cizimler/flans/` standardı) açık
-🟡 Diğer flanş tipleri + boru/dirsek/T tabloları açık
+🔴 40 canli test borcu acik (43 basi en yuksek oncelik — Cihat soz aldi)
+🟡 Kutuphane icerigi %95 bos
+🟡 Frontend cascade UI yok
 
 ---
 
-> 41 kapanışında yazıldı. Detaylı arşiv. 42 başında okunmaz, sadece geriye dönüp aranır.
+> 42 kapanisinda yazildi. Detayli arsiv. 43 basinda okunmaz, sadece geriye donup aranir.
