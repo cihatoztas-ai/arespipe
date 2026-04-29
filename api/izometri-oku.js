@@ -58,6 +58,10 @@ const ARES_BORU = globalThis.ARES_BORU;
 // sadece bos/bozuk metin doner -- fingerprint skoru dusuk kalir, AI fallback'a duser (dogru davranis).
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
+// 48: Cache mekanizmasi -- pdf_sha256 hash hesabi icin Node.js native crypto.
+// Yeni paket eklenmiyor (47 dersi: Vercel paket uyumlulugu container testi yetmiyor).
+import crypto from 'crypto';
+
 if (!ARES_BORU) {
   console.error('[izometri-oku] UYARI: ARES_BORU yuklenemedi -- helper fallback devre disi.');
 }
@@ -171,16 +175,46 @@ export default async function handler(req, res) {
     const formatBilgisi = await formatTani({ pdf_base64, dosya_adi, tenant_id });
     console.log('[izometri-oku] Format taraması:', formatBilgisi.kaynak, formatBilgisi.format_id || '(yok)');
 
+    // --- 2.3.b Cache lookup (48 -- Vizyon Madde 4 ogrenme dongusu) ---
+    // Format taninmissa, ayni PDF onceden basariyla parse edilmis mi diye bak.
+    // HIT: Vision AI cagrilmaz, eski cevap dondurulur (~0.5 sn, $0).
+    // Hash buffer'dan hesaplanir; sonra visionAIParse'a parametre olarak gecer (yeni Buffer.from cagirma).
+    const pdf_sha256 = pdfHashHesapla(Buffer.from(pdf_base64, 'base64'));
+    const cacheKayit = formatBilgisi.format_id
+      ? await cacheKontrol({ pdf_sha256, format_id: formatBilgisi.format_id, tenant_id })
+      : null;
+
     // --- 2.4 Parser secimi ---
     let parseSonuc;
-    if (formatBilgisi.format_id && formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
+    if (cacheKayit) {
+      // CACHE HIT -- onceki basarili sonucu kullan, Vision AI'i atla
+      console.log('[izometri-oku] CACHE HIT:', {
+        hash_kisa: pdf_sha256.substring(0, 12),
+        format_id: formatBilgisi.format_id,
+        original_log_id: cacheKayit.id,
+        original_sure_ms: cacheKayit.sure_ms,
+      });
+      const parsed = cacheKayit.cevap_full;
+      const spoollar = Array.isArray(parsed?.spoollar) ? parsed.spoollar : [];
+      parseSonuc = {
+        ok: true,
+        spoollar,
+        ham_cevap: parsed,
+        _cache_meta: {
+          cache_hit: true,
+          original_log_id: cacheKayit.id,
+          original_sure_ms: cacheKayit.sure_ms,
+          cached_at: cacheKayit.olusturma_at,
+        },
+      };
+    } else if (formatBilgisi.format_id && formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
       // L1/L2 -- format-spesifik parser (38'de aktif)
       // Su an parser_kural'lar bos, bu dal calismayacak
       parseSonuc = await parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi });
     } else {
       // L3 -- Vision AI (Yaklasim Y)
       parseSonuc = await visionAIParse({
-        pdf_base64, dosya_adi, formatBilgisi,
+        pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
         tenant_id, kullanici_id, batch_id,
       });
     }
@@ -226,7 +260,12 @@ export default async function handler(req, res) {
       spoollar: filtreliSpoollar,
     };
 
-    console.log('[izometri-oku] Tamamlandi:', dosya_adi, ozet.spool_sayisi, 'spool,', sure_ms, 'ms');
+    // 48: Cache hit ise meta bilgisini response'a ekle (test/analytics gorunurlugu icin)
+    if (parseSonuc._cache_meta) {
+      ozet._cache_meta = parseSonuc._cache_meta;
+    }
+
+    console.log('[izometri-oku] Tamamlandi:', dosya_adi, ozet.spool_sayisi, 'spool,', sure_ms, 'ms', parseSonuc._cache_meta ? '(CACHE HIT)' : '');
     return res.status(200).json(ozet);
 
   } catch (e) {
@@ -394,8 +433,54 @@ async function batchTokenSayaclariArtir({ batch_id, input_tokens, output_tokens,
 }
 
 // =====================================================================
-// 4. FORMAT DISPATCHER
+// 4. FORMAT DISPATCHER + CACHE HELPERS
 // =====================================================================
+
+// ---------------------------------------------------------------------
+// Cache helpers (48 -- Vizyon Madde 4 ogrenme dongusunun ilk operasyonel adimi)
+// -----------------------------------------------------------------------
+// Akis:
+//   PDF gelir -> SHA256 hash hesaplanir -> formatTani -> cacheKontrol
+//     HIT  : eski cevap_full JSONB'si dondurulur (~0.5 sn, $0)
+//     MISS : visionAIParse normal akis, sonuc ai_api_log'a hash + cevap_full ile yazilir
+
+// PDF SHA256 hash -- Buffer'dan tek gecisle, ~50ms 4MB icin marjinal yuk.
+function pdfHashHesapla(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+// Cache lookup: ayni PDF (hash) + ayni format + ayni tenant icin onceki basarili Vision AI cevabi.
+// 021 migration'in partial index'ini kullanir: WHERE basarili=true AND pdf_sha256 IS NOT NULL.
+// HIT  : { id, cevap_full, sure_ms, olusturma_at } doner
+// MISS : null doner (akis visionAIParse'a devam eder)
+async function cacheKontrol({ pdf_sha256, format_id, tenant_id }) {
+  if (!pdf_sha256 || !format_id || !tenant_id) return null;
+  try {
+    const data = await supaFetch(
+      `ai_api_log?` +
+      `pdf_sha256=eq.${pdf_sha256}` +
+      `&format_id=eq.${format_id}` +
+      `&tenant_id=eq.${tenant_id}` +
+      `&basarili=eq.true` +
+      `&cevap_full=not.is.null` +
+      `&order=olusturma_at.desc&limit=1` +
+      `&select=id,cevap_full,sure_ms,olusturma_at`
+    );
+    if (Array.isArray(data) && data.length > 0 && data[0].cevap_full) {
+      return data[0];
+    }
+    return null;
+  } catch (e) {
+    // Cache lookup hatasi ana akisi BOZMAMALI -- sessiz null donulur,
+    // normal Vision AI akisi calisir. (Ornek: yeni kolon yokken eski deploy.)
+    console.warn('[cacheKontrol] hata (yutuldu, normal akisa donulur):', e.message);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------
+// Format tanima (47 fingerprint skorlama, 47.B en-yuksek-skor tie-breaker)
+// -----------------------------------------------------------------------
 
 async function formatTani({ pdf_base64, dosya_adi, tenant_id }) {
   // Tenant-scope + global formatlari getir, fingerprint ile esle
@@ -565,7 +650,7 @@ function fingerprintEsler(fingerprint, ipucu, esik = 2) {
 // 5. VISION AI PARSER (Yaklasim Y)
 // =====================================================================
 
-async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id }) {
+async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id }) {
   const baslangic = Date.now();
   const sistem_prompt = formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT;
 
@@ -604,6 +689,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   } catch (e) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
+      pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       basarili: false, http_status: 0, hata_mesaji: e.message,
       sure_ms: Date.now() - baslangic,
@@ -614,6 +700,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   if (!claudeRes.ok) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
+      pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       basarili: false, http_status: claudeRes.status,
       hata_mesaji: typeof data === 'object' ? JSON.stringify(data).substring(0, 500) : text.substring(0, 500),
@@ -640,6 +727,7 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   } catch (e) {
     await aiApiLogYaz({
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
+      pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
       input_tokens, output_tokens, maliyet_usd, sure_ms,
       basarili: false, http_status: 200,
@@ -689,12 +777,16 @@ async function visionAIParse({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, 
   }
 
   // Loglama (basarili)
+  // 48: pdf_sha256 + cevap_full ekledik. cevap_full cache lookup'in icini doldurur,
+  // boylece sonraki ayni PDF yuklemesi visionAIParse cagrilmadan eski sonucu doner.
   await aiApiLogYaz({
     tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
+    pdf_sha256,
     kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
     input_tokens, output_tokens, maliyet_usd, sure_ms,
     basarili: true, http_status: 200,
     cevap_kisaltma: JSON.stringify(parsed).substring(0, 500),
+    cevap_full: parsed,
   });
 
   // Batch token sayaclarini artir
