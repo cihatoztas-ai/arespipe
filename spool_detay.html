@@ -949,6 +949,15 @@ var FLANSH_MAP = {};               // {spool_malzeme_id: flansh_olculer_kaydi}
 // 44. oturum — Boru kütüphane lookup (otomatik tier'lı eşleşme)
 var BORU_LIB = [];                 // boru_olculer'dan çekilmiş aday satırlar
 var BORU_MAP = {};                 // {spool_malzeme_id: boru_olculer_kaydi}
+// 44.B — DN → NPS kanonik mapping (statik, ASME/ISO referansı). Modal'da DN·NPS·mm kombo gösterimi için.
+var DN_NPS = {
+  6:'⅛″', 8:'¼″', 10:'⅜″', 15:'½″', 20:'¾″', 25:'1″',
+  32:'1¼″', 40:'1½″', 50:'2″', 65:'2½″', 80:'3″', 90:'3½″',
+  100:'4″', 125:'5″', 150:'6″', 200:'8″', 250:'10″', 300:'12″',
+  350:'14″', 400:'16″', 450:'18″', 500:'20″', 550:'22″', 600:'24″',
+  650:'26″', 700:'28″', 750:'30″', 800:'32″', 850:'34″', 900:'36″',
+  1050:'42″', 1200:'48″'
+};
 var KESIMLER = [], BUKUMLER = [], MARKALAR = [], NOTLAR = [], LOGLAR = [], BELGELER = [];
 var TESTLER = [];
 var FOTOLAR = [];
@@ -3645,7 +3654,14 @@ function boruModalAc(spoolMalzemeId){
   var rows = '';
   rows += _r(tv('boru_standart','Standart'), b.standart || '—');
   if(b.urun_formu)                  rows += _r(tv('boru_urun_formu','Ürün formu'), b.urun_formu);
-  if(b.dn != null)                  rows += _r(tv('boru_dn','Anma çapı (DN)'), 'DN' + b.dn);
+  // 44.B — Anma çapı satırı: DN · NPS · ⌀mm (üç ölçü ifadesi yan yana)
+  if(b.dn != null){
+    var capParts = ['DN' + b.dn];
+    var nps = DN_NPS[b.dn];
+    if(nps) capParts.push('NPS ' + nps);
+    if(b.dis_cap_mm != null) capParts.push('⌀' + String(b.dis_cap_mm).replace('.', ',') + ' mm');
+    rows += _r(tv('boru_anma_cap','Anma çapı'), capParts.join(' · '));
+  }
   if(b.agirlik_kg_m != null)        rows += _r(tv('boru_agirlik','Birim ağırlık'), _kg(b.agirlik_kg_m));
   if(b.hacim_l_m != null)           rows += _r(tv('boru_hacim','Hacim'), _l(b.hacim_l_m));
   if(b.yuzey_alan_dis_m2_m != null) rows += _r(tv('boru_yuzey','Dış yüzey alanı'), _m2(b.yuzey_alan_dis_m2_m));
