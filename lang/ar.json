@@ -1649,5 +1649,13 @@
   "sev_ph_irsaliye": "رقم الإيصال",
   "sev_ph_proje": "اسم المشروع أو رقمه",
   "sev_ph_teslim_kisi": "الاسم الكامل",
-  "sev_yeni": "+ شحنة جديدة"
+  "sev_yeni": "+ شحنة جديدة",
+  "boru_meta": "معلومات الأنبوب",
+  "boru_standart": "المعيار",
+  "boru_urun_formu": "شكل المنتج",
+  "boru_anma_cap": "القطر الاسمي",
+  "boru_agirlik": "الوزن لكل متر",
+  "boru_hacim": "الحجم",
+  "boru_yuzey": "مساحة السطح الخارجي",
+  "boru_kis_ic": "القطر الداخلي"
 }

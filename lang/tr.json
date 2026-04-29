@@ -1649,5 +1649,13 @@
   "sev_ph_irsaliye": "İrsaliye numarası",
   "sev_ph_proje": "Proje adı veya numarası",
   "sev_ph_teslim_kisi": "Adı Soyadı",
-  "sev_yeni": "+ Yeni Sevkiyat"
+  "sev_yeni": "+ Yeni Sevkiyat",
+  "boru_meta": "boru bilgisi",
+  "boru_standart": "Standart",
+  "boru_urun_formu": "Ürün formu",
+  "boru_anma_cap": "Anma çapı",
+  "boru_agirlik": "Birim ağırlık",
+  "boru_hacim": "Hacim",
+  "boru_yuzey": "Dış yüzey alanı",
+  "boru_kis_ic": "İç çap"
 }

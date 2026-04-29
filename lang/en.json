@@ -1649,5 +1649,13 @@
   "sev_ph_irsaliye": "Waybill number",
   "sev_ph_proje": "Project name or number",
   "sev_ph_teslim_kisi": "Full Name",
-  "sev_yeni": "+ New Shipment"
+  "sev_yeni": "+ New Shipment",
+  "boru_meta": "pipe info",
+  "boru_standart": "Standard",
+  "boru_urun_formu": "Product form",
+  "boru_anma_cap": "Nominal diameter",
+  "boru_agirlik": "Unit weight",
+  "boru_hacim": "Volume",
+  "boru_yuzey": "External surface area",
+  "boru_kis_ic": "Inner Ø"
 }
