@@ -1,0 +1,24 @@
+# Bagimliliklar
+node_modules/
+
+# macOS
+.DS_Store
+
+# Loglar
+*.log
+npm-debug.log*
+
+# Vercel
+.vercel
+
+# Editor
+.vscode/
+.idea/
+
+# Build cache
+.next/
+.turbo/
+
+# Env (eger ileride lokal env kullanilirsa)
+.env.local
+.env.*.local
