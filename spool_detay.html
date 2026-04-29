@@ -3406,6 +3406,31 @@ window._onLangChange=function(){
  * Feature flag: kutuphane_parca_kimligi
  * ================================================================ */
 
+// 44.B — Cascade modal görseli yükleyici (genel amaçlı)
+// Tüm tipler (flanş/boru/fitting/...) tek pattern: harici SVG dosyası, fetch + placeholder replace + innerHTML.
+// Sayfaya gömme yok — kütüphane büyüdükçe sayfa şişmez.
+// Placeholder format: {{KEY}} (template SVG dosyasında bulunur). repl objesi yoksa template aynen yüklenir.
+async function _cizimYukle(divId, path, repl){
+  var el = document.getElementById(divId);
+  if(!el) return;
+  if(!path){ el.innerHTML = ''; return; }
+  try {
+    var res = await fetch(path);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var svg = await res.text();
+    if(repl){
+      Object.keys(repl).forEach(function(k){
+        var v = repl[k];
+        svg = svg.split('{{'+k+'}}').join(v == null ? '—' : String(v));
+      });
+    }
+    el.innerHTML = svg;
+  } catch(e){
+    console.warn('_cizimYukle hata ['+path+']:', e);
+    el.innerHTML = '';
+  }
+}
+
 // Sayfa yüklendikten sonra eşleşmeleri çek (MALZEME[] dolu olunca)
 async function flanshKutuphaneYukle(){
   try {
@@ -3449,14 +3474,9 @@ function flanshModalAc(spoolMalzemeId){
   var ozet = ozetMalz + ' · ' + (f.flansh_tipi||'—') + ' ' + (f.basinc_sinifi||'') + '# · ' + capStr + (f.yuzey_tipi ? ' · ' + f.yuzey_tipi : '');
   document.getElementById('flanshModalOzet').textContent = ozet;
   document.getElementById('flanshModalMeta').textContent = (tv('flansh_meta','flanş bilgisi') + ' · ASME ' + (f.geometri_std||'B16.5')).toLowerCase();
-  // Çizim — dosya yüklendikçe görünür, yoksa kart boş kalır (yer tutucu)
-  var cizimEl = document.getElementById('flanshCizim');
-  cizimEl.style.display = '';
-  if(f.cizim_path){
-    cizimEl.innerHTML = '<img src="'+esc(f.cizim_path)+'" alt="'+esc(f.flansh_tipi||'flanş')+' çizimi" style="width:100%;height:auto;display:block;" onerror="this.parentNode.innerHTML=\'\'">';
-  } else {
-    cizimEl.innerHTML = '';
-  }
+  // Çizim — 44.B'den itibaren harici SVG (fetch + injection). cizim_path NULL ise kart boş kalır.
+  // Hardcoded değerli flanş SVG'leri için repl=null no-op; ileride placeholder'lı template'lere geçince repl objesi doldurulur.
+  _cizimYukle('flanshCizim', f.cizim_path || null, null);
   // Tablo
   var tablo = document.getElementById('flanshTablo');
   function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+esc(v)+'</td></tr>'; }
@@ -3602,30 +3622,33 @@ function boruModalAc(spoolMalzemeId){
   document.getElementById('boruModalOzet').textContent = ozet;
   document.getElementById('boruModalMeta').textContent = (tv('boru_meta','boru bilgisi') + ' · ' + (b.standart || '')).toLowerCase();
 
+  // 44.B — Çizim: harici SVG template (cizimler/boru/boru-kesit.svg) — placeholder'lar dinamik dolar
+  function _val(v){ return v == null ? '—' : String(v).replace('.', ','); }
+  var D  = b.dis_cap_mm;
+  var IC = b.ic_cap_mm;
+  var T  = b.et_mm;
+  var R  = (D != null) ? (Math.round(parseFloat(D) * 50) / 100) : null;
+  _cizimYukle('boruCizim', 'cizimler/boru/boru-kesit.svg', {
+    D:        _val(D),
+    IC:       _val(IC),
+    R:        _val(R),
+    T:        _val(T),
+    IC_LABEL: tv('boru_kis_ic','İç çap')
+  });
+
+  // 44.B — Tablo: çizimde gösterilen değerler (D, iç çap, t, R) tekrarlanmaz; sadece kütüphane ek bilgileri
   function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+esc(v)+'</td></tr>'; }
-  function _mm(v){ return v == null ? '—' : (String(v).replace('.', ',') + ' mm'); }
   function _kg(v){ return v == null ? '—' : (String(v).replace('.', ',') + ' kg/m'); }
   function _l(v) { return v == null ? '—' : (String(v).replace('.', ',') + ' L/m'); }
   function _m2(v){ return v == null ? '—' : (String(v).replace('.', ',') + ' m²/m'); }
 
   var rows = '';
   rows += _r(tv('boru_standart','Standart'), b.standart || '—');
-  if(b.dn != null)         rows += _r(tv('boru_dn','Anma çapı (DN)'), 'DN' + b.dn);
-  if(b.urun_formu)         rows += _r(tv('boru_urun_formu','Ürün formu'), b.urun_formu);
-  if(b.malzeme_grubu)      rows += _r(tv('boru_malz_grup','Malzeme grubu'), b.malzeme_grubu);
-  if(b.schedule_kod)       rows += _r(tv('boru_schedule','Şedül / et ailesi'), b.schedule_kod);
-  rows += _r(tv('boru_dis_cap','Dış çap (D)'), _mm(b.dis_cap_mm));
-  rows += _r(tv('boru_et','Et kalınlığı (t)'), _mm(b.et_mm));
-  if(b.et_min_mm != null && b.et_max_mm != null){
-    rows += _r(tv('boru_et_aralik','Et aralığı (min · max)'), _mm(b.et_min_mm).replace(' mm','') + ' · ' + _mm(b.et_max_mm));
-  }
-  if(b.ic_cap_mm != null)  rows += _r(tv('boru_ic_cap','İç çap'), _mm(b.ic_cap_mm));
-  if(b.agirlik_kg_m != null) rows += _r(tv('boru_agirlik','Birim ağırlık'), _kg(b.agirlik_kg_m));
-  if(b.hacim_l_m != null)  rows += _r(tv('boru_hacim','Hacim'), _l(b.hacim_l_m));
+  if(b.urun_formu)                  rows += _r(tv('boru_urun_formu','Ürün formu'), b.urun_formu);
+  if(b.dn != null)                  rows += _r(tv('boru_dn','Anma çapı (DN)'), 'DN' + b.dn);
+  if(b.agirlik_kg_m != null)        rows += _r(tv('boru_agirlik','Birim ağırlık'), _kg(b.agirlik_kg_m));
+  if(b.hacim_l_m != null)           rows += _r(tv('boru_hacim','Hacim'), _l(b.hacim_l_m));
   if(b.yuzey_alan_dis_m2_m != null) rows += _r(tv('boru_yuzey','Dış yüzey alanı'), _m2(b.yuzey_alan_dis_m2_m));
-  if(b.tolerans_et_yuzde != null)      rows += _r(tv('boru_tol_et','Et toleransı'), '±' + b.tolerans_et_yuzde + '%');
-  if(b.tolerans_agirlik_yuzde != null) rows += _r(tv('boru_tol_agirlik','Ağırlık toleransı'), '±' + b.tolerans_agirlik_yuzde + '%');
-  if(b.edisyon_yili)       rows += _r(tv('boru_edisyon','Edisyon yılı'), b.edisyon_yili);
 
   document.getElementById('boruTablo').innerHTML = rows;
   modal.classList.add('show');
@@ -3701,6 +3724,8 @@ document.addEventListener('click', function(e){
       </button>
     </div>
     <div class="flansh-mod-body">
+      <!-- 44.B — Boru kesit çizimi (harici SVG: cizimler/boru/boru-kesit.svg) -->
+      <div id="boruCizim" class="flansh-cizim"></div>
       <table class="flansh-tablo"><tbody id="boruTablo"></tbody></table>
     </div>
   </div>
