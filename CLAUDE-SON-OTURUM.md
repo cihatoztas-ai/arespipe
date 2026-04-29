@@ -1,192 +1,197 @@
-# Claude — 44. Oturum Detaylı Arşivi
+# Claude — 45. Oturum Arşivi
 
 > **Tarih:** 29 Nisan 2026
-> **Tema:** Cascade UI tamamlandı + mimari standart kuruldu + 3D vizyonu netleşti
-> **Sonuç:** 44.B kapsamı tam, 45 gündemi belirgin
+> **Süre:** ~2 saat aktif çalışma
+> **CI:** YESIL
+> **Migration sayısı:** 3 (017, 018, 019)
+> **Yeni dosya:** 0 (sadece DB)
+> **Değişen dosya:** 0
+> **Kapanış:** Schema temeli + format dispatcher altyapısı oturdu, parser yazımı 46'ya disiplinli ertelendi
 
 ---
 
-## 44 Açılış Bağlamı
+## Bağlam
 
-43 sonu durum: kütüphane içerik gerçek IFS verisine **veritabanında** değdi (M1 spool_malzemesi 76.1×4.5 → DIN-2448 DN65 ET4.5 → 22.43 kg eşleşmesi doğrulanmıştı), ama **kullanıcı UI'da bunu göremiyordu**. spool_detay'da boru satırı tıklanabilir değildi, modal yoktu, kütüphane bağlantısı görünmüyordu.
+44 sonu Cihat 3D vizyonu açtı + tersan + PAOR aktif iki referans pilot olarak belirlendi + parser yazımı 45'in iki ana teması olarak yazıldı. 45 başında plan: schema migration → tersan parser → PAOR parser → 3D motor entegrasyonu (Aşama 4.1-4.3).
 
-44 başında ritüel uygulandı (5 cevap), CI yeşil teyit edildi, ana tema A "Cascade UI önce" seçildi (mimari karar 45'e parking).
-
----
-
-## Yapılanlar (Kronolojik)
-
-### 1. Bug Tespiti ve Tek Satır Fix
-
-Dosya incelemesi şu bulguyu ortaya çıkardı: 44.B cascade UI kodu **zaten yazılmış** (BORU_LIB, BORU_MAP, boruEslestir, boruKutuphaneYukle, boruModalAc, modal HTML, KALITE_STANDART_HARITA, tier mantığı, IIFE wrap — hepsi vardı). Ama çalışmıyordu.
-
-**Asıl sebep tek satırdı (satır 969):**
-
-```diff
-- spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,...)
-+ spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,...)
-```
-
-`tip` field'ı select'te yoktu → `m.tip = undefined` → `m.tip_raw = ''` → `boru` filter sıfır element döndü → BORU_MAP boş kaldı → UI hiçbir şey göstermedi.
-
-Ders: **"kod var" demek "çalışıyor" demek değil**. Cihat son-durum.md'ye "cascade UI eksik" yazmıştı, ben kodu görünce "yapılmış" sandım, dipte tek satırlık select bug'ı vardı.
-
-### 2. Cihat'ın 1. Müdahalesi: Kullanıcı Tier Sorma Yerine Deterministik
-
-İlk önerim: çoklu eşleşme durumunda kullanıcıya modal sorduran C-hibrit yaklaşım. Cihat *"bu kullanıcının zaman harcayacağı bir konu olmaması lazım, doğru tabloyla otomatik eşleştirmek için daha güvenli ve iyi bir yol yok mu?"* dedi.
-
-Tier sistemini güçlendirdim:
-- Tier 1: kalite kodu prefix → kanonik standart eşlemesi (`P*` → EN, `A106|A53|API` → ASME, `St*` → DIN, `TP*|A312` → ASTM)
-- Tier 2: kanonik öncelik (DIN → EN → ASME → ASTM → API), edisyon yılı tie-break
-
-Sonuç: pilot vakada hiç modal sormaz, %99'da deterministik tek satıra düşer. Modal sadece çok nadir vakalar için son çare.
-
-**Ders:** "Belirsizlikte kullanıcıya sor" tembelliktir. Doğru çözüm domain bilgisini koda dökmektir. Cihat'ın "stratejik soru sorma" alışkanlığı 4. oturumdur dersini veriyor: yapısal sorunu sezmiş, soru açık ucu bana çözdürmüş.
-
-### 3. Boru Modal Tablosu Sadeleştirme
-
-İlk modal tablosu 15 satırdı (her field bir satır). Cihat sadeleştirme istedi. İlk önerim 6 satır (Standart, Ürün formu, DN, Birim ağırlık, Hacim, Dış yüzey alanı). Cihat bunu onayladı **ama**: "DN, inch ve mm dış çap olması gerekiyordu, bu değerler tabloda yok." Ben mm dış çapı görsele taşımıştım, tabloda yoktu.
-
-**Düzeltme:** Anma çapı satırı kombo formatı:
-```
-Anma çapı: DN65 · NPS 2½″ · ⌀76,1 mm
-```
-
-Hem Avrupa hem Amerikan hem fiziksel ölçü yan yana, tarama yaparken hangisini bilirse bulur. DN→NPS kanonik mapping'i (DN6'dan DN1200'e) sayfa scope'una eklendi.
-
-**Ders:** Görsel + tablo aynı bilgiyi göstermek **tekrar değil amaç ayrılığı**. Görsel sezgisel, tablo aranabilir. Bilgiyi sadece bir yerden vermek zayıflık.
-
-### 4. Cihat'ın 2. Müdahalesi: Mimari — SVG'leri Sayfaya Gömme
-
-İlk boru kesit çizimini inline SVG olarak modal HTML'e gömdüm. Çalıştı, ama Cihat dedi: *"sen boru görselini sayfaya gömdüysen çok sayıda görsel geldiğinde burası kullanılmaz olur."* Hem flanş tarafında **bug** vardı: cizim_path null olduğu için `<img>` 404 veriyordu, ayrıca `<img>` SVG'yi statik raster yapar — dinamik etiket imkansız.
-
-İki sorunu birden çözen mimari değişiklik:
-- Tüm cascade modal görselleri `cizimler/<tip>/` altında **harici SVG dosyası**
-- `_cizimYukle(divId, path, repl)` helper: fetch → `{{KEY}}` placeholder replace → innerHTML
-- Hem boru hem flanş aynı pattern'i paylaşır
-- Sayfa boyutu küçülür, dinamik etiket tam çalışır, yeni tip eklemek = sadece dosya işi
-
-Sayfaya 36 satırlık SVG yerine 1 div + 1 helper çağrısı kaldı. Boru SVG'si `cizimler/boru/boru-kesit.svg` (placeholder'lı template), flanş SVG'si `cizimler/flans/asme_b16_5_class150_wn_dn100.svg` (43'te eklenmişti, 016 migration'ı ile cizim_path bağlandı).
-
-**Ders:** Cihat sezgisel olarak yapısal sorunları görür. "Çok sayıda görsel geldiğinde burası kullanılmaz olur" cümlesi mimariyi sağlamlaştırdı. Ben tek dosyalı çözümü kabul etmiştim, Cihat ölçek sorununu görerek kuralı öne çıkardı.
-
-### 5. Cihat'ın 3. Müdahalesi: Teknik Çizim Standardı
-
-İlk boru SVG'si "iç çap koyu daire, dış çap mavimsi halka" basit gösterimdi. Cihat *"boru kesitinin içi siyah falan biraz garip olmuş. boru kesiti, tarama çizgileri ve daha zarif bir çizim olsun"* dedi. Mühendislik teknik çizim standardını uyguladım:
-- 45° hatching pattern (boru duvarı bölgesi taranmış)
-- Cross-hair merkez (4 yönde uzun kesik chain çizgi — teknik çizim klasiği)
-- İç boşluk şeffaf (sayfa rengi geçer, dark/light tema doğal)
-- İnce çizgiler, hiyerarşik tipografi, letter-spacing
-- Dış kenar düz, iç kenar **kesik** (gizli/iç hat = kesik, ASME standardı)
-
-**Ders:** Görsel kalite somut iş kalitesini de yansıtır. Cihat detaylara hassas, iyi.
-
-### 6. Flanş SVG cizim_path Migration
-
-Şema sorgusu: `flansh_olculer` 20 satır WN Class 150, hepsi `cizim_path = NULL`. SVG dosyası repo'da var (43'te `a314f7d` commit'i ile eklenmişti). DN100 satırı için tek satır UPDATE migration'ı yazıldı (016), idempotent (sadece NULL olanı set eder).
-
-İleride başka DN'ler için SVG hazırlandıkça benzer migration'lar (017, 018...) eklenecek.
-
-### 7. 3D Vizyonu — Cihat Açtı
-
-Oturum sonu Cihat 3D spool oluşturma konusunu açtı. *"Bunu nasıl yaparız?"* sorusu üç katmanlı bir tartışma başlattı:
-
-1. **Yöntem analizi:** AI / STEP / DSTV / şablon eşleştirme / heuristik / manuel — 7 alternatif kategori. AI tek seçenek değil.
-2. **Maliyet sorgusu:** Cihat *"AI maliyeti sürekli mi, sıfırlanabilir mi?"* sordu. Cevap: format öğrenme + pasif öğrenme + (uzun vade) fine-tune ile sıfırlanabilir. Tahmini projeksiyon: yıl 1 $400-600/ay → yıl 2 $50-100/ay → yıl 3+ kendi modeli.
-3. **Veri akışı:** Cihat "izometri PDF + IFS dosyası dışında ne verirsek hızlanır?" sordu. Cevap: STEP/IGES (%95 sorun çözer ama tersane vermek istemez), DSTV (üretim verisi, vermesi kolay), spool detay sayfası (3 görünüş), BOM, eski proje arşivi.
-4. **Yükleme stratejisi:** Cihat *"eski yüzlerce spool'u yüklesem, sonra silsem?"* sordu. Cevap: silersen domain pattern havuzunu kaybedersin. Doğru yaklaşım: anonimleştir, ayrı `egitim_havuzu_*` tablosunda tut, pilot tenant'tan ayrı.
-
-### 8. Üç Format Örneği — Mimari Prensibin Kanıtı
-
-Cihat üç farklı tersane formatı yükledi:
-- **G200** (Türk tersanesi, "tersan" — Cut Length tablosu + Rotation Angle sütunu, A4)
-- **PAOR** (Portekiz Donanması — FORE/PS/HEI koordinat sistemi, BOM çok zengin, A3)
-- **SR027** (Norse Shipyard / Yön TekniK — 3 görünüş + grafik içi açı etiketleri + Welding info bonus W1-W4)
-
-Üç format yan yana baktığımızda mimari prensip kanıtlandı: **parser değişir, motor sabit kalır**. Her format kendi `izometri_format_tanimlari` satırına yazılır, ortak `spool_malzemeleri` şemasına dökülür, ortak `buildChain` motoru ile render olur.
-
-**Cihat'ın kararı:** *"tersan ve PAOR şu an aktif bu ikisini referans alalım, diğer formatları üzerine ekleriz."* Yani 45'te iki parser yazılır, SR027 ve diğerleri sonraki oturumlara.
+45 plan büyük ölçüde tutuldu **ama disiplinli sapma** yapıldı: parser yazımına atlamak yerine önce DB temelini sağladık + 44 raporundaki yanlışlıkları tespit edip düzelttik. CIHAT-PROFIL "atlama, listele, dolu cevap ver" disiplini bu oturumda iki kez kazandırdı.
 
 ---
 
-## Mimari Kararlar (44'te alındı)
+## Yapılanlar
 
-### MK-44.1 — Cascade Modal Görselleri Sayfaya Gömülmez
+### 1. Migration 017 — 3D Motor Schema (✅)
 
-**Kural:** Tüm cascade modal görselleri `cizimler/<tip>/` altında harici SVG dosyası olarak tutulur. Sayfa kodu sadece `_cizimYukle(divId, path, repl)` çağırır. Placeholder'lar `{{KEY}}` formatında, JS replace ile dinamik doldurulur.
+**Dosya:** `migrations/017_3d_motor_schema.sql`
 
-**Sebep:** Sayfa şişmesini önler, dinamik etiket destekler, tema (dark/light) ile uyumludur, yeni tip eklemek dosya işidir.
+Eklenenler:
+- `spool_malzemeleri.sira INTEGER` — 3D motor parça sırası (parser çıktısı)
+- `spool_malzemeleri.rotation_angle INTEGER` — dirsek/parça dönüş açısı (0-359 derece, NULL serbest)
+- `spool_malzemeleri.yonelim_kod TEXT` — manuel düzeltme yönelim kodu (yukari/asagi/sola/saga/on/arka)
+- 2 CHECK constraint (rotation_angle aralığı, yonelim_kod set'i)
+- 1 composite index `idx_spool_malzeme_sira` ON `(spool_id, sira)` — 3D motor sıralı okuma için
 
-### MK-44.2 — Kütüphane Lookup'ında Kullanıcıya Soru Yok
+Doğrulama: 3 kolon eklendi, 2 constraint aktif, 1 index oluştu. Hepsi temiz.
 
-**Kural:** Boru/flanş/fitting eşleştirmesinde çoklu eşleşme oluşursa **deterministik tier sistemi** kullanılır (kalite prefix + kanonik öncelik + edisyon yılı). Kullanıcıya modal sorulmaz.
+**Önemli teyit:** `x1_mm/y1_mm/z1_mm/x2_mm/y2_mm/z2_mm` kolonları zaten vardı (PAOR koordinatları için). Dokunulmadı. 44 raporu *"mevcut: x1/y1/z1 zaten var"* doğru bilgiydi (kolon adı `_mm` suffix'iyle teyit edildi).
 
-**Sebep:** Kullanıcı zamanı değerli. Domain bilgisi kodda netleşir, manuel iş azalır.
+### 2. Migration 018 — sistem_preset Kolonu (✅)
 
-### MK-44.3 — Pilot Format Stratejisi: tersan + PAOR
+**Dosya:** `migrations/018_format_tanimlari_sistem_preset.sql`
 
-**Kural:** İki referans format için ayrı parser'lar yazılır. Diğer formatlar (SR027 dahil) gerçek talep çıkana kadar parking. Format dispatcher PDF metadata + başlık fingerprint ile eşleştirir.
+Bağlam: IZOMETRI-BATCH-KARAR.md / Karar 2 (36) *"sistem geneli format için tenant_id NULL + sistem_preset=true"* diyor ama 005 migration'da kolon eklenmemişti. 45'te tersan kaydı eklemeden önce gerekli.
 
-**Sebep:** "Tetik koşulu olmadan iş yok" prensibi. tersan ve PAOR aktif → yatırım haklı. SR027 incelendi ama pilot değil → 50+ oturumda.
+Eklenenler:
+- `sistem_preset BOOLEAN NOT NULL DEFAULT false` kolonu
+- CHECK `check_format_sistem_preset_tenant`: `sistem_preset=true ⟹ tenant_id IS NULL`
+- Partial unique index: `(ad) WHERE sistem_preset=true` (sistem geneli kayıtlarda ad çakışmaz)
+- Mevcut PAOR kaydı `sistem_preset=true` UPDATE (tenant_id zaten NULL'dı, kullanim_sayisi=6 korundu)
 
-### MK-44.4 — 3D Yön Çıkarımında AI Şart Değil
+RLS policy'leri **dokunulmadı.** Mevcut policy'lerin yapısını görmeden yeniden yazmak risky. PAOR canlı kullanılıyor (kullanim_sayisi=6), policy kırılırsa Vision AI akışı patlar. 020+ açık borç olarak bırakıldı.
 
-**Kural:** tersan ve PAOR formatları yön bilgisini deterministik veriyor (Rotation Angle tablosu / FORE-PS-HEI koordinatları). Pilot 3D motoru AI'sız tasarlanır. AI sadece bilinmeyen format gelirse fallback.
+### 3. Migration 019 — tersan Format Kaydı (✅)
 
-**Sebep:** AI maliyeti sürekli, deterministik parse maliyeti sıfır. Pilot başarısı için AI kritik değil.
+**Dosya:** `migrations/019_format_tanimlari_tersan_kayit.sql`
+
+Eklenen kayıt:
+- **ad:** "Cadmatic — Tersan Shipyard M110 Şablonu"
+- **id:** `c8755d46-5bcc-4a61-88ca-f1d48399e054` (yeni)
+- **cad_program:** "Cadmatic" (44 raporundaki "AVEVA E3D" YANLIŞTI — düzeltildi)
+- **fingerprint:**
+  ```json
+  {
+    "ulke": "TR",
+    "tersane": "Tersan Shipyard",
+    "format_kodu": "tersan_cadmatic_m110",
+    "baslik_regex": "Malzeme Listesi",
+    "tablo_baslik_regex": "Cut & Bending Info",
+    "dosya_adi_regex": "^[A-Z]\\d+-\\d+-\\d+-P\\d+\\s+\\d+\\(\\d+\\)\\.S\\d+\\.\\d+\\.pdf$",
+    "pdf_uretici_anahtar": ["Cadmatic", "Piping Isometrics & Spools"]
+  }
+  ```
+- **parser_kural:** `{}` (boş — 020'de doldurulacak)
+- **sistem_preset:** true, **tenant_id:** NULL
+
+Doğrulama: 2 kayıt aktif (PAOR + tersan), her ikisinde parser_kural boş, ikisi de sistem geneli.
+
+### 4. PDF Örnek Analizi (✅)
+
+Cihat 3 dosya yükledi:
+- `M110-Part2.zip` — tersan örneği (1 Spool PDF + 1 Isometry PDF + 2 Excel)
+- `11D-PAOR-54102-101626-A.pdf` — PAOR ana çizim
+- `11D-PAOR-54102-101626-A-Isometric_View.pdf` — PAOR 3D görünüm (referans)
+
+**tersan analizi (M110-317-022-P2 1(2).S01.1.pdf):**
+
+| Element | Bulgu |
+|---|---|
+| **PDF Producer** | Cadmatic (Piping Isometrics & Spools) |
+| **Sayfa boyutu** | A2 (1684 x 1191 pts) |
+| **Cut & Bending Info tablosu** | Kolonlar: Spool-Cut, Cut Length, Set Length/Transport, **Rotation Angle**, Cut Away. Bu spool'da Rotation Angle BOŞ. |
+| **Malzeme Listesi tablosu** | Kolonlar: No, Adet, Açıklama, Boyut, Boy, Malzeme, Ağırlık. 5 satır (2 boru + 1 dirsek + 2 imalat işi - Victaulic Groove). |
+| **Çap notation** | `219.0x3.0` (DıştanxEt) → DN200 lookup gerektirir |
+| **Standart** | DIN 86018 (CuNi marine pipe) |
+| **Footer** | PIPE NO: M110-317-022-P2, SPOOL NO: -S01, PRJ NO: B1110, Total Weight: 30.6 kg |
+| **Dil** | Türkçe |
+
+**Kritik bulgu:** Item 4 ve 5 ("Boru Ucuna Victaulic için Groove acılacak") parça **değil**, **işlem talimatı**. Parser bunları `spool_malzemeleri`'ne yazmamalı, ayrı bir alana (notlar veya işlem listesi) yazmalı. Bu 46'da netleşecek.
+
+**PAOR analizi (11D-PAOR-54102-101626-A.pdf):**
+
+| Element | Bulgu |
+|---|---|
+| **Üretici** | STM (Türk firma, Portugal Navy için BV) |
+| **CAD program** | AVEVA E3D |
+| **Title block** | "PORTUGUESE NAVY AOR+", Project Drawing No: 11D-PAOR-54102-101626-A |
+| **Pipe ref** | MODEL REFERENCE PIPE NO: Z10-F76_CARGO_SYSTEM_001 |
+| **Coordinates** | "FORE 1279, PS 1294, HEI +2" / "FORE 448, PS 1294, HEI +510" |
+| **3 ana tablo** | FABRICATION MATERIAL LIST + ERECTION MATERIAL LIST + PIPE CUT-LENGTHS |
+| **Spool dilimi** | "SPOOL [1] [2]" (bu çizimde 2 spool) |
+| **Continuation** | "«CONTINUATION OF PIPE» Z11-F76_CARGO_SYSTEM_006" |
+| **Standart** | DIN 2448 (boru), DIN 2616 (redüktör), DIN 2605 (dirsek), DIN 2633 (flanş) |
+| **Dil** | İngilizce |
+
+**Kritik bulgu:** PAOR'da Rotation Angle yok ama **3D koordinat doğrudan var** — daha bile iyi. PAOR parser FORE/PS/HEI değerlerini `x1_mm/y1_mm/z1_mm`/`x2_mm/y2_mm/z2_mm`'e direkt yazabilir. 3D motor Aşama 4.1'de buradan okuyacak.
+
+### 5. Parser Tasarım Haritası (Hazır, kod 46'da)
+
+İki format için regex iskeletleri kafamda hazır:
+
+**tersan (`format_kodu: tersan_cadmatic_m110`):**
+- Tablo çıkarımı: `pdfplumber.extract_tables()` — tablo 2 (Cut & Bending) + tablo 3 (Malzeme Listesi)
+- Footer regex: `PIPE NO:\s*-?(?<pipe>...)`, `SPOOL NO:\s*-?(?<spool>S\d+)`
+- Boyut parse: `^(\d+\.?\d*)x(\d+\.?\d*)$` (219.0x3.0 → dış çap, et) + DN lookup `boru_olculer`
+- Tip eşleşme: "Boru Dikişsiz" → boru, "Dirsek" → dirsek, "Flans" → flans, "Groove" → işlem (atlanır)
+
+**PAOR (`format_kodu: paor_aveva_stm`):**
+- Title block: `MODEL REFERENCE PIPE NO:\s*(?<pipe>Z\d+-...)`, `DESIGN DRAWING NO:\s*(?<dwg>11D-PAOR-...)`
+- Material Description regex (her tip için ayrı):
+  - Boru: `^PIPE\s+SEAMLESS\s+(?<kalite>\w+)\s+DIN\s+(?<std>\d+)\s+DN(?<dn>\d+)\s+T:(?<et>[\d.]+)\s*MM`
+  - Dirsek: `^ELBOW\s+SEAMLESS\s+(?<kalite>\w+)\s+DIN\s+(?<std>\d+)\s+(?<radius>[\d.]+D)\s+(?<aci>\d+)°?\s+DN(?<dn>\d+)`
+  - Flanş: `^FLANGE\s+(?<tip>\w+)\s+(?<kalite>\w+)\s+DIN\s+(?<std>\d+)\s+DN(?<dn>\d+)\s+PN(?<pn>\d+)`
+  - Redüktör: `^REDUCER\s+\w+\s+SEAMLESS\s+(?<kalite>\w+)\s+DIN\s+(?<std>\d+)\s+DN(?<dn1>\d+)X+DN(?<dn2>\d+)\s+T:(?<et1>[\d.]+)X(?<et2>[\d.]+)\s*MM`
+- Erection Material List **atlanır** (cıvata/somun/conta — `spool_malzemeleri`'ne yazılmaz, BOM detayı)
+- Coordinate çıkarımı → `x1_mm/y1_mm/z1_mm` direkt yazılır
 
 ---
 
-## Cihat'tan Gelen Değerli Düzeltmeler (4 Adet)
+## 44 Raporundaki Tespit Edilen Yanlışlar
 
-1. **"Kullanıcı zaman harcamasın"** — modal soru yerine deterministik tier
-2. **"Görselleri sayfaya gömme"** — harici dosya mimarisi
-3. **"İç çap koyu, biraz garip"** — teknik çizim standardı (hatching, cross-hair)
-4. **"DN, inch, mm tabloda olmalı"** — kombo gösterim (DN_NPS mapping)
+CLAUDE-SONRAKI-OTURUM.md (44 sonu) iki kritik yanlış içeriyordu, 45'te düzeltildi:
 
-Her birini ayrı bir mimari prensip olarak son-durum'a not ettim. Bu pattern Cihat'ın profilinde "sezgisel olarak yapısal sorunları görür ama teknik dili bilmediği için açık uçlu soru sorar" tanımının canlı kanıtı.
+**Yanlış 1:** *"AVEVA E3D" — tersan formatı*
+- Gerçek: tersan PDF Producer alanı **Cadmatic**. AVEVA E3D PAOR'a ait.
+- Etki: Eğer 45'te körlemesine "AVEVA E3D" varsayılarak kayıt açılsa, fingerprint asla eşleşmezdi.
 
----
+**Yanlış 2:** *"`api/izometri-oku.js` sıfırdan, K5/36'da kararlaştırıldı"*
+- Gerçek: Dosya zaten var, 985 satır, 28 Nisan 2026 tarihli (38'de K5 uygulanmış). 41-44 arası dokunulmadığı için 44 raporu bu notu stale taşımış.
+- Etki: Eğer dosya yedeklenip silinerek sıfırdan yazılsaydı, 38-42'nin (Pre-A.1/A.2/A.4/A.5 + K12 standart) yatırımı kaybolurdu.
 
-## Çıkarılan Dersler
-
-1. **"Kod var" ≠ "çalışıyor"** — 44 başında BORU_MAP, boruEslestir, boruModalAc hepsi mevcuttu, ama tek satırlık select bug'ı yüzünden hiçbiri tetiklenmiyordu. Test gözle değil, kullanıcı gözüyle yapılır.
-
-2. **"Belirsizlikte sor" tembelliktir** — domain bilgisi varsa koda dökülür, kullanıcıya iş çıkmaz. Tier sistemi çoğul eşleşmeyi 1 saniyede çözer, kullanıcı modali görmez bile.
-
-3. **Mimari prensipler ölçek sorularıyla netleşir** — "1 dosya çalışıyor" demek "100 dosya çalışacak" demek değil. Cihat ölçek sezgisini yapısal kurala çeviriyor, ben bunu kodla pekiştiriyorum.
-
-4. **Görsel kalite iş kalitesini yansıtır** — "biraz garip" eleştirisi sadece estetik değil, mühendislik standartlarına uyum mesajıdır. Teknik çizim hatching + cross-hair sadece güzel değil, doğru.
-
-5. **Cihat'ın "stratejik soruları" mimariyi yönlendirir** (5. oturumdur ders) — "neyi sıfırlayabilir miyiz?", "ne verirsek hızlanır?", "format değişince sıfırdan mı?" — bu sorular yapısal yatırımları doğru yöne çekiyor. Listele, dolu cevap ver, atlama.
-
-6. **Üç format örneği = mimari kanıt** — G200, PAOR, SR027 yan yana baktığımızda "her biri için ayrı parser, ortak motor" prensibi gerçek dünya verisiyle doğrulandı. Spekülasyon değil, kanıt.
-
-7. **Pilot için AI kritik değil** — tersan + PAOR deterministik veri veriyor. AI maliyeti yıl 1'den itibaren minimal başlar, sıfırlanabilir. Vizyon disiplini koruyor: AI vaadi pilot için yapılmamalı.
+**Ders:** Oturum başında plan dokümanlarına güvenmeden DB ve dosya sistemi gerçeği teyit edilmelidir. CIHAT-PROFIL "stratejik soruları ciddiye al" disiplininin uzantısı: **eski rapor güvenilir kaynak değil, gerçek kaynak DB + disk.**
 
 ---
 
-## 44 Sonu Durum
+## Önemli Öğrenmeler
 
-✅ Cascade UI bug fix (boru + flanş)
-✅ Tier'lı otomatik eşleştirme (kullanıcı sıfır tıklama)
-✅ Boru modal sadeleştirme (15 → 6 satır)
-✅ Anma çapı kombo (DN · NPS · ⌀mm) + DN_NPS mapping
-✅ Mimari standart: harici SVG + _cizimYukle (MK-44.1)
-✅ Boru kesit teknik çizim (hatching, cross-hair)
-✅ Flanş cizim_path migration 016 (DN100 set)
-✅ Lang anahtarları 8 yeni (TR/EN/AR)
-✅ 3D vizyon haritası (4 katmanlı strateji)
-✅ Pilot format kararı: tersan + PAOR (MK-44.3)
-✅ AI maliyet projeksiyon analizi
+**1. Migration disiplini iki adımdır.** 018'de Cihat dosyayı GitHub'a upload etti ama Supabase'de çalıştırmayı atladı. Sonraki sorgu hata verdi. Düzeltildi ama 30 dakika kaybedildi. **Kalıcı kural:** önce Supabase, sonra GitHub. Bu kural CLAUDE-SONRAKI-OTURUM.md'ye eklendi.
+
+**2. PDF analizi parser tasarımının kalbidir.** İki PDF örneğini gerçek analizden geçirmeden regex tasarlamak körlemesine olurdu. pdfplumber tablo çıkarımı + pdftotext layout + görsel rasterize üçlüsü temiz veri verdi.
+
+**3. Cihat'ın pragmatik cevapları mimariyi sadeleştirir.** *"tersan başka CAD da kullanıyor olabilir"* + *"diğer tersaneler farklı dosyalar verebilir"* → fingerprint dar olmalı, çoklu kayıt mimarisi (Karar 9). Bu pragmatik anlayış 020 migration tasarımını da yönlendirdi.
+
+**4. Atlamak için disipline ihtiyaç var.** 45'in ilk hedefi parser yazımıydı. Ama 985 satırlık dosyaya körlemesine yama yapmak yerine "yarına bırakalım, izometri-oku.js'i tam okumadan dokunmam" demek doğru karardı. Sonuç: 3 sağlam migration + parser tasarım haritası + 44 hatalarının düzeltilmesi.
+
+**5. `1(2)` gibi belirsiz alanlar opsiyonel kabul edilmeli.** Cihat anlamını bilmiyor → parser zorunlu yapamaz, opsiyonel alır. Eğer ileride anlamı netleşirse parser_kural JSONB'sinde aktif edilir.
+
+**6. Rotation Angle Cadmatic'ta görsel iletim olabilir.** Tablo'da boş, izometri çiziminde yön okları + yeşil çizgiler. Bu yüzden 017 migration'da `rotation_angle` NULL serbest tasarlandı (önceden öngörü vardı, gerçek PDF teyit etti).
+
+---
+
+## Açık Karar/Sorular (46 başında konuşulacak)
+
+1. **`api/izometri-oku.js` 985 satırlık tam içerik.** Cihat sürükle bırak yükleyecek, ben okuyacağım. Hangi fonksiyona, hangi noktaya parser branch'i ekleneceği o zaman kesinleşir.
+2. **Imalat işleri (Victaulic Groove vb.) nereye yazılır?** Spool malzemesi değil, talimat. Mevcut `spooller.notlar` mı, yeni `spool_islemleri` tablosu mu? 46'da netleşir.
+3. **PAOR'da Erection Material List (cıvata/somun/conta) atlanır mı?** Önerim: evet — bunlar BOM detayı, saha montajı için. Spool imalatına dahil değil. Cihat onaylasın.
+4. **PAOR fingerprint'inin "+" karakteri.** Sayfada "PORTUGUESE NAVY AOR+" yazıyor (+ var). DB'deki regex `PORTUGUESE NAVY AOR` (+ yok). Match çalışıyor (kısmi eşleşme) ama açık iyileştirme.
+
+---
+
+## 45 Sonu Durum
+
+✅ 017 — 3D motor schema (sira, rotation_angle, yonelim_kod)
+✅ 018 — sistem_preset kolonu + PAOR güncellemesi
+✅ 019 — Cadmatic Tersan M110 format kaydı
+✅ tersan + PAOR PDF örnek analizi
+✅ Parser regex haritası (kafa hazırlığı)
+✅ 44 raporu yanlışları tespiti ve düzeltmesi
+✅ Migration disiplini formal kural haline geldi
 ✅ CI yeşil
 
-🔴 **45 ana teması:** tersan ve PAOR parser'ları
-🔴 **45 ikinci ana teması:** 3D motor entegrasyonu (Aşama 4.1-4.3 + schema)
-🔴 KK + Sevkiyat sayfa revizyonu (45+)
-🟡 boru_olculer şema güncellenmeli (`tenant_id` + `sistem_preset`, 45+)
-🟡 Eğitim havuzu (Cihat paralel topluyor)
+🔴 **46 ana teması:** Parser branch'i (`api/izometri-oku.js` patch + 020 migration)
+🔴 **46 ikinci ana teması:** Pilot test (1 tersan + 1 PAOR PDF parse)
+🟡 RLS policy (020+ açık borç)
+🟡 016 numaralı flanş cizim_path migration disk'te yok (ileride dökme)
 
 ---
 
-> 44 kapanışında yazıldı. Detaylı arşiv. 45 başında okunmaz, sadece geriye dönüp aranır.
+> 45 kapanışında yazıldı. Detaylı arşiv. 46 başında okunmaz, sadece geriye dönüp aranır.
