@@ -1,22 +1,20 @@
-# Claude — 46. Oturum Gündemi
+# Claude — 48. Oturum Gündemi
 
-> **Bu dosya 45 kapanışında oluşturuldu. 46 başında ilk okunacak.**
+> **Bu dosya 47 kapanışında oluşturuldu. 48 başında ilk okunacak.**
 
 ---
 
-## 46 Açılış Mottosu
+## 48 Açılış Mottosu
 
-45'te schema temeli + format dispatcher altyapısı oturdu (3 migration). 46'nın iki kelimelik özeti: **parser branch**.
+47, 46 kararlarını koda + DB'ye döktü. Fingerprint skorlama canlıda çalışıyor, format_id artık doğru loglanıyor. 47'nin sürpriz dersi: **paket Vercel uyumluluğu container testiyle yetmiyor** — pdf-parse v2.4.5 patlaması bunu kanıtladı, v1.1.1'e downgrade ile çözüldü.
 
-`api/izometri-oku.js` (985 satır) zaten 38-42'de yazılmış AI L3 Vision akışı içeriyor. 4. adıma (`Format bulundu + parser_kural dolu → L1/L2 parse`) deterministik branch ekleyeceğiz. **AI fallback korunur, deterministik eşleşme varsa AI hiç çağrılmaz.**
+48'in iki kelimelik özeti: **cache + güvenlik**.
 
-Cihat'ın 45 son turundaki net kararı (devre yükleme akışı):
-> *"yeni devre yükleme sayfasından bu dosyaları yüklediğimizde bunların aktif olması lazım. buradaki ilerleyişe göre devre yükleme sayfasını güncelleyecem."*
+İki paralel ana iş hattı:
+1. **Cache mekanizması** — Vizyon Madde 4'ün ilk operasyonel adımı. PDF hash bazlı, Vision AI tekrar çağrısı atlanır. ~%15 maliyet düşüşü, 2. yüklemede sıfır gecikme.
+2. **RLS policy'leri** — 5 production tablosunda multi-tenant koruması. Pilot 2. tenant'a hazırlık.
 
-46 üç paralel ana temaya sahip:
-- **Parser branch'i** (kod, izometri-oku.js patch)
-- **020 migration** (parser_kural JSONB doldurma)
-- **Pilot test** (1 tersan + 1 PAOR PDF üzerinden)
+İkisi de uygulama oturumu, keşif değil. 48 sonu canlıda iki teknik kazanım.
 
 ---
 
@@ -30,244 +28,317 @@ Oturum başlangıç ritüeli — 5 kısa kontrol:
 1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
 2. GitHub Actions sekmesinde son build rengi nedir?
 3. .github/son-durum.md dosyasını yükle veya içeriğini yapıştır
-4. Bugün hangi dosyayla çalışılacak? (cevap: api/izometri-oku.js + yeni 020 migration)
+4. Bugün hangi dosyayla çalışılacak? (cevap: 021 migration + api/izometri-oku.js cache patch + RLS migration'ları)
 5. admin/panel.html → Geri Bildirim sekmesinde açık feedback?
 ```
 
 5 cevap geldikten sonra:
-- son-durum.md'den 45 sonu detayını oku
-- docs/CIHAT-PROFIL.md, docs/SPOOL-AI-VIZYON.md hatırla
-- CLAUDE-SON-OTURUM.md (45 detayı) — sadece geriye dönüp aranacak, baştan okunmaz
+- son-durum.md'den 47 sonu detayını oku (5 mimari karar listesi)
+- VIZYON-VE-MODULER-MIMARI.md ve SPOOL-AI-VIZYON.md hatırla (47'de yapıldı, disiplin)
+- docs/CIHAT-PROFIL.md hatırla
+- CLAUDE-SON-OTURUM.md (47 detayı) — sadece geriye dönüp aranır
 - **Migration disiplini hatırlat:** her DB değişikliği iki adımdır (önce Supabase, sonra GitHub)
+- **Paket disiplini hatırlat:** yeni paket ekleme = container test + Vercel preview test + production. Container yetmez (47'nin dersi).
 
 ---
 
-## 2. Açılış İlk İş — `izometri-oku.js`'i Bütün Olarak Yükleme
+## 2. Bağlam Tazeleme — 47'den Devralan Karar Listesi
 
-Cihat sohbete `~/Desktop/arespipe/api/izometri-oku.js`'i sürükle bırak. 985 satır, ~40 KB. Ben okuyacağım, akışı anlayacağım.
+48'e başlamadan önce 47'nin 5 mimari kararı zihinde olmalı:
 
-**Bu yapılmadan parser branch yazımı başlamaz.** 45'te bu adım atılmadı çünkü dürüst karar: körlemesine yama yapmaktansa yarına ertelemek.
+| # | Karar | Etkisi |
+|---|---|---|
+| MK-47.1 | pdf-parse v1.1.1 zorunlu, ESM `lib/pdf-parse.js` direkt | Mevcut akış korundu, 50+'ya kadar değişmez |
+| MK-47.2 | Fingerprint en-yüksek-skor tie-breaker | formatTani'da uygulandı, lokal 5/5 + canlı 1/1 |
+| MK-47.3 | format_id her parse'da loglanır | 48 cache mekanizması bu sayede mümkün — hash + format_id ile lookup |
+| MK-47.4 | Vercel timeout 19.7 sn'i karşıladı | Queue mimarisi acil değil, cache yeter |
+| MK-47.5 | Anthropic baseline 18-21 sn | Cache 2. yüklemede 0 sn yapar — ana hız kazanımı |
 
 ---
 
-## 3. Ana Tema A — Parser Branch Tasarımı (~2 oturum)
+## 3. Ana Tema A — Cache Mekanizması (~1.5 saat)
 
-### 3.1 Dosyada parser branch'i nereye eklenecek
+### 3.1 Hedef
 
-45'te dosyanın header'ı görüldü (1-80. satır). Akış:
+Aynı PDF'in tekrar yüklenmesi durumunda Vision AI çağrısı yapılmaz, eski sonuç döndürülür. ~%15 maliyet düşüşü, 2. yükleme 0 sn (Vision AI 18-21 sn → cache hit ~0.5 sn).
+
+### 3.2 Kavramsal Akış
+
 ```
-1. Validasyon + auth
-2. Batch açma/bulma
-3. Format dispatcher (izometri_format_tanimlari fingerprint eşleşmesi)
-4. Format bulundu + parser_kural dolu → L1/L2 parse  ← ŞU AN BOŞ, BURAYA YAMA
-5. Format bulunamadı VEYA parser_kural boş → L3 Vision AI
-6. ASME helper (boru_olculer) — eksik et/cap doldur
-7. 7 maddeli halüsinasyon filtresi
-8. izometri_batch_kayitlari + ai_api_log INSERT/UPDATE
+PDF gelir
+  ↓
+SHA256 hash hesapla
+  ↓
+formatTani çalışır → format_id belirlenir
+  ↓
+ai_api_log'da WHERE pdf_sha256 = ? AND format_id = ? AND basarili = true LIMIT 1
+  ├─ HIT → cevap_full JSONB'sini parse et, eski sonucu döndür ($0, ~0.5 sn)
+  └─ MISS → visionAIParse normal akış, sonuç ai_api_log'a yazılır (cache için)
 ```
 
-46'da yapılacak: 4. adım canlanacak. `parser_kural.tip === 'deterministik'` ise:
-- `format_kodu` okunur
-- `format_kodu` switch → `parseTersanCadmaticM110()` veya `parsePAORAvevaSTM()`
-- Çıktı `spool_malzemeleri` formatında JSON
-- 6-7-8. adımlar normal akışla devam (halüsinasyon filtresi deterministik veriye de yarar — DN tutarlılığı, boy aralığı, malzeme sözlüğü)
+### 3.3 021 Migration
 
-### 3.2 İki yeni fonksiyon
+**`migrations/021_ai_api_log_cache.sql`** — Cache için yeni kolon + index:
 
-**`parseTersanCadmaticM110(text, dosyaAdi, pdfBuffer)`:**
-- pdfplumber gibi tablo çıkarımı (Node.js eşdeğeri: `pdf-parse` + manuel kolon tespiti, veya `pdfjs-dist` text positioning)
-- Cut & Bending Info tablosu → rotation_angle (varsa)
-- Malzeme Listesi tablosu → spool_malzemeleri JSON
-- Footer regex → pipe_no, spool_no, total_weight, surface_treatment
-- "Boru Ucuna Victaulic için Groove acılacak" satırları → notlar (talimat, parça değil)
+```sql
+ALTER TABLE ai_api_log
+  ADD COLUMN IF NOT EXISTS pdf_sha256 TEXT;
 
-**`parsePAORAvevaSTM(text, dosyaAdi, pdfBuffer)`:**
-- Title block parse → MODEL REFERENCE PIPE NO, DESIGN DRAWING NO, DRAWING NAME
-- FORE/PS/HEI koordinat çıkarımı → x1_mm/y1_mm/z1_mm direkt yazılır
-- Fabrication Material List → spool_malzemeleri (her tip için ayrı regex: PIPE/ELBOW/FLANGE/REDUCER/DOUBLER)
-- Erection Material List → **atlanır** (cıvata/somun/conta — saha montaj BOM'u, spool imalatı değil) — Cihat 46 başında onaylasın
-- Pipe Cut-Lengths → spool_malzemeleri'ne boy_mm doldurma
-- "CONTINUATION OF PIPE" → notlar (devamı başka çizim)
-- "SPOOL [1] [2]" → spool dilimleme
+CREATE INDEX IF NOT EXISTS idx_ai_api_log_cache
+  ON ai_api_log(pdf_sha256, format_id)
+  WHERE basarili = true AND pdf_sha256 IS NOT NULL;
 
-### 3.3 Halüsinasyon filtresi deterministik veriye de uygulanır
+COMMENT ON COLUMN ai_api_log.pdf_sha256 IS
+  '48: PDF SHA256 hash. Vision AI cache lookup icin (vizyon Madde 4 ogrenme dongusunun ilk adimi).';
+```
 
-K3/36'nın 7 maddesi deterministik veriye de uygulanır (sadece AI'a değil):
-1. DN bulunamadı → şüpheli
-2. Çap-DN tutarsız → şüpheli
-3. Et tolerans dışı → şüpheli
-4. Boy negatif/>50000mm → şüpheli
-5. Pipeline_no formatı dosya adıyla uyuşmuyor → şüpheli (deterministik veride bile parser bug olabilir)
-6. AI güven skoru — deterministik veride NULL (uygulanmaz)
-7. Malzeme bilinmeyen → şüpheli
+**Önemli karar:** Index partial (sadece başarılı + hash dolu kayıtlar). Çünkü:
+- Başarısız parse'ları cache'lemek istemiyoruz
+- Eski log'ların hash'i NULL olacak (cache miss, yeni hash hesaplanır, sonra dolar — geriye dönük doldurma gerekmez)
 
-### 3.4 Test Pipeline
+### 3.4 izometri-oku.js Cache Patch
 
-1. Cihat 1 tersan PDF (45'te yüklediği M110 örneği) + 1 PAOR PDF yeniden yükler
-2. Format dispatcher fingerprint eşleştirir → tersan ya da PAOR formatı bulunur
-3. parser_kural.tip="deterministik" → kod branch'i tetiklenir (AI çağrısı YOK)
-4. Çıktı manuel onay UI'da görünür
-5. Cihat doğrulama yapar, hata varsa düzeltir
-6. Doğru çıkıyorsa parser sağlam, yanlış çıkıyorsa regex iyileştirme
+**Yeni helper fonksiyon `pdfHashHesapla(buffer)`:**
+```js
+import crypto from 'crypto';
+
+function pdfHashHesapla(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+```
+
+**Yeni helper `cacheKontrol(pdf_sha256, format_id, tenant_id)`:**
+- ai_api_log'da WHERE clause ile lookup
+- HIT: cevap_full JSONB → parse → returns
+- MISS: null returns (akış visionAIParse'a devam eder)
+
+**Handler revize (satır ~159):**
+- formatTani sonrası: pdfHashHesapla + cacheKontrol
+- HIT: cache'den dönen sonucu kullan, ai_api_log'a yeni kayıt yazma (cache hit'leri loglamak istersek ayrı `cache_hit BOOLEAN` kolonu ekleriz, ama 48'de değil — 49 SARI'da değerlendirilir)
+- MISS: visionAIParse + ai_api_log INSERT'inde pdf_sha256 dolu yaz
+
+### 3.5 Lokal Test
+
+3 senaryo:
+1. **İlk yükleme** → MISS → Vision AI çağrılır, ai_api_log'a hash'li kayıt
+2. **Aynı PDF tekrar** → HIT → 0 ms cevap, Vision AI hiç çağrılmaz
+3. **Aynı PDF farklı format** (teorik) → MISS → format_id farklı, hash uyuşsa da cache uymaz
+
+### 3.6 Canlı Doğrulama
+
+48 sonu PAOR PDF iki kez yüklenecek:
+- 1. yükleme: ai_api_log'a yeni kayıt, sure_ms ~19.7 sn, hash dolu
+- 2. yükleme: ai_api_log'a kayıt yazılmaz (cache hit), Excel rapor 1 sn altında dönmeli
+
+`SELECT COUNT(*), MAX(sure_ms) FROM ai_api_log WHERE pdf_sha256 IS NOT NULL` → 1 kayıt, 19.7 sn (2. yükleme cache hit, log atılmadı).
 
 ---
 
-## 4. Ana Tema B — `020_format_tanimlari_parser_kural.sql` (~30 dk)
+## 4. Ana Tema B — RLS Policy'leri (~2-3 saat)
 
-`parser_kural` JSONB'si şu yapıda olacak:
+### 4.1 Hedef
 
+Supabase Security Advisor 47'de 10 critical uyarı verdi. 5'i production tablosu için. Multi-tenant koruması: Tenant A, Tenant B'nin verisini okuyamamalı. Pilot 2. tenant gelmeden yapılması gerek.
+
+### 4.2 5 Production Tablosu
+
+| Tablo | Sorun | Karmaşıklık |
+|---|---|---|
+| `tenant_features` | Policy var ama RLS off (en sinsi) | Düşük (RLS ENABLE yeter) |
+| `basamak_sablonlari` | RLS off, policy yok | Orta (kalıp policy gerek) |
+| `yetki_tanimlari` | RLS off, policy yok | Orta (rol bazlı erişim) |
+| `markalama_listeleri` | RLS off, policy yok | Düşük (tenant_id bazlı) |
+| `markalama_listesi_kalemleri` | RLS off, policy yok | Orta (parent FK üzerinden tenant) |
+
+### 4.3 Standart Kalıp
+
+```sql
+-- Standart tenant-bazli erisim policy'si
+ALTER TABLE <tablo> ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "<tablo>_select_kendi_tenant"
+  ON <tablo>
+  FOR SELECT
+  USING (tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()));
+
+CREATE POLICY "<tablo>_insert_kendi_tenant"
+  ON <tablo>
+  FOR INSERT
+  WITH CHECK (tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()));
+
+-- UPDATE + DELETE benzer
+```
+
+**Servis rolü için bypass:** Anthropic Vercel Serverless Functions servis anahtarıyla bağlanır → RLS bypass eder. Bu doğru davranış (admin işlemler için), client-side RLS'in dışında.
+
+### 4.4 022, 023, 024, 025, 026 Migration Dosyaları
+
+5 ayrı migration ya da tek 022 dosyasında 5 ALTER + birden fazla CREATE POLICY. **Önerim: tek 022 dosyası**, çünkü:
+- Tüm 5 tablo aynı kategoride (production multi-tenant)
+- Atomik uygulama, geri alma kolay
+- Tek seferde gözden geçirme
+
+`022_rls_production_tablolari.sql`:
+- 5 ALTER TABLE ENABLE ROW LEVEL SECURITY
+- 4 tablo için 4'er policy (SELECT/INSERT/UPDATE/DELETE) → 16 policy
+- tenant_features için sadece ENABLE (policy zaten var)
+- Markalama_listesi_kalemleri için parent FK üzerinden tenant erişimi (özel policy)
+
+### 4.5 Test Tabloları (Düşük Öncelik)
+
+`testler`, `test_spooller`, `egitim_verisi` — RLS uyarısı var ama production değil. **48'de yapılmaz**, açık borç olarak kalır. 49+'da ayrı bir mini-oturumda halledilir.
+
+### 4.6 public_feedback Security Definer View
+
+10 uyarıdan biri farklı sınıf — view, tablo değil. Tasarım kontrolü gerek (genelde anonymous feedback için view creator yetkisi mantıklı). 48 sonunda 5-10 dk ayır, gerek yoksa görmezden gel + son-durum'da not.
+
+---
+
+## 5. SARI Hedefler (Kalan zamana göre, atlama hakkı)
+
+### 5.1 PAOR Isometric_View parser_kural Denemesi (~30 dk)
+
+47'de yapılmadı, 48'e devraldı. Minimal deneme:
 ```json
 {
-  "tip": "deterministik",
-  "format_kodu": "tersan_cadmatic_m110",
-  "extract_pipe_no": {
-    "regex": "PIPE NO:\\s*-?(?<pipe>[A-Z0-9-]+)",
-    "yer": "footer"
-  },
-  "extract_spool_no": {
-    "regex": "SPOOL NO:\\s*-?(?<spool>S\\d+)",
-    "yer": "footer"
-  },
-  "tablolar": {
-    "malzeme_listesi": {
-      "baslik_regex": "Malzeme Listesi",
-      "kolonlar": ["No", "Adet", "Açıklama", "Boyut", "Boy", "Malzeme", "Ağırlık"]
-    },
-    "cut_bending_info": {
-      "baslik_regex": "Cut & Bending Info",
-      "kolonlar": ["Spool-Cut", "Cut Length", "Set Length/Transport", "Rotation Angle", "Cut Away"],
-      "rotation_angle_opsiyonel": true
-    }
-  },
-  "boyut_parse_regex": {
-    "dxh": "^(?<dis>\\d+\\.?\\d*)x(?<et>\\d+\\.?\\d*)$",
-    "dn": "^DN(?<dn>\\d+)$"
-  },
-  "tip_eslesme": {
-    "boru": "^(Boru Dikişsiz|PIPE)",
-    "dirsek": "^(Dirsek|ELBOW)",
-    "flans": "^(Flans|FLANGE)",
-    "redusoel": "^(Redüksoel|REDUCER)",
-    "doubler": "^(Doubler|DOUBLER)",
-    "islem_atla": "(Groove|olunacak)"
+  "alanlar": {
+    "pipeline_no": { "regex": "MODEL\\s+REFERENCE\\s+PIPE\\s+NO[.:]?\\s*(\\S+)", "grup": 1 }
   }
 }
 ```
 
-PAOR için benzer ama `extract_coordinates`, `extract_continuation`, ve material_description regex set'i farklı (CLAUDE-SON-OTURUM.md'de detayı var).
+Bu, **48'in parser_kural ile ilk gerçek deneme**si. Vizyon Madde 4 öğrenme döngüsünün operasyonel başlangıcı. Ama dikkat: parser_kural dolunca `parserKuralIle()` stub'ı tetiklenir → şu an `{ ok: false, error: 'henuz aktif degil' }` döndürür → handler hata atar (satır 161). Yani **önce parserKuralIle() stub'ını da güncellemek gerekir** (en az pipeline_no çıkartmalı, sonra Vision AI ile birleştirmeli — hibrid yapı).
 
-**Migration yapısı:**
-- 2 UPDATE: tersan ve PAOR kayıtlarına `parser_kural` JSONB ata
-- Idempotent: önceki UPDATE çalıştıysa fark eder mi diye `WHERE parser_kural::text = '{}'` koşulu
-- Doğrulama sorgusu: `parser_kural::text != '{}'` kontrolü
+**Bu küçük SARI değil aslında**, 1+ saat iş. 49'a ertelenmesi daha doğru olabilir.
 
----
+### 5.2 CLAUDE.md Halüsinasyon Filtresi 7→8 Düzeltme (~5 dk)
 
-## 5. Ana Tema C — Pilot Test (~1 oturum, 46 sonu veya 47)
+Atomik. MK-46.6'da işaretlendi.
 
-1. Cihat aynı 2 PDF'i yeniden yükler (M110 spool + 11D-PAOR-54102-101626-A)
-2. Backend tetiklenir, izometri-oku.js çalışır
-3. Format dispatcher eşleştirir
-4. Deterministik parser çalışır, AI çağrılmaz
-5. izometri-batch.html manuel onay sekmesinde sonuç görünür
-6. Cihat doğrulama yapar
-7. Hatalı alan varsa parser regex iyileştirme
+### 5.3 Karar 7 (36) Güncellemesi (~10 dk)
 
-**Başarı kriteri:**
-- [ ] tersan PDF parse edildi, 3 boru/dirsek satırı `spool_malzemeleri` formatında
-- [ ] PAOR PDF parse edildi, 5 fabrication satırı + koordinatlar
-- [ ] AI çağrı sayısı **sıfır** (ai_api_log boş satır)
-- [ ] Halüsinasyon filtresi her iki çıktıda da temiz (şüpheli yok veya açıklanabilir)
-- [ ] Manuel onay UI'da sonuçlar görünüyor
+Atomik. Excel = subset truth, ground truth değil. IZOMETRI-BATCH-KARAR.md veya CLAUDE.md'de.
 
----
+### 5.4 .gitignore Ekleme (~5 dk)
 
-## 6. Cihat'ın Paralel İşleri (Oturum Aralarında)
+Atomik:
+```gitignore
+.DS_Store
+node_modules/
+*.log
+.vercel
+```
 
-### 6.1 devre_yeni.html PDF Upload Akışı (Cihat'ın söylediği iş)
+Her oturumda `git stash` gerek olmaz. Küçük kalıcı kazanım.
 
-Cihat 45'te dedi: *"buradaki ilerleyişe göre devre yükleme sayfasını güncelleyecem."*
+### 5.5 Vercel Plan Doğrulaması (~10 dk)
 
-46'da parser hazır olduğunda Cihat:
-- devre_yeni.html'e PDF upload alanı ekler/günceller (zaten izometri-batch.html'de var, devre_yeni'den de tetiklenebilir mi?)
-- Yüklenen PDF'leri /api/izometri-oku endpoint'ine gönderir
-- Manuel onay sonucu spool_malzemeleri'ne yazılır
-
-Bu Claude'un işi değil, Cihat paralel ilerletecek. Claude sadece API contract'ı net tutar.
-
-### 6.2 Eğitim Havuzu (Süregelen)
-
-Eski PAOR ve tersan PDF'lerini topla, anonimleştir. Hedef: 100-300 set. 47+ oturumlarda altyapı.
-
-### 6.3 Kütüphane Veri Doldurma (Süregelen)
-
-44'te boru/flanş/fitting/malzeme katalog hedeflerine ulaşılmamıştı. Cihat paralel sürdürüyor.
+Vercel pricing dokümanı veya account ayarlarından maximum function duration teyit. MK-47.4'ün varsayımını kanıtla. 19.7 sn geçtiğine göre 60 sn olmalı.
 
 ---
 
-## 7. Açık Kararlar (46 başında netleşecek)
+## 6. 48 Sonu Hedef Çıktıları
 
-1. **İmalat işleri (Victaulic Groove vb.) nereye yazılır?** spool_malzemeleri'ne mi (tip="islem"), spooller.notlar'a mı, yeni tablo mu? Cihat karar verecek.
-2. **PAOR'da Erection Material List atlanır mı?** Önerim: evet (saha montaj BOM'u, spool imalatı değil). Cihat onaylasın.
-3. **PAOR fingerprint'inin "+" karakteri.** Sayfada "PORTUGUESE NAVY AOR+", DB regex'inde + yok. Pratik düzeltme: opsiyonel.
-4. **`1(2)` parser tarafından alınmaya değer mi?** Cihat hâlâ bilmiyor → şu anlık parser opsiyonel atlar.
-5. **Multi-tenant boru_olculer:** Şema güncellemesi (`tenant_id` + `sistem_preset`) 46'da mı 47'de mi? Parser çalışırken çakışmamalı.
-6. **3D motor sırası:** Parser bittikten sonra Aşama 4.1 (default zincir) → 4.2 (Rotation Angle) → 4.3 (manuel UI). 47-48'e kalır.
+✅ 021 migration uygulanmış (cache infrastructure)
+✅ izometri-oku.js cache mekanizması canlıda
+✅ Lokal cache testi (3 senaryo geçti)
+✅ Canlı PAOR cache hit doğrulaması (2. yükleme <1 sn)
+✅ 022 migration uygulanmış (5 production tablosu RLS)
+✅ Supabase Security Advisor 5 critical → 5 azaldı (test tabloları + view kalır)
+✅ CI yeşil
+✅ Kapanış üçlüsü yazılı
 
----
+🟡 PAOR Iso parser_kural denemesi (zaman varsa, muhtemelen 49'a ertelenir)
+🟡 CLAUDE.md halüsinasyon filtresi düzeltme
+🟡 Karar 7 güncelleme
+🟡 .gitignore ekleme
+🟡 Vercel plan doğrulaması
 
-## 8. Ne YAPILMAYACAK (Vizyon Disiplini)
-
-44'te 4 istisna kapsama alındı, 45 sıfır istisna ile bitti, 46'da yine **sıfır istisna** hedefi.
-
-❌ Pasif öğrenme — vizyonda kalır
-❌ Tier'li servis modeli — vizyonda kalır
-❌ Lazer tarama — vizyonda kalır
-❌ STEP koordinat çıkarımı — vizyonda kalır (parser mimarisi STEP'e hazır olacak ama implementasyon 50+'a)
-❌ Klasör yükleme + format tanıma — vizyonda kalır (Cihat'ın zip yapısı ilham verdi ama 46 işi değil)
-❌ Çapraz validasyon (3 katman) — vizyonda kalır
-❌ AI yön çıkarımı — 46'da gerek yok (deterministik branch + opsiyonel rotation_angle)
-❌ Yeni format eklemek — 46'da sadece tersan + PAOR. Üçüncü format gelirse 47+'a.
-
-Cihat *"şu sistem can damarı"* derse: cevap *"45'te 4 kapanış istisnası temizlendi, 46'da sıfır istisna kuralı. 50. oturumdan sonra konuşalım. Şimdi parser + pilot test."*
+🔴 **49 ana teması:** parserKuralIle() ilk operasyonel hali (PAOR Iso pipeline_no + hibrid Vision AI)
+🔴 **49+ ana teması:** Cadmatic glyph reverse araştırması (pdfjs-dist font dictionary), eğer Tersan canlı kullanım başlarsa öncelik artar
 
 ---
 
-## 9. Başarı Kriteri (46 Sonu)
+## 7. Cihat'a Sorulacak (48 başında)
 
-- [ ] `api/izometri-oku.js` 4. adımda deterministik branch canlı
-- [ ] `parseTersanCadmaticM110()` ve `parsePAORAvevaSTM()` fonksiyonları yazıldı
-- [ ] `020_format_tanimlari_parser_kural.sql` migration uygulandı, parser_kural'lar dolu
-- [ ] En az 1 tersan + 1 PAOR PDF başarıyla parse edildi (canlı veya test ortamı)
-- [ ] AI maliyeti **sıfır** (deterministik branch çalışıyor, fallback'e düşmedi)
-- [ ] Halüsinasyon filtresi her iki çıktıda temiz
-- [ ] CI yeşil
-- [ ] son-durum.md güncellendi
+**Cache stratejisi onayı.** PDF içeriği değişmez sayılırsa cache geçerli. Aynı PDF güncellenirse (örn. revizyon) hash değişir → otomatik cache miss. Edge case: PDF metadata değişmiş, içerik aynı → cache hit. Cihat: bu istenen davranış mı?
 
-**Stretch goal:** devre_yeni.html'in upload akışı parser'a bağlandı (Cihat paralel iş).
+**RLS uygulama yöntemi.** 22-25-26 ayrı migration mı tek 022 mi? Önerim tek dosya.
+
+**Eski log'lar.** ai_api_log'da pdf_sha256 NULL olan eski kayıtlar (47 öncesi). Geriye dönük hash hesabı yapmaya değer mi? Çoğu zaten 47 öncesi, format_id'siz, cache'lenmesi düşük değer. Önerim: dokunma, yeni kayıtlardan başla.
+
+**Eski PDF eğitim havuzu.** Hâlâ açık borç. Cihat ilerleme yapıyor mu?
 
 ---
 
-## 10. 46 Açılış Mantosu (Cihat'a hatırlatma)
+## 8. Risk Notları
 
-> 45'te yapılan iş: 3 migration + parser tasarım haritası + 44 yanlışlıkları düzeltildi.
-> 46'nın iki kelimelik özeti: **parser branch**.
-> Mevcut 985 satırlık izometri-oku.js korunur, 4. adımına yama yapılır.
-> AI fallback korunur, deterministik eşleşme varsa AI hiç çağrılmaz.
-> tersan + PAOR pilot için yeterli, üçüncü format 50+'a.
+**Risk 1 — Cache hit'in yan etkileri.**
+Aynı PDF iki kez yüklenirse 2. seferde Vision AI çağrılmaz → ai_api_log kaydı oluşmaz → kullanim_sayisi de artmaz (bu kullanim_sayisi format_tanimlari'nda formatTani'da artıyor, cache değil). Yani:
+- format_tanimlari.kullanim_sayisi her PDF için artar (cache hit dahil) — DOĞRU
+- ai_api_log sadece Vision AI çağrısı olunca kayıt — DOĞRU
+- Maliyet düşüşü ai_api_log'dan analytics ile görülür (toplam_usd düşer)
+
+Bu doğru davranış ama Cihat onayı alınmalı: "Cache hit'lerini loglamak istiyor musun?" → istiyorsa 49'da ayrı kolon (`cache_hit BOOLEAN`) eklenir.
+
+**Risk 2 — RLS policy yanlış yazımı production akışını kırabilir.**
+Vercel Serverless Functions servis anahtarıyla bağlanır → RLS bypass eder, yani parse akışı etkilenmez. Ama browser'dan Supabase'e direkt bağlanan bazı operasyonlar (markalama, kalite) anon/authenticated rolüyle gider → RLS aktif olduğunda kırılabilir. **Test gerekli:** her RLS aktivasyonu sonrası tarayıcıdan o tablo işlemlerinin çalıştığı doğrulanmalı.
+
+**Risk 3 — pdf_sha256 hash hesabı performans.**
+SHA256 4 MB PDF için ~50 ms. Marjinal yük, sorun değil. Buffer'dan tek geçişle hesaplanır.
+
+**Risk 4 — Migration disiplini hâlâ kritik.**
+021 ve 022 ayrı uygulanmalı. Önce 021 (Supabase + GitHub + CI yeşil + canlı test), sonra 022.
 
 ---
 
-## 11. Migration Disiplini Hatırlatması (KALICI KURAL)
+## 9. Disiplin Hatırlatmaları
 
-45'te 018'de bu kural ihlal edilince 30 dakika kayboldu. Kalıcı sıra:
+**47'den kalıcı kurallar:**
+- Migration iki adımdır (Supabase önce, GitHub sonra)
+- Paket eklerken Vercel uyumluluğu test edilir (container yetmez)
+- Eski rapor güvenilir kaynak değil, gerçek kaynak DB + disk
+- ESM'den eski paketleri import ederken `lib/` direkt path olabilir
+- git stash + pull --rebase + push 3'lüsü her oturumda gerekir
 
-> Her DB değişikliği iki adımdır:
-> 1. **Önce Supabase SQL Editor** → DB'ye uygula → doğrulama sorgularını çalıştır
-> 2. **Sonra GitHub'a upload** → CI yeşil → versiyonlama
->
-> Tek sıra. Atlamak yok. İkisi de yapılmadan migration "tamamlandı" sayılmaz.
+**46'dan kalıcı:**
+- Vizyon dosyalarını oku (47'de yapıldı, 48 de yapacak)
+- Container'da ham çıktıları context'e değil dosyaya yaz, sohbete sadece özet
+- Cihat'ın stratejik sorularını ciddiye al
+
+**Cihat profili:**
+- "Atlama, listele, dolu cevap ver"
+- İlerleme olmadan geçen zaman tahammülsüzlük → 48'de cache uygulaması ilk 2 saatte bitsin
+- "Tane tane gidelim" disiplini kararsızlıkta açıkça istenir, hazır ol
 
 ---
 
-> 45 kapanışında yazıldı. 46 başında ilk okunacak.
+## 10. Açılış Tek Sayfa Hatırlatması
+
+```
+🎯 48 Mottosu: Cache + RLS. Vizyon Madde 4 öğrenme döngüsünün ilk operasyonel adımı + multi-tenant koruma.
+
+📋 5 Kontrol → Vizyon dosyaları HATIRLA → 021 migration (cache) → izometri-oku.js cache patch → 022 migration (RLS) → lokal + canlı test → kapanış üçlüsü.
+
+⚠️ 47 dersi: Vercel paket uyumluluğu container testiyle yetmiyor. Yeni paket ekleme = preview deploy zorunlu.
+
+🔧 Migration disiplini: Supabase önce, GitHub sonra. Atlamak yok.
+```
+
+---
+
+## 11. Hazır Olunca Kontrol Listesi
+
+48 başlamadan önce zihninde olmalı:
+- [ ] 47'nin 5 mimari kararı (MK-47.1 → MK-47.5)
+- [ ] 47 sonu durum: PAOR fingerprint canlıda doğru tutuyor (kullanim_sayisi=1)
+- [ ] format_id artık ai_api_log'da doğru (cache mekanizmasının ön koşulu hazır)
+- [ ] Vercel timeout endişesi giderildi (19.7 sn geçti)
+- [ ] Anthropic baseline 18-21 sn (cache 2. yüklemede 0 sn → ana hız kazanımı)
+- [ ] 5 production tablosu RLS açık değil (multi-tenant kritik borç)
+- [ ] Cache mantığı: SHA256 + format_id + basarili filter
+
+---
+
+> 47 kapanışında yazıldı. 48 başında ilk okunacak.
+> 47 uygulama oturumuydu, 48 de uygulama oturumu olacak — temiz zemin var, hedef net ve uygulanabilir.
