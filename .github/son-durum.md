@@ -1,94 +1,131 @@
 # AresPipe — Son Durum
 
-> **Son guncelleme:** 29 Nisan 2026 — 45. oturum kapandı
+> **Son guncelleme:** 29 Nisan 2026 — 47. oturum kapandı
 > **CI:** YESIL
-> **Aktif oturum sayisi:** 45
+> **Aktif oturum sayisi:** 47
 
 ---
 
-## 45. Oturum Özeti
+## 47. Oturum Özeti
 
-**Tema:** Schema temeli + Format dispatcher altyapısı (parser yazımı 46'ya).
+**Tema:** DB temizliği + fingerprint patch'i. 46'nın 6 mimari kararı koda + DB'ye dökündü, canlıda doğrulandı.
 
-44 sonu CIHAT-PROFIL "atlama, listele, dolu cevap ver" disiplini doğrulandı: parser yazımına körlemesine atlamak yerine önce DB temelini oturttuk + 44 raporundaki iki kritik yanlış tespit edildi:
+47 üç paralel ana iş hattıyla bitti:
 
-1. **tersan = Cadmatic, AVEVA E3D değil.** PDF metadata Producer alanı kanıtladı. Mevcut DB'deki "AVEVA E3D" tek kayıt PAOR'a aitti, doğru. tersan ayrı yeni kayıt olarak eklendi.
-2. **izometri-oku.js zaten 38'den beri var (985 satır).** "K5/36'da sıfırdan yazılacak" notu 41-44 arası dokunulmadığı için stale kalmış. Strateji değişti: sıfırdan değil, mevcut akışa **deterministik parser branch'i** eklenecek (AI fallback korunur).
+1. **020 migration uygulandı** — 4 doğru format kaydı (paor_aveva_ana, paor_aveva_iso_view, tersan_cadmatic_isometry, tersan_cadmatic_spool) + `requires_ai`/`requires_ocr` flag'leri + `format_kodu` unique index. Eski 2 test kaydı DELETE'lendi (FK SET NULL davranışlı, log/batch tabloları korundu).
 
-İki PDF örneği (tersan M110 spool + PAOR 11D-PAOR-54102-101626-A) detaylı analiz edildi. Parser tasarım kararları netleşti. Cihat'tan gelen pragmatik bilgi: tersan farklı CAD program da kullanabilir, farklı tersaneler farklı format verebilir → fingerprint dar olmalı, yeni format = yeni kayıt (Karar 9 mimarisi).
+2. **fingerprintEsler skorlama patch'i canlıda** — pdf-parse v1.1.1 ile PDF metadata + ilk sayfa metni çıkarımı, 4 sinyalli skorlama (`fingerprintSkor`), en-yüksek-skor tie-breaker mantığı (`formatTani` revize). Lokal 5/5 senaryo + canlı PAOR doğrulaması: `paor_aveva_ana.kullanim_sayisi=1` arttı, doğru kayıt seçildi.
 
-**Yapılanlar:**
-- `017_3d_motor_schema.sql` — `spool_malzemeleri`'ne `sira`, `rotation_angle`, `yonelim_kod` kolonları + 2 CHECK + composite index. Mevcut `x1_mm/y1_mm/z1_mm/x2_mm/y2_mm/z2_mm` doğrulandı (PAOR koordinatları için kullanılacak, dokunulmadı).
-- `018_format_tanimlari_sistem_preset.sql` — `izometri_format_tanimlari`'na `sistem_preset BOOLEAN` + CHECK (`sistem_preset=true ⟹ tenant_id IS NULL`) + partial unique `(ad) WHERE sistem_preset=true` + mevcut PAOR kaydı `sistem_preset=true` UPDATE. RLS policy'leri dokunulmadı (riskli, 020+ açık).
-- `019_format_tanimlari_tersan_kayit.sql` — "Cadmatic — Tersan Shipyard M110 Şablonu" kaydı eklendi (UUID `c8755d46-...`). `parser_kural` boş, fingerprint dolu.
-- tersan + PAOR PDF analizi → parser tasarım haritası (CLAUDE-SON-OTURUM.md detayında).
-- 44 raporundaki Cadmatic/AVEVA hatası ve izometri-oku.js mevcut durumu CLAUDE-SON-OTURUM.md'de belgelenmiştir (45 öğrenmesi).
+3. **Önemli süreç keşfi: pdf-parse v2.4.5 Vercel serverless'ta patlıyor.** İlk deploy `FUNCTION_INVOCATION_FAILED` aldı — pdfjs-dist v4 DOM API gerektiriyor (DOMMatrix, ImageData, Path2D), Vercel Node.js ortamında yok. v1.1.1'e downgrade edildi (kendi pdfjs v1.10.100'ü bundle eder, DOM-free). v1.1.1 ESM'den `import 'pdf-parse'` doğrudan da patlıyor (test data ENOENT) — `import 'pdf-parse/lib/pdf-parse.js'` direkt path workaround. **Bu kütüphane sürüm uyumsuzluğu 1 saatlik bedel ödetti, ama gelecekteki paket eklemelerde kalıcı ders.**
+
+**Maliyet ölçümü ile elde edilen sürpriz kazanım:** `ai_api_log` tablosunda 47 öncesi tüm Vision AI çağrılarının `format_id=NULL` olarak loglandığı doğrulandı. 005 migration'dan beri canlı sistem fingerprint'i hiç tutmamış. 47 sonrası ilk kez `format_id` dolu kaydedildi. Yani 47.B'nin gerçek başarı kanıtı log'da net duruyor.
+
+**Yavaşlık endişesi ölçüldü:** Vision AI çağrıları 18-21 sn sürüyor (Anthropic Sonnet 4.5'in doğal yanıt süresi). 47.B pdf-parse marjinal yük (~1 sn) ekledi, ana yavaşlık 47 öncesi de vardı. Vercel Hobby aslında 19.7 sn 200 döndürdü — timeout sınırı 10 sn değil daha geniş (60 sn olmalı), 48'in queue mimarisi araştırması düşük öncelikli oldu.
 
 ---
 
-## Mimari Kararlar (45)
+## Mimari Kararlar (47)
 
-**MK-45.1 — Parser stratejisi: yamal, sıfırdan değil.**
-Mevcut `api/izometri-oku.js` (985 satır, 38-42'de yazılmış AI L3 Vision akışı) korunur. Akışın 4. adımına (`Format bulundu + parser_kural dolu → L1/L2 parse — bu sürümde devre dışı, 38'de`) deterministik parser branch'i eklenecek. AI fallback (5. adım) bozulmaz, eşleşme varsa hiç çağrılmaz. **Saf kazanç stratejisi.**
+**MK-47.1 — pdf-parse v1.1.1 zorunlu.** v2.4.5 Vercel serverless ortamında DOM API gerektiriyor, çalışmaz. v1.1.1 (2018, kendi pdfjs v1.10.100 ile bundle'lı) DOM-free, Node.js'te stabil. ESM'den `import pdfParse from 'pdf-parse/lib/pdf-parse.js'` doğru kullanım — direkt `'pdf-parse'` import'u ESM'de "debug mode" tetikler, ENOENT atar. Bu kalıcı bir kuraldır, sürüm yükseltme 50+'da pdfjs serverless uyumlu olunca düşünülür.
 
-**MK-45.2 — Format kayıt granülerliği: dar fingerprint, çoklu kayıt.**
-"tersan" tek bir kayıt değil. M110 örneğine özel bir kayıt + her farklı tersane/CAD program kombinasyonu için ayrı kayıt. Cihat: *"tersan başka CAD da kullanıyor olabilir, diğer tersaneler farklı dosyalar verebilir."* → Karar 9 (36) mimarisi pratiğe geçti.
+**MK-47.2 — Fingerprint en-yüksek-skor tie-breaker.** Aynı tersanenin iki PDF tipi (PAOR Ana/Iso, Cadmatic Isometry/Spool) ortak sinyaller paylaşır (Producer + baslik regex). Skor eşiği (≥2) yetmez, en yüksek skor kazanır. `dosya_adi_regex` doğal tie-breaker olur. Lokal 5/5 + canlı 1/1 doğrulanmış davranış.
 
-**MK-45.3 — Rotation Angle opsiyonel.**
-tersan'ın bu örneğinde Cut & Bending Info tablosunda Rotation Angle sütunu var ama BOŞ. Cadmatic dirsek dönüşünü görsel olarak iletiyor (yön okları, izometri çizgisi). Parser opsiyonel olarak okuyacak, NULL kabul. 3D motor Aşama 4.2 (Rotation Angle okuma) ve Aşama 4.3 (manuel düzeltme UI) zaten bu durumla uyumlu.
+**MK-47.3 — format_id artık her parse'da doğru kaydedilir.** Vizyon Madde 4'ün öğrenme döngüsü için zemin: gelecekte her formatın kullanım istatistiği (kullanim_sayisi + ai_api_log analytics) doğru. `son_kullanim_at` timestamp da artıyor → 50+ pasif öğrenmenin ilk kanıtlanmış kayıtları.
 
-**MK-45.4 — Migration disiplini iki adımdır.**
-45'te iki kez aynı tuzağa düşüldü (018 önce GitHub'a, sonra Supabase atlandı). Doğru sıra: (1) önce Supabase SQL Editor'da çalıştır + doğrula, (2) sonra GitHub'a upload + CI yeşil. Bu sıra kalıcı kural — sonraki oturum açılışına ekle.
+**MK-47.4 — Vercel Hobby timeout endişesi giderildi.** 19.7 sn `http_status=200` döndü, eski "10 sn sınırı" varsayımı yanlış (muhtemelen 2024+ pricing'inde 60 sn). Queue mimarisi acil değil. Cache mekanizması (48) yine değerli (maliyet düşürür) ama yapısal zorunluluk değil.
+
+**MK-47.5 — Anthropic Sonnet 4.5 yanıt süresi 18-21 sn baseline.** 47 öncesi de aynı süre (27-28 Nisan log kayıtları). 47 patch'i 1 sn ekledi (pdf-parse), ana yavaşlık API kaynaklı. Cache (48) 2. yükleme için 0 sn yapar — gerçek hız kazanımı orada.
 
 ---
 
 ## Açık Borçlar
 
-### Tamamlandı (45'te)
-- ✅ 017 — 3D motor schema kolonları
-- ✅ 018 — sistem_preset kolonu + PAOR güncelleme
-- ✅ 019 — tersan format kaydı
-- ✅ tersan + PAOR PDF örnek analizi → parser regex haritası
+### Tamamlandı (47'de)
+- ✅ 020 migration — 4 doğru format kaydı + flag'ler + unique index
+- ✅ npm install pdf-parse@1.1.1 (downgrade) — package.json + package-lock.json güncel
+- ✅ izometri-oku.js fingerprintEsler skorlama + en-yüksek-skor + pdfIpucuCikar
+- ✅ Lokal test (5/5 senaryo) + canlı PAOR doğrulaması
+- ✅ format_id artık ai_api_log'da doğru kaydediliyor (canlı kanıt)
+- ✅ Süreç dersi: pdf-parse v2.4.5 Vercel'de patlıyor (kütüphane uyumluluğu testi gerek)
 
-### KIRMIZI 46 ana teması — Parser branch'i
-- `api/izometri-oku.js` Cihat tarafından bütün halinde yüklenecek (985 satır, sürükle bırak)
-- Deterministik parser branch tasarımı (mevcut akışa str_replace patch'leri)
-- `parseTersanCadmaticM110(text, dosya_adi)` ve `parsePAORAvevaSTM(text, dosya_adi)` fonksiyonları
-- AI fallback korunur, eşleşme varsa devre dışı
+### KIRMIZI 48 ana teması — Cache mekanizması (~1.5 saat)
+- PDF SHA256 hash hesapla → `ai_api_log`'da aynı hash + format_id ile başarılı kayıt var mı bak
+- Varsa Vision AI çağrısı atla, eski sonucu döndür ($0 maliyet)
+- 021 migration: `ai_api_log.pdf_sha256 TEXT` kolonu (varsa atla, indexleme dahil)
+- izometri-oku.js'e cache kontrolü ekleme (visionAIParse'tan önce)
+- Beklenen kazanım: aylık ~%15 maliyet düşüşü, 2. yüklemede 0 sn
 
-### KIRMIZI 46 ikinci ana teması — `020_format_tanimlari_parser_kural.sql`
-- tersan + PAOR `parser_kural` JSONB'leri doldur
-- `format_kodu` üzerinden kod branch'i tetiklenir
+### KIRMIZI 48 ikinci teması — RLS policy'leri (~2-3 saat)
+46-47'de Supabase Security Advisor 10 critical uyarı verdi. **5 production tablosu** RLS açık değil (multi-tenant için kritik):
+- `tenant_features` (en sinsi: policy var ama RLS off)
+- `basamak_sablonlari`
+- `yetki_tanimlari`
+- `markalama_listeleri`
+- `markalama_listesi_kalemleri`
 
-### KIRMIZI 46 üçüncü ana teması — Pilot test
-- 1 tersan + 1 PAOR PDF parse → spool_malzemeleri JSON çıktısı
-- Manuel onay UI'da görünür (zaten 36'da yapılmıştı)
+Şu an pratik etki yok (pilot aşaması, tek tenant), 2. tenant gelmeden önce yapılması yeter. 48'de sıfırdan kalıp ile her 5 tablo için tenant_id-based policy. Test tabloları (testler, test_spooller, egitim_verisi) ayrı sınıf, düşük öncelik.
 
-### SARI Diger acik isler (46+)
-- 016 numaralı flanş cizim_path migration disk'te yok (44'te Supabase manuel çalıştırıldı). İleride dökülmesi düzgün migration disiplini için faydalı.
-- KK + Sevkiyat sayfa revizyonu (5. oturumdur açık)
+### SARI 48 hedefler (kalan zamana göre, atlama hakkı)
+- PAOR Isometric_View için ilk parser_kural denemesi (sadece pipeline_no + drawing_no, deneysel)
+- CLAUDE.md halüsinasyon filtresi 7→8 düzeltme (atomik, ~5 dk)
+- Karar 7 (36) güncelleme: "Excel = subset truth, ground truth değil" (atomik)
+- `.gitignore` ekleme: `.DS_Store`, `node_modules/`, `*.log` (her oturumda stash gerek olmaz)
+- `public_feedback` Security Definer View tasarım kontrolü
+
+### SARI Diger acik isler (48+)
+- Vercel actual max duration teyit (10 vs 60 sn — pricing dokümantasyonuna bak)
+- 016 numaralı flanş cizim_path migration disk'te yok
+- KK + Sevkiyat sayfa revizyonu (5+ oturumdur açık)
 - Büküm modal açıklama alanı eksik
-- boru_olculer şema güncellenmeli (`tenant_id` + `sistem_preset` — multi-tenant için)
+- boru_olculer şema güncellenmeli (tenant_id + sistem_preset)
 - CuNi P0 grupları
-- Eğitim havuzu (Cihat paralel topluyor — anonim eski PAOR/tersan PDF'leri)
-- 3D motor Aşama 4.1/4.2/4.3 (parser bittikten sonra)
-- devre_yeni.html PDF upload akışı parser'a bağlanması (Cihat paralel: *"buradaki ilerleyişe göre devre yükleme sayfasını güncelleyecem"*)
+- 3D motor Aşama 4.1/4.2/4.3 (parser olgunlaştıktan sonra)
+- devre_yeni.html PDF upload akışı parser'a bağlanması
+- Cadmatic glyph reverse araştırması (49+)
+
+### YESIL Vizyon ile uyumlu uzun vade
+- Yapısal öğrenme: N Vision AI çıktısından parser_kural otomatik üret (50+, Vizyon Madde 4)
+- Pasif öğrenme: kullanıcı düzeltmeleri RAG context (Vizyon 8)
+- Çapraz validasyon: 3 katmanlı kontrol (Vizyon 3)
+- 3 görünüş okuma: tek izometri yön çıkarımı %85 altına düşerse (Vizyon 6)
 
 ---
 
 ## Vizyon Disiplini
 
-45'te yeni istisna **yapılmadı** ✓. Sadece mevcut altyapıyı (izometri_format_tanimlari + spool_malzemeleri schema) genişlettik. AI maliyet sıfır hedefi tutuyor (henüz parser çalışmadı, ama kod tarafında AI fallback var, deterministik eşleşme varsa AI çağrılmaz).
+47'de yeni istisna **yapılmadı** ✓. Sadece 46 kararlarının uygulanması + 020 migration + kod patch'i. Hiçbir vizyon kapsamı erkene alınmadı.
 
-44'te 4 istisna kapsama alınmıştı. 45 sıfır istisna ile bitti. 5. istisna riski şimdilik yok.
+**MK-47.3 önemli kazanım:** Vizyon Madde 4'ün öğrenme döngüsü için zemin atıldı. Her parse artık format_id ile loglanıyor. 50+'daki yapısal öğrenme bu veri üzerine kurulur.
 
 ❌ Pasif öğrenme — vizyonda kalır
 ❌ Tier'li servis modeli — vizyonda kalır
 ❌ Lazer tarama pipeline — vizyonda kalır
 ❌ STEP koordinat çıkarımı — vizyonda kalır
-❌ Klasör yükleme + format tanıma — vizyonda kalır (Cihat'ın bugün gönderdiği zip yapısı esin verdi ama 45 işi değil)
+❌ Klasör yükleme + format tanıma — vizyonda kalır
 ❌ Çapraz validasyon (3 katman) — vizyonda kalır
-❌ AI yön çıkarımı — 45'te gerek olmadı (rotation_angle opsiyonel kabulü ile yetindi)
+❌ AI yön çıkarımı — vizyonda kalır
+
+---
+
+## Pilot Durumu
+
+**PAOR pilot:** Canlıda fingerprint **doğru tutuyor** (47.B sonrası ilk kez). 1 başarılı kayıt (`paor_aveva_ana.kullanim_sayisi=1`, 18:00:21 UTC). Vision AI parse 19.7 sn, $0.0339, Excel rapor temiz. Yavaşlık zaten Anthropic API kaynaklı, 47 öncesi de aynıydı.
+
+**Tersan pilot:** Henüz canlı kullanım yok (kullanim_sayisi=0). DB hazır (Isometry + Spool için 2 ayrı kayıt). Cadmatic glyph problemi yüzünden parser_kural doldurulmayacak, Vision AI fallback ile çalışır. Tersan'dan ilk gerçek PDF gelirse yine fingerprint doğru tutmalı (lokal test 5/5 davranışı kanıtladı).
+
+---
+
+## Süreç Dersleri (47'den)
+
+**1. Kütüphane sürüm uyumluluğu kütüphane-spesifik test.** Container'da çalışan v2.4.5 Vercel'de patladı (DOM API farkı). 48+: yeni paket eklenirken **önce Vercel preview deploy testi**, sonra production. 1 saat kayıp.
+
+**2. Downloads klasörü versiyonlama riski.** Aynı isimli `izometri-oku.js` dosyalarının `(1)`, `(2)`... numaralı kopyaları karışıyor. 47'de yanlış sürüm (962 satır, eski) commit'lendi → reset --soft → doğru sürüm (1113) bulundu. Çözüm: `wc -l` doğrulaması her kopyalama sonrası.
+
+**3. git stash + pull --rebase + push 3'lüsü.** CI bot her oturum push atıyor (rapor güncellemeleri). Local push reddedilince standart kalıp: `git stash` (varsa) → `git pull --rebase` → `git push`. 47'de 2 kez yaşandı, kalıcı kalıp.
+
+**4. ai_api_log şeması zaten zengin.** `cache_read_tokens`, `cache_write_tokens`, `sure_ms`, `format_id` hepsi var. Yeni kolon eklemeden önce şemayı kontrol et (information_schema sorgusu).
+
+**5. Cihat'ın "yavaş geldi" sezgileri ölçülmeli.** Subjektif yavaşlık hissi → log'a bak → Anthropic API kaynaklı, 47 patch'i değil. Cache (48) bunu ikinci yüklemelerde sıfırlar.
 
 ---
 
@@ -96,3 +133,8 @@ tersan'ın bu örneğinde Cut & Bending Info tablosunda Rotation Angle sütunu v
 > 1. Önce Supabase SQL Editor → DB'ye uygula + doğrula
 > 2. Sonra GitHub'a upload → CI yeşil → versiyonlama
 > İkisi de yapılmadan migration "tamamlandı" sayılmaz.
+
+> Paket disiplini (47'den):
+> 1. npm install öncesi Vercel runtime uyumluluğunu doğrula (DOM API, ESM/CJS, native bindings)
+> 2. Container testi yetmez — Vercel preview deploy zorunlu
+> 3. ESM'den eski paketleri import ederken `lib/` direkt path olabilir
