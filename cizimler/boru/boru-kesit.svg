@@ -1,1 +1,48 @@
+<svg viewBox="0 0 480 290" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+<title>Boru kesit görünümü — kütüphane modal şablonu</title>
+<desc>AresPipe — 44.B, harici SVG (placeholder: D, IC, R, T, IC_LABEL). Teknik çizim standardı: 45° hatching, cross-hair merkez.</desc>
 
+<defs>
+  <!-- Boru duvarı için 45° tarama çizgileri (teknik çizim hatching) -->
+  <pattern id="boruHatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ac)" stroke-width="0.45" opacity="0.55"/>
+  </pattern>
+</defs>
+
+<!-- Boru duvarı bölgesi (halka): dış daire − iç daire, evenodd ile maskelenmiş, hatching dolu -->
+<path d="M 140 150 A 100 100 0 1 0 340 150 A 100 100 0 1 0 140 150 Z M 168 150 A 72 72 0 1 0 312 150 A 72 72 0 1 0 168 150 Z"
+      fill="url(#boruHatch)" fill-rule="evenodd"/>
+
+<!-- Dış kenar (boru dış yüzeyi) -->
+<circle cx="240" cy="150" r="100" fill="none" stroke="var(--tx)" stroke-width="1.2"/>
+<!-- İç kenar (boru iç yüzeyi, kesik çizgi) -->
+<circle cx="240" cy="150" r="72" fill="none" stroke="var(--tx)" stroke-width="0.9" stroke-dasharray="4,2.5"/>
+
+<!-- Merkez cross-hair (teknik çizim kuralı: dikey + yatay center line) -->
+<line x1="125" y1="150" x2="158" y2="150" stroke="var(--txm)" stroke-width="0.5" stroke-dasharray="6,2,1,2"/>
+<line x1="322" y1="150" x2="355" y2="150" stroke="var(--txm)" stroke-width="0.5" stroke-dasharray="6,2,1,2"/>
+<line x1="240" y1="35" x2="240" y2="68" stroke="var(--txm)" stroke-width="0.5" stroke-dasharray="6,2,1,2"/>
+<line x1="240" y1="232" x2="240" y2="265" stroke="var(--txm)" stroke-width="0.5" stroke-dasharray="6,2,1,2"/>
+<circle cx="240" cy="150" r="1.6" fill="var(--tx)"/>
+
+<!-- D ölçü çizgisi (üstte) -->
+<line x1="140" y1="56" x2="140" y2="68" stroke="var(--txm)" stroke-width="0.4" stroke-dasharray="2,2"/>
+<line x1="340" y1="56" x2="340" y2="68" stroke="var(--txm)" stroke-width="0.4" stroke-dasharray="2,2"/>
+<line x1="140" y1="62" x2="340" y2="62" stroke="var(--txm)" stroke-width="0.7"/>
+<polygon points="140,58 134,62 140,66" fill="var(--txm)"/>
+<polygon points="340,58 346,62 340,66" fill="var(--txm)"/>
+<text x="240" y="51" text-anchor="middle" fill="var(--tx)" font-family="'Barlow Condensed',sans-serif" font-size="14" font-weight="600" letter-spacing="0.3">D = {{D}} mm</text>
+
+<!-- İç çap (içerde) -->
+<text x="240" y="154" text-anchor="middle" fill="var(--ac)" font-family="'Barlow Condensed',sans-serif" font-size="12" font-weight="600" letter-spacing="0.2">{{IC_LABEL}} = {{IC}} mm</text>
+
+<!-- R (merkezden sağa) -->
+<line x1="240" y1="150" x2="340" y2="150" stroke="var(--leg)" stroke-width="0.6" stroke-dasharray="3,2"/>
+<polygon points="340,146 346,150 340,154" fill="var(--leg)"/>
+<text x="290" y="166" text-anchor="middle" fill="var(--leg)" font-family="'Barlow Condensed',sans-serif" font-size="10.5" font-weight="600" letter-spacing="0.2">R = {{R}} mm</text>
+
+<!-- t (soldan ok, et kalınlığı bölgesini gösterir) -->
+<line x1="100" y1="150" x2="158" y2="150" stroke="var(--re)" stroke-width="0.8"/>
+<polygon points="158,146 164,150 158,154" fill="var(--re)"/>
+<text x="95" y="154" text-anchor="end" fill="var(--re)" font-family="'Barlow Condensed',sans-serif" font-size="12.5" font-weight="700" letter-spacing="0.3">t = {{T}} mm</text>
+</svg>
