@@ -43,11 +43,20 @@ export const config = { maxDuration: 60 };
 import '../ares-asme.js';
 const ARES_BORU = globalThis.ARES_BORU;
 
-// pdf-parse v2.4.5 -- 47. oturumda eklendi (parser fingerprint icin PDF metadata + ilk sayfa)
-// PDF Producer/Creator + ilk sayfa metni cikarir, fingerprintEsler skorlamasinda kullanilir.
+// pdf-parse v1.1.1 -- 47.B'de eklendi (parser fingerprint icin PDF metadata + ilk sayfa)
+// PDF Producer/Creator + ilk sayfa metni cikarir, fingerprintSkor'da kullanilir.
+//
+// SURUM NOTU: v2.4.5 ilk denendi (46 container testi gecmisti) ama Vercel serverless'ta
+// pdfjs-dist v4+ DOM API gerektiriyor (DOMMatrix, ImageData, Path2D), runtime'da patladi
+// (FUNCTION_INVOCATION_FAILED). v1.1.1 saf Node.js, kendi pdfjs v1.10.100'u bundle eder,
+// DOM API gerektirmez. Vercel serverless'ta yillarca kanitlanmis surum.
+//
+// IMPORT NOTU: 'pdf-parse' direkt import ESM'de "debug mode"u tetikler (test PDF'i okur, ENOENT).
+// 'pdf-parse/lib/pdf-parse.js' direkt path debug mode'u bypass eder, dogru kullanim budur.
+//
 // 46 testlerinde dogrulandi: Cadmatic glyph problemi ve PAOR raster durumlarinda hata atmaz,
 // sadece bos/bozuk metin doner -- fingerprint skoru dusuk kalir, AI fallback'a duser (dogru davranis).
-import { PDFParse } from 'pdf-parse';
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
 if (!ARES_BORU) {
   console.error('[izometri-oku] UYARI: ARES_BORU yuklenemedi -- helper fallback devre disi.');
@@ -474,8 +483,10 @@ async function pdfIpucuCikar(pdf_base64, dosya_adi) {
 
   try {
     const buffer = Buffer.from(pdf_base64, 'base64');
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
+    // v1.1.1 API: pdfParse(buffer) -> { text, info, numpages, metadata }
+    // pdf-parse default options (max 0 = tum sayfalar) ama biz ilk sayfa metnini istiyoruz,
+    // text ham olarak butun sayfalar birlestirilir. Sonra slice(0, 5000) ile kirpilir.
+    const result = await pdfParse(buffer);
     ipucu.producer = (result?.info?.Producer) || '';
     ipucu.creator = (result?.info?.Creator) || '';
     // Ilk 5K karakter yeter -- baslik ve tablo basligi ilk sayfada olur, daha fazlasi gereksiz islem.
