@@ -1,11 +1,11 @@
 {
-  "tarih": "2026-04-29T08:02:30.187Z",
-  "commit_sha": "2e738a9769b61894e57f52c60427bc8b5d89d57f",
+  "tarih": "2026-04-29T10:16:05.553Z",
+  "commit_sha": "f0ce2e8d338da574f4d90c5c77346d98e4f5e8dd",
   "commit_ref": "main",
-  "workflow_run": 625,
+  "workflow_run": 626,
   "ozet": {
     "hata": 0,
-    "uyari": 18,
+    "uyari": 10,
     "taranan_dosya": 80,
     "sorunlu_dosya": 2,
     "durum": "sari"
@@ -28,11 +28,11 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('flansh_meta') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 17,
+      "sayi": 9,
       "dosyalar": [
         {
           "dosya": "spool_detay.html",
-          "sayi": 17,
+          "sayi": 9,
           "satirlar": [
             3485,
             3495,
@@ -42,15 +42,7 @@
             3502,
             3504,
             3508,
-            3510,
-            3632,
-            3645,
-            3655,
-            3656,
-            3663,
-            3665,
-            3666,
-            3667
+            3510
           ]
         }
       ]
@@ -73,7 +65,7 @@
     {
       "dosya": "spool_detay.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 17,
+      "uyari_sayisi": 9,
       "hatalar": [
         {
           "kod": "I18N_EKSIK",
@@ -128,54 +120,6 @@
           "tip": "uyari",
           "satir": 3510,
           "mesaj": "tv('flansh_agirlik') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3632,
-          "mesaj": "tv('boru_meta') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3645,
-          "mesaj": "tv('boru_kis_ic') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3655,
-          "mesaj": "tv('boru_standart') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3656,
-          "mesaj": "tv('boru_urun_formu') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3663,
-          "mesaj": "tv('boru_anma_cap') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3665,
-          "mesaj": "tv('boru_agirlik') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3666,
-          "mesaj": "tv('boru_hacim') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 3667,
-          "mesaj": "tv('boru_yuzey') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     }
