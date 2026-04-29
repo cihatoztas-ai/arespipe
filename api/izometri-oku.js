@@ -43,6 +43,12 @@ export const config = { maxDuration: 60 };
 import '../ares-asme.js';
 const ARES_BORU = globalThis.ARES_BORU;
 
+// pdf-parse v2.4.5 -- 47. oturumda eklendi (parser fingerprint icin PDF metadata + ilk sayfa)
+// PDF Producer/Creator + ilk sayfa metni cikarir, fingerprintEsler skorlamasinda kullanilir.
+// 46 testlerinde dogrulandi: Cadmatic glyph problemi ve PAOR raster durumlarinda hata atmaz,
+// sadece bos/bozuk metin doner -- fingerprint skoru dusuk kalir, AI fallback'a duser (dogru davranis).
+import { PDFParse } from 'pdf-parse';
+
 if (!ARES_BORU) {
   console.error('[izometri-oku] UYARI: ARES_BORU yuklenemedi -- helper fallback devre disi.');
 }
@@ -384,53 +390,164 @@ async function batchTokenSayaclariArtir({ batch_id, input_tokens, output_tokens,
 
 async function formatTani({ pdf_base64, dosya_adi, tenant_id }) {
   // Tenant-scope + global formatlari getir, fingerprint ile esle
-  // PDF'in metadata + dosya adi + ilk sayfa (Vision'a gondermeden) -- simdilik sadece dosya adi pattern
-  // 38'de PDF ilk sayfa metnini de fingerprint'e ekleyecegiz (pdf-parse ile)
+  // 47'de PDF metadata + ilk sayfa metni eklendi (pdf-parse ile, MK-46.3 skorlama icin)
+  // 47.B: En yuksek skor kazanir (tie-breaker) -- aynı tersanenin iki PDF tipi
+  // (Ana/Iso, Isometry/Spool) ortak sinyal pasylasir, dosya_adi_regex tie-breaker olur.
 
   const formatlar = await supaFetch(
     `izometri_format_tanimlari?aktif=eq.true&or=(tenant_id.is.null,tenant_id.eq.${tenant_id})&select=*`
   );
 
-  for (const fmt of (formatlar || [])) {
-    if (fingerprintEsler(fmt.fingerprint, { dosya_adi })) {
-      // Kullanim sayisini artir
-      try {
-        await supaFetch(`izometri_format_tanimlari?id=eq.${fmt.id}`, {
-          method: 'PATCH',
-          body: {
-            kullanim_sayisi: (fmt.kullanim_sayisi || 0) + 1,
-            son_kullanim_at: new Date().toISOString(),
-          },
-        });
-      } catch (e) { /* yutuldu */ }
+  // PDF ipuclarini tek seferde cikar (Producer + Creator + ilk sayfa metni)
+  // Dongu icinde tekrar tekrar cagirmamak icin disarida -- her PDF icin bir kez.
+  const ipucu = await pdfIpucuCikar(pdf_base64, dosya_adi);
 
-      return {
-        format_id: fmt.id,
-        format_adi: fmt.ad,
-        parser_kural: fmt.parser_kural || {},
-        prompt_template: fmt.prompt_template,
-        kaynak: 'tanindi',
-      };
+  // Tum kayitlari skorla, esiken yuksek olani sec (en-yuksek-skor mantigi)
+  const ESIK = 2;
+  let enIyiFmt = null;
+  let enIyiSkor = 0;
+
+  for (const fmt of (formatlar || [])) {
+    const skor = fingerprintSkor(fmt.fingerprint, ipucu);
+    if (skor >= ESIK && skor > enIyiSkor) {
+      enIyiSkor = skor;
+      enIyiFmt = fmt;
     }
   }
 
-  return { format_id: null, format_adi: null, parser_kural: {}, prompt_template: null, kaynak: 'tanimsiz' };
+  if (enIyiFmt) {
+    // Kullanim sayisini artir
+    try {
+      await supaFetch(`izometri_format_tanimlari?id=eq.${enIyiFmt.id}`, {
+        method: 'PATCH',
+        body: {
+          kullanim_sayisi: (enIyiFmt.kullanim_sayisi || 0) + 1,
+          son_kullanim_at: new Date().toISOString(),
+        },
+      });
+    } catch (e) { /* yutuldu */ }
+
+    return {
+      format_id: enIyiFmt.id,
+      format_adi: enIyiFmt.ad,
+      format_kodu: enIyiFmt.format_kodu || null,         // 47: kolondan oku, 48+ parserKuralIle kullanacak
+      parser_kural: enIyiFmt.parser_kural || {},
+      prompt_template: enIyiFmt.prompt_template,
+      requires_ai: enIyiFmt.requires_ai !== false,        // 47: default true (raster/glyph durumlari)
+      requires_ocr: enIyiFmt.requires_ocr === true,       // 47: default false (48+ icin yer rezervi)
+      fingerprint_skor: enIyiSkor,                        // 47: log/debug icin
+      kaynak: 'tanindi',
+    };
+  }
+
+  return {
+    format_id: null,
+    format_adi: null,
+    format_kodu: null,
+    parser_kural: {},
+    prompt_template: null,
+    requires_ai: true,                                 // tanimsiz format -> AI fallback gerek
+    requires_ocr: false,
+    fingerprint_skor: 0,
+    kaynak: 'tanimsiz',
+  };
 }
 
-function fingerprintEsler(fingerprint, ipucu) {
-  // fingerprint = { dosya_adi_regex: "...", baslik_regex: "...", ... }
-  if (!fingerprint || typeof fingerprint !== 'object') return false;
-  if (Object.keys(fingerprint).length === 0) return false;
+// ---------------------------------------------------------------------
+// PDF ipucu cikarici -- 47'de eklendi (pdf-parse v2.4.5 ile)
+// ---------------------------------------------------------------------
+// fingerprintSkor skorlama icin 4 sinyali destekler:
+//   - dosya_adi (zaten var)
+//   - producer (PDF metadata)
+//   - creator (PDF metadata)
+//   - ilk_sayfa_metni (ilk 5K karakter, baslik_regex ve tablo_baslik_regex icin)
+// Hata durumunda eksik ipucu doner (bos string'ler), skorlama dusuk kalir, AI fallback dogal akar.
+async function pdfIpucuCikar(pdf_base64, dosya_adi) {
+  const ipucu = {
+    dosya_adi: dosya_adi || '',
+    producer: '',
+    creator: '',
+    ilk_sayfa_metni: '',
+  };
 
-  // Dosya adi regex kontrol
-  if (fingerprint.dosya_adi_regex) {
+  if (!pdf_base64) return ipucu;
+
+  try {
+    const buffer = Buffer.from(pdf_base64, 'base64');
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    ipucu.producer = (result?.info?.Producer) || '';
+    ipucu.creator = (result?.info?.Creator) || '';
+    // Ilk 5K karakter yeter -- baslik ve tablo basligi ilk sayfada olur, daha fazlasi gereksiz islem.
+    ipucu.ilk_sayfa_metni = (result?.text || '').slice(0, 5000);
+  } catch (e) {
+    // pdf-parse Cadmatic glyph veya PAOR raster gibi durumlarda da hata atmaz genelde,
+    // ama bozuk PDF'lerde patlarsa eksik ipucu donmesi yeterli (AI fallback'a guvenelim).
+    console.warn('[pdfIpucuCikar] PDF metadata cikarilamadi:', e?.message || e);
+  }
+
+  return ipucu;
+}
+
+// ---------------------------------------------------------------------
+// Fingerprint skorlama -- 47'de yeniden yazildi (MK-46.3)
+// ---------------------------------------------------------------------
+// 4 sinyal, her tutan +1 puan (max 4):
+//   1. dosya_adi_regex      -- dosya adi pattern'i tutar mi
+//   2. pdf_uretici_anahtar  -- Producer/Creator alaninda anahtar var mi (array, OR)
+//   3. baslik_regex         -- ilk sayfa metninde baslik pattern tutar mi
+//   4. tablo_baslik_regex   -- ilk sayfa metninde tablo basligi pattern tutar mi
+// Mevcut akis (46): 1 sinyal yetiyordu (dosya_adi_regex), DB'deki diger 3 sinyal bosa duruyordu.
+// 47 sonrasi: skor doner, formatTani esik (>=2) + en-yuksek-skor mantigi ile karar verir.
+// Ayni tersanenin iki PDF tipi (Ana/Iso, Iso/Spool) ortak sinyal pasylasir, dosya_adi_regex tie-breaker.
+function fingerprintSkor(fingerprint, ipucu) {
+  if (!fingerprint || typeof fingerprint !== 'object') return 0;
+  if (Object.keys(fingerprint).length === 0) return 0;
+  if (!ipucu || typeof ipucu !== 'object') return 0;
+
+  let skor = 0;
+
+  // Sinyal 1: dosya_adi_regex
+  if (fingerprint.dosya_adi_regex && ipucu.dosya_adi) {
     try {
       const re = new RegExp(fingerprint.dosya_adi_regex, 'i');
-      if (re.test(ipucu.dosya_adi)) return true;
+      if (re.test(ipucu.dosya_adi)) skor += 1;
     } catch { /* bozuk regex yutuldu */ }
   }
 
-  return false; // Su an sadece dosya adi -- 38'de baslik/metin de eklenecek
+  // Sinyal 2: pdf_uretici_anahtar (Producer veya Creator alaninda)
+  if (Array.isArray(fingerprint.pdf_uretici_anahtar) && fingerprint.pdf_uretici_anahtar.length > 0) {
+    const ureticiBilgi = ((ipucu.producer || '') + ' ' + (ipucu.creator || '')).toLowerCase();
+    if (ureticiBilgi.trim().length > 0) {
+      const tutan = fingerprint.pdf_uretici_anahtar.some(
+        anahtar => ureticiBilgi.includes(String(anahtar).toLowerCase())
+      );
+      if (tutan) skor += 1;
+    }
+  }
+
+  // Sinyal 3: baslik_regex (ilk sayfa metninde)
+  if (fingerprint.baslik_regex && ipucu.ilk_sayfa_metni) {
+    try {
+      const re = new RegExp(fingerprint.baslik_regex, 'i');
+      if (re.test(ipucu.ilk_sayfa_metni)) skor += 1;
+    } catch { /* bozuk regex yutuldu */ }
+  }
+
+  // Sinyal 4: tablo_baslik_regex (ilk sayfa metninde)
+  if (fingerprint.tablo_baslik_regex && ipucu.ilk_sayfa_metni) {
+    try {
+      const re = new RegExp(fingerprint.tablo_baslik_regex, 'i');
+      if (re.test(ipucu.ilk_sayfa_metni)) skor += 1;
+    } catch { /* bozuk regex yutuldu */ }
+  }
+
+  return skor;
+}
+
+// Boolean wrapper -- compat icin (varsa eski cagrilar)
+function fingerprintEsler(fingerprint, ipucu, esik = 2) {
+  return fingerprintSkor(fingerprint, ipucu) >= esik;
 }
 
 // =====================================================================
