@@ -1,112 +1,268 @@
-Claude — 43. Oturum Gundemi
+# Claude — 44. Oturum Gündemi
 
-Bu dosya 42 kapanisinda olusturuldu. 43 basinda ilk okunacak.
+> **Bu dosya 43 kapanışında oluşturuldu. 44 başında ilk okunacak.**
 
+---
 
-43 Acilis Mottosu
-42'de AI standart cikarimi altyapisi tamamlandi. Ama 40 canli test borcu hala acik — 3. oturumdur. 41'de parking, 42'de parking. Disiplin meselesi.
-Cihat 42 kapanisinda soz aldi: "birakmayacan yoksa pesimi." — 43 basi 40 borcu en yuksek oncelik. Vizyondan SIFIR madde, kutuphane'den de kapsam genisletilmez.
+## 44 Açılış Mottosu
 
-1. Acilis Ritueli (~5 dk)
+43'te kütüphane içerik gerçek dünyaya değdi — **ama yarım**:
+- A105 WN Class 150 tam tablo canlıda (20 satır)
+- DN65 DIN 2448 + EN 10216-1 et ailesi (10 yeni satır)
+- IFS pilot lookup **veritabanında** eşleşti: 22.43 kg ✓
+- **AMA spool_detay sayfasında kullanıcı bunu göremiyor**
+
+Cihat 43 kapanışında ekran görüntüsüyle gösterdi: M1 satırı hâlâ "Pipe Seamless Steel Tube — 3.1 Certificate / 76,1 mm / 4,5 mm" yazıyor. Hiçbir kütüphane bağlantısı yok.
+
+**Bunun üstüne ek karar (43 son turu):** Cihat dedi ki — *"Sadece tablolar için yeni proje açmak lazım, internet sitesi içinde de malzeme search bölümü yapacaktık."* Yani kütüphane:
+1. AresPipe'tan ayrı bir GitHub repo
+2. Website'taki public malzeme search ürününü besleyecek
+3. AresPipe ile veri paylaşımı (mimari kararı 44'te)
+
+44 iki paralel ana teması var:
+- **Cascade UI** (AresPipe içi — pilot eşleşmesini UI'da göster)
+- **Kütüphane mimari kararı** (yeni repo + Supabase stratejisi + website entegrasyonu)
+
+---
+
+## 1. Açılış Ritueli (~5 dk)
+
 5 cevap zorunlu (CLAUDE.md):
-Oturum baslangic ritueli. 5 kisa kontrol:
+
+```
+Oturum başlangıç ritueli. 5 kısa kontrol:
 
 1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
 2. GitHub Actions sekmesinde son build rengi nedir?
-3. .github/son-durum.md dosyasini yukle veya icerigini yapistir
-4. Bugun hangi sayfayla calisilacak?
-5. admin/panel.html → Geri Bildirim sekmesinde acik feedback?
+3. .github/son-durum.md dosyasını yükle veya içeriğini yapıştır
+4. Bugün hangi sayfayla çalışılacak? (cevap: spool_detay.html + mimari konuşma)
+5. admin/panel.html → Geri Bildirim sekmesinde açık feedback?
+```
+
 5 cevap geldikten sonra:
+- son-durum.md'den 43 sonu detayını oku
+- docs/CIHAT-PROFIL.md, docs/SPOOL-AI-VIZYON.md, docs/KUTUPHANE-YUKLEME-TAKIP.md hatırla
+- Cihat'ın website hakkında bilgi vermesini iste (hangi framework, hosting, mevcut durum)
 
-Git durumu temiz mi (stash kalintisi, commitlenmemis degisiklik yok mu)
-CI rengi yesil degilse once onu duzelt
-son-durum.md'den 40 borcu detayini oku
-docs/CIHAT-PROFIL.md'yi oku
-docs/SPOOL-AI-VIZYON.md'yi hatirlamak
+---
 
+## 2. Ana Tema A — Kütüphane Mimari Kararı (~30-45 dk)
 
-2. 40 Canli Test Borcu (~1.5-2 saat — EN YUKSEK ONCELIK, KIRMIZI)
-40'ta yapilan operasyon sayfasi standardizasyonlari hala canlida uctan uca test edilmedi. 41 basinda Grup 1 ✓ test edildi, sonrasi parking edildi.
-A. Markalama (15-20 dk)
+### 43'te netleşen konular
 
-✅ Grup 1 (41'de yapildi)
-Grup 2: modal acilis, progress bar, 4 buton
-Grup 3: manuel ekleme akisi (manuelMarkModal)
-Grup 4: arsiv gorunumu
-Grup 5: i18n gecisleri (TR/EN/AR)
+✅ Kütüphane AresPipe'tan ayrılacak — yeni repo olacak
+✅ Website'ta public malzeme search bölümü olacak (Cihat zaten konuşmuştu)
+✅ Aynı veri AresPipe spool akışını + website search'ü besleyecek
 
-B. Bukum (10 dk)
+### 44'te konuşulacak — açık kararlar
 
-modalBukumOnayi aciliyor mu (40'ta null bug fix yapildi)
-aciklama scope bug fix dogrula (Supabase modu kapaliyken hata yok mu)
+**Karar 1: Database stratejisi — Aynı Supabase mı, yeni Supabase mi?**
 
-C. Kalite Kontrol (10 dk)
+| Konu | Aynı Supabase | Ayrı Supabase |
+|---|---|---|
+| AresPipe spool → kütüphane FK | ✅ Doğrudan korunur | ❌ API call gerek |
+| Migration taşıma | Sadece dosya kopyala | DB sıfırdan kurulur |
+| Public erişim | Anon key + RLS policy | Tertemiz public API |
+| Yatırım | ~1 oturum | ~2-3 oturum |
+| İleride API ürünü | Sonradan ayrılabilir | Hazır temel |
 
-Yeni hero+pill standardi gorsel onay (yesil --kk-c)
-TR yazim fix kontrolu (Agirlik→Agirlik vb.)
+**44'te öneri:** Aynı Supabase + ayrı repo (FK korunur, hızlı kuruluş). İleride API ürünü olursa migration script'le ayrılır.
 
-D. Sevkiyatlar (10 dk)
+**Karar 2: Repo yapısı**
 
-Renk lejandi broken HTML fix dogrulamasi
-2 textarea i18n calisiyor mu
+```
+arespipe/                  # mevcut — sadece spool sistemi
+arespipe-kutuphane/        # yeni — public kütüphane repo
+├── migrations/            # 014, 015 buraya taşınır
+├── docs/
+│   ├── KUTUPHANE-KAPSAM.md
+│   └── KUTUPHANE-YUKLEME-TAKIP.md
+├── cizimler/
+│   └── flans/
+│       └── asme_b16_5_class150_wn_dn100.svg  # 43'te yapıldı
+├── scripts/lib_import/    # 45'te kurulacak pipeline
+└── README.md
+```
 
-E. 39 PAOR Akisi (15-20 dk)
+AresPipe'a `submodule` veya `tools/lib-link.js` ile bağlanır (AresPipe yine kütüphaneyi okur, ama kütüphane bağımsız çalışır).
 
-40 oncesinden kalan canli test borcu
-39'da yapilan PAOR (proje, aktivite, organizasyon, raporlama) akisi
+**Karar 3: Website entegrasyonu — search nasıl çalışacak?**
 
-Eger hata bulunursa: O hatayi coz, sonra teste devam et. "Sonra duzeltirim" deme — borc birikmesin.
+| Yaklaşım | Açıklama |
+|---|---|
+| Direkt Supabase | Website'tan anon key ile RLS'li sorgu (en hızlı) |
+| API katmanı | Vercel/Cloudflare worker — search.api.arespipe.com |
+| Static export | Belirli aralıklarla snapshot, JSON olarak yayın (en ucuz) |
 
-3. Kutuphane Icerik Doldurma (~30-45 dk, opsiyonel — 40 borcu bittikten sonra)
-42'de altyapi kuruldu ama kutuphane %95 bos. Sirayla doldurulmali:
-Bence en yararli baslangic: flansh_olculer'a daha fazla A105 kaydi.
+**44'te bilmediğimiz:** Website'ın hangi teknolojide olduğu, hosting durumu, trafik beklentisi. Cihat'ın bilgi vermesi gerek.
 
-DN50, 80, 100, 150, 200, 250, 300 × 150#/300#/600# × WN/SO/BL
-Her satir bir kayit, ASME B16.5 PDF'inden elle giris (Cihat'ta varsa) ya da pilot deger
+**Karar 4: Public API ürünü mü?**
+- Şimdilik website search yeterli mi?
+- Yoksa "ASME B16.5 search by parameter API" olarak sektöre satılacak mı?
+- Karar 1 ve 3 buna bağlı
 
-Veya: boru_olculer'da paslanmaz EN kayitlari (EN 10216-5 ailesi)
+### 44 hedef çıktısı (mimari karar tarafı)
 
-DN15-DN200 × yaygin et × X2CrNiMo17-12-2
+- Yeni repo açma kararı netleşir
+- Database stratejisi karara bağlanır
+- Website entegrasyon yöntemi seçilir
+- 45 ana teması belirlenir (yeni repo kurulumu + ilk taşıma)
 
-Cihat hangisini tercih ederse o yapilir. Eger 40 borcu uzun surduyse bu adim 44'e kayar.
+---
 
-4. Sonraki Kapsam Genisletmeleri (44+ icin parking)
-Kisa vade (44-45)
+## 3. Ana Tema B — Cascade UI (~75-90 dk)
 
-Frontend cascade UI — spool_detay modal'inda kutuphane lookup gorunumu (gercek veri olunca anlamli)
-Super admin UI — feature flag tenant yonetim sayfasi
-Cizim klasor organizasyonu — /cizimler/flans/ standardi, isim formati
+### Hedef Kullanıcı Akışı
 
-Orta vade (46-50)
+Kullanıcı spool_detay.html'de M1 satırına tıklar →
+- Modal açılır
+- "Pipe Seamless Steel Tube — 3.1 Certificate" başlığı
+- **Kütüphane eşleşmesi bloğu:**
+  - Standart: DIN 2448 / EN 10216-1 (paralel)
+  - DN: 65 (NPS 2.5)
+  - OD: 76.1 mm
+  - Et: 4.5 mm
+  - İç çap: 67.1 mm (GENERATED)
+  - Birim ağırlık: 7.946 kg/m
+- **Pilot kayıt karşılaştırması:**
+  - Boy: 2823.2 mm
+  - Sistem hesabı: 7.946 × 2.8232 = 22.43 kg
+  - IFS kaydı: 22.43 kg
+  - ✓ Eşleşme (yeşil rozet)
+- **Alternatif et değerleri (aynı standart, aynı DN):**
+  - 2.9 mm → 5.235 kg/m
+  - 3.6 mm → 6.437 kg/m
+  - 4.0 mm → 7.110 kg/m
+  - **4.5 mm → 7.946 kg/m (mevcut, vurgulu)**
+  - 5.0 mm → 8.764 kg/m
+  - 5.6 mm → 9.732 kg/m
+  - 7.1 mm → 12.078 kg/m
+- **Eşleşme yoksa:** "Bu kayıt kütüphanede bulunamadı. Kütüphaneye ekle?" CTA
 
-boru_olculer paslanmaz EN — EN 10216-5 ailesi
-fitting tablolari — A234 dirsek, B16.9 T, reduksiyon
-Esleme UI — kullanici A105 girdiginde sistem otomatik oneri sunsun (auto_exact)
-42 prompt'unun gercek dunya testi — yeni boyut_standardi/malzeme_standardi alanlari kac PDF'te dolu geliyor analiz
+### Adımlar
 
-Uzun vade (50+)
+1. **41 flanş modal'ını incele** (~15 dk) — pattern'ı oku, i18n eksiklerini listele (lang/tr.json'da 9 anahtar)
+2. **Boru modal iskeleti** (~30 dk) — flanş modal'ının kardeşi, satıra onclick
+3. **Lookup sorgusu** (~20 dk) — `boruLookup(disCap, et)` Supabase query
+4. **Alternatif et değerleri** (~15 dk) — aynı standart + aynı DN diğer et değerleri
+5. **Pilot karşılaştırma** (~10 dk) — sistem_hesap = agirlik_kg_m × (boy_mm/1000), tolerans ±%2
+6. **i18n** (~15 dk) — 41 flanş 9 eksik + boru yeni 12 anahtar = ~21 yeni TR/EN/AR
+7. **Canlı test** (~15 dk) — Cihat'ın spool'unda M1-M4 (76.1×4.5 boruları), modal açılış + içerik kontrolü
 
-AI fuzzy match — IFS yazim varyasyonlari (A106-B, ASTM A106 Gr B, SA106B → A106B)
-3D yon cikarimi — kutuphane DN+tip biliyorsa B16.5 spec'inden geometri zaten hazir
-Foto hata analizi — beklenen geometri kutuphaneden, foto ile diff
-Pasif ogrenme + tier'li servis (vizyonun asil maddeleri)
+### Önemli not
+M5/M6/M7 (Ic Bilezik, Outer Sleeve) → fitting_olculer ve ozel_parcalar boş. Bu kayıtlar için modal "kütüphaneye ekle" CTA gösterir, lookup eşleşmesi yok. 44'te boru tarafı odaklı.
 
+---
 
-5. Vizyon Disiplini Hatirlatmasi
-42 sonunda hala vizyondan SIFIR madde kapsama almama sozu gecerli:
+## 4. Sıralama
 
-❌ Pasif ogrenme — vizyonda kalir
-❌ Tier'li servis modeli — vizyonda kalir
-❌ Lazer tarama pipeline — vizyonda kalir
-❌ STEP koordinat cikarimi — vizyonda kalir
-❌ Klasor yukleme + format tanima — vizyonda kalir
-❌ Capraz validasyon (3 katman) — vizyonda kalir
+44 oturumu uzun olabilir (~3-3.5 saat). Sıralama:
 
-Cihat "bunu da yapalim sistemin can damari" derse: cevap "41-42'de iki kez istisna yaptik. Ucuncusu presedan. 50. oturumdan sonra konusalim."
+| Faz | Süre | Aksiyon |
+|---|---|---|
+| 1. Açılış ritueli | 5 dk | 5 cevap zorunlu |
+| 2. Mimari karar konuşması (Tema A) | 30-45 dk | Karar netleşmeden Tema B'ye geçilmez |
+| 3. Cascade UI (Tema B) | 75-90 dk | 7 alt adım |
+| 4. Kapanış | 10 dk | 3 dosya, varsa yeni repo karar dökümü |
 
-6. 43 Gundemi Ozet
-AdimSureOncelikAcilis ritueli5 dk🔴40 canli test borcu90-120 dk🔴Kapanis (3 dosya)10 dk🔴Kutuphane icerik doldurma30-45 dk🟡 (opsiyonel)
-Toplam: ~2-3 saat oturum.
+**Açılışta net soru:** Cihat website'ın bugünkü durumu hakkında bilgi versin (framework, hosting, repo). Mimari karar bu olmadan tam veremez.
 
+---
 
-42 kapanisinda yazildi. 43 basinda okunacak. 43 sonunda 44 icin yenisi yazilacak.
+## 5. Kapanış (~10 dk)
+
+- Git push
+- son-durum.md güncelle: cascade UI ✓, mimari karar belgelendi
+- KUTUPHANE-YUKLEME-TAKIP.md güncelle (Frontend cascade UI ✓)
+- Yeni: `docs/KUTUPHANE-PROJE-MIMARI.md` — 44'te alınan mimari kararların dökümü
+- CLAUDE-SON-OTURUM.md (44 detay arşiv)
+- CLAUDE-SONRAKI-OTURUM.md (45 gündemi — yeni repo kurulumu)
+
+---
+
+## 45+ Parking — Yeni Repo Kurulumu
+
+44'te mimari karar verildikten sonra, 45 ana teması:
+- `arespipe-kutuphane` repo açılması
+- 014, 015 migration'ları taşınması (aynı Supabase'de kalırsa sadece dosya kopyala)
+- KUTUPHANE-KAPSAM.md, KUTUPHANE-YUKLEME-TAKIP.md taşınması
+- ASME B16.5 SVG çizim (43'te yapıldı) buraya taşınması
+- AresPipe'tan submodule veya link yöntemi
+- README.md (public yüzü, lisans, katkı rehberi)
+- İlk public deploy (Vercel/Netlify static)
+
+---
+
+## 46+ Parking — Pipeline Mimarisi
+
+Yeni repo kurulumundan sonra 46 ana teması: **İçerik pipeline.**
+
+`arespipe-kutuphane/scripts/lib_import/`:
+- `wermac_flange.py` — Wermac HTML scrape, 6 sınıf
+- `ferrobend_check.py` — cross-check + mismatch flag
+- `ose_fitting.py` — OSE-piping CSV → fitting_olculer
+- `ose_pipe.py` — OSE pipe.csv → boru_olculer
+- `normalize.py` — birim çevirimi
+- `sql_writer.py` — idempotent SQL (014/015 pattern template)
+
+**46 hedef:** Class 150 SO/BL + Class 300 WN/SO/BL (~120-200 satır flanş) + OSE fitting import (~200-500 satır fitting). Tek oturumda 10-20x sıçrama.
+
+---
+
+## 47+ Parking — Website Search Sayfası
+
+Pipeline çalışınca + içerik dolunca:
+- Website'ta `/malzeme-arama` sayfası
+- Filter: standart × DN × et × malzeme grubu
+- Sonuç tablosu
+- Detay görünümü (cizimler/flans/*.svg ile)
+- Public Supabase anon key, RLS read-only
+
+---
+
+## 48+ Parking — CuNi P0 + Şema Borçları
+
+- DIN 86019/86087-90 (Cihat PDF varsa)
+- ASTM B466/B467 (CuNi boru)
+- boru_olculer'a tenant_id + sistem_preset
+- KK + Sevkiyat sayfa kapsamlı revizyon
+- Büküm modal açıklama alanı UI
+
+---
+
+## Vizyon Disiplini Hatırlatması
+
+44 sonunda hâlâ vizyondan SIFIR madde kapsama almama sözü geçerli.
+
+**Önemli ayrım:** Yeni repo + website search **mevcut "kütüphane istisnası"nın yer değişikliği**, yeni vizyon maddesi değil. Kütüphane zaten 41-42-43'te kapsama alınmıştı. Şimdi sadece nerede yaşadığı netleşiyor.
+
+❌ Pasif öğrenme — vizyonda kalır
+❌ Tier'lı servis modeli — vizyonda kalır
+❌ Lazer tarama pipeline — vizyonda kalır
+❌ STEP koordinat çıkarımı — vizyonda kalır
+❌ Klasör yükleme + format tanıma — vizyonda kalır
+❌ Çapraz validasyon (3 katman) — vizyonda kalır
+
+Cihat *"bunu da yapalım"* derse: cevap *"41-42-43'te üç kez istisna yaptık. Dördüncüsü presedan. 50. oturumdan sonra konuşalım."*
+
+---
+
+## 44 Gündemi Özet
+
+| Adım | Süre | Öncelik |
+|---|---|---|
+| Açılış ritueli | 5 dk | 🔴 |
+| **Tema A: Mimari karar** | 30-45 dk | 🔴 (önce!) |
+| **Tema B: Cascade UI** | 75-90 dk | 🔴 |
+| Kapanış | 10 dk | 🔴 |
+
+**Toplam:** ~3-3.5 saat oturum.
+
+**Açılış soru sırası:**
+1. Website teknik durumu nedir? (framework, hosting, repo)
+2. Public search ürünü mü, sadece bilgi sayfası mı?
+3. Önce mimari konuşalım sonra UI mı, paralel mi?
+
+---
+
+> 43 kapanışında yazıldı. 44 başında okunacak. 44 sonunda 45 için yenisi yazılacak.
