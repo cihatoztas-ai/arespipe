@@ -163,7 +163,7 @@ Cihat Claude ile düzenli oturumlar yapıyor (oturum numaralı kayıtlar projede
 - **Tablo:** 52
 - **API endpoint:** 3
 - **CI kural:** 170 (7 kategori)
-- **Migration dosyası:** 13
+- **Migration dosyası:** 14
 <!-- AUTO-END:istatistikler -->
 
 ---
