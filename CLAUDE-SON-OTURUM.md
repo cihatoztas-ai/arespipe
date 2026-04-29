@@ -1,190 +1,192 @@
-# Claude — 43. Oturum (28 Nisan 2026)
+# Claude — 44. Oturum Detaylı Arşivi
 
-> **Tema:** Kütüphane içerik gerçek dünyaya kısmen değdi — A105 WN Class 150 tam tablo + DN65 IFS pilot lookup veritabanında eşleşti, ama cascade UI eksik kaldı (44 teması)
-
----
-
-## Oturumun Hikayesi
-
-### Başlangıç — 5 cevap zorunlu ritueli
-Cihat 5 cevap geldi temizce: git temiz (.DS_Store macOS çöpü, önemsiz), CI yeşil, son-durum güncel, Markalama'dan başlanacak, geri bildirim yok. Yeşil ışık.
-
-### 40 Canlı Test Borcu — Yeniden tanımlama
-43 açılış mottosu: "40 borcu 3 oturumdur açık, bu sefer kapatıyoruz."
-
-**Gerçeklik:**
-- Markalama Grup 2-5: Cihat söyledi, "yapılmış zaten." ✓
-- Büküm: modal açılıyor, ama **açıklama alanı eksik**. Cihat: "burası sonra tamamlanacak diye geçmiştik geri gelecez." → Parking.
-- Kalite Kontrol: "hata var ama sayfada zaten çok eksik var." → Parking, sayfa revizyon bekliyor.
-- Sevkiyatlar: KK ile aynı durum. → Parking.
-- PAOR: KK+Sevkiyat'a bağımlı. → Parking.
-
-**Bu nokta önemli — söze sadık kalmak adına dürüst aynaya tutuş:** 40 fix'leri sayfalar bütünüyle revize edilecekken bağımsız test edilemez. **Borç tanımı yeniden çerçevelendi:** "40 canlı test" değil, "KK+Sevkiyat sayfa kapsamlı revizyon" — 45+'a kayıyor.
-
-Cihat oturumun kalanını **kütüphane içerik** olarak yönlendirdi: *"parça tanıma ana iş burası olmadan oralar tamamlanmıyor zaten."* — bu mimari sezgi doğruydu.
-
-### A105 WN Class 150 Tam Tablo
-
-**Yaklaşım:**
-1. flansh_olculer şeması teyit (Cihat şema sorgusu çalıştırdı, 30 kolon)
-2. Wermac + Ferrobend çapraz teyit (Web fetch) — değerler aynı, RF dahil/hariç farkı çözüldü
-3. Pilot 4 satır (DN50/80/100/150) UPDATE + 16 yeni satır (DN15-DN600) INSERT NOT EXISTS
-4. Idempotent migration `014_a105_wn_class150_full.sql`
-5. Doğrulama: 20/20 `preset_ok: true`
-
-**Cihat'ın stratejik müdahalesi:** "Neden DN50-DN150 sadece?" — pilot stratejisi (4 satır mantık testi) açıklandı, hemen tam tabloya genişletildi. CIHAT-PROFIL'deki "stratejik soruları ciddiye al" maddesi devrede.
-
-**Şema öğrenmesi:** flansh_olculer'da farklı kolon adları var (`bolt_holes_inch`, `bolt_cap_inch` text, `raised_face_kalinlik_mm` _mm suffix'li, `bore_std_mm` Sch 40 referans, vs.). Pilot sorgu olmadan tahmin yapsam hata olurdu — şema sorgusunu çalıştırmak şart.
-
-### Hızlandırma Tartışması — Cihat'ın matematiği
-
-Cihat: *"her oturumda bir tablo çok uzun sürecek bu iş, nasıl hızlandırırız."*
-
-Hesap:
-- Sadece flanş: 6 tip × 6 sınıf × 20 boyut = 720 satır
-- Bu hızla manuel = ~35 oturum
-- + fitting (~2500) + malzeme uyumu (~8000) = mantıksız
-
-Önemli gözlem: **flanş geometrisi malzeme bağımsız.** A105 için yazılan satır F304 için tekrar yazılmıyor — `fitting_malzeme_uyum` çapraz tablosunda (vizyondan) çözülecek. Bu fark netleşti.
-
-4 hızlandırma stratejisi sunuldu, Cihat: *"şimdi 30 dk açık dataset ara, varsa hemen import."*
-
-### 30 dk Açık Dataset Araması — Yarım Sonuç
-
-- ❌ Flanş için hazır CSV/JSON YOK (GitHub, FreeCAD, NIST)
-- ✅ Fitting + pipe için **OSE-piping-workbench** (rkrenzler/ose-piping-workbench, LGPL kod)
-   - pipe.csv, elbow.csv, tee.csv, coupling.csv, cross.csv, corner.csv, bushing.csv mevcut
-   - **Ama flange.csv YOK** — sadece fitting/pipe tarafı
-   - Lisans tartışması: kodu LGPL ama biz sadece sayısal veri alıyoruz, fact = telif dışı
-- ✅ FreeCAD-library: STEP/.fcstd 3D modeller (CC-BY 3.0)
-
-**Sonuç:** Açık dataset yarım çözüm. **45 teması** olur — 44'te cascade UI öncelik aldı.
-
-### Kütüphane Yükleme Takip Dosyası — v1 → v2
-
-Cihat: *"bir tane kontrol tablosu lazım bize, sisteme yüklememiz gereken tüm tabloların listesi olması lazım."*
-
-İlk yazım (v1) hızlı yapıldı, **KUTUPHANE-KAPSAM.md referans alınmadı**. Cihat farketti: *"bizim kütüphane listemizde olanların hepsi var mı eksik gibi geldi bana."* Sezgi doğruydu, ciddi eksikler vardı.
-
-**v1 → v2 düzeltmeleri:**
-- **CuNi P3 → P0** 🔴 — gemi tersanesi için deniz suyu sistemi = CuNi. Yapısal hata. (DIN 86019/86087-90, ASTM B466/B467, EEMUA 144-146)
-- 7 malzeme grubu (Karbon/Paslanmaz/Duplex/CuNi/Alüminyum/Alaşımlı/Nikel) — 3 atlanmıştı
-- Fitting tipleri 11'e çıktı (3D radius, LR_red, return_180, cross, stub_long/short eklendi)
-- Standartlar genişledi: A53, A333, API 5L, A420, A860, B16.28, MSS SP-43/SP-75, EEMUA 144-146
-- 3 yeni modül eklendi: `fitting_malzeme_uyum` (8000 satır), `ozel_parcalar` (200-500), `tenant_spec_seti` + `spec_kural` (500-1000)
-- Toplam: 1,810 → **~12,400** (%660 düzeltme)
-
-**Öğrenme:** Yeni kapsam dosyası yazarken referans dosyaları hızlıca atlanmamalı — Cihat'ın sezgisi yapısal kontrolü yakaladı (3. kez sezgi-katkısı bu oturumda).
-
-### IFS Pilot Lookup — Veritabanı Eşleşmesi (Yarım Zafer)
-
-Cihat: *"M1 Pipe Seamless Steel Tube - 3.1 Certificate Karbon Çelik St 37 76,1 mm 4,5 mm 2823.2 mm 22,43 kg bu boru tablosunu yükleyelim."*
-
-**Kritik analiz:**
-- 76.1 mm ≠ ASME B36.10 NPS 2.5 (73.0 mm) → DIN 2448 / EN 10216-1
-- 22.43 / 2.8232 = 7.946 kg/m hesap
-- Standart formül teyit: π × 71.6 × 4.5 × 7.85 / 1000 = 7.946 kg/m ✓
-
-**boru_olculer şema farkı:**
-- DN, schedule_tipi, schedule_deger, schedule_kod (36'daki K11 sağlamlaştırması)
-- ic_cap_mm, hacim_l_m, yuzey_alan_dis_m2_m → GENERATED kolonlar (INSERT'te yazılmaz)
-- **`tenant_id` ve `sistem_preset` YOK** — flansh_olculer'dan farklı, multi-tenant için eklenmeli (45+ borç)
-
-**Mevcut DN65 durum:** ASME (9 + 4) + Al (3) + DIN 2448 (2) + EN 10216-1 (2) = 20 satır. ET 4.5 yok!
-
-**Migration 015:** 5 et değeri × 2 standart = 10 yeni satır. INSERT NOT EXISTS, idempotent.
-
-**Veritabanı doğrulama testi:** Cihat çalıştırdı, **iki satırda da `pilot_test = ✓ EŞLEŞTI (Cihat 22.43 kg)`**. 
-
-### Kritik Kavramsal Düzeltme — Cihat'ın Son Sezgisi
-
-Kapanış öncesi Cihat ekran görüntüsü yapıştırdı: spool_detay.html'de M1 satırı hâlâ "Pipe Seamless Steel Tube — 3.1 Certificate / 76,1 mm / 4,5 mm" yazıyor. **Hiçbir kütüphane bağlantısı görünmüyor.**
-
-*"burda borunun üzerine tıklayınca borunun bilgileri gelmesi gerekiyordu, flanşta test etmiştik ya."*
-
-**Bu sezgi 43'ü olduğundan büyük göstermemekten alıkoydu:**
-- 41'de A105 flanş için spool_detay'a kütüphane lookup modal'ı yapıldı
-- Boru için **aynı modal yapılmadı**
-- 43'te kütüphane içerik dolu (DN65 DIN 2448 ET4.5 ✓), eşleşme veritabanında doğru
-- **AMA kullanıcı spool_detay'da bunu göremiyor**
-
-42 son-durum'da bu zaten parking edilmişti: *"Frontend cascade UI: spool_detay modal'inda yazilim tarafi cikarsamasi gosterilsin (kutuphane icerik doldukca anlamli olur)"*. Ben "kütüphane dolmadan UI yapsam boş olur" diyerek 44+ olarak işaretlemiştim. Cihat haklı: **şimdi kütüphane içerik var, UI cascade artık kıymetli, anlamlı.**
-
-**Sonuç:** Pilot lookup eşleşmesi **veritabanında** ✓, **UI'da** ✗. Pilot sonucu kullanıcı için henüz sıfır. 
-
-44 ana teması bu olacak. İçerik pipeline 45'e kaydı.
+> **Tarih:** 29 Nisan 2026
+> **Tema:** Cascade UI tamamlandı + mimari standart kuruldu + 3D vizyonu netleşti
+> **Sonuç:** 44.B kapsamı tam, 45 gündemi belirgin
 
 ---
 
-## Üretilen Çıktı Dosyaları
+## 44 Açılış Bağlamı
 
-| Dosya | Yer | Açıklama |
-|---|---|---|
-| `migrations/014_a105_wn_class150_full.sql` | repo (yeni) | A105 WN Class 150, 20 boyut sistem preseti |
-| `migrations/015_boru_dn65_din2448_en10216_et_ailesi.sql` | repo (yeni) | DN65 DIN 2448 + EN 10216-1, 10 yeni et |
-| `docs/KUTUPHANE-YUKLEME-TAKIP.md` | repo (yeni) | v2 — gerçek kapsam, 7 malzeme grubu |
-| `.github/son-durum.md` | repo | 43 kapanış v2 (cascade UI eksikliği netleşmiş) |
-| `CLAUDE-SON-OTURUM.md` | repo | bu dosya |
-| `CLAUDE-SONRAKI-OTURUM.md` | repo | 44 gündemi (cascade UI ana teması) |
+43 sonu durum: kütüphane içerik gerçek IFS verisine **veritabanında** değdi (M1 spool_malzemesi 76.1×4.5 → DIN-2448 DN65 ET4.5 → 22.43 kg eşleşmesi doğrulanmıştı), ama **kullanıcı UI'da bunu göremiyordu**. spool_detay'da boru satırı tıklanabilir değildi, modal yoktu, kütüphane bağlantısı görünmüyordu.
+
+44 başında ritüel uygulandı (5 cevap), CI yeşil teyit edildi, ana tema A "Cascade UI önce" seçildi (mimari karar 45'e parking).
 
 ---
 
-## Sayısal Sonuç (43 başında → 43 sonunda)
+## Yapılanlar (Kronolojik)
 
-| Modül | 43 başı | 43 sonu | Δ |
-|---|---:|---:|---:|
-| flansh_olculer | 1 (DN100 yarım) | 20 (Class 150 WN tam) | +19 |
-| boru_olculer | 48 (42 ekledi) | 58 (DN65 DIN+EN tam) | +10 |
-| **Toplam kütüphane** | **49** | **78** | **+29** |
-| **Hedef** | **~12,400** | **~12,400** | **0.6% doluluk** |
+### 1. Bug Tespiti ve Tek Satır Fix
 
-malzeme_tanimlari 12 preset (19'dan) ile birlikte 90.
+Dosya incelemesi şu bulguyu ortaya çıkardı: 44.B cascade UI kodu **zaten yazılmış** (BORU_LIB, BORU_MAP, boruEslestir, boruKutuphaneYukle, boruModalAc, modal HTML, KALITE_STANDART_HARITA, tier mantığı, IIFE wrap — hepsi vardı). Ama çalışmıyordu.
+
+**Asıl sebep tek satırdı (satır 969):**
+
+```diff
+- spool_malzemeleri(id,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,...)
++ spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,...)
+```
+
+`tip` field'ı select'te yoktu → `m.tip = undefined` → `m.tip_raw = ''` → `boru` filter sıfır element döndü → BORU_MAP boş kaldı → UI hiçbir şey göstermedi.
+
+Ders: **"kod var" demek "çalışıyor" demek değil**. Cihat son-durum.md'ye "cascade UI eksik" yazmıştı, ben kodu görünce "yapılmış" sandım, dipte tek satırlık select bug'ı vardı.
+
+### 2. Cihat'ın 1. Müdahalesi: Kullanıcı Tier Sorma Yerine Deterministik
+
+İlk önerim: çoklu eşleşme durumunda kullanıcıya modal sorduran C-hibrit yaklaşım. Cihat *"bu kullanıcının zaman harcayacağı bir konu olmaması lazım, doğru tabloyla otomatik eşleştirmek için daha güvenli ve iyi bir yol yok mu?"* dedi.
+
+Tier sistemini güçlendirdim:
+- Tier 1: kalite kodu prefix → kanonik standart eşlemesi (`P*` → EN, `A106|A53|API` → ASME, `St*` → DIN, `TP*|A312` → ASTM)
+- Tier 2: kanonik öncelik (DIN → EN → ASME → ASTM → API), edisyon yılı tie-break
+
+Sonuç: pilot vakada hiç modal sormaz, %99'da deterministik tek satıra düşer. Modal sadece çok nadir vakalar için son çare.
+
+**Ders:** "Belirsizlikte kullanıcıya sor" tembelliktir. Doğru çözüm domain bilgisini koda dökmektir. Cihat'ın "stratejik soru sorma" alışkanlığı 4. oturumdur dersini veriyor: yapısal sorunu sezmiş, soru açık ucu bana çözdürmüş.
+
+### 3. Boru Modal Tablosu Sadeleştirme
+
+İlk modal tablosu 15 satırdı (her field bir satır). Cihat sadeleştirme istedi. İlk önerim 6 satır (Standart, Ürün formu, DN, Birim ağırlık, Hacim, Dış yüzey alanı). Cihat bunu onayladı **ama**: "DN, inch ve mm dış çap olması gerekiyordu, bu değerler tabloda yok." Ben mm dış çapı görsele taşımıştım, tabloda yoktu.
+
+**Düzeltme:** Anma çapı satırı kombo formatı:
+```
+Anma çapı: DN65 · NPS 2½″ · ⌀76,1 mm
+```
+
+Hem Avrupa hem Amerikan hem fiziksel ölçü yan yana, tarama yaparken hangisini bilirse bulur. DN→NPS kanonik mapping'i (DN6'dan DN1200'e) sayfa scope'una eklendi.
+
+**Ders:** Görsel + tablo aynı bilgiyi göstermek **tekrar değil amaç ayrılığı**. Görsel sezgisel, tablo aranabilir. Bilgiyi sadece bir yerden vermek zayıflık.
+
+### 4. Cihat'ın 2. Müdahalesi: Mimari — SVG'leri Sayfaya Gömme
+
+İlk boru kesit çizimini inline SVG olarak modal HTML'e gömdüm. Çalıştı, ama Cihat dedi: *"sen boru görselini sayfaya gömdüysen çok sayıda görsel geldiğinde burası kullanılmaz olur."* Hem flanş tarafında **bug** vardı: cizim_path null olduğu için `<img>` 404 veriyordu, ayrıca `<img>` SVG'yi statik raster yapar — dinamik etiket imkansız.
+
+İki sorunu birden çözen mimari değişiklik:
+- Tüm cascade modal görselleri `cizimler/<tip>/` altında **harici SVG dosyası**
+- `_cizimYukle(divId, path, repl)` helper: fetch → `{{KEY}}` placeholder replace → innerHTML
+- Hem boru hem flanş aynı pattern'i paylaşır
+- Sayfa boyutu küçülür, dinamik etiket tam çalışır, yeni tip eklemek = sadece dosya işi
+
+Sayfaya 36 satırlık SVG yerine 1 div + 1 helper çağrısı kaldı. Boru SVG'si `cizimler/boru/boru-kesit.svg` (placeholder'lı template), flanş SVG'si `cizimler/flans/asme_b16_5_class150_wn_dn100.svg` (43'te eklenmişti, 016 migration'ı ile cizim_path bağlandı).
+
+**Ders:** Cihat sezgisel olarak yapısal sorunları görür. "Çok sayıda görsel geldiğinde burası kullanılmaz olur" cümlesi mimariyi sağlamlaştırdı. Ben tek dosyalı çözümü kabul etmiştim, Cihat ölçek sorununu görerek kuralı öne çıkardı.
+
+### 5. Cihat'ın 3. Müdahalesi: Teknik Çizim Standardı
+
+İlk boru SVG'si "iç çap koyu daire, dış çap mavimsi halka" basit gösterimdi. Cihat *"boru kesitinin içi siyah falan biraz garip olmuş. boru kesiti, tarama çizgileri ve daha zarif bir çizim olsun"* dedi. Mühendislik teknik çizim standardını uyguladım:
+- 45° hatching pattern (boru duvarı bölgesi taranmış)
+- Cross-hair merkez (4 yönde uzun kesik chain çizgi — teknik çizim klasiği)
+- İç boşluk şeffaf (sayfa rengi geçer, dark/light tema doğal)
+- İnce çizgiler, hiyerarşik tipografi, letter-spacing
+- Dış kenar düz, iç kenar **kesik** (gizli/iç hat = kesik, ASME standardı)
+
+**Ders:** Görsel kalite somut iş kalitesini de yansıtır. Cihat detaylara hassas, iyi.
+
+### 6. Flanş SVG cizim_path Migration
+
+Şema sorgusu: `flansh_olculer` 20 satır WN Class 150, hepsi `cizim_path = NULL`. SVG dosyası repo'da var (43'te `a314f7d` commit'i ile eklenmişti). DN100 satırı için tek satır UPDATE migration'ı yazıldı (016), idempotent (sadece NULL olanı set eder).
+
+İleride başka DN'ler için SVG hazırlandıkça benzer migration'lar (017, 018...) eklenecek.
+
+### 7. 3D Vizyonu — Cihat Açtı
+
+Oturum sonu Cihat 3D spool oluşturma konusunu açtı. *"Bunu nasıl yaparız?"* sorusu üç katmanlı bir tartışma başlattı:
+
+1. **Yöntem analizi:** AI / STEP / DSTV / şablon eşleştirme / heuristik / manuel — 7 alternatif kategori. AI tek seçenek değil.
+2. **Maliyet sorgusu:** Cihat *"AI maliyeti sürekli mi, sıfırlanabilir mi?"* sordu. Cevap: format öğrenme + pasif öğrenme + (uzun vade) fine-tune ile sıfırlanabilir. Tahmini projeksiyon: yıl 1 $400-600/ay → yıl 2 $50-100/ay → yıl 3+ kendi modeli.
+3. **Veri akışı:** Cihat "izometri PDF + IFS dosyası dışında ne verirsek hızlanır?" sordu. Cevap: STEP/IGES (%95 sorun çözer ama tersane vermek istemez), DSTV (üretim verisi, vermesi kolay), spool detay sayfası (3 görünüş), BOM, eski proje arşivi.
+4. **Yükleme stratejisi:** Cihat *"eski yüzlerce spool'u yüklesem, sonra silsem?"* sordu. Cevap: silersen domain pattern havuzunu kaybedersin. Doğru yaklaşım: anonimleştir, ayrı `egitim_havuzu_*` tablosunda tut, pilot tenant'tan ayrı.
+
+### 8. Üç Format Örneği — Mimari Prensibin Kanıtı
+
+Cihat üç farklı tersane formatı yükledi:
+- **G200** (Türk tersanesi, "tersan" — Cut Length tablosu + Rotation Angle sütunu, A4)
+- **PAOR** (Portekiz Donanması — FORE/PS/HEI koordinat sistemi, BOM çok zengin, A3)
+- **SR027** (Norse Shipyard / Yön TekniK — 3 görünüş + grafik içi açı etiketleri + Welding info bonus W1-W4)
+
+Üç format yan yana baktığımızda mimari prensip kanıtlandı: **parser değişir, motor sabit kalır**. Her format kendi `izometri_format_tanimlari` satırına yazılır, ortak `spool_malzemeleri` şemasına dökülür, ortak `buildChain` motoru ile render olur.
+
+**Cihat'ın kararı:** *"tersan ve PAOR şu an aktif bu ikisini referans alalım, diğer formatları üzerine ekleriz."* Yani 45'te iki parser yazılır, SR027 ve diğerleri sonraki oturumlara.
 
 ---
 
-## Öğrenmeler / Anti-Pattern Önleme
+## Mimari Kararlar (44'te alındı)
 
-1. **Pilot stratejisi 4 satırla mantık testi yapar, sonra genişletilir.** A105 WN Class 150 4 satırla başlandı, doğrulanınca 16 satır daha eklendi. Aynı pattern fitting/pipe için 45+'da uygulanır.
+### MK-44.1 — Cascade Modal Görselleri Sayfaya Gömülmez
 
-2. **Şema sorgusu zorunlu, tahmin yasak.** 36'da kolon adı tahmin etmiştim, fail. 41'de tekrar, fail. 43'te flansh_olculer'da 30 kolon, beklediğimden farklı 5 kolon (`yuzey_tipi`, `bore_std_mm`, `bolt_holes_inch`, `bolt_cap_inch` text, `bolt_uzunluk_machine_mm`). information_schema.columns sorgusu olmadan SQL yazsam yine fail olurdu.
+**Kural:** Tüm cascade modal görselleri `cizimler/<tip>/` altında harici SVG dosyası olarak tutulur. Sayfa kodu sadece `_cizimYukle(divId, path, repl)` çağırır. Placeholder'lar `{{KEY}}` formatında, JS replace ile dinamik doldurulur.
 
-3. **Referans dosyaları yazmadan önce oku.** Kütüphane takip dosyasını ilk yazımda KUTUPHANE-KAPSAM.md'yi atladım, ciddi eksikler oldu (CuNi P3 yanlış, 3 malzeme grubu yok, çapraz uyum tablosu yok). Cihat'ın "eksik gibi" sezgisi yapısal hatayı yakaladı. Yeni kapsam dosyası yazarken referans dosyaları zorunlu.
+**Sebep:** Sayfa şişmesini önler, dinamik etiket destekler, tema (dark/light) ile uyumludur, yeni tip eklemek dosya işidir.
 
-4. **Geometri ≠ malzeme.** Flanş ölçüleri (228.6 mm, 8 cıvata) malzeme bağımsız. A105 için yazılan satır F304 için tekrar yazılmıyor. Vizyondaki `fitting_malzeme_uyum` çapraz tablosu bu mimarinin asıl çıktısı (~8000 satır).
+### MK-44.2 — Kütüphane Lookup'ında Kullanıcıya Soru Yok
 
-5. **Borç dürüst tanımlanmalı, "kapandı" denmemeli.** 40 borcu fiilen 1/5 kapatıldı (Markalama). Kalanı parking. "40 borcu kapandı" demek yerine "40 borcu yeniden tanımlandı (KK+Sevkiyat sayfa revizyonu, 45+)" denildi. 4. oturumdur açık olan bir borcu zafere çevirmemek lazım.
+**Kural:** Boru/flanş/fitting eşleştirmesinde çoklu eşleşme oluşursa **deterministik tier sistemi** kullanılır (kalite prefix + kanonik öncelik + edisyon yılı). Kullanıcıya modal sorulmaz.
 
-6. **CuNi gemi için P0, tartışmasız.** Cihat tersanecilik yapıyor, deniz suyu sistemi = CuNi. v1'de bu hata yapıldı (P3), v2'de düzeltildi. Ders: kullanıcı bağlamı (sektör, profil) öncelik kararını yönetir.
+**Sebep:** Kullanıcı zamanı değerli. Domain bilgisi kodda netleşir, manuel iş azalır.
 
-7. **boru_olculer'da `tenant_id` + `sistem_preset` yok.** flansh_olculer'dan farklı şema. Multi-tenant kütüphane mantığı için 45+'da eklenmesi gerekiyor.
+### MK-44.3 — Pilot Format Stratejisi: tersan + PAOR
 
-8. **GENERATED kolonlara INSERT atılmaz.** boru_olculer'da `ic_cap_mm`, `hacim_l_m`, `yuzey_alan_dis_m2_m` GENERATED. Şema sorgusu bunu açıkça gösterdi (NULL olabilir = hesaplanır), INSERT'te yazılmadı.
+**Kural:** İki referans format için ayrı parser'lar yazılır. Diğer formatlar (SR027 dahil) gerçek talep çıkana kadar parking. Format dispatcher PDF metadata + başlık fingerprint ile eşleştirir.
 
-9. **İdempotent SQL = oturum işbirliği.** UPDATE pilot + INSERT NOT EXISTS pattern'ı 014 ve 015'te uygulandı. Cihat tekrar çalıştırırsa ikileme olmuyor.
+**Sebep:** "Tetik koşulu olmadan iş yok" prensibi. tersan ve PAOR aktif → yatırım haklı. SR027 incelendi ama pilot değil → 50+ oturumda.
 
-10. **Web search ile çapraz teyit halüsinasyon korumasıdır.** Wermac + Ferrobend birbirini doğruladı. Tek kaynak yetmez, en az 2 bağımsız kaynak.
+### MK-44.4 — 3D Yön Çıkarımında AI Şart Değil
 
-11. **EN ÖNEMLİ — "Veritabanı eşleşmesi" ≠ "Kullanıcı için sonuç".** 43'te SQL doğrulamasında ✓ EŞLEŞTI gördüğümde "ilk gerçek IFS lookup eşleşmesi doğrulandı" dedim. Cihat ekran görüntüsüyle düzeltti: spool_detay'da hâlâ kullanıcı bunu göremiyor. **Pilot sonucu UI olmadan yarım.** Bu ders 44 cascade UI ana temasının tetiği oldu. Gelecekte: bir özellik canlıda ✓ demeden önce **kullanıcı için görünür mü** kontrol et.
+**Kural:** tersan ve PAOR formatları yön bilgisini deterministik veriyor (Rotation Angle tablosu / FORE-PS-HEI koordinatları). Pilot 3D motoru AI'sız tasarlanır. AI sadece bilinmeyen format gelirse fallback.
+
+**Sebep:** AI maliyeti sürekli, deterministik parse maliyeti sıfır. Pilot başarısı için AI kritik değil.
 
 ---
 
-## 43 Sonu Durum
+## Cihat'tan Gelen Değerli Düzeltmeler (4 Adet)
 
-✅ A105 WN Class 150 tam tablo canlıda (20 satır)
-✅ DN65 DIN 2448 + EN 10216-1 et ailesi (DN65'te 30 satır)
-✅ İlk gerçek IFS pilot lookup **veritabanında** eşleşti (22.43 kg ✓)
-✅ KUTUPHANE-YUKLEME-TAKIP.md v2 (~12,400 hedef)
-✅ Markalama Grup 2-5 canlı (Cihat teyit etti)
+1. **"Kullanıcı zaman harcamasın"** — modal soru yerine deterministik tier
+2. **"Görselleri sayfaya gömme"** — harici dosya mimarisi
+3. **"İç çap koyu, biraz garip"** — teknik çizim standardı (hatching, cross-hair)
+4. **"DN, inch, mm tabloda olmalı"** — kombo gösterim (DN_NPS mapping)
+
+Her birini ayrı bir mimari prensip olarak son-durum'a not ettim. Bu pattern Cihat'ın profilinde "sezgisel olarak yapısal sorunları görür ama teknik dili bilmediği için açık uçlu soru sorar" tanımının canlı kanıtı.
+
+---
+
+## Çıkarılan Dersler
+
+1. **"Kod var" ≠ "çalışıyor"** — 44 başında BORU_MAP, boruEslestir, boruModalAc hepsi mevcuttu, ama tek satırlık select bug'ı yüzünden hiçbiri tetiklenmiyordu. Test gözle değil, kullanıcı gözüyle yapılır.
+
+2. **"Belirsizlikte sor" tembelliktir** — domain bilgisi varsa koda dökülür, kullanıcıya iş çıkmaz. Tier sistemi çoğul eşleşmeyi 1 saniyede çözer, kullanıcı modali görmez bile.
+
+3. **Mimari prensipler ölçek sorularıyla netleşir** — "1 dosya çalışıyor" demek "100 dosya çalışacak" demek değil. Cihat ölçek sezgisini yapısal kurala çeviriyor, ben bunu kodla pekiştiriyorum.
+
+4. **Görsel kalite iş kalitesini yansıtır** — "biraz garip" eleştirisi sadece estetik değil, mühendislik standartlarına uyum mesajıdır. Teknik çizim hatching + cross-hair sadece güzel değil, doğru.
+
+5. **Cihat'ın "stratejik soruları" mimariyi yönlendirir** (5. oturumdur ders) — "neyi sıfırlayabilir miyiz?", "ne verirsek hızlanır?", "format değişince sıfırdan mı?" — bu sorular yapısal yatırımları doğru yöne çekiyor. Listele, dolu cevap ver, atlama.
+
+6. **Üç format örneği = mimari kanıt** — G200, PAOR, SR027 yan yana baktığımızda "her biri için ayrı parser, ortak motor" prensibi gerçek dünya verisiyle doğrulandı. Spekülasyon değil, kanıt.
+
+7. **Pilot için AI kritik değil** — tersan + PAOR deterministik veri veriyor. AI maliyeti yıl 1'den itibaren minimal başlar, sıfırlanabilir. Vizyon disiplini koruyor: AI vaadi pilot için yapılmamalı.
+
+---
+
+## 44 Sonu Durum
+
+✅ Cascade UI bug fix (boru + flanş)
+✅ Tier'lı otomatik eşleştirme (kullanıcı sıfır tıklama)
+✅ Boru modal sadeleştirme (15 → 6 satır)
+✅ Anma çapı kombo (DN · NPS · ⌀mm) + DN_NPS mapping
+✅ Mimari standart: harici SVG + _cizimYukle (MK-44.1)
+✅ Boru kesit teknik çizim (hatching, cross-hair)
+✅ Flanş cizim_path migration 016 (DN100 set)
+✅ Lang anahtarları 8 yeni (TR/EN/AR)
+✅ 3D vizyon haritası (4 katmanlı strateji)
+✅ Pilot format kararı: tersan + PAOR (MK-44.3)
+✅ AI maliyet projeksiyon analizi
 ✅ CI yeşil
-✅ 90 toplam kütüphane satırı (43 başı 49, +41)
 
-🔴 **Cascade UI eksik (44 ana teması):** Pilot eşleşmesi UI'da görünmüyor
-🔴 KK + Sevkiyat sayfa revizyonu açık (45+)
-🟡 Büküm modal açıklama alanı eksik (45+)
-🟡 boru_olculer şema güncellenmeli (45+)
-🟡 İçerik pipeline 45'e kaydı (cascade UI önce)
-🟡 CuNi P0 grupları henüz girilmedi (45+ pipeline ile)
+🔴 **45 ana teması:** tersan ve PAOR parser'ları
+🔴 **45 ikinci ana teması:** 3D motor entegrasyonu (Aşama 4.1-4.3 + schema)
+🔴 KK + Sevkiyat sayfa revizyonu (45+)
+🟡 boru_olculer şema güncellenmeli (`tenant_id` + `sistem_preset`, 45+)
+🟡 Eğitim havuzu (Cihat paralel topluyor)
 
 ---
 
-> 43 kapanışında yazıldı. Detaylı arşiv. 44 başında okunmaz, sadece geriye dönüp aranır.
+> 44 kapanışında yazıldı. Detaylı arşiv. 45 başında okunmaz, sadece geriye dönüp aranır.
