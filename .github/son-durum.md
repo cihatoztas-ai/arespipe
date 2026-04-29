@@ -1,127 +1,98 @@
 # AresPipe — Son Durum
 
-> **Son guncelleme:** 29 Nisan 2026 — 44. oturum kapandı
+> **Son guncelleme:** 29 Nisan 2026 — 45. oturum kapandı
 > **CI:** YESIL
-> **Aktif oturum sayisi:** 44
+> **Aktif oturum sayisi:** 45
 
 ---
 
-## 44. Oturum Özeti
+## 45. Oturum Özeti
 
-**Tema:** 44.B Cascade UI tamamlandı + büyük mimari kararı + 3D vizyonu netleşti.
+**Tema:** Schema temeli + Format dispatcher altyapısı (parser yazımı 46'ya).
 
-43'te kütüphane içerik gerçek IFS verisine **veritabanı seviyesinde** değdi ama UI'da görünmüyordu. 44'te bu kapatıldı: cascade modal hem boru hem flanş için çalışıyor, kütüphane eşleşmesi pilot kullanıcıya görünür halde.
+44 sonu CIHAT-PROFIL "atlama, listele, dolu cevap ver" disiplini doğrulandı: parser yazımına körlemesine atlamak yerine önce DB temelini oturttuk + 44 raporundaki iki kritik yanlış tespit edildi:
 
-Yanı sıra Cihat'ın iki kritik müdahalesi mimariyi sağlamlaştırdı:
-1. **"Kullanıcı zaman harcamasın"** — boru lookup'ında çoklu eşleşme durumunda kullanıcıya soru sorma yerine deterministik tier sistemi (kalite kodu prefix → kanonik standart öncelik). Pilot vakada hiç modal sormaz.
-2. **"Görselleri sayfaya gömme"** — 1500 satırlık inline SVG yerine `cizimler/<tip>/` altında harici dosyalar + `_cizimYukle` helper (fetch + placeholder replace + innerHTML). Sayfa şişmesini önler, dinamik etiket destekler, ileride yeni tip eklenmesi sadece dosya işidir.
+1. **tersan = Cadmatic, AVEVA E3D değil.** PDF metadata Producer alanı kanıtladı. Mevcut DB'deki "AVEVA E3D" tek kayıt PAOR'a aitti, doğru. tersan ayrı yeni kayıt olarak eklendi.
+2. **izometri-oku.js zaten 38'den beri var (985 satır).** "K5/36'da sıfırdan yazılacak" notu 41-44 arası dokunulmadığı için stale kalmış. Strateji değişti: sıfırdan değil, mevcut akışa **deterministik parser branch'i** eklenecek (AI fallback korunur).
 
-Oturum sonu Cihat 3D spool oluşturma vizyonunu açtı. Mevcut 3 farklı tersane formatı (G200, PAOR, SR027) yan yana incelendi, mimari prensibin gerçek dünyada kanıtlandığı görüldü. Pilot iki referans format **tersan** ve **PAOR**, parser yatırımı 45'in ana iş kalemi.
+İki PDF örneği (tersan M110 spool + PAOR 11D-PAOR-54102-101626-A) detaylı analiz edildi. Parser tasarım kararları netleşti. Cihat'tan gelen pragmatik bilgi: tersan farklı CAD program da kullanabilir, farklı tersaneler farklı format verebilir → fingerprint dar olmalı, yeni format = yeni kayıt (Karar 9 mimarisi).
 
 **Yapılanlar:**
-- spool_detay.html cascade UI bug fix (spool fetch'te `tip` field eksikti — tek satır düzeltme)
-- Boru tier'lı otomatik eşleştirme aktif (kalite prefix → kanonik standart, kullanıcı sıfır tıklama)
-- Boru modal tablo sadeleştirmesi: 15 → 6 satır
-- **Mimari değişiklik:** Cascade modal görselleri sayfadan çıkarıldı, harici SVG dosyası + `_cizimYukle` helper. Hem boru hem flanş tek pattern.
-- Boru kesit SVG'si teknik çizim standardına yenilendi (45° hatching, cross-hair merkez, ince çizgiler, şeffaf iç boşluk)
-- Anma çapı kombo gösterimi (DN · NPS · ⌀mm) — DN_NPS kanonik mapping'i sayfaya eklendi
-- Flanş `cizim_path` DN100 doldurma — migration 016
-- Flanş modal `<img>` → `_cizimYukle` (SVG inline render, dinamik etiket destekleyici)
-- Lang anahtarları: `boru_meta`, `boru_standart`, `boru_urun_formu`, `boru_anma_cap`, `boru_agirlik`, `boru_hacim`, `boru_yuzey`, `boru_kis_ic` — 3 dilde tam çeviri
-
-**Çıktı dosyaları:**
-- spool_detay.html (3734 satır, +24 net değişim)
-- cizimler/boru/boru-kesit.svg (yeni dosya, placeholder'lı template)
-- migrations/016_flansh_dn100_b16_5_class150_wn_cizim_path.sql
-- lang/tr.json, en.json, ar.json — 1652 → 1660 satır
-- son-durum.md (bu dosya)
-- CLAUDE-SON-OTURUM.md (44 detaylı arşivi)
-- CLAUDE-SONRAKI-OTURUM.md (45 gündemi)
+- `017_3d_motor_schema.sql` — `spool_malzemeleri`'ne `sira`, `rotation_angle`, `yonelim_kod` kolonları + 2 CHECK + composite index. Mevcut `x1_mm/y1_mm/z1_mm/x2_mm/y2_mm/z2_mm` doğrulandı (PAOR koordinatları için kullanılacak, dokunulmadı).
+- `018_format_tanimlari_sistem_preset.sql` — `izometri_format_tanimlari`'na `sistem_preset BOOLEAN` + CHECK (`sistem_preset=true ⟹ tenant_id IS NULL`) + partial unique `(ad) WHERE sistem_preset=true` + mevcut PAOR kaydı `sistem_preset=true` UPDATE. RLS policy'leri dokunulmadı (riskli, 020+ açık).
+- `019_format_tanimlari_tersan_kayit.sql` — "Cadmatic — Tersan Shipyard M110 Şablonu" kaydı eklendi (UUID `c8755d46-...`). `parser_kural` boş, fingerprint dolu.
+- tersan + PAOR PDF analizi → parser tasarım haritası (CLAUDE-SON-OTURUM.md detayında).
+- 44 raporundaki Cadmatic/AVEVA hatası ve izometri-oku.js mevcut durumu CLAUDE-SON-OTURUM.md'de belgelenmiştir (45 öğrenmesi).
 
 ---
 
-## Sayısal Durum (44 sonu)
+## Mimari Kararlar (45)
 
-| Modül | Bekleniyor | Canlıda | % |
-|---|---:|---:|---:|
-| flansh_olculer | ~800 | 20 | 2.5% |
-| boru_olculer | ~280 | 58 | 21% |
-| fitting_olculer | ~2,500 | 0 | 0% |
-| malzeme_kataloglari | ~120 | 12 | 10% |
-| fitting_malzeme_uyum | ~8,000 | 0 | 0% |
-| ozel_parcalar | 200-500 | 0 | 0% |
-| **TOPLAM kütüphane** | **~12,400** | **90** | **0.7%** |
+**MK-45.1 — Parser stratejisi: yamal, sıfırdan değil.**
+Mevcut `api/izometri-oku.js` (985 satır, 38-42'de yazılmış AI L3 Vision akışı) korunur. Akışın 4. adımına (`Format bulundu + parser_kural dolu → L1/L2 parse — bu sürümde devre dışı, 38'de`) deterministik parser branch'i eklenecek. AI fallback (5. adım) bozulmaz, eşleşme varsa hiç çağrılmaz. **Saf kazanç stratejisi.**
 
-Veri tarafı 43'ten beri sabit — Cihat kütüphane doldurmayı paralel sürdürüyor, sonraki oturumda canlı sayım güncellenir.
+**MK-45.2 — Format kayıt granülerliği: dar fingerprint, çoklu kayıt.**
+"tersan" tek bir kayıt değil. M110 örneğine özel bir kayıt + her farklı tersane/CAD program kombinasyonu için ayrı kayıt. Cihat: *"tersan başka CAD da kullanıyor olabilir, diğer tersaneler farklı dosyalar verebilir."* → Karar 9 (36) mimarisi pratiğe geçti.
+
+**MK-45.3 — Rotation Angle opsiyonel.**
+tersan'ın bu örneğinde Cut & Bending Info tablosunda Rotation Angle sütunu var ama BOŞ. Cadmatic dirsek dönüşünü görsel olarak iletiyor (yön okları, izometri çizgisi). Parser opsiyonel olarak okuyacak, NULL kabul. 3D motor Aşama 4.2 (Rotation Angle okuma) ve Aşama 4.3 (manuel düzeltme UI) zaten bu durumla uyumlu.
+
+**MK-45.4 — Migration disiplini iki adımdır.**
+45'te iki kez aynı tuzağa düşüldü (018 önce GitHub'a, sonra Supabase atlandı). Doğru sıra: (1) önce Supabase SQL Editor'da çalıştır + doğrula, (2) sonra GitHub'a upload + CI yeşil. Bu sıra kalıcı kural — sonraki oturum açılışına ekle.
 
 ---
 
 ## Açık Borçlar
 
-### Tamamlandı (44'te)
-- ✅ Cascade UI bug fix
-- ✅ Boru otomatik eşleştirme + modal
-- ✅ Mimari standart (harici SVG + _cizimYukle)
-- ✅ Lang anahtarları
+### Tamamlandı (45'te)
+- ✅ 017 — 3D motor schema kolonları
+- ✅ 018 — sistem_preset kolonu + PAOR güncelleme
+- ✅ 019 — tersan format kaydı
+- ✅ tersan + PAOR PDF örnek analizi → parser regex haritası
 
-### KIRMIZI 45 ana teması — Pilot Format Parser'ları
-**tersan (G200)** + **PAOR** iki referans format için parser yazımı. Cihat'ın net kararı: "tersan ve PAOR şu an aktif bu ikisini referans alalım, diğer formatları üzerine ekleriz."
+### KIRMIZI 46 ana teması — Parser branch'i
+- `api/izometri-oku.js` Cihat tarafından bütün halinde yüklenecek (985 satır, sürükle bırak)
+- Deterministik parser branch tasarımı (mevcut akışa str_replace patch'leri)
+- `parseTersanCadmaticM110(text, dosya_adi)` ve `parsePAORAvevaSTM(text, dosya_adi)` fonksiyonları
+- AI fallback korunur, eşleşme varsa devre dışı
 
-- tersan parser (Cut Length tablosundan Rotation Angle okuma — deterministik, AI'sız)
-- PAOR parser (FORE/PS/HEI koordinat çıkarımı — deterministik, AI'sız)
-- Format dispatcher (PDF metadata + başlık fingerprint ile eşleşme)
+### KIRMIZI 46 ikinci ana teması — `020_format_tanimlari_parser_kural.sql`
+- tersan + PAOR `parser_kural` JSONB'leri doldur
+- `format_kodu` üzerinden kod branch'i tetiklenir
 
-### KIRMIZI 45 ikinci ana teması — 3D Motor Entegrasyonu
-- Schema: `spool_malzemeleri.sira`, `rotation_angle`, `yonelim_kod` kolonları
-- Aşama 4.1 (default zincir) → Aşama 4.2 (Rotation Angle okuma) → Aşama 4.3 (manuel düzeltme UI)
-- AI'sız çalışan pilot mümkün — çünkü hem tersan hem PAOR formatları yön bilgisini deterministik veriyor
+### KIRMIZI 46 üçüncü ana teması — Pilot test
+- 1 tersan + 1 PAOR PDF parse → spool_malzemeleri JSON çıktısı
+- Manuel onay UI'da görünür (zaten 36'da yapılmıştı)
 
-### SARI Diger acik isler (45+)
-- KK + Sevkiyat sayfa revizyonu (4. oturumdur açık)
+### SARI Diger acik isler (46+)
+- 016 numaralı flanş cizim_path migration disk'te yok (44'te Supabase manuel çalıştırıldı). İleride dökülmesi düzgün migration disiplini için faydalı.
+- KK + Sevkiyat sayfa revizyonu (5. oturumdur açık)
 - Büküm modal açıklama alanı eksik
 - boru_olculer şema güncellenmeli (`tenant_id` + `sistem_preset` — multi-tenant için)
 - CuNi P0 grupları
 - Eğitim havuzu (Cihat paralel topluyor — anonim eski PAOR/tersan PDF'leri)
+- 3D motor Aşama 4.1/4.2/4.3 (parser bittikten sonra)
+- devre_yeni.html PDF upload akışı parser'a bağlanması (Cihat paralel: *"buradaki ilerleyişe göre devre yükleme sayfasını güncelleyecem"*)
 
 ---
 
 ## Vizyon Disiplini
 
-41-43'te kütüphane vizyondan kapsama alındı (3 istisna). 44'te cascade UI ve mimari standardı kapsama alındı (4. istisna) — ama bu vizyondaki **"Katman 4 — Spool Akışına Entegrasyon"** maddesi, yeni iş değil tamamlanma.
+45'te yeni istisna **yapılmadı** ✓. Sadece mevcut altyapıyı (izometri_format_tanimlari + spool_malzemeleri schema) genişlettik. AI maliyet sıfır hedefi tutuyor (henüz parser çalışmadı, ama kod tarafında AI fallback var, deterministik eşleşme varsa AI çağrılmaz).
 
-45'te iki tema (parser + 3D motor) **yine kapsam dahilinde** — mevcut `izometri_format_tanimlari` mimarisi (36'da kuruldu) ve `buildChain` motoru (40'ta hazır) üzerine kurulur. Sıfırdan yeni vaat yok.
+44'te 4 istisna kapsama alınmıştı. 45 sıfır istisna ile bitti. 5. istisna riski şimdilik yok.
 
 ❌ Pasif öğrenme — vizyonda kalır
 ❌ Tier'li servis modeli — vizyonda kalır
 ❌ Lazer tarama pipeline — vizyonda kalır
-❌ STEP koordinat çıkarımı — vizyonda kalır (ama parser mimarisi STEP'e hazır olacak)
-❌ Klasör yükleme + format tanıma — vizyonda kalır
+❌ STEP koordinat çıkarımı — vizyonda kalır
+❌ Klasör yükleme + format tanıma — vizyonda kalır (Cihat'ın bugün gönderdiği zip yapısı esin verdi ama 45 işi değil)
 ❌ Çapraz validasyon (3 katman) — vizyonda kalır
-❌ AI yön çıkarımı — 45'te **gerek yok** (tersan + PAOR deterministik), 50+ oturumda yeni tersane formatı gelirse konuşulur
-
-Cihat *"sistem can damarı, eklemeli"* derse: cevap *"44'te 4. istisna yapıldı, 5.si presedan. 50. oturumdan sonra konuşalım."*
+❌ AI yön çıkarımı — 45'te gerek olmadı (rotation_angle opsiyonel kabulü ile yetindi)
 
 ---
 
-## 44 Sonu Durum
-
-✅ Cascade UI canlıda (boru + flanş)
-✅ Mimari standart kuruldu (harici SVG + _cizimYukle pattern)
-✅ Boru kesit teknik çizim standardı
-✅ DN_NPS kanonik mapping
-✅ Flanş DN100 SVG bağlantılı (migration 016)
-✅ 3 dil i18n boru anahtarları
-✅ CI yeşil
-✅ 3 farklı tersane formatı analiz edildi (G200, PAOR, SR027) — mimari prensip kanıtlandı
-✅ Pilot referans 2 format belirlendi: tersan + PAOR
-
-🔴 **45 ana teması:** tersan ve PAOR parser'ları (deterministik, AI'sız)
-🔴 **45 ikinci ana teması:** 3D motor entegrasyonu (Aşama 4.1-4.3)
-🔴 KK + Sevkiyat sayfa revizyonu açık (45+)
-🟡 Büküm modal açıklama alanı eksik (45+)
-🟡 boru_olculer şema güncellenmeli (`tenant_id` + `sistem_preset`, 45+)
-🟡 CuNi P0 grupları (45+ pipeline ile)
-
----
-
-> 44 kapanışında yazıldı. 45 başında okunmaz, sadece geriye dönüp aranır.
+> Migration disiplini hatırlatması (her DB değişikliği iki adımdır):
+> 1. Önce Supabase SQL Editor → DB'ye uygula + doğrula
+> 2. Sonra GitHub'a upload → CI yeşil → versiyonlama
+> İkisi de yapılmadan migration "tamamlandı" sayılmaz.
