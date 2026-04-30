@@ -69,63 +69,24 @@ export default async function handler(req, res) {
     // Bu hızlı yol, ek sorgu gerektirmez.
     if (batch.sonuc_json && typeof batch.sonuc_json === 'object') {
       var spoollar = duzlestir(batch.sonuc_json, batch_id);
-      if (spoollar.length > 0) {
-        console.log(`[batch-spoollari] Hizli yol: sonuc_json'dan ${spoollar.length} spool`);
-        return res.status(200).json({
-          batch: { id: batch.id, durum: batch.durum, dosya_sayisi: batch.dosya_sayisi },
-          spoollar,
-          toplam_spool: spoollar.length,
-          kaynak: 'sonuc_json',
-        });
-      }
-    }
-
-    // --- 3. Yedek yol: ai_api_log'dan dosya başına en son cevap_full ---
-    // Eğer izometri-oku sonuc_json'a yazmıyorsa (ya da cache hit'te boş kaldıysa)
-    // ai_api_log'dan tek tek çekeriz. Bu yol yavaştır ama defansif.
-    const tamamKayitlar = await supaFetch(
-      `is_kuyrugu?batch_id=eq.${batch_id}&durum=eq.tamam&select=id,dosya_adi,storage_path&order=dosya_sirasi.asc`
-    );
-
-    if (!tamamKayitlar || tamamKayitlar.length === 0) {
+      console.log(`[batch-spoollari] sonuc_json'dan ${spoollar.length} spool`);
       return res.status(200).json({
         batch: { id: batch.id, durum: batch.durum, dosya_sayisi: batch.dosya_sayisi },
-        spoollar: [],
-        toplam_spool: 0,
-        kaynak: 'bos',
+        spoollar,
+        toplam_spool: spoollar.length,
+        kaynak: 'sonuc_json',
       });
     }
 
-    // Her dosya için ai_api_log'da en son başarılı kaydı bul (paralel)
-    const dosyaCevaplari = await Promise.all(
-      tamamKayitlar.map(async (k) => {
-        const dosyaAdiEnc = encodeURIComponent(k.dosya_adi);
-        const log = await supaFetch(
-          `ai_api_log?tenant_id=eq.${batch.tenant_id}&basarili=eq.true&select=cevap_full,olusturma_at&dosya_adi=eq.${dosyaAdiEnc}&order=olusturma_at.desc&limit=1`
-        ).catch(() => []);
-        return { dosya_adi: k.dosya_adi, log: log?.[0] };
-      })
-    );
-
-    const spoollar = [];
-    for (const dc of dosyaCevaplari) {
-      if (!dc.log?.cevap_full?.spoollar) continue;
-      for (const sp of dc.log.cevap_full.spoollar) {
-        spoollar.push({
-          ...sp,
-          _dosya: dc.dosya_adi,
-          _batch_id: batch_id,
-          _manuel_onay: sp.durum === 'manuel_onay',
-        });
-      }
-    }
-
-    console.log(`[batch-spoollari] Yedek yol: ai_api_log'dan ${spoollar.length} spool`);
+    // --- 3. sonuc_json bos: empty cevap ---
+    // Yedek yol (ai_api_log lookup) 49'da disabled — ai_api_log'da dosya_adi kolonu yok.
+    // 50/51'de pdf_sha256 üzerinden join eklenebilir, şimdilik sonuc_json zorunlu.
+    console.log('[batch-spoollari] sonuc_json bos veya yok');
     return res.status(200).json({
       batch: { id: batch.id, durum: batch.durum, dosya_sayisi: batch.dosya_sayisi },
-      spoollar,
-      toplam_spool: spoollar.length,
-      kaynak: 'ai_api_log',
+      spoollar: [],
+      toplam_spool: 0,
+      kaynak: 'bos',
     });
 
   } catch (e) {
