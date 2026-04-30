@@ -883,12 +883,29 @@ function manuelOnayAc() {
 function excelIndir() {
   if (!_tumSpooller.length) return;
 
-  // Sheet 1: Spool Listesi
-  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
+  // Sheet 1: Spool Listesi (Durum + Uyarılar kolonları eklendi)
+  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev', 'Durum', 'Uyarılar']];
   _tumSpooller.forEach(function(s, i) {
     var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
     var _kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||''):(s.kalite||'');
     var _ye=(typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||''):(s.yuzey||'');
+
+    // Durum: manuel_onay → "Manuel Onay", hazir → "Hazır", diğer → durum
+    var durumLabel = s._manuel_onay ? 'Manuel Onay'
+                   : s.durum === 'hazir' ? 'Hazır'
+                   : (s.durum || '—');
+
+    // Uyarılar: agirlik+mesaj birleştir, ; ile ayır
+    var uyariMetni = '';
+    if (s.uyarilar && Array.isArray(s.uyarilar) && s.uyarilar.length > 0) {
+      uyariMetni = s.uyarilar.map(function(u){
+        var prefix = u.agirlik === 'kritik' ? '[KRİTİK] '
+                   : u.agirlik === 'orta' ? '[ORTA] '
+                   : '';
+        return prefix + (u.mesaj || u.kod || '');
+      }).join('; ');
+    }
+
     rows.push([
       i + 1,
       (s._dosya || '').replace('.pdf','').replace('.PDF',''),
@@ -901,13 +918,13 @@ function excelIndir() {
       s.boy_mm      || '',
       s.agirlik_kg  || '',
       _ye,
-      s.rev         || ''
+      s.rev         || '',
+      durumLabel,
+      uyariMetni
     ]);
   });
 
   // Sheet 2: Malzeme Listesi (her spool'un malzeme_listesi'i flatten)
-  // Gerçek JSON yapısına göre: kod, kategori, tanim, kalite, malzeme, adet,
-  // dis_cap_mm, et_mm, boy_mm, agirlik_kg, boyut_standardi, malzeme_standardi
   var malzRows = [['Dosya', 'Pipeline No', 'Spool No', 'Kod', 'Kategori', 'Tanım', 'Malzeme', 'Kalite', 'Adet', 'Dış Çap (mm)', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Boyut Standardı', 'Malzeme Standardı']];
   _tumSpooller.forEach(function(s) {
     (s.malzeme_listesi || []).forEach(function(m) {
@@ -936,8 +953,12 @@ function excelIndir() {
   var ws2 = XLSX.utils.aoa_to_sheet(malzRows);
 
   // Kolon genişlikleri
-  ws1['!cols'] = [{wch:4},{wch:30},{wch:18},{wch:10},{wch:7},{wch:10},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6}];
+  ws1['!cols'] = [{wch:4},{wch:30},{wch:18},{wch:10},{wch:7},{wch:10},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6},{wch:14},{wch:50}];
   ws2['!cols'] = [{wch:30},{wch:18},{wch:10},{wch:6},{wch:18},{wch:50},{wch:14},{wch:10},{wch:6},{wch:12},{wch:8},{wch:10},{wch:12},{wch:18},{wch:18}];
+
+  // Spool Listesi'nde otomatik filtre (kullanıcı kolayca filtreler)
+  var sonHarf = String.fromCharCode(64 + rows[0].length);  // O = 15. kolon
+  ws1['!autofilter'] = { ref: 'A1:' + sonHarf + rows.length };
 
   XLSX.utils.book_append_sheet(wb, ws1, 'Spool Listesi');
   XLSX.utils.book_append_sheet(wb, ws2, 'Malzeme Listesi');
