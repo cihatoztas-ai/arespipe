@@ -103,10 +103,14 @@ export default async function handler(req, res) {
 //     spoollar: [ { spool_no, pipeline_no, dn, kalite, ... }, ... ],
 //     dosya_sonuclari: [ { dosya_adi, dosya_sirasi, spool_sayisi, ... } ]
 //   }
-// Spoollar dosya_adi içermiyor doğrudan. Eşleştirme `dosya_sirasi` üzerinden
-// olabilir veya tek dosya batch'lerde dosya_sonuclari[0].dosya_adi her spool'a atanır.
+// Spoollar dosya_adi içermiyor doğrudan ama pipeline_no içeriyor.
+// dosya_adi'nde de pipeline_no geçer (örn: 11D-PAOR-50600-101516-A.pdf → 50600-101516).
+// Eşleştirme stratejisi (en sağlamdan en zayıfa):
+//   1. pipeline_no eşleştirme — dosya_adi içinde geçen pipeline → dosya_adi atan
+//   2. Tek dosyalı batch → tüm spool'lar bu dosyaya
+//   3. dosya_sirasi map'i — spool'da varsa
 //
-// Yedek: doğrudan array gelirse onu da kabul et (eski format / başka sürüm).
+// Çıktı dosya_sirasi'na göre sıralanır → 100 PDF batch'te aramak kolay.
 // =====================================================================
 function duzlestir(sonuc_json, batch_id) {
   var spoollar = [];
@@ -114,27 +118,74 @@ function duzlestir(sonuc_json, batch_id) {
   // Format A: { spoollar: [...], dosya_sonuclari: [...] }  — gerçek izometri-oku format
   if (sonuc_json.spoollar && Array.isArray(sonuc_json.spoollar)) {
     var dosyaSonuclari = sonuc_json.dosya_sonuclari || [];
-    var dosyaSirasiMap = {};  // dosya_sirasi → dosya_adi
+
+    // Eşleştirme map'leri
+    var dosyaSirasiMap = {};       // dosya_sirasi → dosya_adi
+    var pipelineDosyaMap = {};     // pipeline_no → { dosya_adi, dosya_sirasi }
 
     dosyaSonuclari.forEach(function(ds) {
       if (ds.dosya_sirasi != null && ds.dosya_adi) {
         dosyaSirasiMap[ds.dosya_sirasi] = ds.dosya_adi;
+
+        // Dosya adından pipeline_no çıkar (5 hane - 6 hane formatı)
+        // Örn: "11D-PAOR-50600-101516-A.pdf" → "50600-101516"
+        var pipelineMatch = ds.dosya_adi.match(/(\d{5}-\d{6})/);
+        if (pipelineMatch) {
+          pipelineDosyaMap[pipelineMatch[1]] = {
+            dosya_adi: ds.dosya_adi,
+            dosya_sirasi: ds.dosya_sirasi,
+          };
+        }
       }
     });
 
-    // Tek dosyalı batch ise tüm spool'lar bu dosyaya ait
     var tekDosyaAdi = dosyaSonuclari.length === 1 ? dosyaSonuclari[0].dosya_adi : null;
+    var tekDosyaSirasi = dosyaSonuclari.length === 1 ? dosyaSonuclari[0].dosya_sirasi : null;
 
     sonuc_json.spoollar.forEach(function(sp) {
-      var dosyaAd = sp._dosya
-                 || (sp.dosya_sirasi != null && dosyaSirasiMap[sp.dosya_sirasi])
-                 || tekDosyaAdi
-                 || '?';
+      var dosyaAd = null;
+      var dosyaSirasi = null;
+
+      // 1. Spool'da zaten _dosya varsa onu al (defansif)
+      if (sp._dosya) {
+        dosyaAd = sp._dosya;
+      }
+      // 2. Pipeline_no eşleştirme — en sağlam
+      else if (sp.pipeline_no && pipelineDosyaMap[sp.pipeline_no]) {
+        var match = pipelineDosyaMap[sp.pipeline_no];
+        dosyaAd = match.dosya_adi;
+        dosyaSirasi = match.dosya_sirasi;
+      }
+      // 3. Tek dosyalı batch → tüm spool'lar bu dosyaya
+      else if (tekDosyaAdi) {
+        dosyaAd = tekDosyaAdi;
+        dosyaSirasi = tekDosyaSirasi;
+      }
+      // 4. Spool'da dosya_sirasi varsa map'ten al
+      else if (sp.dosya_sirasi != null && dosyaSirasiMap[sp.dosya_sirasi]) {
+        dosyaAd = dosyaSirasiMap[sp.dosya_sirasi];
+        dosyaSirasi = sp.dosya_sirasi;
+      }
+      // 5. Bulunamadı
+      else {
+        dosyaAd = '?';
+      }
+
       spoollar.push(Object.assign({}, sp, {
         _dosya: dosyaAd,
+        _dosya_sirasi: dosyaSirasi != null ? dosyaSirasi : 9999,  // sıralama için
         _batch_id: batch_id,
         _manuel_onay: sp.durum === 'manuel_onay',
       }));
+    });
+
+    // dosya_sirasi → spool_no sırasında sırala (kullanıcı kolay arasın)
+    spoollar.sort(function(a, b) {
+      if (a._dosya_sirasi !== b._dosya_sirasi) return a._dosya_sirasi - b._dosya_sirasi;
+      // Aynı dosya içinde spool_no'ya göre
+      var aNo = String(a.spool_no || '');
+      var bNo = String(b.spool_no || '');
+      return aNo.localeCompare(bNo);
     });
 
     return spoollar;
@@ -164,7 +215,7 @@ function duzlestir(sonuc_json, batch_id) {
     return spoollar;
   }
 
-  // Format bilinmeyen - boş döndür (yedek yol tetiklenir)
+  // Format bilinmeyen - boş döndür
   console.warn('[batch-spoollari] duzlestir: bilinmeyen sonuc_json formati', typeof sonuc_json);
   return spoollar;
 }
