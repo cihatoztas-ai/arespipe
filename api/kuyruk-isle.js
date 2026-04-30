@@ -44,11 +44,17 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 const STORAGE_BUCKET = 'izometri-pdfs';
 
-// Self-fetch için kendi base URL'imiz. VERCEL_URL ve VERCEL_PROJECT_PRODUCTION_URL
-// Vercel'de otomatik set edilir. Lokalde fallback: localhost.
+// Self-fetch için kendi base URL'imiz.
+// 49 ders: VERCEL_URL deployment-spesifik URL verir (arespipe-xxx-...vercel.app),
+// "Standard Protection" altında bu URL korumalı → 401 alır. Production custom URL
+// (arespipe.vercel.app) public ve sabit. Bu yüzden öncelik:
+//   1. ARES_PUBLIC_URL — manuel override (custom domain için)
+//   2. VERCEL_PROJECT_PRODUCTION_URL — Vercel'in resmi sabit production URL'si
+//   3. VERCEL_URL — son çare (deployment URL, korumalı olabilir)
 const SELF_BASE_URL = (() => {
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.ARES_PUBLIC_URL) return process.env.ARES_PUBLIC_URL.replace(/\/$/, '');
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'http://localhost:3000';
 })();
 
