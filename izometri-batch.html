@@ -882,6 +882,8 @@ function manuelOnayAc() {
 // ── EXCEL İNDİR ───────────────────────────────────────────────
 function excelIndir() {
   if (!_tumSpooller.length) return;
+
+  // Sheet 1: Spool Listesi
   var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
   _tumSpooller.forEach(function(s, i) {
     var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
@@ -902,9 +904,44 @@ function excelIndir() {
       s.rev         || ''
     ]);
   });
-  var ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Sheet 2: Malzeme Listesi (her spool'un malzeme_listesi'i flatten)
+  // Gerçek JSON yapısına göre: kod, kategori, tanim, kalite, malzeme, adet,
+  // dis_cap_mm, et_mm, boy_mm, agirlik_kg, boyut_standardi, malzeme_standardi
+  var malzRows = [['Dosya', 'Pipeline No', 'Spool No', 'Kod', 'Kategori', 'Tanım', 'Malzeme', 'Kalite', 'Adet', 'Dış Çap (mm)', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Boyut Standardı', 'Malzeme Standardı']];
+  _tumSpooller.forEach(function(s) {
+    (s.malzeme_listesi || []).forEach(function(m) {
+      malzRows.push([
+        (s._dosya || '').replace('.pdf','').replace('.PDF',''),
+        s.pipeline_no || '',
+        s.spool_no    || '',
+        m.kod         || '',
+        m.kategori    || '',
+        m.tanim       || '',
+        m.malzeme     || '',
+        m.kalite      || '',
+        m.adet        || '',
+        m.dis_cap_mm  || '',
+        m.et_mm       || '',
+        m.boy_mm      || '',
+        m.agirlik_kg  || '',
+        m.boyut_standardi   || '',
+        m.malzeme_standardi || ''
+      ]);
+    });
+  });
+
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Spool Listesi');
+  var ws1 = XLSX.utils.aoa_to_sheet(rows);
+  var ws2 = XLSX.utils.aoa_to_sheet(malzRows);
+
+  // Kolon genişlikleri
+  ws1['!cols'] = [{wch:4},{wch:30},{wch:18},{wch:10},{wch:7},{wch:10},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6}];
+  ws2['!cols'] = [{wch:30},{wch:18},{wch:10},{wch:6},{wch:18},{wch:50},{wch:14},{wch:10},{wch:6},{wch:12},{wch:8},{wch:10},{wch:12},{wch:18},{wch:18}];
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Spool Listesi');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Malzeme Listesi');
+
   var tarih = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, 'AresPipe_Izometri_' + tarih + '.xlsx');
 }
