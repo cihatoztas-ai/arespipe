@@ -288,6 +288,22 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 <script>
 'use strict';
 
+// =====================================================================
+// 49. OTURUM REFACTOR — async server-driven kuyruk
+// =====================================================================
+// Eski mimari: client loop, her PDF için fetch /api/izometri-oku.
+// Yeni mimari: PDF'ler Storage'a paralel upload → kuyruğa kayıt → backend
+// self-trigger chain ile parse eder. Tarayıcı kapatılsa devam eder.
+//
+// Yeni durum kodları (eski 4 + yeni 2):
+//   bekliyor    — kullanıcı seçti, henüz başlamadı
+//   yukleniyor  — Storage upload sürüyor (yeni)
+//   kuyrukta    — Storage'da, parse bekliyor (yeni)
+//   isleniyor   — backend worker parse ediyor
+//   tamam       — parse başarılı
+//   hata        — kalıcı hata
+// =====================================================================
+
 var DN_MM = {21.3:15,26.9:20,33.7:25,42.4:32,48.3:40,60.3:50,76.1:65,88.9:80,114.3:100,139.7:125,168.3:150,219.1:200,273:250,323.9:300,355.6:350,406.4:400};
 function capToDN(mm) {
   if (!mm) return '—';
@@ -299,10 +315,24 @@ function capToDN(mm) {
   return minDiff < 3 ? 'DN' + closest : '~DN' + closest;
 }
 
-var _dosyalar = []; // {file, durum, format, spooller, hata, batch_id}
+// ── Sabitler (49) ────────────────────────────────────────────
+var STORAGE_BUCKET = 'izometri-pdfs';
+var LS_AKTIF_BATCH = 'ares_aktif_izometri_batch';
+var POLLING_BASE_MS = 3000;
+var POLLING_SLOW_MS = 8000;
+var POLLING_NO_CHANGE_THRESHOLD = 10;
+var UPLOAD_CONCURRENCY = 8;
+
+// ── Global state ─────────────────────────────────────────────
+var _dosyalar = []; // {file, durum, format, spooller, hata, batch_id, storage_path, _resume}
 var _tumSpooller = [];
 var _calisıyor = false;
-var _batchId = null; // İlk PDF response'undan dolar, sonraki PDF'lerde tekrar gönderilir
+var _batchId = null;
+
+// Polling state
+var _polling = null;
+var _pollingNoChange = 0;
+var _sonOzetSnapshot = '';
 
 // ── DRAG DROP ─────────────────────────────────────────────────
 function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
@@ -315,10 +345,13 @@ function onDrop(e) {
 }
 
 function dosyaEkle(files) {
+  if (_calisıyor) {
+    alert(tv('izb_calisiyor', 'Aktif bir batch var. Önce tamamlanmasını bekleyin veya yeni bir oturum başlatın.'));
+    return;
+  }
   var yeni = Array.from(files).filter(function(f){ return f.name.toLowerCase().endsWith('.pdf'); });
   yeni.forEach(function(f) {
-    // Duplikat kontrolü
-    var var_mi = _dosyalar.find(function(d){ return d.file.name === f.name; });
+    var var_mi = _dosyalar.find(function(d){ return d.file && d.file.name === f.name; });
     if (!var_mi) {
       _dosyalar.push({ file: f, durum: 'bekliyor', format: null, spooller: [], hata: null });
     }
@@ -334,16 +367,24 @@ function dosyaSil(idx) {
 }
 
 function temizle() {
-  if (_calisıyor) return;
+  if (_calisıyor) {
+    if (!confirm(tv('izb_temizle_onay','Aktif bir batch var. Yine de temizlemek istiyor musunuz? Backend\'deki parse devam eder, ama bu sayfada izlenmeyecek.'))) {
+      return;
+    }
+    pollingDur();
+    localStorage.removeItem(LS_AKTIF_BATCH);
+  }
+  _calisıyor = false;
   _dosyalar = [];
   _tumSpooller = [];
   _batchId = null;
+  document.getElementById('btnBasla').disabled = false;
+  document.getElementById('btnBasla').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> ' + tv('izb_btn_basla','Batch Başlat');
   renderDosyalar();
   document.getElementById('sonucWrap').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
   document.getElementById('btnExcel').disabled = true;
   document.getElementById('btnManuel').classList.add('gizli');
-  document.getElementById('yeniFormatBanner').classList.remove('show');
 }
 
 function renderDosyalar() {
@@ -363,10 +404,9 @@ function renderDosyalar() {
   liste.style.display = 'block';
   btnRow.style.display = 'flex';
 
-  // Stats
   var tamam = _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length;
   var hata  = _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length;
-  var toplamSpool = _dosyalar.reduce(function(s,d){ return s + d.spooller.length; }, 0);
+  var toplamSpool = _dosyalar.reduce(function(s,d){ return s + (d.spooller||[]).length; }, 0);
   var manOnay = _tumSpooller.filter(function(s){ return s._manuel_onay === true; }).length;
 
   document.getElementById('statDosyaVal').textContent  = _dosyalar.length;
@@ -376,7 +416,6 @@ function renderDosyalar() {
   document.getElementById('statManOnayVal').textContent = manOnay;
   statIds.forEach(function(id){ document.getElementById(id).classList.add('show'); });
 
-  // Manuel onay butonu görünürlüğü
   var btnMan = document.getElementById('btnManuel');
   if (manOnay > 0) {
     btnMan.classList.remove('gizli');
@@ -385,7 +424,6 @@ function renderDosyalar() {
     btnMan.classList.add('gizli');
   }
 
-  // Yeni format banner görünürlüğü
   var bilinmeyenVar = _dosyalar.some(function(d){ return d.durum === 'tamam' && d.format === 'bilinmeyen'; });
   var banner = document.getElementById('yeniFormatBanner');
   if (bilinmeyenVar) banner.classList.add('show'); else banner.classList.remove('show');
@@ -393,16 +431,18 @@ function renderDosyalar() {
   document.getElementById('dosyaListesiBaslik').textContent = _dosyalar.length + ' ' + tv('izb_dosya_secildi','dosya seçildi');
 
   items.innerHTML = _dosyalar.map(function(d, i) {
-    var durumIcon = d.durum === 'bekliyor'   ? '<span class="d-bekliyor">⬜ '+tv('izb_durum_bekliyor','Bekliyor')+'</span>'
-                  : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ '+tv('izb_durum_isleniyor','İşleniyor')+'</span>'
-                  : d.durum === 'tamam'      ? '<span class="d-tamam">✅ '+tv('izb_durum_tamam','Tamam')+'</span>'
-                  : '<span class="d-hata" title="' + (d.hata||'') + '">❌ '+tv('izb_durum_hata','Hata')+'</span>';
-    var spoolText = d.spooller.length ? d.spooller.length + ' ' + tv('izb_spool','spool') : '—';
-    var boyut = (d.file.size / 1024).toFixed(0) + ' KB';
+    var durumIcon =
+        d.durum === 'bekliyor'   ? '<span class="d-bekliyor">⬜ '+tv('izb_durum_bekliyor','Bekliyor')+'</span>'
+      : d.durum === 'yukleniyor' ? '<span class="d-isleniyor isleniyor-dot">⬆ '+tv('izb_durum_yukleniyor','Yükleniyor')+'</span>'
+      : d.durum === 'kuyrukta'   ? '<span class="d-bekliyor">⏸ '+tv('izb_durum_kuyrukta','Kuyrukta')+'</span>'
+      : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ '+tv('izb_durum_isleniyor','İşleniyor')+'</span>'
+      : d.durum === 'tamam'      ? '<span class="d-tamam">✅ '+tv('izb_durum_tamam','Tamam')+'</span>'
+      : '<span class="d-hata" title="' + (d.hata||'') + '">❌ '+tv('izb_durum_hata','Hata')+'</span>';
+    var spoolText = (d.spooller && d.spooller.length) ? d.spooller.length + ' ' + tv('izb_spool','spool') : '—';
+    var boyut = d.file && d.file.size ? (d.file.size / 1024).toFixed(0) + ' KB' : (d._resume ? 'resume' : '—');
 
-    // Format badge
     var formatHtml;
-    if (d.durum === 'bekliyor' || d.durum === 'isleniyor') {
+    if (d.durum === 'bekliyor' || d.durum === 'yukleniyor' || d.durum === 'kuyrukta' || d.durum === 'isleniyor') {
       formatHtml = '<span class="format-badge fb-bekliyor">—</span>';
     } else if (d.format === 'bilinmeyen') {
       formatHtml = '<span class="format-badge fb-bilinmeyen">⚠ '+tv('izb_format_bilinmeyen','Bilinmeyen')+'</span>';
@@ -412,9 +452,10 @@ function renderDosyalar() {
       formatHtml = '<span class="format-badge fb-bekliyor">—</span>';
     }
 
+    var dosyaAd = (d.file && d.file.name) || '?';
     return '<div class="dosya-item">'
       + '<span class="dosya-no">' + (i+1) + '</span>'
-      + '<span class="dosya-ad" title="' + esc(d.file.name) + '">' + esc(d.file.name) + '<br><small style="color:var(--txd);font-size:11px;">' + boyut + '</small></span>'
+      + '<span class="dosya-ad" title="' + esc(dosyaAd) + '">' + esc(dosyaAd) + '<br><small style="color:var(--txd);font-size:11px;">' + boyut + '</small></span>'
       + '<span>' + formatHtml + '</span>'
       + '<span class="dosya-durum">' + durumIcon + '</span>'
       + '<span class="dosya-spool">' + spoolText + '</span>'
@@ -423,25 +464,34 @@ function renderDosyalar() {
   }).join('');
 }
 
-// ── BATCH İŞLEME ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// BATCH BAŞLAT (yeni async akış)
+// ─────────────────────────────────────────────────────────────
 async function basla() {
   if (_calisıyor || !_dosyalar.length) return;
 
-  // Sadece bekleyenleri sıfırla, tamam olanları koruma (yeniden çalıştırma için)
-  var bekleyenler = _dosyalar.filter(function(d){ return d.durum === 'bekliyor' || d.durum === 'hata'; });
-  if (!bekleyenler.length) {
-    // Hepsini sıfırla ve yeniden başlat — yeni batch açılacak
-    _dosyalar.forEach(function(d){ d.durum = 'bekliyor'; d.spooller = []; d.hata = null; d.batch_id = null; });
-    _tumSpooller = [];
-    _batchId = null;
-  }
-
-  // Oturum bilgisi (tenant_id, kullanici_id) — backend zorunlu bekliyor
   var _tid = (typeof ARES !== 'undefined' && ARES.tenantId) ? ARES.tenantId() : null;
   var _otr = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
   var _kid = _otr && _otr.id ? _otr.id : null;
   if (!_tid || !_kid) {
     alert(tv('izb_oturum_hata', 'Oturum bilgisi alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.'));
+    return;
+  }
+  var _supa = (typeof ARES !== 'undefined' && ARES.supabase) ? ARES.supabase() : null;
+  if (!_supa) {
+    alert(tv('izb_supabase_hata','Supabase bağlantısı kurulamadı.'));
+    return;
+  }
+
+  // Yeniden çalıştırma: hatalı/bekleyen yoksa, baştan başlat (Karar 3 → seçenek i)
+  var bekleyenler = _dosyalar.filter(function(d){
+    return d.durum === 'bekliyor' || d.durum === 'hata';
+  });
+  if (!bekleyenler.length) {
+    if (!confirm(tv('izb_yeni_batch_onay','Tüm dosyalar bitti. Yeni bir batch için listeyi temizleyip tekrar yüklemeniz gerekir. Devam edilsin mi?'))) {
+      return;
+    }
+    temizle();
     return;
   }
 
@@ -451,102 +501,331 @@ async function basla() {
   document.getElementById('progressWrap').style.display = 'block';
   document.getElementById('sonucWrap').style.display = 'none';
 
-  var toplam = _dosyalar.length;
-  var tamamlanan = 0;
-  var sira = 0;
+  // Tüm bekleyen dosyaları "yukleniyor" duruma getir
+  _dosyalar.forEach(function(d){
+    if (d.durum === 'bekliyor' || d.durum === 'hata') {
+      d.durum = 'yukleniyor';
+      d.spooller = [];
+      d.hata = null;
+    }
+  });
+  renderDosyalar();
+  progressGuncelleAsync(0, _dosyalar.length, tv('izb_yukleme_hazirlaniyor','Yükleme hazırlanıyor...'));
 
-  for (var i = 0; i < _dosyalar.length; i++) {
-    var d = _dosyalar[i];
-    if (d.durum === 'tamam') { tamamlanan++; continue; }
+  try {
+    // 1. Batch aç
+    var bRes = await fetch('/api/batch-baslat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: _tid,
+        kullanici_id: _kid,
+        dosya_toplami: _dosyalar.length
+      })
+    });
+    var bJson = await bRes.json();
+    if (!bRes.ok || !bJson.ok) throw new Error(bJson.error || tv('izb_batch_acilmadi','Batch açılamadı'));
+    _batchId = bJson.batch_id;
+    localStorage.setItem(LS_AKTIF_BATCH, _batchId);
 
-    d.durum = 'isleniyor';
-    renderDosyalar();
-    progressGuncelle(tamamlanan, toplam, d.file.name);
-
-    try {
-      var base64 = await dosyaBase64(d.file);
-      sira++;
-
-      var res = await fetch('/api/izometri-oku', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id:     _tid,
-          kullanici_id:  _kid,
-          batch_id:      _batchId,           // İlk dosyada null → backend yeni batch açar
-          pdf_base64:    base64,
-          dosya_adi:     d.file.name,
-          dosya_sirasi:  sira,
-          dosya_toplami: toplam
-        })
-      });
-      var json = await res.json();
-
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || tv('izb_sunucu_hatasi','Sunucu hatası'));
-      }
-
-      // İlk başarılı dosyada batch_id'yi yakala — sonraki dosyalar aynı batch'e eklenecek
-      if (!_batchId && json.batch_id) _batchId = json.batch_id;
-
-      d.format    = json.format || null;
-      d.batch_id  = json.batch_id || _batchId;
-      d.spooller  = (json.spoollar || []).map(function(s) {
-        s._dosya    = d.file.name;
-        s._batch_id = d.batch_id;
-        return s;
-      });
-      d.durum = 'tamam';
-    } catch(e) {
-      d.durum = 'hata';
-      d.hata  = e.message;
+    // 2. Storage paralel upload
+    var basariliKayitlar = await dosyalariStorageYukle(_supa, _tid, _batchId, _dosyalar);
+    if (basariliKayitlar.length === 0) {
+      throw new Error(tv('izb_hicbir_yuklenmedi','Hiçbir dosya yüklenemedi'));
     }
 
-    tamamlanan++;
+    // 3. Kuyruğa al (tek çağrı, batched insert)
+    var kRes = await fetch('/api/batch-kuyruga-al', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        batch_id: _batchId, tenant_id: _tid, kullanici_id: _kid,
+        kayitlar: basariliKayitlar
+      })
+    });
+    var kJson = await kRes.json();
+    if (!kRes.ok || !kJson.ok) throw new Error(kJson.error || tv('izb_kuyruk_hata','Kuyruğa alınamadı'));
+
+    // 4. Worker tetikle (fire-and-forget, sonucunu beklemiyoruz)
+    fetch('/api/kuyruk-isle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batch_id: _batchId })
+    }).catch(function(){});
+
+    // 5. Polling başlat
+    document.getElementById('progressDetail').textContent =
+      tv('izb_arkada_basladi','Yükleme tamamlandı. Parse arkada başladı — tarayıcıyı kapatabilirsiniz.');
+    pollingBaslat();
+
+  } catch(e) {
+    _calisıyor = false;
+    document.getElementById('btnBasla').disabled = false;
+    localStorage.removeItem(LS_AKTIF_BATCH);
+    alert(tv('izb_hata_genel','Hata') + ': ' + e.message);
+    // Dosyaları geri "bekliyor"a al
+    _dosyalar.forEach(function(d){
+      if (d.durum === 'yukleniyor') d.durum = 'bekliyor';
+    });
     renderDosyalar();
-    progressGuncelle(tamamlanan, toplam, '');
+  }
+}
+
+// ── STORAGE PARALEL UPLOAD ─────────────────────────────────────
+async function dosyalariStorageYukle(supa, tenant_id, batch_id, dosyalar) {
+  var basarili = [];
+  var queue = [];
+  for (var i = 0; i < dosyalar.length; i++) {
+    if (dosyalar[i].durum === 'yukleniyor' && dosyalar[i].file) {
+      queue.push({ d: dosyalar[i], i: i });
+    }
+  }
+  var aktif = 0;
+  var yuklenen = 0;
+  var toplam = queue.length;
+
+  return new Promise(function(resolve) {
+    function siradakiBaslat() {
+      while (aktif < UPLOAD_CONCURRENCY && queue.length > 0) {
+        var item = queue.shift();
+        aktif++;
+        yukleTek(item.d, item.i).finally(function() {
+          aktif--;
+          yuklenen++;
+          progressGuncelleAsync(yuklenen, toplam, tv('izb_yukleniyor_x','Yükleniyor: ') + yuklenen + '/' + toplam);
+          if (queue.length > 0) {
+            siradakiBaslat();
+          } else if (aktif === 0) {
+            resolve(basarili);
+          }
+        });
+      }
+    }
+
+    async function yukleTek(d, sira) {
+      var slug = slugYap(d.file.name);
+      var path = tenant_id + '/' + batch_id + '/' + slug;
+      try {
+        var up = await supa.storage.from(STORAGE_BUCKET).upload(path, d.file, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+        if (up.error) throw new Error(up.error.message);
+
+        d.durum = 'kuyrukta';
+        d.storage_path = path;
+        renderDosyalar();
+
+        basarili.push({
+          dosya_adi: d.file.name,
+          dosya_boyut: d.file.size,
+          dosya_sirasi: sira + 1,
+          storage_path: path
+        });
+      } catch(e) {
+        d.durum = 'hata';
+        d.hata = tv('izb_upload_hatasi','Upload hatası: ') + e.message;
+        renderDosyalar();
+      }
+    }
+
+    if (queue.length === 0) resolve(basarili);
+    else siradakiBaslat();
+  });
+}
+
+function slugYap(ad) {
+  var trMap = { 'ç':'c','Ç':'c','ğ':'g','Ğ':'g','ı':'i','İ':'i','ö':'o','Ö':'o','ş':'s','Ş':'s','ü':'u','Ü':'u' };
+  var s = String(ad).split('').map(function(c){ return trMap[c] || c; }).join('');
+  s = s.toLowerCase().replace(/[^a-z0-9.\-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  var ts = Date.now().toString(36) + '-' + Math.floor(Math.random()*999);
+  if (s.endsWith('.pdf')) s = s.slice(0, -4) + '-' + ts + '.pdf';
+  else s = s + '-' + ts + '.pdf';
+  return s;
+}
+
+// ── POLLING ─────────────────────────────────────────────────────
+function pollingBaslat() {
+  pollingDur();
+  _pollingNoChange = 0;
+  _sonOzetSnapshot = '';
+  pollingTetikle();
+}
+
+function pollingDur() {
+  if (_polling) {
+    clearTimeout(_polling);
+    _polling = null;
+  }
+}
+
+async function pollingTetikle() {
+  if (!_batchId) return;
+  try {
+    var res = await fetch('/api/kuyruk-durum?batch_id=' + encodeURIComponent(_batchId));
+    var j = await res.json();
+    if (!res.ok) {
+      console.warn('[polling] hata:', j && j.error);
+      pollingZamanla();
+      return;
+    }
+    pollingUygula(j);
+    if (j.ozet && j.ozet.tamamlandi) {
+      pollingDur();
+      await batchTamamlandi();
+      return;
+    }
+    pollingZamanla();
+  } catch(e) {
+    console.warn('[polling] beklenmedik:', e.message);
+    pollingZamanla();
+  }
+}
+
+function pollingZamanla() {
+  var ms = _pollingNoChange >= POLLING_NO_CHANGE_THRESHOLD ? POLLING_SLOW_MS : POLLING_BASE_MS;
+  _polling = setTimeout(pollingTetikle, ms);
+}
+
+function pollingUygula(durum) {
+  var snap = JSON.stringify(durum.ozet || {});
+  if (snap === _sonOzetSnapshot) {
+    _pollingNoChange++;
+  } else {
+    _pollingNoChange = 0;
+    _sonOzetSnapshot = snap;
   }
 
-  // Tüm spool'ları topla
-  _tumSpooller = [];
+  // _dosyalar'ı kuyruk durumuna göre senkronize et
+  var kayitMap = {};
+  (durum.kayitlar || []).forEach(function(k){ kayitMap[k.dosya_adi] = k; });
   _dosyalar.forEach(function(d) {
-    d.spooller.forEach(function(s){ _tumSpooller.push(s); });
+    var ad = d.file && d.file.name;
+    if (!ad) return;
+    var k = kayitMap[ad];
+    if (k) {
+      d.durum = k.durum === 'tamam' ? 'tamam'
+              : k.durum === 'hata' ? 'hata'
+              : k.durum === 'isleniyor' ? 'isleniyor'
+              : 'kuyrukta';
+      if (k.durum === 'hata') d.hata = k.hata_mesaji || tv('izb_bilinmeyen_hata','Bilinmeyen hata');
+    }
   });
+  renderDosyalar();
+
+  var bitmis = (durum.ozet.tamam || 0) + (durum.ozet.hata || 0) + (durum.ozet.iptal || 0);
+  progressGuncelleAsync(bitmis, durum.ozet.toplam || _dosyalar.length, '');
+}
+
+async function batchTamamlandi() {
+  // Spool listesini çek
+  try {
+    var res = await fetch('/api/batch-spoollari?batch_id=' + encodeURIComponent(_batchId));
+    var j = await res.json();
+    if (res.ok && j.spoollar) {
+      _tumSpooller = j.spoollar;
+      _dosyalar.forEach(function(d) {
+        var ad = d.file && d.file.name;
+        if (!ad) return;
+        d.spooller = _tumSpooller.filter(function(s){ return s._dosya === ad; });
+        // Format bilgisi spoollerin ilkinden gelir (varsa)
+        if (d.spooller.length > 0 && d.spooller[0].tespit_edilen_format_ipucu) {
+          d.format = d.spooller[0].tespit_edilen_format_ipucu;
+        }
+      });
+      if (_tumSpooller.length) {
+        document.getElementById('btnExcel').disabled = false;
+        renderSonucTablo();
+        document.getElementById('sonucWrap').style.display = 'block';
+      }
+    }
+  } catch(e) {
+    console.warn('[batchTamamlandi] spool çekme hatası:', e.message);
+  }
 
   _calisıyor = false;
   document.getElementById('btnBasla').disabled = false;
-  document.getElementById('btnBasla').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Tekrar Çalıştır';
+  document.getElementById('btnBasla').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> ' + tv('izb_btn_yeni_batch','Yeni Batch');
+  localStorage.removeItem(LS_AKTIF_BATCH);
 
-  if (_tumSpooller.length) {
-    document.getElementById('btnExcel').disabled = false;
-    renderSonucTablo();
-  }
-
+  var tamam = _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length;
+  var hata = _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length;
   document.getElementById('progressDetail').textContent =
-    tv('izb_tamamlandi','Tamamlandı') + ' — ' + _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length + ' ' + tv('izb_basarili','dosya başarılı') + ', ' + _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length + ' ' + tv('izb_stat_hata','hata');
+    tv('izb_tamamlandi','Tamamlandı') + ' — ' + tamam + ' ' + tv('izb_basarili','dosya başarılı') + ', ' + hata + ' ' + tv('izb_stat_hata','hata');
+
+  renderDosyalar();
 }
 
-function progressGuncelle(tamamlanan, toplam, dosyaAdi) {
-  var pct = toplam ? Math.round(tamamlanan / toplam * 100) : 0;
+function progressGuncelleAsync(bitmis, toplam, mesaj) {
+  var pct = toplam ? Math.round(bitmis / toplam * 100) : 0;
   document.getElementById('progressBar').style.width = pct + '%';
   document.getElementById('progressPct').textContent = pct + '%';
-  document.getElementById('progressText').textContent = dosyaAdi
-    ? (tamamlanan + 1) + '/' + toplam + ' — ' + dosyaAdi
-    : tamamlanan + '/' + toplam + ' ' + tv('izb_tamamlandi_k','tamamlandı');
+  document.getElementById('progressText').textContent = mesaj || (bitmis + '/' + toplam);
 }
 
-function dosyaBase64(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function(e) { resolve(e.target.result.split(',')[1]); };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+// ─────────────────────────────────────────────────────────────
+// RESUME (sayfa açılışında aktif batch varsa otomatik devam)
+// ─────────────────────────────────────────────────────────────
+async function aktifBatchKontrol() {
+  var bid = localStorage.getItem(LS_AKTIF_BATCH);
+  if (!bid) return false;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bid)) {
+    localStorage.removeItem(LS_AKTIF_BATCH);
+    return false;
+  }
+  try {
+    var res = await fetch('/api/kuyruk-durum?batch_id=' + encodeURIComponent(bid));
+    if (!res.ok) {
+      localStorage.removeItem(LS_AKTIF_BATCH);
+      return false;
+    }
+    var j = await res.json();
+    if (j.ozet && j.ozet.tamamlandi) {
+      // Batch tamamlanmış — son sonuçları göster
+      _batchId = bid;
+      _calisıyor = false;
+      _dosyalar = (j.kayitlar || []).map(function(k){
+        return {
+          file: { name: k.dosya_adi, size: 0 },
+          durum: k.durum, format: null, spooller: [], hata: k.hata_mesaji || null,
+          storage_path: k.storage_path, _resume: true
+        };
+      });
+      document.getElementById('progressWrap').style.display = 'block';
+      progressGuncelleAsync(j.ozet.tamam + j.ozet.hata, j.ozet.toplam, '');
+      renderDosyalar();
+      await batchTamamlandi();
+      return true;
+    }
+    // Aktif batch — resume modunda izle
+    _batchId = bid;
+    _calisıyor = true;
+    _dosyalar = (j.kayitlar || []).map(function(k){
+      return {
+        file: { name: k.dosya_adi, size: 0 },
+        durum: k.durum === 'bekliyor' ? 'kuyrukta' : k.durum,
+        format: null, spooller: [], hata: k.hata_mesaji || null,
+        storage_path: k.storage_path, _resume: true
+      };
+    });
+    document.getElementById('btnBasla').disabled = true;
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressDetail').textContent =
+      tv('izb_resume','Önceki batch devam ediyor...') + ' (' + _dosyalar.length + ' ' + tv('izb_dosya','dosya') + ')';
+    renderDosyalar();
+    pollingBaslat();
+    return true;
+  } catch(e) {
+    console.warn('[resume] hata:', e.message);
+    localStorage.removeItem(LS_AKTIF_BATCH);
+    return false;
+  }
 }
 
-// ── SONUÇ TABLO ───────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// SONUÇ TABLOSU (eski mantık, dokunulmadı)
+// ─────────────────────────────────────────────────────────────
 function renderSonucTablo() {
-  document.getElementById('sonucWrap').style.display = 'block';
   var manSayi = _tumSpooller.filter(function(s){ return s._manuel_onay === true; }).length;
   var badgeText = _tumSpooller.length + ' ' + tv('izb_spool','spool');
   if (manSayi > 0) badgeText += ' · ' + manSayi + ' ' + tv('izb_man_onay_kucuk','manuel onay');
@@ -582,7 +861,7 @@ function renderSonucTablo() {
   }).join('');
 }
 
-// ── İNCELE / MANUEL ONAY (Ekran 2'ye yönlendirme) ────────────
+// ── İNCELE / MANUEL ONAY ────────────────────────────────────
 function inceleAc(idx) {
   var s = _tumSpooller[idx];
   var bid = (s && s._batch_id) || _batchId;
@@ -603,11 +882,8 @@ function manuelOnayAc() {
 // ── EXCEL İNDİR ───────────────────────────────────────────────
 function excelIndir() {
   if (!_tumSpooller.length) return;
-
   var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev']];
-
   _tumSpooller.forEach(function(s, i) {
-    // G-03: Excel satırı da lokalize
     var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
     var _kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||''):(s.kalite||'');
     var _ye=(typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(s.yuzey)||s.yuzey||''):(s.yuzey||'');
@@ -618,8 +894,7 @@ function excelIndir() {
       s.spool_no    || '',
       capToDN(s.cap_mm),
       s.cap_mm      || '',
-      _me,
-      _kg,
+      _me, _kg,
       s.et_mm       || '',
       s.boy_mm      || '',
       s.agirlik_kg  || '',
@@ -627,37 +902,9 @@ function excelIndir() {
       s.rev         || ''
     ]);
   });
-
-  // Malzeme listesi — ayrı sheet
-  var malzRows = [['Dosya', 'Pipeline No', 'Spool No', 'No', 'Kategori', 'Açıklama', 'DPN', 'DN', 'Miktar', 'Et (mm)']];
-  _tumSpooller.forEach(function(s) {
-    (s.malzeme_listesi || []).forEach(function(m) {
-      malzRows.push([
-        (s._dosya || '').replace('.pdf',''),
-        s.pipeline_no || '',
-        s.spool_no    || '',
-        m.no          || '',
-        m.kategori    || '',
-        m.tanim       || '',
-        m.dpn         || '',
-        m.nbore_dn    || '',
-        m.miktar      || '',
-        m.et_kalinlik || ''
-      ]);
-    });
-  });
-
+  var ws = XLSX.utils.aoa_to_sheet(rows);
   var wb = XLSX.utils.book_new();
-  var ws1 = XLSX.utils.aoa_to_sheet(rows);
-  var ws2 = XLSX.utils.aoa_to_sheet(malzRows);
-
-  // Kolon genişlikleri
-  ws1['!cols'] = [{wch:4},{wch:30},{wch:25},{wch:10},{wch:7},{wch:10},{wch:14},{wch:12},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6}];
-  ws2['!cols'] = [{wch:25},{wch:22},{wch:10},{wch:4},{wch:10},{wch:50},{wch:12},{wch:6},{wch:8},{wch:8}];
-
-  XLSX.utils.book_append_sheet(wb, ws1, 'Spool Listesi');
-  XLSX.utils.book_append_sheet(wb, ws2, 'Malzeme Listesi');
-
+  XLSX.utils.book_append_sheet(wb, ws, 'Spool Listesi');
   var tarih = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, 'AresPipe_Izometri_' + tarih + '.xlsx');
 }
@@ -677,7 +924,12 @@ document.addEventListener('DOMContentLoaded', function() {
         var _supa = ARES.supabase();
         if (_supa) {
           var _ses = await _supa.auth.getSession();
-          if (_ses.data && _ses.data.session) { await ARES.oturumKontrol(); break; }
+          if (_ses.data && _ses.data.session) {
+            await ARES.oturumKontrol();
+            // 49: Aktif batch varsa otomatik resume
+            await aktifBatchKontrol();
+            break;
+          }
           if (_bekle > 20) { location.href = 'giris.html'; return; }
         }
         await new Promise(function(r){ setTimeout(r,100); });
