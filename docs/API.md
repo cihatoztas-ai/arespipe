@@ -99,10 +99,11 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 7 endpoint. Son güncelleme: 2026-04-30.
+> Toplam 8 endpoint. Son güncelleme: 2026-04-30.
 
 - **`api/batch-baslat.js`** — api/batch-baslat.js -- 49. oturum — _=====================================================================_
 - **`api/batch-kuyruga-al.js`** — api/batch-kuyruga-al.js -- 49. oturum — _=====================================================================_
+- **`api/batch-spoollari.js`** — api/batch-spoollari.js -- 49. oturum — _=====================================================================_
 - **`api/dosya-url-al.js`** — Supabase Storage dosyaları için signed URL üretir — _Yetki: JWT'den tenant_id okunur, yol ile eşleşmeli (cross-tenant bloklanır)_
 - **`api/izometri-oku.js`** — api/izometri-oku.js -- Vercel Serverless Function (Node.js) — _=====================================================================_
 - **`api/kuyruk-durum.js`** — api/kuyruk-durum.js -- 49. oturum, polling endpoint — _=====================================================================_
