@@ -1,20 +1,18 @@
-# Claude — 48. Oturum Gündemi
+# Claude — 49. Oturum Gündemi
 
-> **Bu dosya 47 kapanışında oluşturuldu. 48 başında ilk okunacak.**
+> **Bu dosya 48 kapanışında oluşturuldu. 49 başında ilk okunacak.**
 
 ---
 
-## 48 Açılış Mottosu
+## 49 Açılış Mottosu
 
-47, 46 kararlarını koda + DB'ye döktü. Fingerprint skorlama canlıda çalışıyor, format_id artık doğru loglanıyor. 47'nin sürpriz dersi: **paket Vercel uyumluluğu container testiyle yetmiyor** — pdf-parse v2.4.5 patlaması bunu kanıtladı, v1.1.1'e downgrade ile çözüldü.
+48, cache mekanizmasını ve RLS'yi canlıya aldı. Ama 48'in **gerçek mirası** kod değil **stratejik bir yön değişikliği**: Cihat'ın "1000 spool — her PDF için gerçekten AI gerekli mi?" sorusu Vizyon Madde 4'ün operasyonel çekirdeğini gün ışığına çıkardı.
 
-48'in iki kelimelik özeti: **cache + güvenlik**.
+**49 iki kelimelik özeti: format öğrenme.**
 
-İki paralel ana iş hattı:
-1. **Cache mekanizması** — Vizyon Madde 4'ün ilk operasyonel adımı. PDF hash bazlı, Vision AI tekrar çağrısı atlanır. ~%15 maliyet düşüşü, 2. yüklemede sıfır gecikme.
-2. **RLS policy'leri** — 5 production tablosunda multi-tenant koruması. Pilot 2. tenant'a hazırlık.
+İlk PDF AI'a gider (parse + parser_kural taslağı üretimi). Kalan 999 PDF aynı formatsa **L2 deterministik parse** ile çıkar — AI yok, regex/koordinat extract, ~100ms × 999 = ~100 sn, $0 maliyet. 60× ekonomi farkı.
 
-İkisi de uygulama oturumu, keşif değil. 48 sonu canlıda iki teknik kazanım.
+49 keşif + uygulama oturumu (47 keşifti, 48 uygulamaydı, 49 ikisi birden). 49 sonu: PAOR formatının `parser_kural` JSONB'si dolu, L2 parser engine canlı, Cihat'ın 1000 spool senaryosu 5 dakikada biten somut bir gerçeklik.
 
 ---
 
@@ -28,317 +26,315 @@ Oturum başlangıç ritüeli — 5 kısa kontrol:
 1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
 2. GitHub Actions sekmesinde son build rengi nedir?
 3. .github/son-durum.md dosyasını yükle veya içeriğini yapıştır
-4. Bugün hangi dosyayla çalışılacak? (cevap: 021 migration + api/izometri-oku.js cache patch + RLS migration'ları)
+4. Bugün hangi dosyayla çalışılacak? (cevap: PAOR parser_kural taslağı + L2 parser engine + admin panel "Format Öğretme")
 5. admin/panel.html → Geri Bildirim sekmesinde açık feedback?
 ```
 
 5 cevap geldikten sonra:
-- son-durum.md'den 47 sonu detayını oku (5 mimari karar listesi)
-- VIZYON-VE-MODULER-MIMARI.md ve SPOOL-AI-VIZYON.md hatırla (47'de yapıldı, disiplin)
+- son-durum.md'den 48 sonu detayını oku (5 mimari karar listesi MK-48.1→48.5)
+- VIZYON-VE-MODULER-MIMARI.md ve SPOOL-AI-VIZYON.md hatırla (özellikle Madde 4 — öğrenme döngüsü)
 - docs/CIHAT-PROFIL.md hatırla
-- CLAUDE-SON-OTURUM.md (47 detayı) — sadece geriye dönüp aranır
-- **Migration disiplini hatırlat:** her DB değişikliği iki adımdır (önce Supabase, sonra GitHub)
-- **Paket disiplini hatırlat:** yeni paket ekleme = container test + Vercel preview test + production. Container yetmez (47'nin dersi).
+- CLAUDE-SON-OTURUM.md (48 detayı) — gerekirse aranır
+- **Migration disiplini hatırlat:** her DB değişikliği iki adımdır
+- **Paket disiplini hatırlat:** Vercel cache invalidation manuel kontrol (48 dersi MK-48.1)
+- **Dosya transfer disiplini:** 30KB+ değişiklik için patch formatı tercih (48 dersi)
 
 ---
 
-## 2. Bağlam Tazeleme — 47'den Devralan Karar Listesi
+## 2. Bağlam Tazeleme — 48'den Devralan Karar Listesi
 
-48'e başlamadan önce 47'nin 5 mimari kararı zihinde olmalı:
+49'a başlamadan önce 48'in 6 mimari kararı zihinde olmalı:
 
 | # | Karar | Etkisi |
 |---|---|---|
-| MK-47.1 | pdf-parse v1.1.1 zorunlu, ESM `lib/pdf-parse.js` direkt | Mevcut akış korundu, 50+'ya kadar değişmez |
-| MK-47.2 | Fingerprint en-yüksek-skor tie-breaker | formatTani'da uygulandı, lokal 5/5 + canlı 1/1 |
-| MK-47.3 | format_id her parse'da loglanır | 48 cache mekanizması bu sayede mümkün — hash + format_id ile lookup |
-| MK-47.4 | Vercel timeout 19.7 sn'i karşıladı | Queue mimarisi acil değil, cache yeter |
-| MK-47.5 | Anthropic baseline 18-21 sn | Cache 2. yüklemede 0 sn yapar — ana hız kazanımı |
+| **MK-48.1** | Vercel build cache invalidation paket değişiminde manuel redeploy şart | Kalıcı süreç kuralı |
+| **MK-48.2** | Cache lookup: hash + format_id + tenant_id + cevap_full | 49 format öğrenme ile birlikte yaşar |
+| **MK-48.3** | RLS 15 prod tablosu, `markalama_listesi_kalemleri` parent FK kuralı | Multi-tenant güvenlik kapatıldı |
+| **MK-48.4** | Cache HIT log yazmaz, response `_cache_meta` ile bilir | Tasarım kararı, gereksiz şişme yok |
+| **MK-48.5** | **Format öğrenme döngüsü (49) > Wizard (50+).** 60× ekonomi. | **49'un asıl kapsamı bu.** |
+| **MK-48.6** | **Veri Sahipliği Politikası (KARAR-48.1)**: Müşteri verisi müşterinin, anonim kurallar AresPipe'ın. Sözleşmede yazılır. | İş modeli temel taşı, 50+ sözleşme tasarımı |
+
+**Strateji notu (kritik):** Fine tuning YOK, RAG VAR. Anthropic AI sabit, AresPipe sistemi öğrenir. 3 katmanlı hafıza: (1) Format öğrenme — `parser_kural` JSONB (49'un konusu), (2) Veri birikimli akıl yürütme — geçmiş özet AI prompt context (50+), (3) Pasif öğrenme — kullanıcı düzeltmeleri (Vizyon 8). 49 başında bu kavramlar zihinde olmalı.
 
 ---
 
-## 3. Ana Tema A — Cache Mekanizması (~1.5 saat)
+## 3. Mevcut Durum — Format Kütüphanesi
 
-### 3.1 Hedef
-
-Aynı PDF'in tekrar yüklenmesi durumunda Vision AI çağrısı yapılmaz, eski sonuç döndürülür. ~%15 maliyet düşüşü, 2. yükleme 0 sn (Vision AI 18-21 sn → cache hit ~0.5 sn).
-
-### 3.2 Kavramsal Akış
-
-```
-PDF gelir
-  ↓
-SHA256 hash hesapla
-  ↓
-formatTani çalışır → format_id belirlenir
-  ↓
-ai_api_log'da WHERE pdf_sha256 = ? AND format_id = ? AND basarili = true LIMIT 1
-  ├─ HIT → cevap_full JSONB'sini parse et, eski sonucu döndür ($0, ~0.5 sn)
-  └─ MISS → visionAIParse normal akış, sonuç ai_api_log'a yazılır (cache için)
-```
-
-### 3.3 021 Migration
-
-**`migrations/021_ai_api_log_cache.sql`** — Cache için yeni kolon + index:
+49 başında DB'ye **mutlaka** sorulması gereken iki sorgu:
 
 ```sql
-ALTER TABLE ai_api_log
-  ADD COLUMN IF NOT EXISTS pdf_sha256 TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_ai_api_log_cache
-  ON ai_api_log(pdf_sha256, format_id)
-  WHERE basarili = true AND pdf_sha256 IS NOT NULL;
-
-COMMENT ON COLUMN ai_api_log.pdf_sha256 IS
-  '48: PDF SHA256 hash. Vision AI cache lookup icin (vizyon Madde 4 ogrenme dongusunun ilk adimi).';
+-- 1. Mevcut format kütüphanesi durumu
+SELECT 
+  ad,
+  format_kodu,
+  cad_program,
+  egitim_kaynagi,
+  kullanim_sayisi,
+  basari_orani,
+  son_kullanim_at,
+  CASE 
+    WHEN parser_kural IS NULL OR parser_kural::text = '{}' THEN 'L3 (AI)'
+    ELSE 'L2 (kural)'
+  END AS parser_seviye
+FROM izometri_format_tanimlari
+WHERE aktif = true
+ORDER BY kullanim_sayisi DESC NULLS LAST;
 ```
 
-**Önemli karar:** Index partial (sadece başarılı + hash dolu kayıtlar). Çünkü:
-- Başarısız parse'ları cache'lemek istemiyoruz
-- Eski log'ların hash'i NULL olacak (cache miss, yeni hash hesaplanır, sonra dolar — geriye dönük doldurma gerekmez)
+48 sonu durumu (49 başında değişmiş olabilir, tekrar bak):
+- `paor_aveva_ana` (PAOR Ana Çizim, AVEVA E3D): kullanim=8, **49 hedefi**
+- `paor_aveva_iso_view`: kullanim=0
+- `tersan_cadmatic_isometry`: kullanim=0
+- `tersan_cadmatic_spool`: kullanim=0
 
-### 3.4 izometri-oku.js Cache Patch
-
-**Yeni helper fonksiyon `pdfHashHesapla(buffer)`:**
-```js
-import crypto from 'crypto';
-
-function pdfHashHesapla(buffer) {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
-}
-```
-
-**Yeni helper `cacheKontrol(pdf_sha256, format_id, tenant_id)`:**
-- ai_api_log'da WHERE clause ile lookup
-- HIT: cevap_full JSONB → parse → returns
-- MISS: null returns (akış visionAIParse'a devam eder)
-
-**Handler revize (satır ~159):**
-- formatTani sonrası: pdfHashHesapla + cacheKontrol
-- HIT: cache'den dönen sonucu kullan, ai_api_log'a yeni kayıt yazma (cache hit'leri loglamak istersek ayrı `cache_hit BOOLEAN` kolonu ekleriz, ama 48'de değil — 49 SARI'da değerlendirilir)
-- MISS: visionAIParse + ai_api_log INSERT'inde pdf_sha256 dolu yaz
-
-### 3.5 Lokal Test
-
-3 senaryo:
-1. **İlk yükleme** → MISS → Vision AI çağrılır, ai_api_log'a hash'li kayıt
-2. **Aynı PDF tekrar** → HIT → 0 ms cevap, Vision AI hiç çağrılmaz
-3. **Aynı PDF farklı format** (teorik) → MISS → format_id farklı, hash uyuşsa da cache uymaz
-
-### 3.6 Canlı Doğrulama
-
-48 sonu PAOR PDF iki kez yüklenecek:
-- 1. yükleme: ai_api_log'a yeni kayıt, sure_ms ~19.7 sn, hash dolu
-- 2. yükleme: ai_api_log'a kayıt yazılmaz (cache hit), Excel rapor 1 sn altında dönmeli
-
-`SELECT COUNT(*), MAX(sure_ms) FROM ai_api_log WHERE pdf_sha256 IS NOT NULL` → 1 kayıt, 19.7 sn (2. yükleme cache hit, log atılmadı).
-
----
-
-## 4. Ana Tema B — RLS Policy'leri (~2-3 saat)
-
-### 4.1 Hedef
-
-Supabase Security Advisor 47'de 10 critical uyarı verdi. 5'i production tablosu için. Multi-tenant koruması: Tenant A, Tenant B'nin verisini okuyamamalı. Pilot 2. tenant gelmeden yapılması gerek.
-
-### 4.2 5 Production Tablosu
-
-| Tablo | Sorun | Karmaşıklık |
-|---|---|---|
-| `tenant_features` | Policy var ama RLS off (en sinsi) | Düşük (RLS ENABLE yeter) |
-| `basamak_sablonlari` | RLS off, policy yok | Orta (kalıp policy gerek) |
-| `yetki_tanimlari` | RLS off, policy yok | Orta (rol bazlı erişim) |
-| `markalama_listeleri` | RLS off, policy yok | Düşük (tenant_id bazlı) |
-| `markalama_listesi_kalemleri` | RLS off, policy yok | Orta (parent FK üzerinden tenant) |
-
-### 4.3 Standart Kalıp
+**Hepsi `egitim_kaynagi='vision_only'` ve `parser_kural={}`. Yani format tanıma çalışıyor (fingerprint match), ama hep L3 fallback.**
 
 ```sql
--- Standart tenant-bazli erisim policy'si
-ALTER TABLE <tablo> ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "<tablo>_select_kendi_tenant"
-  ON <tablo>
-  FOR SELECT
-  USING (tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()));
-
-CREATE POLICY "<tablo>_insert_kendi_tenant"
-  ON <tablo>
-  FOR INSERT
-  WITH CHECK (tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()));
-
--- UPDATE + DELETE benzer
+-- 2. PAOR'un mevcut yapısı (49'da işlenecek)
+SELECT 
+  ad,
+  fingerprint,
+  prompt_template,
+  parser_kural
+FROM izometri_format_tanimlari
+WHERE format_kodu = 'paor_aveva_ana';
 ```
 
-**Servis rolü için bypass:** Anthropic Vercel Serverless Functions servis anahtarıyla bağlanır → RLS bypass eder. Bu doğru davranış (admin işlemler için), client-side RLS'in dışında.
-
-### 4.4 022, 023, 024, 025, 026 Migration Dosyaları
-
-5 ayrı migration ya da tek 022 dosyasında 5 ALTER + birden fazla CREATE POLICY. **Önerim: tek 022 dosyası**, çünkü:
-- Tüm 5 tablo aynı kategoride (production multi-tenant)
-- Atomik uygulama, geri alma kolay
-- Tek seferde gözden geçirme
-
-`022_rls_production_tablolari.sql`:
-- 5 ALTER TABLE ENABLE ROW LEVEL SECURITY
-- 4 tablo için 4'er policy (SELECT/INSERT/UPDATE/DELETE) → 16 policy
-- tenant_features için sadece ENABLE (policy zaten var)
-- Markalama_listesi_kalemleri için parent FK üzerinden tenant erişimi (özel policy)
-
-### 4.5 Test Tabloları (Düşük Öncelik)
-
-`testler`, `test_spooller`, `egitim_verisi` — RLS uyarısı var ama production değil. **48'de yapılmaz**, açık borç olarak kalır. 49+'da ayrı bir mini-oturumda halledilir.
-
-### 4.6 public_feedback Security Definer View
-
-10 uyarıdan biri farklı sınıf — view, tablo değil. Tasarım kontrolü gerek (genelde anonymous feedback için view creator yetkisi mantıklı). 48 sonunda 5-10 dk ayır, gerek yoksa görmezden gel + son-durum'da not.
+Beklenen:
+- `prompt_template`: NULL (49'da AI prompt yazılacak)
+- `parser_kural`: `{}` (49'da AI taslağı doldurulacak)
 
 ---
 
-## 5. SARI Hedefler (Kalan zamana göre, atlama hakkı)
+## 4. 49 Ana Hattı — Format Öğrenme Döngüsü (~3-4 saat)
 
-### 5.1 PAOR Isometric_View parser_kural Denemesi (~30 dk)
+### 4.1 — AI Taslak Üretici (~1 saat)
 
-47'de yapılmadı, 48'e devraldı. Minimal deneme:
-```json
-{
-  "alanlar": {
-    "pipeline_no": { "regex": "MODEL\\s+REFERENCE\\s+PIPE\\s+NO[.:]?\\s*(\\S+)", "grup": 1 }
+Vision AI parse başarılı olduğunda **ek bir prompt** çalışır:
+> "Bu PDF'i parse ettin ve JSON döndürdün. Şimdi başka aynı formatta PDF'ler için bir extraction kuralı yaz. Şunları belirt: spool_no hangi koordinatlarda/regex'te, DN tablosu hangi satırlarda, malzeme listesi hangi sütunlarda. JSON formatında döndür."
+
+Çıktı `parser_kural` JSONB'sine yazılır.
+
+**Tasarım kararı (49 başında verilecek):**
+- (a) Her başarılı parse'da otomatik taslak üret (her seferinde overwrite veya ortalama)?
+- (b) İlk N başarılı parse'da üret, N+1'den sonra dondur?
+- (c) Manuel "Bu format için kural üret" butonu (admin panelde)?
+
+**Önerim:** (c) — kontrollü başlangıç. İlk PAOR için manuel tetikle, kural test et, sonra otomatikleştir.
+
+### 4.2 — L2 Parser Engine (~1 saat)
+
+Yeni dosya: `lib/l2-parser.js` veya `api/izometri-oku.js` içine fonksiyon.
+
+```javascript
+async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
+  const kural = formatBilgisi.parser_kural;
+  if (!kural || Object.keys(kural).length === 0) return null;
+  
+  const buffer = Buffer.from(pdf_base64, 'base64');
+  const data = await pdfParse(buffer);
+  const text = data.text;
+  
+  // Kural'a göre extract et
+  const spoollar = [];
+  for (const sablon of kural.spool_sablon || []) {
+    const match = text.match(new RegExp(sablon.regex));
+    // ...
   }
+  
+  // Şüphelilik kontrolü (eksik alan, regex match yok)
+  if (eksikAlanVar(spoollar)) return null; // L3'e fallback
+  
+  return { ok: true, spoollar, _parser_seviye: 'L2' };
 }
 ```
 
-Bu, **48'in parser_kural ile ilk gerçek deneme**si. Vizyon Madde 4 öğrenme döngüsünün operasyonel başlangıcı. Ama dikkat: parser_kural dolunca `parserKuralIle()` stub'ı tetiklenir → şu an `{ ok: false, error: 'henuz aktif degil' }` döndürür → handler hata atar (satır 161). Yani **önce parserKuralIle() stub'ını da güncellemek gerekir** (en az pipeline_no çıkartmalı, sonra Vision AI ile birleştirmeli — hibrid yapı).
-
-**Bu küçük SARI değil aslında**, 1+ saat iş. 49'a ertelenmesi daha doğru olabilir.
-
-### 5.2 CLAUDE.md Halüsinasyon Filtresi 7→8 Düzeltme (~5 dk)
-
-Atomik. MK-46.6'da işaretlendi.
-
-### 5.3 Karar 7 (36) Güncellemesi (~10 dk)
-
-Atomik. Excel = subset truth, ground truth değil. IZOMETRI-BATCH-KARAR.md veya CLAUDE.md'de.
-
-### 5.4 .gitignore Ekleme (~5 dk)
-
-Atomik:
-```gitignore
-.DS_Store
-node_modules/
-*.log
-.vercel
+Handler'da entegrasyon:
+```javascript
+if (cacheKayit) { /* cache HIT */ }
+else if (formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
+  parseSonuc = await parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi });
+  if (!parseSonuc) {
+    // L2 başarısız, L3 fallback
+    parseSonuc = await visionAIParse({ ... });
+  }
+} else {
+  // L3 (Vision AI)
+  parseSonuc = await visionAIParse({ ... });
+}
 ```
 
-Her oturumda `git stash` gerek olmaz. Küçük kalıcı kazanım.
+### 4.3 — Admin Panel "Format Öğretme" Sayfası (~1 saat)
 
-### 5.5 Vercel Plan Doğrulaması (~10 dk)
+Yeni sayfa: `admin/format-ogretme.html`
 
-Vercel pricing dokümanı veya account ayarlarından maximum function duration teyit. MK-47.4'ün varsayımını kanıtla. 19.7 sn geçtiğine göre 60 sn olmalı.
+Özellikler:
+- Format listesi (kullanım, başarı oranı, son kullanım)
+- Bir formata tıklayınca:
+  - Mevcut `parser_kural` JSONB'si göster
+  - "AI Taslak Üret" butonu → son başarılı parse'tan kural taslağı oluştur, kullanıcıya göster
+  - JSONB editör (manuel düzenleme)
+  - "Test Et" butonu → bir PDF yükle, L2 parser ile sonucu göster
+  - "Aktif Et" butonu → `parser_kural` kaydet, `egitim_kaynagi='AI_taslak_onayli'`
+- Test loop: AI taslak → kullanıcı düzeltme → tekrar test → onay
 
----
+### 4.4 — Metrik Dashboard Sorguları (~30 dk)
 
-## 6. 48 Sonu Hedef Çıktıları
-
-✅ 021 migration uygulanmış (cache infrastructure)
-✅ izometri-oku.js cache mekanizması canlıda
-✅ Lokal cache testi (3 senaryo geçti)
-✅ Canlı PAOR cache hit doğrulaması (2. yükleme <1 sn)
-✅ 022 migration uygulanmış (5 production tablosu RLS)
-✅ Supabase Security Advisor 5 critical → 5 azaldı (test tabloları + view kalır)
-✅ CI yeşil
-✅ Kapanış üçlüsü yazılı
-
-🟡 PAOR Iso parser_kural denemesi (zaman varsa, muhtemelen 49'a ertelenir)
-🟡 CLAUDE.md halüsinasyon filtresi düzeltme
-🟡 Karar 7 güncelleme
-🟡 .gitignore ekleme
-🟡 Vercel plan doğrulaması
-
-🔴 **49 ana teması:** parserKuralIle() ilk operasyonel hali (PAOR Iso pipeline_no + hibrid Vision AI)
-🔴 **49+ ana teması:** Cadmatic glyph reverse araştırması (pdfjs-dist font dictionary), eğer Tersan canlı kullanım başlarsa öncelik artar
-
----
-
-## 7. Cihat'a Sorulacak (48 başında)
-
-**Cache stratejisi onayı.** PDF içeriği değişmez sayılırsa cache geçerli. Aynı PDF güncellenirse (örn. revizyon) hash değişir → otomatik cache miss. Edge case: PDF metadata değişmiş, içerik aynı → cache hit. Cihat: bu istenen davranış mı?
-
-**RLS uygulama yöntemi.** 22-25-26 ayrı migration mı tek 022 mi? Önerim tek dosya.
-
-**Eski log'lar.** ai_api_log'da pdf_sha256 NULL olan eski kayıtlar (47 öncesi). Geriye dönük hash hesabı yapmaya değer mi? Çoğu zaten 47 öncesi, format_id'siz, cache'lenmesi düşük değer. Önerim: dokunma, yeni kayıtlardan başla.
-
-**Eski PDF eğitim havuzu.** Hâlâ açık borç. Cihat ilerleme yapıyor mu?
-
----
-
-## 8. Risk Notları
-
-**Risk 1 — Cache hit'in yan etkileri.**
-Aynı PDF iki kez yüklenirse 2. seferde Vision AI çağrılmaz → ai_api_log kaydı oluşmaz → kullanim_sayisi de artmaz (bu kullanim_sayisi format_tanimlari'nda formatTani'da artıyor, cache değil). Yani:
-- format_tanimlari.kullanim_sayisi her PDF için artar (cache hit dahil) — DOĞRU
-- ai_api_log sadece Vision AI çağrısı olunca kayıt — DOĞRU
-- Maliyet düşüşü ai_api_log'dan analytics ile görülür (toplam_usd düşer)
-
-Bu doğru davranış ama Cihat onayı alınmalı: "Cache hit'lerini loglamak istiyor musun?" → istiyorsa 49'da ayrı kolon (`cache_hit BOOLEAN`) eklenir.
-
-**Risk 2 — RLS policy yanlış yazımı production akışını kırabilir.**
-Vercel Serverless Functions servis anahtarıyla bağlanır → RLS bypass eder, yani parse akışı etkilenmez. Ama browser'dan Supabase'e direkt bağlanan bazı operasyonlar (markalama, kalite) anon/authenticated rolüyle gider → RLS aktif olduğunda kırılabilir. **Test gerekli:** her RLS aktivasyonu sonrası tarayıcıdan o tablo işlemlerinin çalıştığı doğrulanmalı.
-
-**Risk 3 — pdf_sha256 hash hesabı performans.**
-SHA256 4 MB PDF için ~50 ms. Marjinal yük, sorun değil. Buffer'dan tek geçişle hesaplanır.
-
-**Risk 4 — Migration disiplini hâlâ kritik.**
-021 ve 022 ayrı uygulanmalı. Önce 021 (Supabase + GitHub + CI yeşil + canlı test), sonra 022.
-
----
-
-## 9. Disiplin Hatırlatmaları
-
-**47'den kalıcı kurallar:**
-- Migration iki adımdır (Supabase önce, GitHub sonra)
-- Paket eklerken Vercel uyumluluğu test edilir (container yetmez)
-- Eski rapor güvenilir kaynak değil, gerçek kaynak DB + disk
-- ESM'den eski paketleri import ederken `lib/` direkt path olabilir
-- git stash + pull --rebase + push 3'lüsü her oturumda gerekir
-
-**46'dan kalıcı:**
-- Vizyon dosyalarını oku (47'de yapıldı, 48 de yapacak)
-- Container'da ham çıktıları context'e değil dosyaya yaz, sohbete sadece özet
-- Cihat'ın stratejik sorularını ciddiye al
-
-**Cihat profili:**
-- "Atlama, listele, dolu cevap ver"
-- İlerleme olmadan geçen zaman tahammülsüzlük → 48'de cache uygulaması ilk 2 saatte bitsin
-- "Tane tane gidelim" disiplini kararsızlıkta açıkça istenir, hazır ol
-
----
-
-## 10. Açılış Tek Sayfa Hatırlatması
-
+Bu hafta hangi parse seviyesi dağılımı:
+```sql
+SELECT 
+  COUNT(*) FILTER (WHERE basarili = true) AS toplam_basarili,
+  COUNT(*) FILTER (WHERE basarili = true AND http_status = 200) AS L3_AI_cagrisi,
+  -- L2 ve cache hit log yazmıyor, response'tan ölçülür (ek sorgu/dashboard)
+FROM ai_api_log
+WHERE olusturma_at > NOW() - INTERVAL '7 days';
 ```
-🎯 48 Mottosu: Cache + RLS. Vizyon Madde 4 öğrenme döngüsünün ilk operasyonel adımı + multi-tenant koruma.
 
-📋 5 Kontrol → Vizyon dosyaları HATIRLA → 021 migration (cache) → izometri-oku.js cache patch → 022 migration (RLS) → lokal + canlı test → kapanış üçlüsü.
-
-⚠️ 47 dersi: Vercel paket uyumluluğu container testiyle yetmiyor. Yeni paket ekleme = preview deploy zorunlu.
-
-🔧 Migration disiplini: Supabase önce, GitHub sonra. Atlamak yok.
+Format öğrenme effectiveness:
+```sql
+SELECT 
+  ad,
+  format_kodu,
+  kullanim_sayisi,
+  CASE 
+    WHEN parser_kural::text = '{}' THEN 'L3 sadece'
+    WHEN basari_orani > 0.8 THEN 'L2 başarılı'
+    ELSE 'L2 zayıf, L3 fallback sık'
+  END AS durum
+FROM izometri_format_tanimlari;
 ```
 
 ---
 
-## 11. Hazır Olunca Kontrol Listesi
+## 5. 49 İkincil Hedefler (kalan zamana göre)
 
-48 başlamadan önce zihninde olmalı:
-- [ ] 47'nin 5 mimari kararı (MK-47.1 → MK-47.5)
-- [ ] 47 sonu durum: PAOR fingerprint canlıda doğru tutuyor (kullanim_sayisi=1)
-- [ ] format_id artık ai_api_log'da doğru (cache mekanizmasının ön koşulu hazır)
-- [ ] Vercel timeout endişesi giderildi (19.7 sn geçti)
-- [ ] Anthropic baseline 18-21 sn (cache 2. yüklemede 0 sn → ana hız kazanımı)
-- [ ] 5 production tablosu RLS açık değil (multi-tenant kritik borç)
-- [ ] Cache mantığı: SHA256 + format_id + basarili filter
+### Cache effectiveness ölçümü (~30 dk)
+
+Cache HIT log yazmıyor (MK-48.4). Ama `_cache_meta`'lı response'lar Vercel function logs'ta görülebilir. Basit bir Vercel log query yazılabilir:
+
+```
+"izometri-oku" AND "(CACHE HIT)"
+```
+
+veya yeni bir kolon eklenebilir (`cache_hit BOOLEAN`) — ama bu **49'da gerek değil**, 50+'da metrik dashboard için düşünülür.
+
+### Vercel `vercel.json` `maxDuration` (~10 dk)
+
+48'de unutuldu. `maxDuration: 60` belirteci eklemek gelecekte timeout sürprizleri önler. Atomik işlem.
+
+### `package-lock.json` düzenli yenileme alışkanlığı (~10 dk)
+
+48'de keşfedildi: lock değişikliği Vercel cache invalidation tetiklemiyor olabilir. Periyodik `rm -rf node_modules package-lock.json && npm install` (örneğin oturum başlarında) cache karışıklığını önler.
 
 ---
 
-> 47 kapanışında yazıldı. 48 başında ilk okunacak.
-> 47 uygulama oturumuydu, 48 de uygulama oturumu olacak — temiz zemin var, hedef net ve uygulanabilir.
+## 6. 49 Sonrası — 50+ Yol Haritası
+
+49'un sonucuna göre:
+
+**L2 başarılı (basari_orani > 0.8):**
+- 50+: Wizard tasarımı (devre yükleme sihirbazı), Excel + PDF + arşiv döküman entegrasyonu
+- Async kuyruk **gerek değil** (L2 5 dk'da 1000 spool biter)
+- Format öğrenme her yeni format için tekrar (Tersan Cadmatic, sonradan eklenecek tersaneler)
+
+**L2 zayıf (basari_orani < 0.5):**
+- 50+: L3 fallback ana akış kalır, async kuyruk altyapısı (Vercel Cron + is_kuyrugu) kurulur
+- 1000 spool senaryosu kuyruktan saatlerce parse edilir
+
+**Karma (basari_orani 0.5-0.8):**
+- 50+: Hibrit — L2 dene, başarısızsa L3, L3 sonucu kuyruğa atılmadan önce paralel parse (Promise.all 3-4 PDF)
+
+### 50+ Bağımsız Strateji Konuları (L2 sonucundan ayrı)
+
+48 son saat içgörüleriyle ortaya çıkan **iş modeli/strateji temel borçları**:
+
+**50 oturum (acil):**
+- **PDF Storage altyapısı** — Şu an PDF'ler kaydedilmiyor (Vercel function memory'de geçici). Supabase Storage entegrasyonu: `tenant_id/devre_id/dosya.pdf` path. spool kaydında `pdf_storage_path` kolonu. Knowledge Pack için kritik temel.
+- **`kullanici_duzeltmeleri` tablosu** — Tip 3 pasif öğrenme (Vizyon 8) için. Manuel onay sırasında değişen alanlar burada birikecek.
+
+**51-52 oturumlar:**
+- **`OGRENME-STRATEJISI.md`** — Fine tuning YOK / RAG VAR ilkesinin belgesi. 3 tip öğrenme açıklaması. AresPipe stratejik temel belgesi.
+- **`VERI-TASINABILIRLIK.md`** — KARAR-48.1 (B yaklaşımı) operasyonel hali. İki paket türü:
+  1. **Tenant Data Pack** — Müşterinin kendi malı (devreleri, PDF'leri). Çıkışta teslim + silme.
+  2. **System Knowledge Archive** — AresPipe iç envanteri (anonim format kuralları, genel istatistikler). Müşteri çıkışında sistemde kalır.
+  Sözleşme metni temeli buradan çıkar.
+- **Knowledge Pack üretici script** — Aylık otomatik snapshot (her iki paket türü için).
+
+**Daha uzak:**
+- `PROJE-DURUM.md` — Genel sağlık özeti tek dosyada (50+ oturum)
+- `EKONOMI-MODELI.md` — 49 format öğrenme sonuçlarına göre maliyet/fiyatlama modeli
+- Pasif öğrenme RAG context implementasyonu (Vizyon 8)
+- Çapraz validasyon 3 katmanlı kontrol (Vizyon 3)
+- 3 görünüş okuma (Vizyon 6)
+
+---
+
+## 7. Açık Borçlar (47-48'den devralanlar, 49'da dokunulmaz)
+
+Bu liste **49'a engel değil**, ama genel hatırlatma:
+
+- KK + Sevkiyat sayfa revizyonu (5+ oturumdur açık)
+- Büküm modal açıklama alanı eksik
+- boru_olculer şema güncellenmeli
+- CuNi P0 grupları
+- devre_yeni.html PDF upload akışı parser'a bağlanması (50+ wizard ile)
+- Cadmatic glyph reverse araştırması (49+, ama 49'da PAOR'a odaklan)
+- `public_feedback` Security Definer View tasarım kontrolü
+- CLAUDE.md halüsinasyon filtresi 7→8 düzeltme
+- 016 numaralı flanş cizim_path migration disk'te yok
+- 3D motor Aşama 4.1/4.2/4.3 (parser olgunlaştıktan sonra)
+
+---
+
+## 8. 49 Süre Tahmini
+
+- Açılış ritüeli + bağlam tazeleme: 15 dk
+- Mevcut durum SQL'leri + analizi: 15 dk
+- 4.1 AI Taslak Üretici: 60 dk
+- 4.2 L2 Parser Engine: 60 dk
+- Lokal test (5+ PAOR PDF ile): 30 dk
+- 4.3 Admin Panel Format Öğretme: 60 dk
+- 4.4 Metrik dashboard sorguları: 30 dk
+- Canlı doğrulama + commit + push: 30 dk
+- Kapanış dosyaları: 30 dk
+
+**Toplam: ~5 saat.** Yoğun oturum. Eğer 4.3 admin paneli zaman almazsa 5 saatte biter, alırsa 50'ye taşar (4.3'ün uzaması normal).
+
+---
+
+## 9. 49 Başarı Kriterleri
+
+Aşağıdaki kanıtlar gelirse 49 **başarılı kapanır**:
+
+1. ✅ `paor_aveva_ana.parser_kural` dolu (boş değil)
+2. ✅ `paor_aveva_ana.egitim_kaynagi = 'AI_taslak_onayli'`
+3. ✅ Lokal test: bir PAOR PDF L2 ile parse edildi, AI çağrısı yok, sonuç doğru
+4. ✅ Canlı test: bir PAOR PDF yüklendi, response'ta `_parser_seviye: 'L2'` veya benzer işaret
+5. ✅ `ai_api_log`'da L2 başarılı parse sonrası **YENİ AI çağrısı log'lanmadı** (Vision AI gerçekten atlandı)
+
+Bu 5 kanıt gelirse 49 sonu **Vizyon Madde 4'ün öğrenme döngüsü canlıda çalışıyor** denebilir. Bu küçük bir adım gibi görünür ama AresPipe'in iş modelinin ekonomik temeli.
+
+---
+
+## 10. 49'a Özel Notlar
+
+**Cihat'ın stratejik içgörüsü:** Aynı tersane, aynı gemi, aynı CAD program → format **çoğunlukla aynı**. Yıl 1: 10-15 format öğrenilir, sonra çok az yenisi gelir. Bu **scaling avantajı** — sistemin ekonomik fizibilitesi yıllar geçtikçe artar.
+
+**NB1124+NB1125 senaryosu:** Aynı 1000 PDF iki gemiye yüklenir. Format öğrenildiyse: NB1124 (ilk yükleme) → AI 0-1 kez (zaten öğrenildi), L2 1000×. NB1125 (paralel veya sonra) → cache HIT 1000× ($0 + 50 dk). Bu 49 sonrası senaryo gerçek olur.
+
+**Pasif öğrenme (Vizyon 8) için zemin:** 49 sonrası kullanıcı düzeltmeleri (manuel onay verirken yaptığı değişiklikler) `parser_kural`'a feedback olarak yazılabilir. 50+'da düşünülür.
+
+**Tersan Cadmatic:** PAOR başarılı olursa şablon hazır. Tersan glyph problemi nedeniyle parser_kural çıkarmak zor olabilir, ama **fingerprint zaten doğru tutuyor** (47'de doğrulandı), L3 fallback varsayılan kalır. PAOR'a odaklan, Tersan ileride.
+
+---
+
+## 11. Tetikçi Eylem (49 başında ilk 30 dk)
+
+Ritüel sonrası dorudan şu sırayla:
+
+1. Yukarıdaki SQL sorgularını çalıştır → format kütüphanesi gerçek durumu
+2. Cihat'tan 4.1 tasarım kararı al: AI taslak üretimi (a/b/c seçeneği)
+3. Karar (c) ise → admin panel sayfası önce mi sonra mı? Hızlı kazanım için: backend taslak üretici + manuel SQL ile parser_kural doldurma → L2 test → sonra admin panel UI
+4. PAOR ile lokal test başlat (Cihat'ta zaten test PDF'leri var)
+
+49 hızlı başlasın, ortada yavaşlamasın. 4.3 admin panel **bonus**, ana iş 4.1 + 4.2 + lokal test.
