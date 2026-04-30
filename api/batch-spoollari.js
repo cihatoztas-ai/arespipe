@@ -65,16 +65,19 @@ export default async function handler(req, res) {
 
     // --- 2. Hızlı yol: izometri_batch_kayitlari.sonuc_json doluysa onu kullan ---
     // izometri-oku.js akışı her başarılı parse'da batch'in sonuc_json'una ekleme yapıyor.
+    // Format: { spoollar: [...], dosya_sonuclari: [...] }  (obje, doğrudan spool array'i değil)
     // Bu hızlı yol, ek sorgu gerektirmez.
-    if (batch.sonuc_json && Array.isArray(batch.sonuc_json) && batch.sonuc_json.length > 0) {
-      console.log(`[batch-spoollari] Hizli yol: sonuc_json'dan ${batch.sonuc_json.length} kayit`);
-      const spoollar = duzlestir(batch.sonuc_json, batch_id);
-      return res.status(200).json({
-        batch: { id: batch.id, durum: batch.durum, dosya_sayisi: batch.dosya_sayisi },
-        spoollar,
-        toplam_spool: spoollar.length,
-        kaynak: 'sonuc_json',
-      });
+    if (batch.sonuc_json && typeof batch.sonuc_json === 'object') {
+      var spoollar = duzlestir(batch.sonuc_json, batch_id);
+      if (spoollar.length > 0) {
+        console.log(`[batch-spoollari] Hizli yol: sonuc_json'dan ${spoollar.length} spool`);
+        return res.status(200).json({
+          batch: { id: batch.id, durum: batch.durum, dosya_sayisi: batch.dosya_sayisi },
+          spoollar,
+          toplam_spool: spoollar.length,
+          kaynak: 'sonuc_json',
+        });
+      }
     }
 
     // --- 3. Yedek yol: ai_api_log'dan dosya başına en son cevap_full ---
@@ -134,37 +137,74 @@ export default async function handler(req, res) {
 // =====================================================================
 // HELPER: sonuc_json'u flatten et
 // =====================================================================
-// izometri_batch_kayitlari.sonuc_json yapısı (tahmin):
-//   [
-//     { dosya_adi: "...", spoollar: [...] },
-//     ...
-//   ]
-// veya doğrudan spool array'i de olabilir; her iki formatı tolere ediyoruz.
+// izometri-oku.js'in yazdığı gerçek format (incelenen, 49.7 testi):
+//   {
+//     spoollar: [ { spool_no, pipeline_no, dn, kalite, ... }, ... ],
+//     dosya_sonuclari: [ { dosya_adi, dosya_sirasi, spool_sayisi, ... } ]
+//   }
+// Spoollar dosya_adi içermiyor doğrudan. Eşleştirme `dosya_sirasi` üzerinden
+// olabilir veya tek dosya batch'lerde dosya_sonuclari[0].dosya_adi her spool'a atanır.
+//
+// Yedek: doğrudan array gelirse onu da kabul et (eski format / başka sürüm).
+// =====================================================================
 function duzlestir(sonuc_json, batch_id) {
-  const spoollar = [];
+  var spoollar = [];
 
-  for (const item of sonuc_json) {
-    // Format 1: { dosya_adi, spoollar }
-    if (item.spoollar && Array.isArray(item.spoollar)) {
-      for (const sp of item.spoollar) {
-        spoollar.push({
-          ...sp,
-          _dosya: item.dosya_adi || sp._dosya || '?',
-          _batch_id: batch_id,
-          _manuel_onay: sp.durum === 'manuel_onay',
-        });
+  // Format A: { spoollar: [...], dosya_sonuclari: [...] }  — gerçek izometri-oku format
+  if (sonuc_json.spoollar && Array.isArray(sonuc_json.spoollar)) {
+    var dosyaSonuclari = sonuc_json.dosya_sonuclari || [];
+    var dosyaSirasiMap = {};  // dosya_sirasi → dosya_adi
+
+    dosyaSonuclari.forEach(function(ds) {
+      if (ds.dosya_sirasi != null && ds.dosya_adi) {
+        dosyaSirasiMap[ds.dosya_sirasi] = ds.dosya_adi;
       }
-    }
-    // Format 2: doğrudan spool objesi
-    else if (item.spool_no || item.pipeline_no) {
-      spoollar.push({
-        ...item,
+    });
+
+    // Tek dosyalı batch ise tüm spool'lar bu dosyaya ait
+    var tekDosyaAdi = dosyaSonuclari.length === 1 ? dosyaSonuclari[0].dosya_adi : null;
+
+    sonuc_json.spoollar.forEach(function(sp) {
+      var dosyaAd = sp._dosya
+                 || (sp.dosya_sirasi != null && dosyaSirasiMap[sp.dosya_sirasi])
+                 || tekDosyaAdi
+                 || '?';
+      spoollar.push(Object.assign({}, sp, {
+        _dosya: dosyaAd,
         _batch_id: batch_id,
-        _manuel_onay: item.durum === 'manuel_onay',
-      });
-    }
+        _manuel_onay: sp.durum === 'manuel_onay',
+      }));
+    });
+
+    return spoollar;
   }
 
+  // Format B: doğrudan array  — yedek/eski format
+  if (Array.isArray(sonuc_json)) {
+    for (var i = 0; i < sonuc_json.length; i++) {
+      var item = sonuc_json[i];
+      if (item.spoollar && Array.isArray(item.spoollar)) {
+        // Format B1: array of { dosya_adi, spoollar }
+        item.spoollar.forEach(function(sp) {
+          spoollar.push(Object.assign({}, sp, {
+            _dosya: item.dosya_adi || sp._dosya || '?',
+            _batch_id: batch_id,
+            _manuel_onay: sp.durum === 'manuel_onay',
+          }));
+        });
+      } else if (item.spool_no || item.pipeline_no) {
+        // Format B2: array of spool objects
+        spoollar.push(Object.assign({}, item, {
+          _batch_id: batch_id,
+          _manuel_onay: item.durum === 'manuel_onay',
+        }));
+      }
+    }
+    return spoollar;
+  }
+
+  // Format bilinmeyen - boş döndür (yedek yol tetiklenir)
+  console.warn('[batch-spoollari] duzlestir: bilinmeyen sonuc_json formati', typeof sonuc_json);
   return spoollar;
 }
 
