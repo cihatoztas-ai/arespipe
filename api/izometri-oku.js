@@ -619,11 +619,11 @@ function fingerprintSkor(fingerprint, ipucu) {
 
   let skor = 0;
 
-  // Sinyal 1: dosya_adi_regex
+  // Sinyal 1: dosya_adi_regex (51: tie-breaker bonus -- 5 puan, niyet 47.B yorumunda)
   if (fingerprint.dosya_adi_regex && ipucu.dosya_adi) {
     try {
       const re = new RegExp(fingerprint.dosya_adi_regex, 'i');
-      if (re.test(ipucu.dosya_adi)) skor += 1;
+      if (re.test(ipucu.dosya_adi)) skor += 5;
     } catch { /* bozuk regex yutuldu */ }
   }
 
