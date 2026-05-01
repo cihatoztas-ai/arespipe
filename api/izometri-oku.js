@@ -208,8 +208,11 @@ export default async function handler(req, res) {
         },
       };
     } else if (formatBilgisi.format_id && formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
-      // L1/L2 -- format-spesifik parser (51'de aktif edildi)
-      parseSonuc = await parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi });
+      // L1/L2 -- format-spesifik parser (51'de aktif edildi, 52'de DB log eklendi)
+      parseSonuc = await parserKuralIle({
+        pdf_base64, dosya_adi, formatBilgisi,
+        tenant_id, kullanici_id, batch_id, pdf_sha256,
+      });
       // 51: L2 fail olursa L3 (Vision AI) fallback. Format envanter UI metrigi icin log.
       if (!parseSonuc.ok && parseSonuc.parser_seviye === 'l2_failed') {
         const l2_sebep = parseSonuc.sebep;
@@ -219,12 +222,15 @@ export default async function handler(req, res) {
           dosya_adi,
           sebep: l2_sebep,
         });
+        // 52: Fallback meta'sini visionAIParse'a tasi -- ai_api_log.cevap_full icine yedirilsin
+        const l2_fallback_meta = { l2_failed: true, l2_sebep };
         parseSonuc = await visionAIParse({
           pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
           tenant_id, kullanici_id, batch_id,
+          l2_fallback_meta,
         });
         if (parseSonuc.ok) {
-          parseSonuc._l2_fallback = { l2_failed: true, l2_sebep };
+          parseSonuc._l2_fallback = l2_fallback_meta;
         }
       }
     } else {
@@ -666,7 +672,7 @@ function fingerprintEsler(fingerprint, ipucu, esik = 2) {
 // 5. VISION AI PARSER (Yaklasim Y)
 // =====================================================================
 
-async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id }) {
+async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta }) {
   const baslangic = Date.now();
   const sistem_prompt = formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT;
 
@@ -707,6 +713,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
       pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
+      parser_seviye: 'l3',
       basarili: false, http_status: 0, hata_mesaji: e.message,
       sure_ms: Date.now() - baslangic,
     });
@@ -718,6 +725,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
       pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
+      parser_seviye: 'l3',
       basarili: false, http_status: claudeRes.status,
       hata_mesaji: typeof data === 'object' ? JSON.stringify(data).substring(0, 500) : text.substring(0, 500),
       sure_ms: Date.now() - baslangic,
@@ -745,6 +753,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
       tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
       pdf_sha256,
       kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
+      parser_seviye: 'l3',
       input_tokens, output_tokens, maliyet_usd, sure_ms,
       basarili: false, http_status: 200,
       hata_mesaji: 'JSON parse: ' + e.message,
@@ -795,14 +804,20 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
   // Loglama (basarili)
   // 48: pdf_sha256 + cevap_full ekledik. cevap_full cache lookup'in icini doldurur,
   // boylece sonraki ayni PDF yuklemesi visionAIParse cagrilmadan eski sonucu doner.
+  // 52: parser_seviye='l3' set edildi (eski kayitlarda NULL'di) + L2 fail->L3 fallback
+  //     durumunda cevap_full icine _l2_fallback meta yediriyoruz (gorunurluk icin).
+  const cevap_full_yedirilmis = l2_fallback_meta
+    ? { ...parsed, _l2_fallback: l2_fallback_meta }
+    : parsed;
   await aiApiLogYaz({
     tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
     pdf_sha256,
     kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
+    parser_seviye: 'l3',
     input_tokens, output_tokens, maliyet_usd, sure_ms,
     basarili: true, http_status: 200,
     cevap_kisaltma: JSON.stringify(parsed).substring(0, 500),
-    cevap_full: parsed,
+    cevap_full: cevap_full_yedirilmis,
   });
 
   // Batch token sayaclarini artir
@@ -813,9 +828,11 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
 }
 
 // Format-spesifik parser (51'de aktif edildi -- lib/l2-parser.js'e baglandi)
-async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
+// 52: ai_api_log'a L2 basari kaydi yazilir -- gorunurluk + format envanter UI metrigi.
+async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, pdf_sha256 }) {
   // 51: STUB kaldirildi, L2 deterministik parser'a baglandi (lib/l2-parser.js).
   // L2 fail olursa parser_seviye='l2_failed' doner, cagri yeri L3 fallback yapar.
+  const baslangic = Date.now();
   try {
     const buffer = Buffer.from(pdf_base64, 'base64');
     const pdfData = await pdfParse(buffer);
@@ -826,17 +843,35 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
     const { parse } = await import('../lib/l2-parser.js');
     const sonuc = parse(text, formatBilgisi.parser_kural);
     if (sonuc.ok) {
+      const sure_ms = Date.now() - baslangic;
+      const _l2_meta = {
+        parser_seviye: 'l2',
+        alan_match_orani: sonuc.alan_match_orani,
+        cikarilan_alan_sayisi: sonuc.cikarilan_alan_sayisi,
+        toplam_alan_sayisi: sonuc.toplam_alan_sayisi,
+        malzeme_satir_sayisi: sonuc.malzeme_satir_sayisi,
+      };
+      // 52: L2 basarili -- ai_api_log'a yaz (gorunurluk + format envanter UI metrigi).
+      // Token/maliyet 0 cunku model cagrilmiyor. cagri_tipi='L2_deterministic'
+      // (52'de CHECK constraint'e eklendi). parser_seviye='l2' filtre icin.
+      // cevap_full = parsed yapisi + _l2_meta -- cache HIT'te bu meta korunur,
+      // sonraki yuklemede ayni meta donulur (52 + sonrasi ayni format icin tutarli).
+      await aiApiLogYaz({
+        tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
+        pdf_sha256,
+        kaynak: 'izometri_oku', cagri_tipi: 'L2_deterministic', model: null,
+        parser_seviye: 'l2',
+        input_tokens: 0, output_tokens: 0, maliyet_usd: 0,
+        sure_ms,
+        basarili: true, http_status: 200,
+        cevap_kisaltma: JSON.stringify(sonuc.parsed).substring(0, 500),
+        cevap_full: { ...sonuc.parsed, _l2_meta },
+      });
       return {
         ok: true,
         spoollar: sonuc.parsed?.spoollar || [],
         ham_cevap: sonuc.parsed,
-        _l2_meta: {
-          parser_seviye: 'l2',
-          alan_match_orani: sonuc.alan_match_orani,
-          cikarilan_alan_sayisi: sonuc.cikarilan_alan_sayisi,
-          toplam_alan_sayisi: sonuc.toplam_alan_sayisi,
-          malzeme_satir_sayisi: sonuc.malzeme_satir_sayisi,
-        },
+        _l2_meta,
       };
     }
     return { ok: false, sebep: sonuc.sebep, parser_seviye: 'l2_failed', http_status: 200 };
