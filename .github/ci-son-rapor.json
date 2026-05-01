@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-05-01T04:53:57.817Z",
-  "commit_sha": "eefc5721b9427068bbe2564091170d85a4e9e58d",
+  "tarih": "2026-05-01T07:08:00.765Z",
+  "commit_sha": "ca16a6fc4507f8e04cda71e5ddf92d3e30129f97",
   "commit_ref": "main",
-  "workflow_run": 661,
+  "workflow_run": 662,
   "ozet": {
-    "hata": 0,
+    "hata": 1,
     "uyari": 28,
     "taranan_dosya": 86,
-    "sorunlu_dosya": 3,
-    "durum": "sari"
+    "sorunlu_dosya": 4,
+    "durum": "kirmizi"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -67,6 +67,18 @@
             3508,
             3510
           ]
+        }
+      ]
+    },
+    "MIG_ISIM_BOZUK": {
+      "tip": "hata",
+      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 024-oturum-parser-seviye.sql",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "migrations/024-oturum-parser-seviye.sql",
+          "sayi": 1,
+          "satirlar": []
         }
       ]
     }
@@ -258,6 +270,19 @@
           "tip": "uyari",
           "satir": 3510,
           "mesaj": "tv('flansh_agirlik') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "migrations/024-oturum-parser-seviye.sql",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 0,
+      "hatalar": [
+        {
+          "kod": "MIG_ISIM_BOZUK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 024-oturum-parser-seviye.sql"
         }
       ]
     }
