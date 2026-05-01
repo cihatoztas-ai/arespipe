@@ -1,257 +1,299 @@
-# Claude — 48. Oturum Arşivi
+# 49. Oturum Detaylı Özeti
 
-> **Tarih:** 30 Nisan 2026
-> **Süre:** ~6 saat aktif çalışma (ritüel + 021 cache patch + Vercel cache invalidation savaşı + 022 RLS migration + stratejik dönüşüm tartışması + kapanış)
-> **CI:** YESIL
-> **Migration sayısı:** 2 (021 + 022)
-> **Yeni dosya:** `migrations/021_ai_api_log_cache.sql`, `migrations/022_rls_eksik_tablolar.sql`, `.gitignore`
-> **Değişen dosya:** `api/izometri-oku.js` (1113 → 1205 satır, +92)
-> **Kapanış:** Cache mekanizması ve RLS gündemi tamam. 5 mimari karar (MK-48.1→48.5). **Stratejik kazanım:** 49'un yönü "wizard" yerine "format öğrenme döngüsü"ne çevrildi.
+> **Tarih:** 30 Nisan 2026 → 1 Mayıs 2026 (gece bitirme)
+> **Süre:** ~7 saat
+> **Tema:** Async kuyruk altyapısı + frontend refactor + Excel iyileştirme
+> **Sonuç:** Tüm hedefler ✓, sistem canlıda kanıtlandı, kapanış temiz
 
 ---
 
-## Bağlam
+## Açılış — 5 Cevap Ritüeli
 
-47 fingerprint skorlama patch'ini canlıya almıştı, format_id artık doğru kaydediliyordu. 47'nin sürpriz dersi: Vercel paket uyumluluğu container testiyle yetmiyor (pdf-parse v2.4.5 patladı, v1.1.1'e downgrade çözdü).
+Cihat:
+1. `git pull` temizdi (`b722446..` ile başlangıç). Untracked yalnız `node_modules/`. ✓
+2. GitHub Actions yeşil ✓
+3. son-durum.md güncel (48 sonu). ✓
+4. Gündem: 49 (PAOR `parser_kural` JSONB + L2 parser engine + admin "Format Öğretme")
+5. Geri bildirim yok ✓
 
-48 gündemi netti: **(A) Cache mekanizması** + **(B) RLS policy'leri**. İki uygulama oturumu, keşif değil. Ama 48'in gerçek değeri planlananın ötesinde — **stratejik bir dönüşüm** geçirdi.
-
----
-
-## Yapılanlar
-
-### 1. Açılış Ritüeli (✅)
-
-5/5 cevap yeşil. CI yeşil, son commit `bf62bb8 chore(ci)` (47 kapanış raporu). Cihat: "github yeşil, son durum güncel, gündem uygun, geri bildirim yok". Ritüel temiz, hareket geçildi.
-
-### 2. 4 Karar Onayı (~2 dk) (✅)
-
-48 ana iş hattını başlatmadan önce 4 karar onaylandı:
-
-| # | Konu | Karar |
-|---|---|---|
-| 1 | Cache geçerlilik kuralı | SHA256 bazlı, içerik değişirse hash değişir → cache miss otomatik |
-| 2 | RLS migration yapısı | Tek `022_rls_production_tablolari.sql` (gündem planı, sonradan 3 tabloya küçüldü) |
-| 3 | Eski `ai_api_log` (47 öncesi NULL hash) | Dokunma, yeni kayıtlardan başla |
-| 4 | Eski PDF eğitim havuzu | 49+'a açık borç |
-
-### 3. 021 Migration — Cache Infrastructure (✅)
-
-**Dosya:** `migrations/021_ai_api_log_cache.sql`
-
-Eklenenler:
-- `ai_api_log.pdf_sha256 TEXT` kolonu (`IF NOT EXISTS` korumalı, idempotent)
-- `idx_ai_api_log_cache` partial index: `(pdf_sha256, format_id) WHERE basarili = true AND pdf_sha256 IS NOT NULL`
-- COMMENT'lar (gelecek bakım için)
-
-Supabase'te çalıştı, doğrulama sorgusu yeşil (kolon var, index var). GitHub'a commit + push, CI yeşil.
-
-### 4. Cache Patch (api/izometri-oku.js) (✅)
-
-**Dosya değişikliği:** 1113 → 1205 satır (+92 net).
-
-5 değişiklik:
-
-1. **`import crypto from 'crypto'`** (Node.js native, yeni paket yok)
-2. **`pdfHashHesapla(buffer)` helper** — SHA256 tek geçişle, ~50ms 4MB için marjinal yük
-3. **`cacheKontrol({ pdf_sha256, format_id, tenant_id })` helper** — Multi-anahtarlı lookup, hata durumunda sessiz null (ana akış bozulmaz)
-4. **Handler'da 2.3.b cache lookup** — `formatTani` sonrası hash + cacheKontrol, 3-yollu parser seçimi: HIT / parser_kural / Vision
-5. **Response özetinde `_cache_meta`** — cache_hit, original_log_id, original_sure_ms, cached_at
-6. **`visionAIParse` imzasına `pdf_sha256`** — 4 ai_api_log INSERT noktasına eklenmesi (1 başarılı + 3 hata yolu)
-7. **Başarılı log'da `cevap_full = parsed`** — Cache'in çalışması için kritik (eski kayıtlarda NULL'du, kod yazmıyordu)
-
-Lokal syntax check yeşil (`node --check`).
-
-### 5. Vercel Build Cache İnvalidation Savaşı (1 saat 30 dk, sürpriz) (⚠️→✅)
-
-**Tetikleyici:** Cache patch deploy edildi, canlıda PDF yükleme test edildi → **500 hatası**: `Cannot load "@napi-rs/canvas" package: "Error: Cannot..."`. 47'de pdf-parse v2.4.5'i v1.1.1'e indirmiştik ama bu **canlıya hiç inmemiş**. Cihat'ın testi 47 sonrası ilk gerçek pdf-parse çağrısıydı, o yüzden problem o ana kadar görünmemişti.
-
-**Kanıtlama süreci:**
-1. `package.json` ve `package-lock.json` Mac'te v1.1.1 görünüyordu ✅
-2. `pdfjs-dist` ve `@napi-rs/canvas` lock'ta 0 referans ✅
-3. Vercel build log'unda **kanıt bulundu:** `Restored build cache from previous deployment (95w3GvXea...)` — 47'nin "fix" deploy'undan önceki cache restore edilmiş, package.json değişikliği yansımamış.
-
-**Çözüm:** Vercel UI → son deploy → "..." menüsü → Redeploy → "Use existing Build Cache" KAPALI checkbox → manual redeploy. Yeni build log'da `Skipping build cache, deployment was triggered without cache.` + `Installing dependencies...` + `added 17 packages in 2s` (v2.4.5 + pdfjs-dist + @napi-rs/canvas yok).
-
-### 6. Patch Transfer Çilesi (~1 saat, beklenmeyen) (⚠️→✅)
-
-48 boyunca **izometri-oku.js dosyası 7-8 kez indirilmeye çalışıldı**, her seferinde ~45KB olarak geldi (gerçek boyut 49KB, 4KB transfer kaybı). Browser cache, Downloads `(1).js, (10).js, (11).js` birikmesi, hep yanlış dosya kopyalandı. Cihat'ın `cp ~/Downloads/izometri-oku.js` komutu **2 gün önceki dosyayı** kopyalıyordu (sade isimli olan 27 Nisan tarihli, browser yeni indirmeyi `(N).js` olarak yapıyordu).
-
-**Çözüm:** Patch (diff) formatı.
-- `diff -u eski.js yeni.js > izometri-oku-48.patch` — 8KB, 183 satır
-- Patch'in kendisini de transfer edemedik (yapıştırırken satır sonları bozuldu, "corrupt patch at line 186")
-- **Nihai çözüm:** Base64 encode patch + heredoc + `base64 -d < /tmp/file.b64 > /tmp/file.patch` + `git apply`. macOS `base64 -d` Linux'tan farklı argüman alıyor (`< stdin` redirect şart).
-
-Sonuç: Patch temiz uygulandı, MD5 kozmetik whitespace farklılığı olsa da git diff istatistiği `+97 -5 = +92 net satır` benimle birebir uyuştu, syntax OK, grep ile 30 cache pattern eşleşmesi doğrulandı.
-
-### 7. Canlı Cache Doğrulama (✅)
-
-**Backend deploy yeşil + cache bypass redeploy:**
-- Build log: `Skipping build cache, deployment was triggered without cache. Installing dependencies... added 17 packages in 2s.`
-- Lock'ta `pdf-parse@1.1.1` net, `pdfjs-dist` ve `@napi-rs/canvas` referansı 0.
-
-**Frontend cache karışıklığı:** Cihat ilk testlerde "Tekrar Çalıştır" basıyordu, network'te POST görünmüyordu. Frontend kodu incelendi: `if (d.durum === 'tamam') continue;` satırı bulundu — yani başarılı parse edilmiş dosya tekrar parse edilmiyor. Çözüm: `localStorage.clear() + reload + "Başla" butonu`. Bu DB'den de doğrulandı: son 6 saatte `ai_api_log`'a 6 başarılı PAOR parse kaydı düşmüş, hepsi `pdf_sha256` ve `cevap_full` dolu — testler **gerçekten yapılmıştı**, frontend "ölü taklidi" değil.
-
-**Cache HIT kanıtı:** Aynı PDF ikinci kez yüklendi (Cihat: "3-saniye falan sürdü"). Ardından SQL: son 5 dk'da 0 yeni `ai_api_log` kaydı. **Cache mekanizması çalıştı** — 23 sn'lik Vision AI çağrısı atlandı, eski kayıttan cevap döndü, yeni log yazılmadı (tasarım kararı).
-
-### 8. 022 Migration — RLS Policy'leri (✅)
-
-**Plan değişikliği:** Gündem "5 tablo + 16 policy" yazmıştı ama denetim yapılınca:
-- 12 production tablosu zaten RLS aktifti (tablo isimlerinin çoğul olmasını gündem yazılırken yanlış varsaymıştık: `devre` değil `devreler`, `spool` değil `spooller`)
-- Sadece 3 tablo eksikti: `markalama_listeleri`, `markalama_listesi_kalemleri`, `test_spooller`
-
-Gündem fazla iddialıymış, gerçek ihtiyaç **3 tablo + 8 policy** çıktı.
-
-**Dosya:** `migrations/022_rls_eksik_tablolar.sql` (143 satır)
-
-Policy'ler:
-- `markalama_listeleri`: 2 (select tenant+admin, write tenant)
-- `markalama_listesi_kalemleri`: 4 (select, insert WITH CHECK parent FK, update WITH CHECK parent FK, delete) — **özel tasarım:** kalem'in tenant'ı parent listenin tenant'ıyla uyuşmalı
-- `test_spooller`: 2 (defansif, 0 satır var ama gelecek-hazır)
-
-Supabase'te çalıştı, doğrulama yeşil (8 policy + 3 RLS aktif). GitHub'a Cihat web UI'dan upload etti (terminal indirme sorunu nedeniyle dosya transfer formatına alternatif), CI yeşil.
-
-### 9. Stratejik Dönüşüm — 49 Yönü (en değerli kısım) (🔥)
-
-48'in gündemi sadece teknik uygulamaydı, ama **Cihat birkaç kritik soru sordu** ve mimari yön kökten değişti:
-
-**Soru 1 — "Wizard yapsak mı?"** Devre yükleme sihirbazı tarif etti: devre bilgisi → izometri PDF'ler → arşiv dosyaları → kaydet kapat → arka planda parse. İlk önerim hibrit (Excel hızlı yol + PDF wizard yol) + 50+'da implementasyon.
-
-**Soru 2 — "1000 spool senaryosu?"** Cihat: "bir seferde minimum 100 spool yüklenecek, bazen 1000". Bu ölçek mevcut frontend-sırayla modeli kıracak (5 saat tarayıcı açık beklemek imkansız). Async kuyruk + Vercel Cron + worker mimarisi gerektiriyor görünüyordu.
-
-**Soru 3 — "Aynı format 50 PDF için gerçekten her birine AI lazım mı?"** Bu **tam isabetli soru**. Mimariyi netleştirdi: Vision AI 50× $0.02 = $1, oysa 1 kere format öğrenildikten sonra deterministik parse 100ms × 50 = 5 sn, $0. **60× ekonomi farkı.**
-
-**Soru 4 — "NB1124+NB1125 paralel yapım, NB1124→NB1130 yıl sonra kopya?"** Tersane sektöründe sık görülen senaryolar. İkisinde de aynı 1000 PDF tekrar yüklenir → cache HIT %100. Cache patch'in stratejik gerekçesi netleşti (sadece test gimnastiği değil).
-
-**Sentez:**
-
-```
-Yıl 1 ekonomi (öğrenme YOK senaryosu):
-  100 spool/gün × 30 gün × $0.02 = $60/ay/tenant
-  Sürdürülemez.
-
-Yıl 1+ ekonomi (öğrenme aktif):
-  Yeni format: AI ($0.02 × ~10 format/yıl = $0.20)
-  Bilinen format: L2 deterministik ($0)
-  Toplam: ~$1/ay/tenant
-  60× kazanım.
-```
-
-**49'un Yönü Değişti:**
-- ❌ Önceki plan: Wizard tasarımı + kuyruk altyapısı
-- ✅ Yeni plan: **Format öğrenme döngüsü** (parser_kural üretimi, L2 deterministik parser)
-- Wizard 50+'a ertelendi
-- Kuyruk altyapısı **gerek olmayabilir** (L2 başarılı olursa 1000 spool 5 dk'da biter, frontend sırayla yeter)
-
-### 10. Son Saat — 3 Stratejik Soru Daha (🔥🔥)
-
-48'in **son saatinde** Cihat 3 daha kritik soru sordu, projeyi hafıza/strateji düzeyinde netleştirdi:
-
-**Soru 5 — "Spool detay verisi ileride bize ne fayda sağlayacak?"** Bu soru fine tuning vs RAG ayrımını gün ışığına çıkardı. Anlatıldı: AresPipe Anthropic modelini eğitmiyor, modelin etrafına 3 katmanlı hafıza inşa ediyor:
-- Tip 1: Format öğrenme (49'un konusu) — `parser_kural` JSONB
-- Tip 2: Veri birikimli akıl yürütme (50+) — geçmiş özet AI prompt'una context olarak verilir
-- Tip 3: Pasif öğrenme (Vizyon 8) — kullanıcı düzeltmelerinin biriktirilmesi
-
-Anthropic AI sabit, AresPipe sistemi öğrenir. Anthropic model güncellediğinde otomatik faydalanırız (fine tune'da o avantaj sıfırlanır). Strateji tabiri: **Context Engineering + Retrieval Augmented Generation (RAG)**.
-
-**Soru 6 — "Birkaç yıl sonra başka programa veri taşınabilir mi?"** Veri portability sorusu. Profesyonel cevap: **Knowledge Pack mimarisi**:
-- PostgreSQL `pg_dump` ile tek dosya export'u zaten mümkün
-- Eksiklik: PDF'ler şu an saklanmıyor (Vercel function memory geçici), parse JSON'u var ama **orijinal kanıt yok**
-- Sistematik çözüm: Aylık otomatik snapshot zip — format kütüphanesi + spool detayları + tersane istatistikleri + PDF'ler + veri sözlüğü
-
-**Soru 7 — "AI öğrenmesi mevcut veriden bağımsız mı çalışır?"** İki farklı varlık ayrımı yapıldı:
-- **Format kuralı (parser_kural)**: Tersan A'nın 1000 PDF'inden öğrenildi ama artık VERİDEN BAĞIMSIZ çalışır. Tersan B yeni PAOR yüklerse kural ona da hizmet eder.
-- **Akıl yürütme kontekst (geçmiş özet)**: Canlı veriden türetilir. Tersan A çıkarsa onun istatistikleri gider. Ama format kuralı kalır.
-
-İki farklı taşıma stratejisi gerektirir:
-- **Tenant Data Pack**: Müşterinin kendi malı (devreleri, PDF'leri, istatistikleri). Çıkışta teslim edilir + sistemden silinir.
-- **System Knowledge Archive**: AresPipe'ın iç envanteri (anonim format kuralları, genel mühendislik desenleri). Müşteri çıkışında sistemde kalır.
-
-**Sentez — KARAR-48.1 (Veri Sahipliği Politikası B):**
-
-```
-Müşteri verisi: Müşterinin malı → Çıkışta teslim + silme
-Anonim öğrenilmiş kurallar: AresPipe'ın malı → Sistemde kalır
-Bu kural sözleşmede yazılır.
-Kabul etmeyene program verilmez.
-```
-
-Cihat'ın tepkisi: "B olur bu durumda zaten bu kuralı kabul etmeyene program vermek zorunda değiliz" — net duruş. Bu MK-48.6 olarak son-durum.md'ye yazıldı.
-
-### 11. Kapanış Dosyaları (✅)
-
-- `son-durum.md` — 48 sonu mevcut durum, 6 mimari karar (MK-48.1→48.6), açık borçlar (KIRMIZI listesi 7 yeni eksik dosya/altyapı ile genişledi)
-- `CLAUDE-SON-OTURUM.md` — bu dosya
-- `CLAUDE-SONRAKI-OTURUM.md` — 49 gündemi (format öğrenme döngüsü)
+5/5 yeşil, doğrudan teknik işe girildi.
 
 ---
 
-## Mimari Kararlar
+## Aşama 1: 48 Mirası + Stratejik Sorgulama (~30 dk)
+
+PAOR formatının durumu sorgulandı:
+
+```sql
+-- PAOR Ana Çizim: 10 kullanım (8 önce + 2 yeni)
+-- basari_orani: NULL (handler güncellemiyor — borç)
+-- prompt_template: NULL
+-- parser_kural: {} (henüz öğrenilmedi)
+-- egitim_kaynagi: 'vision_only'
+```
+
+**Cihat'ın kritik soruları:**
+- "Format öğretme nerede olacak? Müşteri öğretsin mi, AresPipe öğretsin mi?"
+- "Mecburiyet var mı? Öğretmezse ne olur?"
+- "Sistem hangi formatları tanıyor önizleme görebilirmiyiz?"
+- "Bir kullanıcı 1000 PDF yükledi gitti, ben başında bekleyemem ki."
+
+**Sentez — 49'un kapsamı yeniden çerçevelendi:**
+
+48'in MK-48.5 kararı doğruydu (format öğrenme > wizard) ama **Cihat'ın "kapat-git" perspektifi temel UX gereksinimi olarak ortaya çıktı.** Wizard değil, **async altyapı + format öğrenme** birlikte ele alınmalıydı.
+
+Üç yol seçeneği:
+- A: Format öğrenme dar, async yok (eski plan)
+- B: Sadece async, L2 yok
+- **C: Hibrit, 49 + 50 ikiye böl** (Cihat'ın seçtiği)
+
+Karar: **C — 49 async kurulum, 50 format öğrenme.** Bu seçim sayesinde Cihat ve kullanıcılar tarayıcıyı kapatıp gidebiliyor, ekonomi optimizasyonu 50'de geliyor.
+
+---
+
+## Aşama 2: Mimari Detay Konuşması (~45 dk)
+
+Çoklu derin konu açıldı:
+
+**1. Format öğrenme tetikleme:** (a) otomatik / (b) ilk N sonra / (c) manuel buton
+- Önce (c) seçildi, sonra Cihat'ın "kullanıcı başında bekleyemem" sezgisiyle **etkileşimli akışa** dönüştü
+- Karar: B seviyesi — PDF görüntü + yan panel + "evet/hayır/açıklama" (50'de)
+
+**2. Eski formatta yeni alan / değer farkı vs konum farkı:**
+- Cihat'ın asıl kastı: "yüzey alanı bir izometride sağ alt, başkasında sağ üst"
+- **MK-49.4 kararı:** `parser_kural` metin pattern tabanlı, koordinat değil. Konum değişimine dayanıklı.
+
+**3. 3D model maliyeti:**
+- Cihat endişesi: "her seferinde token mu öderiz?"
+- Cevap: 3D = kod tarafında deterministik, AI'a gitmiyor. **MK-49.7** olarak sabitlendi.
+
+**4. Devre wizard vs devre detay:**
+- Cihat sezgisi: "wizard sıkıştırır, detay sayfasından ekleyelim"
+- Cevap: Wizard kalır ama "atla" butonlu, **aynı bileşen wizard ve detay sayfasında embed**. **MK-49.8** olarak sabitlendi.
+
+**5. Format öğretme mecburiyeti:**
+- Cevap: Mecburiyet yok, ekonomik gereklilik. **MK-49.9** olarak sabitlendi.
+
+İki MK karar memory'ye yazıldı (49.A 3D, 49.B PDF yükleme bileşeni embed).
+
+---
+
+## Aşama 3: 49 Plan Bölünmesi (~15 dk)
+
+Sekiz alt-iş hattı tanımlandı:
+- 49.1 — `is_kuyrugu` migration
+- 49.2 — Storage bucket + RLS
+- 49.3 — `batch-baslat` + `batch-kuyruga-al`
+- 49.4 — `kuyruk-isle` worker
+- 49.5 — `kuyruk-durum` polling
+- 49.6 — `batch-spoollari` (49.7'nin parçası olarak yapıldı)
+- 49.7 — Frontend refactor
+- 49.6b — `vercel.json` cron
+- 49.9 — `basari_orani` fix
+- 49 kapanış
+
+3 önemli karar:
+- Worker stratejisi: **γ hibrit (cron + chain)**
+- Vercel planı: **Hobby** (Pro'ya sonra)
+- Polling stratejisi: **basit polling** (SSE değil)
+
+---
+
+## Aşama 4: Teyit Sorguları + Migration 023 (~30 dk)
+
+CIHAT-PROFIL.md dersi: "Kolon adlarını tahmin etme — information_schema sorgusu yap."
+
+3 teyit sorgusu çalıştırıldı:
+- A: Tablo adları (`tenants`, `kullanicilar`, `izometri_batch_kayitlari`, `ai_api_log` — hepsi UUID)
+- B: FK tipleri uyumlu
+- C: `izometri_batch_kayitlari` 18 kolon (sonuc_json JSONB var)
+- Storage: tek bucket `arespipe-dosyalar`, yeni `izometri-pdfs` ekleniyor
+
+**Migration 023 — `is_kuyrugu`:**
+- 18 kolon (id, tenant_id, kullanici_id, batch_id, storage_bucket, storage_path, dosya_adi, dosya_boyut, dosya_sirasi, dosya_toplami, durum, hata_mesaji, deneme_sayisi, parse_baslangic_at, parse_bitis_at, olusturma_at, guncelleme_at, ai_api_log_id)
+- 5 index (3 manuel + 2 unique)
+- 4 RLS policy (SELECT/INSERT/UPDATE/DELETE)
+- 2 CHECK constraint (durum enum, deneme_sayisi range)
+- 1 trigger (guncelleme_at otomatik)
+- 4 FK (tenants CASCADE, kullanicilar RESTRICT, izometri_batch_kayitlari CASCADE, ai_api_log SET NULL)
+
+D1-D6 doğrulamaları hepsi yeşil.
+
+---
+
+## Aşama 5: Storage Bucket + RLS (~15 dk)
+
+Cihat Supabase Studio'dan bucket oluşturdu:
+- Name: `izometri-pdfs`
+- Public: false
+- File size limit: 10 MB (önce 25 MB önerildi, 10 yeterli)
+- MIME types: `application/pdf`
+
+4 storage RLS policy SQL ile:
+- SELECT (tenant + super_admin)
+- INSERT (tenant kendi klasörü)
+- UPDATE (tenant kendi klasörü)
+- DELETE (tenant + super_admin, KARAR-48.1 müşteri çıkışı)
+
+Path mantığı: `(storage.foldername(name))[1] = tenant_id::text`
+
+---
+
+## Aşama 6: 4 Backend Endpoint (~1.5 saat)
+
+**`api/batch-baslat.js`** (109 satır) — Yeni batch açar, batch_id döndürür. supaFetch helper kopya (50/51'de lib/supabase.js'e taşınır).
+
+**`api/batch-kuyruga-al.js`** (183 satır) — Storage upload sonrası batched INSERT. Tenant izolasyon güvencesi: her storage_path `{tenant_id}/{batch_id}/` ile başlamalı, .pdf uzantı zorunlu.
+
+**Smoke test 1 (curl):** İki endpoint çalıştı. İlk hata: BATCH_ID_BURAYA placeholder validation tarafından yakalandı (fail-loud doğru çalışıyor).
+
+**`api/kuyruk-isle.js`** (348 satır) — **49'un kalbi.**
+- Self-trigger chain hibrit: function başına 2 PDF
+- Storage'dan PDF indir → izometri-oku'ya HTTP POST → kayıt güncelle
+- 5 dk stale lock cleanup
+- 3 deneme retry, 4xx kalıcı / 5xx geçici ayrımı
+
+**`api/kuyruk-durum.js`** (204 satır) — polling endpoint, 3 paralel sorgu (Promise.all).
+
+3 smoke test yeşil:
+- Boş batch polling ✓
+- Var olmayan batch (404) ✓
+- Geçersiz UUID (400) ✓
+
+---
+
+## Aşama 7: Frontend Refactor — `izometri-batch.html` (~2 saat)
+
+Strateji: **minimum invaziv refactor.** HTML+CSS dokunulmadı (1-287 satır), sadece JavaScript yeniden yazıldı.
+
+Eski 692 satırlık dosya → 1015 satıra çıktı. Yeni fonksiyonlar:
+- `basla()` — async akış (Storage upload → kuyruk → worker → polling)
+- `dosyalariStorageYukle()` — 8 paralel concurrency
+- `slugYap()` — Türkçe karakter + timestamp
+- `pollingBaslat/Dur/Tetikle/Zamanla/Uygula` — adaptif 3→8 sn
+- `batchTamamlandi()` — spool listesi çek + UI render
+- `aktifBatchKontrol()` — localStorage resume
+
+**`api/batch-spoollari.js`** (197 → 249 satır, 5. endpoint) — Async batch sonrası spool listesi. 5 katmanlı dosya eşleştirme (pipeline_no öncelikli).
+
+---
+
+## Aşama 8: Test + Bug Fix Maratonu (~1.5 saat)
+
+**İlk test:** 1 PDF yükle, "parse cevabi JSON degil" hatası — Vercel Authentication Standard Protection 401 dönüyor. **Çözüm:** Cihat Authentication kapattı + `SELF_BASE_URL` öncelik sırası değişti (`VERCEL_PROJECT_PRODUCTION_URL` öne).
+
+**İkinci test (1 PDF):** Parse başarılı ama spool tablosu boş, "Excel İndir" pasif. **Çözüm:** `batch-spoollari.js`'in `duzlestir()` fonksiyonu yanlış format varsayıyordu. `sonuc_json` array değil obje (`{spoollar:[], dosya_sonuclari:[]}`).
+
+**Üçüncü test (1 PDF):** Excel geldi ama 1 sekme. **Çözüm:** Eski `excelIndir()` 2 sekme yapıyordu (Spool + Malzeme), refactor sırasında kayboldu. Geri eklendi, kolonlar gerçek JSON yapısına göre düzeltildi.
+
+**Dördüncü test (4 PDF):** Excel 2 sekme, 4 spool, 22 malzeme. AMA `Dosya` kolonu "?" çıkıyor, sıralama yok. **Çözüm:** Pipeline_no eşleştirme + dosya_sirasi sıralama eklendi.
+
+**Beşinci test (3 PDF — 101501, 101409, 101408):** Mükemmel sonuç:
+- Sırasıyla sıralı
+- Dosya kolonu doğru
+- 5 spool (101409 ve 101408 için 2'şer, AI doğru tespit etti)
+- 20 malzeme satırı
+- Yeni "AI Notları" kolonu dolduruldu
+
+**Cihat'ın spool sayısı endişesi:** PAOR-50600-101513'te AI tek spool çıkardı (gerçek: 2). Bu prompt sorunu, 50'ye ertelendi. Çözüm yolu: Excel'e AI Notları + Uyarılar kolonları → kullanıcı 100 PDF batch'inde filtre ile yakalar.
+
+---
+
+## Aşama 9: Tam Kapanış (~45 dk)
+
+3 kalan iş yapıldı:
+- **49.6b vercel.json cron:** Mevcut header'lar bozulmadan crons alanı eklendi (`0 3 * * *` UTC)
+- **49.9 basari_orani fix:** Trigger `tg_basari_orani_guncelle` kuruldu. PAOR: 26 kullanım, %100 doğru hesaplandı.
+- **49 kapanış:** 3 dosya güncellendi (son-durum.md, CLAUDE-SON-OTURUM.md, CLAUDE-SONRAKI-OTURUM.md)
+
+Token analizi (24 saat):
+- 6 çağrı, $0.218 toplam
+- Ortalama $0.036/PDF
+- 50 sonrası beklenti: $0.001/PDF (60× tasarruf)
+
+---
+
+## Mimari Kararlar Özet
 
 | # | Karar | Etki |
 |---|---|---|
-| **MK-48.1** | Vercel build cache invalidation paket değişiminde tutarsız. Manual "cache'siz redeploy" zorunlu. | Kalıcı süreç kuralı, 47'nin gizli arızası 48'de keşfedildi |
-| **MK-48.2** | Cache mekanizması: `pdf_sha256 + format_id + tenant_id + basarili + cevap_full`. Tenant izolasyonu. Devre/batch ilişkisi yok (NB1124→NB1125 için doğru) | Cache çalışma prensibi, 49+ format öğrenme ile birlikte yaşar |
-| **MK-48.3** | RLS bekçisi 15 prod tablosu (12 + 3 eklenen). `markalama_listesi_kalemleri` özel parent FK kuralı. Backend service_role ile bypass | Multi-tenant güvenlik tabanı |
-| **MK-48.4** | Cache HIT log YAZMAZ. Frontend `_cache_meta` ile bilir. Analytics gerekirse function logs'tan veya yeni kolon (49+) | Tasarım kararı, gereksiz log şişmesi engellendi |
-| **MK-48.5** | Format öğrenme döngüsü (49) > Wizard (50+). 60× ekonomi. Kuyruk gerek olmayabilir. | Stratejik yön değişikliği, Vizyon Madde 4 çekirdeği |
-| **MK-48.6** | **Veri Sahipliği Politikası (KARAR-48.1)**: Müşteri verisi müşterinin malı (çıkışta Tenant Data Pack ile teslim + silme). Anonim öğrenilmiş kurallar AresPipe'ın malı (sistemde kalır). Sözleşmede yazılır, kabul etmeyene program yok. | İş modeli temel taşı, 50+ sözleşme/teknik altyapı buradan kurulur |
+| **MK-49.1** | izometri-oku.js HTTP üzerinden çağrılır | 1206 satır dokunulmaz, 47 self-test felaketi tekrarlanmadı |
+| **MK-49.2** | SELF_BASE_URL: VERCEL_PROJECT_PRODUCTION_URL > VERCEL_URL | Standard Protection 401 sorunu çözüldü |
+| **MK-49.3** | Self-trigger chain hibrit, 2 PDF/function + cron safety net | Vercel 60s timeout altı + chain dayanıklı |
+| **MK-49.4** | parser_kural metin pattern tabanlı, koordinat değil | Konum değişimine dayanıklı (50+) |
+| **MK-49.5** | Cache HIT log yazmamak korunuyor, basari_orani formülü dikkatli | Cache HIT'ler "başarısız" görünmez |
+| **MK-49.6** | Dosya-spool eşleştirme pipeline_no öncelikli, 5 katmanlı fallback | 100 PDF batch'inde doğru eşleştirme |
+| **MK-49.7** | 3D model render = kod tarafında, AI çağrısı yok | $0 maliyet, 52+'ya planlandı |
+| **MK-49.8** | İzometri PDF yükleme bileşeni hem wizard hem devre detay'da embed | Aynı backend endpoint, kod tek yerde |
+| **MK-49.9** | Format öğretme mecburiyeti yok, ekonomik gereklilik | Müşteri kapatabilir, sistem L3 ile devam eder |
 
 ---
 
 ## Süreç Dersleri
 
-**1. Vercel build cache invalidation tutarsız.** Lock değişse bile eski cache restore edilebilir. Çözüm: Manuel redeploy + "cache'siz" + build log doğrulama.
+**1. Vercel Authentication Standard Protection function-to-function call'ları kırar.** Worker `process.env.VERCEL_URL` ile self-call yapınca 401 → HTML response → "JSON degil". Hobby planda Authentication faydasız (preview yok). Çözüm: production URL öncelikli + Authentication kapat.
 
-**2. Anthropic transfer 30KB+ dosyalarda truncate riski.** Patch (diff) formatı tercih, base64 encode son çare. macOS `base64 -d < file` (stdin redirect) Linux'tan farklı.
+**2. zsh quote sorunu commit mesajlarında.** Parantez `()` zsh'i `quote>` prompt'una sokar. Çözüm: parantezsiz commit mesajları.
 
-**3. Downloads klasörü versiyonlama riski büyük.** Browser `(N).js` birikmesi, sade isimli dosya kopyalandığında 2-3 gün önceki dosya kullanılıyor. Çözüm: tarihli isim veya patch.
+**3. Mac dosya indirme bozuk olabilir.** Aynı isimli dosyalar Downloads'ta birikiyor, lokal repo'ya yanlış sürüm gidiyor. **GitHub web UI'dan direkt edit + commit** pragmatik kurtarıcı.
 
-**4. Frontend "ölü taklidi" = state hatası, kod bozukluğu değil.** DB sorgusu kanıttır. `ai_api_log`'a baktık, testler gerçekten yapılmıştı, frontend butonu basılması gereken `Başla`'ydı (`Tekrar Çalıştır` değil — `if durum=='tamam' continue` mantığı).
+**4. JSONB obje vs array varsayım kontrolü.** `jsonb_array_length()` obje üzerinde patlar. Çözüm: önce `jsonb_typeof()`.
 
-**5. Gündem ile gerçeklik arasında denetim şart.** "5 tablo + 16 policy" planı denetimde "3 tablo + 8 policy"e küçüldü. Gündem yazımında **information_schema sorgusu yapılmadan tablo varsayımı yanlış**.
+**5. Function-to-function HTTP overhead küçük (~200ms).** 24 sn parse'ın %1'i. izometri-oku.js dokunulmadı (refactor 51+'a).
 
-**6. Stratejik sorular planı değiştirir.** Cihat'ın "1000 spool", "aynı format her birine AI mı?", "NB1124+NB1125" soruları 49'un yönünü kökten değiştirdi. Wizard sandığımız büyük iş, format öğrenmenin yan ürünü olabilir.
+**6. Pipeline_no eşleştirme PDF format'a özel.** PAOR `\d{5}-\d{6}` çalışıyor, başka format'ta çalışmaz. Generic eşleştirme 50+'da.
 
-**7. zsh `interactive_comments` off — `#` yorumları komut sayar.** Cross-shell komut yapıştırırken yorum kullanma.
+**7. AI parse'da spool sayısı düşük çıkabilir.** `[1] [2]` köşeli parantez vs `<1> <2>` cut-length etiketleri AI tarafından karıştırılabilir. Excel'e AI Notları kolonu eklendi → kullanıcı yakalar. Prompt iyileştirmesi 50'de.
 
----
-
-## Süre Dağılımı (~6 saat)
-
-- Açılış ritüeli + 4 karar: ~10 dk
-- 021 migration + cache patch yazımı: ~45 dk
-- Vercel cache invalidation savaşı: ~1 saat
-- Patch transfer çilesi (7-8 deneme): ~1 saat
-- Cache patch canlı doğrulama (3 sn HIT): ~30 dk
-- 022 RLS denetim + migration: ~30 dk
-- Stratejik dönüşüm tartışması: ~1 saat
-- Kapanış dosyaları: ~30 dk
+**8. Cache HIT formül problemi.** `kullanim_sayisi` her PDF girişinde artıyor (cache HIT dahil), ama `ai_api_log` cache HIT'te yazılmıyor. Doğru formül: `basari_orani = basarili_log / toplam_log` (kullanim_sayisi yerine).
 
 ---
 
-## 49'a Geçerken Net Aklımdaki Plan
+## 49'da Üretilen Dosyalar
 
-49 gündemi: **Format öğrenme döngüsü.**
+| # | Dosya | Satır | Durum |
+|---|---|---|---|
+| 1 | `migrations/023_is_kuyrugu.sql` | ~220 | ✓ Supabase'te uygulandı |
+| 2 | `api/batch-baslat.js` | 109 | ✓ Canlıda |
+| 3 | `api/batch-kuyruga-al.js` | 183 | ✓ Canlıda |
+| 4 | `api/kuyruk-isle.js` | 348 | ✓ Canlıda |
+| 5 | `api/kuyruk-durum.js` | 204 | ✓ Canlıda |
+| 6 | `api/batch-spoollari.js` | 249 | ✓ Canlıda |
+| 7 | `izometri-batch.html` | 692 → 1015 | ✓ Canlıda |
+| 8 | `vercel.json` | +6 satır cron | ✓ Canlıda |
 
-İlk hedef format: **PAOR Ana Çizim** (`paor_aveva_ana`). Şu an 8 başarılı kullanım var, kütüphanede en zengin sample.
+DB değişikliği:
+- 1 yeni tablo: `is_kuyrugu`
+- 1 yeni storage bucket: `izometri-pdfs`
+- 1 yeni trigger: `tg_basari_orani_guncelle`
+- 8 yeni RLS policy (4 tablo + 4 storage)
 
-49 başında çalışılacak SQL hazır:
-```sql
-SELECT * FROM izometri_format_tanimlari
-WHERE format_kodu = 'paor_aveva_ana';
--- ad: PAOR Ana Çizim
--- fingerprint: { ulke: PT, tersane: STM, baslik_regex: "PORTUGUESE NAVY AOR", ...}
--- prompt_template: NULL ← buraya AI'nin kullandığı prompt
--- parser_kural: {} ← buraya AI taslağı doldurulacak
--- egitim_kaynagi: 'vision_only' ← 49 sonrası 'AI_taslak_onayli' olur
-```
+---
 
-49'da AI'a şu ekstra prompt eklenecek (Vision AI parse sonrası):
-> "Bu PDF'i parse ettin ve JSON döndürdün. Şimdi başka aynı formatta PDF'ler için bir extraction kuralı yaz: hangi alan PDF'in neresinde (regex, koordinat, satır işareti). JSON formatında döndür."
+## 50'ye Geçerken
 
-Çıktı `parser_kural` JSONB'sine yazılır, admin paneli "Format Öğretme" sayfasında kullanıcı onayına sunulur.
+**50 gündemi: Format öğrenme döngüsü L2.** 49'un mantıklı devamı.
 
-L2 parser engine: `parser_kural` varsa AI atla, regex/extract uygula. Şüpheliyse L3 (Vision AI) fallback.
+İlk hedef format: **PAOR Ana Çizim** (`paor_aveva_ana`) — 26 başarılı kullanım, çok zengin sample.
 
-**Beklenen 49 kazanımı:** İlk PAOR PDF → AI öğrendi → kalan 999 PAOR PDF → L2 deterministik. Cihat'ın "1000 spool" senaryosu 5 dakikada biter.
+50'de yapılacaklar:
+1. Etkileşimli format öğretme akışı (PDF görüntü + yan panel onay)
+2. L2 parser engine (`lib/l2-parser.js`)
+3. `parser_kural` JSONB şeması v1
+4. Handler entegrasyonu (mevcut `parserKuralIle` STUB → gerçek)
+5. Prompt iyileştirme: spool sayısı tespiti
+6. Format öğretme tetikleme (modal otomatik)
+
+**Beklenen kazanım:** Aynı format → ilk PDF $0.036, sonraki 999 PDF $0. **60× ekonomi mimarisi tamamlanır.**
+
+---
+
+## Kapanış Notu
+
+49 büyük oturumdu (~7 saat). Mimari kayma yapmadan büyük UX kazanımı: tarayıcı kapatılabilir, parse arka planda devam eder. `izometri-oku.js` 1206 satırına dokunulmadı (47 dersi). 9 mimari karar dokümante edildi.
+
+Token harcama bilinçli kabul edildi — 50'de L2 parser kurulduğunda asıl ekonomi gelecek. Şu an "ilk PDF $0.036" beklenen davranış (yeni içerik, yeni hash, AI çağrısı doğal).
+
+Sistem **canlıda kanıtlandı:** 3 PDF batch, 5 spool, 20 malzeme, dosya eşleştirme + sıralama doğru, Excel 2 sekme + AI Notları + Uyarılar + autofilter çalışıyor.
+
+50'ye temiz başlangıç hazır.
