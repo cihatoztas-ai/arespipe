@@ -883,8 +883,8 @@ function manuelOnayAc() {
 function excelIndir() {
   if (!_tumSpooller.length) return;
 
-  // Sheet 1: Spool Listesi (Durum + Uyarılar kolonları eklendi)
-  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev', 'Durum', 'Uyarılar']];
+  // Sheet 1: Spool Listesi (Durum + Uyarılar + AI Notları kolonları eklendi)
+  var rows = [['#', 'Dosya', 'Pipeline No', 'Spool No', 'DN', 'Çap (mm)', 'Malzeme', 'Kalite', 'Et (mm)', 'Boy (mm)', 'Ağırlık (kg)', 'Yüzey', 'Rev', 'Durum', 'Uyarılar', 'AI Notları']];
   _tumSpooller.forEach(function(s, i) {
     var _me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(s.malzeme)||s.malzeme||''):(s.malzeme||'');
     var _kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||''):(s.kalite||'');
@@ -906,6 +906,11 @@ function excelIndir() {
       }).join('; ');
     }
 
+    // AI Notları: spool.notlar — AI'ın kendi yazdığı şüphe/açıklama notu
+    // (prompt iyileştirmeleri 50+'a) — şu an spool sayısı uyumsuzluğu, kesim
+    // parçası yorumu, format ipucu gibi durumları yakalar
+    var aiNot = s.notlar || '';
+
     rows.push([
       i + 1,
       (s._dosya || '').replace('.pdf','').replace('.PDF',''),
@@ -920,7 +925,8 @@ function excelIndir() {
       _ye,
       s.rev         || '',
       durumLabel,
-      uyariMetni
+      uyariMetni,
+      aiNot
     ]);
   });
 
@@ -952,12 +958,19 @@ function excelIndir() {
   var ws1 = XLSX.utils.aoa_to_sheet(rows);
   var ws2 = XLSX.utils.aoa_to_sheet(malzRows);
 
-  // Kolon genişlikleri
-  ws1['!cols'] = [{wch:4},{wch:30},{wch:18},{wch:10},{wch:7},{wch:10},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6},{wch:14},{wch:50}];
+  // Kolon genişlikleri (16 kolon: 13 ana + Durum + Uyarılar + AI Notları)
+  ws1['!cols'] = [{wch:4},{wch:30},{wch:18},{wch:10},{wch:7},{wch:10},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:10},{wch:6},{wch:14},{wch:50},{wch:60}];
   ws2['!cols'] = [{wch:30},{wch:18},{wch:10},{wch:6},{wch:18},{wch:50},{wch:14},{wch:10},{wch:6},{wch:12},{wch:8},{wch:10},{wch:12},{wch:18},{wch:18}];
 
   // Spool Listesi'nde otomatik filtre (kullanıcı kolayca filtreler)
-  var sonHarf = String.fromCharCode(64 + rows[0].length);  // O = 15. kolon
+  // 16 kolon → A-P. Excel'in column letter mantığı: A=1, B=2, ..., P=16
+  var sonHarf = '';
+  var n = rows[0].length;
+  while (n > 0) {
+    var rem = (n - 1) % 26;
+    sonHarf = String.fromCharCode(65 + rem) + sonHarf;
+    n = Math.floor((n - 1) / 26);
+  }
   ws1['!autofilter'] = { ref: 'A1:' + sonHarf + rows.length };
 
   XLSX.utils.book_append_sheet(wb, ws1, 'Spool Listesi');
