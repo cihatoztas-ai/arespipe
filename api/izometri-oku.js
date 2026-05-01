@@ -208,9 +208,25 @@ export default async function handler(req, res) {
         },
       };
     } else if (formatBilgisi.format_id && formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
-      // L1/L2 -- format-spesifik parser (38'de aktif)
-      // Su an parser_kural'lar bos, bu dal calismayacak
+      // L1/L2 -- format-spesifik parser (51'de aktif edildi)
       parseSonuc = await parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi });
+      // 51: L2 fail olursa L3 (Vision AI) fallback. Format envanter UI metrigi icin log.
+      if (!parseSonuc.ok && parseSonuc.parser_seviye === 'l2_failed') {
+        const l2_sebep = parseSonuc.sebep;
+        console.warn('[L2-FAIL]', {
+          format_id: formatBilgisi.format_id,
+          format_adi: formatBilgisi.format_adi,
+          dosya_adi,
+          sebep: l2_sebep,
+        });
+        parseSonuc = await visionAIParse({
+          pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
+          tenant_id, kullanici_id, batch_id,
+        });
+        if (parseSonuc.ok) {
+          parseSonuc._l2_fallback = { l2_failed: true, l2_sebep };
+        }
+      }
     } else {
       // L3 -- Vision AI (Yaklasim Y)
       parseSonuc = await visionAIParse({
@@ -796,11 +812,37 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
   return { ok: true, spoollar, ham_cevap: parsed };
 }
 
-// Format-spesifik parser (38'de aktif)
+// Format-spesifik parser (51'de aktif edildi -- lib/l2-parser.js'e baglandi)
 async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
-  // Su an parser_kural'lar bos -- bu fonksiyon aktif degil
-  // 38'de format-spesifik regex/template parse buraya gelecek
-  return { ok: false, error: 'parser_kural ile parse henuz aktif degil (38)', http_status: 501 };
+  // 51: STUB kaldirildi, L2 deterministik parser'a baglandi (lib/l2-parser.js).
+  // L2 fail olursa parser_seviye='l2_failed' doner, cagri yeri L3 fallback yapar.
+  try {
+    const buffer = Buffer.from(pdf_base64, 'base64');
+    const pdfData = await pdfParse(buffer);
+    const text = pdfData.text || '';
+    if (!text.trim()) {
+      return { ok: false, sebep: 'pdf_text_bos', parser_seviye: 'l2_failed', http_status: 200 };
+    }
+    const { parse } = await import('../lib/l2-parser.js');
+    const sonuc = parse(text, formatBilgisi.parser_kural);
+    if (sonuc.ok) {
+      return {
+        ok: true,
+        spoollar: sonuc.parsed?.spoollar || [],
+        ham_cevap: sonuc.parsed,
+        _l2_meta: {
+          parser_seviye: 'l2',
+          alan_match_orani: sonuc.alan_match_orani,
+          cikarilan_alan_sayisi: sonuc.cikarilan_alan_sayisi,
+          toplam_alan_sayisi: sonuc.toplam_alan_sayisi,
+          malzeme_satir_sayisi: sonuc.malzeme_satir_sayisi,
+        },
+      };
+    }
+    return { ok: false, sebep: sonuc.sebep, parser_seviye: 'l2_failed', http_status: 200 };
+  } catch (e) {
+    return { ok: false, sebep: 'l2_exception:' + (e.message || 'bilinmeyen'), parser_seviye: 'l2_failed', http_status: 200 };
+  }
 }
 
 // =====================================================================
