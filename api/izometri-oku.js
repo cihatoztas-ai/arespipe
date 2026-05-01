@@ -1012,9 +1012,9 @@ async function asmeFallbackDoldur(spoollar) {
     // Et_mm yoksa veya kaynagi pdf_yok ise -> helper'dan default schedule
     if ((!yeni.et_mm || yeni.et_kaynagi === 'pdf_yok') && yeni.dn) {
       const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu });
-      if (olcu?.et_kalinligi_mm) {
-        yeni.et_mm = Number(olcu.et_kalinligi_mm);
-        yeni.et_kaynagi = `${olcu.kaynak} (SCH ${olcu.schedule_kodu})`;
+      if (olcu?.et_mm) {
+        yeni.et_mm = Number(olcu.et_mm);
+        yeni.et_kaynagi = `${olcu.kaynak} (SCH ${olcu.schedule_kod})`;
         yeni.dolduruldu.et_mm = yeni.et_kaynagi;
       }
     }
@@ -1040,8 +1040,8 @@ async function boruOlcuBul({ dn, malzeme_en_kodu, schedule }) {
     if (od && et) {
       return {
         dis_cap_mm: od,
-        et_kalinligi_mm: et,
-        schedule_kodu: sch,
+        et_mm: et,
+        schedule_kod: sch,
         kaynak: 'ares_boru',
       };
     }
@@ -1049,7 +1049,7 @@ async function boruOlcuBul({ dn, malzeme_en_kodu, schedule }) {
 
   // 2. Helper bulamadi -> boru_olculer DB'ye sor (DIN/EN borular helper'da yok)
   try {
-    let path = `boru_olculer?dn=eq.${dnInt}&select=dis_cap_mm,et_kalinligi_mm,schedule_kodu,standart&limit=1`;
+    let path = `boru_olculer?dn=eq.${dnInt}&select=dis_cap_mm,et_mm,schedule_kod,standart&limit=1`;
     if (malzeme_en_kodu && /CrNi|paslanmaz|316|304|321|347|duplex/i.test(malzeme_en_kodu)) {
       path += '&standart=eq.ASME-B36.19M';
     } else {
@@ -1071,14 +1071,14 @@ async function boruEtTolerans({ dn, malzeme_en_kodu, schedule }) {
   const dnInt = Number(dn);
   if (!dnInt) return null;
   try {
-    let path = `boru_olculer?dn=eq.${dnInt}&select=et_kalinligi_mm,et_min,et_max,schedule_kodu&limit=1`;
+    let path = `boru_olculer?dn=eq.${dnInt}&select=et_mm,et_min_mm,et_max_mm,schedule_kod&limit=1`;
     if (malzeme_en_kodu && /CrNi|paslanmaz|316|304|321|347|duplex/i.test(malzeme_en_kodu)) {
       path += '&standart=eq.ASME-B36.19M';
     } else {
       path += '&standart=eq.ASME-B36.10M';
     }
     if (schedule) {
-      path += `&schedule_kodu=eq.${encodeURIComponent(schedule)}`;
+      path += `&schedule_kod=eq.${encodeURIComponent(schedule)}`;
     }
     const data = await supaFetch(path);
     return data?.[0] || null;
@@ -1118,15 +1118,15 @@ async function halusinasyonFiltresi({ spoollar, dosya_adi }) {
       }
     }
 
-    // Madde 3: Et tolerans disi (sadece boru_olculer'da et_min/et_max generated kolonlar var)
+    // Madde 3: Et tolerans disi (sadece boru_olculer'da et_min_mm/et_max_mm generated kolonlar var)
     if (sp.dn && sp.et_mm && sp.et_kaynagi === 'pdf') {
       const tol = await boruEtTolerans({ dn: sp.dn, malzeme_en_kodu: sp.malzeme_en_kodu });
-      if (tol?.et_min && tol?.et_max) {
+      if (tol?.et_min_mm && tol?.et_max_mm) {
         const et = Number(sp.et_mm);
-        if (et < Number(tol.et_min) || et > Number(tol.et_max)) {
+        if (et < Number(tol.et_min_mm) || et > Number(tol.et_max_mm)) {
           uyarilar.push({
             kod: 'et_tolerans_disi',
-            mesaj: `Et ${et}mm, kabul tolerans: ${tol.et_min}-${tol.et_max}mm (SCH ${tol.schedule_kodu})`,
+            mesaj: `Et ${et}mm, kabul tolerans: ${tol.et_min_mm}-${tol.et_max_mm}mm (SCH ${tol.schedule_kod})`,
             agirlik: 'orta',
           });
         }
