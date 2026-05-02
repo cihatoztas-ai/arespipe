@@ -22,13 +22,19 @@ Oturum başlangıç ritüeli. 2 kısa kontrol:
 **Bu 2 cevap geldikten sonra Claude şunu yapar:**
 - Git durumu temiz mi kontrol eder (stash kalıntısı, commitlenmemiş değişiklik yok mu)
 - CI durumunu son commit'ten anlar (gerekirse `gh run list -L 1` veya GitHub Actions sayfası kontrolü)
-- **`docs/PROJE-HARITASI.md`'yi okur** — projenin güncel durumu, teknik borçlar, sayfalar arası bağlar (52'de oluşturuldu, **canlı tutulan dosya**)
-- **`docs/CLAUDE-CALISMA-MODU.md`'yi okur** — Cihat ile nasıl çalışılacağı (52'de oluşturuldu)
+- **`docs/SAYFA-EKSIKLERI.md`'yi okur** — projenin **asıl teknik borç defteri** (25 Nis'ten beri canlı, sayfa sayfa bug ID'leri ile takip, SED-01 kuralı). 3+ oturumdur açık eksikleri Cihat'a hatırlat.
+- **`docs/CLAUDE-CALISMA-MODU.md`'yi okur** — Cihat ile nasıl çalışılacağı (52'de oluşturuldu, "yardımcı asistan değil proje parçası" rolü)
+- **`docs/ARCHITECTURE.md`'yi okur** — sistem mimarisinin "niye böyle" mantığı (CI tarafından AUTO bölümleri güncellenir, manuel kısımlar da var)
+- **`docs/ONBOARDING.md`'yi okur** — yeni katılan için sistem haritası (5 günlük rehber, kritik kurallar)
 - **`docs/CIHAT-PROFIL.md`'yi okur** (kullanıcının çalışma tarzını, tercihlerini, alerjilerini hatırlamak için)
-- **`docs/SPOOL-AI-VIZYON.md`'yi hatırlar** (gündelik iş vizyona hizmet ediyor mu?)
+- **`SPOOL-AI-VIZYON.md`'yi okur** (root'ta, gündelik iş vizyona hizmet ediyor mu?)
+- **`kurallar.json`'ı kontrol eder** — SED-01 (Sayfa Eksik Defteri), MK-* (Madde Kuralları) gibi kurallar var, hepsini bilmen şart
 - `.github/son-durum.md`'den son oturum özetini + açık borçları okur
 
 **NOT (52. oturumda kaldırıldı):** CI rengi sorma (son-durum.md'de zaten var), geri bildirim sayısı sorma (genelde 0, lazım olunca konuşulur), "bugün hangi sayfa" sorma (gündem konuşmaya başlayınca çıkar). Bu adımlar kullanıcıyı yoruyordu, bilgi değeri yoktu.
+
+**NOT (52. oturumda eklendi):** `docs/PROJE-HARITASI.md` 52'de yazıldı ama aynı oturumda silindi — `docs/SAYFA-EKSIKLERI.md` zaten daha iyi format. Eğer biri tekrar PROJE-HARITASI.md yazmak isterse, önce SAYFA-EKSIKLERI.md'ye bakıp duplicate olup olmadığını kontrol et.
+
 
 ---
 
