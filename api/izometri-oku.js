@@ -854,12 +854,14 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
       // 52: L2 basarili -- ai_api_log'a yaz (gorunurluk + format envanter UI metrigi).
       // Token/maliyet 0 cunku model cagrilmiyor. cagri_tipi='L2_deterministic'
       // (52'de CHECK constraint'e eklendi). parser_seviye='l2' filtre icin.
+      // model='l2_deterministic' -- DB'de model kolonu NOT NULL, AI cagrilmadigini
+      // belirten yer-tutucu deger (52: ilk push'ta null gonderilmisti, INSERT sessiz fail oluyordu).
       // cevap_full = parsed yapisi + _l2_meta -- cache HIT'te bu meta korunur,
       // sonraki yuklemede ayni meta donulur (52 + sonrasi ayni format icin tutarli).
       await aiApiLogYaz({
         tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
         pdf_sha256,
-        kaynak: 'izometri_oku', cagri_tipi: 'L2_deterministic', model: null,
+        kaynak: 'izometri_oku', cagri_tipi: 'L2_deterministic', model: 'l2_deterministic',
         parser_seviye: 'l2',
         input_tokens: 0, output_tokens: 0, maliyet_usd: 0,
         sure_ms,
