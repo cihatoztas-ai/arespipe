@@ -269,6 +269,88 @@ sonraki oturumlara bırakıldı.
 - **MK-52.2**: `gp` (otomatik rebase + push)
 - **CLAUDE-CALISMA-MODU.md**: Sonraki Claude için talimat dosyası
 - **PROJE-HARITASI.md**: Bu dosya
+- **DB tarama**: 12 ölü tablo + 24 şüpheli tablo bulundu (aşağıda detayda)
+
+---
+
+## Yarım Kalan İşler (52 sonu envanteri)
+
+> **Bu bölüm CANLI tutulur.** Her oturumda 1-2 maddeye bakılıp karar verilir:
+> "bitirelim mi, silelim mi, beklesin mi?"
+>
+> Madde formatı: `[durum] tablo/modül — sebep — karar`
+> Durum: 🔴 ölü (silinebilir) / 🟡 yarım (bitir veya sil) / 🟢 vizyonda (bekleyebilir)
+
+### Kodda hiç çağrılmayan tablolar (52 taramasından)
+
+| Durum | Tablo | Satır | Notu |
+|---|---|---:|---|
+| 🟡 | `rol_sablonlari` | **69** | Yetki sistemi UI'da var, tablo dolu, kod bağlanmamış. **Bug riski**: kullanıcı şablon seçer ama hiçbir yerde okunmaz. |
+| 🟡 | `fitting_olculer` | 391 | Kütüphane temeli, kod hiç sorgulamıyor. Pilot başladığında işe yaramaz. |
+| 🟡 | `boru_dn_isim_eslesme` | 180 | DB tablosu var, ama `ares-asme.js` aynı veriyi kod içinde yapıyor. **Duplicate** — hangisi doğruluk kaynağı belirsiz. |
+| 🔴 | `endustri_urun_formlari` | 0 | Boş, niye var belirsiz |
+| 🔴 | `fitting_malzeme_uyum` | 0 | KUTUPHANE-YUKLEME-TAKIP'te P0 yazıyordu (~8000 satır hedef), kod yok |
+| 🔴 | `hakedis_kriterleri` | 0 | Hakediş sistemi yarım kalmış |
+| 🔴 | `ifs_material_alias` | 0 | IFS sistem entegrasyonu için, kullanılmıyor |
+| 🔴 | `tarama_sonuclari` | 0 | QR tarama altyapısı, akış yok |
+| 🔴 | `tersane_firma_iliskileri` | 0 | Multi-tersane mimarisi için |
+| 🔴 | `yetki_tanimlari` | 0 | Yetki referans tablosu, kullanılmıyor |
+| 🔴 | `boru_standart_sozluk` | 0 | Paralel kütüphane oturumu (mig 028) ekledi, henüz kullanım yok |
+| 🔴 | `ai_analizler` | 0 | Vizyon belgesinde geçti ama bağlanmamış |
+
+### Kodda 1-2 dosyada geçen şüpheliler
+
+| Durum | Tablo | Satır | Notu |
+|---|---|---:|---|
+| 🟡 | `asme_borular` | **334** | Eski tablo. `boru_olculer`'a geçiş yarım. Hangi eski sayfa hâlâ buna bakıyor? |
+| 🟡 | `flansh_olculer` | 216 | Sadece 1 dosya kullanıyor — modülerlik sorunu var |
+| 🟡 | `endustri_form_astm` | 78 | Niye var, kim kullanıyor belirsiz |
+| 🟢 | `egitim_verisi` | 0 | Vizyonda var (AI eğitim verisi), UI henüz yapılmadı — beklemekte sorun yok |
+| 🟢 | `fotograflar` | 0 | Vizyonda var (fotoğraf altyapısı), UI henüz yapılmadı |
+
+### UI/Kod yarım kalan modüller
+
+| Durum | Modül | Notu |
+|---|---|---|
+| 🟡 | Yetki sistemi şablonları | `rol_sablonlari` doluyor ama kod bağlanmadı |
+| 🟡 | Hakediş sistemi | Tablolar (`hakedis_*`) var ama UI/kod yok |
+| 🟡 | Sevkiyat | Sayfa var (1225 satır) ama tablolar boş, akış tamamlanmamış |
+| 🟡 | Test (RT/PT/UT) | Sayfa var (1014 satır) ama `testler` tablosu boş |
+| 🟡 | KK davet sistemi | `kk_davet_*` tabloları var, akış incelenmeli |
+| 🟢 | Mobil | 13 satır iskelet — vizyonda öncelikli |
+| 🟢 | AI eğitim verisi UI | Tablo hazır, UI yok |
+| 🟢 | Fotoğraf yükleme/etiketleme | Tablo hazır, UI yok |
+
+---
+
+## Tarama Soruları (sonraki oturumlarda Claude'un kendi başına soracağı)
+
+> **Cihat "neyi sorgulayacağımı bilmiyorum" der.** Sen (sonraki Claude) bu listeyi
+> kullanıp kendi başına analiz öner. Cihat istek beklemiyorsun.
+>
+> Her oturumda en az **1 soruyu** kendi başına sor, çıktısını oturum sonunda
+> "Yarım Kalan İşler" listesine ekle.
+
+### Hızlı taramalar (5-10 dk)
+
+1. **Hangi tablo kodda hiç geçmiyor?** (52'de yapıldı, sonuç yukarıda — 6 ay sonra tekrar)
+2. **Hangi API endpoint'i frontend'den çağrılmıyor?** `api/` altındaki her dosya için frontend'de fetch çağrısı var mı?
+3. **Hangi feature_flag tanımlı ama hiç okunmuyor?** `feature_flags` tablosundaki her flag için kod taraması.
+4. **Hangi RPC fonksiyon DB'de var ama kullanılmıyor?** `pg_proc`'a bak.
+5. **Hangi schema kolonu hiç INSERT/UPDATE almıyor?** Tablodaki kullanılmayan kolonlar.
+6. **Hangi sayfa import ediliyor ama hiç açılmıyor?** Sol menüden veya başka linkten erişilebiliyor mu?
+
+### Derin taramalar (30-60 dk)
+
+7. **Sayfalar arası kolon adı tutarsızlığı.** Bir yerde `cap_mm`, başka yerde `dis_cap_mm` — hangileri var?
+8. **Schema-kod uyumsuzluğu.** Kod `tablo.x` deniyorsa ama `tablo`'da `x` yoksa runtime hatası verir, derleme hatası vermez.
+9. **N+1 sorgu tespiti.** Bir spool listesi yüklenirken kaç sorgu atılıyor? `for...await` zincirlerine bak.
+10. **Kod tekrarı.** Aynı 20+ satırlık fonksiyon birden fazla yerde mi var? `lib/` boş, helper'lar root'ta.
+
+### Vizyon-uyum kontrolleri
+
+11. **Hangi sayfa SPOOL-AI-VIZYON.md'deki vizyona aykırı?** Mutfağa baktırma prensibi var, hangi sayfa kullanıcıya gereksiz teknik detay gösteriyor?
+12. **Hangi sayfa "kümülatif değer" üretmiyor?** Statik gösterim mi, kullanım/zamanla zenginleşen veri mi?
 
 ---
 
@@ -278,12 +360,15 @@ sonraki oturumlara bırakıldı.
 
 1. Bu oturumda yeni teknik borç açıldı mı? → Liste'ye ekle
 2. Bu oturumda çözülen teknik borç var mı? → Liste'den çıkar
-3. Yeni sayfa veya modül eklendi mi? → Tabloya ekle
-4. Boş tablolardan biri kullanılmaya başlandı mı? → "Aktif"e taşı
-5. Performans gözlemi var mı? → Ekle
+3. Yarım kalan işler bölümünde durum değişen var mı? (🟡 → ✅ veya 🔴 → silindi)
+4. Yeni sayfa veya modül eklendi mi? → Tabloya ekle
+5. Boş tablolardan biri kullanılmaya başlandı mı? → "Aktif"e taşı
+6. Performans gözlemi var mı? → Ekle
+7. **Bu oturumda Tarama Soruları'ndan biri sorulup yanıtlandı mı?** Yanıtsa bulgular nereye eklendi?
 
 **Her ay** geri çekilip okuma:
 
 - 30 saniye özeti hâlâ doğru mu?
 - Teknik borç listesi anlamlı sırada mı?
 - Belirsiz tablolar hâlâ belirsiz mi, sorulmalı mı?
+- Yarım Kalan İşler listesinde 🟡 maddeleri çürüyor mu? (3 ay duranlar 🔴 olur)

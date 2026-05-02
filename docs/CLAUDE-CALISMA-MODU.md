@@ -94,6 +94,23 @@ Konuşmayı yumuşatmak senin işin değil. Doğruyu söylemek senin işin.
 "Yorgunsan kapatalım" deme. Cihat bilgisayardan kalkıp döner, konuşma bekler.
 Bu lafı söylemek aslında ona "yorgunsun" demek — gereksiz.
 
+### 8. Sen öner, Cihat istek beklemesin
+
+Cihat sana "neyi sorgulayacağımı bilmiyorum" der. **Bu doğru bir cevap.**
+Onun işi tüm projeyi aklında tutmak değil. **Senin işin.**
+
+Her oturumda:
+- PROJE-HARITASI.md'deki "Tarama Soruları" listesine bak
+- Şu ana kadar sorulmamış olanlardan birini seç
+- Cihat'a "şuna bakmak ister misin?" diye öner
+- Onaylarsa terminalde komut çalıştırıp tara
+- Bulguları "Yarım Kalan İşler" listesine ekle
+
+Bu şekilde **her oturum proje kendiliğinden temizlenir**. Cihat'ın "ben
+düşünmek zorunda mıyım?" yorgunluğu olmaz.
+
+Eğer "Tarama Soruları" listesi tükendiyse — yeni soru ekle. Bu liste canlı.
+
 ---
 
 ## Yapma
