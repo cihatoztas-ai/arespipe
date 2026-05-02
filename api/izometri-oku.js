@@ -1061,6 +1061,44 @@ async function asmeFallbackDoldur(spoollar) {
   return sonuc;
 }
 
+// 52: DN icin TUM standartlardaki OD adaylarini topla.
+// ARES_BORU helper'i sadece ASME bilir, DB'de DIN-2448 + EN-10216-1 + ASTM-B241 + EEMUA-144 var.
+// Eski boruOlcuBul tek standart donduyordu (ASME default) -- Avrupa boru kullanan
+// PDF'lerde yanlis pozitif "cap_dn_tutarsiz" uyarisi cikariyordu.
+// Ornek: DN125 PDF'inde cap=139.7 (EN 10220 dogru), helper 141.3 (ASME) doner -> yanlis uyari.
+// Yeni yaklasim: tum standart adaylarini topla, herhangi birinde tutuyorsa OK.
+async function boruTumOdAdaylari({ dn }) {
+  const dnInt = Number(dn);
+  if (!dnInt) return [];
+  const adaylar = [];
+  const ekle = (od, standart, kaynak) => {
+    const odNum = Number(od);
+    if (!odNum) return;
+    const key = `${odNum}|${standart}`;
+    if (!adaylar.some(a => `${a.od}|${a.standart}` === key)) {
+      adaylar.push({ od: odNum, standart, kaynak });
+    }
+  };
+
+  // 1. Helper -- in-memory, hizli (ASME B36.10/B36.19/ASTM-B241/EEMUA-144)
+  if (ARES_BORU) {
+    ekle(ARES_BORU.disCap(dnInt, 'karbon'), 'ASME-B36.10M', 'ares_boru');
+    ekle(ARES_BORU.disCap(dnInt, 'paslanmaz'), 'ASME-B36.19M', 'ares_boru');
+  }
+
+  // 2. DB -- DIN-2448, EN-10216-1 ve helper'in atladigi diger standartlar
+  try {
+    const rows = await supaFetch(`boru_olculer?dn=eq.${dnInt}&select=dis_cap_mm,standart`);
+    if (Array.isArray(rows)) {
+      for (const r of rows) ekle(r.dis_cap_mm, r.standart, 'boru_olculer');
+    }
+  } catch (e) {
+    console.error('[boruTumOdAdaylari] hata:', e.message);
+  }
+
+  return adaylar;
+}
+
 async function boruOlcuBul({ dn, malzeme_en_kodu, schedule }) {
   const dnInt = Number(dn);
   if (!dnInt) return null;
@@ -1140,15 +1178,25 @@ async function halusinasyonFiltresi({ spoollar, dosya_adi }) {
       uyarilar.push({ kod: 'dn_bulunamadi', mesaj: `DN bos veya gecersiz (deger: ${sp.dn})`, agirlik: 'kritik' });
     }
 
-    // Madde 2: Cap-DN tutarli mi (helper veya boru_olculer cross-check)
+    // Madde 2: Cap-DN tutarli mi -- TUM standart aileleri arasinda dene
+    // 52: ARES_BORU sadece ASME bilir, DB'de DIN-2448 + EN-10216-1 var. Tek standart
+    // kontrolu Avrupa boru iceren PDF'lerde yanlis pozitif uyari uretiyordu (DN125 PDF'inde
+    // cap=139.7 EN 10220 dogru, ama eski kod ASME 141.3 bekliyordu, fark=1.6 -> uyari).
+    // Yeni mantik: DN icin tum standartlardaki OD adaylarini al, en yakin aday 1mm
+    // tolerans icindeyse OK; degilse uyari mesajinda hangi standartlari bekledigini goster.
     if (sp.dn && sp.cap_mm) {
-      const beklenen = await boruOlcuBul({ dn: sp.dn, malzeme_en_kodu: sp.malzeme_en_kodu });
-      if (beklenen?.dis_cap_mm) {
-        const fark = Math.abs(Number(beklenen.dis_cap_mm) - Number(sp.cap_mm));
-        if (fark > 1.0) {
+      const adaylar = await boruTumOdAdaylari({ dn: sp.dn });
+      if (adaylar.length > 0) {
+        const cap = Number(sp.cap_mm);
+        const enYakin = adaylar.reduce(
+          (min, a) => Math.abs(a.od - cap) < Math.abs(min.od - cap) ? a : min
+        );
+        if (Math.abs(enYakin.od - cap) > 1.0) {
+          // Hicbir standart adayi 1mm tolerans icinde tutmadi -- gercek uyumsuzluk
+          const beklenen_str = [...new Set(adaylar.map(a => `${a.od}mm (${a.standart})`))].join(', ');
           uyarilar.push({
             kod: 'cap_dn_tutarsiz',
-            mesaj: `DN${sp.dn} icin beklenen cap ${beklenen.dis_cap_mm}mm (kaynak: ${beklenen.kaynak}), gelen ${sp.cap_mm}mm`,
+            mesaj: `DN${sp.dn} icin beklenen cap: ${beklenen_str}; gelen ${cap}mm`,
             agirlik: 'orta',
           });
         }
