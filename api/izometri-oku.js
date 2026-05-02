@@ -253,6 +253,7 @@ export default async function handler(req, res) {
     const filtreliSpoollar = await halusinasyonFiltresi({
       spoollar: zenginlestirilmis,
       dosya_adi,
+      tenant_id,
     });
 
     // --- 2.7 DB yazimi -- batch sonuclarini guncelle ---
@@ -1067,7 +1068,14 @@ async function asmeFallbackDoldur(spoollar) {
 // PDF'lerde yanlis pozitif "cap_dn_tutarsiz" uyarisi cikariyordu.
 // Ornek: DN125 PDF'inde cap=139.7 (EN 10220 dogru), helper 141.3 (ASME) doner -> yanlis uyari.
 // Yeni yaklasim: tum standart adaylarini topla, herhangi birinde tutuyorsa OK.
-async function boruTumOdAdaylari({ dn }) {
+//
+// 52 (sonraki patch): paralel kutuphane oturumu migration 027'de boru_olculer'a
+// tenant_id + sistem_preset kolonlari ekledi. Tenant ozel ara-olculer (tersane
+// standart-disi uretim, gemi agirlik kritik) artik desteklenmeli. Bu fonksiyon
+// hem sistem standartlarini (sistem_preset=TRUE, tenant_id NULL) hem aktif
+// tenant'in ozel kayitlarini (tenant_id eq) toplar -- diger tenant'larin ozel
+// kayitlari gizli kalir (multi-tenant gizlilik).
+async function boruTumOdAdaylari({ dn, tenant_id }) {
   const dnInt = Number(dn);
   if (!dnInt) return [];
   const adaylar = [];
@@ -1086,11 +1094,23 @@ async function boruTumOdAdaylari({ dn }) {
     ekle(ARES_BORU.disCap(dnInt, 'paslanmaz'), 'ASME-B36.19M', 'ares_boru');
   }
 
-  // 2. DB -- DIN-2448, EN-10216-1 ve helper'in atladigi diger standartlar
+  // 2. DB -- sistem standartlari (tenant_id NULL) + aktif tenant'in ozel kayitlari.
+  // Diger tenant'larin kayitlari gizli kalir. Pattern formatTani ile ayni (satir 514).
+  // tenant_id verilmediyse sadece sistem standartlari getirilir (geriye uyumluluk).
   try {
-    const rows = await supaFetch(`boru_olculer?dn=eq.${dnInt}&select=dis_cap_mm,standart`);
+    let path = `boru_olculer?dn=eq.${dnInt}&select=dis_cap_mm,standart,tenant_id`;
+    if (tenant_id) {
+      path += `&or=(tenant_id.is.null,tenant_id.eq.${tenant_id})`;
+    } else {
+      path += `&tenant_id=is.null`;
+    }
+    const rows = await supaFetch(path);
     if (Array.isArray(rows)) {
-      for (const r of rows) ekle(r.dis_cap_mm, r.standart, 'boru_olculer');
+      for (const r of rows) {
+        // tenant ozel kayitlari standart adina '-TENANT' ekle ki uyari mesajinda ayirt edilsin
+        const standartEtiket = r.tenant_id ? `${r.standart}-TENANT` : r.standart;
+        ekle(r.dis_cap_mm, standartEtiket, r.tenant_id ? 'tenant_ozel' : 'boru_olculer');
+      }
     }
   } catch (e) {
     console.error('[boruTumOdAdaylari] hata:', e.message);
@@ -1167,7 +1187,7 @@ async function boruEtTolerans({ dn, malzeme_en_kodu, schedule }) {
 // 8. HALUSINASYON FILTRESI (K3/36 -- 7 madde)
 // =====================================================================
 
-async function halusinasyonFiltresi({ spoollar, dosya_adi }) {
+async function halusinasyonFiltresi({ spoollar, dosya_adi, tenant_id }) {
   const sonuc = [];
 
   for (const sp of spoollar) {
@@ -1185,7 +1205,7 @@ async function halusinasyonFiltresi({ spoollar, dosya_adi }) {
     // Yeni mantik: DN icin tum standartlardaki OD adaylarini al, en yakin aday 1mm
     // tolerans icindeyse OK; degilse uyari mesajinda hangi standartlari bekledigini goster.
     if (sp.dn && sp.cap_mm) {
-      const adaylar = await boruTumOdAdaylari({ dn: sp.dn });
+      const adaylar = await boruTumOdAdaylari({ dn: sp.dn, tenant_id });
       if (adaylar.length > 0) {
         const cap = Number(sp.cap_mm);
         const enYakin = adaylar.reduce(
