@@ -1,240 +1,176 @@
-# 51. Oturum — Tersan L2 Canlı Entegrasyon (1 Mayıs 2026)
+# 52. Oturum — Akış Altyapısı Revizyonu (2 Mayıs 2026)
 
-> **Durum:** ✅ Hedef başarıldı + bonus iş.
+> **Durum:** ✅ Beklenmedik yöne gitti, ama bu doğru yöndü.
 >
-> 50. oturumun L2 prototipi canlıya bağlandı. L2 fail → L3 fallback mekanizması canlıda doğrulandı. Bonus olarak 5+ aydır gizli çalışan ASME helper bug'ı temizlendi.
+> 52'nin planı parser_kural iyileştirmesiydi. Sohbet altyapı işine yöneldi: knowledge ↔ repo bağlantısı, dosya transfer otomasyonu, push akışı, ritüel sadeleştirme. Sonuçta planlanan teknik iş 53'e ertelendi ama "her oturum başlangıcının vergi'si" ciddi şekilde düştü.
+
+> 📜 Bu özet 53. oturumun başında yazıldı (52 kapanışında atlandı). Detaylar `git log` + bu sohbet üzerinden derlendi.
 
 ---
 
-## Hedef
+## Hedef ve Sapma
 
-51'in ana hedefi: 50'de yazılan L2 deterministik parser'ı (`lib/l2-parser.js`) `api/izometri-oku.js`'in `parserKuralIle` STUB'ına bağlamak ve canlıda Tersan PDF'leri ile doğrulamak.
+**Planlanan hedef:** 51'in açık borçlarını kapatmak — parser_kural pipeline_no regex'i genişletme, `_l2_meta` DB'ye yazma, 5+ Tersan PDF ile L2 başarı oranı ölçümü.
 
-CLAUDE-SONRAKI-OTURUM.md'de "3 satır iş" yazıyordu, gerçekte 5-6 satır + iki ek bug daha çıktı:
-- Fingerprint tie-breaker bug'ı (47.B'den beri sessiz)
-- ASME helper sütun adı bug'ı (5+ ay öncesi DB migration sonrası)
+**Gerçekleşen:** Cihat sohbette altyapıyla ilgili olası iyileştirmeleri sezdi, sohbet bu yöne döndü. Sonuçta dökümantasyon ve akış altyapısı elden geçirildi. Planlanan teknik iş 53/54'e ertelendi.
+
+**Sapma değerlendirmesi:** Doğru yön. Parser_kural'ı iyileştirmek için her oturumda önce 10-15 dakika manuel dosya yükleme + bağlam kurma vergisi ödeniyordu. Bu vergi olmadan 54'te parser_kural işine doğrudan dalmak mümkün.
 
 ---
 
 ## Yapılanlar (Sıralı)
 
-### 1. `parserKuralIle` STUB → Gerçek L2 Bağlandı
+### 1. Knowledge ↔ Repo Bağlantısı (MK-52.4)
 
-**Eski (STUB):**
-```javascript
-async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
-  return { ok: false, error: 'parser_kural ile parse henuz aktif degil (38)', http_status: 501 };
-}
+**Eski akış:** Her oturum sonunda `son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` üçü manuel olarak Claude project'e Files olarak yükleniyordu. Eski sürümler silinip yenisi konuyordu. Tek doğru kaynak yoktu, repo ↔ Claude bilgi senkronu kırılgandı, bağlam dardı (5-10 dosya).
+
+**Yeni akış:** Claude project doğrudan GitHub repo'ya bağlandı. Repo'daki tüm dosyalar push sonrası otomatik knowledge'a indekslenir. ~1-2 dakika gecikme var (push → indexleme), bu süre dışında knowledge canlı.
+
+**Sonuç:** 12% kapasite kullanımı. 40+ web sayfa, mobil React kodu, `api/`, `lib/`, `docs/` (16 dosya), `migrations/` (26 dosya), `.github/` hepsi indexli. Claude bu cevapta knowledge'ı 6 farklı sorguyla taradı, anında geldi.
+
+**Sınır:** DB içeriği, runtime log'lar, Storage PDF'leri, Vercel env değişkenleri repo'da olmadığı için knowledge'da da değil. Bunlar hâlâ kopyala-yapıştır gerektiriyor.
+
+### 2. `arespipe_kopyala` zsh Fonksiyonu (MK-52.1)
+
+**Sorun:** macOS Downloads `dosya.js` zaten varsa yenisini `dosya (1).js` olarak ekliyor, sonra `dosya (2).js`, vb. `cp ~/Downloads/dosya.js ~/Desktop/...` komutu eski (boyut 1) sürümü kopyalıyor. 15+ oturum boyunca bu yüzden yanlış push'lar oldu, her seferi 30+ dakika düzeltme aldı.
+
+**Çözüm:** `~/.zshrc`'de `arespipe_kopyala` fonksiyonu. Kullanım:
+
+```bash
+arespipe_kopyala ~/Downloads/dosya.js ~/Desktop/arespipe/api/dosya.js <BEKLENEN_MD5>
 ```
 
-**Yeni:**
-```javascript
-async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi }) {
-  try {
-    const buffer = Buffer.from(pdf_base64, 'base64');
-    const pdfData = await pdfParse(buffer);
-    const text = pdfData.text || '';
-    if (!text.trim()) {
-      return { ok: false, sebep: 'pdf_text_bos', parser_seviye: 'l2_failed', http_status: 200 };
-    }
-    const { parse } = await import('../lib/l2-parser.js');
-    const sonuc = parse(text, formatBilgisi.parser_kural);
-    if (sonuc.ok) {
-      return {
-        ok: true,
-        spoollar: sonuc.parsed?.spoollar || [],
-        ham_cevap: sonuc.parsed,
-        _l2_meta: { /* parser_seviye, alan_match_orani, ... */ },
-      };
-    }
-    return { ok: false, sebep: sonuc.sebep, parser_seviye: 'l2_failed', http_status: 200 };
-  } catch (e) {
-    return { ok: false, sebep: 'l2_exception:...', parser_seviye: 'l2_failed', http_status: 200 };
-  }
-}
-```
+MD5 doğrular, eşleşirse kopyalar (`✅ Kopyalandi`), eşleşmezse reddeder (`❌ MD5 uyusmuyor`).
 
-### 2. Çağrı Yerinde L3 Fallback
+**Claude tarafı disiplin:** Her dosya transferinde MD5'i komutta veriyor, `cp` doğrudan kullanılmıyor.
 
-```javascript
-} else if (formatBilgisi.format_id && formatBilgisi.parser_kural && Object.keys(formatBilgisi.parser_kural).length > 0) {
-  parseSonuc = await parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi });
-  if (!parseSonuc.ok && parseSonuc.parser_seviye === 'l2_failed') {
-    console.warn('[L2-FAIL]', { format_id, format_adi, dosya_adi, sebep });
-    parseSonuc = await visionAIParse({ /* ... */ });
-    if (parseSonuc.ok) {
-      parseSonuc._l2_fallback = { l2_failed: true, l2_sebep };
-    }
-  }
-}
-```
+### 3. `gp` zsh Fonksiyonu (MK-52.2)
 
-### 3. Fingerprint Tie-Breaker Bug Tespiti ve Fix
+**Sorun:** Her `git push` sonrası GitHub Actions `ci-son-rapor.json`'u güncelleyip `[skip ci]` ile commit ediyor. Bir sonraki push'ta lokal arkada kalıyor → push reject → manuel `git pull --rebase` → tekrar push. Oturum başına 5+ kez tekrarlanıyordu.
 
-İlk canlı testten sonra şaşırtıcı sonuç: yüklenen Tersan Spool PDF'leri **`84c12f61` (Tersan M110 Montaj Resmi / Isometry)** olarak tanındı, **`e1fb879d` (Tersan M110 İmalat Resmi / Spool)** değil. Halbuki parser_kural sadece İmalat Resmi'nde dolu.
+**Çözüm:** `~/.zshrc`'de `gp` fonksiyonu. Önce origin fetch + rebase, sonra push. Conflict olursa abort eder, kullanıcıya söyler.
 
-**Sebep:** İki formatın 5 fingerprint sinyalinden 4'ü aynı:
-- ulke: TR ✓
-- tersane: Tersan Shipyard ✓
-- baslik_regex: "Malzeme Listesi" ✓
-- tablo_baslik_regex: "Cut & Bending Info" ✓
-- pdf_uretici_anahtar: Cadmatic + Piping Isometrics & Spools ✓
+**Disiplin:** Artık `git push origin main` doğrudan yazılmaz, `gp` kullanılır.
 
-Tek fark: `dosya_adi_regex`. Spool: `^[A-Z]\d+-\d+-\d+-P\d+\s+...`, Isometry: `^M\d+-\d+-\d+\.\d+\.pdf$`. İkisi de gerçek dosya `G200-303S-BS18 5(5).S09.1.pdf` ile eşleşmiyor (`P\d+` ve `M\d+` yok).
+### 4. Açılış Ritüeli Sadeleştirildi (MK-52.3)
 
-Sonuç: 4 sinyalden 3'ü aynı, ikisi 3 puan alıyor. `fingerprintSkor`'da `if (skor >= ESIK && skor > enIyiSkor)` — eşitlikte ilk gelen kazanıyor (DB sıralama şansı).
+**Eski (5 madde):**
+1. git pull temiz mi
+2. CI yeşil mi (Actions sayfası)
+3. son-durum.md güncel mi
+4. Bekleyen migration var mı
+5. Cihat'tan geri bildirim var mı
 
-**Fix:** `dosya_adi_regex` eşleşmesi tek başına `+5` puan versin (1 yerine). Diğer 3 sinyalin toplam puanı 3, dosya adı eşleşen format kesin kazanır.
+**Yeni (2 madde):**
+1. `git pull && git status && git log --oneline -3` çıktısı
+2. Bugün ne yapmak istiyorsun?
 
-```javascript
-// SİNYAL 1: dosya_adi_regex (51: tie-breaker bonus, 47.B yorumundaki niyet)
-if (re.test(ipucu.dosya_adi)) skor += 5;  // önceden +1 idi
-```
+**Sebep:** Bilgi vermeyen adımlar Cihat'ı yoruyordu. CI durumu zaten `son-durum.md`'de, geri bildirim genelde 0, "hangi sayfa" gündem konuşulunca çıkıyor. Knowledge ↔ repo bağlandığı için son-durum.md anlık güncel.
 
-### 4. Spool Fingerprint Dosya Adı Regex Düzeltmesi
+### 5. Yeni Dökümanlar Doğdu
 
-Tie-breaker fix'inden sonra hâlâ Isometry kazanıyordu. Sebep: **Spool fingerprint'inin dosya_adi_regex'i kendi örnek dosyalarıyla bile eşleşmiyordu.**
+**`docs/CLAUDE-CALISMA-MODU.md`** — Claude'un Cihat ile nasıl çalışacağı talimat dosyası. "Sen kimsin", "Cihat kim", "senden beklenen", "yapma" listeleri.
 
-50'nin yazdığı: `^[A-Z]\d+-\d+-\d+-P\d+\s+\d+\(\d+\)\.S\d+\.\d+\.pdf$`
+**`docs/PROJE-HARITASI.md`** — Yazıldı ama içerik tamamlanmadı. CLAUDE.md ve CLAUDE-CALISMA-MODU.md "her oturum başında oku" diyor ama dosya boş kaldı. **53'te içeriği yazıldı.**
 
-Bu `-P\d+` parçası yanlış. Gerçek dosyalar `-BS15`, `-BS18` gibi varyantlar içeriyor (`-[A-Z]+\d+`). 50'de 3 örnekle yazıldı, "kabaca uyar" varsayıldı, hiç test edilmedi → sessiz fail.
+### 6. CLAUDE.md Güncellemeleri
 
-**Yeni regex:**
-```
-^G\d+-[\dA-Z]+-[A-Z]+\d+\s+\d+\(\d+\)\.S\d+(?:_\d+)?\.\d+\.pdf$
-```
-
-7 gerçek dosyayla test edildi:
-- `G200-303-BS15 3(5).S06.1.pdf` ✓
-- `G200-303-BS15 4(5).S08.1.pdf` ✓
-- `G200-303S-BS18 5(5).S10.1.pdf` ✓ (`303S` varyantı)
-- `G200-303-BS15 3(5).S03_1.1.pdf` ✓ (`_1` opsiyonel)
-- `M110-303-BS15.1.pdf` ✗ (Isometry'e bırakılır)
-- `11D-PAOR-50600-101409-A.pdf` ✗ (PAOR'a bırakılır)
-
-DB'de `UPDATE izometri_format_tanimlari` ile uygulandı.
-
-### 5. ASME Helper Sütun Adı Bug Tespiti ve Fix
-
-Canlı testte log'da:
-
-```
-[supaFetch] hata: boru_olculer?...select=et_kalinligi_mm,... 400
-column boru_olculer.et_kalinligi_mm does not exist
-[boruEtTolerans] hata: Supabase 400: ...
-```
-
-`boru_olculer` tablosu DB'de **var**, ama 5+ ay önce sütun adları değişmiş, kod güncellenmemiş. Bug 51 ile ilgili değil ama her PDF parse'inde tetikleniyor — Excel raporlardaki "Malzeme alani bos" uyarısının gizli sebeplerinden biri.
-
-**12 sütun referansı düzeltildi (`api/izometri-oku.js`):**
-
-| Kod (Eski) | DB (Doğru) |
-|-----------|-----------|
-| `et_kalinligi_mm` | `et_mm` |
-| `schedule_kodu` | `schedule_kod` |
-| `et_min` | `et_min_mm` |
-| `et_max` | `et_max_mm` |
-
-Düzeltilen yerler: `boruOlcuBul` helper return + DB SELECT, `boruEtTolerans` SELECT + filter, `asmeFallbackDoldur` field okuma, `halusinasyonFiltresi` Madde 3 et toleransı kontrol.
+- Açılış ritüeli 5→2 madde olarak güncellendi
+- MK-52.1 ve MK-52.2 detayları (komut kullanımı için) yazıldı
+- Knowledge ↔ repo bağlantısı not edildi
 
 ---
 
-## Canlı Test Sonuçları
+## Karşılaşılan Yapısal Problem (53'e devreden ana iş)
 
-| Saat | Test | Format Tanındı | parser_seviye | Sonuç |
-|------|------|----------------|---------------|-------|
-| 18:13 UTC | Tersan S09 (eski kod) | `84c12f61` (Isometry) ❌ | l3 | Yanlış format → düz L3 |
-| 21:13 TR (sonra) | Tersan S09 (yeni kod) | `e1fb879d` (Spool) ✓ | l3 (l2_failed → fallback) | Doğru format, L2 fail tespit edildi, L3 fallback çalıştı |
-| 21:35 TR (sonra) | Tersan PDF | `e1fb879d` ✓ | l3 | ASME hata yok, temiz |
+Sohbet sonunda Cihat şunu fark etti:
 
-L2 fail sebebi: **`zorunlu_eksik: pipeline_no`**. parser_kural'daki `pipeline_no` regex'i `(G\d{3}-\d{3}-[A-Z0-9]+)` — 3 rakam dayatıyor, "303**S**" yakalayamıyor. Aynı bug pattern'i (5+ örnek olmadan yazılmış regex). 52'de düzeltilecek.
+> *"yakışıklı hazırlanmış cafcaflı dosyalar düzenleyip kenara atmak istemiyorum. ya canlı tutamayacağımız dosyalar olmasın ya da hiç olmasın. ben nasıl olsa kaydettik diye güveniyorum, aradan 20 oturum geçmiş, ortada çoktan ölmüş dosyalar var."*
+
+**Tespitler:**
+- `docs/ROADMAP.md` 23-29. oturum planı, 24+ oturum sapmış, kimse güncellememiş
+- `docs/PANO-TASARIM.md` 24. oturum implementasyon planı, "şu an neredeyiz" sorusunun cevabı yok
+- `docs/PROJE-HARITASI.md` referansı var ama dosya boş
+- `son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` 52 kapanışında güncellenmemiş — hâlâ 51 sürümünde
+- MK kuralları üç dosyada birden tekrar ediyor, kanonik adres yok
+
+**Sonuç:** 53'ün ilk işi dökümantasyon revizyonu olarak kararlaştırıldı. **53'te yapıldı** — bu özetin yazılma sebebi de o.
 
 ---
 
 ## Veriyle Tasarım Hatırlatması
 
-51 boyunca üç defa MK-50.3 ihlali görüldü:
-1. Spool dosya_adi_regex (3 örnek, kendi örnekleriyle bile fail)
-2. parser_kural pipeline_no regex (3 örnek, "303S" varyantı kaçtı)
-3. Tüm parser_kural alanları potansiyel olarak benzer şekilde dar
+52'de altyapı kararlarının pek çoğu **ölçüldükten sonra** alındı:
+- "Knowledge'a kaç dosya yüklüyoruz?" → 5-10
+- "Manuel yüklemede hangi adımda kayboluyor?" → eski sürüm `~/Downloads`'da
+- "Kaç oturumda yanlış sürüm kopyalandı?" → 15+
+- "`git push --rebase` döngüsü oturum başına kaç kez?" → 5+
 
-**Yeni kural önerisi (MK-51.2):** Parser_kural regex'leri en az 5 farklı gerçek dosya örneğiyle test edildikten sonra commit'lenmeli.
+Bu rakamlar olmasaydı kararların gerekçesi sezgisel kalırdı.
 
 ---
 
 ## Süreç Olayları
 
-### Dosya Kopyalama Krizi
+### Mac Downloads Karmaşası (sürekli)
 
-51'in başında bir Claude'un verdiği güncel `izometri-oku.js`, Cihat'ın `~/Downloads`'da zaten bulunan eski bir sürümle çakıştı. `cp ~/Downloads/izometri-oku.js api/izometri-oku.js` yanlış (eski) dosyayı kopyaladı, **282 satır silindi** (cache mekanizması, pdf-parse import'u, vs.). `git push` reddedildi (uzakta yenisi vardı), `git reset --hard` ile lokal commit atıldı.
+Cihat tarayıcıdan dosyayı indirirken bazen önceki sürüm hâlâ Downloads'da duruyordu. `KARARLAR.md` indirilince `KARARLAR (1).md` oluyor, `arespipe_kopyala` MD5 uyuşmazsa reddediyor. Disiplin: `~/Downloads/_arsiv/` klasörüne eskiyi taşıyıp yeniyi `KARARLAR.md` olarak yeniden adlandırma.
 
-**MK-51.1 (yeni):** Dosya kopyalamadan önce `~/Downloads`'da:
-1. Eski sürümü `_arsiv/` klasörüne taşı
-2. MD5 + satır sayısı doğrula (Claude verdiği hash ile eşleşmeli)
-3. Sonra `cp`
+### "Komut Çıktı Gürültüsü"
 
-51'in geri kalanında her dosya transferinde bu protokol uygulandı, problem tekrarlamadı.
-
-### "Add files via upload" Akışı Karışıklığı
-
-Cihat parallel olarak GitHub Web UI üzerinden de dosya yüklüyordu. Hem `git push` hem web upload aynı anda çalışınca commit historyde "Add files via upload" satırları yer aldı, push reddedildi, rebase'de "skipped previously applied commit" uyarıları çıktı.
-
-**Karar:** Bundan sonra sadece terminal git akışı kullanılacak, GitHub web UI upload bırakılacak.
-
-### Saat Dilimi Sorunu
-
-`ai_api_log.olusturma_at` UTC saklar, Cihat Türkiye saatiyle düşünüyor. SQL filtresi `> '19:00:00+00'` (UTC) yazıldığında 22:00 TR sonrası kayıtları filtreliyordu, "yeni log gelmiyor" yanılgısı doğdu. **`AT TIME ZONE 'Europe/Istanbul'`** ile sorgula → her iki saat de görünür.
-
-### `_l2_meta` / `_l2_fallback` DB Görünürlük Bug'ı
-
-Bizim eklediğimiz fallback meta `parseSonuc` root level'da set ediliyor, ama `cevap_full = parsed` (sadece AI cevabı) olduğu için DB'ye gitmiyor. Yani kullanıcı response'unda görünür ama log'da görünmez. 52'nin işi.
+Sohbet sırasında `for f in ...; cat "$f"; done` desenli toplu çıktı verince Cihat "komutun başladığı yeri bile bulmak zor" dedi. Bu MK-53.2 olarak resmiyetleştirildi (53'te).
 
 ---
 
 ## DB Operasyonları
 
-```sql
--- Spool fingerprint dosya_adi_regex düzeltme
-UPDATE izometri_format_tanimlari
-SET fingerprint = jsonb_set(fingerprint, '{dosya_adi_regex}',
-  '"^G\\d+-[\\dA-Z]+-[A-Z]+\\d+\\s+\\d+\\(\\d+\\)\\.S\\d+(?:_\\d+)?\\.\\d+\\.pdf$"'::jsonb),
-    guncelleme_at = now()
-WHERE id = 'e1fb879d-3f13-40ae-8684-59237e63d40f';
-```
+Yok.
 
 ---
 
 ## Commit'ler
 
-| Hash | Mesaj | Etkisi |
-|------|-------|--------|
-| `14693de` | Add files via upload | parserKuralIle bağlama + L3 fallback |
-| `dd4c8ec` | fix(L2): fingerprint dosya_adi_regex tie-breaker bonus +5 (51) | +5 puan tie-breaker |
-| `fec28ae` | fix(asme): boru_olculer sütun adları DB ile uyumlu hale getirildi (51) | 12 sütun referansı |
+Detay GitHub repo `git log` üzerinden alınabilir. Ana noktalar:
 
-CI: ✅ YEŞİL (her commit sonrası otomatik ci-son-rapor.json güncellemesi)
+- Birden fazla `docs/` güncelleme commit'i
+- `f8980f1` docs: CLAUDE.md ritual okuma listesi güncellendi (52)
+- `f5eb28b` chore(ci): ci-son-rapor.json güncelle [skip ci] (kapanış)
+
+CI: ✅ YEŞİL (her commit sonrası ci-son-rapor.json otomatik)
 
 ---
 
-## 52'ye Devreden Borçlar
+## 53'e Devreden Borçlar
 
-Detay için `CLAUDE-SONRAKI-OTURUM.md`. Kısaca:
-- parser_kural regex iyileştirme (öncelik 1, kullanıcı L2'nin gerçekten çalıştığını hâlâ görmedi)
-- `_l2_meta`/`_l2_fallback` ai_api_log'a yazılması (görünürlük)
+**Hemen:**
+- Dökümantasyon revizyonu (yapıldı, 53'te)
+- KARARLAR.md doğacak (yapıldı, 53'te)
+- ROADMAP + PANO-TASARIM arşivlenecek (yapıldı, 53'te)
+
+**Sonra (54+):**
+- parser_kural pipeline_no fix
+- `_l2_meta` / `_l2_fallback` log
+- 5+ Tersan PDF testi
 - Format envanter UI
-- "Tersan M110 Montaj Resmi" formatı temizlik kararı
 
 ---
 
 ## Performans
 
-- **L2 deterministik parse (lokal):** 1-2 ms/PDF
-- **L3 vision parse (canlı):** 11-25 sn/PDF
-- **L2 fail → L3 fallback:** ~22 sn (kullanıcıya kesintisiz, L2 anlık fail)
-- **Format tanıma:** <100 ms/PDF
-- **Hız farkı (L2 başarılı senaryo):** ~10,000× (deterministik vs AI)
-- **L2 fail oranı (51 tarihinde):** %100 (parser_kural eksik, 52'de düşürülecek)
+Mevcut metrikler 51'le aynı (52'de kod değişmedi).
 
 ---
 
-> 52. oturum açılışında bu dosya, `son-durum.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+## Kazanılan Zaman (54+'a)
+
+Her oturum başlangıcında:
+- Eski: 10-15 dk manuel dosya yükleme + bağlam kurma
+- Yeni: 30 sn (`git pull` çıktısı + ne yapacağız sorusu)
+
+20 oturum projesi varsayarsak ~3-5 saatlik kazanç. Aynı zamanda "manuel yükleme unutuldu, Claude eski bilgiyle çalıştı" risk sıfırlandı.
+
+---
+
+> 53. oturum açılışında bu dosya + son-durum.md + CLAUDE-SONRAKI-OTURUM.md okundu. Bu özet kapsamlı detay isteyenler için, son-durum.md tek sayfalık snapshot için.
+> Detay karar listesi: `docs/KARARLAR.md`. Modül durumu: `docs/PROJE-HARITASI.md`.
+> 51'in detayı: `docs/oturumlar/051-tersan-l2-canli.md` (kalıcı arşiv).

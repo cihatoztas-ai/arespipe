@@ -1,3 +1,11 @@
+> ⚠️ **ARŞİV — DONDURULDU**
+>
+> Bu dosya 53. oturumda dondurulmuştur. Yaşayan içerik `docs/PROJE-HARITASI.md`'ye emildi, kabuk tarihsel kayıt için duruyor.
+>
+> **Bu dosyadaki bilgiler güncel değildir.** Yeni karar veya plan için PROJE-HARITASI.md'ye bak.
+
+---
+
 # AresPipe — Uzun Vadeli Yol Haritası
 
 > **Amaç:** AresPipe'ı 1-2 yıl içinde çoklu tersane/firma müşteri tabanına satılabilir, bug'sız ve hızlı bir SaaS ürününe dönüştürmek.

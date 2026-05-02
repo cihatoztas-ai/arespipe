@@ -1,3 +1,11 @@
+> ⚠️ **ARŞİV — DONDURULDU**
+>
+> Bu dosya 53. oturumda dondurulmuştur. Yaşayan içerik `docs/PROJE-HARITASI.md`'ye emildi, kabuk tarihsel kayıt için duruyor.
+>
+> **Bu dosyadaki bilgiler güncel değildir.** Yeni karar veya plan için PROJE-HARITASI.md'ye bak.
+
+---
+
 # AresPipe Süper Admin — Yönetim Panosu Tasarımı
 
 > **Durum:** Tasarım belgesi — kod yazılmadı. 24. oturumda implementasyon.
