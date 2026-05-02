@@ -8,31 +8,27 @@
 
 ## 🔒 ZORUNLU OTURUM BAŞLANGIÇ RİTÜELİ
 
-**Claude:** Oturumun ilk mesajında, başka hiçbir iş yapmadan önce aşağıdaki 5 soruyu kullanıcıya sor. Cevaplar gelmeden teknik iş başlamaz. Kullanıcı "atla, acelem var" dese bile ısrar et — 30 saniyelik iş, kurulmuş disiplin.
+**Claude:** Oturumun ilk mesajında, aşağıdaki 2 soruyu kullanıcıya sor. Eski 5 maddeli ritüel 52. oturumda sadeleşti — gereksiz adımlar atıldı.
 
 ```
-Oturum başlangıç ritüeli. 5 kısa kontrol:
+Oturum başlangıç ritüeli. 2 kısa kontrol:
 
 1. Şunu çalıştırır mısın ve çıktıyı yapıştırır mısın:
    cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
 
-2. GitHub Actions sekmesinde son build rengi nedir? (yeşil / sarı / kırmızı)
-
-3. .github/son-durum.md dosyasını bana yükler misin veya içeriğini yapıştırır mısın?
-
-4. Bugün hangi sayfayla çalışacağız? (Sayfayı söyle, açık uyarıları göstereyim.)
-
-5. admin/panel.html → Geri Bildirim sekmesinde açık (yeni + inceleniyor durumunda) kaç feedback var? Kritik olanları (veri kaybı / güvenlik / canlı hata) kısaca özetle.
+2. Bugün ne yapmak istiyorsun? (Kaldığımız yerden, yeni konu, vb.)
 ```
 
-**Bu 5 cevap geldikten sonra Claude şunu yapar:**
+**Bu 2 cevap geldikten sonra Claude şunu yapar:**
 - Git durumu temiz mi kontrol eder (stash kalıntısı, commitlenmemiş değişiklik yok mu)
-- CI rengi yeşil değilse önce onu düzeltir
-- son-durum.md'den son oturum özetini + açık borçları okur
-- **`docs/CIHAT-PROFIL.md`'yi okur** (kullanıcının çalışma tarzını, tercihlerini, allerjilerini hatırlamak için — Cihat'a "nasıl çalışıyoruz" diye sordurmaz, kendi okur)
+- CI durumunu son commit'ten anlar (gerekirse `gh run list -L 1` veya GitHub Actions sayfası kontrolü)
+- **`docs/PROJE-HARITASI.md`'yi okur** — projenin güncel durumu, teknik borçlar, sayfalar arası bağlar (52'de oluşturuldu, **canlı tutulan dosya**)
+- **`docs/CLAUDE-CALISMA-MODU.md`'yi okur** — Cihat ile nasıl çalışılacağı (52'de oluşturuldu)
+- **`docs/CIHAT-PROFIL.md`'yi okur** (kullanıcının çalışma tarzını, tercihlerini, alerjilerini hatırlamak için)
 - **`docs/SPOOL-AI-VIZYON.md`'yi hatırlar** (gündelik iş vizyona hizmet ediyor mu?)
-- **`docs/PANO-TASARIM.md`'yi kontrol eder** (24+ oturumda pano implementasyonu gündemde)
-- Kullanıcı söylediği sayfa için açık uyarı listesini `kurallar.json`'dan eşleştirir, "bugün bu uyarıları da düzeltelim mi?" diye sorar
+- `.github/son-durum.md`'den son oturum özetini + açık borçları okur
+
+**NOT (52. oturumda kaldırıldı):** CI rengi sorma (son-durum.md'de zaten var), geri bildirim sayısı sorma (genelde 0, lazım olunca konuşulur), "bugün hangi sayfa" sorma (gündem konuşmaya başlayınca çıkar). Bu adımlar kullanıcıyı yoruyordu, bilgi değeri yoktu.
 
 ---
 
