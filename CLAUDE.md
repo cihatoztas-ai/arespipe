@@ -91,6 +91,46 @@ Kritik bir hata varsa ve CI kırmızıyken yükleme zorunluysa: commit mesajına
 
 ---
 
+## 🔒 DOSYA TRANSFER VE PUSH DİSİPLİNİ (52. oturum)
+
+52. oturumda iki kalıcı sorun çözüldü ve `~/.zshrc`'ye iki yardımcı kuruldu. Claude'un sonraki oturumlarda **mutlaka** bu komutları kullanması gerekiyor — eski uzun yöntemleri yazmaz.
+
+### MK-52.1 — `arespipe_kopyala` (MD5 doğrulamalı dosya kopyalama)
+
+**Sorun:** macOS Downloads klasörü aynı isimde dosya geldiğinde otomatik olarak `(1)`, `(2)` ekliyor. 15+ oturum boyunca Cihat "yeni indirdim" diyordu ama Mac eskisini sakladığı için Claude eski dosyayı projeye kopyalatıyordu. Sonuç: kafa karışıklığı, "bu dosya yok" iddiaları, düzeltilmesi 30+ dakika alan yanlış push'lar.
+
+**Çözüm:** `~/.zshrc`'de `arespipe_kopyala` fonksiyonu. MD5 doğrulamalı kopyalar. Yanlış sürümü reddeder.
+
+**Kullanım — Claude her dosya transferinde şunu yazar:**
+```bash
+arespipe_kopyala ~/Downloads/dosya.js ~/Desktop/arespipe/api/dosya.js <BEKLENEN_MD5>
+```
+
+`<BEKLENEN_MD5>`'i Claude oluşturduğu dosyadan alır ve komutla beraber verir. Eşleşme varsa `✅ Kopyalandi`, yoksa `❌ MD5 uyusmuyor` ve hangi dosyaya bakması gerektiğini söyler.
+
+**Claude için kural:** Her dosya transferinde MD5'i komutta vermeyi unutma. `cp` komutunu doğrudan kullanma — `arespipe_kopyala` kullan.
+
+### MK-52.2 — `gp` (otomatik rebase + push)
+
+**Sorun:** Her `git push` sonrası GitHub Actions `ci-son-rapor.json`'u güncelleyip `[skip ci]` ile commit ediyor. Bir sonraki push'ta lokal arkada kalıyor → push reject → manuel `git pull --rebase` → tekrar push. Her oturumda 5+ kez tekrarlanıyordu, akışı bozuyordu.
+
+**Çözüm:** `~/.zshrc`'de `gp` fonksiyonu. Önce origin'i fetch + rebase eder, sonra push eder. Conflict olursa abort eder, kullanıcıya söyler — körlemesine resolve etmez.
+
+**Kullanım — Claude push komutunu şöyle yazar:**
+```bash
+git add api/dosya.js && git commit -m "..." && gp
+```
+
+`git push origin main` artık YAZILMAZ. Yerine `gp` yazılır.
+
+**Claude için kural:** Push reddedilirse "git pull --rebase" söyleme — `gp` zaten bunu yapıyor olmalı. Eğer `gp` kurulu değilse (eski ortam), kullanıcıdan `~/.zshrc`'ye fonksiyonu eklemesini iste.
+
+### Bu disiplinler nereye yazılı
+
+`~/.zshrc` dosyasında. Yeniden makineye geçildiğinde veya başka bir kullanıcıya devredildiğinde tekrar kurulması gerekir. Kurulum komutları 52. oturum kayıtlarında (CLAUDE-SON-OTURUM.md, son-durum.md).
+
+---
+
 ## 🔒 RİTÜEL TESTİ
 
 Bu bloğu gören Claude, kullanıcının ilk "merhaba"sından sonra ritüeli başlatırsa sistem çalışıyor demektir. Aksi halde bu blok okunmadı demek — kullanıcı şöyle der: **"Ritüeli atladın, başlama."**
