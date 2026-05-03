@@ -169,7 +169,7 @@ git add ... && git commit -m "..." && gp
 
 **Sebep:** Eskiden her oturum sonunda 3 özet dosyası manuel olarak Files'a yükleniyordu. Tek doğru kaynak yoktu, senkron riski vardı, bağlam dardı (5-10 dosya). Şimdi 40+ web sayfa + tüm `docs/` + `migrations/` + `.github/` indexli.
 
-**Geçerlilik:** ✅ Aktif. Indexleme gecikmesi ~1-2 dakika — push'tan hemen sonra yeni oturum açılırsa son commit'ler eski snapshot'tan görünebilir.
+**Geçerlilik:** ⚠️ MK-56.2 ile **revize edildi**. 56'da kanıtlandı: indekleme gecikmesi öngörülemez (1-2 dakika değil, saatler olabiliyor — Anthropic'te açık ticket'lar var). Birincil bağlam aktarım yöntemi artık `cat BRIEFING.md` çıktısının yapıştırılması; project knowledge yedek katman.
 
 ---
 
@@ -425,9 +425,80 @@ Script `git status` + `log -3` çıktılarını da içine alır.
 
 Üç oturum üst üste atlamasının sebebi insan dikkati değil, **mekanik kapı eksikliği**. Yazılı kural ("Claude oturum sonu mutlaka şunu yapar") sıkışık anda atlanıyor. Script çağrısı atlanırsa zaten görüyor: BAYAT. Atlanamayan tek yol bu.
 
-**Geçerlilik:** ✅ Aktif. 55 açılışında ilk testi yapıldı: BAYAT döndü, onarım modu çalıştı, üç dosya geriye dönük yazıldı, script TEMIZ döndü. 55'ten itibaren her oturum açılışı + kapanışı bu kapıdan geçer.
+**Geçerlilik:** ⚠️ MK-56.2 ile **revize edildi**. Üç ritüel dosyası tek `BRIEFING.md`'ye birleştirildi. Script'in hedef dosyaları değişti (BRIEFING.md başlık + mtime). BAYAT/onarım modu disiplini aynı, sadece kontrol nesnesi tek dosya oldu. Script konumu: `scripts/oturum-saglik.sh` (56'da 331 satıra çıktı, MD5: `c0ee88cb745298de2c2fed99c3ff3f48`).
 
-**Script konumu:** `scripts/oturum-saglik.sh` (~9KB, smoke-test edilmiş). MD5 değişirse `arespipe_kopyala` ile yeniden yüklenir.
+---
+
+#### MK-56.1 [DISIPLIN] — Kapanış Cihat onayı (otomasyon yok)
+
+**Karar:** Oturum kapanışında BRIEFING.md hazırlandıktan sonra **Cihat onayı olmadan** otomatik commit + push yapılmaz. `oturum-saglik.sh --kapanis` script'i sadece **kontrol + öneri** sunar (mtime + başlık eşleşmesi + git status). Cihat *"doğru, push"* dedikten sonra **manuel** `git add -A && git commit && gp` çalıştırılır.
+
+**Sebep:** 55. oturum kapanışında script BRIEFING benzeri bir kontrol yapmıştı, ama içeriğin **doğruluğu** kontrol edilmiyordu. Önceki Claude *"55'in birincil işi i18n"* yazdı (yanlış özet), kimse onaylamadan push edildi, 56'da bağlam tıkanıklığı yarattı, yarım gün kayıp. Mekanik kapı + insan onayı = hibrit Katman 1 + Katman 3.
+
+**Hibrit model (Katman 1 + 2 + 3):**
+- **Katman 1 (Script):** Kanıtlanabilir gerçekler — git diff, başlık eşleşmesi, mtime, tazelik etiketleri.
+- **Katman 2 (Claude):** Yorum gerektiren tespit — bu sohbette yeni MK var mı, mimari değişti mi, alerji ifade edildi mi. Konuşmadan kanıtla cevap verir.
+- **Katman 3 (Cihat):** Son söz — Claude'un yorumunu denetler, *"yanlış anladın"* diyebilir, kapanışı reddedebilir.
+
+Hiçbir katman tek başına yeterli değil; üçü birlikte aynı hatayı aynı anda yapma olasılığını azaltır.
+
+**Geçerlilik:** ✅ Aktif. 56'da yazıldı.
+
+#### MK-56.2 [DISIPLIN] — BRIEFING.md tek aktif bağlam dosyası
+
+**Karar:** Sohbet açılışında ihtiyaç duyulan tüm dinamik bilgi tek `BRIEFING.md` dosyasında bulunur. Eski 3 ritüel dosyası (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) `docs/arsiv/` altına taşındı.
+
+**BRIEFING.md zorunlu bölümleri:**
+- 🎯 Sıradaki Oturum Gündemi
+- ✅ Bu Oturumda Yapılanlar
+- 🗺️ Bilgi Haritası (hangi soru hangi referans dosyada)
+- 📋 Açık Borçlar
+- 🔧 Aktif Kritik MK Kararları
+- 🔄 Tazelik Durumu (MK-56.3 tablosu)
+- ⚙️ Sistem Sağlık Durumu
+- 📦 Son 5 Commit
+- 🚪 Sonraki Oturum Açılış Komutu
+
+**Gerekçe:**
+1. Project knowledge GitHub sync gecikmesi/bug'ları — push edilen dosya hemen indekslenmiyor (Anthropic'te açık ticket'lar: claude-ai-mcp#180, claude-code#10647, claude-code#32244). 56 açılışında 55'in commit'i push'ta görünüyordu ama project knowledge hâlâ 51-52 chunk'ları döndürüyordu.
+2. 4-5 dosya hatırlama yükü Cihat için ağır.
+3. Dağınık dosyalarda yanlış özet yazılırsa sonraki sohbet yanılır (55→56 sapması).
+
+Tek dosya = tek doğruluk noktası.
+
+**Birincil bağlam aktarım yöntemi:** `cat BRIEFING.md` çıktısının sohbete yapıştırılması. Çünkü:
+- Terminalden okunan dosya **az önceki** halidir (sync gecikmesi yok)
+- Cihat gözle görür, kontrol edilebilir
+- 56'da kanıtlandı: `cat son-durum.md` yapıştırılınca bağlam düzeldi
+
+**Yedek katmanlar:**
+- GitHub sync (manuel "Sync now") — birincil yöntem fail ederse
+- Drag-and-drop dosya yükleme — son çare (terminal yoksa)
+
+**Geçerlilik:** ✅ Aktif. 56'da yazıldı. MK-52.4 ve MK-55.1 bu kararla revize edildi.
+
+#### MK-56.3 [DISIPLIN] — Tazelik kapısı (yavaş değişen dosyalar için periyodik gözden geçirme)
+
+**Karar:** Yavaş değişen referans dosyaları (vizyon, mimari, profil, çalışma modu, mobile, onboarding) BRIEFING.md'nin "🔄 Tazelik Durumu" tablosunda izlenir. Her dosya için: `son_gozden_gecirme` (oturum no) + `sonraki_zorunlu` (oturum no) + tetikleyici. `oturum-saglik.sh --acilis` her oturum başında bunu kontrol eder; `sonraki_zorunlu ≤ aktif oturum` ise **uyarı** verir (BAYAT yapmaz, gözden geçirme görevi olarak listeler).
+
+**İzlenen dosyalar ve periyotlar (56'da):**
+
+| Dosya | Periyot | Tetikleyici |
+|---|---|---|
+| `SPOOL-AI-VIZYON.md` | 20 oturum | Yeni katman, prototip→yapım geçişi |
+| `docs/ARCHITECTURE.md` | 15 oturum | Mimari karar değişimi |
+| `CLAUDE-MOBILE.md` | 15 oturum | Yeni mobile şablon, prebuild değişimi |
+| `docs/CIHAT-PROFIL.md` | 10 oturum | Yeni alerji/tercih tespiti |
+| `docs/CLAUDE-CALISMA-MODU.md` | 10 oturum | Yeni Claude disiplin dersi |
+| `docs/ONBOARDING.md` | 20 oturum | Yeni yazılımcı katılımı, sistem değişimi |
+
+**Hariç tutulanlar:** `KARARLAR.md`, `SAYFA-EKSIKLERI.md`, `kurallar.json` — zaten her oturumda dokunulan defter dosyaları, periyodik kapı gereksiz.
+
+**Tazelik tablosu güncelleme akışı:** Bir dosya gözden geçirildiğinde, BRIEFING.md tablosundaki `son_gozden_gecirme` aktif oturum no olur, `sonraki_zorunlu` aktif + periyot olur. Cihat tarafından elle güncellenir, kapanışta MK-56.1 ile onaylanır.
+
+**Gerekçe:** Cihat'ın gözlemi (56): *"25. oturumdaki AI vizyonu mesela 75. oturumda da aynı olabilir mi? Ya çok sağlam bir vizyon olması lazım ya da bayatlamış bir dosyadır."* Yavaş dosyalar bayatlığını ne CI ne yazılı kural yakalıyor. Mekanik periyodik uyarı = çözüm.
+
+**Geçerlilik:** ✅ Aktif. 56'da yazıldı, ilk uyarı 66. oturumda CIHAT-PROFIL ve CLAUDE-CALISMA-MODU için tetiklenecek.
 
 ---
 
@@ -450,3 +521,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 
 | 3 Mayıs 2026 | 54 | MK-54.A (mobile = light versiyon) + MK-54.B (web öncül mobile follower) + MK-54.C (vanilla referans, kopyalanmaz) + MK-54.D (prebuild pattern) + MK-54.E (MSpoolDetay 3 sekme, 3D yok) + MK-54.F (MSpoolDetay tipografisi) + MK-54.G (n/N format + tema renkler) eklendi. MK-54.1 (M ekranları i18n bypass borcu) kayda alındı. |
 | 3 Mayıs 2026 | 55 | MK-55.1 (oturum sağlık script'i — mekanik açılış/kapanış kontrolü) eklendi. 53+54 ritüel atlamasının üst üste birikmesinin sebebi tespit edildi: yazılı kural sıkışık anda atlanabiliyor. Mekanik kapı (script BAYAT/TEMIZ) atlanamaz tek yol. |
+| 3 Mayıs 2026 | 56 | MK-56.1 (kapanış Cihat onayı, otomasyon yok) + MK-56.2 (BRIEFING.md tek aktif bağlam dosyası) + MK-56.3 (tazelik kapısı, yavaş değişen dosyalar için periyodik gözden geçirme) eklendi. Eski 3 ritüel dosyası (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) `docs/arsiv/`'a taşındı. `oturum-saglik.sh` BRIEFING.md odaklı yeniden yazıldı (331 satır, MD5: c0ee88cb745298de2c2fed99c3ff3f48, 3 senaryo testi yeşil). MK-52.4 ve MK-55.1 revize işareti aldı. 55'in sapması belgelendi: önceki Claude `son-durum.md` "Açık Borçlar" listesini gündem sandı, oysa o liste CI bakım kuyruğu — asıl iş (MSpoolDetay) hiç başlamadı. CIHAT-PROFIL.md'ye yeni alerji eklendi: *"varsayım yapma, kanıttan git"*. |
