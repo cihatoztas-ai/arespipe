@@ -388,6 +388,49 @@ Her tema kombinasyonu **AA kontrast** üzerinde tutulur (özellikle açık tema'
 
 ---
 
+#### MK-55.1 [DISIPLIN] — Oturum sağlık script'i (mekanik açılış/kapanış kontrolü)
+
+**Karar:** Her oturum **açılış ve kapanışında** `scripts/oturum-saglik.sh` çalıştırılır. Üç ritüel dosyasının (`CLAUDE-SONRAKI-OTURUM.md`, `CLAUDE-SON-OTURUM.md`, `.github/son-durum.md`) güncel olup olmadığını mekanik kontrol eder.
+
+**Açılış modu** — `./scripts/oturum-saglik.sh N`:
+- `CLAUDE-SONRAKI-OTURUM.md` başlığı `# N. Oturum` ile başlamalı
+- `CLAUDE-SON-OTURUM.md` başlığı `# (N-1). Oturum` ile başlamalı
+- Tutarsızsa **❌ BAYAT** (exit 1), tutarlıysa **✅ TEMİZ** (exit 0)
+- Git status + son 3 commit + her dosyanın mtime'ı + başlığı tek çıktıda görünür
+
+**Kapanış modu** — `./scripts/oturum-saglik.sh N --kapanis`:
+- `CLAUDE-SON-OTURUM.md` başlığı `# N. Oturum` (bu oturumun özeti)
+- `CLAUDE-SONRAKI-OTURUM.md` başlığı `# (N+1). Oturum` (sonraki oturum gündemi)
+- Üç dosyanın mtime'ı bugün olmalı
+- Hepsi geçerse: `git add` + `git commit`. Push manuel `gp` ile.
+
+**BAYAT durumunda (kritik kural):** Claude gündem işine başlamaz, **onarım moduna girer**:
+1. `git log --oneline --since=...` ile eksik oturumların commit'lerini topla
+2. `docs/KARARLAR.md` son N kararını oku
+3. Eksik özet(ler)i geriye dönük yaz: `CLAUDE-SON-OTURUM.md` (geçen oturum), `CLAUDE-SONRAKI-OTURUM.md` (bu oturum), `.github/son-durum.md` (güncel borç)
+4. Script'i tekrar çalıştır, **TEMİZ** olduğunu doğrula
+5. **Sonra** gündem işine başla
+
+**Açılış ritüeli güncellemesi (CLAUDE.md):** Mevcut 1. madde:
+```
+cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+```
+**Yeni 1. madde:**
+```
+cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh N
+```
+Script `git status` + `log -3` çıktılarını da içine alır.
+
+**Sebep:** 52 kapanışında üç ritüel dosyası atlandı. 53'te tamir edilmedi (sadece KARARLAR'a dökümantasyon revizyonu yazıldı). 54'te yine tamir edilmedi (mobile gündemi geldi). 55 açılışında "spool_detay yapıyorduk oradan devam" denildiğinde Claude'un elinde somut gündem yoktu — userMemories'ten sahte bir gündem türetmeye çalıştı, 55 boş başladı. Cihat haklı olarak şikayet etti: *"nasıl önceki oturumdan güncel durum gelmemiş olabilir... yoksa tüm dökümanlarımız bayatlar."*
+
+Üç oturum üst üste atlamasının sebebi insan dikkati değil, **mekanik kapı eksikliği**. Yazılı kural ("Claude oturum sonu mutlaka şunu yapar") sıkışık anda atlanıyor. Script çağrısı atlanırsa zaten görüyor: BAYAT. Atlanamayan tek yol bu.
+
+**Geçerlilik:** ✅ Aktif. 55 açılışında ilk testi yapıldı: BAYAT döndü, onarım modu çalıştı, üç dosya geriye dönük yazıldı, script TEMIZ döndü. 55'ten itibaren her oturum açılışı + kapanışı bu kapıdan geçer.
+
+**Script konumu:** `scripts/oturum-saglik.sh` (~9KB, smoke-test edilmiş). MD5 değişirse `arespipe_kopyala` ile yeniden yüklenir.
+
+---
+
 ## Açık Borçlar (henüz karar değil — gözlem)
 
 Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp yukarıdaki listeye eklenecek.
@@ -406,3 +449,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 2 Mayıs 2026 | 53 | MK-53.2 (terminal komut çıktı disiplini), MK-53.3 (dökümantasyon revizyonu — ROADMAP+PANO-TASARIM arşivlendi, PROJE-HARITASI doğdu), MK-53.4 (PROJE-HARITASI canlılık disiplini), MK-53.5 (etki taraması — anlık karar yakalama) eklendi. |
 
 | 3 Mayıs 2026 | 54 | MK-54.A (mobile = light versiyon) + MK-54.B (web öncül mobile follower) + MK-54.C (vanilla referans, kopyalanmaz) + MK-54.D (prebuild pattern) + MK-54.E (MSpoolDetay 3 sekme, 3D yok) + MK-54.F (MSpoolDetay tipografisi) + MK-54.G (n/N format + tema renkler) eklendi. MK-54.1 (M ekranları i18n bypass borcu) kayda alındı. |
+| 3 Mayıs 2026 | 55 | MK-55.1 (oturum sağlık script'i — mekanik açılış/kapanış kontrolü) eklendi. 53+54 ritüel atlamasının üst üste birikmesinin sebebi tespit edildi: yazılı kural sıkışık anda atlanabiliyor. Mekanik kapı (script BAYAT/TEMIZ) atlanamaz tek yol. |

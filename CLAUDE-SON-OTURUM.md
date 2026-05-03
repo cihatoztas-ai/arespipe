@@ -1,176 +1,133 @@
-# 52. Oturum — Akış Altyapısı Revizyonu (2 Mayıs 2026)
+# 54. Oturum — Mobile Vizyon + i18n Altyapısı (3 Mayıs 2026)
 
-> **Durum:** ✅ Beklenmedik yöne gitti, ama bu doğru yöndü.
+> **Durum:** ✅ Mobile vizyonu netleşti, prebuild altyapısı kuruldu, MSpoolDetay tasarım kararları bağlandı. M ekranlarındaki i18n bypass borcu (MK-54.1) tespit edildi, 55'e devredildi.
 >
-> 52'nin planı parser_kural iyileştirmesiydi. Sohbet altyapı işine yöneldi: knowledge ↔ repo bağlantısı, dosya transfer otomasyonu, push akışı, ritüel sadeleştirme. Sonuçta planlanan teknik iş 53'e ertelendi ama "her oturum başlangıcının vergi'si" ciddi şekilde düştü.
-
-> 📜 Bu özet 53. oturumun başında yazıldı (52 kapanışında atlandı). Detaylar `git log` + bu sohbet üzerinden derlendi.
+> 📜 Bu özet **53 + 54 birleşik** — 52 kapanışında ritüel dosyaları atlanmıştı, 53 ve 54 tamamlanmadan yeni özet yazılmadı. 55 açılışında oturum-saglik.sh script'i BAYAT dedi (MK-55.1), onarım modunda bu özet birleşik olarak toparlandı.
 
 ---
 
-## Hedef ve Sapma
+## 53. Oturum Özeti — Dökümantasyon Revizyonu (2 Mayıs 2026)
 
-**Planlanan hedef:** 51'in açık borçlarını kapatmak — parser_kural pipeline_no regex'i genişletme, `_l2_meta` DB'ye yazma, 5+ Tersan PDF ile L2 başarı oranı ölçümü.
+### Hedef
+Cihat 53 başında talep etti: *"yakışıklı hazırlanmış cafcaflı dosyalar düzenleyip kenara atmak istemiyorum. ya canlı tutamayacağımız dosyalar olmasın ya da hiç olmasın."* — bayatlamış dökümantasyona karşı revizyon.
 
-**Gerçekleşen:** Cihat sohbette altyapıyla ilgili olası iyileştirmeleri sezdi, sohbet bu yöne döndü. Sonuçta dökümantasyon ve akış altyapısı elden geçirildi. Planlanan teknik iş 53/54'e ertelendi.
+### Yapılanlar
+1. **`docs/KARARLAR.md` doğdu** — Kanonik karar günlüğü. MK-49.1 → MK-52.4 dağınık halde duran tüm kararlar tek dosyada toplandı. Format: kategori etiketli (`[VIZYON]`, `[DISIPLIN]`, `[ALTYAPI]`...), geçerlilik durumlu (✅ Aktif / 🚫 İptal / 🔄 Revize), sebep açıklamalı.
+2. **`docs/ROADMAP.md` öldü** — `docs/arsiv/ROADMAP-faz-b-c.md` adıyla arşivlendi. İçeriği `PROJE-HARITASI.md`'ye emildi.
+3. **`docs/PANO-TASARIM.md` öldü** — `docs/arsiv/PANO-TASARIM-24-oturum.md` adıyla arşivlendi.
+4. **`docs/PROJE-HARITASI.md` doğdu** — Modül bazlı yaşayan durum panosu (Aşama %, Son Durum, Sonraki Adım, Etiketler).
+5. **Eski oturum arşivi başladı** — `docs/sessions/archive-01-22.md` (1-22. oturum özetleri).
+6. **5 yeni karar** — MK-53.1 (KARARLAR.md doğumu) → MK-53.5 (etki taraması — anlık karar yakalama).
 
-**Sapma değerlendirmesi:** Doğru yön. Parser_kural'ı iyileştirmek için her oturumda önce 10-15 dakika manuel dosya yükleme + bağlam kurma vergisi ödeniyordu. Bu vergi olmadan 54'te parser_kural işine doğrudan dalmak mümkün.
+### Kritik karar
+**MK-53.3** — Yeni dosya doğmadan önce kategorisi belirlenir: AKTIF (yaşar, canlı tutulur), ARŞIV (öldü ama tarihsel referans, `docs/arsiv/`), UYUR (ileride uyanacak modül, `docs/uyku/`). "Yaşar" dosya kabul edilmesinin üç şartı: rol netliği, tetikleyici netliği, sahip belli.
 
----
-
-## Yapılanlar (Sıralı)
-
-### 1. Knowledge ↔ Repo Bağlantısı (MK-52.4)
-
-**Eski akış:** Her oturum sonunda `son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` üçü manuel olarak Claude project'e Files olarak yükleniyordu. Eski sürümler silinip yenisi konuyordu. Tek doğru kaynak yoktu, repo ↔ Claude bilgi senkronu kırılgandı, bağlam dardı (5-10 dosya).
-
-**Yeni akış:** Claude project doğrudan GitHub repo'ya bağlandı. Repo'daki tüm dosyalar push sonrası otomatik knowledge'a indekslenir. ~1-2 dakika gecikme var (push → indexleme), bu süre dışında knowledge canlı.
-
-**Sonuç:** 12% kapasite kullanımı. 40+ web sayfa, mobil React kodu, `api/`, `lib/`, `docs/` (16 dosya), `migrations/` (26 dosya), `.github/` hepsi indexli. Claude bu cevapta knowledge'ı 6 farklı sorguyla taradı, anında geldi.
-
-**Sınır:** DB içeriği, runtime log'lar, Storage PDF'leri, Vercel env değişkenleri repo'da olmadığı için knowledge'da da değil. Bunlar hâlâ kopyala-yapıştır gerektiriyor.
-
-### 2. `arespipe_kopyala` zsh Fonksiyonu (MK-52.1)
-
-**Sorun:** macOS Downloads `dosya.js` zaten varsa yenisini `dosya (1).js` olarak ekliyor, sonra `dosya (2).js`, vb. `cp ~/Downloads/dosya.js ~/Desktop/...` komutu eski (boyut 1) sürümü kopyalıyor. 15+ oturum boyunca bu yüzden yanlış push'lar oldu, her seferi 30+ dakika düzeltme aldı.
-
-**Çözüm:** `~/.zshrc`'de `arespipe_kopyala` fonksiyonu. Kullanım:
-
-```bash
-arespipe_kopyala ~/Downloads/dosya.js ~/Desktop/arespipe/api/dosya.js <BEKLENEN_MD5>
-```
-
-MD5 doğrular, eşleşirse kopyalar (`✅ Kopyalandi`), eşleşmezse reddeder (`❌ MD5 uyusmuyor`).
-
-**Claude tarafı disiplin:** Her dosya transferinde MD5'i komutta veriyor, `cp` doğrudan kullanılmıyor.
-
-### 3. `gp` zsh Fonksiyonu (MK-52.2)
-
-**Sorun:** Her `git push` sonrası GitHub Actions `ci-son-rapor.json`'u güncelleyip `[skip ci]` ile commit ediyor. Bir sonraki push'ta lokal arkada kalıyor → push reject → manuel `git pull --rebase` → tekrar push. Oturum başına 5+ kez tekrarlanıyordu.
-
-**Çözüm:** `~/.zshrc`'de `gp` fonksiyonu. Önce origin fetch + rebase, sonra push. Conflict olursa abort eder, kullanıcıya söyler.
-
-**Disiplin:** Artık `git push origin main` doğrudan yazılmaz, `gp` kullanılır.
-
-### 4. Açılış Ritüeli Sadeleştirildi (MK-52.3)
-
-**Eski (5 madde):**
-1. git pull temiz mi
-2. CI yeşil mi (Actions sayfası)
-3. son-durum.md güncel mi
-4. Bekleyen migration var mı
-5. Cihat'tan geri bildirim var mı
-
-**Yeni (2 madde):**
-1. `git pull && git status && git log --oneline -3` çıktısı
-2. Bugün ne yapmak istiyorsun?
-
-**Sebep:** Bilgi vermeyen adımlar Cihat'ı yoruyordu. CI durumu zaten `son-durum.md`'de, geri bildirim genelde 0, "hangi sayfa" gündem konuşulunca çıkıyor. Knowledge ↔ repo bağlandığı için son-durum.md anlık güncel.
-
-### 5. Yeni Dökümanlar Doğdu
-
-**`docs/CLAUDE-CALISMA-MODU.md`** — Claude'un Cihat ile nasıl çalışacağı talimat dosyası. "Sen kimsin", "Cihat kim", "senden beklenen", "yapma" listeleri.
-
-**`docs/PROJE-HARITASI.md`** — Yazıldı ama içerik tamamlanmadı. CLAUDE.md ve CLAUDE-CALISMA-MODU.md "her oturum başında oku" diyor ama dosya boş kaldı. **53'te içeriği yazıldı.**
-
-### 6. CLAUDE.md Güncellemeleri
-
-- Açılış ritüeli 5→2 madde olarak güncellendi
-- MK-52.1 ve MK-52.2 detayları (komut kullanımı için) yazıldı
-- Knowledge ↔ repo bağlantısı not edildi
+### Commit
+`1998538 docs(53): dökümantasyon revizyonu — KARARLAR güncel, PROJE-HARITASI doğdu, ROADMAP+PANO arşivlendi, oturum arşivi başladı`
 
 ---
 
-## Karşılaşılan Yapısal Problem (53'e devreden ana iş)
+## 54. Oturum Özeti — Mobile Vizyon + i18n Altyapısı (3 Mayıs 2026)
 
-Sohbet sonunda Cihat şunu fark etti:
+### Hedef ve Sapma
+**Planlanan:** 51-52'den ertelenen parser_kural canlı L2 başarısı (pipeline_no regex genişletme + `_l2_meta` log).
 
-> *"yakışıklı hazırlanmış cafcaflı dosyalar düzenleyip kenara atmak istemiyorum. ya canlı tutamayacağımız dosyalar olmasın ya da hiç olmasın. ben nasıl olsa kaydettik diye güveniyorum, aradan 20 oturum geçmiş, ortada çoktan ölmüş dosyalar var."*
+**Gerçekleşen:** Cihat mobile gündemini açtı, sohbet mobil vizyon konuşmasına döndü. parser_kural işi 55+'e ertelendi. Yerine 7 yeni karar + bir borç tespiti çıktı.
 
-**Tespitler:**
-- `docs/ROADMAP.md` 23-29. oturum planı, 24+ oturum sapmış, kimse güncellememiş
-- `docs/PANO-TASARIM.md` 24. oturum implementasyon planı, "şu an neredeyiz" sorusunun cevabı yok
-- `docs/PROJE-HARITASI.md` referansı var ama dosya boş
-- `son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` 52 kapanışında güncellenmemiş — hâlâ 51 sürümünde
-- MK kuralları üç dosyada birden tekrar ediyor, kanonik adres yok
+**Sapma değerlendirmesi:** Doğru yön. Mobile 5 hafta atalete girmişti — vizyon belirsizliği parser_kural işinden öncelikliydi.
 
-**Sonuç:** 53'ün ilk işi dökümantasyon revizyonu olarak kararlaştırıldı. **53'te yapıldı** — bu özetin yazılma sebebi de o.
+### Yapılanlar
 
----
+#### 1. Mobile vizyonu netleşti — 4 yeni karar (MK-54.A → MK-54.D)
+- **MK-54.A** [VIZYON]: Mobile = web'in light versiyonu. Saha (veri girişi) + ofis (izleme). Üretim ekranları (devre tanımlama, IFS, izometri batch, kesim wizard, malzeme havuzu) **dahil değil**.
+- **MK-54.B** [DISIPLIN]: Web öncül, mobile follower. Yeni özellik önce web'de doğar, mobile'a yansıtılır. Mobile-only özellik eklenmez.
+- **MK-54.C** [VIZYON]: Vanilla mobile (`mobile.zip`, 7 HTML, 16 Nisan öncesi) referans olarak korunur, **kopya/port edilmez**. Tasarım/UX vanilla'dan, DB sorguları web'in bugünkü halinden, i18n web'le paylaşılan `lang/`'dan.
+- **MK-54.D** [ALTYAPI]: Mobile prebuild pattern. `mobile/src/lang/` artık auto-generated, `mobile/package.json`'da `prebuild` script'i her build/dev öncesi `cp ../lang/*.json src/lang/` yapar. Tek anahtar kaynağı (`/lang/tr.json` 1659 anahtar), web ve mobile aynı dosya.
 
-## Veriyle Tasarım Hatırlatması
+#### 2. MSpoolDetay tasarım kararları — 3 yeni karar (MK-54.E → MK-54.G)
+- **MK-54.E** [TASARIM]: MSpoolDetay 3 sekme (Genel + Malzeme + İşlem Kayıtları). **3D Model sekmesi YOK** (web'de doğruluk problemi çözülene kadar). Malzeme sekmesi salt-okur. Geri bildirim FAB tüm sekmelerde.
+- **MK-54.F** [TASARIM]: Tipografi WCAG kontrast düzeltmeleri. Sekme yazısı 11px → 14px, başlık 10px `--txd` → 12px `--txm` (kontrast 3.2:1 → 7:1 AAA). Renkler hardcoded hex değil CSS değişkeni ile.
+- **MK-54.G** [TASARIM]: İşlem Durumu n/N format (örn. `Kesim 3/3 yeşil, Büküm 1/3 sarı`). İlerleme barı yok — bar bilgi katmıyor. Tema-spesifik renk değişkenleri (`--status-done/wip/no` koyu/açık tema için ayrı).
 
-52'de altyapı kararlarının pek çoğu **ölçüldükten sonra** alındı:
-- "Knowledge'a kaç dosya yüklüyoruz?" → 5-10
-- "Manuel yüklemede hangi adımda kayboluyor?" → eski sürüm `~/Downloads`'da
-- "Kaç oturumda yanlış sürüm kopyalandı?" → 15+
-- "`git push --rebase` döngüsü oturum başına kaç kez?" → 5+
+#### 3. i18n altyapısı kuruldu (kod commit'i)
+- `mobile/package.json` scripts: `prebuild` + `predev` eklendi
+- `mobile/.gitignore`'a `src/lang/` eklendi (auto-generated)
+- Vercel build pipeline'ı `npm run build` çağırdığı için prebuild otomatik tetiklenir
+- **Commit:** `f227253 feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı`
 
-Bu rakamlar olmasaydı kararların gerekçesi sezgisel kalırdı.
+#### 4. Borç tespiti — MK-54.1
+**M ekranları `useT()` hook'unu bypass ediyor.** Test sırasında keşfedildi: TR → EN → AR seçimi `localStorage` + html `lang` attribute güncelleniyor ama içerik aynı kalıyor. Sebep: ekranlar kendi paralel `[dil, setDil] = useState(...)` state'ini tutuyor, hook'u hiç çağırmıyor, JSX tüm yazılar hardcoded TR.
 
----
+**Etkilenen dosyalar (denetim 55'te):**
+- `mobile/src/screens/MGiris.jsx` — kanıtlı bypass
+- `mobile/src/screens/MAnasayfa.jsx` — şüpheli
+- `mobile/src/screens/MAnasayfaYonetici.jsx` — şüpheli
+- `mobile/src/screens/MIslemler.jsx` — şüpheli
+- `mobile/src/screens/MDrawer.jsx` — şüpheli
 
-## Süreç Olayları
+**Yan etki:** PROJE-HARITASI'nda bu ekranlar "%100 i18n'li" yazıyordu — yanlış bilgi, 54 kapanışında düzeltildi (%60: açılıyor ama i18n borç).
 
-### Mac Downloads Karmaşası (sürekli)
+#### 5. PROJE-HARITASI mobile bölümü güncellendi
+54'te ortaya çıkan vizyon (light versiyon, web öncül), prebuild altyapısı, MSpoolDetay tasarım kararları, MK-54.1 borç bilgisi PROJE-HARITASI'na işlendi.
 
-Cihat tarayıcıdan dosyayı indirirken bazen önceki sürüm hâlâ Downloads'da duruyordu. `KARARLAR.md` indirilince `KARARLAR (1).md` oluyor, `arespipe_kopyala` MD5 uyuşmazsa reddediyor. Disiplin: `~/Downloads/_arsiv/` klasörüne eskiyi taşıyıp yeniyi `KARARLAR.md` olarak yeniden adlandırma.
+### Commit'ler (54)
+| Hash | Mesaj |
+|------|-------|
+| `f227253` | feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı |
+| `dc41290` | docs: AUTO bölümleri güncellendi [skip ci] |
+| `7467b10` | docs(54): oturum arşivi + 7 yeni MK kararı + PROJE-HARITASI mobil bölümü güncellendi |
 
-### "Komut Çıktı Gürültüsü"
+### CI Son Durum (54 sonu)
+- **Build:** ✅ YEŞİL (sarı uyarı)
+- **Hata:** 0
+- **Uyarı:** 28 (3 dosyada)
+  - `izometri-batch.html`: 18 i18n eksik anahtar (`izb_*`)
+  - `spool_detay.html`: 9 i18n eksik anahtar (`flansh_*`)
+  - `devre_detay.html:1428`: 1 G-03 ham yüzey şüphesi
+- **Vercel:** ✅ Production aktif
 
-Sohbet sırasında `for f in ...; cat "$f"; done` desenli toplu çıktı verince Cihat "komutun başladığı yeri bile bulmak zor" dedi. Bu MK-53.2 olarak resmiyetleştirildi (53'te).
-
----
-
-## DB Operasyonları
-
-Yok.
-
----
-
-## Commit'ler
-
-Detay GitHub repo `git log` üzerinden alınabilir. Ana noktalar:
-
-- Birden fazla `docs/` güncelleme commit'i
-- `f8980f1` docs: CLAUDE.md ritual okuma listesi güncellendi (52)
-- `f5eb28b` chore(ci): ci-son-rapor.json güncelle [skip ci] (kapanış)
-
-CI: ✅ YEŞİL (her commit sonrası ci-son-rapor.json otomatik)
-
----
-
-## 53'e Devreden Borçlar
-
-**Hemen:**
-- Dökümantasyon revizyonu (yapıldı, 53'te)
-- KARARLAR.md doğacak (yapıldı, 53'te)
-- ROADMAP + PANO-TASARIM arşivlenecek (yapıldı, 53'te)
-
-**Sonra (54+):**
-- parser_kural pipeline_no fix
-- `_l2_meta` / `_l2_fallback` log
-- 5+ Tersan PDF testi
-- Format envanter UI
+### DB değişiklikleri
+Yok (54'te DB'ye dokunulmadı).
 
 ---
 
-## Performans
+## Açık Borçlar Özeti
 
-Mevcut metrikler 51'le aynı (52'de kod değişmedi).
+| Borç | Kaynak | Durum |
+|------|--------|-------|
+| **flansh_* / izb_* i18n eksik anahtarları (28 uyarı)** | 54 CI raporu | 55 birincil iş |
+| **MK-54.1**: M ekranları useT() bypass (5 dosya) | 54 keşif | 55 ikincil iş |
+| **MK-49.A**: spool_detay 3D model deterministik render (PDF parse → yon_dizilim JSON) | 49+'dan beri bekliyor | 55+ |
+| **MK-49.B**: İzometri PDF yükleme bileşeni — wizard Adım 2 + devre detay sekmesi | 49+'dan beri bekliyor | 55+ |
+| **parser_kural pipeline_no regex** (51 L2-FAIL) | 51 log | 55+ |
+| **`_l2_meta` / `_l2_fallback` ai_api_log'a yazılması** | 51 borç | 55+ |
+| **5+ Tersan PDF testi** (L2 başarı oranı ölçümü) | 51 borç | 55+ |
+| **Migration disiplini kararı** | 51-52'den beri konuşuluyor | Henüz karar yok |
+| **`CALISMA-MODU.md` ↔ `CIHAT-PROFIL.md` overlap** | 53 gözlem | Karar yok |
+| **`asme_borular`/`cuni_borular` silme** | 35'te dondu | Durum belirsiz |
 
 ---
 
-## Kazanılan Zaman (54+'a)
+## 55. Oturuma Devredilen Ana İş
 
-Her oturum başlangıcında:
-- Eski: 10-15 dk manuel dosya yükleme + bağlam kurma
-- Yeni: 30 sn (`git pull` çıktısı + ne yapacağız sorusu)
+**Birincil iş:** CI'da raporlanmış 28 uyarı kapatma — 27 i18n eksik anahtar + 1 G-03 yüzey hatası. Bu 54'te yarım kalmış son dönem işidir, kapanmadan üzerine yeni iş eklemek doğru değil.
 
-20 oturum projesi varsayarsak ~3-5 saatlik kazanç. Aynı zamanda "manuel yükleme unutuldu, Claude eski bilgiyle çalıştı" risk sıfırlandı.
+**İkincil:** MK-54.1 — mobile M ekranları i18n bypass denetimi.
+
+**Detay:** `docs/CLAUDE-SONRAKI-OTURUM.md`.
 
 ---
 
-> 53. oturum açılışında bu dosya + son-durum.md + CLAUDE-SONRAKI-OTURUM.md okundu. Bu özet kapsamlı detay isteyenler için, son-durum.md tek sayfalık snapshot için.
-> Detay karar listesi: `docs/KARARLAR.md`. Modül durumu: `docs/PROJE-HARITASI.md`.
-> 51'in detayı: `docs/oturumlar/051-tersan-l2-canli.md` (kalıcı arşiv).
+## Önemli Öğrenmeler
+
+1. **Ritüel atlamanın bedeli:** 52 kapanışında üç dosya (son-durum, son-oturum, sonraki-oturum) atlandı. 53 başında tamir edilmedi (sadece KARARLAR'a dökümantasyon revizyonu olarak yazıldı). 54 başında yine tamir edilmedi (mobile gündemi geldi). 55 başında "spool_detay yapıyorduk oradan devam" denildiğinde Claude'da somut gündem yoktu, userMemories'ten sahte gündem türetmeye çalıştı. **MK-55.1** bu zinciri kıracak: oturum-saglik.sh script'i BAYAT'sa ben işe başlamayacağım.
+
+2. **Mobile 5 hafta atalet — sebebi vizyon belirsizliği değil baskı eksikliği:** Web evrildi (40+ sayfa, devre/spool/IFS/izometri batch refactor'ları), mobile geride kaldı çünkü bağımsız evrilme baskısı yoktu. MK-54.B (web öncül) bu boşluğu disiplin olarak doldurdu — artık her web değişikliği "mobile'a yansıyor mu?" sorusunu doğuracak.
+
+3. **"Yarım kalmış iş" CI'da şişiyor:** 54'te `spool_detay.html`'de flansh_* tv() çağrıları yazılmış ama anahtarlar `lang/tr.json`'a eklenmemiş. CI uyarı verdi, deploy gitti, kullanıcıya `flansh_meta` gibi raw key görünüyor olabilir. **Disiplin:** Yeni `tv()` çağrısı yazınca aynı commit'te 3 dil dosyasına anahtar ekle. Pre-commit lint'i bu adımı zorlayacak (Faz B borcu).
+
+---
+
+> 55. oturum açılışında bu dosya okundu. 55'in gündemi: `docs/CLAUDE-SONRAKI-OTURUM.md`.
+> Karar günlüğü: `docs/KARARLAR.md` (MK-55.1 dahil).
+> Modül durumu: `docs/PROJE-HARITASI.md`.

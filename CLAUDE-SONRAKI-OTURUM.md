@@ -1,165 +1,162 @@
-# 54. Oturum — parser_kural Canlı L2 Başarısı
+# 55. Oturum — i18n Borç Kapatma + Onarım Modu Test (3 Mayıs 2026)
 
-> 53'ü takip eder. 53 dökümantasyon revizyonuna ayrıldı (KARARLAR.md, PROJE-HARITASI.md, ROADMAP+PANO arşiv). 54'ün asıl işi: 51-52'den ertelenmiş L2 başarı oranı ölçümü ve canlıda en az bir L2 başarısı görmek.
-
----
-
-## Açılış Ritüeli (CLAUDE.md MK-52.3)
-
-2 madde:
-
-1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
-2. Bugün ne yapmak istiyorsun? (önerilen sıra aşağıda)
+> 54'ü takip eder. 54 mobile vizyon + i18n altyapısı işine ayrıldı, 9 (`flansh_*`) + 18 (`izb_*`) eksik i18n anahtarı + 1 G-03 yüzey uyarısı CI'da yarım kaldı. 55'in birincil işi bunları kapatmak.
+>
+> 55 aynı zamanda **MK-55.1 onarım modu**'nun ilk testi: 53+54 ritüel atlamasının üst üste birikmesi tespit edildi, oturum-saglik.sh script'i BAYAT dedi, geriye dönük özet bu dosyayla beraber yazıldı.
 
 ---
 
-## 54'ün Hedefi
+## Açılış Ritüeli (CLAUDE.md MK-55.1 sonrası)
 
-L2 mekanizması canlıda **çalışıyor ama hiç başarılı olmadı**. parser_kural regex'leri çok dar (3 örnekten yazıldı, MK-50.3 ihlali). Bu oturumda:
-
-1. parser_kural'ı 5+ örnekle test edip genişlet
-2. `_l2_meta` / `_l2_fallback` ai_api_log'a yaz (görünürlük)
-3. Canlıda en az **bir L2 başarısı** gör
-
-### Ana İş 1 — `pipeline_no` Regex Düzeltme (öncelik 1)
-
-51 log'unda görüldü: `[L2-FAIL] sebep: 'zorunlu_eksik: pipeline_no'`. Mevcut regex:
-
-```
--(G\d{3}-\d{3}-[A-Z0-9]+)
+```bash
+cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 55
 ```
 
-Sorun: `\d{3}` (sadece 3 rakam) — `303S` gibi varyantları yakalayamıyor. Düzeltme:
+Beklenen: **✅ TEMİZ**. BAYAT çıkarsa yine onarım moduna girilir.
 
-```sql
--- 54: parser_kural pipeline_no regex genişletme
-UPDATE izometri_format_tanimlari
-SET parser_kural = jsonb_set(
-  parser_kural,
-  '{alanlar,pipeline_no,regex}',
-  '"-(G\\d+-[\\dA-Z]+-[A-Z]+\\d+)"'::jsonb
-),
-  guncelleme_at = now()
-WHERE id = 'e1fb879d-3f13-40ae-8684-59237e63d40f'
-RETURNING parser_kural -> 'alanlar' -> 'pipeline_no' -> 'regex' AS yeni_regex;
+Sonra: "Bugün ne yapmak istiyorsun?" — önerilen sıra aşağıda.
+
+---
+
+## 55'in Hedefi
+
+CI yeşilini sağlamlaştırmak (sarı→yeşil), 54'te yarım kalmış 28 uyarıyı kapatmak. Mobil i18n bypass borcunu (MK-54.1) ele almak. Bu işler küçük ama biriktiklerinde *"sistem güvenilmez"* hissi yaratıyorlar.
+
+### Ana İş 1 — `spool_detay.html` flansh_* anahtarları (öncelik 1)
+
+54'te flanş bölümüne kod yazılmış (satır 3485-3510 arası), `tv('flansh_*')` çağrıları var ama 9 anahtar `lang/tr.json` + `en.json` + `ar.json`'da yok.
+
+**Eksik anahtarlar:**
+
+| Satır | Anahtar | Tahmini içerik |
+|-------|---------|----------------|
+| 3485 | `flansh_meta` | (flanş ana başlık?) |
+| 3495 | `flansh_standart` | Standart |
+| 3496 | `flansh_od` | Dış Çap (OD) |
+| 3497 | `flansh_kalinlik` | Kalınlık |
+| 3499 | `flansh_hub` | Hub |
+| 3502 | `flansh_ic_cap` | İç Çap |
+| 3504 | `flansh_bcd` | BCD (Bolt Circle Diameter) |
+| 3508 | `flansh_civata` | Cıvata |
+| 3510 | `flansh_agirlik` | Ağırlık |
+
+**Adım:**
+1. `spool_detay.html:3485-3510` aralığını oku, her `tv()` çağrısının fallback'ini ve bağlamını gör
+2. Üç dil için anahtar değerlerini belirle (TR canonical + EN + AR)
+3. `lang/tr.json`, `lang/en.json`, `lang/ar.json` üçüne ekle
+4. Anahtar sırası alfabetik mi kategori mi — mevcut dosyaya bak
+
+**Test:** Lokal `python -m http.server 8000` veya direkt canlıda `?lang=en` ve `?lang=ar` ile flanş bölümü kontrol — raw key görünmemeli.
+
+### Ana İş 2 — `izometri-batch.html` izb_* anahtarları (öncelik 2)
+
+18 eksik anahtar (satır 349'dan 814'e kadar dağılmış). Tahmini içerikler büyük ölçüde anahtar adından okunabilir:
+
+```
+izb_calisiyor          izb_temizle_onay       izb_durum_yukleniyor
+izb_durum_kuyrukta     izb_supabase_hata      izb_yeni_batch_onay
+izb_yukleme_hazirlaniyor   izb_batch_acilmadi     izb_hicbir_yuklenmedi
+izb_kuyruk_hata        izb_arkada_basladi     izb_hata_genel
+izb_yukleniyor_x       izb_upload_hatasi      izb_bilinmeyen_hata
+izb_btn_yeni_batch     izb_resume             izb_dosya
 ```
 
-**Test planı:** Yeni Tersan PDF yükle → log'da `[L2-FAIL]` çıkmasın → `parser_seviye='l2'` olsun → süre 1-2 sn.
+**Adım:** Aynı prosedür — bağlam okumak, üç dile yazmak, mevcut anahtar formatına uygun yere koymak.
 
-**Not (53'te konuşuldu, henüz karar değil):** Bu UPDATE elle Supabase SQL Editor'da çalışıyor. Repo görmüyor. Migration disiplinine geçmeli miyiz? 54'te karar olabilir.
+### Ana İş 3 — `devre_detay.html:1428` G-03 ham yüzey
 
-### Ana İş 2 — `_l2_meta` / `_l2_fallback` DB'ye Yaz
+Tek satır, tek uyarı. `esc(x.yuzey)` yerine `ARES_NORM.yuzeyEtiket(x.yuzey)` kullanılacak. CLAUDE.md 2.18 referansı.
 
-Şu an L2 başarılı olsa bile **ai_api_log'a hiç yazılmıyor** (`cevap_full` sadece AI parsed JSON).
+**Adım:**
+1. Satır 1428'i oku
+2. `ARES_NORM.yuzeyEtiket()` çağrısına çevir (ham `karbon` yerine "Karbon Çelik" gibi canonical)
+3. Lokal smoke-test (devre detay açılışı bozulmadı mı)
 
-**Seçenek A — Yeni log fonksiyonu:** L2 başarısı için `aiApiLogYaz({ kaynak: 'izometri_oku', cagri_tipi: 'L2_deterministic', parser_seviye: 'l2', ... })` çağır. Token/maliyet 0. cevap_full = ham_cevap.
+### Ana İş 4 — CI yeşil doğrulama
 
-**Seçenek B — Mevcut visionAIParse log'una meta ekle:** Fallback durumunda `cevap_full.parsed._l2_fallback = ...` set edilsin DB'ye yazılmadan önce.
+Üç düzeltme commit'lendikten sonra `.github/ci-son-rapor.json` taranır:
+- `hata: 0`
+- `uyari: 0` (veya 1 — sadece bilinen tolere edilen)
+- `durum: "yesil"`
 
-**Önerim: A** — temiz ayrım, parser_seviye filtresi ile metrik çıkarma kolay.
+Push edip GitHub Actions'da yeşil görmeden 55 kapanmaz.
 
-### Ana İş 3 — `parser_kural` Diğer Alanları Test (5+ örnek prensibi, MK-51.2)
+---
 
-pipeline_no düzeldikten sonra hâlâ fail edebilecek alanlar:
+## İkincil İş (zaman kalırsa)
 
-- `kalite` whitelist: `ST37|S235JR|A106B|316L|304L|316|304` — başka kalite varsa fail
-- `cap_mm`, `et_mm`, `boy_mm`: `(\d+(?:\.\d+)?)x(\d\.\d)(\d{3,5})` — DN50 dışı çapları yakalar mı?
-- `agirlik_kg`: `(\d+(?:\.\d+)?)\s*kg` — birden fazla kg geçiyorsa hangisini alıyor?
-- `proje_kodu`: `\b(?:NB|B)(\d{4})\b` — başka proje kod formatı varsa fail
-- Malzeme satır pattern'leri (boru, fitting, islem): 50'de 3 örnekle yazıldı
+### MK-54.1 — Mobile M Ekranları i18n Bypass Denetimi
+
+54'te tespit edildi, 5 dosyada şüphe. **MGiris.jsx kanıtlı** (kendi `[dil, setDil] = useState` paralel state, `useT()` çağrılmıyor, JSX hardcoded TR).
 
 **Plan:**
-1. 5+ farklı Tersan PDF yükle (yapı çeşitliliği için)
-2. Her birinde L2 fail sebebini gör (`sebep` log'u)
-3. Hangi alan en sık fail ediyor → onu düzelt → tekrar test
-4. %80+ L2 başarı oranı hedefi
+1. 5 dosyayı sırayla aç (MGiris, MAnasayfa, MAnasayfaYonetici, MIslemler, MDrawer)
+2. Her birinde `useT()` import edilmiş mi, JSX'te `t()` veya `tv()` kullanılıyor mu?
+3. Bypass varsa: hardcoded string'leri `tv('anahtar', 'fallback')` formatına çevir, eksik anahtarları üç dile ekle
+4. Lokal `npm run dev` ile dil değiştirme testi (TR → EN → AR)
+
+**Süre tahmini:** 5 ekran × ~10dk = ~50dk. Ana işlerden zaman artarsa 55'te kapanabilir, kalmazsa 56'ya devredilir.
 
 ---
 
-## İkincil İşler (54'te zaman kalırsa)
+## Aşağıda Bekleyen Büyük İşler (55'e dahil değil, hatırlatma)
 
-### "Tersan M110 Montaj Resmi" formatı temizlik kararı
+Bu maddeler 55'te ele alınmıyor — sadece **unutulmasın** diye burada listede:
 
-84c12f61 formatı son 3-4 oturumda hep yanlış tanıma sonucu hit aldı. **Cihat'a sorulacak:** Tersan'da Montaj Resmi gerçekten geliyor mu?
-
-- **(A) Sil:** Aktif=false yap. İleride gelirse log'da format yok diye çıkar, kullanıcı bildirir.
-- **(B) Tut, fingerprint daraltsa:** Belirli pattern'i `M\d+-\d+-\d+\.\d+\.pdf` ile sınırla.
-
-### tv() i18n eksiklikleri (28 uyarı CI'da)
-
-`lang/tr.json` + `lang/en.json` doldur, hızlı iş.
-
-### Hatalı kayıt aksiyonları
-
-`kuyruk-yeniden-dene`, `kuyruk-sil`, `kuyruk-pdf-indir` endpoint'leri eksik. izometri-batch sayfası bu butonları gösteriyor ama backend yok.
+| Borç | Detay |
+|------|-------|
+| **MK-49.A** | spool_detay 3D model deterministik render. PDF parse'tan gelen `yon_dizilim` JSON'undan Three.js benzeri çizim. AI çağrısı yok, $0 maliyet. 49'dan beri bekliyor. |
+| **MK-49.B** | İzometri PDF yükleme bileşeni. Devre wizard Adım 2'ye gömülü (atla butonu var) + devre detay sayfasında "İzometri Çizimleri" sekmesi. Aynı backend endpoint'leri (`batch-baslat` + `batch-kuyruga-al`). |
+| **parser_kural pipeline_no regex** | 51 log: `[L2-FAIL] sebep: 'zorunlu_eksik: pipeline_no'`. Mevcut `\d{3}` dar, `303S` gibi varyant yakalamıyor. Genişletme + 5+ Tersan PDF test. |
+| **`_l2_meta` / `_l2_fallback` ai_api_log** | L2 başarısı DB'ye yazılmıyor, görünürlük yok. Yeni log fonksiyonu (Seçenek A) tercih edilmişti. |
+| **Migration disiplini** | DB değişiklikleri elle Supabase'de — repo görmüyor. Her DB değişikliği `migrations/NNN_*.sql` olarak yazılmalı kararı henüz alınmadı. |
+| **CALISMA-MODU ↔ CIHAT-PROFIL overlap** | İkisinde de Cihat tanımı var, biri silinmeli. |
 
 ---
 
-## 55+ Sıralaması (PROJE-HARITASI'den)
+## Beklenen Commit'ler (55)
 
-- **55** — Cihat karar verir: Format envanter UI (B1 görünürlük), mobil ısınma (MProfil/MIsBaslat), veya Pano implementasyon teyidi
-- **56-57** — Mobil yoğun başlangıç (mockup-first)
+```
+fix(i18n): spool_detay flansh_* anahtarları üç dile eklendi (55)
+fix(i18n): izometri-batch izb_* anahtarları üç dile eklendi (55)
+fix(g03): devre_detay yüzey rendering ARES_NORM'a çevrildi (55)
+docs(55): MK-55.1 oturum-saglik.sh + CLAUDE.md ritual güncellendi
+docs(55): oturum kapanış — son+sonraki+son-durum güncellendi
+```
+
+İkincil iş yapılırsa:
+```
+fix(mk-54.1): mobile M ekranları useT() hook'una bağlandı (55)
+```
+
+---
+
+## Kapanış Protokolü (55 sonu)
+
+```bash
+# 1. Üç dosyayı 56 için yenile
+#    - CLAUDE-SON-OTURUM.md → "# 55. Oturum — ..."
+#    - CLAUDE-SONRAKI-OTURUM.md → "# 56. Oturum — ..."
+#    - .github/son-durum.md → güncel borç
+
+# 2. Sağlık kontrolü
+./scripts/oturum-saglik.sh 55 --kapanis
+
+# 3. Beklenti: ✅ üç dosya bugünkü, başlıklar doğru → otomatik commit
+# 4. Manuel push
+gp
+```
 
 ---
 
 ## Kritik Hatırlatmalar
 
-**MK kurallarının tek kanonik adresi:** `docs/KARARLAR.md`. Bu dosyada (CLAUDE-SONRAKI-OTURUM.md) MK tekrarı yapılmaz.
-
-**Her oturum başında zorunlu okuma:** `CLAUDE.md` (sözleşme), `docs/PROJE-HARITASI.md` (modül durumu), `son-durum.md` (en son durum), `docs/CLAUDE-SON-OTURUM.md` (52 detayı), bu dosya (gündem).
-
-**Her oturum kapanışında zorunlu** (MK-53.4):
-- PROJE-HARITASI.md taranır, etkilenen modül satırları güncellenir
-- Yeni karar varsa KARARLAR.md'ye eklenir
-- O oturumun özeti `docs/oturumlar/0XX-baslik.md` olarak yazılır
-- son-durum.md, CLAUDE-SON-OTURUM.md, CLAUDE-SONRAKI-OTURUM.md güncellenir
-- Tek `gp` ile push
+- **MK-55.1 aktif:** Bu oturum açılışında oturum-saglik.sh BAYAT dedi, onarım modu çalıştı. Bu kapı bundan sonra her oturum başında ve sonunda işliyor olacak.
+- **MK-53.5 aktif:** Sohbet içinde karar geçtiğinde bekleme — anında KARARLAR.md'ye veya ilgili yaşayan dosyaya işle.
+- **MK-54.B aktif:** Yeni özellik önce web'de doğar. Mobile-only öneri reddedilir.
 
 ---
 
-## Süreç Disiplinleri
-
-- **MK-52.1 — `arespipe_kopyala`:** Dosya transferinde MD5 doğrulamalı zsh fonksiyonu
-- **MK-52.2 — `gp`:** `git push origin main` yerine `gp` (otomatik rebase)
-- **MK-53.2 — Komut çıktı disiplini:** Tek seferde birden fazla dosyayı `cat` etme, çıktı şişer
-- **MK-53.5 — Etki taraması:** Sohbette karar alındığında **anında** ilgili dosyaya işle, kapanışı bekleme
-
----
-
-## Storage Path'leri (Bilinen Tersan PDF'leri)
-
-```
-S02-S03 (51'de kullanıldı):
-  G200-303-BS15 3(5).S03_1.1.pdf
-  G200-303-BS15 2(5).S02_1.1.pdf
-
-S06-S07 (51'de kullanıldı):
-  G200-303-BS15 3(5).S06.1.pdf
-  G200-303-BS15 4(5).S07.1.pdf
-
-S08-S10 (50'de kullanıldı):
-  G200-303-BS15 4(5).S08.1.pdf
-  G200-303-BS15 4(5).S09.1.pdf
-  G200-303-BS15 5(5).S10.1.pdf
-
-S09 (303S varyantı, 51'de kullanıldı):
-  G200-303S-BS18 5(5).S09.1.pdf
-  G200-303S-BS18 5(5).S10.1.pdf
-```
-
-54'te canlı test için bu pattern'lerin **dışındaki** yeni PDF'ler önerilir (cache MISS olsun, L2 yolu gerçekten çalışsın).
-
----
-
-## 54'te Veriyle Tasarım
-
-L2 başarısı görüldükten sonra:
-
-- Format envanter UI'da L2 fail oranını gözlemle
-- 5-10 farklı Tersan PDF birikince malzeme pattern'lerini tekrar bak
-- L3 fallback oranı %30'un altına düşmeli (ölçülebilir hedef)
-- Pilot tersane ile konuşulmadan önce **L2 başarı oranı %70+** olmalı (vizyon ekonomisi: 60× maliyet farkı)
-
----
-
-> Önerilen sıra: pipeline_no fix → DB log yazma → parser_kural test (5+ PDF). Cihat hangi işle başlayacağını seçecek.
+> 56. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+> Karar günlüğü: `docs/KARARLAR.md`.
+> Modül durumu: `docs/PROJE-HARITASI.md`.

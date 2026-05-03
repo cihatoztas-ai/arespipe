@@ -14,7 +14,7 @@
 Oturum başlangıç ritüeli. 2 kısa kontrol:
 
 1. Şunu çalıştırır mısın ve çıktıyı yapıştırır mısın:
-   cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+   cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh <oturum_no>
 
 2. Bugün ne yapmak istiyorsun? (Kaldığımız yerden, yeni konu, vb.)
 ```

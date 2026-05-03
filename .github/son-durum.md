@@ -1,92 +1,95 @@
-# Son Durum — 52. Oturum (2 Mayıs 2026)
+# Son Durum — 54. Oturum Sonu (3 Mayıs 2026)
 
-> 51 → 52 geçişi. Asıl amaç parser_kural iyileştirmeydi, **ama** sohbet altyapı revizyonuna yöneldi: knowledge ↔ repo bağlantısı kuruldu, dosya transfer + push akışı otomatize edildi, ritüel sadeleştirildi.
-
----
-
-## Bu Oturumun Sonucu
-
-**52 başarıyla kapatıldı — ama planlanan iş yapılmadı.** Parser_kural pipeline_no fix, `_l2_meta` log yazma, 5+ Tersan PDF testi — hiçbiri yapılmadı. Bunun yerine **akış altyapısı** elden geçirildi. Bu sayede 53'ten itibaren oturum açılışı dakikalar yerine saniyeler alıyor.
-
-### Yapılanlar (sırasıyla)
-
-1. **Knowledge ↔ repo bağlantısı kuruldu** (Claude project ↔ GitHub)
-   - Manuel dosya yükleme akışı sona erdi
-   - Repo'daki tüm dosyalar push sonrası otomatik indekslenir
-   - 12% kapasite, 40+ web sayfa + tüm `docs/` + `migrations/` + `.github/` indexli
-2. **`arespipe_kopyala` zsh fonksiyonu** (MD5 doğrulamalı kopyalama)
-   - macOS Downloads'un `(1)`, `(2)` ekleme problemi çözüldü
-   - Yanlış sürümü reddediyor, doğruyu kabul ediyor
-3. **`gp` zsh fonksiyonu** (otomatik rebase + push)
-   - GitHub Actions `[skip ci]` commit'leri yüzünden manuel `git pull --rebase` artık otomatik
-   - Conflict varsa abort, körlemesine resolve etmiyor
-4. **Açılış ritüeli sadeleştirildi (5 → 2 madde)**
-   - Eski: git pull, CI rengi, son-durum güncel mi, migration var mı, geri bildirim
-   - Yeni: git pull çıktısı + "bugün ne yapmak istiyorsun?"
-5. **`docs/PROJE-HARITASI.md` ve `docs/CLAUDE-CALISMA-MODU.md` doğdu**
-   - PROJE-HARITASI ilk yazımda boş referans olarak kaldı (içeriği 53'te yazıldı)
-   - CLAUDE-CALISMA-MODU Claude'un Cihat ile çalışma talimat dosyası
-6. **CLAUDE.md ritüel okuma listesi güncellendi**
-   - Yeni protokoller eklendi
-
-### Yapılmayan (53'e devredildi)
-
-- Parser_kural pipeline_no regex genişletme
-- `_l2_meta` / `_l2_fallback` ai_api_log'a yazılması
-- 5+ Tersan PDF havuzu testi
-- Format envanter UI
-- "Tersan M110 Montaj Resmi" formatı temizlik kararı
-
----
-
-## Commit'ler (52. Oturumda)
-
-Doğrudan kod commit'i değil, ağırlıklı olarak `docs/` ve altyapı:
-
-| Hash | Mesaj |
-|------|-------|
-| Çoklu | docs/ + CLAUDE.md + CLAUDE-CALISMA-MODU.md + PROJE-HARITASI iskelet |
-| `f8980f1` | docs: CLAUDE.md ritual okuma listesi güncellendi (52) |
-| `f5eb28b` | chore(ci): ci-son-rapor.json güncelle [skip ci] (52 sonu) |
-
-CI: ✅ YEŞİL
-
----
-
-## DB Değişiklikleri
-
-Yok. 52'de DB'ye dokunulmadı.
-
----
-
-## 53'e Açık Borç (önceliğe göre)
-
-**Önce dökümantasyon revizyonu, sonra parser_kural** — Cihat 53 başında talep etti.
-
-1. **Dökümantasyon revizyonu** ✅ 53'te tamamlandı (KARARLAR.md, PROJE-HARITASI.md, ROADMAP+PANO arşiv)
-2. `parser_kural` pipeline_no regex genişletme — 54'e
-3. `_l2_meta` / `_l2_fallback` ai_api_log'a yazılması — 54'e
-4. 5+ Tersan PDF testi — 54'e
-5. Format envanter UI — 55'te değerlendirilecek
-6. "Tersan M110 Montaj Resmi" temizlik kararı — Cihat'a sorulacak
-
----
-
-## Kritik Hatırlatmalar
-
-**MK kuralları artık tek dosyada:** `docs/KARARLAR.md`. MK-49.1 ila MK-53.5 dahil tüm kararlar orada listelenmiş, kategori etiketli, geçerlilik durumlu. Bu dosyada (son-durum.md) MK tekrarı yapılmaz.
+> **Durum:** ✅ Mobile vizyonu netleşti, i18n altyapısı kuruldu (prebuild). 28 CI uyarısı 55'e devredildi. MK-55.1 onarım modu aktif.
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL
-- **Lint:** 0 hata, 22 uyarı (Faz B baseline'ı korundu)
+- **Build:** ✅ YEŞİL (sarı uyarı)
+- **Hata:** 0
+- **Uyarı:** 28
+  - `izometri-batch.html`: 18 i18n eksik (`izb_*`)
+  - `spool_detay.html`: 9 i18n eksik (`flansh_*`)
+  - `devre_detay.html:1428`: 1 G-03 ham yüzey
 - **Vercel:** ✅ Production aktif
+- **Workflow run:** 688
 
 ---
 
-> 53. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
-> 52'nin detayı için: `docs/CLAUDE-SON-OTURUM.md` (en son oturumun özeti).
+## Açık Borçlar (önceliğe göre)
+
+### 55'in Birincil İşi
+1. **`spool_detay.html` flansh_* i18n** — 9 anahtar (3485-3510) üç dile eklenecek
+2. **`izometri-batch.html` izb_* i18n** — 18 anahtar üç dile eklenecek
+3. **`devre_detay.html:1428` G-03** — `esc(x.yuzey)` → `ARES_NORM.yuzeyEtiket(x.yuzey)`
+4. **CI yeşil doğrulama** — yukarıdakiler kapandıktan sonra `uyari: 0` görmek
+
+### 55'in İkincil İşi (zaman kalırsa)
+5. **MK-54.1** — Mobile M ekranları `useT()` bypass denetimi (5 dosya: MGiris, MAnasayfa, MAnasayfaYonetici, MIslemler, MDrawer)
+
+### 56+ İçin Bekleyen Büyük İşler
+6. **MK-49.A** — spool_detay 3D model deterministik render (PDF parse → yon_dizilim JSON → Three.js)
+7. **MK-49.B** — İzometri PDF yükleme bileşeni (devre wizard Adım 2 + devre detay sekmesi)
+8. **parser_kural pipeline_no regex** — 51 L2-FAIL, `\d{3}` dar
+9. **`_l2_meta` / `_l2_fallback` ai_api_log** — görünürlük borcu (51'den)
+10. **5+ Tersan PDF testi** — L2 başarı oranı ölçümü (51'den)
+
+### Henüz Karar Olmayan Gözlemler
+- DB migration disiplini (51-52'den beri konuşuluyor) — `migrations/NNN_*.sql` zorunluluğu kararı yok
+- `CALISMA-MODU.md` ↔ `CIHAT-PROFIL.md` overlap — Cihat tanımı iki dosyada
+- `asme_borular`/`cuni_borular` silme durumu belirsiz (35'te dondu, 37-38'de silinecekti)
+
+---
+
+## Son Oturumlarda Eklenen Kararlar
+
+| Karar | Kategori | Özet |
+|-------|----------|------|
+| MK-53.1 | DISIPLIN | KARARLAR.md kanonik karar günlüğü |
+| MK-53.2 | DISIPLIN | Terminal komut çıktı disiplini |
+| MK-53.3 | DISIPLIN | Dökümantasyon revizyonu (AKTIF/ARSIV/UYUR kategorisi) |
+| MK-53.4 | DISIPLIN | PROJE-HARITASI canlılık disiplini |
+| MK-53.5 | DISIPLIN | Etki taraması (anlık karar yakalama) |
+| MK-54.A | VIZYON | Mobile = web'in light versiyonu |
+| MK-54.B | DISIPLIN | Web öncül, mobile follower |
+| MK-54.C | VIZYON | Vanilla mobile referans, kopyalanmaz |
+| MK-54.D | ALTYAPI | Mobile prebuild pattern (web lang/ paylaşımlı) |
+| MK-54.E | TASARIM | MSpoolDetay 3 sekme, 3D yok |
+| MK-54.F | TASARIM | MSpoolDetay tipografisi (kompakt + WCAG) |
+| MK-54.G | TASARIM | İşlem Durumu n/N format + tema-spesifik renkler |
+| MK-54.1 | BORÇ | M ekranları useT() bypass |
+| **MK-55.1** | **DISIPLIN** | **Oturum sağlık script'i (mekanik açılış/kapanış kontrolü)** |
+
+---
+
+## Son Commit'ler
+
+| Hash | Mesaj |
+|------|-------|
+| `f58c8d4` | chore(ci): ci-son-rapor.json güncelle [skip ci] |
+| `7467b10` | docs(54): oturum arşivi + 7 yeni MK kararı + PROJE-HARITASI mobil bölümü güncellendi |
+| `f227253` | feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı |
+| `1998538` | docs(53): dökümantasyon revizyonu — KARARLAR güncel, PROJE-HARITASI doğdu, ROADMAP+PANO arşivlendi |
+| `40e8851` | docs: KARARLAR.md doğdu — kanonik karar günlüğü (53) |
+
+---
+
+## DB Değişiklikleri
+
+53 ve 54'te DB'ye dokunulmadı.
+
+---
+
+## Kritik Hatırlatmalar
+
+- **MK kuralları tek dosyada:** `docs/KARARLAR.md`. Tekrar yapılmaz, oradan referans verilir.
+- **MK-55.1 aktif:** Her oturum açılışı `./scripts/oturum-saglik.sh N` ile başlar. BAYAT durumunda gündem yok, onarım modu çalışır.
+- **MK-53.5 aktif:** Anlık karar yakalama — sohbette karar geçince bekleme, anında KARARLAR.md'ye işle.
+
+---
+
+> 55 açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunur.
+> 54'ün detayı için: `docs/CLAUDE-SON-OTURUM.md`.
 > Karar günlüğü için: `docs/KARARLAR.md`.
 > Modül durum panosu için: `docs/PROJE-HARITASI.md`.
