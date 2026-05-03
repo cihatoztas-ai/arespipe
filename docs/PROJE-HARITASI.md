@@ -92,23 +92,23 @@
 
 | Modül | Aşama | Son Durum (kısa) | Sonraki Adım | Vizyon |
 |---|---|---|---|---|
-| MGiris.jsx | %100 | i18n'li, çalışıyor | — | OP |
-| MAnasayfa.jsx (router) | %100 | Role göre yönlendirir | — | OP |
-| MAnasayfaYonetici.jsx | %100 | Dashboard + İşlem Başlat + profil butonu | — | OP |
-| MIslemler.jsx | %100 | Grup bazlı buton ekranı + profil butonu | — | OP |
-| MDrawer.jsx | %100 | 17 Nis (2. oturum) — profil + tema toggle + dil dropdown + çıkış | — | OP |
+| Mobile React iskeleti | %50 | 54'te 5 hafta sonra ilk kez canlı (npm run dev OK, Vite v8.0.8). prebuild pattern (MK-54.D) ile lang/ web ile paylaşımlı. Vanilla mobile zip referans (MK-54.C). Vizyon: web'in light versiyonu (MK-54.A), web öncül mobile follower (MK-54.B). | M ekranları i18n bağlama (MK-54.1) | OP |
+| MGiris.jsx | %60 | İskelet açılıyor, form çalışıyor (Supabase auth). **Bug (MK-54.1):** i18n hook bypass — kendi paralel `[dil, setDil]` state'i, hardcoded TR string'ler. | `useT()` hook'una bağla, JSX'teki `'E-posta'` vb. → `tv('m_giris_eposta', 'E-posta')` | OP |
+| MAnasayfa.jsx (router) | %60 ❓ | Role göre yönlendirir, açılıyor olduğu varsayılıyor. **Şüphe (MK-54.1):** i18n bypass olabilir, denetim 55'te. | i18n denetimi + bağlama | OP |
+| MAnasayfaYonetici.jsx | %60 ❓ | Dashboard + İşlem Başlat + profil butonu. **Şüphe (MK-54.1):** i18n bypass olabilir. | i18n denetimi + bağlama | OP |
+| MIslemler.jsx | %60 ❓ | Grup bazlı buton ekranı + profil butonu. **Şüphe (MK-54.1):** i18n bypass olabilir. | i18n denetimi + bağlama | OP |
+| MDrawer.jsx | %60 ❓ | 17 Nis (2. oturum) — profil + tema toggle + dil dropdown + çıkış. **Şüphe (MK-54.1):** i18n bypass olabilir. | i18n denetimi + bağlama | OP |
 | MProfil.jsx | %0 | Planlandı: avatar yükleme + kişisel bilgi | Mockup-first → kod | OP |
-| MIsBaslat.jsx | %0 | Planlandı (eski `is_baslat.html`'den) | Mockup-first → kod | D (mobil etiketleme) |
+| MIsBaslat.jsx | %0 | Planlandı (eski `is_baslat.html`'den, vanilla'da 1930 satırlık 9-ekranlı state machine) | 56-57. oturumlar (vizyona göre) | D (mobil etiketleme) |
 | MDevreler.jsx | %0 | Planlandı | Mockup-first → kod | OP |
-| MDevreDetay.jsx | %0 | Planlandı | Mockup-first → kod | OP |
-| MSpoolDetay.jsx | %0 | Planlandı | Mockup-first → kod | OP |
+| MDevreDetay.jsx | %0 | 54'te tasarım kararları konuşuldu (Spoollar + Notlar sekme yapısı, 6-aşama timeline + filtre, kompakt tipografi MK-54.F). MSpoolDetay sonrası başlanır. | 56. oturum (sonraki adım) | OP |
+| MSpoolDetay.jsx | %5 | 54'te tasarım kilitlendi: 3 sekme (Genel + Malzeme + İşlem Kay., 3D yok MK-54.E), kompakt tipografi (MK-54.F), n/N işlem durumu (MK-54.G), salt-okur Malzeme tablosu, Geri Bildirim FAB. **55'in ana işi.** | Web spool_detay.html upload + DB sorgu + JSX yaz + route ekle + lokal test | OP |
 | MQRTara.jsx | %0 | Planlandı, tenant prefix parse (`A-0504:UUID`) cross-tenant uyarısı gerekli | Mockup-first → kod | D |
-| Mobil i18n | %100 | 61 `m_*` anahtarı, 3 dil senkron | Yeni ekran eklenince anahtar eklenir | İÇ |
-| Mobil tema sistemi | %100 | `useTema()` Context, 2 tema bloğu | — | İÇ |
-| Mobil yetki sistemi | %100 | `lib/yetki.js` blok/grup/gizli_bolumler | — | İÇ |
+| Mobil i18n altyapısı | %85 | 54'te kuruldu: `i18n.jsx` provider (TR/EN/AR + RTL otomatik + localStorage + fallback), prebuild pattern (MK-54.D), 1659 anahtar × 3 dil web'le paylaşımlı. **Borç (MK-54.1):** M ekranları henüz `useT()` ile bağlanmamış, hardcoded TR string'ler kullanıyor. | Tüm M ekranlarında `useT()` denetimi (55) + spool detay için `mob_sp_*` 36 anahtar yazımı | İÇ |
+| Mobil tema sistemi | %95 | `useTema()` Context, light-anthracite + dark, MGiris'te toggle çalışıyor. **MK-54.G ile** tema-spesifik durum renkleri eklendi (`--status-done/wip/no`). | Tüm M ekranlarında AAA kontrast denetimi (vanilla'nın `--txd` hatası tekrarlanmasın) | İÇ |
+| Mobil yetki sistemi | %100 ❓ | `lib/yetki.js` blok/grup/gizli_bolumler. **Şüphe:** 5 hafta önce yazıldı, web yetki sistemiyle uyum kontrolü yapılmamış. i18n bug'ının kuzeni olabilir. | İleride denetim (düşük öncelik) | İÇ |
 | Avatar Storage upload | %0 | `foto_url` kolonu var, upload UI yok | MProfil'le birlikte | OP |
-| Web↔mobil dil senkron scripti | %0 | Manuel | Yardımcı script | İÇ |
-
+| Mobil 3D model render | — UYKU | 54'te karar (MK-54.E): web 3D doğruluk problemi çözülene kadar mobile'a eklenmez. Sahada izometri çıkmayan personel için **kritik özellik** ama yanlış görsel = fire riski. | Web 3D olgunlaştığında 56-58. oturumda port | A + D |
 ### Grup 6 — Altyapı ve Disiplin (Görünmez ama şart)
 
 | Modül | Aşama | Son Durum (kısa) | Sonraki Adım | Vizyon |
@@ -154,7 +154,7 @@
 |---|---|---|---|
 | **53** | Dökümantasyon revizyonu — KARARLAR.md, PROJE-HARITASI.md, ROADMAP+PANO arşiv, üç oturum dosyası 52 sonu güncel | — | 🔵 Aktif |
 | **54** | Parser_kural pipeline_no fix + DB log yazma + 5+ Tersan PDF testi (L2 başarı oranı ölçümü) | 53 ✓ | ⚪ Sırada |
-| **55** | Cihat karar verecek: ya format envanter UI (B1 görünürlük), ya mobil ısınma (PROJE-HARITASI Grup 5'ten ekran), ya Pano implementasyonu teyidi | 54 ✓ | ⚪ Karar bekleniyor |
+| **55** | MSpoolDetay.jsx port (vanilla referans + web bugünkü sorgu) + tüm M ekranlarında i18n hook denetimi (MK-54.1) | 54 ✓ | 🔵 Plan net |
 | **56-57** | Mobil yoğun başlangıç (planlanmış: MProfil, MIsBaslat, MQRTara) — mockup-first | 55 ✓ + Cihat hazırsa | ⚪ Niyet |
 
 **Not:** Bu liste **uzun vade taahhüt değil**. 3-5 oturumdan ileriyi yazmıyoruz çünkü plan bayatlıyor (eski ROADMAP'in dersi). Her oturum kapanışında bu liste yeniden değerlendirilir.

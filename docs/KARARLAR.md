@@ -244,6 +244,150 @@ git add ... && git commit -m "..." && gp
 
 ---
 
+#### MK-54.A [VIZYON] — Mobile = web'in light versiyonu
+
+**Karar:** Mobile uygulaması web'in tüm özelliklerini değil, **light versiyonunu** sunar. İçerik:
+- **Saha kullanıcısı için:** Veri girişi (kesim/büküm/markalama kaydet, fotoğraf ekle, QR oku, not gir)
+- **Ofis kullanıcısı için:** İzleme (devre listesi, spool detayı, KK durumu, sevkiyat durumu, raporlar)
+- **Hiçbir zaman dahil olmayacak:** Üretim ekranları (devre tanımlama, IFS import, izometri batch yükleme, kesim wizard'ı, malzeme havuzu yönetimi)
+
+**Sebep:** 54'te Cihat'ın açtığı vizyon konuşmasında çıktı. "Mobile büyük olabilir mi?" sorusuna verilen yanıt: büyük ≠ kötü, ama büyük + bakımsız = felaket. Web'de 40 sayfa var, mobile bunların light alt-kümesi olur. Üretim ekranları zaten masaüstü merkezli (devre tanımlama 3225 satırlık spool_detay'a bakıyor — telefonda anlamsız).
+
+**Geçerlilik:** ✅ Aktif. Yeni mobile ekranı önerildiğinde "bu üretim mi izleme mi?" sorusu sorulur, üretimse reddedilir.
+
+#### MK-54.B [DISIPLIN] — Web öncül, mobile follower
+
+**Karar:** Yeni özellik **önce web'de** doğar, sonra mobile'a yansıtılır. Mobile-only özellik **eklenmez**. Web'de olmayan bir şey mobile'a önerilince reddedilir veya önce web'e tasarım yapılır.
+
+**Pratik etki:** Bakım yükü tek yönlü. Web'de yeni filtre eklenirse mobile'a da gelir; mobile'da yeni filtre denemek istersen önce web'de kur.
+
+**Sebep:** Tek geliştirici (Cihat + AI), iki platformun bakımı paralel zor. 5 hafta atalet bunun kanıtı: web hızla evrildi (devre/spool/IFS/izometri batch refactor'ları), mobile geride kaldı çünkü bağımsız evrilme baskısı yoktu. Tek-yönlü akış disiplini bunun tekrarını önler.
+
+**Geçerlilik:** ✅ Aktif. Mobile için yeni özellik istendiğinde "web'de var mı?" ilk kontrol.
+
+#### MK-54.C [VIZYON] — Vanilla mobile referans, kopyalanmaz
+
+**Karar:** 16 Nisan öncesi yazılan vanilla mobile (`mobile.zip`, 7 HTML sayfası) **referans olarak korunur**, **kopya/port edilmez**. Yeni React M ekranları yazılırken:
+- **Tasarım/UX kararları** vanilla'dan alınır (sayfa yapısı, sekme düzeni, kart pattern'leri, tipografi, navigasyon — yıllık iş, atılmaz)
+- **DB sorguları** web'in **bugünkü** halinden alınır (vanilla 5 hafta önceki şemayla yazılmış, kopyalamak ölü iş)
+- **i18n anahtarları** web'le paylaşılan `lang/*.json`'dan kullanılır (MK-54.D ile birlikte)
+
+**Pratik etki:** Vanilla'da olan ama React'te olmayan bir şey görüldüğünde "atalım mı" değil, "neden vardı, ne işe yaradı, React'te nasıl olmalı" sorusu sorulur.
+
+**Sebep:** 5 hafta önceki vanilla tasarımı **tamamen değersiz değil** — Cihat'ın o zamanki UX kararları olgun (PWA hazır, drawer mantıklı, 6-aşama timeline, K/B/M chip'leri). Bunları sıfırdan icat etmek hata. Ama 5 haftadır web evrildi, DB değişti — kod kopyalamak da hata.
+
+**Geçerlilik:** ✅ Aktif. Mobile React ekranı yazılırken vanilla referans dosya açılır, web'in güncel sayfası açılır, ikisinin sentezi yapılır.
+
+#### MK-54.D [ALTYAPI] — Mobile prebuild pattern (web lang/ paylaşımlı)
+
+**Karar:** Mobile React projesi `lang/*.json` dosyalarını **kendi tutmaz**. Repo kökündeki `lang/`'dan **build aşamasında otomatik kopyalanır.**
+
+**Uygulama:**
+- `mobile/package.json` scripts:
+  - `prebuild`: `rm -rf src/lang && mkdir -p src/lang && cp ../lang/*.json src/lang/`
+  - `predev`: `npm run prebuild`
+- npm convention gereği `prebuild` her `npm run build` öncesi otomatik çalışır
+- `predev` her `npm run dev` öncesi çalışır → lokal geliştirmede de güncel
+- `mobile/.gitignore`'da `src/lang/` var (auto-generated, repo kirletmez)
+- Vercel deploy'da `npm run build` çalıştığında prebuild otomatik tetiklenir
+
+**Pratik etki:** Anahtar tek yerde tutulur (`/lang/tr.json` 1659 anahtar), web ve mobile aynı dosyayı kullanır. Yeni anahtar eklenince **bir kez** ekle, hem web hem mobile alır. Çift bakım yok.
+
+**Sebep:** 54'te keşfedildi: `mobile/src/lib/i18n.jsx` profesyonelce kuruldu ama 3 import edilen JSON dosyası **yoktu**. Yarım iş. Prebuild pattern bu boşluğu tek-kaynak ile kapatır, gelecekte de aynı yarım kalmamasını garanti eder.
+
+**Geçerlilik:** ✅ Aktif. Mobile build/dev her zaman bu pattern üzerinden çalışır.
+
+#### MK-54.E [TASARIM] — MSpoolDetay sekme yapısı (3 sekme, 3D yok)
+
+**Karar:** MSpoolDetay.jsx **3 sekme** içerir: **Genel** + **Malzeme** + **İşlem Kayıtları**.
+- **3D Model sekmesi YOK.** Web'deki 3D doğruluk problemi çözülene kadar mobile'a eklenmez.
+- **Malzeme sekmesi salt-okur.** Tablo (malzeme/kalite/çap/et/boy) görüntülenir, satıra tıklanmaz, kütüphane kaydı detayı açılmaz.
+- **Belgeler bölümü** Genel sekmesi içindedir (PDF listesi, tıklama eksik — Storage signedUrl borç kalır).
+- **Geri bildirim FAB** sayfanın sağ-alt köşesinde, tüm sekmelerde görünür.
+
+**Sebep:**
+- 3D olgunlaşmamışken sahaya yanlış görsel vermek **fire üretir**. Personel ekrandaki yanlış spool şekline güvenip yanlış büküm yapar.
+- Malzeme tıklama mobile'da değer üretmez (kütüphane sertifikası vs masaüstü işi). Tıklama açılırsa tasarım bütünlüğü bozulur, scroll cehennemi gelir.
+- Vanilla'da 4. sekme "3D Model" placeholder vardı (`🧊 yakında`) — kullanıcı tıklar, hayal kırıklığı yaşar, sayfaya güveni azalır. Boş söz vermek > söz vermemek.
+
+**Geçerlilik:** ✅ Aktif. 3D olgunlaştığında MK kararla yeniden değerlendirilir (tahmini 56-58. oturumlar).
+
+#### MK-54.F [TASARIM] — MSpoolDetay tipografisi (kompakt + okunur)
+
+**Karar:** MSpoolDetay sekmelerinde **vanilla'nın tek-satır key-value yapısı korunur**, sadece okunabilirlik düzeltmeleri yapılır:
+
+| Element | Eski (vanilla) | Yeni (MSpoolDetay) |
+|---|---|---|
+| Topbar yüksekliği | 52px | 56px (iOS standart) |
+| Sayfa başlığı (topbar label) | 17px | 18px |
+| Durum badge (sağ üst) | 10px | 12px |
+| Spool ID (D001-S001-R0) | 18px | 20-22px |
+| Sekme yazısı | 11px | **14px** |
+| Sekme başlığı (SPOOL BİLGİLERİ) | 10px `var(--txd)` | **12px `var(--txm)`** (kontrast 3.2:1 → 7:1) |
+| Alan adı (Pipeline No) | 13px `var(--txd)` | **14px `var(--txm)`** |
+| Değer (G200-303-BS15) | 13px | **15px** |
+
+**Önemli:** Renkler `var(--txm)` gibi **CSS değişkeni** üzerinden tanımlanır, hardcoded hex yazılmaz. Aksi halde açık tema'da iyi görünüp koyu tema'da kötü olur (vanilla'nın hatasıydı).
+
+**Sebep:** Cihat 54'te screenshot ile gösterdi: vanilla'nın 11px sekme yazıları açık tema'da okunmuyor. WCAG kontrast hesabıyla doğrulandı: `--txd` üzerine `--sur` zemin = 3.2:1 (FAIL). `--txm` ile 7:1 (AAA seviyesi). Vanilla ekranlarda da bu sorun var ama orada çözülmedi (pratik test eksikti).
+
+**Stacked (alt-alta) yapı reddedildi** — Cihat tek-satır kompakt yapıyı tercih etti, dikey alan tasarrufu için.
+
+**Geçerlilik:** ✅ Aktif. MSpoolDetay başta uygulanır, MDevreDetay vs. diğer M ekranları aynı sistem üzerine kurulur.
+
+#### MK-54.G [TASARIM] — İşlem Durumu n/N format + tema-spesifik renkler
+
+**Karar:** MSpoolDetay'ın "İşlem Durumu" bölümünde her operasyon (Kesim/Büküm/Markalama) **n/N formatında** gösterilir, **ilerleme barı yok, sadece sayı**:
+
+```
+Kesim       3/3      (yeşil)
+Büküm       1/3      (sarı)
+Markalama   0/3      (kırmızı)
+```
+
+**Renk paleti — tema-spesifik:**
+- Açık tema (`light-anthracite`):
+  - `--status-done`: `#15803d` (koyu yeşil)
+  - `--status-wip`: `#A16207` (koyu amber, sarı turuncuya kaymadan)
+  - `--status-no`: `#B91C1C` (koyu kırmızı)
+- Koyu tema (`dark`):
+  - `--status-done`: `#4ADE80` (parlak yeşil)
+  - `--status-wip`: `#FBBF24` (parlak amber)
+  - `--status-no`: `#F87171` (açık kırmızı)
+
+Her tema kombinasyonu **AA kontrast** üzerinde tutulur (özellikle açık tema'da sarı standart `#EAB308` kontrast 2.8:1 = FAIL, koyulaştırılmış varyant kullanılır).
+
+**Veri kaynağı:** `kesim_kalemleri`, `bukum_kalemleri`, `markalama_kalemleri` tabloları (web `devre_detay.html` satır 1200'deki nested select pattern'i: `.select('*, kesim_kalemleri(id,kesildi), ...')`).
+
+**Sebep:**
+- Vanilla'nın "Kesim ✓ Tamamlandı / Büküm ● Devam" tek-durum yapısı yetersiz — bir spool 3 parça kesim gerektirebilir, "1 parça kesildi" durumu kaybolur. n/N bunu açıkça gösterir.
+- Bar gereksiz görsel gürültü; kart zaten n/N + renkle dolu, bar bilgi katmıyor.
+- Tek hex renk (örn. `#EAB308`) yazılırsa açık temada okunmaz. Tema-spesifik tanım WCAG güvencesi sağlar.
+
+**Geçerlilik:** ✅ Aktif. MSpoolDetay'da uygulanır, MDevreDetay'ın 6-aşama timeline'da da aynı renk sistemi kullanılır.
+
+#### MK-54.1 [BORÇ] — M ekranları i18n hook'unu bypass ediyor
+
+**Borç (henüz çözülmedi, 55'te ele alınacak):** Mobile React iskeletindeki M ekranları `i18n.jsx` provider'ını ve `useT()` hook'unu **kullanmıyor**. Tespit MGiris.jsx'te yapıldı, diğerlerinde de büyük ihtimalle aynı sorun var.
+
+**Tespit:**
+- 54'te dil değiştirme testi: TR → EN → AR seçimi `localStorage` ve html `lang` attribute'unu güncelliyor, **ama içerik aynı kalıyor.**
+- Sebep: MGiris.jsx kendi `[dil, setDil] = useState(...)` paralel state'ini tutuyor, `useT()` hook'unu hiç çağırmıyor, JSX'te tüm yazılar hardcoded TR.
+- 5 hafta önce yarım kalmış: i18n provider kuruldu, dil seçici eklendi, ama M ekranları bağlanmadı.
+
+**Etkilenen dosyalar (denetim 55'te):**
+- `mobile/src/screens/MGiris.jsx` — kanıtlı bypass
+- `mobile/src/screens/MAnasayfa.jsx` — şüpheli
+- `mobile/src/screens/MAnasayfaYonetici.jsx` — şüpheli
+- `mobile/src/screens/MIslemler.jsx` — şüpheli
+- `mobile/src/screens/MDrawer.jsx` — şüpheli
+
+**Yan etki:** PROJE-HARITASI'nda bu ekranlar "%100 i18n'li çalışıyor" yazıyordu — yanlış bilgi, 54 kapanışında düzeltildi. Aşamalar gerçek değerlere çekildi (%60: açılıyor ama i18n borç).
+
+**55'te yapılacak:** Her M ekranını tek tek aç, `useT()` hook'una bağla, hardcoded string'leri `tv('anahtar', 'fallback')` formatına çevir, eksik anahtarları `lang/tr.json` + `en.json` + `ar.json`'a ekle.
+
+---
+
 ## Açık Borçlar (henüz karar değil — gözlem)
 
 Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp yukarıdaki listeye eklenecek.
@@ -260,3 +404,5 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 |---|---|---|
 | 2 Mayıs 2026 | 53 | KARARLAR.md doğdu. MK-49.1 ila MK-52.4 ilk kez tek dosyada toplandı. MK-52.3 (ritüel sadeleştirme) ve MK-52.4 (knowledge ↔ repo bağlantısı) bu tarama sırasında geriye dönük yazıldı. MK-53.1 ile dosyanın kendisi karar olarak kaydedildi. |
 | 2 Mayıs 2026 | 53 | MK-53.2 (terminal komut çıktı disiplini), MK-53.3 (dökümantasyon revizyonu — ROADMAP+PANO-TASARIM arşivlendi, PROJE-HARITASI doğdu), MK-53.4 (PROJE-HARITASI canlılık disiplini), MK-53.5 (etki taraması — anlık karar yakalama) eklendi. |
+
+| 3 Mayıs 2026 | 54 | MK-54.A (mobile = light versiyon) + MK-54.B (web öncül mobile follower) + MK-54.C (vanilla referans, kopyalanmaz) + MK-54.D (prebuild pattern) + MK-54.E (MSpoolDetay 3 sekme, 3D yok) + MK-54.F (MSpoolDetay tipografisi) + MK-54.G (n/N format + tema renkler) eklendi. MK-54.1 (M ekranları i18n bypass borcu) kayda alındı. |
