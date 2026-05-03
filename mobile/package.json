@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "rm -rf src/lang && mkdir -p src/lang && cp ../lang/*.json src/lang/",
+    "predev": "npm run prebuild",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
