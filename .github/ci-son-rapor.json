@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-05-04T11:01:53.328Z",
-  "commit_sha": "674435ecd956b5f141fed1e4ceed434dc68347af",
+  "tarih": "2026-05-04T12:27:46.869Z",
+  "commit_sha": "2c1e3398598bf8456a48b2dbbce8a94f983e91d1",
   "commit_ref": "main",
-  "workflow_run": 699,
+  "workflow_run": 700,
   "ozet": {
     "hata": 0,
-    "uyari": 28,
-    "taranan_dosya": 86,
-    "sorunlu_dosya": 3,
+    "uyari": 29,
+    "taranan_dosya": 87,
+    "sorunlu_dosya": 4,
     "durum": "sari"
   },
   "kurallar": {
@@ -28,7 +28,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('izb_calisiyor') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 27,
+      "sayi": 28,
       "dosyalar": [
         {
           "dosya": "izometri-batch.html",
@@ -51,6 +51,13 @@
             711,
             748,
             814
+          ]
+        },
+        {
+          "dosya": "mobile/src/screens/MDevreDetay.jsx",
+          "sayi": 1,
+          "satirlar": [
+            436
           ]
         },
         {
@@ -197,6 +204,19 @@
           "tip": "uyari",
           "satir": 814,
           "mesaj": "tv('izb_dosya') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "mobile/src/screens/MDevreDetay.jsx",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 436,
+          "mesaj": "tv('mob_filtre_temizle') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
