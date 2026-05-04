@@ -349,7 +349,7 @@ export default function MSpoolDetay() {
         <button className="msd-back" onClick={geriDon} aria-label={tv('mob_sp_geri', 'Geri')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div className="msd-tblabel">{sp.spool_no || tv('mob_sp_baslik', 'Spool Detay')}</div>
+        <div className="msd-tblabel">{sp.spool_id || sp.spool_no || tv('mob_sp_baslik', 'Spool Detay')}</div>
         <div className="msd-tbbadge" style={{ background: badge.bg, color: badge.tx }}>
           {tv(`mob_sp_durum_${aktifBasamak}`, badge.lbl)}
         </div>
