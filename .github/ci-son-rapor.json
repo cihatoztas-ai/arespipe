@@ -1,12 +1,12 @@
 {
-  "tarih": "2026-05-04T15:41:38.941Z",
-  "commit_sha": "767efb8f3873d731d2ec6c6009aac56791f6cfd9",
+  "tarih": "2026-05-04T16:54:04.836Z",
+  "commit_sha": "d714bb21afa29a13786ac3e0e7198db21d7b0613",
   "commit_ref": "main",
-  "workflow_run": 705,
+  "workflow_run": 706,
   "ozet": {
     "hata": 0,
     "uyari": 29,
-    "taranan_dosya": 86,
+    "taranan_dosya": 87,
     "sorunlu_dosya": 4,
     "durum": "sari"
   },
@@ -57,7 +57,7 @@
           "dosya": "mobile/src/screens/MDevreDetay.jsx",
           "sayi": 1,
           "satirlar": [
-            436
+            398
           ]
         },
         {
@@ -215,7 +215,7 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 436,
+          "satir": 398,
           "mesaj": "tv('mob_filtre_temizle') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
