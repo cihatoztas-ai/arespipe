@@ -676,6 +676,71 @@ cp ~/Downloads/MSpoolDetay-MK586-fix.jsx ~/Desktop/arespipe/mobile/src/screens/M
 
 **Geçerlilik:** ✅ Aktif. Tüm `present_files` çağrılarında unique isim zorunlu. (Sapma dersi #11 olarak BRIEFING.md'ye de eklenir.)
 
+### MK-60.1 — TemaProvider App.jsx'e eklenmeli (4 Mayıs 2026, 60. oturum)
+
+**Karar:** `mobile/src/App.jsx` Provider zincirinde `<TemaProvider>` bulunmalı. Mevcut zincir sadece `<I18nProvider>` sarıyor; `useTema()` `<TemaProvider>` zorunluluğu tanımlıyor (`if (!ctx) throw new Error('useTema TemaProvider icinde kullanilmali')`).
+
+**Doğum kanıtı:** 60'ta `useT()` bypass denetimi sırasında MGiris.jsx ile ilgili "tam vs minimal scope" tartışmasında MGiris'in kendi local `tema` state'ini kullandığı görüldü. *"Provider'a bağla"* önerisi sırasında `App.jsx` kontrol edildi → `TemaProvider` orada yok. `MDrawer.jsx` `useTema()` çağırıyor ve canlıda çalışıyor; sebep: oturum öncesi MDrawer ulaşılamaz, `useTema()` hiç tetiklenmiyor. Yani kod canlıdaki yolda crash etmiyor ama her an etmesi mümkün.
+
+**Yapılacak (61. oturum birincil iş #1 parçası):**
+1. `mobile/src/App.jsx`'te `TemaProvider`'ı `I18nProvider`'ın dışına/içine sar (sırası fark etmez, ikisi bağımsız context):
+   ```jsx
+   <TemaProvider>
+     <I18nProvider>
+       <Routes>...</Routes>
+     </I18nProvider>
+   </TemaProvider>
+   ```
+2. MGiris.jsx kendi `tema`/`dil` local state'ini sil, `useTema()`/`useT()` üzerinden al.
+
+**Geçerlilik:** ✅ Aktif. 61'de implementasyon birincil iş.
+
+---
+
+### MK-60.2 — `mobile/src/lib/format.js` ortak helper modülü (4 Mayıs 2026, 60. oturum)
+
+**Karar:** Mobil ekranlar arasında paylaşılan format/dönüştürme fonksiyonları `mobile/src/lib/format.js` altında tek noktada tutulur. Yeni bir mobil screen yazılırken format işi gerekiyorsa **önce buradan import** edilir; yeni helper gerekirse buraya eklenir, ekrana yazılmaz.
+
+**60'ta export edilen 10 helper:**
+- Sayı/format: `revFmt`, `markaHesapla`, `nNRenkler`, `formatSpoolId`
+- Tarih: `formatTarih`, `formatTarihSaat`, `formatSure`
+- Veri: `alistirmaBilgi` (defensive enum reader), `malzemeEtiket` (i18n + map)
+- Güvenlik: `esc` (HTML escape, JSX dışı string concat için)
+
+**Doğum kanıtı:** 58. oturumda MSpoolDetay'a yazılan 8 helper, 59. oturumda MDevreDetay'da 3'ü kopyalandı + 1'inde drift oluştu (`revFmt('0')` → `'Rev0'` bug, MSpoolDetay'ın defensive sürümünde yok). 60'ta açık borç #3 kapatılırken kanonik sürümler tek dosyada birleştirildi, 33 birim test geçti, MSpoolDetay -73 satır, MDevreDetay -38 satır. MDevreDetay'ın bug'lı `revFmt`'i MSpoolDetay sürümüyle değiştirildi (net bug fix).
+
+**UI'a özel kalanlar (format.js'e gitmedi):**
+- `getStageKey(s)` — MDevreDetay'a özgü, `on_imalat → bekliyor` UI map'i (MK-59.1).
+
+**Geçerlilik:** ✅ Aktif. Yeni mobil screen'ler buradan başlar.
+
+---
+
+### MK-60.3 — `oturum-saglik.sh --kapanis` Katman 1 canlı (4 Mayıs 2026, 60. oturum)
+
+**Karar:** MK-56.4'te tasarımı yazılan kapanış orkestra protokolünün **Katman 1 (Script)** kısmı 60'ta implement edildi ve canlıya çıktı. Artık `./scripts/oturum-saglik.sh N --kapanis` çağrısı her kapanış öncesi mekanik kontrol sağlar.
+
+**Katman 1 ürettiği veriler:**
+- BRIEFING.md başlık tutarlılığı (`# AresPipe BRIEFING — N. Oturum Kapanışı`)
+- BRIEFING.md mtime bugün mü
+- Bu oturumun commit listesi (önceki kapanış SHA'sından HEAD'e — `docs(N-1): kapanis` pattern'i veya BRIEFING mtime fallback)
+- Working tree değişimleri (henüz commit'lenmedi)
+- 7 kategori dosyası taraması: `docs/KARARLAR.md`, `docs/ARCHITECTURE.md`, `docs/CIHAT-PROFIL.md`, `docs/SAYFA-EKSIKLERI.md`, `SPOOL-AI-VIZYON.md`, `kurallar.json`, `migrations/` — her biri için commit + ws diff şort-stat
+- Tazelik kapısı uyarıları (varsa)
+- Onay akışı talimatı (Katman 2 + Katman 3 sözleşmesi)
+
+**Otomatik commit YAPMAZ.** MK-56.1 kapısı: Cihat onayı zorunlu. Script sadece **veri sunar**, karar Cihat'ın.
+
+**Doğum kanıtı:** 57. oturumda MK-56.4 tasarımı yazıldı (`docs/KAPANIS-ORKESTRA-TASARIM.md`), 57-58-59 boyunca implementasyon zaman bulamadı. 60'ta ikincil iş olarak yapıldı, fake repo'da 4 senaryo testi geçti, gerçek repoda BRIEFING başlığı reddetti (beklenen davranış — production'da çalıştığını doğruladı), commit `afac0a8`.
+
+**61+ iyileştirme adayları:**
+- Çıktı format okunabilirliği (kategori taramasında uzun bir kategori varsa output dağılıyor)
+- Kategori taraması JSON output opsiyonu (programatik denetim için, KAPANIS-ORKESTRA-TASARIM.md'de yazılı genişleme)
+
+**Geçerlilik:** ✅ Aktif. Her kapanış bu script'i çalıştırır.
+
+---
+
 ---
 
 ## Açık Borçlar (henüz karar değil — gözlem)
@@ -701,3 +766,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 4 Mayıs 2026 | 57 | MK-56.4 (kapanış orkestra protokolü — etkileşimli `--kapanis` flag'i, üç-katmanlı sistem: Script + Claude rapor + Cihat yargı, iki yönlü çelişki kontrolü) eklendi. Tasarım dosyası `docs/KAPANIS-ORKESTRA-TASARIM.md` doğdu (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e). 56 sızıntısı telafi: `docs/CIHAT-PROFIL.md`'ye iki alerji **gerçekten** eklendi — "varsayım yapma, kanıttan git" + "heredoc + Türkçe markdown güvenilmez" (uzun dosyalarda heredoc/TextEdit yöntemleri başarısız, Claude `create_file` + Cihat `cp` standart yöntem oldu). BRIEFING.md yenilendi (5/6. sapma dersleri eklendi). `--kapanis` flag implementasyonu 58'e devredildi (tasarım yazılı, sıra kodda). |
 | 4 Mayıs 2026 | 58 | MSpoolDetay React port (vanilla `mobile/spool_detay.html` 635 satır → `mobile/src/screens/MSpoolDetay.jsx` ~775 satır) tamamlandı. 7 MK kararı eklendi: MK-58.1 (alistirma enum, PENDING), MK-58.2 (mobil rota konvansiyonu), MK-58.3 (kontrast-kritik renkler sabit hex), MK-58.4 (root lang tek kaynak), MK-58.5 (panel hardcoded UUID, PENDING), MK-58.6 (4 Supabase sorgu schema, PENDING), MK-58.7 (spool ID min 4 basamak format). 5 push, 7 dosya değişti. Bonus: SPA fallback eksik bug yakalandı + düzeltildi (`mobile/vercel.json` doğdu), süper admin panel mobile preview React URL'lerine güncellendi (eski vanilla yolları silindi). Birincil iş tamam, ikincil iş `oturum-saglik.sh --kapanis` flag implementasyonu 59'a devredildi (MK-56.4 tasarımı yazılı, kod sırada). |
 | 4 Mayıs 2026 | 59 | **Birincil iş #1 tamam:** MK-58.6 [PENDING] → ✅ TAMAMLANDI (commit `674435e`). 5 sorgu yeniden yazıldı: `kk_davetler.spool_ids` yok → `kk_davet_spooller` junction; `kk_no` → `davet_no`; `sevkiyatlar.sevkiyat_no` → `sevk_no`; `belgeler.dosya_adi/url` yok → `ad/dosya_url`; `islem_log.kayit_id` yok → `spool_id` direkt. UI'da 6 yer güncellendi. Localhost + canlı doğrulandı. **Birincil iş #2 tamam:** MDevreDetay React port (vanilla `mobile/devre_detay.html` 502 satır → `mobile/src/screens/MDevreDetay.jsx` 502 satır, commit `2c1e339`). 3 sekme yapısı: Genel TAM (sticky header + aşama tracker + spool kartları), Malzeme + İşlem Kay. placeholder ("Yakında", 60+'da dolacak). Vanilla 1:1 mantık + mockup-first onaylı tasarım: aşama pill'leri OVAL (2-3 basamaklı sayı sığsın), renk paleti vanilla'dan birebir (sp-* CSS class hex'leri), sol bar = pill rengi (kart aşaması bir bakışta okunuyor). `formatSpoolId`, `markaHesapla`, `revFmt`, `malzemeEtiket` helper'ları MDevreDetay'a kopyalandı (taşıma hâlâ açık borç). Spooller select'ine `pipeline_no, rev` eklendi (full marka için). 23 yeni `mob_dv_*` i18n anahtarı 3 dilde (1718 → 1741). 2 yeni MK kararı: MK-59.1 (`on_imalat` UI'da Bekliyor sayacına map'lenir, vanilla'da yutuluyordu), MK-59.2 (Outputs'a unique isim disiplini, Chrome `(1)` suffix riskini önler). 6 push (MK-58.6 fix + MDevreDetay + lang + 3 CI bot rebase). **İkincil iş 60'a devredildi:** MDrawer'a Geri Bildirim satırı + MSpoolDetay FAB temizlik (Cihat onayı: "tutarlılık için global çözüm"). `oturum-saglik.sh --kapanis` flag hâlâ açık borç (57-58-59 boyunca yetişmedi). |
+| 4 Mayıs 2026 | 60 | **5 ana iş tamam:** Geri Bildirim MDrawer'a taşındı + MSpoolDetay FAB temizlik (commit `a5b75a2`, ~110 satır temizlik, MGeriBildirimSheet bağımsız component, 8 i18n rename + 1 yeni). `oturum-saglik.sh --kapanis` Katman 1 implementasyonu (commit `afac0a8`, MK-60.3 — MK-56.4'ün ilk somut çıktısı, 152+ insertions, 7 kategori taraması). Açık Borç #8 kapandı (`.DS_Store` track'ten çıkarıldı, commit `22a66a7`). Açık Borç #7 kapandı (`Devreler.jsx` + `IsBaslat.jsx` boş stub'lar silindi, commit `767efb8`). Açık Borç #3 kapandı: 10 helper `mobile/src/lib/format.js`'e taşındı (commit `d714bb2`, MK-60.2, MSpoolDetay -73 + MDevreDetay -38 satır, `revFmt` defensive sürümü MDevreDetay'daki silent bug'ı düzeltti, 33 birim test geçti). **3 yeni MK kararı:** MK-60.1 (TemaProvider App.jsx'e eklenmeli — useTema crash riski, oturum öncesi MDrawer açılmıyor diye sessiz kalan tehlike), MK-60.2 (format.js mobil ortak helper modülü), MK-60.3 (oturum-saglik.sh --kapanis Katman 1 canlı). **Yarı kapalı:** MK-54.1 useT bypass denetimi — 4 M ekran ✓ useT'li, MAnasayfa ✓ temiz (router), MGiris ⚠️ atlandı (61 birincil iş). **Bilinçli atlanan:** Açık Borç #9 CI sarı temizliği (limit korunması). 11 push (5 ana commit + 3 CI bot rebase + 3 docs auto). 4 yeni sapma dersi belgelendi (BRIEFING.md sapma 14-17): kod bloğu terminale yapıştırma, SQL editöre bash, Vite zombie portlar, TemaProvider sessiz mimari boşluk. |
