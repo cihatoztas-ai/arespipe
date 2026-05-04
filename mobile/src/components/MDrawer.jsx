@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { useTema } from '../lib/tema'
+import MGeriBildirimSheet from './MGeriBildirimSheet'
 
 const DILLER = [
   { kod: 'tr', bayrak: '🇹🇷', anahtar: 'm_dil_tr' },
@@ -17,6 +18,7 @@ export default function MDrawer({ acik, kapat }) {
   const [kullanici, setKullanici] = useState(null)
   const [tenantAd, setTenantAd] = useState(null)
   const [dilMenuAcik, setDilMenuAcik] = useState(false)
+  const [fbAcik, setFbAcik] = useState(false)
   const dilMenuRef = useRef(null)
 
   useEffect(() => {
@@ -92,6 +94,11 @@ export default function MDrawer({ acik, kapat }) {
     setDilMenuAcik(false)
   }
 
+  function geriBildirimAc() {
+    kapat()
+    setFbAcik(true)
+  }
+
   const aktifDil = DILLER.find(d => d.kod === dil) || DILLER[0]
   const karanlik = tema === 'dark'
   const bas = kullanici?.ad_soyad?.charAt(0)?.toUpperCase() || '?'
@@ -162,6 +169,17 @@ export default function MDrawer({ acik, kapat }) {
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
             <span style={s.satirMetin}>{tv('m_drawer_profili_duzenle', 'Profili Düzenle')}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.8">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+
+          {/* Geri Bildirim — drawer'ı kapat, sheet'i aç */}
+          <button style={s.satir} onClick={geriBildirimAc}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txm)" strokeWidth="1.8">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span style={s.satirMetin}>{tv('m_drawer_geri_bildirim', 'Geri Bildirim')}</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.8">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
@@ -247,6 +265,9 @@ export default function MDrawer({ acik, kapat }) {
           </button>
         </div>
       </aside>
+
+      {/* Geri Bildirim sheet — drawer'dan bağımsız, her zaman mount, fbAcik state'i ile gizlenir */}
+      <MGeriBildirimSheet acik={fbAcik} kapat={() => setFbAcik(false)} />
     </>
   )
 }

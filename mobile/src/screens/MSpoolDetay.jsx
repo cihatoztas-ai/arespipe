@@ -12,13 +12,17 @@
 //   - Tipografi tabanı yükseltildi (F-01 14px alt sınır)
 //   - Devre adı uzunsa ellipsis + tıklayınca modal
 //   - Topbar geri: navigate('/devre/' + devre_id) — MDevreDetay yazılınca otomatik bağlanır
-//   - Geri Bildirim FAB + bottom sheet aynen korundu
+//
+// 60. oturum:
+//   - Geri Bildirim FAB + bottom sheet KALKTI → MDrawer'daki bağımsız MGeriBildirimSheet'e taşındı
+//   - Devre adı modal'ı hâlâ msd-fb-modal/overlay/sheet/handle/title/send class'larını kullanıyor
+//     (semantik olarak garip — class adı "fb" ama feedback değil. 60+ açık borcu: rename msd-modal-*)
 //
 // Tutarsızlık not (oturum sonu KARARLAR.md MK-58.X olarak):
 //   spooller.alistirma kolonu mobile vanilla'da 'tam|kismi|yok', devre_detay'da
 //   'VAR|KISMI|YOK' okunuyor — defensive handler ikisini de kabul ediyor.
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
@@ -140,14 +144,6 @@ export default function MSpoolDetay() {
   const [aktifTab, setAktifTab] = useState('genel')
   const [devreModalAcik, setDevreModalAcik] = useState(false)
 
-  // Geri bildirim modal
-  const [fbAcik, setFbAcik] = useState(false)
-  const [fbKat, setFbKat] = useState('hata')
-  const [fbNot, setFbNot] = useState('')
-  const [fbFotoData, setFbFotoData] = useState(null)
-  const [fbGonderiyor, setFbGonderiyor] = useState(false)
-  const fotoInputRef = useRef(null)
-
   // ── Veri yükle ─────────────────────────────────────────────────────────
   useEffect(() => {
     let iptal = false
@@ -254,68 +250,6 @@ export default function MSpoolDetay() {
   const badge = BADGES[aktifBasamak] || BADGES.bekliyor
 
   const alist = sp ? alistirmaBilgi(sp.alistirma, tv) : null
-
-  // ── Geri bildirim handler'ları ────────────────────────────────────────
-  function fbFotoSec() {
-    fotoInputRef.current?.click()
-  }
-  function fbFotoYukle(ev) {
-    const f = ev.target.files?.[0]
-    if (!f) return
-    const reader = new FileReader()
-    reader.onload = (e) => setFbFotoData(e.target.result)
-    reader.readAsDataURL(f)
-  }
-  async function fbGonder() {
-    const not = fbNot.trim()
-    if (!not || fbGonderiyor) return
-    setFbGonderiyor(true)
-    try {
-      const tid = await getTenantId()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      let foto_url = null
-      if (fbFotoData) {
-        try {
-          const blob = await fetch(fbFotoData).then(r => r.blob())
-          const dosyaAdi = `feedback/${Date.now()}.jpg`
-          const yukle = await supabase.storage
-            .from('arespipe-dosyalar')
-            .upload(dosyaAdi, blob, { contentType: 'image/jpeg' })
-          if (!yukle.error) {
-            const { data: urlData } = supabase.storage
-              .from('arespipe-dosyalar')
-              .getPublicUrl(dosyaAdi)
-            foto_url = urlData?.publicUrl || null
-          } else {
-            foto_url = fbFotoData
-          }
-        } catch {
-          foto_url = fbFotoData
-        }
-      }
-
-      await supabase.from('feedback_kayitlari').insert({
-        tenant_id: tid,
-        kullanici_id: user?.id || null,
-        sayfa_url: `/spool/${id}`,
-        kategori: fbKat,
-        not_: not,
-        fotograf_url: foto_url,
-      })
-
-      // Kapanış + reset
-      setFbAcik(false)
-      setFbNot('')
-      setFbFotoData(null)
-      setFbKat('hata')
-      // Toast yok — eğer mobile'da global toast varsa (örn. mToast benzeri) buraya çağrılır
-    } catch (e) {
-      console.error('[MSpoolDetay] fbGonder hata:', e)
-    } finally {
-      setFbGonderiyor(false)
-    }
-  }
 
   function geriDon() {
     if (devre?.id) {
@@ -582,63 +516,9 @@ export default function MSpoolDetay() {
         </div>
       )}
 
-      {/* FAB Geri Bildirim */}
-      <button className="msd-fab" onClick={() => setFbAcik(true)} aria-label={tv('mob_sp_geri_bildirim', 'Geri Bildirim')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-        </svg>
-      </button>
-
-      {/* Geri Bildirim modal */}
-      {fbAcik && (
-        <div className="msd-fb-modal">
-          <div className="msd-fb-overlay" onClick={() => !fbGonderiyor && setFbAcik(false)}></div>
-          <div className="msd-fb-sheet">
-            <div className="msd-fb-handle"></div>
-            <div className="msd-fb-title">{tv('mob_sp_geri_bildirim', 'Geri Bildirim')}</div>
-            <div className="msd-fb-cats">
-              <button className={`msd-fb-cat ${fbKat === 'hata' ? 'msd-fb-cat-on' : ''}`} onClick={() => setFbKat('hata')}>
-                🐛 {tv('mob_sp_fb_hata', 'Hata')}
-              </button>
-              <button className={`msd-fb-cat ${fbKat === 'eksik' ? 'msd-fb-cat-on' : ''}`} onClick={() => setFbKat('eksik')}>
-                📋 {tv('mob_sp_fb_eksik', 'Eksik')}
-              </button>
-              <button className={`msd-fb-cat ${fbKat === 'fikir' ? 'msd-fb-cat-on' : ''}`} onClick={() => setFbKat('fikir')}>
-                💡 {tv('mob_sp_fb_fikir', 'Fikir')}
-              </button>
-            </div>
-            <textarea
-              className="msd-fb-textarea"
-              placeholder={tv('mob_sp_fb_placeholder', 'Ne gördünüz? Ne olmasını bekliyordunuz?')}
-              value={fbNot}
-              onChange={(e) => setFbNot(e.target.value)}
-            />
-            <div className="msd-fb-foto-row">
-              <button className="msd-fb-foto-btn" onClick={fbFotoSec}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                {tv('mob_sp_fb_foto', 'Fotoğraf ekle')}
-              </button>
-              {fbFotoData && <img className="msd-fb-thumb" src={fbFotoData} alt="" />}
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                ref={fotoInputRef}
-                onChange={fbFotoYukle}
-              />
-            </div>
-            <button
-              className="msd-fb-send"
-              onClick={fbGonder}
-              disabled={!fbNot.trim() || fbGonderiyor}
-            >
-              {fbGonderiyor ? tv('mob_sp_fb_gonderiliyor', 'Gönderiliyor...') : tv('mob_sp_fb_gonder', 'Gönder')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Devre adı modal (uzun ad) */}
+      {/* Devre adı modal (uzun ad)
+          Not: msd-fb-* class adları semantik olarak yanıltıcı — eskiden FB modal'ıyla
+          paylaşılıyordu, FB MDrawer'a taşınınca burada kaldı. 60+ açık borcu: rename. */}
       {devreModalAcik && (
         <div className="msd-fb-modal" onClick={() => setDevreModalAcik(false)}>
           <div className="msd-fb-overlay"></div>
@@ -661,6 +541,11 @@ export default function MSpoolDetay() {
 // ── Stil bloğu ─────────────────────────────────────────────────────────────
 // CSS variable cascade güvenliği için sekme rengi sabit hex; geri kalanı --xxx kullanır.
 // Light/Dark tema için [data-theme=...] selector'ları index.css'te çözülür.
+//
+// 60. oturum:
+//   FAB + FB modal CSS'leri kalktı (.msd-fab, .msd-fb-cats, .msd-fb-cat, .msd-fb-textarea,
+//   .msd-fb-foto-row, .msd-fb-foto-btn, .msd-fb-thumb, .msd-fb-send:disabled).
+//   .msd-fb-modal/overlay/sheet/handle/title/send KALDI — devre adı modal'ı kullanıyor.
 
 const styleBlock = `
 .msd-topbar{position:sticky;top:0;height:54px;background:var(--sur);border-bottom:1px solid var(--bor);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:50;}
@@ -750,22 +635,11 @@ const styleBlock = `
 .msd-logm{font-size:13px;color:var(--txm);margin-top:3px;}
 .msd-log-empty{padding:24px;text-align:center;font-size:14px;color:var(--txm);}
 
-.msd-fab{position:fixed;bottom:76px;right:16px;width:52px;height:52px;border-radius:15px;background:var(--ac);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;z-index:60;box-shadow:0 4px 16px rgba(45,142,255,.4);}
-.msd-fab svg{width:22px;height:22px;}
-
+/* Devre adı modal — class adları "fb" prefix'iyle kaldı (60+ rename açık borç) */
 .msd-fb-modal{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;}
 .msd-fb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);}
 .msd-fb-sheet{position:relative;background:var(--sur);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));}
 .msd-fb-handle{width:36px;height:4px;border-radius:2px;background:var(--bor);margin:0 auto 16px;}
 .msd-fb-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--tx);margin-bottom:14px;}
-.msd-fb-cats{display:flex;gap:8px;margin-bottom:12px;}
-.msd-fb-cat{flex:1;padding:9px;border-radius:10px;border:1px solid var(--bor);background:var(--sur2);font-size:13px;font-weight:600;color:var(--txm);text-align:center;cursor:pointer;font-family:inherit;}
-.msd-fb-cat-on{border-color:var(--ac);background:rgba(45,142,255,.08);color:var(--ac);}
-.msd-fb-textarea{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:12px;font-size:15px;color:var(--tx);font-family:inherit;resize:none;outline:none;min-height:84px;margin-bottom:10px;box-sizing:border-box;}
-.msd-fb-textarea:focus{border-color:var(--ac);}
-.msd-fb-foto-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
-.msd-fb-foto-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px dashed var(--bor);background:var(--sur2);font-size:13px;font-weight:600;color:var(--txd);cursor:pointer;font-family:inherit;}
-.msd-fb-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;}
 .msd-fb-send{width:100%;height:48px;border-radius:12px;background:var(--ac);border:none;color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;}
-.msd-fb-send:disabled{opacity:.5;cursor:not-allowed;}
 `
