@@ -112,6 +112,14 @@ function formatSure(isoStr) {
 
 // ── Ana bileşen ───────────────────────────────────────────────────────────
 
+function formatSpoolId(id) {
+  if (!id) return '';
+  const m = String(id).match(/^([A-Z]+)-(\d+)$/i);
+  if (!m) return id;
+  const num = String(parseInt(m[2], 10)).padStart(4, '0');
+  return `${m[1].toUpperCase()}-${num}`;
+}
+
 export default function MSpoolDetay() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -349,7 +357,7 @@ export default function MSpoolDetay() {
         <button className="msd-back" onClick={geriDon} aria-label={tv('mob_sp_geri', 'Geri')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div className="msd-tblabel">{sp.spool_id || sp.spool_no || tv('mob_sp_baslik', 'Spool Detay')}</div>
+        <div className="msd-tblabel">{formatSpoolId(sp.spool_id) || sp.spool_no || tv('mob_sp_baslik', 'Spool Detay')}</div>
         <div className="msd-tbbadge" style={{ background: badge.bg, color: badge.tx }}>
           {tv(`mob_sp_durum_${aktifBasamak}`, badge.lbl)}
         </div>
@@ -434,7 +442,7 @@ export default function MSpoolDetay() {
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_revizyon', 'Revizyon')}</span><span className="msd-v">{sp.rev || '—'}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_cap', 'Çap')}</span><span className="msd-v">{sp.dis_cap_mm ? `${sp.dis_cap_mm} mm` : '—'}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_et', 'Et Kalınlığı')}</span><span className="msd-v">{sp.et_kalinligi_mm ? `${sp.et_kalinligi_mm} mm` : '—'}</span></div>
-            <div className="msd-r"><span className="msd-k">{tv('mob_stat_agirlik', 'Ağırlık')}</span><span className="msd-v">{sp.agirlik ? `${sp.agirlik} kg` : '—'}</span></div>
+            <div className="msd-r"><span className="msd-k">{tv('mob_stat_agirlik', 'Ağırlık')}</span><span className="msd-v">{sp.agirlik ? `${Number(sp.agirlik).toFixed(1)} kg` : '—'}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_malzeme_kal', 'Malzeme / Kalite')}</span><span className="msd-v">{[sp.malzeme, sp.kalite].filter(Boolean).join(' / ') || '—'}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_yuzey', 'Yüzey')}</span><span className="msd-v">{sp.yuzey || '—'}</span></div>
             <div className="msd-r">
