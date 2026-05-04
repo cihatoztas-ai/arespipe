@@ -186,18 +186,15 @@ export default function MSpoolDetay() {
             .eq('spool_id', spData.id)
             .order('olusturma', { ascending: false })
             .limit(20),
-          supabase.from('kk_davetler')
-            .select('kk_no, olusturma')
-            .eq('tenant_id', tid)
-            .contains('spool_ids', [spData.id])
-            .order('olusturma', { ascending: false })
-            .limit(1),
+          supabase.from('kk_davet_spooller')
+            .select('kk_davetler(davet_no, olusturma)')
+            .eq('spool_id', spData.id),
           supabase.from('sevkiyat_spooller')
-            .select('sevkiyatlar(sevkiyat_no, tarih)')
+            .select('sevkiyatlar(sevk_no, tarih)')
             .eq('spool_id', spData.id)
             .limit(1),
           supabase.from('belgeler')
-            .select('ad, dosya_adi, url, olusturma')
+            .select('ad, dosya_url, olusturma')
             .eq('spool_id', spData.id)
             .order('olusturma', { ascending: false }),
           supabase.from('spool_malzemeleri')
@@ -205,7 +202,7 @@ export default function MSpoolDetay() {
             .eq('spool_id', spData.id),
           supabase.from('islem_log')
             .select('katman, islem, olusturma')
-            .eq('kayit_id', spData.id)
+            .eq('spool_id', spData.id)
             .order('olusturma', { ascending: false })
             .limit(30),
         ])
@@ -213,7 +210,11 @@ export default function MSpoolDetay() {
         if (iptal) return
         setFotolar(rFoto?.data || [])
         setFotoIdx(0)
-        setKkBilgi(rKK?.data?.[0] || null)
+        const kkList = (rKK?.data || [])
+          .map(r => r.kk_davetler)
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.olusturma) - new Date(a.olusturma))
+        setKkBilgi(kkList[0] || null)
         const svlar = rSevk?.data?.[0]?.sevkiyatlar
         setSevkBilgi(svlar || null)
         setBelgeler(rBelge?.data || [])
@@ -479,9 +480,9 @@ export default function MSpoolDetay() {
 
           <div className="msd-dg">
             <div className="msd-dg-t">{tv('mob_sp_kk_sevk', 'KK & Sevkiyat')}</div>
-            <div className="msd-r"><span className="msd-k">{tv('mob_sp_kk', 'Kalite Kontrol')}</span><span className="msd-v">{kkBilgi?.kk_no || <span className="msd-v-muted">—</span>}</span></div>
+            <div className="msd-r"><span className="msd-k">{tv('mob_sp_kk', 'Kalite Kontrol')}</span><span className="msd-v">{kkBilgi?.davet_no || <span className="msd-v-muted">—</span>}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_kk_tarih', 'KK Tarihi')}</span><span className="msd-v">{kkBilgi ? formatTarih(kkBilgi.olusturma) : <span className="msd-v-muted">—</span>}</span></div>
-            <div className="msd-r"><span className="msd-k">{tv('mob_sp_sevk', 'Sevkiyat')}</span><span className="msd-v">{sevkBilgi?.sevkiyat_no || <span className="msd-v-muted">—</span>}</span></div>
+            <div className="msd-r"><span className="msd-k">{tv('mob_sp_sevk', 'Sevkiyat')}</span><span className="msd-v">{sevkBilgi?.sevk_no || <span className="msd-v-muted">—</span>}</span></div>
             <div className="msd-r"><span className="msd-k">{tv('mob_sp_sevk_tarih', 'Sevk Tarihi')}</span><span className="msd-v">{sevkBilgi ? formatTarih(sevkBilgi.tarih) : <span className="msd-v-muted">—</span>}</span></div>
           </div>
 
@@ -503,12 +504,12 @@ export default function MSpoolDetay() {
             {belgeler.length === 0 ? (
               <div className="msd-belge-empty">{tv('mob_sp_belge_yok', 'Belge eklenmemiş')}</div>
             ) : belgeler.map((b, i) => (
-              <div className="msd-belge" key={i} onClick={() => b.url && window.open(b.url, '_blank')}>
+              <div className="msd-belge" key={i} onClick={() => b.dosya_url && window.open(b.dosya_url, '_blank')}>
                 <div className="msd-belge-ic">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
                 <div className="msd-belge-body">
-                  <div className="msd-belge-ad">{b.ad || b.dosya_adi || tv('mob_sp_belge', 'Belge')}</div>
+                  <div className="msd-belge-ad">{b.ad || tv('mob_sp_belge', 'Belge')}</div>
                   <div className="msd-belge-meta">{formatTarih(b.olusturma)}</div>
                 </div>
                 <div className="msd-belge-arr">›</div>
