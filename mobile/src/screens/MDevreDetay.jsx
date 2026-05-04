@@ -12,6 +12,9 @@
 //   - Bottom nav yok (60+'da MBottomNav ortak component olarak yazılacak)
 //
 // MK-58.3: Kontrast-kritik renkler için sabit hex (CSS variable bypass).
+// 60. oturum — Açık Borç #3 kapandı:
+//   esc, formatSpoolId, revFmt, markaHesapla, malzemeEtiket helper'ları
+//   mobile/src/lib/format.js'e taşındı. getStageKey UI'a özel kaldı (MK-59.1).
 // ============================================================================
 
 import React, { useState, useEffect } from 'react'
@@ -19,6 +22,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { getTenantId } from '../lib/auth'
+import {
+  esc,
+  formatSpoolId,
+  markaHesapla,
+  malzemeEtiket,
+} from '../lib/format'
 
 // ── Aşama paleti — vanilla'dan birebir ─────────────────────────────────────
 const STAGE_PALET = {
@@ -41,59 +50,12 @@ const ALIST_BAR = {
 // ── Aşama sıralaması (tracker) ─────────────────────────────────────────────
 const STAGE_SIRA = ['bekliyor', 'imalat', 'kaynak', 'on_kontrol', 'kk', 'sevkiyat']
 
-// ── Helper'lar (60+'da format.js'e taşınacak — Açık Borç #6) ───────────────
-function esc(s) {
-  if (s == null) return ''
-  return String(s).replace(/[<>&"']/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;' }[c]))
-}
-
+// ── UI'a özel helper (format.js'e gitmedi — MK-59.1 anlamsal map) ──────────
 function getStageKey(s) {
   if (s.durduruldu) return 'durduruldu'
   // on_imalat → bekliyor (vanilla aşama tracker'da on_imalat yok)
   if (s.aktif_basamak === 'on_imalat') return 'bekliyor'
   return s.aktif_basamak || 'bekliyor'
-}
-
-// MSpoolDetay'dan port — A-000553 → A-0553 (min 4 basamak pad)
-function formatSpoolId(id) {
-  if (!id) return ''
-  const m = String(id).match(/^([A-Z]+)-(\d+)$/i)
-  if (!m) return id
-  const num = String(parseInt(m[2], 10)).padStart(4, '0')
-  return `${m[1].toUpperCase()}-${num}`
-}
-
-// MSpoolDetay'dan port — Rev formatı
-function revFmt(rev) {
-  if (rev == null || rev === 0) return ''
-  return `Rev${rev}`
-}
-
-// MSpoolDetay'dan port — E-02 marka: proje_no-pipeline_no-spool_no[-RevN]
-function markaHesapla(sp, devre, proje) {
-  const parcalar = [
-    proje?.proje_no || '',
-    sp?.pipeline_no || '',
-    sp?.spool_no || '',
-    revFmt(sp?.rev),
-  ].filter(Boolean)
-  const m = parcalar.join('-')
-  return m || sp?.spool_no || '—'
-}
-
-// Malzeme kodu → lokalize etiket (web ARES_NORM.malzemeEtiket eşi)
-// Canonical kodlar: karbon, paslanmaz, bakir, alum, diger
-function malzemeEtiket(kod, tv) {
-  if (!kod) return '—'
-  const k = String(kod).toLowerCase().trim()
-  const map = {
-    karbon:    tv('cmn_malzeme_karbon',    'Karbon Çelik'),
-    paslanmaz: tv('cmn_malzeme_paslanmaz', 'Paslanmaz'),
-    bakir:     tv('cmn_malzeme_bakir',     'Bakır Alaşım'),
-    alum:      tv('cmn_malzeme_alum',      'Alüminyum'),
-    diger:     tv('cmn_malzeme_diger',     'Diğer'),
-  }
-  return map[k] || kod
 }
 
 // ── CSS — inline style block, MSpoolDetay pattern ──────────────────────────

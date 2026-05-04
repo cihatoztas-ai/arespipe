@@ -21,54 +21,27 @@
 // Tutarsızlık not (oturum sonu KARARLAR.md MK-58.X olarak):
 //   spooller.alistirma kolonu mobile vanilla'da 'tam|kismi|yok', devre_detay'da
 //   'VAR|KISMI|YOK' okunuyor — defensive handler ikisini de kabul ediyor.
+//
+// 60. oturum — Açık Borç #3 kapandı:
+//   8 helper (revFmt, markaHesapla, nNRenkler, alistirmaBilgi, formatTarih,
+//   formatTarihSaat, formatSure, formatSpoolId) → mobile/src/lib/format.js'e taşındı.
+//   MDevreDetay aynı modülü kullanıyor.
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { getTenantId } from '../lib/auth'
-
-// ── Helper'lar ────────────────────────────────────────────────────────────
-
-function revFmt(rev) {
-  const n = Number(rev)
-  return Number.isFinite(n) && n > 0 ? `Rev${n}` : ''
-}
-
-// E-02 marka: proje_no-pipeline_no-spool_no[-RevN]
-// Web spool_detay.html satır 1968-1970'in birebir port'u
-function markaHesapla(sp, devre, proje) {
-  const parcalar = [
-    proje?.proje_no || '',
-    sp?.pipeline_no || '',
-    sp?.spool_no || '',
-    revFmt(sp?.rev),
-  ].filter(Boolean)
-  const m = parcalar.join('-')
-  return m || sp?.spool_no || '—'
-}
-
-// devre_detay.html satır 1400 islemMb helper'ının React port'u
-// 0 toplam → "—", 0/N → kırmızı, N/N → yeşil, n/N → sarı
-function nNRenkler(tamamlanan, toplam) {
-  if (!toplam) return { txt: '—', cls: 'msd-pill-none' }
-  if (!tamamlanan) return { txt: `0/${toplam}`, cls: 'msd-pill-red' }
-  if (tamamlanan === toplam) return { txt: `${toplam}/${toplam}`, cls: 'msd-pill-green' }
-  return { txt: `${tamamlanan}/${toplam}`, cls: 'msd-pill-yellow' }
-}
-
-// Alıştırma defensive — 'tam'/'VAR' = yapıldı, 'kismi'/'KISMI' = kısmi, 'yok'/'YOK'/null = yok
-// Mobile vanilla convention'ı: yapıldı=yeşil, kısmi=sarı, yok=kırmızı
-function alistirmaBilgi(v, tv) {
-  const x = (v || '').toString().toLowerCase()
-  if (x === 'tam' || x === 'var') {
-    return { txt: tv('mob_sp_alist_var', 'Var'), cls: 'msd-alist-tam' }
-  }
-  if (x === 'kismi') {
-    return { txt: tv('mob_sp_alist_kismi', 'Kısmi'), cls: 'msd-alist-kismi' }
-  }
-  return { txt: tv('mob_sp_alist_yok', 'Yok'), cls: 'msd-alist-yok' }
-}
+import {
+  revFmt,
+  markaHesapla,
+  nNRenkler,
+  alistirmaBilgi,
+  formatTarih,
+  formatTarihSaat,
+  formatSure,
+  formatSpoolId,
+} from '../lib/format'
 
 // 7 durum için topbar badge
 const BADGES = {
@@ -81,48 +54,7 @@ const BADGES = {
   durduruldu: { bg: 'rgba(229,62,62,.14)',   tx: 'var(--re)',  lbl: 'Durduruldu' },
 }
 
-function formatTarih(isoStr) {
-  if (!isoStr) return '—'
-  try {
-    const d = new Date(isoStr)
-    if (isNaN(d.getTime())) return '—'
-    const ay = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]
-    return `${d.getDate()} ${ay} ${d.getFullYear()}`
-  } catch { return '—' }
-}
-
-function formatTarihSaat(isoStr) {
-  if (!isoStr) return '—'
-  try {
-    const d = new Date(isoStr)
-    if (isNaN(d.getTime())) return '—'
-    const ay = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]
-    const ss = String(d.getMinutes()).padStart(2, '0')
-    return `${d.getDate()} ${ay} ${d.getFullYear()}, ${d.getHours()}:${ss}`
-  } catch { return '—' }
-}
-
-function formatSure(isoStr) {
-  if (!isoStr) return '—'
-  const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return '—'
-  const fark = (Date.now() - d.getTime()) / 1000
-  if (fark < 60) return 'az önce'
-  if (fark < 3600) return `${Math.floor(fark/60)} dk önce`
-  if (fark < 86400) return `${Math.floor(fark/3600)} saat önce`
-  if (fark < 604800) return `${Math.floor(fark/86400)} gün önce`
-  return formatTarih(isoStr)
-}
-
 // ── Ana bileşen ───────────────────────────────────────────────────────────
-
-function formatSpoolId(id) {
-  if (!id) return '';
-  const m = String(id).match(/^([A-Z]+)-(\d+)$/i);
-  if (!m) return id;
-  const num = String(parseInt(m[2], 10)).padStart(4, '0');
-  return `${m[1].toUpperCase()}-${num}`;
-}
 
 export default function MSpoolDetay() {
   const { id } = useParams()
