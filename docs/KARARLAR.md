@@ -500,6 +500,23 @@ Tek dosya = tek doğruluk noktası.
 
 **Geçerlilik:** ✅ Aktif. 56'da yazıldı, ilk uyarı 66. oturumda CIHAT-PROFIL ve CLAUDE-CALISMA-MODU için tetiklenecek.
 
+#### MK-56.4 [DISIPLIN] — Kapanış orkestra protokolü (etkileşimli `--kapanis` flag'i)
+
+**Karar:** `oturum-saglik.sh N --kapanis` kapanışta üç-katmanlı bir protokol çalıştırır. Katman 1 (script): git diff, status, BRIEFING.md başlık + mtime, tazelik kapısı — kanıtlanabilir gerçekler. Katman 2 (Claude): tek toplu kapanış raporu üretir; "bu oturumda olanlar" listesi + her madde için `git diff` çelişki kontrolü (eksiklik = "yapıldı dedi ama dosya değişmemiş", fazlalık = "yapılmadı dedi ama dosya değişmiş"). Katman 3 (Cihat): raporu yargılar — "doğru" / "şunu kaçırdın" / "yanlış anladın". Üç DUR noktası: Katman 1 alarmı, Katman 2 çelişkisi, Katman 3 reddi. Hiçbir DUR'da kısa devre yok — eksik tamamlanmadan push olmaz.
+
+**Sınır kabulü:** Script "sohbette ne konuşuldu"yu bilemez, bu Claude'un yorumu. Claude bir konuyu kaçırırsa Katman 3 yakalar — üç katmanın aynı anda yanlış yapma olasılığı düşüktür.
+
+**Cihat'ın bilmesi gereken yok:** Hangi konunun hangi dosyaya gitmesi gerektiği Claude'un iç işidir. Cihat sadece raporu yargılar — bilgi sahibi değil, yargı sahibi olur.
+
+**Sabit kategori listesi (Claude'un dahili kullanımı):** Yeni MK → KARARLAR, mimari → ARCHITECTURE, alerji → CIHAT-PROFIL, sayfa eksiği → SAYFA-EKSIKLERI, vizyon → SPOOL-AI-VIZYON, CI kural → kurallar.json, DB → migrations + DATABASE. Sabit liste çünkü dinamikse Claude soruyu kendi eleyebilir, kapı zayıflar.
+
+**Detay:** Tam akış adımları, çelişki şablonu, doğum kanıtı (56 sızıntısı), genişleme noktaları → `docs/KAPANIS-ORKESTRA-TASARIM.md`. Bu MK kararı sadece referans tutar.
+
+**Gerekçe — doğum kanıtı (56):** 56 BRIEFING.md "Yapılanlar" listesinde *"CIHAT-PROFIL.md'ye yeni alerji eklendi"* yazılı, ama 57 açılışında `git log` ve `grep` kanıtladı: dosya 56'da hiç dokunulmamış, frazlar dosyada yok. 56 Claude'un öz-kontrolü "EKSİK" tespit etmişti ama BRIEFING'e yansıtmadı, "yapıldı" yazdı. Cihat onayında çelişki kaçtı. Bu sistem olsaydı: *"Yeni alerji konuşuldu? EVET. CIHAT-PROFIL.md değişti? HAYIR (git diff'te yok). ALARM."* — kapanış durur, alerji eklenir, BRIEFING dürüst yazılır. **MK-56.4 bu sızıntının doğurduğu telafidir.**
+
+**Geçerlilik:** ✅ Aktif. 57'de yazıldı. `--kapanis` flag'i 57'de veya 58'de kodlanacak. Tasarım dosyası: `docs/KAPANIS-ORKESTRA-TASARIM.md` (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e).
+
+
 ---
 
 ## Açık Borçlar (henüz karar değil — gözlem)

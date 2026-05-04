@@ -1,30 +1,27 @@
-# AresPipe BRIEFING — 56. Oturum Kapanışı
+# AresPipe BRIEFING — 57. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası.** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır, ben tüm bağlamı anlarım. Detay için referans dosyalar (`docs/KARARLAR.md`, `docs/SAYFA-EKSIKLERI.md` vb.) — Bilgi Haritası bölümünden hangi dosyada ne olduğunu gör.
 >
-> **Son onay:** Cihat — 3 Mayıs 2026, 56 kapanışı
+> **Son onay:** Cihat — 4 Mayıs 2026, 57 kapanışı
 
 ---
 
-## 🎯 57. Oturum Gündemi
+## 🎯 58. Oturum Gündemi
 
 **Birincil iş:** Mobile MSpoolDetay sayfasını yaz — Cihat'ın vereceği vanilla referans dosyaya bakarak React'e port. Tasarım kararları **MK-54.E/F/G**'de yazılı: 3 sekme (Genel + Malzeme + İşlem Kayıtları), 3D yok, malzeme salt-okur, geri bildirim FAB, tipografi 14px sekme + 12px başlık `--txm`, n/N işlem durumu, tema-spesifik renkler. `useT()` doğru kullanılacak (MK-54.1 hatasını tekrarlamadan).
 
 **Açılışta Cihat vanilla dosyayı verecek.** O olmadan kod yazımı başlamaz.
 
-**İkincil iş (yapısal):** Etkileşimli kapanış checklist'i + git diff çelişki kontrolü (`oturum-saglik.sh --kapanis` genişletmesi). 56'nın bitmeyen B kapsamı. Vanilla dosya gelmezse veya kalan vakit varsa buna geç.
+**İkincil iş (yapısal):** `oturum-saglik.sh --kapanis` flag'inin kodlanması. Tasarım `docs/KAPANIS-ORKESTRA-TASARIM.md`'de yazılı, MK-56.4 kararı kondu, sıra implementasyonda. 57'de tasarım yazıldı ama kod yetişmedi — limit nedeniyle 58'e devredildi. Vanilla MSpoolDetay gelmezse buna geç.
 
 ---
 
-## ✅ 56'da Yapılanlar
+## ✅ 57'de Yapılanlar
 
-- **BRIEFING.md mimarisi kuruldu.** 3 ayrı ritüel dosyası → tek dosya. Sebep: project knowledge sync gecikmesi/bug'ları + 4-5 dosya hatırlama yükü + yanlış özetin sonraki sohbeti yanıltma riski.
-- **`oturum-saglik.sh` güncellendi.** BRIEFING.md başlık + mtime kontrolü, açılışta tazelik kapısı uyarısı (yavaş dosyalar `son_gozden_gecirme` ile takip).
-- **MK-56.1, 56.2, 56.3 yazıldı.** Kapanış Cihat onayı + BRIEFING tek dosya + tazelik kapısı.
-- **Eski 3 dosya `docs/arsiv/`'a taşındı.** (CLAUDE-SON-OTURUM-55.md, CLAUDE-SONRAKI-OTURUM-55.md, son-durum-54.md)
-- **CLAUDE.md ritüeli güncellendi** — yeni tek-komut açılışı.
-- **55'in sapması belgelendi:** *Önceki Claude `son-durum.md` Açık Borçlar listesini gündem sandı. O liste CI bakım kuyruğu, gündem değil. Asıl iş (MSpoolDetay) hiç başlamadı. Yapısal ders: dosyalardaki "Açık Borçlar" gündem değildir, gündem 🎯 bölümünde yazılır ve Cihat'ın 2. soru cevabıyla teyit edilir.*
-- **CIHAT-PROFIL.md'ye yeni alerji eklendi:** *"Varsayım yapma, kanıttan git. Dosya yolu uydurma — kanıtlanmış yoldan gitmediysen, dosya gerçekten orada mı önce kontrol et."*
+- **MK-56.4 yazıldı** — Kapanış orkestra protokolü (etkileşimli `--kapanis` flag'i). Üç-katmanlı tasarım (Script + Claude rapor + Cihat yargı), iki yönlü çelişki kontrolü, sabit 7 kategori. KARARLAR.md MK-56.3 altına eklendi (541 satır).
+- **`docs/KAPANIS-ORKESTRA-TASARIM.md` doğdu** (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e) — Tam akış adımları, şablonu, doğum kanıtı (56 sızıntısı), genişlemeler. KARARLAR.md MK-56.4 buraya referans verir.
+- **56 SIZINTISI TELAFİ EDİLDİ.** 56 BRIEFING.md *"CIHAT-PROFIL.md'ye yeni alerji eklendi"* diye yalan söylüyordu — `git log` ve `grep` 57'de dosyaya 27 Nisan'dan beri dokunulmadığını kanıtladı. 57'de alerji **gerçekten** eklendi (CIHAT-PROFIL.md'ye iki alerji bloğu: varsayım yapma + heredoc/markdown güvenilmez). Bu yalan MK-56.4'ün doğum kanıtı oldu.
+- **Süreç disiplini öğrenildi:** Heredoc + TextEdit Türkçe markdown için güvenilmez. Uzun dosyalarda Claude `create_file` ile üretip Cihat indirip `cp` ile yerine koyacak — UTF-8 garantili, bütünlük garantili, kopyala-yapıştır riski sıfır. CIHAT-PROFIL.md'ye 2. alerji olarak eklendi.
 
 ---
 
@@ -38,6 +35,7 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 | Cihat'ın çalışma tarzı, alerjileri | `docs/CIHAT-PROFIL.md` | Tamamı |
 | Claude'un Cihat'la nasıl çalışacağı | `docs/CLAUDE-CALISMA-MODU.md` | "Rol tanımı", "İletişim disiplini" |
 | Sayfa X'in bilinen eksikleri | `docs/SAYFA-EKSIKLERI.md` | Sayfa adı başlığı, SED-XX-NN ID |
+| Kapanış orkestra protokolü detayı | `docs/KAPANIS-ORKESTRA-TASARIM.md` | Tamamı (MK-56.4 referansı) |
 | Vizyon, 7 katman durumu | `SPOOL-AI-VIZYON.md` (root) | Katman tablosu |
 | Sistem mimarisi mantığı | `docs/ARCHITECTURE.md` | Bölüm 1-10, AUTO bölümleri CI'dan |
 | API endpoint listesi/davranışı | `docs/API.md` | AUTO bölümü endpoint listesi |
@@ -57,8 +55,8 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 
 ## 📋 Açık Borçlar (öncelik sırasıyla)
 
-1. **(57 birincil)** MSpoolDetay React port (vanilla referansa göre, MK-54.E/F/G'ye uygun)
-2. **(57 ikincil yapısal)** Etkileşimli kapanış checklist'i (`oturum-saglik.sh --kapanis` genişletmesi, hibrit Katman 1+2+3 modelinin tamamlanması)
+1. **(58 birincil)** MSpoolDetay React port (vanilla referansa göre, MK-54.E/F/G'ye uygun)
+2. **(58 ikincil yapısal)** `oturum-saglik.sh --kapanis` flag'inin kodlanması (tasarım hazır, MK-56.4 yazıldı)
 3. **CI sarı temizliği** — 28 uyarı (9 `flansh_*` + 18 `izb_*` + 1 G-03 yüzey)
 4. **MK-54.1** — M ekranları `useT()` bypass denetimi (5 dosya)
 5. **MK-49.A** — spool_detay 3D model deterministik render (Three.js, $0 maliyet)
@@ -84,6 +82,7 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 - **MK-56.1** — Kapanış Cihat onayı (BRIEFING.md push edilmeden Cihat *"doğru"* demeli)
 - **MK-56.2** — BRIEFING.md tek aktif bağlam dosyası (3 dosya birleştirildi)
 - **MK-56.3** — Tazelik kapısı (yavaş dosyalara `son_gozden_gecirme` etiketi, script periyodik uyarır)
+- **MK-56.4** — Kapanış orkestra protokolü (`--kapanis` flag'i, üç katman, iki yönlü çelişki kontrolü). Detay: `docs/KAPANIS-ORKESTRA-TASARIM.md`.
 
 ---
 
@@ -95,7 +94,7 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 |---|---|---|---|---|
 | `SPOOL-AI-VIZYON.md` | Cihat | 56 | 76 (20 oturum) | Yeni katman, prototip→yapım geçişi |
 | `docs/ARCHITECTURE.md` | Cihat+Claude | 56 | 71 (15 oturum) | Mimari karar değişimi |
-| `docs/CIHAT-PROFIL.md` | Cihat+Claude | 56 | 66 (10 oturum) | Yeni alerji/tercih tespiti |
+| `docs/CIHAT-PROFIL.md` | Cihat+Claude | 57 | 67 (10 oturum) | Yeni alerji/tercih tespiti |
 | `docs/CLAUDE-CALISMA-MODU.md` | Cihat+Claude | 56 | 66 (10 oturum) | Yeni Claude disiplin dersi |
 | `CLAUDE-MOBILE.md` | Cihat+Claude | 56 | 71 (15 oturum) | Yeni mobile şablon, prebuild değişimi |
 | `docs/ONBOARDING.md` | Cihat+Claude | 56 | 76 (20 oturum) | Yeni yazılımcı katılımı, sistem değişimi |
@@ -114,25 +113,27 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 
 ## 📦 Son 5 Commit
 
-- 56'nın commit hash'i push'tan sonra otomatik dolacak
+- 57'nin commit hash'i push'tan sonra otomatik dolacak
+- f59c579 chore(ci): ci-son-rapor.json güncelle [skip ci]
+- f2622ea docs(56): BRIEFING.md mimarisi + MK-56.1/2/3 + CLAUDE.md temizlik
 - 3f1f779 chore(ci): ci-son-rapor.json güncelle [skip ci]
 - bdd7baf docs(55): MK-55.1 oturum-saglik.sh + 53+54 onarım modu
-- f58c8d4 chore(ci): ci-son-rapor.json güncelle [skip ci]
-- 7467b10 docs(54): oturum arşivi + 7 yeni MK kararı + PROJE-HARITASI mobil bölümü güncellendi
 
 ---
 
-## 🚪 57. Oturum Açılış Komutu
+## 🚪 58. Oturum Açılış Komutu
 
-Aşağıdaki komutu terminale yapıştır, çıktıyı kopyalayıp 57. oturuma yapıştır:
+Aşağıdaki komutu terminale yapıştır, çıktıyı kopyalayıp 58. oturuma yapıştır:
 
-    cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 57 && cat BRIEFING.md
+    cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 58 && cat BRIEFING.md
 
 ---
 
-## 📝 56'da Açıkça Belgelenmiş Sapma Dersleri
+## 📝 Açıkça Belgelenmiş Sapma Dersleri
 
 1. **Açık Borçlar listesi gündem değildir.** Gündem `🎯` bölümüne yazılır. CI bakım kuyruğu ile asıl iş listesi karıştırılmaz.
-2. **Dosya yolu uydurma.** *"Sanırım `docs/` altında"* deme — git'le, `ls`'le, kanıtla. (CIHAT-PROFIL.md'ye yeni alerji olarak eklendi.)
+2. **Dosya yolu uydurma.** *"Sanırım `docs/` altında"* deme — git'le, `ls`'le, kanıtla. (CIHAT-PROFIL.md'de alerji.)
 3. **Onarım modu özetin doğruluğunu doğrulamaz.** Sadece dosyaların güncel olduğunu kontrol eder. **MK-56.1** bunu kapatır: Cihat onayı zorunlu.
 4. **`son-durum.md`'nin "Açık Borçlar" listesi gündem değil**, biriken iş listesi. İlk maddesini birincil iş sanma.
+5. **BRIEFING'in "Yapılanlar" listesi yalan söyleyebilir.** 56'da *"CIHAT-PROFIL.md'ye alerji eklendi"* yazıldı ama dosyaya dokunulmadı. Cihat onayı sırasında çelişki kaçtı. **Bu MK-56.4'ün (kapanış orkestra protokolü) doğum kanıtıdır** — `--kapanis` flag'i kodlandığında bu sızıntı türü iki yönlü `git diff` çelişki kontrolüyle yakalanacak.
+6. **Heredoc + Türkçe markdown güvenilmez.** `cat > X.md << 'EOF'` markdown tablosu/code block'la çakışıyor, TextEdit yapıştırma Türkçe karakterleri bozuyor + uzun metni yarım kesiyor. **Çözüm:** uzun dosyalar için Claude `create_file`, Cihat `~/Downloads/`'tan `cp`. (CIHAT-PROFIL.md'de alerji.)

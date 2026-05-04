@@ -160,3 +160,22 @@ CREATE POLICY tablo_admin_write ON tablo FOR ALL USING (
 
 **İlk yazım:** 23 Nisan 2026 — 23. oturum kapanışı.
 **Son güncelleme:** 27 Nisan 2026 — 36. oturum kapanışı (kod konvansiyonu + migration disiplini + stratejik karakter eklendi).
+
+## Alerjiler — 56-57'de Tespit Edilenler
+
+### "Varsayım yapma, kanıttan git" (56'da konuşuldu, 57'de yazıldı)
+
+Cihat dosya yolu uydurmaya, hatırlamaya dayalı çıkarım yapmaya tahammül etmiyor. *"Sanırım `docs/` altında"* veya *"galiba o dosya silinmişti"* gibi belirsizlikler kabul edilmez. Kanıttan git: `ls`, `cat`, `git log`, `grep`. Bilmiyorsan söyle, uydurma.
+
+**Doğum kanıtı:** 56 Claude'un `docs/CLAUDE-MD-EVRIM.md` diye var olmayan bir dosyaya referans vermesi.
+
+**57 doğum kanıtı (ironik):** Bu alerjinin kendisi 56 BRIEFING.md'de *"CIHAT-PROFIL.md'ye eklendi"* diye yazılı, ama 57 açılışında `git log` ve `grep` ile kanıtlandı: dosyaya hiç dokunulmamış. Yani 56 Claude bu alerjiyi yazma sırasında bile kendisi varsayım yaptı. MK-56.4 kapanış orkestra protokolü bu sızıntının doğurduğu telafidir.
+
+### "Heredoc + Türkçe markdown güvenilmez" (57'de tespit edildi)
+
+`cat > file.md << 'EOF' ... EOF` yöntemi içinde markdown tabloları, üçlü backtick code block'lar, otomatik link tespit edilen URL benzeri dizilimler olduğunda shell tırnak/escape kontrolünden çıkıyor — `cmdand heredoc>` prompt'una düşüp uzun metni bozuyor. TextEdit yapıştırma da güvenilmez: Chrome → TextEdit kopyalamada Türkçe karakterler bozulabiliyor (ı→i, ş→s, ğ→g) ve uzun metin yarım kalıyor.
+
+**Çözüm:** Uzun markdown dosyaları için Claude `create_file` ile dosya üretir, Cihat indirip `cp ~/Downloads/X.md docs/X.md` ile yerine koyar. UTF-8 garantili, bütünlük garantili, kopyala-yapıştır riski sıfır.
+
+**Doğum kanıtı:** 57'de `KAPANIS-ORKESTRA-TASARIM.md` üç defa denendi — heredoc takıldı, TextEdit Türkçe bozdu + yarım yapıştırdı, üçüncü `create_file` denemesinde temiz oturdu (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e).
+
