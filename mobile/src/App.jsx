@@ -6,6 +6,7 @@ import { I18nProvider } from './lib/i18n'
 import MGiris from './screens/MGiris'
 import MAnasayfa from './screens/MAnasayfa'
 import MIslemler from './screens/MIslemler'
+import MSpoolDetay from './screens/MSpoolDetay'
 
 export default function App() {
   const [oturum, setOturum] = useState(null)
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/giris" element={!oturum ? <MGiris /> : <Navigate to="/" />} />
         <Route path="/" element={oturum ? <MAnasayfa /> : <Navigate to="/giris" />} />
         <Route path="/islemler" element={oturum ? <MIslemlerSayfasi /> : <Navigate to="/giris" />} />
+        <Route path="/spool/:id" element={oturum ? <MSpoolDetay /> : <Navigate to="/giris" />} />
         <Route path="*" element={<Navigate to={oturum ? '/' : '/giris'} />} />
       </Routes>
     </I18nProvider>
