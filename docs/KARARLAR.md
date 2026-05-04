@@ -519,6 +519,121 @@ Tek dosya = tek doğruluk noktası.
 
 ---
 
+#### MK-58.1 [DB] — spooller.alistirma kanonik enum belirlemesi (PENDING)
+
+**Karar:** Vanilla `mobile/spool_detay.html` `tam|kismi|yok` lowercase enum okuyor, `devre_detay.html` `VAR|KISMI|YOK` uppercase okuyor — aynı kolon iki farklı convention. MSpoolDetay React port'unda defensive handler yazıldı (her iki convention'ı da kabul ediyor: `alistirmaBilgi(v, tv)` fonksiyonu `v.toLowerCase()` üzerinden eşler). 59'da `SELECT DISTINCT alistirma FROM spooller` ile DB'deki kanonik değer tespit edilecek, lowercase'e standardize migration yazılacak (`UPDATE spooller SET alistirma = LOWER(alistirma)` veya tek yönlü `UPPER → lower` map).
+
+**Etki:** MSpoolDetay'da Alıştırma satırı ("Var/Kısmi/Yok") düzgün görünüyor, ama vanilla devre_detay.html iki convention'ı yan yana okumaya devam ediyor. Migration sonrası tek convention kalır, defensive handler basitleştirilebilir.
+
+**Geçerlilik:** ⏳ PENDING — 59 başında migration.
+
+#### MK-58.2 [MİMARİ] — Mobil rota konvansiyonu (detay tekil + :id, liste çoğul)
+
+**Karar:** Mobile React rotaları:
+
+- Detay sayfaları: tekil + `:id` parametresi → `/spool/:id`, `/devre/:id`, `/proje/:id`, `/firma/:id`
+- Liste sayfaları: çoğul → `/devreler`, `/spoollar`, `/projeler`, `/firmalar`
+
+`App.jsx`'te yeni screen eklenirken bu konvansiyona uyulur. Tutarlılık için web URL'leri ile **kasıtlı farklı**: Web `?id=` query param kullanıyor (örn. `/spool_detay.html?id=...`), mobile React Router URL parametre. İki ayrı projeye ayrı URL şeması — web vanilla'nın query-param mantığını mobile'a taşımıyoruz.
+
+**Geçerlilik:** ✅ Aktif. MSpoolDetay (`/spool/:id`) ile başlatıldı (58). MDevreDetay 59'da `/devre/:id` olarak yazılacak.
+
+#### MK-58.3 [TASARIM] — Kontrast-kritik renkler için sabit hex (CSS variable bypass)
+
+**Karar:** Kontrast-kritik UI öğelerinde (sekme yazıları, aktif buton metni, durum badge metinleri) `var(--tx)` gibi CSS değişkenleri kullanılmaz; sabit hex kullanılır + `[data-theme=dark]` selector ile koyu tema override'lanır. CSS variable cascade tema toggle anında tutarsız davranabilir, sabit hex deterministik.
+
+Örnek (MSpoolDetay sekmeleri):
+
+```css
+.msd-tab { color: #1a1817; }   /* sabit, açık tema okunaklı */
+[data-theme="dark"] .msd-tab { color: #eceae3; }  /* koyu tema explicit override */
+```
+
+**Tema değişkenlerine güven ölçüsü:** Kart arka planı, ana yazı rengi, kenarlık → `var(--*)` OK. "Tıklanabilir kontrol metni" gibi okunabilirlik kritik yerler → sabit hex. Karar değil, kural — tasarım kuralı olarak `CLAUDE-MOBILE.md` R-09'a ek nota dönüştürülecek (59 borcu).
+
+**Geçerlilik:** ✅ Aktif. MSpoolDetay sekmelerinde uygulandı.
+
+#### MK-58.4 [MİMARİ] — Root lang/ tek kaynak, mobile türev (prebuild kopyalar)
+
+**Karar:** `lang/{tr,en,ar,...}.json` kök dizinde **tek kaynak**. Web doğrudan oradan okur. Mobile `mobile/src/lang/` türev — `.gitignore`'da, her build'de `mobile/package.json` `prebuild` script'i kopyalar:
+
+```json
+"prebuild": "rm -rf src/lang && mkdir -p src/lang && cp ../lang/*.json src/lang/"
+```
+
+**Yeni dil eklemek için:** sadece `lang/<kod>.json` (root) eklemek yeter — mobile prebuild otomatik kopyalar. UI dropdown'larında `<kod>` listesini güncellemek ayrı iş (web `ares-lang.js`, mobile `mobile/src/lib/i18n.jsx`).
+
+**Anahtar prefix konvansiyonu:** Web ve mobile için ayrı prefix'ler kullanılır (örn. mobile `mob_*`, web `sp_*`, `cmn_*`, `dny_*`). Aynı kavram iki ayrı isim alabilir — senkronizasyon scripti yazılana kadar (15. oturumdan beri açık borç) bu manuel takip edilir.
+
+**58'de doğrulama:** Mobile/src/lang'a manuel eklenen 65 anahtar root'a taşındı, prebuild ile mobile tazelendi. Sayım 1659 → 1718, 3 dilde (TR/EN/AR) simetrik.
+
+**Geçerlilik:** ✅ Aktif.
+
+#### MK-58.5 [BORÇ] — Süper admin paneli mobile preview hardcoded UUID (PENDING)
+
+**Karar:** `admin/panel.html` Mobile Önizleme sekmesi şu an hardcoded test UUID kullanıyor: `c79d0983-e0f3-406f-afde-bb7bc9ad92c3` (S03 / AT110-816-026 / NB1137 — gerçek bir spool, fotoğraf yok ama Spool Bilgileri dolu).
+
+```html
+<option value="https://arespipe-mob.vercel.app/spool/c79d0983-e0f3-406f-afde-bb7bc9ad92c3">Spool Detay (test)</option>
+```
+
+**59'da:** panel'e dinamik bir input alanı eklenecek (UUID elle yapıştırılabilsin) veya son N spool dropdown'dan seçilebilsin (RLS'e takılmayacak şekilde, Supabase service_role değil normal session ile).
+
+**Geçerlilik:** ⏳ PENDING — 59'da dinamik input.
+
+#### MK-58.6 [BORÇ] — MSpoolDetay 4 Supabase sorgusu schema uyumsuzluğu (PENDING)
+
+**Karar:** Vanilla `mobile/spool_detay.html`'den miras 4 sorgu DB schema ile uyumsuz, 400 Bad Request veriyor. Etkilenen bölümler MSpoolDetay'da boş gözüküyor:
+
+| Sorgu | Tablo | Beklenen kolon | Etkilenen UI bölümü |
+|---|---|---|---|
+| `belgeler` | `select=ad,dosya_url,olusturma` | Kolon isimleri DB'de farklı olabilir | "Belgeler" satırı (Spool Bilgileri sonu) |
+| `islem_log` | `select=katman,...&t_id=eq.X` | Kolon `t_id` mi `spool_id` mi belirsiz | "İşlem Kayıtları" sekmesi |
+| `kk_davetler` | `select=kk_no,...` | Sorgu yapısı belirsiz | "Kalite Kontrol" satırı (Spool Bilgileri) |
+| `sevkiyat_spooller` | `select=sevkiyat_no,tarih&spool_id=eq.X` | Tablo adı/kolon ismi belirsiz | "Sevkiyat" satırı |
+
+**Birincil işlev sağlam:** Spool Bilgileri (Çap, Et, Ağırlık, Malzeme), tam marka, sekmeler, tema, n/N, Alıştırma — hepsi çalışıyor. Sadece bu 4 sorgudan beslenen UI alanları boş. Kullanıcı deneyimini kırmıyor ama eksik veri.
+
+**59'da:** Supabase SQL editor'de `information_schema.columns` ile gerçek kolon isimleri tespit edilecek, MSpoolDetay.jsx'teki sorgular düzeltilecek.
+
+```sql
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_name IN ('belgeler', 'islem_log', 'kk_davetler', 'sevkiyat_spooller')
+ORDER BY table_name, ordinal_position;
+```
+
+**Geçerlilik:** ⏳ PENDING — 59'da SQL şema kontrolü + kolon isim düzeltmesi.
+
+#### MK-58.7 [TASARIM] — Spool ID format minimum 4 basamak pad (dinamik genişleme)
+
+**Karar:** Spool ID display formatı: `<PREFIX>-<N>` formatı, N kısmı min 4 basamağa zero-pad, daha büyük rakamlar otomatik genişler.
+
+| DB değeri | UI gösterim |
+|---|---|
+| `A-000072` | `A-0072` (4 basamak) |
+| `A-000555` | `A-0555` (4 basamak) |
+| `A-012345` | `A-12345` (5 basamak — auto genişler) |
+| `A-123456` | `A-123456` (6 basamak) |
+
+**Helper fonksiyon (MSpoolDetay'da inline):**
+
+```js
+function formatSpoolId(id) {
+  if (!id) return '';
+  const m = String(id).match(/^([A-Z]+)-(\d+)$/i);
+  if (!m) return id;
+  const num = String(parseInt(m[2], 10)).padStart(4, '0');
+  return `${m[1].toUpperCase()}-${num}`;
+}
+```
+
+**59'da:** Helper `mobile/src/lib/format.js`'e taşınacak — MDevreDetay ve diğer sayfalar da kullanacak.
+
+**Geçerlilik:** ✅ Aktif. MSpoolDetay topbar'ında uygulanıyor.
+
+---
+
 ## Açık Borçlar (henüz karar değil — gözlem)
 
 Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp yukarıdaki listeye eklenecek.
@@ -540,3 +655,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 3 Mayıs 2026 | 55 | MK-55.1 (oturum sağlık script'i — mekanik açılış/kapanış kontrolü) eklendi. 53+54 ritüel atlamasının üst üste birikmesinin sebebi tespit edildi: yazılı kural sıkışık anda atlanabiliyor. Mekanik kapı (script BAYAT/TEMIZ) atlanamaz tek yol. |
 | 3 Mayıs 2026 | 56 | MK-56.1 (kapanış Cihat onayı, otomasyon yok) + MK-56.2 (BRIEFING.md tek aktif bağlam dosyası) + MK-56.3 (tazelik kapısı, yavaş değişen dosyalar için periyodik gözden geçirme) eklendi. Eski 3 ritüel dosyası (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) `docs/arsiv/`'a taşındı. `oturum-saglik.sh` BRIEFING.md odaklı yeniden yazıldı (331 satır, MD5: c0ee88cb745298de2c2fed99c3ff3f48, 3 senaryo testi yeşil). MK-52.4 ve MK-55.1 revize işareti aldı. 55'in sapması belgelendi: önceki Claude `son-durum.md` "Açık Borçlar" listesini gündem sandı, oysa o liste CI bakım kuyruğu — asıl iş (MSpoolDetay) hiç başlamadı. CIHAT-PROFIL.md'ye alerji ekleneceği yazıldı ("varsayım yapma, kanıttan git") ama 57 açılışında git log+grep ile dosyaya hiç dokunulmadığı tespit edildi — bu yarı yalan MK-56.4'ün doğum kanıtı oldu. Telafi 57'de yapıldı. |
 | 4 Mayıs 2026 | 57 | MK-56.4 (kapanış orkestra protokolü — etkileşimli `--kapanis` flag'i, üç-katmanlı sistem: Script + Claude rapor + Cihat yargı, iki yönlü çelişki kontrolü) eklendi. Tasarım dosyası `docs/KAPANIS-ORKESTRA-TASARIM.md` doğdu (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e). 56 sızıntısı telafi: `docs/CIHAT-PROFIL.md`'ye iki alerji **gerçekten** eklendi — "varsayım yapma, kanıttan git" + "heredoc + Türkçe markdown güvenilmez" (uzun dosyalarda heredoc/TextEdit yöntemleri başarısız, Claude `create_file` + Cihat `cp` standart yöntem oldu). BRIEFING.md yenilendi (5/6. sapma dersleri eklendi). `--kapanis` flag implementasyonu 58'e devredildi (tasarım yazılı, sıra kodda). |
+| 4 Mayıs 2026 | 58 | MSpoolDetay React port (vanilla `mobile/spool_detay.html` 635 satır → `mobile/src/screens/MSpoolDetay.jsx` ~775 satır) tamamlandı. 7 MK kararı eklendi: MK-58.1 (alistirma enum, PENDING), MK-58.2 (mobil rota konvansiyonu), MK-58.3 (kontrast-kritik renkler sabit hex), MK-58.4 (root lang tek kaynak), MK-58.5 (panel hardcoded UUID, PENDING), MK-58.6 (4 Supabase sorgu schema, PENDING), MK-58.7 (spool ID min 4 basamak format). 5 push, 7 dosya değişti. Bonus: SPA fallback eksik bug yakalandı + düzeltildi (`mobile/vercel.json` doğdu), süper admin panel mobile preview React URL'lerine güncellendi (eski vanilla yolları silindi). Birincil iş tamam, ikincil iş `oturum-saglik.sh --kapanis` flag implementasyonu 59'a devredildi (MK-56.4 tasarımı yazılı, kod sırada). |

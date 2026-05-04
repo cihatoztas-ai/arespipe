@@ -248,3 +248,79 @@ G-08 sadece **tablo/liste gösteren** sayfalar için. Aşağıdaki sayfalarda ge
 
 **G-08 ilk yazım:** 25 Nisan 2026 — 31. oturum, Cihat tarafından önerilmiştir.
 **Güncelleme:** 25 Nisan 2026 — 32. oturum, devre_detay yarım uygulama.
+
+
+---
+
+## MSpoolDetay React Sayfası — 58. Oturum Notları
+
+`mobile/src/screens/MSpoolDetay.jsx` (775 satır, 4 Mayıs 2026'da doğdu). Vanilla `mobile/spool_detay.html` (635 satır) port'u + MK-54.E/F/G + 58 düzeltmeleri.
+
+### Açık eksikler (SED-58-NN)
+
+#### SED-58-01 [BORÇ — MK-58.6] — 4 Supabase sorgusu 400 Bad Request
+
+Vanilla'dan miras schema uyumsuzluğu. Etkilenen UI bölümleri MSpoolDetay'da boş gözüküyor:
+
+- **Belgeler satırı** (Spool Bilgileri sonu) — `belgeler` tablosu kolon adları DB'de farklı
+- **Kalite Kontrol satırı** (Spool Bilgileri) — `kk_davetler` sorgu yapısı belirsiz
+- **Sevkiyat satırı** (Spool Bilgileri) — `sevkiyat_spooller` tablo/kolon belirsiz
+- **İşlem Kayıtları sekmesi** — `islem_log` kolon `t_id` mi `spool_id` mi belirsiz
+
+**Fix yolu:** Supabase SQL editor'de `information_schema.columns` ile gerçek kolon isimleri tespit, MSpoolDetay.jsx'teki sorgular düzeltilir. Detay: KARARLAR.md MK-58.6.
+
+**Etki:** Birincil işlev (Spool Bilgileri, marka, sekmeler, n/N, Alıştırma) çalışıyor. Bu 4 alan boş ama UX kırılmıyor.
+
+#### SED-58-02 [BORÇ — MK-58.5] — Süper admin paneli hardcoded UUID
+
+`admin/panel.html` Mobile Önizleme sekmesi şu an tek bir test UUID hardcoded: `c79d0983-e0f3-406f-afde-bb7bc9ad92c3`. Başka spool'u önizlemek için elle URL düzenlemek gerekiyor.
+
+**Fix yolu:** Panel'e UUID input alanı veya son N spool dropdown. Detay: KARARLAR.md MK-58.5.
+
+#### SED-58-03 [BORÇ — MK-58.1] — spooller.alistirma enum tutarsızlığı
+
+Aynı kolon vanilla mobile'da `tam|kismi|yok` lowercase, vanilla devre_detay.html'de `VAR|KISMI|YOK` uppercase okunuyor. MSpoolDetay defensive handler ile her ikisini kabul ediyor.
+
+**Fix yolu:** `SELECT DISTINCT alistirma FROM spooller` ile kanonik değer tespit, lowercase'e standardize migration. Detay: KARARLAR.md MK-58.1.
+
+#### SED-58-04 [REFAKTÖR] — Helper fonksiyonlarını lib'e taşı
+
+MSpoolDetay'da inline 6 helper var (MDevreDetay ve diğer sayfalar da kullanacak):
+
+- `formatSpoolId(id)` — spool ID min 4 basamak pad (MK-58.7)
+- `revFmt(rev)` — rev>0 ise `Rev{n}`, yoksa boş
+- `markaHesapla(sp, devre, proje)` — tam marka birleştirme (E-02 formatı)
+- `nNRenkler(tamam, toplam)` — n/N renk pill class
+- `formatTarih(s)`, `formatTarihSaat(s)`, `formatSure(dk)` — tarih/saat formatlama
+- `alistirmaBilgi(v, tv)` — defensive enum handler (MK-58.1 çözülünce sadeleşir)
+
+**Fix yolu:** `mobile/src/lib/format.js` doğsun. MSpoolDetay'dan import edilsin. MDevreDetay yazılmadan önce yapılmalı (ikisi de kullanır).
+
+#### SED-58-05 [TEMİZLİK] — Kullanılmayan screen dosyaları
+
+`mobile/src/screens/Devreler.jsx` ve `mobile/src/screens/IsBaslat.jsx` App.jsx'te route'a bağlı değil. 9-16. oturumlarda eski deneme dosyaları olabilir.
+
+**Fix yolu:** İçeriği incele — kullanılıyor mu (başka dosyadan import ediliyor mu) kontrol et. Kullanılmıyorsa sil. Kullanılıyorsa İsim/route belirle.
+
+```bash
+grep -rn "import.*Devreler\|import.*IsBaslat" mobile/src/
+```
+
+#### SED-58-06 [TEMİZLİK] — mobile/.gitignore eksik
+
+`mobile/.DS_Store` git'te tracked, oysa macOS sistem dosyası, gitignore'da olmalı.
+
+**Fix yolu:**
+
+```bash
+echo ".DS_Store" >> mobile/.gitignore
+git rm --cached mobile/.DS_Store
+```
+
+### Çözülen eksikler (58'de kapatıldı)
+
+- **Topbar ID format:** Vanilla'da `spool_no` (S03, kısa) gösteriyordu. 58'de `formatSpoolId(spool_id)` ile A-XXXX formatına geçildi (MK-58.7).
+- **Ağırlık desimal:** Vanilla'da raw değer (`53.755801999...`). 58'de `toFixed(1)` ile tek desimal (`53.8 kg`).
+- **SPA fallback (mobile genel):** `mobile/vercel.json` yokluğunda doğrudan `/spool/:id` URL'i 404 veriyordu. 58'de rewrite eklendi, tüm mobile rotaları artık F5'lenebilir/doğrudan açılabilir.
+- **Süper admin paneli mobile preview:** Eski vanilla `../mobile/spool_detay.html` yollarına gidiyordu (artık deploy'da yok). 58'de React canlı URL'lerine (`https://arespipe-mob.vercel.app/...`) güncellendi.
+
