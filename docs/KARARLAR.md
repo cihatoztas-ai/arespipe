@@ -581,29 +581,28 @@ Tek dosya = tek doğruluk noktası.
 
 **Geçerlilik:** ⏳ PENDING — 59'da dinamik input.
 
-#### MK-58.6 [BORÇ] — MSpoolDetay 4 Supabase sorgusu schema uyumsuzluğu (PENDING)
+#### MK-58.6 [BUG-FIX] — MSpoolDetay 4 Supabase sorgusu schema uyumsuzluğu (✅ 59'da TAMAMLANDI)
 
 **Karar:** Vanilla `mobile/spool_detay.html`'den miras 4 sorgu DB schema ile uyumsuz, 400 Bad Request veriyor. Etkilenen bölümler MSpoolDetay'da boş gözüküyor:
 
-| Sorgu | Tablo | Beklenen kolon | Etkilenen UI bölümü |
-|---|---|---|---|
-| `belgeler` | `select=ad,dosya_url,olusturma` | Kolon isimleri DB'de farklı olabilir | "Belgeler" satırı (Spool Bilgileri sonu) |
-| `islem_log` | `select=katman,...&t_id=eq.X` | Kolon `t_id` mi `spool_id` mi belirsiz | "İşlem Kayıtları" sekmesi |
-| `kk_davetler` | `select=kk_no,...` | Sorgu yapısı belirsiz | "Kalite Kontrol" satırı (Spool Bilgileri) |
-| `sevkiyat_spooller` | `select=sevkiyat_no,tarih&spool_id=eq.X` | Tablo adı/kolon ismi belirsiz | "Sevkiyat" satırı |
+| Sorgu | Eski (yanlış) | Yeni (doğru) |
+|---|---|---|
+| `belgeler` | `select=ad,dosya_adi,url,olusturma` | `select=ad,dosya_url,olusturma` (`dosya_adi`, `url` kolonları yok) |
+| `islem_log` | `.eq('kayit_id', X)` | `.eq('spool_id', X)` (`kayit_id` kolonu yok, `spool_id` direkt var) |
+| `kk_davetler` | `.contains('spool_ids', [X])` (`spool_ids` kolonu yok) | `kk_davet_spooller` junction üzerinden + `kk_davetler(davet_no, olusturma)` nested + `kk_no` → `davet_no` |
+| `sevkiyat_spooller` | `select=sevkiyatlar(sevkiyat_no,tarih)` | `select=sevkiyatlar(sevk_no,tarih)` (`sevkiyat_no` yok, `sevk_no` doğrusu) |
 
-**Birincil işlev sağlam:** Spool Bilgileri (Çap, Et, Ağırlık, Malzeme), tam marka, sekmeler, tema, n/N, Alıştırma — hepsi çalışıyor. Sadece bu 4 sorgudan beslenen UI alanları boş. Kullanıcı deneyimini kırmıyor ama eksik veri.
+**Ek değişiklikler:** UI tarafında `kkBilgi?.kk_no` → `davet_no`, `sevkBilgi?.sevkiyat_no` → `sevk_no`, `b.url` → `b.dosya_url` (2 yerde), `b.dosya_adi` ölü fallback temizlendi. KK davet sıralaması foreignTable order karmaşası nedeniyle JS tarafına alındı (`kkList.sort` + `setKkBilgi`).
 
-**59'da:** Supabase SQL editor'de `information_schema.columns` ile gerçek kolon isimleri tespit edilecek, MSpoolDetay.jsx'teki sorgular düzeltilecek.
+**Birincil işlev sağlam:** Spool Bilgileri (Çap, Et, Ağırlık, Malzeme), tam marka, sekmeler, tema, n/N, Alıştırma — hepsi çalışıyor. 58'de bu 4 sorgudan beslenen UI alanları boştu, 59'da düzeltildi.
 
-```sql
-SELECT table_name, column_name, data_type
-FROM information_schema.columns
-WHERE table_name IN ('belgeler', 'islem_log', 'kk_davetler', 'sevkiyat_spooller')
-ORDER BY table_name, ordinal_position;
-```
+**59'da yapılan adımlar:**
+1. Supabase SQL editor'de `information_schema.columns` ile gerçek kolon isimleri tespit edildi (4 + `sevkiyatlar` + `kk_davet_spooller` junction)
+2. MSpoolDetay.jsx'te 5 sorgu yeniden yazıldı (kk_davetler junction'a çevrildi)
+3. UI tarafında 6 yer güncellendi (kk_no, sevkiyat_no, dosya_adi/url referansları)
+4. Localhost'ta Network 4 sorgu 200 OK doğrulandı, ardından canlıda da yeşil
 
-**Geçerlilik:** ⏳ PENDING — 59'da SQL şema kontrolü + kolon isim düzeltmesi.
+**Geçerlilik:** ✅ TAMAMLANDI — Commit `674435e` (59. oturum, 4 Mayıs 2026). Localhost + canlı doğrulandı, panel mobil önizleme yeşil.
 
 #### MK-58.7 [TASARIM] — Spool ID format minimum 4 basamak pad (dinamik genişleme)
 
@@ -634,6 +633,51 @@ function formatSpoolId(id) {
 
 ---
 
+#### MK-59.1 [TASARIM] — `on_imalat` aşaması UI'da "Bekliyor" sayacına map'lenir
+
+**Karar:** Vanilla `devre_detay.html`'in aşama tracker'ı 6 step gösterir (Bekliyor / İmalat / Kaynak / Ön Kont. / KK / Sevkiyat) ama DB'de `spooller.aktif_basamak` 7. değer olarak `on_imalat` (Ön İmalat) içeriyor. Vanilla'da bu spool'lar yutuluyordu — sayaç 0 görünüyordu, kullanıcı şaşırıyordu.
+
+**MDevreDetay React port'unda:** `getStageKey()` helper'ı `on_imalat` → `bekliyor` map'ler. Bu spool'lar artık Bekliyor sayacında görünür ve aşama pill'ine tıklanınca filtrelenir.
+
+```js
+function getStageKey(s) {
+  if (s.durduruldu) return 'durduruldu'
+  if (s.aktif_basamak === 'on_imalat') return 'bekliyor'  // ← MK-59.1
+  return s.aktif_basamak || 'bekliyor'
+}
+```
+
+**Mantığı:** Ön imalat = "iş henüz başlamadı" anlamı taşıyor, kullanıcı zihninde "Bekliyor"a yakın. Ayrı 7. step açmak da seçenekti ama mockup'ı sıkıştırırdı (mobil viewport'ta 6 step zaten dar).
+
+**Sınır:** Bu mapping SADECE UI seviyesinde. DB'ye dokunulmaz, `aktif_basamak` kolonu olduğu gibi kalır. İleride 7. step açma ihtiyacı doğarsa MDevreDetay'da `STAGE_SIRA` listesine `on_imalat` eklenir + i18n + paletten yeni renk seçilir.
+
+**Geçerlilik:** ✅ Aktif. MDevreDetay'da uygulanıyor (commit `2c1e339`). MSpoolDetay'da bu sorun yok — orada tek spool görüntüleniyor, sayaç hesabı yapılmıyor.
+
+#### MK-59.2 [DİSİPLİN] — Outputs'a dosya unique isim ile sun (Chrome `(1)` suffix riski)
+
+**Karar:** Claude `/mnt/user-data/outputs/`'a dosya koyarken **her seferinde unique isim** kullanır. Aynı isim Cihat'ın `~/Downloads/` klasöründe varsa Chrome `(1)` suffix'le ikinci kopyayı kaydeder, Cihat `cp ~/Downloads/X.jsx ...` komutu eski/orijinal dosyayı yapıştırabilir.
+
+**59'da yaşanan vaka:** MSpoolDetay.jsx fix'i `MSpoolDetay.jsx` ismiyle outputs'a kondu. Cihat aynı dosyayı GitHub'dan da `MSpoolDetay.jsx` olarak indirmişti. Yeni indirme `MSpoolDetay (1).jsx` olarak kaydedildi. `cp ~/Downloads/MSpoolDetay.jsx ...` komutu **bug'lı orijinal dosyayı kopyaladı**. Sayfa yine bug'lı görüntüsüne döndü, panik yaşandı (~5 dk kayıp).
+
+**Çözüm pattern:** Dosya adına MK kodu / değişiklik tipi / oturum numarası ekle.
+
+| ❌ Çakışma riski | ✅ Unique isim |
+|---|---|
+| `MSpoolDetay.jsx` | `MSpoolDetay-MK586-fix.jsx` |
+| `MDevreDetay.jsx` | `MDevreDetay-MK59-format-fix.jsx`, `MDevreDetay-MK59-stage-fix.jsx` |
+| `App.jsx` | `App-MK59-route.jsx` |
+| `tr.json` | `tr-MK59-mobdv.json` |
+
+**Cihat tarafında `cp` komutu** kopyalarken zaten doğru ismi yazıyor:
+
+```bash
+cp ~/Downloads/MSpoolDetay-MK586-fix.jsx ~/Desktop/arespipe/mobile/src/screens/MSpoolDetay.jsx
+```
+
+**Geçerlilik:** ✅ Aktif. Tüm `present_files` çağrılarında unique isim zorunlu. (Sapma dersi #11 olarak BRIEFING.md'ye de eklenir.)
+
+---
+
 ## Açık Borçlar (henüz karar değil — gözlem)
 
 Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp yukarıdaki listeye eklenecek.
@@ -656,3 +700,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 3 Mayıs 2026 | 56 | MK-56.1 (kapanış Cihat onayı, otomasyon yok) + MK-56.2 (BRIEFING.md tek aktif bağlam dosyası) + MK-56.3 (tazelik kapısı, yavaş değişen dosyalar için periyodik gözden geçirme) eklendi. Eski 3 ritüel dosyası (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) `docs/arsiv/`'a taşındı. `oturum-saglik.sh` BRIEFING.md odaklı yeniden yazıldı (331 satır, MD5: c0ee88cb745298de2c2fed99c3ff3f48, 3 senaryo testi yeşil). MK-52.4 ve MK-55.1 revize işareti aldı. 55'in sapması belgelendi: önceki Claude `son-durum.md` "Açık Borçlar" listesini gündem sandı, oysa o liste CI bakım kuyruğu — asıl iş (MSpoolDetay) hiç başlamadı. CIHAT-PROFIL.md'ye alerji ekleneceği yazıldı ("varsayım yapma, kanıttan git") ama 57 açılışında git log+grep ile dosyaya hiç dokunulmadığı tespit edildi — bu yarı yalan MK-56.4'ün doğum kanıtı oldu. Telafi 57'de yapıldı. |
 | 4 Mayıs 2026 | 57 | MK-56.4 (kapanış orkestra protokolü — etkileşimli `--kapanis` flag'i, üç-katmanlı sistem: Script + Claude rapor + Cihat yargı, iki yönlü çelişki kontrolü) eklendi. Tasarım dosyası `docs/KAPANIS-ORKESTRA-TASARIM.md` doğdu (159 satır, MD5: 0d85796ea6ff468a330257b622c2273e). 56 sızıntısı telafi: `docs/CIHAT-PROFIL.md`'ye iki alerji **gerçekten** eklendi — "varsayım yapma, kanıttan git" + "heredoc + Türkçe markdown güvenilmez" (uzun dosyalarda heredoc/TextEdit yöntemleri başarısız, Claude `create_file` + Cihat `cp` standart yöntem oldu). BRIEFING.md yenilendi (5/6. sapma dersleri eklendi). `--kapanis` flag implementasyonu 58'e devredildi (tasarım yazılı, sıra kodda). |
 | 4 Mayıs 2026 | 58 | MSpoolDetay React port (vanilla `mobile/spool_detay.html` 635 satır → `mobile/src/screens/MSpoolDetay.jsx` ~775 satır) tamamlandı. 7 MK kararı eklendi: MK-58.1 (alistirma enum, PENDING), MK-58.2 (mobil rota konvansiyonu), MK-58.3 (kontrast-kritik renkler sabit hex), MK-58.4 (root lang tek kaynak), MK-58.5 (panel hardcoded UUID, PENDING), MK-58.6 (4 Supabase sorgu schema, PENDING), MK-58.7 (spool ID min 4 basamak format). 5 push, 7 dosya değişti. Bonus: SPA fallback eksik bug yakalandı + düzeltildi (`mobile/vercel.json` doğdu), süper admin panel mobile preview React URL'lerine güncellendi (eski vanilla yolları silindi). Birincil iş tamam, ikincil iş `oturum-saglik.sh --kapanis` flag implementasyonu 59'a devredildi (MK-56.4 tasarımı yazılı, kod sırada). |
+| 4 Mayıs 2026 | 59 | **Birincil iş #1 tamam:** MK-58.6 [PENDING] → ✅ TAMAMLANDI (commit `674435e`). 5 sorgu yeniden yazıldı: `kk_davetler.spool_ids` yok → `kk_davet_spooller` junction; `kk_no` → `davet_no`; `sevkiyatlar.sevkiyat_no` → `sevk_no`; `belgeler.dosya_adi/url` yok → `ad/dosya_url`; `islem_log.kayit_id` yok → `spool_id` direkt. UI'da 6 yer güncellendi. Localhost + canlı doğrulandı. **Birincil iş #2 tamam:** MDevreDetay React port (vanilla `mobile/devre_detay.html` 502 satır → `mobile/src/screens/MDevreDetay.jsx` 502 satır, commit `2c1e339`). 3 sekme yapısı: Genel TAM (sticky header + aşama tracker + spool kartları), Malzeme + İşlem Kay. placeholder ("Yakında", 60+'da dolacak). Vanilla 1:1 mantık + mockup-first onaylı tasarım: aşama pill'leri OVAL (2-3 basamaklı sayı sığsın), renk paleti vanilla'dan birebir (sp-* CSS class hex'leri), sol bar = pill rengi (kart aşaması bir bakışta okunuyor). `formatSpoolId`, `markaHesapla`, `revFmt`, `malzemeEtiket` helper'ları MDevreDetay'a kopyalandı (taşıma hâlâ açık borç). Spooller select'ine `pipeline_no, rev` eklendi (full marka için). 23 yeni `mob_dv_*` i18n anahtarı 3 dilde (1718 → 1741). 2 yeni MK kararı: MK-59.1 (`on_imalat` UI'da Bekliyor sayacına map'lenir, vanilla'da yutuluyordu), MK-59.2 (Outputs'a unique isim disiplini, Chrome `(1)` suffix riskini önler). 6 push (MK-58.6 fix + MDevreDetay + lang + 3 CI bot rebase). **İkincil iş 60'a devredildi:** MDrawer'a Geri Bildirim satırı + MSpoolDetay FAB temizlik (Cihat onayı: "tutarlılık için global çözüm"). `oturum-saglik.sh --kapanis` flag hâlâ açık borç (57-58-59 boyunca yetişmedi). |

@@ -1,71 +1,74 @@
-# AresPipe BRIEFING — 58. Oturum Kapanışı
+# AresPipe BRIEFING — 59. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası.** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır, ben tüm bağlamı anlarım. Detay için referans dosyalar (`docs/KARARLAR.md`, `docs/SAYFA-EKSIKLERI.md` vb.) — Bilgi Haritası bölümünden hangi dosyada ne olduğunu gör.
 >
-> **Son onay:** Cihat — 4 Mayıs 2026, 58 kapanışı
+> **Son onay:** Cihat — 4 Mayıs 2026, 59 kapanışı
 
 ---
 
-## 🎯 59. Oturum Gündemi
+## 🎯 60. Oturum Gündemi
 
-**Birincil iş #1:** MK-58.6 — MSpoolDetay'da 4 Supabase sorgusu 400 Bad Request düzeltmesi. Vanilla'dan miras schema uyumsuzluğu. Sorgular: `belgeler`, `islem_log`, `kk_davetler`, `sevkiyat_spooller`. Supabase SQL editor'de `information_schema.columns` ile gerçek kolon isimleri tespit edilip MSpoolDetay.jsx'teki sorgular düzeltilecek. Kullanıcı şu an KK & Sevkiyat satırları, Belgeler bölümü, İşlem Kayıtları sekmesi boş gözüküyor.
+**Birincil iş #1 (UX tutarlılık):** Geri Bildirim'i `MDrawer`'a (sağdan açılan menü) taşı + `MSpoolDetay`'daki FAB'ı kaldır. 59'da onaylanan karar: tüm sayfalardan tek tıkla erişim, sayfa-özel FAB karmaşası yok. İki dosyada değişiklik:
+- `mobile/src/components/MDrawer.jsx` — yeni "Geri Bildirim" satırı + bottom-sheet modal (Hata/Eksik/Fikir kategorileri, fotoğraf eki opsiyonel)
+- `mobile/src/screens/MSpoolDetay.jsx` — `fbAcik` state + FAB butonu + bottom sheet bloğu kaldırılacak (~50 satır temizlik)
 
-**Birincil iş #2:** MDevreDetay React port. Web `devre_detay.html`'den port — mobile (yeni) `mobile/src/screens/MDevreDetay.jsx`. MSpoolDetay topbar'ındaki `geri` butonu `/devre/:id`'e gidiyor şu an placeholder. MDevreDetay yazılınca otomatik bağlanır. Tasarım kararları açılışta konuşulacak (mevcut web devre_detay.html üzerinden + MK-54.E/F/G mantığı).
+**İkincil iş (yapısal):** `oturum-saglik.sh --kapanis` flag'inin kodlanması. Tasarım `docs/KAPANIS-ORKESTRA-TASARIM.md`'de yazılı, MK-56.4 kararı 57'de kondu, 58-59'da yetişmedi (her ikisinde de büyük port işleri zamanı doldurdu). 60'ta bekleyen iş listesinin başında, ama birincil iş kısa olduğu için bu sefer kapanır.
 
-**İkincil iş (yapısal):** `oturum-saglik.sh --kapanis` flag'inin kodlanması. Tasarım `docs/KAPANIS-ORKESTRA-TASARIM.md`'de yazılı, MK-56.4 kararı 57'de kondu, 58'de kod yetişmedi (MSpoolDetay port'u + bug fix'ler 5 push aldı). 59'da bekleyen iş listesinin başında.
-
-**Diğer 58 borçları (gündem değil, çözülecek):**
+**Diğer açık borçlar (gündem değil, çözülecek):**
+- MSpoolDetay helper taşıma (`formatSpoolId`, `revFmt`, `markaHesapla`, `nNRenkler`, `formatTarih`, `alistirmaBilgi`, `malzemeEtiket`) → `mobile/src/lib/format.js`. MDevreDetay aynı helper'ları kopyaladı, taşıma her ikisini DRY yapar.
 - MK-58.1 — `spooller.alistirma` kanonik enum migration (lowercase'e standardize)
 - MK-58.5 — Panel.html mobile preview dinamik UUID input alanı
-- `mobile/src/screens/{Devreler.jsx, IsBaslat.jsx}` — App.jsx route'u yok, kullanılıyor mu kontrol → kullanılmıyorsa sil
-- `mobile/.gitignore`'a `.DS_Store` ekleme
-- MSpoolDetay helper'larını (`formatSpoolId`, `revFmt`, `markaHesapla`, `nNRenkler`, `formatTarih`, `alistirmaBilgi`) `mobile/src/lib/format.js`'e taşı (MDevreDetay da kullanacak)
 
 ---
 
-## ✅ 58'de Yapılanlar
+## ✅ 59'da Yapılanlar
 
-**Birincil iş tamamlandı: MSpoolDetay React port** (vanilla `mobile/spool_detay.html` 635 satır → `mobile/src/screens/MSpoolDetay.jsx` 762 satır, ardından format düzeltmeleriyle ~775 satır).
+**Birincil iş #1 tamamlandı: MK-58.6 [PENDING] → ✅ TAMAMLANDI** (commit `674435e`).
 
-- **Tasarım uygulamaları (MK-54.E/F/G + 58'de eklenenler):**
-  - 3 sekme (Genel | Malzeme | İşlem Kayıtları), 3D Model atıldı
-  - Spool Bilgileri'nde Pipeline No yerine **tam marka** (E-02 formatı: `proje_no-pipeline_no-spool_no[-RevN]` örn. `NB1137-AT110-816-026-S03`)
-  - Alıştırma → Spool Bilgileri'nin son satırı (işlem değil, durum kabulü)
-  - İşlem Durumu 4 satır (Kesim/Büküm/Markalama/Test), n/N renk pill (devre_detay.html 1308-1310 birebir port)
-  - Tipografi 14px+ tabanlı (vanilla'da 10-11px ihlaller vardı)
-  - Sekme yazıları açık temada `#1a1817`, koyu temada `#eceae3` (sabit hex, CSS variable bypass — MK-58.3)
-  - Devre adı uzunsa ellipsis + bottom sheet modal
-  - Topbar geri: `/devre/:id` (MDevreDetay placeholder)
-  - Geri Bildirim FAB + bottom sheet (Hata/Eksik/Fikir)
-  - Topbar ID: `formatSpoolId(sp.spool_id)` öncelikli (A-XXXX format), `spool_no` fallback
-  - Spool ID format: min 4 basamak pad, dinamik genişleme (`A-000555` → `A-0555`, `A-012345` → `A-12345` — MK-58.7)
-  - Ağırlık: tek desimal (`53.755801999...` → `53.8 kg`)
+Vanilla `mobile/spool_detay.html`'den miras 4 Supabase sorgusu DB schema ile uyumsuzdu, 400 Bad Request veriyordu. Etkilenen UI alanları (KK & Sevkiyat satırları, Belgeler bölümü, İşlem Kayıtları sekmesi) boş gözüküyordu. 5 sorgu yeniden yazıldı:
 
-- **i18n: 65 yeni `mob_sp_*` anahtarı, 3 dilde** (TR/EN/AR). Root `lang/` tek kaynak (MK-58.4), prebuild mobile'a kopyalar. 1659 → 1718 anahtar, 3 dilde simetrik.
+| Eski (yanlış) | Yeni (doğru) |
+|---|---|
+| `kk_davetler.contains('spool_ids', [X])` (kolon yok) | `kk_davet_spooller` junction üzerinden + nested `kk_davetler(davet_no, olusturma)` |
+| `kk_no` | `davet_no` |
+| `sevkiyatlar(sevkiyat_no, tarih)` | `sevkiyatlar(sevk_no, tarih)` |
+| `belgeler: ad, dosya_adi, url, olusturma` | `belgeler: ad, dosya_url, olusturma` |
+| `islem_log.eq('kayit_id', X)` | `islem_log.eq('spool_id', X)` |
 
-- **Süper admin paneli güncellendi:** `admin/panel.html` Mobile Önizleme bölümü artık React canlı URL'leri (`https://arespipe-mob.vercel.app/...`) iframe'liyor. Eski vanilla yolları (`../mobile/spool_detay.html` vb.) silindi. Cross-origin iframe çalışıyor (Vercel default'ta `X-Frame-Options` koymuyor). Hardcoded test UUID: `c79d0983-e0f3-406f-afde-bb7bc9ad92c3` (MK-58.5 — 59'da dinamik).
+UI tarafında 6 yer güncellendi: `kkBilgi.kk_no` → `davet_no`, `sevkBilgi.sevkiyat_no` → `sevk_no`, `b.url` → `b.dosya_url` (2 yer), `b.dosya_adi` ölü fallback temizlendi, KK davet sıralaması foreignTable order karmaşası nedeniyle JS tarafına alındı.
 
-- **Bonus fix (planlanmamış):** SPA fallback eksik bug yakalandı + düzeltildi. `mobile/vercel.json` doğdu — 4 satırlık rewrite kuralı tüm path'leri `/index.html`'e yönlendirir, React Router parse eder. **MK-58 öncesi de sessiz var olan bir bug**: kullanıcı `/spool/:id` URL'ine doğrudan giderse veya F5'lese 404 alıyordu, ama tıklayarak gidişlerde fark edilmemişti. 58'de panel iframe testi sayesinde yakalandı.
+**Birincil iş #2 tamamlandı: MDevreDetay React port** (commit `2c1e339`).
 
-- **5 push, 7 dosya değişti:**
-  - `3ce6ae4` MSpoolDetay React port + 65 i18n + App.jsx route
-  - `a3afc6d` panel mobile preview React URL'lerine güncellendi
-  - `3d81366` mobile/vercel.json SPA fallback
-  - `9a7be70` topbar spool_id öncelikli (A-XXXX format)
-  - `e622794` formatSpoolId helper + ağırlık tek desimal
+Vanilla `mobile/devre_detay.html` 502 satır → `mobile/src/screens/MDevreDetay.jsx` 502 satır. **3 sekme yapısı:** Genel sekmesi TAM (sticky header + aşama tracker + spool kartları), Malzeme + İşlem Kay. sekmeleri "Yakında" placeholder (60+'da dolacak — vanilla'da bu sekmeler de yoktu zaten, MSpoolDetay ile tutarlılık için iskeleti şimdi konuldu).
 
-- **7 yeni MK kararı (KARARLAR.md MK-58.1..7):**
-  - MK-58.1 [PENDING] — `spooller.alistirma` enum standardizasyonu
-  - MK-58.2 — Mobil rota konvansiyonu (detay tekil + `:id`, liste çoğul)
-  - MK-58.3 — Kontrast-kritik renkler için sabit hex (CSS variable bypass)
-  - MK-58.4 — Root `lang/` tek kaynak, mobile türev (prebuild kopyalar)
-  - MK-58.5 [PENDING] — Panel hardcoded UUID (59'da dinamik input)
-  - MK-58.6 [PENDING] — MSpoolDetay 4 Supabase sorgu schema uyumsuzluğu
-  - MK-58.7 — Spool ID format min 4 basamak pad (dinamik)
+- **Mockup-first onaylı tasarım (R-10):**
+  - Aşama pill'leri **OVAL** — 2-3 basamaklı sayılar sığsın (vanilla'da daha dardı)
+  - Renk paleti vanilla'dan **birebir** (`sp-bekliyor`, `sp-imalat`, `sp-kaynak`, `sp-on_kontrol`, `sp-kk`, `sp-sevkiyat`, `sp-durduruldu` CSS class hex'leri sabit hex olarak React'a taşındı — MK-58.3 disiplin)
+  - **Sol bar = pill rengi** (kart aşaması bir bakışta okunuyor — Cihat'ın 59'daki feedback'i)
+  - Sağ ince bar: alıştırma (yeşil tam · sarı kısmi · gri yok)
+  - Topbar geri: `/devreler` (placeholder, MDevreler 60+'da yazılacak)
+  - Sticky header: devre başlığı (`{Gemi} / {Sistem}`) + arama + spool sayacı + durduruldu pill (varsa)
 
-- **Vanilla kalıntı taraması TEMIZ.** mobile/ klasörü tamamen Vite/React, eski HTML/CSS/JS yok, admin'de `../mobile/` referansı yok. Sadece kökteki `./spool_detay.html` (web) korunmaya devam.
+- **MK-59.1 — `on_imalat` aşaması Bekliyor'a map'lendi:** Vanilla'da `on_imalat` aşamasındaki spool'lar yutuluyordu (sayaç 0 görünüyordu, kullanıcı şaşırıyordu). MDevreDetay'da `getStageKey(s)` helper'ı `on_imalat` → `bekliyor` map'ler, böylece bu spool'lar Bekliyor sayacında görünür. UI seviyesinde fix, DB'ye dokunulmaz.
 
-**İkincil iş (oturum-saglik.sh --kapanis):** Yapılmadı, 59'a devredildi. 5 push'luk birincil iş + bug fix kuyruğu zamanı doldurdu.
+- **Format helper'ları kopyalandı (MSpoolDetay'dan):** `formatSpoolId`, `revFmt`, `markaHesapla`, `malzemeEtiket`. Bunların `lib/format.js`'e taşınması açık borç olarak kaldı (MDevreDetay yazıldıktan sonra bilinçli geciktirildi, taşıma 60+'da yapılacak).
+
+- **Sorgu select genişledi:** `spooller` select'ine `pipeline_no, rev` eklendi. `markaHesapla(s, devre, proje)` full marka oluşturmak için bunlara ihtiyaç duyuyor (örn. `NB1137-AT110-816-026-S01-Rev`).
+
+**i18n: 23 yeni `mob_dv_*` anahtarı, 3 dilde** (TR/EN/AR). Root `lang/` tek kaynak (MK-58.4), prebuild mobile'a kopyalar. 1718 → 1741 anahtar, 3 dilde simetrik.
+
+**6 push, 5 dosya değişti:**
+- `674435e` fix(mob/59): MSpoolDetay 4 Supabase sorgusu schema fix (MK-58.6)
+- `797cbfa` chore(ci): ci-son-rapor.json güncelle [skip ci]
+- `2c1e339` feat(mob/59): MDevreDetay React port + 23 i18n anahtari (3 dil)
+- `27fa99a` docs: AUTO bölümleri güncellendi [skip ci]
+- `4fe1099` chore(ci): ci-son-rapor.json güncelle [skip ci]
+
+**2 yeni MK kararı (KARARLAR.md MK-59.1, MK-59.2):**
+- MK-59.1 — `on_imalat` aşaması UI'da "Bekliyor" sayacına map'lenir
+- MK-59.2 — Outputs'a dosya unique isim disiplini (Chrome `(1)` suffix riskini önler)
+
+**İkincil iş (oturum-saglik.sh --kapanis):** Yine yapılmadı, 60'a devredildi. MK-58.6 fix + MDevreDetay port + 4 ekstra fix turu + i18n + lang dosyaları zamanı doldurdu.
 
 ---
 
@@ -99,23 +102,25 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 
 ## 📋 Açık Borçlar (öncelik sırasıyla)
 
-1. **(59 birincil #1)** MK-58.6 — MSpoolDetay 4 Supabase sorgu schema fix (`belgeler`, `islem_log`, `kk_davetler`, `sevkiyat_spooller`)
-2. **(59 birincil #2)** MDevreDetay React port (web `devre_detay.html` → `mobile/src/screens/MDevreDetay.jsx`)
-3. **(59 ikincil yapısal)** `oturum-saglik.sh --kapanis` flag implementasyonu (tasarım MK-56.4 yazılı, 57 ve 58'de yetişmedi)
+1. **(60 birincil #1)** MDrawer'a Geri Bildirim satırı + MSpoolDetay FAB temizlik (UX tutarlılık, 59'da onaylandı)
+2. **(60 ikincil yapısal)** `oturum-saglik.sh --kapanis` flag implementasyonu (tasarım MK-56.4 yazılı, 57-58-59'da yetişmedi)
+3. **MSpoolDetay + MDevreDetay helper taşıma** — `formatSpoolId, revFmt, markaHesapla, nNRenkler, formatTarih, alistirmaBilgi, malzemeEtiket` → `mobile/src/lib/format.js`. İki dosya da kopyaladı, DRY için merkezi yer (60+'da yapılabilir, küçük iş)
 4. **MK-58.1** — `spooller.alistirma` enum migration (DB SELECT + standardize lowercase)
 5. **MK-58.5** — Panel mobile preview dinamik UUID input
-6. **MSpoolDetay helper taşıma** — `formatSpoolId, revFmt, markaHesapla, nNRenkler, formatTarih, alistirmaBilgi` → `mobile/src/lib/format.js` (MDevreDetay öncesi yapılabilir)
+6. **MDevreler React port** (vanilla `mobile/devreler.html` → `mobile/src/screens/MDevreler.jsx`). MDevreDetay topbar'ındaki "Tüm Devreler" linki + geri butonu şu an `/devreler`'e gidiyor, ama MDevreler henüz yok — placeholder. Birincil iş olarak 61+'da gündeme gelecek.
 7. **mobile/src/screens kullanılmayan dosyalar** — `Devreler.jsx`, `IsBaslat.jsx` App.jsx route yok, sil veya bağla
 8. **mobile/.gitignore** — `.DS_Store` ekleme (küçük temizlik)
 9. **CI sarı temizliği** — 28 uyarı (9 `flansh_*` + 18 `izb_*` + 1 G-03 yüzey)
 10. **MK-54.1** — M ekranları `useT()` bypass denetimi (5 dosya)
 11. **MK-49.A** — spool_detay 3D model deterministik render (Three.js, $0 maliyet) — web vanilla için
 12. **MK-49.B** — İzometri PDF yükleme bileşeni (devre wizard Adım 2 + devre detay sekmesi)
-13. **parser_kural pipeline_no regex** (51 L2-FAIL: `\d{3}` dar) + 5+ Tersan PDF testi
-14. **`_l2_meta` / `_l2_fallback` `ai_api_log` görünürlük** (51 borç)
-15. **Migration disiplini kararı** (51-52'den beri konuşuluyor)
-16. **`asme_borular`/`cuni_borular` silme durumu** (35'te dondu, belirsiz)
-17. **Lang dosya senkronizasyon scripti** — 15. oturumdan beri açık borç (web `sp_*` ↔ mobile `mob_*` paralel anahtar takibi)
+13. **MDevreDetay 7. step "Ön İmalat"** — eğer ihtiyaç doğarsa. Şu an `on_imalat` → `bekliyor` map'leniyor (MK-59.1), yeterli görünüyor. UX feedback'e göre revize edilebilir.
+14. **MDevreDetay Malzeme + İşlem Kay. sekmeleri** — şu an "Yakında" placeholder. Devre seviyesi BOM (`spool_malzemeleri` JOIN) + `islem_log.devre_id` log akışı. Ayrı tasarım kararı + mockup gerektirir (60+).
+15. **parser_kural pipeline_no regex** (51 L2-FAIL: `\d{3}` dar) + 5+ Tersan PDF testi
+16. **`_l2_meta` / `_l2_fallback` `ai_api_log` görünürlük** (51 borç)
+17. **Migration disiplini kararı** (51-52'den beri konuşuluyor)
+18. **`asme_borular`/`cuni_borular` silme durumu** (35'te dondu, belirsiz)
+19. **Lang dosya senkronizasyon scripti** — 15. oturumdan beri açık borç (web `sp_*` ↔ mobile `mob_*` paralel anahtar takibi)
 
 ---
 
@@ -133,11 +138,14 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 - **MK-56.1** — Kapanış Cihat onayı (BRIEFING.md push edilmeden Cihat *"doğru"* demeli)
 - **MK-56.2** — BRIEFING.md tek aktif bağlam dosyası (3 dosya birleştirildi)
 - **MK-56.3** — Tazelik kapısı (yavaş dosyalara `son_gozden_gecirme` etiketi, script periyodik uyarır)
-- **MK-56.4** — Kapanış orkestra protokolü (`--kapanis` flag'i, üç katman, iki yönlü çelişki kontrolü). Detay: `docs/KAPANIS-ORKESTRA-TASARIM.md`. **Implementasyon 59'a ertelendi.**
+- **MK-56.4** — Kapanış orkestra protokolü (`--kapanis` flag'i, üç katman, iki yönlü çelişki kontrolü). Detay: `docs/KAPANIS-ORKESTRA-TASARIM.md`. **Implementasyon 60'a ertelendi.**
 - **MK-58.2** — Mobil rota konvansiyonu (detay tekil + `:id`, liste çoğul)
 - **MK-58.3** — Kontrast-kritik renkler için sabit hex (CSS variable bypass)
 - **MK-58.4** — Root `lang/` tek kaynak, mobile türev (prebuild kopyalar)
+- **MK-58.6** — ✅ TAMAMLANDI 59'da (4 sorgu schema fix)
 - **MK-58.7** — Spool ID format min 4 basamak pad (dinamik genişleme)
+- **MK-59.1** — `on_imalat` aşaması UI'da "Bekliyor" sayacına map'lenir (vanilla'da yutuluyordu)
+- **MK-59.2** — Outputs'a dosya unique isim disiplini (Chrome `(1)` suffix riski)
 
 ---
 
@@ -156,36 +164,37 @@ Sohbette bir bilgi gerekirse Claude buraya bakar, ilgili dosyayı `project_knowl
 
 **KARARLAR.md, SAYFA-EKSIKLERI.md, kurallar.json — tazelik kapısına alınmadı** çünkü bunlar zaten her oturumda dokunulan defter dosyaları.
 
-**59'da bekleyen tazelik notu:** MK-58.3 (kontrast-kritik renkler sabit hex) `CLAUDE-MOBILE.md` R-09'a ek nota dönüştürülecek — ama dosya henüz tazelik penceresi içinde (sonraki_zorunlu 71). 59-71 arası fırsat varsa eklenebilir.
+**60'ta bekleyen tazelik notu:** MK-58.3 (kontrast-kritik renkler sabit hex) `CLAUDE-MOBILE.md` R-09'a ek nota dönüştürülecek — ama dosya henüz tazelik penceresi içinde (sonraki_zorunlu 71). 60-71 arası fırsat varsa eklenebilir. MK-59.2 (outputs unique isim) `CLAUDE-CALISMA-MODU.md`'ye eklenebilir (sonraki_zorunlu 66).
 
 ---
 
 ## ⚙️ Sistem Sağlık Durumu
 
-- **CI:** ⚠️ SARI — 28 uyarı (`spool_detay.html` 9, `izometri-batch.html` 18, `devre_detay.html` 1), 0 hata. Build YEŞİL.
+- **CI:** ⚠️ SARI — 28 uyarı (`spool_detay.html` 9, `izometri-batch.html` 18, `devre_detay.html` 1), 0 hata. Build YEŞİL. (59'da değişmedi.)
 - **Vercel (web):** ✅ Production aktif (`arespipe.vercel.app`)
-- **Vercel (mobile):** ✅ Production aktif (`arespipe-mob.vercel.app`) — SPA fallback eklendi 58'de
-- **DB:** Bu oturumda dokunulmadı — 59'da MK-58.6 schema kontrolü için Supabase SQL editor
+- **Vercel (mobile):** ✅ Production aktif (`arespipe-mob.vercel.app`) — MDevreDetay canlı, MSpoolDetay 4 sorgu fix canlı
+- **DB:** Bu oturumda dokunulmadı — 59'da MK-58.6 schema kontrolü için 2 SQL okuma (`information_schema.columns`), DDL yok
 
 ---
 
-## 📦 Son 5 Commit (58 sonu)
+## 📦 Son 6 Commit (59 sonu)
 
-- `e622794` fix(mob/58): spool_id min 4 basamak format + agirlik tek desimal
-- `9a7be70` fix(mob/58): topbar spool_id oncelikli (A-0072 formati), spool_no fallback
-- `3d81366` fix(mob/58): SPA fallback — mobile/vercel.json ile tüm rotalar index.html'e
-- `a3afc6d` feat(admin/58): panel mobile preview React canlı URL'lerine güncellendi
-- `3ce6ae4` feat(mob/58): MSpoolDetay React port + 65 i18n anahtarı (3 dil)
+- `4fe1099` chore(ci): ci-son-rapor.json güncelle [skip ci]
+- `27fa99a` docs: AUTO bölümleri güncellendi [skip ci]
+- `2c1e339` feat(mob/59): MDevreDetay React port + 23 i18n anahtari (3 dil)
+- `797cbfa` chore(ci): ci-son-rapor.json güncelle [skip ci]
+- `674435e` fix(mob/59): MSpoolDetay 4 Supabase sorgusu schema fix (MK-58.6)
+- `59a4192` chore(ci): ci-son-rapor.json güncelle [skip ci]
 
-(58 kapanış commit'i — bu dosya + KARARLAR + SAYFA-EKSIKLERI — push'tan sonra yukarı eklenecek.)
+(59 kapanış commit'i — bu dosya + KARARLAR — push'tan sonra yukarı eklenecek.)
 
 ---
 
-## 🚪 59. Oturum Açılış Komutu
+## 🚪 60. Oturum Açılış Komutu
 
-Aşağıdaki komutu terminale yapıştır, çıktıyı kopyalayıp 59. oturuma yapıştır:
+Aşağıdaki komutu terminale yapıştır, çıktıyı kopyalayıp 60. oturuma yapıştır:
 
-    cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 59 && cat BRIEFING.md
+    cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 60 && cat BRIEFING.md
 
 ---
 
@@ -198,6 +207,9 @@ Aşağıdaki komutu terminale yapıştır, çıktıyı kopyalayıp 59. oturuma y
 5. **BRIEFING'in "Yapılanlar" listesi yalan söyleyebilir.** 56'da *"CIHAT-PROFIL.md'ye alerji eklendi"* yazıldı ama dosyaya dokunulmadı. Cihat onayı sırasında çelişki kaçtı. **Bu MK-56.4'ün (kapanış orkestra protokolü) doğum kanıtıdır** — `--kapanis` flag'i kodlandığında bu sızıntı türü iki yönlü `git diff` çelişki kontrolüyle yakalanacak.
 6. **Heredoc + Türkçe markdown güvenilmez.** `cat > X.md << 'EOF'` markdown tablosu/code block'la çakışıyor, TextEdit yapıştırma Türkçe karakterleri bozuyor + uzun metni yarım kesiyor. **Çözüm:** uzun dosyalar için Claude `create_file`, Cihat `~/Downloads/`'tan `cp`. (CIHAT-PROFIL.md'de alerji.)
 7. **(58'de eklendi)** **zsh `!` history expansion + `||` delimiter karışıklığı.** `node -e "..."` içinde `!` veya `|` karakterleri olunca zsh karışır (`zsh: event not found`, `bad flag in substitute command`). **Çözüm:** Tek-tırnaklı heredoc ile geçici dosya yaz (`cat > /tmp/fix.js << 'EOF'`) sonra `node /tmp/fix.js` çalıştır. Veya direkt outputs'a Node script üretip `~/Downloads/`'tan çalıştır. 58'de iki ayrı sed/node komut zsh tarafından kırıldı, üçüncü deneme dosya yöntemi ile geçti.
-8. **(58'de eklendi)** **CI bot push race.** Her commit'ten sonra GitHub Actions otomatik bir commit atıyor (`ci-son-rapor.json güncelle [skip ci]`). İkinci push'unu yapmadan önce `git pull --rebase origin main` zorunlu, yoksa "rejected (fetch first)" hatası gelir. 58'de bu pattern 4 kez yaşandı. Sadece "uyarı"; kayıp yok.
+8. **(58'de eklendi)** **CI bot push race.** Her commit'ten sonra GitHub Actions otomatik bir commit atıyor (`ci-son-rapor.json güncelle [skip ci]`). İkinci push'unu yapmadan önce `git pull --rebase origin main` zorunlu, yoksa "rejected (fetch first)" hatası gelir. 58'de bu pattern 4 kez yaşandı. 59'da da 3 kez. Sadece "uyarı"; kayıp yok.
 9. **(58'de eklendi)** **Vite dev server prebuild ile çakışma.** `npm run prebuild` `mobile/src/lang/` klasörünü `rm -rf` ile siliyor. Aynı terminal'de Vite çalışıyorsa Vite watcher'ı şaşırtabilir; ayrıca prebuild bittikten sonra Vite "yeniden başlat" gerektirebilir. 58'de bir kez `ERR_CONNECTION_REFUSED` sebebi: Vite terminali yanlışlıkla prebuild komutu yedi, dev server durdu. **Disiplin:** `npm run dev` çalışırken prebuild çalıştırılmaz; gerekirse Vite'ı `Ctrl+C` ile durdur, prebuild yap, `npm run dev` ile yeniden başlat.
 10. **(58'de eklendi)** **SPA fallback — Vercel'de React Router için manuel rewrite gerekir.** `mobile/vercel.json` yoksa `/spool/:id` gibi rotalar doğrudan açıldığında 404 olur. Default Vite + Vercel kombinasyonu bunu otomatik yapmaz. Yeni rota eklerken sayfa açılışında 404 oluyorsa, ilk kontrol: `mobile/vercel.json` rewrite var mı.
+11. **(59'da eklendi)** **Chrome `(1)` suffix riski.** Outputs'a aynı isimle (örn. `MSpoolDetay.jsx`) dosya konursa, Cihat'ın `~/Downloads/` klasöründe aynı isim varsa Chrome ikinci indirmeyi `MSpoolDetay (1).jsx` olarak kaydeder. `cp ~/Downloads/MSpoolDetay.jsx ...` komutu **eski/orijinal dosyayı** kopyalar. 59'da MSpoolDetay fix'i bu sebeple kayboldu, panik yaşandı (~5 dk kayıp). **MK-59.2** çözer: Outputs'a unique isim ver (`MSpoolDetay-MK586-fix.jsx`, `App-MK59-route.jsx`, `tr-MK59-mobdv.json`).
+12. **(59'da eklendi)** **Vite zombie portlar.** Dev server'lar Ctrl+C ile düzgün kapatılmazsa portları (5173, 5174, 5175...) tutmaya devam eder. Yeni `npm run dev` bir sonraki porta düşer. 59'da 4 paralel zombi Vite vardı (5173-5175), bizim oturumun başlattığı 5176'ya düştü, sonra zombi temizliği sonrası 5174'e. **Çözüm:** `lsof -i :5173 -i :5174 -i :5175 -i :5176 | grep node` ile tespit, `kill <PID>` ile temizle. **Disiplin:** Vite'ı kapatırken Ctrl+C kullan, terminal sekmesini direkt kapatma.
+13. **(59'da eklendi)** **zsh `#` yorum yorumlanmaz** — kabuk INTERACTIVE_COMMENTS ayarı kapalıysa terminale `# yorum` yapıştırılınca `command not found: #` verir. Komut bloğu çıktısı verirken yorum satırlarını ya çıkar ya da Cihat'a "yorum satırlarını atla" notunu açıkça düş.
