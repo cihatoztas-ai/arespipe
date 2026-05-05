@@ -181,6 +181,8 @@ function Ekran() {
 
 **Önemli:** Her yeni `m_*` anahtarı **tr/en/ar üçüne birden** eklenmelidir. Eksikse `tv()` fallback'e düşer ve dil değiştiğinde UI güncellenmez (hep Türkçe kalır).
 
+**Hedef dosya — kök `lang/`, mobil değil (MK-62.3).** Anahtarlar yalnızca repo kökündeki `lang/{tr,en,ar}.json` dosyalarına yazılır. `mobile/src/lang/` dizini her dev/build başlangıcında `predev`/`prebuild` script'i tarafından silinip kök `lang/`'dan yeniden kopyalanır. Mobil dizinine elle yazılan her şey sessizce uçar — runtime'da ham anahtar adları UI'da görünür.
+
 ### R-09: Tema Yönetimi (17 Nisan 2026 — 2. oturum)
 
 Tema sadece `useTema()` hook'u üzerinden değiştirilir. Direct DOM manipulation (`document.documentElement.setAttribute`) YASAK.

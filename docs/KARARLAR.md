@@ -845,3 +845,56 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 4 Mayıs 2026 | 59 | **Birincil iş #1 tamam:** MK-58.6 [PENDING] → ✅ TAMAMLANDI (commit `674435e`). 5 sorgu yeniden yazıldı: `kk_davetler.spool_ids` yok → `kk_davet_spooller` junction; `kk_no` → `davet_no`; `sevkiyatlar.sevkiyat_no` → `sevk_no`; `belgeler.dosya_adi/url` yok → `ad/dosya_url`; `islem_log.kayit_id` yok → `spool_id` direkt. UI'da 6 yer güncellendi. Localhost + canlı doğrulandı. **Birincil iş #2 tamam:** MDevreDetay React port (vanilla `mobile/devre_detay.html` 502 satır → `mobile/src/screens/MDevreDetay.jsx` 502 satır, commit `2c1e339`). 3 sekme yapısı: Genel TAM (sticky header + aşama tracker + spool kartları), Malzeme + İşlem Kay. placeholder ("Yakında", 60+'da dolacak). Vanilla 1:1 mantık + mockup-first onaylı tasarım: aşama pill'leri OVAL (2-3 basamaklı sayı sığsın), renk paleti vanilla'dan birebir (sp-* CSS class hex'leri), sol bar = pill rengi (kart aşaması bir bakışta okunuyor). `formatSpoolId`, `markaHesapla`, `revFmt`, `malzemeEtiket` helper'ları MDevreDetay'a kopyalandı (taşıma hâlâ açık borç). Spooller select'ine `pipeline_no, rev` eklendi (full marka için). 23 yeni `mob_dv_*` i18n anahtarı 3 dilde (1718 → 1741). 2 yeni MK kararı: MK-59.1 (`on_imalat` UI'da Bekliyor sayacına map'lenir, vanilla'da yutuluyordu), MK-59.2 (Outputs'a unique isim disiplini, Chrome `(1)` suffix riskini önler). 6 push (MK-58.6 fix + MDevreDetay + lang + 3 CI bot rebase). **İkincil iş 60'a devredildi:** MDrawer'a Geri Bildirim satırı + MSpoolDetay FAB temizlik (Cihat onayı: "tutarlılık için global çözüm"). `oturum-saglik.sh --kapanis` flag hâlâ açık borç (57-58-59 boyunca yetişmedi). |
 | 4 Mayıs 2026 | 60 | **5 ana iş tamam:** Geri Bildirim MDrawer'a taşındı + MSpoolDetay FAB temizlik (commit `a5b75a2`, ~110 satır temizlik, MGeriBildirimSheet bağımsız component, 8 i18n rename + 1 yeni). `oturum-saglik.sh --kapanis` Katman 1 implementasyonu (commit `afac0a8`, MK-60.3 — MK-56.4'ün ilk somut çıktısı, 152+ insertions, 7 kategori taraması). Açık Borç #8 kapandı (`.DS_Store` track'ten çıkarıldı, commit `22a66a7`). Açık Borç #7 kapandı (`Devreler.jsx` + `IsBaslat.jsx` boş stub'lar silindi, commit `767efb8`). Açık Borç #3 kapandı: 10 helper `mobile/src/lib/format.js`'e taşındı (commit `d714bb2`, MK-60.2, MSpoolDetay -73 + MDevreDetay -38 satır, `revFmt` defensive sürümü MDevreDetay'daki silent bug'ı düzeltti, 33 birim test geçti). **3 yeni MK kararı:** MK-60.1 (TemaProvider App.jsx'e eklenmeli — useTema crash riski, oturum öncesi MDrawer açılmıyor diye sessiz kalan tehlike), MK-60.2 (format.js mobil ortak helper modülü), MK-60.3 (oturum-saglik.sh --kapanis Katman 1 canlı). **Yarı kapalı:** MK-54.1 useT bypass denetimi — 4 M ekran ✓ useT'li, MAnasayfa ✓ temiz (router), MGiris ⚠️ atlandı (61 birincil iş). **Bilinçli atlanan:** Açık Borç #9 CI sarı temizliği (limit korunması). 11 push (5 ana commit + 3 CI bot rebase + 3 docs auto). 4 yeni sapma dersi belgelendi (BRIEFING.md sapma 14-17): kod bloğu terminale yapıştırma, SQL editöre bash, Vite zombie portlar, TemaProvider sessiz mimari boşluk. |
 | 5 Mayıs 2026 | 61 | **Vizyon konsolidasyon oturumu** (kod oturumu değil). Cihat 60 gündemini *"araya konu al"* dedi, eline 4 vizyon belgesi geldi (`SPOOL-AI-VIZYON.md`, `docs/VIZYON-VE-MODULER-MIMARI.md`, `docs/AI-VE-3D-VIZYON-v3.md`, `docs/KUTUPHANE-KAPSAM.md` + `docs/KUTUPHANE-YUKLEME-TAKIP.md`). Üçü repo'da olmasına rağmen BRIEFING bilgi haritasında yoktu (yetim) — Claude başta varlığını sandı, repo cloning + `find` ile gerçek doğrulandı. Sohbet sistem anatomisini yazılı hâle getirdi: spool agregat root, havuz batching pattern, bağlı raporlar zinciri, tezgahlar canlı görünürlük, devre arşivi görünürlük filtresi. **`docs/AI-VE-3D-VIZYON-v3.md` repo'ya alındı** (918 satır, repo entegrasyon notu eklendi, v2.1'in 4 maddesini revize eder: ürün karakteri SaaS değil internal tool, hacim 1000 spool/ay, foto akışı QR-tetikli, tier modeli terk). **`docs/VIZYON-OTURUMLARI.md` doğdu** (146 satır, kategori belgesi — 61 ilk kayıt, vizyon her geçtiğinde başlık eklenir). **BRIEFING bilgi haritasına 5 belge satırı eklendi** (KUTUPHANE-KAPSAM, KUTUPHANE-YUKLEME-TAKIP, VIZYON-VE-MODULER, AI-VE-3D-VIZYON-v3, VIZYON-OTURUMLARI). **4 yeni MK kararı:** MK-61.1 (foto arşiv: sıkıştırılmış cloud + orijinal yerel, 3-2-1 yedek), MK-61.2 (foto aşama bilgisi QR'dan, kişiden değil), MK-61.3 (devre arşivi görünürlük filtresi, soft archive değil), MK-61.4 (yeni belge yaratırken bilgi haritası satırı + sahip + tazelik penceresi zorunlu — doğum kanıtı: 18-21 oturum yetim üç belge). **5 MK karar adayı 62'ye taşındı** (VIZYON-OTURUMLARI.md'de kayıtlı): spool agregat root pattern, havuz batching pattern, format tanıtımı görsel template editor, etiketleme dörtlü bağ parca_id'den, yönetici gözlem fotosu. **2 yeni sapma dersi (BRIEFING sapma 18-19):** bilgi haritası eksiği = belge yokmuş gibi davranma riski (MK-61.4 doğum kanıtı), Cihat'ın "biz şunu yaptık" cümleleri kontrol edilmiş varsayım kabul (Claude yanılgı: Parça Kimliği eksik sandı, migration dosyalarında `tg_spool_malzemeleri_ref_sync` trigger bulundu). **Bilinçli atlanan:** MGiris.jsx (62 birincil iş), CIHAT-PROFIL güncellemesi (62'ye, heyecan sarkacı + kıyas yorumlamama farkındalıkları), 5 MK adayı (62'ye). Master vizyon konsolidasyonu hedef: 65-70 oturum civarı 4 belge → tek `docs/VIZYON.md`. |
+
+### MK-62.1 — Mimari pattern adlandırması: spool agregat root + havuz batching (5 Mayıs 2026, 62. oturum)
+
+**Karar:** AresPipe'ta isim verilmemiş iki mimari pattern artık adlandırılmış sayılır ve gelecek özellik kararlarında zorunlu sorgu hâline getirilir.
+
+**Pattern A — Spool agregat root (DDD anlamında).** Spool detay sayfası bir aggregate'tir. Devre = paket, spool = kayıt, havuzlar = aynı işin toplandığı kuyruklar, log = anlatı. Diğer sayfalar (kesim, markalama, büküm, KK, sevk, test, foto, log) bu agregata enjekte olur, bağımsız varlık değildir.
+
+**Pattern B — Havuz batching.** Kesim, markalama, büküm üçü de aynı kalıbın tekrarı: spool detayda girilen veri → tip+spec'e göre filtrelenmiş havuz → batching/optimizasyon → makine → "yapıldı" sinyali → spool detayına geri yansıma. Aynı kalıp 3 kez tekrarlandı, 4. havuz için referans şablon hazır.
+
+**Sebep:** Pattern adı olmadan her yeni sayfa kendi yöntemini icat eder. 5 havuz olduğunda 5 farklı uygulama çıkar; tutarsızlık geri-dönülemez bir teknik borçtur. İsim koymak = gelecekteki tutarlılığın sıfır maliyetli garantisi. 61'in sistem anatomisi tartışmasında her iki pattern de Cihat'ın kafasında oturmuş ama belgelerde adlandırılmamış olarak yakalandı.
+
+**Uygulama kuralı:**
+- Yeni özellik kararı verilirken zorunlu sorgu: *"Bu spool agregatına mı enjekte oluyor, yoksa yan tabloda mı duruyor?"* Yan tabloda duruyorsa spool detayı şişirme; agregata enjekte ediliyorsa enjeksiyon noktası standart olmalı (mevcut kesim/markalama/büküm referans alınır).
+- Yeni batching ihtiyacında (4. havuz, 5. havuz) önce mevcut kesim/markalama/büküm pattern'i referans alınır, sıfırdan tasarım yapılmaz. Pattern'den sapma gerekçesi yazılı olarak belgelenir.
+
+**Tetik koşulu:** Yok — koruyucu kural, anında geçerli.
+
+---
+
+### MK-62.2 — Foto tipi ayrımı: aşama-fotosu vs gözlem-fotosu (5 Mayıs 2026, 62. oturum)
+
+**Karar:** `fotograflar` tablosunda `fotograf_tipi` kolonu zorunlu hâle gelir, iki değer alır:
+
+- **`asama_fotosu`** — QR okutma akışından doğan otomatik foto. `imalat_asamasi` zorunlu (MK-61.2 kapsamı), `qr_referansi` zorunlu.
+- **`gozlem_fotosu`** — yönetici sahada gözlem yaparken çektiği foto. `imalat_asamasi` NULL, `not` zorunlu, `uyari_olustur` boolean (true ise uyarılar sayfasına düşer).
+
+**Sebep:** MK-61.2 foto aşamasını QR okutma session'ından alıyor. Ama yönetici sahada gezerken foto çekerse aktif QR session yok — *kişi → aşama* eşlemesi 61'in ana dersinde zaten reddedildi. Tek tabloda iki akışı `fotograf_tipi` ayrımı olmadan tutmak, `imalat_asamasi NULL`'unun anlamını bozar (eksik mi, gözlem mi belirsiz). Tip ayrımı = NULL'a anlam kazandırır + gözlem fotolarının uyarı kanalına bağlanmasının doğal yeri.
+
+**Tasarım:**
+- Mobile QR okutma akışında çekilen foto → `asama_fotosu` (otomatik).
+- Yönetici sahada "Gözlem ekle" akışında çekilen foto → `gozlem_fotosu`, ekran alanları: foto + not (zorunlu) + "Bu bir uyarı oluştursun" checkbox'ı (opsiyonel).
+- `uyari_olustur=true` ise `uyarilar` tablosuna kayıt düşer, uyarılar sayfasında görünür.
+- DB constraint: `CHECK ((fotograf_tipi = 'asama_fotosu' AND imalat_asamasi IS NOT NULL) OR (fotograf_tipi = 'gozlem_fotosu' AND not IS NOT NULL))`.
+
+**Tetik koşulu:** Schema kararı şimdi alınır (MK-61.2'nin temiz uygulanması için). Yönetici gözlem foto UI'ı tetik geldiğinde (sahada talep çıkarsa) eklenir, ama tablo şeması bugün bu ayrımı destekleyecek şekilde tasarlanır.
+
+
+
+### MK-62.3 — `lang/` tek-otorite, `mobile/src/lang/` otomatik üretilir (5 Mayıs 2026, 62. oturum)
+
+**Karar:** Repo kökündeki `lang/{tr,en,ar}.json` dosyaları i18n için tek-otorite kaynaktır. `mobile/src/lang/{tr,en,ar}.json` dizini her `npm run dev` ve `npm run build` öncesinde `predev`/`prebuild` script'i tarafından silinip kök `lang/`'dan yeniden kopyalanır (`rm -rf src/lang && cp ../lang/*.json src/lang/`).
+
+Yeni i18n anahtarı eklenirken/güncellenirken hedef sadece `lang/{tr,en,ar}.json` dosyalarıdır. `mobile/src/lang/` dizinine elle yazılan her şey ilk dev/build çağrısında sessizce silinir — lint yakalamaz, runtime'da ham anahtar adları (`m_gr_email_lbl` gibi) UI'da görünür.
+
+**Sebep:** 62'de bu tuzak gerçek hâliyle yaşandı. MGiris.jsx için 10 yeni anahtar `mobile/src/lang/`'a yazıldı. `npm run dev` çalışınca `predev` dizini sildi, kök `lang/`'dan kopyaladı, 10 anahtar uçtu. Tarayıcı henüz açılmadığı için fark edildi; açılsaydı dolaylı tespit gerekecekti. CLAUDE-MOBILE.md'deki "m_* anahtarlar 3 dilde senkron" notu kök `lang/` ile mobil senkronu ima ediyordu, ama mimarinin yönü açıkça yazılmamıştı.
+
+**Uygulama kuralı:**
+- Yeni mobil anahtar eklenirken hedef yalnızca `lang/{tr,en,ar}.json`. Mobil dizinine asla yazılmaz.
+- Mobil ekran build'i debug edilirken anahtar görünmüyorsa önce `lang/`'a bakılır, ardından `mobile/src/lang/`'ın tarihçesi kontrol edilir (`stat` veya `git log`).
+- Bu kural CLAUDE-MOBILE.md'de yazılı görünür hâle getirilir — 62 kapanışında satır eklenir.
+- `mobile/src/lang/` dizinine 1 satırlık README.md eklenir: kaynak dizinin nerede olduğunu söyler.
+
+**Tetik koşulu:** Yok — koruyucu kural, anında geçerli. CLAUDE-MOBILE.md satırı ve mobil dizin README'si bu oturum kapanışında yazılır.

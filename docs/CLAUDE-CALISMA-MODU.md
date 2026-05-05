@@ -128,6 +128,19 @@ Eğer "Tarama Soruları" listesi tükendiyse — yeni soru ekle. Bu liste canlı
 
 ## Bu dosyanın güncellenmesi
 
+## Terminal/Paste Disiplinleri (62. oturumdan)
+
+Cihat'ın paste mekanizması (Mac clipboard veya terminal emülatörü) bazı pattern'leri otomatik markdown link'e çeviriyor. Bu **görsel artefakt** — disk'e yazılan içerik genelde sağlam, ama Claude'un üreteceği komut/kod'da bu pattern'lerden kaçınılır:
+
+- **Domain ve email literalleri** (`firma.com`, `user@example.com`, vb.) doğrudan kod/JSON literal kullanılmaz. `chr(46)` (`.`) ve `chr(64)` (`@`) ile parçalı inşa edilir. Doğrulama uzunluk veya bracket kontrolü ile yapılır, görsel kontrol değil.
+- **`.md` literal pattern'leri** (`README.md`, `CLAUDE.md`, vb.) Python/bash kaynak kodu içinde mümkünse `'README' + chr(46) + 'md'` şeklinde inşa edilir. Doğrudan literal yazıldığında paste sırasında link'e dönüşebilir.
+- **Bash heredoc içi `#` yorumlu satır apostrof içerirse zsh'i `quote>` moduna sokar.** Heredoc (`<<'EOF'`) açıkken Cihat paste eder, içindeki yorum satırındaki tek tırnak quote modunu açar, EOF beklediği gibi yorumlanmaz, blok asılı kalır. Heredoc verilirken yorum satırı yazılmaz; gerekiyorsa heredoc dışına yorum konur.
+- **Görsel paste artefaktları disk gerçeğini değiştirmez.** `ls` çıktısında `[README.md](http://README.md)` görsen bile dosyanın disk'teki gerçek adı `README.md` olabilir. Şüphe halinde `od -c` veya `python3 -c "import os; os.listdir(...)"` ile binary doğrulama yapılır, panik silme yapılmaz.
+
+## Mevcut Kod Pattern'lerini Önce Oku (62. oturumdan)
+
+Bir hook, lib veya context'i bir ekrana eklemeden önce **mevcut kullanıcılarından birini** grep'le bul, çağrı pattern'ini oku. 62'de `useT()` MGiris'e eklendi, MDrawer'ın gerçek pattern'i (`const { tv, dil, setDil } = useT()`) kontrol edilmeden farklı bir tahmin (`const t = useT()`) yapıldı. Sonuç: `<Giris>` component'i runtime'da TypeError verdi. **Kural:** Yeni bir hook çağrısı yazmadan önce `grep -A 1 "useT()" .` veya benzeri bir komutla mevcut tüketicileri görmek zorunlu adım.
+
 Cihat ile çalışma şeklin değiştikçe **bu dosya da güncellenir**.
 Yeni davranış kalıbı yakalandığında buraya ekle.
 

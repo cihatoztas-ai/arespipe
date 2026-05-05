@@ -1,42 +1,36 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
-const DILLER = ['tr', 'en', 'ar']
+import { useT } from '../lib/i18n'
 
 export default function Giris() {
+  const { tv, dil, setDil, mevcutDiller } = useT()
+
   const [email, setEmail]             = useState('')
   const [sifre, setSifre]             = useState('')
   const [sifreGoster, setSifreGoster] = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(false)
   const [hata, setHata]               = useState('')
   const [tema, setTema]               = useState(() => localStorage.getItem('ares_theme') || 'light-anthracite')
-  const [dil, setDil]                 = useState(() => localStorage.getItem('ares_lang') || 'tr')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema)
     localStorage.setItem('ares_theme', tema)
   }, [tema])
 
-  useEffect(() => {
-    document.documentElement.setAttribute('lang', dil)
-    document.documentElement.setAttribute('dir', dil === 'ar' ? 'rtl' : 'ltr')
-    localStorage.setItem('ares_lang', dil)
-  }, [dil])
-
   async function girisYap(e) {
     e.preventDefault()
     setHata('')
-    if (!email) { setHata('E-posta boş bırakılamaz.'); return }
-    if (!sifre) { setHata('Şifre boş bırakılamaz.'); return }
+    if (!email) { setHata(tv('m_gr_hata_email_bos')); return }
+    if (!sifre) { setHata(tv('m_gr_hata_sifre_bos')); return }
 
     setYukleniyor(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password: sifre })
     setYukleniyor(false)
 
     if (error) {
-      if (error.message.includes('Invalid login'))            setHata('E-posta veya şifre hatalı.')
-      else if (error.message.includes('Email not confirmed')) setHata('E-posta adresiniz doğrulanmamış.')
-      else if (error.message.includes('Too many requests'))   setHata('Çok fazla deneme. Lütfen bekleyin.')
+      if (error.message.includes('Invalid login'))            setHata(tv('m_gr_hata_kimlik'))
+      else if (error.message.includes('Email not confirmed')) setHata(tv('m_gr_hata_dogrulama'))
+      else if (error.message.includes('Too many requests'))   setHata(tv('m_gr_hata_cok_deneme'))
       else setHata(error.message)
     }
   }
@@ -55,16 +49,16 @@ export default function Giris() {
         <form onSubmit={girisYap} style={{ width:'100%', maxWidth:380 }}>
 
           <div style={{ marginBottom:14 }}>
-            <label style={s.etiket}>E-posta</label>
+            <label style={s.etiket}>{tv('m_gr_email_lbl')}</label>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
-              placeholder="ornek@firma.com" autoComplete="email" inputMode="email" autoCapitalize="none"
+              placeholder={tv('m_gr_email_ph')} autoComplete="email" inputMode="email" autoCapitalize="none"
               style={s.input}
               onFocus={e=>e.target.style.borderColor='var(--ac)'}
               onBlur={e=>e.target.style.borderColor='var(--bor)'} />
           </div>
 
           <div style={{ marginBottom:14 }}>
-            <label style={s.etiket}>Şifre</label>
+            <label style={s.etiket}>{tv('m_gr_sifre_lbl')}</label>
             <div style={{ position:'relative' }}>
               <input type={sifreGoster?'text':'password'} value={sifre} onChange={e=>setSifre(e.target.value)}
                 placeholder="••••••••" autoComplete="current-password"
@@ -89,7 +83,7 @@ export default function Giris() {
           <button type="submit" disabled={yukleniyor}
             style={{ width:'100%', height:56, borderRadius:16, background:yukleniyor?'var(--bor)':'var(--ac)', border:'none', color:'#fff', fontSize:17, fontWeight:700, fontFamily:"'Barlow',sans-serif", cursor:yukleniyor?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:8 }}>
             {yukleniyor && <span style={{ width:20, height:20, border:'2.5px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin .7s linear infinite', display:'inline-block' }} />}
-            {yukleniyor ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+            {yukleniyor ? tv('m_gr_btn_yukleniyor') : tv('m_gr_btn_giris')}
           </button>
 
         </form>
@@ -99,13 +93,13 @@ export default function Giris() {
       <div style={{ padding:'16px 24px', paddingBottom:'max(24px, env(safe-area-inset-bottom))', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
 
         <div style={s.toggleKap}>
-          {[['light-anthracite','☀️'],['dark','🌙']].map(([t,ikon])=>(
-            <button key={t} onClick={()=>setTema(t)} style={{ ...s.toggleBtn, ...(tema===t?s.toggleAktif:{}) }}>{ikon}</button>
+          {[['light-anthracite','☀️'],['dark','🌙']].map(([tem,ikon])=>(
+            <button key={tem} onClick={()=>setTema(tem)} style={{ ...s.toggleBtn, ...(tema===tem?s.toggleAktif:{}) }}>{ikon}</button>
           ))}
         </div>
 
         <div style={s.toggleKap}>
-          {DILLER.map(d=>(
+          {mevcutDiller.map(d=>(
             <button key={d} onClick={()=>setDil(d)} style={{ ...s.toggleBtn, fontSize:12, fontWeight:700, padding:'6px 10px', ...(dil===d?s.toggleAktif:{}) }}>{d.toUpperCase()}</button>
           ))}
         </div>
