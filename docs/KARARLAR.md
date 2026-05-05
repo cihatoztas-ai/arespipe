@@ -741,6 +741,83 @@ cp ~/Downloads/MSpoolDetay-MK586-fix.jsx ~/Desktop/arespipe/mobile/src/screens/M
 
 ---
 
+### MK-61.1 — Foto arşiv stratejisi: sıkıştırılmış cloud + orijinal yerel (5 Mayıs 2026, 61. oturum)
+
+**Karar:** Saha fotoğrafları **iki kanalda** saklanır:
+
+1. **Sıkıştırılmış sürüm (web boyutu, ~500KB)** — Supabase Storage'a yüklenir, sistem bu sürümü gösterir, AI çağrıları (Vision, RAG) bunu kullanır.
+2. **Orijinal sürüm (~5MB)** — Yerel diskte (Cihat'ın bilgisayarı + 3-2-1 yedek prensibiyle harici disk + off-site kopya) arşivlenir. Sistem orijinale doğrudan ulaşmaz.
+
+**Doğum kanıtı:** 61'de vizyon konsolidasyonu sırasında foto arşivi tartışıldı. v3 madde 19 *"3 versiyon paralel saklama"* (orijinal Backblaze + web Supabase + vektör pgvector) öneriyor. Cihat'ın endişesi: *"Veri biriktikçe büyüklük yönetilemez olabilir, ama orijinali silmek de saçma."* Üçüncü yol bulundu: bulut soğuk depo maliyeti **ortadan kalktı** (1 müşteri × 300GB Backblaze ~$1.5/ay tasarrufu küçük ama disipline yöneticisi yerel olduğu için Cihat zaten bunu yapıyor — 3-2-1 yedek prensibiyle SPOOL-AI-VIZYON 8. teknik kararı uyumlu).
+
+**v2/v3 uyumu:** SPOOL-AI-VIZYON v2.1 *"Veri yedek politikası: fiziksel yedek, 3-2-1 prensibi"* diyor. v3 madde 19'un cloud bağımlılığı bu kararla yumuşatıldı. v3'ün esas niyeti *"orijinal kayboldu mu"* sorusunu ortadan kaldırmaktı — bu karar onu sağlıyor (orijinal yerel diskte hep var).
+
+**Pratik takas:** AI çağrısı sıkıştırılmış sürümü kullanır, 500KB foto Vision için yeterli (Vision API zaten upload'u 5MB'ı 2048x2048'e küçültüyor). Eğer ileride yüksek çözünürlük gerekirse (örn. mikro-çatlak tespiti), yerel arşivden geçici upload yapılabilir.
+
+**Geçerlilik:** ✅ Aktif. `fotograflar` tablosunda `dosya_url` (Supabase) + `arsiv_yerel_yolu` (TEXT, opsiyonel) kolonu olur. Yeni foto upload akışı: orijinal yerel'e kopyala (kullanıcı tarafında JS ile, manuel disipline güvenir), sıkıştırılmış sürüm Supabase'e gönder.
+
+---
+
+### MK-61.2 — Foto aşama bilgisi QR okutmadan alınır, kişiden değil (5 Mayıs 2026, 61. oturum)
+
+**Karar:** Bir fotoğrafın hangi imalat aşamasına ait olduğu, **fotoğrafı çeken kişinin rolünden değil**, fotoğrafın çekildiği anda **aktif QR okutma session'ından** belirlenir.
+
+**Sebep:** Personel rolleri 1:1 aşama eşlemesi vermez. Aynı kaynakçı farklı zamanlarda hem argon hem gazaltı kaynak yapabilir; aynı kişi sabah kesim yapıp öğleden sonra markalama da yapabilir. Ek olarak, **yöneticiler sahada gezerken foto çekebilir** — yönetici hangi aşamada çekti belirsizdir, eşleştirilemez.
+
+**Akış:**
+1. Personel QR okutur → `spool_aksiyonlari` tablosuna kayıt: `(spool_id, asama, aksiyon=basla, personel_id, zaman)`
+2. İş bittiğinde tekrar QR okutur → `(spool_id, asama, aksiyon=bitir, personel_id, zaman)` + foto ekranı açılır
+3. Çekilen foto otomatik `aksiyon_id`'ye bağlanır, `asama` aksiyon'dan kopyalanır.
+
+**İstisna — yönetici gözlem fotosu:** Yönetici bir spool'u sahada görüp foto çekerse, **aşama YOK**. Sadece `spool_id` + foto + not. (Bu için ayrı bir MK adayı 62'de yazılacak — `docs/VIZYON-OTURUMLARI.md`'de kayıtlı.)
+
+**v3 uyumu:** v3 madde 17 *"asama otomatik aksiyondan kopyalanır"* diyor, bu karar onu yazılı kılar.
+
+**DB etkisi:** `spool_aksiyonlari` tablosu doğacak (henüz yok), `fotograflar.aksiyon_id` FK olacak (henüz yok), `fotograflar.asama` enum kolonu (kopyalanmış değer, denormalize) — bu schema değişiklikleri 62-63 civarı bir migration'da yapılır. Bugün karar yazılı, implementasyon sonra.
+
+**Geçerlilik:** ✅ Aktif. QR-tetikli foto akışı tasarlanırken bu sözleşme korunur.
+
+---
+
+### MK-61.3 — Devre arşivlenmesi soft archive değil, görünürlük filtresi (5 Mayıs 2026, 61. oturum)
+
+**Karar:** Devre/proje arşivlenmesi **DB'den çıkarmaz, görünürlük filtresi** uygular.
+
+**Tasarım:**
+- Devre durumu = aktif / biten (`spooller` tablosundaki tüm spool'lar tamamlandığında otomatik "biten" olur)
+- Aktif Devreler sayfası: sadece `durum = 'aktif'` olanları listeler
+- Gemi sayfası: gemiye bağlı tüm devreleri (aktif + biten) gösterir, biten devre kartı sönük renkle çizilir
+- Gemi `aktif` sayılması: en az bir aktif devresi olması. Tüm devreler bittiyse gemi de "tamamlanmış" görünür ama veri yerinde kalır
+- Devre yeniden devraldığında (yeni iş geldi): otomatik aktif olur, hiçbir manuel işlem yok
+- Veri **hiç silinmez**, sadece UI'da gizlenir
+
+**Sebep:** Tersane operasyonunda bir gemi projesi 5 yıl sonra geri açılabilir (garanti, modifikasyon, yedek parça siparişi). Soft delete (silindi=true) bunu zorlaştırır. Görünürlük filtresi UI mantığına bırakır, veri özgür kalır.
+
+**Foto boyutu ile karışmaz:** Bu karar **görünürlük** ile ilgili. **Foto sıkıştırma** ayrı bir konu (MK-61.1). Cihat sohbette *"5MB → 500KB"* diye foto küçültmeyi devre arşivlenmesi anına bağlamıştı, ama o yanlış bir bağlanmadır. Foto sıkıştırma **upload anında** olur (MK-61.1), devre arşivlenmesi sadece UI filtresi olur (bu karar). İki sistem birbirinden bağımsız.
+
+**Geçerlilik:** ✅ Aktif. Aktif Devreler sayfası filtresi + Gemi sayfası birleşik gösterimi bu karara göre tasarlanır.
+
+---
+
+### MK-61.4 — Yeni belge yaratırken bilgi haritası satırı + sahip + tazelik penceresi zorunlu (5 Mayıs 2026, 61. oturum)
+
+**Karar:** AresPipe repo'sunda yeni bir markdown belge yaratıldığında, **aynı oturumda** şunlar yapılmazsa belge oluşturulmaz:
+1. **BRIEFING.md bilgi haritasına** belgenin sorduğu soru tipini içeren satır eklenir.
+2. Belgenin başına **sahip** yazılır (Cihat / Cihat+Claude / Claude).
+3. Belgenin başına **tazelik penceresi** yazılır (sonraki_zorunlu kaç oturum sonra) **ya da** *"kayıt dosyası, tazelik kapısına alınmaz"* notu.
+
+Bu üç şart sağlanmadıysa: belge yaratılmaz, içerik **mevcut bir belgeye eklenir**.
+
+**Doğum kanıtı:** 61'de keşfedildi: 40-43. oturumlarda yaratılan üç belge (`docs/KUTUPHANE-KAPSAM.md`, `docs/KUTUPHANE-YUKLEME-TAKIP.md`, `docs/VIZYON-VE-MODULER-MIMARI.md`) BRIEFING bilgi haritasına hiç eklenmemiş. 18-21 oturum boyunca **yetim** kaldılar — Claude bilmedikleri için varlığını farketmedi, Cihat hatırlatınca repo'da bulundu. 61. oturum başında Claude bu üç belgeyi *"repo'da olmayabilir"* sandı; gerçek doğrulama için repo cloning + `find` gerekti. Bu deneyim **belge ölümünün ana sebebini** ortaya koydu: bilgi haritasında yer almayan belge yokmuş gibi davranılır.
+
+**Yan ürün:** Bu karar aynı zamanda **belge yaratma cazibesine direnç** sağlar. *"Yeni belge yapıyorum"* duygusal olarak tatmin edicidir, ama doğru iş genelde mevcut belgeye paragraf eklemektir. Üç şart kontrolü, belgeyi yaratmak yerine *"acaba mevcut belgenin bir bölümü olabilir mi?"* sorusunu zorlar.
+
+**İstisna — kategori belgeleri:** Kümülatif kayıt belgeleri (örn. `docs/VIZYON-OTURUMLARI.md`) tazelik penceresi yerine *"kayıt dosyası, tazelik kapısına alınmaz"* notuyla geçer. Bu meşru çünkü içeriği zaten her oturumda büyür, "güncel" tutulması gereken bir tek-değer yok.
+
+**Geçerlilik:** ✅ Aktif. Tüm yeni belge yaratımları bu kontrol altında.
+
+---
+
 ---
 
 ## Açık Borçlar (henüz karar değil — gözlem)
@@ -767,3 +844,4 @@ Bu maddeler bir karara dönüştüğünde kendi `MK-XX.X` numaralarını alıp y
 | 4 Mayıs 2026 | 58 | MSpoolDetay React port (vanilla `mobile/spool_detay.html` 635 satır → `mobile/src/screens/MSpoolDetay.jsx` ~775 satır) tamamlandı. 7 MK kararı eklendi: MK-58.1 (alistirma enum, PENDING), MK-58.2 (mobil rota konvansiyonu), MK-58.3 (kontrast-kritik renkler sabit hex), MK-58.4 (root lang tek kaynak), MK-58.5 (panel hardcoded UUID, PENDING), MK-58.6 (4 Supabase sorgu schema, PENDING), MK-58.7 (spool ID min 4 basamak format). 5 push, 7 dosya değişti. Bonus: SPA fallback eksik bug yakalandı + düzeltildi (`mobile/vercel.json` doğdu), süper admin panel mobile preview React URL'lerine güncellendi (eski vanilla yolları silindi). Birincil iş tamam, ikincil iş `oturum-saglik.sh --kapanis` flag implementasyonu 59'a devredildi (MK-56.4 tasarımı yazılı, kod sırada). |
 | 4 Mayıs 2026 | 59 | **Birincil iş #1 tamam:** MK-58.6 [PENDING] → ✅ TAMAMLANDI (commit `674435e`). 5 sorgu yeniden yazıldı: `kk_davetler.spool_ids` yok → `kk_davet_spooller` junction; `kk_no` → `davet_no`; `sevkiyatlar.sevkiyat_no` → `sevk_no`; `belgeler.dosya_adi/url` yok → `ad/dosya_url`; `islem_log.kayit_id` yok → `spool_id` direkt. UI'da 6 yer güncellendi. Localhost + canlı doğrulandı. **Birincil iş #2 tamam:** MDevreDetay React port (vanilla `mobile/devre_detay.html` 502 satır → `mobile/src/screens/MDevreDetay.jsx` 502 satır, commit `2c1e339`). 3 sekme yapısı: Genel TAM (sticky header + aşama tracker + spool kartları), Malzeme + İşlem Kay. placeholder ("Yakında", 60+'da dolacak). Vanilla 1:1 mantık + mockup-first onaylı tasarım: aşama pill'leri OVAL (2-3 basamaklı sayı sığsın), renk paleti vanilla'dan birebir (sp-* CSS class hex'leri), sol bar = pill rengi (kart aşaması bir bakışta okunuyor). `formatSpoolId`, `markaHesapla`, `revFmt`, `malzemeEtiket` helper'ları MDevreDetay'a kopyalandı (taşıma hâlâ açık borç). Spooller select'ine `pipeline_no, rev` eklendi (full marka için). 23 yeni `mob_dv_*` i18n anahtarı 3 dilde (1718 → 1741). 2 yeni MK kararı: MK-59.1 (`on_imalat` UI'da Bekliyor sayacına map'lenir, vanilla'da yutuluyordu), MK-59.2 (Outputs'a unique isim disiplini, Chrome `(1)` suffix riskini önler). 6 push (MK-58.6 fix + MDevreDetay + lang + 3 CI bot rebase). **İkincil iş 60'a devredildi:** MDrawer'a Geri Bildirim satırı + MSpoolDetay FAB temizlik (Cihat onayı: "tutarlılık için global çözüm"). `oturum-saglik.sh --kapanis` flag hâlâ açık borç (57-58-59 boyunca yetişmedi). |
 | 4 Mayıs 2026 | 60 | **5 ana iş tamam:** Geri Bildirim MDrawer'a taşındı + MSpoolDetay FAB temizlik (commit `a5b75a2`, ~110 satır temizlik, MGeriBildirimSheet bağımsız component, 8 i18n rename + 1 yeni). `oturum-saglik.sh --kapanis` Katman 1 implementasyonu (commit `afac0a8`, MK-60.3 — MK-56.4'ün ilk somut çıktısı, 152+ insertions, 7 kategori taraması). Açık Borç #8 kapandı (`.DS_Store` track'ten çıkarıldı, commit `22a66a7`). Açık Borç #7 kapandı (`Devreler.jsx` + `IsBaslat.jsx` boş stub'lar silindi, commit `767efb8`). Açık Borç #3 kapandı: 10 helper `mobile/src/lib/format.js`'e taşındı (commit `d714bb2`, MK-60.2, MSpoolDetay -73 + MDevreDetay -38 satır, `revFmt` defensive sürümü MDevreDetay'daki silent bug'ı düzeltti, 33 birim test geçti). **3 yeni MK kararı:** MK-60.1 (TemaProvider App.jsx'e eklenmeli — useTema crash riski, oturum öncesi MDrawer açılmıyor diye sessiz kalan tehlike), MK-60.2 (format.js mobil ortak helper modülü), MK-60.3 (oturum-saglik.sh --kapanis Katman 1 canlı). **Yarı kapalı:** MK-54.1 useT bypass denetimi — 4 M ekran ✓ useT'li, MAnasayfa ✓ temiz (router), MGiris ⚠️ atlandı (61 birincil iş). **Bilinçli atlanan:** Açık Borç #9 CI sarı temizliği (limit korunması). 11 push (5 ana commit + 3 CI bot rebase + 3 docs auto). 4 yeni sapma dersi belgelendi (BRIEFING.md sapma 14-17): kod bloğu terminale yapıştırma, SQL editöre bash, Vite zombie portlar, TemaProvider sessiz mimari boşluk. |
+| 5 Mayıs 2026 | 61 | **Vizyon konsolidasyon oturumu** (kod oturumu değil). Cihat 60 gündemini *"araya konu al"* dedi, eline 4 vizyon belgesi geldi (`SPOOL-AI-VIZYON.md`, `docs/VIZYON-VE-MODULER-MIMARI.md`, `docs/AI-VE-3D-VIZYON-v3.md`, `docs/KUTUPHANE-KAPSAM.md` + `docs/KUTUPHANE-YUKLEME-TAKIP.md`). Üçü repo'da olmasına rağmen BRIEFING bilgi haritasında yoktu (yetim) — Claude başta varlığını sandı, repo cloning + `find` ile gerçek doğrulandı. Sohbet sistem anatomisini yazılı hâle getirdi: spool agregat root, havuz batching pattern, bağlı raporlar zinciri, tezgahlar canlı görünürlük, devre arşivi görünürlük filtresi. **`docs/AI-VE-3D-VIZYON-v3.md` repo'ya alındı** (918 satır, repo entegrasyon notu eklendi, v2.1'in 4 maddesini revize eder: ürün karakteri SaaS değil internal tool, hacim 1000 spool/ay, foto akışı QR-tetikli, tier modeli terk). **`docs/VIZYON-OTURUMLARI.md` doğdu** (146 satır, kategori belgesi — 61 ilk kayıt, vizyon her geçtiğinde başlık eklenir). **BRIEFING bilgi haritasına 5 belge satırı eklendi** (KUTUPHANE-KAPSAM, KUTUPHANE-YUKLEME-TAKIP, VIZYON-VE-MODULER, AI-VE-3D-VIZYON-v3, VIZYON-OTURUMLARI). **4 yeni MK kararı:** MK-61.1 (foto arşiv: sıkıştırılmış cloud + orijinal yerel, 3-2-1 yedek), MK-61.2 (foto aşama bilgisi QR'dan, kişiden değil), MK-61.3 (devre arşivi görünürlük filtresi, soft archive değil), MK-61.4 (yeni belge yaratırken bilgi haritası satırı + sahip + tazelik penceresi zorunlu — doğum kanıtı: 18-21 oturum yetim üç belge). **5 MK karar adayı 62'ye taşındı** (VIZYON-OTURUMLARI.md'de kayıtlı): spool agregat root pattern, havuz batching pattern, format tanıtımı görsel template editor, etiketleme dörtlü bağ parca_id'den, yönetici gözlem fotosu. **2 yeni sapma dersi (BRIEFING sapma 18-19):** bilgi haritası eksiği = belge yokmuş gibi davranma riski (MK-61.4 doğum kanıtı), Cihat'ın "biz şunu yaptık" cümleleri kontrol edilmiş varsayım kabul (Claude yanılgı: Parça Kimliği eksik sandı, migration dosyalarında `tg_spool_malzemeleri_ref_sync` trigger bulundu). **Bilinçli atlanan:** MGiris.jsx (62 birincil iş), CIHAT-PROFIL güncellemesi (62'ye, heyecan sarkacı + kıyas yorumlamama farkındalıkları), 5 MK adayı (62'ye). Master vizyon konsolidasyonu hedef: 65-70 oturum civarı 4 belge → tek `docs/VIZYON.md`. |
