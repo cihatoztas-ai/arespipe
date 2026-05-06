@@ -167,7 +167,7 @@ export default function MAnasayfaYonetici({ kullanici }) {
         </div>
 
         <div style={s.quickGrid}>
-          <StatKart renk="var(--ac)"   label={tv('m_stat_aktif_devre', 'Aktif Devre')}     deger={istatistik.devre}    sub={tv('m_stat_aktif_devre_sub', 'Devam eden')}       onClick={() => yakinda(tv('m_kart_devreler', 'Devreler'))} />
+          <StatKart renk="var(--ac)"   label={tv('m_stat_aktif_devre', 'Aktif Devre')}     deger={istatistik.devre}    sub={tv('m_stat_aktif_devre_sub', 'Devam eden')}       onClick={() => navigate('/devreler')} />
           <StatKart renk="var(--warn)" label={tv('m_stat_bekleyen_spool', 'Bekleyen Spool')} deger={istatistik.bekleyen} sub={tv('m_stat_bekleyen_spool_sub', 'İşlem gerekiyor')} onClick={() => yakinda(tv('m_stat_bekleyen_spool', 'Bekleyen'))} />
           <StatKart renk="var(--leg)"  label={tv('m_stat_kk_bekleyen', 'KK Bekleyen')}       deger={istatistik.kk}        sub={tv('m_stat_kk_bekleyen_sub', 'Onay bekliyor')}   onClick={() => yakinda(tv('m_kart_kk', 'KK'))} />
           <StatKart renk="var(--gr)"   label={tv('m_stat_bu_ay_sevk', 'Bu Ay Sevk')}         deger={istatistik.sevk}      sub={tv('m_stat_bu_ay_sevk_sub', 'Tamamlandı')}       onClick={() => yakinda(tv('m_kart_sevkiyat', 'Sevkiyat'))} />

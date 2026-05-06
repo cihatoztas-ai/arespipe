@@ -126,7 +126,7 @@ export default function MIslemler({ kullanici }) {
               renk="var(--ac)"
               baslik={tv('m_kart_qr_tara', 'QR Tara')}
               altbaslik={tv('m_kart_qr_tara_alt', 'Spool bilgisini gör')}
-              onClick={() => yakinda(tv('m_kart_qr_tara', 'QR Tara'))}
+              onClick={() => navigate('/qr')}
             />
           </div>
         )}
