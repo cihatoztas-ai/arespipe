@@ -898,3 +898,174 @@ Yeni i18n anahtarı eklenirken/güncellenirken hedef sadece `lang/{tr,en,ar}.jso
 - `mobile/src/lang/` dizinine 1 satırlık README.md eklenir: kaynak dizinin nerede olduğunu söyler.
 
 **Tetik koşulu:** Yok — koruyucu kural, anında geçerli. CLAUDE-MOBILE.md satırı ve mobil dizin README'si bu oturum kapanışında yazılır.
+
+---
+
+### MK-63.A — DB sütun adlarını varsaymadan kanonik isimlerle çalış (6 Mayıs 2026, 63. oturum)
+
+**Karar:** Yeni bir SELECT/INSERT/UPDATE yazılırken sütun adı **vanilla kodda nasıl geçiyorsa** öyle değil, **kanonik DB şemasında** nasıl tanımlıysa öyle yazılır. Ezbere yazılan ya da knowledge base'den hatırlanan ad şüphelidir, yazmadan önce şu üçünden biriyle doğrulanır: (1) `information_schema.columns` sorgusu, (2) Supabase MCP query, (3) güncel migration dosyası.
+
+**Sebep:** 63'te `MDevreler` port'unda iki kez kolon-adı bug'ı yaşandı: `zone_no` (yok) → 4c7c77f fix(63.1) ile düzeltildi, `olusturulma` (yok, doğrusu `olusturma`) → b139a60 fix(63.5) ile düzeltildi. İki canlı 400 hatası, iki ek commit, ~10 dakika kayıp. Knowledge base'deki şema bilgisi her zaman bayat olabilir; kod yazımı sırasında kontrol gözden kaçtı.
+
+**Geçerlilik:** ✅ Aktif. Yeni DB sorgusu yazarken kontrol zorunlu, atlandığında bir sonraki canlı testte 400 dönen sorgu sapmayı belgeler.
+
+---
+
+### MK-63.B — "Planlandı" notu yapılmamış değildir, vanilla cross-check zorunlu (6 Mayıs 2026, 63. oturum)
+
+**Karar:** Bir önceki briefing/karar dosyasında *"X planlandı"* notu varsa, X'in yapılmamış olduğu varsayılmaz. Yapılıp yapılmadığı **vanilla kod** veya **git log** ile cross-check edilir, ardından devam edilir.
+
+**Sebep:** 63'te QR payload formatı (`KOD-NUMARA:UUID`) 6. oturumda *"planlandı"* diye yazılmıştı; 7. oturumda implemente edilmişti ama 63 açılışında planlanmış-ama-yapılmamış varsayılıp eski format için kod yazıldı. Vanilla `qr.html` 5 dakikalık bir bakışla doğru formatı gösteriyordu, kontrol atlandı; 4ef6c6e + c7fe6e6 fix(63.4) ile payload parse düzeltilmek zorunda kalındı.
+
+**Geçerlilik:** ✅ Aktif. Yeni port işlerinde "vanilla nasıl çalışıyor?" sorusu **planı okumadan önce** sorulur.
+
+---
+
+### MK-63.C — Knowledge base sayım/tarih bayatlığı; baseline komutlarıyla doğrulama (6 Mayıs 2026, 63. oturum)
+
+**Karar:** Knowledge base'deki sayılar (lang anahtar adedi, dosya satır sayısı, son commit, bağımlılık sürümü) yazma zamanından bu yana güncelliğini yitirmiş olabilir. Sayıyla iş yapacak her oturum açılışında üç baseline komutu çalıştırılır: `wc -l <ilgili dosyalar>`, `git log --oneline -3`, `cat package.json` (veya ilgili manifest).
+
+**Sebep:** 63'te knowledge base `mobile/src/lang/` altında 61 anahtarlı eski snapshot tutuyordu. Bu dizin 54. oturumda silinmiş ve `predev` script'i kök `lang/`'dan kopyalıyordu (MK-62.3); knowledge base bunu bilmiyordu. Açılışta `wc -l` veya `ls` çekilseydi sapma anlık yakalanırdı.
+
+**Geçerlilik:** ✅ Aktif. `oturum-saglik.sh` (MK-55.1) zaten git baseline kontrolü yapıyor, 64+'da i18n anahtar sayımı baseline'a eklenebilir (66+ aday).
+
+---
+
+### MK-64.1 — claude.ai chat URL auto-link sorunu, kod editör zorunlu (6 Mayıs 2026, 64. oturum)
+
+**Karar:** Kod düzenleme **terminal yapıştırması ile yapılmaz**. Doğrudan editör (VS Code / TextEdit, Smart Quotes/Dashes kapalı) kullanılır. Terminal yapıştırması yalnızca komut satırı için (örn. `git commit`, `cp`, `npm run dev`) kullanılır.
+
+**Sebep:** claude.ai chat arayüzü, yapıştırılan terminal çıktısındaki nokta-ayrımlı identifier'ları (örn. `sd.session.user.id`, `e.target.value`, `os.path.expanduser`) otomatik olarak markdown linke çeviriyor: `[sd.session.user.id](http://sd.session.user.id)`. Sed/Python heredoc komutları içinde böyle identifier varsa terminal yapıştırmasında köşeli parantez + URL yapısı kodu bozar. 64'te 3 kez yaşandı (MIsBaslat.jsx 64. satır, isbaslat.js 101. satır + bir tane daha), her seferinde ek tur attırdı. 65'te tekrar oluştu (MK-65.7 — devam kararı).
+
+**Geçerlilik:** ✅ Aktif. Çoklu satır kod yamaları her zaman editörde, terminale yapıştırmadan.
+
+---
+
+### MK-64.2 — Mobile React + ares-mobile.css bağlama (6 Mayıs 2026, 64. oturum)
+
+**Karar:** Mobile React projesi (`mobile/`) vanilla CSS class'larını otomatik almaz. Vanilla'dan adapte edilen ekranlarda ortak class kullanılacaksa (`m-card-item`, `m-bottomnav`, `m-topbar` vb.) `mobile/public/ares-mobile.css` + `mobile/index.html` `<link>` zinciri devrede olmalıdır. Yeni komponent yazımında bu class'lar import gerektirmeden kullanılabilir.
+
+**Sebep:** 64. oturumdan önceki React komponentleri (MIslemler, MAnasayfa, MAnasayfaYonetici) tamamen inline-style kullandığı için CSS bağlama ihtiyacı doğmamıştı. 64'te MTopBar/MBottomNav ortak komponentleri için `m-card-item` / `m-bottomnav` class'ları gerekti; CSS bağlama tamamlandı, sonraki komponentler bu altyapıyı bedava kullanır.
+
+**Geçerlilik:** ✅ Aktif. 65'te IbRolSec/IbQRTara bu altyapıyı kullandı, 66+ ekranlarda da aynen geçerli.
+
+---
+
+### MK-64.3 — Lang master = root `lang/` (MK-62.3'ün güçlendirilmiş tekrarı) (6 Mayıs 2026, 64. oturum)
+
+**Karar:** Mobile React build-time'da `prebuild` script'i (`rm -rf src/lang && mkdir -p src/lang && cp ../lang/*.json src/lang/`) ile senkronize eder. Doğrudan `mobile/src/lang/`'a yapılan değişiklikler bir sonraki dev/build'te override olur, git status'ta da görünmez. Yeni i18n anahtarı eklerken hedef **her zaman** `lang/{tr,en,ar}.json` (kök) olur.
+
+**Sebep:** Bu MK-62.3 ile aynı kararın güçlendirilmiş yeniden yazımıdır. 62'de tuzak gerçek hâliyle yaşandı (10 anahtar uçtu); 64'te de aynı tuzağa düşme riski oluştu, kontrol noktasında MK-62.3 hatırlatıldı. CLAUDE-MOBILE.md satır 184'teki uyarı genişletildi.
+
+**Geçerlilik:** ✅ Aktif. MK-62.3 ile birlikte tek-otorite kuralı koruyor.
+
+---
+
+### MK-64.4 — `kullanicilar` tablosunda `auth_id` kolonu yoktur (6 Mayıs 2026, 64. oturum)
+
+**Karar:** `kullanicilar.id` doğrudan `auth.users.id` ile aynı UUID'dir. Kullanıcı sorgusu **her zaman** `.eq('id', session.user.id)` kalıbıyla yazılır; `auth_id` kolonu **yok**.
+
+**Sebep:** 64'te MIsBaslat.jsx'in kullanıcı sorgusunda `auth_id` kullanıldı, canlı testte 400 hatası döndü. 00817de fix(64) ile düzeltildi. MAnasayfa.jsx ve App.jsx zaten doğru pattern'i kullanıyordu, referans alınmadan yazılmıştı.
+
+**Geçerlilik:** ✅ Aktif. Yeni sayfada kullanıcı sorgusu yazılırken pattern: `.eq('id', session.user.id)`.
+
+---
+
+### MK-64.5 — `yetki_bloklari` tablosunda `tip` kolonu yoktur (6 Mayıs 2026, 64. oturum)
+
+**Karar:** `yetki_bloklari` tablosunun gerçek kolonları: `id, ad, renk` (+ standart `olusturma`/`guncelleme`). `tip` **yok** — vanilla'daki `is_islem_blogu_mu()` fonksiyonu blok adına göre çalışır, kod tarafında `ISLEM_BLOK_ADLARI` listesi ile karşılaştırma yapar; DB'de `tip` enum'ı tutulmaz.
+
+**Sebep:** 64'te SELECT'e `yetki_bloklari(id, ad, renk, tip)` yazıldı, canlı testte 400 hatası döndü. b077cff fix(64) ile düzeltildi.
+
+**Geçerlilik:** ✅ Aktif. Blok-tip ayrımı UI tarafında ad listesi karşılaştırmasıyla yapılır.
+
+---
+
+### MK-65.1 — Lang merge script'i `~/Downloads/` path konvansiyonu kullanır (6 Mayıs 2026, 65. oturum)
+
+**Karar:** Claude'un verdiği dosyalar Cihat'ın Mac'inde **her zaman** `~/Downloads/` altına iner. Lang merge / batch dosya işleme script'leri `/mnt/user-data/outputs/` yerine `os.path.expanduser('~/Downloads')` veya bash'te `$DL` (`export DL=~/Downloads`) kullanır.
+
+**Sebep:** 65'te ilk önerilen `python3 -c` script'i `/mnt/user-data/outputs/` path'ini kullanıyordu; bu sandbox path'i Cihat'ın Mac'inde mevcut değil, "No such file or directory" hatasıyla durdu. `~/Downloads` ile yeniden yazılınca çalıştı.
+
+**Geçerlilik:** ✅ Aktif. Sonraki oturumlarda dosya entegrasyon komutları bu konvansiyonu kullanır.
+
+---
+
+### MK-65.2 — Mobile React tarafında 6-haneli spool_id format (geçici fix, kalıcı çözüm normalize.js) (6 Mayıs 2026, 65. oturum)
+
+**Karar:** DB'de spool_id `<TENANT>-<6_HANELI_PADDED>` formatında saklanır (örn. `A-000575`, 8. oturum sayaç digits=6 kararı). Mobile React tarafında manuel girişte `padStart(6, '0')` ile bu formata dönüştürme yapılır. Bu **geçici fix**'tir; **kalıcı çözüm** `mobile/src/lib/normalize.js` portudur (`ares-normalize.js`'in mobile karşılığı, `markaId()` + `marka()` + `revFmt()` + `malzemeEtiket()` helper'ları).
+
+**Sebep:** 65'te IbQRTara manuel girişte `tenantKod + '-' + manuelDeger.trim()` kullandı; Cihat `0001` aradı, `A-0001` üretti, DB'de `A-000001` olduğu için bulamadı. Ek olarak eski legacy spool'lar (`0169`, `0170`) prefix'siz 4-haneli, ama bunlar artık ana akışta değil. 65'te `padStart(6, '0')` direkt IbQRTara'ya yazıldı, normalize.js portu 66'ya bırakıldı.
+
+**Geçerlilik:** ✅ Geçici aktif. 66 birincil iş #2 olarak kalıcı normalize.js port'u yazılır, ardından geçici padStart kaldırılır.
+
+---
+
+### MK-65.3 — Hub kontrolleri Ekran 4 (uyarı) mockup'ından önce yazılmaz (6 Mayıs 2026, 65. oturum)
+
+**Karar:** İş başlatma akışında uyarı/uyumsuzluk kontrolleri (`is_durumu === 'devam_ediyor'`, `aktif_basamak` × rol matrisi, cross-tenant) **gerçek DB değerleriyle doğrulanmadan** ve **Ekran 4 (uyarı) mockup'ı tasarlanmadan** kod tarafında yazılmaz. False-positive uyarı kullanıcıyı yorar, akış UX'i bozulur.
+
+**Sebep:** 65'te ilk versiyonda kontroller yazılmıştı, ama rol haritası tahminliydi (gerçek DB değerleri `on_imalat`, `alim_kontrol` brifing'te yoktu). Test sırasında her spool Ekran 4 placeholder'a düştü, Cihat'ın doğal akışı (Büküm rolü → A-000575 spool → spool detayı görmek) bozuldu. Tüm kontroller askıya alındı, `aktifBasamakRolaUyumlu` helper'ı isbaslat.js'te export edili kaldı (66'da kullanılır).
+
+**Geçerlilik:** ✅ Aktif. 66'da Ekran 4 mockup turu + `aktif_basamak` × rol matrix tablosu birlikte yazılır, kontroller ondan sonra kod tarafına döner.
+
+---
+
+### MK-65.4 — Rol chip / durum chip görsel tutarlılık (6 Mayıs 2026, 65. oturum)
+
+**Karar:** Kameralı / dinamik arka planlı ekranlarda chip stilleri tek bir görsel dile sabitlenir: **koyu opak arka plan** (`rgba(13,18,28,0.9)` civarı) + **2px solid renkli border** (rolün veya durumun rengi) + **box shadow**. Transparan beyaz arka plan + ince border kombinasyonu **yasak** — kameralı/açık arka planlarda zorla okunur.
+
+**Sebep:** 65'te ilk roleChip stili `rgba(255,255,255,0.13)` arka plan + `1px rgba(255,255,255,0.3)` border ile yazıldı; kameralı arka planda chip yazısı kayboldu. Durum chip pattern'i (zaten koyu opak) referans alınarak hizalandı. İki chip artık aynı görsel dilde, kullanıcı algısı tutarlı.
+
+**Geçerlilik:** ✅ Aktif. Yeni dinamik arka planlı ekranlarda chip stili default olarak bu pattern'le açılır.
+
+---
+
+### MK-65.5 — Hub'a gömülü component'lerde navigate yerine callback (6 Mayıs 2026, 65. oturum)
+
+**Karar:** Bir hub komponent (örn. MIsBaslat) içine gömülü alt komponent (örn. IbQRTara, IbRolSec, IbSpoolDetay), router üzerinde **navigate** çağırmaz. Bunun yerine hub'ın geçirdiği callback prop'larını kullanır (örn. `onGeri`, `onSpoolBulundu`, `onCrossTenant`, `onIslemBaslat`). Hub ekran geçişini kendi state machine'iyle yönetir (`setAktifEkran`).
+
+**Sebep:** 65'te IbQRTara'nın geri butonu MQRTara stand-alone versiyonundan kopya `navigate(-1)` çağırıyordu; bu çağrı hub'ın state machine'ini bypass etti, kullanıcıyı `/is-baslat`'tan tamamen çıkardı. setAktifEkran('rolSec') pattern'iyle düzeltildi. Hub'a gömülü component yazımında en kolay düşülen tuzak.
+
+**Geçerlilik:** ✅ Aktif. Yeni hub-altı bileşenlerde navigate kullanılmaz; her geçiş callback üzerinden hub'a bildirilir.
+
+---
+
+### MK-65.6 — Kart tıklama → QR shortcut UX kararı (6 Mayıs 2026, 65. oturum)
+
+**Karar:** MIsBaslat'ta rol kartına tıklama = **rol seç + direkt QR ekranını aç** (kısa yol). FAB ise rol değiştirmeden, hatırlanan rolle, tekrar QR açmak için (kart tıklamadan).
+
+**Sebep:** 64. oturumun v4 mockup'ında *"tek yetki için otomatik geçiş kaldırıldı"* kararı vardı; bu karar **otomatik atlama**'yı kapsıyordu (sayfa açılır açılmaz tek role atla), **kart tıklama**'yı değil. 65'te Cihat'ın niyeti netleşti: kart tıklama açıkça bir kullanıcı eylemi, otomatik atlama değil. İkisi farklı UX olayları.
+
+**Geçerlilik:** ✅ Aktif. IbRolSec callback'inde `setAktifEkran('qr')` çalışır.
+
+---
+
+### MK-65.7 — claude.ai URL auto-link sorunu sürdü (MK-64.1 devam) (6 Mayıs 2026, 65. oturum)
+
+**Karar:** MK-64.1 aynen geçerli; 65'te tekrar yaşandı (`os.path.expanduser('~/Downloads')` linke dönüşmedi ✓ ama `e.target.value` gibi nokta-ayrımlı identifier'lar yine risk taşıyor). Bu karar yeni bir kural eklemez, MK-64.1'in genelliğini doğrular.
+
+**Sebep:** 64'te 3 kez, 65'te 1 kez tekrar oldu. Tetik koşulu: kod parçası terminal yapıştırması üzerinden gönderildiğinde. Editör kullanımı zorunluluğu pekişti.
+
+**Geçerlilik:** ✅ Aktif. MK-64.1'in pekiştirilmesi.
+
+---
+
+### MK-65.8 — Sapmama protokolü ihlalleri + kapanış mimarisinin kırıldığı an (6 Mayıs 2026, 65. oturum, KRİTİK)
+
+**Karar:** Bu karar 65'in kapanışında fark edilen ÜÇ sapmanın belgelenmesi ve gelecek için mekanik koruma çağrısıdır:
+
+**Sapma 1 — MK-52.1 ihlali (`arespipe_kopyala` atlandı):** Cihat 65'te 4-5 kez `~/Downloads/` → repo dosya transferi yaptı, hiçbirinde MD5 doğrulamalı `arespipe_kopyala` helper'ı kullanılmadı, düz `cp $DL/X /path/...` çalıştırıldı. macOS'un `(1)`, `(2)` suffix riski koruyamadı (şanslıyız ki sorun çıkmadı).
+
+**Sapma 2 — MK-52.2 ihlali (`gp` atlandı):** Push reddedildiğinde `git pull --rebase` + `git push` manuel zinciri kullanıldı, `gp` (otomatik rebase + push helper'ı) çağrılmadı.
+
+**Sapma 3 — MK-56.2 ihlali (KAPANIŞ MİMARİSİ KIRILDI):** 65'in kapanışında `.github/son-durum.md` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` üçüsü yazıldı. Bu **MK-56.2 öncesi (56'dan eski) mimari**. MK-56.2 ile bu üç dosya 56'da `docs/arsiv/`'a taşınmış, BRIEFING.md tek aktif bağlam dosyası olmuştu. 63-64-65 boyunca compact konuşmalarda bu mimari değişimi gözden kaçtı, dosyalar yeniden canlandı. 65 kapanışında MK-65.8 kararı **eski mimari içinde** yazıldı (3 dosyayı tamamlama, bd24774); 66 açılışında gerçek düzeltme yapıldı (193e49f commit'i ile üç dosya `docs/arsiv/*-yanlis-yazim.md` adıyla arşive taşındı, BRIEFING.md ve KARARLAR.md restorasyonu yapıldı).
+
+**Kök neden (üçü için ortak):** Oturum 7. saatine girmişti, fast-forward kapanış. Mekanik kapı (script) çağrılmadı. **Eğer `oturum-saglik.sh 65 --kapanis` (MK-60.3) çağrılsaydı:** BRIEFING.md başlık kontrolü Sapma 3'ü yakalardı (script *"# AresPipe BRIEFING — 65. Oturum Kapanışı"* arar, bulamayınca BAYAT döndürürdü). Sapma 1 ve 2 script kapsamında değil, ama `--kapanis` çıktısındaki commit listesi turundan Cihat farkına vardırılırdı.
+
+**Çözüm (66+ için kalıcı):**
+1. **Kapanış başlangıcında zorunlu komut:** `./scripts/oturum-saglik.sh N --kapanis` her oturum sonunda çalıştırılır. Çıktısı yeşil değilse kapanış commit'i atılmaz.
+2. **Claude tarafında otomatik kontrol:** Kullanıcı *"X'i kapatıyoruz"* dediği anda Claude şu üçünü tek seferde kontrol eder: (a) BRIEFING.md başlık güncel mi (N. Oturum Kapanışı yazıyor mu), (b) `arespipe_kopyala` her dosya transferinde kullanıldı mı, (c) `gp` push'larda kullanıldı mı. Eksik varsa kapanışa geçmeden tamamlatır.
+3. **Eski 3-dosya mimarisi yasak:** `.github/son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` **YAZILMAZ** (MK-56.2). Bağlam BRIEFING.md, kararlar KARARLAR.md, kapanış orkestra script'i + Claude raporu (MK-56.4 / MK-60.3). Bu üç dosya repo köküne tekrar dönerse bu MK-56.2 ihlali kabul edilir, derhal arşive taşınır.
+
+**Geçerlilik:** ✅ Aktif (KRİTİK). Bu karar MK-52.1, MK-52.2, MK-56.2, MK-56.4, MK-60.3'ün hepsini birlikte canlı tutan bekçi karardır. 66 açılışında bu sapmanın delili `docs/arsiv/*-yanlis-yazim.md` dosyaları ve 193e49f commit'i ile korundu.
