@@ -1,7 +1,8 @@
 // mobile/src/lib/isbaslat.js
 // AresPipe Mobile — İş Başlat helper'ları
-// Eski mobile/is_baslat.html'in lib karşılığı (rol seçimi + DB sorguları)
-// 64. oturumda yazıldı, R-10 mockup-first onayıyla.
+// 64. oturumda yazıldı (rol seçimi + DB sorguları)
+// 65. oturumda eklendi: BLOK_RENK_HEX (v3.2 palette), blokRenkHex(),
+//                       rolBasamakKarsiligi(), islemBloklariniGetir().renkHex
 
 import { supabase } from './supabase'
 
@@ -37,19 +38,98 @@ export function blokIkon(blokAd) {
 }
 
 // ───────────────────────────────────────────────
-// Renk normalize: DB'den hex/isim/preset kodu olabilir
-// → ares-mobile.css preset class'ına çevir (.cl-ac/cl-warn/cl-gr/cl-leg/cl-re)
+// v3.2 Renk Palette'i — 65. oturum
+// 5 işlem rengi (turkuaz/indigo/turuncu/pembe/mor) + 4 durum rengi
+// (mavi/amber/yeşil/kırmızı) çakışmadan ayrı slotlara dağıtıldı.
+// Mockup karar zinciri: v3.1 → v3.2 (ayrım netleştirildi).
+// Bkz. son-durum.md MK-65 + IbQRTara mockup turu (v3.3).
+// ───────────────────────────────────────────────
+export const BLOK_RENK_HEX = {
+  'İmalat':           '#6366f1', // indigo (mavi/scan tonundan farklı)
+  'Argon Kaynağı':    '#f97316', // turuncu
+  'Gazaltı Kaynağı':  '#f97316', // turuncu (Argon'la aynı kategori)
+  'Büküm':            '#14b8a6', // turkuaz
+  'Kesim':            '#ec4899', // pembe (kırmızı/hata tonundan farklı)
+  'Markalama':        '#a855f7', // mor
+  'Ön Kontrol':       '#a855f7', // mor (Markalama'yla aynı kategori)
+}
+
+const VARSAYILAN_RENK = '#888888'
+
+export function blokRenkHex(blokAd) {
+  if (!blokAd) return VARSAYILAN_RENK
+  return BLOK_RENK_HEX[blokAd] || VARSAYILAN_RENK
+}
+
+// Hex string'i rgba'ya çevirir (ikon arka planı, glow vb. için).
+// 3-haneli (#fff) ve 6-haneli (#ffffff) hex destekler.
+// rgba(...) gibi string gelirse olduğu gibi döner.
+export function hexToRgba(hex, alpha) {
+  if (!hex) return `rgba(136,136,136,${alpha})`
+  if (typeof hex !== 'string') return `rgba(136,136,136,${alpha})`
+  if (hex.startsWith('rgb')) return hex
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  if (h.length !== 6) return `rgba(136,136,136,${alpha})`
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
+// ───────────────────────────────────────────────
+// Rol → DB aktif_basamak karşılığı
+// (Ekran 4 rol uyumsuzluğu kontrolü için — 65. oturum)
+//
+// DB'deki gerçek aktif_basamak değerleri (test sonucu):
+//   'on_imalat', 'alim_kontrol', vs. — sürece özgü adlandırmalar
+//
+// Bir rol birden fazla aşamayı kapsayabilir (operatörün katma değer
+// adımları). Bu yüzden DEĞER bir DİZİ. Spool.aktif_basamak listede
+// varsa rol uyumlu sayılır.
+//
+// 65. oturum: Liste kasıtlı geniş tutuldu (false-positive uyumsuzluk
+// engellenir). 66+ oturumlarda gerçek iş akışı haritasına göre daraltılır.
+// ───────────────────────────────────────────────
+const ROL_BASAMAK = {
+  'İmalat':           ['imalat', 'on_imalat'],
+  'Argon Kaynağı':    ['kaynak', 'argon_kaynak'],
+  'Gazaltı Kaynağı':  ['kaynak', 'gazalti_kaynak'],
+  'Büküm':            ['bukum'],
+  'Kesim':            ['kesim'],
+  'Markalama':        ['markalama'],
+  'Ön Kontrol':       ['on_kontrol', 'alim_kontrol'],
+}
+
+// Rolün uyumlu olduğu basamak listesi (her zaman dizi döner; bilinmeyen rol = [])
+export function rolBasamakKarsiligi(blokAd) {
+  if (!blokAd) return []
+  return ROL_BASAMAK[blokAd] || []
+}
+
+// Spool aşaması bu rol için uyumlu mu?
+// Bilinmeyen aşama (haritada yok) için true döner — false-positive engellenir,
+// operatör Ekran 3'te detayı görüp kendi karar verir.
+export function aktifBasamakRolaUyumlu(blokAd, aktifBasamak) {
+  if (!aktifBasamak) return true
+  const liste = rolBasamakKarsiligi(blokAd)
+  if (liste.length === 0) return true     // rol haritada yok → kontrolü pas geç
+  return liste.includes(aktifBasamak)
+}
+
+// ───────────────────────────────────────────────
+// (DEPRECATED ama korunur) Eski renk → CSS preset class sistemi
+// MIslemler ve başka yerler hâlâ cl-ac/cl-gr/cl-re/cl-warn/cl-leg kullanıyor.
+// İş Başlat akışı 65. oturumdan itibaren v3.2 hex sistemine geçti.
 // ───────────────────────────────────────────────
 function _renkAnahtari(renk) {
   if (!renk) return 'ac'
   const r = String(renk).toLowerCase().replace(/[^a-z0-9]/g, '')
-  // hex eşleşmeleri
   if (r.includes('2d8eff'))                  return 'ac'
   if (r.includes('16a36e'))                  return 'gr'
   if (r.includes('e53e3e') || r.includes('dc2626')) return 're'
   if (r.includes('d97706') || r.includes('f59e0b')) return 'warn'
   if (r.includes('7c3aed') || r.includes('8b5cf6')) return 'leg'
-  // sözcük eşleşmeleri
   if (['ac', 'mavi', 'blue'].includes(r))             return 'ac'
   if (['gr', 'yesil', 'yeşil', 'green'].includes(r))  return 'gr'
   if (['re', 'kirmizi', 'kırmızı', 'red'].includes(r)) return 're'
@@ -64,8 +144,6 @@ export function blokRenkSinifi(renk) {
 
 export function blokIkonRenkStili(renk) {
   const k = _renkAnahtari(renk)
-  // ares-mobile.css'te ic-blue/ic-green/ic-red preset'leri var, warn/leg yok
-  // hepsini inline rgba ile veriyorum — tutarlı
   const map = {
     ac:   'rgba(45, 142, 255, 0.12)',
     gr:   'rgba(22, 163, 110, 0.12)',
@@ -79,6 +157,8 @@ export function blokIkonRenkStili(renk) {
 // ───────────────────────────────────────────────
 // Kullanıcının atanmış olduğu işlem bloklarını getir
 // (sadece ISLEM_BLOK_ADLARI'nda olanları döner)
+// 65. oturum: dönen object'e `renkHex` (v3.2 palette) eklendi.
+// `renk` (DB) field'ı geriye uyumluluk için saklanır.
 // ───────────────────────────────────────────────
 export async function islemBloklariniGetir(kullaniciId, tenantId) {
   if (!kullaniciId || !tenantId) return []
@@ -98,7 +178,14 @@ export async function islemBloklariniGetir(kullaniciId, tenantId) {
     return data
       .map(kb => {
         const b = kb.yetki_bloklari || {}
-        return { id: b.id, blok_kayit_id: kb.id, ad: b.ad, renk: b.renk, tip: b.tip }
+        return {
+          id: b.id,
+          blok_kayit_id: kb.id,
+          ad: b.ad,
+          renk: b.renk,                  // DB rengi (geriye uyum)
+          renkHex: blokRenkHex(b.ad),    // v3.2 palette (yeni — IbQRTara/IbRolSec)
+          tip: b.tip,
+        }
       })
       .filter(b => b.id && ISLEM_BLOK_ADLARI.includes(b.ad))
   } catch (e) {
@@ -109,18 +196,18 @@ export async function islemBloklariniGetir(kullaniciId, tenantId) {
 
 // ───────────────────────────────────────────────
 // localStorage — rol hatırlama
-// Operatör bir rol seçtiğinde, sonraki açılışta otomatik seçili gelir.
-// Kart highlighted olduğu için kullanıcı yanlışı fark eder.
+// 65. oturum: artık sadece id + ad saklanır.
+// renk runtime'da blokRenkHex(ad) ile çevrilir → palette güncellenirse
+// localStorage'daki eski hex çakışma yapmaz.
 // ───────────────────────────────────────────────
 const ROL_KEY = 'ares_is_aktif_rol'
 
 export function rolKaydet(blok) {
-  if (!blok || !blok.id) return
+  if (!blok || !blok.id || !blok.ad) return
   try {
     localStorage.setItem(ROL_KEY, JSON.stringify({
-      id:   blok.id,
-      ad:   blok.ad,
-      renk: blok.renk || null,
+      id: blok.id,
+      ad: blok.ad,
     }))
   } catch (e) { /* private browsing fallback */ }
 }
@@ -128,7 +215,10 @@ export function rolKaydet(blok) {
 export function rolHatirla() {
   try {
     const v = localStorage.getItem(ROL_KEY)
-    return v ? JSON.parse(v) : null
+    if (!v) return null
+    const obj = JSON.parse(v)
+    if (!obj || !obj.id || !obj.ad) return null
+    return obj
   } catch {
     return null
   }
