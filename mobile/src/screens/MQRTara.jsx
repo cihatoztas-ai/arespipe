@@ -99,9 +99,24 @@ export default function MQRTara() {
       try { navigator.vibrate(100) } catch (e) {}
     }
 
-    const spoolId = (spoolIdRaw || '').trim().toUpperCase()
+    // Payload formatları (6. → 7. oturum kararı):
+    //   Yeni: "KOD-NUMARA:UUID"   (örn. "A-0575:9911DC39-F826-4EB9-89AA-CDB40253EDB1")
+    //   Eski: "KOD-NUMARA"        (örn. "A-0575")
+    //   Çok eski: "NUMARA"        (prefix'siz, örn. "0575" — geriye uyumlu)
+    // UUID parça varsa onunla ara (en kesin), yoksa spool_id ile.
+    const raw = (spoolIdRaw || '').trim().toUpperCase()
+    let spoolKodu = raw
+    let spoolUuid = null
+    if (raw.includes(':')) {
+      const parcalar = raw.split(':')
+      spoolKodu = parcalar[0]
+      const olasiUuid = (parcalar[1] || '').toLowerCase()
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      if (UUID_RE.test(olasiUuid)) spoolUuid = olasiUuid
+    }
+
     setDurum('arama')
-    setDurumYazi(spoolId + ' ' + tv('m_qr_araniyor', 'aranıyor…'))
+    setDurumYazi(spoolKodu + ' ' + tv('m_qr_araniyor', 'aranıyor…'))
 
     try {
       const oturum = await getOturum()
@@ -114,21 +129,20 @@ export default function MQRTara() {
         return
       }
 
-      // 6. oturum: QR payload format "KOD-NUMARA:UUID" planlanmıştı.
-      // Şu an payload sadece "KOD-NUMARA" — UUID parse'ı gelecek oturumda eklenir.
-      // Eski prefix'siz kayıtlar da spool_id'de "0504" formatında olabilir.
-      const { data, error } = await supabase
+      // UUID varsa onunla ara (kesin eşleşme), yoksa spool_id ile.
+      let sorgu = supabase
         .from('spooller')
         .select('id, spool_id')
         .eq('tenant_id', tid)
-        .eq('spool_id', spoolId)
         .or('silindi.is.null,silindi.eq.false')
         .limit(1)
-        .maybeSingle()
+      sorgu = spoolUuid ? sorgu.eq('id', spoolUuid) : sorgu.eq('spool_id', spoolKodu)
+
+      const { data, error } = await sorgu.maybeSingle()
 
       if (error || !data) {
         setDurum('hata')
-        setDurumYazi(tv('m_qr_bulunamadi', 'Spool bulunamadı') + ': ' + spoolId)
+        setDurumYazi(tv('m_qr_bulunamadi', 'Spool bulunamadı') + ': ' + spoolKodu)
         setTimeout(taramayiTekrarBaslat, HATA_BEKLEME_MS)
         return
       }
@@ -633,36 +647,36 @@ const s = {
   durum: {
     display: 'inline-flex', alignItems: 'center',
     gap: 8,
-    padding: '8px 16px',
+    padding: '10px 18px',
     borderRadius: 25,
-    fontSize: 14, fontWeight: 600,
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+    fontSize: 14, fontWeight: 700,
+    boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
     maxWidth: '90vw',
+    lineHeight: 1.3,
   },
   durumNokta: {
     width: 8, height: 8, borderRadius: '50%',
     flexShrink: 0,
   },
   stTarama:  {
-    background: 'rgba(45,142,255,0.22)',
-    border: '1px solid rgba(45,142,255,0.5)',
+    background: 'rgba(13,18,28,0.9)',
+    border: '2px solid #2D8EFF',
     color: '#7ec8ff',
   },
   stArama:   {
-    background: 'rgba(217,119,6,0.22)',
-    border: '1px solid rgba(217,119,6,0.5)',
+    background: 'rgba(13,18,28,0.9)',
+    border: '2px solid #d97706',
     color: '#fbbf24',
   },
   stBulundu: {
-    background: 'rgba(22,163,110,0.22)',
-    border: '1px solid rgba(22,163,110,0.5)',
+    background: 'rgba(13,18,28,0.92)',
+    border: '2px solid #16a36e',
     color: '#4ade80',
   },
   stHata:    {
-    background: 'rgba(229,62,62,0.22)',
-    border: '1px solid rgba(229,62,62,0.5)',
-    color: '#f87171',
+    background: 'rgba(13,18,28,0.92)',
+    border: '2px solid #e53e3e',
+    color: '#fca5a5',
   },
 
   altBilgi: {
