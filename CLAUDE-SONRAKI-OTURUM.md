@@ -1,162 +1,204 @@
-# 55. Oturum — i18n Borç Kapatma + Onarım Modu Test (3 Mayıs 2026)
+# CLAUDE-SONRAKI-OTURUM.md — 64. Oturum
 
-> 54'ü takip eder. 54 mobile vizyon + i18n altyapısı işine ayrıldı, 9 (`flansh_*`) + 18 (`izb_*`) eksik i18n anahtarı + 1 G-03 yüzey uyarısı CI'da yarım kaldı. 55'in birincil işi bunları kapatmak.
->
-> 55 aynı zamanda **MK-55.1 onarım modu**'nun ilk testi: 53+54 ritüel atlamasının üst üste birikmesi tespit edildi, oturum-saglik.sh script'i BAYAT dedi, geriye dönük özet bu dosyayla beraber yazıldı.
+> 63'ü takip eder. **Birincil iş: MIsBaslat.jsx** — operatör çekirdek akışı, vanilla `is_baslat.html` 1930 satır, mobile React port'u.
 
 ---
 
-## Açılış Ritüeli (CLAUDE.md MK-55.1 sonrası)
+## Açılış Ritüeli (CLAUDE.md disiplini, 52. oturumda sadeleşti)
 
-```bash
-cd ~/Desktop/arespipe && git pull origin main && ./scripts/oturum-saglik.sh 55
-```
+2 kontrol cevabı zorunlu:
 
-Beklenen: **✅ TEMİZ**. BAYAT çıkarsa yine onarım moduna girilir.
+1. **`git pull` temiz mi + CI yeşil mi?** →
+   ```bash
+   cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+   ```
 
-Sonra: "Bugün ne yapmak istiyorsun?" — önerilen sıra aşağıda.
-
----
-
-## 55'in Hedefi
-
-CI yeşilini sağlamlaştırmak (sarı→yeşil), 54'te yarım kalmış 28 uyarıyı kapatmak. Mobil i18n bypass borcunu (MK-54.1) ele almak. Bu işler küçük ama biriktiklerinde *"sistem güvenilmez"* hissi yaratıyorlar.
-
-### Ana İş 1 — `spool_detay.html` flansh_* anahtarları (öncelik 1)
-
-54'te flanş bölümüne kod yazılmış (satır 3485-3510 arası), `tv('flansh_*')` çağrıları var ama 9 anahtar `lang/tr.json` + `en.json` + `ar.json`'da yok.
-
-**Eksik anahtarlar:**
-
-| Satır | Anahtar | Tahmini içerik |
-|-------|---------|----------------|
-| 3485 | `flansh_meta` | (flanş ana başlık?) |
-| 3495 | `flansh_standart` | Standart |
-| 3496 | `flansh_od` | Dış Çap (OD) |
-| 3497 | `flansh_kalinlik` | Kalınlık |
-| 3499 | `flansh_hub` | Hub |
-| 3502 | `flansh_ic_cap` | İç Çap |
-| 3504 | `flansh_bcd` | BCD (Bolt Circle Diameter) |
-| 3508 | `flansh_civata` | Cıvata |
-| 3510 | `flansh_agirlik` | Ağırlık |
-
-**Adım:**
-1. `spool_detay.html:3485-3510` aralığını oku, her `tv()` çağrısının fallback'ini ve bağlamını gör
-2. Üç dil için anahtar değerlerini belirle (TR canonical + EN + AR)
-3. `lang/tr.json`, `lang/en.json`, `lang/ar.json` üçüne ekle
-4. Anahtar sırası alfabetik mi kategori mi — mevcut dosyaya bak
-
-**Test:** Lokal `python -m http.server 8000` veya direkt canlıda `?lang=en` ve `?lang=ar` ile flanş bölümü kontrol — raw key görünmemeli.
-
-### Ana İş 2 — `izometri-batch.html` izb_* anahtarları (öncelik 2)
-
-18 eksik anahtar (satır 349'dan 814'e kadar dağılmış). Tahmini içerikler büyük ölçüde anahtar adından okunabilir:
-
-```
-izb_calisiyor          izb_temizle_onay       izb_durum_yukleniyor
-izb_durum_kuyrukta     izb_supabase_hata      izb_yeni_batch_onay
-izb_yukleme_hazirlaniyor   izb_batch_acilmadi     izb_hicbir_yuklenmedi
-izb_kuyruk_hata        izb_arkada_basladi     izb_hata_genel
-izb_yukleniyor_x       izb_upload_hatasi      izb_bilinmeyen_hata
-izb_btn_yeni_batch     izb_resume             izb_dosya
-```
-
-**Adım:** Aynı prosedür — bağlam okumak, üç dile yazmak, mevcut anahtar formatına uygun yere koymak.
-
-### Ana İş 3 — `devre_detay.html:1428` G-03 ham yüzey
-
-Tek satır, tek uyarı. `esc(x.yuzey)` yerine `ARES_NORM.yuzeyEtiket(x.yuzey)` kullanılacak. CLAUDE.md 2.18 referansı.
-
-**Adım:**
-1. Satır 1428'i oku
-2. `ARES_NORM.yuzeyEtiket()` çağrısına çevir (ham `karbon` yerine "Karbon Çelik" gibi canonical)
-3. Lokal smoke-test (devre detay açılışı bozulmadı mı)
-
-### Ana İş 4 — CI yeşil doğrulama
-
-Üç düzeltme commit'lendikten sonra `.github/ci-son-rapor.json` taranır:
-- `hata: 0`
-- `uyari: 0` (veya 1 — sadece bilinen tolere edilen)
-- `durum: "yesil"`
-
-Push edip GitHub Actions'da yeşil görmeden 55 kapanmaz.
+2. **Bugün ne yapmak istiyorsun?** → Önerilen: MIsBaslat.jsx (briefing'in birincil işi)
 
 ---
 
-## İkincil İş (zaman kalırsa)
+## 64'ün Hedefi
 
-### MK-54.1 — Mobile M Ekranları i18n Bypass Denetimi
+**MIsBaslat.jsx** mobile React port'u. Vanilla `is_baslat.html` (1930 satır) operatörlerin günlük çekirdek akışı:
 
-54'te tespit edildi, 5 dosyada şüphe. **MGiris.jsx kanıtlı** (kendi `[dil, setDil] = useState` paralel state, `useT()` çağrılmıyor, JSX hardcoded TR).
-
-**Plan:**
-1. 5 dosyayı sırayla aç (MGiris, MAnasayfa, MAnasayfaYonetici, MIslemler, MDrawer)
-2. Her birinde `useT()` import edilmiş mi, JSX'te `t()` veya `tv()` kullanılıyor mu?
-3. Bypass varsa: hardcoded string'leri `tv('anahtar', 'fallback')` formatına çevir, eksik anahtarları üç dile ekle
-4. Lokal `npm run dev` ile dil değiştirme testi (TR → EN → AR)
-
-**Süre tahmini:** 5 ekran × ~10dk = ~50dk. Ana işlerden zaman artarsa 55'te kapanabilir, kalmazsa 56'ya devredilir.
+- Rol seçimi → QR tara → Spool detayı gör → İşe başla → Çalış → Foto çek + Basamak seç → Tamamla
+- 10 ekranlı state machine
+- LocalStorage persistance (`ares_is_aktif` — sayfa yenilenirse devam eder)
+- Foto upload (Supabase Storage `arespipe-dosyalar` bucket)
+- 3 ayrı foto akışı: not ekle (opsiyonel), kapanış (zorunlu), son foto SF (on_kontrol basamağı)
+- Uyarı sistemi: alıştırma VAR/KISMI, test tanımlı, `qr_goster=true` notlar
 
 ---
 
-## Aşağıda Bekleyen Büyük İşler (55'e dahil değil, hatırlatma)
+## 64. Oturum Yaklaşımı (R-10 mockup-first 5-batch)
 
-Bu maddeler 55'te ele alınmıyor — sadece **unutulmasın** diye burada listede:
+Tek seferde tüm 10 ekranı mockup yapmak imkansız. Batch-batch ilerle:
 
-| Borç | Detay |
-|------|-------|
-| **MK-49.A** | spool_detay 3D model deterministik render. PDF parse'tan gelen `yon_dizilim` JSON'undan Three.js benzeri çizim. AI çağrısı yok, $0 maliyet. 49'dan beri bekliyor. |
-| **MK-49.B** | İzometri PDF yükleme bileşeni. Devre wizard Adım 2'ye gömülü (atla butonu var) + devre detay sayfasında "İzometri Çizimleri" sekmesi. Aynı backend endpoint'leri (`batch-baslat` + `batch-kuyruga-al`). |
-| **parser_kural pipeline_no regex** | 51 log: `[L2-FAIL] sebep: 'zorunlu_eksik: pipeline_no'`. Mevcut `\d{3}` dar, `303S` gibi varyant yakalamıyor. Genişletme + 5+ Tersan PDF test. |
-| **`_l2_meta` / `_l2_fallback` ai_api_log** | L2 başarısı DB'ye yazılmıyor, görünürlük yok. Yeni log fonksiyonu (Seçenek A) tercih edilmişti. |
-| **Migration disiplini** | DB değişiklikleri elle Supabase'de — repo görmüyor. Her DB değişikliği `migrations/NNN_*.sql` olarak yazılmalı kararı henüz alınmadı. |
-| **CALISMA-MODU ↔ CIHAT-PROFIL overlap** | İkisinde de Cihat tanımı var, biri silinmeli. |
+### Batch 1 — Rol Seç + QR + Spool Detay (mockup)
 
----
+İlk 3 ekran. R-10: önce 3-mockup yan yana, kullanıcı onayı, gerekirse iterasyon.
 
-## Beklenen Commit'ler (55)
+Önemli noktalar:
+- **Rol Seç:** `ARES.kullaniciBloklari()` çağrısı, ISLEM_BLOKLARI = ['İmalat', 'Kaynak', 'Büküm', 'Kesim', 'Markalama', 'Ön Kontrol']. Tek blok varsa otomatik geç (800ms sonra rolDevam).
+- **QR Tara (ekran 2):** MQRTara'dan kopya değil — burada modal değil tam ekran kamera + manuel input alt-alta. Cross-tenant uyarı + payload parse zaten 63.4'te yapıldı, kod paylaşılabilir.
+- **Spool Detay:** Foto carousel + 2 sekme (Genel/Malzeme) + dinamik foot (`is_durumu` durumuna göre "İşe Başla" veya "İşi Kapat + Not Ekle + İptal").
 
-```
-fix(i18n): spool_detay flansh_* anahtarları üç dile eklendi (55)
-fix(i18n): izometri-batch izb_* anahtarları üç dile eklendi (55)
-fix(g03): devre_detay yüzey rendering ARES_NORM'a çevrildi (55)
-docs(55): MK-55.1 oturum-saglik.sh + CLAUDE.md ritual güncellendi
-docs(55): oturum kapanış — son+sonraki+son-durum güncellendi
-```
+### Batch 2 — Uyarı + Not Ekle (mockup)
 
-İkincil iş yapılırsa:
-```
-fix(mk-54.1): mobile M ekranları useT() hook'una bağlandı (55)
-```
+Akış: Spool detay → "İşe Başla" tıkla → uyarı listesi varsa Uyarı ekranı ara adım → onay → DB update → durum "devam_ediyor".
 
----
+- **Uyarı:** 3 tip — kırmızı (alıştırma VAR), sarı (alıştırma KISMI veya qr_goster=true notlar), mavi (test tanımlı)
+- **Not Ekle:** Textarea + foto upload (multi-select) + not geçmişi listesi (`notlar` tablosu)
 
-## Kapanış Protokolü (55 sonu)
+### Batch 3 — Foto Kapat + Basamak Seç + Tamamla (mockup)
 
-```bash
-# 1. Üç dosyayı 56 için yenile
-#    - CLAUDE-SON-OTURUM.md → "# 55. Oturum — ..."
-#    - CLAUDE-SONRAKI-OTURUM.md → "# 56. Oturum — ..."
-#    - .github/son-durum.md → güncel borç
+Akış: Devam eden iş → "İşi Kapat" → Foto Kapat (zorunlu file input) → Basamak Seç (rol'e göre filtreli) → Tamamla → DB update.
 
-# 2. Sağlık kontrolü
-./scripts/oturum-saglik.sh 55 --kapanis
+- **Foto Kapat:** Tek dosya, kamera/galeri açar, önizleme, "Devam Et" butonu (foto seçilene kadar disabled)
+- **Basamak Seç:** ROL_BASAMAKLAR map'i — `İmalat`/`Kaynak` → `argon_kaynagi`/`gazalti_kaynagi`/`on_kontrol`, diğer roller sadece `on_kontrol`. Alıştırma=VAR ise kaynak basamakları disabled.
+- **Tamamla:** DB update (aktif_basamak, is_durumu='bekliyor', guncelleme), is_kayitlari INSERT, foto upload, 2sn sonra QR'a dön
 
-# 3. Beklenti: ✅ üç dosya bugünkü, başlıklar doğru → otomatik commit
-# 4. Manuel push
-gp
-```
+### Batch 4 — SF Akışı (on_kontrol için, mockup)
+
+Spool `aktif_basamak === 'on_kontrol'` ise farklı akış: spoolYukle direkt SF ekranına gider (Spool Detay atlanır). Bu akış imalat çıkış fotoğrafı içindir, basamak değişmez.
+
+### Batch 5 — Kod Port (5 batch onaylanınca)
+
+Tüm mockup'lar onaylandıktan sonra MIsBaslat.jsx tek seferde yazılır. Tahmini boyut: 1500-2000 satır.
 
 ---
 
-## Kritik Hatırlatmalar
+## Vanilla Referans Detayları
 
-- **MK-55.1 aktif:** Bu oturum açılışında oturum-saglik.sh BAYAT dedi, onarım modu çalıştı. Bu kapı bundan sonra her oturum başında ve sonunda işliyor olacak.
-- **MK-53.5 aktif:** Sohbet içinde karar geçtiğinde bekleme — anında KARARLAR.md'ye veya ilgili yaşayan dosyaya işle.
-- **MK-54.B aktif:** Yeni özellik önce web'de doğar. Mobile-only öneri reddedilir.
+`is_baslat.html` (1930 satır) okundu, ana yapısı:
+
+### Sabit veriler (script üst kısmı)
+
+```js
+var ISLEM_BLOKLARI = ['İmalat', 'Kaynak', 'Büküm', 'Kesim', 'Markalama', 'Ön Kontrol']
+
+var ROL_BASAMAKLAR = {
+  'İmalat':     ['argon_kaynagi', 'gazalti_kaynagi', 'on_kontrol'],
+  'Kaynak':     ['argon_kaynagi', 'gazalti_kaynagi', 'on_kontrol'],
+  'Büküm':      ['on_kontrol'],
+  'Kesim':      ['on_kontrol'],
+  'Markalama':  ['on_kontrol'],
+  'Ön Kontrol': ['on_kontrol']
+}
+
+var BASAMAK_TANIMLARI = [
+  { sistem_adi: 'argon_kaynagi',  ad: tv('mob_is_bsm_argon',   'Argon Kaynağı'),   renk: '#d97706' },
+  { sistem_adi: 'gazalti_kaynagi',ad: tv('mob_is_bsm_gazalti', 'Gazaltı Kaynağı'), renk: '#d97706' },
+  { sistem_adi: 'on_kontrol',     ad: tv('mob_is_bsm_on_kontrol','Ön Kontrol'),    renk: '#7c3aed' }
+]
+```
+
+### Spool yükleme arama mantığı
+
+```js
+// UUID → id, sadece rakam → spool_id, diğer → spool_no
+var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+var aramaKolonu = UUID_RE.test(val) ? 'id'
+                : /^[0-9]+$/.test(val) ? 'spool_id'
+                : 'spool_no'
+```
+
+### Spool SELECT (ana sorgu)
+
+```js
+'id, spool_no, spool_id, pipeline_no, dis_cap_mm, et_kalinligi_mm, agirlik, malzeme, kalite, yuzey_islemi, rev, aktif_basamak, is_durumu, ilerleme, durdurma_sebebi, alistirma, devreler(id, ad), fotograflar(...), spool_malzemeleri(...), kesim_kalemleri(...), bukum_kalemleri(...), markalama_kalemleri(...)'
+```
+
+5 alt-tablo sorgusu Promise.all ile paralel atılıyor (`_safe` wrapper ile).
+
+### Foto upload helper
+
+```js
+async function fotoyukle(file, islemTuru) {
+  // Dosya adı: tenant_id + '/' + spool_id + '/' + Date.now() + '_' + islemTuru + '.' + uzanti
+  // Bucket: arespipe-dosyalar
+  // Önce storage.upload, sonra getPublicUrl, sonra fotograflar tablosuna INSERT
+}
+```
+
+### LocalStorage persistance
+
+`ares_is_aktif` key — `{id, rol}` JSON. `is_durumu='devam_ediyor'` set edilince yazılır, sıfırlanınca silinir. Sayfa açılışında kontrol: aktif iş varsa direkt o spool yüklenir.
 
 ---
 
-> 56. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
-> Karar günlüğü: `docs/KARARLAR.md`.
-> Modül durumu: `docs/PROJE-HARITASI.md`.
+## Açık Borç (önceliğe göre)
+
+1. **MIsBaslat.jsx 5-batch port** (yukarıda detay)
+2. **MQRTara cross-tenant uyarısı** — 6. oturum planı, MIsBaslat sırasında MQRTara'da da fix atılır (paylaşılan akış)
+3. **MK-58.1 alıştırma enum migration** — MIsBaslat'ta da uppercase 'VAR'/'KISMI'/'YOK' okunacak, tüm mobile dönüşümü sonra tek seferde lowercase'a
+4. **MK-62.3 README açığı** — predev script `mobile/src/lang/README.md`'yi siliyor, predev'e README üretme satırı eklenmeli (MIsBaslat sırasında natural moment)
+
+---
+
+## 64'te Veriyle Tasarım
+
+Mockup-first protokolü zaman alıyor — 5 batch için tahmini 60-90 dakika sadece mockup. Buna karşılık kod aşaması ~30 dakika sürecek (port iş, kreatif iş değil). Toplam 90-120 dakika. Vakit darsa Batch 1+2 mockup, kullanıcı onayıyla Batch 3'te kod yazımına geçilebilir, Batch 4 (SF) sonraki oturum.
+
+---
+
+## Kritik Hatırlatmalar (63'ten taşınanlar)
+
+### MK-63.A — DB sütun adlarını varsayma
+Vanilla'daki kolon adına direkt güven. Ezbere yazma. Knowledge base bayat olabilir.
+
+### MK-63.B — "Planlandı" ≠ "Yapılmadı"
+Briefing'deki plan notları sonraki oturumda gerçekleştirilmiş olabilir. Vanilla dosyayı cross-check et.
+
+### MK-63.C — Knowledge Base Sayım/Tarih Bayatlığı
+`wc -l`, `git log`, `cat package.json` ile baseline kontrol.
+
+### MK-51.1 — Dosya kopyalama protokolü (51'den)
+`cp` öncesi `wc -l` ile boyut doğrula. Tarayıcı suffix'leri (`tr (13).json` vs `tr (12).json`) için en yenisini al.
+
+### MK-51.2 — Yeterli ornek prensibi
+Regex/parse kuralları en az 5 farklı gerçek örnekle test edilir.
+
+---
+
+## Süreç Disiplinleri (62 + 63'ten)
+
+- **Heredoc/sed yöntemi** dosya patch için (Mac indirme bozuk olabilir)
+- **`git pull --rebase origin main`** her push öncesi (GitHub Actions otomatik commit ekliyor)
+- **Vercel "Canceled"** = ardışık push, panic değil
+- **Filesystem I/O hatası** olursa dosyaları yeniden yükle (sandbox geçici sorun)
+- **Sadece terminal git akışı** (51'den, GitHub web upload kullanma)
+
+---
+
+## Bonus İşler (64'te zaman kalırsa)
+
+- **MK-62.3 README açığı** kapat — predev script güncellemesi
+- **MAnasayfa kart yönlendirmeleri** — Bekleyen Spool, KK Bekleyen, vs. henüz `yakinda(...)`. MIsBaslat tamamlanınca operatörler için anlamlı yönlendirme.
+- **MQRTara cross-tenant uyarısı** — küçük iş (6. oturum planı), MIsBaslat'ın QR ekranıyla beraber halledilebilir
+
+---
+
+## Storage Bucket'ı (Bilinen)
+
+```
+arespipe-dosyalar/
+  {tenant_id}/
+    {spool_id}/
+      {timestamp}_{islem_turu}.{uzanti}
+```
+
+`islem_turu` değerleri: `not_imalat`, `not_kaynak`, `imalat`, `kaynak`, `on_kontrol` vb.
+
+---
+
+## Sayılar Hatırlama
+
+- HEAD: `b139a60` (63 sonu)
+- Lang: 1800 anahtar TR/EN/AR senkron
+- Mobile ekran: 9 tamamlandı (MGiris, MAnasayfa, MAnasayfaYonetici, MIslemler, MDrawer, MSpoolDetay, MDevreDetay, MDevreler, MQRTara)
+- Bekleyen ekran: MIsBaslat (1500-2000 satır), MProfil (avatar yükleme)
+
+---
+
+> 64. oturum açılışında `son-durum.md` + `CLAUDE-SON-OTURUM.md` + bu dosya okunur. Sonra Cihat'a "Hangi işle başlayalım?" sorusu sorulur. Önerilen: MIsBaslat Batch 1 mockup ile başla.

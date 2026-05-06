@@ -1,133 +1,247 @@
-# 54. Oturum — Mobile Vizyon + i18n Altyapısı (3 Mayıs 2026)
+# CLAUDE-SON-OTURUM.md — 63. Oturum
 
-> **Durum:** ✅ Mobile vizyonu netleşti, prebuild altyapısı kuruldu, MSpoolDetay tasarım kararları bağlandı. M ekranlarındaki i18n bypass borcu (MK-54.1) tespit edildi, 55'e devredildi.
->
-> 📜 Bu özet **53 + 54 birleşik** — 52 kapanışında ritüel dosyaları atlanmıştı, 53 ve 54 tamamlanmadan yeni özet yazılmadı. 55 açılışında oturum-saglik.sh script'i BAYAT dedi (MK-55.1), onarım modunda bu özet birleşik olarak toparlandı.
+> 6 Mayıs 2026 — Mobile React port: MDevreler + MQRTara
 
 ---
 
-## 53. Oturum Özeti — Dökümantasyon Revizyonu (2 Mayıs 2026)
+## Ana Tema
 
-### Hedef
-Cihat 53 başında talep etti: *"yakışıklı hazırlanmış cafcaflı dosyalar düzenleyip kenara atmak istemiyorum. ya canlı tutamayacağımız dosyalar olmasın ya da hiç olmasın."* — bayatlamış dökümantasyona karşı revizyon.
+Vanilla web sayfalarının mobile React port'una devam: **MDevreler** (vanilla `devreler.html` 1104 satır) ve **MQRTara** (vanilla `qr.html` 346 satır) ekranları yazıldı, canlıya alındı, 5 farklı bug fix'lendi.
 
-### Yapılanlar
-1. **`docs/KARARLAR.md` doğdu** — Kanonik karar günlüğü. MK-49.1 → MK-52.4 dağınık halde duran tüm kararlar tek dosyada toplandı. Format: kategori etiketli (`[VIZYON]`, `[DISIPLIN]`, `[ALTYAPI]`...), geçerlilik durumlu (✅ Aktif / 🚫 İptal / 🔄 Revize), sebep açıklamalı.
-2. **`docs/ROADMAP.md` öldü** — `docs/arsiv/ROADMAP-faz-b-c.md` adıyla arşivlendi. İçeriği `PROJE-HARITASI.md`'ye emildi.
-3. **`docs/PANO-TASARIM.md` öldü** — `docs/arsiv/PANO-TASARIM-24-oturum.md` adıyla arşivlendi.
-4. **`docs/PROJE-HARITASI.md` doğdu** — Modül bazlı yaşayan durum panosu (Aşama %, Son Durum, Sonraki Adım, Etiketler).
-5. **Eski oturum arşivi başladı** — `docs/sessions/archive-01-22.md` (1-22. oturum özetleri).
-6. **5 yeni karar** — MK-53.1 (KARARLAR.md doğumu) → MK-53.5 (etki taraması — anlık karar yakalama).
-
-### Kritik karar
-**MK-53.3** — Yeni dosya doğmadan önce kategorisi belirlenir: AKTIF (yaşar, canlı tutulur), ARŞIV (öldü ama tarihsel referans, `docs/arsiv/`), UYUR (ileride uyanacak modül, `docs/uyku/`). "Yaşar" dosya kabul edilmesinin üç şartı: rol netliği, tetikleyici netliği, sahip belli.
-
-### Commit
-`1998538 docs(53): dökümantasyon revizyonu — KARARLAR güncel, PROJE-HARITASI doğdu, ROADMAP+PANO arşivlendi, oturum arşivi başladı`
+Sonraki oturuma **MIsBaslat** kalıyor (briefing'in birincil işi, 1500-2000 satır 10-ekran state machine, fresh context için ayrılan).
 
 ---
 
-## 54. Oturum Özeti — Mobile Vizyon + i18n Altyapısı (3 Mayıs 2026)
+## Oturum Başlangıcı ve Karar Akışı
 
-### Hedef ve Sapma
-**Planlanan:** 51-52'den ertelenen parser_kural canlı L2 başarısı (pipeline_no regex genişletme + `_l2_meta` log).
+Cihat MQRTara'yı briefing'in birincil işi olarak istiyordu, ama **MDevreler'i öne aldı** çünkü vanilla `devreler.html`'i hazır göndermişti. R-10 mockup-first protokolü uygulandı:
 
-**Gerçekleşen:** Cihat mobile gündemini açtı, sohbet mobil vizyon konuşmasına döndü. parser_kural işi 55+'e ertelendi. Yerine 7 yeni karar + bir borç tespiti çıktı.
+1. **MDevreler:** 4 mockup iterasyonu (v1→v4), her birinde Cihat'ın geri bildirimi alındı:
+   - v1: Vanilla'ya yakın, "AresPipe'a yabancı" geri bildirim
+   - v2: Renk paleti index.css'e çekildi, sahte veriler denizcilik diline yakın
+   - v3: Filtre paneli açık halini gösteren mockup
+   - v4: Major refaktör — sol çizgi her zaman mavi (durduruldu istisnası kırmızı), sağ alt spool sayısı, sticky search/filter/sort bar, durumlar grubu kalktı
 
-**Sapma değerlendirmesi:** Doğru yön. Mobile 5 hafta atalete girmişti — vizyon belirsizliği parser_kural işinden öncelikliydi.
+2. **MQRTara:** 2 mockup iterasyonu (v1, v2):
+   - v1: 3 durum yan yana (kamera + tarama, manuel modal, hata)
+   - v2: Tenant prefix sabit sol tarafta (Aresmak `A-`, başka firma `CKM-` örneği)
 
-### Yapılanlar
-
-#### 1. Mobile vizyonu netleşti — 4 yeni karar (MK-54.A → MK-54.D)
-- **MK-54.A** [VIZYON]: Mobile = web'in light versiyonu. Saha (veri girişi) + ofis (izleme). Üretim ekranları (devre tanımlama, IFS, izometri batch, kesim wizard, malzeme havuzu) **dahil değil**.
-- **MK-54.B** [DISIPLIN]: Web öncül, mobile follower. Yeni özellik önce web'de doğar, mobile'a yansıtılır. Mobile-only özellik eklenmez.
-- **MK-54.C** [VIZYON]: Vanilla mobile (`mobile.zip`, 7 HTML, 16 Nisan öncesi) referans olarak korunur, **kopya/port edilmez**. Tasarım/UX vanilla'dan, DB sorguları web'in bugünkü halinden, i18n web'le paylaşılan `lang/`'dan.
-- **MK-54.D** [ALTYAPI]: Mobile prebuild pattern. `mobile/src/lang/` artık auto-generated, `mobile/package.json`'da `prebuild` script'i her build/dev öncesi `cp ../lang/*.json src/lang/` yapar. Tek anahtar kaynağı (`/lang/tr.json` 1659 anahtar), web ve mobile aynı dosya.
-
-#### 2. MSpoolDetay tasarım kararları — 3 yeni karar (MK-54.E → MK-54.G)
-- **MK-54.E** [TASARIM]: MSpoolDetay 3 sekme (Genel + Malzeme + İşlem Kayıtları). **3D Model sekmesi YOK** (web'de doğruluk problemi çözülene kadar). Malzeme sekmesi salt-okur. Geri bildirim FAB tüm sekmelerde.
-- **MK-54.F** [TASARIM]: Tipografi WCAG kontrast düzeltmeleri. Sekme yazısı 11px → 14px, başlık 10px `--txd` → 12px `--txm` (kontrast 3.2:1 → 7:1 AAA). Renkler hardcoded hex değil CSS değişkeni ile.
-- **MK-54.G** [TASARIM]: İşlem Durumu n/N format (örn. `Kesim 3/3 yeşil, Büküm 1/3 sarı`). İlerleme barı yok — bar bilgi katmıyor. Tema-spesifik renk değişkenleri (`--status-done/wip/no` koyu/açık tema için ayrı).
-
-#### 3. i18n altyapısı kuruldu (kod commit'i)
-- `mobile/package.json` scripts: `prebuild` + `predev` eklendi
-- `mobile/.gitignore`'a `src/lang/` eklendi (auto-generated)
-- Vercel build pipeline'ı `npm run build` çağırdığı için prebuild otomatik tetiklenir
-- **Commit:** `f227253 feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı`
-
-#### 4. Borç tespiti — MK-54.1
-**M ekranları `useT()` hook'unu bypass ediyor.** Test sırasında keşfedildi: TR → EN → AR seçimi `localStorage` + html `lang` attribute güncelleniyor ama içerik aynı kalıyor. Sebep: ekranlar kendi paralel `[dil, setDil] = useState(...)` state'ini tutuyor, hook'u hiç çağırmıyor, JSX tüm yazılar hardcoded TR.
-
-**Etkilenen dosyalar (denetim 55'te):**
-- `mobile/src/screens/MGiris.jsx` — kanıtlı bypass
-- `mobile/src/screens/MAnasayfa.jsx` — şüpheli
-- `mobile/src/screens/MAnasayfaYonetici.jsx` — şüpheli
-- `mobile/src/screens/MIslemler.jsx` — şüpheli
-- `mobile/src/screens/MDrawer.jsx` — şüpheli
-
-**Yan etki:** PROJE-HARITASI'nda bu ekranlar "%100 i18n'li" yazıyordu — yanlış bilgi, 54 kapanışında düzeltildi (%60: açılıyor ama i18n borç).
-
-#### 5. PROJE-HARITASI mobile bölümü güncellendi
-54'te ortaya çıkan vizyon (light versiyon, web öncül), prebuild altyapısı, MSpoolDetay tasarım kararları, MK-54.1 borç bilgisi PROJE-HARITASI'na işlendi.
-
-### Commit'ler (54)
-| Hash | Mesaj |
-|------|-------|
-| `f227253` | feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı |
-| `dc41290` | docs: AUTO bölümleri güncellendi [skip ci] |
-| `7467b10` | docs(54): oturum arşivi + 7 yeni MK kararı + PROJE-HARITASI mobil bölümü güncellendi |
-
-### CI Son Durum (54 sonu)
-- **Build:** ✅ YEŞİL (sarı uyarı)
-- **Hata:** 0
-- **Uyarı:** 28 (3 dosyada)
-  - `izometri-batch.html`: 18 i18n eksik anahtar (`izb_*`)
-  - `spool_detay.html`: 9 i18n eksik anahtar (`flansh_*`)
-  - `devre_detay.html:1428`: 1 G-03 ham yüzey şüphesi
-- **Vercel:** ✅ Production aktif
-
-### DB değişiklikleri
-Yok (54'te DB'ye dokunulmadı).
+3. Her ekran için ayrıca tasarım soruları ile netleşildi:
+   - MQRTara: permission akışı (vanilla A — direkt getUserMedia), dedektör fallback (BarcodeDetector → jsQR), yönlendirme (herkes /spool/:id), prefix UI (sabit sol, kullanıcı sadece numara yazar)
 
 ---
 
-## Açık Borçlar Özeti
+## Yapılan İş — 5 Commit
 
-| Borç | Kaynak | Durum |
-|------|--------|-------|
-| **flansh_* / izb_* i18n eksik anahtarları (28 uyarı)** | 54 CI raporu | 55 birincil iş |
-| **MK-54.1**: M ekranları useT() bypass (5 dosya) | 54 keşif | 55 ikincil iş |
-| **MK-49.A**: spool_detay 3D model deterministik render (PDF parse → yon_dizilim JSON) | 49+'dan beri bekliyor | 55+ |
-| **MK-49.B**: İzometri PDF yükleme bileşeni — wizard Adım 2 + devre detay sekmesi | 49+'dan beri bekliyor | 55+ |
-| **parser_kural pipeline_no regex** (51 L2-FAIL) | 51 log | 55+ |
-| **`_l2_meta` / `_l2_fallback` ai_api_log'a yazılması** | 51 borç | 55+ |
-| **5+ Tersan PDF testi** (L2 başarı oranı ölçümü) | 51 borç | 55+ |
-| **Migration disiplini kararı** | 51-52'den beri konuşuluyor | Henüz karar yok |
-| **`CALISMA-MODU.md` ↔ `CIHAT-PROFIL.md` overlap** | 53 gözlem | Karar yok |
-| **`asme_borular`/`cuni_borular` silme** | 35'te dondu | Durum belirsiz |
+### 1. `acab92b` — feat(mob/63): MDevreler React port
+
+**MDevreler.jsx (1178 satır):**
+- Sticky topbar (geri / başlık / drawer) + sticky search/filter/sort bar
+- 4 kart stat grid (devre / spool / ağırlık / ilerleme)
+- Devre kartları: sol şerit her zaman mavi, durduruldu istisnası kırmızı; sağ şerit alıştırma rengi (VAR=yeşil, KISMI=amber, YOK=kırmızı)
+- Sağ alt köşe: `{n} spool` (alıştırma chip metni kaldırıldı)
+- Filtre paneli: 4 akordion (Firma/Proje/Malzeme/Yüzey) — Durumlar grubu yok
+- Sort bottom-sheet: tarih_yeni (default) / tarih_eski / agirlik / ilerleme / spool / ad
+- Search anlık filtre: devre/iş emri/proje no/gemi/tersane/malzeme/yüzey/zone üzerinde tr-locale case-insensitive
+- Cascade fade-in 45ms stagger, slide panel 320ms, sheet 280ms
+- ESC kapatma + body scroll lock + accessibility tam
+
+**App.jsx:** `/devreler` route + `import MDevreler` eklendi.
+
+**lang/{tr,en,ar}.json:** 1752 → 1783 (+31 anahtar `m_dvr_*`).
+
+### 2. `4c7c77f` — fix(mob/63.1): zone_no kolon hatası
+
+Canlı test sonucu:
+> `column devreler.zone_no does not exist`
+
+DB'de sadece `zone` var, `zone_no` yok (CLAUDE.md 11. oturumda "ölü mü migration mı belirsiz" yazılmıştı). 3 yerde `zone_no` kaldırıldı: SELECT, search haystack, sub render fallback.
+
+**Tek sed komutu** (önceki yanlış denemelerden sonra):
+```bash
+sed -i '' 's/zone_no, //' mobile/src/screens/MDevreler.jsx
+```
+
+### 3. `4ef6c6e` — feat(mob/63.2): MQRTara React port
+
+**MQRTara.jsx (831 satır):**
+- BarcodeDetector API (Android Chrome) → jsQR CDN fallback (iOS Safari) — dinamik script yükleme
+- Tam ekran kamera (object-fit cover), tarama çerçevesi 4 köşe + animasyonlu çizgi
+- Manuel giriş bottom-sheet: `tenants.kod` prefix solda sabit (örn. `A-`), input sadece numara
+- Saf numerik input (inputMode + replace `\D/g`), maxLength 6 (4-6 hane dinamik)
+- Durum chip'leri: tarama (mavi) / arama (amber) / bulundu (yeşil) / hata (kırmızı)
+- Bulunca `/spool/:id`'ye 500ms sonra navigate
+- Hata sonrası 2.2sn otomatik tekrar tarama
+- Kamera reddedildi fallback ekranı: 📵 + "Manuel giriş kullanın"
+- ESC kapatma + body scroll lock + cleanup (stream stop, RAF cancel)
+
+**App.jsx:** `/qr` route + `import MQRTara` eklendi.
+
+**lang/{tr,en,ar}.json:** 1783 → 1800 (+17 anahtar `m_qr_*`).
+
+### 4. `536ca9e` — fix(mob/63.3): yönlendirme bağlantıları
+
+Cihat ekran görüntüsünde MAnasayfaYonetici dashboard'unu paylaşınca fark edildi: route'lar tanımlıydı ama dashboard kartları hâlâ `yakinda(...)` placeholder'ı çağırıyordu. Bağlandı:
+
+- **MIslemler.jsx:** "QR Tara" kartı → `navigate('/qr')`
+- **MAnasayfaYonetici.jsx:** "Aktif Devre" StatKart → `navigate('/devreler')`
+
+Diğer kartlar (Bekleyen Spool, KK Bekleyen, Bu Ay Sevk, Kullanıcı Yönetimi, Malzeme, Markalama, Raporlar, Sevkiyat, Tanımlar) hâlâ `yakinda(...)` — şimdilik kalıyor, ileride bağlanacak.
+
+### 5. `c7fe6e6` — fix(mob/63.4): MQRTara payload parse + okunur durum chip
+
+Cihat gerçek QR ile test ettiğinde **payload formatı uyumsuzluğu** ortaya çıktı:
+
+- QR payload format: `A-000575:9911DC39-F826-4EB9-89AA-CDB40253EDB1` (KOD-NUMARA:UUID)
+- MQRTara sadece `KOD-NUMARA` bekliyordu → "bulunamadı" hatası
+
+**Sebep:** 6. oturumda "QR payload format `A-0504:UUID` olacak" planı yazılmıştı, ben "planlandı" notuna takılıp 7. oturumda implemente edildiğini varsaymadım. Vanilla `qr.html`'de gerçek davranışı kontrol etseydim daha hızlı yakalardım.
+
+**Patch:**
+- 3 format desteklendi:
+  - Yeni `KOD-NUMARA:UUID` → UUID ile direkt `id` ile ara (kesin eşleşme)
+  - Eski `KOD-NUMARA` → `spool_id` ile ara
+  - Çok eski `NUMARA` (prefix'siz) → `spool_id` ile ara (geriye uyum)
+- UUID regex: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`
+- Hata mesajı kısaltıldı (UUID gizli, sadece spool kodu): "Spool bulunamadı: A-0575"
+
+**Durum chip görünüm:** Transparan zeminde okunmuyordu. `rgba(13,18,28,0.92)` opaque zemin, 2px renkli border, drop shadow, fontWeight 700.
+
+### 6. `b139a60` — fix(mob/63.5): olusturma kolon adı
+
+Tekrar 400 Bad Request:
+> `column devreler.olusturulma does not exist`  
+> `Perhaps you meant to reference the column "devreler.olusturma".`
+
+DB'de `olusturma` (CLAUDE.md 4.2'de "olusturma TIMESTAMPTZ created_at DEĞİL!" açıkça yazıyor), kodda `olusturulma` yazmışım. Tek harf benzerliği yüzünden gözden kaçtı.
+
+```bash
+sed -i '' 's/olusturulma/olusturma/' mobile/src/screens/MDevreler.jsx
+```
 
 ---
 
-## 55. Oturuma Devredilen Ana İş
+## Süreç Olayları
 
-**Birincil iş:** CI'da raporlanmış 28 uyarı kapatma — 27 i18n eksik anahtar + 1 G-03 yüzey hatası. Bu 54'te yarım kalmış son dönem işidir, kapanmadan üzerine yeni iş eklemek doğru değil.
+### "Lang dosyaları web ve mobil aynı mı?" Tartışması
 
-**İkincil:** MK-54.1 — mobile M ekranları i18n bypass denetimi.
+Mid-oturum Cihat haklı bir soru sordu: "Mevcut dosyalar üzerine mi yazacağım yoksa ekleme mi yapıyoruz?". Knowledge base'deki bilgi `mobile/src/lang/` 61 m_* anahtarı diyordu, ama bu **54. oturum öncesinden eski bilgiydi** (54'te mobile/src/lang/ git'ten silindi, predev script kök'ten kopyalıyor şu an).
 
-**Detay:** `docs/CLAUDE-SONRAKI-OTURUM.md`.
+`git log --oneline -- mobile/src/lang/tr.json` ile gerçek tarih netleşti:
+- `f227253` "feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı" — burada 3 dosya silindi (tr -333, en -377, ar -338 satır), `.gitignore`'a eklendi, prebuild script kuruldu
+
+Karar: tek otorite kök `lang/{tr,en,ar}.json`. Mobile/src/lang/ build artifact, dokunulmaz.
+
+**Disiplin notu:** Knowledge base bayat olabilir. Sayı/tarih iddialarını her zaman `wc -l`, `git log`, `cat package.json | grep` ile cross-check.
+
+### Filesystem I/O Hatası
+
+Mid-oturum `/mnt/user-data/uploads/` Input/output error verdi (~5 dakika erişim yoktu). Çözüm: dosyaları yeniden yükledim. Sonraki oturumda da olabilir, tekrar yüklemek standart fallback.
+
+### Vercel "Canceled" Aldatıcı
+
+İlk MDevreler push'undan sonra Vercel mob deploy "Canceled" gözüktü. Panik yapmadan açıklama: "more recent commit in the same branch" — Vercel ardışık iki push'un eskisini iptal eder, bu standart davranış. Hata değil.
+
+### GitHub Actions Otomatik Commit'leri
+
+Her push'tan sonra `chore(ci): ci-son-rapor.json güncelle [skip ci]` otomatik commit ekleniyor. Bu yüzden her sonraki push'ta `git pull --rebase origin main` gerekti. Bu artık beklenen pattern.
 
 ---
 
-## Önemli Öğrenmeler
+## Dosya Transfer Disiplini (62'den taşındı, 63'te de uygulandı)
 
-1. **Ritüel atlamanın bedeli:** 52 kapanışında üç dosya (son-durum, son-oturum, sonraki-oturum) atlandı. 53 başında tamir edilmedi (sadece KARARLAR'a dökümantasyon revizyonu olarak yazıldı). 54 başında yine tamir edilmedi (mobile gündemi geldi). 55 başında "spool_detay yapıyorduk oradan devam" denildiğinde Claude'da somut gündem yoktu, userMemories'ten sahte gündem türetmeye çalıştı. **MK-55.1** bu zinciri kıracak: oturum-saglik.sh script'i BAYAT'sa ben işe başlamayacağım.
+Tarayıcı suffix sorunu (`tr (12).json`, `tr (13).json` gibi):
+- Cihat dosya indirir → otomatik suffix
+- `cp ~/Downloads/"tr (13).json" lang/tr.json` ile kopyalanır
+- Önce `wc -l` ile boyut doğrulanır
 
-2. **Mobile 5 hafta atalet — sebebi vizyon belirsizliği değil baskı eksikliği:** Web evrildi (40+ sayfa, devre/spool/IFS/izometri batch refactor'ları), mobile geride kaldı çünkü bağımsız evrilme baskısı yoktu. MK-54.B (web öncül) bu boşluğu disiplin olarak doldurdu — artık her web değişikliği "mobile'a yansıyor mu?" sorusunu doğuracak.
-
-3. **"Yarım kalmış iş" CI'da şişiyor:** 54'te `spool_detay.html`'de flansh_* tv() çağrıları yazılmış ama anahtarlar `lang/tr.json`'a eklenmemiş. CI uyarı verdi, deploy gitti, kullanıcıya `flansh_meta` gibi raw key görünüyor olabilir. **Disiplin:** Yeni `tv()` çağrısı yazınca aynı commit'te 3 dil dosyasına anahtar ekle. Pre-commit lint'i bu adımı zorlayacak (Faz B borcu).
+63'te bir kez yanlış suffix kullanıldı (Cihat eski versiyonu kopyalamıştı), `wc -l 1785` (1802 olmalıydı) ile yakalandı, geri çevrildi.
 
 ---
 
-> 55. oturum açılışında bu dosya okundu. 55'in gündemi: `docs/CLAUDE-SONRAKI-OTURUM.md`.
-> Karar günlüğü: `docs/KARARLAR.md` (MK-55.1 dahil).
-> Modül durumu: `docs/PROJE-HARITASI.md`.
+## Test Sonuçları
+
+| Test | Sonuç | Not |
+|---|---|---|
+| MDevreler `/devreler` ilk açılış | ❌ 400 | zone_no eksik |
+| MDevreler ikinci deneme | ❌ 400 | olusturulma kolon yanlış |
+| MDevreler üçüncü deneme | ✅ | Liste yükleniyor (kullanıcının test sonucu beklenen son durum) |
+| MQRTara `/qr` ilk açılış | ✅ | Kamera açıldı, çerçeve görüldü |
+| MQRTara ilk QR taraması | ❌ "bulunamadı" | Payload format `A-0575:UUID` tanınmadı |
+| MQRTara ikinci QR taraması (patch sonrası) | ✅ Beklenen | Cihat yeniden test edecek |
+| MQRTara durum chip okunabilirliği | ✅ | Opaque zemin |
+| Manuel giriş prefix UI | ✅ | `A-` solda sabit, sadece numara |
+| Dashboard yönlendirmeleri | ✅ | QR Tara ve Aktif Devre kartları çalışıyor |
+
+---
+
+## Çıkan Yeni Disiplin Notları
+
+### MK-63.A — DB sütun adlarını varsayma
+
+Knowledge base'de `olusturma TIMESTAMPTZ created_at DEĞİL!` açıkça yazıyordu, kodu yazarken yanlış varyant kullandım. SELECT cümlelerinde column adları için:
+- Önce vanilla'da geçen kullanıma bak (eğer dosya verildiyse)
+- Sonra knowledge base'deki şemayı doğrula
+- Şüphe varsa Supabase MCP query veya `information_schema.columns` ile cross-check
+
+### MK-63.B — "Planlandı" ≠ "Yapılmadı"
+
+Knowledge base'deki "X planlandı, sonraki oturumda implemente edilecek" notları — sonraki oturum gerçekten yapmış olabilir. Vanilla dosyayı her zaman cross-check et:
+- 6. oturumda "QR payload format `KOD-NUMARA:UUID` planlandı" yazıyordu
+- 7. oturumda implemente edilmiş ama briefing'de yansımamış olabilir
+- Vanilla `qr.html`'de aslında payload nasıl üretiliyor kontrol etseydim 5 dakikada görürdüm
+
+### MK-63.C — Knowledge Base Sayım/Tarih Bayatlığı
+
+`mobile/src/lang/` 61 m_* anahtarı diyordu, gerçekte git'te bile yok (54. oturumda silindi). Saymalı/tarihli iddialar için baseline kontrol:
+- `wc -l file.json` boyut
+- `git log --oneline -- path` dosya tarihçesi
+- `cat package.json | grep script` script konfigürasyonu
+
+---
+
+## 64. Oturuma Devreden Borçlar
+
+### Birincil iş — MIsBaslat.jsx
+
+Vanilla `is_baslat.html` 1930 satır, **operatör çekirdek akışı**. 10 ekranlı state machine:
+
+1. Rol Seç (kullanıcının işlem blokları)
+2. QR Tara (BarcodeDetector + jsQR fallback)
+3. Spool Detay (foto carousel + 2 sekme + dinamik foot)
+4. Uyarı (alıştırma + test + qr_goster notlar)
+5. Not Ekle (textarea + foto upload + not geçmişi)
+6. Foto Kapat (zorunlu kapanış fotoğrafı)
+7. Basamak Seç (rol'e göre filtrelenmiş, alıştırma=VAR ise kaynak disabled)
+8. Tamamlandı (özet + 2sn sonra QR'a dön)
+9. Son Foto SF (on_kontrol basamağı için ayrı akış)
+10. SF Tamamlandı
+
+R-10 mockup-first 5-batch protokolü önerildi (CLAUDE-SONRAKI-OTURUM.md detayda).
+
+### MQRTara — gelecek patch'ler
+
+- **Cross-tenant uyarısı:** payload `B-...` ama kullanıcı `A` tenant'ı → "Bu spool X firmasına aittir" uyarı ekranı (6. oturum planı)
+- **Mükerrer iş:** `is_durumu === 'devam_ediyor'` spool taranınca "başkası işliyor" + devralma akışı
+- **Operatör yönlendirmesi:** MIsBaslat tamamlanınca operatörler `/is-baslat/:id`, diğer roller `/spool/:id`
+
+### Mobile — açık MK'lar
+
+- **MK-58.1 alıştırma enum migration** — uppercase 'VAR'/'KISMI'/'YOK' lowercase'a çevrilecek (MDevreler + MIsBaslat dönüşümü sonrası tek seferde)
+- **MK-62.3 README açığı** — predev script README.md'yi siliyor, predev'e README üretme satırı eklenmeli
+- **MK-58.5** Panel.html mobile preview UUID input
+
+---
+
+## Sayılar Özeti
+
+- **Lang anahtar:** TR/EN/AR 1752 → 1800 (+48)
+- **Yeni dosya:** MDevreler.jsx (1178), MQRTara.jsx (845)
+- **Değiştirilen dosya:** App.jsx, MAnasayfaYonetici.jsx, MIslemler.jsx, lang × 3
+- **Commit sayısı:** 5 feat/fix (CI commit'leri hariç)
+- **HEAD:** `b139a60`
+- **Mobile ekran sayısı:** 9 tamamlandı (önceki 7 + MDevreler + MQRTara)
+
+---
+
+> 64. oturum açılışında bu dosya `son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` ile birlikte okunacak.
