@@ -1069,3 +1069,98 @@ Yeni i18n anahtarı eklenirken/güncellenirken hedef sadece `lang/{tr,en,ar}.jso
 3. **Eski 3-dosya mimarisi yasak:** `.github/son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` **YAZILMAZ** (MK-56.2). Bağlam BRIEFING.md, kararlar KARARLAR.md, kapanış orkestra script'i + Claude raporu (MK-56.4 / MK-60.3). Bu üç dosya repo köküne tekrar dönerse bu MK-56.2 ihlali kabul edilir, derhal arşive taşınır.
 
 **Geçerlilik:** ✅ Aktif (KRİTİK). Bu karar MK-52.1, MK-52.2, MK-56.2, MK-56.4, MK-60.3'ün hepsini birlikte canlı tutan bekçi karardır. 66 açılışında bu sapmanın delili `docs/arsiv/*-yanlis-yazim.md` dosyaları ve 193e49f commit'i ile korundu.
+
+
+## MK-66.1 — Migration dosya adı sıralı, oturum numarasından bağımsız (6 Mayıs 2026)
+
+**Bağlam:** 66'da Supabase RLS güvenlik fix'i için ilk migration yazılırken dosya adı `066_rls_fix_5_tablo.sql` olarak verildi (oturum numarasıyla karıştırıldı). Cihat fark etti — repo'daki son migration `031_public_views_ve_rls.sql`, sıralı devam etmesi gerekiyordu. Düzeltme: `032_rls_fix_5_tablo.sql`.
+
+**Karar:** Migration dosya adı **sıralı (NNN_)**, oturum numarasından **bağımsız**. Mevcut son numaranın bir fazlası alınır. Oturum referansı dosya yorumunda verilir, dosya numarasında değil.
+
+**Format (`migrations/README.md` korundu):**
+```
+NNN_kisa_aciklama.sql
+```
+- 3 haneli sıra numarası (000, 001, ..., 099, 100)
+- snake_case açıklama, 2-5 kelime
+- Header yorum: Tarih + Oturum + Amac + Idempotent
+- BEGIN/COMMIT atomik (psql uyumu için, MK-66.5 ile birlikte)
+- DROP POLICY IF EXISTS + CREATE POLICY (idempotent)
+- Geri alma notu zorunlu
+
+**Uygulama:**
+```bash
+ls migrations/ | tail -3                    # son numarayı bul
+# NNN'yi +1 yap, dosyayı yaz
+# Supabase SQL Editor'de çalıştır
+# Doğrulama yap
+git add migrations/NNN_*.sql
+git commit -m "..."
+gp
+```
+
+**Etki:** 66'da `032_rls_fix_5_tablo.sql` ve `033_tenant_features_eski_policy_temizlik.sql` bu disipline göre yazıldı, her ikisi de header'da "Oturum: 66" yazıyor.
+
+---
+
+## MK-66.2 — RLS aktif eden migration'larda eski policy taraması zorunlu (6 Mayıs 2026)
+
+**Bağlam:** 66'da `tenant_features` tablosuna RLS aktif edildikten sonra doğrulama sorgusunda **10 policy** çıktı (beklenen 8). İki eski policy zaten yazılıydı ama RLS kapalı olduğu için "uyuyordu":
+- `tenant_features_all` — `USING (true)`, roles `{public}`, cmd `ALL` → **fiilen RLS bypass** ediyordu, 032'nin yeni policy'lerini iptal ediyordu, anon dahil herkese tam erişim veriyordu.
+- `super_admin_feature_yonet` — eski JWT path (`auth.jwt() -> 'app_metadata' ->> 'rol'`), 032'nin yeni policy'siyle (`auth.jwt() ->> 'rol'`) duplikat.
+
+**Karar:** RLS aktif eden migration'larda her tabloya policy yazmadan **önce** `pg_policies` taraması yapılır. Boş dönmüyorsa eski policy'ler ya migration'a `DROP IF EXISTS` ile dahil edilir ya da uyumlu hale getirilir. Özellikle **`USING (true)` görünce alarm** — bu RLS'i fiilen kapatır.
+
+**Tarama sorgusu:**
+```sql
+SELECT policyname, cmd, qual, with_check, roles
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'X';
+```
+
+**Tehlike sinyalleri:**
+- `qual = 'true'` veya `qual IS NULL` (cmd ALL/SELECT için) → RLS bypass
+- `roles = '{public}'` → anon erişim (authenticated yerine olmalı)
+- Yeni policy ile aynı cmd'ye sahip eski policy → OR mantığı çakışması (genelde sorun değil ama temizlenmeli)
+
+**Etki:** `migrations/033_tenant_features_eski_policy_temizlik.sql` bu kararın doğum belgesi. Diğer 4 tablo (testler, egitim_verisi, yetki_tanimlari, basamak_sablonlari) tarandı, eski policy yoktu, 032 tek başına yeterli oldu.
+
+---
+
+## MK-66.3 — Mockup-first turunda vanilla'yı bütün okumadan iterasyona başlama yasağı (6 Mayıs 2026)
+
+**Bağlam:** 66'da MIsBaslat Ekran 3 (IbSpoolDetay) için mockup-first protokolü (R-10) başlatıldı. Vanilla referansı olarak `is_baslat.html` repo'da 1772 satırdı, **prod 1930 satırdı** — 158 satır boşluk fark edilmeden 4 iterasyon harcandı. Cihat 4. iterasyondan sonra "ben hatırlamıyorum" deyince kontrol yapıldı, fark çıktı. 7 iterasyon sonunda hâlâ prod'a girecek tasarım bulunamadı, oturum kapatıldı. Bu MK-63.B'nin (knowledge base güncel olmayabilir, vanilla cross-check zorunlu) tam tetiklenmesi.
+
+**Karar:** Mockup-first turunda iterasyona başlamadan önce vanilla'nın gerçek satır sayısı + kritik fonksiyonlar grep'lenir. Sadece repo'daki dosyaya değil, **prod'a güncel olan dosyaya** bakılır.
+
+**Açılış protokolü:**
+1. Repo'daki vanilla satır sayısı + son commit tarihi → `wc -l X.html && git log -1 X.html`
+2. Cihat'tan prod'un güncel olup olmadığını sor → uyumsuzsa Cihat kopyala-yapıştırla prod versiyonunu verir
+3. Kritik fonksiyonların kaynaklarını grep'le çıkar (örnek: `uyarilariTopla`, `ROL_BASAMAKLAR`, foot CTA dinamik mantığı)
+4. Cihat'a açılış sorusu: **"Mevcut ekran prod'da çalışıyor — neyi değiştirmek istiyoruz?"**
+5. Özgür tasarım YASAK — özellikle yorgun oturumlarda "sana özgür tasarım yapayım mı?" sorusu Cihat'ı daha çok yorar, geri besleme döngüsü uzar.
+
+**Etki:** 67 açılışında Ekran 3 mockup turu yeniden başlarsa bu protokole uyulur. Alternatif yollar (Ekran 7 veya normalize.js portu) daha az tartışmalı, sıcak temas için tercih edilebilir.
+
+---
+
+## MK-66.5 — Supabase SQL Editor BEGIN/COMMIT kabul etmiyor, dosyada kalır ama atlanır (6 Mayıs 2026)
+
+**Bağlam:** 66'da `migrations/033_tenant_features_eski_policy_temizlik.sql` Supabase SQL Editor'e yapıştırıldığında `ERROR: 42601: syntax error at or near ";"` ve `LINE 44: BEGIN;` hatası verdi. Sebep: Supabase SQL Editor zaten kendi transaction'ında çalışıyor, nested `BEGIN`/`COMMIT` kabul etmiyor.
+
+**Karar:** Migration dosyasında BEGIN/COMMIT **kalır** (psql uyumu için, README.md disiplini gereği), ama Supabase SQL Editor'de manuel çalıştırırken **atlanır** — sadece DDL/DML komutları yapıştırılır.
+
+**Pratik:**
+- **Dosyada:** BEGIN; ... COMMIT; (kanonik form, atomik intent belgesi)
+- **SQL Editor'de:** sadece içerideki komutlar yapıştırılır
+- **psql ile:** dosya olduğu gibi çalıştırılır (`psql ... < migrations/NNN_*.sql`)
+
+**Alternatif çözüm (gelecekte):** Supabase CLI (`supabase db push`) entegrasyonu kurulursa BEGIN/COMMIT olduğu gibi çalışır. Şu an manuel SQL Editor disiplini kullanıldığı için bu workaround geçerli.
+
+**Etki:** 67'de prod Supabase'inde 032+033 koşulurken aynı yöntem kullanılır.
+
+---
+
+## MK-66.4 — boş bırakıldı (numara rezerve, 6 Mayıs 2026 itibarıyla içerik yok)
+
+Numaralandırma sırasında 66.4 atlandı (66.5 doğrudan tahsis edildi). Gelecek bir karar için saklanır veya kalıcı olarak boş bırakılabilir.
