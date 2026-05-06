@@ -85,7 +85,7 @@ export async function islemBloklariniGetir(kullaniciId, tenantId) {
   try {
     const { data, error } = await supabase
       .from('kullanici_bloklar')
-      .select('id, blok_id, yetki_bloklari(id, ad, renk, tip)')
+      .select('id, blok_id, yetki_bloklari(id, ad, renk)')
       .eq('kullanici_id', kullaniciId)
       .eq('tenant_id', tenantId)
 
