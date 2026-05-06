@@ -9,6 +9,7 @@ import MIslemler from './screens/MIslemler'
 import MSpoolDetay from './screens/MSpoolDetay'
 import MDevreDetay from './screens/MDevreDetay'
 import MDevreler from './screens/MDevreler'
+import MQRTara from './screens/MQRTara'
 
 export default function App() {
   const [oturum, setOturum] = useState(null)
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/spool/:id" element={oturum ? <MSpoolDetay /> : <Navigate to="/giris" />} />
         <Route path="/devre/:id" element={oturum ? <MDevreDetay /> : <Navigate to="/giris" />} />
         <Route path="/devreler" element={oturum ? <MDevreler /> : <Navigate to="/giris" />} />
+        <Route path="/qr" element={oturum ? <MQRTara /> : <Navigate to="/giris" />} />
         <Route path="*" element={<Navigate to={oturum ? '/' : '/giris'} />} />
       </Routes>
     </I18nProvider>
