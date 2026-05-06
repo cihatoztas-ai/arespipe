@@ -1798,5 +1798,21 @@
   "ts_tab_tamamlanan": "Tamamlanan",
   "ts_th_hata": "Hata Kaynağı",
   "ts_th_sonuc": "Test Sonucu",
-  "ts_title": "Test Yönetimi | AresPipe"
+  "ts_title": "Test Yönetimi | AresPipe",
+  "m_app_baslik": "AresPipe",
+  "m_profil": "Profil",
+  "m_yukleniyor": "Yükleniyor...",
+  "mob_geri": "Geri",
+  "mob_nav_anasayfa": "Ana Sayfa",
+  "mob_nav_ara": "Ara",
+  "mob_nav_bildirim": "Bildirim",
+  "mob_nav_menu": "Menü",
+  "m_ib_baslik": "İş Başlat",
+  "m_ib_ne_yapacaksiniz": "Ne yapacaksınız?",
+  "m_ib_yetki_yok": "İşlem yetkiniz bulunmuyor",
+  "m_ib_yetki_yok_aciklama": "Yöneticinizden işlem bloğu yetkisi tanımlanmasını isteyin.",
+  "m_ib_qr_tara": "QR Tara",
+  "m_ib_rol_sec_uyari": "Önce yukarıdan rolünüzü seçin",
+  "m_ib_qr_yapim_asamasinda_baslik": "QR ekranı sonraki turda",
+  "m_ib_qr_yapim_asamasinda": "Ekran 2 (QR Tarama) henüz hazır değil."
 }

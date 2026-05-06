@@ -1798,5 +1798,21 @@
   "ts_tab_tamamlanan": "Completed",
   "ts_th_hata": "Fault Source",
   "ts_th_sonuc": "Result",
-  "ts_title": "Test Management | AresPipe"
+  "ts_title": "Test Management | AresPipe",
+  "m_app_baslik": "AresPipe",
+  "m_profil": "Profile",
+  "m_yukleniyor": "Loading...",
+  "mob_geri": "Back",
+  "mob_nav_anasayfa": "Home",
+  "mob_nav_ara": "Search",
+  "mob_nav_bildirim": "Alerts",
+  "mob_nav_menu": "Menu",
+  "m_ib_baslik": "Start Job",
+  "m_ib_ne_yapacaksiniz": "What will you do?",
+  "m_ib_yetki_yok": "You have no operation permissions",
+  "m_ib_yetki_yok_aciklama": "Ask your manager to assign an operation block.",
+  "m_ib_qr_tara": "Scan QR",
+  "m_ib_rol_sec_uyari": "Pick your role above first",
+  "m_ib_qr_yapim_asamasinda_baslik": "QR screen coming next",
+  "m_ib_qr_yapim_asamasinda": "Screen 2 (QR scan) is not ready yet."
 }

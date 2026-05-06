@@ -1798,5 +1798,21 @@
   "ts_tab_tamamlanan": "مكتمل",
   "ts_th_hata": "مصدر الخطأ",
   "ts_th_sonuc": "النتيجة",
-  "ts_title": "إدارة الاختبارات | AresPipe"
+  "ts_title": "إدارة الاختبارات | AresPipe",
+  "m_app_baslik": "AresPipe",
+  "m_profil": "الملف الشخصي",
+  "m_yukleniyor": "جارٍ التحميل...",
+  "mob_geri": "رجوع",
+  "mob_nav_anasayfa": "الرئيسية",
+  "mob_nav_ara": "بحث",
+  "mob_nav_bildirim": "الإشعارات",
+  "mob_nav_menu": "القائمة",
+  "m_ib_baslik": "بدء العمل",
+  "m_ib_ne_yapacaksiniz": "ماذا ستفعل؟",
+  "m_ib_yetki_yok": "ليس لديك صلاحيات عمليات",
+  "m_ib_yetki_yok_aciklama": "اطلب من مديرك تعيين كتلة عمليات.",
+  "m_ib_qr_tara": "مسح QR",
+  "m_ib_rol_sec_uyari": "اختر دورك من الأعلى أولاً",
+  "m_ib_qr_yapim_asamasinda_baslik": "شاشة QR في الجولة التالية",
+  "m_ib_qr_yapim_asamasinda": "الشاشة 2 (مسح QR) غير جاهزة بعد."
 }
