@@ -61,7 +61,7 @@ export default function MIsBaslat() {
         const { data: kul, error: kulErr } = await supabase
           .from('kullanicilar')
           .select('id, ad_soyad, email, rol, tenant_id, foto_url')
-          .eq('auth_id', sd.session.user.id)
+          .eq('id', sd.session.user.id)
           .maybeSingle()
         if (kulErr) throw kulErr
         if (!kul)   throw new Error('Kullanıcı bulunamadı')
