@@ -144,6 +144,13 @@ Net: 65. oturumda 5 ana feat commit + lokal test sonrası push.
 
 - **MK-65.7: claude.ai chat URL auto-link sorunu sürdü (MK-64.1 devam).** Bu oturumda da terminal yapıştırmasında `os.path.expanduser('~/Downloads')` ifadesi linke dönüşmedi (✓), ama `e.target.value` gibi nokta-ayrımlı identifier'lar yine risk. **Disiplin:** Kod düzenleme **her zaman** doğrudan editör (VS Code/TextEdit, Smart Quotes/Dashes kapalı) ile yapılır, terminal yapıştırması sadece komut için.
 
+- **MK-65.8: ⚠️ Sapmama protokolü ihlalleri tespit edildi.** Cihat oturum sonunda fark etti. 3 sapma:
+  1. **MK-52.1 ihlali:** `arespipe_kopyala` (MD5 doğrulamalı) yerine düz `cp $DL/X /path/...` kullanıldı. macOS Downloads `(1)`, `(2)` riski koruyamadı (şanslıyız ki sorun çıkmadı).
+  2. **MK-52.2 ihlali:** Push reddinde `gp` (otomatik rebase + push) yerine `git push` + manuel `git pull --rebase` kullanıldı.
+  3. **Oturum sonu 3-dosya kuralı eksik:** Sadece son-durum.md yazıldı, `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` push sonrası eklendi (ikinci push'la senkronize edildi).
+  
+  **Kök neden:** Oturum 7. saatine girmişti, fast-forward kapanış. **Çözüm:** 66'da kapanış başlangıcında otomatik 3-dosya + arespipe_kopyala + gp kontrolü. Claude "65'i kapatıyoruz" der demez bu üçünü gözden geçirir, eksik bırakmaz. **Detay:** `CLAUDE-SON-OTURUM.md` Bölüm 5 ve `CLAUDE-SONRAKI-OTURUM.md` "66 disiplin uyarıları" bölümleri.
+
 ## Önemli Sayılar
 
 - **Toplam MK:** 65 oturum

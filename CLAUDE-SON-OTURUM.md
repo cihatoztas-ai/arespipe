@@ -1,247 +1,169 @@
-# CLAUDE-SON-OTURUM.md — 63. Oturum
+# CLAUDE-SON-OTURUM — 65. OTURUM ÖZETİ
 
-> 6 Mayıs 2026 — Mobile React port: MDevreler + MQRTara
-
----
-
-## Ana Tema
-
-Vanilla web sayfalarının mobile React port'una devam: **MDevreler** (vanilla `devreler.html` 1104 satır) ve **MQRTara** (vanilla `qr.html` 346 satır) ekranları yazıldı, canlıya alındı, 5 farklı bug fix'lendi.
-
-Sonraki oturuma **MIsBaslat** kalıyor (briefing'in birincil işi, 1500-2000 satır 10-ekran state machine, fresh context için ayrılan).
+> 6 Mayıs 2026 — Çarşamba — ~7 saatlik oturum
+> HEAD: `eb79efd`
+> Önceki HEAD: `01d273f` (64. oturum kapanışı)
 
 ---
 
-## Oturum Başlangıcı ve Karar Akışı
+## Bu oturumun ana teması
 
-Cihat MQRTara'yı briefing'in birincil işi olarak istiyordu, ama **MDevreler'i öne aldı** çünkü vanilla `devreler.html`'i hazır göndermişti. R-10 mockup-first protokolü uygulandı:
+**MIsBaslat hub'ında Ekran 2 (QR Tara) — IbQRTara component'i, R-10 mockup-first protokolü.**
 
-1. **MDevreler:** 4 mockup iterasyonu (v1→v4), her birinde Cihat'ın geri bildirimi alındı:
-   - v1: Vanilla'ya yakın, "AresPipe'a yabancı" geri bildirim
-   - v2: Renk paleti index.css'e çekildi, sahte veriler denizcilik diline yakın
-   - v3: Filtre paneli açık halini gösteren mockup
-   - v4: Major refaktör — sol çizgi her zaman mavi (durduruldu istisnası kırmızı), sağ alt spool sayısı, sticky search/filter/sort bar, durumlar grubu kalktı
-
-2. **MQRTara:** 2 mockup iterasyonu (v1, v2):
-   - v1: 3 durum yan yana (kamera + tarama, manuel modal, hata)
-   - v2: Tenant prefix sabit sol tarafta (Aresmak `A-`, başka firma `CKM-` örneği)
-
-3. Her ekran için ayrıca tasarım soruları ile netleşildi:
-   - MQRTara: permission akışı (vanilla A — direkt getUserMedia), dedektör fallback (BarcodeDetector → jsQR), yönlendirme (herkes /spool/:id), prefix UI (sabit sol, kullanıcı sadece numara yazar)
+64. oturumda Ekran 1 (rolSec) tamamlanmıştı. Bu oturum Ekran 2'yi prod'a aldı: kameralı QR + manuel giriş + spool DB sorgusu + hub state machine entegrasyonu.
 
 ---
 
-## Yapılan İş — 5 Commit
+## Akış (kronolojik)
 
-### 1. `acab92b` — feat(mob/63): MDevreler React port
+### 1. Açılış + erken kararlar (mockup öncesi)
 
-**MDevreler.jsx (1178 satır):**
-- Sticky topbar (geri / başlık / drawer) + sticky search/filter/sort bar
-- 4 kart stat grid (devre / spool / ağırlık / ilerleme)
-- Devre kartları: sol şerit her zaman mavi, durduruldu istisnası kırmızı; sağ şerit alıştırma rengi (VAR=yeşil, KISMI=amber, YOK=kırmızı)
-- Sağ alt köşe: `{n} spool` (alıştırma chip metni kaldırıldı)
-- Filtre paneli: 4 akordion (Firma/Proje/Malzeme/Yüzey) — Durumlar grubu yok
-- Sort bottom-sheet: tarih_yeni (default) / tarih_eski / agirlik / ilerleme / spool / ad
-- Search anlık filtre: devre/iş emri/proje no/gemi/tersane/malzeme/yüzey/zone üzerinde tr-locale case-insensitive
-- Cascade fade-in 45ms stagger, slide panel 320ms, sheet 280ms
-- ESC kapatma + body scroll lock + accessibility tam
+Cihat son-durum.md + git log paylaştı, 65 gündemi netleşti. 3 ana karar:
 
-**App.jsx:** `/devreler` route + `import MDevreler` eklendi.
+1. **Component stratejisi:** IbQRTara sıfırdan yazılır, MQRTara.jsx'e dokunulmaz (prod'da çalışıyor). Ortak hook refactor 66+ borcu.
+2. **Yönlendirme ilkesi:** *"Tekrar tarat akışı doğalsa Ekran 2 inline, akış kesiliyorsa Ekran 4 (uyari)."*
+3. **Senaryo dağılımı:**
+   - Ekran 2 inline: Geçersiz QR formatı, Spool bulunamadı, Kamera reddi
+   - Ekran 4 (uyari): Cross-tenant (kırmızı), is_durumu=devam_ediyor (sarı, devral/iptal), Operatör rol uyumsuzluğu (kırmızı)
 
-**lang/{tr,en,ar}.json:** 1752 → 1783 (+31 anahtar `m_dvr_*`).
+### 2. R-10 Mockup-first süreç (6 iterasyon)
 
-### 2. `4c7c77f` — fix(mob/63.1): zone_no kolon hatası
+- **v1:** Phone-içi viewfinder, MTopBar+nav görünür → yanlış yön
+- **v2:** Cihat MQRTara.jsx upload etti. Tam ekran kamera, beyaz çerçeve, mavi #2D8EFF scan, gradient topbar/altinfo, manuel modal — MQRTara stiliyle birebir hizalı
+- **v3:** 7 karar uygulandı: geri navigate(-1), MQRTara mini-bar, **(b) rol chip eklendi**, "İşlem Başlat →" CTA, "Spool ID Gir" başlık, prefix gösterim, çerçeve beyaz korundu
+- **v3.1:** Chip yazısı `Büküm` → `BÜKÜM` (uppercase + 14px + letter-spacing 1.2 + dot glow). Bu 64'teki "kart başlığı uppercase küçük borcu" ile birleşip MK-65 oldu.
+- **v3.2:** Renk paletesi yeniden düzenlendi (5 blok × 4 durum çakışması çözüldü):
+  - Büküm #14b8a6 (turkuaz, korundu)
+  - İmalat #3b82f6 → **#6366f1** (indigo, scan #2D8EFF tonundan ayrıştı)
+  - Argon Kaynağı #f59e0b → **#f97316** (turuncu, arama amber'inden ayrıştı)
+  - Gazaltı Kaynağı #f97316 (Argon'la aynı kategori)
+  - Kesim #ef4444 → **#ec4899** (pembe, hata kırmızısından ayrıştı)
+  - Markalama #a855f7 (mor, korundu)
+- **v3.3:** Cihat gerçek prod görüntüsü (IMG_4054.png) paylaştı. Düzeltmeler: çerçeve 230→220, durum chip bottom 160→110, gradient topbar/altinfo geri eklendi.
 
-Canlı test sonucu:
-> `column devreler.zone_no does not exist`
+### 3. Kod yazımı
 
-DB'de sadece `zone` var, `zone_no` yok (CLAUDE.md 11. oturumda "ölü mü migration mı belirsiz" yazılmıştı). 3 yerde `zone_no` kaldırıldı: SELECT, search haystack, sub render fallback.
+Cihat MIsBaslat.jsx + IbRolSec.jsx + isbaslat.js'in mevcut hâllerini paylaştı.
 
-**Tek sed komutu** (önceki yanlış denemelerden sonra):
-```bash
-sed -i '' 's/zone_no, //' mobile/src/screens/MDevreler.jsx
+**Önemli keşif:** isbaslat.js'te `BLOK_RENK_HEX` YOK. Sistem DB'deki `yetki_bloklari.renk` → `_renkAnahtari()` → cl-X CSS preset (cl-ac/gr/re/warn/leg) ile çalışıyordu. v3.2 paleti **ad-bazlı paralel API** olarak eklendi (legacy cl-X API geriye uyum için korundu).
+
+4 dosya yazıldı (Babel parser ile syntax doğrulandı):
+
+1. **`mobile/src/components/isbaslat/IbQRTara.jsx`** (yeni, 934 satır final). MQRTara'dan farklar:
+   - `navigate()` yok — props callback (`onGeri`, `onSpoolBulundu`, `onCrossTenant`)
+   - Üst ortada **rol chip** (aktifRol.ad uppercase + aktifRol.renk dot + glow + dinamik border)
+   - Cross-tenant erken algılama (DB sorgusu öncesi payload prefix kontrolü)
+   - Manuel modal CTA: "Spool'u Bul →" → "İşlem Başlat →"
+   - i18n prefix: `m_qr_*` → `m_ib_qr_*`
+   - `hexToRgba` helper, `toLocaleUpperCase('tr-TR')`
+
+2. **`mobile/src/lib/isbaslat.js`** (230 satır, +106). Eklenenler:
+   - `BLOK_RENK_HEX` haritası (v3.2 palette)
+   - `blokRenkHex(blokAd)` helper
+   - `hexToRgba(hex, alpha)` export edildi (IbRolSec ve IbQRTara kullanıyor)
+   - `aktifBasamakRolaUyumlu(blokAd, aktifBasamak)` — yumuşak rol kontrolü helper'ı (bilinmeyen aşama → true)
+   - `ROL_BASAMAK` artık dizi (her rol birden fazla DB aşaması ile uyumlu olabilir)
+   - `islemBloklariniGetir` döndüğü object'e `renkHex` field'ı eklendi
+   - `rolKaydet/rolHatirla` artık sadece `id + ad` saklıyor (renk runtime'da)
+   - Eski API (cl-X preset) korundu, geriye uyum
+
+3. **`mobile/src/components/isbaslat/IbRolSec.jsx`** (106 satır, +41). cl-X kaldırıldı, `borderLeft: 4px solid renkHex` inline + ikon arka planı `hexToRgba(renkHex, 0.14)` inline. Kart başlığı uppercase + 16px + letter-spacing 0.8 + weight 700.
+
+4. **`mobile/src/screens/MIsBaslat.jsx`** (364 satır final). aktifEkran === 'qr' artık IbQRTara render eder. Kart tıklama → direkt QR shortcut (rolSec içinde setAktifEkran('qr')). Ekran 3 (spoolDetay) ve Ekran 4 (uyari) **placeholder** — JSON dump akış kanıtı için.
+
+5. **Lang anahtarları** — lang/{tr,en,ar}.json'a 18 yeni anahtar (toplam 1816 → 1834): m_ib_qr_baslik, m_ib_qr_alt_yazi, m_ib_qr_manuel, m_ib_qr_modal_baslik, m_ib_qr_btn_islem_baslat, m_ib_qr_iptal, m_ib_qr_durum_baslangic, m_ib_qr_araniyor, m_ib_qr_bulundu, m_ib_qr_bulunamadi, m_ib_qr_baglanti_hatasi, m_ib_qr_cross_tenant, m_ib_qr_kamera_yok_baslik, m_ib_qr_kamera_yok_yazi, m_ib_qr_hint_sadece_numara, m_ib_qr_hint_tam_id, m_ib_qr_geri, m_ib_qr_kapat.
+
+### 4. Test ve bug fix turu
+
+localhost:5174/is-baslat'ta canlı test, 4 küçük fix yapıldı:
+
+#### MK-65.1 — Lang merge yolu
+
+İlk önerdiğim `python3 -c` script'i `/mnt/user-data/outputs/` path'i kullanıcının Mac'inde çalışmadı. **Düzeltme:** `os.path.expanduser('~/Downloads')`. Cihat'ın Claude'dan aldığı dosyalar Mac'te `~/Downloads/`'a iner; lang merge script'i bu path'ten okumalı.
+
+#### MK-65.2 — Manuel giriş 6-haneli padding
+
+İlk versiyon `tenantKod + '-' + manuelDeger.trim()` kullandı. Cihat `0001` aradı, "Spool bulunamadı" çıktı. Konsol sorgusuyla DB formatı tespit edildi:
+- Yeni spool'lar: `A-000554` (6-haneli padded, 8. oturum sayaç digits=6 kararı)
+- Eski spool'lar: `0169`, `0170` (prefix'siz 4-haneli legacy)
+
+**Çözüm:** IbQRTara `manuelGonder()`'de `padStart(6, '0')` eklendi. Cihat `575` yazdı → `A-000575` bulundu. QR ile gelen payload zaten dolu olduğu için etkilenmedi.
+
+#### MK-65.3 — Hub kontrolü 65 için yumuşatıldı
+
+İlk versiyonda `is_durumu === 'devam_ediyor'` ve `aktif_basamak` rol uyumsuzluğu kontrolleri vardı. Test sırasında Cihat Büküm rolünde `A-000575` (aktif_basamak: `on_imalat`) okuttu — Ekran 4 placeholder'a düştü.
+
+**Sebep:** rol haritam tahminliydi, gerçek DB değerleri (`on_imalat`, `alim_kontrol`) brifing'te yoktu. **Karar:** Tüm hub kontrolleri 66'ya (Ekran 4 mockup turu) ertelendi. `handleSpoolBulundu` artık spool varsa direkt Ekran 3'e geçer. `aktifBasamakRolaUyumlu` helper'ı isbaslat.js'te export ediliyor — 66'da kullanılır.
+
+**Önemli prensip:** Mockup tasarlanmadan kontrol mantığı yazılmaz — false-positive uyarılar kullanıcıyı yorar.
+
+#### MK-65.4 — Rol chip görünürlüğü
+
+İlk versiyon `rgba(255,255,255,0.13)` arka plan + `1px rgba(255,255,255,0.3)` border ile transparan görünüyordu, kameralı arka planda zorla okunuyordu. **Düzeltme:** Durum chip pattern'i ile (koyu opak `rgba(13,18,28,0.9)` arka plan + `2px solid {rolRenk}` dinamik border + box shadow) aynı görsel dile geçti. Rol chip ile durum chip artık tutarlı.
+
+#### MK-65.5 — aktifEkran state geçişi vs navigate
+
+Hub'a gömülü IbQRTara'da geri butonu **navigate(-1)** değil **setAktifEkran('rolSec')** çağırır. MQRTara (standalone) ile IbQRTara (hub'a gömülü) arasındaki en önemli farklardan biri. **Disiplin:** Hub'a gömülü component'lerde her navigate çağrısı yerine ilgili hub callback (onGeri, onSpoolBulundu, vb.) tanımlanmalı.
+
+#### MK-65.6 — Kart tıklama → QR shortcut UX kararı
+
+64. oturum v4'teki "tek yetki otomatik geçişi kaldırıldı" kararı, kart tıklama davranışını değil **otomatik atlama**'yı kapsıyordu. Cihat'ın niyeti: kart tıklama = rol seç + direkt QR aç (kısa yol). **Yeni davranış:** rolSec callback'inde setAktifEkran('qr'). FAB ise rol değiştirmeden tekrar QR açmak için (kart tıklamadan, hatırlanan rolle).
+
+#### MK-65.7 — claude.ai chat URL auto-link sorunu sürdü (MK-64.1 devam)
+
+Bu oturumda `os.path.expanduser('~/Downloads')` linke dönüşmedi (✓), ama `e.target.value` gibi nokta-ayrımlı identifier'lar yine risk. **Disiplin:** Kod düzenleme her zaman doğrudan editör (VS Code/TextEdit, Smart Quotes/Dashes kapalı), terminal yapıştırması sadece komut için.
+
+### 5. ⚠️ MK-65.8 — Sapmama protokolü ihlalleri (BU OTURUM)
+
+Cihat oturumu kapatırken sordu: *"sessizce dosyalarımız ölmesin"*. Kontrol ettim, **3 sapma**:
+
+1. **MK-52.1 ihlali — `arespipe_kopyala` yerine düz `cp` kullanıldı.** Kullanıcı bu oturumda 4-5 kez dosya kopyaladı (IbQRTara, MIsBaslat, isbaslat, son-durum). Hiçbirinde MD5 doğrulaması yapılmadı. macOS Downloads `(1)`, `(2)` riski koruyamadı (şanslıyız ki sorun çıkmadı). **Disiplin:** 66+ oturumlarda her dosya transferi `arespipe_kopyala ~/Downloads/X /path/to/X <MD5>` formatında olacak. Claude her dosya verdiğinde MD5'i de yazacak.
+
+2. **MK-52.2 ihlali — `gp` yerine `git push` + manuel `git pull --rebase`.** Push reddedildiğinde Cihat'a "git pull --rebase" söyledim, oysa `gp` zaten otomatik rebase + push yapıyor. **Disiplin:** 66+ oturumlarda push komutu her zaman `gp` ile bitecek. `git push origin main` veya `git push` yazılmayacak.
+
+3. **Oturum sonu kapanışı eksik tamamlandı.** `.github/son-durum.md` yazıldı ama `CLAUDE-SON-OTURUM.md` (bu dosya) ve `CLAUDE-SONRAKI-OTURUM.md` push'tan sonra yazıldı. **Disiplin:** Oturum kapanışı 3 dosya birden — push'tan ÖNCE üçü birden hazırlanır, tek commit'te gider.
+
+**Bu sapmaların kök nedeni:** Oturum 7. saatine girmişti, fast-forward kapanış yapıldı. **Çözüm:** Oturum başlangıcında ritüel kontrolü gibi, **kapanış başlangıcında da 3-dosya kontrolü** yapılır. Claude "65'i kapatıyoruz" dediğinde otomatik olarak `arespipe_kopyala / gp / 3-dosya` kontrolünü yapar, eksik bırakmaz.
+
+---
+
+## Test sonuçları (Cihat doğruladı)
+
+- ✅ Ekran 1 — kartlar uppercase + 16px + v3.2 palette
+- ✅ Kart tıklama → kameralı QR ekran (kısa yol)
+- ✅ Rol chip net görünüyor (KESİM pembe border + dot glow)
+- ✅ Beyaz çerçeve + mavi scan animasyonu
+- ✅ Manuel giriş `A-` prefix + 6-haneli padding (575 → A-000575)
+- ✅ Spool DB'den geldi
+- ✅ Hub kontrolü yumuşadı, spool varsa direkt Ekran 3 placeholder JSON dump
+- ✅ Geri butonu hub state geçişi (Ekran 1'e dön)
+- 🟡 Canlı prod test (arespipe-mob.vercel.app/is-baslat) — push sonrası, Cihat yapacak
+
+---
+
+## Push ve commit zinciri
+
+6 commit atıldı. Push'ta heredoc/quote modu sorunu yaşandı (özel karakterler `→`, `'`, Türkçe karakterler), ASCII'ye geçirildi. Push reject (remote'ta `[skip ci]` AUTO commit'i vardı), `git pull --rebase` ile çözüldü (ideal: `gp`).
+
+```
+eb79efd docs(65): son-durum.md - 65. oturum kapanis brifingi
+8fe1c13 feat(65): m_ib_qr 18 anahtar 3 dil (1816 -> 1834)
+2d651ec feat(65): MIsBaslat hub'a IbQRTara entegre + kart-QR shortcut + Ekran 3/4 placeholder
+0a3f6bd feat(65): IbQRTara - Ekran 2 (QR Tara) - MQRTara'dan adapte
+a36c18c feat(65): IbRolSec v3.2 palette + uppercase 16px baslik (MK-65)
+6286869 feat(65): isbaslat.js v3.2 palette + blokRenkHex + aktifBasamakRolaUyumlu helper
 ```
 
-### 3. `4ef6c6e` — feat(mob/63.2): MQRTara React port
-
-**MQRTara.jsx (831 satır):**
-- BarcodeDetector API (Android Chrome) → jsQR CDN fallback (iOS Safari) — dinamik script yükleme
-- Tam ekran kamera (object-fit cover), tarama çerçevesi 4 köşe + animasyonlu çizgi
-- Manuel giriş bottom-sheet: `tenants.kod` prefix solda sabit (örn. `A-`), input sadece numara
-- Saf numerik input (inputMode + replace `\D/g`), maxLength 6 (4-6 hane dinamik)
-- Durum chip'leri: tarama (mavi) / arama (amber) / bulundu (yeşil) / hata (kırmızı)
-- Bulunca `/spool/:id`'ye 500ms sonra navigate
-- Hata sonrası 2.2sn otomatik tekrar tarama
-- Kamera reddedildi fallback ekranı: 📵 + "Manuel giriş kullanın"
-- ESC kapatma + body scroll lock + cleanup (stream stop, RAF cancel)
-
-**App.jsx:** `/qr` route + `import MQRTara` eklendi.
-
-**lang/{tr,en,ar}.json:** 1783 → 1800 (+17 anahtar `m_qr_*`).
-
-### 4. `536ca9e` — fix(mob/63.3): yönlendirme bağlantıları
-
-Cihat ekran görüntüsünde MAnasayfaYonetici dashboard'unu paylaşınca fark edildi: route'lar tanımlıydı ama dashboard kartları hâlâ `yakinda(...)` placeholder'ı çağırıyordu. Bağlandı:
-
-- **MIslemler.jsx:** "QR Tara" kartı → `navigate('/qr')`
-- **MAnasayfaYonetici.jsx:** "Aktif Devre" StatKart → `navigate('/devreler')`
-
-Diğer kartlar (Bekleyen Spool, KK Bekleyen, Bu Ay Sevk, Kullanıcı Yönetimi, Malzeme, Markalama, Raporlar, Sevkiyat, Tanımlar) hâlâ `yakinda(...)` — şimdilik kalıyor, ileride bağlanacak.
-
-### 5. `c7fe6e6` — fix(mob/63.4): MQRTara payload parse + okunur durum chip
-
-Cihat gerçek QR ile test ettiğinde **payload formatı uyumsuzluğu** ortaya çıktı:
-
-- QR payload format: `A-000575:9911DC39-F826-4EB9-89AA-CDB40253EDB1` (KOD-NUMARA:UUID)
-- MQRTara sadece `KOD-NUMARA` bekliyordu → "bulunamadı" hatası
-
-**Sebep:** 6. oturumda "QR payload format `A-0504:UUID` olacak" planı yazılmıştı, ben "planlandı" notuna takılıp 7. oturumda implemente edildiğini varsaymadım. Vanilla `qr.html`'de gerçek davranışı kontrol etseydim daha hızlı yakalardım.
-
-**Patch:**
-- 3 format desteklendi:
-  - Yeni `KOD-NUMARA:UUID` → UUID ile direkt `id` ile ara (kesin eşleşme)
-  - Eski `KOD-NUMARA` → `spool_id` ile ara
-  - Çok eski `NUMARA` (prefix'siz) → `spool_id` ile ara (geriye uyum)
-- UUID regex: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`
-- Hata mesajı kısaltıldı (UUID gizli, sadece spool kodu): "Spool bulunamadı: A-0575"
-
-**Durum chip görünüm:** Transparan zeminde okunmuyordu. `rgba(13,18,28,0.92)` opaque zemin, 2px renkli border, drop shadow, fontWeight 700.
-
-### 6. `b139a60` — fix(mob/63.5): olusturma kolon adı
-
-Tekrar 400 Bad Request:
-> `column devreler.olusturulma does not exist`  
-> `Perhaps you meant to reference the column "devreler.olusturma".`
-
-DB'de `olusturma` (CLAUDE.md 4.2'de "olusturma TIMESTAMPTZ created_at DEĞİL!" açıkça yazıyor), kodda `olusturulma` yazmışım. Tek harf benzerliği yüzünden gözden kaçtı.
-
-```bash
-sed -i '' 's/olusturulma/olusturma/' mobile/src/screens/MDevreler.jsx
-```
+CI: ✅ YEŞİL (Cihat browser'dan doğruladı)
 
 ---
 
-## Süreç Olayları
+## Önemli Sayılar
 
-### "Lang dosyaları web ve mobil aynı mı?" Tartışması
-
-Mid-oturum Cihat haklı bir soru sordu: "Mevcut dosyalar üzerine mi yazacağım yoksa ekleme mi yapıyoruz?". Knowledge base'deki bilgi `mobile/src/lang/` 61 m_* anahtarı diyordu, ama bu **54. oturum öncesinden eski bilgiydi** (54'te mobile/src/lang/ git'ten silindi, predev script kök'ten kopyalıyor şu an).
-
-`git log --oneline -- mobile/src/lang/tr.json` ile gerçek tarih netleşti:
-- `f227253` "feat(mobile-54): i18n altyapısı kuruldu, prebuild ile web lang/ paylaşımlı" — burada 3 dosya silindi (tr -333, en -377, ar -338 satır), `.gitignore`'a eklendi, prebuild script kuruldu
-
-Karar: tek otorite kök `lang/{tr,en,ar}.json`. Mobile/src/lang/ build artifact, dokunulmaz.
-
-**Disiplin notu:** Knowledge base bayat olabilir. Sayı/tarih iddialarını her zaman `wc -l`, `git log`, `cat package.json | grep` ile cross-check.
-
-### Filesystem I/O Hatası
-
-Mid-oturum `/mnt/user-data/uploads/` Input/output error verdi (~5 dakika erişim yoktu). Çözüm: dosyaları yeniden yükledim. Sonraki oturumda da olabilir, tekrar yüklemek standart fallback.
-
-### Vercel "Canceled" Aldatıcı
-
-İlk MDevreler push'undan sonra Vercel mob deploy "Canceled" gözüktü. Panik yapmadan açıklama: "more recent commit in the same branch" — Vercel ardışık iki push'un eskisini iptal eder, bu standart davranış. Hata değil.
-
-### GitHub Actions Otomatik Commit'leri
-
-Her push'tan sonra `chore(ci): ci-son-rapor.json güncelle [skip ci]` otomatik commit ekleniyor. Bu yüzden her sonraki push'ta `git pull --rebase origin main` gerekti. Bu artık beklenen pattern.
-
----
-
-## Dosya Transfer Disiplini (62'den taşındı, 63'te de uygulandı)
-
-Tarayıcı suffix sorunu (`tr (12).json`, `tr (13).json` gibi):
-- Cihat dosya indirir → otomatik suffix
-- `cp ~/Downloads/"tr (13).json" lang/tr.json` ile kopyalanır
-- Önce `wc -l` ile boyut doğrulanır
-
-63'te bir kez yanlış suffix kullanıldı (Cihat eski versiyonu kopyalamıştı), `wc -l 1785` (1802 olmalıydı) ile yakalandı, geri çevrildi.
-
----
-
-## Test Sonuçları
-
-| Test | Sonuç | Not |
-|---|---|---|
-| MDevreler `/devreler` ilk açılış | ❌ 400 | zone_no eksik |
-| MDevreler ikinci deneme | ❌ 400 | olusturulma kolon yanlış |
-| MDevreler üçüncü deneme | ✅ | Liste yükleniyor (kullanıcının test sonucu beklenen son durum) |
-| MQRTara `/qr` ilk açılış | ✅ | Kamera açıldı, çerçeve görüldü |
-| MQRTara ilk QR taraması | ❌ "bulunamadı" | Payload format `A-0575:UUID` tanınmadı |
-| MQRTara ikinci QR taraması (patch sonrası) | ✅ Beklenen | Cihat yeniden test edecek |
-| MQRTara durum chip okunabilirliği | ✅ | Opaque zemin |
-| Manuel giriş prefix UI | ✅ | `A-` solda sabit, sadece numara |
-| Dashboard yönlendirmeleri | ✅ | QR Tara ve Aktif Devre kartları çalışıyor |
-
----
-
-## Çıkan Yeni Disiplin Notları
-
-### MK-63.A — DB sütun adlarını varsayma
-
-Knowledge base'de `olusturma TIMESTAMPTZ created_at DEĞİL!` açıkça yazıyordu, kodu yazarken yanlış varyant kullandım. SELECT cümlelerinde column adları için:
-- Önce vanilla'da geçen kullanıma bak (eğer dosya verildiyse)
-- Sonra knowledge base'deki şemayı doğrula
-- Şüphe varsa Supabase MCP query veya `information_schema.columns` ile cross-check
-
-### MK-63.B — "Planlandı" ≠ "Yapılmadı"
-
-Knowledge base'deki "X planlandı, sonraki oturumda implemente edilecek" notları — sonraki oturum gerçekten yapmış olabilir. Vanilla dosyayı her zaman cross-check et:
-- 6. oturumda "QR payload format `KOD-NUMARA:UUID` planlandı" yazıyordu
-- 7. oturumda implemente edilmiş ama briefing'de yansımamış olabilir
-- Vanilla `qr.html`'de aslında payload nasıl üretiliyor kontrol etseydim 5 dakikada görürdüm
-
-### MK-63.C — Knowledge Base Sayım/Tarih Bayatlığı
-
-`mobile/src/lang/` 61 m_* anahtarı diyordu, gerçekte git'te bile yok (54. oturumda silindi). Saymalı/tarihli iddialar için baseline kontrol:
-- `wc -l file.json` boyut
-- `git log --oneline -- path` dosya tarihçesi
-- `cat package.json | grep script` script konfigürasyonu
-
----
-
-## 64. Oturuma Devreden Borçlar
-
-### Birincil iş — MIsBaslat.jsx
-
-Vanilla `is_baslat.html` 1930 satır, **operatör çekirdek akışı**. 10 ekranlı state machine:
-
-1. Rol Seç (kullanıcının işlem blokları)
-2. QR Tara (BarcodeDetector + jsQR fallback)
-3. Spool Detay (foto carousel + 2 sekme + dinamik foot)
-4. Uyarı (alıştırma + test + qr_goster notlar)
-5. Not Ekle (textarea + foto upload + not geçmişi)
-6. Foto Kapat (zorunlu kapanış fotoğrafı)
-7. Basamak Seç (rol'e göre filtrelenmiş, alıştırma=VAR ise kaynak disabled)
-8. Tamamlandı (özet + 2sn sonra QR'a dön)
-9. Son Foto SF (on_kontrol basamağı için ayrı akış)
-10. SF Tamamlandı
-
-R-10 mockup-first 5-batch protokolü önerildi (CLAUDE-SONRAKI-OTURUM.md detayda).
-
-### MQRTara — gelecek patch'ler
-
-- **Cross-tenant uyarısı:** payload `B-...` ama kullanıcı `A` tenant'ı → "Bu spool X firmasına aittir" uyarı ekranı (6. oturum planı)
-- **Mükerrer iş:** `is_durumu === 'devam_ediyor'` spool taranınca "başkası işliyor" + devralma akışı
-- **Operatör yönlendirmesi:** MIsBaslat tamamlanınca operatörler `/is-baslat/:id`, diğer roller `/spool/:id`
-
-### Mobile — açık MK'lar
-
-- **MK-58.1 alıştırma enum migration** — uppercase 'VAR'/'KISMI'/'YOK' lowercase'a çevrilecek (MDevreler + MIsBaslat dönüşümü sonrası tek seferde)
-- **MK-62.3 README açığı** — predev script README.md'yi siliyor, predev'e README üretme satırı eklenmeli
-- **MK-58.5** Panel.html mobile preview UUID input
-
----
-
-## Sayılar Özeti
-
-- **Lang anahtar:** TR/EN/AR 1752 → 1800 (+48)
-- **Yeni dosya:** MDevreler.jsx (1178), MQRTara.jsx (845)
-- **Değiştirilen dosya:** App.jsx, MAnasayfaYonetici.jsx, MIslemler.jsx, lang × 3
-- **Commit sayısı:** 5 feat/fix (CI commit'leri hariç)
-- **HEAD:** `b139a60`
-- **Mobile ekran sayısı:** 9 tamamlandı (önceki 7 + MDevreler + MQRTara)
-
----
-
-> 64. oturum açılışında bu dosya `son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` ile birlikte okunacak.
+- **Toplam MK:** 65 oturum
+- **Mobile ekran sayısı:** 9 tam ekran + 1 hub içinde 2 ekran
+- **Lang anahtar:** 1834 (TR/EN/AR senkron)
+- **Yeni dosya:** IbQRTara.jsx (934 satır)
+- **Güncellenen:** IbRolSec, MIsBaslat, isbaslat.js, lang/{tr,en,ar}.json
+- **Toplam değişiklik:** +1265 satır eklendi, ~163 satır değişti
+- **HEAD:** eb79efd
