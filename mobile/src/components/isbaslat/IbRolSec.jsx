@@ -1,10 +1,15 @@
 // mobile/src/components/isbaslat/IbRolSec.jsx
 // İş Başlat — Ekran 1: Rol Seç
+// 64. oturumda yazıldı, 65. oturumda güncellendi:
+//   - v3.2 renk palette'i (turkuaz/indigo/turuncu/pembe/mor) — blokRenkHex
+//   - Sol şerit ve ikon arka planı runtime hex ile (CSS cl-X preset yerine)
+//   - Kart başlığı uppercase + 16px + letter-spacing (Ekran 2 chip ile tutarlı)
+//
 // Operatörün atanmış işlem bloklarını liste olarak gösterir.
-// Tıklayınca rolü aktif eder (highlighted), bottom nav'daki QR FAB butonu kullanılabilir hale gelir.
-// Sınıflar ares-mobile.css'ten gelir: .m-card-list, .m-card-item, .cl-*, .m-card-icon, .m-card-body, .m-card-title
+// Tıklayınca rolü aktif eder (highlighted), bottom nav'daki QR FAB
+// butonu kullanılabilir hale gelir.
 
-import { blokIkon, blokRenkSinifi, blokIkonRenkStili } from '../../lib/isbaslat'
+import { blokIkon, blokRenkHex, hexToRgba } from '../../lib/isbaslat'
 import { useT } from '../../lib/i18n'
 
 export default function IbRolSec({ bloklar, seciliRolId, onRolSec }) {
@@ -49,27 +54,48 @@ export default function IbRolSec({ bloklar, seciliRolId, onRolSec }) {
 
       {bloklar.map(blok => {
         const sec = seciliRolId === blok.id
+        // v3.2 palette önceliklidir; eski entry'lerde (renkHex yoksa) fallback
+        const renkHex = blok.renkHex || blokRenkHex(blok.ad)
+
+        const baseStyle = {
+          width: '100%',
+          textAlign: 'left',
+          cursor: 'pointer',
+          borderLeft: `4px solid ${renkHex}`,
+        }
+        const finalStyle = sec
+          ? { ...baseStyle, background: 'var(--ac2)' }
+          : baseStyle
+
         return (
           <button
             key={blok.id}
             type="button"
-            className={`m-card-item ${blokRenkSinifi(blok.renk)}`}
+            className="m-card-item"
             onClick={() => onRolSec(blok)}
-            style={{
-              width: '100%',
-              textAlign: 'left',
-              cursor: 'pointer',
-              ...(sec ? {
-                background: 'var(--ac2)',
-                borderColor: 'var(--ac)',
-              } : {}),
-            }}
+            style={finalStyle}
           >
-            <div className="m-card-icon" style={blokIkonRenkStili(blok.renk)}>
+            <div
+              className="m-card-icon"
+              style={{
+                background: hexToRgba(renkHex, 0.14),
+                color: renkHex,
+              }}
+            >
               {blokIkon(blok.ad)}
             </div>
             <div className="m-card-body">
-              <div className="m-card-title">{blok.ad}</div>
+              <div
+                className="m-card-title"
+                style={{
+                  textTransform: 'uppercase',
+                  fontSize: 16,
+                  letterSpacing: 0.8,
+                  fontWeight: 700,
+                }}
+              >
+                {blok.ad}
+              </div>
             </div>
           </button>
         )
