@@ -83,7 +83,7 @@ export default function MDevreler() {
         // 1) Devreler + proje + tersane
         const { data: devreList, error: dvErr } = await supabase
           .from('devreler')
-          .select('id, is_emri_no, devre_no, ad, zone, durum, durdurma_sebebi, ilerleme, agirlik, malzeme, yuzey, guncelleme, olusturulma, projeler(proje_no, gemi_adi, tersaneler(ad))')
+          .select('id, is_emri_no, devre_no, ad, zone, durum, durdurma_sebebi, ilerleme, agirlik, malzeme, yuzey, guncelleme, olusturma, projeler(proje_no, gemi_adi, tersaneler(ad))')
           .eq('tenant_id', tid)
           .or('silindi.is.null,silindi.eq.false')
           .order('guncelleme', { ascending: false })
