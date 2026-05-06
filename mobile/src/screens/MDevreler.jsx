@@ -83,7 +83,7 @@ export default function MDevreler() {
         // 1) Devreler + proje + tersane
         const { data: devreList, error: dvErr } = await supabase
           .from('devreler')
-          .select('id, is_emri_no, devre_no, ad, zone, zone_no, durum, durdurma_sebebi, ilerleme, agirlik, malzeme, yuzey, guncelleme, olusturulma, projeler(proje_no, gemi_adi, tersaneler(ad))')
+          .select('id, is_emri_no, devre_no, ad, zone, durum, durdurma_sebebi, ilerleme, agirlik, malzeme, yuzey, guncelleme, olusturulma, projeler(proje_no, gemi_adi, tersaneler(ad))')
           .eq('tenant_id', tid)
           .or('silindi.is.null,silindi.eq.false')
           .order('guncelleme', { ascending: false })
@@ -179,7 +179,7 @@ export default function MDevreler() {
     if (q) {
       liste = liste.filter(d => {
         const fields = [
-          d.is_emri_no, d.devre_no, d.ad, d.malzeme, d.yuzey, d.zone, d.zone_no,
+          d.is_emri_no, d.devre_no, d.ad, d.malzeme, d.yuzey, d.zone,
           d.projeler?.proje_no, d.projeler?.gemi_adi, d.projeler?.tersaneler?.ad,
         ]
         return fields.some(f => f && String(f).toLocaleLowerCase('tr').includes(q))
@@ -482,7 +482,7 @@ export default function MDevreler() {
               const a = spoolAgg[d.id] || {}
               const proje = d.projeler || {}
               const tersaneAd = proje.tersaneler?.ad || ''
-              const sub = [tersaneAd, proje.proje_no, d.zone || d.zone_no].filter(Boolean).join(' · ')
+              const sub = [tersaneAd, proje.proje_no, d.zone].filter(Boolean).join(' · ')
               const adText = d.devre_no ? d.devre_no + (d.ad ? ' — ' + d.ad : '') : (d.ad || '—')
               const durduruldu = !!(d.durdurma_sebebi || (d.durum || '').toLowerCase() === 'durduruldu')
 
