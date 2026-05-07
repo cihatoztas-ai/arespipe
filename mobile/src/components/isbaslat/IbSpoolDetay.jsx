@@ -66,18 +66,25 @@ export default function IbSpoolDetay({
       }
     }
 
-    // 2. alternatifBasamak — aktif basamak rol ile uyumsuz
+    // 2. alternatifBasamak — SADECE kaynak ailesi içinde (argon ↔ gazaltı).
+    // Cihat'ın 68. oturumda netleştirdiği senaryo: aktif basamak argon kaynağı
+    // ise ve kullanıcı gazaltı kaynakçısı ise drawer çıkar (alternatif teklif).
+    // Diğer basamak uyumsuzlukları (imalat ↔ ön imalat ↔ kesim vb.) için
+    // drawer açılmaz; iş başlatma izni RLS/yetki kontrolüyle DB tarafında
+    // yapılır. İlk operatör senaryosunda imalatçı direkt İşe Başla'ya basar.
     if (yerelSpool.aktif_basamak && aktifRol?.ad) {
-      const aktif = String(yerelSpool.aktif_basamak).toLowerCase().trim()
-      const rol   = String(aktifRol.ad).toLowerCase().trim()
-      // Basit normalize: birbirini içeriyorsa uyumlu say
-      // (örn. "argon_kaynagi" vs "Argon Kaynağı" — ikisi de "argon" içerir).
-      const uyumlu =
-        aktif === rol ||
-        aktif.includes(rol.split(' ')[0]) ||
-        rol.includes(aktif.split('_')[0]) ||
-        rol.includes(aktif.split(' ')[0])
-      if (!uyumlu) {
+      const aktif = String(yerelSpool.aktif_basamak).toLowerCase()
+      const rol   = String(aktifRol.ad).toLowerCase()
+      const kaynakMi = (s) =>
+        s.includes('argon') || s.includes('gazalti') || s.includes('gazaltı')
+      const aktifKaynakMi = kaynakMi(aktif)
+      const rolKaynakMi   = kaynakMi(rol)
+      // İkisi de kaynak ailesinden, ama farklı tür ise → alternatif teklifi
+      const farkliKaynakTuru =
+        aktifKaynakMi && rolKaynakMi &&
+        !(aktif.includes('argon') && rol.includes('argon')) &&
+        !(aktif.includes('gazalt') && rol.includes('gazalt'))
+      if (farkliKaynakTuru) {
         // 68b: yetki kontrolü ile yetkili/yetkisiz ayrımı.
         // Şu an varsayılan: yetkili (alternatif teklifi göster).
         setUyariDrawer({
@@ -324,7 +331,7 @@ const s = {
 
   // Foto blok
   fotoBlok: {
-    height: 160,
+    height: 90,
     background: 'var(--sur2)',
     display: 'flex',
     alignItems: 'center',
