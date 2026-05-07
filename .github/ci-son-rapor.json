@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-05-07T18:21:31.293Z",
-  "commit_sha": "c1faccc55ce581fad329bbed60d078a42bda3441",
+  "tarih": "2026-05-07T18:59:58.946Z",
+  "commit_sha": "108534489f53f2f1de67848046e9d1649e875daf",
   "commit_ref": "main",
-  "workflow_run": 737,
+  "workflow_run": 738,
   "ozet": {
-    "hata": 1,
-    "uyari": 80,
+    "hata": 0,
+    "uyari": 74,
     "taranan_dosya": 98,
     "sorunlu_dosya": 7,
-    "durum": "kirmizi"
+    "durum": "sari"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -28,7 +28,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('izb_calisiyor') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 79,
+      "sayi": 73,
       "dosyalar": [
         {
           "dosya": "izometri-batch.html",
@@ -64,13 +64,8 @@
         },
         {
           "dosya": "mobile/src/components/isbaslat/IbSpoolDetay.jsx",
-          "sayi": 32,
+          "sayi": 26,
           "satirlar": [
-            182,
-            183,
-            192,
-            193,
-            203,
             271,
             273,
             284,
@@ -86,7 +81,6 @@
             395,
             398,
             401,
-            419,
             512,
             513,
             514,
@@ -141,20 +135,6 @@
             3504,
             3508,
             3510
-          ]
-        }
-      ]
-    },
-    "YASAK_RENK_22C55E": {
-      "tip": "hata",
-      "mesaj": "Yasak renk kodu: #22c55e — var(--gr) kullan",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "mobile/src/components/isbaslat/IbSpoolDetay.jsx",
-          "sayi": 1,
-          "satirlar": [
-            635
           ]
         }
       ]
@@ -316,45 +296,9 @@
     },
     {
       "dosya": "mobile/src/components/isbaslat/IbSpoolDetay.jsx",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 32,
+      "hata_sayisi": 0,
+      "uyari_sayisi": 26,
       "hatalar": [
-        {
-          "kod": "YASAK_RENK_22C55E",
-          "tip": "hata",
-          "satir": 635,
-          "mesaj": "Yasak renk kodu: #22c55e — var(--gr) kullan"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 182,
-          "mesaj": "tv('m_ib_uy_yu_alis_baslik') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 183,
-          "mesaj": "tv('m_ib_uy_yu_alis_mesaj') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 192,
-          "mesaj": "tv('m_ib_uy_yu_test_baslik') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 193,
-          "mesaj": "tv('m_ib_uy_yu_test_mesaj') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 203,
-          "mesaj": "tv('m_ib_uy_yu_not_baslik') kullanılıyor ama lang/tr.json'da yok"
-        },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
@@ -444,12 +388,6 @@
           "tip": "uyari",
           "satir": 401,
           "mesaj": "tv('m_ib_sd_iptal') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 419,
-          "mesaj": "tv('m_ib_uy_yu_anladim') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
