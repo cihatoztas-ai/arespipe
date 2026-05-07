@@ -10,7 +10,9 @@
 //   artık drawer overlay olarak host ekranlarda gösterilir:
 //     - cross-tenant → IbQRTara içinde drawer overlay
 //     - devamEdiyor + alternatif basamak → IbSpoolDetay içinde drawer overlay
-//   Hub artık 'uyari' ekran state'i taşımaz, uyariPayload state'i yok.
+//   Hub artık 'uyari' ekran state'i taşımaz.
+// 68. oturum (Adım 3): Ekran 3 placeholder kaldırıldı, gerçek IbSpoolDetay
+//   import edildi. Foto carousel + Malzeme BOM + foot akışları 68b'de.
 //
 // State:
 //   aktifEkran    — 'rolSec' | 'qr' | 'spoolDetay' | ...
@@ -19,11 +21,12 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MTopBar     from '../components/MTopBar'
-import MBottomNav  from '../components/MBottomNav'
-import MDrawer     from '../components/MDrawer'
-import IbRolSec    from '../components/isbaslat/IbRolSec'
-import IbQRTara    from '../components/isbaslat/IbQRTara'
+import MTopBar      from '../components/MTopBar'
+import MBottomNav   from '../components/MBottomNav'
+import MDrawer      from '../components/MDrawer'
+import IbRolSec     from '../components/isbaslat/IbRolSec'
+import IbQRTara     from '../components/isbaslat/IbQRTara'
+import IbSpoolDetay from '../components/isbaslat/IbSpoolDetay'
 import {
   islemBloklariniGetir,
   rolKaydet,
@@ -142,6 +145,14 @@ export default function MIsBaslat() {
   }
 
   // ───────────────────────────────────────────────
+  // Ekran 3 callback'leri
+  // ───────────────────────────────────────────────
+  const handleBaskaSpool = () => {
+    setGuncelSpool(null)
+    setAktifEkran('qr')
+  }
+
+  // ───────────────────────────────────────────────
   // QR ekranı tam ekran kamera — MTopBar/MBottomNav gizlenir
   // ───────────────────────────────────────────────
   if (aktifEkran === 'qr') {
@@ -205,40 +216,15 @@ export default function MIsBaslat() {
           />
         )}
 
-        {/* ── Ekran 3: Spool Detay (placeholder) ── */}
+        {/* ── Ekran 3: Spool Detay ── */}
         {!yukleniyor && !hata && aktifEkran === 'spoolDetay' && (
-          <PlaceholderEkran
-            ikon="📦"
-            baslik="Spool Detay (Ekran 3)"
-            aciklama={
-              guncelSpool
-                ? `Bulundu: ${guncelSpool.spool_id || guncelSpool.id}`
-                : 'Spool yok.'
-            }
-            geriEtiket={tv('mob_geri', 'Geri')}
+          <IbSpoolDetay
+            spool={guncelSpool}
+            aktifRol={seciliRol}
+            kullanici={kullanici}
+            onBaskaSpool={handleBaskaSpool}
             onGeri={() => setAktifEkran('rolSec')}
-            tv={tv}
-          >
-            <pre style={{
-              fontSize: 11,
-              color: 'var(--txd)',
-              background: 'var(--sur2)',
-              padding: 12,
-              borderRadius: 8,
-              overflow: 'auto',
-              maxWidth: 320,
-              margin: '12px auto',
-              textAlign: 'left',
-            }}>
-{JSON.stringify({
-  id: guncelSpool?.id,
-  spool_id: guncelSpool?.spool_id,
-  is_durumu: guncelSpool?.is_durumu,
-  aktif_basamak: guncelSpool?.aktif_basamak,
-  rol: seciliRol?.ad,
-}, null, 2)}
-            </pre>
-          </PlaceholderEkran>
+          />
         )}
       </main>
 
@@ -254,50 +240,5 @@ export default function MIsBaslat() {
         kapat={() => setDrawerAcik(false)}
       />
     </>
-  )
-}
-
-// ───────────────────────────────────────────────
-// Yardımcı: Placeholder ekran (Ekran 3 için)
-// 68. oturum geçici — IbSpoolDetay yazılınca silinir.
-// ───────────────────────────────────────────────
-function PlaceholderEkran({ ikon, baslik, aciklama, geriEtiket, onGeri, tv, children }) {
-  return (
-    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--txd)' }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>{ikon}</div>
-      <div style={{
-        fontSize: 16,
-        fontWeight: 600,
-        color: 'var(--tx)',
-        marginBottom: 8,
-        fontFamily: "'Barlow Condensed', sans-serif",
-        letterSpacing: 0.5,
-      }}>
-        {baslik}
-      </div>
-      {aciklama && (
-        <div style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
-          {aciklama}
-        </div>
-      )}
-      {children}
-      <button
-        type="button"
-        onClick={onGeri}
-        style={{
-          marginTop: 8,
-          padding: '10px 20px',
-          background: 'var(--ac)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 10,
-          fontSize: 14,
-          fontWeight: 500,
-          cursor: 'pointer',
-        }}
-      >
-        {geriEtiket}
-      </button>
-    </div>
   )
 }
