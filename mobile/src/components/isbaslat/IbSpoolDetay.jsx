@@ -209,58 +209,63 @@ export default function IbSpoolDetay({
         <span style={s.ustBantYazi}>{ustBant}</span>
       </div>
 
-      {/* ───── Foto carousel placeholder ───── */}
-      <div style={s.fotoBlok}>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-      </div>
-
-      {/* ───── Aktif rol + Spool ID + Peek tab satırı ───── */}
-      <div style={s.idSatir}>
-        <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
-        <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
-        <button
-          type="button"
-          style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
-          onClick={handlePeekTabBas}
-          disabled={yumusKartlar.length === 0}
-          aria-label={tv('m_ib_sd_peek_aria', 'Uyarıları göster')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+      {/* ───── SCROLL alanı — foto + ID satırı + sekmeler + içerik ─────
+          Cihat 68 testi: sadece üst bant sabit kalsın, geri kalan tüm
+          bölümler scroll edilebilir olsun. */}
+      <div style={s.scrollAlani}>
+        {/* Foto carousel placeholder */}
+        <div style={s.fotoBlok}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
           </svg>
-          {yumusKartlar.length > 0 && (
-            <span style={s.peekSayi}>{yumusKartlar.length}</span>
-          )}
-        </button>
-      </div>
+        </div>
 
-      {/* ───── Sekmeler ───── */}
-      <div style={s.sekmeler}>
-        <button
-          type="button"
-          style={aktifSekme === 'genel' ? s.sekmeAktif : s.sekme}
-          onClick={() => setAktifSekme('genel')}
-        >
-          {tv('m_ib_sd_genel', 'Genel')}
-        </button>
-        <button
-          type="button"
-          style={aktifSekme === 'malzeme' ? s.sekmeAktif : s.sekme}
-          onClick={() => setAktifSekme('malzeme')}
-        >
-          {tv('m_ib_sd_malzeme', 'Malzeme')}
-        </button>
-      </div>
+        {/* Aktif rol + Spool ID + Peek tab satırı */}
+        <div style={s.idSatir}>
+          <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
+          <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
+          <button
+            type="button"
+            style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
+            onClick={handlePeekTabBas}
+            disabled={yumusKartlar.length === 0}
+            aria-label={tv('m_ib_sd_peek_aria', 'Uyarıları göster')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            {yumusKartlar.length > 0 && (
+              <span style={s.peekSayi}>{yumusKartlar.length}</span>
+            )}
+          </button>
+        </div>
 
-      {/* ───── İçerik (scroll alanı) ───── */}
-      <div style={s.icerik}>
-        {aktifSekme === 'genel'   && <GenelPanel spool={yerelSpool} tv={tv} />}
-        {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
+        {/* Sekmeler */}
+        <div style={s.sekmeler}>
+          <button
+            type="button"
+            style={aktifSekme === 'genel' ? s.sekmeAktif : s.sekme}
+            onClick={() => setAktifSekme('genel')}
+          >
+            {tv('m_ib_sd_genel', 'Genel')}
+          </button>
+          <button
+            type="button"
+            style={aktifSekme === 'malzeme' ? s.sekmeAktif : s.sekme}
+            onClick={() => setAktifSekme('malzeme')}
+          >
+            {tv('m_ib_sd_malzeme', 'Malzeme')}
+          </button>
+        </div>
+
+        {/* İçerik */}
+        <div style={s.icerikInner}>
+          {aktifSekme === 'genel'   && <GenelPanel spool={yerelSpool} tv={tv} />}
+          {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
+        </div>
       </div>
 
       {/* ───── Foot CTA ───── */}
@@ -584,12 +589,15 @@ const s = {
     WebkitTapHighlightColor: 'transparent',
   },
 
-  // İçerik (scroll alanı)
-  icerik: {
+  // Scroll alanı — sadece üst bant sabit, geri kalan kayar
+  // (Cihat 68 testi: foto + ID + sekmeler + içerik tek scroll içinde)
+  scrollAlani: {
     flex: 1,
     minHeight: 0,
     overflowY: 'auto',
     background: 'var(--sur)',
+  },
+  icerikInner: {
     padding: '4px 16px',
   },
 
