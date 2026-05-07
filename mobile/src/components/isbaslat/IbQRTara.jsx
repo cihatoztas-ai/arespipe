@@ -3,16 +3,21 @@
 // MQRTara.jsx (63. oturum)'dan adapte edildi. Hub state pattern'i.
 //
 // MQRTara ile farklar:
-// - navigate() yok — onGeri / onSpoolBulundu / onCrossTenant prop callback'leri
+// - navigate() yok — onGeri / onSpoolBulundu prop callback'leri
 // - Üst ortada rol chip (aktifRol.ad uppercase + aktifRol.renk dot)
 // - Cross-tenant erken algılama (DB sorgusu öncesi, payload prefix kontrolü)
 // - Manuel modal CTA: "Spool'u Bul →" yerine "İşlem Başlat →"
 // - i18n anahtarları m_qr_* yerine m_ib_qr_*
 // - import path bir alt seviye (../../lib/...)
 //
-// Kalan akış (devam_ediyor / rol uyumsuzluğu) hub'da yapılır:
-// onSpoolBulundu(spool) çağrılır, MIsBaslat içinde check edilip Ekran 3 ya da
-// Ekran 4'e yönlendirilir.
+// 68. oturum (MK-68.B): Ekran 4 (uyari) silindi.
+// Cross-tenant artık inline drawer overlay olarak içeride handle ediliyor;
+// parent'a onCrossTenant callback'i fırlatılmıyor. Drawer "Tamam, geri dön"
+// → drawer kapanır + tarama yeniden başlar (kullanıcı QR ekranında kalır).
+//
+// Akış-kesici diğer uyarılar (devamEdiyor, alternatif basamak) IbSpoolDetay
+// içinde drawer overlay olarak gösterilir — onSpoolBulundu(spool) ile devreye
+// girer, hub bu noktada ek check yapmaz.
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -27,7 +32,7 @@ const BULUNDU_BEKLEME_MS = 500
 
 // ───────────────────────── Component ─────────────────────────
 
-export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTenant }) {
+export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu }) {
   const { tv } = useT()
 
   // UI state
@@ -36,6 +41,9 @@ export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTena
   const [manuelAcik, setManuelAcik] = useState(false)
   const [manuelDeger, setManuelDeger] = useState('')
   const [tenantKod, setTenantKod] = useState('')
+  // 68. oturum: akış-kesici uyarı drawer'ı (şu an sadece crossTenant).
+  // null → kapalı; { tip: 'crossTenant' } → açık.
+  const [uyariDrawer, setUyariDrawer] = useState(null)
 
   // Refs (re-render tetiklemez — kamera/RAF yönetimi için)
   const videoRef = useRef(null)
@@ -109,18 +117,12 @@ export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTena
 
     // ─── Cross-tenant erken algılama (DB sorgusu YOK) ───
     // Payload "KOD-NUMARA" formatındaysa ve KOD kullanıcı tenant'ından farklıysa,
-    // doğrudan Ekran 4'e yönlendir. RLS zaten keser ama UX için açıklama önemli.
+    // drawer overlay göster. RLS zaten keser ama UX için açıklama önemli.
+    // 68. oturum: parent'a callback fırlatmak yerine inline drawer.
     if (tenantKod && spoolKodu.includes('-')) {
       const payloadTenant = spoolKodu.split('-')[0]
       if (payloadTenant && payloadTenant !== tenantKod) {
-        if (onCrossTenant) {
-          onCrossTenant({ payloadTenant, spoolKodu })
-        } else {
-          // Fallback: hub bağlamı yoksa inline hata göster
-          setDurum('hata')
-          setDurumYazi(tv('m_ib_qr_cross_tenant', 'Bu spool farklı firmaya ait'))
-          setTimeout(taramayiTekrarBaslat, HATA_BEKLEME_MS)
-        }
+        setUyariDrawer({ tip: 'crossTenant' })
         return
       }
     }
@@ -157,8 +159,8 @@ export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTena
         return
       }
 
-      // Bulundu — hub'a teslim et. Hub devam_ediyor / rol uyumsuzluğu kontrolü
-      // yaparak Ekran 3 (spoolDetay) veya Ekran 4 (uyari)'ye yönlendirir.
+      // Bulundu — hub'a teslim et. Akış-kesici uyarılar (devamEdiyor /
+      // alternatif basamak) IbSpoolDetay içinde drawer overlay olarak hesaplanır.
       setDurum('bulundu')
       setDurumYazi(tv('m_ib_qr_bulundu', 'Bulundu — yönlendiriliyor…'))
       setTimeout(() => {
@@ -171,15 +173,21 @@ export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTena
       setTimeout(taramayiTekrarBaslat, HATA_BEKLEME_MS)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantKod, onCrossTenant, onSpoolBulundu, onGeri, tv])
+  }, [tenantKod, onSpoolBulundu, onGeri, tv])
 
-  // Tekrar tarama — hata sonrası
+  // Tekrar tarama — hata sonrası ve drawer kapanışı sonrası
   function taramayiTekrarBaslat() {
     bulundupRef.current = false
     taramaAcikRef.current = true
     setDurum('tarama')
     setDurumYazi(tv('m_ib_qr_durum_baslangic', 'Kodu çerçeveye hizala'))
     taramaCalistir()
+  }
+
+  // 68. oturum: drawer kapanış handler — tarama moduna döner.
+  function uyariDrawerKapat() {
+    setUyariDrawer(null)
+    taramayiTekrarBaslat()
   }
 
   // ─── Tarama döngüsü ───
@@ -571,6 +579,32 @@ export default function IbQRTara({ aktifRol, onGeri, onSpoolBulundu, onCrossTena
         </>
       )}
 
+      {/* ───────────── 68. oturum: Akış-kesici uyarı drawer overlay ───────────── */}
+      {/* Şu an sadece crossTenant tipi. devamEdiyor + alternatif basamak
+          IbSpoolDetay içinde aynı pattern'le hostlanır — Adım 3'te ortak
+          komponente çıkarılır (IbUyariDrawer.jsx). */}
+      {uyariDrawer && uyariDrawer.tip === 'crossTenant' && (
+        <div style={s.drawerOvl}>
+          <div style={s.drawerKart}>
+            <div style={s.drawerIkonDaire}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--re)" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18"/>
+              </svg>
+            </div>
+            <p style={s.drawerBaslik}>
+              {tv('m_ib_uy_ct_baslik', 'Bu spool size ait değil')}
+            </p>
+            <p style={s.drawerMesaj}>
+              {tv('m_ib_uy_ct_mesaj', 'Bu spool başka bir firmaya ait. Görüntüleyemezsiniz.')}
+            </p>
+            <button style={s.drawerBtnPrimary} onClick={uyariDrawerKapat}>
+              {tv('m_ib_uy_ct_btn', 'Tamam, geri dön')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes ibQrScan {
           0%   { top: 8%;  opacity: 1; }
@@ -929,5 +963,66 @@ const s = {
     fontSize: 14,
     fontFamily: 'Barlow, sans-serif',
     cursor: 'pointer',
+  },
+
+  // 68. oturum: Akış-kesici uyarı drawer overlay
+  // Mockup v19 cross-tenant kart tasarımı.
+  drawerOvl: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.55)',
+    zIndex: 200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    animation: 'ibQrFade 240ms ease-out forwards',
+  },
+  drawerKart: {
+    background: 'var(--sur)',
+    color: 'var(--tx)',
+    borderRadius: 14,
+    padding: '18px 18px 16px',
+    width: '100%',
+    maxWidth: 360,
+    borderLeft: '4px solid var(--re)',
+    fontFamily: 'Barlow, system-ui, sans-serif',
+  },
+  drawerIkonDaire: {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    background: 'rgba(229,62,62,0.12)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  drawerBaslik: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: 17,
+    fontWeight: 700,
+    margin: '0 0 8px',
+    color: 'var(--tx)',
+    letterSpacing: 0.3,
+  },
+  drawerMesaj: {
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: 'var(--txd)',
+    margin: '0 0 18px',
+  },
+  drawerBtnPrimary: {
+    width: '100%',
+    padding: 12,
+    background: 'var(--tx)',
+    color: 'var(--sur)',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: 'Barlow, sans-serif',
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
   },
 }

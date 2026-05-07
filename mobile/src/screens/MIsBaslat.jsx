@@ -1,20 +1,21 @@
 // mobile/src/screens/MIsBaslat.jsx
 // İş Başlat — Hub komponenti
-// Tüm iş_baslat ekranlarını yönetir (10 ekran):
-//   rolSec → qr → spoolDetay → uyari → notEkle → fotoKapat → basamakSec → tamam
+// Tüm iş_baslat ekranlarını yönetir (8 ekran):
+//   rolSec → qr → spoolDetay → notEkle → fotoKapat → basamakSec → tamam
 //   on_kontrol akışı: spoolDetay → sonFoto → sfTamam
 //
 // 64. oturum: Ekran 1 (rolSec) implement edildi, diğerleri placeholder.
 // 65. oturum: Ekran 2 (qr) → IbQRTara entegre edildi.
-//             Ekran 3 (spoolDetay) ve Ekran 4 (uyari) hâlâ placeholder
-//             ama hub akışı tam — onSpoolBulundu / onCrossTenant callback'leri
-//             devam_ediyor + rol uyumsuzluğu kontrolleriyle çalışıyor.
+// 68. oturum (MK-68.B): Ekran 4 (uyari) silindi. Akış-kesici uyarılar
+//   artık drawer overlay olarak host ekranlarda gösterilir:
+//     - cross-tenant → IbQRTara içinde drawer overlay
+//     - devamEdiyor + alternatif basamak → IbSpoolDetay içinde drawer overlay
+//   Hub artık 'uyari' ekran state'i taşımaz, uyariPayload state'i yok.
 //
 // State:
-//   aktifEkran    — 'rolSec' | 'qr' | 'spoolDetay' | 'uyari' | ...
+//   aktifEkran    — 'rolSec' | 'qr' | 'spoolDetay' | ...
 //   seciliRol     — { id, ad, renk } (renk = blokRenkHex'ten v3.2 palette)
 //   guncelSpool   — Ekran 2'de bulunan spool
-//   uyariPayload  — { tip, ... } Ekran 4 için (cross-tenant / devamEdiyor / rolUyumsuz)
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -45,7 +46,6 @@ export default function MIsBaslat() {
   const [bloklar,      setBloklar]      = useState([])
   const [seciliRol,    setSeciliRol]    = useState(null)
   const [guncelSpool,  setGuncelSpool]  = useState(null)
-  const [uyariPayload, setUyariPayload] = useState(null)
   const [yukleniyor,   setYukleniyor]   = useState(true)
   const [hata,         setHata]         = useState(null)
 
@@ -134,18 +134,11 @@ export default function MIsBaslat() {
   const handleSpoolBulundu = (spool) => {
     if (!spool) return
 
-    // 65. oturum: Tüm hub kontrolleri (devam_ediyor / rol uyumsuzluğu)
-    // Ekran 4 (uyari) mockup turuna kadar yumuşatıldı.
-    // 66. oturumda iş akışı haritasıyla birlikte yazılır.
-    // Şimdilik spool varsa direkt Ekran 3'e geçer; cross-tenant erken
-    // algılama IbQRTara içinde RLS-pre-emptive uyarı için aktif kalır.
+    // 68. oturum (MK-68.B): Akış-kesici uyarılar (devamEdiyor /
+    // alternatif basamak) artık IbSpoolDetay içinde drawer overlay
+    // olarak hesaplanır. Hub'ın görevi sadece spool'u Ekran 3'e iletmek.
     setGuncelSpool(spool)
     setAktifEkran('spoolDetay')
-  }
-
-  const handleCrossTenant = ({ payloadTenant, spoolKodu }) => {
-    setUyariPayload({ tip: 'crossTenant', payloadTenant, spoolKodu })
-    setAktifEkran('uyari')
   }
 
   // ───────────────────────────────────────────────
@@ -157,7 +150,6 @@ export default function MIsBaslat() {
         aktifRol={seciliRol}
         onGeri={handleQrGeri}
         onSpoolBulundu={handleSpoolBulundu}
-        onCrossTenant={handleCrossTenant}
       />
     )
   }
@@ -248,32 +240,6 @@ export default function MIsBaslat() {
             </pre>
           </PlaceholderEkran>
         )}
-
-        {/* ── Ekran 4: Uyarı (placeholder) ── */}
-        {!yukleniyor && !hata && aktifEkran === 'uyari' && (
-          <PlaceholderEkran
-            ikon={uyariPayload?.tip === 'crossTenant' ? '🚫' : '⚠️'}
-            baslik={uyariBaslik(uyariPayload)}
-            aciklama={uyariAciklama(uyariPayload)}
-            geriEtiket={tv('mob_geri', 'Geri')}
-            onGeri={() => setAktifEkran('rolSec')}
-            tv={tv}
-          >
-            <pre style={{
-              fontSize: 11,
-              color: 'var(--txd)',
-              background: 'var(--sur2)',
-              padding: 12,
-              borderRadius: 8,
-              overflow: 'auto',
-              maxWidth: 320,
-              margin: '12px auto',
-              textAlign: 'left',
-            }}>
-{JSON.stringify(uyariPayload, null, 2)}
-            </pre>
-          </PlaceholderEkran>
-        )}
       </main>
 
       <MBottomNav
@@ -292,8 +258,8 @@ export default function MIsBaslat() {
 }
 
 // ───────────────────────────────────────────────
-// Yardımcı: Placeholder ekran (Ekran 3 + Ekran 4 için)
-// 65. oturum geçici — sonraki turlarda gerçek IbSpoolDetay / IbUyari yazılınca silinir.
+// Yardımcı: Placeholder ekran (Ekran 3 için)
+// 68. oturum geçici — IbSpoolDetay yazılınca silinir.
 // ───────────────────────────────────────────────
 function PlaceholderEkran({ ikon, baslik, aciklama, geriEtiket, onGeri, tv, children }) {
   return (
@@ -334,30 +300,4 @@ function PlaceholderEkran({ ikon, baslik, aciklama, geriEtiket, onGeri, tv, chil
       </button>
     </div>
   )
-}
-
-// ───────────────────────────────────────────────
-// Uyarı tip → başlık / açıklama (placeholder Türkçe)
-// 65. oturumdan sonra Ekran 4 mockup turu yapılınca tv() anahtarlarına dönüşür.
-// ───────────────────────────────────────────────
-function uyariBaslik(p) {
-  if (!p) return 'Uyarı'
-  if (p.tip === 'crossTenant') return 'Farklı firmaya ait spool'
-  if (p.tip === 'devamEdiyor') return 'Spool zaten işlemde'
-  if (p.tip === 'rolUyumsuz')  return 'Rol uyumsuz'
-  return 'Uyarı'
-}
-
-function uyariAciklama(p) {
-  if (!p) return ''
-  if (p.tip === 'crossTenant') {
-    return `Bu spool "${p.payloadTenant}" firmasına ait, sizin firmanızda görüntülenemiyor.`
-  }
-  if (p.tip === 'devamEdiyor') {
-    return 'Bu spool şu anda başka bir operatör tarafından işleniyor. Devral / iptal seçimi Ekran 4 mockup turunda eklenecek.'
-  }
-  if (p.tip === 'rolUyumsuz') {
-    return `${p.rolAd || 'Rolünüz'} bu aşamada (${p.mevcut}) çalışamaz.`
-  }
-  return ''
 }
