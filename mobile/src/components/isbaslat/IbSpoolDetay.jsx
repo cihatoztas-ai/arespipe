@@ -1,5 +1,5 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 68. oturum (MK-68.B / Adım 3a-final)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 68b. oturum (notlar wiring)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
@@ -35,7 +35,13 @@
 // - Yetki kontrolü (alternatifBasamakYetkili / yetkisiz ayrımı)
 // - İşe Başla / İşi Kapat / Not Ekle / İptal Et gerçek akışlar
 // - Genel paneli'nde Büküm / Markalama / Kesim ilerleme badge'leri (agregat)
-// - Test tanımlı + not_metni şema doğrulaması (şu an optional kolon kontrolü)
+// - m_ib_uy_yu_* anahtar setinin lang/tr,en,ar.json'a toplu eklenmesi
+//   (alis/test/anladim/not — şu an hepsi tv() fallback ile çalışıyor)
+//
+// 68b'de eklendi:
+// - Notlar drawer wiring (notlar tablosu fetch + sarı kart üreticisi,
+//   spool_id veya devre_id eşleşmesi, qr_goster=true filtresi)
+// - Üst banttan gemi_adi çıkarıldı (UI'a sızmaması gerekiyordu)
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
@@ -55,6 +61,7 @@ export default function IbSpoolDetay({
   const [devre, setDevre] = useState(null)
   const [proje, setProje] = useState(null)
   const [testlerSayi, setTestlerSayi] = useState(0)
+  const [notlar, setNotlar] = useState([])
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
@@ -82,8 +89,9 @@ export default function IbSpoolDetay({
   }, [yerelSpool?.devre_id])
 
   // ─── Proje fetch ───
-  // Devre yüklenince proje_id ile proje bilgisini al — gemi_adi (üst bant
-  // için, "NB1137-AT100-..." formatı).
+  // Devre yüklenince proje_id ile proje bilgisini al — proje_no üst banttaki
+  // kimlik string'inde kullanılır (örn. "NB1137-AT100-..."). gemi_adi 68b'de
+  // bilinçli olarak çıkarıldı (UI'da hiç gösterilmemeliydi).
   useEffect(() => {
     if (!devre?.proje_id) return
     let iptal = false
@@ -91,7 +99,7 @@ export default function IbSpoolDetay({
       try {
         const { data, error } = await supabase
           .from('projeler')
-          .select('id, proje_no, gemi_adi')
+          .select('id, proje_no')
           .eq('id', devre.proje_id)
           .maybeSingle()
         if (error || iptal) return
@@ -125,9 +133,42 @@ export default function IbSpoolDetay({
     return () => { iptal = true }
   }, [yerelSpool?.devre_id])
 
+  // ─── Notlar fetch ───
+  // notlar tablosu: spool seviyesi (spool_id) veya devre seviyesi (devre_id).
+  // Filtre: tenant_id + silindi=false + qr_goster=true.
+  // qr_goster=false olan iç-idari notlar drawer'a sızmaz (Notlar sekmesi
+  // ilerideki bir oturumda hepsini ayrı UI'da gösterecek). Sıralama
+  // olusturma DESC — en yeni not ilk kart.
+  useEffect(() => {
+    if (!yerelSpool?.id) return
+    const tenantId = kullanici?.tenant_id || yerelSpool.tenant_id
+    if (!tenantId) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const orFiltre = yerelSpool.devre_id
+          ? `spool_id.eq.${yerelSpool.id},devre_id.eq.${yerelSpool.devre_id}`
+          : `spool_id.eq.${yerelSpool.id}`
+        const { data, error } = await supabase
+          .from('notlar')
+          .select('id, metin, olusturma')
+          .eq('tenant_id', tenantId)
+          .eq('silindi', false)
+          .eq('qr_goster', true)
+          .or(orFiltre)
+          .order('olusturma', { ascending: false })
+        if (error || iptal) return
+        setNotlar(Array.isArray(data) ? data : [])
+      } catch (e) {
+        console.warn('[IbSpoolDetay] notlar yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.id, yerelSpool?.devre_id, kullanici?.tenant_id])
+
   // ─── Yumuşak uyarı kartlarını topla ───
   // 3 kategori: Alıştırma kırmızı (spool.alistirma VAR/KISMI), Test mavi
-  // (devreye test tanımlı), Not sarı (notlar tablosu — 68b'de eklenecek).
+  // (devreye test tanımlı), Not sarı (notlar tablosundan, her not ayrı kart).
   const yumusKartlar = useMemo(() => {
     const liste = []
     if (!yerelSpool) return liste
@@ -136,6 +177,7 @@ export default function IbSpoolDetay({
     const alis = String(yerelSpool.alistirma || '').toUpperCase()
     if (alis === 'VAR' || alis === 'KISMI') {
       liste.push({
+        _key:     'alis',
         kategori: 'alistirma',
         baslik:   tv('m_ib_uy_yu_alis_baslik', 'Bu spool kaynatılmayacak'),
         mesaj:    tv('m_ib_uy_yu_alis_mesaj',  'Alıştırma (prefab) spool — kaynak işlemi uygulanmaz. Sadece montaj yapılacak.'),
@@ -145,16 +187,26 @@ export default function IbSpoolDetay({
     // Test kartı (mavi) — devreye en az 1 test tanımlıysa
     if (testlerSayi > 0) {
       liste.push({
+        _key:     'test',
         kategori: 'test',
         baslik:   tv('m_ib_uy_yu_test_baslik', 'Test tanımlanmış'),
         mesaj:    tv('m_ib_uy_yu_test_mesaj',  'Bu devreye test tanımlanmıştır. Çalışma tamamlandığında test kontrol edilecek.'),
       })
     }
 
-    // Not kartı (sarı) — notlar tablosu fetch'i 68b'de eklenecek
+    // Not kartları (sarı) — her not ayrı kart, olusturma DESC
+    notlar.forEach(n => {
+      if (!n?.metin) return
+      liste.push({
+        _key:     `not_${n.id}`,
+        kategori: 'not',
+        baslik:   tv('m_ib_uy_yu_not_baslik', 'Dikkat Edilecekler'),
+        mesaj:    String(n.metin),
+      })
+    })
 
     return liste
-  }, [yerelSpool, testlerSayi, tv])
+  }, [yerelSpool, testlerSayi, notlar, tv])
 
   // ─── Akış-kesici uyarı kontrolü ───
   // Mount + spool değişiminde değerlendirilir. Öncelik: devamEdiyor > alternatifBasamak.
@@ -249,10 +301,10 @@ export default function IbSpoolDetay({
   const isDevamEdiyor = yerelSpool.is_durumu === 'devam_ediyor'
   const drawerAcikHerhangi = !!uyariDrawer || yumusDrawerAcik
 
-  // Üst bant tek satır kimlik string — mockup formatı: "gemi-pipeline-spool-rev"
-  // Gemi: projeler.gemi_adi (örn. "NB1137") veya fallback projeler.proje_no
+  // Üst bant tek satır kimlik string — mockup formatı: "proje-pipeline-spool-rev"
+  // Proje: projeler.proje_no (örn. "NB1137"). gemi_adi UI'a sızmaz (68b kararı).
   const ustBant = [
-    proje?.gemi_adi || proje?.proje_no,
+    proje?.proje_no,
     yerelSpool.pipeline_no,
     yerelSpool.spool_no,
     yerelSpool.rev,
@@ -359,8 +411,8 @@ export default function IbSpoolDetay({
         <div style={s.yumusOverlay}>
           <div style={s.yumusBlok}>
             <div style={s.yumusKartYigin}>
-              {yumusKartlar.map((kart, i) => (
-                <YumusKart key={i} kategori={kart.kategori} baslik={kart.baslik} mesaj={kart.mesaj} />
+              {yumusKartlar.map((kart) => (
+                <YumusKart key={kart._key} kategori={kart.kategori} baslik={kart.baslik} mesaj={kart.mesaj} />
               ))}
             </div>
             <button type="button" style={s.yumusBtn} onClick={handleYumusKapat}>
