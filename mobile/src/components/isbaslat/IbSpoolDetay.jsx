@@ -53,6 +53,8 @@ export default function IbSpoolDetay({
 
   const [yerelSpool, setYerelSpool] = useState(spool)
   const [devre, setDevre] = useState(null)
+  const [proje, setProje] = useState(null)
+  const [testlerSayi, setTestlerSayi] = useState(0)
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
@@ -79,9 +81,53 @@ export default function IbSpoolDetay({
     return () => { iptal = true }
   }, [yerelSpool?.devre_id])
 
+  // ─── Proje fetch ───
+  // Devre yüklenince proje_id ile proje bilgisini al — gemi_adi (üst bant
+  // için, "NB1137-AT100-..." formatı).
+  useEffect(() => {
+    if (!devre?.proje_id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projeler')
+          .select('id, proje_no, gemi_adi')
+          .eq('id', devre.proje_id)
+          .maybeSingle()
+        if (error || iptal) return
+        if (data) setProje(data)
+      } catch (e) {
+        console.warn('[IbSpoolDetay] proje yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [devre?.proje_id])
+
+  // ─── Testler sayım fetch ───
+  // Devreye en az 1 test tanımlıysa yumuşak drawer'da "Test tanımlanmış"
+  // mavi kartı gösterilecek. (Testler devre seviyesinde tanımlı, spool
+  // seviyesi sonuçlar 68b'de eklenecek — test_spooller join.)
+  useEffect(() => {
+    if (!yerelSpool?.devre_id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { count, error } = await supabase
+          .from('testler')
+          .select('id', { count: 'exact', head: true })
+          .eq('devre_id', yerelSpool.devre_id)
+        if (error || iptal) return
+        setTestlerSayi(count || 0)
+      } catch (e) {
+        console.warn('[IbSpoolDetay] testler sayilamadi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.devre_id])
+
   // ─── Yumuşak uyarı kartlarını topla ───
-  // Şu an spool kolonlarına göre. 68b'de devre/proje seviyesi notlar +
-  // basamak_tanimlari'ndan test_tanimli flag eklenecek.
+  // 3 kategori: Alıştırma kırmızı (spool.alistirma VAR/KISMI), Test mavi
+  // (devreye test tanımlı), Not sarı (notlar tablosu — 68b'de eklenecek).
   const yumusKartlar = useMemo(() => {
     const liste = []
     if (!yerelSpool) return liste
@@ -96,8 +142,8 @@ export default function IbSpoolDetay({
       })
     }
 
-    // Test kartı (mavi) — test_tanimli boolean kolonu varsa
-    if (yerelSpool.test_tanimli || yerelSpool.devre_test_tanimli) {
+    // Test kartı (mavi) — devreye en az 1 test tanımlıysa
+    if (testlerSayi > 0) {
       liste.push({
         kategori: 'test',
         baslik:   tv('m_ib_uy_yu_test_baslik', 'Test tanımlanmış'),
@@ -105,23 +151,10 @@ export default function IbSpoolDetay({
       })
     }
 
-    // Not kartı (sarı) — not_metni veya notlar dizisi varsa
-    const notRaw = yerelSpool.not_metni || yerelSpool.notlar
-    if (notRaw) {
-      const notMetni = Array.isArray(notRaw)
-        ? notRaw.map(n => `· ${n}`).join('\n')
-        : String(notRaw).trim()
-      if (notMetni) {
-        liste.push({
-          kategori: 'not',
-          baslik:   tv('m_ib_uy_yu_not_baslik', 'Dikkat edilecekler'),
-          mesaj:    notMetni,
-        })
-      }
-    }
+    // Not kartı (sarı) — notlar tablosu fetch'i 68b'de eklenecek
 
     return liste
-  }, [yerelSpool, tv])
+  }, [yerelSpool, testlerSayi, tv])
 
   // ─── Akış-kesici uyarı kontrolü ───
   // Mount + spool değişiminde değerlendirilir. Öncelik: devamEdiyor > alternatifBasamak.
@@ -217,8 +250,9 @@ export default function IbSpoolDetay({
   const drawerAcikHerhangi = !!uyariDrawer || yumusDrawerAcik
 
   // Üst bant tek satır kimlik string — mockup formatı: "gemi-pipeline-spool-rev"
+  // Gemi: projeler.gemi_adi (örn. "NB1137") veya fallback projeler.proje_no
   const ustBant = [
-    yerelSpool.gemi || yerelSpool.proje_no || yerelSpool.proje_adi,
+    proje?.gemi_adi || proje?.proje_no,
     yerelSpool.pipeline_no,
     yerelSpool.spool_no,
     yerelSpool.rev,
@@ -283,21 +317,7 @@ export default function IbSpoolDetay({
 
       {/* İçerik */}
       <div style={s.icerikInner}>
-        {aktifSekme === 'genel' && (
-          <>
-            <GenelPanel spool={yerelSpool} devre={devre} tv={tv} />
-            {/* DEBUG (68b'de kaldırılacak) — yumuşak uyarı raw değerleri */}
-            <div style={s.debugBox}>
-              <div style={s.debugBaslik}>DEBUG · 68b'de kaldırılacak</div>
-              <div>alistirma: <code>{JSON.stringify(yerelSpool.alistirma)}</code></div>
-              <div>yumusKartlar.length: <code>{yumusKartlar.length}</code></div>
-              <div>not_metni: <code>{JSON.stringify(yerelSpool.not_metni)}</code></div>
-              <div>notlar: <code>{JSON.stringify(yerelSpool.notlar)}</code></div>
-              <div>test_tanimli: <code>{JSON.stringify(yerelSpool.test_tanimli)}</code></div>
-              <div>devre_test_tanimli: <code>{JSON.stringify(yerelSpool.devre_test_tanimli)}</code></div>
-            </div>
-          </>
-        )}
+        {aktifSekme === 'genel'   && <GenelPanel spool={yerelSpool} devre={devre} tv={tv} />}
         {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
       </div>
 
@@ -403,7 +423,11 @@ function yumusKartStili(kategori) {
 
 function GenelPanel({ spool, devre, tv }) {
   // Malzeme/Yüzey/Ağırlık: spool null ise devreden inherit
-  const malzemeDeger = spool.malzeme || devre?.malzeme || null
+  const malzemeRaw = spool.malzeme || devre?.malzeme || null
+  // Capitalize (mockup: "Karbon Çelik" gibi büyük harfle başlayan)
+  const malzemeDeger = malzemeRaw
+    ? malzemeRaw.charAt(0).toLocaleUpperCase('tr-TR') + malzemeRaw.slice(1)
+    : null
   const malzemeKalite = [malzemeDeger, spool.kalite].filter(Boolean).join(' · ')
 
   // Türkçe sayı formatı (virgül) — mockup "219,1 mm" / "12,5 kg" tarzı
@@ -496,11 +520,16 @@ function alistirmaBadgeStili(deger) {
 
 // Aktif basamak slug'ından görünen ad — basamak_snapshot JSON içinden çevir.
 // Örn: "on_imalat" → "Ön İmalat"
-// Snapshot yoksa veya bulunamazsa slug'ı geri döndür (raw fallback).
+//
+// basamak_snapshot'ta aynı sistem_adi için birden fazla görünen_ad olabilir
+// (sistem_adi="on_imalat" → "Başlamadı" placeholder + "Ön İmalat" gerçek ad
+// gibi). Placeholder satırlarını atlayıp gerçek görünen adı bul.
 function basamakLabel(slug, snapshot) {
   if (!slug) return null
   if (!Array.isArray(snapshot)) return slug
-  const found = snapshot.find(b => b && b.sistem_adi === slug)
+  const found = snapshot.find(b =>
+    b && b.sistem_adi === slug && b.gorunen_ad && b.gorunen_ad !== 'Başlamadı'
+  )
   return found?.gorunen_ad || slug
 }
 
@@ -705,26 +734,6 @@ const s = {
     fontWeight: 500,
     padding: '3px 10px',
     borderRadius: 8,
-  },
-
-  // ───── DEBUG kutusu (68b'de kaldırılacak) ─────
-  debugBox: {
-    marginTop: 16,
-    padding: 10,
-    background: '#FEF3C7',
-    border: '1px dashed #F59E0B',
-    borderRadius: 8,
-    fontSize: 11,
-    color: '#78350F',
-    lineHeight: 1.6,
-    fontFamily: 'monospace',
-  },
-  debugBaslik: {
-    fontWeight: 700,
-    marginBottom: 6,
-    fontFamily: 'Barlow, sans-serif',
-    fontSize: 11,
-    letterSpacing: 0.5,
   },
 
   // Boş durum

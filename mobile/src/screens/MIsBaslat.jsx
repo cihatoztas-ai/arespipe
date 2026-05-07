@@ -201,7 +201,7 @@ export default function MIsBaslat() {
             padding: '24px',
             textAlign: 'center',
             color: 'var(--re)',
-            fontSize: 13,
+            fontSize: 14,
           }}>
             {hata}
           </div>
