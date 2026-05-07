@@ -138,5 +138,5 @@ export async function sayfaErisimiVar(sayfa_kodu) {
  */
 export function yoneticiMi(kullanici) {
   if (!kullanici) return false
-  return ['super_admin', 'yonetici'].includes(kullanici.rol)
+  return ['super_admin', 'yonetici', 'firma_admin'].includes(kullanici.rol)
 }

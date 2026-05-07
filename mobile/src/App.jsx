@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { I18nProvider } from './lib/i18n'
 
@@ -56,6 +56,9 @@ export default function App() {
         <Route path="/devreler" element={oturum ? <MDevreler /> : <Navigate to="/giris" />} />
         <Route path="/qr" element={oturum ? <MQRTara /> : <Navigate to="/giris" />} />
         <Route path="/is-baslat" element={oturum ? <MIsBaslat /> : <Navigate to="/giris" />} />
+        {/* 67. oturum: bottom nav loop'u önlemek için placeholder rotalar */}
+        <Route path="/ara" element={oturum ? <MYakinda baslik="Ara" /> : <Navigate to="/giris" />} />
+        <Route path="/bildirim" element={oturum ? <MYakinda baslik="Bildirim" /> : <Navigate to="/giris" />} />
         <Route path="*" element={<Navigate to={oturum ? '/' : '/giris'} />} />
       </Routes>
     </I18nProvider>
@@ -104,4 +107,56 @@ function MIslemlerSayfasi() {
   if (!kullanici) return <Navigate to="/giris" />
 
   return <MIslemler kullanici={kullanici} />
+}
+
+// 67. oturum: /ara ve /bildirim için sade placeholder.
+// Bottom nav'daki sekmeler oraya yönlendirildiğinde kullanıcı boş ekrana
+// veya catch-all loop'a düşmesin diye. Gerçek sayfalar yapıldığında bu
+// komponent silinir, route'lar gerçek ekrana bağlanır.
+function MYakinda({ baslik }) {
+  const navigate = useNavigate()
+  return (
+    <div style={{
+      height: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 16,
+      padding: 24,
+      background: 'var(--bg)',
+      color: 'var(--tx)',
+      textAlign: 'center',
+    }}>
+      <div style={{ fontSize: 48 }}>🚧</div>
+      <div style={{
+        fontSize: 22,
+        fontWeight: 700,
+        fontFamily: "'Barlow Condensed', sans-serif",
+        letterSpacing: 0.5,
+      }}>
+        {baslik}
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--txd)', maxWidth: 280, lineHeight: 1.5 }}>
+        Bu sayfa yakında geliyor.
+      </div>
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        style={{
+          marginTop: 16,
+          padding: '12px 28px',
+          background: 'var(--ac)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 12,
+          fontSize: 15,
+          fontWeight: 500,
+          cursor: 'pointer',
+        }}
+      >
+        Ana Sayfa
+      </button>
+    </div>
+  )
 }
