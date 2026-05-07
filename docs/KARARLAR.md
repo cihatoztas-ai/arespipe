@@ -1164,3 +1164,189 @@ WHERE schemaname = 'public' AND tablename = 'X';
 ## MK-66.4 — boş bırakıldı (numara rezerve, 6 Mayıs 2026 itibarıyla içerik yok)
 
 Numaralandırma sırasında 66.4 atlandı (66.5 doğrudan tahsis edildi). Gelecek bir karar için saklanır veya kalıcı olarak boş bırakılabilir.
+
+---
+
+## MK-67.1 — Tek Supabase ortamı (dev = prod, 7 Mayıs 2026)
+
+**Bağlam:** 66 BRIEFING'i 67'nin birinci işi olarak "prod RLS migration — `032+033` prod Supabase'inde koşulur, dev'le senkron olur" diye verdi. 67 açılışında prod ref'i araştırıldığında üç doğrulama eş zamanlı yapıldı:
+1. Vercel `arespipe` projesi env: `SUPABASE_URL = https://ochvbepfiatzvyknkvsn.supabase.co`
+2. Repo geneli grep: `grep -r "supabase.co" ...` → tek URL `ochvbepfiatzvyknkvsn.supabase.co`
+3. `mobile/src/lib/supabase.js` hardcoded: aynı URL
+
+`arespipe-dev` adı tek Supabase projesinin ismi, ayrı bir prod projesi yok. Hem `arespipe.vercel.app` (web) hem `arespipe-mob.vercel.app` (mobil) bu tek projeye bağlı. 66'da yapılan `032+033` migration'ları aslında dev değil, fiilen **canlı veriyi etkileyen tek ortam** üzerinde koşulmuş.
+
+**Karar:** AresPipe şu an tek Supabase ortamında çalışır. "dev'e migration koş, sonra prod'a da koş" akışı **yoktur**. Tek koşum, canlı veri.
+
+**Sonuçlar:**
+- BRIEFING'in açılış ritüelinden "Prod RLS migration" maddesi çıkarıldı
+- Sıralı disiplin (MK-66.1) ve `pg_policies` tarama disiplini (MK-66.2) **aynen geçerli**, hatta tek ortam olduğu için DAHA kritik — yanlış migration kurtarılacak başka kopya yok
+- 66'daki "smoke test atlandı, yeşilse commit" notu (BRIEFING) aslında canlı sistemde doğrulanmamış migration anlamına geliyordu — bu doğrulukla kayda alındı
+
+**Risk:** Tek ortam = canlı veri üstünde geliştirme. ROADMAP Faz C'de (33+ ileri oturum) staging Supabase planı duruyor. O zamana kadar bilinçli kabul. Migration'ları küçük tut, `BEGIN`/`ROLLBACK` ile lokal dene mümkünse, `pg_policies` + `pg_tables` taramasını her zaman yap.
+
+**İlişkili:** MK-66.1 (sıralı migration), MK-66.2 (policy taraması), ROADMAP Faz C (staging projesi).
+
+---
+
+## MK-67.2 — `mobile/src/lib/normalize.js` canonical, `format.js` köprülü (7 Mayıs 2026)
+
+**Bağlam:** Web tarafı `ares-normalize.js` (kök, 251 satır) AresPipe'ın enum normalize + lokalize etiket + uyum matrisi + marka format kanonik kaynağı. Mobile tarafında 60. oturumda `mobile/src/lib/format.js` doğmuştu — içinde `revFmt`, `markaHesapla`, `malzemeEtiket` üç fonksiyonu vanilla'dan birebir kopyalanmıştı (kod tekrarı). 65'te `IbQRTara`'da `padStart(6, '0')` geçici fix yazıldığında BRIEFING "kalıcı çözüm `mobile/src/lib/normalize.js` portu" demişti.
+
+67 açılışında üç port stratejisi tartışıldı:
+- **B0**: `format.js` dokunulmaz, `normalize.js` doğar — iki kaynak yan yana
+- **B düz**: `format.js`'ten 3 fonksiyon silinir, ekran import'ları güncellenir
+- **B2.5 (köprülü)**: `normalize.js` canonical, `format.js` 3 satır re-export + 1 adapter
+
+Cihat "ekranlar bozulmasın" sorumluluğu nedeniyle B2.5 seçildi.
+
+**Karar:** Mobil tarafta enum normalize tek kanonik kaynak `mobile/src/lib/normalize.js`. ES module export'lar, web ile birebir semantik. `format.js` 3 fonksiyon için ince köprü:
+- `revFmt` → `normalize.js`'ten re-export (web semantik: alfanumerik destekli, "RevA" gibi)
+- `malzemeEtiket` → `normalize.js`'ten re-export (kod + ham kabul)
+- `markaHesapla` → object-wrapper, içeride `marka(...parts)` çağırır (mobil ergonomi: `(sp, devre, proje)` imzası korundu)
+
+**Web tarafı dokunulmadı.** `is_baslat.html`, `ares-normalize.js`, `admin/`, `portal/` aynen kalır.
+
+**Geliştirici kuralı:**
+- Yeni fonksiyon eklenecekse `normalize.js`'e eklenir, `format.js`'e değil
+- `format.js` UI helper'lar (`nNRenkler`, `formatSpoolId`, `alistirmaBilgi`, `formatTarih*`, `formatSure`, `esc`) için kalır — bunlar mobil-özgü, port edilmez
+- Ekran 3+ implementasyonunda `yuzeyEtiket`, `kaliteGoster`, `uyumlu` gibi yeni fonksiyonlar **doğrudan** `normalize.js`'ten import edilir
+
+**Davranış değişiklikleri:**
+- `revFmt('A')` artık `'RevA'` döner (eski `Number(rev)` defensive sürüm `''` dönerdi). DB'de `rev = 'A'` varsa otomatik düzgün gösterilecek
+- `malzemeEtiket('ST37', tv)` artık `'Karbon Çelik'` döner (eski mobil sadece kod kabul ediyordu, ham fail ediyordu)
+
+**Etki:** Commit `c42325b`. Build `91 modules`, bundle 775.16 → 775.96 KB (+800 byte). 2 ekran (`MSpoolDetay.jsx`, `MDevreDetay.jsx`) import satırlarına dokunulmadı, davranış aynı.
+
+**İlişkili:** MK-56.2 (tek canonical kaynak disiplini), MK-65.2 (`padStart(6)` borç teyit — MK-67.5'te netleşti).
+
+---
+
+## MK-67.3 — `firma_admin` rolü `yoneticiMi` kapsamına alındı (geçici, 7 Mayıs 2026)
+
+**Bağlam:** 67 mid-session'da Cihat "ana sayfada kalıyoruz, ilerlenmiyor" dedi. Araştırma:
+- `MAnasayfa.jsx` rol bazlı router → `yoneticiMi(kullanici)` true ise dashboard, false ise `MIslemler` (büyük buton listesi)
+- `yoneticiMi` sadece `super_admin` + `yonetici` kabul ediyor
+- DB'deki rol dağılımı: `super_admin`, `yonetici`, `firma_admin`, `kk_uzmani`, `operatör`
+- Cihat'ın hesabı (`cihatoztas@gmail.com`) `firma_admin` → MIslemler'e düşüyor → "imalat / kaynak" kart listesi → kafa karışıklığı
+
+**Karar (geçici):** `yoneticiMi`'ye `firma_admin` eklendi. Üç rol dashboard görür: `super_admin`, `yonetici`, `firma_admin`.
+
+```js
+return ['super_admin', 'yonetici', 'firma_admin'].includes(kullanici.rol)
+```
+
+**Neden geçici:** `firma_admin` semantiği `super_admin`/`yonetici`'den farklı:
+- `super_admin` — tüm tenant'lara erişim
+- `yonetici` — kendi tenant'ı + yönetim yetkileri
+- `firma_admin` — kendi tenant'ı + sadece kendi firma yetkileri (sınırlı)
+- `kk_uzmani` — sadece KK akışı
+- `operatör` — sadece operatör akışı
+
+`firma_admin`'in dashboard görmesi mantıklı (firma genel durumu önemli) ama `yoneticiMi` fonksiyonu **dashboard görme yetkisi** ile **yönetim aksiyonları yetkisi**ni karıştırıyor. İleride dashboard erişimi ile yönetim aksiyonları ayrı yetkilere bölünmeli.
+
+**Açık borç:** 68 veya sonrasında yetki haritası gözden geçirilir. Olası ayrım:
+- `dashboardYetkili(kullanici)` — kim dashboard görür (super_admin, yonetici, firma_admin)
+- `yoneticiMi(kullanici)` — kim yönetim aksiyonları yapar (super_admin, yonetici)
+- `superAdminMi(kullanici)` — kim cross-tenant aksiyon yapar (super_admin)
+
+`kk_uzmani` ve `operatör` MIslemler ekranını görmeye devam eder (yetki bloklarına göre büyük buton listesi).
+
+**Yan etkiler (aynı commit):**
+- `MAnasayfaYonetici` "İşlem Başlat" butonu `/islemler` yerine `/is-baslat`'a yönlendirildi (vanilla MIsBaslat React akışına geçiş noktası)
+- Bekleyen Spool ve KK Bekleyen stat kartları `yakinda(...)` alert yerine `/devreler`'e bağlandı (filtreli liste sonra eklenir)
+- App.jsx'e `/ara` ve `/bildirim` placeholder route'ları eklendi (`MYakinda` inline komponenti) — bottom nav loop'unu kapattı
+
+**Etki:** Commit `088c9b4`. 3 dosya, 60 insertion / 5 deletion.
+
+**İlişkili:** ROADMAP yetki haritası genişletmesi, MK-25 yetki sistemi (eski).
+
+---
+
+## MK-67.4 — Supabase API key migration (sb_publishable / sb_secret), 69'a ertelendi (7 Mayıs 2026)
+
+**Bağlam:** 67 kapanışına yakın `arespipe-backups` GitHub Action workflow'u "All jobs have failed" maili attı. İnceleme:
+- Son başarılı backup: `2026-05-01_03-55-15` UTC (1 hafta önce)
+- DB dump ✓ geçiyor (31s, password connection string kullanıyor, JWT'ye bağlı değil)
+- Storage backup ✗ (`InvalidAccessKeyId: The Access Key Id you provided does not exist in our records`)
+- Hem S3 path (`rclone`) hem HTTP fallback path (`curl + Authorization: Bearer ${SERVICE_KEY}`) fail
+
+Supabase Dashboard → Settings → API Keys incelemesi:
+- **"Your new API keys are here"** banner görünüyor
+- Yeni format: `sb_publishable_*` (frontend) + `sb_secret_*` (backend)
+- Eski JWT-tabanlı `anon` + `service_role` artık "Legacy anon, service_role API keys" sekmesine düşmüş
+- "Secret keys" listesi → "No secret API keys found" (yeni format'ta hiç yok)
+
+Supabase 2026 başında API key sistemini yenilemiş. Eski `service_role` JWT muhtemelen invalide edildi (büyük ihtimalle 66'da yaptığımız RLS güvenlik fix'inin tetiklediği güvenlik politikası kapsamında). Mobil + web hâlâ çalışıyor — Supabase grace period'da legacy key'leri kabul etmeye devam ediyor, ama ne zaman keseceği belirsiz.
+
+`arespipe-backups` workflow'u zaten yanlış konfigure: rclone S3 config'inde `access_key_id` olarak proje ref kullanıyor (`access_key_id = ${SUPABASE_HOST%%.*}`) — bu hiç çalışmamış olmalı. HTTP fallback şu ana kadar kurtarmış.
+
+**Karar:** Bu kapsamlı migration **69. oturumun birinci işi.** 67'de yarım yamalak yapma riski yüksek, 67 ana mesai başka konuda (Ekran 3 mockup + dashboard fix). 68 zaten dolu (Ekran 3 + Ekran 4 implementasyonu).
+
+**69. oturum işleri:**
+1. Supabase Dashboard'da yeni `sb_secret_*` oluştur, GitHub Secrets güncelle (`SUPABASE_SERVICE_KEY`)
+2. Mobil `mobile/src/lib/supabase.js` + web `ares-store.js` + `admin/index.html` + `sw.js` eski JWT → yeni `sb_publishable_*` migration
+3. Vercel env vars (web + mob projeleri) update — kontrollü migration için önce yeni key'i ekle (eski JWT yanına), test et, sonra eski JWT'yi sil
+4. `arespipe-backups` workflow temizle: S3 mantığı sil (zaten yanlış), sadece HTTP API kullan
+5. Smoke test: mobil giriş, web giriş, RLS kontrolleri (66'da fix'lenen 5 tablo + tenant_features), backup workflow re-run
+6. Supabase'in legacy key timeout tarihini öğren — Dashboard banner'ında veya mailde olabilir
+
+**Risk:** Legacy key'ler bir sabah uyandığımızda kesilirse hem mobil hem web aniden 401 atar. Migration'ı kontrollü yapmak için **yeni key'i mevcut JWT'nin yanına** ekle, test et, sonra eski JWT'yi sil.
+
+**Geçici durum (67-68 arası):** DB backup'lar zaten çalışıyor (en kritik). Storage backup fail — son storage backup 1 Mayıs (1 hafta önce, hâlâ 30 günlük retention içinde). Storage'da yeni dosyalar varsa şimdilik yedeksiz, ama 69'da düzgün migration sonrası geri başlar.
+
+**İlişkili:** MK-66.2 (RLS policy taraması — yeni key'ler RLS'ye dokunmaz), `arespipe-backups` repo, Vercel `arespipe` + `arespipe-mob` projeleri, Supabase legacy key sunset roadmap.
+
+---
+
+## MK-67.5 — MK-65.2 yanlış teşhis: `padStart(6, '0')` geçici fix değil, kanonik DB-arama format (7 Mayıs 2026)
+
+**Bağlam:** 65. oturumda `IbQRTara.jsx`'te (manuel input, satır 362) yazılmış kod:
+
+```js
+const tamId = tenantKod + '-' + num.padStart(6, '0')
+```
+
+65'te bu "geçici fix" olarak etiketlendi (MK-65.2), kalıcı çözüm "`mobile/src/lib/normalize.js` portu" diye verildi. 67'de port tamamlandı, MK-65.2 cleanup adımına geçildiğinde kod gerçekten incelendi:
+
+```js
+function manuelGonder() {
+  if (!manuelDeger.trim()) return
+  const num = manuelDeger.trim()
+  if (!tenantKod) {
+    setManuelAcik(false)
+    spoolAra(num)
+    return
+  }
+  // 6-haneli padding (8. oturum sayaç digits=6 kararıyla uyumlu).
+  // Kullanıcı '554' yazınca 'A-000554' arar — DB'deki formatla eşleşir.
+  // QR ile gelen payload zaten dolu geldiği için padding etkilemez.
+  const tamId = tenantKod + '-' + num.padStart(6, '0')
+  setManuelAcik(false)
+  spoolAra(tamId)
+}
+```
+
+`padStart(6)` **DB-arama format**'ı: kullanıcı `554` yazınca `A-000554` arar — DB'de spool_id'ler 6-hane padded saklanıyor (8. oturum kararı). Kalıcı **doğru** kod.
+
+`normalize.js`'teki `markaId` ise tam tersi — **display** için: `A-000554` → `A-0554` (4-hane). DB'de `A-0554` aranırsa eşleşme bulunmaz.
+
+**Karar:** MK-65.2'deki "geçici fix" etiketi **yanlış teşhis**. `padStart(6)` doğru, kalıcı kod, kalmalı. `normalize.js` portu bu kodu **etkilemez** — port `markaId` (display) için, bu satır DB-arama (input). İki ayrı iş.
+
+**Cleanup işlemi yapıldı:** Yok. Kod aynen kalır.
+
+**Olası küçük iyileştirme (zorunlu değil):** Magic number temizliği için `normalize.js`'e yeni helper:
+
+```js
+export function spoolDbId(tenantKod, kisaNumara) {
+  return tenantKod + '-' + String(kisaNumara).padStart(6, '0')
+}
+```
+
+`IbQRTara.jsx` bu fonksiyonu çağırır. Bu DRY iyileştirme, gerçek bug yok. Düşük öncelik, açık borç değil.
+
+**Etki:** MK-65.2 listeden düştü (yanlış teşhis kapatıldı). 67 cleanup commit'i atılmadı çünkü değişiklik yok.
+
+**İlişkili:** MK-65.2 (yanlış teşhis), MK-67.2 (`normalize.js` canonical port), 8. oturum spool_id sayaç digits=6 kararı.
+
+---

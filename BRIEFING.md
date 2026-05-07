@@ -1,106 +1,150 @@
-# AresPipe BRIEFING — 66. Oturum Kapanışı
+# AresPipe BRIEFING — 67. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası.** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır, ben tüm bağlamı anlarım. Detay için referans dosyalar (`docs/KARARLAR.md`, `docs/SAYFA-EKSIKLERI.md` vb.) — Bilgi Haritası bölümünden hangi dosyada ne olduğunu gör.
 >
-> **Son onay:** Cihat — 6 Mayıs 2026, 66 kapanışı (`oturum-saglik.sh 66 --kapanis` MK-65.8 disiplinine uygun çalıştırıldı, MK-56.2 yeniden canlı kalıyor)
+> **Son onay:** Cihat — 7 Mayıs 2026, 67 kapanışı (`oturum-saglik.sh 67 --kapanis` MK-65.8 disiplinine uygun çalıştırıldı, MK-56.2 canlı kalıyor)
 
 ---
 
-## 🎯 67. Oturum Gündemi
+## 🎯 68. Oturum Gündemi
 
-**Birincil iş 1: MIsBaslat Ekran 3 (IbSpoolDetay) — R-10 mockup-first, 66'da başarısız tur.** 66'da 7 iterasyon yapıldı, hiçbiri prod'a girmedi (MK-66.3'ün doğum sebebi). Yeni Claude için strateji baştan belli: **vanilla `is_baslat.html`'in 1930 satırını bütün okumadan iterasyona başlama**. 66'daki turda repo'daki 1772 satır referans alındı, gerçek prod 1930 — 158 satır boşluk fark edilmeden 4 iterasyon harcandı (MK-63.B'nin tam tetiklenmesi). 67'de açılış sorusu: *"Mevcut ekran prod'da çalışıyor — neyi değiştirmek istiyoruz?"* — özgür tasarım sunma, Cihat'ın değiştirmek istediği maddelerden başla. Alternatif daha az tartışmalı yollar: Ekran 7 (Basamak Seç) veya `mobile/src/lib/normalize.js` portu.
+**Birincil iş 1: MIsBaslat Ekran 3 (IbSpoolDetay) implementasyonu.** 67'de mockup turu (v9 → v16) tamamlandı, tasarım kilitlendi. Yazılacak iki dosya:
+- `mobile/src/components/isbaslat/IbSpoolDetay.jsx` — ana ekran komponenti (DB sorgu, foto carousel, başlık, sekmeler, Genel + Malzeme paneller, foot CTA, IbUyari entegrasyonu, heat inline edit)
+- `mobile/src/components/isbaslat/IbUyari.jsx` — drawer komponenti (peek tab + sağdan kayan overlay, 3 uyarı tipi, "Anladım, devam et" butonu)
 
-**Birincil iş 2 (Ekran 3'ün önkoşulu olarak duruyor): `mobile/src/lib/normalize.js` portu.** `ares-normalize.js`'in mobile karşılığı: `markaId()` (6→4 hane display), `marka()` (E-04 helper), `malzemeEtiket()` (i18n + map), `yuzeyEtiket()`, `revFmt()`. 65'te IbQRTara'da `padStart(6, '0')` geçici fix yazıldı (MK-65.2), kalıcı çözüm bu port. **format.js ile çakışmaz** — format.js veri biçimleme, normalize.js domain dönüşümü.
+**67'de IbUyari.jsx taslağı yazıldı** (197 satır, MD5 `8763ad6d8e7c6880d5fbc8ae23ad7057`) ama Ekran 4 mimari kararı netleşene kadar commit edilmedi — `~/Downloads/IbUyari.jsx`'te durmaya devam edebilir veya silinebilir, 68'de yeniden üretilecek (mimari karar drawer kapsamını değiştirebilir).
 
-**İkincil iş: MIsBaslat Ekran 4 (IbUyari) — R-10 mockup turu.** Üç senaryo tek mockup'ta: cross-tenant kırmızı + `is_durumu === 'devam_ediyor'` sarı (devral/iptal) + rol uyumsuzluğu kırmızı/sarı. **Karar noktası 67 başında:** `aktif_basamak` × rol matriksi netleştirilmeli (MK-65.3 ile askıya alınmıştı, 66'da Ekran 3'e geçildiği için yine açıldı), kontroller ondan sonra hub'a geri döner.
+**Birincil iş 2: Ekran 4 mimari kararı.** 67 sonunda Cihat "akış-kesici uyarılar (cross-tenant, devamEdiyor başka operatör, rolUyumsuz) için ayrı bir ekrana gerçekten ihtiyacımız var mı?" sorusunu açtı. İki seçenek:
+- **A — Vanilla mantığı koru:** Ekran 4 (uyari) ayrı ekran kalır, sadece akış-kesici uyarılar için. Spool-içi uyarılar (alıştırma, test, not) Ekran 3 drawer'ında. Hub'ın `setAktifEkran('uyari')` mantığı korunur.
+- **B — Tek pattern:** Ekran 4 silinir. Tüm uyarılar Ekran 3 drawer'ında. Cross-tenant + devamEdiyor + rolUyumsuz için ek mockup turu gerekir (Devral/İptal, Rol Değiştir butonları). Hub mantığı yeniden yazılır.
 
-**Etkilenen dosyalar:** `mobile/src/components/isbaslat/IbSpoolDetay.jsx` (yeni), `mobile/src/components/isbaslat/IbUyari.jsx` (yeni), `mobile/src/lib/normalize.js` (yeni), `mobile/src/screens/MIsBaslat.jsx` (Ekran 3+4 placeholder'ları gerçek bileşene çevrilir), `lang/{tr,en,ar}.json` (`m_ib_sd_*`, `m_ib_uy_*` anahtarları).
+67'de A geçici olarak korundu (kapsamı dar tutmak için). 68 başında karar verilir, ona göre IbSpoolDetay yazımı şekillenir.
+
+**Birincil iş 3 (Ekran 4 sonrası): MIsBaslat Ekran 4 (IbUyari ayrı ekran) — eğer A seçilirse.** Şu an placeholder. Akış-kesici uyarı tasarımı 67'de **konuşulmadı** — devral/iptal/rol değiştir butonları, mockup turu gerekir.
+
+**Etkilenen dosyalar (68 boyunca):** `mobile/src/components/isbaslat/IbSpoolDetay.jsx` (yeni), `mobile/src/components/isbaslat/IbUyari.jsx` (yeni veya taslaktan revizyon), `mobile/src/screens/MIsBaslat.jsx` (Ekran 3 placeholder'ı gerçek bileşene çevrilir, Ekran 4 mimari karara göre güncellenir), `lang/{tr,en,ar}.json` (`m_ib_sd_*`, `m_ib_uy_*` anahtarları).
 
 **Diğer açık borçlar (gündem değil, çözülecek):**
 - MK-58.1 — `spooller.alistirma` kanonik enum migration (lowercase'e standardize)
 - MK-62.3 — `mobile/src/lang/README.md` predev silme problemi
 - MK-58.5 — Panel.html mobile preview UUID input alanı
-- **Prod RLS migration** — dev'de 032+033 yeşil, prod Supabase'inde aynı SQL koşulmalı (MK-66.1 disiplini gereği aynı dosya, aynı sıra)
+- **MK-67.4** — Supabase API key migration (`sb_publishable` / `sb_secret`) → **69'un birincil işi**
+- **`arespipe-backups` Storage backup fail** (MK-67.4 ile aynı kapsam, 69'da çözülür)
 
 ---
 
-## ✅ 66'da Yapılanlar
+## ✅ 67'de Yapılanlar
 
-> 66, **63-64-65 sapma onarımı + Supabase RLS güvenlik fix + Ekran 3 mockup turu (başarısız) + 4 yeni MK kararı** üretti. Kayda değer iki başarı: `MK-56.2`'nin yeniden hayata dönmesi ve **5 publicly-accessible tablo + USING(true) policy'sinin kapatılması**.
+> 67, **BRIEFING'in 1. işinin temelsiz çıkmasıyla pivot + normalize.js portu + Ekran 3 mockup-first başarılı tur + dashboard erişim fix + 5 MK kararı** üretti. Kayda değer üç başarı: tek Supabase ortamının kayda alınması, mobil enum normalize tek canonical kaynağa indirilmesi, `firma_admin`'in dashboard görür hale getirilmesi.
 
-### 1. Sapma onarımı (66 açılışı)
+### 1. BRIEFING 1. işi (Prod RLS migration) temelsiz çıktı (67 açılışı)
 
-63-64-65'te yeniden canlanan 3-dosya kapanış mimarisi (`.github/son-durum.md` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md`) `docs/arsiv/*-65-yanlis-yazim.md` adıyla arşive taşındı (commit `193e49f`). BRIEFING.md ve KARARLAR.md restorasyonu yapıldı (`c5dd95f`): 14 yeni MK kararı (MK-63.A/B/C, MK-64.1-5, MK-65.1-8) MK-62.3'ün altına eklendi, BRIEFING.md "65. Oturum Kapanışı" başlığıyla yeniden doğdu. **Onarım scripti `onarim_66`** kaynak dosyaları kopyaladı, KARARLAR.md'ye append etti, sanity check + sağlık scripti çalıştırdı.
+66 BRIEFING'i "032+033 prod Supabase'inde koşulur, dev'le senkron olur" demişti. 67 açılışında prod ref'i araştırıldı:
+- `pg_policies` taraması (MK-66.2 disiplini) sandığımız prod sekmesinde yapıldı → çıktı dev'in 66 sonu hedef durumuyla **birebir aynı** (8 policy + 5 RLS açık)
+- Browser URL'i kontrolü → sekme dev (`ochvbepfiatzvyknkvsn`) açık, prod sandık
+- Vercel `arespipe` env'i → tek URL: `ochvbepfiatzvyknkvsn.supabase.co`
+- Repo geneli grep → tek URL aynı
+- Sonuç: AresPipe **tek Supabase projesinde** çalışıyor, "dev/prod" diye iki ortam yok
 
-### 2. Supabase RLS güvenlik fix (66 ortası)
+**MK-67.1 doğdu:** Tek Supabase ortamı, "prod'a koş" akışı yoktur. Risk olarak yazıldı: tek ortam = canlı veri üstünde geliştirme. ROADMAP Faz C'de staging Supabase planı duruyor.
 
-Cihat'ın paylaştığı 03 Mayıs 2026 Supabase Security Advisor mailindeki 5 tablo RLS açığı kapatıldı:
+**Etki:** BRIEFING'in açılış ritüelinden "Prod RLS migration" maddesi çıkarıldı. Adım 1 kapandı, yapılacak iş yok. Kayıt: 66'daki "smoke test atlandı, yeşilse commit" notu aslında canlı sistemde doğrulanmamış migration anlamına geliyordu.
 
-**`migrations/032_rls_fix_5_tablo.sql`** (ilk kanonik migration disiplini uygulanışı):
-- `testler` — multi-tenant policy (`tenant_id = get_tenant_id()`)
-- `tenant_features` — multi-tenant SELECT + super_admin ALL
-- `egitim_verisi` — multi-tenant policy (HASSAS, AI eğitim verisi)
-- `yetki_tanimlari` — sistem sözlük (read public + super_admin write)
-- `basamak_sablonlari` — sistem sözlük (read public + super_admin write)
-- 8 yeni policy, hepsi `TO authenticated` filtresi ile (anon erişim kapalı)
+### 2. `mobile/src/lib/normalize.js` portu — canonical + format.js köprülü
 
-**`migrations/033_tenant_features_eski_policy_temizlik.sql`** (kritik bulgu):
-- `tenant_features_all` policy'si silindi — `USING (true), roles {public}, cmd ALL` ile fiilen RLS'i bypass eden eski policy. **Anon dahil herkese tam erişim veriyordu** — RLS açıldıktan sonra bile bu policy OR mantığıyla güvenliği iptal ediyordu.
-- `super_admin_feature_yonet` silindi — eski JWT format (`app_metadata.rol`), 032'nin yeni policy'siyle (`auth.jwt() ->> 'rol'`) duplikat.
-- Bu bulguya `MK-66.2` doğdu: RLS aktif eden migration'larda **`pg_policies` ile eski policy taraması zorunlu**.
+Web `ares-normalize.js` (251 satır) AresPipe'ın enum normalize + lokalize etiket + uyum matrisi + marka format kanonik kaynağı. Mobile tarafında 60. oturumda yazılan `format.js` 3 fonksiyon için kod kopyalamış (`revFmt`, `markaHesapla`, `malzemeEtiket`). 65'teki `IbQRTara` `padStart(6, '0')` "geçici fix" (MK-65.2) için kalıcı çözüm olarak normalize.js portu BRIEFING'de duruyordu.
 
-**Numaralandırma düzeltmesi (önemli):** İlk yazımda dosya adı `066_rls_fix_5_tablo.sql` olarak verildi (oturum numarasıyla karıştırma). Cihat fark etti — repo'daki son migration `031`, sıralı devam etmesi gerekiyordu. Düzeltildi: `032_rls_fix_5_tablo.sql`. Bu hata `MK-66.1`'in temel netliğini doğurdu: **migration dosya adı sıralı (NNN_), oturum numarasından bağımsız**, oturum referansı dosya yorumunda verilir.
+Üç port stratejisi tartışıldı (B0 / B düz / B2.5 köprülü). Cihat'ın "ekranlar bozulmasın" kaygısıyla **B2.5** seçildi:
+- `mobile/src/lib/normalize.js` (yeni, 221 satır) — canonical, ESM export'lar, web ile birebir semantik
+- `mobile/src/lib/format.js` (117 satır, -25 net) — 3 fonksiyon ince köprü:
+  - `revFmt` → re-export (web semantik: `'A'` → `'RevA'`, eski mobil sadece sayı kabul ediyordu)
+  - `malzemeEtiket` → re-export (kod + ham kabul, eski mobil sadece kod)
+  - `markaHesapla` → object-wrapper, içeride `marka(...parts)` çağırır (mobil ergonomi imzası korundu)
 
-**Manuel uygulama akışı (Supabase SQL Editor):**
-1. 032 yapıştırıldı → "Success. No rows returned" → 5 tablo RLS aktif
-2. Doğrulama sorgusu çalıştırıldı → 10 policy bulundu (beklenen 8) → tenant_features'ta 2 fazla
-3. Detay sorgusu → `tenant_features_all USING(true)` tehlikesi tespit edildi
-4. 033 yazıldı, BEGIN/COMMIT'siz çalıştırıldı (Supabase SQL Editor nested transaction kabul etmedi, bu **MK-66.5** olarak yazıldı: "BEGIN/COMMIT migration dosyasında kalır, Supabase Editor'de çalıştırırken atlanır")
-5. Final doğrulama: `tenant_features` artık 2 policy (select + super_admin), 5 tablo TRUE, 8 policy total
+**MK-67.2 doğdu.** İki ekran (`MSpoolDetay.jsx`, `MDevreDetay.jsx`) import satırlarına dokunulmadı, davranış aynı. Build yeşil (91 modules, +800 byte).
 
-**Etki:** Supabase Security Advisor'ın `arespipe-dev` (`ochvbepfiatzvyknkvsn`) için verdiği uyarı kapanmış olmalı. Prod tehlikede değildi (mailde sadece dev), ama aynı SQL prod'a da koşulacak (67'de).
+**Commit:** `c42325b` — `feat(mobile): ares-normalize port - normalize.js canonical + format.js adapter (oturum 67)`
 
-### 3. Ekran 3 (IbSpoolDetay) mockup turu — 7 iterasyon, prod'a girmedi
+### 3. MK-65.2 yanlış teşhis düzeltmesi (cleanup yok)
 
-**MK-66.3 doğum hikayesi.** Vanilla `is_baslat.html` repo'da 1772 satır, prod'da 1930 satır — 158 satır fark fark edilmeden iterasyona başlandı (MK-63.B'nin tam tetiklenmesi). 7 iterasyon:
+Port sonrası MK-65.2 "geçici fix" (`IbQRTara.jsx:362` `padStart(6, '0')`) gerçekten incelendi. Kod **doğru iş yapıyor**: kullanıcı `554` yazınca `A-000554` arar — DB'de spool_id'ler 6-hane padded saklanıyor (8. oturum kararı). `normalize.js`'teki `markaId` ise tam tersi (display için 4-hane: `A-000554` → `A-0554`).
 
-- **v1:** dark theme + 6-step aşama tracker + bilgi grid (uydurma elementler, vanilla'da yok)
-- **v2:** light-anthracite tema, vanilla satır listesine birebir hizalı (Cihat: "ben hatırlamıyorum")
-- **v3:** 7 düzeltme — kare foto, devam_ediyor sarı şerit, "Spool Detay" topbar, A-0575 4 hane (1. defa düzeltildi), "Ön İmalat" lokalize
-- **v4:** 7 yeni feedback — "ön imalat yerine spool ID", yüzey "Galvaniz" sade, devam_ediyor sarı şerit yanlış, Rev/alıştırma duplikasyonu, notlar dipte yanlış, **uyarılar radikal tasarım gerektiriyor**
-- **v5:** sol uyarı rail + "ŞU AN İŞLEMDE" bandı + izometri bölümü (panel layout shift problemi)
-- **v6:** sağ kenardan slide-in panel, 3 renkli stripe, A-0575 (4 hane! 4. defa düzeltildi)
-- **v7:** Cihat'ın isteği üzerine "Claude'un özgür tasarımı" — hero (marka soldan + foto thumb sağdan), durum bandı, mini istat grid, ilerleme progress bar, sticky uyarı çubuğu + bottom sheet pattern
+**MK-67.5 doğdu:** `padStart(6)` doğru, kalıcı kod. MK-65.2 "geçici fix" etiketi yanlış teşhisti, açık borçtan düştü. Cleanup commit yok çünkü değişiklik yok.
 
-**Visualizer 2 kez timeout** (4 dk her biri, Anthropic tarafında geçici sorun) — v7 alternatif HTML dosyası olarak verildi (`~/Downloads/ekran3_v7_ozgun_tasarim.html`). Cihat yorgun bitirdi, oturumu kapattı, RLS işine geçildi.
+### 4. MIsBaslat Ekran 3 (IbSpoolDetay) mockup-first turu — başarılı, 8 iterasyon
 
-**67 stratejisi** (gündem maddesinde tekrar yazılı): vanilla'yı **bütün** okuyarak başla, "neyi değiştirmek istiyoruz?" sorusuyla aç, özgür tasarım sunma. Alternatif: Ekran 7 (Basamak Seç) veya normalize.js portu.
+66'daki başarısız 7 iterasyondan farklı olarak 67'de MK-66.3 disiplinine uyuldu: vanilla `is_baslat.html` (1930 satır) **bütün okundu**, kritik fonksiyonlar grep'lendi (`spoolDetayHazirla`, `panelGenelRender`, `panelMalzemeRender`, `spoolFootGuncelle`, `uyarilariTopla`, `carouselRender`). Açılış sorusu özgür tasarım değil, **"Mevcut ekran prod'da çalışıyor — neyi değiştirmek istiyoruz?"** sorusuyla başlandı.
 
-### 4. 4 yeni MK kararı (`docs/KARARLAR.md`'ye yazılacak — şu an taslakta)
+**8 iterasyon** (Cihat'ın değiştirme istekleri sırasında):
 
-- **MK-66.1** — Migration disiplini başlangıcı: dosya numarası **sıralı (NNN_)**, oturum numarasından bağımsız. Oturum referansı dosya yorumunda. README.md migration formatı korundu (BEGIN/COMMIT, idempotent DROP IF EXISTS, geri alma notu).
-- **MK-66.2** — RLS aktif eden migration'larda **`pg_policies` ile eski policy taraması zorunlu**. RLS kapalıyken yazılmış policy'ler "uyuyabilir", RLS açılınca uyanır ve yeni policy'lerle çakışır. Migration öncesi her tabloda `SELECT policyname, cmd, qual FROM pg_policies WHERE tablename = 'X';` — boş dönmüyorsa eski policy'ler ya migration'a `DROP IF EXISTS` ile dahil edilir ya da uyumlu hale getirilir. **`USING (true)` görünce alarm ver** — bu RLS'i fiilen iptal eder.
-- **MK-66.3** — Mockup-first turunda (R-10) vanilla'yı **bütün okumadan** iterasyona başlama yasağı. 66'da 158 satırlık prod-repo farkı görmeden 7 iterasyon harcandı. Yeni protokol: vanilla'nın gerçek satır sayısı + grep'le kritik fonksiyonlar (uyarilariTopla, ROL_BASAMAKLAR, foot CTA dinamiği) çıkarılır, sonra mockup başlar. **Açılış sorusu özgür tasarım değil:** "Mevcut ekran çalışıyor, neyi değiştiriyoruz?"
-- **MK-66.5** — Supabase SQL Editor nested transaction kabul etmiyor (`BEGIN; ... COMMIT;` parse error verir). Migration dosyasında BEGIN/COMMIT **kalır** (psql ile çalıştırılma uyumu için, kanonik form), ama Supabase SQL Editor'de çalıştırırken **atlanır** — sadece DDL/DML komutları yapıştırılır. Editor zaten kendi transaction'ında çalışır.
+- **v8a:** Vanilla'nın mevcut hali (default state, alıştırma yok, foto yok), bekliyor durumu — referans
+- **v8b:** Devam ediyor durumu — "● Devam Ediyor" badge + 3 buton foot ([İşi Kapat][Not Ekle][İşi İptal Et])
+- **v9a/v9b:** Spool no foto üzerine overlay (Cihat: hayır, ayrı bant olsun)
+- **v10a/v10b:** Spool no foto **üstünde** ayrı bant — devam ediyorsa sarı bant + yanıp sönen yeşil nokta solda
+- **v11/v11b:** Sağdan açılan uyarı drawer + peek tab — kullanıcı: 1c (drawer açık olmadıkça İşe Başla disable), 2a (otomatik açılır), 3a (peek tab sürekli görünür)
+- **v12/v12b:** Spool ID mor pill (renkli + görünür), peek tab spool ID satırına taşındı, drawer transparan (sadece kartlar opak)
+- **v13/v13b:** R-06 disiplini (mobil min 14px font), drawer header kaldırıldı, button uyarıların altına alındı, "Anladım, devam et" solid mavi
+- **v14:** Açık tema (light-anthracite), button kartların altında dikey merkez tek blok
+- **v15 + v16:** Malzeme sekmesi — vanilla yapı + 14px+, sonra heat numarası inline edit (heat var → kalem ikonu, heat yok → "+ Heat numarası ekle" outline) + peek tab pasif/aktif kuralı
 
-### 5. Commitler (66'nın tamamı)
+**Final tasarım kararları (kilitlendi):**
+- Üst bant = spool no (gemi+pipeline+spool+rev DB'den dolu blok). Devam ediyorsa sarı + yanıp sönen yeşil nokta sol üstte
+- Foto carousel = vanilla mantığı (foto var/yok, prev/next, sayaç, meta) + nötr arka plan
+- Aktif basamak (sol) + Spool ID mor pill (orta) + Peek tab (sağ) tek satırda
+- Peek tab sürekli görünür: uyarı varsa sarı + sayı, yoksa gri pasif (disabled)
+- Sekmeler = Genel | Malzeme (vanilla aynen)
+- Genel paneli vanilla aynen (10 satır, font 14px+, rozetler büyütüldü)
+- Malzeme paneli = vanilla yapı + heat inline edit (popup yok, inline expand)
+- Foot CTA = bekliyor [İşe Başla yeşil][Başka Spool Tara] · devam ediyor [İşi Kapat][Not Ekle][İşi İptal Et]
+- Drawer = QR sonrası uyarı varsa otomatik açılır, transparan zemin sadece kartlar opak, kartlar + "Anladım, devam et" tek blok dikey merkez, kapanmadıkça İşe Başla disable
 
+**67'de implementasyona geçilmedi.** Sebep: Ekran 4 mimari kararı (akış-kesici uyarılar drawer'a mı taşınsın, ayrı ekran mı kalsın?) Cihat tarafından açıldı, sonuç 68'e ertelendi.
+
+**Yarım kalan:** `IbUyari.jsx` taslağı yazıldı (197 satır, `~/Downloads/IbUyari.jsx`, MD5 `8763ad6d8e7c6880d5fbc8ae23ad7057`) ama commit edilmedi. Ekran 4 mimari karara göre 68'de revize edilebilir veya yeniden üretilebilir.
+
+### 5. `firma_admin` dashboard erişimi + ana sayfa link temizliği
+
+Cihat "ana sayfada kalıyoruz, ilerlenmiyor" deyince inceleme:
+- `MAnasayfa.jsx` rol bazlı router, `yoneticiMi(kullanici)` kontrolü
+- `yoneticiMi` sadece `super_admin` + `yonetici` kabul, Cihat `firma_admin` → `MIslemler`'e (büyük buton listesi) düşüyor → "imalat / kaynak kart" karışıklığı buradan
+
+**MK-67.3 doğdu (geçici karar):** `firma_admin` `yoneticiMi` kapsamına alındı. Üç rol dashboard görür (super_admin + yonetici + firma_admin). Geçici çünkü "dashboard görme yetkisi" ile "yönetim aksiyonları yetkisi" karıştırılıyor — ileride ayrı fonksiyonlara bölünmeli (`dashboardYetkili` vs `yoneticiMi` vs `superAdminMi`).
+
+**Aynı commit'te yan etkiler:**
+- `MAnasayfaYonetici` "İşlem Başlat" butonu `/islemler` yerine `/is-baslat`'a yönlendirildi (vanilla MIsBaslat React akışı)
+- Bekleyen Spool + KK Bekleyen stat kartları `yakinda(...)` alert yerine `/devreler`'e bağlandı (filtreli liste sonra eklenir)
+- App.jsx'e `/ara` ve `/bildirim` placeholder rotaları eklendi (`MYakinda` inline komponenti) — bottom nav loop'unu kapattı
+
+**Commit:** `088c9b4` — `feat(mobile): firma_admin dashboard erisimi + ana sayfa link temizligi (oturum 67)`. 3 dosya, 60 insertion / 5 deletion.
+
+### 6. Supabase API key sistemi keşfi → 69'a ertelendi
+
+67 kapanışına yakın `arespipe-backups` GitHub Action "All jobs failed" maili. İnceleme:
+- DB dump ✓ (password connection string, JWT'ye bağlı değil)
+- Storage backup ✗ (`InvalidAccessKeyId`)
+- Son başarılı backup 1 Mayıs (1 hafta önce)
+- Supabase Dashboard → "Your new API keys are here" banner → `sb_publishable_*` + `sb_secret_*` yeni format, eski JWT'ler "Legacy" sekmesine düşmüş
+- "No secret API keys found" — yeni format'ta hiç oluşturulmamış
+- Mobil + web hâlâ çalışıyor (Supabase grace period legacy key kabulü)
+
+**MK-67.4 doğdu:** Migration kapsamlı (mobil supabase.js, web ares-store.js, admin/index.html, sw.js, GitHub Secrets, Vercel env vars, arespipe-backups workflow temizliği, smoke test). 67'de yapılmadı, 68 zaten dolu (Ekran 3 + 4), **69'un birincil işi**.
+
+**Commitler (67'nin tamamı):**
 ```
-193e49f fix(mimari): 63-64-65 sapma - terk edilen dosyalar arsive geri tasindi (MK-56.2)
-c685e30 chore(ci): ci-son-rapor.json güncelle [skip ci]
-c5dd95f docs(66): BRIEFING + KARARLAR restorasyonu - 63-64-65 sapma onarimi (MK-56.2, MK-65.8)
-26a6119 chore(ci): ci-son-rapor.json güncelle [skip ci]
-b4c7286 fix(security): RLS aktif 5 tablo + tenant_features eski policy temizlik - oturum 66
+088c9b4 feat(mobile): firma_admin dashboard erisimi + ana sayfa link temizligi (oturum 67)
+6a4ebd1 chore(ci): ci-son-rapor.json güncelle [skip ci]
+c42325b feat(mobile): ares-normalize port - normalize.js canonical + format.js adapter (oturum 67)
+80f476c chore(ci): ci-son-rapor.json güncelle [skip ci] (66 sonu)
 ```
 
-### 66'da yapılmayanlar (bilinçli + zaman/sapma kaynaklı)
+### 67'de yapılmayanlar (bilinçli + zaman/kapsam kaynaklı)
 
-- **Ekran 3 prod'a alınmadı** — 7 iterasyon başarısız, 67'ye devredildi
-- **Ekran 4 mockup'ı yazılmadı** — Ekran 3 takılınca sıraya gelmedi
-- **`mobile/src/lib/normalize.js` portu** — Ekran 3'ün önkoşuluydu, başlanmadı
-- **Smoke test** — RLS migration sonrası uygulama smoke testi yapılmadı (Cihat yorgundu, "yeşilse commit" stratejisi seçildi). Risk: süper admin paneli + tenant feature sayfası + operatör spool aç akışında 67 başında bir sorun olabilir; `migrations/034_*` ile fix yazılır eğer çıkarsa
-- **Prod RLS migration** — 032+033 sadece dev'de çalıştırıldı, prod Supabase'inde aynı SQL koşulmalı (67 açılış işi)
-- **`oturum-saglik.sh 66 --kapanis` çağrısı** — yapıldı ✅ (MK-65.8 disiplinine uyuldu, BRIEFING güncellemesi olmadan reddetti, brifing yazılınca yeşil oldu)
+- **Ekran 3 (IbSpoolDetay) implementasyonu** — mockup turu başarılı bitti, tasarım kilitli ama Ekran 4 mimari kararı bekliyor → 68'e
+- **Ekran 4 (IbUyari) mimari kararı** — akış-kesici uyarılar drawer'a mı, ayrı ekran mı? → 68 başı
+- **`IbUyari.jsx` commit** — taslak `~/Downloads/`'ta, mimari karara göre revize edilecek
+- **MK-65.2 cleanup** — yanlış teşhis çıktı (MK-67.5), cleanup gerekmedi
+- **`oturum-saglik.sh 67 --kapanis` çağrısı** — yapıldı ✅ (MK-65.8 disiplinine uyuldu)
+- **Supabase API key migration** — kapsamı büyük, 69'a ertelendi (MK-67.4)
 
 ---
 
@@ -117,7 +161,7 @@ b4c7286 fix(security): RLS aktif 5 tablo + tenant_features eski policy temizlik 
 - ⭐ `docs/VIZYON-OTURUMLARI.md` — Vizyon/strateji sohbetleri (kategori belgesi, 61'de doğdu)
 
 **Karar ve süreç:**
-- `docs/KARARLAR.md` — Tüm MK kararları (66 sonu: MK-66.5'e kadar)
+- `docs/KARARLAR.md` — Tüm MK kararları (67 sonu: MK-67.5'e kadar, 1352 satır)
 - ⭐ `docs/CIHAT-PROFIL.md` — Cihat'ın çalışma stili + Claude'un farkındalıkları
 - `docs/CLAUDE-CALISMA-MODU.md` — Claude'a canlı talimatlar
 - `CLAUDE.md` — Geliştirme kuralları (web)
@@ -143,43 +187,39 @@ b4c7286 fix(security): RLS aktif 5 tablo + tenant_features eski policy temizlik 
 
 ---
 
-## 📊 66 Sonu Sayılar
+## 📊 67 Sonu Sayılar
 
-- **i18n anahtarları (kök `lang/`):** 1834 (66'da değişmedi — Ekran 3 ilerlemeyince yeni anahtar eklenmedi). Trend: 62→1752, 63→1800, 64→1816, 65→1834, 66→1834
+- **i18n anahtarları (kök `lang/`):** 1834 (67'de değişmedi — Ekran 3 implementasyona geçmeyince yeni anahtar eklenmedi). Trend: 62→1752, 63→1800, 64→1816, 65→1834, 66→1834, 67→1834
 - **Mobil ekran sayısı:** 9 tam ekran + MIsBaslat hub'ında 2 alt ekran (IbRolSec, IbQRTara) + 2 ortak komponent. ⏳ Bekleyen: MIsBaslat Ekran 3-10 + MProfil
-- **Toplam MK kararı:** MK-66.5'e kadar (65→66 arası +4: MK-66.1, MK-66.2, MK-66.3, MK-66.5 — *MK-66.4 atlandı, numara boş bırakıldı*)
-- **Migration dosyası:** 33 (031 → 033, 66'da +2: RLS fix + tenant_features temizlik). Sıralı disiplin (MK-66.1) ilk uygulandı.
-- **CI:** ✅ son commit yeşil (`b4c7286`)
-- **HEAD:** `b4c7286`
+- **Toplam MK kararı:** MK-67.5'e kadar (66→67 arası +5: MK-67.1, 67.2, 67.3, 67.4, 67.5). KARARLAR.md = 1352 satır
+- **Migration dosyası:** 33 (031 → 033, 67'de değişmedi — MK-67.1 ile prod migration konusu temelsiz çıktı, yeni migration yazılmadı)
+- **CI:** ✅ son commit yeşil (`088c9b4`)
+- **HEAD:** `088c9b4`
 - **Lint:** Faz B baseline'ı korundu
 
 ---
 
-## 🔄 66'dan 67'ye Geçiş Notları
+## 🔄 67'den 68'e Geçiş Notları
 
-- **MK-65.8 disiplinine uyuldu**: `oturum-saglik.sh 66 --kapanis` çalıştırıldı, BRIEFING.md başlığı yanlışken script kapanışı reddetti, brifing güncellendi sonra commit zinciri akıttı.
-- **Prod RLS migration 67'nin ilk işi.** `migrations/032_rls_fix_5_tablo.sql` + `033_tenant_features_eski_policy_temizlik.sql` aynı sırayla **prod Supabase**'inde SQL Editor'e yapıştırılır (BEGIN/COMMIT atlanır — MK-66.5). Doğrulama: 5 tablo TRUE + 8 policy + tenant_features 2 policy. Prod'da `tenant_features_all` ve `super_admin_feature_yonet` policy'leri **muhtemelen yok** (dev'de tarihsel artıktı), ama 033'ün `DROP IF EXISTS` ifadeleri zarar vermez.
-- **Ekran 3 mockup turu yeniden başlar — vanilla 1930 satırı bütün okunarak.** 66'daki 7 iterasyon zihinsel olarak "sıfırlanır" (referans olarak v7'nin HTML dosyası `~/Downloads/`'ta), Cihat'ın değiştirmek istediği maddelerden başlanır. Açılış sorusu Claude'a yasak: "Sana özgür tasarım yapayım mı?" — bunun yerine "Şu an çalışan ekrandan neyi değiştirmek istiyorsun?". MK-66.3 budur.
-- **`aktif_basamak` × rol matriksi 67'de gerçek DB sorgusuyla netleşir.** 65'te tahminliydi, 66'da Ekran 3'e geçildiği için ertelendi. Ekran 4 (uyari) bu matrise bağlı.
-- **`mobile/src/lib/normalize.js` portu** Ekran 3'ün önkoşulu olarak duruyor. Cihat 67 açılışında *"önce Ekran 3 mockup mı, normalize portu mu?"* tercihini yapar. Port önce yapılırsa Ekran 3 mockup'ı `markaId()` + `marka()` çağrılarıyla gerçekçi yazılır.
+- **MK-65.8 disiplinine uyuldu**: `oturum-saglik.sh 67 --kapanis` çalıştırıldı, BRIEFING.md "67. Oturum Kapanışı" başlığıyla güncellendi.
+- **Ekran 3 implementasyonu 68'in birincil işi.** Tasarım kilitli, vanilla mantığı dökümante (BRIEFING ve mockup serisi v9 → v16). Yazılacak `IbSpoolDetay.jsx` taslağı yok ama plan net (state yönetimi, DB sorgu, foto carousel, sekme değişimi, foot CTA branching, IbUyari entegrasyonu, heat inline edit).
+- **Ekran 4 mimari kararı 68 başında.** Cihat seçecek: A (vanilla mantığı koru, akış-kesici uyarılar ayrı ekran) veya B (tek pattern, hepsi drawer). A daha az kapsam, B daha temiz mimari ama ek mockup turu gerektirir.
+- **`IbUyari.jsx` taslağı korunabilir veya silinebilir.** `~/Downloads/IbUyari.jsx`, MD5 `8763ad6d8e7c6880d5fbc8ae23ad7057`, 197 satır. Mimari karar A ise olduğu gibi kullanılır (peek tab + drawer + 4 uyarı tipi). B ise revize edilir (devral/iptal/rol değiştir butonları eklenir).
+- **`firma_admin` dashboard erişimi geçici.** MK-67.3 ileride yetki haritası ile netleşir. 68 odağı bu değil ama Ekran 3 yazılırken karşılaşılabilir.
 - **Geçici borç:** `mobile/src/lang/README.md` (MK-62.3) hâlâ `.gitignore` satır 27 ignore ediyor.
-- **Ekran 3 visualizer crash'i 66'da Anthropic tarafında geçiciydi** — 67'de denemek değer. Hâlâ crash ediyorsa HTML dosyası alternatifi (66'da kullanıldı) çalışıyor.
+- **Supabase API key migration 69'un birincil işi.** Mobil + web hâlâ çalışıyor (legacy grace period), ama ne zaman keseceği belirsiz. 69'da kontrollü migration: yeni key'i mevcut JWT yanına ekle, test et, sonra eski JWT'yi sil. `arespipe-backups` workflow temizliği aynı kapsamda.
 
 ---
 
-## 🎯 Açılış Ritüeli (67 için)
+## 🎯 Açılış Ritüeli (68 için)
 
 ```bash
 cd ~/Desktop/arespipe
 git pull origin main
-./scripts/oturum-saglik.sh 67
+./scripts/oturum-saglik.sh 68
 cat BRIEFING.md
 ```
 
-Sağlık scripti yeşilse Claude'a `cat BRIEFING.md` çıktısı yapıştırılır, **iki seçenek sunulur**:
+Sağlık scripti yeşilse Claude'a `cat BRIEFING.md` çıktısı yapıştırılır, **Ekran 4 mimari kararı** sorulur (A: vanilla koru, B: tek pattern). Cihat'ın cevabına göre Ekran 3 implementasyonu başlar.
 
-1. **Prod RLS migration** (15 dk iş, kapatılması gereken tek somut açık) → Supabase prod SQL Editor'de 032+033 koş, doğrula, smoke test, 67 ilk commit'i `chore(security): prod RLS - 5 tablo (oturum 67)` olarak boş kalan repo durumunu güncelleyebilir veya sadece dev/prod senkronu için belge kaydı bırakılabilir.
-
-2. **Ekran 3 mockup-first ikinci tur** (vanilla 1930 satırı bütün okuyarak) ya da **normalize.js portu** (mockup'tan daha az tartışmalı sıcak temas).
-
-Cihat tercihini söyler, oradan başlanır. **Açılışta özgür tasarım sunulmaz** — bu MK-66.3 disiplinidir.
+**Açılışta özgür tasarım sunulmaz** (MK-66.3). Ekran 3 tasarımı zaten kilitli, doğrudan implementasyona geçilir.
