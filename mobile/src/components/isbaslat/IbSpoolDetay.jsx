@@ -39,6 +39,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
+import { supabase } from '../../lib/supabase'
 import IbUyariDrawer from './IbUyariDrawer'
 
 export default function IbSpoolDetay({
@@ -51,9 +52,32 @@ export default function IbSpoolDetay({
   const { tv } = useT()
 
   const [yerelSpool, setYerelSpool] = useState(spool)
+  const [devre, setDevre] = useState(null)
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
+
+  // ─── Devre fetch ───
+  // Spool yüklenince devre_id ile devre bilgisini al — iş emri, devre adı,
+  // zone + spool null kolonları için fallback (malzeme, yüzey, ağırlık).
+  useEffect(() => {
+    if (!yerelSpool?.devre_id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('devreler')
+          .select('id, devre_no, zone, is_emri_no, agirlik, malzeme, yuzey, ad, proje_id')
+          .eq('id', yerelSpool.devre_id)
+          .maybeSingle()
+        if (error || iptal) return
+        if (data) setDevre(data)
+      } catch (e) {
+        console.warn('[IbSpoolDetay] devre yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.devre_id])
 
   // ─── Yumuşak uyarı kartlarını topla ───
   // Şu an spool kolonlarına göre. 68b'de devre/proje seviyesi notlar +
@@ -261,7 +285,7 @@ export default function IbSpoolDetay({
       <div style={s.icerikInner}>
         {aktifSekme === 'genel' && (
           <>
-            <GenelPanel spool={yerelSpool} tv={tv} />
+            <GenelPanel spool={yerelSpool} devre={devre} tv={tv} />
             {/* DEBUG (68b'de kaldırılacak) — yumuşak uyarı raw değerleri */}
             <div style={s.debugBox}>
               <div style={s.debugBaslik}>DEBUG · 68b'de kaldırılacak</div>
@@ -377,22 +401,29 @@ function yumusKartStili(kategori) {
 
 // ─────────── Genel Paneli — mockup v13b uyumlu ───────────
 
-function GenelPanel({ spool, tv }) {
-  const malzemeKalite = [spool.malzeme, spool.kalite].filter(Boolean).join(' · ')
+function GenelPanel({ spool, devre, tv }) {
+  // Malzeme/Yüzey/Ağırlık: spool null ise devreden inherit
+  const malzemeDeger = spool.malzeme || devre?.malzeme || null
+  const malzemeKalite = [malzemeDeger, spool.kalite].filter(Boolean).join(' · ')
 
   // Türkçe sayı formatı (virgül) — mockup "219,1 mm" / "12,5 kg" tarzı
   const capDeger = spool.dis_cap_mm
     ? `${parseFloat(spool.dis_cap_mm).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} mm`
     : null
-  const agirlikRaw = spool.agirlik || spool.agirlik_kg
+  const agirlikRaw = spool.agirlik || spool.agirlik_kg || devre?.agirlik
   const agirlikDeger = agirlikRaw
     ? `${parseFloat(agirlikRaw).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} kg`
     : null
 
   // Yüzey: "galvaniz" → "Galvaniz" (ilk harf büyük)
-  const yuzeyRaw = spool.yuzey || spool.yuzey_islemi
+  const yuzeyRaw = spool.yuzey || spool.yuzey_islemi || devre?.yuzey
   const yuzeyDeger = yuzeyRaw
     ? yuzeyRaw.charAt(0).toLocaleUpperCase('tr-TR') + yuzeyRaw.slice(1)
+    : null
+
+  // Devre adı: "262- Tank Connection — AT100-Galv"
+  const devreAdi = devre
+    ? [devre.devre_no, devre.zone].filter(Boolean).join(' — ')
     : null
 
   // Durum: Türkçe değer (`durum`) öncelikli, slug (`is_durumu`) fallback
@@ -402,9 +433,11 @@ function GenelPanel({ spool, tv }) {
   const basamakDeger = basamakLabel(spool.aktif_basamak, spool.basamak_snapshot)
 
   const satirlar = [
+    { etiket: tv('m_ib_sd_g_is_emri',        'İş Emri'),          deger: devre?.is_emri_no },
+    { etiket: tv('m_ib_sd_g_devre',          'Devre'),            deger: devreAdi },
     { etiket: tv('m_ib_sd_g_cap',            'Çap'),              deger: capDeger },
     { etiket: tv('m_ib_sd_g_agirlik',        'Ağırlık'),          deger: agirlikDeger },
-    { etiket: tv('m_ib_sd_g_malzeme_kalite', 'Malzeme / Kalite'), deger: malzemeKalite || spool.malzeme || null },
+    { etiket: tv('m_ib_sd_g_malzeme_kalite', 'Malzeme / Kalite'), deger: malzemeKalite || malzemeDeger || null },
     { etiket: tv('m_ib_sd_g_yuzey',          'Yüzey İşlem'),      deger: yuzeyDeger },
     { etiket: tv('m_ib_sd_g_alistirma',      'Alıştırma'),        deger: spool.alistirma, badge: alistirmaBadgeStili(spool.alistirma) },
     { etiket: tv('m_ib_sd_g_durum',          'Durum'),            deger: durumDeger },
