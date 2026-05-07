@@ -1832,5 +1832,11 @@
   "m_ib_qr_hint_sadece_numara": "Sadece spool numarasını yazın",
   "m_ib_qr_hint_tam_id": "Tam spool ID girin",
   "m_ib_qr_geri": "Geri",
-  "m_ib_qr_kapat": "Kapat"
+  "m_ib_qr_kapat": "Kapat",
+  "m_ib_uy_yu_alis_baslik": "Bu spool kaynatılmayacak",
+  "m_ib_uy_yu_alis_mesaj": "Alıştırma (prefab) spool — kaynak işlemi uygulanmaz. Sadece montaj yapılacak.",
+  "m_ib_uy_yu_test_baslik": "Test tanımlanmış",
+  "m_ib_uy_yu_test_mesaj": "Bu devreye test tanımlanmıştır. Çalışma tamamlandığında test kontrol edilecek.",
+  "m_ib_uy_yu_not_baslik": "Dikkat Edilecekler",
+  "m_ib_uy_yu_anladim": "Anladım, devam et"
 }

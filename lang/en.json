@@ -1832,5 +1832,11 @@
   "m_ib_qr_hint_sadece_numara": "Enter spool number only",
   "m_ib_qr_hint_tam_id": "Enter full spool ID",
   "m_ib_qr_geri": "Back",
-  "m_ib_qr_kapat": "Close"
+  "m_ib_qr_kapat": "Close",
+  "m_ib_uy_yu_alis_baslik": "This spool will not be welded",
+  "m_ib_uy_yu_alis_mesaj": "Prefab spool — no welding applied. Assembly only.",
+  "m_ib_uy_yu_test_baslik": "Test defined",
+  "m_ib_uy_yu_test_mesaj": "A test is defined for this circuit. It will be checked upon completion.",
+  "m_ib_uy_yu_not_baslik": "Points to Watch",
+  "m_ib_uy_yu_anladim": "Got it, continue"
 }

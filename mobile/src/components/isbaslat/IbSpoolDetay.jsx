@@ -632,7 +632,7 @@ const s = {
     width: 8,
     height: 8,
     borderRadius: '50%',
-    background: '#22c55e',
+    background: 'var(--gr)',
     boxShadow: '0 0 6px rgba(34,197,94,0.8)',
     flexShrink: 0,
     animation: 'ibSdPulse 1.4s ease-in-out infinite',

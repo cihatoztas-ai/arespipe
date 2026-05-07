@@ -1832,5 +1832,11 @@
   "m_ib_qr_hint_sadece_numara": "أدخل رقم السبول فقط",
   "m_ib_qr_hint_tam_id": "أدخل معرف السبول الكامل",
   "m_ib_qr_geri": "رجوع",
-  "m_ib_qr_kapat": "إغلاق"
+  "m_ib_qr_kapat": "إغلاق",
+  "m_ib_uy_yu_alis_baslik": "لن يتم لحام هذا السبول",
+  "m_ib_uy_yu_alis_mesaj": "سبول مسبق الصنع — لا يوجد لحام. التجميع فقط.",
+  "m_ib_uy_yu_test_baslik": "تم تحديد اختبار",
+  "m_ib_uy_yu_test_mesaj": "تم تحديد اختبار لهذه الدائرة. سيتم فحصه عند اكتمال العمل.",
+  "m_ib_uy_yu_not_baslik": "نقاط الانتباه",
+  "m_ib_uy_yu_anladim": "فهمت، متابعة"
 }
