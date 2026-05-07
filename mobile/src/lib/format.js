@@ -1,45 +1,37 @@
 // mobile/src/lib/format.js
 //
 // Mobil ekranlar için ortak format/helper fonksiyonları.
+//
 // 60. oturum — Açık Borç #3 kapandı: MSpoolDetay ve MDevreDetay'da
 // kopyalanan helper'lar burada birleştirildi.
 //
-// Kanonik kaynaklar:
-//   - revFmt: MSpoolDetay sürümü (defensive — Number tipini garantiliyor).
-//     MDevreDetay sürümünde "0" string'i veya NaN için bug vardı, düzeltildi.
-//   - markaHesapla, formatSpoolId, alistirmaBilgi, nNRenkler,
-//     formatTarih, formatTarihSaat, formatSure: MSpoolDetay sürümleri.
-//   - malzemeEtiket, esc: MDevreDetay sürümleri.
+// 67. oturum — Enum normalize canonical kaynak `./normalize.js`'e taşındı.
+// Bu dosya artık 3 fonksiyon için ince köprü:
+//   - revFmt        → normalize.js'ten re-export (web semantik: alfanumerik destekli)
+//   - malzemeEtiket → normalize.js'ten re-export (web ARES_NORM eşi)
+//   - markaHesapla  → object-wrapper adapter, içeride normalize.marka(...) çağırır
+// Mevcut import'lar değişmedi; davranış aynı (revFmt artık 'A' → 'RevA' da kabul eder).
 //
-// Kullanılmayan helper'lar (esc gibi) ileride lazım olur diye merkezi
-// tutuldu — DRY prensibinden ödün, ama tek satırlık import maliyeti.
-//
-// MSpoolDetay'a özgü rev formatı için NOT:
-//   revFmt(rev) string ya da number kabul eder. Geçersiz/0/negatif değerlerde
-//   boş string döner. Pozitif sayı verilince "RevN" formatı.
-//
-// MDevreDetay'a özgü `getStageKey` BURADA YOK — UI semantiği taşır
-// (on_imalat → bekliyor map'i, MK-59.1). Ekrana özgü kalsın.
+// Mobil-özgü kalan helper'lar (port edilmedi, UI semantiği taşır):
+//   nNRenkler, formatSpoolId, alistirmaBilgi, formatTarih, formatTarihSaat,
+//   formatSure, esc.
 
-// ── Sayı formatı ──────────────────────────────────────────────────────────
+// ── 67: enum normalize canonical kaynak ───────────────────────────────────
+import { marka, revFmt as _revFmt, malzemeEtiket as _malzemeEtiket } from './normalize'
 
-export function revFmt(rev) {
-  const n = Number(rev)
-  return Number.isFinite(n) && n > 0 ? `Rev${n}` : ''
-}
+export const revFmt = _revFmt
+export const malzemeEtiket = _malzemeEtiket
 
 // E-02 marka: proje_no-pipeline_no-spool_no[-RevN]
-// Web spool_detay.html sat. 1968-1970'in birebir port'u.
-// İkinci parametre `devre` şu an kullanılmıyor; signature stabil tutuldu
-// (gelecekte devre-aware varyant gerekirse imza değişmesin).
+// İkinci parametre `devre` şu an kullanılmıyor; signature stabil tutuldu.
+// 67: gövde normalize.marka()'ya delegate edildi.
 export function markaHesapla(sp, devre, proje) {
-  const parcalar = [
-    proje?.proje_no || '',
-    sp?.pipeline_no || '',
-    sp?.spool_no || '',
-    revFmt(sp?.rev),
-  ].filter(Boolean)
-  const m = parcalar.join('-')
+  const m = marka(
+    proje?.proje_no,
+    sp?.pipeline_no,
+    sp?.spool_no,
+    _revFmt(sp?.rev),
+  )
   return m || sp?.spool_no || '—'
 }
 
@@ -110,23 +102,6 @@ export function formatSure(isoStr) {
   if (fark < 86400) return `${Math.floor(fark/3600)} saat önce`
   if (fark < 604800) return `${Math.floor(fark/86400)} gün önce`
   return formatTarih(isoStr)
-}
-
-// ── Malzeme etiketi ───────────────────────────────────────────────────────
-
-// Web ARES_NORM.malzemeEtiket eşi.
-// Canonical kodlar: karbon, paslanmaz, bakir, alum, diger
-export function malzemeEtiket(kod, tv) {
-  if (!kod) return '—'
-  const k = String(kod).toLowerCase().trim()
-  const map = {
-    karbon:    tv('cmn_malzeme_karbon',    'Karbon Çelik'),
-    paslanmaz: tv('cmn_malzeme_paslanmaz', 'Paslanmaz'),
-    bakir:     tv('cmn_malzeme_bakir',     'Bakır Alaşım'),
-    alum:      tv('cmn_malzeme_alum',      'Alüminyum'),
-    diger:     tv('cmn_malzeme_diger',     'Diğer'),
-  }
-  return map[k] || kod
 }
 
 // ── HTML escape (XSS koruması) ────────────────────────────────────────────
