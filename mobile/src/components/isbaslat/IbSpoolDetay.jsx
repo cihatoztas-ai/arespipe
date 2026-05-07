@@ -209,63 +209,72 @@ export default function IbSpoolDetay({
         <span style={s.ustBantYazi}>{ustBant}</span>
       </div>
 
-      {/* ───── SCROLL alanı — foto + ID satırı + sekmeler + içerik ─────
-          Cihat 68 testi: sadece üst bant sabit kalsın, geri kalan tüm
-          bölümler scroll edilebilir olsun. */}
-      <div style={s.scrollAlani}>
-        {/* Foto carousel placeholder */}
-        <div style={s.fotoBlok}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
+      {/* Foto carousel placeholder */}
+      <div style={s.fotoBlok}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </div>
+
+      {/* Aktif rol + Spool ID + Peek tab satırı */}
+      <div style={s.idSatir}>
+        <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
+        <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
+        <button
+          type="button"
+          style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
+          onClick={handlePeekTabBas}
+          disabled={yumusKartlar.length === 0}
+          aria-label={tv('m_ib_sd_peek_aria', 'Uyarıları göster')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-        </div>
+          {yumusKartlar.length > 0 && (
+            <span style={s.peekSayi}>{yumusKartlar.length}</span>
+          )}
+        </button>
+      </div>
 
-        {/* Aktif rol + Spool ID + Peek tab satırı */}
-        <div style={s.idSatir}>
-          <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
-          <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
-          <button
-            type="button"
-            style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
-            onClick={handlePeekTabBas}
-            disabled={yumusKartlar.length === 0}
-            aria-label={tv('m_ib_sd_peek_aria', 'Uyarıları göster')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            {yumusKartlar.length > 0 && (
-              <span style={s.peekSayi}>{yumusKartlar.length}</span>
-            )}
-          </button>
-        </div>
+      {/* Sekmeler */}
+      <div style={s.sekmeler}>
+        <button
+          type="button"
+          style={aktifSekme === 'genel' ? s.sekmeAktif : s.sekme}
+          onClick={() => setAktifSekme('genel')}
+        >
+          {tv('m_ib_sd_genel', 'Genel')}
+        </button>
+        <button
+          type="button"
+          style={aktifSekme === 'malzeme' ? s.sekmeAktif : s.sekme}
+          onClick={() => setAktifSekme('malzeme')}
+        >
+          {tv('m_ib_sd_malzeme', 'Malzeme')}
+        </button>
+      </div>
 
-        {/* Sekmeler */}
-        <div style={s.sekmeler}>
-          <button
-            type="button"
-            style={aktifSekme === 'genel' ? s.sekmeAktif : s.sekme}
-            onClick={() => setAktifSekme('genel')}
-          >
-            {tv('m_ib_sd_genel', 'Genel')}
-          </button>
-          <button
-            type="button"
-            style={aktifSekme === 'malzeme' ? s.sekmeAktif : s.sekme}
-            onClick={() => setAktifSekme('malzeme')}
-          >
-            {tv('m_ib_sd_malzeme', 'Malzeme')}
-          </button>
-        </div>
-
-        {/* İçerik */}
-        <div style={s.icerikInner}>
-          {aktifSekme === 'genel'   && <GenelPanel spool={yerelSpool} tv={tv} />}
-          {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
-        </div>
+      {/* İçerik */}
+      <div style={s.icerikInner}>
+        {aktifSekme === 'genel' && (
+          <>
+            <GenelPanel spool={yerelSpool} tv={tv} />
+            {/* DEBUG (68b'de kaldırılacak) — yumuşak uyarı raw değerleri */}
+            <div style={s.debugBox}>
+              <div style={s.debugBaslik}>DEBUG · 68b'de kaldırılacak</div>
+              <div>alistirma: <code>{JSON.stringify(yerelSpool.alistirma)}</code></div>
+              <div>yumusKartlar.length: <code>{yumusKartlar.length}</code></div>
+              <div>not_metni: <code>{JSON.stringify(yerelSpool.not_metni)}</code></div>
+              <div>notlar: <code>{JSON.stringify(yerelSpool.notlar)}</code></div>
+              <div>test_tanimli: <code>{JSON.stringify(yerelSpool.test_tanimli)}</code></div>
+              <div>devre_test_tanimli: <code>{JSON.stringify(yerelSpool.devre_test_tanimli)}</code></div>
+            </div>
+          </>
+        )}
+        {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
       </div>
 
       {/* ───── Foot CTA ───── */}
@@ -371,14 +380,35 @@ function yumusKartStili(kategori) {
 function GenelPanel({ spool, tv }) {
   const malzemeKalite = [spool.malzeme, spool.kalite].filter(Boolean).join(' · ')
 
+  // Türkçe sayı formatı (virgül) — mockup "219,1 mm" / "12,5 kg" tarzı
+  const capDeger = spool.dis_cap_mm
+    ? `${parseFloat(spool.dis_cap_mm).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} mm`
+    : null
+  const agirlikRaw = spool.agirlik || spool.agirlik_kg
+  const agirlikDeger = agirlikRaw
+    ? `${parseFloat(agirlikRaw).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} kg`
+    : null
+
+  // Yüzey: "galvaniz" → "Galvaniz" (ilk harf büyük)
+  const yuzeyRaw = spool.yuzey || spool.yuzey_islemi
+  const yuzeyDeger = yuzeyRaw
+    ? yuzeyRaw.charAt(0).toLocaleUpperCase('tr-TR') + yuzeyRaw.slice(1)
+    : null
+
+  // Durum: Türkçe değer (`durum`) öncelikli, slug (`is_durumu`) fallback
+  const durumDeger = spool.durum || spool.is_durumu
+
+  // Aktif basamak: slug → görünen ad (basamak_snapshot içinden)
+  const basamakDeger = basamakLabel(spool.aktif_basamak, spool.basamak_snapshot)
+
   const satirlar = [
-    { etiket: tv('m_ib_sd_g_cap',            'Çap'),              deger: spool.cap ? `${spool.cap} mm` : null },
-    { etiket: tv('m_ib_sd_g_agirlik',        'Ağırlık'),          deger: spool.agirlik ? `${spool.agirlik} kg` : null },
+    { etiket: tv('m_ib_sd_g_cap',            'Çap'),              deger: capDeger },
+    { etiket: tv('m_ib_sd_g_agirlik',        'Ağırlık'),          deger: agirlikDeger },
     { etiket: tv('m_ib_sd_g_malzeme_kalite', 'Malzeme / Kalite'), deger: malzemeKalite || spool.malzeme || null },
-    { etiket: tv('m_ib_sd_g_yuzey',          'Yüzey İşlem'),      deger: spool.yuzey },
+    { etiket: tv('m_ib_sd_g_yuzey',          'Yüzey İşlem'),      deger: yuzeyDeger },
     { etiket: tv('m_ib_sd_g_alistirma',      'Alıştırma'),        deger: spool.alistirma, badge: alistirmaBadgeStili(spool.alistirma) },
-    { etiket: tv('m_ib_sd_g_durum',          'Durum'),            deger: spool.is_durumu },
-    { etiket: tv('m_ib_sd_g_basamak',        'Aktif basamak'),    deger: spool.aktif_basamak },
+    { etiket: tv('m_ib_sd_g_durum',          'Durum'),            deger: durumDeger },
+    { etiket: tv('m_ib_sd_g_basamak',        'Aktif basamak'),    deger: basamakDeger },
     { etiket: tv('m_ib_sd_g_ilerleme',       'İlerleme'),         deger: spool.ilerleme != null ? `%${spool.ilerleme}` : null },
   ]
 
@@ -431,22 +461,34 @@ function alistirmaBadgeStili(deger) {
   return null
 }
 
+// Aktif basamak slug'ından görünen ad — basamak_snapshot JSON içinden çevir.
+// Örn: "on_imalat" → "Ön İmalat"
+// Snapshot yoksa veya bulunamazsa slug'ı geri döndür (raw fallback).
+function basamakLabel(slug, snapshot) {
+  if (!slug) return null
+  if (!Array.isArray(snapshot)) return slug
+  const found = snapshot.find(b => b && b.sistem_adi === slug)
+  return found?.gorunen_ad || slug
+}
+
 // ─────────── Stiller ───────────
 
 const s = {
-  // Kapsayıcı — height fix → flex scroll alanı çalışsın
+  // Kapsayıcı — TEK scroll alanı (foot dahil her şey kayar, sadece üst bant sticky)
+  // Cihat 68 (Adım 3a-final iter2): üst bant dışında her şey kaysın.
   kapsayici: {
-    display: 'flex',
-    flexDirection: 'column',
     height: 'calc(100dvh - 56px - 80px)',
+    overflowY: 'auto',
     background: 'var(--bg)',
     color: 'var(--tx)',
     position: 'relative',  // yumuşak drawer overlay için
   },
 
-  // Üst bant
+  // Üst bant — sticky top
   ustBant: {
-    flexShrink: 0,
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -455,7 +497,9 @@ const s = {
     borderBottom: '1px solid var(--bor)',
   },
   ustBantDevam: {
-    flexShrink: 0,
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -589,16 +633,10 @@ const s = {
     WebkitTapHighlightColor: 'transparent',
   },
 
-  // Scroll alanı — sadece üst bant sabit, geri kalan kayar
-  // (Cihat 68 testi: foto + ID + sekmeler + içerik tek scroll içinde)
-  scrollAlani: {
-    flex: 1,
-    minHeight: 0,
-    overflowY: 'auto',
-    background: 'var(--sur)',
-  },
+  // İçerik padding (artık ayrı scroll değil, kapsayıcı doğrudan scroll yapıyor)
   icerikInner: {
     padding: '4px 16px',
+    background: 'var(--sur)',
   },
 
   // Genel paneli satırları
@@ -634,6 +672,26 @@ const s = {
     fontWeight: 500,
     padding: '3px 10px',
     borderRadius: 8,
+  },
+
+  // ───── DEBUG kutusu (68b'de kaldırılacak) ─────
+  debugBox: {
+    marginTop: 16,
+    padding: 10,
+    background: '#FEF3C7',
+    border: '1px dashed #F59E0B',
+    borderRadius: 8,
+    fontSize: 11,
+    color: '#78350F',
+    lineHeight: 1.6,
+    fontFamily: 'monospace',
+  },
+  debugBaslik: {
+    fontWeight: 700,
+    marginBottom: 6,
+    fontFamily: 'Barlow, sans-serif',
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 
   // Boş durum
