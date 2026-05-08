@@ -324,3 +324,33 @@ git rm --cached mobile/.DS_Store
 - **SPA fallback (mobile genel):** `mobile/vercel.json` yokluğunda doğrudan `/spool/:id` URL'i 404 veriyordu. 58'de rewrite eklendi, tüm mobile rotaları artık F5'lenebilir/doğrudan açılabilir.
 - **Süper admin paneli mobile preview:** Eski vanilla `../mobile/spool_detay.html` yollarına gidiyordu (artık deploy'da yok). 58'de React canlı URL'lerine (`https://arespipe-mob.vercel.app/...`) güncellendi.
 
+---
+
+## 68. Oturum Tarama Sonuçları (7 Mayıs 2026)
+
+### `devre_yeni.html`
+
+#### 🟡 Açık (sonraya bırakıldı)
+- **SED-68-01** — Form validation: `proje_no` ve `gemi_adi` alanlarında karışım engeli. 68b'de canlı verilerde iki proje (`NB1124`, `NB138`) için `gemi_adi` alanına em-dash + proje_no prefix yazıldığı görüldü ("NB1124 — Kargo Gemisi", "NB138 — Yük Gemisi"). Mobil üst bant kuralı (MK-68.3) sadece `proje_no` kullanıyor; ama `gemi_adi`'a yanlış format girilmesi başka ekranlarda (devre listesi, proje detayı) yanıltıcı olabilir. **Fix yolu:** `devre_yeni.html` form'unda iki kural — `proje_no` alanı `^[A-Z0-9]+$` regex (em-dash, boşluk, tire yasak), `gemi_adi` alanı em-dash içeremez ve `^NB\d+` ile başlayamaz (proje no prefix yasak). Hata mesajı: "Gemi adı sadece geminin adı olmalı, proje numarası proje no alanına gider." 68b'de iki kayıt manuel UPDATE ile temizlendi, validation eklenmezse tekrarlar.
+
+### `mobile/src/components/isbaslat/` ekosistemi (Ib-prefix component'leri, 68b CI uyarıları)
+
+#### 🟡 Açık (sonraya bırakıldı)
+- **SED-68-02** — i18n borç temizliği. 68b CI raporu (`AresPipe Kod Kalite Kontrolü`) 1 hata + 80 uyarı tespit etti. Hata düzeltildi (MK-68.2'de `#22c55e` → `var(--gr)`), 6 uyarı kapatıldı (`m_ib_uy_yu_*` 6 anahtar tr/en/ar üçüne eklendi). **~75 uyarı hâlâ açık** — `tv()` çağrısında kullanılan ama lang dosyalarında olmayan anahtarlar:
+  - `IbQRTara.jsx` — 3 anahtar (`m_ib_uy_ct_*`)
+  - `IbUyariDrawer.jsx` — 16 anahtar (`m_ib_uy_ct_*`, `m_ib_uy_de_*`, `m_ib_uy_ab_*`)
+  - `IbSpoolDetay.jsx` — kalan ~25 anahtar (`m_ib_sd_*`, `m_ib_sd_g_*`)
+  - `izometri-batch.html` — 18 anahtar (`izb_*` web tarafı)
+  - `spool_detay.html` — 9 anahtar (`flansh_*`)
+  - `MDevreDetay.jsx` — 1 anahtar (`mob_filtre_temizle`)
+  - `devre_detay.html` — 1 hardcode renk benzeri uyarı (`G03_HAM_YUZEY` esc(x.yuzey))
+
+  Şu an hepsi `tv()` fallback ile çalışıyor (UI bozulmuyor, sadece i18n disiplini kırık). Deploy'u kesmiyor. **Fix yolu:** Her dosya için eksik anahtarlar tespit edilir, fallback string'leri tr/en/ar'a yazılır. Tek seferde toplu patch (3 lang dosyası + N JSX/HTML değişikliği yok, sadece JSON ekleme).
+
+### CI ve push akışı
+
+#### 🟡 Açık (sonraya bırakıldı)
+- **SED-68-03** — CI bot push rebase çakışması. `AresPipe Kod Kalite Kontrolü` workflow'u her push sonrası `.github/ci-son-rapor.json` dosyasını güncelleyen bir `[skip ci]` rapor commit'i atıyor. 68b push'unda iki paralel commit (kullanıcı push'u + bot rapor commit'i) çakıştı, bot tarafında rebase fail oldu (`CONFLICT (content): Merge conflict in .github/ci-son-rapor.json`). Workflow `Error: Rebase başarısız — manuel müdahale gerek` ile sonlandı. Deploy'u kesmiyor (Vercel paralel çalışıyor) ama log'da kirlilik bırakıyor. **Fix yolu:** Workflow'da fetch + rebase loop'u (3-5 deneme) veya farklı strateji — rapor commit'ini `force-with-lease` ile push, ya da farklı branch'e (`ci-reports`) yazıp ana branch'i etkilemeyen pattern. Detay araştırma 69'a.
+
+---
+

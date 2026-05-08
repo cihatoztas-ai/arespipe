@@ -1350,3 +1350,156 @@ export function spoolDbId(tenantKod, kisaNumara) {
 **İlişkili:** MK-65.2 (yanlış teşhis), MK-67.2 (`normalize.js` canonical port), 8. oturum spool_id sayaç digits=6 kararı.
 
 ---
+
+## MK-68.1 — Ekran 4 silindi: drawer-tabanlı mimari (B seçimi, 7 Mayıs 2026)
+
+**Bağlam:** 67 sonunda Cihat "akış-kesici uyarılar (cross-tenant, devamEdiyor başka operatör, rolUyumsuz) için ayrı bir ekrana gerçekten ihtiyacımız var mı?" sorusunu açtı. İki seçenek BRIEFING'e taşındı:
+- **A — Vanilla mantığı koru:** Ekran 4 (uyari) ayrı ekran kalır, sadece akış-kesici uyarılar için. Spool-içi uyarılar (alıştırma, test, not) Ekran 3 drawer'ında.
+- **B — Tek pattern:** Ekran 4 silinir. Tüm uyarılar Ekran 3 drawer'ında.
+
+68 başında karar verildi: **B seçildi.** Tek pattern hem mimari olarak temiz hem de UX olarak tutarlı (kullanıcı tek bir UI elementinden — peek tab + drawer — tüm uyarıları görüyor).
+
+**Karar:** AresPipe mobil tarafında akış-kesici ve yumuşak uyarılar **tek drawer pattern'i** ile gösterilir. Ekran 4 (`MUyari` placeholder) silindi, hub mantığı (`MIsBaslat.jsx`'in `setAktifEkran('uyari')` çağrıları) kaldırıldı.
+
+**Drawer kategori şeması:**
+
+| Tip | Renk | Tetikleyici | Davranış |
+|---|---|---|---|
+| **Akış-kesici** crossTenant | Mor | Spool farklı tenant'ta | IbQRTara'da overlay, üzerine kapatılamaz |
+| **Akış-kesici** devamEdiyor | Kırmızı | Başka operatör çalışıyor | IbSpoolDetay'da overlay, "Devral" / "İptal" |
+| **Akış-kesici** alternatifBasamakYetkili | Mavi | Alternatif basamağa geçiş yetkisi var | "Alternatife başla" / "İptal" |
+| **Akış-kesici** alternatifBasamakYetkisiz | Gri | Alternatif basamak ama yetki yok | Sadece bilgi, "Anladım" |
+| **Yumuşak** alıştırma | Kırmızı kart | `spool.alistirma=VAR/KISMI` | Drawer içi kart, "Anladım, devam et" |
+| **Yumuşak** test | Mavi kart | Devreye test tanımlı | Drawer içi kart, "Anladım, devam et" |
+| **Yumuşak** not | Sarı kart | `notlar` tablosunda `qr_goster=true` not var | Drawer içi kart (her not ayrı), "Anladım, devam et" |
+
+**Öncelik kuralı:** Akış-kesici varsa yumuşak drawer **atlanır** (kullanıcıyı çift onaya zorlamamak için). Sadece akış-kesici overlay açılır, kullanıcı çözünce (Devral, alternatife başla, vb.) yumuşak uyarılar zaten kartlara yansıtılmış olarak görünür.
+
+**Alternatif basamak kapsam kuralı:** Alternatif basamak SADECE kaynak ailesi içinde tetiklenir (argon ↔ gazaltı). İmalat ↔ ön imalat geçişi drawer çıkarmaz, RLS DB tarafında halleder.
+
+**Etki:** Mobil mimari sadeleşti, 5 ekran yerine 4 ekran (giriş, anasayfa, işlemler, IsBaslat hub'ı) + alt-akış component'leri. Yeni dosya: `mobile/src/components/isbaslat/IbUyariDrawer.jsx` (peek tab + 4 akış-kesici tipi + 3 yumuşak kart üreticisi).
+
+**İlişkili:** MK-68.4 (Ib-prefix konvansiyonu), MK-68.2 (IbSpoolDetay implementasyonu), 67 mockup turu v9-v16 kararları.
+
+---
+
+## MK-68.2 — IbSpoolDetay Ekran 3 implementasyonu (Adım 3a + 68b notlar wiring, 7 Mayıs 2026)
+
+**Bağlam:** 67 mockup turu (v9 → v16) tasarımı kilitledi. 68'de implementasyon. Tek oturuma sığmadı, token sebepli "68b" alt-bölmesinde devam etti (aynı oturum bağlamı).
+
+**Karar:** `mobile/src/components/isbaslat/IbSpoolDetay.jsx` (947 satır) Ekran 3'ün ana komponenti. 68'de Adım 3a (foto bloğu, ID + sekmeler, Genel paneli, foot CTA, IbUyariDrawer entegrasyonu, `MIsBaslat.jsx`'ten `is_baslat` kanonik akışı) tamamlandı. 68b'de notlar drawer wiring + üst bant `gemi_adi` cleanup + CI hex renk düzeltmesi.
+
+**68 (Adım 3a) commitleri:**
+- `767580e` — feat(mobile): devre fetch + Is Emri/Devre satirlari + malzeme fetch
+- `68c2fdc` — feat(mobile): proje fetch + testler kart + format normalize + R-06 (oturum 68 - Adim 3a kapanis)
+
+**68b commitleri:**
+- `c1faccc` — MK-68b.1: IbSpoolDetay notlar drawer wiring + üst bant gemi_adi cleanup
+- `1085344` — MK-68b.1b: CI red fix + m_ib_uy_yu_* lang keys (6 anahtar × 3 dil)
+
+**68b'de eklenenler:**
+- `notlar` tablosundan fetch: `OR(spool_id, devre_id) + tenant_id + silindi=false + qr_goster=true + olusturma DESC`
+- Yumuşak drawer'a sarı not kart tipi (her not için ayrı kart)
+- `pulseNokta.background` `#22c55e` → `var(--gr)` (R-07 hardcode renk düzeltmesi)
+- Stable React keys (B-02 disiplini): `alis`, `test`, `not_${n.id}`
+- 6 yeni i18n anahtarı (`m_ib_uy_yu_alis_baslik`, `_alis_mesaj`, `_test_baslik`, `_test_mesaj`, `_not_baslik`, `_anladim`) tr/en/ar üçüne birden eklendi (R-08 disiplini)
+
+**Final dosya kanıtı:**
+```
+mobile/src/components/isbaslat/IbSpoolDetay.jsx  MD5 95f329c81fa8ff508467cdcc316bce6d  947 satır
+lang/tr.json                                      MD5 a20e6c19da2045972bdc3b48ec807fbc  1841 satır
+lang/en.json                                      MD5 9c87fa88b595ce11a4c0e0e45a4cbb4b  1841 satır
+lang/ar.json                                      MD5 aa9ac024c677305b86302fe281f2cfc5  1841 satır
+```
+
+**Veri tarafı temizlik (DB UPDATE):** İki projede `gemi_adi` em-dash/proje_no prefix kirli idi:
+```sql
+UPDATE projeler SET gemi_adi = 'Kargo Gemisi' WHERE id = '3d309111-1d9c-46ff-9266-4937f24c8a99';  -- NB1124
+UPDATE projeler SET gemi_adi = 'Yük Gemisi'   WHERE id = 'f3f5e5f7-369f-4923-9054-bde91b95a908';  -- NB138
+```
+
+**Bilinçli ertelenenler (69'a):** Foto carousel detayı, Malzeme paneli BOM listesi, Devral/alternatife başla DB UPDATE akışları, basamak_tanimlari label, yetki kontrolü (alternatifBasamakYetkili / yetkisiz), İşe Başla / İşi Kapat / Not Ekle / İptal Et gerçek akışları, Genel paneli'nde Büküm/Markalama/Kesim ilerleme badge'leri.
+
+**İlişkili:** MK-68.1 (drawer mimarisi), MK-68.3 (üst bant kuralı), MK-68.4 (Ib-prefix), MK-68.5 (lang tek kaynak), 67 mockup serisi.
+
+---
+
+## MK-68.3 — Üst bant: sadece `proje_no` (gemi_adi UI'a sızmaz, 7 Mayıs 2026)
+
+**Bağlam:** 67 BRIEFING'inde Ekran 3 üst bant formatı için "Gemi adı: NB1137 (üst bantta görünmeli)" notu vardı. 68'de implementasyon sırasında tuzak tespit edildi: NB1137 aslında `projeler.proje_no` değeri, gerçek `projeler.gemi_adi` (örn. "MV Poseidon") UI'da görünmemeliydi. Briefing'in not dilinden tuzağa düşüldü.
+
+68b'de canlı testte spool A-0575 (proje NB1124) tarandığında üst bantta "**NB1124 — Kargo Gemisi**-G200-350-FR38-Galv-S01" görünüyordu — em-dash ile birleştirilmiş kirli string. Üç katmanlı sebep:
+1. `projeler.gemi_adi` alanına biri "NB1124 — Kargo Gemisi" yazmış (veri girişi hatası, em-dash dahil)
+2. IbSpoolDetay üst bant render'ı `proje?.gemi_adi || proje?.proje_no` mantığıyla gemi_adi'yi öne alıyordu
+3. SELECT sorgusu `gemi_adi`'ni de çekiyordu
+
+**Karar:** Üst bant SADECE `proje_no` kullanır. `gemi_adi` UI'a sızmaz. Format:
+
+```
+{proje.proje_no}-{spool.pipeline_no}-{spool.spool_no}-{spool.rev}
+```
+
+(rev varsa, yoksa atlanır.)
+
+**68b'de uygulanan kod düzeltmesi (commit `c1faccc`):**
+- `IbSpoolDetay.jsx` SELECT: `'id, proje_no, gemi_adi'` → `'id, proje_no'`
+- Render: `proje?.gemi_adi || proje?.proje_no` → `proje?.proje_no`
+- Yorum bloğu güncellendi (gemi_adi'nın bilinçli çıkarıldığı not edildi)
+
+**68b'de uygulanan veri temizliği (DB UPDATE):** İki projede `gemi_adi` em-dash + proje_no prefix temizlendi (MK-68.2'de detaylı). Tarama sorgusu (`gemi_adi LIKE '%—%' OR LIKE '% - %' OR ~ '^NB\d+'`) artık boş dönüyor.
+
+**67 BRIEFING'i hatası:** "Gemi adı: NB1137 üst bantta görünmeli" satırı yanıltıcıydı, 68 BRIEFING'inde silinecek (eski not, MK-68.3 ile geçersiz).
+
+**İlişkili:** SED-68-01 (devre_yeni.html form validation borcu — bu tipte kirliliği DB seviyesinde engellemek için).
+
+---
+
+## MK-68.4 — Ib-prefix konvansiyonu: alt-akış component'leri (7 Mayıs 2026)
+
+**Bağlam:** 67-68'de İş Başlat akışı için MIsBaslat host'unun yanı sıra alt-akış component'leri yazılmaya başlandı (IbRolSec, IbQRTara, IbSpoolDetay, IbUyariDrawer). Bu dosyaların M-prefix konvansiyonuna (CLAUDE-MOBILE.md Bölüm 1.3) sığmadığı, çünkü tam-ekran screens değil hub-içi alt component'ler oldukları gözlemlendi.
+
+**Karar:** Mobil component'lerinde iki prefix konvansiyonu birlikte yaşar:
+- **M-prefix** (`mobile/src/screens/M*.jsx`) — Tam-ekran screens, route'ta tanımlı (örn. `MGiris`, `MAnasayfa`, `MIsBaslat`).
+- **Ib-prefix** (`mobile/src/components/isbaslat/Ib*.jsx`) — İş Başlat akışı alt-akış component'leri, MIsBaslat hub'ı içinde render edilir (örn. `IbRolSec`, `IbQRTara`, `IbSpoolDetay`, `IbUyariDrawer`).
+
+**Genel kural:** Eğer bir akış (örn. İş Başlat) hub-tabanlı bir host (örn. MIsBaslat) ile alt-akış component'leri içeriyorsa, alt-akışlar `mobile/src/components/<akış-adı>/<Akış>*.jsx` altında, kendi prefix'leriyle yaşar. Bu yapı M-prefix tutarlılığını korur (sadece tam-ekran screens M ile başlar) ama klasör isimlendirmesini de net tutar.
+
+**Mevcut durum (68b sonu):**
+```
+mobile/src/screens/
+  MIsBaslat.jsx                             ✅ host, M-prefix
+
+mobile/src/components/isbaslat/
+  IbRolSec.jsx                              ✅ rol seçim alt-akışı
+  IbQRTara.jsx                              ✅ QR tarama alt-akışı
+  IbSpoolDetay.jsx                          ✅ spool detay alt-akışı
+  IbUyariDrawer.jsx                         ✅ uyarı drawer alt-akışı
+```
+
+**İlişkili:** MK-68.1 (Ekran 4 silindi → IbUyariDrawer doğdu), CLAUDE-MOBILE.md Bölüm 1.3 (M-prefix kuralı).
+
+---
+
+## MK-68.5 — Lang tek kaynak prensibi pekişti: CLAUDE.md tutarsızlığı düzeltildi (7 Mayıs 2026)
+
+**Bağlam:** MK-62.3 (`mobile/src/lang/README.md` predev silme problemi) lang dosyalarının tek kaynaktan (kök `lang/`) yönetildiği prensibini kararlaştırmıştı. CLAUDE-MOBILE.md Bölüm R-08 satır 184 bu kuralı doğru yazdı: *"Hedef dosya — kök `lang/`, mobil değil. `mobile/src/lang/` her dev/build başlangıcında predev/prebuild script'i tarafından silinip kök `lang/`'dan yeniden kopyalanır."*
+
+Ancak CLAUDE.md Bölüm 3.3 (Dil Dosyaları) bu kurala uymuyordu:
+- Satır 1203: "Mobil'de dil dosyaları: `mobile/src/lang/{tr,en,ar}.json` — Vite bundle'a dahil eder (fetch yok, hızlı)" — predev silmesinden bahsetmiyor, mobil dosyalar otonom imiş gibi yazıyor
+- Satır 1217-1221: `mobile/src/lang/` ayrı tablo, "61 m_* anahtarı" eski sayım
+- Satır 1223: "**Senkron tutma:** Web ve mobil ayrı JSON'ları var. İleride senkronize edilmesi için npm script eklenebilir." — yanlış (zaten predev script var, MK-62.3)
+- Satır 1393 (klasör ağacı): `lang/ ✅ tr.json, en.json, ar.json (61 m_* anahtarı)` — yanıltıcı
+
+68b'de canlı bir push akışında bu tutarsızlığın etkisi gözlendi: `mobile/.gitignore` satır 27 `src/lang/` ignore ediyordu (predev kaynaklı), kullanıcı lang dosyalarını `mobile/src/lang/` altına taşıdığında git radarına girmiyor + commit edilemiyordu. Doğru hedef kök `lang/`.
+
+**Karar:** CLAUDE.md Bölüm 3.3 düzeltildi — mobil tek bir alt-tablo değil, prebuild auto-generated kopya olarak belgelendi. CLAUDE-MOBILE.md Bölüm 1.2 klasör yapısında "61 m_* anahtarı" eski sayımı kaldırıldı, MK-62.3 referansı eklendi.
+
+**Tek kaynak kuralı (özet):**
+- Yazılır: `lang/{tr,en,ar}.json` (kök)
+- Üretilir: `mobile/src/lang/{tr,en,ar}.json` (predev/prebuild kopyası, gitignored)
+- Mobil ekranlar Vite bundle'da `mobile/src/lang/` dosyalarını okur (runtime)
+- Sayım: 67 sonu 1834 anahtar, 68 sonu 1841 anahtar (+6 `m_ib_uy_yu_*` + diğer küçük artışlar). Mobil ve web ayrı sayım YOK; tek kaynak tek sayım.
+
+**İlişkili:** MK-62.3 (predev silme sorunu — bu kararın temeli), R-08 (i18n disiplini), 68b push akışında ortaya çıkan `mobile/.gitignore` satır 27 davranışı.
+
+---

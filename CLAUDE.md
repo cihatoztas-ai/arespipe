@@ -1200,7 +1200,7 @@ const { tv, dil, setDil } = useT()
 tv('anahtar_adi', 'Türkçe fallback')
 ```
 
-**Mobil'de dil dosyaları:** `mobile/src/lang/{tr,en,ar}.json` — Vite bundle'a dahil eder (fetch yok, hızlı).
+**Mobil'de dil dosyaları:** Tek kaynak kök `lang/`, mobil ayrı dosya tutmaz. `mobile/src/lang/` dizini predev/prebuild script'i tarafından kök `lang/`'dan otomatik kopyalanır (gitignored). Vite bundle bu kopyayı dahil eder. Mobile dizinine elle yazılan her şey sessizce silinir (MK-62.3, MK-68.5).
 
 ### 3.3 Dil Dosyaları
 
@@ -1213,14 +1213,9 @@ lang/
 
 **Not:** EN'de 42, AR'da 8 anahtar TR ile aynı görünür ama bunlar **evrensel teknik terim** (Spool, Pipeline, Rev, PDF, Excel, kg, #, AresPipe, emoji'li başlıklar) — tüm dillerde aynı yazılır, "çevrilmemiş" değil.
 
-```
-mobile/src/lang/
-  tr.json  — Türkçe (mobil) — 17 Nisan 2026 itibarıyla 61 `m_*` anahtarı
-  en.json  — İngilizce (mobil)
-  ar.json  — Arapça (RTL destekli, mobil)
-```
+**`mobile/src/lang/` (auto-generated, gitignored):** Vite bundle için predev/prebuild kopyası. Yapısı kök `lang/` ile birebir aynı (her dev/build başlangıcında silinip yeniden üretilir). Dosya elle düzenlenmez — kaynak kök `lang/`'dadır.
 
-**Senkron tutma:** Web ve mobil ayrı JSON'ları var. İleride senkronize edilmesi için npm script eklenebilir.
+**Senkron tutma:** Tek kaynak kök `lang/`. Mobil'in ayrı bir JSON seti YOK — predev script (MK-62.3) farkı kapatıyor. Yeni `m_*` anahtarı eklenince sadece kök `lang/{tr,en,ar}.json`'a yazılır, mobil otomatik alır.
 
 ---
 
@@ -1390,7 +1385,7 @@ var { data } = await supa.rpc('devre_istatistik', { devre_ids: devreIdListesi })
 │   │   │   ├── yetki.js             ✅ blok/grup/gizli_bolumler helper
 │   │   │   ├── gruplar.js           ✅ grup → ikon/renk/hedef haritası
 │   │   │   └── tema.jsx             ✅ TemaProvider + useTema Context (2. oturum)
-│   │   ├── lang/                    ✅ tr.json, en.json, ar.json (61 m_* anahtarı)
+│   │   ├── lang/                    🔄 prebuild auto-generated, gitignored — kaynak: kök ../lang/ (MK-62.3)
 │   │   ├── screens/
 │   │   │   ├── MGiris.jsx            ✅ Giriş ekranı
 │   │   │   ├── MAnasayfa.jsx         ✅ Router: role göre yönlendirir

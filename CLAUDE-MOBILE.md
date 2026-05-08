@@ -31,7 +31,7 @@ mobile/
 │   │   ├── yetki.js          ← Blok/grup/gizli_bolumler helper ✅
 │   │   ├── gruplar.js        ← Grup → ikon/renk/hedef haritası ✅
 │   │   └── tema.jsx          ← TemaProvider + useTema Context ✅ (2. oturum)
-│   ├── lang/                 ← i18n JSON dosyaları ✅ (61 m_* anahtarı)
+│   ├── lang/                 🔄 prebuild auto-generated, gitignored — kaynak: kök ../lang/ (MK-62.3, MK-68.5)
 │   │   ├── tr.json
 │   │   ├── en.json
 │   │   └── ar.json (RTL)
@@ -54,13 +54,29 @@ mobile/
 
 ### 1.3 İsimlendirme: "M" ön eki
 
-**Tüm mobil React component'leri "M" ön ekiyle başlar:**
-- `MGiris.jsx`, `MAnasayfa.jsx`, `MIslemler.jsx`, `MDrawer.jsx`, `MProfil.jsx`
+**Tüm tam-ekran mobil React screen'leri "M" ön ekiyle başlar:**
+- `MGiris.jsx`, `MAnasayfa.jsx`, `MIslemler.jsx`, `MDrawer.jsx`, `MProfil.jsx`, `MIsBaslat.jsx`
 
 **Neden:**
 - Web tarafındaki `mInit()`, `mSupabase()`, `m-topbar` pattern'i ile tutarlı
 - Dosya ağacında mobil component'ler hemen ayırt edilir
 - Web'teki aynı ekrandan karışıklık olmaz (örn. `Giris.html` ≠ `MGiris.jsx`)
+
+### 1.3.1 Alt-akış component'leri: "Ib" ön eki (MK-68.4)
+
+Bir akış (örn. İş Başlat) hub-tabanlı bir host (örn. `MIsBaslat`) ile alt-akış component'leri içeriyorsa, alt-akışlar `mobile/src/components/<akış-adı>/<Akış>*.jsx` altında, kendi prefix'leriyle yaşar:
+
+```
+mobile/src/screens/MIsBaslat.jsx               ← host, M-prefix
+mobile/src/components/isbaslat/IbRolSec.jsx    ← rol seçim alt-akışı
+mobile/src/components/isbaslat/IbQRTara.jsx    ← QR tarama alt-akışı
+mobile/src/components/isbaslat/IbSpoolDetay.jsx ← spool detay alt-akışı
+mobile/src/components/isbaslat/IbUyariDrawer.jsx ← uyarı drawer alt-akışı
+```
+
+**Neden ayrı prefix:** M-prefix tam-ekran screens için rezerve. Alt-akış component'leri tam-ekran değil — host içinde render edilir, route'a doğrudan bağlanmaz. Karışıklığı önlemek için ayrı prefix.
+
+**Diğer akışlar için:** İleride (örn. devre düzenleme akışı) hub-tabanlı yeni bir host eklenirse aynı pattern: kendi klasörü + kendi prefix'i.
 
 ### 1.4 Supabase Bağlantısı
 
