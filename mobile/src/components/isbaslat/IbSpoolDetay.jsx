@@ -1,5 +1,5 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix2)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
@@ -50,13 +50,16 @@
 // - 0 foto → mevcut placeholder; ≥1 → resim + meta chip; ≥2 → +nav + sayaç
 // - Meta chip: islem_turu i18n (m_ib_foto_islem_*) · ad_soyad · GG Ay (locale)
 //
-// 69'da (Adım 3b-fix, aynı oturum):
-// - fotoUrlCoz helper: fotograflar.dosya_url path-only ise getPublicUrl ile
-//   public URL'e dönüşür (bucket: arespipe-dosyalar). Full URL ise aynen.
-// - onError: console.error + img display:none (eski "visibility:hidden" sessiz
-//   hata gizliyordu, debug imkansızdı)
-// - fotoCarouselWrap background #000 → var(--sur2) (kırık img'de siyah
-//   ekran yerine gri sur2 zemin, kullanıcı durumu anlar)
+// 69'da (Adım 3b-fix2, signed URL geçişi):
+// - createSignedUrl(path, 3600): private bucket için 1 saatlik token.
+//   Promise.all ile paralel — fotograflar state'i 'cozulmus_url' alanı
+//   ile zenginleştirilir, render saf okuma.
+// - getPublicUrl ilk denenmişti (3b-fix) ama bucket private olduğu için
+//   public URL'ler 4xx döndü. createSignedUrl doğru API.
+// - onError: console.error log + img display:none. Eski "visibility:hidden"
+//   sessiz hata gizliyordu, debug imkansızdı.
+// - fotoCarouselWrap background #000 → var(--sur2): kırık img'de siyah
+//   ekran yerine gri sur2 zemin (kullanıcı durumu anlar).
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
@@ -190,6 +193,11 @@ export default function IbSpoolDetay({
   // embed select('*, kullanicilar(ad_soyad)') RLS 400 + FK disambiguate
   // riskini taşıyor (MDrawer'daki tenants(ad) deneyiminin dersi).
   // Spool değişiminde fotoIdx 0'a sıfırlanır.
+  //
+  // 3b-fix2: dosya_url path-only ise createSignedUrl ile 1 saatlik token
+  // üretilir (private bucket). Promise.all ile paralel — render anında
+  // ek async iş yok. Token ömrü 1 saat (3600s); kullanıcı bu süre içinde
+  // ekranı kapatır, yeniden açıldığında fresh fetch + yeni token.
   useEffect(() => {
     if (!yerelSpool?.id) return
     let iptal = false
@@ -202,7 +210,25 @@ export default function IbSpoolDetay({
           .order('olusturma', { ascending: false })
         if (error || iptal) return
         const liste = Array.isArray(foto) ? foto : []
-        setFotograflar(liste)
+
+        // Signed URL paralel üretim (private bucket gereği)
+        const cozumlu = await Promise.all(
+          liste.map(async (f) => {
+            const yol = f.dosya_url
+            if (!yol) return { ...f, cozulmus_url: null }
+            if (/^https?:\/\//i.test(yol)) return { ...f, cozulmus_url: yol }
+            const { data: sig, error: sigErr } = await supabase.storage
+              .from('arespipe-dosyalar')
+              .createSignedUrl(yol, 3600)
+            if (sigErr) {
+              console.warn('[FotoCarousel] signed URL üretilemedi:', yol, sigErr)
+              return { ...f, cozulmus_url: null }
+            }
+            return { ...f, cozulmus_url: sig?.signedUrl || null }
+          })
+        )
+        if (iptal) return
+        setFotograflar(cozumlu)
         setFotoIdx(0)
 
         // Unique yukleyen_id'leri toplu ad_soyad'a çevir (0 foto → skip)
@@ -620,19 +646,13 @@ function MalzemePanel({ tv }) {
 // Tarih: tarayıcı locale'ine göre (tr-TR şu anlık — gelecekte useT'ten lokal alınabilir).
 // Tap-to-fullscreen yok (3b kapsamı dışı, IbFotoViewer ileride).
 //
-// 3b-fix (69. oturum, aynı gün):
-// fotograflar.dosya_url alanı bazı eski kayıtlarda Storage path-only
-// ('<tenantId>/fotograflar/<spoolId>/<dosya>') olarak saklanmış (full URL
-// değil). fotoUrlCoz helper'ı path → public URL dönüşümü yapar; full URL
-// (https://...) gelirse aynen döner. Geriye uyumlu, ileride yeni eklenen
-// path-only kayıtlar da çalışır.
-
-function fotoUrlCoz(url) {
-  if (!url || typeof url !== 'string') return null
-  if (/^https?:\/\//i.test(url)) return url
-  const { data } = supabase.storage.from('arespipe-dosyalar').getPublicUrl(url)
-  return data?.publicUrl || null
-}
+// 3b-fix2 (69. oturum, signed URL geçişi):
+// arespipe-dosyalar bucket'ı private. getPublicUrl ile üretilen URL'ler 4xx
+// dönüyor (canlı testte doğrulandı). Bu yüzden createSignedUrl(path, 3600)
+// kullanılır — 1 saatlik geçerli token. Async olduğu için fetch effect
+// içinde Promise.all ile paralel üretilir, fotograflar state'i her foto
+// için 'cozulmus_url' alanıyla zenginleştirilir. Render saf okuma yapar.
+// dosya_url full URL (https://...) ile gelirse aynen geçer (geriye uyumlu).
 
 function FotoCarousel({ fotograflar, idx, setIdx, kullaniciAdMap, tv }) {
   const sayim = Array.isArray(fotograflar) ? fotograflar.length : 0
@@ -676,12 +696,12 @@ function FotoCarousel({ fotograflar, idx, setIdx, kullaniciAdMap, tv }) {
   return (
     <div style={s.fotoCarouselWrap}>
       <img
-        src={fotoUrlCoz(aktif.dosya_url) || ''}
+        src={aktif.cozulmus_url || ''}
         alt=""
         style={s.fotoResim}
         loading="lazy"
         onError={(e) => {
-          console.error('[FotoCarousel] foto yüklenemedi — orijinal:', aktif.dosya_url, '| çözüm:', e.currentTarget.src)
+          console.error('[FotoCarousel] foto yüklenemedi — orijinal:', aktif.dosya_url, '| signed:', aktif.cozulmus_url)
           e.currentTarget.style.display = 'none'
         }}
       />
