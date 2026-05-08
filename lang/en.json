@@ -1838,5 +1838,12 @@
   "m_ib_uy_yu_test_baslik": "Test defined",
   "m_ib_uy_yu_test_mesaj": "A test is defined for this circuit. It will be checked upon completion.",
   "m_ib_uy_yu_not_baslik": "Points to Watch",
-  "m_ib_uy_yu_anladim": "Got it, continue"
+  "m_ib_uy_yu_anladim": "Got it, continue",
+  "m_ib_foto_islem_kesim": "Cutting",
+  "m_ib_foto_islem_bukum": "Bending",
+  "m_ib_foto_islem_markalama": "Marking",
+  "m_ib_foto_islem_kk": "Quality Control",
+  "m_ib_foto_islem_genel": "General",
+  "m_ib_foto_onceki": "Previous photo",
+  "m_ib_foto_sonraki": "Next photo"
 }

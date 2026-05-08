@@ -1838,5 +1838,12 @@
   "m_ib_uy_yu_test_baslik": "تم تحديد اختبار",
   "m_ib_uy_yu_test_mesaj": "تم تحديد اختبار لهذه الدائرة. سيتم فحصه عند اكتمال العمل.",
   "m_ib_uy_yu_not_baslik": "نقاط الانتباه",
-  "m_ib_uy_yu_anladim": "فهمت، متابعة"
+  "m_ib_uy_yu_anladim": "فهمت، متابعة",
+  "m_ib_foto_islem_kesim": "قطع",
+  "m_ib_foto_islem_bukum": "ثني",
+  "m_ib_foto_islem_markalama": "وسم",
+  "m_ib_foto_islem_kk": "مراقبة الجودة",
+  "m_ib_foto_islem_genel": "عام",
+  "m_ib_foto_onceki": "الصورة السابقة",
+  "m_ib_foto_sonraki": "الصورة التالية"
 }

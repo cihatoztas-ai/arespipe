@@ -1,13 +1,13 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 68b. oturum (notlar wiring)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b: foto carousel)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
 //
 // Bu dosyada:
-// - Üst bant tek satır kimlik string (gemi-pipeline-spool-rev birleşik) +
-//   devam_ediyor durumunda sarı + yeşil pulse nokta
-// - Foto blok 200px placeholder (kamera ikonu)
+// - Üst bant tek satır kimlik string (proje-pipeline-spool-rev birleşik) +
+//   devam_ediyor durumunda sarı + yeşil pulse nokta (gemi_adi sızmaz, MK-68.3)
+// - Foto carousel 200px (3b — fotograflar tablosu, prev/next, sayaç, meta chip)
 // - Aktif rol mavi pill + Spool ID mor pill (4-hane normalize) + Peek tab
 //   (yumuşak uyarı varsa sarı + sayı, yoksa gri pasif)
 // - Sekmeler (Genel | Malzeme)
@@ -27,21 +27,28 @@
 // 2. Yoksa yumuşak uyarı(lar) topla, drawer otomatik aç (peek tab aktif)
 // 3. Yumuşak yoksa drawer yok, peek tab pasif (gri)
 //
-// Bilinçli ertelenenler (68b):
-// - Foto carousel detayı (fotograflar tablosu sorgusu, prev/next, sayaç)
-// - Malzeme paneli BOM listesi + heat inline edit
-// - Devral foto akışı, alternatife başla DB update
+// Bilinçli ertelenenler (69 sonrası):
+// - Foto fullscreen tap-to-zoom (ayrı IbFotoViewer component, 70+)
+// - Malzeme paneli BOM listesi (3c, bu oturumda)
+// - Heat inline edit (3k, sonraki oturumlar)
+// - Yetki kontrolü + Footer CTA branchleri (3d, bu oturumda)
+// - Devral foto akışı, alternatife başla DB update (3g/3h)
 // - basamak_tanimlari label (slug → "Ön İmalat" gibi okunaklı görünüm)
-// - Yetki kontrolü (alternatifBasamakYetkili / yetkisiz ayrımı)
-// - İşe Başla / İşi Kapat / Not Ekle / İptal Et gerçek akışlar
-// - Genel paneli'nde Büküm / Markalama / Kesim ilerleme badge'leri (agregat)
+// - İşe Başla / İşi Kapat / Not Ekle / İptal Et gerçek akışlar (3e/3f/3i/3j)
+// - Genel paneli'nde Büküm / Markalama / Kesim ilerleme badge'leri (3l, agregat)
 // - m_ib_uy_yu_* anahtar setinin lang/tr,en,ar.json'a toplu eklenmesi
 //   (alis/test/anladim/not — şu an hepsi tv() fallback ile çalışıyor)
 //
 // 68b'de eklendi:
 // - Notlar drawer wiring (notlar tablosu fetch + sarı kart üreticisi,
 //   spool_id veya devre_id eşleşmesi, qr_goster=true filtresi)
-// - Üst banttan gemi_adi çıkarıldı (UI'a sızmaması gerekiyordu)
+// - Üst banttan gemi_adi çıkarıldı (MK-68.3, UI'a sızmaması gerekiyordu)
+//
+// 69'da (Adım 3b) eklendi:
+// - Foto carousel: fotograflar tablosu fetch (spool_id eq + olusturma DESC)
+// - yukleyen_id → ad_soyad lookup (ayrı sorgu, embed RLS 400 riski yok)
+// - 0 foto → mevcut placeholder; ≥1 → resim + meta chip; ≥2 → +nav + sayaç
+// - Meta chip: islem_turu i18n (m_ib_foto_islem_*) · ad_soyad · GG Ay (locale)
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
@@ -62,6 +69,9 @@ export default function IbSpoolDetay({
   const [proje, setProje] = useState(null)
   const [testlerSayi, setTestlerSayi] = useState(0)
   const [notlar, setNotlar] = useState([])
+  const [fotograflar, setFotograflar] = useState([])
+  const [fotoIdx, setFotoIdx] = useState(0)
+  const [kullaniciAdMap, setKullaniciAdMap] = useState({})
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
@@ -165,6 +175,48 @@ export default function IbSpoolDetay({
     })()
     return () => { iptal = true }
   }, [yerelSpool?.id, yerelSpool?.devre_id, kullanici?.tenant_id])
+
+  // ─── Fotograflar fetch ───
+  // fotograflar tablosu: spool_id eq + olusturma DESC (en yeni önde).
+  // yukleyen_id → ad_soyad lookup AYRI sorgu (Promise.all içinde):
+  // embed select('*, kullanicilar(ad_soyad)') RLS 400 + FK disambiguate
+  // riskini taşıyor (MDrawer'daki tenants(ad) deneyiminin dersi).
+  // Spool değişiminde fotoIdx 0'a sıfırlanır.
+  useEffect(() => {
+    if (!yerelSpool?.id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data: foto, error } = await supabase
+          .from('fotograflar')
+          .select('id, dosya_url, yukleyen_id, islem_turu, olusturma')
+          .eq('spool_id', yerelSpool.id)
+          .order('olusturma', { ascending: false })
+        if (error || iptal) return
+        const liste = Array.isArray(foto) ? foto : []
+        setFotograflar(liste)
+        setFotoIdx(0)
+
+        // Unique yukleyen_id'leri toplu ad_soyad'a çevir (0 foto → skip)
+        const userIds = [...new Set(liste.map(f => f.yukleyen_id).filter(Boolean))]
+        if (userIds.length === 0) {
+          setKullaniciAdMap({})
+          return
+        }
+        const { data: users, error: userErr } = await supabase
+          .from('kullanicilar')
+          .select('id, ad_soyad')
+          .in('id', userIds)
+        if (userErr || iptal) return
+        const map = {}
+        ;(users || []).forEach(u => { if (u?.id) map[u.id] = u.ad_soyad || '' })
+        setKullaniciAdMap(map)
+      } catch (e) {
+        console.warn('[IbSpoolDetay] fotograflar yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.id])
 
   // ─── Yumuşak uyarı kartlarını topla ───
   // 3 kategori: Alıştırma kırmızı (spool.alistirma VAR/KISMI), Test mavi
@@ -319,13 +371,14 @@ export default function IbSpoolDetay({
         <span style={s.ustBantYazi}>{ustBant}</span>
       </div>
 
-      {/* Foto carousel placeholder */}
-      <div style={s.fotoBlok}>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-      </div>
+      {/* Foto carousel — 3b (69. oturum) */}
+      <FotoCarousel
+        fotograflar={fotograflar}
+        idx={fotoIdx}
+        setIdx={setFotoIdx}
+        kullaniciAdMap={kullaniciAdMap}
+        tv={tv}
+      />
 
       {/* Aktif rol + Spool ID + Peek tab satırı */}
       <div style={s.idSatir}>
@@ -547,6 +600,100 @@ function MalzemePanel({ tv }) {
   )
 }
 
+// ─────────── Foto Carousel — 3b (69. oturum) ───────────
+//
+// 0 foto → mevcut placeholder (kamera ikonu). Nav/sayaç/meta yok.
+// 1 foto → resim + meta chip (tek). Nav/sayaç yok.
+// ≥2 foto → resim + nav (sol/sağ daire) + sayaç pill (sol-alt) + meta chip
+//   (sağ-alt). İlk fotoda sol ok pasif, sonda sağ ok pasif.
+//
+// Meta chip formatı: "<İslem> · <Yükleyen ad> · <GG Ay>"
+// İslem turu i18n: m_ib_foto_islem_<slug>, fallback TR-capitalize.
+// Tarih: tarayıcı locale'ine göre (tr-TR şu anlık — gelecekte useT'ten lokal alınabilir).
+// Tap-to-fullscreen yok (3b kapsamı dışı, IbFotoViewer ileride).
+
+function FotoCarousel({ fotograflar, idx, setIdx, kullaniciAdMap, tv }) {
+  const sayim = Array.isArray(fotograflar) ? fotograflar.length : 0
+
+  // 0 foto → mevcut placeholder
+  if (sayim === 0) {
+    return (
+      <div style={s.fotoBlok}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" strokeWidth="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </div>
+    )
+  }
+
+  const guvIdx = Math.min(Math.max(idx, 0), sayim - 1)
+  const aktif  = fotograflar[guvIdx]
+  if (!aktif) return null
+
+  const onceki  = () => { if (guvIdx > 0)         setIdx(guvIdx - 1) }
+  const sonraki = () => { if (guvIdx < sayim - 1) setIdx(guvIdx + 1) }
+
+  // Meta chip parçaları
+  const islem = aktif.islem_turu || ''
+  const islemLabel = islem
+    ? tv(
+        `m_ib_foto_islem_${islem}`,
+        islem.charAt(0).toLocaleUpperCase('tr-TR') + islem.slice(1)
+      )
+    : ''
+  const yukleyenAd = aktif.yukleyen_id ? (kullaniciAdMap[aktif.yukleyen_id] || '') : ''
+  const tarihStr = aktif.olusturma
+    ? new Date(aktif.olusturma).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })
+    : ''
+  const metaText = [islemLabel, yukleyenAd, tarihStr].filter(Boolean).join(' · ')
+
+  const ilkMi = guvIdx === 0
+  const sonMi = guvIdx === sayim - 1
+
+  return (
+    <div style={s.fotoCarouselWrap}>
+      <img
+        src={aktif.dosya_url}
+        alt=""
+        style={s.fotoResim}
+        loading="lazy"
+        onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+      />
+
+      {sayim > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={onceki}
+            disabled={ilkMi}
+            style={{ ...s.fotoNavBtn, left: 8, opacity: ilkMi ? 0.3 : 1, cursor: ilkMi ? 'default' : 'pointer' }}
+            aria-label={tv('m_ib_foto_onceki', 'Önceki foto')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={sonraki}
+            disabled={sonMi}
+            style={{ ...s.fotoNavBtn, right: 8, opacity: sonMi ? 0.3 : 1, cursor: sonMi ? 'default' : 'pointer' }}
+            aria-label={tv('m_ib_foto_sonraki', 'Sonraki foto')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <span style={s.fotoSayac}>{guvIdx + 1} / {sayim}</span>
+        </>
+      )}
+
+      {metaText && <span style={s.fotoMeta}>{metaText}</span>}
+    </div>
+  )
+}
+
 // ─────────── Helpers ───────────
 
 function normalizeSpoolId(rawId) {
@@ -638,7 +785,7 @@ const s = {
     animation: 'ibSdPulse 1.4s ease-in-out infinite',
   },
 
-  // Foto blok
+  // Foto blok (0 foto durumu — kamera ikonu placeholder)
   fotoBlok: {
     flexShrink: 0,
     height: 200,
@@ -646,6 +793,68 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Foto carousel (≥1 foto durumu — 3b)
+  fotoCarouselWrap: {
+    flexShrink: 0,
+    position: 'relative',
+    height: 200,
+    background: '#000',
+    overflow: 'hidden',
+  },
+  fotoResim: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  fotoNavBtn: {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: 36,
+    height: 36,
+    borderRadius: '50%',
+    background: 'rgba(0,0,0,0.45)',
+    border: 'none',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    WebkitTapHighlightColor: 'transparent',
+    transition: 'opacity 120ms ease',
+    padding: 0,
+  },
+  fotoSayac: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    padding: '4px 10px',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 500,
+    borderRadius: 12,
+    fontFamily: 'Barlow, sans-serif',
+    pointerEvents: 'none',
+    letterSpacing: 0.2,
+  },
+  fotoMeta: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    maxWidth: 'calc(100% - 90px)',
+    padding: '4px 10px',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    fontSize: 12,
+    borderRadius: 12,
+    fontFamily: 'Barlow, sans-serif',
+    pointerEvents: 'none',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 
   // ID satırı

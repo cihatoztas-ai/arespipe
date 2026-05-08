@@ -1838,5 +1838,12 @@
   "m_ib_uy_yu_test_baslik": "Test tanımlanmış",
   "m_ib_uy_yu_test_mesaj": "Bu devreye test tanımlanmıştır. Çalışma tamamlandığında test kontrol edilecek.",
   "m_ib_uy_yu_not_baslik": "Dikkat Edilecekler",
-  "m_ib_uy_yu_anladim": "Anladım, devam et"
+  "m_ib_uy_yu_anladim": "Anladım, devam et",
+  "m_ib_foto_islem_kesim": "Kesim",
+  "m_ib_foto_islem_bukum": "Büküm",
+  "m_ib_foto_islem_markalama": "Markalama",
+  "m_ib_foto_islem_kk": "Kalite Kontrol",
+  "m_ib_foto_islem_genel": "Genel",
+  "m_ib_foto_onceki": "Önceki foto",
+  "m_ib_foto_sonraki": "Sonraki foto"
 }
