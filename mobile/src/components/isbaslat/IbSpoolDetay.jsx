@@ -1,5 +1,5 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b: foto carousel)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
@@ -49,6 +49,14 @@
 // - yukleyen_id → ad_soyad lookup (ayrı sorgu, embed RLS 400 riski yok)
 // - 0 foto → mevcut placeholder; ≥1 → resim + meta chip; ≥2 → +nav + sayaç
 // - Meta chip: islem_turu i18n (m_ib_foto_islem_*) · ad_soyad · GG Ay (locale)
+//
+// 69'da (Adım 3b-fix, aynı oturum):
+// - fotoUrlCoz helper: fotograflar.dosya_url path-only ise getPublicUrl ile
+//   public URL'e dönüşür (bucket: arespipe-dosyalar). Full URL ise aynen.
+// - onError: console.error + img display:none (eski "visibility:hidden" sessiz
+//   hata gizliyordu, debug imkansızdı)
+// - fotoCarouselWrap background #000 → var(--sur2) (kırık img'de siyah
+//   ekran yerine gri sur2 zemin, kullanıcı durumu anlar)
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
@@ -611,6 +619,20 @@ function MalzemePanel({ tv }) {
 // İslem turu i18n: m_ib_foto_islem_<slug>, fallback TR-capitalize.
 // Tarih: tarayıcı locale'ine göre (tr-TR şu anlık — gelecekte useT'ten lokal alınabilir).
 // Tap-to-fullscreen yok (3b kapsamı dışı, IbFotoViewer ileride).
+//
+// 3b-fix (69. oturum, aynı gün):
+// fotograflar.dosya_url alanı bazı eski kayıtlarda Storage path-only
+// ('<tenantId>/fotograflar/<spoolId>/<dosya>') olarak saklanmış (full URL
+// değil). fotoUrlCoz helper'ı path → public URL dönüşümü yapar; full URL
+// (https://...) gelirse aynen döner. Geriye uyumlu, ileride yeni eklenen
+// path-only kayıtlar da çalışır.
+
+function fotoUrlCoz(url) {
+  if (!url || typeof url !== 'string') return null
+  if (/^https?:\/\//i.test(url)) return url
+  const { data } = supabase.storage.from('arespipe-dosyalar').getPublicUrl(url)
+  return data?.publicUrl || null
+}
 
 function FotoCarousel({ fotograflar, idx, setIdx, kullaniciAdMap, tv }) {
   const sayim = Array.isArray(fotograflar) ? fotograflar.length : 0
@@ -654,11 +676,14 @@ function FotoCarousel({ fotograflar, idx, setIdx, kullaniciAdMap, tv }) {
   return (
     <div style={s.fotoCarouselWrap}>
       <img
-        src={aktif.dosya_url}
+        src={fotoUrlCoz(aktif.dosya_url) || ''}
         alt=""
         style={s.fotoResim}
         loading="lazy"
-        onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+        onError={(e) => {
+          console.error('[FotoCarousel] foto yüklenemedi — orijinal:', aktif.dosya_url, '| çözüm:', e.currentTarget.src)
+          e.currentTarget.style.display = 'none'
+        }}
       />
 
       {sayim > 1 && (
@@ -800,7 +825,7 @@ const s = {
     flexShrink: 0,
     position: 'relative',
     height: 200,
-    background: '#000',
+    background: 'var(--sur2)',
     overflow: 'hidden',
   },
   fotoResim: {
