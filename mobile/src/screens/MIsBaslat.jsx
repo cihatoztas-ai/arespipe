@@ -34,6 +34,7 @@ import {
   rolKaydet,
   rolHatirla,
   blokRenkHex,
+  aktifIsleriDBdenSenkronize,
 } from '../lib/isbaslat'
 import { useT }     from '../lib/i18n'
 import { supabase } from '../lib/supabase'
@@ -105,6 +106,21 @@ export default function MIsBaslat() {
 
     return () => { iptal = true }
   }, [navigate])
+
+  // ───────────────────────────────────────────────
+  // 70b.A: DB-truth aktif iş senkronizasyonu
+  //
+  // Operatör login sonrası bir kez çalışır. is_kayitlari'dan bitis IS NULL
+  // (açık) kayıtları çekip localStorage 'ares_is_aktif'i tazeler.
+  //
+  // Senaryo: Operatör mesai sonu/ertesi gün/telefon kapatma sonrası programı
+  // tekrar açtığında, açık işleri kaybetmemiş olur (DB-truth). 70b.B'de bu
+  // bilgi IbRolSec göstergelerinde kullanılacak.
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!kullanici?.id) return
+    aktifIsleriDBdenSenkronize(supabase, kullanici.id)
+  }, [kullanici?.id])
 
   // ───────────────────────────────────────────────
   // Ekran 1 → 2 davranışları

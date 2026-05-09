@@ -300,47 +300,168 @@ export function rolUnut() {
 }
 
 // ───────────────────────────────────────────────
-// 70. oturum (Adım 3e): localStorage — aktif iş kaydı
+// 70. oturum (3e + 70b.A): localStorage — ÇOKLU aktif iş kaydı
 //
-// Web'in 'ares_is_aktif' pattern'i (is_baslat.html:1142) muadili.
-// DB'de "kim çalışıyor" alanı yok (spooller.aktif_isci_id kolonu yok).
-// Bunun yerine, operatör İşe Başla'ya basınca spool id + rol localStorage'a
-// kaydedilir. IbSpoolDetay useEffect "benimMi" kontrolü buradan okur.
+// Format: { '<rolAd>': { spoolId, basamak, baslangic } }
+// Örn:    { 'İmalat': { spoolId: 'uuid', basamak: 'imalat', baslangic: 'iso' },
+//           'Kesim':  { spoolId: 'uuid', basamak: 'kesim',  baslangic: 'iso' } }
 //
-// Saha varsayımı: tek operatör tek cihaz. Çoklu operatör paylaşımlı cihaz
-// için lokalize çözümün sınırı; ileride DB'de aktif kayıt tablosu (veya
-// spooller.aktif_isci_id kolonu) eklenince buraya dokunulmadan migrate edilir.
+// Saha senaryosu: operatör İmalat'ta açık işi varken aynı anda Kesim'de de
+// iş başlatabilir (farklı roller). Aynı rolde tek aktif iş kuralı.
+//
+// Persistence: Mesai sonu / ertesi gün / telefon kapatma senaryolarında
+// localStorage cache temizlenebilir → aktifIsleriDBdenSenkronize() ile
+// is_kayitlari (bitis IS NULL) DB-truth okunur, localStorage tazelenir.
+//
+// Geriye uyumluluk: Eski {id, rol} formatı okunduğunda otomatik dönüştürülür.
 // ───────────────────────────────────────────────
 const AKTIF_IS_KEY = 'ares_is_aktif'
 
-// Operatör işe başlarken çağrılır (3e).
-// @param spoolId — string (spool.id UUID)
-// @param rolAd   — string (aktif rol adı, ör. 'Argon Kaynağı')
-export function aktifIsKaydet({ spoolId, rolAd }) {
-  if (!spoolId) return
-  try {
-    localStorage.setItem(AKTIF_IS_KEY, JSON.stringify({
-      id:  spoolId,
-      rol: rolAd || '',
-    }))
-  } catch (e) { /* private browsing fallback */ }
-}
-
-// IbSpoolDetay useEffect'te çağrılır (devamEdiyor → benimMi check).
-// @returns { id, rol } | null
-export function aktifIsHatirla() {
+// İç: localStorage'dan ham veri oku, eski formatı dönüştür
+function _aktifIsHam() {
   try {
     const v = localStorage.getItem(AKTIF_IS_KEY)
-    if (!v) return null
+    if (!v) return {}
     const obj = JSON.parse(v)
-    if (!obj || !obj.id) return null
+    if (!obj || typeof obj !== 'object') return {}
+
+    // Geriye uyumluluk: eski tek-aktif format {id, rol}
+    if (obj.id && obj.rol) {
+      return {
+        [obj.rol]: {
+          spoolId:   obj.id,
+          basamak:   '',
+          baslangic: new Date().toISOString(),
+        },
+      }
+    }
     return obj
   } catch {
-    return null
+    return {}
   }
 }
 
-// Operatör işi kapatınca çağrılır (3f).
-export function aktifIsUnut() {
-  try { localStorage.removeItem(AKTIF_IS_KEY) } catch {}
+// İç: localStorage'a yaz
+function _aktifIsYaz(coklu) {
+  try {
+    if (!coklu || Object.keys(coklu).length === 0) {
+      localStorage.removeItem(AKTIF_IS_KEY)
+    } else {
+      localStorage.setItem(AKTIF_IS_KEY, JSON.stringify(coklu))
+    }
+  } catch {}
+}
+
+// Operatör işe başlarken çağrılır (3e).
+// @param spoolId   — string (spool.id UUID)
+// @param rolAd     — string (aktif rol adı, ör. 'Argon Kaynağı')
+// @param basamak   — string (aktif_basamak slug, ör. 'imalat')
+// @param baslangic — string (ISO timestamp, opsiyonel — varsayılan now)
+export function aktifIsKaydet({ spoolId, rolAd, basamak, baslangic }) {
+  if (!spoolId || !rolAd) return
+  const coklu = _aktifIsHam()
+  coklu[rolAd] = {
+    spoolId,
+    basamak:   basamak || '',
+    baslangic: baslangic || new Date().toISOString(),
+  }
+  _aktifIsYaz(coklu)
+}
+
+// Operatör spool detayına girdiğinde "kendi işi mi?" check'i.
+// @param rolAd — opsiyonel; verilmezse herhangi bir aktif iş aranır
+// @returns { spoolId, rol, basamak, baslangic } | null
+export function aktifIsHatirla(rolAd) {
+  const coklu = _aktifIsHam()
+  if (rolAd) {
+    const k = coklu[rolAd]
+    if (!k || !k.spoolId) return null
+    return { ...k, rol: rolAd, id: k.spoolId }  // 'id' geriye uyumlu (3e useEffect)
+  }
+  // rolAd verilmedi: ilk aktif işi döndür (geçiş)
+  const ilkRol = Object.keys(coklu)[0]
+  if (!ilkRol) return null
+  const k = coklu[ilkRol]
+  return { ...k, rol: ilkRol, id: k.spoolId }
+}
+
+// Tüm aktif işleri obje olarak döndürür (IbRolSec göstergeleri için 70b.B).
+// @returns { '<rolAd>': { spoolId, basamak, baslangic }, ... }
+export function aktifIslerTumu() {
+  return _aktifIsHam()
+}
+
+// Operatör işi kapatınca çağrılır (3f.1).
+// @param rolAd — opsiyonel; verilmezse TÜM kayıtlar silinir (eski davranış)
+export function aktifIsUnut(rolAd) {
+  if (!rolAd) {
+    try { localStorage.removeItem(AKTIF_IS_KEY) } catch {}
+    return
+  }
+  const coklu = _aktifIsHam()
+  delete coklu[rolAd]
+  _aktifIsYaz(coklu)
+}
+
+// 70b.A: Operatör login sonrası DB-truth senkronizasyonu.
+// is_kayitlari'dan bitis IS NULL kayıtları çekip localStorage'ı tazeler.
+// Mesai sonu / ertesi gün / telefon kapatma persistence sorunu çözer.
+//
+// MIsBaslat.jsx mount useEffect'inde çağrılır:
+//   useEffect(() => {
+//     if (kullanici?.id) aktifIsleriDBdenSenkronize(supabase, kullanici.id)
+//   }, [kullanici?.id])
+export async function aktifIsleriDBdenSenkronize(supabase, kullaniciId) {
+  if (!supabase || !kullaniciId) return
+  try {
+    const { data, error } = await supabase
+      .from('is_kayitlari')
+      .select('id, spool_id, islem_tipi, baslangic')
+      .eq('personel_id', kullaniciId)
+      .is('bitis', null)
+
+    if (error) {
+      console.warn('[aktifIsleriDBdenSenkronize] DB hatası:', error)
+      return
+    }
+
+    if (!data || data.length === 0) {
+      // DB'de aktif iş yok — localStorage temizle
+      try { localStorage.removeItem(AKTIF_IS_KEY) } catch {}
+      return
+    }
+
+    // DB'den gelenlerle yeniden doldur (rolAd türetimi heuristik)
+    const coklu = {}
+    for (const k of data) {
+      const rolAd = _basamakToRolAd(k.islem_tipi) || k.islem_tipi
+      coklu[rolAd] = {
+        spoolId:   k.spool_id,
+        basamak:   k.islem_tipi,
+        baslangic: k.baslangic,
+      }
+    }
+    _aktifIsYaz(coklu)
+  } catch (e) {
+    console.warn('[aktifIsleriDBdenSenkronize] beklenmeyen:', e)
+  }
+}
+
+// İç: basamak slug → rol adı (heuristik). Çakışmalı slug'lar (örn. 'kaynak'
+// hem Argon hem Gazaltı'a karşılık gelir) için varsayılan döner; tek operatör
+// tek rol senaryosunda bu kabul edilebilir.
+function _basamakToRolAd(basamak) {
+  const map = {
+    imalat:        'İmalat',
+    on_imalat:     'İmalat',
+    kesim:         'Kesim',
+    bukum:         'Büküm',
+    markalama:     'Markalama',
+    kaynak:        'Argon Kaynağı',
+    argon_kaynak:  'Argon Kaynağı',
+    gazalti_kaynak:'Gazaltı Kaynağı',
+    on_kontrol:    'Ön Kontrol',
+    alim_kontrol:  'Alım Kontrol',
+  }
+  return map[basamak] || null
 }

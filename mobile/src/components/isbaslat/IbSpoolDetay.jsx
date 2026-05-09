@@ -533,40 +533,71 @@ export default function IbSpoolDetay({
   // ─── Foot CTA handler'ları ───
   // iseBasla: 70. oturum 3e implementasyonu. Diğer handler'lar 3f/3i/3j'de.
 
-  // 3e — İşe Başla akışı.
-  // Web pattern (is_baslat.html:1131 isBaslatDB) birebir port:
-  //   1. spooller UPDATE: is_durumu='devam_ediyor', guncelleme=now
-  //   2. localStorage 'ares_is_aktif' yaz (kim çalışıyor — DB'de alan yok)
-  //   3. Local state güncelle (Footer 3'lü buton'a otomatik geçer)
+  // 3e + 70b.A — İşe Başla akışı.
+  //   1. is_kayitlari INSERT (bitis=null, aktif kayıt) — DB-truth persistence
+  //   2. spooller UPDATE: is_durumu='devam_ediyor', guncelleme=now
+  //   3. localStorage çoklu yapıya kayıt (rol-anahtarlı)
+  //   4. Local state güncelle (Footer 3'lü buton'a otomatik geçer)
   //
-  // is_kayitlari INSERT yapılmaz — web'de işi kapat akışında yapılıyor (3f).
-  // Hata yönetimi: alert (geçici, 3f'te toast helper eklenebilir).
+  // Persistence: Telefon kapansa bile DB'de bitis=null kayıt durur.
+  // App load sırasında aktifIsleriDBdenSenkronize ile localStorage tazelenir.
   async function iseBasla() {
     if (!yerelSpool || !kullanici) return
-    if (drawerAcikHerhangi || !yetkili) return  // güvenlik gate'i (button disabled olsa da)
+    if (drawerAcikHerhangi || !yetkili) return
+
+    const simdi = new Date().toISOString()
 
     try {
-      const { error } = await supabase
-        .from('spooller')
-        .update({
-          is_durumu:   'devam_ediyor',
-          guncelleme:  new Date().toISOString(),
+      // 1. is_kayitlari INSERT — aktif iş kaydı (bitis=null)
+      const { error: insErr } = await supabase
+        .from('is_kayitlari')
+        .insert({
+          tenant_id:    yerelSpool.tenant_id,
+          spool_id:     yerelSpool.id,
+          personel_id:  kullanici.id,
+          islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
+          baslangic:    simdi,
+          // bitis: null (default) — 3f.1 UPDATE ile kapatılacak
+          qr_baslangic: true,
         })
-        .eq('id', yerelSpool.id)
 
-      if (error) {
-        console.error('[iseBasla] UPDATE hatası:', error)
-        alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (error.message || error.code || 'RLS?'))
+      if (insErr) {
+        console.error('[iseBasla] is_kayitlari INSERT hatası:', insErr)
+        alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (insErr.message || insErr.code || 'RLS?'))
         return
       }
 
-      // Aktif iş kaydı (web pattern muadili — localStorage)
+      // 2. spooller UPDATE
+      const { error: updErr } = await supabase
+        .from('spooller')
+        .update({
+          is_durumu:   'devam_ediyor',
+          guncelleme:  simdi,
+        })
+        .eq('id', yerelSpool.id)
+
+      if (updErr) {
+        console.error('[iseBasla] spooller UPDATE hatası:', updErr)
+        // Rollback: is_kayitlari'dan az önce eklenen kaydı sil
+        await supabase
+          .from('is_kayitlari')
+          .delete()
+          .eq('personel_id', kullanici.id)
+          .eq('spool_id', yerelSpool.id)
+          .eq('baslangic', simdi)
+        alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (updErr.message || updErr.code || 'RLS?'))
+        return
+      }
+
+      // 3. localStorage çoklu yapıya kayıt (rol-anahtarlı)
       aktifIsKaydet({
-        spoolId: yerelSpool.id,
-        rolAd:   aktifRol?.ad || '',
+        spoolId:   yerelSpool.id,
+        rolAd:     aktifRol?.ad || '',
+        basamak:   yerelSpool.aktif_basamak,
+        baslangic: simdi,
       })
 
-      // Local state — Footer otomatik 3'lü buton'a geçer
+      // 4. Local state — Footer otomatik 3'lü buton'a geçer
       setYerelSpool(prev => ({ ...prev, is_durumu: 'devam_ediyor' }))
     } catch (e) {
       console.error('[iseBasla] beklenmeyen hata:', e)
@@ -588,38 +619,75 @@ export default function IbSpoolDetay({
     }
   }
 
-  // 3f.1 — Onaylı kapatma DB writes + temizlik + navigate.
-  // R-06: Web isTamamla pattern'i tamamı NO (foto + basamak seçim 3f.2/3'te).
-  // is_kayitlari INSERT'te DB schema'ya UYULUR, web'in yanlış kolon adları
-  // (kullanici_id/basamak/tarih) DEĞİL — web INSERT muhtemelen NOT NULL
-  // ihlaliyle sessizce fail ediyor (try/catch /* opsiyonel */).
-  // baslangic = bitis = now() — sure_dakika kayıp, 3f.2'de düzeltilir.
+  // 3f.1 + 70b.A — Onaylı kapatma: is_kayitlari UPDATE pattern + spooller UPDATE.
+  //   1. Aktif kaydı (3e'de INSERT edilen, bitis IS NULL) bul
+  //   2. UPDATE: bitis=now, sure_dakika=hesaplanmış (gerçek süre!)
+  //      Aktif kayıt yoksa fallback INSERT (eski 3e öncesi spool'lar için)
+  //   3. spooller UPDATE: is_durumu='bekliyor' (aktif_basamak DEĞİŞMEZ — 3f.3'te)
+  //   4. Temizlik (aktifIsUnut sadece o role) + navigate('/')
   async function handleKapatOnayli() {
     if (!yerelSpool || !kullanici) return
 
     const simdi = new Date().toISOString()
+    const rolAd = aktifRol?.ad || ''
 
     try {
-      // 1. is_kayitlari INSERT (opsiyonel, başarısızsa UPDATE devam eder)
-      const insertPayload = {
-        tenant_id:    yerelSpool.tenant_id,
-        spool_id:     yerelSpool.id,
-        personel_id:  kullanici.id,
-        islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
-        baslangic:    simdi,
-        bitis:        simdi,
-        sure_dakika:  0,
-        qr_baslangic: true,
-        qr_bitis:     false,
-      }
-      const { error: insErr } = await supabase
+      // 1. Aktif iş kaydını bul (3e'de INSERT edilen, bitis IS NULL)
+      const { data: aktifKayit, error: selErr } = await supabase
         .from('is_kayitlari')
-        .insert(insertPayload)
-      if (insErr) {
-        console.warn('[handleKapatOnayli] is_kayitlari INSERT hatası (devam):', insErr)
+        .select('id, baslangic')
+        .eq('personel_id', kullanici.id)
+        .eq('spool_id', yerelSpool.id)
+        .is('bitis', null)
+        .order('baslangic', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (selErr) {
+        console.warn('[handleKapatOnayli] aktif kayıt arama hatası:', selErr)
       }
 
-      // 2. spooller UPDATE — aktif_basamak DEĞİŞMEZ (3f.3'te ilerletilecek)
+      if (aktifKayit) {
+        // 2a. UPDATE — gerçek süre hesaplanmış olarak
+        const baslangicMs = new Date(aktifKayit.baslangic).getTime()
+        const bitisMs     = new Date(simdi).getTime()
+        const sure_dakika = Math.max(0, Math.floor((bitisMs - baslangicMs) / 60000))
+
+        const { error: updIsErr } = await supabase
+          .from('is_kayitlari')
+          .update({
+            bitis:        simdi,
+            sure_dakika,
+            qr_bitis:     false,  // 3f.1'de QR yok, 3f.2/3'te değişebilir
+          })
+          .eq('id', aktifKayit.id)
+
+        if (updIsErr) {
+          console.warn('[handleKapatOnayli] is_kayitlari UPDATE hatası (devam):', updIsErr)
+        }
+      } else {
+        // 2b. Fallback — aktif kayıt yok (eski 3e öncesi başlamış spool veya
+        //     senkronizasyon farkı). Bitiş anında full INSERT.
+        console.warn('[handleKapatOnayli] aktif is_kayitlari kaydı yok, fallback INSERT')
+        const { error: insErr } = await supabase
+          .from('is_kayitlari')
+          .insert({
+            tenant_id:    yerelSpool.tenant_id,
+            spool_id:     yerelSpool.id,
+            personel_id:  kullanici.id,
+            islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
+            baslangic:    simdi,
+            bitis:        simdi,
+            sure_dakika:  0,
+            qr_baslangic: false,
+            qr_bitis:     false,
+          })
+        if (insErr) {
+          console.warn('[handleKapatOnayli] fallback INSERT hatası (devam):', insErr)
+        }
+      }
+
+      // 3. spooller UPDATE — aktif_basamak DEĞİŞMEZ (3f.3'te ilerletilecek)
       const { error: updErr } = await supabase
         .from('spooller')
         .update({
@@ -631,15 +699,16 @@ export default function IbSpoolDetay({
       if (updErr) {
         console.error('[handleKapatOnayli] spooller UPDATE hatası:', updErr)
         alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (updErr.message || updErr.code || 'RLS?'))
-        return  // drawer'lar açık kalsın, operatör tekrar deneyebilir
+        return
       }
 
-      // 3. Temizlik
-      aktifIsUnut()
+      // 4. Temizlik — sadece bu role ait localStorage kaydı silinir
+      //    (operatörün başka rollerdeki aktif işleri korunur)
+      aktifIsUnut(rolAd)
       setUyariDrawer(null)
       setYumusDrawerMod(null)
 
-      // 4. Hub'a yönlendir — App.jsx kök rotası rolüne göre yönlendirir
+      // 5. Hub'a yönlendir
       navigate('/')
     } catch (e) {
       console.error('[handleKapatOnayli] beklenmeyen hata:', e)
