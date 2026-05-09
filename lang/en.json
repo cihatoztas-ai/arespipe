@@ -1855,6 +1855,8 @@
   "m_ib_sd_malzeme_kaydedildi": "Saved",
   "m_ib_sd_yetki_yok": "This spool is at the {basamak} step, not in your authorization right now",
   "m_ib_sd_basla_hata": "Failed to start work: ",
+  "m_ib_sd_son_kontrol": "Final check",
+  "m_ib_sd_kapat_hata": "Could not close work: ",
   "m_ib_uy_yz_baslik": "Not authorized",
   "m_ib_uy_yz_mesaj": "You are not authorized for this step.",
   "m_ib_uy_anladim": "Understood",
@@ -1865,5 +1867,8 @@
   "m_ib_uy_yu_alis_var_baslik": "This spool will not be welded",
   "m_ib_uy_yu_alis_var_mesaj": "Spool is fully practice (prefab) — no welding. Assembly only.",
   "m_ib_uy_yu_alis_kismi_baslik": "Partial practice",
-  "m_ib_uy_yu_alis_kismi_mesaj": "This spool has no-weld areas. Mask them off and check the drawing."
+  "m_ib_uy_yu_alis_kismi_mesaj": "This spool has no-weld areas. Mask them off and check the drawing.",
+  "m_ib_uy_ko_baslik": "Close work",
+  "m_ib_uy_ko_mesaj": "You are about to close this work.",
+  "m_ib_uy_tamam_kapat": "Yes, close"
 }

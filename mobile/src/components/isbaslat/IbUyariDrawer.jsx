@@ -11,9 +11,10 @@
 //   alternatifBasamakYetkisiz  — mavi info, tek koyu solid buton "İptal"
 //   yetkisiz                   — kırmızı + kilit, tek koyu solid "Anladım" (70. oturum 3d)
 //   tamAlistirmaKaynak         — kırmızı + yasak, kaynakçı için "kaynak yapılmayacak" (3d-fix3)
+//   kapatOnay                  — kırmızı + soru, "İşi kapat" sade onay (3f.1)
 //
 // Props:
-//   tip       — string (yukarıdaki 6 değerden biri)
+//   tip       — string (yukarıdaki 7 değerden biri)
 //   payload   — { operatorAd?, aktifBasamak?, alternatif? }
 //   onKapat   — () => void (İptal / Tamam butonları çağırır)
 //   onAksiyon — (aksiyon: 'devral' | 'alternatifeBasla') => void
@@ -168,6 +169,31 @@ export default function IbUyariDrawer({ tip, payload = {}, onKapat, onAksiyon })
         }
       }
 
+      // 70. oturum (3f.1): İşi kapat sade onay drawer.
+      // Yumuşak uyarı YOK durumunda gösterilir (yumuşak uyarı varsa
+      // IbSpoolDetay'da inline kart-listeli kapat onay drawer'ı kullanılır).
+      // Kırmızı tonu yıkıcı işlem işareti — operatör yanlış basmasın diye 2 adım.
+      case 'kapatOnay': {
+        return {
+          aksent: 'var(--re)',
+          aksentBg: 'rgba(229,62,62,0.12)',
+          ikonStroke: 'var(--re)',
+          ikonSvg: (
+            <>
+              <circle cx="12" cy="12" r="9"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </>
+          ),
+          baslik: tv('m_ib_uy_ko_baslik', 'İşi kapat'),
+          mesaj:  tv('m_ib_uy_ko_mesaj',  'Bu işi şimdi kapatacaksın.'),
+          butonlar: [
+            { etiket: tv('m_ib_uy_iptal', 'Vazgeç'),                  tip: 'ikincil',  onClick: onKapat },
+            { etiket: tv('m_ib_uy_tamam_kapat', 'Tamam, kapat'),      tip: 'birincil', onClick: () => onAksiyon && onAksiyon('kapatOnayli') },
+          ],
+        }
+      }
+
       default:
         return null
     }
@@ -191,7 +217,7 @@ export default function IbUyariDrawer({ tip, payload = {}, onKapat, onAksiyon })
           </svg>
         </div>
         <p style={s.baslik}>{konfig.baslik}</p>
-        <p style={s.mesaj}>{konfig.mesaj}</p>
+        {konfig.mesaj && <p style={s.mesaj}>{konfig.mesaj}</p>}
         <div style={s.butonlarWrap}>
           {konfig.butonlar.map((btn, i) => (
             <button

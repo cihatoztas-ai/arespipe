@@ -84,10 +84,11 @@
 //   heat_placeholder, bos, kayit_hatasi} × 3 dil = 18 satır.
 
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { dosyaUrlAl } from '../../lib/dosya'
-import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla } from '../../lib/isbaslat'
+import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla, aktifIsUnut } from '../../lib/isbaslat'
 import IbUyariDrawer from './IbUyariDrawer'
 
 export default function IbSpoolDetay({
@@ -100,6 +101,7 @@ export default function IbSpoolDetay({
 }) {
   const { tv } = useT()
 
+  const navigate = useNavigate()
   const [yerelSpool, setYerelSpool] = useState(spool)
   const [devre, setDevre] = useState(null)
   const [proje, setProje] = useState(null)
@@ -114,7 +116,10 @@ export default function IbSpoolDetay({
   const [heatKayitDurumu, setHeatKayitDurumu] = useState({})
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
-  const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
+  // 3f.1: 'peek' (mevcut tap-to-expand) | 'kapat' (yeni kapat onay) | null (kapalı)
+  const [yumusDrawerMod, setYumusDrawerMod] = useState(null)
+  const yumusDrawerAcik = yumusDrawerMod !== null  // backward-compat alias
+  function setYumusDrawerAcik(val) { setYumusDrawerMod(val ? 'peek' : null) } // yumuşak
 
   // ─── Devre fetch ───
   // Spool yüklenince devre_id ile devre bilgisini al — iş emri, devre adı,
@@ -455,9 +460,12 @@ export default function IbSpoolDetay({
   // ─── Drawer handler'ları ───
   // 70. oturum (3d): Akış-kesici kapatılınca yumuşak uyarı varsa drawer
   // otomatik açılır (zincirleme akış). Operatör peek tab'ı kaçırmasın.
+  // 3f.1 (Vazgeç akışı): kapatOnay tipinde zincirleme YAPMA — operatör
+  // "Vazgeç" basmış, drawer'ı kapatıp yumuşak drawer'a açmak yanıltıcı.
   function handleAkisKesiciKapat() {
+    const onceki = uyariDrawer
     setUyariDrawer(null)
-    if (yumusKartlar.length > 0) {
+    if (onceki?.tip !== 'kapatOnay' && yumusKartlar.length > 0) {
       setYumusDrawerAcik(true)
     }
   }
@@ -466,6 +474,10 @@ export default function IbSpoolDetay({
       alert(tv('m_ib_sd_devral_placeholder', "(Devral akışı 68b'de eklenecek — foto çekme + DB update)"))
     } else if (aksiyon === 'alternatifeBasla') {
       alert(tv('m_ib_sd_alt_placeholder',    "(Alternatif başla akışı 68b'de eklenecek — DB update)"))
+    } else if (aksiyon === 'kapatOnayli') {
+      // 3f.1: kapatOnay drawer'dan "Tamam, kapat" — DB writes + Hub'a yönlendir
+      handleKapatOnayli()
+      return  // kapat akışı kendi içinde drawer kapatır + navigate, zincirleme yok
     }
     setUyariDrawer(null)
     if (yumusKartlar.length > 0) {
@@ -562,7 +574,79 @@ export default function IbSpoolDetay({
     }
   }
 
-  function isiKapat() { alert(tv('m_ib_sd_kapat_placeholder', "(İşi Kapat akışı 68b'de eklenecek)")) }
+  // 3f.1 — İşi Kapat akışı (yumuşak drawer kapat modu VEYA sade onay drawer)
+  // Foto akışı 3f.2'de, basamak seçim 3f.3'te eklenecek. Bu turda minimum:
+  //   - Yumuşak uyarı varsa: yumuşak drawer kapat modunda açılır (kart listesi + 2 buton)
+  //   - Yumuşak uyarı yoksa: sade onay drawer (IbUyariDrawer 'kapatOnay' tipi)
+  function isiKapat() {
+    if (!yerelSpool || !kullanici) return
+    if (drawerAcikHerhangi || !yetkili) return
+    if (yumusKartlar.length > 0) {
+      setYumusDrawerMod('kapat')
+    } else {
+      setUyariDrawer({ tip: 'kapatOnay', payload: {} })
+    }
+  }
+
+  // 3f.1 — Onaylı kapatma DB writes + temizlik + navigate.
+  // R-06: Web isTamamla pattern'i tamamı NO (foto + basamak seçim 3f.2/3'te).
+  // is_kayitlari INSERT'te DB schema'ya UYULUR, web'in yanlış kolon adları
+  // (kullanici_id/basamak/tarih) DEĞİL — web INSERT muhtemelen NOT NULL
+  // ihlaliyle sessizce fail ediyor (try/catch /* opsiyonel */).
+  // baslangic = bitis = now() — sure_dakika kayıp, 3f.2'de düzeltilir.
+  async function handleKapatOnayli() {
+    if (!yerelSpool || !kullanici) return
+
+    const simdi = new Date().toISOString()
+
+    try {
+      // 1. is_kayitlari INSERT (opsiyonel, başarısızsa UPDATE devam eder)
+      const insertPayload = {
+        tenant_id:    yerelSpool.tenant_id,
+        spool_id:     yerelSpool.id,
+        personel_id:  kullanici.id,
+        islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
+        baslangic:    simdi,
+        bitis:        simdi,
+        sure_dakika:  0,
+        qr_baslangic: true,
+        qr_bitis:     false,
+      }
+      const { error: insErr } = await supabase
+        .from('is_kayitlari')
+        .insert(insertPayload)
+      if (insErr) {
+        console.warn('[handleKapatOnayli] is_kayitlari INSERT hatası (devam):', insErr)
+      }
+
+      // 2. spooller UPDATE — aktif_basamak DEĞİŞMEZ (3f.3'te ilerletilecek)
+      const { error: updErr } = await supabase
+        .from('spooller')
+        .update({
+          is_durumu:   'bekliyor',
+          guncelleme:  simdi,
+        })
+        .eq('id', yerelSpool.id)
+
+      if (updErr) {
+        console.error('[handleKapatOnayli] spooller UPDATE hatası:', updErr)
+        alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (updErr.message || updErr.code || 'RLS?'))
+        return  // drawer'lar açık kalsın, operatör tekrar deneyebilir
+      }
+
+      // 3. Temizlik
+      aktifIsUnut()
+      setUyariDrawer(null)
+      setYumusDrawerMod(null)
+
+      // 4. Hub'a yönlendir — App.jsx kök rotası rolüne göre yönlendirir
+      navigate('/')
+    } catch (e) {
+      console.error('[handleKapatOnayli] beklenmeyen hata:', e)
+      alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (e?.message || 'bilinmeyen'))
+    }
+  }
+
   function notEkle()  { alert(tv('m_ib_sd_not_placeholder',   "(Not Ekle akışı 68b'de eklenecek)")) }
   function isiIptal() { alert(tv('m_ib_sd_iptal_placeholder', "(İptal Et akışı 68b'de eklenecek)")) }
 
@@ -705,7 +789,8 @@ export default function IbSpoolDetay({
       {/* ───── Yumuşak uyarı drawer (inline, sağdan slide-in) ─────
           Mockup v14 final: kartlar + buton TEK BLOK dikey merkez.
           Transparan zemin → sayfa kısmen görünür, sadece kartlar opak. */}
-      {yumusDrawerAcik && yumusKartlar.length > 0 && (
+      {/* Yumuşak drawer 'peek' modu — sağ kenar overlay (mevcut tap-to-expand) */}
+      {yumusDrawerMod === 'peek' && yumusKartlar.length > 0 && (
         <div style={s.yumusOverlay}>
           <div style={s.yumusBlok}>
             <div style={s.yumusKartYigin}>
@@ -716,6 +801,28 @@ export default function IbSpoolDetay({
             <button type="button" style={s.yumusBtn} onClick={handleYumusKapat}>
               {tv('m_ib_uy_yu_anladim', 'Anladım, devam et')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3f.1 — Yumuşak drawer 'kapat' modu — full-screen onay modal (yumuşak uyarı VAR) */}
+      {yumusDrawerMod === 'kapat' && yumusKartlar.length > 0 && (
+        <div style={s.kapatOverlay}>
+          <div style={s.kapatKart}>
+            <p style={s.kapatBaslik}>{tv('m_ib_sd_son_kontrol', 'Son kontrol')}</p>
+            <div style={s.kapatKartYigin}>
+              {yumusKartlar.map((kart) => (
+                <YumusKart key={kart._key} kategori={kart.kategori} baslik={kart.baslik} mesaj={kart.mesaj} />
+              ))}
+            </div>
+            <div style={s.kapatBtnYigin}>
+              <button type="button" style={s.kapatBtnIkincil} onClick={() => setYumusDrawerMod(null)}>
+                {tv('m_ib_uy_iptal', 'Vazgeç')}
+              </button>
+              <button type="button" style={s.kapatBtnKirmizi} onClick={handleKapatOnayli}>
+                {tv('m_ib_uy_tamam_kapat', 'Tamam, kapat')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1806,6 +1913,74 @@ const s = {
     borderRadius: 8,
     fontSize: 15,
     fontWeight: 500,
+    fontFamily: 'Barlow, sans-serif',
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  },
+
+  // 3f.1 — Kapat onay full-screen modal stilleri (yumuşak uyarı VAR durumunda)
+  kapatOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.55)',
+    zIndex: 200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    animation: 'ibUyFade 240ms ease-out forwards',
+  },
+  kapatKart: {
+    background: 'var(--sur)',
+    borderRadius: 14,
+    padding: '18px 16px 16px',
+    width: '100%',
+    maxWidth: 360,
+    fontFamily: 'Barlow, system-ui, sans-serif',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+  },
+  kapatBaslik: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: 17,
+    fontWeight: 600,
+    color: 'var(--tx)',
+    margin: '0 0 14px',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  kapatKartYigin: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    marginBottom: 16,
+  },
+  kapatBtnYigin: {
+    display: 'flex',
+    gap: 8,
+  },
+  kapatBtnIkincil: {
+    flex: 1,
+    padding: 12,
+    background: 'transparent',
+    color: 'var(--tx)',
+    border: '1px solid var(--bor)',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: 'Barlow, sans-serif',
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  },
+  kapatBtnKirmizi: {
+    flex: 1,
+    padding: 12,
+    background: 'var(--re)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
     fontFamily: 'Barlow, sans-serif',
     cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
