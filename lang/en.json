@@ -1870,5 +1870,12 @@
   "m_ib_uy_yu_alis_kismi_mesaj": "This spool has no-weld areas. Mask them off and check the drawing.",
   "m_ib_uy_ko_baslik": "Close work",
   "m_ib_uy_ko_mesaj": "You are about to close this work.",
-  "m_ib_uy_tamam_kapat": "Yes, close"
+  "m_ib_uy_tamam_kapat": "Yes, close",
+  "m_ib_sd_sonraki_basamak_baslik": "Next Stage",
+  "m_ib_sd_sonraki_basamak_mesaj": "Your work is complete. Send the spool to the next step.",
+  "m_ib_sd_kaynak_yontemi_baslik": "Welding Method",
+  "m_ib_sd_kaynak_yontemi_mesaj": "Choose the welding method. The next welder will be routed accordingly.",
+  "m_ib_sd_kaynak_yontemi_argon": "TIG (Argon) Welding",
+  "m_ib_sd_kaynak_yontemi_gazalti": "MIG/MAG Welding",
+  "m_ib_sd_kaynak_yontemi_geri": "Back to stage selection"
 }

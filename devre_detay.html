@@ -996,17 +996,34 @@ function _yuzeyBadge(raw){
   var cls=kod==='asit'?'yb-asit':kod==='galvaniz'?'yb-galvaniz':kod==='boyali'?'yb-boyali':'yb-siyah';
   return '<span class="yuzey-badge '+cls+'">'+esc(label)+'</span>';
 }
+// SED-71-05: Kaynak alt-tipini ana 'kaynak' sistem_adi'na normalize et
+function _normalizeBasamak(sistemAdi){
+  if(!sistemAdi) return sistemAdi;
+  if(/kaynak/i.test(sistemAdi)) return 'kaynak';
+  return sistemAdi;
+}
+// SED-71-05: is_durumu birincil kaynak (MK-70.1), durum eski fallback
+function _stepKey(s){
+  if(s.stopped) return 'stopped';
+  if(s.isDurumu==='devam_ediyor') return 'progress';
+  if(s.isDurumu==='bekliyor') return 'waiting';
+  if(s.durum==='waiting') return 'waiting';
+  if(s.durum==='done') return 'done';
+  if(s.durum==='qc') return 'qc';
+  return 'progress';
+}
 // Dinamik adım etiketi — dil değişince doğru çeviriyi döndürür
 function _stepText(s){
-  if(s.stopped)return tv('dv_status_stopped','Durduruldu');
   var lblMap=_basamakMap; // DB'den yüklenen dinamik map
-  var d=s.durum;
-  if(d==='waiting')return tv('dv_status_waiting','Bekliyor');
-  if(d==='done')return tv('dv_status_done','Tamamlandı');
-  if(d==='qc')return lblMap['kk']||tv('dv_status_qc','Kalite Kontrol');
-  // Progress: önce lblMap[aktifBasamak], sonra snapshot adı, sonra genel
-  if(s._aktifBasamak&&lblMap[s._aktifBasamak])return lblMap[s._aktifBasamak];
-  if(s._aktGorLabel)return s._aktGorLabel;
+  var key=_stepKey(s);
+  if(key==='stopped') return tv('dv_status_stopped','Durduruldu');
+  if(key==='waiting') return tv('dv_status_waiting','Bekliyor');
+  if(key==='done') return tv('dv_status_done','Tamamlandı');
+  if(key==='qc') return lblMap['kk']||tv('dv_status_qc','Kalite Kontrol');
+  // Progress: kaynak alt-tipini normalize ederek lblMap'te ara
+  var normaliseAktif=_normalizeBasamak(s._aktifBasamak);
+  if(normaliseAktif&&lblMap[normaliseAktif]) return lblMap[normaliseAktif];
+  if(s._aktGorLabel) return s._aktGorLabel;
   return tv('dv_status_progress','Devam Ediyor');
 }
 
@@ -1413,7 +1430,7 @@ function renderTable(){
   var DR=DURUM();
   tbody.innerHTML=slice.map(function(s,i){
     var ci=i<10?i:10;
-    var d=DR[s.durum]||{cls:'sb-wait',text:s.durumText};
+    var d=DR[_stepKey(s)]||{cls:'sb-wait',text:s.durumText};
     var gi=(_page-1)*_perPage+i+1;
     return'<tr data-ci="'+ci+'" style="'+(s.stopped?'opacity:.55;':'')+';cursor:pointer;" onclick="goSpool(\''+esc(s._lk)+'\')">'
       +'<td style="color:var(--txd);font-size:12px;">'+gi+'</td>'
@@ -1426,7 +1443,7 @@ function renderTable(){
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'malzeme\',\''+esc(s._lk)+'\',\'select\',\'Karbon Çelik,Paslanmaz,Bakır Alaşım,Alüminyum\',\''+esc(s.malzeme)+'\')">'+_matBadge(s.malzeme)+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'kalite\',\''+esc(s._lk)+'\',\'text\',\'\',\''+esc(s.kalite)+'\')" style="color:var(--ac);font-weight:600;">'+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(s.kalite)||s.kalite||'—'):(s.kalite||'—'))+'</td>'
       +'<td onclick="event.stopPropagation();inlineEdit(this,\'yuzey\',\''+esc(s._lk)+'\',\'select\',\'Galvaniz,Asit,Siyah,Epoksi,Boyalı\',\''+esc(s.yuzey)+'\')">'+_yuzeyBadge(s.yuzey)+'</td>'
-      +'<td><span class="sb '+d.cls+'">'+(s.isDurumu==='devam_ediyor'&&(s._aktifBasamak==='imalat'||s._aktifBasamak==='kaynak')?'<span class="sb-pulse-dot"></span>':'')+esc(_stepText(s))+'</span></td>'
+      +'<td><span class="sb '+d.cls+'">'+(s.isDurumu==='devam_ediyor'&&(s._aktifBasamak==='imalat'||/kaynak/i.test(s._aktifBasamak||''))?'<span class="sb-pulse-dot"></span>':'')+esc(_stepText(s))+'</span></td>'
       +'<td><div class="steps" title="'+adimLbl().join(' → ')+'">'+s.adimlar.map(stepHtml).join('')+'</div>'
         +'<div style="font-size:11px;color:var(--txd);margin-top:2px;">'+s.adimlar.filter(function(v){return v===1;}).length+'/'+s.adimlar.length+'</div></td>'
       +'<td style="color:var(--txd);font-size:12px;">'+esc(s.sonIslem||'—')+'</td>'

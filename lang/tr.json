@@ -1870,5 +1870,12 @@
   "m_ib_uy_yu_alis_kismi_mesaj": "Bu spoolda kaynatılmayacak yerler var. Bantlayarak ayırın, çizimi kontrol edin.",
   "m_ib_uy_ko_baslik": "İşi kapat",
   "m_ib_uy_ko_mesaj": "Bu işi şimdi kapatacaksın.",
-  "m_ib_uy_tamam_kapat": "Tamam, kapat"
+  "m_ib_uy_tamam_kapat": "Tamam, kapat",
+  "m_ib_sd_sonraki_basamak_baslik": "Sonraki Basamak",
+  "m_ib_sd_sonraki_basamak_mesaj": "İşin tamamlandı. Spool'u sonraki adıma gönder.",
+  "m_ib_sd_kaynak_yontemi_baslik": "Kaynak Yöntemi",
+  "m_ib_sd_kaynak_yontemi_mesaj": "Spool için kaynak yöntemini seç. Sonraki kaynakçı bu seçime göre yönlendirilir.",
+  "m_ib_sd_kaynak_yontemi_argon": "Argon Kaynağı",
+  "m_ib_sd_kaynak_yontemi_gazalti": "Gazaltı Kaynağı",
+  "m_ib_sd_kaynak_yontemi_geri": "Basamak seçimine dön"
 }

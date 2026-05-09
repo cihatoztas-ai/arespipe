@@ -89,7 +89,9 @@ import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { dosyaUrlAl } from '../../lib/dosya'
 import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla, aktifIsUnut } from '../../lib/isbaslat'
+import { basamakListesiniGetir, sonrakiBasamaklar } from '../../lib/basamak-akisi'
 import IbUyariDrawer from './IbUyariDrawer'
+import IbSonrakiBasamakDrawer from './IbSonrakiBasamakDrawer'
 
 export default function IbSpoolDetay({
   spool,
@@ -119,6 +121,11 @@ export default function IbSpoolDetay({
   // 3f.1: 'peek' (mevcut tap-to-expand) | 'kapat' (yeni kapat onay) | null (kapalı)
   const [yumusDrawerMod, setYumusDrawerMod] = useState(null)
   const yumusDrawerAcik = yumusDrawerMod !== null  // backward-compat alias
+
+  // 71 (3f.3): Sonraki basamak secim drawer'i
+  const [sonrakiDrawerAcik, setSonrakiDrawerAcik] = useState(false)
+  const [sonrakiSecenekler, setSonrakiSecenekler] = useState([])
+  const [sonrakiBasamakKaydediliyor, setSonrakiBasamakKaydediliyor] = useState(false)
   function setYumusDrawerAcik(val) { setYumusDrawerMod(val ? 'peek' : null) } // yumuşak
 
   // ─── Devre fetch ───
@@ -704,15 +711,67 @@ export default function IbSpoolDetay({
 
       // 4. Temizlik — sadece bu role ait localStorage kaydı silinir
       //    (operatörün başka rollerdeki aktif işleri korunur)
-      aktifIsUnut(rolAd)
+      // NOT: aktifIsUnut + navigate'i 3f.3 drawer'inin sonrasinda yapacagiz
       setUyariDrawer(null)
       setYumusDrawerMod(null)
 
-      // 5. Hub'a yönlendir
-      navigate('/')
+      // 5. 3f.3: Sonraki basamak secim drawer'i ac
+      try {
+        const liste = await basamakListesiniGetir(supabase)
+        const sonrakiler = sonrakiBasamaklar(yerelSpool.aktif_basamak, liste)
+
+        if (sonrakiler.length === 0) {
+          // Son basamak (sevkiyat sonrasi) — secim yok, direkt cik
+          aktifIsUnut(rolAd)
+          navigate('/')
+          return
+        }
+
+        // Sonraki basamak(lar) var — drawer ac (atla yok, secim zorunlu)
+        setSonrakiSecenekler(sonrakiler)
+        setSonrakiDrawerAcik(true)
+      } catch (basErr) {
+        // basamak_tanimlari fetch hatasi — guvenli fallback
+        console.error('[3f.3] basamak listesi yuklenemedi:', basErr)
+        aktifIsUnut(rolAd)
+        navigate('/')
+      }
     } catch (e) {
       console.error('[handleKapatOnayli] beklenmeyen hata:', e)
       alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (e?.message || 'bilinmeyen'))
+    }
+  }
+
+  // 71 (3f.3): Sonraki basamak secimi handler
+  async function handleSonrakiBasamakSec(secilenSistemAdi) {
+    setSonrakiBasamakKaydediliyor(true)
+    try {
+      const { error: updErr } = await supabase
+        .from('spooller')
+        .update({
+          aktif_basamak: secilenSistemAdi,
+          guncelleme: new Date().toISOString(),
+        })
+        .eq('id', yerelSpool.id)
+        .select('id')
+        .single() // MK-70.2: silent fail yakalama
+
+      if (updErr) {
+        console.error('[3f.3] aktif_basamak UPDATE hatasi:', updErr)
+        alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (updErr.message || 'RLS?'))
+        setSonrakiBasamakKaydediliyor(false)
+        return
+      }
+
+      // Basarili — drawer kapat, hub'a don
+      setSonrakiDrawerAcik(false)
+      setSonrakiSecenekler([])
+      aktifIsUnut(rolAd)
+      navigate('/')
+    } catch (e) {
+      console.error('[3f.3] beklenmeyen hata:', e)
+      alert(tv('m_ib_sd_kapat_hata', 'İş kapatılamadı: ') + (e?.message || 'bilinmeyen'))
+      setSonrakiBasamakKaydediliyor(false)
     }
   }
 
@@ -905,6 +964,14 @@ export default function IbSpoolDetay({
           onAksiyon={handleAkisKesiciAksiyon}
         />
       )}
+
+      {/* ───── 3f.3: Sonraki basamak secim drawer'i ───── */}
+      <IbSonrakiBasamakDrawer
+        acik={sonrakiDrawerAcik}
+        basamaklar={sonrakiSecenekler}
+        onSec={handleSonrakiBasamakSec}
+        yukleniyor={sonrakiBasamakKaydediliyor}
+      />
     </div>
   )
 }

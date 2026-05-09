@@ -1870,5 +1870,12 @@
   "m_ib_uy_yu_alis_kismi_mesaj": "يحتوي هذا الـ spool على مناطق بدون لحام. عزّلها وتحقق من الرسم.",
   "m_ib_uy_ko_baslik": "إغلاق العمل",
   "m_ib_uy_ko_mesaj": "أنت على وشك إغلاق هذا العمل.",
-  "m_ib_uy_tamam_kapat": "نعم، أغلق"
+  "m_ib_uy_tamam_kapat": "نعم، أغلق",
+  "m_ib_sd_sonraki_basamak_baslik": "المرحلة التالية",
+  "m_ib_sd_sonraki_basamak_mesaj": "اكتمل عملك. أرسل القطعة إلى الخطوة التالية.",
+  "m_ib_sd_kaynak_yontemi_baslik": "طريقة اللحام",
+  "m_ib_sd_kaynak_yontemi_mesaj": "اختر طريقة اللحام. سيتم توجيه اللحام التالي وفقًا لذلك.",
+  "m_ib_sd_kaynak_yontemi_argon": "لحام TIG (الأرغون)",
+  "m_ib_sd_kaynak_yontemi_gazalti": "لحام MIG/MAG",
+  "m_ib_sd_kaynak_yontemi_geri": "العودة إلى اختيار المرحلة"
 }
