@@ -1,5 +1,5 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix3 + 3c)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix3 + 3c + fix)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
@@ -422,7 +422,7 @@ export default function IbSpoolDetay({
     try {
       const { error } = await supabase
         .from('spool_malzemeleri')
-        .update({ heat_no: yeni || null, guncelleme: new Date().toISOString() })
+        .update({ heat_no: yeni || null })
         .eq('id', id)
       if (error) throw error
       setMalzemeler(prev => prev.map(m => m.id === id ? { ...m, heat_no: yeni || null } : m))
@@ -433,7 +433,7 @@ export default function IbSpoolDetay({
           delete y[id]
           return y
         })
-      }, 1200)
+      }, 2500)
     } catch (e) {
       console.warn('[heatKaydet] hata:', e)
       setHeatKayitDurumu(prev => ({ ...prev, [id]: 'hata' }))
@@ -857,6 +857,11 @@ function MalzemeKart({ malzeme, sira, heatKaydet, kayitDurumu, tv }) {
           autoCapitalize="characters"
           spellCheck={false}
         />
+        {kayitDurumu === 'basarili' && (
+          <span style={s.heatBasariYazi}>
+            ✓ {tv('m_ib_sd_malzeme_kaydedildi', 'Kaydedildi')}
+          </span>
+        )}
         {kayitDurumu === 'hata' && (
           <span style={s.heatHataYazi}>
             {tv('m_ib_sd_malzeme_kayit_hatasi', 'Kaydedilemedi')}
@@ -1321,8 +1326,8 @@ const s = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '8px 4px 12px',
-    fontSize: 12,
-    color: 'var(--txd)',
+    fontSize: 13,
+    color: 'var(--txm)',
     fontFamily: 'Barlow, sans-serif',
   },
   malzemeBaslikSert: {
@@ -1333,8 +1338,8 @@ const s = {
     background: 'var(--sur)',
     border: '1px solid var(--bor)',
     borderRadius: 8,
-    padding: '10px 12px',
-    marginBottom: 8,
+    padding: '12px 14px',
+    marginBottom: 10,
     fontFamily: 'Barlow, sans-serif',
   },
   malzemeUstSatir: {
@@ -1342,77 +1347,80 @@ const s = {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   malzemeKodBlok: {
     display: 'flex',
-    gap: 6,
+    gap: 8,
     alignItems: 'center',
     flexWrap: 'wrap',
   },
   malzemeSira: {
-    fontSize: 11,
-    color: 'var(--txd)',
+    fontSize: 12,
+    color: 'var(--txm)',
     minWidth: 18,
+    fontWeight: 500,
   },
   malzemeKod: {
-    fontSize: 13,
-    fontWeight: 500,
+    fontSize: 14,
+    fontWeight: 600,
     fontFamily: 'monospace',
     color: 'var(--tx)',
   },
   tipChip: {
-    fontSize: 10,
-    padding: '2px 7px',
+    fontSize: 11,
+    padding: '2px 8px',
     borderRadius: 4,
     fontWeight: 500,
     letterSpacing: 0.2,
   },
   sertChip: {
-    fontSize: 11,
+    fontSize: 12,
     color: 'var(--gr)',
-    fontWeight: 500,
+    fontWeight: 600,
     flexShrink: 0,
   },
   malzemeTanim: {
-    fontSize: 13,
+    fontSize: 14,
     color: 'var(--tx)',
-    marginBottom: 2,
+    marginBottom: 4,
+    lineHeight: 1.3,
   },
   malzemeAlt: {
-    fontSize: 11,
-    color: 'var(--txd)',
-    marginBottom: 4,
+    fontSize: 12,
+    color: 'var(--txm)',
+    marginBottom: 6,
+    fontWeight: 500,
   },
   malzemeOlcu: {
-    fontSize: 12,
-    color: 'var(--txd)',
+    fontSize: 13,
+    color: 'var(--txm)',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   malzemeNoktaAyrac: {
-    color: 'var(--txd)',
+    color: 'var(--txm)',
     opacity: 0.5,
   },
   heatBlok: {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    marginTop: 4,
+    marginTop: 6,
   },
   heatLabel: {
-    fontSize: 11,
-    color: 'var(--txd)',
-    fontWeight: 500,
-    minWidth: 32,
+    fontSize: 12,
+    color: 'var(--txm)',
+    fontWeight: 600,
+    minWidth: 36,
   },
   heatInput: {
     flex: 1,
-    height: 32,
-    padding: '0 10px',
-    fontSize: 13,
+    height: 36,
+    padding: '0 12px',
+    fontSize: 14,
     fontFamily: 'monospace',
     color: 'var(--tx)',
     background: 'var(--bg)',
@@ -1423,9 +1431,18 @@ const s = {
     WebkitAppearance: 'none',
     letterSpacing: 0.5,
   },
+  heatBasariYazi: {
+    fontSize: 12,
+    color: 'var(--gr)',
+    fontWeight: 600,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
   heatHataYazi: {
-    fontSize: 11,
+    fontSize: 12,
     color: 'var(--re)',
+    fontWeight: 500,
+    flexShrink: 0,
   },
   btnIkincil: {
     padding: '10px 20px',

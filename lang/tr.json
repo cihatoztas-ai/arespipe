@@ -1851,5 +1851,6 @@
   "m_ib_sd_malzeme_heat_label": "Heat",
   "m_ib_sd_malzeme_heat_placeholder": "Heat no...",
   "m_ib_sd_malzeme_bos": "Henüz malzeme eklenmemiş",
-  "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi"
+  "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi",
+  "m_ib_sd_malzeme_kaydedildi": "Kaydedildi"
 }
