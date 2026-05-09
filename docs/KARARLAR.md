@@ -1503,3 +1503,70 @@ Ancak CLAUDE.md Bölüm 3.3 (Dil Dosyaları) bu kurala uymuyordu:
 **İlişkili:** MK-62.3 (predev silme sorunu — bu kararın temeli), R-08 (i18n disiplini), 68b push akışında ortaya çıkan `mobile/.gitignore` satır 27 davranışı.
 
 ---
+
+## MK-69.1 — Mobile env var disiplini: yerel `.env` + `.env.example` + Vercel project (9 Mayıs 2026)
+
+**Bağlam:** 69. oturum 3b-fix3'te `mobile/src/lib/dosya.js` helper'ı kuruldu, `/api/dosya-url-al` endpoint'ini çağırmak için `VITE_API_BASE` env var'ı eklendi. İlk eklemede yerel `mobile/.env`'e yazıldı + Vite restart ile masaüstü çalıştı. Ama production'da iPhone Safari'de foto gelmedi. Tanı: `arespipe-mob` Vercel project Settings → Environment Variables'a env var **eklenmemişti** → production bundle'da `import.meta.env.VITE_API_BASE` `undefined` → fetch URL relative oluyordu → `arespipe-mob.vercel.app/api/...` 405 dönüyordu (mobile project'te `api/` klasörü yok).
+
+Bu sorun yaklaşık 30 dk emek aldı çünkü disiplin yazılı değildi. Aynı disiplin önceden olsa: env var ekleme = (a) yerel `.env`, (b) Vercel project, (c) `.env.example` repo'da → Cihat ilk seferde üçünü beraber yapardı, prod-dev tutarsızlığı oluşmazdı.
+
+**Karar:** Yeni mobile env var ekleme disiplini üç adımdan oluşur, hiçbiri atlanamaz:
+1. **Yerel `mobile/.env`** — geliştirici makinesine yazılır, gitignore'da kalır, Vite dev için.
+2. **`mobile/.env.example`** — repo'ya commit'lenir, env var **anahtarı** + örnek değer içerir (gerçek secret değil), hangi env var'ların var olduğunu yeni geliştiriciler görür.
+3. **Vercel project Environment Variables** — `arespipe-mob` (mobile) için ayrı ayrı eklenir, Production + Preview + Development işaretlenir.
+
+Vercel'de ekleme sonrası **redeploy** zorunlu (env var sadece sonraki build'e işler, mevcut deploy onsuz build edildi). Cache'siz fresh build için "Use existing Build Cache" işaretlenmemeli.
+
+**Mobil deploy mimarisi farkındalığı:** `arespipe-mob.vercel.app` ayrı bir Vercel projesi (mobile React build), kök `api/` klasörünü görmez. Mobile'ın endpoint çağrıları cross-origin olarak `arespipe.vercel.app/api/*`'a gider (CORS endpoint'te zaten açık). Bu yüzden `VITE_API_BASE` mobile project'te `https://arespipe.vercel.app` olarak set edilir, mobile'ın kendi domain'i değil.
+
+**İlişkili:** MK-69.2 (mobile lib helper kütüphanesi — env var bu helper'ları besler), MK-67.4 (Supabase API key migration — mobile `supabase.js` hardcoded JWT'leri benzer disiplinle env var'a alınmalı), R-06 (kapsamı baştan tam çıkar).
+
+---
+
+## MK-69.2 — Mobile için web ARES helper'larının muadili sistematik kurulur (9 Mayıs 2026)
+
+**Bağlam:** 69. oturum 3b'de foto carousel için signed URL üretimi yapılırken üç yanlış patika denendi (getPublicUrl → createSignedUrl → endpoint), her biri canlı testte kırıldı. Doğru çözüm web tarafının `ARES.dosyaUrlAl(yol)` fonksiyonunu (ares-store.js satır 923) mobile React'a port etmek oldu. Yeni dosya: `mobile/src/lib/dosya.js` (124 satır, 5 dakika buffer'lı cache, JWT Bearer auth, web pattern'inin birebir muadili).
+
+Bu olay genelleştirilirse: **web ARES global'i altında çoğu sistem-kanalı helper'ı yıllar içinde test edilmiş halde duruyor.** Mobile React tarafında bunların muadilleri ihtiyaç bazlı ad-hoc yazılıyor — bu sadece ek emek değil, hata riski (3b'de yaşandığı gibi) ve tutarsızlık üretiyor.
+
+**Karar:** Mobile için `mobile/src/lib/*` altında web ARES helper'larının muadili sistematik kurulur. Disiplin:
+- **Ad denkliği:** `ARES.fonksiyonAdi` ↔ `lib/dosya.js` içinde aynı isimli export. Örnek: `ARES.dosyaUrlAl` ↔ `dosyaUrlAl`.
+- **Davranış denkliği:** Cache stratejisi, error handling, return tipleri web ile aynı. Mobile'a özel davranış varsa (örn. async storage) açıkça yorumda belirtilir.
+- **Yeni helper ihtiyacı doğunca:** Önce web'de muadili var mı? Varsa ARES'tekiyle başla. Yoksa pattern uydur (gelecekte web tarafında da aynı isimle açılabilir).
+
+**Mevcut durum (69 sonu):** `mobile/src/lib/` altında sadece `dosya.js` (yeni) + `supabase.js` (mevcut, ama hardcoded JWT — MK-69.1 ile env var'a alınmalı) + `i18n.js` (mevcut) + `yetki.js` (mevcut, 70'in 3d işinde kullanılacak) var.
+
+**Gelecek adaylar (ihtiyaç bazlı):**
+- `lib/oturum.js` — `ARES.oturumAl` muadili (current user, tenant_id, rol)
+- `lib/format.js` — `ARES.format.tarih`, `ARES.format.sayi` muadili
+- `lib/normalize.js` — `ARES_NORM.malzemeEtiket` (TR-capitalize + lokalize) muadili
+
+**İlişkili:** MK-69.1 (env var disiplini — bu helper'lar env var'lara dayanır), 3b deneyimi (web pattern referans alma dersi), R-06 (kapsamı baştan tam çıkar — sıfırdan yazma yerine mevcut testli pattern'i taşı).
+
+---
+
+## MK-69.3 — Mobile saha app'i viewport: `maximum-scale=1, user-scalable=no` (9 Mayıs 2026)
+
+**Bağlam:** 69. oturum 3c-fix push edildikten sonra Cihat iPhone'da test ederken: heat input alanına dokununca sayfa otomatik yakınlaştı (zoom), kayıt sonrası küçültmek için elle pinch gerekti. Bu, iOS Safari'nin klasik davranışı — input `font-size < 16px` olan herhangi bir alana focus olunca "kullanıcı daha rahat yazabilsin diye" sayfayı zoom yapıyor. Heat input bizde 14px (kart tasarımıyla uyumlu).
+
+İki çözüm yolu var:
+1. **Tüm input'ları 16px yap.** Tek input için kabul edilebilir ama tüm app boyunca tasarım disiplinini bozar (kart içinde 13-14px hierarchy var).
+2. **Viewport meta tag'ine `maximum-scale=1` + `user-scalable=no`.** Tek dosya değişikliği (`mobile/index.html`), tüm app için input zoom kapanır. Twitter/Instagram/native saha uygulamaları bu pattern'i kullanır.
+
+**Karar:** AresPipe mobile (saha app'i), `mobile/index.html` viewport meta tag'inde aşağıdaki standart kullanılır:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+```
+
+- `maximum-scale=1` — manuel zoom kapalı
+- `user-scalable=no` — pinch-to-zoom kapalı
+- `viewport-fit=cover` — iPhone notch/dynamic island kullanım alanı tam (bonus)
+
+**Trade-off (kabul edildi):** Pinch-to-zoom kapanır, görme zorluğu olan kullanıcılar manuel zoom yapamaz. Endüstriyel saha app'i için bu kabul edilebilir bir trade-off — operatör tek elinde telefonla iş yapıyor, native app benzeri davranış (zoom yok) bekliyor.
+
+**Kapsam:** Sadece `mobile/` (operatör saha app'i). Web tarafı (`index.html`, `admin/index.html`, `panel.html` vb.) bu disiplinden etkilenmez — masaüstü/tablet kullanım, zoom kapatılmamalı.
+
+**İlişkili:** R-07 (CSS variable disiplini — viewport meta CSS değil ama ortak temaya bağlı UX kararı), saha kullanım senaryoları (operatör tek el, telefon, eldiven olabilir).
+
+---

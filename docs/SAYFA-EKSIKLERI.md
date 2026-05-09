@@ -354,3 +354,31 @@ git rm --cached mobile/.DS_Store
 
 ---
 
+
+## 69. Oturum Tarama Sonuçları (9 Mayıs 2026)
+
+### `fotograflar` tablosu / web upload akışı
+
+#### 🟡 Açık (sonraya bırakıldı)
+- **SED-69-01** — `fotograflar.islem_turu` web upload UI'sından NULL geliyor. 69. oturum 3b'de mobile foto carousel canlı testinde A-0575 spool'unda 2 foto vardı ama her ikisinin `islem_turu` alanı NULL. Mobile carousel meta chip'i `m.tv('m_ib_foto_islem_' + islem_turu, ...)` ile lokalize ediyor; NULL geldiğinde fallback olarak chip sadece "Yükleyen · Tarih" gösteriyor (degraded gracefully). **Fix yolu:** Web `spool_detay.html`'in foto upload akışında (muhtemelen `fotoUpload` veya benzeri fonksiyon) form alanına/event handler'a `islem_turu` zorunlu seçim eklenmeli (kesim/bukum/markalama/kk/genel — mobile zaten bu enum'u tanıyor, `m_ib_foto_islem_*` anahtarları kök lang'de var). Mevcut NULL kayıtlar için ya manuel `'genel'` UPDATE'i ya da migration ile düzeltme.
+
+### `mobile/` predev script disiplini
+
+#### 🟡 Açık (sonraya bırakıldı)
+- **SED-69-02** — Mobile predev script bypass kolaylığı. `npm run dev` çalıştırıldığında `predev` script lang dosyalarını kök `lang/`'tan `mobile/src/lang/`'a kopyalıyor (MK-62.3 + MK-68.5 disiplini). Ancak geliştirici doğrudan `vite` çağırırsa veya VS Code/IDE entegrasyonundan başlatırsa predev atlanıyor → `mobile/src/lang/` boş kalıyor → import error (lang dosyaları bundle'a girmiyor). 69. oturumda Cihat'ın bu durumu yaşadığına dair işaret yok ama disiplin yapısal olarak kırılgan. **Fix yolu:** İki seçenek — (a) Vite plugin yazıp `dev` config'inde her başlangıçta lang kopyalamayı tetikle (predev script gerek yok); (b) CLAUDE-MOBILE.md'ye uyarı + `mobile/.env.example` dosyası eklenirken yanına README satırı (her zaman `npm run dev` çağır). Seçenek (a) daha sağlam.
+
+### Mobile Vercel deploy mimarisi
+
+#### 🟢 Belgelendi (canlı disiplin)
+- **SED-69-03** — `arespipe-mob` mobile project'te kök `api/` klasörü yok, cross-origin endpoint pattern. 69. oturum 3b-fix3'te yaşandı: mobile build'de `arespipe-mob.vercel.app` domain'i, repo kökündeki `api/` Vercel serverless fonksiyonlarını **görmez** (mobile project root'u `/mobile`, kök `api/` kapsamı dışı). Mobile'ın endpoint çağrıları cross-origin olarak `arespipe.vercel.app/api/*`'a gider. Bu endpoint'lerin CORS header'ı zaten açık (`Access-Control-Allow-Origin: '*'`). Disiplin: yeni mobile endpoint çağrısı eklerken `VITE_API_BASE` üzerinden absolute URL kullan, relative path kullanma. Bu durum MK-69.1 (env var disiplini) ile birlikte belgelendi. **Aktif iş gerektirmiyor** ama yeni geliştiriciler için CLAUDE-MOBILE.md'ye satır eklenmeli — mobile/web Vercel projeleri ayrı, api/ web project'inde.
+
+### `IbQRTara.jsx` + `IbUyariDrawer.jsx` (sertifika konusu)
+
+#### 🟡 Açık (sonraya bırakıldı, saha kritik)
+- **SED-69-04** — QR okutunca sertifikalı malzeme uyarısı. 69. oturum 3c'de Cihat saha senaryosunu açıkladı: bazı spool'larda gemi gövdesi gibi MTC/3.1 sertifikası gerektiren malzemeler kullanılıyor (`spool_malzemeleri.sertifikali=true`, BOM'da baştan tanımlı, mühendislik kararı). Operatör QR okuttuğunda bu spool'da sertifikalı malzeme olduğunu **bilgilendirici uyarı** olarak görmeli — yanlış malzeme kullanmasın. Akış-kesici değil (operatör hâlâ işe başlayabilir). **Fix yolu:** `IbUyariDrawer.jsx`'e yeni bir yumuşak kart tipi eklenir (sarı zemin, "Bu spool sertifikalı malzeme içeriyor" başlık + malzeme listesi + uyarı metni). `IbQRTara.jsx`'in `handleScan` callback'i bu spool'un `spool_malzemeleri` tablosunda `sertifikali=true` satırı var mı kontrol eder, varsa drawer'a sarı kart bağlar (mevcut not kartı pattern'iyle aynı). Yeni i18n: `m_ib_uy_yu_sert_baslik`, `m_ib_uy_yu_sert_mesaj` × 3 dil = 6 anahtar.
+
+### Spool sertifika evrak yükleme akışı
+
+#### 🟡 Açık (büyük iş, sonraki oturumlar)
+- **SED-69-05** — Spool sertifika evrakı yükleme akışı. Cihat'ın saha bağlamı: sertifikalı malzeme kullanılan spool'larda **sertifika evrakı (PDF/fotoğraf)** spool'a yüklenmeli. Devre imalatı bittiğinde tüm spool sertifikaları + diğer kalite belgeleri tek bir **devre kalite dosyası** olarak agregate edilecek (müşteriye teslim edilen kalite paketi). **Fix yolu:** Çok aşamalı iş — (a) `belgeler` tablosu kontrolü/oluşturma (tip='sertifika' ayrımı, spool_id + tenant_id), (b) IbSpoolDetay'da yeni "Belgeler" sekmesi VEYA Malzeme kartında "+ sertifika ekle" butonu, (c) Foto/PDF upload akışı (yeni `lib/yukle.js` helper, MK-69.2 muadili), (d) Devre detayında agregat görüntü ("Bu devrenin N spool'undan M sertifika yüklü"), (e) Devre imalatı bitirildi flag'i + kalite dosyası export (PDF birleştirme, uzun vadeli). Bu işin tamamı tek oturumda olmaz, parça parça gelir. 70'te belki sadece (a) + (b) aşamaları + temel upload.
+
