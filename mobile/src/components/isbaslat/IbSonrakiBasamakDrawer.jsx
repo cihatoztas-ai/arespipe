@@ -9,12 +9,13 @@
 //      - "Geri" linki ile basamak ekranina donulebilir
 //
 // MK-68.4 Ib-prefix
-// MK-71.1 basamak adlari DB-driven
+// MK-71.1 basamak adlari DB-driven (basamakAdi + dil)
+// MK-71.3 lib/i18n useT() pattern: { tv, dil, setDil, mevcutDiller }
 // Cihat 71: "Atla yok, secim zorunlu" + "coklu basamak secimi"
 
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { basamakAdi, KAYNAK_ALT_TIPLERI } from '../../lib/basamak-akisi';
+import { useState, useEffect } from 'react'
+import { useT } from '../../lib/i18n'
+import { basamakAdi, KAYNAK_ALT_TIPLERI } from '../../lib/basamak-akisi'
 
 /**
  * @param {boolean} acik
@@ -29,34 +30,33 @@ export default function IbSonrakiBasamakDrawer({
   onSec,
   yukleniyor = false,
 }) {
-  const { t, i18n } = useTranslation();
-  const dil = (i18n.language || 'tr').slice(0, 2);
+  const { tv, dil } = useT()
 
   // Drawer ic state: hangi ekran gosteriliyor
-  const [ekran, setEkran] = useState('basamak'); // 'basamak' | 'kaynak_yontemi'
+  const [ekran, setEkran] = useState('basamak') // 'basamak' | 'kaynak_yontemi'
 
   // Drawer her acildiginda basamak ekranina don
   useEffect(() => {
-    if (acik) setEkran('basamak');
-  }, [acik]);
+    if (acik) setEkran('basamak')
+  }, [acik])
 
-  if (!acik) return null;
+  if (!acik) return null
 
   // Ana basamak ekraninda buton tikina
   const handleBasamakSec = (basamak) => {
     if (basamak.sistem_adi === 'kaynak') {
       // Kaynak — alt-tip secimine gec
-      setEkran('kaynak_yontemi');
-      return;
+      setEkran('kaynak_yontemi')
+      return
     }
     // Diger basamaklar — direkt onSec
-    onSec(basamak.sistem_adi);
-  };
+    onSec(basamak.sistem_adi)
+  }
 
   // Kaynak alt-tip secimi
   const handleKaynakAltTipi = (altTipKodu) => {
-    onSec(altTipKodu);
-  };
+    onSec(altTipKodu)
+  }
 
   return (
     <>
@@ -89,11 +89,9 @@ export default function IbSonrakiBasamakDrawer({
           overflowY: 'auto',
         }}
       >
-        {/* Drag handle gostermiyoruz - drawer kapatilamaz */}
-
         {ekran === 'basamak' ? (
           <BasamakEkrani
-            t={t}
+            tv={tv}
             dil={dil}
             basamaklar={basamaklar}
             yukleniyor={yukleniyor}
@@ -101,7 +99,7 @@ export default function IbSonrakiBasamakDrawer({
           />
         ) : (
           <KaynakYontemEkrani
-            t={t}
+            tv={tv}
             yukleniyor={yukleniyor}
             onYontemSec={handleKaynakAltTipi}
             onGeri={() => setEkran('basamak')}
@@ -109,13 +107,13 @@ export default function IbSonrakiBasamakDrawer({
         )}
       </div>
     </>
-  );
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Ekran 1: Sonraki basamak listesi
 // ─────────────────────────────────────────────────────────────────
-function BasamakEkrani({ t, dil, basamaklar, yukleniyor, onBasamakSec }) {
+function BasamakEkrani({ tv, dil, basamaklar, yukleniyor, onBasamakSec }) {
   return (
     <>
       <h2
@@ -127,7 +125,7 @@ function BasamakEkrani({ t, dil, basamaklar, yukleniyor, onBasamakSec }) {
           textAlign: 'center',
         }}
       >
-        {t('m_ib_sd_sonraki_basamak_baslik')}
+        {tv('m_ib_sd_sonraki_basamak_baslik', 'Sonraki Basamak')}
       </h2>
 
       <p
@@ -139,13 +137,13 @@ function BasamakEkrani({ t, dil, basamaklar, yukleniyor, onBasamakSec }) {
           lineHeight: 1.5,
         }}
       >
-        {t('m_ib_sd_sonraki_basamak_mesaj')}
+        {tv('m_ib_sd_sonraki_basamak_mesaj', "İşin tamamlandı. Spool'u sonraki adıma gönder.")}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {basamaklar.map((b, i) => {
-          const ad = basamakAdi(b, dil);
-          const isPrimary = i === 0; // Ilk eleman dogal sonraki — primary mavi
+          const ad = basamakAdi(b, dil)
+          const isPrimary = i === 0 // Ilk eleman dogal sonraki — primary mavi
           return (
             <button
               key={b.sistem_adi}
@@ -171,17 +169,23 @@ function BasamakEkrani({ t, dil, basamaklar, yukleniyor, onBasamakSec }) {
               <span>{ad}</span>
               <span aria-hidden="true">→</span>
             </button>
-          );
+          )
         })}
       </div>
     </>
-  );
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Ekran 2: Kaynak yontem secimi (alt-tip)
 // ─────────────────────────────────────────────────────────────────
-function KaynakYontemEkrani({ t, yukleniyor, onYontemSec, onGeri }) {
+function KaynakYontemEkrani({ tv, yukleniyor, onYontemSec, onGeri }) {
+  // KAYNAK_ALT_TIPLERI'deki i18nKey'lerin TR fallback'leri
+  const kaynakFallback = {
+    m_ib_sd_kaynak_yontemi_argon: 'Argon Kaynağı',
+    m_ib_sd_kaynak_yontemi_gazalti: 'Gazaltı Kaynağı',
+  }
+
   return (
     <>
       <h2
@@ -193,7 +197,7 @@ function KaynakYontemEkrani({ t, yukleniyor, onYontemSec, onGeri }) {
           textAlign: 'center',
         }}
       >
-        {t('m_ib_sd_kaynak_yontemi_baslik')}
+        {tv('m_ib_sd_kaynak_yontemi_baslik', 'Kaynak Yöntemi')}
       </h2>
 
       <p
@@ -205,7 +209,10 @@ function KaynakYontemEkrani({ t, yukleniyor, onYontemSec, onGeri }) {
           lineHeight: 1.5,
         }}
       >
-        {t('m_ib_sd_kaynak_yontemi_mesaj')}
+        {tv(
+          'm_ib_sd_kaynak_yontemi_mesaj',
+          'Spool için kaynak yöntemini seç. Sonraki kaynakçı bu seçime göre yönlendirilir.'
+        )}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -230,7 +237,7 @@ function KaynakYontemEkrani({ t, yukleniyor, onYontemSec, onGeri }) {
               justifyContent: 'space-between',
             }}
           >
-            <span>{t(alt.i18nKey)}</span>
+            <span>{tv(alt.i18nKey, kaynakFallback[alt.i18nKey] || alt.kod)}</span>
             <span aria-hidden="true">→</span>
           </button>
         ))}
@@ -254,8 +261,8 @@ function KaynakYontemEkrani({ t, yukleniyor, onYontemSec, onGeri }) {
           opacity: yukleniyor ? 0.5 : 1,
         }}
       >
-        ← {t('m_ib_sd_kaynak_yontemi_geri')}
+        ← {tv('m_ib_sd_kaynak_yontemi_geri', 'Basamak seçimine dön')}
       </button>
     </>
-  );
+  )
 }
