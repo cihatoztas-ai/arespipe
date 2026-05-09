@@ -296,24 +296,56 @@ export default function IbSpoolDetay({
   }, [yerelSpool?.id])
 
   // ─── Yumuşak uyarı kartlarını topla ───
-  // 3 kategori: Alıştırma kırmızı (spool.alistirma VAR/KISMI), Test mavi
-  // (devreye test tanımlı), Not sarı (notlar tablosundan, her not ayrı kart).
+  // 4 kategori (70. oturum 3d, doygun palet):
+  //   Alıştırma kırmızı (spool.alistirma VAR/KISMI)
+  //   Sertifika mavi (spool_malzemeleri.sertifikali=true — SED-69-04)
+  //   Test mor (devreye test tanımlı)
+  //   Not amber (notlar tablosundan, her not ayrı kart, olusturma DESC)
+  // Sıra: alıştırma → sertifika → test → not (kritiklik azalan).
   const yumusKartlar = useMemo(() => {
     const liste = []
     if (!yerelSpool) return liste
 
-    // Alıştırma kartı (kırmızı) — VAR/KISMI
+    // Alıştırma kartları (70. oturum 3d-fix3): VAR ve KISMI farklı semantik.
+    //   VAR   → 'alistirma'        (kırmızı): spool tamamen alıştırma, kaynak yok
+    //   KISMI → 'alistirma_kismi'  (coral):   bazı parçalar alıştırma, bantlama gerek
     const alis = String(yerelSpool.alistirma || '').toUpperCase()
-    if (alis === 'VAR' || alis === 'KISMI') {
+    if (alis === 'VAR') {
       liste.push({
         _key:     'alis',
         kategori: 'alistirma',
-        baslik:   tv('m_ib_uy_yu_alis_baslik', 'Bu spool kaynatılmayacak'),
-        mesaj:    tv('m_ib_uy_yu_alis_mesaj',  'Alıştırma (prefab) spool — kaynak işlemi uygulanmaz. Sadece montaj yapılacak.'),
+        baslik:   tv('m_ib_uy_yu_alis_var_baslik', 'Bu spool kaynatılmayacak'),
+        mesaj:    tv('m_ib_uy_yu_alis_var_mesaj',  'Spool tamamen alıştırma (prefab) — kaynak yapılmayacak. Sadece montaj.'),
+      })
+    } else if (alis === 'KISMI') {
+      liste.push({
+        _key:     'alis',
+        kategori: 'alistirma_kismi',
+        baslik:   tv('m_ib_uy_yu_alis_kismi_baslik', 'Kısmi alıştırma'),
+        mesaj:    tv('m_ib_uy_yu_alis_kismi_mesaj',  'Bu spoolda kaynatılmayacak yerler var. Bantlayarak ayırın, çizimi kontrol edin.'),
       })
     }
 
-    // Test kartı (mavi) — devreye en az 1 test tanımlıysa
+    // Sertifika kartı (mavi) — sertifikalı malzeme varsa (70. oturum, SED-69-04)
+    const sertMalzemeler = malzemeler.filter(m => m && m.sertifikali === true)
+    if (sertMalzemeler.length > 0) {
+      const ilk3Kod = sertMalzemeler.slice(0, 3).map(m => m.kod).filter(Boolean)
+      const fazlaSayi = sertMalzemeler.length - ilk3Kod.length
+      const kodListesi = ilk3Kod.length
+        ? ilk3Kod.join(', ') + (fazlaSayi > 0 ? ` ve ${fazlaSayi} diğer` : '')
+        : '—'
+      liste.push({
+        _key:     'sertifika',
+        kategori: 'sertifika',
+        baslik:   tv('m_ib_uy_yu_sert_baslik', 'Sertifikalı malzeme'),
+        mesaj:    tv('m_ib_uy_yu_sert_mesaj',
+                      'Bu spoolda {sayi} adet sertifikalı malzeme var (MTC gerekli). Yanlış malzeme kullanmamaya dikkat et: {liste}')
+                    .replace('{sayi}', String(sertMalzemeler.length))
+                    .replace('{liste}', kodListesi),
+      })
+    }
+
+    // Test kartı (mor) — devreye en az 1 test tanımlıysa
     if (testlerSayi > 0) {
       liste.push({
         _key:     'test',
@@ -323,7 +355,7 @@ export default function IbSpoolDetay({
       })
     }
 
-    // Not kartları (sarı) — her not ayrı kart, olusturma DESC
+    // Not kartları (amber) — her not ayrı kart, olusturma DESC
     notlar.forEach(n => {
       if (!n?.metin) return
       liste.push({
@@ -335,14 +367,38 @@ export default function IbSpoolDetay({
     })
 
     return liste
-  }, [yerelSpool, testlerSayi, notlar, tv])
+  }, [yerelSpool, testlerSayi, notlar, malzemeler, tv])
 
   // ─── Akış-kesici uyarı kontrolü ───
-  // Mount + spool değişiminde değerlendirilir. Öncelik: devamEdiyor > alternatifBasamak.
+  // Mount + spool değişiminde değerlendirilir.
+  // Öncelik (70. oturum 3d-fix3):
+  //   1. tamAlistirmaKaynak — VAR + kaynakçı (özel mesaj)
+  //   2. yetkisiz           — genel yetki
+  //   3. devamEdiyor        — başkasının aktif işi
+  //   4. alternatifBasamak  — kaynak ailesi içi geçiş
   useEffect(() => {
     if (!yerelSpool) return
 
-    // 1. devamEdiyor — başkasının aktif işi
+    // 1. tamAlistirmaKaynak (70. oturum 3d-fix3) — Spool tamamen alıştırma
+    // ise kaynak yapılmaz. Kaynakçı operatöre "yetki yok" yerine net mesaj.
+    // Diğer roller (büküm, kesim) yumuşak kart yeterli — bu kontrol kaynakçı
+    // özelinde priority 1.
+    const alistirmaUst = String(yerelSpool.alistirma || '').toUpperCase()
+    const kaynakciRol = aktifRol?.ad === 'Argon Kaynağı' || aktifRol?.ad === 'Gazaltı Kaynağı'
+    if (alistirmaUst === 'VAR' && kaynakciRol) {
+      setUyariDrawer({ tip: 'tamAlistirmaKaynak', payload: {} })
+      return
+    }
+
+    // 2. yetkisiz — operatör bu basamak için yetkili değil
+    // Akış-kesici, "Anladım" ile kapatılır. Kapanınca yumuşak drawer otomatik
+    // açılır (handleAkisKesiciKapat içinde zincirleme).
+    if (!aktifBasamakYetkili(yerelSpool.aktif_basamak, bloklar)) {
+      setUyariDrawer({ tip: 'yetkisiz', payload: {} })
+      return
+    }
+
+    // 3. devamEdiyor — başkasının aktif işi
     if (yerelSpool.is_durumu === 'devam_ediyor') {
       const aktifIsciId = yerelSpool.aktif_isci_id || yerelSpool.aktif_kullanici_id
       const benimMi = aktifIsciId && kullanici?.id && aktifIsciId === kullanici.id
@@ -357,7 +413,7 @@ export default function IbSpoolDetay({
       }
     }
 
-    // 2. alternatifBasamak — SADECE kaynak ailesi içinde (argon ↔ gazaltı).
+    // 4. alternatifBasamak — SADECE kaynak ailesi içinde (argon ↔ gazaltı).
     // Diğer basamak uyumsuzlukları için drawer açılmaz; iş başlatma izni
     // RLS/yetki kontrolüyle DB tarafında yapılır. İlk operatör senaryosu
     // (örn. imalatçı ön imalat bekleyen spool'a okutmuşsa) drawer çıkmaz.
@@ -394,7 +450,14 @@ export default function IbSpoolDetay({
   }, [yerelSpool?.id])
 
   // ─── Drawer handler'ları ───
-  function handleAkisKesiciKapat()    { setUyariDrawer(null) }
+  // 70. oturum (3d): Akış-kesici kapatılınca yumuşak uyarı varsa drawer
+  // otomatik açılır (zincirleme akış). Operatör peek tab'ı kaçırmasın.
+  function handleAkisKesiciKapat() {
+    setUyariDrawer(null)
+    if (yumusKartlar.length > 0) {
+      setYumusDrawerAcik(true)
+    }
+  }
   function handleAkisKesiciAksiyon(aksiyon) {
     if (aksiyon === 'devral') {
       alert(tv('m_ib_sd_devral_placeholder', "(Devral akışı 68b'de eklenecek — foto çekme + DB update)"))
@@ -402,6 +465,9 @@ export default function IbSpoolDetay({
       alert(tv('m_ib_sd_alt_placeholder',    "(Alternatif başla akışı 68b'de eklenecek — DB update)"))
     }
     setUyariDrawer(null)
+    if (yumusKartlar.length > 0) {
+      setYumusDrawerAcik(true)
+    }
   }
   function handleYumusKapat()  { setYumusDrawerAcik(false) }
   function handlePeekTabBas() {
@@ -557,52 +623,25 @@ export default function IbSpoolDetay({
         )}
       </div>
 
-      {/* ───── Foot CTA — 70. oturum (Adım 3d): durum × yetki matrisi ───── */}
+      {/* ───── Foot CTA — 70. oturum (3d): durum × yetki matrisi ─────
+          Yetkisizlik artık akış-kesici drawer ile bildirilir (useEffect
+          priority 1). Footer'da "İşe Başla" disabled gösterilir, info
+          satırı yok (mesaj drawer'da). */}
       <div style={s.footWrap}>
         {!isDevamEdiyor ? (
-          yetkili ? (
-            <>
-              <button
-                type="button"
-                style={drawerAcikHerhangi ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
-                onClick={iseBasla}
-                disabled={drawerAcikHerhangi}
-              >
-                {tv('m_ib_sd_basla', 'İşe Başla')}
-              </button>
-              <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
-                {tv('m_ib_sd_baska', 'Başka Spool Tara')}
-              </button>
-            </>
-          ) : (
-            <>
-              <div style={s.footInfoSatir}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  style={s.footInfoIkon}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  aria-hidden="true"
-                >
-                  <circle cx="8" cy="8" r="6.5" />
-                  <line x1="8" y1="7.2" x2="8" y2="11.5" strokeLinecap="round" />
-                  <circle cx="8" cy="4.6" r="0.7" fill="currentColor" stroke="none" />
-                </svg>
-                <span>
-                  {tv(
-                    'm_ib_sd_yetki_yok',
-                    'Bu spool {basamak} basamağında, şu an senin yetkinde değil'
-                  ).replace('{basamak}', basamakAdi(yerelSpool.aktif_basamak))}
-                </span>
-              </div>
-              <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
-                {tv('m_ib_sd_baska', 'Başka Spool Tara')}
-              </button>
-            </>
-          )
+          <>
+            <button
+              type="button"
+              style={(!yetkili || drawerAcikHerhangi) ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
+              onClick={iseBasla}
+              disabled={!yetkili || drawerAcikHerhangi}
+            >
+              {tv('m_ib_sd_basla', 'İşe Başla')}
+            </button>
+            <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
+              {tv('m_ib_sd_baska', 'Başka Spool Tara')}
+            </button>
+          </>
         ) : (
           <>
             <button type="button" style={s.footBtnKirmizi} onClick={isiKapat}>
@@ -653,35 +692,130 @@ export default function IbSpoolDetay({
 
 function YumusKart({ kategori, baslik, mesaj }) {
   const stil = yumusKartStili(kategori)
+  const ikon = yumusKartIkon(kategori, stil.ikonRenk)
   return (
     <div style={stil.kart}>
-      <div style={stil.baslik}>{baslik}</div>
-      <div style={stil.mesaj}>{mesaj}</div>
+      {ikon}
+      <div style={stil.icerik}>
+        <div style={stil.baslik}>{baslik}</div>
+        <div style={stil.mesaj}>{mesaj}</div>
+      </div>
     </div>
   )
 }
 
+// 70. oturum (3d): Kategori bazlı SVG ikonu (renk körü için redundancy).
+// Alıştırma yasak, sertifika belge, test erlen, not belge+işaret.
+function yumusKartIkon(kategori, renk) {
+  const ortakProps = {
+    width: 20,
+    height: 20,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: renk,
+    strokeWidth: 2.2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    style: { flexShrink: 0, marginTop: 1 },
+    'aria-hidden': true,
+  }
+  if (kategori === 'alistirma' || kategori === 'alistirma_kismi') {
+    // VAR ve KISMI aynı ikon (yasak) — semantik aile aynı, renk ayrı.
+    return (
+      <svg {...ortakProps}>
+        <circle cx="12" cy="12" r="9" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    )
+  }
+  if (kategori === 'sertifika') {
+    return (
+      <svg {...ortakProps}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" />
+        <path d="M9 13h6M9 17h4" />
+      </svg>
+    )
+  }
+  if (kategori === 'test') {
+    return (
+      <svg {...ortakProps}>
+        <path d="M9 2v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V2" />
+        <line x1="7" y1="2" x2="17" y2="2" />
+        <line x1="7" y1="13" x2="17" y2="13" />
+      </svg>
+    )
+  }
+  // not
+  return (
+    <svg {...ortakProps}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13l-3 3-2-2-3 3" />
+    </svg>
+  )
+}
+
 function yumusKartStili(kategori) {
-  // Mockup v14 light-anthracite renk paleti
+  // 70. oturum (3d): Doygun palet (Anthropic ramp 100/200 + 4px sol accent
+  // + ikon). Pastel paletten geçiş — Cihat saha test geri bildirimi.
+  // Kategoriler: alistirma kırmızı, sertifika mavi, test mor, not amber.
+  const ortakKart = {
+    display:    'flex',
+    gap:        12,
+    alignItems: 'flex-start',
+    padding:    14,
+    borderRadius: 8,
+  }
+  const ortakIcerik = { flex: 1, minWidth: 0 }
+  const ortakBaslik = { fontSize: 15, fontWeight: 600, marginBottom: 4 }
+  const ortakMesaj  = { fontSize: 14, lineHeight: 1.5 }
+
   if (kategori === 'alistirma') {
     return {
-      kart:   { background: '#FCEBEB', border: '0.5px solid #F7C1C1', borderRadius: 8, padding: 14 },
-      baslik: { fontSize: 15, fontWeight: 500, color: '#791F1F', marginBottom: 6 },
-      mesaj:  { fontSize: 14, color: '#501313', lineHeight: 1.5 },
+      kart:     { ...ortakKart, background: '#F7C1C1', border: '0.5px solid #F0997B', borderLeft: '4px solid #A32D2D' },
+      icerik:   ortakIcerik,
+      baslik:   { ...ortakBaslik, color: '#501313' },
+      mesaj:    { ...ortakMesaj,  color: '#501313' },
+      ikonRenk: '#501313',
+    }
+  }
+  if (kategori === 'alistirma_kismi') {
+    // 70. oturum (3d-fix3): KISMI alıştırma — coral (kırmızıdan ayrı, 'alistirma'
+    // ile aynı aile ama daha yumuşak ton, kısmi/bantlama semantiği).
+    return {
+      kart:     { ...ortakKart, background: '#F5C4B3', border: '0.5px solid #F0997B', borderLeft: '4px solid #993C1D' },
+      icerik:   ortakIcerik,
+      baslik:   { ...ortakBaslik, color: '#712B13' },
+      mesaj:    { ...ortakMesaj,  color: '#4A1B0C' },
+      ikonRenk: '#712B13',
+    }
+  }
+  if (kategori === 'sertifika') {
+    return {
+      kart:     { ...ortakKart, background: '#B5D4F4', border: '0.5px solid #85B7EB', borderLeft: '4px solid #185FA5' },
+      icerik:   ortakIcerik,
+      baslik:   { ...ortakBaslik, color: '#0C447C' },
+      mesaj:    { ...ortakMesaj,  color: '#042C53' },
+      ikonRenk: '#0C447C',
     }
   }
   if (kategori === 'test') {
     return {
-      kart:   { background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 8, padding: 14 },
-      baslik: { fontSize: 15, fontWeight: 500, color: '#0C447C', marginBottom: 6 },
-      mesaj:  { fontSize: 14, color: '#042C53', lineHeight: 1.5 },
+      kart:     { ...ortakKart, background: '#CECBF6', border: '0.5px solid #AFA9EC', borderLeft: '4px solid #534AB7' },
+      icerik:   ortakIcerik,
+      baslik:   { ...ortakBaslik, color: '#26215C' },
+      mesaj:    { ...ortakMesaj,  color: '#26215C' },
+      ikonRenk: '#26215C',
     }
   }
-  // not (sarı)
+  // not (amber)
   return {
-    kart:   { background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: 14 },
-    baslik: { fontSize: 15, fontWeight: 500, color: '#854F0B', marginBottom: 6 },
-    mesaj:  { fontSize: 14, color: '#412402', lineHeight: 1.5, whiteSpace: 'pre-line' },
+    kart:     { ...ortakKart, background: '#FAC775', border: '0.5px solid #EF9F27', borderLeft: '4px solid #854F0B' },
+    icerik:   ortakIcerik,
+    baslik:   { ...ortakBaslik, color: '#412402' },
+    mesaj:    { ...ortakMesaj,  color: '#412402', whiteSpace: 'pre-line' },
+    ikonRenk: '#412402',
   }
 }
 

@@ -9,9 +9,11 @@
 //   devamEdiyor                — amber, [Devral][İptal]
 //   alternatifBasamakYetkili   — mavi info, [{Alternatif} ile başla][İptal]
 //   alternatifBasamakYetkisiz  — mavi info, tek koyu solid buton "İptal"
+//   yetkisiz                   — kırmızı + kilit, tek koyu solid "Anladım" (70. oturum 3d)
+//   tamAlistirmaKaynak         — kırmızı + yasak, kaynakçı için "kaynak yapılmayacak" (3d-fix3)
 //
 // Props:
-//   tip       — string (yukarıdaki 4 değerden biri)
+//   tip       — string (yukarıdaki 6 değerden biri)
 //   payload   — { operatorAd?, aktifBasamak?, alternatif? }
 //   onKapat   — () => void (İptal / Tamam butonları çağırır)
 //   onAksiyon — (aksiyon: 'devral' | 'alternatifeBasla') => void
@@ -118,6 +120,50 @@ export default function IbUyariDrawer({ tip, payload = {}, onKapat, onAksiyon })
           mesaj: tv('m_ib_uy_ab_yz_mesaj', 'Bu işi yapma yetkiniz yok.'),
           butonlar: [
             { etiket: tv('m_ib_uy_iptal', 'İptal'), tip: 'koyu', onClick: onKapat },
+          ],
+        }
+      }
+
+      // 70. oturum (Adım 3d): Yetkisizlik — operatör bu basamak için
+      // yetkili değil. Kırmızı kilit + tek "Anladım" butonu (akış-kesici).
+      // IbSpoolDetay'da useEffect priority 2 olarak tetiklenir.
+      case 'yetkisiz': {
+        return {
+          aksent: 'var(--re)',
+          aksentBg: 'rgba(229,62,62,0.12)',
+          ikonStroke: 'var(--re)',
+          ikonSvg: (
+            <>
+              <rect x="5" y="11" width="14" height="10" rx="1.5"/>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+            </>
+          ),
+          baslik: tv('m_ib_uy_yz_baslik', 'Yetki yok'),
+          mesaj:  tv('m_ib_uy_yz_mesaj',  'Bu basamak için yetkili değilsiniz.'),
+          butonlar: [
+            { etiket: tv('m_ib_uy_anladim', 'Anladım'), tip: 'koyu', onClick: onKapat },
+          ],
+        }
+      }
+
+      // 70. oturum (3d-fix3): Tam alıştırma + kaynakçı rol — özel akış-kesici.
+      // "Bu spool tamamen alıştırma, kaynak yapılmayacak" net mesajı (yetkisiz
+      // genel mesajından daha açık). IbSpoolDetay'da useEffect priority 1.
+      case 'tamAlistirmaKaynak': {
+        return {
+          aksent: 'var(--re)',
+          aksentBg: 'rgba(229,62,62,0.12)',
+          ikonStroke: 'var(--re)',
+          ikonSvg: (
+            <>
+              <circle cx="12" cy="12" r="9"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </>
+          ),
+          baslik: tv('m_ib_uy_ta_baslik', 'Kaynak yapılmayacak'),
+          mesaj:  tv('m_ib_uy_ta_mesaj',  'Bu spool tamamen alıştırma. Kaynak işlemi yapılmayacak.'),
+          butonlar: [
+            { etiket: tv('m_ib_uy_anladim', 'Anladım'), tip: 'koyu', onClick: onKapat },
           ],
         }
       }

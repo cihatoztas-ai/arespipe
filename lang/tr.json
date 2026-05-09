@@ -1853,5 +1853,16 @@
   "m_ib_sd_malzeme_bos": "Henüz malzeme eklenmemiş",
   "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi",
   "m_ib_sd_malzeme_kaydedildi": "Kaydedildi",
-  "m_ib_sd_yetki_yok": "Bu spool {basamak} basamağında, şu an senin yetkinde değil"
+  "m_ib_sd_yetki_yok": "Bu spool {basamak} basamağında, şu an senin yetkinde değil",
+  "m_ib_uy_yz_baslik": "Yetki yok",
+  "m_ib_uy_yz_mesaj": "Bu basamak için yetkili değilsiniz.",
+  "m_ib_uy_anladim": "Anladım",
+  "m_ib_uy_yu_sert_baslik": "Sertifikalı malzeme",
+  "m_ib_uy_yu_sert_mesaj": "Bu spoolda {sayi} adet sertifikalı malzeme var (MTC gerekli). Yanlış malzeme kullanmamaya dikkat et: {liste}",
+  "m_ib_uy_ta_baslik": "Kaynak yapılmayacak",
+  "m_ib_uy_ta_mesaj": "Bu spool tamamen alıştırma. Kaynak işlemi yapılmayacak.",
+  "m_ib_uy_yu_alis_var_baslik": "Bu spool kaynatılmayacak",
+  "m_ib_uy_yu_alis_var_mesaj": "Spool tamamen alıştırma (prefab) — kaynak yapılmayacak. Sadece montaj.",
+  "m_ib_uy_yu_alis_kismi_baslik": "Kısmi alıştırma",
+  "m_ib_uy_yu_alis_kismi_mesaj": "Bu spoolda kaynatılmayacak yerler var. Bantlayarak ayırın, çizimi kontrol edin."
 }

@@ -1853,5 +1853,16 @@
   "m_ib_sd_malzeme_bos": "لم تتم إضافة أي مواد بعد",
   "m_ib_sd_malzeme_kayit_hatasi": "تعذر الحفظ",
   "m_ib_sd_malzeme_kaydedildi": "تم الحفظ",
-  "m_ib_sd_yetki_yok": "هذا الـ spool في مرحلة {basamak}، ليس ضمن صلاحياتك حالياً"
+  "m_ib_sd_yetki_yok": "هذا الـ spool في مرحلة {basamak}، ليس ضمن صلاحياتك حالياً",
+  "m_ib_uy_yz_baslik": "غير مصرح",
+  "m_ib_uy_yz_mesaj": "أنت غير مصرح لهذه المرحلة.",
+  "m_ib_uy_anladim": "حسناً",
+  "m_ib_uy_yu_sert_baslik": "مواد معتمدة",
+  "m_ib_uy_yu_sert_mesaj": "يحتوي هذا الـ spool على {sayi} مادة معتمدة (MTC مطلوب). لا تستخدم مواد خاطئة: {liste}",
+  "m_ib_uy_ta_baslik": "لا يوجد لحام",
+  "m_ib_uy_ta_mesaj": "هذا الـ spool تجريبي بالكامل. لن يتم إجراء أي لحام.",
+  "m_ib_uy_yu_alis_var_baslik": "هذا الـ spool لن يتم لحامه",
+  "m_ib_uy_yu_alis_var_mesaj": "الـ spool تجريبي بالكامل (prefab) — بدون لحام. التجميع فقط.",
+  "m_ib_uy_yu_alis_kismi_baslik": "تجريبي جزئي",
+  "m_ib_uy_yu_alis_kismi_mesaj": "يحتوي هذا الـ spool على مناطق بدون لحام. عزّلها وتحقق من الرسم."
 }

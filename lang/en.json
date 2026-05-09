@@ -1853,5 +1853,16 @@
   "m_ib_sd_malzeme_bos": "No materials added yet",
   "m_ib_sd_malzeme_kayit_hatasi": "Could not save",
   "m_ib_sd_malzeme_kaydedildi": "Saved",
-  "m_ib_sd_yetki_yok": "This spool is at the {basamak} step, not in your authorization right now"
+  "m_ib_sd_yetki_yok": "This spool is at the {basamak} step, not in your authorization right now",
+  "m_ib_uy_yz_baslik": "Not authorized",
+  "m_ib_uy_yz_mesaj": "You are not authorized for this step.",
+  "m_ib_uy_anladim": "Understood",
+  "m_ib_uy_yu_sert_baslik": "Certified materials",
+  "m_ib_uy_yu_sert_mesaj": "This spool has {sayi} certified materials (MTC required). Do not use wrong materials: {liste}",
+  "m_ib_uy_ta_baslik": "No welding",
+  "m_ib_uy_ta_mesaj": "This spool is fully practice. No welding will be performed.",
+  "m_ib_uy_yu_alis_var_baslik": "This spool will not be welded",
+  "m_ib_uy_yu_alis_var_mesaj": "Spool is fully practice (prefab) — no welding. Assembly only.",
+  "m_ib_uy_yu_alis_kismi_baslik": "Partial practice",
+  "m_ib_uy_yu_alis_kismi_mesaj": "This spool has no-weld areas. Mask them off and check the drawing."
 }
