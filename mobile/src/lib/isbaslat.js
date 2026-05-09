@@ -3,6 +3,8 @@
 // 64. oturumda yazıldı (rol seçimi + DB sorguları)
 // 65. oturumda eklendi: BLOK_RENK_HEX (v3.2 palette), blokRenkHex(),
 //                       rolBasamakKarsiligi(), islemBloklariniGetir().renkHex
+// 70. oturumda eklendi (Adım 3d): basamakAdi(), aktifBasamakYetkili(),
+//                                  yetkiliRolAdlari() — Footer matrisi gate'i.
 
 import { supabase } from './supabase'
 
@@ -115,6 +117,75 @@ export function aktifBasamakRolaUyumlu(blokAd, aktifBasamak) {
   const liste = rolBasamakKarsiligi(blokAd)
   if (liste.length === 0) return true     // rol haritada yok → kontrolü pas geç
   return liste.includes(aktifBasamak)
+}
+
+// ───────────────────────────────────────────────
+// 70. oturum (Adım 3d): Yetki + Footer CTA
+// ───────────────────────────────────────────────
+
+// aktif_basamak slug → operatöre gösterilecek küçük-harf etiket.
+// Cümle akışında doğal okunsun diye lowercase ("imalat", "argon kaynağı").
+const BASAMAK_AD_TR = {
+  'imalat':         'imalat',
+  'on_imalat':      'ön imalat',
+  'kaynak':         'kaynak',
+  'argon_kaynak':   'argon kaynağı',
+  'gazalti_kaynak': 'gazaltı kaynağı',
+  'bukum':          'büküm',
+  'kesim':          'kesim',
+  'markalama':      'markalama',
+  'on_kontrol':     'ön kontrol',
+  'alim_kontrol':   'alım kontrol',
+}
+
+// Spool'un aktif_basamak slug'ını insan-okunabilir TR etikete çevirir.
+// Bilinmeyen slug → slug'ı olduğu gibi döner (fail-loud — eksik harita
+// kolayca fark edilsin).
+export function basamakAdi(slug) {
+  if (!slug) return ''
+  return BASAMAK_AD_TR[String(slug).toLowerCase()] || String(slug)
+}
+
+// Operatörün ATANMIŞ blokları arasında spool'un aktif basamağı için
+// uyumlu olan EN AZ BİR blok var mı? "İşe Başla" butonunun visibility
+// kararı (3d Footer matrisi) için kullanılır.
+//
+// Kural: ROL_BASAMAK haritasını yeniden kullanır — herhangi bir blok
+// uyumluysa kullanıcı yetkilidir (BİRLEŞİM, gizli_bolumler kesişiminin tersi).
+//
+// Bilinmeyen basamak → false (yetki kontrolünde GÜVENLİ default —
+// aktifBasamakRolaUyumlu'nun "true" davranışından KASTEN farklı, çünkü
+// o fonksiyon rol uyumsuzluk uyarısı için, bu fonksiyon yetki gate'i için).
+//
+// @param aktif_basamak — spool.aktif_basamak (slug, ör. 'imalat', 'argon_kaynak')
+// @param bloklar       — islemBloklariniGetir() çıktısı: [{ad, ...}, ...]
+// @returns boolean
+export function aktifBasamakYetkili(aktif_basamak, bloklar) {
+  if (!aktif_basamak) return false
+  if (!Array.isArray(bloklar) || !bloklar.length) return false
+  const aktif = String(aktif_basamak).toLowerCase()
+  for (const b of bloklar) {
+    if (!b || !b.ad) continue
+    const liste = ROL_BASAMAK[b.ad] || []
+    if (liste.includes(aktif)) return true
+  }
+  return false
+}
+
+// Yetkili olduğu rolleri listele — info satırında "Senin yetkin: X, Y" için.
+// Returns: ["Kesim", "Büküm"] gibi distinct rol adları (display order korunur).
+export function yetkiliRolAdlari(bloklar) {
+  if (!Array.isArray(bloklar) || !bloklar.length) return []
+  const seen = new Set()
+  const out = []
+  for (const b of bloklar) {
+    if (!b || !b.ad) continue
+    if (!seen.has(b.ad)) {
+      seen.add(b.ad)
+      out.push(b.ad)
+    }
+  }
+  return out
 }
 
 // ───────────────────────────────────────────────

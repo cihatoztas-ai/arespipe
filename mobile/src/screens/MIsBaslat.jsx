@@ -13,6 +13,8 @@
 //   Hub artık 'uyari' ekran state'i taşımaz.
 // 68. oturum (Adım 3): Ekran 3 placeholder kaldırıldı, gerçek IbSpoolDetay
 //   import edildi. Foto carousel + Malzeme BOM + foot akışları 68b'de.
+// 70. oturum (Adım 3d): bloklar prop'u IbSpoolDetay'a geçirildi —
+//   Footer matrisi yetki gate'i için (aktifBasamakYetkili).
 //
 // State:
 //   aktifEkran    — 'rolSec' | 'qr' | 'spoolDetay' | ...
@@ -222,6 +224,7 @@ export default function MIsBaslat() {
             spool={guncelSpool}
             aktifRol={seciliRol}
             kullanici={kullanici}
+            bloklar={bloklar}
             onBaskaSpool={handleBaskaSpool}
             onGeri={() => setAktifEkran('rolSec')}
           />

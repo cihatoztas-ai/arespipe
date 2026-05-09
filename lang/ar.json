@@ -1852,5 +1852,6 @@
   "m_ib_sd_malzeme_heat_placeholder": "رقم Heat...",
   "m_ib_sd_malzeme_bos": "لم تتم إضافة أي مواد بعد",
   "m_ib_sd_malzeme_kayit_hatasi": "تعذر الحفظ",
-  "m_ib_sd_malzeme_kaydedildi": "تم الحفظ"
+  "m_ib_sd_malzeme_kaydedildi": "تم الحفظ",
+  "m_ib_sd_yetki_yok": "هذا الـ spool في مرحلة {basamak}، ليس ضمن صلاحياتك حالياً"
 }

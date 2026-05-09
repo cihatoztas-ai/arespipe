@@ -1852,5 +1852,6 @@
   "m_ib_sd_malzeme_heat_placeholder": "Heat no...",
   "m_ib_sd_malzeme_bos": "Henüz malzeme eklenmemiş",
   "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi",
-  "m_ib_sd_malzeme_kaydedildi": "Kaydedildi"
+  "m_ib_sd_malzeme_kaydedildi": "Kaydedildi",
+  "m_ib_sd_yetki_yok": "Bu spool {basamak} basamağında, şu an senin yetkinde değil"
 }

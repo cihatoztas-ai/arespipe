@@ -87,12 +87,14 @@ import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { dosyaUrlAl } from '../../lib/dosya'
+import { aktifBasamakYetkili, basamakAdi } from '../../lib/isbaslat'
 import IbUyariDrawer from './IbUyariDrawer'
 
 export default function IbSpoolDetay({
   spool,
   aktifRol,
   kullanici,
+  bloklar = [],
   onBaskaSpool,
   onGeri,
 }) {
@@ -468,6 +470,13 @@ export default function IbSpoolDetay({
   const isDevamEdiyor = yerelSpool.is_durumu === 'devam_ediyor'
   const drawerAcikHerhangi = !!uyariDrawer || yumusDrawerAcik
 
+  // 70. oturum (Adım 3d): Yetki kontrolü
+  // Operatörün atanmış bloklarından biri spool'un aktif basamağı için
+  // uyumluysa "İşe Başla" gösterilir; değilse info satırı + "Başka Spool".
+  // Bilinmeyen basamak → false (güvenli default — yetki gate'i için
+  // false-positive engellenir).
+  const yetkili = aktifBasamakYetkili(yerelSpool.aktif_basamak, bloklar)
+
   // Üst bant tek satır kimlik string — mockup formatı: "proje-pipeline-spool-rev"
   // Proje: projeler.proje_no (örn. "NB1137"). gemi_adi UI'a sızmaz (68b kararı).
   const ustBant = [
@@ -548,22 +557,52 @@ export default function IbSpoolDetay({
         )}
       </div>
 
-      {/* ───── Foot CTA ───── */}
+      {/* ───── Foot CTA — 70. oturum (Adım 3d): durum × yetki matrisi ───── */}
       <div style={s.footWrap}>
         {!isDevamEdiyor ? (
-          <>
-            <button
-              type="button"
-              style={drawerAcikHerhangi ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
-              onClick={iseBasla}
-              disabled={drawerAcikHerhangi}
-            >
-              {tv('m_ib_sd_basla', 'İşe Başla')}
-            </button>
-            <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
-              {tv('m_ib_sd_baska', 'Başka Spool Tara')}
-            </button>
-          </>
+          yetkili ? (
+            <>
+              <button
+                type="button"
+                style={drawerAcikHerhangi ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
+                onClick={iseBasla}
+                disabled={drawerAcikHerhangi}
+              >
+                {tv('m_ib_sd_basla', 'İşe Başla')}
+              </button>
+              <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
+                {tv('m_ib_sd_baska', 'Başka Spool Tara')}
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={s.footInfoSatir}>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  style={s.footInfoIkon}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  aria-hidden="true"
+                >
+                  <circle cx="8" cy="8" r="6.5" />
+                  <line x1="8" y1="7.2" x2="8" y2="11.5" strokeLinecap="round" />
+                  <circle cx="8" cy="4.6" r="0.7" fill="currentColor" stroke="none" />
+                </svg>
+                <span>
+                  {tv(
+                    'm_ib_sd_yetki_yok',
+                    'Bu spool {basamak} basamağında, şu an senin yetkinde değil'
+                  ).replace('{basamak}', basamakAdi(yerelSpool.aktif_basamak))}
+                </span>
+              </div>
+              <button type="button" style={s.footBtnIkincil} onClick={onBaskaSpool}>
+                {tv('m_ib_sd_baska', 'Başka Spool Tara')}
+              </button>
+            </>
+          )
         ) : (
           <>
             <button type="button" style={s.footBtnKirmizi} onClick={isiKapat}>
@@ -1503,6 +1542,28 @@ const s = {
     fontFamily: 'Barlow, sans-serif',
     cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
+  },
+  // 70. oturum (Adım 3d): Yetkisiz operatöre info satırı.
+  // Genel paneli badge pattern'i (sur2 + bor + sol accent ac).
+  // Üç temada (light/dark/light-anthracite) otomatik adapt.
+  footInfoSatir: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: '12px 14px',
+    background: 'var(--sur2)',
+    border: '1px solid var(--bor)',
+    borderLeft: '3px solid var(--ac)',
+    borderRadius: 10,
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: 'var(--tx)',
+    fontFamily: 'Barlow, sans-serif',
+  },
+  footInfoIkon: {
+    flexShrink: 0,
+    marginTop: 1,
+    color: 'var(--ac)',
   },
   footBtnKirmizi: {
     width: '100%',
