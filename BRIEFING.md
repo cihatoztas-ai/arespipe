@@ -1,150 +1,171 @@
-# AresPipe BRIEFING — 69. Oturum Kapanışı
+# AresPipe BRIEFING — 70. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası.** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır, ben tüm bağlamı anlarım. Detay için referans dosyalar (`docs/KARARLAR.md`, `docs/SAYFA-EKSIKLERI.md` vb.) — Bilgi Haritası bölümünden hangi dosyada ne olduğunu gör.
 >
-> **Son onay:** Cihat — 9 Mayıs 2026, 69 kapanışı (`oturum-saglik.sh 69 --kapanis` MK-65.8 disiplinine uygun çalıştırıldı, MK-56.2 + MK-56.4 canlı kalıyor)
+> **Son onay:** Cihat — 9 Mayıs 2026, 70 kapanışı (4 commit canlıda + 1 manuel RLS migration uygulandı, 70b.A + 3f.1 saha doğrulaması RLS fix sonrası 71'e devredildi)
 
 ---
 
-## 🎯 70. Oturum Gündemi
+## 🎯 71. Oturum Gündemi
 
-**Birincil iş 1: IbSpoolDetay Adım 3d — Yetki + Footer CTA branchleri.** 3b ve 3c kapandı, foto + malzeme + heat çalışıyor; ama operatör **hâlâ herhangi bir işlem yapamıyor** çünkü Foot CTA handler'ları (`iseBasla`, `isiKapat`, `notEkle`) `alert()` placeholder. 3d'nin görevi:
-1. `mobile/src/lib/yetki.js`'in `getKullaniciBloklari` çağrısı — current user'ın aktif blokları MIsBaslat hub'ından IbSpoolDetay'a prop olarak geçer (şu an geçmiyor, hub-prop güncellemesi).
-2. `aktifBasamakYetkili(spool.aktif_basamak, bloklar)` yardımcı fonksiyonu.
-3. Footer matrisi: durum × yetki:
-   - bekliyor + yetkili → İşe Başla aktif + Başka Spool
-   - bekliyor + yetkisiz → Sadece Başka Spool (İşe Başla görünmez)
-   - devam_ediyor + kendi işi (drawer çıkmadığı için garantili) → İşi Kapat + Not Ekle + İptal Et
+**Birincil iş 1 — SED-71-01: 70b.A saha doğrulaması (RLS fix sonrası).** 70'in son saatinde keşfedildi: `is_kayitlari` tablosunda eski `tenant_isolation` policy'si `with_check NULL` ile silent INSERT fail üretiyordu. Manuel SQL ile `is_kayitlari_tenant` policy'si `get_tenant_id()` pattern'ine geçirildi (Supabase Studio'da, repo'da migration YOK). Bu fix'ten sonra Cihat henüz yeni İşe Başla testini yapmadı. 71'in ilk işi: iPhone Safari cache temizle → demo.imalatci ile yeni Bekliyor spool seç → İşe Başla → `is_kayitlari` SELECT ile kayıt oluştu mu doğrula. Eğer tamamsa 70b.A canlıya tam geçmiş olur. Hâlâ "no rows" dönerse derinlemesine debug.
 
-**Birincil iş 2: 3e/3f/3g/3h/3i/3j — yazma akışları.** 3d temeli üstüne kurulur:
-- 3e — İşe Başla (`spooller`: is_durumu→devam_ediyor, aktif_isci_id, başlama tarihi; `is_kayitlari` INSERT)
-- 3f — İşi Kapat (basamak ilerletme + is_durumu→bekliyor + log)
-- 3g — Devral (foto çekme zorunlu + aktif_isci_id swap + `fotograflar` INSERT + log)
-- 3h — Alternatif basamağa başla (drawer mavi/gri'den → aktif_basamak swap + log)
-- 3i — Not Ekle (`notlar` INSERT, qr_goster=true)
-- 3j — İptal Et (devam_ediyor → bekliyor + sebep + log)
+**Birincil iş 2 — SED-71-02: RLS migration repo'ya.** Manuel uygulanan policy değişikliği (DROP `tenant_isolation` + CREATE `is_kayitlari_tenant`) `migrations/034_is_kayitlari_rls_get_tenant_id.sql` olarak repo'ya eklenir (033'ten sonra, MK-66.1 sıralı disiplini). Yoksa staging/prod ortamlarında bu RLS bug tekrarlar.
 
-**Birincil iş 3: SED-69-04 — QR okutunca sertifikalı malzeme uyarısı.** Cihat'ın saha senaryosu (69 oturum sonu eklendi): gemi gövdesine kaynak yapılan boru gibi MTC sertifikası gereken malzemelerde (`spool_malzemeleri.sertifikali=true`) operatör yanlış malzeme kullanmasın diye QR okutunca IbUyariDrawer'a yumuşak uyarı tipi (peek tab sarı kart). Akış-kesici değil — bilgilendirici.
+**Birincil iş 3 — 70b.C: Aynı rolde aktif iş engeli.** Cihat'ın net isteği: *"devam eden işim varken yeni iş açamamam lazım, bu da yapılmadı galiba"*. IbQRTara'da kontrol gerekli: spool fetch sonrası `aktifIsHatirla(seciliRol.ad)` çağrılır, aktif iş varsa VE farklı spool ise akış-kesici drawer "Zaten aktif <rol> işin var: <spool_no>. Önce kapat." Veya yumuşak yönlendirme: "Direkt o spool'a git" butonu.
 
-**Bilinçli ertelenen birincil işler (kapsam yorgun, 70 sonrasına):**
-- **MK-67.4 — Supabase API key migration** (4. kez ertelendi). 67-68-69 boyunca açık. Mobil + web hâlâ legacy JWT key'leriyle çalışıyor (Supabase grace period). Tek başına bir oturum hak ediyor. Mobile `supabase.js` hardcoded zaten — MK-69.1 (env var disiplini) ile birlikte ele alınabilir.
-- **IbRolSec.jsx hardcoded TR sarma** (68b borcu, 69'da yapılmadı). 5 anahtar × 3 dil. Isınma maddesi.
-- **i18n borç temizliği SED-68-02** — ~75 uyarı. Toplu JSON ekleme.
+**Birincil iş 4 — 70b.B: IbRolSec göstergeleri (mockup-first R-10).** Cihat'ın net isteği: *"imalatın kutusunun sağ tarafında yanıp sönen bir devam ediyor yazısı çıksın, buraya basınca direk iş başlat ekranına gelsin"*. IbRolSec'te her rol kartında `aktifIsHatirla(rol.ad)` check, aktif iş varsa yanıp sönen "DEVAM EDİYOR" badge sağ tarafta. Tıklama: aktifIs varsa onSpool callback → MIsBaslat IbQRTara'yı atlar, direkt IbSpoolDetay'a yönlendirir.
 
-**Diğer açık borçlar (gündem değil, çözülecek):**
+**Birincil iş 5 — SED-71-03: 3f.1 saha doğrulaması.** 70b.A test edildikten sonra: spool aç → İşi Kapat → Tamam, kapat → `is_kayitlari` SELECT, `bitis IS NOT NULL`, `sure_dakika > 0` (gerçek hesap). Eski 3f.1'de `sure_dakika=0` yazılıyordu, 70b.A UPDATE pattern'iyle gerçek süre hesaplanmaya başlamalı.
+
+**Bilinçli ertelenen birincil işler:**
+- 3f.2 (Foto çekme akışı, Storage upload + fotograf_id link, web `isTamamla` pattern'i 1480 satırı) — 71+ ortada bir noktada
+- 3f.3 (Sonraki basamak seçim UI, `spooller.aktif_basamak` UPDATE) — 3f.2 sonrası
+- 3g (Devral akışı, Cihat'ın saha senaryosu: *"yarım bıraktığı işi başka personel devralıp tamamlayabiliyordu"*)
+- 3h, 3i, 3j (Alternatif başla, Not Ekle, İptal Et — şu an placeholder alert)
+
+**Saha kritik web bug'ları (SED-71-04, SED-71-05):**
+- SED-71-04: Web `is_baslat.html` `is_kayitlari` INSERT yanlış kolon adlarıyla yazıyor (`kullanici_id, basamak, tarih` — DB schema: `personel_id, islem_tipi, baslangic`). Mobile DB schema'ya doğru yazıyor, web değil. NOT NULL ihlaliyle silent fail. Web tarafı muhtemelen `is_kayitlari` hiç dolduramamıştır.
+- SED-71-05: Web `devre_detay.html` tablo `durum` kolonunu okuyor (eski sistem), `is_durumu` kolonunu görmüyor. Mobile `is_durumu='devam_ediyor'` yazıyor ama web'de hâlâ "Bekliyor" görünüyor (DB sorgu kanıtı 70'te alındı: 6 spool `is_durumu='devam_ediyor'` ama hepsinin `durum='Bekliyor'`).
+
+**Diğer açık borçlar (gündem değil, kuyruğa alınmış):**
 - MK-58.1 — `spooller.alistirma` kanonik enum migration (lowercase)
 - MK-58.5 — Panel.html mobile preview UUID input alanı
 - SED-68-01 — `devre_yeni.html` form validation (proje_no/gemi_adi temizlik kuralı)
-- SED-68-03 — CI bot push rebase çakışması (`.github/ci-son-rapor.json` workflow'u)
-- SED-69-01..05 (5 yeni borç, 69'dan, "Açık borçlar" bölümünde detay)
+- SED-68-02 — i18n borç temizliği (~75 uyarı, ölü anahtarlar dahil: `m_ib_sd_yetki_yok`, `m_ib_uy_yu_alis_baslik/mesaj`)
+- SED-68-03 — CI bot push rebase çakışması
+- SED-69-01..03, 05 (4 borç, 69'dan)
+- SED-69-04 ✅ KAPATILDI — 70 3d-fix2'de IbUyariDrawer'a sertifika sarı kart eklendi
+- MK-67.4 — Supabase API key migration (5. kez ertelendi)
+- IbRolSec.jsx hardcoded TR sarma (68b borcu)
+- DB temizlik — 6 yetim `is_durumu='devam_ediyor'` spool (70'te oluşan test artığı, RLS bug yüzünden `is_kayitlari` kayıtsız kaldı)
 - `arespipe-backups` Storage backup fail (MK-67.4 kapsamı)
 
-**Etkilenen dosyalar (70 boyunca):** `mobile/src/components/isbaslat/IbSpoolDetay.jsx`, `mobile/src/screens/MIsBaslat.jsx` (bloklar prop'u eklenecek), `mobile/src/lib/yetki.js` (mevcut, kullanılacak), `lang/{tr,en,ar}.json`.
+**Etkilenen dosyalar (71 boyunca):** `mobile/src/components/isbaslat/IbQRTara.jsx` (70b.C kontrolü), `mobile/src/components/isbaslat/IbRolSec.jsx` (70b.B göstergeleri), `mobile/src/screens/MIsBaslat.jsx` (70b.B onRolSec callback), `migrations/034_is_kayitlari_rls_get_tenant_id.sql` (RLS policy migration), `lang/{tr,en,ar}.json`.
 
 ---
 
-## ✅ 69'da Yapılanlar
+## ✅ 70'te Yapılanlar
 
-> 69, **IbSpoolDetay Adım 3b (foto carousel) + Adım 3c (Malzeme paneli BOM + heat inline edit) + iOS viewport zoom fix + 3 MK adayı + 5 SED-69 keşfi** üretti. 3b çekirdek implementasyonu hızlı geçti, ardından 4 fix turu (path/createSignedUrl/endpoint/env var) yapıldı — bu turun en derin öğrenmesi. 3c kapsamı genişledi (read-only → read+heat edit), eski 58. oturum MSpoolDetay'den fetch pattern referans alındı.
+> 70, **3d Yetki + Footer matrisi tam akış (3d temel + 3d-fix2 + 3d-fix3) + 3e İşe Başla DB writes + 3f.1 İşi Kapat onay drawer + DB writes + 70b.A Çoklu aktif iş + DB-truth persistence + 1 manuel RLS migration** üretti. 4 commit canlıda, ~890 satır net değişiklik. Son saatte kritik bir RLS bug keşfedildi ve manuel SQL ile düzeltildi (repo'ya migration 71'de eklenecek). Saha test 3 commit için tam ✅, 70b.A + 3f.1 için RLS fix sonrası bekleyen.
 
-### 1. IbSpoolDetay Adım 3b — Foto carousel + 4 fix turu
+### 1. 3d — Yetki gate + Footer matrisi (commit `da93bf1`, +287/-74)
 
-`mobile/src/components/isbaslat/IbSpoolDetay.jsx` Adım 3b'de foto carousel implementasyonu yapıldı. Mockup tasarımı (200px height + sol-alt sayaç + sağ-alt meta chip + yarı şeffaf nav okları) tek atışta uyguldu.
+**3d temel:** Durum × yetki Footer branch matrisi (bekliyor + yetkili → İşe Başla, bekliyor + yetkisiz → sadece Başka Spool, devam_ediyor + benimMi → 3'lü buton). `aktifBasamakYetkili(spool.aktif_basamak, bloklar)` helper'ı `mobile/src/lib/yetki.js`'den import edildi, MIsBaslat'tan IbSpoolDetay'a `bloklar` prop geçirildi.
 
-**3b kapsamı:**
-- `fotograflar` tablosu fetch (spool_id eq + olusturma DESC)
-- `yukleyen_id → ad_soyad` ayrı sorgu (embed RLS 400 riski yok — MDrawer'daki tenants(ad) deneyiminin dersi)
-- 0 foto → mevcut placeholder; 1 foto → resim + meta chip; ≥2 foto → +nav + sayaç
-- Meta chip: `islem_turu` i18n (`m_ib_foto_islem_*`) · ad_soyad · GG Ay (locale-aware)
+**3d-fix2:** Yetkisizlik akış-kesici drawer (kırmızı + kilit ikonu, "Bu basamak için yetkili değilsiniz."). Drawer kapatılınca yumuşak uyarılar zincirleme açılır. **Sertifikalı malzeme yumuşak kart eklendi (mavi)** — SED-69-04 saha kritik borcu burada kapandı. Yumuşak kart paleti pastel'den doygun renge çevrildi (Anthropic 100/200 + 4px sol accent + ikon her karta). 4 ayrı renk: alıştırma kırmızı, sertifika mavi, test mor, not amber.
 
-**Fix turları (private bucket policy keşfi):**
-1. **3b-fix1 — `getPublicUrl`:** Path-only `dosya_url` için public URL üretildi → 4xx döndü çünkü bucket private.
-2. **3b-fix2 — Client `createSignedUrl`:** supabase-js client'tan signed URL → "Object not found" döndü çünkü `storage.objects` SELECT RLS'i normal kullanıcılara kapalı.
-3. **3b-fix3 — `/api/dosya-url-al` endpoint geçişi:** Web'in `ARES.dosyaUrlAl` pattern'i mobile'a port edildi (yeni `mobile/src/lib/dosya.js`). Endpoint server-side service_key ile RLS bypass yapar + JWT'den tenant_id check. **Doğru kanal bu.**
-4. **3b env var fix:** Production'da fetch URL relative oluyordu (`undefined/api/...`). Vercel `arespipe-mob` projesinde `VITE_API_BASE=https://arespipe.vercel.app` eklendi + redeploy. iPhone Safari'de de canlıya geçti.
+**3d-fix3:** alıştırma=VAR ve KISMI **farklı mesaj** (eskiden aynıydı). KISMI yeni kategori 'alistirma_kismi' coral palet (kırmızıdan ayrı). VAR + kaynakçı rolü → yeni 'tamAlistirmaKaynak' akış-kesici drawer.
 
-**Net öğrenme (oturumun en değerlisi):** **Yeni component private resource'a erişiyorsa, ÖNCE web pattern'ine bakılır.** R-06'ya ek disiplin: "DB pattern'i değil, sistem kanalı kopyalanır."
+**Saha test:** ✅ Tamamlandı — yetki gate çalışıyor, palet doygun, 4 renk net, alıştırma semantik düzgün.
 
-**MK-69.1 doğdu (aday, 70'te formal):** Mobile env var disiplini = yerel `mobile/.env` + repo `mobile/.env.example` + Vercel project Environment Variables. Bu üçü zorunlu, bypass'sız. Bu oturumda 30 dk env var eksikliğine harcandı, disiplin yazılı olmadığı için.
+### 2. 3e — İşe Başla DB writes (commit `824d6ec`, +99/-5)
 
-**MK-69.2 doğdu (aday):** Mobile için `lib/*` altında web ARES'in muadili sistematik kurulur. `lib/dosya.js` başlangıç. Ad denkliği korunur (`ARES.dosyaUrlAl` ↔ `dosyaUrlAl`).
+`iseBasla()` async hâle getirildi (alert placeholder kaldırıldı):
+- `spooller` UPDATE: `is_durumu='devam_ediyor'`, `guncelleme=now`
+- `aktifIsKaydet` localStorage `ares_is_aktif` yaz
+- `setYerelSpool` → Footer otomatik 3'lü butona geçer
+- useEffect priority 3 düzeltildi: `yerelSpool.aktif_isci_id` (DB'de yok) → `aktifIsHatirla` (localStorage)
 
-**3b commitleri:**
-- `1d489b8` — feat(mobile): IbSpoolDetay 3b foto carousel
-- `872133c` — fix(mobile): path-only URL desteği (3b-fix1)
-- `61938d0` — fix(mobile): client createSignedUrl (3b-fix2)
-- `c33ec66` — fix(mobile): signed URL endpoint geçişi (3b-fix3)
+Yeni helper'lar `lib/isbaslat.js`: `aktifIsKaydet`, `aktifIsHatirla`, `aktifIsUnut`. **Web pattern: `is_kayitlari` INSERT yapılmaz** (web `is_baslat.html:1131` `isBaslatDB`'da da yok). INSERT 3f'de yapılacak — bu mobil seçimi 70b.A'da değişti (3e'de aktif kayıt olarak yazılır oldu).
 
-### 2. IbSpoolDetay Adım 3c — Malzeme paneli BOM + heat inline edit
+**Saha test:** ✅ Tamamlandı — İşe Başla → Footer 3'lü buton, telefon kapat → tekrar aç → drawer çıkmıyor.
 
-68'in başında Adım 3c **read-only** olarak planlandı. Cihat'ın oturum içinde "personel heat numaralarını da girebiliyordu" yorumu üzerine eski 58. oturum `MSpoolDetay.jsx`'i (mevcut hâlâ duruyor) tarandı — heat input web'de varmış ama mobile'a hiç port edilmemişti. Cihat saha senaryosunu açıkladı (operatör malzemenin üstündeki heat'i okuyup girer, kalite dosyasında lazım), kapsam 3c+3k birleştirilerek genişletildi.
+### 3. 3f.1 — İşi Kapat onay drawer + DB writes (commit `8d8a4b6`, +226/-10)
 
-**Final 3c kapsamı:**
-- `spool_malzemeleri` tablosu fetch (11 kolon, DB sırası — web pattern)
-- MalzemePanel **kart-tabanlı liste** (mobile 380px için; web'in 13-kolon tablosu mobil-uyumlu değil)
-- Her kart: #sıra · kod (mono) · tip chip · sertifikalı (varsa ✓ chip) · tanım · malzeme/kalite · ölçü satırı · heat input
-- Heat inline edit: input onBlur → `heatKaydet(id, val)` → DB UPDATE + state local güncelle + flash feedback
-- Sertifika READ-ONLY (mühendislik kararı, operatör değiştiremez — Cihat netleştirdi: gemi gövdesi kaynağı gibi MTC sertifikası gereken malzemeler için BOM'da baştan tanımlı)
-- Tip chip 4 renk grubu: boru=teal, flans/reduktor=mor, dirsek/fitting/te=amber, bilinmeyen=gri
+"İşi Kapat" butonu çalışıyor:
+- Yumuşak uyarı VAR (alıştırma/test/not/sertifika) → yumuşak drawer 'kapat' modu (full-screen modal, "Son kontrol" başlığı, kart listesi, Vazgeç/Tamam,kapat)
+- Yumuşak uyarı YOK → sade onay drawer (`IbUyariDrawer` 'kapatOnay' tipi, kırmızı + soru ikonu)
 
-**3c-fix (aynı oturum):** İlk canlı testte heat kaydet 400 (`PGRST204: Could not find 'guncelleme' column`). Kolon DB'de yokmuş — UPDATE'ten kaldırıldı. UX iterasyonu: yazı boyutları +1px, soluk metinler `var(--txd)` → `var(--txm)` okunabilirlik, başarı feedback "✓ Kaydedildi" yazısı 2.5sn (eski sadece border 1.2sn yetersizdi).
+DB writes (3f.1 dönemi, 70b.A'da değişti):
+- `is_kayitlari` INSERT (DB schema'ya UYGUN): `personel_id, islem_tipi, baslangic, bitis, sure_dakika=0, qr_baslangic=true`
+- `spooller` UPDATE: `is_durumu='bekliyor'`, `guncelleme=now` (`aktif_basamak` DEĞİŞMEZ — 3f.3'te ilerletilecek)
 
-**Sertifika konusu — saha bağlamı (Cihat'ın açıklaması):**
-> Sertifikalı malzeme = MTC/3.1 sertifikası gerektiren özel boru/fitting (örn. gemi gövdesine kaynak yapılacak ST37). Operatör değiştiremez (BOM'da baştan tanımlı). QR okutunca uyarı çıkmalı (yanlış malzeme kullanımı önlemek için). Sertifika evrakı spool'a yüklenmeli (devre imalatı bittiğinde devre kalite dosyasına eklenecek).
+`aktifIsUnut()` + `navigate('/')` Hub'a. `yumusDrawerAcik` (boolean) → `yumusDrawerMod` (null|'peek'|'kapat') refactor.
 
-Bu bağlamdan iki yeni borç doğdu: **SED-69-04** (QR uyarı), **SED-69-05** (sertifika evrak yükleme).
+**Saha test:** 🟡 RLS fix sonrası bekleyen — `is_kayitlari` INSERT'i RLS bug'ı yüzünden silent fail ediyordu.
 
-**3c commitleri:**
-- `ff82fb7` — feat(mobile): 3c Malzeme paneli BOM + heat inline edit
-- `ded7e63` — fix(mobile): 3c heat kayit + UX iyilestirme (3c-fix)
+### 4. 70b.A — Çoklu aktif iş + DB-truth persistence (commit `49e3c4d`, +280/-74)
 
-### 3. iOS viewport zoom fix — saha app'i için kritik
+**Saha senaryosu (Cihat):** İmalatçı imalata başlar, kapanmadan kesim'de de iş başlatabilir (farklı roller). Mesai sonu/ertesi gün/telefon kapatma sonrası açık işler localStorage'dan kaybolsa bile DB'den geri okunur.
 
-3c-fix push edildikten sonra Cihat iPhone'da test ederken: heat input'a tıklayınca sayfa yakınlaştı, kayıt sonrası küçültmek elle gerekti. iOS Safari'nin klasik davranışı: input `font-size < 16px` ise otomatik zoom. `mobile/index.html` viewport meta tag'i güncellendi:
+`mobile/src/lib/isbaslat.js` (+121 satır):
+- localStorage çoklu format: `{ '<rolAd>': { spoolId, basamak, baslangic } }`
+- `aktifIsKaydet/Hatirla/Unut`: rol parametreli (geri uyumlu)
+- `aktifIslerTumu`: 70b.B IbRolSec göstergeleri için
+- `aktifIsleriDBdenSenkronize(supabase, kullaniciId)`: `is_kayitlari WHERE bitis IS NULL` → localStorage
+- `_basamakToRolAd`: heuristik (imalat→İmalat, kaynak→Argon Kaynağı varsayılan)
+- Eski `{id, rol}` formatı otomatik dönüştürülür
 
-```diff
-- <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+`mobile/src/components/isbaslat/IbSpoolDetay.jsx` (+69 satır):
+- 3e `iseBasla`: `is_kayitlari` INSERT eklendi (`bitis=null` aktif kayıt). Rollback: spooller UPDATE fail ederse INSERT silinir
+- 3f.1 `handleKapatOnayli`: INSERT yerine UPDATE pattern (SELECT bitis null + UPDATE bitis=now + sure_dakika hesaplanmış GERÇEK SÜRE; aktif kayıt yoksa fallback INSERT)
+- `aktifIsUnut(rolAd)` sadece o roldeki kayıt silinir, diğer rollerdeki aktif işler korunur
+
+`mobile/src/screens/MIsBaslat.jsx` (+16 satır):
+- Yeni useEffect: `kullanici?.id` değişimi → `aktifIsleriDBdenSenkronize(supabase, kullanici.id)`
+- Operatör login sonrası DB-truth ile localStorage tazelenir
+
+**Saha test:** 🟡 RLS fix sonrası bekleyen.
+
+### 5. RLS Bug Keşfi ve Manuel Fix (KRİTİK, repo'da migration YOK)
+
+70'in son saatinde DB sorgularıyla bulundu: `is_kayitlari` policy'si silent fail üretiyordu.
+
+**Eski (problem):**
+```sql
+qual:       tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid())
+with_check: NULL
 ```
 
-`maximum-scale=1` + `user-scalable=no` → input zoom kapalı. `viewport-fit=cover` → iPhone notch/dynamic island tam kullanım (bonus). **Trade-off:** Pinch-to-zoom kapalı (görme zorluğu olan kullanıcılar manuel zoom yapamaz). Endüstriyel saha app'i için kabul edilen — operatör tek elinde telefonla iş yapıyor, zoom istemez.
+PostgreSQL RLS chaining: `kullanicilar` tablosunun kendi RLS'i subquery'yi engelliyor → NULL → false → silent INSERT reddi.
 
-**MK-69.3 doğdu (aday):** Mobile saha app'i viewport — `maximum-scale=1, user-scalable=no` standart. Native app hissi.
+`spooller` policy'si daha sağlam: `tenant_id = get_tenant_id()` (SECURITY DEFINER function, JWT app_metadata/root claim/DB fallback ile COALESCE).
 
-**Commit:** `54b1130` — fix(mobile): viewport meta - iOS input zoom kapatıldı.
-
-### 4. mobile/src/lib/dosya.js — yeni helper kütüphanesi
-
-3b-fix3'te doğdu. Web'in `ARES.dosyaUrlAl(yol)` fonksiyonunun mobile React muadili. 5 dakika buffer'lı cache, JWT Bearer auth, `/api/dosya-url-al` endpoint'i. Kullanım yerleri: 3b foto carousel + ileride 3g (Devral foto), 3i (Not foto'lu), MProfil avatar upload, vb.
-
-**MK-69.2 (yukarıda) bu dosyanın sistematik gelişiminin başlangıcı.** Web ARES'in muadili olarak `lib/oturum.js`, `lib/format.js`, `lib/normalize.js` benzeri parçalar ileride doğacak.
-
-### 5. Yeni env var: VITE_API_BASE
-
-3b env var fix'ten doğdu. `mobile/.env` (yerel, gitignore'da, manuel oluşturuldu) + Vercel `arespipe-mob` project Environment Variables (Production+Preview, manuel eklendi). `mobile/.gitignore`'a `.env` satırı eklendi. **`.env.example` henüz commit'lenmedi** — MK-69.1 (env var disiplini) belgelendiğinde eklenir.
-
-### 6. Net dosya kanıtı (69 sonu)
-
-```
-mobile/src/components/isbaslat/IbSpoolDetay.jsx  MD5 70bcb10bcfb6d1bbe8615edaa0dcb47a  1593 satır (947 → +646)
-mobile/src/lib/dosya.js                          MD5 58368583dbb72e723d95bab2bbda0ace  124 satır (yeni)
-mobile/index.html                                MD5 c75f6ae00f8bee2d863e5589825e7d40  (viewport meta)
-lang/tr.json                                     MD5 5c10b9010918fec1bd071c24e1286705  1854 satır
-lang/en.json                                     MD5 7c70323100773a0b4aab983cbbdc124b  1854 satır
-lang/ar.json                                     MD5 29b3511abf3dafb5373d19c9ad7099c6  1854 satır
+**Manuel fix Supabase Studio'da uygulandı:**
+```sql
+DROP POLICY IF EXISTS tenant_isolation ON is_kayitlari;
+CREATE POLICY is_kayitlari_tenant ON is_kayitlari
+  FOR ALL
+  USING (tenant_id = get_tenant_id())
+  WITH CHECK (tenant_id = get_tenant_id());
 ```
 
-### 69'da yapılmayanlar (bilinçli + zaman/kapsam kaynaklı)
+✅ Policy uygulandı, `pg_policies` SELECT doğruladı.
+❌ **Repo'da migration dosyası YOK** — SED-71-02 ile 71'de eklenecek.
 
-- **3d (Yetki + Footer CTA)** → 70'in Birincil iş 1
-- **3e/3f/3g/3h/3i/3j (yazma akışları)** → 70'in Birincil iş 2
-- **3l (Genel paneli ilerleme badge'leri)** — agregat sorgular, sonraki oturumlar
-- **Foto fullscreen tap-to-zoom** — IbFotoViewer ayrı component, 70+
-- **Supabase API key migration** — kapsamı büyük, tek başına oturum (4. kez ertelendi)
-- **IbRolSec hardcoded TR sarma** — 5 anahtar × 3 dil, ısınma maddesi
-- **i18n borç temizliği SED-68-02** — ~75 uyarı, toplu patch
-- **SED-69-04, SED-69-05** — sertifika uyarısı + evrak yükleme (saha kritik ama 3d/3e öncelikli)
-- **`oturum-saglik.sh 69 --kapanis` çağrısı** — yapıldı ✅ (MK-65.8 + MK-56.4 disiplinine uyuldu)
+### 6. MK-70 Kararları (3 yeni)
+
+- **MK-70.1 [DISIPLIN]** — Mobile-DB schema-first, web pattern ikincil. R-06 mutlak değil; web INSERT yanlış kolon adları kullanıyorsa mobile DB schema'yı izler.
+- **MK-70.2 [DISIPLIN]** — Silent fail yakalama. Supabase mutation'larında `.select().single()` chain'i veya count kontrolü tercih edilir.
+- **MK-70.3 [MIMARI]** — RLS policy review. Yeni tablolarda subquery yerine `get_tenant_id()` SECURITY DEFINER pattern'i.
+
+Detay: `docs/KARARLAR.md`.
+
+### 7. Net dosya kanıtı (70 sonu)
+
+```
+mobile/src/components/isbaslat/IbSpoolDetay.jsx  MD5 1edf4f08b31dd2c6c5e8e132b4079c0d  ~2080 satır
+mobile/src/components/isbaslat/IbUyariDrawer.jsx                                     ~329 satır (3 yeni case)
+mobile/src/lib/isbaslat.js                       MD5 69f787fed6947901194756b779110bfa  467 satır
+mobile/src/screens/MIsBaslat.jsx                 MD5 6d9bc80d40bd58403791255b874250bb  263 satır
+lang/tr.json                                                                          1872 satır
+lang/en.json                                                                          1872 satır
+lang/ar.json                                                                          1872 satır
+```
+
+### 70'te yapılmayanlar (bilinçli)
+
+- **70b.B (IbRolSec göstergeleri)** → 71. oturum birincil iş 4
+- **70b.C (Aynı rolde aktif iş engeli)** → 71. oturum birincil iş 3
+- **3f.2/3 (Foto çekme + sonraki basamak seçim)** → 71+
+- **3g/3h/3i/3j (Devral, Alternatif, Not Ekle, İptal Et)** → 71+
+- **RLS migration repo'ya** → SED-71-02
+- **DB temizlik (6 yetim spool)** → 71+ küçük
+- **i18n borç temizliği SED-68-02** → ~75 uyarı, daha biriktirildi
+- **Web bug'ları SED-71-04, 05** → web tarafına müdahale, 71+
+- **Supabase API key migration (MK-67.4)** → 5. kez ertelendi
+- **`oturum-saglik.sh 70 --kapanis`** → 71 açılışında BAYAT/TEMİZ kontrol edilir
 
 ---
 
@@ -155,82 +176,94 @@ lang/ar.json                                     MD5 29b3511abf3dafb5373d19c9ad7
 **Vizyon ve mimari:**
 - `docs/SPOOL-AI-VIZYON.md` — AI özelinde vizyon v2.1
 - `docs/AI-VE-3D-VIZYON-v3.md` — Operasyonel veri merkezli vizyon v3
-- `docs/VIZYON-VE-MODULER-MIMARI.md` — Modüler altyapı taahhütleri (40)
-- `docs/KUTUPHANE-KAPSAM.md` — Standart kütüphane kapsam haritası (40)
+- `docs/VIZYON-VE-MODULER-MIMARI.md` — Modüler altyapı taahhütleri
+- `docs/KUTUPHANE-KAPSAM.md` — Standart kütüphane kapsam haritası
 - `docs/KUTUPHANE-YUKLEME-TAKIP.md` — P0 kütüphane yükleme trajektorisi
-- ⭐ `docs/VIZYON-OTURUMLARI.md` — Vizyon/strateji sohbetleri (kategori belgesi, 61'de doğdu)
+- ⭐ `docs/VIZYON-OTURUMLARI.md` — Vizyon/strateji sohbetleri (61'de doğdu)
 
 **Karar ve süreç:**
-- `docs/KARARLAR.md` — Tüm MK kararları (69 sonu: MK-69.3'e kadar — 69.1/69.2/69.3 bu oturumda eklendi)
+- `docs/KARARLAR.md` — Tüm MK kararları (70 sonu: MK-70.3'e kadar — 70.1/70.2/70.3 bu oturumda eklendi)
 - ⭐ `docs/CIHAT-PROFIL.md` — Cihat'ın çalışma stili + Claude'un farkındalıkları
 - `docs/CLAUDE-CALISMA-MODU.md` — Claude'a canlı talimatlar
 - `CLAUDE.md` — Geliştirme kuralları (web + global)
-- `CLAUDE-MOBILE.md` — Geliştirme kuralları (mobil) — 68'de Ib-prefix konvansiyonu + lang tek kaynak güncellendi
+- `CLAUDE-MOBILE.md` — Geliştirme kuralları (mobil)
 
 **Operasyonel:**
-- `docs/SAYFA-EKSIKLERI.md` — Sayfa bazlı eksik tespit metodu (69 sonu: SED-69-05'e kadar)
+- `docs/SAYFA-EKSIKLERI.md` — Sayfa bazlı eksik tespit metodu (70 sonu: SED-71-05'e kadar — 71-01..05 70'te eklendi, SED-69-04 ✅ kapatıldı)
 - `docs/IZOMETRI-BATCH-KARAR.md` + `docs/IZOMETRI-BATCH-NOTLARI.md` — İzometri batch parser
 - `docs/L2-PARSER-NOTLARI.md` — L2 deterministik parser kararları
-- `docs/KAPANIS-ORKESTRA-TASARIM.md` — Kapanış orkestra protokolü tasarımı (MK-56.4)
-- `scripts/oturum-saglik.sh` — Oturum açılış/kapanış sağlık scripti (MK-55.1, MK-60.3, MK-65.8, MK-56.4)
-- `migrations/` — DB şema değişiklikleri (000_initial → 033 tenant_features temizlik); README disiplini
+- `docs/KAPANIS-ORKESTRA-TASARIM.md` — Kapanış orkestra protokolü tasarımı
+- `scripts/oturum-saglik.sh` — Oturum açılış/kapanış sağlık scripti
+- `migrations/` — DB şema değişiklikleri (000_initial → 033 + manuel uygulanan RLS fix 034 olarak repo'ya 71'de eklenecek)
 - `docs/ROADMAP.md` — Faz B/C planı
 
 **Onboarding:**
-- `docs/ONBOARDING.md` — Yeni geliştirici giriş yolu (32)
+- `docs/ONBOARDING.md` — Yeni geliştirici giriş yolu
 
 **Arşiv (referans, aktif değil):**
 - `docs/arsiv/CLAUDE-SON-OTURUM-65-yanlis-yazim.md`
 - `docs/arsiv/CLAUDE-SONRAKI-OTURUM-65-yanlis-yazim.md`
 - `docs/arsiv/son-durum-65-yanlis-yazim.md`
-  → 63-64-65'te yanlış mimaride yazılan üç dosya, MK-56.2 sapmasının delili olarak korundu (193e49f).
 
 ---
 
-## 📊 69 Sonu Sayılar
+## 📊 70 Sonu Sayılar
 
-- **i18n anahtarları (kök `lang/`):** 1854 (68'de 1841, 69'da +13 — 7 `m_ib_foto_*` 3b'de + 6 `m_ib_sd_malzeme_*` 3c'de + 1 `m_ib_sd_malzeme_kaydedildi` 3c-fix'te). Trend: 62→1752, 63→1800, 64→1816, 65→1834, 66→1834, 67→1834, 68→1841, 69→1854
-- **Mobil ekran sayısı:** 9 tam ekran + MIsBaslat hub'ında 3 alt ekran (IbRolSec, IbQRTara, IbSpoolDetay) + 1 ortak component (IbUyariDrawer) + 1 ortak (MDrawer). Yeni: `mobile/src/lib/dosya.js` helper. ⏳ Bekleyen: MProfil + IbSpoolDetay 3d/3e/3f/...
-- **Toplam MK kararı:** MK-69.3'e kadar (69'da +3: MK-69.1 env var disiplini, MK-69.2 mobile lib helper kütüphanesi, MK-69.3 viewport zoom kapama).
-- **Sayfa eksikleri:** SED-69-05'e kadar (69'da +5: SED-69-01..05)
-- **Migration dosyası:** 33 (değişmedi — schema değişikliği yok, sadece veri okuma)
-- **CI:** ✅ son commit yeşil
-- **HEAD:** `54b1130` (briefing commit'i sonrası güncellenecek)
-- **Lint:** Faz B baseline'ı korundu, ~75 i18n uyarı borcu açık (SED-68-02 — 69'da çözülmedi)
+- **i18n anahtarları (kök `lang/`):** 1872 (69'da 1854, 70'te +17 — 3d/3e/3f.1 için yumuşak kart başlık+mesaj, kapatOnay drawer, sertifika kart, alıştırma KISMI, tamAlistirmaKaynak akış-kesici). Trend: 62→1752, 63→1800, 64→1816, 65→1834, 66→1834, 67→1834, 68→1841, 69→1854, **70→1872**
+- **Mobil ekran sayısı:** 9 tam ekran + MIsBaslat hub'ında 3 alt ekran (IbRolSec, IbQRTara, IbSpoolDetay) + 1 ortak component (IbUyariDrawer ~329 satır) + 1 ortak (MDrawer). ⏳ Bekleyen: 3f.2 foto akışı, IbRolSec göstergeleri (70b.B)
+- **Toplam MK kararı:** MK-70.3'e kadar (70'te +3)
+- **Sayfa eksikleri:** SED-71-05'e kadar (70'te +5: SED-71-01..05; SED-69-04 ✅ kapatıldı)
+- **Migration dosyası:** 33 (RLS fix manuel uygulandı, 71'de 034 olarak repo'ya eklenecek)
+- **CI:** ✅ 4 commit yeşil (`da93bf1`, `824d6ec`, `8d8a4b6`, `49e3c4d`)
+- **HEAD:** `49e3c4d` (briefing commit'i sonrası güncellenecek)
+- **Lint:** Faz B baseline'ı korundu, ~75 i18n uyarı borcu açık (SED-68-02)
 - **Vercel env var:** `VITE_API_BASE=https://arespipe.vercel.app` (`arespipe-mob` Production+Preview)
-- **Yeni dosyalar (69):** `mobile/src/lib/dosya.js`, `mobile/.env` (gitignored)
 
 ---
 
-## 🔄 69'dan 70'e Geçiş Notları
+## 🔄 70'ten 71'e Geçiş Notları
 
-- **MK-65.8 + MK-56.4 disiplinine uyuldu**: `oturum-saglik.sh 69 --kapanis` çalıştırıldı, BRIEFING.md "69. Oturum Kapanışı" başlığıyla güncellendi, üç katmanlı kapanış protokolü (Script + Claude + Cihat) işletildi.
-- **3d 70'in birincil işi (Yetki + Footer CTA).** 3b ve 3c bittiği için artık IbSpoolDetay görsel olarak %95 tamam, ama operatör hâlâ yazma yapamıyor. Önce yetki temeli (3d), sonra yazma akışları (3e..3j).
-- **MK-69.1/69.2/69.3 KARARLAR.md'ye eklendi** — 70 başında bu briefing içeriğiyle tutarlı.
-- **SED-69-04/05 saha kritik** ama 3d/3e öncelikli. Kalan zamanda ele alınır.
-- **Web pattern referans alma disiplini canlı** (3b deneyimi): yeni component private resource'a erişiyorsa, önce web'de nasıl yapılıyor bakılır, ondan sonra mobil port'u yazılır.
-- **`mobile/src/lib/dosya.js` artık var** (MK-69.2 başlangıç) — sonraki dosya/foto/upload component'leri bu helper'ı bedava kullanacak.
-- **`VITE_API_BASE` Vercel'de canlı** — yeni mobile endpoint çağrısı eklerken aynı pattern hazır.
+- **MK-65.8 + MK-56.4 disiplini henüz çağrılmadı bu kapanışta** — Cihat 71 açılışında `oturum-saglik.sh 70 --kapanis` çalıştırarak BAYAT/TEMİZ kontrol etmeli.
+- **71'in ilk işi RLS fix sonrası saha doğrulaması.** 70'in 4 commit'i canlıda ama 70b.A + 3f.1 RLS bug yüzünden silent fail ediyordu. Manuel SQL fix sonrası test edilmedi. **Bu test olmadan 70b.B veya 70b.C'ye geçilmemeli** — kritik bağımlılık.
+- **MK-70.1/70.2/70.3 KARARLAR.md'ye eklendi** — 71 başında bu briefing içeriğiyle tutarlı.
+- **SED-71-01..05 SAYFA-EKSIKLERI.md'ye eklendi.** SED-69-04 ✅ kapatma notu eklendi (3d-fix2'de IbUyariDrawer'a sertifika sarı kart eklendi).
+- **70b.B + 70b.C Cihat'ın net saha senaryosundan doğdu.** İkisi birlikte 71'de ana kapsamı oluşturur.
+- **MK-70.1 yetkisi canlı:** Web pattern referans alma disiplini (R-06) mutlak değil.
 - **Üst bant kuralı (MK-68.3) canlı:** `proje_no` only, `gemi_adi` UI'a sızmaz.
-- **Ib-prefix konvansiyonu (MK-68.4) canlı:** İş Başlat alt-akış component'leri `mobile/src/components/isbaslat/Ib*.jsx`.
-- **Lang tek kaynak (MK-68.5) canlı:** Yazılır kök `lang/`, üretilir `mobile/src/lang/` (predev kopyası, gitignored).
-- **Supabase API key migration (MK-67.4) 4. kez ertelendi.** 70 sonrası bir oturuma alınmalı. Mobile `supabase.js` hardcoded JWT — env var'a alınması MK-69.1 ile birlikte ele alınabilir.
-- **CI bot push rebase çakışması (SED-68-03):** Bu oturumda her push'ta `git pull --rebase` ile manuel atlatıldı. Workflow tarafında force-with-lease veya farklı strateji çözümü hâlâ açık.
-- **`firma_admin` dashboard erişimi geçici** (MK-67.3'ten devam): İleride yetki haritası ile netleşir.
+- **Ib-prefix konvansiyonu (MK-68.4) canlı.**
+- **Lang tek kaynak (MK-68.5) canlı:** Yazılır kök `lang/`, üretilir `mobile/src/lang/`.
+- **Supabase API key migration (MK-67.4) 5. kez ertelendi.**
+- **CI bot push rebase çakışması (SED-68-03):** Hâlâ açık.
 
 ---
 
-## 🎯 Açılış Ritüeli (70 için)
+## 🎯 Açılış Ritüeli (71 için)
 
 ```bash
-cd ~/Desktop/arespipe
+cd /Users/cihatoztas/Desktop/arespipe
 git pull origin main
 ./scripts/oturum-saglik.sh 70
 cat BRIEFING.md
 ```
 
-Sağlık scripti yeşilse Claude'a `cat BRIEFING.md` çıktısı yapıştırılır. **Birincil iş 1 (3d — Yetki + Footer CTA)** ile başlanır. Önce `mobile/src/lib/yetki.js`'in mevcut fonksiyonları taranır (`getKullaniciBloklari` vs.), MIsBaslat'tan `bloklar` prop'unun IbSpoolDetay'a geçirilmesi planlanır, sonra Footer durum × yetki matrisi implemente edilir.
+Sağlık scripti yeşilse Claude'a `cat BRIEFING.md` çıktısı yapıştırılır.
 
-**Açılışta özgür tasarım sunulmaz** (MK-66.3). Footer CTA branchleri zaten 3a'da yapısal olarak hazır (sadece yetki gate'i eklenecek), 3e/3f handler'ları placeholder yerine gerçek akışlara kavuşacak.
+**71. oturum ilk pratik adımlar (SED-71-01):**
 
-**3b'nin dersi (R-06 ek disiplini):** Yeni component private resource'a erişiyor mu? Önce web pattern'ine bak. Yeni env var eklenecek mi? Üç yer (yerel `.env` + `.env.example` + Vercel) zorunlu, bypass'sız.
+1. iPhone Safari → Settings → Safari → Clear History and Website Data
+2. demo.imalatci@arespipe.dev / Demo1234! ile giriş
+3. Bekleyen yeni spool seç (mevcut 6 yetim devam_ediyor olanları DEĞİL) → İşe Başla
+4. Supabase Studio:
+   ```sql
+   select spool_id, personel_id, islem_tipi, baslangic, bitis, qr_baslangic
+   from is_kayitlari
+   order by olusturma desc
+   limit 3;
+   ```
+   Beklenen: yeni satır, `bitis=NULL`, `personel_id='9aecf3aa-2e99-448b-9a06-7611bf5940dc'`, `qr_baslangic=true`.
+
+Test başarılıysa 70b.A canlıya tam geçmiş olur. Sonra **SED-71-02 (RLS migration repo'ya)**, ardından **70b.C + 70b.B**.
+
+**Açılışta özgür tasarım sunulmaz** (MK-66.3). 70b.B mockup'ı IbRolSec'in mevcut yapısı + Cihat'ın net isteği referansıyla hazırlanır.
+
+**70'in dersi (MK-70.2 + MK-70.3):** RLS bug silent fail üretti ve 4 commit boyunca tespit edilmedi. Yeni Supabase mutation'larında `.select().single()` tercih edilir; yeni RLS policy'si yazılırken `get_tenant_id()` SECURITY DEFINER pattern kullanılır.

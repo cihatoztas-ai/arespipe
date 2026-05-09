@@ -382,3 +382,59 @@ git rm --cached mobile/.DS_Store
 #### 🟡 Açık (büyük iş, sonraki oturumlar)
 - **SED-69-05** — Spool sertifika evrakı yükleme akışı. Cihat'ın saha bağlamı: sertifikalı malzeme kullanılan spool'larda **sertifika evrakı (PDF/fotoğraf)** spool'a yüklenmeli. Devre imalatı bittiğinde tüm spool sertifikaları + diğer kalite belgeleri tek bir **devre kalite dosyası** olarak agregate edilecek (müşteriye teslim edilen kalite paketi). **Fix yolu:** Çok aşamalı iş — (a) `belgeler` tablosu kontrolü/oluşturma (tip='sertifika' ayrımı, spool_id + tenant_id), (b) IbSpoolDetay'da yeni "Belgeler" sekmesi VEYA Malzeme kartında "+ sertifika ekle" butonu, (c) Foto/PDF upload akışı (yeni `lib/yukle.js` helper, MK-69.2 muadili), (d) Devre detayında agregat görüntü ("Bu devrenin N spool'undan M sertifika yüklü"), (e) Devre imalatı bitirildi flag'i + kalite dosyası export (PDF birleştirme, uzun vadeli). Bu işin tamamı tek oturumda olmaz, parça parça gelir. 70'te belki sadece (a) + (b) aşamaları + temel upload.
 
+
+## 70. Oturum Tarama Sonuçları (9 Mayıs 2026)
+
+### Kapatılan eksikler (70'te)
+
+#### ✅ SED-69-04 — KAPATILDI (70 3d-fix2)
+QR okutunca sertifikalı malzeme uyarısı `IbUyariDrawer.jsx`'e yumuşak sarı/mavi kart olarak eklendi (3d-fix2, commit `da93bf1`). Spool'un `spool_malzemeleri` tablosunda `sertifikali=true` satır varsa drawer'a "Bu spool'da sertifikalı malzeme var" başlıklı kart bağlanır (sertifikalı sayı + ilk 3 kod gösterimi). 4 ayrı renk grubu (alıştırma kırmızı, sertifika mavi, test mor, not amber). Akış-kesici değil — bilgilendirici. Saha test ✅.
+
+### `mobile/src/components/isbaslat/IbSpoolDetay.jsx` ekosistemi (70b.A persistence)
+
+#### 🔴 KRİTİK — Saha doğrulaması bekleyen
+- **SED-71-01** — 70b.A saha doğrulaması (RLS fix sonrası). 70'in son saatinde keşfedildi: `is_kayitlari` tablosunun eski `tenant_isolation` policy'si silent INSERT fail üretiyordu (subquery RLS chaining + `with_check NULL`). Manuel SQL fix Supabase Studio'da uygulandı (DROP `tenant_isolation` + CREATE `is_kayitlari_tenant` `get_tenant_id()` pattern), policy doğrulandı (`pg_policies` SELECT'i temiz). Ama Cihat henüz yeni İşe Başla testini yapmadı, RLS fix sonrası `is_kayitlari` INSERT'in gerçekten çalıştığı doğrulanmadı. **Test sırası:** (1) iPhone Safari → Settings → Safari → Clear History and Website Data; (2) demo.imalatci@arespipe.dev / Demo1234! ile giriş; (3) bekleyen yeni spool seç (mevcut 6 yetim devam_ediyor olanları DEĞİL) → İşe Başla; (4) Supabase Studio: `select * from is_kayitlari order by olusturma desc limit 3` → yeni satır görünmeli, `bitis=NULL`, `personel_id='9aecf3aa-2e99-448b-9a06-7611bf5940dc'`, `qr_baslangic=true`. Eğer hâlâ "no rows" dönerse derinlemesine debug (console hataları, RLS başka kolon, vb.). **71'in birinci işi.**
+
+### `migrations/` klasörü
+
+#### 🔴 KRİTİK — Repo'ya migration eklenmeli
+- **SED-71-02** — RLS migration repo'ya. 70'te manuel uygulanan `is_kayitlari` policy değişimi (DROP `tenant_isolation` + CREATE `is_kayitlari_tenant` `get_tenant_id()` pattern) repo'da yok. Staging/prod ortamlarında bu RLS bug tekrarlayacak. **Fix yolu:** `migrations/034_is_kayitlari_rls_get_tenant_id.sql` (033'ten sonra, MK-66.1 sıralı disiplini). Header: tarih + oturum 70 + amac (silent INSERT fail düzeltmesi) + idempotent (DROP IF EXISTS + CREATE). 71'in ikinci işi.
+
+### `mobile/src/components/isbaslat/IbSpoolDetay.jsx` 3f.1 (saha doğrulaması bekleyen)
+
+#### 🟡 Saha doğrulaması bekleyen
+- **SED-71-03** — 3f.1 saha doğrulaması (70b.A test edildikten sonra). 70b.A pattern (UPDATE `bitis` + `sure_dakika` hesaplanmış) RLS fix sonrası 3f.1 İşi Kapat akışında doğrulanmalı. **Test sırası:** (1) SED-71-01 başarılıysa açılan spool'da "İşi Kapat" → "Tamam, kapat"; (2) Hub'a yönlendiriliyorsa Supabase Studio: `select bitis, sure_dakika from is_kayitlari order by olusturma desc limit 3` → en üst kayıt `bitis IS NOT NULL`, `sure_dakika > 0` (gerçek hesap, eski 3f.1'de hep 0 yazılıyordu). 71'in beşinci işi.
+
+### Web `is_baslat.html` (saha kritik bug)
+
+#### 🟡 Açık (web tarafı fix)
+- **SED-71-04** — `is_baslat.html` `is_kayitlari` INSERT yanlış kolon adlarıyla yazıyor (satır 1517 civarı):
+  ```js
+  // Web kodu — fail ediyor (silent):
+  {
+    kullanici_id: oturum.id,         // DB'de: personel_id
+    basamak:      _seciliBasamak.x,  // DB'de: islem_tipi
+    tarih:        new Date().toIso() // DB'de: baslangic (NOT NULL)
+  }
+  ```
+  DB schema'da bu kolon adları yok. NOT NULL ihlaliyle silent fail. Web tarafı `/* opsiyonel */` yorumuyla try/catch yutuyor — bu yüzden web tarafı muhtemelen `is_kayitlari` tablosuna **hiç** kayıt yazmamış. **Fix yolu:** `is_baslat.html`'in `isTamamla` fonksiyonunda (satır 1480-1620) INSERT pattern düzeltilmeli — kolon adları DB schema'ya göre (`personel_id`, `islem_tipi`, `baslangic`, `bitis`, `sure_dakika`, `qr_baslangic`, `qr_bitis`). Mobile zaten doğru yazıyor (3f.1 + 70b.A). Web fix'inden sonra `is_kayitlari` web girişlerinden de dolmaya başlar — log/rapor sayfaları için kritik.
+
+### Web `devre_detay.html` (saha kritik bug — UI mismatch)
+
+#### 🟡 Açık (web tarafı fix)
+- **SED-71-05** — `devre_detay.html` tablo `durum` kolonunu okuyor, `is_durumu`'nu görmüyor. DB'de iki ayrı kolon var: `is_durumu` (text NOT NULL default 'bekliyor', mobile + 70b.A pattern yazıyor) ve `durum` (text nullable, eski sistem kalıntısı, web okuyor). 70 sonu DB sorgusu kanıtladı: 6 spool `is_durumu='devam_ediyor'` ama hepsinin `durum='Bekliyor'` — web tarafı `durum` okuduğu için mobile UPDATE'lerini görmüyor. **Saha gözlemi (Cihat 70):** A-000585 web'de "İmalat" görünüyordu (aktif_basamak'tan), A-000577 hâlâ "Bekliyor" — ikisinin de `is_durumu='devam_ediyor'`, ama web `durum`'a bakıyor. **Fix yolu:** `devre_detay.html` ve diğer web tablolarındaki spool durum render'ları `is_durumu` kolonunu okuyacak şekilde düzeltilir. `durum` kolonu deprecation kararı ayrı (ya kaldırılır, ya is_durumu sync trigger'ı yazılır). Mobile zaten doğru kolonu yazıyor.
+
+### DB temizlik (test artığı)
+
+#### 🟢 Küçük — opsiyonel temizlik
+- **SED-71-06** — 6 yetim `is_durumu='devam_ediyor'` spool. 70'te oluşan test artıkları, RLS bug yüzünden `is_kayitlari` kayıtsız kaldılar. Manuel SQL ile temizlenebilir:
+  ```sql
+  UPDATE spooller
+  SET is_durumu = 'bekliyor', guncelleme = now()
+  WHERE is_durumu = 'devam_ediyor'
+    AND tenant_id = '00000000-0000-0000-0000-000000000001'
+    AND id NOT IN (SELECT spool_id FROM is_kayitlari WHERE bitis IS NULL);
+  ```
+  71 saha doğrulaması (SED-71-01) için bu spool'lar engelleyici değil (yeni Bekliyor spool'la test edilebilir), ama temiz başlangıç için 71 başında çalıştırılabilir.
+
+---

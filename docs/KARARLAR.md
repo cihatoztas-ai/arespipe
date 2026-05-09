@@ -1570,3 +1570,176 @@ Bu olay genelleştirilirse: **web ARES global'i altında çoğu sistem-kanalı h
 **İlişkili:** R-07 (CSS variable disiplini — viewport meta CSS değil ama ortak temaya bağlı UX kararı), saha kullanım senaryoları (operatör tek el, telefon, eldiven olabilir).
 
 ---
+
+### MK-70.1 — Mobile-DB schema-first, web pattern ikincil (9 Mayıs 2026, 70. oturum)
+
+**Bağlam:** 70'te 3f.1 implementasyonu sırasında web `is_baslat.html:1517` `is_kayitlari` INSERT pattern'i incelendi:
+
+```js
+// Web kodu — fail ediyor (silent):
+{
+  kullanici_id: oturum.id,         // DB'de: personel_id
+  basamak:      _seciliBasamak.x,  // DB'de: islem_tipi
+  tarih:        new Date().toIso() // DB'de: baslangic (NOT NULL)
+}
+```
+
+DB schema'da bu kolon adları yok. NOT NULL ihlaliyle silent fail. Web tarafı `/* opsiyonel */` yorumuyla try/catch yutuyor — bu yüzden web tarafı muhtemelen `is_kayitlari` tablosuna **hiç** kayıt yazmamış.
+
+R-06 disiplini ("web pattern'i birebir port") yarı uygulandı: pattern semantiği alındı (kayıt yaz, qr_baslangic=true), kolon adları DB schema'ya doğru çevrildi (`personel_id`, `islem_tipi`, `baslangic`). Web pattern tam kopyalansaydı mobile da silent fail ederdi.
+
+**Karar:** R-06 (web pattern referans alma) **mutlak değil**. Web'in pattern semantiği değerli (akış mantığı, tetikleyici, yan etki sırası), ama:
+- **Kolon adları:** Mobile DB schema'sını izler (kanonik kaynak)
+- **Davranış:** Web'de fail eden bir akış varsa mobile düzeltebilir
+- **Pattern düzeltme yetkisi:** Web bug'ı tespit edilirse mobile koduna doğrusu yazılır, web tarafı SED-XX-NN olarak ayrı borç olur
+
+**Pratik uygulama:**
+1. Yeni mobile akışı yazılırken önce web pattern incelenir (R-06)
+2. Web'in DB sorguları schema ile cross-check edilir (information_schema.columns veya Supabase Studio)
+3. Schema uyumsuzluğu varsa mobile DB schema'ya yazar, web tarafı SED-XX-NN olarak işaretlenir
+4. Cihat'a not edilir: "Web tarafında benzer bug var, fix gerekir"
+
+**Doğum kanıtı:** 70 oturum sonu DB sorgusu (`is_kayitlari`'nın "no rows returned" döndürmesi 3 commit sonrası) bu disiplinin değerini kanıtladı. Mobile pattern doğruydu, web tarafı yanlış. Ama RLS bug ayrı bir mesele — o MK-70.3'te.
+
+**İlişkili:** R-06 (web pattern referans), SED-71-04 (web is_baslat.html INSERT kolon adları), MK-58.6 (vanilla DB sorgu schema uyumsuzluğu — benzer disiplinin web↔mobile versiyonu).
+
+---
+
+### MK-70.2 — Silent fail yakalama: `.select()` chain veya count kontrolü (9 Mayıs 2026, 70. oturum)
+
+**Bağlam:** 70'te `is_kayitlari` INSERT pattern Supabase RLS'in default davranışı yüzünden silent fail ediyordu:
+
+```js
+const { error } = await supabase
+  .from('is_kayitlari')
+  .insert({ ... })
+
+if (error) {
+  // bu BLOK GİRMEDİ — error null döndü
+}
+// Devam etti, spooller UPDATE de geçti
+// Ama is_kayitlari'nda satır YOK
+```
+
+PostgreSQL RLS, INSERT'i reddederken `qual` policy'si false döndürürse error fırlatmaz, sadece 0 satır ekler. Supabase client error null döndürür. Mobile kodu "INSERT başarılı" sanır.
+
+**Tespit:** 70'in son saatinde DB sorgusuyla yapıldı: 6 spool `is_durumu='devam_ediyor'` ama hepsinin `is_kayitlari` kaydı yok (3e + 3f.1 commitlerinden 3 oturum boyunca biriken yetim spool'lar). 70b.A `aktifIsleriDBdenSenkronize` fonksiyonu bu boş `is_kayitlari` üzerinden çalıştığı için persistence çalışmıyordu.
+
+**Karar:** Yeni Supabase mutation'larında error null + 0 satır eklendi durumunu tespit etmek için savunma katmanı eklenir:
+
+**Yöntem 1: `.select().single()` chain (önerilen):**
+```js
+const { data, error } = await supabase
+  .from('is_kayitlari')
+  .insert({ ... })
+  .select()
+  .single()  // 0 satırda error fırlatır
+
+if (error) {
+  // RLS reddi veya başka bir hata yakalanır
+}
+```
+
+`.single()` çağrısı 0 veya 1+ satır döndüğünde error verir; INSERT 1 satır eklediği için bu yöntemde başarı = `data` dolu, hata = `error` dolu.
+
+**Yöntem 2: count kontrolü (alternatif, batch INSERT için):**
+```js
+const { data, error } = await supabase
+  .from('is_kayitlari')
+  .insert(payload)
+  .select()
+
+if (error || !data || data.length === 0) {
+  console.error('Silent fail tespit edildi')
+  // ... handle
+}
+```
+
+**Pratik uygulama:**
+- Kritik DB write akışlarında (3e iseBasla, 3f.1 handleKapatOnayli, vb.) `.select().single()` veya `.select() + length check` zorunlu
+- Read sorgularında gereksiz (zaten data === null kontrolü doğal)
+- UPDATE/DELETE'de gerekirse aynı pattern: `.select()` chain + 0 satır kontrolü
+
+**Doğum kanıtı:** 70 RLS bug 4 commit boyunca tespit edilmedi çünkü hiçbir kod silent fail'i yakalamıyordu. Eğer 3e'de `.select().single()` kullanılsaydı ilk testte hata fırlatırdı, RLS bug 70'in başında çıkardı.
+
+**İlişkili:** MK-70.3 (RLS policy review — silent fail'in kök sebebi), R-04 (fail-loud > silent fail).
+
+---
+
+### MK-70.3 — RLS policy: subquery yerine `get_tenant_id()` SECURITY DEFINER pattern (9 Mayıs 2026, 70. oturum)
+
+**Bağlam:** 70'te `is_kayitlari` tablosunun mevcut policy'si silent INSERT fail üretiyordu:
+
+```sql
+-- ESKİ (problem):
+CREATE POLICY tenant_isolation ON is_kayitlari
+  FOR ALL
+  USING (tenant_id = (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()))
+  WITH CHECK NULL  ← INSERT için kontrol YOK!
+```
+
+İki problem birlikte:
+
+**Problem 1: Subquery RLS chaining.** `kullanicilar` tablosunun kendi RLS'i subquery'yi engelliyor → NULL döndürür → `tenant_id = NULL` her zaman FALSE → policy reddi. Bu chaining bağımlılık zinciri kırılgan, başka tablolarda RLS değiştirildiğinde silent regresyon yaşanır.
+
+**Problem 2: `with_check NULL`.** PostgreSQL RLS'te `qual` SELECT cmd için, `with_check` INSERT/UPDATE cmd için kullanılır. `FOR ALL` policy'sinde `qual` ALL cmd'ye uygulanır AMA `with_check NULL` ise INSERT'te kontrol bypass olur (ancak `qual` da uygulanmaz — bu Supabase + PostgreSQL'in default deny davranışıyla birleşince INSERT silent fail eder).
+
+**`spooller` policy'si daha sağlam (referans):**
+```sql
+CREATE POLICY spool_tenant ON spooller
+  FOR ALL
+  USING (tenant_id = get_tenant_id())
+  WITH CHECK (tenant_id = get_tenant_id());
+```
+
+`get_tenant_id()` fonksiyonu:
+```sql
+CREATE OR REPLACE FUNCTION public.get_tenant_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE SECURITY DEFINER  -- ← yazarın haklarıyla çalışır, RLS bypass eder
+AS $function$
+  SELECT COALESCE(
+    (auth.jwt()->'app_metadata'->>'tenant_id')::uuid,    -- JWT app_metadata
+    (auth.jwt()->>'tenant_id')::uuid,                     -- JWT root claim
+    (SELECT tenant_id FROM kullanicilar WHERE id = auth.uid())  -- DB fallback
+  );
+$function$
+```
+
+`SECURITY DEFINER` etiketi fonksiyonu yazarın (admin) hakları ile çalıştırır → `kullanicilar` RLS'ini bypass eder → 3 fallback de güvenli çalışır → subquery chaining problemi yok.
+
+**Karar:** Yeni RLS policy'leri yazılırken **`get_tenant_id()` pattern'i kullanılır**, subquery (`SELECT tenant_id FROM kullanicilar WHERE id = auth.uid()`) yazılmaz.
+
+**Standart şablon:**
+```sql
+CREATE POLICY <tablo_adi>_tenant ON <tablo>
+  FOR ALL
+  USING (tenant_id = get_tenant_id())
+  WITH CHECK (tenant_id = get_tenant_id());
+```
+
+`get_tenant_id()` fonksiyonu zaten DB'de var. Yeni tablo eklenirken bu pattern uygulanır.
+
+**Manuel fix uygulandı (70'te, repo'da migration YOK):**
+```sql
+DROP POLICY IF EXISTS tenant_isolation ON is_kayitlari;
+CREATE POLICY is_kayitlari_tenant ON is_kayitlari
+  FOR ALL
+  USING (tenant_id = get_tenant_id())
+  WITH CHECK (tenant_id = get_tenant_id());
+```
+
+71'de SED-71-02 ile `migrations/034_is_kayitlari_rls_get_tenant_id.sql` olarak repo'ya alınır.
+
+**Pratik uygulama:**
+1. Yeni tablo eklenirken RLS policy yazılır → bu pattern
+2. Mevcut tablo policy'si subquery kullanıyorsa cross-check edilir (silent fail riski)
+3. RLS değişikliği kapsamında MK-66.2 disiplini geçerli (policy taraması zorunlu)
+4. SECURITY DEFINER fonksiyonlar veritabanı güvenliği için dikkatlice yazılır (audit log + parametre doğrulama)
+
+**Doğum kanıtı:** 70 RLS bug `is_kayitlari` policy'sinin subquery chaining yüzünden silent fail ettiği keşfi. `spooller` aynı tenant_id ile UPDATE'i geçiyordu (get_tenant_id pattern'i), `is_kayitlari` INSERT'i geçemiyordu (subquery pattern'i). Aynı user, aynı tenant, farklı policy → farklı sonuç. Pattern fark = bug fark.
+
+**İlişkili:** MK-66.1 (sıralı migration disiplini), MK-66.2 (policy taraması), MK-70.2 (silent fail yakalama — bu RLS bug'ın yakalanmamasının sebebi), SED-71-02 (RLS migration repo'ya).
+
+---
