@@ -1845,5 +1845,11 @@
   "m_ib_foto_islem_kk": "Quality Control",
   "m_ib_foto_islem_genel": "General",
   "m_ib_foto_onceki": "Previous photo",
-  "m_ib_foto_sonraki": "Next photo"
+  "m_ib_foto_sonraki": "Next photo",
+  "m_ib_sd_malzeme_birim": "items",
+  "m_ib_sd_malzeme_sert_kisa": "cert",
+  "m_ib_sd_malzeme_heat_label": "Heat",
+  "m_ib_sd_malzeme_heat_placeholder": "Heat no...",
+  "m_ib_sd_malzeme_bos": "No materials added yet",
+  "m_ib_sd_malzeme_kayit_hatasi": "Could not save"
 }

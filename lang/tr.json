@@ -1845,5 +1845,11 @@
   "m_ib_foto_islem_kk": "Kalite Kontrol",
   "m_ib_foto_islem_genel": "Genel",
   "m_ib_foto_onceki": "Önceki foto",
-  "m_ib_foto_sonraki": "Sonraki foto"
+  "m_ib_foto_sonraki": "Sonraki foto",
+  "m_ib_sd_malzeme_birim": "kalem",
+  "m_ib_sd_malzeme_sert_kisa": "sert",
+  "m_ib_sd_malzeme_heat_label": "Heat",
+  "m_ib_sd_malzeme_heat_placeholder": "Heat no...",
+  "m_ib_sd_malzeme_bos": "Henüz malzeme eklenmemiş",
+  "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi"
 }

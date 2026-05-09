@@ -1845,5 +1845,11 @@
   "m_ib_foto_islem_kk": "مراقبة الجودة",
   "m_ib_foto_islem_genel": "عام",
   "m_ib_foto_onceki": "الصورة السابقة",
-  "m_ib_foto_sonraki": "الصورة التالية"
+  "m_ib_foto_sonraki": "الصورة التالية",
+  "m_ib_sd_malzeme_birim": "عنصر",
+  "m_ib_sd_malzeme_sert_kisa": "موث",
+  "m_ib_sd_malzeme_heat_label": "Heat",
+  "m_ib_sd_malzeme_heat_placeholder": "رقم Heat...",
+  "m_ib_sd_malzeme_bos": "لم تتم إضافة أي مواد بعد",
+  "m_ib_sd_malzeme_kayit_hatasi": "تعذر الحفظ"
 }

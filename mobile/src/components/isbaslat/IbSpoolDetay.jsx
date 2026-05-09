@@ -1,5 +1,5 @@
 // mobile/src/components/isbaslat/IbSpoolDetay.jsx
-// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix3)
+// AresPipe — İş Başlat Ekran 3 (Spool Detay) — 69. oturum (Adım 3b + fix3 + 3c)
 //
 // 67'de v9-v16 mockup turuyla kilitlenen tasarımı birebir hayata geçirir.
 // Mockup referansları: ekran3_v13_*.html, v13b_*.html, v14_*.html.
@@ -29,13 +29,15 @@
 //
 // Bilinçli ertelenenler (69 sonrası):
 // - Foto fullscreen tap-to-zoom (ayrı IbFotoViewer component, 70+)
-// - Malzeme paneli BOM listesi (3c, bu oturumda)
-// - Heat inline edit (3k, sonraki oturumlar)
-// - Yetki kontrolü + Footer CTA branchleri (3d, bu oturumda)
+// - Yetki kontrolü + Footer CTA branchleri (3d, sıradaki iş)
 // - Devral foto akışı, alternatife başla DB update (3g/3h)
 // - basamak_tanimlari label (slug → "Ön İmalat" gibi okunaklı görünüm)
 // - İşe Başla / İşi Kapat / Not Ekle / İptal Et gerçek akışlar (3e/3f/3i/3j)
 // - Genel paneli'nde Büküm / Markalama / Kesim ilerleme badge'leri (3l, agregat)
+// - QR okutunca sertifikalı malzeme uyarısı (SED — IbUyariDrawer'a yeni
+//   "sertifikalı malzeme dikkat" tipi eklenecek)
+// - Spool'a sertifika evrakı yükleme akışı (SED — belgeler tablosu, devre
+//   kalite dosyası agregasyonu)
 // - m_ib_uy_yu_* anahtar setinin lang/tr,en,ar.json'a toplu eklenmesi
 //   (alis/test/anladim/not — şu an hepsi tv() fallback ile çalışıyor)
 //
@@ -64,6 +66,22 @@
 //   sessiz hata gizliyordu, debug imkansızdı.
 // - fotoCarouselWrap background #000 → var(--sur2): kırık img'de siyah
 //   ekran yerine gri sur2 zemin (kullanıcı durumu anlar).
+//
+// 69'da (Adım 3c, Malzeme paneli BOM + heat inline edit):
+// - spool_malzemeleri tablosu fetch (11 kolon, DB sırası — web pattern)
+// - MalzemePanel placeholder yerine kart-tabanlı liste (mobile 380px'e
+//   uygun, web 13-kolon tablo değil dikey kart). Her kart: #sıra · kod ·
+//   tip chip · sertifikalı (varsa) · tanım · malzeme/kalite · ölçü
+//   satırı · heat input.
+// - Heat inline edit: input onBlur → heatKaydet(id, val). DB UPDATE +
+//   state local güncelle + flash feedback (border mavi → yeşil/kırmızı,
+//   1.2sn / 2sn). Web'in heatKaydet pattern'inin birebir muadili.
+// - Sertifika READ-ONLY (mühendislik kararı, operatör değiştiremez).
+//   ✓ chip yeşil, sertifikali=true ise görünür. Toggle yok.
+// - Tip chip 4 renk grubu: boru=teal, flans/reduktor=mor,
+//   dirsek/fitting/te=amber, bilinmeyen=gri.
+// - 6 yeni i18n: m_ib_sd_malzeme_{birim, sert_kisa, heat_label,
+//   heat_placeholder, bos, kayit_hatasi} × 3 dil = 18 satır.
 
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
@@ -88,6 +106,10 @@ export default function IbSpoolDetay({
   const [fotograflar, setFotograflar] = useState([])
   const [fotoIdx, setFotoIdx] = useState(0)
   const [kullaniciAdMap, setKullaniciAdMap] = useState({})
+  const [malzemeler, setMalzemeler] = useState([])
+  // heatKayitDurumu: { [malzemeId]: 'kaydediyor' | 'basarili' | 'hata' }
+  // Kaydet sonrası 1.2sn 'basarili'/'hata' gösterilir, sonra silinir.
+  const [heatKayitDurumu, setHeatKayitDurumu] = useState({})
   const [aktifSekme, setAktifSekme] = useState('genel')
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   const [yumusDrawerAcik, setYumusDrawerAcik] = useState(false) // yumuşak
@@ -249,6 +271,28 @@ export default function IbSpoolDetay({
     return () => { iptal = true }
   }, [yerelSpool?.id])
 
+  // ─── Spool malzemeleri fetch (3c) ───
+  // BOM listesi (read-only görüntü + heat inline edit). DB sırası korunur
+  // (web pattern). 11 kolon: kod, tip, tanim, malzeme, kalite, dis_cap_mm,
+  // et_mm, boy_mm, agirlik_kg, sertifikali, heat_no.
+  useEffect(() => {
+    if (!yerelSpool?.id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('spool_malzemeleri')
+          .select('id, kod, tip, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, agirlik_kg, sertifikali, heat_no')
+          .eq('spool_id', yerelSpool.id)
+        if (error || iptal) return
+        setMalzemeler(Array.isArray(data) ? data : [])
+      } catch (e) {
+        console.warn('[IbSpoolDetay] malzemeler yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.id])
+
   // ─── Yumuşak uyarı kartlarını topla ───
   // 3 kategori: Alıştırma kırmızı (spool.alistirma VAR/KISMI), Test mavi
   // (devreye test tanımlı), Not sarı (notlar tablosundan, her not ayrı kart).
@@ -363,6 +407,46 @@ export default function IbSpoolDetay({
     setYumusDrawerAcik(true)
   }
 
+  // ─── Heat kaydet (3c) ───
+  // Input onBlur tetikler. Eski değerle aynıysa noop. Trim + null normalize.
+  // Kaydet sonrası state lokal güncellenir + 1.2sn 'basarili' / 'hata' flash.
+  // Web pattern: spool_detay.html heatKaydet(id, val) — birebir muadil.
+  async function heatKaydet(id, yeniHam) {
+    const malzeme = malzemeler.find(m => m.id === id)
+    if (!malzeme) return
+    const yeni = (yeniHam || '').trim()
+    const eski = malzeme.heat_no || ''
+    if (yeni === eski) return // değişmemiş
+
+    setHeatKayitDurumu(prev => ({ ...prev, [id]: 'kaydediyor' }))
+    try {
+      const { error } = await supabase
+        .from('spool_malzemeleri')
+        .update({ heat_no: yeni || null, guncelleme: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+      setMalzemeler(prev => prev.map(m => m.id === id ? { ...m, heat_no: yeni || null } : m))
+      setHeatKayitDurumu(prev => ({ ...prev, [id]: 'basarili' }))
+      setTimeout(() => {
+        setHeatKayitDurumu(prev => {
+          const y = { ...prev }
+          delete y[id]
+          return y
+        })
+      }, 1200)
+    } catch (e) {
+      console.warn('[heatKaydet] hata:', e)
+      setHeatKayitDurumu(prev => ({ ...prev, [id]: 'hata' }))
+      setTimeout(() => {
+        setHeatKayitDurumu(prev => {
+          const y = { ...prev }
+          delete y[id]
+          return y
+        })
+      }, 2000)
+    }
+  }
+
   // ─── Foot CTA handler'ları (placeholder) ───
   function iseBasla() { alert(tv('m_ib_sd_basla_placeholder', "(İşe Başla akışı 68b'de eklenecek)")) }
   function isiKapat() { alert(tv('m_ib_sd_kapat_placeholder', "(İşi Kapat akışı 68b'de eklenecek)")) }
@@ -454,7 +538,14 @@ export default function IbSpoolDetay({
       {/* İçerik */}
       <div style={s.icerikInner}>
         {aktifSekme === 'genel'   && <GenelPanel spool={yerelSpool} devre={devre} tv={tv} />}
-        {aktifSekme === 'malzeme' && <MalzemePanel tv={tv} />}
+        {aktifSekme === 'malzeme' && (
+          <MalzemePanel
+            malzemeler={malzemeler}
+            heatKaydet={heatKaydet}
+            kayitDurumu={heatKayitDurumu}
+            tv={tv}
+          />
+        )}
       </div>
 
       {/* ───── Foot CTA ───── */}
@@ -621,14 +712,185 @@ function GenelPanel({ spool, devre, tv }) {
   )
 }
 
-function MalzemePanel({ tv }) {
+// ─────────── Malzeme Paneli — 3c (69. oturum) ───────────
+//
+// BOM listesi kart formatı (mobile 380px). Her malzeme bir kart:
+//   #sıra · kod (mono) · tip chip [renkli] · ✓ sert (sağda, varsa)
+//   tanım (m.tanim)
+//   malzeme · kalite (TR-capitalize fallback)
+//   ölçü satırı: Ø<dis_cap> × <et> × <boy> mm · <adet> ad · <agirlik> kg
+//     (sadece dolu alanlar gösterilir, yoksa atlanır)
+//   Heat: [input mono] (read+write — onBlur DB UPDATE)
+//
+// Heat girişi: input → onBlur → heatKaydet(id, val). Kaydet sırasında
+// kayitDurumu[id] = 'kaydediyor' (border mavi). Başarılı: 'basarili'
+// (border yeşil 1.2sn). Hata: 'hata' (border kırmızı 2sn).
+//
+// Sertifika: read-only chip. DB'deki sertifikali=true ise yeşil ✓.
+// Operatör değiştiremez — mühendislik kararı (gemi gövdesi gibi kritik
+// kaynaklar için MTC/3.1 sertifikası gereken malzemeler). 70+'da
+// QR okutunca uyarı + sertifika evrakı yükleme akışı eklenecek (SED).
+//
+// Tip chip renk haritası (4 grup):
+//   boru                          → teal
+//   flans, reduktor               → mor (uç eleman)
+//   dirsek, fitting, te (default) → amber (yön/fitting)
+//   bilinmeyen                    → gri
+
+function MalzemePanel({ malzemeler, heatKaydet, kayitDurumu, tv }) {
+  if (!malzemeler || malzemeler.length === 0) {
+    return (
+      <div style={s.merkezBos}>
+        <p style={s.bosYazi}>
+          {tv('m_ib_sd_malzeme_bos', 'Henüz malzeme eklenmemiş')}
+        </p>
+      </div>
+    )
+  }
+
+  const sertSayim = malzemeler.filter(m => m.sertifikali).length
+  const sertKisa = tv('m_ib_sd_malzeme_sert_kisa', 'sert')
+  const birim = tv('m_ib_sd_malzeme_birim', 'kalem')
+
   return (
-    <div style={s.merkezBos}>
-      <p style={s.bosYazi}>
-        {tv('m_ib_sd_malzeme_yakinda', "Malzeme listesi 68b'de eklenecek.")}
-      </p>
+    <div style={s.malzemeWrap}>
+      <div style={s.malzemeBaslik}>
+        <span>{malzemeler.length} {birim}</span>
+        {sertSayim > 0 && (
+          <span style={s.malzemeBaslikSert}>✓ {sertSayim} {sertKisa}</span>
+        )}
+      </div>
+      {malzemeler.map((m, idx) => (
+        <MalzemeKart
+          key={m.id || `m_${idx}`}
+          malzeme={m}
+          sira={idx + 1}
+          heatKaydet={heatKaydet}
+          kayitDurumu={kayitDurumu[m.id]}
+          tv={tv}
+        />
+      ))}
+      <div style={{ height: 16 }} />
     </div>
   )
+}
+
+function MalzemeKart({ malzeme, sira, heatKaydet, kayitDurumu, tv }) {
+  const [heatLocal, setHeatLocal] = useState(malzeme.heat_no || '')
+
+  // malzeme.heat_no dış kaynaktan değişirse (başka tab/cihaz) state senkron
+  useEffect(() => {
+    setHeatLocal(malzeme.heat_no || '')
+  }, [malzeme.heat_no])
+
+  const tip = (malzeme.tip || '').toLowerCase()
+  const tipStil = tipChipStili(tip)
+  const tipEtiket = tip
+    ? tip.charAt(0).toLocaleUpperCase('tr-TR') + tip.slice(1)
+    : '—'
+
+  const malzemeAd = malzeme.malzeme
+    ? malzeme.malzeme.charAt(0).toLocaleUpperCase('tr-TR') + malzeme.malzeme.slice(1)
+    : '—'
+  const kalite = malzeme.kalite || '—'
+
+  // Ölçü satırı (sadece dolu alanlar)
+  const olculer = []
+  if (malzeme.dis_cap_mm) olculer.push(`Ø ${formatSayi(malzeme.dis_cap_mm)}`)
+  if (malzeme.et_mm)      olculer.push(`× ${formatSayi(malzeme.et_mm)}`)
+  if (malzeme.boy_mm)     olculer.push(`× ${formatSayi(malzeme.boy_mm)}`)
+  const olcuStr = olculer.length ? olculer.join(' ') + ' mm' : null
+
+  // Heat input border rengi (kayit durumuna göre)
+  let heatBorderColor = 'var(--bd)'
+  if (kayitDurumu === 'kaydediyor') heatBorderColor = 'var(--ac)'
+  else if (kayitDurumu === 'basarili') heatBorderColor = 'var(--gr)'
+  else if (kayitDurumu === 'hata')     heatBorderColor = 'var(--re)'
+
+  return (
+    <div style={s.malzemeKart}>
+      {/* Üst satır: sıra + kod + tip chip + sert chip */}
+      <div style={s.malzemeUstSatir}>
+        <div style={s.malzemeKodBlok}>
+          <span style={s.malzemeSira}>#{sira}</span>
+          <span style={s.malzemeKod}>{malzeme.kod || '—'}</span>
+          {tip && <span style={{ ...s.tipChip, ...tipStil }}>{tipEtiket}</span>}
+        </div>
+        {malzeme.sertifikali && (
+          <span style={s.sertChip}>✓ {tv('m_ib_sd_malzeme_sert_kisa', 'sert')}</span>
+        )}
+      </div>
+
+      {/* Tanım */}
+      {malzeme.tanim && <div style={s.malzemeTanim}>{malzeme.tanim}</div>}
+
+      {/* Malzeme · Kalite */}
+      <div style={s.malzemeAlt}>{malzemeAd} · {kalite}</div>
+
+      {/* Ölçü satırı + adet + ağırlık */}
+      {olcuStr && (
+        <div style={s.malzemeOlcu}>
+          <span>{olcuStr}</span>
+          {malzeme.agirlik_kg && (
+            <>
+              <span style={s.malzemeNoktaAyrac}>·</span>
+              <span>{formatSayi(malzeme.agirlik_kg)} kg</span>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Heat input */}
+      <div style={s.heatBlok}>
+        <span style={s.heatLabel}>{tv('m_ib_sd_malzeme_heat_label', 'Heat')}</span>
+        <input
+          type="text"
+          value={heatLocal}
+          onChange={(e) => setHeatLocal(e.target.value)}
+          onBlur={() => heatKaydet(malzeme.id, heatLocal)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+          }}
+          placeholder={tv('m_ib_sd_malzeme_heat_placeholder', 'Heat no...')}
+          style={{ ...s.heatInput, borderColor: heatBorderColor }}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+        />
+        {kayitDurumu === 'hata' && (
+          <span style={s.heatHataYazi}>
+            {tv('m_ib_sd_malzeme_kayit_hatasi', 'Kaydedilemedi')}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Tip chip rengi — 4 grup haritası
+function tipChipStili(tip) {
+  if (tip === 'boru') {
+    return { background: '#E1F5EE', color: '#085041' } // teal
+  }
+  if (tip === 'flans' || tip === 'reduktor') {
+    return { background: '#EEEDFE', color: '#3C3489' } // mor
+  }
+  if (tip === 'dirsek' || tip === 'fitting' || tip === 'te') {
+    return { background: '#FAEEDA', color: '#633806' } // amber
+  }
+  return { background: 'var(--sur2)', color: 'var(--txd)' } // gri / bilinmeyen
+}
+
+// Sayı format — "139.7" → "139,7", trailing zero kırp
+function formatSayi(n) {
+  if (n == null || n === '') return '—'
+  const num = parseFloat(n)
+  if (isNaN(num)) return String(n)
+  // Tam sayıysa ondalık yok, değilse en fazla 2 basamak
+  const str = Number.isInteger(num)
+    ? String(num)
+    : num.toFixed(2).replace(/\.?0+$/, '')
+  return str.replace('.', ',')
 }
 
 // ─────────── Foto Carousel — 3b (69. oturum) ───────────
@@ -1048,6 +1310,122 @@ const s = {
     fontSize: 14,
     color: 'var(--txd)',
     margin: '0 0 16px',
+  },
+
+  // Malzeme paneli (3c)
+  malzemeWrap: {
+    padding: '8px 12px',
+  },
+  malzemeBaslik: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 4px 12px',
+    fontSize: 12,
+    color: 'var(--txd)',
+    fontFamily: 'Barlow, sans-serif',
+  },
+  malzemeBaslikSert: {
+    color: 'var(--gr)',
+    fontWeight: 500,
+  },
+  malzemeKart: {
+    background: 'var(--sur)',
+    border: '1px solid var(--bor)',
+    borderRadius: 8,
+    padding: '10px 12px',
+    marginBottom: 8,
+    fontFamily: 'Barlow, sans-serif',
+  },
+  malzemeUstSatir: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  malzemeKodBlok: {
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  malzemeSira: {
+    fontSize: 11,
+    color: 'var(--txd)',
+    minWidth: 18,
+  },
+  malzemeKod: {
+    fontSize: 13,
+    fontWeight: 500,
+    fontFamily: 'monospace',
+    color: 'var(--tx)',
+  },
+  tipChip: {
+    fontSize: 10,
+    padding: '2px 7px',
+    borderRadius: 4,
+    fontWeight: 500,
+    letterSpacing: 0.2,
+  },
+  sertChip: {
+    fontSize: 11,
+    color: 'var(--gr)',
+    fontWeight: 500,
+    flexShrink: 0,
+  },
+  malzemeTanim: {
+    fontSize: 13,
+    color: 'var(--tx)',
+    marginBottom: 2,
+  },
+  malzemeAlt: {
+    fontSize: 11,
+    color: 'var(--txd)',
+    marginBottom: 4,
+  },
+  malzemeOlcu: {
+    fontSize: 12,
+    color: 'var(--txd)',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  malzemeNoktaAyrac: {
+    color: 'var(--txd)',
+    opacity: 0.5,
+  },
+  heatBlok: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  heatLabel: {
+    fontSize: 11,
+    color: 'var(--txd)',
+    fontWeight: 500,
+    minWidth: 32,
+  },
+  heatInput: {
+    flex: 1,
+    height: 32,
+    padding: '0 10px',
+    fontSize: 13,
+    fontFamily: 'monospace',
+    color: 'var(--tx)',
+    background: 'var(--bg)',
+    border: '1px solid var(--bd)',
+    borderRadius: 6,
+    outline: 'none',
+    transition: 'border-color 200ms ease',
+    WebkitAppearance: 'none',
+    letterSpacing: 0.5,
+  },
+  heatHataYazi: {
+    fontSize: 11,
+    color: 'var(--re)',
   },
   btnIkincil: {
     padding: '10px 20px',
