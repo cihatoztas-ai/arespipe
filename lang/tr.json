@@ -1854,6 +1854,7 @@
   "m_ib_sd_malzeme_kayit_hatasi": "Kaydedilemedi",
   "m_ib_sd_malzeme_kaydedildi": "Kaydedildi",
   "m_ib_sd_yetki_yok": "Bu spool {basamak} basamağında, şu an senin yetkinde değil",
+  "m_ib_sd_basla_hata": "İşe başlatılamadı: ",
   "m_ib_uy_yz_baslik": "Yetki yok",
   "m_ib_uy_yz_mesaj": "Bu basamak için yetkili değilsiniz.",
   "m_ib_uy_anladim": "Anladım",

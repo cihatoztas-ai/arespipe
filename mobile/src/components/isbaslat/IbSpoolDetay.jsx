@@ -87,7 +87,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { dosyaUrlAl } from '../../lib/dosya'
-import { aktifBasamakYetkili, basamakAdi } from '../../lib/isbaslat'
+import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla } from '../../lib/isbaslat'
 import IbUyariDrawer from './IbUyariDrawer'
 
 export default function IbSpoolDetay({
@@ -399,9 +399,12 @@ export default function IbSpoolDetay({
     }
 
     // 3. devamEdiyor — başkasının aktif işi
+    // 70. oturum (3e): "kim çalışıyor" bilgisi DB'de yok (spooller.aktif_isci_id
+    // kolonu yok). Web pattern'i izleyerek localStorage 'ares_is_aktif'
+    // üzerinden okunur. Tek operatör tek cihaz varsayımı.
     if (yerelSpool.is_durumu === 'devam_ediyor') {
-      const aktifIsciId = yerelSpool.aktif_isci_id || yerelSpool.aktif_kullanici_id
-      const benimMi = aktifIsciId && kullanici?.id && aktifIsciId === kullanici.id
+      const aktifIs = aktifIsHatirla()
+      const benimMi = !!(aktifIs && aktifIs.id === yerelSpool.id)
       if (!benimMi) {
         setUyariDrawer({
           tip: 'devamEdiyor',
@@ -515,8 +518,50 @@ export default function IbSpoolDetay({
     }
   }
 
-  // ─── Foot CTA handler'ları (placeholder) ───
-  function iseBasla() { alert(tv('m_ib_sd_basla_placeholder', "(İşe Başla akışı 68b'de eklenecek)")) }
+  // ─── Foot CTA handler'ları ───
+  // iseBasla: 70. oturum 3e implementasyonu. Diğer handler'lar 3f/3i/3j'de.
+
+  // 3e — İşe Başla akışı.
+  // Web pattern (is_baslat.html:1131 isBaslatDB) birebir port:
+  //   1. spooller UPDATE: is_durumu='devam_ediyor', guncelleme=now
+  //   2. localStorage 'ares_is_aktif' yaz (kim çalışıyor — DB'de alan yok)
+  //   3. Local state güncelle (Footer 3'lü buton'a otomatik geçer)
+  //
+  // is_kayitlari INSERT yapılmaz — web'de işi kapat akışında yapılıyor (3f).
+  // Hata yönetimi: alert (geçici, 3f'te toast helper eklenebilir).
+  async function iseBasla() {
+    if (!yerelSpool || !kullanici) return
+    if (drawerAcikHerhangi || !yetkili) return  // güvenlik gate'i (button disabled olsa da)
+
+    try {
+      const { error } = await supabase
+        .from('spooller')
+        .update({
+          is_durumu:   'devam_ediyor',
+          guncelleme:  new Date().toISOString(),
+        })
+        .eq('id', yerelSpool.id)
+
+      if (error) {
+        console.error('[iseBasla] UPDATE hatası:', error)
+        alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (error.message || error.code || 'RLS?'))
+        return
+      }
+
+      // Aktif iş kaydı (web pattern muadili — localStorage)
+      aktifIsKaydet({
+        spoolId: yerelSpool.id,
+        rolAd:   aktifRol?.ad || '',
+      })
+
+      // Local state — Footer otomatik 3'lü buton'a geçer
+      setYerelSpool(prev => ({ ...prev, is_durumu: 'devam_ediyor' }))
+    } catch (e) {
+      console.error('[iseBasla] beklenmeyen hata:', e)
+      alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (e?.message || 'bilinmeyen'))
+    }
+  }
+
   function isiKapat() { alert(tv('m_ib_sd_kapat_placeholder', "(İşi Kapat akışı 68b'de eklenecek)")) }
   function notEkle()  { alert(tv('m_ib_sd_not_placeholder',   "(Not Ekle akışı 68b'de eklenecek)")) }
   function isiIptal() { alert(tv('m_ib_sd_iptal_placeholder', "(İptal Et akışı 68b'de eklenecek)")) }

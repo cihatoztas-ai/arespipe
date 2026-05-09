@@ -298,3 +298,49 @@ export function rolHatirla() {
 export function rolUnut() {
   try { localStorage.removeItem(ROL_KEY) } catch {}
 }
+
+// ───────────────────────────────────────────────
+// 70. oturum (Adım 3e): localStorage — aktif iş kaydı
+//
+// Web'in 'ares_is_aktif' pattern'i (is_baslat.html:1142) muadili.
+// DB'de "kim çalışıyor" alanı yok (spooller.aktif_isci_id kolonu yok).
+// Bunun yerine, operatör İşe Başla'ya basınca spool id + rol localStorage'a
+// kaydedilir. IbSpoolDetay useEffect "benimMi" kontrolü buradan okur.
+//
+// Saha varsayımı: tek operatör tek cihaz. Çoklu operatör paylaşımlı cihaz
+// için lokalize çözümün sınırı; ileride DB'de aktif kayıt tablosu (veya
+// spooller.aktif_isci_id kolonu) eklenince buraya dokunulmadan migrate edilir.
+// ───────────────────────────────────────────────
+const AKTIF_IS_KEY = 'ares_is_aktif'
+
+// Operatör işe başlarken çağrılır (3e).
+// @param spoolId — string (spool.id UUID)
+// @param rolAd   — string (aktif rol adı, ör. 'Argon Kaynağı')
+export function aktifIsKaydet({ spoolId, rolAd }) {
+  if (!spoolId) return
+  try {
+    localStorage.setItem(AKTIF_IS_KEY, JSON.stringify({
+      id:  spoolId,
+      rol: rolAd || '',
+    }))
+  } catch (e) { /* private browsing fallback */ }
+}
+
+// IbSpoolDetay useEffect'te çağrılır (devamEdiyor → benimMi check).
+// @returns { id, rol } | null
+export function aktifIsHatirla() {
+  try {
+    const v = localStorage.getItem(AKTIF_IS_KEY)
+    if (!v) return null
+    const obj = JSON.parse(v)
+    if (!obj || !obj.id) return null
+    return obj
+  } catch {
+    return null
+  }
+}
+
+// Operatör işi kapatınca çağrılır (3f).
+export function aktifIsUnut() {
+  try { localStorage.removeItem(AKTIF_IS_KEY) } catch {}
+}
