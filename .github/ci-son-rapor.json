@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-10T18:00:29.992Z",
-  "commit_sha": "c38a6fcf2b2e620c6ec9e027a9a8ef08f72665e0",
+  "tarih": "2026-05-10T21:27:45.675Z",
+  "commit_sha": "18655e20503b6f5a66766373e3b65114cfb062fd",
   "commit_ref": "main",
-  "workflow_run": 761,
+  "workflow_run": 762,
   "ozet": {
     "hata": 0,
     "uyari": 73,
@@ -66,31 +66,31 @@
           "dosya": "mobile/src/components/isbaslat/IbSpoolDetay.jsx",
           "sayi": 25,
           "satirlar": [
-            486,
-            488,
-            847,
-            848,
-            854,
-            856,
-            908,
-            928,
-            935,
-            959,
-            970,
-            979,
-            982,
-            985,
-            1022,
-            1222,
-            1223,
-            1224,
-            1225,
-            1226,
-            1227,
-            1228,
-            1229,
-            1230,
-            1231
+            532,
+            534,
+            893,
+            894,
+            900,
+            902,
+            954,
+            974,
+            981,
+            1005,
+            1016,
+            1025,
+            1028,
+            1031,
+            1068,
+            1268,
+            1269,
+            1270,
+            1271,
+            1272,
+            1273,
+            1274,
+            1275,
+            1276,
+            1277
           ]
         },
         {
@@ -301,151 +301,151 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 486,
+          "satir": 532,
           "mesaj": "tv('m_ib_sd_devral_placeholder') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 488,
+          "satir": 534,
           "mesaj": "tv('m_ib_sd_alt_placeholder') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 847,
+          "satir": 893,
           "mesaj": "tv('m_ib_sd_not_placeholder') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 848,
+          "satir": 894,
           "mesaj": "tv('m_ib_sd_iptal_placeholder') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 854,
+          "satir": 900,
           "mesaj": "tv('m_ib_sd_spool_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 856,
+          "satir": 902,
           "mesaj": "tv('m_ib_sd_baska') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 908,
+          "satir": 954,
           "mesaj": "tv('m_ib_sd_peek_aria') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 928,
+          "satir": 974,
           "mesaj": "tv('m_ib_sd_genel') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 935,
+          "satir": 981,
           "mesaj": "tv('m_ib_sd_malzeme') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 959,
+          "satir": 1005,
           "mesaj": "tv('m_ib_sd_tek_seferlik') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 970,
+          "satir": 1016,
           "mesaj": "tv('m_ib_sd_basla') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 979,
+          "satir": 1025,
           "mesaj": "tv('m_ib_sd_kapat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 982,
+          "satir": 1028,
           "mesaj": "tv('m_ib_sd_not') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 985,
+          "satir": 1031,
           "mesaj": "tv('m_ib_sd_iptal') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1022,
+          "satir": 1068,
           "mesaj": "tv('m_ib_uy_iptal') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1222,
+          "satir": 1268,
           "mesaj": "tv('m_ib_sd_g_is_emri') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1223,
+          "satir": 1269,
           "mesaj": "tv('m_ib_sd_g_devre') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1224,
+          "satir": 1270,
           "mesaj": "tv('m_ib_sd_g_cap') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1225,
+          "satir": 1271,
           "mesaj": "tv('m_ib_sd_g_agirlik') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1226,
+          "satir": 1272,
           "mesaj": "tv('m_ib_sd_g_malzeme_kalite') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1227,
+          "satir": 1273,
           "mesaj": "tv('m_ib_sd_g_yuzey') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1228,
+          "satir": 1274,
           "mesaj": "tv('m_ib_sd_g_alistirma') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1229,
+          "satir": 1275,
           "mesaj": "tv('m_ib_sd_g_durum') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1230,
+          "satir": 1276,
           "mesaj": "tv('m_ib_sd_g_basamak') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1231,
+          "satir": 1277,
           "mesaj": "tv('m_ib_sd_g_ilerleme') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
