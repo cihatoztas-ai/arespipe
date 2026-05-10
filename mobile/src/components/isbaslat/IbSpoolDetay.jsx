@@ -739,6 +739,7 @@ export default function IbSpoolDetay({
 
   // 71 (3f.3): Sonraki basamak secimi handler
   async function handleSonrakiBasamakSec(secilenSistemAdi) {
+    const rolAd = aktifRol?.ad || ''
     setSonrakiBasamakKaydediliyor(true)
     try {
       const { error: updErr } = await supabase
