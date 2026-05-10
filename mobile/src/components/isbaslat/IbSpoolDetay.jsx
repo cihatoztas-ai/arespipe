@@ -628,7 +628,7 @@ export default function IbSpoolDetay({
 
   // 3f.1 + 70b.A — Onaylı kapatma: is_kayitlari UPDATE pattern + spooller UPDATE.
   //   1. Aktif kaydı (3e'de INSERT edilen, bitis IS NULL) bul
-  //   2. UPDATE: bitis=now, sure_dakika=hesaplanmış (gerçek süre!)
+  //   2. UPDATE: bitis=now (sure_dakika DB GENERATED — otomatik hesaplanır)
   //      Aktif kayıt yoksa fallback INSERT (eski 3e öncesi spool'lar için)
   //   3. spooller UPDATE: is_durumu='bekliyor' (aktif_basamak DEĞİŞMEZ — 3f.3'te)
   //   4. Temizlik (aktifIsUnut sadece o role) + navigate('/')
@@ -655,16 +655,11 @@ export default function IbSpoolDetay({
       }
 
       if (aktifKayit) {
-        // 2a. UPDATE — gerçek süre hesaplanmış olarak
-        const baslangicMs = new Date(aktifKayit.baslangic).getTime()
-        const bitisMs     = new Date(simdi).getTime()
-        const sure_dakika = Math.max(0, Math.floor((bitisMs - baslangicMs) / 60000))
-
+        // 2a. UPDATE — sadece bitis (sure_dakika DB GENERATED column, otomatik hesaplanır)
         const { error: updIsErr } = await supabase
           .from('is_kayitlari')
           .update({
             bitis:        simdi,
-            sure_dakika,
             qr_bitis:     false,  // 3f.1'de QR yok, 3f.2/3'te değişebilir
           })
           .eq('id', aktifKayit.id)
@@ -675,6 +670,7 @@ export default function IbSpoolDetay({
       } else {
         // 2b. Fallback — aktif kayıt yok (eski 3e öncesi başlamış spool veya
         //     senkronizasyon farkı). Bitiş anında full INSERT.
+        // sure_dakika DB GENERATED column, manuel deger gondermiyoruz.
         console.warn('[handleKapatOnayli] aktif is_kayitlari kaydı yok, fallback INSERT')
         const { error: insErr } = await supabase
           .from('is_kayitlari')
@@ -685,7 +681,6 @@ export default function IbSpoolDetay({
             islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
             baslangic:    simdi,
             bitis:        simdi,
-            sure_dakika:  0,
             qr_baslangic: false,
             qr_bitis:     false,
           })
