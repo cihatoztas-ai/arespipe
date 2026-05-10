@@ -128,6 +128,11 @@ export default function IbSpoolDetay({
   const [sonrakiBasamakKaydediliyor, setSonrakiBasamakKaydediliyor] = useState(false)
   function setYumusDrawerAcik(val) { setYumusDrawerMod(val ? 'peek' : null) } // yumuşak
 
+  // 72 (MK-72.8): Tek-seferlik basamak — bu spool icin hedef basamak daha
+  // once tamamlanmissa Ise Basla disable edilir + info satiri gosterilir.
+  const [basamakTamamlanmis, setBasamakTamamlanmis] = useState(false)
+  const [hedefBasamakAd, setHedefBasamakAd] = useState('')
+
   // ─── Devre fetch ───
   // Spool yüklenince devre_id ile devre bilgisini al — iş emri, devre adı,
   // zone + spool null kolonları için fallback (malzeme, yüzey, ağırlık).
@@ -497,6 +502,46 @@ export default function IbSpoolDetay({
     setYumusDrawerAcik(true)
   }
 
+  // ─── MK-72.8: Tek-seferlik basamak kontrolu (72. oturum) ───
+  // Spool icin "gidilecek basamak"ta daha once tamamlanmis is_kayitlari
+  // varsa (bitis IS NOT NULL), Ise Basla butonu disabled olur ve info
+  // satiri gosterilir. Hedef basamak: aktif_basamak (eger on_imalat ise
+  // imalat olarak normalize, cunku iseBasla'da o gecisi yapacagiz).
+  useEffect(() => {
+    if (!yerelSpool?.id) return
+    const aktif = yerelSpool.aktif_basamak
+    if (!aktif) return
+    const hedef = aktif === 'on_imalat' ? 'imalat' : aktif
+
+    let iptal = false
+    ;(async () => {
+      try {
+        const { count, error } = await supabase
+          .from('is_kayitlari')
+          .select('id', { count: 'exact', head: true })
+          .eq('spool_id', yerelSpool.id)
+          .eq('islem_tipi', hedef)
+          .not('bitis', 'is', null)
+
+        if (iptal) return
+        if (error) {
+          console.warn('[MK-72.8] tek-seferlik kontrol hatasi:', error)
+          return
+        }
+        if ((count || 0) > 0) {
+          setBasamakTamamlanmis(true)
+          setHedefBasamakAd(basamakAdi(hedef))
+        } else {
+          setBasamakTamamlanmis(false)
+          setHedefBasamakAd('')
+        }
+      } catch (e) {
+        console.warn('[MK-72.8] beklenmeyen:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.id, yerelSpool?.aktif_basamak])
+
   // ─── Heat kaydet (3c) ───
   // Input onBlur tetikler. Eski değerle aynıysa noop. Trim + null normalize.
   // Kaydet sonrası state lokal güncellenir + 1.2sn 'basarili' / 'hata' flash.
@@ -551,18 +596,29 @@ export default function IbSpoolDetay({
   async function iseBasla() {
     if (!yerelSpool || !kullanici) return
     if (drawerAcikHerhangi || !yetkili) return
+    if (basamakTamamlanmis) return // MK-72.8: tek-seferlik kural
 
     const simdi = new Date().toISOString()
 
+    // MK-72.5 / SED-72-03: on_imalat → imalat otomatik gecisi.
+    // Imalatci QR okuttugunda spool 'Baslamadi' state'inden cikar, 'Imalat'
+    // basamagina gecer. Drawer ile soruyu atlayan "tek secenek" kuraliyla
+    // (MK-72.7) tutarli — drawer'da olmamasi gereken seyi burada otomatik yap.
+    const yeniBasamak = yerelSpool.aktif_basamak === 'on_imalat'
+      ? 'imalat'
+      : yerelSpool.aktif_basamak
+
     try {
       // 1. is_kayitlari INSERT — aktif iş kaydı (bitis=null)
+      // islem_tipi: hedef basamak (on_imalat ise imalat olarak yazilir,
+      // cunku Baslamadi state'inde gercek is yapilmaz).
       const { error: insErr } = await supabase
         .from('is_kayitlari')
         .insert({
           tenant_id:    yerelSpool.tenant_id,
           spool_id:     yerelSpool.id,
           personel_id:  kullanici.id,
-          islem_tipi:   yerelSpool.aktif_basamak || 'imalat',
+          islem_tipi:   yeniBasamak || 'imalat',
           baslangic:    simdi,
           // bitis: null (default) — 3f.1 UPDATE ile kapatılacak
           qr_baslangic: true,
@@ -574,12 +630,13 @@ export default function IbSpoolDetay({
         return
       }
 
-      // 2. spooller UPDATE
+      // 2. spooller UPDATE — is_durumu + (gerekirse) aktif_basamak
       const { error: updErr } = await supabase
         .from('spooller')
         .update({
-          is_durumu:   'devam_ediyor',
-          guncelleme:  simdi,
+          is_durumu:     'devam_ediyor',
+          aktif_basamak: yeniBasamak,
+          guncelleme:    simdi,
         })
         .eq('id', yerelSpool.id)
 
@@ -600,12 +657,18 @@ export default function IbSpoolDetay({
       aktifIsKaydet({
         spoolId:   yerelSpool.id,
         rolAd:     aktifRol?.ad || '',
-        basamak:   yerelSpool.aktif_basamak,
+        basamak:   yeniBasamak,
         baslangic: simdi,
       })
 
-      // 4. Local state — Footer otomatik 3'lü buton'a geçer
-      setYerelSpool(prev => ({ ...prev, is_durumu: 'devam_ediyor' }))
+      // 4. Local state — Footer otomatik 3'lü buton'a geçer + aktif_basamak
+      //    bilgisi de guncellenir (Genel panelinde "Aktif basamak: Imalat"
+      //    olarak hemen yansisin).
+      setYerelSpool(prev => ({
+        ...prev,
+        is_durumu:     'devam_ediyor',
+        aktif_basamak: yeniBasamak,
+      }))
     } catch (e) {
       console.error('[iseBasla] beklenmeyen hata:', e)
       alert(tv('m_ib_sd_basla_hata', 'İşe başlatılamadı: ') + (e?.message || 'bilinmeyen'))
@@ -711,18 +774,28 @@ export default function IbSpoolDetay({
       setYumusDrawerMod(null)
 
       // 5. 3f.3: Sonraki basamak secim drawer'i ac
+      // MK-72.7 (Secenek A): Drawer "bir sonraki kim devralacak" sorusu.
+      //   - 0 secenek (terminal, on_kontrol gibi) → drawer YOK, direkt cik
+      //   - 1 secenek → drawer YOK, otomatik gec (sessiz)
+      //   - 2+ secenek → drawer ac, secim zorunlu
       try {
         const liste = await basamakListesiniGetir(supabase)
         const sonrakiler = sonrakiBasamaklar(yerelSpool.aktif_basamak, liste)
 
         if (sonrakiler.length === 0) {
-          // Son basamak (sevkiyat sonrasi) — secim yok, direkt cik
+          // Terminal — secim yok, direkt cik
           aktifIsUnut(rolAd)
           navigate('/')
           return
         }
 
-        // Sonraki basamak(lar) var — drawer ac (atla yok, secim zorunlu)
+        if (sonrakiler.length === 1) {
+          // MK-72.7: Tek secenek varsa drawer acma, otomatik gec
+          await handleSonrakiBasamakSec(sonrakiler[0].sistem_adi)
+          return
+        }
+
+        // Coklu — drawer ac (atla yok, secim zorunlu)
         setSonrakiSecenekler(sonrakiler)
         setSonrakiDrawerAcik(true)
       } catch (basErr) {
@@ -881,13 +954,18 @@ export default function IbSpoolDetay({
           priority 1). Footer'da "İşe Başla" disabled gösterilir, info
           satırı yok (mesaj drawer'da). */}
       <div style={s.footWrap}>
+        {basamakTamamlanmis && !isDevamEdiyor && (
+          <div style={s.tamamlanmisInfo}>
+            <strong>{hedefBasamakAd}</strong> {tv('m_ib_sd_tek_seferlik', 'basamağı bu spool için zaten tamamlanmış. Tekrar başlatılamaz.')}
+          </div>
+        )}
         {!isDevamEdiyor ? (
           <>
             <button
               type="button"
-              style={(!yetkili || drawerAcikHerhangi) ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
+              style={(!yetkili || drawerAcikHerhangi || basamakTamamlanmis) ? s.footBtnYesilDisabled : s.footBtnYesilGhost}
               onClick={iseBasla}
-              disabled={!yetkili || drawerAcikHerhangi}
+              disabled={!yetkili || drawerAcikHerhangi || basamakTamamlanmis}
             >
               {tv('m_ib_sd_basla', 'İşe Başla')}
             </button>
@@ -1922,6 +2000,17 @@ const s = {
     padding: '14px 16px 16px',
     background: 'var(--sur)',
     borderTop: '1px solid var(--bor)',
+  },
+  // MK-72.8 — Tek-seferlik basamak info satırı (Foot üstü, sarı uyarı)
+  tamamlanmisInfo: {
+    padding: '10px 12px',
+    background: 'rgba(245,158,11,0.12)',
+    color: '#b45309',
+    border: '1px solid rgba(245,158,11,0.35)',
+    borderRadius: 8,
+    fontSize: 13,
+    lineHeight: 1.4,
+    fontFamily: 'Barlow, sans-serif',
   },
   footBtnYesilGhost: {
     width: '100%',
