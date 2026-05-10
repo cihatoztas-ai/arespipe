@@ -415,24 +415,70 @@ export default function IbSpoolDetay({
       return
     }
 
-    // 3. devamEdiyor — başkasının aktif işi
-    // 70. oturum (3e): "kim çalışıyor" bilgisi DB'de yok (spooller.aktif_isci_id
-    // kolonu yok). Web pattern'i izleyerek localStorage 'ares_is_aktif'
-    // üzerinden okunur. Tek operatör tek cihaz varsayımı.
+    // 3. devamEdiyor — DB-truth kontrol (MK-73.3, 73. oturum)
+    // localStorage cache'tir; karar mercii is_kayitlari tablosudur (DB-truth).
+    // Açık kayıt varsa: benim mi → devral (cache tazele), başkasının mı → uyarı drawer.
+    // is_durumu='devam_ediyor' ama açık kayıt yoksa drift — sessizce bekliyor'a düşür.
+    //
+    // Önceki bug (72 sonu): aktifIsHatirla() rol parametresi olmadan çağrılıyordu;
+    // localStorage'daki coklu yapıdan ilk rolü dönerek başkasının işini bile
+    // "benim" gibi gösteriyordu. DB-truth yaklaşımı tüm bu cache-drift sorununu
+    // ortadan kaldırır. localStorage devam ediyor ama sadece performans cache'i.
     if (yerelSpool.is_durumu === 'devam_ediyor') {
-      const aktifIs = aktifIsHatirla()
-      const benimMi = !!(aktifIs && aktifIs.id === yerelSpool.id)
-      if (!benimMi) {
-        setUyariDrawer({
-          tip: 'devamEdiyor',
-          payload: {
-            operatorAd: yerelSpool.aktif_isci_ad || yerelSpool.son_isci_ad || '',
-          },
-        })
-        return
-      }
-    }
+      const devamEdiyorKontrol = async () => {
+        const { data: acikKayit, error: acikErr } = await supabase
+          .from('is_kayitlari')
+          .select('id, personel_id, baslangic, islem_tipi, kullanicilar(ad_soyad)')
+          .eq('spool_id', yerelSpool.id)
+          .is('bitis', null)
+          .maybeSingle()
 
+        if (acikErr) {
+          console.warn('[devamEdiyor] is_kayitlari okuma hatası:', acikErr)
+          return
+        }
+
+        if (!acikKayit) {
+          // is_durumu='devam_ediyor' ama açık kayıt yok — drift senaryosu.
+          // Sebep: kapatma sırasında is_kayitlari.bitis yazıldı ama
+          // spooller.is_durumu update'i atlandı (ağ kesintisi vb).
+          // Çözüm: spool'u bekliyor'a düşür, UI tutarlı olsun.
+          console.warn('[devamEdiyor] is_durumu drift — açık kayıt yok, bekliyor\'a düşürülüyor')
+          await supabase
+            .from('spooller')
+            .update({ is_durumu: 'bekliyor', guncelleme: new Date().toISOString() })
+            .eq('id', yerelSpool.id)
+          setYerelSpool(prev => ({ ...prev, is_durumu: 'bekliyor' }))
+          return
+        }
+
+        const benimMi = acikKayit.personel_id === kullanici.id
+
+        if (benimMi) {
+          // Devral: localStorage cache'i DB-truth ile tazele.
+          // Ekran zaten "devam ediyor" modunda render olacak (isDevamEdiyor true).
+          // Footer otomatik 3'lü buton (Kapat/Not/İptal) — yetki kontrolü saklı.
+          aktifIsKaydet({
+            spoolId:   yerelSpool.id,
+            rolAd:     aktifRol?.ad || '',
+            basamak:   acikKayit.islem_tipi,
+            baslangic: acikKayit.baslangic,
+          })
+        } else {
+          // Başkasının açık işi — uyarı drawer aç.
+          // operatorAd: is_kayitlari.kullanicilar JOIN'inden gelir (DB-truth).
+          setUyariDrawer({
+            tip: 'devamEdiyor',
+            payload: {
+              operatorAd: acikKayit.kullanicilar?.ad_soyad || '—',
+              baslangic:  acikKayit.baslangic,
+            },
+          })
+        }
+      }
+      devamEdiyorKontrol()
+      return
+    }
     // 4. alternatifBasamak — SADECE kaynak ailesi içinde (argon ↔ gazaltı).
     // Diğer basamak uyumsuzlukları için drawer açılmaz; iş başlatma izni
     // RLS/yetki kontrolüyle DB tarafında yapılır. İlk operatör senaryosu
