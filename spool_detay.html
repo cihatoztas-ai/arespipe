@@ -1013,7 +1013,7 @@ async function spoolYukle(supaId) {
     SP.bbox       = s.bbox_json        || null;
 
     // Tracker pozisyonu — önce dinamik STAGE_SISTEM (DB'den), sonra snapshot
-    var _aktifStr = _normalizeBasamak(s.aktif_basamak || '');
+    var _aktifStr = s.aktif_basamak || '';
     var _snap = s.basamak_snapshot || [];
     if (_aktifStr && STAGE_SISTEM.length) {
       var _idx = STAGE_SISTEM.indexOf(_aktifStr);
@@ -1450,15 +1450,6 @@ function getSTAGES(){return STAGES.slice();}
 var STAGES=['Ön İmalat','İmalat','Kaynak','Ön Kontrol','KK','Sevkiyat'];
 var STAGES_DATA=[]; // [{tr, en, ar}] — DB'den doldurulur, _rebuildStages() STAGES'i günceller
 var STAGE_KEYS=['sp_stage_pre','sp_stage_fab','sp_stage_weld','sp_stage_inspect','sp_stage_qc','sp_stage_ship'];
-// SED-73-03 (73. oturum): Kaynak alt-tipini ana 'kaynak' sistem_adi'na normalize et.
-// Mobile argon_kaynagi/gazalti_kaynagi yazıyor, STAGE_SISTEM sadece üst basamaklar
-// (kaynak) içerdiği için tracker indexOf'ta bulamıyordu. devre_detay'da
-// SED-71-05 zaten aynı çözümü uyguluyor.
-function _normalizeBasamak(sistemAdi){
-  if(!sistemAdi) return sistemAdi;
-  if(/kaynak/i.test(sistemAdi)) return 'kaynak';
-  return sistemAdi;
-}
 var STAGE_SISTEM=['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
 
 // Mevcut dile göre STAGES array'ini yeniden oluşturur
