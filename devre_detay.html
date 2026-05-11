@@ -1308,7 +1308,9 @@ function _spoolMap(s,i){
     : (s.basamak_snapshot||[]).map(function(b){return b.sistem_adi;});
   if(!stgList.length) stgList = ['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
   var total = stgList.length;
-  var aktStr = s.aktif_basamak||''; var akt = -1;
+  var aktStrRaw = s.aktif_basamak||'';
+  var aktStr = _normalizeBasamak(aktStrRaw);  // SED-73-03 (74): argon_kaynagi -> kaynak; -1 zincirini kirar
+  var akt = -1;
   if(aktStr) { var ix = stgList.indexOf(aktStr); akt = ix >= 0 ? ix : -1; }
   var adimlar=[];for(var a=0;a<total;a++){if(akt<0)adimlar.push(0);else if(a<akt)adimlar.push(1);else if(a===akt)adimlar.push(3);else adimlar.push(0);}
   var dur='waiting';
