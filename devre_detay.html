@@ -999,7 +999,7 @@ function _yuzeyBadge(raw){
 // SED-71-05: Kaynak alt-tipini ana 'kaynak' sistem_adi'na normalize et
 function _normalizeBasamak(sistemAdi){
   if(!sistemAdi) return sistemAdi;
-  if(/kaynak/i.test(sistemAdi)) return 'kaynak';
+  if(/kayna/i.test(sistemAdi)) return 'kaynak';  // /kayna/i hem kaynak hem argon_kaynagi/gazalti_kaynagi yakalar
   return sistemAdi;
 }
 // SED-71-05: is_durumu birincil kaynak (MK-70.1), durum eski fallback

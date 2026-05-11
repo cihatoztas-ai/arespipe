@@ -1456,7 +1456,7 @@ var STAGE_KEYS=['sp_stage_pre','sp_stage_fab','sp_stage_weld','sp_stage_inspect'
 // bulamiyordu. devre_detay'da SED-71-05 ayni cozumu satir 1000'de uyguluyor.
 function _normalizeBasamak(sistemAdi){
   if(!sistemAdi) return sistemAdi;
-  if(/kaynak/i.test(sistemAdi)) return 'kaynak';
+  if(/kayna/i.test(sistemAdi)) return 'kaynak';  // /kayna/i hem kaynak hem argon_kaynagi/gazalti_kaynagi yakalar
   return sistemAdi;
 }
 
