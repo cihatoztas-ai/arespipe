@@ -89,6 +89,7 @@ import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { dosyaUrlAl } from '../../lib/dosya'
 import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla, aktifIsUnut } from '../../lib/isbaslat'
+import { islemLogYaz } from '../../lib/islem-log'
 import { basamakListesiniGetir, sonrakiBasamaklar } from '../../lib/basamak-akisi'
 import IbUyariDrawer from './IbUyariDrawer'
 import IbSonrakiBasamakDrawer from './IbSonrakiBasamakDrawer'
@@ -699,6 +700,17 @@ export default function IbSpoolDetay({
         return
       }
 
+      // SED-72-09: islem_log — İşe başla olayı (fire-and-forget)
+      islemLogYaz({
+        tenantId: yerelSpool.tenant_id,
+        spoolId:  yerelSpool.id,
+        devreId:  yerelSpool.devre_id,
+        islem:    'is_basla',
+        aciklama: `${basamakAdi(yeniBasamak)} başlatıldı`,
+        yapanId:  kullanici.id,
+        meta:     { rol: aktifRol?.ad, basamak: yeniBasamak },
+      })
+
       // 3. localStorage çoklu yapıya kayıt (rol-anahtarlı)
       aktifIsKaydet({
         spoolId:   yerelSpool.id,
@@ -813,6 +825,17 @@ export default function IbSpoolDetay({
         return
       }
 
+      // SED-72-09: islem_log — İşi kapat olayı (fire-and-forget)
+      islemLogYaz({
+        tenantId: yerelSpool.tenant_id,
+        spoolId:  yerelSpool.id,
+        devreId:  yerelSpool.devre_id,
+        islem:    'is_kapat',
+        aciklama: `${basamakAdi(yerelSpool.aktif_basamak)} tamamlandı`,
+        yapanId:  kullanici.id,
+        meta:     { rol: aktifRol?.ad, basamak: yerelSpool.aktif_basamak },
+      })
+
       // 4. Temizlik — sadece bu role ait localStorage kaydı silinir
       //    (operatörün başka rollerdeki aktif işleri korunur)
       // NOT: aktifIsUnut + navigate'i 3f.3 drawer'inin sonrasinda yapacagiz
@@ -877,6 +900,17 @@ export default function IbSpoolDetay({
         setSonrakiBasamakKaydediliyor(false)
         return
       }
+
+      // SED-72-09: islem_log — Sonraki basamak'a geçiş (fire-and-forget)
+      islemLogYaz({
+        tenantId: yerelSpool.tenant_id,
+        spoolId:  yerelSpool.id,
+        devreId:  yerelSpool.devre_id,
+        islem:    'basamak_gec',
+        aciklama: `${basamakAdi(yerelSpool.aktif_basamak)} → ${basamakAdi(secilenSistemAdi)}`,
+        yapanId:  kullanici.id,
+        meta:     { onceki: yerelSpool.aktif_basamak, sonraki: secilenSistemAdi, rol: rolAd },
+      })
 
       // Basarili — drawer kapat, hub'a don
       setSonrakiDrawerAcik(false)
