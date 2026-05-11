@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-05-11T20:29:08.607Z",
-  "commit_sha": "102ba52de644ca622a2bdd7411a3a671d519fd3e",
+  "tarih": "2026-05-11T21:24:02.774Z",
+  "commit_sha": "11816b08fd87d20c0d3c4672ed015bc4a377247f",
   "commit_ref": "main",
-  "workflow_run": 777,
+  "workflow_run": 778,
   "ozet": {
-    "hata": 0,
+    "hata": 1,
     "uyari": 79,
     "taranan_dosya": 102,
-    "sorunlu_dosya": 7,
-    "durum": "sari"
+    "sorunlu_dosya": 8,
+    "durum": "kirmizi"
   },
   "kurallar": {
     "G03_HAM_YUZEY": {
@@ -147,6 +147,18 @@
             3518,
             3520
           ]
+        }
+      ]
+    },
+    "MIG_ISIM_BOZUK": {
+      "tip": "hata",
+      "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 041_inserts_b3619m_dn350-600_40s80s.sql",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "migrations/041_inserts_b3619m_dn350-600_40s80s.sql",
+          "sayi": 1,
+          "satirlar": []
         }
       ]
     }
@@ -672,6 +684,19 @@
           "tip": "uyari",
           "satir": 3520,
           "mesaj": "tv('flansh_agirlik') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "migrations/041_inserts_b3619m_dn350-600_40s80s.sql",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 0,
+      "hatalar": [
+        {
+          "kod": "MIG_ISIM_BOZUK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "Migration dosya adı NNN_aciklama.sql formatında olmalı (örn. 001_yeni_kolon.sql). 3 rakam + underscore + snake_case + .sql. — bulunan: 041_inserts_b3619m_dn350-600_40s80s.sql"
         }
       ]
     }
