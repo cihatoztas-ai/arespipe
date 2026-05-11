@@ -1787,3 +1787,34 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **İlişkili:** SED-74-01 (kapatıldı), SED-74-02 (NULL temizliği — açık).
 
 ---
+## MK-74.3 — is_durumu (mobile axis) ve s.durum (frontend axis) ayrı eksenler
+
+**Karar:** `is_durumu` (DB, mobile yazar) ve `s.durum` (frontend `_spoolMap` üretir) iki ayrı semantik ekseni temsil eder. UI render mantığı bu iki ekseni karıştırmaz, biri diğerini override etmez.
+
+**Eksenler:**
+
+- **`is_durumu` — mobile axis (aktif/pasif):** Sahada o anda iş yapılıyor mu?
+  - `'devam_ediyor'`: bir işçi aktif iş kaydı tutuyor (is_kayitlari'nda açık satır var → pulse-dot)
+  - `'bekliyor'`: aktif iş kaydı yok, ama spool herhangi bir basamakta olabilir
+
+- **`s.durum` — frontend axis (basamak ilerlemesi):** Spool üretim hattının neresinde?
+  - `'waiting'`: hiç başlanmamış (aktif basamak yok)
+  - `'progress'`: bir basamakta (on_imalat, imalat, kaynak, vs.) — basamak adı gösterilir
+  - `'qc'`: kalite kontrol basamağında
+  - `'done'`: tamamlanmış (sevkiyat sonrası)
+  - `'stopped'`: durduruldu
+
+**Hatalı varsayım (74'te düzeltildi):** Önceki `_stepKey` mantığı `is_durumu='bekliyor'` durumunda otomatik `'waiting'` döndürüyordu. Bu, "aktif iş kaydı yok = hiç başlanmamış" varsayımına dayanıyordu. Yanlış: kaynak aşamasındaki bir spool ânlık olarak iş kaydı tutmuyor olabilir, ama basamak ilerlemesi açık.
+
+**Doğru render mantığı:**
+1. `is_durumu='devam_ediyor'` → `s.durum`'dan bağımsız: basamak rengi + pulse-dot
+2. `is_durumu='bekliyor'` → `s.durum`'a düş (basamak adı veya "Bekliyor")
+3. Pulse-dot ve durum kolonu farklı bilgileri taşır: pulse-dot = "şu an aktif", durum kolonu = "üretim hattı pozisyonu"
+
+**Doğum kanıtı:** 74'te SED-73-03'ün son adımı. A-0585 DB'de `aktif_basamak='argon_kaynagi'` + `is_durumu='bekliyor'` durumundayken, devre_detay tablosu "Bekliyor" gösteriyordu. Beklenen: "Kaynak". `_stepKey`'deki `is_durumu==='bekliyor'` override satırı silindi; tablo doğru basamak adını göstermeye başladı.
+
+**Etki:** Spool listesinde "Bekliyor" yığınları dağıldı; her spool gerçek basamağında görünüyor (İmalat, Kaynak, Ön Kontrol, vs.).
+
+**İlişkili:** MK-70.1 (is_durumu birincil kaynak), MK-73.3 (is_durumu DB-truth), SED-73-03 (74'te tamamen kapatıldı).
+
+---
