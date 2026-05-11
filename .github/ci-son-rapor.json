@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-11T12:47:38.360Z",
-  "commit_sha": "bff53deadc485e11db77e0d86a0ae642c2bea32c",
+  "tarih": "2026-05-11T12:50:38.425Z",
+  "commit_sha": "4a7912d450ee1fd7a769e4cf655be5fac74054e3",
   "commit_ref": "main",
-  "workflow_run": 765,
+  "workflow_run": 766,
   "ozet": {
     "hata": 0,
     "uyari": 73,
@@ -125,15 +125,15 @@
           "dosya": "spool_detay.html",
           "sayi": 9,
           "satirlar": [
+            3485,
             3495,
-            3505,
-            3506,
-            3507,
-            3509,
-            3512,
-            3514,
-            3518,
-            3520
+            3496,
+            3497,
+            3499,
+            3502,
+            3504,
+            3508,
+            3510
           ]
         }
       ]
@@ -574,55 +574,55 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3495,
+          "satir": 3485,
           "mesaj": "tv('flansh_meta') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3505,
+          "satir": 3495,
           "mesaj": "tv('flansh_standart') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3506,
+          "satir": 3496,
           "mesaj": "tv('flansh_od') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3507,
+          "satir": 3497,
           "mesaj": "tv('flansh_kalinlik') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3509,
+          "satir": 3499,
           "mesaj": "tv('flansh_hub') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3512,
+          "satir": 3502,
           "mesaj": "tv('flansh_ic_cap') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3514,
+          "satir": 3504,
           "mesaj": "tv('flansh_bcd') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3518,
+          "satir": 3508,
           "mesaj": "tv('flansh_civata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 3520,
+          "satir": 3510,
           "mesaj": "tv('flansh_agirlik') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
