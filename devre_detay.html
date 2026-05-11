@@ -80,6 +80,13 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .sb-qc{background:rgba(124,58,237,.12);color:var(--leg);}
 .sb-done{background:rgba(22,163,110,.12);color:var(--gr);}
 .sb-stop{background:rgba(229,62,62,.12);color:var(--re);}
+/* SED-74-03: basamak basina renk */
+.sb-prog-on_imalat{background:rgba(245,158,11,.12);color:#d97706;}
+.sb-prog-imalat{background:rgba(45,142,255,.12);color:var(--ac);}
+.sb-prog-kaynak{background:rgba(239,68,68,.12);color:#dc2626;}
+.sb-prog-on_kontrol{background:rgba(168,85,247,.12);color:#9333ea;}
+.sb-prog-kk{background:rgba(124,58,237,.12);color:var(--leg);}
+.sb-prog-sevkiyat{background:rgba(20,184,166,.12);color:#0d9488;}
 @keyframes sbPulse{0%,100%{opacity:1;}50%{opacity:.25;}}
 .sb-pulse-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:middle;animation:sbPulse 1.4s ease-in-out infinite;}
 
@@ -1005,12 +1012,18 @@ function _normalizeBasamak(sistemAdi){
 // SED-71-05: is_durumu birincil kaynak (MK-70.1), durum eski fallback
 function _stepKey(s){
   if(s.stopped) return 'stopped';
-  if(s.isDurumu==='devam_ediyor') return 'progress';
+  if(s.isDurumu==='devam_ediyor'){
+    // SED-74-03: granular renk icin basamak adina gore key
+    var _norm=_normalizeBasamak(s._aktifBasamak);
+    return _norm ? ('progress_'+_norm) : 'progress';
+  }
   // SED-73-03 (74): is_durumu='bekliyor' override'i kaldirildi -> basamak ilerlemis olabilir, s.durum'a guven
   if(s.durum==='waiting') return 'waiting';
   if(s.durum==='done') return 'done';
   if(s.durum==='qc') return 'qc';
-  return 'progress';
+  // SED-74-03: granular renk icin basamak adina gore key
+  var _normF=_normalizeBasamak(s._aktifBasamak);
+  return _normF ? ('progress_'+_normF) : 'progress';
 }
 // Dinamik adım etiketi — dil değişince doğru çeviriyi döndürür
 function _stepText(s){
@@ -1140,6 +1153,13 @@ function DURUM(){return{
   qc:{cls:'sb-qc', get text(){return tv('dv_status_qc','Kalite Kontrol');}},
   done:{cls:'sb-done', get text(){return tv('dv_status_done','Tamamlandı');}},
   stopped:{cls:'sb-stop', get text(){return tv('dv_status_stopped','Durduruldu');}},
+  // SED-74-03: her basamak icin farkli renk
+  progress_on_imalat:{cls:'sb-prog-on_imalat', get text(){return _basamakMap['on_imalat']||tv('dv_stage_on_imalat','Ön İmalat');}},
+  progress_imalat:{cls:'sb-prog-imalat', get text(){return _basamakMap['imalat']||tv('dv_stage_imalat','İmalat');}},
+  progress_kaynak:{cls:'sb-prog-kaynak', get text(){return _basamakMap['kaynak']||tv('dv_stage_kaynak','Kaynak');}},
+  progress_on_kontrol:{cls:'sb-prog-on_kontrol', get text(){return _basamakMap['on_kontrol']||tv('dv_stage_on_kontrol','Ön Kontrol');}},
+  progress_kk:{cls:'sb-prog-kk', get text(){return _basamakMap['kk']||tv('dv_stage_kk','Kalite Kontrol');}},
+  progress_sevkiyat:{cls:'sb-prog-sevkiyat', get text(){return _basamakMap['sevkiyat']||tv('dv_stage_sevkiyat','Sevkiyat');}},
 };}
 function adimLbl(){return[
   tv('sp_stage_pre','Ön İmalat'),tv('sp_stage_fab','İmalat'),
