@@ -1459,6 +1459,7 @@ function _normalizeBasamak(sistemAdi){
   if(/kaynak/i.test(sistemAdi)) return 'kaynak';
   return sistemAdi;
 }
+window._normalizeBasamak = _normalizeBasamak;
 var STAGE_SISTEM=['on_imalat','imalat','kaynak','on_kontrol','kk','sevkiyat'];
 
 // Mevcut dile göre STAGES array'ini yeniden oluşturur
