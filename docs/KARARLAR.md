@@ -1743,3 +1743,47 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **İlişkili:** MK-66.1 (sıralı migration disiplini), MK-66.2 (policy taraması), MK-70.2 (silent fail yakalama — bu RLS bug'ın yakalanmamasının sebebi), SED-71-02 (RLS migration repo'ya).
 
 ---
+## MK-74.1 — DB değişiklikleri migration dosyası yazılmadan uygulanmaz
+
+**Karar:** Canlı DB üzerinde yapılan her schema veya data değişikliği aynı oturum içinde `migrations/NNN_*.sql` dosyasına yazılır. Migration dosyası yazılmadan canlı DB'ye UPDATE/ALTER atılmaz.
+
+**Sebep:** 73. oturumda `spool_id` A- prefix UPDATE'i (492 satır) live DB'ye atıldı, migration dosyası yazılmadı. Repo/DB drift oluştu. 74'te keşfedildi: sıfırdan kurulan bir ortam aynı sonuca varamazdı. Bu drift sessiz bir bug zemini.
+
+**Uygulama:**
+1. SQL değişikliği planı yazılır
+2. `migrations/NNN_*.sql` dosyası açılır, idempotent yazılır
+3. Önce dosya, sonra Studio'da çalıştırma (veya tersi — ama ikisi aynı commit'te)
+4. Doğrulama bloğu (`do $$ ... raise exception ... $$`) eklenir
+5. Commit mesajı migration numarasını içerir
+
+**Doğum kanıtı:** 73 sonu drift keşfi (BRIEFING-73-SONUC.md). 74'te `migrations/036_spool_id_a_prefix.sql` ile kapatıldı.
+
+**İlişkili:** MK-66.1 (sıralı migration disiplini), MK-66.2 (policy taraması).
+
+---
+
+## MK-74.2 — spool_id format kuralı (CHECK constraint ile enforce)
+
+**Karar:** `spooller.spool_id` değeri NULL VEYA `^A-[0-9]{4,}$` pattern'ine uyar. DB seviyesinde CHECK constraint (`spool_id_format_chk`) ile zorlanır.
+
+**Format detayı:**
+- UI'da 4 hane gösterilir (`A-0580`)
+- DB değeri sıfır-dolgulu daha geniş hane olabilir (`A-000580`)
+- 4 hane dolunca 5'e, dolunca 6'ya kademeli geçiş
+- Şu an 4 hane yeterli (max ~600 spool)
+
+**Uygulama:**
+- DB: `migrations/036_spool_id_a_prefix.sql` CHECK constraint ekler
+- Frontend: `spoolIdFormatla(deger)` helper'ı her insert noktasında normalize eder
+- `devre_yeni.html`: toplu insert, `kisaKodlar[idx]` helper'dan geçirilir
+- `devre_detay.html`: tekil insert, `spoolIdDevreSonraki(SPOOLS)` ile devre içi max+1 üretilir
+
+**NULL durumu:** spool_id NULL olabilir (atanmamış spool). Şu an 40 satır NULL — SED-74-02 ile temizlenecek.
+
+**Tekil ID değildir:** spool_id UNIQUE değildir, her devrede tekrarlanabilir. Gerçek tekil referans `spooller.id` (uuid). Bu format kuralı sadece "human-readable label" rolünü standardize eder.
+
+**Doğum kanıtı:** 74'te SED-74-01 (Yol B — backfill + schema enforcement). DB durum ölçümü: 566 A-uyumlu, 40 NULL, 0 anomali → CHECK regex `IS NULL OR ^A-[0-9]{4,}$` güvenli.
+
+**İlişkili:** SED-74-01 (kapatıldı), SED-74-02 (NULL temizliği — açık).
+
+---

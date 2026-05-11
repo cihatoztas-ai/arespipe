@@ -1677,6 +1677,37 @@ async function kaydet() {
           const no = await ARES.sonrakiNo('spool');
           kisaKodlar.push(tenantKod ? (tenantKod + '-' + no) : no);
         }
+          // SED-74-01: spool_id format normalize helper (MK-74.2)
+  // İdempotent: tanımsız format icin NULL döndürür (CHECK constraint izin verir)
+  function spoolIdFormatla(deger) {
+    if (deger == null || deger === '') return null;
+    var s = String(deger).trim();
+    if (s === '') return null;
+    if (/^A-[0-9]+$/.test(s)) {
+      var sayi = s.slice(2);
+      if (sayi.length < 4) sayi = sayi.padStart(4, '0');
+      return 'A-' + sayi;
+    }
+    if (/^[0-9]+$/.test(s)) return 'A-' + s.padStart(4, '0');
+    if (typeof console !== 'undefined') console.warn('[ARES] spool_id format tanimsiz, NULL atandi:', s);
+    return null;
+  }
+  // Devre icindeki SPOOLS array'inden bir sonraki spool_id'yi uret
+  function spoolIdDevreSonraki(spoolsArray) {
+    var max = 0;
+    if (spoolsArray && spoolsArray.length) {
+      for (var i = 0; i < spoolsArray.length; i++) {
+        var sid = spoolsArray[i].spoolId || spoolsArray[i].spool_id;
+        if (sid && /^A-[0-9]+$/.test(sid)) {
+          var n = parseInt(sid.slice(2), 10);
+          if (n > max) max = n;
+        }
+      }
+    }
+    return 'A-' + String(max + 1).padStart(4, '0');
+  }
+
+
         const spoolRows = spooller.map(function(s, idx) {
           // ✅ Bug1: Türkçe virgüllü çap formatını düzelt (örn: "114,3" → 114.3)
           const capMm = parseFloat(String(s.cap || '').replace(',', '.')) || null;
@@ -1684,7 +1715,7 @@ async function kaydet() {
             tenant_id:     ARES.tenantId(),
             devre_id:      devreId,
             spool_no:      s.spoolNo  || s.pipeline || ('S' + (idx + 1)),
-            spool_id:      kisaKodlar[idx] || null,
+            spool_id:      spoolIdFormatla(kisaKodlar[idx]),
             pipeline_no:   s.pipeline || null,
             rev:           s.rev      || '',
             malzeme:       s.malzeme  || null,

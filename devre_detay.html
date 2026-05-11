@@ -1607,6 +1607,36 @@ function spoolEkleBaslat(){
     +'</div></td></tr>';
   setTimeout(function(){var e=document.getElementById('nr_pl');if(e)e.focus();},50);
 }
+  // SED-74-01: spool_id format normalize helper (MK-74.2)
+  // İdempotent: tanımsız format icin NULL döndürür (CHECK constraint izin verir)
+  function spoolIdFormatla(deger) {
+    if (deger == null || deger === '') return null;
+    var s = String(deger).trim();
+    if (s === '') return null;
+    if (/^A-[0-9]+$/.test(s)) {
+      var sayi = s.slice(2);
+      if (sayi.length < 4) sayi = sayi.padStart(4, '0');
+      return 'A-' + sayi;
+    }
+    if (/^[0-9]+$/.test(s)) return 'A-' + s.padStart(4, '0');
+    if (typeof console !== 'undefined') console.warn('[ARES] spool_id format tanimsiz, NULL atandi:', s);
+    return null;
+  }
+  // Devre icindeki SPOOLS array'inden bir sonraki spool_id'yi uret
+  function spoolIdDevreSonraki(spoolsArray) {
+    var max = 0;
+    if (spoolsArray && spoolsArray.length) {
+      for (var i = 0; i < spoolsArray.length; i++) {
+        var sid = spoolsArray[i].spoolId || spoolsArray[i].spool_id;
+        if (sid && /^A-[0-9]+$/.test(sid)) {
+          var n = parseInt(sid.slice(2), 10);
+          if (n > max) max = n;
+        }
+      }
+    }
+    return 'A-' + String(max + 1).padStart(4, '0');
+  }
+
 async function spoolEkleKaydet(){
   var g=function(id){return((document.getElementById(id)||{}).value||'').trim();};
   var sn=g('nr_sn');if(!sn){showToast(tv('dv_spool_no_required','Spool No zorunludur'),'e');return;}
@@ -1629,6 +1659,7 @@ async function spoolEkleKaydet(){
     var agN=parseFloat(String(g('nr_ag')).replace(',','.'));
     var kayit={
       tenant_id:_tid(),devre_id:devreId,spool_no:sn,
+      spool_id:spoolIdDevreSonraki(SPOOLS),
       pipeline_no:_pl||null,rev:_rev,
       dis_cap_mm:isFinite(capN)?capN:null,
       agirlik_kg:isFinite(agN)?agN:null,
