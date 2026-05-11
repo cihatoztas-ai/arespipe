@@ -1006,7 +1006,7 @@ function _normalizeBasamak(sistemAdi){
 function _stepKey(s){
   if(s.stopped) return 'stopped';
   if(s.isDurumu==='devam_ediyor') return 'progress';
-  if(s.isDurumu==='bekliyor') return 'waiting';
+  // SED-73-03 (74): is_durumu='bekliyor' override'i kaldirildi -> basamak ilerlemis olabilir, s.durum'a guven
   if(s.durum==='waiting') return 'waiting';
   if(s.durum==='done') return 'done';
   if(s.durum==='qc') return 'qc';
