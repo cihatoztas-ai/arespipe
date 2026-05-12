@@ -1,192 +1,198 @@
-# Sonraki Oturum İçin Gündem (78)
+# CLAUDE-SONRAKI-OTURUM — 82. Oturum Gündemi
 
-**Hazırlanma tarihi:** 12 Mayıs 2026 (77. oturum sonu)
-**Son durum:** B0 omurga (`malzeme_kataloglari`) canlı, PN 10 paketi 16 satır eklendi, kütüphane 292/12.400 (%2.4 — yeni baseline)
-
-> **MK-77.1:** Bu dosya her oturum kapanışında yenilenir. 76'da unutuldu, 77'de mecburen yenilendi.
+> **Bu dosya 82'nin açılışında okunacak.** Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md` + `docs/KUTUPHANE-EKLER-TASARIM.md`.
 
 ---
 
-## Başlarken — Standart Ritüel
+## 82. Oturum Ana Tema
 
-Yeni sohbet açınca:
-1. `oturum 78 başlasın` ile başla
-2. Git kontrol: `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
-3. `cat docs/CLAUDE-SON-OTURUM.md` ile 77 özeti
-4. `cat docs/CLAUDE-SONRAKI-OTURUM.md` ile bu dosya
-5. Aşağıdaki Öncelik 1'i onaylayarak başla
+**Kütüphane envanteri sayfası implementasyonu.** Tasarım 81'de mockup'la onaylandı, kararlar netleşti. Bu oturumda kod yazılır.
 
----
+Hedef çıktılar:
+1. `admin/kutuphane.html` — ana sayfa, 5 metric kart + 8 tablo grupları halinde
+2. `admin/kutuphane-detay.html` — tek detay sayfa, query string ile (`?tablo=X`)
+3. Sidebar/admin menüsünde "Kütüphane" linki
+4. Süper admin yetki kontrolü
 
-## Öncelik 1 — Toplu `malzeme_id` UPDATE'leri (BORÇ KAPATMA, EN YÜKSEK ROI)
-
-**Neden öncelik:** B0 omurgası canlı ama 1.366 mevcut geometri satırının `malzeme_id`'si NULL. Bu satırlar "yapısal kimlik fazı"na geçmedi. Tek tek 1.366 satır yazmadan, **toplu UPDATE** ile saatler içinde hepsi kapanır.
-
-**Yapılacak (sırayla, her biri kendi commit'i):**
-
-### 1.a) B16.5 → A105 (216 satır, 5 dk)
-ASTM B16.5 flanşları geleneksel olarak A105 forged karbon çelik. Tek UPDATE:
-```sql
-UPDATE flansh_olculer
-SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A105' AND tenant_id IS NULL),
-    olusturma = olusturma  -- timestamp'i bozma
-WHERE geometri_std = 'B16.5'
-  AND malzeme_id IS NULL
-  AND sistem_preset = TRUE;
-```
-**Doğrulama:** 216 satır UPDATE etmeli.
-
-### 1.b) EN 1092-1 PN 16 → A105 (60 satır, 5 dk)
-PN 16 paketi de A105 (forged karbon flansh).
-
-### 1.c) `boru_olculer` → kategori bazlı (450 satır, 30-45 dk)
-Boru tablosu çeşitli — A106, A53, A312, EN 10216-1 vs. `malzeme_grubu` text kolonu var, ondan eşleştirilir:
-```sql
--- Karbon dikişsiz boru → A106 Grade B (ya da A53 B; ikisi de geçerli, A106 daha yaygın)
-UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A106 B' AND tenant_id IS NULL)
-WHERE malzeme_grubu IN ('karbon','steel') AND malzeme_id IS NULL;
-
--- Paslanmaz → A312 TP316L
-UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A312 TP316L' AND tenant_id IS NULL)
-WHERE malzeme_grubu IN ('paslanmaz','stainless') AND malzeme_id IS NULL;
-
--- EN karbon → EN 10216-1 P235GH
-UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'EN 10216-1 P235GH' AND tenant_id IS NULL)
-WHERE geometri_std LIKE 'EN-%' AND malzeme_grubu = 'karbon' AND malzeme_id IS NULL;
-```
-**Sorun:** `boru_olculer.malzeme_grubu` text içeriği bilinmiyor. **78 başında DISTINCT sorgu çekilir, sonra UPDATE yazılır.**
-```sql
-SELECT malzeme_grubu, COUNT(*) FROM boru_olculer GROUP BY malzeme_grubu;
-```
-
-### 1.d) `fitting_olculer` → kategori bazlı (424 satır, 30 dk)
-Fitting `parca_tipi` kolonu var: `90LR`, `45LR`, `cap`, `tee_eq`, `reducer_*`. Tüm B16.9 buttweld fitting → A234 WPB (karbon) ya da A403 WP316L (paslanmaz). `fitting_olculer` tablosunda malzeme_grubu kolonu var mı? **Pre-flight kontrol:**
-```sql
-SELECT column_name FROM information_schema.columns
-WHERE table_schema='public' AND table_name='fitting_olculer' AND column_name LIKE '%malzeme%';
-```
-
-**Süre tahmini (1.a-1.d):** 1.5-2 saat — 78'in büyük kısmı.
-
-**Beklenen sonuç:** 1.366 NULL satır → 0 NULL satır. Tüm kütüphane parça kimliği prensibine geçmiş olur. Kritik mimari milestone.
+**Süre tahmini:** 1 oturum, ~3-4 saat.
 
 ---
 
-## Öncelik 2 — EN 1092-1 PN 10 Eksik Tipler (T01 + T12)
+## Önerilen Sıra (82'de)
 
-**Önkoşul:** Kaynak araştırması. RoyMech PN 10 sayfası yok (77'de tespit edildi). Alternatif kaynaklar:
-- **DIN 2632** (eski Alman standardı) — Wermac ana referans, RoyMech BS4504_10 sayfası mevcut
-- **EN 1092-1:2018 PDF** — resmi standart, ücretsiz versiyon arama gerek
-- **ProjectMaterials Plate Flange (Type 01) PN 10** — direkt sayfa var: `/en-1092-plate-flange-sizes/`
-- **piping-world.com** — ek cross-check
+### Saat 1 — Hazırlık ve sayfa iskeleti
 
-**Yapılacak:**
-1. `web_fetch` ile PM Plate Flange sayfası → PN 10 T01 verisi
-2. RoyMech BS4504_10 sayfası → Wermac PN 10 ile cross-check
-3. T01 + T12 için DN 10-600 paketi yaz (~40 satır)
-4. Migration 043 ya da numara disiplini sonrası neresi olursa
+1. `docs/templates/yeni-sayfa-sablonu.md`'den iskelet kopyala
+2. AresPipe standartlarına uydur:
+   - `<html data-theme="dark">`
+   - Barlow font, CSS değişkenleri (`var(--ac)`, `var(--gr)`, vb.)
+   - `ares-layout.js` + `ares-normalize.js` script yüklemesi
+   - `ARES.sayfaYetkiKontrol(['super_admin'])`
+   - i18n `tv()` helper, `data-i18n` attributeları
+3. Sidebar'a "Kütüphane" linki ekle (super_admin için görünür)
+4. `admin/` alt-dizini olduğu için script yollarına `../` ekle (R-10 referans `admin/panel.html`)
 
-**Süre tahmini:** 1.5 saat (kaynak araştırma + 40 satır paket)
+### Saat 2 — Ana sayfa (`admin/kutuphane.html`)
 
----
+1. **Üst başlık:** "Kütüphane Envanteri" + alt-bilgi (toplam satır / hedef / %)
+2. **5 metric kart** (G-02 Hero+Pill pattern):
+   - Geometri: boru + fitting + flanş toplam / hedef
+   - Malzeme: malzeme_kataloglari / 120
+   - Uyum: fitting_malzeme_uyum / 8000
+   - Özel parça: ozel_parcalar / ~350
+   - Spec: tenant_spec_seti + spec_kural / ~765
+3. **Gruplar halinde tablo listesi:**
+   - GEOMETRİ → boru_olculer / fitting_olculer / flansh_olculer
+   - MALZEME → malzeme_kataloglari
+   - ÇAPRAZ UYUM → fitting_malzeme_uyum
+   - ÖZEL PARÇA → ozel_parcalar
+   - SPEC SİSTEMİ → tenant_spec_seti / spec_kural
+4. Her satır:
+   - Tablo teknik adı (mono font, `code` stili)
+   - Türkçe etiket
+   - Standart listesi (alt-yazı)
+   - Sayım (canlı DB count) + hedef
+   - Doluluk barı
+   - `→` ikonu, tıklanınca detay sayfaya git
 
-## Öncelik 3 — `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` Otomasyonu
+### Saat 3 — Hedef rakamlar markdown'dan fetch
 
-**Neden:** MK-77.1 disiplini insan-hafıza riskli. 76'da unutuldu. Otomatik kontrol scripti yazılırsa risk sıfırlanır.
+1. `docs/KUTUPHANE-YUKLEME-TAKIP.md` markdown dosyasını fetch et
+2. Parse: "Modül" tablosundaki `Beklenen` sütunu (Bölüm 1 — Özet)
+3. Hedef sayıları metric kartlara + tablo satırlarına dağıt
+4. Cache: ilk yüklemede fetch, sayfa içinde state'te tut
+5. Hata yönetimi: markdown fetch fail olursa fallback olarak hardcoded değerler (geçici), uyarı toast
 
-**Yapılacak:**
-- `scripts/oturum-kapanis-kontrol.sh` — son git commit tarihiyle bu iki dosyanın `mtime`'ı karşılaştırılır, yaşlı dosya varsa uyarı
-- `pre-commit` hook veya GitHub Actions workflow — kapanış commit'inde bu iki dosya değişmemişse PR uyarı
+**Referans patern:** `docs/PANO-TASARIM.md` Sekme 1 — markdown parse mantığı zaten Pano'da var (24. oturumda). Aynı kodu yeniden kullan, kopyala/uyarla.
 
-**Süre tahmini:** 30 dk
+### Saat 4 — DB count sorguları
 
----
+1. 8 tablo paralel `SELECT count(*)`:
+   ```js
+   const tablolar = [
+     'boru_olculer','fitting_olculer','flansh_olculer',
+     'malzeme_kataloglari','fitting_malzeme_uyum','ozel_parcalar',
+     'tenant_spec_seti','spec_kural'
+   ];
+   const sayimlar = await Promise.all(
+     tablolar.map(t => supa.from(t).select('*', { count: 'exact', head: true }))
+   );
+   ```
+2. Skeleton + cascade UI pattern (devreler.html / kesim.html referansı — `_skShimmer`, `sk-bar`, `data-ci=`)
+3. Sayımlar gelene kadar `—` göster, gelince in-place güncelle (skeleton kaldırılır)
 
-## Öncelik 4 — B36.10M Karbon Audit (76'da Atlandı)
+### Saat 5 — Detay sayfa (`admin/kutuphane-detay.html`)
 
-**Neden:** 76 takip belgesinde "76 P1: B36.10M karbon doğrulama (Wermac ile audit, 238 satır)" işi vardı, ama atlanmış. Yeni satır eklemez, mevcut verinin doğrulanmasıdır.
+1. Query string'den `?tablo=X` oku
+2. Metadata dictionary (8 tablo için):
+   - Türkçe etiket
+   - Standart açıklaması
+   - Sütun haritası (hangi DB sütunu nasıl gösterilsin)
+   - Filtre alanları (örn. flanş için: tip, sınıf, çap)
+3. `SELECT * FROM X LIMIT 100 OFFSET Y` ile sayfalama (50-100 satır)
+4. Arama kutusu (basit `ILIKE %text%` ana sütunlar üzerinde)
+5. Filtre dropdown'ları (metadata'dan)
+6. Salt-okunur tablo render (G-03 standartına uy)
+7. **Eklerin sayısı kolonu** (henüz boş, 83'te `kutuphane_ekler` migration sonrası dolar) — kolon yapısı bugünden hazırlanır, sayı `0` olarak gösterilir
+8. Satıra tıklayınca **popup** (modal): tek satır detay, tüm sütunlar, formatlanmış
 
-**Yapılacak:**
-- Wermac B36.10M tablosunu çek
-- Canlı 238 satır karbon boru ile karşılaştır (DN/OD/wall thickness)
-- Tutarsızlık varsa UPDATE migration yaz
+### Saat 6 — Test ve temizlik
 
-**Süre tahmini:** 2 saat (orta öncelikte, 79+ olabilir)
-
----
-
-## Kesinlikle 78'DE YAPILMAYACAKLAR
-
-- ❌ EN 1092-1 PN 25 + PN 40 paketleri (79+'a)
-- ❌ B16.9 eksik parça tipleri (80+'a)
-- ❌ Wizard UI (43. oturumdan beri erteleme, format learning loop önce)
-- ❌ Mobil ekranlar (MProfil vb. — 2. oturumdan kalan eski gündem)
-
----
-
-## Kural Hatırlatmaları (78 Claude'una)
-
-**Kapanış protokolü (MK-77.1):**
-Oturum sonunda zorunlu 3 dosya:
-1. `CLAUDE-SON-OTURUM.md` (bu oturum özeti)
-2. `CLAUDE-SONRAKI-OTURUM.md` (gelecek oturum gündemi)
-3. `.github/son-durum.md` (yaşayan durum dosyası)
-
-**Migration numara disiplini (MK-77.3):**
-Yeni migration önermeden:
-```bash
-ls ~/Desktop/arespipe/migrations/ | sort | tail -10
-```
-Çıktıyı görmeden numara önerme. 77'de 041 çakışması son anda yakalandı, bundan ders alındı.
-
-**Migration dosya adı pattern (MK-77.8):**
-`^\d{3}_[a-z0-9_]+\.sql$` — 3 rakam + underscore + lowercase. **Tire (`-`) YASAK**, sadece underscore. CI `[MIG_ISIM_BOZUK]` ile yakalar, deploy'u engeller. 76'da `dn350-600` tire içeriyordu, 77'de rename ile düzeltildi.
-
-**Şema kontrol disiplini (MK-77.4):**
-Bilinmeyen tabloya sorgu öncesi:
-```sql
-SELECT column_name, data_type FROM information_schema.columns
-WHERE table_schema='public' AND table_name='X';
-```
-
-**Yeni geometri satırı disiplini (MK-77.5):**
-Yeni `boru_olculer`/`fitting_olculer`/`flansh_olculer` satırı eklenirken `malzeme_id` **dolu doğmalı**. NULL FK kabul edilmez. INSERT'te subquery ile:
-```sql
-malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu='ASTM A105' AND tenant_id IS NULL)
-```
-
-**Tek-kaynak satır disiplini (MK-77.6):**
-JSONB notlar içinde `kaynak_crosscheck` alanı her yeni satırda var. Çift kaynak doğrulanmadıysa `"YOK — sebep"` yazılır, audit trail bırakılır.
-
-**Direct-COMMIT kabul (MK-77.7):**
-Dry-run ROLLBACK zorunlu değil, ama her migration BEGIN/COMMIT tek-atomik sarılı olmalı. DDL + DML aynı transaction'da.
-
-**İpucu↔katalog uyumu (MK-77.2):**
-Yeni katalog spec'i eklerken:
-```sql
-SELECT i.kalite_kodu_pattern, i.tipik_malzeme_standardi, k.spec_kodu
-FROM malzeme_standart_ipucu i
-LEFT JOIN malzeme_kataloglari k ON k.spec_kodu = i.tipik_malzeme_standardi;
-```
-NULL kalan eşleşmeler kontrol edilir.
+1. Tüm sayfaların super_admin haricinde erişilemediği teyit
+2. Lint yeşil mi (`node .github/kontrol.js --self-test`)
+3. i18n eksikleri kontrol (CI'da `tv()` çağrıları için anahtar var mı)
+4. Manuel test:
+   - Ana sayfa açılıyor, sayılar gerçek
+   - Her tabloya tıklayınca detay açılıyor
+   - Detay sayfada filtre, arama, popup çalışıyor
+   - F5 ve doğrudan URL ile detay sayfaya gelmek çalışıyor
 
 ---
 
-## Strateji Özeti
+## Açık Sorular (82'de Cihat'a sorulacak)
 
-**78 ana iş bandı: BORÇ KAPATMA.** Yeni satır eklemek yerine mevcut 1.366 NULL FK'yı kapatmak en yüksek ROI iş. Tek UPDATE komutu 200+ satırı düzeltir. Bu, 77'de açtığımız omurganın **gerçek değerini kanıtlar**.
-
-**3 katmanlı strateji (76'dan devam):**
-- Katman 1: Altyapı düzeltmeleri (B0 ✅, FK UPDATE'leri 78)
-- Katman 2: Yeni paket ekleme (PN 10 T01/T12 78'de, PN 25/40 79+)
-- Katman 3: Audit/cross-check (B36.10M karbon 79+)
-
-**Önceliklendirme prensibi:** Her oturum sonunda kütüphane "%ilerleme" değil, **"satır yapısal kimliğe sahip mi"** ile ölçülür. 78 sonu hedef: tüm 1.366 NULL FK kapatılmış, kütüphane tutarlı.
+1. **Sayfa başlığı dili:** "Kütüphane Envanteri" mi, "Parça Kütüphanesi" mi, başka bir isim mi? (Vizyon belgesi "fitting_kutuphane.html" demiş ama içeriği sadece fitting değil — "kütüphane" yeterli)
+2. **Detay sayfa hedef sayı gösterimi:** Ana sayfada doluluk gösteriyoruz, detay sayfada da göstereyim mi? (örn. flanş detay açıldığında "20/800 = %2.5" üstte tekrar)
+3. **Popup yerine ayrı sayfa:** Satır detayı popup'ta mı, yoksa üçüncü seviye sayfa (`admin/kutuphane-detay.html?tablo=X&id=Y`) mı? (popup daha hızlı, ayrı sayfa kalıcı URL'li — popup'tan başlayalım, ihtiyaç olursa ayrı sayfa)
+4. **Excel export:** Salt-okunur ama Excel'e indirme butonu eklenebilir, küçük iş — ekleyelim mi?
 
 ---
 
-## Son Söz (77'den 78'e)
+## İkincil İşler (82'de zaman kalırsa)
 
-77'de mimari devrim oldu — kütüphane "çiğ data" fazından "yapısal kimlik" fazına geçti. 78'de **bu devrimi mevcut 1.366 satıra yayıyoruz**. 16 yeni satır eklemek 1.5 saat aldı, 1.366 satırı kapatmak 1.5-2 saat alacak — bu ölçek farkı omurganın değerinin somut kanıtı.
+- `kutuphane_ekler` migration **TASARIM** dosyası hazır, **kod 83'e** — ama Cihat isterse 82'de migration da yazılabilir (1-2 saat ek iş)
+- 80'in açık borçlarına dönüş (commit `4bf1102`'den okunur, bu oturumun gündeminde yok)
 
-İyi başlangıçlar. 🚀
+---
+
+## Kritik Hatırlatmalar (81'de yeni eklenenler)
+
+- **MK-81.1:** Polimorfik etiketleme — yeni etiket kaynağı için ayrı tablo açma, enum genişlet
+- **MK-81.2:** Olgunluk parça başına ölçülür (power law kabulü)
+- **MK-81.3:** AI önerir, kullanıcı onaylar — otomatik etiket YOK
+- **MK-81.4:** Lisans zorunlu, `belirsiz` paylaşıma terfi edemez
+
+## Kritik Hatırlatmalar (52+ den, değişmedi)
+
+- **`izometri-oku.js`'e DOKUNMA** (MK-49.1)
+- **Hassas anahtar Claude'a verme** (MK-50.1)
+- **MK-51.1:** Dosya kopyalamadan önce MD5 + satır sayısı doğrula
+- **MK-52.1:** `arespipe_kopyala` fonksiyonu kullan, `cp` doğrudan KULLANMA
+- **MK-52.2:** `gp` kullan (otomatik rebase + push), `git push origin main` YAZMA
+
+---
+
+## Süreç Disiplinleri
+
+- **Heredoc yöntemi** dosya yazma için
+- **`ls -la`** dotfile kontrolü
+- **Vim açılırsa:** `Esc` → `:q!` → `Enter`
+- **Çakışma çözümü:** `git checkout --ours <dosya>` (rebase'de HEAD = remote)
+- **Vercel logs zaman dilimi:** UTC saklar, SQL'de `AT TIME ZONE 'Europe/Istanbul'`
+- **DB sütun adı uyumsuzluğu:** `information_schema.columns` ile doğrula
+- **Sadece terminal git** akışı
+
+---
+
+## R-10 (Mockup-First) Hatırlatması
+
+82'de yeni mockup gerekmez — ana sayfa mockup'ı 81'de onaylandı. Ama implementasyon sırasında AresPipe CSS değişkenleriyle mockup'taki yapı **birebir** çıkarılmalı (5 kart + 5 grup + 8 satır + 4 sütun her satırda). Detay sayfa için mockup zaten yok — 82'de Cihat'a basit prose anlatılır, çok mockup'a gerek yok (standart liste sayfa pattern'ı, `devreler.html` referans).
+
+---
+
+## Veriyle Tasarım (82+ Vizyon)
+
+Kütüphane sayfası canlıya alındıktan sonra:
+- Cihat hangi tablolara daha çok bakıyor? (analytics gerekmez, organik)
+- Doluluk hızı nasıl? Hangi parçalar manuel kalacak, hangileri otomatik dolu?
+- Detay sayfada hangi filtre/arama en çok kullanılıyor?
+
+Bu sinyaller 83+'ün önceliklendirilmesinde kullanılır:
+- Çok kullanılan filtreler → daha iyi UX
+- Az kullanılan tablolar → detay sayfa öncelik düşük
+- Manuel kalan parçalar → 85+ etiketleme aracında UI önerisi
+
+---
+
+## 83+ Genel Yön
+
+Tasarım belgesindeki implementasyon takvimi (Bölüm 11):
+- **83:** `kutuphane_ekler` migration + detay sayfa "Ekler" sekmesi
+- **~85-90:** `parca_etiketleri` migration + 3-pencere manuel etiketleme UI
+- **~90-100:** `kutuphane_ogrenme_durumu` view + olgunluk badge
+- **~3 ay:** Kanal 1 (kural-tabanlı öneri)
+- **~6-12 ay:** Kanal 2 (embedding)
+- **Tetik gelince:** STEP/Rhino entegrasyonu (vizyon Kategori C)
+- **18+ ay:** Lazer, Kanal 3 fine-tune
+
+---
+
+## Bonus İşler (82'de zaman kalırsa)
+
+- Dark mode + light-anthracite tema doğrulama (kütüphane sayfası)
+- Mobil görünüm test (responsive — mockup desktop için çizildi ama AresPipe genel responsive)
+- Sayfa açılış performansı: 8 paralel count ne kadar sürüyor? Yavaşsa materialized count tablosuna gerek var mı? (muhtemelen yok, ölçüye göre karar)
+
+---
+
+> 82. oturum açılışında Cihat'a ilk soru: **"Kütüphane envanter sayfasına başlıyoruz, başka konu var mı?"** Onaylanırsa Saat 1'den başlanır. Açık sorulardan (yukarıda 1-4) ilki implementasyon başlangıcında sorulur, gerisi sayfa ilerledikçe çıktığında.
