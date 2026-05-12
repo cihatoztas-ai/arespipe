@@ -1,170 +1,158 @@
-# Son Durum — 75. Oturum (11 Mayıs 2026)
+# Son Durum — 76. Oturum (12 Mayıs 2026)
 
-> 74 → 75 geçişi. 75 ana proje akışından ayrı, **kütüphane mini-projesi** oturumu oldu. Cap cephesi bitirildi, EN 1092-1 PN 16 cephesi açıldı ve 3 tip yüklendi. Toplam **78 yeni kütüphane kaydı** Supabase + GitHub'da.
+> 75'in devamı. Kütüphane mini-projesi: EN 1092-1 PN 16 T05 Blind + B36.19M paslanmaz boru doğrulama & eksik tamamlama. +25 satır.
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**75 başarıyla kapatıldı (kütüphane mini-projesi):**
-- 037 Cap (33 satır) — `fitting_olculer` toplamı 391 → 424
-- 038 EN-T11 PN 16 WN (15 satır)
-- 039 EN-T01 + EN-T12 PN 16 (30 satır) — `flansh_olculer` toplamı 216 → 261
-- Sistem kütüphanesi toplamı: 1,047 → 1,125 satır
+**76 başarıyla kapatıldı.**
+
+- A1 tamamlandı: EN 1092-1 PN 16 Type 05 Blind, 15 satır (`flansh_olculer`)
+- A4 doğrulandı: B36.19M mevcut 70 satır %100 doğru (sıfır sapma)
+- A4 bonus tamamlandı: B36.19M DN 350-600 40S+80S, 10 satır (`boru_olculer`)
+- **EN 1092-1 PN 16 cephesi tamamen kapalı:** T01 + T05 + T11 + T12 × 15 DN = 60 satır
+- **KUTUPHANE-YUKLEME-TAKIP.md ile gerçek DB arasında büyük sapma tespit edildi** (43'ten kalma, 5+ ay güncellenmemiş)
 
 ### Yapılanlar (sırasıyla)
 
-1. **Cap cephesi tamamlandı** — briefing v1'in yarıda kalan işi
-   - 032 → 037 yeniden numaralandı (ana sayaç 032'yi başka iş için tüketmişti)
-   - Idempotent yeniden yazıldı (`INSERT ... SELECT ... WHERE NOT EXISTS`)
-   - Doğrulama: NPS 4 spot `4, 100, 114.3, H=64.0, H1=76.0` ✓
-2. **EN 1092-1 PN 16 Type 11 (WN)** — 038, 15 satır
-   - Wermac kaynak, RoyMech cross-check (DN 100 birebir uyum)
-   - Schema kararları: `flansh_tipi='EN-T11'`, `basinc_sinifi='16'`
-   - 6/6 test geçti
-3. **EN 1092-1 PN 16 Type 01 + Type 12** — 039, 30 satır
-   - RoyMech tek tablodan iki tip türetildi (C1 plate, C2 boss/WN, N2 boss OD, H1 boss length)
-   - Cıvata reuse (Wermac WN'den, PN+DN sabit)
-   - Standart edisyon farkı yakalandı: RoyMech `f1=2mm` (BS 2002) vs Wermac `f1=3mm` DN 32-250 (en güncel DIN). Wermac override edildi.
-   - İlk INSERT NOT NULL constraint patladı (`bolt_circle_mm`), transformer düzeltildi (UPDATE → INSERT içinde)
-   - Doğrulama: DN 100 üç tip karşılaştırma:
-     - EN-T01: K=22, hub=NULL, bore=116, BC=180 (plate, gövdesiz)
-     - EN-T11: K=20, hub=131, hub_uz=52, BC=180 (welding neck)
-     - EN-T12: K=20, hub=140, hub_uz=40, bore=116, BC=180 (hubbed)
-   - Üçü de farklı parça → 3D modelde net ayrı geometri ✓
+1. **Migration 040** — EN 1092-1 PN 16 Type 05 (Blind), 15 satır
+   - Strateji: T11 PN16 RF satırlarından SELECT (kanonik DB kaynak), flansh_tipi + agirlik_kg + notlar override
+   - Sebep: PN+DN tek belirleyici, T05 ve T11 geometri (D, b, K, n, bolt, RF, cap_mm) aynı
+   - Çift kaynak doğrulama: piping-world Blind tablosu + pipingpipeline Type 05 BL — 6 alanda %100 eşleşme
+   - Yüzey tipi RF kararı: EN spec varsayılan A/FF olsa da, mevcut T01/T11/T12 PN16 tutarlılığı için RF
+2. **Migration 041** — B36.19M doğrulama + DN 350-600 SCH 40S+80S, 10 satır
+   - Mevcut 70 satır satır-satır kontrol: OD, et, kg/m, tolerans alanları tamamen doğru
+   - Halüsinasyon kontrolü: NPS 14+ 80S et=12.70 sabit pattern doğru (B36.10M karışıklığı yok)
+   - Eksik P0 satırlar: DN 350-600 için 40S+80S (gemi KK ana hatları için kritik)
+   - DN 450 carbon kg/m: Wermac eksik, formülle hesaplandı (π·(D-t)·t·ρ/1e6)
+3. **Kütüphane gerçek durum tespiti** — KUTUPHANE-YUKLEME-TAKIP.md çok eski
 
-### Cihat'ın yönlendirdiği kritik prensip (75 ortası)
+### Canlı Doğrulamalar
 
-> *"Sistemimize giren spoollara ait malzeme listesinde ne varsa bunları bir yazı olarak değil parça olarak tanıyacaz. O yüzden burada eksiğimizin olmaması lazım. Bu parça tanıma işi bizim daha sonra 3D modellemelerimizde lazım olacak."*
-
-Bu prensip schema kararını şekillendirdi (MK-75.A): tek "SO" kodu kabul edilemez, Type 01 ve Type 12 ayrı kayıt olmalı.
+- ✅ `flansh_olculer` EN-1092-1 EN-T05 PN16 RF: 15 satır
+- ✅ `boru_olculer` ASME-B36.19M toplam: 80 satır (70 → 80)
+- ✅ DN 350-600 40S+80S: 10 yeni satır, tolerans alanları GENERATED ile otomatik dolduruldu
+- ✅ Idempotent test: NOT EXISTS ile çift girişi engelleme çalışıyor
 
 ---
 
-## Commit'ler (75. Oturumda)
+## Commit'ler (76. Oturumda)
 
 | Hash | Mesaj |
 |------|-------|
-| `048d90f` | data(75): 039 EN1092-1 PN16 Type 01+12 (ilk push, içerik bozuk — INSERT fail) |
-| `18fc4d8` | data(75): 037 Cap (33) + 038 EN-T11 WN (15) + 039 EN-T01+T12 (30) — toplam 78 satır |
+| 18fc4d8 | 76: EN-1092-1 PN16 T05 Blind 15 satir - migration 040 |
+| 11816b0 | 76: B36.19M DN 350-600 40S+80S 10 satir bonus - migration 041 |
 
-İlk 039 commit'i Supabase'de NOT NULL hatası verdi (`bolt_circle_mm`), ikinci commit aynı dosya adına düzeltilmiş halini yazıp 037+38 ile birlikte push'ladı. `gp` (rebase + push) sorunsuz çalıştı.
-
-CI: ✅ YEŞİL (tüm push'lar sonrası ci-son-rapor.json otomatik güncellendi)
+CI: ✅ YEŞİL (her commit sonrası otomatik ci-son-rapor.json güncellemesi)
 
 ---
 
 ## DB Değişiklikleri
 
-```
-fitting_olculer:
-  +33 satır  B16.9 Cap, DN 15-1200, sistem_preset=TRUE
-  Toplam: 391 → 424
-
-flansh_olculer:
-  +15 satır  EN-1092-1 / EN-T11 (WN) PN 16, DN 10-300
-  +15 satır  EN-1092-1 / EN-T01 (Plate SO) PN 16, DN 10-300
-  +15 satır  EN-1092-1 / EN-T12 (Hubbed SO) PN 16, DN 10-300
-  Toplam: 216 → 261
+```sql
+-- 040: 15 satır EN-T05 PN16 RF (T11'den kopya pattern)
+-- 041: 10 satır B36.19M DN 350-600 40S+80S (Wermac + formula)
 ```
 
-Migration dosyaları:
-- `migrations/037_inserts_cap.sql` (Supabase + GitHub ✓)
-- `migrations/038_inserts_en1092_pn16_t11_wn.sql` (Supabase + GitHub ✓)
-- `migrations/039_inserts_en1092_pn16_t01_t12.sql` (Supabase + GitHub ✓)
+---
+
+## Kütüphane Snapshot — Gerçek Durum (12 Mayıs 2026)
+
+Bu oturumun en büyük keşfi: `KUTUPHANE-YUKLEME-TAKIP.md` 43'ten kalma, gerçek DB çok daha dolu.
+
+| Modül | Satır (canlı) | Belgedeki (43) | Fark |
+|---|---:|---:|---:|
+| `boru_olculer` | **450** | 48 | +402 |
+| `flansh_olculer` | **276** | 20 | +256 |
+| `fitting_olculer` | **424** | 0 | +424 |
+| `fitting_malzeme_uyum` | 1 | 0 | +1 (test) |
+| `malzeme_kataloglari` | ? (kontrol et) | 12 | ? |
+| `tenant_spec_seti` | 0 | 0 | 0 |
+| `spec_kural` | 0 | 0 | 0 |
+| `ozel_parcalar` | 0 | 0 | 0 |
+
+### `boru_olculer` kırılımı
+
+| Standart | Satır |
+|---|---:|
+| ASME-B36.10M (karbon) | 238 |
+| ASME-B36.19M (paslanmaz) | 80 ✅ 76 sonu |
+| ASTM-B241 (alüminyum) | 50 |
+| DIN-2448 (eski Alman karbon) | 29 |
+| EN-10216-1 (EN karbon dikişsiz) | 29 |
+| EEMUA-144 (CuNi gemi) | 24 |
+| **TOPLAM** | **450** |
+
+### `flansh_olculer` kırılımı
+
+| Standart | Satır |
+|---|---:|
+| B16.5 (ASME) | 216 |
+| EN-1092-1 | 60 ✅ 76 sonu (T01/T05/T11/T12 × 15 DN PN16) |
+| **TOPLAM** | **276** |
+
+### `fitting_olculer`: 424 satır
+
+Kırılım yapılmadı (zaman). 77'de detay analizi önerilir.
 
 ---
 
-## 76'ya Açık Borç (önceliğe göre)
+## 77'ye Açık Borç (önceliğe göre)
 
-### Kütüphane (sıralı)
-1. **EN-T05 (Blind) PN 16** — kaynak araştırması (piping-world, pipingpipeline, valvias), ~15 satır → PN 16 tamamlanır
-2. **B16.9 Stub End** — Wermac dim_stub_ends, ~33 satır → Cap'in çifti
-3. **B36.19M paslanmaz boru içerik teyidi** — DB'de 70 satır var, bizim üretim değil
-4. **EN 1092-1 PN 10, 25, 40** × T01/T05/T11/T12 → ~180 satır toplu, PN 16 pattern'inden hızlı
-
-### Hijyen
-5. **Migrations 027-031 push** — DB'de aktif ama GitHub'da yok, eski kütüphane oturumlarından
-
-### Düşük öncelik
-6. `notlar` TEXT → JSONB migration (mevcut veri geçerli JSON, CAST mümkün)
-7. `bolt_holes_inch` / `bolt_cap_inch` → `bolt_size_text` yeniden adlandırma (UI naming)
-
-### Ana proje (75'te dokunulmadı, 74'ten devren)
-- briefing-74-sonuc + MK-74.3 (is_durumu vs s.durum eksenleri) — detay 74 kayıtlarında
+1. **KUTUPHANE-YUKLEME-TAKIP.md tam senkronizasyon** — gerçek DB count ile baştan yaz (P0, ~30 dk)
+2. **fitting_olculer kırılım analizi** — 424 satır hangi standart × parça tipinde dolu? (P0, ~15 dk)
+3. **`malzeme_kataloglari` durum kontrolü** — kaç satır? hangi gruplar dolu? (P1, ~10 dk)
+4. **A2 — B16.9 Stub End** (P1, ~1.5 sa) — fitting cephesinde devam
+5. **A3 — EN 1092-1 PN 10 paketi** (P1, ~2 sa) — PN 16 pattern'i tekrar
+6. **C — Migrations 027-031 push** (hijyen, ~15 dk) — repo'da olmayan canlı DB değişiklikleri
+7. **`fitting_malzeme_uyum` planlama** — 8000 satır beklenen ama 1 satır var. Script-üretim stratejisi (P2)
+8. **Eksik B36.19M satırları** — DN 6/8/10 (NPS 1/8, 1/4, 3/8) küçük boyutlar (P2, ~30 dk)
 
 ---
 
-## Kritik Hatırlatmalar (75 yeni + öncesi)
+## Kritik Hatırlatmalar (76 yeni dersleri dahil)
 
-### 75'ten yeni
-- **MK-75.A:** EN flanş tip kodu `EN-T01/T05/T11/T12` (B16.5'ten ayrı, parça kimliği)
-- **MK-75.B:** `basinc_sinifi` sadece sayı (`'16'`, `'150'`)
-- **MK-75.C:** `bolt_holes_inch`=delik / `bolt_cap_inch`=bolt çapı (B16.5 inch / EN metric)
-- **MK-75.D:** Idempotent INSERT — `WHERE NOT EXISTS` her satırda
-- **MK-75.1:** `notlar` kolonu TEXT (JSONB değil) — SELECT'te `::jsonb` cast şart
-- **MK-75.2:** NOT NULL constraint kontrolü zorunlu — `is_nullable` sorgula
-- **MK-75.3:** Çift kaynak doğrulama — DN 100 + 7 alan ±0.5mm
-- **MK-75.4:** Standart edisyon farkları (BS 2002 vs EN 2013) — en güncel referans
+### 76'da öğrenilen (yeni)
 
-### Önceki oturumlardan
-- **`izometri-oku.js`'e DOKUNMA** (MK-49.1) — sadece ilgili fonksiyon
-- **Hassas anahtar Claude'a verme** (MK-50.1)
-- **Dosya kopyalama protokolü** (MK-51.1, `arespipe_kopyala` zsh)
-- **`gp` push kullan** — otomatik rebase, `git push origin main` yazma (MK-52.2)
-- **Tek tırnak commit mesajı** (Türkçe + parantez shell'i karıştırır)
-- **DB schema değişikliği grep tarama** (MK-51.4)
-- **`isometri-batch.html`'e dokunma sınırı** vs minimum değişiklik prensibi
+- **MK-76.1:** Supabase SQL Editor `BEGIN;`/`COMMIT;` syntax error verir. Multi-statement zaten implicit transaction içinde, explicit kullanma. DO bloğundaki RAISE EXCEPTION rollback'i tetikler.
+- **MK-76.2:** Bir tablonun kolon adları/değerleri varsayma — mevcut benzer satırdan LATERAL JOIN ile kopyala. `flansh_olculer` `cap_dn` kullanıyor ama `boru_olculer` `dn` kullanıyor — her tablo farklı sözlük.
+- **MK-76.3:** SQL yorumlarında sadece **saf ASCII** kullan. Em-dash, bullet, multiply sign, Yunan harfleri, üst-indis, Türkçe karakterler parser'ı bozar. Detayları JSON `notlar` alanına koy (JSON parser onları görür, SQL parser değil).
+- **MK-76.4:** `information_schema.columns` `is_generated` kolonunu (PG 12+) **göstermez**, GENERATED kolonlar yanıltıcı şekilde `is_nullable: YES` görünebilir. Şüphede sade SELECT ile dolu gelen ama default'u olmayan kolonu GENERATED varsay. INSERT'te bunları belirtme — otomatik dolar.
+- **MK-76.5:** `KUTUPHANE-YUKLEME-TAKIP.md` belgeleri canlı DB count ile senkronize tutulmalı. 43'ten kalma yapısı 5+ ay geri kaldı. Her oturum sonu canlı DB sorgu ile güncelle.
 
----
+### 75 + öncesi (taşınan)
 
-## Performans (75 ölçümleri)
-
-- **Wermac PN 16 WN fetch:** ~3 sn, markdown ~3 KB
-- **RoyMech PN 16 fetch:** ~3 sn, markdown ~4 KB
-- **Parser çalışma süresi:** <1 sn (15 satır × 3 tablo)
-- **Transformer çalışma süresi:** <1 sn (30 INSERT üretim)
-- **Cross-check (manuel):** DN 100, 7 alan, ~2 dk
-- **Supabase INSERT (idempotent):** 33 + 15 + 30 satır, her biri <2 sn
-- **Tüm cephe (Cap + 3 EN tipi) end-to-end:** ~3 saat (Wermac + RoyMech araştırma + parser + transformer + push + doğrulama)
+- MK-75.1: `notlar` TEXT, SELECT'te `::jsonb` cast şart
+- MK-75.2: INSERT öncesi `is_nullable` sorgula (76'da bu yetersiz çıktı, MK-76.4 ile genişletildi)
+- MK-75.3: Çift kaynak doğrulama disiplini
+- MK-75.4: Standart edisyon farkları, en güncel referans
+- MK-75.A: EN flanş tip kodu `EN-T01`, `EN-T05`, `EN-T11`, `EN-T12`
+- MK-75.B: `basinc_sinifi` sadece sayı ('16', '150')
+- MK-75.C: `bolt_holes_inch`/`bolt_cap_inch` 'NNmm' / 'MNN' format
+- MK-75.D: Idempotent INSERT pattern (NOT EXISTS bileşik anahtar)
+- MK-51.4: DB schema değişikliği yapılırken kod tarafında SELECT/INSERT cümlelerini grep'le tara
+- MK-49.1: `izometri-oku.js`'e dokunma — minimum değişiklik
 
 ---
 
-## Süreç Disiplinleri (75'ten)
+## Süreç Disiplinleri (76'da uygulanan)
 
-- **Migration numarası ön-kontrolü:** `ls migrations/ | tail -10` (ana sayaç paralel mini-projeyle çakışabilir)
-- **Idempotent SQL standardı:** Briefing kuralı, `INSERT ... SELECT ... WHERE NOT EXISTS`
-- **Schema sorgusu standartı:** `column_name, is_nullable, data_type` — sadece kolon adı yetmez
-- **Cıvata reuse:** Aynı PN+DN'de tüm tipler aynı bolt pattern → tek kaynak (Wermac WN) yeterli
-- **Standart edisyon belirtimi:** Üretimde "kaynak: X, edisyon: Y" notlar JSONB içinde
-- **Çift kaynak doğrulama:** DN 100 spot + 7 alan ±0.5mm
+- **`gp` push kullan** (otomatik rebase) — terminal git akışı, GitHub web UI upload yok
+- **Heredoc yöntemi** Mac dosya transferi için (MK-51.1)
+- **Önce DB schema sorgula, sonra INSERT yaz** — MK-76.2 ile genişletildi (LATERAL JOIN pattern)
+- **Idempotent SQL** her satır için `NOT EXISTS` kontrolü
+- **DO blok ile doğrulama** — INSERT sonrası RAISE NOTICE / RAISE EXCEPTION ile final satır sayısı kontrolü
+- **ASCII-only SQL comments** (MK-76.3) — Türkçe açıklamaları JSON notlar alanına taşı
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL (en son `18fc4d8` data(75): 78 satır)
-- **Lint:** 0 hata, 22 uyarı (Faz B baseline'ı korundu)
-- **Vercel:** ✅ Production = `18fc4d8`
+- **Build:** ✅ YEŞİL (son commit `11816b0`)
+- **Lint:** baseline korundu (Faz B sonrası 0 hata / 22 uyarı)
+- **Vercel:** ✅ Production = `11816b0`
 
 ---
 
-## Kütüphane Mini-Projesi Durumu (75 sonu)
-
-| Modül | Beklenen | Canlıda | % |
-|---|---:|---:|---:|
-| `boru_olculer` | 280 | 440 | 157% (kapsam aşıldı) |
-| `flansh_olculer` | 800 | **261** | 33% |
-| `fitting_olculer` | 2,500 | **424** | 17% |
-| `malzeme_kataloglari` | 120 | 12 | 10% |
-| `fitting_malzeme_uyum` | 8,000 | 0 | 0% |
-| `ozel_parcalar` | 200-500 | 0 | 0% |
-| `tenant_spec_seti` | 10-20 | 0 | 0% |
-| `spec_kural` | 500-1,000 | 0 | 0% |
-| **TOPLAM** | **~12,400** | **1,137** | **9.2%** |
-
-75 boyunca: 1,059 → 1,137 (+78 satır, %0.6 artış). Stratejik olarak pilot ihtiyacı PN flanşları için doğru cephe.
-
----
-
-> 76. oturum açılışında bu dosya, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` ve `KUTUPHANE-BRIEFING.md` v2 okunacak.
+> 77. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
