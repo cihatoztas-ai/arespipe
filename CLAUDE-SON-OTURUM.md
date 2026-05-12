@@ -1,199 +1,238 @@
-# CLAUDE — 78. Oturum (12 Mayıs 2026)
+# CLAUDE — 79. Oturum (12 Mayıs 2026)
 
-> 76 → 77 → 78 kütüphane mini-projesi zinciri. PN 10 cephesi tamamlandı, M_K iki katına çıktı (10 → 20), gemi P0 CuNi cephesi açıldı.
+> 78 → 79 fitting cephesi sıçraması. fitting_olculer +145 satır, iki yeni cephe (B16.11 SW + B16.9 stub_end), naming hijyeni, ağırlık doluluğu 3.5 kat. Aynı zamanda **ağırlık tasarımı** sistematik konuya dönüştü.
 
 ---
 
 ## Ana Tema
 
-Üç çizgide paralel ilerleme:
-1. **Flansh kütüphanesi:** EN 1092-1 PN 10 cephesi tam (77 T05+T11 + 78 T01+T12 = 32 satır)
-2. **Malzeme kataloğu:** 77 omurga + ilk 10 spec → 78 sonrası 20 spec (gemi P0 cephesi tam, paslanmaz P0-P1 genişledi)
-3. **Belge hijyeni:** 5+ aylık birikim (KUTUPHANE-YUKLEME-TAKIP.md v3) + 77'de atlanan kapanış üçlüsü disipline alındı
+Dört çizgide ilerleme:
+
+1. **B16.11 SW fitting cephesi açıldı** — ikinci ana standart, 7 parça tipi, 105 satır β (046 ALTER + 047 INSERT)
+2. **B16.9 stub_end** — 76'dan açık borç kapatıldı, 6. parça tipi B16.9 cephesinde (048)
+3. **Naming hijyeni** — geometri_std prefix tutarlılığı sağlandı (48'de UPDATE 424)
+4. **Ağırlık tasarımı sistemleşti** — boru kanonik formül, fitting tablo + kaynak işareti (049'da 83 UPDATE)
 
 ---
 
-## Açılış — 77 Envanteri
+## Açılış — 78 Envanteri
 
-`git pull` çıktısı `77: kapanis - B0 omurga + PN10 16 satir + 8 MK + 041 rename fix` mesajıyla geldi. İlk yorumum: "PN 10 16 satır, ne kondu?"
+`git pull` çıktısı `b87ef05 docs(78): kapanis uclusu` mesajıyla geldi. Üç dosya: son-durum, CLAUDE-SON-OTURUM, CLAUDE-SONRAKI-OTURUM hepsi 78 sonu pattern'ında doğru. MK-78.3 disiplini ilk meyvesini verdi — 79 doğru belge ile başladı, 77'deki gibi eski belgeden bilgi okumadık.
 
-Cihat'ın gönderdiği `.github/son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` dosyaları 76 başlıklıydı (yani 77'de kapanış üçlüsü atlandı). Bu büyük bir keşif: bir sonraki oturum eski belgeyle çalışıyor olabilir.
-
-GitHub migrations dizininin ekran görüntüsünü yakalayınca tam manzara çıktı:
-- `040_malzeme_kataloglari_b0.sql` (77)
-- `041_inserts_b3619m_dn350_600_40s80s.sql` (76 → 77 rename)
-- `042_inserts_en1092_pn10_t05_t11.sql` (77)
-
-Yani 77 aslında **üç migration birden** yapmış, "041 rename fix" 76'nın eski 040'ının 041'e taşınması, B0 ve PN10 yeni dosyalar.
-
-**MK-78.1 doğdu:** Migration numarası atamadan önce GitHub dizinine bak. Ben 042'ye yazmıştım, çakışma vardı. Cihat'ın ekran görüntüsü kurtardı.
+CLAUDE-SONRAKI-OTURUM.md 5 yol veriyordu (A: PN 25 paketi, B: Stub End, C: düşük sıcaklık karbon, D: B16.11 socket, E: hijyen). Cihat "büyük D'yi yapalım" dedi — **Yol D: B16.11 socket fittings**.
 
 ---
 
-## Migration 043 — EN1092-1 PN 10 T01 + T12
+## Migration 046 — fitting_olculer şema genişletme
 
-### Kapsam Kararı (KARAR-78.1)
+### Şema kararı
 
-PN 16 cephesi 76'da 4 tip × 15 DN = 60 satır olarak tam kapatılmıştı. 77 PN 10'a iki tip (T05+T11) × 8 DN = 16 satır koymuştu (DN 200-600). T01 plate + T12 hubbed slip-on eksikti.
+İlk soru: B16.11 SW fittings B16.9 BW fittings ile aynı tabloda mı, ayrı tabloda mı? Mevcut `fitting_olculer` şema kontrolü yapıldı (Cihat'tan information_schema sorgusu). Sonuç: aynı tabloda. Çoğu kolon (et_mm, ucu_uca_a_mm, ucu_uca_h_mm, vs.) aynı geometri için kullanılabiliyor. Sadece B16.11'e özgü 3 kolon eksikti.
 
-İki seçenek tartıldı:
-- **α (geniş):** β + küçük DN'ler (DN 10-150, 7 DN × 4 tip = 28 satır) = toplam 44 satır
-- **β (dar):** sadece DN 200-600 × T01+T12 = 16 satır
+3 yeni kolon eklendi:
 
-ProjectMaterials Type 01 PN10 tablosu açıldığında **DN 200'den başlıyordu** (DN 10-150 satırları kaynakta yok). Bu doğrulama β kararını üç yönden destekledi:
-1. Gemi tersane profili (PN 10 büyük çapta yaygın, küçük çap PN 16'da karşılı)
-2. Kaynağın doğal kapsamı (PN 10 Type 01 standart üretim DN 200+)
-3. Oturum büyüklüğü (16 satır 1 saatte biter, 44 satır oturumu sarkıtır)
+- `class_no INTEGER` — B16.11 pressure class (2000/3000/6000/9000), B16.9 BW için NULL
+- `soket_derinlik_mm NUMERIC` — J değeri (min depth of socket)
+- `soket_ic_cap_mm NUMERIC` — B değeri (socket bore max = boru OD + tolerans)
 
-### Veri Kaynağı
+class_no için CHECK constraint: `IS NULL OR IN (2000, 3000, 6000, 9000)`.
 
-İki bağımsız kaynak (MK-75.3):
-- **ProjectMaterials EN 1092-1 Plate Flange PN10** — T01 için 8 DN × 9 alan tablo, weight dahil
-- **pipefittingweb EN 1092-1 PDF** — Type 01/02/04/05/11/12/13/21 hepsini tek tabloda, T12 için N1 hub_od + H1 hub_length + R1 corner
+### CHECK constraint analizi
 
-T01 PN10 değerleri %100 örtüştü iki kaynak arasında.
+Önemli ön kontrol (MK-78.1 ruhu): mevcut CHECK constraint'leri sorguladık. Tek constraint var: `schedule_consistency` (schedule_tipi/deger/kod üçlüsü hep birlikte dolu veya hep birlikte NULL). parca_tipi üzerinde CHECK YOK — yeni SW parça tiplerini eklemek serbest. Bu plan hafifletti.
 
-T12 için tek kanonik kaynak (pipefittingweb PDF) kullanıldı, ama T11 PN10 DN200 değerleri (N1=234, H2=62, S=6.3) DB'de mevcuttu ve PDF ile birebir eşleşti → kaynak güvenilir.
+### Uygulama notu
 
-### Pattern
-
-LATERAL JOIN ile T11 PN10 satırlarından `D, K, b, RF_OD, RF_h, A (boru OD), bolt_circle, bolt_count, bolt_holes_inch, bolt_cap_inch` reuse edildi (MK-76.2). T01 için sadece `weight` override, T12 için `hub_od_mm + hub_uzunluk_mm` eklendi.
-
-Sonuç: DN 200 detay testi → T01/T05/T11/T12 dörtlüsü aynı D/b/K/n/M paylaşıyor, sadece hub farklı (T01/T05: NULL/NULL, T11: 234/62, T12: 246/44). EN 1092-1 tip-spesifik geometri doğru.
+İlk yapıştırmada SQL Editor satır 21'de "syntax error at TABLE" verdi. Önce dosyada syntax hatası sandık, `view` ile kontrol — dosya temiz. İkinci yapıştırma `cat | pbcopy` ile clipboard'a alıp editor'ı tamamen temizleyince çalıştı. **Ders: kısmi seçim veya editor'da kalan eski içerik silent şekilde hata verebilir; tam clipboard transferi güvenli.**
 
 ---
 
-## P0 Hijyen Üçlüsü
+## Migration 047 — B16.11 SW fittings β
 
-76 ve 77'de atlanan üç P0 borç temizlendi.
+### β kapsam kararı
 
-### Adım 1 — M_K Durum Tespiti
+Wermac (primary), Skyland (cross-1), Ferrobend (cross-2) üç bağımsız kaynak. β kapsam evrimleşti:
 
-77'nin `040_malzeme_kataloglari_b0.sql`'i okundu (cat ile). İki şey ortaya çıktı:
-1. Tablo şeması zengin: GENERATED `spec_kodu`, malzeme_grubu/aile enum'ları, 4 uygunluk flag (boru/bw/forged/flansh), CHECK `en_az_bir_uygun`, partial unique (sistem + tenant)
-2. 77 sadece CREATE TABLE değil, **5 spec içerik** de eklemiş
+Başlangıç önerisi (kapsamı geniş): NPS 1/8-4, Class 3000+6000, 8 parça tipi.
 
-DB sorgusu 10 satır verdi (5 değil!), yani 77 daha geniş çalışmış:
-- Karbon: A53/A106/A234/A105/EN10216 (5)
-- Paslanmaz: A312/A403/A182 ×TP316L (3)
-- CuNi: B466 C70600 + C71500 (2)
+Önemli kısıt 1 (B16.11-2011 standart notu): **Class 6000 elbow/tee/cross sadece NPS 1/8-2**, NPS 2½+ standartta yok. Pipingpipeline'ın açıkladığı durum.
 
-**Önemli bulgu:** `malzeme_kataloglari` (yeni, B0) ile `malzeme_tanimlari` (eski, 19. oturumdan UI/IFS köprüsü) farklı tablolar. 76 son-durum.md "12 satır" derken `malzeme_tanimlari`'na işaret ediyormuş, ben karıştırmıştım.
+Önemli kısıt 2 (Wermac kapsamı): **Wermac NPS 1/2'den başlıyor**, NPS 1/8-3/8 Wermac'ta yok. Sadece bazı parça için Ferrobend NPS 1/8-3/8 verir. Veri tutarsızlığı riski.
 
-### Adım 2 — fitting_olculer Kırılımı
+Pragmatik β-v2 (final): **NPS 1/2 → 4 (Class 3000) + NPS 1/2 → 2 (Class 6000), 7 parça tipi**, reducing coupling γ'ya. NPS 1/8-3/8 γ'ya (instrument lines, gemi tersane ana hatları NPS 1/2+).
 
-424 satır, hepsi `B16.9`. 8 parça tipi × 33 DN:
-- reducer_ecc 114 + reducer_conc 114 (DN kombinasyon)
-- cap 33 + 90LR 33 + 45LR 33 + tee_eq 33
-- 90_3D 32 + 45_3D 32
+### 7 parça tipi
 
-`schedule_kod` hepsi NULL — B16.9 schedule bağımsız ölçüler, standart davranış.
+- `90SW` — 90° socket weld elbow
+- `45SW` — 45° socket weld elbow
+- `tee_eq_sw` — equal tee SW
+- `cross_sw` — equal cross SW (yeni cephe — B16.9'da `cross` yok)
+- `coupling_full` — full coupling (yeni cephe)
+- `coupling_half` — half coupling (yeni cephe)
+- `cap_sw` — socket weld cap
 
-v2 belgesindeki "~2500 satır beklenir" tahmini aşırı şişikmiş. Gerçek standart kapsamı 424 ve bunun %85'i dolu. Eksikler: 90SR, 180LR return, tee_red eşitsiz, stub_end (A2 görevi), B16.11 socket, B16.28 short radius, EN 10253.
+İsimlendirme kararı (KARAR-79.2): mevcut B16.9 stilini izle (`90LR`, `45LR` pattern'ı → `90SW`, `45SW`). geometri_std='ASME B16.11' filtresi ile ayrım. `tee_eq` (B16.9 BW) vs `tee_eq_sw` (B16.11 SW), `cap` vs `cap_sw` — isim çakışması yok.
 
-### Adım 3 — KUTUPHANE-YUKLEME-TAKIP.md v3
+### Pattern özellikleri
 
-Belge 43. oturumdan beri (5+ ay) güncellenmemişti. v3 olarak sıfırdan yazıldı:
-- v2 → v3 senkron notu (büyük düzeltmeler dökümü)
-- Özet tablo (10 modül, gerçek DB sayıları)
-- 7 ana modül detay (kırılımlar + öncelikler + 80 sonu hedefler)
-- 5 önemli iz (M_K vs m_tanimlari karışıklığı, B16.9 tek-standart, β kapsam vb.)
-- 79+ pratik iş sırası (6 somut adım)
+- Socket bore (B) ve depth (J) Class-bağımsız (sadece NPS'ye bağlı sabit)
+- Body wall G Class-bağlı (Class 6000 daha kalın)
+- A (center-to-bottom) parça-tipi-bağlı (90° vs 45°, ama 90° ile tee/cross aynı)
+- Cap için cap_dia_mm (R) ayrı kolon olmadığı için notlar JSON'a koyuldu: `{"cap_dia_mm": R}`
 
-Eski v2 `docs/_arsiv/KUTUPHANE-YUKLEME-TAKIP_v2_43.md` olarak korundu (geçmiş referansı). v3 push edildi (commit `cfcb5ba`).
+### Sonuç
 
-**MK-78.4 doğdu:** `&&` zincirinde mkdir → mv sırası yanlış kurulmuştu, ilk komut fail oldu zincir durdu. "Önce yer aç, sonra koy."
+105 satır INSERT (Class 3000=63 + Class 6000=42). Spot check DN 50 90SW Class 3000 → et=5.55, A=38.0, J=16, B=61.35 (Wermac bire-bir).
+
+İkinci yeni standart cephesi açıldı (B16.5 ve B16.9 yanına B16.11).
 
 ---
 
-## Migration 044 — M_K CuNi Fitting + Flansh
+## Migration 048 — Naming Hijyeni + B16.9 stub_end
 
-### Niye Bu Cephe Kritik
+### Tetikleyici
 
-Gemi tersane (Yalova) profili: deniz suyu sistemi = CuNi. Paslanmaz klorid pitting yapar, karbon korozyon. CuNi çözümdür. 77 sadece boru spec'i koymuş, fitting + flansh eksikti — gemi P0 cephesi yarım kalmış.
-
-### Veri Kaynağı
-
-- **copper.org/applications/marine/cuni/standards** — ana referans, ASTM + EEMUA + DIN listesi
-- **cnkpipefitting.com** — B151 forged flange detayı
-- **Solitaire Overseas** — B466 seamless + B467 welded
-- **PM International CuNi datasheet** — mukavemet, density
-
-### Karar: 3 Spec Türü
-
-Pratikte CuNi malzeme spec'leri:
-- **ASTM B466** — seamless boru + seamless BW fitting (mevcut, ama fitting flag eksikti)
-- **ASTM B467** — welded boru + welded BW fitting (büyük çap için ekonomik)
-- **ASTM B151** — forged rod/bar (flansh + küçük forged fitting)
-
-Operasyon: 2 UPDATE (B466 fitting flag) + 4 INSERT (B467 ve B151 × C70600 + C71500) = M_K 10 → 14.
-
-### Mukavemet Değerleri
-
-| Grade | TS min (MPa) | YS min (MPa) | Density |
-|---|---|---|---|
-| C70600 (CuNi 90/10) | 275 | 105 | 8940 |
-| C71500 (CuNi 70/30) | 345 | 138 | 8940 |
-
-C71500 daha yüksek hız servisi için, mukavemeti daha yüksek (Ni içeriği yüksek). Sıcaklık aralığı her ikisi: -100 ila 200°C.
-
----
-
-## Migration 045 — M_K Paslanmaz Genişleme
-
-### Kapsam
-
-Mevcut sadece TP316L (3 spec: A312/A403/A182). Eksik:
-- **TP304L** (P0 yaygın, gemi mutfak + sıhhi tesisat + paslanmaz hatlar)
-- **TP316** (P1, 316L'nin yüksek karbonlu kardeşi, kaynak edilmemiş parçalar için)
-
-6 INSERT: 2 grade × 3 spec türü.
-
-### Mukavemet (A312/A403/A182 aynı grade aynı min)
-
-| Grade | TS min | YS min | Density |
-|---|---|---|---|
-| TP304L / WP304L / F304L | 485 MPa | 170 MPa | 7900 (Mo'suz) |
-| TP316 / WP316 / F316 | 515 MPa | 205 MPa | 7980 (Mo'lu) |
-
-L versiyonları (304L, 316L) düşük karbon = düşük mukavemet ama kaynak sonrası IGC dirençli. Yüksek karbonlu versiyon (316) daha güçlü ama kaynak edilmemiş parçalar için ideal.
-
-### Yakalanan Hata (MK-78.5)
-
-İlk SQL taslağında TP316 satırlarının kolon sırası karışmıştı:
-```
-('ASTM A312', 'TP316', 'paslanmaz', 'ASTM',
- 7980, 515, 205, -196, 425,           <-- yanlış: flag bloğu olmalıydı
- true, false, false, false,           <-- numeric bloğu sonradan gelmeli
- ...)
-```
-
-TP304L satırları doğru, TP316 satırları yanlış. str_replace ile düzeltildi. **Yakalanmamış olsaydı:** CHECK `en_az_bir_uygun` violation alacaktı (7980 = boolean false değil, type cast hatası önce gelirdi).
-
-Disiplin: VALUES yazımında her satırda **aynı dikey hizalama** (flag bloğu → numeric bloğu → text bloğu). Göz hatayı yakalar.
-
----
-
-## DB Değişiklik Özeti
+Cihat'a "hangi cephe boş, hangi cephe dolu?" diye ağırlık dağılımı sordum. SELECT FROM fitting_olculer GROUP BY geometri_std → çıktı:
 
 ```
-flansh_olculer:        292 -> 308  (+16, migration 043)
-malzeme_kataloglari:    10 -> 20  (+10, migrations 044+045, iki kat)
+ASME B16.11 → 105
+B16.9       → 424
 ```
 
-### M_K Kırılım (78 sonu, 20 satır)
+**Naming inconsistency.** 047'de doğru prefix kullanmıştım (`'ASME B16.11'`), ama eski 424 satır prefix'siz (`'B16.9'`). 33-50 oturumlar arasında eklenmiş, kontrol edilmemiş. Sistem genelinde standart `'ASME B16.5'`, `'EN-1092-1'` prefix'li — B16.9 da hizalanmalı.
 
-| Grup | Spec | Notlar |
-|---|---|---|
-| Karbon | 5 spec | A53/A106/A234/A105/EN10216 — 77 omurgada eklendi |
-| Paslanmaz | 9 spec | TP316L + TP304L + TP316 × A312/A403/A182 |
-| CuNi | 6 spec | B466 + B467 + B151 × C70600/C71500 |
+### Plan: tek dosya, iki bölüm
 
-### Flansh Kırılım (308 satır)
+48 migration'ı iki iş atomik yapacak:
+1. UPDATE 424 → 'ASME B16.9' (hijyen)
+2. INSERT stub_end (40 satır)
 
-- ASME B16.5: 216 (mevcut)
-- EN 1092-1 PN 16: 60 (76'da kapatıldı)
-- EN 1092-1 PN 10: 32 (77: T05+T11 16, 78: T01+T12 16) — **cephe tam**
+Hijyen UPDATE WHERE filtresiyle (geometri_std='B16.9') idempotent, ikinci kez 0 etkiler.
+
+### stub_end kapsam (β)
+
+Wermac + Skyland karşılaştırma:
+- B16.9 long pattern (ASA): NPS 1/2-24, 20 NPS
+- MSS SP-43 short pattern: aynı aralık, daha kısa F değeri
+- NPS 22 Wermac'ta yok (Skyland var, T değeri eksik)
+
+KARAR-79.3: β = long pattern, NPS 1/2-24, Schedule STD + XS. Short pattern γ'ya, NPS 22 γ'ya.
+
+20 NPS × 2 schedule = 40 satır.
+
+### Yeni pattern — schedule-bağımlı
+
+stub_end mevcut B16.9 fittings'den farklı: **boru duvar kalınlığından üretilir, T (lap thickness) = pipe wall thickness**. Yani Schedule STD ile Schedule XS aynı NPS'de farklı T verir, farklı ağırlık.
+
+Mevcut 90LR/tee_eq/cap **schedule-bağımsız** (ortalama bir tek değer, schedule_kod=NULL). Stub_end **schedule-bağımlı**: schedule_tipi='SCHEDULE', schedule_deger='STD' veya 'XS', schedule_kod aynı.
+
+Idempotent NOT EXISTS bileşik anahtar **schedule_kod dahil** (`geometri_std + parca_tipi + cap_buyuk_dn + schedule_kod + tenant_id`).
+
+### Ağırlık ilk defa dolu
+
+Wermac stub_end tablosu **kg/parça veriyor** (47'deki SW sayfaları weight vermemişti). 40 stub_end satırı **agirlik_kg dolu** — bu sistemde **ilk weight-dolu fitting satırları**.
+
+Sıralı sürpriz: önceki ağırlık taraması (sorgu fitting_olculer + flansh_olculer) gösterdi:
+- B16.11: 105 dolu 0 (Wermac SW weight vermiyor)
+- B16.9: 424 dolu 48 (33-50 arası eski 24'er 90LR/45LR satırından)
+- Flansh B16.5: 216 dolu 104
+- Flansh EN-1092-1: 92 dolu 31
+
+**Toplam 654 satır ağırlık eksik.** Bu Cihat'tan kritik soru getirdi.
+
+### Yan ders: pbcopy + zsh
+
+Cihat 048 push komutunu yapıştırırken `pbcopy` bloğunda yorum (`# 1) MD5`) varmış. zsh `# 1)` satırını parantez yüzünden parse hatası verdi, sonraki komutları reddetti. Bu MK-79.1 oldu: çok-satır komut bloğunda shell yorumu kullanma.
+
+### Sonuç
+
+464 ASME B16.9 satır (424 eski + 40 stub_end), 105 ASME B16.11 satır. fitting_olculer 424 → 569. Stub_end DN 100 STD spot check: et=6.02, F=152.4, R=11.11, lap_t=6.02, G=157.2, kg=3.0 (Wermac bire-bir).
+
+---
+
+## Ağırlık Tasarımı (KARAR-79.5)
+
+48 push edildikten sonra Cihat doğru bir soru sordu: **"Ağırlıkları hesap ile mi tablodan mı bulup yazmamız lazım?"**
+
+Cevap kategori bazlı oluştu:
+
+### Boru için: formül = tablo
+
+ASME B36.10M boru tablosu **formülün kanonik üretimidir**. Boru saf silindir:
+$$m/L = \rho \times \pi \times (D-t) \times t \quad \text{[kg/m]}$$
+
+Spot check 10 örnek satır (DN 15/50/100/200/300 × STD/XS, karbon):
+
+| DN | Schedule | DB | Formül | Sapma |
+|---:|---|---:|---:|---:|
+| 15 | STD | 1.270 | 1.2658 | +0.328% |
+| 50 | STD | 5.440 | 5.4375 | +0.046% |
+| 100 | STD | 16.080 | 16.0755 | +0.028% |
+| 200 | STD | 42.550 | 42.5491 | +0.002% |
+| 300 | XS | 97.440 | 97.4369 | +0.003% |
+
+Tüm sapmalar **|%0.33|'ün altında**, çoğu **|%0.03|** — yuvarlama hatası seviyesi. Büyük çaplarda neredeyse 0.
+
+**Sonuç: Boru ağırlıkları kanonik. Formül = tablo, doğrulandı.** `boru_olculer.agirlik_kg_m` NOT NULL kolon, 450 satırın hepsi zaten dolu, formülden üretilmiş. Yeni iş gerek yok.
+
+### Fitting için: tablo + üretici-bağımlı
+
+Fitting geometrisi karmaşık (kavis, lap, hub, transition radius). Formül ±%5-15 sapar. Wermac kendisi yazıyor:
+
+> "ASME buttweld fitting specifications **do not specify weights** for fittings. Weights quoted ... are based on **manufacturers information** and should be considered as **approximate** ... **can vary considerably between manufacturers**."
+
+Wermac → **Hackney Ladish** üretici tablolarını kullanıyor. Notlar JSON'a kaynak işareti zorunlu: ilerleyen oturumlarda farklı üretici tabloları (Octalsteel, ProjectMaterials, Tube Bend) gelirse karşılaştırma mümkün, hatta değişim yapılabilir.
+
+### KARAR-79.5: Ağırlık iki kategoride
+
+- **Boru için**: formül-bazlı (kanonik, %0.3 sapma), UPDATE m = ρ × π × (D-t) × t / 1000 kg/m
+- **Fitting için**: tablo-bazlı (Wermac/Hackney Ladish primary, ±%5-15 üretici sapması)
+- **notlar JSON pattern**: `{"kaynak": "...", "uretim_tarihi": "YYYY-MM", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, "160": z, "XXS": w}}`. agirlik_kg ana kolonda STD değeri (mevcut 90LR/45LR pattern'iyle birebir uyumlu).
+
+### MK-79.3: Boru ağırlık formül kanonik, fitting ağırlık üretici tablo
+
+İkisini karıştırma. Boru için formül UPDATE, fitting için kaynak-bazlı UPDATE. İlerleyen iş için 80+ oturumlarda fitting ağırlık taraması — kategori-bazlı plan.
+
+---
+
+## Migration 049 — B16.9 Fitting Ağırlık Dolum
+
+### Hedef
+
+Wermac BW weight tablolarından 4 B16.9 parça tipi için ağırlık doldur. Eksik DN tarama sorgusu (MK-79.4 disiplini — string_agg ile eksik DN listesi) Wermac kapsamı dışı satırları gösterdi:
+
+| Parça | DB eksik | Wermac doldurabilir | Wermac dışı (γ) |
+|---|---:|---:|---:|
+| 90LR | 9 | 0 | 9 (NPS 28+) |
+| 45LR | 9 | 0 | 9 |
+| 90_3D | 32 | 19 | 13 (küçük + büyük NPS) |
+| 45_3D | 32 | 19 | 13 |
+| tee_eq | 33 | 24 | 9 |
+| cap | 33 | 21 | 12 |
+| **TOPLAM** | **148** | **83** | **65** |
+
+**90LR ve 45LR'in 9 eksik DN'i tamamen Wermac kapsamı dışı** (NPS 28, 32, 34, 38, 40+ DB'de DN 700, 800, 850, 950, 1000, 1050, 1100, 1150, 1200). Bunlara dokunulmadı, γ'ya kaldı.
+
+### 4 UPDATE bloğu
+
+Her parça tipi için ayrı UPDATE, VALUES inline + JSON notlar string olarak:
+
+- **90_3D**: 19 satır (NPS 2-36)
+- **45_3D**: 19 satır (NPS 2-36)
+- **tee_eq**: 24 satır (NPS 1/2-36)
+- **cap**: 21 satır (NPS 1-30)
+
+İdempotent `WHERE agirlik_kg IS NULL` filtresi — ikinci çalıştırmada 0 etki.
+
+### JSON pattern
+
+Mevcut 90LR/45LR satırları (24'er, eski oturumlardan) `{"kaynak": "Wermac B16.9 elbow tablosu", "uretim_tarihi": "2026-05", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, ...}}` formatında. 049 bu pattern'ı 4 parça tipine yaydı, sadece "elbow" yerine "3D elbow", "tee straight", "cap" yazıldı.
+
+### Doğrulama
+
+- Toplam: 83 ✓
+- Dağılım: 45_3D 19/13, 45LR 24/9, 90_3D 19/13, 90LR 24/9, cap 21/12, tee_eq 24/9 ✓
+- Spot cap DN 200 STD = 5.44 ✓ (Wermac bire-bir)
 
 ---
 
@@ -201,43 +240,73 @@ malzeme_kataloglari:    10 -> 20  (+10, migrations 044+045, iki kat)
 
 ### Disiplin Uygulamaları
 
-- `gp` push 3 kez sorunsuz çalıştı
-- MD5 transfer doğrulaması her dosyada (3 SQL + 1 markdown)
-- Heredoc yerine present_files kullanıldı (Mac üstünde MK-51.1 protokolü)
-- Power outage senaryosu (045 push sırasında elektrik kesintisi) — git atomik commit garantisiyle bütünlük korundu, sadece tarayıcıdan migrations dizini doğrulandı
+- **4 push tamamı sorunsuz** (gp ile otomatik rebase, 79 yepyeni commit zinciri)
+- **MD5 + satır + byte transfer doğrulaması** — her dosya için (4 SQL)
+- **present_files** ile temiz transfer; Mac üstünde arespipe_kopyala protokolü
+- **pbcopy ile temiz clipboard** — 046'da öğrenildi (editor'ı temizle, cat | pbcopy, yapıştır)
+- **MK-78.3 disiplini** — kapanış üçlüsü (bu dosya o disiplinin parçası)
 
 ### Karar Yorgunluğu Yönetimi
 
-78 büyük bir oturumdu (4 büyük iş). β/α kapsam kararları, hijyen seçimleri, migration sıralaması — Cihat'a sade çoktan seçmeli sunmaya özen gösterildi. Bir karar Cihat'a bırakıldı ("sen öner ve başla" — KARAR-78.1 β kapsamı).
+79 büyük bir oturumdu (4 büyük migration + ağırlık tasarım kararı + spot doğrulamalar). β kapsamları sürekli revize edildi (B16.11 kapsamı Wermac kısıtları sebebiyle, stub_end NPS 22 cephesi, fitting ağırlık γ ayrımı). Her seferinde tablo formatında özet sunup karar Cihat'a bırakıldı.
 
-Erken bir noktada **kapanış reflexine kapıldım** ("PR oldu = oturum bitti"). Cihat haklı olarak "daha yeni başladık" dedi → reflex durduruldu, oturum devam etti, asıl iş şimdi yapıldı.
+Bir noktada Cihat haklı olarak sordu: "ağırlık tamamlama işi çok uzun mu sürecek, 7-8 oturum tutuyor, tablolar o kadar sürmedi". Tahmini revize ettim (5-6 → 3 oturum, çünkü Wermac tek site, pattern oturmuş). β+'ya çıkıldı, 148 satır hedefi.
 
----
+### Cihat'ın doğru sorduğu sorular
 
-## Mimari Karar Kayıtları (MK) — 78'de doğan
-
-- **MK-78.1:** Migration numarası atamadan önce GitHub migrations dizinine bak. `git pull` çıktısı + son commit mesajı YETMİYOR; numara çakışması silent dosya kaybı riski.
-- **MK-78.2:** Cihat ekran görüntüsü gönderirse o **belge bana açılan tek pencere** — reflexle hemen yansıt, DB sorgusu kadar değerli.
-- **MK-78.3:** Kapanış üçlüsü hiçbir koşulda atlanmaz. 77'de atlanması bir sonraki oturumu eski belgeyle başlattı.
-- **MK-78.4:** `&&` zincirinde prerequisite (mkdir) önce, hedef-bağımlı (mv, cp) sonra. "Önce yer aç, sonra koy."
-- **MK-78.5:** SQL `VALUES (...) AS v(kolonlar)` pattern'inde her satırda **dikey hizalama** (flag bloğu / numeric bloğu / text bloğu). Kolon sırası karışıklığı göze çarpsın. 045'te bu sayede yakalandı, CHECK violation önlendi.
-- **MK-78.6:** 77'nin `040_malzeme_kataloglari_b0.sql`'inde explicit `BEGIN; ... COMMIT;` kullanılmış (MK-76.1 ile çelişiyor). Çalıştığı için sorun yaratmadı ama gelecek migration'larda implicit transaction kalsın.
+- "Ağırlıkları hesap ile değil tablolardan bulup yazmamız lazım değil mi?" → kategori ayrımına götürdü (KARAR-79.5)
+- "Bu ağırlık tamamlama işi çok uzun mu sürecek?" → realistik plan revizesine yol açtı (5-6 oturum → 3 oturum)
+- "Boru ağırlıklarına güveniyorum. Birkaç tane kontrol edelim" → 10 örnek spot check yapıldı, %0.33 sapma görüldü, kanonik formül onaylandı
 
 ---
 
-## 79'a Hazırlık
+## Mimari Karar Kayıtları (MK) — 79'da doğan
 
-KUTUPHANE-YUKLEME-TAKIP.md v3 belgesindeki "Pratik İş Sırası" 6 somut adım veriyor:
+- **MK-79.1:** `pbcopy` veya çok-satır komut bloğunda **shell yorumu (`#`) kullanma**. zsh parantezde parse hatası verir, sonraki komutları atlatır. 78'in "tek tırnak commit" dersinin yeni varyantı.
 
-1. M_K CuNi fitting+flansh ✅ (78'de yapıldı)
-2. M_K paslanmaz grade'leri ✅ (78'de yapıldı, TP304L+TP316)
-3. EN 1092-1 PN 25 paketi (~2 sa) — flansh_olculer %38 → %53
-4. B16.9 stub_end (A2, ~1.5 sa) — fitting cephesinde 6. parça tipi
-5. B16.11 socket fittings (~3-4 sa) — fitting_olculer ikinci standart
-6. M_K A333 + A420 (~30 dk) — düşük sıcaklık karbon (gemi ambar)
+- **MK-79.2:** **Ağırlık notlar JSON pattern'i** standart: `{"kaynak": "...", "uretim_tarihi": "YYYY-MM", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, "160": z, "XXS": w}}`. agirlik_kg ana kolonda STD değeri.
 
-İlk 2 madde 78'de bitti. Sıradaki 4 madde 79 için adaylar — Cihat seçecek.
+- **MK-79.3:** **Ağırlık ikiye bölünür** — boru için formül-kanonik (ASME B36.10M, %0.3 sapma), fitting için tablo-üretici (Wermac/Hackney Ladish, ±%5-15 sapma). İki kategori karıştırma.
+
+- **MK-79.4:** **geometri_std prefix tutarlılığı** — sistem genelinde `'ASME B16.x'`, `'EN-1092-1'` formatı. Yeni veri öncesi mevcut prefix'leri kontrol et.
+
+- **MK-79.5:** **Migration numarası için `ls migrations/ | tail -5` yeterli** (MK-78.1 güncelleme). Push edilmiş dosyalar dizinde olur, GitHub web UI'ye gerek yok.
+
+- **KARAR-79.1:** B16.11 β kapsam → NPS 1/2-4 (Class 3000) + NPS 1/2-2 (Class 6000). Reducing coupling, threaded, Class 9000, NPS 1/8-3/8 → γ.
+
+- **KARAR-79.2:** B16.11 parça tipi isimlendirme → mevcut B16.9 stili (90SW, 45SW, tee_eq_sw vb.). geometri_std ile ayrım.
+
+- **KARAR-79.3:** B16.9 stub_end β → long pattern (B16.9), NPS 1/2-24, STD + XS. MSS SP-43 short pattern + NPS 22 → γ.
+
+- **KARAR-79.4:** Schedule-bağımlı vs schedule-bağımsız — stub_end üçlüsü dolu, mevcut B16.9 elbow/tee/cap üçlüsü NULL. Ağırlık schedule farkı notlar JSON'a.
+
+- **KARAR-79.5:** Ağırlık tasarımı — notlar JSON ile kaynak izi (uretici, tarih, schedule başına detay), agirlik_kg ana değer (boru formül, fitting Wermac STD).
 
 ---
 
-> 79. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` okunacak.
+## 80'a Hazırlık
+
+Açık borç listesi (önceliğe göre):
+
+**Ağırlık hijyeni cephesi (P0-P1):**
+
+1. B16.11 SW ağırlık (105 satır) — pipingpipeline/ProjectMaterials
+2. B16.9 reducer ağırlık (228 satır, kombinatif) — Wermac weights_bw_reducers
+3. B16.9 γ ağırlık (65 satır, büyük NPS + 3D küçük) — ProjectMaterials/Octalsteel
+4. Flansh ağırlık (173 satır, B16.5 112 + EN-1092-1 61) — ProjectMaterials/octalsteel
+5. boru_olculer türetilmiş kolonlar (ic_cap_mm, hacim_l_m, yuzey_alan_dis_m2_m) — basit aritmetik UPDATE
+
+**78'den taşınan:**
+
+6. EN 1092-1 PN 25 paketi (60 satır)
+7. M_K düşük sıcaklık karbon (A333+A420+A350 LF2)
+8. B16.11 reducing coupling (kombinatif)
+9. B16.11 threaded fittings (yeni cephe)
+10. B16.9 stub_end MSS SP-43 short pattern
+11. fitting_malzeme_uyum ilk script tasarımı
+
+80 önerisi: **B16.11 SW ağırlık** ile başla (P0, ~45 dk-1 sa), pattern 049'la aynı yapı.
+
+---
+
+> 80. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` okunacak.
