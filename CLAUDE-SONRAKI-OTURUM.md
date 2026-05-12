@@ -1,140 +1,164 @@
-# 76. Oturum Gündemi
+# 79. Oturum Gündemi
 
-> 75'in devamı. Kütüphane mini-projesi 78 satır ilerledi, açılan EN 1092-1 cephesi PN 16'da yarıya geldi. Cihat'a hangi yolda devam soracağız.
+> 78'in devamı. PN 10 flansh cephesi tam + M_K iki katına çıktı (gemi P0 cephesi açık + paslanmaz P1 genişledi). 79 için somut yollar belirlendi, Cihat seçecek.
 
 ---
 
 ## Açılış Ritüeli (CLAUDE.md disiplini — 2 soru)
 
-1. **`git pull` + `git log -3` çıktısı.** 75 commit'leri (`18fc4d8`) main'de olmalı.
+1. **`git pull` + `git log -3` çıktısı.** 78 commit'leri (`edd3962`, `cfcb5ba`, `13b97d2`, 045) main'de olmalı.
 2. **Bugün ne yapmak istiyorsun?**
 
-Üç ana yol var:
+Üç ana yol var (KUTUPHANE-YUKLEME-TAKIP.md v3'teki pratik iş sırası 3-6 arası).
 
 ---
 
-## Yol A — Kütüphane'de devam (önerilen, akış sürer)
+## Yol A — EN 1092-1 PN 25 paketi (P1, ~2 saat) ⭐ ÖNERİLEN
 
-### A1 — EN-T05 (Blind) PN 16 (P0, ~1 saat)
-
-Yarıda kalan PN 16 cephesinin son tipi. 78+15 = 93 satır PN 16 olur, "tüm yaygın tipler" tamam.
+PN 10 ve PN 16 cephesi tam (toplam 92 satır). PN 25 doğal devam: yüksek basınç, küçük çap, sık görülen.
 
 **İş:**
-1. Schema sorgusu: `is_nullable` dahil tüm constraint'ler (MK-75.2)
+1. Schema kontrolü (zaten biliyoruz, MK-75.2)
 2. Kaynak araştırması:
-   - piping-world.com PN 16 BL (önceki denemede menü çıktı, gerçek tablo gerek)
-   - pipingpipeline.com EN 1092-1 Type 05 BL
-   - valvias.com PN-16
-3. Facing tipi nüansı: Pipefittingweb PDF'i diyor ki Type 05 PN ≤ 40 default Type A (FF), B1 (RF) opsiyonel. Karar: Cihat'a sor — Type 05'in `yuzeyTipi` default neyi olsun?
-4. Cıvata reuse (Wermac Type 11 PN 16 → BC, count, hex/stud) — aynı PN+DN
-5. Idempotent SQL: `040_inserts_en1092_pn16_t05_blind.sql`
+   - ProjectMaterials EN 1092-1 PN 25 (T01 plate)
+   - pipefittingweb EN 1092-1 PDF (T05/T11/T12 ortak tablo)
+3. PN 25 DN aralığı: tipik DN 10-300, 15 DN — PN 16 ile aynı kapsam beklenir
+4. LATERAL JOIN pattern (MK-76.2) — T11'den geometri reuse, T01/T05/T12 override
+5. Migration `046_inserts_en1092_pn25_paketi.sql`
+6. Beklenen: 4 tip × 15 DN = 60 satır, idempotent NOT EXISTS
 
-### A2 — B16.9 Stub End (P0, ~1.5 saat)
+**Sonuç:** flansh_olculer 308 → 368 (%19 artış)
 
-`fitting_olculer`'a Lap Joint pair, NPS 1/2 – 24, ~33 satır. Wermac dim_stub_ends sayfası kaynak.
+---
+
+## Yol B — B16.9 Stub End (A2, P1, ~1.5 saat)
+
+76'dan beri açık. Fitting cephesinde 6. parça tipi.
 
 **İş:**
-1. Wermac fetch + markdown'a kaydet
-2. Schema kontrolü `fitting_olculer` (Cap pattern'i biliniyor zaten)
-3. Parser → JSON → transformer → 041 SQL (idempotent)
+1. Wermac `dim_stub_ends.html` fetch (önceki Cap pattern'ı 75'te kullanıldı)
+2. Schema `fitting_olculer` (`stub_lap_kalinlik_mm` + `stub_lap_od_mm` özel kolonlar bu tip için)
+3. 33 DN (DN 15-1200, B16.9 standart kapsamı)
+4. Migration `046_inserts_b16_9_stub_end.sql` (eğer A öncelikli değilse)
 
-### A3 — EN 1092-1 PN 10 paketi (P1, ~2 saat)
-
-PN 16 pattern'i birebir tekrar: T01 + T11 + T12 + T05 (eğer A1 bitmişse). ~60 satır.
-
-**Wermac PN 10 WN + RoyMech (eğer PN 10 sayfası varsa) + Wermac bolt PN 10.**
-
-Pattern aynı → hızlı geçiş. Tek başına bir oturumda biter.
-
-### A4 — B36.19M paslanmaz boru içerik teyidi (P0, ~1 saat)
-
-DB'de 70 satır var ama 75'te dokunulmadı. İçerik kim tarafından yüklendi belirsiz. Cross-check:
-- Wermac/Ferrobend B36.19M tablosu fetch
-- DB ile karşılaştır (DN, schedule, dış çap, et)
-- Sapma varsa not düş, ±0.5mm tolerans dışı satırları işaretle
+**Sonuç:** fitting_olculer 424 → 457
 
 ---
 
-## Yol B — Ana proje (kütüphane dışı)
+## Yol C — M_K Düşük Sıcaklık Karbon (P1, ~30-45 dk)
 
-75 ana proje akışından ayrıydı. Eğer ana proje devam edilecekse 74'te kalan iş:
-- `briefing-74-sonuc` + MK-74.3 (is_durumu vs s.durum eksenleri)
-- Bu konuda detay 75'in kayıtlarında yok — eski son-durum.md'ye veya 74'ün dosyalarına bak
+Gemi ambar hatları (sıvı doğalgaz, soğutma sistemleri) için kritik. Hızlı iş.
 
-**Açılış:** *"75 kütüphane oturumuydu, ana proje 74'te kalmıştı. is_durumu / s.durum konusu vardı, devam edelim mi yoksa başka bir konu mu?"*
+**İş:**
+1. ASTM A333 Grade 6 (boru, -45°C'ye kadar)
+2. ASTM A420 WPL6 (BW fitting, eşleşen)
+3. ASTM A350 LF2 (forged + flansh, eşleşen)
+4. Mukavemet: TS=415 MPa, YS=240 MPa (A106 B ile benzer ama düşük sıcaklık sertleşmesi)
+5. Migration `046_malzeme_kataloglari_dusuk_sicaklik_karbon.sql`
 
----
-
-## Yol C — Migrations 027-031 push (hijyen, ~15 dk)
-
-DB'de aktif olan ama GitHub'a hiç push edilmemiş kütüphane migration'ları:
-- 027_boru_olculer_tenant_ekle.sql
-- 028_tenant_spec_sozluk.sql
-- 029_boru_agirlik_function.sql
-- 030_dogrulama.sql
-- 031_public_views_ve_rls.sql
-
-Bu dosyalar muhtemelen Cihat'ın elinde (önceki kütüphane oturumlarından) veya regenerate edilebilir. Disiplin gereği repo'ya girmeli — sürüm kontrol kayıp olmasın.
-
-**Eğer Cihat'ın elinde dosyalar varsa hızlı.** Yoksa rejenerasyon iş.
+**Sonuç:** M_K 20 → 23 satır, gemi cryogenic cephesi başlangıç
 
 ---
 
-## Önerilen Sıra (Cihat seçimine bırakılır)
+## Yol D — B16.11 Socket Fittings (P1, ~3-4 saat, büyük)
 
-Üç yol da geçerli. Öncelik sezgisi:
-1. **A1 (EN-T05 Blind)** → PN 16 tam tamamlanır, "parça kimliği" prensibi PN 16'da %100 örnek olur
-2. **C (027-031 push)** → 15 dk, küçük temizlik
-3. **A4 (B36.19M teyit)** → açık veriyi kontrol etme, etik
-4. **A2 (Stub End)** → fitting cephesinde Cap'ten sonra natural devam
-5. **A3 (PN 10)** → MVP genişletme (PN 16 örneğinden hızlı)
-6. **B (ana proje)** → kütüphaneden çıkıp ana akışa
+Fitting_olculer'a ikinci standart eklenmesi. Küçük çap (NPS ≤ 4) socket weld fittings — karbon ve paslanmaz, Class 3000/6000.
 
----
+**İş:**
+1. ProjectMaterials veya Wermac B16.11 tablosu
+2. Şema kontrol (`schedule_kod` kullanılabilir bu standartta — B16.9'dan farklı)
+3. Parça tipleri: elbow, tee, cross, coupling, half-coupling, cap (~6 tip × ~10 DN × 2 class = ~120 satır)
+4. Migration `046_inserts_b16_11_socket.sql`
 
-## Hazır Pattern (76'da hızlandırıcı)
+**Sonuç:** fitting_olculer 424 → 540+, ikinci standart açılır
 
-75'te aşağıdaki disiplinler oturdu:
-- Schema sorgusu: `column_name, is_nullable, data_type` (NOT NULL atlanamasın)
-- Idempotent INSERT: `WHERE NOT EXISTS` her satırda
-- Çift kaynak doğrulama: DN 100 spot + 7 alan ±0.5mm
-- Standart edisyon kontrolü: yeni vs eski sürüm farklılıkları (MK-75.4)
-- Cıvata reuse: aynı PN+DN'de tüm tipler aynı bolt pattern → Wermac WN sayfası tek başına yeterli
-- `notlar` JSON string olarak yaz (TEXT kolon), SELECT'te `::jsonb` cast
-
-Bu pattern A1, A2, A3, A4'te birebir uygulanır. Cihat onayladığı anda iş başlar.
+⚠ Bu büyük iş — bir oturum dolusu zaman alır. Karar yorgunluğu riski var.
 
 ---
 
-## Kritik Hatırlatmalar (75'ten taşınanlar)
+## Yol E — Hijyen + küçük iyileştirmeler (~30-45 dk)
 
-- **MK-75.1:** `notlar` TEXT, SELECT'te `::jsonb` cast şart
-- **MK-75.2:** INSERT öncesi `is_nullable` sorgula
-- **MK-75.3:** Çift kaynak doğrulama disiplini
-- **MK-75.4:** Standart edisyon farkları, en güncel referans
-- **MK-75.A:** EN flanş tip kodu `EN-T01`, `EN-T05`, `EN-T11`, `EN-T12` (B16.5'ten ayrı)
-- **MK-75.B:** `basinc_sinifi` sadece sayı ('16', '150')
-- **MK-75.C:** `bolt_holes_inch`/`bolt_cap_inch` çift anlamı
-- **MK-75.D:** Idempotent INSERT pattern
+Karışık küçük borçlar:
 
-Ana proje tarafından taşınanlar (51 + öncesi):
-- `izometri-oku.js`'e DOKUNMA (MK-49.1)
-- Hassas anahtar Claude'a verme (MK-50.1)
-- Dosya kopyalama protokolü (MK-51.1, `arespipe_kopyala` zsh fonksiyonu)
-- Parser_kural regex'leri 5+ örnekle test (MK-51.2)
-- DB schema değişikliği grep tarama (MK-51.4)
+- **DB kontrolü:** M_K mevcut satırlarda `cekme_mukavemeti_min_mpa` ve `akma_mukavemeti_min_mpa` dolu mu? 77'nin başlangıç 5 satırında NULL olabilir. Hızlı UPDATE ile doldur.
+- **CuNi cephesi `korozyon_notlari` JSONB dolumu** — mevcut satırlarda NULL. Pratik bilgi notları eklenebilir (deniz suyu hızı limiti, H2S etkisi).
+- **flansh_olculer notlar JSON şeması tutarlılık kontrolü** — 76-78 arasında pattern aynı mı?
+- **`fitting_malzeme_uyum` ilk script tasarımı** — M_K × fitting_olculer otomatik üretim mantığı (büyük, ayrı oturum gerekebilir)
 
 ---
 
-## Süreç Disiplinleri
+## Önerilen Sıra (78 sonu mantığı)
 
-- **`gp` push kullan** (otomatik rebase) — `git push origin main` YAZMA
-- **Heredoc yöntemi** Mac dosya transferi için
-- **Vercel logs UTC** — TR saatine `AT TIME ZONE 'Europe/Istanbul'`
-- **GitHub web UI upload kullanma** — sadece terminal git akışı
-- **Tek tırnak commit mesajı** — Türkçe parantez + özel karakter shell'i karıştırır (`'data(75): ...'`)
+Cihat'ın seçimine bırakılır, ama Claude önerisi:
+
+1. **A (PN 25 paketi)** — doğal devam, flansh cephesi büyük adım, pattern oturmuş, hızlı yapılır
+2. **C (düşük sıcaklık karbon)** — hızlı kazanç, gemi P1 cephesi açılır
+3. **B (Stub End)** — 76'dan beri biriken borç, fitting cephesinde temizlik
+4. **D (B16.11)** — büyük iş, ayrı oturuma uygun
+5. **E (hijyen)** — diğerleri arasında ara dolgu
 
 ---
 
-> 76 açılışında bu dosya + `son-durum.md` + `KUTUPHANE-BRIEFING.md` v2 + `CLAUDE-SON-OTURUM.md` okunur.
-> Sonra Cihat'a *"Hangi yolu seçelim — kütüphane mi, ana proje mi?"* sorulur. Beklenen cevaba göre detaylı plana geçilir.
+## Hazır Pattern (78'den taşınanlar)
+
+- **LATERAL JOIN reuse:** T11'den ortak geometri kopya, T01/T05/T12 override (MK-76.2)
+- **VALUES dikey hizalama:** flag bloğu / numeric bloğu / text bloğu — kolon sırası göze çarpsın (MK-78.5)
+- **Idempotent NOT EXISTS:** her INSERT öncesi (spec_standart + COALESCE spec_grade + tenant_id) bileşik kontrol
+- **ASCII SQL comments:** Türkçe sadece TEXT string'lerde (MK-76.3)
+- **MD5 + satır + byte transfer doğrulaması:** her dosya için (MK-51.1)
+- **`gp` push:** otomatik rebase + push tek adımda
+
+---
+
+## Kritik Hatırlatmalar (78'den taşınanlar)
+
+### Migration sırası
+
+- **MK-78.1 EN ÖNEMLİ:** Migration numarası vermeden önce **GitHub migrations dizinine bak**. 78'de 042 çakışması ekran görüntüsüyle yakalandı.
+- 78 sonunda son numara: **045** (paslanmaz). 79'da yeni dosyalar **046**'dan başlar.
+
+### Kapanış disiplini
+
+- **MK-78.3:** Kapanış üçlüsü hiçbir koşulda atlanmaz. 77'de atlanmıştı, 78'de düzeltildi.
+
+### Komut zincirleri
+
+- **MK-78.4:** `&&` zincirinde prerequisite (mkdir) önce, hedef-bağımlı sonra.
+
+### SQL yazımı
+
+- **MK-78.5:** VALUES'da dikey hizalama (flag/numeric/text blokları). Kolon sırası karışırsa CHECK violation veya silent yanlış veri.
+- **MK-76.1:** Supabase'de explicit BEGIN/COMMIT yok (implicit).
+- **MK-76.3:** SQL yorumları ASCII-only.
+- **MK-76.4:** GENERATED kolonu (örn. `spec_kodu`) INSERT'e koyma.
+
+### Kaynak doğrulama
+
+- **MK-75.3:** Her veri için iki bağımsız kaynak. 78'de bu disiplin sayesinde T01 PN 10 (ProjectMaterials + pipefittingweb), CuNi (copper.org + cnkpipefitting + Solitaire), paslanmaz (octalsteel + dsstainlesssteel + pipingpipeline) hepsi çift doğrulandı.
+
+---
+
+## Süreç Disiplinleri (78'de yerleşik)
+
+- **Heredoc yöntemi yerine present_files** — Claude tarafında dosya yaz, MD5 + satır + byte ver, Cihat indir + doğrula + kopyala
+- **Vercel logs UTC** — TR saatine `AT TIME ZONE 'Europe/Istanbul'` (51'den)
+- **GitHub web UI upload kullanma** — sadece terminal git akışı (51 dersi)
+- **Tek tırnak commit mesajı** — Türkçe parantez/özel karakter shell'i karıştırır (eski ders)
+- **CuNi notlar:** Mevcut M_K CuNi satırlarında `korozyon_notlari` (JSONB) NULL. İlerde deniz suyu hız limiti (3.5 m/s) gibi notlar buraya gidebilir.
+
+---
+
+## 78'in Özeti (79 başlangıcında 30 saniyede)
+
+| İş | Sonuç |
+|---|---|
+| Migration 043 — PN10 T01+T12 | +16 satır flansh, PN10 cephesi tam |
+| Migration 044 — M_K CuNi fitting+flansh | 2 UPDATE + 4 INSERT, gemi P0 cephesi açıldı |
+| Migration 045 — M_K paslanmaz genişleme | +6 INSERT, TP304L + TP316 grade'leri |
+| KUTUPHANE-YUKLEME-TAKIP.md v3 | 5+ ay belge birikimi kapatıldı |
+
+DB delta: flansh_olculer 292→308, malzeme_kataloglari 10→20.
+
+---
+
+> 79 açılışında bu dosya + `son-durum.md` + `CLAUDE-SON-OTURUM.md` okunur, sonra Cihat'a *"Hangi yolu seçelim — A (PN 25), B (Stub End), C (düşük sıcaklık karbon), D (B16.11), E (hijyen)?"* sorulur.
