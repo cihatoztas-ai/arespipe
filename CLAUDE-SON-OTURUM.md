@@ -1,312 +1,204 @@
-# CLAUDE — 79. Oturum (12 Mayıs 2026)
+# CLAUDE-SON-OTURUM.md
 
-> 78 → 79 fitting cephesi sıçraması. fitting_olculer +145 satır, iki yeni cephe (B16.11 SW + B16.9 stub_end), naming hijyeni, ağırlık doluluğu 3.5 kat. Aynı zamanda **ağırlık tasarımı** sistematik konuya dönüştü.
-
----
-
-## Ana Tema
-
-Dört çizgide ilerleme:
-
-1. **B16.11 SW fitting cephesi açıldı** — ikinci ana standart, 7 parça tipi, 105 satır β (046 ALTER + 047 INSERT)
-2. **B16.9 stub_end** — 76'dan açık borç kapatıldı, 6. parça tipi B16.9 cephesinde (048)
-3. **Naming hijyeni** — geometri_std prefix tutarlılığı sağlandı (48'de UPDATE 424)
-4. **Ağırlık tasarımı sistemleşti** — boru kanonik formül, fitting tablo + kaynak işareti (049'da 83 UPDATE)
+**Oturum: 80**
+**Tarih: 12 May 2026 (Salı)**
+**Başlangıç: git temiz, son commit `4425e51 docs(79): kapanis uclusu`**
+**Bitiş: 80 push hash `b5f9226` (Migration 051), 80'in iki kendi commit'i `ad57157` (050) + `c3f6f84` (051, rebase sonrası `b5f9226`)**
 
 ---
 
-## Açılış — 78 Envanteri
+## Özet
 
-`git pull` çıktısı `b87ef05 docs(78): kapanis uclusu` mesajıyla geldi. Üç dosya: son-durum, CLAUDE-SON-OTURUM, CLAUDE-SONRAKI-OTURUM hepsi 78 sonu pattern'ında doğru. MK-78.3 disiplini ilk meyvesini verdi — 79 doğru belge ile başladı, 77'deki gibi eski belgeden bilgi okumadık.
+80. oturum **çift-cephe stratejisi**: A yolu (B16.11 SW fitting ağırlık) + E yolu (boru türetilmiş kolonlar) önerisi vardı; A bitince E'nin **hayalet borç** olduğu keşfedildi, B yolu (B16.9 reducer ağırlık) açıldı. Net sonuç: **fitting_olculer ağırlık doluluğu 171 → 452** (%30 → ~%78, **+281 satır**).
 
-CLAUDE-SONRAKI-OTURUM.md 5 yol veriyordu (A: PN 25 paketi, B: Stub End, C: düşük sıcaklık karbon, D: B16.11 socket, E: hijyen). Cihat "büyük D'yi yapalım" dedi — **Yol D: B16.11 socket fittings**.
-
----
-
-## Migration 046 — fitting_olculer şema genişletme
-
-### Şema kararı
-
-İlk soru: B16.11 SW fittings B16.9 BW fittings ile aynı tabloda mı, ayrı tabloda mı? Mevcut `fitting_olculer` şema kontrolü yapıldı (Cihat'tan information_schema sorgusu). Sonuç: aynı tabloda. Çoğu kolon (et_mm, ucu_uca_a_mm, ucu_uca_h_mm, vs.) aynı geometri için kullanılabiliyor. Sadece B16.11'e özgü 3 kolon eksikti.
-
-3 yeni kolon eklendi:
-
-- `class_no INTEGER` — B16.11 pressure class (2000/3000/6000/9000), B16.9 BW için NULL
-- `soket_derinlik_mm NUMERIC` — J değeri (min depth of socket)
-- `soket_ic_cap_mm NUMERIC` — B değeri (socket bore max = boru OD + tolerans)
-
-class_no için CHECK constraint: `IS NULL OR IN (2000, 3000, 6000, 9000)`.
-
-### CHECK constraint analizi
-
-Önemli ön kontrol (MK-78.1 ruhu): mevcut CHECK constraint'leri sorguladık. Tek constraint var: `schedule_consistency` (schedule_tipi/deger/kod üçlüsü hep birlikte dolu veya hep birlikte NULL). parca_tipi üzerinde CHECK YOK — yeni SW parça tiplerini eklemek serbest. Bu plan hafifletti.
-
-### Uygulama notu
-
-İlk yapıştırmada SQL Editor satır 21'de "syntax error at TABLE" verdi. Önce dosyada syntax hatası sandık, `view` ile kontrol — dosya temiz. İkinci yapıştırma `cat | pbcopy` ile clipboard'a alıp editor'ı tamamen temizleyince çalıştı. **Ders: kısmi seçim veya editor'da kalan eski içerik silent şekilde hata verebilir; tam clipboard transferi güvenli.**
+İki ayrı kaynak kullanıldı: A için **Bonney Forge Catalog F9-2012** (primary, ISO 9001, B16 komitesi üyesi), B için **Wermac BW Reducers / Hackney Ladish data**.
 
 ---
 
-## Migration 047 — B16.11 SW fittings β
+## A Yolu — B16.11 SW Fitting Ağırlık Dolum
 
-### β kapsam kararı
+### Kaynak stratejisi (Seçenek 2 → Seçenek 1)
 
-Wermac (primary), Skyland (cross-1), Ferrobend (cross-2) üç bağımsız kaynak. β kapsam evrimleşti:
+İlk plan ASME B16.11-2011 PDF kanonik tablosunu kullanmaktı. **Kritik keşif**: PDF'in mass tablosu YOK (ASME standardı ağırlık vermez, sadece boyut). Revize: 15-20dk üretici tarama → **Bonney Forge** bulundu.
 
-Başlangıç önerisi (kapsamı geniş): NPS 1/8-4, Class 3000+6000, 8 parça tipi.
+Cross-check: pipingpipeline.com (aggregator). NPS 4 90SW C3000'de:
+- Bonney Forge: 10.25 kg
+- pipingpipeline: 14.50 kg
+- **%41 sapma** → PP yazım hatası şüphesi (BF tutarlı pattern)
 
-Önemli kısıt 1 (B16.11-2011 standart notu): **Class 6000 elbow/tee/cross sadece NPS 1/8-2**, NPS 2½+ standartta yok. Pipingpipeline'ın açıkladığı durum.
+**KARAR-80.1**: ASME standartlarında mass tablosu yoksa üretici tablosu primary; aggregator secondary cross-check. PDF kanonik kontrolünden önce tablo varlığı teyit edilmeli.
 
-Önemli kısıt 2 (Wermac kapsamı): **Wermac NPS 1/2'den başlıyor**, NPS 1/8-3/8 Wermac'ta yok. Sadece bazı parça için Ferrobend NPS 1/8-3/8 verir. Veri tutarsızlığı riski.
+### Migration 050 detayları
 
-Pragmatik β-v2 (final): **NPS 1/2 → 4 (Class 3000) + NPS 1/2 → 2 (Class 6000), 7 parça tipi**, reducing coupling γ'ya. NPS 1/8-3/8 γ'ya (instrument lines, gemi tersane ana hatları NPS 1/2+).
+- **Dosya**: `migrations/050_b16_11_sw_agirlik_dolum.sql`
+- **MD5**: `de215945abebc82e53b6e1d45ff790bc`
+- **Satır**: 243, **Byte**: 26833
+- **UPDATE bloğu**: 7 (90SW, 45SW, tee_eq_sw, cross_sw, coupling_full, coupling_half, cap_sw)
+- **Kapsam**: C3000 NPS 1/2-4 (9 satır) + C6000 NPS 1/2-2 (6 satır) per parça = **105 satır**
 
-### 7 parça tipi
+### DN 20 C6000 coupling_half istisnası
 
-- `90SW` — 90° socket weld elbow
-- `45SW` — 45° socket weld elbow
-- `tee_eq_sw` — equal tee SW
-- `cross_sw` — equal cross SW (yeni cephe — B16.9'da `cross` yok)
-- `coupling_full` — full coupling (yeni cephe)
-- `coupling_half` — half coupling (yeni cephe)
-- `cap_sw` — socket weld cap
+Bonney Forge tablosunda **NPS 3/4 (DN 20) C6000 half coupling üretmiyor** (production constraint, sadece 9 değer var 11 yerine). Pipingpipeline secondary kullanıldı:
+- DN 20 C6000 coupling_half = 0.45 kg (PP secondary)
+- notlar JSON `"kaynak_tipi":"secondary_fallback"` flag ile işaretli
+- Diğer 5 C6000 coupling_half satırı Bonney Forge primary
 
-İsimlendirme kararı (KARAR-79.2): mevcut B16.9 stilini izle (`90LR`, `45LR` pattern'ı → `90SW`, `45SW`). geometri_std='ASME B16.11' filtresi ile ayrım. `tee_eq` (B16.9 BW) vs `tee_eq_sw` (B16.11 SW), `cap` vs `cap_sw` — isim çakışması yok.
+**KARAR-80.2**: BF'de eksik NPS için PP secondary fallback kullanılır, JSON'da flag ile ayrılır.
 
-### Pattern özellikleri
-
-- Socket bore (B) ve depth (J) Class-bağımsız (sadece NPS'ye bağlı sabit)
-- Body wall G Class-bağlı (Class 6000 daha kalın)
-- A (center-to-bottom) parça-tipi-bağlı (90° vs 45°, ama 90° ile tee/cross aynı)
-- Cap için cap_dia_mm (R) ayrı kolon olmadığı için notlar JSON'a koyuldu: `{"cap_dia_mm": R}`
-
-### Sonuç
-
-105 satır INSERT (Class 3000=63 + Class 6000=42). Spot check DN 50 90SW Class 3000 → et=5.55, A=38.0, J=16, B=61.35 (Wermac bire-bir).
-
-İkinci yeni standart cephesi açıldı (B16.5 ve B16.9 yanına B16.11).
-
----
-
-## Migration 048 — Naming Hijyeni + B16.9 stub_end
-
-### Tetikleyici
-
-Cihat'a "hangi cephe boş, hangi cephe dolu?" diye ağırlık dağılımı sordum. SELECT FROM fitting_olculer GROUP BY geometri_std → çıktı:
+### Doğrulama (105/105 dolu)
 
 ```
-ASME B16.11 → 105
-B16.9       → 424
+14 satır (7 parça × 2 class), hepsinde sayim = agirlik_dolu
+- 45SW C3000: 9/9, min 0.27, max 12.97 kg
+- 45SW C6000: 6/6, min 0.36, max 3.42 kg
+- 90SW C3000: 9/9, min 0.20, max 10.25 kg
+- 90SW C6000: 6/6, min 0.27, max 2.59 kg
+- cap_sw C3000: 9/9, min 0.10, max 5.48 kg
+- cap_sw C6000: 6/6, min 0.19, max 1.66 kg
+- coupling_full C3000: 9/9, min 0.11, max 2.60 kg
+- coupling_full C6000: 6/6, min 0.20, max 1.75 kg
+- coupling_half C3000: 9/9, min 0.15, max 3.76 kg
+- coupling_half C6000: 6/6, min 0.36, max 2.26 kg
+- cross_sw C3000: 9/9, min 0.33, max 18.14 kg
+- cross_sw C6000: 6/6, min 0.70, max 4.38 kg
+- tee_eq_sw C3000: 9/9, min 0.19, max 10.91 kg
+- tee_eq_sw C6000: 6/6, min 0.22, max 2.04 kg
 ```
 
-**Naming inconsistency.** 047'de doğru prefix kullanmıştım (`'ASME B16.11'`), ama eski 424 satır prefix'siz (`'B16.9'`). 33-50 oturumlar arasında eklenmiş, kontrol edilmemiş. Sistem genelinde standart `'ASME B16.5'`, `'EN-1092-1'` prefix'li — B16.9 da hizalanmalı.
-
-### Plan: tek dosya, iki bölüm
-
-48 migration'ı iki iş atomik yapacak:
-1. UPDATE 424 → 'ASME B16.9' (hijyen)
-2. INSERT stub_end (40 satır)
-
-Hijyen UPDATE WHERE filtresiyle (geometri_std='B16.9') idempotent, ikinci kez 0 etkiler.
-
-### stub_end kapsam (β)
-
-Wermac + Skyland karşılaştırma:
-- B16.9 long pattern (ASA): NPS 1/2-24, 20 NPS
-- MSS SP-43 short pattern: aynı aralık, daha kısa F değeri
-- NPS 22 Wermac'ta yok (Skyland var, T değeri eksik)
-
-KARAR-79.3: β = long pattern, NPS 1/2-24, Schedule STD + XS. Short pattern γ'ya, NPS 22 γ'ya.
-
-20 NPS × 2 schedule = 40 satır.
-
-### Yeni pattern — schedule-bağımlı
-
-stub_end mevcut B16.9 fittings'den farklı: **boru duvar kalınlığından üretilir, T (lap thickness) = pipe wall thickness**. Yani Schedule STD ile Schedule XS aynı NPS'de farklı T verir, farklı ağırlık.
-
-Mevcut 90LR/tee_eq/cap **schedule-bağımsız** (ortalama bir tek değer, schedule_kod=NULL). Stub_end **schedule-bağımlı**: schedule_tipi='SCHEDULE', schedule_deger='STD' veya 'XS', schedule_kod aynı.
-
-Idempotent NOT EXISTS bileşik anahtar **schedule_kod dahil** (`geometri_std + parca_tipi + cap_buyuk_dn + schedule_kod + tenant_id`).
-
-### Ağırlık ilk defa dolu
-
-Wermac stub_end tablosu **kg/parça veriyor** (47'deki SW sayfaları weight vermemişti). 40 stub_end satırı **agirlik_kg dolu** — bu sistemde **ilk weight-dolu fitting satırları**.
-
-Sıralı sürpriz: önceki ağırlık taraması (sorgu fitting_olculer + flansh_olculer) gösterdi:
-- B16.11: 105 dolu 0 (Wermac SW weight vermiyor)
-- B16.9: 424 dolu 48 (33-50 arası eski 24'er 90LR/45LR satırından)
-- Flansh B16.5: 216 dolu 104
-- Flansh EN-1092-1: 92 dolu 31
-
-**Toplam 654 satır ağırlık eksik.** Bu Cihat'tan kritik soru getirdi.
-
-### Yan ders: pbcopy + zsh
-
-Cihat 048 push komutunu yapıştırırken `pbcopy` bloğunda yorum (`# 1) MD5`) varmış. zsh `# 1)` satırını parantez yüzünden parse hatası verdi, sonraki komutları reddetti. Bu MK-79.1 oldu: çok-satır komut bloğunda shell yorumu kullanma.
-
-### Sonuç
-
-464 ASME B16.9 satır (424 eski + 40 stub_end), 105 ASME B16.11 satır. fitting_olculer 424 → 569. Stub_end DN 100 STD spot check: et=6.02, F=152.4, R=11.11, lap_t=6.02, G=157.2, kg=3.0 (Wermac bire-bir).
+**Commit**: `ad57157 data(80): 050 B16.11 SW fitting agirlik dolum Bonney Forge - 105 satir UPDATE (7 parca x 15)`
 
 ---
 
-## Ağırlık Tasarımı (KARAR-79.5)
+## E Yolu — Boru Türetilmiş Kolonlar (HAYALET BORÇ)
 
-48 push edildikten sonra Cihat doğru bir soru sordu: **"Ağırlıkları hesap ile mi tablodan mı bulup yazmamız lazım?"**
+CLAUDE-SONRAKI-OTURUM (79'da yazılan) Yol E'yi **boru_olculer için ic_cap_mm, hacim_l_m, yuzey_alan_dis_m2_m UPDATE** olarak öneriyordu. MK-78.1 disiplini (DB live state verify) gereği önce kontrol edildi:
 
-Cevap kategori bazlı oluştu:
+```sql
+SELECT column_name, is_generated, generation_expression FROM information_schema.columns
+WHERE table_name = 'boru_olculer' AND column_name IN ('ic_cap_mm', 'hacim_l_m', 'yuzey_alan_dis_m2_m');
+```
 
-### Boru için: formül = tablo
+Sonuç: **Üç kolon da GENERATED ALWAYS** (36. oturum K11/8 maddeli mimari kararı). 450/450 satır dolu, hiç NULL yok. Formüller doğru:
+- `ic_cap_mm = dis_cap_mm - 2 * et_mm`
+- `hacim_l_m = π × ((dis-2et)/2)² / 1000`
+- `yuzey_alan_dis_m2_m = π × dis_cap / 1000`
 
-ASME B36.10M boru tablosu **formülün kanonik üretimidir**. Boru saf silindir:
-$$m/L = \rho \times \pi \times (D-t) \times t \quad \text{[kg/m]}$$
+**Yol E zaten halledilmiş** — hiç yapılacak iş yok. CLAUDE-SONRAKI-OTURUM yanlış varsayım üzerine kurulmuştu (79'da DB live state kontrol edilmemiş).
 
-Spot check 10 örnek satır (DN 15/50/100/200/300 × STD/XS, karbon):
-
-| DN | Schedule | DB | Formül | Sapma |
-|---:|---|---:|---:|---:|
-| 15 | STD | 1.270 | 1.2658 | +0.328% |
-| 50 | STD | 5.440 | 5.4375 | +0.046% |
-| 100 | STD | 16.080 | 16.0755 | +0.028% |
-| 200 | STD | 42.550 | 42.5491 | +0.002% |
-| 300 | XS | 97.440 | 97.4369 | +0.003% |
-
-Tüm sapmalar **|%0.33|'ün altında**, çoğu **|%0.03|** — yuvarlama hatası seviyesi. Büyük çaplarda neredeyse 0.
-
-**Sonuç: Boru ağırlıkları kanonik. Formül = tablo, doğrulandı.** `boru_olculer.agirlik_kg_m` NOT NULL kolon, 450 satırın hepsi zaten dolu, formülden üretilmiş. Yeni iş gerek yok.
-
-### Fitting için: tablo + üretici-bağımlı
-
-Fitting geometrisi karmaşık (kavis, lap, hub, transition radius). Formül ±%5-15 sapar. Wermac kendisi yazıyor:
-
-> "ASME buttweld fitting specifications **do not specify weights** for fittings. Weights quoted ... are based on **manufacturers information** and should be considered as **approximate** ... **can vary considerably between manufacturers**."
-
-Wermac → **Hackney Ladish** üretici tablolarını kullanıyor. Notlar JSON'a kaynak işareti zorunlu: ilerleyen oturumlarda farklı üretici tabloları (Octalsteel, ProjectMaterials, Tube Bend) gelirse karşılaştırma mümkün, hatta değişim yapılabilir.
-
-### KARAR-79.5: Ağırlık iki kategoride
-
-- **Boru için**: formül-bazlı (kanonik, %0.3 sapma), UPDATE m = ρ × π × (D-t) × t / 1000 kg/m
-- **Fitting için**: tablo-bazlı (Wermac/Hackney Ladish primary, ±%5-15 üretici sapması)
-- **notlar JSON pattern**: `{"kaynak": "...", "uretim_tarihi": "YYYY-MM", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, "160": z, "XXS": w}}`. agirlik_kg ana kolonda STD değeri (mevcut 90LR/45LR pattern'iyle birebir uyumlu).
-
-### MK-79.3: Boru ağırlık formül kanonik, fitting ağırlık üretici tablo
-
-İkisini karıştırma. Boru için formül UPDATE, fitting için kaynak-bazlı UPDATE. İlerleyen iş için 80+ oturumlarda fitting ağırlık taraması — kategori-bazlı plan.
+**MK-80.2 (yeni)**: CLAUDE-SONRAKI-OTURUM yazılırken her açık borç DB live state ile teyit edilmeli (MK-78.1'in genişletilmiş hali). Hayalet borç önleme — zaten halledilmiş işler bir sonraki oturum gündemine taşınmamalı.
 
 ---
 
-## Migration 049 — B16.9 Fitting Ağırlık Dolum
+## B Yolu — B16.9 Reducer Ağırlık Dolum
 
-### Hedef
+### Yapı analizi
 
-Wermac BW weight tablolarından 4 B16.9 parça tipi için ağırlık doldur. Eksik DN tarama sorgusu (MK-79.4 disiplini — string_agg ile eksik DN listesi) Wermac kapsamı dışı satırları gösterdi:
+DB live state (MK-80.2 disiplini):
+- `fitting_olculer` reducer_conc: 114 satır, reducer_ecc: 114 satır = **228 toplam**
+- `cap_buyuk_dn` (NOT NULL) + `cap_kucuk_dn` (NULLABLE, reducer için dolu)
+- Schedule üçlüsü NULL (KARAR-79.4: schedule-bağımsız pattern)
+- 28 unique DN_buyuk × değişken DN_kucuk → üçgensel matris
+- DN dağılımı: 20-1000 mm (NPS 3/4 - 40)
 
-| Parça | DB eksik | Wermac doldurabilir | Wermac dışı (γ) |
-|---|---:|---:|---:|
-| 90LR | 9 | 0 | 9 (NPS 28+) |
-| 45LR | 9 | 0 | 9 |
-| 90_3D | 32 | 19 | 13 (küçük + büyük NPS) |
-| 45_3D | 32 | 19 | 13 |
-| tee_eq | 33 | 24 | 9 |
-| cap | 33 | 21 | 12 |
-| **TOPLAM** | **148** | **83** | **65** |
+### Kaynak: Wermac BW Reducers (Hackney Ladish)
 
-**90LR ve 45LR'in 9 eksik DN'i tamamen Wermac kapsamı dışı** (NPS 28, 32, 34, 38, 40+ DB'de DN 700, 800, 850, 950, 1000, 1050, 1100, 1150, 1200). Bunlara dokunulmadı, γ'ya kaldı.
+4 schedule sayfası çekildi:
+- `weights_bw_reducers.html` STD — NPS 3/4 → 30 (DN 20-750), ~89 combo
+- `weights_bw_reducers_xs.html` XS — Aynı kapsam, bazı "-" 
+- `weights_bw_reducers_160.html` 160 — **NPS 12 sınırı** (DN 300)
+- `weights_bw_reducers_xxs.html` XXS — **NPS 8 sınırı** (DN 200)
 
-### 4 UPDATE bloğu
+Wermac kaynak güvenilirliği: Hackney Ladish (Dallas, TX, 380,000 sqft, B16 fitting üreticisi). MK-79.3: üretici tablosu primary, varyans bilinmiyor (tek-ama-tutarlı kaynak).
 
-Her parça tipi için ayrı UPDATE, VALUES inline + JSON notlar string olarak:
+### DB-Wermac eşleştirme
 
-- **90_3D**: 19 satır (NPS 2-36)
-- **45_3D**: 19 satır (NPS 2-36)
-- **tee_eq**: 24 satır (NPS 1/2-36)
-- **cap**: 21 satır (NPS 1-30)
+DB DN combo özeti (114 conc kombinasyonu):
+- DN 20-150: 42 (DN_buyuk × değişken DN_kucuk)
+- DN 200-300: 12
+- DN 350-550: 20
+- DN 600-750: 16
+- DN 800-1000: 24
 
-İdempotent `WHERE agirlik_kg IS NULL` filtresi — ikinci çalıştırmada 0 etki.
+Wermac kapsam dışı kombinasyonlar:
+- **DN 800-1000 büyük NPS**: Wermac NPS 30 sınırı (DN 750) → 24 satır γ
+- **DN 600-550**: Wermac "-" (24-22) → 1 combo γ
+- **DN 700-450**: Wermac'ta 28-18 yok → 1 combo γ
 
-### JSON pattern
+Toplam **88 unique combo eşleşti** (114-26), **52 satır γ** (26 conc + 26 ecc).
 
-Mevcut 90LR/45LR satırları (24'er, eski oturumlardan) `{"kaynak": "Wermac B16.9 elbow tablosu", "uretim_tarihi": "2026-05", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, ...}}` formatında. 049 bu pattern'ı 4 parça tipine yaydı, sadece "elbow" yerine "3D elbow", "tee straight", "cap" yazıldı.
+### Migration 051 detayları
+
+- **Dosya**: `migrations/051_b16_9_reducer_agirlik_wermac.sql`
+- **MD5**: `5c5b1ad7cea51159a69584892a4a9b74`
+- **Satır**: 176, **Byte**: 7113
+- **Pattern**: Tek UPDATE bloğu, parca_tipi IN ('reducer_conc', 'reducer_ecc') filtre
+- **88 VALUES satırı × 2 parça tipi = 176 satır UPDATE**
+
+**MK-80.3 (yeni)**: Reducer ağırlık **β-mini-extended pattern** — STD ana kolon (kanonik), JSON multi-schedule (`agirlik_schedule_bagimli_kg: {"STD":x, "XS":y, "160":z, "XXS":w}`, null'lar kabul). 049 pattern'la uyumlu.
+
+JSON kaynak alanı:
+```json
+{
+  "kaynak": "Wermac BW Reducers (Hackney Ladish source, weights_bw_reducers.html STD/XS/160/XXS)",
+  "uretim_tarihi": "2026-05",
+  "agirlik_schedule_bagimli_kg": {"STD":..., "XS":..., "160":..., "XXS":...}
+}
+```
 
 ### Doğrulama
 
-- Toplam: 83 ✓
-- Dağılım: 45_3D 19/13, 45LR 24/9, 90_3D 19/13, 90LR 24/9, cap 21/12, tee_eq 24/9 ✓
-- Spot cap DN 200 STD = 5.44 ✓ (Wermac bire-bir)
+```
+reducer_conc: 114 sayim, 88 dolu, min 0.08 kg, max 109.32 kg
+reducer_ecc:  114 sayim, 88 dolu, min 0.08 kg, max 109.32 kg
+gamma listesi: 52 satir (26 conc + 26 ecc, tam beklenen NPS kombinasyonları)
+```
+
+**Commit**: `c3f6f84 data(80): 051 B16.9 reducer agirlik dolum Wermac/Hackney Ladish - 176 satir UPDATE (88 combo x 2)`. Push sırasında remote'ta `cf8e462` (beklenmedik commit, paralel chat batch olabilir) → rebase → final hash `b5f9226`.
 
 ---
 
-## Süreç Notları
+## Mimari Kararlar (80)
 
-### Disiplin Uygulamaları
+### Yeni MK'lar
 
-- **4 push tamamı sorunsuz** (gp ile otomatik rebase, 79 yepyeni commit zinciri)
-- **MD5 + satır + byte transfer doğrulaması** — her dosya için (4 SQL)
-- **present_files** ile temiz transfer; Mac üstünde arespipe_kopyala protokolü
-- **pbcopy ile temiz clipboard** — 046'da öğrenildi (editor'ı temizle, cat | pbcopy, yapıştır)
-- **MK-78.3 disiplini** — kapanış üçlüsü (bu dosya o disiplinin parçası)
+- **MK-80.1**: B16.11 SW ağırlık için Bonney Forge primary (ISO 9001, B16 komitesi); pipingpipeline secondary cross-check. Üretici-aggregator varyans %30-50, NPS sınırlarında yazım hatası kontrolü zorunlu (örnek: NPS 4 90SW C3000'de PP=14.50 vs BF=10.25, %41 sapma → PP yazım hatası şüphesi).
 
-### Karar Yorgunluğu Yönetimi
+- **MK-80.2**: CLAUDE-SONRAKI-OTURUM yazılırken her açık borç DB live state ile teyit edilmeli (MK-78.1'in genişletilmiş hali). Hayalet borç önleme. 79'da Yol E (boru türetilmiş kolonlar) bu hatanın ürünüydü — 36. oturum K11 ile GENERATED yapılmıştı, kontrol edilmediği için listeye taşındı.
 
-79 büyük bir oturumdu (4 büyük migration + ağırlık tasarım kararı + spot doğrulamalar). β kapsamları sürekli revize edildi (B16.11 kapsamı Wermac kısıtları sebebiyle, stub_end NPS 22 cephesi, fitting ağırlık γ ayrımı). Her seferinde tablo formatında özet sunup karar Cihat'a bırakıldı.
+- **MK-80.3**: Reducer ağırlık β-mini-extended pattern — STD ana kolon (kanonik), JSON multi-schedule (STD/XS/160/XXS, null'lar kabul). Wermac kapsam dışı kombinasyonlar (büyük NPS, üretici-spesifik atlamalar) γ'da kalır, ek üretici (Sandvik/Vallourec gibi) ile tamamlanabilir.
 
-Bir noktada Cihat haklı olarak sordu: "ağırlık tamamlama işi çok uzun mu sürecek, 7-8 oturum tutuyor, tablolar o kadar sürmedi". Tahmini revize ettim (5-6 → 3 oturum, çünkü Wermac tek site, pattern oturmuş). β+'ya çıkıldı, 148 satır hedefi.
+### Yeni KARAR'lar
 
-### Cihat'ın doğru sorduğu sorular
+- **KARAR-80.1**: ASME standardının mass tablosu içermediği durumlarda (B16.11 örneği), üretici tablosu (Bonney Forge F9-2012) primary kaynak; PDF kanonik kontrolünden önce tablo varlığı teyit edilmeli.
 
-- "Ağırlıkları hesap ile değil tablolardan bulup yazmamız lazım değil mi?" → kategori ayrımına götürdü (KARAR-79.5)
-- "Bu ağırlık tamamlama işi çok uzun mu sürecek?" → realistik plan revizesine yol açtı (5-6 oturum → 3 oturum)
-- "Boru ağırlıklarına güveniyorum. Birkaç tane kontrol edelim" → 10 örnek spot check yapıldı, %0.33 sapma görüldü, kanonik formül onaylandı
+- **KARAR-80.2**: BF'de eksik NPS için PP secondary fallback kullanılır (DN 20 C6000 coupling_half NPS 3/4 production constraint örneği). notlar JSON'da `kaynak_tipi: "secondary_fallback"` flag ile işaretli.
+
+- **KARAR-80.3**: 80'in çift-cephe stratejisi (A: B16.11 SW + B: B16.9 reducer) iki ayrı kaynak (Bonney Forge + Wermac/Hackney Ladish) kullandı; fitting ağırlık doluluğu 171 → 452 (%30 → ~%78). Multi-source fitting ağırlık dolum **tek migration'da** yerine **iki ayrı parça-tipi-spesifik migration**'da daha temiz.
 
 ---
 
-## Mimari Karar Kayıtları (MK) — 79'da doğan
+## Önceki Disiplinlerin Uygulanması
 
-- **MK-79.1:** `pbcopy` veya çok-satır komut bloğunda **shell yorumu (`#`) kullanma**. zsh parantezde parse hatası verir, sonraki komutları atlatır. 78'in "tek tırnak commit" dersinin yeni varyantı.
-
-- **MK-79.2:** **Ağırlık notlar JSON pattern'i** standart: `{"kaynak": "...", "uretim_tarihi": "YYYY-MM", "agirlik_schedule_bagimli_kg": {"STD": x, "XS": y, "160": z, "XXS": w}}`. agirlik_kg ana kolonda STD değeri.
-
-- **MK-79.3:** **Ağırlık ikiye bölünür** — boru için formül-kanonik (ASME B36.10M, %0.3 sapma), fitting için tablo-üretici (Wermac/Hackney Ladish, ±%5-15 sapma). İki kategori karıştırma.
-
-- **MK-79.4:** **geometri_std prefix tutarlılığı** — sistem genelinde `'ASME B16.x'`, `'EN-1092-1'` formatı. Yeni veri öncesi mevcut prefix'leri kontrol et.
-
-- **MK-79.5:** **Migration numarası için `ls migrations/ | tail -5` yeterli** (MK-78.1 güncelleme). Push edilmiş dosyalar dizinde olur, GitHub web UI'ye gerek yok.
-
-- **KARAR-79.1:** B16.11 β kapsam → NPS 1/2-4 (Class 3000) + NPS 1/2-2 (Class 6000). Reducing coupling, threaded, Class 9000, NPS 1/8-3/8 → γ.
-
-- **KARAR-79.2:** B16.11 parça tipi isimlendirme → mevcut B16.9 stili (90SW, 45SW, tee_eq_sw vb.). geometri_std ile ayrım.
-
-- **KARAR-79.3:** B16.9 stub_end β → long pattern (B16.9), NPS 1/2-24, STD + XS. MSS SP-43 short pattern + NPS 22 → γ.
-
-- **KARAR-79.4:** Schedule-bağımlı vs schedule-bağımsız — stub_end üçlüsü dolu, mevcut B16.9 elbow/tee/cap üçlüsü NULL. Ağırlık schedule farkı notlar JSON'a.
-
-- **KARAR-79.5:** Ağırlık tasarımı — notlar JSON ile kaynak izi (uretici, tarih, schedule başına detay), agirlik_kg ana değer (boru formül, fitting Wermac STD).
+- ✅ **MK-75.3** çift kaynak: Bonney Forge primary + pipingpipeline cross-check (A); B16.9 reducer için Wermac/Hackney Ladish tek-ama-tutarlı (B)
+- ✅ **MK-78.1** DB live state verify: hem reducer schema (yapı, NULL durumu) hem boru türetilmiş kolonlar (GENERATED tespiti) için
+- ✅ **MK-79.1** pbcopy ile clipboard yapıştırma (`cat sql | pbcopy`)
+- ✅ **MK-79.2** ağırlık notlar JSON pattern: `kaynak`, `uretim_tarihi`, `agirlik_schedule_bagimli_kg`
+- ✅ **MK-79.3** fitting ağırlık = üretici tablosu, ±%5-15 normal varyans (B16.11 C6000'de %30-50'ye kadar)
+- ✅ **MK-79.4** schedule üçlüsü NULL pattern (reducer + B16.11 SW schedule-bağımsız)
+- ✅ **MK-79.5** migration numarası `ls migrations/ | tail -5` (049 sonrası → 050, 051)
+- ✅ **MK-51.1** dosya transferi MD5 + satır + byte
+- ✅ **MK-52.1** arespipe_kopyala MD5 doğrulamayla
+- ✅ **MK-52.2** gp (auto-rebase push)
+- ✅ ASCII-only SQL yorumlar (Türkçe karakter yok yorum içinde)
+- ✅ present_files ile temiz transfer
 
 ---
 
-## 80'a Hazırlık
+## Süre dağılımı
 
-Açık borç listesi (önceliğe göre):
+- A yolu (kaynak + SQL + doğrulama + commit): ~1 saat
+- E yolu (DB kontrol + hayalet borç tespiti): ~10 dk
+- B yolu (Wermac 4 sayfa + DN combo eşleştirme + SQL + doğrulama + commit): ~1 saat
+- Kapanış üçlüsü: ~15 dk (devam ediyor)
 
-**Ağırlık hijyeni cephesi (P0-P1):**
-
-1. B16.11 SW ağırlık (105 satır) — pipingpipeline/ProjectMaterials
-2. B16.9 reducer ağırlık (228 satır, kombinatif) — Wermac weights_bw_reducers
-3. B16.9 γ ağırlık (65 satır, büyük NPS + 3D küçük) — ProjectMaterials/Octalsteel
-4. Flansh ağırlık (173 satır, B16.5 112 + EN-1092-1 61) — ProjectMaterials/octalsteel
-5. boru_olculer türetilmiş kolonlar (ic_cap_mm, hacim_l_m, yuzey_alan_dis_m2_m) — basit aritmetik UPDATE
-
-**78'den taşınan:**
-
-6. EN 1092-1 PN 25 paketi (60 satır)
-7. M_K düşük sıcaklık karbon (A333+A420+A350 LF2)
-8. B16.11 reducing coupling (kombinatif)
-9. B16.11 threaded fittings (yeni cephe)
-10. B16.9 stub_end MSS SP-43 short pattern
-11. fitting_malzeme_uyum ilk script tasarımı
-
-80 önerisi: **B16.11 SW ağırlık** ile başla (P0, ~45 dk-1 sa), pattern 049'la aynı yapı.
-
----
-
-> 80. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` okunacak.
+Toplam: ~2.5 saat oturum
