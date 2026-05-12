@@ -1,218 +1,152 @@
-# CLAUDE-SON-OTURUM — 76. Oturum Detaylı Özet (12 Mayıs 2026)
+# 77. Oturum — Kapanış (12 Mayıs 2026)
 
-> 75 kütüphane oturumunun devamı. EN PN16 cephesini kapama + B36.19M doğrulama & eksik tamamlama.
-
----
-
-## Bağlam & Açılış
-
-Cihat "kütüphaneye devam" dedi. Briefing'in 4 alt seçeneği vardı: A1 (T05 Blind), A2 (Stub End), A4 (B36.19M teyit), C (027-031 push).
-
-**Sıra:** A1 → A4 (mevcut + bonus).
-
-Açılış ritüeli sadeleşmiş haliyle koştu (52'de yapılan basitleştirme): git pull + 2 soru. Net.
+> **Tema:** B0 omurga (`malzeme_kataloglari`) + PN 10 paketi (omurganın ilk kullanımı)
+> **Süre/Yoğunluk:** Yüksek — mimari karar + iki canlı migration + 7 MK kararı
+> **Devir alındığı yer:** 76 (kütüphane yükleme, +25 satır, takip v3 senkron)
 
 ---
 
-## A1 — EN 1092-1 PN 16 Type 05 Blind (15 satır)
+## Yapılanlar
 
-### Yaklaşım
+### A) B0 — `malzeme_kataloglari` Omurgası (Migration 040)
 
-Briefing önerisi: piping-world.com + pipingpipeline + Wermac çift kaynak. Mevcut T01/T11/T12 PN16 ile tutarlılık kontrolü (yüzey tipi RF mi A mı kararı için).
+Vizyon belgesinin "parça kimliği prensibi" (Bölüm 2.A) için ana tablo. Boru/fitting/flansh tabloları artık buraya FK ile bağlanır.
 
-### Schema teyidi
+**Tablo yapısı:**
+- `spec_standart` + `spec_grade` (örn `ASTM A106` + `B`) → generated `spec_kodu`
+- `malzeme_grubu` (karbon/paslanmaz/duplex/cuni/alum/nikel/titan/diger) + `aile` (ASTM/EN/DIN/JIS/API/EEMUA/...)
+- 4 uygunluk bool (boru/buttweld/forged/flansh) + **en az 1 true** constraint
+- `yogunluk_kg_m3` NOT NULL (ağırlık hesabı kritik)
+- Mukavemet + sıcaklık + korozyon JSONB (opsiyonel zenginleştirme)
+- Multi-tenant: `tenant_id IS NULL` = sistem geneli
 
-`flansh_olculer` 30 kolon, **bileşik unique constraint yok** (sadece PK). Idempotent için manuel `NOT EXISTS` gerekti.
+**Index'ler:** Partial UNIQUE (NULL-aware) sistem + tenant, grup aktif lookup, spec_kodu lookup
 
-Zorunlu kolonlar: `geometri_std`, `flansh_tipi`, `basinc_sinifi`, `flansh_od_mm`, `flansh_kalinlik_mm`, `bolt_circle_mm`, `bolt_count`.
+**RLS:** 4 policy — sistem okuma, tenant okuma, super_admin tüm, firma_admin kendi tenant
 
-### Yüzey tipi kararı
+**FK eklendi:** `boru_olculer.malzeme_id`, `fitting_olculer.malzeme_id`, `flansh_olculer.malzeme_id` (`ozel_parcalar` tablosu yok, atlandı)
 
-Çakışma:
-- EN spec (pipefittingweb PDF): Type 05 PN ≤ 40 default **Type A (FF)**
-- Piyasa pratiği (piping-world, pipingpipeline, valvias, rfitalia): **B1 (RF)** yaygın
-- DB tutarlılığı: mevcut T01/T11/T12 PN16 hepsi RF
+**P0 seed (10 spec):**
+| spec_kodu | grup | yogunluk | uygunluk |
+|---|---|---|---|
+| ASTM A106 B | karbon | 7850 | boru |
+| ASTM A53 B | karbon | 7850 | boru |
+| ASTM A234 WPB | karbon | 7850 | fitting_buttweld |
+| ASTM A105 | karbon | 7850 | forged + flansh |
+| ASTM A312 TP316L | paslanmaz | 7980 | boru |
+| ASTM A403 WP316L | paslanmaz | 7980 | fitting_buttweld |
+| ASTM A182 F316L | paslanmaz | 7980 | forged + flansh |
+| **ASTM B466 C70600** (CuNi 90/10) | cuni | 8940 | boru — 🔴 gemi kritik |
+| **ASTM B466 C71500** (CuNi 70/30) | cuni | 8940 | boru |
+| EN 10216-1 P235GH | karbon | 7850 | boru |
 
-**Karar:** T05 de RF — DB tutarlılığı öncelikli. Gerekçe `notlar.yuzey_karari` alanında saklı.
+**Köprü doğrulandı:** `malzeme_standart_ipucu` (PDF parser pattern→standart) ↔ `malzeme_kataloglari` (standart→spec_id) JOIN testi 5/12 eşleşme (316L, A106, A53, P235GH, TP316L). Diğer 7 ipucu pattern'i (TP304L, TP321, 5083, P265GH, S235, ST37) katalog B1+ paketlerinde dolacak.
 
-### Çift kaynak doğrulama
+**İpucu format fix:** İki satırlık UPDATE — `A106 → ASTM A106 B`, `A53 → ASTM A53 B`. Köprü 3/12 → 5/12 eşleşmeye çıktı.
 
-piping-world ve pipingpipeline 6 alanda (D, C, K, n, M-bolt, W) DN 10/50/100/250/600/1000 spot — %100 eşleşme. T11 ile PN+DN bazlı geometri de %100 eşleşme (D, b değerleri DN 10..300).
+### B) PN 10 Paketi (Migration 042)
 
-### SQL Stratejisi
+B0 omurgasının **ilk gerçek kullanımı** — yeni 16 satır `malzeme_id` A105 FK ile dolu doğdu.
 
-**Akıllı kanonik kaynak:** T11 PN16 RF satırlarından SELECT, 3 alanı override:
-1. `flansh_tipi = 'EN-T05'`
-2. `agirlik_kg` = piping-world Blind tablosu
-3. `notlar` = T05'e özgü JSON
+| Tip | DN aralığı | Satır | Kaynak |
+|---|---|---|---|
+| EN-T11 (Weld Neck) | 200-600 | 8 | Wermac + ProjectMaterials çift kaynak |
+| EN-T05 (Blind) | 200-600 | 8 | ProjectMaterials ana, Wermac T11 K cross-check DN 200-500 |
+| **Toplam** | | **16** | |
 
-13 alan birebir kopyalanır. Avantaj: T11 ileride güncellenirse aynı pattern T05 için tekrar koşar — kanonik kaynak DB.
+**Kritik teknik gözlem:** DN 600 T05 b=34 ≠ T11 b=30 — standart bilgi, Blind full-face pressure aldığı için daha kalın. DN 200-500'de T05=T11.
 
-### Çalıştırma
+**DN 600 T05 tek-kaynak notu:** Wermac PN 10 Blind sayfası yok. PM tek kaynak, JSONB notlar içinde `kaynak_crosscheck: "YOK"` ile audit trail bırakıldı.
 
-İlk denemede hata: `BEGIN;` syntax error. **MK-76.1 öğrenildi** (Supabase Editor explicit transaction yasak). `BEGIN/COMMIT` çıkarıldı, yeniden koşuldu — başarılı: 15 satır insert + NOTICE doğrulama.
+**Genel kütüphane ilerlemesi (`flansh_olculer`):**
+- 76 sonu: 276 satır
+- 77 sonu: **292 satır** (B16.5: 216, EN-1092-1: 76 → PN 16: 60, PN 10: 16)
 
-Push: commit `18fc4d8`.
+### C) Numara Çakışması Kazası (Ders Olarak Değerli)
 
----
+Migration 041 önerdim → 76'da Cihat zaten 041 kullanmış (B36.19M DN 350-600 paketi). 040 slot'u boştu, B0 oraya gitti — sorun yok. Ama 041 PN 10 paketi yarattım, son anda yakalandı. Düzeltme: 042'ye taşındı.
 
-## A4 — B36.19M Paslanmaz Boru Doğrulama (mevcut 70 satır)
-
-### Hata 1: Kolon adı varsayımı
-
-Cihat'tan B36.19M satırlarını çekmek için sorgu yazdım, kolon adı olarak `cap_dn` kullandım — `flansh_olculer`'da gördüğüm pattern. Ama `boru_olculer`'da kolon adı `dn`. SQL hata verdi: `column "cap_dn" does not exist`.
-
-**MK-76.2 doğdu:** Her tablonun kolon adlarını ayrı sorgula. Aynı projedeki tablolar farklı sözlük kullanabilir.
-
-### Schema teyidi sonrası
-
-`boru_olculer` 26 kolon. Önemli farklılıklar:
-- `dn` (cap_dn değil)
-- `malzeme_grubu` NOT NULL (paslanmaz/karbon/cuni ayrımı)
-- `schedule_tipi` + `schedule_deger` + `schedule_kod` — 3 ayrı schedule kolonu
-- `agirlik_kg_m` (per meter, kg değil)
-- `et_min_mm` / `et_max_mm` — is_nullable YES ama dolu (sonradan GENERATED olduğu anlaşıldı)
-- `sistem_preset` default `true` (flansh'in tersi)
-
-### Çapraz kontrol
-
-Wermac dim_b36.19_pipes.html çekildi. 70 mevcut satır satır-satır kıyaslandı:
-
-**OD değerleri:** %100 doğru. DN 450'de DB daha hassas (457.2 vs Wermac 457).
-
-**Et değerleri:** %100 doğru. B36.19M özel et değerleri (NPS 14-22 SCH 10S, NPS 12 SCH 40S, NPS 10/12 SCH 80S) hepsi B36.10M'den FARKLI değerlerle yüklü — halüsinasyon yok.
-
-**Ağırlık:** DB sistematik olarak Wermac'tan ~%2 yüksek. Wermac General Notes 4: *"austenitic stainless steels about 2% greater than carbon values"*. **DB pattern doğru** — austenitik için Wermac × 1.02 uygulanmış. DN 200/250/300 80S spot kontrolünde ratio 1.0203-1.0204 tespit.
-
-**et_min/et_max:** ASTM A530 ±%12.5 tam uyumlu (9.52 × 0.875 = 8.330 ✓, GENERATED kolon).
-
-**Edisyon:** ASME B36.19M-2018 (Wermac 2004 R2015'ten daha güncel).
-
-### Tek mikro-not
-
-DN 300 40S et = 9.52 (DB) vs 9.53 (Wermac). ASME orijinal 0.375" = 9.525 mm. İki yuvarlama da spec'e uygun. Bağlayıcı değil.
-
-### Eksik satırlar tespit
-
-- DN 6/8/10 (NPS 1/8, 1/4, 3/8): ~12 satır, P2 (sanayide nadir)
-- **DN 350-600 için 40S+80S: 10 satır, P0** (gemi KK ana hatları)
-- DN 550, 750: 4 satır, P1-P2
-
-A4 bonus olarak P0'lar eklendi.
+**Çıkardığım ders → MK-77.3:** Yeni migration numarası önermeden önce **tam liste** istenir, sadece son commit mesajı yetmez.
 
 ---
 
-## A4 Bonus — DN 350-600 40S+80S (10 satır)
+## MK-77 Karar Kayıtları (7 adet)
 
-### Veri hazırlama
+**MK-77.1 — Kapanış protokolüne `CLAUDE-SONRAKI-OTURUM.md` yenileme zorunluluğu eklendi.**
+76'da bu dosya unutulmuştu, 2. oturumdan kalma "MDrawer / Dil sistemi" gündemi 77'ye taşmıştı. Bundan sonra her oturum kapanışında bu dosya **mecburen** yenilenir. Sonraki oturum gündemi orada açık ve güncel olmalı.
 
-Wermac'tan 10 satırın geometrisi ve carbon kg/m çekildi. DN 450 için Wermac kg/m boş (`...`), formülle hesaplandı:
-
-```
-carbon kg/m = π × (D - t) × t × ρ × 10⁻⁶,  ρ = 7850 kg/m³
-DN 450 40S: π × (457.2 - 9.53) × 9.53 × 7850 / 1e6 = 105.22 kg/m
-DN 450 80S: π × (457.2 - 12.70) × 12.70 × 7850 / 1e6 = 139.21 kg/m
-```
-
-Formula doğrulandı: DN 500 40S formula → 117.14, Wermac → 117.15 (fark 0.01) ✓
-
-Austenitik dönüşüm: hepsine × 1.02.
-
-### SQL Stratejisi
-
-**LATERAL JOIN ile meta kopya (MK-76.2):**
-
+**MK-77.2 — Format uyumu kontrolü: yeni katalog spec'i ↔ ipucu tablosu.**
+`malzeme_standart_ipucu.tipik_malzeme_standardi` ile `malzeme_kataloglari.spec_kodu` birebir uyumlu yazılır. Yeni spec eklerken karşılaştırma sorgusu çalıştırılır:
 ```sql
-JOIN LATERAL (
-  SELECT schedule_tipi, schedule_deger
-  FROM boru_olculer
-  WHERE standart = 'ASME-B36.19M' AND schedule_kod = v.schedule_kod
-  LIMIT 1
-) m ON true
+SELECT i.kalite_kodu_pattern, i.tipik_malzeme_standardi, k.spec_kodu
+FROM malzeme_standart_ipucu i
+LEFT JOIN malzeme_kataloglari k ON k.spec_kodu = i.tipik_malzeme_standardi;
 ```
+NULL kalan satırlar ya katalog eksiği (geç dolacak) ya format hatası (hemen düzeltilir).
 
-Yani: schedule_tipi/deger varsayma — mevcut B36.19M satırından kopya. Tutarlılık garanti.
+**MK-77.3 — Migration numara disiplini.**
+Yeni migration önermeden önce **tam liste** istenir:
+```bash
+ls ~/Desktop/arespipe/migrations/ | sort | tail -10
+```
+Atlanmış slot tespit edilirse nedeni dokümante edilir; rastgele atlamak yasak. Çakışma riski sıfıra indirilir.
 
-### Çalıştırma — 3 hata, 3 ders
+**MK-77.4 — Bilinmeyen tabloya sorgu disiplini.**
+Bilinmeyen veya yeni tabloya `SELECT *` veya `LIMIT N` dışı sorgu çekmeden önce şema bekle:
+```sql
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_schema='public' AND table_name='X' ORDER BY ordinal_position;
+```
+Kolon adı tahminiyle hata harcamak yerine pre-flight şema kontrolü zorunlu.
 
-**Hata 1:** `BEGIN;` (zaten 040'tan biliyorduk ama 041 dosyasında baştan yazdım — kopyala-yapıştır bir okul ödevi, MK-76.1 dosyaya gömüldü)
+**MK-77.5 — B0 sonrası `malzeme_id` zorunluluğu.**
+Yeni eklenen her geometri satırı (`boru_olculer`, `fitting_olculer`, `flansh_olculer`) `malzeme_id` **dolu** doğar. NULL FK kabul edilmez. Mevcut NULL satırlar (276 PN 16 + 216 B16.5 + 450 boru + 424 fitting = 1.366 satır) toplu UPDATE ile dolacak (Borç-3, 4, 5).
 
-**Hata 2:** Türkçe karakterler + multi-byte unicode (`×`, `ρ`, `⁻⁶`, `—`, `•`, `±`) yorum bloğunda → "syntax error at or near INSERT" satır 44. Parser dengesini bozdu.
+**MK-77.6 — Tek-kaynak satırlarda audit trail.**
+Bir satır çift kaynak doğrulamadan geçemiyorsa (örn. DN 600 T05), JSONB notlar içinde:
+```json
+"kaynak_geometri": "Kaynak adı (tek kaynak)",
+"kaynak_crosscheck": "YOK — sebep",
+"tek_kaynak_notu": "Post-validation Cihat onayı gerek"
+```
+Bu sayede ileride hangi satırlar tek-kaynaklı tespit edilebilir (`WHERE notlar->>'kaynak_crosscheck' = 'YOK'`).
 
-**MK-76.3:** SQL yorumlarında saf ASCII. Detayları JSON notlar alanına taşı (JSON parser unicode'u doğru yorumlar).
+**MK-77.7 — Direct-COMMIT workflow kabul.**
+Cihat'ın workflow'u dry-run ROLLBACK adımını atlıyor. Migration BEGIN/COMMIT atomik olduğu için pratikte güvenli — kabul edildi. Disiplin: "dry-run zorunlu değil, ama **tek-atomik BEGIN/COMMIT migration zorunlu**". DDL + DML aynı transaction'da, hata olursa hiçbiri kalmaz.
 
-ASCII-temiz versiyon hazırlandı, `file` komutu doğruladı.
-
-**Hata 3:** `cannot insert a non-DEFAULT value into column "et_min_mm". Column "et_min_mm" is a generated column.`
-
-**MK-76.4:** `information_schema.columns` GENERATED kolonları yanıltıcı gösteriyor (is_nullable YES). INSERT'ten kaldırıldı — DB otomatik dolduracak.
-
-Üçüncü denemede başarılı: 10 satır insert + NOTICE doğrulama.
-
-Push: commit `11816b0`.
-
----
-
-## Büyük Resim — KUTUPHANE-YUKLEME-TAKIP.md Sapması
-
-Snapshot sorgusu çalıştırıldı:
-
-| Modül | Belgedeki (43) | Gerçek (canlı) |
-|---|---:|---:|
-| `boru_olculer` | 48 | **450** (+402) |
-| `flansh_olculer` | 20 | **276** (+256) |
-| `fitting_olculer` | 0 | **424** (+424) |
-
-5+ ay önceki belge ile gerçek arasında 1000+ satır fark. **MK-76.5:** Bu belge her oturum sonu canlı DB count ile senkronize edilmeli. 77'nin ilk işi.
-
----
-
-## Yapılmayan / Sıradaki
-
-- 041 push **yapıldı** (11816b0)
-- KUTUPHANE-YUKLEME-TAKIP.md senkronizasyonu **yapılmadı** (77 öncelik 1)
-- fitting_olculer kırılım analizi **yapılmadı** (zaman, 77'de)
-- A2 (B16.9 Stub End) **yapılmadı** (77+)
+**MK-77.8 — Migration dosya adı pattern.**
+`^\d{3}_[a-z0-9_]+\.sql$` — 3 rakam + underscore + lowercase. **Tire (`-`) YASAK**. CI `[MIG_ISIM_BOZUK]` ile yakalar, deploy'u engeller. 76'da `dn350-600` tire içeriyordu, CI kırmızı verdi, 77 kapanışında rename ile düzeltildi.
 
 ---
 
-## Öğrenilenler Özeti
+## Açık Borçlar (78+ için)
 
-**Teknik:**
-1. Supabase SQL Editor BEGIN/COMMIT yasak (MK-76.1)
-2. Tablo bazlı kolon sözlüğü, varsayma — LATERAL JOIN ile kopyala (MK-76.2)
-3. SQL yorumları saf ASCII, detay JSON (MK-76.3)
-4. GENERATED kolonlar information_schema.columns'tan teşhis edilemez (MK-76.4)
-5. Belgeler ve canlı DB arasında uzun süreli sapma riski (MK-76.5)
-
-**Süreç:**
-6. **3 hata pahalı oldu ama 041'i hızlandırdı.** Aynı dosyada 3 farklı sebepten 3 retry. Her retry öğrenme — ama bir sonraki migration'da sıfırdan ASCII + GENERATED-aware + BEGIN'siz başlanır.
-7. **Kanonik kaynak DB stratejisi güçlü:** T11'den T05 üretmek, mevcut B36.19M'den schedule meta çekmek — DB pattern güncellenirse türetilen satırlar otomatik güncel kalır.
-8. **Çift kaynak doğrulamada %2 sistematik fark yakalandı:** austenitik kg/m DB'de Wermac × 1.02. Bu pattern olmadan yeni satırlar (DN 350-600) hata yapardı. Eski veriyi okumak değerli.
-
-**Kütüphane stratejisi:**
-9. Belgelerden çok DB durumu güvenilir. 77'de KUTUPHANE-YUKLEME-TAKIP.md baştan canlı sayılarla yazılmalı.
-10. EN 1092-1 PN 16 örneği — 4 tip × 15 DN = 60 satır — gelecekteki PN 10, PN 25, PN 40 cephelerinin **şablonu**. Pattern oturdu.
+| # | İş | Tahmini boyut | Notlar |
+|---|---|---|---|
+| Borç-1 | EN 1092-1 PN 10 DN 10-150 T05+T11 | ~24 satır | RoyMech BS4504_10 alternatif kaynak araştırması |
+| Borç-2 | EN 1092-1 PN 10 T01 + T12 (tüm DN) | ~30 satır | Kaynak araştırması (DIN 2632 eski / EN 1092-1 PDF) |
+| Borç-3 | PN 16 + PN 10 mevcut satırlar `malzeme_id` toplu UPDATE | 76 satır | A105 (T01/T05/T12) + A105 (T11) eşleştirme |
+| Borç-4 | B16.5 216 satır `malzeme_id` toplu UPDATE | 216 satır | A105 (ASTM forged flansh için doğal) |
+| Borç-5 | `boru_olculer` 450 + `fitting_olculer` 424 satır `malzeme_id` UPDATE | 874 satır | Spec başına UPDATE (A106/A53/A312/A234/A403 vs) |
+| Borç-6 | EN 1092-1 PN 25 + PN 40 paketleri | ~120 satır | 79+ |
+| Borç-7 | B16.9 eksik parça tipleri (90SR + 180LR/SR + tee_red + stub) | ~150 satır | 80+ |
 
 ---
 
-## Performans
+## Strateji Özeti (Üzerinde Anlaşıldı)
 
-- Oturum süresi: ~2 saat (briefing 1 sa A1 + 1 sa A4 tahminiydi, gerçekleşti)
-- Net çıktı: +25 satır kütüphane, 2 commit, 5 yeni MK dersi
-- Hata oranı: 3 hata (BEGIN, ASCII, GENERATED) — her biri yeni ders, dosya 4. denemede çalıştı
+**Parça kimliği prensibi artık canlı.** Yeni satırlar `malzeme_id` dolu doğar, mevcut satırlar borç olarak takip edilir, toplu UPDATE'lerle kapatılır.
 
----
+**Çift-kaynak doğrulama disiplini.** Geometri tablolarına yeni satır eklenirken iki kaynaktan veri okunur, %100 tutarlılık olmazsa tek-kaynak notu JSONB'ye işlenir. Bu Cihat'ın 12. öğrenme prensibinin (halüsinasyon koruması) sistematik uygulanmasıdır.
 
-## Commit'ler
-
-| Hash | Mesaj | Etki |
-|------|-------|------|
-| 18fc4d8 | 76: EN-1092-1 PN16 T05 Blind 15 satir - migration 040 | flansh_olculer +15 |
-| 11816b0 | 76: B36.19M DN 350-600 40S+80S 10 satir bonus - migration 041 | boru_olculer +10 |
-
-CI: ✅ YEŞİL
+**Kütüphane yükleme momentum'u kütle bazlı değil temel bazlı.** B0 omurgası 16 satır PN 10 paketinden daha değerli — çünkü 1.366 mevcut satırın FK ile bağlanmasının yolunu açtı. 77 satır sayısı olarak (16) mütevazi, mimari etki olarak büyük.
 
 ---
 
-> 77. oturum açılışında bu dosya, `.github/son-durum.md`, `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+## Son Söz
+
+77 bir geçiş oturumuydu: kütüphane yüklemenin "çiğ data" fazından "yapısal kimlik" fazına. B0 öncesi her satır izole, B0 sonrası her satır kataloglu. PN 10 paketinin 16 satırının her birinin `malzeme_id` ile dolu doğması — bu yapının somut kanıtı.
+
+78'de borçların azaltılmasına başlanır. Toplu UPDATE'ler en hızlı %ilerleme sağlar (Borç-4: 216 B16.5 satırı tek UPDATE ile A105 FK alır).
+
+İyi deploy'lar, iyi dinlenmeler. 🚀

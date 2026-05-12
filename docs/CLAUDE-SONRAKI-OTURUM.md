@@ -1,190 +1,192 @@
-# Sonraki Oturum İçin Gündem
+# Sonraki Oturum İçin Gündem (78)
 
-**Hazırlanma tarihi:** 17 Nisan 2026 (2. oturum sonu)
-**Son durum:** MDrawer canlıda, dil sistemi senkronize (1335 anahtar), sidebar + devreler düzeltildi
+**Hazırlanma tarihi:** 12 Mayıs 2026 (77. oturum sonu)
+**Son durum:** B0 omurga (`malzeme_kataloglari`) canlı, PN 10 paketi 16 satır eklendi, kütüphane 292/12.400 (%2.4 — yeni baseline)
 
----
-
-## Başlarken — Yeni Sohbete Yükle
-
-Yeni sohbet açınca şu dosyaları yükle:
-1. `CLAUDE.md` — ana proje bağlamı
-2. `CLAUDE-MOBILE.md` — mobil kuralları
-3. `CLAUDE-DURUM-RAPORU.md` — proje sağlık raporu
-4. `CLAUDE-SONRAKI-OTURUM.md` — bu dosya (yol haritası)
-
-Claude ilk baştan hızlı başlar.
+> **MK-77.1:** Bu dosya her oturum kapanışında yenilenir. 76'da unutuldu, 77'de mecburen yenilendi.
 
 ---
 
-## Öncelik 1 — Enum Anti-Pattern Taraması ve Temizliği
+## Başlarken — Standart Ritüel
 
-**Sorun:** Her sayfa kendi `_normalizeMalzeme` / `_normalizeYuzey` fonksiyonunu yazmış, hardcode Türkçe döndürüyor. devreler.html'de çözüldü ama başka sayfalarda da aynı durum olabilir.
-
-**Yapılacak:**
-- `kesim.html`, `markalama.html`, `proje_detay.html`, `devre_yeni.html`, `devre_duzenle.html`, `is_baslat.html`, `spool_detay.html` sayfalarını tara
-- Her sayfada malzeme/yüzey/durum DB'den gelip ekrana yazılan yerleri bul
-- `_normalizeX` varsa çıktısını koda çevir, ekrana yazarken `tvMalzeme/tvYuzey/tvDurum` ile sar
-- Ortak `ares-normalize.js` modülü düşün — her sayfa aynı fonksiyonu kopyalamasın
-
-**Süre tahmini:** 1 oturum (tek büyük tarama script + toplu patch)
+Yeni sohbet açınca:
+1. `oturum 78 başlasın` ile başla
+2. Git kontrol: `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
+3. `cat docs/CLAUDE-SON-OTURUM.md` ile 77 özeti
+4. `cat docs/CLAUDE-SONRAKI-OTURUM.md` ile bu dosya
+5. Aşağıdaki Öncelik 1'i onaylayarak başla
 
 ---
 
-## Öncelik 2 — Şema Kolon Adları Düzeltmesi
+## Öncelik 1 — Toplu `malzeme_id` UPDATE'leri (BORÇ KAPATMA, EN YÜKSEK ROI)
 
-**Sorun:** CLAUDE.md "kritik kolon adları" bölümü var ama kodda hâlâ eski isimler.
+**Neden öncelik:** B0 omurgası canlı ama 1.366 mevcut geometri satırının `malzeme_id`'si NULL. Bu satırlar "yapısal kimlik fazı"na geçmedi. Tek tek 1.366 satır yazmadan, **toplu UPDATE** ile saatler içinde hepsi kapanır.
 
-**Yapılacak (sayfa bazında, sırasıyla):**
+**Yapılacak (sırayla, her biri kendi commit'i):**
 
-### 2a) spool_detay.html (EN KRITIK — sessiz bug'lar burada)
-- `cap_mm` → `dis_cap_mm` (18 kez)
-- `et_mm` → `et_kalinligi_mm` (25 kez)
-- `agirlik_kg` → `agirlik` (8 kez)
-- `yapan_id` → `ekleyen_id` (6 kez — notlar tablosu için)
-- `url` → `dosya_url` (21 kez — fotograflar için, dikkatli replace!)
-
-### 2b) devre_detay.html
-- `et_mm` → `et_kalinligi_mm` (10 kez)
-- `agirlik_kg` → `agirlik` (5 kez)
-- `revizyon` → `rev` (3 kez)
-
-### 2c) devre_yeni.html, is_baslat.html, kullanici_detay.html
-- Benzer düzeltmeler, rapor detayında
-
-**Süre tahmini:** 1-2 oturum (her sayfa kullanıcı tarafından test edilmeli)
-
----
-
-## Öncelik 3 — Mobil: MProfil.jsx
-
-**Neden önce MProfil:**
-- MDrawer'daki "Profili Düzenle" döngüsü tamamlanmamış (`/profil` route var, sayfa yok)
-- Avatar upload feature `kullanicilar.foto_url` kolonu hazır bekliyor
-- Küçük, odaklanmış iş (mockup-first kuralıyla)
-
-**Yapılacak:**
-- MProfil.jsx ekranı mockup-first
-- Avatar upload (Supabase Storage `arespipe-dosyalar` bucket'ı)
-- ad_soyad, tel, brans, firma editing
-- ui_tercihleri JSONB alanı kullanımı (gelecekte kullanıcı ayarları için)
-
-**Süre tahmini:** 1 oturum
-
----
-
-## Öncelik 4 — Mobil: MIsBaslat + Zaman Takibi
-
-**Araştırma gereken:** Bilgisayardan Supabase SQL Editor'de bu sorguları çalıştır ve çıktıları paylaş:
-
+### 1.a) B16.5 → A105 (216 satır, 5 dk)
+ASTM B16.5 flanşları geleneksel olarak A105 forged karbon çelik. Tek UPDATE:
 ```sql
--- 1. is_kayitlari kolonları
-SELECT column_name, data_type, is_nullable, column_default
-FROM information_schema.columns
-WHERE table_schema = 'public' AND table_name = 'is_kayitlari'
-ORDER BY ordinal_position;
+UPDATE flansh_olculer
+SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A105' AND tenant_id IS NULL),
+    olusturma = olusturma  -- timestamp'i bozma
+WHERE geometri_std = 'B16.5'
+  AND malzeme_id IS NULL
+  AND sistem_preset = TRUE;
+```
+**Doğrulama:** 216 satır UPDATE etmeli.
 
--- 2. Kesim/büküm/markalama kalemlerinde zaman alanları var mı?
-SELECT table_name, column_name, data_type
-FROM information_schema.columns
-WHERE table_schema = 'public'
-  AND table_name IN ('kesim_kalemleri','bukum_kalemleri','markalama_kalemleri')
-  AND (column_name LIKE '%zaman%' 
-       OR column_name LIKE '%baslangic%' 
-       OR column_name LIKE '%bitis%'
-       OR column_name LIKE '%sure%'
-       OR column_name LIKE '%tarih%')
-ORDER BY table_name;
+### 1.b) EN 1092-1 PN 16 → A105 (60 satır, 5 dk)
+PN 16 paketi de A105 (forged karbon flansh).
 
--- 3. islem_log kullanımı — zaman tutuluyor mu?
-SELECT column_name, data_type
-FROM information_schema.columns
-WHERE table_schema = 'public' AND table_name = 'islem_log'
-ORDER BY ordinal_position;
+### 1.c) `boru_olculer` → kategori bazlı (450 satır, 30-45 dk)
+Boru tablosu çeşitli — A106, A53, A312, EN 10216-1 vs. `malzeme_grubu` text kolonu var, ondan eşleştirilir:
+```sql
+-- Karbon dikişsiz boru → A106 Grade B (ya da A53 B; ikisi de geçerli, A106 daha yaygın)
+UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A106 B' AND tenant_id IS NULL)
+WHERE malzeme_grubu IN ('karbon','steel') AND malzeme_id IS NULL;
+
+-- Paslanmaz → A312 TP316L
+UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'ASTM A312 TP316L' AND tenant_id IS NULL)
+WHERE malzeme_grubu IN ('paslanmaz','stainless') AND malzeme_id IS NULL;
+
+-- EN karbon → EN 10216-1 P235GH
+UPDATE boru_olculer SET malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu = 'EN 10216-1 P235GH' AND tenant_id IS NULL)
+WHERE geometri_std LIKE 'EN-%' AND malzeme_grubu = 'karbon' AND malzeme_id IS NULL;
+```
+**Sorun:** `boru_olculer.malzeme_grubu` text içeriği bilinmiyor. **78 başında DISTINCT sorgu çekilir, sonra UPDATE yazılır.**
+```sql
+SELECT malzeme_grubu, COUNT(*) FROM boru_olculer GROUP BY malzeme_grubu;
 ```
 
-**Yapılacak (araştırma sonrası):**
-- Web'deki zaman takibi yapısı anlaşılsın
-- Düzensizlik varsa web tarafında düzeltilsin
-- Mobilin bu yapıya nasıl bağlanacağı mockup-first planlansın
-- MIsBaslat.jsx (QR'lı akış: imalat/kaynak/ön kontrol)
-- MIsListesi.jsx (Liste akışı: kesim/büküm/markalama, `?islem=kesim` param ile)
+### 1.d) `fitting_olculer` → kategori bazlı (424 satır, 30 dk)
+Fitting `parca_tipi` kolonu var: `90LR`, `45LR`, `cap`, `tee_eq`, `reducer_*`. Tüm B16.9 buttweld fitting → A234 WPB (karbon) ya da A403 WP316L (paslanmaz). `fitting_olculer` tablosunda malzeme_grubu kolonu var mı? **Pre-flight kontrol:**
+```sql
+SELECT column_name FROM information_schema.columns
+WHERE table_schema='public' AND table_name='fitting_olculer' AND column_name LIKE '%malzeme%';
+```
 
-**Süre tahmini:** 2-3 oturum
+**Süre tahmini (1.a-1.d):** 1.5-2 saat — 78'in büyük kısmı.
+
+**Beklenen sonuç:** 1.366 NULL satır → 0 NULL satır. Tüm kütüphane parça kimliği prensibine geçmiş olur. Kritik mimari milestone.
 
 ---
 
-## Öncelik 5 — i18n Linter Script
+## Öncelik 2 — EN 1092-1 PN 10 Eksik Tipler (T01 + T12)
 
-**Neden:** Bu oturumda yaşadığımız "sessizce anahtar silme" hatasını bir daha yaşamamak için.
+**Önkoşul:** Kaynak araştırması. RoyMech PN 10 sayfası yok (77'de tespit edildi). Alternatif kaynaklar:
+- **DIN 2632** (eski Alman standardı) — Wermac ana referans, RoyMech BS4504_10 sayfası mevcut
+- **EN 1092-1:2018 PDF** — resmi standart, ücretsiz versiyon arama gerek
+- **ProjectMaterials Plate Flange (Type 01) PN 10** — direkt sayfa var: `/en-1092-plate-flange-sizes/`
+- **piping-world.com** — ek cross-check
 
 **Yapılacak:**
-- `scripts/i18n-check.js` — Node script
-- Tüm pattern'leri tarar: `tv('x')`, `data-i18n`, `i18n:`, dinamik prefix'ler
-- Kullanılmayan anahtar var mı, kullanılıp tanımsız var mı uyarır
-- GitHub Actions workflow'a ekle — her PR'da çalışsın
-- `npm run i18n-check` komutu
+1. `web_fetch` ile PM Plate Flange sayfası → PN 10 T01 verisi
+2. RoyMech BS4504_10 sayfası → Wermac PN 10 ile cross-check
+3. T01 + T12 için DN 10-600 paketi yaz (~40 satır)
+4. Migration 043 ya da numara disiplini sonrası neresi olursa
 
-**Süre tahmini:** 1 oturum
+**Süre tahmini:** 1.5 saat (kaynak araştırma + 40 satır paket)
 
 ---
 
-## Öncelik 6 — Ortak Modüller Çıkarma
+## Öncelik 3 — `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` Otomasyonu
 
-**Sorun:** spool_detay.html 132 fonksiyon, çoğu diğer sayfalarla kopya
+**Neden:** MK-77.1 disiplini insan-hafıza riskli. 76'da unutuldu. Otomatik kontrol scripti yazılırsa risk sıfırlanır.
 
 **Yapılacak:**
-- `ares-spool.js` — spool ile ilgili ortak fonksiyonlar (kesim, büküm, kaynak iş yönetimi)
-- `ares-devre.js` — devre hesaplama, filtre, sıralama
-- `ares-ui.js` — ortak UI helper'ları (badge render, alert, modal)
-- `ares-normalize.js` — _normalizeMalzeme/_normalizeYuzey ortak merkez
+- `scripts/oturum-kapanis-kontrol.sh` — son git commit tarihiyle bu iki dosyanın `mtime`'ı karşılaştırılır, yaşlı dosya varsa uyarı
+- `pre-commit` hook veya GitHub Actions workflow — kapanış commit'inde bu iki dosya değişmemişse PR uyarı
 
-**Süre tahmini:** 2-3 oturum
+**Süre tahmini:** 30 dk
 
 ---
 
-## Kesinlikle BU ORTURUMDA YAPILMAYACAKLAR
+## Öncelik 4 — B36.10M Karbon Audit (76'da Atlandı)
 
-- [ ] `_status.json` i18n yönetimi — Freeze & Translate stratejisi benimsendi
-- [ ] spool_detay.html yeniden yazma — büyük iş, revizyon geldiğinde yapılacak
-- [ ] devre_detay.html yeniden yazma — aynı şekilde
-- [ ] Admin paneli dil yönetim ekranı — gereksiz
+**Neden:** 76 takip belgesinde "76 P1: B36.10M karbon doğrulama (Wermac ile audit, 238 satır)" işi vardı, ama atlanmış. Yeni satır eklemez, mevcut verinin doğrulanmasıdır.
 
----
+**Yapılacak:**
+- Wermac B36.10M tablosunu çek
+- Canlı 238 satır karbon boru ile karşılaştır (DN/OD/wall thickness)
+- Tutarsızlık varsa UPDATE migration yaz
 
-## Kural Hatırlatmaları (Bir Sonraki Oturum için Claude'a)
-
-- **Toplu silme yapmadan önce dry-run + kullanıcı onayı** (bu oturumda 2 kere yandık)
-- **Tarama kapsamı:** HTML + JS + JSX hepsi birlikte. Pattern'ler: `tv()`, `data-i18n`, `i18n:`, dinamik `prefix_`
-- **Mockup-first (R-10):** Yeni mobil ekran yazılmadan önce artifact mockup + onay
-- **Tema için useTema (R-09):** Direct DOM manipulation yasak
-- **Kolon adı uyumu:** Her Supabase query'sinden önce şema referansına bak
+**Süre tahmini:** 2 saat (orta öncelikte, 79+ olabilir)
 
 ---
 
-## Strateji Özeti (Üzerinde Anlaşıldı)
+## Kesinlikle 78'DE YAPILMAYACAKLAR
 
-**3 Katmanlı Hibrit Yaklaşım:**
-- **Katman 1:** Altyapı düzeltmeleri (script ile toplu) — dil sistemi ✅, kolon adları, tırnaklı tema ✅
-- **Katman 2:** Revizyon geldikçe sayfa yeniden yaz (yama değil) — strangler fig pattern
-- **Katman 3:** Küçük çalışan sayfalar dokunulmaz (ayarlar, tezgahlar, log vb.)
-
-**Dil Stratejisi: Freeze & Translate**
-- Proje stabil olunca `tr.json` freeze
-- Profesyonel translator / CAT tool / Claude + terminoloji sözlüğü
-- Direkt kullan, admin panel yok
+- ❌ EN 1092-1 PN 25 + PN 40 paketleri (79+'a)
+- ❌ B16.9 eksik parça tipleri (80+'a)
+- ❌ Wizard UI (43. oturumdan beri erteleme, format learning loop önce)
+- ❌ Mobil ekranlar (MProfil vb. — 2. oturumdan kalan eski gündem)
 
 ---
 
-## Son Söz
+## Kural Hatırlatmaları (78 Claude'una)
 
-Bu oturumda çok şey yaptık ve çok şey öğrendik:
-- MDrawer canlıda ✅
-- Dil sistemi 1335 anahtar, 3 dilde senkron ✅
-- Mimari anti-pattern tespit edildi ve devreler.html'de çözüldü ✅
-- Proje sağlık raporu çıkarıldı ✅
-- Kapsamlı strateji kararları alındı ✅
+**Kapanış protokolü (MK-77.1):**
+Oturum sonunda zorunlu 3 dosya:
+1. `CLAUDE-SON-OTURUM.md` (bu oturum özeti)
+2. `CLAUDE-SONRAKI-OTURUM.md` (gelecek oturum gündemi)
+3. `.github/son-durum.md` (yaşayan durum dosyası)
 
-Ama en önemlisi: **Proje düzeliyor.** Yeniden yazmaya gerek yok. Adım adım, doğru sıra ile, hedefli düzeltmelerle. Motivasyonun yerinde kalsın.
+**Migration numara disiplini (MK-77.3):**
+Yeni migration önermeden:
+```bash
+ls ~/Desktop/arespipe/migrations/ | sort | tail -10
+```
+Çıktıyı görmeden numara önerme. 77'de 041 çakışması son anda yakalandı, bundan ders alındı.
 
-İyi deploy'lar, iyi dinlenmeler. 🚀
+**Migration dosya adı pattern (MK-77.8):**
+`^\d{3}_[a-z0-9_]+\.sql$` — 3 rakam + underscore + lowercase. **Tire (`-`) YASAK**, sadece underscore. CI `[MIG_ISIM_BOZUK]` ile yakalar, deploy'u engeller. 76'da `dn350-600` tire içeriyordu, 77'de rename ile düzeltildi.
+
+**Şema kontrol disiplini (MK-77.4):**
+Bilinmeyen tabloya sorgu öncesi:
+```sql
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_schema='public' AND table_name='X';
+```
+
+**Yeni geometri satırı disiplini (MK-77.5):**
+Yeni `boru_olculer`/`fitting_olculer`/`flansh_olculer` satırı eklenirken `malzeme_id` **dolu doğmalı**. NULL FK kabul edilmez. INSERT'te subquery ile:
+```sql
+malzeme_id = (SELECT id FROM malzeme_kataloglari WHERE spec_kodu='ASTM A105' AND tenant_id IS NULL)
+```
+
+**Tek-kaynak satır disiplini (MK-77.6):**
+JSONB notlar içinde `kaynak_crosscheck` alanı her yeni satırda var. Çift kaynak doğrulanmadıysa `"YOK — sebep"` yazılır, audit trail bırakılır.
+
+**Direct-COMMIT kabul (MK-77.7):**
+Dry-run ROLLBACK zorunlu değil, ama her migration BEGIN/COMMIT tek-atomik sarılı olmalı. DDL + DML aynı transaction'da.
+
+**İpucu↔katalog uyumu (MK-77.2):**
+Yeni katalog spec'i eklerken:
+```sql
+SELECT i.kalite_kodu_pattern, i.tipik_malzeme_standardi, k.spec_kodu
+FROM malzeme_standart_ipucu i
+LEFT JOIN malzeme_kataloglari k ON k.spec_kodu = i.tipik_malzeme_standardi;
+```
+NULL kalan eşleşmeler kontrol edilir.
+
+---
+
+## Strateji Özeti
+
+**78 ana iş bandı: BORÇ KAPATMA.** Yeni satır eklemek yerine mevcut 1.366 NULL FK'yı kapatmak en yüksek ROI iş. Tek UPDATE komutu 200+ satırı düzeltir. Bu, 77'de açtığımız omurganın **gerçek değerini kanıtlar**.
+
+**3 katmanlı strateji (76'dan devam):**
+- Katman 1: Altyapı düzeltmeleri (B0 ✅, FK UPDATE'leri 78)
+- Katman 2: Yeni paket ekleme (PN 10 T01/T12 78'de, PN 25/40 79+)
+- Katman 3: Audit/cross-check (B36.10M karbon 79+)
+
+**Önceliklendirme prensibi:** Her oturum sonunda kütüphane "%ilerleme" değil, **"satır yapısal kimliğe sahip mi"** ile ölçülür. 78 sonu hedef: tüm 1.366 NULL FK kapatılmış, kütüphane tutarlı.
+
+---
+
+## Son Söz (77'den 78'e)
+
+77'de mimari devrim oldu — kütüphane "çiğ data" fazından "yapısal kimlik" fazına geçti. 78'de **bu devrimi mevcut 1.366 satıra yayıyoruz**. 16 yeni satır eklemek 1.5 saat aldı, 1.366 satırı kapatmak 1.5-2 saat alacak — bu ölçek farkı omurganın değerinin somut kanıtı.
+
+İyi başlangıçlar. 🚀
