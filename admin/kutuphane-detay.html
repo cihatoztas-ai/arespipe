@@ -8,18 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="../ares-store.js"></script>
 <style>
-:root {
-  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
-  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
-}
-[data-theme=dark] {
-  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
-  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
-}
-[data-theme=light-anthracite] {
-  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
-  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
-}
+:root {--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--admin:#f97316;}
+[data-theme=dark] {--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
+[data-theme=light-anthracite] {--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -29,8 +20,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .topbar-sep{flex:1;}
 .topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
 .topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
-.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
-.btn-logout:hover{border-color:var(--re);color:var(--re);}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;}
 
 .layout{display:flex;flex:1;min-height:0;}
 .sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
@@ -40,39 +30,89 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .nav-icon{font-size:16px;width:20px;text-align:center;}
 .nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
 
-.main{flex:1;overflow-y:auto;padding:28px 32px;min-width:0;}
+.main{flex:1;overflow-y:auto;padding:24px 32px;min-width:0;}
 
-.geri-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);text-decoration:none;margin-bottom:14px;padding:4px 10px;border-radius:7px;border:1px solid transparent;transition:all .15s;}
+.geri-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);text-decoration:none;margin-bottom:14px;padding:4px 10px;border-radius:7px;border:1px solid transparent;}
 .geri-link:hover{color:var(--tx);background:var(--sur);border-color:var(--bor);}
 
-.page-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
-.page-header-l{flex:1;min-width:200px;}
-.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.page-title .tk-kod{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ac);background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.3);padding:3px 10px;border-radius:7px;font-weight:600;}
-.page-sub{font-size:13px;color:var(--txm);margin-top:6px;}
-.page-stats{display:flex;gap:14px;font-family:'Barlow Condensed',sans-serif;}
-.ps-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:10px 16px;text-align:right;}
-.ps-card .ps-lbl{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;}
-.ps-card .ps-val{font-size:24px;font-weight:800;color:var(--tx);line-height:1;margin-top:2px;}
+/* SAYFA BAŞLIĞI */
+.sf-bas{margin-bottom:20px;}
+.sf-bas-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.sf-baslik{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:var(--tx);}
+.sf-kod{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac);background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.25);padding:3px 9px;border-radius:7px;font-weight:600;}
+.sf-cnt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--txm);background:var(--sur);border:1px solid var(--bor);padding:3px 9px;border-radius:7px;font-weight:600;}
+.sf-std{font-size:12px;color:var(--txm);margin-top:8px;line-height:1.4;}
+.sf-std strong{color:var(--tx);}
 
+/* ÜST KART: 2 sütun (SVG | Sağ Panel) */
+.ust-kart{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-bottom:22px;}
+
+/* SVG yer tutucu */
+.svg-yer{background:var(--sur);border:1px dashed var(--bor);border-radius:14px;min-height:280px;display:flex;align-items:center;justify-content:center;color:var(--txd);font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;text-align:center;line-height:1.6;background-image:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(148,163,184,.04) 8px,rgba(148,163,184,.04) 16px);padding:24px;}
+.svg-yer .yer-ikon{font-size:56px;opacity:.25;margin-bottom:10px;display:block;}
+.svg-yer .yer-not{opacity:.7;max-width:280px;}
+.svg-yer .yer-baslik{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--txm);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+
+/* SAĞ PANEL */
+.sag-panel{display:flex;flex-direction:column;gap:14px;}
+
+.panel-blok{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;}
+.panel-blok-bas{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.panel-blok-ikon{font-size:14px;opacity:.7;}
+.panel-blok-ad{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--tx);}
+.panel-blok-not{font-size:10.5px;color:var(--txd);margin-left:auto;}
+
+/* Ölçü Lejantı */
+.lejant-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px 12px;}
+.lejant-sat{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;}
+.harf-rozet{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;background:var(--sur2);border:1px solid var(--bor);color:var(--ac);padding:2px 6px;border-radius:5px;letter-spacing:.3px;min-width:36px;text-align:center;flex-shrink:0;line-height:1.2;}
+.lejant-ad{color:var(--txm);flex:1;min-width:0;}
+.lejant-ad-tx{color:var(--tx);font-weight:500;}
+
+/* Ek Dosyalar Özet */
+.ek-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.ek-kart{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 10px;text-align:center;}
+.ek-ikon{font-size:16px;opacity:.5;display:block;margin-bottom:2px;}
+.ek-sayi{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--tx);line-height:1;}
+.ek-ad{font-size:9px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
+
+.bilgi-not{font-size:10.5px;color:var(--warn);margin-top:8px;display:flex;align-items:center;gap:5px;}
+
+/* AI Olgunluk */
+.olg-track{background:var(--sur2);height:8px;border-radius:4px;overflow:hidden;margin:6px 0;}
+.olg-fill{background:linear-gradient(90deg, var(--ac), var(--leg));height:100%;transition:width .5s ease;}
+.olg-detay{font-size:11px;color:var(--txm);display:flex;justify-content:space-between;align-items:center;}
+.olg-pct{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);}
+.olg-esik{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--txd);font-family:'JetBrains Mono',monospace;letter-spacing:.3px;text-transform:uppercase;}
+.olg-esik span{position:relative;padding-top:8px;}
+.olg-esik span::before{content:'';position:absolute;top:0;left:50%;width:1px;height:5px;background:var(--bor);}
+
+/* KAYITLAR TABLOSU */
 .tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
 .tbl-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);gap:14px;flex-wrap:wrap;}
 .tbl-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;color:var(--tx);}
 .tbl-meta{font-size:11px;color:var(--txd);font-family:'JetBrains Mono',monospace;}
 
-.veri-tbl-kapsayici{overflow-x:auto;max-height:calc(100vh - 380px);}
+.veri-tbl-kapsayici{overflow-x:auto;max-height:calc(100vh - 540px);min-height:240px;}
 .veri-tbl{width:100%;border-collapse:collapse;font-size:12px;}
 .veri-tbl th{position:sticky;top:0;text-align:left;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;border-bottom:1px solid var(--bor);background:var(--sur2);white-space:nowrap;z-index:1;}
-.veri-tbl td{padding:8px 12px;border-bottom:1px solid rgba(35,39,48,.4);font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.veri-tbl th .th-harf{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:var(--ac);background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.3);padding:1px 5px;border-radius:4px;margin-left:5px;letter-spacing:.2px;text-transform:none;}
+.veri-tbl td{padding:8px 12px;border-bottom:1px solid rgba(35,39,48,.4);font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .veri-tbl td.meta{color:var(--txd);font-size:10.5px;}
 .veri-tbl td.null{color:var(--txd);font-style:italic;}
-.veri-tbl tr:hover td{background:rgba(255,255,255,.02);}
 .veri-tbl td.uuid{color:var(--txd);font-size:10px;}
+.veri-tbl tr:hover td{background:rgba(255,255,255,.02);}
+
+/* Olgunluk hücresi */
+.olg-hucre{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);}
+.olg-min{display:inline-flex;align-items:center;gap:2px;}
+.olg-min-ikon{opacity:.5;}
+.olg-pct-min{font-weight:700;color:var(--txd);margin-left:6px;padding-left:6px;border-left:1px solid var(--bor);}
 
 .pag-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--bor);background:var(--sur2);gap:14px;flex-wrap:wrap;}
 .pag-bilgi{font-size:12px;color:var(--txm);font-family:'JetBrains Mono',monospace;}
 .pag-btns{display:flex;gap:6px;align-items:center;}
-.pag-btn{padding:6px 12px;background:var(--sur);border:1px solid var(--bor);border-radius:7px;color:var(--tx);cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.pag-btn{padding:6px 12px;background:var(--sur);border:1px solid var(--bor);border-radius:7px;color:var(--tx);cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;}
 .pag-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac);}
 .pag-btn:disabled{opacity:.4;cursor:not-allowed;}
 .pag-input{width:60px;padding:5px 8px;background:var(--sur);border:1px solid var(--bor);border-radius:6px;color:var(--tx);font-size:12px;text-align:center;font-family:'JetBrains Mono',monospace;}
@@ -82,9 +122,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .loader{display:inline-block;width:14px;height:14px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-.std-bilgi{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--ac);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:12.5px;color:var(--txm);line-height:1.5;}
-.std-bilgi strong{color:var(--tx);}
 .uyari{background:var(--sur);border:1px solid rgba(229,62,62,.3);border-left:3px solid var(--re);border-radius:10px;padding:16px 20px;color:var(--tx);}
+
+@media (max-width: 1100px) { .ust-kart{grid-template-columns:1fr;} .svg-yer{min-height:200px;} .lejant-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -92,10 +132,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 <div id="appShell" style="display:none;flex-direction:column;min-height:100vh;visibility:hidden;">
 
 <div class="topbar">
-  <div class="topbar-logo">
-    ⚙ AresPipe
-    <span>/ Süper Admin · Kütüphane Detay</span>
-  </div>
+  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane Detay</span></div>
   <div class="topbar-sep"></div>
   <div class="topbar-user">
     <span class="topbar-badge">SUPER ADMIN</span>
@@ -120,196 +157,338 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 </div>
 
 <div class="main">
-
   <a class="geri-link" href="kutuphane.html">← Kütüphane Envanteri</a>
-
   <div id="icerikKok">
     <div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>
   </div>
+</div>
 
-</div><!-- /.main -->
-</div><!-- /.layout -->
-</div><!-- /#appShell -->
+</div>
+</div>
 
 <script>
 'use strict';
 
-// Sayfa başına satır
 var SAYFA_BOYUTU = 50;
 
-// İzinli tablolar (kutuphane.html ile aynı)
+// İzinli tablolar
 var TABLO_BILGI = {
-  boru_olculer:        { ad:'Boru Ölçüleri',     ikon:'📐', std:'ASME B36.10M · B36.19M · EN 10216 · DIN 86019', grup:'Geometri' },
-  fitting_olculer:     { ad:'Fitting Ölçüleri',  ikon:'📐', std:'ASME B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089', grup:'Geometri' },
-  flansh_olculer:      { ad:'Flanş Ölçüleri',    ikon:'📐', std:'ASME B16.5 · B16.47 · EN 1092 · DIN 86087/88', grup:'Geometri' },
-  malzeme_kataloglari: { ad:'Malzeme Katalogları', ikon:'🧪', std:'7 grup · karbon, paslanmaz, duplex, CuNi, alüminyum, alaşımlı, nikel', grup:'Malzeme' },
-  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',       ikon:'🔗', std:'Geometri × malzeme — hangi parça hangi malzemeden üretilebilir', grup:'Uyum' },
-  ozel_parcalar:       { ad:'Özel Parçalar',     ikon:'🧩', std:'Coupling sleeve · custom fitting · üretici-spesifik', grup:'Özel' },
-  tenant_spec_seti:    { ad:'Spec Setleri',      ikon:'📑', std:'Tersane bazlı parça/malzeme alt kümeleri (AVEVA-vari)', grup:'Spec' },
-  spec_kural:          { ad:'Spec Kuralları',    ikon:'📑', std:'Spec başına izinli parça/malzeme kombinasyonları', grup:'Spec' }
+  boru_olculer:        { ad:'Boru Ölçüleri',       ikon:'📐', std:'ASME B36.10M · B36.19M · EN 10216 · DIN 86019', grup:'Borular' },
+  fitting_olculer:     { ad:'Fitting Ölçüleri',    ikon:'🔩', std:'ASME B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089', grup:'Fittings' },
+  flansh_olculer:      { ad:'Flanş Ölçüleri',      ikon:'⚙️', std:'ASME B16.5 · B16.47 · EN 1092 · DIN 86087/88', grup:'Flanşlar' },
+  malzeme_kataloglari: { ad:'Malzeme Katalogları', ikon:'🧪', std:'7 grup · karbon → paslanmaz → duplex → CuNi → alüminyum → alaşımlı → nikel', grup:'Malzemeler' },
+  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',         ikon:'🔗', std:'Geometri × malzeme — hangi parça hangi malzemeden üretilebilir', grup:'Çapraz Uyum' },
+  ozel_parcalar:       { ad:'Özel Parçalar',       ikon:'🧩', std:'Coupling sleeve · custom fitting · üretici-spesifik', grup:'Özel' },
+  tenant_spec_seti:    { ad:'Spec Setleri',        ikon:'📑', std:'Tersane bazlı parça/malzeme alt kümeleri (AVEVA-vari)', grup:'Spec' },
+  spec_kural:          { ad:'Spec Kuralları',      ikon:'📑', std:'Spec başına izinli parça/malzeme kombinasyonları', grup:'Spec' }
+};
+
+// Ölçü lejantı — her tablo için kolon → harf + açıklama
+var OLCU_LEJANT = {
+  boru_olculer: {
+    aciklama: 'Tek bir borunun geometrisi (malzeme bağımsız).',
+    olculer: [
+      { harf:'DN',     kolon:'dn',                  birim:'',     ad:'Nominal çap' },
+      { harf:'Sch',    kolon:'schedule_kod',        birim:'',     ad:'Schedule (40, 80, ...)' },
+      { harf:'OD',     kolon:'dis_cap_mm',          birim:'mm',   ad:'Dış çap' },
+      { harf:'t',      kolon:'et_mm',               birim:'mm',   ad:'Et kalınlığı' },
+      { harf:'ID',     kolon:'ic_cap_mm',           birim:'mm',   ad:'İç çap (OD−2t)' },
+      { harf:'W',      kolon:'agirlik_kg_m',        birim:'kg/m', ad:'Ağırlık (lineer)' },
+      { harf:'V',      kolon:'hacim_l_m',           birim:'l/m',  ad:'İç hacim (lineer)' },
+      { harf:'SA',     kolon:'yuzey_alan_dis_m2_m', birim:'m²/m', ad:'Dış yüzey alanı' },
+      { harf:'t-min',  kolon:'et_min_mm',           birim:'mm',   ad:'Min et' },
+      { harf:'t-max',  kolon:'et_max_mm',           birim:'mm',   ad:'Max et' },
+      { harf:'t-tol%', kolon:'tolerans_et_yuzde',   birim:'%',    ad:'Et tolerans %' },
+      { harf:'STD',    kolon:'standart',            birim:'',     ad:'Geometri standardı' }
+    ]
+  },
+  fitting_olculer: {
+    aciklama: 'B16.9 (BW) + B16.11 (SW/THD) + B16.28 (SR elbow) fittingler.',
+    olculer: [
+      { harf:'TYPE',   kolon:'parca_tipi',          birim:'',    ad:'90LR/SR · 45 · TEE · REDUCER · CAP ...' },
+      { harf:'STD',    kolon:'geometri_std',        birim:'',    ad:'B16.9 · B16.11 · B16.28' },
+      { harf:'DN1',    kolon:'cap_buyuk_dn',        birim:'',    ad:'Büyük uç DN' },
+      { harf:'DN2',    kolon:'cap_kucuk_dn',        birim:'',    ad:'Küçük uç DN (reducer/red. tee)' },
+      { harf:'OD1',    kolon:'cap_buyuk_mm',        birim:'mm',  ad:'Büyük uç dış çapı' },
+      { harf:'OD2',    kolon:'cap_kucuk_mm',        birim:'mm',  ad:'Küçük uç dış çapı' },
+      { harf:'t',      kolon:'et_mm',               birim:'mm',  ad:'Et kalınlığı' },
+      { harf:'A',      kolon:'ucu_uca_a_mm',        birim:'mm',  ad:'Merkez-yüz (elbow A boyu)' },
+      { harf:'B',      kolon:'ucu_uca_b_mm',        birim:'mm',  ad:'Branch merkez-yüz (tee)' },
+      { harf:'C',      kolon:'ucu_uca_c_mm',        birim:'mm',  ad:'Uzunluk (reducer)' },
+      { harf:'F',      kolon:'ucu_uca_f_mm',        birim:'mm',  ad:'Ek uç-uca' },
+      { harf:'M',      kolon:'ucu_uca_m_mm',        birim:'mm',  ad:'Ek uç-uca' },
+      { harf:'H',      kolon:'ucu_uca_h_mm',        birim:'mm',  ad:'Yükseklik (cap)' },
+      { harf:'R',      kolon:'yaricap_mm',          birim:'mm',  ad:'Bükme yarıçapı' },
+      { harf:'SL-t',   kolon:'stub_lap_kalinlik_mm',birim:'mm',  ad:'Stub end lap kalınlığı' },
+      { harf:'SL-OD',  kolon:'stub_lap_od_mm',      birim:'mm',  ad:'Stub end lap dış çapı' },
+      { harf:'SOK-D',  kolon:'soket_derinlik_mm',   birim:'mm',  ad:'Socket derinliği (B16.11)' },
+      { harf:'SOK-ID', kolon:'soket_ic_cap_mm',     birim:'mm',  ad:'Socket iç çapı (B16.11)' },
+      { harf:'CLS',    kolon:'class_no',            birim:'',    ad:'SW/THD class (3000/6000/9000)' },
+      { harf:'W',      kolon:'agirlik_kg',          birim:'kg',  ad:'Parça ağırlığı' }
+    ]
+  },
+  flansh_olculer: {
+    aciklama: 'WN · SO · BL · LJ · SW · TH flanşlar (face, hub, bolt boyutları).',
+    olculer: [
+      { harf:'TYPE',   kolon:'flansh_tipi',           birim:'',    ad:'WN · SO · BL · LJ · SW · TH' },
+      { harf:'STD',    kolon:'geometri_std',          birim:'',    ad:'B16.5 · B16.47 · EN 1092 ...' },
+      { harf:'CLASS',  kolon:'basinc_sinifi',         birim:'',    ad:'150 · 300 · 600 · 900 · 1500 · 2500' },
+      { harf:'FACE',   kolon:'yuzey_tipi',            birim:'',    ad:'RF · FF · RTJ' },
+      { harf:'DN',     kolon:'cap_dn',                birim:'',    ad:'Nominal çap' },
+      { harf:'OD',     kolon:'cap_mm',                birim:'mm',  ad:'Pipe OD (nominal bore tarafı)' },
+      { harf:'D',      kolon:'flansh_od_mm',          birim:'mm',  ad:'Flanş dış çapı' },
+      { harf:'t',      kolon:'flansh_kalinlik_mm',   birim:'mm',  ad:'Flanş kalınlığı' },
+      { harf:'X',      kolon:'hub_od_mm',             birim:'mm',  ad:'Hub OD (taban)' },
+      { harf:'Y',      kolon:'hub_uzunluk_mm',        birim:'mm',  ad:'Hub uzunluğu' },
+      { harf:'B',      kolon:'bore_std_mm',           birim:'mm',  ad:'Bore (standart)' },
+      { harf:'B-min',  kolon:'bore_min_mm',           birim:'mm',  ad:'Bore (minimum)' },
+      { harf:'G',      kolon:'raised_face_od_mm',     birim:'mm',  ad:'Raised face OD' },
+      { harf:'f',      kolon:'raised_face_kalinlik_mm',birim:'mm', ad:'Raised face kalınlığı' },
+      { harf:'C',      kolon:'bolt_circle_mm',        birim:'mm',  ad:'Bolt circle dairesi' },
+      { harf:'n',      kolon:'bolt_count',            birim:'',    ad:'Bolt sayısı' },
+      { harf:'BH',     kolon:'bolt_holes_inch',       birim:'in',  ad:'Bolt hole çapı' },
+      { harf:'BC',     kolon:'bolt_cap_inch',         birim:'in',  ad:'Bolt çapı' },
+      { harf:'BL-s',   kolon:'bolt_uzunluk_stud_mm',  birim:'mm',  ad:'Stud bolt uzunluğu' },
+      { harf:'BL-m',   kolon:'bolt_uzunluk_machine_mm',birim:'mm', ad:'Machine bolt uzunluğu' },
+      { harf:'SOK',    kolon:'socket_depth_mm',       birim:'mm',  ad:'Socket derinliği (SW flanş)' },
+      { harf:'W',      kolon:'agirlik_kg',            birim:'kg',  ad:'Flanş ağırlığı' }
+    ]
+  },
+  malzeme_kataloglari: {
+    aciklama: 'Spec + grade katalogları (B0 omurga).',
+    olculer: [
+      { harf:'STD',    kolon:'spec_standart', birim:'', ad:'Spec standart (A106, A312, B466, ...)' },
+      { harf:'GRADE',  kolon:'spec_grade',    birim:'', ad:'Grade kodu (GrB, WPB, TP316L, ...)' }
+    ]
+  },
+  fitting_malzeme_uyum: {
+    aciklama: 'Geometri × malzeme çapraz uyum tablosu.',
+    olculer: [
+      { harf:'FIT',  kolon:'flansh_id',      birim:'uuid', ad:'Fitting/flansh ID (referans)' },
+      { harf:'MAT',  kolon:'malzeme_id',     birim:'uuid', ad:'Malzeme spec/grade ID (referans)' },
+      { harf:'M',    kolon:'uretim_yontemi', birim:'',     ad:'Üretim yöntemi (forged, seamless, ...)' },
+      { harf:'Y',    kolon:'yaygin_mi',      birim:'',     ad:'Yaygın kombinasyon mu' }
+    ]
+  }
 };
 
 // Meta kolonları (sona alınır)
-var META_KOLONLAR = ['id','tenant_id','olusturma_at','guncelleme_at','olusturan_id','guncelleyen_id','created_at','updated_at','aktif'];
+var META_KOLONLAR = ['id','tenant_id','olusturma_at','olusturma','guncelleme_at','olusturan_id','guncelleyen_id','created_at','updated_at','aktif','sistem_preset','malzeme_id','edisyon_yili','gecerlilik_basla','gecerlilik_bitis','kaynak','notlar','urun_formu','cizim_path','model_3d_path'];
 
 // ── SUPABASE PROXY ────────────────────────────────────────
 var _supa = null;
-function _getSupa() {
-  if (_supa) return _supa;
-  if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase();
-  return _supa;
-}
-var _supaProxy = new Proxy({}, {
-  get: function(t, prop) {
-    var s = _getSupa();
-    if (!s) throw new Error('Supabase hazır değil');
-    var val = s[prop];
-    return typeof val === 'function' ? val.bind(s) : val;
-  }
-});
+function _getSupa(){if(_supa)return _supa;if(typeof ARES!=='undefined'&&ARES.supabase())_supa=ARES.supabase();return _supa;}
+var _supaProxy = new Proxy({},{get:function(t,prop){var s=_getSupa();if(!s)throw new Error('Supabase hazır değil');var v=s[prop];return typeof v==='function'?v.bind(s):v;}});
 
-// ── HELPER ────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 function T(id){return document.getElementById(id);}
-async function cikisYap() {
-  await _supaProxy.auth.signOut();
-  window.location.href = '../giris.html';
+async function cikisYap(){await _supaProxy.auth.signOut();window.location.href='../giris.html';}
+function getParam(ad){return new URLSearchParams(window.location.search).get(ad);}
+
+// Kolon adına göre lejant harfini bul
+function harfBul(kolon, tablo){
+  var L = OLCU_LEJANT[tablo];
+  if (!L) return null;
+  var found = null;
+  L.olculer.some(function(o){ if (o.kolon===kolon) {found=o.harf;return true;} return false; });
+  return found;
 }
 
-function getParam(ad) {
-  return new URLSearchParams(window.location.search).get(ad);
-}
-
-function hucreyiBicimle(deger, kolon) {
-  if (deger === null || deger === undefined) {
-    return '<td class="null">—</td>';
-  }
-  // UUID tespiti
-  if (typeof deger === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deger)) {
-    return '<td class="uuid" title="' + esc(deger) + '">' + esc(deger.substring(0, 8)) + '…</td>';
-  }
-  // Boolean
-  if (typeof deger === 'boolean') {
-    return '<td class="meta">' + (deger ? '✓' : '✗') + '</td>';
-  }
-  // Object / Array (JSONB)
-  if (typeof deger === 'object') {
-    var str = JSON.stringify(deger);
-    var kisa = str.length > 60 ? str.substring(0, 57) + '…' : str;
-    return '<td class="meta" title="' + esc(str) + '">' + esc(kisa) + '</td>';
-  }
-  // Tarih
-  if (typeof deger === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(deger)) {
-    var t = new Date(deger);
-    if (!isNaN(t.getTime())) {
-      return '<td class="meta" title="' + esc(deger) + '">' + t.toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) + '</td>';
-    }
-  }
-  // Sayı
-  if (typeof deger === 'number') {
-    var siniflanmaMeta = (kolon && kolon.indexOf('_id') !== -1) ? ' meta' : '';
-    return '<td class="num' + siniflanmaMeta + '">' + esc(deger.toLocaleString('tr-TR')) + '</td>';
-  }
-  // String
-  var s = String(deger);
-  var sKisa = s.length > 60 ? s.substring(0, 57) + '…' : s;
-  return '<td title="' + esc(s) + '">' + esc(sKisa) + '</td>';
-}
-
-// Kolonları sırala: önce anlamlılar, sonra meta
-function kolonlariSirala(kolonlar) {
+function kolonlariSirala(kolonlar, tablo){
   var anlamli = [], meta = [];
-  kolonlar.forEach(function(k) {
-    if (META_KOLONLAR.indexOf(k) !== -1) meta.push(k);
+  // Önce: lejant sırasına göre tabloyu ön plana al
+  var L = OLCU_LEJANT[tablo];
+  var lejantSira = L ? L.olculer.map(function(o){return o.kolon;}) : [];
+  var siralanmis = [];
+  lejantSira.forEach(function(k){ if (kolonlar.indexOf(k)!==-1) siralanmis.push(k); });
+  // Lejantta olmayanlar
+  kolonlar.forEach(function(k){
+    if (siralanmis.indexOf(k)!==-1) return;
+    if (META_KOLONLAR.indexOf(k)!==-1) meta.push(k);
     else anlamli.push(k);
   });
-  return anlamli.concat(meta);
+  return siralanmis.concat(anlamli, meta);
+}
+
+function hucreyiBicimle(deger, kolon){
+  if (deger===null||deger===undefined) return '<td class="null">—</td>';
+  if (typeof deger==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deger))
+    return '<td class="uuid" title="'+esc(deger)+'">'+esc(deger.substring(0,8))+'…</td>';
+  if (typeof deger==='boolean') return '<td class="meta">'+(deger?'✓':'✗')+'</td>';
+  if (typeof deger==='object'){
+    var str=JSON.stringify(deger); var k=str.length>60?str.substring(0,57)+'…':str;
+    return '<td class="meta" title="'+esc(str)+'">'+esc(k)+'</td>';
+  }
+  if (typeof deger==='string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(deger)){
+    var t=new Date(deger);
+    if (!isNaN(t.getTime())) return '<td class="meta" title="'+esc(deger)+'">'+t.toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})+'</td>';
+  }
+  if (typeof deger==='number'){
+    var ek=(kolon&&kolon.indexOf('_id')!==-1)?' meta':'';
+    return '<td class="num'+ek+'">'+esc(deger.toLocaleString('tr-TR'))+'</td>';
+  }
+  var s=String(deger); var sk=s.length>60?s.substring(0,57)+'…':s;
+  return '<td title="'+esc(s)+'">'+esc(sk)+'</td>';
 }
 
 // ── VERİ ÇEK ──────────────────────────────────────────────
-async function veriCek(tablo, sayfa) {
-  var offset = (sayfa - 1) * SAYFA_BOYUTU;
-  var orderKolon = 'created_at';
-  // Hangi sıralama kullanılacağı tabloya bağlı, varsayılan başarısız olursa fallback
-  var sonuc;
-  try {
-    sonuc = await _supaProxy.from(tablo)
-      .select('*', { count: 'exact' })
-      .order('olusturma_at', { ascending: false, nullsFirst: false })
-      .range(offset, offset + SAYFA_BOYUTU - 1);
-  } catch (e1) {
-    // olusturma_at yoksa created_at dene
+async function veriCek(tablo, sayfa){
+  var offset=(sayfa-1)*SAYFA_BOYUTU;
+  // Sıralama denemeleri (kolon yoksa hata atar, fallback)
+  var siralamalar = ['olusturma_at','olusturma','created_at',null];
+  var hatalar = [];
+  for (var i=0;i<siralamalar.length;i++) {
+    var col = siralamalar[i];
     try {
-      sonuc = await _supaProxy.from(tablo)
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false, nullsFirst: false })
-        .range(offset, offset + SAYFA_BOYUTU - 1);
-    } catch (e2) {
-      sonuc = await _supaProxy.from(tablo)
-        .select('*', { count: 'exact' })
-        .range(offset, offset + SAYFA_BOYUTU - 1);
-    }
+      var q = _supaProxy.from(tablo).select('*',{count:'exact'});
+      if (col) q = q.order(col,{ascending:false,nullsFirst:false});
+      var r = await q.range(offset, offset+SAYFA_BOYUTU-1);
+      if (r.error) { hatalar.push(col+': '+r.error.message); continue; }
+      return r;
+    } catch (e) { hatalar.push(col+': '+(e.message||e)); }
   }
-  if (sonuc.error) {
-    // İlk hata olabilir (order kolonu yok) — order'sız tekrar dene
-    var sonuc2 = await _supaProxy.from(tablo)
-      .select('*', { count: 'exact' })
-      .range(offset, offset + SAYFA_BOYUTU - 1);
-    if (sonuc2.error) throw sonuc2.error;
-    return sonuc2;
-  }
-  return sonuc;
+  throw new Error('Hiçbir sıralama çalışmadı: '+hatalar.join(' | '));
 }
 
-// ── RENDER ────────────────────────────────────────────────
+// ── DURUM ─────────────────────────────────────────────────
 var _durum = { tablo:null, sayfa:1, toplam:0, kolonlar:[] };
 
-async function sayfayiYukle(tablo, sayfa) {
-  _durum.tablo = tablo;
-  _durum.sayfa = sayfa;
-  var icerikEl = document.getElementById('icerikYer');
-  if (icerikEl) {
-    icerikEl.innerHTML = '<div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>';
+// ── ÇERÇEVE (üst kart + lejant + ek + olgunluk + tablo iskeleti) ──
+function cerceveCiz(tablo, bilgi){
+  var L = OLCU_LEJANT[tablo];
+  var lejantHTML;
+  if (L) {
+    lejantHTML = '<div class="lejant-grid">' + L.olculer.map(function(o){
+      var birim = o.birim ? ' <span style="color:var(--txd);">('+esc(o.birim)+')</span>' : '';
+      return '<div class="lejant-sat" title="'+esc(o.kolon)+'">' +
+        '<span class="harf-rozet">'+esc(o.harf)+'</span>' +
+        '<span class="lejant-ad"><span class="lejant-ad-tx">'+esc(o.ad)+'</span>'+birim+'</span>' +
+      '</div>';
+    }).join('') + '</div>';
+  } else {
+    lejantHTML = '<div style="font-size:12px;color:var(--txd);padding:6px;">Bu tablo için ölçü lejantı henüz tanımlanmamış. Kolon adları aşağıda ham olarak görünür.</div>';
   }
+
+  document.getElementById('icerikKok').innerHTML =
+    '<div class="sf-bas">' +
+      '<div class="sf-bas-row">' +
+        '<span style="font-size:28px;line-height:1;">'+bilgi.ikon+'</span>' +
+        '<span class="sf-baslik">'+esc(bilgi.ad)+'</span>' +
+        '<span class="sf-kod">'+esc(tablo)+'</span>' +
+        '<span class="sf-cnt" id="sfCnt">—</span>' +
+      '</div>' +
+      '<div class="sf-std"><strong>Standartlar:</strong> '+esc(bilgi.std)+'</div>' +
+      (L?'<div class="sf-std" style="margin-top:4px;color:var(--txd);">'+esc(L.aciklama)+'</div>':'') +
+    '</div>' +
+
+    '<div class="ust-kart">' +
+      '<div class="svg-yer">' +
+        '<div>' +
+          '<div class="yer-baslik">Parça Görseli</div>' +
+          '<span class="yer-ikon">'+bilgi.ikon+'</span>' +
+          '<div class="yer-not">SVG/PNG için yer ayrıldı.<br>Arşivden çizim eklenince üzerine gelecek.</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="sag-panel">' +
+        '<div class="panel-blok">' +
+          '<div class="panel-blok-bas">' +
+            '<span class="panel-blok-ikon">📏</span>' +
+            '<span class="panel-blok-ad">Ölçü Lejantı</span>' +
+            '<span class="panel-blok-not">çizimdeki harflerin DB kolonu</span>' +
+          '</div>' +
+          lejantHTML +
+        '</div>' +
+
+        '<div class="panel-blok">' +
+          '<div class="panel-blok-bas">' +
+            '<span class="panel-blok-ikon">📎</span>' +
+            '<span class="panel-blok-ad">Ek Dosyalar</span>' +
+            '<span class="panel-blok-not">tüm tip için toplam</span>' +
+          '</div>' +
+          '<div class="ek-grid">' +
+            '<div class="ek-kart"><span class="ek-ikon">📐</span><div class="ek-sayi">0</div><div class="ek-ad">DXF</div></div>' +
+            '<div class="ek-kart"><span class="ek-ikon">🧊</span><div class="ek-sayi">0</div><div class="ek-ad">STEP</div></div>' +
+            '<div class="ek-kart"><span class="ek-ikon">📷</span><div class="ek-sayi">0</div><div class="ek-ad">Foto</div></div>' +
+            '<div class="ek-kart"><span class="ek-ikon">🎬</span><div class="ek-sayi">0</div><div class="ek-ad">Video</div></div>' +
+          '</div>' +
+          '<div class="bilgi-not">🚧 <code style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--ac);">kutuphane_ekler</code> tablosu 83+ oturumda kurulacak</div>' +
+        '</div>' +
+
+        '<div class="panel-blok">' +
+          '<div class="panel-blok-bas">' +
+            '<span class="panel-blok-ikon">🎯</span>' +
+            '<span class="panel-blok-ad">AI Olgunluk</span>' +
+            '<span class="panel-blok-not">fine-tune'+"'"+'a yaklaşım</span>' +
+          '</div>' +
+          '<div class="olg-detay">' +
+            '<span>Kanal: <strong style="color:var(--txm);">yok</strong> · 0 altın grup</span>' +
+            '<span class="olg-pct">0%</span>' +
+          '</div>' +
+          '<div class="olg-track"><div class="olg-fill" style="width:0%;"></div></div>' +
+          '<div class="olg-esik">' +
+            '<span>0 · yok</span>' +
+            '<span>1 · kural</span>' +
+            '<span>5 · embed</span>' +
+            '<span>50 · finetune</span>' +
+          '</div>' +
+          '<div class="bilgi-not">🚧 <code style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--ac);">parca_etiketleri</code> tablosu 84+ oturumda kurulacak</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div id="icerikYer">' +
+      '<div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Kayıtlar yükleniyor…</div></div>' +
+    '</div>';
+}
+
+async function sayfayiYukle(tablo, sayfa){
+  _durum.tablo=tablo; _durum.sayfa=sayfa;
+  var el=document.getElementById('icerikYer');
+  if (el) el.innerHTML='<div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>';
   try {
-    var r = await veriCek(tablo, sayfa);
-    var veri = r.data || [];
-    var toplam = r.count || 0;
-    _durum.toplam = toplam;
-
-    // Kolon listesi: ilk row'dan, yoksa sadece "id"
-    var kolonlar = [];
-    if (veri.length > 0) {
-      kolonlar = kolonlariSirala(Object.keys(veri[0]));
-    }
-    _durum.kolonlar = kolonlar;
-
-    icerikCiz(veri, toplam, kolonlar);
+    var r=await veriCek(tablo,sayfa);
+    var veri=r.data||[], toplam=r.count||0;
+    _durum.toplam=toplam;
+    var kolonlar = veri.length>0 ? kolonlariSirala(Object.keys(veri[0]), tablo) : [];
+    _durum.kolonlar=kolonlar;
+    icerikCiz(veri, toplam, kolonlar, tablo);
+    T('sfCnt').textContent = toplam.toLocaleString('tr-TR') + ' kayıt';
   } catch (e) {
     document.getElementById('icerikYer').innerHTML =
       '<div class="uyari"><strong>Veri çekilemedi.</strong><br>' +
-      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--re);">' + esc(e.message || e) + '</span></div>';
+      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--re);">'+esc(e.message||e)+'</span></div>';
   }
 }
 
-function icerikCiz(veri, toplam, kolonlar) {
-  var sayfa = _durum.sayfa;
-  var sonSayfa = Math.max(1, Math.ceil(toplam / SAYFA_BOYUTU));
-  var basRow = (sayfa - 1) * SAYFA_BOYUTU + 1;
-  var sonRow = Math.min(toplam, sayfa * SAYFA_BOYUTU);
+function icerikCiz(veri, toplam, kolonlar, tablo){
+  var sayfa=_durum.sayfa;
+  var sonSayfa=Math.max(1,Math.ceil(toplam/SAYFA_BOYUTU));
+  var bas=(sayfa-1)*SAYFA_BOYUTU+1, son=Math.min(toplam,sayfa*SAYFA_BOYUTU);
 
-  var thsHTML = kolonlar.map(function(k) {
-    return '<th>' + esc(k) + '</th>';
-  }).join('');
+  var thsHTML = kolonlar.map(function(k){
+    var harf = harfBul(k, tablo);
+    var harfHTML = harf ? '<span class="th-harf">'+esc(harf)+'</span>' : '';
+    return '<th>'+esc(k)+harfHTML+'</th>';
+  }).join('') + '<th style="text-align:right;">Olgunluk</th>';
 
   var rowsHTML;
-  if (veri.length === 0) {
-    rowsHTML = '<tr><td colspan="' + Math.max(1, kolonlar.length) + '" style="text-align:center;padding:36px;color:var(--txd);font-family:Barlow,sans-serif;font-size:13px;">Kayıt yok</td></tr>';
+  if (veri.length===0){
+    rowsHTML = '<tr><td colspan="'+(Math.max(1,kolonlar.length)+1)+'" style="text-align:center;padding:36px;color:var(--txd);font-family:Barlow,sans-serif;font-size:13px;">Kayıt yok</td></tr>';
   } else {
-    rowsHTML = veri.map(function(row) {
-      return '<tr>' + kolonlar.map(function(k) {
-        return hucreyiBicimle(row[k], k);
-      }).join('') + '</tr>';
+    rowsHTML = veri.map(function(row){
+      var hucreHTML = kolonlar.map(function(k){ return hucreyiBicimle(row[k], k); }).join('');
+      // Olgunluk hücresi — placeholder
+      var olgHTML = '<td style="text-align:right;">' +
+        '<div class="olg-hucre" style="justify-content:flex-end;">' +
+          '<span class="olg-min" title="DXF"><span class="olg-min-ikon">📐</span>0</span>' +
+          '<span class="olg-min" title="STEP"><span class="olg-min-ikon">🧊</span>0</span>' +
+          '<span class="olg-min" title="Foto"><span class="olg-min-ikon">📷</span>0</span>' +
+          '<span class="olg-pct-min" title="AI olgunluk yüzdesi">0%</span>' +
+        '</div>' +
+      '</td>';
+      return '<tr>'+hucreHTML+olgHTML+'</tr>';
     }).join('');
   }
 
@@ -317,131 +496,67 @@ function icerikCiz(veri, toplam, kolonlar) {
     '<div class="tbl-wrap">' +
       '<div class="tbl-head">' +
         '<div class="tbl-title">📋 Kayıtlar</div>' +
-        '<div class="tbl-meta">' + (toplam ? basRow + '-' + sonRow + ' / ' + toplam.toLocaleString('tr-TR') : '0 kayıt') + '</div>' +
+        '<div class="tbl-meta">' + (toplam? bas+'-'+son+' / '+toplam.toLocaleString('tr-TR') : '0 kayıt') + '</div>' +
       '</div>' +
       '<div class="veri-tbl-kapsayici">' +
-        '<table class="veri-tbl"><thead><tr>' + thsHTML + '</tr></thead><tbody>' + rowsHTML + '</tbody></table>' +
+        '<table class="veri-tbl"><thead><tr>'+thsHTML+'</tr></thead><tbody>'+rowsHTML+'</tbody></table>' +
       '</div>' +
       '<div class="pag-foot">' +
-        '<div class="pag-bilgi">Sayfa ' + sayfa + ' / ' + sonSayfa + ' · ' + SAYFA_BOYUTU + ' satır/sayfa</div>' +
+        '<div class="pag-bilgi">Sayfa '+sayfa+' / '+sonSayfa+' · '+SAYFA_BOYUTU+' satır/sayfa</div>' +
         '<div class="pag-btns">' +
-          '<button class="pag-btn" ' + (sayfa <= 1 ? 'disabled' : '') + ' onclick="pageGo(1)">İlk</button>' +
-          '<button class="pag-btn" ' + (sayfa <= 1 ? 'disabled' : '') + ' onclick="pageGo(' + (sayfa - 1) + ')">‹ Önceki</button>' +
-          '<input class="pag-input" id="pagInput" type="number" min="1" max="' + sonSayfa + '" value="' + sayfa + '" onkeydown="pageInputKey(event)" />' +
-          '<button class="pag-btn" ' + (sayfa >= sonSayfa ? 'disabled' : '') + ' onclick="pageGo(' + (sayfa + 1) + ')">Sonraki ›</button>' +
-          '<button class="pag-btn" ' + (sayfa >= sonSayfa ? 'disabled' : '') + ' onclick="pageGo(' + sonSayfa + ')">Son</button>' +
+          '<button class="pag-btn" '+(sayfa<=1?'disabled':'')+' onclick="pageGo(1)">İlk</button>' +
+          '<button class="pag-btn" '+(sayfa<=1?'disabled':'')+' onclick="pageGo('+(sayfa-1)+')">‹ Önceki</button>' +
+          '<input class="pag-input" id="pagInput" type="number" min="1" max="'+sonSayfa+'" value="'+sayfa+'" onkeydown="pageInputKey(event)" />' +
+          '<button class="pag-btn" '+(sayfa>=sonSayfa?'disabled':'')+' onclick="pageGo('+(sayfa+1)+')">Sonraki ›</button>' +
+          '<button class="pag-btn" '+(sayfa>=sonSayfa?'disabled':'')+' onclick="pageGo('+sonSayfa+')">Son</button>' +
         '</div>' +
       '</div>' +
     '</div>';
 }
 
-function pageGo(s) {
-  var son = Math.max(1, Math.ceil(_durum.toplam / SAYFA_BOYUTU));
-  if (s < 1) s = 1;
-  if (s > son) s = son;
-  // URL güncelle
-  var url = new URL(window.location.href);
-  url.searchParams.set('sayfa', String(s));
-  window.history.replaceState({}, '', url.toString());
+function pageGo(s){
+  var son=Math.max(1,Math.ceil(_durum.toplam/SAYFA_BOYUTU));
+  if (s<1) s=1; if (s>son) s=son;
+  var url=new URL(window.location.href); url.searchParams.set('sayfa',String(s));
+  window.history.replaceState({},'',url.toString());
   sayfayiYukle(_durum.tablo, s);
 }
+function pageInputKey(e){ if (e.key==='Enter'){var v=parseInt(e.target.value,10); if (!isNaN(v)) pageGo(v);} }
+window.pageGo=pageGo; window.pageInputKey=pageInputKey;
 
-function pageInputKey(e) {
-  if (e.key === 'Enter') {
-    var v = parseInt(e.target.value, 10);
-    if (!isNaN(v)) pageGo(v);
-  }
-}
-window.pageGo = pageGo;
-window.pageInputKey = pageInputKey;
-
-// ── ÇERÇEVE ÇİZ ───────────────────────────────────────────
-function cerceveCiz(tablo, bilgi) {
-  document.getElementById('icerikKok').innerHTML =
-    '<div class="page-header">' +
-      '<div class="page-header-l">' +
-        '<div class="page-title">' +
-          '<span>' + bilgi.ikon + '</span>' +
-          '<span>' + esc(bilgi.ad) + '</span>' +
-          '<span class="tk-kod">' + esc(tablo) + '</span>' +
-        '</div>' +
-        '<div class="page-sub">Grup: ' + esc(bilgi.grup) + ' · salt-okunur</div>' +
-      '</div>' +
-      '<div class="page-stats">' +
-        '<div class="ps-card"><div class="ps-lbl">Kayıt</div><div class="ps-val" id="psKayit">—</div></div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="std-bilgi">' +
-      '<strong>Standartlar:</strong> ' + esc(bilgi.std) +
-    '</div>' +
-    '<div id="icerikYer"><div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div></div>';
-}
-
-// İlk yüklemede ps-val'i de güncelle
-var _origIcerikCiz = icerikCiz;
-icerikCiz = function(veri, toplam, kolonlar) {
-  _origIcerikCiz(veri, toplam, kolonlar);
-  var ps = document.getElementById('psKayit');
-  if (ps) ps.textContent = (toplam || 0).toLocaleString('tr-TR');
-};
-
-function gecersizTablo(tabloAdi) {
+function gecersizTablo(adi){
   document.getElementById('icerikKok').innerHTML =
     '<div class="uyari">' +
       '<strong>Geçersiz tablo.</strong><br>' +
-      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--txm);">' +
-      'URL parametresi: ' + esc(tabloAdi || '(boş)') + '</span><br><br>' +
-      '<a class="geri-link" href="kutuphane.html" style="margin:0;">← Kütüphane Envanteri</a>' +
+      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--txm);">URL parametresi: '+esc(adi||'(boş)')+'</span>' +
     '</div>';
 }
 
 // ── BAŞLANGIÇ ─────────────────────────────────────────────
-(async function() {
-  var _b = 0;
-  while (_b < 80) {
-    if (_getSupa()) break;
-    await new Promise(function(r){ setTimeout(r, 100); });
-    _b++;
-  }
-  var supa = _getSupa();
-  if (!supa) { window.location.href = '../giris.html'; return; }
+(async function(){
+  var b=0; while (b<80) { if (_getSupa()) break; await new Promise(function(r){setTimeout(r,100);}); b++; }
+  var supa=_getSupa();
+  if (!supa) { window.location.href='../giris.html'; return; }
 
   if (window.location.hash) {
-    var params = new URLSearchParams(window.location.hash.substring(1));
-    var access_token = params.get('access_token');
-    var refresh_token = params.get('refresh_token');
-    if (access_token) {
-      await supa.auth.setSession({ access_token: access_token, refresh_token: refresh_token });
-      window.location.hash = '';
-    }
+    var p=new URLSearchParams(window.location.hash.substring(1));
+    var at=p.get('access_token'), rt=p.get('refresh_token');
+    if (at) { await supa.auth.setSession({access_token:at,refresh_token:rt}); window.location.hash=''; }
   }
 
-  var sessionRes = await supa.auth.getSession();
-  if (!sessionRes?.data?.session) {
-    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-    return;
-  }
-  var userId = sessionRes.data.session.user.id;
-  var kulRes = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id', userId).single();
-  if (!kulRes.data || kulRes.data.rol !== 'super_admin') {
-    window.location.href = '../index.html';
-    return;
-  }
+  var sr=await supa.auth.getSession();
+  if (!sr?.data?.session) { window.location.href='../giris.html?redirect='+encodeURIComponent(window.location.pathname+window.location.search); return; }
+  var kr=await supa.from('kullanicilar').select('rol,ad_soyad').eq('id',sr.data.session.user.id).single();
+  if (!kr.data || kr.data.rol!=='super_admin') { window.location.href='../index.html'; return; }
 
-  T('topbarUser').textContent = kulRes.data.ad_soyad || sessionRes.data.session.user.email;
-  var app = T('appShell');
-  app.style.display = 'flex';
-  app.style.visibility = 'visible';
-  document.documentElement.style.visibility = '';
+  T('topbarUser').textContent = kr.data.ad_soyad || sr.data.session.user.email;
+  var app=T('appShell'); app.style.display='flex'; app.style.visibility='visible';
+  document.documentElement.style.visibility='';
 
-  // URL'den tablo + sayfa parametresi
-  var tablo = getParam('tablo');
-  if (!tablo || !TABLO_BILGI[tablo]) {
-    gecersizTablo(tablo);
-    return;
-  }
-  var sayfa = parseInt(getParam('sayfa') || '1', 10);
-  if (isNaN(sayfa) || sayfa < 1) sayfa = 1;
+  var tablo=getParam('tablo');
+  if (!tablo || !TABLO_BILGI[tablo]) { gecersizTablo(tablo); return; }
+  var sayfa=parseInt(getParam('sayfa')||'1',10);
+  if (isNaN(sayfa)||sayfa<1) sayfa=1;
 
   cerceveCiz(tablo, TABLO_BILGI[tablo]);
   sayfayiYukle(tablo, sayfa);

@@ -9,36 +9,20 @@
 <script src="../ares-store.js"></script>
 <style>
 :root {
-  --ac:    #2D8EFF;
-  --ac2:   #1a75e8;
-  --gr:    #16a36e;
-  --re:    #e53e3e;
-  --warn:  #d97706;
-  --leg:   #7c3aed;
-  --admin: #f97316;
+  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
+  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
 }
 [data-theme=dark] {
-  --bg:    #0d1117;
-  --sur:   #161b24;
-  --sur2:  #1c2333;
-  --bor:   #262f3e;
-  --tx:    #e6ecf4;
-  --txm:   #94a3b8;
-  --txd:   #6b7a90;
+  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
+  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
 }
 [data-theme=light-anthracite] {
-  --bg:    #d8dde4;
-  --sur:   #e4e9ef;
-  --sur2:  #d0d7e0;
-  --bor:   #bcc5d0;
-  --tx:    #141e2b;
-  --txm:   #3a4f63;
-  --txd:   #637080;
+  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
+  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
 
-/* -- TOP BAR -- */
 .topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-shrink:0;}
 .topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
 .topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;letter-spacing:0;}
@@ -48,10 +32,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
 .btn-logout:hover{border-color:var(--re);color:var(--re);}
 
-/* -- LAYOUT -- */
 .layout{display:flex;flex:1;min-height:0;}
-
-/* -- SIDEBAR -- */
 .sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;text-decoration:none;}
 .nav-item:hover{background:var(--sur2);color:var(--tx);}
@@ -59,90 +40,94 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .nav-icon{font-size:16px;width:20px;text-align:center;}
 .nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
 
-/* -- MAIN -- */
 .main{flex:1;overflow-y:auto;padding:28px 32px;}
-.page-header{margin-bottom:24px;}
+.page-header{margin-bottom:20px;}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);}
 .page-sub{font-size:13px;color:var(--txm);margin-top:4px;}
 
-/* -- STAT KARTLAR -- */
-.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
-.stat-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);opacity:.5;}
-.stat-card[data-grup="malzeme"]::before{background:var(--leg);}
-.stat-card[data-grup="uyum"]::before{background:var(--warn);}
-.stat-card[data-grup="ozel"]::before{background:var(--gr);}
-.stat-card[data-grup="spec"]::before{background:var(--admin);}
-.stat-icon{font-size:18px;line-height:1;}
-.stat-label{font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.7px;}
-.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;color:var(--tx);}
-.stat-val .stat-hedef{font-size:14px;color:var(--txd);font-weight:600;margin-left:4px;}
-.stat-sub{font-size:11px;color:var(--txd);}
-.stat-pct{position:absolute;top:14px;right:16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--txd);}
-
-/* -- ENVANTER TABLOSU -- */
-.env-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
-.env-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);}
-.env-title{font-size:14px;font-weight:700;color:var(--tx);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
-.env-meta{font-size:11px;color:var(--txd);font-family:'JetBrains Mono',monospace;}
-.env-table{width:100%;border-collapse:collapse;}
-.env-table th{text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;padding:10px 16px;border-bottom:1px solid var(--bor);background:var(--sur2);}
-.env-table th.num{text-align:right;}
-.env-table td{padding:12px 16px;border-bottom:1px solid rgba(35,39,48,.6);font-size:13px;color:var(--tx);}
-.env-table td.num{text-align:right;font-family:'JetBrains Mono',monospace;}
-.env-table tr.grup-bas td{background:var(--sur2);padding:8px 16px;border-bottom:1px solid var(--bor);}
-.env-table tr.grup-bas .grup-bas-ad{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--txm);}
-.env-table tr:hover:not(.grup-bas) td{background:rgba(255,255,255,.025);}
-.env-table .tablo-kod{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--txd);}
-.env-table .tablo-ad{font-weight:600;}
-.env-table .standart{font-size:11px;color:var(--txd);margin-top:2px;}
-
-.ilerleme-track{background:var(--sur2);height:6px;border-radius:3px;overflow:hidden;width:120px;}
-.ilerleme-fill{background:var(--ac);height:100%;transition:width .5s ease;}
-.ilerleme-fill.tam{background:var(--gr);}
-.ilerleme-fill.dusuk{background:var(--warn);}
-.ilerleme-fill.bos{background:var(--re);opacity:.4;}
-
-/* Tablo yok (404) durumu */
-.yok-rozet{display:inline-block;background:rgba(148,163,184,.15);color:var(--txm);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px;text-transform:uppercase;}
-.env-table tr.satir-yok td{opacity:.55;}
-.env-table tr.satir-yok:hover td{opacity:.75;}
-.stat-card.karti-yok{opacity:.6;}
-.stat-card.karti-yok::before{background:var(--txd) !important;}
-
-.detay-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1px solid var(--bor);color:var(--txm);font-size:11px;font-weight:600;text-decoration:none;transition:all .15s;font-family:'Barlow',sans-serif;}
-.detay-btn:hover{border-color:var(--ac);color:var(--ac);background:rgba(45,142,255,.08);}
-
-.empty{text-align:center;padding:48px 20px;color:var(--txd);}
-.empty-icon{font-size:32px;margin-bottom:10px;}
-
-/* Bilgi şeridi */
 .info-strip{display:flex;align-items:center;gap:14px;background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--ac);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--txm);line-height:1.5;}
 .info-strip strong{color:var(--tx);}
 
-/* Loader */
-.loader{display:inline-block;width:12px;height:12px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
+/* ÖZET ŞERİT — toplam mevcut/hedef + %dolu */
+.ozet-serit{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+.ozet-kart{background:var(--sur);border:1px solid var(--bor);border-radius:11px;padding:14px 16px;}
+.ozet-lbl{font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.ozet-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:1;color:var(--tx);}
+.ozet-sub{font-size:11px;color:var(--txd);margin-top:3px;}
+.ozet-track{background:var(--sur2);height:5px;border-radius:3px;overflow:hidden;margin-top:8px;}
+.ozet-fill{background:var(--ac);height:100%;transition:width .5s ease;}
+
+/* GRUP KARTLARI GRID */
+.grup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grup-kart{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:border-color .15s;}
+.grup-kart::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);}
+.grup-kart[data-renk="leg"]::before{background:var(--leg);}
+.grup-kart[data-renk="gr"]::before{background:var(--gr);}
+.grup-kart[data-renk="warn"]::before{background:var(--warn);}
+.grup-kart[data-renk="admin"]::before{background:var(--admin);}
+.grup-kart[data-renk="re"]::before{background:var(--re);}
+.grup-kart[data-renk="txm"]::before{background:var(--txm);}
+.grup-kart:hover{border-color:var(--txd);}
+.grup-kart.bos{opacity:.7;}
+
+.grup-bas{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.grup-bas-l{flex:1;min-width:0;}
+.grup-bas-isim{display:flex;align-items:center;gap:8px;}
+.grup-ikon{font-size:20px;line-height:1;}
+.grup-ad{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--tx);}
+.grup-aciklama{font-size:11px;color:var(--txd);margin-top:3px;line-height:1.35;}
+.grup-pct{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--txd);white-space:nowrap;}
+.grup-pct.tam{color:var(--gr);}
+.grup-pct.bos{color:var(--txd);}
+
+.svg-yer{background:var(--sur2);border:1px dashed var(--bor);border-radius:10px;height:108px;display:flex;align-items:center;justify-content:center;color:var(--txd);font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;text-align:center;line-height:1.4;margin-bottom:12px;background-image:repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(148,163,184,.04) 8px, rgba(148,163,184,.04) 16px);}
+.svg-yer .yer-ikon{font-size:30px;opacity:.3;margin-bottom:4px;display:block;}
+.svg-yer .yer-not{opacity:.7;}
+
+.grup-toplam-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;}
+.grup-mevcut{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--tx);}
+.grup-hedef{font-size:13px;color:var(--txd);font-weight:600;}
+.grup-track{background:var(--sur2);height:5px;border-radius:3px;overflow:hidden;margin-bottom:14px;}
+.grup-fill{background:var(--ac);height:100%;transition:width .5s ease;}
+.grup-fill.tam{background:var(--gr);}
+.grup-fill.dusuk{background:var(--warn);}
+.grup-fill.bos{background:var(--re);opacity:.4;}
+
+.tablo-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.tablo-sat{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sur2);border-radius:8px;border:1px solid transparent;transition:all .15s;text-decoration:none;color:inherit;}
+.tablo-sat:hover{border-color:var(--ac);background:rgba(45,142,255,.06);}
+.tablo-sat.satir-yok{opacity:.5;pointer-events:none;}
+.tablo-sat.satir-hata{border-color:rgba(229,62,62,.4);}
+.tablo-sat-l{flex:1;min-width:0;}
+.tablo-kod{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--tx);}
+.tablo-not{font-size:10px;color:var(--txd);margin-top:1px;}
+.tablo-sat-r{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.tablo-cnt{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);}
+.tablo-cnt-hedef{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);font-weight:600;}
+.tablo-ok{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(22,163,110,.15);color:var(--gr);font-size:11px;font-weight:700;}
+.tablo-arrow{color:var(--txd);font-size:14px;line-height:1;}
+
+.yok-rozet{display:inline-block;background:rgba(148,163,184,.15);color:var(--txm);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.4px;text-transform:uppercase;}
+.hata-rozet{display:inline-block;background:rgba(229,62,62,.15);color:var(--re);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.4px;text-transform:uppercase;}
+
+.olgunluk{font-size:10.5px;color:var(--txd);display:flex;align-items:center;gap:6px;padding-top:10px;border-top:1px dashed var(--bor);}
+.olgunluk-ikon{font-size:12px;opacity:.6;}
+
+.empty{text-align:center;padding:80px 20px;color:var(--txd);}
+.empty-icon{font-size:32px;margin-bottom:10px;}
+.loader{display:inline-block;width:14px;height:14px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-@media (max-width: 1100px) {
-  .stat-grid{grid-template-columns:repeat(3,1fr);}
-}
-@media (max-width: 720px) {
-  .stat-grid{grid-template-columns:repeat(2,1fr);}
-  .main{padding:16px;}
-}
+@media (max-width: 1280px) { .grup-grid{grid-template-columns:repeat(2,1fr);} .ozet-serit{grid-template-columns:repeat(2,1fr);} }
+@media (max-width: 720px)  { .grup-grid{grid-template-columns:1fr;} .ozet-serit{grid-template-columns:1fr;} .main{padding:16px;} }
 </style>
 </head>
 <body>
 
 <div id="appShell" style="display:none;flex-direction:column;min-height:100vh;visibility:hidden;">
 
-<!-- TOP BAR -->
 <div class="topbar">
-  <div class="topbar-logo">
-    ⚙ AresPipe
-    <span>/ Süper Admin · Kütüphane</span>
-  </div>
+  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane</span></div>
   <div class="topbar-sep"></div>
   <div class="topbar-user">
     <span class="topbar-badge">SUPER ADMIN</span>
@@ -153,7 +138,6 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 
 <div class="layout">
 
-<!-- SIDEBAR -->
 <div class="sidebar">
   <a class="nav-item" href="panel.html"><span class="nav-icon">📊</span>Dashboard</a>
   <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Pano</a>
@@ -167,42 +151,54 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
   <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Sistem Logları</a>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
   <div class="page-header">
     <div class="page-title">Kütüphane Envanteri</div>
-    <div class="page-sub">5 grup · 8 tablo · salt-okunur · veri girişi Claude oturumları + SQL ile yürür</div>
+    <div class="page-sub">7 bölüm · 8 tablo · parça tipine göre gruplanmış</div>
   </div>
 
   <div class="info-strip">
     <span style="font-size:16px;">ℹ️</span>
     <div>
-      <strong>Hedef rakamlar</strong> <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);">docs/KUTUPHANE-YUKLEME-TAKIP.md</code> dosyasından okunur — Cihat dosyayı güncelleyince burası da güncellenir.
+      <strong>Hedef rakamlar</strong> <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);">docs/KUTUPHANE-YUKLEME-TAKIP.md</code> dosyasından okunur.
       <strong>Mevcut sayılar</strong> canlı DB'den paralel <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);">count(*)</code> ile.
-      Aralık hedeflerde (ör. 200-500) yüzde ortalama üzerinden hesaplanır.
+      <strong>Parça görselleri</strong> bölümlerde yer tutucu olarak ayrıldı — arşivden eklenecek.
     </div>
   </div>
 
-  <!-- ÖZET KARTLAR -->
-  <div class="stat-grid" id="grupKartGrid">
-    <!-- JS doldurur -->
+  <!-- ÖZET ŞERİT (toplam) -->
+  <div class="ozet-serit" id="ozetSerit">
+    <div class="ozet-kart">
+      <div class="ozet-lbl">Toplam Mevcut</div>
+      <div class="ozet-val" id="ozetMevcut">—</div>
+      <div class="ozet-sub" id="ozetMevcutSub">yükleniyor</div>
+    </div>
+    <div class="ozet-kart">
+      <div class="ozet-lbl">Toplam Hedef</div>
+      <div class="ozet-val" id="ozetHedef">—</div>
+      <div class="ozet-sub">KUTUPHANE-YUKLEME-TAKIP.md (v3)</div>
+    </div>
+    <div class="ozet-kart">
+      <div class="ozet-lbl">Genel İlerleme</div>
+      <div class="ozet-val" id="ozetPct">—</div>
+      <div class="ozet-track"><div class="ozet-fill" id="ozetFill" style="width:0%;"></div></div>
+    </div>
+    <div class="ozet-kart">
+      <div class="ozet-lbl">Sistem Durumu</div>
+      <div class="ozet-val" id="ozetDurum" style="font-size:14px;line-height:1.3;">—</div>
+      <div class="ozet-sub" id="ozetDurumSub">—</div>
+    </div>
   </div>
 
-  <!-- ANA TABLO -->
-  <div class="env-wrap">
-    <div class="env-head">
-      <div class="env-title">📚 Tablo Envanteri</div>
-      <div class="env-meta" id="envMetaOzet">—</div>
-    </div>
-    <div id="envIcerik">
-      <div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>
-    </div>
+  <!-- GRUP KARTLARI -->
+  <div class="grup-grid" id="grupGrid">
+    <div class="empty" style="grid-column:1/-1;"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>
   </div>
 
-</div><!-- /.main -->
-</div><!-- /.layout -->
-</div><!-- /#appShell -->
+</div>
+</div>
+</div>
 
 <script>
 'use strict';
@@ -211,363 +207,210 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 var YUKLEME_URL = 'https://raw.githubusercontent.com/cihatoztas-ai/arespipe/main/docs/KUTUPHANE-YUKLEME-TAKIP.md';
 
 var GRUPLAR = [
-  { kod:'geometri', ad:'Geometri', ikon:'📐', aciklama:'Boru / fitting / flanş ölçüleri',
-    tablolar:['boru_olculer','fitting_olculer','flansh_olculer'] },
-  { kod:'malzeme',  ad:'Malzeme',  ikon:'🧪', aciklama:'Spec + grade katalogları',
-    tablolar:['malzeme_kataloglari'] },
-  { kod:'uyum',     ad:'Uyum',     ikon:'🔗', aciklama:'Geometri × malzeme çapraz uyum',
-    tablolar:['fitting_malzeme_uyum'] },
-  { kod:'ozel',     ad:'Özel',     ikon:'🧩', aciklama:'Custom, coupling sleeve, üretici özel',
-    tablolar:['ozel_parcalar'] },
-  { kod:'spec',     ad:'Spec',     ikon:'📑', aciklama:'AVEVA-vari spec seti + kurallar',
-    tablolar:['tenant_spec_seti','spec_kural'] }
+  { kod:'borular',    ad:'Borular',        ikon:'📐', renk:'',     aciklama:'Çıplak boru ölçüleri · malzeme bağımsız',         tablolar:['boru_olculer'] },
+  { kod:'fittings',   ad:'Fittings',       ikon:'🔩', renk:'leg',  aciklama:'Dirsek · tee · redüksiyon · cap · stub end',     tablolar:['fitting_olculer'] },
+  { kod:'flanslar',   ad:'Flanşlar',       ikon:'⚙️', renk:'gr',   aciklama:'WN · SO · BL · LJ · SW · TH flanşlar',           tablolar:['flansh_olculer'] },
+  { kod:'malzemeler', ad:'Malzemeler',     ikon:'🧪', renk:'warn', aciklama:'Spec + grade katalogları (A106, A312, B466…)',  tablolar:['malzeme_kataloglari'] },
+  { kod:'uyum',       ad:'Çapraz Uyum',    ikon:'🔗', renk:'admin',aciklama:'Geometri × malzeme — üretilebilirlik tablosu',   tablolar:['fitting_malzeme_uyum'] },
+  { kod:'ozel',       ad:'Özel Parçalar',  ikon:'🧩', renk:'re',   aciklama:'Custom · coupling sleeve · üretici özel',        tablolar:['ozel_parcalar'] },
+  { kod:'spec',       ad:'Spec Sistemi',   ikon:'📑', renk:'txm',  aciklama:'AVEVA-vari spec seti + spec kuralları',          tablolar:['tenant_spec_seti','spec_kural'] }
 ];
 
 var TABLO_BILGI = {
-  boru_olculer:        { ad:'Boru Ölçüleri',     std:'ASME B36.10M · B36.19M · EN 10216 · DIN 86019' },
-  fitting_olculer:     { ad:'Fitting Ölçüleri',  std:'ASME B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089' },
-  flansh_olculer:      { ad:'Flanş Ölçüleri',    std:'ASME B16.5 · B16.47 · EN 1092 · DIN 86087/88' },
-  malzeme_kataloglari: { ad:'Malzeme Katalogları', std:'7 grup · karbon, paslanmaz, duplex, CuNi, alüminyum, alaşımlı, nikel' },
-  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',       std:'Geometri × malzeme — hangi parça hangi malzemeden üretilebilir' },
-  ozel_parcalar:       { ad:'Özel Parçalar',     std:'Coupling sleeve · custom fitting · üretici-spesifik' },
-  tenant_spec_seti:    { ad:'Spec Setleri',      std:'Tersane bazlı parça/malzeme alt kümeleri (AVEVA-vari)' },
-  spec_kural:          { ad:'Spec Kuralları',    std:'Spec başına izinli parça/malzeme kombinasyonları' }
+  boru_olculer:        { ad:'Boru Ölçüleri',       not:'B36.10 · B36.19 · EN 10216 · DIN 86019' },
+  fitting_olculer:     { ad:'Fitting Ölçüleri',    not:'B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089' },
+  flansh_olculer:      { ad:'Flanş Ölçüleri',      not:'B16.5 · B16.47 · EN 1092 · DIN 86087/88' },
+  malzeme_kataloglari: { ad:'Malzeme Katalogları', not:'7 grup · karbon → paslanmaz → duplex → CuNi → alüminyum → alaşımlı → nikel' },
+  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',         not:'Geometri × malzeme — hangi parça hangi malzemeden' },
+  ozel_parcalar:       { ad:'Özel Parçalar',       not:'Coupling sleeve · custom fitting' },
+  tenant_spec_seti:    { ad:'Spec Setleri',        not:'Tersane bazlı alt küme (AVEVA-vari)' },
+  spec_kural:          { ad:'Spec Kuralları',      not:'Spec başına izinli parça/malzeme' }
 };
 
-// ── SUPABASE PROXY (panel.html paterni) ───────────────────
+// ── SUPABASE PROXY ────────────────────────────────────────
 var _supa = null;
-function _getSupa() {
-  if (_supa) return _supa;
-  if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase();
-  return _supa;
-}
-var _supaProxy = new Proxy({}, {
-  get: function(t, prop) {
-    var s = _getSupa();
-    if (!s) throw new Error('Supabase hazır değil');
-    var val = s[prop];
-    return typeof val === 'function' ? val.bind(s) : val;
-  }
-});
+function _getSupa() { if (_supa) return _supa; if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase(); return _supa; }
+var _supaProxy = new Proxy({}, { get:function(t,prop){var s=_getSupa();if(!s)throw new Error('Supabase hazır değil');var v=s[prop];return typeof v==='function'?v.bind(s):v;}});
 
-// ── HELPER ────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 function T(id){return document.getElementById(id);}
-async function cikisYap() {
-  await _supaProxy.auth.signOut();
-  window.location.href = '../giris.html';
-}
+async function cikisYap(){await _supaProxy.auth.signOut();window.location.href='../giris.html';}
 
-// "120" → 120 ; "200-500" → {min:200, max:500, avg:350} ; "10-20" → {...}
-function hedefParse(raw) {
+function hedefParse(raw){
   if (!raw) return null;
-  raw = raw.replace(/,/g, '').replace(/\s+/g,'').replace(/[–—]/g,'-');
-  var arli = raw.match(/^(\d+)-(\d+)$/);
-  if (arli) {
-    var min = parseInt(arli[1],10), max = parseInt(arli[2],10);
-    return { min:min, max:max, avg:Math.round((min+max)/2), gosterim: min+'-'+max };
-  }
-  var tek = raw.match(/^(\d+)$/);
-  if (tek) {
-    var v = parseInt(tek[1],10);
-    return { min:v, max:v, avg:v, gosterim:String(v) };
-  }
+  raw = raw.replace(/,/g,'').replace(/\s+/g,'').replace(/[–—]/g,'-');
+  var a = raw.match(/^(\d+)-(\d+)$/);
+  if (a){var mn=parseInt(a[1],10),mx=parseInt(a[2],10);return{min:mn,max:mx,avg:Math.round((mn+mx)/2),gosterim:mn+'-'+mx};}
+  var t = raw.match(/^(\d+)$/);
+  if (t){var v=parseInt(t[1],10);return{min:v,max:v,avg:v,gosterim:String(v)};}
   return null;
 }
-
-// KUTUPHANE-YUKLEME-TAKIP.md özet tablosundan hedef rakamları çek (v3 format)
-// Satır: | `tablo_adi` (açıklama) | **mevcut** | hedef | yüzde |
-// Aynı tablo birden çok satırda olabilir (örn. fitting_olculer B16.9 + B16.11/EN) → TOPLA
-function hedeflerParse(md) {
-  var sonuc = {};
-  var re = /\|\s*`([a-z_]+)`[^|]*\|[^|]+\|\s*([\d,\s\-–—]+)\s*\|/g;
+function hedeflerParse(md){
+  var sonuc={};
+  var re=/\|\s*`([a-z_]+)`[^|]*\|[^|]+\|\s*([\d,\s\-–—]+)\s*\|/g;
   var m;
-  while ((m = re.exec(md)) !== null) {
-    var tabloAdi = m[1];
-    var hedef = hedefParse(m[2]);
-    if (!hedef || !TABLO_BILGI[tabloAdi]) continue;
-    if (sonuc[tabloAdi]) {
-      // Aynı tablo tekrar — topla
-      var mev = sonuc[tabloAdi];
-      mev.min += hedef.min;
-      mev.max += hedef.max;
-      mev.avg = Math.round((mev.min + mev.max) / 2);
-      mev.gosterim = (mev.min === mev.max) ? String(mev.min) : (mev.min + '-' + mev.max);
-    } else {
-      sonuc[tabloAdi] = hedef;
-    }
+  while ((m=re.exec(md))!==null) {
+    var tablo=m[1], h=hedefParse(m[2]);
+    if (!h || !TABLO_BILGI[tablo]) continue;
+    if (sonuc[tablo]) {
+      var x=sonuc[tablo];
+      x.min+=h.min; x.max+=h.max; x.avg=Math.round((x.min+x.max)/2);
+      x.gosterim=(x.min===x.max)?String(x.min):(x.min+'-'+x.max);
+    } else sonuc[tablo]=h;
   }
   return sonuc;
 }
-
-// Hedeften yüzde sınıfı
-function ilerlemeSinif(mevcut, hedefAvg) {
-  if (mevcut === 0) return 'bos';
-  if (hedefAvg === 0) return 'tam';
-  var p = mevcut / hedefAvg;
-  if (p >= 0.85) return 'tam';
-  if (p >= 0.30) return '';
+function ilerlemeSinif(mevcut, hedefAvg){
+  if (mevcut===0) return 'bos';
+  if (hedefAvg===0) return 'tam';
+  var p=mevcut/hedefAvg;
+  if (p>=0.85) return 'tam';
+  if (p>=0.30) return '';
   return 'dusuk';
 }
-function yuzdeHesap(mevcut, hedefAvg) {
-  if (!hedefAvg) return 0;
-  return Math.min(100, Math.round((mevcut / hedefAvg) * 100));
-}
 
-// ── DB count'larını paralel al ────────────────────────────
-// Her tablo için { durum: 'ok'|'yok'|'hata', sayi?, mesaj? } döner
-async function sayilariAl() {
-  var tumTablolar = Object.keys(TABLO_BILGI);
-  var sonuc = {};
-  await Promise.all(tumTablolar.map(async function(tablo) {
+// ── VERİ ÇEK ──────────────────────────────────────────────
+async function sayilariAl(){
+  var tums=Object.keys(TABLO_BILGI), sonuc={};
+  await Promise.all(tums.map(async function(tablo){
     try {
-      var r = await _supaProxy.from(tablo).select('*', { count:'exact', head:true });
+      var r=await _supaProxy.from(tablo).select('*',{count:'exact',head:true});
       if (r && r.error) {
-        var code = (r.error.code || '').toString();
-        var msg  = (r.error.message || '').toLowerCase();
-        var status = r.status || 0;
-        if (status === 404 || code === 'PGRST205' || code === '42P01' ||
-            /does not exist|not found|could not find/.test(msg)) {
-          sonuc[tablo] = { durum: 'yok' };
-        } else {
-          sonuc[tablo] = { durum: 'hata', mesaj: r.error.message };
-          console.warn('[sayi] ' + tablo + ':', r.error.message);
-        }
-      } else {
-        sonuc[tablo] = { durum: 'ok', sayi: (r && typeof r.count === 'number') ? r.count : 0 };
-      }
+        var code=(r.error.code||'').toString(), msg=(r.error.message||'').toLowerCase(), status=r.status||0;
+        if (status===404||code==='PGRST205'||code==='42P01'||/does not exist|not found|could not find/.test(msg)) sonuc[tablo]={durum:'yok'};
+        else {sonuc[tablo]={durum:'hata',mesaj:r.error.message};console.warn('[sayi] '+tablo+':',r.error.message);}
+      } else sonuc[tablo]={durum:'ok',sayi:(r&&typeof r.count==='number')?r.count:0};
     } catch (e) {
-      var emsg = (e.message || '').toLowerCase();
-      if (/does not exist|not found|404/.test(emsg)) {
-        sonuc[tablo] = { durum: 'yok' };
-      } else {
-        sonuc[tablo] = { durum: 'hata', mesaj: e.message };
-        console.warn('[sayi] ' + tablo + ' exception:', e.message);
-      }
+      var em=(e.message||'').toLowerCase();
+      if (/does not exist|not found|404/.test(em)) sonuc[tablo]={durum:'yok'};
+      else {sonuc[tablo]={durum:'hata',mesaj:e.message};console.warn('[sayi] '+tablo+' exc:',e.message);}
     }
   }));
   return sonuc;
 }
-
-// ── Hedefleri fetch + parse ───────────────────────────────
-async function hedefleriAl() {
+async function hedefleriAl(){
   try {
-    var res = await fetch(YUKLEME_URL, { cache:'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var md = await res.text();
-    return hedeflerParse(md);
-  } catch (e) {
-    console.warn('[hedef] yüklenemedi:', e.message);
-    return {};
-  }
+    var res=await fetch(YUKLEME_URL,{cache:'no-cache'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    return hedeflerParse(await res.text());
+  } catch (e){console.warn('[hedef] yüklenemedi:',e.message);return {};}
 }
 
-// ── Stat kartları çiz ─────────────────────────────────────
-function kartlariCiz(sayilar, hedefler) {
-  var grid = T('grupKartGrid');
-  grid.innerHTML = GRUPLAR.map(function(g) {
-    var mevcut = 0, hedef = 0, eksikHedef = false;
-    var tumYok = true, herhangiYok = false, herhangiHata = false;
-    g.tablolar.forEach(function(t) {
-      var s = sayilar[t];
-      if (s && s.durum === 'ok') {
-        mevcut += s.sayi;
-        tumYok = false;
-      } else if (s && s.durum === 'yok') {
-        herhangiYok = true;
+// ── ÇİZİM ─────────────────────────────────────────────────
+function ciz(sayilar, hedefler){
+  var toplamMevcut=0, toplamHedef=0, yokSayisi=0, hataSayisi=0, okTabloSayisi=0;
+
+  var html = GRUPLAR.map(function(g){
+    var grupMevcut=0, grupHedef=0, grupYok=0, grupHata=0, grupOk=0;
+    var altSatHTML='';
+
+    g.tablolar.forEach(function(t){
+      var s = sayilar[t], h = hedefler[t], bilgi = TABLO_BILGI[t];
+      var hedefAvg = h ? h.avg : 0, hedefStr = h ? h.gosterim : '—';
+
+      var sagHTML, sinif='';
+      if (s && s.durum==='yok') {
+        sagHTML = '<span class="yok-rozet">tablo yok</span>';
+        sinif=' satir-yok';
+        grupYok++; yokSayisi++;
+      } else if (s && s.durum==='hata') {
+        sagHTML = '<span class="hata-rozet" title="'+esc(s.mesaj||'')+'">hata</span>';
+        sinif=' satir-hata';
+        grupHata++; hataSayisi++;
       } else {
-        herhangiHata = true;
-        tumYok = false;
+        var mev = s ? s.sayi : 0;
+        grupMevcut += mev; grupOk++; okTabloSayisi++;
+        sagHTML = '<span class="tablo-cnt">'+mev.toLocaleString('tr-TR')+'</span>' +
+                  '<span class="tablo-cnt-hedef">/ '+esc(hedefStr)+'</span>' +
+                  (mev>0 && hedefAvg && mev>=hedefAvg*0.85 ? '<span class="tablo-ok" title="hedef tamam">✓</span>' : '') +
+                  '<span class="tablo-arrow">›</span>';
       }
-      var h = hedefler[t];
-      if (h) hedef += h.avg; else eksikHedef = true;
+      if (h) grupHedef += h.avg;
+
+      var link = (s && s.durum==='yok') ? '#' : 'kutuphane-detay.html?tablo='+encodeURIComponent(t);
+      altSatHTML += '<a class="tablo-sat'+sinif+'" href="'+link+'">' +
+        '<div class="tablo-sat-l"><div class="tablo-kod">'+esc(t)+'</div><div class="tablo-not">'+esc(bilgi.not)+'</div></div>' +
+        '<div class="tablo-sat-r">'+sagHTML+'</div>' +
+      '</a>';
     });
-    var pct = hedef > 0 ? Math.min(100, Math.round((mevcut/hedef)*100)) : 0;
-    var hedefGoster = hedef > 0
-      ? (eksikHedef ? '~' : '') + hedef.toLocaleString('tr-TR')
-      : '—';
 
-    // Üst sağ rozet
-    var rozet;
-    if (tumYok && herhangiYok) {
-      rozet = '<span style="background:rgba(148,163,184,.15);color:var(--txm);font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;letter-spacing:.4px;">TABLO YOK</span>';
-    } else if (herhangiHata) {
-      rozet = '<span style="color:var(--re);font-size:10px;font-weight:700;">HATA</span>';
-    } else {
-      rozet = '<span class="stat-pct" style="position:static;">' + (hedef ? pct + '%' : '—') + '</span>';
-    }
+    toplamMevcut += grupMevcut;
+    toplamHedef  += grupHedef;
 
-    var altNot = '';
-    if (herhangiYok && !tumYok) {
-      altNot = ' <span style="color:var(--warn);font-size:10px;">· kısmi (bazı tablolar yok)</span>';
-    }
+    var pct = grupHedef>0 ? Math.min(100, Math.round((grupMevcut/grupHedef)*100)) : 0;
+    var sinifFill = ilerlemeSinif(grupMevcut, grupHedef);
+    var tumYok = (grupOk===0 && grupYok>0 && grupHata===0);
+    var pctText = grupHedef>0 ? (pct + '%') : (tumYok ? '—' : '0%');
+    var pctSinif = (pct>=85?'tam':(grupMevcut===0?'bos':''));
 
-    var sinifEk = tumYok ? ' karti-yok' : '';
-    return '<div class="stat-card' + sinifEk + '" data-grup="'+esc(g.kod)+'">' +
-      '<div style="position:absolute;top:14px;right:16px;">' + rozet + '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<span class="stat-icon">' + g.ikon + '</span>' +
-        '<span class="stat-label">' + esc(g.ad) + '</span>' +
+    var olgunlukNot = tumYok
+      ? 'Tablolar henüz oluşturulmadı'
+      : (grupMevcut===0 ? 'Henüz veri yok'
+         : 'AI olgunluk: henüz veri yok · ek dosya: 0');
+
+    return '<div class="grup-kart' + (tumYok?' bos':'') + '" data-renk="'+esc(g.renk||'')+'">' +
+      '<div class="grup-bas">' +
+        '<div class="grup-bas-l">' +
+          '<div class="grup-bas-isim"><span class="grup-ikon">'+g.ikon+'</span><span class="grup-ad">'+esc(g.ad)+'</span></div>' +
+          '<div class="grup-aciklama">'+esc(g.aciklama)+'</div>' +
+        '</div>' +
+        '<div class="grup-pct '+pctSinif+'">'+pctText+'</div>' +
       '</div>' +
-      '<div class="stat-val">' + mevcut.toLocaleString('tr-TR') +
-        '<span class="stat-hedef">/ ' + hedefGoster + '</span>' +
+      '<div class="svg-yer">' +
+        '<div><span class="yer-ikon">'+g.ikon+'</span><div class="yer-not">parça görseli<br>arşivden eklenecek</div></div>' +
       '</div>' +
-      '<div class="stat-sub">' + esc(g.aciklama) + altNot + '</div>' +
+      '<div class="grup-toplam-row">' +
+        '<span class="grup-mevcut">'+grupMevcut.toLocaleString('tr-TR')+'</span>' +
+        '<span class="grup-hedef">/ '+(grupHedef ? '~'+grupHedef.toLocaleString('tr-TR') : '—')+'</span>' +
+      '</div>' +
+      '<div class="grup-track"><div class="grup-fill '+sinifFill+'" style="width:'+pct+'%;"></div></div>' +
+      '<div class="tablo-list">'+altSatHTML+'</div>' +
+      '<div class="olgunluk"><span class="olgunluk-ikon">🎯</span>'+esc(olgunlukNot)+'</div>' +
     '</div>';
   }).join('');
-}
 
-// ── Envanter tablosunu çiz ────────────────────────────────
-function envanterCiz(sayilar, hedefler) {
-  var toplamMevcut = 0, toplamHedef = 0, yokSayisi = 0;
+  T('grupGrid').innerHTML = html;
 
-  function mevcutDeger(s) { return (s && s.durum === 'ok') ? s.sayi : 0; }
+  // Özet şerit
+  var pctTop = toplamHedef ? Math.round((toplamMevcut/toplamHedef)*100) : 0;
+  T('ozetMevcut').textContent = toplamMevcut.toLocaleString('tr-TR');
+  T('ozetMevcutSub').textContent = okTabloSayisi + ' / 8 tablo aktif';
+  T('ozetHedef').textContent = '~'+toplamHedef.toLocaleString('tr-TR');
+  T('ozetPct').textContent = pctTop + '%';
+  T('ozetFill').style.width = pctTop + '%';
 
-  var bodyHTML = '';
-  GRUPLAR.forEach(function(g) {
-    var grupMevcut = 0, grupHedef = 0, grupYok = 0;
-    g.tablolar.forEach(function(t) {
-      var s = sayilar[t];
-      if (s && s.durum === 'ok') grupMevcut += s.sayi;
-      if (s && s.durum === 'yok') grupYok++;
-      var h = hedefler[t];
-      if (h) grupHedef += h.avg;
-    });
-    toplamMevcut += grupMevcut;
-    toplamHedef += grupHedef;
-    yokSayisi += grupYok;
-
-    var grupNot = grupYok > 0 ? ' <span style="color:var(--warn);font-size:10.5px;">· ' + grupYok + ' tablo yok</span>' : '';
-
-    // Grup başlık satırı
-    bodyHTML += '<tr class="grup-bas"><td colspan="6">' +
-      '<span class="grup-bas-ad">' + g.ikon + ' ' + esc(g.ad) + '</span>' +
-      ' <span style="font-size:11px;color:var(--txd);margin-left:8px;">' + esc(g.aciklama) + '</span>' +
-      grupNot +
-      ' <span style="float:right;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);">' +
-        grupMevcut.toLocaleString('tr-TR') + ' / ' + (grupHedef ? '~'+grupHedef.toLocaleString('tr-TR') : '—') +
-      '</span>' +
-    '</td></tr>';
-
-    g.tablolar.forEach(function(tablo) {
-      var bilgi = TABLO_BILGI[tablo];
-      var s = sayilar[tablo];
-      var hedef = hedefler[tablo];
-      var hedefAvg = hedef ? hedef.avg : 0;
-      var hedefStr = hedef ? hedef.gosterim : '—';
-
-      var mevcutHTML, ilerlemeHTML, detayHTML;
-
-      if (s && s.durum === 'yok') {
-        mevcutHTML = '<span class="yok-rozet">tablo yok</span>';
-        ilerlemeHTML =
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<div class="ilerleme-track"><div class="ilerleme-fill" style="width:0%;background:var(--txd);opacity:.25;"></div></div>' +
-            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);min-width:34px;text-align:right;">—</span>' +
-          '</div>';
-        detayHTML = '<span class="detay-btn" style="opacity:.35;cursor:not-allowed;pointer-events:none;">Henüz yok</span>';
-      } else if (s && s.durum === 'hata') {
-        mevcutHTML = '<span style="color:var(--re);" title="' + esc(s.mesaj || '') + '">hata</span>';
-        ilerlemeHTML = '<span style="color:var(--re);font-size:11px;">—</span>';
-        detayHTML = '<a class="detay-btn" href="kutuphane-detay.html?tablo=' + encodeURIComponent(tablo) + '">Detay →</a>';
-      } else {
-        var mevcut = s ? s.sayi : 0;
-        var pct = yuzdeHesap(mevcut, hedefAvg);
-        var sinif = ilerlemeSinif(mevcut, hedefAvg);
-        mevcutHTML = mevcut.toLocaleString('tr-TR');
-        ilerlemeHTML =
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<div class="ilerleme-track"><div class="ilerleme-fill ' + sinif + '" style="width:' + pct + '%;"></div></div>' +
-            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);min-width:34px;text-align:right;">' + (hedefAvg ? pct + '%' : '—') + '</span>' +
-          '</div>';
-        detayHTML = '<a class="detay-btn" href="kutuphane-detay.html?tablo=' + encodeURIComponent(tablo) + '">Detay →</a>';
-      }
-
-      bodyHTML += '<tr' + ((s && s.durum === 'yok') ? ' class="satir-yok"' : '') + '>' +
-        '<td>' +
-          '<div class="tablo-ad">' + esc(bilgi.ad) + '</div>' +
-          '<div class="tablo-kod">' + esc(tablo) + '</div>' +
-        '</td>' +
-        '<td><div class="standart">' + esc(bilgi.std) + '</div></td>' +
-        '<td class="num">' + mevcutHTML + '</td>' +
-        '<td class="num">' + esc(hedefStr) + '</td>' +
-        '<td>' + ilerlemeHTML + '</td>' +
-        '<td>' + detayHTML + '</td>' +
-      '</tr>';
-    });
-  });
-
-  T('envIcerik').innerHTML =
-    '<table class="env-table">' +
-      '<thead><tr>' +
-        '<th>Tablo</th>' +
-        '<th>Standartlar</th>' +
-        '<th class="num">Mevcut</th>' +
-        '<th class="num">Hedef</th>' +
-        '<th>İlerleme</th>' +
-        '<th></th>' +
-      '</tr></thead>' +
-      '<tbody>' + bodyHTML + '</tbody>' +
-    '</table>';
-
-  var pctToplam = toplamHedef ? Math.round((toplamMevcut/toplamHedef)*100) : 0;
-  var metaText = 'Toplam: ' + toplamMevcut.toLocaleString('tr-TR') +
-    ' / ~' + toplamHedef.toLocaleString('tr-TR') +
-    ' (' + pctToplam + '%)';
-  if (yokSayisi > 0) metaText += ' · ' + yokSayisi + ' tablo henüz oluşturulmadı';
-  T('envMetaOzet').textContent = metaText;
+  var durumTxt = '✓ Sağlıklı', durumSubTxt = 'tüm aktif tablolar okunuyor';
+  if (hataSayisi>0) { durumTxt = '⚠ ' + hataSayisi + ' hata'; durumSubTxt = 'RLS veya erişim sorunu olabilir'; T('ozetDurum').style.color='var(--re)'; }
+  else if (yokSayisi>0) { durumTxt = yokSayisi + ' tablo yok'; durumSubTxt = 'henüz oluşturulmadı (tasarım sırası)'; T('ozetDurum').style.color='var(--warn)'; }
+  else T('ozetDurum').style.color='var(--gr)';
+  T('ozetDurum').textContent = durumTxt;
+  T('ozetDurumSub').textContent = durumSubTxt;
 }
 
 // ── BAŞLANGIÇ ─────────────────────────────────────────────
-(async function() {
-  // ARES + Supabase bekle
-  var _b = 0;
-  while (_b < 80) {
-    if (_getSupa()) break;
-    await new Promise(function(r){ setTimeout(r, 100); });
-    _b++;
-  }
-  var supa = _getSupa();
-  if (!supa) { window.location.href = '../giris.html'; return; }
+(async function(){
+  var b=0; while (b<80) { if (_getSupa()) break; await new Promise(function(r){setTimeout(r,100);}); b++; }
+  var supa=_getSupa();
+  if (!supa) { window.location.href='../giris.html'; return; }
 
-  // Magic link hash
   if (window.location.hash) {
-    var params = new URLSearchParams(window.location.hash.substring(1));
-    var access_token = params.get('access_token');
-    var refresh_token = params.get('refresh_token');
-    if (access_token) {
-      await supa.auth.setSession({ access_token: access_token, refresh_token: refresh_token });
-      window.location.hash = '';
-    }
+    var p=new URLSearchParams(window.location.hash.substring(1));
+    var at=p.get('access_token'), rt=p.get('refresh_token');
+    if (at) { await supa.auth.setSession({access_token:at,refresh_token:rt}); window.location.hash=''; }
   }
 
-  // Auth + super_admin yetki
-  var sessionRes = await supa.auth.getSession();
-  if (!sessionRes?.data?.session) {
-    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname);
-    return;
-  }
-  var userId = sessionRes.data.session.user.id;
-  var kulRes = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id', userId).single();
-  if (!kulRes.data || kulRes.data.rol !== 'super_admin') {
-    window.location.href = '../index.html';
-    return;
-  }
+  var sr=await supa.auth.getSession();
+  if (!sr?.data?.session) { window.location.href='../giris.html?redirect='+encodeURIComponent(window.location.pathname); return; }
+  var kr=await supa.from('kullanicilar').select('rol,ad_soyad').eq('id',sr.data.session.user.id).single();
+  if (!kr.data || kr.data.rol!=='super_admin') { window.location.href='../index.html'; return; }
 
-  T('topbarUser').textContent = kulRes.data.ad_soyad || sessionRes.data.session.user.email;
-  var app = T('appShell');
-  app.style.display = 'flex';
-  app.style.visibility = 'visible';
-  document.documentElement.style.visibility = '';
+  T('topbarUser').textContent = kr.data.ad_soyad || sr.data.session.user.email;
+  var app=T('appShell'); app.style.display='flex'; app.style.visibility='visible';
+  document.documentElement.style.visibility='';
 
-  // Veriyi paralel al
-  var [sayilar, hedefler] = await Promise.all([
-    sayilariAl(),
-    hedefleriAl()
-  ]);
-
-  kartlariCiz(sayilar, hedefler);
-  envanterCiz(sayilar, hedefler);
+  var [sayilar, hedefler] = await Promise.all([sayilariAl(), hedefleriAl()]);
+  ciz(sayilar, hedefler);
 })();
 </script>
 </body>
