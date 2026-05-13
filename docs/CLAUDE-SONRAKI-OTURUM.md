@@ -1,229 +1,344 @@
-# CLAUDE-SONRAKI-OTURUM — 84. Oturum Gündemi
+# CLAUDE-SONRAKI-OTURUM — 85. Oturum Gündemi
 
-> Bu dosya 84'ün açılışında okunacak. Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md`.
-
----
-
-## 84. Oturum Ana Tema
-
-**Uç işlemi taxonomy refactor (KARAR-83.2) + Kütüphane FK bağlama tamamlama.**
-
-83'te kütüphane bağlama altyapısı kuruldu (3 FK kolonu + master join + iki boyutlu standartlık) ama veri tarafında üç açık iş kaldı:
-1. 36 Victaulic Groove-Steel kaydı yanlış kategoride (parça değil, uç işlemi)
-2. 41 boş `boru_olculer_id` (kütüphane kapsamı veya yazım farkı)
-3. Fitting + Flansh için FK bağlama mekanizması henüz yok (sadece 1 flansh kaydı migrate edildi)
-
-84 bunları kapatır.
+> Bu dosya 85'in açılışında okunacak. Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md`.
 
 ---
 
-## Açılış Ritüeli (CLAUDE.md disiplini, kısaltılmış 2-soru hâli)
+## 85. Oturum Ana Tema
+
+**Uç işlemi sözlük katmanı + spool ↔ kütüphane standart gösterimi tam akışı.**
+
+84'te KARAR-83.2'nin DB tarafı uygulandı (uc_a_islemi/uc_b_islemi kolonları + 36 Victaulic migrate). Sonra spool_detay'a Standart sütunu eklenirken altyapı tasarımı tetiklendi:
+1. Boru için Standart sütunu canlıda (v4)
+2. Fitting/flansh için kolon adı `geometri_std` (farklı şema, v5'te eklenecek)
+3. Uç işlemleri (yiv/bevel/yaka) standartlarının nereye yazılacağı: **sözlük tablosu + FK pattern'i** kararı verildi
+4. Tanımsız ölçüler için öneri akışı placeholder hâlinde (gerçek DB tablosu 85'te)
+
+85'te bunların hepsi DB + frontend uygulamasıyla kapatılır.
+
+---
+
+## Açılış Ritüeli
 
 ```
 Oturum başlangıç ritüeli. 2 kısa kontrol:
 
 1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
 
-2. Bugün ne yapmak istiyorsun? (Önerilen: 84 gündemi A→B→C→D sırası)
+2. Bugün ne yapmak istiyorsun? (Önerilen: 85.A → 85.B → 85.C → 85.D sırası)
 ```
 
-`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` (bu dosya) okunur. Sonra 84.A'ya başlanır.
+`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra 85.A'ya başlanır.
 
 ---
 
-## 84.A — Migration 057: Uç İşlemi Refactor (öncelik 1, ~1 saat)
+## 85.A — Migration 058: `uc_islemi_tipleri` sözlük tablosu (~15 dk, öncelik 1)
 
-KARAR-83.2'nin DB tarafı.
+KARAR-84.1'in DB tarafı.
+
+### Şema
+
+```sql
+CREATE TABLE uc_islemi_tipleri (
+  kod              TEXT PRIMARY KEY,
+  ad_tr            TEXT NOT NULL,
+  ad_en            TEXT,
+  varsayilan_std   TEXT,
+  alternatif_std   JSONB DEFAULT '[]'::jsonb,
+  kategori         TEXT,
+  aktif            BOOLEAN DEFAULT true,
+  sira             INT,
+  aciklama         TEXT,
+  olusturma_at     TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE uc_islemi_tipleri ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "uc_islemi_select_all" ON uc_islemi_tipleri FOR SELECT USING (true);
+CREATE POLICY "uc_islemi_super_admin_only" ON uc_islemi_tipleri
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM kullanicilar
+            WHERE id = auth.uid() AND rol = 'super_admin')
+  );
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE uc_islemi_tipleri;
+```
+
+### Seed (KARAR-84.1 + KARAR-84.4)
+
+| sira | kod | ad_tr | ad_en | varsayilan_std | kategori | aciklama |
+|---|---|---|---|---|---|---|
+| 1 | `plain` | Düz | Plain | — | — | Boru ucu kesimsiz/düz |
+| 2 | `bevel` | Kaynak Ağzı | Beveled End | ASME B16.25 | kaynakli | Buttwelding ağzı |
+| 3 | `socket` | Soket Kaynak | Socket Weld | ASME B16.11 | kaynakli | Soket içine yerleştirilen uç |
+| 4 | `threaded` | Vida Dişi | Threaded | ASME B1.20.1 | disli | NPT diş (alternatif: ISO 7-1 BSPT) |
+| 5 | `groove_victaulic` | Victaulic Yiv | Victaulic Groove | ANSI/AWWA C606 | mekanik | Yiv açılarak Victaulic kelepçe ile bağlanır |
+| 6 | `yaka_formlu` | Yaka (Form Verilmiş) | Formed Lap End (Vanstone) | MSS SP-43 | flansli | Borunun ucuna makinayla form verilerek oluşturulan yaka; loose lap joint flange ile kullanılır. Fabrika yapımı stub end (Type A/B) ile karıştırılmamalı. |
+
+### Migration dosyası adı
+
+`058_uc_islemi_tipleri_sozluk.sql`
+
+### Doğrulama SELECT'leri (migration sonu)
+
+```sql
+SELECT count(*) AS toplam FROM uc_islemi_tipleri;  -- beklenen: 6
+SELECT kod, ad_tr, varsayilan_std FROM uc_islemi_tipleri ORDER BY sira;
+```
+
+---
+
+## 85.B — Migration 059: spool_malzemeleri 4 yeni kolon + CHECK → FK (~10 dk)
+
+KARAR-84.5'in DB tarafı (müşteri raw metni saklanır).
 
 ### Plan
 
-**1. Şema değişikliği** — `spool_malzemeleri` (veya parent boruyu tutmak için `spooller`) tablosuna iki kolon:
-
 ```sql
 ALTER TABLE spool_malzemeleri
-ADD COLUMN IF NOT EXISTS uc_a_islemi TEXT,
-ADD COLUMN IF NOT EXISTS uc_b_islemi TEXT;
+  ADD COLUMN IF NOT EXISTS uc_a_aciklama TEXT,
+  ADD COLUMN IF NOT EXISTS uc_b_aciklama TEXT,
+  ADD COLUMN IF NOT EXISTS uc_a_std      TEXT,
+  ADD COLUMN IF NOT EXISTS uc_b_std      TEXT;
 
--- Kabul edilen değerler: 'plain' (düz), 'bevel' (kaynak ağzı), 'groove_victaulic' (yiv), 'threaded' (diş), 'socket' (cep)
+-- Önce mevcut CHECK constraint'i kaldır
+ALTER TABLE spool_malzemeleri DROP CONSTRAINT IF EXISTS spool_malzemeleri_uc_islemi_chk;
+
+-- FK ekle (sözlük tablosu zaten 058'de yaratıldı + seed'lendi)
 ALTER TABLE spool_malzemeleri
-DROP CONSTRAINT IF EXISTS spool_malzemeleri_uc_islemi_chk;
+  ADD CONSTRAINT spool_malzemeleri_uc_a_fk
+    FOREIGN KEY (uc_a_islemi) REFERENCES uc_islemi_tipleri(kod)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT spool_malzemeleri_uc_b_fk
+    FOREIGN KEY (uc_b_islemi) REFERENCES uc_islemi_tipleri(kod)
+    ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE spool_malzemeleri
-ADD CONSTRAINT spool_malzemeleri_uc_islemi_chk
-CHECK (
-  (uc_a_islemi IS NULL OR uc_a_islemi IN ('plain','bevel','groove_victaulic','threaded','socket')) AND
-  (uc_b_islemi IS NULL OR uc_b_islemi IN ('plain','bevel','groove_victaulic','threaded','socket'))
-);
+COMMENT ON COLUMN spool_malzemeleri.uc_a_aciklama IS 'Musteri raw metni (orneklerde gelen aciklama)';
+COMMENT ON COLUMN spool_malzemeleri.uc_a_std IS 'Standart override - NULL ise sozlukten varsayilan_std gelir (KARAR-84.5)';
 ```
 
-Karar noktası: Boru kalemleri için uç işlemi mantıklı (her boru iki uçludur). Fitting/flansh için anlamlı mı? Fitting de kaynak ağızlı olabilir (BW fitting) — yine de kolonlar `spool_malzemeleri`'nde dursun, tip-bağımsız.
-
-**2. Mevcut Victaulic kayıtlarını parent boruya migrate et**
-
-36 Victaulic satırının her biri için: aynı `spool_id`'deki boru kalemi(leri)ne `uc_a_islemi='groove_victaulic'` ata. Hangi uca (A veya B)? İlk yaklaşım: her ikisine `groove_victaulic` ata (Victaulic genelde iki ucu da yivlidir → kelepçe-kelepçe bağlantı). Daha sonra izometri parser'ı düzeltilirken doğru ucu belirleyebilir.
+### Doğrulama
 
 ```sql
-WITH parent_boru AS (
-  SELECT v.id AS victaulic_id, v.spool_id, v.dis_cap_mm,
-         (SELECT b.id FROM spool_malzemeleri b
-          WHERE b.spool_id = v.spool_id
-            AND b.tip = 'boru'
-            AND b.dis_cap_mm = v.dis_cap_mm
-          ORDER BY b.olusturma LIMIT 1) AS boru_id
-  FROM spool_malzemeleri v
-  WHERE v.tanim ILIKE '%victaulic%'
-)
-UPDATE spool_malzemeleri sm
-SET uc_a_islemi = 'groove_victaulic',
-    uc_b_islemi = 'groove_victaulic'
-FROM parent_boru pb
-WHERE sm.id = pb.boru_id;
-```
-
-**Edge case'ler:**
-- Victaulic var, eşleşen boru yok → kayıt yetim. 84'te bu durumlardan kaç tane var önce sayılmalı (Cihat'a sor: silinecek mi yoksa parent boru oluşturulacak mı?)
-- Aynı spool'da birden fazla boru var, çapları farklı → en uygun olan seçilmeli
-- Bir borunun her iki ucu groove ama tek Victaulic satırı var → her iki uca atamalıyız mı? Bu noktada Cihat'tan saha bilgisi gerekli
-
-**3. Victaulic satırlarını sil**
-
-```sql
-DELETE FROM spool_malzemeleri
-WHERE tanim ILIKE '%victaulic%';
--- Beklenen: 36 satır silinir
-```
-
-**4. Doğrulama**
-
-```sql
-SELECT count(*) FROM spool_malzemeleri WHERE tanim ILIKE '%victaulic%';
--- Beklenen: 0
-
-SELECT count(*) FROM spool_malzemeleri
-WHERE uc_a_islemi = 'groove_victaulic' OR uc_b_islemi = 'groove_victaulic';
--- Beklenen: 36'ya yakın (her Victaulic satırı tek boruya gitse 36, ama bazıları aynı boruya gitmiş olabilir → daha az)
+-- 36 Victaulic kaydı groove_victaulic koduna FK ile baglanmali (zaten oyle)
+SELECT count(*) FROM spool_malzemeleri WHERE uc_a_islemi = 'groove_victaulic';  -- beklenen: 36
+-- FK constraint test: gecersiz kod insert edilemez
+-- INSERT INTO spool_malzemeleri (..., uc_a_islemi) VALUES (..., 'YOK_OLAN_KOD');
+-- ERROR: violates foreign key constraint
 ```
 
 ---
 
-## 84.B — Boru Kütüphanesi Doluluk Analizi (~30 dk)
+## 85.C — Frontend spool_detay v5 (~30 dk)
 
-29/70 boru bağlandı. 41 boş satır neden eşleşmedi? İki olasılık:
+Standart sütunu **alt satırlar** ile uç işlemi bilgisi gösterir.
 
-1. Kütüphanede o ölçü gerçekten yok
-2. Yazım/scale farkı var (örn. spool'da `139.70` ama kütüphanede `139.7`)
-
-```sql
--- Hangi ölçüler boş kaldı?
-SELECT sm.dis_cap_mm, sm.et_mm, count(*) AS spool_adet
-FROM spool_malzemeleri sm
-WHERE sm.tip = 'boru' AND sm.boru_olculer_id IS NULL
-GROUP BY sm.dis_cap_mm, sm.et_mm
-ORDER BY spool_adet DESC;
-
--- Kütüphanede yakın ölçü var mı? (tolerans bazlı)
-SELECT sm.dis_cap_mm AS spool_d, sm.et_mm AS spool_t,
-       bo.dis_cap_mm AS lib_d, bo.et_mm AS lib_t,
-       abs(sm.dis_cap_mm - bo.dis_cap_mm) AS d_fark,
-       abs(sm.et_mm - bo.et_mm) AS t_fark
-FROM spool_malzemeleri sm
-LEFT JOIN boru_olculer bo
-  ON abs(sm.dis_cap_mm - bo.dis_cap_mm) < 0.5
- AND abs(sm.et_mm - bo.et_mm) < 0.2
-WHERE sm.tip = 'boru' AND sm.boru_olculer_id IS NULL
-LIMIT 20;
-```
-
-Çıktıya göre:
-- (a) Ölçü kütüphanede yok → kütüphaneye ekleme önceliği listesi (KUTUPHANE-YUKLEME-TAKIP'a not)
-- (b) Yakın ölçü var (tolerans dahilinde) → migration 058 yazılır, tolerans-bazlı eşleştirme
-
----
-
-## 84.C — Fitting & Flansh FK Bağlama (~1-2 saat)
-
-Boru için 056 back-fill yeterli (tam ölçü eşleşmesi). Fitting/flansh için tanım parsing gerekiyor — daha riskli.
-
-### Flansh
-
-Tanım örnekleri:
-- "Flange Slip-On PN 16 - 2.2 Certificate" → TYPE='SO', CLASS karşılığı PN16
-- "International Shore Connection Flange PN16" → özel flanş, kütüphanede yok
-
-Parsing kuralı (regex):
-- TYPE: `slip[- ]on|wn|weld[- ]neck|blind|bl|so|lj|lap|threaded|th` → `'SO'|'WN'|'BL'|'LJ'|'TH'`
-- CLASS: `PN ?\d+|Class ?\d+|150|300|600|...`
-- DN: `dis_cap_mm`'den çıkar (60.3 → DN50, 114.3 → DN100)
-
-**Risk**: Hayalî eşleşme. Tanım belirsizse FK doldurma, manuel onaya bırak. Önerilen yaklaşım: AI öneri + kullanıcı onay UI.
-
-### Fitting
-
-Tanım örnekleri yok elimizde (Victaulic temizlendikten sonra geri kalan 79-43=43 satır gerçek fitting). 84.A'dan sonra:
-
-```sql
-SELECT tanim, count(*) FROM spool_malzemeleri WHERE tip = 'fitting' GROUP BY tanim;
-```
-
-Çıkan tanımlara göre regex parser yazılır (elbow, tee, reducer, cap, vb.).
-
----
-
-## 84.D — Boru Modal'ı FK Kalıcı Kaydetme (5-10 dk)
-
-`spool_detay.html` line 3609 etrafında `boruModalAc` runtime'da eşleşmeyi buluyor ama FK kaydetmiyor. Tek UPSERT eklemek yeterli:
+### SELECT cümlesi güncelleme
 
 ```js
-// boru_olculer kayıt bulunduğunda
-if(found && SP.malzeme_id && !m.boru_olculer_id){
-  supa.from('spool_malzemeleri')
-    .update({ boru_olculer_id: found.id })
-    .eq('id', SP.malzeme_id)
-    .then(...);
+.select('*, spool_malzemeleri(
+  id, tip, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm,
+  agirlik_kg, sertifikali, heat_no,
+  malzeme_ref_id, boru_olculer_id, fitting_olculer_id, flansh_olculer_id,
+  uc_a_islemi, uc_b_islemi, uc_a_aciklama, uc_b_aciklama, uc_a_std, uc_b_std,
+  malzeme_tanimlari(kategori_kod, kalite_kod, kalite_goster, standart, tenant_id),
+  boru_lib:boru_olculer_id(standart, schedule_kod),
+  uc_a_tip:uc_a_islemi(ad_tr, varsayilan_std),
+  uc_b_tip:uc_b_islemi(ad_tr, varsayilan_std)
+), fotograflar(...), belgeler(...), devreler(...)')
+```
+
+### MAP'e yeni alanlar
+
+```js
+uc_a_islemi:    m.uc_a_islemi || null,
+uc_b_islemi:    m.uc_b_islemi || null,
+uc_a_aciklama:  m.uc_a_aciklama || '',
+uc_b_aciklama:  m.uc_b_aciklama || '',
+uc_a_std_eff:   m.uc_a_std || (m.uc_a_tip ? m.uc_a_tip.varsayilan_std : ''),
+uc_b_std_eff:   m.uc_b_std || (m.uc_b_tip ? m.uc_b_tip.varsayilan_std : ''),
+uc_a_ad:        m.uc_a_tip ? m.uc_a_tip.ad_tr : '',
+uc_b_ad:        m.uc_b_tip ? m.uc_b_tip.ad_tr : '',
+```
+
+### TBODY render — Standart hücresinde 3 satırlı yapı
+
+```js
+// Ana satır: boru/fitting/flansh std (mevcut v4 davranisi)
+var ucAlt = '';
+// Uc A: gosterilecek mi? (plain veya null disindaysa)
+if(m.uc_a_islemi && m.uc_a_islemi !== 'plain'){
+  var ucAGoster = m.uc_a_aciklama || m.uc_a_ad;  // raw varsa raw, yoksa ad_tr
+  var ucAStdEk  = m.uc_a_std_eff ? ' <span style="color:var(--txd);">(' + esc(m.uc_a_std_eff) + ')</span>' : '';
+  ucAlt += '<div style="font-size:11px;color:var(--txm);">↳ A: ' + esc(ucAGoster) + ucAStdEk + '</div>';
+}
+// Uc B: aynisi
+if(m.uc_b_islemi && m.uc_b_islemi !== 'plain'){
+  // ...
+}
+// Hucre icerik: ana satir + ucAlt
+stdGoster = stdGoster + ucAlt;
+```
+
+### Test spool'ları
+
+- `00d4926d` (S07) — bir borunun uc_a_islemi='groove_victaulic' olmali, alt satirda "Yiv A: Victaulic Yiv (ANSI/AWWA C606)" gorunmeli
+- Migration 057 sonrasi 36 boru groove_victaulic'e set edildi, hepsinde alt satir gorunecek
+- Plain veya null uc'lar alt satir gostermez
+
+---
+
+## 85.D — fitting/flansh Standart sütunu (v6) (~20 dk)
+
+84'te kesfedilen sema:
+- `fitting_olculer.geometri_std` (kolon adi farkli, `standart` degil)
+- `flansh_olculer.geometri_std` + `flansh_tipi` + `basinc_sinifi`
+
+### SELECT'e nested join
+
+```js
+fitting_lib:fitting_olculer_id(geometri_std, parca_tipi, class_no),
+flansh_lib:flansh_olculer_id(geometri_std, flansh_tipi, basinc_sinifi)
+```
+
+### MAP'te tip-bagimli geom belirleme
+
+```js
+var geom;
+var geom_extra = '';
+if(m.tip === 'boru' && m.boru_lib){
+  geom = m.boru_lib.standart;
+  geom_extra = m.boru_lib.schedule_kod || '';
+} else if(m.tip === 'fitting' && m.fitting_lib){
+  geom = m.fitting_lib.geometri_std;
+  geom_extra = m.fitting_lib.parca_tipi || '';
+} else if(m.tip === 'flansh' && m.flansh_lib){
+  geom = m.flansh_lib.geometri_std;
+  geom_extra = (m.flansh_lib.flansh_tipi || '') + ' ' + (m.flansh_lib.basinc_sinifi || '');
+} else {
+  geom = null;
 }
 ```
 
-Bu sayede 41 boş satır kullanıcı tıkladıkça organik şekilde dolar.
+Bu degisiklik sonrasi 11 flansh + 43 fitting'in de Standart sutunu dolar (varsa).
 
 ---
 
-## 84 İçin Hatırlatmalar
+## 85.E — Tanımsız malzeme öneri akışı DB tarafı (~1 saat)
 
-- **KARAR-83.1 uygulaması canlı** — Patch 3 push edildikten sonra turuncu rozet aktif. Yeni eklenen FK kolonları (`boru_olculer_id`, `fitting_olculer_id`, `flansh_olculer_id`) renkleri etkiliyor. 84.A migration'ı çalıştıktan sonra Victaulic satırları silineceği için "fitting" tipindeki turuncu rozet sayısı düşecek.
-- **MK-83.1** İki boyutlu standartlık — her yeni rapor/yayın endpoint'inde bu filtre uygulanmalı
-- **MK-83.2** Uç işlemleri taxonomy'ye eklenirken `spool_malzemeleri.tip` enum'una `'islem'` veya benzer eklenmesin — yanlış yön. İşlemler **kolon** olarak duruyor (`uc_a_islemi`, `uc_b_islemi`)
-- **MK-83.3** Yeni FK eklendiğinde grep ile tüm SELECT cümlelerini tarayıp silent state oluşmasını engelle
-- **MK-83.4** Supabase UPDATE sonrası `count(*) FILTER (WHERE fk IS NOT NULL)` ile gerçek etki doğrula
+KARAR-84.2'nin DB tarafı.
+
+### `tanimsiz_malzeme_onerileri` tablosu
+
+```sql
+CREATE TABLE tanimsiz_malzeme_onerileri (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id           UUID NOT NULL REFERENCES tenants(id),
+  spool_malzeme_id    UUID REFERENCES spool_malzemeleri(id) ON DELETE SET NULL,
+  tip                 TEXT NOT NULL,  -- 'boru' | 'fitting' | 'flansh'
+  ham_data            JSONB NOT NULL, -- {dis_cap, et, kalite, tanim, ...}
+  hash_anahtari       TEXT NOT NULL,  -- normalize edilmis benzersiz tanimlayici
+  kullanici_sebep     TEXT,           -- 'kutuphanede_eksik' | 'standart_disi' | 'veri_hatasi'
+  kullanici_aciklama  TEXT,
+  kullanici_id        UUID REFERENCES kullanicilar(id),
+  siklik_sayisi       INT DEFAULT 1,  -- ayni hash icin tekrar tetiklerse artar
+  durum               TEXT DEFAULT 'bekliyor', -- 'bekliyor'|'onaylandi'|'reddedildi'|'tenant_ozel'
+  super_admin_id      UUID REFERENCES kullanicilar(id),
+  karar_zamani        TIMESTAMPTZ,
+  karar_notu          TEXT,
+  olusturma_at        TIMESTAMPTZ DEFAULT now(),
+  guncelleme_at       TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, hash_anahtari)
+);
+
+-- hash_anahtari ornek: 'boru|139.70|4.500|St 37|karbon' (normalize)
+-- UNIQUE ile ayni teklif tek satira toplanir, siklik_sayisi artirilir
+```
+
+RLS: tenant kendi onerilerini gorur+yazar, super_admin tumunu gorur+karar verir.
+
+### Frontend `tanimsizModalAc` upgrade
+
+confirm() placeholder yerine gercek modal:
+- Form: kullanici_sebep dropdown (3 secenek), kullanici_aciklama textarea
+- INSERT veya UPSERT (ayni hash varsa siklik_sayisi += 1)
+- Toast: "Oneri alindi - super admin onayina gonderildi"
+
+### `arespipe_hash_anahtari` SQL fonksiyonu
+
+Tip ve ana ozelliklere gore normalize hash uret (yazim farkliliklarini eler).
 
 ---
 
-## 85+ Genel Yön (değişmedi, 83'te netleşen)
+## 85.F — Süper admin paneli `admin/oneriler.html` (~2 saat, ayrı oturum olabilir)
 
-- **85.A** — İzometri parser'ı KARAR-83.2 ileri uygulama (Victaulic-türü kayıtlar parça listesine eklenmesin, uç işlemi olarak çıksın)
-- **85.B** — `spool_flansh_eslesme` junction tablosu DROP (1-2 oturum gözle, sonra)
-- **85.C** — Tek `parcaModalAc(spool_malzeme_id)` refactor (boru + fitting + flansh tek fonksiyon)
-- **86+** — Public kütüphane sayfası (`arespipe.com/kutuphane`, KARAR-82.5 + KARAR-83.1 yayın filtresi)
-- **84+ paralel** — Anomali tespiti: "groove ucuna kaynak yapılmamalı" (Cihat'ın saha gözlemi → otomatik KK uyarısı)
+KARAR-84.2'nin UI tarafı.
 
----
+### Yapı
 
-## Bonus İşler (84'te zaman kalırsa)
+- Sidebar'a "Öneriler" linki (super_admin only)
+- Üst: 4 metric kart (Bekleyen / Bu Hafta Gelen / Toplam Onaylanan / Reddedilen)
+- Filtre çubuğu: Durum / Tip / Tenant / Sıklık
+- Tablo:
+  - Sıklık rozeti (kaç tenant'tan / kaç spool'da)
+  - Ham veri özeti (tip, dis_cap, et, kalite, tanim)
+  - Kullanıcı sebebi
+  - 3 buton: **Sisteme Ekle** | **Tenant-Özel Onayla** | **Reddet**
+- Detay popup: tam ham_data jsonb, ilgili spool linki, kullanıcı bilgisi
 
-- "SA/A105" normalize bug fix (ARES_NORM.kaliteKodNormalize'a "SA/" prefix kuralı)
-- 1 hatalı boru/A105 kaydının manuel düzeltilmesi (yanlış kalite ataması, 28 Nisan eski test verisi)
-- Patch 3 öncesi M1 satırı için "ölçü kütüphanede yok" tooltip'i UI'da görsel pekiştirme (örn. bilgi ikonu)
+### Karar sonrası eylem
 
----
+- **Sisteme Ekle**: ilgili kütüphane tablosuna INSERT (`sistem_preset=true, tenant_id=NULL`) + tanimsiz_malzeme_onerileri.durum='onaylandi'
+- **Tenant-Özel Onayla**: kütüphaneye INSERT (`sistem_preset=false, tenant_id=öneren tenant`) + durum='tenant_ozel'
+- **Reddet**: durum='reddedildi' + karar_notu zorunlu (kullanıcıya neden gösterilir)
 
-## Storage / Test Spool ID'leri (83'ten faydalı)
-
-- `00d4926d-5bcf-472c-96af-0447d9feb045` (S07) — 2 kalem, M1 (St 37/139.7×4.5 lib yok) + M2 (Victaulic/St*)
-- `01485adf-aead-49b2-9734-00113053223d` (S01) — 5 kalem, hem boru hem flanş hem Victaulic
-- `9911dc39-f826-4eb9-89aa-cdb40253edb1` (S01) — 3 kalem, hep St 37
-- `88114af4-38bf-4b22-aa75-04c29e80e830` — boru kesit modal'ı (DN50 60.3×4.5) açılıyor, mavi tıklanabilir
-
-84'te 84.A migration sonrası bu spool'lar yeniden test edilmeli — Victaulic satırları kaybolmuş, parent borularda `uc_a_islemi='groove_victaulic'` görünmeli (UI'da gösterimi 85'te gelir, şu an DB'de var).
+Tüm üçü için: ilgili `spool_malzemeleri.boru/fitting/flansh_olculer_id` UPDATE (FK kalıcı olur, satır mavi olur, turuncu rozet kalkar).
 
 ---
 
-> 84. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunur. Sonra Cihat'a "84.A migration ile başlayalım mı?" sorusu sorulur (gündem kilitli, açılış sorusu standart).
+## 85 İçin Hatırlatmalar
+
+- **MK-84.1** — Migration'lar Supabase Studio'da çalıştırıldıktan sonra **aynı oturumda** repo'ya commit edilir. Kapanışta `git status` zorunlu.
+- **MK-84.2** — Yeni nested join eklerken `information_schema.columns` ile şema doğrulanır. 85.D'de fitting/flansh için bu kural kritik.
+- **MK-84.3** — Aggregate sorgu sonuçlarından inference yapmadan önce detay sorgusu çalıştırılır.
+- **MK-84.4** — Uç işlemleri sözlük tablosu + FK ile yönetilir, CHECK enum büyütmek yok.
+- **MK-84.5** — Müşteri raw metni saklanır (`uc_a_aciklama`), arka planda kanonik kodla eşleştirilir.
+- **MK-83.1** İki boyutlu standartlık (KARAR-83.1) — yeni rapor/yayın endpoint'inde bu filtre uygulanmalı
+- **MK-83.4** — Supabase UPDATE sonrası `count(*) FILTER (WHERE fk IS NOT NULL)` ile gerçek etki doğrula
+
+---
+
+## 86+ Genel Yön
+
+- **86** — Public kütüphane sayfası (`arespipe.com/kutuphane`, sistem_preset=true filtresi)
+- **87+** — `parca_etiketleri` + üç-pencere etiketleme UI
+- **88+** — `kutuphane_ogrenme_durumu` materialized view
+- **89+** — İzometri parser KARAR-83.2 uygulaması (Victaulic-türü kayıtlar uç işlemi olarak çıkar)
+- **90+** — `spool_flansh_eslesme` junction DROP
+- **91+** — Diğer uç işlemleri (lazer, threaded varyantları, expanded taper, vb.) sözlüğe eklenecek tipler
+
+---
+
+## Bonus İşler (85'te zaman kalırsa)
+
+- Migration 060: uc_a_std back-fill (mevcut 36 groove_victaulic kaydına `uc_a_std='ANSI/AWWA C606'` set et — opsiyonel, sözlük varsayılanı zaten gelir)
+- KUTUPHANE-YUKLEME-TAKIP.md'ye 139.70×4.5 ölçüsü için tenant-özel ekleme örneği (85.F sonrasında ilk gerçek vaka)
+- 60.30×6.3 boş 2 kalemin tanısı (kütüphanede var, 056 neden bağlamadı)
+- 114.30×null boş 1 kalemin tanısı (eksik veri tespiti)
+- `tanimsizModalAc` modal'a "Önce kütüphaneye baktım, gerçekten yokmuş" tipinde otomatik kontrol (sözlük + tolerans)
+
+---
+
+## Storage / Test Spool ID'leri
+
+- `00d4926d-5bcf-472c-96af-0447d9feb045` (S07) — 84.A'da Victaulic migrate edildi, parent boru groove_victaulic almali
+- `01485adf-aead-49b2-9734-00113053223d` (S10) — 84.E test edildi, 5 kalem
+- `9911dc39-f826-4eb9-89aa-cdb40253edb1` — 3 kalem hepsi St 37
+- `88114af4-38bf-4b22-aa75-04c29e80e830` — boru kesit modal DN50 60.3×4.5
+
+85'te 85.C uygulanınca bu spool'larda Standart hücresinin alt satırında uç işlemi bilgisi görünmeli.
+
+---
+
+> 85. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunur. Sonra Cihat'a "85.A migration ile başlayalım mı?" sorusu sorulur (gündem kilitli, açılış sorusu standart).
