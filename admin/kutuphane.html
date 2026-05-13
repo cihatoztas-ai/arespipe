@@ -118,6 +118,21 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .loader{display:inline-block;width:14px;height:14px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
+/* Canlı bağlantı badge */
+.canli-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--gr);padding:3px 8px;background:rgba(22,163,110,.1);border:1px solid rgba(22,163,110,.3);border-radius:6px;letter-spacing:.4px;text-transform:uppercase;}
+.canli-nokta{width:6px;height:6px;background:var(--gr);border-radius:50%;animation:nabz 1.8s ease-in-out infinite;}
+.canli-badge.kopuk{color:var(--txd);background:var(--sur2);border-color:var(--bor);}
+.canli-badge.kopuk .canli-nokta{background:var(--txd);animation:none;}
+@keyframes nabz{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Toast */
+.toast-konteyner{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--gr);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx);min-width:200px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:toast-in .25s ease;}
+.toast-ikon{font-size:14px;}
+@keyframes toast-in{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+.toast.cikar{animation:toast-out .25s ease forwards;}
+@keyframes toast-out{to{opacity:0;transform:translateX(20px);}}
+
 @media (max-width: 1280px) { .grup-grid{grid-template-columns:repeat(2,1fr);} .ozet-serit{grid-template-columns:repeat(2,1fr);} }
 @media (max-width: 720px)  { .grup-grid{grid-template-columns:1fr;} .ozet-serit{grid-template-columns:1fr;} .main{padding:16px;} }
 </style>
@@ -130,6 +145,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
   <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane</span></div>
   <div class="topbar-sep"></div>
   <div class="topbar-user">
+    <span class="canli-badge kopuk" id="canliBadge" title="Real-time bağlantı durumu"><span class="canli-nokta"></span> bağlanıyor</span>
     <span class="topbar-badge">SUPER ADMIN</span>
     <span id="topbarUser">—</span>
     <button class="btn-logout" onclick="cikisYap()">Çıkış</button>
@@ -199,6 +215,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 </div>
 </div>
 </div>
+
+<!-- Toast konteyner -->
+<div class="toast-konteyner" id="toastKonteyner"></div>
 
 <script>
 'use strict';
@@ -411,7 +430,85 @@ function ciz(sayilar, hedefler){
 
   var [sayilar, hedefler] = await Promise.all([sayilariAl(), hedefleriAl()]);
   ciz(sayilar, hedefler);
+
+  // Real-time bağlantı
+  realtimeBaslat(supa, hedefler);
 })();
+
+// ── TOAST ─────────────────────────────────────────────────
+function toast(metin, ikon){
+  var k = T('toastKonteyner');
+  if (!k) return;
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<span class="toast-ikon">'+esc(ikon||'🔄')+'</span><span>'+esc(metin)+'</span>';
+  k.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('cikar');
+    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 250);
+  }, 3000);
+}
+
+// ── REAL-TIME ─────────────────────────────────────────────
+var _yenileTimer = null;
+var _degisiklikSayaci = 0;
+var _kanallar = [];
+
+function realtimeYenileDebounced(hedefler){
+  _degisiklikSayaci++;
+  if (_yenileTimer) clearTimeout(_yenileTimer);
+  _yenileTimer = setTimeout(async function(){
+    var n = _degisiklikSayaci;
+    _degisiklikSayaci = 0;
+    try {
+      var sayilar = await sayilariAl();
+      ciz(sayilar, hedefler);
+      toast(n + ' değişiklik geldi · sayılar güncellendi', '🔄');
+    } catch (e) {
+      console.warn('[realtime] yenile hatası:', e.message);
+    }
+  }, 1500);
+}
+
+function realtimeBaslat(supa, hedefler){
+  var badge = T('canliBadge');
+  // Subscribe edilebilir tablolar (sadece var olanlar)
+  var tablolar = ['boru_olculer','fitting_olculer','flansh_olculer','malzeme_kataloglari','fitting_malzeme_uyum'];
+  var basariliSub = 0;
+
+  tablolar.forEach(function(tablo){
+    try {
+      var ch = supa.channel('kut-anasayfa-' + tablo)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: tablo },
+          function(payload){
+            console.log('[realtime] ' + tablo + ' · ' + payload.eventType);
+            realtimeYenileDebounced(hedefler);
+          }
+        )
+        .subscribe(function(status){
+          if (status === 'SUBSCRIBED') {
+            basariliSub++;
+            badge.classList.remove('kopuk');
+            badge.title = basariliSub + ' tablo dinleniyor';
+            badge.innerHTML = '<span class="canli-nokta"></span> canlı';
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            badge.classList.add('kopuk');
+            badge.title = 'Real-time bağlantı kapalı';
+            badge.innerHTML = '<span class="canli-nokta"></span> kopuk';
+          }
+        });
+      _kanallar.push(ch);
+    } catch (e) {
+      console.warn('[realtime] subscribe hata:', tablo, e.message);
+    }
+  });
+
+  // Sayfa kapanırken temizle
+  window.addEventListener('beforeunload', function(){
+    _kanallar.forEach(function(ch){ try { supa.removeChannel(ch); } catch(e){} });
+  });
+}
 </script>
 </body>
 </html>
