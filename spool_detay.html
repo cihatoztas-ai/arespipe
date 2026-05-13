@@ -980,7 +980,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_olculer:boru_olculer_id(standart,schedule_kod),fitting_olculer:fitting_olculer_id(standart),flansh_olculer:flansh_olculer_id(standart)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1106,10 +1106,11 @@ async function spoolYukle(supaId) {
       // FK: spool_malzemeleri.malzeme_ref_id → malzeme_tanimlari.id
       // master null ise: eski "serbest kalite" davranışı korunur (geriye uyumlu)
       var master = m.malzeme_tanimlari || null;
-      // 84. oturum (84.E) — geometri kütüphane nested join'leri (explicit FK alias)
-      // FK varsa standart bilgisi (örn. "DIN-2448 ET4.5" / "EN-1092-1") render'a ulaşır
-      var geom = m.boru_olculer || m.fitting_olculer || m.flansh_olculer || null;
-      var geom_sch = m.boru_olculer ? (m.boru_olculer.schedule_kod || '') : '';
+      // 84. oturum (84.E v3) — boru_olculer nested join (custom alias "boru_lib" PostgREST _2 suffix bug fix)
+      // NOT: fitting_olculer ve flansh_olculer'da `standart` kolonu yok (84'te keşfedildi).
+      //      Onlar için standart bilgisi 84.E-v4 veya 85+'da şema kontrolü sonrası eklenecek.
+      var geom = m.boru_lib || null;
+      var geom_sch = m.boru_lib ? (m.boru_lib.schedule_kod || '') : '';
 
       return {
         id:          m.id,
@@ -1127,7 +1128,7 @@ async function spoolYukle(supaId) {
         boru_olculer_id:    m.boru_olculer_id    || null,
         fitting_olculer_id: m.fitting_olculer_id || null,
         flansh_olculer_id:  m.flansh_olculer_id  || null,
-        // 84. oturum (84.E) — geometri standart bilgisi (boru/fitting/flansh_olculer.standart)
+        // 84. oturum (84.E v3) — geometri standart bilgisi (sadece boru, fitting/flansh sonraki sürümde)
         geom_standart: geom ? (geom.standart || '') : '',
         geom_schedule: geom_sch,
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
@@ -2230,10 +2231,11 @@ function renderMalzeme(){
     }
     var trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
 
-    // 84. oturum (84.E) — Standart sütunu içeriği
-    // Öncelik: geometri standartı (boru/fitting/flansh_olculer.standart) varsa "DIN-2448 ET4.5" formatında
+    // 84. oturum (84.E v3) — Standart sütunu içeriği
+    // Öncelik: geometri standartı (boru için boru_lib.standart) varsa "DIN-2448 ET4.5" formatında
     // Yoksa kalite standartı (malzeme_tanimlari.standart) fallback, italik soluk renkle
     // İkisi de yoksa "—" (KARAR-83.1 turuncu rozet zaten satırın sol kenarında)
+    // NOT: Fitting/flansh için boru_lib null gelir → kalite_standart veya "—" gösterir. 85+ eklenecek.
     var stdGoster, stdAttrs, stdTitle;
     if(m.geom_standart){
       stdGoster = esc(m.geom_standart) + (m.geom_schedule ? ' <span style="color:var(--txd);font-size:11px;">'+esc(m.geom_schedule)+'</span>' : '');
