@@ -978,7 +978,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1116,6 +1116,11 @@ async function spoolYukle(supaId) {
         kal_standart: master ? (master.standart || '') : '',
         kal_kaynak:   master ? (master.tenant_id ? 'firma' : 'sistem') : 'serbest',
         master_id:    m.malzeme_ref_id || null,
+        // 83. oturum (KARAR-83.1 genişletme) — geometri kütüphane FK'ları
+        // null = ölçü kütüphanede yok / bağlanmamış → "standart dışı" sinyali
+        boru_olculer_id:    m.boru_olculer_id    || null,
+        fitting_olculer_id: m.fitting_olculer_id || null,
+        flansh_olculer_id:  m.flansh_olculer_id  || null,
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         et:          m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
         boy:         m.boy_mm     ? m.boy_mm + ' mm' : '--',
@@ -2180,7 +2185,10 @@ function renderMalzeme(){
     }
     // 41. oturum — kütüphane eşleşmesi varsa satır tıklanır + sol kenar mavi
     // 44. oturum — boru için aynı pattern, BORU_MAP üzerinden
-    // 83. oturum (KARAR-83.1) — kal_kaynak !== 'sistem' ise turuncu standart-dışı şerit
+    // 83. oturum (KARAR-83.1) — İki boyutlu standartlık:
+    //   STANDART = kalite sistem preset (kal_kaynak='sistem') VE
+    //              tipine göre geometri kütüphanesine bağlı (FK NOT NULL)
+    //   Biri eksikse "standart dışı" → turuncu şerit
     var trClasses = [];
     var trOnclick = '';
     var trTitle = '';
@@ -2193,10 +2201,22 @@ function renderMalzeme(){
       trOnclick = ' onclick="boruModalAc(\''+esc(m.id)+'\')"';
       trTitle = ' title="Kütüphane bilgisi için tıkla"';
     }
-    if(m.kal_kaynak && m.kal_kaynak !== 'sistem'){
+    // Standartlık denetimi
+    var kaliteStandart = m.kal_kaynak === 'sistem';
+    var geomBagli = false;
+    var tipR = (m.tip_raw || '').toLowerCase();
+    if(tipR === 'boru')         geomBagli = !!m.boru_olculer_id;
+    else if(tipR === 'fitting') geomBagli = !!m.fitting_olculer_id;
+    else if(tipR === 'flansh')  geomBagli = !!m.flansh_olculer_id;
+    else if(tipR === 'malzeme') geomBagli = true; // malzeme için geometri yok, kalite yeterli
+    else                        geomBagli = false; // bilinmeyen tip → standart dışı
+    if(!kaliteStandart || !geomBagli){
       trClasses.push('malz-standartdisi');
       if(!trTitle){
-        trTitle = ' title="Standart dışı kalite — '+(m.kal_kaynak === 'firma' ? 'firma özel kütüphane' : 'serbest yazım, kütüphaneye bağlı değil')+'"';
+        var eksik = [];
+        if(!kaliteStandart) eksik.push('kalite kütüphaneye bağlı değil');
+        if(!geomBagli)      eksik.push('ölçü kütüphaneye bağlı değil');
+        trTitle = ' title="Standart dışı — ' + eksik.join(' · ') + '"';
       }
     }
     var trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
