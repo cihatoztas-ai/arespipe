@@ -1074,12 +1074,16 @@ async function spoolYukle(supaId) {
 
     // Malzeme listesi
     MALZEME = (s.spool_malzemeleri || []).map(function(m, i) {
+      // 85.D — Uç işlemi satırları (yiv, bevel, vb.) için ağırlık tahmini yapılmaz
+      //   Fiziksel ayrı parça değil, boruya entegre. Ağırlık parent boruda zaten sayılı.
+      var ucIslemiSatiriMi = (m.tip === 'malzeme') && (m.uc_a_islemi || m.uc_b_islemi);
+
       // Ağırlık hesabı — gerçek değer yoksa tahmin et
       var agr_gercek = m.agirlik_kg ? parseFloat(m.agirlik_kg) : null;
       var agr_tahmin = null;
       var agr_tahmin_mi = false;
 
-      if (!agr_gercek) {
+      if (!agr_gercek && !ucIslemiSatiriMi) {
         var D = m.dis_cap_mm ? parseFloat(m.dis_cap_mm) : null;
         var t = m.et_mm      ? parseFloat(m.et_mm)      : null;
         var L = m.boy_mm     ? parseFloat(m.boy_mm)     : null;
@@ -2298,9 +2302,16 @@ function renderMalzeme(){
     +'<td style="color:var(--txm);">'+esc(malzEtiket)+'</td><td'+kalAttrs+'>'+esc(kalEtiket)+'</td>'
     +'<td'+stdAttrs+stdTitle+'>'+stdGoster+'</td>'
     +'<td>'+esc(m.cap)+'</td><td>'+esc(m.et)+'</td><td>'+esc(m.boy)+'</td>'
-    +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td>'+(m.agr_tahmin?'<td><span style="color:var(--warn);font-weight:600;" title="Tahmini ağırlık">~'+esc(m.agr)+'</span></td>':'<td>'+esc(m.agr)+'</td>')
-    +'<td><input class="ei" style="width:85px;font-family:monospace;font-size:13px;" value="'+esc(m.heat||'')+'" data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onblur="heatKaydet(this.dataset.mid,this.value)" placeholder="Heat No"></td>'
-    +'<td style="text-align:center;"><input type="checkbox"'+(m.sert?' checked':'')+' data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onchange="sertToggle(this.dataset.mid,this.checked)" style="width:14px;height:14px;accent-color:var(--gr);cursor:pointer;"></td>'
+    +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td>'
+    +(m.agr_tahmin?'<td><span style="color:var(--warn);font-weight:600;" title="Tahmini ağırlık">~'+esc(m.agr)+'</span></td>':'<td>'+esc(m.agr)+'</td>')
+    // 85.D — Uç işlemi satırı (yiv vb.): Heat No yok, fiziksel parça olmadığı için
+    +(ucIslemiSatiri
+      ? '<td style="color:var(--txd);text-align:center;" title="Uç işlemi — Heat No parent boruda">—</td>'
+      : '<td><input class="ei" style="width:85px;font-family:monospace;font-size:13px;" value="'+esc(m.heat||'')+'" data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onblur="heatKaydet(this.dataset.mid,this.value)" placeholder="Heat No"></td>')
+    // 85.D — Uç işlemi satırı: Sertifika checkbox gizli (boruya ait)
+    +(ucIslemiSatiri
+      ? '<td style="text-align:center;color:var(--txd);" title="Uç işlemi — Sertifika parent boruda">—</td>'
+      : '<td style="text-align:center;"><input type="checkbox"'+(m.sert?' checked':'')+' data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onchange="sertToggle(this.dataset.mid,this.checked)" style="width:14px;height:14px;accent-color:var(--gr);cursor:pointer;"></td>')
     +'<td><button data-eid="'+esc(m.id)+'" onclick="event.stopPropagation();malzSil(this.dataset.eid)" class="ctx ctx-re" title="Sil">✕</button></td></tr>';
   }).join('');
   sertGuncelle();
