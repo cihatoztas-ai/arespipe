@@ -980,7 +980,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1109,6 +1109,13 @@ async function spoolYukle(supaId) {
       var geom = m.boru_lib || null;
       var geom_sch = m.boru_lib ? (m.boru_lib.schedule_kod || '') : '';
 
+      // 85.C — uç işlemi sözlük join (MK-84.5: raw + kanonik + std)
+      // uc_a_std (override) NULL ise sözlükten varsayılan_std gelir
+      var ucA = m.uc_a_tip || null;
+      var ucB = m.uc_b_tip || null;
+      var ucAStdEff = m.uc_a_std || (ucA ? (ucA.varsayilan_std || '') : '');
+      var ucBStdEff = m.uc_b_std || (ucB ? (ucB.varsayilan_std || '') : '');
+
       return {
         id:          m.id,
         supaId:      m.id,
@@ -1125,6 +1132,15 @@ async function spoolYukle(supaId) {
         // 84. oturum — geometri standart bilgisi (sadece boru, fitting/flansh 85+'da)
         geom_standart: geom ? (geom.standart || '') : '',
         geom_schedule: geom_sch,
+        // 85.C — uç işlemi alanları (kanonik kod + müşteri raw + standart)
+        uc_a_islemi:    m.uc_a_islemi   || null,
+        uc_b_islemi:    m.uc_b_islemi   || null,
+        uc_a_aciklama:  m.uc_a_aciklama || '',
+        uc_b_aciklama:  m.uc_b_aciklama || '',
+        uc_a_std_eff:   ucAStdEff,
+        uc_b_std_eff:   ucBStdEff,
+        uc_a_ad:        ucA ? (ucA.ad_tr || '') : '',
+        uc_b_ad:        ucB ? (ucB.ad_tr || '') : '',
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         et:          m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
         boy:         m.boy_mm     ? m.boy_mm + ' mm' : '--',
@@ -2241,6 +2257,20 @@ function renderMalzeme(){
       stdTitle = m.kal_standart
         ? ' title="Ölçü standart dışı (kalite std: '+esc(m.kal_standart)+')"'
         : ' title="Standart dışı"';
+    }
+
+    // 85.C — uç işlemi alt satırları (MK-84.5: raw > kanonik ad_tr > kod fallback)
+    //   "↳ A: <gösterim> (<std>)" formatında, plain ve NULL durumlarında satır yok
+    //   stdGoster string'ine eklenir, hücreye block-display olarak iniş yapar
+    if(m.uc_a_islemi && m.uc_a_islemi !== 'plain'){
+      var ucAGoster = m.uc_a_aciklama || m.uc_a_ad || m.uc_a_islemi;
+      var ucAStdEk  = m.uc_a_std_eff ? ' <span style="color:var(--txd);font-style:italic;">(' + esc(m.uc_a_std_eff) + ')</span>' : '';
+      stdGoster += '<div style="font-size:11px;color:var(--txm);margin-top:2px;">↳ A: ' + esc(ucAGoster) + ucAStdEk + '</div>';
+    }
+    if(m.uc_b_islemi && m.uc_b_islemi !== 'plain'){
+      var ucBGoster = m.uc_b_aciklama || m.uc_b_ad || m.uc_b_islemi;
+      var ucBStdEk  = m.uc_b_std_eff ? ' <span style="color:var(--txd);font-style:italic;">(' + esc(m.uc_b_std_eff) + ')</span>' : '';
+      stdGoster += '<div style="font-size:11px;color:var(--txm);margin-top:2px;">↳ B: ' + esc(ucBGoster) + ucBStdEk + '</div>';
     }
 
     // 84. oturum (84.E v4) — Standart-dışı satırlar tıklanır olur
