@@ -975,7 +975,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1097,13 +1097,22 @@ async function spoolYukle(supaId) {
       var agr_val = agr_gercek || agr_tahmin;
       var agr_text = agr_val ? String(agr_val.toFixed(2)).replace('.',',') + ' kg' : '--';
 
+      // 83. oturum (A patch) — malzeme_tanimlari master tablo join sonucu
+      // FK: spool_malzemeleri.malzeme_ref_id → malzeme_tanimlari.id
+      // master null ise: eski "serbest kalite" davranışı korunur (geriye uyumlu)
+      var master = m.malzeme_tanimlari || null;
+
       return {
         id:          m.id,
         supaId:      m.id,
         kod:         m.kod        || ('M' + (i+1)),
         ac:          m.tanim      || m.aciklama || '—',
         malz:        m.malzeme    || '—',
-        kal:         m.kalite     || '—',
+        kal:         master ? master.kalite_goster : (m.kalite || '—'),
+        // 83. oturum — master tablo ek bilgileri (UI'da rozetleme için hazır)
+        kal_standart: master ? (master.standart || '') : '',
+        kal_kaynak:   master ? (master.tenant_id ? 'firma' : 'sistem') : 'serbest',
+        master_id:    m.malzeme_ref_id || null,
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         et:          m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
         boy:         m.boy_mm     ? m.boy_mm + ' mm' : '--',
