@@ -522,6 +522,7 @@ tr.malz-standartdisi td:first-child{padding-left:9px;}
         <thead><tr>
           <th>#</th><th data-i18n="th_code">Kod</th><th data-i18n="th_desc">Açıklama</th>
           <th data-i18n="th_material">Malzeme</th><th data-i18n="th_quality">Kalite</th>
+          <th data-i18n="th_standard">Standart</th>
           <th data-i18n="th_diameter">Dış Çap</th><th data-i18n="th_thickness">Et (mm)</th>
           <th data-i18n="th_length">Boy</th><th data-i18n="th_qty">Adet</th>
           <th data-i18n="th_weight">Ağırlık</th><th data-i18n="th_heat">Heat No</th>
@@ -535,6 +536,7 @@ tr.malz-standartdisi td:first-child{padding-left:9px;}
             <td><input class="ei" id="nr_ac" placeholder="Açıklama" style="min-width:120px;"></td>
             <td><input class="ei" id="nr_malz" placeholder="Malzeme" style="min-width:70px;"></td>
             <td><input class="ei" id="nr_kal" placeholder="316L" style="width:50px;"></td>
+            <td style="color:var(--txd);font-size:12px;">—</td>
             <td><input class="ei" id="nr_cap" placeholder="48,3 mm" style="width:70px;"></td>
             <td><input class="ei" id="nr_et" placeholder="3,2 mm" style="width:60px;"></td>
             <td><input class="ei" id="nr_boy" placeholder="6000 mm" style="width:70px;"></td>
@@ -550,7 +552,7 @@ tr.malz-standartdisi td:first-child{padding-left:9px;}
             </td>
           </tr>
           <tr id="addTrigger">
-            <td colspan="13">
+            <td colspan="14">
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <button onclick="newRowAc()" style="flex:1;min-width:100px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:none;border:1px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'" data-i18n="sp_add_material">+ Malzeme Ekle</button>
                 <label style="display:flex;align-items:center;gap:5px;padding:8px 12px;background:none;border:1px dashed var(--bor);border-radius:8px;color:var(--txd);font-size:14px;cursor:pointer;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--bor)';this.style.color='var(--txd)'">
@@ -978,7 +980,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_olculer(standart,schedule_kod),fitting_olculer(standart),flansh_olculer(standart)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1104,6 +1106,10 @@ async function spoolYukle(supaId) {
       // FK: spool_malzemeleri.malzeme_ref_id → malzeme_tanimlari.id
       // master null ise: eski "serbest kalite" davranışı korunur (geriye uyumlu)
       var master = m.malzeme_tanimlari || null;
+      // 84. oturum (84.E) — geometri kütüphane nested join'leri
+      // FK varsa standart bilgisi (örn. "DIN-2448 ET4.5" / "EN-1092-1") render'a ulaşır
+      var geom = m.boru_olculer || m.fitting_olculer || m.flansh_olculer || null;
+      var geom_sch = m.boru_olculer ? (m.boru_olculer.schedule_kod || '') : '';
 
       return {
         id:          m.id,
@@ -1121,6 +1127,9 @@ async function spoolYukle(supaId) {
         boru_olculer_id:    m.boru_olculer_id    || null,
         fitting_olculer_id: m.fitting_olculer_id || null,
         flansh_olculer_id:  m.flansh_olculer_id  || null,
+        // 84. oturum (84.E) — geometri standart bilgisi (boru/fitting/flansh_olculer.standart)
+        geom_standart: geom ? (geom.standart || '') : '',
+        geom_schedule: geom_sch,
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
         et:          m.et_mm      ? String(m.et_mm).replace('.',',') + ' mm' : '--',
         boy:         m.boy_mm     ? m.boy_mm + ' mm' : '--',
@@ -2168,7 +2177,7 @@ function renderMalzeme(){
   if(btn){btn.style.display=(PM.length&&!MALZEME.length)?'block':'none';}
   if(pmSay)pmSay.textContent=PM.length;
   if(!MALZEME.length){
-    body.innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--txd);padding:16px;">'+(PM.length?'Pipeline malzemeleri mevcut — yukarıdaki butonu kullanın':tv('sp_no_materials','Henüz malzeme eklenmemiş'))+'</td></tr>';
+    body.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--txd);padding:16px;">'+(PM.length?'Pipeline malzemeleri mevcut — yukarıdaki butonu kullanın':tv('sp_no_materials','Henüz malzeme eklenmemiş'))+'</td></tr>';
     sertGuncelle();return;
   }
   body.innerHTML=MALZEME.map(function(m,i){
@@ -2220,8 +2229,29 @@ function renderMalzeme(){
       }
     }
     var trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
+
+    // 84. oturum (84.E) — Standart sütunu içeriği
+    // Öncelik: geometri standartı (boru/fitting/flansh_olculer.standart) varsa "DIN-2448 ET4.5" formatında
+    // Yoksa kalite standartı (malzeme_tanimlari.standart) fallback, italik soluk renkle
+    // İkisi de yoksa "—" (KARAR-83.1 turuncu rozet zaten satırın sol kenarında)
+    var stdGoster, stdAttrs, stdTitle;
+    if(m.geom_standart){
+      stdGoster = esc(m.geom_standart) + (m.geom_schedule ? ' <span style="color:var(--txd);font-size:11px;">'+esc(m.geom_schedule)+'</span>' : '');
+      stdAttrs = ' style="color:var(--txm);font-size:12px;white-space:nowrap;"';
+      stdTitle = m.kal_standart ? ' title="Kalite std: '+esc(m.kal_standart)+'"' : '';
+    } else if(m.kal_standart){
+      stdGoster = '<em style="color:var(--txd);font-size:12px;">'+esc(m.kal_standart)+'</em>';
+      stdAttrs = ' style="font-size:12px;white-space:nowrap;"';
+      stdTitle = ' title="Sadece kalite standardı — ölçü kütüphaneye bağlı değil"';
+    } else {
+      stdGoster = '<span style="color:var(--txd);">—</span>';
+      stdAttrs = ' style="font-size:12px;"';
+      stdTitle = '';
+    }
+
     return'<tr'+trAttrs+'><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+esc(m.ac)+'</td>'
     +'<td style="color:var(--txm);">'+esc(malzEtiket)+'</td><td'+kalAttrs+'>'+esc(kalEtiket)+'</td>'
+    +'<td'+stdAttrs+stdTitle+'>'+stdGoster+'</td>'
     +'<td>'+esc(m.cap)+'</td><td>'+esc(m.et)+'</td><td>'+esc(m.boy)+'</td>'
     +'<td style="text-align:center;font-weight:600;">'+esc(m.adet)+'</td>'+(m.agr_tahmin?'<td><span style="color:var(--warn);font-weight:600;" title="Tahmini ağırlık">~'+esc(m.agr)+'</span></td>':'<td>'+esc(m.agr)+'</td>')
     +'<td><input class="ei" style="width:85px;font-family:monospace;font-size:13px;" value="'+esc(m.heat||'')+'" data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onblur="heatKaydet(this.dataset.mid,this.value)" placeholder="Heat No"></td>'
