@@ -103,6 +103,13 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .ilerleme-fill.dusuk{background:var(--warn);}
 .ilerleme-fill.bos{background:var(--re);opacity:.4;}
 
+/* Tablo yok (404) durumu */
+.yok-rozet{display:inline-block;background:rgba(148,163,184,.15);color:var(--txm);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px;text-transform:uppercase;}
+.env-table tr.satir-yok td{opacity:.55;}
+.env-table tr.satir-yok:hover td{opacity:.75;}
+.stat-card.karti-yok{opacity:.6;}
+.stat-card.karti-yok::before{background:var(--txd) !important;}
+
 .detay-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1px solid var(--bor);color:var(--txm);font-size:11px;font-weight:600;text-decoration:none;transition:all .15s;font-family:'Barlow',sans-serif;}
 .detay-btn:hover{border-color:var(--ac);color:var(--ac);background:rgba(45,142,255,.08);}
 
@@ -268,16 +275,25 @@ function hedefParse(raw) {
   return null;
 }
 
-// KUTUPHANE-YUKLEME-TAKIP.md özet tablosundan hedef rakamları çek
-// Satır formatı: | **`tablo_adi`** (...) | 120 | 12 | 10% |
+// KUTUPHANE-YUKLEME-TAKIP.md özet tablosundan hedef rakamları çek (v3 format)
+// Satır: | `tablo_adi` (açıklama) | **mevcut** | hedef | yüzde |
+// Aynı tablo birden çok satırda olabilir (örn. fitting_olculer B16.9 + B16.11/EN) → TOPLA
 function hedeflerParse(md) {
   var sonuc = {};
-  var re = /\|\s*\*\*`([a-z_]+)`\*\*[^|]*\|\s*([\d,\s\-–—]+)\s*\|/g;
+  var re = /\|\s*`([a-z_]+)`[^|]*\|[^|]+\|\s*([\d,\s\-–—]+)\s*\|/g;
   var m;
   while ((m = re.exec(md)) !== null) {
     var tabloAdi = m[1];
     var hedef = hedefParse(m[2]);
-    if (hedef && TABLO_BILGI[tabloAdi]) {
+    if (!hedef || !TABLO_BILGI[tabloAdi]) continue;
+    if (sonuc[tabloAdi]) {
+      // Aynı tablo tekrar — topla
+      var mev = sonuc[tabloAdi];
+      mev.min += hedef.min;
+      mev.max += hedef.max;
+      mev.avg = Math.round((mev.min + mev.max) / 2);
+      mev.gosterim = (mev.min === mev.max) ? String(mev.min) : (mev.min + '-' + mev.max);
+    } else {
       sonuc[tabloAdi] = hedef;
     }
   }
@@ -299,16 +315,35 @@ function yuzdeHesap(mevcut, hedefAvg) {
 }
 
 // ── DB count'larını paralel al ────────────────────────────
+// Her tablo için { durum: 'ok'|'yok'|'hata', sayi?, mesaj? } döner
 async function sayilariAl() {
   var tumTablolar = Object.keys(TABLO_BILGI);
   var sonuc = {};
   await Promise.all(tumTablolar.map(async function(tablo) {
     try {
       var r = await _supaProxy.from(tablo).select('*', { count:'exact', head:true });
-      sonuc[tablo] = (r && typeof r.count === 'number') ? r.count : null;
+      if (r && r.error) {
+        var code = (r.error.code || '').toString();
+        var msg  = (r.error.message || '').toLowerCase();
+        var status = r.status || 0;
+        if (status === 404 || code === 'PGRST205' || code === '42P01' ||
+            /does not exist|not found|could not find/.test(msg)) {
+          sonuc[tablo] = { durum: 'yok' };
+        } else {
+          sonuc[tablo] = { durum: 'hata', mesaj: r.error.message };
+          console.warn('[sayi] ' + tablo + ':', r.error.message);
+        }
+      } else {
+        sonuc[tablo] = { durum: 'ok', sayi: (r && typeof r.count === 'number') ? r.count : 0 };
+      }
     } catch (e) {
-      console.warn('[sayi] ' + tablo + ':', e.message);
-      sonuc[tablo] = null;
+      var emsg = (e.message || '').toLowerCase();
+      if (/does not exist|not found|404/.test(emsg)) {
+        sonuc[tablo] = { durum: 'yok' };
+      } else {
+        sonuc[tablo] = { durum: 'hata', mesaj: e.message };
+        console.warn('[sayi] ' + tablo + ' exception:', e.message);
+      }
     }
   }));
   return sonuc;
@@ -332,20 +367,44 @@ function kartlariCiz(sayilar, hedefler) {
   var grid = T('grupKartGrid');
   grid.innerHTML = GRUPLAR.map(function(g) {
     var mevcut = 0, hedef = 0, eksikHedef = false;
+    var tumYok = true, herhangiYok = false, herhangiHata = false;
     g.tablolar.forEach(function(t) {
-      mevcut += (sayilar[t] || 0);
+      var s = sayilar[t];
+      if (s && s.durum === 'ok') {
+        mevcut += s.sayi;
+        tumYok = false;
+      } else if (s && s.durum === 'yok') {
+        herhangiYok = true;
+      } else {
+        herhangiHata = true;
+        tumYok = false;
+      }
       var h = hedefler[t];
       if (h) hedef += h.avg; else eksikHedef = true;
     });
     var pct = hedef > 0 ? Math.min(100, Math.round((mevcut/hedef)*100)) : 0;
-    var hedefGoster;
-    if (hedef > 0) {
-      hedefGoster = (eksikHedef ? '~' : '') + hedef.toLocaleString('tr-TR');
+    var hedefGoster = hedef > 0
+      ? (eksikHedef ? '~' : '') + hedef.toLocaleString('tr-TR')
+      : '—';
+
+    // Üst sağ rozet
+    var rozet;
+    if (tumYok && herhangiYok) {
+      rozet = '<span style="background:rgba(148,163,184,.15);color:var(--txm);font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;letter-spacing:.4px;">TABLO YOK</span>';
+    } else if (herhangiHata) {
+      rozet = '<span style="color:var(--re);font-size:10px;font-weight:700;">HATA</span>';
     } else {
-      hedefGoster = '—';
+      rozet = '<span class="stat-pct" style="position:static;">' + (hedef ? pct + '%' : '—') + '</span>';
     }
-    return '<div class="stat-card" data-grup="'+esc(g.kod)+'">' +
-      '<div class="stat-pct">' + (hedef ? pct + '%' : '—') + '</div>' +
+
+    var altNot = '';
+    if (herhangiYok && !tumYok) {
+      altNot = ' <span style="color:var(--warn);font-size:10px;">· kısmi (bazı tablolar yok)</span>';
+    }
+
+    var sinifEk = tumYok ? ' karti-yok' : '';
+    return '<div class="stat-card' + sinifEk + '" data-grup="'+esc(g.kod)+'">' +
+      '<div style="position:absolute;top:14px;right:16px;">' + rozet + '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;">' +
         '<span class="stat-icon">' + g.ikon + '</span>' +
         '<span class="stat-label">' + esc(g.ad) + '</span>' +
@@ -353,62 +412,87 @@ function kartlariCiz(sayilar, hedefler) {
       '<div class="stat-val">' + mevcut.toLocaleString('tr-TR') +
         '<span class="stat-hedef">/ ' + hedefGoster + '</span>' +
       '</div>' +
-      '<div class="stat-sub">' + esc(g.aciklama) + '</div>' +
+      '<div class="stat-sub">' + esc(g.aciklama) + altNot + '</div>' +
     '</div>';
   }).join('');
 }
 
 // ── Envanter tablosunu çiz ────────────────────────────────
 function envanterCiz(sayilar, hedefler) {
-  var grupToplamHTML = [];
-  var toplamMevcut = 0, toplamHedef = 0;
+  var toplamMevcut = 0, toplamHedef = 0, yokSayisi = 0;
+
+  function mevcutDeger(s) { return (s && s.durum === 'ok') ? s.sayi : 0; }
 
   var bodyHTML = '';
   GRUPLAR.forEach(function(g) {
-    var grupMevcut = 0, grupHedef = 0;
+    var grupMevcut = 0, grupHedef = 0, grupYok = 0;
     g.tablolar.forEach(function(t) {
-      grupMevcut += (sayilar[t] || 0);
+      var s = sayilar[t];
+      if (s && s.durum === 'ok') grupMevcut += s.sayi;
+      if (s && s.durum === 'yok') grupYok++;
       var h = hedefler[t];
       if (h) grupHedef += h.avg;
     });
     toplamMevcut += grupMevcut;
     toplamHedef += grupHedef;
+    yokSayisi += grupYok;
+
+    var grupNot = grupYok > 0 ? ' <span style="color:var(--warn);font-size:10.5px;">· ' + grupYok + ' tablo yok</span>' : '';
 
     // Grup başlık satırı
     bodyHTML += '<tr class="grup-bas"><td colspan="6">' +
       '<span class="grup-bas-ad">' + g.ikon + ' ' + esc(g.ad) + '</span>' +
       ' <span style="font-size:11px;color:var(--txd);margin-left:8px;">' + esc(g.aciklama) + '</span>' +
+      grupNot +
       ' <span style="float:right;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);">' +
         grupMevcut.toLocaleString('tr-TR') + ' / ' + (grupHedef ? '~'+grupHedef.toLocaleString('tr-TR') : '—') +
       '</span>' +
     '</td></tr>';
 
-    // Her tablo için satır
     g.tablolar.forEach(function(tablo) {
       var bilgi = TABLO_BILGI[tablo];
-      var mevcut = sayilar[tablo];
+      var s = sayilar[tablo];
       var hedef = hedefler[tablo];
       var hedefAvg = hedef ? hedef.avg : 0;
       var hedefStr = hedef ? hedef.gosterim : '—';
-      var pct = yuzdeHesap(mevcut || 0, hedefAvg);
-      var sinif = ilerlemeSinif(mevcut || 0, hedefAvg);
-      var mevcutStr = (mevcut === null) ? '<span style="color:var(--re);">hata</span>' : mevcut.toLocaleString('tr-TR');
 
-      bodyHTML += '<tr>' +
+      var mevcutHTML, ilerlemeHTML, detayHTML;
+
+      if (s && s.durum === 'yok') {
+        mevcutHTML = '<span class="yok-rozet">tablo yok</span>';
+        ilerlemeHTML =
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div class="ilerleme-track"><div class="ilerleme-fill" style="width:0%;background:var(--txd);opacity:.25;"></div></div>' +
+            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);min-width:34px;text-align:right;">—</span>' +
+          '</div>';
+        detayHTML = '<span class="detay-btn" style="opacity:.35;cursor:not-allowed;pointer-events:none;">Henüz yok</span>';
+      } else if (s && s.durum === 'hata') {
+        mevcutHTML = '<span style="color:var(--re);" title="' + esc(s.mesaj || '') + '">hata</span>';
+        ilerlemeHTML = '<span style="color:var(--re);font-size:11px;">—</span>';
+        detayHTML = '<a class="detay-btn" href="kutuphane-detay.html?tablo=' + encodeURIComponent(tablo) + '">Detay →</a>';
+      } else {
+        var mevcut = s ? s.sayi : 0;
+        var pct = yuzdeHesap(mevcut, hedefAvg);
+        var sinif = ilerlemeSinif(mevcut, hedefAvg);
+        mevcutHTML = mevcut.toLocaleString('tr-TR');
+        ilerlemeHTML =
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div class="ilerleme-track"><div class="ilerleme-fill ' + sinif + '" style="width:' + pct + '%;"></div></div>' +
+            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);min-width:34px;text-align:right;">' + (hedefAvg ? pct + '%' : '—') + '</span>' +
+          '</div>';
+        detayHTML = '<a class="detay-btn" href="kutuphane-detay.html?tablo=' + encodeURIComponent(tablo) + '">Detay →</a>';
+      }
+
+      bodyHTML += '<tr' + ((s && s.durum === 'yok') ? ' class="satir-yok"' : '') + '>' +
         '<td>' +
           '<div class="tablo-ad">' + esc(bilgi.ad) + '</div>' +
           '<div class="tablo-kod">' + esc(tablo) + '</div>' +
         '</td>' +
         '<td><div class="standart">' + esc(bilgi.std) + '</div></td>' +
-        '<td class="num">' + mevcutStr + '</td>' +
+        '<td class="num">' + mevcutHTML + '</td>' +
         '<td class="num">' + esc(hedefStr) + '</td>' +
-        '<td>' +
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<div class="ilerleme-track"><div class="ilerleme-fill ' + sinif + '" style="width:' + pct + '%;"></div></div>' +
-            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--txd);min-width:34px;text-align:right;">' + (hedefAvg ? pct + '%' : '—') + '</span>' +
-          '</div>' +
-        '</td>' +
-        '<td><a class="detay-btn" href="kutuphane-detay.html?tablo=' + encodeURIComponent(tablo) + '">Detay →</a></td>' +
+        '<td>' + ilerlemeHTML + '</td>' +
+        '<td>' + detayHTML + '</td>' +
       '</tr>';
     });
   });
@@ -427,10 +511,11 @@ function envanterCiz(sayilar, hedefler) {
     '</table>';
 
   var pctToplam = toplamHedef ? Math.round((toplamMevcut/toplamHedef)*100) : 0;
-  T('envMetaOzet').textContent =
-    'Toplam: ' + toplamMevcut.toLocaleString('tr-TR') +
+  var metaText = 'Toplam: ' + toplamMevcut.toLocaleString('tr-TR') +
     ' / ~' + toplamHedef.toLocaleString('tr-TR') +
     ' (' + pctToplam + '%)';
+  if (yokSayisi > 0) metaText += ' · ' + yokSayisi + ' tablo henüz oluşturulmadı';
+  T('envMetaOzet').textContent = metaText;
 }
 
 // ── BAŞLANGIÇ ─────────────────────────────────────────────
