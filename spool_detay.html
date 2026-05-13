@@ -1103,12 +1103,9 @@ async function spoolYukle(supaId) {
       var agr_text = agr_val ? String(agr_val.toFixed(2)).replace('.',',') + ' kg' : '--';
 
       // 83. oturum (A patch) — malzeme_tanimlari master tablo join sonucu
-      // FK: spool_malzemeleri.malzeme_ref_id → malzeme_tanimlari.id
-      // master null ise: eski "serbest kalite" davranışı korunur (geriye uyumlu)
       var master = m.malzeme_tanimlari || null;
-      // 84. oturum (84.E v3) — boru_olculer nested join (custom alias "boru_lib" PostgREST _2 suffix bug fix)
-      // NOT: fitting_olculer ve flansh_olculer'da `standart` kolonu yok (84'te keşfedildi).
-      //      Onlar için standart bilgisi 84.E-v4 veya 85+'da şema kontrolü sonrası eklenecek.
+      // 84. oturum (84.E v4) — boru_olculer nested join (custom alias)
+      // NOT: fitting/flansh için `standart` kolonu yok, geometri_std var (85+ için)
       var geom = m.boru_lib || null;
       var geom_sch = m.boru_lib ? (m.boru_lib.schedule_kod || '') : '';
 
@@ -1119,16 +1116,13 @@ async function spoolYukle(supaId) {
         ac:          m.tanim      || m.aciklama || '—',
         malz:        m.malzeme    || '—',
         kal:         master ? master.kalite_goster : (m.kalite || '—'),
-        // 83. oturum — master tablo ek bilgileri (UI'da rozetleme için hazır)
         kal_standart: master ? (master.standart || '') : '',
         kal_kaynak:   master ? (master.tenant_id ? 'firma' : 'sistem') : 'serbest',
         master_id:    m.malzeme_ref_id || null,
-        // 83. oturum (KARAR-83.1 genişletme) — geometri kütüphane FK'ları
-        // null = ölçü kütüphanede yok / bağlanmamış → "standart dışı" sinyali
         boru_olculer_id:    m.boru_olculer_id    || null,
         fitting_olculer_id: m.fitting_olculer_id || null,
         flansh_olculer_id:  m.flansh_olculer_id  || null,
-        // 84. oturum (84.E v3) — geometri standart bilgisi (sadece boru, fitting/flansh sonraki sürümde)
+        // 84. oturum — geometri standart bilgisi (sadece boru, fitting/flansh 85+'da)
         geom_standart: geom ? (geom.standart || '') : '',
         geom_schedule: geom_sch,
         cap:         m.dis_cap_mm ? String(parseFloat(m.dis_cap_mm).toFixed(1)).replace('.',',') + ' mm' : '—',
@@ -2229,27 +2223,38 @@ function renderMalzeme(){
         trTitle = ' title="Standart dışı — ' + eksik.join(' · ') + '"';
       }
     }
-    var trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
-
-    // 84. oturum (84.E v3) — Standart sütunu içeriği
-    // Öncelik: geometri standartı (boru için boru_lib.standart) varsa "DIN-2448 ET4.5" formatında
-    // Yoksa kalite standartı (malzeme_tanimlari.standart) fallback, italik soluk renkle
-    // İkisi de yoksa "—" (KARAR-83.1 turuncu rozet zaten satırın sol kenarında)
-    // NOT: Fitting/flansh için boru_lib null gelir → kalite_standart veya "—" gösterir. 85+ eklenecek.
+    // 84. oturum (84.E v4) — Standart sütunu içeriği
+    // KARAR-83.1 iki boyutlu standartlık:
+    //   Geometri kütüphanesine bağlıysa: standart adı (örn. "DIN-2448 ET4.5") gösterilir
+    //   Bağlı değilse: "—" (boş) gösterilir — kalite standartı (DIN 17100 vb.) UYDURMA standart olarak değil,
+    //   tooltip'te bilgi olarak korunur.
+    // Cihat (84): "uydurma standart değil boş gelsin, tıklandığında açılsın, standart malzemeler gibi tanımlayalım"
     var stdGoster, stdAttrs, stdTitle;
     if(m.geom_standart){
       stdGoster = esc(m.geom_standart) + (m.geom_schedule ? ' <span style="color:var(--txd);font-size:11px;">'+esc(m.geom_schedule)+'</span>' : '');
       stdAttrs = ' style="color:var(--txm);font-size:12px;white-space:nowrap;"';
       stdTitle = m.kal_standart ? ' title="Kalite std: '+esc(m.kal_standart)+'"' : '';
-    } else if(m.kal_standart){
-      stdGoster = '<em style="color:var(--txd);font-size:12px;">'+esc(m.kal_standart)+'</em>';
-      stdAttrs = ' style="font-size:12px;white-space:nowrap;"';
-      stdTitle = ' title="Sadece kalite standardı — ölçü kütüphaneye bağlı değil"';
     } else {
+      // Geometri kütüphanesinde yok — boş göster, kalite std tooltip'te kalır
       stdGoster = '<span style="color:var(--txd);">—</span>';
       stdAttrs = ' style="font-size:12px;"';
-      stdTitle = '';
+      stdTitle = m.kal_standart
+        ? ' title="Ölçü standart dışı (kalite std: '+esc(m.kal_standart)+')"'
+        : ' title="Standart dışı"';
     }
+
+    // 84. oturum (84.E v4) — Standart-dışı satırlar tıklanır olur
+    // Mevcut boru/flansh modal yoksa, tanimsizModalAc placeholder bağlanır.
+    // Tam tanımsızlık akışı (DB tablosu + süper admin sayfası) 85+'a.
+    var trAttrs;
+    if((trClasses.indexOf('malz-standartdisi') >= 0) && !trOnclick){
+      trClasses.push('malz-tiklanabilir');
+      trOnclick = ' onclick="tanimsizModalAc(\''+esc(m.id)+'\')"';
+      if(!trTitle){
+        trTitle = ' title="Standart dışı — kütüphaneye eklemek için tıkla"';
+      }
+    }
+    trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
 
     return'<tr'+trAttrs+'><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+esc(m.ac)+'</td>'
     +'<td style="color:var(--txm);">'+esc(malzEtiket)+'</td><td'+kalAttrs+'>'+esc(kalEtiket)+'</td>'
@@ -3761,6 +3766,48 @@ function boruModalAc(spoolMalzemeId){
 function boruModalKapat(){
   var modal = document.getElementById('boruModal');
   if(modal) modal.classList.remove('show');
+}
+
+
+// 84. oturum (84.E v4) — Tanımsız malzeme modal (placeholder)
+//
+// Cihat (84): "uydurma standart değil boş gelsin, tıklandığında açılsın,
+//              standart malzemeler gibi tanımlayalım ama standart dışı olduğunu da bilelim.
+//              bu tanımlanamayan malzemeler süper admin sayfasında toplanmalı
+//              ve eğer gerçekten standartta yoksa ve sahada kullanılıyorsa
+//              burada onaylanıp kütüphaneye dahil edilmeli."
+//
+// Bu prototip placeholder — gerçek akış 85+'da:
+//   - DB tablosu: tanimsiz_malzeme_onerileri (öneri toplama, sıklık sayma)
+//   - Süper admin sayfası: admin/oneriler.html (Sisteme ekle / Tenant-özel / Reddet)
+//   - Tam modal: detay form (parça tipi, standart önerisi, sebep)
+//
+// Şimdilik: confirm() + toast (sahada test edilebilir, geri bildirim alabilir)
+function tanimsizModalAc(malzemeId){
+  var m = MALZEME.find(function(x){return x.id === malzemeId;});
+  if(!m){ return; }
+  var msg = 'STANDART DIŞI MALZEME\n\n';
+  msg += 'Kod:       ' + (m.kod || '—') + '\n';
+  msg += 'Tip:       ' + (m.tip_raw || '—') + '\n';
+  msg += 'Tanım:     ' + (m.ac || '—') + '\n';
+  msg += 'Malzeme:   ' + (m.malz || '—') + '\n';
+  msg += 'Kalite:    ' + (m.kal || '—') + '\n';
+  msg += 'Dış çap:   ' + (m.cap || '—') + '\n';
+  msg += 'Et:        ' + (m.et || '—') + '\n';
+  if(m.kal_standart){
+    msg += '\nKalite std: ' + m.kal_standart + ' (sadece kalite — ölçü standart dışı)';
+  }
+  msg += '\n\n────────────────────────\n';
+  msg += 'Bu malzeme kütüphaneye eklensin mi?\n\n';
+  msg += '✓ Tamam → Süper admin onayına gönderilir (85+ tam akış)\n';
+  msg += '✕ İptal  → İşlem iptal';
+  if(!confirm(msg)){ return; }
+  // TODO 85: tanimsiz_malzeme_onerileri tablosuna INSERT (placeholder)
+  if(typeof toast === 'function'){
+    toast('Öneri alındı — süper admin onayı 85+ oturumda devreye girer','wa');
+  } else {
+    alert('Öneri alındı. (Süper admin onay akışı 85+ oturumda devreye girer.)');
+  }
 }
 
 
