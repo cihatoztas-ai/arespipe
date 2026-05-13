@@ -2230,7 +2230,12 @@ function renderMalzeme(){
     else if(tipR === 'flansh')  geomBagli = !!m.flansh_olculer_id;
     else if(tipR === 'malzeme') geomBagli = true; // malzeme için geometri yok, kalite yeterli
     else                        geomBagli = false; // bilinmeyen tip → standart dışı
-    if(!kaliteStandart || !geomBagli){
+    // 85.D — Uç işlemi satırı (yiv, bevel, threaded vb.) standart-dışı sayılmaz
+    //   Standart bilgisi sözlükten (uc_islemi_tipleri.varsayilan_std) gelir
+    //   Kalite kontrolü parent borudan geliyor — yiv satırının kalitesi tekrar
+    //   doğrulanmaz (master_id NULL olduğu için kal_kaynak='serbest' yanıltıcı)
+    var ucIslemiSatiri = !!(m.uc_a_islemi || m.uc_b_islemi);
+    if(!ucIslemiSatiri && (!kaliteStandart || !geomBagli)){
       trClasses.push('malz-standartdisi');
       if(!trTitle){
         var eksik = [];
@@ -2240,18 +2245,29 @@ function renderMalzeme(){
       }
     }
     // 84. oturum (84.E v4) — Standart sütunu içeriği
+    // 85.D (060 sonrası) — yiv satırları (tip='malzeme', uc_a_islemi='groove_victaulic')
+    //   kendi standartlarını (ANSI/AWWA C606) Standart hücresinde gösterir.
     // KARAR-83.1 iki boyutlu standartlık:
     //   Geometri kütüphanesine bağlıysa: standart adı (örn. "DIN-2448 ET4.5") gösterilir
-    //   Bağlı değilse: "—" (boş) gösterilir — kalite standartı (DIN 17100 vb.) UYDURMA standart olarak değil,
-    //   tooltip'te bilgi olarak korunur.
-    // Cihat (84): "uydurma standart değil boş gelsin, tıklandığında açılsın, standart malzemeler gibi tanımlayalım"
+    //   Yiv vb. uç işlemi satırıysa: sözlükten varsayilan_std gösterilir (ANSI/AWWA C606)
+    //   Hiçbiri yoksa: "—" (boş) gösterilir
     var stdGoster, stdAttrs, stdTitle;
     if(m.geom_standart){
+      // Boru / fitting / flansh: geometri kütüphanesinden standart
       stdGoster = esc(m.geom_standart) + (m.geom_schedule ? ' <span style="color:var(--txd);font-size:11px;">'+esc(m.geom_schedule)+'</span>' : '');
       stdAttrs = ' style="color:var(--txm);font-size:12px;white-space:nowrap;"';
       stdTitle = m.kal_standart ? ' title="Kalite std: '+esc(m.kal_standart)+'"' : '';
+    } else if(m.uc_a_std_eff || m.uc_b_std_eff){
+      // Uç işlemi satırı (yiv, bevel, vb.): sözlük varsayilan_std (ANSI/AWWA C606 vb.)
+      // Genelde uc_a dolu olur; uc_b varsa "; " ile birleştir
+      var ucStdParts = [];
+      if(m.uc_a_std_eff) ucStdParts.push(esc(m.uc_a_std_eff));
+      if(m.uc_b_std_eff && m.uc_b_std_eff !== m.uc_a_std_eff) ucStdParts.push(esc(m.uc_b_std_eff));
+      stdGoster = ucStdParts.join(' &middot; ');
+      stdAttrs = ' style="color:var(--txm);font-size:12px;white-space:nowrap;"';
+      stdTitle = '';
     } else {
-      // Geometri kütüphanesinde yok — boş göster, kalite std tooltip'te kalır
+      // Geometri kütüphanesinde yok + uç işlemi yok — boş göster, kalite std tooltip'te kalır
       stdGoster = '<span style="color:var(--txd);">—</span>';
       stdAttrs = ' style="font-size:12px;"';
       stdTitle = m.kal_standart
@@ -2259,19 +2275,11 @@ function renderMalzeme(){
         : ' title="Standart dışı"';
     }
 
-    // 85.C — uç işlemi alt satırları (MK-84.5: raw > kanonik ad_tr > kod fallback)
-    //   "↳ A: <gösterim> (<std>)" formatında, plain ve NULL durumlarında satır yok
-    //   stdGoster string'ine eklenir, hücreye block-display olarak iniş yapar
-    if(m.uc_a_islemi && m.uc_a_islemi !== 'plain'){
-      var ucAGoster = m.uc_a_aciklama || m.uc_a_ad || m.uc_a_islemi;
-      var ucAStdEk  = m.uc_a_std_eff ? ' <span style="color:var(--txd);font-style:italic;">(' + esc(m.uc_a_std_eff) + ')</span>' : '';
-      stdGoster += '<div style="font-size:11px;color:var(--txm);margin-top:2px;">↳ A: ' + esc(ucAGoster) + ucAStdEk + '</div>';
-    }
-    if(m.uc_b_islemi && m.uc_b_islemi !== 'plain'){
-      var ucBGoster = m.uc_b_aciklama || m.uc_b_ad || m.uc_b_islemi;
-      var ucBStdEk  = m.uc_b_std_eff ? ' <span style="color:var(--txd);font-style:italic;">(' + esc(m.uc_b_std_eff) + ')</span>' : '';
-      stdGoster += '<div style="font-size:11px;color:var(--txm);margin-top:2px;">↳ B: ' + esc(ucBGoster) + ucBStdEk + '</div>';
-    }
+    // 85.D (060 sonrası) — Alt satır rendering KALDIRILDI
+    //   Önceki 85.C v5'te "↳ A: Victaulic Yiv (ANSI/AWWA C606)" alt satırı vardı.
+    //   Migration 060 ile yiv satırları artık tip='malzeme' olarak AYRI BOM kalemi.
+    //   Kendi Standart hücresinde varsayilan_std (ANSI/AWWA C606) gösterilir.
+    //   Alt satır gösterimi gereksiz kaldı + iki kere gösterim hatası yaratıyordu.
 
     // 84. oturum (84.E v4) — Standart-dışı satırlar tıklanır olur
     // Mevcut boru/flansh modal yoksa, tanimsizModalAc placeholder bağlanır.
