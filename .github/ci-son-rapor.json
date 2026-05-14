@@ -1,50 +1,16 @@
 {
-  "tarih": "2026-05-13T20:17:09.162Z",
-  "commit_sha": "0045c950b7d942574e720de5ba3f9e90c91549f7",
+  "tarih": "2026-05-14T05:34:02.578Z",
+  "commit_sha": "659069a49cf3d87f2a788e4bf0f769c2e20fc40c",
   "commit_ref": "main",
-  "workflow_run": 819,
+  "workflow_run": 820,
   "ozet": {
-    "hata": 2,
-    "uyari": 81,
+    "hata": 0,
+    "uyari": 79,
     "taranan_dosya": 104,
-    "sorunlu_dosya": 9,
-    "durum": "kirmizi"
+    "sorunlu_dosya": 7,
+    "durum": "sari"
   },
   "kurallar": {
-    "ARES_LAYOUT_EKSIK": {
-      "tip": "hata",
-      "mesaj": "ares-layout.js yüklenmiyor.",
-      "sayi": 2,
-      "dosyalar": [
-        {
-          "dosya": "admin/kutuphane-detay.html",
-          "sayi": 1,
-          "satirlar": []
-        },
-        {
-          "dosya": "admin/kutuphane.html",
-          "sayi": 1,
-          "satirlar": []
-        }
-      ]
-    },
-    "ARES_NORMALIZE_EKSIK": {
-      "tip": "uyari",
-      "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)",
-      "sayi": 2,
-      "dosyalar": [
-        {
-          "dosya": "admin/kutuphane-detay.html",
-          "sayi": 1,
-          "satirlar": []
-        },
-        {
-          "dosya": "admin/kutuphane.html",
-          "sayi": 1,
-          "satirlar": []
-        }
-      ]
-    },
     "G03_HAM_YUZEY": {
       "tip": "uyari",
       "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
@@ -186,44 +152,6 @@
     }
   },
   "dosyalar": [
-    {
-      "dosya": "admin/kutuphane-detay.html",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 1,
-      "hatalar": [
-        {
-          "kod": "ARES_LAYOUT_EKSIK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "ares-layout.js yüklenmiyor."
-        },
-        {
-          "kod": "ARES_NORMALIZE_EKSIK",
-          "tip": "uyari",
-          "satir": null,
-          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
-        }
-      ]
-    },
-    {
-      "dosya": "admin/kutuphane.html",
-      "hata_sayisi": 1,
-      "uyari_sayisi": 1,
-      "hatalar": [
-        {
-          "kod": "ARES_LAYOUT_EKSIK",
-          "tip": "hata",
-          "satir": null,
-          "mesaj": "ares-layout.js yüklenmiyor."
-        },
-        {
-          "kod": "ARES_NORMALIZE_EKSIK",
-          "tip": "uyari",
-          "satir": null,
-          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
-        }
-      ]
-    },
     {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
