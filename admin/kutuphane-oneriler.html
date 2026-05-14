@@ -122,11 +122,16 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 
 <div class="layout">
   <aside class="sidebar">
-    <a class="nav-item" href="index.html"><span class="nav-icon">📊</span>Panel</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">📊</span>Dashboard</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Pano</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">🏢</span>Firmalar</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">👥</span>Kullanıcılar</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">🚩</span>Feature Flags</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">📱</span>Mobil Önizleme</a>
+    <div class="nav-sep"></div>
     <a class="nav-item active" href="kutuphane.html"><span class="nav-icon">📚</span>Kütüphane</a>
     <div class="nav-sep"></div>
-    <a class="nav-item" href="firma.html"><span class="nav-icon">🏢</span>Firmalar</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">⚙️</span>Yönetim</a>
+    <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Sistem Logları</a>
   </aside>
 
   <main class="main">
@@ -249,14 +254,21 @@ function olcuStr(r){
 }
 
 async function init(){
-  // ARES.supabase()
+  // ARES helper yüklendi mi?
   if(typeof ARES === 'undefined' || typeof ARES.supabase !== 'function'){
     document.getElementById('listeIcerik').innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Bağlantı kurulamadı</div><div class="bm-alt">ARES helper yüklenmemiş.</div></div>';
     return;
   }
-  SUPA = ARES.supabase();
+  // Supabase init için retry loop (ares-store.js async yükleyebilir, max 8 sn bekle)
+  var b = 0;
+  while (b < 80) {
+    SUPA = ARES.supabase();
+    if (SUPA) break;
+    await new Promise(function(r){ setTimeout(r, 100); });
+    b++;
+  }
   if(!SUPA){
-    document.getElementById('listeIcerik').innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Supabase bağlantısı yok</div></div>';
+    document.getElementById('listeIcerik').innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Supabase bağlantısı yok</div><div class="bm-alt">8 sn beklendi, ares-store.js yüklenemedi.</div></div>';
     return;
   }
   // Auth + super_admin kontrol
