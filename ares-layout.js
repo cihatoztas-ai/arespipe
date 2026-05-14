@@ -52,7 +52,7 @@
 
   function loadLang(lang, cb) {
     // Cache yok - her zaman fetch
-    fetch('lang/' + lang + '.json?nocache=' + Date.now())
+    fetch('/lang/' + lang + '.json?nocache=' + Date.now())
       .then(function(r){ return r.json(); })
       .then(function(data){
         // Race condition fix: fetch biterken kullanıcı başka dile geçmiş olabilir
