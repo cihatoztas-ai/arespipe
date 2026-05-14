@@ -244,22 +244,19 @@ tr.malz-arasolc{border-left:3px solid var(--warn);}
 tr.malz-arasolc td:first-child{padding-left:9px;}
 tr.malz-tanimsiz{border-left:3px solid var(--txd);cursor:pointer;}
 tr.malz-tanimsiz td:first-child{padding-left:9px;}
-/* 86.A v2 — Modal basligi tema sistemi (sol cizgi mavi/turuncu/gri) */
-.flansh-mod-head{border-left:3px solid var(--ac);padding-left:15px;}
-.flansh-mod-head.theme-arasolc{border-left-color:var(--warn);}
-.flansh-mod-head.theme-tanimsiz{border-left-color:var(--txd);}
-/* 86.C — Tanimsiz oneri modal form alanlari */
-.tanimsiz-form{display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--bor);}
-.tanimsiz-form label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-.tanimsiz-form select,.tanimsiz-form textarea{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box;}
-.tanimsiz-form textarea{resize:vertical;min-height:60px;}
-.tanimsiz-form select:focus,.tanimsiz-form textarea:focus{outline:none;border-color:var(--ac);}
-.tanimsiz-form-row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+/* 86.C v2 — Modal kart sol kenari tema (mavi=baglii / turuncu=arasolc / gri=tanimsiz) */
+.flansh-mod-card{border-left-width:4px;border-left-color:var(--ac);}
+.flansh-mod-card.theme-arasolc{border-left-color:var(--warn);}
+.flansh-mod-card.theme-tanimsiz{border-left-color:var(--txd);}
+/* 86.C v2 — Tanimsiz modal: inline input + alt buton satiri */
+.tanimsiz-input{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);border-radius:5px;padding:4px 8px;font-family:inherit;font-size:13px;width:140px;text-align:right;}
+.tanimsiz-input:focus{outline:none;border-color:var(--ac);}
+.tanimsiz-input::placeholder{color:var(--txd);font-style:italic;}
+.tanimsiz-form-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--bor);}
 .tanimsiz-btn-sec{background:transparent;color:var(--txm);border:1px solid var(--bor);border-radius:6px;padding:8px 16px;cursor:pointer;font-family:inherit;font-size:13px;}
 .tanimsiz-btn-sec:hover{color:var(--tx);border-color:var(--ac);}
-.tanimsiz-btn-pri{background:var(--ac);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;}
+.tanimsiz-btn-pri{background:var(--ac);color:#fff;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;}
 .tanimsiz-btn-pri:disabled{opacity:.45;cursor:not-allowed;}
-.tanimsiz-bilgi-not{font-size:12px;color:var(--txm);font-style:italic;margin-top:10px;padding:8px 12px;background:var(--sur2);border-radius:6px;}
 .flansh-mod{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:48px 16px;overflow-y:auto;}
 .flansh-mod.show{display:flex;}
 .flansh-mod-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;width:100%;max-width:560px;overflow:hidden;}
@@ -3642,11 +3639,11 @@ function flanshModalAc(spoolMalzemeId, theme){
   if(!f){ return; }
   var modal = document.getElementById('flanshModal');
   if(!modal) return;
-  // 86.A v2 — Modal basligi tema (default mavi; arasolc=turuncu)
-  var head = modal.querySelector('.flansh-mod-head');
-  if(head){
-    head.classList.remove('theme-arasolc','theme-tanimsiz');
-    if(theme==='arasolc') head.classList.add('theme-arasolc');
+  // 86.C v2 — Modal kart tema (sol kenar mavi/turuncu)
+  var card = modal.querySelector('.flansh-mod-card');
+  if(card){
+    card.classList.remove('theme-arasolc','theme-tanimsiz');
+    if(theme==='arasolc') card.classList.add('theme-arasolc');
   }
   // Başlık özeti
   var capStr   = f.cap_nps ? (f.cap_nps + '"') : '';
@@ -3797,11 +3794,11 @@ function boruModalAc(spoolMalzemeId, theme){
   if(!b) return;
   var modal = document.getElementById('boruModal');
   if(!modal) return;
-  // 86.A v2 — Modal basligi tema (default mavi; arasolc=turuncu)
-  var head = modal.querySelector('.flansh-mod-head');
-  if(head){
-    head.classList.remove('theme-arasolc','theme-tanimsiz');
-    if(theme==='arasolc') head.classList.add('theme-arasolc');
+  // 86.C v2 — Modal kart tema (sol kenar mavi/turuncu)
+  var card = modal.querySelector('.flansh-mod-card');
+  if(card){
+    card.classList.remove('theme-arasolc','theme-tanimsiz');
+    if(theme==='arasolc') card.classList.add('theme-arasolc');
   }
 
   var sm = MALZEME.find(function(x){ return x.id === spoolMalzemeId; });
@@ -3857,49 +3854,90 @@ function boruModalKapat(){
 }
 
 
-// 86.C (KARAR-85.3) — Tanimsiz malzeme oneri modal'i
-// confirm() placeholder yerine BORU BILGISI kabugunu kullanan gercek modal.
-// RPC: tanimsiz_kayit_onerisi (061 migration) — UPSERT (siklik artirma + aciklama append)
+// 86.C v2 — Tanimsiz oneri modal (Cihat feedback)
+// Card sol kenar gri, SVG cizim, hesaplanan degerler, bilinmeyen icin inline input.
+// Form/sebep yok; buton Kaydet. RPC: tanimsiz_kayit_onerisi (061).
 var _tanimsizAktifId = null;
+function _malzemeYogunlugu(malz){
+  var k = (malz || '').toLowerCase();
+  if(k === 'karbon' || k === 'alasimli') return 7850;
+  if(k === 'paslanmaz') return 7950;
+  if(k === 'dupleks') return 7850;
+  if(k === 'cuni' || k === 'bakir_alasim') return 8900;
+  if(k === 'aluminyum') return 2700;
+  return null;
+}
+function _hesapBoru(D_mm, t_mm, malz){
+  var D = parseFloat(String(D_mm||'').replace(',','.'));
+  var t = parseFloat(String(t_mm||'').replace(',','.'));
+  if(!isFinite(D) || !isFinite(t) || t*2 >= D) return null;
+  var d = D - 2*t;
+  var kesit_m2 = Math.PI/4 * (D*D - d*d) * 1e-6;
+  var ic_alan_m2 = Math.PI/4 * d*d * 1e-6;
+  var yog = _malzemeYogunlugu(malz);
+  return {
+    ic_cap_mm: d,
+    agirlik_kg_m: yog ? (kesit_m2 * yog) : null,
+    hacim_l_m: ic_alan_m2 * 1000,
+    yuzey_m2_m: Math.PI * D * 1e-3
+  };
+}
 function tanimsizModalAc(malzemeId){
   var m = MALZEME.find(function(x){return x.id === malzemeId;});
   if(!m){ return; }
   var modal = document.getElementById('tanimsizModal');
   if(!modal) return;
   _tanimsizAktifId = malzemeId;
-
-  // Modal basligi tema (gri)
-  var head = modal.querySelector('.flansh-mod-head');
-  if(head){
-    head.classList.remove('theme-arasolc','theme-tanimsiz');
-    head.classList.add('theme-tanimsiz');
+  // Modal karti tema (gri sol kenar)
+  var card = modal.querySelector('.flansh-mod-card');
+  if(card){
+    card.classList.remove('theme-arasolc','theme-tanimsiz');
+    card.classList.add('theme-tanimsiz');
   }
-
   // Ozet/meta
   var malzKisa = m.kal && m.kal !== '—' ? m.kal : (m.malz || '—');
   var capStr = (m.cap || '—') + (m.et ? '×' + m.et : '') + ' mm';
   var ozet = malzKisa + ' · ' + (m.tip_raw || '—') + ' · ' + capStr;
   document.getElementById('tanimsizModalOzet').textContent = ozet;
   document.getElementById('tanimsizModalMeta').textContent = 'malzeme önerisi · kütüphanede yok';
-
-  // Bilgi tablosu (BORU BILGISI formatina paralel)
-  function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+esc(v)+'</td></tr>'; }
+  // SVG cizim: boru icin _cizimYukle, diger tipte bos placeholder
+  var cizimDiv = document.getElementById('tanimsizCizim');
+  if(cizimDiv){
+    cizimDiv.innerHTML = '';
+    if((m.tip_raw||'').toLowerCase() === 'boru' && m.cap && m.et && typeof _cizimYukle === 'function'){
+      function _val(v){ return v == null ? '—' : String(v).replace('.', ','); }
+      var D = parseFloat(String(m.cap).replace(',','.'));
+      var t = parseFloat(String(m.et).replace(',','.'));
+      var d = (isFinite(D) && isFinite(t)) ? (D - 2*t) : null;
+      var R = isFinite(D) ? (Math.round(D * 50) / 100) : null;
+      _cizimYukle('tanimsizCizim', 'cizimler/boru/boru-kesit.svg', {
+        D: _val(D), IC: _val(d), R: _val(R), T: _val(t),
+        IC_LABEL: (typeof tv==='function' ? tv('boru_kis_ic','İç çap') : 'İç çap')
+      });
+    }
+  }
+  // Bilgi tablosu: bilinenler read-only, bilinmeyen Standart/DN inline input
+  function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+v+'</td></tr>'; }
+  function _e(s){ return esc(String(s == null ? '—' : s)); }
+  function _num(v, suf){ if(v == null || !isFinite(v)) return '<span style="color:var(--txd);">—</span>'; return esc(String(Math.round(v*100)/100).replace('.', ',')) + (suf ? ' <span style="color:var(--txd);">'+suf+'</span>' : ''); }
+  function _input(id, ph){ return '<input id="'+id+'" class="tanimsiz-input" type="text" placeholder="'+esc(ph)+'">'; }
   var rows = '';
-  rows += _r('Kod', m.kod || '—');
-  rows += _r('Tip', m.tip_raw || '—');
-  if(m.ac)   rows += _r('Tanım', m.ac);
-  rows += _r('Malzeme', m.malz || '—');
-  rows += _r('Kalite', m.kal || '—');
-  if(m.cap)  rows += _r('Dış çap', m.cap + ' mm');
-  if(m.et)   rows += _r('Et', m.et + ' mm');
-  if(m.kal_standart) rows += _r('Kalite std', m.kal_standart);
+  rows += _r('Standart', _input('tanimsizStandart','örn. DIN-2448'));
+  rows += _r('Ürün formu', _e(m.tip_raw));
+  rows += _r('Anma çapı', _input('tanimsizDN','örn. 125'));
+  if(m.cap) rows += _r('Dış çap', _e(m.cap + ' mm'));
+  if(m.et)  rows += _r('Et', _e(m.et + ' mm'));
+  if((m.tip_raw||'').toLowerCase() === 'boru'){
+    var h = _hesapBoru(m.cap, m.et, m.malz);
+    if(h){
+      rows += _r('İç çap', _num(h.ic_cap_mm, 'mm'));
+      rows += _r('Birim ağırlık', h.agirlik_kg_m != null ? _num(h.agirlik_kg_m, 'kg/m') : '<span style="color:var(--txd);">— (malzeme bilinmiyor)</span>');
+      rows += _r('Hacim', _num(h.hacim_l_m, 'L/m'));
+      rows += _r('Dış yüzey alanı', _num(h.yuzey_m2_m, 'm²/m'));
+    }
+  }
   document.getElementById('tanimsizModalTablo').innerHTML = rows;
-
-  // Form sifirla
-  document.getElementById('tanimsizSebep').value = '';
-  document.getElementById('tanimsizAciklama').value = '';
   document.getElementById('tanimsizGonderBtn').disabled = false;
-
   modal.classList.add('show');
 }
 
@@ -3909,17 +3947,10 @@ function tanimsizModalKapat(){
   _tanimsizAktifId = null;
 }
 
-async function tanimsizModalGonder(){
+async function tanimsizModalKaydet(){
   if(!_tanimsizAktifId) return;
   var m = MALZEME.find(function(x){return x.id === _tanimsizAktifId;});
   if(!m){ tanimsizModalKapat(); return; }
-  var sebep = document.getElementById('tanimsizSebep').value || '';
-  var aciklama = document.getElementById('tanimsizAciklama').value || '';
-  if(!sebep){
-    if(typeof toast === 'function') toast('Lütfen sebep seçin','er');
-    else alert('Lütfen sebep seçin');
-    return;
-  }
   var btn = document.getElementById('tanimsizGonderBtn');
   btn.disabled = true;
   try{
@@ -3927,11 +3958,15 @@ async function tanimsizModalGonder(){
     var oturum = (typeof ARES.oturumAl === 'function') ? ARES.oturumAl() : null;
     var tenantId = (typeof ARES.tenantId === 'function') ? ARES.tenantId() : null;
     var userId   = oturum && oturum.id ? oturum.id : null;
+    var elStd = document.getElementById('tanimsizStandart');
+    var elDN  = document.getElementById('tanimsizDN');
+    var kullStandart = elStd && elStd.value ? elStd.value.trim() : '';
+    var kullDN       = elDN  && elDN.value  ? elDN.value.trim()  : '';
     var hamData = {
       kod: m.kod, tip: m.tip_raw, tanim: m.ac,
       malzeme: m.malz, kalite: m.kal,
       dis_cap_mm: m.cap, et_mm: m.et,
-      kal_standart: m.kal_standart || null
+      kullanici_doldurdu: { standart: kullStandart || null, dn: kullDN || null }
     };
     var capNum = m.cap ? parseFloat(String(m.cap).replace(',','.')) : null;
     var etNum  = m.et  ? parseFloat(String(m.et).replace(',','.'))  : null;
@@ -3944,21 +3979,21 @@ async function tanimsizModalGonder(){
       p_tenant_id:          tenantId,
       p_user_id:            userId,
       p_spool_malzeme_id:   m.id,
-      p_kullanici_sebep:    sebep,
-      p_kullanici_aciklama: aciklama || null
+      p_kullanici_sebep:    'STD_DISI',
+      p_kullanici_aciklama: null
     });
     if(r.error){
       console.error('[tanimsiz_kayit_onerisi]', r.error);
-      if(typeof toast === 'function') toast('Hata: ' + (r.error.message || 'gönderilemedi'),'er');
-      else alert('Hata: ' + (r.error.message || 'gönderilemedi'));
+      if(typeof toast === 'function') toast('Hata: ' + (r.error.message || 'kaydedilemedi'),'er');
+      else alert('Hata: ' + (r.error.message || 'kaydedilemedi'));
       btn.disabled = false;
       return;
     }
-    if(typeof toast === 'function') toast('Süper admin onayına gönderildi','ok');
-    else alert('Süper admin onayına gönderildi');
+    if(typeof toast === 'function') toast('Kaydedildi','ok');
+    else alert('Kaydedildi');
     tanimsizModalKapat();
   }catch(e){
-    console.error('[tanimsizModalGonder]', e);
+    console.error('[tanimsizModalKaydet]', e);
     if(typeof toast === 'function') toast('Beklenmeyen hata','er');
     else alert('Beklenmeyen hata: ' + e.message);
     btn.disabled = false;
@@ -4049,22 +4084,12 @@ document.addEventListener('click', function(e){
       </button>
     </div>
     <div class="flansh-mod-body">
+      <!-- 86.C v2 — SVG cizim alani (boru: doldurulur; diger tip: bos placeholder) -->
+      <div id="tanimsizCizim" class="flansh-cizim"></div>
       <table class="flansh-tablo"><tbody id="tanimsizModalTablo"></tbody></table>
-      <div class="tanimsiz-form">
-        <label for="tanimsizSebep">Sebep</label>
-        <select id="tanimsizSebep">
-          <option value="">— Seçin —</option>
-          <option value="STD_EKSIK">Standartta var, henüz eklenmedi</option>
-          <option value="STD_DISI">Standartta yok, özel/firma ölçüsü</option>
-          <option value="VERI_HATALI">Veri hatalı (eksik veya yanlış)</option>
-        </select>
-        <label for="tanimsizAciklama">Açıklama (opsiyonel)</label>
-        <textarea id="tanimsizAciklama" rows="3" placeholder="Ek bilgi..."></textarea>
-        <div class="tanimsiz-form-row">
-          <button class="tanimsiz-btn-sec" onclick="tanimsizModalKapat()">Vazgeç</button>
-          <button id="tanimsizGonderBtn" class="tanimsiz-btn-pri" onclick="tanimsizModalGonder()">Süper admin onayına gönder</button>
-        </div>
-        <div class="tanimsiz-bilgi-not">Aynı kombinasyon birden fazla yerden gelirse sıklık otomatik artar. Süper admin onayladığında kütüphaneye geçer.</div>
+      <div class="tanimsiz-form-row">
+        <button class="tanimsiz-btn-sec" onclick="tanimsizModalKapat()">Vazgeç</button>
+        <button id="tanimsizGonderBtn" class="tanimsiz-btn-pri" onclick="tanimsizModalKaydet()">Kaydet</button>
       </div>
     </div>
   </div>
