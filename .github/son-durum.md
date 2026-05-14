@@ -1,209 +1,210 @@
 # AresPipe — Son Durum
 
-> **Son güncelleme:** 13 Mayıs 2026 — 85. oturum (KAPATILDI ✅)
-> **Bir önceki oturum:** 84. oturum — Uç işlemi taxonomy refactor + Standart sütunu prototipi (commit `4a1b991`)
-> **Sonraki oturum:** 86 — Renk semantiği fix + fitting/flansh Standart sütunu + tanımsızlık frontend modal + süper admin paneli
+> **Son güncelleme:** 14 Mayıs 2026 — 86. oturum (KAPATILDI ✅)
+> **Bir önceki oturum:** 85. oturum — Uç işlemi taxonomy tamamı + Tanımsızlık DB altyapısı + CI yeşil (commit `659069a`)
+> **Sonraki oturum:** 87 — Kütüphane sayfası render fix + Öneriler kartı + 86.D Phase 2 (onay/red) + veri borç tanıları
 
 ---
 
-## 85. Oturum Özeti — Uç İşlemi Taxonomy Tamamı + Tanımsızlık DB Altyapısı + CI Disiplin
+## 86. Oturum Özeti — Renk Semantiği + Standart Asimetrisi + Tanımsız Öneri Akışı (uçtan uca)
 
-85'in ana ekseni 84'te tasarlanan uç işlemi sözlük altyapısının DB ve frontend tarafında tamamlanması oldu. Sonra **kritik bir model düzeltmesi** yapıldı: 84'te yapılan "Victaulic satırlarını parent boruya nitelik olarak migrate et" kararı yanlıştı — Cihat'ın sahadan getirdiği geri bildirim üzerine 36 yiv satırı **ayrı BOM kalemi (`tip='malzeme'`)** olarak geri eklendi. Tanımsız kayıt öneri akışının DB tarafı kuruldu. CI'ı 21. oturumdan beri sürüncemede olan kütüphane sayfaları script eksiği + Vite SPA yanlış tarama kuralı düzeltilerek **tamamen yeşil** olarak kapatıldı.
+86'nın ana ekseni 85'te kurulan tanımsızlık altyapısının kullanıcı yüzeyine kavuşması oldu. Üç ana iş + bir hotfix + bir panel:
 
-Akış altı dalga halinde ilerledi:
+1. **86.A v1 — Renk semantiği fix:** `geomBagli=false` satırlar için tek `malz-standartdisi` class'ı yerine **iki ayrı class** (`malz-arasolc` turuncu = kütüphanede özel ölçü tanımlı; `malz-tanimsiz` gri = kütüphanede yok, tıklanır). KARAR-85.5 implementasyonu. 3-dallı render kararı (geomBagli + kaliteStandart matrisi) eklendi.
 
-1. **Migration 058 (KARAR-84.1 DB tarafı)** — `uc_islemi_tipleri` sözlük tablosu + 6 seed (plain/bevel/socket/threaded/groove_victaulic/yaka_formlu) + RLS + Realtime. 6/6 doğrulama yeşil.
+2. **86.A v2 — Cihat geri bildirim:** Tablo satırlarında 6px → 3px sol kenar, background tint kaldırıldı (sade). Modal başlıklarında değil **kart sol kenarında** 4px renk şeridi: mavi (default) / turuncu (`theme-arasolc`) / gri (`theme-tanimsiz`). `boruModalAc`, `flanshModalAc` imzalarına opsiyonel `theme` parametresi eklendi.
 
-2. **Migration 059 (KARAR-84.5 DB tarafı)** — `spool_malzemeleri` üzerine 4 yeni kolon (`uc_a_aciklama`, `uc_b_aciklama`, `uc_a_std`, `uc_b_std`) + 057'deki CHECK constraint kaldırma + sözlük FK ekleme (ON DELETE SET NULL, ON UPDATE CASCADE). 36 Victaulic kaydı otomatik bağlandı.
+3. **86.B — fitting/flansh için Standart sütunu:** Şema asimetrisi `boru_olculer.standart` vs `fitting_olculer.geometri_std` vs `flansh_olculer.geometri_std`. SELECT cümlesine `fitting_lib` + `flansh_lib` nested join eklendi, MAP'te `geomStandart` 3-dallı hesap. Render zaten `m.geom_standart` kullanıyordu, dokunulmadı. MK-84.2 + MK-85.3 disiplini: `information_schema.columns` ile şema önce doğrulandı.
 
-3. **Frontend spool_detay v5 (85.C)** — SELECT'e 2 nested join (`uc_a_tip`, `uc_b_tip`) + MAP'e 8 yeni alan + TBODY Standart hücresinde alt satır rendering (`↳ A: Victaulic Yiv (ANSI/AWWA C606)`). **Sahada test sonrası model yanlışlığı tespit edildi.**
+4. **86.C v1 — Tanımsızlık modal v1:** `tanimsizModalAc` placeholder `confirm()` çağrısı yerine `flansh-mod` kabuğunu kullanan gerçek modal. Sebep dropdown (3 seçenek) + açıklama textarea + "Süper admin onayına gönder" butonu. `tanimsiz_kayit_onerisi` RPC bağlandı.
 
-4. **Migration 060 — Taxonomy Düzeltmesi** — Cihat'ın geri bildirimi: "yiv borunun niteliği değil, BOM kalemi. Sahada fiziksel ayrı parça olmasa bile müşterinin tablosunda öyle gösteriyor, bizde de ayrı satır olmalı." 057'nin DELETE 36 adımı yanlış varsayıma dayanıyordu. 36 yiv satırı `tip='malzeme'` olarak geri INSERT edildi, parent borulardaki `uc_a_islemi` NULL yapıldı. Yiv kendi sözlük FK'sını kendi satırında taşır. v1 fail (`guncelleme` kolonu yok), v2 ile düzeldi.
+5. **86.C v2 — Cihat geri bildirim:** Modal kart sol kenarı 4px renk + SVG çizim alanı (boru için `_cizimYukle`, diğer tipte boş placeholder) + bilinen alanlar read-only / bilinmeyen Standart+DN inline input + ağırlık/iç çap/hacim/yüzey alanı hesabı + "Kaydet" butonu (sade). Form + alt sıklık notu kaldırıldı. "Kalite std" satırı kaldırıldı (MK-85.1 ihlali: kalite_kod_normalize türevi).
 
-5. **Frontend v6 + v7 (85.D)** — v6: alt satır rendering kaldırıldı, Standart hücresi 3 dallı oldu (geom_standart / uc_a_std_eff / `—`), uç işlemi satırları kalite kontrolünden muaf tutuldu. v7: yiv satırlarında ağırlık tahmini kapatıldı, Heat No ve Sertifika hücreleri `—` (input/checkbox gizli).
+6. **86.C v2.1 — Hotfix:** RPC `p_tip='boru/fitting/...'` ve `p_kullanici_sebep='STD_DISI'` (büyük harf) → CHECK constraint fail. Doğrusu: `p_tip='std_disi'` (parça tipi değil eksiklik kategorisi), `p_kullanici_sebep=null`. **Tablo 0 kayıtla bu hatayı gizliyordu.** 86.C v2 ekran testinde "Kaydet"e tıklanmadığı için fark edilmedi.
 
-6. **Migration 061 (85.E DB tarafı)** — `tanimsiz_kayitlar` tablosu + hash anahtarı fonksiyonu + UPSERT fonksiyonu (sıklık artırma + açıklama append) + 4 RLS policy + Realtime. Frontend modal RPC bağlantısı 86'ya devredildi.
-
-7. **CI Yeşillendirme** — `admin/kutuphane.html` ve `admin/kutuphane-detay.html`'e eksik `ares-lang.js`/`ares-normalize.js`/`ares-layout.js` script tag'leri eklendi (21. oturumdan beri borç). `.github/kontrol.js` ZORUNLU HTML kontrolüne `mobile/` muafiyeti eklendi (Vite SPA ortak vanilla JS yüklemez, I18N kuralıyla simetrik).
+7. **86.D Phase 1 — Süper admin paneli (salt okuma):** Yeni `admin/kutuphane-oneriler.html`. Sıklığa göre DESC sıralı liste, kırmızı rozet, durum/tip filtreleri, yan detay paneli (ham_data + kullanıcı_doldurdu + meta). Kütüphane ailesinin parçası (Cihat: "kütüphane menüsünde bulunmalı"); sidebar'da "Kütüphane" active. **Phase 2 (onay/red butonları + hedef tabloya yazma) 87'ye devredildi.**
 
 ---
 
-## Yapılanlar (85)
+## Yapılanlar (86)
 
 ### Migration'lar
 
-- **`058_uc_islemi_tipleri_sozluk.sql`** (141 satır, MD5 `e367221...`)
-  - Sözlük tablosu + 6 seed + RLS (super_admin yazar) + Realtime
-  - 6/6 doğrulama yeşil
+Yok — bu oturum tamamen frontend + auth + UI iş.
 
-- **`059_spool_malzemeleri_uc_alanlari_fk.sql`** (180 satır, MD5 `7ff6ce96...`)
-  - 4 kolon + CHECK→FK
-  - Önkoşul kontrolü DO bloğu ile (MK-84.4 defansif)
-  - 36 Victaulic kaydı FK eklemeden zaten doğru kodla bağlandı
+### Frontend (`spool_detay.html`)
 
-- **`060_uc_islemi_taxonomy_duzeltme.sql`** (202 satır, MD5 `a8cd17b1...`)
-  - 36 yiv satırı `tip='malzeme'` olarak geri INSERT (parent'tan tenant/malzeme/kalite/dis_cap/et kopyalandı, boy/agirlik NULL)
-  - Parent borulardaki `uc_a_islemi` NULL'a çekildi
-  - v1 fail: `guncelleme` kolonu DB'de yok, v2 düzeltildi (MK-85.3 — MK-84.2 tekrarı)
-  - Tip dağılımı sonuç: boru=70, fitting=43, flansh=11, **malzeme=36**, toplam 160
+**Toplam:** 3934 → 4107 satır (+173, dört commit'te)
 
-- **`061_tanimsiz_kayitlar.sql`** (354 satır, MD5 `d9399bc4...`)
-  - `tanimsiz_kayitlar` tablosu + 4 tip enum + hash UNIQUE + JSONB ham_data
-  - `tanimsiz_hash_anahtari(tip, dis_cap, et, kalite)` IMMUTABLE fonksiyon
-  - `tanimsiz_kayit_onerisi(...)` UPSERT fonksiyonu (sıklık artırma + açıklama append)
-  - 4 RLS policy + Realtime + index'ler (durum_siklik DESC sıralı sorgu için)
-  - 4/4 doğrulama yeşil (frontend bağlantısı 86'da)
+- **CSS bloğu eklenmeleri:**
+  - `tr.malz-arasolc` + `tr.malz-tanimsiz` (86.A v1)
+  - `.flansh-mod-card.theme-arasolc/.theme-tanimsiz` (86.A v2 — head'den card'a taşındı)
+  - `.tanimsiz-input` + `.tanimsiz-btn-*` + `.tanimsiz-form-row` (86.C v2)
+- **JS fonksiyon değişiklikleri:**
+  - `boruModalAc(spoolMalzemeId, theme)` + `flanshModalAc(...)`: imzaya theme parametresi, card sınıfı yönetimi
+  - `tanimsizModalAc(malzemeId)`: tam yeniden — SVG çizim + bilgi tablosu + inline input + hesaplama helper'ları
+  - `tanimsizModalKaydet()`: form yok, RPC çağrısı `std_disi` + null sebep
+  - `_malzemeYogunlugu(malz)` + `_hesapBoru(D, t, malz)`: yeni helper'lar (yoğunluk tablosu + π formülü)
+- **SELECT cümlesi (86.B):**
+  - `boru_lib:boru_olculer_id(standart,schedule_kod)` → `+ fitting_lib:fitting_olculer_id(geometri_std), flansh_lib:flansh_olculer_id(geometri_std)`
+- **MAP fonksiyonu (86.B):**
+  - `var geom = m.boru_lib || null` (sadece boru) → `_tipNorm` üzerinden 3-dallı `geomStandart` + `geom_sch` (sadece boru için schedule)
+- **Render mantığı:**
+  - `geomBagli=false && !ucIslemiSatiri` → 3-dallı renk kararı (`malz-tanimsiz` / `malz-arasolc` / mavi)
+  - arasolc satırlarına `boruModalAc('id','arasolc')` theme parametresi inline injection (slice/append)
+- **HTML değişiklikleri:**
+  - Yeni `<div id="tanimsizModal">` (SVG cizim placeholder + tablo + sade buton satırı)
 
-### Frontend (`spool_detay.html` — 3885 → 3934 satır, +49)
+### Yeni dosya: `admin/kutuphane-oneriler.html` (429 satır)
 
-- **SELECT cümlesi** — 6 yeni kolon (`uc_a_islemi, uc_b_islemi, uc_a_aciklama, uc_b_aciklama, uc_a_std, uc_b_std`) + 2 nested join (`uc_a_tip`, `uc_b_tip`)
-- **MAP fonksiyonu** — 8 yeni alan (`uc_a/b_islemi, uc_a/b_aciklama, uc_a/b_std_eff, uc_a/b_ad`), `ucIslemiSatiriMi` hesabı, yiv için ağırlık tahmini muafiyeti
-- **TBODY Standart hücresi** — 3 dallı (geom_standart / uc_a_std_eff / `—`)
-- **TBODY render** — yiv satırı (`ucIslemiSatiri`) için Heat No `—` (input gizli), Sertifika `—` (checkbox gizli)
-- **Kalite kontrol muafiyeti** — uç işlemi satırları standart-dışı işaretlenmiyor
+- Süper admin auth kontrolü (`kullanicilar.rol='super_admin'`, değilse `../index.html` redirect)
+- Liste: `siklik_sayisi DESC, olusturma_at DESC`, kolonlar: eksiklik tipi rozeti / parça tipi / ölçü / kalite / sıklık rozeti (≥5 kırmızı) / son öneri zaman farkı / durum
+- Filtreler: durum dropdown (bekliyor varsayılan), eksiklik tipi dropdown
+- Yan detay paneli: parça bilgileri + kullanıcı doldurdu (Standart, DN) + öneri meta + ham JSON (debug)
+- Sidebar: "Kütüphane" active (ayrı "Öneriler" nav-item yok)
+- Phase 2 placeholder notu detay panelinde
 
-### Admin Sayfaları
+### Bu oturumda commit'ler
 
-- **`admin/kutuphane.html`** (MD5 `c951e738...`) — 9. satıra `ares-lang.js` + `ares-normalize.js` + `ares-layout.js` eklendi (CLAUDE.md 2.2 SC-01)
-- **`admin/kutuphane-detay.html`** (MD5 `b3823b2d...`) — aynı pattern
+```
+1aa3e41  docs(85): 86.A icin ekran goruntusu gozlemleri eklendi (M2 turuncu gozukmeme + confirm() placeholder)
+[oturum-acilis]  fix(86.A v1): renk semantigi 3-dalli (turuncu=arasolc, gri=tanimsiz) [KARAR-85.5]
+f487d7a  fix(86.A v2)+feat(86.C v1): renk sadelestirme + tanimsiz oneri modal (BORU BILGISI tarzi + RPC)
+a81ad2e  fix(86.C v2): card sol kenar renk + SVG cizim + hesaplamalar + sade Kaydet (Cihat feedback)
+6d81e06  feat(86.B): fitting/flansh icin Standart sutunu (sema asimetri: geometri_std)
+c80c941  fix(86.C v2.1): RPC parametreleri CHECK constraint uyumlu (p_tip=std_disi, sebep=null)
+1682bec  feat(86.D Phase 1): kutuphane-oneriler.html — tanimsiz kayit oneri paneli (salt okuma)
+[bu]     docs(86): oturum kapanis + 87 gundem + MK-86.x kurallari + .gitignore bak* + DB durum
+```
 
-### CI Kontrol Sistemi
+### Kararlar Alındı (86)
 
-- **`.github/kontrol.js`** (MD5 `efd97809...`) — `zorunluKontrol` fonksiyonunun başına `mobile/` muafiyeti (Vite SPA build çıktısı ortak vanilla JS yüklemez)
+- **KARAR-86.1** — Modal kart sol kenarı = tablo satırı kenar şeridi semantik simetri taşır. Üç renk: mavi (`--ac`, varsayılan) / turuncu (`--warn`, `theme-arasolc`) / gri (`--txd`, `theme-tanimsiz`). KARAR-85.5'in görsel uygulaması. *MK-85.4 (Model-UI simetri) genişletildi.*
 
-### Kararlar Alındı (85)
+- **KARAR-86.2** — Tanımsız öneri modal'ında **sebep formu yok**. Cihat: "kullanıcı sebebini sormaya zorlamayalım; bilinmeyen alanlar (Standart, DN) doldurulabilsin yeter". Sebep alanı `null`, eksiklik kategorisi tablo seviyesinde `tip='std_disi'` (varsayılan). Süper admin panelinde rozetlerle sınıflandırılır.
 
-- **KARAR-85.1** — Turuncu satır gerçekte üç tip eksiklik içerir: STD-EKSİK (standartta var, biz eklemedik), STD-DIŞI (standartta yok, özel ölçü), VERİ-HATALI (boyut yok). Modal akışında ayrım yapılır. *(Frontend implementasyon 86)*
+- **KARAR-86.3** — Süper admin "Öneriler" sayfası kütüphane akışının parçasıdır, ayrı bir admin işi değil. Dosya adı `admin/kutuphane-oneriler.html`, sidebar'da "Kütüphane" linki active. *Kullanıcı modeli: kayıt → kütüphaneye katılma akışı tek bir mental modelde kalır.*
 
-- **KARAR-85.2** — RLS asla kapalı bırakılmaz. Supabase Studio'da "Run without RLS" görünürse durulup policy yazılır. *(MK-85.2 olarak da kuralda)*
+- **KARAR-86.4** — Ağırlık hesabı: yoğunluk tablosu hard-code (`karbon=7850`, `paslanmaz=7950`, `dupleks=7850`, `cuni=8900`, `aluminyum=2700`). Bilinmeyen malzeme için "—" (uydurma yapılmaz). MK-85.1 disiplini: kategori adından standart türetilmiyor, **yoğunluk türevi malzeme adından da olmamalı** — ama burada fiziksel sabit olduğu için kabul edildi. *Açık not: gelecekte malzeme_kataloglari'ndan yoğunluk çekilebilir.*
 
-- **KARAR-85.3** — Tanımsız satır modal'ı mavi BORU BİLGİSİ modal'ının formatına paralel olur. Tahmini değerler gösterilir, kullanıcı onaylar veya yazar. *(86'da implementasyon)*
+- **KARAR-86.5** — `tanimsiz_kayitlar` tablo şeması okunduğunda RPC parametre semantiği keşfedildi:
+  - `tip` = eksiklik kategorisi (`std_disi/std_eksik/kalite_std_eksik/uc_islemi_eksik`), parça tipi DEĞİL
+  - `kullanici_sebep` = küçük harf snake_case (`std_var_eklenmemis/std_disi_ozel_olcu/veri_hatali_eksik` veya null)
+  - Parça tipi (boru/fitting/flansh/malzeme) `ham_data.tip` JSONB field'ında saklanır
+  - Hash anahtarı `(tip, dis_cap_mm, et_mm, kalite)` üzerinden, tenant fark etmez (KARAR-85.7)
 
-- **KARAR-85.4** — Tenant-özel ↔ sistem-preset çakışma çözümü: Cihat'ın getirdiği "süper admin tek otorite" felsefesiyle **doğal çözüldü**. Kullanıcının önerisi `tanimsiz_kayitlar`'a düşer (önerİ), süper admin onayladığında kütüphaneye geçer. Tek bir karar otoritesi olduğu için çakışma yoktur.
+### Yeni Mimari Kurallar (MK-86.x)
 
-- **KARAR-85.5** — Renk semantiği netleşti: **🟠 turuncu = kütüphanede özel ölçü olarak tanımlı (STD-DIŞI ama tanımlı)**, **⚪ gri = tanımsız (kütüphanede yok, tıklanır → öneri akışı)**. *(86'da implementasyon)*
+- **MK-86.1** — **"zsh tuzakları: `!!` history expansion, `()` parantezli yorum satırları, `===` echo blokları parse error verir."** Komutlar **tek tırnak** içinde olmalı (`grep '...' file`) veya base64 ile sevk. Heredoc kullanılırsa `<<'DELIM'` (tek tırnak ile) — expansion kapanır. Bu oturum 4 kez yaşandı (Patch 1, B64 yapıştırma, sed kontrol).
 
-- **KARAR-85.6** — Süper admin iki yollu karar: (1) standartta var → manuel toplu tablo yükle, (2) standartta yok → tekil kontrol et + dahil et. Çakışma engellenmiş olur.
+- **MK-86.2** — **"Migration imzasından parametre adlarını okumak yetmez; CHECK constraint'ler ayrıca doğrulanır."** MK-85.3 genişletmesi. 86.C v1 hatası: `p_tip='boru/fitting'` yazmıştık, CHECK `(tip = ANY (ARRAY['std_disi','std_eksik',...]))` üstüne fail etti. **Tablo 0 kayıt ile bunu gizledi** — modal'ı görsel test ettik ama "Kaydet"e basmadığımız için RPC hiç tetiklenmedi. *Pattern: tablo şeması + CHECK + RLS üçü birden doğrulanmadan RPC çağrısı yazılmaz.*
 
-- **KARAR-85.7** — Öneri birleşme: `UNIQUE (hash_anahtari)` — tenant fark etmez, aynı kombinasyon tek satır. Sıklık tüm tenant'lardan toplu. Süper admin paneli sıklığa göre sıralar, sağ tarafta kırmızı rozet ile sayım gösterir. Onaylanırsa listeden düşer.
+- **MK-86.3** — **"Model-UI simetrisi (MK-85.4) tabloyla sınırlı değil: modal kabuğu da semantiği yansıtmalı."** Satırın renk kodu (mavi/turuncu/gri) tıklanan modal'ın kart kenarında aynen görünür. Aksi: kullanıcı tablo turuncu görür, mavi modal açılır → bilgi parçalanır.
 
-- **KARAR-85.8** — 057'nin DELETE 36 adımı yanlıştı. Veri tarafı 060 ile düzeltildi (yiv ayrı BOM kalemi). Migration silinmez (audit trail korunur), gelecekteki ileriye taşıma 060 ile yapılır.
+- **MK-86.4** — **"Mac terminale büyük heredoc/base64 yapıştırma güvenilmez (~45KB üstü buffer bölünmesi)."** Çözüm: `present_files` ile artifact olarak ver, Cihat indirir, `mv ~/Downloads/X /tmp/X`. Bu oturumda 4 dosya bu yolla geçti, hepsi başarılı. Heredoc < 5KB için hâlâ kullanılabilir.
 
-### Yeni Mimari Kurallar
-
-- **MK-85.1** — **"Standart üç kaynaktan biri: kütüphane FK, müşteri raw, veya hiç. Kategori adından (karbon, paslanmaz vb.) standart TÜRETMEYİZ."** 84.E v3'te yaptığım hatanın doğru gerekçesi. Müşteri "Victaulic" derse biz "ANSI/AWWA C606" yazarız (kanonik eşleştirme); kategori "karbon"dan "DIN 17100" türetmeyiz.
-
-- **MK-85.2** — **"RLS asla kapalı bırakılmaz."** Supabase Studio'da "Run without RLS" hiçbir tabloda **seçenek değildir**. Multi-tenant veri sızıntısı riski. Tablo yaratan her migration'da `ENABLE ROW LEVEL SECURITY` + en az 2 policy zorunlu.
-
-- **MK-85.3** — **"Migration yazmadan önce HER ZAMAN `information_schema.columns` ile şema doğrula."** MK-84.2 ihlalini 060 v1'de tekrar yaptım (`guncelleme` kolonu kopyaladım, DB'de yoktu). Önceki bir migration'dan kopyalanan kolon adı bile şüpheli — şema değişmiş olabilir.
-
-- **MK-85.4** — **"Modeli yanlış kurarsan UI hilesiyle örtmek bilgi kaybına yol açar."** 057 yiv'i parent boruya nitelik olarak migrate etti, 85.C "↳ A:" alt satırı ile bunu kullanıcıya gösterdi. Görsel düzgün gözüktü ama hangi standardın hangi parça için olduğu belirsizdi. Cihat sahadan geri bildirim getirince model düzeltildi (060). Gelecekte: veri modeli ile UI gösterimi arasında **simetri** kontrolü zorunlu.
+- **MK-86.5** — **"Eski admin sayfaları (82'den önce/sırası kalanlar) farklı render pattern'larında olabilir."** `admin/kutuphane.html` topbar HTML + CSS'i içeriyor olmasına rağmen sahada bozuk gözüküyor (87.A keşfi). 86'da bu dosyaya dokunulmadı (git log: son commit `659069a` = 85 kapanış). Sebebi runtime (`ares-layout.js` veya başka script) muhtemelen. 87.A'da panel.html ile karşılaştırmalı tanı.
 
 ---
 
-## Açık Borçlar (86+ Oturumlara Devreden)
+## Açık Borçlar (87+ Oturumlara Devreden)
 
-### 86. Oturum gündemi — Renk semantiği fix + fitting/flansh Standart sütunu + tanımsızlık frontend modal
+### 87. Oturum gündemi — Kütüphane render fix + Öneriler kartı + 86.D Phase 2 + veri borç tanıları
 
-**86.A — Renk semantiği fix (KARAR-85.5)** (~30 dk)
+**87.A — `admin/kutuphane.html` topbar/layout render fix** (~30 dk, öncelik 1)
 
-Şu an `geomBagli=false` olan satırlar bazıları turuncu görünmüyor (M2/M3/M4/M5 keşfi — `46622aea-...` spool'unda tespit edildi). Render mantığı:
-- Kütüphaneye bağlı + standartta var → mavi (mevcut)
-- Kütüphaneye bağlı + standartta yok (özel ölçü) → **turuncu** (yeni)
-- Kütüphaneye bağsız → **gri + tıklanır** (yeni, modal açılır)
+Sahada görsel bozuk: sidebar ana içeriğin üstüne biniyor, topbar gözükmüyor. Dosya 86'da değişmedi (son commit `659069a` = 85 kapanışı). Topbar HTML (satır 147-153) + CSS (satır 29-34) ikisi de var. Tanı:
+- `ares-layout.js` runtime hata yapıyor olabilir → Console kırmızı hata kontrol
+- `display:flex` layout `class="layout"` üstüne biniyor olabilir → DevTools inspect
+- panel.html'in topbar yapısıyla diff alıp eşitle
 
-`master.tenant_id` kontrolü ile sistem-preset / tenant-özel ayrımı yapılır. Render'da bir bug var, debug edilecek.
+**87.B — `admin/kutuphane.html`'e Öneriler kartı** (~15 dk, 87.A bağımlı)
 
-**86.B — fitting/flansh için Standart sütunu (v8)** (~20 dk)
+`GRUPLAR` array'ine yeni kart eklenir:
+```js
+{ kod:'oneriler', ad:'Bekleyen Öneriler', ikon:'💡', renk:'warn',
+  aciklama:'Kullanıcı kayıt önerileri — kütüphaneye alınmak için onay bekliyor',
+  link:'kutuphane-oneriler.html' }  // tablolar:[] yerine link
+```
+Render fonksiyonu (satır 374) `g.link` varsa direkt href, yoksa mevcut `kutuphane-detay.html?...` akışı. Sayım: `tanimsiz_kayitlar` `durum='bekliyor'` count, kartta rozet.
 
-84.E'de keşfedildi: fitting_olculer ve flansh_olculer'da kolon adı `geometri_std` (boru'daki `standart` değil). Frontend'de sadece boru için Standart çekiliyor. fitting/flansh için ayrı nested join + render mantığı eklenir. MK-84.2 (şema doğrulama) zorunlu.
+**87.C — 86.D Phase 2: Onay/Red butonları + hedef tabloya yazma** (~2 saat, ayrı oturum olabilir)
 
-**86.C — Tanımsızlık frontend modal (85.E v2)** (~1 saat)
+`admin/kutuphane-oneriler.html` detay panelinde 3 buton:
+- **Sisteme Ekle** — `boru_olculer/fitting_olculer/flansh_olculer/malzeme_kataloglari` ana tabloya INSERT, `tanimsiz_kayitlar.durum='onaylandi'` + `hedef_tablo` + `hedef_kayit_id` yaz
+- **Tenant-Özel Onayla** — aynı tablolara INSERT ama `tenant_id` set
+- **Reddet** — `durum='reddedildi'` + `karar_notu`
 
-`tanimsizModalAc` placeholder'ı gerçek modal'a yükselt:
-- Mavi BORU BİLGİSİ modal formatına paralel (KARAR-85.3)
-- Eksik alanlar tahmin edilir (örn. DN125 tahmini gösterilir)
-- Kullanıcı sebep dropdown (3 seçenek) + serbest açıklama
-- `tanimsiz_kayit_onerisi(...)` RPC fonksiyonuna POST
-- Toast: "Süper admin onayına gönderildi"
+Üç buton için ayrı RPC fonksiyonları (yeni migration `062_oneri_karar_rpc.sql`) veya tek RPC + action parametresi. Süper admin auth zaten kurulu.
 
-**86.D — Süper admin paneli `admin/oneriler.html`** (~2 saat, ayrı oturum olabilir)
+**87.D — Veri borç tanıları** (~30 dk)
 
-- Bekleyen öneriler listesi (sıklığa göre DESC)
-- Sağ tarafta kırmızı rozet ile siklik_sayisi
-- Detay: ham veri, kullanıcı sebebi, kaç tenant'tan geldi, hangi spool'larda
-- 3 buton: "Sisteme Ekle" (toplu tablo yükle) / "Tenant-Özel Onayla" / "Reddet"
-- Onaylananlar listeden düşer (durum='onaylandi' filter)
+- **60.30×6.3** — Kütüphanede var, 056 migration neden bağlamadı? Tanı + ileriye taşıma migration
+- **114.30×null** — Eksik et değeri. PDF parse'de mi atlandı? Yoksa kullanıcı boş bıraktı mı?
+- **139.70×4.5** — 36 spool kalemi standartta yok; 86.D Phase 2 + tenant-özel onay senaryosunun ilk büyük vakası
 
-### 87+ ve sonrası
+**87.E — `.gitignore` tamamlandı** (bu kapanışta yapıldı, sadece teyit)
 
-- **87** — Public kütüphane sayfası (`arespipe.com/kutuphane`, KARAR-83.1 + KARAR-85.5 yayın filtresi)
-- **88+** — `parca_etiketleri` + üç-pencere etiketleme UI (81 + 82.C)
-- **89+** — `kutuphane_ogrenme_durumu` materialized view (81 + 82.D)
-- **90+** — İzometri parser KARAR-83.2 ileri uygulama (Victaulic-türü kayıtlar direkt `tip='malzeme'` olarak parse edilir, 057 reconstruct akışı kalkar)
-- **91+** — `spool_flansh_eslesme` junction DROP (85'te FK migrate edilmişti)
-- **92+** — Diğer uç işlemleri (lazer kesim, dişli flanş, expanded taper) sözlüğe eklenecek
+**87.F — `CLAUDE.md` ritüel düzeltmesi** (~5 dk)
+
+Şu an CLAUDE.md'de açılış ritüeli `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` dosyalarını **kök dizinde** arıyor olabilir, gerçek konum `docs/` altında. Path düzeltilir.
+
+### 88+ ve sonrası
+
+- **88** — Public kütüphane sayfası (`arespipe.com/kutuphane`, KARAR-83.1 + KARAR-85.5 yayın filtresi)
+- **89+** — `parca_etiketleri` + üç-pencere etiketleme UI (81 + 82.C)
+- **90+** — `kutuphane_ogrenme_durumu` materialized view (81 + 82.D)
+- **91+** — İzometri parser KARAR-83.2 ileri uygulama
+- **92+** — `spool_flansh_eslesme` junction DROP
+- **93+** — Diğer uç işlemleri (lazer kesim, dişli flanş, expanded taper) sözlüğe ekleme
 
 ### Veri / Vizyon Borçları (sinyal bazlı)
 
-- **139.70×4.5** boyutu 36 spool kalemi → standartta yok ama sahada yaygın. 86.D süper admin onayı geldiğinde ilk büyük "tenant-özel ekleme" vakası.
-- **60.30×6.3** (önceki oturumlardan) — kütüphanede var aslında, 056 neden bağlamadı? 86 başında tanı.
-- **114.30×null** (önceki oturumdan) — eksik veri tespiti.
-- **Test spool keşfi**: `46622aea-d732-4b66-9fba-bcadc1d354d2` — 4 satır (M2/M3/M4/M5) kütüphaneye bağsız ama UI'da turuncu görünmüyor. 86.A debug için kullanılır.
+- **`tanimsiz_kayitlar` ilk gerçek kayıt** — 86 kapanışında 0 kayıt vardı. Saha kullanıcı testi sonrası akış doğrulanır (86.C v2.1 RPC'si CHECK uyumlu).
+- **Test spool akış doğrulama**: `465a641e-e466-422c-972b-a5a7a7d7b571` — M1 boru (`139.7×4.5`, kütüphaneye bağsız) → gri renk → tıkla → modal aç → Standart "DIN 17175", DN "125" yaz → Kaydet → toast "Kaydedildi". Sahada test edildi mi? *(86 kapanışında doğrulanmadı)*
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL (85 kapanış commit'inden sonra beklenen)
-- **Lint:** 3 hata vardı (admin/kutuphane*.html + mobile/dist/index.html), hepsi düzeltildi
-- **Vercel:** ✅ Production aktif (CI'a bağlı değil, hâlâ otomatik deploy ediyor)
-- **Bu oturumda commit'ler (özet):**
-  - `4e7ce6e` migration(85.A): 058 uc_islemi_tipleri sozluk
-  - `fa709a1` migration(85.B): 059 spool_malzemeleri uc alanlari + FK
-  - `e7bcdd9` feat(85.C): spool_detay v5 (alt satir gosterimi, sonra kaldırıldı)
-  - `2e1ec45` migration(85.D): 060 v2 taxonomy duzeltme (yiv ayri kalem)
-  - `12815be` feat(85.D v6): yiv satirlari ayri kalem (alt satir kaldirildi)
-  - `1d35330` feat(85.D v7): yiv satirinda agirlik/heat/sert kaldirildi
-  - `0045c95` migration(85.E): 061 tanimsiz_kayitlar
-  - **`?` chore(85): kapanis — admin script fix + kontrol.js mobile muafiyet + 3 docs**
+- **Build:** ✅ YEŞİL (85'te zaten yeşildi, 86 sadece frontend + yeni HTML dosyası)
+- **Vercel:** ✅ Production aktif, son deploy `1682bec` (86.D Phase 1 push'undan sonra)
+- **Lint:** 0 hata (admin/kutuphane-oneriler.html 85'in script tag pattern'ına birebir uyumlu)
 
 ---
 
 ## Performans / Veri Sinyalleri
 
-- **Migration 060 etkisi**: 36 yiv satırı geri eklendi → spool_malzemeleri tip dağılımı 124 → **160** (boru=70, fitting=43, flansh=11, malzeme=36)
-- **Frontend v7 etkisi**: Yiv satırları temiz görünüyor (ağırlık `—`, Heat No `—`, Sertifika `—`)
-- **CI etkisi**: 3 hata → 0 hata (admin/* + mobile/dist tarama dışı)
+- **Frontend etkisi (86.A v1+v2):** `46622aea-...` spool'unda M2-M5 satırları artık gri görünüyor (DOM inspect `getComputedStyle.borderLeftColor = rgb(99,112,128)` = `--txd`)
+- **86.B etkisi (test bekliyor):** fitting/flansh içeren spool'larda Standart hücresi artık `—` değil (örn. `01485adf-...`); bağlı kayıt yoksa hâlâ `—`, beklenen davranış
+- **86.C v2 etkisi:** Tanımsız modal sahada görsel test edildi (Cihat ekran görüntüsü); kart sol kenarı gri 4px, SVG kesit çizimi, hesaplanan ağırlık değerleri görünür
+- **86.C v2.1 hotfix:** Modal "Kaydet" butonu artık CHECK constraint'e takılmamalı (saha testi 87'de doğrulanır)
+- **86.D Phase 1:** Panel sahada açılır, salt okuma çalışır; ilk gerçek kayıt geldiğinde liste doluş davranışı test edilir
 
 ---
 
-## Süreç Disiplinleri (85 ekledikleri + öncesi)
+## Süreç Disiplinleri (86 ekledikleri + öncesi)
 
-- **Heredoc / str_replace tabanlı patch'leme** dosya yazma için (MK-52.1)
-- **`arespipe_kopyala`** MD5 doğrulamalı
-- **`gp`** otomatik rebase + push (MK-52.2)
-- **5 haneli migration numarası**, son numara 061
-- **PL/pgSQL DO bloğu** Supabase Studio'da defansif kontrol (MK-84 ailesi)
-- **Migration öncesi `information_schema.columns` ile şema doğrulama** (MK-84.2 + MK-85.3)
-- **RLS asla kapalı bırakılmaz** (MK-85.2)
-- **Standart üç kaynaktan biri** (MK-85.1) — kategori türevi yasak
-- **Model ile UI simetri kontrolü** (MK-85.4) — UI hilesiyle model hatasını örtme
+- **MK-86.1** — zsh tek tırnak / base64 / heredoc `<<'DELIM'` (parse error tuzakları)
+- **MK-86.2** — Şema + CHECK + RLS üçü birden doğrulanmadan RPC çağrısı yazılmaz
+- **MK-86.3** — Model-UI simetrisi modal'a uzanır (tablo + modal kenar rengi semantik aynı)
+- **MK-86.4** — Mac terminale ~45KB üstü base64 yapıştırma güvenilmez → `present_files` artifact
+- **MK-86.5** — Eski admin sayfaları runtime pattern uyumsuzlukları yaşatabilir (87.A keşfi)
+- **MK-85.x** ve **MK-84.x** korunur (RLS asla kapalı, şema doğrulama, sade test, vb.)
 
 ---
 
 ## Açık Test / Doğrulama Notları
 
-- ✅ Migration 058 — 6 doğrulama yeşil
-- ✅ Migration 059 — 5 doğrulama yeşil + 36 Victaulic bağlantısı
-- ✅ Migration 060 v2 — 4 doğrulama yeşil, toplam 160 satır
-- ✅ Migration 061 — 4 doğrulama yeşil (frontend testi 86'da)
-- ✅ Frontend v7 — sahada test edildi (`00d4926d-...`), yiv satırı temiz görünüyor
-- ⏳ Renk semantiği bug — `46622aea-...` spool'unda M2/M3/M4/M5 turuncu görünmüyor (86.A için keşif)
-- ⏳ Modal akışı — sahada test edilmedi (86.C frontend modal sonrası)
+- ✅ 86.A v1 + v2 — sahada test edildi, ekran görüntüsü ile doğrulandı (gri sol kenar 3px)
+- ✅ 86.B — kod sahaya çıktı, görsel test fitting/flansh kütüphane bağlı kayıt olmadığı için yapılamadı (geriye dönük doğrulama mümkün olduğunda)
+- ✅ 86.C v2 — modal sahada test edildi (ekran görüntüsü); SVG + hesap + inline input görünür
+- ⏳ 86.C v2.1 hotfix — Kaydet butonu RPC çağrısı (87 başında bir test kaydı yapılır, `tanimsiz_kayitlar` count > 0 olduğu doğrulanır)
+- ⏳ 86.D Phase 1 — Panel boş listede çalışıyor, ilk gerçek kayıt sonrası liste/detay testi
+- ⚠ 87.A — `admin/kutuphane.html` render bozuk (sahada görüldü, 86'da dokunulmadı; 87'de tanı + fix)
 
 ---
 
-> **86. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.** 86 gündemi (A-D arasında 4 alt iş, D ayrı oturum olabilir) kapanışta kilitlendi.
+> **87. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.** 87 gündemi (A-F arasında 6 alt iş, C ayrı oturum olabilir) bu kapanışta kilitlendi.
 >
-> **Son güncelleme:** 13 Mayıs 2026 — 85. oturum (kapatma)
+> **Son güncelleme:** 14 Mayıs 2026 — 86. oturum (kapatma)

@@ -25,3 +25,8 @@ npm-debug.log*
 
 # Vite build artifact
 mobile/dist/
+
+# 86. oturum — patch backup dosyalari (heredoc/script ile birakilan)
+*.bak.*
+*.bak
+spool_detay.html.bak*
