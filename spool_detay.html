@@ -239,11 +239,27 @@ tr.malz-tiklanabilir td:first-child{padding-left:9px;}
 /* 83. oturum (KARAR-83.1) — Standart-dışı kalite (firma özel veya serbest yazım) turuncu şerit */
 tr.malz-standartdisi{border-left:3px solid var(--warn);}
 tr.malz-standartdisi td:first-child{padding-left:9px;}
-/* 86.A (KARAR-85.5) Renk semantigi ayrimi: turuncu=ara olcu, gri=tanimsiz */
-tr.malz-arasolc{border-left:6px solid var(--warn);background:rgba(217,119,6,0.06);}
+/* 86.A v2 (KARAR-85.5) — Tablo satiri sadelestirme: 3px sol cizgi, background yok */
+tr.malz-arasolc{border-left:3px solid var(--warn);}
 tr.malz-arasolc td:first-child{padding-left:9px;}
-tr.malz-tanimsiz{border-left:6px solid var(--txd);background:rgba(99,112,128,0.07);cursor:pointer;}
+tr.malz-tanimsiz{border-left:3px solid var(--txd);cursor:pointer;}
 tr.malz-tanimsiz td:first-child{padding-left:9px;}
+/* 86.A v2 — Modal basligi tema sistemi (sol cizgi mavi/turuncu/gri) */
+.flansh-mod-head{border-left:3px solid var(--ac);padding-left:15px;}
+.flansh-mod-head.theme-arasolc{border-left-color:var(--warn);}
+.flansh-mod-head.theme-tanimsiz{border-left-color:var(--txd);}
+/* 86.C — Tanimsiz oneri modal form alanlari */
+.tanimsiz-form{display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--bor);}
+.tanimsiz-form label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.tanimsiz-form select,.tanimsiz-form textarea{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box;}
+.tanimsiz-form textarea{resize:vertical;min-height:60px;}
+.tanimsiz-form select:focus,.tanimsiz-form textarea:focus{outline:none;border-color:var(--ac);}
+.tanimsiz-form-row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+.tanimsiz-btn-sec{background:transparent;color:var(--txm);border:1px solid var(--bor);border-radius:6px;padding:8px 16px;cursor:pointer;font-family:inherit;font-size:13px;}
+.tanimsiz-btn-sec:hover{color:var(--tx);border-color:var(--ac);}
+.tanimsiz-btn-pri{background:var(--ac);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;}
+.tanimsiz-btn-pri:disabled{opacity:.45;cursor:not-allowed;}
+.tanimsiz-bilgi-not{font-size:12px;color:var(--txm);font-style:italic;margin-top:10px;padding:8px 12px;background:var(--sur2);border-radius:6px;}
 .flansh-mod{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:48px 16px;overflow-y:auto;}
 .flansh-mod.show{display:flex;}
 .flansh-mod-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;width:100%;max-width:560px;overflow:hidden;}
@@ -2255,6 +2271,8 @@ function renderMalzeme(){
       } else if(!kaliteStandart){
         trClasses.push('malz-arasolc');
         if(!trTitle) trTitle = ' title="Ara ölçü — kalite kütüphaneye bağlı değil"';
+        // 86.A v2 — Onclick zaten boruModalAc/flanshModalAc'e bagli; theme parametresi ekle
+        if(trOnclick) trOnclick = trOnclick.slice(0,-3) + "', 'arasolc')\"";
       }
     }
     // 84. oturum (84.E v4) — Standart sütunu içeriği
@@ -3619,11 +3637,17 @@ async function flanshKutuphaneYukle(){
 }
 
 // Modal aç — spool_malzemeleri.id alır, FLANSH_MAP'tan kayıt çeker
-function flanshModalAc(spoolMalzemeId){
+function flanshModalAc(spoolMalzemeId, theme){
   var f = FLANSH_MAP[spoolMalzemeId];
   if(!f){ return; }
   var modal = document.getElementById('flanshModal');
   if(!modal) return;
+  // 86.A v2 — Modal basligi tema (default mavi; arasolc=turuncu)
+  var head = modal.querySelector('.flansh-mod-head');
+  if(head){
+    head.classList.remove('theme-arasolc','theme-tanimsiz');
+    if(theme==='arasolc') head.classList.add('theme-arasolc');
+  }
   // Başlık özeti
   var capStr   = f.cap_nps ? (f.cap_nps + '"') : '';
   if(f.cap_dn) capStr += (capStr ? ' / ' : '') + 'DN' + f.cap_dn;
@@ -3768,11 +3792,17 @@ async function boruKutuphaneYukle(){
 }
 
 // Boru bilgi modalını aç — BORU_MAP'tan kayıt çeker
-function boruModalAc(spoolMalzemeId){
+function boruModalAc(spoolMalzemeId, theme){
   var b = BORU_MAP[spoolMalzemeId];
   if(!b) return;
   var modal = document.getElementById('boruModal');
   if(!modal) return;
+  // 86.A v2 — Modal basligi tema (default mavi; arasolc=turuncu)
+  var head = modal.querySelector('.flansh-mod-head');
+  if(head){
+    head.classList.remove('theme-arasolc','theme-tanimsiz');
+    if(theme==='arasolc') head.classList.add('theme-arasolc');
+  }
 
   var sm = MALZEME.find(function(x){ return x.id === spoolMalzemeId; });
   var malzKisa = sm && sm.kal && sm.kal !== '—' ? sm.kal : (sm && sm.malz ? sm.malz : '—');
@@ -3827,44 +3857,111 @@ function boruModalKapat(){
 }
 
 
-// 84. oturum (84.E v4) — Tanımsız malzeme modal (placeholder)
-//
-// Cihat (84): "uydurma standart değil boş gelsin, tıklandığında açılsın,
-//              standart malzemeler gibi tanımlayalım ama standart dışı olduğunu da bilelim.
-//              bu tanımlanamayan malzemeler süper admin sayfasında toplanmalı
-//              ve eğer gerçekten standartta yoksa ve sahada kullanılıyorsa
-//              burada onaylanıp kütüphaneye dahil edilmeli."
-//
-// Bu prototip placeholder — gerçek akış 85+'da:
-//   - DB tablosu: tanimsiz_malzeme_onerileri (öneri toplama, sıklık sayma)
-//   - Süper admin sayfası: admin/oneriler.html (Sisteme ekle / Tenant-özel / Reddet)
-//   - Tam modal: detay form (parça tipi, standart önerisi, sebep)
-//
-// Şimdilik: confirm() + toast (sahada test edilebilir, geri bildirim alabilir)
+// 86.C (KARAR-85.3) — Tanimsiz malzeme oneri modal'i
+// confirm() placeholder yerine BORU BILGISI kabugunu kullanan gercek modal.
+// RPC: tanimsiz_kayit_onerisi (061 migration) — UPSERT (siklik artirma + aciklama append)
+var _tanimsizAktifId = null;
 function tanimsizModalAc(malzemeId){
   var m = MALZEME.find(function(x){return x.id === malzemeId;});
   if(!m){ return; }
-  var msg = 'STANDART DIŞI MALZEME\n\n';
-  msg += 'Kod:       ' + (m.kod || '—') + '\n';
-  msg += 'Tip:       ' + (m.tip_raw || '—') + '\n';
-  msg += 'Tanım:     ' + (m.ac || '—') + '\n';
-  msg += 'Malzeme:   ' + (m.malz || '—') + '\n';
-  msg += 'Kalite:    ' + (m.kal || '—') + '\n';
-  msg += 'Dış çap:   ' + (m.cap || '—') + '\n';
-  msg += 'Et:        ' + (m.et || '—') + '\n';
-  if(m.kal_standart){
-    msg += '\nKalite std: ' + m.kal_standart + ' (sadece kalite — ölçü standart dışı)';
+  var modal = document.getElementById('tanimsizModal');
+  if(!modal) return;
+  _tanimsizAktifId = malzemeId;
+
+  // Modal basligi tema (gri)
+  var head = modal.querySelector('.flansh-mod-head');
+  if(head){
+    head.classList.remove('theme-arasolc','theme-tanimsiz');
+    head.classList.add('theme-tanimsiz');
   }
-  msg += '\n\n────────────────────────\n';
-  msg += 'Bu malzeme kütüphaneye eklensin mi?\n\n';
-  msg += '✓ Tamam → Süper admin onayına gönderilir (85+ tam akış)\n';
-  msg += '✕ İptal  → İşlem iptal';
-  if(!confirm(msg)){ return; }
-  // TODO 85: tanimsiz_malzeme_onerileri tablosuna INSERT (placeholder)
-  if(typeof toast === 'function'){
-    toast('Öneri alındı — süper admin onayı 85+ oturumda devreye girer','wa');
-  } else {
-    alert('Öneri alındı. (Süper admin onay akışı 85+ oturumda devreye girer.)');
+
+  // Ozet/meta
+  var malzKisa = m.kal && m.kal !== '—' ? m.kal : (m.malz || '—');
+  var capStr = (m.cap || '—') + (m.et ? '×' + m.et : '') + ' mm';
+  var ozet = malzKisa + ' · ' + (m.tip_raw || '—') + ' · ' + capStr;
+  document.getElementById('tanimsizModalOzet').textContent = ozet;
+  document.getElementById('tanimsizModalMeta').textContent = 'malzeme önerisi · kütüphanede yok';
+
+  // Bilgi tablosu (BORU BILGISI formatina paralel)
+  function _r(k, v){ return '<tr><td class="k">'+esc(k)+'</td><td class="v">'+esc(v)+'</td></tr>'; }
+  var rows = '';
+  rows += _r('Kod', m.kod || '—');
+  rows += _r('Tip', m.tip_raw || '—');
+  if(m.ac)   rows += _r('Tanım', m.ac);
+  rows += _r('Malzeme', m.malz || '—');
+  rows += _r('Kalite', m.kal || '—');
+  if(m.cap)  rows += _r('Dış çap', m.cap + ' mm');
+  if(m.et)   rows += _r('Et', m.et + ' mm');
+  if(m.kal_standart) rows += _r('Kalite std', m.kal_standart);
+  document.getElementById('tanimsizModalTablo').innerHTML = rows;
+
+  // Form sifirla
+  document.getElementById('tanimsizSebep').value = '';
+  document.getElementById('tanimsizAciklama').value = '';
+  document.getElementById('tanimsizGonderBtn').disabled = false;
+
+  modal.classList.add('show');
+}
+
+function tanimsizModalKapat(){
+  var modal = document.getElementById('tanimsizModal');
+  if(modal) modal.classList.remove('show');
+  _tanimsizAktifId = null;
+}
+
+async function tanimsizModalGonder(){
+  if(!_tanimsizAktifId) return;
+  var m = MALZEME.find(function(x){return x.id === _tanimsizAktifId;});
+  if(!m){ tanimsizModalKapat(); return; }
+  var sebep = document.getElementById('tanimsizSebep').value || '';
+  var aciklama = document.getElementById('tanimsizAciklama').value || '';
+  if(!sebep){
+    if(typeof toast === 'function') toast('Lütfen sebep seçin','er');
+    else alert('Lütfen sebep seçin');
+    return;
+  }
+  var btn = document.getElementById('tanimsizGonderBtn');
+  btn.disabled = true;
+  try{
+    var supa = ARES.supabase();
+    var oturum = (typeof ARES.oturumAl === 'function') ? ARES.oturumAl() : null;
+    var tenantId = (typeof ARES.tenantId === 'function') ? ARES.tenantId() : null;
+    var userId   = oturum && oturum.id ? oturum.id : null;
+    var hamData = {
+      kod: m.kod, tip: m.tip_raw, tanim: m.ac,
+      malzeme: m.malz, kalite: m.kal,
+      dis_cap_mm: m.cap, et_mm: m.et,
+      kal_standart: m.kal_standart || null
+    };
+    var capNum = m.cap ? parseFloat(String(m.cap).replace(',','.')) : null;
+    var etNum  = m.et  ? parseFloat(String(m.et).replace(',','.'))  : null;
+    var r = await supa.rpc('tanimsiz_kayit_onerisi', {
+      p_tip:                m.tip_raw || 'malzeme',
+      p_dis_cap_mm:         capNum,
+      p_et_mm:              etNum,
+      p_kalite:             m.kal || null,
+      p_ham_data:           hamData,
+      p_tenant_id:          tenantId,
+      p_user_id:            userId,
+      p_spool_malzeme_id:   m.id,
+      p_kullanici_sebep:    sebep,
+      p_kullanici_aciklama: aciklama || null
+    });
+    if(r.error){
+      console.error('[tanimsiz_kayit_onerisi]', r.error);
+      if(typeof toast === 'function') toast('Hata: ' + (r.error.message || 'gönderilemedi'),'er');
+      else alert('Hata: ' + (r.error.message || 'gönderilemedi'));
+      btn.disabled = false;
+      return;
+    }
+    if(typeof toast === 'function') toast('Süper admin onayına gönderildi','ok');
+    else alert('Süper admin onayına gönderildi');
+    tanimsizModalKapat();
+  }catch(e){
+    console.error('[tanimsizModalGonder]', e);
+    if(typeof toast === 'function') toast('Beklenmeyen hata','er');
+    else alert('Beklenmeyen hata: ' + e.message);
+    btn.disabled = false;
   }
 }
 
@@ -3936,6 +4033,39 @@ document.addEventListener('click', function(e){
       <!-- 44.B — Boru kesit çizimi (harici SVG: cizimler/boru/boru-kesit.svg) -->
       <div id="boruCizim" class="flansh-cizim"></div>
       <table class="flansh-tablo"><tbody id="boruTablo"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="tanimsizModal" class="flansh-mod" role="dialog" aria-hidden="true">
+  <div class="flansh-mod-card">
+    <div class="flansh-mod-head">
+      <div>
+        <p id="tanimsizModalMeta" class="flansh-mod-meta">malzeme önerisi</p>
+        <p id="tanimsizModalOzet" class="flansh-mod-title">—</p>
+      </div>
+      <button class="flansh-mod-x" onclick="tanimsizModalKapat()" title="Kapat" aria-label="Kapat">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="flansh-mod-body">
+      <table class="flansh-tablo"><tbody id="tanimsizModalTablo"></tbody></table>
+      <div class="tanimsiz-form">
+        <label for="tanimsizSebep">Sebep</label>
+        <select id="tanimsizSebep">
+          <option value="">— Seçin —</option>
+          <option value="STD_EKSIK">Standartta var, henüz eklenmedi</option>
+          <option value="STD_DISI">Standartta yok, özel/firma ölçüsü</option>
+          <option value="VERI_HATALI">Veri hatalı (eksik veya yanlış)</option>
+        </select>
+        <label for="tanimsizAciklama">Açıklama (opsiyonel)</label>
+        <textarea id="tanimsizAciklama" rows="3" placeholder="Ek bilgi..."></textarea>
+        <div class="tanimsiz-form-row">
+          <button class="tanimsiz-btn-sec" onclick="tanimsizModalKapat()">Vazgeç</button>
+          <button id="tanimsizGonderBtn" class="tanimsiz-btn-pri" onclick="tanimsizModalGonder()">Süper admin onayına gönder</button>
+        </div>
+        <div class="tanimsiz-bilgi-not">Aynı kombinasyon birden fazla yerden gelirse sıklık otomatik artar. Süper admin onayladığında kütüphaneye geçer.</div>
+      </div>
     </div>
   </div>
 </div>
