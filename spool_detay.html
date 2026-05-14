@@ -3980,7 +3980,8 @@ async function tanimsizModalKaydet(){
     var capNum = m.cap ? parseFloat(String(m.cap).replace(',','.')) : null;
     var etNum  = m.et  ? parseFloat(String(m.et).replace(',','.'))  : null;
     var r = await supa.rpc('tanimsiz_kayit_onerisi', {
-      p_tip:                m.tip_raw || 'malzeme',
+      p_tip:                'std_disi',  // 86.C v2.1 — CHECK: std_disi/std_eksik/kalite_std_eksik/uc_islemi_eksik
+                                          // Parca tipi (boru/fitting/flansh) ham_data.tip'te korunuyor
       p_dis_cap_mm:         capNum,
       p_et_mm:              etNum,
       p_kalite:             m.kal || null,
@@ -3988,7 +3989,7 @@ async function tanimsizModalKaydet(){
       p_tenant_id:          tenantId,
       p_user_id:            userId,
       p_spool_malzeme_id:   m.id,
-      p_kullanici_sebep:    'STD_DISI',
+      p_kullanici_sebep:    null,  // 86.C v2.1 — modal'da sebep formu yok
       p_kullanici_aciklama: null
     });
     if(r.error){
