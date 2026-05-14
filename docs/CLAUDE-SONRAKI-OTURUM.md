@@ -1,289 +1,240 @@
-# CLAUDE-SONRAKI-OTURUM — 87. Oturum Gündemi
+# CLAUDE-SONRAKI-OTURUM — 88. Oturum
 
-> Bu dosya 87'nin açılışında okunacak. Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md`.
-
----
-
-## 87. Oturum Ana Tema
-
-**Kütüphane sayfası render fix + Öneriler kartı + 86.D Phase 2 (onay/red) + veri borç tanıları.**
-
-86'da kullanıcı yüzeyi tamamlandı (renk semantiği, tanımsız modal, salt-okuma panel) ama saha testinde `admin/kutuphane.html` görselinde regresyon tespit edildi (86'da dosyaya dokunulmadı, başka sebep). 87 önce bunu çözer, sonra 86.D Phase 1'in doğal devamı olan kütüphane.html → Öneriler kartı bağlantısı eklenir. Sonra onay/red akışı (Phase 2) ile öneri döngüsü tamamlanır. Son olarak 80+ oturumlardan kalan veri borçları tanılanır.
+> 87'yi takip eder. Ana iş: tanımsız malzeme akışını sıfırdan, doğru vizyonla yaz.
+> 87.C revert edildi (`dad5307`), saha 86.D Phase 1 (sadece okuma) hâlinde.
+> Detaylı vizyon: **`docs/88-VIZYON-TANIMSIZLAR.md`** mutlaka oku.
 
 ---
 
-## Açılış Ritüeli
+## Açılış Ritüeli (CLAUDE.md disiplini + MK-87.1)
 
-```
-Oturum başlangıç ritüeli. 2 kısa kontrol:
+2 cevap zorunlu:
 
-1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
+2. Bugün ne yapmak istiyorsun?
 
-2. Bugün ne yapmak istiyorsun? (Önerilen: 87.A → 87.B → 87.C; D-F küçük temizlik)
-```
-
-`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra 87.A tanı ile başlanır.
-
-**Ek açılış kontrolü:** `SELECT count(*) FROM tanimsiz_kayitlar;` — 86 kapanışında 0 kayıt vardı. >0 ise sahada Kaydet testi yapılmış demektir, 86.C v2.1 hotfix doğrulandı.
-
----
-
-## 87.A — `admin/kutuphane.html` Topbar/Layout Render Fix (~30 dk, öncelik 1)
-
-86 kapanışında saha kullanıcısı bildirdi: sidebar ana içeriğin üstüne biniyor, topbar görünmüyor. **86'da bu dosyaya hiç dokunulmadı** (`git log admin/kutuphane.html` son commit `659069a` = 85 kapanışı, SC-01 script tag fix).
-
-### Sorun
-
-`arespipe.vercel.app/admin/kutuphane.html` açıldığında:
-- Sidebar (220px) doğru render, "Kütüphane" active turuncu vurgulu
-- Sidebar ana içeriğin **üstüne biniyor**, content sol taraftan kesiliyor
-- Topbar (AresPipe logosu + Süper Admin badge + Çıkış butonu) **gözükmüyor**
-- Başlık ("Kütüphane Envanteri") parçalanmış görünüyor
-
-Diğer admin sayfaları (panel.html, firma.html, kullanicilar) **çalışıyor** — topbar + sidebar + main düzgün hizalı.
-
-### Tanı Adımları
-
-1. **Console kırmızı hata:**
-   ```
-   # Sayfa acik, Console sekmesi
-   # Hata mesajlarini ekran goruntusu veya kopyala-yapistir
-   ```
-
-2. **DevTools Layout inspect:**
-   - `<div class="layout">` element seç → Computed paneli → `display`, `flex-direction`, height kontrol
-   - Sidebar `position:sticky` mu `position:absolute` mu? Override var mı?
-   - Topbar `height:56px` görünüyor mu yoksa `height:0` mu?
-
-3. **`ares-layout.js` davranış:**
-   ```bash
-   head -50 ares-layout.js
-   # ares-layout.js global olarak topbar/sidebar inject ediyorsa, kutuphane.html'in
-   # kendi topbar HTML'i ile cakisma olabilir
-   ```
-
-4. **panel.html ile diff:**
-   ```bash
-   diff <(sed -n '140,170p' admin/panel.html) <(sed -n '140,170p' admin/kutuphane.html)
-   # Topbar HTML yapisini karsilastir
-   ```
-
-5. **Vercel build cache** (MK-48.1 reflexi):
-   - Vercel dashboard → Deployments → en son deploy → "..." menü → "Redeploy" → **"Use existing Build Cache" UNCHECK**
-   - Production sayfada hard refresh (Cmd+Shift+R)
-
-### Çözüm Hipotezleri (sıralı)
-
-- **H1:** `ares-layout.js` runtime hata atıyor, sidebar inject olduktan sonra topbar atılıyor → script düzeltme veya `kutuphane.html`'den `ares-layout.js` kaldır
-- **H2:** Topbar HTML var ama CSS height ezilmiş → CSS specificity sorunu, `.topbar{height:56px !important}` veya order düzeltme
-- **H3:** `<div class="layout">` yapısı paneldan farklı → panel.html pattern'ına hizala (rebuild HTML iskeleti)
-- **H4:** Vercel build cache eski JS taşıyor → manuel cache cleared redeploy
-
-### İş Tanımı
-
-- Tanı: 30 dk
-- Fix: 15-30 dk (hipotez doğrulanırsa)
-- Commit: `fix(87.A): admin/kutuphane.html topbar/layout render duzelt`
+**Sonra Claude şunları okur:**
+- `.github/son-durum.md` (kök)
+- `docs/CLAUDE-SON-OTURUM.md` (87 detay)
+- `docs/CLAUDE-SONRAKI-OTURUM.md` (bu dosya)
+- **`docs/88-VIZYON-TANIMSIZLAR.md`** (88 vizyon — kritik)
+- `docs/PROJE-HARITASI.md`, `docs/CIHAT-PROFIL.md`, `docs/SPOOL-AI-VIZYON.md` (genel)
 
 ---
 
-## 87.B — `admin/kutuphane.html`'e Öneriler Kartı (~15 dk, 87.A bağımlı)
+## 88'in Ana Hedefi
 
-87.A çalışır hale getirildikten sonra, 86.D Phase 1'in doğal devamı: süper admin "Öneriler" sayfasına kütüphane sayfasından doğal giriş.
+**Tanımsız malzeme akışını yeniden tasarla, vizyona uyumlu yaz.** Üç prensip:
 
-### Mevcut Yapı (84'te kuruldu)
-
-`admin/kutuphane.html` satır 232'de `GRUPLAR` array, 7 kart: borular, fittings, flanslar, malzemeler, uyum, ozel, spec. Her kart `tablolar:['boru_olculer']` gibi tablo listesine bağlı, render fonksiyonu (satır 374) `kutuphane-detay.html?tablo=...` linkine yönlendiriyor.
-
-### Yapılacak
-
-**Yeni kart `GRUPLAR` array'ine eklenir:**
-```js
-{ kod:'oneriler', ad:'Bekleyen Öneriler', ikon:'💡', renk:'warn',
-  aciklama:'Kullanıcı kayıt önerileri — kütüphaneye alınmak için onay bekliyor',
-  link:'kutuphane-oneriler.html' }
-```
-
-**Render fonksiyonu (satır 374) dallandırılır:**
-```js
-// Mevcut: tablolar:[] -> kutuphane-detay.html?tablo=...
-// Yeni: link varsa direkt link, yoksa eski akis
-var hedef = g.link ? g.link : 'kutuphane-detay.html?grup=' + g.kod;
-```
-
-**Sayım rozeti (opsiyonel):**
-Kart üzerinde `tanimsiz_kayitlar` durum='bekliyor' count gösterilebilir (mevcut tablo count'ları gibi). Eğer mevcut count pattern array tabanlıysa "tablolar:['tanimsiz_kayitlar']" + filter eklemek daha temiz; yoksa link kart için ayrı bir count helper.
-
-### İş Tanımı
-
-- Patch: 10 dk
-- Commit: `feat(87.B): admin/kutuphane.html — Oneriler karti (kutuphane-oneriler.html link)`
+1. **Sıklık = sistemde gerçek tekrar sayısı**, kullanıcı tıklamasına bağlı değil
+2. **Kullanıcıya iş yükleme** — sistem otomatik tespit eder
+3. **Süper admin sıfırdan araştırmasın** — kütüphane bilinçli sorgu pre-fill yapar
 
 ---
 
-## 87.C — 86.D Phase 2: Onay/Red Butonları + Hedef Tabloya Yazma (~2 saat, ayrı oturum olabilir)
+## 88 Görev Listesi (Sıralı)
 
-86.D Phase 1 salt okuma. Phase 2 öneri döngüsünü kapatır: süper admin kararını verir, kayıt ya kütüphaneye geçer ya reddedilir.
+### 88.0 — CLAUDE.md ritüel path düzeltmesi (~5 dk, MK-87.1)
 
-### DB Tarafı — Yeni Migration `062_oneri_karar_rpc.sql`
+Açılış ritüeli mevcut metni `son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md`'nin nerede olduğunu net belirtmeli (kök vs `docs/`). 86'da yanlış teşhise yol açmıştı. Tek dosya patch.
 
-`tanimsiz_kayitlar` zaten 5 alana sahip karar takibi için: `super_admin_id`, `karar_zamani`, `karar_notu`, `hedef_tablo`, `hedef_kayit_id`. Eksik olan: kararı uygulayan RPC fonksiyonları.
+### 88.A — `v_tanimsiz_havuz` VIEW migration (~30 dk)
 
-**3 RPC fonksiyonu:**
-
-1. **`oneri_sisteme_ekle(p_oneri_id, p_hedef_tablo, p_hedef_kayit_data JSONB, p_karar_notu)`**
-   - `tanimsiz_kayitlar` `durum='onaylandi'`, `super_admin_id=auth.uid()`, `karar_zamani=now()`
-   - `p_hedef_tablo` (boru_olculer/fitting_olculer/flansh_olculer/malzeme_kataloglari) → INSERT (tenant_id NULL = sistem-preset)
-   - `hedef_kayit_id` = yeni satırın UUID'si
-   - RLS: süper admin yazıyor, RLS kontrol gerek yok (auth check fonksiyon içinde)
-
-2. **`oneri_tenant_ozel_onayla(p_oneri_id, p_hedef_tablo, p_hedef_kayit_data JSONB, p_tenant_id, p_karar_notu)`**
-   - Aynı pattern, sadece `tenant_id=p_tenant_id` ile INSERT
-   - Tenant ID parametresinden alınır (öneren tenant ID otomatik geçilebilir veya farklı tenant atanabilir)
-
-3. **`oneri_reddet(p_oneri_id, p_karar_notu)`**
-   - `tanimsiz_kayitlar` `durum='reddedildi'`, `super_admin_id`, `karar_zamani`, `karar_notu`
-   - Hedef tablo değişmez
-
-### Frontend Tarafı — `admin/kutuphane-oneriler.html` detay paneli
-
-**3 buton ekle:**
-- 🟢 **Sisteme Ekle** (yeşil) — modal: "Hangi tabloya?", form: dış çap/et/kalite/standart/DN düzenlenebilir → RPC
-- 🟡 **Tenant Özel Onayla** (sarı) — modal: hangi tenant + tablo + alanlar → RPC
-- 🔴 **Reddet** (kırmızı) — basit confirm + karar notu textarea → RPC
-
-Karar verildikten sonra liste yenilenir, kayıt listeden düşer (filtre `durum='bekliyor'` aktif olduğu sürece).
-
-### İş Tanımı
-
-- Migration: 30 dk
-- Frontend (3 buton + 3 modal akışı): 1 saat
-- Saha test: 30 dk
-- Toplam: 2 saat — ayrı oturum (87 ana eksenle birleştirilebilir veya 88'e kayabilir)
-
----
-
-## 87.D — Veri Borç Tanıları (~30 dk)
-
-80+ oturumlardan kalan üç bilinen veri borcu. Tanı + ileriye taşıma kararı.
-
-### 60.30×6.3 — Neden bağlanmadı?
-
-`boru_olculer` tablosunda 60.30×6.3 kaydı **var** ama 056 migration sonrası bazı spool'larda `boru_olculer_id=NULL` kaldı. Sebep:
+Yeni migration `065_v_tanimsiz_havuz.sql`:
 
 ```sql
-SELECT s.spool_no, sm.id, sm.dis_cap_mm, sm.et_mm, sm.kalite, sm.boru_olculer_id
+CREATE OR REPLACE VIEW v_tanimsiz_havuz AS
+SELECT
+  'boru' AS parca_tipi,
+  ROUND(sm.dis_cap_mm::numeric, 3) AS dis_cap_mm,
+  ROUND(sm.et_mm::numeric, 3)      AS et_mm,
+  sm.kalite_kod_normalize          AS kalite,
+  md5('boru|' || ROUND(sm.dis_cap_mm::numeric, 3)::text || '|' ||
+      ROUND(sm.et_mm::numeric, 3)::text || '|' || coalesce(sm.kalite_kod_normalize, '')) AS hash_anahtari,
+  COUNT(DISTINCT sm.spool_id)      AS siklik,
+  COUNT(DISTINCT s.devre_id)       AS devre_sayisi,
+  COUNT(DISTINCT s.tenant_id)      AS tenant_sayisi,
+  MIN(sm.olusturma_at)             AS ilk_gorulme,
+  MAX(sm.olusturma_at)             AS son_gorulme
 FROM spool_malzemeleri sm
-JOIN spooller s ON s.id = sm.spool_id
-WHERE sm.tip = 'boru' AND sm.dis_cap_mm = 60.30 AND sm.et_mm = 6.3
-  AND sm.boru_olculer_id IS NULL
-LIMIT 10;
+LEFT JOIN spooller s ON sm.spool_id = s.id
+WHERE sm.boru_olculer_id IS NULL
+  AND coalesce(sm.tip, '?') = 'boru'
+  AND sm.dis_cap_mm IS NOT NULL
+  AND sm.et_mm IS NOT NULL
+GROUP BY parca_tipi, dis_cap_mm, et_mm, sm.kalite_kod_normalize, hash_anahtari
+HAVING COUNT(DISTINCT sm.spool_id) > 0
+ORDER BY siklik DESC, son_gorulme DESC;
 ```
 
-Hipotezler:
-- 056 sadece spesifik standart/schedule kombinasyonlarını bağladı, 60.30×6.3 farklı
-- Kalite eşleşmesi başarısız (master.kalite kodu uyumsuz)
-- Boy/agirlik NULL olan satırlar bağlanmadı
+**Açık karar noktaları (88 başında):**
+- `spool_malzemeleri` şemasında `kalite_kod_normalize` kolonu var mı? `tip` kolonu var mı? (`information_schema.columns` sorgu)
+- View RLS otomatik kalıtır mı, yoksa SECURITY DEFINER fonksiyon mu? (Şema testi)
+- `tanimsiz_kayitlar`'daki red kararları view'a JOIN edilsin mi? (Liste'de "reddedildi" rozeti için)
 
-Tanı sonrası ileriye taşıma migration (`063_60_30_6_3_baglanti.sql` gibi).
+### 88.B — Kullanıcı "Kaydet" akışı kaldır (~15 dk)
 
-### 114.30×null — Eksik et değeri
+`spool_detay.html`:
+- `tanimsizModalAc()` ve `tanimsizModalKaydet()` fonksiyonları sök
+- Gri/tıklanır kalsın ama tıklayınca info toast: *"Bu malzeme süper admin envanterine düştü, kütüphaneye eklenince otomatik bağlanacak"*
+- `tanimsiz_kayit_onerisi` RPC çağrısı kaldırılır
 
-PDF parse'de mi atlandı, kullanıcı boş mu bıraktı? Tanı:
+### 88.C — `kutuphane-oneriler.html` listeYukle → v_tanimsiz_havuz (~30 dk)
+
+- `SUPA.from('tanimsiz_kayitlar')` → `SUPA.from('v_tanimsiz_havuz')`
+- Kolonlar: tip, parça, ölçü, kalite, **sıklık** (büyük), **devre sayısı**, **tenant sayısı**, ilk görülme
+- Sıklık rozetinin anlamı netleşir: 36 spool = 36 yerde bağlanamamış malzeme
+
+### 88.D — Detay paneline "Kütüphane Bilinçli Yardım" (~45 dk)
+
+3 paralel sorgu:
+
+**1. ASME yakın eşleşme:**
+```sql
+SELECT id, standart, dn, schedule_kod, dis_cap_mm, et_mm, malzeme_grubu
+FROM boru_olculer
+WHERE ABS(dis_cap_mm - $1) < 0.5 AND ABS(et_mm - $2) < 0.3 AND sistem_preset = true
+ORDER BY ABS(dis_cap_mm - $1) + ABS(et_mm - $2) ASC LIMIT 5;
+```
+Eşleşme varsa: **"Bu ölçü kütüphanede!"** + `[Otomatik bağla]` butonu
+
+**2. Kalite katalog kontrolü:**
+```sql
+SELECT id FROM malzeme_kataloglari
+WHERE lower(regexp_replace(grade, '[^a-z0-9]', '', 'g')) = $1;
+```
+Boşsa: *"DIN 17100 (St 37 ailesi) kataloga eklenmemiş — `0XX_din_17100_seed.sql` öner"*
+
+**3. STD_KILAVUZ JS lookup:**
+50-100 satır yaygın kombinasyon (Cihat'ın referans listesinden + ProjectMaterials.com'dan). Eşleşme varsa modal pre-fill için kullanılır.
+
+### 88.E — `oneri_kutuphaneye_bagla` RPC (~30 dk)
+
+Yeni migration `066_oneri_bagla_rpc.sql`:
 
 ```sql
-SELECT s.spool_no, sm.id, sm.dis_cap_mm, sm.et_mm, sm.tanim, ai.kaynak
-FROM spool_malzemeleri sm
-JOIN spooller s ON s.id = sm.spool_id
-LEFT JOIN ai_api_log ai ON ai.spool_id = s.id
-WHERE sm.tip = 'boru' AND sm.dis_cap_mm = 114.30 AND sm.et_mm IS NULL
-LIMIT 10;
+CREATE OR REPLACE FUNCTION oneri_kutuphaneye_bagla(
+  p_dis_cap_mm NUMERIC,
+  p_et_mm NUMERIC,
+  p_kalite TEXT,
+  p_boru_olculer_id UUID
+) RETURNS INT  -- kaç spool_malzemesi güncellendi
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_admin_id UUID;
+  v_count INT;
+BEGIN
+  v_admin_id := auth.uid();
+  IF NOT EXISTS (SELECT 1 FROM kullanicilar WHERE id = v_admin_id AND rol = 'super_admin') THEN
+    RAISE EXCEPTION 'Yetkisiz' USING ERRCODE = '42501';
+  END IF;
+
+  UPDATE spool_malzemeleri
+  SET boru_olculer_id = p_boru_olculer_id
+  WHERE boru_olculer_id IS NULL
+    AND ROUND(dis_cap_mm::numeric, 3) = ROUND(p_dis_cap_mm::numeric, 3)
+    AND ROUND(et_mm::numeric, 3) = ROUND(p_et_mm::numeric, 3)
+    AND lower(regexp_replace(coalesce(kalite_kod_normalize, ''), '[^a-z0-9]', '', 'g')) = lower(regexp_replace(p_kalite, '[^a-z0-9]', '', 'g'))
+    AND coalesce(tip, '?') = 'boru';
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END $$;
 ```
 
-`ai_api_log` üzerinden hangi PDF'ten geldiği belirlenebilir, ham parse çıktısına bakılır.
+UI: "Otomatik bağla" → bu RPC → toast "36 spool bağlandı" → liste yenile (kayıt artık view'de görünmez).
 
-### 139.70×4.5 — 36 spool kalemi, standartta yok
+### 88.F — STD_KILAVUZ JS lookup seed (~30 dk)
 
-Bu artık 87.C Phase 2'nin ilk büyük vakası olur: tenant-özel onay → boru_olculer'a `tenant_id` set ile INSERT.
-
-### İş Tanımı
-
-- 3 sorgu çalıştır + analiz: 30 dk
-- Karar: ileriye taşıma migration yazılır mı yoksa Phase 2 ile mi çözülür?
-
----
-
-## 87.E — `.gitignore` (tamamlandı, sadece teyit)
-
-86 kapanışında eklendi:
-```
-*.bak.*
-*.bak
-spool_detay.html.bak*
-```
-
-`git status`'ta `.bak` dosyaları artık görünmez. Test: `cp spool_detay.html spool_detay.html.bak.test && git status` → temiz olmalı.
-
----
-
-## 87.F — `CLAUDE.md` Ritüel Düzeltmesi (~5 dk)
-
-Şu an CLAUDE.md (kök dizinde) ritüel adımında `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` dosyalarını okuma talimatı var. **Gerçek konum:** `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md`.
-
-86 açılışında bu hatayı yaşadık: ilk `cat CLAUDE-SONRAKI-OTURUM.md` çalıştırdığımda "no such file" hatası verdi, `docs/` ile düzelttim.
-
-Düzeltme:
-```bash
-sed -i '' 's|CLAUDE-SON-OTURUM.md|docs/CLAUDE-SON-OTURUM.md|g' CLAUDE.md
-sed -i '' 's|CLAUDE-SONRAKI-OTURUM.md|docs/CLAUDE-SONRAKI-OTURUM.md|g' CLAUDE.md
+```js
+const STD_KILAVUZ = {
+  // ASME B36.10M karbon yaygın
+  'boru:21.30:2.77':  { std:'ASME B36.10M', dn:15,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:26.70:2.87':  { std:'ASME B36.10M', dn:20,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:33.40:3.38':  { std:'ASME B36.10M', dn:25,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:48.30:3.68':  { std:'ASME B36.10M', dn:40,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:60.30:3.91':  { std:'ASME B36.10M', dn:50,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:73.00:5.16':  { std:'ASME B36.10M', dn:65,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:88.90:5.49':  { std:'ASME B36.10M', dn:80,  sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  'boru:114.30:6.02': { std:'ASME B36.10M', dn:100, sch:'SCH40', malzeme_grubu:'karbon', urun_formu:'seamless' },
+  // DIN 2448 / EN 10216
+  'boru:139.70:4.50': { std:'DIN 2448',     dn:125, sch:'4.5mm',  malzeme_grubu:'karbon', urun_formu:'seamless' },
+  // ... toplam 50-100 satır
+};
 ```
 
-(macOS `sed -i ''` syntax)
+Liste Cihat'ın saha deneyiminden + ProjectMaterials.com referansından oluşturulur.
+
+### 88.G — Manuel kaydet modal (~45 dk)
+
+87.C'deki boru onay modal'ı refactor:
+- STD_KILAVUZ eşleşmesi varsa pre-fill (Cihat sadece onaylar)
+- ASME yakın eşleşme varsa modal **açılmaz**, "Otomatik bağla" yolu önerilir
+- Internet araştırması "yok denecek kadar az" hedef
+
+INSERT INTO boru_olculer **+** UPDATE spool_malzemeleri.boru_olculer_id (88.E RPC'sini reuse).
+
+### 88.H — Saha test + commit + push (~30 dk)
+
+3 senaryo:
+1. **Yakın eşleşme akışı:** Kütüphanede var → tek tıkla 36 spool bağlanır
+2. **Tam yeni kayıt:** Modal manuel doldurulur → boru_olculer'a INSERT + spool_malzemeleri UPDATE
+3. **Red:** Mevcut RPC (`oneri_reddet`), tanimsiz_kayitlar audit log'a yazar
 
 ---
 
-## Önemli Test Spool'ları
+## Açık Sorular (88'de cevaplanacak)
 
-| Spool ID | Senaryo |
-|---|---|
-| `465a641e-e466-422c-972b-a5a7a7d7b571` | 86.C v2.1 saha doğrulama — M1 boru tıkla, Standart+DN doldur, Kaydet → `tanimsiz_kayitlar` count > 0 |
-| `46622aea-d732-4b66-9fba-bcadc1d354d2` | 86.A renk semantiği test (M2/M3/M4/M5 bağsız → gri) |
-| `01485adf-aead-49b2-9734-00113053223d` | 86.B fitting içeren spool — Standart hücresi `geometri_std` test |
-| `00d4926d-...` | 85 yiv satırı (uç işlemi muaf, ağırlık/heat/sert `—`) |
+1. **`spool_malzemeleri` şeması:** `tip`, `kalite_kod_normalize`, `dis_cap_mm`, `et_mm` kolonları var mı? Migration 88.A öncesi `information_schema.columns` sorgusuyla teyit edilir.
 
----
+2. **`fitting_olculer` ve `flansh_olculer` için aynı view:** 88'de sadece boru phase 1 mi, yoksa 3 view birden mi? Cihat'a sor.
 
-## Devreden Mimari Kararlar (KARAR-86.x)
+3. **Migration 063 RPC'leri (`oneri_reddet`, `oneri_onayla_boru`):** 88'de DROP edilsin mi yoksa kalıp 88.G manuel modal'ında reuse mu? (Tahminim: reuse — sadece UI yolu değişir, RPC mantığı tutarlı.)
 
-- **KARAR-86.1** Kart + tablo + modal kenar rengi semantik simetri (3 renk)
-- **KARAR-86.2** Tanımsız modal'da sebep formu yok; `tip='std_disi'` varsayılan
-- **KARAR-86.3** Öneriler kütüphane akışının parçası; ayrı admin işi değil
-- **KARAR-86.4** Ağırlık hesabı yoğunluk tablosu hard-code; bilinmeyen = "—"
-- **KARAR-86.5** `tanimsiz_kayitlar.tip` = eksiklik kategorisi (parça tipi `ham_data.tip`)
+4. **`tanimsiz_kayitlar` tablosu rolü:** 88'de "audit log" rolüne düşer. Yeni karar UI'sı tablo'ya `durum='reddedildi'` yazmaya devam etsin mi (red kararları için)? Onay kararları artık `spool_malzemeleri.boru_olculer_id` UPDATE'i ile dolaylı görülür — ayrı tablo gerekmiyor.
+
+5. **STD_KILAVUZ'ı JS sabit mi yoksa DB tablosu mu yapalım?** JS sabit basit ama Cihat editleyemez. DB tablo `kilavuz_olcu_eşleme` Cihat'ın `tanimlar.html` üzerinden yönetilmesini sağlar. Karar 88'in başında.
 
 ---
 
-## Devreden Mimari Kurallar (MK-86.x)
+## 88'de Veriyle Tasarım
 
-- **MK-86.1** zsh tek tırnak / base64 / heredoc `<<'DELIM'`
-- **MK-86.2** Şema + CHECK + RLS doğrulanmadan RPC yok
-- **MK-86.3** Model-UI simetrisi modal'a uzanır
-- **MK-86.4** Mac terminale ~45KB+ base64 yapıştırma güvenilmez → `present_files`
-- **MK-86.5** Eski admin sayfaları runtime uyumsuzluğu yaşatabilir
+- View deploy edilince Cihat'ın merak ettiği "kaç tanımsız var" sayısı görünür (sıklığa göre desc)
+- "Yakın eşleşme bul" sorgusu beklenen davranış: en az 1-2 satırda gerçek eşleşme bulunmalı (sistemde 779 boru kayıt var, hash kombinasyonlarına yakınlar olmalı)
+- STD_KILAVUZ kapsama oranı: ilk seed 50 satırla %30+ tanımsız hash'i pre-fill edebilmeli (hedef)
 
 ---
 
-## 88+ ve Sonrası
+## Bonus İşler (88'de zaman kalırsa)
 
-- **88** — Public kütüphane sayfası (`arespipe.com/kutuphane`)
-- **89+** — `parca_etiketleri` + üç-pencere etiketleme UI
-- **90+** — `kutuphane_ogrenme_durumu` materialized view
-- **91+** — İzometri parser KARAR-83.2 ileri uygulama
-- **92+** — `spool_flansh_eslesme` junction DROP
-- **93+** — Diğer uç işlemleri sözlüğe ekleme
+- Migration 063 RPC'leri (`oneri_reddet` + `oneri_onayla_boru`) **88.G manuel modal'ında reuse** — yeniden yazılmasın
+- `fitting_olculer` ve `flansh_olculer` için `v_tanimsiz_havuz_fitting` ve `v_tanimsiz_havuz_flansh` view'leri
+- "Toplu onay" özelliği — view'de aynı standart altında 10 farklı DN varsa, hepsini birden eklemek için "Standart toplu yükle" akışı
 
 ---
 
-> **87. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunacak.**
->
-> **Son güncelleme:** 14 Mayıs 2026 — 86. oturum kapatma (87 gündemi kilitlendi)
+## Süreç Disiplinleri (87'den taşınan + öncesi)
+
+- **MK-87.1** — Açılış ritüeli `docs/` path'i kontrol etmeli, kök değil
+- **MK-87.2** — Eski admin sayfaları farklı sidebar pattern'ında, layout standardizasyonu 88+ borcu
+- **MK-87.3** — Mac terminal commit mesajları tek satır olmalı
+- **MK-87.4** — Sıklık counter modeli yanlış — gerçek-zamanlı view
+- **MK-87.5** — Sistem otomatik tespit edebilen şeyi kullanıcıya kaydettirme
+- **MK-87.6** — Süper admin internet araştırmasından önce sistem kendi kütüphanesini kontrol etmeli
+- **MK-86.x** — zsh tek tırnak / base64 / heredoc tuzakları, şema+CHECK+RLS üçü doğrulanmadan migration yazılmaz
+- **MK-85.x** — RLS asla kapalı, model-UI simetri, sade test
+- **MK-51.1** — Dosya kopyalamadan önce `~/Downloads/_arsiv/` + MD5 doğrulama
+- **MK-49.1** — Mevcut çalışan koda minimum müdahale, sadece ilgili fonksiyon
+
+---
+
+## Kritik Hatırlatmalar
+
+- **`tanimsiz_kayit_onerisi` RPC ve `tanimsiz_hash_anahtari` fonksiyonu DB'de kalır.** UI çağrısı kaldırılır (88.B). Migration ile DROP 90+ oturumlara.
+- **Migration 063 (`oneri_reddet`, `oneri_onayla_boru`)** DB'de atıl. 88.G reuse edebilir.
+- **86.C v2.1 hotfix'i çalışıyor** — saha test sırasında bir kayıt (`std_disi|139.700|4.500|st37`) sorunsuz oluştu, CHECK constraint geçti.
+- **87.A migration 062 (`ozel_parcalar`, `tenant_spec_seti`, `spec_kural`)** DB'de aktif, count = 0. P3 öncelikli, 88'de doldurulmaz.
+
+---
+
+> 88. oturum açılışında bu dosya, `.github/son-durum.md`, `docs/CLAUDE-SON-OTURUM.md` ve **`docs/88-VIZYON-TANIMSIZLAR.md`** okunacak. Önerilen sıra: 88.0 (CLAUDE.md ritüel fix) → 88.A (view migration) → 88.B (kullanıcı kaydet sök) → 88.C (listeYukle değişimi). Bu zincir 88'in core'u, kalan adımlar bonus.
