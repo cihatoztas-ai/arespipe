@@ -138,6 +138,15 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 
 @media (max-width: 1280px) { .grup-grid{grid-template-columns:repeat(2,1fr);} .ozet-serit{grid-template-columns:repeat(2,1fr);} }
 @media (max-width: 720px)  { .grup-grid{grid-template-columns:1fr;} .ozet-serit{grid-template-columns:1fr;} .main{padding:16px;} }
+
+/* Bekleyen Öneriler özel kartı */
+.grup-kart-link{display:block;transition:transform .15s, border-color .15s;}
+.grup-kart-link:hover{border-color:var(--admin);transform:translateY(-1px);}
+.oneri-rozet{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap;letter-spacing:.4px;}
+.oneri-rozet.bos{background:var(--sur2);color:var(--txd);border:1px solid var(--bor);}
+.oneri-rozet.aktif{background:rgba(249,115,22,.12);color:var(--admin);border:1px solid rgba(249,115,22,.3);}
+.oneri-rozet.kritik{background:rgba(229,62,62,.15);color:var(--re);border:1px solid rgba(229,62,62,.4);animation:oneri-pulse 2s ease-in-out infinite;}
+@keyframes oneri-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
 </style>
 </head>
 <body>
@@ -235,7 +244,8 @@ var GRUPLAR = [
   { kod:'malzemeler', ad:'Malzemeler',     ikon:'🧪', renk:'warn', aciklama:'Spec + grade katalogları (A106, A312, B466…)',  tablolar:['malzeme_kataloglari'] },
   { kod:'uyum',       ad:'Çapraz Uyum',    ikon:'🔗', renk:'admin',aciklama:'Geometri × malzeme — üretilebilirlik tablosu',   tablolar:['fitting_malzeme_uyum'] },
   { kod:'ozel',       ad:'Özel Parçalar',  ikon:'🧩', renk:'re',   aciklama:'Custom · coupling sleeve · üretici özel',        tablolar:['ozel_parcalar'] },
-  { kod:'spec',       ad:'Spec Sistemi',   ikon:'📑', renk:'txm',  aciklama:'AVEVA-vari spec seti + spec kuralları',          tablolar:['tenant_spec_seti','spec_kural'] }
+  { kod:'spec',       ad:'Spec Sistemi',   ikon:'📑', renk:'txm',  aciklama:'AVEVA-vari spec seti + spec kuralları',          tablolar:['tenant_spec_seti','spec_kural'] },
+  { kod:'oneriler',   ad:'Bekleyen Öneriler', ikon:'💡', renk:'admin', aciklama:'Kullanıcı kayıt önerileri — onay bekliyor', tablolar:[], ozelKart:true, link:'kutuphane-oneriler.html' }
 ];
 
 var TABLO_BILGI = {
@@ -318,12 +328,56 @@ async function hedefleriAl(){
     return hedeflerParse(await res.text());
   } catch (e){console.warn('[hedef] yüklenemedi:',e.message);return {};}
 }
+// Bekleyen kayıt önerisi sayısı (tanimsiz_kayitlar durum='bekliyor')
+async function oneriSayisiAl(){
+  try {
+    var r=await _supaProxy.from('tanimsiz_kayitlar').select('*',{count:'exact',head:true}).eq('durum','bekliyor');
+    if (r && r.error) {
+      var code=(r.error.code||'').toString(), status=r.status||0;
+      if (status===404||code==='PGRST205'||code==='42P01') return {durum:'yok'};
+      console.warn('[oneri] hata:', r.error.message);
+      return {durum:'hata', mesaj:r.error.message};
+    }
+    return {durum:'ok', sayi:(r&&typeof r.count==='number')?r.count:0};
+  } catch (e) {
+    console.warn('[oneri] exc:', e.message);
+    return {durum:'hata', mesaj:e.message};
+  }
+}
 
 // ── ÇİZİM ─────────────────────────────────────────────────
 function ciz(sayilar, hedefler){
   var toplamMevcut=0, toplamHedef=0, yokSayisi=0, hataSayisi=0, okTabloSayisi=0;
 
   var html = GRUPLAR.map(function(g){
+    // Özel kart: Bekleyen Öneriler (tıklanır, kutuphane-oneriler.html'e gider)
+    if (g.ozelKart && g.kod === 'oneriler') {
+      var oneriDurum = sayilar.__oneriler || {durum:'yok'};
+      var oneriSayi  = (oneriDurum.durum==='ok') ? (oneriDurum.sayi||0) : 0;
+      var rSinif = (oneriSayi>=5) ? 'kritik' : (oneriSayi>0 ? 'aktif' : 'bos');
+      var rText  = (oneriDurum.durum==='yok') ? 'tablo yok'
+                 : (oneriDurum.durum==='hata' ? 'hata'
+                 : (oneriSayi>0 ? oneriSayi+' bekliyor' : 'temiz'));
+      var bag = (oneriDurum.durum==='ok') ? g.link : '#';
+      return '<a class="grup-kart grup-kart-link" data-renk="'+esc(g.renk||'')+'" href="'+esc(bag)+'" style="text-decoration:none;color:inherit;">' +
+        '<div class="grup-bas">' +
+          '<div class="grup-bas-l">' +
+            '<div class="grup-bas-isim"><span class="grup-ikon">'+g.ikon+'</span><span class="grup-ad">'+esc(g.ad)+'</span></div>' +
+            '<div class="grup-aciklama">'+esc(g.aciklama)+'</div>' +
+          '</div>' +
+          '<div class="oneri-rozet '+rSinif+'">'+esc(rText)+'</div>' +
+        '</div>' +
+        '<div class="svg-yer">' +
+          '<div><span class="yer-ikon">'+g.ikon+'</span><div class="yer-not">süper admin onay akışı<br>tıklayın →</div></div>' +
+        '</div>' +
+        '<div class="grup-toplam-row">' +
+          '<span class="grup-mevcut">'+oneriSayi.toLocaleString('tr-TR')+'</span>' +
+          '<span class="grup-hedef">bekleyen kayıt</span>' +
+        '</div>' +
+        '<div class="olgunluk" style="margin-top:14px;"><span class="olgunluk-ikon">💡</span>Kullanıcı önerilerini incele ve kütüphaneye al</div>' +
+      '</a>';
+    }
+
     var grupMevcut=0, grupHedef=0, grupYok=0, grupHata=0, grupOk=0;
     var altSatHTML='';
 
@@ -431,7 +485,8 @@ function ciz(sayilar, hedefler){
   var app=T('appShell'); app.style.display='flex'; app.style.visibility='visible';
   document.documentElement.style.visibility='';
 
-  var [sayilar, hedefler] = await Promise.all([sayilariAl(), hedefleriAl()]);
+  var [sayilar, hedefler, oneriler] = await Promise.all([sayilariAl(), hedefleriAl(), oneriSayisiAl()]);
+  sayilar.__oneriler = oneriler;
   ciz(sayilar, hedefler);
 
   // Real-time bağlantı
@@ -464,7 +519,8 @@ function realtimeYenileDebounced(hedefler){
     var n = _degisiklikSayaci;
     _degisiklikSayaci = 0;
     try {
-      var sayilar = await sayilariAl();
+      var [sayilar, oneriler] = await Promise.all([sayilariAl(), oneriSayisiAl()]);
+      sayilar.__oneriler = oneriler;
       ciz(sayilar, hedefler);
       toast(n + ' değişiklik geldi · sayılar güncellendi', '🔄');
     } catch (e) {
@@ -476,7 +532,7 @@ function realtimeYenileDebounced(hedefler){
 function realtimeBaslat(supa, hedefler){
   var badge = T('canliBadge');
   // Subscribe edilebilir tablolar (sadece var olanlar)
-  var tablolar = ['boru_olculer','fitting_olculer','flansh_olculer','malzeme_kataloglari','fitting_malzeme_uyum'];
+  var tablolar = ['boru_olculer','fitting_olculer','flansh_olculer','malzeme_kataloglari','fitting_malzeme_uyum','tanimsiz_kayitlar'];
   var basariliSub = 0;
 
   tablolar.forEach(function(tablo){
