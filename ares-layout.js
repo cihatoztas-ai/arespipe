@@ -518,7 +518,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 ::-webkit-scrollbar-corner{background:transparent;}
 *{scrollbar-width:thin;scrollbar-color:var(--bor) transparent;}
     `;
-    document.head.appendChild(style);
+    if (!document.querySelector(".sidebar")) { document.head.appendChild(style); }
   }
 
   // ── Sidebar HTML'ini sıfırdan oluştur ve app-shell'e ekle ─
