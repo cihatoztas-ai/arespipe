@@ -327,6 +327,60 @@ Tüm üçü için: ilgili `spool_malzemeleri.{boru,fitting,flansh}_olculer_id` U
 
 ---
 
+## 85 Kapanış Ekran Görüntüsü Gözlemleri (86.A için somut vaka)
+
+Spool `46622aea-d732-4b66-9fba-bcadc1d354d2` (NB1124-G200-350-FR47-Galv, 8 kalem) son test sırasında M2 satırına tıklandığında **`confirm()` placeholder modal** açıldı (mesaj: "STANDART DIŞI MALZEME").
+
+**Tespit edilen anomaliler:**
+
+1. **M2 üzerinde "STANDART DIŞI" mesajı tetiklendi** — yani render `malz-standartdisi` class'ını ekledi, `tanimsizModalAc` çağrıldı. Demek bu satır UI tarafından zaten **tanımsız** kabul edilmiş. Ama önceki ekran görüntülerinde **görsel olarak turuncu görünmüyordu**. İki olasılık:
+   - (a) Border-left turuncu vardı, ekran zoom/contrast sebebiyle görünmedi (yanlış teşhis)
+   - (b) Sınıf eklendi ama CSS bir başka kuralla override ediliyor (gerçek bug)
+   - 86.A'da DOM inspect ile kesin tespit edilir
+
+2. **DB doğrulaması ile uyumlu:** M2 boru 139.7×4.5 → `boru_olculer_id = NULL` → kütüphaneye bağsız. Hangi tip işaret koymak gerekirken (turuncu vs gri) — KARAR-85.5'in tek tek alt-class implementasyonu eksik.
+
+3. **`tanimsizModalAc` placeholder hâlâ confirm() ile çalışıyor** — bu 85.E v2'de (86.C) düzeltilecek. Modal mavi BORU BİLGİSİ formatına paralel olacak, RPC ile `tanimsiz_kayit_onerisi(...)` çağrılacak.
+
+**86.A için somut test akışı:**
+
+```
+1. Spool 46622aea-... aç
+2. DOM inspect:
+   - M2 satırının <tr> classList'inde `malz-standartdisi` var mı?
+   - Border-left CSS değeri ne (gerçek render rengi)?
+   - master.tenant_id NULL mu? (sistem-preset/tenant-özel kararı)
+3. Render kod path'ini izle (satır 2225-2245 civarı geomBagli + kaliteStandart kontrolleri)
+4. KARAR-85.5 alt-class implementasyonu:
+   - `malz-arasolc` (turuncu) — kütüphane bağlı + master.tenant_id var
+   - `malz-tanimsiz` (gri) — kütüphane bağsız
+5. Test sonrası bu spool'da:
+   - M1 (yiv) → mavi, alt satır yok ✓
+   - M2/M3/M4/M5 (bağsız) → gri, tıklanır
+   - M6/M7/M8 (kütüphane bağlı, sistem preset) → mavi
+```
+
+**86.C frontend modal için somut girdi:**
+
+Ekran görüntüsündeki confirm() içeriği yeni modal'da paralel olmalı:
+```
+STANDART DIŞI MALZEME (turuncu/gri başlık)
+Kod:     M2
+Tip:     boru
+Tanım:   Pipe Seamless Steel Tube - 2.2 Certificate
+Malzeme: karbon
+Kalite:  St 37
+Dış çap: 139,7 mm
+Et:      4,5 mm
+```
+
+Bu bilgilere ek olarak modal'da:
+- "Tahmini anma çapı: DN125, NPS 5"" (139.7 → en yakın anma çap)
+- "Birim ağırlık: hesaplanamadı" (kütüphane bağlı değil)
+- Öneri formu (3 sebep + açıklama + gönder butonu)
+
+---
+
 > 86. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunur. Sonra Cihat'a "86.A renk bug ile başlayalım mı?" sorulur (gündem kilitli, açılış sorusu standart).
 >
 > 85, AresPipe taxonomy katmanını gerçekliğe uydurma + tanımsızlık altyapısı kurma oturumuydu. 86 görselleştirme + kullanıcı akışını tamamlar.
