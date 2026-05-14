@@ -163,8 +163,8 @@ function zorunluKontrol(dosyaYolu, icerik) {
   if (dosyaIstisnasiMi(dosyaYolu)) return [];
   // mobile/ altındaki HTML'ler Vite SPA build çıktısı — ortak ares-* (store/lang/normalize/layout)
   // vanilla JS dosyalarını yüklemez; React component'ler + kendi i18n'i kullanır.
-  // 205. satırdaki I18N kontrolündeki mobile/ muafiyetiyle simetrik. (Web focus)
-  if (dosyaYolu.replace(/\\/g, '/').includes('/mobile/')) return [];
+  // Regex: yol başında veya alt yolunda mobile/ — relative ('mobile/dist/...') ve absolute ikisinde de çalışır.
+  if (/(^|\/)mobile\//.test(dosyaYolu.replace(/\\/g, '/'))) return [];
 
   const hatalar = [];
   for (const kural of KURAL.zorunlu_her_html.kurallar) {
@@ -207,7 +207,8 @@ function i18nSenkronKontrol(dosyaYolu, icerik) {
   const zatenRaporlandi = new Set();
   satirlar.forEach((satir, idx) => {
     // mobile/ altındaki React dosyaları farklı sözlük kullanabilir — atla (Web focus)
-    if (dosyaYolu.replace(/\\/g, '/').includes('/mobile/')) return;
+    // Regex: relative ve absolute yol başlangıçlarında çalışır.
+    if (/(^|\/)mobile\//.test(dosyaYolu.replace(/\\/g, '/'))) return;
 
     let match;
     const lokalRegex = new RegExp(regex.source, 'g');

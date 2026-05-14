@@ -22,3 +22,6 @@ npm-debug.log*
 # Env (eger ileride lokal env kullanilirsa)
 .env.local
 .env.*.local
+
+# Vite build artifact
+mobile/dist/
