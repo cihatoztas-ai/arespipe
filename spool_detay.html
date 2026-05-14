@@ -998,7 +998,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),fitting_lib:fitting_olculer_id(geometri_std),flansh_lib:flansh_olculer_id(geometri_std),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
       .eq('id', supaId)
       .single();
 
@@ -1126,10 +1126,19 @@ async function spoolYukle(supaId) {
 
       // 83. oturum (A patch) — malzeme_tanimlari master tablo join sonucu
       var master = m.malzeme_tanimlari || null;
-      // 84. oturum (84.E v4) — boru_olculer nested join (custom alias)
-      // NOT: fitting/flansh için `standart` kolonu yok, geometri_std var (85+ için)
-      var geom = m.boru_lib || null;
-      var geom_sch = m.boru_lib ? (m.boru_lib.schedule_kod || '') : '';
+      // 86.B — Standart kaynagi tip'e gore 3-dalli (sema asimetri: boru.standart vs fitting/flansh.geometri_std)
+      // Sema dogrulamasi: information_schema.columns (MK-84.2 + MK-85.3)
+      var _tipNorm = (m.tip || '').toLowerCase();
+      var geomStandart = '';
+      var geom_sch = '';
+      if(_tipNorm === 'boru' && m.boru_lib){
+        geomStandart = m.boru_lib.standart || '';
+        geom_sch = m.boru_lib.schedule_kod || '';
+      } else if(_tipNorm === 'fitting' && m.fitting_lib){
+        geomStandart = m.fitting_lib.geometri_std || '';
+      } else if(_tipNorm === 'flansh' && m.flansh_lib){
+        geomStandart = m.flansh_lib.geometri_std || '';
+      }
 
       // 85.C — uç işlemi sözlük join (MK-84.5: raw + kanonik + std)
       // uc_a_std (override) NULL ise sözlükten varsayılan_std gelir
@@ -1151,8 +1160,8 @@ async function spoolYukle(supaId) {
         boru_olculer_id:    m.boru_olculer_id    || null,
         fitting_olculer_id: m.fitting_olculer_id || null,
         flansh_olculer_id:  m.flansh_olculer_id  || null,
-        // 84. oturum — geometri standart bilgisi (sadece boru, fitting/flansh 85+'da)
-        geom_standart: geom ? (geom.standart || '') : '',
+        // 86.B — geometri standart bilgisi (boru, fitting, flansh — 3 tip)
+        geom_standart: geomStandart,
         geom_schedule: geom_sch,
         // 85.C — uç işlemi alanları (kanonik kod + müşteri raw + standart)
         uc_a_islemi:    m.uc_a_islemi   || null,
