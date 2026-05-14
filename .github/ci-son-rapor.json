@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-14T18:55:17.700Z",
-  "commit_sha": "d2b22e3ec9ece7f21e0cd03edc5c7129654841b0",
+  "tarih": "2026-05-14T19:21:55.163Z",
+  "commit_sha": "dad5307e25ec17c51f9a169ffa9dc02d9bf28e34",
   "commit_ref": "main",
-  "workflow_run": 835,
+  "workflow_run": 836,
   "ozet": {
     "hata": 0,
     "uyari": 37,
@@ -20,7 +20,7 @@
           "dosya": "admin/kutuphane-oneriler.html",
           "sayi": 1,
           "satirlar": [
-            558
+            389
           ]
         }
       ]
@@ -34,8 +34,8 @@
           "dosya": "admin/kutuphane-oneriler.html",
           "sayi": 2,
           "satirlar": [
-            520,
-            559
+            351,
+            390
           ]
         }
       ]
@@ -121,19 +121,19 @@
         {
           "kod": "G03_HAM_MALZEME",
           "tip": "uyari",
-          "satir": 558,
+          "satir": 389,
           "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 520,
+          "satir": 351,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 559,
+          "satir": 390,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
