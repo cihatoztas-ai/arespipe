@@ -161,6 +161,10 @@ function yasakStringKontrol(dosyaYolu, icerik) {
 function zorunluKontrol(dosyaYolu, icerik) {
   if (!dosyaYolu.endsWith('.html')) return [];
   if (dosyaIstisnasiMi(dosyaYolu)) return [];
+  // mobile/ altındaki HTML'ler Vite SPA build çıktısı — ortak ares-* (store/lang/normalize/layout)
+  // vanilla JS dosyalarını yüklemez; React component'ler + kendi i18n'i kullanır.
+  // 205. satırdaki I18N kontrolündeki mobile/ muafiyetiyle simetrik. (Web focus)
+  if (dosyaYolu.replace(/\\/g, '/').includes('/mobile/')) return [];
 
   const hatalar = [];
   for (const kural of KURAL.zorunlu_her_html.kurallar) {

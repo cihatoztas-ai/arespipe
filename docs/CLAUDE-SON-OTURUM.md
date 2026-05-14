@@ -1,332 +1,296 @@
-# CLAUDE-SON-OTURUM — 84. Oturum Detaylı Raporu
+# CLAUDE-SON-OTURUM — 85. Oturum Detaylı Kronoloji
 
 > **Tarih:** 13 Mayıs 2026
-> **Süre:** ~5-6 saat
-> **Önceki:** 83 (commit `b19ba26`)
-> **Sonraki:** 85 — Uç işlemi sözlük katmanı + tanımsızlık tam akış (gündem: `docs/CLAUDE-SONRAKI-OTURUM.md`)
+> **Süre:** ~4 saat (yoğun, model düzeltmesi içeren)
+> **Önceki:** 84. oturum (commit `4a1b991`) — taxonomy refactor + Standart sütunu prototipi
+> **Kapanış commit:** `?` (admin script fix + kontrol.js + 3 docs, paket olarak push)
+> **Sonraki:** 86 — Renk semantiği fix + fitting/flansh Standart + tanımsızlık frontend modal
 
 ---
 
-## Ana Çıktılar
+## Ana Sonuçlar
 
-| # | İş | Durum | Commit |
-|---|---|---|---|
-| 057 | Uç işlemi taxonomy refactor migration (36 Victaulic) | ✅ DB + repo | `3fb7167` |
-| 054/055/056 | Önceki oturumdan kayıp migration'lar | ✅ Repo'ya kazandırıldı (önceki commit) | `b19ba26..3fb7167` arası |
-| 84.E v1 | spool_detay Standart sütunu — nested join naive syntax | ❌ Revert | `7bc75a1` → `77b806d` |
-| 84.E v3 | Standart sütunu sadece boru için (alias `boru_lib`) | ✅ Canlı | `d3d35d5` |
-| 84.E v4 | Tanımsızlık placeholder + uydurma std kaldırıldı | ✅ Canlı | `3385582` |
+- **4 migration** (058, 059, 060, 061) yazıldı + çalıştırıldı + doğrulandı
+- **Frontend spool_detay.html** v5 → v6 → v7 üç iterasyon (alt satır eklendi → model düzeltmesi sonrası kaldırıldı → temizlikler)
+- **2 admin sayfası** script eksiği düzeltildi (21. oturumdan beri borç)
+- **CI tamamen yeşil** olarak kapanış
+- **Veri modeli düzeltmesi**: 36 yiv satırı parent boruya nitelik değil, BOM kalemi olarak duruyor
+- **Tanımsızlık DB altyapısı** kuruldu (frontend modal 86'da)
 
----
+## Sayılarla 85
 
-## 84.A — Migration 057 (KARAR-83.2 DB tarafı)
-
-**Hedef**: 36 Victaulic Groove-Steel kaydını parent boruya `uc_a_islemi='groove_victaulic'` olarak migrate et, sonra Victaulic satırlarını sil.
-
-### Adım 1 — Veri keşfi
-
-4 tanı sorgusu çalıştırıldı:
-- **Sorgu 1**: `toplam_victaulic` = **36** ✅
-- **Sorgu 2**: Aynı spool'da boru sayısı dağılımı
-  - "1 — net" (spool'da tek boru): 19 Victaulic
-  - "2+ — çoklu boru": 17 Victaulic
-  - "0 — yetim": **0** ✅ (silinmesi gereken yetim kayıt yok)
-- **Sorgu 3**: Çoklu boru senaryolarında `dis_cap_mm` filtresi sonrası kalan aday boru
-  - 12 satır: filtreden sonra tek aday (kesin atama)
-  - 5 satır: filtreden sonra 2-3 aday (deterministik en eski çap-uyumlu seçim)
-- **Sorgu 4**: Aynı spool'da birden fazla Victaulic
-  - 5 spool'da 2'şer Victaulic (139.70 + 60.30) — farklı çaplar → farklı borulara
-
-**Karar**: B senaryosu (5 belirsiz kayıt) için "deterministik en eski çap-uyumlu boru" seçimi onaylandı (kullanıcı A seçeneği).
-
-### Adım 2 — Migration v1 → v2 → v3 iterasyonu
-
-- **v1 (MD5 `0b856d10...`)**: BEGIN/COMMIT bloklu, Supabase Studio "syntax error at BEGIN" hatası verdi
-- **v2 (MD5 `dce7ba1f...`)**: PL/pgSQL DO bloğu ile atomik UPDATE+DELETE + defansif ROW_COUNT kontrolü. `guncelleme = now()` kolonu yok → 42703 hatası
-- **v3 (MD5 `4043fc77...`)**: `guncelleme = now()` kaldırıldı, başarıyla çalıştı
-
-### Adım 3 — Sonuçlar
-
-Migration 057 v3 RAISE NOTICE çıktısı (Messages sekmesi):
-```
-NOTICE: UPDATE -> 36 boru satirina uc_a_islemi=groove_victaulic atandi
-NOTICE: DELETE -> 36 Victaulic satiri silindi
-```
-
-Doğrulama:
-- **D1**: kalan_victaulic = 0 ✅
-- **D2**: groove_victaulic alan boru = 36 (mükemmel, çakışma yok)
-- **D3**: tip dağılımı boru=70, fitting=43 (önce 79 idi, -36 Victaulic ✅), flansh=11
-- **D4**: çap × et dağılımı: DN139.70×4.5 → 29 / DN60.30×4.5 → 6 / DN60.30×6.3 → 1 = **36/36** ✅
-
-### Ders: MK-84.2 (DB-aware patch için şema doğrulama)
-
-`guncelleme = now()` denemem AresPipe'da bazı tablolarda `guncelleme_at` kolonu olduğu için varsayımsal yazıldı. Aslında `spool_malzemeleri`'nde böyle bir kolon yok. v2 → v3 iterasyonu öğrenme maliyeti ile çözüldü. **Pattern**: yeni patch öncesi `information_schema.columns` ile target tabloyu doğrula.
+- Migration: 4 (058 + 059 + 060 + 061)
+- Migration satır toplam: 877 (141 + 180 + 202 + 354)
+- Frontend net büyüme: +49 satır (3885 → 3934)
+- Admin script eklemesi: 6 satır (2 dosya × 3 script)
+- kontrol.js patch: +4 satır (mobile muafiyet)
+- Yeni KARAR: 8 (KARAR-85.1 ile 85.8)
+- Yeni MK: 4 (MK-85.1 ile 85.4)
+- Push edilen commit: 8 (kapanış öncesi)
 
 ---
 
-## 84.B — Boru kütüphane doluluk analizi
+## Kronoloji — Altı Dalga
 
-Önceki oturumun 41 boş `boru_olculer_id` borularının tanısı.
+### Dalga 1 — Açılış ve Felsefe Düzeltmeleri
 
-### Sorgular ve sonuçlar
+**Açılış ritüeli temizliği:**
+- Kökteki eski `CLAUDE-SONRAKI-OTURUM.md` (80→81 dönüşümünden kalma) silindi
+- `docs/CLAUDE-SONRAKI-OTURUM.md` (84 kapanışı, 85 gündemi) referans alındı
 
-**B1**: Doluluk istatistik
-- toplam_boru = 70, bağlı = 29, boş = 41, bağlı_yüzde = %41
+**KARAR-83.1/83.2 yeniden değerlendirme:**
 
-**B2**: Boş kalan çap × et dağılımı
-| dis_cap_mm | et_mm | spool_kalemi | farkli_spool |
-|---|---|---:|---:|
-| 139.70 | 4.500 | **38** | 30 |
-| 60.30 | 6.300 | 2 | 1 |
-| 114.30 | null | 1 | 1 |
+Cihat 85.C testi sırasında felsefe dönüşü getirdi:
+- "DIN 17100 biz uydurduk, müşteri belgesinde yazmıyordu, sadece Victaulic yazıyordu"
+- → MK-85.1 doğdu: kategori adından (karbon, paslanmaz vb.) standart **TÜRETMEYİZ**
 
-**38/41 satır tek bir ölçüde toplandı**: 139.70 × 4.500 (DN125, ASME B36.10M tablosunda yer almayan tedarikçi-özel ölçü).
+Devam tartışması:
+- "Müşteri 'Victaulic' der → biz literatürden 'ANSI/AWWA C606' yazarız"
+- "Müşteri PDF'inde standart yazıyorsa → biz kanonik forma normalize ederiz"
+- "Standart bilinmiyor + müşteri raw yok → boş bırakırız, asla uydurmayız"
 
-### Yanlış teşhis ve düzeltme (önemli ders — MK-84.3)
+`ares-normalize.js` grep çıktısı kontrol edildi — `kalite → standart` haritası yok (zaten olmamalı). Sadece kanonik kalite kodları var. Bu felsefeyi doğruladı.
 
-İlk inceleme: T2 sorgusu "29 bağlı boru" 4 farklı boru_olculer ID'sine dağılmış, hepsinin schedule_kod'u "ET4.5", ben kafamdan "139.70×4.5 sınırda olduğu için 056 et_min/et_max range'ine yapıştırdı" varsaymıştım → "halüsinasyon FK" tezi.
+### Dalga 2 — Migration 058 (Sözlük Tablosu)
 
-T4 detay sorgusu (4 ID için gerçek dis_cap_mm):
-- 5323f223 DIN-2448 ET4.5 × **76.300** (DN65)
-- 3c6560f1 EN-10216-1 ET4.5 × **60.300** (DN50)
-- e90525eb DIN-2448 ET4.5 × **114.300** (DN100)
-- 020b2157 DIN-2448 ET4.5 × **168.300** (DN150)
+`uc_islemi_tipleri` (PK: kod) — 6 seed:
+- `plain` (—)
+- `bevel` (ASME B16.25)
+- `socket` (ASME B16.11)
+- `threaded` (ASME B1.20.1, BSPT alt)
+- `groove_victaulic` (ANSI/AWWA C606)
+- `yaka_formlu` (MSS SP-43)
 
-→ 29 boru **farklı çaplara** dağılmış, hepsi kendi çapına uygun. Migration 056 doğru iş yapmış (`dis_cap_mm + et_mm` AND eşleşmesi). T5 = 0 ile kesinleştirildi (yanlış FK yok).
+RLS: `auth.role()='authenticated'` SELECT, super_admin yazar. Realtime publication.
 
-**Ders**: Aggregate sorgu sonuçlarından inference yapmak risklidir. ID listesi geldiğinde detay sorgusu çalıştırılmalı.
+6/6 doğrulama yeşil:
+- 6 toplam ✓
+- Sıralı liste ✓
+- Victaulic 36 (sözlükle uyumlu) ✓
+- RLS açık ✓
+- 2 policy ✓
+- Realtime ✓
 
-### Sonuç: 139.70×4.5 standartta yok ama saha kullanıyor
+Commit: `4e7ce6e`
 
-ASME B36.10M NPS 5 et değerleri: 3.40 (Sch20) / 4.78 (Sch30) / 6.55 (STD). DIN-2448/EN-10216-1 et tablosu: 3.2/4.0/5.0/6.3/7.1. **4.5 hiçbir resmi tabloda yok.** Tersane tedarikçisinin özel ölçüsü. 30 farklı spool × 38 kalem = büyük etki.
+### Dalga 3 — Migration 059 + Frontend v5 (85.C)
 
-Bu durum **KARAR-84.2 (öneri akışı)** için tam pilot vaka.
+`spool_malzemeleri` üzerine:
+- 4 yeni kolon (`uc_a_aciklama`, `uc_b_aciklama`, `uc_a_std`, `uc_b_std`) — MK-84.5 müşteri raw + override
+- 057'nin CHECK constraint'i kaldırıldı (dinamik bulup drop)
+- 2 FK eklendi (`uc_a_fk`, `uc_b_fk` → `uc_islemi_tipleri(kod)`, ON DELETE SET NULL, ON UPDATE CASCADE)
+
+Önkoşul DO bloğu: sözlük + FK + 36 Victaulic doğrulaması. Hata olursa rollback.
+
+5/5 doğrulama yeşil. Commit: `fa709a1`
+
+**Frontend spool_detay v5 (Patch A/B/C):**
+- SELECT'e 6 kolon + 2 nested join (`uc_a_tip`, `uc_b_tip`)
+- MAP'e 8 yeni alan (override > sözlük varsayılan_std fallback)
+- TBODY Standart hücresinde alt satır: `↳ A: Victaulic Yiv (ANSI/AWWA C606)`
+
+MD5 `7758734d...`, +30 satır. Commit: `e7bcdd9`
+
+**Sahada test (S07 = `00d4926d-...`):** Standart sütununda M1 borusunda hem `DIN-2448 ET4.5` hem `↳ A: Victaulic Yiv (ANSI/AWWA C606)` görünüyordu.
+
+### Dalga 4 — Model Düzeltmesi (Kritik Dönüm Noktası)
+
+**Cihat'ın geri bildirimi:**
+> "Burda yiv olan borunun standardına yazmışız yivi. Ama burası standartta olsa burda neyi gösterecez. Borunun zaten kendi standardı var, standart sütunu sadece o satırdaki malzemenin standardını göstermesi lazım."
+
+İkinci ekran görüntüsünde M2 satırı zaten "Victaulic Groove-Steel" ayrı kalem olarak duruyordu — yani **izometride yiv ayrı satır olarak gelmiş**, ama 057 bu satırı silip parent boruya nitelik olarak migrate etmişti.
+
+**Cihat'ın felsefesi netleşti:**
+> "Bunlar sahada ayrı malzeme kalemleri değil ama müşterinin tablosunda malzeme gibi gösteriyorsa bizde de malzeme gibi düşünelim. Malzeme listesinde görünmese bile bunun bir standardı var ve program kütüphanesinde bu standart olmalı ve bunu tanımalı."
+
+**Sonuç:** 057 yanlıştı. Veri modeli yiv için "parent boru niteliği" değil, "BOM kalemi" olmalı.
+
+**Migration 060 Hazırlığı:**
+- DB araştırma sorgusu: 5 parent borunun verileri incelendi (tüm 36'sı `tip='boru'`, `tanim='Pipe Seamless Steel Tube'`, çap 60.30 veya 139.70, kalite St 37)
+- `spool_malzemeleri.tip` CHECK constraint kontrol: `boru | fitting | flansh | malzeme`
+- **`malzeme` tipi zaten var** ama hiç kullanılmamış (0 satır) → yiv için ideal
+
+**Migration 060 v1 fail:**
+- INSERT'te `guncelleme = now()` kullandım (057'den kopya)
+- `guncelleme` kolonu DB'de yok! Sadece `olusturma` var.
+- Hata: `ERROR: 42703: column "guncelleme" of relation "spool_malzemeleri" does not exist`
+- BEGIN/COMMIT rollback → DB bozulmadı
+- **MK-85.3 doğdu** (MK-84.2 tekrar)
+
+**Migration 060 v2 düzeltmesi:**
+- `guncelleme` kolonu kaldırıldı (INSERT + UPDATE'ten)
+- `tenant_id` eklendi (parent borudan kopya, multi-tenant koruma)
+- 36 yiv satırı `tip='malzeme'` olarak geri INSERT
+- Parent borulardaki `uc_a_islemi` NULL'a çekildi
+
+5.1 doğrulama: `boru=70, fitting=43, flansh=11, malzeme=36, toplam=160` ✓
+
+Commit: `2e1ec45` (rebase + push sonrası)
+
+### Dalga 5 — Frontend v6 + v7
+
+**v6 patch'leri (3 nokta):**
+
+1. **Alt satır rendering kaldırıldı** — `↳ A:` ve `↳ B:` blokları silindi (yorum olarak tarihçesi kaldı)
+2. **Standart hücresi 3 dallı** —
+   - `geom_standart` varsa: boru/fitting/flansh için
+   - `uc_a_std_eff || uc_b_std_eff` varsa: yiv için `ANSI/AWWA C606` göster
+   - Hiçbiri: `—`
+3. **Uç işlemi satırı kalite kontrol muafiyeti** — `master_id` NULL olduğu için `kal_kaynak='serbest'` çıkıyordu, yiv satırı yanlışlıkla turuncu işaretleniyordu. `ucIslemiSatiri` flag eklenip muaf tutuldu.
+
+MD5 `1489b995...`, +8 satır net. Commit: `12815be`
+
+**Sahada test (S07):** M1 boru (DIN-2448 ET4.5) + M2 yiv (ANSI/AWWA C606), ayrı satırlar, doğru gösterim. ✅
+
+**v7 — Yiv satırı sahada hâlâ problemli görünüyordu:**
+
+Cihat ekran görüntüsünde: "yiv için -7,5 kg vermiş burda ağırlık, heat no, sertifika boş veya pasif olmalı"
+
+3 patch:
+1. **MAP'te yiv için ağırlık tahmini kapatıldı** (`ucIslemiSatiriMi` kontrolüyle)
+2. **Render: Heat No `—`** (input gizli, tooltip "Heat No parent boruda")
+3. **Render: Sertifika `—`** (checkbox gizli, tooltip "Sertifika parent boruda")
+
+MD5 `cfdad35f...`, +15 satır. Commit: `1d35330`
+
+**Sahada test:** Yiv satırı temiz görünüyor (ağırlık `—`, Heat No `—`, Sertifika `—`). ✅
+
+### Dalga 6 — Migration 061 (Tanımsızlık Altyapısı)
+
+**Tasarım kararları (sohbet sırasında netleşti):**
+
+- **KARAR-85.5** — Turuncu = STD-DIŞI ama tanımlı; gri = tanımsız (modal akışı)
+- **KARAR-85.6** — Süper admin tek otorite (çakışma engellenir)
+- **KARAR-85.7** — `UNIQUE (hash_anahtari)` — tenant fark etmez, aynı kombinasyon tek satır, sıklık rozet
+
+**SQL pseudocode kazası:**
+
+Cihat tasarım netleşmeden, ben dahil pseudocode'u Studio'ya yapıştırdı:
+```
+CREATE TABLE tanimsiz_kayitlar (
+  id UUID PK,
+  ...
+)
+```
+Hata: `42601 syntax error at or near ".."`. Studio doğru reddetti. MK-85.5 (bilgi notu): "Pseudo code'u açıkça etiketle, asla doğrudan Studio'ya çalıştırılabilir gibi sunma."
+
+**Migration 061 (gerçek SQL):**
+
+- Tablo: 4 tip enum + hash UNIQUE + JSONB ham_data + sıklık + durum makinesi + admin alanları + audit
+- 3 index (durum_siklik DESC, olusturma DESC, son_oneren_tenant)
+- `tanimsiz_hash_anahtari(tip, dis_cap, et, kalite)` IMMUTABLE fonksiyon
+  - Format: `'tip|dis_cap.000|et.000|kalite_normalize'`
+  - Örnek: `tanimsiz_hash_anahtari('boru', 139.70, 4.500, 'St 37')` → `'boru|139.700|4.500|st37'`
+- `tanimsiz_kayit_onerisi(...)` UPSERT fonksiyonu
+  - Atomik tek call
+  - Yoksa INSERT, varsa siklik_sayisi += 1
+  - Açıklama append (önceki kullanıcının yorumu kaybolmaz, `---` ile birleşir)
+- Trigger: `guncelleme_at` otomatik
+- 4 RLS policy:
+  - SELECT super_admin (tümü)
+  - SELECT normal kullanıcı (kendi tenant'ı)
+  - INSERT authenticated
+  - DELETE super_admin
+- Realtime publication
+
+4/4 doğrulama yeşil:
+- 5 index ✓ (pkey + unique + 3 custom)
+- Hash fonksiyonu çıktısı doğru ✓
+- RLS açık ✓
+- Tablo + fonksiyonlar mevcut ✓
+
+Commit: `0045c95`
+
+### Dalga 7 — CI Yeşillendirme
+
+**Hatalar (kalıtsal borç):**
+- `admin/kutuphane.html` — `ares-layout.js` eksik (21. oturumdan beri)
+- `admin/kutuphane-detay.html` — aynı
+- `mobile/dist/index.html` — `ares-layout.js` eksik (yanlış kural, Vite SPA)
+
+**İki çözüm yolu:**
+
+**Admin sayfaları için:** Tek script (`ares-store.js`) yerine 4 script ekle (CLAUDE.md sırası: store → lang → normalize → layout). Pattern diğer admin sayfalarıyla simetrik.
+
+**Mobile için:** Vite SPA build çıktısı, vanilla JS ortak `ares-*` kullanmıyor. `kontrol.js`'in **ZORUNLU HTML kontrolü** mobile/'i tarama dışı bırakmalı. I18N kontrolünde (satır 205) zaten muafiyet vardı, simetrik olarak `zorunluKontrol` fonksiyonuna eklendi (satır 167).
+
+**Sonuç:** 3 hata → 0 hata. CI yeşil.
 
 ---
 
-## 84.C — Fitting/Flansh FK bağlama (84'e dahil edilmedi)
+## Sürprizler ve Keşifler
 
-Planlanmıştı ama oturum kapasitesi nedeniyle 85+'a ötelendi. Sebep: 84.E iterasyonu uzun sürdü, ayrıca fitting/flansh tanım parsing riski (hayalî eşleşme) için R-10 mockup gerekiyor.
+### 1. `guncelleme` Kolonu Yok
 
----
+Migration 057 zaten `guncelleme = now()` kullanıyordu — demek ki o zaman vardı, sonradan kaldırılmış. Bu **silent state** problemi (MK-83.3 ailesi). Migration zincirinde kolon DROP edilirse sonraki migration'lara not düşmek lazım.
 
-## 84.D — Boru modal FK kalıcı kaydetme (84'e dahil edilmedi)
+### 2. `malzeme` Tipi Zaten Vardı
 
-Aynı sebep, 85+'a.
+`spool_malzemeleri.tip` CHECK enum: `boru | fitting | flansh | malzeme`. `malzeme` tipi tanımlı ama hiç kullanılmıyordu. Yiv için ideal — "geometri altyapısı olmayan BOM kalemleri" anlamı zaten taşıyordu. Yeni enum eklemeden 060 ilerledi.
 
----
+### 3. M2/M3/M4/M5 Sırrı
 
-## 84.E — spool_detay Standart sütunu (4 fail-fix döngüsü)
-
-### v1 (commit `7bc75a1`, REVERT)
-
-**Patch**: SELECT'e nested join `boru_olculer(standart,schedule_kod)` + `fitting_olculer(standart)` + `flansh_olculer(standart)` + 5 ek patch (THEAD/MAP/render/colspan).
-
-**Hata**: Sayfa açıldı, **malzeme listesi 0 kalem** göründü. Console: `Failed to load resource: 400 Bad Request`.
-
-**Sebep**: PostgREST nested join syntax'ı tablo adı ile FK adı eşleşmediğinde fail oluyor. `spool_malzemeleri.boru_olculer_id` FK var ama PostgREST `boru_olculer(...)` syntax'ını otomatik çözemedi.
-
-**Çözüm**: `git revert HEAD && gp` → 1-2 dakikada üretim geri geldi.
-
-### v2 (yazıldı ama push edilmedi)
-
-**Patch**: Explicit FK alias `boru_olculer:boru_olculer_id(...)` + `fitting_olculer:fitting_olculer_id(...)` + `flansh_olculer:flansh_olculer_id(...)`.
-
-**Hata**: Sayfa açıldı, **yine 400**. Console: `code: 42703 — column fitting_olculer_2.standart does not exist`.
-
-**Sebep**: PostgREST alias'ları çözebildi (suffix `_2` ile disambig yaptı), ama `fitting_olculer` tablosunda `standart` adında bir kolon yok. Önceden sadece `boru_olculer.standart`'ı T1 sorgusu ile doğrulamıştım, fitting/flansh şemasını hiç sorgulamadım.
-
-**Çözüm**: v3'e geçiş — fitting/flansh nested join'ler çıkarıldı, şema doğrulama sorgusu paralel çalıştırıldı.
-
-### Şema keşfi (paralel olarak)
-
-```sql
-SELECT table_name, column_name FROM information_schema.columns
-WHERE table_name IN ('boru_olculer','fitting_olculer','flansh_olculer')
-ORDER BY table_name, ordinal_position;
-```
-
-Sonuç:
-- `boru_olculer`: `standart` (TEXT, örn. "DIN-2448")
-- `fitting_olculer`: **`geometri_std`** (kolon adı farklı!)
-- `flansh_olculer`: **`geometri_std`** + `flansh_tipi` + `basinc_sinifi`
-
-**Yapısal tutarsızlık** keşfedildi. `boru_olculer` 36. oturumda 8-maddeli mimari ile yazıldı, fitting/flansh sonradan farklı konvensiyonla. 85.D'de fitting/flansh için ayrı patch yazılacak.
-
-### v3 (commit `d3d35d5`, CANLI)
-
-**Patch**: SELECT'te sadece `boru_lib:boru_olculer_id(standart, schedule_kod)` (custom alias `boru_lib` PostgREST suffix sorununu da önler). Fitting/flansh tamamen çıkarıldı.
-
-**Sonuç**: Sayfa **çalıştı**, malzeme listesi göründü. Boru satırlarında Standart sütunu doldu. Fitting/flansh için `boru_lib` null → "—" veya kalite_std fallback gösterildi.
-
-### v4 (commit `3385582`, CANLI — şu anki sürüm)
-
-**Cihat'ın geri bildirimi**: 
-- "DIN 17100" italik fallback **uydurma standart yanılgısı** yaratıyor — kaldırılmalı
-- Boş "—" gösterilen satırlar **tıklanır olsun**, kullanıcı oradan tanımsız malzeme öneri akışını başlatabilsin
-- "Standart malzemeler gibi tanımlayalım ama standart dışı olduğunu da bilelim"
-
-**Patch 6 yeniden**: 
-- Hücre içeriği sadece `geom_standart` veya `—` (kalite_std fallback hücreden kaldırıldı, sadece tooltip'te)
-- KARAR-83.1 iki boyutlu standartlık tutarlılığı sağlandı
-
-**Patch 7 yeni**: 
-- `malz-standartdisi` sınıflı satırlar **tıklanır** olur (eğer boru/flansh modal yoksa)
-- `tanimsizModalAc(m.id)` placeholder fonksiyonu eklendi
-- confirm() dialog malzeme bilgilerini gösterir, "Tamam" derse toast: "Süper admin onayı 85+ oturumda devreye girer"
-
-Sayfa çalıştı (test push sonrası doğrulandı). 85.E'de gerçek modal + DB INSERT akışı eklenecek.
-
----
-
-## Tasarım Kararları — Uç İşlemi Katmanı (85'e devren)
-
-Cihat 84'ün sonunda "yivin de standartı var" diye sordu. Bu, KARAR-83.2'nin doğal uzantısı.
-
-### Web search ile doğrulama
-
-**ANSI/AWWA C606-15** Victaulic için ana standart: "AWWA C-606 – Grooved and Shouldered Joints". Kapsam: "Metallic IPS pipe, ¾–24 in. (steel, aluminum, brass)".
-
-Diğer uç işlemleri (kafa + web bilgisi):
-- `bevel` → ASME B16.25 (Buttwelding Ends)
-- `threaded` → ASME B1.20.1 (NPT) veya ISO 7-1 (BSPT)
-- `socket` → ASME B16.11 (Socket-Welding and Threaded Fittings)
-
-### Cihat'ın "yaka" tarifi
-
-Hazır Lap Joint Stub End (ASME B16.9 fitting, ayrı parça) DEĞİL, **borunun ucuna makinayla form verilerek oluşturulan yaka** istedi.
-
-Web search: "The type C stub end can be used for standard lap joint flange and slip on flange. It is flared leaving a rounded edge at the inside diameter of the lap."
-
-Terminoloji: **Type C Stub End** / **Vanstone Flared Lap**. Standart: "Dimensions and manufacturing tolerances are covered in ASME B16.9 - Butt Weld Fittings and MSS-SP-43".
-
-→ `yaka_formlu` kodu, varsayılan_std `MSS SP-43`, kategori `flansli`.
-
-### Tasarım: Sözlük tablosu + FK pattern (KARAR-84.1, KARAR-84.4)
-
-3 seçenek arasında karar:
-- **(A) JS hardcoded mapping** — basit, ama "kütüphane felsefesine" aykırı
-- **(B) DB kolonu** — kullanıcı override edebilir ama sözlük yok
-- **(C) Sözlük tablo + FK** — temiz, esnek, yeni tip için sıfır kod değişikliği ✅
-
-(C) seçildi. Yapı:
+Kapanış sırasında `46622aea-...` spool'u test edilirken 8 satırın 4'ünün (M2 boru, M3 fitting reducer, M4 fitting bilezik, M5 flansh) kütüphaneye bağsız olduğu **ama UI'da turuncu görünmediği** tespit edildi. DB doğrulaması yapıldı:
 
 ```
-uc_islemi_tipleri (kod PK, ad_tr, ad_en, varsayilan_std, alternatif_std jsonb, kategori, ...)
-  ├─ INSERT seed: 6 satır (plain, bevel, socket, threaded, groove_victaulic, yaka_formlu)
-  ├─ RLS: tüm okur, super_admin yazar
-  └─ Realtime publication'a eklenir
-
-spool_malzemeleri
-  ├─ uc_a_aciklama TEXT      (müşteri raw metni - KARAR-84.5)
-  ├─ uc_b_aciklama TEXT
-  ├─ uc_a_std      TEXT      (override - NULL ise sözlükten gelir)
-  ├─ uc_b_std      TEXT
-  └─ uc_a_islemi/uc_b_islemi CHECK → FK to uc_islemi_tipleri(kod)
-```
-
-UI'da Standart sütunu çoklu satırlı:
-```
-DIN-2448 ET4.5            ← ana satır (boru/fitting/flansh std)
-↳ A: Victaulic Style 77 (AWWA C606)   ← raw + parantezde std
-↳ B: Düz                              ← plain ise gösterilmez aslında
-```
-
-`uc_a_aciklama` öncelikli (müşteri raw), yoksa sözlük `ad_tr` kullanılır. Standart parantezde her zaman.
-
-### İleri genişleme
-
-Yeni uç işlemi geldiğinde sıfır kod değişikliği:
-```sql
-INSERT INTO uc_islemi_tipleri (kod, ad_tr, varsayilan_std, kategori)
-VALUES ('expanded_taper', 'Konik Genişletilmiş', 'TEMA Std', 'flansli');
+M2 Pipe Seamless 139.70 → bağsız (139.70×4.5 standartta yok)
+M3 Reducer Concentric    → bağsız (fitting_olculer'da yok)
+M4 Ic Bilezik           → bağsız (fitting_olculer'da yok)
+M5 Flange Slip-On       → bağsız (flansh_olculer'da yok)
 ```
 
-Sözlüğe gelecek aday tipler: lazer kesim varyantları, ANSI flange-end, diş varyantları (NPT vs BSPT vs metric), expanded taper (eşanjör uçları), pres bağlantı, vb.
+Render mantığında bir bug var (kalite kaynak kontrolü? — debug 86.A'da). Sahada `geomBagli=false` olan satırlar turuncu işaretlenmeli ama olmuyor.
+
+Bu **gri (tanımsız) renk semantiğini somutlaştıran** ilk gerçek vaka oldu — 86.C frontend modal'ı için tam pilot. KARAR-85.5 doğrulandı.
+
+### 4. CI ile Vercel Bağlantısız
+
+Vercel deploy CI'a bağlı değil. CI hep kırmızı olsa bile production deploy ediyor. Bu **çift kenar bıçak**: 85.C deploy edildi (canlı test yapıldı) ama CI yeşili olmadan kapanmazdı. 86'da MK-CI eklenebilir.
 
 ---
 
-## Yeni Mimari Kurallar (84)
+## Yeni KARAR Listesi (85 katkıları)
 
-### MK-84.1 — Migration commit eksiksizliği
+| Kod | Konu | Durum |
+|---|---|---|
+| **KARAR-85.1** | Turuncu satır 3 alt tip (STD-EKSİK / STD-DIŞI / VERİ-HATALI) | Frontend 86 |
+| **KARAR-85.2** | RLS asla kapalı bırakılmaz | Aktif (MK-85.2 da) |
+| **KARAR-85.3** | Tanımsız modal mavi BORU BİLGİSİ ile simetrik | 86.C |
+| **KARAR-85.4** | Çakışma çözümü "süper admin tek otorite" felsefesiyle doğal çözüldü | Aktif (86.D ile uygulanır) |
+| **KARAR-85.5** | Renk semantiği: 🟠 STD-DIŞI tanımlı, ⚪ tanımsız | 86.A |
+| **KARAR-85.6** | Süper admin iki yollu karar (toplu tablo / tekil) | 86.D |
+| **KARAR-85.7** | Hash UNIQUE + sıklık rozet | DB tarafı aktif, UI 86.D |
+| **KARAR-85.8** | 057 yanlıştı, 060 ile düzeltildi (audit korunur) | Tamamlandı |
 
-Migration dosyaları Supabase Studio'da çalıştırıldıktan sonra **aynı oturum içinde** repo'ya commit edilmeli. "Repo'da arşivde" iddiası `git log` çıktısı ile doğrulanır. Kapanış checklist'ine eklendi: `git status` clean olmalı.
+## Yeni MK Listesi (85 katkıları)
 
-**Vaka**: 83'te 054/055/056 unutuldu. 84'te 056'nın gerçek SQL'ini görmeden teşhis koymaya çalıştık → "yanlış FK" hipotezine girdik. Cihat history'den alıp önceki oturuma push ettiği için audit tamamlandı.
-
-### MK-84.2 — DB-aware patch için şema doğrulama
-
-Yeni nested join veya SET cümlesi eklerken target tablodaki kolon adı `information_schema.columns` ile doğrulanır. Bu, 84.E v1 → v2 → v3 zincirini yaratan ana sebep.
-
-**Vaka**: `fitting_olculer.standart` kolonu olduğunu varsaydım (boru'dan extrapolation), aslında `geometri_std`'di. v1 ve v2 fail oldu.
-
-### MK-84.3 — Aggregate vs detay sorgu disiplini
-
-ID listesi içeren aggregate sorgu sonuçlarından inference yapmadan önce detay sorgusu çalıştırılır. Aksi halde çapraz yanılgı riski yüksek.
-
-**Vaka**: T2'deki 4 boru_olculer ID'sini çap bilgisi olmadan "yanlış-bağlı" sanmıştım. T4 detay sorgusu farklı çapları gösterdi → 056 aslında doğru iş yapmıştı.
-
-### MK-84.4 — Sözlük tablosu + FK pattern
-
-Genişleyebilir tip listeleri için CHECK enum yerine sözlük tablosu + FK kullanılır. Yeni değer = INSERT bir satır + sıfır kod değişikliği. KARAR-84.1'in genelleştirilmiş hâli.
-
-### MK-84.5 — Müşteri raw metni saklanır
-
-İzometriden gelen orijinal metin `*_aciklama` kolonunda saklanır, kanonik kod (`uc_a_islemi`) ile eşleştirilir. UI raw metni gösterir (müşterinin dokümandaki orijinal terimini "kaybetmez"), arka planda biz kategorize ederiz.
-
-**Felsefe**: Müşteri "Vic Style 77" yazmışsa o görünür; "yiv" demişse o görünür; ama her ikisi de `groove_victaulic` kanonik koduna bağlı, AWWA C606 standartı arka planda.
+| Kod | Kural | Tetiklendiği yer |
+|---|---|---|
+| **MK-85.1** | Standart üç kaynaktan biri; kategoriden TÜRETME | DIN 17100 yanlışı (84.E v3) |
+| **MK-85.2** | RLS asla kapalı bırakılmaz | Studio "Run without RLS" |
+| **MK-85.3** | Migration öncesi `information_schema.columns` ile şema doğrula | 060 v1 fail (`guncelleme`) |
+| **MK-85.4** | Model ile UI simetri kontrolü; UI hilesi modeli düzeltmez | 85.C `↳ A:` alt satır yanılgısı |
 
 ---
 
-## Veri / Performans Sinyalleri
+## Sonraki Oturum İçin Net Devir Notları
 
-- **Migration 057**: -36 spool_malzemeleri satırı. Tablo daha temiz.
-- **84.E v4**: 41 boş `boru_olculer_id` satırı sahada test edilebilir (turuncu + tıklanır). 38'i 139.70×4.5 ortak vaka.
-- **Şema tutarsızlığı**: `boru_olculer.standart` vs `fitting_olculer.geometri_std` vs `flansh_olculer.geometri_std`. 86+ refactor adayı.
+**Aktif borçlar:**
+1. **Renk semantiği bug** (M2/M3/M4/M5 keşfi) — 86.A
+2. **fitting/flansh için Standart sütunu** — 86.B (84'te keşfedilen `geometri_std` kolon adı)
+3. **Tanımsızlık frontend modal** (RPC bağlantısı) — 86.C
+4. **Süper admin paneli** — 86.D
 
----
+**Test materyali:**
+- Spool `46622aea-d732-4b66-9fba-bcadc1d354d2` — renk semantiği debug için (4 bağsız satır)
+- Spool `00d4926d-5bcf-472c-96af-0447d9feb045` — yiv testleri için
+- 36 tip='malzeme' kaydı — tanımsızlık modal RPC testleri için
 
-## CI / Commit Listesi
-
-84 boyunca:
-1. `3fb7167` migration(84.A): 057 uc islemi taxonomy refactor — 36 Victaulic parent boruya nitelik (KARAR-83.2)
-2. `7bc75a1` feat(84.E): spool_detay Standart sutunu — REVERT EDILDI (PostgREST 400)
-3. `77b806d` Revert "feat(84.E)..."
-4. `d3d35d5` feat(84.E v3): Standart sutunu sadece boru icin (fitting/flansh standart kolonu yok) — PostgREST 42703 fix
-5. `3385582` feat(84.E v4): standart disi satirlar tiklanir + tanimsiz modal placeholder — uydurma std kaldirildi
-6. (kapanış) docs(84): oturum kapanis — 057 + 84.E v4 + uc islemi sozluk tasarimi + 85'e devir
-
-Önceki oturumdan eklenen (Cihat ayrı push):
-- `054_taxonomy_temizligi.sql`
-- `055_fk_kolonlari_junction_migrate.sql`
-- `056_boru_backfill.sql`
+**Korunması gerekenler:**
+- v7 frontend pattern (yiv satırı muafiyet mantığı `ucIslemiSatiri`)
+- Migration 060 audit trail (asla DROP edilmez)
+- KARAR-85.4 felsefesi (admin tek otorite, çakışma yok)
 
 ---
 
-## Açık Test / Doğrulama Notları
-
-- ✅ Migration 057 v3 çalıştı, sonuçlar doğrulandı (D1-D4 hepsi yeşil)
-- ✅ T5 sorgusu = 0 (yanlış FK yok)
-- ✅ Şema sorgusu çalıştırıldı, 3 tablonun kolon listesi alındı
-- ✅ 84.E v4 push edildi, sayfa açılışı test edildi
-- ⏳ Sahada `tanimsizModalAc` confirm() prototipi test edilecek (kullanıcı geri bildirimi → 85.E modal tasarımına girdi)
-- ⏳ 60.30×6.3 boş 2 kalemin nedeni hâlâ açık (85+ tanı bonus)
-
----
-
-## Süreç Disiplinleri
-
-- **Heredoc / str_replace tabanlı patch'leme**
-- **`arespipe_kopyala`** MD5 doğrulamalı (MK-52.1)
-- **`gp`** otomatik rebase + push (MK-52.2)
-- **PL/pgSQL DO bloğu** Supabase Studio'da BEGIN/COMMIT yerine — `GET DIAGNOSTICS ROW_COUNT` + `RAISE NOTICE` ile defansif kontrol
-- **Yeni FK / SET cümlesi** öncesi `information_schema.columns` ile şema doğrulama (MK-84.2)
-- **Aggregate sonuçtan inference** öncesi detay sorgusu (MK-84.3)
-- **Migration commit eksiksizliği**: kapanışta `git status` clean (MK-84.1)
-
----
-
-> **84. oturum kapatma:** 6 saatlik yoğun bir oturum, 4 fail-fix döngüsü, 2 önemli tasarım kararı (sözlük tablo + müşteri raw metin), 5 yeni MK kuralı.
->
-> **85. oturum açılışında** bu dosya, `son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` okunur. 85.A migration 058 ile başlanır.
+> **85, AresPipe'ın taxonomy katmanını gerçek dünyaya uydurma oturumudur. Bir model hatası fark edilip düzeltildi, tanımsızlık altyapısı kuruldu, CI temizlendi. 86'da renk + modal + admin paneli ile akış tamamlanır.**

@@ -1,20 +1,19 @@
-# CLAUDE-SONRAKI-OTURUM — 85. Oturum Gündemi
+# CLAUDE-SONRAKI-OTURUM — 86. Oturum Gündemi
 
-> Bu dosya 85'in açılışında okunacak. Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md`.
+> Bu dosya 86'nın açılışında okunacak. Birlikte: `.github/son-durum.md` + `docs/CLAUDE-SON-OTURUM.md`.
 
 ---
 
-## 85. Oturum Ana Tema
+## 86. Oturum Ana Tema
 
-**Uç işlemi sözlük katmanı + spool ↔ kütüphane standart gösterimi tam akışı.**
+**Renk semantiği + fitting/flansh Standart sütunu + tanımsızlık frontend modal + süper admin paneli.**
 
-84'te KARAR-83.2'nin DB tarafı uygulandı (uc_a_islemi/uc_b_islemi kolonları + 36 Victaulic migrate). Sonra spool_detay'a Standart sütunu eklenirken altyapı tasarımı tetiklendi:
-1. Boru için Standart sütunu canlıda (v4)
-2. Fitting/flansh için kolon adı `geometri_std` (farklı şema, v5'te eklenecek)
-3. Uç işlemleri (yiv/bevel/yaka) standartlarının nereye yazılacağı: **sözlük tablosu + FK pattern'i** kararı verildi
-4. Tanımsız ölçüler için öneri akışı placeholder hâlinde (gerçek DB tablosu 85'te)
+85'te uç işlemi taxonomy DB tarafı tamamlandı (058+059+060+061), frontend v7 ile yiv satırları temiz, tanımsız_kayitlar tablosu altyapı hazır. 86'da kullanıcının gerçek sahada karşılaştığı UI problemleri çözülür:
 
-85'te bunların hepsi DB + frontend uygulamasıyla kapatılır.
+1. **Renk bug**: Kütüphaneye bağsız satırlar turuncu görünmüyor (M2/M3/M4/M5 keşfi) → 86.A
+2. **Fitting/flansh için Standart yok**: Sadece boru için var, fitting/flansh hücresi hep `—` → 86.B
+3. **Tanımsızlık modal'ı**: confirm() placeholder yerine gerçek modal (RPC bağlantısı) → 86.C
+4. **Süper admin paneli**: Önerileri toplayan, onay/red veren sayfa → 86.D (ayrı oturum olabilir)
 
 ---
 
@@ -25,320 +24,309 @@ Oturum başlangıç ritüeli. 2 kısa kontrol:
 
 1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
 
-2. Bugün ne yapmak istiyorsun? (Önerilen: 85.A → 85.B → 85.C → 85.D sırası)
+2. Bugün ne yapmak istiyorsun? (Önerilen: 86.A → 86.B → 86.C sırası; 86.D ayrı oturum)
 ```
 
-`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra 85.A'ya başlanır.
+`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra 86.A debug ile başlanır.
 
 ---
 
-## 85.A — Migration 058: `uc_islemi_tipleri` sözlük tablosu (~15 dk, öncelik 1)
+## 86.A — Renk Semantiği Bug Fix (~30 dk, öncelik 1)
 
-KARAR-84.1'in DB tarafı.
+KARAR-85.5 implementasyonu. 85'te tasarım netleşti ama mevcut render'da bug var.
 
-### Şema
+### Sorun
 
-```sql
-CREATE TABLE uc_islemi_tipleri (
-  kod              TEXT PRIMARY KEY,
-  ad_tr            TEXT NOT NULL,
-  ad_en            TEXT,
-  varsayilan_std   TEXT,
-  alternatif_std   JSONB DEFAULT '[]'::jsonb,
-  kategori         TEXT,
-  aktif            BOOLEAN DEFAULT true,
-  sira             INT,
-  aciklama         TEXT,
-  olusturma_at     TIMESTAMPTZ DEFAULT now()
-);
+`46622aea-d732-4b66-9fba-bcadc1d354d2` spool'u açıldığında:
+- M2 Pipe Seamless 139.70×4.5 → `boru_olculer_id = NULL` → kütüphaneye bağsız → **turuncu olmalı**, ama mavi/normal görünüyor
+- M3 Reducer Concentric → `fitting_olculer_id = NULL` → **turuncu/gri olmalı**, görünmüyor
+- M4 Ic Bilezik → aynı durum
+- M5 Flange Slip-On PN 16 → aynı durum
 
--- RLS
-ALTER TABLE uc_islemi_tipleri ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "uc_islemi_select_all" ON uc_islemi_tipleri FOR SELECT USING (true);
-CREATE POLICY "uc_islemi_super_admin_only" ON uc_islemi_tipleri
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM kullanicilar
-            WHERE id = auth.uid() AND rol = 'super_admin')
-  );
-
--- Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE uc_islemi_tipleri;
-```
-
-### Seed (KARAR-84.1 + KARAR-84.4)
-
-| sira | kod | ad_tr | ad_en | varsayilan_std | kategori | aciklama |
-|---|---|---|---|---|---|---|
-| 1 | `plain` | Düz | Plain | — | — | Boru ucu kesimsiz/düz |
-| 2 | `bevel` | Kaynak Ağzı | Beveled End | ASME B16.25 | kaynakli | Buttwelding ağzı |
-| 3 | `socket` | Soket Kaynak | Socket Weld | ASME B16.11 | kaynakli | Soket içine yerleştirilen uç |
-| 4 | `threaded` | Vida Dişi | Threaded | ASME B1.20.1 | disli | NPT diş (alternatif: ISO 7-1 BSPT) |
-| 5 | `groove_victaulic` | Victaulic Yiv | Victaulic Groove | ANSI/AWWA C606 | mekanik | Yiv açılarak Victaulic kelepçe ile bağlanır |
-| 6 | `yaka_formlu` | Yaka (Form Verilmiş) | Formed Lap End (Vanstone) | MSS SP-43 | flansli | Borunun ucuna makinayla form verilerek oluşturulan yaka; loose lap joint flange ile kullanılır. Fabrika yapımı stub end (Type A/B) ile karıştırılmamalı. |
-
-### Migration dosyası adı
-
-`058_uc_islemi_tipleri_sozluk.sql`
-
-### Doğrulama SELECT'leri (migration sonu)
+### Açılış DB Check
 
 ```sql
-SELECT count(*) AS toplam FROM uc_islemi_tipleri;  -- beklenen: 6
-SELECT kod, ad_tr, varsayilan_std FROM uc_islemi_tipleri ORDER BY sira;
+-- Kütüphaneye bağsız satır sayımı (turuncu/gri olmalı, mavi değil)
+SELECT
+  s.spool_no,
+  sm.tip, sm.tanim, sm.dis_cap_mm,
+  sm.boru_olculer_id, sm.fitting_olculer_id, sm.flansh_olculer_id,
+  CASE
+    WHEN sm.tip='boru' AND sm.boru_olculer_id IS NULL THEN 'BAGSIZ_BORU'
+    WHEN sm.tip='fitting' AND sm.fitting_olculer_id IS NULL THEN 'BAGSIZ_FITTING'
+    WHEN sm.tip='flansh' AND sm.flansh_olculer_id IS NULL THEN 'BAGSIZ_FLANSH'
+    WHEN sm.tip='malzeme' THEN 'UC_ISLEMI'
+    ELSE 'BAGLI'
+  END AS durum
+FROM spool_malzemeleri sm
+JOIN spooller s ON s.id = sm.spool_id
+WHERE sm.tip IN ('boru','fitting','flansh')
+  AND (sm.boru_olculer_id IS NULL AND sm.fitting_olculer_id IS NULL AND sm.flansh_olculer_id IS NULL)
+ORDER BY sm.tip, sm.dis_cap_mm
+LIMIT 30;
 ```
 
----
+### Debug Yaklaşımı
 
-## 85.B — Migration 059: spool_malzemeleri 4 yeni kolon + CHECK → FK (~10 dk)
+`spool_detay.html` render fonksiyonunda:
+- `geomBagli` hesabı satır 2228-2233 civarı (`!!m.boru_olculer_id` vb.)
+- `!ucIslemiSatiri && (!kaliteStandart || !geomBagli)` koşulu turuncu işaretliyor
+- **Şüphe:** `kaliteStandart = m.kal_kaynak === 'sistem'` — eğer master tablosu join'i tüm satırlar için `kal_kaynak='sistem'` döndürüyorsa, ikinci koşul (`!geomBagli`) yetiyor olmalı...
 
-KARAR-84.5'in DB tarafı (müşteri raw metni saklanır).
+DOM inspect ile gerçek render'a bakılıp `trClasses`'a `malz-standartdisi` ekleniyor mu kontrol edilir.
 
-### Plan
+### Renk Ayrımı (KARAR-85.5)
 
-```sql
-ALTER TABLE spool_malzemeleri
-  ADD COLUMN IF NOT EXISTS uc_a_aciklama TEXT,
-  ADD COLUMN IF NOT EXISTS uc_b_aciklama TEXT,
-  ADD COLUMN IF NOT EXISTS uc_a_std      TEXT,
-  ADD COLUMN IF NOT EXISTS uc_b_std      TEXT;
+Tek `malz-standartdisi` yerine iki ayrı class:
+- `malz-arasolc` — 🟠 turuncu, kütüphaneye bağlı ama sistem-preset değil (tenant-özel ara ölçü)
+- `malz-tanimsiz` — ⚪ gri, kütüphaneye hiç bağlı değil (modal tıklanır)
 
--- Önce mevcut CHECK constraint'i kaldır
-ALTER TABLE spool_malzemeleri DROP CONSTRAINT IF EXISTS spool_malzemeleri_uc_islemi_chk;
-
--- FK ekle (sözlük tablosu zaten 058'de yaratıldı + seed'lendi)
-ALTER TABLE spool_malzemeleri
-  ADD CONSTRAINT spool_malzemeleri_uc_a_fk
-    FOREIGN KEY (uc_a_islemi) REFERENCES uc_islemi_tipleri(kod)
-    ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT spool_malzemeleri_uc_b_fk
-    FOREIGN KEY (uc_b_islemi) REFERENCES uc_islemi_tipleri(kod)
-    ON DELETE SET NULL ON UPDATE CASCADE;
-
-COMMENT ON COLUMN spool_malzemeleri.uc_a_aciklama IS 'Musteri raw metni (orneklerde gelen aciklama)';
-COMMENT ON COLUMN spool_malzemeleri.uc_a_std IS 'Standart override - NULL ise sozlukten varsayilan_std gelir (KARAR-84.5)';
+CSS:
+```css
+tr.malz-arasolc{border-left:3px solid var(--warn);}     /* turuncu */
+tr.malz-tanimsiz{border-left:3px solid var(--txd);cursor:pointer;}  /* gri */
 ```
 
-### Doğrulama
-
-```sql
--- 36 Victaulic kaydı groove_victaulic koduna FK ile baglanmali (zaten oyle)
-SELECT count(*) FROM spool_malzemeleri WHERE uc_a_islemi = 'groove_victaulic';  -- beklenen: 36
--- FK constraint test: gecersiz kod insert edilemez
--- INSERT INTO spool_malzemeleri (..., uc_a_islemi) VALUES (..., 'YOK_OLAN_KOD');
--- ERROR: violates foreign key constraint
-```
-
----
-
-## 85.C — Frontend spool_detay v5 (~30 dk)
-
-Standart sütunu **alt satırlar** ile uç işlemi bilgisi gösterir.
-
-### SELECT cümlesi güncelleme
-
+Render mantığı:
 ```js
-.select('*, spool_malzemeleri(
-  id, tip, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm,
-  agirlik_kg, sertifikali, heat_no,
-  malzeme_ref_id, boru_olculer_id, fitting_olculer_id, flansh_olculer_id,
-  uc_a_islemi, uc_b_islemi, uc_a_aciklama, uc_b_aciklama, uc_a_std, uc_b_std,
-  malzeme_tanimlari(kategori_kod, kalite_kod, kalite_goster, standart, tenant_id),
-  boru_lib:boru_olculer_id(standart, schedule_kod),
-  uc_a_tip:uc_a_islemi(ad_tr, varsayilan_std),
-  uc_b_tip:uc_b_islemi(ad_tr, varsayilan_std)
-), fotograflar(...), belgeler(...), devreler(...)')
-```
-
-### MAP'e yeni alanlar
-
-```js
-uc_a_islemi:    m.uc_a_islemi || null,
-uc_b_islemi:    m.uc_b_islemi || null,
-uc_a_aciklama:  m.uc_a_aciklama || '',
-uc_b_aciklama:  m.uc_b_aciklama || '',
-uc_a_std_eff:   m.uc_a_std || (m.uc_a_tip ? m.uc_a_tip.varsayilan_std : ''),
-uc_b_std_eff:   m.uc_b_std || (m.uc_b_tip ? m.uc_b_tip.varsayilan_std : ''),
-uc_a_ad:        m.uc_a_tip ? m.uc_a_tip.ad_tr : '',
-uc_b_ad:        m.uc_b_tip ? m.uc_b_tip.ad_tr : '',
-```
-
-### TBODY render — Standart hücresinde 3 satırlı yapı
-
-```js
-// Ana satır: boru/fitting/flansh std (mevcut v4 davranisi)
-var ucAlt = '';
-// Uc A: gosterilecek mi? (plain veya null disindaysa)
-if(m.uc_a_islemi && m.uc_a_islemi !== 'plain'){
-  var ucAGoster = m.uc_a_aciklama || m.uc_a_ad;  // raw varsa raw, yoksa ad_tr
-  var ucAStdEk  = m.uc_a_std_eff ? ' <span style="color:var(--txd);">(' + esc(m.uc_a_std_eff) + ')</span>' : '';
-  ucAlt += '<div style="font-size:11px;color:var(--txm);">↳ A: ' + esc(ucAGoster) + ucAStdEk + '</div>';
+if(!ucIslemiSatiri){
+  if(!geomBagli){
+    // Hiç kütüphaneye bağsız — gri, modal tıklanır
+    trClasses.push('malz-tanimsiz');
+    trOnclick = ' onclick="tanimsizModalAc(\\''+esc(m.id)+'\\')"';
+  } else if(/* tenant-özel = master.tenant_id IS NOT NULL */) {
+    // Kütüphaneye bağlı ama sistem-preset değil — turuncu, ara ölçü
+    trClasses.push('malz-arasolc');
+  }
+  // else: mavi (sistem preset, normal)
 }
-// Uc B: aynisi
-if(m.uc_b_islemi && m.uc_b_islemi !== 'plain'){
-  // ...
-}
-// Hucre icerik: ana satir + ucAlt
-stdGoster = stdGoster + ucAlt;
 ```
 
-### Test spool'ları
+**Önemli detay:** `master.tenant_id` kontrolü ile sistem/tenant ayrımı yapılır. 85.C MAP'te `kal_kaynak: master ? (master.tenant_id ? 'firma' : 'sistem') : 'serbest'` zaten var. Yani `kal_kaynak === 'firma'` → turuncu, `kal_kaynak === 'sistem'` → mavi.
 
-- `00d4926d` (S07) — bir borunun uc_a_islemi='groove_victaulic' olmali, alt satirda "Yiv A: Victaulic Yiv (ANSI/AWWA C606)" gorunmeli
-- Migration 057 sonrasi 36 boru groove_victaulic'e set edildi, hepsinde alt satir gorunecek
-- Plain veya null uc'lar alt satir gostermez
+### Çıktı
+
+- `spool_detay.html` v8
+- DB ile UI senkron — kütüphane bağsız satırlar gri, ara ölçüler turuncu, normal sistem-preset satırlar mavi
 
 ---
 
-## 85.D — fitting/flansh Standart sütunu (v6) (~20 dk)
+## 86.B — fitting/flansh için Standart Sütunu (v9, ~20 dk)
 
-84'te kesfedilen sema:
-- `fitting_olculer.geometri_std` (kolon adi farkli, `standart` degil)
-- `flansh_olculer.geometri_std` + `flansh_tipi` + `basinc_sinifi`
+84'te keşfedildi, 85'te boru için yapıldı, fitting/flansh hâlâ `—` görünüyor.
+
+### MK-84.2 Zorunlu — Açılış DB Check
+
+```sql
+-- fitting_olculer + flansh_olculer şema doğrulama
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name IN ('fitting_olculer','flansh_olculer')
+  AND column_name LIKE '%standart%' OR column_name LIKE '%geom%'
+ORDER BY table_name, column_name;
+```
+
+Beklenen: `fitting_olculer.geometri_std`, `flansh_olculer.geometri_std`, `flansh_olculer.flansh_tipi`, `flansh_olculer.basinc_sinifi` (parantezde).
 
 ### SELECT'e nested join
 
 ```js
-fitting_lib:fitting_olculer_id(geometri_std, parca_tipi, class_no),
-flansh_lib:flansh_olculer_id(geometri_std, flansh_tipi, basinc_sinifi)
+// 86.B — fitting/flansh için Standart sütunu
+fitting_lib:fitting_olculer_id(geometri_std,parca_tipi,class_no),
+flansh_lib:flansh_olculer_id(geometri_std,flansh_tipi,basinc_sinifi)
 ```
 
-### MAP'te tip-bagimli geom belirleme
+### MAP'te tip-bağımlı geom belirleme
 
 ```js
-var geom;
-var geom_extra = '';
-if(m.tip === 'boru' && m.boru_lib){
+var geom, geom_extra = '';
+if(tipR === 'boru' && m.boru_lib){
   geom = m.boru_lib.standart;
   geom_extra = m.boru_lib.schedule_kod || '';
-} else if(m.tip === 'fitting' && m.fitting_lib){
+} else if(tipR === 'fitting' && m.fitting_lib){
   geom = m.fitting_lib.geometri_std;
-  geom_extra = m.fitting_lib.parca_tipi || '';
-} else if(m.tip === 'flansh' && m.flansh_lib){
+} else if(tipR === 'flansh' && m.flansh_lib){
   geom = m.flansh_lib.geometri_std;
   geom_extra = (m.flansh_lib.flansh_tipi || '') + ' ' + (m.flansh_lib.basinc_sinifi || '');
-} else {
-  geom = null;
 }
 ```
 
-Bu degisiklik sonrasi 11 flansh + 43 fitting'in de Standart sutunu dolar (varsa).
+### Çıktı
+
+- 43 fitting + 11 flansh satırının Standart hücresi (varsa) dolar
+- M3 Reducer Concentric → `ASME B16.9` (varsa) göstermeli
+- M5 Flange Slip-On → `ASME B16.5 · Class 150` gibi
 
 ---
 
-## 85.E — Tanımsız malzeme öneri akışı DB tarafı (~1 saat)
+## 86.C — Tanımsızlık Frontend Modal (RPC bağlantısı, ~1 saat)
 
-KARAR-84.2'nin DB tarafı.
+KARAR-85.3 implementasyonu. 85.E'de DB altyapısı kuruldu, modal placeholder `tanimsizModalAc` hâlâ `confirm()` ile çalışıyor.
 
-### `tanimsiz_malzeme_onerileri` tablosu
+### Modal Tasarım (Mavi BORU BİLGİSİ ile simetrik)
 
-```sql
-CREATE TABLE tanimsiz_malzeme_onerileri (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  spool_malzeme_id    UUID REFERENCES spool_malzemeleri(id) ON DELETE SET NULL,
-  tip                 TEXT NOT NULL,  -- 'boru' | 'fitting' | 'flansh'
-  ham_data            JSONB NOT NULL, -- {dis_cap, et, kalite, tanim, ...}
-  hash_anahtari       TEXT NOT NULL,  -- normalize edilmis benzersiz tanimlayici
-  kullanici_sebep     TEXT,           -- 'kutuphanede_eksik' | 'standart_disi' | 'veri_hatasi'
-  kullanici_aciklama  TEXT,
-  kullanici_id        UUID REFERENCES kullanicilar(id),
-  siklik_sayisi       INT DEFAULT 1,  -- ayni hash icin tekrar tetiklerse artar
-  durum               TEXT DEFAULT 'bekliyor', -- 'bekliyor'|'onaylandi'|'reddedildi'|'tenant_ozel'
-  super_admin_id      UUID REFERENCES kullanicilar(id),
-  karar_zamani        TIMESTAMPTZ,
-  karar_notu          TEXT,
-  olusturma_at        TIMESTAMPTZ DEFAULT now(),
-  guncelleme_at       TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (tenant_id, hash_anahtari)
-);
-
--- hash_anahtari ornek: 'boru|139.70|4.500|St 37|karbon' (normalize)
--- UNIQUE ile ayni teklif tek satira toplanir, siklik_sayisi artirilir
+```
+┌─────────────────────────────────────────────┐
+│ BORU BİLGİSİ · KÜTÜPHANEYE EKLENMEMIŞ   [X] │
+│ St 37 · DN??? · 139.7×4.5 mm                │
+│                                             │
+│ [Şema yok — kütüphane güncellemesi bekleniyor] │
+│                                             │
+│ Standart        — (kütüphaneye eklenmemiş)  │
+│ Ürün formu      boru                         │
+│ Anma çapı       — (tahmini: DN125, NPS 5")  │
+│ Dış çap         139,7 mm                    │
+│ Et kalınlığı    4,5 mm                      │
+│ Kalite          St 37                        │
+│ Birim ağırlık   — (hesaplanamadı)           │
+│                                             │
+│ ─────────────────────────────────────────── │
+│ NEDEN KÜTÜPHANEDE YOK?                      │
+│ ( ) Standartta var ama eklenmemiş           │
+│ ( ) Standartta yok, özel ölçü               │
+│ ( ) Veri hatalı / eksik                     │
+│                                             │
+│ Açıklama: [_________________________]       │
+│                                             │
+│ [İptal]  [Süper admin onayına gönder]      │
+└─────────────────────────────────────────────┘
 ```
 
-RLS: tenant kendi onerilerini gorur+yazar, super_admin tumunu gorur+karar verir.
+### Tahmini DN Hesabı
 
-### Frontend `tanimsizModalAc` upgrade
+```js
+function tahminiDN(dis_cap_mm){
+  // 139.70 → DN125 (yakın anma çap)
+  // ASME B36.10M tablosundan en yakın DN bulunur
+  var dnTablo = [
+    {dn:15,od:21.3}, {dn:20,od:26.7}, {dn:25,od:33.4},
+    {dn:32,od:42.2}, {dn:40,od:48.3}, {dn:50,od:60.3},
+    {dn:65,od:73.0}, {dn:80,od:88.9}, {dn:100,od:114.3},
+    {dn:125,od:141.3}, {dn:150,od:168.3}, ...
+  ];
+  // En yakın eşleşmeyi bul, fark > 5mm ise "(tahmini değil, ölçü standart dışı)"
+  ...
+}
+```
 
-confirm() placeholder yerine gercek modal:
-- Form: kullanici_sebep dropdown (3 secenek), kullanici_aciklama textarea
-- INSERT veya UPSERT (ayni hash varsa siklik_sayisi += 1)
-- Toast: "Oneri alindi - super admin onayina gonderildi"
+### RPC Call
 
-### `arespipe_hash_anahtari` SQL fonksiyonu
+```js
+async function tanimsizOneriGonder(form){
+  var hash_data = {
+    tip: form.tip,
+    dis_cap_mm: form.dis_cap,
+    et_mm: form.et,
+    kalite: form.kalite,
+    tahmini_dn: form.tahminiDN,
+    tanim: form.tanim,
+    malzeme: form.malzeme
+  };
 
-Tip ve ana ozelliklere gore normalize hash uret (yazim farkliliklarini eler).
+  const { data, error } = await supa.rpc('tanimsiz_kayit_onerisi', {
+    p_tip: form.tip === 'boru' ? 'std_disi' : ...,
+    p_dis_cap_mm: form.dis_cap,
+    p_et_mm: form.et,
+    p_kalite: form.kalite,
+    p_ham_data: hash_data,
+    p_tenant_id: AresStore.tenantId,
+    p_user_id: AresStore.userId,
+    p_spool_malzeme_id: form.malzemeId,
+    p_kullanici_sebep: form.sebep,
+    p_kullanici_aciklama: form.aciklama
+  });
+
+  if(error) toast('Hata: ' + error.message, 'error');
+  else toast('Süper admin onayına gönderildi', 'success');
+}
+```
+
+### Çıktı
+
+- Gri satıra tıklayınca modal açılır
+- Form 3 alanlı (sebep + açıklama + tahmin onayı)
+- "Süper admin onayına gönder" → RPC → `tanimsiz_kayitlar` upsert
+- Aynı kullanıcı tekrar gönderirse → siklik_sayisi += 1
 
 ---
 
-## 85.F — Süper admin paneli `admin/oneriler.html` (~2 saat, ayrı oturum olabilir)
+## 86.D — Süper Admin Paneli `admin/oneriler.html` (~2 saat, ayrı oturum)
 
-KARAR-84.2'nin UI tarafı.
+KARAR-85.4 + KARAR-85.6 + KARAR-85.7 implementasyonu.
 
-### Yapı
+### Sayfa Yapısı
 
 - Sidebar'a "Öneriler" linki (super_admin only)
 - Üst: 4 metric kart (Bekleyen / Bu Hafta Gelen / Toplam Onaylanan / Reddedilen)
 - Filtre çubuğu: Durum / Tip / Tenant / Sıklık
 - Tablo:
-  - Sıklık rozeti (kaç tenant'tan / kaç spool'da)
+  - **Sağ tarafta kırmızı rozet ile `siklik_sayisi`** (KARAR-85.7)
   - Ham veri özeti (tip, dis_cap, et, kalite, tanim)
-  - Kullanıcı sebebi
+  - Kullanıcı sebebi + açıklama
   - 3 buton: **Sisteme Ekle** | **Tenant-Özel Onayla** | **Reddet**
-- Detay popup: tam ham_data jsonb, ilgili spool linki, kullanıcı bilgisi
+- Detay popup: tam ham_data, ilgili spool linki, kullanıcı bilgisi
 
-### Karar sonrası eylem
+### Karar Sonrası Eylem
 
-- **Sisteme Ekle**: ilgili kütüphane tablosuna INSERT (`sistem_preset=true, tenant_id=NULL`) + tanimsiz_malzeme_onerileri.durum='onaylandi'
-- **Tenant-Özel Onayla**: kütüphaneye INSERT (`sistem_preset=false, tenant_id=öneren tenant`) + durum='tenant_ozel'
-- **Reddet**: durum='reddedildi' + karar_notu zorunlu (kullanıcıya neden gösterilir)
+| Buton | Eylem |
+|---|---|
+| **Sisteme Ekle** | İlgili kütüphane tablosuna INSERT (`sistem_preset=true, tenant_id=NULL`) + `tanimsiz_kayitlar.durum='onaylandi'` + `hedef_tablo` + `hedef_kayit_id` |
+| **Tenant-Özel Onayla** | Kütüphaneye INSERT (`sistem_preset=false, tenant_id=öneren tenant`) + `durum='onaylandi'` |
+| **Reddet** | `durum='reddedildi'` + `karar_notu` zorunlu (kullanıcıya neden gösterilir) |
 
-Tüm üçü için: ilgili `spool_malzemeleri.boru/fitting/flansh_olculer_id` UPDATE (FK kalıcı olur, satır mavi olur, turuncu rozet kalkar).
+Tüm üçü için: ilgili `spool_malzemeleri.{boru,fitting,flansh}_olculer_id` UPDATE (FK kalıcı olur, satır gri'den maviye geçer).
 
----
+### Toplu Tablo Yükleme (KARAR-85.6)
 
-## 85 İçin Hatırlatmalar
-
-- **MK-84.1** — Migration'lar Supabase Studio'da çalıştırıldıktan sonra **aynı oturumda** repo'ya commit edilir. Kapanışta `git status` zorunlu.
-- **MK-84.2** — Yeni nested join eklerken `information_schema.columns` ile şema doğrulanır. 85.D'de fitting/flansh için bu kural kritik.
-- **MK-84.3** — Aggregate sorgu sonuçlarından inference yapmadan önce detay sorgusu çalıştırılır.
-- **MK-84.4** — Uç işlemleri sözlük tablosu + FK ile yönetilir, CHECK enum büyütmek yok.
-- **MK-84.5** — Müşteri raw metni saklanır (`uc_a_aciklama`), arka planda kanonik kodla eşleştirilir.
-- **MK-83.1** İki boyutlu standartlık (KARAR-83.1) — yeni rapor/yayın endpoint'inde bu filtre uygulanmalı
-- **MK-83.4** — Supabase UPDATE sonrası `count(*) FILTER (WHERE fk IS NOT NULL)` ile gerçek etki doğrula
+"Sisteme Ekle" butonunun yanında **"Tabloyu Yükle (Excel)"** ek butonu:
+- Standart adı seçilir (ASME B16.5, DIN 2448, vb.)
+- Excel template indirilir (mevcut KUTUPHANE-YUKLEME-TAKIP.md pattern'i)
+- Satırlar yüklenir, ilgili öneri otomatik bağlanır
 
 ---
 
-## 86+ Genel Yön
+## 86 İçin Hatırlatmalar
 
-- **86** — Public kütüphane sayfası (`arespipe.com/kutuphane`, sistem_preset=true filtresi)
-- **87+** — `parca_etiketleri` + üç-pencere etiketleme UI
-- **88+** — `kutuphane_ogrenme_durumu` materialized view
-- **89+** — İzometri parser KARAR-83.2 uygulaması (Victaulic-türü kayıtlar uç işlemi olarak çıkar)
-- **90+** — `spool_flansh_eslesme` junction DROP
-- **91+** — Diğer uç işlemleri (lazer, threaded varyantları, expanded taper, vb.) sözlüğe eklenecek tipler
-
----
-
-## Bonus İşler (85'te zaman kalırsa)
-
-- Migration 060: uc_a_std back-fill (mevcut 36 groove_victaulic kaydına `uc_a_std='ANSI/AWWA C606'` set et — opsiyonel, sözlük varsayılanı zaten gelir)
-- KUTUPHANE-YUKLEME-TAKIP.md'ye 139.70×4.5 ölçüsü için tenant-özel ekleme örneği (85.F sonrasında ilk gerçek vaka)
-- 60.30×6.3 boş 2 kalemin tanısı (kütüphanede var, 056 neden bağlamadı)
-- 114.30×null boş 1 kalemin tanısı (eksik veri tespiti)
-- `tanimsizModalAc` modal'a "Önce kütüphaneye baktım, gerçekten yokmuş" tipinde otomatik kontrol (sözlük + tolerans)
+- **MK-85.1** — Standart üç kaynaktan biri; kategoriden TÜRETME. Müşteri raw'ı korunur, kanonik eşleştirme yapılır.
+- **MK-85.2** — RLS asla kapalı bırakılmaz. Studio "Run without RLS" durup policy yaz.
+- **MK-85.3** — Migration öncesi `information_schema.columns` ile şema doğrula. 86.B'de zorunlu.
+- **MK-85.4** — Model ile UI simetri kontrolü. UI hilesiyle model hatasını örtme.
+- **MK-84.1** — Push paketi eksiksiz olmalı; kapanışta `git status` zorunlu.
+- **MK-84.5** — Müşteri raw metni saklanır, kanonik kodla eşleştirilir.
 
 ---
 
-## Storage / Test Spool ID'leri
+## 87+ Genel Yön
 
-- `00d4926d-5bcf-472c-96af-0447d9feb045` (S07) — 84.A'da Victaulic migrate edildi, parent boru groove_victaulic almali
-- `01485adf-aead-49b2-9734-00113053223d` (S10) — 84.E test edildi, 5 kalem
-- `9911dc39-f826-4eb9-89aa-cdb40253edb1` — 3 kalem hepsi St 37
-- `88114af4-38bf-4b22-aa75-04c29e80e830` — boru kesit modal DN50 60.3×4.5
-
-85'te 85.C uygulanınca bu spool'larda Standart hücresinin alt satırında uç işlemi bilgisi görünmeli.
+- **87** — Public kütüphane sayfası (`arespipe.com/kutuphane`, KARAR-83.1 + KARAR-85.5 yayın filtresi). 86 kapanınca tetiklenir.
+- **88** — `parca_etiketleri` + üç-pencere etiketleme UI (81 + 82.C)
+- **89** — `kutuphane_ogrenme_durumu` materialized view (81 + 82.D)
+- **90** — İzometri parser ileri uygulama: Victaulic-türü kayıtlar **direkt `tip='malzeme'` olarak parse edilir** (057 reconstruct akışı kalkar, doğrudan doğru taksonomi)
+- **91** — `spool_flansh_eslesme` junction DROP
+- **92+** — Diğer uç işlemleri sözlüğe eklenecek (lazer kesim, expanded taper, dişli flanş)
 
 ---
 
-> 85. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunur. Sonra Cihat'a "85.A migration ile başlayalım mı?" sorusu sorulur (gündem kilitli, açılış sorusu standart).
+## Bonus İşler (86'da zaman kalırsa)
+
+- `mobile/dist/index.html` Vite SPA için ayrı bir CI kontrol kuralı tasarımı (şu an `mobile/` tamamen muaf)
+- KUTUPHANE-YUKLEME-TAKIP.md'ye 86.D toplu tablo yükleme akışı eklenmesi
+- 139.70×4.5 ölçüsü için tenant-özel ekleme örneği (86.D sonrası ilk gerçek vaka)
+- 60.30×6.3 boş 2 kalemin tanısı (kütüphanede var, 056 neden bağlamadı?)
+
+---
+
+## Test Materyali
+
+| Spool ID | Test Konusu |
+|---|---|
+| `46622aea-d732-4b66-9fba-bcadc1d354d2` | **86.A renk semantiği bug** — M2/M3/M4/M5 bağsız |
+| `00d4926d-5bcf-472c-96af-0447d9feb045` | **86.B/C** — yiv satırı + bağsız reducer + flansh karması |
+| `01485adf-aead-49b2-9734-00113053223d` | **86.B** — fitting içeren spool (S10) |
+| `tip='malzeme'` 36 kayıt | **86.C modal** — yiv satırı tıklanmıyor (uç işlemi muaf), ama benzer test |
+
+---
+
+> 86. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SON-OTURUM.md` okunur. Sonra Cihat'a "86.A renk bug ile başlayalım mı?" sorulur (gündem kilitli, açılış sorusu standart).
+>
+> 85, AresPipe taxonomy katmanını gerçekliğe uydurma + tanımsızlık altyapısı kurma oturumuydu. 86 görselleştirme + kullanıcı akışını tamamlar.
