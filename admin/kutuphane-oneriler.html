@@ -106,6 +106,65 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .detay-json{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:10px;color:var(--tx);white-space:pre-wrap;word-break:break-all;max-height:240px;overflow-y:auto;}
 
 .loading{padding:60px;text-align:center;color:var(--txd);font-size:13px;}
+
+/* Aksiyon butonları (Sisteme Ekle / Tenant-Özel / Reddet) */
+.aksiyon-bolum{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px dashed var(--bor);}
+.aksiyon-bolum h4{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin:0 0 6px 0;}
+.aksiyon-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;border:1px solid var(--bor);background:var(--sur);color:var(--tx);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-align:left;}
+.aksiyon-btn:hover{background:var(--sur2);}
+.aksiyon-btn:disabled{opacity:.45;cursor:not-allowed;background:var(--sur);}
+.aksiyon-btn:disabled:hover{background:var(--sur);}
+.aksiyon-btn .ikon{font-size:14px;line-height:1;flex-shrink:0;}
+.aksiyon-btn .alt{display:block;font-size:10px;color:var(--txd);font-weight:400;margin-top:1px;letter-spacing:0;}
+.aksiyon-btn.success{border-color:rgba(22,163,110,.4);color:var(--gr);}
+.aksiyon-btn.success:hover:not(:disabled){background:rgba(22,163,110,.08);border-color:var(--gr);}
+.aksiyon-btn.warn{border-color:rgba(217,119,6,.4);color:var(--warn);}
+.aksiyon-btn.warn:hover:not(:disabled){background:rgba(217,119,6,.08);border-color:var(--warn);}
+.aksiyon-btn.danger{border-color:rgba(229,62,62,.4);color:var(--re);}
+.aksiyon-btn.danger:hover:not(:disabled){background:rgba(229,62,62,.08);border-color:var(--re);}
+
+/* Modal */
+.mod-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+.mod-ov.acik{display:flex;}
+.mod-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;border-left:4px solid var(--ac);}
+.mod-card.theme-red{border-left-color:var(--re);}
+.mod-card.theme-warn{border-left-color:var(--warn);}
+.mod-card.theme-success{border-left-color:var(--gr);}
+.mod-head{padding:14px 18px;border-bottom:1px solid var(--bor);}
+.mod-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--tx);}
+.mod-sub{font-size:12px;color:var(--txd);margin-top:2px;}
+.mod-body{flex:1;overflow-y:auto;padding:14px 18px;}
+.mod-foot{padding:12px 18px;border-top:1px solid var(--bor);display:flex;justify-content:flex-end;gap:8px;}
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mod-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.mod-row.full{grid-column:1 / -1;}
+.mod-row label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.mod-row label .req{color:var(--re);}
+.mod-row input, .mod-row select, .mod-row textarea{background:var(--sur2);border:1px solid var(--bor);border-radius:7px;padding:7px 10px;color:var(--tx);font-family:'Barlow',sans-serif;font-size:13px;outline:none;}
+.mod-row input:focus, .mod-row select:focus, .mod-row textarea:focus{border-color:var(--ac);}
+.mod-row input[readonly]{background:var(--sur);color:var(--txm);}
+.mod-row .hint{font-size:10px;color:var(--txd);font-style:italic;}
+.mod-row textarea{min-height:80px;resize:vertical;}
+.mod-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--bor);background:var(--sur);color:var(--tx);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.mod-btn:hover{background:var(--sur2);}
+.mod-btn.primary{background:var(--ac);color:#fff;border-color:var(--ac);}
+.mod-btn.primary:hover{background:var(--ac2);}
+.mod-btn.success{background:var(--gr);color:#fff;border-color:var(--gr);}
+.mod-btn.success:hover{filter:brightness(0.92);}
+.mod-btn.danger{background:var(--re);color:#fff;border-color:var(--re);}
+.mod-btn.danger:hover{filter:brightness(0.92);}
+.mod-btn:disabled{opacity:.5;cursor:not-allowed;}
+.mod-hata{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);color:var(--re);padding:8px 12px;border-radius:7px;font-size:12px;margin-bottom:10px;}
+
+/* Toast */
+.toast-konteyner{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--gr);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx);min-width:240px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:toast-in .25s ease;}
+.toast.hata{border-left-color:var(--re);}
+.toast.bilgi{border-left-color:var(--ac);}
+.toast-ikon{font-size:14px;}
+@keyframes toast-in{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+.toast.cikar{animation:toast-out .25s ease forwards;}
+@keyframes toast-out{to{opacity:0;transform:translateX(20px);}}
 </style>
 </head>
 <body>
@@ -187,6 +246,116 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
       </aside>
     </div>
   </main>
+</div>
+
+<!-- Toast konteyneri -->
+<div class="toast-konteyner" id="toastKonteyner"></div>
+
+<!-- Red modal -->
+<div class="mod-ov" id="redMod">
+  <div class="mod-card theme-red">
+    <div class="mod-head">
+      <div class="mod-title">Öneriyi Reddet</div>
+      <div class="mod-sub">Bu kayıt kütüphaneye alınmayacak. Karar notu zorunlu.</div>
+    </div>
+    <div class="mod-body">
+      <div id="redHata"></div>
+      <div class="mod-row full">
+        <label for="redNot">Karar notu <span class="req">*</span></label>
+        <textarea id="redNot" placeholder="Neden reddediliyor? (örn. ölçü hatalı, mükerrer, sahada kullanılmıyor)"></textarea>
+      </div>
+    </div>
+    <div class="mod-foot">
+      <button class="mod-btn" onclick="redKapat()">Vazgeç</button>
+      <button class="mod-btn danger" id="redGonderBtn" onclick="redGonder()">Reddet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Boru onay modal -->
+<div class="mod-ov" id="boruMod">
+  <div class="mod-card" id="boruModCard">
+    <div class="mod-head">
+      <div class="mod-title" id="boruModTitle">Boru — Sisteme Ekle</div>
+      <div class="mod-sub" id="boruModSub">Sistem preset (tüm tenant'lar görür). Eksik alanları doldur.</div>
+    </div>
+    <div class="mod-body">
+      <div id="boruHata"></div>
+      <div class="mod-grid">
+        <div class="mod-row">
+          <label>Standart <span class="req">*</span></label>
+          <input type="text" id="bF_standart" placeholder="DIN 17175, ASME B36.10M, EN 10216-2 vb." />
+        </div>
+        <div class="mod-row">
+          <label>Malzeme grubu <span class="req">*</span></label>
+          <select id="bF_malzeme_grubu">
+            <option value="karbon">karbon</option>
+            <option value="paslanmaz">paslanmaz</option>
+            <option value="dupleks">dupleks</option>
+            <option value="cuni">cuni</option>
+            <option value="aluminyum">aluminyum</option>
+            <option value="alasimli">alasimli</option>
+            <option value="nikel_alasim">nikel_alasim</option>
+          </select>
+        </div>
+        <div class="mod-row">
+          <label>DN <span class="req">*</span></label>
+          <input type="number" id="bF_dn" placeholder="125" min="6" max="2000" />
+        </div>
+        <div class="mod-row">
+          <label>Ürün formu <span class="req">*</span></label>
+          <select id="bF_urun_formu">
+            <option value="seamless">seamless (dikişsiz)</option>
+            <option value="welded">welded (kaynaklı)</option>
+            <option value="erw">erw</option>
+            <option value="lsaw">lsaw</option>
+            <option value="hsaw">hsaw</option>
+          </select>
+        </div>
+        <div class="mod-row">
+          <label>Schedule tipi <span class="req">*</span></label>
+          <select id="bF_schedule_tipi">
+            <option value="sch">SCH (ASME B36.10)</option>
+            <option value="sch_s">SCH-S (paslanmaz, B36.19)</option>
+            <option value="din">DIN (et cinsinden)</option>
+            <option value="en">EN (et cinsinden)</option>
+            <option value="ozel">özel</option>
+          </select>
+        </div>
+        <div class="mod-row">
+          <label>Schedule değer <span class="req">*</span></label>
+          <input type="text" id="bF_schedule_deger" placeholder="40, 80, XS, STD, 4.5" />
+        </div>
+        <div class="mod-row full">
+          <label>Schedule kod (gösterim) <span class="req">*</span></label>
+          <input type="text" id="bF_schedule_kod" placeholder="SCH40, SCH80, DIN 4.5 mm" />
+        </div>
+        <div class="mod-row">
+          <label>Dış çap (mm) <span class="req">*</span></label>
+          <input type="number" step="0.001" id="bF_dis_cap_mm" readonly />
+          <span class="hint">öneriden — değiştirilemez</span>
+        </div>
+        <div class="mod-row">
+          <label>Et (mm) <span class="req">*</span></label>
+          <input type="number" step="0.001" id="bF_et_mm" readonly />
+          <span class="hint">öneriden — değiştirilemez</span>
+        </div>
+        <div class="mod-row full">
+          <label>Ağırlık (kg/m) <span class="req">*</span></label>
+          <input type="number" step="0.001" id="bF_agirlik_kg_m" placeholder="hesapla butonuna bas" />
+          <span class="hint">Formül: π × (D − t) × t × ρ × 10⁻³ &nbsp;&nbsp; <button type="button" class="mod-btn" style="padding:3px 8px;font-size:11px;margin-top:4px;" onclick="agirlikHesapla()">↻ Hesapla</button></span>
+        </div>
+        <div class="mod-row full">
+          <label>Notlar (opsiyonel)</label>
+          <textarea id="bF_notlar" placeholder="Ek bilgi (kaynak, edisyon, vs.)" style="min-height:50px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="mod-foot">
+      <button class="mod-btn" onclick="boruKapat()">Vazgeç</button>
+      <button class="mod-btn success" id="boruGonderBtn" onclick="boruGonder()">Onayla &amp; Kütüphaneye Ekle</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -420,14 +589,237 @@ function kayitSec(id){
   // Bolum 5: Ham JSON (debug)
   html += '<div class="detay-bolum"><h4>Ham Veri (JSON)</h4><pre class="detay-json">' + esc(JSON.stringify(hd, null, 2)) + '</pre></div>';
 
-  // Phase 2 placeholder
-  html += '<div class="detay-bolum" style="border-top:1px dashed var(--bor);padding-top:14px;">'
-    + '<div style="font-size:12px;color:var(--txd);font-style:italic;">Onay/Red butonları 87. oturumda eklenecek.</div>'
-    + '</div>';
+  // Bolum 6: Aksiyon butonlari (87.C)
+  html += aksiyonButonlariHTML(r);
 
   html += '</div>'; // detay-body
   card.innerHTML = html;
 }
+
+// ════════════════════════════════════════════════════════════════════
+// 87.C — Aksiyon butonları + Red modal + Boru onay modal
+// ════════════════════════════════════════════════════════════════════
+
+// Malzeme yoğunlukları (KARAR-86.4) — agirlik_kg_m hesabı için
+var YOGUNLUK = {
+  karbon: 7850, paslanmaz: 7950, dupleks: 7850,
+  cuni: 8900, aluminyum: 2700, alasimli: 7850, nikel_alasim: 8900
+};
+
+// Şu an seçili öneri (modal context için)
+var SECILI_ONERI = null;
+
+function aksiyonButonlariHTML(r){
+  var hdTip = (r.ham_data && r.ham_data.tip) ? r.ham_data.tip : '';
+  var karari_var = (r.durum === 'onaylandi' || r.durum === 'reddedildi');
+  var html = '<div class="aksiyon-bolum"><h4>Karar</h4>';
+
+  if(karari_var){
+    var rozet = r.durum === 'onaylandi' ? '✓ Onaylandı' : '✗ Reddedildi';
+    var renk  = r.durum === 'onaylandi' ? 'var(--gr)' : 'var(--re)';
+    html += '<div style="font-size:13px;color:' + renk + ';font-weight:700;">' + rozet + '</div>';
+    if(r.karar_notu) html += '<div style="font-size:11px;color:var(--txd);margin-top:4px;font-style:italic;">"' + esc(r.karar_notu) + '"</div>';
+    html += '</div>';
+    return html;
+  }
+
+  if(hdTip === 'boru'){
+    html += '<button class="aksiyon-btn success" onclick="boruAc(\'' + esc(r.id) + '\', \'sistem\')">'
+         +   '<span class="ikon">✓</span><div><div>Sisteme Ekle</div>'
+         +     '<span class="alt">sistem preset · tüm tenantlar görür</span></div></button>';
+    html += '<button class="aksiyon-btn warn" onclick="boruAc(\'' + esc(r.id) + '\', \'tenant\')">'
+         +   '<span class="ikon">★</span><div><div>Tenant-Özel Onayla</div>'
+         +     '<span class="alt">sadece öneren tenant görür</span></div></button>';
+  } else {
+    html += '<button class="aksiyon-btn" disabled>'
+         +   '<span class="ikon">⏳</span><div><div>Onay akışı yakında</div>'
+         +     '<span class="alt">tip: ' + esc(hdTip || '?') + ' · sadece boru için aktif</span></div></button>';
+  }
+  html += '<button class="aksiyon-btn danger" onclick="redAc(\'' + esc(r.id) + '\')">'
+       +   '<span class="ikon">✗</span><div><div>Reddet</div>'
+       +     '<span class="alt">kayıt kütüphaneye alınmaz</span></div></button>';
+  html += '</div>';
+  return html;
+}
+
+// ─── Red modal ──────────────────────────────────────────────────────
+function redAc(oneriId){
+  SECILI_ONERI = KAYITLAR.find(function(k){ return k.id === oneriId; });
+  if(!SECILI_ONERI) return;
+  document.getElementById('redNot').value = '';
+  document.getElementById('redHata').innerHTML = '';
+  document.getElementById('redMod').classList.add('acik');
+  setTimeout(function(){ document.getElementById('redNot').focus(); }, 50);
+}
+function redKapat(){ document.getElementById('redMod').classList.remove('acik'); }
+async function redGonder(){
+  if(!SECILI_ONERI) return;
+  var btn = document.getElementById('redGonderBtn');
+  var hataEl = document.getElementById('redHata');
+  var not = document.getElementById('redNot').value.trim();
+  hataEl.innerHTML = '';
+  if(!not){
+    hataEl.innerHTML = '<div class="mod-hata">Karar notu boş olamaz.</div>';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Gönderiliyor…';
+  try {
+    var r = await SUPA.rpc('oneri_reddet', { p_oneri_id: SECILI_ONERI.id, p_karar_notu: not });
+    if(r.error) throw new Error(r.error.message || 'RPC hata');
+    toast('Öneri reddedildi', '✗', 'bilgi');
+    redKapat();
+    await istatistikYukle();
+    await listeYukle();
+    document.getElementById('detayCard').className = 'detay-card empty';
+    document.getElementById('detayCard').innerHTML = '<div style="font-size:14px;color:var(--txm);">Detay için bir kayıt seç</div>';
+  } catch(e){
+    hataEl.innerHTML = '<div class="mod-hata">' + esc(e.message || 'Hata') + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Reddet';
+  }
+}
+
+// ─── Boru onay modal ────────────────────────────────────────────────
+var BORU_MOD_MOD = 'sistem'; // 'sistem' veya 'tenant'
+
+function boruAc(oneriId, mod){
+  SECILI_ONERI = KAYITLAR.find(function(k){ return k.id === oneriId; });
+  if(!SECILI_ONERI) return;
+  BORU_MOD_MOD = mod;
+  var hd = SECILI_ONERI.ham_data || {};
+  var kd = hd.kullanici_doldurdu || {};
+
+  // Başlık + tema
+  var card = document.getElementById('boruModCard');
+  var title = document.getElementById('boruModTitle');
+  var sub   = document.getElementById('boruModSub');
+  if(mod === 'sistem'){
+    card.className = 'mod-card theme-success';
+    title.textContent = 'Boru — Sisteme Ekle';
+    sub.textContent = 'Sistem preset (tüm tenant\'lar görür). Eksik alanları doldur.';
+  } else {
+    card.className = 'mod-card theme-warn';
+    title.textContent = 'Boru — Tenant-Özel Onayla';
+    sub.textContent = 'Sadece öneren tenant\'ın kütüphanesine eklenir. Eksik alanları doldur.';
+  }
+
+  // Form pre-fill
+  document.getElementById('bF_standart').value     = kd.standart || hd.standart || '';
+  document.getElementById('bF_dn').value           = kd.dn || hd.tahmini_dn || '';
+  document.getElementById('bF_dis_cap_mm').value   = hd.dis_cap_mm != null ? hd.dis_cap_mm : '';
+  document.getElementById('bF_et_mm').value        = hd.et_mm != null ? hd.et_mm : '';
+  document.getElementById('bF_schedule_tipi').value  = 'sch';
+  document.getElementById('bF_schedule_deger').value = '';
+  document.getElementById('bF_schedule_kod').value   = '';
+  document.getElementById('bF_urun_formu').value     = 'seamless';
+  document.getElementById('bF_agirlik_kg_m').value   = '';
+  document.getElementById('bF_notlar').value         = '';
+
+  // Malzeme grubu — kalite tahmini
+  var kalite = (hd.kalite || '').toLowerCase();
+  var mg = 'karbon';
+  if(/(316|304|321|347)/.test(kalite)) mg = 'paslanmaz';
+  else if(/(2205|2507|s32)/.test(kalite)) mg = 'dupleks';
+  else if(/(cuni|c70|c71)/.test(kalite)) mg = 'cuni';
+  else if(/(al\b|5083|6061)/.test(kalite)) mg = 'aluminyum';
+  document.getElementById('bF_malzeme_grubu').value = mg;
+
+  document.getElementById('boruHata').innerHTML = '';
+  document.getElementById('boruMod').classList.add('acik');
+  // Otomatik bir kez hesapla
+  setTimeout(agirlikHesapla, 100);
+}
+function boruKapat(){ document.getElementById('boruMod').classList.remove('acik'); }
+
+function agirlikHesapla(){
+  var D = parseFloat(document.getElementById('bF_dis_cap_mm').value);
+  var t = parseFloat(document.getElementById('bF_et_mm').value);
+  var mg = document.getElementById('bF_malzeme_grubu').value;
+  var ro = YOGUNLUK[mg];
+  if(!D || !t || !ro){
+    toast('Hesap yapılamadı — dış çap, et veya malzeme grubu eksik', '⚠', 'hata');
+    return;
+  }
+  // Formül: w(kg/m) = π × (D - t) × t × ρ × 10⁻³  (D, t mm; ρ kg/m³)
+  var w = Math.PI * (D - t) * t * ro * 1e-3;
+  document.getElementById('bF_agirlik_kg_m').value = w.toFixed(3);
+}
+
+async function boruGonder(){
+  if(!SECILI_ONERI) return;
+  var btn = document.getElementById('boruGonderBtn');
+  var hataEl = document.getElementById('boruHata');
+  hataEl.innerHTML = '';
+
+  // Form değerleri
+  var form = {
+    standart:        document.getElementById('bF_standart').value.trim(),
+    malzeme_grubu:   document.getElementById('bF_malzeme_grubu').value,
+    dn:              document.getElementById('bF_dn').value,
+    schedule_tipi:   document.getElementById('bF_schedule_tipi').value,
+    schedule_deger:  document.getElementById('bF_schedule_deger').value.trim(),
+    schedule_kod:    document.getElementById('bF_schedule_kod').value.trim(),
+    urun_formu:      document.getElementById('bF_urun_formu').value,
+    dis_cap_mm:      document.getElementById('bF_dis_cap_mm').value,
+    et_mm:           document.getElementById('bF_et_mm').value,
+    agirlik_kg_m:    document.getElementById('bF_agirlik_kg_m').value,
+    notlar:          document.getElementById('bF_notlar').value.trim() || null,
+    kaynak:          'oneri:' + SECILI_ONERI.id.slice(0,8)
+  };
+
+  // Zorunlu alan kontrol
+  var eksik = [];
+  ['standart','malzeme_grubu','dn','schedule_tipi','schedule_deger','schedule_kod',
+   'urun_formu','dis_cap_mm','et_mm','agirlik_kg_m'].forEach(function(k){
+    if(!form[k] || (typeof form[k] === 'string' && form[k].length === 0)) eksik.push(k);
+  });
+  if(eksik.length){
+    hataEl.innerHTML = '<div class="mod-hata">Zorunlu alan eksik: ' + eksik.join(', ') + '</div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Gönderiliyor…';
+  try {
+    var r = await SUPA.rpc('oneri_onayla_boru', {
+      p_oneri_id: SECILI_ONERI.id,
+      p_form: form,
+      p_mod: BORU_MOD_MOD
+    });
+    if(r.error) throw new Error(r.error.message || 'RPC hata');
+    var modAd = BORU_MOD_MOD === 'sistem' ? 'sisteme' : 'tenant\'a';
+    toast('Boru ' + modAd + ' eklendi (yeni id: ' + String(r.data || '').slice(0,8) + '…)', '✓', '');
+    boruKapat();
+    await istatistikYukle();
+    await listeYukle();
+    document.getElementById('detayCard').className = 'detay-card empty';
+    document.getElementById('detayCard').innerHTML = '<div style="font-size:14px;color:var(--txm);">Detay için bir kayıt seç</div>';
+  } catch(e){
+    hataEl.innerHTML = '<div class="mod-hata">' + esc(e.message || 'Hata') + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Onayla & Kütüphaneye Ekle';
+  }
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────
+function toast(metin, ikon, sinif){
+  var k = document.getElementById('toastKonteyner');
+  if(!k) return;
+  var t = document.createElement('div');
+  t.className = 'toast' + (sinif ? ' ' + sinif : '');
+  t.innerHTML = '<span class="toast-ikon">' + esc(ikon || '🔔') + '</span><span>' + esc(metin) + '</span>';
+  k.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('cikar');
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 250);
+  }, 3500);
+}
+
+// Modal overlay'e tıklayınca kapat (içe tıklayınca kapanmasın)
+document.addEventListener('click', function(e){
+  if(e.target && e.target.classList && e.target.classList.contains('mod-ov')){
+    e.target.classList.remove('acik');
+  }
+});
 
 async function cikis(){
   if(SUPA){ try{ await SUPA.auth.signOut(); }catch(e){} }
