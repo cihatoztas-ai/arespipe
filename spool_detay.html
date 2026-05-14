@@ -239,6 +239,11 @@ tr.malz-tiklanabilir td:first-child{padding-left:9px;}
 /* 83. oturum (KARAR-83.1) — Standart-dışı kalite (firma özel veya serbest yazım) turuncu şerit */
 tr.malz-standartdisi{border-left:3px solid var(--warn);}
 tr.malz-standartdisi td:first-child{padding-left:9px;}
+/* 86.A (KARAR-85.5) Renk semantigi ayrimi: turuncu=ara olcu, gri=tanimsiz */
+tr.malz-arasolc{border-left:6px solid var(--warn);background:rgba(217,119,6,0.06);}
+tr.malz-arasolc td:first-child{padding-left:9px;}
+tr.malz-tanimsiz{border-left:6px solid var(--txd);background:rgba(99,112,128,0.07);cursor:pointer;}
+tr.malz-tanimsiz td:first-child{padding-left:9px;}
 .flansh-mod{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:48px 16px;overflow-y:auto;}
 .flansh-mod.show{display:flex;}
 .flansh-mod-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;width:100%;max-width:560px;overflow:hidden;}
@@ -2239,13 +2244,17 @@ function renderMalzeme(){
     //   Kalite kontrolü parent borudan geliyor — yiv satırının kalitesi tekrar
     //   doğrulanmaz (master_id NULL olduğu için kal_kaynak='serbest' yanıltıcı)
     var ucIslemiSatiri = !!(m.uc_a_islemi || m.uc_b_islemi);
-    if(!ucIslemiSatiri && (!kaliteStandart || !geomBagli)){
-      trClasses.push('malz-standartdisi');
-      if(!trTitle){
-        var eksik = [];
-        if(!kaliteStandart) eksik.push('kalite kütüphaneye bağlı değil');
-        if(!geomBagli)      eksik.push('ölçü kütüphaneye bağlı değil');
-        trTitle = ' title="Standart dışı — ' + eksik.join(' · ') + '"';
+    // 86.A (KARAR-85.5) — 3-dalli renk karari:
+    //   geomBagli=false        -> gri (kutuphanede yok, tiklanir -> oneri modal)
+    //   geomBagli=true + !kaliteStandart -> turuncu (ara olcu, tenant-ozel)
+    //   aksi                   -> mavi/normal
+    if(!ucIslemiSatiri){
+      if(!geomBagli){
+        trClasses.push('malz-tanimsiz');
+        if(!trTitle) trTitle = ' title="Kütüphanede yok — eklemek için tıkla"';
+      } else if(!kaliteStandart){
+        trClasses.push('malz-arasolc');
+        if(!trTitle) trTitle = ' title="Ara ölçü — kalite kütüphaneye bağlı değil"';
       }
     }
     // 84. oturum (84.E v4) — Standart sütunu içeriği
@@ -2289,11 +2298,11 @@ function renderMalzeme(){
     // Mevcut boru/flansh modal yoksa, tanimsizModalAc placeholder bağlanır.
     // Tam tanımsızlık akışı (DB tablosu + süper admin sayfası) 85+'a.
     var trAttrs;
-    if((trClasses.indexOf('malz-standartdisi') >= 0) && !trOnclick){
-      trClasses.push('malz-tiklanabilir');
+    // 86.A — Sadece tanimsiz (gri) satir tiklanir; arasolc (turuncu) mavi modaldan onclick alir
+    if((trClasses.indexOf('malz-tanimsiz') >= 0) && !trOnclick){
       trOnclick = ' onclick="tanimsizModalAc(\''+esc(m.id)+'\')"';
       if(!trTitle){
-        trTitle = ' title="Standart dışı — kütüphaneye eklemek için tıkla"';
+        trTitle = ' title="Kütüphanede yok — eklemek için tıkla"';
       }
     }
     trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
