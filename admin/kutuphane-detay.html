@@ -195,12 +195,12 @@ var MG_AD = {
 // Fitting/flanş için ileride genişletilecek (90+ oturumlar).
 var TABLO_KONFIG = {
   boru_olculer: {
-    siralama: [{ kol:'dn', yon:'asc' }, { kol:'sch_kod', yon:'asc' }],
+    siralama: [{ kol:'dn', yon:'asc' }, { kol:'schedule_kod', yon:'asc' }],
     kolonlar: [
       { kol:'nps_inch',     ad:'NPS',    tip:'nps_pill' },
       { kol:'dn',           ad:'DN',     tip:'sayi', birim:'mm', ondalik:0 },
       { kol:'dis_cap_mm',   ad:'OD',     tip:'sayi', birim:'mm', ondalik:1 },
-      { kol:'sch_kod',      ad:'Sch',    tip:'kod' },
+      { kol:'schedule_kod',      ad:'Sch',    tip:'kod' },
       { kol:'et_mm',        ad:'Et',     tip:'sayi', birim:'mm', ondalik:2 },
       { kol:'ic_cap_mm',    ad:'İç çap', tip:'sayi', birim:'mm', ondalik:2 },
       { kol:'agirlik_kg_m', ad:'kg/m',   tip:'sayi', ondalik:2 },
@@ -212,7 +212,7 @@ var TABLO_KONFIG = {
       { kol:'dis_cap_mm',   harf:'OD',   ad:'Dış çap',           birim:'mm', ondalik:2 },
       { kol:'ic_cap_mm',    harf:'ID',   ad:'İç çap',            birim:'mm', ondalik:2 },
       { kol:'et_mm',        harf:'et',   ad:'Et kalınlığı',      birim:'mm', ondalik:2 },
-      { kol:'sch_kod',      harf:'Sch',  ad:'Schedule' },
+      { kol:'schedule_kod',      harf:'Sch',  ad:'Schedule' },
       { kol:'agirlik_kg_m', harf:'kg/m', ad:'Birim ağırlık',     ondalik:2 },
       { kol:'yuzey_m2_m',   harf:'m²/m', ad:'Yüzey alanı',       ondalik:3 }
     ],
@@ -543,7 +543,7 @@ function satirTiklamasiBagla(){
       var od = parseFloat(degerler.dis_cap_mm || 0);
       var et = parseFloat(degerler.et_mm || 0);
       var id = degerler.ic_cap_mm ? parseFloat(degerler.ic_cap_mm) : (od - 2*et);
-      var sch = degerler.sch_kod || '—';
+      var sch = degerler.schedule_kod || '—';
       var nps = degerler.nps_inch || '';
 
       var elOd = T('svgOd'); if (elOd) elOd.textContent = (od ? od.toFixed(1) : '—') + ' mm';
