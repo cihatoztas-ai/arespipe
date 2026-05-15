@@ -1,31 +1,35 @@
 {
-  "tarih": "2026-05-15T11:36:21.778Z",
-  "commit_sha": "7832cafba3c75db729d9ba2d94be854cde4f5dfc",
+  "tarih": "2026-05-15T12:13:48.476Z",
+  "commit_sha": "078fa9d890f64e059d3ae780c884908cdc3e30f8",
   "commit_ref": "main",
-  "workflow_run": 844,
+  "workflow_run": 845,
   "ozet": {
     "hata": 0,
-    "uyari": 38,
+    "uyari": 34,
     "taranan_dosya": 107,
-    "sorunlu_dosya": 4,
+    "sorunlu_dosya": 3,
     "durum": "sari"
   },
   "kurallar": {
-    "I18N_EKSIK": {
+    "G03_HAM_YUZEY": {
       "tip": "uyari",
-      "mesaj": "tv('ko_hata_yukleme') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 37,
+      "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
       "dosyalar": [
         {
-          "dosya": "admin/kutuphane-oneriler.html",
-          "sayi": 4,
+          "dosya": "devre_detay.html",
+          "sayi": 1,
           "satirlar": [
-            230,
-            240,
-            288,
-            302
+            1467
           ]
-        },
+        }
+      ]
+    },
+    "I18N_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 33,
+      "dosyalar": [
         {
           "dosya": "devre_detay.html",
           "sayi": 6,
@@ -77,54 +81,9 @@
           ]
         }
       ]
-    },
-    "G03_HAM_YUZEY": {
-      "tip": "uyari",
-      "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "devre_detay.html",
-          "sayi": 1,
-          "satirlar": [
-            1467
-          ]
-        }
-      ]
     }
   },
   "dosyalar": [
-    {
-      "dosya": "admin/kutuphane-oneriler.html",
-      "hata_sayisi": 0,
-      "uyari_sayisi": 4,
-      "hatalar": [
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 230,
-          "mesaj": "tv('ko_hata_yukleme') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 240,
-          "mesaj": "tv('ko_hata_beklenmeyen') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 288,
-          "mesaj": "tv('ko_btn_detay') kullanılıyor ama lang/tr.json'da yok"
-        },
-        {
-          "kod": "I18N_EKSIK",
-          "tip": "uyari",
-          "satir": 302,
-          "mesaj": "tv('ko_detay_tba') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
     {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
