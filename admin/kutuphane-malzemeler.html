@@ -170,7 +170,7 @@ var TABLO_KONFIG = {
     ad: 'Boru Ölçüleri',
     kod: 'boru_olculer',
     aciklama: 'Çıplak boru kesit ölçüleri · malzeme grubu bazında standartlar',
-    malzeme_grubu_kolonu: 'malzeme_grubu_kod',
+    malzeme_grubu_kolonu: 'malzeme_grubu',
     gruplar: [
       { kod:'karbon',     ad:'Karbon çelik',   ikon:'⚫', aciklama:'A106 · A53 · A179 · ST 37 · ST 52 · P195/P235/P265 grade\'leri' },
       { kod:'paslanmaz',  ad:'Paslanmaz çelik',ikon:'⚪', aciklama:'A312 TP304/TP316/TP316L · EN X5CrNi · paslanmaz tüm sınıflar' },
@@ -185,7 +185,7 @@ var TABLO_KONFIG = {
     ad: 'Fitting Ölçüleri',
     kod: 'fitting_olculer',
     aciklama: 'Dirsek · tee · redüksiyon · cap · stub end ölçüleri',
-    malzeme_grubu_kolonu: 'malzeme_grubu_kod',
+    malzeme_grubu_kolonu: 'malzeme_grubu',
     gruplar: [
       { kod:'karbon',     ad:'Karbon çelik',   ikon:'⚫', aciklama:'A234 WPB · A420 WPL6 · butt-weld ve socket fittings' },
       { kod:'paslanmaz',  ad:'Paslanmaz çelik',ikon:'⚪', aciklama:'A403 WP304/WP316/WP316L · paslanmaz fittings' },
@@ -200,7 +200,7 @@ var TABLO_KONFIG = {
     ad: 'Flanş Ölçüleri',
     kod: 'flansh_olculer',
     aciklama: 'WN · SO · BL · LJ · SW · TH flanş ölçüleri',
-    malzeme_grubu_kolonu: 'malzeme_grubu_kod',
+    malzeme_grubu_kolonu: 'malzeme_grubu',
     gruplar: [
       { kod:'karbon',     ad:'Karbon çelik',   ikon:'⚫', aciklama:'A105 · A350 LF2 · A694 · flanş tüm tipler' },
       { kod:'paslanmaz',  ad:'Paslanmaz çelik',ikon:'⚪', aciklama:'A182 F304/F316/F316L · paslanmaz flanşlar' },
@@ -257,7 +257,7 @@ async function gruplariSay(){
           sonuc[g.kod] = { durum:'yok' };
         } else {
           // Kolon yok hatası — schema henüz hazır değil, 0 say
-          if (/malzeme_grubu_kod|column.*does not exist/i.test(r.error.message || '')) {
+          if (/malzeme_grubu|column.*does not exist/i.test(r.error.message || '')) {
             sonuc[g.kod] = { durum:'ok', sayi:0, kolon_yok:true };
           } else {
             sonuc[g.kod] = { durum:'hata', mesaj:r.error.message };

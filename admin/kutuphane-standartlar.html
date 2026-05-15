@@ -176,7 +176,7 @@ var TABLO_AD = {
 };
 
 var MG_AD = {
-  karbon:'Karbon çelik', paslanmaz:'Paslanmaz çelik', cuni:'CuNi',
+  karbon:'Karbon çelik', paslanmaz:'Paslanmaz çelik', cunife:'CuNi',
   duplex:'Duplex', alasimli:'Alaşımlı', aluminyum:'Alüminyum', nikel:'Nikel alaşım'
 };
 
@@ -195,7 +195,7 @@ var STANDART_KATALOG = {
       { kod:'ASTM A312',    ad:'ASTM A312',    aciklama:'Paslanmaz çelik dikişsiz/kaynaklı boru · TP304/TP316/TP316L', hedef_olcu:25 },
       { kod:'EN 10216-5',   ad:'EN 10216-5',   aciklama:'Paslanmaz çelik dikişsiz boru · DIN/EN · X5CrNi grade\'leri', hedef_olcu:20 }
     ],
-    cuni: [
+    cunife: [
       { kod:'ASTM B466',    ad:'ASTM B466',    aciklama:'CuNi alaşım dikişsiz boru · 90/10 · 70/30 · deniz suyu hatları', hedef_olcu:15 },
       { kod:'DIN 86019',    ad:'DIN 86019 (CuNi)', aciklama:'Gemi CuNi boru · deniz suyu sistemleri için ana standart', hedef_olcu:18 },
       { kod:'EEMUA 234',    ad:'EEMUA 234',    aciklama:'İngiliz CuNi standardı · ofshore/marine uygulamalar', hedef_olcu:10 }
@@ -217,7 +217,7 @@ var STANDART_KATALOG = {
       { kod:'ASME B16.9',   ad:'ASME B16.9 (SS)',  aciklama:'Paslanmaz butt-weld fittings · A403 WP304/WP316/WP316L', hedef_olcu:80 },
       { kod:'ASME B16.11',  ad:'ASME B16.11 (SS)', aciklama:'Paslanmaz socket-weld ve threaded fittings · A182', hedef_olcu:40 }
     ],
-    cuni: [
+    cunife: [
       { kod:'ASTM B466 (Ftg)', ad:'ASTM B466 fittings', aciklama:'CuNi fittings · deniz suyu hatları', hedef_olcu:25 },
       { kod:'DIN 86089 (CuNi)',ad:'DIN 86089 (CuNi)',  aciklama:'Gemi CuNi fittings', hedef_olcu:18 }
     ],
@@ -238,7 +238,7 @@ var STANDART_KATALOG = {
       { kod:'ASME B16.5 (SS)', ad:'ASME B16.5 (SS)', aciklama:'Paslanmaz flanşlar · F304/F316/F316L · Class 150-2500', hedef_olcu:200 },
       { kod:'EN 1092-1 (SS)',  ad:'EN 1092-1 (SS)',  aciklama:'Avrupa paslanmaz flanşlar · DIN/EN', hedef_olcu:80 }
     ],
-    cuni: [
+    cunife: [
       { kod:'ASTM B467',    ad:'ASTM B467',    aciklama:'CuNi flanşlar · B16.5 boyutlarında · deniz suyu hatları', hedef_olcu:40 },
       { kod:'DIN 86087/88 (CuNi)', ad:'DIN 86087/88 (CuNi)', aciklama:'Gemi CuNi flanşlar PN20/PN40', hedef_olcu:30 }
     ],
@@ -265,6 +265,32 @@ var _supaProxy = new Proxy({}, {
   }
 });
 
+// ── Standart kod normalize (DB <-> KATALOG format birleştirici) ──
+// DB: 'ASME-B36.10M' / 'EN-10216-1' · KATALOG: 'ASME B36.10M' / 'EN 10216'
+// Boşluk, tire, alt-çizgi ve nokta atılır, büyük harfe çevrilir.
+function normStd(s){
+  if (!s) return '';
+  return String(s).toUpperCase().replace(/[\s\-_.]+/g,'');
+}
+// DB anahtarlarını hem orijinal hem normalize key ile döndür
+function normalizeDagilim(dag){
+  var out = {};
+  Object.keys(dag).forEach(function(k){
+    out[k] = dag[k];
+    out[normStd(k)] = dag[k];
+  });
+  return out;
+}
+// KATALOG kodu verilince DB'deki gerçek anahtarı bul (link URL'i için)
+function dbAnahtariBul(katKod, dag){
+  var n = normStd(katKod);
+  var keys = Object.keys(dag);
+  for (var i=0; i<keys.length; i++){
+    if (normStd(keys[i]) === n) return keys[i];
+  }
+  return katKod;
+}
+
 // ── Helpers ───────────────────────────────────────────────
 function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
 function T(id){ return document.getElementById(id); }
@@ -283,7 +309,7 @@ async function standartlariSay(){
   try {
     var r = await _supaProxy.from(TABLO)
       .select('standart')
-      .eq('malzeme_grubu_kod', MG)
+      .eq('malzeme_grubu', MG)
       .limit(5000);
 
     if (r && r.error) {
@@ -294,7 +320,7 @@ async function standartlariSay(){
         sonuc.durum = 'tablo_yok';
         return sonuc;
       }
-      if (/malzeme_grubu_kod|standart|column.*does not exist/i.test(msg)) {
+      if (/malzeme_grubu|standart|column.*does not exist/i.test(msg)) {
         // Kolon eksik — sayfa çalışsın, sayılar 0 olsun
         sonuc.durum = 'kolon_yok';
         return sonuc;
@@ -347,7 +373,7 @@ function ciz(sayim){
   if (sayim.durum === 'tablo_yok') {
     sysUyari = '<div class="uyari" style="margin-bottom:18px;">⚠ <code>' + esc(TABLO) + '</code> tablosu henüz oluşturulmamış. Hedef standartlar gösteriliyor ama tümü 0 ölçüyle.</div>';
   } else if (sayim.durum === 'kolon_yok') {
-    sysUyari = '<div class="uyari" style="margin-bottom:18px;">⚠ <code>malzeme_grubu_kod</code> kolonu DB\'de eksik. Hedef standartlar gösteriliyor ama tümü 0 ölçüyle. Migration sonrası gerçek sayılar görünecek.</div>';
+    sysUyari = '<div class="uyari" style="margin-bottom:18px;">⚠ <code>malzeme_grubu</code> kolonu DB\'de eksik. Hedef standartlar gösteriliyor ama tümü 0 ölçüyle. Migration sonrası gerçek sayılar görünecek.</div>';
   } else if (sayim.durum === 'hata') {
     sysUyari = '<div class="uyari" style="margin-bottom:18px;">⚠ DB hatası: ' + esc(sayim.mesaj || '') + '</div>';
   }
@@ -355,7 +381,7 @@ function ciz(sayim){
   // Sayfa başlığı + özet
   var dag = sayim.standart_dagilim || {};
   var toplamMevcut = 0;
-  hedefler.forEach(function(h){ toplamMevcut += (dag[h.kod] || 0); });
+  hedefler.forEach(function(h){ toplamMevcut += (dagN[normStd(h.kod)] || 0); });
   var toplamHedef = 0;
   hedefler.forEach(function(h){ toplamHedef += (h.hedef_olcu || 0); });
   var aktifStdSayisi = hedefler.filter(function(h){ return (dag[h.kod] || 0) > 0; }).length;
@@ -382,9 +408,11 @@ function ciz(sayim){
   var bekleyenler = [];
   var hedefKodSet = {};
 
+  // Normalize edilmiş dağılım (DB <-> KATALOG)
+  var dagN = normalizeDagilim(dag);
   hedefler.forEach(function(h){
-    hedefKodSet[h.kod] = true;
-    var sayi = dag[h.kod] || 0;
+    hedefKodSet[normStd(h.kod)] = true;
+    var sayi = dagN[normStd(h.kod)] || 0;
     if (sayi > 0) aktifler.push({h:h, sayi:sayi});
     else bekleyenler.push({h:h, sayi:0});
   });
@@ -392,7 +420,7 @@ function ciz(sayim){
   // DB'de var ama hedefte yok = ekstra (mor)
   var ekstralar = [];
   Object.keys(dag).forEach(function(stdKod){
-    if (!hedefKodSet[stdKod]) {
+    if (!hedefKodSet[normStd(stdKod)]) {
       ekstralar.push({
         h: { kod:stdKod, ad:stdKod, aciklama:'Hedef kataloğunda tanımsız · veride mevcut', hedef_olcu:0 },
         sayi: dag[stdKod]
@@ -430,7 +458,7 @@ function ciz(sayim){
 
     var link = 'kutuphane-detay.html?tablo=' + encodeURIComponent(TABLO) +
                '&mg=' + encodeURIComponent(MG) +
-               '&std=' + encodeURIComponent(h.kod);
+               '&std=' + encodeURIComponent(dbAnahtariBul(h.kod, dag));
 
     return '<a class="std-sat ' + sinif + '" href="' + link + '">' +
       '<div class="std-sol">' +

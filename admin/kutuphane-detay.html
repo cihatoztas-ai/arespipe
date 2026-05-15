@@ -187,7 +187,7 @@ var TABLO_AD = {
 };
 
 var MG_AD = {
-  karbon:'Karbon çelik', paslanmaz:'Paslanmaz çelik', cuni:'CuNi',
+  karbon:'Karbon çelik', paslanmaz:'Paslanmaz çelik', cunife:'CuNi',
   duplex:'Duplex', alasimli:'Alaşımlı', aluminyum:'Alüminyum', nikel:'Nikel alaşım'
 };
 
@@ -266,7 +266,8 @@ async function veriCek(){
   }
 
   try {
-    var q = _supaProxy.from(TABLO).select('*').eq('malzeme_grubu_kod', MG).eq('standart', STD);
+    // Standart filtre client-side (DB '-' / KATALOG ' ' format farkı için normalize)
+    var q = _supaProxy.from(TABLO).select('*').eq('malzeme_grubu', MG);
     (konfig.siralama || []).forEach(function(s){
       q = q.order(s.kol, { ascending: s.yon !== 'desc', nullsFirst: false });
     });
@@ -279,7 +280,10 @@ async function veriCek(){
       if (/column.*does not exist/i.test(msg)) return { durum:'kolon_yok', mesaj:r.error.message };
       return { durum:'hata', mesaj:r.error.message };
     }
-    return { durum:'ok', satirlar: r.data || [] };
+    function _nrm(x){ return String(x||'').toUpperCase().replace(/[\s\-_.]+/g,''); }
+    var _stdN = _nrm(STD);
+    var _filt = (r.data || []).filter(function(row){ return _nrm(row.standart) === _stdN; });
+    return { durum:'ok', satirlar: _filt };
   } catch (e) {
     return { durum:'hata', mesaj: e.message };
   }
@@ -289,7 +293,7 @@ async function veriCek(){
 async function digerStandartlariCek(){
   if (!TABLO || !MG) return [];
   try {
-    var r = await _supaProxy.from(TABLO).select('standart').eq('malzeme_grubu_kod', MG).limit(5000);
+    var r = await _supaProxy.from(TABLO).select('standart').eq('malzeme_grubu', MG).limit(5000);
     if (!r || r.error) return [];
     var dag = {};
     (r.data || []).forEach(function(row){
