@@ -1,325 +1,370 @@
 <!DOCTYPE html>
 <html lang="tr" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="ko_title">Kütüphane Önerileri — AresPipe</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-  <style>
-    /* ===== Sayfa-yerel CSS (global var'lar ares-layout.js'ten gelir) ===== */
-    .ko-main { padding: 24px; max-width: 1400px; margin: 0 auto; font-family: 'Barlow', sans-serif; }
-
-    .ko-header { margin-bottom: 20px; }
-    .ko-header h1 {
-      margin: 0 0 4px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 700;
-      font-size: 28px;
-      color: var(--tx);
-    }
-    .ko-subtitle { font-size: 14px; color: var(--txd); }
-
-    /* G-02 Hero + Pill */
-    .ko-hero { display: flex; gap: 16px; margin-bottom: 20px; }
-    .ko-hero-left {
-      display: flex; align-items: center; justify-content: center;
-      width: 88px; background: var(--sur2);
-      border: 1px solid var(--bor); border-radius: 10px;
-      font-size: 36px;
-    }
-    .ko-hero-stats { display: flex; flex: 1; gap: 12px; }
-    .ko-stat-pill {
-      background: var(--sur2); border: 1px solid var(--bor);
-      border-radius: 10px; padding: 14px 18px;
-      min-width: 120px; flex: 1;
-      display: flex; flex-direction: column; justify-content: center;
-    }
-    .ko-stat-label { font-size: 13px; color: var(--txd); margin-bottom: 4px; }
-    .ko-stat-num {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 800; font-size: 28px; color: var(--ac);
-    }
-
-    /* Skeleton shimmer (devreler.html pattern'i) */
-    .sk {
-      background: linear-gradient(90deg, var(--sur) 0%, var(--bor) 50%, var(--sur) 100%);
-      background-size: 200% 100%;
-      animation: _skShimmer 1.2s infinite;
-      color: transparent !important;
-      border-radius: 4px;
-    }
-    .sk-num { display: inline-block; min-width: 40px; }
-    @keyframes _skShimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    /* Tablo */
-    .ko-table-wrap {
-      background: var(--sur2); border: 1px solid var(--bor);
-      border-radius: 10px; overflow: hidden;
-    }
-    .ko-table { width: 100%; border-collapse: collapse; }
-    .ko-table thead { background: var(--sur); }
-    .ko-table th {
-      text-align: left; padding: 12px 16px;
-      font-size: 12px; font-weight: 600;
-      color: var(--txd); text-transform: uppercase; letter-spacing: .5px;
-      border-bottom: 1px solid var(--bor);
-    }
-    .ko-table td {
-      padding: 14px 16px; font-size: 15px; color: var(--tx);
-      border-bottom: 1px solid var(--bor);
-    }
-    .ko-table tbody tr {
-      opacity: 0;
-      animation: _cascadeIn .35s ease forwards;
-      animation-delay: calc(45ms * var(--ci, 0));
-    }
-    @keyframes _cascadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .ko-td-olcu strong {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 700; font-size: 16px;
-    }
-    .ko-td-olcu small { color: var(--txd); font-size: 13px; margin-left: 4px; }
-    .ko-td-kalite { color: var(--txd); }
-    .ko-td-tarih { color: var(--txd); font-size: 13px; }
-
-    .ko-badge-siklik {
-      display: inline-block; padding: 4px 12px;
-      border-radius: 14px;
-      background: rgba(45, 142, 255, 0.15);
-      color: var(--ac); font-weight: 700;
-      font-size: 14px; font-family: 'Barlow Condensed', sans-serif;
-      min-width: 40px; text-align: center;
-    }
-    .ko-badge-tenant {
-      display: inline-block; padding: 2px 8px;
-      border-radius: 4px;
-      background: var(--sur);
-      border: 1px solid var(--bor);
-      color: var(--txd); font-size: 13px;
-    }
-
-    .ko-btn-detay {
-      padding: 6px 14px; border-radius: 6px;
-      border: 1px solid var(--bor); background: var(--sur);
-      color: var(--ac); font-size: 13px; font-weight: 600;
-      font-family: 'Barlow', sans-serif;
-      cursor: pointer; transition: all .15s;
-    }
-    .ko-btn-detay:hover {
-      border-color: var(--ac); background: rgba(45, 142, 255, .05);
-    }
-
-    .ko-bos {
-      padding: 48px 24px; text-align: center;
-    }
-    .ko-bos-icon { font-size: 48px; color: var(--gr); margin-bottom: 12px; }
-    .ko-bos-msg { font-size: 16px; color: var(--txd); }
-  </style>
-</head>
-<body data-sayfa="kutuphane-oneriler">
-
-<main class="ko-main">
-
-  <div class="ko-header">
-    <h1 data-i18n="ko_baslik">Kütüphane Önerileri</h1>
-    <div class="ko-subtitle" data-i18n="ko_aciklama">
-      Sistemde tanımsız olarak görünen malzemeler — sıklığa göre sıralandı
-    </div>
-  </div>
-
-  <div class="ko-hero">
-    <div class="ko-hero-left">📚</div>
-    <div class="ko-hero-stats">
-      <div class="ko-stat-pill">
-        <div class="ko-stat-label" data-i18n="ko_st_kayit">Tanımsız Kayıt</div>
-        <span class="ko-stat-num sk sk-num" id="koStKayit">—</span>
-      </div>
-      <div class="ko-stat-pill">
-        <div class="ko-stat-label" data-i18n="ko_st_spool">Etkilenen Spool</div>
-        <span class="ko-stat-num sk sk-num" id="koStSpool">—</span>
-      </div>
-      <div class="ko-stat-pill">
-        <div class="ko-stat-label" data-i18n="ko_st_tenant">Tenant</div>
-        <span class="ko-stat-num sk sk-num" id="koStTenant">—</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="ko-table-wrap">
-    <table class="ko-table">
-      <thead>
-        <tr>
-          <th data-i18n="ko_th_olcu">Ölçü</th>
-          <th data-i18n="ko_th_kalite">Kalite</th>
-          <th data-i18n="ko_th_siklik">Spool</th>
-          <th data-i18n="ko_th_devre">Devre</th>
-          <th data-i18n="ko_th_tenant">Tenant</th>
-          <th data-i18n="ko_th_son_gorulme">Son Görülme</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="koTbody"></tbody>
-    </table>
-    <div class="ko-bos" id="koBos" style="display:none;">
-      <div class="ko-bos-icon">✓</div>
-      <div class="ko-bos-msg" data-i18n="ko_bos">Tüm malzemeler kütüphaneye bağlı!</div>
-    </div>
-  </div>
-
-</main>
-
-<!-- AresPipe core scripts (admin/ alt-dizininden parent path) -->
-<script src="../ares-supabase.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="ko_title">Kütüphane Önerileri — AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="../ares-store.js"></script>
+<script src="../ares-lang.js"></script>
 <script src="../ares-normalize.js"></script>
 <script src="../ares-layout.js"></script>
-<script src="../lang.js"></script>
+<style>
+:root {
+  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
+  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
+}
+[data-theme=dark] {
+  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
+  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
+}
+[data-theme=light-anthracite] {
+  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
+  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
+
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-shrink:0;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;letter-spacing:0;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+.layout{display:flex;flex:1;min-height:0;}
+.sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;text-decoration:none;}
+.nav-item:hover{background:var(--sur2);color:var(--tx);}
+.nav-item.active{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.2);color:var(--admin);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
+
+.main{flex:1;overflow-y:auto;padding:24px 32px;min-width:0;}
+
+/* Breadcrumb */
+.brd{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txm);margin-bottom:14px;flex-wrap:wrap;}
+.brd a{color:var(--txm);text-decoration:none;padding:4px 8px;border-radius:6px;border:1px solid transparent;transition:all .15s;}
+.brd a:hover{color:var(--ac);border-color:var(--bor);background:var(--sur);}
+.brd-sep{color:var(--txd);font-size:10px;}
+.brd-aktif{color:var(--tx);font-weight:600;padding:4px 8px;}
+
+/* Sayfa başlığı */
+.sf-bas{display:flex;align-items:flex-end;gap:18px;margin-bottom:8px;flex-wrap:wrap;}
+.sf-baslik{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;letter-spacing:1px;color:var(--tx);line-height:1;}
+.sf-alt{font-size:13px;color:var(--txm);margin-bottom:24px;}
+
+/* Özet kartları */
+.ozet{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.ozet-k{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;}
+.ozet-l{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--txm);font-weight:600;}
+.ozet-v{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1.1;}
+.ozet-s{font-size:11px;color:var(--txd);}
+
+/* Tablo */
+.tablo-saran{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
+.tablo-bas{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bor);}
+.tablo-bas-baslik{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--tx);letter-spacing:.5px;}
+.tablo-bas-cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txm);background:var(--sur2);padding:3px 10px;border-radius:8px;border:1px solid var(--bor);}
+
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txm);border-bottom:1px solid var(--bor);background:var(--sur2);}
+tbody td{padding:10px 14px;font-size:13px;color:var(--tx);border-bottom:1px solid var(--bor);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--sur2);}
+.td-olcu{font-family:'JetBrains Mono',monospace;font-weight:600;}
+.td-olcu small{color:var(--txd);font-weight:400;margin-left:3px;}
+.td-kalite{font-family:'JetBrains Mono',monospace;color:var(--ac);}
+.td-sayi{font-family:'JetBrains Mono',monospace;text-align:right;font-weight:600;}
+.td-tarih{color:var(--txm);font-size:12px;}
+.null{color:var(--txd);}
+
+/* Boş durum */
+.bos{padding:60px 20px;text-align:center;}
+.bos-ikon{font-size:48px;color:var(--gr);margin-bottom:14px;line-height:1;}
+.bos-msg{color:var(--txm);font-size:14px;}
+
+/* Yükleme / hata */
+.yuk{display:flex;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--txm);}
+.loader{display:inline-block;width:18px;height:18px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:sp 1s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.uyari{background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.25);color:var(--re);padding:14px 18px;border-radius:10px;font-size:13px;margin-bottom:16px;}
+.uyari code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(229,62,62,.12);padding:1px 6px;border-radius:4px;}
+
+/* Toast */
+.toast-konteyner{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:1000;}
+.toast{background:var(--sur);border:1px solid var(--bor);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:10px;animation:tsl .25s ease-out;box-shadow:0 6px 24px rgba(0,0,0,.25);}
+.toast.er{border-color:rgba(229,62,62,.4);}
+@keyframes tsl{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+#appShell{display:none;flex-direction:column;flex:1;visibility:hidden;}
+</style>
+</head>
+<body>
+
+<div id="appShell">
+
+<div class="topbar">
+  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-user">
+    <span class="topbar-badge">SUPER ADMIN</span>
+    <span id="topbarUser">—</span>
+    <button class="btn-logout" onclick="cikisYap()">Çıkış</button>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="sidebar">
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📊</span>Dashboard</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Pano</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">🏢</span>Firmalar</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">👥</span>Kullanıcılar</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">🚩</span>Feature Flags</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📱</span>Mobil Önizleme</a>
+  <div class="nav-sep"></div>
+  <a class="nav-item active" href="kutuphane.html"><span class="nav-icon">📚</span>Kütüphane</a>
+  <div class="nav-sep"></div>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Sistem Logları</a>
+</div>
+
+<div class="main">
+  <div id="anaIcerik">
+    <div class="yuk"><span class="loader"></span> Yükleniyor…</div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="toast-konteyner" id="toastKonteyner"></div>
 
 <script>
-(function() {
-  'use strict';
+'use strict';
 
-  // ===== Yetki kontrolü =====
-  if (typeof ARES !== 'undefined' && typeof ARES.sayfaYetkiKontrol === 'function') {
-    ARES.sayfaYetkiKontrol(['super_admin']);
-  } else {
-    console.warn('[KO] ARES.sayfaYetkiKontrol bulunamadı — yetki kontrolü atlandı (geliştirme modu?)');
+// ── Supabase proxy ───────────────────────────────────────
+var _supa = null;
+function _getSupa() {
+  if (_supa) return _supa;
+  if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase();
+  return _supa;
+}
+var _supaProxy = new Proxy({}, {
+  get: function(t, prop){
+    var s = _getSupa();
+    if (!s) throw new Error('Supabase hazır değil');
+    var v = s[prop];
+    return typeof v === 'function' ? v.bind(s) : v;
   }
+});
 
-  // ===== Helpers =====
-  const tv = (k, fb) => (typeof window.tv === 'function' ? window.tv(k, fb) : (fb || k));
-  const toast = (m, t) => (window.ARES?.toast ? ARES.toast(m, t) : console.log('[toast]', t, m));
+// ── Helpers ──────────────────────────────────────────────
+function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function T(id){ return document.getElementById(id); }
+async function cikisYap(){ await _supaProxy.auth.signOut(); window.location.href='../giris.html'; }
+function tv(k, fb){ try { return (typeof ARES_LANG !== 'undefined' && ARES_LANG.tv) ? ARES_LANG.tv(k, fb) : fb; } catch(e){ return fb; } }
 
-  function _skTemizle(el) {
-    if (!el) return;
-    el.classList.remove('sk', 'sk-num');
-  }
+function toast(metin, tip){
+  var k = T('toastKonteyner'); if (!k) return;
+  var t = document.createElement('div');
+  t.className = 'toast' + (tip === 'er' ? ' er' : '');
+  t.innerHTML = '<span>' + (tip === 'er' ? '⚠' : '✓') + '</span><span>' + esc(metin) + '</span>';
+  k.appendChild(t);
+  setTimeout(function(){ t.style.opacity = '0'; t.style.transform = 'translateY(20px)'; }, 3000);
+  setTimeout(function(){ t.remove(); }, 3400);
+}
 
-  function _fmtTarih(iso) {
-    if (!iso) return '—';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return '—'; }
-  }
+function fmtOlcu(disCap, et){
+  if (disCap == null && et == null) return '—';
+  var d = disCap != null ? Number(disCap).toFixed(1).replace(/\.0$/, '') : '?';
+  var e = et != null ? Number(et).toFixed(2).replace(/0+$/, '').replace(/\.$/, '') : '?';
+  return d + ' × ' + e;
+}
 
-  function _fmtOlcu(dis_cap, et) {
-    const a = Number(dis_cap).toFixed(1);
-    const b = Number(et).toFixed(1);
-    return `${a} × ${b}`;
-  }
+function fmtTarih(ts){
+  if (!ts) return '—';
+  try {
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    var bugun = new Date();
+    var fark = Math.floor((bugun - d) / 86400000);
+    if (fark === 0) return 'Bugün';
+    if (fark === 1) return 'Dün';
+    if (fark < 7) return fark + ' gün önce';
+    if (fark < 30) return Math.floor(fark/7) + ' hafta önce';
+    return d.toLocaleDateString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  } catch(e){ return '—'; }
+}
 
-  // ===== Liste yükleme =====
-  async function listeYukle() {
-    try {
-      const sb = ARES.supabase();
-      const { data, error } = await sb.rpc('v_tanimsiz_havuz_listele');
-
-      if (error) {
-        console.error('[KO] RPC hata:', error);
-        toast(tv('ko_hata_yukleme', 'Liste yüklenemedi: ') + error.message, 'er');
-        _renderBos();
-        return;
+// ── Liste yükleme ────────────────────────────────────────
+async function listeYukle(){
+  try {
+    var r = await _supaProxy.rpc('v_tanimsiz_havuz_listele');
+    if (r && r.error) {
+      var msg = (r.error.message || '').toLowerCase();
+      var code = (r.error.code || '').toString();
+      if (code === 'PGRST202' || /could not find.*function/i.test(msg)) {
+        return { durum:'rpc_yok' };
       }
-
-      const rows = data || [];
-      _renderStats(rows);
-      _renderTablo(rows);
-    } catch (e) {
-      console.error('[KO] Beklenmeyen hata:', e);
-      toast(tv('ko_hata_beklenmeyen', 'Beklenmeyen hata'), 'er');
-      _renderBos();
+      return { durum:'hata', mesaj: r.error.message };
     }
+    return { durum:'ok', satirlar: r.data || [] };
+  } catch (e) {
+    return { durum:'hata', mesaj: e.message };
+  }
+}
+
+// ── Çizim ────────────────────────────────────────────────
+function ciz(sonuc){
+  // Breadcrumb
+  var brd = '<div class="brd">' +
+    '<a href="kutuphane.html">📚 Kütüphane</a>' +
+    '<span class="brd-sep">›</span>' +
+    '<span class="brd-aktif">Öneriler</span>' +
+  '</div>';
+
+  // Başlık + alt yazı
+  var sayfaBas = '<div class="sf-bas">' +
+    '<div class="sf-baslik">Kütüphane Önerileri</div>' +
+  '</div>' +
+  '<div class="sf-alt">Sistemde tanımsız olarak görünen malzemeler — sıklığa göre sıralandı. ' +
+    'Bu liste pilot tersanedeki Spool AI eğitim verisini besler.</div>';
+
+  // Hata durumları
+  if (sonuc.durum === 'rpc_yok') {
+    return brd + sayfaBas +
+      '<div class="uyari">⚠ <code>v_tanimsiz_havuz_listele</code> RPC fonksiyonu bulunamadı. ' +
+      'Migration 061 (tanimsiz_kayitlar) çalıştırılmamış olabilir.</div>';
+  }
+  if (sonuc.durum === 'hata') {
+    return brd + sayfaBas +
+      '<div class="uyari">⚠ Liste yüklenemedi: ' + esc(sonuc.mesaj || '') + '</div>';
   }
 
-  function _renderStats(rows) {
-    const toplamKayit = rows.length;
-    const toplamSpool = rows.reduce((acc, r) => acc + Number(r.siklik || 0), 0);
-    const tenantSet = new Set();
-    rows.forEach(r => (r.tenant_ler || []).forEach(t => tenantSet.add(t)));
+  var satirlar = sonuc.satirlar || [];
 
-    const elK = document.getElementById('koStKayit');
-    const elS = document.getElementById('koStSpool');
-    const elT = document.getElementById('koStTenant');
+  // İstatistik hesabı
+  var toplamKayit = satirlar.length;
+  var toplamSpool = satirlar.reduce(function(acc, r){ return acc + Number(r.siklik || 0); }, 0);
+  var tenantSet = {};
+  satirlar.forEach(function(r){
+    var tenants = r.tenant_ler || r.tenantler || [];
+    if (Array.isArray(tenants)) tenants.forEach(function(t){ tenantSet[t] = 1; });
+  });
+  var tenantSayi = Object.keys(tenantSet).length;
 
-    if (elK) { elK.textContent = toplamKayit; _skTemizle(elK); }
-    if (elS) { elS.textContent = toplamSpool; _skTemizle(elS); }
-    if (elT) { elT.textContent = tenantSet.size; _skTemizle(elT); }
+  var ozet = '<div class="ozet">' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Tanımsız Kayıt</div>' +
+      '<div class="ozet-v">' + toplamKayit + '</div>' +
+      '<div class="ozet-s">benzersiz ölçü × kalite</div>' +
+    '</div>' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Etkilenen Spool</div>' +
+      '<div class="ozet-v">' + toplamSpool + '</div>' +
+      '<div class="ozet-s">toplam görülme</div>' +
+    '</div>' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Tenant</div>' +
+      '<div class="ozet-v">' + tenantSayi + '</div>' +
+      '<div class="ozet-s">farklı firma</div>' +
+    '</div>' +
+  '</div>';
+
+  // Boş durum
+  if (toplamKayit === 0) {
+    return brd + sayfaBas + ozet +
+      '<div class="tablo-saran">' +
+        '<div class="bos">' +
+          '<div class="bos-ikon">✓</div>' +
+          '<div class="bos-msg">Tüm malzemeler kütüphaneye bağlı!</div>' +
+        '</div>' +
+      '</div>';
   }
 
-  function _renderTablo(rows) {
-    const tbody = document.getElementById('koTbody');
-    if (!tbody) return;
+  // Tablo
+  var tabloBas = '<div class="tablo-bas">' +
+    '<div class="tablo-bas-baslik">Tanımsız Havuz</div>' +
+    '<div class="tablo-bas-cnt">' + toplamKayit + ' kayıt · sıklığa göre</div>' +
+  '</div>';
 
-    if (rows.length === 0) {
-      tbody.innerHTML = '';
-      _renderBos();
-      return;
-    }
+  var thead = '<thead><tr>' +
+    '<th>Ölçü</th>' +
+    '<th>Kalite</th>' +
+    '<th style="text-align:right;">Spool</th>' +
+    '<th style="text-align:right;">Devre</th>' +
+    '<th>Tenant</th>' +
+    '<th>Son Görülme</th>' +
+  '</tr></thead>';
 
-    document.getElementById('koBos').style.display = 'none';
+  var tbody = '<tbody>' + satirlar.map(function(r){
+    var olcu = fmtOlcu(r.dis_cap_mm, r.et_mm);
+    var kalite = r.kalite_ham || r.kalite || '—';
+    var spool = r.siklik || r.spool_sayi || 0;
+    var devre = r.devre_sayi || '—';
+    var tenants = r.tenant_ler || r.tenantler || [];
+    var tenantStr = Array.isArray(tenants) ? tenants.length : '—';
+    var tarih = fmtTarih(r.son_gorulme);
 
-    const html = rows.map((r, i) => {
-      const ci = Math.min(i, 19); // cascade max 20
-      const olcu = _fmtOlcu(r.dis_cap_mm, r.et_mm);
-      const kalite = r.kalite_ham || '—';
-      const tarih = _fmtTarih(r.son_gorulme);
-      const hashEsc = (r.hash_anahtari || '').replace(/[^a-z0-9]/gi, '');
+    return '<tr>' +
+      '<td class="td-olcu"><strong>' + esc(olcu) + '</strong> <small>mm</small></td>' +
+      '<td class="td-kalite">' + esc(kalite) + '</td>' +
+      '<td class="td-sayi">' + esc(spool) + '</td>' +
+      '<td class="td-sayi">' + esc(devre) + '</td>' +
+      '<td>' + esc(tenantStr) + '</td>' +
+      '<td class="td-tarih">' + esc(tarih) + '</td>' +
+    '</tr>';
+  }).join('') + '</tbody>';
 
-      return `<tr style="--ci:${ci};" data-hash="${hashEsc}">
-        <td class="ko-td-olcu"><strong>${olcu}</strong> <small>mm</small></td>
-        <td class="ko-td-kalite">${kalite}</td>
-        <td><span class="ko-badge-siklik">${r.siklik}</span></td>
-        <td>${r.devre_sayisi}</td>
-        <td><span class="ko-badge-tenant">${r.tenant_sayisi}</span></td>
-        <td class="ko-td-tarih">${tarih}</td>
-        <td>
-          <button class="ko-btn-detay" data-hash="${hashEsc}" data-i18n="ko_btn_detay">
-            ${tv('ko_btn_detay', 'Detay →')}
-          </button>
-        </td>
-      </tr>`;
-    }).join('');
+  return brd + sayfaBas + ozet +
+    '<div class="tablo-saran">' + tabloBas +
+    '<table>' + thead + tbody + '</table></div>';
+}
 
-    tbody.innerHTML = html;
+// ── ANA AKIŞ ─────────────────────────────────────────────
+(async function init(){
+  // ares-store async init için 80 iterasyonlu poll (kutuphane.html pattern'i)
+  var b = 0; while (b < 80) { if (_getSupa()) break; await new Promise(function(r){ setTimeout(r, 100); }); b++; }
+  var supa = _getSupa();
+  if (!supa) { window.location.href = '../giris.html'; return; }
 
-    // Detay butonları — 88.G'de detay paneli açacak
-    tbody.querySelectorAll('.ko-btn-detay').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const hash = btn.dataset.hash;
-        const row = rows.find(r => (r.hash_anahtari || '').replace(/[^a-z0-9]/gi, '') === hash);
-        console.log('[KO] Detay tıklandı:', row);
-        toast(tv('ko_detay_tba', '88.G ile detay paneli gelecek'), 'in');
-      });
-    });
+  // OAuth redirect sonrası URL hash'inde token gelirse oturumu kur
+  if (window.location.hash) {
+    var p = new URLSearchParams(window.location.hash.substring(1));
+    var at = p.get('access_token'), rt = p.get('refresh_token');
+    if (at) { await supa.auth.setSession({ access_token: at, refresh_token: rt }); window.location.hash = ''; }
   }
 
-  function _renderBos() {
-    const tbody = document.getElementById('koTbody');
-    const bos = document.getElementById('koBos');
-    if (tbody) tbody.innerHTML = '';
-    if (bos) bos.style.display = 'block';
-
-    // Stat'ları sıfırla, skeleton'ı temizle
-    ['koStKayit', 'koStSpool', 'koStTenant'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.textContent = '0'; _skTemizle(el); }
-    });
+  var sr = await supa.auth.getSession();
+  if (!sr || !sr.data || !sr.data.session) {
+    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
   }
 
-  // ===== Başlat =====
-  document.addEventListener('DOMContentLoaded', listeYukle);
+  var kr = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id', sr.data.session.user.id).single();
+  if (!kr.data || kr.data.rol !== 'super_admin') {
+    window.location.href = '../index.html';
+    return;
+  }
 
+  // appShell'i göster
+  var ub = T('topbarUser'); if (ub) ub.textContent = kr.data.ad_soyad || '—';
+  var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
+  document.documentElement.style.visibility = 'visible';
+
+  // Veri yükle + çiz
+  try {
+    var sonuc = await listeYukle();
+    T('anaIcerik').innerHTML = ciz(sonuc);
+  } catch (e) {
+    console.error('[oneriler] init hata:', e);
+    T('anaIcerik').innerHTML = '<div class="uyari">⚠ Sayfa yüklenirken hata oluştu: ' + esc(e.message) + '</div>';
+  }
 })();
 </script>
 
