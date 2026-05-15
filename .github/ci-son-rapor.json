@@ -1,64 +1,31 @@
 {
-  "tarih": "2026-05-14T19:31:00.138Z",
-  "commit_sha": "7a7f9420ae1c684258b0f1fb475f83129a723e1d",
+  "tarih": "2026-05-15T06:03:18.066Z",
+  "commit_sha": "dadfb18786d08e7c629b6561e4250ddcb24a76c9",
   "commit_ref": "main",
-  "workflow_run": 837,
+  "workflow_run": 838,
   "ozet": {
     "hata": 0,
-    "uyari": 37,
+    "uyari": 38,
     "taranan_dosya": 105,
     "sorunlu_dosya": 4,
     "durum": "sari"
   },
   "kurallar": {
-    "G03_HAM_MALZEME": {
-      "tip": "uyari",
-      "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "admin/kutuphane-oneriler.html",
-          "sayi": 1,
-          "satirlar": [
-            389
-          ]
-        }
-      ]
-    },
-    "G03_HAM_KALITE": {
-      "tip": "uyari",
-      "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 2,
-      "dosyalar": [
-        {
-          "dosya": "admin/kutuphane-oneriler.html",
-          "sayi": 2,
-          "satirlar": [
-            351,
-            390
-          ]
-        }
-      ]
-    },
-    "G03_HAM_YUZEY": {
-      "tip": "uyari",
-      "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
-      "dosyalar": [
-        {
-          "dosya": "devre_detay.html",
-          "sayi": 1,
-          "satirlar": [
-            1467
-          ]
-        }
-      ]
-    },
     "I18N_EKSIK": {
       "tip": "uyari",
-      "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 33,
+      "mesaj": "tv('ko_hata_yukleme') kullanılıyor ama lang/tr.json'da yok",
+      "sayi": 37,
       "dosyalar": [
+        {
+          "dosya": "admin/kutuphane-oneriler.html",
+          "sayi": 4,
+          "satirlar": [
+            230,
+            240,
+            288,
+            302
+          ]
+        },
         {
           "dosya": "devre_detay.html",
           "sayi": 6,
@@ -110,31 +77,51 @@
           ]
         }
       ]
+    },
+    "G03_HAM_YUZEY": {
+      "tip": "uyari",
+      "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "devre_detay.html",
+          "sayi": 1,
+          "satirlar": [
+            1467
+          ]
+        }
+      ]
     }
   },
   "dosyalar": [
     {
       "dosya": "admin/kutuphane-oneriler.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 3,
+      "uyari_sayisi": 4,
       "hatalar": [
         {
-          "kod": "G03_HAM_MALZEME",
+          "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 389,
-          "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
+          "satir": 230,
+          "mesaj": "tv('ko_hata_yukleme') kullanılıyor ama lang/tr.json'da yok"
         },
         {
-          "kod": "G03_HAM_KALITE",
+          "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 351,
-          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
+          "satir": 240,
+          "mesaj": "tv('ko_hata_beklenmeyen') kullanılıyor ama lang/tr.json'da yok"
         },
         {
-          "kod": "G03_HAM_KALITE",
+          "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 390,
-          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
+          "satir": 288,
+          "mesaj": "tv('ko_btn_detay') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 302,
+          "mesaj": "tv('ko_detay_tba') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
