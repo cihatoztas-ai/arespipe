@@ -380,6 +380,7 @@ function ciz(sayim){
 
   // Sayfa başlığı + özet
   var dag = sayim.standart_dagilim || {};
+  var dagN = normalizeDagilim(dag);
   var toplamMevcut = 0;
   hedefler.forEach(function(h){ toplamMevcut += (dagN[normStd(h.kod)] || 0); });
   var toplamHedef = 0;
@@ -408,8 +409,6 @@ function ciz(sayim){
   var bekleyenler = [];
   var hedefKodSet = {};
 
-  // Normalize edilmiş dağılım (DB <-> KATALOG)
-  var dagN = normalizeDagilim(dag);
   hedefler.forEach(function(h){
     hedefKodSet[normStd(h.kod)] = true;
     var sayi = dagN[normStd(h.kod)] || 0;
