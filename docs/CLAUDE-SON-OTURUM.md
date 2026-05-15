@@ -1,173 +1,158 @@
-# CLAUDE-SON-OTURUM — 87. Oturum (14 Mayıs 2026)
+# 88. Oturum Arşivi (14 Mayıs 2026)
 
-> Kapanış tarihi: 14 Mayıs 2026 ~22:30
-> Süre: ~6 saat (yoğun teknik + 1 büyük vizyon yeniden hizalama)
-> Ana sonuç: Kütüphane görünüm + 3 eksik tablo + 87.B kart tamam; 87.C onay/red akışı revert (vizyon değişikliği)
+> Konu: Tanımsız Malzeme Havuzu — paradigma değişimi + backend tamam, frontend kısmi.
 
 ---
 
-## Akış (Kronolojik)
+## Oturum Açılışı
 
-### 1. Açılış + ritüel kafa karışıklığı
+87. oturumun "vizyon tanımsızlar" commit'i (`58347a0`) ile geldi. Sonraki gündem belgesi `docs/88-VIZYON-TANIMSIZLAR.md` 87 kapanışında yazılmıştı; Cihat dosyayı yüklediğinde paradigma netleşti:
 
-86 kapanışta `CLAUDE-SONRAKI-OTURUM.md` `docs/` altında yazılmış ama açılış ritüeli kök dizini kontrol etti → "ritüele uymadı" yanlış teşhisi. `ls -la CLAUDE*.md docs/CLAUDE*.md` ile path netleşti. **MK-87.1** olarak kayıt: açılış ritüeli `docs/` altını da kontrol etmeli.
+> "Mevcut tasarım yanlış — kullanıcı tıklamasına bakan counter modeli, sistemin gerçek durumunu yansıtmıyor."
 
-### 2. 87.A — Eksik 3 tablo + ares-layout.js fix'leri (kümülatif)
+Yeni vizyon:
+- Tanımsız malzeme = `boru_olculer_id IS NULL` olan her satır (gerçek-zamanlı)
+- Kullanıcı tarafında "Kaydet" akışı tamamen kalkar (operatör iş yükü = 0)
+- Süper admin panelinde sıklığa göre liste + ya **standart tablo yükle** (toplu) ya **özel parça gir** (form)
 
-**Tanı 1 (console hatası):** `admin/kutuphane.html`'i Chrome'da açıp DevTools Console kırmızı 4 hata gösterdi:
-- `lang/tr.json` 404 (`ares-layout.js:55`)
-- `tenant_spec_seti` 404
-- `ozel_parcalar` 404
-- `spec_kural` 404
+---
 
-**Adım 1 — Migration 062:** `KUTUPHANE-YUKLEME-TAKIP.md` §6, §7 referansıyla 3 boş tablo + RLS + 5'er policy:
-- `ozel_parcalar` (coupling sleeve, custom flansh, kompansator, vb. — 7 CHECK enum)
-- `tenant_spec_seti` (spec_kodu, basinc_class, malzeme_grup CHECK, sicaklik_min/max)
-- `spec_kural` (spec_id FK + 5 farklı kütüphane FK + CHECK "en az 1 referans")
-- 061'deki RLS pattern birebir kopyalandı (super_admin + tenant_id eşleşmesi).
+## Tartışma Adımları (önemli netleşmeler)
 
-Supabase'de çalıştırılırken ilk sefer `Success. No rows returned` görünmesine rağmen tablolar oluşmadı — anlaşılan SQL Editor cursor pozisyonundaki tek deyimi çalıştırmıştı. Yeniden `Cmd+A → Cmd+V → Cmd+A → Run` ile tam dosya çalıştı. Doğrulama: 12 satır (3 tablo + 3 RLS + 3 policy + 3 count) hepsi 0/true/5/var.
+### 1. AI önerisi var mı yok mu? (KARAR-88.3)
 
-**Adım 2 — `ares-layout.js` lang path:** Satır 55'te `fetch('lang/' + lang + '.json...')` göreceli. `admin/` altında çağrılınca `admin/lang/tr.json` arıyor → 404. Fix: `fetch('/lang/' + lang...)` absolute. Mac sed delimiter `|` parantez içeren patternlerde sorun yapabildiği için `#` delimiter tercih edildi:
-```
-sed -i '' "s|fetch('lang/' + lang|fetch('/lang/' + lang|" ares-layout.js
-```
-İlk denemede çift tırnak içinde `!important` zsh history expansion'a takıldı. **MK-87.3** olarak kayıt: commit mesajlarında `!` kullanılmamalı.
+İlk taslakta "STD_KILAVUZ JS lookup" + ASME yakın eşleşme + malzeme katalog kontrolü ("Kütüphane Bilinçli Yardım") vardı. Cihat sordu:
 
-**Adım 3 — CSS injection guard (en zor):** Console hatası çözüldü ama Cihat tekrar baktı: "düzelmedi, kütüphane sayfasının yarısı görünmüyor, sol menü gri". Sahada paralel ekran görüntüsü gönderdi — `panel.html` ile karşılaştırma: panel.html düzgün, kutuphane.html yarım.
+> "Tanımsız olan malzemeyi ben dışarıda araştırayım ya da sana sorarım. Buradan sadece standart dışı malzemelerin tablo değerlerini girelim."
 
-İlk hipotez (statik + dinamik sidebar çakışıyor) DOM sorgusuyla yanlışlandı: `document.querySelectorAll('.sidebar').length` = 1. Sonraki hipotez computed CSS sorgusuyla doğrulandı: `getComputedStyle(.sidebar).position = fixed` — sidebar topbar'ın üstüne yapışıyor, ana akıştan kopuyor. Kaynak: `ares-layout.js` satır 401-405'te `.sidebar { position:fixed; top:0; left:0; !important }` injection, satır 521'de `document.head.appendChild(style)`.
+Karar: AI önerisi 88'de **YOK**. Sebep: halüsinasyon riski yüksek, doğrulama katmanı ayrı bir oturumluk iş. Pano sıklığa göre listeler, Cihat veriden öğrenir, gerektiğinde claude.ai sohbetinden standart bulur, sonra ya toplu seed migration ile yükler ya özel parça olarak girer.
 
-Fix: Sayfa zaten statik `.sidebar` HTML tanımlamışsa CSS'i enjekte etme:
-```
-sed -i '' 's#document\.head\.appendChild(style);#if (!document.querySelector(".sidebar")) { document.head.appendChild(style); }#' ares-layout.js
-```
-Satır 521 patch'lendi, satır 875'teki `appendChild(noTr)` etkilenmedi (farklı değişken). Saha test: kutuphane.html düzeldi.
+### 2. Özel parça formu nasıl? (KARAR-88.2 öncesi)
 
-**Commit'ler:** `9a5bf02` (migration 062 + lang fix), `48ed6d4` (CSS injection guard).
+İlk taslakta sabit form (7 alan: standart, dn, schedule, ölçü, ağırlık, kalite, açıklama). Cihat:
 
-### 3. 87.B — Bekleyen Öneriler kartı
+> "Form sabit değil, `boru_olculer` tablosunun kolonlarına göre dinamik."
 
-`admin/kutuphane.html`'in `GRUPLAR` array'ine 8. eleman eklendi, `ciz()` fonksiyonuna özel render branch + `oneriSayisiAl()` fonksiyonu + realtime subscribe listesine `tanimsiz_kayitlar` eklendi. 7 yamayı tek dosyada str_replace ile uyguladım, 517 → 573 satır.
+Şema sorgusu: `boru_olculer` 27 kolon. Gruplandırınca:
+- 7 zorunlu (NOT NULL, GENERATED değil): standart, malzeme_grubu, dn, schedule_tipi/deger/kod, dis_cap_mm, et_mm, agirlik_kg_m
+- 5 GENERATED (otomatik): et_min, et_max, ic_cap, hacim, yüzey
+- Geri kalan opsiyonel/default'lu
 
-Saha test: 8. kart "Bekleyen Öneriler" görünüyor, "1 bekliyor" turuncu rozet (DB'de zaten 1 kayıt vardı — 86.C v2.1 hotfix'i sahada doğrulanmış oldu).
+### 3. `agirlik_kg_m` neden GENERATED değil? (Risk değerlendirmesi)
 
-Karta tıklanınca `kutuphane-oneriler.html`'e gitti ama oradan "Supabase bağlantısı yok" hatası verdi. İki ayrı bug daha ortaya çıktı:
-1. **Sidebar uyumsuzluğu:** kutuphane-oneriler.html sidebar'ı 4-item (Panel/Kütüphane/Firmalar/Yönetim), kullanıcı kütüphane'ye dönmeden sayfa kontekstini kaybediyor.
-2. **Supabase race condition:** `ARES.supabase()` çağrısı `ares-store.js` async yüklenmeden önce → null dönüyor → hata.
+Diğer hesaplanan kolonlar GENERATED ama bu değil. Manuel giriş riski tartışıldı:
+- Risk 1 (hesap hatası): JS otomatik hesap ile çözülür
+- Risk 2 (yoğunluk yanlış malzeme grubu): malzeme_grubu seçilince yoğunluk lookup otomatik
+- Risk 3 (mevcut 358 satırla tutarlılık): GENERATED'a çevirme 90+'a kaldı, önce sapma kontrolü gerekir
 
-Tek dosyada iki yama: sidebar'ı kutuphane.html'inkiyle birebir aynı yaptım (8-item), init'e 80×100ms retry loop ekledim. 429 → 441 satır.
+Karar: β-iyileştirilmiş — form input'unda yoğunluk lookup ile otomatik hesap, üzerine yazılabilir.
 
-Saha test 2: Sayfa açıldı, "1 bekleyen kayıt" liste, kayda tıklayınca sağ detay panel doldu (parça bilgileri + öneri meta + ham JSON). 86.C v2.1 hotfix'i de **dolaylı olarak doğrulandı** (hash hesabı doğru, CHECK constraint geçmiş).
+### 4. RLS yaklaşımı — view vs RPC (KARAR-88.MK-A)
 
-**Commit'ler:** `b2ddac1` (kart), `8a74307` (sidebar + retry).
+Süper admin tüm tenant'ları görmeli. `spool_malzemeleri` RLS policy'si `tenant_id = get_tenant_id()` filtresi yapıyor.
 
-### 4. 87.C — Onay/Red akışı + REVERT (en uzun bölüm)
+İki seçenek:
+- (a) Policy'ye super_admin eklemek → tüm tablodaki sorgular yan etki alır
+- (b) RPC SECURITY DEFINER + içeride super_admin auth
 
-#### 4a. Migration 063 hazırlığı
+Karar: **(b)** — yan etki sıfır, scope dar.
 
-`boru_olculer` şemasını sorduğumda 27 kolon döndü, 11'i NOT NULL — anladım ki "Tek tıkla sisteme ekle" mümkün değil, süper admin'in `schedule_*`, `urun_formu`, `malzeme_grubu`, `agirlik_kg_m` gibi alanları manuel doldurması gerek. Constraint sorgusu kritik bilgi verdi: `tenant_consistency` CHECK (`sistem_preset XOR tenant_id`) + UNIQUE `(standart, malzeme_grubu, dn, schedule_tipi, schedule_deger)`.
+### 5. CHECK constraint sürprizi (KARAR-88.2 finali)
 
-**Karar noktası:** Cihat "Sadece boru için tam akış (modal + RPC + UI), diğer tipler 'Yakında' placeholder" (Seçenek A) seçti.
+Smoke test'te `boru_olculer_tenant_consistency` patladı. Constraint:
 
-`063_oneri_karar_rpc.sql` (311 satır) yazıldı:
-- `oneri_reddet(p_oneri_id, p_karar_notu)` — auth + durum + karar notu kontrolü → UPDATE
-- `oneri_onayla_boru(p_oneri_id, p_form jsonb, p_mod text)` — auth + 11 zorunlu alan validate + tenant_consistency hesabı (`sistem` veya `tenant` mod) + UNIQUE çakışma yakalama → INSERT + UPDATE
-- İkisi de SECURITY DEFINER + ayrı super_admin guard
-
-Migration çalıştırıldı, doğrulama: 2 fonksiyon `prosecdef=true`, dönüş tipleri uuid/void. **Commit:** `f80c00f`.
-
-#### 4b. UI hazırlığı
-
-`kutuphane-oneriler.html`'e 5 yama:
-1. CSS: aksiyon butonları (success/warn/danger) + modal stilleri + toast
-2. Body sonuna 2 modal HTML (red modal + boru onay modal) + toast konteyneri
-3. "Phase 2 placeholder" yerine `aksiyonButonlariHTML(r)` çağrısı
-4. JS fonksiyonları: `aksiyonButonlariHTML`, `redAc/redKapat/redGonder`, `boruAc/boruKapat/boruGonder`, `agirlikHesapla`, `toast`
-5. cikis() + init() çağrısı (str_replace kazasında silinmişti, geri eklendi)
-
-441 → 833 satır. Boru onay modal'ı 12 alan içeriyor (4'ü pre-fill: standart/dn/dis_cap/et; 4'ü dropdown: malzeme_grubu/urun_formu/schedule_tipi; 4'ü manuel: schedule_deger/schedule_kod/agirlik_kg_m/notlar). agirlik_kg_m için `π × (D − t) × t × ρ × 10⁻³` formülü + 7 malzeme grubu yoğunluk lookup (KARAR-86.4'ten).
-
-Saha test öncesi commit: `d2b22e3`.
-
-#### 4c. Cihat'ın geri bildirimi → revert
-
-Cihat sistemde gerçek tanımsız kontrolü için sorgu yazdı:
 ```sql
-SELECT COUNT(...) FROM spool_malzemeleri WHERE boru_olculer_id IS NULL ...
+CHECK (
+  (sistem_preset = true  AND tenant_id IS NULL) OR
+  (sistem_preset = false AND tenant_id IS NOT NULL)
+)
 ```
-Sonuç: **0**. Halbuki `tanimsiz_kayitlar`'da 1 kayıt var. Çelişki Cihat'ı uyandırdı:
 
-> "burda sıklık konusunda bir yanlış anlaşılma var. biri malzemelere bakar tıklayıp kaydederse burada çıkıyor. böyle değil sistemde kaç tane varsa görünsün ki biz ihtiyaç ne kadar büyük görelim."
->
-> "kullanıcı kaydet tarafını iptal edelim. sisteme girdi ve malzeme tanınmıyor. süper admin sayfasına düştü. burada biz bunun gerçekte standartta var mı kısmını kopyala google'da ara yapmadan sadece kendi sistemimizden bakabilir miyiz."
+Yani "özel parça = `sistem_preset=false` + tenant_id" şeması zaten kurulmuş. İki yorum:
+- Yol-A: "Özel" demek paylaşımlı kütüphane kaydı (`sistem_preset=true`)
+- Yol-B: "Özel" demek tenant-spesifik (`sistem_preset=false + tenant_id`)
 
-3 temel mimari hata netleşti:
-1. **Sıklık counter modeli yanlış** — gerçek sıklık `spool_malzemeleri` üzerinden COUNT olmalı, kullanıcı tıklamasına bağlı değil
-2. **Kullanıcı "Kaydet" akışı gereksiz** — sistem zaten görüyor, kullanıcıya iş yükleme
-3. **"Süper admin sıfırdan araştıracak" yanlış kabul** — kütüphane bilinçli sorgu sistemin görevi
-
-Karar: 87.C UI **revert edilir**, 88'de sıfırdan doğru vizyonla yazılır. Migration 063 RPC'leri DB'de atıl bırakılır (silinmesin, 88 değerlendirir).
-
-```
-git revert --no-edit d2b22e3 → 33c10b5
-gp → dad5307 push
-```
-Saha 86.D Phase 1 (sadece okuma) hâline döndü.
-
-### 5. Vizyon belgesi + kapanış
-
-`docs/88-VIZYON-TANIMSIZLAR.md` yazıldı:
-- `v_tanimsiz_havuz` VIEW tasarımı (gerçek-zamanlı, `spool_malzemeleri` üzerinden)
-- "Kütüphane Bilinçli Yardım" panel tasarımı (3 paralel sorgu: ASME yakın eşleşme, kalite katalog, STD_KILAVUZ JS)
-- `oneri_kutuphaneye_bagla` yeni RPC çerçevesi
-- 8 alt görev (88.A — 88.H), ~4 saat tahmin
+Cihat Yol-A seçti. Sebep: Yarın B tenant aynı ölçüyü kullanırsa Yol-B'de yine tanımsız çıkar, ikinci kez eklemek gerekir.
 
 ---
 
-## Süreç Disiplinleri (87'den)
+## Yapılanlar (sırasıyla)
 
-**MK-87.1** — Açılış ritüeli `docs/` path'i kontrol etmeli, kök değil. CLAUDE.md path düzeltmesi 88.A öncesi yapılır.
-
-**MK-87.2** — Eski admin sayfaları (panel.html ve alt sayfaları) modern kütüphane sayfalarıyla farklı sidebar pattern'ında. Admin layout standardizasyonu 88+ refactor borcu.
-
-**MK-87.3** — Mac Terminal'e çoklu satır commit mesajı yapıştırma güvenilmez. Commit mesajları tek satırda olmalı veya `git commit -F`.
-
-**MK-87.4** — Sıklık counter modeli yanlış. Counter kolonlar kullanıcı eylemine bağlı olunca oyunlaştırılabilir ve gerçek talebi yansıtmaz. Gerçek-zamanlı view tercih edilir.
-
-**MK-87.5** — Kullanıcıya iş yükleme prensibi: Sistem zaten bir bilgiyi görüyorsa otomatik tetik tercih edilir.
-
-**MK-87.6** — Sistem önce kendi kütüphanesinden yakın eşleşme aramalı, sonra manuel araştırmaya gerek olduğunu göstermeli.
-
----
-
-## Bu Oturumdan Önemli Dersler
-
-1. **"Console temiz" görsel doğruluk kanıtı değil.** Console hatasız olabilir ama sayfa hâlâ bozuk olabilir (87.A'da CSS injection guard senaryosu). DOM geometrisi (`getBoundingClientRect`) + computed CSS (`getComputedStyle`) ayrı kontrol gerek.
-
-2. **86 kapanışı "topbar render fix" diye yanlış tanı koymuştu.** 87'de tanı 3 ayrı şeye bölündü (eksik tablolar, lang path, CSS injection). Kapanış belgeleri yazılırken "iş yapılacak" listesi tanı belirsizken yazılmasın — önce sahada tanı.
-
-3. **Mimari hatalar implementasyon sırasında değil, vizyon konuştukça çıkar.** 87.C'nin tamamı (migration + UI) sahaya çıktıktan sonra Cihat tek bir soruyla (`SELECT COUNT(...) WHERE boru_olculer_id IS NULL`) 3 saatlik işi geçersiz kıldı. Erken: "Sıklık nasıl hesaplanıyor?" sorulsaydı baştan doğru tasarlanabilirdi.
-
-4. **Revert maliyetli değil, ısrar maliyetli.** Yanlış mimariyi düzeltmek için 87.C'nin üstüne 88'de ekleme yapmak yerine, revert + sıfırdan yazmak daha temiz. Git revert geçmişi kaybetmiyor.
-
-5. **`SECURITY DEFINER` + `auth.uid()` + `kullanicilar.rol = 'super_admin'`** pattern'i 061 + 063'te tutarlı çalıştı. 88'in `oneri_kutuphaneye_bagla` RPC'si de aynı pattern'ı kullanacak.
-
-6. **Mac terminal heredoc + base64 üzerine `arespipe_kopyala` (MD5 doğrulamalı kopya) protokolü** 87'de 4 dosya transferinde sıfır hata. MK-51.1 + MK-86.4 disiplinleri olgun.
-
-7. **Bracketed paste karakter yutuyor.** Çoklu satır yapıştırmada `(` parantezleri ve `!important` gibi history expansion zsh için tehlikeli. Tek satır commit mesajı disiplini (MK-87.3) artık zorunlu.
+1. **Vizyon belgesi okundu** (`docs/88-VIZYON-TANIMSIZLAR.md` — 87 kapanışından)
+2. **Şema teyit sorguları** (`spool_malzemeleri`, `boru_olculer`, RLS, tanımsız sayım)
+3. **Migration v1 yazıldı** (`064_v_tanimsiz_havuz.sql`) — VIEW + 2 RPC, `sistem_preset=false`
+4. **Smoke test patladı** — `boru_olculer_tenant_consistency` constraint hatası
+5. **Constraint analizi + karar** (KARAR-88.2: Yol-A, paylaşımlı)
+6. **Migration v2 patch** — `sistem_preset=true`, MD5 değişti
+7. **Smoke test v2 başarılı** — 30 spool bağlandı, GENERATED kolonlar formül uyumlu, view doğru sıralıyor
+8. **RPC sürüm teyidi** — `pg_get_functiondef` ile `'boru', true` görüldü ✅
+9. **`admin/kutuphane-oneriler.html` yazıldı** — Hero+Stats + tablo, cascade animasyon, RPC çağrısı
+10. **Sayfa deploy edildi** (commit `dadfb18`) — yapısal sorunlar tespit edildi
+11. **89 gündem belgesi yazıldı** (refactor + 88.G planı)
+12. **Kapanış belgeleri** (bu dosya + son-durum + sonraki-oturum)
 
 ---
 
-## Performans / Metrik
+## Canlı Doğrulamalar
 
-- **CSS injection guard:** Tek satır if check, performans etkisi yok
-- **Migration 062:** 3 boş tablo + 15 policy, ~50 ms execution
-- **Migration 063:** 2 RPC, ~30 ms execution
-- **Bekleyen Öneriler kartı:** kutuphane.html init sürelerinde fark yok (mevcut `Promise.all` paralelize edildi, 3. iş eklendi)
-- **kutuphane-oneriler.html sidebar/retry fix:** Init süresi <8 sn (retry loop max), saha test ~200 ms (ares-store hızlı yükleniyor)
-- **87.C revert:** Tek dosya, 396 satır silindi, ~200 ms
+- ✅ VIEW + 2 RPC oluşturuldu (`Success. No rows returned`)
+- ✅ RPC `'boru', true` sürümüyle DB'de (`pg_get_functiondef` ile teyit)
+- ✅ Smoke test 30 spool'u tek transaction'da bağladı
+- ✅ Tolerans (`±0.5mm dış çap / ±0.3mm et`) selektif çalıştı, 60.3×6.3 toleranstan kaldı
+- ✅ GENERATED kolonlar: ic_cap=130.7, et_min=3.938, et_max=5.063, hacim=13.4166, yüzey=0.4389
+- ❌ Frontend sayfa AresPipe pattern'ine uyumsuz → 89 refactor
 
 ---
 
-> 88. oturum açılışında bu dosya, `.github/son-durum.md`, `docs/CLAUDE-SONRAKI-OTURUM.md` ve özellikle `docs/88-VIZYON-TANIMSIZLAR.md` okunacak.
+## Öğrenmeler (MK kayıtları)
+
+- **MK-88.A** — RPC SECURITY DEFINER + içeride auth.uid() + super_admin kontrolü → güvenli RLS bypass pattern'i. Diğer admin-only RPC'lerde de aynı şablon kullanılabilir.
+- **MK-88.B** — CHECK constraint = schema tasarım sinyali. Bypass etmek yerine constraint'i okuyup vizyonu onunla buluştur. (`boru_olculer_tenant_consistency` örneği)
+- **MK-88.C** — SQL Editor `postgres` rolünde `auth.uid()=NULL`. SECURITY DEFINER + auth kontrolü olan RPC'ler doğrudan test edilemez. Manuel SQL ile mantığı yürüt + ROLLBACK ile teyit et.
+- **MK-88.D** — Yeni admin sayfası yazarken **referans bir admin sayfasını görmeden başlama**. AresPipe ortak layout pattern'i tahminle çalışmıyor — script path'leri, sidebar inject, CSS değişkenleri vs hepsi belirli pattern'e bağlı.
+- **MK-88.E** — Vizyon belgesi büyükse oturum içinde paradigma onayını ilk 2-3 mesajda netleştir. Cihat "yanlış anlaşıldı" diyebilir, küçük adımlarla teyit etmek lazım.
+
+---
+
+## Karar Geçmişi (88'in)
+
+| # | Karar | Bağlam |
+|---|---|---|
+| **KARAR-88.1** | Tanımsız = gerçek-zamanlı view (`boru_olculer_id IS NULL`). Counter modeli ve kullanıcı "Kaydet" akışı kalkar. | Vizyon belgesi 87 sonu + 88 onayı |
+| **KARAR-88.2** | Özel parça `sistem_preset=true, tenant_id=NULL` — paylaşımlı kütüphane. | CHECK constraint sürprizi sonrası |
+| **KARAR-88.3** | AI standart önerisi 88'de YOK. Tetik: 50+ tanımsız kayıt veya Cihat sinyali. | Cihat: "ben dışarıda araştırırım" |
+| **KARAR-88.4** | Özel parça formu sabit değil, `boru_olculer` kolonlarına göre dinamik. | Cihat tarafından netleştirildi |
+| **KARAR-88.5** | `agirlik_kg_m` β-iyileştirilmiş: form input + yoğunluk lookup ile otomatik hesap, üzerine yazılabilir. α (GENERATED migration) 90+'a kaldı. | Manuel giriş riski tartışması |
+| **KARAR-88.6** | `kutuphane-oneriler.html` 89'da komple refactor. AresPipe admin pattern'ine uymadığı için sıfırdan yazılacak. | Canlı test sonrası |
+
+---
+
+## Yapılamayanlar / Devreden Borç
+
+| # | Konu | Aciliyet |
+|---|---|---|
+| 1 | `admin/kutuphane-oneriler.html` refactor | P0 — 89 öncelik 1 |
+| 2 | 88.G — Detay paneli + özel parça formu | P0 — 89 öncelik 2 |
+| 3 | DIN 17175 seed migration (139.7×4.5 dahil) | P1 — opsiyonel 89 |
+| 4 | AI standart önerisi (A-AI) | P2 — tetik koşulu var, ertelendi |
+| 5 | `agirlik_kg_m` GENERATED migration | P2 — 90+, önce veri sapma kontrolü |
+
+---
+
+## Commit'ler
+
+| Hash | Mesaj |
+|------|-------|
+| `dadfb18` | feat(88): tanimsiz malzeme havuzu - migration + liste sayfasi |
+
+---
+
+## Performans Notları
+
+- View sorgusu: <50ms (40 satır / 2 grup)
+- RPC `v_tanimsiz_havuz_listele()`: aynı sorgu, SECURITY DEFINER ek maliyet yok
+- RPC `ozel_parca_boru_kaydet()`: 1 INSERT + 1 UPDATE (30 satır) = single transaction, <100ms tahmini
+
+---
+
+> 89. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra Cihat'a "Hangi işle başlayalım?" sorusu sorulur. Önerilen sıra: referans admin sayfasını gör → kutuphane-oneriler.html refactor → 88.G özel parça formu.
