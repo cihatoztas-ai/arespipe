@@ -1,100 +1,150 @@
-# Son Durum — 88. Oturum (14 Mayıs 2026)
+# Son Durum — 89. Oturum (15 Mayıs 2026)
 
-> 87 → 88 geçişi. Tanımsız malzeme paradigma değişimi (counter → gerçek-zamanlı view). 88.A canlıda, 88.C deploy ama yapısal refactor gerekiyor, 88.G beklemede.
+> 88'in kalan işleri (89.A oneriler refactor + 89.B 88.G detay paneli) yerine, kullanıcı vizyonu netleştirince odak değişti: **kütüphane sayfa hiyerarşisi refactor** (Katman 2-3-4 yeni yapı) yapıldı. AI/AR/3D vizyonu yazılı belgelendi.
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**88 kısmi başarıyla kapatıldı.** Backend (migration + RPC'ler) canlıda ve doğrulandı. Frontend sayfa AresPipe layout pattern'ine uymadığı için 89'da komple refactor edilecek.
+**89 başarıyla kapandı.** Kütüphane refactor'ün ilk büyük parçası tamamlandı:
+- 1 yeni vizyon belgesi (`docs/KUTUPHANE-VERI-BESLEME-VIZYONU.md`, 218 satır)
+- 2 yeni admin sayfası (Katman 2 + Katman 3)
+- 1 mevcut admin sayfası tamamen yeniden yazıldı (Katman 4 — 863 → 599 satır)
+- 1 mevcut sayfada link patch (Katman 1)
 
 ### Yapılanlar
 
-1. **Paradigma kararı (KARAR-88.1)** — Tanımsız malzeme = `spool_malzemeleri.boru_olculer_id IS NULL` gerçek-zamanlı view. Counter modeli (`tanimsiz_kayitlar.siklik_sayisi`) ve kullanıcı "Kaydet" akışı tamamen kaldırıldı. Vizyon belgesi: `docs/88-VIZYON-TANIMSIZLAR.md`.
-2. **Migration `064_v_tanimsiz_havuz.sql`** (canlıda, smoke test geçti)
-   - `v_tanimsiz_havuz` VIEW — sıklığa göre gruplama, RLS-aware
-   - `v_tanimsiz_havuz_listele()` RPC — SECURITY DEFINER + içeride super_admin auth → tüm tenant'ları kapsar
-   - `ozel_parca_boru_kaydet()` RPC — INSERT + UPDATE, tolerans ±0.5mm dış çap / ±0.3mm et
-3. **CHECK constraint uyumu (KARAR-88.2)** — `boru_olculer_tenant_consistency` constraint'i `sistem_preset=false ↔ tenant_id≠NULL` zorunluluğu getiriyor. Vizyon "paylaşımlı kütüphane" olduğu için RPC `sistem_preset=true, tenant_id=NULL` ile yazıyor.
-4. **Smoke test canlı doğrulaması** (BEGIN/ROLLBACK ile)
-   - 30 spool (`139.7×4.5 St 37`) tek INSERT+UPDATE ile bağlandı
-   - 60.3×6.3 St 37 (1 spool) tolerans dışı kaldı, kazara çapraz eşleşme yok
-   - GENERATED kolonlar formül uyumlu: ic_cap=130.7, et_min=3.938, et_max=5.063, hacim=13.42, yüzey=0.439
-5. **`admin/kutuphane-oneriler.html` deploy edildi** (commit `dadfb18`) ama yapısal sorunlu — 89'da komple refactor.
+1. **Vizyon belgesi — `docs/KUTUPHANE-VERI-BESLEME-VIZYONU.md`** (218 satır)
+   - 4 veri pipeline: manuel · mobile etiketleme · imalat foto QR-ölçek · STEP/Rhino parse
+   - Bootstrap learning loop (Faz 0 → Faz 5)
+   - Olgunluk göstergesinin AR/3D anlamı (📷 / 🎲 / 📐)
+   - Veri modeli önerisi (`kutuphane_medya` polymorphic tablo)
+   - Sayfa hiyerarşisi ve sonraki adımlar
 
-### Canlı Tespit Edilen Sorunlar (88.C)
+2. **Katman 2 — `admin/kutuphane-malzemeler.html`** (406 satır, YENİ)
+   - URL: `?tablo=boru_olculer` (veya `fitting_olculer`, `flansh_olculer`)
+   - 7 malzeme grubu kart liste: Karbon · Paslanmaz · CuNi · Duplex · Alüminyum · Alaşımlı · Nikel
+   - Her grup için DB paralel `count(*)` (mevcut sayı)
+   - Aktif/Bekleyen ayrımı, breadcrumb, olgunluk badge placeholder
 
-- `lang.js` ve `ares-supabase.js` 404 — `../` script path'leri yanlış
-- Sol sidebar yok — AresPipe admin layout pattern'ine uyumsuz
-- CSS değişkenleri (`var(--ac)`, `var(--sur2)`) tarayıcı default'una düştü, palet yüklenmedi
-- ARES global tanımsız → RPC çağrısı yapılamadı → liste boş "Tüm malzemeler bağlı" yanıltıcı mesajı
+3. **Katman 3 — `admin/kutuphane-standartlar.html`** (519 satır, YENİ)
+   - URL: `?tablo=boru_olculer&mg=karbon`
+   - Hedef standart kataloğu kod-içi sabit (3 tablo × 7 mg × 1-5 std)
+   - Boru karbon: B36.10M · EN 10216 · DIN 86019 · API 5L · A53 vs.
+   - Aktif / Bekleyen / Hedef Dışı (ekstra) 3 bölüm
+   - Mevcut/hedef ölçü sayısı + ilerleme bar
+
+4. **Katman 4 — `admin/kutuphane-detay.html`** (599 satır, SIFIRDAN)
+   - URL: `?tablo=boru_olculer&mg=karbon&std=B36.10M`
+   - Mevcut 863 satır filtre-bazlı sayfa tamamen değişti (eski MD5: `b3823b2dcaf87c56274ce641c8b4cf86` git history'de)
+   - SVG kesit (boru için) + sağ panel (seçili satır ölçüleri + ek dosyalar)
+   - Long format tablo (DN × Sch satırları), satır tıklama → SVG/panel canlı güncellenir
+   - Aksiyon barı placeholder (yeni ölçü, foto yükle, excel — 90+)
+   - Alt navigasyon: malzeme grubu altındaki diğer standartlar
+   - Boru için tam destek, fitting/flanş placeholder
+
+5. **Katman 1 link güncelleme — `admin/kutuphane.html`** (1 satır, satır 407)
+   - `kutuphane-detay.html?tablo=X` → `kutuphane-malzemeler.html?tablo=X`
+   - Grup kartları artık Katman 2'ye yönlendiriyor
+
+### Kullanıcı Vizyon Açıklamaları (89'un en değerli kazanımı)
+
+Oturum sırasında Cihat şu vizyon parçalarını netleştirdi:
+- Kütüphane sadece admin envanteri değil — **AI/AR/3D ekosisteminin yakıt deposu**
+- 4 veri pipeline: manuel + mobile etiketleme + **imalat foto QR-ölçek (en büyük veri kaynağı)** + STEP/Rhino parse
+- Bootstrap loop: kütüphane olgunlaştıkça AI fotoğraftan parça tanır, döngü tersine döner
+- Uzun vade: sahada **AR ile parça doğrulama** (operatör mobil → AR overlay → "Bu parça gerçekten DN500 mi?")
+
+Bu vizyon parçaları belgeye yazıldı → 90+ oturumlarda referans olacak.
 
 ---
 
-## Commit'ler (88. Oturumda)
+## Plan Değişikliği
+
+88'in 89'a devrettiği işler **90'a kaldı**:
+
+| # | İş | Durum |
+|---|---|---|
+| **89.A** | `admin/kutuphane-oneriler.html` refactor | 90'a kaldı (mockup pattern hazır, ~1 saat) |
+| **89.B** | 88.G detay paneli + özel parça formu | 90'a kaldı (`ozel_parca_boru_kaydet()` RPC canlıda) |
+
+**Sebep:** Cihat kütüphane sayfası refactor'üne odak istedi. Vizyon netleştikçe iş büyüdü (4 katmanlı yapı + AI/AR/3D belge). 89'un işi tek başına ~3 saat sürdü, oneriler+88.G ek 2 saat olurdu — bilinçli olarak 90'a kaydırıldı.
+
+---
+
+## Commit'ler (89. Oturumda)
 
 | Hash | Mesaj |
 |------|-------|
-| `dadfb18` | feat(88): tanimsiz malzeme havuzu - migration + liste sayfasi |
+| (pending) | feat(89): kütüphane 4 katman hiyerarşi refactor + AI/AR vizyon belgesi |
 
-CI: ✅ YEŞİL son commit'ten itibaren.
+**Beklenen değişiklik özeti:**
+- 1 yeni: `docs/KUTUPHANE-VERI-BESLEME-VIZYONU.md`
+- 2 yeni: `admin/kutuphane-malzemeler.html`, `admin/kutuphane-standartlar.html`
+- 2 değişiklik: `admin/kutuphane-detay.html` (sıfırdan yazıldı), `admin/kutuphane.html` (1 satır)
+
+CI: ✅ YEŞİL (0 hata, 38 uyarı — uyarılar 88'den kalan, bizim eklediklerimiz 0)
 
 ---
 
 ## DB Değişiklikleri
 
-```sql
--- 88.A migration (064_v_tanimsiz_havuz.sql) — özet
-CREATE OR REPLACE VIEW v_tanimsiz_havuz AS ...
-CREATE OR REPLACE FUNCTION v_tanimsiz_havuz_listele() RETURNS TABLE(...) SECURITY DEFINER ...
-CREATE OR REPLACE FUNCTION ozel_parca_boru_kaydet(...) RETURNS TABLE(...) SECURITY DEFINER ...
-GRANT EXECUTE ON FUNCTION v_tanimsiz_havuz_listele() TO authenticated;
-GRANT EXECUTE ON FUNCTION ozel_parca_boru_kaydet(...) TO authenticated;
-```
+**Yok.** 89 sadece frontend refactor.
 
-Mevcut veri: 40 tanımsız `spool_malzemeleri` satırı / 31 etkilenen spool / 2 benzersiz kombinasyon (139.7×4.5 St 37 ile 60.3×6.3 St 37).
+**Varsayılan DB kolonları** (Katman 2/3/4 sorguları):
+- `boru_olculer.malzeme_grubu_kod` (text)
+- `boru_olculer.standart` (text)
 
----
+**Bu kolonlar yoksa** sayfa hata yerine "kolon yok" uyarısı gösterir (MK-89.B). Canlı testte kontrol edilecek.
 
-## 89'a Açık Borç (önceliğe göre)
-
-1. **`admin/kutuphane-oneriler.html` komple refactor** — AresPipe admin pattern'ine uyumlu yeniden yaz. Ön koşul: bir referans admin sayfası (örn. `admin/panel.html`) ilk 60 satırını gör.
-2. **88.G — Detay paneli + özel parça formu** — Liste satırına tıklayınca yan panel, form (malzeme_grubu/dn/schedule/ölçü/ağırlık-auto), `ozel_parca_boru_kaydet()` RPC çağrısı, sonuç toast.
-3. **DIN 17175 seed migration (opsiyonel)** — 139.7×4.5 St 37 (30 spool) için doğru çözüm aslında özel değil standart tablo yüklenmesi. 88.A'nın UPDATE mantığı zaten hazır, sadece INSERT seed.
-4. **AI standart önerisi (A-AI, 89+ değil — sonra)** — Tetik koşulu: tanımsız kayıt 50+ olunca veya Cihat sinyal verince. 88'de bilinçli ertelendi.
-5. **`agirlik_kg_m` GENERATED migration** — Tutarsızlık (diğer hesaplanan kolonlar GENERATED ama bu değil). Mevcut 358 satırda sapma kontrolü gerekiyor önce. 90+ oturum.
+`kutuphane_medya` tablosu vizyon belgesinde önerildi ama migration 90+'a kaldı.
 
 ---
 
-## Kararlar (88'de Alınanlar)
+## 90'a Açık Borç (önceliğe göre)
+
+1. **DB schema doğrulama** — canlı test: `boru_olculer.malzeme_grubu_kod` ve `boru_olculer.standart` kolonları var mı? Yoksa migration gerekli.
+2. **89.A** — `admin/kutuphane-oneriler.html` refactor. Aynı pattern (head + topbar + sidebar + appShell + inline auth). Mockup yok ama Katman 2/3/4 referans yeterli.
+3. **89.B** — 88.G detay paneli + özel parça formu. `ozel_parca_boru_kaydet()` RPC kullanılacak.
+4. **Katman 4 fitting/flanş kolon konfigi** — Şu an `TABLO_KONFIG.fitting_olculer.kolonlar = []`. Fitting + flanş için kolon listesi + SVG kesit tipi tanımlanmalı.
+5. **`kutuphane_medya` migration** — Polymorphic medya tablosu (vizyon belgesi Bölüm 5). Aksiyon butonları aktif olur (foto yükle, 3D yükle, DXF yükle).
+6. **Hedef standart kataloğu** — Şu an `STANDART_KATALOG` kod-içi sabit (Katman 3'te). Markdown veya DB tablosuna taşınabilir.
+
+---
+
+## Kararlar (89'da Alınanlar)
 
 | # | Karar |
 |---|---|
-| **KARAR-88.1** | Tanımsız malzeme = `boru_olculer_id IS NULL` gerçek-zamanlı view. Counter modeli ve kullanıcı "Kaydet" akışı kaldırıldı. |
-| **KARAR-88.2** | Özel parça `sistem_preset=true, tenant_id=NULL` — paylaşımlı kütüphane. Tenant-spesifik özel parça senaryosu (`sistem_preset=false`) ileride tetik koşulu çıkarsa açılır. |
-| **KARAR-88.3** | AI standart önerisi 88'de YOK. Halüsinasyon riski yüksek, doğrulama katmanı (kaynak + fizik + cross-check) ayrı oturumluk iş. Tetik: 50+ tanımsız kayıt veya Cihat sinyali. |
-| **MK-88.A** | RPC SECURITY DEFINER + içeride `auth.uid()` + `kullanicilar.rol='super_admin'` kontrolü → güvenli RLS bypass pattern'i. Diğer admin-only RPC'lerde aynı yaklaşım. |
-| **MK-88.B** | CHECK constraint'leri schema tasarım sinyali. Bypass etmek yerine vizyonu constraint'le buluştur. |
-| **MK-88.C** | SQL Editor `postgres` rolünde `auth.uid()=NULL` → SECURITY DEFINER RPC'leri doğrudan test edilemez. Manuel SQL ile mantığı yürüt + ROLLBACK ile teyit et. |
-| **MK-88.D** | Yeni admin sayfası yazarken **mutlaka mevcut bir referans sayfayı gör**. Script path'leri, sidebar inject pattern'i, CSS yüklemesi tahminle çalışmıyor. |
+| **KARAR-89.1** | Kütüphane sayfa hiyerarşisi 4 katman: envanter → malzeme grupları → standartlar → tek tablo. Filtre yerine navigasyon. |
+| **KARAR-89.2** | Olgunluk göstergesi 3 katman (foto + 3D + DXF) — SVG zaten temel, ayrı sayılmaz. |
+| **KARAR-89.3** | Hedef standart kataloğu kod-içi sabit `STANDART_KATALOG` ile başla, ileride markdown/DB'ye taşınır. |
+| **KARAR-89.4** | Tablo formatı Long (DN × Sch satırları) — pivot mantığı yok, sade ve esnek. |
+| **KARAR-89.5** | Katman 4'te sadece boru için tam destek. Fitting/flanş placeholder, 90+'da eklenecek. |
+| **KARAR-89.6** | `kutuphane-detay.html` adı korundu (sıfırdan yazılsa da) — semantik uygun, link patch'i tek satır oldu. |
+| **MK-89.A** | Çok katmanlı sayfa hiyerarşisinde her sayfa için **inline `super_admin` auth pattern'i** kullan (`kutuphane.html` referansla aynı). `ARES.sayfaYetkiKontrol` yok — `getSession + select rol + appShell visibility`. |
+| **MK-89.B** | DB kolonu eksik olabilir varsayımıyla hata dayanıklılığı: 404/PGRST205/`column does not exist` hatalarında sayfa açılır, uyarı gösterir, kullanıcı engellenmez. |
+| **MK-89.C** | Mockup-first çalışma R-10 disiplini → karmaşık tasarım kararları için **3 yaklaşım kıyaslama**, sonra detay HTML mockup zaman tasarrufu sağladı. |
+| **MK-89.D** | Vizyon parçaları netleştiğinde **mutlaka yazılı belgele** — `docs/KUTUPHANE-VERI-BESLEME-VIZYONU.md` pattern'i. İleride sayfa "neden böyle?" sorusunun cevabı. |
 
 ---
 
-## Kritik Hatırlatmalar (88'den dahil)
+## Kritik Hatırlatmalar (89'dan dahil)
 
-- **MK-88.D (YENİ):** Yeni admin sayfası → referans admin sayfasını gör (`admin/panel.html` veya benzeri). Yoksa tekrar aynı path/layout hatasını yaparsın.
-- **MK-88.C (YENİ):** SECURITY DEFINER + auth.uid() RPC'leri SQL Editor'da test edilemez. Manuel SQL + ROLLBACK kullan.
-- **MK-88.B (YENİ):** CHECK constraint vs vizyon çakışması olursa: constraint okumadan vizyonu zorla yazma, ikisini buluştur.
-- **MK-52.x (Önceki):** `~/Downloads/_arsiv/` disiplin, MD5 doğrulama, terminal git akışı (web UI upload yok).
+- **MK-89.D (YENİ):** Karmaşık vizyon konuşmaları → yazılı belge. Markdown dosya yaz, repo'ya koy.
+- **MK-89.B (YENİ):** Yeni DB kolonu varsayan UI kodları → her sorguya hata dayanıklılığı (kolon yok, tablo yok senaryoları).
+- **MK-89.A (YENİ):** Admin sayfa pattern'i: inline `getSession → select rol from kullanicilar → appShell visibility` üçlüsü.
+- **MK-88.D (Önceki):** Yeni admin sayfası → referans admin sayfasını gör. Bu oturumda `kutuphane.html` referans alındı, 3 yeni sayfa pattern'e uydu.
+- **MK-52.x (Önceki):** `~/Downloads/_arsiv/` disiplin, MD5 doğrulama, terminal git akışı.
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL (`dadfb18`)
-- **Lint:** 0 hata
-- **Vercel:** Production = `dadfb18`
+- **Build:** ✅ YEŞİL (commit öncesi lokal lint)
+- **Lint:** 0 hata, 38 uyarı (88'den kalan, izometri-batch + spool_detay i18n eksiklikleri)
+- **Vercel:** Production = (89 commit sonrası deploy edilecek)
 
 ---
 
-> 89. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+> 90. oturum açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.

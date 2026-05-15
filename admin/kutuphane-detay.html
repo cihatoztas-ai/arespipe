@@ -11,9 +11,18 @@
 <script src="../ares-normalize.js"></script>
 <script src="../ares-layout.js"></script>
 <style>
-:root {--ac:#2D8EFF;--ac2:#1a75e8;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;--admin:#f97316;}
-[data-theme=dark] {--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txm:#94a3b8;--txd:#6b7a90;}
-[data-theme=light-anthracite] {--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+:root {
+  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
+  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
+}
+[data-theme=dark] {
+  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
+  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
+}
+[data-theme=light-anthracite] {
+  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
+  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -23,7 +32,8 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .topbar-sep{flex:1;}
 .topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
 .topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
-.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
 
 .layout{display:flex;flex:1;min-height:0;}
 .sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
@@ -35,136 +45,98 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 
 .main{flex:1;overflow-y:auto;padding:24px 32px;min-width:0;}
 
-.geri-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txm);text-decoration:none;margin-bottom:14px;padding:4px 10px;border-radius:7px;border:1px solid transparent;}
-.geri-link:hover{color:var(--tx);background:var(--sur);border-color:var(--bor);}
+/* Breadcrumb */
+.brd{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txm);margin-bottom:14px;flex-wrap:wrap;}
+.brd a{color:var(--txm);text-decoration:none;padding:4px 8px;border-radius:6px;border:1px solid transparent;transition:all .15s;}
+.brd a:hover{color:var(--tx);background:var(--sur);border-color:var(--bor);}
+.brd-sep{color:var(--txd);font-size:11px;}
+.brd-aktif{color:var(--tx);font-weight:600;padding:4px 8px;}
 
-/* SAYFA BAŞLIĞI */
+/* Sayfa başlığı */
 .sf-bas{margin-bottom:20px;}
-.sf-bas-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.sf-bas-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
 .sf-baslik{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:var(--tx);}
 .sf-kod{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac);background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.25);padding:3px 9px;border-radius:7px;font-weight:600;}
 .sf-cnt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--txm);background:var(--sur);border:1px solid var(--bor);padding:3px 9px;border-radius:7px;font-weight:600;}
-.sf-std{font-size:12px;color:var(--txm);margin-top:8px;line-height:1.4;}
-.sf-std strong{color:var(--tx);}
+.sf-mg-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--leg);font-size:12px;font-weight:600;}
+.sf-alt{font-size:13px;color:var(--txm);margin-top:6px;}
 
-/* ÜST KART: 2 sütun (SVG | Sağ Panel) */
-.ust-kart{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-bottom:22px;}
+/* Üst kart: SVG + Sağ Panel */
+.ust-kart{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-bottom:14px;}
 
-/* SVG yer tutucu */
-.svg-yer{background:var(--sur);border:1px dashed var(--bor);border-radius:14px;min-height:280px;display:flex;align-items:center;justify-content:center;color:var(--txd);font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;text-align:center;line-height:1.6;background-image:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(148,163,184,.04) 8px,rgba(148,163,184,.04) 16px);padding:24px;}
-.svg-yer .yer-ikon{font-size:56px;opacity:.25;margin-bottom:10px;display:block;}
-.svg-yer .yer-not{opacity:.7;max-width:280px;}
-.svg-yer .yer-baslik{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--txm);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.svg-yer{background:var(--sur);border:1px solid var(--bor);border-radius:14px;min-height:280px;display:flex;align-items:center;justify-content:center;padding:18px;position:relative;}
+.svg-yer svg{width:100%;height:auto;max-height:280px;}
+.svg-yer-baslik{position:absolute;top:10px;left:14px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--txd);text-transform:uppercase;}
+.svg-yer-not{position:absolute;bottom:10px;right:14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);}
 
-/* SAĞ PANEL */
 .sag-panel{display:flex;flex-direction:column;gap:14px;}
-
 .panel-blok{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:14px 16px;}
 .panel-blok-bas{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .panel-blok-ikon{font-size:14px;opacity:.7;}
 .panel-blok-ad{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--tx);}
 .panel-blok-not{font-size:10.5px;color:var(--txd);margin-left:auto;}
 
-/* Ölçü Lejantı */
 .lejant-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px 12px;}
 .lejant-sat{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;}
-.harf-rozet{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;background:var(--sur2);border:1px solid var(--bor);color:var(--ac);padding:2px 6px;border-radius:5px;letter-spacing:.3px;min-width:36px;text-align:center;flex-shrink:0;line-height:1.2;}
-.lejant-ad{color:var(--txm);flex:1;min-width:0;}
-.lejant-ad-tx{color:var(--tx);font-weight:500;}
+.harf-rozet{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;background:var(--sur2);border:1px solid var(--bor);color:var(--ac);padding:2px 6px;border-radius:5px;letter-spacing:.3px;min-width:42px;text-align:center;flex-shrink:0;line-height:1.2;}
+.lejant-ad{color:var(--txm);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lejant-val{color:var(--tx);font-weight:600;font-family:'JetBrains Mono',monospace;}
+.lejant-val.bos{color:var(--txd);font-style:italic;font-weight:400;}
 
-/* Ek Dosyalar Özet */
-.ek-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.ek-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .ek-kart{background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:8px 10px;text-align:center;}
 .ek-ikon{font-size:16px;opacity:.5;display:block;margin-bottom:2px;}
 .ek-sayi{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--tx);line-height:1;}
 .ek-ad{font-size:9px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
 
-.bilgi-not{font-size:10.5px;color:var(--warn);margin-top:8px;display:flex;align-items:center;gap:5px;}
+/* Aksiyon barı */
+.aksiyon-bar{display:flex;align-items:center;justify-content:space-between;background:var(--sur);border:1px solid var(--bor);border-radius:11px;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+.aksiyon-sol{font-size:12px;color:var(--txm);font-family:'JetBrains Mono',monospace;}
+.aksiyon-sol strong{color:var(--tx);font-weight:700;}
+.aksiyon-sag{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;border:1px solid var(--bor);background:var(--sur);color:var(--tx);transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{border-color:var(--ac);color:var(--ac);}
+.btn-pri{background:var(--ac);border-color:var(--ac);color:#fff;}
+.btn-pri:hover{background:var(--ac2);border-color:var(--ac2);color:#fff;}
+.btn-yetkisiz{opacity:.5;cursor:not-allowed;}
 
-/* AI Olgunluk */
-.olg-track{background:var(--sur2);height:8px;border-radius:4px;overflow:hidden;margin:6px 0;}
-.olg-fill{background:linear-gradient(90deg, var(--ac), var(--leg));height:100%;transition:width .5s ease;}
-.olg-detay{font-size:11px;color:var(--txm);display:flex;justify-content:space-between;align-items:center;}
-.olg-pct{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);}
-.olg-esik{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--txd);font-family:'JetBrains Mono',monospace;letter-spacing:.3px;text-transform:uppercase;}
-.olg-esik span{position:relative;padding-top:8px;}
-.olg-esik span::before{content:'';position:absolute;top:0;left:50%;width:1px;height:5px;background:var(--bor);}
-
-/* KAYITLAR TABLOSU */
+/* Tablo */
 .tbl-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
-.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);gap:14px;flex-wrap:wrap;}
-.tbl-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;color:var(--tx);}
-.tbl-meta{font-size:11px;color:var(--txd);font-family:'JetBrains Mono',monospace;}
-
-.veri-tbl-kapsayici{overflow-x:auto;max-height:calc(100vh - 540px);min-height:240px;}
+.veri-tbl-kapsayici{overflow-x:auto;max-height:calc(100vh - 460px);min-height:240px;}
 .veri-tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.veri-tbl th{position:sticky;top:0;text-align:left;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;border-bottom:1px solid var(--bor);background:var(--sur2);white-space:nowrap;z-index:1;}
-.veri-tbl th .th-harf{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:var(--ac);background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.3);padding:1px 5px;border-radius:4px;margin-left:5px;letter-spacing:.2px;text-transform:none;}
-.veri-tbl td{padding:8px 12px;border-bottom:1px solid rgba(35,39,48,.4);font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.veri-tbl td.meta{color:var(--txd);font-size:10.5px;}
-.veri-tbl td.null{color:var(--txd);font-style:italic;}
-.veri-tbl td.uuid{color:var(--txd);font-size:10px;}
+.veri-tbl th{position:sticky;top:0;text-align:left;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;border-bottom:1px solid var(--bor);background:var(--sur2);white-space:nowrap;z-index:1;}
+.veri-tbl td{padding:10px 12px;border-bottom:1px solid rgba(35,39,48,.4);font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx);white-space:nowrap;cursor:pointer;}
 .veri-tbl tr:hover td{background:rgba(255,255,255,.02);}
+.veri-tbl tr.secili td{background:rgba(45,142,255,.08);}
+.veri-tbl tr.secili td:first-child{border-left:3px solid var(--ac);padding-left:9px;}
+.veri-tbl td.null{color:var(--txd);font-style:italic;}
 
-/* Olgunluk hücresi */
-.olg-hucre{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);}
-.olg-min{display:inline-flex;align-items:center;gap:2px;}
-.olg-min-ikon{opacity:.5;}
-.olg-pct-min{font-weight:700;color:var(--txd);margin-left:6px;padding-left:6px;border-left:1px solid var(--bor);}
+.olg-hucre{display:flex;align-items:center;gap:4px;}
+.olg-badge{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;border:1px solid var(--bor);background:var(--sur2);color:var(--txd);transition:all .15s;}
+.olg-badge.dolu{background:rgba(22,163,110,.12);border-color:rgba(22,163,110,.35);color:var(--gr);}
 
-.pag-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--bor);background:var(--sur2);gap:14px;flex-wrap:wrap;}
-.pag-bilgi{font-size:12px;color:var(--txm);font-family:'JetBrains Mono',monospace;}
-.pag-btns{display:flex;gap:6px;align-items:center;}
-.pag-btn{padding:6px 12px;background:var(--sur);border:1px solid var(--bor);border-radius:7px;color:var(--tx);cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;}
-.pag-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac);}
-.pag-btn:disabled{opacity:.4;cursor:not-allowed;}
-.pag-input{width:60px;padding:5px 8px;background:var(--sur);border:1px solid var(--bor);border-radius:6px;color:var(--tx);font-size:12px;text-align:center;font-family:'JetBrains Mono',monospace;}
+.nps-pill{display:inline-block;padding:2px 8px;border-radius:5px;background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.2);color:var(--ac);font-weight:700;font-size:12px;font-family:'JetBrains Mono',monospace;}
 
-.empty{text-align:center;padding:48px 20px;color:var(--txd);}
-.empty-icon{font-size:32px;margin-bottom:10px;}
+/* Alt navigasyon */
+.alt-nav{margin-top:30px;padding-top:20px;border-top:1px solid var(--bor);}
+.alt-nav-bas{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txd);margin-bottom:12px;}
+.alt-nav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.alt-nav-k{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all .15s;border-left:3px solid var(--bor);}
+.alt-nav-k:hover{border-color:var(--ac);background:var(--sur2);}
+.alt-nav-k.dolu{border-left-color:var(--ac);}
+.alt-nav-k.bos{border-left-color:var(--txd);opacity:.6;}
+.alt-nav-k.bos:hover{opacity:.85;}
+.alt-nav-k.aktif{border-left-color:var(--ac);background:rgba(45,142,255,.05);border-color:var(--ac);pointer-events:none;}
+.alt-nav-ad{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--tx);}
+.alt-nav-sayi{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
+
+/* Boş / yükleniyor */
+.yuk{text-align:center;padding:48px 20px;color:var(--txd);}
 .loader{display:inline-block;width:14px;height:14px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-.uyari{background:var(--sur);border:1px solid rgba(229,62,62,.3);border-left:3px solid var(--re);border-radius:10px;padding:16px 20px;color:var(--tx);}
-
-/* Canlı badge */
-.canli-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--gr);padding:3px 8px;background:rgba(22,163,110,.1);border:1px solid rgba(22,163,110,.3);border-radius:6px;letter-spacing:.4px;text-transform:uppercase;}
-.canli-nokta{width:6px;height:6px;background:var(--gr);border-radius:50%;animation:nabz 1.8s ease-in-out infinite;}
-.canli-badge.kopuk{color:var(--txd);background:var(--sur2);border-color:var(--bor);}
-.canli-badge.kopuk .canli-nokta{background:var(--txd);animation:none;}
-@keyframes nabz{0%,100%{opacity:1;}50%{opacity:.3;}}
-
-/* Toast */
-.toast-konteyner{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
-.toast{background:var(--sur);border:1px solid var(--bor);border-left:3px solid var(--gr);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx);min-width:200px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:toast-in .25s ease;}
-.toast-ikon{font-size:14px;}
-@keyframes toast-in{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-.toast.cikar{animation:toast-out .25s ease forwards;}
-@keyframes toast-out{to{opacity:0;transform:translateX(20px);}}
-
-/* FİLTRE ÇUBUĞU */
-.filtre-cubuk{background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-.filtre-cubuk-bas{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
-.filtre-cubuk-bas-ikon{font-size:13px;opacity:.7;}
-
-.filtre-grup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;}
-
-.filtre-kutu{display:flex;align-items:center;gap:5px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:0 0 0 10px;font-size:11px;transition:border-color .15s;}
-.filtre-kutu:hover{border-color:var(--txd);}
-.filtre-kutu.aktif{border-color:var(--ac);background:rgba(45,142,255,.05);}
-.filtre-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;}
-.filtre-lbl-harf{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:var(--ac);background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.3);padding:1px 5px;border-radius:4px;margin-right:5px;letter-spacing:.2px;}
-.filtre-select{background:transparent;border:none;color:var(--tx);padding:7px 28px 7px 5px;font-size:11.5px;font-family:'Barlow',sans-serif;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%23637080' d='M3 4.5L6 8L9 4.5z'/></svg>");background-repeat:no-repeat;background-position:right 8px center;background-size:10px;}
-.filtre-select option{background:var(--sur);color:var(--tx);}
-.filtre-kutu.aktif .filtre-select{color:var(--ac);font-weight:600;}
-
-.filtre-sag{display:flex;align-items:center;gap:10px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);}
-.filtre-temizle{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:11px;font-family:'Barlow',sans-serif;}
-.filtre-temizle:hover{border-color:var(--re);color:var(--re);}
-.filtre-temizle:disabled{opacity:.4;cursor:not-allowed;border-color:var(--bor);color:var(--txd);}
-.filtre-aktif-sayi{color:var(--ac);font-weight:700;}
-
-@media (max-width: 1100px) { .ust-kart{grid-template-columns:1fr;} .svg-yer{min-height:200px;} .lejant-grid{grid-template-columns:1fr;} }
+.uyari{background:var(--sur);border:1px solid rgba(229,62,62,.3);border-left:3px solid var(--re);border-radius:10px;padding:16px 20px;color:var(--tx);font-size:13px;}
+.bos-tablo{text-align:center;padding:40px 20px;color:var(--txd);}
+.bos-tablo-ikon{font-size:36px;margin-bottom:10px;opacity:.4;}
 </style>
 </head>
 <body>
@@ -172,10 +144,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 <div id="appShell" style="display:none;flex-direction:column;min-height:100vh;visibility:hidden;">
 
 <div class="topbar">
-  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane Detay</span></div>
+  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane</span></div>
   <div class="topbar-sep"></div>
   <div class="topbar-user">
-    <span class="canli-badge kopuk" id="canliBadge" title="Real-time bağlantı durumu"><span class="canli-nokta"></span> bağlanıyor</span>
     <span class="topbar-badge">SUPER ADMIN</span>
     <span id="topbarUser">—</span>
     <button class="btn-logout" onclick="cikisYap()">Çıkış</button>
@@ -198,665 +169,431 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 </div>
 
 <div class="main">
-  <a class="geri-link" href="kutuphane.html">← Kütüphane Envanteri</a>
-  <div id="icerikKok">
-    <div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>
+  <div id="anaIcerik">
+    <div class="yuk"><span class="loader"></span> Yükleniyor…</div>
   </div>
 </div>
-
 </div>
 </div>
-
-<!-- Toast konteyner -->
-<div class="toast-konteyner" id="toastKonteyner"></div>
 
 <script>
 'use strict';
 
-var SAYFA_BOYUTU = 50;
-
-// İzinli tablolar
-var TABLO_BILGI = {
-  boru_olculer:        { ad:'Boru Ölçüleri',       ikon:'📐', std:'ASME B36.10M · B36.19M · EN 10216 · DIN 86019', grup:'Borular' },
-  fitting_olculer:     { ad:'Fitting Ölçüleri',    ikon:'🔩', std:'ASME B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089', grup:'Fittings' },
-  flansh_olculer:      { ad:'Flanş Ölçüleri',      ikon:'⚙️', std:'ASME B16.5 · B16.47 · EN 1092 · DIN 86087/88', grup:'Flanşlar' },
-  malzeme_kataloglari: { ad:'Malzeme Katalogları', ikon:'🧪', std:'7 grup · karbon → paslanmaz → duplex → CuNi → alüminyum → alaşımlı → nikel', grup:'Malzemeler' },
-  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',         ikon:'🔗', std:'Geometri × malzeme — hangi parça hangi malzemeden üretilebilir', grup:'Çapraz Uyum' },
-  ozel_parcalar:       { ad:'Özel Parçalar',       ikon:'🧩', std:'Coupling sleeve · custom fitting · üretici-spesifik', grup:'Özel' },
-  tenant_spec_seti:    { ad:'Spec Setleri',        ikon:'📑', std:'Tersane bazlı parça/malzeme alt kümeleri (AVEVA-vari)', grup:'Spec' },
-  spec_kural:          { ad:'Spec Kuralları',      ikon:'📑', std:'Spec başına izinli parça/malzeme kombinasyonları', grup:'Spec' }
+// ── KONFİG ────────────────────────────────────────────────
+var TABLO_AD = {
+  boru_olculer: 'Boru Ölçüleri',
+  fitting_olculer: 'Fitting Ölçüleri',
+  flansh_olculer: 'Flanş Ölçüleri'
 };
 
-// Tablo bazında filtre kolonları (dropdown'la filtrelenebilir kategorik kolonlar)
-var FILTRELER = {
-  boru_olculer: [
-    { kolon:'standart',       ad:'Standart',  harf:'STD' },
-    { kolon:'malzeme_grubu',  ad:'Malzeme',   harf:'MAT' },
-    { kolon:'dn',             ad:'DN',        harf:'DN' },
-    { kolon:'schedule_kod',   ad:'Schedule',  harf:'Sch' },
-    { kolon:'urun_formu',     ad:'Form',      harf:'FRM' }
-  ],
-  fitting_olculer: [
-    { kolon:'geometri_std',   ad:'Standart',  harf:'STD' },
-    { kolon:'parca_tipi',     ad:'Parça',     harf:'TYPE' },
-    { kolon:'cap_buyuk_dn',   ad:'Büyük DN',  harf:'DN1' },
-    { kolon:'cap_kucuk_dn',   ad:'Küçük DN',  harf:'DN2' },
-    { kolon:'schedule_kod',   ad:'Schedule',  harf:'Sch' },
-    { kolon:'class_no',       ad:'Class',     harf:'CLS' }
-  ],
-  flansh_olculer: [
-    { kolon:'geometri_std',   ad:'Standart',  harf:'STD' },
-    { kolon:'flansh_tipi',    ad:'Tip',       harf:'TYPE' },
-    { kolon:'basinc_sinifi',  ad:'Class',     harf:'CLASS' },
-    { kolon:'yuzey_tipi',     ad:'Yüzey',     harf:'FACE' },
-    { kolon:'cap_dn',         ad:'DN',        harf:'DN' }
-  ],
-  malzeme_kataloglari: [
-    { kolon:'spec_standart',  ad:'Standart',  harf:'STD' },
-    { kolon:'spec_grade',     ad:'Grade',     harf:'GR' }
-  ],
-  fitting_malzeme_uyum: [
-    { kolon:'uretim_yontemi', ad:'Üretim',    harf:'M' },
-    { kolon:'yaygin_mi',      ad:'Yaygın',    harf:'Y' }
-  ]
+var MG_AD = {
+  karbon:'Karbon çelik', paslanmaz:'Paslanmaz çelik', cuni:'CuNi',
+  duplex:'Duplex', alasimli:'Alaşımlı', aluminyum:'Alüminyum', nikel:'Nikel alaşım'
 };
 
-// Ölçü lejantı — her tablo için kolon → harf + açıklama
-var OLCU_LEJANT = {
+// Tablo başına kolon konfigürasyonu — sadece boru için tam tanımlı
+// Fitting/flanş için ileride genişletilecek (90+ oturumlar).
+var TABLO_KONFIG = {
   boru_olculer: {
-    aciklama: 'Tek bir borunun geometrisi (malzeme bağımsız).',
-    olculer: [
-      { harf:'DN',     kolon:'dn',                  birim:'',     ad:'Nominal çap' },
-      { harf:'Sch',    kolon:'schedule_kod',        birim:'',     ad:'Schedule (40, 80, ...)' },
-      { harf:'OD',     kolon:'dis_cap_mm',          birim:'mm',   ad:'Dış çap' },
-      { harf:'t',      kolon:'et_mm',               birim:'mm',   ad:'Et kalınlığı' },
-      { harf:'ID',     kolon:'ic_cap_mm',           birim:'mm',   ad:'İç çap (OD−2t)' },
-      { harf:'W',      kolon:'agirlik_kg_m',        birim:'kg/m', ad:'Ağırlık (lineer)' },
-      { harf:'V',      kolon:'hacim_l_m',           birim:'l/m',  ad:'İç hacim (lineer)' },
-      { harf:'SA',     kolon:'yuzey_alan_dis_m2_m', birim:'m²/m', ad:'Dış yüzey alanı' },
-      { harf:'t-min',  kolon:'et_min_mm',           birim:'mm',   ad:'Min et' },
-      { harf:'t-max',  kolon:'et_max_mm',           birim:'mm',   ad:'Max et' },
-      { harf:'t-tol%', kolon:'tolerans_et_yuzde',   birim:'%',    ad:'Et tolerans %' },
-      { harf:'STD',    kolon:'standart',            birim:'',     ad:'Geometri standardı' }
-    ]
+    siralama: [{ kol:'dn', yon:'asc' }, { kol:'sch_kod', yon:'asc' }],
+    kolonlar: [
+      { kol:'nps_inch',     ad:'NPS',    tip:'nps_pill' },
+      { kol:'dn',           ad:'DN',     tip:'sayi', birim:'mm', ondalik:0 },
+      { kol:'dis_cap_mm',   ad:'OD',     tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'sch_kod',      ad:'Sch',    tip:'kod' },
+      { kol:'et_mm',        ad:'Et',     tip:'sayi', birim:'mm', ondalik:2 },
+      { kol:'ic_cap_mm',    ad:'İç çap', tip:'sayi', birim:'mm', ondalik:2 },
+      { kol:'agirlik_kg_m', ad:'kg/m',   tip:'sayi', ondalik:2 },
+      { kol:'yuzey_m2_m',   ad:'m²/m',   tip:'sayi', ondalik:3 }
+    ],
+    panel_lejant: [
+      { kol:'nps_inch',     harf:'NPS',  ad:'Nominal Pipe Size' },
+      { kol:'dn',           harf:'DN',   ad:'Diameter Nominal',  birim:'mm', ondalik:0 },
+      { kol:'dis_cap_mm',   harf:'OD',   ad:'Dış çap',           birim:'mm', ondalik:2 },
+      { kol:'ic_cap_mm',    harf:'ID',   ad:'İç çap',            birim:'mm', ondalik:2 },
+      { kol:'et_mm',        harf:'et',   ad:'Et kalınlığı',      birim:'mm', ondalik:2 },
+      { kol:'sch_kod',      harf:'Sch',  ad:'Schedule' },
+      { kol:'agirlik_kg_m', harf:'kg/m', ad:'Birim ağırlık',     ondalik:2 },
+      { kol:'yuzey_m2_m',   harf:'m²/m', ad:'Yüzey alanı',       ondalik:3 }
+    ],
+    svg_tipi: 'boru_kesit'
   },
-  fitting_olculer: {
-    aciklama: 'B16.9 (BW) + B16.11 (SW/THD) + B16.28 (SR elbow) fittingler.',
-    olculer: [
-      { harf:'TYPE',   kolon:'parca_tipi',          birim:'',    ad:'90LR/SR · 45 · TEE · REDUCER · CAP ...' },
-      { harf:'STD',    kolon:'geometri_std',        birim:'',    ad:'B16.9 · B16.11 · B16.28' },
-      { harf:'DN1',    kolon:'cap_buyuk_dn',        birim:'',    ad:'Büyük uç DN' },
-      { harf:'DN2',    kolon:'cap_kucuk_dn',        birim:'',    ad:'Küçük uç DN (reducer/red. tee)' },
-      { harf:'OD1',    kolon:'cap_buyuk_mm',        birim:'mm',  ad:'Büyük uç dış çapı' },
-      { harf:'OD2',    kolon:'cap_kucuk_mm',        birim:'mm',  ad:'Küçük uç dış çapı' },
-      { harf:'t',      kolon:'et_mm',               birim:'mm',  ad:'Et kalınlığı' },
-      { harf:'A',      kolon:'ucu_uca_a_mm',        birim:'mm',  ad:'Merkez-yüz (elbow A boyu)' },
-      { harf:'B',      kolon:'ucu_uca_b_mm',        birim:'mm',  ad:'Branch merkez-yüz (tee)' },
-      { harf:'C',      kolon:'ucu_uca_c_mm',        birim:'mm',  ad:'Uzunluk (reducer)' },
-      { harf:'F',      kolon:'ucu_uca_f_mm',        birim:'mm',  ad:'Ek uç-uca' },
-      { harf:'M',      kolon:'ucu_uca_m_mm',        birim:'mm',  ad:'Ek uç-uca' },
-      { harf:'H',      kolon:'ucu_uca_h_mm',        birim:'mm',  ad:'Yükseklik (cap)' },
-      { harf:'R',      kolon:'yaricap_mm',          birim:'mm',  ad:'Bükme yarıçapı' },
-      { harf:'SL-t',   kolon:'stub_lap_kalinlik_mm',birim:'mm',  ad:'Stub end lap kalınlığı' },
-      { harf:'SL-OD',  kolon:'stub_lap_od_mm',      birim:'mm',  ad:'Stub end lap dış çapı' },
-      { harf:'SOK-D',  kolon:'soket_derinlik_mm',   birim:'mm',  ad:'Socket derinliği (B16.11)' },
-      { harf:'SOK-ID', kolon:'soket_ic_cap_mm',     birim:'mm',  ad:'Socket iç çapı (B16.11)' },
-      { harf:'CLS',    kolon:'class_no',            birim:'',    ad:'SW/THD class (3000/6000/9000)' },
-      { harf:'W',      kolon:'agirlik_kg',          birim:'kg',  ad:'Parça ağırlığı' }
-    ]
-  },
-  flansh_olculer: {
-    aciklama: 'WN · SO · BL · LJ · SW · TH flanşlar (face, hub, bolt boyutları).',
-    olculer: [
-      { harf:'TYPE',   kolon:'flansh_tipi',           birim:'',    ad:'WN · SO · BL · LJ · SW · TH' },
-      { harf:'STD',    kolon:'geometri_std',          birim:'',    ad:'B16.5 · B16.47 · EN 1092 ...' },
-      { harf:'CLASS',  kolon:'basinc_sinifi',         birim:'',    ad:'150 · 300 · 600 · 900 · 1500 · 2500' },
-      { harf:'FACE',   kolon:'yuzey_tipi',            birim:'',    ad:'RF · FF · RTJ' },
-      { harf:'DN',     kolon:'cap_dn',                birim:'',    ad:'Nominal çap' },
-      { harf:'OD',     kolon:'cap_mm',                birim:'mm',  ad:'Pipe OD (nominal bore tarafı)' },
-      { harf:'D',      kolon:'flansh_od_mm',          birim:'mm',  ad:'Flanş dış çapı' },
-      { harf:'t',      kolon:'flansh_kalinlik_mm',   birim:'mm',  ad:'Flanş kalınlığı' },
-      { harf:'X',      kolon:'hub_od_mm',             birim:'mm',  ad:'Hub OD (taban)' },
-      { harf:'Y',      kolon:'hub_uzunluk_mm',        birim:'mm',  ad:'Hub uzunluğu' },
-      { harf:'B',      kolon:'bore_std_mm',           birim:'mm',  ad:'Bore (standart)' },
-      { harf:'B-min',  kolon:'bore_min_mm',           birim:'mm',  ad:'Bore (minimum)' },
-      { harf:'G',      kolon:'raised_face_od_mm',     birim:'mm',  ad:'Raised face OD' },
-      { harf:'f',      kolon:'raised_face_kalinlik_mm',birim:'mm', ad:'Raised face kalınlığı' },
-      { harf:'C',      kolon:'bolt_circle_mm',        birim:'mm',  ad:'Bolt circle dairesi' },
-      { harf:'n',      kolon:'bolt_count',            birim:'',    ad:'Bolt sayısı' },
-      { harf:'BH',     kolon:'bolt_holes_inch',       birim:'in',  ad:'Bolt hole çapı' },
-      { harf:'BC',     kolon:'bolt_cap_inch',         birim:'in',  ad:'Bolt çapı' },
-      { harf:'BL-s',   kolon:'bolt_uzunluk_stud_mm',  birim:'mm',  ad:'Stud bolt uzunluğu' },
-      { harf:'BL-m',   kolon:'bolt_uzunluk_machine_mm',birim:'mm', ad:'Machine bolt uzunluğu' },
-      { harf:'SOK',    kolon:'socket_depth_mm',       birim:'mm',  ad:'Socket derinliği (SW flanş)' },
-      { harf:'W',      kolon:'agirlik_kg',            birim:'kg',  ad:'Flanş ağırlığı' }
-    ]
-  },
-  malzeme_kataloglari: {
-    aciklama: 'Spec + grade katalogları (B0 omurga).',
-    olculer: [
-      { harf:'STD',    kolon:'spec_standart', birim:'', ad:'Spec standart (A106, A312, B466, ...)' },
-      { harf:'GRADE',  kolon:'spec_grade',    birim:'', ad:'Grade kodu (GrB, WPB, TP316L, ...)' }
-    ]
-  },
-  fitting_malzeme_uyum: {
-    aciklama: 'Geometri × malzeme çapraz uyum tablosu.',
-    olculer: [
-      { harf:'FIT',  kolon:'flansh_id',      birim:'uuid', ad:'Fitting/flansh ID (referans)' },
-      { harf:'MAT',  kolon:'malzeme_id',     birim:'uuid', ad:'Malzeme spec/grade ID (referans)' },
-      { harf:'M',    kolon:'uretim_yontemi', birim:'',     ad:'Üretim yöntemi (forged, seamless, ...)' },
-      { harf:'Y',    kolon:'yaygin_mi',      birim:'',     ad:'Yaygın kombinasyon mu' }
-    ]
-  }
+  fitting_olculer: { kolonlar:[], not:'Fitting kolon konfigürasyonu henüz tanımlanmamış (90+ oturumlarda eklenecek)' },
+  flansh_olculer: { kolonlar:[], not:'Flanş kolon konfigürasyonu henüz tanımlanmamış (90+ oturumlarda eklenecek)' }
 };
 
-// Meta kolonları (sona alınır)
-var META_KOLONLAR = ['id','tenant_id','olusturma_at','olusturma','guncelleme_at','olusturan_id','guncelleyen_id','created_at','updated_at','aktif','sistem_preset','malzeme_id','edisyon_yili','gecerlilik_basla','gecerlilik_bitis','kaynak','notlar','urun_formu','cizim_path','model_3d_path'];
-
-// ── SUPABASE PROXY ────────────────────────────────────────
+// ── Supabase proxy ───────────────────────────────────────
 var _supa = null;
-function _getSupa(){if(_supa)return _supa;if(typeof ARES!=='undefined'&&ARES.supabase())_supa=ARES.supabase();return _supa;}
-var _supaProxy = new Proxy({},{get:function(t,prop){var s=_getSupa();if(!s)throw new Error('Supabase hazır değil');var v=s[prop];return typeof v==='function'?v.bind(s):v;}});
-
-// ── HELPERS ───────────────────────────────────────────────
-function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
-function T(id){return document.getElementById(id);}
-async function cikisYap(){await _supaProxy.auth.signOut();window.location.href='../giris.html';}
-function getParam(ad){return new URLSearchParams(window.location.search).get(ad);}
-
-// Kolon adına göre lejant harfini bul
-function harfBul(kolon, tablo){
-  var L = OLCU_LEJANT[tablo];
-  if (!L) return null;
-  var found = null;
-  L.olculer.some(function(o){ if (o.kolon===kolon) {found=o.harf;return true;} return false; });
-  return found;
+function _getSupa() {
+  if (_supa) return _supa;
+  if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase();
+  return _supa;
 }
-
-function kolonlariSirala(kolonlar, tablo){
-  var anlamli = [], meta = [];
-  // Önce: lejant sırasına göre tabloyu ön plana al
-  var L = OLCU_LEJANT[tablo];
-  var lejantSira = L ? L.olculer.map(function(o){return o.kolon;}) : [];
-  var siralanmis = [];
-  lejantSira.forEach(function(k){ if (kolonlar.indexOf(k)!==-1) siralanmis.push(k); });
-  // Lejantta olmayanlar
-  kolonlar.forEach(function(k){
-    if (siralanmis.indexOf(k)!==-1) return;
-    if (META_KOLONLAR.indexOf(k)!==-1) meta.push(k);
-    else anlamli.push(k);
-  });
-  return siralanmis.concat(anlamli, meta);
-}
-
-function hucreyiBicimle(deger, kolon){
-  if (deger===null||deger===undefined) return '<td class="null">—</td>';
-  if (typeof deger==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deger))
-    return '<td class="uuid" title="'+esc(deger)+'">'+esc(deger.substring(0,8))+'…</td>';
-  if (typeof deger==='boolean') return '<td class="meta">'+(deger?'✓':'✗')+'</td>';
-  if (typeof deger==='object'){
-    var str=JSON.stringify(deger); var k=str.length>60?str.substring(0,57)+'…':str;
-    return '<td class="meta" title="'+esc(str)+'">'+esc(k)+'</td>';
+var _supaProxy = new Proxy({}, {
+  get: function(t, prop){
+    var s = _getSupa();
+    if (!s) throw new Error('Supabase hazır değil');
+    var v = s[prop];
+    return typeof v === 'function' ? v.bind(s) : v;
   }
-  if (typeof deger==='string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(deger)){
-    var t=new Date(deger);
-    if (!isNaN(t.getTime())) return '<td class="meta" title="'+esc(deger)+'">'+t.toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})+'</td>';
-  }
-  if (typeof deger==='number'){
-    var ek=(kolon&&kolon.indexOf('_id')!==-1)?' meta':'';
-    return '<td class="num'+ek+'">'+esc(deger.toLocaleString('tr-TR'))+'</td>';
-  }
-  var s=String(deger); var sk=s.length>60?s.substring(0,57)+'…':s;
-  return '<td title="'+esc(s)+'">'+esc(sk)+'</td>';
+});
+
+// ── Helpers ───────────────────────────────────────────────
+function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function T(id){ return document.getElementById(id); }
+async function cikisYap(){ await _supaProxy.auth.signOut(); window.location.href='../giris.html'; }
+function qsParam(name){ var u=new URLSearchParams(window.location.search); return u.get(name); }
+function fmtSayi(val, ondalik){
+  if (val == null || val === '') return null;
+  var n = Number(val);
+  if (!isFinite(n)) return null;
+  if (ondalik != null) return n.toFixed(ondalik);
+  return String(n);
 }
 
-// ── VERİ ÇEK ──────────────────────────────────────────────
-// Filtreleri sorguya uygula (eq chain)
-function filtreUygula(q, filtreler){
-  Object.keys(filtreler).forEach(function(kolon){
-    var deger = filtreler[kolon];
-    if (deger === '' || deger === null || deger === undefined) return;
-    // Sayısal kolon mu? heuristic: tüm karakterler digit ise number'a çevir
-    if (/^-?\d+(\.\d+)?$/.test(String(deger))) {
-      var n = Number(deger);
-      if (!isNaN(n)) { q = q.eq(kolon, n); return; }
-    }
-    if (deger === 'true' || deger === 'false') {
-      q = q.eq(kolon, deger === 'true');
-      return;
-    }
-    q = q.eq(kolon, deger);
-  });
-  return q;
-}
+// ── URL parametreleri ────────────────────────────────────
+var TABLO = qsParam('tablo');
+var MG    = qsParam('mg');
+var STD   = qsParam('std');
 
-async function veriCek(tablo, sayfa, filtreler){
-  var offset=(sayfa-1)*SAYFA_BOYUTU;
-  var siralamalar = ['olusturma_at','olusturma','created_at',null];
-  var hatalar = [];
-  for (var i=0;i<siralamalar.length;i++) {
-    var col = siralamalar[i];
-    try {
-      var q = _supaProxy.from(tablo).select('*',{count:'exact'});
-      q = filtreUygula(q, filtreler||{});
-      if (col) q = q.order(col,{ascending:false,nullsFirst:false});
-      var r = await q.range(offset, offset+SAYFA_BOYUTU-1);
-      if (r.error) { hatalar.push(col+': '+r.error.message); continue; }
-      return r;
-    } catch (e) { hatalar.push(col+': '+(e.message||e)); }
+// ── DB'den o (tablo, mg, std) için tüm satırları çek ──
+async function veriCek(){
+  if (!TABLO || !MG || !STD) return { durum:'param_eksik' };
+  var konfig = TABLO_KONFIG[TABLO];
+  if (!konfig) return { durum:'tablo_yok' };
+  if (!konfig.kolonlar || konfig.kolonlar.length === 0) {
+    return { durum:'konfig_yok', not: konfig.not };
   }
-  throw new Error('Hiçbir sıralama çalışmadı: '+hatalar.join(' | '));
-}
 
-// Filtre dropdown'ları için distinct değerleri tek SELECT'le al
-async function distinctlerAl(tablo){
-  var liste = FILTRELER[tablo];
-  if (!liste || liste.length === 0) return {};
-  var kolonStr = liste.map(function(f){return f.kolon;}).join(',');
   try {
-    // En fazla 5000 satır taranır (filtre değerleri için yeterli)
-    var r = await _supaProxy.from(tablo).select(kolonStr).limit(5000);
-    if (r.error) { console.warn('[distinct] '+tablo+':', r.error.message); return {}; }
-    var sonuc = {};
-    liste.forEach(function(f){
-      var setM = new Map();
-      r.data.forEach(function(row){
-        var v = row[f.kolon];
-        if (v === null || v === undefined || v === '') return;
-        var k = String(v);
-        setM.set(k, (setM.get(k)||0) + 1);
-      });
-      var arr = Array.from(setM.entries()).map(function(e){
-        return { val: e[0], cnt: e[1] };
-      });
-      // Sıralama: sayısalsa numerik, yoksa locale
-      arr.sort(function(a,b){
-        var an = Number(a.val), bn = Number(b.val);
-        if (!isNaN(an) && !isNaN(bn)) return an - bn;
-        return String(a.val).localeCompare(String(b.val), 'tr', {numeric:true});
-      });
-      sonuc[f.kolon] = arr;
+    var q = _supaProxy.from(TABLO).select('*').eq('malzeme_grubu_kod', MG).eq('standart', STD);
+    (konfig.siralama || []).forEach(function(s){
+      q = q.order(s.kol, { ascending: s.yon !== 'desc', nullsFirst: false });
     });
-    return sonuc;
+    var r = await q.limit(2000);
+    if (r && r.error) {
+      var code = (r.error.code || '').toString();
+      var status = r.status || 0;
+      var msg = (r.error.message || '').toLowerCase();
+      if (status === 404 || code === 'PGRST205' || code === '42P01') return { durum:'tablo_yok' };
+      if (/column.*does not exist/i.test(msg)) return { durum:'kolon_yok', mesaj:r.error.message };
+      return { durum:'hata', mesaj:r.error.message };
+    }
+    return { durum:'ok', satirlar: r.data || [] };
   } catch (e) {
-    console.warn('[distinct] '+tablo+' exception:', e.message);
-    return {};
+    return { durum:'hata', mesaj: e.message };
   }
 }
 
-// ── DURUM ─────────────────────────────────────────────────
-var _durum = { tablo:null, sayfa:1, toplam:0, kolonlar:[], filtreler:{}, distinctler:{} };
-var _kanallar = [];
-var _yenileTimer = null;
-var _degisiklikSayaci = 0;
-
-// ── ÇERÇEVE (üst kart + lejant + ek + olgunluk + tablo iskeleti) ──
-function cerceveCiz(tablo, bilgi){
-  var L = OLCU_LEJANT[tablo];
-  var lejantHTML;
-  if (L) {
-    lejantHTML = '<div class="lejant-grid">' + L.olculer.map(function(o){
-      var birim = o.birim ? ' <span style="color:var(--txd);">('+esc(o.birim)+')</span>' : '';
-      return '<div class="lejant-sat" title="'+esc(o.kolon)+'">' +
-        '<span class="harf-rozet">'+esc(o.harf)+'</span>' +
-        '<span class="lejant-ad"><span class="lejant-ad-tx">'+esc(o.ad)+'</span>'+birim+'</span>' +
-      '</div>';
-    }).join('') + '</div>';
-  } else {
-    lejantHTML = '<div style="font-size:12px;color:var(--txd);padding:6px;">Bu tablo için ölçü lejantı henüz tanımlanmamış. Kolon adları aşağıda ham olarak görünür.</div>';
-  }
-
-  document.getElementById('icerikKok').innerHTML =
-    '<div class="sf-bas">' +
-      '<div class="sf-bas-row">' +
-        '<span style="font-size:28px;line-height:1;">'+bilgi.ikon+'</span>' +
-        '<span class="sf-baslik">'+esc(bilgi.ad)+'</span>' +
-        '<span class="sf-kod">'+esc(tablo)+'</span>' +
-        '<span class="sf-cnt" id="sfCnt">—</span>' +
-      '</div>' +
-      '<div class="sf-std"><strong>Standartlar:</strong> '+esc(bilgi.std)+'</div>' +
-      (L?'<div class="sf-std" style="margin-top:4px;color:var(--txd);">'+esc(L.aciklama)+'</div>':'') +
-    '</div>' +
-
-    '<div class="ust-kart">' +
-      '<div class="svg-yer">' +
-        '<div>' +
-          '<div class="yer-baslik">Parça Görseli</div>' +
-          '<span class="yer-ikon">'+bilgi.ikon+'</span>' +
-          '<div class="yer-not">SVG/PNG için yer ayrıldı.<br>Arşivden çizim eklenince üzerine gelecek.</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="sag-panel">' +
-        '<div class="panel-blok">' +
-          '<div class="panel-blok-bas">' +
-            '<span class="panel-blok-ikon">📏</span>' +
-            '<span class="panel-blok-ad">Ölçü Lejantı</span>' +
-            '<span class="panel-blok-not">çizimdeki harflerin DB kolonu</span>' +
-          '</div>' +
-          lejantHTML +
-        '</div>' +
-
-        '<div class="panel-blok">' +
-          '<div class="panel-blok-bas">' +
-            '<span class="panel-blok-ikon">📎</span>' +
-            '<span class="panel-blok-ad">Ek Dosyalar</span>' +
-            '<span class="panel-blok-not">tüm tip için toplam</span>' +
-          '</div>' +
-          '<div class="ek-grid">' +
-            '<div class="ek-kart"><span class="ek-ikon">📐</span><div class="ek-sayi">0</div><div class="ek-ad">DXF</div></div>' +
-            '<div class="ek-kart"><span class="ek-ikon">🧊</span><div class="ek-sayi">0</div><div class="ek-ad">STEP</div></div>' +
-            '<div class="ek-kart"><span class="ek-ikon">📷</span><div class="ek-sayi">0</div><div class="ek-ad">Foto</div></div>' +
-            '<div class="ek-kart"><span class="ek-ikon">🎬</span><div class="ek-sayi">0</div><div class="ek-ad">Video</div></div>' +
-          '</div>' +
-          '<div class="bilgi-not">🚧 <code style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--ac);">kutuphane_ekler</code> tablosu 83+ oturumda kurulacak</div>' +
-        '</div>' +
-
-        '<div class="panel-blok">' +
-          '<div class="panel-blok-bas">' +
-            '<span class="panel-blok-ikon">🎯</span>' +
-            '<span class="panel-blok-ad">AI Olgunluk</span>' +
-            '<span class="panel-blok-not">fine-tune'+"'"+'a yaklaşım</span>' +
-          '</div>' +
-          '<div class="olg-detay">' +
-            '<span>Kanal: <strong style="color:var(--txm);">yok</strong> · 0 altın grup</span>' +
-            '<span class="olg-pct">0%</span>' +
-          '</div>' +
-          '<div class="olg-track"><div class="olg-fill" style="width:0%;"></div></div>' +
-          '<div class="olg-esik">' +
-            '<span>0 · yok</span>' +
-            '<span>1 · kural</span>' +
-            '<span>5 · embed</span>' +
-            '<span>50 · finetune</span>' +
-          '</div>' +
-          '<div class="bilgi-not">🚧 <code style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--ac);">parca_etiketleri</code> tablosu 84+ oturumda kurulacak</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div id="icerikYer">' +
-      '<div id="filtreCubuk"></div>' +
-      '<div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Kayıtlar yükleniyor…</div></div>' +
-    '</div>';
+// "Bu malzeme grubunda diğer standartlar" için alt-nav verisi
+async function digerStandartlariCek(){
+  if (!TABLO || !MG) return [];
+  try {
+    var r = await _supaProxy.from(TABLO).select('standart').eq('malzeme_grubu_kod', MG).limit(5000);
+    if (!r || r.error) return [];
+    var dag = {};
+    (r.data || []).forEach(function(row){
+      var s = (row.standart || '').trim();
+      if (!s) return;
+      dag[s] = (dag[s] || 0) + 1;
+    });
+    return Object.keys(dag).map(function(k){ return { kod:k, sayi:dag[k] }; }).sort(function(a,b){ return b.sayi - a.sayi; });
+  } catch (e) { return []; }
 }
 
-// ── FİLTRE ÇUBUĞU ÇİZİMİ ─────────────────────────────────
-function filtreCubukCiz(tablo, distinctler, filtreler){
-  var FList = FILTRELER[tablo];
-  var el = document.getElementById('filtreCubuk');
-  if (!el) return;
-  if (!FList || FList.length === 0) { el.innerHTML = ''; return; }
+// ── SVG kesit (boru için) ─────────────────────────────────
+function svgBoruKesit(){
+  return '<svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="170" cy="120" r="80" fill="var(--sur2)" stroke="var(--ac)" stroke-width="2"/>' +
+    '<circle cx="170" cy="120" r="62" fill="var(--bg)" stroke="var(--ac)" stroke-width="2" id="svgIcCember"/>' +
+    '<circle cx="170" cy="120" r="2" fill="var(--txm)"/>' +
+    '<line x1="90" y1="40" x2="250" y2="40" stroke="var(--txm)" stroke-width=".6"/>' +
+    '<line x1="90" y1="35" x2="90" y2="120" stroke="var(--txm)" stroke-width=".6" stroke-dasharray="2,3"/>' +
+    '<line x1="250" y1="35" x2="250" y2="120" stroke="var(--txm)" stroke-width=".6" stroke-dasharray="2,3"/>' +
+    '<polygon points="90,40 96,37 96,43" fill="var(--txm)"/>' +
+    '<polygon points="250,40 244,37 244,43" fill="var(--txm)"/>' +
+    '<text x="170" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--ac)">OD = <tspan id="svgOd">— mm</tspan></text>' +
+    '<line x1="108" y1="210" x2="232" y2="210" stroke="var(--txm)" stroke-width=".6"/>' +
+    '<line x1="108" y1="120" x2="108" y2="215" stroke="var(--txm)" stroke-width=".6" stroke-dasharray="2,3"/>' +
+    '<line x1="232" y1="120" x2="232" y2="215" stroke="var(--txm)" stroke-width=".6" stroke-dasharray="2,3"/>' +
+    '<polygon points="108,210 114,207 114,213" fill="var(--txm)"/>' +
+    '<polygon points="232,210 226,207 226,213" fill="var(--txm)"/>' +
+    '<text x="170" y="226" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--ac)">ID = <tspan id="svgId">— mm</tspan></text>' +
+    '<line x1="250" y1="120" x2="290" y2="120" stroke="var(--txm)" stroke-width=".6"/>' +
+    '<line x1="232" y1="120" x2="290" y2="120" stroke="var(--txm)" stroke-width=".6"/>' +
+    '<text x="293" y="118" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--ac)">et = <tspan id="svgEt">— mm</tspan></text>' +
+    '<text x="293" y="132" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--txm)">(Sch <tspan id="svgSch">—</tspan>)</text>' +
+  '</svg>';
+}
 
-  var aktifSayi = Object.keys(filtreler).filter(function(k){return filtreler[k] !== '' && filtreler[k] != null;}).length;
+// ── Hücre render (kolon tipine göre) ──────────────────────
+function hucreHtml(satir, kolon){
+  var v = satir[kolon.kol];
+  if (v == null || v === '') return '<td class="null">—</td>';
+  if (kolon.tip === 'nps_pill') return '<td><span class="nps-pill">' + esc(v) + '</span></td>';
+  if (kolon.tip === 'kod')      return '<td>' + esc(v) + '</td>';
+  if (kolon.tip === 'sayi') {
+    var f = fmtSayi(v, kolon.ondalik);
+    return '<td>' + esc(f || '—') + '</td>';
+  }
+  return '<td>' + esc(v) + '</td>';
+}
 
-  var grupHTML = FList.map(function(f){
-    var degerler = distinctler[f.kolon] || [];
-    var seciliDeger = filtreler[f.kolon] || '';
-    var aktifClass = seciliDeger ? ' aktif' : '';
-    var ops = '<option value="">tümü ('+degerler.length+')</option>' +
-      degerler.map(function(d){
-        var sel = (String(d.val) === String(seciliDeger)) ? ' selected' : '';
-        return '<option value="'+esc(d.val)+'"'+sel+'>'+esc(d.val)+' · '+d.cnt+'</option>';
-      }).join('');
-    return '<div class="filtre-kutu'+aktifClass+'">' +
-      '<span class="filtre-lbl"><span class="filtre-lbl-harf">'+esc(f.harf)+'</span>'+esc(f.ad)+'</span>' +
-      '<select class="filtre-select" data-kolon="'+esc(f.kolon)+'" onchange="filtreDegisti(this)">'+ops+'</select>' +
-    '</div>';
+// ── Çizim ─────────────────────────────────────────────────
+function ciz(veri, digerStandartlar){
+  // Param kontrolleri
+  if (!TABLO || !MG || !STD) {
+    return '<div class="uyari">⚠ Eksik parametre. URL\'de <code>tablo</code>, <code>mg</code> ve <code>std</code> gerekli. <a href="kutuphane.html" style="color:var(--ac);">Kütüphane envanterine dön</a>.</div>';
+  }
+
+  var tabloAd = TABLO_AD[TABLO] || TABLO;
+  var mgAd = MG_AD[MG] || MG;
+  var konfig = TABLO_KONFIG[TABLO];
+
+  // Breadcrumb
+  var brd = '<div class="brd">' +
+    '<a href="kutuphane.html">📚 Kütüphane</a>' +
+    '<span class="brd-sep">›</span>' +
+    '<a href="kutuphane-malzemeler.html?tablo=' + encodeURIComponent(TABLO) + '">' + esc(tabloAd) + '</a>' +
+    '<span class="brd-sep">›</span>' +
+    '<a href="kutuphane-standartlar.html?tablo=' + encodeURIComponent(TABLO) + '&mg=' + encodeURIComponent(MG) + '">' + esc(mgAd) + '</a>' +
+    '<span class="brd-sep">›</span>' +
+    '<span class="brd-aktif">' + esc(STD) + '</span>' +
+  '</div>';
+
+  // Kolon konfigi yoksa
+  if (veri.durum === 'konfig_yok') {
+    return brd + '<div class="uyari">📝 <strong>' + esc(tabloAd) + '</strong> tablosu için kolon konfigürasyonu henüz tanımlanmamış. <br><br>Detay: <code>' + esc(veri.not || '') + '</code><br><br>Şimdilik sadece <strong>Boru Ölçüleri</strong> için tam destek var. Diğer tablolar için <code>admin/kutuphane-detay.html</code> dosyasında <code>TABLO_KONFIG</code> sözlüğüne eklenmesi gerekiyor.</div>';
+  }
+
+  var satirSayisi = (veri.satirlar || []).length;
+
+  // Sayfa başlığı
+  var sayfaBas = '<div class="sf-bas">' +
+    '<div class="sf-bas-row">' +
+      '<div class="sf-baslik">' + esc(STD) + '</div>' +
+      '<span class="sf-kod">' + esc(STD) + '</span>' +
+      '<span class="sf-mg-pill">🧪 ' + esc(mgAd) + '</span>' +
+      '<span class="sf-cnt">' + satirSayisi + ' ölçü</span>' +
+    '</div>' +
+    '<div class="sf-alt">' + esc(tabloAd) + ' · ' + esc(STD) + ' standardının ' + esc(mgAd) + ' altındaki kayıtları</div>' +
+  '</div>';
+
+  // Üst kart (SVG + sağ panel)
+  var svgHtml = (konfig.svg_tipi === 'boru_kesit') ? svgBoruKesit() :
+    '<div style="text-align:center;color:var(--txd);font-size:12px;">SVG kesit bu tablo için tanımlanmamış</div>';
+
+  // Sağ panel — lejant
+  var lejantHtml = (konfig.panel_lejant || []).map(function(L){
+    return '<div class="lejant-sat"><span class="harf-rozet">' + esc(L.harf) + '</span><span class="lejant-ad">' + esc(L.ad) + '</span><span class="lejant-val bos" id="pn_' + esc(L.kol) + '">—</span></div>';
   }).join('');
 
-  el.innerHTML =
-    '<div class="filtre-cubuk">' +
-      '<div class="filtre-cubuk-bas"><span class="filtre-cubuk-bas-ikon">🔍</span>Filtreler</div>' +
-      '<div class="filtre-grup">' + grupHTML + '</div>' +
-      '<div class="filtre-sag">' +
-        (aktifSayi > 0 ? '<span><span class="filtre-aktif-sayi">'+aktifSayi+'</span> aktif</span>' : '<span style="color:var(--txd);">filtre yok</span>') +
-        '<button class="filtre-temizle" onclick="filtreleriTemizle()"' + (aktifSayi===0?' disabled':'') + '>Temizle</button>' +
-      '</div>' +
-    '</div>';
-}
-
-function filtreDegisti(sel){
-  var kolon = sel.getAttribute('data-kolon');
-  var deger = sel.value;
-  if (deger === '') delete _durum.filtreler[kolon];
-  else _durum.filtreler[kolon] = deger;
-  urlGuncelle();
-  sayfayiYukle(_durum.tablo, 1); // Filtre değişince 1. sayfaya dön
-}
-window.filtreDegisti = filtreDegisti;
-
-function filtreleriTemizle(){
-  _durum.filtreler = {};
-  urlGuncelle();
-  sayfayiYukle(_durum.tablo, 1);
-}
-window.filtreleriTemizle = filtreleriTemizle;
-
-function urlGuncelle(){
-  var url = new URL(window.location.href);
-  // Eski filtre paramlarını temizle
-  Array.from(url.searchParams.keys()).forEach(function(k){
-    if (k.indexOf('f.') === 0) url.searchParams.delete(k);
-  });
-  url.searchParams.set('sayfa', String(_durum.sayfa));
-  Object.keys(_durum.filtreler).forEach(function(k){
-    if (_durum.filtreler[k]) url.searchParams.set('f.'+k, _durum.filtreler[k]);
-  });
-  window.history.replaceState({}, '', url.toString());
-}
-
-async function sayfayiYukle(tablo, sayfa){
-  _durum.tablo=tablo; _durum.sayfa=sayfa;
-  // Filtre çubuğu çiz (zaten tutuluyorsa korunsun)
-  filtreCubukCiz(tablo, _durum.distinctler, _durum.filtreler);
-
-  // İçerik alanını loader yap, filtre çubuğunu boz
-  var el=document.getElementById('icerikYer');
-  if (el) {
-    var fc = document.getElementById('filtreCubuk');
-    var fcHTML = fc ? fc.outerHTML : '<div id="filtreCubuk"></div>';
-    el.innerHTML = fcHTML + '<div class="empty"><div class="empty-icon"><span class="loader"></span></div><div>Yükleniyor…</div></div>';
-  }
-  try {
-    var r=await veriCek(tablo,sayfa,_durum.filtreler);
-    var veri=r.data||[], toplam=r.count||0;
-    _durum.toplam=toplam;
-    var kolonlar = veri.length>0 ? kolonlariSirala(Object.keys(veri[0]), tablo) : [];
-    _durum.kolonlar=kolonlar;
-    icerikCiz(veri, toplam, kolonlar, tablo);
-    T('sfCnt').textContent = toplam.toLocaleString('tr-TR') + ' kayıt';
-  } catch (e) {
-    var fc2 = document.getElementById('filtreCubuk');
-    var fcHTML2 = fc2 ? fc2.outerHTML : '';
-    document.getElementById('icerikYer').innerHTML = fcHTML2 +
-      '<div class="uyari"><strong>Veri çekilemedi.</strong><br>' +
-      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--re);">'+esc(e.message||e)+'</span></div>';
-  }
-}
-
-function icerikCiz(veri, toplam, kolonlar, tablo){
-  var sayfa=_durum.sayfa;
-  var sonSayfa=Math.max(1,Math.ceil(toplam/SAYFA_BOYUTU));
-  var bas=(sayfa-1)*SAYFA_BOYUTU+1, son=Math.min(toplam,sayfa*SAYFA_BOYUTU);
-  var aktifFiltre = Object.keys(_durum.filtreler).filter(function(k){return _durum.filtreler[k];}).length;
-
-  var thsHTML = kolonlar.map(function(k){
-    var harf = harfBul(k, tablo);
-    var harfHTML = harf ? '<span class="th-harf">'+esc(harf)+'</span>' : '';
-    return '<th>'+esc(k)+harfHTML+'</th>';
-  }).join('') + '<th style="text-align:right;">Olgunluk</th>';
-
-  var rowsHTML;
-  if (veri.length===0){
-    var msg = aktifFiltre > 0 ? 'Bu filtrelere uyan kayıt yok' : 'Kayıt yok';
-    rowsHTML = '<tr><td colspan="'+(Math.max(1,kolonlar.length)+1)+'" style="text-align:center;padding:36px;color:var(--txd);font-family:Barlow,sans-serif;font-size:13px;">'+msg+'</td></tr>';
-  } else {
-    rowsHTML = veri.map(function(row){
-      var hucreHTML = kolonlar.map(function(k){ return hucreyiBicimle(row[k], k); }).join('');
-      var olgHTML = '<td style="text-align:right;">' +
-        '<div class="olg-hucre" style="justify-content:flex-end;">' +
-          '<span class="olg-min" title="DXF"><span class="olg-min-ikon">📐</span>0</span>' +
-          '<span class="olg-min" title="STEP"><span class="olg-min-ikon">🧊</span>0</span>' +
-          '<span class="olg-min" title="Foto"><span class="olg-min-ikon">📷</span>0</span>' +
-          '<span class="olg-pct-min" title="AI olgunluk yüzdesi">0%</span>' +
+  var ustKart = '<div class="ust-kart">' +
+    '<div class="svg-yer">' +
+      '<div class="svg-yer-baslik">Kesit · ' + esc(STD) + '</div>' +
+      '<div class="svg-yer-not" id="svgSatirRef">— satır seçilmedi —</div>' +
+      svgHtml +
+    '</div>' +
+    '<div class="sag-panel">' +
+      '<div class="panel-blok">' +
+        '<div class="panel-blok-bas">' +
+          '<span class="panel-blok-ikon">📐</span>' +
+          '<span class="panel-blok-ad">Seçili Satır Ölçüleri</span>' +
+          '<span class="panel-blok-not" id="pnSatirAd">— satır seç —</span>' +
         '</div>' +
-      '</td>';
-      return '<tr>'+hucreHTML+olgHTML+'</tr>';
+        '<div class="lejant-grid">' + lejantHtml + '</div>' +
+      '</div>' +
+      '<div class="panel-blok">' +
+        '<div class="panel-blok-bas">' +
+          '<span class="panel-blok-ikon">📎</span>' +
+          '<span class="panel-blok-ad">Ek Dosyalar (Standart Geneli)</span>' +
+          '<span class="panel-blok-not">medya tablosu 90+</span>' +
+        '</div>' +
+        '<div class="ek-grid">' +
+          '<div class="ek-kart"><span class="ek-ikon">📷</span><span class="ek-sayi">—</span><div class="ek-ad">Foto</div></div>' +
+          '<div class="ek-kart"><span class="ek-ikon">🎲</span><span class="ek-sayi">—</span><div class="ek-ad">3D</div></div>' +
+          '<div class="ek-kart"><span class="ek-ikon">📐</span><span class="ek-sayi">—</span><div class="ek-ad">DXF</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // Aksiyon barı (placeholder butonlar)
+  var aksiyonBar = '<div class="aksiyon-bar">' +
+    '<div class="aksiyon-sol"><strong>' + satirSayisi + '</strong> kayıt</div>' +
+    '<div class="aksiyon-sag">' +
+      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">⊕ Yeni ölçü</button>' +
+      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📷 Foto yükle</button>' +
+      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📥 Excel içe aktar</button>' +
+      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📤 Excel dışa aktar</button>' +
+    '</div>' +
+  '</div>';
+
+  // Hata durumları
+  if (veri.durum === 'tablo_yok') {
+    return brd + sayfaBas + '<div class="uyari">⚠ <code>' + esc(TABLO) + '</code> tablosu DB\'de yok. Migration gerekli.</div>';
+  }
+  if (veri.durum === 'kolon_yok') {
+    return brd + sayfaBas + '<div class="uyari">⚠ Kolon hatası: ' + esc(veri.mesaj || '') + '</div>';
+  }
+  if (veri.durum === 'hata') {
+    return brd + sayfaBas + '<div class="uyari">⚠ DB hatası: ' + esc(veri.mesaj || '') + '</div>';
+  }
+
+  // Tablo başlığı
+  var thHtml = '<th style="width:90px;">Olgunluk</th>' + konfig.kolonlar.map(function(k){
+    var birim = k.birim ? ' (' + k.birim + ')' : '';
+    return '<th>' + esc(k.ad) + esc(birim) + '</th>';
+  }).join('');
+
+  // Tablo satırları
+  var tbodyHtml;
+  if (satirSayisi === 0) {
+    tbodyHtml = '<tr><td colspan="' + (konfig.kolonlar.length + 1) + '" style="cursor:default;">' +
+      '<div class="bos-tablo"><div class="bos-tablo-ikon">📭</div>Bu (standart × malzeme grubu) kombinasyonunda DB\'de henüz kayıt yok.</div></td></tr>';
+  } else {
+    tbodyHtml = veri.satirlar.map(function(satir){
+      // Data attribute olarak tüm değerleri tut (satır tıklamada okunacak)
+      var dataAttrs = konfig.panel_lejant.map(function(L){
+        var v = satir[L.kol];
+        if (v == null) return '';
+        return 'data-' + L.kol.replace(/_/g,'-') + '="' + esc(String(v)).replace(/"/g,'&quot;') + '"';
+      }).join(' ');
+
+      var olgHtml = '<td><div class="olg-hucre">' +
+        '<span class="olg-badge" title="Fotoğraf yok">📷</span>' +
+        '<span class="olg-badge" title="3D model yok">🎲</span>' +
+        '<span class="olg-badge" title="DXF yok">📐</span>' +
+      '</div></td>';
+
+      var hucreler = konfig.kolonlar.map(function(k){ return hucreHtml(satir, k); }).join('');
+
+      return '<tr ' + dataAttrs + '>' + olgHtml + hucreler + '</tr>';
     }).join('');
   }
 
-  var fc = document.getElementById('filtreCubuk');
-  var fcHTML = fc ? fc.outerHTML : '<div id="filtreCubuk"></div>';
-  var filtreNot = aktifFiltre > 0 ? '<span style="color:var(--ac);">· '+aktifFiltre+' filtre aktif</span>' : '';
+  var tabloHtml = '<div class="tbl-wrap">' +
+    '<div class="veri-tbl-kapsayici">' +
+      '<table class="veri-tbl">' +
+        '<thead><tr>' + thHtml + '</tr></thead>' +
+        '<tbody id="tblBody">' + tbodyHtml + '</tbody>' +
+      '</table>' +
+    '</div>' +
+  '</div>';
 
-  document.getElementById('icerikYer').innerHTML = fcHTML +
-    '<div class="tbl-wrap">' +
-      '<div class="tbl-head">' +
-        '<div class="tbl-title">📋 Kayıtlar '+filtreNot+'</div>' +
-        '<div class="tbl-meta">' + (toplam? bas+'-'+son+' / '+toplam.toLocaleString('tr-TR') : '0 kayıt') + '</div>' +
-      '</div>' +
-      '<div class="veri-tbl-kapsayici">' +
-        '<table class="veri-tbl"><thead><tr>'+thsHTML+'</tr></thead><tbody>'+rowsHTML+'</tbody></table>' +
-      '</div>' +
-      '<div class="pag-foot">' +
-        '<div class="pag-bilgi">Sayfa '+sayfa+' / '+sonSayfa+' · '+SAYFA_BOYUTU+' satır/sayfa</div>' +
-        '<div class="pag-btns">' +
-          '<button class="pag-btn" '+(sayfa<=1?'disabled':'')+' onclick="pageGo(1)">İlk</button>' +
-          '<button class="pag-btn" '+(sayfa<=1?'disabled':'')+' onclick="pageGo('+(sayfa-1)+')">‹ Önceki</button>' +
-          '<input class="pag-input" id="pagInput" type="number" min="1" max="'+sonSayfa+'" value="'+sayfa+'" onkeydown="pageInputKey(event)" />' +
-          '<button class="pag-btn" '+(sayfa>=sonSayfa?'disabled':'')+' onclick="pageGo('+(sayfa+1)+')">Sonraki ›</button>' +
-          '<button class="pag-btn" '+(sayfa>=sonSayfa?'disabled':'')+' onclick="pageGo('+sonSayfa+')">Son</button>' +
-        '</div>' +
-      '</div>' +
+  // Alt navigasyon — diğer standartlar
+  var altNav = '';
+  if (digerStandartlar && digerStandartlar.length > 0) {
+    var altKartlar = digerStandartlar.map(function(d){
+      var aktifSinif = (d.kod === STD) ? 'aktif' : (d.sayi > 0 ? 'dolu' : 'bos');
+      var link = 'kutuphane-detay.html?tablo=' + encodeURIComponent(TABLO) + '&mg=' + encodeURIComponent(MG) + '&std=' + encodeURIComponent(d.kod);
+      return '<a class="alt-nav-k ' + aktifSinif + '" href="' + link + '">' +
+        '<div class="alt-nav-ad">' + esc(d.kod) + '</div>' +
+        '<div class="alt-nav-sayi">' + d.sayi + ' ölçü</div>' +
+      '</a>';
+    }).join('');
+    altNav = '<div class="alt-nav">' +
+      '<div class="alt-nav-bas">' + esc(mgAd) + ' · diğer standartlar</div>' +
+      '<div class="alt-nav-grid">' + altKartlar + '</div>' +
     '</div>';
-}
-
-function pageGo(s){
-  var son=Math.max(1,Math.ceil(_durum.toplam/SAYFA_BOYUTU));
-  if (s<1) s=1; if (s>son) s=son;
-  _durum.sayfa = s;
-  urlGuncelle();
-  sayfayiYukle(_durum.tablo, s);
-}
-function pageInputKey(e){ if (e.key==='Enter'){var v=parseInt(e.target.value,10); if (!isNaN(v)) pageGo(v);} }
-window.pageGo=pageGo; window.pageInputKey=pageInputKey;
-
-function gecersizTablo(adi){
-  document.getElementById('icerikKok').innerHTML =
-    '<div class="uyari">' +
-      '<strong>Geçersiz tablo.</strong><br>' +
-      '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--txm);">URL parametresi: '+esc(adi||'(boş)')+'</span>' +
-    '</div>';
-}
-
-// ── TOAST ─────────────────────────────────────────────────
-function toast(metin, ikon){
-  var k = T('toastKonteyner');
-  if (!k) return;
-  var t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = '<span class="toast-ikon">'+esc(ikon||'🔄')+'</span><span>'+esc(metin)+'</span>';
-  k.appendChild(t);
-  setTimeout(function(){
-    t.classList.add('cikar');
-    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 250);
-  }, 3000);
-}
-
-// ── REAL-TIME ─────────────────────────────────────────────
-function realtimeYenileDebounced(){
-  _degisiklikSayaci++;
-  if (_yenileTimer) clearTimeout(_yenileTimer);
-  _yenileTimer = setTimeout(async function(){
-    var n = _degisiklikSayaci;
-    _degisiklikSayaci = 0;
-    try {
-      // Distinct değerleri de yenile (yeni değer eklenmiş olabilir)
-      _durum.distinctler = await distinctlerAl(_durum.tablo);
-      await sayfayiYukle(_durum.tablo, _durum.sayfa);
-      toast(n + ' değişiklik · '+_durum.tablo+' yenilendi', '🔄');
-    } catch (e) {
-      console.warn('[realtime] yenile hatası:', e.message);
-    }
-  }, 1500);
-}
-
-function realtimeBaslat(supa, tablo){
-  var badge = T('canliBadge');
-  try {
-    var ch = supa.channel('kut-detay-' + tablo)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: tablo },
-        function(payload){
-          console.log('[realtime] '+tablo+' · '+payload.eventType);
-          realtimeYenileDebounced();
-        }
-      )
-      .subscribe(function(status){
-        if (status === 'SUBSCRIBED') {
-          badge.classList.remove('kopuk');
-          badge.title = tablo + ' dinleniyor';
-          badge.innerHTML = '<span class="canli-nokta"></span> canlı';
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          badge.classList.add('kopuk');
-          badge.title = 'Real-time bağlantı kapalı';
-          badge.innerHTML = '<span class="canli-nokta"></span> kopuk';
-        }
-      });
-    _kanallar.push(ch);
-  } catch (e) {
-    console.warn('[realtime] subscribe hata:', e.message);
   }
-  window.addEventListener('beforeunload', function(){
-    _kanallar.forEach(function(ch){ try { supa.removeChannel(ch); } catch(e){} });
-  });
+
+  return brd + sayfaBas + ustKart + aksiyonBar + tabloHtml + altNav;
 }
 
-// ── BAŞLANGIÇ ─────────────────────────────────────────────
-(async function(){
-  var b=0; while (b<80) { if (_getSupa()) break; await new Promise(function(r){setTimeout(r,100);}); b++; }
-  var supa=_getSupa();
+// ── Satır tıklama → SVG + panel güncelle ──────────────────
+function satirTiklamasiBagla(){
+  var tbody = document.getElementById('tblBody');
+  if (!tbody) return;
+
+  var konfig = TABLO_KONFIG[TABLO];
+  if (!konfig || !konfig.panel_lejant) return;
+
+  tbody.addEventListener('click', function(e){
+    var tr = e.target.closest('tr');
+    if (!tr || !tr.hasAttribute('data-' + (konfig.panel_lejant[0].kol).replace(/_/g,'-'))) return;
+
+    tbody.querySelectorAll('tr.secili').forEach(function(r){ r.classList.remove('secili'); });
+    tr.classList.add('secili');
+
+    // Satır verilerini panel + SVG'ye yansıt
+    var degerler = {};
+    konfig.panel_lejant.forEach(function(L){
+      var attr = 'data-' + L.kol.replace(/_/g,'-');
+      var v = tr.getAttribute(attr);
+      degerler[L.kol] = v;
+      var el = T('pn_' + L.kol);
+      if (el) {
+        if (v == null || v === '') { el.textContent = '—'; el.classList.add('bos'); }
+        else {
+          var formatted = L.ondalik != null ? fmtSayi(v, L.ondalik) : v;
+          var birim = L.birim ? ' ' + L.birim : '';
+          el.textContent = (formatted || v) + birim;
+          el.classList.remove('bos');
+        }
+      }
+    });
+
+    // SVG (boru için)
+    if (konfig.svg_tipi === 'boru_kesit') {
+      var od = parseFloat(degerler.dis_cap_mm || 0);
+      var et = parseFloat(degerler.et_mm || 0);
+      var id = degerler.ic_cap_mm ? parseFloat(degerler.ic_cap_mm) : (od - 2*et);
+      var sch = degerler.sch_kod || '—';
+      var nps = degerler.nps_inch || '';
+
+      var elOd = T('svgOd'); if (elOd) elOd.textContent = (od ? od.toFixed(1) : '—') + ' mm';
+      var elId = T('svgId'); if (elId) elId.textContent = (id ? id.toFixed(2) : '—') + ' mm';
+      var elEt = T('svgEt'); if (elEt) elEt.textContent = (et ? et.toFixed(2) : '—') + ' mm';
+      var elSch = T('svgSch'); if (elSch) elSch.textContent = sch;
+      var elRef = T('svgSatirRef'); if (elRef) elRef.textContent = (nps ? 'NPS ' + nps : '') + (sch ? ' · Sch ' + sch : '');
+      var elSad = T('pnSatirAd'); if (elSad) elSad.textContent = (nps ? 'NPS ' + nps : '') + (sch ? ' · Sch ' + sch : '');
+    }
+  });
+
+  // İlk satırı otomatik seç
+  var ilk = tbody.querySelector('tr[data-' + (konfig.panel_lejant[0].kol).replace(/_/g,'-') + ']');
+  if (ilk) ilk.dispatchEvent(new Event('click', { bubbles:true }));
+}
+
+// ── Ana akış ──────────────────────────────────────────────
+(async function init(){
+  var supa;
+  try { supa = _getSupa(); }
+  catch(e){ document.body.innerHTML = '<div style="padding:40px;color:#fff;">Supabase hazır değil. Sayfayı yenile.</div>'; return; }
   if (!supa) { window.location.href='../giris.html'; return; }
 
-  if (window.location.hash) {
-    var p=new URLSearchParams(window.location.hash.substring(1));
-    var at=p.get('access_token'), rt=p.get('refresh_token');
-    if (at) { await supa.auth.setSession({access_token:at,refresh_token:rt}); window.location.hash=''; }
+  var sr = await supa.auth.getSession();
+  if (!sr || !sr.data || !sr.data.session) {
+    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
   }
 
-  var sr=await supa.auth.getSession();
-  if (!sr?.data?.session) { window.location.href='../giris.html?redirect='+encodeURIComponent(window.location.pathname+window.location.search); return; }
-  var kr=await supa.from('kullanicilar').select('rol,ad_soyad').eq('id',sr.data.session.user.id).single();
-  if (!kr.data || kr.data.rol!=='super_admin') { window.location.href='../index.html'; return; }
+  var kr = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id', sr.data.session.user.id).single();
+  if (!kr.data || kr.data.rol !== 'super_admin') {
+    window.location.href = '../index.html';
+    return;
+  }
 
-  T('topbarUser').textContent = kr.data.ad_soyad || sr.data.session.user.email;
-  var app=T('appShell'); app.style.display='flex'; app.style.visibility='visible';
-  document.documentElement.style.visibility='';
+  var ub = T('topbarUser'); if (ub) ub.textContent = kr.data.ad_soyad || '—';
+  var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
+  document.documentElement.style.visibility = 'visible';
 
-  var tablo=getParam('tablo');
-  if (!tablo || !TABLO_BILGI[tablo]) { gecersizTablo(tablo); return; }
-  var sayfa=parseInt(getParam('sayfa')||'1',10);
-  if (isNaN(sayfa)||sayfa<1) sayfa=1;
+  try {
+    // Paralel: tablo verisi + diğer standartlar listesi
+    var [veri, digerStandartlar] = await Promise.all([veriCek(), digerStandartlariCek()]);
+    T('anaIcerik').innerHTML = ciz(veri, digerStandartlar);
 
-  // URL'den filtreleri oku (f.<kolon> formatı)
-  var sp = new URLSearchParams(window.location.search);
-  _durum.filtreler = {};
-  sp.forEach(function(deger, anahtar){
-    if (anahtar.indexOf('f.') === 0) {
-      var kolon = anahtar.substring(2);
-      if (deger) _durum.filtreler[kolon] = deger;
+    // Satır etkileşimini bağla (eğer kolon konfigi varsa ve veri varsa)
+    if (veri.durum === 'ok' && (veri.satirlar || []).length > 0) {
+      satirTiklamasiBagla();
     }
-  });
-
-  cerceveCiz(tablo, TABLO_BILGI[tablo]);
-
-  // Distinct değerleri paralel çek + ilk sayfa yükle
-  _durum.distinctler = await distinctlerAl(tablo);
-  await sayfayiYukle(tablo, sayfa);
-
-  // Real-time bağlantı
-  realtimeBaslat(supa, tablo);
+  } catch (e) {
+    console.error('[kutuphane-detay] init hata:', e);
+    T('anaIcerik').innerHTML = '<div class="uyari">⚠ Sayfa yüklenirken hata oluştu: ' + esc(e.message) + '</div>';
+  }
 })();
 </script>
+
 </body>
 </html>
