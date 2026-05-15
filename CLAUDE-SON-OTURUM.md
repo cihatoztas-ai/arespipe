@@ -1,204 +1,276 @@
-# CLAUDE-SON-OTURUM.md
+# 91. Oturum Detay Özeti — 15 Mayıs 2026
 
-**Oturum: 80**
-**Tarih: 12 May 2026 (Salı)**
-**Başlangıç: git temiz, son commit `4425e51 docs(79): kapanis uclusu`**
-**Bitiş: 80 push hash `b5f9226` (Migration 051), 80'in iki kendi commit'i `ad57157` (050) + `c3f6f84` (051, rebase sonrası `b5f9226`)**
+> **Plan A** (UI temizliği) ile başladı, **kapsam revizyonu + DB mimari teşhis** ile sonlandı. Beklenmedik yönde gitti ama değerli bir oturum oldu.
 
 ---
 
-## Özet
+## Oturum Akışı (Zaman Sırasıyla)
 
-80. oturum **çift-cephe stratejisi**: A yolu (B16.11 SW fitting ağırlık) + E yolu (boru türetilmiş kolonlar) önerisi vardı; A bitince E'nin **hayalet borç** olduğu keşfedildi, B yolu (B16.9 reducer ağırlık) açıldı. Net sonuç: **fitting_olculer ağırlık doluluğu 171 → 452** (%30 → ~%78, **+281 satır**).
+### Faz 1 — Plan A başlangıcı
 
-İki ayrı kaynak kullanıldı: A için **Bonney Forge Catalog F9-2012** (primary, ISO 9001, B16 komitesi üyesi), B için **Wermac BW Reducers / Hackney Ladish data**.
+- Git durumu temiz, `.bak90*` 6 yedek dosya silindi (90'dan kalan)
+- 90'ın açık borçları gözden geçirildi (6 borç)
+- Plan A onaylandı: 3 saatte fitting/flansh filtre modeli + küçük borçlar
+
+### Faz 2 — UI mimarisi kararı
+
+- `kutuphane.html` Katman 1 + `kutuphane-malzemeler.html` Katman 2 incelendi
+- 3 tablonun (malzeme_kataloglari, fitting_malzeme_uyum, ozel_parcalar) Katman 2'de "Geçersiz tablo" hatası verdiği fark edildi
+- Tablo başına özel UI yazma (α) vs Generic kayıt tarayıcısı (β) karşılaştırıldı
+- **Cihat seçimi:** Generic altyapı kuralım (β) — sürdürülebilir
+- 4 mimari karar onaylandı: A (tek sayfa) + C (DB+UI metadata) + C (otomatik+manuel) + B (generic + zenginleştirme)
+
+### Faz 3 — DB şemaları incelendi
+
+- 4 tablonun information_schema sorgusu yapıldı (boru, fitting, flansh, malzeme_kataloglari)
+- 3 mimari bulgu keşfedildi:
+  - **Bulgu 1:** flansh_olculer'da Migration 065 (90'ın işi) yarım kalmış sanıldı — sonra düzgün çalıştığı doğrulandı
+  - **Bulgu 2:** fitting_malzeme_uyum'da `flansh_id` kolon adı varsayıldı — sonra çıktının kesilme hatası anlaşıldı, gerçek kolon `fitting_id`
+  - **Bulgu 3:** `malzeme_id` üç tabloda 1:1 FK var ama KUTUPHANE-KAPSAM.md M:N diyor — çelişki
+
+### Faz 4 — 4 malzeme tablosu sorunu
+
+- Cihat sordu: "bu listeyi tam olarak birkaç oturum öncesine kadar ben de göremiyordum"
+- 4 tablo keşfedildi:
+  - `malzeme_kataloglari` (20) — kütüphane master ✓
+  - `malzeme_tanimlari` (13) — runtime spool/pipeline FK ✓
+  - `endustri_malzemeler` (36) — ??? kütüphane dışı?
+  - `endustri_form_astm` (78) — ??? kütüphane dışı?
+  - `malzeme_standart_ipucu` (18) — ??? hiç FK yok
+- FK haritası çıkarıldı, bağımlılıklar tespit edildi
+
+### Faz 5 — Sessiz kırık keşfi (KRİTİK)
+
+- `grep -rn "malzeme_standart_ipucu"` boş → ölü tablo
+- `grep -rn "endustri_malzemeler"` → `api/izometri-oku.js:1325` çağırıyor
+- `grep -rn "endustri_form_astm"` → `api/izometri-oku.js:1280, 1329` çağırıyor
+- **Şok:** İlk count sorgusu `endustri_malzemeler` 36 satır demişti, ama `SELECT *` çalışmadı
+- Tablolar `arsiv` schema'sında bulundu
+- **İzometri parse akışı 35 batch boyunca sessizce kırık çalışmış**
+- Çözüm: `ALTER TABLE arsiv.endustri_* SET SCHEMA public;` (Migration 065 — retroaktif)
+
+### Faz 6 — Kütüphane vizyonu sorgulandı
+
+- Cihat: "bu kütüphane işini baştan bir gözden geçirmemiz gerek sanki"
+- Yeni gereksinimler:
+  - GOST/JIS/GB/T standart aileleri (Rus/Japon/Çin gemi)
+  - Fitting malzeme çeşitliliği genişletilmeli
+  - Özel üretim ölçüler (4.5mm ara kalınlık gibi) sahaya özel olarak desteklenmeli
+- Plan A → Kapsam Revizyonu olarak yeniden konumlandı
+
+### Faz 7 — KUTUPHANE-KAPSAM.md v3 yazımı
+
+- 5 onay alındı (6 standart aile / 23 fitting / 10 flanş / non-preset bayrak / 3 katman)
+- v3 yazıldı, ~600 satır
+- "Atlas okyanusu felsefesi" başlığı sonradan iptal edildi (Cihat: "ben onu laf olsun diye söyledim")
+- Düzeltme yapıldı: "Tasarım Yaklaşımı: İskelet + Organik İçerik"
+
+### Faz 8 — Dublin flanş sorusu
+
+- Cihat: "Dublin flanş diye bir şey var, listemizde var mı?"
+- Web araması: standart sektörel terim değil
+- Cihat ortaya çıkardı: Double Stud Adapter Flange (DSAF) — sahada "Dublin"
+- 11. flanş tipi olarak eklendi (kütüphane standart adı, saha jargonu parser sözlüğüne)
+
+### Faz 9 — KUTUPHANE-YUKLEME-TAKIP.md v3 yazımı
+
+- Mevcut sayılarla güncellendi
+- 11 flanş tipi tablosu (DSAF dahil)
+- ozel_parcalar modülü silindi
+
+### Faz 10 — Migration 068 denemesi → KRİTİK HATA
+
+- "B yolu — Migration 066 (sonradan adı 068 olacaktı) bu oturumda çalıştır" onaylandı
+- SQL Editor'da çalıştırıldı
+- **FK violation hatası:** fitting_id UUID'si flansh_olculer'de bulundu
+- BEGIN/COMMIT içinde rollback edildi
+- Sample veri detaylı incelendi:
+  - 1 test satırı var (count sorgu sıfır demişti — sonradan ortaya çıktı)
+  - fitting_id → flansh_olculer (yanlış FK)
+  - malzeme_id → malzeme_tanimlari (yanlış FK)
+- Cihat söyledi: "bizim migration klasörümüz var"
+- `migrations/README.md` okundu: **"önce dosya, sonra çalıştırma" kuralı**
+- 91'de bu kural ihlal edilmiş: 065 SQL Editor'da çalıştırıldı, dosyalanmadı
+
+### Faz 11 — Toparlama
+
+- Repo gerçeği görüldü: `migrations/` 064'e kadar dosyalı
+- Migration 065 retroaktif dosyası yazıldı (91'in 2 SQL değişikliğinin kaydı)
+- Migration 066 yazıldı (fitting_malzeme_uyum onarım — 92'de çalışacak)
+- MIGRATION-YOL-HARITASI v2'ye düzeltildi (gerçek numaralar)
+- Plan A revize: ne bu oturumda çalıştır ne 92'ye taşı (Cihat: A onayı)
 
 ---
 
-## A Yolu — B16.11 SW Fitting Ağırlık Dolum
-
-### Kaynak stratejisi (Seçenek 2 → Seçenek 1)
-
-İlk plan ASME B16.11-2011 PDF kanonik tablosunu kullanmaktı. **Kritik keşif**: PDF'in mass tablosu YOK (ASME standardı ağırlık vermez, sadece boyut). Revize: 15-20dk üretici tarama → **Bonney Forge** bulundu.
-
-Cross-check: pipingpipeline.com (aggregator). NPS 4 90SW C3000'de:
-- Bonney Forge: 10.25 kg
-- pipingpipeline: 14.50 kg
-- **%41 sapma** → PP yazım hatası şüphesi (BF tutarlı pattern)
-
-**KARAR-80.1**: ASME standartlarında mass tablosu yoksa üretici tablosu primary; aggregator secondary cross-check. PDF kanonik kontrolünden önce tablo varlığı teyit edilmeli.
-
-### Migration 050 detayları
-
-- **Dosya**: `migrations/050_b16_11_sw_agirlik_dolum.sql`
-- **MD5**: `de215945abebc82e53b6e1d45ff790bc`
-- **Satır**: 243, **Byte**: 26833
-- **UPDATE bloğu**: 7 (90SW, 45SW, tee_eq_sw, cross_sw, coupling_full, coupling_half, cap_sw)
-- **Kapsam**: C3000 NPS 1/2-4 (9 satır) + C6000 NPS 1/2-2 (6 satır) per parça = **105 satır**
-
-### DN 20 C6000 coupling_half istisnası
-
-Bonney Forge tablosunda **NPS 3/4 (DN 20) C6000 half coupling üretmiyor** (production constraint, sadece 9 değer var 11 yerine). Pipingpipeline secondary kullanıldı:
-- DN 20 C6000 coupling_half = 0.45 kg (PP secondary)
-- notlar JSON `"kaynak_tipi":"secondary_fallback"` flag ile işaretli
-- Diğer 5 C6000 coupling_half satırı Bonney Forge primary
-
-**KARAR-80.2**: BF'de eksik NPS için PP secondary fallback kullanılır, JSON'da flag ile ayrılır.
-
-### Doğrulama (105/105 dolu)
+## 91'in Anatomisi — Plan Değişiklikleri
 
 ```
-14 satır (7 parça × 2 class), hepsinde sayim = agirlik_dolu
-- 45SW C3000: 9/9, min 0.27, max 12.97 kg
-- 45SW C6000: 6/6, min 0.36, max 3.42 kg
-- 90SW C3000: 9/9, min 0.20, max 10.25 kg
-- 90SW C6000: 6/6, min 0.27, max 2.59 kg
-- cap_sw C3000: 9/9, min 0.10, max 5.48 kg
-- cap_sw C6000: 6/6, min 0.19, max 1.66 kg
-- coupling_full C3000: 9/9, min 0.11, max 2.60 kg
-- coupling_full C6000: 6/6, min 0.20, max 1.75 kg
-- coupling_half C3000: 9/9, min 0.15, max 3.76 kg
-- coupling_half C6000: 6/6, min 0.36, max 2.26 kg
-- cross_sw C3000: 9/9, min 0.33, max 18.14 kg
-- cross_sw C6000: 6/6, min 0.70, max 4.38 kg
-- tee_eq_sw C3000: 9/9, min 0.19, max 10.91 kg
-- tee_eq_sw C6000: 6/6, min 0.22, max 2.04 kg
+Başlangıç: Plan A (UI temizliği, fitting filtre, küçük borçlar) — 6-9 saat
+   ↓
+Faz 2: Generic UI altyapısı (mimari) — 11-12 saat
+   ↓
+Faz 6: Kapsam revizyonu (sadece belge işi) — 4-5 saat
+   ↓
+Faz 10: Migration disiplin ihlali → toparlama gerekti
+   ↓
+Sonuç: Belge revizyonu + Migration 065/066 dosyalama + Kapanış — ~8 saat
 ```
 
-**Commit**: `ad57157 data(80): 050 B16.11 SW fitting agirlik dolum Bonney Forge - 105 satir UPDATE (7 parca x 15)`
+**Yön değişimi 3 kez:**
+- Plan A → Generic altyapı (Cihat: "sıkıştırmaktan vazgeçiyorum")
+- Generic → Kapsam revizyonu (Cihat: "kütüphane işini baştan gözden geçirmemiz gerek sanki")
+- Kapsam → Toparlama (FK violation + migration disiplin ihlali keşfi)
+
+Her seferinde **Cihat geri çekilme kararını verdi**, ben uydum. Bu kararlar sağlıklıydı, çünkü yanlış yola devam etmek daha pahalıya mâl olurdu.
 
 ---
 
-## E Yolu — Boru Türetilmiş Kolonlar (HAYALET BORÇ)
+## Üretilen Dosyalar
 
-CLAUDE-SONRAKI-OTURUM (79'da yazılan) Yol E'yi **boru_olculer için ic_cap_mm, hacim_l_m, yuzey_alan_dis_m2_m UPDATE** olarak öneriyordu. MK-78.1 disiplini (DB live state verify) gereği önce kontrol edildi:
-
-```sql
-SELECT column_name, is_generated, generation_expression FROM information_schema.columns
-WHERE table_name = 'boru_olculer' AND column_name IN ('ic_cap_mm', 'hacim_l_m', 'yuzey_alan_dis_m2_m');
-```
-
-Sonuç: **Üç kolon da GENERATED ALWAYS** (36. oturum K11/8 maddeli mimari kararı). 450/450 satır dolu, hiç NULL yok. Formüller doğru:
-- `ic_cap_mm = dis_cap_mm - 2 * et_mm`
-- `hacim_l_m = π × ((dis-2et)/2)² / 1000`
-- `yuzey_alan_dis_m2_m = π × dis_cap / 1000`
-
-**Yol E zaten halledilmiş** — hiç yapılacak iş yok. CLAUDE-SONRAKI-OTURUM yanlış varsayım üzerine kurulmuştu (79'da DB live state kontrol edilmemiş).
-
-**MK-80.2 (yeni)**: CLAUDE-SONRAKI-OTURUM yazılırken her açık borç DB live state ile teyit edilmeli (MK-78.1'in genişletilmiş hali). Hayalet borç önleme — zaten halledilmiş işler bir sonraki oturum gündemine taşınmamalı.
+1. **`migrations/065_olu_tablo_temizligi_ve_endustri_geri_tasima.sql`** (yeni — retroaktif)
+2. **`migrations/066_fitting_malzeme_uyum_onarim.sql`** (yeni — 92'de çalışacak)
+3. **`docs/KUTUPHANE-KAPSAM.md`** (v2 → v3)
+4. **`docs/KUTUPHANE-YUKLEME-TAKIP.md`** (v2 → v3)
+5. **`docs/MIGRATION-YOL-HARITASI.md`** (yeni belge — v2)
+6. **`.github/son-durum.md`** (91 sonu güncelleme)
+7. **`CLAUDE-SON-OTURUM.md`** (bu dosya)
+8. **`CLAUDE-SONRAKI-OTURUM.md`** (92 gündemi)
 
 ---
 
-## B Yolu — B16.9 Reducer Ağırlık Dolum
+## Önemli Değişikenler
 
-### Yapı analizi
+### DB
 
-DB live state (MK-80.2 disiplini):
-- `fitting_olculer` reducer_conc: 114 satır, reducer_ecc: 114 satır = **228 toplam**
-- `cap_buyuk_dn` (NOT NULL) + `cap_kucuk_dn` (NULLABLE, reducer için dolu)
-- Schedule üçlüsü NULL (KARAR-79.4: schedule-bağımsız pattern)
-- 28 unique DN_buyuk × değişken DN_kucuk → üçgensel matris
-- DN dağılımı: 20-1000 mm (NPS 3/4 - 40)
+- 1 tablo silindi: `malzeme_standart_ipucu` (18 satır, ölü)
+- 2 tablo schema değişti: `endustri_malzemeler`, `endustri_form_astm` (arsiv → public)
+- 1 migration yazıldı, 92'de çalışacak: 066 (fitting_malzeme_uyum onarım)
+- 1 üretim bug onarıldı: izometri parse akışı 35 batch'lik kırılma temizlendi
 
-### Kaynak: Wermac BW Reducers (Hackney Ladish)
+### Belgeler
 
-4 schedule sayfası çekildi:
-- `weights_bw_reducers.html` STD — NPS 3/4 → 30 (DN 20-750), ~89 combo
-- `weights_bw_reducers_xs.html` XS — Aynı kapsam, bazı "-" 
-- `weights_bw_reducers_160.html` 160 — **NPS 12 sınırı** (DN 300)
-- `weights_bw_reducers_xxs.html` XXS — **NPS 8 sınırı** (DN 200)
+- KUTUPHANE-KAPSAM.md v2 → v3:
+  - 3 standart aile → 6 (GOST/JIS/GB/T eklendi)
+  - 11 fitting tipi → 23
+  - 6 flanş tipi → 11 (DSAF dahil)
+  - ozel_parcalar modülü kaldırıldı, non-preset bayrak yaklaşımı
+  - 3 katman mimarisi netleşti
+  - 12.000 satır hedef kaldırıldı (organik büyüme yaklaşımı)
+- KUTUPHANE-YUKLEME-TAKIP.md v2 → v3 (canlı durum)
+- MIGRATION-YOL-HARITASI.md v2 (yeni)
 
-Wermac kaynak güvenilirliği: Hackney Ladish (Dallas, TX, 380,000 sqft, B16 fitting üreticisi). MK-79.3: üretici tablosu primary, varyans bilinmiyor (tek-ama-tutarlı kaynak).
+### Mimari Kararlar
 
-### DB-Wermac eşleştirme
-
-DB DN combo özeti (114 conc kombinasyonu):
-- DN 20-150: 42 (DN_buyuk × değişken DN_kucuk)
-- DN 200-300: 12
-- DN 350-550: 20
-- DN 600-750: 16
-- DN 800-1000: 24
-
-Wermac kapsam dışı kombinasyonlar:
-- **DN 800-1000 büyük NPS**: Wermac NPS 30 sınırı (DN 750) → 24 satır γ
-- **DN 600-550**: Wermac "-" (24-22) → 1 combo γ
-- **DN 700-450**: Wermac'ta 28-18 yok → 1 combo γ
-
-Toplam **88 unique combo eşleşti** (114-26), **52 satır γ** (26 conc + 26 ecc).
-
-### Migration 051 detayları
-
-- **Dosya**: `migrations/051_b16_9_reducer_agirlik_wermac.sql`
-- **MD5**: `5c5b1ad7cea51159a69584892a4a9b74`
-- **Satır**: 176, **Byte**: 7113
-- **Pattern**: Tek UPDATE bloğu, parca_tipi IN ('reducer_conc', 'reducer_ecc') filtre
-- **88 VALUES satırı × 2 parça tipi = 176 satır UPDATE**
-
-**MK-80.3 (yeni)**: Reducer ağırlık **β-mini-extended pattern** — STD ana kolon (kanonik), JSON multi-schedule (`agirlik_schedule_bagimli_kg: {"STD":x, "XS":y, "160":z, "XXS":w}`, null'lar kabul). 049 pattern'la uyumlu.
-
-JSON kaynak alanı:
-```json
-{
-  "kaynak": "Wermac BW Reducers (Hackney Ladish source, weights_bw_reducers.html STD/XS/160/XXS)",
-  "uretim_tarihi": "2026-05",
-  "agirlik_schedule_bagimli_kg": {"STD":..., "XS":..., "160":..., "XXS":...}
-}
-```
-
-### Doğrulama
-
-```
-reducer_conc: 114 sayim, 88 dolu, min 0.08 kg, max 109.32 kg
-reducer_ecc:  114 sayim, 88 dolu, min 0.08 kg, max 109.32 kg
-gamma listesi: 52 satir (26 conc + 26 ecc, tam beklenen NPS kombinasyonları)
-```
-
-**Commit**: `c3f6f84 data(80): 051 B16.9 reducer agirlik dolum Wermac/Hackney Ladish - 176 satir UPDATE (88 combo x 2)`. Push sırasında remote'ta `cf8e462` (beklenmedik commit, paralel chat batch olabilir) → rebase → final hash `b5f9226`.
+- KARAR-91.A → KARAR-91.H (8 karar)
+- Generic UI altyapısı için 4 alt-karar (A-C-C-B)
 
 ---
 
-## Mimari Kararlar (80)
+## 91'in Dersleri (Detay)
 
-### Yeni MK'lar
+### 1. Süper Admin'de görünmüyor diye tablo silmek tehlikeli
 
-- **MK-80.1**: B16.11 SW ağırlık için Bonney Forge primary (ISO 9001, B16 komitesi); pipingpipeline secondary cross-check. Üretici-aggregator varyans %30-50, NPS sınırlarında yazım hatası kontrolü zorunlu (örnek: NPS 4 90SW C3000'de PP=14.50 vs BF=10.25, %41 sapma → PP yazım hatası şüphesi).
+**Veri:**
+- `endustri_*` tabloları `arsiv` schema'sında bulundu
+- Önceki bir oturumda biri bilinçli arşivlemiş (Süper Admin'de görünmüyordu)
+- `api/izometri-oku.js` çağırıyordu (`grep -rn` ile kanıtlandı)
+- 35 batch boyunca sessiz kırık
 
-- **MK-80.2**: CLAUDE-SONRAKI-OTURUM yazılırken her açık borç DB live state ile teyit edilmeli (MK-78.1'in genişletilmiş hali). Hayalet borç önleme. 79'da Yol E (boru türetilmiş kolonlar) bu hatanın ürünüydü — 36. oturum K11 ile GENERATED yapılmıştı, kontrol edilmediği için listeye taşındı.
+**Ders:** Tablo silmek/arşivlemek için 3 zorunlu kontrol:
+1. `grep -rn` ile kod tabanında ara
+2. Vercel function logs / `ai_api_log` kontrolü
+3. Aktif kullanım kanıtlanmadan dokunma
 
-- **MK-80.3**: Reducer ağırlık β-mini-extended pattern — STD ana kolon (kanonik), JSON multi-schedule (STD/XS/160/XXS, null'lar kabul). Wermac kapsam dışı kombinasyonlar (büyük NPS, üretici-spesifik atlamalar) γ'da kalır, ek üretici (Sandvik/Vallourec gibi) ile tamamlanabilir.
+### 2. Migration dosyası önce, çalıştırma sonra
 
-### Yeni KARAR'lar
+**Veri:**
+- `migrations/README.md` açıkça yazıyordu: "önce dosya, sonra çalıştırma"
+- 91'de bu kural ihlal edildi: `malzeme_standart_ipucu` DROP + `endustri_*` taşıma SQL Editor'da yapıldı, dosyalanmadı
+- Geriye dönük 065 dosyası yazıldı (retroaktif kayıt)
+- Bir daha olmayacak
 
-- **KARAR-80.1**: ASME standardının mass tablosu içermediği durumlarda (B16.11 örneği), üretici tablosu (Bonney Forge F9-2012) primary kaynak; PDF kanonik kontrolünden önce tablo varlığı teyit edilmeli.
+**Ders:** Yeni DB değişikliği akışı:
+1. Migration numarasını bul (`ls migrations/`)
+2. Şablondan kopyala (`docs/templates/yeni-migration-sablonu.sql`)
+3. SQL yaz, header doldur, **önce repo'ya commit et**
+4. Sonra Supabase'de çalıştır
+5. Doğrulama
 
-- **KARAR-80.2**: BF'de eksik NPS için PP secondary fallback kullanılır (DN 20 C6000 coupling_half NPS 3/4 production constraint örneği). notlar JSON'da `kaynak_tipi: "secondary_fallback"` flag ile işaretli.
+### 3. "Felsefe" abartı
 
-- **KARAR-80.3**: 80'in çift-cephe stratejisi (A: B16.11 SW + B: B16.9 reducer) iki ayrı kaynak (Bonney Forge + Wermac/Hackney Ladish) kullandı; fitting ağırlık doluluğu 171 → 452 (%30 → ~%78). Multi-source fitting ağırlık dolum **tek migration'da** yerine **iki ayrı parça-tipi-spesifik migration**'da daha temiz.
+**Veri:**
+- Cihat "atlas okyanusu" benzetmesi yaptı
+- Ben "Atlas Okyanusu Felsefesi" diye doctrine adı verdim
+- Cihat: "ben onu laf olsun diye söyledim"
+- 5 yerde "atlas/okyanus/felsefe" referansı temizlendi
+
+**Ders:** Cihat'ın günlük dilini doctrine'leştirme. Kararları "tasarım yaklaşımı" diye yaz, "felsefe" diye değil.
+
+### 4. Aynı oturuma çok iş sığdırma vs. doğru yol
+
+**Veri:**
+- 4 kez "B yapalım, kapsamı genişletmeyelim" vs "doğru olanı yapalım" gerilimi
+- Cihat 3 kez sıkıştırmaktan vazgeçti
+- Her seferinde kazanım: daha sağlam altyapı kararı
+
+**Ders:** "Oturum içine sığdırmak" pratik bir hedef değil. "Doğru olanı yapmak" hedef. Sığmazsa kapanış doğru karar.
+
+### 5. Veri-tabanlı karar > sezgi
+
+**Veri:**
+- Sezgi: "fazla tablo var, silelim"
+- Veri: 4 tablodan 3'ü canlı kullanılıyordu
+- Sezgi: "fitting_malzeme_uyum 0 satır"
+- Veri: 1 test satırı vardı (count yanlış sayılmıştı)
+
+**Ders:** Her tabloya, her FK'ya, her tahmine veri ile doğrula. Sample query ucuz, hata pahalı.
 
 ---
 
-## Önceki Disiplinlerin Uygulanması
+## 92'ye Geçiş
 
-- ✅ **MK-75.3** çift kaynak: Bonney Forge primary + pipingpipeline cross-check (A); B16.9 reducer için Wermac/Hackney Ladish tek-ama-tutarlı (B)
-- ✅ **MK-78.1** DB live state verify: hem reducer schema (yapı, NULL durumu) hem boru türetilmiş kolonlar (GENERATED tespiti) için
-- ✅ **MK-79.1** pbcopy ile clipboard yapıştırma (`cat sql | pbcopy`)
-- ✅ **MK-79.2** ağırlık notlar JSON pattern: `kaynak`, `uretim_tarihi`, `agirlik_schedule_bagimli_kg`
-- ✅ **MK-79.3** fitting ağırlık = üretici tablosu, ±%5-15 normal varyans (B16.11 C6000'de %30-50'ye kadar)
-- ✅ **MK-79.4** schedule üçlüsü NULL pattern (reducer + B16.11 SW schedule-bağımsız)
-- ✅ **MK-79.5** migration numarası `ls migrations/ | tail -5` (049 sonrası → 050, 051)
-- ✅ **MK-51.1** dosya transferi MD5 + satır + byte
-- ✅ **MK-52.1** arespipe_kopyala MD5 doğrulamayla
-- ✅ **MK-52.2** gp (auto-rebase push)
-- ✅ ASCII-only SQL yorumlar (Türkçe karakter yok yorum içinde)
-- ✅ present_files ile temiz transfer
+### 92 açılış ritüeli (CLAUDE.md)
+
+```
+1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+2. Bugün ne yapmak istiyorsun?
+```
+
+Cevap muhtemelen: "91'in açık borçları" → migration 066 çalıştır + 067 yaz
+
+### 92'nin öncelikli işi
+
+**Migration 066'yı canlıda çalıştırmak.**
+
+- Önce git pull (yeni 065 + 066 dosyalarını al)
+- Supabase SQL editor'da `migrations/066_*.sql` çalıştır
+- Doğrulama sorgusu
+- Başarılıysa MIGRATION-YOL-HARITASI'da 📝 → ✅
+
+Sonra Migration 067 yazılır (boru_malzeme_uyum + flansh_malzeme_uyum CREATE). RLS pattern doğrulanmalı.
+
+### 92'nin tahmini süresi
+
+- Migration 066 çalıştırma + doğrulama: ~15 dk
+- Migration 067 yazma + çalıştırma + doğrulama: ~45 dk
+- Plan A'dan kalan küçük borçlar: ~45 dk
+- Toplam: ~2 saat (kısa, rahat oturum)
+
+Sonra 93+'da Generic UI altyapısı, GOST/JIS/GB/T seed, DIN 86087/88/89 P0 doldurma, vb.
 
 ---
 
-## Süre dağılımı
+## Son Söz
 
-- A yolu (kaynak + SQL + doğrulama + commit): ~1 saat
-- E yolu (DB kontrol + hayalet borç tespiti): ~10 dk
-- B yolu (Wermac 4 sayfa + DN combo eşleştirme + SQL + doğrulama + commit): ~1 saat
-- Kapanış üçlüsü: ~15 dk (devam ediyor)
+91 mimari oturum olarak başladı, üretim onarımı + kapsam revizyonu + disiplin dersi olarak bitti. Plan değişiklikleri yorgun gibi görünse de, **doğru karar her seferinde alındı**. Sıkıştırmaya çalışmasak daha iyi olurdu, ama yön değişimleri zaten sağlam değişimlerdi.
 
-Toplam: ~2.5 saat oturum
+**92'ye temiz girdik:**
+- Repo + DB senkronize (065 retroaktif dosya ile)
+- 066 hazır bekliyor (önce dosya, sonra çalıştır)
+- 3 kütüphane belgesi güncel
+- Migration disiplini netleşti
+- Kapsam yeniden tasarlandı
+
+İyi geceler Cihat, dinlen.
+
+— Claude, 91. oturum kapanışı
