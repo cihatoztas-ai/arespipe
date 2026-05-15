@@ -1,152 +1,215 @@
-# CLAUDE-SON-OTURUM — 89. Oturum
+# CLAUDE-SON-OTURUM — 90. Oturum (15 Mayıs 2026)
 
-> **Tarih:** 15 Mayıs 2026
-> **Süre:** ~3 saat
-> **Ana tema:** Kütüphane sayfa hiyerarşisi 4-katmanlı refactor + AI/AR/3D veri besleme vizyon belgesi
-> **Sonuç:** ✅ Başarıyla kapatıldı. 88'in 89.A/89.B borçları 90'a kaydı.
+> **Tema:** Kütüphane Faz 1 kapanışı — boru için 4 katman uçtan uca, fitting/flansh mimari kararla 91'e devir, 89.A oneriler refactor tamam, 89.B prensipsel iptal.
 
 ---
 
-## Oturum Akışı
+## Açılış Durumu
 
-### Faz 1 — Açılış ve Plan Belirleme (10 dk)
+89'un kapanışında:
+- Boru için 4 katman sayfa hiyerarşisi mockup'lı (kutuphane-malzemeler/standartlar/detay)
+- Canlı doğrulama henüz yapılmamış
+- DB kolonlarının (`malzeme_grubu_kod`, `standart`) varlığı varsayım
+- 89.A (oneriler refactor) ve 89.B (özel parça formu) borç olarak 90'a kalmış
 
-Cihat 89'u açtı, mevcut 88 kapanışını oku → 89.A (oneriler refactor) + 89.B (88.G form) plan. Mockup kararı için R-10 mockup-first.
-
-Önce **3 yaklaşım kıyaslaması** yapıldı: A (sekme=standart), B (sekme=mg), C (düz liste). Cihat hiçbirini seçmedi, kendi vizyonunu anlattı.
-
-### Faz 2 — Vizyon Netleşmesi (60 dk)
-
-Cihat 4 kritik vizyon parçasını ortaya koydu:
-
-1. **Tablo yapısı yeniden tasarlanmalı** — PDF flanş örneği üzerinden: üstte SVG kesit + altta tablo. Satıra tıklayınca SVG etiketleri o satırın değerleriyle dolar.
-
-2. **Olgunluk göstergesi** — Her satır için 3 katman (foto + 3D + DXF, SVG zaten temel). Tablonun en solunda gösterilir.
-
-3. **3 katmanlı navigasyon** — "Bir sayfada bir tablo göreyim". Filtreleme yerine: Borular → Karbon → ASME B36.10M üç tıkla ulaşılır.
-
-4. **Veri besleme pipeline'ları**:
-   - Manuel admin yükleme
-   - Mobile sahadan etiketleme (fotoğraf çek → parça etiketle → standart seç)
-   - **İmalat fotoğrafı QR-ölçek parse (en büyük veri kaynağı)** — operatör zaten her aşamada çekiyor, kütüphane otomatik besleniyor
-   - STEP/Rhino otomatik parse (3D dosyadan boyut çıkarımı)
-
-**Niye:** Sahada AR doğrulama, 3D ölçü kontrolü, AI parça tanıma. Yani kütüphane = AI ekosisteminin yakıt deposu.
-
-### Faz 3 — Mockup ve Onay (45 dk)
-
-Cihat'ın anlatımına göre 2 mockup yapıldı:
-1. `kutuphane-malzeme-v1.html` (Katman 3 — standart listesi)
-2. `kutuphane-detay-v2.html` (Katman 4 — tek tablo)
-
-Cihat: "tamam çok güzel oldu, koda geçebiliriz". Mockup yeterli.
-
-### Faz 4 — Vizyon Belgesi (20 dk)
-
-Cihat'ın AI/AR/3D vizyonunu **yazılı belgeye** dönüştürmek için `KUTUPHANE-VERI-BESLEME-VIZYONU.md` yazıldı. 218 satır:
-- 4 pipeline detayları (kaynak, güven seviyesi, akış)
-- Bootstrap learning loop (Faz 0 → Faz 5)
-- Olgunluk göstergesinin AR/3D anlamı
-- Veri modeli önerisi (`kutuphane_medya` polymorphic tablo)
-- Sayfa hiyerarşisi
-- Sonraki adımlar (90, 91, 92, 100, uzun vade)
-
-### Faz 5 — Kod Implementasyonu (90 dk)
-
-Mevcut `admin/kutuphane.html` referans pattern alındı (MK-88.D). Üç sayfa:
-
-**Katman 2** (`admin/kutuphane-malzemeler.html`, 406 satır):
-- URL parametresi `?tablo=boru_olculer`
-- `TABLO_KONFIG` sözlüğü: 3 tablo × 7 mg
-- Paralel `count(*)` her grup için
-- Aktif/Bekleyen ayrımı
-
-**Katman 3** (`admin/kutuphane-standartlar.html`, 519 satır):
-- URL `?tablo=X&mg=Y`
-- `STANDART_KATALOG` kod-içi sabit (boru/fitting/flanş × 7 mg × standartlar)
-- DB'den `select('standart').eq(mg)` → client-side groupBy
-- Aktif / Bekleyen / Ekstra (hedef dışı) 3 bölüm
-
-**Katman 4** (`admin/kutuphane-detay.html`, 599 satır, mevcut 863 satır → sıfırdan):
-- URL `?tablo=X&mg=Y&std=Z`
-- Long format tablo (DN × Sch satırları)
-- SVG kesit (boru için tam) + sağ panel
-- Satır tıklama → SVG/panel güncellenir (vanilla JS)
-- Alt navigasyon: diğer standartlar
-
-**Katman 1 patch** (`admin/kutuphane.html`):
-- Satır 407 tek satır sed: `kutuphane-detay.html?tablo=X` → `kutuphane-malzemeler.html?tablo=X`
+90 başlangıcında ritüel + git temiz + son commit `41f6bb8 feat(89)`. Cihat'ın hedefi netti: "kütüphane işini kapatmak istiyorum."
 
 ---
 
-## Değişen Dosyalar
+## Olay Sırası ve Karar Noktaları
 
-| Dosya | Önce → Sonra | Risk |
-|---|---|---|
-| `docs/KUTUPHANE-VERI-BESLEME-VIZYONU.md` | YOK → 218 | Düşük (yeni belge) |
-| `admin/kutuphane-malzemeler.html` | YOK → 406 | Düşük (yeni sayfa) |
-| `admin/kutuphane-standartlar.html` | YOK → 519 | Düşük (yeni sayfa) |
-| `admin/kutuphane-detay.html` | 863 → 599 | **Orta-yüksek** (mevcut dosya sıfırdan, eski MD5 git'te) |
-| `admin/kutuphane.html` | 1 satır | Düşük (sed patch, .bak doğrulandı silindi) |
+### Faz 1 — Tanıma (15 dk)
+
+DB şemaları, kolon dağılımları, KATALOG içeriği karşılaştırıldı:
+
+| Bulgu | Anlamı |
+|---|---|
+| `boru_olculer.malzeme_grubu` zaten dolu | Migration gereksiz, sadece kod rename |
+| DB `cunife` vs KATALOG `cuni` | İsim uyumsuzluğu |
+| DB `ASME-B36.10M` vs KATALOG `ASME B36.10M` | Format uyumsuzluğu |
+| fitting/flansh tablolarında `malzeme_grubu` + `standart` yok | Migration gerekli |
+| fitting/flansh'ta `malzeme_id` neredeyse hep boş (569'da 0, 308'de 16) | JOIN backfill çalışmaz |
+
+**KARAR-90.A:** `cunife` DB değeri, KATALOG `cuni` → KATALOG'u değiştir (sıfır migration)
+**KARAR-90.B:** Format farkı için normalize fonksiyonu (DB ne saklarsa saklasın, JS tarafında eşle)
+**KARAR-90.C:** fitting/flansh için kolon ekle ama içini doldurma (mimari karar gerekli)
+
+### Faz 2 — Boru Patch (45 dk)
+
+3 dosyada `malzeme_grubu_kod` → `malzeme_grubu` rename + KATALOG `cuni:` → `cunife:` + `normStd()` helper sistemi:
+
+```javascript
+function normStd(s){ return String(s).toUpperCase().replace(/[\s\-_.]+/g,''); }
+function normalizeDagilim(dag){ ... }  // DB anahtarları hem orijinal hem normalize key ile
+function dbAnahtariBul(katKod, dag){ ... }  // KATALOG kodundan DB anahtarına geri çeviri
+```
+
+Bu tasarımda **iki yönlü çalışma**:
+- Dağılım toplama: KATALOG kodları (`ASME B36.10M`) DB anahtarlarıyla (`ASME-B36.10M`) normalize üzerinden eşleşiyor
+- Link üretimi: URL'e DB-format kod gidiyor (`?std=ASME-B36.10M`), detay sayfası `.eq('standart', STD)` ile direkt eşleşiyor
+
+**Commit:** `d0fea4a fix(90): kütüphane malzeme_grubu rename + cunife + normStd helper + client-side standart filtre`
+
+### Faz 3 — Auth Yarış Koşulu (60 dk, 3 patch deneme)
+
+Cihat ilk canlı testte: "Kartlar duruyor ama içine girince sistemden düşüyorum, şifre ekranı geliyor."
+
+Tanı: `_getSupa()` bekleyişsiz çağrılıyor, `ares-store.js` async init bitmeden null dönüyor, IIFE `window.location.href='../giris.html'` yapıyor. Console temiz çünkü redirect var, hata atılmadan kaçıyor.
+
+`kutuphane.html`'in çalışan pattern'i:
+```javascript
+var b=0; while (b<80) { if (_getSupa()) break; await new Promise(r=>setTimeout(r,100)); b++; }
+```
+
+Bu pattern 3 yeni sayfaya kopyalandı + URL hash auth handle eklendi (OAuth redirect sonrası setSession).
+
+Patch ilk denemede zsh syntax hatası verdi (Python heredoc içindeki çift tırnaklar shell parser'ı karıştırdı). Çözüm: Python script'ini ayrı dosya olarak yarat + base64+heredoc ile transfer + Cihat'ın `arespipe_kopyala` MD5 doğrulamasıyla yerleştir.
+
+**MK-90.B (YENİ):** Bu oturumda patch90a.py'de f-string `{` literal'i `{{` olarak escape edilmeden gönderildi → SyntaxError. Bundan sonra her Python script `py_compile` ile syntax kontrolünden geçer.
+
+**MK-90.A:** macOS base64 `-D` (büyük D) tüm sürümlerde çalışır, `-d` (küçük) bazılarında yok. `-D` tercih.
+
+**Commit:** `2f61f49 fix(90): 3 yeni admin sayfasında auth yarış koşulu (80-iter poll + hash auth handle)`
+
+### Faz 4 — dagN Scope Bug (5 dk)
+
+Auth fix sonrası Cihat tıkladı, sayfa açıldı ama "Cannot read properties of undefined (reading 'ASMEB3610M')" hatası geldi.
+
+Sebep: normStd patch'inde `dagN` değişkeni satır 414'te tanımlanıyor (aktif/bekleyen ayrımı bloğunda) ama satır 385'teki `toplamMevcut += dagN[...]` daha önce çalışıyor. JavaScript undefined property erişimi → TypeError.
+
+Fix: `dagN` tanımı `var dag` satırının hemen ardına (383) taşındı, 414'teki tekrar silindi.
+
+**Commit:** `c770ec4 fix(90): standartlar.html dagN tanımı yukarı taşındı (ReferenceError fix)`
+
+### Faz 5 — Canlı Test ve sch_kod Bug (15 dk)
+
+Cihat 7 ekran görüntüsü gönderdi — her bir sayfada farklı bir hata:
+- **Borular > Karbon > ASME-B36.10M detayı:** "column boru_olculer.sch_kod does not exist"
+- **fitting_olculer sayfası:** 7× HEAD 400
+- **flansh_olculer sayfası:** 7× HEAD 400
+- **malzeme_kataloglari / fitting_malzeme_uyum / ozel_parcalar:** "Geçersiz tablo"
+
+`sch_kod` bug'ı tek hataydı — DB kolonu `schedule_kod`, kod `sch_kod` arıyor. 4 noktada sed rename, tek dosya. Boru detay sayfası bu fix sonrası **tam çalıştı** — 238 ASME-B36.10M karbon satırı tabloda göründü.
+
+**Diğer 6 hata mimari sorun:**
+- fitting/flansh tablolarında `malzeme_grubu` yok (sayfanın varsaydığı kolon)
+- 3 tablo (`malzeme_kataloglari`, `fitting_malzeme_uyum`, `ozel_parcalar`) Katman 2'de tanımlı değil
+
+### Faz 6 — Mimari Soru (45 dk diyalog)
+
+Cihat'ın doğru sezgisi netleşti:
+> "Şimdi aynı malzemenin hem karbon hem de paslanmaz tipi var, en iyi ihtimalle bunların ağırlıklarında fark var. Bunlar aslında farklı malzemeler. Bu durumda aynı tablo hem karbon hem paslanmaz için olmayacak mı. Bizim aynı tabloyu farklı yerlerde göstermemizde sakınca var mı?"
+
+Bu **mühendislik açısından doğru tasarım**:
+- Geometri (ASME B16.9 elbow 4" merkezler arası 152mm) → malzemeden bağımsız
+- Yoğunluk/mukavemet/ağırlık → malzemeye bağımlı
+
+Doğru model:
+- `fitting_olculer` geometri tutar (mevcut hâli doğru)
+- `malzeme_kataloglari` malzeme özellikleri (yoğunluk, vs.) tutar (mevcut, dolu)
+- `fitting_malzeme_uyum` çapraz tablo: "hangi geometri hangi malzeme ile uyumlu" (boş, doldurulacak)
+- Sayfa: standart bazlı liste + üstte malzeme grubu filtresi, ağırlık dinamik hesap
+
+**89'da yapılan mockup yanlış varsayımla yapıldı** (her satır bir malzeme grubuna ait). Yenisinden tasarlamak gerekir.
+
+**KARAR-90.C:** fitting/flansh için **migration 065 minimal** (kolon ekle, `standart` backfill, `malzeme_grubu` boş). Filtre modeli + uyum tablosu doldurma 91'de.
+
+### Faz 7 — 89.A oneriler refactor (75 dk)
+
+Mevcut `kutuphane-oneriler.html` 88'den kalmış — `ARES not defined`, script 404, sidebar yok. AresPipe pattern'iyle uyumsuz.
+
+Sıfırdan yazıldı:
+- 372 satır (eskisi 327, AresPipe scaffold biraz daha büyük)
+- `v_tanimsiz_havuz_listele` RPC çağrısı korundu (87.B'de canlıda)
+- 3 istat kartı (Tanımsız Kayıt, Etkilenen Spool, Tenant) + 6 sütunlu tablo
+- 80-iter poll auth, URL hash handle, super_admin kontrolü
+
+Canlı test geçti: 2 tanımsız kayıt (139.7×4.5 St37 + 60.3×6.3 St37), 31 etkilenen spool, 1 tenant.
+
+**Commit:** `078fa9d feat(90.A): kutuphane-oneriler.html sıfırdan yazıldı (AresPipe pattern)`
+
+### Faz 8 — 89.B Bilinçli İptal (10 dk diyalog)
+
+Cihat: "Biz mevcut standarda yeni ölçü mü ekliyoruz?"
+
+`ozel_parca_boru_kaydet()` RPC gövdesi incelendi:
+- `standart='Ozel'` sabit yazıyor (kullanıcının seçtiği standart değil)
+- `sistem_preset=true` ile saklanıyor
+- Auto-bağlama: yeni kayıtla eşleşen `spool_malzemeleri` satırlarını günceller
+
+Yani RPC "kullanıcı tanımlı özel parça takibi" (senaryo C) için yazılmış. Senaryo A (standart tamamlama) için değil.
+
+Cihat'ın doğru tespiti:
+> "Standartta varsa zaten tabloda. Standartta var ama tabloda yoksa migration ile yüklenir, manuel riskli. Standartta yok sahada varsa bekleyen öneriler akışıyla yapacaz zaten."
+
+**KARAR-90.D:** Manuel veri girişi kütüphane prensibine aykırı. 89.B form **yapılmadı**, çünkü prensipsel olarak yanlış iş. RPC duruyor (silinmesin, senaryo C için referans), frontend asla açılmadı.
+
+**MK-90.D (YENİ):** Kütüphane sayfalarında manuel ekleme istenmez. Migration / bekleyen öneriler / mimari karar — ama hiçbir zaman serbest form.
 
 ---
 
-## Verilen Anahtar Kararlar
+## Toplam Commit'ler (90)
 
-- **3 katman ayrı sayfa** (tek dosya parametreli değil) — AresPipe pattern'i (devre_yeni/devre_detay ayrı)
-- **Long format tablo** (Wide pivot değil) — DB satırı = tablo satırı, sade
-- **Boru için tam destek** (fitting/flanş placeholder) — kapsam genişlemesi 90+'a
-- **Kod-içi `STANDART_KATALOG`** (markdown/DB değil) — hızlı başlangıç, ileride taşınır
-- **Eski `kutuphane-detay.html` overwrite** (yeni isim değil) — git history'de mevcut, link patch tek satır
+| Hash | Mesaj |
+|------|-------|
+| `d0fea4a` | fix(90): kütüphane malzeme_grubu rename + cunife + normStd helper + client-side standart filtre |
+| `2f61f49` | fix(90): 3 yeni admin sayfasında auth yarış koşulu (80-iter poll + hash auth handle) |
+| `c770ec4` | fix(90): standartlar.html dagN tanımı yukarı taşındı (ReferenceError fix) |
+| _(sch_kod fix sonrası push)_ | fix(90): kutuphane-detay sch_kod -> schedule_kod (DB kolon adıyla uyum) |
+| `078fa9d` | feat(90.A): kutuphane-oneriler.html sıfırdan yazıldı (AresPipe pattern) |
 
----
-
-## Keşfedilen Yeni Teknik Borçlar (90'a aktarıldı)
-
-| # | Borç | Süre | Risk |
-|---|---|---|---|
-| 1 | DB schema doğrulama (`malzeme_grubu_kod`, `standart` kolonları) | 10 dk | Düşük |
-| 2 | 89.A — kutuphane-oneriler.html refactor (88'den) | 60 dk | Orta |
-| 3 | 89.B — 88.G detay paneli + form (88'den) | 90 dk | Orta |
-| 4 | Katman 4 fitting/flanş kolon konfigi | 60 dk | Düşük |
-| 5 | `kutuphane_medya` migration + UI bağlama | 2 saat | Orta |
-| 6 | `STANDART_KATALOG` markdown'a/DB'ye taşıma | 1 saat | Düşük |
+Migration 065 SQL Editor'da çalıştırıldı (canlıda).
 
 ---
 
-## Önemli Öğrenmeler
+## Çalışma Disiplinleri (90'da Öğrenilenler)
 
-1. **Vizyon konuşmasının kayda değer olması** — Cihat 4 pipeline + AR vizyonunu sözlü anlattı. Hemen yazılı belgeye geçirildi. **Ders:** Kullanıcı uzun vadeli vizyon parçası söylediğinde durup belgele — sonraki oturumlarda "neden böyle?" sorusunun cevabı.
+1. **Heredoc içinde Python kodu → ayrı dosya zorunlu.** Tek satır chain'de heredoc patlıyor (zsh special char). Script `cat > /tmp/x.py <<'EOF'` ile dosyaya yaz, sonra ayrı komutla `python3 /tmp/x.py`.
 
-2. **Mockup-first R-10 disiplini değerli** — Önce 3 yaklaşım kıyaslama (visualize widget), sonra detay HTML mockup (gerçek pattern), sonra kod. Her iterasyon Cihat'ın kararını netleştirdi.
+2. **Patch script üretiminden önce py_compile.** Bu oturumda f-string'de `{` literal'i `{{` escape edilmeden gönderildi → SyntaxError. Bundan sonra her script sandbox'ta compile testten geçer.
 
-3. **Mevcut dosya pattern'i taklit etmek (MK-88.D)** — `kutuphane.html` referans alındı, 3 yeni sayfa head + topbar + sidebar + appShell + inline auth pattern'i birebir uydurdu. 88'deki "yeni sayfa pattern'e uymadı" hatası tekrarlanmadı.
+3. **Mockup ↔ DB uyum kontrolü.** 89'da fitting/flansh sayfası DB modeliyle uyumsuz tasarlandı. Mockup yaparken DB şemasıyla karşılaştırma sorgusu (information_schema) yap, "bu kolonlar var mı" sor.
 
-4. **Hata dayanıklılığı erken eklendi (MK-89.B)** — `malzeme_grubu_kod` kolonu yoksa sayfa açılır, uyarı gösterir. Migration sonrası test gerekmez, kullanıcı engellenmez. **Ders:** Yeni kolon varsayan kodlarda her sorgu için 404/PGRST205/column-does-not-exist hatalarına placeholder cevap.
+4. **RPC adı yanıltıcı olabilir.** `ozel_parca_boru_kaydet` adı "boru ekleme" gibi durur ama gövdesi senaryo C yapıyor. Frontend yazmadan önce `pg_get_functiondef` ile gövdeyi gör.
 
-5. **Plan değişikliği bilinçli olmalı** — 88'in 89.A/89.B borçları 90'a kayması Cihat'ın enerjisini koruma kararıydı. Mockup öncesi söylendi, son-durum.md'ye yazıldı, gizli kaymıyor. Şeffaflık devam ediyor.
+5. **macOS base64 `-D`.** Hem eski hem yeni macOS'ta çalışır.
 
-6. **Long format vs Wide format kararı** — Mockup wide görünüyordu (kullanıcı dostu) ama DB long format. Karar long format (sade, esnek, pivot mantığı yok) — wide gerekirse 91+'da pivot eklenir.
-
----
-
-## Performans (kütüphane refactor)
-
-- **Katman 2 (sayfa açılış):** ~150ms (7 paralel count sorgusu)
-- **Katman 3 (sayfa açılış):** ~200ms (1 select sorgusu, client groupBy)
-- **Katman 4 (sayfa açılış):** ~300ms (2 paralel: tablo verisi + diğer standartlar)
-- **Satır tıklama → SVG/panel:** <10ms (DOM update)
-
-Yeterince hızlı. Optimizasyona gerek yok.
+6. **Mac indirme bozulması.** Cihat'ın `arespipe_kopyala` MD5 doğrulamalı kopyalama fonksiyonu + base64+heredoc fallback yöntemi 90'da iki kez işe yaradı.
 
 ---
 
-## Bu Oturumun Gerçek Değeri
+## 91'e Devreden Borçlar (özet)
 
-İlk planlanan: 89.A + 89.B (88'den kalan refactor + form). Gerçekte yapılan: **Kütüphane sayfa hiyerarşisi tamamen yeniden mimari + AI/AR/3D vizyonu belgelendi**.
+Detay için `CLAUDE-SONRAKI-OTURUM.md`. Kısaca:
 
-89.A/B 90'a kaymanın bedeli = kütüphanenin uzun vadeli yakıt deposu olma vizyonunun **şimdi** yazılı + iskelet halinde kodlanmış olması. Bu yatırım 91+ oturumlarda **mobile etiketleme**, **imalat foto pipeline'ı**, **STEP parse** işlerine zemin hazırlıyor.
+1. **Fitting/flansh filtre modeli** (3-4 saat, ana iş)
+2. **Tutarsızlık çöz** (15 dk)
+3. **Bekleyen öneriler aksiyon akışı** (2 saat)
+4. **ozel_parca_boru_kaydet RPC kararı** (10 dk, dokümante veya sil)
+5. **kutuphane.html broken link temizliği** (10 dk)
+6. **kutuphane_medya tablosu + UI** (91 veya 92, opsiyonel)
 
 ---
 
-> 90. oturum açılışında bu dosya, `son-durum.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunur. Sonra Cihat'a "Hangi işle başlayalım?" sorusu sorulur. Önerilen sıra: DB schema doğrulama → 89.A oneriler refactor → 89.B 88.G form.
+## Performans (90'da doğrulanan)
+
+- Boru Katman 2 (4 malzeme grubu): ~600ms
+- Boru Katman 3 (standartlar): ~400ms
+- Boru Katman 4 (238 satır karbon): ~300ms
+- Yeni 80-iter poll overhead: 0-100ms (genelde 1. iterasyonda geçer)
+
+---
+
+## Cihat'ın Sözleri (kalıcı not olarak)
+
+> *"Standartta varsa zaten tabloda. Standartta var ama tabloda yoksa migration ile yüklenir manuel riskli. Standartta yok sahada varsa bekleyen önerilerden yapacaz zaten."*
+
+Bu cümle 89.B'yi iptal etti ve kütüphane veri yönetimi prensibini netleştirdi. MK-90.D bu cümleden doğdu.
+
+> *"Aynı tabloyu farklı yerlerde göstermemizde sakınca var mı?"*
+
+Bu soru fitting/flansh mimarisinin doğru yolunu açtı. KARAR-90.C ve 91 filtre modeli bu soruya dayanıyor.
+
+---
+
+> 91. oturum açılışında bu dosya, `.github/son-durum.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
