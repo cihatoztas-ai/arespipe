@@ -1,210 +1,367 @@
 # AresPipe — Kütüphane Yükleme Takip
 
-> **Amaç:** Hangi tablolar/kombinasyonlar sisteme yüklenecek, hangileri tamam, hangileri öncelikli — bir bakışta gör.
+> **Amaç:** Kütüphane tablolarında neyi yaptık, neyi yapacağız — bir bakışta gör. Her oturum kapanışında güncellenir.
 >
-> **Referans:** Bu dosya `docs/KUTUPHANE-KAPSAM.md` belgesinin **canlı durumudur**. Kapsam belgesi neyi yapacağımızı söyler, bu dosya neresini yaptığımızı gösterir.
+> **Kapsam:** Bu dosya `KUTUPHANE-KAPSAM.md` belgesinin **canlı durumudur**. Kapsam belgesi neyi yapacağımızı söyler, bu dosya neresini yaptığımızı gösterir.
 >
-> **İlk yazım:** 28 Nisan 2026 — 43. oturum (v1)
-> **Düzeltme:** 28 Nisan 2026 — 43. oturum (v2)
-> **Senkron:** 12 Mayıs 2026 — 78. oturum (v3 — gerçek DB sorgularıyla tam yenileme, 5+ aylık birikim kapatıldı)
+> **Versiyon geçmişi:**
+> - **v1** — 43. oturum (28 Nis 2026): İlk yazım, CuNi eksikti
+> - **v2** — 43. oturum (28 Nis 2026): KUTUPHANE-KAPSAM.md ile hizalandı, CuNi P0'a çıkarıldı
+> - **v3** — 91. oturum (15 May 2026): GOST/JIS/GB/T eklendi, ozel_parcalar modülü kaldırıldı, çapraz uyum 3 tabloya bölündü, hedef satır sayısı tahminleri kaldırıldı (iskelet + organik içerik), DSAF (Dublin flanş) 11. tip olarak eklendi
 
 ---
 
-## v2 → v3 Senkron Notu (78. oturum)
+## Özet Tablo (15 May 2026 — 91 sonu)
 
-v2 yazıldıktan sonra 44-77 oturumları boyunca DB doldu ama belge güncellenmedi (76, 77'de P0 listesinde olduğu halde atlandı). 78'de canlı DB sorgularıyla tam yenileme yapıldı.
+| Modül | Tablo | Canlıda | İskelet | Not |
+|---|---|---:|---|---|
+| **Malzeme Master** | `malzeme_kataloglari` | 20 satır | 6 aile × 7 grup yapı hazır | İçerik dolacak |
+| **Boru Geometrisi** | `boru_olculer` | 450 satır | ASME/EN/DIN dolu, GOST/JIS/GB/T 0 | İskelet eksik (GOST/JIS/GB/T) |
+| **Fitting Geometrisi** | `fitting_olculer` | 569 satır | ASME B16.9/B16.11 dolu, diğerleri 0 | 23 tipten 3-4 tipi mevcut |
+| **Flanş Geometrisi** | `flansh_olculer` | 308 satır | ASME B16.5 + EN 1092-1 dolu | 10 tipten 6 tipi mevcut |
+| **Boru Çapraz Uyum** | `boru_malzeme_uyum` | YOK | Tablo yok | Migration 067'de oluşacak |
+| **Fitting Çapraz Uyum** | `fitting_malzeme_uyum` | 0 satır | FK BUG var | Migration 066: malzeme_id → malzeme_kataloglari fix |
+| **Flanş Çapraz Uyum** | `flansh_malzeme_uyum` | YOK | Tablo yok | Migration 067'de oluşacak |
 
-**Büyük düzeltmeler:**
-- `malzeme_kataloglari` 77'de B0 omurga ile yeniden kuruldu (önceki `malzeme_tanimlari` ile karıştırılmıştı, ayrı tablo olarak ayrıştı)
-- `boru_olculer` 48 → **450** (44-65 oturumları arasında çoklu standart eklemeleri)
-- `flansh_olculer` 20 → **308** (75-78 oturumları kütüphane mini-projesi)
-- `fitting_olculer` 0 → **424** (75'te Cap, 77 hipotezi öncesi B16.9 tamamı)
-- v2'deki "beklenen toplam ~12.400" tahmini gerçekçi değildi (özellikle B16.9 için 2500 yazıyordu, gerçek standart kapsamı 424). Yeni gerçekçi tahmin: ~8.000-9.000 (uzun kuyruk hep parking)
+**Toplam canlıda:** 1,347 satır (geometri) + 20 (malzeme master) = 1,367 kayıt.
 
----
-
-## Özet (12 Mayıs 2026, 78 sonu)
-
-| Modül | Canlı (78 sonu) | Hedef (gerçekçi) | % |
-|---|---:|---:|---:|
-| `malzeme_kataloglari` (parça kimliği omurgası) | **10** | 60-80 | ~13% |
-| `malzeme_tanimlari` (UI/IFS köprüsü, paralel tablo) | 12 | 12-20 | ~80% |
-| `boru_olculer` | **450** | 280-450 | %100 (hedef aşıldı) |
-| `flansh_olculer` | **308** | 800 | %38 |
-| `fitting_olculer` (B16.9) | **424** | 500 | %85 |
-| `fitting_olculer` (B16.11/B16.28/EN) | 0 | 500-1000 | %0 |
-| `fitting_malzeme_uyum` (çapraz uyum) | 1 (test) | 5000-8000 | %0 |
-| `ozel_parcalar` | 0 | 200-500 | %0 |
-| `tenant_spec_seti` | 0 | 10-20 | %0 |
-| `spec_kural` | 0 | 500-1000 | %0 |
-| **TOPLAM (geometri tabloları)** | **1.205** | **~8.000** | **~15%** |
-
-**Hedef trajektori (78 sonundan itibaren gerçekçi):**
-- 80 sonu: %25 (malzeme_kataloglari B0-B5 + B16.11 socket başlangıcı)
-- 90 sonu: %50 (fitting_olculer ikinci standartlar + flansh_olculer PN25/PN40)
-- 100 sonu: %75 (çapraz uyum başlangıcı + spec set tanımları)
-- 120+: %90+ — uzun kuyruk hep parking, ihtiyaca göre eklenir
+**Hedef sayı yok.** İskelet hazır, içerik organik dolar. Her gemi PDF'i kütüphaneyi büyütür.
 
 ---
 
-## Öncelik Mantığı (gemi tersanesi profili — Cihat'ın işi, Yalova)
+## Öncelik Mantığı (Gemi Tersanesi Profili)
 
 | Öncelik | Açıklama | Örnek |
 |---|---|---|
-| **P0** 🔴 | Her gemi spool projesinde kritik | A105 WN/SO Class 150-300, **CuNi B466/B467 deniz suyu**, B16.9 90LR + Tee + Reducer DN50-200, B36.10 Sch 40 |
-| **P1** 🟠 | Sık görülen | F316L Class 150-300, A234 WPB butt-weld, B16.11 socket, A335 P11/P22 (HT hatları) |
-| **P2** 🟡 | Belirli proje tiplerinde | Class 600+ HT, alaşımlı (F11/F22), Duplex (2205/2507), LJ flanş, Alüminyum (5083 deniz) |
-| **P3** ⚪ | Özel proje gelirse | Nikel alaşım (Inconel/Hastelloy), Class 2500, A860 yüksek dayanım |
+| **P0** 🔴 | Her gemi spool projesinde kritik | A105 WN/SO Class 150-300, **CuNi B466/B467 (deniz suyu)**, B16.9 90LR + Tee + Reducer DN50-200, B36.10 Sch 40 |
+| **P1** 🟠 | Sık görülen | F316L Class 150-300, A234 WPB butt-weld, A335 P11/P22 (HT hatları) |
+| **P2** 🟡 | Belirli proje tiplerinde | Class 600+ HT, Duplex (2205/2507), LJ flanş, Alüminyum (5083 deniz) |
+| **P3** ⚪ | Özel proje gelirse | Nikel alaşım (Inconel/Hastelloy), Class 2500 |
 
----
+**Standart aile bazında:**
 
-## 1. Malzeme Kataloğu — `malzeme_kataloglari`
-
-**Amaç:** Her malzeme spec + grade'i tek satır. Boru/fitting/flansh tabloları FK ile bağlanır.
-
-**Mevcut tablo:** 77'de B0 omurga CREATE TABLE (migration 040). Şema temiz: spec_standart + spec_grade + GENERATED spec_kodu, malzeme_grubu enum (karbon/paslanmaz/duplex/cuni/alum/nikel/titan/diger), aile enum (ASTM/ASME/EN/DIN/JIS/API/EEMUA/GOST/GB), uygunluk dört flag (boru/bw/forged/flansh), yoğunluk + mukavemet + sıcaklık aralığı, JSONB korozyon_notlari, partial unique (sistem + tenant), CHECK en_az_bir_uygun.
-
-**Canlı (10 satır, 77'de eklendi):**
-
-| Grup | Spec | Uygunluk | Öncelik |
+| Aile | İskelet | Öncelik | Tetik |
 |---|---|---|---|
-| Karbon | ASTM A53 B | boru | P0 |
-| Karbon | ASTM A106 B | boru | P0 |
-| Karbon | EN 10216-1 P235GH | boru | P0 |
-| Karbon | ASTM A234 WPB | bw fitting | P0 |
-| Karbon | ASTM A105 | forged + flansh | P0 |
-| Paslanmaz | ASTM A312 TP316L | boru | P0 |
-| Paslanmaz | ASTM A403 WP316L | bw fitting | P0 |
-| Paslanmaz | ASTM A182 F316L | forged + flansh | P0 |
-| CuNi | ASTM B466 C70600 | boru | P0 (gemi) |
-| CuNi | ASTM B466 C71500 | boru | P0 (gemi) |
-
-**Eksik P0 (öncelikli dolum):**
-
-- **CuNi fitting** — ASTM B467 (welding ftng), Wermac CuNi tablosu (P0, ~3 spec)
-- **CuNi flansh / forged** — ASTM B151 / B564 (P0, ~2 spec)
-- **Karbon A333 Grade 6** — düşük sıcaklık boru (P2 → P1, gemi ambar hatları için)
-- **Karbon A420 WPL6** — düşük sıcaklık BW fitting (P2)
-- **Paslanmaz A312 TP304L + TP316 + TP304** — yaygın grade'ler (P1, ~3 spec)
-- **Paslanmaz A403 WP304L + WP316 + WP304** (P1, ~3 spec)
-- **Paslanmaz A182 F304L + F316 + F304** (P1, ~3 spec)
-- **EN paslanmaz** — EN 10216-5 X2CrNiMo17-12-2 (1.4404) — boru (P1)
-- **API 5L X42-X70** — hat borusu (P2)
-
-Hedef 80 sonu: 30-35 spec, P0 + P1 büyük ölçüde kapsanır.
+| ASME | Geometri var (B36.10, B16.5, B16.9, B16.11) | P0 🔴 | Aktif kullanım |
+| EN | Geometri var (10216, 1092-1) | P0 🔴 | Aktif kullanım |
+| DIN | Geometri var (2448, 86019, 86087) | P0 🔴 | CuNi için kritik |
+| **GOST** | İskelet boş | P1 🟠 | Rus armatör projesi geldiğinde |
+| **JIS** | İskelet boş | P1 🟠 | Japon inşa gemi geldiğinde |
+| **GB/T** | İskelet boş | P1 🟠 | Çin inşa gemi geldiğinde |
 
 ---
 
-## 2. Boru Ölçüleri — `boru_olculer` (450 satır, %100 hedef aşıldı)
+## 1. `malzeme_kataloglari` — Master Spec Tablosu
 
-| Standart | Satır | Kapsam |
+**Amaç:** Her malzeme spec + grade'i tek satır. Tüm geometri tabloları çapraz uyumla buraya bağlanır.
+
+**Mevcut: 20 satır** (12 sistem preset + 8 ek).
+
+**İçerik durumu (15 May 2026):**
+
+| Malzeme Grubu | Mevcut | Tipik İçerik | Öncelik |
+|---|---:|---|---|
+| Karbon | ~8 | ASTM A106-B, A53-B, A234-WPB, A105 | P0 🔴 |
+| Paslanmaz | ~5 | ASTM A312 TP304L/TP316L, A182 F316L | P0 🔴 |
+| CuNi | ~3 | ASTM B466 C70600 (90/10), B466 C71500 (70/30) | P0 🔴 |
+| Duplex | ~1 | ASTM A790 S31803 | P2 🟡 |
+| Alüminyum | ~1 | 5083, 6061 | P2 🟡 |
+| Alaşımlı | ~1 | ASTM A335 P11 | P1 🟠 |
+| Nikel | 0 | — | P3 ⚪ |
+
+**Eklenecek (P0 + P1):**
+- Karbon: A312 TP321/TP347 (HT paslanmaz), A350 LF2 (düşük sıcaklık)
+- CuNi: DIN 86019 (Alman gemi CuNi), EEMUA 144/146 (İngiliz CuNi)
+- Alaşımlı: A335 P22, P91
+
+**Veri kaynağı:** Üretici katalogları + Wermac + Ferrobend (Octal, Sandvik, Vallourec, Tubacex).
+
+---
+
+## 2. `boru_olculer` — Boru Geometrisi
+
+**Mevcut: 450 satır.**
+
+### ASME B36.10M (Karbon/Alaşımlı)
+| Schedule | Mevcut | Öncelik |
 |---|---:|---|
-| ASME B36.10M (karbon) | 238 | Tam (NPS 1/8 — NPS 48, tüm schedule'lar) |
-| ASME B36.19M (paslanmaz) | 80 | DN 6/8/10 küçük boyutlar eksik (P2) |
-| ASTM B241 (alüminyum) | 50 | Yeterli (P2, gemi nadir) |
-| DIN 2448 (eski Alman karbon) | 29 | Sınırlı, geriye uyum için |
-| EN 10216-1 (EN karbon dikişsiz) | 29 | DN 10-200 dolu, büyük DN eksik (P2) |
-| EEMUA-144 (CuNi gemi) | 24 | Yeterli (P0 ana gemi kapsamı) |
+| Sch 40 / STD | ✅ | P0 🔴 |
+| Sch 80 / XS | ✅ | P0 🔴 |
+| Sch 10 | ✅ | P1 🟠 |
+| Sch 160, XXS | ⚠ Eksik | P1 🟠 |
+| Sch 5, 20, 30, 60, 100, 120, 140 | ⚠ Kısmi | P2 🟡 |
 
-**Hedef:** Bu modül kapatıldı. Sonraki iş B36.19M küçük boyutlar (76'dan açık, ~30 dk, P2).
+### ASME B36.19M (Paslanmaz)
+Sch 5S/10S/40S/80S × DN aralığı → ✅ Mevcut.
 
----
+### EN 10216 (Karbon + Paslanmaz dikişsiz)
+✅ Mevcut, 42'de eklendi.
 
-## 3. Flansh Ölçüleri — `flansh_olculer` (308 satır, %38)
+### DIN 2448 + DIN 86019
+✅ Mevcut, 42'de eklendi. **DIN 86019 gemi CuNi için kritik.**
 
-| Standart | Alt-grup | Satır | Statü |
-|---|---|---:|---|
-| ASME B16.5 | Class 150-2500 × WN/SO/BL/LJ/PL/TH | 216 | 75 öncesi dolduruldu (büyük resim) |
-| EN 1092-1 | PN 16 × T01+T05+T11+T12 × 15 DN | 60 | ✅ 76 sonu |
-| EN 1092-1 | PN 10 × T01+T05+T11+T12 × 8 DN | 32 | ✅ 78 sonu (77 T05+T11, 78 T01+T12) |
-| **TOPLAM** | | **308** | |
+### GOST 8732 / 8734 (Rus boru)
+❌ İskelet boş. Rus armatör projesi geldiğinde Migration ile satır eklenir.
 
-**Açık iş (öncelikli):**
+### JIS G3454 (Japon boru)
+❌ İskelet boş. Japon inşa gemi geldiğinde.
 
-- **EN 1092-1 PN 25 × 4 tip × 15 DN = 60 satır** (P1, hat çapı küçük, yüksek basınç sistemleri)
-- **EN 1092-1 PN 40 × 4 tip × 13 DN = 52 satır** (P2, daha az yaygın)
-- **EN 1092-1 PN 10 küçük cephe (DN 10-150, 7 DN × 4 tip = 28 satır)** (P2, KARAR-78.1'de β ile dışlandı, ihtiyaç gelirse α)
-- **B16.47 Series A/B large diameter (NPS 26-60)** (P2, ~120 satır)
-- **DIN 86087/88 (gemi flansh)** (P3, özel)
+### GB/T 8163 (Çin boru)
+❌ İskelet boş. Çin inşa gemi geldiğinde.
 
-**Hedef 80 sonu:** EN 1092-1 PN 25 + PN 40 tamamlanır → 308 + 112 = 420 satır (%53).
+**Sonraki adım (94+):** P0/P1 iskeletini tamamla (Sch 160/XXS) + GOST/JIS/GB/T'nin DN50-200 P0 boyutlarını seed et.
 
 ---
 
-## 4. Fitting Ölçüleri — `fitting_olculer` (424 satır)
+## 3. `fitting_olculer` — Fitting Geometrisi
 
-| Geometri Std | Satır | Kırılım |
-|---|---:|---|
-| ASME B16.9 | 424 | reducer_ecc 114 + reducer_conc 114 + cap 33 + 90LR 33 + 45LR 33 + tee_eq 33 + 90_3D 32 + 45_3D 32 |
+**Mevcut: 569 satır** (sadece ASME B16.9 ve B16.11).
 
-**B16.9 kapsam:** 33 DN (DN15-1200), 8 parça tipi. Standart kapsamının %85'i (eksik: 90SR, 180LR return, tee_red eşitsiz, lateral, stub_end). Bu büyük ölçüde **tamam**.
+### 23 Fitting Tipinin Mevcut Durumu
 
-**Açık iş (büyük kapsamlar):**
+| Tip | Mevcut | Öncelik | Not |
+|---|:---:|---|---|
+| 90° LR (`90_LR`) | ✅ | P0 🔴 | En yaygın |
+| 90° SR (`90_SR`) | ⚠ | P1 🟠 | B16.28, az |
+| 45° LR (`45_LR`) | ✅ | P0 🔴 | |
+| 90° 3D (`90_3D`) | ✅ | P2 🟡 | 3D radius, akış kritik |
+| 180° LR (`180_LR`) | ❌ | P2 🟡 | |
+| 180° SR (`180_SR`) | ❌ | P3 ⚪ | |
+| Tee eşit (`tee_eq`) | ✅ | P0 🔴 | |
+| Tee redüksiyon (`tee_red`) | ⚠ | P1 🟠 | Kombinasyon çok |
+| Cross eşit (`cross_eq`) | ❌ | P2 🟡 | |
+| Cross redüksiyon (`cross_red`) | ❌ | P3 ⚪ | |
+| Redüksiyon konsantrik (`red_conc`) | ✅ | P0 🔴 | |
+| Redüksiyon eksantrik (`red_ecc`) | ✅ | P1 🟠 | |
+| Cap (`cap`) | ✅ | P1 🟠 | |
+| Bilezik uzun (`stub_long`) | ⚠ | P2 🟡 | LJ flanş ile |
+| Bilezik kısa (`stub_short`) | ⚠ | P2 🟡 | LJ flanş ile |
+| Manşon kaynaklı (`manson_butt`) | ❌ | P1 🟠 | |
+| Manşon soketli (`manson_sw`) | ✅ | P1 🟠 | B16.11 |
+| Manşon dişli (`manson_th`) | ⚠ | P3 ⚪ | |
+| Nipel (`nipel`) | ❌ | P1 🟠 | |
+| Half Coupling (`half_coupling`) | ❌ | P2 🟡 | |
+| Weldolet (`weldolet`) | ❌ | P2 🟡 | |
+| Sockolet (`sockolet`) | ❌ | P2 🟡 | |
+| Thredolet (`thredolet`) | ❌ | P3 ⚪ | |
 
-- **B16.9 — stub_end (Lap Joint pair)** — ~33 DN, P1, A2 görevi (76'dan açık)
-- **B16.9 — tee_red (eşitsiz T)** — ~80 kombinasyon, P1
-- **B16.9 — 90SR (Short Radius)** — ~33 DN, P2
-- **B16.9 — 180LR return bend** — ~33 DN, P3
-- **B16.11 — socket weld fittings** (P1, küçük çap karbon/paslanmaz, ~150-200 satır)
-- **B16.28 — short radius elbows** (P2)
-- **EN 10253-2 / 10253-3 (EN BW fitting)** (P1, ~200 satır)
-- **DIN 86089 (gemi BW)** (P3)
+**Standart bazında:**
+- ASME B16.9 (buttweld) → ✅ 464 satır
+- ASME B16.11 (forged socket/threaded) → ✅ 105 satır
+- ASME B16.28 (short radius) → ❌ 0 satır, P1
+- EN 10253 → ❌ 0 satır, P1
+- DIN 86089 (gemi CuNi) → ❌ 0 satır, **P0**
+- GOST 17375 → ❌ İskelet boş
+- JIS B2311/B2312 → ❌ İskelet boş
+- GB/T 12459 → ❌ İskelet boş
 
-**Hedef 80 sonu:** B16.9 stub_end + tee_red eklenir → 424 + 115 ≈ 540 satır.
-
----
-
-## 5. Çapraz Uyum — `fitting_malzeme_uyum`
-
-**Canlı:** 1 satır (test).
-
-**Plan:** Spec × geometri kombinasyonu (örn. ASTM A234 WPB → B16.9 elbow/tee/reducer/cap). Otomatik script üretim stratejisi (her malzeme_kataloglari satırının `uygun_*` flag'lerinden FK kombinasyonu üret).
-
-**Beklenen:** ~5000-8000 satır (78'de bu rakam v2'den indirildi, gerçek hesap m_kataloglari × fitting_olculer × yaygın spec kombinasyonu).
-
-**Öncelik:** P1, ama script tasarımı (~3-4 sa) ön gerekli. 85+ oturuma uygun.
-
----
-
-## 6. Özel Parçalar — `ozel_parcalar`
-
-**Canlı:** 0. Coupling sleeve, custom flansh, vb. Tenant başına özel.
-
-**Plan:** İhtiyaç bazlı. Şimdilik P3.
-
----
-
-## 7. Spec Set — `tenant_spec_seti` + `spec_kural`
-
-**Canlı:** 0 (her ikisi).
-
-**Plan:** AVEVA-vari spec yönetimi. Her tenant kendi spec set'ini tanımlar (örn. "GEMI-CS-300# karbon class 300 boru spec'i"), spec_kural'da o spec'e izinli parça kombinasyonları (A106 boru + A234 WPB elbow + A105 flansh, vb.).
-
-**Öncelik:** P1, ürünün AVEVA bağımsızlığı için kritik. Tasarım belgesi gerekli, 90+ oturuma.
+**Sonraki adım (94+):** DIN 86089 (CuNi P0) + EN 10253 + B16.28 + eksik fitting tipleri.
 
 ---
 
-## Önemli İzler (78 sonu)
+## 4. `flansh_olculer` — Flanş Geometrisi
 
-1. **`malzeme_kataloglari` (yeni, B0)** ≠ **`malzeme_tanimlari` (eski, UI köprüsü)** — paralel tablolar, karıştırma yok. v3'te ayrıştırıldı.
-2. **`fitting_olculer.geometri_std = 'B16.9'`** tek standart — kolon tasarımı çoklu standardı destekliyor (`schedule_kod` NULL olabilir), gelecek B16.11/EN eklemeleri sorunsuz.
-3. **B16.9 schedule bağımsız** — `et_mm` ve `schedule_kod` çoğu B16.9 satırında NULL (standart davranış, ölçüler et kalınlığına bağlı değil).
-4. **EN 1092-1 PN 10 küçük cephe (DN 10-150)** β kapsamı dışı bırakıldı (KARAR-78.1, gemi profilinde nadir). Eğer pilot tersanesinden talep gelirse α paketi 28 satır.
-5. **CuNi fitting + flansh eksiği P0** — gemi tersanesi için en kritik açık. 79-80 oturumlarında dolacak.
+**Mevcut: 308 satır** (sadece ASME B16.5 ve EN 1092-1).
+
+### 11 Flanş Tipinin Mevcut Durumu
+
+| Tip | B16.5 Class 150 | Class 300 | Class 600+ | EN 1092-1 | Öncelik |
+|---|:---:|:---:|:---:|:---:|---|
+| WN | ✅ | ✅ | ⚠ Eksik | ✅ | P0 🔴 |
+| SO | ⚠ | ⚠ | ❌ | ⚠ | P0 🔴 |
+| BL | ⚠ | ⚠ | ❌ | ⚠ | P0 🔴 |
+| SW | ❌ | ❌ | ❌ | ❌ | P2 🟡 |
+| LJ | ❌ | ❌ | ❌ | ❌ | P2 🟡 |
+| TH | ❌ | ❌ | — | — | P3 ⚪ |
+| RTJ | ❌ | ❌ | ❌ | ❌ | P2 🟡 |
+| Reducing | ❌ | ❌ | ❌ | ❌ | P3 ⚪ |
+| Spectacle | ❌ | ❌ | ❌ | ❌ | P3 ⚪ |
+| Orifice | ❌ | ❌ | ❌ | ❌ | P3 ⚪ |
+| DSAF | ❌ | ❌ | ❌ | — | P2 🟡 |
+
+**DSAF özel notu:** Şema uyarlaması gerekiyor (çift bolt pattern). İlk kayıt geldiğinde Migration ile çözülür — JSONB ile esnek alan eklenmesi düşünülüyor. Sahada **"Dublin flanş"** olarak geçer.
+
+**Standart bazında:**
+- ASME B16.5 → ✅ 216 satır (WN dolu, SO/BL kısmen)
+- EN 1092-1 → ✅ 92 satır (PN10/16/25 kısmen)
+- ASME B16.47 (büyük çap NPS 26-60) → ❌ 0 satır, P3
+- DIN 86087/88 (gemi CuNi) → ❌ 0 satır, **P0**
+- GOST 33259 → ❌ İskelet boş
+- JIS B2220 → ❌ İskelet boş
+- GB/T 9112 → ❌ İskelet boş
+
+**Sonraki adım (94+):** DIN 86087/88 (CuNi P0) + B16.5 SO/BL tamamla + EN 1092-1 dolu sınıflar.
 
 ---
 
-## Pratik İş Sırası (79+ önerilen)
+## 5. Çapraz Uyum Tabloları — KRİTİK BUG + EKSİK TABLOLAR
 
-| Sıra | İş | Süre | Etki |
-|---|---|---|---|
-| 1 | M_K CuNi fitting + flansh (B467, B151, B564) | ~1 sa | Gemi profili P0 cephesi kapanır |
-| 2 | M_K paslanmaz grade'leri (TP304L, TP316, F304L vb.) | ~1 sa | P1 cephesi gerinir |
-| 3 | EN 1092-1 PN 25 paketi (4 tip × 15 DN = 60 satır) | ~2 sa | flansh_olculer %53'e çıkar |
-| 4 | B16.9 stub_end (A2, ~33 satır) | ~1.5 sa | fitting cephesinde 6. parça tipi |
-| 5 | B16.11 socket fittings başlangıcı | ~3-4 sa | İkinci standart, büyük kapsam |
-| 6 | M_K A333 + A420 (düşük sıcaklık karbon) | ~30 dk | Gemi ambar hatları |
+### 5.1. `fitting_malzeme_uyum` — FK BUG (Migration 066'da fix)
+
+**Mevcut: 0 satır.**
+
+**Bug:** `malzeme_id` kolonu yanlış tabloya FK'lanmış:
+```
+ŞU AN (yanlış):
+  fitting_malzeme_uyum.malzeme_id → malzeme_tanimlari  ❌
+
+DOĞRUSU:
+  fitting_malzeme_uyum.malzeme_id → malzeme_kataloglari  ✅
+```
+
+`fitting_olculer.malzeme_id` zaten `malzeme_kataloglari`'ya bağlı. Çapraz tablonun farklı bir master'a bağlanması mantıksız. 0 satır olduğu için hiç fark edilmemiş.
+
+**Migration 066 yapacak:**
+- Mevcut `malzeme_id` FK constraint'i sil
+- Yeni FK constraint ekle: `malzeme_kataloglari`'ya
+- Aynı zamanda PK ekle: `PRIMARY KEY (fitting_id, malzeme_id)`
+
+### 5.2. `boru_malzeme_uyum` — TABLO YOK (Migration 067)
+
+Şu an boru × malzeme çapraz uyumu için tablo yok. Boru kayıtları sadece `boru_olculer.malzeme_grubu` text kolonuyla "karbon/paslanmaz/cuni" sınıflandırılıyor. Bu **kategori** seviyesi, **spec-grade** değil.
+
+**Migration 067 yapacak:**
+```sql
+CREATE TABLE boru_malzeme_uyum (
+  boru_id        uuid NOT NULL REFERENCES boru_olculer(id) ON DELETE CASCADE,
+  malzeme_id     uuid NOT NULL REFERENCES malzeme_kataloglari(id) ON DELETE CASCADE,
+  uretim_yontemi text,                    -- seamless / welded
+  yaygin_mi      boolean DEFAULT true,
+  notlar         text,
+  PRIMARY KEY (boru_id, malzeme_id)
+);
+```
+
+### 5.3. `flansh_malzeme_uyum` — TABLO YOK (Migration 067)
+
+Aynı şekilde flanş için.
+
+**Migration 067 aynı tablo şablonu ile:**
+```sql
+CREATE TABLE flansh_malzeme_uyum (
+  flansh_id      uuid NOT NULL REFERENCES flansh_olculer(id) ON DELETE CASCADE,
+  malzeme_id     uuid NOT NULL REFERENCES malzeme_kataloglari(id) ON DELETE CASCADE,
+  uretim_yontemi text,                    -- forged / cast
+  yaygin_mi      boolean DEFAULT true,
+  notlar         text,
+  PRIMARY KEY (flansh_id, malzeme_id)
+);
+```
+
+### Doldurma Stratejisi
+
+3 çapraz uyum tablosu **manuel doldurulmaz**. Akış:
+
+1. Spool PDF parse → AI bir parça çıkarır (geometri + malzeme)
+2. Sistem geometri tablosunda (`fitting_olculer`) eşleşme arar
+3. Aynı geometriye ait `fitting_malzeme_uyum` satırı varsa → tanındı
+4. Yoksa "öneri" akışına düşer (`tanimsiz_kayitlar`)
+5. Süper Admin onayıyla yeni satır eklenir
+
+**Hedef satır sayısı yok.** Kullanım organik. 50 spool sonra ~500 satır beklenir, ama hedef değil.
 
 ---
 
-_v3 yazıldı: 12 Mayıs 2026, 78. oturum. Canlı DB sorguları: `malzeme_kataloglari` (10), `flansh_olculer` (308), `fitting_olculer` (424), `boru_olculer` (450)._
+## 6. Özel Üretim Ölçüler (v2'den Değişti — 91)
+
+**v2'de:** `ozel_parcalar` ayrı tablosu vardı, ~200-500 satır beklenir deniyordu.
+
+**v3'te:** Ayrı tablo yok. Özel üretim ölçüler `boru/fitting/flansh_olculer` içinde `sistem_preset = false` + `tenant_id` ile yaşar.
+
+**Aktif durumu:** Şu an 0 tenant özel kayıt. Pilot tersane geldiğinde sahadan eklenecek.
+
+**Detay:** `KUTUPHANE-KAPSAM.md` Bölüm 6'da tam açıklama.
+
+---
+
+## 7. Spec Sistemi (`tenant_spec_seti` + `spec_kural`)
+
+AVEVA-vari spec mantığı — KUTUPHANE-KAPSAM.md Bölüm 11.6'da detay.
+
+**Mevcut:**
+- `tenant_spec_seti`: ✅ tablo mevcut, 0 satır
+- `spec_kural`: ✅ tablo mevcut, 0 satır (FK → `malzeme_kataloglari` zaten doğru kurulu)
+
+**Tetik:** İkinci tersane geldiğinde — şu an pilot tek tersane.
+
+**Sonraki adım (96+):** İkinci tersane sözleşmesi imzalanınca açılır. Şu an tablolar boş duruyor, hazır beklemede.
+
+---
+
+## 8. Kütüphane Dışı Tablolar (91'de Netleşti)
+
+Aşağıdaki tablolar **kütüphane değil**, kendi amaçları var. Bu belge yönetmez. (KUTUPHANE-KAPSAM.md Bölüm 8'de detay.)
+
+| Tablo | Satır | Amaç | Önemli Not |
+|---|---:|---|---|
+| `endustri_malzemeler` | 36 | AI parser EN/DIN sözlüğü | 91'de `arsiv`'den `public`'e geri taşındı |
+| `endustri_form_astm` | 78 | AI parser ASTM sözlüğü | 91'de `arsiv`'den `public`'e geri taşındı |
+| `malzeme_tanimlari` | 13 | Runtime spool/pipeline bağlantısı | Aktif sistem buna bağımlı, dokunma |
+| `malzeme_standart_ipucu` | — | AI parser çoklu standart tanıma | **91'de DROP edildi** (18 satır, hiç kullanılmıyordu) |
+
+**Kural:** Bu tabloların yönetimi ayrı, "lazımsa kalsın" prensibi (Cihat, 91).
+
+---
+
+## 9. Veri Kaynakları
+
+### Aktif kullanılan ✅
+- **Wermac** (wermac.org) — ASME B16.5 inç tablolar
+- **Ferrobend** (ferrobend.com) — Çapraz teyit
+- **OSE-piping-workbench** (github.com/rkrenzler) — Fitting/pipe CSV (LGPL kod, sayısal veri telif dışı)
+
+### Potansiyel — Cihat eklerse 📥
+- 📥 Üretici PDF kataloğu (Octal Flange, Texas Flange, Sandvik, Vallourec, Tubacex, Haihao)
+- 📥 DIN 86019/86087-90 resmi dokümanları — gemi CuNi için
+- 📥 EEMUA 144-146 — İngiliz CuNi standardı
+- 📥 GOST/JIS/GB/T üretici kataloğu — armatör projesi geldiğinde
+- 📥 Tersane Excel/PDF — yıllarca biriktirilmiş tablolar (en kaliteli kaynak)
+
+### Sahadan organik 🌱
+- Pilot ilk spool girdiğinde → tanınmayan parçalar `tanimsiz_kayitlar`'a düşer
+- Süper Admin onayıyla `sistem_preset=false` kütüphaneye eklenir
+- Çok yaygınlaşırsa `sistem_preset=true`'ya promote
+
+---
+
+## 10. Sonraki Oturumlar İçin Sıra
+
+| Oturum | İş | Önkoşul |
+|---|---|---|
+| **91** (mevcut) | Belge revize (KAPSAM + TAKIP + MIGRATION-YOL-HARITASI) + küçük borçlar | — |
+| **92** | Migration 066 (fitting_malzeme_uyum FK fix) + Migration 067 (boru/flansh_malzeme_uyum CREATE) | 91 ✓ |
+| **93** | Generic UI altyapısı (`kutuphane-tablo.html`) — KAPSAM Bölüm 11.5 | 92 ✓ |
+| **94** | GOST/JIS/GB/T iskelet seed + DIN 86087/88/89 P0 doldurma | 93 ✓ |
+| **95** | Fitting/Flansh filtre modeli (KARAR-90.C) + ilk uyum tablosu satırları | 94 ✓ |
+| **96+** | Spec sistemi (`tenant_spec_seti`) — ikinci tersane geldiğinde | 95 ✓ + İkinci tersane sözleşmesi |
+
+---
+
+## Güncelleme Protokolü
+
+**Her oturum kapanışında Claude:**
+1. Eklenen kayıt sayısı → ilgili tablonun "Mevcut" kolonu
+2. Tamamlanan satırlar ❌ → ✅
+3. Kısmi olanlar ⚠ KISMEN
+4. Yeni veri kaynağı eklendi mi → Bölüm 9'a 📥 olarak
+5. Önemli karar alındı mı → ilgili bölüme not
+
+**Her 5 oturumda:**
+- Öncelik P kademeleri tersane talebine göre revize edilir
+- Yeni tersane spec'i geldiyse `tenant_spec_seti` aktif edilir
+- KUTUPHANE-KAPSAM.md ile tutarlılık kontrol edilir
+
+---
+
+## Açık Notlar
+
+- **Geometri ≠ malzeme.** Çapraz uyum tablosu zorunlu, geometri tablosunda malzeme tutmak yetersiz (43 dersi).
+- **`fitting_malzeme_uyum` FK bug.** Migration 066'da fix. Mevcut 0 satır olduğu için veri kaybı yok.
+- **GOST/JIS/GB/T iskelet bekliyor.** Karşılaşıldığında değil, ön taraftan seed edilebilir (94'te). İskelet hazır olunca PDF parse "GOST 8732 tanındı" diyebilir.
+- **`endustri_*` arşivlemesi olayı (91).** Tablo silinmeden / arşivlenmeden önce kod araması zorunlu. KUTUPHANE-KAPSAM.md Bölüm 1'de yazılı kural.
+- **Hedef yüzdesi yok.** v2'de "44 sonu %5-10, 50 sonu %25-40" yazıyordu, v3'te kaldırıldı. Organik büyüme prensibine ters.
+
+---
+
+> Bu dosya canlı tutulur. Her oturum kapanışında Claude günceller, Cihat doğrular.
+> v3 — 91. oturum — 15 Mayıs 2026 — KUTUPHANE-KAPSAM.md v3 ile tam hizalandı.
