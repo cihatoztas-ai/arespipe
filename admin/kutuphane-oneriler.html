@@ -1,441 +1,327 @@
 <!DOCTYPE html>
 <html lang="tr" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AresPipe — Kütüphane · Bekleyen Öneriler</title>
-<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="../ares-store.js"></script>
-<script src="../ares-lang.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="ko_title">Kütüphane Önerileri — AresPipe</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== Sayfa-yerel CSS (global var'lar ares-layout.js'ten gelir) ===== */
+    .ko-main { padding: 24px; max-width: 1400px; margin: 0 auto; font-family: 'Barlow', sans-serif; }
+
+    .ko-header { margin-bottom: 20px; }
+    .ko-header h1 {
+      margin: 0 0 4px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 28px;
+      color: var(--tx);
+    }
+    .ko-subtitle { font-size: 14px; color: var(--txd); }
+
+    /* G-02 Hero + Pill */
+    .ko-hero { display: flex; gap: 16px; margin-bottom: 20px; }
+    .ko-hero-left {
+      display: flex; align-items: center; justify-content: center;
+      width: 88px; background: var(--sur2);
+      border: 1px solid var(--bor); border-radius: 10px;
+      font-size: 36px;
+    }
+    .ko-hero-stats { display: flex; flex: 1; gap: 12px; }
+    .ko-stat-pill {
+      background: var(--sur2); border: 1px solid var(--bor);
+      border-radius: 10px; padding: 14px 18px;
+      min-width: 120px; flex: 1;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .ko-stat-label { font-size: 13px; color: var(--txd); margin-bottom: 4px; }
+    .ko-stat-num {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800; font-size: 28px; color: var(--ac);
+    }
+
+    /* Skeleton shimmer (devreler.html pattern'i) */
+    .sk {
+      background: linear-gradient(90deg, var(--sur) 0%, var(--bor) 50%, var(--sur) 100%);
+      background-size: 200% 100%;
+      animation: _skShimmer 1.2s infinite;
+      color: transparent !important;
+      border-radius: 4px;
+    }
+    .sk-num { display: inline-block; min-width: 40px; }
+    @keyframes _skShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Tablo */
+    .ko-table-wrap {
+      background: var(--sur2); border: 1px solid var(--bor);
+      border-radius: 10px; overflow: hidden;
+    }
+    .ko-table { width: 100%; border-collapse: collapse; }
+    .ko-table thead { background: var(--sur); }
+    .ko-table th {
+      text-align: left; padding: 12px 16px;
+      font-size: 12px; font-weight: 600;
+      color: var(--txd); text-transform: uppercase; letter-spacing: .5px;
+      border-bottom: 1px solid var(--bor);
+    }
+    .ko-table td {
+      padding: 14px 16px; font-size: 15px; color: var(--tx);
+      border-bottom: 1px solid var(--bor);
+    }
+    .ko-table tbody tr {
+      opacity: 0;
+      animation: _cascadeIn .35s ease forwards;
+      animation-delay: calc(45ms * var(--ci, 0));
+    }
+    @keyframes _cascadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ko-td-olcu strong {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; font-size: 16px;
+    }
+    .ko-td-olcu small { color: var(--txd); font-size: 13px; margin-left: 4px; }
+    .ko-td-kalite { color: var(--txd); }
+    .ko-td-tarih { color: var(--txd); font-size: 13px; }
+
+    .ko-badge-siklik {
+      display: inline-block; padding: 4px 12px;
+      border-radius: 14px;
+      background: rgba(45, 142, 255, 0.15);
+      color: var(--ac); font-weight: 700;
+      font-size: 14px; font-family: 'Barlow Condensed', sans-serif;
+      min-width: 40px; text-align: center;
+    }
+    .ko-badge-tenant {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--sur);
+      border: 1px solid var(--bor);
+      color: var(--txd); font-size: 13px;
+    }
+
+    .ko-btn-detay {
+      padding: 6px 14px; border-radius: 6px;
+      border: 1px solid var(--bor); background: var(--sur);
+      color: var(--ac); font-size: 13px; font-weight: 600;
+      font-family: 'Barlow', sans-serif;
+      cursor: pointer; transition: all .15s;
+    }
+    .ko-btn-detay:hover {
+      border-color: var(--ac); background: rgba(45, 142, 255, .05);
+    }
+
+    .ko-bos {
+      padding: 48px 24px; text-align: center;
+    }
+    .ko-bos-icon { font-size: 48px; color: var(--gr); margin-bottom: 12px; }
+    .ko-bos-msg { font-size: 16px; color: var(--txd); }
+  </style>
+</head>
+<body data-sayfa="kutuphane-oneriler">
+
+<main class="ko-main">
+
+  <div class="ko-header">
+    <h1 data-i18n="ko_baslik">Kütüphane Önerileri</h1>
+    <div class="ko-subtitle" data-i18n="ko_aciklama">
+      Sistemde tanımsız olarak görünen malzemeler — sıklığa göre sıralandı
+    </div>
+  </div>
+
+  <div class="ko-hero">
+    <div class="ko-hero-left">📚</div>
+    <div class="ko-hero-stats">
+      <div class="ko-stat-pill">
+        <div class="ko-stat-label" data-i18n="ko_st_kayit">Tanımsız Kayıt</div>
+        <span class="ko-stat-num sk sk-num" id="koStKayit">—</span>
+      </div>
+      <div class="ko-stat-pill">
+        <div class="ko-stat-label" data-i18n="ko_st_spool">Etkilenen Spool</div>
+        <span class="ko-stat-num sk sk-num" id="koStSpool">—</span>
+      </div>
+      <div class="ko-stat-pill">
+        <div class="ko-stat-label" data-i18n="ko_st_tenant">Tenant</div>
+        <span class="ko-stat-num sk sk-num" id="koStTenant">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ko-table-wrap">
+    <table class="ko-table">
+      <thead>
+        <tr>
+          <th data-i18n="ko_th_olcu">Ölçü</th>
+          <th data-i18n="ko_th_kalite">Kalite</th>
+          <th data-i18n="ko_th_siklik">Spool</th>
+          <th data-i18n="ko_th_devre">Devre</th>
+          <th data-i18n="ko_th_tenant">Tenant</th>
+          <th data-i18n="ko_th_son_gorulme">Son Görülme</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="koTbody"></tbody>
+    </table>
+    <div class="ko-bos" id="koBos" style="display:none;">
+      <div class="ko-bos-icon">✓</div>
+      <div class="ko-bos-msg" data-i18n="ko_bos">Tüm malzemeler kütüphaneye bağlı!</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- AresPipe core scripts (admin/ alt-dizininden parent path) -->
+<script src="../ares-supabase.js"></script>
 <script src="../ares-normalize.js"></script>
 <script src="../ares-layout.js"></script>
-<style>
-:root {
-  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
-  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
-}
-[data-theme=dark] {
-  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
-  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
-}
-[data-theme=light-anthracite] {
-  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
-  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
-
-.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-shrink:0;}
-.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
-.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;letter-spacing:0;}
-.topbar-sep{flex:1;}
-.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
-.topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
-.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
-.btn-logout:hover{border-color:var(--re);color:var(--re);}
-
-.layout{display:flex;flex:1;min-height:0;}
-.sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;text-decoration:none;}
-.nav-item:hover{background:var(--sur2);color:var(--tx);}
-.nav-item.active{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.2);color:var(--admin);}
-.nav-icon{font-size:16px;width:20px;text-align:center;}
-.nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
-
-.main{flex:1;overflow-y:auto;padding:28px 32px;display:flex;flex-direction:column;min-width:0;}
-.page-header{margin-bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);}
-.page-sub{font-size:13px;color:var(--txm);margin-top:4px;}
-.page-stats{display:flex;gap:12px;}
-.stat-pill{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:8px 14px;font-size:12px;color:var(--txm);}
-.stat-pill b{color:var(--tx);font-size:18px;font-family:'Barlow Condensed',sans-serif;margin-right:6px;}
-
-.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
-.toolbar label{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-.toolbar select{background:var(--sur2);color:var(--tx);border:1px solid var(--bor);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;cursor:pointer;}
-.toolbar select:focus{outline:none;border-color:var(--admin);}
-.toolbar .refresh-btn{background:transparent;color:var(--txm);border:1px solid var(--bor);border-radius:6px;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:13px;}
-.toolbar .refresh-btn:hover{color:var(--tx);border-color:var(--admin);}
-
-.split{display:grid;grid-template-columns:1fr 360px;gap:18px;flex:1;min-height:0;}
-@media (max-width:1100px){ .split{grid-template-columns:1fr;} }
-
-.liste-card{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.liste-head{padding:12px 16px;border-bottom:1px solid var(--bor);font-size:12px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
-.liste-tablo{width:100%;border-collapse:collapse;font-size:13px;}
-.liste-tablo thead th{position:sticky;top:0;background:var(--sur2);text-align:left;padding:10px 12px;font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid var(--bor);}
-.liste-tablo tbody td{padding:10px 12px;border-bottom:1px solid var(--bor);}
-.liste-tablo tbody tr{cursor:pointer;transition:background .12s;}
-.liste-tablo tbody tr:hover{background:var(--sur2);}
-.liste-tablo tbody tr.sec{background:rgba(249,115,22,.08);border-left:3px solid var(--admin);}
-.liste-tablo tbody tr.sec td:first-child{padding-left:9px;}
-.liste-wrap{overflow-y:auto;flex:1;}
-
-.tip-rozet{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;font-weight:600;background:var(--sur2);color:var(--txm);border:1px solid var(--bor);}
-.tip-rozet.boru{color:var(--ac);border-color:rgba(45,142,255,.3);background:rgba(45,142,255,.08);}
-.tip-rozet.fitting{color:var(--leg);border-color:rgba(124,58,237,.3);background:rgba(124,58,237,.08);}
-.tip-rozet.flansh{color:var(--gr);border-color:rgba(22,163,110,.3);background:rgba(22,163,110,.08);}
-.tip-rozet.malzeme{color:var(--warn);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.08);}
-
-.siklik-rozet{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--admin);background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);padding:2px 8px;border-radius:10px;min-width:34px;justify-content:center;}
-.siklik-rozet.cok{background:rgba(229,62,62,.15);border-color:rgba(229,62,62,.4);color:var(--re);}
-
-.durum-rozet{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;font-weight:600;}
-.durum-rozet.bekliyor{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.3);}
-.durum-rozet.incelemede{background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.3);}
-.durum-rozet.onaylandi{background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);}
-.durum-rozet.reddedildi{background:rgba(229,62,62,.12);color:var(--re);border:1px solid rgba(229,62,62,.3);}
-
-.bos-mesaj{padding:60px 20px;text-align:center;color:var(--txd);}
-.bos-mesaj .bm-icon{font-size:42px;margin-bottom:12px;opacity:.4;}
-.bos-mesaj .bm-baslik{font-size:16px;color:var(--txm);margin-bottom:6px;}
-.bos-mesaj .bm-alt{font-size:13px;}
-
-.detay-card{background:var(--sur);border:1px solid var(--bor);border-radius:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-.detay-card.empty{align-items:center;justify-content:center;color:var(--txd);padding:40px 20px;text-align:center;}
-.detay-head{padding:12px 16px;border-bottom:1px solid var(--bor);border-left:4px solid var(--admin);}
-.detay-meta{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-.detay-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--tx);margin-top:2px;}
-.detay-body{flex:1;overflow-y:auto;padding:14px 16px;}
-.detay-bolum{margin-bottom:18px;}
-.detay-bolum h4{font-size:11px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px;}
-.detay-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;}
-.detay-grid .k{color:var(--txd);}
-.detay-grid .v{color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:11px;word-break:break-all;}
-.detay-json{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--sur2);border:1px solid var(--bor);border-radius:6px;padding:10px;color:var(--tx);white-space:pre-wrap;word-break:break-all;max-height:240px;overflow-y:auto;}
-
-.loading{padding:60px;text-align:center;color:var(--txd);font-size:13px;}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="topbar-logo">AresPipe <span>· Süper Admin</span></div>
-  <div class="topbar-sep"></div>
-  <div class="topbar-user">
-    <span class="topbar-badge">SÜPER ADMIN</span>
-    <span id="userAd">—</span>
-    <button class="btn-logout" onclick="cikis()">Çıkış</button>
-  </div>
-</div>
-
-<div class="layout">
-  <aside class="sidebar">
-    <a class="nav-item" href="panel.html"><span class="nav-icon">📊</span>Dashboard</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Pano</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">🏢</span>Firmalar</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">👥</span>Kullanıcılar</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">🚩</span>Feature Flags</a>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">📱</span>Mobil Önizleme</a>
-    <div class="nav-sep"></div>
-    <a class="nav-item active" href="kutuphane.html"><span class="nav-icon">📚</span>Kütüphane</a>
-    <div class="nav-sep"></div>
-    <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Sistem Logları</a>
-  </aside>
-
-  <main class="main">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Kütüphane — Bekleyen Öneriler</h1>
-        <p class="page-sub">Kütüphane çalışma akışının parçası. Kullanıcılar "Kaydet" derken biriken kayıtlar. Sıklığa göre sıralı.</p>
-      </div>
-      <div class="page-stats">
-        <div class="stat-pill"><b id="statBekliyor">—</b>bekliyor</div>
-        <div class="stat-pill"><b id="statToplam">—</b>toplam</div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <label for="filtreDurum">Durum:</label>
-      <select id="filtreDurum">
-        <option value="bekliyor">Bekliyor</option>
-        <option value="incelemede">İncelemede</option>
-        <option value="onaylandi">Onaylanmış</option>
-        <option value="reddedildi">Reddedilmiş</option>
-        <option value="">Tümü</option>
-      </select>
-      <label for="filtreTip">Tip:</label>
-      <select id="filtreTip">
-        <option value="">Tümü</option>
-        <option value="std_disi">Standart Dışı</option>
-        <option value="std_eksik">Standart Eksik</option>
-        <option value="kalite_std_eksik">Kalite Std Eksik</option>
-        <option value="uc_islemi_eksik">Uç İşlemi Eksik</option>
-      </select>
-      <button class="refresh-btn" onclick="listeYukle()">Yenile</button>
-    </div>
-
-    <div class="split">
-      <section class="liste-card">
-        <div class="liste-head">
-          <span>Önerilenler</span>
-          <span id="listeSayi" style="font-weight:normal;text-transform:none;letter-spacing:0;color:var(--txm);"></span>
-        </div>
-        <div class="liste-wrap">
-          <div id="listeIcerik">
-            <div class="loading">Yükleniyor…</div>
-          </div>
-        </div>
-      </section>
-
-      <aside class="detay-card empty" id="detayCard">
-        <div>
-          <div style="font-size:34px;opacity:.4;margin-bottom:8px;">←</div>
-          <div style="font-size:14px;color:var(--txm);">Detay için bir kayıt seç</div>
-        </div>
-      </aside>
-    </div>
-  </main>
-</div>
+<script src="../lang.js"></script>
 
 <script>
-'use strict';
-// 86.D Phase 1 — Tanimsiz kayit oneri paneli (salt okuma)
+(function() {
+  'use strict';
 
-var SUPA = null;
-var KULLANICI = null;
-var KAYITLAR = [];
-var SEC_ID = null;
-
-function fmtTarih(s){
-  if(!s) return '—';
-  try{
-    var d = new Date(s);
-    var pad = function(n){ return n<10 ? '0'+n : ''+n; };
-    return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }catch(e){ return s; }
-}
-
-function fmtZamanFark(s){
-  if(!s) return '—';
-  var d = new Date(s);
-  var dakika = Math.floor((Date.now() - d.getTime()) / 60000);
-  if(dakika < 1)   return 'az önce';
-  if(dakika < 60)  return dakika + ' dk önce';
-  var saat = Math.floor(dakika/60);
-  if(saat < 24)    return saat + ' s önce';
-  var gun = Math.floor(saat/24);
-  if(gun < 30)     return gun + ' g önce';
-  var ay = Math.floor(gun/30);
-  if(ay < 12)      return ay + ' ay önce';
-  return Math.floor(ay/12) + ' yıl önce';
-}
-
-function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-
-function tipRozet(tip){
-  var t = (tip||'').toLowerCase();
-  var label = t === 'std_disi'         ? 'STD Dışı'
-            : t === 'std_eksik'        ? 'STD Eksik'
-            : t === 'kalite_std_eksik' ? 'Kalite Std'
-            : t === 'uc_islemi_eksik'  ? 'Uç İşlemi'
-            : t;
-  return '<span class="tip-rozet">' + esc(label) + '</span>';
-}
-
-function parcaTipRozet(parcaTipi){
-  var t = (parcaTipi||'').toLowerCase();
-  if(!t) return '<span style="color:var(--txd);">—</span>';
-  return '<span class="tip-rozet ' + esc(t) + '">' + esc(t) + '</span>';
-}
-
-function durumRozet(durum){
-  var d = (durum||'').toLowerCase();
-  return '<span class="durum-rozet ' + esc(d) + '">' + esc(d) + '</span>';
-}
-
-function olcuStr(r){
-  var hd = r.ham_data || {};
-  var dc = hd.dis_cap_mm != null ? hd.dis_cap_mm : '';
-  var et = hd.et_mm     != null ? hd.et_mm     : '';
-  if(!dc && !et) return '<span style="color:var(--txd);">—</span>';
-  return esc(String(dc).replace('.', ',')) + (et ? '×' + esc(String(et).replace('.', ',')) : '') + ' <span style="color:var(--txd);font-size:11px;">mm</span>';
-}
-
-async function init(){
-  // ARES helper yüklendi mi?
-  if(typeof ARES === 'undefined' || typeof ARES.supabase !== 'function'){
-    document.getElementById('listeIcerik').innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Bağlantı kurulamadı</div><div class="bm-alt">ARES helper yüklenmemiş.</div></div>';
-    return;
-  }
-  // Supabase init için retry loop (ares-store.js async yükleyebilir, max 8 sn bekle)
-  var b = 0;
-  while (b < 80) {
-    SUPA = ARES.supabase();
-    if (SUPA) break;
-    await new Promise(function(r){ setTimeout(r, 100); });
-    b++;
-  }
-  if(!SUPA){
-    document.getElementById('listeIcerik').innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Supabase bağlantısı yok</div><div class="bm-alt">8 sn beklendi, ares-store.js yüklenemedi.</div></div>';
-    return;
-  }
-  // Auth + super_admin kontrol
-  var sr = await SUPA.auth.getSession();
-  if(!sr.data || !sr.data.session){
-    window.location.href = '../index.html';
-    return;
-  }
-  var kr = await SUPA.from('kullanicilar').select('id,rol,ad_soyad,email').eq('id', sr.data.session.user.id).single();
-  if(kr.error || !kr.data || kr.data.rol !== 'super_admin'){
-    window.location.href = '../index.html';
-    return;
-  }
-  KULLANICI = kr.data;
-  document.getElementById('userAd').textContent = KULLANICI.ad_soyad || KULLANICI.email || '—';
-
-  // Filtre listener
-  document.getElementById('filtreDurum').addEventListener('change', listeYukle);
-  document.getElementById('filtreTip').addEventListener('change', listeYukle);
-
-  await istatistikYukle();
-  await listeYukle();
-}
-
-async function istatistikYukle(){
-  var bekR = await SUPA.from('tanimsiz_kayitlar').select('id', {count:'exact', head:true}).eq('durum','bekliyor');
-  var topR = await SUPA.from('tanimsiz_kayitlar').select('id', {count:'exact', head:true});
-  document.getElementById('statBekliyor').textContent = bekR.error ? '?' : (bekR.count != null ? bekR.count : '0');
-  document.getElementById('statToplam').textContent   = topR.error ? '?' : (topR.count != null ? topR.count : '0');
-}
-
-async function listeYukle(){
-  var elIcerik = document.getElementById('listeIcerik');
-  var elSayi   = document.getElementById('listeSayi');
-  elIcerik.innerHTML = '<div class="loading">Yükleniyor…</div>';
-
-  var durum = document.getElementById('filtreDurum').value;
-  var tip   = document.getElementById('filtreTip').value;
-
-  var q = SUPA.from('tanimsiz_kayitlar')
-    .select('id,tip,hash_anahtari,ham_data,siklik_sayisi,durum,kullanici_sebep,kullanici_aciklama,ilk_oneren_tenant_id,son_oneren_tenant_id,ilk_spool_malzeme_id,olusturma_at,guncelleme_at')
-    .order('siklik_sayisi', {ascending:false, nullsFirst:false})
-    .order('olusturma_at', {ascending:false})
-    .limit(200);
-
-  if(durum) q = q.eq('durum', durum);
-  if(tip)   q = q.eq('tip', tip);
-
-  var r = await q;
-  if(r.error){
-    elIcerik.innerHTML = '<div class="bos-mesaj"><div class="bm-icon">⚠</div><div class="bm-baslik">Hata</div><div class="bm-alt">' + esc(r.error.message || 'Sorgu başarısız') + '</div></div>';
-    return;
-  }
-  KAYITLAR = r.data || [];
-  elSayi.textContent = KAYITLAR.length + ' kayıt';
-
-  if(!KAYITLAR.length){
-    elIcerik.innerHTML = '<div class="bos-mesaj"><div class="bm-icon">📭</div><div class="bm-baslik">Bekleyen öneri yok</div><div class="bm-alt">Kullanıcılar "Kaydet" derken burada birikir.</div></div>';
-    return;
+  // ===== Yetki kontrolü =====
+  if (typeof ARES !== 'undefined' && typeof ARES.sayfaYetkiKontrol === 'function') {
+    ARES.sayfaYetkiKontrol(['super_admin']);
+  } else {
+    console.warn('[KO] ARES.sayfaYetkiKontrol bulunamadı — yetki kontrolü atlandı (geliştirme modu?)');
   }
 
-  var rows = '<table class="liste-tablo">'
-    + '<thead><tr>'
-      + '<th>Tip</th>'
-      + '<th>Parça</th>'
-      + '<th>Ölçü</th>'
-      + '<th>Kalite</th>'
-      + '<th>Sıklık</th>'
-      + '<th>Son öneri</th>'
-      + '<th>Durum</th>'
-    + '</tr></thead><tbody>';
-  KAYITLAR.forEach(function(r){
-    var hd = r.ham_data || {};
-    var siklikClass = (r.siklik_sayisi||0) >= 5 ? 'siklik-rozet cok' : 'siklik-rozet';
-    var sec = (r.id === SEC_ID) ? ' class="sec"' : '';
-    rows += '<tr' + sec + ' onclick="kayitSec(\'' + esc(r.id) + '\')">'
-      + '<td>' + tipRozet(r.tip) + '</td>'
-      + '<td>' + parcaTipRozet(hd.tip) + '</td>'
-      + '<td>' + olcuStr(r) + '</td>'
-      + '<td style="color:var(--tx);font-weight:600;">' + esc(hd.kalite || '—') + '</td>'
-      + '<td><span class="' + siklikClass + '">' + (r.siklik_sayisi || 1) + '</span></td>'
-      + '<td style="color:var(--txm);font-size:12px;">' + esc(fmtZamanFark(r.guncelleme_at)) + '</td>'
-      + '<td>' + durumRozet(r.durum) + '</td>'
-    + '</tr>';
-  });
-  rows += '</tbody></table>';
-  elIcerik.innerHTML = rows;
-}
+  // ===== Helpers =====
+  const tv = (k, fb) => (typeof window.tv === 'function' ? window.tv(k, fb) : (fb || k));
+  const toast = (m, t) => (window.ARES?.toast ? ARES.toast(m, t) : console.log('[toast]', t, m));
 
-function kayitSec(id){
-  SEC_ID = id;
-  var r = KAYITLAR.find(function(x){ return x.id === id; });
-  // satir secimi gorsel
-  document.querySelectorAll('.liste-tablo tbody tr').forEach(function(tr){ tr.classList.remove('sec'); });
-  var aktif = document.querySelector('.liste-tablo tbody tr[onclick*="' + id + '"]');
-  if(aktif) aktif.classList.add('sec');
-
-  var card = document.getElementById('detayCard');
-  if(!r){ card.className = 'detay-card empty'; card.innerHTML = '<div>Kayıt bulunamadı</div>'; return; }
-  card.className = 'detay-card';
-
-  var hd = r.ham_data || {};
-  var kd = hd.kullanici_doldurdu || {};
-  var ozet = (hd.kalite || hd.malzeme || '—') + ' · ' + (hd.tip || r.tip || '—');
-
-  var html = ''
-    + '<div class="detay-head">'
-      + '<div class="detay-meta">' + esc(r.tip || '—') + ' · ' + esc(r.durum || '—') + '</div>'
-      + '<div class="detay-title">' + esc(ozet) + '</div>'
-    + '</div>'
-    + '<div class="detay-body">';
-
-  // Bolum 1: Ana bilgiler
-  html += '<div class="detay-bolum"><h4>Parça Bilgileri</h4><div class="detay-grid">';
-  html += '<div class="k">Parça tipi</div><div class="v">' + esc(hd.tip || '—') + '</div>';
-  if(hd.kod)     html += '<div class="k">Kod</div><div class="v">' + esc(hd.kod) + '</div>';
-  if(hd.tanim)   html += '<div class="k">Tanım</div><div class="v">' + esc(hd.tanim) + '</div>';
-  if(hd.malzeme) html += '<div class="k">Malzeme</div><div class="v">' + esc(hd.malzeme) + '</div>';
-  if(hd.kalite)  html += '<div class="k">Kalite</div><div class="v">' + esc(hd.kalite) + '</div>';
-  if(hd.dis_cap_mm != null) html += '<div class="k">Dış çap</div><div class="v">' + esc(String(hd.dis_cap_mm).replace('.', ',')) + ' mm</div>';
-  if(hd.et_mm     != null)  html += '<div class="k">Et</div><div class="v">' + esc(String(hd.et_mm).replace('.', ',')) + ' mm</div>';
-  html += '</div></div>';
-
-  // Bolum 2: Kullanici doldurdu
-  if(kd && (kd.standart || kd.dn)){
-    html += '<div class="detay-bolum"><h4>Kullanıcı Doldurdu</h4><div class="detay-grid">';
-    if(kd.standart) html += '<div class="k">Standart</div><div class="v">' + esc(kd.standart) + '</div>';
-    if(kd.dn)       html += '<div class="k">Anma çapı (DN)</div><div class="v">' + esc(kd.dn) + '</div>';
-    html += '</div></div>';
+  function _skTemizle(el) {
+    if (!el) return;
+    el.classList.remove('sk', 'sk-num');
   }
 
-  // Bolum 3: Oneri meta
-  html += '<div class="detay-bolum"><h4>Öneri Meta</h4><div class="detay-grid">';
-  html += '<div class="k">Sıklık</div><div class="v">' + (r.siklik_sayisi || 1) + '</div>';
-  html += '<div class="k">Hash</div><div class="v" style="font-size:10px;">' + esc(r.hash_anahtari || '—') + '</div>';
-  html += '<div class="k">İlk öneri</div><div class="v">' + esc(fmtTarih(r.olusturma_at)) + '</div>';
-  html += '<div class="k">Son öneri</div><div class="v">' + esc(fmtTarih(r.guncelleme_at)) + '</div>';
-  if(r.ilk_spool_malzeme_id) html += '<div class="k">İlk spool kalemi</div><div class="v">' + esc(r.ilk_spool_malzeme_id) + '</div>';
-  html += '</div></div>';
-
-  // Bolum 4: Kullanici notu (varsa)
-  if(r.kullanici_sebep || r.kullanici_aciklama){
-    html += '<div class="detay-bolum"><h4>Kullanıcı Notu</h4><div class="detay-grid">';
-    if(r.kullanici_sebep)    html += '<div class="k">Sebep</div><div class="v">' + esc(r.kullanici_sebep) + '</div>';
-    if(r.kullanici_aciklama) html += '<div class="k">Açıklama</div><div class="v">' + esc(r.kullanici_aciklama) + '</div>';
-    html += '</div></div>';
+  function _fmtTarih(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch { return '—'; }
   }
 
-  // Bolum 5: Ham JSON (debug)
-  html += '<div class="detay-bolum"><h4>Ham Veri (JSON)</h4><pre class="detay-json">' + esc(JSON.stringify(hd, null, 2)) + '</pre></div>';
+  function _fmtOlcu(dis_cap, et) {
+    const a = Number(dis_cap).toFixed(1);
+    const b = Number(et).toFixed(1);
+    return `${a} × ${b}`;
+  }
 
-  // Phase 2 placeholder
-  html += '<div class="detay-bolum" style="border-top:1px dashed var(--bor);padding-top:14px;">'
-    + '<div style="font-size:12px;color:var(--txd);font-style:italic;">Onay/Red butonları 87. oturumda eklenecek.</div>'
-    + '</div>';
+  // ===== Liste yükleme =====
+  async function listeYukle() {
+    try {
+      const sb = ARES.supabase();
+      const { data, error } = await sb.rpc('v_tanimsiz_havuz_listele');
 
-  html += '</div>'; // detay-body
-  card.innerHTML = html;
-}
+      if (error) {
+        console.error('[KO] RPC hata:', error);
+        toast(tv('ko_hata_yukleme', 'Liste yüklenemedi: ') + error.message, 'er');
+        _renderBos();
+        return;
+      }
 
-async function cikis(){
-  if(SUPA){ try{ await SUPA.auth.signOut(); }catch(e){} }
-  window.location.href = '../index.html';
-}
+      const rows = data || [];
+      _renderStats(rows);
+      _renderTablo(rows);
+    } catch (e) {
+      console.error('[KO] Beklenmeyen hata:', e);
+      toast(tv('ko_hata_beklenmeyen', 'Beklenmeyen hata'), 'er');
+      _renderBos();
+    }
+  }
 
-document.documentElement.style.visibility = 'visible';
-init();
+  function _renderStats(rows) {
+    const toplamKayit = rows.length;
+    const toplamSpool = rows.reduce((acc, r) => acc + Number(r.siklik || 0), 0);
+    const tenantSet = new Set();
+    rows.forEach(r => (r.tenant_ler || []).forEach(t => tenantSet.add(t)));
+
+    const elK = document.getElementById('koStKayit');
+    const elS = document.getElementById('koStSpool');
+    const elT = document.getElementById('koStTenant');
+
+    if (elK) { elK.textContent = toplamKayit; _skTemizle(elK); }
+    if (elS) { elS.textContent = toplamSpool; _skTemizle(elS); }
+    if (elT) { elT.textContent = tenantSet.size; _skTemizle(elT); }
+  }
+
+  function _renderTablo(rows) {
+    const tbody = document.getElementById('koTbody');
+    if (!tbody) return;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '';
+      _renderBos();
+      return;
+    }
+
+    document.getElementById('koBos').style.display = 'none';
+
+    const html = rows.map((r, i) => {
+      const ci = Math.min(i, 19); // cascade max 20
+      const olcu = _fmtOlcu(r.dis_cap_mm, r.et_mm);
+      const kalite = r.kalite_ham || '—';
+      const tarih = _fmtTarih(r.son_gorulme);
+      const hashEsc = (r.hash_anahtari || '').replace(/[^a-z0-9]/gi, '');
+
+      return `<tr style="--ci:${ci};" data-hash="${hashEsc}">
+        <td class="ko-td-olcu"><strong>${olcu}</strong> <small>mm</small></td>
+        <td class="ko-td-kalite">${kalite}</td>
+        <td><span class="ko-badge-siklik">${r.siklik}</span></td>
+        <td>${r.devre_sayisi}</td>
+        <td><span class="ko-badge-tenant">${r.tenant_sayisi}</span></td>
+        <td class="ko-td-tarih">${tarih}</td>
+        <td>
+          <button class="ko-btn-detay" data-hash="${hashEsc}" data-i18n="ko_btn_detay">
+            ${tv('ko_btn_detay', 'Detay →')}
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.innerHTML = html;
+
+    // Detay butonları — 88.G'de detay paneli açacak
+    tbody.querySelectorAll('.ko-btn-detay').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hash = btn.dataset.hash;
+        const row = rows.find(r => (r.hash_anahtari || '').replace(/[^a-z0-9]/gi, '') === hash);
+        console.log('[KO] Detay tıklandı:', row);
+        toast(tv('ko_detay_tba', '88.G ile detay paneli gelecek'), 'in');
+      });
+    });
+  }
+
+  function _renderBos() {
+    const tbody = document.getElementById('koTbody');
+    const bos = document.getElementById('koBos');
+    if (tbody) tbody.innerHTML = '';
+    if (bos) bos.style.display = 'block';
+
+    // Stat'ları sıfırla, skeleton'ı temizle
+    ['koStKayit', 'koStSpool', 'koStTenant'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = '0'; _skTemizle(el); }
+    });
+  }
+
+  // ===== Başlat =====
+  document.addEventListener('DOMContentLoaded', listeYukle);
+
+})();
 </script>
+
 </body>
 </html>
