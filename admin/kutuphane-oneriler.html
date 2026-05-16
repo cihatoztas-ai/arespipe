@@ -99,6 +99,7 @@ tbody tr:hover{background:var(--sur2);}
 .toast-konteyner{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:1000;}
 .toast{background:var(--sur);border:1px solid var(--bor);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:10px;animation:tsl .25s ease-out;box-shadow:0 6px 24px rgba(0,0,0,.25);}
 .toast.er{border-color:rgba(229,62,62,.4);}
+.toast.ok{border-color:rgba(22,163,110,.4);}
 @keyframes tsl{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
 
 #appShell{display:none;flex-direction:column;flex:1;visibility:hidden;}
@@ -300,6 +301,7 @@ function ciz(sonuc){
     '<th style="text-align:right;">Devre</th>' +
     '<th>Tenant</th>' +
     '<th>Son Görülme</th>' +
+    '<th style="text-align:right;">İşlem</th>' +
   '</tr></thead>';
 
   var tbody = '<tbody>' + satirlar.map(function(r){
@@ -311,6 +313,11 @@ function ciz(sonuc){
     var tenantStr = Array.isArray(tenants) ? tenants.length : '—';
     var tarih = fmtTarih(r.son_gorulme);
 
+    var payloadEnc = encodeURIComponent(JSON.stringify({
+      dis_cap_mm: r.dis_cap_mm, et_mm: r.et_mm,
+      kalite_ham: r.kalite_ham, kalite: r.kalite,
+      siklik: r.siklik || r.spool_sayi || 0
+    }));
     return '<tr>' +
       '<td class="td-olcu"><strong>' + esc(olcu) + '</strong> <small>mm</small></td>' +
       '<td class="td-kalite">' + esc(kalite) + '</td>' +
@@ -318,6 +325,7 @@ function ciz(sonuc){
       '<td class="td-sayi">' + esc(devre) + '</td>' +
       '<td>' + esc(tenantStr) + '</td>' +
       '<td class="td-tarih">' + esc(tarih) + '</td>' +
+      '<td style="text-align:right;"><button class="btn-ekle" onclick="mkAc(JSON.parse(decodeURIComponent(this.getAttribute(\'data-payload\'))))" data-payload="' + payloadEnc + '">+ Ekle</button></td>' +
     '</tr>';
   }).join('') + '</tbody>';
 
@@ -365,6 +373,263 @@ function ciz(sonuc){
     console.error('[oneriler] init hata:', e);
     T('anaIcerik').innerHTML = '<div class="uyari">⚠ Sayfa yüklenirken hata oluştu: ' + esc(e.message) + '</div>';
   }
+})();
+</script>
+
+
+<style>
+.mk-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.mk-overlay.acik{display:flex;}
+.mk-modal{background:var(--sur);border:1px solid var(--bor);border-radius:14px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:20px 24px;font-family:'Barlow',sans-serif;}
+.mk-bas{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.mk-bas-l h3{margin:0;font-size:18px;font-weight:700;color:var(--tx);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+.mk-bas-l p{margin:4px 0 0;font-size:12px;color:var(--txm);}
+.mk-bas-l code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--sur2);padding:1px 6px;border-radius:4px;}
+.mk-kapat{background:none;border:1px solid var(--bor);color:var(--txm);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;}
+.mk-kapat:hover{border-color:var(--re);color:var(--re);}
+.mk-readbox{background:var(--sur2);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.mk-readlbl{font-size:10px;color:var(--txm);letter-spacing:.5px;text-transform:uppercase;font-weight:600;margin-bottom:2px;}
+.mk-readval{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--tx);}
+.mk-row{display:grid;gap:10px;margin-bottom:10px;}
+.mk-row-2{grid-template-columns:1fr 1fr;}
+.mk-row-3{grid-template-columns:1fr 1fr 1fr;}
+.mk-lbl{font-size:11px;color:var(--txm);display:block;margin-bottom:4px;font-weight:600;letter-spacing:.3px;}
+.mk-lbl .mk-tip{color:var(--ac);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;}
+.mk-input,.mk-select,.mk-textarea{width:100%;background:var(--bg);border:1px solid var(--bor);color:var(--tx);padding:7px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.mk-textarea{font-family:'Barlow',sans-serif;resize:vertical;}
+.mk-input:focus,.mk-select:focus,.mk-textarea:focus{outline:none;border-color:var(--ac);}
+.mk-formul{font-size:10px;color:var(--txd);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+.mk-bilgi{background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.25);color:var(--ac);padding:9px 12px;border-radius:8px;font-size:11px;margin:10px 0 14px;line-height:1.5;}
+.mk-butonlar{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}
+.mk-btn{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Barlow',sans-serif;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);transition:all .15s;}
+.mk-btn:hover{border-color:var(--txm);}
+.mk-btn-ana{background:rgba(45,142,255,.15);color:var(--ac);border-color:rgba(45,142,255,.35);}
+.mk-btn-ana:hover{background:rgba(45,142,255,.25);}
+.mk-btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ekle{font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);border-radius:7px;cursor:pointer;}
+.btn-ekle:hover{background:rgba(22,163,110,.2);}
+</style>
+
+<div class="mk-overlay" id="mkOverlay">
+  <div class="mk-modal" role="dialog" aria-labelledby="mkBaslik">
+    <div class="mk-bas">
+      <div class="mk-bas-l">
+        <h3 id="mkBaslik">Kutuphaneye ekle</h3>
+        <p>Bu havuz adayini <code>boru_olculer</code> tablosuna ozel kayit olarak ekle</p>
+      </div>
+      <button class="mk-kapat" onclick="mkKapat()">Iptal</button>
+    </div>
+
+    <div class="mk-readbox">
+      <div>
+        <div class="mk-readlbl">Dis cap</div>
+        <div class="mk-readval"><span id="mkDcGoster">-</span> mm</div>
+      </div>
+      <div>
+        <div class="mk-readlbl">Et kalinligi</div>
+        <div class="mk-readval"><span id="mkEtGoster">-</span> mm</div>
+      </div>
+      <div>
+        <div class="mk-readlbl">Kalite</div>
+        <div class="mk-readval" id="mkKaliteGoster">-</div>
+      </div>
+    </div>
+
+    <div class="mk-row mk-row-2">
+      <div>
+        <label class="mk-lbl">Malzeme grubu</label>
+        <select class="mk-select" id="mkMalzemeGrubu" onchange="mkAgirlikYenile()">
+          <option value="karbon">karbon</option>
+          <option value="paslanmaz">paslanmaz</option>
+          <option value="cuni">cuni</option>
+          <option value="duplex">duplex</option>
+          <option value="aluminyum">aluminyum</option>
+          <option value="alasimli">alasimli</option>
+          <option value="nikel">nikel</option>
+        </select>
+      </div>
+      <div>
+        <label class="mk-lbl">DN <span class="mk-tip">otomatik</span></label>
+        <input type="number" class="mk-input" id="mkDn" value="" />
+      </div>
+    </div>
+
+    <div class="mk-row mk-row-3">
+      <div>
+        <label class="mk-lbl">Sch. tipi</label>
+        <input type="text" class="mk-input" id="mkSchTipi" value="Sch" />
+      </div>
+      <div>
+        <label class="mk-lbl">Sch. deger</label>
+        <input type="text" class="mk-input" id="mkSchDeger" value="40" />
+      </div>
+      <div>
+        <label class="mk-lbl">Sch. kod</label>
+        <input type="text" class="mk-input" id="mkSchKod" value="" placeholder="OZEL_SCH40" />
+      </div>
+    </div>
+
+    <div class="mk-row">
+      <div>
+        <label class="mk-lbl">Agirlik (kg/m) <span class="mk-tip">otomatik hesap, duzeltebilirsin</span></label>
+        <input type="number" step="0.001" class="mk-input" id="mkAgirlik" value="" />
+        <div class="mk-formul" id="mkFormul">pi * (OD - et) * et * yogunluk / 1000</div>
+      </div>
+    </div>
+
+    <div class="mk-row">
+      <div>
+        <label class="mk-lbl">Notlar <span class="mk-tip">opsiyonel</span></label>
+        <textarea class="mk-textarea" id="mkNotlar" rows="2" placeholder="orn. NB1234 projesinde karsilasildi"></textarea>
+      </div>
+    </div>
+
+    <div class="mk-bilgi" id="mkBilgi">
+      Eklendiginde ayni olcu+kaliteye sahip <strong id="mkEtkiSpool">-</strong> spool kaydi bu yeni boruya otomatik baglanacak. Sonradan ayni geometriye sahip sistem standardi eklenirse <a href="kutuphane-cakismalar.html" style="color:inherit;text-decoration:underline;">Cakismalar</a> sayfasindan birlestirebilirsin.
+    </div>
+
+    <div class="mk-butonlar">
+      <button class="mk-btn" onclick="mkKapat()">Iptal</button>
+      <button class="mk-btn mk-btn-ana" id="mkOnaylaBtn" onclick="mkOnayla()">Kutuphaneye ekle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // Yogunluk (kg/dm3) -- malzeme grubuna gore
+  var YOGUNLUK = {
+    karbon: 7.85, paslanmaz: 7.93, cuni: 8.94, duplex: 7.80,
+    aluminyum: 2.70, alasimli: 7.85, nikel: 8.90
+  };
+
+  // DN tablosu (ASME B36.10M / EN ISO 6708)
+  var DN_TABLO = [
+    {dc:21.3,dn:15},{dc:26.7,dn:20},{dc:33.4,dn:25},{dc:42.2,dn:32},
+    {dc:48.3,dn:40},{dc:60.3,dn:50},{dc:73.0,dn:65},{dc:88.9,dn:80},
+    {dc:101.6,dn:90},{dc:114.3,dn:100},{dc:141.3,dn:125},{dc:168.3,dn:150},
+    {dc:219.1,dn:200},{dc:273.0,dn:250},{dc:323.9,dn:300},{dc:355.6,dn:350},
+    {dc:406.4,dn:400},{dc:457.2,dn:450},{dc:508.0,dn:500},{dc:559.0,dn:550},
+    {dc:610.0,dn:600}
+  ];
+
+  // State -- aktif aday verisi
+  var _aktif = null;
+
+  function dnTahmin(dc){
+    if (!dc) return null;
+    var en_yakin = DN_TABLO[0], min_fark = Math.abs(dc - DN_TABLO[0].dc);
+    for (var i=1; i<DN_TABLO.length; i++){
+      var f = Math.abs(dc - DN_TABLO[i].dc);
+      if (f < min_fark){ min_fark = f; en_yakin = DN_TABLO[i]; }
+    }
+    return en_yakin.dn;
+  }
+
+  function agirlikHesap(dc, et, yog){
+    if (!dc || !et) return null;
+    var v = Math.PI * (dc - et) * et * yog / 1000;
+    return Math.round(v * 1000) / 1000;
+  }
+
+  function $(id){ return document.getElementById(id); }
+
+  // Modal acma -- tabloda Ekle butonu cagirir
+  window.mkAc = function(payload){
+    if (!payload || typeof payload !== 'object') return;
+    _aktif = payload;
+
+    var dc = Number(payload.dis_cap_mm), et = Number(payload.et_mm);
+    $('mkDcGoster').textContent = dc ? dc.toFixed(2) : '-';
+    $('mkEtGoster').textContent = et ? et.toFixed(2) : '-';
+    $('mkKaliteGoster').textContent = payload.kalite_ham || payload.kalite || '-';
+    $('mkEtkiSpool').textContent = (payload.siklik || 0);
+
+    // Auto-fill: DN tahmin
+    $('mkDn').value = dnTahmin(dc) || '';
+
+    // Auto-fill: agirlik (karbon varsayilan)
+    $('mkMalzemeGrubu').value = 'karbon';
+    mkAgirlikYenile();
+
+    // Manuel alanlari sifirla
+    $('mkSchTipi').value = 'Sch';
+    $('mkSchDeger').value = '40';
+    $('mkSchKod').value = '';
+    $('mkNotlar').value = '';
+    $('mkOnaylaBtn').disabled = false;
+    $('mkOnaylaBtn').textContent = 'Kutuphaneye ekle';
+
+    $('mkOverlay').classList.add('acik');
+  };
+
+  window.mkKapat = function(){
+    $('mkOverlay').classList.remove('acik');
+    _aktif = null;
+  };
+
+  // Malzeme grubu degisince agirligi yenile
+  window.mkAgirlikYenile = function(){
+    if (!_aktif) return;
+    var dc = Number(_aktif.dis_cap_mm), et = Number(_aktif.et_mm);
+    var grup = $('mkMalzemeGrubu').value;
+    var yog = YOGUNLUK[grup] || 7.85;
+    var ag = agirlikHesap(dc, et, yog);
+    $('mkAgirlik').value = ag != null ? ag : '';
+    $('mkFormul').textContent = 'pi * (' + dc.toFixed(2) + ' - ' + et.toFixed(2) + ') * ' + et.toFixed(2) + ' * ' + yog + ' / 1000 = ' + (ag != null ? ag.toFixed(3) : '?');
+  };
+
+  // Onayla -- RPC cagri
+  window.mkOnayla = async function(){
+    if (!_aktif) return;
+    var btn = $('mkOnaylaBtn');
+    var grup = $('mkMalzemeGrubu').value;
+    var dn = parseInt($('mkDn').value, 10);
+    var schT = $('mkSchTipi').value.trim();
+    var schD = $('mkSchDeger').value.trim();
+    var schK = $('mkSchKod').value.trim();
+    var ag = parseFloat($('mkAgirlik').value);
+    var notlar = $('mkNotlar').value.trim() || null;
+    var dc = Number(_aktif.dis_cap_mm), et = Number(_aktif.et_mm);
+    var kal = _aktif.kalite_ham || _aktif.kalite || null;
+
+    // Basit validasyon
+    if (!grup || !dn || !schT || !schD || !schK || !ag || !dc || !et){
+      toast('Eksik alan var: malzeme grubu, DN, Sch tipi/deger/kod, agirlik zorunlu', 'er');
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      var r = await _supaProxy.rpc('ozel_parca_boru_kaydet', {
+        p_malzeme_grubu: grup,
+        p_dn: dn,
+        p_schedule_tipi: schT,
+        p_schedule_deger: schD,
+        p_schedule_kod: schK,
+        p_dis_cap_mm: dc,
+        p_et_mm: et,
+        p_agirlik_kg_m: ag,
+        p_kalite_match: kal,
+        p_notlar: notlar
+      });
+      if (r && r.error){
+        toast('Kayit hatasi: ' + r.error.message, 'er');
+        btn.disabled = false; btn.textContent = 'Kutuphaneye ekle';
+        return;
+      }
+      var sonuc = (r && Array.isArray(r.data) && r.data[0]) ? r.data[0] : null;
+      var ek = sonuc ? (sonuc.baglanan_satir + ' kayit baglandi') : '';
+      toast('Kutuphaneye eklendi. ' + ek, 'ok');
+      mkKapat();
+      setTimeout(function(){ window.location.reload(); }, 700);
+    } catch (e){
+      toast('Beklenmedik hata: ' + e.message, 'er');
+      btn.disabled = false; btn.textContent = 'Kutuphaneye ekle';
+    }
+  };
 })();
 </script>
 

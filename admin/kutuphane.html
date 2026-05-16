@@ -242,10 +242,10 @@ var GRUPLAR = [
   { kod:'fittings',   ad:'Fittings',       ikon:'🔩', renk:'leg',  aciklama:'Dirsek · tee · redüksiyon · cap · stub end',     tablolar:['fitting_olculer'] },
   { kod:'flanslar',   ad:'Flanşlar',       ikon:'⚙️', renk:'gr',   aciklama:'WN · SO · BL · LJ · SW · TH flanşlar',           tablolar:['flansh_olculer'] },
   { kod:'malzemeler', ad:'Malzemeler',     ikon:'🧪', renk:'warn', aciklama:'Spec + grade katalogları (A106, A312, B466…)',  tablolar:['malzeme_kataloglari'] },
-  { kod:'uyum',       ad:'Çapraz Uyum',    ikon:'🔗', renk:'admin',aciklama:'Geometri × malzeme — üretilebilirlik tablosu',   tablolar:['fitting_malzeme_uyum'] },
-  { kod:'ozel',       ad:'Özel Parçalar',  ikon:'🧩', renk:'re',   aciklama:'Custom · coupling sleeve · üretici özel',        tablolar:['ozel_parcalar'] },
+  { kod:'uyum',       ad:'Çapraz Uyum',    ikon:'🔗', renk:'admin',aciklama:'Geometri × malzeme — 3 çapraz tablo (boru/fitting/flanş)', tablolar:['boru_malzeme_uyum','fitting_malzeme_uyum','flansh_malzeme_uyum'] },
   { kod:'spec',       ad:'Spec Sistemi',   ikon:'📑', renk:'txm',  aciklama:'AVEVA-vari spec seti + spec kuralları',          tablolar:['tenant_spec_seti','spec_kural'] },
-  { kod:'oneriler',   ad:'Bekleyen Öneriler', ikon:'💡', renk:'admin', aciklama:'Kullanıcı kayıt önerileri — onay bekliyor', tablolar:[], ozelKart:true, link:'kutuphane-oneriler.html' }
+  { kod:'oneriler',   ad:'Bekleyen Öneriler', ikon:'💡', renk:'admin', aciklama:'Kullanıcı kayıt önerileri — onay bekliyor', tablolar:[], ozelKart:true, link:'kutuphane-oneriler.html' },
+  { kod:'cakismalar', ad:'Çakışmalar',      ikon:'⚖️', renk:'warn',  aciklama:'Sistem standardi vs özel kayıt çakışmaları — birleştirme', tablolar:[], ozelKart:true, link:'kutuphane-cakismalar.html' }
 ];
 
 var TABLO_BILGI = {
@@ -253,8 +253,9 @@ var TABLO_BILGI = {
   fitting_olculer:     { ad:'Fitting Ölçüleri',    not:'B16.9 · B16.11 · B16.28 · EN 10253 · DIN 86089' },
   flansh_olculer:      { ad:'Flanş Ölçüleri',      not:'B16.5 · B16.47 · EN 1092 · DIN 86087/88' },
   malzeme_kataloglari: { ad:'Malzeme Katalogları', not:'7 grup · karbon → paslanmaz → duplex → CuNi → alüminyum → alaşımlı → nikel' },
-  fitting_malzeme_uyum:{ ad:'Çapraz Uyum',         not:'Geometri × malzeme — hangi parça hangi malzemeden' },
-  ozel_parcalar:       { ad:'Özel Parçalar',       not:'Coupling sleeve · custom fitting' },
+  boru_malzeme_uyum:   { ad:'Boru × Malzeme',       not:'Hangi boru hangi malzemeden üretilir' },
+  fitting_malzeme_uyum:{ ad:'Fitting × Malzeme',    not:'Hangi fitting hangi malzemeden üretilir' },
+  flansh_malzeme_uyum: { ad:'Flanş × Malzeme',     not:'Hangi flanş hangi malzemeden üretilir' },
   tenant_spec_seti:    { ad:'Spec Setleri',        not:'Tersane bazlı alt küme (AVEVA-vari)' },
   spec_kural:          { ad:'Spec Kuralları',      not:'Spec başına izinli parça/malzeme' }
 };
@@ -328,21 +329,37 @@ async function hedefleriAl(){
     return hedeflerParse(await res.text());
   } catch (e){console.warn('[hedef] yüklenemedi:',e.message);return {};}
 }
-// Bekleyen kayıt önerisi sayısı (tanimsiz_kayitlar durum='bekliyor')
+// Bekleyen kayıt önerisi sayısı (92. oturum - iki ayri kavram birlestirildi):
+//   - inceleniyorSayi: tanimsiz_kayitlar.durum='bekliyor' (manuel oneri akisi)
+//   - havuzSayi: v_tanimsiz_havuz_listele() RPC (kutuphanede eslesmeyen ham olcu+kalite gruplari)
 async function oneriSayisiAl(){
+  var sonuc = {durum:'ok', inceleniyorSayi:0, havuzSayi:null};
+  // 1. tanimsiz_kayitlar count
   try {
     var r=await _supaProxy.from('tanimsiz_kayitlar').select('*',{count:'exact',head:true}).eq('durum','bekliyor');
     if (r && r.error) {
       var code=(r.error.code||'').toString(), status=r.status||0;
       if (status===404||code==='PGRST205'||code==='42P01') return {durum:'yok'};
-      console.warn('[oneri] hata:', r.error.message);
+      console.warn('[oneri] tanimsiz_kayitlar hata:', r.error.message);
       return {durum:'hata', mesaj:r.error.message};
     }
-    return {durum:'ok', sayi:(r&&typeof r.count==='number')?r.count:0};
+    sonuc.inceleniyorSayi = (r&&typeof r.count==='number')?r.count:0;
   } catch (e) {
-    console.warn('[oneri] exc:', e.message);
+    console.warn('[oneri] tanimsiz_kayitlar exc:', e.message);
     return {durum:'hata', mesaj:e.message};
   }
+  // 2. Havuz adaylari (RPC, fail olabilir, sessiz gec)
+  try {
+    var rp=await _supaProxy.rpc('v_tanimsiz_havuz_listele');
+    if (rp && !rp.error && Array.isArray(rp.data)) {
+      sonuc.havuzSayi = rp.data.length;
+    } else if (rp && rp.error) {
+      console.warn('[oneri] havuz RPC hata:', rp.error.message);
+    }
+  } catch (e) {
+    console.warn('[oneri] havuz exc:', e.message);
+  }
+  return sonuc;
 }
 
 // ── ÇİZİM ─────────────────────────────────────────────────
@@ -353,11 +370,18 @@ function ciz(sayilar, hedefler){
     // Özel kart: Bekleyen Öneriler (tıklanır, kutuphane-oneriler.html'e gider)
     if (g.ozelKart && g.kod === 'oneriler') {
       var oneriDurum = sayilar.__oneriler || {durum:'yok'};
-      var oneriSayi  = (oneriDurum.durum==='ok') ? (oneriDurum.sayi||0) : 0;
-      var rSinif = (oneriSayi>=5) ? 'kritik' : (oneriSayi>0 ? 'aktif' : 'bos');
-      var rText  = (oneriDurum.durum==='yok') ? 'tablo yok'
-                 : (oneriDurum.durum==='hata' ? 'hata'
-                 : (oneriSayi>0 ? oneriSayi+' bekliyor' : 'temiz'));
+      var inceleniyor = (oneriDurum.durum==='ok') ? (oneriDurum.inceleniyorSayi||0) : 0;
+      var havuz       = (oneriDurum.durum==='ok' && typeof oneriDurum.havuzSayi==='number') ? oneriDurum.havuzSayi : null;
+      var toplam      = inceleniyor + (havuz||0);
+      var rSinif = (toplam>=5) ? 'kritik' : (toplam>0 ? 'aktif' : 'bos');
+      var rText;
+      if (oneriDurum.durum==='yok')  rText = 'tablo yok';
+      else if (oneriDurum.durum==='hata') rText = 'hata';
+      else if (toplam===0) rText = 'temiz';
+      else if (havuz===null) rText = inceleniyor+' inceleniyor';
+      else if (inceleniyor===0 && havuz>0) rText = havuz+' havuz adayı';
+      else if (inceleniyor>0 && havuz===0) rText = inceleniyor+' inceleniyor';
+      else rText = havuz+' havuz • '+inceleniyor+' inceleme';
       var bag = (oneriDurum.durum==='ok') ? g.link : '#';
       return '<a class="grup-kart grup-kart-link" data-renk="'+esc(g.renk||'')+'" href="'+esc(bag)+'" style="text-decoration:none;color:inherit;">' +
         '<div class="grup-bas">' +
@@ -371,8 +395,8 @@ function ciz(sayilar, hedefler){
           '<div><span class="yer-ikon">'+g.ikon+'</span><div class="yer-not">süper admin onay akışı<br>tıklayın →</div></div>' +
         '</div>' +
         '<div class="grup-toplam-row">' +
-          '<span class="grup-mevcut">'+oneriSayi.toLocaleString('tr-TR')+'</span>' +
-          '<span class="grup-hedef">bekleyen kayıt</span>' +
+          '<span class="grup-mevcut">'+toplam.toLocaleString('tr-TR')+'</span>' +
+          '<span class="grup-hedef">'+(havuz===null ? 'bekleyen kayıt' : 'toplam (havuz+inceleme)')+'</span>' +
         '</div>' +
         '<div class="olgunluk" style="margin-top:14px;"><span class="olgunluk-ikon">💡</span>Kullanıcı önerilerini incele ve kütüphaneye al</div>' +
       '</a>';
@@ -404,8 +428,12 @@ function ciz(sayilar, hedefler){
       }
       if (h) grupHedef += h.avg;
 
-      var link = (s && s.durum==='yok') ? '#' : 'kutuphane-malzemeler.html?tablo='+encodeURIComponent(t);
-      altSatHTML += '<a class="tablo-sat'+sinif+'" href="'+link+'">' +
+      // 92: Generic UI olmayan tablolar tiklanmaz (93'e kadar)
+      var GENERIC_UI_YOK = ['malzeme_kataloglari','boru_malzeme_uyum','fitting_malzeme_uyum','flansh_malzeme_uyum'];
+      var uyumsuz = GENERIC_UI_YOK.indexOf(t) >= 0;
+      var link = (s && s.durum==='yok' || uyumsuz) ? '#' : 'kutuphane-malzemeler.html?tablo='+encodeURIComponent(t);
+      var extra = uyumsuz ? ' title="Detay görünümü 93. oturumda eklenecek" style="cursor:default;opacity:0.65"' : '';
+      altSatHTML += '<a class="tablo-sat'+sinif+'" href="'+link+'"'+extra+'>' +
         '<div class="tablo-sat-l"><div class="tablo-kod">'+esc(t)+'</div><div class="tablo-not">'+esc(bilgi.not)+'</div></div>' +
         '<div class="tablo-sat-r">'+sagHTML+'</div>' +
       '</a>';
@@ -532,7 +560,7 @@ function realtimeYenileDebounced(hedefler){
 function realtimeBaslat(supa, hedefler){
   var badge = T('canliBadge');
   // Subscribe edilebilir tablolar (sadece var olanlar)
-  var tablolar = ['boru_olculer','fitting_olculer','flansh_olculer','malzeme_kataloglari','fitting_malzeme_uyum','tanimsiz_kayitlar'];
+  var tablolar = ['boru_olculer','fitting_olculer','flansh_olculer','malzeme_kataloglari','boru_malzeme_uyum','fitting_malzeme_uyum','flansh_malzeme_uyum','tanimsiz_kayitlar'];
   var basariliSub = 0;
 
   tablolar.forEach(function(tablo){

@@ -335,6 +335,41 @@ boru_olculer satırı (özel üretim örneği):
 5. Süper Admin "Kütüphaneye ekle" derse → `sistem_preset = false` kayıt oluşur
 6. Çok yaygın hale gelirse (>5 tersane kullanıyorsa) → `sistem_preset = true`'ya promote edilebilir (manuel karar)
 
+### Mevcut Backend: `ozel_parca_boru_kaydet` RPC
+
+Yukarıdaki akışın 5. adımı ("Süper Admin Kütüphaneye ekle der") için **backend zaten yazılmış**: `ozel_parca_boru_kaydet` RPC fonksiyonu.
+
+**İmza:**
+
+```sql
+ozel_parca_boru_kaydet(
+  p_malzeme_grubu   text,
+  p_dn              integer,
+  p_schedule_tipi   text,
+  p_schedule_deger  text,
+  p_schedule_kod    text,
+  p_dis_cap_mm      numeric,
+  p_et_mm           numeric,
+  p_agirlik_kg_m    numeric,
+  p_kalite_match    text DEFAULT NULL,
+  p_notlar          text DEFAULT NULL
+) RETURNS TABLE(yeni_boru_id uuid, baglanan_satir integer)
+```
+
+**Ne yapıyor:**
+
+1. `boru_olculer`'a `sistem_preset = false` + `tenant_id = <auth.uid()'den>` ile yeni satır ekler
+2. `tanimsiz_kayitlar`'da aynı ölçü+kaliteye sahip bekleyen satırları bu yeni boruya **otomatik bağlar** (durum'unu günceller)
+3. Kaç satır bağlandığını döner (`baglanan_satir`)
+
+**Şu an kullanılmıyor:** Frontend yok. "Bekleyen Öneriler" sayfasında (`kutuphane-oneriler.html`) havuz adayları listeleniyor ama "Kütüphaneye ekle" butonu henüz bağlı değil. 92. oturum öneri aksiyon akışı UI'ı bu RPC'yi tetikleyecek.
+
+**Niye duruyor:** Backend hatırlıyor olması + ileride hiç dokunmadan UI ekleme olanağı + KARAR-91.B'ye uyumlu (`sistem_preset=false` bayrak yaklaşımı tam burada).
+
+**Yetki:** `SECURITY DEFINER`, sadece `super_admin` rolü çağırabilir (RPC içindeki kontrol).
+
+**Benzeri:** Fitting ve flanş için aynı desende `ozel_parca_fitting_kaydet` ve `ozel_parca_flansh_kaydet` yazılabilir (93+ işü).
+
 ### KARAR-90.D ile Uyum
 
 90'da Cihat'ın söylediği: *"Standartta varsa zaten tabloda. Eksikse migration ile yüklenir, manuel riskli."*
@@ -343,6 +378,32 @@ v3 yaklaşımı bu karara **uygundur**:
 - **Manuel ekleme yapılmaz** → form yok
 - **Sahadan dahil edilir** → spool parse → tanınmıyor → öneri → onay → eklenir
 - Süper Admin'in **onaylama** rolü var, **manuel girme** rolü yok
+
+### Çakışma Yönetimi (92. oturumda eklendi)
+
+Cihat'ın 92'deki saha gereçesi: *"Sahada acil teslimat var, standardı bulup migration yazmaya vakit yok. Geçici özel kayıt yapayım, akış yürüsün. Kütüphane olgunlaştıkça, aynı geometri sistem standardiyla çakışrsa birleştiririm."*
+
+Bu yaklaşım **operasyonel olarak gereklidir** — "önce standardi bul, sonra ekle" katı kuralı saha hızına uymaz. Ama yan etkisi: zamanla **çakışma** oluşabilir — aynı (`dis_cap_mm`, `et_mm`) kombinasyonu hem `sistem_preset=true` hem `sistem_preset=false` olarak var.
+
+**Tespit:** `v_kutuphane_cakismalari_listele()` RPC (Migration 068). Geometri eşleşmesi (ROUND'lu, 3 ondalık) kontrolü.
+
+**Birleştirme:** `boru_kaydi_birlestir(p_ozel_id, p_sistem_id)` RPC. 7 adım:
+
+1. Yetki: super_admin
+2. Her iki kaydın varlığı
+3. Yön doğrulaması: özel → sistem (parametre sırası)
+4. Geometri eşleşmesi sanity check
+5. `spool_malzemeleri.boru_olculer_id` referansları sistem kaydına aktarılır
+6. Özel kaydın tam JSONB snapshot'ı `arsiv.kayit_birlestirme_log`'a yazılır
+7. Özel kayıt silinir
+
+**Yol 3 — Arşive snapshot (KARAR-92.Ç):** Veri kaybı SIFIR. Silinen özel kaydın her alanı arşivde JSONB olarak korunur. Gerekirse manuel restore mümkün (test edilmedi ama teorik).
+
+**UI:** `admin/kutuphane-cakismalar.html` — süper admin'in görebildiği liste, her satırda "Birleştir" butonu. Birleştirme öncesi `confirm()` ile etkilenen spool sayısı gösterilir.
+
+**Generic tablo:** `arsiv.kayit_birlestirme_log` `parca_tipi` (text: 'boru'/'fitting'/'flansh') kolonuyla generic. 93+ fitting/flanş için aynı tablo kullanılır, ayrı audit log gerekmez.
+
+**Disiplin kuralı:** Yeni sistem standardi migration'ı yazılırken `v_kutuphane_cakismalari_listele()` ile çakışma kontrolü zorunludur. Detay: `MIGRATION-YOL-HARITASI.md`.
 
 ### Aynı Mantık Fitting ve Flanş İçin
 

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kütüphane Çakışmaları — AresPipe</title>
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="../ares-store.js"></script>
+<script src="../ares-lang.js"></script>
+<script src="../ares-normalize.js"></script>
+<script src="../ares-layout.js"></script>
+<style>
+:root {
+  --ac:#2D8EFF; --ac2:#1a75e8; --gr:#16a36e; --re:#e53e3e;
+  --warn:#d97706; --leg:#7c3aed; --admin:#f97316;
+}
+[data-theme=dark] {
+  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
+  --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
+}
+[data-theme=light-anthracite] {
+  --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0;
+  --tx:#141e2b; --txm:#3a4f63; --txd:#637080;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
+
+.topbar{display:flex;align-items:center;gap:16px;padding:0 24px;height:56px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-shrink:0;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;color:var(--admin);display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--txm);font-weight:400;font-size:13px;letter-spacing:0;}
+.topbar-sep{flex:1;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txm);}
+.topbar-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--admin);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;}
+.btn-logout{background:none;border:1px solid var(--bor);color:var(--txm);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-logout:hover{border-color:var(--re);color:var(--re);}
+
+.layout{display:flex;flex:1;min-height:0;}
+.sidebar{width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bor);padding:16px 8px;display:flex;flex-direction:column;gap:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--txm);transition:all .15s;border:1px solid transparent;text-decoration:none;}
+.nav-item:hover{background:var(--sur2);color:var(--tx);}
+.nav-item.active{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.2);color:var(--admin);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-sep{height:1px;background:var(--bor);margin:8px 4px;}
+
+.main{flex:1;overflow-y:auto;padding:24px 32px;min-width:0;}
+
+.brd{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txm);margin-bottom:14px;flex-wrap:wrap;}
+.brd a{color:var(--txm);text-decoration:none;padding:4px 8px;border-radius:6px;border:1px solid transparent;transition:all .15s;}
+.brd a:hover{color:var(--ac);border-color:var(--bor);background:var(--sur);}
+.brd-sep{color:var(--txd);font-size:10px;}
+.brd-aktif{color:var(--tx);font-weight:600;padding:4px 8px;}
+
+.sf-bas{display:flex;align-items:flex-end;gap:18px;margin-bottom:8px;flex-wrap:wrap;}
+.sf-baslik{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;letter-spacing:1px;color:var(--tx);line-height:1;}
+.sf-alt{font-size:13px;color:var(--txm);margin-bottom:24px;max-width:780px;line-height:1.5;}
+
+.ozet{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.ozet-k{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;}
+.ozet-l{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--txm);font-weight:600;}
+.ozet-v{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1.1;}
+.ozet-s{font-size:11px;color:var(--txd);}
+
+.tablo-saran{background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;}
+.tablo-bas{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bor);}
+.tablo-bas-baslik{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--tx);letter-spacing:.5px;}
+.tablo-bas-cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txm);background:var(--sur2);padding:3px 10px;border-radius:8px;border:1px solid var(--bor);}
+
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txm);border-bottom:1px solid var(--bor);background:var(--sur2);}
+tbody td{padding:12px 14px;font-size:13px;color:var(--tx);border-bottom:1px solid var(--bor);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--sur2);}
+.td-olcu{font-family:'JetBrains Mono',monospace;font-weight:600;}
+.td-kod{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.td-not{font-size:11px;color:var(--txm);margin-top:2px;}
+.td-sayi{font-family:'JetBrains Mono',monospace;text-align:right;font-weight:600;}
+.btn-birlestir{font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;background:rgba(45,142,255,.12);color:var(--ac);border:1px solid rgba(45,142,255,.3);border-radius:8px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-birlestir:hover{background:rgba(45,142,255,.2);}
+.btn-birlestir:disabled{opacity:.5;cursor:not-allowed;}
+
+.bos{padding:60px 20px;text-align:center;}
+.bos-ikon{font-size:48px;color:var(--gr);margin-bottom:14px;line-height:1;}
+.bos-msg{color:var(--txm);font-size:14px;}
+
+.yuk{display:flex;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--txm);}
+.loader{display:inline-block;width:18px;height:18px;border:2px solid var(--bor);border-top-color:var(--ac);border-radius:50%;animation:sp 1s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.uyari{background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.25);color:var(--re);padding:14px 18px;border-radius:10px;font-size:13px;margin-bottom:16px;}
+.uyari code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(229,62,62,.12);padding:1px 6px;border-radius:4px;}
+.bilgi{background:rgba(45,142,255,.08);border:1px solid rgba(45,142,255,.25);color:var(--ac);padding:12px 16px;border-radius:10px;font-size:12px;margin-top:16px;line-height:1.5;}
+
+.toast-konteyner{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:1000;}
+.toast{background:var(--sur);border:1px solid var(--bor);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:10px;animation:tsl .25s ease-out;box-shadow:0 6px 24px rgba(0,0,0,.25);}
+.toast.er{border-color:rgba(229,62,62,.4);}
+.toast.ok{border-color:rgba(22,163,110,.4);}
+@keyframes tsl{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+#appShell{display:none;flex-direction:column;flex:1;visibility:hidden;}
+</style>
+</head>
+<body>
+
+<div id="appShell">
+
+<div class="topbar">
+  <div class="topbar-logo">⚙ AresPipe<span>/ Süper Admin · Kütüphane</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-user">
+    <span class="topbar-badge">SUPER ADMIN</span>
+    <span id="topbarUser">—</span>
+    <button class="btn-logout" onclick="cikisYap()">Çıkış</button>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="sidebar">
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📊</span>Dashboard</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Pano</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">🏢</span>Firmalar</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">👥</span>Kullanıcılar</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">🚩</span>Feature Flags</a>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📱</span>Mobil Önizleme</a>
+  <div class="nav-sep"></div>
+  <a class="nav-item active" href="kutuphane.html"><span class="nav-icon">📚</span>Kütüphane</a>
+  <div class="nav-sep"></div>
+  <a class="nav-item" href="panel.html"><span class="nav-icon">📋</span>Sistem Logları</a>
+</div>
+
+<div class="main">
+  <div id="anaIcerik">
+    <div class="yuk"><span class="loader"></span> Yükleniyor…</div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="toast-konteyner" id="toastKonteyner"></div>
+
+<script>
+'use strict';
+
+// ── Supabase proxy ───────────────────────────────────────
+var _supa = null;
+function _getSupa() {
+  if (_supa) return _supa;
+  if (typeof ARES !== 'undefined' && ARES.supabase()) _supa = ARES.supabase();
+  return _supa;
+}
+var _supaProxy = new Proxy({}, {
+  get: function(t, prop){
+    var s = _getSupa();
+    if (!s) throw new Error('Supabase hazır değil');
+    var v = s[prop];
+    return typeof v === 'function' ? v.bind(s) : v;
+  }
+});
+
+// ── Helpers ──────────────────────────────────────────────
+function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function T(id){ return document.getElementById(id); }
+async function cikisYap(){ await _supaProxy.auth.signOut(); window.location.href='../giris.html'; }
+
+function toast(metin, tip){
+  var k = T('toastKonteyner'); if (!k) return;
+  var t = document.createElement('div');
+  t.className = 'toast' + (tip==='er' ? ' er' : (tip==='ok' ? ' ok' : ''));
+  t.textContent = metin;
+  k.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity .25s'; t.style.opacity='0'; setTimeout(function(){ t.remove(); }, 250); }, 3500);
+}
+
+function fmtOlcu(dc, et){
+  if (dc == null || et == null) return '—';
+  var f = function(x){ return (Math.round(Number(x) * 100) / 100).toFixed(2); };
+  return f(dc) + ' × ' + f(et);
+}
+
+function fmtTarih(s){
+  if (!s) return '—';
+  try {
+    var d = new Date(s);
+    return d.toLocaleDateString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  } catch(e){ return '—'; }
+}
+
+// ── Veri yukle ───────────────────────────────────────────
+async function listeYukle(){
+  try {
+    var r = await _supaProxy.rpc('v_kutuphane_cakismalari_listele');
+    if (r && r.error) {
+      var msg = (r.error.message || '').toLowerCase();
+      var code = (r.error.code || '').toString();
+      if (code === 'PGRST202' || /could not find.*function/i.test(msg)) {
+        return { durum:'rpc_yok' };
+      }
+      return { durum:'hata', mesaj: r.error.message };
+    }
+    return { durum:'ok', satirlar: r.data || [] };
+  } catch (e) {
+    return { durum:'hata', mesaj: e.message };
+  }
+}
+
+async function gecmisSayi(){
+  try {
+    var r = await _supaProxy.schema('arsiv').from('kayit_birlestirme_log')
+      .select('*', { count:'exact', head:true }).eq('parca_tipi','boru');
+    if (r && r.error) return null;
+    return (r && typeof r.count==='number') ? r.count : 0;
+  } catch (e) { return null; }
+}
+
+// ── Birlestir akisi ──────────────────────────────────────
+async function birlestirYap(ozelId, sistemId, etkilenenSpool, buton){
+  var soru = 'Bu özel kayıt sistem altına geçecek.\n\n' +
+             '• ' + etkilenenSpool + ' spool referansı sistem kaydına aktarılacak\n' +
+             '• Özel kayıt arşive snapshot olarak yazılıp silinecek\n' +
+             '• Geri alma manuel (arşivden restore mümkün)\n\n' +
+             'Devam edilsin mi?';
+  if (!window.confirm(soru)) return;
+
+  if (buton) { buton.disabled = true; buton.textContent = '...'; }
+  try {
+    var r = await _supaProxy.rpc('boru_kaydi_birlestir', { p_ozel_id: ozelId, p_sistem_id: sistemId });
+    if (r && r.error) {
+      toast('Birleştirme hatası: ' + r.error.message, 'er');
+      if (buton) { buton.disabled = false; buton.textContent = 'Birleştir'; }
+      return;
+    }
+    var sonuc = (r && Array.isArray(r.data) && r.data[0]) ? r.data[0] : null;
+    var ek = sonuc ? (sonuc.etkilenen_spool + ' spool aktarıldı') : '';
+    toast('Birleştirildi. ' + ek, 'ok');
+    setTimeout(function(){ tekrarYukle(); }, 600);
+  } catch (e) {
+    toast('Beklenmedik hata: ' + e.message, 'er');
+    if (buton) { buton.disabled = false; buton.textContent = 'Birleştir'; }
+  }
+}
+
+// Global -- onclick attribute'den cagrilacak
+window.birlestirTikla = function(ozelId, sistemId, etkilenenSpool, btnRef){
+  birlestirYap(ozelId, sistemId, etkilenenSpool, btnRef);
+};
+
+// ── Cizim ────────────────────────────────────────────────
+function ciz(sonuc, gecmis){
+  var brd = '<div class="brd">' +
+    '<a href="kutuphane.html">📚 Kütüphane</a>' +
+    '<span class="brd-sep">›</span>' +
+    '<span class="brd-aktif">Çakışmalar</span>' +
+  '</div>';
+
+  var sayfaBas = '<div class="sf-bas">' +
+    '<div class="sf-baslik">Kütüphane Çakışmaları</div>' +
+  '</div>' +
+  '<div class="sf-alt">Aynı geometriye sahip sistem standardı + tenant özel kaydı. ' +
+    '"Birleştir" özel kaydı sistem altına geçirir, spool referanslarını günceller ve özel kaydı arşive snapshot olarak yazıp siler.</div>';
+
+  if (sonuc.durum === 'rpc_yok') {
+    return brd + sayfaBas +
+      '<div class="uyari">⚠ <code>v_kutuphane_cakismalari_listele</code> RPC fonksiyonu bulunamadı. Migration 068 çalıştırılmamış olabilir.</div>';
+  }
+  if (sonuc.durum === 'hata') {
+    return brd + sayfaBas +
+      '<div class="uyari">⚠ Liste yüklenemedi: ' + esc(sonuc.mesaj || '') + '</div>';
+  }
+
+  var satirlar = sonuc.satirlar || [];
+  var toplamCakisma = satirlar.length;
+  var toplamSpool = satirlar.reduce(function(acc, r){ return acc + Number(r.etkilenen_spool || 0); }, 0);
+
+  var ozet = '<div class="ozet">' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Aktif Çakışma</div>' +
+      '<div class="ozet-v">' + toplamCakisma + '</div>' +
+      '<div class="ozet-s">geometri eşleşmesi</div>' +
+    '</div>' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Etkilenen Spool</div>' +
+      '<div class="ozet-v">' + toplamSpool + '</div>' +
+      '<div class="ozet-s">birleştirme bekliyor</div>' +
+    '</div>' +
+    '<div class="ozet-k">' +
+      '<div class="ozet-l">Geçmiş Birleştirme</div>' +
+      '<div class="ozet-v">' + (gecmis==null ? '—' : gecmis) + '</div>' +
+      '<div class="ozet-s">arşivde toplam</div>' +
+    '</div>' +
+  '</div>';
+
+  if (toplamCakisma === 0) {
+    return brd + sayfaBas + ozet +
+      '<div class="tablo-saran">' +
+        '<div class="bos">' +
+          '<div class="bos-ikon">✓</div>' +
+          '<div class="bos-msg">Çakışma yok — sistem ve özel kayıtlar temiz.</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  var tabloBas = '<div class="tablo-bas">' +
+    '<div class="tablo-bas-baslik">Aktif Çakışmalar</div>' +
+    '<div class="tablo-bas-cnt">' + toplamCakisma + ' kayıt</div>' +
+  '</div>';
+
+  var thead = '<thead><tr>' +
+    '<th>Ölçü (mm)</th>' +
+    '<th>Sistem Kaydı</th>' +
+    '<th>Özel Kayıt</th>' +
+    '<th style="text-align:right;">Spool</th>' +
+    '<th style="text-align:right;">İşlem</th>' +
+  '</tr></thead>';
+
+  var tbody = '<tbody>' + satirlar.map(function(r){
+    var olcu = fmtOlcu(r.dis_cap_mm, r.et_mm);
+    var sistemAd = (r.sistem_standart || '—') + (r.dn ? ' DN' + r.dn : '');
+    var sistemKod = r.sistem_sch_kod || '—';
+    var ozelKod = r.ozel_sch_kod || '—';
+    var ozelTar = fmtTarih(r.ozel_olusturma_at);
+    var spool = r.etkilenen_spool || 0;
+    var ozelId = r.ozel_id;
+    var sistemId = r.sistem_id;
+
+    return '<tr>' +
+      '<td class="td-olcu">' + esc(olcu) + '</td>' +
+      '<td><div class="td-kod">' + esc(sistemKod) + '</div><div class="td-not">' + esc(sistemAd) + '</div></td>' +
+      '<td><div class="td-kod">' + esc(ozelKod) + '</div><div class="td-not">' + esc(ozelTar) + (r.ozel_notlar ? ' · ' + esc((r.ozel_notlar||'').substring(0,40)) : '') + '</div></td>' +
+      '<td class="td-sayi">' + esc(spool) + '</td>' +
+      '<td style="text-align:right;">' +
+        '<button class="btn-birlestir" onclick="birlestirTikla(\'' + esc(ozelId) + '\', \'' + esc(sistemId) + '\', ' + spool + ', this)">⇢ Birleştir</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') + '</tbody>';
+
+  var bilgi = '<div class="bilgi">' +
+    '"Birleştir" tıklayınca onay alınır. Onaylanırsa: özel kayıttaki spool referansları sistem kaydına aktarılır, özel kaydın tam JSONB snapshot\'ı <code>arsiv.kayit_birlestirme_log</code>\'a yazılır, sonra özel kayıt silinir. Geri alma manuel.' +
+  '</div>';
+
+  return brd + sayfaBas + ozet +
+    '<div class="tablo-saran">' + tabloBas +
+    '<table>' + thead + tbody + '</table></div>' +
+    bilgi;
+}
+
+// ── Yeniden yukleme ──────────────────────────────────────
+async function tekrarYukle(){
+  T('anaIcerik').innerHTML = '<div class="yuk"><span class="loader"></span> Yükleniyor…</div>';
+  try {
+    var sonuc = await listeYukle();
+    var gecmis = await gecmisSayi();
+    T('anaIcerik').innerHTML = ciz(sonuc, gecmis);
+  } catch (e) {
+    console.error('[cakismalar] yukleme hata:', e);
+    T('anaIcerik').innerHTML = '<div class="uyari">⚠ Sayfa yüklenirken hata: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ── ANA AKIS ─────────────────────────────────────────────
+(async function init(){
+  var b = 0; while (b < 80) { if (_getSupa()) break; await new Promise(function(r){ setTimeout(r, 100); }); b++; }
+  var supa = _getSupa();
+  if (!supa) { window.location.href = '../giris.html'; return; }
+
+  if (window.location.hash) {
+    var p = new URLSearchParams(window.location.hash.substring(1));
+    var at = p.get('access_token'), rt = p.get('refresh_token');
+    if (at) { await supa.auth.setSession({ access_token: at, refresh_token: rt }); window.location.hash = ''; }
+  }
+
+  var sr = await supa.auth.getSession();
+  if (!sr || !sr.data || !sr.data.session) {
+    window.location.href = '../giris.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
+  }
+
+  var kr = await supa.from('kullanicilar').select('rol,ad_soyad').eq('id', sr.data.session.user.id).single();
+  if (!kr.data || kr.data.rol !== 'super_admin') {
+    window.location.href = '../index.html';
+    return;
+  }
+
+  var ub = T('topbarUser'); if (ub) ub.textContent = kr.data.ad_soyad || '—';
+  var app = T('appShell'); app.style.display = 'flex'; app.style.visibility = 'visible';
+  document.documentElement.style.visibility = 'visible';
+
+  await tekrarYukle();
+})();
+</script>
+
+</body>
+</html>
