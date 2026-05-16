@@ -191,8 +191,9 @@ var MG_AD = {
   duplex:'Duplex', alasimli:'Alaşımlı', aluminyum:'Alüminyum', nikel:'Nikel alaşım'
 };
 
-// Tablo başına kolon konfigürasyonu — sadece boru için tam tanımlı
-// Fitting/flanş için ileride genişletilecek (90+ oturumlar).
+// Tablo başına kolon konfigürasyonu.
+// 93. oturum: fitting + flansh A1 (tüm kolonlar) ile eklendi. SVG ileri oturumda
+// parça_tipi sözlüğüyle gelecek.
 var TABLO_KONFIG = {
   boru_olculer: {
     siralama: [{ kol:'dn', yon:'asc' }, { kol:'schedule_kod', yon:'asc' }],
@@ -218,8 +219,119 @@ var TABLO_KONFIG = {
     ],
     svg_tipi: 'boru_kesit'
   },
-  fitting_olculer: { kolonlar:[], not:'Fitting kolon konfigürasyonu henüz tanımlanmamış (90+ oturumlarda eklenecek)' },
-  flansh_olculer: { kolonlar:[], not:'Flanş kolon konfigürasyonu henüz tanımlanmamış (90+ oturumlarda eklenecek)' }
+  fitting_olculer: {
+    siralama: [
+      { kol:'parca_tipi',    yon:'asc' },
+      { kol:'cap_buyuk_dn',  yon:'asc' },
+      { kol:'cap_kucuk_dn',  yon:'asc' },
+      { kol:'schedule_kod',  yon:'asc' }
+    ],
+    kolonlar: [
+      { kol:'parca_tipi',           ad:'Tip',          tip:'kod' },
+      { kol:'class_no',             ad:'Class',        tip:'sayi', ondalik:0 },
+      { kol:'cap_buyuk_nps',        ad:'NPS (B)',      tip:'nps_pill' },
+      { kol:'cap_buyuk_dn',         ad:'DN (B)',       tip:'sayi', birim:'mm', ondalik:0 },
+      { kol:'cap_buyuk_mm',         ad:'OD (B)',       tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'cap_kucuk_nps',        ad:'NPS (K)',      tip:'nps_pill' },
+      { kol:'cap_kucuk_dn',         ad:'DN (K)',       tip:'sayi', birim:'mm', ondalik:0 },
+      { kol:'cap_kucuk_mm',         ad:'OD (K)',       tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'schedule_kod',         ad:'Sch',          tip:'kod' },
+      { kol:'et_mm',                ad:'Et',           tip:'sayi', birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_a_mm',         ad:'A',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'ucu_uca_b_mm',         ad:'B',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'ucu_uca_c_mm',         ad:'C',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'ucu_uca_f_mm',         ad:'F',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'ucu_uca_m_mm',         ad:'M',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'ucu_uca_h_mm',         ad:'H',            tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'yaricap_mm',           ad:'Yarıçap',      tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'stub_lap_kalinlik_mm', ad:'Lap kal.',     tip:'sayi', birim:'mm', ondalik:2 },
+      { kol:'stub_lap_od_mm',       ad:'Lap OD',       tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'soket_derinlik_mm',    ad:'Soket der.',   tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'soket_ic_cap_mm',      ad:'Soket iç',     tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'agirlik_kg',           ad:'kg',           tip:'sayi', ondalik:2 }
+    ],
+    panel_lejant: [
+      { kol:'parca_tipi',           harf:'Tip',  ad:'Parça tipi' },
+      { kol:'class_no',             harf:'Cls',  ad:'Class',                         ondalik:0 },
+      { kol:'cap_buyuk_nps',        harf:'NPSb', ad:'NPS — büyük uç' },
+      { kol:'cap_buyuk_dn',         harf:'DNb',  ad:'DN — büyük uç',       birim:'mm', ondalik:0 },
+      { kol:'cap_buyuk_mm',         harf:'ODb',  ad:'Dış çap — büyük uç',  birim:'mm', ondalik:2 },
+      { kol:'cap_kucuk_nps',        harf:'NPSk', ad:'NPS — küçük uç (redüksiyon)' },
+      { kol:'cap_kucuk_dn',         harf:'DNk',  ad:'DN — küçük uç',       birim:'mm', ondalik:0 },
+      { kol:'cap_kucuk_mm',         harf:'ODk',  ad:'Dış çap — küçük uç',  birim:'mm', ondalik:2 },
+      { kol:'schedule_kod',         harf:'Sch',  ad:'Schedule' },
+      { kol:'et_mm',                harf:'et',   ad:'Et kalınlığı',        birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_a_mm',         harf:'A',    ad:'Uç-uca A',            birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_b_mm',         harf:'B',    ad:'Uç-uca B',            birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_c_mm',         harf:'C',    ad:'Uç-uca C',            birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_f_mm',         harf:'F',    ad:'Uç-uca F',            birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_m_mm',         harf:'M',    ad:'Uç-uca M',            birim:'mm', ondalik:2 },
+      { kol:'ucu_uca_h_mm',         harf:'H',    ad:'Uç-uca H',            birim:'mm', ondalik:2 },
+      { kol:'yaricap_mm',           harf:'R',    ad:'Yarıçap (dirsek)',    birim:'mm', ondalik:2 },
+      { kol:'stub_lap_kalinlik_mm', harf:'LapT', ad:'Stub-end lap kalınlığı', birim:'mm', ondalik:2 },
+      { kol:'stub_lap_od_mm',       harf:'LapD', ad:'Stub-end lap OD',     birim:'mm', ondalik:2 },
+      { kol:'soket_derinlik_mm',    harf:'SokD', ad:'Soket derinlik',      birim:'mm', ondalik:2 },
+      { kol:'soket_ic_cap_mm',      harf:'Soki', ad:'Soket iç çap',        birim:'mm', ondalik:2 },
+      { kol:'agirlik_kg',           harf:'kg',   ad:'Birim ağırlık',                   ondalik:3 }
+    ],
+    svg_tipi: null
+  },
+  flansh_olculer: {
+    siralama: [
+      { kol:'flansh_tipi',   yon:'asc' },
+      { kol:'basinc_sinifi', yon:'asc' },
+      { kol:'cap_dn',        yon:'asc' }
+    ],
+    kolonlar: [
+      { kol:'flansh_tipi',             ad:'Tip',         tip:'kod' },
+      { kol:'basinc_sinifi',           ad:'Class',       tip:'kod' },
+      { kol:'yuzey_tipi',              ad:'Yüzey',       tip:'kod' },
+      { kol:'cap_nps',                 ad:'NPS',         tip:'nps_pill' },
+      { kol:'cap_dn',                  ad:'DN',          tip:'sayi', birim:'mm', ondalik:0 },
+      { kol:'cap_mm',                  ad:'Hat OD',      tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'flansh_od_mm',            ad:'Flansh OD',   tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'flansh_kalinlik_mm',      ad:'Kalınlık',    tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'hub_od_mm',               ad:'Hub OD',      tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'hub_uzunluk_mm',          ad:'Hub L',       tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'bore_min_mm',             ad:'Bore min',    tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'bore_std_mm',             ad:'Bore std',    tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'socket_depth_mm',         ad:'Soket der.',  tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'raised_face_od_mm',       ad:'RF OD',       tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'raised_face_kalinlik_mm', ad:'RF kal.',     tip:'sayi', birim:'mm', ondalik:2 },
+      { kol:'bolt_circle_mm',          ad:'BC',          tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'bolt_count',              ad:'Cıvata #',    tip:'sayi', ondalik:0 },
+      { kol:'bolt_holes_inch',         ad:'Delik (inç)', tip:'kod' },
+      { kol:'bolt_cap_inch',           ad:'Cıvata (inç)',tip:'kod' },
+      { kol:'bolt_uzunluk_stud_mm',    ad:'L stud',      tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'bolt_uzunluk_machine_mm', ad:'L makine',    tip:'sayi', birim:'mm', ondalik:1 },
+      { kol:'agirlik_kg',              ad:'kg',          tip:'sayi', ondalik:2 }
+    ],
+    panel_lejant: [
+      { kol:'flansh_tipi',             harf:'Tip',  ad:'Flanş tipi (WN, SO, BL, LJ, SW, TH)' },
+      { kol:'basinc_sinifi',           harf:'Cls',  ad:'Basınç sınıfı' },
+      { kol:'yuzey_tipi',              harf:'Yzy',  ad:'Yüzey tipi (RF, FF, RTJ)' },
+      { kol:'cap_nps',                 harf:'NPS',  ad:'Nominal Pipe Size' },
+      { kol:'cap_dn',                  harf:'DN',   ad:'Diameter Nominal',         birim:'mm', ondalik:0 },
+      { kol:'cap_mm',                  harf:'OD',   ad:'Hat OD (boru tarafı)',      birim:'mm', ondalik:2 },
+      { kol:'flansh_od_mm',            harf:'FOD',  ad:'Flansh dış çap',            birim:'mm', ondalik:2 },
+      { kol:'flansh_kalinlik_mm',      harf:'tF',   ad:'Flansh kalınlık',           birim:'mm', ondalik:2 },
+      { kol:'hub_od_mm',               harf:'HOD',  ad:'Hub dış çap',               birim:'mm', ondalik:2 },
+      { kol:'hub_uzunluk_mm',          harf:'HL',   ad:'Hub uzunluğu',              birim:'mm', ondalik:2 },
+      { kol:'bore_min_mm',             harf:'Bmin', ad:'Bore min',                  birim:'mm', ondalik:2 },
+      { kol:'bore_std_mm',             harf:'Bstd', ad:'Bore standart',             birim:'mm', ondalik:2 },
+      { kol:'socket_depth_mm',         harf:'SokD', ad:'Soket derinlik (SW)',       birim:'mm', ondalik:2 },
+      { kol:'raised_face_od_mm',       harf:'RFD',  ad:'Raised face dış çap',       birim:'mm', ondalik:2 },
+      { kol:'raised_face_kalinlik_mm', harf:'RFt',  ad:'Raised face kalınlık',      birim:'mm', ondalik:2 },
+      { kol:'bolt_circle_mm',          harf:'BC',   ad:'Bolt circle',               birim:'mm', ondalik:2 },
+      { kol:'bolt_count',              harf:'n',    ad:'Cıvata sayısı',                         ondalik:0 },
+      { kol:'bolt_holes_inch',         harf:'Dh',   ad:'Delik çapı (inç)' },
+      { kol:'bolt_cap_inch',           harf:'Db',   ad:'Cıvata çapı (inç)' },
+      { kol:'bolt_uzunluk_stud_mm',    harf:'Ls',   ad:'Cıvata uzunluk — stud',     birim:'mm', ondalik:2 },
+      { kol:'bolt_uzunluk_machine_mm', harf:'Lm',   ad:'Cıvata uzunluk — machine',  birim:'mm', ondalik:2 },
+      { kol:'agirlik_kg',              harf:'kg',   ad:'Birim ağırlık',                         ondalik:3 }
+    ],
+    svg_tipi: null
+  }
 };
 
 // ── Supabase proxy ───────────────────────────────────────
