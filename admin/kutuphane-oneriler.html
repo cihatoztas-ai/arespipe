@@ -457,15 +457,15 @@ function ciz(sonuc){
     <div class="mk-row mk-row-3">
       <div>
         <label class="mk-lbl">Sch. tipi</label>
-        <input type="text" class="mk-input" id="mkSchTipi" value="Sch" />
+        <input type="text" class="mk-input" id="mkSchTipi" value="" placeholder="Sch (opsiyonel)" />
       </div>
       <div>
         <label class="mk-lbl">Sch. deger</label>
-        <input type="text" class="mk-input" id="mkSchDeger" value="40" />
+        <input type="text" class="mk-input" id="mkSchDeger" value="" placeholder="40 (opsiyonel)" />
       </div>
       <div>
         <label class="mk-lbl">Sch. kod</label>
-        <input type="text" class="mk-input" id="mkSchKod" value="" placeholder="OZEL_SCH40" />
+        <input type="text" class="mk-input" id="mkSchKod" value="" placeholder="otomatik uretilir (opsiyonel)" />
       </div>
     </div>
 
@@ -555,8 +555,8 @@ function ciz(sonuc){
     mkAgirlikYenile();
 
     // Manuel alanlari sifirla
-    $('mkSchTipi').value = 'Sch';
-    $('mkSchDeger').value = '40';
+    $('mkSchTipi').value = '';
+    $('mkSchDeger').value = '';
     $('mkSchKod').value = '';
     $('mkNotlar').value = '';
     $('mkOnaylaBtn').disabled = false;
@@ -596,8 +596,8 @@ function ciz(sonuc){
     var kal = _aktif.kalite_ham || _aktif.kalite || null;
 
     // Basit validasyon
-    if (!grup || !dn || !schT || !schD || !schK || !ag || !dc || !et){
-      toast('Eksik alan var: malzeme grubu, DN, Sch tipi/deger/kod, agirlik zorunlu', 'er');
+    if (!grup || !dn || !ag || !dc || !et){
+      toast('Eksik alan var: malzeme grubu, DN, agirlik zorunlu (Sch opsiyonel)', 'er');
       return;
     }
 
@@ -606,9 +606,9 @@ function ciz(sonuc){
       var r = await _supaProxy.rpc('ozel_parca_boru_kaydet', {
         p_malzeme_grubu: grup,
         p_dn: dn,
-        p_schedule_tipi: schT,
-        p_schedule_deger: schD,
-        p_schedule_kod: schK,
+        p_schedule_tipi: schT || null,
+        p_schedule_deger: schD || null,
+        p_schedule_kod: schK || null,
         p_dis_cap_mm: dc,
         p_et_mm: et,
         p_agirlik_kg_m: ag,
