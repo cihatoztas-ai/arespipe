@@ -44,13 +44,13 @@ INSERT INTO boru_standart_sozluk (
   'NPS',
   'cunife',
   '["CuNi10Fe1Mn", "CuNi10Fe1.6Mn", "C70600", "C71500", "WL 2.1972", "CW352H", "CW354H", "UNS C7060X", "UNS C71520"]'::jsonb,
-  '["DIN 86019", "86019", "DIN EN 12449", "EN 12449", "CuNi10Fe", "CuNi 90/10", "CuNi 70/30", "OSNA-10", "OSNA-30"]'::jsonb,
+  ARRAY['DIN 86019', '86019', 'DIN EN 12449', 'EN 12449', 'CuNi10Fe', 'CuNi 90/10', 'CuNi 70/30', 'OSNA-10', 'OSNA-30']::text[],
   2006,
   '2006-02-01',
   'din-86019',
   'Alman gemi insa standardi. CuNi10Fe1,6Mn (90/10) ve CuNi 70/30 malzemeli dikissiz ve dikisli boru olculeri. Deniz suyu sistemlerinde (yangin, sogutma, balast) yaygin. ASTM B466/B467, EEMUA 234/1-2, MIL-T-16420 K, DEF STAN 02-779 (NES 779) ile esdeger.',
   'German shipbuilding standard. Seamless and seamwelded tube dimensions for CuNi 90/10 and CuNi 70/30 alloys. Widely used in seawater piping systems (firewater, cooling, ballast). Equivalent to ASTM B466/B467, EEMUA 234/1-2, MIL-T-16420 K, DEF STAN 02-779 (NES 779).',
-  '["tersane", "denizcilik", "offshore"]'::jsonb,
+  ARRAY['tersane', 'denizcilik', 'offshore']::text[],
   true,
   true
 );
