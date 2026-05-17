@@ -1818,3 +1818,36 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **İlişkili:** MK-70.1 (is_durumu birincil kaynak), MK-73.3 (is_durumu DB-truth), SED-73-03 (74'te tamamen kapatıldı).
 
 ---
+
+## KARAR-95.1 — `olusturma_at` Rename Refactor'u İptal (17 May 2026, 95. Oturum)
+
+**Bağlam:** 93. oturumda bazı tablolardaki `olusturma` (timestamp) kolonu `olusturma_at` olarak rename edildi. 18 tablo (kütüphane + AI + parser tarafı) yapıldı, 50 tablo (runtime: devre/spool/kk/sevkiyat/hakedis/kullanıcı/...) yapılmadı. 94'te ertelendi, 95'te durum tespit edildi.
+
+**Tespit (95. oturumda):**
+- 50 tablo eski adla (`olusturma`), 18 tablo yeni adla (`olusturma_at`) — yarım kalmış refactor
+- Orijinal kararın gerekçesi `KARARLAR.md`'de **dokümante edilmemiş** (momentum/ezber işi)
+- Tamamlama maliyeti: 2-3 oturum (50 tablo + ~150 kod referansı + 3 view DROP/CREATE + RLS policy taraması)
+- Riskler: silent JS bug'ları (kolon yok → null döner, hata vermez), RLS policy referansı (multi-tenant sızıntı), view kırılması, deploy timing 400 hataları
+- Kazanç: sadece "tutarlılık" — son 50 oturumda bu yüzden yaşanmış bir bug raporu yok
+
+**Karar:** Refactor iptal edildi. Mevcut durum kabul edildi:
+- **Eski tablolar** (50 adet) `olusturma` ile **kalır.** Dokunulmuyor.
+- **Yeni tablolar** (95+ açılacaklar) `olusturma_at` canonical adıyla yaratılır.
+- İki ad da geçerli alias kabul edilir. Kod tarafında her tablonun kendi adı kullanılır.
+
+**İstisna:** 93'te oluşturulan `boru_malzeme_uyum` ve `flansh_malzeme_uyum` tabloları yeni olmalarına rağmen `olusturma` ile yaratılmış. 0 satır oldukları + henüz kod referansı olmadığı için bir sonraki kütüphane oturumunda (kod yazımı başlamadan önce) tek migration ile `olusturma_at`'e çekilebilir — opsiyonel, risk sıfır. Acil değil.
+
+**Sebep gerekçeleri:**
+1. **Gerçek bir bug raporu yok.** 50 oturumda bu tutarsızlık yüzünden yaşanmış bir sorun belgelenmedi. Hayali kazanç peşinde 2-3 oturum harcamak verimsiz.
+2. **Risk/kazanç oranı kötü.** Refactor riskleri (RLS sızıntı, silent fail, view kırılma) reel; kazanç (geliştirici ergonomi) hayali.
+3. **YAGNI prensibi** — gerçek sıkıntı çıkana kadar dokunma.
+4. **Bilinçli kapatma > sürekli erteleme** — açık borç listesinde 3 oturumdur bekleyen iş, kapatılarak liste temizlenir.
+
+**Geri dönüş tetikleri:** Aşağıdaki sinyaller görülürse karar tekrar açılabilir:
+- Aynı yer için 3+ kez `olusturma` vs `olusturma_at` karıştırılıp silent null bug yaşandı
+- Yeni geliştirici onboarding'inde "hangi ad?" tekrar tekrar soruluyor
+- ORM/codegen kullanmaya geçtik (Drizzle, Prisma gibi) — şemayı standartlaştırması fayda sağlar
+
+**Açık borçtan çıkarılır:** `.github/son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` dosyalarındaki "olusturma_at rename" maddesi 95 kapanışında silinir.
+
+---
