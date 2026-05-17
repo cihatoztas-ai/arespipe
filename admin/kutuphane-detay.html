@@ -627,7 +627,12 @@ function satirTiklamasiBagla(){
 
   tbody.addEventListener('click', function(e){
     var tr = e.target.closest('tr');
-    if (!tr || !tr.hasAttribute('data-' + (konfig.panel_lejant[0].kol).replace(/_/g,'-'))) return;
+    if (!tr) return;
+    // En az bir panel_lejant kolonu data-attr olarak varsa satırdır
+    var dataAttrEsleti = konfig.panel_lejant.some(function(L){
+      return tr.hasAttribute('data-' + L.kol.replace(/_/g,'-'));
+    });
+    if (!dataAttrEsleti) return;
 
     tbody.querySelectorAll('tr.secili').forEach(function(r){ r.classList.remove('secili'); });
     tr.classList.add('secili');
@@ -668,7 +673,15 @@ function satirTiklamasiBagla(){
   });
 
   // İlk satırı otomatik seç
-  var ilk = tbody.querySelector('tr[data-' + (konfig.panel_lejant[0].kol).replace(/_/g,'-') + ']');
+  // Ilk gercek satiri bul (herhangi bir panel_lejant kolonu data-attr olarak varsa)
+  var ilk = null;
+  var tumSatirlar = tbody.querySelectorAll('tr');
+  for (var i = 0; i < tumSatirlar.length; i++) {
+    var herhangiBiriVar = konfig.panel_lejant.some(function(L){
+      return tumSatirlar[i].hasAttribute('data-' + L.kol.replace(/_/g,'-'));
+    });
+    if (herhangiBiriVar) { ilk = tumSatirlar[i]; break; }
+  }
   if (ilk) ilk.dispatchEvent(new Event('click', { bubbles:true }));
 }
 
