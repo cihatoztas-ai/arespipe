@@ -90,6 +90,12 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .ek-ad{font-size:9px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
 
 /* Aksiyon barı */
+.filter-bar{display:flex;align-items:center;gap:12px;background:var(--sur);border:1px solid var(--bor);border-radius:11px;padding:10px 16px;margin-bottom:10px;flex-wrap:wrap;}
+.flt-label{font-size:11px;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;font-weight:700;font-family:'Barlow Condensed',sans-serif;}
+.flt-select{padding:5px 28px 5px 10px;border-radius:6px;border:1px solid var(--bor);background:var(--sur2);color:var(--tx);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;appearance:none;min-width:120px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path fill='%2394a3b8' d='M2 4l3 3 3-3z'/></svg>");background-repeat:no-repeat;background-position:right 8px center;}
+.flt-chip{padding:4px 9px;border-radius:6px;background:rgba(45,142,255,.12);border:1px solid rgba(45,142,255,.3);color:var(--ac);font-size:11px;font-family:'JetBrains Mono',monospace;}
+.flt-sifirla{margin-left:auto;font-size:11px;color:var(--txd);cursor:pointer;border:none;background:none;font-family:'Barlow',sans-serif;}
+.flt-sifirla:hover{color:var(--ac);}
 .aksiyon-bar{display:flex;align-items:center;justify-content:space-between;background:var(--sur);border:1px solid var(--bor);border-radius:11px;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
 .aksiyon-sol{font-size:12px;color:var(--txm);font-family:'JetBrains Mono',monospace;}
 .aksiyon-sol strong{color:var(--tx);font-weight:700;}
@@ -215,7 +221,8 @@ var TABLO_KONFIG = {
       { kol:'agirlik_kg_m', harf:'kg/m', ad:'Birim ağırlık',     ondalik:2 },
       { kol:'yuzey_alan_dis_m2_m', harf:'m²/m', ad:'Yüzey alanı',       ondalik:3 }
     ],
-    svg_tipi: 'boru_kesit'
+    svg_tipi: 'boru_kesit',
+    filtre: { kol: 'schedule_kod', label: 'Schedule' }
   },
   fitting_olculer: {
     siralama: [
@@ -272,7 +279,8 @@ var TABLO_KONFIG = {
       { kol:'soket_ic_cap_mm',      harf:'Soki', ad:'Soket iç çap',        birim:'mm', ondalik:2 },
       { kol:'agirlik_kg',           harf:'kg',   ad:'Birim ağırlık',                   ondalik:3 }
     ],
-    svg_tipi: null
+    svg_tipi: null,
+    filtre: { kol: 'parca_tipi', label: 'Parça Tipi' }
   },
   flansh_olculer: {
     siralama: [
@@ -328,7 +336,8 @@ var TABLO_KONFIG = {
       { kol:'bolt_uzunluk_machine_mm', harf:'Lm',   ad:'Cıvata uzunluk — machine',  birim:'mm', ondalik:2 },
       { kol:'agirlik_kg',              harf:'kg',   ad:'Birim ağırlık',                         ondalik:3 }
     ],
-    svg_tipi: null
+    svg_tipi: null,
+    filtre: { kol: 'basinc_sinifi', label: 'Class' }
   }
 };
 
@@ -532,13 +541,39 @@ function ciz(veri, digerStandartlar){
     '</div>' +
   '</div>';
 
+  // Filtre çubuğu (TABLO_KONFIG'de filtre tanımlıysa)
+  var filterBar = '';
+  if (konfig.filtre && veri.satirlar && veri.satirlar.length > 0) {
+    var kol = konfig.filtre.kol;
+    var lbl = konfig.filtre.label;
+    var benzersizDegerler = [];
+    var gorulen = {};
+    veri.satirlar.forEach(function(satir){
+      var v = satir[kol];
+      if (v != null && v !== '' && !gorulen[v]) {
+        gorulen[v] = true;
+        benzersizDegerler.push(v);
+      }
+    });
+    benzersizDegerler.sort();
+    if (benzersizDegerler.length > 1) {
+      var optHtml = '<option value="">Tümü</option>' + benzersizDegerler.map(function(v){
+        return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+      }).join('');
+      filterBar = '<div class="filter-bar">' +
+        '<span class="flt-label">Filtre</span>' +
+        '<label style="font-size:11.5px;color:var(--txm);">' + esc(lbl) + '</label>' +
+        '<select class="flt-select" id="fltSelect" data-kol="' + esc(kol) + '">' + optHtml + '</select>' +
+        '<span class="flt-chip" id="fltChip" style="display:none;"></span>' +
+        '<button class="flt-sifirla" id="fltSifirla" style="display:none;">↺ Sıfırla</button>' +
+      '</div>';
+    }
+  }
+
   // Aksiyon barı (placeholder butonlar)
   var aksiyonBar = '<div class="aksiyon-bar">' +
     '<div class="aksiyon-sol"><strong>' + satirSayisi + '</strong> kayıt</div>' +
     '<div class="aksiyon-sag">' +
-      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">⊕ Yeni ölçü</button>' +
-      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📷 Foto yükle</button>' +
-      '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📥 Excel içe aktar</button>' +
       '<button class="btn btn-yetkisiz" disabled title="90+ oturumda eklenecek">📤 Excel dışa aktar</button>' +
     '</div>' +
   '</div>';
@@ -612,7 +647,7 @@ function ciz(veri, digerStandartlar){
     '</div>';
   }
 
-  return brd + sayfaBas + ustKart + aksiyonBar + tabloHtml + altNav;
+  return brd + sayfaBas + ustKart + filterBar + aksiyonBar + tabloHtml + altNav;
 }
 
 // ── Satır tıklama → SVG + panel güncelle ──────────────────
@@ -683,6 +718,56 @@ function satirTiklamasiBagla(){
   if (ilk) ilk.dispatchEvent(new Event('click', { bubbles:true }));
 }
 
+// ── Filtre handler ────────────────────────────────────────
+function filtreHandlerBagla(){
+  var sel = document.getElementById('fltSelect');
+  if (!sel) return;
+
+  var kol = sel.getAttribute('data-kol');
+  var dataAttr = 'data-' + kol.replace(/_/g, '-');
+  var chip = document.getElementById('fltChip');
+  var sifirla = document.getElementById('fltSifirla');
+  var aksiyonSol = document.querySelector('.aksiyon-sol strong');
+
+  var tbody = document.getElementById('tblBody');
+  if (!tbody) return;
+  var tumSatirlar = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+  var toplam = tumSatirlar.filter(function(tr){ return tr.hasAttribute(dataAttr) || tr.hasAttribute('data-' + (TABLO_KONFIG[TABLO].panel_lejant[0].kol).replace(/_/g,'-')); }).length;
+
+  function uygula(){
+    var deger = sel.value;
+    var gorunenSayi = 0;
+    tumSatirlar.forEach(function(tr){
+      // Boş veya basligi olmayan satirlari (colspan empty state) atla
+      if (tr.cells.length === 1 && tr.cells[0].hasAttribute('colspan')) return;
+      if (!deger) {
+        tr.style.display = '';
+        gorunenSayi++;
+      } else {
+        var v = tr.getAttribute(dataAttr);
+        if (v === deger) { tr.style.display = ''; gorunenSayi++; }
+        else { tr.style.display = 'none'; }
+      }
+    });
+    if (deger) {
+      chip.textContent = gorunenSayi + ' / ' + toplam + ' gösteriliyor';
+      chip.style.display = '';
+      sifirla.style.display = '';
+      if (aksiyonSol) aksiyonSol.textContent = gorunenSayi;
+    } else {
+      chip.style.display = 'none';
+      sifirla.style.display = 'none';
+      if (aksiyonSol) aksiyonSol.textContent = toplam;
+    }
+  }
+
+  sel.addEventListener('change', uygula);
+  if (sifirla) sifirla.addEventListener('click', function(){
+    sel.value = '';
+    uygula();
+  });
+}
+
 // ── Ana akış ──────────────────────────────────────────────
 (async function init(){
   // ares-store async init için 80 iterasyonlu poll (kutuphane.html pattern'i)
@@ -721,6 +806,7 @@ function satirTiklamasiBagla(){
     // Satır etkileşimini bağla (eğer kolon konfigi varsa ve veri varsa)
     if (veri.durum === 'ok' && (veri.satirlar || []).length > 0) {
       satirTiklamasiBagla();
+      filtreHandlerBagla();
     }
   } catch (e) {
     console.error('[kutuphane-detay] init hata:', e);
