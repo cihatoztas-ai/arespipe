@@ -1,122 +1,209 @@
-# CLAUDE-SON-OTURUM.md -- 92. Oturum Tam Ozet
+# CLAUDE-SON-OTURUM.md — 94. Oturum Detaylı Özet
 
-> 92'nin tum hikayesi, kararlar arka plani, surprizler, dersler.
+**Tarih:** 17 Mayıs 2026
+**Süre:** ~4 saat
+**Ana tema:** KME OSNA-10/30 Shipbuilding PDF'inden CuNi marine kütüphanesi yüklemesi (boru + flanş)
+**Sonuç:** ✅ Başarıyla kapatıldı, 92 satır CuNi veri DB'de, UI'da görünür
 
-## Acilis
+---
 
-91 kapanmis (commit 731a709) ardindan AUTO docs guncellemesi (23fa091). Cihat ritueli tamamladi: git temiz, son 3 commit 91 isleri.
+## Akış (Adım Adım)
 
-Plan dosyasi sadece DB altyapisi (Migration 066, 067) + 3 kucuk borc icerigordu. ~2 saat tahmin.
+### 1. Açılış Ritüeli
+- `git pull` temiz, son commit `8f3fce9` (93 kapanışı)
+- CI yeşil, branch güncel
+- Cihat'ın yönü: "kütüphane hedef listemizde olan malzemeler için bana PDF indirme linklerini bul" → PDF kaynak haritası çıkarma kararı
 
-## Surpriz 1 -- "Yarim kalan isler"
+### 2. PDF Kaynak Listesi
+6 ana kaynak teyit edildi (üretici/otorite, distribütör derlemesi değil):
+- KME OSNA-10/30 Shipbuilding (CuNi P0 tümü, elimizde)
+- Alaskan Copper CuNi Tubing (B466/B467)
+- CDA Copper-Nickel Piping (offshore otorite)
+- Tenaris Dalmine Seamless Pipes (A53/A106/API 5L)
+- Sandvik SAF 2205 (Duplex 2205/2507)
+- + Vallourec/Tubacex/Bonney Forge (henüz aranmadı, 95+)
 
-Cihat: *"91'de yarim biraktigimiz baska isler de vardi kutuphane isimizi tamamlamak icin."*
+**Önemli mimari gözlem:** ASME A106/A53/A312/A335 boyutları zaten B36.10M/B36.19M'de var. Yeni geometri PDF'i değil, **malzeme grade'leri** (malzeme_kataloglari) eksik.
 
-YUKLEME-TAKIP okuduktan sonra netlesti: oneri aksiyon akisi (Kutuphaneye Ekle butonu) eksikti -- 90'da netlesmis, 91'de unutulmus. B plani'na dahil edildi.
+### 3. Migration 076 — DIN 86019 CuNi Boru (44 satır)
 
-## Adim 1 -- Migration 066 (FK Fix)
+**Yapı:** 22 Standard wall + 17 Special wall + 5 Seamwelded = 44 satır
 
-91'in retroaktif yazip kaydettigi migration. On kontrol: FK'lar gercekten bozuk mu? Evet.
+**Python sanity check (gen_migration_076.py):**
+```
+π × (OD - S) × S × ρ / 1000 = kg/m
+Ortalama yoğunluk: 8.919 g/cm³ (DIN nominal ~8.9)
+Std sapma: 0.038
+Min - Max: 8.842 - 9.095
+Tüm 44 satır 8.7-9.1 toleransı içinde ✓
+```
 
-**Surpriz 1.5:** Birlesik PK zaten vardi! 91 belgesinin "PK eksik" teshisi yanlisli -- information_schema bilesik PK'yi cross-join formatta gosterirken "yok" gibi okunur.
+**Hata 1 — JSONB vs TEXT[]:**
+```
+ERROR: 42804: column "pdf_anahtar_kelime" is of type text[] but expression is of type jsonb
+```
+Çözüm: `pdf_anahtar_kelime` ve `kullanim_sektor` ARRAY[...]::text[] syntax'a çevrildi. `materyal_kodu_listesi` JSONB kaldı.
 
-Migration calistirildi, dogrulama: FK'lar fitting_olculer + malzeme_kataloglari'na bagli.
+**Hata 2 — Supabase BEGIN/COMMIT:**
+```
+ERROR: 42601: syntax error at or near ";"
+LINE 30: BEGIN;
+```
+Çözüm: `grep -v -E "^(BEGIN|COMMIT);$" file | pbcopy` filtreleme. Dosyada kalır (psql/CI uyumu).
 
-## Surpriz 2 -- Policy hala eski tabloyu referansliyor
+**Hata 3 — 23505 duplicate key:**
+Aslında transaction başarılıydı, Supabase UI "Success" göstermedi → Cihat tekrar Run'a bastı → ikinci insert duplicate hatası. DB temizdi, COUNT(*) = 44 ile doğrulandı.
 
-Migration 066 sonrasi RLS policy'lerine bakildiginda:
-- `fitting_malzeme_uyum_select` hala `flansh_olculer f WHERE f.id = fitting_malzeme_uyum.fitting_id`
-- `fitting_malzeme_uyum_modify` ayni durumda
+**Sonuç:** ✅ 44 satır DB'de, fizik 8.842/9.095/8.919 birebir kayıt.
 
-91 FK fix yapti ama policy ifadeleri kontrol etmedi. Cozum: Migration 066b -- policy DROP + CREATE.
+### 4. Vocabulary Sorunu Tespiti — `cuni` vs `cunife`
 
-## Adim 2 -- Migration 067 (yeni capraz tablolar)
+Kütüphane envanteri sayfası (`admin/kutuphane.html`) açıldığında DIN-86019 görünmüyordu. Sebep: 3 katmanlı UI:
+- Katman 1: Envanter (tablolar toplamı, görünüyordu — 495 boru)
+- Katman 2: Malzeme grubu (CuNi 0 ölçü — uyumsuz vocabulary!)
+- Katman 3: Standart (görünmedi çünkü Katman 2 boş)
 
-`boru_malzeme_uyum` ve `flansh_malzeme_uyum` CREATE + RLS.
+SQL doğrulama:
+```sql
+SELECT malzeme_grubu, COUNT(*) FROM boru_olculer GROUP BY 1;
+-- karbon: 297, paslanmaz: 80, cunife: 68, aluminyum: 50
+```
 
-**Surpriz 3 -- Mojibake.** v1 SQL'de Turkce karakterler bozuk byte sequenceler olarak gozuktu (`M-^V`, `M-^_`). SQL editor "syntax error at or near ';'" verdi. Sebep: editor Latin-1 olarak okuyor. v2: tam ASCII-safe yazildi, sorun cozuldu.
+DB'de `cunife` (CuNiFe = bakır-nikel-demir, bilimsel doğru — 90/10 alaşımı 1-2% Fe içerir), UI'da `cuni` arıyordu.
 
-## Adim 3 -- 3 kucuk borc
+**KARAR-94.2:** UI fix yönü seçildi (DB tarihsel kod korunsun). 3 yerde değişiklik:
+- `admin/kutuphane-malzemeler.html` line 177, 192, 207
+- `kod:'cuni'` → `kod:'cunife'` (boru/fitting/flansh KONFIG)
 
-**Borc 1: Sayim tutarsizligi.** Ana sayfa "1 bekliyor" ama icerideki sayfa "2". Iki ayri kavram:
-- `tanimsiz_kayitlar.durum='bekliyor'` -- manuel inceleme akisi
-- `v_tanimsiz_havuz_listele()` RPC -- ham havuz adaylari
+**Dosya:** MD5 `c876b75f76c7ab27ac6d1f80b91a7ef6`, commit, push.
 
-Cozum: iki sayim birlikte ("X havuz adayi · Y inceleniyor").
+UI test: `kutuphane-standartlar.html?tablo=boru_olculer&mg=cunife` → DIN 86019 "Aktif" rozeti, 44/18 ölçü (102%, hedef parse rakamı yanlış — 95'te düzeltilecek).
 
-**Borc 2: `ozel_parca_boru_kaydet` RPC dokumantasyonu.**
+### 5. Migration 077 — DIN 86037-2 LJ + EN 1092-3 Type 05-C (48 satır)
 
-**Surpriz 4 (buyuk):** RPC zaten audit-trail mantigi var, `tanimsiz_kayitlar`'i otomatik bagliyor. Frontend yokken kullanim hazirdi. Adim 4'te modal bu RPC'yi cagiracak.
+**Şema keşfi (önce sorgu):**
+- `flansh_standart_sozluk` tablosu YOK → sözlük girişi gerekmiyor
+- `flansh_olculer` 32 kolon: temel boyut + hub + raised face + bolt geometri ayrı
+- Mevcut vocabulary:
+  - ASME-B16.5: WN/SO/BL, basinc_sinifi '150'
+  - EN-1092-1: EN-T01/05/11/12, basinc_sinifi '10'/'16'
+- `yuzey_tipi`: 'RF' standart
+- `malzeme_grubu`: 'karbon' (297), 'paslanmaz' (80), 'cunife' (68), 'aluminyum' (50)
 
-**Borc 3: Broken link tooltip.** `ozel_parcalar` linkleri kirik, `malzeme_kataloglari` ve capraz uyum tablolari icin generic UI yok. Cozum: tiklanmaz + tooltip "Detay gorunumu 93. oturumda eklenecek". `ozel` karti silindi (KARAR-91.B), `uyum` karti 3 tabloya genisledi.
+**KARAR-94.3 — Teknik karar: WN → LJ**
 
-## Adim 4 -- Oneri Aksiyon Akisi
+DIN 86037-2 fiziksel olarak lap-joint stub end:
+- Disc ince (5-14mm) + uzun hub (40-60mm)
+- KME PDF "compatible with Outer Flanges PN 10, 16" diyor (composite design işareti)
+- WN parça kendi bolt geometrisine sahip değil — outer halka (S235JR, sayfa 18) bolt'lar
+- ASME B16.5'te aynı tip 'LJ' (Lap Joint) olarak adlandırılıyor
 
-### Cihat'in saha gercegi
+**Vocabulary:**
+- `flansh_tipi='LJ'` (KME terminolojisi 'WN' yanıltıcı)
+- `basinc_sinifi='PN10/16'` (composite design, outer flansh ile birlikte)
+- Composite Blind için `basinc_sinifi` DN'ye göre '10' veya '16'
 
-*"Acil teslimat var, standardi 2 saat aramayacagim. Gecici ozel kayit yapayim, akis yurusun. Kutuphane olgunlastikca, ayni geometri sistem standardiyla cakisirsa birlestiririm."*
+**Satır sayım:**
+- WN flansh (LJ): 29 satır (DN20-DN1200, bazı DN'de 2 et)
+- Composite Blind: 19 satır (DN10-175 PN16 = 13 + DN200-500 PN10 = 6)
+- Toplam: 48 satır
 
-Bu **operasyonel olarak gerekli** ama yan etkisi cakisma. Cozum: 4 katmanli cakisma yonetimi (tespit / uyari / birlestirme / onleme).
+**Sanity check (gen_migration_077.py):**
+- LJ (eski WN): d3 < cap_mm < d2 < d4 (içe genişleme): 29/29 ✓
+- BL: d1 < k < D, bolt_count >= 4: 19/19 ✓
 
-### Tasarim Kararlari
+**Hata 4 — INSERT has more expressions than target columns:**
+`kaynak` kolonu boru_olculer'da var, flansh_olculer'da yok. VALUES 30, hedef 29.
+Çözüm: kaynak bilgisi `notlar`'ın sonuna `| Kaynak: KME...` formatında birleştirildi.
 
-- Yon: her zaman ozel -> sistem (standart authoritative)
-- Yol 3: ozel kayit silinmeden once JSONB snapshot arsive
-- Veri kaybi: SIFIR
-- Generic audit tablo (parca_tipi kolonu ile boru/fitting/flansh tek tablo)
-- UI: ayri sayfa + native confirm()
+**Hata 5 — bolt_circle_mm NOT NULL violation:**
+LJ flanşlarda bolt geometrisi yok (outer halkasında). Ama schema NOT NULL diyor.
 
-### Adim 4.1 -- Migration 068
+Sorgu:
+```sql
+SELECT column_name, is_nullable FROM information_schema.columns
+WHERE table_name = 'flansh_olculer' AND is_nullable = 'NO';
+-- NOT NULL: id, sistem_preset, geometri_std, flansh_tipi, basinc_sinifi,
+-- flansh_od_mm, flansh_kalinlik_mm, bolt_circle_mm, bolt_count, aktif, olusturma
+```
 
-**Surpriz 5 -- PL/pgSQL compile hatasi.** v1 `SET search_path TO 'public, arsiv'` (tek string) `%ROWTYPE` ile compile hatasi. PostgreSQL string'i tek sema adi olarak okudu. Cozum v2: `SET search_path = public, arsiv` (tirnaksiz, identifier list) + `public.boru_olculer%ROWTYPE` (schema-qualified).
+**KARAR-94.4 — Schema fix:**
+Schema ASME B16.5 integral varsayımıyla yazılmış (her flansh bolt'lu). Lap-joint için yanlış. Migration 077 başına 2 ALTER eklendi:
+```sql
+ALTER TABLE flansh_olculer ALTER COLUMN bolt_circle_mm DROP NOT NULL;
+ALTER TABLE flansh_olculer ALTER COLUMN bolt_count DROP NOT NULL;
+```
 
-### Adim 4.2 -- Cakismalar sayfasi
+**Sonuç:** ✅ 48 satır, doğrulama:
+```
+DIN-86037-2 | LJ     | PN10/16 | 29
+EN-1092-3   | EN-T05 | 10      | 6
+EN-1092-3   | EN-T05 | 16      | 13
+```
 
-`admin/kutuphane-cakismalar.html` (394 satir). `kutuphane-oneriler.html` pattern'i ile (super_admin guard, sidebar, breadcrumb, toast). 3 ozet kart + tablo + "Birlestir" butonu.
+### 6. Kütüphane Geliştirme Stratejisi (Süreç Kararı)
 
-### Adim 4.3 -- Kutuphaneye Ekle modal
+Cihat öneri: kütüphane geliştirme için **ayrı Claude projesi** açılsın. PDF'ler oraya yüklenir, **sohbette JSON üretilir**, ana projeye JSON aktarılır, oradan Migration SQL üretilir.
 
-`admin/kutuphane-oneriler.html`'a 4 patch ile modal. Yari otomatik:
-- Read-only: dis_cap_mm, et_mm, kalite (RPC'den)
-- Auto-fill: DN (NPS tablosundan), agirlik (formul, 7 yogunluk degeri)
-- Manuel: malzeme_grubu (dropdown), Sch tipi/deger/kod, notlar
+**Faydaları:**
+- PDF'ler kalıcı project knowledge'da (her sohbette upload yok)
+- Token verimli (PDF context'e değil)
+- JSON ara katman = manuel kontrol noktası
+- Risk izolasyonu (kütüphane sohbeti DB'ye dokunmaz)
+- İki sohbet paralel ritm (kütüphane parça parça, normal geliştirme yoğun)
 
-### Adim 4.4 -- Belge guncellemeleri
+**Karar:** Yeni proje açılacak: `AresPipe — Kütüphane Veri Kaynakları`. Talimat dosyası ayrıca hazırlanıyor (`KUTUPHANE-PROJE-PROMPTU.md`).
 
-- `kutuphane.html`'a Cakismalar karti
-- `KUTUPHANE-KAPSAM.md` Bolum 6'ya "Cakisma Yonetimi" alt baslik
-- `MIGRATION-YOL-HARITASI.md` zaten "Migration 068" iceriyordu (91 farkli icerikti), atlandi
+---
 
-## Surpriz 6 -- Test push sonrasi
+## Değişen / Eklenen Dosyalar
 
-Cihat canli test denedi ama Vercel'de 91 sonu hali gorundu (push olmadi). Yanlis intibalar:
-- "Cakismalar sayfasina nereden giriliyor" -> 92'de eklendi, push bekliyor
-- "Bekleyen Oneriler 1 vs 2" -> 92'de duzeltildi
-- "Gecersiz tablo" mesajlari -> 92'de tooltip ile degistirildi
+| Dosya | Tür | Boyut | MD5 |
+|---|---|---:|---|
+| `migrations/076_din_86019_cuni_borulari.sql` | Yeni | 15291 B | `e7272e50812714d40af53065d91b0439` |
+| `admin/kutuphane-malzemeler.html` | Düzenleme | — | `c876b75f76c7ab27ac6d1f80b91a7ef6` |
+| `migrations/077_din_86037_2_en_1092_3_cuni_flanslari.sql` | Yeni | 24281 B | `fe1aeed872d08b17ed818f2776983535` |
 
-Sonra **gercek bir 91 oncesi bug** kesfedildi: 877 satir fitting/flansh `malzeme_grubu` NULL. UI bu satirlari gostermiyor.
+---
 
-Bu bug 92'de cozulmedi (yorgun olunmus, 100+ dakika ek is yapilamadi). **93'e tasindi**, detay: `docs/93-DEVRALINAN-BUGLAR.md`.
+## Hazır SQL/Python Dosyaları (Arşiv)
 
-## Dersler
+- `validate_kme.py` — Migration 076 fizik doğrulama (Python)
+- `gen_migration_076.py` — boru SQL üreteç (Python)
+- `gen_migration_077.py` — flansh SQL üreteç (Python)
 
-1. **Plan vs gercek:** B plan'i 2 saatlik gibi gozukti ama 3.5+ saat surdu. Oneri aksiyon akisi sandiklarimizdan buyuktu.
+Gelecekte benzer migration'larda referans olarak kullanılabilir. Yeni kütüphane projesinde de bu pattern kullanılacak (PDF → Python parser → JSON → Migration).
 
-2. **Cihat'in saha gercegi en degerli mimari girdi.** Bir kullanicidan tek cumle 4-katmanli sistemi olusturdu.
+---
 
-3. **91 disiplini iyi calisti.** "Once dosya, sonra calistirma" v1 hatalarini erken yakaladi.
+## Bu Oturumdan Dersler
 
-4. **Test push sonrasi yapilir.** Vercel preview deploy zorunlu.
+1. **Şema önce sorgu, sonra INSERT.** Migration 076 ve 077 her ikisinde de target table kolon tipi/NOT NULL durumu önceden çekilmeli. `information_schema.columns` 30 saniyelik kontrol, saatlerce zaman kazandırır.
 
-5. **Kutuphane aslinda dolu.** 1.347 satir geometri var, %34'u UI'dan gorunuyor. Tasarim hatasi 877 satiri gizliyor.
+2. **Vocabulary disiplinini DB tarihçesinden değil teknik gerçeklikten al.** 'WN' KME terminolojisi, 'LJ' fiziksel tasarım. Doğru olan 'LJ'. UI ve sözlük yapay tutarlılık değil, teknik doğruluk önceliği.
 
-6. **Mojibake icin disiplin.** SQL ve Python yorumlarinda Turkce karakter risk. ASCII-safe yazim ya da `file` ile dogrulama.
+3. **Supabase SQL Editor disiplini:** BEGIN/COMMIT desteklemez, "Success" mesajı bazen göstermez (transaction commit oldu sansa). Doğrulama her zaman ayrı SELECT ile.
 
-## Toplam Cikti
+4. **Schema constraint'ler tasarım varsayımları taşır.** flansh_olculer NOT NULL'ları ASME B16.5 integral'e göre yazılmış, DIN composite/lap-joint için yanlış. Schema değişikliği data migration'la birlikte tek transaction'da uygulanabilir.
 
-- 4 migration
-- 1 yeni HTML sayfa
-- 5 patch script (92a-e) ile minimum mudahale
-- 3 belge guncellemesi + 1 yeni belge (93-DEVRALINAN-BUGLAR)
-- 9 KARAR-92.X
-- 6 ders/disiplin kurali
+5. **Programatik sanity check manuel doğrulamadan daha güvenli.** Geometric kuralar (bore < OD < hub < flansh) tek seferde 48 satıra uygulanır, gözle 5 örnek karşılaştırmaktan daha kapsamlı.
+
+6. **Aynı PDF'ten çoklu standart yüklemek mantıklı** (KME 4 standart birden), aynı oturumda momentum korunur. Tek dezavantaj: hata olunca rollback kapsamı geniş — BEGIN/COMMIT içinde tutarak çözüldü.
+
+7. **UI 3 katmanlı kütüphane envanteri Cihat'ın görmediği güzel bir sistem.** "data drift detection" — DB'de planlanmamış kayıt (EEMUA-144) "tanımsız standart" rozetiyle uyarıyor. KUTUPHANE-YUKLEME-TAKIP.md eksikliğini gösterdi.
+
+---
+
+## Performans
+
+- **Migration 076 yazım + üretim:** ~30 dakika
+- **Migration 076 hata + düzeltme + transfer:** ~20 dakika
+- **UI vocabulary fix:** ~5 dakika
+- **Migration 077 yazım + üretim:** ~40 dakika
+- **Migration 077 iki hata + düzeltme + transfer:** ~30 dakika
+- **Doğrulama + canlı UI test:** ~10 dakika
+- **Toplam:** ~2 saat 15 dakika aktif iş + dosya transferleri
+
+---
+
+> 95. oturum açılışında bu dosya, `.github/son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` okunur.

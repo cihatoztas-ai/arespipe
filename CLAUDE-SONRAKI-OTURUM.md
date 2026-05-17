@@ -1,120 +1,183 @@
-# 93. Oturum Gundemi
+# CLAUDE-SONRAKI-OTURUM.md — 95. Oturum Gündemi
 
-> Push sonrasi canli test + Bug 1 (fitting/flansh malzeme_grubu NULL) cozumu.
+> 94 → 95 geçişi. CuNi boru + flanş yüklendi (92 satır). Kütüphane geliştirme için **ayrı Claude projesi** açıldı — bu oturum (95) **ana proje sohbeti**, normal geliştirmeye devam.
 
 ---
 
-## 93 Acilis Ritueli
+## 🔀 İki Proje Koordinasyonu
 
-Standart 2 kontrol:
+**Bu sohbet (95+):** `AresPipe` (ana proje)
+- Normal geliştirme işleri (kod, UI, DB schema, debug)
+- Migration SQL'i yazıp DB'ye uygulama
+- Kütüphane projesinden gelen JSON'ları Migration'a çevirme
+
+**Diğer sohbet:** `AresPipe — Kütüphane Veri Kaynakları` (yeni proje)
+- PDF'lerden veri çıkarma (KME, Tenaris, Alaskan, vs.)
+- Veriyi JSON formatında üretme (boru/fitting/flansh kolon şemasıyla)
+- DB'ye dokunmaz, sadece JSON üretir
+- Cihat JSON'u indirir, ana projeye getirir, "şu JSON'dan Migration SQL üret" der
+
+### Migration Numarası Çakışma Önleme
+
+İki sohbet de yeni migration yazabilir. Aynı numara çakışmasın diye:
+
+**Her yeni migration başlamadan önce kontrol:**
+```bash
+ls ~/Desktop/arespipe/migrations/ | sort | tail -3
+```
+
+En son numarayı görüp +1 al. `gp` (otomatik rebase) zaten karşı tarafın commit'ini çekiyor, push'tan önce conflict varsa fark eder, numarayı kaydırırsın.
+
+### İletişim Yolu
+
+İki proje arasında veri akışı:
+1. Kütüphane sohbetinde JSON üretildi → Cihat JSON'u indirir
+2. Cihat ana projeye gelir, JSON'u paylaşır
+3. Bu sohbet (95+) JSON'dan Migration SQL üretir
+4. Standart akış: arespipe_kopyala MD5 → git commit → gp → Supabase SQL Editor
+
+---
+
+## 🚀 95. Oturum Başlangıç Önerisi
+
+Cihat oturumu açtığında, **normal başlangıç ritüeli + 1 ek adım**:
 
 ```
-1. cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
-2. Bugun ne yapmak istiyorsun?
+1. git pull origin main && git status && git log --oneline -3
+2. Bugün ne yapmak istiyorsun?
+3. (Yeni) Kütüphane sohbetinden JSON var mı? — varsa onunla devam, yoksa normal gündem
 ```
 
-**Beklenen 1. cikti:** Son 5 commit 92 isleri olmali. Branch temiz.
+---
 
-**Beklenen 2. cevap:** "92'yi test edelim" veya "Bug 1'i cozelim" veya "kaldigimiz yerden".
+## 95'in Açık Borçları (Öncelik Sırası)
+
+### 1. `docs/KUTUPHANE-YUKLEME-TAKIP.md` Güncellemesi (10 dk, kapanışta yapılmadı)
+
+**Yapılacaklar:**
+- DIN-86019 boru: 0 → 44 satır eklendi, **hedef rakam doğru yaz (yanlış '18' yazılıydı, gerçek 30-50)**
+- DIN-86037-2 LJ: 0 → 29 satır eklendi (yeni kayıt)
+- EN-1092-3 EN-T05: 0 → 19 satır eklendi (yeni kayıt)
+- **EEMUA-144 boru** ekle: 24 satır mevcut, hedef ~30 P1 CuNi (UI'da "tanımsız standart" rozetinden çıksın)
+- **Vocabulary kararı not düş:** "Lap-joint stub end flanşları (ASME LJ + DIN 86037-2) aynı kategori. UI/DB'de 'LJ' kullanılır."
+- Genel istatistik güncel: boru 495, flansh 48 yeni (toplam? — DB'den sayım), fitting 0
+
+### 2. 93'ten Devralınan `olusturma_at` Rename (Açık Borç)
+
+**Bağlam:** 93 kapanışında KARAR-93.6 ile 94'e ertelendi. 94'te de farklı yön seçildi (CuNi yüklemesi). Hâlâ açık.
+
+**İş kapsamı:**
+- Migration 076 önce — UI ve API'lerde `olusturma` kolonu standardı `olusturma_at` olarak rename edildi (93'te)
+- Bazı eski tablolarda hâlâ `olusturma` (rename yapılmamış)
+- Migration `076b_olusturma_at_rename.sql` veya benzer ad ile tam yap
+
+Önce SQL ile hangi tablolar `olusturma` (rename yapılmamış) kontrol et:
+```sql
+SELECT table_name, column_name
+FROM information_schema.columns
+WHERE column_name IN ('olusturma', 'olusturma_at')
+ORDER BY table_name, column_name;
+```
+
+### 3. Kütüphane Sohbetinden Gelecek JSON İşleme (Sürekli)
+
+Kütüphane sohbeti DIN 86089 fitting için JSON üretirse, bu sohbet:
+1. JSON'u oku, geometrik sanity check
+2. Migration 078 SQL üret (fitting_olculer schema'ya göre)
+3. arespipe_kopyala + commit + push + Supabase Run
+4. Doğrulama sorgusu + UI test
+
+Pattern Migration 076/077 ile aynı.
+
+### 4. Diğer Geliştirme İşleri
+
+Cihat'tan gelecek normal işler (önceki oturumlardan, KUTUPHANE-YUKLEME-TAKIP.md kapsamı dışı):
+- Pano implementasyonu (23. oturumdan)
+- Format envanter UI (super_admin için /admin/formatlar)
+- Devre wizard UI (Session 50+)
+- Reducer dimension table entegrasyonu (43. oturumdan)
+- Test Yönetimi sayfası (CLAUDE.md son-durum'dan)
 
 ---
 
-## Bilgi Onceligi
+## ⚠️ Kritik Hatırlatmalar (94 + öncesi)
 
-**ILK MESAJ:** `docs/93-DEVRALINAN-BUGLAR.md` chat'e yapistirilabilir. Eger Claude project knowledge'da bulamadiysa Cihat manuel yapistirir. Belge 220 satir, 3 bug + cozum secenekleri.
+**94'te öğrenilen MK disiplinleri:**
 
----
+- **MK-94.1:** Yeni standart eklerken **sözlük tablosunun kolon tiplerini önceden çek** (JSONB vs TEXT[] tuzağı).
+  ```sql
+  SELECT column_name, data_type, udt_name
+  FROM information_schema.columns
+  WHERE table_name = '<sözlük_tablosu>'
+  ORDER BY ordinal_position;
+  ```
 
-## 93'un Ana Isi
+- **MK-94.2:** Yeni veri yüklemeden önce **target tablonun NOT NULL ve kolon listesini doğrula**:
+  ```sql
+  SELECT column_name, is_nullable, data_type
+  FROM information_schema.columns
+  WHERE table_name = '<hedef_tablo>'
+  ORDER BY ordinal_position;
+  ```
 
-### 1. Push sonrasi canli test (~15 dk)
+- **MK-94.3:** Composite/lap-joint design flanşlar için DB schema bolt kolonları NULL kabul eder. ASME integral'e özel constraint değildir.
 
-Vercel preview deploy ~2-3 dk surer. Sonra:
+- **MK-94.4:** Vocabulary kararı PDF üreticinin terminolojisinden değil, **teknik fiziksel tasarımdan** alınır.
 
-**Ana sayfa (`admin/kutuphane.html`):**
-- [ ] "Bekleyen Oneriler" karti iki sayim gosteriyor mu?
-- [ ] "Cakismalar" karti goruluyor mu (yeni)
-- [ ] `ozel` karti yok mu (silindi)
-- [ ] `uyum` karti 3 capraz tabloyu listeliyor mu
-- [ ] Detay sayfasi olmayan tablolar tooltip gosteriyor mu
+- **MK-94.5:** Programatik sanity check yeterli, manuel 5 örnek karşılaştırma gerekmedi. Yeni veri için **Python sanity scripti** (geometrik mantık, fizik formülü) tek seferde tüm satırlara uygulanır.
 
-**Oneriler sayfasi (`admin/kutuphane-oneriler.html`):**
-- [ ] Tablo satirlarinda "+ Ekle" butonu var mi
-- [ ] Buton tikla -> modal aciliyor mu
-- [ ] DN otomatik dolu mu (114.3 -> 100)
-- [ ] Agirlik formulu dogru hesap yapiyor mu
-- [ ] Malzeme grubu degisince agirlik yenileniyor mu
-- [ ] Submit -> RPC -> toast cikiyor mu
+**Önceki oturumlardan:**
 
-**Cakismalar sayfasi (`admin/kutuphane-cakismalar.html`):**
-- [ ] Sayfa aciliyor mu
-- [ ] Super admin yetkisi var mi (yetkisiz kullanici redirect olmali)
-- [ ] Bos liste mesaji goruluyor mu
-
-### 2. Bug 1 -- fitting/flansh malzeme_grubu NULL
-
-**On kosul:** `docs/93-DEVRALINAN-BUGLAR.md` okunmus olmali.
-
-3 secenek:
-- **A) Hizli UPDATE 'karbon'** (~30 dk) -- yamacik cozumu
-- **B) malzeme_grubu kolonunu kaldir** (~2 saat) -- mimari fix, KARAR-43 ile uyumlu
-- **C) Erteleme** (~3 saat) -- her satirin standardindan tahmin
-
-Onerilen: **A veya B**, pilot tersane durumuna gore.
-
-### 3. Geri kalan 93 isleri (Bug 1 sonrasi)
-
-- **Fitting/flansh icin Kutuphaneye Ekle RPC'leri** -- `ozel_parca_fitting_kaydet`, `ozel_parca_flansh_kaydet`. Boru pattern'i ile yazilir.
-- **Bug 2 -- olusturma_at vs olusturma kolon adi** (P2). Yeni tablolari (boru_malzeme_uyum, flansh_malzeme_uyum, arsiv.kayit_birlestirme_log) suffix'siz rename et.
-- **Generic UI altyapisi (KARAR-91.F)** -- `kutuphane-tablo.html`, `_kutuphane-konfig.js`. Eski plan, 93+'da.
+- **MK-43:** PDF context stream yerine `pdftotext -layout` disk extraction
+- **MK-48.1:** Vercel build cache stale node_modules — manuel redeploy + "Use existing Build Cache" kapalı
+- **MK-50.3:** Yeni format/standart için 5 örnek doğrulama → 94'te programatik sanity check ile değiştirildi
+- **MK-51.1:** arespipe_kopyala MD5 ile, tahmin yok
+- **MK-52.2:** `gp` push (otomatik rebase)
 
 ---
 
-## 93'un Acik Sorulari
+## 📋 Süreç Disiplinleri (94 + 93'ten)
 
-**Soru 1 -- Bug 1 icin secenek?**
-Cihat 92 sonunda "kutuphane sandigimizdan dolu" yorum yapti, bug'i ciddiye aliyor. Pilot tersane durumuna gore A (hizli) ya da B (mimari).
-
-**Soru 2 -- Generic UI 93'te mi 94'te mi?**
-92'de cakisma UI'lari generic olmadan da yazildi. Generic UI acil degil, belki 94'e tasinabilir.
-
-**Soru 3 -- Fitting/flansh modal'i nasil?**
-Boru modal hazir. Fitting/flansh icin: 3 tip secim sekmesi mi, parca tipine gore farkli modal mi? Mockup gerek.
-
----
-
-## Tahmini Sure
-
-- Push sonrasi canli test: 15 dk
-- Bug 1 cozumu: 30 dk (Sec A) veya 2 saat (Sec B)
-- Fitting/flansh RPC + modal: 1-2 saat
-- Bug 2 fix (kolon rename): 30 dk
-
-**Toplam A senaryosu:** ~4 saat
-**Toplam B senaryosu:** ~5.5 saat
+- **Supabase SQL Editor BEGIN/COMMIT desteklemez** → panoya alırken filtrele:
+  ```bash
+  grep -v -E "^(BEGIN|COMMIT);$" file.sql | pbcopy
+  ```
+  Dosyada kalır (psql/CI uyumu).
+- **Doğrulama her zaman ayrı SELECT** ile, Editor "Success" göstermese bile commit olmuş olabilir.
+- **Aynı PDF'ten çoklu standart yüklerken** tek migration'da BEGIN/COMMIT kullan, hata olunca tüm satırlar rollback.
+- **GitHub web UI upload yok**, sadece terminal git akışı (51. oturumda "Add files via upload" karışıklığı yaşandı).
 
 ---
 
-## 92'nin Acik Notlari (Hatirlatma)
+## 🎯 96+ Vizyon
 
-- **KARAR-92.A** Cakisma yonetimi 4 katman
-- **KARAR-92.B** Her parca tipinin kendi RPC'si
-- **KARAR-92.C** Modal yari otomatik
-- **KARAR-92.D** Gecici/kalici DB'de ayrim YOK
-- **KARAR-92.E** Birlestirme yonu ozel -> sistem
-- **KARAR-92.F** Yol 3 snapshot arsive
-- **KARAR-92.G** Yeni standart migration -> cakisma kontrolu zorunlu
+**Kütüphane tarafı:**
+- CuNi fitting (Migration 078) — yeni kütüphane projesinden gelecek
+- ASTM A312 paslanmaz boru — Outokumpu/Tubacex/Sandvik PDF (yeni projeye yüklenir)
+- ASTM A106/A53 karbon boru — Tenaris Dalmine PDF (yeni projeye yüklenir)
+- malzeme_kataloglari modülü (~120 grade) — ayrı yol haritası
+- A790 Duplex (Sandvik özel et)
 
----
+**Ana geliştirme tarafı:**
+- Devre wizard UI tamamlama
+- Pano implementasyonu
+- Format envanter UI
+- Reducer dimension table entegrasyonu
 
-## Onemli Belgeler (93 baslangicinda okunacak)
-
-1. `docs/93-DEVRALINAN-BUGLAR.md` -- 93'un ana isi
-2. `.github/son-durum.md` -- 92 tam ozet
-3. `CLAUDE-SON-OTURUM.md` -- 92 detay
-4. `docs/KUTUPHANE-KAPSAM.md` -- Cakisma Yonetimi bolumu
-5. `docs/KUTUPHANE-YUKLEME-TAKIP.md` -- icerik durumu
+**Hedef ölçü:** 96 sonunda CuNi tüm kategorilerde **doluluk %70+** (boru + flanş + fitting + malzeme katalog hepsi var).
 
 ---
 
-> 93 acilisinda: `docs/93-DEVRALINAN-BUGLAR.md` + `son-durum.md` okunacak. "Push'u test mi yoksa Bug 1'e direkt mi?" sorulur.
+## 📁 İlgili Dosyalar
+
+- `.github/son-durum.md` — 94 özet
+- `CLAUDE-SON-OTURUM.md` — 94 detaylı
+- `docs/KUTUPHANE-YUKLEME-TAKIP.md` — yükleme takip (güncellenmesi gerek)
+- `docs/KUTUPHANE-KAPSAM.md` — kapsam haritası
+- `KUTUPHANE-PROJE-PROMPTU.md` — yeni Claude projesine yüklenecek (bu oturumda hazırlandı)
+- `CLAUDE.md` — proje ana bağlam
+
+---
+
+> 95. oturum açılışında bu dosya + `.github/son-durum.md` + `CLAUDE-SON-OTURUM.md` okunur.
+> Önerilen açılış: "Kütüphane projesinden JSON geldi mi? Yoksa hangi gündem?" — Cihat'ın yönü belirler.
