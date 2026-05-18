@@ -1,115 +1,117 @@
-# Son Durum — 96. Oturum (18 Mayıs 2026)
+# AresPipe — Son Durum
 
-> 94 → 95 → 96 geçişi. KME OSNA-10/30 Shipbuilding PDF'inden CuNi gemicilik **fitting** kütüphanesi 95-96'da tamamlandı: DIN 86089 reducer (95) + DIN 86090 elbow + DIN 86088 tee (96). Cross-validation protokolü kuruldu (Wieland Eucaro 2. üretici doğrulama + Stirlings 3. kaynak referans).
-
----
-
-## Bu Oturumun Sonucu (96)
-
-**96 başarıyla kapatıldı.** Migration 079 (170 satır) canlıda doğrulandı. Migration 078 (95'in 158 satırı) ile birlikte CuNi fitting grubu **328 satır** = hedef (~320) ✅ TAM. Vocabulary kararları K1-K7 ile yapı oturdu, cross-validation protokolü (MK-96) kalıcılaştı.
-
-### 96'da Yapılanlar
-
-1. **Migration 079 — DIN 86090 + DIN 86088 CuNi (170 satır)** (MD5 `30fed68860c2072d6e11fead7849f078`)
-   - 46 LR elbow (23×90LR + 23×45LR) + 42 SR elbow (21×90SR + 21×45SR)
-   - 19 equal tee + 63 reduced tee
-   - JSON kaynağı: `din86090_din86088_kme_v1.json` (kütüphane projesinden, MD5 `992dc3c16228a8379ee816aa969b3957`)
-
-2. **3 kaynak cross-validation analizi** (KME + Wieland + Stirlings)
-   - 115/170 satır (%67) Wieland ile %15 içinde doğrulandı
-   - 51 satır >%15 sapma — büyük çoğunluğu reducing tee'lerin üretim yöntemi farkı (KME swaged vs Wieland pulled, DIN 86088 ağırlık tanımlamaz)
-   - 4 satır Wieland'da yok (DN16 SR yok vb.)
-
-3. **1 KME tipografi düzeltmesi (KARAR-96.5):** DN50 45SR ağırlık 0.96 → 0.096
-   - 45° ağırlığı 90°'den 5× yüksek olamaz (fizik kuralı)
-   - Wieland 0.10 + Stirlings 0.10 konsensüsü
-   - notlar'da: `kme_tipografi_duzeltmesi=true`, `kme_orijinal_agirlik_kg=0.96`
-
-4. **2 KME doğrulanmamış anomali (KARAR-96.6):** DN175 90LR + 45LR
-   - KME 8.1 vs Wieland 5.7 (%42 sapma), KME 4.05 vs Wieland 2.85 (%42)
-   - Tek kaynak sapması → KME orijinal değer korundu
-   - notlar'da: `wieland_uyari=true`, alternatif değer kayıtlı
-
-5. **Migration 079 doğrulama sorgusu (canlı)**
-
-   | geometri_std | parca_tipi | satir | wieland_doğr | tipo_düz | dn175_uyarı |
-   |---|---|---:|---:|---:|---:|
-   | DIN 86088 | tee_eq | 19 | 12 | 0 | 0 |
-   | DIN 86088 | tee_red | 63 | 36 | 0 | 0 |
-   | DIN 86090 | elbow_45lr | 23 | 14 | 0 | 1 |
-   | DIN 86090 | elbow_45sr | 21 | 19 | 1 | 0 |
-   | DIN 86090 | elbow_90lr | 23 | 16 | 0 | 1 |
-   | DIN 86090 | elbow_90sr | 21 | 18 | 0 | 0 |
-
-   Toplam 170, 115 doğrulandı, 1 düzeltme, 2 uyarı — tüm rakamlar planlananla 1:1.
-
-### 95+96 Birlikte — CuNi Fitting Modülü Tamamlandı
-
-| Standart | Satır | Migration | Oturum |
-|---|---:|---|---|
-| DIN 86089 reducer (concentric + eccentric) | 158 | 078 | 95 |
-| DIN 86090 elbow (LR 90/45 + SR 90/45) | 88 | 079 | 96 |
-| DIN 86088 tee (equal + reducing) | 82 | 079 | 96 |
-| **CuNi fitting toplam** | **328** | — | — |
-
-`fitting_olculer` cunife grubu hedef ~320 → **✅ TAM**. Tablo toplamı tahmini ~897 (94 sonu 569 + 95+96 +328).
+> **97. oturum kapanışı — 18 Mayıs 2026**
+> Bu dosya her oturum başında ilk okunan kayıttır. Güncel CI durumu + açık borçlar + sonraki oturum gündemi burada.
 
 ---
 
-## 96'da Çıkan Yeni MK (Mimari Karar) Disiplinleri
+## CI Son Durum
 
-- **MK-96.1:** Kütüphane yükleme cross-validation protokolü — tek üretici (ör KME) ham veri **+ 2. üretici** (ör Wieland) doğrulama **+ 3. kaynak** (ör Stirlings) referans. Her satıra `notlar.wieland_agirlik_kg`, `wieland_sapma_pct`, `wieland_dogrulandi` (sapma <%15) izi yazılır.
-
-- **MK-96.2:** Üretici katalog değeri düzeltme şartı = en az **2 bağımsız kaynak konsensüsü**. Tek kaynak sapması ise orijinal korunur, sadece `wieland_uyari` işaretlenir.
-
-- **MK-96.3:** TEE fittinglerinde teorik kütle hesabı atlanır. Üretim yöntemi farkı (swaged vs pulled) %50-200 sapma yaratır, DIN 86088 ağırlık tanımlamaz — geometri tanımlar.
-
-- **MK-96.4:** Vocabulary 7 karar (K1-K7) `parca_tipi` ve geometri kolonları için kalıcı pattern:
-  - K1: `elbow_90lr / _45lr / _90sr / _45sr` (snake_case)
-  - K2: `tee_eq` / `tee_red` (cap_kucuk_dn karşılaştırması)
-  - K3: 90° → `yaricap_mm + ucu_uca_a_mm`; 45° → `yaricap_mm + ucu_uca_c_mm`; tee → `ucu_uca_m_mm + ucu_uca_b_mm`
-  - K4: Elbow'da teorik kütle, TEE'de atlanır
-  - K5/K6/K7: tipografi düzeltme + uyarı + cross-validation izi
+- **Build:** ✅ YEŞİL (97 öncesi son commit `bea9002 docs(96): oturum 96 kapanis`, sonra `c50d615` otomatik ci-son-rapor.json)
+- **Lint:** 0 hata, 22 uyarı (Faz B baseline'ı korundu)
+- **Vercel:** ✅ Production aktif
+- **Migration sayısı:** 79 (son: `079_din_86090_86088_cuni_kme.sql` — 96'da)
+- **97 sonrası:** `migrations/080_devre_wizard_v2_schema.sql` yüklenmeyi bekliyor (henüz commit edilmedi)
 
 ---
 
-## Commit'ler (96'te)
+## 97. Oturum Özeti
 
-| Hash | Mesaj |
-|------|-------|
-| `0a7838b` | feat(96): DIN 86090/86088 CuNi elbow+tee (170 satir, KME+Wieland cross-validated) |
+**Ana tema:** Devre yükleme wizard'ı mimari planı — sürükle bırak çoklu dosya, dosya tipi dispatch, klasör hiyerarşisi, çapraz veri füzyonu.
 
-CI: ✅ YEŞİL
+**Süreç:** 97 alışılmadık bir oturum oldu — kod yazımı değil, **uzun mimari sohbet**. Cihat devre yükleme vizyonunu detaylı yazdı, ben de gerçekleştirilebilirliği test ettim ("hayalci olmayalım"). 13 KARAR alındı, 8 yeni tablonun migration dosyası yazıldı, gelecek 6 oturumun yol haritası çıkarıldı.
 
----
+**Yazılan dosyalar (4):**
+- `migrations/080_devre_wizard_v2_schema.sql` (527 satır — 8 tablo + 16 index + 8 RLS policy + 62 seed + 1 ALTER + feature flag)
+- `docs/DEVRE-WIZARD-V2-MIMARISI.md` (97'nin asıl mimari belgesi)
+- `CLAUDE-SON-OTURUM.md` (97 detaylı özeti)
+- `CLAUDE-SONRAKI-OTURUM.md` (98 gündemi)
 
-## 97'e Açık Borç (Öncelik Sırası)
+**DB değişikliği yapıldı mı?** Hayır — migration **97'de yazıldı, 98'de çalıştırılacak.** Bilinçli karar: önce CI'da görsün, sonra Cihat aradan mola alıp uykusuyla bir kontrol katmanı daha ekler.
 
-1. **`docs/KUTUPHANE-YUKLEME-TAKIP.md` v5 güncellemesi** — 95 (DIN 86089) + 96 (DIN 86090/86088) yansıtılmadıysa yansıt. CuNi fitting **✅ TAM** olarak işaretle.
+**13 KARAR (97.0 – 97.13):** Detayı `docs/DEVRE-WIZARD-V2-MIMARISI.md`'de. Özet:
+- 97.0: Yeni tablolar mevcut tablolara FK kurmaz (tek istisna opsiyonel izleme)
+- 97.1: Tek spool = bir dosya (STP/Rhino parse edilebilir)
+- 97.2: Füzyon alan başına öncelik (JSONB skor)
+- 97.3: Yüksek risk manuel, düşük otomatik
+- 97.4: Çelişki kararları loglanır, 5+ aynı = sistem önerisi
+- 97.5: İki boyutlu skor (parse güveni × kaynak içerik önceliği)
+- 97.6: Devre detay Windows Gezgini görünümü
+- 97.7: Çok-spoollu PDF tek dosya + N satır (sayfa aralık)
+- 97.8: Multi-spool ortak BOM `pipeline_malzemeleri`'ne
+- 97.9: Token limit aşan PDF sayfa-başına AI + kuyruk
+- 97.10: Storage hiyerarşisi `tenants/projeler/devreler/{klasör}/dosya`
+- 97.11: STP AVEVA HarmonyWare B-spline parse + montaj koordinatı bonus
+- 97.12: Soft delete 30 gün
+- 97.13: RLS canlı pattern (DATABASE.md uyumsuzluğu not edildi)
 
-2. **Kalan 5 JSON dosyası işleme** — Kütüphane sohbetinden gelecek diğer dosyalar (97 açılışında Cihat netleştirir, muhtemelen DIN 86087 saddle ve/veya kalan KME PDF sayfaları).
+**STP analiz bulgusu:** Cihat yükledi `1030-3531-103-PS07.stp` (322 KB, AVEVA HarmonyWare). Silindir/torus yok, sadece B-spline yüzeyleri. Parser tahminim **2-3 oturum → 3-5 oturum** revize edildi. Bonus: gemi global koordinatlar otomatik montaj noktası etiketleme sağlıyor.
 
-3. **93'ten devralınan `olusturma_at` rename** (KARAR-93.6) — hâlâ açık, 94+95+96'da değinilmedi.
-
-4. **`fitting_olculer` toplam sayım teyidi** — 97 açılışında `SELECT COUNT(*) FROM fitting_olculer;` çalıştır, tahmin 897 doğru mu kontrol et.
-
-5. **Diğer geliştirme işleri** (önceki oturumlardan):
-   - Pano implementasyonu
-   - Format envanter UI (super_admin)
-   - Devre wizard UI tamamlama
-   - Reducer dimension table entegrasyonu
-
----
-
-## Açık Süreç Notu — Kütüphane Sohbet Koordinasyonu
-
-96'da pattern oturdu: Kütüphane sohbeti JSON üretir, ana proje (bu sohbet) migration'a çevirir + cross-validate eder + canlıya geçirir. 95'te DIN 86089 JSON'u, 96'da DIN 86090/86088 JSON'u aynı protokolü izledi.
-
-97'de devam edecek 5 JSON dosyası için aynı akış:
-1. Cihat JSON'u indirir, ana projeye paylaşır
-2. Ana proje (97): KME ham veriyi parse + cross-validation kaynağı belirle (Wieland Section X) + migration üret + Supabase + commit
-3. MD5 doğrulamalı, MK-96.1-4 izle
+**Yan keşif:** `pipeline_malzemeleri` tablosu 19'da kurulmuş, multi-spool ortak BOM için tam yeri. Yeni tablo gerekmedi, sadece `kaynak_dokuman_id UUID NULL` kolonu eklenecek.
 
 ---
 
-> 97. oturum açılışında bu dosya, `CLAUDE-SONRAKI-OTURUM.md`, `docs/KUTUPHANE-YUKLEME-TAKIP.md` okunur.
+## Açık Borçlar (97 sonu)
+
+### Acil (98 gündemi)
+- ⚪ **Migration çalıştırma** — Supabase SQL Editor'de kuru çalıştırma + gerçek + 5 smoke test
+- ⚪ **CI yeşil teyit** — `MIG_*` uyarı yok mu
+
+### Önemli (99+)
+- ⚪ 99: `devre_wizard.html` iskelet + drag-drop + dosya tipi auto-detect
+- ⚪ 100: Excel generic parser (L1 sözlük + L2 pattern, L3 Haiku ileride)
+- ⚪ 101: İzometri batch entegrasyonu + Faz 1/Faz 2 kuyruğu
+- ⚪ 102: Füzyon motoru + çelişki ekranı + manuel onay
+- ⚪ 103: STP tek-spool parser (B-spline → silindir fitting)
+- ⚪ 104: Rhino parser + Windows Gezgini UI + spool detay "Belgeler" sekmesi
+
+### Opsiyonel
+- ⚪ AVEVA AP214 çıkış denemesi (Cihat tersanedeki adımı sorabilir, başarılı olursa STP parser 5 dakikalık iş olur)
+- ⚪ `docs/DATABASE.md` RLS uyumsuzluğu (4 policy disiplinine geçiş veya doküman güncelleme)
+- ⚪ Soft delete cron işi (30 gün sonra kalıcı silme) — 100+ oturumda
+
+### Geri kalan (97'den önceki listeden devam)
+- ⚪ Format envanter UI (super_admin)
+- ⚪ Etkileşimli format öğretme modal
+- ⚪ tv() i18n eksiklikleri
+- ⚪ Hatalı kayıt aksiyonları (kuyruk-yeniden-dene, kuyruk-sil, kuyruk-pdf-indir endpoint'leri)
+
+---
+
+## Aktif Süreç Disiplinleri
+
+- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti — em-dash, typografik apostrofe paste etme
+- **MK-49.1:** `izometri-oku.js`'e dokunma — minimum değişiklik
+- **MK-50.1:** Hassas anahtar Claude'a verme
+- **MK-50.3:** Yeni format için parser_kural yazmadan önce 3+ başarılı AI örneği
+- **MK-50.4:** Dotfile oluşturduktan sonra `ls -la` kontrol
+- **MK-51.1:** Dosya kopyalamadan önce `~/Downloads`'da MD5 + satır sayısı doğrula
+- **MK-51.2:** Parser_kural regex'lerini en az 5 farklı gerçek dosya örneğiyle test et
+- **MK-52.1:** `arespipe_kopyala` MD5 doğrulamalı dosya kopyalama
+- **MK-52.2:** `gp` otomatik rebase + push (manuel `git push` yerine)
+- **KARAR-97.0:** Yeni tablolar mevcut sisteme dokunmaz (geri alma garantisi)
+
+---
+
+## Performans
+
+- **L2 parse (lokal):** 1-2 ms/PDF
+- **L3 vision parse (canlı):** 11-25 sn/PDF
+- **Format tanıma:** <100 ms/PDF
+- **Hız farkı (L2 başarılı):** ~10,000× (deterministik vs AI)
+
+---
+
+## 98 Hazırlık Notu
+
+98 sadece 30 dakikalık iş. Sıralı adımlar:
+1. CI yeşil teyit (5 dk)
+2. Supabase'de kuru çalıştırma — `BEGIN...ROLLBACK` (10 dk)
+3. Gerçek çalıştırma — `BEGIN...COMMIT` (5 dk)
+4. 5 smoke test sorgusu (10 dk)
+
+Detay: `CLAUDE-SONRAKI-OTURUM.md`.
+
+---
+
+> 98. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.

@@ -1,128 +1,187 @@
-# CLAUDE-SONRAKI-OTURUM.md — 97. Oturum Gündemi
+# 98. Oturum — Migration Çalıştırma + Smoke Test
 
-> 96 → 97 geçişi. CuNi fitting kütüphanesi 95+96 ile tamamlandı (328 satır ✅). Cross-validation protokolü oturdu (MK-96.1-4). 97'de kalan 5 JSON dosyası işlenecek.
+> **Önce:** 97 mimari planı yazdı, schema dosyasını hazırladı, hiçbir SQL çalıştırmadı.
+> **Şimdi:** 98'in tek işi `migrations/080_devre_wizard_v2_schema.sql`'ı **canlı DB'ye çalıştırmak** ve doğrulamak.
 
 ---
 
-## 🚀 97. Oturum Açılış Ritüeli
+## Açılış Ritüeli (CLAUDE.md disiplini)
+
+2 kısa kontrol:
+
+1. **`git pull` temiz mi?**
+   ```bash
+   cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+   ```
+
+2. **Bugün ne yapmak istiyorsun?** → Cevap: **97'nin migration'ını çalıştıracağız + smoke test.**
+
+---
+
+## 98'in Ana İşi — 4 Adım, ~30 dakika
+
+### Adım 1 — CI yeşil mi teyit (5 dk)
 
 ```bash
-cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
+# Son commit'in CI durumu
+gh run list -L 1
+# veya GitHub Actions sayfası: https://github.com/cihatoztas-ai/arespipe/actions
 ```
 
-Sonra 2 soru:
-1. **`SELECT COUNT(*) FROM fitting_olculer;`** — 96 sonu tahmini 897, teyit
-2. **Kütüphane sohbetinden gelecek 5 JSON ne?** — Hangi standartlar, hangi PDF kaynaklı
+97'de yüklenen 4 dosya CI'yı tetiklemiş olmalı:
+- `migrations/080_devre_wizard_v2_schema.sql` (yeni)
+- `docs/DEVRE-WIZARD-V2-MIMARISI.md` (yeni)
+- `CLAUDE-SON-OTURUM.md` (güncelleme)
+- `CLAUDE-SONRAKI-OTURUM.md` (güncelleme)
 
----
+Beklenen: **CI YEŞİL**. `MIG_*` uyarısı çıkmamalı (dosya adı + başlık formatı şablona uydu).
 
-## 97'in Açık Borçları (Öncelik Sırası)
+Eğer kırmızı: önce uyarıyı çözeriz, sonra migration. Push edilmiş dosyayı düzeltir, `gp` ile yeniden push.
 
-### 1. `docs/KUTUPHANE-YUKLEME-TAKIP.md` v5 güncellemesi (15 dk)
+### Adım 2 — Kuru çalıştırma (10 dk)
 
-**Sebep:** Mevcut dosya **v4 = 94 sonu** durumu. 95 (DIN 86089) + 96 (DIN 86090/86088) yansıtılmadı.
+Supabase SQL Editor'de:
 
-**Yapılacaklar (özet tablo + fitting bölümü):**
-- Versiyon geçmişi: v5 — 96. oturum (18 May 2026) eklenir
-- Özet tablo: `fitting_olculer` 569 → ~897 (sayım sonrası kesinleşir)
-- CuNi kütüphane satırı: fitting 0 → **328 ✅ TAM** (158 reducer + 170 elbow+tee)
-- Aile bazında: DIN 86088/89/90 **✅** oldu, DIN 86087 hâlâ ❌
-- Yeni MK kararları K1-K7 + MK-96.1-4 not edilir
+1. `migrations/080_devre_wizard_v2_schema.sql` dosyasının **tüm içeriğini** kopyala
+2. SQL Editor'e yapıştır
+3. Dosyadaki `BEGIN;` ve `COMMIT;` satırlarını bul — `COMMIT;` satırını **`ROLLBACK;`** olarak değiştir
+4. **Çalıştır**
 
-### 2. Kalan 5 JSON Dosyası İşleme
+Bu **gerçek yazmadan** sözdizimi + şema hatalarını gösterir. Transaction sonunda ROLLBACK olduğundan tablolar oluşmaz.
 
-Kütüphane sohbetinden Cihat'ın bahsettiği 5 JSON. Tahmini içerik (97 açılışında netleşir):
-- DIN 86087 saddle type (CuNi gemi)
-- ASME B16.9 buttweld diğer malzeme grupları
-- Veya farklı PDF kaynakları (Tenaris, Vallourec, Sandvik)
+**Beklenen sonuç:** Hata mesajı olmamalı, alt kısımda "Success. No rows returned" veya benzer mesaj.
 
-Her biri için **MK-96 protokolü:**
-1. JSON'u oku, şema doğrula
-2. Cross-validation kaynağı belirle (Wieland Section X, veya farklı 2. üretici)
-3. Migration SQL üret (parça tipi vocabulary K1-K2 izle)
-4. Notlar JSONB cross-validation izi K7
-5. arespipe_kopyala + MD5 + git + Supabase Run
-6. Doğrulama sorgusu + UI test
+**Olası sorunlar:**
+- `function get_tenant_id() does not exist` → canlı'da fonksiyon yok, kontrol et: `SELECT * FROM pg_proc WHERE proname='get_tenant_id'`
+- `relation "tenants" does not exist` → schema search_path sorunu (olağan değil)
+- `Unicode/encoding hatası` → kopyala-yapıştırda em-dash veya typografik karakter karışmış (MK-48.6 hatırlat: ASCII yapıştır)
 
-### 3. 93'ten Devralınan `olusturma_at` Rename (4. oturumdur açık)
+### Adım 3 — Gerçek çalıştırma (5 dk)
 
-**Bağlam:** 93'te KARAR-93.6 ile ertelendi → 94'te CuNi yüklemesi → 95-96'da CuNi fitting → hâlâ açık.
+Kuru çalıştırma temizse:
 
-**İş kapsamı:**
+1. Aynı SQL'i tekrar yapıştır
+2. `ROLLBACK;` satırını **`COMMIT;`** olarak geri al
+3. **Çalıştır**
+
+**Beklenen sonuç:** "Success. No rows returned" — 8 tablo, 16 index, 8 policy, 62 seed satır, 1 ALTER, N feature flag satırı (her tenant için 1) eklendi.
+
+### Adım 4 — Smoke test (10 dk)
+
+Migration dosyasının altındaki **5 test sorgusunu** sırayla çalıştır (yorumları açarak):
+
+**Test 1: 8 tablo oluştu mu?**
 ```sql
-SELECT table_name, column_name
-FROM information_schema.columns
-WHERE column_name IN ('olusturma', 'olusturma_at')
-ORDER BY table_name, column_name;
+SELECT table_name FROM information_schema.tables
+WHERE table_schema='public' AND table_name IN (
+  'dokuman_tipleri','klasor_isim_sozluk','devre_dokumanlari','spool_dokumanlari',
+  'dosya_isleme_kuyrugu','alan_oncelik_kurallari','excel_format_tanimlari','fuzyon_karar_log'
+) ORDER BY table_name;
 ```
-Hangi tablolar hâlâ `olusturma` (rename yapılmamış) — Migration ile düzeltilir.
+Beklenen: 8 satır.
 
-### 4. Diğer Geliştirme İşleri (CLAUDE.md'den)
+**Test 2: Sistem default'lar yüklendi mi?**
+```sql
+SELECT 'dokuman_tipleri' AS tablo, count(*) FROM dokuman_tipleri WHERE tenant_id IS NULL
+UNION ALL SELECT 'klasor_isim_sozluk', count(*) FROM klasor_isim_sozluk WHERE tenant_id IS NULL
+UNION ALL SELECT 'alan_oncelik_kurallari', count(*) FROM alan_oncelik_kurallari WHERE tenant_id IS NULL;
+```
+Beklenen: 14, 33, 15.
 
-- Pano implementasyonu (23. oturumdan)
-- Format envanter UI (super_admin için /admin/formatlar)
-- Devre wizard UI (Session 50+)
-- Reducer dimension table entegrasyonu (43. oturumdan, artık veri canlıda — UI bağlantısı kuruluyor)
-- Test Yönetimi sayfası
+**Test 3: RLS policy'leri eklendi mi?**
+```sql
+SELECT tablename, policyname FROM pg_policies
+WHERE schemaname='public' AND tablename IN (
+  'dokuman_tipleri','klasor_isim_sozluk','devre_dokumanlari','spool_dokumanlari',
+  'dosya_isleme_kuyrugu','alan_oncelik_kurallari','excel_format_tanimlari','fuzyon_karar_log'
+) ORDER BY tablename;
+```
+Beklenen: 8 satır (her tabloda 1 policy).
 
----
+**Test 4: pipeline_malzemeleri'ne kolon eklendi mi?**
+```sql
+SELECT column_name, data_type, is_nullable FROM information_schema.columns
+WHERE table_schema='public' AND table_name='pipeline_malzemeleri'
+  AND column_name='kaynak_dokuman_id';
+```
+Beklenen: 1 satır, `uuid`, `YES`.
 
-## ⚠️ Kritik Hatırlatmalar (96'da öğrenilen)
+**Test 5: Feature flag tüm tenant'lara eklendi mi?**
+```sql
+SELECT count(DISTINCT tenant_id) AS tenant_sayisi
+FROM tenant_features
+WHERE feature_kod='devre_wizard_v2';
 
-**MK-96.1:** Kütüphane yükleme cross-validation 3 kaynak protokolü. Tek üretici güvenilmez.
-
-**MK-96.2:** Üretici katalog değeri düzeltme şartı = **2 bağımsız kaynak konsensüsü**. Aksi halde orijinal korunur, `wieland_uyari` işaretlenir.
-
-**MK-96.3:** TEE fittinglerinde teorik kütle atlanır (üretim yöntemi farkı).
-
-**MK-96.4:** Vocabulary 7 karar (K1-K7) elbow/tee/reducer fitting tipleri için kalıcı pattern. Yeni fitting tipi gelirse aynı pattern uygulanır.
-
-**Önceki oturumlardan:**
-- **MK-94.1:** Sözlük tablosunun kolon tiplerini önceden çek (JSONB vs TEXT[])
-- **MK-94.2:** Hedef tablonun NOT NULL ve kolon listesini doğrula
-- **MK-50.3:** 5 örnek doğrulama (Migration 076'dan beri programatik sanity check ile değiştirildi)
-- **MK-51.1:** arespipe_kopyala MD5 ile, tahmin yok
-- **MK-52.2:** `gp` push (otomatik rebase)
-
----
-
-## 📋 Süreç Disiplinleri
-
-- **Supabase SQL Editor BEGIN/COMMIT desteklemez** → panoya alırken filtrele:
-  ```bash
-  grep -v -E "^(BEGIN|COMMIT);$" file.sql | pbcopy
-  ```
-- **Doğrulama her zaman ayrı SELECT** — Editor "Success" göstermese bile commit olmuş olabilir.
-- **`notlar` kolonu TEXT** (JSONB değil) — sorgularda `(notlar::jsonb)->>'key'` cast'ı zorunlu. İleride bu kolonu JSONB'ye dönüştürme migration'ı yapılabilir (opsiyonel iyileştirme).
+SELECT count(*) AS toplam_tenant FROM tenants;
+```
+Beklenen: İki sayı eşit olmalı (her tenant'a 1 satır).
 
 ---
 
-## 🎯 97 Sonrası Vizyon
+## Beş Test de Yeşilse Ne Yapıyoruz?
 
-**Kütüphane tarafı:**
-- DIN 86087 saddle (kalan tek CuNi gemicilik standardı)
-- ASTM A312/A106/A53 buttweld fitting (paslanmaz + karbon)
-- malzeme_kataloglari modülü (~120 grade) — ayrı yol haritası
-- A790 Duplex
+**HİÇBİR ŞEY.** 98 kapanır. 99'da `devre_wizard.html` iskeletine başlanır. 98 sadece **DB altyapısını canlıya almak**, başka iş yok.
 
-**Ana geliştirme tarafı:**
-- Devre wizard UI tamamlama
-- Pano implementasyonu
-- Format envanter UI
-- Reducer + elbow + tee dimension table entegrasyonu (artık veri canlıda)
+Tek ek: `KARAR-97.13` kapsamında DATABASE.md'yi güncellemek istersen, bu 98'in **opsiyonel** ek işi olabilir. Ama gerekli değil — uyumsuzluk migration başlığında not edildi.
 
 ---
 
-## 📁 İlgili Dosyalar
+## Beklenmedik Senaryo — Bir Test Kırmızı Çıkarsa
 
-- `.github/son-durum.md` — 96 özet (bu commit'te güncellendi)
-- `docs/KUTUPHANE-YUKLEME-TAKIP.md` — yükleme takip (97'de v5 güncellemesi gerek)
-- `docs/KUTUPHANE-KAPSAM.md` — kapsam haritası
-- `migrations/078_din_86089_cuni_reducer.sql` — 95'in eklemesi
-- `migrations/079_din_86090_86088_cuni_kme.sql` — 96'nın eklemesi (170 satır)
-- `CLAUDE.md` — proje ana bağlam
+### `get_tenant_id()` yoksa
+
+Kontrol:
+```sql
+SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='get_tenant_id';
+```
+
+Yoksa migration başarısız olur. Bu durumda **mevcut sistemde** `spool_malzemeleri` çalışıyor demek imkansız — fonksiyon olmadan RLS çalışmaz. Yani büyük ihtimal var ama farklı isimle (`current_tenant_id`?, `jwt_tenant_id`?). Aramamız gerek:
+
+```sql
+SELECT proname FROM pg_proc 
+WHERE proname ILIKE '%tenant%' AND prokind='f';
+```
+
+### Bir CHECK constraint reddederse
+
+Olası neden: seed verisinde tip kodu listesi ile CHECK kuralı çakışır. Migration'da CHECK koymadım constraint'lerde — sadece `varsayilan_seviye IN ('devre','spool')` ve birkaç tane. Bunlar seed verilerimle uyumlu, sorun olmamalı.
+
+### CASCADE deadlock olursa
+
+CREATE TABLE sırası önemli — FK bağımlılıkları düzgün olmalı. Migration'da `devre_dokumanlari` `spool_dokumanlari`'ndan önce yaratıldı (FK doğru yön). Sorun olmamalı.
 
 ---
 
-> 97. oturum açılışında bu dosya + `.github/son-durum.md` + `docs/KUTUPHANE-YUKLEME-TAKIP.md` okunur.
-> Önerilen açılış: "Kütüphane sohbetinden 5 JSON geldi mi? Veya başka gündem var mı?"
+## 99'a Bakış (Şimdilik Spoiler)
+
+99'da:
+- `devre_wizard.html` yeni dosya yaratılır (0 satır → ~300 satır iskelet)
+- Sidebar'a "Yeni Devre (Wizard)" eklentisi (sadece feature flag açık tenant'larda görünür)
+- Drag-drop area + dosya tipi auto-detect (`dokuman_tipleri` sözlüğünden okuyarak)
+- Yüklenen dosyaların tablosu (henüz parse yok, sadece liste)
+- "İlerle" butonu disabled
+
+Parser entegrasyonu 100+'a. 99'un asıl işi **UI iskeleti + dosya kabul akışı**.
+
+---
+
+## Açık Borçlar (97 sonu)
+
+- ⚪ Migration çalıştırma (98'in işi — bu dosya)
+- ⚪ Feature flag'in tek tenant için açılması (98 veya 99'da, pilot tenant kararı)
+- ⚪ AVEVA AP214 çıkış denemesi (opsiyonel, Cihat zaman bulduğunda tersanedeki adımı sorabilir)
+- ⚪ `DATABASE.md` RLS uyumsuzluğu (97.13'te not edildi, gelecek belge sweep oturumunda)
+- ⚪ 99-104 implementasyon serisi (bu plan `docs/DEVRE-WIZARD-V2-MIMARISI.md` bölüm 4'te)
+
+---
+
+## Hatırlatmalar
+
+- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti — em-dash, typografik apostrofe paste'ten kaçın. Migration dosyasını GitHub'dan ham olarak (Raw view) kopyala, plain text yapıştır
+- **MK-52.2:** `gp` kullan, `git push` değil — son-durum.md otomatik commit'ini yakalar
+- **Risk düşük** — KARAR-97.0 garantisi mevcut tablolarda veri kaybı yok. Her şey olsa olsa **kuru çalıştırmada** hata verir, ROLLBACK ile çıkarsın
+- **Acele yok** — 98 sadece 30 dakikalık iş. İşten önce yapabilirsin, akşam yapabilirsin, hafta sonu yapabilirsin. Schema bekler
+
+---
+
+> **98. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SON-OTURUM.md` okunacak.**
