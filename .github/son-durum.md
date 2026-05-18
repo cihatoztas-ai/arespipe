@@ -1,102 +1,115 @@
-# Son Durum — 94. Oturum (17 Mayıs 2026)
+# Son Durum — 96. Oturum (18 Mayıs 2026)
 
-> 93 → 94 geçişi. KME OSNA-10/30 Shipbuilding PDF'inden CuNi gemicilik kütüphanesi yüklendi: DIN 86019 boru + DIN 86037-2 LJ + EN 1092-3 Composite Blind. Schema tasarım kararı (lap-joint için bolt NULL). Vocabulary disiplini netleşti (cunife + LJ).
-
----
-
-## Bu Oturumun Sonucu
-
-**94 başarıyla kapatıldı.** İki migration (92 satır CuNi veri) + bir UI fix + bir schema ALTER + bir teknik mimari karar. Boru ve flanş tarafı tamamlandı, fitting (Migration 078, ~320 satır) 95+ oturumlara ertelendi. Kütüphane geliştirme için **ayrı bir Claude projesi** açılması kararı alındı.
-
-### Yapılanlar (sırasıyla)
-
-1. **Migration 076 — DIN 86019 CuNi boru (44 satır)** (MD5 `e7272e50812714d40af53065d91b0439`)
-   - boru_standart_sozluk: 1 sözlük girişi (`malzeme_grubu_default='cunife'`)
-   - boru_olculer: 44 ölçü (22 Standard wall + 17 Special wall + 5 Seamwelded)
-   - Fizik doğrulama: 44/44 satır 8.7-9.1 yoğunluk bandında, ortalama 8.919 g/cm³
-
-2. **UI fix — kutuphane-malzemeler.html vocabulary uyumu** (MD5 `c876b75f76c7ab27ac6d1f80b91a7ef6`)
-   - 3 yerde (boru/fitting/flansh KONFIG): `kod:'cuni'` → `kod:'cunife'`
-   - DB tarihsel olarak `cunife` kullanıyordu (EEMUA-144 24 + DIN-86019 44 = 68), UI ise `cuni` arıyordu — CuNi grubu görünmüyordu
-
-3. **Migration 077 — DIN 86037-2 LJ + EN 1092-3 Type 05-C (48 satır)** (MD5 `fe1aeed872d08b17ed818f2776983535`)
-   - Schema ALTER: `bolt_circle_mm` ve `bolt_count` NOT NULL → NULL'a açıldı
-   - 29 LJ satır (DN20-DN1200, PN10/16 compatible)
-   - 19 Composite Blind satır (DN10-DN500, PN16 0-175 + PN10 200-500)
-   - Geometrik sanity: 48/48 satır içe genişleme mantığı geçti
-
-4. **Teknik karar (KARAR-94.3) — flansh_tipi: WN → LJ**
-   - DIN 86037-2 KME PDF "Welding Neck" adlandırıyor ama tasarım fiziksel olarak lap-joint stub end
-   - B16.5 WN integral (kendi bolt'lu) ≠ DIN 86037-2 (outer flansh halkasıyla)
-   - Vocabulary doğruluğu için 'LJ' kullanıldı
-
-5. **Kütüphane envanteri canlı UI test**
-   - boru_olculer 451 → 495 (+44 DIN-86019)
-   - kutuphane-standartlar.html?tablo=boru_olculer&mg=cunife sayfası DIN 86019 satırını "Aktif" olarak gösteriyor
-   - EEMUA-144 "Hedef Dışı (Tanımsız Standart)" rozeti — KUTUPHANE-YUKLEME-TAKIP.md eksikliği
-
-### Hata ve Düzeltmeler
-
-- **Migration 076 ilk run:** `pdf_anahtar_kelime` JSONB sandım, gerçekte TEXT[]. `kullanim_sektor` da TEXT[]. ARRAY syntax'a çevrildi, transfer tekrar yapıldı.
-- **Supabase SQL Editor BEGIN/COMMIT desteklemez:** `grep -v -E "^(BEGIN|COMMIT);$" | pbcopy` ile panoya alındı. Dosyada kalır (psql/CI için).
-- **Migration 077 ilk run:** `kaynak` kolonu boru_olculer'da var, flansh_olculer'da yok. VALUES 30, hedef 29. Notlar'a birleştirildi.
-- **Migration 077 ikinci run:** `bolt_circle_mm` ve `bolt_count` NOT NULL constraint hatası. Lap-joint için anlamsız — schema ALTER ile NULL'a açıldı.
+> 94 → 95 → 96 geçişi. KME OSNA-10/30 Shipbuilding PDF'inden CuNi gemicilik **fitting** kütüphanesi 95-96'da tamamlandı: DIN 86089 reducer (95) + DIN 86090 elbow + DIN 86088 tee (96). Cross-validation protokolü kuruldu (Wieland Eucaro 2. üretici doğrulama + Stirlings 3. kaynak referans).
 
 ---
 
-## Yeni MK (Mimari Karar) Disiplinleri
+## Bu Oturumun Sonucu (96)
 
-- **MK-94.1:** Yeni standart eklerken **sözlük tablosunun kolon tiplerini önceden çek** (`information_schema.columns`). JSONB vs TEXT[] tuzağı.
-- **MK-94.2:** Yeni veri yüklemeden önce **target tablonun NOT NULL ve kolon listesini doğrula**. boru_olculer ile flansh_olculer şeması farklı.
-- **MK-94.3:** Composite/lap-joint design flanşlar için DB schema bolt kolonları NULL kabul eder. ASME B16.5 integral'e özel constraint değildi.
-- **MK-94.4:** Vocabulary kararı PDF üreticinin terminolojisinden değil, **teknik fiziksel tasarımdan** alınır.
-- **MK-94.5:** Programatik sanity check yeterli, manuel 5 örnek karşılaştırma gerekmedi. Geometrik mantık tek seferde tüm satırlara uygulanır.
+**96 başarıyla kapatıldı.** Migration 079 (170 satır) canlıda doğrulandı. Migration 078 (95'in 158 satırı) ile birlikte CuNi fitting grubu **328 satır** = hedef (~320) ✅ TAM. Vocabulary kararları K1-K7 ile yapı oturdu, cross-validation protokolü (MK-96) kalıcılaştı.
+
+### 96'da Yapılanlar
+
+1. **Migration 079 — DIN 86090 + DIN 86088 CuNi (170 satır)** (MD5 `30fed68860c2072d6e11fead7849f078`)
+   - 46 LR elbow (23×90LR + 23×45LR) + 42 SR elbow (21×90SR + 21×45SR)
+   - 19 equal tee + 63 reduced tee
+   - JSON kaynağı: `din86090_din86088_kme_v1.json` (kütüphane projesinden, MD5 `992dc3c16228a8379ee816aa969b3957`)
+
+2. **3 kaynak cross-validation analizi** (KME + Wieland + Stirlings)
+   - 115/170 satır (%67) Wieland ile %15 içinde doğrulandı
+   - 51 satır >%15 sapma — büyük çoğunluğu reducing tee'lerin üretim yöntemi farkı (KME swaged vs Wieland pulled, DIN 86088 ağırlık tanımlamaz)
+   - 4 satır Wieland'da yok (DN16 SR yok vb.)
+
+3. **1 KME tipografi düzeltmesi (KARAR-96.5):** DN50 45SR ağırlık 0.96 → 0.096
+   - 45° ağırlığı 90°'den 5× yüksek olamaz (fizik kuralı)
+   - Wieland 0.10 + Stirlings 0.10 konsensüsü
+   - notlar'da: `kme_tipografi_duzeltmesi=true`, `kme_orijinal_agirlik_kg=0.96`
+
+4. **2 KME doğrulanmamış anomali (KARAR-96.6):** DN175 90LR + 45LR
+   - KME 8.1 vs Wieland 5.7 (%42 sapma), KME 4.05 vs Wieland 2.85 (%42)
+   - Tek kaynak sapması → KME orijinal değer korundu
+   - notlar'da: `wieland_uyari=true`, alternatif değer kayıtlı
+
+5. **Migration 079 doğrulama sorgusu (canlı)**
+
+   | geometri_std | parca_tipi | satir | wieland_doğr | tipo_düz | dn175_uyarı |
+   |---|---|---:|---:|---:|---:|
+   | DIN 86088 | tee_eq | 19 | 12 | 0 | 0 |
+   | DIN 86088 | tee_red | 63 | 36 | 0 | 0 |
+   | DIN 86090 | elbow_45lr | 23 | 14 | 0 | 1 |
+   | DIN 86090 | elbow_45sr | 21 | 19 | 1 | 0 |
+   | DIN 86090 | elbow_90lr | 23 | 16 | 0 | 1 |
+   | DIN 86090 | elbow_90sr | 21 | 18 | 0 | 0 |
+
+   Toplam 170, 115 doğrulandı, 1 düzeltme, 2 uyarı — tüm rakamlar planlananla 1:1.
+
+### 95+96 Birlikte — CuNi Fitting Modülü Tamamlandı
+
+| Standart | Satır | Migration | Oturum |
+|---|---:|---|---|
+| DIN 86089 reducer (concentric + eccentric) | 158 | 078 | 95 |
+| DIN 86090 elbow (LR 90/45 + SR 90/45) | 88 | 079 | 96 |
+| DIN 86088 tee (equal + reducing) | 82 | 079 | 96 |
+| **CuNi fitting toplam** | **328** | — | — |
+
+`fitting_olculer` cunife grubu hedef ~320 → **✅ TAM**. Tablo toplamı tahmini ~897 (94 sonu 569 + 95+96 +328).
 
 ---
 
-## Commit'ler (94'te)
+## 96'da Çıkan Yeni MK (Mimari Karar) Disiplinleri
+
+- **MK-96.1:** Kütüphane yükleme cross-validation protokolü — tek üretici (ör KME) ham veri **+ 2. üretici** (ör Wieland) doğrulama **+ 3. kaynak** (ör Stirlings) referans. Her satıra `notlar.wieland_agirlik_kg`, `wieland_sapma_pct`, `wieland_dogrulandi` (sapma <%15) izi yazılır.
+
+- **MK-96.2:** Üretici katalog değeri düzeltme şartı = en az **2 bağımsız kaynak konsensüsü**. Tek kaynak sapması ise orijinal korunur, sadece `wieland_uyari` işaretlenir.
+
+- **MK-96.3:** TEE fittinglerinde teorik kütle hesabı atlanır. Üretim yöntemi farkı (swaged vs pulled) %50-200 sapma yaratır, DIN 86088 ağırlık tanımlamaz — geometri tanımlar.
+
+- **MK-96.4:** Vocabulary 7 karar (K1-K7) `parca_tipi` ve geometri kolonları için kalıcı pattern:
+  - K1: `elbow_90lr / _45lr / _90sr / _45sr` (snake_case)
+  - K2: `tee_eq` / `tee_red` (cap_kucuk_dn karşılaştırması)
+  - K3: 90° → `yaricap_mm + ucu_uca_a_mm`; 45° → `yaricap_mm + ucu_uca_c_mm`; tee → `ucu_uca_m_mm + ucu_uca_b_mm`
+  - K4: Elbow'da teorik kütle, TEE'de atlanır
+  - K5/K6/K7: tipografi düzeltme + uyarı + cross-validation izi
+
+---
+
+## Commit'ler (96'te)
 
 | Hash | Mesaj |
 |------|-------|
-| `d534ba6` | feat(94): DIN 86019 CuNi boru ilk versiyon (JSONB hatalı) |
-| `533d6c3` | feat(94): DIN 86019 CuNi gemi boru kutuphanesi (KME kaynak, 44 satir) — TEXT[] fix |
-| (UI fix) | fix(94): kutuphane-malzemeler.html CuNi grup kodu cuni→cunife |
-| `abf1e3f` | fix(94): 077 migration kaynak kolonu kaldirildi, notlar'a birlestirildi |
-| `a0a2a89` | fix(94): 077 schema ALTER (bolt NULL) + WN→LJ teknik düzeltme (lap-joint) |
-| `ff6d97c` | (push tamam) |
+| `0a7838b` | feat(96): DIN 86090/86088 CuNi elbow+tee (170 satir, KME+Wieland cross-validated) |
 
 CI: ✅ YEŞİL
 
 ---
 
-## DB Değişiklikleri
+## 97'e Açık Borç (Öncelik Sırası)
 
-```sql
--- Migration 076: Sözlük + 44 boru
--- Migration 077: Schema ALTER + 48 flansh
-ALTER TABLE flansh_olculer ALTER COLUMN bolt_circle_mm DROP NOT NULL;
-ALTER TABLE flansh_olculer ALTER COLUMN bolt_count DROP NOT NULL;
-```
+1. **`docs/KUTUPHANE-YUKLEME-TAKIP.md` v5 güncellemesi** — 95 (DIN 86089) + 96 (DIN 86090/86088) yansıtılmadıysa yansıt. CuNi fitting **✅ TAM** olarak işaretle.
 
----
+2. **Kalan 5 JSON dosyası işleme** — Kütüphane sohbetinden gelecek diğer dosyalar (97 açılışında Cihat netleştirir, muhtemelen DIN 86087 saddle ve/veya kalan KME PDF sayfaları).
 
-## 95'e Açık Borç (önceliğe göre)
+3. **93'ten devralınan `olusturma_at` rename** (KARAR-93.6) — hâlâ açık, 94+95+96'da değinilmedi.
 
-1. **`KUTUPHANE-YUKLEME-TAKIP.md` güncellemesi (10 dk)** — EEMUA-144 satırını ekle (24 mevcut, hedef ~30 P1), DIN-86019 hedef rakam düzelt (yanlış 18 yazılı, gerçek 30-50), DIN-86037-2 LJ + EN-1092-3 EN-T05 ekle, LJ vocabulary kararını not düş.
-2. **93'ten devralınan `olusturma_at` rename** (KARAR-93.6) — hâlâ açık.
-3. **Migration 078 — CuNi fitting (~320 satır)** — **Yeni kütüphane projesine taşınıyor.**
+4. **`fitting_olculer` toplam sayım teyidi** — 97 açılışında `SELECT COUNT(*) FROM fitting_olculer;` çalıştır, tahmin 897 doğru mu kontrol et.
 
----
-
-## CuNi Kütüphane (94 sonrası birikim)
-
-| Kategori | Mevcut | Hedef | Kaynak |
-|---|---:|---:|---|
-| Boru (boru_olculer) | 68 satır | ~100 | EEMUA-144 24 + DIN-86019 44, B466 + EEMUA 234 eksik |
-| Flansh (flansh_olculer) | 48 satır | ~100 | DIN-86037-2 LJ 29 + EN-1092-3 EN-T05 19, DIN 86087/88 eksik |
-| Fitting (fitting_olculer) | 0 satır | ~320 | DIN 86089 + 86088 + 86090 + 28011 + 86087 → Migration 078 |
+5. **Diğer geliştirme işleri** (önceki oturumlardan):
+   - Pano implementasyonu
+   - Format envanter UI (super_admin)
+   - Devre wizard UI tamamlama
+   - Reducer dimension table entegrasyonu
 
 ---
 
-> 95. oturum açılışında bu dosya, `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` okunacak.
-> **YENİ:** Kütüphane geliştirme için ayrı Claude projesi açıldı (`AresPipe — Kütüphane Veri Kaynakları`). Detay: `CLAUDE-SONRAKI-OTURUM.md` "İki Proje Koordinasyonu" bölümü.
+## Açık Süreç Notu — Kütüphane Sohbet Koordinasyonu
+
+96'da pattern oturdu: Kütüphane sohbeti JSON üretir, ana proje (bu sohbet) migration'a çevirir + cross-validate eder + canlıya geçirir. 95'te DIN 86089 JSON'u, 96'da DIN 86090/86088 JSON'u aynı protokolü izledi.
+
+97'de devam edecek 5 JSON dosyası için aynı akış:
+1. Cihat JSON'u indirir, ana projeye paylaşır
+2. Ana proje (97): KME ham veriyi parse + cross-validation kaynağı belirle (Wieland Section X) + migration üret + Supabase + commit
+3. MD5 doğrulamalı, MK-96.1-4 izle
+
+---
+
+> 97. oturum açılışında bu dosya, `CLAUDE-SONRAKI-OTURUM.md`, `docs/KUTUPHANE-YUKLEME-TAKIP.md` okunur.
