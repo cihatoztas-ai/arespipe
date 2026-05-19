@@ -161,9 +161,9 @@ Cihat Claude ile düzenli oturumlar yapıyor (oturum numaralı kayıtlar projede
 - **Web sayfa:** 47
 - **Mobil ekran (React):** 17
 - **Tablo:** 53
-- **API endpoint:** 8
+- **API endpoint:** 9
 - **CI kural:** 170 (7 kategori)
-- **Migration dosyası:** 77
+- **Migration dosyası:** 78
 <!-- AUTO-END:istatistikler -->
 
 ---

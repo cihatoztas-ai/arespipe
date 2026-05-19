@@ -99,7 +99,7 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 8 endpoint. Son güncelleme: 2026-05-19.
+> Toplam 9 endpoint. Son güncelleme: 2026-05-19.
 
 - **`api/batch-baslat.js`** — api/batch-baslat.js -- 49. oturum — _=====================================================================_
 - **`api/batch-kuyruga-al.js`** — api/batch-kuyruga-al.js -- 49. oturum — _=====================================================================_
@@ -107,6 +107,7 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 - **`api/dosya-url-al.js`** — Supabase Storage dosyaları için signed URL üretir — _Yetki: JWT'den tenant_id okunur, yol ile eşleşmeli (cross-tenant bloklanır)_
 - **`api/izometri-oku.js`** — api/izometri-oku.js -- Vercel Serverless Function (Node.js) — _=====================================================================_
 - **`api/kuyruk-durum.js`** — api/kuyruk-durum.js -- 49. oturum, polling endpoint — _=====================================================================_
+- **`api/kuyruk-isle-excel.js`** — Wizard'a yüklenen bom_excel dokümanlarını parse eder, sonucu kuyrukta saklar. — _101. oturum (19 Mayıs 2026)_
 - **`api/kuyruk-isle.js`** — api/kuyruk-isle.js -- 49. oturum, self-trigger chain worker — _=====================================================================_
 - **`api/sorgula.js`** — Doğal dil → SQL → Supabase → Türkçe cevap — _Güvenlik: sadece SELECT, tenant_id zorunlu_
 <!-- AUTO-END:endpointler -->
