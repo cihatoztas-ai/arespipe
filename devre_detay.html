@@ -221,6 +221,13 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .yb-galvaniz{background:rgba(22,163,110,.1); color:var(--gr);}
 .yb-siyah   {background:rgba(107,122,144,.15); color:var(--txm);}
 
+/* 100: Doküman satırı hover + modal */
+.dok-row{transition:background .15s;}
+.dok-row:hover{background:var(--sur2);}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;}
+.dok-xls-tab{margin-right:6px;}
+.dok-xls-tab.active{background:var(--ac);color:#fff;border-color:var(--ac);}
+
 /* G-08 — Sayfa Açılış Ritüeli (skeleton + cascade) — devreler.html referans */
 @keyframes _skShimmer { 0%{background-position:-340px 0;} 100%{background-position:calc(340px + 100%) 0;} }
 .sk{display:inline-block;background:linear-gradient(90deg,var(--bor) 0%,var(--sur2) 50%,var(--bor) 100%);background-size:340px 100%;animation:_skShimmer 1.4s ease-in-out infinite;border-radius:4px;color:transparent !important;vertical-align:middle;user-select:none;}
@@ -2286,13 +2293,12 @@ function renderDokumanlar(){
     var cfg=DT[d.tur]||DT.diger;
     var ext=(d.dosyaAdi||'').split('.').pop().toLowerCase();
     var ikon=DOK_EXT[ext]||'DOC';
-    var acBtn=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" target="_blank" rel="noopener" class="btn" style="color:var(--ac);border-color:rgba(54,127,236,.3);text-decoration:none;" title="'+tv('dv_dok_open','Aç')+'" onclick="event.stopPropagation();">↗</a>':'';
     var padLeft=18+(indent||0)*22;
-    return'<div data-ci="'+ci+'" onclick="dokOnizle(\''+esc(d.id)+'\')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 18px 10px '+padLeft+'px;border-bottom:1px solid var(--bor);transition:background .15s;" onmouseenter="this.style.background=\'var(--sur2)\'" onmouseleave="this.style.background=\'transparent\'">'
+    var idEsc=esc(d.id);
+    return'<div class="dok-row" data-ci="'+ci+'" data-doc-id="'+idEsc+'" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 18px 10px '+padLeft+'px;border-bottom:1px solid var(--bor);">'
       +'<div style="width:34px;height:34px;border-radius:8px;background:'+cfg.bg+';border:1px solid '+cfg.bor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+cfg.renk+';flex-shrink:0;">'+esc(ikon)+'</div>'
       +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+esc(d.ad)+'</div><div style="font-size:12px;color:var(--txd);margin-top:1px;"><span style="padding:1px 6px;border-radius:6px;background:'+cfg.bg+';color:'+cfg.renk+';font-weight:700;font-size:11px;">'+esc(cfg.lbl)+'</span> '+esc(d.dosyaAdi||'')+'</div></div>'
-      +acBtn
-      +'<button class="btn" onclick="event.stopPropagation();dokSil(\''+esc(d.id)+'\')" style="color:var(--re);border-color:rgba(229,62,62,.3);">✕</button>'
+      +'<button class="btn dok-row-del" data-doc-id="'+idEsc+'" style="color:var(--re);border-color:rgba(229,62,62,.3);">✕</button>'
       +'</div>';
   }
 
@@ -2388,8 +2394,39 @@ function dokKlasorToggle(yol){
   renderDokumanlar();
 }
 
-// ── Önizleme modal
-// Önizlenebilir formatlar
+// 100: Doküman satırı tıklama (event delegation) + ✕ sil
+(function(){
+  var hookup=false;
+  function hook(){
+    if(hookup)return;
+    var dl=document.getElementById('dokListesi');
+    if(!dl)return;
+    dl.addEventListener('click',function(e){
+      // ✕ sil butonu
+      var del=e.target.closest('.dok-row-del');
+      if(del){
+        e.stopPropagation();
+        var did=del.getAttribute('data-doc-id');
+        if(did)dokSil(did);
+        return;
+      }
+      // Satıra tıklama → önizleme
+      var row=e.target.closest('.dok-row');
+      if(row){
+        var rid=row.getAttribute('data-doc-id');
+        if(rid)dokOnizle(rid);
+      }
+    });
+    hookup=true;
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',hook);
+  }else{
+    hook();
+  }
+})();
+
+// 100: Doküman önizleme modal
 var DOK_ONIZ_FMT={
   pdf:'pdf',
   png:'img', jpg:'img', jpeg:'img', gif:'img', webp:'img', bmp:'img',
@@ -2414,19 +2451,17 @@ function dokOnizle(id){
   var DOK_EXT={pdf:'PDF',dwg:'DWG',dxf:'DXF',doc:'DOC',docx:'DOC',xls:'XLS',xlsx:'XLS',xlsm:'XLS',png:'IMG',jpg:'IMG',jpeg:'IMG',txt:'TXT',stp:'3D',step:'3D','3dm':'3D'};
   var ikon=DOK_EXT[ext]||'DOC';
 
-  // Header doldur
   adEl.textContent=d.ad||d.dosyaAdi||'(isimsiz)';
   var metaParts=[];
-  if(d._klasor)metaParts.push('📁 '+d._klasor);
+  if(d._klasor)metaParts.push('\u{1F4C1} '+d._klasor);
   metaParts.push(cfg.lbl);
   metaParts.push(d.dosyaAdi||'');
-  metaEl.textContent=metaParts.join(' · ');
+  metaEl.textContent=metaParts.join(' \u00B7 ');
   ikonEl.style.background=cfg.bg;
   ikonEl.style.border='1px solid '+cfg.bor;
   ikonEl.style.color=cfg.renk;
   ikonEl.textContent=ikon;
 
-  // ↗ Yeni sekme link
   if(d.dosyaUrl){
     acLink.href=d.dosyaUrl;
     acLink.style.display='inline-block';
@@ -2434,44 +2469,50 @@ function dokOnizle(id){
     acLink.style.display='none';
   }
 
-  // Body'i temizle, loading göster
-  body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;">'+tv('dv_dok_loading','Yükleniyor...')+'</div>';
+  body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;">'+tv('dv_dok_loading','Yukleniyor...')+'</div>';
   modal.style.display='flex';
 
-  // Format kontrolü
   var fmt=DOK_ONIZ_FMT[ext];
   if(!fmt){
-    // Önizleme yok — indir mesajı
     dokOnizleGosterDesteksiz(body,d,ikon,cfg);
     return;
   }
   if(!d.dosyaUrl){
-    body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;text-align:center;">'+tv('dv_dok_url_missing','Dosya bağlantısı bulunamadı')+'</div>';
+    body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;text-align:center;">'+tv('dv_dok_url_missing','Dosya baglantisi bulunamadi')+'</div>';
     return;
   }
-
-  // Format'a göre render
-  if(fmt==='pdf'){
-    dokOnizleGosterPDF(body,d);
-  }else if(fmt==='img'){
-    dokOnizleGosterImg(body,d);
-  }else if(fmt==='txt'){
-    dokOnizleGosterTxt(body,d);
-  }else if(fmt==='xls'){
-    dokOnizleGosterXls(body,d);
-  }
+  if(fmt==='pdf'){dokOnizleGosterPDF(body,d);}
+  else if(fmt==='img'){dokOnizleGosterImg(body,d);}
+  else if(fmt==='txt'){dokOnizleGosterTxt(body,d);}
+  else if(fmt==='xls'){dokOnizleGosterXls(body,d);}
 }
 
 function dokOnizleGosterPDF(body,d){
   body.style.display='block';
   body.style.padding='0';
-  body.innerHTML='<iframe src="'+esc(d.dosyaUrl)+'" style="width:100%;height:75vh;border:0;display:block;" title="'+esc(d.ad||'')+'"></iframe>';
+  var iframe=document.createElement('iframe');
+  iframe.src=d.dosyaUrl;
+  iframe.style.width='100%';
+  iframe.style.height='75vh';
+  iframe.style.border='0';
+  iframe.style.display='block';
+  iframe.title=d.ad||'';
+  body.innerHTML='';
+  body.appendChild(iframe);
 }
 
 function dokOnizleGosterImg(body,d){
   body.style.display='flex';
   body.style.padding='20px';
-  body.innerHTML='<img src="'+esc(d.dosyaUrl)+'" alt="'+esc(d.ad||'')+'" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:8px;">';
+  var img=document.createElement('img');
+  img.src=d.dosyaUrl;
+  img.alt=d.ad||'';
+  img.style.maxWidth='100%';
+  img.style.maxHeight='75vh';
+  img.style.objectFit='contain';
+  img.style.borderRadius='8px';
+  body.innerHTML='';
+  body.appendChild(img);
 }
 
 async function dokOnizleGosterTxt(body,d){
@@ -2483,13 +2524,32 @@ async function dokOnizleGosterTxt(body,d){
     var txt=await resp.text();
     var kesildi=false;
     if(txt.length>102400){txt=txt.slice(0,102400);kesildi=true;}
-    var html='<pre style="font-family:Menlo,Monaco,monospace;font-size:12px;line-height:1.5;color:var(--tx);background:var(--sur2);padding:14px;border-radius:8px;white-space:pre-wrap;word-break:break-word;max-height:70vh;overflow:auto;margin:0;">'+esc(txt)+'</pre>';
+    var pre=document.createElement('pre');
+    pre.style.fontFamily='Menlo,Monaco,monospace';
+    pre.style.fontSize='12px';
+    pre.style.lineHeight='1.5';
+    pre.style.color='var(--tx)';
+    pre.style.background='var(--sur2)';
+    pre.style.padding='14px';
+    pre.style.borderRadius='8px';
+    pre.style.whiteSpace='pre-wrap';
+    pre.style.wordBreak='break-word';
+    pre.style.maxHeight='70vh';
+    pre.style.overflow='auto';
+    pre.style.margin='0';
+    pre.textContent=txt;
+    body.innerHTML='';
+    body.appendChild(pre);
     if(kesildi){
-      html+='<div style="margin-top:10px;font-size:12px;color:var(--warn);">⚠ '+tv('dv_dok_txt_truncated','İlk 100 KB gösteriliyor — tümü için indirin')+'</div>';
+      var warn=document.createElement('div');
+      warn.style.marginTop='10px';
+      warn.style.fontSize='12px';
+      warn.style.color='var(--warn)';
+      warn.textContent='\u26A0 '+tv('dv_dok_txt_truncated','Ilk 100 KB gosteriliyor - tumu icin indirin');
+      body.appendChild(warn);
     }
-    body.innerHTML=html;
   }catch(err){
-    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_dok_load_error','Yüklenemedi')+': '+esc(err.message)+'</div>';
+    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_dok_load_error','Yuklenemedi')+': '+esc(err.message)+'</div>';
   }
 }
 
@@ -2497,7 +2557,7 @@ async function dokOnizleGosterXls(body,d){
   body.style.display='block';
   body.style.padding='20px';
   if(typeof XLSX==='undefined'){
-    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_xlsx_missing','Excel okuyucu yüklü değil')+'</div>';
+    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_xlsx_missing','Excel okuyucu yuklu degil')+'</div>';
     return;
   }
   try{
@@ -2506,78 +2566,136 @@ async function dokOnizleGosterXls(body,d){
     var buf=await resp.arrayBuffer();
     var wb=XLSX.read(buf,{type:'array'});
     if(!wb.SheetNames.length){
-      body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;text-align:center;">'+tv('dv_xls_no_sheet','Excel boş')+'</div>';
+      body.innerHTML='<div style="padding:40px;color:var(--txd);font-size:13px;text-align:center;">'+tv('dv_xls_no_sheet','Excel bos')+'</div>';
       return;
     }
-    // Tüm sheet'leri tab'lar olarak göster (ilk sheet aktif)
-    var sheetTabs='';
-    var sheetContents='';
+    body.innerHTML='';
+    var tabBar=document.createElement('div');
+    tabBar.style.marginBottom='10px';
+    tabBar.style.display=wb.SheetNames.length>1?'flex':'none';
+    tabBar.style.flexWrap='wrap';
+    tabBar.style.gap='4px';
+    var contentWrap=document.createElement('div');
+
     wb.SheetNames.forEach(function(name,idx){
       var ws=wb.Sheets[name];
-      // İlk 100 satıra sınırla
-      var ref=ws['!ref'];
-      var range=XLSX.utils.decode_range(ref||'A1:A1');
+      var ref=ws['!ref']||'A1:A1';
+      var range=XLSX.utils.decode_range(ref);
       var maxRow=Math.min(range.e.r,99);
-      var clipRef=XLSX.utils.encode_range({s:range.s,e:{r:maxRow,c:range.e.c}});
-      var html=XLSX.utils.sheet_to_html(ws,{id:'xlsTbl_'+idx,header:'',footer:''});
-      // Tablonun sadece body'sini al, kendi style ekle
-      sheetTabs+='<button class="btn xls-tab" data-tab="'+idx+'" onclick="dokXlsTabAc('+idx+')" style="margin-right:6px;'+(idx===0?'background:var(--ac);color:#fff;border-color:var(--ac);':'')+'">'+esc(name)+'</button>';
       var kesildi=range.e.r>99;
-      sheetContents+='<div class="xls-content" data-tab="'+idx+'" style="display:'+(idx===0?'block':'none')+';">'
-        +'<div style="overflow:auto;max-height:65vh;border:1px solid var(--bor);border-radius:8px;background:var(--sur2);">'
-        +'<style>#xlsTbl_'+idx+'{width:100%;border-collapse:collapse;font-size:12px;}'
+
+      var tab=document.createElement('button');
+      tab.className='btn dok-xls-tab'+(idx===0?' active':'');
+      tab.textContent=name;
+      tab.setAttribute('data-tab',String(idx));
+      tab.onclick=function(){
+        body.querySelectorAll('.dok-xls-tab').forEach(function(t){
+          t.classList.toggle('active',t.getAttribute('data-tab')===String(idx));
+        });
+        body.querySelectorAll('.dok-xls-content').forEach(function(c){
+          c.style.display=(c.getAttribute('data-tab')===String(idx))?'block':'none';
+        });
+      };
+      tabBar.appendChild(tab);
+
+      var content=document.createElement('div');
+      content.className='dok-xls-content';
+      content.setAttribute('data-tab',String(idx));
+      content.style.display=idx===0?'block':'none';
+
+      var tblWrap=document.createElement('div');
+      tblWrap.style.overflow='auto';
+      tblWrap.style.maxHeight='65vh';
+      tblWrap.style.border='1px solid var(--bor)';
+      tblWrap.style.borderRadius='8px';
+      tblWrap.style.background='var(--sur2)';
+
+      var html=XLSX.utils.sheet_to_html(ws,{id:'xlsTbl_'+idx,header:'',footer:''});
+      var styleStr='<style>#xlsTbl_'+idx+'{width:100%;border-collapse:collapse;font-size:12px;}'
         +'#xlsTbl_'+idx+' td,#xlsTbl_'+idx+' th{padding:6px 10px;border:1px solid var(--bor);text-align:left;color:var(--tx);background:var(--sur);}'
         +'#xlsTbl_'+idx+' tr:first-child td{background:var(--sur2);font-weight:700;}'
-        +'</style>'
-        +html
-        +'</div>';
-      if(kesildi){
-        sheetContents+='<div style="margin-top:8px;font-size:12px;color:var(--warn);">⚠ '+tv('dv_dok_xls_truncated','İlk 100 satır gösteriliyor — tümü için indirin')+'</div>';
-      }
-      sheetContents+='</div>';
-    });
-    var sheetTabBar=wb.SheetNames.length>1?'<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:4px;">'+sheetTabs+'</div>':'';
-    body.innerHTML=sheetTabBar+sheetContents;
-  }catch(err){
-    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_dok_load_error','Yüklenemedi')+': '+esc(err.message)+'</div>';
-  }
-}
+        +'</style>';
+      tblWrap.innerHTML=styleStr+html;
+      content.appendChild(tblWrap);
 
-function dokXlsTabAc(idx){
-  document.querySelectorAll('#mDokOnizleBody .xls-tab').forEach(function(b){
-    var active=parseInt(b.getAttribute('data-tab'),10)===idx;
-    b.style.background=active?'var(--ac)':'';
-    b.style.color=active?'#fff':'';
-    b.style.borderColor=active?'var(--ac)':'';
-  });
-  document.querySelectorAll('#mDokOnizleBody .xls-content').forEach(function(c){
-    c.style.display=(parseInt(c.getAttribute('data-tab'),10)===idx)?'block':'none';
-  });
+      if(kesildi){
+        var warn=document.createElement('div');
+        warn.style.marginTop='8px';
+        warn.style.fontSize='12px';
+        warn.style.color='var(--warn)';
+        warn.textContent='\u26A0 '+tv('dv_dok_xls_truncated','Ilk 100 satir gosteriliyor - tumu icin indirin');
+        content.appendChild(warn);
+      }
+      contentWrap.appendChild(content);
+    });
+
+    body.appendChild(tabBar);
+    body.appendChild(contentWrap);
+  }catch(err){
+    body.innerHTML='<div style="padding:40px;color:var(--re);font-size:13px;text-align:center;">'+tv('dv_dok_load_error','Yuklenemedi')+': '+esc(err.message)+'</div>';
+  }
 }
 
 function dokOnizleGosterDesteksiz(body,d,ikon,cfg){
   body.style.display='flex';
   body.style.padding='40px 20px';
-  var indirBtn=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" download="'+esc(d.dosyaAdi||'dosya')+'" class="btn btn-primary" style="text-decoration:none;">⬇ '+tv('dv_dok_download','İndir')+'</a>':'';
-  var yeniSekme=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" target="_blank" rel="noopener" class="btn" style="text-decoration:none;color:var(--ac);border-color:rgba(54,127,236,.3);">↗ '+tv('dv_dok_open_new','Yeni Sekme')+'</a>':'';
-  body.innerHTML='<div style="text-align:center;max-width:380px;">'
-    +'<div style="width:80px;height:80px;border-radius:14px;background:'+cfg.bg+';border:1px solid '+cfg.bor+';display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:'+cfg.renk+';margin:0 auto 16px;">'+esc(ikon)+'</div>'
-    +'<div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:6px;">'+tv('dv_dok_no_preview','Bu dosya türü önizlenemiyor')+'</div>'
-    +'<div style="font-size:13px;color:var(--txd);margin-bottom:18px;">'+tv('dv_dok_download_to_view','İndirip kendi programınızla açın')+'</div>'
-    +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'+indirBtn+yeniSekme+'</div>'
-    +'</div>';
+  body.innerHTML='';
+  var wrap=document.createElement('div');
+  wrap.style.textAlign='center';
+  wrap.style.maxWidth='380px';
+
+  var ic=document.createElement('div');
+  ic.style.cssText='width:80px;height:80px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;margin:0 auto 16px;';
+  ic.style.background=cfg.bg;
+  ic.style.border='1px solid '+cfg.bor;
+  ic.style.color=cfg.renk;
+  ic.textContent=ikon;
+  wrap.appendChild(ic);
+
+  var t1=document.createElement('div');
+  t1.style.cssText='font-size:14px;font-weight:700;color:var(--tx);margin-bottom:6px;';
+  t1.textContent=tv('dv_dok_no_preview','Bu dosya turu onizlenemiyor');
+  wrap.appendChild(t1);
+
+  var t2=document.createElement('div');
+  t2.style.cssText='font-size:13px;color:var(--txd);margin-bottom:18px;';
+  t2.textContent=tv('dv_dok_download_to_view','Indirip kendi programinizla acin');
+  wrap.appendChild(t2);
+
+  var btnWrap=document.createElement('div');
+  btnWrap.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;';
+
+  if(d.dosyaUrl){
+    var dl=document.createElement('a');
+    dl.href=d.dosyaUrl;
+    dl.download=d.dosyaAdi||'dosya';
+    dl.className='btn btn-primary';
+    dl.style.textDecoration='none';
+    dl.textContent='\u2B07 '+tv('dv_dok_download','Indir');
+    btnWrap.appendChild(dl);
+
+    var nt=document.createElement('a');
+    nt.href=d.dosyaUrl;
+    nt.target='_blank';
+    nt.rel='noopener';
+    nt.className='btn';
+    nt.style.cssText='text-decoration:none;color:var(--ac);border-color:rgba(54,127,236,.3);';
+    nt.textContent='\u2197 '+tv('dv_dok_open_new','Yeni Sekme');
+    btnWrap.appendChild(nt);
+  }
+
+  wrap.appendChild(btnWrap);
+  body.appendChild(wrap);
 }
 
 function dokOnizleKapat(){
   var modal=document.getElementById('mDokOnizle');
   if(!modal)return;
   modal.style.display='none';
-  // Body'i temizle (PDF iframe bellekte kalmasın)
   var body=document.getElementById('mDokOnizleBody');
   if(body)body.innerHTML='';
 }
 
-// ESC ile kapanma + dış tıklama
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     var modal=document.getElementById('mDokOnizle');
@@ -2892,8 +3010,7 @@ function exportPdf(){
     +'<table><thead><tr><th>#</th><th>'+tv('dv_th_marka','Marka')+'</th><th>'+tv('sp_stat_diameter','Çap')+'</th><th>'+tv('sp_stat_weight','Ağırlık')+'</th><th>'+tv('sp_stat_material','Malzeme')+'</th><th>'+tv('sp_stat_surface','Yüzey')+'</th><th>'+tv('sp_alist_label','Alıştırma')+'</th><th>'+tv('dv_th_status','Durum')+'</th></tr></thead><tbody>'+satirlar+'</tbody></table>
 <!-- 100: Doküman Önizleme Modal -->
 <div id="mDokOnizle" class="modal" style="display:none;align-items:center;justify-content:center;">
-  <div class="modal-card" style="width:min(960px,92vw);max-height:88vh;display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">
-    <!-- Header -->
+  <div style="width:min(960px,92vw);max-height:88vh;display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bor);border-radius:14px;overflow:hidden;">
     <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--bor);background:var(--sur2);flex-shrink:0;">
       <div id="mDokOnizleIkon" style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;"></div>
       <div style="flex:1;min-width:0;">
@@ -2902,11 +3019,7 @@ function exportPdf(){
       </div>
       <button onclick="dokOnizleKapat()" class="btn" style="color:var(--txd);border:0;background:transparent;font-size:20px;padding:6px 10px;cursor:pointer;" title="Kapat">✕</button>
     </div>
-    <!-- Body (preview content) -->
-    <div id="mDokOnizleBody" style="flex:1;overflow:auto;background:var(--sur);min-height:300px;display:flex;align-items:center;justify-content:center;">
-      <!-- içerik dokOnizle() tarafından doldurulur -->
-    </div>
-    <!-- Footer -->
+    <div id="mDokOnizleBody" style="flex:1;overflow:auto;background:var(--sur);min-height:300px;display:flex;align-items:center;justify-content:center;"></div>
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--bor);background:var(--sur2);flex-shrink:0;">
       <a id="mDokOnizleAcLink" href="#" target="_blank" rel="noopener" class="btn" style="color:var(--ac);border-color:rgba(54,127,236,.3);text-decoration:none;display:none;" data-i18n="dv_dok_open_new">↗ Yeni Sekme</a>
       <button onclick="dokOnizleKapat()" class="btn" data-i18n="cmn_close">Kapat</button>
