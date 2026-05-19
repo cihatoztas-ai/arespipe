@@ -23,7 +23,7 @@
 //
 // Env (Vercel):
 //   SUPABASE_URL                  (zaten var)
-//   SUPABASE_SERVICE_ROLE_KEY     (RLS bypass — DB için zorunlu)
+//   SUPABASE_SERVICE_KEY     (RLS bypass — DB için zorunlu)
 //
 // NOT: Pilot dönemde public erişim, 102+ auth eklenecek (TODO).
 
@@ -31,7 +31,7 @@ import { createClient } from '@supabase/supabase-js';
 import { parseExcel } from '../lib/excel-parser.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
 const BUCKET_ADI   = 'devre-belgeleri';
 
 export default async function handler(req, res) {
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
   if (!SUPABASE_URL || !SERVICE_ROLE) {
     return res.status(500).json({
-      hata: 'Env eksik: SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY zorunlu'
+      hata: 'Env eksik: SUPABASE_URL ve SUPABASE_SERVICE_KEY zorunlu'
     });
   }
 
