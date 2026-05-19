@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klasör Yükle — AresPipe</title>
+  <!-- B-03: Flash prevention -->
+  <script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);document.documentElement.style.visibility='hidden';})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap&subset=latin" rel="stylesheet">
+
+  <style>
+    :root { --ac:#2D8EFF; --gr:#16a36e; --re:#e53e3e; --warn:#d97706; --leg:#7c3aed; }
+    [data-theme="dark"]             { --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e; --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90; }
+    [data-theme="light-anthracite"] { --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0; --tx:#141e2b; --txm:#3a4f63; --txd:#637080; }
+
+    .page        { padding:28px; }
+    .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+    .page-title  { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:800; color:var(--tx); line-height:1; }
+    .breadcrumb  { font-size:14px; color:var(--txd); margin-bottom:6px; }
+    .breadcrumb a { color:var(--txd); text-decoration:none; }
+    .breadcrumb a:hover { color:var(--ac); }
+    .btn-primary, .btn-outline { font-family:inherit; font-size:14px; padding:9px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s; border:1px solid; }
+    .btn-primary { background:var(--ac); color:#fff; border-color:var(--ac); }
+    .btn-primary:hover:not(:disabled) { background:#1d7eef; }
+    .btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-outline { background:transparent; color:var(--tx); border-color:var(--bor); }
+    .btn-outline:hover { background:var(--sur); border-color:var(--ac); color:var(--ac); }
+
+    /* ── WIZARD STEPS (üst gösterge) ── */
+    .wiz-steps { display:flex; align-items:center; margin-bottom:24px; background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:14px 18px; gap:0; }
+    .wiz-step { display:flex; align-items:center; gap:10px; flex:1; }
+    .wiz-step + .wiz-step::before { content:''; height:2px; background:var(--bor); flex:1; margin-right:10px; }
+    .wiz-step.done + .wiz-step::before, .wiz-step.active + .wiz-step::before { background:var(--ac); }
+    .wiz-num { width:32px; height:32px; border-radius:50%; background:var(--sur2); border:2px solid var(--bor); color:var(--txd); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .wiz-step.active .wiz-num { background:var(--ac); border-color:var(--ac); color:#fff; }
+    .wiz-step.done .wiz-num { background:var(--gr); border-color:var(--gr); color:#fff; }
+    .wiz-step.done .wiz-num::after { content:'✓'; font-size:16px; }
+    .wiz-step.done .wiz-num span { display:none; }
+    .wiz-label { font-size:14px; color:var(--txd); font-weight:500; }
+    .wiz-step.active .wiz-label { color:var(--tx); font-weight:600; }
+    .wiz-step.done .wiz-label { color:var(--gr); }
+
+    /* ── WIZARD CARD (içerik) ── */
+    .wiz-card { background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:28px; min-height:300px; }
+    .wiz-panel h3 { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:700; color:var(--tx); margin:0 0 18px; }
+    .form-row { margin-bottom:16px; }
+    .form-row label { display:block; font-size:13px; font-weight:500; color:var(--txm); margin-bottom:6px; }
+    .form-row select, .form-row input[type=text] { width:100%; max-width:480px; padding:10px 12px; background:var(--bg); border:1px solid var(--bor); border-radius:8px; color:var(--tx); font-size:14px; font-family:inherit; }
+    .form-row select:focus, .form-row input:focus { outline:none; border-color:var(--ac); }
+    .form-row .info { font-size:12px; color:var(--txd); margin-top:6px; }
+
+    .wiz-actions { display:flex; justify-content:space-between; align-items:center; margin-top:28px; padding-top:18px; border-top:1px solid var(--bor); gap:10px; }
+    .wiz-actions .spacer { flex:1; }
+
+    /* ── DROP ZONE ── */
+    .drop-zone { border:2px dashed var(--bor); border-radius:12px; padding:40px 20px; text-align:center; transition:all .15s; margin-bottom:20px; background:var(--bg); }
+    .drop-zone.drag-over { border-color:var(--ac); background:rgba(45,142,255,.05); }
+    .drop-zone svg { width:48px; height:48px; color:var(--txd); margin-bottom:12px; }
+    .drop-zone p { margin:6px 0; color:var(--tx); }
+    .drop-zone .muted { color:var(--txd); font-size:13px; }
+    .drop-zone .dz-actions { margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+    /* ── DOSYA TABLOSU ── */
+    .dosya-tablo { width:100%; border-collapse:collapse; font-size:13px; }
+    .dosya-tablo thead th { text-align:left; padding:10px 12px; background:var(--sur2); color:var(--txm); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid var(--bor); }
+    .dosya-tablo tbody td { padding:10px 12px; border-bottom:1px solid var(--bor); color:var(--tx); vertical-align:middle; }
+    .dosya-tablo tbody tr:hover { background:var(--sur2); }
+    .dosya-tablo code { background:var(--sur2); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--txm); }
+    .tip-sel { padding:4px 8px; background:var(--bg); border:1px solid var(--bor); border-radius:6px; color:var(--tx); font-size:12px; font-family:inherit; }
+    .tip-sel:focus { outline:none; border-color:var(--ac); }
+    .btn-sil { background:transparent; border:none; color:var(--re); font-size:18px; cursor:pointer; padding:2px 8px; border-radius:4px; }
+    .btn-sil:hover { background:rgba(229,62,62,.1); }
+
+    /* ── ÖZET TABLOSU (Adım 3) ── */
+    .ozet-tablo { width:auto; min-width:300px; border-collapse:collapse; font-size:14px; margin-bottom:18px; }
+    .ozet-tablo th, .ozet-tablo td { padding:10px 16px; text-align:left; border-bottom:1px solid var(--bor); }
+    .ozet-tablo th { background:var(--sur2); color:var(--txm); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.3px; }
+    .ozet-tablo .tip-cell { color:var(--ac); font-weight:500; }
+    .ozet-tablo .total-row { font-weight:700; background:var(--sur2); }
+
+    /* ── YÜKLEME (Adım 4) ── */
+    .yukleme-status { padding:20px; background:var(--bg); border:1px solid var(--bor); border-radius:8px; margin-bottom:16px; }
+    .yukleme-status p { margin:6px 0; font-size:14px; color:var(--tx); }
+    .yukleme-status .muted { color:var(--txd); font-size:13px; }
+    .progress-bar { height:8px; background:var(--sur2); border-radius:4px; overflow:hidden; margin:12px 0; }
+    .progress-fill { height:100%; background:var(--ac); transition:width .3s; }
+    .durum-ok { color:var(--gr); }
+    .durum-fail { color:var(--re); }
+
+    /* ── Yüklenirken layout taşmalarını engelle ── */
+    .wiz-card { overflow-x:auto; }
+    @media (max-width: 768px) {
+      .page { padding:16px; }
+      .wiz-card { padding:18px; }
+      .wiz-label { display:none; }
+    }
+  </style>
+
+  <script src="ares-store.js"></script>
+  <script src="ares-lang.js"></script>
+  <script src="ares-normalize.js"></script>
+  <script src="ares-layout.js"></script>
+</head>
+<body>
+<div class="app-shell"><div class="main-content"><div class="page">
+
+  <!-- BAŞLIK -->
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="nav_home">Ana Sayfa</a> ›
+        <a href="devreler.html" data-i18n="nav_active_circuits">Aktif Devreler</a> ›
+        <span style="color:var(--tx)" data-i18n="dw_title">Klasör Yükle</span>
+      </div>
+      <div class="page-title" data-i18n="dw_page_title">📁 Klasör Yükle — Mevcut Devreye Belge Ekle</div>
+    </div>
+    <div>
+      <button class="btn-outline" onclick="if(confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) location.href='devreler.html'">
+        <span data-i18n="cmn_cancel">İptal</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- WIZARD STEPS -->
+  <div class="wiz-steps">
+    <div class="wiz-step active" data-step="1">
+      <span class="wiz-num"><span>1</span></span>
+      <span class="wiz-label" data-i18n="dw_step1">Devre Seç</span>
+    </div>
+    <div class="wiz-step" data-step="2">
+      <span class="wiz-num"><span>2</span></span>
+      <span class="wiz-label" data-i18n="dw_step2">Dosya Yükleme</span>
+    </div>
+    <div class="wiz-step" data-step="3">
+      <span class="wiz-num"><span>3</span></span>
+      <span class="wiz-label" data-i18n="dw_step3">Onay</span>
+    </div>
+    <div class="wiz-step" data-step="4">
+      <span class="wiz-num"><span>4</span></span>
+      <span class="wiz-label" data-i18n="dw_step4">Yükleme</span>
+    </div>
+  </div>
+
+  <!-- WIZARD CARD -->
+  <div class="wiz-card">
+
+    <!-- ADIM 1: Devre Seçimi -->
+    <div class="wiz-panel" data-panel="1">
+      <h3 data-i18n="dw_p1_title">Hangi devreye dosya yüklüyorsunuz?</h3>
+      <div class="form-row">
+        <label data-i18n="dw_lbl_proje">Proje *</label>
+        <select id="selProje"><option value="">— Yükleniyor… —</option></select>
+        <div class="info" data-i18n="dw_info_proje">Yalnızca size atanmış aktif projeler listelenir.</div>
+      </div>
+      <div class="form-row">
+        <label data-i18n="dw_lbl_devre">Devre *</label>
+        <select id="selDevre" disabled><option value="">— Önce proje seçin —</option></select>
+        <div class="info" data-i18n="dw_info_devre">Aktif devreler listelenir (silinmiş olanlar hariç).</div>
+      </div>
+      <div class="wiz-actions">
+        <div class="spacer"></div>
+        <button class="btn-primary" id="btnIlerle1" disabled>
+          <span data-i18n="cmn_next">İlerle →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ADIM 2: Dosya Yükleme -->
+    <div class="wiz-panel" data-panel="2" style="display:none">
+      <h3 data-i18n="dw_p2_title">Klasör veya dosyaları yükleyin</h3>
+      <div class="drop-zone" id="dropZone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          <line x1="12" y1="11" x2="12" y2="17"/>
+          <line x1="9" y1="14" x2="15" y2="14"/>
+        </svg>
+        <p><strong data-i18n="dw_dz_main">Klasör veya dosyaları sürükleyip bırakın</strong></p>
+        <p class="muted" data-i18n="dw_dz_or">veya:</p>
+        <input type="file" id="fileInput" multiple style="display:none">
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+        <div class="dz-actions">
+          <button class="btn-outline" onclick="document.getElementById('folderInput').click()" data-i18n="dw_btn_folder">📁 Klasör Seç</button>
+          <button class="btn-outline" onclick="document.getElementById('fileInput').click()" data-i18n="dw_btn_files">📄 Dosya Seç</button>
+        </div>
+      </div>
+      <table id="dosyaTablo" class="dosya-tablo" style="display:none">
+        <thead>
+          <tr>
+            <th data-i18n="dw_th_dosya">Dosya</th>
+            <th data-i18n="dw_th_klasor">Klasör Yolu</th>
+            <th data-i18n="dw_th_tip">Tip (otomatik)</th>
+            <th data-i18n="dw_th_boyut">Boyut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="dosyaTbody"></tbody>
+      </table>
+      <div class="wiz-actions">
+        <button class="btn-outline" id="btnGeri2"><span data-i18n="cmn_back">← Geri</span></button>
+        <button class="btn-primary" id="btnIlerle2" disabled>
+          <span data-i18n="cmn_next">İlerle →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ADIM 3: Onay -->
+    <div class="wiz-panel" data-panel="3" style="display:none">
+      <h3 data-i18n="dw_p3_title">Yükleme Özeti</h3>
+      <p style="color:var(--txd);font-size:14px;margin-bottom:18px" id="ozetBaslik"></p>
+      <div id="ozetIcerik"></div>
+      <p style="color:var(--txd);font-size:13px;margin-top:18px" data-i18n="dw_p3_note">
+        ℹ️ Dosyalar Storage'a yüklenecek, devre belgeleri tablosuna kaydedilecek. Parser şu an "saklama" modunda — yüklenen dosyalar arşivlenir, sonraki oturumlarda parser entegrasyonu eklenecek.
+      </p>
+      <div class="wiz-actions">
+        <button class="btn-outline" id="btnGeri3"><span data-i18n="cmn_back">← Geri</span></button>
+        <button class="btn-primary" id="btnYukle">
+          <span data-i18n="dw_btn_yukle">Yükle ve Kuyruğa At →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ADIM 4: Yükleme -->
+    <div class="wiz-panel" data-panel="4" style="display:none">
+      <h3 data-i18n="dw_p4_title">Yükleme</h3>
+      <div class="yukleme-status" id="yuklemeStatus">
+        <p data-i18n="dw_p4_hazirlik">Hazırlanıyor…</p>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <div class="wiz-actions">
+        <div class="spacer"></div>
+        <button class="btn-primary" id="btnDevreyiGor" style="display:none">
+          <span data-i18n="dw_btn_devreyi_gor">Devreyi Görüntüle →</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div></div></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// devre_wizard.html — 99. oturum iskeleti (Senaryo A1)
+// MEVCUT aktif devreye dosya yükleme akışı
+// Parser yok henüz — hepsi 'sakla' modunda, parse_durumu='tamamlandi'
+// ─────────────────────────────────────────────────────────────
+
+var WIZ = {
+  step: 1,
+  proje_id: null,
+  proje_no: '',
+  devre_id: null,
+  devre_no: '',
+  dosyalar: [],          // {file, klasor_yolu, dosya_adi, uzanti, tip_kodu, parser_yolu, boyut, durum}
+  dokuman_tipleri: [],   // DB seed
+  klasor_sozluk: []      // DB seed
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    // ── ARES + auth bekleme (devreler.html pattern'i) ──
+    try {
+      var _bekle = 0;
+      while (_bekle < 80) {
+        if (typeof ARES === 'undefined') { await new Promise(function(r){ setTimeout(r,100); }); _bekle++; continue; }
+        var _supa = ARES.supabase();
+        if (_supa) {
+          var _ses = await _supa.auth.getSession();
+          if (_ses.data && _ses.data.session) {
+            await ARES.oturumKontrol();
+            if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin', 'operator'])) return;
+            break;
+          }
+          if (_bekle > 20) { location.href = 'giris.html'; return; }
+        }
+        await new Promise(function(r){ setTimeout(r,100); });
+        _bekle++;
+      }
+    } catch(e) { console.error('[ARES auth]', e); }
+
+    // ── Feature flag çift-check (sayfa direkt URL ile açılmış olabilir) ──
+    try {
+      var _tid = ARES.tenantId();
+      if (!_tid) { location.href = 'giris.html'; return; }
+      var _r = await ARES.supabase().from('tenant_features')
+        .select('aktif').eq('tenant_id', _tid).eq('feature_kod', 'devre_wizard_v2').single();
+      if (!_r.data || _r.data.aktif !== true) {
+        alert('Bu özellik tenant için aktif değil. Yöneticinizden aktivasyon talep edin.');
+        location.href = 'devreler.html';
+        return;
+      }
+    } catch(e) {
+      console.error('[flag check]', e);
+      location.href = 'devreler.html';
+      return;
+    }
+
+    // ── Seed yükle (dokuman_tipleri + klasor_isim_sozluk) ──
+    try {
+      var supa = ARES.supabase();
+      var _t = await supa.from('dokuman_tipleri').select('tip_kodu, uzanti, parser_yolu, varsayilan_seviye').eq('aktif', true);
+      WIZ.dokuman_tipleri = _t.data || [];
+      var _k = await supa.from('klasor_isim_sozluk').select('klasor_pattern, tip_kodu, varsayilan_seviye').eq('aktif', true);
+      WIZ.klasor_sozluk = _k.data || [];
+    } catch(e) { console.error('[seed]', e); }
+
+    // ── Projeleri yükle ──
+    await projeleriYukle();
+
+    // ── Event bindings ──
+    bindleri();
+
+    // ── Flash prevention'ı kaldır ──
+    document.documentElement.style.visibility = '';
+  })();
+});
+
+async function projeleriYukle() {
+  var sel = document.getElementById('selProje');
+  try {
+    var supa = ARES.supabase();
+    var _r = await supa.from('projeler')
+      .select('id, proje_no, tersaneler(ad,kisa_ad)')
+      .eq('tenant_id', ARES.tenantId())
+      .order('proje_no');
+    sel.innerHTML = '<option value="">— Proje seçin —</option>';
+    (_r.data || []).forEach(function(p) {
+      var ts = (p.tersaneler && (p.tersaneler.kisa_ad || p.tersaneler.ad)) || '';
+      var ad = ts ? (ts + ' — ' + p.proje_no) : p.proje_no;
+      var opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = ad;
+      opt.dataset.no = p.proje_no;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('[projeler]', e);
+    sel.innerHTML = '<option value="">— Yükleme hatası —</option>';
+  }
+}
+
+async function devreleriYukle(proje_id) {
+  var sel = document.getElementById('selDevre');
+  sel.innerHTML = '<option value="">— Yükleniyor… —</option>';
+  sel.disabled = true;
+  try {
+    var supa = ARES.supabase();
+    // A1: silindi != true filtresi (devreler.html ile tutarlı)
+    var _r = await supa.from('devreler')
+      .select('id, devre_no, zone, is_emri_no')
+      .eq('tenant_id', ARES.tenantId())
+      .eq('proje_id', proje_id)
+      .neq('silindi', true)
+      .order('devre_no');
+    sel.innerHTML = '<option value="">— Devre seçin —</option>';
+    var liste = _r.data || [];
+    if (liste.length === 0) {
+      sel.innerHTML = '<option value="">— Bu projede aktif devre yok —</option>';
+      return;
+    }
+    liste.forEach(function(d) {
+      var et = d.devre_no;
+      if (d.zone) et += ' / ' + d.zone;
+      if (d.is_emri_no) et += '  (' + d.is_emri_no + ')';
+      var opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = et;
+      opt.dataset.no = d.devre_no;
+      sel.appendChild(opt);
+    });
+    sel.disabled = false;
+  } catch(e) {
+    console.error('[devreler]', e);
+    sel.innerHTML = '<option value="">— Yükleme hatası —</option>';
+  }
+}
+
+function bindleri() {
+  document.getElementById('selProje').addEventListener('change', function(e) {
+    var pid = e.target.value;
+    if (pid) {
+      var opt = e.target.options[e.target.selectedIndex];
+      WIZ.proje_id = pid;
+      WIZ.proje_no = opt.dataset.no || '';
+      devreleriYukle(pid);
+    } else {
+      document.getElementById('selDevre').innerHTML = '<option value="">— Önce proje seçin —</option>';
+      document.getElementById('selDevre').disabled = true;
+    }
+    guncelleAdim1Buton();
+  });
+  document.getElementById('selDevre').addEventListener('change', function(e) {
+    var did = e.target.value;
+    if (did) {
+      var opt = e.target.options[e.target.selectedIndex];
+      WIZ.devre_id = did;
+      WIZ.devre_no = opt.dataset.no || '';
+    } else {
+      WIZ.devre_id = null;
+    }
+    guncelleAdim1Buton();
+  });
+  document.getElementById('btnIlerle1').addEventListener('click', function() {
+    if (WIZ.proje_id && WIZ.devre_id) gosterAdim(2);
+  });
+  document.getElementById('btnGeri2').addEventListener('click', function() { gosterAdim(1); });
+  document.getElementById('btnIlerle2').addEventListener('click', adim2_ilerle);
+  document.getElementById('btnGeri3').addEventListener('click', function() { gosterAdim(2); });
+  document.getElementById('btnYukle').addEventListener('click', adim3_yukle);
+
+  // Drag-drop
+  var dz = document.getElementById('dropZone');
+  ['dragover','dragenter'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('drag-over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('drag-over'); });
+  });
+  dz.addEventListener('drop', dropHandler);
+
+  document.getElementById('fileInput').addEventListener('change', function(e) { fileInputHandler(e.target.files, false); });
+  document.getElementById('folderInput').addEventListener('change', function(e) { fileInputHandler(e.target.files, true); });
+}
+
+function guncelleAdim1Buton() {
+  document.getElementById('btnIlerle1').disabled = !(WIZ.proje_id && WIZ.devre_id);
+}
+
+// ── Drag-drop: klasör + dosya destekli ──
+async function dropHandler(ev) {
+  ev.preventDefault();
+  var items = ev.dataTransfer.items;
+  var dosyalar = [];
+  for (var i = 0; i < items.length; i++) {
+    var entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+    if (entry) {
+      await entryTraverse(entry, '', dosyalar);
+    } else {
+      var f = items[i].getAsFile();
+      if (f) dosyalar.push({ file: f, klasor_yolu: '' });
+    }
+  }
+  dosyalariEkle(dosyalar);
+}
+
+async function entryTraverse(entry, path, dosyalar) {
+  if (entry.isFile) {
+    return new Promise(function(resolve) {
+      entry.file(function(f) {
+        dosyalar.push({ file: f, klasor_yolu: path });
+        resolve();
+      });
+    });
+  } else if (entry.isDirectory) {
+    var reader = entry.createReader();
+    var entries = await new Promise(function(resolve){ reader.readEntries(resolve); });
+    var newPath = path ? path + '/' + entry.name : entry.name;
+    for (var i = 0; i < entries.length; i++) {
+      await entryTraverse(entries[i], newPath, dosyalar);
+    }
+  }
+}
+
+function fileInputHandler(files, isFolder) {
+  var dosyalar = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    var path = f.webkitRelativePath || '';
+    var klasor = (isFolder && path) ? path.split('/').slice(0, -1).join('/') : '';
+    dosyalar.push({ file: f, klasor_yolu: klasor });
+  }
+  dosyalariEkle(dosyalar);
+}
+
+function dosyalariEkle(dosyalar) {
+  dosyalar.forEach(function(d) {
+    var ad = d.file.name;
+    var uzanti = (ad.split('.').pop() || '').toLowerCase();
+    var tip_kodu = autoDetect(d.klasor_yolu, uzanti);
+    var parser_yolu = parserBul(tip_kodu, uzanti);
+    WIZ.dosyalar.push({
+      file: d.file,
+      klasor_yolu: d.klasor_yolu,
+      dosya_adi: ad,
+      uzanti: uzanti,
+      tip_kodu: tip_kodu,
+      parser_yolu: parser_yolu,
+      boyut: d.file.size,
+      durum: 'bekliyor'
+    });
+  });
+  renderDosyaTablo();
+  document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
+}
+
+// ── Auto-detect: 1) klasör adı (tam eşleşme), 2) uzantı, 3) diger ──
+function autoDetect(klasor_yolu, uzanti) {
+  var son_klasor = (klasor_yolu.split('/').pop() || '').toLowerCase().trim();
+  if (son_klasor) {
+    var k = WIZ.klasor_sozluk.find(function(s) { return s.klasor_pattern.toLowerCase() === son_klasor; });
+    if (k) return k.tip_kodu;
+  }
+  var u = WIZ.dokuman_tipleri.find(function(t) { return t.uzanti.toLowerCase() === uzanti; });
+  if (u) return u.tip_kodu;
+  return 'diger';
+}
+
+function parserBul(tip_kodu, uzanti) {
+  var t = WIZ.dokuman_tipleri.find(function(d) { return d.tip_kodu === tip_kodu && d.uzanti === uzanti; });
+  if (t) return t.parser_yolu;
+  return 'sakla';
+}
+
+function renderDosyaTablo() {
+  var tbody = document.getElementById('dosyaTbody');
+  tbody.innerHTML = '';
+  WIZ.dosyalar.forEach(function(d, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + esc(d.dosya_adi) + '</td>' +
+      '<td><code>' + esc(d.klasor_yolu || '(kök)') + '</code></td>' +
+      '<td>' + tipSelectHtml(i, d.tip_kodu) + '</td>' +
+      '<td>' + formatBoyut(d.boyut) + '</td>' +
+      '<td><button class="btn-sil" data-i="' + i + '" title="Kaldır">×</button></td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('dosyaTablo').style.display = WIZ.dosyalar.length > 0 ? 'table' : 'none';
+  // Event delegation: tip-sel ve btn-sil
+  tbody.querySelectorAll('.tip-sel').forEach(function(s) {
+    s.addEventListener('change', function() {
+      var i = parseInt(s.dataset.i);
+      WIZ.dosyalar[i].tip_kodu = s.value;
+      WIZ.dosyalar[i].parser_yolu = parserBul(s.value, WIZ.dosyalar[i].uzanti);
+    });
+  });
+  tbody.querySelectorAll('.btn-sil').forEach(function(b) {
+    b.addEventListener('click', function() {
+      WIZ.dosyalar.splice(parseInt(b.dataset.i), 1);
+      renderDosyaTablo();
+      document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
+    });
+  });
+}
+
+function tipSelectHtml(i, secili) {
+  var tipler = ['izometri', 'bom_excel', 'sertifika', 'sartname', 'akis_semasi', '3d_pdf', 'spool_imalat', 'stp', 'rhino', 'diger'];
+  var opts = tipler.map(function(t) {
+    return '<option value="' + t + '"' + (t === secili ? ' selected' : '') + '>' + t + '</option>';
+  }).join('');
+  return '<select class="tip-sel" data-i="' + i + '">' + opts + '</select>';
+}
+
+function formatBoyut(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+
+function adim2_ilerle() {
+  document.getElementById('ozetBaslik').textContent =
+    'Hedef: ' + WIZ.proje_no + ' — ' + WIZ.devre_no + ' (' + WIZ.dosyalar.length + ' dosya)';
+  var ozet = {};
+  WIZ.dosyalar.forEach(function(d) { ozet[d.tip_kodu] = (ozet[d.tip_kodu] || 0) + 1; });
+  var html = '<table class="ozet-tablo"><thead><tr><th>Tip</th><th style="text-align:right">Adet</th></tr></thead><tbody>';
+  Object.keys(ozet).sort().forEach(function(t) {
+    html += '<tr><td class="tip-cell">' + esc(t) + '</td><td style="text-align:right">' + ozet[t] + '</td></tr>';
+  });
+  html += '<tr class="total-row"><td>Toplam</td><td style="text-align:right">' + WIZ.dosyalar.length + '</td></tr>';
+  html += '</tbody></table>';
+  document.getElementById('ozetIcerik').innerHTML = html;
+  gosterAdim(3);
+}
+
+async function adim3_yukle() {
+  gosterAdim(4);
+  var box = document.getElementById('yuklemeStatus');
+  var fill = document.getElementById('progressFill');
+  var supa = ARES.supabase();
+  var tid = ARES.tenantId();
+  var userId;
+  try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+
+  var basarili = 0, basarisiz = 0;
+  var loglar = [];
+
+  for (var i = 0; i < WIZ.dosyalar.length; i++) {
+    var d = WIZ.dosyalar[i];
+    var ilerlemePct = Math.round(((i)/WIZ.dosyalar.length)*100);
+    fill.style.width = ilerlemePct + '%';
+    box.querySelector('p').innerHTML = '<strong>' + (i+1) + ' / ' + WIZ.dosyalar.length + ':</strong> ' + esc(d.dosya_adi) +
+      '<br><span class="muted">Tip: ' + esc(d.tip_kodu) + ' · Parser: ' + esc(d.parser_yolu) + '</span>';
+
+    try {
+      // 1. Storage upload — path pattern: {tenant_id}/projeler/{pid}/devreler/{did}/...
+      //    (izometri-pdfs bucket'ı ile tutarlı; RLS [1]=tenant_id::text kontrolüne uyar)
+      var path = tid + '/projeler/' + WIZ.proje_id + '/devreler/' + WIZ.devre_id + '/' +
+                 (d.klasor_yolu ? d.klasor_yolu + '/' : '') + d.dosya_adi;
+      var up = await supa.storage.from('devre-belgeleri').upload(path, d.file, { upsert: false });
+      if (up.error) throw up.error;
+
+      // 2. devre_dokumanlari INSERT
+      var _ddi = await supa.from('devre_dokumanlari').insert({
+        tenant_id: tid,
+        devre_id: WIZ.devre_id,
+        storage_yolu: path,
+        klasor_yolu: d.klasor_yolu || '',
+        dosya_adi: d.dosya_adi,
+        uzanti: d.uzanti,
+        boyut_byte: d.boyut,
+        dokuman_tipi: d.tip_kodu,
+        parse_durumu: 'tamamlandi',   // 99: 'sakla' parser hep tamamlandi
+        versiyon: 1,
+        aktif: true,
+        yukleyen_id: userId
+      }).select('id').single();
+      if (_ddi.error) throw _ddi.error;
+
+      // 3. dosya_isleme_kuyrugu INSERT (sakla parser — anında tamamlandı)
+      var _q = await supa.from('dosya_isleme_kuyrugu').insert({
+        tenant_id: tid,
+        devre_dokuman_id: _ddi.data.id,
+        parser: 'sakla',
+        oncelik: 100,
+        durum: 'tamamlandi',
+        deneme_sayisi: 0,
+        alindi_at: new Date().toISOString(),
+        bitis_at: new Date().toISOString()
+      });
+      if (_q.error) throw _q.error;
+
+      basarili++;
+      loglar.push({ ok:true, ad: d.dosya_adi });
+    } catch(e) {
+      console.error('Yükleme hatası:', d.dosya_adi, e);
+      basarisiz++;
+      loglar.push({ ok:false, ad: d.dosya_adi, hata: (e && e.message) || String(e) });
+    }
+  }
+
+  fill.style.width = '100%';
+  var sonHtml = '<p class="durum-ok">✓ Tamamlandı. <strong>' + basarili + '</strong> / ' + WIZ.dosyalar.length + ' dosya başarıyla yüklendi.</p>';
+  if (basarisiz > 0) {
+    sonHtml += '<p class="durum-fail">✗ <strong>' + basarisiz + '</strong> dosya başarısız:</p><ul style="font-size:13px;color:var(--txd)">';
+    loglar.filter(function(l){return !l.ok;}).forEach(function(l) {
+      sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(l.hata) + '</li>';
+    });
+    sonHtml += '</ul>';
+  }
+  box.innerHTML = sonHtml + '<div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>';
+
+  if (basarili > 0) {
+    var btn = document.getElementById('btnDevreyiGor');
+    btn.style.display = '';
+    btn.addEventListener('click', function() {
+      location.href = 'devre_detay.html?id=' + WIZ.devre_id;
+    });
+  }
+}
+
+function gosterAdim(n) {
+  WIZ.step = n;
+  document.querySelectorAll('.wiz-step').forEach(function(el) {
+    var s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === n);
+    el.classList.toggle('done', s < n);
+  });
+  document.querySelectorAll('.wiz-panel').forEach(function(el) {
+    el.style.display = (parseInt(el.dataset.panel) === n) ? '' : 'none';
+  });
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[<>&"]/g, function(c) {
+    return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];
+  });
+}
+</script>
+
+</body>
+</html>
