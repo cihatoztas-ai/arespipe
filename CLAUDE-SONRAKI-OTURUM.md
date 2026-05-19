@@ -1,7 +1,7 @@
-# 98. Oturum — Migration Çalıştırma + Smoke Test
+# 99. Oturum — Devre Wizard UI İskeleti
 
-> **Önce:** 97 mimari planı yazdı, schema dosyasını hazırladı, hiçbir SQL çalıştırmadı.
-> **Şimdi:** 98'in tek işi `migrations/080_devre_wizard_v2_schema.sql`'ı **canlı DB'ye çalıştırmak** ve doğrulamak.
+> **Önce:** 98 migration'ı canlıya aldı (8 tablo, 16 index, 8 policy, 62 seed, 1 ALTER, 7 tenant flag).
+> **Şimdi:** 99'un işi `devre_wizard.html` iskeletini yaratmak + sidebar'a feature-flag'li giriş eklemek + drag-drop dosya kabul akışını kurmak. **Parser yok henüz.**
 
 ---
 
@@ -14,174 +14,159 @@
    cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3
    ```
 
-2. **Bugün ne yapmak istiyorsun?** → Cevap: **97'nin migration'ını çalıştıracağız + smoke test.**
+2. **Bugün ne yapmak istiyorsun?** → Cevap: **97-98'in altyapısı üstünde wizard UI iskeleti.**
 
 ---
 
-## 98'in Ana İşi — 4 Adım, ~30 dakika
+## 99'un Ana İşi — 4 Adım, ~2-3 saat
 
-### Adım 1 — CI yeşil mi teyit (5 dk)
+### Adım 1 — Pilot tenant aktivasyonu (5 dk)
 
-```bash
-# Son commit'in CI durumu
-gh run list -L 1
-# veya GitHub Actions sayfası: https://github.com/cihatoztas-ai/arespipe/actions
-```
+Wizard'ı sadece pilot tenant'ta açacağız. Cihat hangi tenant'ın pilot olacağına karar versin (büyük ihtimal kendi test/dev tenant'ı).
 
-97'de yüklenen 4 dosya CI'yı tetiklemiş olmalı:
-- `migrations/080_devre_wizard_v2_schema.sql` (yeni)
-- `docs/DEVRE-WIZARD-V2-MIMARISI.md` (yeni)
-- `CLAUDE-SON-OTURUM.md` (güncelleme)
-- `CLAUDE-SONRAKI-OTURUM.md` (güncelleme)
-
-Beklenen: **CI YEŞİL**. `MIG_*` uyarısı çıkmamalı (dosya adı + başlık formatı şablona uydu).
-
-Eğer kırmızı: önce uyarıyı çözeriz, sonra migration. Push edilmiş dosyayı düzeltir, `gp` ile yeniden push.
-
-### Adım 2 — Kuru çalıştırma (10 dk)
-
-Supabase SQL Editor'de:
-
-1. `migrations/080_devre_wizard_v2_schema.sql` dosyasının **tüm içeriğini** kopyala
-2. SQL Editor'e yapıştır
-3. Dosyadaki `BEGIN;` ve `COMMIT;` satırlarını bul — `COMMIT;` satırını **`ROLLBACK;`** olarak değiştir
-4. **Çalıştır**
-
-Bu **gerçek yazmadan** sözdizimi + şema hatalarını gösterir. Transaction sonunda ROLLBACK olduğundan tablolar oluşmaz.
-
-**Beklenen sonuç:** Hata mesajı olmamalı, alt kısımda "Success. No rows returned" veya benzer mesaj.
-
-**Olası sorunlar:**
-- `function get_tenant_id() does not exist` → canlı'da fonksiyon yok, kontrol et: `SELECT * FROM pg_proc WHERE proname='get_tenant_id'`
-- `relation "tenants" does not exist` → schema search_path sorunu (olağan değil)
-- `Unicode/encoding hatası` → kopyala-yapıştırda em-dash veya typografik karakter karışmış (MK-48.6 hatırlat: ASCII yapıştır)
-
-### Adım 3 — Gerçek çalıştırma (5 dk)
-
-Kuru çalıştırma temizse:
-
-1. Aynı SQL'i tekrar yapıştır
-2. `ROLLBACK;` satırını **`COMMIT;`** olarak geri al
-3. **Çalıştır**
-
-**Beklenen sonuç:** "Success. No rows returned" — 8 tablo, 16 index, 8 policy, 62 seed satır, 1 ALTER, N feature flag satırı (her tenant için 1) eklendi.
-
-### Adım 4 — Smoke test (10 dk)
-
-Migration dosyasının altındaki **5 test sorgusunu** sırayla çalıştır (yorumları açarak):
-
-**Test 1: 8 tablo oluştu mu?**
 ```sql
-SELECT table_name FROM information_schema.tables
-WHERE table_schema='public' AND table_name IN (
-  'dokuman_tipleri','klasor_isim_sozluk','devre_dokumanlari','spool_dokumanlari',
-  'dosya_isleme_kuyrugu','alan_oncelik_kurallari','excel_format_tanimlari','fuzyon_karar_log'
-) ORDER BY table_name;
-```
-Beklenen: 8 satır.
+-- Önce mevcut tenant listesini gör:
+SELECT id, ad FROM tenants ORDER BY ad;
 
-**Test 2: Sistem default'lar yüklendi mi?**
-```sql
-SELECT 'dokuman_tipleri' AS tablo, count(*) FROM dokuman_tipleri WHERE tenant_id IS NULL
-UNION ALL SELECT 'klasor_isim_sozluk', count(*) FROM klasor_isim_sozluk WHERE tenant_id IS NULL
-UNION ALL SELECT 'alan_oncelik_kurallari', count(*) FROM alan_oncelik_kurallari WHERE tenant_id IS NULL;
-```
-Beklenen: 14, 33, 15.
+-- Pilot tenant'ın id'sini al, aktif=true yap:
+UPDATE tenant_features
+SET aktif = true
+WHERE feature_kod = 'devre_wizard_v2'
+  AND tenant_id = '<PILOT_TENANT_ID>';
 
-**Test 3: RLS policy'leri eklendi mi?**
-```sql
-SELECT tablename, policyname FROM pg_policies
-WHERE schemaname='public' AND tablename IN (
-  'dokuman_tipleri','klasor_isim_sozluk','devre_dokumanlari','spool_dokumanlari',
-  'dosya_isleme_kuyrugu','alan_oncelik_kurallari','excel_format_tanimlari','fuzyon_karar_log'
-) ORDER BY tablename;
+-- Doğrula:
+SELECT tf.aktif, t.ad
+FROM tenant_features tf
+JOIN tenants t ON t.id = tf.tenant_id
+WHERE tf.feature_kod = 'devre_wizard_v2';
 ```
-Beklenen: 8 satır (her tabloda 1 policy).
 
-**Test 4: pipeline_malzemeleri'ne kolon eklendi mi?**
-```sql
-SELECT column_name, data_type, is_nullable FROM information_schema.columns
-WHERE table_schema='public' AND table_name='pipeline_malzemeleri'
-  AND column_name='kaynak_dokuman_id';
+Beklenen: pilot tenant'ta `aktif=true`, diğer 6'sında `false`.
+
+### Adım 2 — Sidebar Entegrasyonu (15 dk)
+
+Sidebar şablonunda yeni link:
+
+- **Konum:** "Yeni Devre" linkinin hemen altı (veya alternatif: "Yeni Devre" → "Yeni Devre (Wizard)" alt-menüsü)
+- **Görünürlük:** Sadece feature flag aktif tenant'larda. Çoğu sayfa `arespipe.tenant_features` cache'ini sorguluyor — bu mekanizmayı kullan.
+- **Etiket:** TR/EN/AR dil anahtarı eklenmeli (`menu_devre_wizard` veya benzeri)
+
+**Dosya:** `dashboard.html` veya merkezi sidebar (`docs/PROJE-HARITASI.md`'ye bak — sidebar nerede)
+
+### Adım 3 — `devre_wizard.html` İskeleti (~2 saat)
+
+**Hedef:** ~300 satırlık iskelet. Henüz parser yok, henüz fuzyon yok — sadece **dosya kabul + listeleme + ilerleme** akışı.
+
+Yapı:
+
 ```
-Beklenen: 1 satır, `uuid`, `YES`.
-
-**Test 5: Feature flag tüm tenant'lara eklendi mi?**
-```sql
-SELECT count(DISTINCT tenant_id) AS tenant_sayisi
-FROM tenant_features
-WHERE feature_kod='devre_wizard_v2';
-
-SELECT count(*) AS toplam_tenant FROM tenants;
+┌─ Adım 1: Tenant + Proje + Devre seçimi
+│   - Tenant: otomatik (kullanıcı tenant'ı)
+│   - Proje: dropdown (mevcut projeler)
+│   - Devre no: text input (manuel veya dosyadan inferens — 100+'da)
+│   - "İlerle" butonu
+│
+├─ Adım 2: Dosya Yükleme
+│   - Drag-drop alanı (büyük, görsel)
+│   - Klasör yükleme desteği (webkitdirectory)
+│   - Yüklenen dosyaların tablosu:
+│     | Dosya adı | Klasör yolu | Tip (auto-detect) | Boyut | Durum |
+│   - Tip auto-detect: `dokuman_tipleri` sözlüğünden uzantı eşleme +
+│     `klasor_isim_sozluk` sözlüğünden klasör pattern eşleme
+│   - Manuel tip override: tıklanabilir tip kolonu
+│   - "Geri" / "İlerle" butonları
+│
+├─ Adım 3: Onay
+│   - Yüklenecek dosyaların özeti (tipe göre gruplu)
+│   - "Yükle ve Kuyruğa At" butonu → Storage'a + DB'ye + kuyruğa
+│
+└─ Adım 4: Yükleme + Durum
+   - Progress bar (Storage upload)
+   - Kuyruk durumu: bekliyor / işleniyor / tamamlandı (parse yok henüz, sadece 'saklama' parser'ı çalışır)
+   - "Devreyi Görüntüle" butonu → mevcut `devre_detay.html`'e gider
 ```
-Beklenen: İki sayı eşit olmalı (her tenant'a 1 satır).
+
+**Henüz YAPMAYACAĞIMIZ şeyler (100+):**
+- Parse çağrıları (izometri-oku, excel-generic, step-parser)
+- Füzyon motoru
+- Çelişki onay popup'ı
+- Pipeline malzemeleri ortak BOM yazımı
+- Spool detay klasör hiyerarşisi UI'sı
+
+**Yapacağımız 99'da:**
+- Storage'a dosya yazma (`tenants/{tenant}/projeler/{proje}/devreler/{devre}/{klasor}/dosya`)
+- `devre_dokumanlari` ve `spool_dokumanlari` INSERT (sadece "saklama" tipinde dosyalar için)
+- `dosya_isleme_kuyrugu`'na "saklama" parser'lı satır ekleme (kuyruk işleyicisi 100+'da)
+- "Saklama" parser'ı işleyici (basit: durum güncelle, parse_durumu='tamamlandi', metadata yok)
+
+### Adım 4 — Smoke Test (15 dk)
+
+Pilot tenant'la yeni wizard'a gir, basit bir senaryoyu test et:
+
+1. Yeni devre oluştur (X projesi, Y devre no)
+2. Bir klasör yapısı sürükle-bırak yap (örn: `test_devre/izometri/123.pdf, test_devre/bom/list.xlsx, test_devre/sertifikalar/mtc.pdf`)
+3. Tip auto-detect doğru mu? (izometri → izometri, bom → bom_excel, sertifikalar → sertifika)
+4. "Yükle" → Storage'a yazıldı mı? (Supabase Storage UI'dan teyit)
+5. `devre_dokumanlari` SELECT: 3 satır
+6. `dosya_isleme_kuyrugu` SELECT: 3 satır, hepsi 'tamamlandi' (saklama parser'ı)
 
 ---
 
-## Beş Test de Yeşilse Ne Yapıyoruz?
+## Beklenmedik Senaryo
 
-**HİÇBİR ŞEY.** 98 kapanır. 99'da `devre_wizard.html` iskeletine başlanır. 98 sadece **DB altyapısını canlıya almak**, başka iş yok.
+### Tenant_features cache'i
 
-Tek ek: `KARAR-97.13` kapsamında DATABASE.md'yi güncellemek istersen, bu 98'in **opsiyonel** ek işi olabilir. Ama gerekli değil — uyumsuzluk migration başlığında not edildi.
+Çoğu sayfa tenant_features'ı bir kez okuyup memory'de tutuyor. Yeni flag eklediğimizde **sayfa yenileme** gerekebilir — kullanıcıya hatırlat.
 
----
+### Drag-drop klasör API'si
 
-## Beklenmedik Senaryo — Bir Test Kırmızı Çıkarsa
+`webkitdirectory` Firefox 50+, Chrome 4+, Safari 11.1+ destekliyor — ama bazı eski sürümlerde davranış farklı. Yedek: tek-tek dosya yükleme akışı bırak.
 
-### `get_tenant_id()` yoksa
+### Tip auto-detect false positive
 
-Kontrol:
-```sql
-SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='get_tenant_id';
-```
-
-Yoksa migration başarısız olur. Bu durumda **mevcut sistemde** `spool_malzemeleri` çalışıyor demek imkansız — fonksiyon olmadan RLS çalışmaz. Yani büyük ihtimal var ama farklı isimle (`current_tenant_id`?, `jwt_tenant_id`?). Aramamız gerek:
-
-```sql
-SELECT proname FROM pg_proc 
-WHERE proname ILIKE '%tenant%' AND prokind='f';
-```
-
-### Bir CHECK constraint reddederse
-
-Olası neden: seed verisinde tip kodu listesi ile CHECK kuralı çakışır. Migration'da CHECK koymadım constraint'lerde — sadece `varsayilan_seviye IN ('devre','spool')` ve birkaç tane. Bunlar seed verilerimle uyumlu, sorun olmamalı.
-
-### CASCADE deadlock olursa
-
-CREATE TABLE sırası önemli — FK bağımlılıkları düzgün olmalı. Migration'da `devre_dokumanlari` `spool_dokumanlari`'ndan önce yaratıldı (FK doğru yön). Sorun olmamalı.
+Klasör adı "iso" → `izometri` eşlemesi var ama kullanıcı "iso_sertifikalar" diye bir klasör yüklerse yanlış eşleşir. Pattern başında `ILIKE 'iso%'` yerine `ILIKE 'iso'` (tam eşleşme) tercih et. Veya kullanıcıya manuel override kolaylığı bırak.
 
 ---
 
-## 99'a Bakış (Şimdilik Spoiler)
+## 100'e Bakış (Spoiler)
 
-99'da:
-- `devre_wizard.html` yeni dosya yaratılır (0 satır → ~300 satır iskelet)
-- Sidebar'a "Yeni Devre (Wizard)" eklentisi (sadece feature flag açık tenant'larda görünür)
-- Drag-drop area + dosya tipi auto-detect (`dokuman_tipleri` sözlüğünden okuyarak)
-- Yüklenen dosyaların tablosu (henüz parse yok, sadece liste)
-- "İlerle" butonu disabled
+100'de:
+- İlk gerçek parser: `excel-generic` parser (BOM yükleme + sözlük match + L3 AI fallback)
+- `pipeline_malzemeleri` INSERT (multi-spool BOM ortak alan)
+- Manuel kolon eşleme UI'sı (sözlük match başarısız olursa)
+- Format öğrenme: ilk başarılı eşlemeden sonra `excel_format_tanimlari` satır eklenmesi
 
-Parser entegrasyonu 100+'a. 99'un asıl işi **UI iskeleti + dosya kabul akışı**.
+101+'da:
+- İzometri PDF parser entegrasyonu (mevcut `api/izometri-oku.js` wrapper)
+- Çoklu sayfa PDF kuyruk akışı
+- STP parser ilk denemesi (B-spline → silindir fit zor, opsiyonel)
+
+102-104:
+- Füzyon motoru (çelişki tespit + iki boyutlu skor)
+- Yüksek riskli alanlar manuel onay UI
+- Karar log entegrasyonu
 
 ---
 
-## Açık Borçlar (97 sonu)
+## Açık Borçlar (98 sonu)
 
-- ⚪ Migration çalıştırma (98'in işi — bu dosya)
-- ⚪ Feature flag'in tek tenant için açılması (98 veya 99'da, pilot tenant kararı)
+- ⚪ Pilot tenant feature flag aktivasyonu (99 Adım 1)
+- ⚪ `devre_wizard.html` iskeleti (99 Adım 2-4)
 - ⚪ AVEVA AP214 çıkış denemesi (opsiyonel, Cihat zaman bulduğunda tersanedeki adımı sorabilir)
-- ⚪ `DATABASE.md` RLS uyumsuzluğu (97.13'te not edildi, gelecek belge sweep oturumunda)
-- ⚪ 99-104 implementasyon serisi (bu plan `docs/DEVRE-WIZARD-V2-MIMARISI.md` bölüm 4'te)
+- ⚪ `docs/DATABASE.md` RLS uyumsuzluğu (97.13'te not edildi, belge sweep oturumunda)
+- ⚪ 100-104 implementasyon serisi (parser + füzyon)
 
 ---
 
 ## Hatırlatmalar
 
-- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti — em-dash, typografik apostrofe paste'ten kaçın. Migration dosyasını GitHub'dan ham olarak (Raw view) kopyala, plain text yapıştır
-- **MK-52.2:** `gp` kullan, `git push` değil — son-durum.md otomatik commit'ini yakalar
-- **Risk düşük** — KARAR-97.0 garantisi mevcut tablolarda veri kaybı yok. Her şey olsa olsa **kuru çalıştırmada** hata verir, ROLLBACK ile çıkarsın
-- **Acele yok** — 98 sadece 30 dakikalık iş. İşten önce yapabilirsin, akşam yapabilirsin, hafta sonu yapabilirsin. Schema bekler
+- **MK-98.1:** Yeni feature flag eklerken `feature_flags` master kayıt önce, `tenant_features` sonra (FK kuralı).
+- **MK-98.2:** Şema migration'larında `BEGIN...ROLLBACK` kuru çalıştırma **zorunlu**.
+- **MK-98.3:** Terminal yapıştırmada `\` line continuation yerine `&&` zinciri tercih et.
+- **MK-98.4:** SQL'i her zaman "Supabase SQL Editor →" başlığıyla ver, terminal komutlarını `bash` bloğunda.
+- **MK-52.2:** `gp` kullan, `git push` değil — son-durum.md otomatik commit'i yakalar.
+- **Acele yok** — 99 ~2-3 saatlik iş. UI iskeleti, parser yok. Test edebileceğin minimum yüzey.
 
 ---
 
-> **98. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SON-OTURUM.md` okunacak.**
+> **99. oturum açılışında bu dosya + `son-durum.md` + `CLAUDE-SON-OTURUM.md` okunacak.**

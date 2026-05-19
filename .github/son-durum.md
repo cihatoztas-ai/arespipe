@@ -1,73 +1,67 @@
 # AresPipe — Son Durum
 
-> **97. oturum kapanışı — 18 Mayıs 2026**
+> **98. oturum kapanışı — 19 Mayıs 2026**
 > Bu dosya her oturum başında ilk okunan kayıttır. Güncel CI durumu + açık borçlar + sonraki oturum gündemi burada.
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL (97 öncesi son commit `bea9002 docs(96): oturum 96 kapanis`, sonra `c50d615` otomatik ci-son-rapor.json)
+- **Build:** ✅ YEŞİL (98 düzeltme commit'i `f8f44cd fix(080): feature_flags master INSERT eklendi`, sonra bu kapanış commit'i)
 - **Lint:** 0 hata, 22 uyarı (Faz B baseline'ı korundu)
 - **Vercel:** ✅ Production aktif
-- **Migration sayısı:** 79 (son: `079_din_86090_86088_cuni_kme.sql` — 96'da)
-- **97 sonrası:** `migrations/080_devre_wizard_v2_schema.sql` yüklenmeyi bekliyor (henüz commit edilmedi)
+- **Migration sayısı:** 80 (son: `080_devre_wizard_v2_schema.sql` — 97'de yazıldı, 98'de canlıda çalıştı)
+- **98 sonrası:** Migration 080 canlıda, 5/5 smoke test yeşil. Pilot tenant feature flag aktivasyonu 99'a aktarıldı.
 
 ---
 
-## 97. Oturum Özeti
+## 98. Oturum Özeti
 
-**Ana tema:** Devre yükleme wizard'ı mimari planı — sürükle bırak çoklu dosya, dosya tipi dispatch, klasör hiyerarşisi, çapraz veri füzyonu.
+**Ana tema:** `migrations/080_devre_wizard_v2_schema.sql` canlıya çalıştırma + 5 smoke test.
 
-**Süreç:** 97 alışılmadık bir oturum oldu — kod yazımı değil, **uzun mimari sohbet**. Cihat devre yükleme vizyonunu detaylı yazdı, ben de gerçekleştirilebilirliği test ettim ("hayalci olmayalım"). 13 KARAR alındı, 8 yeni tablonun migration dosyası yazıldı, gelecek 6 oturumun yol haritası çıkarıldı.
+**Süreç:** Plan 30 dk öngörmüştü, FK hata düzeltmesi nedeniyle ~45 dk sürdü. 4 adım: (1) CI yeşil teyit → (2) kuru çalıştırma `BEGIN...ROLLBACK` → FK hata yakalandı → (2.5) düzeltme commit'i `f8f44cd` → (3) gerçek çalıştırma → (4) 5 smoke test.
 
-**Yazılan dosyalar (4):**
-- `migrations/080_devre_wizard_v2_schema.sql` (527 satır — 8 tablo + 16 index + 8 RLS policy + 62 seed + 1 ALTER + feature flag)
-- `docs/DEVRE-WIZARD-V2-MIMARISI.md` (97'nin asıl mimari belgesi)
-- `CLAUDE-SON-OTURUM.md` (97 detaylı özeti)
-- `CLAUDE-SONRAKI-OTURUM.md` (98 gündemi)
+**Yazılan/değişen dosyalar (5):**
+- `migrations/080_devre_wizard_v2_schema.sql` (527 → 542 satır — Bölüm 6.1 `feature_flags` master INSERT eklendi + DOWN düzeltmesi)
+- `.github/son-durum.md` (bu dosya, 98 kapanış)
+- `CLAUDE-SON-OTURUM.md` (98 detaylı özeti)
+- `CLAUDE-SONRAKI-OTURUM.md` (99 gündemi)
+- (otomatik) `.github/ci-son-rapor.json` — bot CI raporu
 
-**DB değişikliği yapıldı mı?** Hayır — migration **97'de yazıldı, 98'de çalıştırılacak.** Bilinçli karar: önce CI'da görsün, sonra Cihat aradan mola alıp uykusuyla bir kontrol katmanı daha ekler.
+**DB değişikliği yapıldı mı?** Evet — **8 tablo + 16 index + 8 RLS policy + 62 seed satır + 1 ALTER (`pipeline_malzemeleri.kaynak_dokuman_id` UUID NULL) + 1 master feature_flag (`devre_wizard_v2`) + 7 tenant_features satırı** canlıda. Mevcut tablolarda veri kaybı: YOK (KARAR-97.0 garantisi tutuldu).
 
-**13 KARAR (97.0 – 97.13):** Detayı `docs/DEVRE-WIZARD-V2-MIMARISI.md`'de. Özet:
-- 97.0: Yeni tablolar mevcut tablolara FK kurmaz (tek istisna opsiyonel izleme)
-- 97.1: Tek spool = bir dosya (STP/Rhino parse edilebilir)
-- 97.2: Füzyon alan başına öncelik (JSONB skor)
-- 97.3: Yüksek risk manuel, düşük otomatik
-- 97.4: Çelişki kararları loglanır, 5+ aynı = sistem önerisi
-- 97.5: İki boyutlu skor (parse güveni × kaynak içerik önceliği)
-- 97.6: Devre detay Windows Gezgini görünümü
-- 97.7: Çok-spoollu PDF tek dosya + N satır (sayfa aralık)
-- 97.8: Multi-spool ortak BOM `pipeline_malzemeleri`'ne
-- 97.9: Token limit aşan PDF sayfa-başına AI + kuyruk
-- 97.10: Storage hiyerarşisi `tenants/projeler/devreler/{klasör}/dosya`
-- 97.11: STP AVEVA HarmonyWare B-spline parse + montaj koordinatı bonus
-- 97.12: Soft delete 30 gün
-- 97.13: RLS canlı pattern (DATABASE.md uyumsuzluğu not edildi)
+**Smoke test (5/5 ✅):**
+| Test | Beklenen | Gerçek |
+|---|---|---|
+| 1. 8 tablo oluştu | 8 satır | ✅ 8 |
+| 2. Seed (`dokuman_tipleri`/`klasor_isim_sozluk`/`alan_oncelik_kurallari`) | 14, 33, 15 | ✅ 14, 33, 15 |
+| 3. RLS policy (8 tablo × 1 policy) | 8 satır | ✅ 8 (isimler birebir) |
+| 4. `pipeline_malzemeleri.kaynak_dokuman_id` | uuid, YES | ✅ uuid, YES |
+| 5. Tenant flag = tenant sayısı, master = 1 | 7=7, 1 | ✅ 7=7, 1 |
 
-**STP analiz bulgusu:** Cihat yükledi `1030-3531-103-PS07.stp` (322 KB, AVEVA HarmonyWare). Silindir/torus yok, sadece B-spline yüzeyleri. Parser tahminim **2-3 oturum → 3-5 oturum** revize edildi. Bonus: gemi global koordinatlar otomatik montaj noktası etiketleme sağlıyor.
+**FK hata düzeltmesi (Adım 2.5):** Kuru çalıştırma `tenant_features.feature_kod -> feature_flags.kod` FK constraint'ini yakaladı. 97 mimari yazımında `feature_flags` master tablosunun varlığı gözden kaçmıştı (canlıda 5 satırla aktif kurulu: `ai_izometri`, `musteri_portal`, `raporlar_gelismis`, `hakedis`, `yh_admin_panel_yol_haritasi_sekmesi`). Düzeltme: Bölüm 6.1 olarak `INSERT INTO feature_flags ... ON CONFLICT (kod) DO NOTHING` eklendi, DOWN bloğunda da silme adımı (child önce, parent sonra). **Canlıya hiç hatalı yazma olmadı** — kuru çalıştırma disiplini kurtardı.
 
-**Yan keşif:** `pipeline_malzemeleri` tablosu 19'da kurulmuş, multi-spool ortak BOM için tam yeri. Yeni tablo gerekmedi, sadece `kaynak_dokuman_id UUID NULL` kolonu eklenecek.
+**Yan keşif:** `feature_flags` master tablosu DB keşif sorgusu yapılmadan varsayılmıştı. Ders: Migration yazılırken FK target tabloları için `information_schema.columns` veya `\d` sorgusu zorunlu.
 
 ---
 
-## Açık Borçlar (97 sonu)
+## Açık Borçlar (98 sonu)
 
-### Acil (98 gündemi)
-- ⚪ **Migration çalıştırma** — Supabase SQL Editor'de kuru çalıştırma + gerçek + 5 smoke test
-- ⚪ **CI yeşil teyit** — `MIG_*` uyarı yok mu
+### Acil (99 gündemi)
+- ⚪ **Pilot tenant feature flag aktivasyonu** — `UPDATE tenant_features SET aktif=true WHERE tenant_id=<PILOT> AND feature_kod='devre_wizard_v2'` (99 Adım 1, 5 dk)
+- ⚪ **`devre_wizard.html` iskeleti** — sidebar entegrasyonu (feature-flag'li) + 4-adım wizard UI + drag-drop + dosya tipi auto-detect + Storage upload + `dosya_isleme_kuyrugu` "saklama" parser'ı (99 Adım 2-4, ~2-3 saat)
+- ⚪ **Smoke test (99 Adım 5)** — pilot tenant'la basit klasör yükleme + tip auto-detect + DB+Storage teyit
 
-### Önemli (99+)
-- ⚪ 99: `devre_wizard.html` iskelet + drag-drop + dosya tipi auto-detect
-- ⚪ 100: Excel generic parser (L1 sözlük + L2 pattern, L3 Haiku ileride)
-- ⚪ 101: İzometri batch entegrasyonu + Faz 1/Faz 2 kuyruğu
+### Önemli (100+)
+- ⚪ 100: Excel generic parser (L1 sözlük + L2 pattern, L3 Haiku ileride) + `pipeline_malzemeleri` INSERT (multi-spool BOM)
+- ⚪ 101: İzometri batch entegrasyonu + Faz 1/Faz 2 kuyruğu (mevcut `api/izometri-oku.js` wrapper)
 - ⚪ 102: Füzyon motoru + çelişki ekranı + manuel onay
 - ⚪ 103: STP tek-spool parser (B-spline → silindir fitting)
 - ⚪ 104: Rhino parser + Windows Gezgini UI + spool detay "Belgeler" sekmesi
 
 ### Opsiyonel
 - ⚪ AVEVA AP214 çıkış denemesi (Cihat tersanedeki adımı sorabilir, başarılı olursa STP parser 5 dakikalık iş olur)
-- ⚪ `docs/DATABASE.md` RLS uyumsuzluğu (4 policy disiplinine geçiş veya doküman güncelleme)
+- ⚪ `docs/DATABASE.md` RLS uyumsuzluğu (4 policy disiplinine geçiş veya doküman güncelleme — belge sweep oturumunda)
 - ⚪ Soft delete cron işi (30 gün sonra kalıcı silme) — 100+ oturumda
 
 ### Geri kalan (97'den önceki listeden devam)
@@ -80,7 +74,7 @@
 
 ## Aktif Süreç Disiplinleri
 
-- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti — em-dash, typografik apostrofe paste etme
+- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti — em-dash, typografik apostrofe paste etme (Raw view'dan kopyala)
 - **MK-49.1:** `izometri-oku.js`'e dokunma — minimum değişiklik
 - **MK-50.1:** Hassas anahtar Claude'a verme
 - **MK-50.3:** Yeni format için parser_kural yazmadan önce 3+ başarılı AI örneği
@@ -89,6 +83,10 @@
 - **MK-51.2:** Parser_kural regex'lerini en az 5 farklı gerçek dosya örneğiyle test et
 - **MK-52.1:** `arespipe_kopyala` MD5 doğrulamalı dosya kopyalama
 - **MK-52.2:** `gp` otomatik rebase + push (manuel `git push` yerine)
+- **MK-98.1:** Yeni feature flag eklerken `feature_flags` master kayıt önce, `tenant_features` sonra (FK kuralı). Master tablo için DB keşif sorgusu zorunlu, varsayım yasak.
+- **MK-98.2:** Şema migration'larında `BEGIN...ROLLBACK` kuru çalıştırma **zorunlu**. Önce `COMMIT;` → `ROLLBACK;` ile test, temizse `ROLLBACK;` → `COMMIT;` ile tekrar çalıştır.
+- **MK-98.3:** Terminal yapıştırmada `\` line continuation yerine `&&` zinciri tercih et. Çok parametreli `-m` yerine tek `-m "paragraf 1\n\nparagraf 2"` (gerçek satır sonlu) kullan, veya heredoc.
+- **MK-98.4:** SQL'i her zaman "Supabase SQL Editor →" başlığıyla ver, terminal komutlarını `bash` bloğunda. Karışmasın (zsh `count(*)` içindeki `*` karakterini glob sanar).
 - **KARAR-97.0:** Yeni tablolar mevcut sisteme dokunmaz (geri alma garantisi)
 
 ---
@@ -102,16 +100,18 @@
 
 ---
 
-## 98 Hazırlık Notu
+## 99 Hazırlık Notu
 
-98 sadece 30 dakikalık iş. Sıralı adımlar:
-1. CI yeşil teyit (5 dk)
-2. Supabase'de kuru çalıştırma — `BEGIN...ROLLBACK` (10 dk)
-3. Gerçek çalıştırma — `BEGIN...COMMIT` (5 dk)
-4. 5 smoke test sorgusu (10 dk)
+99 ~2-3 saatlik iş. Sıralı adımlar:
+1. Pilot tenant feature flag aktivasyonu (5 dk)
+2. Sidebar entegrasyonu — `dashboard.html` veya merkezi sidebar, feature-flag'li link (15 dk)
+3. `devre_wizard.html` iskeleti — ~300 satır, 4 adım wizard, drag-drop + auto-detect + Storage upload + kuyruk INSERT (~2 saat)
+4. Smoke test — pilot tenant'la basit klasör yükleme + tip auto-detect + DB+Storage teyit (15 dk)
+
+**Parser yok henüz** — sadece "saklama" parser'ı (durum güncelle, metadata yok). Gerçek parse 100+'a kalıyor.
 
 Detay: `CLAUDE-SONRAKI-OTURUM.md`.
 
 ---
 
-> 98. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
+> 99. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
