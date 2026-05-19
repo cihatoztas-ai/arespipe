@@ -648,7 +648,7 @@ async function adim3_yukle() {
     } catch(e) {
       console.error('Yükleme hatası:', d.dosya_adi, e);
       basarisiz++;
-      loglar.push({ ok:false, ad: d.dosya_adi, hata: (e && e.message) || String(e) });
+      loglar.push({ ok:false, ad: d.dosya_adi, hata: hataMesajiTr(e) });
     }
   }
 
@@ -688,6 +688,21 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[<>&"]/g, function(c) {
     return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];
   });
+}
+
+// ─── 99-fix-c: İngilizce hata mesajlarını Türkçeleştir (kullanıcı dostu) ─────
+function hataMesajiTr(e) {
+  var msg = (e && e.message) ? String(e.message) : String(e || 'Bilinmeyen hata');
+  // Supabase Storage en yaygın hatalar
+  if (/already exists/i.test(msg))              return 'Bu dosya bu devreye zaten yüklenmiş.';
+  if (/Invalid key/i.test(msg))                 return 'Dosya adında veya klasör yolunda geçersiz karakter var.';
+  if (/mime type .* is not supported/i.test(msg)) return 'Bu dosya türü kabul edilmiyor (' + (msg.match(/mime type ([^ ]+)/) || [])[1] + '). Yöneticiye bildirin.';
+  if (/Payload too large|too large/i.test(msg)) return 'Dosya boyutu 50 MB sınırını aşıyor.';
+  if (/violates row-level security/i.test(msg)) return 'Yetkiniz bu tenant\'a yazma izni vermiyor.';
+  if (/duplicate key value/i.test(msg))         return 'Aynı kayıt zaten var (DB tarafında çakışma).';
+  if (/network|fetch failed|timeout/i.test(msg))return 'Ağ hatası — bağlantınızı kontrol edin ve tekrar deneyin.';
+  // Bilinmeyen → orijinali kısaltılmış göster
+  return msg.length > 120 ? msg.substring(0, 120) + '…' : msg;
 }
 
 // ─── 99-fix: Storage path için Türkçe karakter + güvenli ASCII slugify ──────
