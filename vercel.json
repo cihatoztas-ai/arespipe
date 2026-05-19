@@ -1,29 +1,7 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "headers": [
-    {
-      "source": "/(.*)\\.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/ares-store.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-    },
-    {
-      "source": "/ares-lang.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-    },
-    {
-      "source": "/lang/(.*)\\.json",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "lib/**"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/kuyruk-isle",
-      "schedule": "0 3 * * *"
-    }
-  ]
+  }
 }
