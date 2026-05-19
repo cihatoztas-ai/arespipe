@@ -414,8 +414,21 @@ CREATE INDEX IF NOT EXISTS idx_pipeline_mal_kaynak_dok
 -- 6. FEATURE FLAG — devre_wizard_v2 (default kapalı)
 -- ══════════════════════════════════════════════════════════════════
 
--- Tüm tenant'lara satır eklenir, hepsi default kapalı.
--- Sen istediğin tenant'ta UPDATE ile aktif=true yaparsın.
+-- 6.1 Master feature_flags tablosuna devre_wizard_v2 tanimi (yoksa).
+-- 98'de kuru calistirmada FK hatasi yakalandi: tenant_features.feature_kod
+-- bu master tabloya referans veriyor, once burada satir olmasi gerekiyor.
+-- (97 mimari yaziminda master tablo varligi gozden kacmisti.)
+INSERT INTO feature_flags (kod, ad, aciklama, varsayilan)
+VALUES (
+  'devre_wizard_v2',
+  'devre_wizard_v2',
+  'Devre yukleme wizard v2 - coklu dokuman, otomatik dispatch, fuzyon motoru (KARAR-97)',
+  false
+)
+ON CONFLICT (kod) DO NOTHING;
+
+-- 6.2 Tum tenant'lara satir eklenir, hepsi default kapali.
+-- Sen istedigin tenant'ta UPDATE ile aktif=true yaparsin.
 INSERT INTO tenant_features (tenant_id, feature_kod, aktif)
 SELECT t.id, 'devre_wizard_v2', false
 FROM tenants t
@@ -484,8 +497,10 @@ COMMIT;
 -- /*
 -- BEGIN;
 -- 
--- -- 1. Feature flag kaldır
+-- -- 1. Feature flag kaldir (once child, sonra parent)
+-- -- tenant_features -> feature_flags FK iliskisi nedeniyle siralama onemli.
 -- DELETE FROM tenant_features WHERE feature_kod = 'devre_wizard_v2';
+-- DELETE FROM feature_flags WHERE kod = 'devre_wizard_v2';
 -- 
 -- -- 2. Mevcut tabloya eklenmiş opsiyonel izleme kolonu kaldır
 -- DROP INDEX IF EXISTS idx_pipeline_mal_kaynak_dok;
