@@ -475,8 +475,14 @@ function fileInputHandler(files, isFolder) {
 }
 
 function dosyalariEkle(dosyalar) {
+  var atlananSayisi = 0;
   dosyalar.forEach(function(d) {
     var ad = d.file.name;
+    // 99-fix: gizli/sistem dosyaları otomatik atla
+    if (gizliDosyaMi(ad, d.klasor_yolu)) {
+      atlananSayisi++;
+      return;
+    }
     var uzanti = (ad.split('.').pop() || '').toLowerCase();
     var tip_kodu = autoDetect(d.klasor_yolu, uzanti);
     var parser_yolu = parserBul(tip_kodu, uzanti);
@@ -491,6 +497,9 @@ function dosyalariEkle(dosyalar) {
       durum: 'bekliyor'
     });
   });
+  if (atlananSayisi > 0) {
+    console.log('[wizard] ' + atlananSayisi + ' gizli/sistem dosyası atlandı (.DS_Store, Thumbs.db, hidden vs.)');
+  }
   renderDosyaTablo();
   document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
 }
@@ -595,8 +604,12 @@ async function adim3_yukle() {
     try {
       // 1. Storage upload — path pattern: {tenant_id}/projeler/{pid}/devreler/{did}/...
       //    (izometri-pdfs bucket'ı ile tutarlı; RLS [1]=tenant_id::text kontrolüne uyar)
+      // 99-fix: Türkçe karakter + non-ASCII'yi Storage key'i için slugify et
+      //         DB'de (devre_dokumanlari) orijinal isim ve klasor_yolu korunur.
+      var storage_klasor = d.klasor_yolu ? slugifyPath(d.klasor_yolu) + '/' : '';
+      var storage_ad = slugifyPath(d.dosya_adi);
       var path = tid + '/projeler/' + WIZ.proje_id + '/devreler/' + WIZ.devre_id + '/' +
-                 (d.klasor_yolu ? d.klasor_yolu + '/' : '') + d.dosya_adi;
+                 storage_klasor + storage_ad;
       var up = await supa.storage.from('devre-belgeleri').upload(path, d.file, { upsert: false });
       if (up.error) throw up.error;
 
@@ -675,6 +688,48 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[<>&"]/g, function(c) {
     return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];
   });
+}
+
+// ─── 99-fix: Storage path için Türkçe karakter + güvenli ASCII slugify ──────
+// DB'de orijinal isim (dosya_adi, klasor_yolu) korunur; sadece Storage key ASCII.
+// Türkçe + sık görülen sorunlu karakterler → ASCII karşılığı; boşluk → '_'
+// Geri kalan tüm non-ASCII + güvensiz karakterler → '_'
+function slugifyPath(s) {
+  var tr = { 'İ':'I','ı':'i','Ş':'S','ş':'s','Ğ':'G','ğ':'g','Ü':'U','ü':'u','Ö':'O','ö':'o','Ç':'C','ç':'c' };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    if (tr[ch] !== undefined) { out += tr[ch]; continue; }
+    if (ch === '/') { out += '/'; continue; }      // klasör ayracı koru
+    if (ch === '.') { out += '.'; continue; }      // dosya uzantısı koru
+    if (ch === '-') { out += '-'; continue; }
+    if (ch === '_') { out += '_'; continue; }
+    if (/[A-Za-z0-9]/.test(ch)) { out += ch; continue; }
+    if (ch === ' ') { out += '_'; continue; }
+    out += '_';                                    // diğer hepsi: '_'
+  }
+  // Birden fazla art arda '_' → tek '_'
+  return out.replace(/_+/g, '_');
+}
+
+// ─── 99-fix: Sistem/gizli dosya filtresi ─────────────────────────────────────
+// macOS .DS_Store, Windows Thumbs.db, vs. unix hidden (. ile başlayan) dosyaları
+// otomatik atla. Kullanıcı klasör yüklerken bunlar görünmüyor ama dahil oluyorlar.
+function gizliDosyaMi(dosya_adi, klasor_yolu) {
+  if (!dosya_adi) return true;
+  var ad_lower = dosya_adi.toLowerCase();
+  if (dosya_adi.charAt(0) === '.') return true;            // .DS_Store, .gitignore vs.
+  if (ad_lower === 'thumbs.db') return true;
+  if (ad_lower === 'desktop.ini') return true;
+  if (ad_lower === '__macosx') return true;
+  // Klasör yolunda gizli segment varsa (örn. .git/, .vscode/) tüm dosya atlanır
+  if (klasor_yolu) {
+    var parcalar = klasor_yolu.split('/');
+    for (var i = 0; i < parcalar.length; i++) {
+      if (parcalar[i].charAt(0) === '.') return true;
+    }
+  }
+  return false;
 }
 </script>
 
