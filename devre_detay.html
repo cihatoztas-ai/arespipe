@@ -513,6 +513,15 @@ tr.sk-row:hover td{background:transparent !important;}
       <button class="btn btn-primary" style="height:28px;font-size:12px;" onclick="dokModalAc()" data-i18n="sp_add_doc">+ Doküman Ekle</button>
     </div>
     <div id="dokListesi" style="padding:2px 0;">
+      <!-- Arama kutusu (≥8 dosyada görünür, otomatik) -->
+      <div id="dokAraKutu" style="display:none;padding:10px 18px;border-bottom:1px solid var(--bor);background:var(--sur2);">
+        <div style="position:relative;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txd);font-size:14px;pointer-events:none;">🔍</span>
+          <input type="text" id="dokAra" class="fi" placeholder="Dosya veya klasör ara..." data-i18n-placeholder="dv_dok_search_ph" oninput="dokAraInput(this.value)" style="width:100%;height:32px;padding:6px 10px 6px 32px;font-size:13px;">
+          <button type="button" id="dokAraTemizle" onclick="dokAraInput(''); document.getElementById('dokAra').value='';" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--txd);cursor:pointer;font-size:16px;padding:4px 8px;">✕</button>
+        </div>
+        <div id="dokAraSonuc" style="display:none;font-size:11px;color:var(--txd);margin-top:6px;"></div>
+      </div>
       <!-- Grup 1: + Doküman Ekle modal yüklemeleri (belgeler tablosu) -->
       <div id="grpBelgeler" style="display:none;">
         <div style="padding:8px 18px;font-size:11px;font-weight:700;color:var(--txd);background:var(--sur2);border-bottom:1px solid var(--bor);text-transform:uppercase;letter-spacing:.5px;">
@@ -2215,23 +2224,63 @@ function renderDokumanlar(){
 
   setText('dokSayi',DOKUMANLAR.length?DOKUMANLAR.length+' '+tv('dv_unit_doc','doküman'):'');
 
+  // Arama kutusu görünürlüğü (≥8 dosyada otomatik)
+  var araKutu=document.getElementById('dokAraKutu');
+  if(araKutu){
+    araKutu.style.display=(DOKUMANLAR.length>=8)?'block':'none';
+  }
+
   var DT=DOK_TURLER();
   var DOK_EXT={pdf:'PDF',dwg:'DWG',dxf:'DXF',doc:'DOC',docx:'DOC',xls:'XLS',xlsx:'XLS',xlsm:'XLS',png:'IMG',jpg:'IMG',jpeg:'IMG',txt:'TXT',stp:'3D',step:'3D','3dm':'3D'};
 
+  // Arama sorgusu (lowercase, trim)
+  var q=(window.DOK_ARA_Q||'').toLowerCase().trim();
+  function eslesir(d){
+    if(!q)return true;
+    var hav=((d.ad||'')+' '+(d.dosyaAdi||'')+' '+(d._klasor||'')+' '+(d.tur||'')).toLowerCase();
+    return hav.indexOf(q)>=0;
+  }
+
   var listeB=DOKUMANLAR.filter(function(d){return d._kaynak==='belgeler';});
   var listeD=DOKUMANLAR.filter(function(d){return d._kaynak==='devre_dokumanlari';});
+
+  // Filtre uygulanmış listeler
+  var listeBf=q?listeB.filter(eslesir):listeB;
+  var listeDf=q?listeD.filter(eslesir):listeD;
+
+  // Temizle butonu görünürlüğü + arama sonuç metni
+  var btnTemizle=document.getElementById('dokAraTemizle');
+  var araSonuc=document.getElementById('dokAraSonuc');
+  if(btnTemizle)btnTemizle.style.display=q?'block':'none';
+  if(araSonuc){
+    if(q){
+      araSonuc.style.display='block';
+      var toplam=listeBf.length+listeDf.length;
+      araSonuc.textContent=toplam+' '+tv('dv_dok_search_match','eşleşme bulundu');
+    }else{
+      araSonuc.style.display='none';
+    }
+  }
 
   // Boş durum?
   if(!listeB.length && !listeD.length){
     elBelgeler.innerHTML='';elDokumanlar.innerHTML='';
     if(grpB)grpB.style.display='none';
     if(grpD)grpD.style.display='none';
-    if(bos)bos.style.display='block';
+    if(bos){bos.style.display='block';bos.innerHTML='<span>'+tv('dv_no_docs','Henüz doküman eklenmemiş')+'</span>';}
+    return;
+  }
+  // Arama sonucu boşsa
+  if(q && !listeBf.length && !listeDf.length){
+    elBelgeler.innerHTML='';elDokumanlar.innerHTML='';
+    if(grpB)grpB.style.display='none';
+    if(grpD)grpD.style.display='none';
+    if(bos){bos.style.display='block';bos.innerHTML='<span>'+tv('dv_dok_search_empty','Aramanızla eşleşen sonuç yok')+'</span>';}
     return;
   }
   if(bos)bos.style.display='none';
 
-  // ── Tek dosya satırı HTML (her iki grup için ortak)
+  // ── Tek dosya satırı HTML
   function satirHTML(d,i,indent){
     var ci=i<10?i:10;
     var cfg=DT[d.tur]||DT.diger;
@@ -2248,23 +2297,22 @@ function renderDokumanlar(){
   }
 
   // ── Grup A — belgeler (eski modal, düz liste)
-  if(listeB.length){
+  if(listeBf.length){
     elBelgeler.className='cascade-list';
-    elBelgeler.innerHTML=listeB.map(function(d,i){return satirHTML(d,i,0);}).join('');
+    elBelgeler.innerHTML=listeBf.map(function(d,i){return satirHTML(d,i,0);}).join('');
     if(grpB)grpB.style.display='block';
-    if(sayiB)sayiB.textContent='('+listeB.length+')';
+    if(sayiB)sayiB.textContent=q?'('+listeBf.length+'/'+listeB.length+')':'('+listeB.length+')';
   }else{
     elBelgeler.innerHTML='';
     if(grpB)grpB.style.display='none';
   }
 
   // ── Grup B — devre_dokumanlari (wizard, TREE)
-  if(listeD.length){
-    // 1) Klasör yoluna göre ağaç kur
-    //    Her node: {ad, yol, dosyalar:[], altKlasorler:{ad:node}, _toplam:N}
+  if(listeDf.length){
+    // 1) Klasör yoluna göre ağaç kur (filtre uygulanmış liste)
     var kok={ad:'',yol:'',dosyalar:[],altKlasorler:{},_toplam:0};
-    listeD.forEach(function(d){
-      var yol=(d._klasor||'').replace(/^\/+|\/+$/g,'');  // baş/son slashleri temizle
+    listeDf.forEach(function(d){
+      var yol=(d._klasor||'').replace(/^\/+|\/+$/g,'');
       var segs=yol?yol.split('/'):[];
       var node=kok;
       for(var i=0;i<segs.length;i++){
@@ -2278,7 +2326,6 @@ function renderDokumanlar(){
       node.dosyalar.push(d);
     });
 
-    // 2) Toplam dosya sayısını her node için hesapla (recursive)
     function hesapla(node){
       var t=node.dosyalar.length;
       Object.keys(node.altKlasorler).forEach(function(k){
@@ -2289,26 +2336,22 @@ function renderDokumanlar(){
     }
     hesapla(kok);
 
-    // 3) Açık/kapalı state — globalde tut, oturum boyunca koru
     if(typeof window.DOK_TREE_ACIK==='undefined'){
       window.DOK_TREE_ACIK={};
     }
-    // Kök her zaman "açık" gibi davranır — ağacın içine girilebilsin
-    // Diğer klasörler default açık (ilk kez gösteriliyorsa)
 
-    // 4) Recursive render
     var ci_counter={n:0};
     function nodeHTML(node,indent,parentYol){
       var html='';
-      // Önce alt klasörleri render et (alfabetik sırada)
       var altAdlar=Object.keys(node.altKlasorler).sort();
       altAdlar.forEach(function(ad){
         var alt=node.altKlasorler[ad];
         var stateKey=alt.yol;
         if(typeof window.DOK_TREE_ACIK[stateKey]==='undefined'){
-          window.DOK_TREE_ACIK[stateKey]=true; // default açık
+          window.DOK_TREE_ACIK[stateKey]=true;
         }
-        var acik=window.DOK_TREE_ACIK[stateKey];
+        // Arama varsa, eşleşme içeren klasörler otomatik açık
+        var acik=q?true:window.DOK_TREE_ACIK[stateKey];
         var ok=acik?'▾':'▸';
         var padLeft=18+indent*22;
         html+='<div onclick="dokKlasorToggle(\''+esc(stateKey)+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 18px 8px '+padLeft+'px;background:var(--sur2);border-bottom:1px solid var(--bor);font-size:13px;font-weight:600;user-select:none;">'
@@ -2321,7 +2364,6 @@ function renderDokumanlar(){
           html+=nodeHTML(alt,indent+1,alt.yol);
         }
       });
-      // Sonra bu klasörün kendi dosyaları
       node.dosyalar.forEach(function(d){
         html+=satirHTML(d,ci_counter.n,indent);
         ci_counter.n++;
@@ -2332,7 +2374,7 @@ function renderDokumanlar(){
     elDokumanlar.className='cascade-list';
     elDokumanlar.innerHTML=nodeHTML(kok,0,'');
     if(grpD)grpD.style.display='block';
-    if(sayiD)sayiD.textContent='('+listeD.length+')';
+    if(sayiD)sayiD.textContent=q?'('+listeDf.length+'/'+listeD.length+')':'('+listeD.length+')';
   }else{
     elDokumanlar.innerHTML='';
     if(grpD)grpD.style.display='none';
@@ -2344,6 +2386,16 @@ function dokKlasorToggle(yol){
   if(typeof window.DOK_TREE_ACIK==='undefined')window.DOK_TREE_ACIK={};
   window.DOK_TREE_ACIK[yol]=!window.DOK_TREE_ACIK[yol];
   renderDokumanlar();
+}
+
+// ── Arama input (debounce 150ms)
+var _DOK_ARA_T=null;
+function dokAraInput(val){
+  if(_DOK_ARA_T)clearTimeout(_DOK_ARA_T);
+  _DOK_ARA_T=setTimeout(function(){
+    window.DOK_ARA_Q=val||'';
+    renderDokumanlar();
+  },150);
 }
 function dokModalAc(){document.getElementById('dokLabel').querySelector('span').textContent=tv('dv_dok_file_hint','Dosya seç veya buraya bırak');document.getElementById('dokAd').value='';document.getElementById('dokTur').value='izometri';document.getElementById('dokInput').value='';document.getElementById('mDok').style.display='flex';}
 function dokDosyaSec(input){var f=input.files[0];if(!f)return;document.getElementById('dokLabel').querySelector('span').textContent='✓ '+f.name;var ad=document.getElementById('dokAd');if(ad&&!ad.value.trim())ad.value=f.name.replace(/\.[^/.]+$/,'');}
