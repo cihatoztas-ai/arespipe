@@ -1,139 +1,236 @@
-# CLAUDE-SON-OTURUM — 93. Oturum (16-17 Mayıs 2026)
+# 100. Oturum — Devre Detay'da Belge Listesi UI 🎊
 
-> **Tema:** 92'den devralınan bug raporu çözümü. Plan basit görünüyordu (Bug 1 pragmatik fix + Bug 2 rename), ama 4 katmanlı Bug 1 + RPC'nin hiç çalışmamış olduğu keşfi + bonus UX işleri ile derinleşti. Kütüphane sayfası "boş gibi" görünen halinden "tam çalışır, filtreli, kullanışlı" haline geldi.
+> **Tarih:** 19 Mayıs 2026
+> **Tema:** Wizard yüklemelerini devre detay sayfasında görüntüleme — tree + arama
+> **Süre:** ~5 saat (plan 1.5-3 saat, görsel + önizleme denemeleri ile uzadı)
+> **Sonuç:** ✅ Devre detay'da iki kaynaklı, tree-yapılı, aranabilir belge listesi canlıda
+> **Milestone:** AresPipe'ın 100. oturumu
 
 ---
 
 ## Açılış Durumu
 
-92'nin son commit'i `7f07c73 feat(92): cakisma yonetimi + oneri aksiyon akisi + kutuphane fix'leri` push'lanmıştı. Cihat oturum açılışında `93-DEVRALINAN-BUGLAR.md` (221 satır) belgesini yapıştırdı, içerik net: Bug 1 (fitting + flansh `malzeme_grubu` NULL, 877 satır görünmüyor) + Bug 2 (kolon adı tutarsızlığı) + 3 push bekleyen UI işi.
+99 wizard altyapısını kurdu, ama yüklenen 24 dosya `devre_dokumanlari`'nda görünmüyordu — devre detay sayfası `belgeler` (eski modal sistemi) tablosundan okuyordu. Pilot için yarım UX.
 
-92'nin tüm değişiklikleri zaten Vercel'de canlıydı (commit hash kontroldü), sadece 93 başlangıcında "git pull + status" temizdi. Açılış net hedefliydi.
+Cihat'ın 100 başlangıç tercihi: **"99'da kalan wizard işine devam ediyoruz."** Plan: önce belge listesi UI, sonra Excel parser.
+
+99 sonu temizlik: `devre_dokumanlari` ve storage tamamen boştu, sadece `belgeler` tablosunda 1 gerçek kayıt (Sevk_Fisi_ITS26-063, AT110-Drencher-Galv devresine, 25 Nisan'da test sırasında yüklenmiş).
 
 ---
 
 ## Olay Sırası ve Karar Noktaları
 
-### Faz 1 — CI fix (kısa)
+### Faz 1 — DB Şema Keşfi ve Strateji
 
-İlk sürpriz: `cat .github/ci-son-rapor.json` baktığımızda **1 hata** vardı — `MIG_ISIM_BOZUK` kuralı, `066b_fitting_malzeme_uyum_policy_fix.sql` dosya adının `NNN_aciklama.sql` formatına uymadığı için reddedilmiş. Çözüm: `git mv 066b... → 069...`. 5 dk, push, CI yeşillendi.
+İlk önce **`belgeler` (eski) ve `devre_dokumanlari` (yeni) tablo şemalarını çıkardık**. Kritik farklar:
+- Alan adları farklı: `ad` ↔ `dosya_adi`, `tur` ↔ `dokuman_tipi`, `dosya_url` ↔ `storage_yolu`, `olusturma` ↔ `yuklenme`
+- `devre_dokumanlari` ek alanlar: `klasor_yolu`, `uzanti` (NOT NULL), `parse_durumu`, `versiyon`, `aktif`
+- Storage bucket'ları farklı: `arespipe-dosyalar` (eski) vs `devre-belgeleri` (yeni)
 
-34 i18n + G-03 uyarısı kapsam dışı bırakıldı (51'den beri açık borç).
+Bu fark nedeniyle Cihat **iki sistemi paralel yaşatma stratejisi**ni netleştirdi: "Wizard çalışırsa eski modal'ı kaldırırız, çalışmazsa wizard'ı kaldırırız — şimdi seçmeyelim." (KARAR-100 stratejisi.)
 
-### Faz 2 — Canlı doğrulama (modal bulgu çıktı)
+**Sonuç mimari:** UI sadece **görüntü katmanı**, yazma akışları (modal + wizard) ayrı yaşar. Devre detay birleşik liste gösterir, sil-akışı `_kaynak`-aware.
 
-Cihat 92'nin 5 maddesini canlı kontrol etti. 4'ü tamam, ama **5. madde — "+ Ekle" modal'ı**'nda kayıt denenince "Eksik alan var: malzeme grubu, DN, Sch tipi/değer/kod, ağırlık zorunlu" uyarısı çıkıyordu. Dolu alanlarda da uyarı veriyor → modal validasyon bug'ı. Ayrıca standart dışı ölçü için (139.7×4.5 mm) Sch uydurmak gerektiği fark edildi.
+### Faz 2 — İki Kaynaklı Belge Listesi Patch'i
 
-**Bu noktada hipotez:** Modal hiç başarıyla çalışmamış olabilir. Sonraki keşiflerle doğrulandı.
+Tek dosya değişikliği: `devre_detay.html`. 5 nokta:
 
-### Faz 3 — Bug 1 keşifleri (4 katman)
+1. **HTML**: tek liste yerine 2 grup blokları (📎 Doküman Ekle / 📁 Klasör Yükle)
+2. **DOK_TURLER**: 4 tipten 11 tipe genişletildi (bom_excel, spool_imalat, 3d_pdf, sartname, akis_semasi, stp, rhino — eskisinden 7 yeni)
+3. **`belgelerYukle()`**: `Promise.all` ile iki paralel SELECT, her kayda `_kaynak` etiketi
+4. **`renderDokumanlar()`**: gruplu çıktı, her grup ayrı sayım
+5. **`dokSil()`**: `_kaynak`-aware doğru tabloya UPDATE
 
-Migration 070 ile DB tarafı UPDATE edildi (`malzeme_grubu='karbon'`, 569+308=877 satır). Doğrulama SELECT tamam: hepsi dolu.
+Patch'in büyüklüğü: 162 satır eklendi, 18 silindi.
 
-**Ama tablo hâlâ boş.** UI'da fitting/flansh detay sayfasına girilince "Detay görünümü 90+ oturumlarda eklenecek" diyordu. Yani **TABLO_KONFIG'de fitting + flansh yok**, bu 90 öncesi karar. 92'nin tooltip mesajı bu durumu kabullenmiş.
+Commit: `90df065`.
 
-İkinci katman netleşti: UI konfig eksik. Cihat'la "A1 — tüm kolonlar (Excel export eksik kalmasın)" kararı verildi, fitting (22 kolon) + flansh (22 kolon) için TABLO_KONFIG genişletildi, `panel_lejant`'lar da yazıldı.
+### Faz 3 — Skeleton Çakışması (Beklenmedik Bug)
 
-Push sonrası test: **fitting hâlâ "0 ölçü"**, flansh ise 216 göstererek çalıştı. Yani fitting'de daha derin bir sorun.
+Patch sonrası devre detay'da Dokümanlar bölümünde **skeleton placeholder kaldı**. Console'da `belgelerListesi: false`, `grpBelgeler: false`.
 
-**Üçüncü katman — RLS:** `pg_policies` sorgusuyla görüldü ki `fitting_olculer` için **SELECT policy hiç yokmuş**. RLS açık ama policy yok → her sorgu 0 satır döner (service role görür, kullanıcı görmez). Migration 071, flansh policy'sinin birebir kopyası uygulandı. Fitting çalıştı.
+İlk hipotez: cache. Cmd+Shift+R yetmedi. Yedek + lokal commit'i karşılaştırdık — **lokal ve HEAD birbirinin aynısı**, HTML doğruydu.
 
-**Dördüncü katman — boru kolon adı:** Boru detay sayfasında NPS sütununun boş olması fark edildi. `information_schema` sorgusu: `boru_olculer`'da `nps_inch` kolonu **yok** (DB'de hiçbir zaman olmamış). Ayrıca TABLO_KONFIG'de `yuzey_m2_m` (gerçek ad `yuzey_alan_dis_m2_m`). Bu bug **88+ oturumdan beri gizli** — UI hep boş NPS gösteriyor, kimse dikkat etmemiş. 2 değişiklik, fix uygulandı.
+Asıl neden: satır 1153'teki `_skList('dokListesi', 3)` G-08 sayfa açılış ritüelinin parçası. Sayfa yüklenir yüklenmez `dokListesi.innerHTML = <skeleton...>` çağrılıyor → bizim 2 grup yapımızı eziyor → `renderDokumanlar()` sonra DOM'da `belgelerListesi` bulamayıp early return ediyor → skeleton sonsuza kalakalıyor.
 
-### Faz 4 — Modal RPC zinciri (3 katman daha)
+**Seçenek C** seçildi: `_skList('dokListesi', 3)` satırı yoruma alındı. Skeleton-sız 100-200ms açılış kullanıcıya görünmez, sorun temiz çözüldü.
 
-Sch zorunluluğunu çözmek için Migration 073 yazıldı: `ozel_parca_boru_kaydet` RPC parametreleri DEFAULT NULL, sentetik üretim eklendi. İlk yazımda PostgreSQL kuralı ihlal edildi (DEFAULT'lu parametreler sondan önce gelemez), düzeltildi.
+### Faz 4 — Klasör Tree (Cihat'ın Geri Bildirimi)
 
-Frontend tarafı: validasyondan Sch koşulları çıkarıldı, RPC'ye boş string yerine `null` gönderiliyor, placeholder'lar güncellendi (Python heredoc patch ile 9 satır).
+İlk wizard test yüklemesi (15 dosya) sonrası Cihat dedi:
 
-Console'dan ilk RPC çağrısı: **400 Bad Request**, hata mesajı: `boru_olculer_tenant_consistency` constraint ihlali. RPC `tenant_id` koymamış INSERT'e, ama tablonun check constraint'i `sistem_preset=false ise tenant_id NOT NULL` istiyor. Migration 074 ile RPC yeniden güncellendi, `kullanicilar` tablosundan auth.uid()'in tenant_id'si çekilip INSERT'e eklendi.
+> *"bence daha tam çalışmıyor. bu klasörün içinde 2 tane klasör var bu klasörler görünmüyor. tüm dosyalar karışık nasıl bulacaz aradığımızı"*
 
-Console testi başarılı: 1 kayıt eklendi, 30 spool bağlandı, havuz 2'den 1'e düştü. Modal akışı **88'den beri ilk kez** tam çalışıyor.
+DB'de `klasor_yolu` doğru saklanmıştı (`AT110-Drencher-Galv/İzometri`, `.../Spool`) ama render düz listeydi. **3 seçenek sundum:**
 
-### Faz 5 — Standart adı normalizasyonu (Migration 075)
+- A) Tree (Finder hiyerarşisi)
+- B) Filtre çubuğu
+- C) Tree + arama kombine
 
-DB'de görüldü ki ASME standartları 3 farklı yazımla durur:
-- boru: `ASME-B36.10M` ✓
-- fitting: `ASME B16.9` (boşluklu)
-- flansh: `B16.5` (öneksiz)
+Cihat: **A** seçti — "elimizdeki şekilde klasör yapısını görelim."
 
-785 kayıt etkileyen 3 UPDATE ile tek formata: `ASME-B16.9`, `ASME-B16.11`, `ASME-B16.5`. UI etkisi minimal (`_nrm()` normalizasyonu zaten toleranslı), eski URL'ler çalışmaya devam etti.
+Patch: `renderDokumanlar()`'da wizard kayıtları için **recursive ağaç oluşturma + nodeHTML render**. Klasörler tıklanır, aç/kapa (`▾`/`▸`), state oturum boyunca korunur. Belgeler grubu düz liste kaldı.
 
-### Faz 6 — UX iyileştirmeleri (Cihat ısrarıyla)
+Sayım rozeti: `3 (·15)` = bu klasörün direkt dosyaları + alt klasörler dahil toplam.
 
-Cihat yorgun olmadığını söyledi, daha çok iş yapabileceğini iletti. 3 ek iş:
+### Faz 5 — Arama (Cihat Beğendi, B'ye Geçtik)
 
-1. **Satır tıklama bug fix:** Boru sayfasında ilk satıra tıklayınca panel/SVG güncellenmiyordu. Tanı: `satirTiklamasiBagla` `panel_lejant[0].kol` üzerinden selector kuruyor, ama o kolon NULL değer içeren satırlarda `data-attr` oluşturulmuyor → selector eşleşmiyor. Çözüm: panel_lejant'taki **herhangi bir** kolonun data-attr'ı varsa satır olarak kabul eden döngü.
+> *"süper çalışıyor ama senden birşey daha rica etsem yapar mısın..."*
 
-2. **Aksiyon barı temizliği:** Cihat haklı olarak "standart bir tabloya yeni ölçü/foto/içe aktarım eklemiyoruz" dedi. 3 buton (Yeni ölçü, Foto yükle, Excel içe aktar) kaldırıldı, sadece Excel dışa aktar kaldı.
+Bu aşamada Cihat **B planı**'na geçmeyi onayladı:
+- B.1 Arama
+- B.2 Slugify kozmetik
+- B.3 Kapanış
 
-3. **Filtre dropdown (mockup → karar → kod):** Cihat fitting+flansh için "aynı çap farklı sch karışıyor" demişti, basınç sınıfları için de aynı. Mockup'ta 2 varyant sunuldu (aksiyon barına gömülü vs ayrı çubuk), Varyant B seçildi. TABLO_KONFIG'e `filtre` alanı eklendi (3 tablo için), CSS + HTML + JS handler 200 satır kod. Boru: Schedule, fitting: Parça Tipi, flansh: Class.
+Arama patch'i: dokListesi başına `<input>` kutusu, **≥8 dosyada otomatik görünür** (eşik). Filtre: dosya adı + klasör yolu + tip. Match olan klasörler otomatik açık (drill-down kaldırır). Debounce 150ms, temizle butonu, sonuç sayısı metni.
 
-### Faz 7 — Kapanış
+Sayım badge'leri filtreye göre güncellenir: `(4/15)` formatı.
 
-3 dosya güncellendi (`son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`). 94'e devredilen borçlar netleşti.
+### Faz 6 — Önizleme Modal (İki Deneme, Revert)
+
+Cihat sordu: *"buradaki dosyalara önizleme de ekleyebilir miyiz?"*
+
+Önce tartıştık:
+- Hangi formatlar mümkün?
+- SheetJS zaten yüklü mü? → Evet, Excel önizlemesi mümkün
+- Sayfa performansına etki?
+- "Önizlenemiyen formatlar bloklansın" yaklaşımı
+
+Plan: PDF (iframe), IMG (img), TXT (fetch + pre), Excel (SheetJS sheet_to_html), diğerleri için "indirin" mesajı.
+
+**Patch v1 (patch-100e-onizleme.py):**
+- 358 satırlık Python script
+- Modal HTML + dokOnizle fonksiyonu + satır onclick + ↗ stopPropagation
+- Sonuç: `Uncaught SyntaxError: Invalid or unexpected token` @ satır 2892
+- **Sebep:** Python heredoc içinde JS string oluştururken `\\'` escape karmaşası
+
+**Patch v2 (patch-100f-onizleme-v2.py):**
+- ↗ butonu kaldırıldı (modal'da var)
+- DOM API (createElement) + event delegation kullanıldı, inline string concat azaltıldı
+- Python raw string `r'''` ile Unicode escape sorunu giderildi
+- `node --check` ile JS syntax önceden doğrulandı, geçti
+- Sonuç: **YİNE syntax error** @ satır 3010, farklı bir noktada
+
+İkinci başarısızlık sonrası Cihat: *"yapmasaydık keşke bozduk sanki :("*
+
+**Karar:** Revert. `cp` ile yedekten geri al, commit `revert(100): onizleme patch geri alindi (syntax bug)`.
+
+Bu **doğru karardı** — saat geç, önizleme tek başına bir oturum hak ediyor, bugünün diğer kazanımları zaten somut.
+
+### Faz 7 — Mimari Konuşmalar (Paralel)
+
+Cihat oturum boyunca 3 önemli mimari soru sordu, hepsine cevap verdik:
+
+**1. İzometri Batch Sayfası Geleceği:**
+- Wizard ana akış, batch sayfası "Uygulamalar" altında alternatif/güç-kullanıcı aracı olarak kalır
+- KARAR-100.A: Her iki UI da **aynı kuyruğa yazar**, tek parser endpoint çalışır
+- Format öğrenme iki kaynaktan beslenir
+
+**2. `izometri-oku.js` Bölünmesi:**
+- 101'de kuyruk wrapper yazılırken doğal zaman
+- Hedef yapı: `api/izometri-oku.js` (dispatcher) + `api/parsers/aveva-paor.js`, `aveva-e3d.js`, vb.
+- MK-49.1 ihlali değil — iç davranış aynı, dosya organizasyonu değişiyor
+
+**3. Vanilla JS Uzun Vade Endişesi:**
+- Cihat: "5 yıl sonra desteklenmez denirse ne yaparız?"
+- Cevap: Vanilla = web standardı = eskimez. Asıl risk **framework**'lerde (Vue 2→3 gibi)
+- Topyekun rewrite gerekmez, parça parça modernleşme (Alpine.js, Lit gibi mikro-framework'ler tek-tek sayfalara eklenebilir)
+- Bugün buradayız çünkü vanilla seçildi — React'la 50. oturumda olurduk
+
+**Bonus:** Sayfa parçalama stratejisi (3500+ satıra ulaşan dosyalar için Yöntem 1 — `<script src=...>` ile JS ayrımı). 105+ borcuna eklendi.
+
+---
+
+## Süre Dağılımı (Yaklaşık)
+
+- Açılış ritüeli + DB keşfi + plan: 30 dk
+- Faz 2 patch (iki kaynaklı liste): 45 dk
+- Faz 3 skeleton bug + fix: 30 dk
+- Faz 4 tree render patch + test: 40 dk
+- Faz 5 arama patch: 35 dk
+- Faz 6 önizleme deneme v1 + v2 + revert: 90 dk (en uzun, en az verimli)
+- Faz 7 mimari konuşmalar (paralel, dağınık): 30 dk
+- Kapanış belgeleri: 30 dk
+
+**Toplam:** ~5 saat (gerçek), 1.5-3 saat (plan). Önizleme denemeleri %30 zaman aldı, geri alındı. Faz 7 konuşmalar 101+ için zemin hazırladı, vakit kaybı değil.
 
 ---
 
 ## Anlamlı Anlar
 
-- **"Tabloyu bölelim mi" sohbeti (Cihat):** Aynı çap farklı Sch'lerin uzun listelere yol açtığı, filtreleme yokken karışık göründüğü için Cihat tabloyu Sch'e göre fiziksel olarak bölmeyi düşündüğünü söyledi. Açıklandı: tek tablo + Sch kolonu + UI filtresi doğru tasarım, fiziksel bölme bakım başağrısı. Cihat kabul etti, filtre çözümüne ikna oldu.
-- **"Standart bir tabloya yeni ölçü ekleme yapmaya gerek yok" (Cihat):** Aksiyon barında 4 buton vardı, Cihat'ın bu yorumu UX temizliğinin temelini oluşturdu.
-- **MD5 hatası (Claude):** `arespipe_kopyala`'da Cihat'ın 070 dosyasının MD5'ini verirken tahmin ettim ("7330b48a..." dedim), MK-51.1 koruma çalıştı reddedildi, gerçek MD5 `9f8bc88b...`'ymiş. MK-51.1 disiplini canlıda işe yaradı.
-- **Console bulgu (Claude):** Cihat F12 Console kullanarak fitting sayfasını test ettiğinde RPC 0 satır döndü ama service role 464 satır. Bu RLS olmadan açıklanamazdı, üçüncü katmanı bulduran an buydu.
+- **Tree görünümü onaylanma anı:** Cihat 15 dosyalı klasör + alt klasörler tree render'ı görünce *"süper çalışıyor"* dedi. Bu wizard'ın gerçek değer noktası — Finder/dosya sistemi kavramının web'de yansıması.
+- **"Vanilla eskimez" konuşması:** Cihat haklı bir endişe taşıyordu, cevap onu rahatlattı. Bu konuşma 101+ oturumlarda da geçerli kalır.
+- **Cihat'ın disiplini:** İki kez önizleme patch fail edince *"yapmasaydık keşke bozduk sanki :("* dedi. Bu duygusal değil — geri al kararı hemen sonra onaylandı, AresPipe'ın "yavaş yavaş doğru yap" felsefesi tam burada işledi.
+- **MK-100.2 yazımı:** "Python heredoc ile JS patch" anti-pattern'i 100'de iki kez yenildi. Bu artık yazılı, 101+'da kaçınılır.
 
 ---
 
-## Süre Dağılımı (yaklaşık)
+## Eklenen Mimari Kararlar (MK)
 
-- CI fix + canlı test: 30 dk
-- Bug 1 katman 1 (DB UPDATE): 20 dk
-- Bug 1 katman 2 (TABLO_KONFIG kolon listesi tartışması + kod): 1 saat
-- Bug 1 katman 3 (RLS keşfi + 071): 20 dk
-- Bug 1 katman 4 (boru NPS kolon adı): 30 dk
-- Modal akışı (073 + frontend + 074 + test): 1.5 saat
-- Standart normalizasyon (075): 20 dk
-- Satır tıklama fix: 20 dk
-- Aksiyon barı temizliği: 15 dk
-- Filtre dropdown (mockup + kod + test): 1 saat
-- Kapanış belgeleri: 25 dk
-
-**Toplam: ~7 saat** (plan 1.5 saatti, ama paralel keşifler hızla büyüdü)
+- **MK-100.1:** İki kaynaklı UI deseni — eski + yeni sistem paralel yaşar, UI birleşik gösterim
+- **MK-100.2:** Python heredoc + JS patch = anti-pattern. Alternatif: küçük str_replace, ayrı .js dosyası, DOM API
+- **MK-100.3:** Tree render state oturum-içi global (`window.DOK_TREE_ACIK`), DB persist yok
+- **KARAR-100.A:** Wizard + İzometri Batch ortak kuyruk mimarisi
 
 ---
 
-## Çıkarılan Dersler (sonraki Claude'lar için)
+## Çıkarılan Dersler (101+ Claude'lar için)
 
-1. **Çok katmanlı bug'lar:** "Bug 1" başlıkla başlayan iş 4 farklı katmana çıkabiliyor (DB, UI konfig, RLS, yanlış kolon adı). Bir katmanı çözmek sayfayı çalıştırmıyor olabilir, ısrarla diğer katmanlara bakmak gerek. Cihat'a "tablo dolu mu?" diye sormak her seferinde değerli oldu.
+1. **DB şemasını ön-keşif:** Yeni tabloya yazmadan önce `information_schema.columns` SELECT zorunlu. 100'de `tip` kolonu varsayımı patladı, MK-98.1 ihlal edildi → düzeltildi.
 
-2. **`information_schema` ile DB doğrulama:** Kod tarafının varsayımları (`nps_inch`, `olusturma`) DB'nin gerçeğiyle eşleşmeyebilir. Yeni TABLO_KONFIG yazmadan önce `information_schema.columns` ile kontrol şart. Bu disiplin Bug 1 katman 4'ü 88'den beri gizli kalmaktan kurtardı.
+2. **Skeleton + yeni HTML çakışması:** G-08 ritüelinde `_skList('xxx', N)` bir elementin tüm innerHTML'ini ezer. Eğer o element içine sonradan dinamik yapı koyacaksak, skeleton'ı o element için **kapatmak veya inner yapıya enjekte etmek** gerekir.
 
-3. **`arespipe_kopyala` MK-51.1 koruma:** Yanlış MD5 verirsem kopyalama reddediliyor. Çok defalar hayat kurtardı, sahte güvenlik vermiyor. Tahminle MD5 yazmamak iyi, Cihat'ın gerçek çıktısını kullanmak şart.
+3. **Python heredoc + JS patch fragility:** Inline string concat ile JS üretmek `\\'` escape karmaşası getirir. **`r'''...'''` raw string** Unicode sorununu çözer ama tek tırnak escape'i çözmez. DOM API + ayrı .js dosyası tek temiz yol.
 
-4. **Modal'ın 88'den beri çalışmamış olması:** Bir RPC `CREATE FUNCTION` ile yazılmış ama test edilmemiş olabilir. Constraint'ler runtime'da patlar. RPC'lerde test fonksiyonu eklemek mantıklı olabilir (94+).
+4. **Patch validation:** `node --check` JS syntax doğrular ama HTML/JS sınırı bağlamını **doğrulamaz**. Patch sonrası **mecburi** browser console testi.
 
-5. **Cihat'ın gözü işin %20'sini görüyor, %80'i altta:** "Tablo görünüyor" demiş olsa bile dropdown sayım/içerik tutarsızlığı, panel güncellenmeme, NPS boş gibi şeyler ancak detaylı testle çıkıyor. Bu yüzden "tamam mı?" sorusu yerine "şu satıra tıkla, panel ne diyor?" diye somut adım sormak iyi.
+5. **Pilot strateji = iki sistem paralel:** Eski + yeni sistem paralel yaşatma riski düşük (kayıt sayısı eski sistemde fiilen 1, yeni sistemde 15). Pilot kullanım sonrası karar net olur. Erken birleştirme yapma.
 
-6. **Filtre tasarımı için mockup şart:** Cihat ilk başta "ayırsak" demişti, mockup ile filtre yaklaşımı netleşti. Görmek > anlatmak.
+6. **Cihat'ın UX feedback'i %20 görünür, %80 derin:** "Çalışıyor" dese bile detaylı bakınca eksik bulur (klasör görünmüyor, arama yok vb). Bu yüzden teslim sonrası **birlikte 5-10 dk gerçek kullanım** geçirmek değerli.
 
-7. **Aksiyon temizliği ucuz UX kazanç:** Cihat'ın UX gözlemleri (Yeni ölçü, Foto yükle, İçe aktar mantıksız) doğrudan dinlenince 15 dk'da sayfa çok daha iyi.
+7. **Saat geç olunca patch denemesi pahalı:** Faz 6'daki iki yeniden yazım 90 dk yedi, hiçbir kalıcı kazanım sağlamadı. **Yorulduktan sonra revert + sonraki oturum** daha verimli.
 
 ---
 
-## 94 Gündemine Mektup
+## 101 Gündemine Mektup
 
-Sevgili 94 Claude'u,
+Sevgili 101 Claude'u,
 
-93 kütüphaneyi gerçek anlamda görünür kıldı. DB doluydu zaten (1.347 satır), şimdi UI da gösteriyor. Filtre var, tıklama çalışıyor, modal kayıt ekliyor.
+100 wizard'ın UX'ini gerçekten tamamladı — Finder gibi klasör görünümü, arama, iki sistem paralel. Pilot için canlıda hazır.
 
-Ama 93'ün şişiren büyük tek görev kalıyor: **olusturma_at tam rename** (Migration 076). 18 tablo + 9+ kod dosyası. Kritik API'leri (kuyruk-isle, izometri-oku) etkiliyor, çok dikkat. Önce kod tarafında `grep -rn "olusturma_at"` ile haritala, sonra migration + kod commit'i **aynı PR'de** olsun ki DB ve kod tutarlı kalsın.
+**101'in 3 işi var, sırayla:**
 
-Diğer büyük iş: **kütüphane-detay'da "Ek dosyalar" panelini satır geneline çevirmek** (Cihat'ın isteği). Bu medya tablosu olmadığı için karmaşık — önce medya tablosu mu yapalım, yoksa şu an placeholder mı kalsın? Cihat'la konuş.
+1. **Önizleme modal v3** (~1 saat) — 100'de iki kez yenildik. Bu sefer farklı:
+   - **`devre_detay.html`'in içine yazma**, ayrı `js/dok-onizle.js` dosyası oluştur
+   - DOM API kullan (`createElement` + `appendChild`), inline string concat YAPMA
+   - Python heredoc patch YAPMA, dosyayı doğrudan yaz
+   - SheetJS Excel için zaten yüklü, kullan
+   - PDF (iframe), IMG (img), TXT (fetch + pre), Excel (sheet_to_html), diğeri "indir"
 
-Bug 1 Seçenek B (DROP COLUMN) hâlâ borç ama acil değil. KARAR-43 mimari temizliği için 94'te yapılsa güzel, ama 76 öncelikli.
+2. **Excel generic parser** (~2 saat):
+   - L1 sözlük match (kolon adı eşleştirme)
+   - L2 pattern (başlık satırı bul)
+   - L3 Haiku fallback **102+'a ertelendi** — şimdilik L2 başarısız olursa manuel onay
+   - Yeni endpoint `api/kuyruk-isle-excel.js`
+   - `pipeline_malzemeleri` tablosuna INSERT
+   - **MK-50.3 disiplini:** En az 3 farklı format dosyasıyla test et (Donatım, IFS, Tutanak)
 
-Üçüncü öneri: **fitting/flansh için "Kütüphaneye Ekle" RPC'leri** (`ozel_parca_fitting_kaydet`, `ozel_parca_flansh_kaydet`). 93'te boru RPC'sini düzelttik ama fitting+flansh için karşılığı yok — kullanıcı bu tablolar için öneri eklemeye çalışırsa modal çalışmaz.
+3. **İzometri parser wrapper** (~1.5 saat):
+   - `api/kuyruk-isle-izometri.js` (yeni)
+   - Mevcut `api/izometri-oku.js`'i HTTP POST ile çağırır (in-process import değil — port izolasyonu)
+   - Eğer zaman elveriyorsa `parsers/aveva-paor.js` taşıması da başlat
+   - **KARAR-100.A:** Wizard ve izometri-batch.html aynı kuyruğa yazsın
+
+**Önce önizlemeyi yap** — küçük iş, hızlı kullanıcı değeri. Sonra parser'ları (yoğunluk gerektirir).
+
+**MK-100.2'yi unutma:** Python heredoc + büyük JS = bug. Patch script yerine direkt dosya yaz. Veya küçük str_replace ile parça parça.
+
+**KARAR-100.A'yı netleştir:** Wizard `parser='izometri-oku'` yazsın, batch sayfası `parser='izometri-oku'` yazsın, tek wrapper tüketsin.
+
+Açık borç listesi `son-durum.md`'de uzun. 105+ için `devre_detay.html` parçalama ufukta. **Önizleme modal'ı ayrı dosya olarak başlatırsan** o parçalamanın ilk adımı atılır.
+
+**Görsel polish** Cihat'ın istediği bir şey ama 101'de değil. Wizard akışı tamamlanınca (~104 sonrası) tek bir oturum buna ayrılabilir.
 
 İyi çalışmalar.
 
-— 93 Claude
+— 100 Claude

@@ -30,3 +30,4 @@ mobile/dist/
 *.bak.*
 *.bak
 spool_detay.html.bak*
+devre_detay.html.bak-*

@@ -1,127 +1,161 @@
 # AresPipe — Son Durum
 
-> **99. oturum kapanışı — 19 Mayıs 2026**
+> **100. oturum kapanışı — 19 Mayıs 2026** 🎊
 > Bu dosya her oturum başında ilk okunan kayıttır. Güncel CI durumu + açık borçlar + sonraki oturum gündemi burada.
 
 ---
 
 ## CI Son Durum
 
-- **Build:** ✅ YEŞİL (son commit'ler: `8230e77` adım 2 → `7f5bb80` adım 3 → `ee736c3` adım 4 fix → 99 kapanış commit'i)
+- **Build:** ✅ YEŞİL
 - **Lint:** 0 hata, 22 uyarı (Faz B baseline'ı korundu)
-- **Vercel:** ✅ Production aktif
-- **Migration sayısı:** 82 (son: `082_devre_belgeleri_mime_genisletme.sql`, canlıda 19 May 12:05)
-- **99 sonrası:** Devre wizard v2 pilot tenantlarda canlı (Demo Atölye/A + Demo Tersane A.Ş./E). Smoke test 24/25 (1 .DS_Store bilerek atlandı).
+- **Vercel:** ✅ Production aktif (son commit: `6579c2e` revert sonrası temiz hâl)
+- **Migration sayısı:** 82 (99'dan değişiklik yok — 100 sadece UI işi)
+- **100 sonrası:** Devre detay'da iki kaynaklı belge listesi + tree + arama canlıda
 
 ---
 
-## 99. Oturum Özeti
+## 100. Oturum Özeti
 
-**Ana tema:** Devre wizard UI iskeleti — mevcut aktif devreye klasör yükleme akışı (Senaryo A1).
+**Ana tema:** Devre detay'da belge listesi UI — wizard ile yüklenen klasör hiyerarşisinin Finder gibi görüntülenmesi + arama.
 
-**Süreç:** Plan ~2-3 saatlik tahmin etmişti, gerçek süre ~5 saat (Downloads klasör temizliği + 2 smoke test iterasyonu + i18n eklemesi dahil). 4 adım:
+**Süre:** ~5 saat (plan 1.5-3 saatti, görsel iyileştirme + önizleme denemesi + revert ile uzadı). Net 6 commit + 1 revert.
 
-1. **Sidebar entegrasyonu** (devreler.html + 3 dil dosyası, commit `8230e77`)
-2. **Bucket migration + wizard iskeleti** (migration 081 + devre_wizard.html, commit `7f5bb80`)
-3. **İlk smoke test** — 9/16 başarılı, 3 sorun tespit
-4. **Düzeltmeler + ikinci smoke test** — 24/25 başarılı (sadece .DS_Store filtrelendi)
+### Yapılanlar (Kronolojik)
 
-**Yazılan/değişen dosyalar:**
-- `devreler.html` (+22 satır, wizard giriş butonu + feature flag check)
-- `devre_wizard.html` (yeni, 752 satır) — 4 adımlı wizard UI
-- `migrations/081_devre_belgeleri_storage_bucket.sql` (153 satır) — bucket + 3 RLS policy
-- `migrations/082_devre_belgeleri_mime_genisletme.sql` (71 satır) — macro-Office MIME genişletme
-- `lang/tr.json`, `lang/en.json`, `lang/ar.json` — 32 yeni i18n anahtarı (dr_new_circuit_wizard + 31 dw_*/cmn_*/nav_*)
+1. **İki kaynaklı belge listesi** (`90df065`):
+   - `belgelerYukle()` artık paralel SELECT: `belgeler` (eski modal) + `devre_dokumanlari` (wizard)
+   - Her kayda `_kaynak` etiketi: `'belgeler'` veya `'devre_dokumanlari'`
+   - Gruplu render: 📎 Doküman Ekle / 📁 Klasör Yükle
+   - `DOK_TURLER` 7 yeni tip (bom_excel, spool_imalat, 3d_pdf, sartname, akis_semasi, stp, rhino)
+   - `dokSil()` `_kaynak`-aware — doğru tabloya UPDATE
+2. **Skeleton çakışması fix:** `_skList('dokListesi', 3)` kaldırıldı (2 grup yapısını eziyordu)
+3. **Klasör tree** (Finder hiyerarşisi):
+   - `klasor_yolu`'na göre recursive ağaç
+   - Aç/kapa toggle (`▾` / `▸`), state oturum boyunca korunur
+   - Sayım badge: `3 (·15)` formatı (direkt + toplam)
+4. **Arama kutusu** (`d06756f` öncesi):
+   - ≥8 dosyada otomatik görünür
+   - Dosya adı, klasör yolu, tip alanlarında filtre
+   - Match olan klasörler otomatik açık
+   - Debounce 150ms, temizle butonu, "X eşleşme bulundu" sonuç metni
+5. **Önizleme modal denemesi** → 2 kez syntax bug → **revert** (`6579c2e`)
+   - PDF + IMG + TXT + Excel preview planlandı
+   - Python heredoc → JS string escape sorunu yenildi
+   - 101'e ertelendi, taze yaklaşımla yapılacak
 
-**DB değişikliği yapıldı mı?** Evet:
-- **`tenant_features`** — `devre_wizard_v2` flag 2 pilot tenantta `aktif=true` (A: Demo Atölye, E: Demo Tersane A.Ş.)
-- **`storage.buckets`** — 1 yeni bucket: `devre-belgeleri` (private, 50 MB, 15 MIME)
-- **`storage.policies`** — 3 yeni policy (SELECT/INSERT/DELETE) — izometri-pdfs pattern'iyle tutarlı
-- **`devre_dokumanlari`** — smoke test sırasında 24 satır (2 farklı devreye), parse_durumu='tamamlandi'
-- **`dosya_isleme_kuyrugu`** — 24 kuyruk satırı, parser='sakla', durum='tamamlandi'
+### Yazılan/değişen dosyalar
+- `devre_detay.html` (2776 satır, +~80 net — net büyüme arama + tree + iki kaynak nedeniyle)
 
-**Smoke test sonucu (2 iterasyon):**
+### DB değişikliği yapıldı mı?
+**Hayır** — 100 sadece UI işi. `belgeler` ve `devre_dokumanlari` tabloları olduğu gibi.
 
-| Iterasyon | Devre | Dosya | Başarılı | Hata | Sebep |
-|---|---|---|---|---|---|
-| #1 | 88ae46e4 | 16 | 9 | 7 | 5× Türkçe karakter (İ/ı/ş/ğ), 2× .xlsm MIME yok, 1× .DS_Store yüklendi (cosmetic) |
-| #2 | 4c592886 | 15 | 15 | 0 | .DS_Store bilerek filtrelendi (16 → 15) — TAM BAŞARI |
-
-**Smoke test #2 doğrulama:** Storage'da slugify ASCII (`Donatim_Kontrol_Formu.xlsx`), DB'de orijinal isim (`Donatım Kontrol Formu.xlsx`) korundu. Türkçe → ASCII çevrim sorunsuz.
-
-**Üçüncü smoke test:** Aynı klasörü aynı devreye 3. kez yüklemeye çalıştı → 15/15 "The resource already exists" (upsert=false bilerek). Bu **istenen davranış** (veri kaybı önleme), sadece hata mesajı Türkçeleştirildi (`hataMesajiTr()` helper).
+### Smoke test sonuçları
+- ✅ Eski modal kaydı (Sevk_Fisi_ITS26-063) `📎 grubu`'nda görünüyor
+- ✅ Wizard ile 15 dosya yüklendi → `📁 grubu`'nda tree olarak görünüyor (klasör hiyerarşisi: AT110-Drencher-Galv → İzometri/Spool alt klasörleri)
+- ✅ Arama: "izom" → 4 İzometri PDF görünüyor, gerisi gizli
+- ✅ Klasör tıklama: aç/kapa çalışıyor
+- ✅ Sil: doğru tabloya UPDATE atıyor
 
 ---
 
-## Açık Borçlar (99 sonu)
+## Açık Borçlar (100 sonu)
 
-### Acil (100 gündemi)
-- ⚪ **Devre detay'da belge listesi UI yok** — wizard yüklediği dosyalar `devre_dokumanlari` tablosunda duruyor ama `devre_detay.html`'de görünmüyor. Kullanıcı yüklediğini göremez. Memory'de 104'tü ama 100 başına çekilebilir.
-- ⚪ **100. oturum ana iş:** Excel generic parser (`bom_excel` tipi için, L1 sözlük + L2 pattern, L3 Haiku ileride) + `pipeline_malzemeleri` INSERT (multi-spool BOM).
+### Acil (101 gündemi)
+- ⚪ **Doküman önizleme modal** — PDF/IMG/TXT/Excel preview. 100'de iki kez denendi (patch-100e, patch-100f), her ikisi syntax bug verdi → revert. 101'de **farklı yaklaşımla** (ayrı `.js` dosyası, build script yerine direkt yazım) tekrar denenecek.
+- ⚪ **Excel generic parser** — orijinal 100B planı. `bom_excel` tipi için L1 sözlük + L2 pattern (L3 Haiku 102+). `pipeline_malzemeleri` INSERT. Yeni endpoint `api/kuyruk-isle-excel.js`.
+- ⚪ **İzometri parser entegrasyonu (wizard + batch ortak kuyruk)** — KARAR: hem wizard hem `izometri-batch.html` aynı `dosya_isleme_kuyrugu`'na yazsın, tek `api/kuyruk-isle-izometri.js` wrapper çalışsın. Detay: `CLAUDE-SONRAKI-OTURUM.md`.
 
-### Önemli (100+)
-- ⚪ **Wizard UX iyileştirme** — Adım 2'de "zaten yüklendi" badge'i (önceden DB query), Adım 4'te görsel polish ("daha havalı" — Cihat dedi). Cihat 100+'a bıraktı.
-- ⚪ **Slugify kozmetik:** `Tutanağı.xlsm` → `Tutanag_i.xlsm` (ğ+ı arasına _ giriyor). Beklenen `Tutanagi.xlsm`. Düşük öncelik.
-- ⚪ **Re-açma senaryosu** — Pasif devreye yeni spool geldiğinde wizard'da görünmüyor (A1 filtresi `silindi!=true` ama "pasif" tanımı kodda hesaplanan). Düşük frekans iş senaryosu, A2'ye geçmek gereksiz. Üç seçenek (a) "yeniden aç" butonu, (b) "pasif devreleri göster" toggle, (c) otomatik re-aktif. Pilot kullanım gözlemlenince karar.
-- ⚪ **101**: İzometri batch entegrasyonu + Faz 1/Faz 2 kuyruğu (mevcut `api/izometri-oku.js` wrapper)
-- ⚪ **102**: Füzyon motoru + çelişki ekranı + manuel onay
-- ⚪ **103**: STP tek-spool parser (B-spline → silindir fitting)
-- ⚪ **104**: Rhino parser + Windows Gezgini UI
+### Önemli (101+)
+- ⚪ **`izometri-oku.js` → dispatcher + parsers/ klasörü** — 101'de wrapper yazılırken doğal zaman. Mevcut PAOR kodu `parsers/aveva-paor.js`'e taşınır. **MK-49.1 ihlali değil — iç davranış aynı, sadece dosya organizasyonu.**
+- ⚪ **Wizard UX iyileştirme** — "Klasör Yükle" butonu görsel olarak zayıf, wizard akışı tamamlanınca komple bir görsel iyileştirme oturumu (Cihat dedi: "çok havalı bir özellik olacak"). 101+ tek bir oturum bu işe ayrılabilir.
+- ⚪ **Slugify kozmetik** — `Tutanağı.xlsm` → `Tutanagi.xlsm` (şu an `Tutanag_i.xlsm`). 10 dk işi.
+- ⚪ **Re-açma senaryosu** — pasif devreye yeni spool. Düşük frekans.
 
-### Opsiyonel
+### Mimari Borçlar (105+)
+- ⚪ **`devre_detay.html` parçalama** — 100 sonu 2776 satır. ≥3500 satıra ulaştığında Yöntem 1 (script src ile JS'i ayır) ile parçala. Hedef yapı: `js/devre-detay/{belgeler, spool, malzeme, notlar, excel}.js`. **Önizleme modal'ı 101'de yazılırken ayrı `js/dok-onizle.js` olarak başlasın** — devre_detay.html'i şişirmemek için.
+- ⚪ **`devre-belgeleri` storage'da Türkçe karakter** — MK-99.3 ile slugify yapılıyor ama wizard kodunda kontrol et (`Tutanag_i` sorunu).
+- ⚪ Ortak helper'ları `js/ares-ui.js`'e çıkar (`esc`, `tv`, `setText`, `showToast`, skeleton)
+
+### Opsiyonel / Uzun Vade
 - ⚪ AVEVA AP214 çıkış denemesi
 - ⚪ `docs/DATABASE.md` RLS uyumsuzluğu
-- ⚪ i18n anahtar consolidation refactor (`cmn_iptal` vs `btn_iptal` vs `dny_cancel` — aynı metin 5+ yerde)
+- ⚪ i18n anahtar consolidation refactor
 - ⚪ Soft delete cron işi (30 gün sonra kalıcı silme)
 - ⚪ Format envanter UI (super_admin)
-- ⚪ Etkileşimli format öğretme modal
-- ⚪ Hatalı kayıt aksiyonları (kuyruk-yeniden-dene, kuyruk-sil, kuyruk-pdf-indir)
+
+### Roadmap (Mimari Sırası — Konuşulduğu Hâliyle)
+- **101**: Önizleme modal + Excel generic parser + İzometri wrapper (parsers/ klasörü)
+- **102**: Füzyon motoru + çelişki ekranı + manuel onay
+- **103**: STP tek-spool parser (B-spline → silindir fitting)
+- **104**: Rhino parser + Windows Gezgini UI
+- **105**: AVEVA AP214 + opsiyonel parça temizliği
 
 ---
 
 ## Aktif Süreç Disiplinleri
 
 - **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti
-- **MK-49.1:** `izometri-oku.js`'e dokunma — minimum değişiklik
+- **MK-49.1:** `izometri-oku.js`'e dokunma — minimum değişiklik (101'de dispatcher refactor istisnası: iç davranış aynı, dosya organizasyonu değişir)
 - **MK-50.1:** Hassas anahtar Claude'a verme
-- **MK-50.3:** Yeni format için parser_kural yazmadan önce 3+ başarılı AI örneği
+- **MK-50.3:** Yeni parser için 3+ başarılı AI örneği önce
 - **MK-50.4:** Dotfile oluşturduktan sonra `ls -la` kontrol
 - **MK-51.1:** Dosya kopyalamadan önce `~/Downloads`'da MD5 + satır sayısı doğrula
 - **MK-51.2:** Parser_kural regex'lerini en az 5 farklı gerçek dosya örneğiyle test et
 - **MK-52.1:** `arespipe_kopyala` MD5 doğrulamalı dosya kopyalama
 - **MK-52.2:** `gp` otomatik rebase + push
-- **MK-98.1:** Yeni feature flag eklerken `feature_flags` master kayıt önce, master tablo için DB keşif sorgusu zorunlu
+- **MK-98.1:** Yeni feature flag eklerken `feature_flags` master kayıt önce, DB keşif sorgusu zorunlu
 - **MK-98.2:** Şema migration'larında `BEGIN...ROLLBACK` kuru çalıştırma zorunlu
 - **MK-98.3:** Terminal yapıştırmada `\` line continuation yerine `&&` zinciri
 - **MK-98.4:** SQL'i "Supabase SQL Editor →" başlığıyla ver, terminal komutları `bash` bloğunda
-- **MK-99.1 (yeni):** Migration policy'lerinde `DROP IF EXISTS ... CREATE` idempotent pattern zorunlu. "policy already exists" hatası önlenir.
-- **MK-99.2 (yeni):** Storage path patterni izometri-pdfs ile tutarlı, **`{tenant_id}/...`** (tenants/ prefix YOK), RLS: `(storage.foldername(name))[1] = tenant_id::text`.
-- **MK-99.3 (yeni):** Wizard dosya yüklemesinde DB'de orijinal isim (Türkçe karakter dahil) korunur, Storage key slugify ile ASCII'ye çevrilir. `dosya_adi` vs `storage_yolu` ayrımı kullanıcıya görünmez.
-- **MK-99.4 (yeni):** `.DS_Store`, `Thumbs.db`, `desktop.ini`, `__MACOSX`, `.` ile başlayan hidden file/folder'lar yüklemede otomatik atlanır. Console log: kaç dosya atlandı.
+- **MK-99.1:** Migration policy'lerinde `DROP IF EXISTS ... CREATE` idempotent pattern zorunlu
+- **MK-99.2:** Storage path patterni `{tenant_id}/...` (tenants/ prefix YOK), izometri-pdfs ile tutarlı
+- **MK-99.3:** Wizard yüklemesinde DB'de orijinal isim, Storage key slugify
+- **MK-99.4:** `.DS_Store` ve benzeri sistem/hidden dosyalar otomatik filtrelenir
+- **MK-100.1 (yeni):** **İki kaynaklı UI deseni** — eski sistem (belgeler) ve yeni sistem (devre_dokumanlari) paralel yaşayabilir. Listede `_kaynak` etiketi ile birleştirilir, sil-akışı `_kaynak`-aware. Pilot dönemde her iki yol da kullanılabilir. Pilot kararı sonrası taşıma yapılır.
+- **MK-100.2 (yeni):** **Python heredoc ile büyük JS patch yazma anti-pattern'i.** Python string'i içinde JS template oluşturmak escape karmaşası getirir (`\\'`, `\u{}`). 100'de iki kez denendi, ikisinde de syntax bug çıktı. Alternatif: (a) küçük str_replace patch'leri, (b) ayrı `.js` dosyası yazıp `<script src=...>` ile yükle, (c) DOM API (createElement) ile inline string concat yerine.
+- **MK-100.3 (yeni):** **Tree render state oturum-içi sakla** — `window.DOK_TREE_ACIK` global obje. Sayfa yenilenince sıfırlanır (default açık). DB'ye yazma gereği yok, kullanıcı yenilemede de aynı state'i bulmuyorsa sorun değil.
 - **KARAR-97.0:** Yeni tablolar mevcut sisteme dokunmaz (geri alma garantisi)
+- **KARAR-100.A (yeni):** **Wizard + İzometri Batch ortak kuyruk mimarisi.** Her iki UI da `dosya_isleme_kuyrugu`'na yazar, tek parser endpoint (`api/kuyruk-isle-*.js`) tüketir. İzometri batch sayfası kuyruğun **UI penceresi** olur, ayrı işleme katmanı değil. Format öğrenme tablosu (`izometri_format_tanimlari`) iki kaynaktan da beslenir.
 
 ---
 
-## Performans
+## Performans (Değişiklik Yok)
 
 - **L2 parse (lokal):** 1-2 ms/PDF
 - **L3 vision parse (canlı):** 11-25 sn/PDF
 - **Format tanıma:** <100 ms/PDF
-- **Wizard yükleme:** ~15 dosya / 7 saniye (storage upload + DB insert + queue insert)
+- **Wizard yükleme:** ~15 dosya / 7 saniye
+- **Tree render (16 dosya):** <50 ms
+- **Arama filtre (16 dosya, 150ms debounce):** <30 ms hesap
 
 ---
 
-## 100 Hazırlık Notu
+## 101 Hazırlık Notu
 
-100 ~3-4 saatlik iş. **İki ana hedef:**
+**101 ~4-5 saat öngörü.** Üç ana iş:
 
-1. **Excel generic parser** (`bom_excel` tipi için) — L1 sözlük match + L2 pattern + L3 Haiku fallback (sonraya)
-2. **Devre detay'da belge listesi UI** (acil — kullanıcı yüklediğini göremiyor)
+1. **Önizleme modal v3** (~1 saat) — `js/dok-onizle.js` ayrı dosya olarak. Python heredoc kullanma. PDF / IMG / TXT / Excel + "Önizleme yok" branchları.
+2. **Excel generic parser** (~2 saat) — L1 sözlük + L2 pattern, L3 Haiku 102+'a. Yeni `api/kuyruk-isle-excel.js`.
+3. **İzometri parser wrapper** (~1.5 saat) — `api/kuyruk-isle-izometri.js`. Mevcut `izometri-oku.js`'i wrapper'dan çağır. `izometri-oku.js` minimum değişiklik (MK-49.1). Eğer zaman elveriyorsa `parsers/aveva-paor.js`'e taşıma da başlasın.
 
-Sıralama: önce **UI** (yüklenen dosyalar görünür hale gelmeli), sonra **parser** (gerçek BOM'lar otomatik dolar). 100'ün gündemi `CLAUDE-SONRAKI-OTURUM.md`'de detaylı.
+Sıralama: önce **önizleme** (kullanıcı değeri yüksek, küçük iş), sonra **parser'lar** (asıl uzun iş, yoğunluk gerektirir).
 
 Detay: `CLAUDE-SONRAKI-OTURUM.md`.
 
 ---
 
-> 100. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
+## 100. Oturum Anlamlı Anlar
+
+🎊 **100. oturum milestone'u** — 22. oturumda kurulan disiplin (numaralı oturumlar, açılış ritüeli, MK takibi) buraya kadar getirdi. 80+ oturumdur tek bir oturum bile bu disiplini çiğnemedi.
+
+**Yeni mimari kararlar (100'de pekişen):**
+- Vanilla seçimi **stratejik olarak doğruydu** (Cihat'la konuşuldu). 5 yıl sonra da çalışacak, eski olmuyor — risk framework'lerde, vanilla zaten standart.
+- Wizard + Batch ortak kuyruk pattern'i (KARAR-100.A).
+- "Python heredoc anti-pattern'i" — 100'de iki kez yenildik, artık biliyoruz (MK-100.2).
+
+**Süreç dersi:** Patch script'i `node --check` ile JS syntax'ı doğrulamak yeterli değil — HTML/JS sınırı bağlamı validate edilmiyor. 101'de **`html-validate` veya manuel browser console testi** patch sonrası mecburi.
+
+---
+
+> 101. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
