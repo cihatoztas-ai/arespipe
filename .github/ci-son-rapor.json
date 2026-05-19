@@ -1,11 +1,11 @@
 {
-  "tarih": "2026-05-19T10:31:59.766Z",
-  "commit_sha": "b4e6b98ae16b0d24fbfc339bc456356c1a1db9b9",
+  "tarih": "2026-05-19T14:21:02.088Z",
+  "commit_sha": "90df0652c4fcb22ad30a1d36536db1d105fb6bd4",
   "commit_ref": "main",
-  "workflow_run": 878,
+  "workflow_run": 879,
   "ozet": {
     "hata": 0,
-    "uyari": 34,
+    "uyari": 41,
     "taranan_dosya": 109,
     "sorunlu_dosya": 3,
     "durum": "sari"
@@ -20,7 +20,7 @@
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
-            1467
+            1495
           ]
         }
       ]
@@ -28,18 +28,25 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 33,
+      "sayi": 40,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
-          "sayi": 6,
+          "sayi": 13,
           "satirlar": [
-            1157,
-            1158,
-            1159,
-            1160,
-            1161,
-            1162
+            1178,
+            1179,
+            1180,
+            1181,
+            1182,
+            1183,
+            1204,
+            1205,
+            1206,
+            1207,
+            1208,
+            1209,
+            1210
           ]
         },
         {
@@ -87,49 +94,91 @@
     {
       "dosya": "devre_detay.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 7,
+      "uyari_sayisi": 14,
       "hatalar": [
         {
           "kod": "G03_HAM_YUZEY",
           "tip": "uyari",
-          "satir": 1467,
+          "satir": 1495,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1157,
+          "satir": 1178,
           "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1158,
+          "satir": 1179,
           "mesaj": "tv('dv_stage_imalat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1159,
+          "satir": 1180,
           "mesaj": "tv('dv_stage_kaynak') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1160,
+          "satir": 1181,
           "mesaj": "tv('dv_stage_on_kontrol') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1161,
+          "satir": 1182,
           "mesaj": "tv('dv_stage_kk') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1162,
+          "satir": 1183,
           "mesaj": "tv('dv_stage_sevkiyat') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1204,
+          "mesaj": "tv('dv_dok_bom') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1205,
+          "mesaj": "tv('dv_dok_spool_im') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1206,
+          "mesaj": "tv('dv_dok_3dpdf') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1207,
+          "mesaj": "tv('dv_dok_sartname') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1208,
+          "mesaj": "tv('dv_dok_pid') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1209,
+          "mesaj": "tv('dv_dok_step') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 1210,
+          "mesaj": "tv('dv_dok_rhino') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
