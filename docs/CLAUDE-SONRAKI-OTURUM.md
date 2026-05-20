@@ -1,393 +1,271 @@
-# 101. Oturum — Önizleme + Excel Parser + İzometri Wrapper
+# 102. Oturum — Manuel Onay UI + INSERT Akışı
 
-> **100'den gelen plan.** Hedef: Devre detay'da doküman önizleme + wizard yüklemelerinin **otomatik parse** edilmesi. 100'de UI tamamlandı, şimdi veri katmanı.
+> **101'den gelen plan.** Hedef: parser çıktısını kullanıcıya göster, onay sonrası `spooller` + `spool_malzemeleri`'ne INSERT.
+> 101'de pipeline canlıda, parse_sonuc JSONB hazır. Şimdi UI ve INSERT katmanı.
 
 ---
 
-## Açılış Ritüeli (CLAUDE.md disiplini)
+## Açılış Ritüeli
 
+```
 2 kısa kontrol:
 
-1. **`git pull` temiz mi?**
-   ```bash
+1. Şunu çalıştırır mısın ve çıktıyı yapıştırır mısın:
    cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
-   ```
 
-2. **Bugün ne yapmak istiyorsun?**
+2. Bugün ne yapmak istiyorsun? (Manuel onay UI mu, başka konu mu?)
+```
 
 Cevap geldikten sonra Claude şu dosyaları okur:
-- `.github/son-durum.md` (100 kapanışı)
-- `docs/CLAUDE-SON-OTURUM.md` (detaylı 100 özeti)
+- `.github/son-durum.md` (101 kapanışı)
+- `docs/CLAUDE-SON-OTURUM.md` (detaylı 101 özeti)
 - Bu dosya
-- `docs/IZOMETRI-BATCH-KARAR.md` (mevcut izometri-oku.js mimarisi için referans)
+- `devre_yeni.html` `ifsOnayla` fonksiyonu (referans — INSERT mantığı)
 
 ---
 
-## 100 Sonu Durumu (Özet)
+## 101 Sonu Durumu (Özet)
 
-- **Migration:** 82'de duruyor (100 sadece UI)
-- **CI:** ✅ YEŞİL, 22 uyarı (Faz B baseline)
-- **Vercel:** Production = 100 sonu, son commit `6579c2e` (önizleme revert sonrası temiz hâl)
-- **Wizard:** Canlıda, pilot tenant A+E aktif, 15+ smoke test dosyası yüklendi/silindi
-- **Devre detay:** İki kaynaklı belge listesi (📎 modal + 📁 wizard tree) + arama (≥8 dosyada) çalışıyor
-- **Önizleme:** Yok (100'de iki kez denendi, syntax bug, revert)
+- **CI:** ✅ YEŞİL
+- **Migration:** 84 (083 parse_sonuc + 084 durum 7 değer)
+- **Endpoint:** `POST /api/kuyruk-isle-excel` canlıda, IFS xlsm test L1 %95
+- **DB:** `dosya_isleme_kuyrugu.parse_sonuc JSONB` doluyor
+- **Test verisi:** Kuyrukta `id=eb23f38a-...` durum=`oneri_hazir`, parse_sonuc dolu (4 satır IFS BOM)
 
 ---
 
-## 101'in 3 Ana İşi
+## 102'nin 3 Ana İşi
 
-### İş 1 — Önizleme Modal v3 (~1 saat) **— ÖNCE BU**
+### İş 1 — Manuel Onay UI (~2 saat) **— ÖNCELİK**
+
+#### Konum
+`devre_detay.html` — yeni sekme veya modal. Mevcut "Belgeler" sekmesinden bir adım ileri.
+
+#### Veri Kaynağı
+```sql
+SELECT k.id, k.parse_sonuc, k.durum,
+       d.dosya_adi, d.dokuman_tipi, d.devre_id
+FROM dosya_isleme_kuyrugu k
+JOIN devre_dokumanlari d ON d.id = k.devre_dokuman_id
+WHERE d.devre_id = '<DEVRE_UUID>'
+  AND k.durum IN ('oneri_hazir', 'manuel_onay')
+  AND d.silindi = false;
+```
+
+#### UI Akışı
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 📋 Parse Sonuçları (2 dosya onay bekliyor)          │
+├──────────────────────────────────────────────────────┤
+│ • IFS Malzeme Listesi.xlsm                  [Aç ↓]   │
+│   ✅ L1 başarılı · %95 güven · 4 satır              │
+│                                                       │
+│ • Donatım Kontrol Formu.xlsx                [Aç ↓]   │
+│   ⚠ Tanınamadı · 7 sayfa kontrol formu              │
+│   [Tipini düzelt] [Sil]                              │
+└──────────────────────────────────────────────────────┘
+```
+
+"Aç" tıklanınca expand:
+
+```
+Tablo: parse_sonuc.satirlar
+┌─────────┬────────┬─────────┬──────────┬─────────┬────────┐
+│ ✓ Seç   │ Spool  │ Boru/Fit│ DN/Boyut │ Malzeme │ Uzun.  │
+├─────────┼────────┼─────────┼──────────┼─────────┼────────┤
+│ ☑       │ S01    │ Pipe    │ 60.3x4.5 │ ST37    │ 3126   │
+│ ☑       │ S01    │ Pipe    │ 60.3x4.5 │ ST37    │ 204    │
+│ ☑       │ S01    │ Coupling│ DN50     │ St*     │ —      │
+│ ☑       │ -      │ Std.Comp│ DN50     │ A536    │ —      │
+└─────────┴────────┴─────────┴──────────┴─────────┴────────┘
+[Tümünü Aktar] [İptal]
+```
+
+Onay → `ifsOnayla` mantığını çağır (mevcut kod, yeniden uydurma):
+1. Spool gruplama (pipeline_no + spool_no)
+2. `spool_id` üretimi (`A-0001` formatı, `spoolIdFormatla(kisaKodlar[idx])`)
+3. spool_no'da rev ayrımı (`_spoolRevAyir` regex)
+4. Boyut parse (`_boyutParcala`)
+5. Malzeme canonical (`ARES_NORM.malzemeKod`)
+6. Sertifika tespiti (desc'te `3.2|3.3`)
+7. INSERT `spooller` + `spool_malzemeleri`
+8. Kuyrukta `durum='tamamlandi'`, doküman tablosunda `parse_durumu='tamamlandi'`
+9. Devre detay yenile, kullanıcı yeni spool'ları görür
+
+#### Test Senaryoları (smoke)
+- `oneri_hazir` dosya açılır, satırlar görünür ✓
+- Bazı satırlar seçilir, onaylanır → o satırlar INSERT olur, diğerleri kalmaz
+- `manuel_onay` dosyada kolon eşleme modal'ı (102'nin Bonus İşi)
+- `hata` dosyada "tanınamadı, tip düzelt" UI
+
+---
+
+### İş 2 — Wizard Auto-Detect Düzeltmesi (~30 dk)
 
 #### Sorun
-Kullanıcı dosyayı görmek için indirip açmak zorunda. Pilot için UX yarım.
+Test'te gördük: `303S-Sludge System-G200-P2 IFS Malzeme Listesi.xlsm` → `dokuman_tipi='diger'` etiketlendi (yanlış). `Donatım Kontrol Formu.xlsx` → `bom_excel` etiketlendi (yine yanlış). Wizard auto-detect kuralı dar.
 
-#### 100'de Ne Denendi (Başarısızlık Bağlamı)
+#### Yer
+`devre_wizard.html` (oturum 99'da yazıldı). Auto-detect fonksiyonunu bul:
 
-İki patch (patch-100e, patch-100f) yazıldı. İkisi de `devre_detay.html`'in içine inline JS ekledi. İki kez `Uncaught SyntaxError: Invalid or unexpected token` çıktı (farklı satırlarda). 
+```bash
+grep -n "auto.*detect\|dokuman_tipi.*=\|sini\(la\|fla\)ndir\|tipi.*belirle" devre_wizard.html | head -20
+```
 
-**Kök neden:** Python heredoc içinde uzun JS string'leri oluştururken escape karmaşası (`\\'`, `\u{...}`). Patch script'in **kendisi** Python olarak geçerliydi (`compile` testi geçti, `node --check` geçti), ama HTML/JS sınırına yerleştirildikten sonra bir noktada syntax kırıldı.
-
-**MK-100.2 disiplini bunun için yazıldı:** *"Python heredoc ile büyük JS patch yazma anti-pattern'i."*
-
-#### 101'de Yeni Yaklaşım
-
-**Anti-pattern'den kaç:**
-- ❌ `devre_detay.html` içine inline yazma
-- ❌ Python heredoc + string concat
-- ❌ Inline `onclick="dokOnizle('id')"` attribute'ları
-
-**Doğru yaklaşım:**
-- ✅ **Ayrı dosya:** `js/dok-onizle.js` (yeni)
-- ✅ Bu dosya doğrudan yazılır (`create_file` ile), heredoc YOK
-- ✅ `devre_detay.html`'a tek satır eklenir: `<script src="js/dok-onizle.js"></script>` (kalan kod orada)
-- ✅ DOM API: `createElement` + `appendChild` (inline string concat **YASAK**)
-- ✅ Event delegation: dokListesi'ne tek listener, `data-doc-id` attribute'una göre yönlendirme
-- ✅ Modal HTML de JS'in içinde DOM ile oluştur, ayrı HTML attribute string olmasın
-
-#### İmplementasyon Detay
-
-`js/dok-onizle.js` taslağı (sözde-kod):
+#### Yeni Kural Tablosu
 
 ```javascript
-// js/dok-onizle.js
-(function(){
-  // Global API: window.dokOnizle(id)
-  
-  function ensureModal() {
-    if (document.getElementById('mDokOnizle')) return;
-    const modal = document.createElement('div');
-    modal.id = 'mDokOnizle';
-    // ... DOM API ile yapı kur
-    document.body.appendChild(modal);
+function dokumanTipiTahminEt(dosyaAdi) {
+  const ad = dosyaAdi.toLowerCase();
+
+  // Önce kesin pattern'ler
+  if (ad.includes('izometri') || ad.includes('iso ') || /\.s\d+/.test(ad)) return 'izometri';
+  if (ad.includes('spool') && (ad.endsWith('.pdf') || ad.endsWith('.dwg'))) return 'spool_imalat';
+  if (ad.endsWith('.stp') || ad.endsWith('.step')) return 'stp';
+  if (ad.endsWith('.3dm') || ad.includes('rhino')) return 'rhino';
+
+  // Excel/xlsm → IFS / BOM tahmini
+  if (/\.(xlsx|xlsm|xls)$/.test(ad)) {
+    if (ad.includes('ifs') || ad.includes('malzeme') ||
+        ad.includes('bom') || ad.includes('part list')) return 'bom_excel';
+    return 'diger';  // başka xlsm → diger (kontrol formu, tutanak vb.)
   }
-  
-  function open(d) {
-    ensureModal();
-    const ext = (d.dosyaAdi||'').split('.').pop().toLowerCase();
-    const fmt = {
-      pdf: 'pdf',
-      png: 'img', jpg: 'img', jpeg: 'img', gif: 'img', webp: 'img',
-      txt: 'txt', csv: 'txt', log: 'txt', md: 'txt',
-      xlsx: 'xls', xls: 'xls', xlsm: 'xls'
-    }[ext];
-    
-    if (!fmt) renderUnsupported(d);
-    else if (fmt === 'pdf') renderPDF(d);
-    else if (fmt === 'img') renderImg(d);
-    else if (fmt === 'txt') renderTxt(d);
-    else if (fmt === 'xls') renderXls(d);  // SheetJS lazım
-  }
-  
-  function renderPDF(d) {
-    const iframe = document.createElement('iframe');
-    iframe.src = d.dosyaUrl;
-    // ... style
-    body.replaceChildren(iframe);
-  }
-  
-  // ... diğer render fonksiyonları
-  
-  window.dokOnizle = function(id) {
-    const d = (window.DOKUMANLAR||[]).find(x => x.id === id);
-    if (d) open(d);
-  };
-})();
-```
 
-`devre_detay.html`'a ekleme:
-```html
-<script src="js/dok-onizle.js"></script>
-```
+  // PDF + akış şeması
+  if (ad.includes('p&id') || ad.includes('akis') || ad.includes('flow')) return 'akis_semasi';
 
-`renderDokumanlar()` satır onclick'i:
-```javascript
-// satirHTML içinde:
-<div class="dok-row" data-doc-id="${id}" style="cursor:pointer;...">
-```
+  // Şartname
+  if (ad.includes('sartname') || ad.includes('teknik') || ad.includes('spec')) return 'sartname';
 
-dokListesi event delegation:
-```javascript
-dokListesi.addEventListener('click', e => {
-  const row = e.target.closest('.dok-row');
-  if (row && !e.target.closest('.dok-row-del')) {
-    dokOnizle(row.dataset.docId);
-  }
-});
-```
-
-**Önemli:** ↗ butonu kaldırıldı (100'deki son tasarım). Kullanıcı modal'dan "Yeni Sekme" ile açar.
-
-#### Test Senaryoları (101'de smoke)
-- PDF satırına tıkla → iframe açılır
-- Excel satırına tıkla → ilk 100 satır, çoklu sheet için tab bar
-- ✕ butonuna tıkla → SADECE sil onayı, modal AÇILMAZ
-- ESC → modal kapanır
-- Dış tıklama → kapanır
-- DWG/STP gibi format → "Önizleme yok, indirin" mesajı
-
----
-
-### İş 2 — Excel Generic Parser (~2 saat)
-
-#### Hedef
-Wizard `bom_excel` tipi yüklemeleri **otomatik parse** edilsin, `pipeline_malzemeleri`'ne yazılsın.
-
-#### Mevcut Durum (100 sonu)
-- Wizard `bom_excel` dosyaları `dosya_isleme_kuyrugu`'na `parser='sakla'` ile atıyor → atıl
-- Parser endpoint yok
-
-#### Mimari
-
-```
-Wizard upload (bom_excel) 
-  → dosya_isleme_kuyrugu (parser='excel-generic', durum='bekliyor')
-  → api/kuyruk-isle-excel.js (yeni endpoint, cron veya manuel tetik)
-  → SheetJS read → L1 sözlük match → L2 pattern fallback
-  → pipeline_malzemeleri INSERT
-  → durum='tamamlandi' veya 'hata'
-```
-
-#### Parser Katmanları
-
-**L1 — Sözlük match (~30 dk implementasyon)**
-- `excel_format_tanimlari` tablosu (varsa) — yoksa şimdilik hardcoded sözlük
-- Excel başlık satırını ilk 5 satır içinde ara
-- Bilinen kolon adları: `["Çap", "DN", "Diameter"] → boyut`, `["Malzeme", "Material", "Mat"] → malzeme`, vb.
-- Hepsi eşleşirse L1 başarılı, satırları map et
-
-**L2 — Pattern fallback (~45 dk)**
-- Başlık satırı bulunamazsa veya sözlükte eşleşmezse
-- Pattern: "ilk satırda metin var, sonraki satırlarda sayı var" → metin = başlık
-- Heuristic kolon tanıma: sayısal sütunlar = `dn`, `cap`, `et`, `adet`; metin sütunlar = `malzeme`, `kalite`, `tanim`
-- L2 başarısızsa: kuyrukta `durum='manuel_onay'` + UI'da kullanıcıya gönder
-
-**L3 — Haiku fallback (102+'a ertelendi)**
-- Anthropic Haiku ile parse
-- Maliyet düşük (~$0.001/Excel)
-- L1+L2 yetersizse fallback
-
-#### Endpoint İskeleti
-
-`api/kuyruk-isle-excel.js`:
-```javascript
-// Pseudo:
-import XLSX from 'xlsx';
-
-export default async function handler(req, res) {
-  // 1) Kuyruktan bekleyen excel-generic işleri çek (limit 1)
-  // 2) Storage'dan dosyayı indir
-  // 3) XLSX.read(buffer)
-  // 4) L1 sözlük match dene
-  //    → başarılı: satırları pipeline_malzemeleri'ne INSERT
-  // 5) Yetmedi: L2 pattern dene
-  // 6) Yetmedi: durum='manuel_onay', kullanıcıya bildirim
-  // 7) Başarılı: durum='tamamlandi'
+  return 'diger';
 }
 ```
 
-#### Test Verisi (Elimizdeki)
-- `Donatım Kontrol Formu.xlsx` — wizard'la yüklenmiş, AT110-Drencher-Galv devresinde
-- `IFS Malzeme List.xlsm` — aynı yer
-- `Resim Teslim Tutanağı.xlsm` — aynı yer (bom_excel değil olabilir, kontrol)
-
-**MK-50.3 disiplini:** En az 3 farklı format ile L1 yaz. Şu an 2-3 var, 4. format için pilot bekleyebiliriz.
+Yeni eklemeler: "ifs", "malzeme", "bom", "part list" kelimeleri → `bom_excel`.
 
 ---
 
-### İş 3 — İzometri Parser Wrapper (~1.5 saat)
+### İş 3 — Wizard Kuyruk Parser Mapping (~30 dk)
 
-#### Hedef
-Wizard `izometri` tipi PDF'leri **otomatik parse** olsun, spool/malzeme çıksın.
+#### Sorun
+Mevcut 15 wizard yüklemesi hepsi `parser='sakla'`. Şu an wizard kuyruğa yazarken hep `sakla` yazıyor.
 
-#### KARAR-100.A: Ortak Kuyruk
+#### Yer
+`devre_wizard.html` veya backend `api/wizard-yukle.js` (varsa). Kuyruğa INSERT yapan kodu bul:
 
-```
-Wizard upload (izometri.pdf)
-  ↓
-İzometri Batch sayfası (PDF seç)
-  ↓
-       (her ikisi de aynı yere)
-  ↓
-dosya_isleme_kuyrugu (parser='izometri-oku', durum='bekliyor')
-  ↓
-api/kuyruk-isle-izometri.js (yeni wrapper)
-  ↓
-api/izometri-oku.js (mevcut, MİNİMUM değişiklik — MK-49.1)
-  ↓
-spool_malzemeleri / pipeline_malzemeleri INSERT
+```bash
+grep -rn "dosya_isleme_kuyrugu.*insert\|from.*dosya_isleme" api/ devre_wizard.html
 ```
 
-#### Önemli — MK-49.1 İhlali Değil
+#### Yeni Mapping
 
-Konuştuğumuz mimari ileri vade:
-```
-api/
-├─ izometri-oku.js           ← dispatcher (kısa, format eşleştirir)
-├─ parsers/
-│  ├─ aveva-paor.js          ← pilot PAOR varyantı
-│  ├─ aveva-e3d.js
-│  ├─ smart3d.js
-│  └─ vision-fallback.js     ← L3 AI fallback
-```
-
-**101'de yapılacak:**
-- Mevcut `izometri-oku.js`'i wrapper'dan **HTTP POST** ile çağır (in-process değil, bağımsız endpoint)
-- `izometri-oku.js`'in **iç kodu değişmiyor**, sadece wrapper'dan tüketiliyor
-- **Eğer zaman elveriyorsa:** PAOR kodu `parsers/aveva-paor.js`'e taşınır + `izometri-oku.js` dispatcher haline gelir. Bu refactor'ün iç davranışı **aynı** — sadece dosya yeri değişir. MK-49.1 hâlâ geçerli.
-
-#### Wrapper İskeleti
-
-`api/kuyruk-isle-izometri.js`:
 ```javascript
-// Pseudo:
-export default async function handler(req, res) {
-  // 1) Kuyruktan bekleyen izometri-oku işi çek
-  // 2) Storage'dan PDF indir → base64
-  // 3) Mevcut /api/izometri-oku endpoint'ine POST (kendine çağrı, hot-loop tehlikesi yok çünkü farklı endpoint)
-  // 4) Yanıt: spool/malzeme JSON
-  // 5) Halüsinasyon koruması (K3/36 — 7 madde) çalıştır
-  //    → şüpheli satırlar: durum='manuel_onay'
-  //    → temiz satırlar: spool_malzemeleri INSERT
-  // 6) İzometri batch sayfası kuyruktan okuyup gösterir (mevcut UI)
+function parserSec(dokuman_tipi) {
+  return {
+    'bom_excel': 'excel-generic',
+    'izometri':  'izometri-oku',
+    // diğerleri (sartname, akis_semasi, spool_imalat, stp, rhino, 3d_pdf, diger)
+  }[dokuman_tipi] || 'sakla';
 }
 ```
 
-#### İzometri Batch Sayfası Etkilenir
-
-Mevcut `izometri-batch.html` artık **kuyruğun UI penceresi** olacak:
-- "PDF Yükle" → wizard ile aynı kuyruğa yazar
-- Kuyruktaki bekleyen/işlenen/hatalı işleri listeler
-- Hata varsa manuel onay UI'sı buradan açılır
-- Format öğretme UI'sı buradan tetiklenir
-
-**101'de yapılacak değişiklik:** Minimum — sadece kuyruğa yazma noktası. UI değişiklikleri 102+ (füzyon ekranı).
+Yani sadece **2 tip otomatik parse edilir** (bom_excel + izometri), diğerleri arşive gider.
 
 ---
 
-## Sıralama Önerisi (101 için)
+## Sıralama Önerisi (102 için)
 
 ```
-0:00-0:15  Açılış ritüeli + dosyaları oku
-0:15-1:15  İş 1: Önizleme modal v3 (js/dok-onizle.js)
-1:15-1:30  Önizleme smoke test + commit
-1:30-3:30  İş 2: Excel parser (api/kuyruk-isle-excel.js)
-3:30-4:00  Excel parser smoke test (3 dosya) + commit
-4:00-5:30  İş 3: İzometri wrapper (api/kuyruk-isle-izometri.js)
-5:30-5:45  İzometri smoke test (1 PDF) + commit
-5:45-6:00  Kapanış belgeleri
+0:00-0:15  Açılış + dosya okuma
+0:15-2:15  İş 1: Manuel Onay UI (devre_detay.html)
+2:15-2:30  Smoke test 1 (mevcut eb23f38a- onayla, spool oluştur)
+2:30-3:00  İş 2: Wizard auto-detect düzeltmesi
+3:00-3:30  İş 3: Wizard kuyruk mapping
+3:30-3:45  Smoke test 2 (yeni IFS yükle → otomatik kuyruğa → endpoint çağır → UI'da gör)
+3:45-4:00  Kapanış belgeleri
 ```
 
-**Toplam:** ~6 saat. Bu yoğun bir oturum — Cihat tercihine göre 101 sadece **İş 1 + İş 2**, İş 3 102'ye kayabilir.
-
----
-
-## Diğer 101 Açık Borçları (Süre kalırsa)
-
-- ⚪ **Slugify kozmetik** — `Tutanağı.xlsm` → `Tutanagi.xlsm`. wizard kodunda 10 dk fix.
-- ⚪ **i18n anahtarları** — 100'de eklenen `dv_dok_grp_modal`, `dv_dok_grp_wizard`, `dv_dok_search_*` ana dil dosyalarına eklenmeli (tr/en/ar). Şu an fallback metin gösteriliyor, çalışıyor ama temiz değil.
+**Toplam:** ~4 saat. Cihat tercihi: 3 işin hepsi mi yoksa sadece İş 1?
 
 ---
 
 ## Dikkat Etmesi Gerekenler
 
-### MK-100.2 (Yeni — 100'den ders)
+### MK-101 grubu (yeni — bunlar zorunlu)
 
-**Python heredoc ile büyük JS patch yazma anti-pattern'i.** 100'de iki kez yenildi (patch-100e, patch-100f). Alternatifler:
-1. **Ayrı `.js` dosyası** (ÖNERILEN — İş 1 bunu kullanır)
-2. **Küçük str_replace patch'leri** (10-20 satırlık değişiklikler için OK)
-3. **DOM API + event delegation** (inline string concat yerine)
+- **MK-101.1:** `arespipe_kopyala` sonrası `git status` ile staged dosyaları doğrula
+- **MK-101.2:** `npm install` sonrası `package.json + package-lock.json` aynı commit
+- **MK-101.3:** `vercel.json` üzerine yazmadan önce `git show HEAD:vercel.json`
+- **MK-101.4:** Env değişkeni için `grep "SUPABASE_SERVICE" api/*.js` ile sistem standardını kontrol
+- **MK-101.5:** Yeni durum/enum değerleri eklerken `pg_get_constraintdef` kontrolü
 
-### MK-51.1 (arespipe_kopyala MD5)
+### `ifsOnayla` Mantığını Kütüphaneye Çıkarma (Opsiyonel, 103+)
 
-Hâlâ geçerli. Patch script kopyalarken MD5'i Claude verir, gerçek md5 mismatch'inde reddedilir. 100'de bir defa yanlış MD5 vermedik (iyi disiplin).
+Şu an `ifsOnayla` browser-side function, devre_yeni.html'e gömülü. 102'de manuel onay UI yazarken aynı mantık tekrar lazım olacak (devre_detay.html). İki seçenek:
 
-### MK-98.1 (DB Şema Keşif)
+- (a) Kopyala — kısa vadede hızlı, kod tekrar
+- (b) Ortak modül — `js/ifs-onay.js` veya benzeri (105+ refactor sırası)
 
-100'de bir kez `tip` kolonu varsayımı patladı (`dokuman_tipi` doğru imiş). **Yeni tabloya yazmadan önce mecburi:**
-```sql
-SELECT column_name, data_type, is_nullable, column_default
-FROM information_schema.columns
-WHERE table_schema='public' AND table_name='<TABLO>'
-ORDER BY ordinal_position;
+102'de (a) seçilir, 105'te (b) yapılır.
+
+### `_boyutParcala`, `_malzemeTipi`, `spoolIdFormatla` Yerleri
+
+102'de UI yazılırken bunları `devre_yeni.html`'den `devre_detay.html`'e taşımalı (veya `js/` ortak modülüne). Mevcut yerleri:
+
+```bash
+grep -n "function _boyutParcala\|function _malzemeTipi\|function spoolIdFormatla" devre_yeni.html
 ```
 
-### `dosya_isleme_kuyrugu` Şeması (101'de Lazım)
+### DB Şema Notları
 
-```sql
-id, tenant_id, devre_dokuman_id, sayfa_no, parser,
-oncelik, durum, hata_mesaji, deneme_sayisi,
-alindi_at, bitis_at, olusturma
-```
-
-`parser` alanı text — Wrapper'lar `parser` değerine göre seçer:
-- `'excel-generic'` → api/kuyruk-isle-excel.js
-- `'izometri-oku'` → api/kuyruk-isle-izometri.js
-- `'sakla'` → işlem yok (eski varsayılan)
-
-### Browser Console Testi (Patch Sonrası Mecburi)
-
-100'de `node --check` JS syntax doğruladı ama HTML/JS sınırı bağlamı doğrulanmadı → iki kez kabul edilebilir patch HTML içinde patladı. **101'de patch sonrası:**
-
-1. Tarayıcıda `Cmd+Shift+R` ile hard refresh
-2. Console temiz mi? (Hata satırı var mı?)
-3. Yoksa devam, varsa **hemen geri al** (`cp $(ls -t devre_detay.html.bak-* | head -1) devre_detay.html`)
+`dosya_isleme_kuyrugu` ve `devre_dokumanlari` arasındaki ilişki:
+- Kuyruk işlerinin durumunu izler (`durum`, `parse_sonuc`, `hata_mesaji`)
+- Doküman tablosu üst düzey özet tutar (`parse_durumu`)
+- 102'de UI bunları birlikte çekmeli, INSERT sonrası ikisini de `tamamlandi` yapmalı
 
 ---
 
-## 102 Bakış (Hatırlatma)
+## 103 Bakış (Hatırlatma)
 
-102'de **füzyon motoru** var:
-- Excel BOM + İzometri PDF + STP aynı spool'a denk düşüyor mu?
-- Çelişki tespit (boyut farkı, malzeme farkı, adet farkı)
-- Manuel onay ekranı: "BOM 1 dirsek diyor, izometri 2 diyor — hangisi doğru?"
-- Cihat'ın bilgi felsefesi: hangi kaynak öncelikli? (101 sonu konuşulur)
-
-Bu **karar günü** olacak, kod günü değil.
+103'te **İzometri wrapper**:
+- `api/kuyruk-isle-izometri.js` (102'de Excel UI hazır olunca aynı pattern)
+- Mevcut `api/izometri-oku.js`'i HTTP POST ile çağır
+- 7-madde halüsinasyon koruması (K3/36) önce
+- `parsers/aveva-paor.js` refactor (opsiyonel, MK-49.1 ihlali değil — iç davranış aynı)
 
 ---
 
-## Yardımcı Komut Cebi
+## Yardımcı Komutlar
 
 ```bash
 # Açılış
 cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5
 
-# Kuyruktaki bekleyen işler
-psql -c "SELECT parser, durum, COUNT(*) FROM dosya_isleme_kuyrugu GROUP BY parser, durum;"
+# Bekleyen onaylar
+psql "$DATABASE_URL" <<EOF
+SELECT k.id, k.durum, d.dosya_adi, d.devre_id
+FROM dosya_isleme_kuyrugu k
+JOIN devre_dokumanlari d ON d.id = k.devre_dokuman_id
+WHERE k.durum IN ('oneri_hazir', 'manuel_onay')
+  AND d.silindi = false;
+EOF
 
-# Wizard ile yüklenmiş bekleyen dosyalar
-psql -c "SELECT k.parser, k.durum, d.dosya_adi FROM dosya_isleme_kuyrugu k JOIN devre_dokumanlari d ON d.id=k.devre_dokuman_id WHERE k.durum='bekliyor' LIMIT 10;"
+# Manuel parse tetik (test için)
+curl -X POST https://arespipe.vercel.app/api/kuyruk-isle-excel
 
-# Bir devrenin tüm dokümanları
-psql -c "SELECT dosya_adi, dokuman_tipi, klasor_yolu FROM devre_dokumanlari WHERE devre_id='<UUID>' AND silindi=false;"
-
-# Migration
-arespipe_kopyala ~/Downloads/<dosya>.sql ~/Desktop/arespipe/migrations/<dosya>.sql <md5>
-git add migrations/<dosya>.sql && git commit -m "feat(101): ..." && gp
+# Belirli bir kuyruk kaydını yeniden işle
+psql "$DATABASE_URL" -c "UPDATE dosya_isleme_kuyrugu SET durum='bekliyor', parse_sonuc=NULL, hata_mesaji=NULL WHERE id='<UUID>'"
 ```
 
 ---
 
-İyi başlangıçlar, 101. 100 wizard'ı görünür hale getirdi, **sen onu işlevsel hale getireceksin**.
+## 102'nin Anlam Yükü
 
-— 100 Claude
+101 mimari kurdu, 102 **kullanıcının sistemi gerçekten kullanır hale geldiği oturum** olacak. Manuel onay UI hazır olduğunda pilot tersane Excel'i wizard'a sürükler, dakikalar içinde spool listesi otomatik dolar. Bu, Spool AI vizyonu B1 maddesinin **tam canlı çalıştığı an** olur.
+
+---
+
+İyi başlangıçlar, 102.
+
+— 101 Claude

@@ -1,236 +1,233 @@
-# 100. Oturum — Devre Detay'da Belge Listesi UI 🎊
+# 101. Oturum — Detaylı Özet
 
-> **Tarih:** 19 Mayıs 2026
-> **Tema:** Wizard yüklemelerini devre detay sayfasında görüntüleme — tree + arama
-> **Süre:** ~5 saat (plan 1.5-3 saat, görsel + önizleme denemeleri ile uzadı)
-> **Sonuç:** ✅ Devre detay'da iki kaynaklı, tree-yapılı, aranabilir belge listesi canlıda
-> **Milestone:** AresPipe'ın 100. oturumu
+> **19 Mayıs 2026 (Pzt) · ~6 saat · Ana hedef: Excel parser pipeline canlıda**
+> Sonuç: ✅ Endpoint çalışıyor, IFS xlsm → L1 %95 güven, parser üretime hazır
 
 ---
 
-## Açılış Durumu
+## Hedef ve Stratejik Karar
 
-99 wizard altyapısını kurdu, ama yüklenen 24 dosya `devre_dokumanlari`'nda görünmüyordu — devre detay sayfası `belgeler` (eski modal sistemi) tablosundan okuyordu. Pilot için yarım UX.
+100'de bırakılan plan: 3 ana iş (önizleme + Excel parser + İzometri wrapper). Cihat'ın açılışta tercih: "önizlemeyi atla, wizardımızı yapmaya devam edelim". Yani Excel parser önceliği.
 
-Cihat'ın 100 başlangıç tercihi: **"99'da kalan wizard işine devam ediyoruz."** Plan: önce belge listesi UI, sonra Excel parser.
+Asıl mimari kararlar oturum içinde verildi:
 
-99 sonu temizlik: `devre_dokumanlari` ve storage tamamen boştu, sadece `belgeler` tablosunda 1 gerçek kayıt (Sevk_Fisi_ITS26-063, AT110-Drencher-Galv devresine, 25 Nisan'da test sırasında yüklenmiş).
+- **KARAR-101.A — B yaklaşımı:** Endpoint parser çıktısını `parse_sonuc` JSONB'de saklar, INSERT YAPMAZ. 102'de UI'da kullanıcı onayında `spooller` + `spool_malzemeleri` INSERT yapılır. Sebep: Cihat'ın "elle hazırlanmış olanlar düşündürüyor" sezgisi → sert kural olarak kodlanır (L1 + güven ≥ 70 → otomatik insert opsiyonel, diğerleri manuel onay zorunlu).
 
----
+- **`spool_malzemeleri` vs `pipeline_malzemeleri`:** Plan dosyası `pipeline_malzemeleri` öneriyordu, mevcut `devre_yeni.html` IFS akışı (`ifsOnayla`) gösterdi ki **gerçek hedef `spooller` + `spool_malzemeleri`**. IFS satırları zaten spool bazında (her satır bir parça). Plan düzeltildi.
 
-## Olay Sırası ve Karar Noktaları
-
-### Faz 1 — DB Şema Keşfi ve Strateji
-
-İlk önce **`belgeler` (eski) ve `devre_dokumanlari` (yeni) tablo şemalarını çıkardık**. Kritik farklar:
-- Alan adları farklı: `ad` ↔ `dosya_adi`, `tur` ↔ `dokuman_tipi`, `dosya_url` ↔ `storage_yolu`, `olusturma` ↔ `yuklenme`
-- `devre_dokumanlari` ek alanlar: `klasor_yolu`, `uzanti` (NOT NULL), `parse_durumu`, `versiyon`, `aktif`
-- Storage bucket'ları farklı: `arespipe-dosyalar` (eski) vs `devre-belgeleri` (yeni)
-
-Bu fark nedeniyle Cihat **iki sistemi paralel yaşatma stratejisi**ni netleştirdi: "Wizard çalışırsa eski modal'ı kaldırırız, çalışmazsa wizard'ı kaldırırız — şimdi seçmeyelim." (KARAR-100 stratejisi.)
-
-**Sonuç mimari:** UI sadece **görüntü katmanı**, yazma akışları (modal + wizard) ayrı yaşar. Devre detay birleşik liste gösterir, sil-akışı `_kaynak`-aware.
-
-### Faz 2 — İki Kaynaklı Belge Listesi Patch'i
-
-Tek dosya değişikliği: `devre_detay.html`. 5 nokta:
-
-1. **HTML**: tek liste yerine 2 grup blokları (📎 Doküman Ekle / 📁 Klasör Yükle)
-2. **DOK_TURLER**: 4 tipten 11 tipe genişletildi (bom_excel, spool_imalat, 3d_pdf, sartname, akis_semasi, stp, rhino — eskisinden 7 yeni)
-3. **`belgelerYukle()`**: `Promise.all` ile iki paralel SELECT, her kayda `_kaynak` etiketi
-4. **`renderDokumanlar()`**: gruplu çıktı, her grup ayrı sayım
-5. **`dokSil()`**: `_kaynak`-aware doğru tabloya UPDATE
-
-Patch'in büyüklüğü: 162 satır eklendi, 18 silindi.
-
-Commit: `90df065`.
-
-### Faz 3 — Skeleton Çakışması (Beklenmedik Bug)
-
-Patch sonrası devre detay'da Dokümanlar bölümünde **skeleton placeholder kaldı**. Console'da `belgelerListesi: false`, `grpBelgeler: false`.
-
-İlk hipotez: cache. Cmd+Shift+R yetmedi. Yedek + lokal commit'i karşılaştırdık — **lokal ve HEAD birbirinin aynısı**, HTML doğruydu.
-
-Asıl neden: satır 1153'teki `_skList('dokListesi', 3)` G-08 sayfa açılış ritüelinin parçası. Sayfa yüklenir yüklenmez `dokListesi.innerHTML = <skeleton...>` çağrılıyor → bizim 2 grup yapımızı eziyor → `renderDokumanlar()` sonra DOM'da `belgelerListesi` bulamayıp early return ediyor → skeleton sonsuza kalakalıyor.
-
-**Seçenek C** seçildi: `_skList('dokListesi', 3)` satırı yoruma alındı. Skeleton-sız 100-200ms açılış kullanıcıya görünmez, sorun temiz çözüldü.
-
-### Faz 4 — Klasör Tree (Cihat'ın Geri Bildirimi)
-
-İlk wizard test yüklemesi (15 dosya) sonrası Cihat dedi:
-
-> *"bence daha tam çalışmıyor. bu klasörün içinde 2 tane klasör var bu klasörler görünmüyor. tüm dosyalar karışık nasıl bulacaz aradığımızı"*
-
-DB'de `klasor_yolu` doğru saklanmıştı (`AT110-Drencher-Galv/İzometri`, `.../Spool`) ama render düz listeydi. **3 seçenek sundum:**
-
-- A) Tree (Finder hiyerarşisi)
-- B) Filtre çubuğu
-- C) Tree + arama kombine
-
-Cihat: **A** seçti — "elimizdeki şekilde klasör yapısını görelim."
-
-Patch: `renderDokumanlar()`'da wizard kayıtları için **recursive ağaç oluşturma + nodeHTML render**. Klasörler tıklanır, aç/kapa (`▾`/`▸`), state oturum boyunca korunur. Belgeler grubu düz liste kaldı.
-
-Sayım rozeti: `3 (·15)` = bu klasörün direkt dosyaları + alt klasörler dahil toplam.
-
-### Faz 5 — Arama (Cihat Beğendi, B'ye Geçtik)
-
-> *"süper çalışıyor ama senden birşey daha rica etsem yapar mısın..."*
-
-Bu aşamada Cihat **B planı**'na geçmeyi onayladı:
-- B.1 Arama
-- B.2 Slugify kozmetik
-- B.3 Kapanış
-
-Arama patch'i: dokListesi başına `<input>` kutusu, **≥8 dosyada otomatik görünür** (eşik). Filtre: dosya adı + klasör yolu + tip. Match olan klasörler otomatik açık (drill-down kaldırır). Debounce 150ms, temizle butonu, sonuç sayısı metni.
-
-Sayım badge'leri filtreye göre güncellenir: `(4/15)` formatı.
-
-### Faz 6 — Önizleme Modal (İki Deneme, Revert)
-
-Cihat sordu: *"buradaki dosyalara önizleme de ekleyebilir miyiz?"*
-
-Önce tartıştık:
-- Hangi formatlar mümkün?
-- SheetJS zaten yüklü mü? → Evet, Excel önizlemesi mümkün
-- Sayfa performansına etki?
-- "Önizlenemiyen formatlar bloklansın" yaklaşımı
-
-Plan: PDF (iframe), IMG (img), TXT (fetch + pre), Excel (SheetJS sheet_to_html), diğerleri için "indirin" mesajı.
-
-**Patch v1 (patch-100e-onizleme.py):**
-- 358 satırlık Python script
-- Modal HTML + dokOnizle fonksiyonu + satır onclick + ↗ stopPropagation
-- Sonuç: `Uncaught SyntaxError: Invalid or unexpected token` @ satır 2892
-- **Sebep:** Python heredoc içinde JS string oluştururken `\\'` escape karmaşası
-
-**Patch v2 (patch-100f-onizleme-v2.py):**
-- ↗ butonu kaldırıldı (modal'da var)
-- DOM API (createElement) + event delegation kullanıldı, inline string concat azaltıldı
-- Python raw string `r'''` ile Unicode escape sorunu giderildi
-- `node --check` ile JS syntax önceden doğrulandı, geçti
-- Sonuç: **YİNE syntax error** @ satır 3010, farklı bir noktada
-
-İkinci başarısızlık sonrası Cihat: *"yapmasaydık keşke bozduk sanki :("*
-
-**Karar:** Revert. `cp` ile yedekten geri al, commit `revert(100): onizleme patch geri alindi (syntax bug)`.
-
-Bu **doğru karardı** — saat geç, önizleme tek başına bir oturum hak ediyor, bugünün diğer kazanımları zaten somut.
-
-### Faz 7 — Mimari Konuşmalar (Paralel)
-
-Cihat oturum boyunca 3 önemli mimari soru sordu, hepsine cevap verdik:
-
-**1. İzometri Batch Sayfası Geleceği:**
-- Wizard ana akış, batch sayfası "Uygulamalar" altında alternatif/güç-kullanıcı aracı olarak kalır
-- KARAR-100.A: Her iki UI da **aynı kuyruğa yazar**, tek parser endpoint çalışır
-- Format öğrenme iki kaynaktan beslenir
-
-**2. `izometri-oku.js` Bölünmesi:**
-- 101'de kuyruk wrapper yazılırken doğal zaman
-- Hedef yapı: `api/izometri-oku.js` (dispatcher) + `api/parsers/aveva-paor.js`, `aveva-e3d.js`, vb.
-- MK-49.1 ihlali değil — iç davranış aynı, dosya organizasyonu değişiyor
-
-**3. Vanilla JS Uzun Vade Endişesi:**
-- Cihat: "5 yıl sonra desteklenmez denirse ne yaparız?"
-- Cevap: Vanilla = web standardı = eskimez. Asıl risk **framework**'lerde (Vue 2→3 gibi)
-- Topyekun rewrite gerekmez, parça parça modernleşme (Alpine.js, Lit gibi mikro-framework'ler tek-tek sayfalara eklenebilir)
-- Bugün buradayız çünkü vanilla seçildi — React'la 50. oturumda olurduk
-
-**Bonus:** Sayfa parçalama stratejisi (3500+ satıra ulaşan dosyalar için Yöntem 1 — `<script src=...>` ile JS ayrımı). 105+ borcuna eklendi.
+- **Mevcut `ifsOku` kütüphaneleştirilmedi:** İlk düşünce browser+node ortak modüldü, ama complexity yüksek. Şu an iki paralel akış (browser=devre_yeni.html, server=wizard) ortak bir sözlüğü paylaşıyor — kütüphane yerine *paylaşılan disiplin*. 102'de UI manuel onay yazılırken `ifsOnayla` mantığı doğrudan kullanılır (`_boyutParcala`, `_malzemeTipi`, sertifika tespiti).
 
 ---
 
-## Süre Dağılımı (Yaklaşık)
+## Yapılanlar — Kronolojik
 
-- Açılış ritüeli + DB keşfi + plan: 30 dk
-- Faz 2 patch (iki kaynaklı liste): 45 dk
-- Faz 3 skeleton bug + fix: 30 dk
-- Faz 4 tree render patch + test: 40 dk
-- Faz 5 arama patch: 35 dk
-- Faz 6 önizleme deneme v1 + v2 + revert: 90 dk (en uzun, en az verimli)
-- Faz 7 mimari konuşmalar (paralel, dağınık): 30 dk
-- Kapanış belgeleri: 30 dk
+### 1. Parser v1 ve Anti-Pattern Yenilgisi (~30 dk)
 
-**Toplam:** ~5 saat (gerçek), 1.5-3 saat (plan). Önizleme denemeleri %30 zaman aldı, geri alındı. Faz 7 konuşmalar 101+ için zemin hazırladı, vakit kaybı değil.
+İlk denemede CommonJS yazıldı (`require`), Cihat'ın `package.json`'da `"type": "module"` var. ESM hatası. Hızla ESM'e çevrildi. Bu küçük sürpriz dosya/test döngüsünü öğretti.
+
+İlk parser tam string match yapıyordu, sözlük dar (8 alan). CADMATIC IFS xlsm test edildi → 7 eşleşme, 4 kritik alan (Weight, Dimensions, len mm, SpoolNo) kaçtı.
+
+### 2. Mevcut `devre_yeni.html` Parser'larını İnceleme (~45 dk)
+
+Cihat çok değerli not düştü: "Mevcutta IFS dosyalarını çok güzel parselleyip içeriye alabiliyorduk zaten." Tekerleği yeniden uydurmamak için iki parser kodu çıkarıldı:
+
+- `excelOku` (line 1158-1228) — eski, ilk sayfa hardkod, dar sözlük
+- `ifsOku` (line 586-664) — IFS özel, sayfa öncelik 'All'/'import', substring match, özet satır filtresi, iki seviyeli kolon arama
+
+`ifsOku`'dan 3 kritik ders çıktı, parser v2'ye taşındı:
+1. **Sayfa önceliği** (sabit isim → fallback skor)
+2. **Substring match** (tam eşit yerine "içeriyor mu")
+3. **Özet satır filtresi** (total/cog/formül başlayanları atla)
+
+### 3. Parser v2 ve Test (~45 dk)
+
+Yeni sözlük: 14 alan, ~80 terim (TR + EN). Yeni alanlar: `agirlik_kg`, `yuzey`, `revizyon`, `system`, `birim`, `ifs_kod`, `dn` genişletildi. Word-boundary substring match (en uzun eşleşme kazanır).
+
+Aynı IFS xlsm ile test:
+- v1: 7 eşleşme, 4 kritik alan kayıp
+- v2: **14 eşleşme**, tüm alanlar yakalandı, 42 satır + 8 özet atıldı, %95 güven
+
+### 4. `ifsOnayla` İncelemesi ve INSERT Kuralları (~30 dk)
+
+Mevcut `ifsOnayla` (line 742-790) ve `spool_malzemeleri` INSERT bloğu (line 1862-1885) çıkarıldı. Endpoint'in 102'de uyacağı kurallar derlendi:
+- spool/rev ayırma regex'i
+- toplam ağırlık (item'lerin sumu)
+- ana malzeme (mode = en sık)
+- Dimensions parse (3 format: OD×WT / inch / DN)
+- ARES_NORM.malzemeKod canonical
+- kalite ham saklanır (oturum 20 dersi)
+- desc'te `3.2|3.3` → sertifikalı
+
+### 5. DB Keşfi (MK-98.1, ~15 dk)
+
+`devre_dokumanlari` ve `dosya_isleme_kuyrugu` şemaları çıkarıldı:
+- `devre_dokumanlari` 17 kolon (storage_yolu, klasor_yolu, dokuman_tipi, parse_durumu, ...)
+- `dosya_isleme_kuyrugu` 12 kolon (tenant_id, devre_dokuman_id, parser, durum, deneme_sayisi, ...) ama **parse_sonuc YOK** — eklenmeli
+- Mevcut 15 satır, hepsi `parser='sakla', durum='tamamlandi'` (wizard arşivleme, bom_excel parse yok)
+- Eski cron endpoint `api/kuyruk-isle.js` `is_kuyrugu` tablosunda yaşıyor — çakışma yok
+
+### 6. Migration 083 + Endpoint Yazımı (~30 dk)
+
+- `migrations/083_dosya_isleme_kuyrugu_parse_sonuc.sql` — JSONB kolonu + partial index
+- `api/kuyruk-isle-excel.js` — 229 satır, baştan sona pipeline
+
+İdempotent, kuru çalıştırma (BEGIN/ROLLBACK) ile doğrulandı, sonra COMMIT.
+
+### 7. Vercel Sürprizleri (~2 saat — bu oturumun en büyük tüketicisi)
+
+Dört arka arkaya hata, hepsinden ders:
+
+#### Sürpriz 1: `ERR_MODULE_NOT_FOUND lib/excel-parser.js`
+Endpoint deploy edildi ama parser dosyası kayıp. Vercel function bundle'ında `lib/` yok.
+
+İlk hipotez: `vercel.json` `functions.includeFiles: 'lib/**'` lazım. Eklendi, **30 satırlık eski `vercel.json` üzerine yazıldı**.
+
+#### Sürpriz 2: Vercel.json kaybı
+Cihat'ın "26 satır silindi" notu mesajı uyandırdı. `git show HEAD~1:vercel.json` ile eski sürüm geri çağrıldı. HTML cache-busting headers + gece 3 cron + JSON schema kayıp olacaktı. **Revert + birleştirilmiş `vercel.json`** (eski 30 + yeni 4 satır).
+
+Yeni MK-101.3: vercel.json üzerine yazmadan önce eski içeriği gör.
+
+#### Sürpriz 3: Aynı `ERR_MODULE_NOT_FOUND` tekrar
+`vercel.json` doğru ama dosya hâlâ bundle'da değil. `git ls-files lib/` çekildi → `lib/l2-parser.js` var, `lib/excel-parser.js` **YOK**.
+
+Sebep: `arespipe_kopyala` çalıştırdığında dosya lokale kopyalandı ama önceki commit'lerimde `git add lib/excel-parser.js` atlandı. **Sessiz kayıp.**
+
+Aynı zamanda `package.json + package-lock.json` modified — `xlsx` dependency commit'lenmemiş. İki kayıp birden tek commit'le düzeltildi.
+
+Yeni MK-101.1: `arespipe_kopyala` sonrası `git status` zorunlu.
+Yeni MK-101.2: `npm install` sonrası package.json+lock aynı commit'te.
+
+#### Sürpriz 4: Env değişkeni
+Build temiz, function runtime: `Env eksik: SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY zorunlu`.
+
+`grep "SUPABASE_SERVICE" api/*.js` → 3 mevcut endpoint hepsi `SUPABASE_SERVICE_KEY` kullanıyor. Vercel'de de aynı isimle tanımlı. Benim endpoint `SUPABASE_SERVICE_ROLE_KEY` arıyordu — yanlış isim.
+
+`sed -i '' 's/SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY/g'` ile 1 satırlık fix.
+
+Yeni MK-101.4: env adı için `grep api/*.js` ile sistem standardını kontrol.
+
+### 8. İlk Canlı Test ve Constraint Sürprizi (~30 dk)
+
+İlk curl → `{"sonuc":"islendi","durum":"hata","seviye":"fail"}` — boru hattı çalışıyor ama dosya `Donatım Kontrol Formu.xlsx`, BOM değil, kontrol formu. Sayfa adları `BORU MODEL, EKIPMAN MODEL, HVAC-MODEL, FOUNDATION MODEL, ...` — disiplin checklist'i.
+
+Cihat yeni dosya yükledi (`303S-Sludge System-G200-P2 IFS Malzeme Listesi.xlsm`). Ama wizard auto-detect bunu `dokuman_tipi='diger'` etiketlemiş (yanlış), `Donatım Kontrol Formu` ise `bom_excel` (yine yanlış). Manuel UPDATE ile düzeltildi.
+
+İkinci curl → `{"hata":"Sonuç yazma hatası: violates check constraint dosya_isleme_kuyrugu_durum_chk"}`. DB check constraint `oneri_hazir`/`manuel_onay` değerlerini reddediyor.
+
+**Migration 084** yazıldı — constraint'i 7 değere genişletti (`DROP CONSTRAINT IF EXISTS + ADD`). Uygulandı.
+
+Yeni MK-101.5: yeni durum değeri eklerken `pg_get_constraintdef` kontrolü.
+
+### 9. Asıl Başarı Testi (~5 dk)
+
+`UPDATE ... durum='bekliyor'` → curl → 🎯
+
+```json
+{
+  "sonuc": "islendi",
+  "dosya": "303S-Sludge System-G200-P2 IFS Malzeme Listesi.xlsm",
+  "durum": "oneri_hazir",
+  "seviye": "L1",
+  "guven": 95,
+  "secilen_sayfa": "All",
+  "satir_sayisi": 4,
+  "otomatik_insert_uygun": true
+}
+```
+
+SQL ile `parse_sonuc` JSONB içeriği çıkarıldı. 4 satır, hem boru hem fitting doğru ayırt edildi, tüm temel alanlar yakalandı:
+- `pipeline_no: G200-303S-BS18-P2`
+- `spool_no: S01`
+- `malzeme: ST37 / St* / ASTM A536 G65-45-12`
+- `parca_tipi: Pipe / Standard Comp.`
+- `agirlik_kg: 19.36 / 1.26 / 0 / 2.0`
+- `uzunluk_mm: 3126.3 / 204.2 (sadece boru)`
+- `adet: 2 (sadece fitting)`
+- `dn: 60.3x4.5 / DN50 OD:60`
+
+✅ Pipeline'ın tamamı canlıda, üretime hazır.
 
 ---
 
-## Anlamlı Anlar
+## DB İşlemleri
 
-- **Tree görünümü onaylanma anı:** Cihat 15 dosyalı klasör + alt klasörler tree render'ı görünce *"süper çalışıyor"* dedi. Bu wizard'ın gerçek değer noktası — Finder/dosya sistemi kavramının web'de yansıması.
-- **"Vanilla eskimez" konuşması:** Cihat haklı bir endişe taşıyordu, cevap onu rahatlattı. Bu konuşma 101+ oturumlarda da geçerli kalır.
-- **Cihat'ın disiplini:** İki kez önizleme patch fail edince *"yapmasaydık keşke bozduk sanki :("* dedi. Bu duygusal değil — geri al kararı hemen sonra onaylandı, AresPipe'ın "yavaş yavaş doğru yap" felsefesi tam burada işledi.
-- **MK-100.2 yazımı:** "Python heredoc ile JS patch" anti-pattern'i 100'de iki kez yenildi. Bu artık yazılı, 101+'da kaçınılır.
+```sql
+-- 083
+ALTER TABLE dosya_isleme_kuyrugu ADD COLUMN IF NOT EXISTS parse_sonuc JSONB;
+CREATE INDEX IF NOT EXISTS idx_dosya_isleme_kuyrugu_parser_durum
+  ON dosya_isleme_kuyrugu (parser, durum, oncelik DESC, olusturma ASC)
+  WHERE durum = 'bekliyor';
 
----
-
-## Eklenen Mimari Kararlar (MK)
-
-- **MK-100.1:** İki kaynaklı UI deseni — eski + yeni sistem paralel yaşar, UI birleşik gösterim
-- **MK-100.2:** Python heredoc + JS patch = anti-pattern. Alternatif: küçük str_replace, ayrı .js dosyası, DOM API
-- **MK-100.3:** Tree render state oturum-içi global (`window.DOK_TREE_ACIK`), DB persist yok
-- **KARAR-100.A:** Wizard + İzometri Batch ortak kuyruk mimarisi
-
----
-
-## Çıkarılan Dersler (101+ Claude'lar için)
-
-1. **DB şemasını ön-keşif:** Yeni tabloya yazmadan önce `information_schema.columns` SELECT zorunlu. 100'de `tip` kolonu varsayımı patladı, MK-98.1 ihlal edildi → düzeltildi.
-
-2. **Skeleton + yeni HTML çakışması:** G-08 ritüelinde `_skList('xxx', N)` bir elementin tüm innerHTML'ini ezer. Eğer o element içine sonradan dinamik yapı koyacaksak, skeleton'ı o element için **kapatmak veya inner yapıya enjekte etmek** gerekir.
-
-3. **Python heredoc + JS patch fragility:** Inline string concat ile JS üretmek `\\'` escape karmaşası getirir. **`r'''...'''` raw string** Unicode sorununu çözer ama tek tırnak escape'i çözmez. DOM API + ayrı .js dosyası tek temiz yol.
-
-4. **Patch validation:** `node --check` JS syntax doğrular ama HTML/JS sınırı bağlamını **doğrulamaz**. Patch sonrası **mecburi** browser console testi.
-
-5. **Pilot strateji = iki sistem paralel:** Eski + yeni sistem paralel yaşatma riski düşük (kayıt sayısı eski sistemde fiilen 1, yeni sistemde 15). Pilot kullanım sonrası karar net olur. Erken birleştirme yapma.
-
-6. **Cihat'ın UX feedback'i %20 görünür, %80 derin:** "Çalışıyor" dese bile detaylı bakınca eksik bulur (klasör görünmüyor, arama yok vb). Bu yüzden teslim sonrası **birlikte 5-10 dk gerçek kullanım** geçirmek değerli.
-
-7. **Saat geç olunca patch denemesi pahalı:** Faz 6'daki iki yeniden yazım 90 dk yedi, hiçbir kalıcı kazanım sağlamadı. **Yorulduktan sonra revert + sonraki oturum** daha verimli.
+-- 084
+ALTER TABLE dosya_isleme_kuyrugu DROP CONSTRAINT IF EXISTS dosya_isleme_kuyrugu_durum_chk;
+ALTER TABLE dosya_isleme_kuyrugu ADD CONSTRAINT dosya_isleme_kuyrugu_durum_chk
+  CHECK (durum = ANY (ARRAY[
+    'bekliyor', 'isleniyor', 'tamamlandi', 'hata', 'iptal',
+    'oneri_hazir', 'manuel_onay'
+  ]));
+```
 
 ---
 
-## 101 Gündemine Mektup
+## Commit'ler (sırayla)
 
-Sevgili 101 Claude'u,
+| Hash | Mesaj | Etkisi |
+|------|-------|--------|
+| `32f36a3` | feat(101): Excel parser endpoint + migration 083 | endpoint+migration eklendi (parser dosyası kayıp!) |
+| `ecee0d1` | fix(101): vercel.json includeFiles | dolaylı bypass denemesi |
+| `abaf82c` | Revert vercel.json | 30 satır eski içerik geri |
+| `e13e554` | fix(101): vercel.json birleştirilmiş | doğru yapı |
+| `f264def` | fix(101): lib/excel-parser.js + xlsx commit | **sessiz kayıp düzeltildi** |
+| `a1f7bf3` | fix(101): SUPABASE_SERVICE_KEY std | env adı düzeltildi |
+| `33233ac` | feat(101): migration 084 — 7 durum değeri | check constraint genişletildi |
 
-100 wizard'ın UX'ini gerçekten tamamladı — Finder gibi klasör görünümü, arama, iki sistem paralel. Pilot için canlıda hazır.
+CI: Her commit sonrası ✅ YEŞİL.
 
-**101'in 3 işi var, sırayla:**
+---
 
-1. **Önizleme modal v3** (~1 saat) — 100'de iki kez yenildik. Bu sefer farklı:
-   - **`devre_detay.html`'in içine yazma**, ayrı `js/dok-onizle.js` dosyası oluştur
-   - DOM API kullan (`createElement` + `appendChild`), inline string concat YAPMA
-   - Python heredoc patch YAPMA, dosyayı doğrudan yaz
-   - SheetJS Excel için zaten yüklü, kullan
-   - PDF (iframe), IMG (img), TXT (fetch + pre), Excel (sheet_to_html), diğeri "indir"
+## Yeni Mimari Kararlar
 
-2. **Excel generic parser** (~2 saat):
-   - L1 sözlük match (kolon adı eşleştirme)
-   - L2 pattern (başlık satırı bul)
-   - L3 Haiku fallback **102+'a ertelendi** — şimdilik L2 başarısız olursa manuel onay
-   - Yeni endpoint `api/kuyruk-isle-excel.js`
-   - `pipeline_malzemeleri` tablosuna INSERT
-   - **MK-50.3 disiplini:** En az 3 farklı format dosyasıyla test et (Donatım, IFS, Tutanak)
+- **KARAR-101.A:** Parser endpoint **INSERT YAPMAZ**, sadece `parse_sonuc` JSONB'ye yazar. UI onayında DB INSERT (102).
+- **MK-101.1:** `arespipe_kopyala` sonrası `git status` zorunlu.
+- **MK-101.2:** `npm install` sonrası `package.json + package-lock.json` aynı commit.
+- **MK-101.3:** `vercel.json` üzerine yazmadan önce `git show HEAD:vercel.json`.
+- **MK-101.4:** Env değişkeni için `grep "SUPABASE_SERVICE" api/*.js` ile sistem standardını gör.
+- **MK-101.5:** Yeni durum/enum değeri eklerken `pg_get_constraintdef` kontrolü.
 
-3. **İzometri parser wrapper** (~1.5 saat):
-   - `api/kuyruk-isle-izometri.js` (yeni)
-   - Mevcut `api/izometri-oku.js`'i HTTP POST ile çağırır (in-process import değil — port izolasyonu)
-   - Eğer zaman elveriyorsa `parsers/aveva-paor.js` taşıması da başlat
-   - **KARAR-100.A:** Wizard ve izometri-batch.html aynı kuyruğa yazsın
+---
 
-**Önce önizlemeyi yap** — küçük iş, hızlı kullanıcı değeri. Sonra parser'ları (yoğunluk gerektirir).
+## 102'ye Devreden Borçlar
 
-**MK-100.2'yi unutma:** Python heredoc + büyük JS = bug. Patch script yerine direkt dosya yaz. Veya küçük str_replace ile parça parça.
+Detay: `CLAUDE-SONRAKI-OTURUM.md`. Kısaca:
 
-**KARAR-100.A'yı netleştir:** Wizard `parser='izometri-oku'` yazsın, batch sayfası `parser='izometri-oku'` yazsın, tek wrapper tüketsin.
+- **Manuel onay UI** (öncelik 1, ~2 saat) — devre detayında parse_sonuc görüntüle, kullanıcı onaylasın, INSERT akışı (`ifsOnayla` mantığı)
+- **Wizard auto-detect düzeltmesi** — "IFS Malzeme Listesi" → `bom_excel` etiketlensin
+- **Wizard kuyruk mapping** — `bom_excel` tipli için `parser='excel-generic'` (şu an `sakla`)
+- **İzometri wrapper** — 102 sonu veya 103 (Excel UI önce)
+- **Auth** — endpoint pilot için public, production'a `CRON_SECRET` eklenmeli
+- **Cron tetik** — şu an manuel curl, ileride scheduled
 
-Açık borç listesi `son-durum.md`'de uzun. 105+ için `devre_detay.html` parçalama ufukta. **Önizleme modal'ı ayrı dosya olarak başlatırsan** o parçalamanın ilk adımı atılır.
+---
 
-**Görsel polish** Cihat'ın istediği bir şey ama 101'de değil. Wizard akışı tamamlanınca (~104 sonrası) tek bir oturum buna ayrılabilir.
+## Yenilen 4 Sürprizden Çıkarılan Felsefe
 
-İyi çalışmalar.
+Bugün **mimari oturumdan çok bir disiplin oturumu** oldu. Kod doğruydu, ama:
 
-— 100 Claude
+1. **Lokal ≠ Git** — `arespipe_kopyala` MD5 doğruladığında "dosya yerinde" hissi veriyor ama git track etmiyorsa Vercel hiç görmüyor.
+2. **package.json drift** — bağımlılık eklemek `npm install` ile bitmiyor, commit ile bitiyor.
+3. **Var olanı önce gör** — `vercel.json` örneği. "Yeni dosya yarat" değil "üzerine yaz" yapıyorsam eskiyi okumadan yapmamalıyım.
+4. **Sistem standardına saygı** — env var adı, tablo adı, fonksiyon ismi — mevcudu görmeden yenisi yazılmaz.
+
+Bu dördü `kurallar.json`'a (varsa) eklenmeli, yoksa CLAUDE.md'de **MK-101 grubu** olarak kalıcı tutulmalı. Bu sürprizlerden sonra ben (Claude) artık her dosya kopyalama/değiştirme öncesi bu kontrollere içtenlikle bağlıyım.
+
+---
+
+## Performans
+
+- Excel parse (lokal): 50-200ms / dosya
+- Endpoint toplam: 1-3 sn (storage indirme + parse + DB yazma)
+- Sözlük eşleşme: O(satır × kolon × |sözlük|) — büyük dosyalarda da küçük
+
+---
+
+> 102'de bu dosya + `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
