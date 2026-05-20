@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-05-20T17:14:30.460Z",
-  "commit_sha": "e6a833d53926f9fcdcf200a66422101ea722233d",
+  "tarih": "2026-05-20T19:01:13.771Z",
+  "commit_sha": "ace25d8eda47d9ee4cd134b9ccc515131510b325",
   "commit_ref": "main",
-  "workflow_run": 903,
+  "workflow_run": 904,
   "ozet": {
     "hata": 0,
-    "uyari": 59,
+    "uyari": 61,
     "taranan_dosya": 111,
-    "sorunlu_dosya": 3,
+    "sorunlu_dosya": 4,
     "durum": "sari"
   },
   "kurallar": {
@@ -42,7 +42,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 57,
+      "sayi": 59,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -81,26 +81,34 @@
           ]
         },
         {
+          "dosya": "izometri-batch-incele.html",
+          "sayi": 2,
+          "satirlar": [
+            493,
+            507
+          ]
+        },
+        {
           "dosya": "izometri-batch.html",
           "sayi": 18,
           "satirlar": [
-            349,
-            371,
-            436,
-            437,
-            482,
-            491,
-            513,
-            527,
+            355,
+            377,
+            443,
+            444,
+            489,
+            498,
+            520,
             534,
-            547,
-            558,
+            541,
+            554,
             565,
-            595,
-            627,
-            711,
-            748,
-            814
+            572,
+            602,
+            634,
+            718,
+            756,
+            822
           ]
         },
         {
@@ -322,6 +330,25 @@
       ]
     },
     {
+      "dosya": "izometri-batch-incele.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 493,
+          "mesaj": "tv('izbi_ai_guven') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 507,
+          "mesaj": "tv('izbi_eksik') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
       "dosya": "izometri-batch.html",
       "hata_sayisi": 0,
       "uyari_sayisi": 18,
@@ -329,109 +356,109 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 349,
+          "satir": 355,
           "mesaj": "tv('izb_calisiyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 371,
+          "satir": 377,
           "mesaj": "tv('izb_temizle_onay') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 436,
+          "satir": 443,
           "mesaj": "tv('izb_durum_yukleniyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 437,
+          "satir": 444,
           "mesaj": "tv('izb_durum_kuyrukta') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 482,
+          "satir": 489,
           "mesaj": "tv('izb_supabase_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 491,
+          "satir": 498,
           "mesaj": "tv('izb_yeni_batch_onay') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 513,
+          "satir": 520,
           "mesaj": "tv('izb_yukleme_hazirlaniyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 527,
+          "satir": 534,
           "mesaj": "tv('izb_batch_acilmadi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 534,
+          "satir": 541,
           "mesaj": "tv('izb_hicbir_yuklenmedi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 547,
+          "satir": 554,
           "mesaj": "tv('izb_kuyruk_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 558,
+          "satir": 565,
           "mesaj": "tv('izb_arkada_basladi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 565,
+          "satir": 572,
           "mesaj": "tv('izb_hata_genel') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 595,
+          "satir": 602,
           "mesaj": "tv('izb_yukleniyor_x') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 627,
+          "satir": 634,
           "mesaj": "tv('izb_upload_hatasi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 711,
+          "satir": 718,
           "mesaj": "tv('izb_bilinmeyen_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 748,
+          "satir": 756,
           "mesaj": "tv('izb_btn_yeni_batch') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 814,
+          "satir": 822,
           "mesaj": "tv('izb_resume') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 814,
+          "satir": 822,
           "mesaj": "tv('izb_dosya') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
