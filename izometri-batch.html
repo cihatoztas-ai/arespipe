@@ -30,9 +30,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 /* Drop zone */
 .drop-zone{
   border:2px dashed var(--bor);border-radius:16px;
-  padding:48px 32px;text-align:center;
+  padding:20px 28px;text-align:center;
   cursor:pointer;transition:all .2s;
-  background:var(--sur);margin-bottom:20px;
+  background:var(--sur);margin-bottom:14px;
   position:relative;overflow:hidden;
 }
 .drop-zone::before{
@@ -42,8 +42,8 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 }
 .drop-zone:hover,.drop-zone.drag{border-color:var(--ai);background:rgba(99,102,241,.04);}
 .drop-zone.yuklendi{border-color:var(--gr);border-style:solid;}
-.drop-ikon{font-size:48px;margin-bottom:12px;display:block;}
-.drop-baslik{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;}
+.drop-ikon{font-size:30px;margin-bottom:6px;display:block;}
+.drop-baslik{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
 .drop-alt{font-size:14px;color:var(--txd);}
 
 /* Dosya listesi */
@@ -191,29 +191,7 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
     <div class="yeni-format-metin" id="yeniFormatMetin"><span data-i18n="izb_yeni_format_metni">Bilinmeyen formatta dosya var. Manuel onay sonrası "Format kaydet" diyebilirsin — bir sonraki aynı format otomatik tanınır.</span></div>
   </div>
 
-  <!-- Stats -->
-  <div class="stat-row" id="statRow">
-    <div class="stat-kart" id="statDosya">
-      <div class="stat-val" id="statDosyaVal">0</div>
-      <div class="stat-lbl" data-i18n="izb_stat_dosya">Dosya</div>
-    </div>
-    <div class="stat-kart" id="statTamam">
-      <div class="stat-val" id="statTamamVal" style="color:var(--gr)">0</div>
-      <div class="stat-lbl" data-i18n="izb_stat_tamam">Tamamlandı</div>
-    </div>
-    <div class="stat-kart" id="statHata">
-      <div class="stat-val" id="statHataVal" style="color:var(--re)">0</div>
-      <div class="stat-lbl" data-i18n="izb_stat_hata">Hata</div>
-    </div>
-    <div class="stat-kart" id="statSpool">
-      <div class="stat-val" id="statSpoolVal" style="color:var(--ai2)">0</div>
-      <div class="stat-lbl" data-i18n="izb_stat_spool">Toplam Spool</div>
-    </div>
-    <div class="stat-kart man-onay" id="statManOnay">
-      <div class="stat-val" id="statManOnayVal" style="color:var(--warn)">0</div>
-      <div class="stat-lbl" data-i18n="izb_stat_man_onay">Manuel Onay</div>
-    </div>
-  </div>
+  <!-- Stats kaldirildi (104): sade ekran, sayilar Spool Listesi rozetinde -->
 
   <!-- Dosya listesi -->
   <div class="dosya-listesi" id="dosyaListesi" style="display:none;">
@@ -230,17 +208,9 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       <span data-i18n="izb_btn_basla">Batch Başlat</span>
     </button>
-    <button class="btn btn-manuel gizli" id="btnManuel" onclick="manuelOnayAc()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2 L2 22 L22 22 Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="18" r="0.5"/></svg>
-      <span data-i18n="izb_btn_manuel">Manuel Onay</span> (<span id="btnManuelSayi">0</span>)
-    </button>
     <button class="btn btn-incele-tum" id="btnIncele" onclick="sonuclariIncele()" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <span data-i18n="izb_btn_incele_tum">Sonuçları İncele</span>
-    </button>
-    <button class="btn btn-excel" id="btnExcel" onclick="excelIndir()" disabled>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      <span data-i18n="izb_btn_excel">Excel İndir</span>
     </button>
   </div>
 
@@ -389,47 +359,23 @@ function temizle() {
   renderDosyalar();
   document.getElementById('sonucWrap').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
-  document.getElementById('btnExcel').disabled = true;
   document.getElementById('btnIncele').disabled = true;
-  document.getElementById('btnManuel').classList.add('gizli');
 }
 
 function renderDosyalar() {
   var liste = document.getElementById('dosyaListesi');
   var items = document.getElementById('dosyaItems');
   var btnRow = document.getElementById('btnRow');
-  var statIds = ['statDosya','statTamam','statHata','statSpool','statManOnay'];
 
   if (!_dosyalar.length) {
     liste.style.display = 'none';
     btnRow.style.display = 'none';
-    statIds.forEach(function(id){ document.getElementById(id).classList.remove('show'); });
     document.getElementById('yeniFormatBanner').classList.remove('show');
     return;
   }
 
   liste.style.display = 'block';
   btnRow.style.display = 'flex';
-
-  var tamam = _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length;
-  var hata  = _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length;
-  var toplamSpool = _dosyalar.reduce(function(s,d){ return s + (d.spooller||[]).length; }, 0);
-  var manOnay = _tumSpooller.filter(function(s){ return s._manuel_onay === true; }).length;
-
-  document.getElementById('statDosyaVal').textContent  = _dosyalar.length;
-  document.getElementById('statTamamVal').textContent  = tamam;
-  document.getElementById('statHataVal').textContent   = hata;
-  document.getElementById('statSpoolVal').textContent  = toplamSpool;
-  document.getElementById('statManOnayVal').textContent = manOnay;
-  statIds.forEach(function(id){ document.getElementById(id).classList.add('show'); });
-
-  var btnMan = document.getElementById('btnManuel');
-  if (manOnay > 0) {
-    btnMan.classList.remove('gizli');
-    document.getElementById('btnManuelSayi').textContent = manOnay;
-  } else {
-    btnMan.classList.add('gizli');
-  }
 
   var bilinmeyenVar = _dosyalar.some(function(d){ return d.durum === 'tamam' && d.format === 'bilinmeyen'; });
   var banner = document.getElementById('yeniFormatBanner');
@@ -504,7 +450,6 @@ async function basla() {
 
   _calisıyor = true;
   document.getElementById('btnBasla').disabled = true;
-  document.getElementById('btnExcel').disabled = true;
   document.getElementById('progressWrap').style.display = 'block';
   document.getElementById('sonucWrap').style.display = 'none';
 
@@ -741,7 +686,6 @@ async function batchTamamlandi() {
         }
       });
       if (_tumSpooller.length) {
-        document.getElementById('btnExcel').disabled = false;
         document.getElementById('btnIncele').disabled = false;
         renderSonucTablo();
         document.getElementById('sonucWrap').style.display = 'block';

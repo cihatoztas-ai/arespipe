@@ -90,6 +90,14 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .spool-head-baslik.gv-dusuk{color:var(--re);}
 /* okunamayan/eksik deger vurgusu */
 .deger-eksik{color:var(--re);font-style:italic;font-weight:600;}
+/* 104: renk acıklama legend */
+.guven-legend{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:12px;color:var(--txm);}
+.guven-legend .lg-baslik{font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;font-size:11px;}
+.guven-legend .lg-it{display:inline-flex;align-items:center;gap:5px;}
+.guven-legend .lg-nokta{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.guven-legend .lg-yuksek{background:var(--gr);}
+.guven-legend .lg-orta{background:var(--warn);}
+.guven-legend .lg-dusuk{background:var(--re);}
 .spool-head-info{flex:1;min-width:0;}
 .spool-head-baslik{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--tx);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .spool-head-alt{font-size:12px;color:var(--txm);display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
@@ -274,6 +282,15 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
     <span data-i18n="izbi_filt_hata">Hata</span>
     <span class="filt-cnt" id="filtCntHata">0</span>
   </button>
+</div>
+
+<!-- 104: renk acıklama -->
+<div class="guven-legend">
+  <span class="lg-baslik" data-i18n="izbi_legend_baslik">AI Güven</span>
+  <span class="lg-it"><span class="lg-nokta lg-yuksek"></span> <span data-i18n="izbi_legend_yuksek">Yüksek (≥85%)</span></span>
+  <span class="lg-it"><span class="lg-nokta lg-orta"></span> <span data-i18n="izbi_legend_orta">Orta (65-84%)</span></span>
+  <span class="lg-it"><span class="lg-nokta lg-dusuk"></span> <span data-i18n="izbi_legend_dusuk">Düşük (&lt;65%)</span></span>
+  <span class="lg-it"><span class="deger-eksik">eksik</span> <span data-i18n="izbi_legend_eksik">= AI okuyamadı, düzeltin</span></span>
 </div>
 
 <!-- SPOOL LİSTESİ -->
