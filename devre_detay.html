@@ -2130,6 +2130,10 @@ async function plExcelYukle(input){
 }
 
 // ── DÖKÜMANLAR (100: iki kaynaklı — belgeler eski modal + devre_dokumanlari wizard)
+function onayModalAc(kuyrukId){
+  if(!kuyrukId)return;
+  showToast((tv('dv_onay_soon','Onay penceresi sonraki adımda eklenecek'))+' · '+kuyrukId,'i');
+}
 async function belgelerYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!devreId)return;
@@ -2149,6 +2153,26 @@ async function belgelerYukle(){
 
   if(r1.error)console.warn('belgeler:',r1.error);
   if(r2.error)console.warn('devre_dokumanlari:',r2.error);
+
+  // 102: Kuyruk gerçek durumunu doküman bazında çek (devre_dokumanlari.parse_durumu ile sync sorunu).
+  // Bağ: devre_dokumanlari.id -> dosya_isleme_kuyrugu.devre_dokuman_id
+  var kuyrukMap={};
+  var dokIds=(r2.data||[]).map(function(d){return d.id;});
+  if(dokIds.length){
+    var rk=await supa.from('dosya_isleme_kuyrugu')
+      .select('id,devre_dokuman_id,parser,durum,bitis_at')
+      .in('devre_dokuman_id',dokIds);
+    if(rk.error){console.warn('dosya_isleme_kuyrugu:',rk.error);}
+    else{
+      var onayaHazir=function(d){return d==='oneri_hazir'||d==='manuel_onay';};
+      (rk.data||[]).forEach(function(k){
+        var cur=kuyrukMap[k.devre_dokuman_id];
+        if(!cur){kuyrukMap[k.devre_dokuman_id]=k;return;}
+        if(onayaHazir(k.durum)&&!onayaHazir(cur.durum)){kuyrukMap[k.devre_dokuman_id]=k;return;}
+        if(onayaHazir(k.durum)===onayaHazir(cur.durum)&&(k.bitis_at||'')>(cur.bitis_at||'')){kuyrukMap[k.devre_dokuman_id]=k;}
+      });
+    }
+  }
 
   // Kaynak A: belgeler (eski modal)
   var arrBelgeler=(r1.data||[]).map(function(b){
@@ -2173,11 +2197,15 @@ async function belgelerYukle(){
     // dosya adının uzantısız hali (.ext kaldır)
     var adSiz=ad.replace(/\.[^/.]+$/,'');
     var klasor=d.klasor_yolu||'';
+    var kq=kuyrukMap[d.id]||null;
     return{
       _kaynak:'devre_dokumanlari',
       _bucket:'devre-belgeleri',
       _klasor:klasor,
       _parseDurumu:d.parse_durumu||'bekliyor',
+      _kuyrukId:kq?kq.id:null,
+      _kuyrukParser:kq?kq.parser:null,
+      _kuyrukDurum:kq?kq.durum:null,
       id:d.id,
       ad:adSiz,
       tur:d.dokuman_tipi||'diger',
@@ -2287,10 +2315,20 @@ function renderDokumanlar(){
     var ext=(d.dosyaAdi||'').split('.').pop().toLowerCase();
     var ikon=DOK_EXT[ext]||'DOC';
     var acBtn=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" target="_blank" rel="noopener" class="btn" style="color:var(--ac);border-color:rgba(54,127,236,.3);text-decoration:none;" title="'+tv('dv_dok_open','Aç')+'">↗</a>':'';
+    // 102: parse sonucu hazır wizard dokümanları için onay butonu
+    var onayBtn='';
+    if(d._kaynak==='devre_dokumanlari'&&d._kuyrukId){
+      if(d._kuyrukDurum==='oneri_hazir'){
+        onayBtn='<button class="btn" onclick="onayModalAc(\''+esc(d._kuyrukId)+'\')" style="color:var(--gr);border-color:rgba(29,158,117,.35);font-weight:600;">'+tv('dv_onay_preview','Önizle / Onayla')+'</button>';
+      }else if(d._kuyrukDurum==='manuel_onay'){
+        onayBtn='<button class="btn" onclick="onayModalAc(\''+esc(d._kuyrukId)+'\')" style="color:var(--warn);border-color:rgba(186,117,23,.35);font-weight:600;">'+tv('dv_onay_review','İncele / Düzelt')+'</button>';
+      }
+    }
     var padLeft=18+(indent||0)*22;
     return'<div data-ci="'+ci+'" style="display:flex;align-items:center;gap:12px;padding:10px 18px 10px '+padLeft+'px;border-bottom:1px solid var(--bor);">'
       +'<div style="width:34px;height:34px;border-radius:8px;background:'+cfg.bg+';border:1px solid '+cfg.bor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+cfg.renk+';flex-shrink:0;">'+esc(ikon)+'</div>'
       +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+esc(d.ad)+'</div><div style="font-size:12px;color:var(--txd);margin-top:1px;"><span style="padding:1px 6px;border-radius:6px;background:'+cfg.bg+';color:'+cfg.renk+';font-weight:700;font-size:11px;">'+esc(cfg.lbl)+'</span> '+esc(d.dosyaAdi||'')+'</div></div>'
+      +onayBtn
       +acBtn
       +'<button class="btn" onclick="dokSil(\''+esc(d.id)+'\')" style="color:var(--re);border-color:rgba(229,62,62,.3);">✕</button>'
       +'</div>';
