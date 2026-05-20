@@ -2130,10 +2130,130 @@ async function plExcelYukle(input){
 }
 
 // ── DÖKÜMANLAR (100: iki kaynaklı — belgeler eski modal + devre_dokumanlari wizard)
-function onayModalAc(kuyrukId){
+// 102 #3a: Excel parse onay modali — parse_sonuc'u spool/BOM olarak gosterir (onizleme; INSERT #3b'de).
+async function onayModalAc(kuyrukId){
   if(!kuyrukId)return;
-  showToast((tv('dv_onay_soon','Onay penceresi sonraki adımda eklenecek'))+' · '+kuyrukId,'i');
+  var supa=_supa();
+  if(!supa){showToast(tv('dv_db_yok','Veritabanı bağlantısı yok'),'e');return;}
+  var rk=await supa.from('dosya_isleme_kuyrugu')
+    .select('id,devre_dokuman_id,parser,durum,parse_sonuc')
+    .eq('id',kuyrukId).maybeSingle();
+  if(rk.error||!rk.data){showToast(tv('dv_onay_yok','Parse kaydı bulunamadı'),'e');return;}
+  var ps=rk.data.parse_sonuc;
+  if(typeof ps==='string'){try{ps=JSON.parse(ps);}catch(e){ps=null;}}
+  if(!ps||!Array.isArray(ps.satirlar)){showToast(tv('dv_onay_bos','Parse sonucu boş veya okunamadı'),'e');return;}
+  var model=_onayGrupla(ps);
+  _onayModalRender(model,kuyrukId);
 }
+
+// parse_sonuc.satirlar -> gruplu spool modeli (gruplama + ayni ozellikteki kalemleri topla)
+function _onayGrupla(ps){
+  var rows=ps.satirlar||[];
+  function tipBelirle(tanim){
+    var t=(tanim||'').toLowerCase();
+    return (t.indexOf('pipe')>=0||t.indexOf('tube')>=0||t.indexOf('boru')>=0)?'boru':'fitting';
+  }
+  function konsolide(kalemler){
+    var map={},sira=[];
+    kalemler.forEach(function(r){
+      var tip=tipBelirle(r.tanim);
+      var k=(r.tanim||'')+'|'+(r.malzeme||'')+'|'+(r.dn||'')+'|'+tip;
+      if(!map[k]){map[k]={tip:tip,tanim:r.tanim||'',malzeme:r.malzeme||'',dn:r.dn||'',standart:r.standart||'',ifs_kod:r.ifs_kod||'',boy_mm:0,adet:0,agirlik_kg:0};sira.push(k);}
+      var c=map[k];
+      if(tip==='boru'){c.boy_mm+=(parseFloat(r.uzunluk_mm)||0);}else{c.adet+=(parseFloat(r.adet)||0);}
+      c.agirlik_kg+=(parseFloat(r.agirlik_kg)||0);
+    });
+    return sira.map(function(k){return map[k];});
+  }
+  var spoolMap={},sirayla=[],atanmamis=[];
+  rows.forEach(function(r){
+    var sn=(r.spool_no||'').trim();
+    if(!sn){atanmamis.push(r);return;}
+    var key=(r.pipeline_no||'').trim()+'|'+sn+'|'+(r.rev||'').trim();
+    if(!spoolMap[key]){spoolMap[key]={pipeline:(r.pipeline_no||'').trim(),spoolNo:sn,rev:(r.rev||'').trim(),kalemler:[]};sirayla.push(key);}
+    spoolMap[key].kalemler.push(r);
+  });
+  // Karar 2: spool_no'suz satirlar — pipeline'da tek spool varsa ona bagla, coksa Atanmamis
+  if(atanmamis.length){
+    var plSpools={};
+    sirayla.forEach(function(k){var s=spoolMap[k];(plSpools[s.pipeline]=plSpools[s.pipeline]||[]).push(k);});
+    var kalan=[];
+    atanmamis.forEach(function(r){
+      var hedef=plSpools[(r.pipeline_no||'').trim()];
+      if(hedef&&hedef.length===1){spoolMap[hedef[0]].kalemler.push(r);}else{kalan.push(r);}
+    });
+    atanmamis=kalan;
+  }
+  var spoollar=sirayla.map(function(k){
+    var s=spoolMap[k];
+    var mc={};s.kalemler.forEach(function(r){if(r.malzeme){mc[r.malzeme]=(mc[r.malzeme]||0)+1;}});
+    var anaMalzeme=Object.keys(mc).sort(function(a,b){return mc[b]-mc[a];})[0]||'';
+    var topKg=s.kalemler.reduce(function(t,r){return t+(parseFloat(r.agirlik_kg)||0);},0);
+    return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,bom:konsolide(s.kalemler)};
+  });
+  return {spoollar:spoollar,atanmamis:atanmamis,secilenSayfa:ps.secilen||'',guven:ps.guven||0};
+}
+
+function _onayModalRender(model,kuyrukId){
+  var ov=document.getElementById('onayModalOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='onayModalOverlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    ov.addEventListener('click',function(e){if(e.target===ov)onayModalKapat();});
+    document.body.appendChild(ov);
+  }
+  function malzGoster(ham){
+    if(!ham)return '—';
+    return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(ham)||ham):ham;
+  }
+  function kg(n){return (n||0).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:3});}
+  var spoolHtml=model.spoollar.map(function(s){
+    var bomRows=s.bom.map(function(b){
+      var olcu=b.tip==='boru'?(b.boy_mm?Math.round(b.boy_mm)+' mm':'—'):(b.adet?b.adet+' adet':'—');
+      var tipBadge='<span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:'+(b.tip==='boru'?'rgba(54,127,236,.10);color:var(--ac)':'rgba(186,117,23,.12);color:var(--warn)')+';">'+(b.tip==='boru'?'Boru':'Fitting')+'</span>';
+      return '<tr>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);">'+tipBadge+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);font-size:12px;">'+esc(b.tanim||'—')+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);font-size:12px;">'+esc(malzGoster(b.malzeme))+' <span style="color:var(--txd);">· '+esc(b.malzeme||'')+'</span></td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);font-size:12px;">'+esc(b.dn||'—')+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);font-size:12px;text-align:right;">'+esc(olcu)+'</td>'
+        +'<td style="padding:6px 8px;border-bottom:1px solid var(--bor);font-size:12px;text-align:right;">'+kg(b.agirlik_kg)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="border:1px solid var(--bor);border-radius:10px;margin-bottom:12px;overflow:hidden;">'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sur2);">'
+        +'<div style="flex:1;"><div style="font-weight:700;font-size:14px;">'+esc(s.spoolNo)+(s.rev?' <span style="color:var(--txd);font-weight:400;">'+esc(s.rev)+'</span>':'')+'</div>'
+        +'<div style="font-size:12px;color:var(--txd);">'+esc(s.pipeline||'—')+'</div></div>'
+        +'<div style="text-align:right;font-size:12px;"><div>'+esc(malzGoster(s.anaMalzeme))+'</div><div style="color:var(--txd);">'+kg(s.toplamKg)+' kg</div></div>'
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;">'
+        +'<thead><tr style="color:var(--txd);font-size:11px;"><th style="text-align:left;padding:4px 8px;">Tip</th><th style="text-align:left;padding:4px 8px;">Tanım</th><th style="text-align:left;padding:4px 8px;">Malzeme · kalite</th><th style="text-align:left;padding:4px 8px;">DN</th><th style="text-align:right;padding:4px 8px;">Metraj / Adet</th><th style="text-align:right;padding:4px 8px;">kg</th></tr></thead>'
+        +'<tbody>'+bomRows+'</tbody></table>'
+      +'</div>';
+  }).join('');
+  var atanmamisHtml='';
+  if(model.atanmamis&&model.atanmamis.length){
+    atanmamisHtml='<div style="border:1px dashed var(--warn);border-radius:10px;margin-bottom:12px;padding:10px 12px;">'
+      +'<div style="font-weight:700;font-size:13px;color:var(--warn);">Atanmamış kalemler ('+model.atanmamis.length+')</div>'
+      +'<div style="font-size:12px;color:var(--txd);margin-top:2px;">Spool numarası boş — aktarımda bir spool\'a atanacak (sonraki adım).</div></div>';
+  }
+  var html='<div style="background:var(--sur);border:1px solid var(--bor);border-radius:14px;max-width:760px;width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">'
+    +'<div style="padding:14px 18px;border-bottom:1px solid var(--bor);display:flex;align-items:center;gap:10px;">'
+      +'<div style="flex:1;"><div style="font-weight:700;font-size:15px;">Spool aktarım önizlemesi</div>'
+      +'<div style="font-size:12px;color:var(--txd);">Kaynak sayfa: '+esc(model.secilenSayfa||'—')+' · güven %'+esc(String(model.guven))+' · '+model.spoollar.length+' spool</div></div>'
+      +'<button class="btn" onclick="onayModalKapat()" style="color:var(--txd);">✕</button></div>'
+    +'<div style="padding:14px 18px;overflow:auto;flex:1;">'+atanmamisHtml+(spoolHtml||'<div style="color:var(--txd);text-align:center;padding:30px;">Gösterilecek spool yok</div>')+'</div>'
+    +'<div style="padding:12px 18px;border-top:1px solid var(--bor);display:flex;align-items:center;gap:10px;justify-content:flex-end;">'
+      +'<span style="flex:1;font-size:12px;color:var(--txd);">Sayfa seçimi, yüzey/eksik alanlar ve Aktar (INSERT) sonraki adımda.</span>'
+      +'<button class="btn" onclick="onayModalKapat()">Kapat</button>'
+      +'<button class="btn" onclick="onayAktar(\''+esc(kuyrukId)+'\')" style="background:var(--gr);color:#fff;border:none;font-weight:600;">Aktar</button></div>'
+  +'</div>';
+  ov.innerHTML=html;
+  ov.style.display='flex';
+}
+function onayModalKapat(){var ov=document.getElementById('onayModalOverlay');if(ov)ov.style.display='none';}
+function onayAktar(kuyrukId){showToast(tv('dv_onay_insert_soon','Aktarım (INSERT) bir sonraki adımda eklenecek'),'i');}
 async function belgelerYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!devreId)return;
