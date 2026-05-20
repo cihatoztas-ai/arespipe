@@ -1,39 +1,92 @@
-# AresPipe — Güncel Durum (son güncelleme: Oturum 102, 20 May 2026)
+# AresPipe — Güncel Durum (son güncelleme: Oturum 103, 20 May 2026)
 
-## Excel BOM → Spool akışı (NEREDE KALDIK)
+## Bu oturumda yapılanlar (103)
 
-**Tamamlandı (102):** Onay modalı tam zincir çalışıyor ve canlı doğrulandı.
-- Wizard'dan yüklenen `bom_excel` parse edilip `oneri_hazir` olunca → devre_detay **Dökümanlar** sekmesinde "Önizle/Onayla" → modal (gruplama+konsolidasyon, tam marka, tek ondalık) → **Aktar** → `spooller`+`spool_malzemeleri` INSERT.
-- spool_id = `tenants.kod + '-' + ARES.sonrakiNo('spool')` (6-hane, prefix doğal). Tenant A son_no ≈ 594.
+### 1) 103-A — Wizard BOM Excel oto-yönlendirme + tespit (KOD TAMAM, CANLI TEST BEKLİYOR)
+102'de onay modalı tam çalışıyordu AMA wizard'dan yüklenen dosyalar kuyruğa `parser='sakla'`
+ile giriyordu → parse otomatik tetiklenmiyordu (102'de elle UPDATE ile test edilmişti). Ayrıca
+BOM oto-tespiti yanlış Excel'i seçiyordu. İkisi de düzeltildi:
 
-**KRİTİK EKSİK (103 öncelik 1):** Wizard'dan yüklenen dosyalar kuyruğa **`parser='sakla'`** ile giriyor → parse otomatik çalışmıyor. 102 testinde kuyruk durumu elle `UPDATE` ile `oneri_hazir` yapıldı. Gerçek akışta wizard Excel'i `excel-generic`'e yönlendirip parse'ı tetiklemeli. Ayrıca BOM oto-tespiti **yanlış dosyayı** seçiyor (Donatım Kontrol Formu → bom_excel; asıl IFS Malzeme Listesi → diger).
+- **A1 (oto-tetik):** `devre_wizard.html` `adim3_yukle()` — `bom_excel` artık kuyruğa
+  `parser='excel-generic'`, `durum='bekliyor'` giriyor; `parse_durumu='bekliyor'`. Upload bitince
+  her BOM işi için sırayla `POST /api/kuyruk-isle-excel` ({is_id}) tetikleniyor. Sonuç
+  (oneri_hazir/manuel_onay/hata) yükleme ekranında özetleniyor. Worker patlasa/ağ kopsa bile
+  upload akışı bozulmuyor (iş kuyrukta 'bekliyor' kalır, gece cron'u alır).
+- **A2 (tespit):** `autoDetect(ad, klasor_yolu, uzanti)` — imza değişti, dosya adı eklendi.
+  Excel uzantılarında (xls/xlsx/xlsm) artık uzantı/klasör değil DOSYA ADI karar veriyor:
+  ad "malzeme listesi / material list / bom / spool list / mto" gibi kalıba uyarsa `bom_excel`,
+  uymazsa (kontrol formu, teslim tutanağı) `diger`. Muhafazakâr: emin değilse `diger`
+  (kullanıcı dropdown'dan elle çevirir; yanlış oto-BOM parse+spool zincirini boşa tetikler).
+  Klasör eşleşmesi hâlâ önce (açık sinyal). `parserBul`'a `bom_excel -> excel-generic` kısayolu
+  (xlsm seed'de yok, tip_kodu üzerinden yakalanıyor — MIGRATION GEREKMEDİ).
+- **Dedup (103 ek):** `dosyalariEkle` — aynı dosya (ad+klasör+boyut) listeye iki kez girmiyor.
+  Drop zone altında görünür uyarı (`#dosyaUyari`). A1'den sonra kritik: aynı BOM iki kez ->
+  iki parse -> çift spool riski.
+- KÖK NEDEN (kayıt): `dokuman_tipleri`'nde `.xlsm` HİÇ yoktu; `xlsx` hem bom_excel hem diger'e
+  bağlıydı, sıralamada bom_excel/xlsx önce -> her xlsx yanlışlıkla bom_excel, her xlsm diger.
+- Test (kodla, Supabase'siz): A2 tespit 24/24 Excel; A1 tetik 5/5 senaryo; dedup 5/5. JS temiz.
+- **Dosya:** `devre_wizard.html` MD5 `27175d4c786666fb7d0daf9298eb2b3b`. Commit edilmiş olmalı
+  (rebase'de a6cbc6b..739e1a5 çekildi — git log ile teyit et).
 
-## Mimari kararlar (102)
-- **MK-102.1** — spool_id = `tenants.kod`+`sonrakiNo('spool')`; bug'lı `spoolIdFormatla` (sabit "A-", non-A tenant'ta NULL) KULLANILMAZ.
-- **MK-102.2** — Yeni spool, `devre_yeni`'nin ürettiğiyle birebir aynı + çift drift kolonlarının HEPSİ doldurulur (savunmacı): `agirlik`+`agirlik_kg`, `durum:'Bekliyor'`+`is_durumu:'bekliyor'`+`ilerleme:0`+`durduruldu:false`, `yuzey`; `aktif_basamak`/`basamak_snapshot`/`alistirma`(null) devreden. malzeme=kategori (`ARES_NORM.malzemeKod`), kalite=ham.
-- **MK-102.3** — Onay (Aktar) devre_detay Dökümanlar listesinde yaşar; tüm spool ekleme tek zincire girer: parse → grupla/topla → kimlik üret → onay → INSERT. (Eski manuel inline "+ Spool Ekle" emekliye ayrılacak — altyapıyla çelişiyor.)
-- **MK-102.4** — Dökümanlar kendi sekmesinde; `belgelerYukle` lazy (sekme açılınca), signed URL lazy (`dokAc`).
-- **KARAR-102.1** — Tek Excel'deki "All" (konsolide) → malzeme listesi; "import" (kesim detayı) → ileride kesim bölümü. 102'de sadece malzeme listesi.
-- **KARAR-102.2** — spool_no boş satır: pipeline'da tek spool varsa ona bağla, çoksa "Atanmamış".
+### 2) Sayaç tenant-scope — AÇIK BORÇ #1 KAPANDI (CANLI)
+- Tablo `sayac_tanimlari` zaten doğruydu: `tenant_id` kolonu + `UNIQUE(tenant_id,tip)` vardı.
+  Bug yalnızca RPC `sonraki_no(p_tip)`'deydi — `tenant_id` filtresi yoktu.
+- **Migration 085** (canlıda çalıştırıldı): B-G tenant'larına A config'i seed (son_no=0) +
+  RPC `sonraki_no(p_tenant_id uuid, p_tip text)` olarak yeniden yazıldı (DROP eski text imza).
+- **Kod** `ares-store.js` (commit bc097dd, MD5 `38e8532a327aff2ddbf38bad8251597f`):
+  `sonrakiNo` helper'ı RPC'ye `p_tenant_id: tenantId()` geçiyor; local fallback anahtarı
+  `tenant:tip` (offline tutarlılık). Helper imzası `sonrakiNo(tip)` AYNI kaldı → 3 çağıran
+  (devre_yeni, devre_detay, kurallar.html) değişmedi.
+- Dry-run (BEGIN...ROLLBACK) doğrulandı: A 594->595,596 | E 0->1,2. ✅
+- **Davranış kararı (kalıcı):** Her firma kendi serisinden sıralı numara. A serisi korundu (594).
+  spool_id anlamsız-ama-benzersiz surrogate; gemi/proje/devre = devre_id->proje_id zinciri.
+  NB1124/NB1125 (aynı tenant, ayrı proje) tek seriden karışık numara alır — istenen bu.
+
+## Mimari kararlar (103)
+- **MK-103.1** — Excel BOM tespiti DOSYA ADI ile yapılır (uzantı/klasör Excel'i ayırt edemez:
+  kontrol formu / teslim tutanağı da .xlsx/.xlsm). Muhafazakâr: emin değilse `diger`.
+- **MK-103.2** — bom_excel routing'i `tip_kodu`'na bağlanır, uzantıya değil (xlsm seed'de yok;
+  parserBul kısayolu `bom_excel -> excel-generic` tüm Excel uzantılarını kapsar).
+- **MK-103.3** — Wizard dedup anahtarı = ad + klasör + boyut. A1 sonrası çift parse/çift spool önler.
+- **MK-103.4** — Sayaç tenant-scope: `sonraki_no(p_tenant_id, p_tip)`. Her tenant kendi serisi.
+  spool_id surrogate; numaraya gemi/proje yansımaz. RPC imza değişimi = kod+migration eşzamanlı deploy.
+- **KARAR-103.1** — Sayaç şema değişikliği YOK (tablo zaten tenant-scope'luydu); sadece RPC + seed.
 
 ## AÇIK BORÇLAR (sıra önemli)
-1. **Sayaç tenant-scope DEĞİL** — `sonraki_no` RPC tenant filtresiz (`WHERE tip=...`), benzersizlik sadece `UNIQUE(tip)`. Tüm tenant'lar tek global numaradan çekiyor; harf (tenants.kod) kozmetik. A-000594 buna canlı örnek. **Düzeltme:** `UNIQUE(tenant_id,tip)` + RPC tenant-filtreli + her tenant'a seed (A son_no korunur, diğerleri 1'den) + fallback config (`digits=6,yil_ekle=false`). Şema-dokunur → MK-98.2 dry-run. **E pilotu gerçek spool üretmeden ÖNCE kapatılmalı.** is_emri/sevkiyat/hakedis de aynı.
-2. **spooller çift-kolon drift** — `agirlik`+`agirlik_kg`, `durum`+`is_durumu`, `yuzey`+`yuzey_islemi` birlikte var. Şimdilik ikisi de doldruluyor (MK-102.2). İleride tek kanonik kolona indir + okuma noktalarını sadeleştir.
-3. **`devre_dokumanlari.parse_durumu` constraint** `oneri_hazir`/`manuel_onay` içermiyor (chk reddetti). Buton kuyruk durumunu okuduğu için sorun değil; istenirse küçük migration ile senkronla.
-4. **Wizard oto-etiketleme yanlış Excel'i seçiyor** (yukarıda) — 103-A kapsamı.
-5. **Wizard Excel parser oto-tetiklenmiyor** (`sakla` ile giriyor) — 103-A kapsamı.
-6. **i18n eksik anahtarlar** (fallback'le TR çalışıyor): `dv_onay_preview, dv_onay_review, dv_onay_soon, dv_db_yok, dv_onay_yok, dv_onay_bos, dv_onay_yuzey, dv_onay_bos_birak, dv_close, dv_onay_aktar, dv_onay_ctx_yok, dv_onay_ortam, dv_onay_sec, dv_onay_aktariliyor, dv_onay_hata, dv_onay_ok, dv_onay_insert_soon, dv_dok_acilamadi, dv_tab_docs` → TR/EN/AR'ye eklenecek.
-7. **Dosya içi önizleme** (PDF/resim viewer — indirmeden içini görmek) — on the horizon. Şu an "↗" yeni sekmede açıyor (signed URL).
+1. ~~Sayaç tenant-scope~~ — **KAPANDI (103, migration 085 + bc097dd).** Not: `is_emri`(P-147),
+   `kesim_listesi`(KL-30), `markalama_listesi`(ML-5), `fason_bukum`(FB-0) sayaçları da artık
+   tenant-scope (aynı RPC). B-G hepsi 0'dan seed'lendi. Bunlar için ayrı iş gerekmiyor — RPC ortak.
+2. **spooller çift-kolon drift** — `agirlik`+`agirlik_kg`, `durum`+`is_durumu`, `yuzey`+`yuzey_islemi`
+   birlikte var. İkisi de dolduruluyor (MK-102.2). İleride tek kanonik kolona indir.
+3. **`devre_dokumanlari.parse_durumu` constraint** `oneri_hazir`/`manuel_onay` İÇERMİYOR
+   (CHECK: bekliyor/isleniyor/tamamlandi/hata/saklama). Buton kuyruk durumunu okuduğu için sorun
+   değil; worker da devre_dokumanlari'ni güncellemiyor (sadece kuyruk satırı). İstenirse senkron.
+4. **103-A canlı test (3 nokta)** — deploy sonrası doğrulanacak: (a) kuyruğa excel-generic/bekliyor
+   satırı RLS engeline takılmadan giriyor + .select('id') id dönüyor mu; (b) worker bekliyor satırını
+   alıp Storage'dan Excel indirip parse ediyor mu (env SUPABASE_SERVICE_KEY Vercel'de var mı);
+   (c) devre_detay Dökümanlar butonu oneri_hazir olunca elle UPDATE olmadan çıkıyor mu.
+5. **i18n eksik anahtarlar** (fallback'le TR çalışıyor) — Wizard tamamlanınca (B/C sonrası) tek
+   seferde toplanacak: `dv_onay_*` (102 modal), `dv_tab_docs`, `dv_dok_acilamadi`, ve 103 metinleri
+   (banner `dw_p3_note`, parse-sonuç özeti, dedup uyarısı). TR/EN/AR. Hangi lang dosyası → Cihat paylaşacak.
+6. **Sayaç config cache + tenant değişimi** — `_sayacConfig` cache'i `tenantId()` değişince
+   temizlenmiyor (sadece `sayacConfigSifirla()`). Aynı oturumda tenant değiştiren super_admin için
+   yanlış config riski. Düşük olasılık. Tenant değişiminde `sayacConfigSifirla()` çağrılmalı.
+7. **Dosya içi önizleme** (PDF/resim viewer) — on the horizon. Şu an "↗" yeni sekmede açıyor.
 
-## Şema notları (102'de doğrulandı)
-- `dosya_isleme_kuyrugu`: ... `devre_dokuman_id`(FK→devre_dokumanlari.id), `parser`, `durum`, `parse_sonuc`(jsonb). 084 ile durum 7 değer.
-- `devre_dokumanlari`: `devre_id`, `tenant_id`, `dokuman_tipi`, `parse_durumu`, `storage_yolu`, `klasor_yolu`. (proje_id yok.)
-- `devreler`: `aktif_basamak`, `basamak_snapshot`(jsonb), `alistirma_devresi`(boolean — `alistirma` text YOK), `zone`, `is_emri_no`.
-- `spooller`: çift kolonlar (üstte). Okuma: ağırlık `agirlik_kg||agirlik`, yüzey `yuzey||yuzey_islemi`, durum state `s.durum`'a güvenir.
-- `spool_malzemeleri`: `spool_id`(uuid FK→spooller.id), kod, tanim, boyut, malzeme(kategori), kalite(ham), dis_cap_mm, et_mm, boy_mm, adet, miktar, agirlik_kg, tip, ifs_kod. **`standart` kolonu YOK** (parse'ın standart'ı düşer).
-
-## Wizard kalan işler (103+ roadmap)
-- **A** (öncelik 1) — Excel oto-yönlendirme `excel-generic` + BOM oto-tespit düzelt + parse oto-tetikle.
-- **B** — İzometri PDF yönlendirme (`batch-baslat`/`batch-kuyruga-al`) + paylaşılan PDF upload komponenti (wizard Step 2 atla butonlu + devre_detay İzometri sekmesi) — MK-49.B.
-- **C** — Wizard'ın sıfırdan yeni devre+iş emri oluşturması (şu an sadece mevcut devreye yüklüyor).
+## Wizard kalan işler (104+ roadmap)
+- **A** ✅ (103, canlı test bekliyor)
+- **B** (öncelik 1, YENİ SOHBET) — İzometri PDF yönlendirme (`batch-baslat`/`batch-kuyruga-al`) +
+  paylaşılan PDF upload komponenti (wizard Step 2 atla-butonlu + devre_detay İzometri sekmesi) —
+  MK-49.B. Bugünkü "çıplak pdf -> 3d_pdf" tespit quirk'i de burada düzelir (uzantı pdf ilk eşleşme
+  3d_pdf'e düşüyor; klasör yoksa yanlış). 102 Dökümanlar sekmesi zemin oldu.
+- **C** — Wizard sıfırdan yeni devre+iş emri oluşturma (şu an sadece mevcut devreye yüklüyor).
 - **D** — Faz 2 arka plan zenginleştirme (Kaydet sonrası async PDF/3D parse, manuel_onay işaretleme).
+
+## Şema notları (değişmedi — 102'den geçerli)
+- `sayac_tanimlari`: tenant_id, tip, son_no, prefix, yil_ekle, digits, aciklama. UNIQUE(tenant_id,tip).
+  spool: digits=6, yil_ekle=false, prefix='' (harf app-side). A son_no=594 (103 öncesi).
+- `dosya_isleme_kuyrugu`: tenant_id, devre_dokuman_id(FK), parser, oncelik(def 5), durum(def 'bekliyor'),
+  olusturma(def now()), parse_sonuc(jsonb). durum 084 ile 7 değer.
+- `devre_dokumanlari`: parse_durumu CHECK = bekliyor/isleniyor/tamamlandi/hata/saklama.
+- `dokuman_tipleri`: bom_excel -> xls,xlsx (xlsm YOK); diger -> pdf,xlsx; izometri -> pdf(izometri-oku);
+  pdf uzantisi cok tip'e bagli, find() ilk eslesme 3d_pdf doner (103-B'de düzelecek).

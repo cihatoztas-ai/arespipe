@@ -1,43 +1,57 @@
-# CLAUDE-SONRAKI-OTURUM — Oturum 103 gündemi
+# CLAUDE-SONRAKI-OTURUM — Oturum 104 gündemi
 
 ## Açılış ritüeli (CLAUDE.md = 2 kontrol)
 1. `git pull` + `git status` + `git log -1` (temiz mi, son commit ne)
-2. Bugünkü hedef onayı (aşağıdaki A)
+2. Bugünkü hedef onayı
 
-> Not: Oturum 102'nin son teslimi `devre_detay.html` (sekme refaktörü, MD5 `e8cb4fab137d4e9f9b2dfdfc738b090a`) + bu 3 kapanış dosyası **commit edilmiş** olmalı. CI yeşil mi bak.
+> Not: 103 son commit'leri — `bc097dd` (ares-store sayaç) ve wizard (`27175d4...`).
+> CI yeşil mi bak. son-durum.md = oturum 103.
 
-## HEDEF — A: Wizard Excel oto-yönlendirme + etiketleme (öncelik 1)
+## İLK İŞ — 103-A canlı test (deploy sonrası, kod yazmadan)
+103-A kodu yazıldı + kodla test edildi ama CANLI test edilmedi. Önce şunu doğrula
+(son-durum.md borç #4):
+- Gerçek klasörü (`G200-P2`, 3 Excel + 2 PDF) wizard'dan o test devresine yükle.
+  - Adım 2 etiketleri: IFS Malzeme Listesi=bom_excel, Donatım Kontrol Formu + Resim Teslim
+    Tutanağı=diger, PDF'ler=izometri (klasör eşleşmesi).
+  - Yükleme sonrası ekranda "BOM ayrıştırılıyor -> öneri hazır ✓ (L1, %.., N satır)" görmeli.
+  - devre_detay > Dökümanlar: "Önizle/Onayla" butonu elle UPDATE OLMADAN çıkmalı.
+- Test öncesi temizlik (dup önle): o devredeki S01/G200-303S-BS18-P2 spool'unu + spool_malzemeleri'ni
+  sil; eski yanlış "Donatım Kontrol Formu" bom_excel kuyruk satırını sil. Dosyalar zaten yüklüyse
+  Storage upsert:false "already exists" verir -> yeni devreye yükle ya da eski kayıtları temizle (MK-99.5).
+- 3 noktadan biri patlarsa düzelt; hepsi yeşilse B'ye geç.
 
-**Neden:** 102'de onay modalı tam çalışıyor AMA wizard'dan yüklenen dosyalar kuyruğa `parser='sakla'` ile giriyor → parse otomatik çalışmıyor (102'de elle `UPDATE` ile test ettik). Bu olmadan upload→`oneri_hazir`→modal zinciri kendiliğinden tamamlanmıyor. Ayrıca BOM oto-tespiti yanlış Excel'i seçiyor.
-
-**İki alt-iş:**
-1. Wizard yükleme/kuyruk-ekleme: `bom_excel` dosyalarını `parser='excel-generic'` ile kuyruğa sok + parse worker'ını tetikle (şu an `sakla`).
-2. BOM tespiti düzelt: "IFS Malzeme Listesi" gibi gerçek BOM'u `bom_excel` etiketle, "Donatım Kontrol Formu"/"Resim Teslim Tutanağı" gibileri `diger`. (102'de tersi olmuştu.)
+## HEDEF — B: İzometri PDF yönlendirme (MK-49.B) [YENİ SOHBET — büyük iş]
+**Neden:** Wizard'da PDF'ler hâlâ `sakla` ile giriyor (parse yok). İzometriler tamamen pasif
+yükleniyor. Ortak PDF upload komponenti hem wizard hem devre_detay İzometri sekmesini besleyecek.
+Bugünkü "çıplak pdf -> 3d_pdf" tespit quirk'i de burada düzelir.
 
 **Başlamadan istenecek dosyalar (Cihat paylaşacak):**
-- `devre_wizard.html` — dosyayı kuyruğa `sakla` ile sokan kısım + dokuman_tipi/etiket atayan kısım.
-- `api/kuyruk-isle-excel.js` (dosya adını doğrula) — Excel worker; tetikleme mekanizması.
-- Gerekirse: kuyruk worker'ı çağıran genel mekanizma (cron/manuel/upload-sonrası).
+- `api/batch-baslat.js`, `api/batch-kuyruga-al.js` (PDF backend ne bekliyor — kuyruk formatı, batch id).
+- `devre_detay.html` İzometri sekmesi (mevcut PDF upload kodu varsa — ortak komponent oraya da takılacak).
+- `devre_wizard.html` (mevcut — A'dan).
+- `api/izometri-oku.js` (worker — PDF parse tetiği nasıl).
 
-## Sonraki adımlar (A bittikten sonra)
-- **B** — İzometri PDF yönlendirme + paylaşılan PDF upload komponenti (MK-49.B). 102'de eklenen Dökümanlar sekmesi zemin oldu.
+**İki alt-iş (tahmini):**
+1. Wizard: izometri PDF'leri `izometri-oku`/`batch-baslat` akışına yönlendir (şu an sakla). Çıplak
+   pdf tespit quirk'ini düzelt (klasör yoksa izometri varsayımı? — Cihat ile karara bağla).
+2. Paylaşılan PDF upload komponenti: wizard Step 2 (atla butonlu) + devre_detay İzometri sekmesi,
+   aynı backend (`batch-baslat` + `batch-kuyruga-al`).
+
+## Sonraki adımlar (B sonrası)
 - **C** — Wizard sıfırdan yeni devre+iş emri oluşturma.
 - **D** — Faz 2 arka plan zenginleştirme.
-- **i18n** — `son-durum.md` borç #6'daki anahtarları (dv_onay_*, dv_tab_docs) TR/EN/AR'ye topla. Hangi lang dosyası kullanılıyorsa Cihat paylaşsın.
+- **i18n** — Wizard (A+B+C) bitince TEK SEFERDE topla: dv_onay_*, dv_tab_docs, dw_p3_note,
+  103 parse-sonuç + dedup metinleri. TR/EN/AR. Lang dosyasını Cihat paylaşacak. (Cihat: "wizard bitince" dedi.)
 
-## Açık borçlar (detay son-durum.md'de) — fırsat çıkarsa
-- **Sayaç tenant-scope değil** — E pilotu gerçek spool üretmeden önce ŞART. Şema+RPC+seed, MK-98.2 dry-run.
-- spooller çift-kolon drift sadeleştirme.
-- `devre_dokumanlari.parse_durumu` constraint genişletme (opsiyonel).
+## Açık borçlar (detay son-durum.md) — fırsat çıkarsa
+- spooller çift-kolon drift sadeleştirme (#2).
+- devre_dokumanlari.parse_durumu constraint genişletme (#3, opsiyonel).
+- Sayaç config cache + tenant değişimi (#6, düşük öncelik — sayacConfigSifirla on tenant switch).
 
-## Test ipucu (modal yeniden test gerekirse)
-- Devre `a9ecf0b7-47ba-4912-8308-b0dc4b0d81b9` (303S-Sludge System-G200-P2), kuyruk `eb23f38a-...`, doküman `187f9264-...`.
-- Konsol: `localStorage.setItem('ares_aktif_devre_id','a9ecf0b7-47ba-4912-8308-b0dc4b0d81b9'); location.reload();`
-- Buton çıkmazsa kuyruk durumunu kontrol et: `oneri_hazir` olmalı (`tamamlandi`'da gizli — doğru). Elle: `UPDATE dosya_isleme_kuyrugu SET durum='oneri_hazir' WHERE id='eb23f38a-...';`
-- Aktar öncesi temizlik (dup önle): o devredeki S01/G200-303S-BS18-P2 spool'unu ve spool_malzemeleri'ni sil.
-
-## Çalışma disiplini (hatırlatma)
-- Tek dosya >45KB → her teslimde MD5'li `arespipe_kopyala`; mismatch=truncate, base64 fallback.
-- devre_detay.html'de düzenleme: str_replace → inline JS `node --check` → outputs → md5 → present_files.
-- Şema-dokunur işlerde MK-98.2 (BEGIN...ROLLBACK dry-run) + `pg_get_constraintdef`.
-- SQL Editor Unicode bozar → düz ASCII yapıştır.
+## Önemli hatırlatmalar
+- **Sayaç tenant-scope CANLI (103).** E pilotunda artık gerçek spool üretilebilir (numara karışmaz).
+  A serisi 594'ten devam (ilk üretim A-000595 olmalı).
+- RPC imza değişiklikleri kod+migration eşzamanlı deploy ister.
+- Çalışma disiplini: >45KB dosya -> MD5'li arespipe_kopyala; str_replace -> inline JS node --check ->
+  outputs -> md5 -> present_files. Şema-dokunur -> MK-98.2 dry-run + pg_get_constraintdef.
+  SQL Editor Unicode bozar -> düz ASCII.
