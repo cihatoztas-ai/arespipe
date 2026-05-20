@@ -1,57 +1,54 @@
-# CLAUDE-SONRAKI-OTURUM — Oturum 104 gündemi
+# CLAUDE-SONRAKI-OTURUM — Oturum 105 gündemi
 
 ## Açılış ritüeli (CLAUDE.md = 2 kontrol)
-1. `git pull` + `git status` + `git log -1` (temiz mi, son commit ne)
-2. Bugünkü hedef onayı
+1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
+2. Bugünkü hedef onayı.
+> Son commit 104'te `48026e0` (normal Excel). CI yeşil mi bak. son-durum.md = oturum 104.
 
-> Not: 103 son commit'leri — `bc097dd` (ares-store sayaç) ve wizard (`27175d4...`).
-> CI yeşil mi bak. son-durum.md = oturum 103.
+## NET SIRALAMA (104'te kararlaştırıldı — değer vs efor dengesi)
+- **105 (bu oturum):** Hızlı tasarruf + Montaj teyidi (küçük, anlık para).
+- **106+:** B-geometri (Tersan metin-PDF deterministik parser → $0 + 3D verisi). EN YÜKSEK GETİRİ.
+- **Sonra:** B-öğrenme (düzeltme → parser_kural geri-yazma, MK-48.5) + cache düzeltme taşıma.
+- **En son:** Wizard'ı bu hazır backend'e bağla (MK-49.B).
 
-## İLK İŞ — 103-A canlı test (deploy sonrası, kod yazmadan)
-103-A kodu yazıldı + kodla test edildi ama CANLI test edilmedi. Önce şunu doğrula
-(son-durum.md borç #4):
-- Gerçek klasörü (`G200-P2`, 3 Excel + 2 PDF) wizard'dan o test devresine yükle.
-  - Adım 2 etiketleri: IFS Malzeme Listesi=bom_excel, Donatım Kontrol Formu + Resim Teslim
-    Tutanağı=diger, PDF'ler=izometri (klasör eşleşmesi).
-  - Yükleme sonrası ekranda "BOM ayrıştırılıyor -> öneri hazır ✓ (L1, %.., N satır)" görmeli.
-  - devre_detay > Dökümanlar: "Önizle/Onayla" butonu elle UPDATE OLMADAN çıkmalı.
-- Test öncesi temizlik (dup önle): o devredeki S01/G200-303S-BS18-P2 spool'unu + spool_malzemeleri'ni
-  sil; eski yanlış "Donatım Kontrol Formu" bom_excel kuyruk satırını sil. Dosyalar zaten yüklüyse
-  Storage upsert:false "already exists" verir -> yeni devreye yükle ya da eski kayıtları temizle (MK-99.5).
-- 3 noktadan biri patlarsa düzelt; hepsi yeşilse B'ye geç.
+## 105 — HEDEF: Hızlı tasarruf + temizlik (küçük, AI maliyeti $0)
 
-## HEDEF — B: İzometri PDF yönlendirme (MK-49.B) [YENİ SOHBET — büyük iş]
-**Neden:** Wizard'da PDF'ler hâlâ `sakla` ile giriyor (parse yok). İzometriler tamamen pasif
-yükleniyor. Ortak PDF upload komponenti hem wizard hem devre_detay İzometri sekmesini besleyecek.
-Bugünkü "çıplak pdf -> 3d_pdf" tespit quirk'i de burada düzelir.
+### İş 1 — PAOR isometric_view L3'e gitmesin
+PAOR iki dosya geliyor: `...-A.pdf` (ana çizim, metin DOLU) + `...-Isometric_View.pdf` (metin BOŞ, image).
+İkincisi tablo içermiyor ama L3'e gidip para yakıyor olabilir.
+- **Önce ÖLÇ:** isometric_view dosyaları gerçekten L3'e gidiyor mu? `ai_api_log`'da dosya/format bak.
+- **Çözüm yönü:** format dispatcher / dosya tipi katmanında "isometric_view" / metni-boş PDF'i parse dışı
+  bırak ya da "3d_pdf"e ayır (parse etme, sadece sakla). izometri-oku.js'e DOKUNMADAN (MK-49.1) — tercihen
+  wizard/dispatch tarafında ya da kuyruk-isle filtresinde. **Cihat ile karara bağla:** isometric_view ne olsun
+  (hiç yükleme / sakla / 3D için ayrı tut).
 
-**Başlamadan istenecek dosyalar (Cihat paylaşacak):**
-- `api/batch-baslat.js`, `api/batch-kuyruga-al.js` (PDF backend ne bekliyor — kuyruk formatı, batch id).
-- `devre_detay.html` İzometri sekmesi (mevcut PDF upload kodu varsa — ortak komponent oraya da takılacak).
-- `devre_wizard.html` (mevcut — A'dan).
-- `api/izometri-oku.js` (worker — PDF parse tetiği nasıl).
+### İş 2 — Tersan M110 Montaj yanlış-tanıma teyidi (51-52'den taşınan şüphe)
+"Tersan M110 Montaj Resmi" formatı geçmişte "gerçek PDF görülmedi, yanlış tanıma" diye işaretlenmişti;
+104 ölçümünde 7 L3 · $0.21 görünüyor.
+- **Teyit:** o 7 çağrı gerçek montaj PDF'i mi yoksa başka formatın yanlış ataması mı?
+  `ai_api_log` + `izometri_format_tanimlari` (fingerprint) bak. Cihat 1 örnek montaj PDF'i versin.
+- Yanlışsa: fingerprint düzelt ya da formatı pasifle → boşa para kesilir.
 
-**İki alt-iş (tahmini):**
-1. Wizard: izometri PDF'leri `izometri-oku`/`batch-baslat` akışına yönlendir (şu an sakla). Çıplak
-   pdf tespit quirk'ini düzelt (klasör yoksa izometri varsayımı? — Cihat ile karara bağla).
-2. Paylaşılan PDF upload komponenti: wizard Step 2 (atla butonlu) + devre_detay İzometri sekmesi,
-   aynı backend (`batch-baslat` + `batch-kuyruga-al`).
+## 106+ — B-geometri (büyük, kendi MK belgesiyle)
+Tersan metin-PDF'inde geometri METİNDE (104'te doğrulandı: 45°, R=130, segment boyları, Rotation Angle,
+Cut & Bending Info). Hedef: deterministik parser hem spool tablosunu hem `yon_dizilim` JSON'unu çeksin →
+o format $0 + MK-49.A 3D render verisi. Başlamadan istenecek: bir Tersan metin-PDF örneği daha (varyasyon),
+`lib/l2-parser.js`, ilgili `parser_kural` satırı (`izometri_format_tanimlari`).
+Ölçülebilir hedef: Tersan İmalat'ta L3 oranını %65 → %20 altına indir.
 
-## Sonraki adımlar (B sonrası)
-- **C** — Wizard sıfırdan yeni devre+iş emri oluşturma.
-- **D** — Faz 2 arka plan zenginleştirme.
-- **i18n** — Wizard (A+B+C) bitince TEK SEFERDE topla: dv_onay_*, dv_tab_docs, dw_p3_note,
-  103 parse-sonuç + dedup metinleri. TR/EN/AR. Lang dosyasını Cihat paylaşacak. (Cihat: "wizard bitince" dedi.)
-
-## Açık borçlar (detay son-durum.md) — fırsat çıkarsa
-- spooller çift-kolon drift sadeleştirme (#2).
-- devre_dokumanlari.parse_durumu constraint genişletme (#3, opsiyonel).
-- Sayaç config cache + tenant değişimi (#6, düşük öncelik — sayacConfigSifirla on tenant switch).
+## Açık borçlar (detay son-durum.md)
+- Normal Excel "Standart" sütunu boş (Açıklama'dan regex ile ayıklanabilir) — küçük.
+- Alan-bazlı AI güven (prompt, MK-49.1) — ertelendi.
+- batch↔incele cache: onay sonrası batch sayfası `_tumSpooller` tazelenmiyor — küçük.
+- `excelIndir`/`manuelOnayAc` ölü kod (zararsız).
+- i18n: 104'te eklenen anahtarlar fallback'le TR çalışıyor (`izb_btn_incele_tum`, `izbi_legend_*`,
+  `izbi_excel_normal`, `izbi_sheet_*`, `izbi_excel_indi`, `izbi_eksik`, `izbi_ai_guven`) — wizard/batch
+  bitince tek seferde TR/EN/AR toplanacak.
 
 ## Önemli hatırlatmalar
-- **Sayaç tenant-scope CANLI (103).** E pilotunda artık gerçek spool üretilebilir (numara karışmaz).
-  A serisi 594'ten devam (ilk üretim A-000595 olmalı).
-- RPC imza değişiklikleri kod+migration eşzamanlı deploy ister.
-- Çalışma disiplini: >45KB dosya -> MD5'li arespipe_kopyala; str_replace -> inline JS node --check ->
-  outputs -> md5 -> present_files. Şema-dokunur -> MK-98.2 dry-run + pg_get_constraintdef.
-  SQL Editor Unicode bozar -> düz ASCII.
+- **İzometri batch = SADECE Excel** (MK-104.1). Devreye bağlama yok.
+- **PAOR image-PDF kalıcı AI gideri** (MK-104.5) — B-öğrenme onu çözmez, sadece azaltılır.
+- izometri-oku.js'e DOKUNMA (MK-49.1). Maliyet/öğrenme işleri dispatch/worker/parser_kural tarafında.
+- Çalışma disiplini: >45KB → MD5'li transfer; str_replace → node --check → grep dangling → outputs → md5
+  → present_files. Şema-dokunur → MK-98.2 dry-run + pg_get_constraintdef. SQL Editor düz ASCII.
+- Sadece terminal git akışı (web UI upload yok).
