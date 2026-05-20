@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-20T11:38:26.583Z",
-  "commit_sha": "b419d149c12ebe5f8fcaff0d71ba282da51b1bbc",
+  "tarih": "2026-05-20T12:18:54.977Z",
+  "commit_sha": "d4b7dfcc803092f2f0f702f30ded5a73f9d39587",
   "commit_ref": "main",
-  "workflow_run": 896,
+  "workflow_run": 897,
   "ozet": {
     "hata": 0,
     "uyari": 58,
@@ -20,7 +20,7 @@
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
-            2220
+            2221
           ]
         }
       ]
@@ -64,19 +64,19 @@
             2138,
             2142,
             2145,
-            2251,
-            2253,
-            2255,
-            2276,
-            2280,
-            2285,
-            2287,
-            2316,
-            2350,
-            2509,
-            2528,
-            2544,
-            2546
+            2252,
+            2254,
+            2256,
+            2277,
+            2281,
+            2286,
+            2288,
+            2317,
+            2351,
+            2510,
+            2529,
+            2545,
+            2547
           ]
         },
         {
@@ -129,7 +129,7 @@
         {
           "kod": "G03_HAM_MALZEME",
           "tip": "uyari",
-          "satir": 2220,
+          "satir": 2221,
           "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
@@ -237,79 +237,79 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2251,
+          "satir": 2252,
           "mesaj": "tv('dv_onay_yuzey') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2253,
+          "satir": 2254,
           "mesaj": "tv('dv_onay_bos_birak') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2255,
+          "satir": 2256,
           "mesaj": "tv('dv_onay_aktar') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2276,
+          "satir": 2277,
           "mesaj": "tv('dv_onay_ctx_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2280,
+          "satir": 2281,
           "mesaj": "tv('dv_onay_ortam') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2285,
+          "satir": 2286,
           "mesaj": "tv('dv_onay_sec') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2287,
+          "satir": 2288,
           "mesaj": "tv('dv_onay_aktariliyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2316,
+          "satir": 2317,
           "mesaj": "tv('dv_onay_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2350,
+          "satir": 2351,
           "mesaj": "tv('dv_onay_ok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2509,
+          "satir": 2510,
           "mesaj": "tv('dv_dok_search_match') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2528,
+          "satir": 2529,
           "mesaj": "tv('dv_dok_search_empty') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2544,
+          "satir": 2545,
           "mesaj": "tv('dv_onay_preview') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2546,
+          "satir": 2547,
           "mesaj": "tv('dv_onay_review') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
