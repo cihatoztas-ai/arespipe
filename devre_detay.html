@@ -2209,7 +2209,7 @@ function _onayModalRender(model,kuyrukId){
     if(!ham)return '—';
     return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(ham)||ham):ham;
   }
-  function kg(n){return (n||0).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:3});}
+  function kg(n){return (n||0).toLocaleString('tr-TR',{minimumFractionDigits:1,maximumFractionDigits:1});}
   var spoolHtml=model.spoollar.map(function(s,si){
     var marka=(typeof ARES_NORM!=='undefined'&&ARES_NORM.marka)?(ARES_NORM.marka(DEVRE.projeNo,s.pipeline,s.spoolNo,(ARES_NORM.revFmt?ARES_NORM.revFmt(s.rev):s.rev))||s.spoolNo):s.spoolNo;
     var bomRows=s.bom.map(function(b){
