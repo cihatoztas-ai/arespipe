@@ -1,11 +1,11 @@
 {
-  "tarih": "2026-05-20T20:23:54.492Z",
-  "commit_sha": "3622acf4b1f71cde0680a439a9629453058d61e8",
+  "tarih": "2026-05-20T20:53:42.011Z",
+  "commit_sha": "48026e0da05c8a74c74b98da4f6a543b9c393ca3",
   "commit_ref": "main",
-  "workflow_run": 905,
+  "workflow_run": 906,
   "ozet": {
     "hata": 0,
-    "uyari": 61,
+    "uyari": 64,
     "taranan_dosya": 111,
     "sorunlu_dosya": 4,
     "durum": "sari"
@@ -42,7 +42,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 59,
+      "sayi": 62,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -82,10 +82,13 @@
         },
         {
           "dosya": "izometri-batch-incele.html",
-          "sayi": 2,
+          "sayi": 5,
           "satirlar": [
-            510,
-            524
+            513,
+            527,
+            855,
+            858,
+            862
           ]
         },
         {
@@ -332,19 +335,37 @@
     {
       "dosya": "izometri-batch-incele.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 2,
+      "uyari_sayisi": 5,
       "hatalar": [
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 510,
+          "satir": 513,
           "mesaj": "tv('izbi_ai_guven') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 524,
+          "satir": 527,
           "mesaj": "tv('izbi_eksik') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 855,
+          "mesaj": "tv('izbi_sheet_spool') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 858,
+          "mesaj": "tv('izbi_sheet_malzeme') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 862,
+          "mesaj": "tv('izbi_excel_indi') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
