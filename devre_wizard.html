@@ -185,6 +185,7 @@
           <button class="btn-outline" onclick="document.getElementById('fileInput').click()" data-i18n="dw_btn_files">📄 Dosya Seç</button>
         </div>
       </div>
+      <div id="dosyaUyari" style="display:none;margin:10px 0;font-size:13px;color:var(--warn,#b8860b);"></div>
       <table id="dosyaTablo" class="dosya-tablo" style="display:none">
         <thead>
           <tr>
@@ -476,7 +477,8 @@ function fileInputHandler(files, isFolder) {
 }
 
 function dosyalariEkle(dosyalar) {
-  var atlananSayisi = 0;
+  var atlananSayisi = 0;   // gizli/sistem dosya
+  var tekrarSayisi  = 0;   // 103: zaten listede olan (dedup)
   dosyalar.forEach(function(d) {
     var ad = d.file.name;
     // 99-fix: gizli/sistem dosyaları otomatik atla
@@ -484,6 +486,13 @@ function dosyalariEkle(dosyalar) {
       atlananSayisi++;
       return;
     }
+    // 103: aynı dosya (ad + klasör + boyut) zaten listede mi? Çift upload + çift BOM
+    //      parse tetiğini (A1) önler — aynı klasörü iki kez sürüklemek yaygın.
+    var zatenVar = WIZ.dosyalar.some(function(x) {
+      return x.dosya_adi === ad && x.klasor_yolu === d.klasor_yolu && x.boyut === d.file.size;
+    });
+    if (zatenVar) { tekrarSayisi++; return; }
+
     var uzanti = (ad.split('.').pop() || '').toLowerCase();
     var tip_kodu = autoDetect(ad, d.klasor_yolu, uzanti);
     var parser_yolu = parserBul(tip_kodu, uzanti);
@@ -500,6 +509,19 @@ function dosyalariEkle(dosyalar) {
   });
   if (atlananSayisi > 0) {
     console.log('[wizard] ' + atlananSayisi + ' gizli/sistem dosyası atlandı (.DS_Store, Thumbs.db, hidden vs.)');
+  }
+  if (tekrarSayisi > 0) {
+    console.log('[wizard] ' + tekrarSayisi + ' dosya zaten listede, atlandı (dedup).');
+  }
+  // 103: kullanıcıya görünür geri bildirim (toast helper yok — inline uyarı kutusu).
+  //      Özellikle "aynı klasörü tekrar bıraktım, neden bir şey olmadı?" kafa karışıklığını çözer.
+  var uyari = document.getElementById('dosyaUyari');
+  if (uyari) {
+    var mesajlar = [];
+    if (tekrarSayisi > 0)  mesajlar.push(tekrarSayisi + ' dosya zaten listedeydi');
+    if (atlananSayisi > 0) mesajlar.push(atlananSayisi + ' gizli/sistem dosyası atlandı');
+    if (mesajlar.length > 0) { uyari.textContent = 'ℹ️ ' + mesajlar.join(' · ') + '.'; uyari.style.display = ''; }
+    else { uyari.style.display = 'none'; uyari.textContent = ''; }
   }
   renderDosyaTablo();
   document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
@@ -586,6 +608,8 @@ function renderDosyaTablo() {
   tbody.querySelectorAll('.btn-sil').forEach(function(b) {
     b.addEventListener('click', function() {
       WIZ.dosyalar.splice(parseInt(b.dataset.i), 1);
+      var _uy = document.getElementById('dosyaUyari');   // 103: stale atlama uyarısını temizle
+      if (_uy) { _uy.style.display = 'none'; _uy.textContent = ''; }
       renderDosyaTablo();
       document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
     });
