@@ -310,6 +310,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
     <button class="btn btn-primary" id="btnDevreOlustur" onclick="ifsExcelIndir()" disabled>
       📦 <span data-i18n="izbi_ifs_indir">IFS Excel İndir</span>
     </button>
+    <button class="btn" id="btnExcelNormal" onclick="normalExcelIndir()" disabled>
+      📊 <span data-i18n="izbi_excel_normal">Excel İndir</span>
+    </button>
   </div>
 </div>
 
@@ -690,6 +693,7 @@ function altBarGuncelle(){
   $('#btnTumOnayla').disabled = manuelKritiksiz.length===0;
   // Devre Oluştur — onaylanan spool varsa aktif (39'da gerçek implementasyon)
   $('#btnDevreOlustur').disabled = hazir===0;
+  $('#btnExcelNormal').disabled = hazir===0;
 }
 
 // =========================================================
@@ -799,6 +803,63 @@ async function tumOnayaUygula(){
   modalKapat('tumOnayModal');
   render();
   toast(tv('izbi_tum_onay_ok','{n} spool onaylandı').replace('{n}',hedef.length),'s');
+}
+
+// 104: "Normal" Excel — devre_detay (spool) + spool_detay (malzeme) formatinda, 2 sheet.
+// Marka yerine Resim No (dosya/cizim adi). Heat No yok (parse uretmez). Sadece onaylanan (hazir) spool'lar.
+function normalExcelIndir(){
+  if (typeof XLSX === 'undefined') {
+    toast(tv('izbi_ifs_lib_yok','Excel kütüphanesi yüklenemedi (sayfayı yenile).'), 'e');
+    return;
+  }
+  var hazirSpoollar = SPOOLLAR.filter(function(sp){ return sp.durum === 'hazir'; });
+  if (!hazirSpoollar.length) {
+    toast(tv('izbi_ifs_yok','Onaylanmış spool yok. Önce spool onaylayın.'), 'e');
+    return;
+  }
+
+  function malzemeEt(v){ return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(v||'')||v||''):(v||''); }
+  function kaliteEt(v){ return (typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(v||'')||v||''):(v||''); }
+  function yuzeyEt(v){ return (typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(v||'')||v||''):(v||''); }
+  function resimNo(sp){ return (sp._dosya||'').replace(/\.pdf$/i,''); }
+  function s(v){ return (v!=null && v!=='') ? v : ''; }
+
+  // Sheet 1 — Spool Listesi (devre_detay formati, Marka -> Resim No)
+  var spoolRows = [['#','Resim No','Pipeline No','Spool No','DN','Çap (mm)','Et (mm)','Boy (mm)','Ağırlık (kg)','Malzeme','Kalite','Yüzey','Rev']];
+  hazirSpoollar.forEach(function(sp, i){
+    spoolRows.push([
+      i+1, resimNo(sp), s(sp.pipeline_no), s(sp.spool_no),
+      s(sp.dn), s(sp.cap_mm), s(sp.et_mm), s(sp.boy_mm), s(sp.agirlik_kg),
+      malzemeEt(sp.malzeme), kaliteEt(sp.kalite), yuzeyEt(sp.yuzey), s(sp.rev)
+    ]);
+  });
+
+  // Sheet 2 — Malzeme Listesi (spool_detay formati, Heat No yok)
+  var malzRows = [['#','Resim No','Spool No','Kod','Açıklama','Malzeme','Kalite','Standart','Dış Çap (mm)','Et (mm)','Boy (mm)','Adet','Ağırlık (kg)','Sert.']];
+  var mi = 0;
+  hazirSpoollar.forEach(function(sp){
+    var bom = Array.isArray(sp.malzeme_listesi) ? sp.malzeme_listesi : [];
+    bom.forEach(function(m){
+      mi++;
+      malzRows.push([
+        mi, resimNo(sp), s(sp.spool_no), s(m.kod), s(m.tanim),
+        malzemeEt(m.malzeme), kaliteEt(m.kalite), '',
+        s(m.dis_cap_mm), s(m.et_mm), s(m.boy_mm), s(m.adet), s(m.agirlik_kg), s(m.sertifika_tipi)
+      ]);
+    });
+  });
+
+  var wb = XLSX.utils.book_new();
+  var wsS = XLSX.utils.aoa_to_sheet(spoolRows);
+  wsS['!cols'] = [4,22,16,9,6,9,8,9,11,14,9,9,6].map(function(w){return{wch:w};});
+  XLSX.utils.book_append_sheet(wb, wsS, tv('izbi_sheet_spool','Spool Listesi'));
+  var wsM = XLSX.utils.aoa_to_sheet(malzRows);
+  wsM['!cols'] = [4,22,9,7,36,14,9,16,12,8,8,6,11,7].map(function(w){return{wch:w};});
+  XLSX.utils.book_append_sheet(wb, wsM, tv('izbi_sheet_malzeme','Malzeme Listesi'));
+
+  var batchKisa = (BATCH && BATCH.id) ? BATCH.id.substring(0,8) : 'export';
+  XLSX.writeFile(wb, 'Spool_Malzeme_' + batchKisa + '.xlsx');
+  toast(tv('izbi_excel_indi','Excel indirildi ('+mi+' malzeme satırı)'), 's');
 }
 
 function ifsExcelIndir(){
