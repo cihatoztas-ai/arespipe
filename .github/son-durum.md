@@ -1,156 +1,39 @@
-# AresPipe — Son Durum
+# AresPipe — Güncel Durum (son güncelleme: Oturum 102, 20 May 2026)
 
-> **101. oturum kapanışı — 19 Mayıs 2026** ⚙️
-> Bu dosya her oturum başında ilk okunan kayıttır.
+## Excel BOM → Spool akışı (NEREDE KALDIK)
 
----
+**Tamamlandı (102):** Onay modalı tam zincir çalışıyor ve canlı doğrulandı.
+- Wizard'dan yüklenen `bom_excel` parse edilip `oneri_hazir` olunca → devre_detay **Dökümanlar** sekmesinde "Önizle/Onayla" → modal (gruplama+konsolidasyon, tam marka, tek ondalık) → **Aktar** → `spooller`+`spool_malzemeleri` INSERT.
+- spool_id = `tenants.kod + '-' + ARES.sonrakiNo('spool')` (6-hane, prefix doğal). Tenant A son_no ≈ 594.
 
-## CI Son Durum
+**KRİTİK EKSİK (103 öncelik 1):** Wizard'dan yüklenen dosyalar kuyruğa **`parser='sakla'`** ile giriyor → parse otomatik çalışmıyor. 102 testinde kuyruk durumu elle `UPDATE` ile `oneri_hazir` yapıldı. Gerçek akışta wizard Excel'i `excel-generic`'e yönlendirip parse'ı tetiklemeli. Ayrıca BOM oto-tespiti **yanlış dosyayı** seçiyor (Donatım Kontrol Formu → bom_excel; asıl IFS Malzeme Listesi → diger).
 
-- **Build:** ✅ YEŞİL
-- **Vercel:** ✅ Production aktif, son commit Excel parser entegrasyonu
-- **Migration sayısı:** 84 (83 parse_sonuc + 84 durum genişletme — 101'de eklendi)
-- **Canlı endpoint:** `POST /api/kuyruk-isle-excel` — IFS xlsm → L1, %95, satır yapısal ✅
+## Mimari kararlar (102)
+- **MK-102.1** — spool_id = `tenants.kod`+`sonrakiNo('spool')`; bug'lı `spoolIdFormatla` (sabit "A-", non-A tenant'ta NULL) KULLANILMAZ.
+- **MK-102.2** — Yeni spool, `devre_yeni`'nin ürettiğiyle birebir aynı + çift drift kolonlarının HEPSİ doldurulur (savunmacı): `agirlik`+`agirlik_kg`, `durum:'Bekliyor'`+`is_durumu:'bekliyor'`+`ilerleme:0`+`durduruldu:false`, `yuzey`; `aktif_basamak`/`basamak_snapshot`/`alistirma`(null) devreden. malzeme=kategori (`ARES_NORM.malzemeKod`), kalite=ham.
+- **MK-102.3** — Onay (Aktar) devre_detay Dökümanlar listesinde yaşar; tüm spool ekleme tek zincire girer: parse → grupla/topla → kimlik üret → onay → INSERT. (Eski manuel inline "+ Spool Ekle" emekliye ayrılacak — altyapıyla çelişiyor.)
+- **MK-102.4** — Dökümanlar kendi sekmesinde; `belgelerYukle` lazy (sekme açılınca), signed URL lazy (`dokAc`).
+- **KARAR-102.1** — Tek Excel'deki "All" (konsolide) → malzeme listesi; "import" (kesim detayı) → ileride kesim bölümü. 102'de sadece malzeme listesi.
+- **KARAR-102.2** — spool_no boş satır: pipeline'da tek spool varsa ona bağla, çoksa "Atanmamış".
 
----
+## AÇIK BORÇLAR (sıra önemli)
+1. **Sayaç tenant-scope DEĞİL** — `sonraki_no` RPC tenant filtresiz (`WHERE tip=...`), benzersizlik sadece `UNIQUE(tip)`. Tüm tenant'lar tek global numaradan çekiyor; harf (tenants.kod) kozmetik. A-000594 buna canlı örnek. **Düzeltme:** `UNIQUE(tenant_id,tip)` + RPC tenant-filtreli + her tenant'a seed (A son_no korunur, diğerleri 1'den) + fallback config (`digits=6,yil_ekle=false`). Şema-dokunur → MK-98.2 dry-run. **E pilotu gerçek spool üretmeden ÖNCE kapatılmalı.** is_emri/sevkiyat/hakedis de aynı.
+2. **spooller çift-kolon drift** — `agirlik`+`agirlik_kg`, `durum`+`is_durumu`, `yuzey`+`yuzey_islemi` birlikte var. Şimdilik ikisi de doldruluyor (MK-102.2). İleride tek kanonik kolona indir + okuma noktalarını sadeleştir.
+3. **`devre_dokumanlari.parse_durumu` constraint** `oneri_hazir`/`manuel_onay` içermiyor (chk reddetti). Buton kuyruk durumunu okuduğu için sorun değil; istenirse küçük migration ile senkronla.
+4. **Wizard oto-etiketleme yanlış Excel'i seçiyor** (yukarıda) — 103-A kapsamı.
+5. **Wizard Excel parser oto-tetiklenmiyor** (`sakla` ile giriyor) — 103-A kapsamı.
+6. **i18n eksik anahtarlar** (fallback'le TR çalışıyor): `dv_onay_preview, dv_onay_review, dv_onay_soon, dv_db_yok, dv_onay_yok, dv_onay_bos, dv_onay_yuzey, dv_onay_bos_birak, dv_close, dv_onay_aktar, dv_onay_ctx_yok, dv_onay_ortam, dv_onay_sec, dv_onay_aktariliyor, dv_onay_hata, dv_onay_ok, dv_onay_insert_soon, dv_dok_acilamadi, dv_tab_docs` → TR/EN/AR'ye eklenecek.
+7. **Dosya içi önizleme** (PDF/resim viewer — indirmeden içini görmek) — on the horizon. Şu an "↗" yeni sekmede açıyor (signed URL).
 
-## 101. Oturum Özeti
+## Şema notları (102'de doğrulandı)
+- `dosya_isleme_kuyrugu`: ... `devre_dokuman_id`(FK→devre_dokumanlari.id), `parser`, `durum`, `parse_sonuc`(jsonb). 084 ile durum 7 değer.
+- `devre_dokumanlari`: `devre_id`, `tenant_id`, `dokuman_tipi`, `parse_durumu`, `storage_yolu`, `klasor_yolu`. (proje_id yok.)
+- `devreler`: `aktif_basamak`, `basamak_snapshot`(jsonb), `alistirma_devresi`(boolean — `alistirma` text YOK), `zone`, `is_emri_no`.
+- `spooller`: çift kolonlar (üstte). Okuma: ağırlık `agirlik_kg||agirlik`, yüzey `yuzey||yuzey_islemi`, durum state `s.durum`'a güvenir.
+- `spool_malzemeleri`: `spool_id`(uuid FK→spooller.id), kod, tanim, boyut, malzeme(kategori), kalite(ham), dis_cap_mm, et_mm, boy_mm, adet, miktar, agirlik_kg, tip, ifs_kod. **`standart` kolonu YOK** (parse'ın standart'ı düşer).
 
-**Ana tema:** Excel BOM parser pipeline'ı baştan sona kurma — wizard'a yüklenen `bom_excel` dosyalarını otomatik parse edip `parse_sonuc` JSONB'ye saklama. **INSERT yok**, 102 UI'da onay sonrası.
-
-**Süre:** ~6 saat (plan 1.5-3 saat). Hedefler doğru ama 4 sürpriz yenildi (aşağıda).
-
-### Yapılanlar (sırayla)
-
-1. **`lib/excel-parser.js`** (ESM, 485 satır, SheetJS dışında bağımlılığı yok)
-   - Sözlük: 14 alan, ~80 eş anlamlı terim TR+EN (devre_yeni.html `ifsOku` mantığından beslenip genelleştirildi)
-   - Word-boundary substring match (en uzun eşleşme kazanır, çakışma çözümü)
-   - L1 / L2 / fail seviyeleri
-   - Özet satır filtresi: total/cog/sum/formül başlayan satırları atla (CADMATIC TOTAL sayfası vs)
-   - Sayfa önceliği: 'All' → 'import' → en yüksek skor
-   - CLI test harness (node lib/excel-parser.js <dosya>)
-   - Otomatik insert sert kuralı: L1 + güven ≥ 70
-
-2. **`api/kuyruk-isle-excel.js`** (229 satır)
-   - POST endpoint, kuyruktan en eski `parser='excel-generic' AND durum='bekliyor'` işi al
-   - Lock: durumu `'isleniyor'`'a çek, deneme_sayisi++
-   - Supabase Storage'dan dosyayı indir (bucket: `devre-belgeleri`)
-   - `parseExcel(buffer)` çalıştır
-   - Sonuca göre durum: oneri_hazir / manuel_onay / hata
-   - `parse_sonuc` JSONB doldur, bitis_at güncelle
-   - DB INSERT YAPMAZ — 102 manuel onay UI'sında
-
-3. **Migration 083** — `dosya_isleme_kuyrugu.parse_sonuc JSONB` kolonu (idempotent), partial index
-
-4. **Migration 084** — `dosya_isleme_kuyrugu_durum_chk` 5→7 değer (+ `oneri_hazir`, `manuel_onay`)
-
-5. **`vercel.json` güncellemesi** — `functions.includeFiles: 'lib/**'` (mevcut headers/crons/schema korundu)
-
-### Canlı Test Sonuçları
-
-**Test 1 (Donatım Kontrol Formu.xlsx, yanlış etiketli):**
-- Sonuç: `durum=hata, seviye=fail, guven=0, satir=0`
-- Yorum: Doğru davranış. Dosya kontrol checklist'i, BOM değil. Wizard auto-detect hatası (`bom_excel` etiketlenmiş, olmamalıydı).
-
-**Test 2 (IFS Malzeme Listesi xlsm — gerçek IFS):**
-- Sonuç: `durum=oneri_hazir, seviye=L1, guven=95, secilen_sayfa=All, satir=4`
-- Yakalanan alanlar: `pipeline_no, spool_no, malzeme, parca_tipi, agirlik_kg, uzunluk_mm, dn, birim, system, ifs_kod, tanim, standart`
-- ✅ Tüm temel alanlar yakalandı, hem boru (uzunluk_mm dolu) hem fitting (adet dolu) doğru ayırt edildi
-
-### DB Değişiklikleri Canlıda
-
-- `dosya_isleme_kuyrugu.parse_sonuc JSONB` eklendi (083)
-- `dosya_isleme_kuyrugu_durum_chk` 7 değere genişletildi (084)
-- Index `idx_dosya_isleme_kuyrugu_parser_durum` eklendi (partial, durum='bekliyor')
-
-### 101'de Yenilen 4 Sürpriz (kalıcı dersler)
-
-1. **`arespipe_kopyala` sonrası `git status` yokmuş.** Lokal'de dosya var, git'te yok. Vercel `ERR_MODULE_NOT_FOUND` ile patladı, sebep `lib/excel-parser.js`'in hiç commit'lenmemiş olmasıydı. **MK-101.1**
-2. **`npm install xlsx` package.json'ı değiştirdi ama commit'lenmedi.** Hidden bağımlılık, Vercel build'inde xlsx çözülmezdi. **MK-101.2**
-3. **`vercel.json` üzerine yazıldı, 30 satır kayboldu** (HTML cache headers, gece 3 cron). Önceki içeriği `git show HEAD:vercel.json` ile kontrol etmedim. **MK-101.3**
-4. **Env değişkeni isim uyumsuzluğu**: kod `SUPABASE_SERVICE_ROLE_KEY` arıyordu, sistem standardı `SUPABASE_SERVICE_KEY`. Diğer endpoint'lerle uyumsuz. **MK-101.4**
-5. **DB check constraint**: `oneri_hazir`/`manuel_onay` değerleri reject edildi. Migration 084 ile genişletildi. **MK-101.5**
-
----
-
-## Açık Borçlar (102 gündemi)
-
-### Acil (102 başlangıç)
-- ⚪ **Manuel onay UI** — devre detayında "Bu dosyadan X satır parse edildi (güven %95). Görüntüle/Onayla" — onay sonrası `spooller` + `spool_malzemeleri` INSERT (mevcut `ifsOnayla` mantığını kullan)
-- ⚪ **Wizard auto-detect düzeltmesi** — "IFS Malzeme Listesi" kelimesini gören dosyalar `bom_excel` etiketlensin (şu an `diger` etiketleniyor)
-- ⚪ **Wizard kuyruk yazımı** — `bom_excel` tipli dosyalar için `parser='excel-generic'` (şu an hepsi `'sakla'`)
-
-### Önemli (102+)
-- ⚪ **İzometri wrapper** (`api/kuyruk-isle-izometri.js`) — 101'de ertelendi, 102'de Excel UI hazır olunca aynı patternle yapılır
-- ⚪ **`devre_dokumanlari.parse_durumu` ile sync** — kuyruk durumu değiştiğinde doküman tablosundaki durumla da senkronize olmalı (`oneri_hazir`, `tamamlandi` vb.)
-- ⚪ **Parse hata UI** — `durum=hata` durumunda kullanıcıya neden tanınmadığı söylenmeli (sayfa adları, sözlük eşleşmesi yok mesajları parse_sonuc.sayfalar'da var, sadece sunulmalı)
-- ⚪ **Auth** — endpoint şu an public, pilot için OK ama production öncesi `CRON_SECRET` veya Bearer token eklenmeli
-
-### Mimari Borçlar
-- ⚪ **`parser='sakla'` mantığı** — şu an wizard her şeyi `sakla` yazıyor. `bom_excel` → `excel-generic`, `izometri` → `izometri-oku`, diğer → `sakla` mapping wizard kodunda yapılmalı
-- ⚪ **`api/kuyruk-isle-excel.js` auth eklenmesi** — `CRON_SECRET` veya Vercel cron auth
-- ⚪ **Cron tetik** — şu an manuel curl. 102'de UI'da "şimdi parse et" butonu, sonra cron schedule (örn 5 dk'da bir bekleyenleri tara)
-
-### Roadmap (Mimari Sırası)
-- **102**: Manuel onay UI + wizard auto-detect + INSERT akışı (Excel)
-- **103**: İzometri wrapper + parsers/aveva-paor.js refactor
-- **104**: Füzyon motoru — Excel BOM × İzometri PDF × STP çelişki tespiti
-- **105**: STP tek-spool parser
-
----
-
-## Aktif Süreç Disiplinleri
-
-- **MK-48.6:** Supabase SQL Editor Unicode hassasiyeti
-- **MK-49.1:** `izometri-oku.js`'e dokunma — minimum değişiklik
-- **MK-50.1:** Hassas anahtar Claude'a verme
-- **MK-50.3:** Yeni parser için 3+ başarılı örnek önce
-- **MK-50.4:** Dotfile sonrası `ls -la` kontrol
-- **MK-51.1:** Dosya kopyalamadan önce MD5 + satır sayısı doğrula
-- **MK-52.1:** `arespipe_kopyala` MD5 doğrulamalı
-- **MK-52.2:** `gp` otomatik rebase + push
-- **MK-98.1:** Yeni feature flag/tablo eklerken DB keşif sorgusu zorunlu
-- **MK-98.2:** Migration'larda `BEGIN...ROLLBACK` kuru çalıştırma
-- **MK-99.1:** Migration policy'lerinde `DROP IF EXISTS + ADD` idempotent
-- **MK-100.1:** İki kaynaklı UI deseni (eski + yeni paralel)
-- **MK-100.2:** Python heredoc ile büyük JS patch yazma anti-pattern
-- **MK-100.3:** Tree render state oturum-içi sakla
-- **KARAR-100.A:** Wizard + İzometri Batch ortak kuyruk mimarisi
-- **KARAR-101.A (yeni):** Parser endpoint INSERT YAPMAZ — sadece parse_sonuc'a yazar, UI onayında DB INSERT (B yaklaşımı)
-- **MK-101.1 (yeni):** `arespipe_kopyala` sonrası **`git status` zorunlu** — sessiz kayıp önle
-- **MK-101.2 (yeni):** `npm install` sonrası package.json+package-lock.json aynı commit'te
-- **MK-101.3 (yeni):** `vercel.json` üzerine yazmadan önce `git show HEAD:vercel.json` ile mevcut içeriği gör
-- **MK-101.4 (yeni):** Env değişken adı için `grep "SUPABASE_SERVICE" api/*.js` ile sistem standardını kontrol et
-- **MK-101.5 (yeni):** Yeni durum/enum değerleri eklerken `pg_get_constraintdef` ile mevcut check constraint kontrolü
-
----
-
-## Performans
-
-- **Excel parse (lokal):** ~50-200 ms / dosya (sayfa sayısına bağlı)
-- **Endpoint toplam (kuyruk → storage → parse → DB):** ~1-3 sn
-- **Sözlük eşleşme:** O(satır × kolon × sözlük_uzunluk) — küçük dosyalarda ihmal edilebilir
-
----
-
-## 101 Hazırlık Notu (102 için)
-
-**102 ~3-4 saat öngörü.** Üç ana iş:
-
-1. **Manuel onay UI** (~2 saat) — devre detayında parse_sonuc JSONB'sini okuyan modal, kullanıcı satırları seçer/düzeltir, "Aktar" butonu spooller + spool_malzemeleri INSERT (mevcut `ifsOnayla` mantığı bire bir)
-2. **Wizard auto-detect düzeltmesi** (~30 dk) — "IFS Malzeme Listesi", "BOM", "Malzeme" kelimelerini içeren xlsm/xlsx → `bom_excel`. Wizard kodu `devre_wizard.html`.
-3. **Wizard kuyruk parser mapping** (~30 dk) — `bom_excel` → `parser='excel-generic'` (şu an `'sakla'`)
-
-Detay: `CLAUDE-SONRAKI-OTURUM.md`.
-
----
-
-## 101'in Anlam Yükü
-
-101 oturum **mimari değil disiplin oturumu**ydu. Kod kısmı temizdi, ama 4 sürpriz (git sessiz kayıpları, package.json drift, vercel.json overwrite, env name mismatch) çıktı. Hepsi kalıcı kayda geçti.
-
-Asıl başarı: **endpoint canlıda parse ediyor, gerçek IFS dosyası %95 güvenle L1 başarısı verdi.** 102'de "manuel onay UI" yapınca pilot kullanıcılar gerçek Excel'leri wizard'a yükleyip otomatik spool oluşturmayı görecekler. Spool AI vizyonunun B1 maddesinin son temel taşı.
-
----
-
-> 102. oturum açılışında bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` okunur.
+## Wizard kalan işler (103+ roadmap)
+- **A** (öncelik 1) — Excel oto-yönlendirme `excel-generic` + BOM oto-tespit düzelt + parse oto-tetikle.
+- **B** — İzometri PDF yönlendirme (`batch-baslat`/`batch-kuyruga-al`) + paylaşılan PDF upload komponenti (wizard Step 2 atla butonlu + devre_detay İzometri sekmesi) — MK-49.B.
+- **C** — Wizard'ın sıfırdan yeni devre+iş emri oluşturması (şu an sadece mevcut devreye yüklüyor).
+- **D** — Faz 2 arka plan zenginleştirme (Kaydet sonrası async PDF/3D parse, manuel_onay işaretleme).
