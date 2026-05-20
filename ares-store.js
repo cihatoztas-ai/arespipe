@@ -364,7 +364,7 @@ else var ARES = (function () {
     if (!_sayacConfig) await _sayacConfigYukle();
     const cfg = _sayacCfgAl(tip);
     if (mod === 'supabase' && _supa) {
-      const { data, error } = await _supa.rpc('sonraki_no', { p_tip: tip });
+      const { data, error } = await _supa.rpc('sonraki_no', { p_tenant_id: tenantId(), p_tip: tip });
       if (!error && data != null) return _noFormatla(cfg, data);
       // ✅ FIX: sessiz hata yerine açık log
       console.error('[ARES] sonrakiNo RPC basarisiz — local fallback:', tip,
@@ -378,8 +378,9 @@ else var ARES = (function () {
 
   function _sonrakiNoLocal(tip, cfg) {
     const sayaclar = _lget('sayaclar') || {};
-    const no = _noFormatla(cfg, sayaclar[tip] || 1);
-    sayaclar[tip] = (sayaclar[tip] || 1) + 1;
+    const anahtar = (tenantId() || 'anon') + ':' + tip;  // 103: tenant-scope (RPC ile ayni felsefe; ares_sayaclar tum tenant'lar icin ortak)
+    const no = _noFormatla(cfg, sayaclar[anahtar] || 1);
+    sayaclar[anahtar] = (sayaclar[anahtar] || 1) + 1;
     _lset('sayaclar', sayaclar);
     return no;
   }
