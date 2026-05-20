@@ -410,6 +410,7 @@ tr.sk-row:hover td{background:transparent !important;}
 <div class="tabs">
   <button class="tab active" data-tab="spooller" data-i18n="dv_tab_spools">📦 Spool Listesi</button>
   <button class="tab" data-tab="genel" data-i18n="dv_tab_general">📋 Genel Bilgiler</button>
+  <button class="tab" data-tab="dokumanlar" data-i18n="dv_tab_docs">📁 Dökümanlar</button>
   <button class="tab" data-tab="malzeme" data-i18n="sp_tab_material">🔧 Malzeme Listesi</button>
   <button class="tab" data-tab="islemler" data-i18n="sp_tab_log">🕗 İşlem Kayıtları</button>
 </div>
@@ -506,6 +507,10 @@ tr.sk-row:hover td{background:transparent !important;}
     </div>
   </div>
 
+</div>
+
+<!-- ═══ DÖKÜMANLAR ═══ -->
+<div id="panDokumanlar" style="display:none;">
   <!-- Dökümanlar -->
   <div class="tablo-kart" style="border-left:3px solid var(--gr);">
     <div class="tablo-head">
@@ -1459,7 +1464,7 @@ function statGuncelle(){
 
 // ── SEKMELER
 function initTabs(){
-  var paneller={spooller:'panSpooller',genel:'panGenel',malzeme:'panMalzeme',islemler:'panIslemler'};
+  var paneller={spooller:'panSpooller',genel:'panGenel',dokumanlar:'panDokumanlar',malzeme:'panMalzeme',islemler:'panIslemler'};
   document.querySelectorAll('.tab').forEach(function(btn){
     btn.addEventListener('click',function(){
       document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
@@ -1467,6 +1472,7 @@ function initTabs(){
       btn.classList.add('active');
       var el=document.getElementById(paneller[btn.dataset.tab]);if(el)el.style.display='block';
       if(btn.dataset.tab==='malzeme'){spoolMalzYukle();plMalzYukle();}
+      if(btn.dataset.tab==='dokumanlar'){belgelerYukle();}
     });
   });
 }
@@ -2357,6 +2363,25 @@ async function onayAktar(kuyrukId){
     if(btn){btn.disabled=false;btn.textContent=tv('dv_onay_aktar','Aktar');}
   }
 }
+// 102: dosyayı açarken signed URL'i o an üret (lazy) — load'da 20+ URL üretme yükü kalkar
+async function dokAc(kaynak,path){
+  if(!path){showToast(tv('dv_dok_acilamadi','Dosya açılamadı'),'e');return;}
+  var supa=_supa();var url='';
+  try{
+    if(kaynak==='belgeler'){
+      url=(typeof ARES!=='undefined'&&ARES.dosyaUrlAl)?(await ARES.dosyaUrlAl(path)||''):'';
+    }else{
+      if(typeof ARES!=='undefined'&&ARES.dosyaUrlAl&&ARES.dosyaUrlAl.length>=2){
+        url=await ARES.dosyaUrlAl(path,'devre-belgeleri')||'';
+      }else if(supa&&supa.storage&&supa.storage.from){
+        var sr=await supa.storage.from('devre-belgeleri').createSignedUrl(path,3600);
+        url=(sr&&sr.data&&sr.data.signedUrl)||'';
+      }
+    }
+  }catch(e){console.warn('dokAc:',e);}
+  if(url)window.open(url,'_blank','noopener');
+  else showToast(tv('dv_dok_acilamadi','Dosya açılamadı'),'e');
+}
 async function belgelerYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!devreId)return;
@@ -2442,24 +2467,7 @@ async function belgelerYukle(){
 
   DOKUMANLAR=arrBelgeler.concat(arrDokumanlar);
 
-  // İki kaynak için paralel signed URL
-  await Promise.all(DOKUMANLAR.map(async function(d){
-    if(!d.dosyaPath||typeof ARES==='undefined'||typeof ARES.dosyaUrlAl!=='function')return;
-    if(d._kaynak==='belgeler'){
-      d.dosyaUrl=await ARES.dosyaUrlAl(d.dosyaPath)||'';
-    }else{
-      // devre-belgeleri bucket için signed URL — ARES.dosyaUrlAl ikinci parametre alırsa kullanır, almazsa varsayılan
-      try{
-        if(ARES.dosyaUrlAl.length>=2){
-          d.dosyaUrl=await ARES.dosyaUrlAl(d.dosyaPath,'devre-belgeleri')||'';
-        }else if(supa.storage&&supa.storage.from){
-          var sr=await supa.storage.from('devre-belgeleri').createSignedUrl(d.dosyaPath,3600);
-          d.dosyaUrl=(sr&&sr.data&&sr.data.signedUrl)||'';
-        }
-      }catch(e){console.warn('signedUrl devre-belgeleri:',e);}
-    }
-  }));
-
+  // 102: signed URL'ler artık lazy — dosya "↗" ile açıldığında dokAc() üretir (load donmasını engeller)
   renderDokumanlar();
 }
 function renderDokumanlar(){
@@ -2537,7 +2545,7 @@ function renderDokumanlar(){
     var cfg=DT[d.tur]||DT.diger;
     var ext=(d.dosyaAdi||'').split('.').pop().toLowerCase();
     var ikon=DOK_EXT[ext]||'DOC';
-    var acBtn=d.dosyaUrl?'<a href="'+esc(d.dosyaUrl)+'" target="_blank" rel="noopener" class="btn" style="color:var(--ac);border-color:rgba(54,127,236,.3);text-decoration:none;" title="'+tv('dv_dok_open','Aç')+'">↗</a>':'';
+    var acBtn='<button class="btn" onclick="dokAc(\''+esc(d._kaynak)+'\',\''+esc(d.dosyaPath||'')+'\')" style="color:var(--ac);border-color:rgba(54,127,236,.3);" title="'+tv('dv_dok_open','Aç')+'">↗</button>';
     // 102: parse sonucu hazır wizard dokümanları için onay butonu
     var onayBtn='';
     if(d._kaynak==='devre_dokumanlari'&&d._kuyrukId){
@@ -2996,7 +3004,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTable();
         statGuncelle();
       }
-      await belgelerYukle();
       await notYukle();
       renderIslemler();
       initTabs();
