@@ -79,6 +79,17 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .spool-kart.manuel .spool-head-icon{background:rgba(217,119,6,.12);color:var(--warn);}
 .spool-kart.hata .spool-head-icon{background:rgba(229,62,62,.12);color:var(--re);}
 .spool-kart.reddedildi .spool-head-icon{background:rgba(100,116,139,.12);color:var(--txd);}
+/* 104: AI guven gostergesi (spool bazli, siyah->kirmizi) */
+.guven-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.guven-pill.gv-yuksek{background:rgba(22,163,110,.12);color:var(--gr);}
+.guven-pill.gv-orta{background:rgba(217,119,6,.12);color:var(--warn);}
+.guven-pill.gv-dusuk{background:rgba(229,62,62,.12);color:var(--re);}
+.guven-pill.gv-bilinmiyor{background:rgba(100,116,139,.12);color:var(--txd);}
+/* spool kimlik degerini guvene gore boya: emin=normal(siyah), dusuk=kirmizi */
+.spool-head-baslik.gv-orta{color:var(--warn);}
+.spool-head-baslik.gv-dusuk{color:var(--re);}
+/* okunamayan/eksik deger vurgusu */
+.deger-eksik{color:var(--re);font-style:italic;font-weight:600;}
 .spool-head-info{flex:1;min-width:0;}
 .spool-head-baslik{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--tx);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .spool-head-alt{font-size:12px;color:var(--txm);display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
@@ -469,6 +480,19 @@ function spoolListeRender(){
   });
 }
 
+// 104: AI guven skorunu 3 kademeye ayir (siyah->kirmizi mantigi)
+function guvenSinif(skor){
+  if (typeof skor!=='number') return 'bilinmiyor';
+  if (skor>=0.85) return 'yuksek';
+  if (skor>=0.65) return 'orta';
+  return 'dusuk';
+}
+function guvenPill(skor){
+  var s = guvenSinif(skor);
+  var pct = (typeof skor==='number') ? '%'+Math.round(skor*100) : '%?';
+  return '<span class="guven-pill gv-'+s+'" title="'+tv('izbi_ai_guven','AI guven skoru')+'">AI '+pct+'</span>';
+}
+
 function spoolKartHTML(sp, idx){
   var durum = sp.durum || 'hazir';
   var durumClass = durum==='manuel_onay'?'manuel':durum==='hata'?'hata':durum==='reddedildi'?'reddedildi':'';
@@ -480,11 +504,11 @@ function spoolKartHTML(sp, idx){
   var spoolNo = esc(sp.spool_no || ('S'+(idx+1)));
 
   // Üst satır info satırı
-  var dnInfo  = '<span><strong>'+tv('izbi_form_dn','DN')+':</strong> '+(sp.dn||'-')+'</span>';
-  var etInfo  = '<span><strong>'+tv('izbi_form_et','Et')+':</strong> '+(sp.et_mm||'-')+' mm</span>';
-  var aiInfo  = (typeof sp.guven_skoru==='number')
-    ? '<span style="color:var(--leg);"><strong>AI:</strong> %'+Math.round(sp.guven_skoru*100)+'</span>'
-    : '';
+  var dnVal = (sp.dn!=null && sp.dn!=='') ? esc(String(sp.dn)) : '<span class="deger-eksik">'+tv('izbi_eksik','eksik')+'</span>';
+  var etVal = (sp.et_mm!=null && sp.et_mm!=='') ? esc(String(sp.et_mm))+' mm' : '<span class="deger-eksik">'+tv('izbi_eksik','eksik')+'</span>';
+  var dnInfo  = '<span><strong>'+tv('izbi_form_dn','DN')+':</strong> '+dnVal+'</span>';
+  var etInfo  = '<span><strong>'+tv('izbi_form_et','Et')+':</strong> '+etVal+'</span>';
+  var aiInfo  = guvenPill(sp.guven_skoru);
 
   // Uyarılar
   var uyariBlok = '';
@@ -603,7 +627,7 @@ function spoolKartHTML(sp, idx){
     + '  <div class="spool-head" onclick="spoolToggle('+idx+')">'
     + '    <div class="spool-head-icon">'+ikon+'</div>'
     + '    <div class="spool-head-info">'
-    + '      <div class="spool-head-baslik">'+spoolNo+' · '+pipeNo+'</div>'
+    + '      <div class="spool-head-baslik gv-'+guvenSinif(sp.guven_skoru)+'">'+spoolNo+' · '+pipeNo+'</div>'
     + '      <div class="spool-head-alt">'
     + '        <span class="sb '+sbClass+'">'+tv('izbi_durum_'+durum, durum)+'</span>'
     + '        '+dnInfo+' '+etInfo+' '+aiInfo
