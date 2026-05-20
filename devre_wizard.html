@@ -211,7 +211,7 @@
       <p style="color:var(--txd);font-size:14px;margin-bottom:18px" id="ozetBaslik"></p>
       <div id="ozetIcerik"></div>
       <p style="color:var(--txd);font-size:13px;margin-top:18px" data-i18n="dw_p3_note">
-        ℹ️ Dosyalar Storage'a yüklenecek, devre belgeleri tablosuna kaydedilecek. Parser şu an "saklama" modunda — yüklenen dosyalar arşivlenir, sonraki oturumlarda parser entegrasyonu eklenecek.
+        ℹ️ Dosyalar Storage'a yüklenecek ve devre belgelerine kaydedilecek. Malzeme listesi (BOM) Excel'leri otomatik ayrıştırılır; önizleme ve onay için devre detayındaki <strong>Dökümanlar</strong> sekmesini açın. Diğer dosyalar (izometri, sertifika vb.) şimdilik arşivlenir.
       </p>
       <div class="wiz-actions">
         <button class="btn-outline" id="btnGeri3"><span data-i18n="cmn_back">← Geri</span></button>
@@ -242,9 +242,10 @@
 
 <script>
 // ─────────────────────────────────────────────────────────────
-// devre_wizard.html — 99. oturum iskeleti (Senaryo A1)
+// devre_wizard.html — 99. oturum iskeleti (Senaryo A1) + 103: BOM Excel oto-parse
 // MEVCUT aktif devreye dosya yükleme akışı
-// Parser yok henüz — hepsi 'sakla' modunda, parse_durumu='tamamlandi'
+// 103-A: bom_excel -> excel-generic kuyruğa 'bekliyor' + worker tetiklenir (oto-parse).
+//        Diğer tipler hâlâ 'sakla' (izometri PDF yönlendirmesi = 103-B).
 // ─────────────────────────────────────────────────────────────
 
 var WIZ = {
@@ -484,7 +485,7 @@ function dosyalariEkle(dosyalar) {
       return;
     }
     var uzanti = (ad.split('.').pop() || '').toLowerCase();
-    var tip_kodu = autoDetect(d.klasor_yolu, uzanti);
+    var tip_kodu = autoDetect(ad, d.klasor_yolu, uzanti);
     var parser_yolu = parserBul(tip_kodu, uzanti);
     WIZ.dosyalar.push({
       file: d.file,
@@ -504,12 +505,48 @@ function dosyalariEkle(dosyalar) {
   document.getElementById('btnIlerle2').disabled = WIZ.dosyalar.length === 0;
 }
 
-// ── Auto-detect: 1) klasör adı (tam eşleşme), 2) uzantı, 3) diger ──
-function autoDetect(klasor_yolu, uzanti) {
+// ── 103-A2: Türkçe karakterleri ASCII'ye indirip küçült (ad eşleştirme için) ──
+function _adNorm(s) {
+  var tr = { 'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c' };
+  var out = '';
+  var str = String(s || '');
+  for (var i = 0; i < str.length; i++) { var ch = str[i]; out += (tr[ch] !== undefined ? tr[ch] : ch); }
+  return out.toLowerCase();
+}
+
+// ── 103-A2: Excel dosya adı gerçek BOM mu? ──────────────────────────────────
+// Uzantı/klasör Excel'i ayırt edemez (kontrol formu, teslim tutanağı da .xlsx/.xlsm).
+// Tek ayırt edici dosya adı. Muhafazakâr: emin değilsek 'diger' (kullanıcı dropdown'dan
+// elle bom_excel'e çevirebilir; yanlış oto-BOM parse+spool zincirini boşa tetikler — daha kötü).
+function excelBomMu(ad) {
+  var n = _adNorm(ad);
+  // çok kelimeli güvenli kalıplar (substring)
+  var kaliplar = [
+    'malzeme listesi', 'malzeme list', 'material list', 'material take', 'take off', 'take-off',
+    'spool listesi', 'spool list', 'parca listesi', 'parts list',
+    'boru listesi', 'pipe list', 'bill of material'
+  ];
+  for (var i = 0; i < kaliplar.length; i++) { if (n.indexOf(kaliplar[i]) !== -1) return true; }
+  // kısa token'lar (kelime sınırıyla): bom, mto, mtl
+  var tokenlar = n.split(/[^a-z0-9]+/);
+  for (var j = 0; j < tokenlar.length; j++) {
+    if (tokenlar[j] === 'bom' || tokenlar[j] === 'mto' || tokenlar[j] === 'mtl') return true;
+  }
+  return false;
+}
+
+// ── Auto-detect: 1) klasör adı (tam eşleşme), 2) Excel ad-katmanı, 3) uzantı, 4) diger ──
+// 103-A2: imza değişti — dosya adı eklendi (Excel BOM/değil ayrımı için).
+function autoDetect(ad, klasor_yolu, uzanti) {
   var son_klasor = (klasor_yolu.split('/').pop() || '').toLowerCase().trim();
   if (son_klasor) {
     var k = WIZ.klasor_sozluk.find(function(s) { return s.klasor_pattern.toLowerCase() === son_klasor; });
-    if (k) return k.tip_kodu;
+    if (k) return k.tip_kodu;  // klasör açık sinyal — her şeyi yener
+  }
+  // 103-A2: Excel ise uzantı eşleşmesi belirsiz (xls/xlsx/xlsm hepsi "Excel").
+  //         Adı BOM kalıbına uyuyorsa bom_excel, uymuyorsa diger. Uzantı katmanını ATLA.
+  if (uzanti === 'xls' || uzanti === 'xlsx' || uzanti === 'xlsm') {
+    return excelBomMu(ad) ? 'bom_excel' : 'diger';
   }
   var u = WIZ.dokuman_tipleri.find(function(t) { return t.uzanti.toLowerCase() === uzanti; });
   if (u) return u.tip_kodu;
@@ -517,6 +554,8 @@ function autoDetect(klasor_yolu, uzanti) {
 }
 
 function parserBul(tip_kodu, uzanti) {
+  // 103-A1: bom_excel her uzantıda (xlsm dahil — seed'de xlsm yok) excel-generic'e gider.
+  if (tip_kodu === 'bom_excel') return 'excel-generic';
   var t = WIZ.dokuman_tipleri.find(function(d) { return d.tip_kodu === tip_kodu && d.uzanti === uzanti; });
   if (t) return t.parser_yolu;
   return 'sakla';
@@ -593,6 +632,7 @@ async function adim3_yukle() {
 
   var basarili = 0, basarisiz = 0;
   var loglar = [];
+  var tetiklenecek = [];   // 103-A1: oto-parse tetiklenecek excel-generic isleri {id, ad}
 
   for (var i = 0; i < WIZ.dosyalar.length; i++) {
     var d = WIZ.dosyalar[i];
@@ -602,6 +642,9 @@ async function adim3_yukle() {
       '<br><span class="muted">Tip: ' + esc(d.tip_kodu) + ' · Parser: ' + esc(d.parser_yolu) + '</span>';
 
     try {
+      // 103-A1: bom_excel ayrı yola gider — oto-parse için kuyruğa 'bekliyor' girer.
+      var bomExcelMi = (d.tip_kodu === 'bom_excel');
+
       // 1. Storage upload — path pattern: {tenant_id}/projeler/{pid}/devreler/{did}/...
       //    (izometri-pdfs bucket'ı ile tutarlı; RLS [1]=tenant_id::text kontrolüne uyar)
       // 99-fix: Türkçe karakter + non-ASCII'yi Storage key'i için slugify et
@@ -623,25 +666,42 @@ async function adim3_yukle() {
         uzanti: d.uzanti,
         boyut_byte: d.boyut,
         dokuman_tipi: d.tip_kodu,
-        parse_durumu: 'tamamlandi',   // 99: 'sakla' parser hep tamamlandi
+        // 103-A1: bom_excel parse bekler; diğerleri (sakla) anında tamamlandı.
+        parse_durumu: bomExcelMi ? 'bekliyor' : 'tamamlandi',
         versiyon: 1,
         aktif: true,
         yukleyen_id: userId
       }).select('id').single();
       if (_ddi.error) throw _ddi.error;
 
-      // 3. dosya_isleme_kuyrugu INSERT (sakla parser — anında tamamlandı)
-      var _q = await supa.from('dosya_isleme_kuyrugu').insert({
-        tenant_id: tid,
-        devre_dokuman_id: _ddi.data.id,
-        parser: 'sakla',
-        oncelik: 100,
-        durum: 'tamamlandi',
-        deneme_sayisi: 0,
-        alindi_at: new Date().toISOString(),
-        bitis_at: new Date().toISOString()
-      });
-      if (_q.error) throw _q.error;
+      // 3. dosya_isleme_kuyrugu INSERT
+      if (bomExcelMi) {
+        // 103-A1: gerçek BOM → excel-generic worker'ı için 'bekliyor'. olusturma/durum
+        //         default'ları DB'de var; oncelik 100 ile öne al. id'yi tetik için topla.
+        var _qb = await supa.from('dosya_isleme_kuyrugu').insert({
+          tenant_id: tid,
+          devre_dokuman_id: _ddi.data.id,
+          parser: 'excel-generic',
+          oncelik: 100,
+          durum: 'bekliyor',
+          deneme_sayisi: 0
+        }).select('id').single();
+        if (_qb.error) throw _qb.error;
+        tetiklenecek.push({ id: _qb.data.id, ad: d.dosya_adi });
+      } else {
+        // sakla parser — anında tamamlandı (izometri PDF yönlendirmesi = 103-B kapsamı)
+        var _q = await supa.from('dosya_isleme_kuyrugu').insert({
+          tenant_id: tid,
+          devre_dokuman_id: _ddi.data.id,
+          parser: 'sakla',
+          oncelik: 100,
+          durum: 'tamamlandi',
+          deneme_sayisi: 0,
+          alindi_at: new Date().toISOString(),
+          bitis_at: new Date().toISOString()
+        });
+        if (_q.error) throw _q.error;
+      }
 
       basarili++;
       loglar.push({ ok:true, ad: d.dosya_adi });
@@ -649,6 +709,34 @@ async function adim3_yukle() {
       console.error('Yükleme hatası:', d.dosya_adi, e);
       basarisiz++;
       loglar.push({ ok:false, ad: d.dosya_adi, hata: hataMesajiTr(e) });
+    }
+  }
+
+  // 103-A1: Yüklenen BOM Excel'lerini otomatik parse ettir.
+  // Worker (/api/kuyruk-isle-excel) {is_id} ile tek iş işler — her birini sırayla tetikle
+  // (lock yarışı yok). Sonuç parse_sonuc'a yazılır, kuyruk durumu oneri_hazir/manuel_onay/hata olur.
+  // devre_detay > Dökümanlar sekmesindeki "Önizle/Onayla" butonu bu durumu okur.
+  var parseLog = [];
+  for (var p = 0; p < tetiklenecek.length; p++) {
+    var t = tetiklenecek[p];
+    box.querySelector('p') && (box.querySelector('p').innerHTML =
+      '<strong>BOM ayrıştırılıyor:</strong> ' + esc(t.ad) + ' <span class="muted">(' + (p+1) + ' / ' + tetiklenecek.length + ')</span>');
+    try {
+      var r = await fetch('/api/kuyruk-isle-excel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_id: t.id })
+      });
+      var j = await r.json();
+      if (!r.ok) {
+        parseLog.push({ ok:false, ad: t.ad, mesaj: (j && j.hata) ? j.hata : ('HTTP ' + r.status) });
+      } else {
+        parseLog.push({ ok:true, ad: t.ad, durum: j.durum, seviye: j.seviye, guven: j.guven, satir: j.satir_sayisi });
+      }
+    } catch(e) {
+      // Parse tetiklenemezse upload başarısı bozulmaz — iş kuyrukta 'bekliyor' kalır,
+      // gece cron'u veya elle tetikle alır. Kullanıcıya bilgi ver.
+      parseLog.push({ ok:false, ad: t.ad, mesaj: hataMesajiTr(e) });
     }
   }
 
@@ -660,6 +748,24 @@ async function adim3_yukle() {
       sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(l.hata) + '</li>';
     });
     sonHtml += '</ul>';
+  }
+
+  // 103-A1: BOM parse sonuç özeti
+  if (parseLog.length > 0) {
+    sonHtml += '<p style="margin-top:10px;"><strong>BOM ayrıştırma:</strong></p><ul style="font-size:13px;color:var(--txd)">';
+    parseLog.forEach(function(l) {
+      if (l.ok) {
+        var durumEt = l.durum === 'oneri_hazir' ? 'öneri hazır ✓' :
+                      l.durum === 'manuel_onay' ? 'manuel onay gerekiyor' :
+                      l.durum === 'hata' ? 'parse hatası' : l.durum;
+        sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(durumEt) +
+          (l.seviye ? ' <span class="muted">(' + esc(l.seviye) + ', %' + (l.guven != null ? l.guven : '?') + ', ' + (l.satir != null ? l.satir : '?') + ' satır)</span>' : '') +
+          '</li>';
+      } else {
+        sonHtml += '<li class="durum-fail">' + esc(l.ad) + ' — tetiklenemedi: ' + esc(l.mesaj) + ' <span class="muted">(kuyrukta bekliyor)</span></li>';
+      }
+    });
+    sonHtml += '</ul><p style="font-size:13px;color:var(--txd);">Önizleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın.</p>';
   }
   box.innerHTML = sonHtml + '<div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>';
 
