@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-21T08:25:10.075Z",
-  "commit_sha": "f0596b1936bd2dd7ead07730f7e972b4ea1c7a36",
+  "tarih": "2026-05-21T10:17:36.658Z",
+  "commit_sha": "3e0055eed8e08d0ed5acffc28232d5e21b32cb00",
   "commit_ref": "main",
-  "workflow_run": 911,
+  "workflow_run": 912,
   "ozet": {
     "hata": 0,
     "uyari": 67,
