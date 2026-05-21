@@ -76,6 +76,12 @@ CI: kod değişiklikleri düz string/render + DB sorgusu (lint sorunu beklenmedi
   üzerinde `str_replace` → inline JS ayıkla → `node --check` → saf fonksiyonları birim testle doğrula.
   Ayrıca `arespipe_kopyala` yanlış kaynağa bakabildi (bu oturumda "Kaynak yok / MD5 uyuşmuyor") →
   `cp` + `md5` gözle teyit eşdeğer güvenlik (MK-101.1 tamamlayıcısı).
+- **MK-109.6 — `[skip ci]` ve boş commit tuzağı.** `[skip ci]` push'un TEPE commit'inde olursa GitHub o
+  push'un TÜM CI'sını atlar (alttaki kod commit'leri dahil — bu oturumda `cd93fae` kod commit'i, üstündeki
+  `980f20b [skip ci]` yüzünden hiç koşmadı). Ayrıca BOŞ commit (`--allow-empty`, 0 değişen dosya) `paths`/
+  `paths-ignore` filtreli workflow'u tetikleMEZ. Kural: (a) kod + doküman aynı push'taysa `[skip ci]`
+  KULLANMA; ya da (b) önce kod commit'ini ayrı push'la (CI koşsun), SONRA doküman commit'ini `[skip ci]`
+  ile ayrı push'la. CI'yı sonradan tetiklemek için boş commit değil, gerçek (zararsız) dosya değişikliği push'la.
 
 ---
 
