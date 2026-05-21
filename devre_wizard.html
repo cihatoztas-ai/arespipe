@@ -212,7 +212,7 @@
       <p style="color:var(--txd);font-size:14px;margin-bottom:18px" id="ozetBaslik"></p>
       <div id="ozetIcerik"></div>
       <p style="color:var(--txd);font-size:13px;margin-top:18px" data-i18n="dw_p3_note">
-        ℹ️ Dosyalar Storage'a yüklenecek ve devre belgelerine kaydedilecek. Malzeme listesi (BOM) Excel'leri otomatik ayrıştırılır; önizleme ve onay için devre detayındaki <strong>Dökümanlar</strong> sekmesini açın. Diğer dosyalar (izometri, sertifika vb.) şimdilik arşivlenir.
+        ℹ️ Dosyalar Storage'a yüklenecek ve devre belgelerine kaydedilecek. Malzeme listesi (BOM) Excel'leri ve izometri PDF'leri otomatik ayrıştırılır; önizleme ve onay için devre detayındaki <strong>Dökümanlar</strong> sekmesini açın. Diğer dosyalar (sertifika, şartname vb.) şimdilik arşivlenir.
       </p>
       <div class="wiz-actions">
         <button class="btn-outline" id="btnGeri3"><span data-i18n="cmn_back">← Geri</span></button>
@@ -246,7 +246,8 @@
 // devre_wizard.html — 99. oturum iskeleti (Senaryo A1) + 103: BOM Excel oto-parse
 // MEVCUT aktif devreye dosya yükleme akışı
 // 103-A: bom_excel -> excel-generic kuyruğa 'bekliyor' + worker tetiklenir (oto-parse).
-//        Diğer tipler hâlâ 'sakla' (izometri PDF yönlendirmesi = 103-B).
+// 107  : izometri -> 'izometri' kuyruğa 'bekliyor' + /api/kuyruk-isle-izometri tetiklenir (MK-49.B).
+//        Diğer tipler hâlâ 'sakla' (anında arşiv).
 // ─────────────────────────────────────────────────────────────
 
 var WIZ = {
@@ -656,7 +657,8 @@ async function adim3_yukle() {
 
   var basarili = 0, basarisiz = 0;
   var loglar = [];
-  var tetiklenecek = [];   // 103-A1: oto-parse tetiklenecek excel-generic isleri {id, ad}
+  var tetiklenecek = [];      // 103-A1: oto-parse tetiklenecek excel-generic isleri {id, ad}
+  var tetiklenecekIzo = [];   // 107/MK-49.B: parse tetiklenecek izometri isleri {id, ad}
 
   for (var i = 0; i < WIZ.dosyalar.length; i++) {
     var d = WIZ.dosyalar[i];
@@ -668,6 +670,8 @@ async function adim3_yukle() {
     try {
       // 103-A1: bom_excel ayrı yola gider — oto-parse için kuyruğa 'bekliyor' girer.
       var bomExcelMi = (d.tip_kodu === 'bom_excel');
+      // 107/MK-49.B: izometri PDF de ayrı yola gider — izometri-oku worker'ı için 'bekliyor'.
+      var izometriMi = (d.tip_kodu === 'izometri');
 
       // 1. Storage upload — path pattern: {tenant_id}/projeler/{pid}/devreler/{did}/...
       //    (izometri-pdfs bucket'ı ile tutarlı; RLS [1]=tenant_id::text kontrolüne uyar)
@@ -690,8 +694,8 @@ async function adim3_yukle() {
         uzanti: d.uzanti,
         boyut_byte: d.boyut,
         dokuman_tipi: d.tip_kodu,
-        // 103-A1: bom_excel parse bekler; diğerleri (sakla) anında tamamlandı.
-        parse_durumu: bomExcelMi ? 'bekliyor' : 'tamamlandi',
+        // 103-A1 + 107: bom_excel/izometri parse bekler; diğerleri (sakla) anında tamamlandı.
+        parse_durumu: (bomExcelMi || izometriMi) ? 'bekliyor' : 'tamamlandi',
         versiyon: 1,
         aktif: true,
         yukleyen_id: userId
@@ -712,8 +716,21 @@ async function adim3_yukle() {
         }).select('id').single();
         if (_qb.error) throw _qb.error;
         tetiklenecek.push({ id: _qb.data.id, ad: d.dosya_adi });
+      } else if (izometriMi) {
+        // 107/MK-49.B: izometri PDF → izometri worker'ı için 'bekliyor'.
+        //   /api/kuyruk-isle-izometri {is_id} ile tetiklenecek → izometri-oku çağırır.
+        var _qi = await supa.from('dosya_isleme_kuyrugu').insert({
+          tenant_id: tid,
+          devre_dokuman_id: _ddi.data.id,
+          parser: 'izometri',
+          oncelik: 100,
+          durum: 'bekliyor',
+          deneme_sayisi: 0
+        }).select('id').single();
+        if (_qi.error) throw _qi.error;
+        tetiklenecekIzo.push({ id: _qi.data.id, ad: d.dosya_adi });
       } else {
-        // sakla parser — anında tamamlandı (izometri PDF yönlendirmesi = 103-B kapsamı)
+        // sakla parser — anında tamamlandı (sertifika, şartname, 3d_pdf vb.)
         var _q = await supa.from('dosya_isleme_kuyrugu').insert({
           tenant_id: tid,
           devre_dokuman_id: _ddi.data.id,
@@ -764,6 +781,32 @@ async function adim3_yukle() {
     }
   }
 
+  // 107/MK-49.B: Yüklenen izometri PDF'lerini /api/kuyruk-isle-izometri ile parse ettir.
+  // Worker {is_id} ile tek iş işler (lock yarışı yok); izometri-oku'yu çağırır
+  // (fingerprint→L2→L3). Sonuç parse_sonuc'a yazılır, kuyruk durumu
+  // oneri_hazir/manuel_onay/hata olur. Vision AI 11-25 sn sürebilir — sabırlı bekle.
+  var parseLogIzo = [];
+  for (var pi = 0; pi < tetiklenecekIzo.length; pi++) {
+    var ti = tetiklenecekIzo[pi];
+    box.querySelector('p') && (box.querySelector('p').innerHTML =
+      '<strong>İzometri okunuyor:</strong> ' + esc(ti.ad) + ' <span class="muted">(' + (pi+1) + ' / ' + tetiklenecekIzo.length + ') · bu birkaç saniye sürebilir</span>');
+    try {
+      var ri = await fetch('/api/kuyruk-isle-izometri', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_id: ti.id })
+      });
+      var ji = await ri.json();
+      if (!ri.ok) {
+        parseLogIzo.push({ ok:false, ad: ti.ad, mesaj: (ji && ji.hata) ? ji.hata : ('HTTP ' + ri.status) });
+      } else {
+        parseLogIzo.push({ ok:true, ad: ti.ad, durum: ji.durum, spool: ji.spool_sayisi, manuel: ji.manuel_onay_sayisi, hazir: ji.hazir_sayisi });
+      }
+    } catch(e) {
+      parseLogIzo.push({ ok:false, ad: ti.ad, mesaj: hataMesajiTr(e) });
+    }
+  }
+
   fill.style.width = '100%';
   var sonHtml = '<p class="durum-ok">✓ Tamamlandı. <strong>' + basarili + '</strong> / ' + WIZ.dosyalar.length + ' dosya başarıyla yüklendi.</p>';
   if (basarisiz > 0) {
@@ -784,6 +827,25 @@ async function adim3_yukle() {
                       l.durum === 'hata' ? 'parse hatası' : l.durum;
         sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(durumEt) +
           (l.seviye ? ' <span class="muted">(' + esc(l.seviye) + ', %' + (l.guven != null ? l.guven : '?') + ', ' + (l.satir != null ? l.satir : '?') + ' satır)</span>' : '') +
+          '</li>';
+      } else {
+        sonHtml += '<li class="durum-fail">' + esc(l.ad) + ' — tetiklenemedi: ' + esc(l.mesaj) + ' <span class="muted">(kuyrukta bekliyor)</span></li>';
+      }
+    });
+    sonHtml += '</ul><p style="font-size:13px;color:var(--txd);">Önizleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın.</p>';
+  }
+
+  // 107/MK-49.B: izometri parse sonuç özeti
+  if (parseLogIzo.length > 0) {
+    sonHtml += '<p style="margin-top:10px;"><strong>İzometri ayrıştırma:</strong></p><ul style="font-size:13px;color:var(--txd)">';
+    parseLogIzo.forEach(function(l) {
+      if (l.ok) {
+        var durumEt = l.durum === 'oneri_hazir' ? 'öneri hazır ✓' :
+                      l.durum === 'manuel_onay' ? 'manuel onay gerekiyor' :
+                      l.durum === 'hata' ? 'parse hatası' : l.durum;
+        sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(durumEt) +
+          (l.spool != null ? ' <span class="muted">(' + l.spool + ' spool' +
+            (l.manuel ? ', ' + l.manuel + ' manuel onay' : '') + ')</span>' : '') +
           '</li>';
       } else {
         sonHtml += '<li class="durum-fail">' + esc(l.ad) + ' — tetiklenemedi: ' + esc(l.mesaj) + ' <span class="muted">(kuyrukta bekliyor)</span></li>';
