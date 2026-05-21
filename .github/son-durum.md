@@ -1,83 +1,71 @@
-# AresPipe — Güncel Durum (son güncelleme: Oturum 104, 20 May 2026)
+# AresPipe — Güncel Durum (son güncelleme: Oturum 106, 21 May 2026)
 
-## Bu oturumda yapılanlar (104) — İzometri Batch UX + Normal Excel + maliyet ölçümü
+## Bu oturumda yapılanlar (106)
 
-Oturum "wizard PDF parse" niyetiyle açıldı ama Cihat'ın yönlendirmesiyle **izometri batch
-sayfasının toparlanmasına** döndü. 3 iş canlıya alındı, 1 büyük ölçüm + 1 PDF metin analizi yapıldı.
+### 1) L2 parser KANITLANDI — "ölçüler eksik" = cache, parser değil
+105'te gelen şüphe (İmalat Excel'inde "1Flanş", Adet=0/2/3, boş DN) kök neden incelendi.
+Mevcut kural 3 gerçek PDF'in (M100-317-01-P2 S01/S02/S03) production yoluyla (pdf-parse)
+çıkarılan metnine karşı çalıştırıldı: **30 malzeme satırı tertemiz** — flanş DN'leri yakalanıyor
+(300/200/65/125), adet=1, "1" sızıntısı yok, NOT karışmıyor. Bozuk Excel = 088-öncesi cache'ti.
+Fixture suite 10/10, 088 fix gerçekten çalışıyor.
 
-### 1) 104-A — İncele her zaman açılır + AI güven renklendirme (CANLI)
-Bug değildi: "Manuel Onay açılmadı" → o batch'te 0 manuel spool vardı (hepsi `hazir`), buton
-doğru gizliydi. ASIL sorun: incele'ye tek giriş manuel onaydı → **all-hazir batch açılamıyordu.**
-- `izometri-batch.html`: her zaman erişilebilir **"Sonuçları İncele"** butonu (spool varsa aktif);
-  satır içi "İncele →" tüm satırlarda.
-- `izometri-batch-incele.html`: spool **AI güven pill'i** (yüksek≥85 yeşil / orta≥65 amber / düşük kırmızı),
-  spool başlığı güven rengiyle, **DN/Et eksikse kırmızı "eksik"** vurgusu.
-- Commit `c... fix(104): izometri batch incele her zaman acilir + AI guven renklendirme`
+### 2) NOT yakalama + KISMI alıştırma ipucu (CANLI — commit 3e0055e)
+- `lib/l2-parser.js`: spool nesnesine `not_metni` + `alistirma_ipucu` (config-driven, motor jenerik).
+- `test/l2-tersan-kural.json`: `alanlar.not_metni` regex (boş notu reddeder) + `alistirma_ipucu_kurali`.
+  Anahtar kelime ASCII-güvenli `al.{2}t.rma` (SQL Editor Unicode bozma riski yok).
+- `test/l2-tersan-fixtures.json` + `test/l2-tersan-test.mjs`: yeni alan beklentileri + 2 kontrol.
+- `migrations/089_tersan_parser_kural_not_alistirma.sql`: jsonb_set ile DB'ye 2 alan (İmalat formatı).
+- Lokal test 10/10, dry-run doğrulandı, COMMIT canlı, DB teyitli (guncelleme_at 10:15).
+- 3 PDF'in üçünde de alistirma_ipucu=KISMI (S01/S02 "ayarlanarak", S03 "alıştırma").
 
-### 2) 104-B — Batch sayfası sadeleştirme + tek akış + legend (CANLI)
-- Drop zone küçültüldü; **stat kutuları kaldırıldı**; **"Manuel Onay" butonu kaldırıldı** (İncele ile
-  aynı işti, kafa karışıklığı); **"Excel İndir" batch sayfasından kaldırıldı** (Excel onaydan sonra).
-- Tek post-parse aksiyon: **Sonuçları İncele**.
-- İncele üstüne **renk legend** (Yüksek/Orta/Düşük/eksik).
-- Commit `fix(104): batch sayfasi sadelestirme + tek inceleme girisi + renk legend`
+### 3) Wizard gerçek durumu netleşti (103 sonu)
+- 4 adım çalışıyor (Devre Seç → Dosya Yükle → Onay → Yükleme).
+- **103-A BİTMİŞ:** BOM Excel oto-parse (`dosya_isleme_kuyrugu parser='excel-generic'` → kuyruk-isle-excel).
+- **103-B EKSİK (= MK-49.B):** izometri PDF şu an sadece `'sakla'` (arşivleniyor), parse EDİLMİYOR.
+  Bu eksik halka; bizim L2+NOT işimiz tam buraya akacak.
 
-### 3) 104-C — İncele "Normal Excel" export (CANLI, son commit 48026e0)
-IFS yanına **"📊 Excel İndir"** (onaylanan spool varsa aktif). 2 sheet:
-- **Spool Listesi** (devre_detay formatı): Resim No · Pipeline No · Spool No · DN · Çap · Et · Boy ·
-  Ağırlık · Malzeme · Kalite · Yüzey · Rev. **Marka yerine Resim No** (= dosya/çizim adı).
-- **Malzeme Listesi** (spool_detay formatı): Resim No · Spool No · Kod · Açıklama · Malzeme · Kalite ·
-  Standart · Dış Çap · Et · Boy · Adet · Ağırlık · Sert. **Heat No YOK** (parse üretmez).
-- Commit `feat(104): incele normal Excel export (spool + malzeme, 2 sheet, Resim No)`
+### 4) Wizard yeniden tasarım omurgası yazıldı (docs/MK-WIZARD-DEVRE-YUKLEME.md)
+Cihat'ın endişesi: "klasörü at, sistem ayıklasın" sessiz eksik/fazla riski (25 yerine 23 spool).
+Tasarım kararı: **otorite kabuktur, PDF değil.** Spool listesi resmi kaynaktan (IFS/şablon) doğar,
+PDF'ler ona karşı çetelelenir, sessiz tamamlama yok, mutabakat ekranı zorunlu.
 
-### Maliyet ölçümü (C — ai_api_log, AI maliyeti $0)
-- Toplam: **L3 (Vision AI) 42 çağrı = $1.34** (~17 sn/çağrı); **L2 (deterministik) 8 çağrı = $0** (23 ms).
-- Format bazında L3 maliyeti:
-  - **PAOR Ana Çizim: 18 · $0.62** — image-PDF, metin yok → mimari olarak çözülemez (sadece azaltılır).
-  - **Tersan M110 İmalat: 15 · $0.46 (+ 8 L2 · $0)** — metin-PDF → öğrenme döngüsünün altın hedefi.
-  - **Tersan M110 Montaj: 7 · $0.21** — YANLIŞ-TANIMA ŞÜPHESİ (gerçek PDF görülmedi, teyit gerek).
-  - (tanımsız): 2 · $0.06.
+## Mimari kararlar (106)
+- **MK-106.1** — L2 parser İmalat'ta zaten çalışıyor; "eksik veri" şikayeti cache kaynaklıydı.
+  Parser bug'ı sanmadan önce production yoluyla (pdf-parse) gerçek metne karşı test et.
+- **MK-106.2** — NOT yakalama config-driven (kelimeler kuralda, motor jenerik). ASCII-güvenli
+  regex (SQL Editor Unicode bozar — MK kuralı).
+- **MK-WIZARD.1** — Boş şablon üretimi: K2'de wizard "Boş şablon indir" verir (elle Excel = hata).
+- **MK-WIZARD.2** — Eksik PDF ≠ eksik spool: spool kabuktan gelir, PDF sonradan eklenir, silinmez.
+- **MK-WIZARD.3** — Kabuk kilidi: onaylanınca değişmez; "26 spool varmış" → bilinçli geri-adım.
+- **MK-WIZARD.4** — "Doğrulanmadı" damgası: parse zayıf → sarı bayrak, sistem uydurmaz.
+- **MK-WIZARD.5** — Eşleştirme = resim_no + spool_no (içerikten bağımsız, image-PDF'te de çalışır);
+  ilişki N:N (`spool_dokumanlari` bağ tablosu).
 
-### PDF metin analizi (4 örnek dosya incelendi)
-- **PAOR isometric_view**: metin BOŞ (image) → geometri AI ister. **L3'e göndermek boşa para** (105 hedefi).
-- **PAOR ana çizim**: metin DOLU (tablo + düğümler `[4] 50600-1514`) → tablo deterministik çekilebilir.
-- **Tersan G200 S01**: geometri/yön dizilimi METİNDE gömülü (`45°`, `R=130`, segment boyları,
-  `Rotation Angle`, `Cut & Bending Info`) → hem tablo hem **yön dizilimi $0 deterministik** çekilebilir
-  → **MK-49.A (3D render) Tersan için tamamen mümkün, AI'sız.**
-
-## Mimari kararlar (104)
-- **MK-104.1** — İzometri batch SADECE Excel verir; devreye bağlanmaz. (Onaylanan spool→gerçek kayıt fikri İPTAL.)
-- **MK-104.2** — Excel akışı: parse → incele → düzelt → onayla → Excel. Batch sayfasında Excel butonu yok.
-- **MK-104.3** — İki Excel: IFS (devre_yeni "All" 92 sütun) + Normal (devre_detay spool + spool_detay malzeme,
-  2 sheet, Marka→Resim No, Heat No yok). İkisi de sadece onaylanan (`hazir`) spool'ları verir.
-- **MK-104.4** — AI güven gösterimi SPOOL bazlı (`guven_skoru`). Alan-bazlı güven prompt değişikliği ister
-  (izometri-oku, MK-49.1) → ertelendi.
-- **MK-104.5** — Geometri kaynağı formata bağlı: metin-PDF (Tersan) metinde → $0 deterministik + 3D verisi;
-  image-PDF (PAOR isometric_view) yok → AI. PAOR'da tek L3 çağrısında tablo+geometri birlikte istenebilir
-  (aynı maliyet, fazla getiri).
-- **MK-104.6** — Maliyet ölçüm protokolü: `ai_api_log` parser_seviye dağılımı + format bazında L3 maliyeti.
-  Ölçmeden optimize etme (B'nin değip değmeyeceği ölçümle belirlenir).
+## Doğrulanmış örnekler (alan haritası)
+- **Tersan:** `NB1110-M100-262-302-47-S01` — text-PDF (L2), resim no = pipe gövdesi (dosya adı), 1 PDF=1 spool.
+- **PAOR:** `NB1110-Z06 52600-102778-A-S01/S02` — image-PDF (L3/Excel zorunlu), resim no = çizim no, 1 PDF=2 spool.
+- Proje: PDF "B1110" ↔ devre "NB1110" → N öneki normalize. (Sadece 2 tersane sağlam kurulur.)
 
 ## CI Son Durum
-- **Build:** ✅ YEŞİL (son commit `48026e0`). 3 commit temiz rebase+push, çakışma yok.
-- İncele dosyaları MD5 doğrulamayla yüklendi (>45KB, MK-51.1).
+- **Build:** son kod commit `3e0055e` (NOT + 089). `[skip ci]` değil → CI koştu.
+  (Cihat teyidi bekleniyor — yeşil olmalı, lokal test 10/10.)
+- Önceki kapanış docs commit'leri [skip ci].
 
 ## AÇIK BORÇLAR (sıra önemli)
-1. **105 — Hızlı tasarruf:** PAOR `isometric_view` (metni boş) L3'e gitmesin → boşa para kesilir.
-   + Tersan M110 Montaj yanlış-tanıma teyit/temizlik (1 sorgu + örnek PDF).
-2. **106+ — B-geometri (büyük, en yüksek getiri):** Tersan metin-PDF için deterministik parser:
-   tablo + `yon_dizilim` (metinden) → o format $0 + 3D render verisi (MK-49.A). Kendi MK belgesiyle.
-3. **B-öğrenme:** düzeltme → `parser_kural` geri-yazma (MK-48.5) + cache'in düzeltmeyi taşıması.
-   NOT: image-PDF (PAOR) bunu çözmez — metin yok.
-4. **Wizard'ı bu hazır backend'e bağla** (MK-49.B) — en son.
-5. **Normal Excel "Standart" sütunu boş** — Açıklama içinden regex ile ayıklanabilir (küçük).
-6. **Alan-bazlı AI güven** — prompt değişikliği (MK-49.1, dikkatli).
-7. **batch ↔ incele cache:** incele'de onay sonrası batch sayfası `_tumSpooller` cache'i yansıtmıyor
-   (geri dönünce tazelenmeli) — küçük.
-8. `excelIndir`/`manuelOnayAc` batch sayfasında ölü kod (zararsız, istenirse silinir).
+1. **Wizard MK-49.B (izometri routing):** `'sakla'` → `dosya_isleme_kuyrugu (parser='izometri')`
+   + yeni worker `/api/kuyruk-isle-izometri` (izometri-oku çağırır, MK-49.1 dokunmaz).
+   PAOR→L3, Tersan→L2. **Sonraki oturumun ana hedefi.**
+2. **Wizard yeniden tasarım (omurga belgesi):** kaynak seçimi (K1/K2/K3), kabuk, format önizleme,
+   mutabakat ekranı, spool_dokumanlari N:N tablosu. Açık sorular: belge Madde 10 (kalan 5-9).
+3. **Excel DN sütunu** (izometri-batch incele export — flanş DN parse ediliyor ama gösterilmiyor).
+4. **Boru OD→DN türetme** (boru_olculer lookup, MK-49.1 sınırı).
+5. **Batch geçmişi sekmesi** (izometri-batch — `izometri_batch_kayitlari` zaten DB'de, surface et).
+6. **NOT downstream:** izometri-oku passthrough (MK-49.1 minimal) → wizard→devre→QR ekranı.
+7. **Tersan Montaj fingerprint ayrımı** (MK-105.4 — şu an İmalat ile aynı kural).
 
-## Önemli öğrenmeler (104)
-- **Görmeden yazma 2 kez kurtardı:** (a) "incele düzenlenemiyor" dedim → meğer `form-grid` editleme VAR
-  (`spoolFormDegis`); (b) "kopukluk = alan uyuşmazlığı" dedim → meğer tesisat tutarlı (DURUM='manuel_onay'
-  her yerde aynı). İki yanlış teşhis de koda bakınca düzeldi.
-- "Devre Oluştur" butonu meğer Excel indiriyor + görünür label zaten "IFS Excel İndir" (sadece id eski).
-- Cost ölçümü stratejiyi değiştirdi: B (öğrenme) paranın ~%50'sini (Tersan metin-PDF) çözebilir, PAOR'u çözemez.
+## Önemli öğrenmeler (106)
+- **Şüpheyi production yoluyla test et.** "Parser bozuk" sanılan şey cache'ti; pdf-parse ile
+  gerçek metne karşı 30 satır test 5 dakikada gerçeği gösterdi.
+- **Regex Unicode/newline tuzakları:** `\s*` newline yutar (NOT regex'i alt satıra atladı → `[ \t]*`);
+  `[^\n,]` boşluğa izin verir, geri-izleyip " ," yakalar (→ `[^\s,]`). Ampirik test şart.
+- **Otorite kabuktur:** wizard'ın en kritik tasarım ilkesi — devre yüklerken hata = tüm programa güvensizlik.
