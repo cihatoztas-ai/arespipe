@@ -392,6 +392,8 @@
   "dv_dok_file_required": "Select a file",
   "dv_dok_iso": "Isometric",
   "dv_dok_iso_opt": "Isometric Drawing",
+  "dv_izo_arka": "Isometric — in background",
+  "dv_izo_arka_aciklama": "Isometrics auto-link to shell spools in the background",
   "dv_dok_modal_title": "Add Document",
   "dv_dok_name_label": "Document Name *",
   "dv_dok_name_required": "Document name is required",

@@ -392,6 +392,8 @@
   "dv_dok_file_required": "Dosya seçin",
   "dv_dok_iso": "İzometri",
   "dv_dok_iso_opt": "İzometrik Çizim",
+  "dv_izo_arka": "İzometri — arka planda",
+  "dv_izo_arka_aciklama": "İzometriler kabuk spool’lara arka planda otomatik bağlanır",
   "dv_dok_modal_title": "Belge Ekle",
   "dv_dok_name_label": "Belge Adı *",
   "dv_dok_name_required": "Belge adı gerekli",

@@ -392,6 +392,8 @@
   "dv_dok_file_required": "اختر ملفاً",
   "dv_dok_iso": "إيزومتري",
   "dv_dok_iso_opt": "رسم إيزومتري",
+  "dv_izo_arka": "إيزومتري — في الخلفية",
+  "dv_izo_arka_aciklama": "تُربط الإيزومتري تلقائيًا بالسبولات في الخلفية",
   "dv_dok_modal_title": "إضافة مستند",
   "dv_dok_name_label": "اسم المستند *",
   "dv_dok_name_required": "اسم المستند مطلوب",

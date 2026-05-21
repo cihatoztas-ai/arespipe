@@ -841,9 +841,15 @@ async function adim3_yukle() {
 
   // 108/Adim3: izometriler arka planda işleniyor — senkron beklenmez.
   if (izoKuyrukSayisi > 0) {
+    // 109/B2: güvenlik ağı — wizard'ın fire-and-forget tetiği koparsa kullanıcı detaya gitmeden
+    // burada elle drene eder (devre_detay'daki "Bekleyenleri işle" düğmesinin eşi). İzometri
+    // kuyruk id'lerini sakla → handler bunlarla kalan 'bekliyor/isleniyor' sayısını sorgular.
+    WIZ._izoIds = tetiklenecekIzo.map(function(t) { return t.id; });
     sonHtml += '<p style="margin-top:10px;"><strong>İzometri ayrıştırma:</strong> ' + izoKuyrukSayisi +
       ' PDF arka planda işleniyor. <span class="muted">Bu pencereyi kapatabilir, başka devre yükleyebilirsiniz.</span></p>' +
-      '<p style="font-size:13px;color:var(--txd);">İlerleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın; izometriler işlendikçe orada görünür.</p>';
+      '<p style="font-size:13px;color:var(--txd);">İlerleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın; izometriler işlendikçe orada görünür.</p>' +
+      '<button class="btn-outline" id="btnWizBekleyen" style="margin-top:4px;font-size:13px;" ' +
+      'title="Arka plan izometri parse\u0027ı takıldıysa elle drene eder">\u27f3 Bekleyenleri işle (<span id="wizBekleyenSayi">' + izoKuyrukSayisi + '</span>)</button>';
   }
   // ── 108 / MK-107.1: KABUK ÖNİZLEME ─────────────────────────────────────────
   // Otorite kabuktur, PDF değil. Az önce parse edilen BOM Excel'lerin parse_sonuc'unu
@@ -879,7 +885,7 @@ async function adim3_yukle() {
         WIZ._kabuk = { satirlar: kabukSatirlar, bomIds: bomIds, tid: tid, devreId: WIZ.devre_id, sayi: kabuk.spoollar.length };
         sonHtml += '<div id="kabukOnayAlani" style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">' +
           '<button class="btn-primary" id="btnKabukOnayla" style="align-self:flex-start;">' +
-          '✓ Onayla / Kilitle → ' + kabuk.spoollar.length + ' spool oluştur</button>' +
+          '✓ Onayla / Kilitle → <span id="kabukOnaySayi">' + kabuk.spoollar.length + '</span> spool oluştur</button>' +
           '<p style="font-size:12px;color:var(--txd);margin:0;">Spool\u2019lar \u201c\u00e7izim bekliyor\u201d olarak kaydedilir. \u0130zometriler arka planda i\u015flendik\u00e7e \u00e7izim durumu kendili\u011finden ilerler \u2014 ayr\u0131ca bir yere gitmenize gerek yok.</p>' +
           '</div>';
       }
@@ -894,6 +900,10 @@ async function adim3_yukle() {
   var kob = document.getElementById('btnKabukOnayla');
   if (kob) kob.addEventListener('click', kabukOnayla);
 
+  // 109/B2: izometri "Bekleyenleri işle" güvenlik düğmesini bağla.
+  var wbb = document.getElementById('btnWizBekleyen');
+  if (wbb) wbb.addEventListener('click', wizBekleyenleriIsle);
+
   if (basarili > 0) {
     var btn = document.getElementById('btnDevreyiGor');
     btn.style.display = '';
@@ -903,7 +913,37 @@ async function adim3_yukle() {
   }
 }
 
-// 109/A-yolu: kabuk-first onay — INSERT wizard'ın İÇİNDE (dolambaç bitti).
+// 109/B2: wizard güvenlik ağı — fire-and-forget izometri tetiği koptuysa elle drene et.
+// devre_detay.bekleyenIzometriIsle eşi; fark: wizard kendi izometri kuyruk id'lerinden
+// kalan 'bekliyor/isleniyor' sayısını DOĞRUDAN sorgular (belge listesi yok).
+async function wizBekleyenleriIsle() {
+  var b = document.getElementById('btnWizBekleyen');
+  var s = document.getElementById('wizBekleyenSayi');
+  var ids = (WIZ._izoIds || []);
+  if (b) { b.disabled = true; b.style.opacity = '.6'; }
+  try {
+    await fetch('/api/kuyruk-isle-izometri', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  } catch (e) { console.warn('[wizard] izometri drenaj tetiği gönderilemedi:', e); }
+  if (!ids.length) { if (b) { b.disabled = false; b.style.opacity = ''; } return; }
+  var supa = ARES.supabase();
+  var tur = 0;
+  var poll = setInterval(async function() {
+    tur++;
+    var kalan = 0;
+    try {
+      var q = await supa.from('dosya_isleme_kuyrugu')
+        .select('id, durum').in('id', ids);
+      if (!q.error && q.data) {
+        kalan = q.data.filter(function(r) { return r.durum === 'bekliyor' || r.durum === 'isleniyor'; }).length;
+      }
+    } catch (e) { console.warn('[wizard] bekleyen sayım:', e); }
+    if (s) s.textContent = kalan;
+    if (kalan <= 0 || tur >= 8) {
+      clearInterval(poll);
+      if (b) { b.disabled = false; b.style.opacity = ''; b.style.display = kalan > 0 ? '' : 'none'; }
+    }
+  }, 4000);
+}
 // Önizlemedeki aynı satırlardan tam BOM modelini kur, ARES_KABUK.aktar ile spooller +
 // spool_malzemeleri yaz (cizim_durumu='bekliyor'), kuyruğu tamamlandı işaretle.
 // Davranış B: wizard'da KAL, "N spool oluşturuldu ✓" göster + Devreyi Görüntüle aktif kalsın.
@@ -912,16 +952,38 @@ async function kabukOnayla() {
   var k = WIZ._kabuk;
   var btn = document.getElementById('btnKabukOnayla');
   var alan = document.getElementById('kabukOnayAlani');
+  // 109/#4: seçili spool anahtarlarını topla (checkbox yoksa hepsi seçili sayılır).
+  var secli = {};
+  var cbs = document.querySelectorAll('.kabuk-spool-cb');
+  if (cbs.length) {
+    document.querySelectorAll('.kabuk-spool-cb:checked').forEach(function(cb) { secli[cb.getAttribute('data-key')] = true; });
+  }
+  var model = ARES_KABUK.grupla({ satirlar: k.satirlar });   // tam BOM modeli (devre_detay ile aynı)
+  var secilenler = cbs.length
+    ? model.spoollar.filter(function(s) { return secli[(s.pipeline || '') + '|' + s.spoolNo + '|' + (s.rev || '')]; })
+    : model.spoollar;
+  if (!secilenler.length) {
+    if (alan) {
+      var uyari = document.getElementById('kabukSecUyari');
+      if (!uyari) {
+        uyari = document.createElement('p');
+        uyari.id = 'kabukSecUyari';
+        uyari.style.cssText = 'font-size:13px;color:var(--warn);margin:4px 0 0;';
+        alan.appendChild(uyari);
+      }
+      uyari.textContent = '⚠ En az bir spool seçin.';
+    }
+    return;
+  }
   if (btn) { btn.disabled = true; btn.textContent = 'Oluşturuluyor…'; }
   try {
     var supa = ARES.supabase();
-    var model = ARES_KABUK.grupla({ satirlar: k.satirlar });   // tam BOM modeli (devre_detay ile aynı)
     var r = await ARES_KABUK.aktar({
       supa: supa, tid: k.tid, devreId: k.devreId,
-      spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: k.bomIds
+      spoollar: secilenler, yuzey: null, perSpoolYuzey: true, kuyrukIds: k.bomIds
     });
     if (!r.ok) {
-      if (btn) { btn.disabled = false; btn.textContent = '✓ Onayla / Kilitle → ' + k.sayi + ' spool oluştur'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = _kabukBtnLabel(secilenler.length); }
       if (alan) {
         var hata = r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || ''));
         var p = document.createElement('p');
@@ -946,8 +1008,32 @@ async function kabukOnayla() {
     if (dgBtn) { dgBtn.style.display = ''; dgBtn.focus && dgBtn.focus(); }
   } catch (e) {
     console.error('[kabuk] onayla:', e);
-    if (btn) { btn.disabled = false; btn.textContent = '✓ Onayla / Kilitle → ' + k.sayi + ' spool oluştur'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = _kabukBtnLabel(secilenler.length); }
   }
+}
+
+// 109/#4: Onayla buton etiketi (span'lı, canlı sayaç için).
+function _kabukBtnLabel(n) {
+  return '✓ Onayla / Kilitle → <span id="kabukOnaySayi">' + n + '</span> spool oluştur';
+}
+// Tümünü seç/kaldır → her satır checkbox'ını ayarla + sayacı güncelle.
+function kabukTumSec(checked) {
+  document.querySelectorAll('.kabuk-spool-cb').forEach(function(cb) { cb.checked = checked; });
+  kabukSayiGuncelle();
+}
+// Seçili spool sayısını Onayla butonuna yansıt; 0 ise butonu pasifleştir.
+function kabukSayiGuncelle() {
+  var n = document.querySelectorAll('.kabuk-spool-cb:checked').length;
+  var sp = document.getElementById('kabukOnaySayi');
+  if (sp) sp.textContent = n;
+  var btn = document.getElementById('btnKabukOnayla');
+  if (btn) { btn.disabled = (n === 0); btn.style.opacity = (n === 0) ? '.55' : ''; }
+  var uyari = document.getElementById('kabukSecUyari');
+  if (uyari && n > 0) uyari.remove();
+  // Tümü-seç checkbox durumunu eşitle
+  var all = document.getElementById('kabukSelAll');
+  var total = document.querySelectorAll('.kabuk-spool-cb').length;
+  if (all) all.checked = (n === total && total > 0);
 }
 
 function gosterAdim(n) {
@@ -1139,6 +1225,7 @@ function kabukTabloHtml(kabuk, projeNo) {
   h += '<h4>Kabuk Önizlemesi — ' + sp.length + ' spool</h4>';
   h += '<p class="kabuk-alt">Excel\u2019den türetildi (otorite kabuktur). Henüz <strong>kaydedilmedi</strong> — sadece önizleme. Alıştırma kolonu izometri PDF\u2019leri arka planda işlenince dolacak.</p>';
   h += '<div class="kabuk-scroll"><table class="kabuk-tablo"><thead><tr>' +
+       '<th style="width:32px;"><input type="checkbox" id="kabukSelAll" checked onchange="kabukTumSec(this.checked)" title="Tümünü seç / kaldır"></th>' +
        '<th>Marka</th><th>Çap</th><th class="num">Ağırlık (kg)</th>' +
        '<th>Malzeme</th><th>Kalite</th><th>Yüzey</th><th>Alıştırma</th>' +
        '<th class="num">Kalem</th></tr></thead><tbody>';
@@ -1162,8 +1249,11 @@ function kabukTabloHtml(kabuk, projeNo) {
       ? (ARES_NORM.kaliteGoster(kaliteHam) || '')
       : (s.kalite || '');
     var capGoster = (s.cap != null) ? (s.cap.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' mm') : '';
+    // 109/#4: spool seçimi — anahtar grupla modeliyle AYNI (pipeline|spool|rev). Varsayılan seçili.
+    var secKey = (s.pipeline_no || '') + '|' + s.spool_no + '|' + (s.rev || '');
 
     h += '<tr>' +
+      '<td style="text-align:center;"><input type="checkbox" class="kabuk-spool-cb" data-key="' + esc(secKey) + '" checked onchange="kabukSayiGuncelle()"></td>' +
       '<td class="marka">' + esc(marka) + '</td>' +
       '<td>' + (capGoster ? esc(capGoster) : '<span class="bos">—</span>') + '</td>' +
       '<td class="num">' + (s.agirlik_kg != null ? s.agirlik_kg.toFixed(1) : '<span class="bos">—</span>') + '</td>' +
@@ -1178,7 +1268,7 @@ function kabukTabloHtml(kabuk, projeNo) {
   h += '</tbody>';
   if (agirlikVar) {
     h += '<tfoot><tr style="font-weight:700;background:var(--sur2)">' +
-         '<td>Toplam</td><td></td><td class="num">' + toplam.toFixed(1) + '</td>' +
+         '<td></td><td>Toplam</td><td></td><td class="num">' + toplam.toFixed(1) + '</td>' +
          '<td colspan="5"></td></tr></tfoot>';
   }
   h += '</table></div>';
