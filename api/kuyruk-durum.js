@@ -94,11 +94,12 @@ export default async function handler(req, res) {
     const isleniyor = ozetData.isleniyor || 0;
     const hata = ozetData.hata || 0;
     const iptal = ozetData.iptal || 0;
-    const toplam = tamam + bekliyor + isleniyor + hata + iptal;
+    const saklama = ozetData.saklama || 0;   // 086: parse-disi (iso_view) -- terminal, 'tamam' degil
+    const toplam = tamam + bekliyor + isleniyor + hata + iptal + saklama;
 
-    // İlerleme yüzdesi: (tamam + hata + iptal) / toplam
-    // — hata ve iptal de "bitmiş" sayılır, batch durmaz
-    const bitmis = tamam + hata + iptal;
+    // İlerleme yüzdesi: (tamam + hata + iptal + saklama) / toplam
+    // — hata, iptal ve saklama da "bitmiş" sayılır, batch durmaz
+    const bitmis = tamam + hata + iptal + saklama;
     const ilerleme_yuzde = toplam > 0 ? Math.round((bitmis / toplam) * 100) : 0;
     const tamamlandi = bekliyor === 0 && isleniyor === 0 && toplam > 0;
 
@@ -119,6 +120,7 @@ export default async function handler(req, res) {
         tamam,
         hata,
         iptal,
+        saklama,
         toplam,
         ilerleme_yuzde,
         tamamlandi,
@@ -145,7 +147,7 @@ export default async function handler(req, res) {
 // Postgrest GROUP BY desteklemiyor, her durum için ayrı count sorgusu.
 // 5 paralel sorgu = ~50-100ms toplam (paralel olduğu için lineer değil).
 async function durumOzetiCek(batch_id) {
-  const durumlar = ['bekliyor', 'isleniyor', 'tamam', 'hata', 'iptal'];
+  const durumlar = ['bekliyor', 'isleniyor', 'tamam', 'hata', 'iptal', 'saklama'];
 
   const sayim = await Promise.all(
     durumlar.map(async (d) => {

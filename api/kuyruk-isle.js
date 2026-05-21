@@ -108,14 +108,19 @@ export default async function handler(req, res) {
 
     console.log(`[kuyruk-isle] ${bekleyenler.length} kayit alindi, isleniyor...`);
 
+    // Parse-disi format kurallarini bir kez cek (086) -- iso_view gibi dosyalar L3'e gitmez
+    const parseDisiKurallar = await parseDisiKurallariGetir();
+
     let basarili = 0;
     let hata = 0;
+    let saklanan = 0;
 
     // --- 2. Her birini işle (in-process loop) ---
     for (const kayit of bekleyenler) {
       try {
-        const sonuc = await tekKayitIsle(kayit);
-        if (sonuc.basarili) basarili++;
+        const sonuc = await tekKayitIsle(kayit, parseDisiKurallar);
+        if (sonuc.saklandi) saklanan++;
+        else if (sonuc.basarili) basarili++;
         else hata++;
       } catch (e) {
         console.error(`[kuyruk-isle] Kayit ${kayit.id} icin beklenmedik hata:`, e.message);
@@ -152,12 +157,13 @@ export default async function handler(req, res) {
     }
 
     const sure_ms = Date.now() - baslangic;
-    console.log(`[kuyruk-isle] Bitti — islenen: ${bekleyenler.length}, basarili: ${basarili}, hata: ${hata}, kalan: ${kalan}, sure: ${sure_ms}ms`);
+    console.log(`[kuyruk-isle] Bitti — islenen: ${bekleyenler.length}, basarili: ${basarili}, saklanan: ${saklanan}, hata: ${hata}, kalan: ${kalan}, sure: ${sure_ms}ms`);
 
     return res.status(200).json({
       ok: true,
       islenen: bekleyenler.length,
       basarili,
+      saklanan,
       hata,
       kalan_bekleyen: kalan,
       chain_baslatildi,
@@ -173,11 +179,28 @@ export default async function handler(req, res) {
 // =====================================================================
 // TEK KAYIT İŞLEME
 // =====================================================================
-async function tekKayitIsle(kayit) {
+async function tekKayitIsle(kayit, parseDisiKurallar) {
   const { id, batch_id, tenant_id, kullanici_id, storage_path, dosya_adi,
           dosya_sirasi, dosya_toplami, deneme_sayisi } = kayit;
 
   console.log(`[kuyruk-isle] Kayit ${id} basliyor: ${dosya_adi} (deneme: ${deneme_sayisi + 1})`);
+
+  // --- 086: parse-disi format kontrolu (iso_view gibi metni-bos image-PDF) ---
+  // Eslesirse L3'e gonderme: dosya zaten Storage'da kalir (sakla), kayit terminal olur.
+  // 'saklama' durumu metrik kirliligini onler -- 'tamam'/'hata' ile karismaz.
+  const sakla_format = parseDisiEslesme(dosya_adi, parseDisiKurallar);
+  if (sakla_format) {
+    console.log(`[kuyruk-isle] Kayit ${id} SAKLAMA (parse-disi: ${sakla_format}): ${dosya_adi}`);
+    await supaFetch(`is_kuyrugu?id=eq.${id}`, {
+      method: 'PATCH',
+      body: {
+        durum: 'saklama',
+        parse_bitis_at: new Date().toISOString(),
+        hata_mesaji: null,
+      },
+    });
+    return { basarili: true, saklandi: true };
+  }
 
   // --- A. Durumu 'isleniyor' yap (atomic) ---
   await supaFetch(`is_kuyrugu?id=eq.${id}`, {
@@ -323,6 +346,42 @@ async function kalanBekleyenSayisi(batch_id) {
   });
 
   return Array.isArray(data) ? data.length : 0;
+}
+
+// =====================================================================
+// PARSE-DISI FORMATLAR (086 -- iso_view gibi metni-bos image-PDF)
+// =====================================================================
+// parse_disi=true formatlar L3'e gonderilmez. Worker dosya adini bu
+// formatlarin fingerprint.dosya_adi_regex'iyle esler; tutarsa durum=saklama.
+// MK-49.1: izometri-oku.js'e dokunulmadan, format-bazli DB bayragiyla.
+async function parseDisiKurallariGetir() {
+  try {
+    const veri = await supaFetch(
+      `izometri_format_tanimlari?aktif=eq.true&parse_disi=eq.true&select=format_kodu,fingerprint`
+    );
+    if (!Array.isArray(veri)) return [];
+    return veri
+      .map(f => ({
+        format_kodu: f.format_kodu,
+        regex_str: f.fingerprint && f.fingerprint.dosya_adi_regex,
+      }))
+      .filter(k => k.regex_str);
+  } catch (e) {
+    // Bayrak okunamazsa parse normal akista devam etsin (defansif, akisi bozma).
+    console.error('[kuyruk-isle] parse_disi formatlari okunamadi (yutuldu):', e.message);
+    return [];
+  }
+}
+
+// Dosya adi parse-disi formatlardan birine uyuyor mu? Uyan format_kodu'nu doner.
+function parseDisiEslesme(dosya_adi, kurallar) {
+  if (!dosya_adi || !Array.isArray(kurallar)) return null;
+  for (const k of kurallar) {
+    try {
+      if (new RegExp(k.regex_str, 'i').test(dosya_adi)) return k.format_kodu;
+    } catch { /* bozuk regex yutuldu */ }
+  }
+  return null;
 }
 
 // =====================================================================

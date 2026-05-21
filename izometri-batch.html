@@ -71,6 +71,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .d-isleniyor{color:var(--warn);}
 .d-tamam{color:var(--gr);}
 .d-hata{color:var(--re);}
+.d-saklama{color:var(--txd);}
 
 /* Progress */
 .progress-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px 20px;margin-bottom:20px;display:none;}
@@ -390,6 +391,7 @@ function renderDosyalar() {
       : d.durum === 'kuyrukta'   ? '<span class="d-bekliyor">⏸ '+tv('izb_durum_kuyrukta','Kuyrukta')+'</span>'
       : d.durum === 'isleniyor'  ? '<span class="d-isleniyor isleniyor-dot">⏳ '+tv('izb_durum_isleniyor','İşleniyor')+'</span>'
       : d.durum === 'tamam'      ? '<span class="d-tamam">✅ '+tv('izb_durum_tamam','Tamam')+'</span>'
+      : d.durum === 'saklama'    ? '<span class="d-saklama" title="'+tv('izb_durum_saklama_t','Parse edilmeden saklandı (image/3D görünüm)')+'">📦 '+tv('izb_durum_saklama','Saklandı')+'</span>'
       : '<span class="d-hata" title="' + (d.hata||'') + '">❌ '+tv('izb_durum_hata','Hata')+'</span>';
     var spoolText = (d.spooller && d.spooller.length) ? d.spooller.length + ' ' + tv('izb_spool','spool') : '—';
     var boyut = d.file && d.file.size ? (d.file.size / 1024).toFixed(0) + ' KB' : (d._resume ? 'resume' : '—');
@@ -657,6 +659,7 @@ function pollingUygula(durum) {
     var k = kayitMap[ad];
     if (k) {
       d.durum = k.durum === 'tamam' ? 'tamam'
+              : k.durum === 'saklama' ? 'saklama'
               : k.durum === 'hata' ? 'hata'
               : k.durum === 'isleniyor' ? 'isleniyor'
               : 'kuyrukta';
@@ -665,7 +668,7 @@ function pollingUygula(durum) {
   });
   renderDosyalar();
 
-  var bitmis = (durum.ozet.tamam || 0) + (durum.ozet.hata || 0) + (durum.ozet.iptal || 0);
+  var bitmis = (durum.ozet.tamam || 0) + (durum.ozet.hata || 0) + (durum.ozet.iptal || 0) + (durum.ozet.saklama || 0);
   progressGuncelleAsync(bitmis, durum.ozet.toplam || _dosyalar.length, '');
 }
 
@@ -702,8 +705,11 @@ async function batchTamamlandi() {
 
   var tamam = _dosyalar.filter(function(d){ return d.durum === 'tamam'; }).length;
   var hata = _dosyalar.filter(function(d){ return d.durum === 'hata'; }).length;
-  document.getElementById('progressDetail').textContent =
-    tv('izb_tamamlandi','Tamamlandı') + ' — ' + tamam + ' ' + tv('izb_basarili','dosya başarılı') + ', ' + hata + ' ' + tv('izb_stat_hata','hata');
+  var saklanan = _dosyalar.filter(function(d){ return d.durum === 'saklama'; }).length;
+  var detayMetin = tv('izb_tamamlandi','Tamamlandı') + ' — ' + tamam + ' ' + tv('izb_basarili','dosya başarılı');
+  if (saklanan > 0) detayMetin += ', ' + saklanan + ' ' + tv('izb_saklandi_kucuk','saklandı');
+  detayMetin += ', ' + hata + ' ' + tv('izb_stat_hata','hata');
+  document.getElementById('progressDetail').textContent = detayMetin;
 
   renderDosyalar();
 }
@@ -744,7 +750,7 @@ async function aktifBatchKontrol() {
         };
       });
       document.getElementById('progressWrap').style.display = 'block';
-      progressGuncelleAsync(j.ozet.tamam + j.ozet.hata, j.ozet.toplam, '');
+      progressGuncelleAsync((j.ozet.tamam||0) + (j.ozet.hata||0) + (j.ozet.iptal||0) + (j.ozet.saklama||0), j.ozet.toplam, '');
       renderDosyalar();
       await batchTamamlandi();
       return true;
