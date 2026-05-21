@@ -15,7 +15,9 @@
    "adetler": [
     1,
     1
-   ]
+   ],
+   "not_metni": "INTERNATIONAL SHORE CONNECTION DETAYI ICIN BILGE & SLUDGE RESMINE BAKINIZ!",
+   "alistirma_ipucu": null
   }
  },
  {
@@ -31,7 +33,9 @@
    "et_mm": null,
    "malzeme_sayisi": 0,
    "ham_sayisi": 0,
-   "adetler": []
+   "adetler": [],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -53,7 +57,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -73,7 +79,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -93,7 +101,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": "Detaylara NDH52-304-CargoArea AirVent&Sounding sys.resminden bakılacak.",
+   "alistirma_ipucu": null
   }
  },
  {
@@ -117,7 +127,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -137,7 +149,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -159,7 +173,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": null,
+   "alistirma_ipucu": null
   }
  },
  {
@@ -180,7 +196,9 @@
     1,
     1,
     1
-   ]
+   ],
+   "not_metni": "Boru ağızları Körlenecek. DN25 Drain yapılacak.",
+   "alistirma_ipucu": null
   }
  },
  {
@@ -199,7 +217,9 @@
    "adetler": [
     1,
     2
-   ]
+   ],
+   "not_metni": "DN300 flangler Alıştırma Parçasıdır Kaynatma",
+   "alistirma_ipucu": "KISMI"
   }
  }
 ]

@@ -2,7 +2,7 @@
 // Calistir: node test/l2-tersan-test.mjs
 // parser_kural'i (test/l2-tersan-kural.json) lib/l2-parser.js ile gercek + sentetik ornege karsi
 // dogrular. izometri_format_tanimlari.parser_kural ile AYNI olmali (DB <-> repo senkron).
-// Kapsar: spool alanlari, malzeme listesi, dn, adet (iki-haneli No / BUG1), NOT-disi (BUG2).
+// Kapsar: spool alanlari, malzeme listesi, dn, adet (iki-haneli No / BUG1), NOT-disi (BUG2), not_metni + alistirma_ipucu (Oturum 106).
 import { parse } from '../lib/l2-parser.js';
 import fs from 'fs';
 import path from 'path';
@@ -32,6 +32,8 @@ for (const fx of fixtures) {
       const a = ml.map(m=>m.adet??null);
       if (JSON.stringify(a) !== JSON.stringify(b.adetler)) hatalar.push(`adet ${JSON.stringify(a)}!=${JSON.stringify(b.adetler)}`);
     }
+    if (b.not_metni !== undefined && (sp.not_metni||null) !== (b.not_metni||null)) hatalar.push(`not_metni ${JSON.stringify(sp.not_metni)}!=${JSON.stringify(b.not_metni)}`);
+    if (b.alistirma_ipucu !== undefined && (sp.alistirma_ipucu||null) !== (b.alistirma_ipucu||null)) hatalar.push(`alistirma_ipucu ${sp.alistirma_ipucu}!=${b.alistirma_ipucu}`);
     // BUG1 guard: malzeme tanimi rakamla baslamamali ("1Flans" hatasi)
     const kirli = ml.filter(m => /^\d/.test(m.tanim||'')).map(m=>m.tanim.slice(0,15));
     if (kirli.length) hatalar.push(`tanim rakamla basliyor: ${JSON.stringify(kirli)}`);
