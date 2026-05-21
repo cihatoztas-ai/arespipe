@@ -1,20 +1,20 @@
 {
-  "tarih": "2026-05-21T12:20:24.957Z",
-  "commit_sha": "280ec54695fe802397a7f2a75ba644906f5cb047",
+  "tarih": "2026-05-21T15:35:41.101Z",
+  "commit_sha": "dd178bab36d4fa62124b509c9c08e06a4fbfe6ed",
   "commit_ref": "main",
-  "workflow_run": 913,
+  "workflow_run": 914,
   "ozet": {
     "hata": 0,
-    "uyari": 67,
+    "uyari": 70,
     "taranan_dosya": 114,
-    "sorunlu_dosya": 4,
+    "sorunlu_dosya": 5,
     "durum": "sari"
   },
   "kurallar": {
     "G03_HAM_MALZEME": {
       "tip": "uyari",
       "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
+      "sayi": 2,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -22,19 +22,33 @@
           "satirlar": [
             2227
           ]
+        },
+        {
+          "dosya": "devre_wizard.html",
+          "sayi": 1,
+          "satirlar": [
+            1119
+          ]
         }
       ]
     },
     "G03_HAM_YUZEY": {
       "tip": "uyari",
       "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
+      "sayi": 2,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
             1510
+          ]
+        },
+        {
+          "dosya": "devre_wizard.html",
+          "sayi": 1,
+          "satirlar": [
+            1121
           ]
         }
       ]
@@ -129,6 +143,20 @@
             3685,
             3689,
             3691
+          ]
+        }
+      ]
+    },
+    "G03_HAM_KALITE": {
+      "tip": "uyari",
+      "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "devre_wizard.html",
+          "sayi": 1,
+          "satirlar": [
+            1120
           ]
         }
       ]
@@ -331,6 +359,31 @@
           "tip": "uyari",
           "satir": 2555,
           "mesaj": "tv('dv_onay_review') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "devre_wizard.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 3,
+      "hatalar": [
+        {
+          "kod": "G03_HAM_MALZEME",
+          "tip": "uyari",
+          "satir": 1119,
+          "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
+        },
+        {
+          "kod": "G03_HAM_KALITE",
+          "tip": "uyari",
+          "satir": 1120,
+          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
+        },
+        {
+          "kod": "G03_HAM_YUZEY",
+          "tip": "uyari",
+          "satir": 1121,
+          "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
     },
