@@ -280,7 +280,7 @@ Belge yazımı maliyetli. Hiçbir insan "51 tablomuz var" kısmını sürekli g�
 - **Web sayfa:** 47
 - **Mobil ekran (React):** 17
 - **Tablo:** 53
-- **API endpoint:** 9
+- **API endpoint:** 10
 - **CI kural:** 170 (7 kategori)
 - **Migration dosyası:** 84
 <!-- AUTO-END:istatistikler -->
