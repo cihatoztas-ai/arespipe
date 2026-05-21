@@ -43,6 +43,24 @@
     return {dis_cap:isFinite(n)?n:null, et:null};
   }
 
+  // ── YÜZEY: kabuk satırlarından spool yüzeyi türet (109/B1).
+  //    Önce r.yuzey alanı, sonra system token'ı ("M100-Galv"). Ham etiket döner ("Galvaniz");
+  //    koda çevirim aktar()'da ARES_NORM.yuzeyKod ile yapılır. (wizard.yuzeyCikar ile AYNI mantık —
+  //    önizleme [kabukTuret] ile INSERT [grupla] aynı yüzeyi göstersin diye birebir.)
+  function _yuzeyTokenden(s){
+    var n=String(s||'').toLowerCase();
+    if(n.indexOf('galv')!==-1)return 'Galvaniz';
+    if(n.indexOf('boyal')!==-1||n.indexOf('boya')!==-1||n.indexOf('paint')!==-1)return 'Boyalı';
+    if(n.indexOf('asit')!==-1||n.indexOf('pickl')!==-1)return 'Asitleme';
+    if(n.indexOf('epoks')!==-1||n.indexOf('epoxy')!==-1)return 'Epoksi';
+    return '';
+  }
+  function _yuzeyHamCikar(rows){
+    for(var i=0;i<rows.length;i++){ if(rows[i].yuzey){ var y=_yuzeyTokenden(rows[i].yuzey); return y||String(rows[i].yuzey).trim(); } }
+    for(var j=0;j<rows.length;j++){ if(rows[j].system){ var y2=_yuzeyTokenden(rows[j].system); if(y2)return y2; } }
+    return '';
+  }
+
   // ── GRUPLA: parse_sonuc.satirlar → gruplu spool modeli (gruplama + aynı özellikteki kalemleri topla)
   //    (devre_detay._onayGrupla AYNEN). ps: { satirlar:[...], secilen, guven }
   //    Dönen: { spoollar:[{pipeline,spoolNo,rev,anaMalzeme,toplamKg,bom:[...]}], atanmamis, secilenSayfa, guven }
@@ -88,7 +106,7 @@
       var mc={};s.kalemler.forEach(function(r){if(r.malzeme){mc[r.malzeme]=(mc[r.malzeme]||0)+1;}});
       var anaMalzeme=Object.keys(mc).sort(function(a,b){return mc[b]-mc[a];})[0]||'';
       var topKg=s.kalemler.reduce(function(t,r){return t+(parseFloat(r.agirlik_kg)||0);},0);
-      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,bom:konsolide(s.kalemler)};
+      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:konsolide(s.kalemler)};
     });
     return {spoollar:spoollar,atanmamis:atanmamis,secilenSayfa:ps.secilen||'',guven:ps.guven||0};
   }
@@ -101,7 +119,10 @@
   //      tid,                  // tenant_id (zorunlu)
   //      devreId,              // devre id (zorunlu)
   //      spoollar,             // grupla().spoollar (zaten seçilmiş/filtrelenmiş aday liste, zorunlu)
-  //      yuzey,                // opsiyonel yüzey kodu (null olabilir)
+  //      yuzey,                // opsiyonel TEK yüzey kodu (tüm spool'lara — devre_detay modalı böyle)
+  //      perSpoolYuzey,        // 109/B1: true ise her spool kendi yuzeyHam'ından kod alır (wizard).
+  //                            //   yuzeyHam boşsa yine `yuzey` param'ına düşer. devre_detay GÖNDERMEZ
+  //                            //   → eski davranış (tek yüzey) korunur, sıfır regresyon.
   //      kuyrukIds             // opsiyonel: tamamlandı işaretlenecek dosya_isleme_kuyrugu id dizisi
   //                            //   (devre_detay tek id → [id]; wizard N BOM Excel → tümü)
   //    }
@@ -113,6 +134,7 @@
     var supa=opts.supa, tid=opts.tid, devreId=opts.devreId;
     var spoollar=(opts.spoollar||[]).slice();
     var yuzeySec=opts.yuzey||null;
+    var perSpool=opts.perSpoolYuzey===true;
     var kuyrukIds=opts.kuyrukIds||[];
     if(!supa||!tid||!devreId){return {ok:false,hata:'ortam'};}      // Tenant/devre/db eksik
     if(!spoollar.length){return {ok:false,hata:'sec'};}             // Aktarılacak spool yok
@@ -151,13 +173,19 @@
         var sid=tkod?(tkod+'-'+no):String(no);
         var anaBoru=s.bom.filter(function(b){return b.tip==='boru';}).sort(function(a,b){return (b.boy_mm||0)-(a.boy_mm||0);})[0];
         var bp=boyutParse(anaBoru?anaBoru.dn:'');
+        // 109/B1: per-spool yüzey — perSpoolYuzey=true ise spool kendi yuzeyHam'ından kod alır
+        // (önizlemede gösterilen yüzey DB'ye de yazılsın). Boşsa tek `yuzey` param'ına düşer.
+        var yz=yuzeySec;
+        if(perSpool && s.yuzeyHam && typeof ARES_NORM!=='undefined' && ARES_NORM.yuzeyKod){
+          yz=ARES_NORM.yuzeyKod(s.yuzeyHam)||yuzeySec;
+        }
         spoolRows.push({
           tenant_id:tid, devre_id:devreId,
           spool_no:s.spoolNo, spool_id:sid,
           pipeline_no:s.pipeline||null, rev:s.rev||'',
           malzeme:malKod(s.anaMalzeme), kalite:s.anaMalzeme||null,
           dis_cap_mm:bp.dis_cap, et_kalinligi_mm:bp.et,
-          agirlik:s.toplamKg||0, agirlik_kg:s.toplamKg||0, yuzey:yuzeySec,
+          agirlik:s.toplamKg||0, agirlik_kg:s.toplamKg||0, yuzey:yz,
           durum:'Bekliyor', is_durumu:'bekliyor', ilerleme:0, durduruldu:false,
           cizim_durumu:'bekliyor',
           aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:null

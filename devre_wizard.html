@@ -918,7 +918,7 @@ async function kabukOnayla() {
     var model = ARES_KABUK.grupla({ satirlar: k.satirlar });   // tam BOM modeli (devre_detay ile aynı)
     var r = await ARES_KABUK.aktar({
       supa: supa, tid: k.tid, devreId: k.devreId,
-      spoollar: model.spoollar, yuzey: null, kuyrukIds: k.bomIds
+      spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: k.bomIds
     });
     if (!r.ok) {
       if (btn) { btn.disabled = false; btn.textContent = '✓ Onayla / Kilitle → ' + k.sayi + ' spool oluştur'; }
