@@ -1,7 +1,8 @@
 // Tersan L2 parser regresyon testi (Oturum 105, MK-51.2)
 // Calistir: node test/l2-tersan-test.mjs
-// parser_kural'i (test/l2-tersan-kural.json) lib/l2-parser.js ile 9 gercek ornege karsi
+// parser_kural'i (test/l2-tersan-kural.json) lib/l2-parser.js ile gercek + sentetik ornege karsi
 // dogrular. izometri_format_tanimlari.parser_kural ile AYNI olmali (DB <-> repo senkron).
+// Kapsar: spool alanlari, malzeme listesi, dn, adet (iki-haneli No / BUG1), NOT-disi (BUG2).
 import { parse } from '../lib/l2-parser.js';
 import fs from 'fs';
 import path from 'path';
@@ -23,9 +24,17 @@ for (const fx of fixtures) {
     if ((sp.spool_no||null) !== b.spool_no) hatalar.push(`spool_no ${sp.spool_no}!=${b.spool_no}`);
     if ((sp.agirlik_kg??null) !== b.agirlik_kg) hatalar.push(`agirlik ${sp.agirlik_kg}!=${b.agirlik_kg}`);
     if ((sp.yuzey||null) !== b.yuzey) hatalar.push(`yuzey ${sp.yuzey}!=${b.yuzey}`);
+    if (b.dn !== undefined && (sp.dn??null) !== b.dn) hatalar.push(`dn ${sp.dn}!=${b.dn}`);
     if (ml.length !== b.malzeme_sayisi) hatalar.push(`malzeme ${ml.length}!=${b.malzeme_sayisi}`);
     const ham = ml.filter(m=>m.ham_satir).length;
     if (ham !== b.ham_sayisi) hatalar.push(`ham ${ham}!=${b.ham_sayisi}`);
+    if (Array.isArray(b.adetler)) {
+      const a = ml.map(m=>m.adet??null);
+      if (JSON.stringify(a) !== JSON.stringify(b.adetler)) hatalar.push(`adet ${JSON.stringify(a)}!=${JSON.stringify(b.adetler)}`);
+    }
+    // BUG1 guard: malzeme tanimi rakamla baslamamali ("1Flans" hatasi)
+    const kirli = ml.filter(m => /^\d/.test(m.tanim||'')).map(m=>m.tanim.slice(0,15));
+    if (kirli.length) hatalar.push(`tanim rakamla basliyor: ${JSON.stringify(kirli)}`);
   }
   if (hatalar.length) { kaldi++; console.error(`FAIL ${fx.ad}: ${hatalar.join(', ')}`); }
   else { gecti++; console.log(`OK   ${fx.ad}`); }

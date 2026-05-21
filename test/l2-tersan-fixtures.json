@@ -7,10 +7,15 @@
    "spool_no": "S01_1",
    "agirlik_kg": 20.3,
    "yuzey": "Galvaniz",
+   "dn": 50,
    "cap_mm": 60.3,
    "et_mm": 4.5,
    "malzeme_sayisi": 2,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1
+   ]
   }
  },
  {
@@ -21,10 +26,12 @@
    "spool_no": null,
    "agirlik_kg": null,
    "yuzey": null,
+   "dn": null,
    "cap_mm": null,
    "et_mm": null,
    "malzeme_sayisi": 0,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": []
   }
  },
  {
@@ -35,10 +42,18 @@
    "spool_no": "S01",
    "agirlik_kg": 19.8,
    "yuzey": "Galvaniz",
+   "dn": 200,
    "cap_mm": 219.1,
    "et_mm": 8.8,
    "malzeme_sayisi": 5,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -49,10 +64,16 @@
    "spool_no": "S01",
    "agirlik_kg": 12,
    "yuzey": "Galvaniz",
+   "dn": 50,
    "cap_mm": 60.3,
    "et_mm": 4.5,
    "malzeme_sayisi": 3,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -63,10 +84,16 @@
    "spool_no": "S01",
    "agirlik_kg": 17.8,
    "yuzey": "Galvaniz",
+   "dn": 50,
    "cap_mm": 60.3,
    "et_mm": 4.5,
    "malzeme_sayisi": 3,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -77,10 +104,20 @@
    "spool_no": "S01",
    "agirlik_kg": 66.7,
    "yuzey": "Paslanmaz",
+   "dn": 125,
    "cap_mm": null,
    "et_mm": null,
    "malzeme_sayisi": 7,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -91,10 +128,16 @@
    "spool_no": "S01",
    "agirlik_kg": 5.3,
    "yuzey": "Galvaniz",
+   "dn": 40,
    "cap_mm": 48.3,
    "et_mm": 4.5,
    "malzeme_sayisi": 3,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -105,10 +148,18 @@
    "spool_no": "S01",
    "agirlik_kg": 30.6,
    "yuzey": "CUNIFE",
+   "dn": 200,
    "cap_mm": 219,
    "et_mm": 3,
    "malzeme_sayisi": 5,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
   }
  },
  {
@@ -119,10 +170,36 @@
    "spool_no": "S02",
    "agirlik_kg": 111.7,
    "yuzey": "Siyah",
+   "dn": 300,
    "cap_mm": 323.9,
    "et_mm": 4,
    "malzeme_sayisi": 4,
-   "ham_sayisi": 0
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    1,
+    1,
+    1
+   ]
+  }
+ },
+ {
+  "ad": "SENTETIK_iki_haneli_No_ve_NOT",
+  "metin": "x\n-S05\n10-01-25\n5 kg\nGalvaniz\n101Flanş Düz Çelik  PN10 - 2.2 SertifikalıDN300 10ST3713.7\n122Flanş Düz Çelik  PN16 - 2.2 SertifikalıDN50 8ST375.88\nNOT: ,DN300 flangler Alıştırma Parçasıdır Kaynatma\n",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S05",
+   "agirlik_kg": 5,
+   "yuzey": "Galvaniz",
+   "dn": 300,
+   "cap_mm": null,
+   "et_mm": null,
+   "malzeme_sayisi": 2,
+   "ham_sayisi": 0,
+   "adetler": [
+    1,
+    2
+   ]
   }
  }
 ]
