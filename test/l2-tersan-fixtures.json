@@ -1,0 +1,128 @@
+[
+ {
+  "ad": "1779340218684_G200-303S-BS18_1_5__S01_1_1.pdf",
+  "metin": "\n\nFR. AFT\nFR. TOP\n1676\nFR. SB\n1416260\n1227\n1227\n260\n150\n1416\n1676\n150\nUP\nPS\nFW\nUP\nFW\nPS\n-S01_1\n-G200-303S-BS18\n17-02-25\n20.3 kg\nB1110\nGalvaniz\nvkaya\n1(1)\nBV Pipe Class III\n303S-Sludge System-G200 -\nNOT: ,INTERNATIONAL SHORE CONNECTION DETAYI ICIN BILGE & SLUDGE RESMINE BAKINIZ!\n303S-Sludge System-G200 -\n1Boru Dikişsiz Çelik - 2.2 Sertifikalı60.3x4.52877 ST3717.813\n21Boru Ucuna Victaulic için Groove acılacakDN50 OD:60 0.2St*0\n31Uluslararası Sahil Bağlantı Flenci PN16DN50 9ST372.46\nS01_1-12876\n10970130\n13590130\n13720\n1287660.3x4.5\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n30°\n260\n150\n1226\n300\n1416\n1227\n2\n3\n11\n30°\nMAIN DECK-11300/11000+1849\nMAIN DECK-11300/11000+1709\nN\nUP\nR=130.0\nR=130.0\n187\nFR80\n4684\nCL\n1849\nMAIN DECK-11300/11000\n340\nFR81\n6360\nCL\n1765\nMAIN DECK-11300/11000",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01_1",
+   "agirlik_kg": 20.3,
+   "yuzey": "Galvaniz",
+   "cap_mm": 60.3,
+   "et_mm": 4.5,
+   "malzeme_sayisi": 2,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "1779340241198_G200-303S-BS18_1_5__1.pdf",
+  "metin": "\n\nUp\nFW\nPS\nSB\n-S01_\nG200-303S-BS18 1(\n17-02-25\n21 kg\nB1110\nGalvaniz\nvkaya\n1()\n303S-Sludge System-G200\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n2\n1\n3\n1\nMAIN DECK-11300/11000+1849\nMAIN DECK-11300/11000+1709\nS01_1\nG200-303S-BS18\nR=130.0\nR=130.0\nContinue: G200-303S-BS18 3(5)\nContinue: G200-303S-BS18 3(5)\n187\nFR80\n4684\nCL\n1849\nMAIN DECK-11300/11000\n340\nFR81\n6360\nCL\n1765\nMAIN DECK-11300/11000",
+  "beklenen": {
+   "ok": false,
+   "spool_no": null,
+   "agirlik_kg": null,
+   "yuzey": null,
+   "cap_mm": null,
+   "et_mm": null,
+   "malzeme_sayisi": 0,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "571-Hvac-Penetration-Stronger-G400-Iso_1_2__S01_1.pdf",
+  "metin": "\n\n267267\n239\n239\nFR. TOP\nFR. AFT\nFR. SB\nUP\nFWFW\nUP\nPS\nPS\n-S01\n-571-Hvac-Penetra\n17-03-25\n19.8 kg\nB1110\nGalvaniz\nfbahadir\n1(1)\n571-Hvac-Penetration-Stronger-G400-Iso -\nNOT: ,\n571-Hvac-Penetration-Stronger-G400-Iso -\n1Boru Dikişli Çelik ST37- 2.2 Sertifikalı219.1x8.8159 ST377.2370\n2Boru Dikişli Çelik ST37- 2.2 Sertifikalı219.1x8.8133 ST376.0197\n3Boru Dikişli Çelik ST37- 2.2 Sertifikalı219.1x8.8159 ST377.2370\n4Boru Dikişli Çelik ST37- 2.2 Sertifikalı219.1x8.8160 ST377.2665\n51Çelik Alın Kaynağı - SahaDN200 3ST370\n1159219.1x8.\n2132219.1x8.\n3159219.1x8.\n4159219.1x8.\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n60°\n50\n87\n30°\n87\n50\n130\n100\n100\n103\n3\n106\n4\n3\n1\n2\n5\n1\n4\n3\n2\n30°\n30°\n30°\nN\nUP\n1\n2\n3\n4\n140\nFR26\n2577\nCL\n459\nOFFICER DECK\n140\nFR26\n2820\nCL\n192\nOFFICER DECK",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 19.8,
+   "yuzey": "Galvaniz",
+   "cap_mm": 219.1,
+   "et_mm": 8.8,
+   "malzeme_sayisi": 5,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "AT110-306-037_S01_1.pdf",
+  "metin": "\n\n462462\n690\n690\nFR. AFTFR. SBFR. TOP\nPS\nUP\nFW\nUPPS\nFW\n-S01\nAT110-306-037\n18-04-25\n12 kg\nB1110\nGalvaniz\nugunes\n1(1)\nBV Pipe Class III\n306-Tank Vent. System-AT110-Galv\nNOT: ,\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n1Boru Dikişsiz Çelik - 2.2 Sertifikalı60.3x4.51097 ST376.7889\n21Ic Bilezik Detay B ST37DN50  L=100 10ST372.48\n31Ic Bilezik Detay B ST37DN50  L=100 10ST372.48\nS01-11096\n3320130\n5600\n1109660.3x4.5\n467\n695\n472\n700\nFR25 - 165\nCL - 10600\nPOOP DECK + 13\n G310-306-037\nContinue:\nPOOP DECK - 459\nCL - 9900\nFR25 - 165\nContinue:\n M255-306-037/S01\n3\n1\n2\n1\nN\nUP\nR=130.0\n3\n4\n2\n1",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 12,
+   "yuzey": "Galvaniz",
+   "cap_mm": 60.3,
+   "et_mm": 4.5,
+   "malzeme_sayisi": 3,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "D120-304-TK202_S01_1.pdf",
+  "metin": "\n\n1746\n1746\n1746\nFR. AFT\nFR. TOP\n1746\nFR. SB\nUP\nFWFW\nUP\nPS\nPS\n-S01\n-D120-304-TK202\n11-01-25\n17.8 kg\nB1110\nGalvaniz\nvkaya\n1(1)\nBV Pipe Class III\n304-Tank Sounding System-D120-Galv. -\nNOT: ,Detaylara NDH52-304-CargoArea AirVent&Sounding sys.resminden bakılacak.\n304-Tank Sounding System-D120-Galv. -\n1Boru Dikişsiz Çelik - 2.2 Sertifikalı60.3x4.52500 ST3715.480\n21Ic Bilezik Detay C L150 ST37DN50  L=150 10ST372.48\n31Çelik Alın Kaynağı - SahaDN50 3ST370\n1250060.3x4.5\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n45°\n1748\n1748\n299\n2472\n2171\n3\n1\n3\n2\n1\nN\nUP\n194\nFR169\n3439\nCL\n31\nBL\n194\nFR169\n5187\nCL\n219\nBL1500/1650\n194\nFR169\n4970\nCL\n6\nBL1500/1650\n194\nFR169\n4977\nCL\n13\nBL1500/1650",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 17.8,
+   "yuzey": "Galvaniz",
+   "cap_mm": 60.3,
+   "et_mm": 4.5,
+   "malzeme_sayisi": 3,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "G200-355-255-Suction_1_35__S01_1.pdf",
+  "metin": "\n\n143143\nFR. SB\nFR. AFT\nFR. TOP\n3894\n5301\n1103\n304\n11033894\n5301\n304\nUP\nPS\nFW\nUP\nFW\nPS\n-S01\n-G200-355-255-Suc\n10-01-25\n66.7 kg\nB1110\nPaslanmaz\nvkaya\n1(1)\nBV Pipe Class III\n355C-Chilled Water System-G200-St.St -\nNOT: ,\n355C-Chilled Water System-G200-St.St -\n1Boru Dikişsiz Paslanmaz 316L SCH10S - 2.2 Sertifik5\" Sch 10S5301 316L61.279\n2Boru Dikişsiz Paslanmaz 316L SCH10S - 2.2 Sertifik2\" Sch 10S70 316L0.2731\n3Boru Dikişsiz Paslanmaz 316L SCH10S - 2.2 Sertifik2\" Sch 10S70 316L0.2750\n41Boru Ucuna Victaulic için Groove acılacakDN125 OD:141 0.2St.St0\n51Boru Ucuna Victaulic için Groove acılacakDN125 OD:141 0.2St.St0\n61Flanş Düz Paslanmaz PN16 AISI316 - 2.2 SertifikalıDN50 9AISI 316L2.46\n71Flanş Düz Paslanmaz PN16 AISI316 - 2.2 SertifikalıDN50 9AISI 316L2.46\n153015\" Sch 1\n2702\" Sch 1\n3702\" Sch 1\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n3894\n142\n143\n1103\n304\n5301\n4\n1\n5\n2\n7\n3\n6\n1\n2\n3\nN\nUP\n91\nFR175\n410\nCL\n1596\nMAIN DECK\n310\nFR168\n410\nCL\n1596\nMAIN DECK\n213\nFR175\n410\nCL\n1453\nMAIN DECK\n84\nFR173\n410\nCL\n1453\nMAIN DECK",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 66.7,
+   "yuzey": "Paslanmaz",
+   "cap_mm": null,
+   "et_mm": null,
+   "malzeme_sayisi": 7,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "M100-303-025-P2_1_4__S01_1.pdf",
+  "metin": "\n\nFR. TOP\n104\nFR. AFT\nFR. SB\n254\n104\n254\nPS\nUP\nPS\nFWFW\nUP\n-S01\n-M100-303-025-P2\n09-01-25\n5.3 kg\nB1110\nGalvaniz\nugunes\n1(1)\nBV Pipe Class III\n303-Bilge System-M100-Part2 -\nNOT: ,\n303-Bilge System-M100-Part2 -\n1Boru Dikişsiz Çelik - 2.2 Sertifikalı48.3x4.5312 ST371.5146\n31Flanş Düz Çelik  PN16 - 2.2 SertifikalıDN40 8ST371.85\n41Flanş Düz Çelik  PN16 - 2.2 SertifikalıDN40 8ST371.85\nS01-131210\n10096\n1500\n131248.3x4.5\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n254\n104\n2\n106\n2\n4\n1\n3\n1\nTT_1800+1590\nN\nUP\nR=96.5\nFR27\n4311\nCL\n1590\nTT_1800\nFR27\n4417\nCL\n1844\nTT_1800",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 5.3,
+   "yuzey": "Galvaniz",
+   "cap_mm": 48.3,
+   "et_mm": 4.5,
+   "malzeme_sayisi": 3,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "M110-317-022-P2_1_2__S01_1.pdf",
+  "metin": "\n\n1149\n1149\nFR. AFT\nFR. TOPFR. SB\n678678\nPS\nUP\nFW\nUP\nPS\nFW\n-S01\n-M110-317-022-P2\n10-03-25\n30.6 kg\nB1110\nCUNIFE\nssdanis\n1(1)\nBV Pipe Class III\n317-Sea Water Cooling System-M110-CuNiFe-Part2 -\nNOT: ,\n317-Sea Water Cooling System-M110-CuNiFe-Part2 -\n1Boru Dikişsiz CuN10Fe1,6Mn DIN 86018 - 3.1 Sertifi219.0x3.0845 CuNi10Fe1.15.289\n2Boru Dikişsiz CuN10Fe1,6Mn DIN 86018 - 3.1 Sertifi219.0x3.0373 CuNi10Fe1.6.7531\n31Dirsek 1.5D - CuNi10Fe1.6Mn - 2.2 Sertifikalı219.0x3.0 305CuNi10Fe1.8.7\n41Boru Ucuna Victaulic için Groove acılacakDN200 0.20\n51Boru Ucuna Victaulic için Groove acılacakDN200 0.20\n1844219.0x3.\n2373219.0x3.\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n678\n1149\n678\n1149\n5\n2\n3\n1\n4\n2\n1\nMEZZ. DECK-5600-365\nN\nUP\n255\nFR33\n3722\nCL\n313\nMEZZ. DECK-5600\n255\nFR33\n4871\nCL\n365\nMEZZ. DECK-5600",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S01",
+   "agirlik_kg": 30.6,
+   "yuzey": "CUNIFE",
+   "cap_mm": 219,
+   "et_mm": 3,
+   "malzeme_sayisi": 5,
+   "ham_sayisi": 0
+  }
+ },
+ {
+  "ad": "M110-332-AUX1_1_2__S02_1.pdf",
+  "metin": "\n\nFR. TOP\nFR. AFT\n372\nFR. SB\n372\n26902690\n2274\n215\n202\n2274\n215\n202\nUP\nFWFW\nPS\nUP\nPS\n-S02\n-M110-332-AUX1\n09-01-25\n111.7 kg\nB1110\nSiyah\nvkaya\n1(1)\nBV Pipe Class III\n332-Exhaust System-M110 -\nNOT: ,Boru ağızları Körlenecek. DN25 Drain yapılacak.\n332-Exhaust System-M110 -\n1Boru Dikişli Çelik ST37- 2.2 Sertifikalı323.9x4.02681 ST3784.695\n2Boru Dikişli Çelik ST37- 2.2 Sertifikalı323.9x4.0416 ST3713.140\n31Flanş Düz Egsoz PN6 DIN 86044 - 2.2 SertifikalıDN300 10ST379.83\n41Flanş Düz Egsoz PN6 DIN 86044 - 2.2 SertifikalıDN300 10ST379.83\n12680323.9x4.\n2416323.9x4.\nA\nB\nC\nD\nE\nF\n87654321\nDrawing symbolsDrawing symbols\nSPOOL NAME\nWELDING NUMBERCUT NUMBER\nPART NUMBER\nNoAdetAçıklamaBoyutBoyMalzemeAğırlık\nMalzeme Listesi\nSpool-CutCut\nLength\nSet Length\n/Transport\nRotationAngleCut Away\nSt/Btw/End\nCut & Bending InfoCut & Bending Info\nTITLE:\nCHECK BY:DRAWN:SHEET:\nDATE:\nSPOOL NO:\nPRJ NO:REV:\nSurface Treatment:\nPIPE NO:\nTotal Weight:\n30°\n372\n216\n430\n2273\n2690\n417\n4\n2\n3\n1\n2\n1\nN\nUP\n54\nFR7\n872\nCL\n690\nPOOP DECK\n274\nFR8\n872\nCL\n902\nBOAT DECK\n273\nFR8\n872\nCL\n892\nPOOP DECK",
+  "beklenen": {
+   "ok": true,
+   "spool_no": "S02",
+   "agirlik_kg": 111.7,
+   "yuzey": "Siyah",
+   "cap_mm": 323.9,
+   "et_mm": 4,
+   "malzeme_sayisi": 4,
+   "ham_sayisi": 0
+  }
+ }
+]
