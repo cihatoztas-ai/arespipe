@@ -1,55 +1,52 @@
-# CLAUDE-SON-OTURUM — Oturum 104 (20 May 2026)
+# CLAUDE-SON-OTURUM — Oturum 105 (21 May 2026)
 
 ## Tema
-İzometri batch sayfasının toparlanması + maliyet/strateji netleştirme. (Wizard PDF parse'a
-girilmedi — Cihat'ın yönlendirmesiyle önce batch hattı bitirildi; wizard en sona alındı.)
+"Küçük temizlik" açıldı; İş 1 canlıya alındı, İş 2 ölçümle B-geometri Faz 1'e dönüştü ve Faz 1
+tamamlandı (Tersan İmalat L2 parser_kural). PAOR ana çizim feasibility kapatıldı (MK-105.6).
 
-## Yapılanlar (3 deploy)
+## İş 1 — iso_view parse-dışı (CANLI, f45ceae)
+Ölçüm: `paor_aveva_iso_view` ai_api_log'da YOK → boşa para $0; İş 1 ÖNLEYİCİ. Tasarım A/B → B
+('saklama' yeni durum; metrik kirliliği yok, 080 ile tutarlı). Tespit = format-flag (parse_disi, DB-driven),
+hardcode regex değil. Migration 086 (parse_disi + 'saklama' durum, DROP+ADD, dry-run sonrası kalıcı).
+kuyruk-isle.js worker filtresi + kuyruk-durum.js + izometri-batch.html UI. izometri-oku'ya DOKUNULMADI.
 
-### 104-A — İncele her zaman açılır + AI güven renklendirme
-- `izometri-batch.html`: `btnIncele` ("Sonuçları İncele") her zaman erişilebilir giriş; spool varsa
-  `batchTamamlandi` aktifleştirir. Satır içi İncele butonu artık tüm satırlarda (manuel ternary kalktı).
-- `izometri-batch-incele.html`: `guvenSinif()` + `guvenPill()` (≥0.85 yüksek/yeşil, ≥0.65 orta/amber,
-  altı düşük/kırmızı, sayı yoksa bilinmiyor/gri). Spool başlığına `gv-*` rengi. DN/Et null → `.deger-eksik`
-  kırmızı "eksik". CSS: `.guven-pill`, `.spool-head-baslik.gv-orta/.gv-dusuk`, `.deger-eksik`.
+## B-geometri Faz 1 — Tersan İmalat L2 (DB CANLI, commit BEKLİYOR)
+### Süreç
+- lib/l2-parser.js = jenerik regex_text parser. **Server pdf-parse** (jammed metin) kullanıyor →
+  regex'ler ona göre. Kod değişmedi.
+- 1 örnekteki taslak regex'ler 7 yeni örnekte kırıldı (SCH/inç boyut, CuNi/316L, ağırlıksız satırlar,
+  kesik pipeline) → **MK-51.2 doğrulandı.** 8 örneğe karşı kapsamlı kural yazıldı.
+- 7 satır tipi (boru-mm, boru-SCH, groove, kaynak, Ic Bilezik, Dirsek, Flanş) × ST37/316L/AISI/CuNi/St.St/St*.
+  Türkçe karakter yok (tetikleyici ASCII, tanım `.+?`).
+- **8/8, 0 ham** (7 detay tam + 1 montaj doğru red). Lokal harness = test düzeneği.
 
-### 104-B — Batch sadeleştirme + tek akış + legend
-- Drop zone: padding 48→20, ikon 48→30, başlık 20→16, margin 20→14.
-- Stat kutuları (statRow + 5 kart) HTML kaldırıldı; `renderDosyalar`'dan statIds + stat-set + btnMan
-  blokları temizlendi (dangling getElementById SIFIR — node --check + grep ile doğrulandı).
-- "Manuel Onay" butonu (İncele ile redundant) + "Excel İndir" butonu (Excel onaydan sonra) HTML kaldırıldı;
-  reset/basla/batchTamamlandi'daki btnExcel/btnManuel referansları temizlendi.
-- İncele üstüne `.guven-legend` (Yüksek ≥85% / Orta 65-84% / Düşük <65% / eksik).
-- `excelIndir`/`manuelOnayAc` ölü kod kaldı (çağrılmıyor, zararsız).
+### Deploy
+- **Migration 087:** dollar-quote (`$pk$…$pk$::jsonb`) parser_kural, **HER İKİ Tersan formatına**
+  (MK-105.4 = A; tie-break-proof). DB uygulandı, teyit 2 satır / satir_tipi=7.
+- **test/** 3 dosya: l2-tersan-kural.json (ayna), l2-tersan-fixtures.json (9 örnek, gerçek metin → MK-48.6
+  commit/gitignore Cihat kararı), l2-tersan-test.mjs (9/9, repo lib'e karşı). CI'a bağlı değil.
+- pipeline_no parser'dan çıkarıldı (metin kesik) → dosya adından downstream (106).
 
-### 104-C — İncele "Normal Excel" export
-- `normalExcelIndir()` + `#btnExcelNormal` (IFS yanı, `hazir>0` ile aktif — `ifsExcelIndir` ile aynı kapı).
-- 2 sheet: **Spool Listesi** (devre_detay `exportExcel` formatı aynalandı, Marka→Resim No=`_dosya`),
-  **Malzeme Listesi** (spool_detay malzeme kolonları, Heat No yok, Standart boş).
-- Alan kaynağı: `ifsExcelIndir`'in okuduğu batch alan adları aynalandı (sp.`pipeline_no/spool_no/dn/cap_mm/
-  et_mm/boy_mm/agirlik_kg/malzeme/kalite/yuzey/rev`; m.`kod/tanim/malzeme/kalite/dis_cap_mm/et_mm/boy_mm/
-  adet/agirlik_kg/sertifika_tipi`). ARES_NORM ile malzeme/kalite/yüzey lokalize.
+## PAOR ana çizim — L2 imkânsız (MK-105.6)
+6 ana çizim: pdf-parse ~boş, pdftotext 1 char, pdffonts 0 font → metin katmanı yok (vektör/raster).
+Deterministik L2 mümkün değil; vision L3 zorunlu. $0.62 kaçınılmaz. iso_view = saklama (İş 1).
 
-## Ölçüm + analiz (kod yok)
-- **Maliyet (ai_api_log):** L3 42·$1.34, L2 8·$0. PAOR Ana Çizim $0.62 (image), Tersan M110 İmalat
-  $0.46+L2, Montaj $0.21 (yanlış-tanıma şüphesi), tanımsız $0.06.
-- **PDF metin testi (4 örnek):** Tersan G200 geometrisi METİNDE (45°, R=130, segmentler, Rotation/Cut&Bending)
-  → deterministik $0 çekilebilir + 3D (MK-49.A). PAOR isometric_view metni boş → AI. PAOR ana çizim metni dolu.
+## MK (105)
+MK-105.1 (parse_disi bayrağı), MK-105.2 ('saklama' terminal), MK-105.3 (ölç-sonra/pdf-parse gerçeği),
+MK-105.4 (Tersan fingerprint ayrışmaz → kural her iki formata), MK-105.5 (montaj=yerleşim, detay=yon_dizilim),
+**MK-105.6 (PAOR ana çizim metinsiz → L2 imkânsız, L3 zorunlu)**. + MK-51.2 uygulandı.
 
-## Commit'ler (104)
+## Commit'ler (105)
 | Hash | Mesaj |
 |------|-------|
-| (104-A) | fix(104): izometri batch incele her zaman acilir + AI guven renklendirme |
-| (104-B) | fix(104): batch sayfasi sadelestirme + tek inceleme girisi + renk legend |
-| 48026e0 | feat(104): incele normal Excel export (spool + malzeme, 2 sheet, Resim No) |
+| f45ceae | feat(105): iso_view parse-disi saklama — worker filtresi + 086 migration + batch UI |
+| (bekliyor) | feat(105): tersan imalat L2 parser_kural + regresyon testi (087 + test/) |
+| (bekliyor) | docs(105): kapanis [skip ci] |
 
-CI: ✅ YEŞİL. Tüm yüklemeler MD5 doğrulamalı, terminal git akışı (web UI yok).
+## 106'ya devreden (öncelik sırası)
+1. **Canlı teyit:** yeni Tersan İmalat PDF → ai_api_log parser_seviye='l2', maliyet=0 (105'te yapılmadıysa ilk iş).
+2. **B-geometri Faz 2/3:** yon_dizilim (detay) + yerleşim/AR (montaj) — lib/l2-parser.js KOD genişletme.
+3. pipeline_no dosya adından; düzgün fingerprint ayrımı (S-segmenti var/yok); çift-parse teyidi.
+4. B-öğrenme (MK-48.5): düzeltme → parser_kural otomatik geri-yazma.
 
-## Yöntem notları
-- str_replace → inline JS `node --check` (her iki dosya 0 hata) → grep ile dangling referans kontrolü →
-  outputs → md5 → present_files. Bu disiplin 104'te buton/stat kaldırırken null hatasını önledi.
-- "Görmeden yazma" 2 yanlış teşhisi düzeltti (form-grid editleme; tutarlı veri tesisatı).
-
-## Mimari kararlar: MK-104.1..6 (detay son-durum.md)
-İzometri batch = sadece Excel; Excel onaydan sonra; 2 Excel tipi (IFS + Normal); güven spool-bazlı;
-geometri formata bağlı (metin-PDF $0, image-PDF AI); maliyet ölçüm protokolü.
+> 106 açılışında oku: son-durum.md + bu dosya + CLAUDE-SONRAKI-OTURUM.md + docs/MK-B-GEOMETRI.md.
