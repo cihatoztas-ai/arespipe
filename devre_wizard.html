@@ -117,6 +117,7 @@
   <script src="ares-store.js"></script>
   <script src="ares-lang.js"></script>
   <script src="ares-normalize.js"></script>
+  <script src="ares-kabuk.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -872,6 +873,15 @@ async function adim3_yukle() {
       var kabuk = kabukTuret(kabukSatirlar);
       if (kabuk.spoollar.length > 0) {
         sonHtml += kabukTabloHtml(kabuk, WIZ.proje_no);
+        // 109/A-yolu: INSERT artık wizard'ın İÇİNDE (devre_detay'a gitmeye gerek yok).
+        // Context'i sakla — Onayla handler'ı aynı satırlardan ARES_KABUK.grupla ile tam
+        // BOM modeli kurup ARES_KABUK.aktar çağırır. bomIds → onaylanınca kuyruk tamamlandı.
+        WIZ._kabuk = { satirlar: kabukSatirlar, bomIds: bomIds, tid: tid, devreId: WIZ.devre_id, sayi: kabuk.spoollar.length };
+        sonHtml += '<div id="kabukOnayAlani" style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">' +
+          '<button class="btn-primary" id="btnKabukOnayla" style="align-self:flex-start;">' +
+          '✓ Onayla / Kilitle → ' + kabuk.spoollar.length + ' spool oluştur</button>' +
+          '<p style="font-size:12px;color:var(--txd);margin:0;">Spool\u2019lar \u201c\u00e7izim bekliyor\u201d olarak kaydedilir. \u0130zometriler arka planda i\u015flendik\u00e7e \u00e7izim durumu kendili\u011finden ilerler \u2014 ayr\u0131ca bir yere gitmenize gerek yok.</p>' +
+          '</div>';
       }
     }
   } catch (e) {
@@ -880,12 +890,63 @@ async function adim3_yukle() {
 
   box.innerHTML = sonHtml + '<div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>';
 
+  // 109/A-yolu: kabuk önizleme altındaki "Onayla" butonunu bağla (DOM artık hazır).
+  var kob = document.getElementById('btnKabukOnayla');
+  if (kob) kob.addEventListener('click', kabukOnayla);
+
   if (basarili > 0) {
     var btn = document.getElementById('btnDevreyiGor');
     btn.style.display = '';
     btn.addEventListener('click', function() {
       location.href = 'devre_detay.html?id=' + WIZ.devre_id;
     });
+  }
+}
+
+// 109/A-yolu: kabuk-first onay — INSERT wizard'ın İÇİNDE (dolambaç bitti).
+// Önizlemedeki aynı satırlardan tam BOM modelini kur, ARES_KABUK.aktar ile spooller +
+// spool_malzemeleri yaz (cizim_durumu='bekliyor'), kuyruğu tamamlandı işaretle.
+// Davranış B: wizard'da KAL, "N spool oluşturuldu ✓" göster + Devreyi Görüntüle aktif kalsın.
+async function kabukOnayla() {
+  if (!WIZ._kabuk) return;
+  var k = WIZ._kabuk;
+  var btn = document.getElementById('btnKabukOnayla');
+  var alan = document.getElementById('kabukOnayAlani');
+  if (btn) { btn.disabled = true; btn.textContent = 'Oluşturuluyor…'; }
+  try {
+    var supa = ARES.supabase();
+    var model = ARES_KABUK.grupla({ satirlar: k.satirlar });   // tam BOM modeli (devre_detay ile aynı)
+    var r = await ARES_KABUK.aktar({
+      supa: supa, tid: k.tid, devreId: k.devreId,
+      spoollar: model.spoollar, yuzey: null, kuyrukIds: k.bomIds
+    });
+    if (!r.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Onayla / Kilitle → ' + k.sayi + ' spool oluştur'; }
+      if (alan) {
+        var hata = r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || ''));
+        var p = document.createElement('p');
+        p.style.cssText = 'font-size:13px;color:var(--re);margin:4px 0 0;';
+        p.textContent = '✗ ' + hata + ' Tekrar deneyebilir veya devre detayından sürdürebilirsiniz.';
+        alan.appendChild(p);
+      }
+      return;
+    }
+    // Başarı — B: yerinde kal, sonucu göster.
+    if (alan) {
+      var atl = r.atlananlar || [];
+      var ok = r.eklenen > 0
+        ? '✓ ' + r.eklenen + ' spool oluşturuldu' + (atl.length ? ' · ' + atl.length + ' zaten mevcuttu, atlandı' : '')
+        : '✓ Seçili spool\u2019lar zaten devrede mevcut — yeni ekleme yapılmadı';
+      alan.innerHTML = '<div style="padding:12px 14px;border:1px solid rgba(29,158,117,.35);background:rgba(29,158,117,.08);border-radius:10px;color:var(--gr);font-weight:600;font-size:14px;">' +
+        esc(ok) + '</div>' +
+        '<p style="font-size:12px;color:var(--txd);margin:8px 0 0;">İzometriler arka planda işlenmeye devam ediyor; çizim durumu (bekliyor → kısmi → tam) devre detayında ilerledikçe görünecek. Bu pencereyi kapatabilirsiniz.</p>';
+    }
+    // Devreyi Görüntüle butonunu öne çıkar (zaten görünür; B akışında ana çıkış noktası).
+    var dgBtn = document.getElementById('btnDevreyiGor');
+    if (dgBtn) { dgBtn.style.display = ''; dgBtn.focus && dgBtn.focus(); }
+  } catch (e) {
+    console.error('[kabuk] onayla:', e);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Onayla / Kilitle → ' + k.sayi + ' spool oluştur'; }
   }
 }
 
@@ -1039,18 +1100,8 @@ function capCikar(rows) {
 }
 
 // "60.3x4.5"→OD 60.3 | "DN50"→tablo 60.3 | "OD:60"→60 | düz sayı→OD
-function _boyutParse(dn) {
-  var s = String(dn || '').trim();
-  if (!s) return { dis_cap: null, et: null };
-  var mx = s.match(/([\d.,]+)\s*[xX]\s*([\d.,]+)/);
-  if (mx) return { dis_cap: parseFloat(mx[1].replace(',', '.')) || null, et: parseFloat(mx[2].replace(',', '.')) || null };
-  var mo = s.match(/OD\s*:?\s*([\d.,]+)/i);
-  if (mo) return { dis_cap: parseFloat(mo[1].replace(',', '.')) || null, et: null };
-  var md = s.match(/DN\s*(\d+)/i);
-  if (md) { var T = {15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4}; var d = parseInt(md[1],10); return { dis_cap: T[d] || null, et: null }; }
-  var n = parseFloat(s.replace(',', '.'));
-  return { dis_cap: isFinite(n) ? n : null, et: null };
-}
+// 109/A-yolu: mantık ares-kabuk.js'e taşındı (devre_detay ile ortak). Bu ince alias.
+function _boyutParse(dn) { return ARES_KABUK.boyutParse(dn); }
 
 // Yüzey ön-doldurma (MK — sorma): önce yuzey alanı, sonra system token'ı ("M100-Galv")
 function yuzeyCikar(rows) {
