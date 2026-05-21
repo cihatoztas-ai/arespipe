@@ -515,7 +515,10 @@ tr.sk-row:hover td{background:transparent !important;}
   <div class="tablo-kart" style="border-left:3px solid var(--gr);">
     <div class="tablo-head">
       <div class="tablo-baslik"><span data-i18n="sp_docs_label">Dokümanlar</span> <span id="dokSayi" class="sk sk-num" style="font-size:12px;font-weight:400;color:var(--txd);margin-left:4px;">—</span></div>
-      <button class="btn btn-primary" style="height:28px;font-size:12px;" onclick="dokModalAc()" data-i18n="sp_add_doc">+ Doküman Ekle</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button id="btnBekleyenIzo" class="btn" style="display:none;height:28px;font-size:12px;color:var(--warn);border-color:rgba(186,117,23,.35);font-weight:600;" onclick="bekleyenIzometriIsle()" title="Arka plan izometri parse'ı takıldıysa elle drene eder">⟳ <span data-i18n="dv_izo_drenaj_btn">Bekleyenleri işle</span> (<span id="bekleyenIzoSayi">0</span>)</button>
+        <button class="btn btn-primary" style="height:28px;font-size:12px;" onclick="dokModalAc()" data-i18n="sp_add_doc">+ Doküman Ekle</button>
+      </div>
     </div>
     <div id="dokListesi" style="padding:2px 0;">
       <!-- Arama kutusu (≥8 dosyada görünür, otomatik) -->
@@ -2402,6 +2405,30 @@ async function dokAc(kaynak,path){
   if(url)window.open(url,'_blank','noopener');
   else showToast(tv('dv_dok_acilamadi','Dosya açılamadı'),'e');
 }
+// 108/Adim3b: self-chain güvenlik ağı — wizard'ın fire-and-forget tetiği koptuysa
+// kullanıcı tek tıkla kuyruğu drene eder. Worker en eski 'bekliyor'u alır + kalanları zincirler.
+async function bekleyenIzometriIsle(){
+  var b=document.getElementById('btnBekleyenIzo');
+  if(b){b.disabled=true;b.style.opacity='.6';}
+  showToast(tv('dv_izo_drenaj_basladi','İzometriler işleniyor — arka planda sürüyor'),'success');
+  try{
+    await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  }catch(e){console.warn('[izo-drenaj] tetik hatasi:',e);}
+  // Zincir arkada akarken sayaç düşene dek periyodik yenile (max ~32 sn)
+  var tur=0;
+  var poll=setInterval(async function(){
+    tur++;
+    if(typeof belgelerYukle==='function')await belgelerYukle();
+    var s=document.getElementById('bekleyenIzoSayi');
+    var kalan=s?(parseInt(s.textContent,10)||0):0;
+    if(kalan<=0||tur>=8){
+      clearInterval(poll);
+      if(b){b.disabled=false;b.style.opacity='';b.style.display=kalan>0?'':'none';}
+      if(kalan<=0)showToast(tv('dv_izo_drenaj_bitti','Bekleyen izometri kalmadı'),'success');
+    }
+  },4000);
+}
+
 async function belgelerYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!supa||!devreId)return;
@@ -2492,6 +2519,12 @@ async function belgelerYukle(){
 }
 function renderDokumanlar(){
   var elTop=document.getElementById('dokListesi');if(!elTop)return;
+  // 108/Adim3b: bekleyen/isleniyor izometri sayisi -> "Bekleyenleri isle" butonu (self-chain guvenlik agi)
+  (function(){
+    var n=(DOKUMANLAR||[]).filter(function(d){return d._kuyrukParser==='izometri'&&(d._kuyrukDurum==='bekliyor'||d._kuyrukDurum==='isleniyor');}).length;
+    var b=document.getElementById('btnBekleyenIzo'), s=document.getElementById('bekleyenIzoSayi');
+    if(b&&s){ s.textContent=n; if(!b.disabled) b.style.display=n>0?'':'none'; }
+  })();
   var elBelgeler=document.getElementById('belgelerListesi');
   var elDokumanlar=document.getElementById('dokumanlarListesi');
   var grpB=document.getElementById('grpBelgeler');
