@@ -92,6 +92,10 @@ export default async function handler(req, res) {
   const istenenIsId = req.body?.is_id || null;
 
   try {
+    // 108/Adim3: stale lock temizligi — 'isleniyor'da 5dk+ takili izometri isleri (worker crash)
+    //            geri 'bekliyor'a alinir; 3+ denemede 'hata' (sonsuz Vision dongusu engeli).
+    await staleLockTemizle(supa);
+
     // 1) Kuyruktan iş çek
     let is;
     if (istenenIsId) {
@@ -248,6 +252,10 @@ export default async function handler(req, res) {
       });
     }
 
+    // 108/Adim3: self-chain — kuyrukta baska bekleyen izometri varsa kendini fire-and-forget
+    //            tetikle. Sirali drenaj (her is bitince bir sonrakini cagirir, kuyruk bosalinca durur).
+    await zincirDevam(supa);
+
     return res.status(200).json({
       sonuc: ok ? 'islendi' : 'hata',
       is_id: is.id,
@@ -287,9 +295,63 @@ async function isiHataylaKapat(supa, isId, res, mesaj) {
     })
     .eq('id', isId);
 
+  // 108/Adim3: hata da olsa drenaji surdur (kalan bekleyenler islensin)
+  await zincirDevam(supa);
+
   return res.status(500).json({
     sonuc: 'hata',
     is_id: isId,
     hata: mesaj
   });
+}
+
+// ───────────────────────────────────────────────────────────────
+// 108/Adim3: self-chain drenaj + stale lock temizligi
+// ───────────────────────────────────────────────────────────────
+
+// Kuyrukta baska bekleyen izometri isi varsa kendini fire-and-forget tetikle (sirali zincir).
+async function zincirDevam(supa) {
+  try {
+    const { data } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .select('id')
+      .eq('parser', 'izometri')
+      .eq('durum', 'bekliyor')
+      .limit(1);
+    if (data && data.length > 0) {
+      const baseUrl = selfBaseUrl();
+      if (!baseUrl) return;
+      // fire-and-forget (kuyruk-isle.js ile ayni desen): await yok, response'tan once tetiklenir.
+      fetch(`${baseUrl}/api/kuyruk-isle-izometri`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      }).catch((e) => console.error('[izo-drenaj] zincir tetik hatasi (yutuldu):', e.message));
+    }
+  } catch (e) {
+    console.error('[izo-drenaj] zincir kontrol hatasi (yutuldu):', e.message);
+  }
+}
+
+// 'isleniyor'da 5dk+ takili kayitlar (worker crash) -> 'bekliyor' (3+ denemede 'hata').
+async function staleLockTemizle(supa) {
+  const STALE_DK = 5, MAX_DENEME = 3;
+  const esik = new Date(Date.now() - STALE_DK * 60 * 1000).toISOString();
+  try {
+    const { data } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .select('id, deneme_sayisi')
+      .eq('parser', 'izometri')
+      .eq('durum', 'isleniyor')
+      .lt('alindi_at', esik);
+    for (const s of (data || [])) {
+      const yeni = (s.deneme_sayisi || 0) >= MAX_DENEME ? 'hata' : 'bekliyor';
+      await supa
+        .from('dosya_isleme_kuyrugu')
+        .update({ durum: yeni, hata_mesaji: 'Stale lock — worker timeout/crash' })
+        .eq('id', s.id);
+    }
+  } catch (e) {
+    console.error('[izo-drenaj] stale lock temizleme hatasi (yutuldu):', e.message);
+  }
 }

@@ -797,30 +797,17 @@ async function adim3_yukle() {
     }
   }
 
-  // 107/MK-49.B: Yüklenen izometri PDF'lerini /api/kuyruk-isle-izometri ile parse ettir.
-  // Worker {is_id} ile tek iş işler (lock yarışı yok); izometri-oku'yu çağırır
-  // (fingerprint→L2→L3). Sonuç parse_sonuc'a yazılır, kuyruk durumu
-  // oneri_hazir/manuel_onay/hata olur. Vision AI 11-25 sn sürebilir — sabırlı bekle.
-  var parseLogIzo = [];
-  for (var pi = 0; pi < tetiklenecekIzo.length; pi++) {
-    var ti = tetiklenecekIzo[pi];
-    box.querySelector('p') && (box.querySelector('p').innerHTML =
-      '<strong>İzometri okunuyor:</strong> ' + esc(ti.ad) + ' <span class="muted">(' + (pi+1) + ' / ' + tetiklenecekIzo.length + ') · bu birkaç saniye sürebilir</span>');
-    try {
-      var ri = await fetch('/api/kuyruk-isle-izometri', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_id: ti.id })
-      });
-      var ji = await ri.json();
-      if (!ri.ok) {
-        parseLogIzo.push({ ok:false, ad: ti.ad, mesaj: (ji && ji.hata) ? ji.hata : ('HTTP ' + ri.status) });
-      } else {
-        parseLogIzo.push({ ok:true, ad: ti.ad, durum: ji.durum, spool: ji.spool_sayisi, manuel: ji.manuel_onay_sayisi, hazir: ji.hazir_sayisi });
-      }
-    } catch(e) {
-      parseLogIzo.push({ ok:false, ad: ti.ad, mesaj: hataMesajiTr(e) });
-    }
+  // 108/Adim3 (MK-107.1): izometriler SENKRON BEKLENMEZ. Kuyruğa 'bekliyor' alındı (yukarıda);
+  // burada tek bir BEKLEMESİZ tetik atılır, worker self-chain ile hepsini arka planda drene eder.
+  // Kullanıcı bu pencereyi kapatıp gidebilir — "bırak git" akışının kalbi (otorite kabuktur).
+  var izoKuyrukSayisi = tetiklenecekIzo.length;
+  if (izoKuyrukSayisi > 0) {
+    // fire-and-forget: await YOK. Body'siz çağrı → worker en eski 'bekliyor'u alır + zincirler.
+    fetch('/api/kuyruk-isle-izometri', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).catch(function(e) { console.warn('[wizard] izometri drenaj tetiği gönderilemedi (kuyrukta bekler):', e); });
   }
 
   fill.style.width = '100%';
@@ -851,23 +838,11 @@ async function adim3_yukle() {
     sonHtml += '</ul><p style="font-size:13px;color:var(--txd);">Önizleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın.</p>';
   }
 
-  // 107/MK-49.B: izometri parse sonuç özeti
-  if (parseLogIzo.length > 0) {
-    sonHtml += '<p style="margin-top:10px;"><strong>İzometri ayrıştırma:</strong></p><ul style="font-size:13px;color:var(--txd)">';
-    parseLogIzo.forEach(function(l) {
-      if (l.ok) {
-        var durumEt = l.durum === 'oneri_hazir' ? 'öneri hazır ✓' :
-                      l.durum === 'manuel_onay' ? 'manuel onay gerekiyor' :
-                      l.durum === 'hata' ? 'parse hatası' : l.durum;
-        sonHtml += '<li>' + esc(l.ad) + ' — ' + esc(durumEt) +
-          (l.spool != null ? ' <span class="muted">(' + l.spool + ' spool' +
-            (l.manuel ? ', ' + l.manuel + ' manuel onay' : '') + ')</span>' : '') +
-          '</li>';
-      } else {
-        sonHtml += '<li class="durum-fail">' + esc(l.ad) + ' — tetiklenemedi: ' + esc(l.mesaj) + ' <span class="muted">(kuyrukta bekliyor)</span></li>';
-      }
-    });
-    sonHtml += '</ul><p style="font-size:13px;color:var(--txd);">Önizleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın.</p>';
+  // 108/Adim3: izometriler arka planda işleniyor — senkron beklenmez.
+  if (izoKuyrukSayisi > 0) {
+    sonHtml += '<p style="margin-top:10px;"><strong>İzometri ayrıştırma:</strong> ' + izoKuyrukSayisi +
+      ' PDF arka planda işleniyor. <span class="muted">Bu pencereyi kapatabilir, başka devre yükleyebilirsiniz.</span></p>' +
+      '<p style="font-size:13px;color:var(--txd);">İlerleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın; izometriler işlendikçe orada görünür.</p>';
   }
   // ── 108 / MK-107.1: KABUK ÖNİZLEME ─────────────────────────────────────────
   // Otorite kabuktur, PDF değil. Az önce parse edilen BOM Excel'lerin parse_sonuc'unu
