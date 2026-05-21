@@ -996,14 +996,15 @@ function gizliDosyaMi(dosya_adi, klasor_yolu) {
 // ─────────────────────────────────────────────────────────────
 
 function kabukTuret(satirlar) {
-  var gruplar = {};   // "pipeline|spool" → { pipeline_no, spool_no, rows:[] }
+  var gruplar = {};   // "pipeline|spool|rev" → { pipeline_no, spool_no, rev, rows:[] }
   var atlanan = 0;    // spool_no'su olmayan satırlar (kabuk dışı BOM kalemi)
   satirlar.forEach(function(r) {
     var sp = (r.spool_no != null ? String(r.spool_no).trim() : '');
     if (!sp) { atlanan++; return; }
     var pl = (r.pipeline_no != null ? String(r.pipeline_no).trim() : '');
-    var anahtar = pl + '|' + sp;
-    if (!gruplar[anahtar]) gruplar[anahtar] = { pipeline_no: pl, spool_no: sp, rows: [] };
+    var rev = (r.rev != null ? String(r.rev).trim() : '');   // onayAktar ile aynı alan
+    var anahtar = pl + '|' + sp + '|' + rev;
+    if (!gruplar[anahtar]) gruplar[anahtar] = { pipeline_no: pl, spool_no: sp, rev: rev, rows: [] };
     gruplar[anahtar].rows.push(r);
   });
 
@@ -1013,16 +1014,14 @@ function kabukTuret(satirlar) {
     rows.forEach(function(r) {
       if (typeof r.agirlik_kg === 'number' && !isNaN(r.agirlik_kg)) { toplam += r.agirlik_kg; agirlikVar = true; }
     });
-    var rev = '';
-    for (var i = 0; i < rows.length; i++) { if (rows[i].revizyon) { rev = String(rows[i].revizyon).trim(); break; } }
     return {
       pipeline_no: g.pipeline_no,
       spool_no: g.spool_no,
-      revizyon: rev,
-      cap: capCikar(rows),
+      rev: g.rev,
+      cap: capCikar(rows),                                  // sayısal OD mm (veya null)
       agirlik_kg: agirlikVar ? toplam : null,
-      malzeme: enSik(rows.map(function(r) { return r.malzeme; })),
-      kalite:  enSik(rows.map(function(r) { return r.kalite; })),
+      malzeme: enSik(rows.map(function(r) { return r.malzeme; })),   // HAM (IFS grade, ör. ST37)
+      kalite:  enSik(rows.map(function(r) { return r.kalite; })),    // genelde boş (IFS'te ayrı kolon yok)
       yuzey:   yuzeyCikar(rows),
       kalem:   rows.length
     };
@@ -1048,25 +1047,34 @@ function enSik(degerler) {
   return enIyi;
 }
 
-// Spool nominal çapı: gruptaki en büyük DN; yoksa en büyük cap_mm
+// Spool nominal çapı = gruptaki en büyük dış çap (OD, mm). Uydurma DN üretme.
+// onayAktar._onayBoyut ile AYNI mantık (ayrı dosya — A-yolunda paylaşılan modüle taşınacak).
 function capCikar(rows) {
-  var enBuyukDn = null;
+  var enBuyuk = null;
   rows.forEach(function(r) {
-    if (r.dn != null) {
-      var m = String(r.dn).match(/(\d+(?:[.,]\d+)?)/);
-      if (m) {
-        var n = parseFloat(m[1].replace(',', '.'));
-        if (!isNaN(n) && (enBuyukDn === null || n > enBuyukDn)) enBuyukDn = n;
-      }
-    }
+    var bp = _boyutParse(r.dn);
+    if (bp.dis_cap != null && (enBuyuk === null || bp.dis_cap > enBuyuk)) enBuyuk = bp.dis_cap;
   });
-  if (enBuyukDn !== null) return 'DN' + enBuyukDn;
-  var enBuyukMm = null;
-  rows.forEach(function(r) {
-    if (typeof r.cap_mm === 'number' && !isNaN(r.cap_mm) && (enBuyukMm === null || r.cap_mm > enBuyukMm)) enBuyukMm = r.cap_mm;
-  });
-  if (enBuyukMm !== null) return enBuyukMm + ' mm';
-  return '';
+  if (enBuyuk == null) {
+    rows.forEach(function(r) {
+      if (typeof r.cap_mm === 'number' && !isNaN(r.cap_mm) && (enBuyuk === null || r.cap_mm > enBuyuk)) enBuyuk = r.cap_mm;
+    });
+  }
+  return enBuyuk;   // sayısal OD mm veya null
+}
+
+// "60.3x4.5"→OD 60.3 | "DN50"→tablo 60.3 | "OD:60"→60 | düz sayı→OD
+function _boyutParse(dn) {
+  var s = String(dn || '').trim();
+  if (!s) return { dis_cap: null, et: null };
+  var mx = s.match(/([\d.,]+)\s*[xX]\s*([\d.,]+)/);
+  if (mx) return { dis_cap: parseFloat(mx[1].replace(',', '.')) || null, et: parseFloat(mx[2].replace(',', '.')) || null };
+  var mo = s.match(/OD\s*:?\s*([\d.,]+)/i);
+  if (mo) return { dis_cap: parseFloat(mo[1].replace(',', '.')) || null, et: null };
+  var md = s.match(/DN\s*(\d+)/i);
+  if (md) { var T = {15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4}; var d = parseInt(md[1],10); return { dis_cap: T[d] || null, et: null }; }
+  var n = parseFloat(s.replace(',', '.'));
+  return { dis_cap: isFinite(n) ? n : null, et: null };
 }
 
 // Yüzey ön-doldurma (MK — sorma): önce yuzey alanı, sonra system token'ı ("M100-Galv")
@@ -1110,14 +1118,31 @@ function kabukTabloHtml(kabuk, projeNo) {
        '<th class="num">Kalem</th></tr></thead><tbody>';
 
   sp.forEach(function(s) {
-    var marka = [projeNo, s.pipeline_no, s.spool_no].filter(function(x) { return x; }).join('-');
-    if (s.revizyon) marka += '-' + s.revizyon;
+    // Marka: onayAktar ile aynı — ARES_NORM.marka(proje, pipeline, spool, rev); fallback manuel
+    var marka;
+    if (typeof ARES_NORM !== 'undefined' && ARES_NORM.marka) {
+      var revF = (ARES_NORM.revFmt ? ARES_NORM.revFmt(s.rev) : s.rev);
+      marka = ARES_NORM.marka(projeNo, s.pipeline_no, s.spool_no, revF) || s.spool_no;
+    } else {
+      marka = [projeNo, s.pipeline_no, s.spool_no].filter(function(x) { return x; }).join('-');
+      if (s.rev) marka += '-' + s.rev;
+    }
+    // IFS Altın Kuralı: ham grade (ST37) → MALZEME=malzemeEtiket("Karbon Çelik"), KALİTE=kaliteGoster("St 37")
+    var malzGoster = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeEtiket)
+      ? (ARES_NORM.malzemeEtiket(s.malzeme) || s.malzeme || '')
+      : (s.malzeme || '');
+    var kaliteHam = s.kalite || s.malzeme;
+    var kalGoster = (typeof ARES_NORM !== 'undefined' && ARES_NORM.kaliteGoster)
+      ? (ARES_NORM.kaliteGoster(kaliteHam) || '')
+      : (s.kalite || '');
+    var capGoster = (s.cap != null) ? (s.cap.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' mm') : '';
+
     h += '<tr>' +
       '<td class="marka">' + esc(marka) + '</td>' +
-      '<td>' + (s.cap ? esc(s.cap) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (capGoster ? esc(capGoster) : '<span class="bos">—</span>') + '</td>' +
       '<td class="num">' + (s.agirlik_kg != null ? s.agirlik_kg.toFixed(1) : '<span class="bos">—</span>') + '</td>' +
-      '<td>' + (s.malzeme ? esc(s.malzeme) : '<span class="bos">—</span>') + '</td>' +
-      '<td>' + (s.kalite ? esc(s.kalite) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (malzGoster ? esc(malzGoster) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (kalGoster ? esc(kalGoster) : '<span class="bos">—</span>') + '</td>' +
       '<td>' + (s.yuzey ? '<span class="yuzey-pill">' + esc(s.yuzey) + '</span>' : '<span class="bos">—</span>') + '</td>' +
       '<td><span class="bos">— (PDF bekliyor)</span></td>' +
       '<td class="num">' + s.kalem + '</td>' +

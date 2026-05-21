@@ -2300,6 +2300,25 @@ async function onayAktar(kuyrukId){
     var tkod=(tq&&tq.data&&tq.data.kod)?tq.data.kod:'';
     var malKod=function(ham){return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeKod)?(ARES_NORM.malzemeKod(ham)||null):null;};
 
+    // 108/MK-WIZARD.3: idempotency — kabuk kilidi. Devrede zaten olan (pipeline_no, spool_no, rev)
+    // tekrar yazılmaz; aynı BOM iki kez "Aktar"lansa bile spool çoğalmaz. Atlananları kullanıcıya bildir.
+    var mevcut=await supa.from('spooller')
+      .select('pipeline_no,spool_no,rev')
+      .eq('tenant_id',tid).eq('devre_id',devreId).eq('silindi',false);
+    var mevcutSet={};
+    (mevcut.data||[]).forEach(function(r){mevcutSet[(r.pipeline_no||'')+'|'+r.spool_no+'|'+(r.rev||'')]=true;});
+    var atlananlar=[];
+    spoollar=spoollar.filter(function(s){
+      var k=(s.pipeline||'')+'|'+s.spoolNo+'|'+(s.rev||'');
+      if(mevcutSet[k]){atlananlar.push(s.spoolNo);return false;}
+      return true;
+    });
+    if(!spoollar.length){
+      showToast(tv('dv_onay_hepsi_var','Seçili spool\'lar zaten devrede mevcut, yeni ekleme yok'),'e');
+      if(btn){btn.disabled=false;btn.textContent=tv('dv_onay_aktar','Aktar');}
+      return;
+    }
+
     // 1) Spooller satırları
     var spoolRows=[];
     for(var i=0;i<spoollar.length;i++){
@@ -2316,6 +2335,7 @@ async function onayAktar(kuyrukId){
         dis_cap_mm:bp.dis_cap, et_kalinligi_mm:bp.et,
         agirlik:s.toplamKg||0, agirlik_kg:s.toplamKg||0, yuzey:yuzeySec,
         durum:'Bekliyor', is_durumu:'bekliyor', ilerleme:0, durduruldu:false,
+        cizim_durumu:'bekliyor',
         aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:null
       });
     }
@@ -2354,7 +2374,7 @@ async function onayAktar(kuyrukId){
     if(kq&&kq.data&&kq.data.devre_dokuman_id){await supa.from('devre_dokumanlari').update({parse_durumu:'tamamlandi'}).eq('id',kq.data.devre_dokuman_id);}
 
     onayModalKapat();
-    showToast(spoollar.length+' '+tv('dv_onay_ok','spool aktarıldı'),'success');
+    showToast(spoollar.length+' '+tv('dv_onay_ok','spool aktarıldı')+(atlananlar.length?(' · '+atlananlar.length+' '+tv('dv_onay_atlandi','zaten mevcut, atlandı')):''),'success');
     if(typeof spoolYukle==='function')await spoolYukle();
     if(typeof belgelerYukle==='function')await belgelerYukle();
   }catch(e){
