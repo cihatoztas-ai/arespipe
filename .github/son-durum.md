@@ -1,112 +1,119 @@
-# AresPipe — Güncel Durum (son güncelleme: Oturum 107, 21 May 2026)
+# Son Durum — 109. Oturum (22 May 2026)
 
-## Bu oturumda yapılanlar (107)
+> 108 → 109 geçişi. Ana hedef: kabuk-first akışını TEK YERE topla (A-yolu). 108 sonu kullanıcı
+> geri bildirimi: akış dolambaçlı — wizard "klasörü hallederim" diyor ama spool oluşturmak için
+> devre_detay'a yolluyordu. 109 bu dolambacı kaldırdı.
 
-### 1) MK-49.B CANLI — Wizard izometri PDF routing (kod tamam, doğrulandı)
-103-B eksik halkası kapandı. izometri PDF artık `'sakla'` (arşiv) değil, parse ediliyor.
-- **Yeni worker `api/kuyruk-isle-izometri.js`** — `kuyruk-isle-excel.js` desenini birebir izler.
-  Kuyruktan `parser='izometri'` işi alır → lock → `devre_dokumanlari`'ndan storage_yolu +
-  yukleyen_id → PDF indir → base64 → `/api/izometri-oku`'yu HTTP ile çağırır (MK-49.1: dokunma,
-  çağır) → sonucu `parse_sonuc`'a yazar → durum oneri_hazir/manuel_onay/hata.
-- **`devre_wizard.html`** — `adim3_yukle`'ye üçüncü dal: izometri → `parser='izometri'`,
-  `durum='bekliyor'`, `parse_durumu='bekliyor'` → ayrı `tetiklenecekIzo` listesi →
-  `/api/kuyruk-isle-izometri {is_id}` tetikle + "İzometri ayrıştırma" sonuç özeti.
-- **Env:** `SELF_BASE_URL=https://arespipe.vercel.app` (Vercel, Production+Preview, Sensitive KAPALI).
-  Worker fallback: SELF_BASE_URL → yoksa VERCEL_URL → yoksa 500.
-- **Migration GEREKMEDİ:** `dosya_isleme_kuyrugu.durum` CHECK'i oneri_hazir/manuel_onay zaten
-  içeriyor; `parser` kolonunda CHECK yok → `parser='izometri'` serbest (MK-101.5 ✓).
-- **Commit:** `280ec54` — feat(107): MK-49.B wizard izometri PDF routing. CI yeşil, Vercel Ready.
+---
 
-### 2) Canlı test — 15/15 dosya, parse zinciri çalıştı
-M100-306 (SP12+SP27) + M100-317 devresi yüklendi. SQL teyidi: 15/15 izometri satırı
-`parse_var=true`, `spoollar_tipi=array`, adetler ekranla birebir (detay PDF=1 spool,
-montaj sayfası=5 spool), `hata_mesaji` hepsi NULL. Worker→izometri-oku→parse_sonuc kusursuz.
-"Spool aktarım önizlemesi" modalı parse_sonuc'u okuyor (boru/fitting/DN/kg dolu).
-Not: önizleme ≠ kayıt — "Aktar" butonuna basılınca spooller'a INSERT olur.
+## Bu Oturumun Sonucu
 
-### 3) Kabuk Excel'den çıkıyor — KANITLANDI (kod yazmadan, SQL ile)
-IFS Excel parse_sonuc'unda her satırda `pipeline_no` + `spool_no` VAR. SQL group-by ile
-25 benzersiz spool temiz çıktı: kalem sayısı, toplam ağırlık, malzeme, system (yüzey kaynağı).
-Yani K1 (kabuk IFS Excel'den doğar) onaylandı, K2 şablon GEREKMEZ. Ağırlıklar makul
-(M100-317 S01=471kg, S02=680kg ağır deniz suyu; küçükler 5-40kg).
-- Gözlem: `S03A_1/S03B_1` alt-parça spool'ları (kabuk ayrı sayar, doğru).
-- Gözlem: `malzeme="St*, ST37"` — "St*" parse artığı, düzeltme sözlüğünün ilk müşterisi.
+**109 başarıyla kapatıldı.** Onay/INSERT mantığı ortak `ares-kabuk.js`'e çıkarıldı; wizard artık
+spool'u KENDİ İÇİNDE oluşturuyor (devre_detay → Excel → Aktar dolambacı tarihe karıştı). Üstüne üç
+küçük iyileştirme: per-spool yüzey (B1), wizard güvenlik düğmesi (B2), wizard'da spool seçimi (#4),
+ve devre_detay izometri etiketi için lang anahtarları (#5).
 
-## Veri envanteri — izometri PDF'ten ne çıkarıyoruz (kod teyidi)
-**Spool seviyesi:** pipeline_no, spool_no, dn, cap_mm, et_mm(+kaynagi), boy_mm, agirlik_kg,
-malzeme_en_kodu, malzeme_astm_kodu, kalite, **yuzey** (Galvaniz/Boyali/Asit/null), rev,
-guven_skoru, not_metni + alistirma_ipucu (106).
-**Her BOM kalemi:** kod, kategori(PIPES/FITTINGS/FLANGES), tanim, malzeme, kalite, dis_cap_mm,
-et_mm, boy_mm, adet, agirlik_kg(+kaynagi), sertifika_tipi, malzeme_notu, boyut_standardi,
-malzeme_standardi.
-**EKSİK (3D için kritik):** geometri/yön — `yon_dizilim`, açı, koordinat, segment YOK.
-Bugünkü veri = BOM + skaler ölçü; 3D için geometri yeni bir parse boyutu olarak eklenmeli.
+### Yapılanlar (A-yolu)
 
-## Mimari kararlar (107)
-- **MK-107.1 (Kabuk akışı = A):** Excel→kabuk tablosu→onay→spool'lar `spooller`'a "çizim
-  bekliyor" damgalı INSERT→sen sonraki devreye geç→PDF'ler ARKADA (async) işlenir→dön,
-  kontrol et, düzeltme varsa yap, kaydet. Kabuk onayında spool'lar HEMEN yazılır (mutabakat
-  sonrası değil). Otorite kabuktur (MK-WIZARD). Eksik PDF ≠ eksik spool (MK-WIZARD.2).
-- **MK-107.2 (Öğrenme = 4 deterministik depo):** (1) düzeltme sözlüğü, (2) referans
-  kütüphaneleri (malzeme + boru_olculer), (3) format kuralları (parser_kural), (4) geometri
-  corpus'u (STEP/Rhino + izometri yön + etiketli foto). "Öğrenme" = AI eğitimi DEĞİL, depo
-  dolması. Her veri bir depoya yazılmazsa kayıptır; yazılırsa öğrenmedir. Sorular zamanla
-  azalır çünkü depolar dolar (ölçülebilir hedef: tersane 1. devre ~%40 manuel onay → 5.
-  devre ~%10 → 10. devre ~%3).
-- **MK-107.3 (Düzeltme sözlüğü):** Yanlış sınıflandırma düzeltilince (a) o kayıt anında
-  düzelir + (b) bir kural doğar `(desen, doğru_sonuç, kapsam)`. Sonraki parse'lar deterministik
-  (sıfır AI) bu sözlükten geçer. Politika: akıllı varsayılan + sessiz işle + sadece belirsizde
-  tek-tık kapsam sorusu (asla sınav). Çoğu düzeltme sessiz+evrensel-aday. "Field Butt welding"
-  örneği = işlem, malzeme değil → BOM'dan ayrıl, kaynak sayısına git (parca_tipi="Standard Comp."
-  + agirlik_kg=0 + tanım "welding" = işlem sinyali).
-- **MK-107.4 (Her alan düzenlenebilir, güven kilit değil):** Güven skoru öneridir, kilit değil.
-  %100 güvenli alan da düzenlenebilir. EN TEHLİKELİ hata sistemin EMİN olduğu hatadır (sessiz
-  geçer). Yüksek güvenli alandaki düzeltme = KÖR NOKTA sinyali → sözlükte `kor_nokta=true`,
-  öncelikli işlenir.
-- **MK-107.5 (Üç katmanlı evrenselleştirme):** (1) Tenant-özel: firma düzeltmesi önce SADECE
-  kendi tenant'ına yazılır, anında çalışır, başka firmada GÖRÜNMEZ. (2) Aday havuzu: aynı desen
-  birden fazla bağımsız tenant'tan gelince "evrensel aday" işaretlenir (MK-96 çapraz doğrulama
-  felsefesi). (3) Admin onayı: süper admin "Evrensel Kural Adayları" ekranında adayı görür
-  (desen, kaç tenant, örnekler) → tek tıkla evrenselleştir (sistem preset, tenant_id IS NULL,
-  herkese uygulanır) / reddet / tenant-özel bırak. Otomatik evrenselleştirme YOK — kapı hep insan.
-  Admin = İKİ ŞAPKA: kullanıcı olarak (devre yüklerken) diğer firmalarla aynı, düzeltmesi kendinde
-  kalır; admin olarak (panel) aday havuzunu yönetir. EVRENSELLEŞEN KURALDIR, VERİ DEĞİL (anonim,
-  hangi firmadan geldiği taşınmaz — MK-48.6 veri sahipliği ile uyumlu).
-- **MK-107.6 (STEP geri-doğrulama):** STEP varsa o GERÇEĞİN ta kendisi (deterministik geometri).
-  Yön: STEP truth → izometriden okunan DN/uzunluk/fitting sayısını DOĞRULA + izometride eksik
-  parçaları TAMAMLA + çelişkide bayrak kaldır (MK-96 geometriye uygulanmış hali). 3D'nin temeli
-  STEP/Rhino; izometri yön bilgisi sonraki boyut; saha foto en uzun vade.
-- **MK-107.7 (Süper admin Öğrenme Yönetimi alanı):** Evrensel Kural Adayları + düzeltme sözlüğü
-  yönetimi + (ileride) kör nokta raporu süper admin sayfasında ayrı bir alan olmalı.
+1. **`ares-kabuk.js` (YENİ ortak modül)** — `ARES_KABUK.boyutParse` + `grupla` + `aktar`. devre_detay'ın
+   KANITLI `onayAktar` INSERT gövdesi AYNEN taşındı (yeniden yazılmadı — MK-109.1), DOM/toast/reload
+   soyuldu, çoklu kuyruk id desteği eklendi. Kabuk kilidi (MK-WIZARD.3 idempotency) modülün İÇİNDE →
+   iki taraf da otomatik korunur.
+2. **devre_detay** — `_onayGrupla`/`_onayBoyut` → ince alias; `onayAktar` → ~25 satırlık sarmalayıcı
+   (checkbox + yüzey topla → `ARES_KABUK.aktar` → toast/reload). Kullanıcıya davranış 108 ile birebir.
+3. **devre_wizard** — kabuk önizleme altına "✓ Onayla / Kilitle → N spool oluştur"; tıkla → `ARES_KABUK.aktar`
+   → yerinde "N spool oluşturuldu ✓" (davranış B). Elle Excel→Aktar yok.
+4. **PDF onay butonları** — izometri PDF'in `parse_sonuc`'u (spoollar/format/batch_id) Excel BOM
+   (satirlar) ile uyumsuz; "Önizle/Onayla" izometride "Parse sonucu boş" veriyordu (108 borcu). Artık
+   `_kuyrukParser==='excel-generic'` ile gate'lendi; izometri için pasif "İzometri — arka planda" etiketi.
 
-## CI Son Durum
-- **Build:** son kod commit `280ec54` (MK-49.B). CI yeşil, Vercel Production Ready (SELF_BASE_URL
-  içeren deploy). Bu kapanış docs commit'i `[skip ci]`.
+### Yapılanlar (B1 + B2 + #4 + #5)
 
-## AÇIK BORÇLAR (108 ana teması: kabuk-first akış)
-1. **Kabuk-first wizard akışı (MK-107.1) — 108 ANA HEDEF.** Excel→kabuk tablosu (ekteki
-   30-spool görünümü gibi: marka, spool_id, çap, ağırlık, malzeme, kalite, yüzey, alıştırma)
-   →onay→spooller INSERT ("çizim bekliyor")→async PDF drenajı→dön/kontrol/düzelt/kaydet.
-   Alıştırma sütunu kabukta boş gelir (Excel'de yok), PDF arkada işlenince dolar.
-2. **Async drenaj:** wizard senkron `await` beklemeyi bırak; cron veya "bekleyenleri işle"
-   endpoint'i kuyruğu boşaltsın (worker zaten body'siz "sıradakini al" destekliyor).
-3. **Yüzey otomatik doldurma (hızlı kazanım):** aktarım/onay modalı parse_sonuc'taki `yuzey`'i
-   (veya Excel `system` token'ı "Galv") dropdown'a ön-doldursun — sorma. Şu an redundant soruyor.
-4. **Düzeltme sözlüğü (MK-107.3) + 3-katman evrenselleştirme (MK-107.5):** kabuk akışının
-   zorunlu parçası, ayrı kodlanır. "St*" ve "Field Butt welding" ilk müşteriler.
-5. **izometri onay/insert yolu:** "Spool aktarım önizlemesi" modalı izometri parse_sonuc'unu
-   okuyor; insert ("Aktar") çalışıyor. Kabuk akışıyla birleştirilecek (kabuk spool'a PDF eşleşir).
-6. **Yetim batch:** her izometri PDF `izometri_batch_kayitlari`'na batch açıyor (izometri-oku
-   yan etkisi, MK-49.1). Pilot için kabul, ileride reconcile.
-7. **Süper admin Öğrenme Yönetimi (MK-107.7):** Evrensel Kural Adayları ekranı.
-8. **3D hattı (MK-49.A + MK-107.6):** STEP/Rhino temel → izometri yön (yon_dizilim, yeni parse
-   boyutu) → saha foto. Uzun vade, ayrı hat.
+- **B1 — per-spool yüzey:** `grupla` her spool'a `yuzeyHam` türetir (r.yuzey → system token). `aktar`
+  opsiyonel `perSpoolYuzey:true` ile her spool kendi yüzey kodunu yazar (wizard); boşsa tek `yuzey`
+  param'ına düşer. devre_detay flag GÖNDERMEZ → eski tek-yüzey davranışı korunur (sıfır regresyon).
+  Önizlemede gösterilen yüzey artık DB'ye de yazılıyor.
+- **B2 — wizard güvenlik düğmesi:** sonuç ekranında "⟳ Bekleyenleri işle (N)". Fire-and-forget izometri
+  tetiği koparsa kullanıcı detaya gitmeden drene eder; wizard kendi kuyruk id'lerinden kalanı sorgular.
+- **#4 — wizard spool seçimi:** kabuk tablosunda satır checkbox'ları + "tümünü seç/kaldır" + canlı sayaç;
+  0 seçilirse buton pasif. Onayla sadece seçilenleri oluşturur (anahtar: pipeline|spool|rev — grupla ile aynı).
+- **#5 — lang anahtarları:** `dv_izo_arka` + `dv_izo_arka_aciklama` → tr/en/ar.json (1909 → 1911).
+  AR pattern korundu (spool=السبول, İzometri=إيزومتري).
 
-## Önemli öğrenmeler (107)
-- **HTTP self-call serverless'ta çalışır** ama mutlak URL + stabil base gerekir → SELF_BASE_URL
-  production alias'ına (Hobby + System Env açık olduğu için VERCEL_URL fallback'i de çalışır).
-- **MK-49.1 disiplini tuttu:** izometri-oku'ya hiç dokunmadan, sadece HTTP ile çağırarak tam
-  entegrasyon. Tam handler'ları import etmek yerine çağırmak doğru semantik.
-- **"Sistemin emin olduğu hata en tehlikelisidir"** — düşük güvenli zaten manuel onaya düşüyor,
-  yüksek güvenli sessiz geçiyor. Bu yüzden her alan düzenlenebilir olmalı.
-- **Veri bir depoya yazılmıyorsa kayıptır** — öğrenme döngüsünün tek şartı bu.
+### Canlı Doğrulamalar
+
+- ✅ Wizard içi Onayla CANLI çalıştı: `cizim_durumu` dağılımı `bekliyor` 3 → **39** (36 yeni kabuk spool),
+  `tam` 628 sabit. Dolambaç gerçekten kapandı.
+- ✅ Wizard izometri kuyruğu: `bekliyor` 0 (self-chain drene etti), 1 `hata` (508 PDF), 17 `manuel_onay`,
+  39 `oneri_hazir`.
+- ⏳ B1/B2/#4 canlı testleri son push sonrası yapılacak (kod doğrulandı: node --check + saf-fonksiyon birim testi).
+
+---
+
+## Commit'ler (109)
+
+| Hash | Mesaj |
+|------|-------|
+| `70f7e32` | feat(109): A-yolu — onay/INSERT ortak ares-kabuk.js'e tasindi, wizard ici Onayla + PDF butonu duzeltme |
+| (bu push) | feat(109): B1 per-spool yuzey + B2 wizard bekleyenleri isle + #4 wizard spool secimi + #5 lang |
+| (doc) | chore(109): kapanis dokumanlari [skip ci] |
+
+CI: kod değişiklikleri düz string/render + DB sorgusu (lint sorunu beklenmedi). Kullanıcı push sonrası yeşili teyit eder.
+
+---
+
+## Mimari Kararlar (109)
+
+- **MK-109.1 — Çalışan kodu yeniden yazma, ÇIKAR + hizala.** Kanıtlı `onayAktar` INSERT gövdesi
+  `ares-kabuk.js`'e aynen taşındı; sıfırdan yazılmadı. Risk minimum, davranış korundu.
+- **MK-109.2 — Kabuk-first onay wizard'ın İÇİNDE (A-yolu).** INSERT artık devre_detay'a bağlı değil;
+  ortak modül iki sayfada da çağrılır. "Tek yerde biter" — kullanıcının dolambaç şikâyeti çözüldü.
+- **MK-109.3 — izometri PDF parse_sonuc şekli ≠ Excel BOM.** PDF: spoollar/format/batch_id; Excel: satirlar.
+  PDF başına onay YOK (kabuk-first); onay butonları parser tipiyle gate'lenir.
+- **MK-109.4 — per-spool yüzey opt-in.** `perSpoolYuzey` bayrağı; varsayılan (devre_detay) tek yüzey =
+  eski davranış. Geriye uyumlu genişletme deseni.
+- **MK-109.5 — Büyük dosya düzenleme + doğrulama disiplini.** Full-file yeniden üretmek yerine kopya
+  üzerinde `str_replace` → inline JS ayıkla → `node --check` → saf fonksiyonları birim testle doğrula.
+  Ayrıca `arespipe_kopyala` yanlış kaynağa bakabildi (bu oturumda "Kaynak yok / MD5 uyuşmuyor") →
+  `cp` + `md5` gözle teyit eşdeğer güvenlik (MK-101.1 tamamlayıcısı).
+
+---
+
+## DB Değişiklikleri
+
+Yok (109'da migration yok; `cizim_durumu` 108'de eklenmişti). Doğrulama sorgusu:
+```sql
+select cizim_durumu, count(*) from spooller group by 1 order by 1;
+```
+
+---
+
+## 110'a Açık Borç (önceliğe göre)
+
+1. **Adım 4 — PDF→kabuk eşleştirme (110 ANA TEMA).** izometri `parse_sonuc` → kabuk spool'a bağla
+   (resim_no+spool_no, MK-WIZARD.5), eksik (alıştırma, yön) doldur, `cizim_durumu` `bekliyor→kismi→tam`.
+   Canlı `parse_sonuc` örneği görmeden tasarlanamaz — kararlar SONRAKI doc'ta.
+2. **`cizim_durumu` UI rozeti** — devre_detay spool listesinde bekliyor/kismi/tam göstergesi. Adım 4'ün parçası.
+3. **HTTP 508 PDF** (`M100-323-FM12-ALS.S02.1.pdf`) — kalıcı `hata`; izometri-oku 508 sebebi araştır.
+4. **İkiz kolon temizliği** — `SEMA-IKIZLER.md`, expand–contract, ayrı oturum (MK-108.2).
+5. **Öğrenme döngüsü** — düzeltme sözlüğü (MK-107.3) + 3-katman (MK-107.5) + süper admin (MK-107.7).
+6. **3D hattı** (MK-49.A + MK-107.6).
+7. **"Tersan M110 Montaj Resmi" formatı GERÇEK** — silme, doğru tanıma.
+8. **Düşük öncelik:** wizard tam i18n (dinamik JS metinleri hâlâ düz TR — tutarlı, ama EN/AR isterse büyük pass).
+
+---
+
+## Kritik Hatırlatmalar (109'a taşınanlar dahil)
+
+- **`izometri-oku.js`'e DOKUNMA** (MK-49.1) — eşleştirme worker'ın SONRASINA, ayrı yere girer (Adım 4).
+- **Önce `git commit`, SONRA `gp`** — gp commit'ten önce çalışırsa boşa push.
+- **`arespipe_kopyala` şaşabilir** → `cp` + `md5` gözle teyit (MK-109.5).
+- **MK-108.1 — iki kuyruk:** wizard = `dosya_isleme_kuyrugu`/`devre-belgeleri`/`kuyruk-isle-izometri.js`;
+  eski = `is_kuyrugu`/`izometri-pdfs`/cron. Yeni iş eklerken hangi kuyruk olduğunu doğrula.
+- **MK-108.4 — kolon adı yazmadan önce `information_schema` sorgula.**
+- **Env:** `SUPABASE_SERVICE_KEY`; `SELF_BASE_URL=https://arespipe.vercel.app`.
+- **Proje bilgisi ~52'de donmuş** — güncel durum yalnız bu dosyalar + git'ten.
+
+---
+
+> 110 açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
