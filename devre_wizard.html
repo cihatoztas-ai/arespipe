@@ -80,6 +80,22 @@
     .ozet-tablo .tip-cell { color:var(--ac); font-weight:500; }
     .ozet-tablo .total-row { font-weight:700; background:var(--sur2); }
 
+    /* ── 108: KABUK ÖNİZLEME (MK-107.1 — otorite kabuktur) ── */
+    .kabuk-wrap   { margin-top:22px; padding-top:18px; border-top:1px solid var(--bor); }
+    .kabuk-wrap h4 { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; color:var(--tx); margin:0 0 4px; }
+    .kabuk-wrap .kabuk-alt { font-size:13px; color:var(--txd); margin:0 0 14px; }
+    .kabuk-scroll { overflow-x:auto; border:1px solid var(--bor); border-radius:10px; }
+    .kabuk-tablo  { width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap; }
+    .kabuk-tablo thead th { text-align:left; padding:9px 12px; background:var(--sur2); color:var(--txm); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid var(--bor); position:sticky; top:0; }
+    .kabuk-tablo thead th.num, .kabuk-tablo tbody td.num { text-align:right; }
+    .kabuk-tablo tbody td { padding:9px 12px; border-bottom:1px solid var(--bor); color:var(--tx); }
+    .kabuk-tablo tbody tr:last-child td { border-bottom:none; }
+    .kabuk-tablo tbody tr:hover { background:var(--sur2); }
+    .kabuk-tablo .marka { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; letter-spacing:.2px; color:var(--tx); }
+    .kabuk-tablo .bos   { color:var(--txd); font-style:italic; }
+    .kabuk-tablo .yuzey-pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; background:var(--sur2); border:1px solid var(--bor); color:var(--txm); }
+    .kabuk-not { font-size:12px; color:var(--txd); margin-top:10px; }
+
     /* ── YÜKLEME (Adım 4) ── */
     .yukleme-status { padding:20px; background:var(--bg); border:1px solid var(--bor); border-radius:8px; margin-bottom:16px; }
     .yukleme-status p { margin:6px 0; font-size:14px; color:var(--tx); }
@@ -853,6 +869,40 @@ async function adim3_yukle() {
     });
     sonHtml += '</ul><p style="font-size:13px;color:var(--txd);">Önizleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın.</p>';
   }
+  // ── 108 / MK-107.1: KABUK ÖNİZLEME ─────────────────────────────────────────
+  // Otorite kabuktur, PDF değil. Az önce parse edilen BOM Excel'lerin parse_sonuc'unu
+  // (kuyruktan, aynı client — INSERT edebildiğimiz satırları okuyabiliriz) çek, benzersiz
+  // (pipeline_no, spool_no) ile grupla, spool kabuğunu GÖSTER. INSERT YOK — sadece önizleme.
+  // Alıştırma kolonu Excel'de yoktur → boş; PDF'ler arkada işlenince dolacak (MK-107.1).
+  try {
+    var bomIds = tetiklenecek.map(function(t) { return t.id; });
+    var kabukSatirlar = [];
+    if (bomIds.length > 0) {
+      var kq = await supa
+        .from('dosya_isleme_kuyrugu')
+        .select('id, parse_sonuc, durum')
+        .in('id', bomIds);
+      if (!kq.error && kq.data) {
+        kq.data.forEach(function(row) {
+          var ps = row.parse_sonuc;
+          if (ps && Array.isArray(ps.satirlar)) {
+            kabukSatirlar = kabukSatirlar.concat(ps.satirlar);
+          }
+        });
+      } else if (kq.error) {
+        console.warn('[kabuk] parse_sonuc okunamadı:', kq.error.message);
+      }
+    }
+    if (kabukSatirlar.length > 0) {
+      var kabuk = kabukTuret(kabukSatirlar);
+      if (kabuk.spoollar.length > 0) {
+        sonHtml += kabukTabloHtml(kabuk, WIZ.proje_no);
+      }
+    }
+  } catch (e) {
+    console.warn('[kabuk] önizleme türetilemedi:', e);
+  }
+
   box.innerHTML = sonHtml + '<div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>';
 
   if (basarili > 0) {
@@ -937,6 +987,157 @@ function gizliDosyaMi(dosya_adi, klasor_yolu) {
     }
   }
   return false;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 108 / MK-107.1 — KABUK TÜRETME + ÖNİZLEME (INSERT YOK, sadece gösterim)
+// Excel parse_sonuc.satirlar → benzersiz (pipeline_no, spool_no) → spool kabuğu.
+// Otorite kabuktur (MK-WIZARD §0). Alıştırma Excel'de yok → boş (PDF arkada dolar).
+// ─────────────────────────────────────────────────────────────
+
+function kabukTuret(satirlar) {
+  var gruplar = {};   // "pipeline|spool" → { pipeline_no, spool_no, rows:[] }
+  var atlanan = 0;    // spool_no'su olmayan satırlar (kabuk dışı BOM kalemi)
+  satirlar.forEach(function(r) {
+    var sp = (r.spool_no != null ? String(r.spool_no).trim() : '');
+    if (!sp) { atlanan++; return; }
+    var pl = (r.pipeline_no != null ? String(r.pipeline_no).trim() : '');
+    var anahtar = pl + '|' + sp;
+    if (!gruplar[anahtar]) gruplar[anahtar] = { pipeline_no: pl, spool_no: sp, rows: [] };
+    gruplar[anahtar].rows.push(r);
+  });
+
+  var spoollar = Object.keys(gruplar).map(function(k) {
+    var g = gruplar[k], rows = g.rows;
+    var toplam = 0, agirlikVar = false;
+    rows.forEach(function(r) {
+      if (typeof r.agirlik_kg === 'number' && !isNaN(r.agirlik_kg)) { toplam += r.agirlik_kg; agirlikVar = true; }
+    });
+    var rev = '';
+    for (var i = 0; i < rows.length; i++) { if (rows[i].revizyon) { rev = String(rows[i].revizyon).trim(); break; } }
+    return {
+      pipeline_no: g.pipeline_no,
+      spool_no: g.spool_no,
+      revizyon: rev,
+      cap: capCikar(rows),
+      agirlik_kg: agirlikVar ? toplam : null,
+      malzeme: enSik(rows.map(function(r) { return r.malzeme; })),
+      kalite:  enSik(rows.map(function(r) { return r.kalite; })),
+      yuzey:   yuzeyCikar(rows),
+      kalem:   rows.length
+    };
+  });
+
+  spoollar.sort(function(a, b) {
+    if (a.pipeline_no !== b.pipeline_no) return a.pipeline_no < b.pipeline_no ? -1 : 1;
+    return a.spool_no < b.spool_no ? -1 : (a.spool_no > b.spool_no ? 1 : 0);
+  });
+
+  return { spoollar: spoollar, atlanan: atlanan };
+}
+
+// En sık görülen boş-olmayan değer (mod)
+function enSik(degerler) {
+  var sayac = {}, enIyi = '', enIyiN = 0;
+  degerler.forEach(function(v) {
+    var s = (v != null ? String(v).trim() : '');
+    if (!s) return;
+    sayac[s] = (sayac[s] || 0) + 1;
+    if (sayac[s] > enIyiN) { enIyiN = sayac[s]; enIyi = s; }
+  });
+  return enIyi;
+}
+
+// Spool nominal çapı: gruptaki en büyük DN; yoksa en büyük cap_mm
+function capCikar(rows) {
+  var enBuyukDn = null;
+  rows.forEach(function(r) {
+    if (r.dn != null) {
+      var m = String(r.dn).match(/(\d+(?:[.,]\d+)?)/);
+      if (m) {
+        var n = parseFloat(m[1].replace(',', '.'));
+        if (!isNaN(n) && (enBuyukDn === null || n > enBuyukDn)) enBuyukDn = n;
+      }
+    }
+  });
+  if (enBuyukDn !== null) return 'DN' + enBuyukDn;
+  var enBuyukMm = null;
+  rows.forEach(function(r) {
+    if (typeof r.cap_mm === 'number' && !isNaN(r.cap_mm) && (enBuyukMm === null || r.cap_mm > enBuyukMm)) enBuyukMm = r.cap_mm;
+  });
+  if (enBuyukMm !== null) return enBuyukMm + ' mm';
+  return '';
+}
+
+// Yüzey ön-doldurma (MK — sorma): önce yuzey alanı, sonra system token'ı ("M100-Galv")
+function yuzeyCikar(rows) {
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].yuzey) {
+      var y = yuzeyTokenden(rows[i].yuzey);
+      return y || String(rows[i].yuzey).trim();
+    }
+  }
+  for (var j = 0; j < rows.length; j++) {
+    if (rows[j].system) {
+      var y2 = yuzeyTokenden(rows[j].system);
+      if (y2) return y2;
+    }
+  }
+  return '';
+}
+
+function yuzeyTokenden(s) {
+  var n = String(s || '').toLowerCase();
+  if (n.indexOf('galv') !== -1) return 'Galvaniz';
+  if (n.indexOf('boyal') !== -1 || n.indexOf('boya') !== -1 || n.indexOf('paint') !== -1) return 'Boyalı';
+  if (n.indexOf('asit') !== -1 || n.indexOf('pickl') !== -1) return 'Asitleme';
+  if (n.indexOf('epoks') !== -1 || n.indexOf('epoxy') !== -1) return 'Epoksi';
+  return '';
+}
+
+// Kabuk önizleme tablosu HTML'i (Panel 4 sonuç alanına eklenir)
+function kabukTabloHtml(kabuk, projeNo) {
+  var sp = kabuk.spoollar;
+  var toplam = 0, agirlikVar = false;
+  sp.forEach(function(s) { if (s.agirlik_kg != null) { toplam += s.agirlik_kg; agirlikVar = true; } });
+
+  var h = '<div class="kabuk-wrap">';
+  h += '<h4>Kabuk Önizlemesi — ' + sp.length + ' spool</h4>';
+  h += '<p class="kabuk-alt">Excel\u2019den türetildi (otorite kabuktur). Henüz <strong>kaydedilmedi</strong> — sadece önizleme. Alıştırma kolonu izometri PDF\u2019leri arka planda işlenince dolacak.</p>';
+  h += '<div class="kabuk-scroll"><table class="kabuk-tablo"><thead><tr>' +
+       '<th>Marka</th><th>Çap</th><th class="num">Ağırlık (kg)</th>' +
+       '<th>Malzeme</th><th>Kalite</th><th>Yüzey</th><th>Alıştırma</th>' +
+       '<th class="num">Kalem</th></tr></thead><tbody>';
+
+  sp.forEach(function(s) {
+    var marka = [projeNo, s.pipeline_no, s.spool_no].filter(function(x) { return x; }).join('-');
+    if (s.revizyon) marka += '-' + s.revizyon;
+    h += '<tr>' +
+      '<td class="marka">' + esc(marka) + '</td>' +
+      '<td>' + (s.cap ? esc(s.cap) : '<span class="bos">—</span>') + '</td>' +
+      '<td class="num">' + (s.agirlik_kg != null ? s.agirlik_kg.toFixed(1) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (s.malzeme ? esc(s.malzeme) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (s.kalite ? esc(s.kalite) : '<span class="bos">—</span>') + '</td>' +
+      '<td>' + (s.yuzey ? '<span class="yuzey-pill">' + esc(s.yuzey) + '</span>' : '<span class="bos">—</span>') + '</td>' +
+      '<td><span class="bos">— (PDF bekliyor)</span></td>' +
+      '<td class="num">' + s.kalem + '</td>' +
+      '</tr>';
+  });
+
+  h += '</tbody>';
+  if (agirlikVar) {
+    h += '<tfoot><tr style="font-weight:700;background:var(--sur2)">' +
+         '<td>Toplam</td><td></td><td class="num">' + toplam.toFixed(1) + '</td>' +
+         '<td colspan="5"></td></tr></tfoot>';
+  }
+  h += '</table></div>';
+
+  if (kabuk.atlanan > 0) {
+    h += '<p class="kabuk-not">ℹ️ ' + kabuk.atlanan + ' satırda spool no yoktu, kabuk dışı bırakıldı.</p>';
+  }
+  h += '<p class="kabuk-not">Bu, MK-107.1 kabuk-first akışının 1. adımı (önizleme). Sonraki adım: \u201cOnayla / Kilitle \u2192 spooller\u2019a \u2018çizim bekliyor\u2019 INSERT\u201d.</p>';
+  h += '</div>';
+  return h;
 }
 </script>
 
