@@ -53,6 +53,9 @@
 
     .wiz-actions { display:flex; justify-content:space-between; align-items:center; margin-top:28px; padding-top:18px; border-top:1px solid var(--bor); gap:10px; }
     .wiz-actions .spacer { flex:1; }
+    /* 113/B — devre modu toggle aktif buton */
+    .dw-mod-btn.aktif { background:var(--ac); border-color:var(--ac); color:#fff; }
+    .dw-mod-btn.aktif:hover { background:var(--ac); color:#fff; }
 
     /* ── DROP ZONE ── */
     .drop-zone { border:2px dashed var(--bor); border-radius:12px; padding:40px 20px; text-align:center; transition:all .15s; margin-bottom:20px; background:var(--bg); }
@@ -173,10 +176,29 @@
         <select id="selProje"><option value="">— Yükleniyor… —</option></select>
         <div class="info" data-i18n="dw_info_proje">Yalnızca size atanmış aktif projeler listelenir.</div>
       </div>
+      <!-- 113/B — Devre modu: mevcuda ekle (eski davranış) / yeni devre oluştur -->
       <div class="form-row">
         <label data-i18n="dw_lbl_devre">Devre *</label>
-        <select id="selDevre" disabled><option value="">— Önce proje seçin —</option></select>
-        <div class="info" data-i18n="dw_info_devre">Aktif devreler listelenir (silinmiş olanlar hariç).</div>
+        <div class="dw-mod-toggle" id="dwModToggle" style="display:flex;gap:8px;margin-bottom:10px;">
+          <button type="button" class="btn-outline dw-mod-btn aktif" data-mode="mevcut"
+            style="flex:1;font-weight:600;" data-i18n="dw_mode_mevcut">Mevcut Devre</button>
+          <button type="button" class="btn-outline dw-mod-btn" data-mode="yeni"
+            style="flex:1;font-weight:600;" data-i18n="dw_mode_yeni">+ Yeni Devre</button>
+        </div>
+        <!-- Mevcut devre seçimi (eski blok, aynen) -->
+        <div id="mevcutDevreBlok">
+          <select id="selDevre" disabled><option value="">— Önce proje seçin —</option></select>
+          <div class="info" data-i18n="dw_info_devre">Aktif devreler listelenir (silinmiş olanlar hariç).</div>
+        </div>
+        <!-- Yeni devre alanları -->
+        <div id="yeniDevreBlok" style="display:none">
+          <input type="text" id="yeniDevreNo" placeholder="Devre No (ör. G200-303)" autocomplete="off"
+            style="width:100%;margin-bottom:8px;" />
+          <input type="text" id="yeniZone" placeholder="Zone (opsiyonel)" autocomplete="off"
+            style="width:100%;margin-bottom:8px;" />
+          <input type="date" id="yeniTermin" style="width:100%;margin-bottom:6px;" />
+          <div class="info" data-i18n="dw_info_yeni">Yeni devre oluşturulur. Malzeme/yüzey, yüklenen BOM Excel’den türetilir; sadece izometri yüklerseniz sonra dolar.</div>
+        </div>
       </div>
       <div class="wiz-actions">
         <div class="spacer"></div>
@@ -275,6 +297,11 @@ var WIZ = {
   proje_no: '',
   devre_id: null,
   devre_no: '',
+  // 113/B — yeni devre oluşturma yolu. _yeniDevre=true ise devre_id Adım 1'de YOK,
+  // adim3_yukle başında devreler INSERT edilip set edilir (öksüz devre olmasın).
+  _yeniDevre: false,
+  yeni_zone: '',
+  yeni_termin: '',
   dosyalar: [],          // {file, klasor_yolu, dosya_adi, uzanti, tip_kodu, parser_yolu, boyut, durum}
   dokuman_tipleri: [],   // DB seed
   klasor_sozluk: []      // DB seed
@@ -424,8 +451,21 @@ function bindleri() {
     }
     guncelleAdim1Buton();
   });
-  document.getElementById('btnIlerle1').addEventListener('click', function() {
-    if (WIZ.proje_id && WIZ.devre_id) gosterAdim(2);
+  document.getElementById('btnIlerle1').addEventListener('click', adim1_ilerle);
+
+  // 113/B — devre modu toggle (Mevcut / Yeni)
+  document.querySelectorAll('.dw-mod-btn').forEach(function(b) {
+    b.addEventListener('click', function() { _dwSetMode(b.getAttribute('data-mode')); });
+  });
+  // 113/B — yeni devre input'ları: buton durumunu güncelle
+  ['yeniDevreNo','yeniZone','yeniTermin'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
+      WIZ.devre_no    = (document.getElementById('yeniDevreNo').value || '').trim();
+      WIZ.yeni_zone   = (document.getElementById('yeniZone').value || '').trim();
+      WIZ.yeni_termin = (document.getElementById('yeniTermin').value || '').trim();
+      guncelleAdim1Buton();
+    });
   });
   document.getElementById('btnGeri2').addEventListener('click', function() { gosterAdim(1); });
   document.getElementById('btnIlerle2').addEventListener('click', adim2_ilerle);
@@ -447,7 +487,82 @@ function bindleri() {
 }
 
 function guncelleAdim1Buton() {
-  document.getElementById('btnIlerle1').disabled = !(WIZ.proje_id && WIZ.devre_id);
+  var hazir = WIZ._yeniDevre
+    ? !!(WIZ.proje_id && WIZ.devre_no)          // yeni: proje + devre_no zorunlu
+    : !!(WIZ.proje_id && WIZ.devre_id);          // mevcut: proje + devre seçili
+  document.getElementById('btnIlerle1').disabled = !hazir;
+}
+
+// 113/B — devre modu değiştir: 'mevcut' | 'yeni'. UI bloklarını ve WIZ durumunu eşitler.
+function _dwSetMode(mode) {
+  WIZ._yeniDevre = (mode === 'yeni');
+  document.querySelectorAll('.dw-mod-btn').forEach(function(b) {
+    b.classList.toggle('aktif', b.getAttribute('data-mode') === mode);
+  });
+  var mevcut = document.getElementById('mevcutDevreBlok');
+  var yeni   = document.getElementById('yeniDevreBlok');
+  if (mevcut) mevcut.style.display = WIZ._yeniDevre ? 'none' : '';
+  if (yeni)   yeni.style.display   = WIZ._yeniDevre ? '' : 'none';
+  if (WIZ._yeniDevre) {
+    // Mevcut seçim varsa temizle; devre_no input'tan okunur
+    WIZ.devre_id = null;
+    WIZ.devre_no    = (document.getElementById('yeniDevreNo').value || '').trim();
+    WIZ.yeni_zone   = (document.getElementById('yeniZone').value || '').trim();
+    WIZ.yeni_termin = (document.getElementById('yeniTermin').value || '').trim();
+  } else {
+    // Mevcut moda dönünce dropdown seçimini WIZ'e geri yaz
+    var sel = document.getElementById('selDevre');
+    WIZ.devre_id = (sel && sel.value) ? sel.value : null;
+    if (sel && sel.value) {
+      var opt = sel.options[sel.selectedIndex];
+      WIZ.devre_no = (opt && opt.dataset.no) || '';
+    }
+  }
+  guncelleAdim1Buton();
+}
+
+// 113/B — Adım 1 "İlerle". Yeni modda dedup: aynı proje+devre_no(+zone) varsa
+// kullanıcıya "Mevcut Devre moduna geçeyim mi?" sor (Karar b).
+async function adim1_ilerle() {
+  if (!WIZ._yeniDevre) {
+    if (WIZ.proje_id && WIZ.devre_id) gosterAdim(2);
+    return;
+  }
+  if (!(WIZ.proje_id && WIZ.devre_no)) return;
+  var btn = document.getElementById('btnIlerle1');
+  btn.disabled = true;   // async dedup sırasında çift tıklamayı engelle
+  try {
+    var supa = ARES.supabase();
+    var q = supa.from('devreler')
+      .select('id, devre_no, zone')
+      .eq('tenant_id', ARES.tenantId())
+      .eq('proje_id', WIZ.proje_id)
+      .eq('devre_no', WIZ.devre_no)
+      .neq('silindi', true);
+    // zone eşleşmesi: girilmişse eq, boşsa NULL kayıtla eşle (devreler zone nullable)
+    q = WIZ.yeni_zone ? q.eq('zone', WIZ.yeni_zone) : q.is('zone', null);
+    var _r = await q.maybeSingle();
+    if (_r && _r.data) {
+      var z = _r.data.zone ? (' / ' + _r.data.zone) : '';
+      var gec = confirm('Bu projede "' + WIZ.devre_no + z + '" devresi zaten var.\n\n' +
+        'Mevcut Devre moduna geçip bu devreye ekleme yapayım mı?\n' +
+        '(İptal: devre numarasını değiştirebilirsiniz.)');
+      if (gec) {
+        _dwSetMode('mevcut');
+        var sel = document.getElementById('selDevre');
+        if (sel) { sel.value = _r.data.id; sel.dispatchEvent(new Event('change')); }
+        if (WIZ.proje_id && WIZ.devre_id) { gosterAdim(2); return; }
+      }
+      // Moda geçmedi / seçim oturmadı → kullanıcı no'yu değiştirsin
+      guncelleAdim1Buton();
+      return;
+    }
+    // Çakışma yok → yeni devre yolu. INSERT adim3_yukle başında (öksüz devre olmasın).
+    gosterAdim(2);
+  } catch (e) {
+    console.error('[wizard] dedup:', e);
+    gosterAdim(2);   // dedup sorgusu hata verse de akışı bloklama
+  }
 }
 
 // ── Drag-drop: klasör + dosya destekli ──
@@ -673,6 +788,46 @@ async function adim3_yukle() {
   var tid = ARES.tenantId();
   var userId;
   try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+
+  // 113/B — Yeni devre modu: dosya yüklemeden ÖNCE devreyi oluştur (öksüz devre olmasın).
+  // Alan seti devre_yeni.html ile aynı (MK-109.1: çıkar/çağır, yeniden yazma yok).
+  // malzeme/yuzey=null, agirlik=0 → kabuk onayı sonrası _devreOzetSenkron ile dolar.
+  // is_emri_no NOT NULL + boş olamaz → ARES.sonrakiNo('is_emri') zorunlu dolu değer.
+  // basamak_snapshot dolu olmalı → aktar() spool'lara buradan kopyalıyor.
+  if (WIZ._yeniDevre && !WIZ.devre_id) {
+    box.querySelector('p').innerHTML = '<strong>Devre oluşturuluyor…</strong>';
+    try {
+      var isEmriNo = await ARES.sonrakiNo('is_emri');
+      if (!isEmriNo || !String(isEmriNo).trim()) throw new Error('is_emri_no üretilemedi');
+      var basamakSnapshot = await ARES.basamakSnapshotOlustur();
+      var ilkBasamak = (basamakSnapshot && basamakSnapshot.length) ? basamakSnapshot[0].sistem_adi : 'on_imalat';
+      var _dr = await supa.from('devreler').insert({
+        tenant_id:         tid,
+        proje_id:          WIZ.proje_id,
+        devre_no:          WIZ.devre_no,
+        zone:              WIZ.yeni_zone || null,
+        termin:            WIZ.yeni_termin || null,
+        malzeme:           null,            // 113/B — kabuk sonrası dolar
+        yuzey:             null,            // 113/B — kabuk sonrası dolar
+        basamak_snapshot:  basamakSnapshot,
+        aktif_basamak:     ilkBasamak,
+        durum:             'aktif',
+        ilerleme:          0,
+        agirlik:           0,               // 113/B — kabuk sonrası dolar
+        is_emri_no:        String(isEmriNo).trim(),
+        alistirma_devresi: false,
+      }).select('id').single();
+      if (_dr.error) throw _dr.error;
+      WIZ.devre_id = _dr.data.id;
+    } catch (e) {
+      console.error('[wizard] yeni devre olustur:', e);
+      var emsg = (typeof hataMesajiTr === 'function') ? hataMesajiTr(e) : ((e && e.message) || String(e));
+      box.innerHTML = '<div style="padding:14px;border:1px solid var(--re);background:rgba(220,38,38,.08);border-radius:10px;color:var(--re);font-weight:600;">' +
+        '✗ Devre oluşturulamadı: ' + esc(emsg) + '<br><span style="font-weight:400;font-size:13px;">Geri dönüp tekrar deneyebilirsiniz.</span></div>';
+      fill.style.width = '0%';
+      return;   // devre yoksa dosya yüklemenin anlamı yok
+    }
+  }
 
   var basarili = 0, basarisiz = 0;
   var loglar = [];
@@ -996,6 +1151,11 @@ async function kabukOnayla() {
       return;
     }
     // Başarı — B: yerinde kal, sonucu göster.
+    // 113/B — Yeni devrede malzeme/yuzey/agirlik henüz null/0. Az önce eklenen spool'lardan
+    // (DB-truth) türetip devreyi güncelle. Mevcut devreye DOKUNMA → sıfır regresyon.
+    if (WIZ._yeniDevre && r.eklenen > 0) {
+      await _devreOzetSenkron(supa, k.tid, k.devreId);
+    }
     if (alan) {
       var atl = r.atlananlar || [];
       var ok = r.eklenen > 0
@@ -1012,6 +1172,44 @@ async function kabukOnayla() {
     console.error('[kabuk] onayla:', e);
     if (btn) { btn.disabled = false; btn.innerHTML = _kabukBtnLabel(secilenler.length); }
   }
+}
+
+// 113/B — Yeni devrenin malzeme/yuzey/agirlik özetini eklenen spool'lardan (DB-truth) türetip
+// devreyi günceller. DB'den okur → çift "Onayla" / atlanan spool durumlarında da doğru kalır.
+// Yalnız yeni devrede çağrılır (mevcut devrenin özeti zaten devre_yeni/mevcut akışta dolu).
+async function _devreOzetSenkron(supa, tid, devreId) {
+  if (!supa || !tid || !devreId) return;
+  try {
+    var q = await supa.from('spooller')
+      .select('malzeme, yuzey, agirlik_kg')
+      .eq('tenant_id', tid).eq('devre_id', devreId).eq('silindi', false);
+    if (q.error || !q.data || !q.data.length) return;
+    var rows = q.data;
+    var topKg = rows.reduce(function(t, r) { return t + (parseFloat(r.agirlik_kg) || 0); }, 0);
+    var malzeme = _baskin(rows.map(function(r) { return r.malzeme; }));
+    var yuzey   = _baskin(rows.map(function(r) { return r.yuzey; }));
+    var upd = {};
+    if (topKg > 0)  upd.agirlik = topKg;
+    if (malzeme)    upd.malzeme = malzeme;
+    if (yuzey)      upd.yuzey   = yuzey;
+    if (Object.keys(upd).length) {
+      var ur = await supa.from('devreler').update(upd).eq('id', devreId).eq('tenant_id', tid);
+      if (ur.error) console.warn('[wizard] devre ozet update:', ur.error.message);
+    }
+  } catch (e) {
+    console.warn('[wizard] devre ozet senkron:', e);
+  }
+}
+
+// Bir dizideki en sık geçen boş-olmayan değeri döndürür (baskın malzeme/yüzey kodu için).
+function _baskin(arr) {
+  var c = {}, best = null, bestN = 0;
+  (arr || []).forEach(function(v) {
+    if (!v) return;
+    c[v] = (c[v] || 0) + 1;
+    if (c[v] > bestN) { bestN = c[v]; best = v; }
+  });
+  return best;
 }
 
 // 109/#4: Onayla buton etiketi (span'lı, canlı sayaç için).
@@ -1048,6 +1246,8 @@ function gosterAdim(n) {
   document.querySelectorAll('.wiz-panel').forEach(function(el) {
     el.style.display = (parseInt(el.dataset.panel) === n) ? '' : 'none';
   });
+  // 113/B — Adım 1'e (geri) dönüldüğünde İlerle butonunu moda göre tazele
+  if (n === 1) guncelleAdim1Buton();
 }
 
 function esc(s) {
