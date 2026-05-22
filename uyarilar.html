@@ -471,8 +471,14 @@ function renderHepsi() {
 async function bindirmeUyarilariYukle() {
   try {
     if (typeof ARES === 'undefined' || !ARES.supabase) return;
-    const supa = ARES.supabase();
-    if (!supa) return;
+    // Supabase CDN async yuklenir — init aninda supabase() henuz null olabilir.
+    // Kisa retry ile hazir olmasini bekle (en fazla ~3sn), sonra devam.
+    let supa = ARES.supabase();
+    for (let bekle = 0; !supa && bekle < 10; bekle++) {
+      await new Promise(function (r) { setTimeout(r, 300); });
+      supa = ARES.supabase();
+    }
+    if (!supa) { console.warn('[uyarilar] supabase hazir degil — bindirme atlandi'); return; }
     const { data, error } = await supa
       .from('dosya_isleme_kuyrugu')
       .select('id, bitis_at, eslesme:parse_sonuc->_eslesme')
