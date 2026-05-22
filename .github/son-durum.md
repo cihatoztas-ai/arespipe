@@ -1,168 +1,166 @@
-# Son Durum — 111. Oturum (22 May 2026)
+# Son Durum — 112. Oturum (22 May 2026)
 
-> 110 → 111 geçişi. ANA TEMA: **Boru ölçü zenginleştirme + katman bindirme** (MK-110.3).
-> İki parça halinde planlandı, **ikisi de tamamlandı ve canlı doğrulandı.**
-> PARÇA 1: kabuk akışının fakir boru ölçüleri IFS'in zengin lookup'ına bağlandı.
-> PARÇA 2: eşleşen PDF verisi kabuk spool'a bindiriliyor (survivorship + çakışma flag + PDF↔spool bağı).
+> 111 → 112 geçişi. ANA TEMA: **izometri drenaj buton tetik sorunu (MK-112.1)** +
+> **spool detayda eşleşen izometri PDF erişimi (MK-112.3)** + **uyarılar sayfasında bindirme
+> çelişki uyarıları (MK-112.5)**. Üç planlı öncelik de tamamlandı ve canlı doğrulandı.
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**111 başarıyla kapandı. İki büyük parça da canlıda çalışıyor.**
+**112 başarıyla kapandı. Üç öncelik de canlıda çalışıyor.**
 
-110'da keşfedilen "iki ayrı parser" sorunu (kabuk SCH/inç bilmiyor, IFS biliyor) çözüldü:
-artık **tek ortak metin parser** (`ares-olcu.js`) var, lookup'ı `ARES_BORU` (ares-asme.js) yapıyor.
-Üstüne, eşleşen izometri PDF'inin verisi kabuk spool'a **katman katman bindiriliyor** — Cihat'ın
-baştan beri vizyonu olan "Excel + PDF birbirini tamamlasın, çakışmaları gör" mantığı.
+- **Öncelik 1:** "Bekleyenleri işle" butonu artık gerçekten drene ediyor. Kök neden: fire-and-forget
+  self-chain Vercel'de container suspend yüzünden ölüyordu (her tetik = 1 iş). İç-döngü drenajla
+  çözüldü + buton devreye özgü hale getirildi.
+- **Öncelik 2:** Eşleşen izometri PDF'i artık spool detay sayfalarından açılabiliyor (mobil + web),
+  Belgeler bölümünde. Endpoint çok-bucket destekli yapıldı.
+- **Öncelik 3:** Bindirme çelişkileri (kabuk Excel ↔ PDF farkı) uyarılar sayfasında görünüyor —
+  sayfanın ilk canlı DB bağlantısı.
 
 ---
 
 ## YAPILANLAR
 
-### PARÇA 1 — Ortak boyut parser (Karar-B, MK-110.3)
+### Öncelik 1 — İzometri drenaj buton tetik sorunu (MK-112.1, MK-112.3)
 
-**Kök neden (110'da kanıtlanmıştı):** Üç ayrı boyut-parser vardı —
-- `ares-kabuk.js::boyutParse` (FAKİR: SCH/inç bilmez, `4" Sch 10S` → dis_cap=4/et=null)
-- `devre_yeni.html::_boyutParcala` (ZENGİN ama inline `_schWT` KOPYASI — ARES_BORU'yu çağırmaz)
-- `ares-asme.js` = `ARES_BORU` (tam lookup motoru ama saf, metin parse etmez, kimse çağırmaz)
+**Kök neden (canlı kanıtlandı):** `kuyruk-isle-izometri.js` her iş bitince `zincirDevam()` ile
+fire-and-forget `fetch` atıp kendini tekrar tetikliyordu. Vercel serverless'te `res.json()` döndükten
+sonra container SUSPEND olur → o fetch çoğu zaman paket gitmeden ölür. Sonuç: her tetik tam 1 iş,
+zincir hiç başlamaz. 112'de kanıt: `bekliyor:134`, tek curl → sadece 1 azaldı.
 
-**Çözüm (Karar 2-B):** Yeni `ares-olcu.js` ortak metin parser. `olcuParse(boyutStr, malzeme)`:
-- `"4\" Sch 10S"` → NPS çıkar → `ARES_BORU.npsToDn` → `disCap` + `etKalinligi` → {114.3, 3.05, dn:100, sch:'10S'}
-- `"88.9x8.0"` → açık OD x et → {88.9, 8.0}
-- `"DN100"` → `ARES_BORU.disCap` → {114.3, null}
-- `"OD:60"` → {60, null} (eski kabuk desteğiydi, regresyon önleme)
-- `"100 x 114.3"` → {100, null} — **MK-111.1: et ≥ dis_cap olamaz → et iptal** (bonus bug fix)
-- dn+sch döndüğü için ağırlık lookup'ı (`agirlikKgM`) da bedava açıldı
+**Çözüm (MK-112.1):** `zincirDevam` silindi. Tek-iş mantığı `birIsIsle(supa, baseUrl, is)` saf
+fonksiyonuna taşındı (res'e dokunmaz, sonuç objesi döner). Yeni `drenajTuru(supa, baseUrl, {maxIs,
+maxMs, devreId})` — `maxDuration:60` içinde ardışık iş işler (maxIs=4, maxMs=50sn). Container zaten
+ayakta, iç while-döngüsü Vercel suspend tuzağına takılmaz. `isiHataylaKapat`'tan res çıkarıldı (obje
+döner). Frontend (`devre_detay.html::bekleyenIzometriIsle`) setInterval → ardışık await döngüsü
+(kalan_var=false olana dek tekrar tetikler, MAX_TUR=60 + ardışık hata + boşTur korumaları).
 
-**Bağlama:** `ares-kabuk.js::boyutParse` fakir mantığı SİLİNDİ → `ARES_OLCU.olcuParse`'a devredildi.
-İki çağrı yeri malzeme alacak şekilde güncellendi. `ARES_OLCU` yüklenmemişse boş+warn (fallback yok,
-kopya bırakma). Script sırası: `ares-asme → ares-olcu → ares-kabuk` (devre_wizard.html + devre_detay.html).
+**Devre-özgü (MK-112.3):** Buton sayacı bu devreye özgüydü ama backend global drene ediyordu →
+"sayı azalmıyor" belirtisi. `drenajTuru` artık `devreId` alıyor; kuyrukta `devre_id` kolonu YOK
+(şema: tenant_id, devre_dokuman_id, parser, oncelik, durum, olusturma), o yüzden devre dokümanı
+id'leri çekilip kuyruk `.in('devre_dokuman_id', [...])` ile filtreleniyor. devreId yoksa global
+(cron için geriye uyumlu — MK-112.2). Buton `body:{devre_id: DEVRE.supaId}` gönderiyor.
 
-**Bonus:** Kabuk artık `spooller.et_kalinligi_mm`'i de dolduruyor — IFS'in bile yapmadığı şey.
+**Canlı doğrulama:** curl drenaj → `islenen_sayisi:4, kalan_var:true` (eskiden 1). deneme 3d devresi
+(8ea2963c) butonla boşaldı: 18 izometri işlendi (10 oneri_hazir + 8 manuel_onay), bekliyor=0.
 
-**Canlı doğrulama:** Yeni aktarılan A-0759 → DIŞ ÇAP 60,3 / ET 4,50 (eskiden 2,0/—). ✅
+**Birim test:** drenajTuru için mock supa + mock fetch ile 25/25 (döngü/limit/kalan_var + devre
+izolasyonu: D1 işlenirken D2'ye dokunulmuyor + global geriye uyumluluk).
 
-### PARÇA 2a — Katman bindirme (MK-111.2)
+### Öncelik 2 — Spool detayda eşleşen izometri PDF erişimi (MK-112.3, MK-112.4)
 
-`eslestir()` (110'da kuruldu, sadece `cizim_durumu` rozeti değiştiriyordu) artık eşleşen PDF
-verisini kabuk spool'a BİNDİRİYOR. Yeni `lib/bindir.js` saf çekirdek (`bindir(pdfSpool, kabukSpool)`):
+DB bağı 111'de kurulmuştu (`devre_dokumanlari.spool_id`). Bu oturumda UI + erişim:
 
-- **Et / Çap:** boşsa doldur; doluysa eşitse geç, **FARKLIYSA flag** (kabuk korunur, sessiz ezme yok)
-- **Ağırlık:** |fark|/kabuk ≤ **%3** → sessiz geç (kabuk kalır); > %3 → **flag** + ikisini sakla
-- **Yüzey:** kabuk boş + PDF dolu → doldur; ikisi dolu+farklı → flag
-- **Yön:** parse'ta kaynak alan YOK → bindirme dışı (backlog/3D, MK-49.A)
+- **Mobil (`mobile/src/components/isbaslat/IbSpoolDetay.jsx`):** `devre_dokumanlari.spool_id` fetch
+  (foto deseninin aynısı) + "📐 İzometri Çizimleri" bölümü + "Aç ↗" (window.open, PWA). Çoklu PDF
+  `.map()` ile destekli. Canlı: A-0764'te PDF göründü+açıldı.
+- **Web (`spool_detay.html`):** Mevcut "📄 Belgeler" bölümünün İÇİNE "📐 İzometri Çizimleri"
+  alt-grubu (ayrı tablo `devre_dokumanlari`, ayrı bucket). `renderBelgeler` genişletildi, akıllı boş
+  durum. Canlı: A-000764'te göründü+açıldı (bucket fix sonrası).
+- **Endpoint çok-bucket (MK-112.4):** `api/dosya-url-al.js` body'den `bucket` okuyor, allow-list
+  (`arespipe-dosyalar` + `devre-belgeleri`), gelmezse default (geriye uyumlu — foto/belge bozulmaz).
+  `mobile/src/lib/dosya.js` + `ares-store.js` (web) `dosyaUrlAl(yol, bucket)` 2. param + bucket-duyarlı
+  cache key. KÖK NEDEN: izometri `devre-belgeleri`'nde, endpoint hardcoded `arespipe-dosyalar`'a
+  bakıyordu → 404 "açılamadı". Çözülünce hem web hem mobil açıyor.
 
-Çakışma izi `parse_sonuc._eslesme.detay[].bindirme[]` JSONB'ye (`{alan,kabuk,pdf,secilen,flag,sebep}`).
-Şema değişmez (oku-birleştir-yaz). `ozet.bindirme_flag_sayisi` = çelişkili eşleşme sayısı.
+### Öncelik 3 — Uyarılar sayfasında bindirme çelişki uyarıları (MK-112.5)
 
-### PARÇA 2b — PDF↔spool kalıcı bağı
-
-Migration (CANLI): `devre_dokumanlari.spool_id uuid REFERENCES spooller(id) ON DELETE SET NULL`
-+ partial index. Eşleşmede `eslestir()` bunu set ediyor. Spool detay sayfası (UI sonraki oturum)
-bu bağdan eşleşen izometri PDF'ine erişecek.
-
-### Canlı Doğrulama (curl ile direkt worker tetik — A-000764)
-
-`POST /api/kuyruk-isle-izometri {is_id}` → `M235-302-101 1(6).S01.1.pdf` →
-- Eşleşti: S01 / M235-302-101 → A-000764, bekliyor→kismi (yukseltilen:1)
-- Bindirme: et 3.2=3.2 (esit), cap 21.3=21.3 (esit), **agirlik kabuk 3.459 ↔ PDF 4.0 = %15.6 → FLAG**
-  (kabuk korundu, ezme yok), **yuzey null → 'Galvaniz' dolduruldu**
-- `bindirme_flag_sayisi:1` — ilk gerçek çakışma, doğru flag'lendi ✅
-- DB teyit: `spooller A-000764` yuzey='Galvaniz', cizim_durumu='kismi' ✅
-- `devre_dokumanlari` spool_id=f19f671c (A-000764) ✅
+`uyarilar.html` şu ana dek MOCK veriydi (U001-U005 hardcoded, SYOS). İlk canlı DB bağlantısı eklendi:
+`bindirmeUyarilariYukle()` → `dosya_isleme_kuyrugu.parse_sonuc->_eslesme` (izole select, hafif) →
+`bindirme_flag_sayisi>0` olan kayıtlardan flag'li alanları çıkarıp "⚖️ Bindirme Çelişkisi" kartı üretir.
+Kart: "A-000662 — çap çelişkisi" + "kabuk 4 ↔ PDF 114.3". A planı: yeni kolon/yazma YOK, _eslesme
+JSONB okunur. Idempotent. Mock uyarılar dokunulmadan kalır. Canlı: 10 flag'li kayıt mevcut
+(M200-355C + M235 formatları).
 
 ---
 
-## Commit'ler (111)
+## Commit'ler (112)
 
 | Hash | Mesaj |
 |------|-------|
-| `a651ad9` | feat(111): ortak boyut parser ares-olcu.js + kabuk SCH/inc lookup (Karar-B, MK-110.3/111.1) |
-| `1179a5f` | feat(111): PARCA2a katman bindirme — lib/bindir.js (EKSIK: eslestir baglantisi commitlenmedi) |
-| `977207c` | feat(111): PARCA2a eslestir bindirme baglandi — onceki commit eksik kalmisti |
-| (doc) | chore(111): kapanis dokumanlari [skip ci] |
+| `32405f6` | fix(112): izometri drenaj — self-chain yerine ic-dongu (MK-112.1) |
+| `38a2b29` | fix(112): bekleyen izometri butonu — ardisik drenaj dongusu |
+| `f9d12a4` | fix(112): drenaj devre-ozgu — buton sadece o devreyi isler (MK-112.3) |
+| `0b0cb9c` | feat(112): spool detayda eslesen izometri PDF — mobil + endpoint cok-bucket (MK-112.3/112.4) |
+| `2922aad` | feat(112): web spool detay belgeler bolumunde eslesen izometri PDF |
+| `0dfd5ef` | fix(112): web dosyaUrlAl bucket param — izometri PDF acilmasi (MK-112.4) |
+| `(yeni)`  | feat(112): uyarilar sayfasi bindirme celiski uyarilari — canli (MK-112.5) |
+| `(doc)`   | chore(112): kapanis dokumanlari [skip ci] |
 
-CI: ✅ YEŞİL (`97a47a0` #925 yeşil). Vercel Production Current = yeni kod (deploy doğrulandı).
-
-DB: `devre_dokumanlari.spool_id` migration COMMIT'lendi (canlı).
-
----
-
-## Mimari Kararlar (111)
-
-- **MK-111.1:** Fiziksel kural — et ≥ dış çap OLAMAZ. `"100 x 114.3"` gibi DNxOD notasyonunda
-  ikinci sayı et sanılmaz; et iptal. (110'da kanıtlanan bonus bug'ın temiz çözümü.)
-- **MK-111.2 (bindirme survivorship):** Eşleşen PDF→kabuk spool bindirme kuralları:
-  boş→doldur; et/çap çelişki→flag (kabuk korunur); ağırlık %3 tolerans (üstü→flag);
-  yüzey boş→doldur/çelişki→flag. **SESSİZ EZME YOK** — her çakışma `_eslesme.bindirme`'ye saklanır
-  (audit). Sektör MDM "survivorship + golden record" disiplininin AresPipe ölçeğine indirgenmiş hali.
-- **Karar-B:** Ortak boyut parser ayrı modülde (`ares-olcu.js`), ARES_BORU saf lookup kalır.
-  Kabuk + IFS + gelecekteki PDF/STP hepsi tek kapıdan geçer (MK-109.1 ruhu).
+CI: aradaki CI commit'leri (`ci-son-rapor.json [skip ci]`) pull-rebase ile düzgün alındı, çakışma yok.
+Vercel: ana proje (arespipe) + mobil proje (arespipe-mob) ayrı deploy ediliyor.
 
 ---
 
-## Sektör/MDM Araştırması — Alınan Kararlar (Cihat değerlendirmesi)
+## Mimari Kararlar (112)
 
-Cihat başka bir sohbette "benzer sistemler ne öğrenmiş" diye sordu, sonucu AresPipe'a bağladık.
-Sektörün BOM reconciliation + MDM (golden record) disiplinleri tam bizim yaptığımız iş.
-**Hepsini değil, ölçeğimize uyanı al** kararıyla süzüldü:
-
-**ALINANLAR (3):**
-- Minimal survivorship (alan-bazlı kaynak önceliği) → **YAPILDI** (MK-111.2).
-- Eşik yönlendirme + kritik alan flag → kısmen var (guven_skoru, manuel_onay zaten çalışıyor;
-  bindirme flag eklendi). Uyarılar sayfasında gösterim → borç.
-- Yeni format → ilk turlar zorunlu insan incelemesi → **disiplin notu** (kod değil, alışkanlık).
-
-**REDDEDİLENLER (ölçeğimize gereksiz):**
-- Sistematik grounding (her değer hangi satırdan) → az format + az hacim → gereksiz.
-- Format kayması monitoring panosu → binlerce belge ölçeği için → gereksiz.
-- Tam audit trail (kim/ne zaman/neden) → compliance ölçeği → gereksiz. "İkisini sakla + flag" yeter.
-
-**ÖNEMLİ TEŞHİS DÜZELTMESİ:** Sektör cevabı çap=4 sorununu "survivorship yok, son yazan eziyor"
-diye okumuştu (MDM lensi). GERÇEK kök parser asimetrisiydi (kabuk SCH/inç bilmiyor) — canlı veriyle
-kanıtlandı. PARÇA 1 ile çoğu "çakışma" kayboldu çünkü onlar veri çelişkisi değil parser eksikliğiydi.
-Survivorship ihtiyacı, gerçekten iki kaynağın farklı ölçtüğü nadir duruma indi (örn. ağırlık %15.6).
+- **MK-112.1:** Vercel serverless'te fire-and-forget self-chain GÜVENİLMEZ (response sonrası container
+  suspend → fetch ölür). Kuyruk drenajı `maxDuration` içinde iç while-döngüsü ile yapılır (maxIs=4,
+  maxMs=50sn). Tek-iş mantığı saf fonksiyona ayrılır, res'e dokunmaz.
+- **MK-112.2 (backlog/hazır):** Yükleme-sonrası OTOMATİK arka plan drenaj istenirse → Vercel Cron,
+  mevcut `drenajTuru` çekirdeğini çağırır. Yeni mantık gerekmez (devreId'siz = global). Bugün
+  monte EDİLMEDİ; "araba/roket" — pilot olay-tetikli, gerek yok. Bağlantı noktası hazır bırakıldı.
+- **MK-112.3:** Drenaj/erişim devre veya spool-özgü olmalı (kullanıcı bağlamı). Kuyrukta devre_id
+  kolonu yok → devre filtresi `devre_dokumanlari` id'leri üzerinden `.in()`. Spool detayda izometri
+  = `devre_dokumanlari where spool_id = <spool uuid>`.
+- **MK-112.4:** `dosya-url-al` endpoint çok-bucket (allow-list + default geriye uyumlu). Helper'lar
+  (web ares-store.js + mobil dosya.js) bucket param + bucket-duyarlı cache key alır. Bucket varsaymak
+  yerine path/parametre ile açıkça verilir.
+- **MK-112.5:** Bindirme çelişkileri uyarılar sayfasında A planıyla gösterilir — `_eslesme` JSONB
+  okunur, yeni kolon/yazma yok, `eslestir`'e dokunulmaz (MK-49.1/109.1).
 
 ---
 
-## 112'ye Açık Borç (önceliğe göre)
+## 113'e Açık Borç (önceliğe göre)
 
-1. **🔴 `Bekleyenleri işle` butonu tetik sorunu.** Endpoint SAĞLAM (curl ile direkt POST → islendi).
-   Buton çağrısı ulaşmıyor / fire-and-forget tetik kayıp. 110'dan beri var olan, PARÇA 2 ile ilgisiz.
-   "Göz kırpıyor ama ilerleme yok" belirtisi. İlk bakılacak: butonun çağırdığı endpoint + zincirDevam.
-2. **Spool detay UI — eşleşen PDF erişimi (2b'nin görünür kısmı).** DB bağı (spool_id) kuruldu;
-   spool detay sayfasında "İzometri" linki/önizleme eklenecek. Cihat "sayfa tasarımı sonra" dedi.
-3. **Uyarılar sayfasında bindirme flag gösterimi.** `_eslesme.bindirme[].flag=true` olan spool'lar
-   (çakışmalı) uyarılar sayfasında görünmeli (vizyon: "eksiği/çelişkisi olan spool").
-4. **`_N` alt-spool fallback (MK-110.2 eksiği).** `S01_1` PDF → kök `S01`'e eşleşsin (pafta eki),
-   ama `S08_1` gibi gerçek ayrı spool'u bozmadan: önce birebir, yoksa `_N` at + kök dene.
-5. **"Tersan M110 Montaj Resmi" format temizliği.** manuel_onay'a düşüyor (düşük güven). Backlog'da.
-6. **Test verisi temizliği.** İçeride GERÇEK veri YOK (Cihat: "rastgele spool ekliyorum, yeni devre
-   ekleyemiyoruz henüz"). 8ca4a958 vs 387732a0 ikiz devreleri + fakir/mükerrer test spool'ları
-   (A-0006xx serisi vb.) topluca silinebilir. Acil değil.
-7. **Yön/3D hattı (MK-49.A).** Bindirme yön verisi getirmedi (parse'ta kaynak yok). 3D için yön
-   üretimi ayrı iş.
-8. **Yeni devre ekleme.** Cihat: "henüz yeni devre ekleyemiyoruz, sadece mevcuda ilave." Wizard
-   "yeni devre" akışı eksik olabilir — netleştir.
+1. **🔴 WIZARD — yeni devre ekleme akışı (DOĞRULANMAMIŞ, kritik olabilir).** 111+112'de Cihat:
+   "henüz yeni devre ekleyemiyoruz, sadece mevcuda ilave." Wizard'ın "yeni devre oluştur" yolu
+   yarım/yok mu? 113 başında `devre_wizard.html` + yükleme akışı CANLI incelenmeli, bu liste doğrulanmalı.
+2. **Mobil YÖNETİCİ ekranında izometri PDF görünmüyor.** İş Başlat (personel) ekranında GÖRÜNDÜ
+   (Image kanıt), ama Cihat yönetici ekranında görmedi. İş Başlat + foto-carousel'li ekran grep'te
+   AYNI dosya (IbSpoolDetay.jsx) çıktı — ama davranış farklı. Ya farklı bir bileşen var ya yönetici
+   bağ olmayan spool'a baktı. TEŞHİS edilmedi. (Not: A-000764 dışında bağ yok — başka spoolda boş
+   görünmesi DOĞRU.)
+3. **Personel "İş Başlat" ekranına izometri — zaten geldi (kalsın mı?).** Aslında IbSpoolDetay.jsx
+   tek dosya olduğu için izometri hem yöneticiye hem personele geldi. Cihat "personele sonra" demişti
+   ama saha için faydalı. Kalsın mı / ayrılsın mı kararı.
+4. **Bindirme uyarıları "Git →" linki.** uyariKartHtml'de `onclick="navigateUyari(u)"` — u runtime
+   scope'ta tanımsız (mevcut mock'larda da kırık olabilir). Link `spool_detay.html?id=<uuid>` olarak
+   set edildi ama navigateUyari davranışı doğrulanmadı. Test/düzeltme.
+5. **Format öğrenme / manuel_onay oranı.** M200-355C + M235 formatları yüksek oranda manuel_onay'a
+   düşüyor (10 flag'li kaydın çoğu). Format envanter UI + öğretme döngüsü (MK-107.x, eski borç).
+6. **"Başka tersane klasörü yükledim, olmadı" (Cihat, bu oturum).** Teşhis edilmedi (Cihat "sonra"
+   dedi). Muhtemelen M200-355C formatı manuel_onay'a düşüyor (yukarıdaki madde ile aynı kök olabilir).
+   113'te: hangi katmanda takıldı — yükleme mi, parse mı, eşleşme mi?
+7. **2 yeni lang anahtarı (i18n borcu).** devre_detay: `dv_izo_drenaj_hata`, `dv_izo_drenaj_kismi` +
+   spool/uyarı: `sp_izo_baslik`, `sp_izo_ac`, `sp_izo_acilamadi`, `sp_izo_eslesen` — fallback'le
+   çalışıyor ama lang/*.json'da yok (TR dışı dilde TR fallback). G-01 i18n.
+8. **`_N` alt-spool fallback (MK-110.2 eksiği).** `S01_1` PDF → kök `S01` (pafta eki) — önce birebir,
+   yoksa `_N` at + kök dene.
+9. **İkiz kolon temizliği** (agirlik/agirlik_kg, durum/is_durumu — MK-108.2). Web spool durum senkronu.
 
 ---
 
-## Kritik Hatırlatmalar
+## Kritik Hatırlatmalar (112 dersleri)
 
-- **Veriyi gör, varsayma (bu oturumun TEKRAR EDEN dersi).** Bu oturumda kolon adlarını birkaç kez
-  varsaydım, SQL hata verdi (`devre_id`, `parse_sonuc` yanlış tablo). Her seferinde `information_schema`
-  ile doğrulamak gerekti. MK-108.4 hatırla: kolon adı yazmadan information_schema ile teyit et.
-- **md5 gözle teyit HAYAT KURTARDI (MK-109.5/MK-51.1).** PARÇA 2 push'unda `cp` eski dosyayı kopyaladı,
-  `git status` sadece 1 dosya gösterdi, md5 335bf78 (beklenen 1042fc5c değil) yakaladı → yarım push
-  fark edildi, düzeltildi. md5 olmasaydı bindirme canlıda çalışmazdı, sebebini günlerce arardık.
-- **Push sırası: migration ÖNCE COMMIT → kod push → deploy.** `devre_dokumanlari.spool_id` koddan önce
-  eklendi (kolon yoksa kod hata loglar). Bu oturumda doğru sırayla yapıldı.
-- **zsh tuzakları:** `--include=*.html` tırnaksız patlar (`--include="*.html"` kullan). md5/açıklama
-  bloğunu komut satırına yapıştırma — `command not found` / `quote>` moduna takılır.
-- **Env:** `SUPABASE_SERVICE_KEY`; `SELF_BASE_URL=https://arespipe.vercel.app`.
+- **Veriyi gör, varsayma — yine işe yaradı.** Kuyrukta `devre_id` kolonu yok (information_schema ile
+  teyit), kolon adı `is_emri_no` (`is_emri` değil — Postgres hint), endpoint hardcoded bucket — üçü de
+  varsayım yerine bakılarak yakalandı. JSONB yapısı (`_eslesme.detay[].bindirme[]`) gerçek veriden
+  görülüp öyle kod yazıldı.
+- **md5 + tek-dosya teyidi her push'ta uygulandı.** cp sonrası git status dosya sayısı doğrulandı,
+  md5 indirme sonrası karşılaştırıldı. Yarım push olmadı.
+- **Push sırası: pull --rebase → commit → push.** Her push'ta uzaktaki CI commit'i (`ci-son-rapor`)
+  autostash + rebase ile temiz alındı.
+- **İki ekran karıştırma riski.** Mobilde İş Başlat vs yönetici ekranı baştan ters eşleştirildi;
+  grep ile dosya kesinleştirildi. Ekran→dosya eşlemesini varsayma.
+- **Mock sayfa tuzağı.** uyarilar.html mock'tu — "küçük ekleme" sandığımız iş aslında "ilk canlı bağ"
+  çıktı. Sayfanın canlı mı mock mu olduğunu kod yazmadan kontrol et.
+- **Env:** `SUPABASE_SERVICE_KEY`; `SELF_BASE_URL=https://arespipe.vercel.app`. Mobil: `VITE_API_BASE`.
 - **Proje bilgisi ~52'de donmuş** — güncel durum yalnız bu dosyalar + git'ten.
 
 ---
 
-> 112 açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+> 113 açılışında bu dosya, `docs/CLAUDE-SON-OTURUM.md` ve `docs/CLAUDE-SONRAKI-OTURUM.md` okunacak.
+> 113 İLK İŞ ÖNERİSİ: Wizard "yeni devre ekleme" akışını canlı doğrula (Açık Borç 1) — bu büyük bir
+> eksik olabilir, netleştirilmeli.
