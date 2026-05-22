@@ -111,6 +111,7 @@ export default function IbSpoolDetay({
   const [testlerSayi, setTestlerSayi] = useState(0)
   const [notlar, setNotlar] = useState([])
   const [fotograflar, setFotograflar] = useState([])
+  const [izometriler, setIzometriler] = useState([])   // 112/MK-112.3: bu spool'a eslesen izometri PDF'leri
   const [fotoIdx, setFotoIdx] = useState(0)
   const [kullaniciAdMap, setKullaniciAdMap] = useState({})
   const [malzemeler, setMalzemeler] = useState([])
@@ -286,6 +287,38 @@ export default function IbSpoolDetay({
         setKullaniciAdMap(map)
       } catch (e) {
         console.warn('[IbSpoolDetay] fotograflar yüklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [yerelSpool?.id])
+
+  // 112/MK-112.3: bu spool'a eslesen izometri PDF'leri (devre_dokumanlari.spool_id — 111'de kuruldu).
+  //   Saha personeli kendi spool'unun cizimine buradan ulasir (web devre_detay disinda tek erisim noktasi).
+  //   Foto deseninin aynisi; TEK FARK: dosyaUrlAl'a 'devre-belgeleri' bucket gecilir (foto arespipe-dosyalar'da,
+  //   izometri devre-belgeleri'nde — MK-112.4 ile endpoint cok-bucket destekler). spool_id zaten sadece
+  //   izometri eslesmesinde set edildigi icin dokuman_tipi filtresine gerek yok (eslestir garantisi).
+  useEffect(() => {
+    if (!yerelSpool?.id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('devre_dokumanlari')
+          .select('id, dosya_adi, storage_yolu, dokuman_tipi, yuklenme')
+          .eq('spool_id', yerelSpool.id)
+          .order('yuklenme', { ascending: false })
+        if (error || iptal) return
+        const liste = Array.isArray(data) ? data : []
+        const cozumlu = await Promise.all(
+          liste.map(async (d) => {
+            const cozulmus_url = await dosyaUrlAl(d.storage_yolu, 'devre-belgeleri')
+            return { ...d, cozulmus_url }
+          })
+        )
+        if (iptal) return
+        setIzometriler(cozumlu)
+      } catch (e) {
+        console.warn('[IbSpoolDetay] izometri PDF yuklenemedi:', e)
       }
     })()
     return () => { iptal = true }
@@ -975,6 +1008,34 @@ export default function IbSpoolDetay({
         kullaniciAdMap={kullaniciAdMap}
         tv={tv}
       />
+
+      {/* 112/MK-112.3: Eslesen izometri PDF'leri — saha personeli icin cizime hizli erisim.
+          Bos ise gosterilmez. Tikla -> yeni sekme (web devre_detay dokAc deseni, PWA'da window.open). */}
+      {izometriler.length > 0 && (
+        <div style={{ margin: '10px 16px', padding: '10px 12px', borderRadius: 12, background: 'rgba(45,142,255,.06)', border: '1px solid rgba(45,142,255,.20)' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2d8eff' }}>
+            📐 {tv('sp_izo_baslik', 'İzometri Çizimleri')}
+          </div>
+          {izometriler.map((d) => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0' }}>
+              <span style={{ fontSize: 13, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.dosya_adi}
+              </span>
+              {d.cozulmus_url ? (
+                <button
+                  type="button"
+                  onClick={() => window.open(d.cozulmus_url, '_blank', 'noopener')}
+                  style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 8, border: '1px solid rgba(45,142,255,.35)', background: 'transparent', color: '#2d8eff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  {tv('sp_izo_ac', 'Aç')} ↗
+                </button>
+              ) : (
+                <span style={{ fontSize: 11, color: '#999' }}>{tv('sp_izo_acilamadi', 'açılamadı')}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Aktif rol + Spool ID + Peek tab satırı */}
       <div style={s.idSatir}>

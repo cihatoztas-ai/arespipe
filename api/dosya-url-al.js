@@ -9,6 +9,12 @@ export const config = { maxDuration: 10 };
 
 const SIGNED_URL_SURE_SN = 3600; // 1 saat
 
+// 112/MK-112.4: cok-bucket destegi (allow-list). Body'den bucket gelmezse 'arespipe-dosyalar'
+//   (geriye uyumlu — mevcut foto/dosya cagrilarinin hicbiri bozulmaz). Allow-list disi bucket
+//   reddedilir (keyfi bucket adi ile storage yoklamayi engeller — guvenlik).
+const IZINLI_BUCKETLAR = ['arespipe-dosyalar', 'devre-belgeleri'];
+const VARSAYILAN_BUCKET = 'arespipe-dosyalar';
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,9 +42,15 @@ export default async function handler(req, res) {
     }
 
     // 3. Body'den yolu al
-    const { yol } = req.body || {};
+    const { yol, bucket } = req.body || {};
     if (!yol || typeof yol !== 'string') {
       return res.status(400).json({ error: 'Yol parametresi gerekli', kod: 'YOL_EKSIK' });
+    }
+
+    // 112/MK-112.4: bucket secimi (allow-list). Gelmezse varsayilan (geriye uyumlu).
+    const secilenBucket = bucket || VARSAYILAN_BUCKET;
+    if (!IZINLI_BUCKETLAR.includes(secilenBucket)) {
+      return res.status(400).json({ error: 'Gecersiz bucket', kod: 'BUCKET_GECERSIZ' });
     }
 
     // Yol formatı kontrolü: en az 2 segment olmalı (tenant_id/dosya)
@@ -87,10 +99,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // 7. Signed URL üret
+    // 7. Signed URL üret (112/MK-112.4: secilen bucket — default arespipe-dosyalar)
     const { data: signedData, error: signedError } = await supabase
       .storage
-      .from('arespipe-dosyalar')
+      .from(secilenBucket)
       .createSignedUrl(yol, SIGNED_URL_SURE_SN);
 
     if (signedError) {

@@ -42,15 +42,19 @@ if (!API_BASE && import.meta.env.DEV) {
   )
 }
 
-export async function dosyaUrlAl(yol) {
+export async function dosyaUrlAl(yol, bucket) {
   if (!yol || typeof yol !== 'string') return null
 
   // Zaten full URL ise olduğu gibi geri ver (geriye uyumluluk —
   // bazı eski kayıtlarda dosya_url'a https://... yazılmış olabilir).
   if (/^https?:\/\//i.test(yol)) return yol
 
+  // 112/MK-112.4: bucket opsiyonel (gelmezse endpoint default 'arespipe-dosyalar' kullanir).
+  //   Cache key bucket'a duyarli — ayni yol farkli bucket'larda cakismasin.
+  const cacheKey = bucket ? `${bucket}|${yol}` : yol
+
   // Cache kontrolü (expiresAt - 5dk buffer)
-  const cached = _CACHE[yol]
+  const cached = _CACHE[cacheKey]
   if (cached && (cached.expiresAt - _BUFFER_MS) > Date.now()) {
     return cached.signedUrl
   }
@@ -71,7 +75,7 @@ export async function dosyaUrlAl(yol) {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ yol }),
+      body: JSON.stringify(bucket ? { yol, bucket } : { yol }),
     })
 
     if (!r.ok) {
@@ -86,7 +90,7 @@ export async function dosyaUrlAl(yol) {
       return null
     }
 
-    _CACHE[yol] = {
+    _CACHE[cacheKey] = {
       signedUrl: body.signedUrl,
       // expiresAt parse et — endpoint ISO string döner; parse edemezse
       // 1 saat varsay (cache'in çok uzun yaşamasını engellemek için)
