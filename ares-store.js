@@ -921,11 +921,16 @@ else var ARES = (function () {
   let _dosyaUrlCache = {};
   const _DOSYA_URL_BUFFER_MS = 5 * 60 * 1000; // 5 dakikalık buffer
 
-  async function dosyaUrlAl(yol) {
+  async function dosyaUrlAl(yol, bucket) {
     if (!yol || typeof yol !== 'string') return null;
 
+    // 112/MK-112.4: bucket opsiyonel (gelmezse endpoint default 'arespipe-dosyalar' kullanir —
+    //   foto/belge geriye uyumlu). devre-belgeleri'ndeki izometri PDF'leri icin bucket gecilir.
+    //   Cache key bucket'a duyarli — ayni yol farkli bucket'larda cakismasin.
+    const cacheKey = bucket ? (bucket + '|' + yol) : yol;
+
     // Cache hit (5 dk buffer'lı)
-    const cached = _dosyaUrlCache[yol];
+    const cached = _dosyaUrlCache[cacheKey];
     if (cached && (cached.expiresAt - _DOSYA_URL_BUFFER_MS) > Date.now()) {
       return cached.signedUrl;
     }
@@ -947,7 +952,7 @@ else var ARES = (function () {
           'Authorization': 'Bearer ' + session.access_token,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ yol: yol }),
+        body: JSON.stringify(bucket ? { yol: yol, bucket: bucket } : { yol: yol }),
       });
 
       if (!r.ok) {
@@ -957,7 +962,7 @@ else var ARES = (function () {
       }
 
       const body = await r.json();
-      _dosyaUrlCache[yol] = {
+      _dosyaUrlCache[cacheKey] = {
         signedUrl: body.signedUrl,
         expiresAt: new Date(body.expiresAt).getTime(),
       };
