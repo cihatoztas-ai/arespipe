@@ -19,6 +19,7 @@
 <script src="ares-asme.js"></script>
 <script src="ares-olcu.js"></script>
 <script src="ares-kabuk.js"></script>
+<script src="ares-izometri-drenaj.js"></script>
 <script src="ares-layout.js"></script>
 <style>
 :root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
@@ -2293,54 +2294,61 @@ async function dokAc(kaynak,path){
 async function bekleyenIzometriIsle(){
   var b=document.getElementById('btnBekleyenIzo');
   if(b){b.disabled=true;b.style.opacity='.6';}
-  showToast(tv('dv_izo_drenaj_basladi','İzometriler işleniyor — arka planda sürüyor'),'success');
 
-  // 112/A: devre-ozgu drenaj — sadece BU devrenin bekleyen izometrilerini isle (sayac da bu devreye ozgu).
+  // 113/A — CLIENT-LOOP: parse tarayicida tek tek yapilir (browser -> izometri-oku),
+  //   sonuc browser -> kuyruk-isle-izometri (skip-parse) ile kaydedilir + eslestir.
+  //   HICBIR server baska serveri cagirmaz -> Vercel 508 (loop detected) YOK.
+  //   Ortak helper (ares-izometri-drenaj.js) batch + wizard + detay icin AYNI ("tek altyapi").
   var _devreId = (typeof DEVRE!=='undefined' && DEVRE.supaId) ? DEVRE.supaId : localStorage.getItem('ares_aktif_devre_id');
-  var MAX_TUR=60;          // guvenlik tavani (~240 ise kadar). Normalde kalan_var=false ile durur.
-  var MAX_ARDISIK_HATA=3;  // ardisik network hatasi -> endpoint olu kabul edilip durulur.
-  var tur=0, ardisikHata=0, bosTur=0, toplamIslenen=0, kalanVar=true;
 
-  while(kalanVar && tur<MAX_TUR){
-    tur++;
-    var r=null;
-    try{
-      var resp=await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({devre_id:_devreId})});
-      r=await resp.json();
-      ardisikHata=0;
-    }catch(e){
-      ardisikHata++;
-      console.warn('[izo-drenaj] tetik hatasi ('+ardisikHata+'/'+MAX_ARDISIK_HATA+'):',e);
-      if(ardisikHata>=MAX_ARDISIK_HATA){
-        showToast(tv('dv_izo_drenaj_hata','İzometri işleme durdu — bağlantı hatası, tekrar deneyin'),'error');
-        break;
-      }
-      await new Promise(function(res){setTimeout(res,3000);}); // kisa bekle, tekrar dene
-      continue;
-    }
-
-    toplamIslenen += (r&&r.islenen_sayisi)?r.islenen_sayisi:0;
-    kalanVar = !!(r&&r.kalan_var);
-
-    // Ilerleme yok korumasi: kalan var diyor ama hicbir is islenmedi -> 2 turda dur (sonsuz onleme).
-    if((r&&(r.islenen_sayisi||0)===0) && kalanVar){ bosTur++; } else { bosTur=0; }
-    if(bosTur>=2){ console.warn('[izo-drenaj] ilerleme yok, duruluyor'); break; }
-
-    // Sayaci gorsel yenile (kullanici dususu gorsun)
-    if(typeof belgelerYukle==='function'){ try{ await belgelerYukle(); }catch(e){} }
+  if(!(window.ARES_IZO_DRENAJ && ARES_IZO_DRENAJ.izometriDreneEt)){
+    showToast('İzometri drenaj modülü yüklenmemiş (script sırası?)','error');
+    if(b){b.disabled=false;b.style.opacity='';}
+    return;
+  }
+  if(!_devreId){
+    showToast(tv('dv_no_id','Devre ID bulunamadı'),'error');
+    if(b){b.disabled=false;b.style.opacity='';}
+    return;
   }
 
-  // Bitis: butonu serbest birak, sayac 0 ise gizle.
+  showToast(tv('dv_izo_drenaj_basladi','İzometriler işleniyor — bu sekmeyi açık tutun'),'success');
+
+  var _yenileSayac=0, ozet=null;
+  try{
+    ozet = await ARES_IZO_DRENAJ.izometriDreneEt({
+      filtre: { devreId: _devreId },
+      bucket: 'devre-belgeleri',
+      onIlerleme: function(durum){
+        if(durum && durum.faz==='bitti'){
+          // Sayaci ucuz guncelle (kalan = toplam - islenen)
+          var s=document.getElementById('bekleyenIzoSayi');
+          if(s){ var kalan=(durum.toplam||0)-((durum.ozet&&durum.ozet.islenen)||0); s.textContent=kalan>0?kalan:0; }
+          // Belge listesini her 5 PDF'de bir tazele (her PDF'de degil — 302 reload agir)
+          _yenileSayac++;
+          if(_yenileSayac%5===0 && typeof belgelerYukle==='function'){ belgelerYukle().catch(function(){}); }
+        }
+      }
+    });
+  }catch(e){
+    console.error('[izo-drenaj] client-loop hatasi:',e);
+    showToast(tv('dv_izo_drenaj_hata','İzometri işleme durdu')+': '+((e&&e.message)||''),'error');
+  }
+
+  // Bitis: belgeleri son kez tazele, butonu serbest birak / gizle
+  if(typeof belgelerYukle==='function'){ try{ await belgelerYukle(); }catch(e){} }
   if(b){
     b.disabled=false; b.style.opacity='';
-    var s=document.getElementById('bekleyenIzoSayi');
-    var kalan=s?(parseInt(s.textContent,10)||0):0;
-    b.style.display = kalan>0 ? '' : 'none';
+    var s2=document.getElementById('bekleyenIzoSayi');
+    var kalan2=s2?(parseInt(s2.textContent,10)||0):0;
+    b.style.display = kalan2>0 ? '' : 'none';
   }
-  if(!kalanVar){
-    showToast(tv('dv_izo_drenaj_bitti','Bekleyen izometri kalmadı'),'success');
-  }else if(tur>=MAX_TUR){
-    showToast(tv('dv_izo_drenaj_kismi','Çok sayıda işlendi — kalanlar için butona tekrar basın'),'success');
+  if(ozet){
+    if((ozet.kalan||0)===0){
+      showToast(tv('dv_izo_drenaj_bitti','Bekleyen izometri kalmadı')+' ('+ozet.islenen+' işlendi)','success');
+    }else{
+      showToast(tv('dv_izo_drenaj_kismi','İşlendi — kalanlar için butona tekrar basın')+' ('+ozet.kalan+' kaldı)','success');
+    }
   }
 }
 

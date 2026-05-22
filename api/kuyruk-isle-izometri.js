@@ -128,7 +128,11 @@ export default async function handler(req, res) {
           hata: `İş zaten '${data.durum}' durumunda, tekrar işlenemez`
         });
       }
-      const sonuc = await birIsIsle(supa, baseUrl, data);
+      // 113/A — tarayici (client-loop) parse sonucunu gonderdiyse skip-parse modu (server->server YOK)
+      const sonuc = await birIsIsle(supa, baseUrl, data, {
+        oncedenParse: req.body?.onceden_parse,
+        oncedenParseHttp: req.body?.onceden_parse_http
+      });
       const httpKod = sonuc._status || 200;
       delete sonuc._status;   // ic alan, disari sizmasin (eski sozlesme korunur)
       return res.status(httpKod).json(sonuc);
@@ -255,7 +259,15 @@ async function bekleyenVarMi(supa, dokIdler) {
 //   res'e DOKUNMAZ. Sonuc objesi doner (handler/drenajTuru kullanir).
 //   _status: is_id modunda HTTP kodu icin (200 normal, 500 DB/sistem hatasi). Disari sizmaz.
 // ───────────────────────────────────────────────────────────────
-async function birIsIsle(supa, baseUrl, is) {
+async function birIsIsle(supa, baseUrl, is, opts = {}) {
+  // 113/A — CLIENT-LOOP skip-parse: tarayici (browser) PDF'i indirip izometri-oku'yu
+  //   ZATEN cagirdiysa, sonucu (oncedenParse) gonderir. Bu modda server indir+izometri-oku
+  //   adimini ATLAR -> server->server HTTP cagrisi YOK -> Vercel 508 (loop detected) YOK.
+  //   opts verilmezse ESKI YOL (server indir+izometri-oku) calisir -> geriye tam uyum.
+  const oncedenParse = opts.oncedenParse;
+  const oncedenParseHttp = opts.oncedenParseHttp;
+  const skipParse = (oncedenParse !== undefined && oncedenParse !== null);
+
   // 1) Durumu 'isleniyor' yap (lock)
   const { error: lockError } = await supa
     .from('dosya_isleme_kuyrugu')
@@ -281,49 +293,57 @@ async function birIsIsle(supa, baseUrl, is) {
     return await isiHataylaKapat(supa, is.id, 'Doküman bulunamadı: ' + (dokError?.message || 'null'));
   }
 
-  // izometri-oku kullanici_id zorunlu kılar (yoksa 400 döner). Net hata ver.
-  if (!dok.yukleyen_id) {
-    return await isiHataylaKapat(supa, is.id, 'yukleyen_id boş — izometri-oku kullanici_id gerektirir');
-  }
-
-  // 3) Storage'dan indir → base64
-  const { data: blob, error: dlError } = await supa
-    .storage
-    .from(BUCKET_ADI)
-    .download(dok.storage_yolu);
-
-  if (dlError || !blob) {
-    return await isiHataylaKapat(supa, is.id, 'Storage indirme hatası: ' + (dlError?.message || 'blob null'));
-  }
-
-  const arrayBuffer = await blob.arrayBuffer();
-  const pdf_base64 = Buffer.from(arrayBuffer).toString('base64');
-
-  if (pdf_base64.length > MAX_BASE64_LEN) {
-    const mb = (pdf_base64.length / 1024 / 1024).toFixed(1);
-    return await isiHataylaKapat(supa, is.id, `PDF çok büyük (${mb}MB base64 > 7MB limit, ~5MB PDF)`);
-  }
-
-  // 4) izometri-oku'yu HTTP ile çağır (MK-49.1: çağır, dokunma)
+  // 113/A — okuJson/okuYanit kaynagi: skip modda tarayicidan, normal modda server fetch'inden.
   let okuYanit, okuJson;
-  try {
-    okuYanit = await fetch(`${baseUrl}/api/izometri-oku`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tenant_id:     dok.tenant_id,
-        kullanici_id:  dok.yukleyen_id,
-        batch_id:      null,            // her PDF kendi batch'i (yan etki — yukarı bkz.)
-        pdf_base64,
-        dosya_adi:     dok.dosya_adi,
-        dosya_sirasi:  1,
-        dosya_toplami: 1
-      })
-    });
-    const t = await okuYanit.text();
-    try { okuJson = t ? JSON.parse(t) : {}; } catch { okuJson = { _ham: t }; }
-  } catch (e) {
-    return await isiHataylaKapat(supa, is.id, 'izometri-oku çağrı hatası: ' + e.message);
+  if (skipParse) {
+    // CLIENT-LOOP: tarayici indirip izometri-oku'yu cagirdi; sonucu aynen kullan.
+    okuJson = oncedenParse || {};
+    const ph = (typeof oncedenParseHttp === 'number') ? oncedenParseHttp : 200;
+    okuYanit = { ok: (ph >= 200 && ph < 300), status: ph };
+  } else {
+    // izometri-oku kullanici_id zorunlu kılar (yoksa 400 döner). Net hata ver.
+    if (!dok.yukleyen_id) {
+      return await isiHataylaKapat(supa, is.id, 'yukleyen_id boş — izometri-oku kullanici_id gerektirir');
+    }
+
+    // 3) Storage'dan indir → base64
+    const { data: blob, error: dlError } = await supa
+      .storage
+      .from(BUCKET_ADI)
+      .download(dok.storage_yolu);
+
+    if (dlError || !blob) {
+      return await isiHataylaKapat(supa, is.id, 'Storage indirme hatası: ' + (dlError?.message || 'blob null'));
+    }
+
+    const arrayBuffer = await blob.arrayBuffer();
+    const pdf_base64 = Buffer.from(arrayBuffer).toString('base64');
+
+    if (pdf_base64.length > MAX_BASE64_LEN) {
+      const mb = (pdf_base64.length / 1024 / 1024).toFixed(1);
+      return await isiHataylaKapat(supa, is.id, `PDF çok büyük (${mb}MB base64 > 7MB limit, ~5MB PDF)`);
+    }
+
+    // 4) izometri-oku'yu HTTP ile çağır (MK-49.1: çağır, dokunma)
+    try {
+      okuYanit = await fetch(`${baseUrl}/api/izometri-oku`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id:     dok.tenant_id,
+          kullanici_id:  dok.yukleyen_id,
+          batch_id:      null,            // her PDF kendi batch'i (yan etki — yukarı bkz.)
+          pdf_base64,
+          dosya_adi:     dok.dosya_adi,
+          dosya_sirasi:  1,
+          dosya_toplami: 1
+        })
+      });
+      const t = await okuYanit.text();
+      try { okuJson = t ? JSON.parse(t) : {}; } catch { okuJson = { _ham: t }; }
+    } catch (e) {
+      return await isiHataylaKapat(supa, is.id, 'izometri-oku çağrı hatası: ' + e.message);
+    }
   }
 
   // 5) Durum belirle
