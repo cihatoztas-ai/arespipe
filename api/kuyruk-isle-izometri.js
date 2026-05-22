@@ -103,8 +103,9 @@ export default async function handler(req, res) {
     auth: { persistSession: false }
   });
 
-  // Spesifik is_id mi yoksa drenaj mi?
+  // Spesifik is_id mi yoksa drenaj mi? (drenaj devre-ozgu olabilir: body.devre_id)
   const istenenIsId = req.body?.is_id || null;
+  const istenenDevreId = req.body?.devre_id || null;
 
   try {
     // 108/Adim3: stale lock temizligi — 'isleniyor'da 5dk+ takili izometri isleri (worker crash)
@@ -134,9 +135,11 @@ export default async function handler(req, res) {
     }
 
     // ── DRENAJ modu (buton + ileride cron, MK-112.1/112.2) ──
+    //    devre_id verilirse o devreye ozgu (buton, MK-112.3); yoksa global (cron).
     const { islenen, kalan_var } = await drenajTuru(supa, baseUrl, {
       maxIs: DRENAJ_MAX_IS,
-      maxMs: DRENAJ_MAX_MS
+      maxMs: DRENAJ_MAX_MS,
+      devreId: istenenDevreId
     });
     return res.status(200).json({
       sonuc: 'drenaj',
@@ -169,22 +172,42 @@ export default async function handler(req, res) {
 export async function drenajTuru(supa, baseUrl, opts = {}) {
   const maxIs = opts.maxIs ?? DRENAJ_MAX_IS;
   const maxMs = opts.maxMs ?? DRENAJ_MAX_MS;
+  const devreId = opts.devreId || null;   // 112/A: verilirse sadece o devrenin bekleyenleri
   const baslangic = Date.now();
   const islenen = [];
+
+  // 112/A (devre-ozgu drenaj): kuyrukta devre_id KOLONU YOK (sema: tenant_id, devre_dokuman_id, ...).
+  //   Devre filtresi icin once o devrenin dokuman id'lerini cek; kuyrugu .in(devre_dokuman_id) ile daralt.
+  //   devreId yoksa -> GLOBAL drenaj (geriye uyumlu; cron/genel tetik icin acik).
+  let dokIdler = null;
+  if (devreId) {
+    const { data: doklar, error: dokErr } = await supa
+      .from('devre_dokumanlari')
+      .select('id')
+      .eq('devre_id', devreId);
+    if (dokErr) {
+      console.error('[izo-drenaj] devre dokuman cekme hatasi:', dokErr.message);
+      return { islenen, kalan_var: false };
+    }
+    dokIdler = (doklar || []).map((d) => d.id);
+    if (dokIdler.length === 0) return { islenen, kalan_var: false };   // devrede dokuman yok
+  }
 
   for (let i = 0; i < maxIs; i++) {
     // Zaman butcesi doldu mu? (is BASLAMADAN kontrol — maxDuration'i asma)
     if (Date.now() - baslangic >= maxMs) break;
 
     // Siradaki bekleyeni cek (en yuksek oncelik, en eski). Lock'u birIsIsle yapar.
-    const { data, error } = await supa
+    let q = supa
       .from('dosya_isleme_kuyrugu')
       .select('*')
       .eq('parser', 'izometri')
-      .eq('durum', 'bekliyor')
-      .order('oncelik', { ascending: false })
-      .order('olusturma', { ascending: true })
-      .limit(1);
+      .eq('durum', 'bekliyor');
+    if (dokIdler) q = q.in('devre_dokuman_id', dokIdler);   // 112/A: devre-ozgu filtre
+    q = q.order('oncelik', { ascending: false })
+         .order('olusturma', { ascending: true })
+         .limit(1);
+    const { data, error } = await q;
     if (error) {
       console.error('[izo-drenaj] kuyruk okuma hatasi:', error.message);
       break;
@@ -205,20 +228,21 @@ export async function drenajTuru(supa, baseUrl, opts = {}) {
     islenen.push(sonuc);
   }
 
-  // Hala bekleyen var mi? (frontend tekrar-tetik / cron karari icin)
-  const kalan_var = await bekleyenVarMi(supa);
+  // Hala bekleyen var mi? (frontend tekrar-tetik / cron karari icin) — ayni devre filtresiyle.
+  const kalan_var = await bekleyenVarMi(supa, dokIdler);
   return { islenen, kalan_var };
 }
 
-// Kuyrukta bekleyen izometri isi var mi? (hizli kontrol)
-async function bekleyenVarMi(supa) {
+// Kuyrukta bekleyen izometri isi var mi? (hizli kontrol). dokIdler verilirse o devreye daraltir.
+async function bekleyenVarMi(supa, dokIdler) {
   try {
-    const { data } = await supa
+    let q = supa
       .from('dosya_isleme_kuyrugu')
       .select('id')
       .eq('parser', 'izometri')
-      .eq('durum', 'bekliyor')
-      .limit(1);
+      .eq('durum', 'bekliyor');
+    if (dokIdler) q = q.in('devre_dokuman_id', dokIdler);
+    const { data } = await q.limit(1);
     return !!(data && data.length > 0);
   } catch (e) {
     console.error('[izo-drenaj] bekleyen kontrol hatasi (yutuldu):', e.message);

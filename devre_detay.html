@@ -2295,9 +2295,8 @@ async function bekleyenIzometriIsle(){
   if(b){b.disabled=true;b.style.opacity='.6';}
   showToast(tv('dv_izo_drenaj_basladi','İzometriler işleniyor — arka planda sürüyor'),'success');
 
-  // 112/MK-112.1: backend artik tek cagrida ~4 isi ic-dongu ile drene ediyor.
-  //   Frontend, kuyruk bosalana dek ARDISIK (await) cagri yapar; kalan_var=false olunca durur.
-  //   setInterval DEGIL: bir drenaj cagrisi 40-50sn surer (4 x ~11sn Vision), ust uste binmesin.
+  // 112/A: devre-ozgu drenaj — sadece BU devrenin bekleyen izometrilerini isle (sayac da bu devreye ozgu).
+  var _devreId = (typeof DEVRE!=='undefined' && DEVRE.supaId) ? DEVRE.supaId : localStorage.getItem('ares_aktif_devre_id');
   var MAX_TUR=60;          // guvenlik tavani (~240 ise kadar). Normalde kalan_var=false ile durur.
   var MAX_ARDISIK_HATA=3;  // ardisik network hatasi -> endpoint olu kabul edilip durulur.
   var tur=0, ardisikHata=0, bosTur=0, toplamIslenen=0, kalanVar=true;
@@ -2306,7 +2305,7 @@ async function bekleyenIzometriIsle(){
     tur++;
     var r=null;
     try{
-      var resp=await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      var resp=await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({devre_id:_devreId})});
       r=await resp.json();
       ardisikHata=0;
     }catch(e){
