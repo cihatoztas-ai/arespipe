@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-22T13:06:47.128Z",
-  "commit_sha": "38a2b29930f8ca0c4ae9c948d85620d558aca4a4",
+  "tarih": "2026-05-22T13:27:20.872Z",
+  "commit_sha": "f9d12a42294b6a12d9f98ab24ea3517f4bc6f3d0",
   "commit_ref": "main",
-  "workflow_run": 927,
+  "workflow_run": 928,
   "ozet": {
     "hata": 0,
     "uyari": 74,
@@ -83,13 +83,13 @@
             2268,
             2274,
             2296,
-            2316,
-            2342,
-            2344,
-            2487,
-            2506,
-            2530,
-            2532
+            2315,
+            2341,
+            2343,
+            2486,
+            2505,
+            2529,
+            2531
           ]
         },
         {
@@ -341,43 +341,43 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2316,
+          "satir": 2315,
           "mesaj": "tv('dv_izo_drenaj_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2342,
+          "satir": 2341,
           "mesaj": "tv('dv_izo_drenaj_bitti') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2344,
+          "satir": 2343,
           "mesaj": "tv('dv_izo_drenaj_kismi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2487,
+          "satir": 2486,
           "mesaj": "tv('dv_dok_search_match') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2506,
+          "satir": 2505,
           "mesaj": "tv('dv_dok_search_empty') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2530,
+          "satir": 2529,
           "mesaj": "tv('dv_onay_preview') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2532,
+          "satir": 2531,
           "mesaj": "tv('dv_onay_review') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
