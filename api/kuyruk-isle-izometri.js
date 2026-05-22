@@ -252,6 +252,19 @@ export default async function handler(req, res) {
       });
     }
 
+    // 7.5) Adim4 (MK-110.1): parse basariliysa spoollar'i kabuk spool'a esle.
+    //      devre context FK'dan (dok.devre_id); anahtar = devre_id + spool_no (normSpoolNo).
+    //      izometri-oku.js'e DOKUNULMAZ (MK-49.1) — bu adim worker'in parse SONRASI.
+    //      Esleme hatasi parse'i gecersiz kilmaz (parse_sonuc zaten yazildi) — yut+logla.
+    let eslesmeOzeti = null;
+    if (ok && okuJson && Array.isArray(okuJson.spoollar)) {
+      try {
+        eslesmeOzeti = await eslestir(supa, dok.devre_id, is.id, okuJson);
+      } catch (eslErr) {
+        console.error('[izo-eslestir] hata (yutuldu):', eslErr.message);
+      }
+    }
+
     // 108/Adim3: self-chain — kuyrukta baska bekleyen izometri varsa kendini fire-and-forget
     //            tetikle. Sirali drenaj (her is bitince bir sonrakini cagirir, kuyruk bosalinca durur).
     await zincirDevam(supa);
@@ -270,7 +283,8 @@ export default async function handler(req, res) {
       spool_sayisi: ok ? (okuJson.spool_sayisi || 0) : 0,
       manuel_onay_sayisi: ok ? (okuJson.manuel_onay_sayisi || 0) : 0,
       hazir_sayisi: ok ? (okuJson.hazir_sayisi || 0) : 0,
-      sure_ms: ok ? (okuJson.sure_ms || null) : null
+      sure_ms: ok ? (okuJson.sure_ms || null) : null,
+      eslesme: eslesmeOzeti   // Adim4: {toplam, eslesen, atanmamis, yukseltilen} | null
     });
 
   } catch (e) {
@@ -354,4 +368,101 @@ async function staleLockTemizle(supa) {
   } catch (e) {
     console.error('[izo-drenaj] stale lock temizleme hatasi (yutuldu):', e.message);
   }
+}
+
+// ───────────────────────────────────────────────────────────────
+// Adim4 (MK-110.1): izometri PDF -> kabuk spool eslestirme.
+// ───────────────────────────────────────────────────────────────
+// FORMAT BAGIMSIZ: anahtar = devre (dok.devre_id, FK'dan) + spool_no (parse_sonuc.spoollar[].spool_no).
+//   Dosya adi parse'i KULLANILMAZ — PDF zaten bir devreye iliskilendirilmis, context bedava.
+// 2B: normSpoolNo (trim + upper) — "S01"/" s01 " gibi case/whitespace farklarini yutar.
+// 3C: eslesen spool 'bekliyor' ise 'kismi'ye yukselt (cizim baglandi, imalat verisi bekliyor).
+//     'tam' veya zaten 'kismi' ise DOKUNMA (MK-WIZARD.3 — spool ile oynamayiz, tek yon yukselt).
+// 4B: eslesmeyen parse spool -> _eslesme.detay[].durum='atanmamis' (devre_detay gosterir).
+// Sema degismez: sonuc parse_sonuc._eslesme jsonb alanina yazilir.
+//
+// supa: service-role client | devreId: uuid | kuyrukId: uuid (dosya_isleme_kuyrugu.id)
+// okuJson: izometri-oku ciktisi (.spoollar bekleniyor)
+// Doner: ozet {at, devre_id, toplam, eslesen, atanmamis, yukseltilen, detay[]} | undefined
+export const normSpoolNo = (s) => String(s == null ? '' : s).trim().toUpperCase();
+
+export async function eslestir(supa, devreId, kuyrukId, okuJson) {
+  if (!devreId || !okuJson || !Array.isArray(okuJson.spoollar)) return;
+
+  // O devredeki kabuk spool'lari cek (normSpoolNo -> {id, spool_id, cizim_durumu}).
+  const { data: spoollar, error: spErr } = await supa
+    .from('spooller')
+    .select('id, spool_no, spool_id, cizim_durumu')
+    .eq('devre_id', devreId)
+    .eq('silindi', false);
+  if (spErr) {
+    console.error('[izo-eslestir] spool cekme hatasi:', spErr.message);
+    return;
+  }
+
+  const harita = new Map();
+  for (const sp of (spoollar || [])) {
+    const k = normSpoolNo(sp.spool_no);
+    if (k && !harita.has(k)) harita.set(k, sp);  // ilk gelen kazanir (devre ici spool_no tekil varsayimi)
+  }
+
+  const detay = [];
+  let yukseltilen = 0;
+
+  for (const ps of okuJson.spoollar) {
+    const anahtar = normSpoolNo(ps.spool_no);
+    const hedef = anahtar ? harita.get(anahtar) : null;
+
+    if (hedef) {
+      // 3C + MK-WIZARD.3: yalniz bekliyor -> kismi. Yaris kosulu icin filtreli UPDATE.
+      if (hedef.cizim_durumu === 'bekliyor') {
+        const { data: upData, error: upErr } = await supa
+          .from('spooller')
+          .update({ cizim_durumu: 'kismi', guncelleme: new Date().toISOString() })
+          .eq('id', hedef.id)
+          .eq('cizim_durumu', 'bekliyor')   // yalniz hala bekliyor ise (idempotent + yaris guvencesi)
+          .select('id');
+        if (upErr) console.error('[izo-eslestir] cizim_durumu update hatasi:', upErr.message);
+        else if (upData && upData.length > 0) yukseltilen++;
+      }
+      detay.push({
+        spool_no: ps.spool_no,
+        durum: 'eslesti',
+        spool_id: hedef.spool_id,
+        spool_uuid: hedef.id,
+        onceki_cizim_durumu: hedef.cizim_durumu
+      });
+    } else {
+      detay.push({ spool_no: ps.spool_no, durum: 'atanmamis' });
+    }
+  }
+
+  const ozet = {
+    at: new Date().toISOString(),
+    devre_id: devreId,
+    toplam: detay.length,
+    eslesen: detay.filter(d => d.durum === 'eslesti').length,
+    atanmamis: detay.filter(d => d.durum === 'atanmamis').length,
+    yukseltilen,
+    detay
+  };
+
+  // parse_sonuc._eslesme yaz (oku-birlestir-yaz; mevcut parse_sonuc korunur).
+  const { data: mevcut, error: okErr } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .select('parse_sonuc')
+    .eq('id', kuyrukId)
+    .single();
+  if (okErr) {
+    console.error('[izo-eslestir] parse_sonuc okuma hatasi:', okErr.message);
+    return ozet;  // spool yukseltmeleri zaten yapildi; meta yazilamadi ama ozeti dondur
+  }
+  const yeniParse = Object.assign({}, mevcut?.parse_sonuc || {}, { _eslesme: ozet });
+  const { error: yzErr } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .update({ parse_sonuc: yeniParse })
+    .eq('id', kuyrukId);
+  if (yzErr) console.error('[izo-eslestir] _eslesme yazma hatasi:', yzErr.message);
+
+  return ozet;
 }
