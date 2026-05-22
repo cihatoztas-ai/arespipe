@@ -28,19 +28,19 @@
 (function(g){
   'use strict';
 
-  // ── BOYUT: "60.3x4.5" (OD x et) | "DN50" | "OD:60" | düz sayı → {dis_cap, et}
-  //    (devre_detay._onayBoyut + wizard._boyutParse AYNI mantıktı — burada birleşti)
-  function boyutParse(dn){
-    var s=String(dn||'').trim();
-    if(!s)return {dis_cap:null,et:null};
-    var mx=s.match(/([\d.,]+)\s*[xX]\s*([\d.,]+)/);
-    if(mx)return {dis_cap:parseFloat(mx[1].replace(',','.'))||null, et:parseFloat(mx[2].replace(',','.'))||null};
-    var mo=s.match(/OD\s*:?\s*([\d.,]+)/i);
-    if(mo)return {dis_cap:parseFloat(mo[1].replace(',','.'))||null, et:null};
-    var md=s.match(/DN\s*(\d+)/i);
-    if(md){var T={15:21.3,20:26.9,25:33.7,32:42.4,40:48.3,50:60.3,65:76.1,80:88.9,100:114.3,125:139.7,150:168.3,200:219.1,250:273,300:323.9,350:355.6,400:406.4};var dn2=parseInt(md[1],10);return {dis_cap:T[dn2]||null,et:null};}
-    var n=parseFloat(s.replace(',','.'));
-    return {dis_cap:isFinite(n)?n:null, et:null};
+  // ── BOYUT: boyut metni + malzeme → {dis_cap, et}.
+  //    111/Karar-B (MK-110.3): fakir DN-tablosu mantığı KALDIRILDI. Artık tek ortak metin parser
+  //    ARES_OLCU.olcuParse çağrılır — SCH/inç ("4\" Sch 10S") çözülür, et lookup ARES_BORU'dan gelir.
+  //    Eski kabuk parseFloat("4")=4 ham çap / et=null hatası bu sayede biter.
+  //    ARES_OLCU yüklenmemişse (script sırası bozuksa) boş + warn — sessiz fallback YOK (kopya bırakma).
+  function boyutParse(dn, malzeme){
+    var O = (typeof ARES_OLCU !== 'undefined' && ARES_OLCU) ? ARES_OLCU
+          : (typeof window !== 'undefined' && window.ARES_OLCU) ? window.ARES_OLCU
+          : (typeof globalThis !== 'undefined' && globalThis.ARES_OLCU) ? globalThis.ARES_OLCU
+          : null;
+    if(!O){ console.warn('[kabuk] ARES_OLCU yuklenmemis — boyut parse atlandi (script sirasi?)'); return {dis_cap:null,et:null}; }
+    var r = O.olcuParse(dn, malzeme);
+    return {dis_cap:r.dis_cap, et:r.et};   // çağıranlar yalnız dis_cap/et kullanıyor; dn/sch sessizce yutulur
   }
 
   // ── YÜZEY: kabuk satırlarından spool yüzeyi türet (109/B1).
@@ -172,7 +172,7 @@
         var no=await ARES.sonrakiNo('spool');
         var sid=tkod?(tkod+'-'+no):String(no);
         var anaBoru=s.bom.filter(function(b){return b.tip==='boru';}).sort(function(a,b){return (b.boy_mm||0)-(a.boy_mm||0);})[0];
-        var bp=boyutParse(anaBoru?anaBoru.dn:'');
+        var bp=boyutParse(anaBoru?anaBoru.dn:'', anaBoru?anaBoru.malzeme:'');
         // 109/B1: per-spool yüzey — perSpoolYuzey=true ise spool kendi yuzeyHam'ından kod alır
         // (önizlemede gösterilen yüzey DB'ye de yazılsın). Boşsa tek `yuzey` param'ına düşer.
         var yz=yuzeySec;
@@ -204,7 +204,7 @@
         var sid=idMap[(s.pipeline||'')+'|'+s.spoolNo+'|'+(s.rev||'')];
         if(!sid)return;
         s.bom.forEach(function(b){
-          var bp=boyutParse(b.dn);
+          var bp=boyutParse(b.dn, b.malzeme);
           malRows.push({
             tenant_id:tid, spool_id:sid,
             kod:(b.ifs_kod||(b.tanim||'').substring(0,20)||'IFS'),
