@@ -43,6 +43,7 @@
 // NOT: Pilot dönemde public erişim, sonra auth eklenecek (TODO).
 
 import { createClient } from '@supabase/supabase-js';
+import { bindir } from '../lib/bindir.js';   // 111/PARÇA2a: PDF→kabuk spool alan bindirme (et/çap/ağırlık/yüzey)
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
@@ -259,7 +260,7 @@ export default async function handler(req, res) {
     let eslesmeOzeti = null;
     if (ok && okuJson && Array.isArray(okuJson.spoollar)) {
       try {
-        eslesmeOzeti = await eslestir(supa, dok.devre_id, is.id, okuJson);
+        eslesmeOzeti = await eslestir(supa, dok.devre_id, is.id, okuJson, dok.id);
       } catch (eslErr) {
         console.error('[izo-eslestir] hata (yutuldu):', eslErr.message);
       }
@@ -406,7 +407,7 @@ export function dosyaAdiParse(dosyaAdi) {
   return { pipeline_no: m[1].trim(), spool_no: m[2].toUpperCase() };
 }
 
-export async function eslestir(supa, devreId, kuyrukId, okuJson) {
+export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) {
   if (!devreId || !okuJson || !Array.isArray(okuJson.spoollar)) return;
 
   // Pipeline'i dosya adindan cikar (parse spoollar pipeline_no NULL).
@@ -414,9 +415,10 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson) {
   const dosyaParse = dosyaAdiParse(dosyaAdi);   // {pipeline_no, spool_no} | null
 
   // O devredeki kabuk spool'lari cek. Anahtar = pipeline_no|spool_no (devre ici tekil).
+  // 111/PARÇA2a: bindirme kiyasi icin et/cap/agirlik/yuzey de cekilir.
   const { data: spoollar, error: spErr } = await supa
     .from('spooller')
-    .select('id, spool_no, pipeline_no, spool_id, cizim_durumu')
+    .select('id, spool_no, pipeline_no, spool_id, cizim_durumu, et_kalinligi_mm, dis_cap_mm, agirlik, agirlik_kg, yuzey')
     .eq('devre_id', devreId)
     .eq('silindi', false);
   if (spErr) {
@@ -450,24 +452,43 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson) {
     }
 
     if (hedef) {
-      // 3C + MK-WIZARD.3: yalniz bekliyor -> kismi. Yaris kosulu icin filtreli UPDATE.
-      if (hedef.cizim_durumu === 'bekliyor') {
-        const { data: upData, error: upErr } = await supa
-          .from('spooller')
-          .update({ cizim_durumu: 'kismi', guncelleme: new Date().toISOString() })
-          .eq('id', hedef.id)
-          .eq('cizim_durumu', 'bekliyor')   // yalniz hala bekliyor ise (idempotent + yaris guvencesi)
-          .select('id');
-        if (upErr) console.error('[izo-eslestir] cizim_durumu update hatasi:', upErr.message);
-        else if (upData && upData.length > 0) yukseltilen++;
+      // 111/PARÇA2a: PDF spool verisini kabuk spool'a bindir (et/çap/ağırlık/yüzey, %3 tolerans).
+      // ps = parse_sonuc.spoollar[] elemani (et_mm, cap_mm, agirlik_kg, yuzey). hedef = kabuk spool.
+      const b = bindir(ps, hedef);                 // {degisiklik, bindirme[], flagVar}
+      const deg = Object.assign({}, b.degisiklik); // spooller UPDATE alanlari (bos olabilir)
+
+      // 3C + MK-WIZARD.3: yalniz bekliyor -> kismi. Bindirme degisiklikleriyle TEK UPDATE'te birlesir.
+      const bekliyorduMu = (hedef.cizim_durumu === 'bekliyor');
+      if (bekliyorduMu) deg.cizim_durumu = 'kismi';
+
+      if (Object.keys(deg).length > 0) {
+        deg.guncelleme = new Date().toISOString();
+        let q = supa.from('spooller').update(deg).eq('id', hedef.id);
+        // cizim_durumu yukseltmesi varsa filtreli (yaris kosulu + idempotency); yoksa duz UPDATE.
+        if (bekliyorduMu) q = q.eq('cizim_durumu', 'bekliyor');
+        const { data: upData, error: upErr } = await q.select('id');
+        if (upErr) console.error('[izo-eslestir] spooller update hatasi:', upErr.message);
+        else if (bekliyorduMu && upData && upData.length > 0) yukseltilen++;
       }
+
+      // 2b: PDF<->spool kalici bagi (spool detay sayfasi bu PDF'e erisecek). Idempotent.
+      if (devreDokumanId) {
+        const { error: dokErr } = await supa
+          .from('devre_dokumanlari')
+          .update({ spool_id: hedef.id })
+          .eq('id', devreDokumanId);
+        if (dokErr) console.error('[izo-eslestir] devre_dokumanlari.spool_id hatasi:', dokErr.message);
+      }
+
       detay.push({
         spool_no: hedef.spool_no,
         pipeline_no: hedef.pipeline_no,
         durum: 'eslesti',
         spool_id: hedef.spool_id,
         spool_uuid: hedef.id,
-        onceki_cizim_durumu: hedef.cizim_durumu
+        onceki_cizim_durumu: hedef.cizim_durumu,
+        bindirme: b.bindirme,        // PARÇA2a: alan-bazli {kabuk,pdf,secilen,flag,sebep}
+        bindirme_flag: b.flagVar     // celiski var mi (uyarilar sayfasi icin)
       });
     } else {
       detay.push({
@@ -487,6 +508,7 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson) {
     eslesen: detay.filter(d => d.durum === 'eslesti').length,
     atanmamis: detay.filter(d => d.durum === 'atanmamis').length,
     yukseltilen,
+    bindirme_flag_sayisi: detay.filter(d => d.bindirme_flag).length,   // PARÇA2a: celiskili eslesme sayisi
     detay
   };
 
