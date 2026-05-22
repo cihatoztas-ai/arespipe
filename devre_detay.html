@@ -2294,22 +2294,55 @@ async function bekleyenIzometriIsle(){
   var b=document.getElementById('btnBekleyenIzo');
   if(b){b.disabled=true;b.style.opacity='.6';}
   showToast(tv('dv_izo_drenaj_basladi','İzometriler işleniyor — arka planda sürüyor'),'success');
-  try{
-    await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-  }catch(e){console.warn('[izo-drenaj] tetik hatasi:',e);}
-  // Zincir arkada akarken sayaç düşene dek periyodik yenile (max ~32 sn)
-  var tur=0;
-  var poll=setInterval(async function(){
+
+  // 112/MK-112.1: backend artik tek cagrida ~4 isi ic-dongu ile drene ediyor.
+  //   Frontend, kuyruk bosalana dek ARDISIK (await) cagri yapar; kalan_var=false olunca durur.
+  //   setInterval DEGIL: bir drenaj cagrisi 40-50sn surer (4 x ~11sn Vision), ust uste binmesin.
+  var MAX_TUR=60;          // guvenlik tavani (~240 ise kadar). Normalde kalan_var=false ile durur.
+  var MAX_ARDISIK_HATA=3;  // ardisik network hatasi -> endpoint olu kabul edilip durulur.
+  var tur=0, ardisikHata=0, bosTur=0, toplamIslenen=0, kalanVar=true;
+
+  while(kalanVar && tur<MAX_TUR){
     tur++;
-    if(typeof belgelerYukle==='function')await belgelerYukle();
+    var r=null;
+    try{
+      var resp=await fetch('/api/kuyruk-isle-izometri',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      r=await resp.json();
+      ardisikHata=0;
+    }catch(e){
+      ardisikHata++;
+      console.warn('[izo-drenaj] tetik hatasi ('+ardisikHata+'/'+MAX_ARDISIK_HATA+'):',e);
+      if(ardisikHata>=MAX_ARDISIK_HATA){
+        showToast(tv('dv_izo_drenaj_hata','İzometri işleme durdu — bağlantı hatası, tekrar deneyin'),'error');
+        break;
+      }
+      await new Promise(function(res){setTimeout(res,3000);}); // kisa bekle, tekrar dene
+      continue;
+    }
+
+    toplamIslenen += (r&&r.islenen_sayisi)?r.islenen_sayisi:0;
+    kalanVar = !!(r&&r.kalan_var);
+
+    // Ilerleme yok korumasi: kalan var diyor ama hicbir is islenmedi -> 2 turda dur (sonsuz onleme).
+    if((r&&(r.islenen_sayisi||0)===0) && kalanVar){ bosTur++; } else { bosTur=0; }
+    if(bosTur>=2){ console.warn('[izo-drenaj] ilerleme yok, duruluyor'); break; }
+
+    // Sayaci gorsel yenile (kullanici dususu gorsun)
+    if(typeof belgelerYukle==='function'){ try{ await belgelerYukle(); }catch(e){} }
+  }
+
+  // Bitis: butonu serbest birak, sayac 0 ise gizle.
+  if(b){
+    b.disabled=false; b.style.opacity='';
     var s=document.getElementById('bekleyenIzoSayi');
     var kalan=s?(parseInt(s.textContent,10)||0):0;
-    if(kalan<=0||tur>=8){
-      clearInterval(poll);
-      if(b){b.disabled=false;b.style.opacity='';b.style.display=kalan>0?'':'none';}
-      if(kalan<=0)showToast(tv('dv_izo_drenaj_bitti','Bekleyen izometri kalmadı'),'success');
-    }
-  },4000);
+    b.style.display = kalan>0 ? '' : 'none';
+  }
+  if(!kalanVar){
+    showToast(tv('dv_izo_drenaj_bitti','Bekleyen izometri kalmadı'),'success');
+  }else if(tur>=MAX_TUR){
+    showToast(tv('dv_izo_drenaj_kismi','Çok sayıda işlendi — kalanlar için butona tekrar basın'),'success');
+  }
 }
 
 async function belgelerYukle(){
