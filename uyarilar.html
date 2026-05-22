@@ -265,7 +265,11 @@ const seviyeConfig = {
   uyari:  { renk:'var(--warn)', sinif:'uk-uyari',     ikonSinif:'uk-ikon-uyari',   badge:'ba' },
   bilgi:  { renk:'var(--ac)',   sinif:'uk-bilgi',     ikonSinif:'uk-ikon-bilgi',   badge:'bb' },
 };
-const kategoriLabel = { devre:'Hareketsiz Devre', personel:'Personel', sistem:'Sistem', manuel:'Manuel' };
+const kategoriLabel = { devre:'Hareketsiz Devre', personel:'Personel', sistem:'Sistem', manuel:'Manuel', bindirme:'Bindirme Çelişkisi' };
+
+// 112/MK-112.5: bindirme celiski alan adlari + deger formatlama (uyari karti metni icin)
+const ALAN_AD = { et:'et kalınlığı', cap:'çap', agirlik:'ağırlık', yuzey:'yüzey' };
+function _bndFmt(v){ return (v===null||v===undefined||v==='') ? '—' : String(v); }
 
 function aktifFiltrele(liste) {
   const kat = document.getElementById('fKategori').value;
@@ -458,6 +462,60 @@ function renderHepsi() {
   ['aktif','goruldu','hepsi'].forEach(renderTab);
 }
 
+// ===== 112/MK-112.5: BİNDİRME ÇELİŞKİ UYARILARI (canlı DB) =====
+// 111'de eslesen izometri PDF verisi kabuk spool'a bindiriliyor; celiski cikan alanlar
+// parse_sonuc._eslesme.detay[].bindirme[].flag=true ile isaretleniyor (sessiz ezme yok).
+// Bu fonksiyon flag'li spool'lari cekip "Bindirme Celiskisi" kategorisinde uyari uretir.
+// A plani (JSONB tara): yeni kolon/yazma YOK — mevcut _eslesme JSONB'sini okur.
+// select'te parse_sonuc->_eslesme izole cekilir (tum parse_sonuc degil — hafif).
+async function bindirmeUyarilariYukle() {
+  try {
+    if (typeof ARES === 'undefined' || !ARES.supabase) return;
+    const supa = ARES.supabase();
+    if (!supa) return;
+    const { data, error } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .select('id, bitis_at, eslesme:parse_sonuc->_eslesme')
+      .eq('parser', 'izometri')
+      .not('parse_sonuc->_eslesme', 'is', null);
+    if (error) { console.warn('[uyarilar] bindirme cekme hatasi:', error.message); return; }
+
+    const yeni = [];
+    (data || []).forEach(function (row) {
+      const es = row.eslesme;
+      if (!es || !(es.bindirme_flag_sayisi > 0) || !Array.isArray(es.detay)) return;
+      es.detay.forEach(function (d) {
+        if (!d.bindirme_flag || !Array.isArray(d.bindirme)) return;
+        const celiskiler = d.bindirme.filter(function (b) { return b.flag; });
+        if (!celiskiler.length) return;
+        const alanlar = celiskiler.map(function (b) { return ALAN_AD[b.alan] || b.alan; }).join(', ');
+        const detayMetin = celiskiler.map(function (b) {
+          return (ALAN_AD[b.alan] || b.alan) + ': kabuk ' + _bndFmt(b.kabuk) + ' ↔ PDF ' + _bndFmt(b.pdf);
+        }).join(' · ');
+        yeni.push({
+          id: 'BND_' + (d.spool_uuid || d.spool_id || row.id),
+          kategori: 'bindirme', seviye: 'uyari', goruldu: false,
+          baslik: (d.spool_id || d.spool_no || 'Spool') + ' — ' + alanlar + ' çelişkisi',
+          aciklama: 'Excel (kabuk) ile eşleşen izometri PDF farklı değer veriyor — ' + detayMetin +
+                    '. Kabuk değeri korundu (sessiz ezme yok), kontrol gerekiyor.',
+          kaynak: d.pipeline_no || es.dosya_adi || '—',
+          link: d.spool_uuid ? ('spool_detay.html?id=' + d.spool_uuid) : '',
+          olusturma: row.bitis_at ? new Date(row.bitis_at).toLocaleString('tr-TR') : '',
+          ikon: '⚖️'
+        });
+      });
+    });
+
+    if (yeni.length) {
+      // Idempotent: onceki BND_ uyarilarini cikar, taze listeyi ekle (re-run guvenli)
+      uyarilar = uyarilar.filter(function (u) { return u.kategori !== 'bindirme'; }).concat(yeni);
+      renderHepsi(); guncelBell(); guncelStatler();
+    }
+  } catch (e) {
+    console.warn('[uyarilar] bindirme yukleme hatasi:', e);
+  }
+}
+
 // ===== TAB =====
 function tabGit(tab) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -486,6 +544,9 @@ function showToast(msg,type='success'){
 renderHepsi();
 guncelBell();
 guncelStatler();
+
+// 112/MK-112.5: canli bindirme celiski uyarilarini yukle (mock render'in ustune, gelince re-render)
+bindirmeUyarilariYukle();
 
 // Bu sayfayı açan ziyaretçi gördü — bell sönsün
 setTimeout(()=>{
