@@ -123,6 +123,7 @@
   <script src="ares-asme.js"></script>
   <script src="ares-olcu.js"></script>
   <script src="ares-kabuk.js"></script>
+  <script src="ares-izometri-drenaj.js"></script>
   <script src="ares-layout.js"></script>
 </head>
 <body>
@@ -955,18 +956,14 @@ async function adim3_yukle() {
     }
   }
 
-  // 108/Adim3 (MK-107.1): izometriler SENKRON BEKLENMEZ. Kuyruğa 'bekliyor' alındı (yukarıda);
-  // burada tek bir BEKLEMESİZ tetik atılır, worker self-chain ile hepsini arka planda drene eder.
-  // Kullanıcı bu pencereyi kapatıp gidebilir — "bırak git" akışının kalbi (otorite kabuktur).
+  // 113/A (MK-113.1): izometriler SENKRON BEKLENMEZ. Kuyruğa 'bekliyor' alındı (yukarıda).
+  // ESKİ fire-and-forget server tetiği (fetch '/api/kuyruk-isle-izometri' body:'{}') KALDIRILDI —
+  // o desen server->server self-invocation üzerinden Vercel 508 (INFINITE_LOOP_DETECTED) üretiyordu.
+  // Drenaj artık client-loop ile: aşağıdaki "Bekleyenleri işle" butonu ARES_IZO_DRENAJ helper'ını
+  // çağırır (tarayıcı her PDF için izometri-oku'yu doğrudan çağırır → server->server YOK).
+  // Kullanıcı bu pencereyi kapatıp gidebilir — "bırak git" akışı korunur; izometriler kuyrukta
+  // bekler, devre detayındaki aynı butonla da drene edilebilir (tek paylaşılan altyapı).
   var izoKuyrukSayisi = tetiklenecekIzo.length;
-  if (izoKuyrukSayisi > 0) {
-    // fire-and-forget: await YOK. Body'siz çağrı → worker en eski 'bekliyor'u alır + zincirler.
-    fetch('/api/kuyruk-isle-izometri', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}'
-    }).catch(function(e) { console.warn('[wizard] izometri drenaj tetiği gönderilemedi (kuyrukta bekler):', e); });
-  }
 
   fill.style.width = '100%';
   var sonHtml = '<p class="durum-ok">✓ Tamamlandı. <strong>' + basarili + '</strong> / ' + WIZ.dosyalar.length + ' dosya başarıyla yüklendi.</p>';
@@ -998,10 +995,9 @@ async function adim3_yukle() {
 
   // 108/Adim3: izometriler arka planda işleniyor — senkron beklenmez.
   if (izoKuyrukSayisi > 0) {
-    // 109/B2: güvenlik ağı — wizard'ın fire-and-forget tetiği koparsa kullanıcı detaya gitmeden
-    // burada elle drene eder (devre_detay'daki "Bekleyenleri işle" düğmesinin eşi). İzometri
-    // kuyruk id'lerini sakla → handler bunlarla kalan 'bekliyor/isleniyor' sayısını sorgular.
-    WIZ._izoIds = tetiklenecekIzo.map(function(t) { return t.id; });
+    // 113/A: güvenlik ağı butonu — drenaj koparsa kullanıcı elle başlatır (devre_detay eşi).
+    // _izoIds saklamaya gerek yok: ARES_IZO_DRENAJ devrenin tüm bekleyen izometrilerini
+    // WIZ.devre_id ile çeker (client-loop, server->server yok → 508 yok).
     sonHtml += '<p style="margin-top:10px;"><strong>İzometri ayrıştırma:</strong> ' + izoKuyrukSayisi +
       ' PDF arka planda işleniyor. <span class="muted">Bu pencereyi kapatabilir, başka devre yükleyebilirsiniz.</span></p>' +
       '<p style="font-size:13px;color:var(--txd);">İlerleme ve onay için devre detayında <strong>Dökümanlar</strong> sekmesini açın; izometriler işlendikçe orada görünür.</p>' +
@@ -1073,33 +1069,54 @@ async function adim3_yukle() {
 // 109/B2: wizard güvenlik ağı — fire-and-forget izometri tetiği koptuysa elle drene et.
 // devre_detay.bekleyenIzometriIsle eşi; fark: wizard kendi izometri kuyruk id'lerinden
 // kalan 'bekliyor/isleniyor' sayısını DOĞRUDAN sorgular (belge listesi yok).
+// 113/A (MK-113.1/113.2): wizard izometri drenajı — devre_detay ile AYNI client-loop motoru.
+// ESKİ server-tetik (body:'{}') + 8-tur setInterval polling KALDIRILDI (508 + ölü desen).
+// Artık ARES_IZO_DRENAJ.izometriDreneEt({filtre:{devreId}}) çağrılır: tarayıcı her PDF için
+// izometri-oku'yu doğrudan çağırır → server->server YOK → 508 yok. Liste BİR KEZ çekilir;
+// bitince "kalan" varsa buton durur (kullanıcı tekrar basabilir). _izoIds'e gerek yok —
+// helper devrenin TÜM bekleyen izometrilerini devre_id ile çeker (devre_detay ile birebir).
 async function wizBekleyenleriIsle() {
   var b = document.getElementById('btnWizBekleyen');
   var s = document.getElementById('wizBekleyenSayi');
-  var ids = (WIZ._izoIds || []);
+  if (!(g_ARES_IZO_DRENAJ_VAR())) {
+    console.warn('[wizard] ARES_IZO_DRENAJ yüklenemedi — drenaj atlandı.');
+    return;
+  }
   if (b) { b.disabled = true; b.style.opacity = '.6'; }
   try {
-    await fetch('/api/kuyruk-isle-izometri', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-  } catch (e) { console.warn('[wizard] izometri drenaj tetiği gönderilemedi:', e); }
-  if (!ids.length) { if (b) { b.disabled = false; b.style.opacity = ''; } return; }
-  var supa = ARES.supabase();
-  var tur = 0;
-  var poll = setInterval(async function() {
-    tur++;
-    var kalan = 0;
-    try {
-      var q = await supa.from('dosya_isleme_kuyrugu')
-        .select('id, durum').in('id', ids);
-      if (!q.error && q.data) {
-        kalan = q.data.filter(function(r) { return r.durum === 'bekliyor' || r.durum === 'isleniyor'; }).length;
+    var supa = ARES.supabase();
+    var tid = ARES.tenantId();
+    var islenen = 0;
+    var ozet = await window.ARES_IZO_DRENAJ.izometriDreneEt({
+      supa: supa, tid: tid,
+      filtre: { devreId: WIZ.devre_id },
+      bucket: 'devre-belgeleri',
+      onIlerleme: function (d) {
+        // Her PDF bittikçe ucuz güncelle: kalan = toplam - işlenen.
+        if (d.faz === 'bitti' && d.toplam) {
+          islenen = d.sira;
+          if (s) s.textContent = Math.max(0, d.toplam - islenen);
+        } else if (d.faz === 'tamam' && d.ozet) {
+          if (s) s.textContent = d.ozet.kalan != null ? d.ozet.kalan : 0;
+        }
       }
-    } catch (e) { console.warn('[wizard] bekleyen sayım:', e); }
+    });
+    var kalan = (ozet && ozet.kalan != null) ? ozet.kalan : 0;
     if (s) s.textContent = kalan;
-    if (kalan <= 0 || tur >= 8) {
-      clearInterval(poll);
-      if (b) { b.disabled = false; b.style.opacity = ''; b.style.display = kalan > 0 ? '' : 'none'; }
+    if (b) {
+      b.disabled = false; b.style.opacity = '';
+      // Kalan varsa buton durur (liste bir kez çekilir; tekrar basılabilir). Kalan 0 → gizle.
+      b.style.display = kalan > 0 ? '' : 'none';
     }
-  }, 4000);
+  } catch (e) {
+    console.error('[wizard] izometri drenaj:', e);
+    if (b) { b.disabled = false; b.style.opacity = ''; }
+  }
+}
+
+// Helper yüklü mü? (script include koparsa drenajı sessizce atla — sayfa çökmez.)
+function g_ARES_IZO_DRENAJ_VAR() {
+  return !!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function');
 }
 // Önizlemedeki aynı satırlardan tam BOM modelini kur, ARES_KABUK.aktar ile spooller +
 // spool_malzemeleri yaz (cizim_durumu='bekliyor'), kuyruğu tamamlandı işaretle.
