@@ -1,91 +1,100 @@
-# CLAUDE — Son Oturum Özeti (Oturum 109, 22 May 2026)
+# CLAUDE — Son Oturum Özeti (Oturum 110, 22 May 2026)
 
 ## Özet
-108 sonu kullanıcı geri bildirimi netti: kabuk-first akış **dolambaçlı**. Wizard "klasörü hallederim"
-diyip önizliyor ama spool oluşturmak için kullanıcıyı devre_detay → Dökümanlar → Excel'i bul → Aktar'a
-yolluyordu. Vaat ile teslimat uyuşmuyordu. 109 bunu **A-yolu** ile çözdü: onay/INSERT mantığı ortak
-`ares-kabuk.js`'e çıkarıldı, wizard artık spool'u kendi içinde oluşturuyor. Üstüne B1 (per-spool yüzey),
-B2 (wizard güvenlik düğmesi), #4 (wizard spool seçimi), #5 (lang anahtarları).
+ANA HEDEF Adım 4'tü: işlenen izometri PDF'ini kabuk spool'a bağla, `cizim_durumu` bekliyor→kismi
+yükselt. Eşleştirme MANTIĞI bitti ve canlı doğrulandı (worker parse-sonrası adımı + backfill
+endpoint). Yolda anahtar bir kez YANLIŞ kuruldu (devre+spool_no), canlı veriyle yakalandı, geri
+alındı, doğru anahtarla (devre+pipeline+spool, pipeline dosya adından) yeniden kuruldu. Test
+sırasında ÇOK DAHA BÜYÜK bir sorun keşfedildi: kabuk akışı boru çap/et'ini IFS'in aksine
+zenginleştirmiyor (`4" Sch 10S` → çap=4mm/et=null). Bu sorun + Cihat'ın "katman katman bindirme"
+vizyonu 111'e ANA TEMA olarak devredildi. `kismi` canlıda KALIYOR (kullanıcı kararı), rozet kararı 111.
 
-## 1) ares-kabuk.js (YENİ ortak modül — A-yolu kalbi)
-`ARES_KABUK` namespace, 3 API:
-- `boyutParse(dn)` → {dis_cap, et}. devre_detay `_onayBoyut` + wizard `_boyutParse` birebir aynıydı → birleşti.
-- `grupla(ps)` → {spoollar, atanmamis, secilenSayfa, guven}. devre_detay `_onayGrupla` AYNEN. + B1: her
-  spool'a `yuzeyHam` türetimi (r.yuzey → system token).
-- `aktar({supa, tid, devreId, spoollar, yuzey, perSpoolYuzey, kuyrukIds})` → Promise.
-  devre_detay `onayAktar`'ın INSERT gövdesi AYNEN (spooller + spool_malzemeleri, `cizim_durumu='bekliyor'`,
-  ikiz kolonlar agirlik/agirlik_kg + durum/is_durumu — MK-108.2 expand fazı korundu). DOM/toast/reload
-  soyuldu. **Kabuk kilidi (MK-WIZARD.3 idempotency) modülün İÇİNDE** → mevcut pipeline|spool|rev atlanır,
-  iki taraf da otomatik korunur. Çoklu kuyruk id (wizard N BOM Excel'i tek seferde tamamlandı yapar).
+## 1) ares-kabuk.js, devre_detay, wizard — DOKUNULMADI bu oturumda
+109'da yazılan kabuk akışı bu oturumda DEĞİŞTİRİLMEDİ. (111'de `boyutParse` lookup'ı için açılacak.)
 
-Doğrulama: saf fonksiyon birim testi — boyutParse 5/5 (gerçek OD "219,1 mm" dahil), grupla 2 spool +
-konsolide BOM (iki Pipe satırı → tek boru kalemi 4000mm, 46.8kg) + atanmamış mantığı, B1 yüzey zinciri 3/3
-(Galvaniz→galvaniz, M200-Boyali→boyali, sinyalsiz→boş→param'a düşer).
+## 2) api/kuyruk-isle-izometri.js — eslestir() eklendi (worker, 1A)
+- `parse_sonuc` UPDATE'i başarılı + `ok` ise → `eslestir(supa, dok.devre_id, is.id, okuJson)`.
+  try/catch ile sarıldı: eşleşme hatası parse'ı geçersiz kılmaz (parse_sonuc zaten yazıldı), yut+logla.
+- Handler response'una `eslesme` özeti eklendi ({toplam,eslesen,atanmamis,yukseltilen}).
+- `izometri-oku.js`'e DOKUNULMADI (MK-49.1) — adım worker'ın PARSE-SONRASI bölümünde.
 
-## 2) devre_detay — ince sarmalayıcı
-- `_onayGrupla(ps)` → `ARES_KABUK.grupla(ps)` (alias).
-- `_onayBoyut(dn)` → `ARES_KABUK.boyutParse(dn)` (alias).
-- `onayAktar(kuyrukId)` → ~25 satır: checkbox seçimi + yüzey topla → `ARES_KABUK.aktar({...,kuyrukIds:[kuyrukId]})`
-  → toast/reload. Kullanıcıya davranış 108 ile BİREBİR (`{ok, eklenen, atlananlar}` → eski toast mesajları).
-- Kalan tek `spooller.insert` = meşru manuel ekleme (`spoolEkleKaydet`), onayAktar kalıntısı değil.
+## 3) eslestir() çekirdek — ANAHTAR İKİ KEZ KURULDU
+**İlk (MK-110.1, YANLIŞ):** `devre_id + spool_no`. normSpoolNo (trim+upper). Birim test 17/17 geçti,
+backfill koştu, 3 kismi yazıldı. SONRA: canlı sorgu `S01 -> 26 farkli pipeline` gösterdi. Devre içi
+spool_no TEKİL DEĞİL → tüm S01 PDF'leri tek spool'a (harita "ilk gelen kazanır") bağlandı. YANLIŞ.
+3 kismi geri alındı (`set cizim_durumu='bekliyor'` + `parse_sonuc - '_eslesme'`).
 
-## 3) devre_detay — PDF onay butonu düzeltme
-`onayBtn` artık `_kuyrukParser==='excel-generic'` ile gate'li. izometri PDF'in `parse_sonuc`'u farklı şekil
-(spoollar/format/batch_id, satirlar YOK) → "Önizle/Onayla" izometride "Parse sonucu boş" veriyordu (108 borcu,
-buton hiç PDF'e bağlanmamıştı). Kabuk-first'te PDF başına onay yok → izometri için pasif "İzometri — arka planda"
-etiketi (tıklanamaz). Yeni tv anahtarları: `dv_izo_arka`, `dv_izo_arka_aciklama`.
+**Doğru (MK-110.2):** `devre_id + pipeline_no + spool_no`. Tekil (`having count>1` → no rows ile
+doğrulandı). Pipeline parse_sonuc.spoollar[].pipeline_no NULL → DOSYA ADINDAN:
+- `dosyaAdiParse(dosyaAdi)`: `/^(.+?)(?:\s+\d+\(\d+\))?\.(S\d+(?:_\d+)?)\.\d+\.pdf$/i`
+- `M100-317-30-ALS 1(2).S01.1.pdf` → {pipeline:'M100-317-30-ALS', spool:'S01'}
+- 12 gerçek dosya adı + 4 negatif (atanmamışa düşmeli) → 16/16.
+- harita anahtarı: `normPipeline(pipeline)+'|'+normSpoolNo(spool)`.
 
-## 4) devre_wizard — onay wizardın içinde (A-yolu)
-- Kabuk önizleme altına "✓ Onayla / Kilitle → N spool oluştur" butonu. `WIZ._kabuk` context (satirlar,
-  bomIds, tid, devreId) saklanır.
-- `kabukOnayla()`: aynı satırlardan `ARES_KABUK.grupla` ile tam BOM modeli → seçili spool'ları filtrele →
-  `ARES_KABUK.aktar({..., perSpoolYuzey:true, kuyrukIds:bomIds})`. Davranış B: wizard'da KAL, yerinde
-  "N spool oluşturuldu ✓" + Devreyi Görüntüle öne çıkar.
-- `_boyutParse` → `ARES_KABUK.boyutParse` (alias).
+**A+B:** pipeline dosya adından çıkar (A). Çıkmaz / kabukta yok → atanmamış, ZORLAMA (B). Sebep
+alanı: `dosya_adi_pipeline_yok` | `kabukta_yok`. "Yanlış eşleşmektense eşleşmesin."
 
-## 5) B1 — per-spool yüzey
-`grupla` her spool'a `yuzeyHam` türetir; `aktar` `perSpoolYuzey:true` ise `ARES_NORM.yuzeyKod(yuzeyHam)`
-yazar, boşsa tek `yuzey` param'ına düşer. Wizard true gönderir → önizlemede gösterilen yüzey DB'ye yazılır.
-devre_detay GÖNDERMEZ → eski tek-yüzey davranışı (modal dropdown) korunur, sıfır regresyon.
+**3C + MK-WIZARD.3:** eşleşen spool 'bekliyor' ise → 'kismi'. 'tam'/'kismi' → DOKUNMA. Filtreli
+UPDATE `.eq('cizim_durumu','bekliyor').select('id')` — yalnız hala bekliyorsa, dönen satır varsa
+yukseltilen++ (yarış koşulu + idempotency). eslesen (eşleşme oldu) ≠ yukseltilen (durum değişti).
 
-## 6) B2 — wizard "Bekleyenleri işle" güvenlik düğmesi
-Sonuç ekranında "⟳ Bekleyenleri işle (N)". `WIZ._izoIds` saklanır; `wizBekleyenleriIsle()` body'siz tetik
-+ kendi kuyruk id'lerinden kalan bekliyor/isleniyor'u 4 sn'de bir sorgular, 0'da düğme gizlenir (max 8 tur).
-devre_detay `bekleyenIzometriIsle` eşi (fark: wizard belge listesi yerine doğrudan kuyruk sayar).
+**4B:** detay[].durum='atanmamis' + sebep. Özet `parse_sonuc._eslesme` jsonb'ye (şema değişmez,
+oku-birleştir-yaz, mevcut parse_sonuc korunur).
 
-## 7) #4 — wizard spool seçimi
-Kabuk tablosu satır checkbox'ları (data-key = pipeline|spool|rev, varsayılan seçili) + başlıkta tümünü
-seç/kaldır + canlı sayaç (`kabukSayiGuncelle`, `kabukTumSec`); 0 seçili → buton pasif. Onayla yalnız
-seçilenleri oluşturur. Anahtar grupla modeliyle aynı → önizleme/insert tutarlı.
+## 4) api/eslestirme-backfill.js — YENİ endpoint
+- Geçmiş (oneri_hazir/manuel_onay, parse_sonuc dolu) PDF'leri eşler. `eslestir()`'i IMPORT eder →
+  worker ile BİREBİR aynı mantık (tek kaynak, MK-109.1).
+- Body: `{devre_id?, kuru?, limit?}`. `kuru:true` = DB'ye yazmaz, "ne eşleşirdi" raporu (kuru mantık
+  da yeni anahtarla güncellendi: pipeline+spool, dosyaAdiParse). devre_dokumanlari!inner(devre_id)
+  join ile devre çekilir. İdempotent.
 
-## 8) #5 — lang anahtarları
-`dv_izo_arka` + `dv_izo_arka_aciklama` → tr/en/ar.json (her biri +2 satır, 1909 → 1911 anahtar, yeniden
-biçimlendirme yok). AR pattern korundu: spool=السبول, İzometri=إيزومتري.
+## Birim test (test-eslestir.mjs — repoda DEGIL, container'da kaldı)
+- dosyaAdiParse 5/5 (pafta ekli/eksiz, S01_1 alt-spool, negatifler).
+- 110 BUG REGRESYON: aynı devrede S01→3 pipeline, PDF M100-317-24 → SADECE A-700 eşleşti,
+  diğer iki S01 dokunulmadı. (Eski kod hepsini tek spool'a bağlardı.)
+- Atanmamış (kabukta_yok), B güvenlik (regex tutmaz → dokunma), MK-WIZARD.3 (tam dokunma),
+  _eslesme.dosya_adi yazımı. Hepsi geçti.
+
+## Canlı kanıt (devre d6dffba8 — altın test seti: 36 bekliyor + 25 tam)
+- Kuru backfill: 20 PDF, eslesen 17, atanmamis 3, yukseltilebilir 16. Doğru pipeline+spool.
+- 3 atanmamış = `_1` alt-spool (`S01_1`/`S02_1`): pipeline doğru, ama kabukta spool çıplak (`S01`),
+  PDF `_1`'li → birebir tutmadı. DOĞRU davranış (B). 111: `_N` fallback gerekli.
+- Gerçek backfill koştu → bekliyor 33 + kismi 3 + tam 25. 25 tam DOKUNULMADI (MK-WIZARD.3 kanıtı).
+
+## 🔴 KEŞFEDİLEN BÜYÜK SORUN (111 ANA TEMA) — boru ölçü zenginleştirme
+Adım 4 testinde, başka bir devrede (G200-333-OD01, kabuk ile gelen) görüldü:
+- A-0682 (kabuk): dis_cap_mm=4.00, et_kalinligi_mm=NULL. `4" Sch 10S` borusunun "4" inç sayısı
+  ham çap yazılmış, SCH→DN→OD/et lookup'ı HİÇ çalışmamış.
+- A-0737 (IFS ile aynı tip boru): dis_cap_mm=114.3, et=3.05. DOĞRU. (görsel kanıt)
+- Kök: iki ayrı `boyutParse`. IFS (devre_yeni.html:1761-1825) NPS+SCH+WT tablosu biliyor. Kabuk
+  (ares-kabuk.js:33-43) sadece DN tablosu, SCH/inç YOK → son satırda parseFloat("4")=4.
+- `ares-asme.js` (2567 satır, tests/asme-lookup.test.js ile test) tam lookup motoru:
+  `etKalinligi(dn,sch,malzeme)`, `disCap(dn,malzeme)`, `agirlikKgM`, `NPS_DN`/`DN_NPS`, `_schNorm`,
+  `_malzemeNorm`. Kabuk bunu çağırmıyor.
+- Vizyon (Cihat): Excel→PDF katman katman bindirme; çakışma görünürlüğü; zengin veri. Uygulamada
+  Excel'den ~sadece spool_no alınıyor, oysa BOM (s.bom) çap/et/ağırlık zaten kabuk'a geliyor ama
+  spool seviyesine taşınmıyor. Adım 4 de sadece rozete indirgendi — PDF verisini bindirmek hedefti.
 
 ## Mimari kararlar
-- **MK-109.1:** Çalışan kodu yeniden yazma — ÇIKAR + hizala. Kanıtlı onayAktar aynen taşındı.
-- **MK-109.2:** Kabuk-first onay wizard'ın İÇİNDE; ortak modül iki sayfada. Dolambaç çözüldü.
-- **MK-109.3:** izometri parse_sonuc ≠ Excel BOM şekli → PDF başına onay yok, butonlar parser tipiyle gate.
-- **MK-109.4:** per-spool yüzey opt-in (`perSpoolYuzey`); devre_detay regresyonsuz.
-- **MK-109.5:** Büyük dosyada str_replace + node --check + birim test; arespipe_kopyala şaşarsa cp + md5 gözle.
+- MK-110.1 (revize→110.2): anahtar tekilliğini CANLI VERİYLE doğrula, varsayma.
+- MK-110.2: anahtar = devre+pipeline+spool, pipeline dosya adından (formata özgü regex).
+- MK-110.3 (YENİ, 111 temeli): kabuk lookup eksiği; ares-asme.js ortak motor; YENİ PARSER YAZMA.
+- MK-110.4 (A+B): emin değilsen zorlama, atanmamış bırak.
+- MK-110.5: kuru çalışma önce (DB'ye dokunmadan raporla→doğrula→koş).
 
 ## Commit'ler
 | Commit | İçerik |
 |--------|--------|
-| 70f7e32 | A-yolu (ares-kabuk + wizard Onayla + devre_detay sarmalayıcı + PDF buton) |
-| (bu push) | B1 + B2 + #4 + #5 (ares-kabuk per-spool yüzey, wizard güvenlik düğmesi + seçim, 3 lang) |
-| (doc) | kapanış dokümanları [skip ci] |
+| 7422009 | Adim4 eslestirme (MK-110.1, yanlis anahtar) + backfill |
+| fa22eba | Adim4 anahtar duzelt (MK-110.2) + A+B + dosyaAdiParse |
+| (doc) | kapanis dokumanlari [skip ci] |
 
 ## Değişen dosyalar
-- `ares-kabuk.js` (YENİ — ortak kabuk modülü)
-- `devre_wizard.html` (Onayla + per-spool yüzey + güvenlik düğmesi + spool seçimi)
-- `devre_detay.html` (sarmalayıcı + alias + PDF buton gate) — A-yolu, 70f7e32'de
-- `lang/tr.json` + `lang/en.json` + `lang/ar.json` (+2 anahtar)
-
-## Canlı kanıt
-`cizim_durumu`: `bekliyor` 3 → 39 (wizard içi Onayla CANLI çalıştı, 36 yeni kabuk spool). `tam` 628 sabit.
+- `api/kuyruk-isle-izometri.js` (eslestir + dosyaAdiParse + normPipeline + export; handler eslesme)
+- `api/eslestirme-backfill.js` (YENİ)
+- (test-eslestir.mjs + test-pipeline-regex.mjs container'da — repoya alınmadı, istenirse 111'de)
 
 ## Sonraki oturum
-ANA HEDEF: **Adım 4 — PDF→kabuk eşleştirme + cizim_durumu görünürlüğü/güncelleme.** Kabuk-first döngüsünün
-"dön, kontrol et, eksikleri doldur" tarafı. Tasarım kararları (eşleştirme nerede, anahtar, kismi/tam eşiği,
-eşleşmeyen PDF) canlı `parse_sonuc` görmeden verilemez — ayrıntı `CLAUDE-SONRAKI-OTURUM.md`.
+🔴 ANA HEDEF: **Boru ölçü zenginleştirme + katman bindirme** (MK-110.3). Detay
+CLAUDE-SONRAKI-OTURUM.md. Yan işler: `_N` fallback eşleştirme, cizim_durumu rozeti (kalsın mı kararı),
+gerçek backfill'i diğer devrelere yayma. `kismi` şu an d6dffba8'de canlı, KALIYOR.
