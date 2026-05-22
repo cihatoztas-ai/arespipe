@@ -371,28 +371,52 @@ async function staleLockTemizle(supa) {
 }
 
 // ───────────────────────────────────────────────────────────────
-// Adim4 (MK-110.1): izometri PDF -> kabuk spool eslestirme.
+// Adim4 (MK-110.1 revize / MK-110.2): izometri PDF -> kabuk spool eslestirme.
 // ───────────────────────────────────────────────────────────────
-// FORMAT BAGIMSIZ: anahtar = devre (dok.devre_id, FK'dan) + spool_no (parse_sonuc.spoollar[].spool_no).
-//   Dosya adi parse'i KULLANILMAZ — PDF zaten bir devreye iliskilendirilmis, context bedava.
-// 2B: normSpoolNo (trim + upper) — "S01"/" s01 " gibi case/whitespace farklarini yutar.
-// 3C: eslesen spool 'bekliyor' ise 'kismi'ye yukselt (cizim baglandi, imalat verisi bekliyor).
-//     'tam' veya zaten 'kismi' ise DOKUNMA (MK-WIZARD.3 — spool ile oynamayiz, tek yon yukselt).
-// 4B: eslesmeyen parse spool -> _eslesme.detay[].durum='atanmamis' (devre_detay gosterir).
-// Sema degismez: sonuc parse_sonuc._eslesme jsonb alanina yazilir.
+// ANAHTAR = devre (FK) + pipeline_no + spool_no.
+//   MK-110.1 ilk hali "devre + spool_no" idi ve YANLISTI: bir devrede ayni spool_no (orn. S01)
+//   ONLARCA farkli pipeline'da tekrar ediyor (canli: S01 -> 26 pipeline). Sadece spool_no ile
+//   eslestirmek tum S01 PDF'lerini tek spool'a baglar (110'da 3 yanlis kismi yazildi, geri alindi).
+//   Dogru tekil anahtar: (devre_id, pipeline_no, spool_no) — canli "no rows" ile dogrulandi.
 //
-// supa: service-role client | devreId: uuid | kuyrukId: uuid (dosya_isleme_kuyrugu.id)
-// okuJson: izometri-oku ciktisi (.spoollar bekleniyor)
-// Doner: ozet {at, devre_id, toplam, eslesen, atanmamis, yukseltilen, detay[]} | undefined
-export const normSpoolNo = (s) => String(s == null ? '' : s).trim().toUpperCase();
+// PIPELINE KAYNAGI = DOSYA ADI (parse_sonuc.dosya_adi). parse spoollar[].pipeline_no NULL geliyor.
+//   dosyaAdiParse() formata-ozgu regex ile "M100-317-30-ALS 1(2).S01.1.pdf" -> {pipeline,spool}.
+//   MK-110.1'in "dosya adi parse'i KULLANILMAZ" hukmu BURADA gevsetildi: pipeline disambiguation
+//   icin dosya adi GEREKLI. Regex bu formata ozgu (Tersan/M100); baska format -> null -> atanmamis.
+//
+// A+B: regex tutarsa pipeline+spool ile eslestir (A). Tutmaz / pipeline kabukta yoksa -> ZORLAMA,
+//   atanmamis birak (B). Yanlis eslesmektense eslesmesin (110'daki hata bunu ogretti).
+// 2B: normSpoolNo + normPipeline (trim+upper) varyasyonlari yutar.
+// 3C: eslesen spool 'bekliyor' ise 'kismi'ye yukselt. 'tam'/'kismi' -> DOKUNMA (MK-WIZARD.3).
+// 4B: eslesmeyen -> _eslesme.detay[].durum='atanmamis' (+ sebep). Sema degismez (jsonb).
+//
+// supa: service-role client | devreId: uuid | kuyrukId: uuid
+// okuJson: izometri-oku ciktisi (.spoollar + .dosya_adi bekleniyor)
+// Doner: ozet {at, devre_id, dosya_adi, toplam, eslesen, atanmamis, yukseltilen, detay[]} | undefined
+export const normSpoolNo  = (s) => String(s == null ? '' : s).trim().toUpperCase();
+export const normPipeline = (s) => String(s == null ? '' : s).trim().toUpperCase();
+
+// Dosya adindan {pipeline_no, spool_no} cikar. Formata-ozgu (Tersan/M100). Tutmazsa null.
+//   "M100-317-30-ALS 1(2).S01.1.pdf" -> {pipeline_no:'M100-317-30-ALS', spool_no:'S01'}
+//   "M100-317-55-ALS 1(2).S01_1.1.pdf" -> {..., spool_no:'S01_1'}
+export function dosyaAdiParse(dosyaAdi) {
+  if (!dosyaAdi || typeof dosyaAdi !== 'string') return null;
+  const m = dosyaAdi.match(/^(.+?)(?:\s+\d+\(\d+\))?\.(S\d+(?:_\d+)?)\.\d+\.pdf$/i);
+  if (!m) return null;
+  return { pipeline_no: m[1].trim(), spool_no: m[2].toUpperCase() };
+}
 
 export async function eslestir(supa, devreId, kuyrukId, okuJson) {
   if (!devreId || !okuJson || !Array.isArray(okuJson.spoollar)) return;
 
-  // O devredeki kabuk spool'lari cek (normSpoolNo -> {id, spool_id, cizim_durumu}).
+  // Pipeline'i dosya adindan cikar (parse spoollar pipeline_no NULL).
+  const dosyaAdi = okuJson.dosya_adi || null;
+  const dosyaParse = dosyaAdiParse(dosyaAdi);   // {pipeline_no, spool_no} | null
+
+  // O devredeki kabuk spool'lari cek. Anahtar = pipeline_no|spool_no (devre ici tekil).
   const { data: spoollar, error: spErr } = await supa
     .from('spooller')
-    .select('id, spool_no, spool_id, cizim_durumu')
+    .select('id, spool_no, pipeline_no, spool_id, cizim_durumu')
     .eq('devre_id', devreId)
     .eq('silindi', false);
   if (spErr) {
@@ -400,18 +424,30 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson) {
     return;
   }
 
-  const harita = new Map();
+  const harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
   for (const sp of (spoollar || [])) {
-    const k = normSpoolNo(sp.spool_no);
-    if (k && !harita.has(k)) harita.set(k, sp);  // ilk gelen kazanir (devre ici spool_no tekil varsayimi)
+    const k = normPipeline(sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
+    if (!harita.has(k)) harita.set(k, sp);
   }
 
   const detay = [];
   let yukseltilen = 0;
 
   for (const ps of okuJson.spoollar) {
-    const anahtar = normSpoolNo(ps.spool_no);
-    const hedef = anahtar ? harita.get(anahtar) : null;
+    // Pipeline: dosya adindan (tum PDF tek pipeline). Spool: oncelik dosya adi, yoksa parse.
+    const pipelineHam = dosyaParse?.pipeline_no || null;
+    const spoolHam    = dosyaParse?.spool_no || ps.spool_no || null;
+
+    let hedef = null, atanmaSebep = null;
+    if (!pipelineHam) {
+      atanmaSebep = 'dosya_adi_pipeline_yok';   // B: regex tutmadi -> zorlama
+    } else if (!spoolHam) {
+      atanmaSebep = 'spool_no_yok';
+    } else {
+      const anahtar = normPipeline(pipelineHam) + '|' + normSpoolNo(spoolHam);
+      hedef = harita.get(anahtar) || null;
+      if (!hedef) atanmaSebep = 'kabukta_yok';   // B: pipeline+spool devrede yok -> atanmamis
+    }
 
     if (hedef) {
       // 3C + MK-WIZARD.3: yalniz bekliyor -> kismi. Yaris kosulu icin filtreli UPDATE.
@@ -426,20 +462,27 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson) {
         else if (upData && upData.length > 0) yukseltilen++;
       }
       detay.push({
-        spool_no: ps.spool_no,
+        spool_no: hedef.spool_no,
+        pipeline_no: hedef.pipeline_no,
         durum: 'eslesti',
         spool_id: hedef.spool_id,
         spool_uuid: hedef.id,
         onceki_cizim_durumu: hedef.cizim_durumu
       });
     } else {
-      detay.push({ spool_no: ps.spool_no, durum: 'atanmamis' });
+      detay.push({
+        spool_no: spoolHam,
+        pipeline_no: pipelineHam,
+        durum: 'atanmamis',
+        sebep: atanmaSebep
+      });
     }
   }
 
   const ozet = {
     at: new Date().toISOString(),
     devre_id: devreId,
+    dosya_adi: dosyaAdi,
     toplam: detay.length,
     eslesen: detay.filter(d => d.durum === 'eslesti').length,
     atanmamis: detay.filter(d => d.durum === 'atanmamis').length,

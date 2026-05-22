@@ -23,7 +23,7 @@
 // Env: SUPABASE_URL + SUPABASE_SERVICE_KEY (MK-101.4).
 
 import { createClient } from '@supabase/supabase-js';
-import { eslestir, normSpoolNo } from './kuyruk-isle-izometri.js';
+import { eslestir, normSpoolNo, normPipeline, dosyaAdiParse } from './kuyruk-isle-izometri.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
@@ -83,23 +83,32 @@ export default async function handler(req, res) {
 
       if (kuru) {
         // KURU: eslesir miydi simule et, DB'ye yazma. (eslestir cagrilmaz.)
+        // Yeni anahtar: pipeline_no|spool_no (dosya adindan). eslestir() ile AYNI mantik.
         const { data: spoollar } = await supa
           .from('spooller')
-          .select('spool_no, cizim_durumu')
+          .select('spool_no, pipeline_no, cizim_durumu')
           .eq('devre_id', dvId)
           .eq('silindi', false);
-        const set = new Set((spoollar || []).map(s => normSpoolNo(s.spool_no)));
-        const bekleyenSet = new Set((spoollar || []).filter(s => s.cizim_durumu === 'bekliyor').map(s => normSpoolNo(s.spool_no)));
+        const harita = new Map();   // PIPELINE|SPOOL -> cizim_durumu
+        for (const s of (spoollar || [])) {
+          const k = normPipeline(s.pipeline_no) + '|' + normSpoolNo(s.spool_no);
+          if (!harita.has(k)) harita.set(k, s.cizim_durumu);
+        }
+        const dp = dosyaAdiParse(okuJson.dosya_adi || null);   // {pipeline_no, spool_no} | null
         let es = 0, at = 0, yuk = 0;
         for (const ps of okuJson.spoollar) {
-          const k = normSpoolNo(ps.spool_no);
-          if (k && set.has(k)) { es++; if (bekleyenSet.has(k)) yuk++; } else at++;
+          const pl = dp?.pipeline_no || null;
+          const sn = dp?.spool_no || ps.spool_no || null;
+          if (!pl || !sn) { at++; continue; }
+          const k = normPipeline(pl) + '|' + normSpoolNo(sn);
+          if (harita.has(k)) { es++; if (harita.get(k) === 'bekliyor') yuk++; }
+          else at++;
         }
         rapor.toplam_spool += okuJson.spoollar.length;
         rapor.toplam_eslesen += es;
         rapor.toplam_atanmamis += at;
         rapor.toplam_yukseltilen += yuk;
-        rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, spool: okuJson.spoollar.length, eslesen: es, atanmamis: at, yukseltilebilir: yuk });
+        rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dosya: okuJson.dosya_adi || null, spool: okuJson.spoollar.length, eslesen: es, atanmamis: at, yukseltilebilir: yuk });
       } else {
         // GERCEK: worker ile ayni eslestir() — bekliyor->kismi + _eslesme yaz.
         const ozet = await eslestir(supa, dvId, is.id, okuJson);
