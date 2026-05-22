@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-22T19:35:41.366Z",
-  "commit_sha": "67c944f58398519827931bdeb589eb45e5264cb4",
+  "tarih": "2026-05-22T20:18:36.277Z",
+  "commit_sha": "94259844af2a5f9cad19f862930749067e1204a0",
   "commit_ref": "main",
-  "workflow_run": 935,
+  "workflow_run": 936,
   "ozet": {
     "hata": 0,
     "uyari": 77,
@@ -41,7 +41,7 @@
           "dosya": "devre_wizard.html",
           "sayi": 1,
           "satirlar": [
-            1464
+            1481
           ]
         }
       ]
@@ -393,7 +393,7 @@
         {
           "kod": "G03_HAM_YUZEY",
           "tip": "uyari",
-          "satir": 1464,
+          "satir": 1481,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
