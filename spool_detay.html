@@ -981,7 +981,7 @@ var DN_NPS = {
   650:'26″', 700:'28″', 750:'30″', 800:'32″', 850:'34″', 900:'36″',
   1050:'42″', 1200:'48″'
 };
-var KESIMLER = [], BUKUMLER = [], MARKALAR = [], NOTLAR = [], LOGLAR = [], BELGELER = [];
+var KESIMLER = [], BUKUMLER = [], MARKALAR = [], NOTLAR = [], LOGLAR = [], BELGELER = [], IZOMETRILER = [];
 var TESTLER = [];
 var FOTOLAR = [];
 var _gonderTip = '';
@@ -1229,6 +1229,33 @@ async function spoolYukle(supaId) {
         if (b.dosya_url) b.url = await ARES.dosyaUrlAl(b.dosya_url) || '';
       })),
     ]);
+
+    // 112/MK-112.3: bu spool'a eslesen izometri PDF'leri (devre_dokumanlari.spool_id — 111'de kuruldu).
+    //   Belgeler bolumunde "Izometri Cizimleri" alt-grubu olarak gosterilir (ayri tablo, ayri bucket).
+    //   dosyaUrlAl'a 'devre-belgeleri' bucket gecilir (belge/foto arespipe-dosyalar'da — MK-112.4).
+    //   Birden fazla PDF bagliysa hepsi listelenir (.map). spool_id sadece izometri eslesmesinde set edilir.
+    try {
+      var izoRes = await supa
+        .from('devre_dokumanlari')
+        .select('id, dosya_adi, storage_yolu, dokuman_tipi, yuklenme')
+        .eq('spool_id', supaId)
+        .order('yuklenme', { ascending: false });
+      IZOMETRILER = (izoRes.data || []).map(function(d) {
+        return {
+          id:           d.id,
+          dosya_adi:    d.dosya_adi    || '—',
+          storage_yolu: d.storage_yolu || '',
+          url:          '',
+          tarih:        d.yuklenme ? new Date(d.yuklenme).toLocaleString('tr-TR') : ''
+        };
+      });
+      await Promise.all(IZOMETRILER.map(async function(d) {
+        if (d.storage_yolu) d.url = await ARES.dosyaUrlAl(d.storage_yolu, 'devre-belgeleri') || '';
+      }));
+    } catch (e) {
+      console.warn('[spool_detay] izometri PDF yuklenemedi:', e);
+      IZOMETRILER = [];
+    }
 
 
     // İşlem logu, notlar, kesim, büküm, markalama — PARALEL
@@ -2763,7 +2790,19 @@ function logNotEkle(){var m=prompt('Not girin:');if(m&&m.trim())logEkle('Not',m.
 // ── BELGELER ─────────────────────────────────────────────────
 function renderBelgeler(){
   var el=T('belgeListe'),cnt=T('belCnt');
-  var html=BELGELER.length?BELGELER.map(function(b){
+  // 112/MK-112.3: izometri alt-grubu (devre_dokumanlari, eslesen PDF'ler) — belgeler ustunde, ayri baslik.
+  var izoHtml = IZOMETRILER.length ? (
+    '<div style="padding:10px 16px 4px;font-size:13px;font-weight:600;color:var(--ac);">📐 '+tv('sp_izo_baslik','İzometri Çizimleri')+'</div>'
+    + IZOMETRILER.map(function(d){
+        return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bor);">'
+        +'<div style="width:32px;height:32px;border-radius:7px;background:rgba(45,142,255,.12);border:1px solid rgba(45,142,255,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0;">PDF</div>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(d.dosya_adi)+'</div>'
+        +'<div style="font-size:14px;color:var(--txd);">'+tv('sp_izo_eslesen','eşleşen izometri')+(d.tarih?' — '+esc(d.tarih):'')+'</div></div>'
+        +(d.url?'<a href="'+d.url+'" target="_blank" class="ctx" title="Aç">↗</a>':'<span style="font-size:12px;color:var(--txd);">'+tv('sp_izo_acilamadi','açılamadı')+'</span>')
+        +'</div>';
+      }).join('')
+  ) : '';
+  var belHtml = BELGELER.length ? BELGELER.map(function(b){
     var ext=(b.dosya_url||b.ad||'').split('.').pop().toUpperCase().slice(0,3)||'DOC';
     return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bor);">'
     +'<div style="width:32px;height:32px;border-radius:7px;background:rgba(22,163,110,.12);border:1px solid rgba(22,163,110,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gr);flex-shrink:0;">'+esc(ext)+'</div>'
@@ -2771,9 +2810,13 @@ function renderBelgeler(){
     +'<div style="font-size:14px;color:var(--txd);">'+esc(b.tur)+' — '+esc(b.tarih)+'</div></div>'
     +(b.url?'<a href="'+b.url+'" target="_blank" class="ctx" title="Aç">↗</a>':'')
     +'<button data-eid="'+esc(b.id)+'" onclick="belgeSil(this.dataset.eid)" class="ctx ctx-re btn-sm">✕</button></div>';
-  }).join(''):'<div style="padding:16px;text-align:center;color:var(--txd);font-size:14px;">'+tv('sp_no_docs','Henüz belge eklenmemiş')+'</div>';
+  }).join(''):'';
+  // Bos durum: yalniz IKISI DE bos ise mesaj (izometri varsa "belge yok" gosterme).
+  var bosMsj = (!IZOMETRILER.length && !BELGELER.length)
+    ? '<div style="padding:16px;text-align:center;color:var(--txd);font-size:14px;">'+tv('sp_no_docs','Henüz belge eklenmemiş')+'</div>'
+    : '';
   if(cnt)cnt.textContent=BELGELER.length?BELGELER.length+' belge':'';
-  if(el)el.innerHTML=html;
+  if(el)el.innerHTML=izoHtml+belHtml+bosMsj;
 }
 function belgeModalAc(){var l=T('belgeDosyaLbl');if(l)l.textContent='📁 Dosya seç';var a=T('belgeAd');if(a)a.value='';var t=T('belgeTur');if(t)t.value='';T('belgeModal').style.display='flex';}
 function belgeDosyaSec(input){var f=input.files[0];if(!f)return;var l=T('belgeDosyaLbl');if(l)l.textContent='✓ '+f.name;var a=T('belgeAd');if(a&&!a.value.trim())a.value=f.name.replace(/\.[^/.]+$/,'');}
