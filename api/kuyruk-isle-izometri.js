@@ -1,6 +1,7 @@
 // api/kuyruk-isle-izometri.js
 // Wizard'a yüklenen izometri PDF dokümanlarını parse eder, sonucu kuyrukta saklar.
 // 107. oturum (21 Mayıs 2026) — MK-49.B
+// 112. oturum (22 Mayıs 2026) — MK-112.1: self-chain (fire-and-forget) -> ic-dongu drenaj
 //
 // kuyruk-isle-excel.js deseninin BİREBİR izometri karşılığı. Tek fark:
 //   excel  → lib/excel-parser.js'i lokalde çağırır (buffer ile).
@@ -11,17 +12,17 @@
 //   MK-49.1: "izometri-oku'ya DOKUNMA, çağır." HTTP çağrı bu semantiğin en temizi
 //   (import edip mock req/res ile çalıştırmak kırılgan + sözleşmeyi bozar).
 //
-// Akış:
-//   1. Kuyruktan bekleyen 'izometri' işi çek (en yüksek öncelik, en eski)
-//   2. Durumu 'isleniyor' yap (lock)
-//   3. devre_dokumanlari'ndan storage_yolu + yukleyen_id al
-//   4. Supabase Storage'dan PDF'i indir → base64
-//   5. /api/izometri-oku'ya POST (fingerprint→L2→L3, MK-49.1 sadece çağrı)
-//   6. Sonuca göre durum:
+// Akış (tek iş — birIsIsle):
+//   1. Durumu 'isleniyor' yap (lock)
+//   2. devre_dokumanlari'ndan storage_yolu + yukleyen_id al
+//   3. Supabase Storage'dan PDF'i indir → base64
+//   4. /api/izometri-oku'ya POST (fingerprint→L2→L3, MK-49.1 sadece çağrı)
+//   5. Sonuca göre durum:
 //        ok:true + manuel_onay_sayisi === 0  →  'oneri_hazir'
 //        ok:true + manuel_onay_sayisi > 0    →  'manuel_onay'
 //        ok:false / HTTP hata                →  'hata'
-//   7. parse_sonuc'a izometri-oku özetini (spoollar dahil) yaz, bitis_at güncelle
+//   6. parse_sonuc'a izometri-oku özetini (spoollar dahil) yaz, bitis_at güncelle
+//   7. eslestir() — parse spoollar -> kabuk spool bindirme (111/PARÇA2a)
 //
 // Bu endpoint DB'ye spool INSERT YAPMAZ. Sadece parse eder + sonucu saklar.
 // Onay UI (sonraki oturum) parse_sonuc'u okuyup spooller'a INSERT edecek.
@@ -31,8 +32,16 @@
 //   her PDF için bir "yetim" batch oluşur. Pilot için kabul edilebilir teknik borç.
 //
 // Tetik: POST /api/kuyruk-isle-izometri
-//   Body: yok (kuyruktan en yüksek öncelikli bekleyeni alır)
-//   Veya: { is_id: 'uuid' } — spesifik işi zorla (wizard bunu kullanır)
+//   Body: yok ('{}')        -> DRENAJ modu: maxDuration icinde ardisik N is isle (MK-112.1).
+//                              Buton ve (ileride) Vercel Cron bu modu kullanir (MK-112.2).
+//   Veya: { is_id: 'uuid' } -> TEK IS modu: spesifik isi zorla (wizard bunu kullanir, MK-108.1).
+//
+// MK-112.1 (NEDEN ic-dongu, neden self-chain DEGIL):
+//   Onceki tasarim her is bitince fire-and-forget fetch ile kendini tekrar tetikliyordu
+//   (zincirDevam). Vercel serverless'te response dondukten sonra container SUSPEND olur;
+//   o fetch cogu zaman PAKET GITMEDEN olur. Sonuc: her tetik tam 1 is isler, zincir hic
+//   baslamaz. 112'de kanitlandi (134 bekliyor, tek curl -> sadece 1 azaliyor).
+//   Cozum: container ZATEN ayakta iken (maxDuration=60) ic while-dongusu ile ardisik isle.
 //
 // Env (Vercel):
 //   SUPABASE_URL              (zaten var)
@@ -55,6 +64,11 @@ export const config = { maxDuration: 60 };
 // izometri-oku'nun base64 limiti ile aynı (5MB PDF ~= 6.7MB base64, 7MB güvenli sınır).
 // Erken dön: opak relay hatası yerine net kuyruk hata_mesaji üret.
 const MAX_BASE64_LEN = 7 * 1024 * 1024;
+
+// 112/MK-112.1: drenaj turu limitleri. maxDuration=60sn; 50sn'de dur (pay birak),
+//   en fazla 4 is (4 x ~11sn = ~44sn < 50sn; yavas izometri-oku'da bile 60'i asmaz).
+const DRENAJ_MAX_IS = 4;
+const DRENAJ_MAX_MS = 50 * 1000;
 
 function selfBaseUrl() {
   if (process.env.SELF_BASE_URL) return process.env.SELF_BASE_URL.replace(/\/+$/, '');
@@ -89,7 +103,7 @@ export default async function handler(req, res) {
     auth: { persistSession: false }
   });
 
-  // Spesifik is_id mi yoksa kuyruktan ilk bekleyen mi?
+  // Spesifik is_id mi yoksa drenaj mi?
   const istenenIsId = req.body?.is_id || null;
 
   try {
@@ -97,8 +111,7 @@ export default async function handler(req, res) {
     //            geri 'bekliyor'a alinir; 3+ denemede 'hata' (sonsuz Vision dongusu engeli).
     await staleLockTemizle(supa);
 
-    // 1) Kuyruktan iş çek
-    let is;
+    // ── TEK IS modu (wizard, MK-108.1): spesifik is_id'yi zorla isle ──
     if (istenenIsId) {
       const { data, error } = await supa
         .from('dosya_isleme_kuyrugu')
@@ -114,178 +127,28 @@ export default async function handler(req, res) {
           hata: `İş zaten '${data.durum}' durumunda, tekrar işlenemez`
         });
       }
-      is = data;
-    } else {
-      const { data, error } = await supa
-        .from('dosya_isleme_kuyrugu')
-        .select('*')
-        .eq('parser', 'izometri')
-        .eq('durum', 'bekliyor')
-        .order('oncelik', { ascending: false })
-        .order('olusturma', { ascending: true })
-        .limit(1);
-      if (error) {
-        return res.status(500).json({ hata: 'Kuyruk okunamadı: ' + error.message });
-      }
-      if (!data || data.length === 0) {
-        return res.status(200).json({
-          sonuc: 'bos',
-          mesaj: 'Bekleyen izometri işi yok'
-        });
-      }
-      is = data[0];
+      const sonuc = await birIsIsle(supa, baseUrl, data);
+      const httpKod = sonuc._status || 200;
+      delete sonuc._status;   // ic alan, disari sizmasin (eski sozlesme korunur)
+      return res.status(httpKod).json(sonuc);
     }
 
-    // 2) Durumu 'isleniyor' yap (lock)
-    const { error: lockError } = await supa
-      .from('dosya_isleme_kuyrugu')
-      .update({
-        durum: 'isleniyor',
-        alindi_at: new Date().toISOString(),
-        deneme_sayisi: (is.deneme_sayisi || 0) + 1
-      })
-      .eq('id', is.id);
-
-    if (lockError) {
-      return res.status(500).json({ hata: 'Lock alınamadı: ' + lockError.message });
-    }
-
-    // 3) Doküman bilgisini al
-    const { data: dok, error: dokError } = await supa
-      .from('devre_dokumanlari')
-      .select('id, tenant_id, devre_id, storage_yolu, dosya_adi, uzanti, yukleyen_id')
-      .eq('id', is.devre_dokuman_id)
-      .single();
-
-    if (dokError || !dok) {
-      return await isiHataylaKapat(
-        supa, is.id, res,
-        'Doküman bulunamadı: ' + (dokError?.message || 'null')
-      );
-    }
-
-    // izometri-oku kullanici_id zorunlu kılar (yoksa 400 döner). Net hata ver.
-    if (!dok.yukleyen_id) {
-      return await isiHataylaKapat(
-        supa, is.id, res,
-        'yukleyen_id boş — izometri-oku kullanici_id gerektirir'
-      );
-    }
-
-    // 4) Storage'dan indir → base64
-    const { data: blob, error: dlError } = await supa
-      .storage
-      .from(BUCKET_ADI)
-      .download(dok.storage_yolu);
-
-    if (dlError || !blob) {
-      return await isiHataylaKapat(
-        supa, is.id, res,
-        'Storage indirme hatası: ' + (dlError?.message || 'blob null')
-      );
-    }
-
-    const arrayBuffer = await blob.arrayBuffer();
-    const pdf_base64 = Buffer.from(arrayBuffer).toString('base64');
-
-    if (pdf_base64.length > MAX_BASE64_LEN) {
-      const mb = (pdf_base64.length / 1024 / 1024).toFixed(1);
-      return await isiHataylaKapat(
-        supa, is.id, res,
-        `PDF çok büyük (${mb}MB base64 > 7MB limit, ~5MB PDF)`
-      );
-    }
-
-    // 5) izometri-oku'yu HTTP ile çağır (MK-49.1: çağır, dokunma)
-    let okuYanit, okuJson;
-    try {
-      okuYanit = await fetch(`${baseUrl}/api/izometri-oku`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id:     dok.tenant_id,
-          kullanici_id:  dok.yukleyen_id,
-          batch_id:      null,            // her PDF kendi batch'i (yan etki — yukarı bkz.)
-          pdf_base64,
-          dosya_adi:     dok.dosya_adi,
-          dosya_sirasi:  1,
-          dosya_toplami: 1
-        })
-      });
-      const t = await okuYanit.text();
-      try { okuJson = t ? JSON.parse(t) : {}; } catch { okuJson = { _ham: t }; }
-    } catch (e) {
-      return await isiHataylaKapat(
-        supa, is.id, res,
-        'izometri-oku çağrı hatası: ' + e.message
-      );
-    }
-
-    // 6) Durum belirle
-    let yeniDurum, hataMesaji = null;
-    const ok = okuYanit.ok && okuJson && okuJson.ok === true;
-
-    if (!ok) {
-      yeniDurum = 'hata';
-      hataMesaji = (okuJson && (okuJson.error || okuJson.hata)) ||
-                   `izometri-oku HTTP ${okuYanit.status}`;
-    } else if ((okuJson.manuel_onay_sayisi || 0) > 0) {
-      yeniDurum = 'manuel_onay';
-    } else {
-      yeniDurum = 'oneri_hazir';
-    }
-
-    // 7) Sonucu kuyruğa yaz (parse_sonuc = izometri-oku özeti, spoollar dahil)
-    const { error: sonError } = await supa
-      .from('dosya_isleme_kuyrugu')
-      .update({
-        durum: yeniDurum,
-        bitis_at: new Date().toISOString(),
-        parse_sonuc: ok ? okuJson : null,
-        hata_mesaji: hataMesaji
-      })
-      .eq('id', is.id);
-
-    if (sonError) {
-      return res.status(500).json({
-        hata: 'Sonuç yazma hatası: ' + sonError.message,
-        is_id: is.id
-      });
-    }
-
-    // 7.5) Adim4 (MK-110.1): parse basariliysa spoollar'i kabuk spool'a esle.
-    //      devre context FK'dan (dok.devre_id); anahtar = devre_id + spool_no (normSpoolNo).
-    //      izometri-oku.js'e DOKUNULMAZ (MK-49.1) — bu adim worker'in parse SONRASI.
-    //      Esleme hatasi parse'i gecersiz kilmaz (parse_sonuc zaten yazildi) — yut+logla.
-    let eslesmeOzeti = null;
-    if (ok && okuJson && Array.isArray(okuJson.spoollar)) {
-      try {
-        eslesmeOzeti = await eslestir(supa, dok.devre_id, is.id, okuJson, dok.id);
-      } catch (eslErr) {
-        console.error('[izo-eslestir] hata (yutuldu):', eslErr.message);
-      }
-    }
-
-    // 108/Adim3: self-chain — kuyrukta baska bekleyen izometri varsa kendini fire-and-forget
-    //            tetikle. Sirali drenaj (her is bitince bir sonrakini cagirir, kuyruk bosalinca durur).
-    await zincirDevam(supa);
-
+    // ── DRENAJ modu (buton + ileride cron, MK-112.1/112.2) ──
+    const { islenen, kalan_var } = await drenajTuru(supa, baseUrl, {
+      maxIs: DRENAJ_MAX_IS,
+      maxMs: DRENAJ_MAX_MS
+    });
     return res.status(200).json({
-      sonuc: ok ? 'islendi' : 'hata',
-      is_id: is.id,
-      doc_id: dok.id,
-      tenant_id: dok.tenant_id,
-      devre_id: dok.devre_id,
-      dosya: dok.dosya_adi,
-      durum: yeniDurum,
-      hata: hataMesaji,
-      format: ok ? (okuJson.format || null) : null,
-      izometri_batch_id: ok ? (okuJson.batch_id || null) : null,
-      spool_sayisi: ok ? (okuJson.spool_sayisi || 0) : 0,
-      manuel_onay_sayisi: ok ? (okuJson.manuel_onay_sayisi || 0) : 0,
-      hazir_sayisi: ok ? (okuJson.hazir_sayisi || 0) : 0,
-      sure_ms: ok ? (okuJson.sure_ms || null) : null,
-      eslesme: eslesmeOzeti   // Adim4: {toplam, eslesen, atanmamis, yukseltilen} | null
+      sonuc: 'drenaj',
+      islenen_sayisi: islenen.length,
+      kalan_var,
+      detay: islenen.map((s) => ({
+        is_id: s.is_id,
+        dosya: s.dosya || null,
+        durum: s.durum || null,
+        sonuc: s.sonuc,
+        hata: s.hata || null
+      }))
     });
 
   } catch (e) {
@@ -297,10 +160,213 @@ export default async function handler(req, res) {
 }
 
 // ───────────────────────────────────────────────────────────────
-// Yardımcı: işi hatayla kapat
+// 112/MK-112.1: DRENAJ TURU — maxDuration icinde ardisik is isle.
+//   Bir tetik (buton/cron) ile maxIs kadar veya maxMs dolana dek bekleyenleri isler.
+//   Vercel suspend tuzagina takilmaz (container zaten ayakta, ic dongu).
+//   Cron istenirse (MK-112.2) bu cekirdegi cagirir — yeni mantik gerekmez.
+//   Doner: { islenen: [birIsIsle sonucu...], kalan_var: bool }
 // ───────────────────────────────────────────────────────────────
+export async function drenajTuru(supa, baseUrl, opts = {}) {
+  const maxIs = opts.maxIs ?? DRENAJ_MAX_IS;
+  const maxMs = opts.maxMs ?? DRENAJ_MAX_MS;
+  const baslangic = Date.now();
+  const islenen = [];
 
-async function isiHataylaKapat(supa, isId, res, mesaj) {
+  for (let i = 0; i < maxIs; i++) {
+    // Zaman butcesi doldu mu? (is BASLAMADAN kontrol — maxDuration'i asma)
+    if (Date.now() - baslangic >= maxMs) break;
+
+    // Siradaki bekleyeni cek (en yuksek oncelik, en eski). Lock'u birIsIsle yapar.
+    const { data, error } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .select('*')
+      .eq('parser', 'izometri')
+      .eq('durum', 'bekliyor')
+      .order('oncelik', { ascending: false })
+      .order('olusturma', { ascending: true })
+      .limit(1);
+    if (error) {
+      console.error('[izo-drenaj] kuyruk okuma hatasi:', error.message);
+      break;
+    }
+    if (!data || data.length === 0) break;   // kuyruk bos -> dur
+
+    const is = data[0];
+    let sonuc;
+    try {
+      sonuc = await birIsIsle(supa, baseUrl, is);
+    } catch (e) {
+      // Beklenmedik hata: is 'isleniyor'da kalir; stale-lock 5dk sonra toparlar (sonsuz dongu yok,
+      //   cunku 'isleniyor' olan is bir daha 'bekliyor' filtresine takilmaz).
+      console.error('[izo-drenaj] birIsIsle beklenmedik hata:', e.message);
+      sonuc = { sonuc: 'hata', is_id: is.id, hata: 'beklenmedik: ' + e.message };
+    }
+    if (sonuc && '_status' in sonuc) delete sonuc._status;
+    islenen.push(sonuc);
+  }
+
+  // Hala bekleyen var mi? (frontend tekrar-tetik / cron karari icin)
+  const kalan_var = await bekleyenVarMi(supa);
+  return { islenen, kalan_var };
+}
+
+// Kuyrukta bekleyen izometri isi var mi? (hizli kontrol)
+async function bekleyenVarMi(supa) {
+  try {
+    const { data } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .select('id')
+      .eq('parser', 'izometri')
+      .eq('durum', 'bekliyor')
+      .limit(1);
+    return !!(data && data.length > 0);
+  } catch (e) {
+    console.error('[izo-drenaj] bekleyen kontrol hatasi (yutuldu):', e.message);
+    return false;
+  }
+}
+
+// ───────────────────────────────────────────────────────────────
+// TEK IS — lock -> dok -> indir -> izometri-oku -> durum yaz -> eslestir.
+//   res'e DOKUNMAZ. Sonuc objesi doner (handler/drenajTuru kullanir).
+//   _status: is_id modunda HTTP kodu icin (200 normal, 500 DB/sistem hatasi). Disari sizmaz.
+// ───────────────────────────────────────────────────────────────
+async function birIsIsle(supa, baseUrl, is) {
+  // 1) Durumu 'isleniyor' yap (lock)
+  const { error: lockError } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .update({
+      durum: 'isleniyor',
+      alindi_at: new Date().toISOString(),
+      deneme_sayisi: (is.deneme_sayisi || 0) + 1
+    })
+    .eq('id', is.id);
+
+  if (lockError) {
+    return { _status: 500, sonuc: 'hata', is_id: is.id, hata: 'Lock alınamadı: ' + lockError.message };
+  }
+
+  // 2) Doküman bilgisini al
+  const { data: dok, error: dokError } = await supa
+    .from('devre_dokumanlari')
+    .select('id, tenant_id, devre_id, storage_yolu, dosya_adi, uzanti, yukleyen_id')
+    .eq('id', is.devre_dokuman_id)
+    .single();
+
+  if (dokError || !dok) {
+    return await isiHataylaKapat(supa, is.id, 'Doküman bulunamadı: ' + (dokError?.message || 'null'));
+  }
+
+  // izometri-oku kullanici_id zorunlu kılar (yoksa 400 döner). Net hata ver.
+  if (!dok.yukleyen_id) {
+    return await isiHataylaKapat(supa, is.id, 'yukleyen_id boş — izometri-oku kullanici_id gerektirir');
+  }
+
+  // 3) Storage'dan indir → base64
+  const { data: blob, error: dlError } = await supa
+    .storage
+    .from(BUCKET_ADI)
+    .download(dok.storage_yolu);
+
+  if (dlError || !blob) {
+    return await isiHataylaKapat(supa, is.id, 'Storage indirme hatası: ' + (dlError?.message || 'blob null'));
+  }
+
+  const arrayBuffer = await blob.arrayBuffer();
+  const pdf_base64 = Buffer.from(arrayBuffer).toString('base64');
+
+  if (pdf_base64.length > MAX_BASE64_LEN) {
+    const mb = (pdf_base64.length / 1024 / 1024).toFixed(1);
+    return await isiHataylaKapat(supa, is.id, `PDF çok büyük (${mb}MB base64 > 7MB limit, ~5MB PDF)`);
+  }
+
+  // 4) izometri-oku'yu HTTP ile çağır (MK-49.1: çağır, dokunma)
+  let okuYanit, okuJson;
+  try {
+    okuYanit = await fetch(`${baseUrl}/api/izometri-oku`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id:     dok.tenant_id,
+        kullanici_id:  dok.yukleyen_id,
+        batch_id:      null,            // her PDF kendi batch'i (yan etki — yukarı bkz.)
+        pdf_base64,
+        dosya_adi:     dok.dosya_adi,
+        dosya_sirasi:  1,
+        dosya_toplami: 1
+      })
+    });
+    const t = await okuYanit.text();
+    try { okuJson = t ? JSON.parse(t) : {}; } catch { okuJson = { _ham: t }; }
+  } catch (e) {
+    return await isiHataylaKapat(supa, is.id, 'izometri-oku çağrı hatası: ' + e.message);
+  }
+
+  // 5) Durum belirle
+  let yeniDurum, hataMesaji = null;
+  const ok = okuYanit.ok && okuJson && okuJson.ok === true;
+
+  if (!ok) {
+    yeniDurum = 'hata';
+    hataMesaji = (okuJson && (okuJson.error || okuJson.hata)) ||
+                 `izometri-oku HTTP ${okuYanit.status}`;
+  } else if ((okuJson.manuel_onay_sayisi || 0) > 0) {
+    yeniDurum = 'manuel_onay';
+  } else {
+    yeniDurum = 'oneri_hazir';
+  }
+
+  // 6) Sonucu kuyruğa yaz (parse_sonuc = izometri-oku özeti, spoollar dahil)
+  const { error: sonError } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .update({
+      durum: yeniDurum,
+      bitis_at: new Date().toISOString(),
+      parse_sonuc: ok ? okuJson : null,
+      hata_mesaji: hataMesaji
+    })
+    .eq('id', is.id);
+
+  if (sonError) {
+    return { _status: 500, sonuc: 'hata', is_id: is.id, hata: 'Sonuç yazma hatası: ' + sonError.message };
+  }
+
+  // 7) Adim4 (MK-110.1): parse basariliysa spoollar'i kabuk spool'a esle (bindirme dahil).
+  //    izometri-oku.js'e DOKUNULMAZ (MK-49.1) — bu adim worker'in parse SONRASI.
+  //    Esleme hatasi parse'i gecersiz kilmaz (parse_sonuc zaten yazildi) — yut+logla.
+  let eslesmeOzeti = null;
+  if (ok && okuJson && Array.isArray(okuJson.spoollar)) {
+    try {
+      eslesmeOzeti = await eslestir(supa, dok.devre_id, is.id, okuJson, dok.id);
+    } catch (eslErr) {
+      console.error('[izo-eslestir] hata (yutuldu):', eslErr.message);
+    }
+  }
+
+  return {
+    _status: 200,
+    sonuc: ok ? 'islendi' : 'hata',
+    is_id: is.id,
+    doc_id: dok.id,
+    tenant_id: dok.tenant_id,
+    devre_id: dok.devre_id,
+    dosya: dok.dosya_adi,
+    durum: yeniDurum,
+    hata: hataMesaji,
+    format: ok ? (okuJson.format || null) : null,
+    izometri_batch_id: ok ? (okuJson.batch_id || null) : null,
+    spool_sayisi: ok ? (okuJson.spool_sayisi || 0) : 0,
+    manuel_onay_sayisi: ok ? (okuJson.manuel_onay_sayisi || 0) : 0,
+    hazir_sayisi: ok ? (okuJson.hazir_sayisi || 0) : 0,
+    sure_ms: ok ? (okuJson.sure_ms || null) : null,
+    eslesme: eslesmeOzeti
+  };
+}
+
+// ───────────────────────────────────────────────────────────────
+// Yardımcı: işi hatayla kapat (res'e dokunmaz — sonuc objesi doner)
+// ───────────────────────────────────────────────────────────────
+async function isiHataylaKapat(supa, isId, mesaj) {
   await supa
     .from('dosya_isleme_kuyrugu')
     .update({
@@ -310,42 +376,7 @@ async function isiHataylaKapat(supa, isId, res, mesaj) {
     })
     .eq('id', isId);
 
-  // 108/Adim3: hata da olsa drenaji surdur (kalan bekleyenler islensin)
-  await zincirDevam(supa);
-
-  return res.status(500).json({
-    sonuc: 'hata',
-    is_id: isId,
-    hata: mesaj
-  });
-}
-
-// ───────────────────────────────────────────────────────────────
-// 108/Adim3: self-chain drenaj + stale lock temizligi
-// ───────────────────────────────────────────────────────────────
-
-// Kuyrukta baska bekleyen izometri isi varsa kendini fire-and-forget tetikle (sirali zincir).
-async function zincirDevam(supa) {
-  try {
-    const { data } = await supa
-      .from('dosya_isleme_kuyrugu')
-      .select('id')
-      .eq('parser', 'izometri')
-      .eq('durum', 'bekliyor')
-      .limit(1);
-    if (data && data.length > 0) {
-      const baseUrl = selfBaseUrl();
-      if (!baseUrl) return;
-      // fire-and-forget (kuyruk-isle.js ile ayni desen): await yok, response'tan once tetiklenir.
-      fetch(`${baseUrl}/api/kuyruk-isle-izometri`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}'
-      }).catch((e) => console.error('[izo-drenaj] zincir tetik hatasi (yutuldu):', e.message));
-    }
-  } catch (e) {
-    console.error('[izo-drenaj] zincir kontrol hatasi (yutuldu):', e.message);
-  }
+  return { _status: 500, sonuc: 'hata', is_id: isId, hata: mesaj };
 }
 
 // 'isleniyor'da 5dk+ takili kayitlar (worker crash) -> 'bekliyor' (3+ denemede 'hata').
