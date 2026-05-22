@@ -1,147 +1,107 @@
-# CLAUDE — Sonraki Oturum (111) Gündemi
+# CLAUDE — Sonraki Oturum (112) Gündemi
 
-## Açılış ritüeli (her oturum)
-1. `git pull` + `git status` (temiz mi?) + `git log --oneline -5` (HEAD 110 + doküman commit'i).
-2. CI rengi: son push yeşil mi?
-3. Bu doküman + `son-durum.md` + `CLAUDE-SON-OTURUM.md` oku, gündemi onayla.
-4. Mid-cycle scope ekleme yok.
+## Açılış ritüeli (52'den beri sade — 2 kontrol)
+1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -5`
+   (HEAD 111 kod commit'leri + doküman commit'i olmalı).
+2. Bugün ne yapmak istiyorsun?
+Sonra Claude: git temiz mi, CI rengi (son commit), `docs/PROJE-HARITASI.md` + bu 3 dosya oku, gündem onayla.
+**Mid-cycle scope ekleme yok.**
 
-## Oturum başı doğrulama sorguları (Supabase SQL Editor → düz ASCII)
+## Oturum başı doğrulama (Supabase SQL Editor → düz ASCII)
 ```sql
--- d6dffba8 cizim_durumu (110 sonu: bekliyor 33, kismi 3, tam 25). kismi CANLI KALDI.
-select cizim_durumu, count(*) from spooller
-where devre_id='d6dffba8-8d5b-4a88-a45f-ca2ef39c01fa' and silindi=false group by 1 order by 1;
+-- 111 bindirme canli mi? A-000764 yuzey/durum (111 sonu: yuzey='Galvaniz', kismi)
+select spool_id, yuzey, et_kalinligi_mm, dis_cap_mm, cizim_durumu, agirlik_kg
+from spooller where spool_id='A-000764';
 
--- ZENGINLESTIRME KANITI: kabuk spool'lari fakir cap (4.00 = inc sayisi, et NULL)
-select spool_id, pipeline_no, spool_no, dis_cap_mm, et_kalinligi_mm, kalite, malzeme
-from spooller where pipeline_no='G200-333-OD01' and silindi=false order by spool_no;
--- Beklenti: dis_cap_mm=4.00, et_kalinligi_mm=NULL (BOZUK). Hedef: 114.3 / 3.05 (IFS gibi).
+-- PDF<->spool bagi (2b) duruyor mu
+select dosya_adi, spool_id from devre_dokumanlari where spool_id is not null limit 10;
 
--- Karsilastirma: IFS ile gelen spool DOGRU (114.3 / 3.05)
-select spool_id, pipeline_no, dis_cap_mm, et_kalinligi_mm from spooller
-where spool_id='A-000737';
+-- Bekleyen izometri kuyrugu — buton sorunu teshisi icin (alindi_at=null = worker hic almadi)
+select q.durum, count(*) from dosya_isleme_kuyrugu q
+where q.parser='izometri' group by 1;
 ```
 
 ---
 
-## ⭐ ANA HEDEF — BORU ÖLÇÜ ZENGİNLEŞTİRME + KATMAN BİNDİRME
+## ⭐ ÖNCELİK 1 — `Bekleyenleri işle` butonu tetik sorunu (🔴 yeni, 111'de keşfedildi)
 
-> Bu, 110'un sonunda keşfedilen iki katmanlı bir iş. Aceleyle "boyutParse'a SCH dalı ekle" demek
-> fırsatı yarım kullanır (Cihat'ın vizyonu daha büyük). İki parça halinde, sırayla.
+**Belirti:** Buton "izometri parse ediliyor" yazar, dökümanlar göz kırpar ama İLERLEME YOK. Kuyruktaki
+işler `durum='bekliyor'`, `alindi_at=null`, `deneme_sayisi=0`, `hata_mesaji=null` kalır — yani worker
+işi HİÇ ALMADI (parse hatası değil, tetik ulaşmıyor).
 
-### Bağlam — Cihat'ın orijinal vizyonu (110'da netleşti)
-"Önce Excel'i sömür (ne varsa al), sonra PDF ve diğer dökümanlardan sömürdüğümüz veriyi ÜSTÜNE
-BİNDİR — katman katman. Hem çakışmaları görürüz, hem kendi sistemimizde zengin veri kaynağı oluşur."
+**KANITLANMIŞ:** Endpoint SAĞLAM. Terminalden direkt `POST /api/kuyruk-isle-izometri {is_id}` →
+`{sonuc:'islendi', eslesme:{...}}` döndü, parse+bindirme tam çalıştı (A-000764). Yani sorun
+**butonun çağırdığı tarafta** — fire-and-forget tetik ulaşmıyor ya da hiç atılmıyor.
 
-Uygulamadaki sapma: Excel'den neredeyse SADECE spool_no alınıyor (kabuk akışı). Oysa BOM'daki
-çap/et/ağırlık/malzeme zaten kabuk'a geliyor (`s.bom` — ares-kabuk.js). Ama:
-1. Spool seviyesine (`spooller.dis_cap_mm/et`) yazarken fakir `boyutParse` kullanılıyor → SCH/inç
-   çözülmüyor → çap=4mm/et=NULL.
-2. Adım 4 (PDF eşleştirme, 110'da yapıldı) PDF verisini kabuk spool'a BİNDİRMİYOR — sadece
-   `cizim_durumu` rozetini değiştiriyor. PDF'teki et/çap/yön/ağırlık ZENGİNLİĞİ kullanılmıyor.
+**Bu PARÇA 2 ile İLGİSİZ** — 110'dan beri var olan ama fark edilmemiş (110'da d6dffba8 zaten parse
+edilmişti, yeni yükleme test edilmemişti). 111 yeni devreye yükleme yapınca ortaya çıktı.
 
-### Kök neden — KANITLANMIŞ (110)
-| | dis_cap_mm | et | sebep |
-|--|--|--|--|
-| A-0682 (kabuk) | 4.00 ❌ | NULL ❌ | ares-kabuk.js boyutParse SCH/inç bilmiyor, parseFloat("4")=4 |
-| A-0737 (IFS) | 114.3 ✅ | 3.05 ✅ | devre_yeni.html:1761 boyutParse NPS+SCH+WT tablosu biliyor |
+**112'de bakılacaklar (veriyi gör, varsayma):**
+1. `Bekleyenleri işle` butonu hangi JS fonksiyonunu / hangi endpoint'i çağırıyor? (devre_detay.html
+   Dökümanlar sekmesi). Çağrı gerçekten atılıyor mu (Network tab) yoksa hiç mi tetiklenmiyor?
+2. `zincirDevam(supa)` self-chain çalışıyor mu — bir iş bitince sonrakini tetikliyor mu?
+   (api/kuyruk-isle-izometri.js içinde, satır ~270). Belki ilk tetik hiç atılmadığı için zincir başlamıyor.
+3. Buton `is_id` ile mi çağırıyor yoksa body'siz (kuyruktan en yüksek öncelikli al) mi? Body'siz çağrı
+   kuyruğu doğru sorguluyor mu (parser='izometri', durum='bekliyor', öncelik/eskilik sırası)?
+4. Vercel function log: buton tetiklendiğinde kuyruk-isle-izometri çağrısı log'a düşüyor mu?
 
-İki ayrı `boyutParse`:
-- **IFS (DOĞRU):** `devre_yeni.html:1761-1825`. `"4\" Sch 10S"` → NPS normalize + sch normalize
-  (`SCH40→40`, `STD→40`, `10S→10S`...) + ASME B36.10/B36.19 WT tablosu → {dis_cap, et}.
-- **Kabuk (FAKİR):** `ares-kabuk.js:33-43`. Sadece `60.3x4.5`, `OD:60`, `DN50` (sabit DN→OD
-  tablosu). SCH/inç YOK → son satır: `parseFloat(s)`.
-- **Ortak motor MEVCUT:** `ares-asme.js` (2567 satır, `tests/asme-lookup.test.js` ile test):
-  `etKalinligi(dn,schedule,malzeme)`, `disCap(dn,malzeme)`, `icCap`, `agirlikKgM`, `cunife*`,
-  `NPS_DN`/`DN_NPS`, `_schNorm`, `_malzemeNorm`. **Lookup zaten var ve çalışıyor — kabuk çağırmıyor.**
+**Geçici workaround (çalışıyor):** Terminalden `curl -X POST .../api/kuyruk-isle-izometri -d '{"is_id":"..."}'`.
+Acil parse gerekirse bununla yapılır.
 
-### PARÇA 1 — Kabuk ölçü lookup'ını düzelt (önce bu, daha somut)
-**Hedef:** Kabuk akışı da `4" Sch 10S` → 114.3/3.05 üretsin (IFS ile aynı).
-**Yol (MK-109.1 ruhu — yeniden yazma, mevcut motoru çağır):**
-1. IFS'in çalışan parse'ını (`devre_yeni.html:1761-1825`) İNCELE — `"4\" Sch 10S"` metnini nasıl
-   {NPS, sch, malzeme} → {dis_cap, et}'e çeviriyor. Bu mantık ya `ares-asme.js`'i çağırıyor ya
-   kendi WT tablosu var (inline). İncele, ortak modüle çıkar.
-2. Karar (oturum başı, A/B/C): ortak `boyutParse` NEREDE yaşasın?
-   - A) `ares-asme.js`'e ekle (lookup motoru zaten orada; metin→{dn,sch,mal} parse + lookup birleşsin).
-   - B) Yeni ortak modül `ares-olcu.js` (parse + ares-asme lookup köprüsü).
-   - C) `ares-kabuk.js`'in boyutParse'ını IFS mantığıyla genişlet (en dar, ama iki kopya kalır).
-   - İlk eğilim: **A veya B** (tek kaynak; IFS + kabuk + gelecek PDF hepsi aynı motoru kullansın).
-3. **DİKKAT — ares-kabuk.js'e dokunma disiplini:** 109'da yazıldı, node --check + birim testle
-   doğrulandı. Kopya → str_replace → node --check → birim test (boyutParse'ın yeni dalları için).
-   Mevcut `boyutParse(dn)` TEK argüman alıyor — ama SCH+malzeme lazım. `s.bom` satırında (b.dn,
-   b.tanim, b.malzeme) bunlar VAR (ares-kabuk.js:207). Yani veri elde; sadece boyutParse'a
-   geçirilmiyor + SCH parse edilmiyor. Çağrı imzasını genişletmek gerekebilir (b.tanim'dan SCH çek).
-4. **KRİTİK — `s.bom`'daki ham veriyi incele:** PDF parse'ta malzeme_listesi.tanim =
-   "Boru Dikişsiz Paslanmaz 316L SCH10S - 2.2 Sertifik 4" Sch 10S 4877 316L 40.813". SCH/inç burada
-   GÖMÜLÜ. Excel BOM'da da (kuyruk-isle-excel.js / excel-parser.js) benzer. Önce gerçek `s.bom`
-   şeklini canlı görmeden imza tasarlama (110 dersi: veriyi gör, varsayma).
+## ÖNCELİK 2 — Spool detay'da eşleşen PDF erişimi (2b'nin görünür kısmı)
+DB bağı 111'de kuruldu (`devre_dokumanlari.spool_id`). Eksik olan UI: spool detay sayfasında eşleşen
+izometri PDF'ine link/önizleme. Cihat: "sayfa tasarımını sonra değiştirebiliriz" dedi → UI bu oturumda.
+- Spool detay (`spool_detay.html` / React `IbSpoolDetay.jsx`?) → `select * from devre_dokumanlari
+  where spool_id = <bu spool uuid> and dokuman_tipi='izometri'` → "İzometri Çizimleri" bölümü/sekmesi.
+- Vizyon: "spool imalat resimleri spool detay sayfalarına aktarılmalı ki ihtiyaç halinde hemen ulaşılsın."
+- PDF önizleme mi, indir linki mi, gömülü iframe mi? — oturum başı A/B/C.
 
-**Doğrulama:** Bir kabuk devresini (G200-333-OD01) yeniden aktar VEYA tek seferlik düzeltme script/
-endpoint ile mevcut fakir spool'ları yeniden hesapla. Sonra A-0682 → 114.3/3.05 görmeli.
+## ÖNCELİK 3 — Uyarılar sayfasında bindirme flag gösterimi
+`parse_sonuc._eslesme.detay[].bindirme[].flag=true` olan spool'lar (çakışmalı — örn. ağırlık %3 üstü)
+uyarılar sayfasında görünmeli. Vizyon: "eksiği/çelişkisi olan spool'lar buradan takip edilecek."
+- Hangi tablo/sorgu? `dosya_isleme_kuyrugu.parse_sonuc` JSONB'den flag'li spool'ları çek, ya da
+  bindirme anında `spooller`'a bir `bindirme_uyari` işareti yaz (tasarım kararı).
+- A-000764 şu an flag'li (ağırlık %15.6) — gerçek test verisi hazır.
 
-### PARÇA 2 — Katman bindirme (Adım 4'ün gerçek hedefi)
-**Hedef:** Adım 4 eşleştirme (110'da yapıldı) artık sadece rozet değil — eşleşen PDF'in verisini
-kabuk spool'a BİNDİRSİN. "Excel katmanı + PDF katmanı = zengin spool."
-**Tasarım kararları (oturum başı, canlı veriyle):**
-1. Hangi alanlar bindirilsin? PDF parse_sonuc.spoollar[]'da: cap_mm, et_mm, agirlik_kg, yuzey,
-   alistirma_ipucu, malzeme_listesi, yon (henüz yok). Excel zaten bazılarını koydu (belki fakir).
-2. Çakışma kuralı: Excel çap=4 (fakir) ↔ PDF çap=114.3 → hangisi kazanır? Boş alanı doldur mu,
-   yoksa "daha güvenilir kaynak" mı? Kaynak güven sırası? (Excel BOM mu PDF mi daha güvenilir?)
-3. Çakışma GÖRÜNÜRLÜĞÜ (Cihat'ın vizyonu): iki kaynak farklı değer derse kullanıcıya göster
-   (devre_detay'da uyarı/badge). Sessizce ezme.
-4. `kismi` → `tam` eşiği: 110'da 3C ile "PDF geldi = kismi" dedik. Bindirme sonrası: tüm zorunlu
-   alanlar (et+yön+alıştırma) doldu → tam? Bu eşik PARÇA 2 ile netleşir.
-5. `cizim_durumu` UI ROZETİ: 110'da YAPILMADI. Karar 111'e bırakıldı (rozet kalsın mı/gitsin mi).
-   Bindirme tasarımı rozetin anlamını belirler → rozet PARÇA 2 sonrası yapılmalı.
-
-### Hatırlatma: 110'da ne ÇALIŞIYOR (üstüne inşa et, geri ALMA)
-- `eslestir()` (kuyruk-isle-izometri.js) — devre+pipeline+spool anahtarı, A+B, 3C, MK-WIZARD.3. CANLI.
-- `eslestirme-backfill.js` — kuru + gerçek mod, `eslestir()` import eder. CANLI.
-- `dosyaAdiParse()` — formata özgü regex (M100/Tersan). 16/16 test.
-- d6dffba8'de 3 kismi CANLI (kullanıcı bıraktı). 25 tam dokunulmadı.
-
----
-
-## Açık borçlar (111'e taşınan, öncelik sırası)
-1. **🔴 ANA: Boru ölçü zenginleştirme + katman bindirme (yukarıda PARÇA 1 + PARÇA 2).**
-2. **`_N` fallback eşleştirme (MK-110.2 eksiği).** `S01_1` PDF → kabukta `S01` varsa ona eşleş
-   (pafta eki). AMA `S08_1` gibi GERÇEK ayrı spool'u bozma. Kural: önce birebir `pipeline|S01_1`
-   dene; yoksa `_N` at → `pipeline|S01` dene; o da yoksa atanmamış. (d6dffba8'de 3 atanmamış bekliyor.)
-3. **cizim_durumu UI rozeti** — PARÇA 2'ye bağlı (kalsın mı kararı orada).
-4. **GERÇEK backfill'i diğer devrelere yay** — zenginleştirme tasarımı netleşince. Şu an yalnız
-   d6dffba8'de koştu.
-5. **HTTP 508 PDF** (`M100-323-FM12-ALS.S02.1.pdf`) — kalıcı hata; izometri-oku 508 sebebi.
-6. **İkiz kolon temizliği** (SEMA-IKIZLER.md, MK-108.2) — ayrı oturum.
-7. **3D hattı** (MK-49.A) — `yon_dizilim` JSON'dan deterministik render. Katman bindirme `yon`
-   verisini de getirirse 3D'nin girdisi hazırlanmış olur (bağlantılı).
-8. **Öğrenme döngüsü** (MK-107.x), "Tersan M110 Montaj Resmi" format temizliği.
+## Açık borçlar (öncelik sonrası)
+4. **`_N` alt-spool fallback (MK-110.2 eksiği).** `S01_1` PDF → kök `S01`'e (pafta eki), `S08_1` gibi
+   gerçek ayrı spool'u bozmadan: önce birebir, yoksa `_N` at + kök dene.
+5. **"Tersan M110 Montaj Resmi" format temizliği.** manuel_onay'a düşüyor (düşük güven 0.65 < 0.7).
+6. **Test verisi temizliği.** GERÇEK veri YOK içeride. 8ca4a958 vs 387732a0 ikiz devreleri + fakir/mükerrer
+   test spool'ları (A-0006xx) topluca silinebilir. Acil değil — Cihat istediğinde.
+7. **Yeni devre ekleme akışı.** Cihat: "henüz yeni devre ekleyemiyoruz, sadece mevcuda ilave." Wizard
+   "yeni devre" yolu eksik/yarım mı? Netleştir — bu büyük bir eksik olabilir.
+8. **Yön/3D hattı (MK-49.A).** Bindirme yön getirmedi (parse'ta kaynak yok). 3D girdisi için yön üretimi ayrı.
+9. **HTTP 508 PDF** (`M100-323-FM12-ALS.S02.1.pdf`) — kalıcı izometri-oku hatası.
+10. **İkiz kolon temizliği** (agirlik/agirlik_kg, durum/is_durumu — SEMA-IKIZLER.md, MK-108.2).
+11. **Öğrenme döngüsü / format envanter UI** (MK-107.x, 51'den).
 
 ## Destekleyen kararlar (akılda tut)
-- **MK-49.1:** `izometri-oku.js`'e DOKUNMA.
-- **MK-108.1:** Wizard kuyruğu = `dosya_isleme_kuyrugu` + `devre-belgeleri` + `kuyruk-isle-izometri.js`.
-- **MK-108.4:** Kolon adı yazmadan `information_schema` ile doğrula.
-- **MK-109.1:** Çalışan kodu YENİDEN YAZMA — çıkar/çağır + hizala. (PARÇA 1'in ÖZÜ: IFS'in çalışan
-  lookup'ını kabuk'a bağla, sıfırdan yazma.)
-- **MK-109.5:** `cp` + `md5` gözle teyit (arespipe_kopyala şaşabilir).
+- **MK-49.1:** izometri-oku.js'e DOKUNMA.
+- **MK-108.1:** Wizard kuyruğu = dosya_isleme_kuyrugu + devre-belgeleri + kuyruk-isle-izometri.js.
+- **MK-108.4:** Kolon adı yazmadan information_schema ile doğrula. (111'de defalarca unutuldu — DİKKAT.)
+- **MK-109.1:** Çalışan kodu yeniden yazma — çıkar/çağır. (ares-olcu, ARES_BORU'yu çağırır; yeniden yazmaz.)
+- **MK-109.5 / MK-51.1:** cp + md5 gözle teyit. (111'de yarım push'u bu yakaladı.)
 - **MK-110.2:** Eşleşme anahtarı = devre+pipeline+spool, pipeline dosya adından.
-- **MK-110.3:** Kabuk lookup eksiği — ares-asme.js ortak motor (111 ANA TEMA temeli).
-- **MK-110.4 (A+B):** Emin değilsen eşleştirme/bindirme ZORLAMA — boş/atanmamış bırak.
+- **MK-110.4 (A+B):** Emin değilsen eşleştirme/bindirme ZORLAMA — atanmamış/dokunma bırak.
 - **MK-110.5:** Kuru çalışma önce — DB'ye dokunmadan raporla, doğrula, koş.
-- **MK-WIZARD.3:** Kabuk kilidi idempotent — bindirme spool ÇOĞALTMA, mevcut spool'u zenginleştir.
+- **MK-111.1:** et ≥ dış çap olamaz.
+- **MK-111.2:** bindirme survivorship — boş→doldur, çelişki→flag, ağırlık %3 tolerans, sessiz ezme yok.
 
 ## Önemli hatırlatmalar (disiplinler)
-- `cp ~/Downloads/<dosya>` + `md5` gözle teyit. Önce `git commit`, SONRA `gp`. Yeni dosya → `git add`.
-- HTML/JS tam dosya değişimi; JS doğrulama: inline script ayıkla → `node --check` + saf fonksiyon
-  birim testi. ares-kabuk.js + ares-asme.js dokunulurken bu disiplin zorunlu (ikisi de test edilmiş).
-- Şema migration: `BEGIN…ROLLBACK` dry-run → `COMMIT` (MK-98.2). Supabase SQL Editor düz ASCII.
-- **Veriyi gör, varsayma (110'un en büyük dersi):** anahtar tekilliği, s.bom şekli, çakışma —
-  hepsini canlı SQL/çıktı ile doğrula, sonra kod yaz. 110'da varsayım 3 yanlış kismi yazdırdı.
-- Env: `SUPABASE_SERVICE_KEY`; `SELF_BASE_URL=https://arespipe.vercel.app`.
+- **Veriyi gör, varsayma.** 111'de en çok bunda tökezledik — kolon adı varsayımı 3-4 SQL hatası yarattı.
+- **cp + md5 gözle teyit. git status dosya sayısını DOĞRULA** (yarım push riski). Yeni dosya → `git add`.
+- **Push sırası: migration COMMIT → kod push → deploy.**
+- **zsh:** `--include="*.html"` tırnaklı. md5/açıklama bloğunu terminale yapıştırma (command not found / quote>).
+- **HTML/JS tam dosya** değişimi; JS → node --check + saf fonksiyon birim testi.
+- **Şema migration:** BEGIN...ROLLBACK dry-run → COMMIT (MK-98.2). Supabase SQL düz ASCII.
+- Env: SUPABASE_SERVICE_KEY; SELF_BASE_URL=https://arespipe.vercel.app.
 - **Proje bilgisi ~52'de donmuş** — güncel durum yalnız bu dosyalar + git'ten.
 
 ---
 
-## 111'e tek cümle özet
-"110'da PDF→spool eşleştirme (rozet seviyesi) kuruldu ve çalışıyor; 111'de işin ASIL hedefine
-geçiyoruz: kabuk akışının fakir boru ölçülerini IFS'in zengin lookup'ıyla düzelt (PARÇA 1) ve
-Excel+PDF verisini spool üstüne KATMAN KATMAN bindir (PARÇA 2) — Cihat'ın baştan beri vizyonu buydu."
+## 112'ye tek cümle özet
+"111'de boru ölçü zenginleştirme (PARÇA 1: ortak parser) + katman bindirme (PARÇA 2: survivorship +
+PDF↔spool bağı) bitti ve canlı doğrulandı; 112'de önce 'Bekleyenleri işle' buton tetik sorununu çöz
+(endpoint sağlam, buton ulaşmıyor), sonra bindirmenin GÖRÜNÜR kısımlarını ekle (spool detay'da PDF
+erişimi + uyarılar sayfasında çakışma flag gösterimi)."
