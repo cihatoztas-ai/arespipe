@@ -1,96 +1,73 @@
-# CLAUDE — Son Oturum Özeti (Oturum 113, 22-23 May 2026)
+# CLAUDE -- Son Oturum Ozeti (Oturum 114, 23 May 2026)
 
-## Özet
-İki ana iş tamamlandı ve canlı doğrulandı. **İş 1 (508 fix):** izometri parse drenajındaki Vercel 508
-INFINITE_LOOP_DETECTED kökten çözüldü — server→server self-invocation (kuyruk-isle-izometri →
-izometri-oku, aynı deployment) kaldırılıp **client-loop orkestrasyonuna** geçildi (tarayıcı her PDF için
-izometri-oku'yu doğrudan çağırır). devre_detay + wizard AYNI `ares-izometri-drenaj.js` motorunu kullanır
-(tek paylaşılan altyapı). **İş 2 (wizard yeni devre):** wizard artık "+ Yeni Devre" ile sıfırdan devre
-oluşturabiliyor; canlı test geçti (P26-151, 142 kg özeti spool'lardan türedi). Kapanışta **format
-öğrenme döngüsünün tanısı** çıkarıldı (üç delik + tek-format-derinlemesine stratejisi) — 114'ün ana teması.
+## Ozet
+ANA TEMA D1 (format ogrenme, fingerprint zayif $3.44) ile basladi, **tani veriyle tersine dondu**:
+delik imalat PDF'lerinin kacmasi DEGIL, **montaj/genel cizimlerin** (malzeme listesi YOK) pahali
+L3'e gidip "malzeme yok" donmesiydi. Cozum: montaji tanitan yeni format kaydi (migration 090) +
+`lib/l2-parser.js`'e geri-uyumlu `montaj_modu` + `liste_alanlar`. Montaj artik L2 deterministik
+topoloji hasati yapiyor (spool listesi + continue + alistirma + toplam agirlik), sifir AI ->
+~$3.38 L3 israfi durdu. **B karari:** bu oturum TANIMA + L2 HASAT'i indirdi; eslesme + spool-detay
+gosterimi + pipe_no enjeksiyonu 115'e. Canli: CI + Vercel yesil, migration COMMIT (count=1).
 
-## 1) ares-izometri-drenaj.js — YENİ paylaşılan helper (MK-113.1/113.2)
-- `ARES_IZO_DRENAJ.izometriDreneEt({supa, tid, filtre:{devreId}|{}, bucket, onIlerleme})`.
-- Liste BİR KEZ çekilir, tek tek browser-loop: ARES.dosyaUrlAl(yol,bucket) imzalı URL → base64 →
-  POST /api/izometri-oku (browser'dan, server→server YOK) → POST /api/kuyruk-isle-izometri {is_id, onceden_parse}.
-- Her PDF bir kez işlenir, re-pay yok. onIlerleme {faz, sira, toplam, dosya, sonuc?, ozet}; sonda ozet.kalan.
-- Bağımlılık: ARES.supabase/tenantId/dosyaUrlAl (ares-store.js'de mevcut).
+## Tani yolculugu (veriyle, "varsayma")
+1. format_id dagilimi: 156 (YOK) cagri / 146 PDF / $3.44. Cache calisiyor (mukerrer ~yok).
+2. pipeline_no on-ek kumeleme: %87 Tersan (G 77 + M 60). DIGER ~$0.39.
+3. 154/156 cagri 21 May icerik-regex'inden SONRA -> "zaten duzeldi" hipotezi curudu.
+4. malzeme_listesi bos/dolu: 154/154 MONTAJ (bos). Skorlama bug'i YOK, delik montajda.
+5. pdf-parse + fingerprintSkor birebir kopya, 12 PDF: imalat skor=3 (L2'de, dogru), montaj skor=1
+   (esik 2 alti -> L3). Glyph hipotezim curudu (metin cikiyor).
 
-## 2) api/kuyruk-isle-izometri.js — skip-parse modu (MK-113.1)
-- `birIsIsle`'ye `opts.oncedenParse` (+ oncedenParseHttp) eklendi. Gelirse server indir+izometri-oku
-  adımını ATLA, sadece kaydet+eslestir çalıştır (parse zaten browser'da yapıldı).
-- Opts yoksa eski server yolu AYNEN (drenajTuru hâlâ opts'suz çağırıyor → sıfır regresyon).
-- Handler is_id modu req.body.onceden_parse/onceden_parse_http geçiriyor. MK-49.1 korundu.
+## Montaj alan haritasi (12 PDF / 6 proje dogrulandi)
+- **Cekirdek:** spool_listesi (S01-S05 tam), continue_baglanti (graf), alistirma (3 sinyal:
+  dosya-ALS=PARCA / continue-ALS=BAGLI / NOT=PARCA), toplam_agirlik, pipe_no (DOSYA ADINDAN).
+- **Paylasilan:** yuzey/blok/tarih/sistem. **Ham:** guverte (savruk). **Cikmiyor:** 3D/geometri.
+- Iki test bug'i yakalandi: spool overlap (ardisik ayrac tuketme -> lookbehind/lookahead fix),
+  guverte trailing-\n. pipe_no rigid icerik-regex'i 4/6 NULL -> dosya adindan cozuldu (12/12).
 
-## 3) devre_detay.html — bekleyenIzometriIsle → helper (MK-113.2)
-- Eski MAX_TUR=60 server-tetik döngüsü → ARES_IZO_DRENAJ.izometriDreneEt({filtre:{devreId},
-  bucket:'devre-belgeleri'}). Sayaç ucuz güncellenir, belgelerYukle her 5 PDF'de + sonda.
-- Script include eklendi (ares-kabuk sonrası). Canlı test GEÇTİ (NB1124/ballast tam drene, 508 YOK).
+## Fingerprint (A-siki, izometri-oku'ya DOKUNULMADI)
+- dosya_adi_regex `^[A-Z]+\d+-[\dA-Za-z]+-[\dA-Za-z-]+_(?!S\d)[\d_]*\d\.pdf$` + Cadmatic.
+- 12 PDF: 6 montaj->MontajA(6), 6 imalat->Imalat(3). Cakisma yok, sinirda degil.
 
-## 4) devre_wizard.html — izometri drenajı + yeni devre (MK-113.2/113.3)
-**İzometri (Aşama 3):**
-- Eski fire-and-forget server tetiği (fetch '/api/kuyruk-isle-izometri' body:'{}') KALDIRILDI.
-- wizBekleyenleriIsle server-tetik+8-tur setInterval polling → ARES_IZO_DRENAJ.izometriDreneEt
-  ({filtre:{devreId:WIZ.devre_id}, bucket:'devre-belgeleri'}). Ölü WIZ._izoIds temizlendi.
-- Script include eklendi. g_ARES_IZO_DRENAJ_VAR() guard (helper koparsa sessizce atla).
+## l2-parser.js degisikligi (geri uyumlu, sifir regresyon)
+- `listeAlanCikar()` helper (matchAll coklu toplama).
+- `parse()` montaj_modu erken-dali: liste_alanlar + montaj_alistirma_kurali -> montaj:{} doner.
+- montaj_modu yoksa eski spoollar:[spool] AYNEN. 3 imalat PDF'inde regresyon-yok dogrulandi.
 
-**Yeni devre (113/B, deploy ayrı `b2aad81`):**
-- Adım 1 mod toggle (Mevcut/Yeni) + devre_no/zone/termin input. Dedup (proje+devre_no+zone, zone boşsa IS NULL).
-- Devre INSERT adim3_yukle başında (öksüz devre yok). Alanlar devre_yeni'den çağrılarak (MK-109.1):
-  is_emri_no=ARES.sonrakiNo('is_emri'), basamak_snapshot=ARES.basamakSnapshotOlustur(), malzeme/yuzey=null.
-- kabukOnayla sonrası _devreOzetSenkron (yalnız yeni devrede) — spool'lardan DB-truth ile malzeme/yuzey/agirlik.
-
-## 5) Aşama 4 — ölü kod temizliği (C kapsamı)
-- Frontend tarandı: devre_detay + wizard'da temizlenecek ölü kod KALMADI (Aşama 2-3'te zaten temiz).
-- Backend drenajTuru + DRENAJ modu + kuyruk-isle.js self-chain temizliği → test sonrasına ertelendi (4b).
-  Çalışıyor ama kullanılmıyor; aktif tehlike yok (is_id dispatch'i drenajdan önce).
-- Batch sayfaları client-loop'a GEÇMEDİ (Aşama 3 devamı, ayrı iş).
-
-## Canlı doğrulamalar
-- Aşama 2: NB1124/ballast devresi tam drene — 508 YOK, manuel_onay:4 + oneri_hazir:8 = 12, bekliyor/hata=0.
-  Spool detayda izometri PDF link ile geldi (eşleşme çalışıyor).
-- AI maliyet sağlıklı: cache çalışıyor (mükerrer 7/233 ~%3), her PDF bir kez L3, para sızmıyor.
-- İş 2: "deneme" devresi P26-151 oluştu — 3 spool, 142 kg, Karbon Çelik, Galvaniz, St 37; özet senkronu çalıştı.
-
-## Format öğrenme TANISI (114 ana teması)
-- Cache (sha256) çalışıyor. Format öğrenme KISMEN: 3 delik — D1 fingerprint zayıf (format_id YOK,
-  $3.44, en büyük), D2 öğrenilmiş formatta L3 sızıntısı + Tersan alıştırma/not eksiği ($0.83),
-  D3 2 format hiç öğrenilmemiş ($1.60), D4 müşteri-öğretir UI (asıl çözüm).
-- Tersan alıştırma PDF'te AÇIK (spool adı ...-ALS-... + "NOT: Alistirma Parcasidir") ama L2 kaçırıyor.
-- Format tablosu: izometri_format_tanimlari. Strateji: D1 yatay → Tersan dikey (uçtan uca) → çoğalt.
-  Çok format eşzamanlı DEĞİL.
+## Migration 090
+- dry-run guard + idempotency (format_kodu UNIQUE DEGIL, elle kontrol) + fingerprint + parser_kural
+  + guvenlik agi (requires_ai=true, l3_fallback_yapilir=true).
+- egitim_kaynagi='vision_only' (CHECK kisiti; aslinda elle yazildi).
+- Supabase elle akis: dry-run ROLLBACK -> dogrulama -> COMMIT. count=1.
+- Repodaki dosya son satir ROLLBACK = guvenli dry-run arsivi (karisiklik onleme notu son-durum'da).
 
 ## Mimari kararlar
-- MK-113.1: Vercel 508 = aynı-deployment yoğun fonksiyon-fonksiyon HTTP çağrısı → client-loop orkestrasyonu.
-- MK-113.2: tek paylaşılan izometri drenaj altyapısı (ares-izometri-drenaj.js); devre_detay+wizard+(batch).
-- MK-113.3: wizard yeni devre — finalize'da INSERT (öksüz yok), alanlar devre_yeni'den çağrılır,
-  kabuk sonrası özet senkronu, mevcut devreye dokunulmaz.
+- MK-114.1: (YOK) deligi cogunlukla montaj cizimleri (malzeme yok), imalat zaten L2'deydi.
+- MK-114.2: montaj/imalat ayrimi = format_id ayrimi (dokuman_tipi'ne deger eklemeye gerek yok).
+- MK-114.3: A-siki fingerprint + guvenlik agi C (fail->L3, veri kaybi yok).
+- MK-114.4: izometri pipe_no DOSYA ADINDAN (split('_')[0]); icerik regex'i kirilgan.
+- MK-114.5: l2-parser montaj_modu + liste_alanlar (matchAll), geri uyumlu.
 
-## Dersler (bu oturum)
-1. **Veriyi gör, varsayma:** olusturma_at (olusturma değil), pdf_sha256, izometri_format_tanimlari
-   (formatlar değil), 508 platformdan (izometri-oku 508 döndürmüyor) — hepsi bakılarak yakalandı.
-   Alıştırma "yok mu/çıkarılamıyor mu" PDF görülmeden denmedi.
-2. **Şüpheyi sorguyla kapat:** "76 L3 ≠ 12 PDF" paniği → sha256 sorgusu → mükerrer yok, para sızmıyor.
-3. **Kapsam disiplini:** Format öğrenme döngüsü çıkınca kapsama eklenmedi, tanı çıkarılıp 114'e bırakıldı.
-   "Notlar 0 not" = elle eklenen alan, bug değil — yanlış alarmı düzelttik.
-4. **Ölü kod temizliğinde aceleci olma:** backend drenajTuru silmek için client-loop'un canlı kanıtı
-   beklendi (4b'ye ertelendi) — geri dönüş noktasını kaybetme.
+## Dersler
+1. Veriyi gor, varsayma -- iki hatali taniyi curuttu (glyph + "imalat takiliyor").
+2. Cok ornekle test (2 yetmez, 6+ bug cikarir).
+3. Kural DB'de olabilir ama kod islemeyebilir (113 tuzagi) -> kodu okuyup montaj_modu eklendi.
+4. CHECK degerlerini varsayma (egitim_kaynagi dry-run'da yakalandi).
+5. Cihat'in 3D/walk fikri (MK-49.A) gecerli ama dar: aci tek basina 3B yon degil, sirali baglanti
+   metinde yok; FR/CL/BL ile kisit-cozumu/oz-denetim mumkun, tam 3B degil.
 
 ## Commit'ler
-| Hash | İçerik |
+| Hash | Icerik |
 |------|--------|
-| b2aad81 | wizard yeni devre oluşturma (MK-113.3) |
-| 67c944f | izometri client-loop drenaj — 508 fix, helper + skip-parse + devre_detay (MK-113.1/113.2) |
-| 9425984 | wizard izometri drenaji helper'a baglandi (MK-113.2) |
-| (doc)   | kapanış dokümanları [skip ci] |
+| 0cd0f89 | feat(114): montaj formati L2 hasat -- tersan_cadmatic_montaj. l2-parser montaj_modu + migration 090 |
+| (doc) | kapanis dokumanlari [skip ci] |
 
-## Değişen/yeni dosyalar
-- ares-izometri-drenaj.js (YENİ — paylaşılan client-loop helper)
-- api/kuyruk-isle-izometri.js (skip-parse modu)
-- devre_detay.html (bekleyenIzometriIsle → helper)
-- devre_wizard.html (izometri drenajı → helper + yeni devre oluşturma akışı)
+## Degisen/yeni dosyalar
+- lib/l2-parser.js (montaj_modu + liste_alanlar + listeAlanCikar -- geri uyumlu)
+- migrations/090_tersan_montaj_format.sql (YENI, dry-run arsiv; canliya COMMIT edildi)
+- izometri-oku.js: DOKUNULMADI (MK-49.1)
 
 ## Sonraki oturum
-Detay CLAUDE-SONRAKI-OTURUM.md. ANA TEMA: **Format öğrenme döngüsü** — D1 fingerprint (en pahalı delik)
-→ Tersan'ı uçtan uca (kural + alıştırma/not + müşteri-öğretir UI). Tek format derinlemesine, çok format değil.
-İkincil: Aşama 4b (backend ölü kod) + batch sayfaları client-loop'a geçir.
+Detay CLAUDE-SONRAKI-OTURUM.md. **115 ANA TEMA: Montaj eslesme + gosterim + pipe_no enjeksiyonu**
+(114'un B-ertelemesini tamamla). Once canli montaj L2 dogrulama, sonra eslesme (pipeline_no+spool_no
+-> spooller, alistirma yansit), sonra spool detayda goster. pipe_no enjeksiyonu (izometri-oku dosya
+adindan) karari verilecek. Sonra D1 kalan + D3.
