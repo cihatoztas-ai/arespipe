@@ -246,6 +246,38 @@ export default async function handler(req, res) {
       return res.status(parseSonuc.http_status || 500).json({ error: parseSonuc.error });
     }
 
+    // 115: MONTAJ dali -- montaj cizimi boru-seviyesi topoloji tasir (spool listesi
+    // + continue + alistirma), malzeme/spool DETAYI YOK. Spool-hatti (asme doldurma,
+    // halusinasyon filtresi, batchSonucBirlestir) montaj icin anlamsiz -> atlanir.
+    // Montaj ciktisi parse_sonuc.montaj olarak doner; spooller tablosuna DOKUNMAZ
+    // (eslesme ayri adim -- 114 B karari). MK-115.1.
+    if (parseSonuc.montaj) {
+      const sure_ms = Date.now() - baslangic;
+      const ozet = {
+        ok: true,
+        batch_id,
+        format: formatBilgisi.format_adi || null,
+        format_id: formatBilgisi.format_id || null,
+        dosya_adi,
+        dosya_sirasi,
+        dosya_toplami,
+        montaj: parseSonuc.montaj,
+        // Montajda spool uretilmez -- sayaclar 0, durum montaj-ozel degil.
+        spool_sayisi: 0,
+        manuel_onay_sayisi: 0,
+        hazir_sayisi: 0,
+        sure_ms,
+        spoollar: [],
+        _montaj_modu: true,
+        _l2_meta: parseSonuc._l2_meta || null,
+      };
+      if (parseSonuc._l2_fallback) ozet._l2_fallback = parseSonuc._l2_fallback;
+      console.log('[izometri-oku] Tamamlandi (MONTAJ):', dosya_adi,
+        (parseSonuc.montaj.spool_listesi || []).length, 'spool-listesi,',
+        (parseSonuc.montaj.continue_baglanti || []).length, 'continue,', sure_ms, 'ms');
+      return res.status(200).json(ozet);
+    }
+
     // --- 2.5 ASME helper -- eksik et/cap doldurma ---
     const zenginlestirilmis = await asmeFallbackDoldur(parseSonuc.spoollar);
 
@@ -845,8 +877,16 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
     const sonuc = parse(text, formatBilgisi.parser_kural);
     if (sonuc.ok) {
       const sure_ms = Date.now() - baslangic;
+      // 115: MONTAJ vs IMALAT sekil ayrimi. l2-parser montaj_modu'nda
+      // { ok, montaj:{} } doner (parsed YOK); imalat modu { ok, parsed:{spoollar} } doner.
+      // 114'te parser montaj_modu eklendi ama parserKuralIle eski sekli (sonuc.parsed)
+      // varsayiyordu -> JSON.stringify(undefined).substring patladi -> l2_exception -> L3.
+      // Asagidaki ayrim bu kok nedeni cozer (MK-115.1).
+      const montajMi = !!sonuc.montaj;
+      const cevapGovde = montajMi ? { montaj: sonuc.montaj } : (sonuc.parsed || {});
       const _l2_meta = {
         parser_seviye: 'l2',
+        montaj_modu: montajMi,
         alan_match_orani: sonuc.alan_match_orani,
         cikarilan_alan_sayisi: sonuc.cikarilan_alan_sayisi,
         toplam_alan_sayisi: sonuc.toplam_alan_sayisi,
@@ -857,8 +897,7 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
       // (52'de CHECK constraint'e eklendi). parser_seviye='l2' filtre icin.
       // model='l2_deterministic' -- DB'de model kolonu NOT NULL, AI cagrilmadigini
       // belirten yer-tutucu deger (52: ilk push'ta null gonderilmisti, INSERT sessiz fail oluyordu).
-      // cevap_full = parsed yapisi + _l2_meta -- cache HIT'te bu meta korunur,
-      // sonraki yuklemede ayni meta donulur (52 + sonrasi ayni format icin tutarli).
+      // cevap_full = cevap govdesi (montaj:{} veya parsed) + _l2_meta.
       await aiApiLogYaz({
         tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
         pdf_sha256,
@@ -867,13 +906,14 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
         input_tokens: 0, output_tokens: 0, maliyet_usd: 0,
         sure_ms,
         basarili: true, http_status: 200,
-        cevap_kisaltma: JSON.stringify(sonuc.parsed).substring(0, 500),
-        cevap_full: { ...sonuc.parsed, _l2_meta },
+        cevap_kisaltma: JSON.stringify(cevapGovde).substring(0, 500),
+        cevap_full: { ...cevapGovde, _l2_meta },
       });
       return {
         ok: true,
-        spoollar: sonuc.parsed?.spoollar || [],
-        ham_cevap: sonuc.parsed,
+        spoollar: montajMi ? [] : (sonuc.parsed?.spoollar || []),
+        montaj: montajMi ? sonuc.montaj : null,
+        ham_cevap: cevapGovde,
         _l2_meta,
       };
     }
