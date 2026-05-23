@@ -559,6 +559,16 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
       const bekliyorduMu = (hedef.cizim_durumu === 'bekliyor');
       if (bekliyorduMu) deg.cizim_durumu = 'kismi';
 
+      // 117: IMALAT NOT -> spooller.imalat_not (TEMEL katman, her zaman yaz; PDF deterministik = idempotent).
+      //   Revizyon farkli not getirirse en guncel PDF kazanir (resmi icerik).
+      if (ps.not_metni) deg.imalat_not = ps.not_metni;
+      // 117: ALISTIRMA cikarimi (BONUS). Dosya adi ALS -> VAR (komple, Cihat ipucu); degilse parse
+      //   alistirma_ipucu (NOT'tan VAR/KISMI). PDF BAZ (Cihat karari): PDF bir deger uretti mi -> yaz
+      //   (mevcut null/YOK/VAR/KISMI ezilir). PDF sessizse (null) -> DOKUNMA (KARAR-116.1: belirsiz->dokunma).
+      const _alsDosya = /(?:^|[-_ ])ALS(?:[-_. ]|$)/i.test(dosyaAdi || '');
+      const _alistirma = _alsDosya ? 'VAR' : (ps.alistirma_ipucu || null);
+      if (_alistirma) deg.alistirma = _alistirma;
+
       if (Object.keys(deg).length > 0) {
         deg.guncelleme = new Date().toISOString();
         let q = supa.from('spooller').update(deg).eq('id', hedef.id);

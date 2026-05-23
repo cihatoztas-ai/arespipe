@@ -1031,6 +1031,7 @@ async function spoolYukle(supaId) {
     SP._basamakSnapshot = s.basamak_snapshot || [];
     SP.devre_id  = s.devre_id          || null;
     SP.montajJson = s.montaj_json      || null;   // 116/Is3: montaj ust-verisi (montaj PDF link icin kaynak_dosya)
+    SP.imalatNot  = s.imalat_not        || null;   // 117: imalat resmi NOT alani (cizimden, salt-okunur)
     SP.ilerleme  = s.ilerleme          || 0;
     // 3D Model verileri (Lambda v4 ile dolan kolonlar)
     SP.segmentler = s.segmentler_json  || null;
@@ -2196,6 +2197,8 @@ function renderQrOnizleme(){
     var kodlar=sertli.map(function(m){return esc(m.kod);}).join(', ');
     html+='<div class="qr-satir" style="background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.22);">🏆 <div><div style="font-size:14px;color:var(--warn);font-weight:700;">'+tv('sp_qr_cert','SERTİFİKALI MALZEME')+': '+sertli.length+' '+tv('sp_items_unit','kalem')+'</div><div style="font-size:14px;color:var(--txm);margin-top:2px;">'+kodlar+'</div></div></div>';
   }
+  // 117: Imalat NOT'u (cizimden) QR'da personele goster -- kullanici notlarinin ustunde.
+  if(SP&&SP.imalatNot) html+='<div class="qr-satir" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);">📄 <div style="font-size:14px;color:var(--tx);font-weight:600;">'+esc(SP.imalatNot)+'</div></div>';
   NOTLAR.forEach(function(n){html+='<div class="qr-satir" style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.18);">📌 <div style="font-size:14px;color:var(--tx);">'+esc(n.metin)+'</div></div>';});
   if(!html) html='<div style="text-align:center;padding:14px 0;color:var(--txd);font-size:14px;">'+tv('sp_qr_no_alerts','Gösterilecek uyarı yok')+'</div>';
   el.innerHTML=html;
@@ -2226,10 +2229,22 @@ function alistirmaSet(v){
 function renderNotlar(){
   var el=T('notListesi'),cnt=T('notSayisi');if(!el)return;
   if(cnt)cnt.textContent=NOTLAR.length+' '+tv('sp_notes_unit','not');
-  if(!NOTLAR.length){el.innerHTML='<div style="font-size:14px;color:var(--txd);">'+tv('sp_no_notes','Henüz not eklenmemiş')+'</div>';return;}
-  el.innerHTML=NOTLAR.map(function(n){
+  // 117: Imalat NOT'u (cizimden, salt-okunur) -- kullanici notlarinin USTUNDE, ayri stil (amber).
+  //   Kaynak spooller.imalat_not (PDF NOT alani). Personel silemez/duzenleyemez.
+  var imalatHtml='';
+  if(SP&&SP.imalatNot){
+    imalatHtml='<div class="not-item" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.30);">'
+      +'<div class="not-text">📄 '+esc(SP.imalatNot)+'</div>'
+      +'<div class="not-meta">'+tv('sp_imalat_not_kaynak','Çizimden (imalat resmi) — salt okunur')+'</div></div>';
+  }
+  var kullaniciHtml=NOTLAR.length?NOTLAR.map(function(n){
     return'<div class="not-item"><div class="not-text">'+esc(n.metin)+'</div><div class="not-meta">'+esc(n.kisi)+' — '+esc(n.tarih)+'</div><button class="not-del" data-nid="'+esc(String(n.id))+'" onclick="notSil(this.dataset.nid)">✕</button></div>';
-  }).join('');
+  }).join(''):'';
+  if(!imalatHtml&&!kullaniciHtml){
+    el.innerHTML='<div style="font-size:14px;color:var(--txd);">'+tv('sp_no_notes','Henüz not eklenmemiş')+'</div>';
+  }else{
+    el.innerHTML=imalatHtml+kullaniciHtml;
+  }
   renderQrOnizleme();
 }
 function notEkle(){
