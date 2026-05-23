@@ -998,7 +998,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),fitting_lib:fitting_olculer_id(geometri_std),flansh_lib:flansh_olculer_id(geometri_std),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad)))')
+      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),fitting_lib:fitting_olculer_id(geometri_std),flansh_lib:flansh_olculer_id(geometri_std),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad))), montaj_json')
       .eq('id', supaId)
       .single();
 
@@ -1030,6 +1030,7 @@ async function spoolYukle(supaId) {
     SP.alistirma = s.alistirma         || null;
     SP._basamakSnapshot = s.basamak_snapshot || [];
     SP.devre_id  = s.devre_id          || null;
+    SP.montajJson = s.montaj_json      || null;   // 116/Is3: montaj ust-verisi (montaj PDF link icin kaynak_dosya)
     SP.ilerleme  = s.ilerleme          || 0;
     // 3D Model verileri (Lambda v4 ile dolan kolonlar)
     SP.segmentler = s.segmentler_json  || null;
@@ -1255,6 +1256,38 @@ async function spoolYukle(supaId) {
     } catch (e) {
       console.warn('[spool_detay] izometri PDF yuklenemedi:', e);
       IZOMETRILER = [];
+    }
+
+    // 116/Is3: MONTAJ PDF'i. Montaj devre_dokumanlari'nda spool_id=null (1-cok: 1 montaj N spool).
+    //   Bu spool'a ait montaj PDF adi = SP.montajJson.kaynak_dosya. Ayni adli PDF baska devrede
+    //   olabilir (D130 ornegi) -> devre_id ile SINIRLA. 3 spool ayni kaynak_dosya -> ucunden de erisilir.
+    MONTAJ_IZO = [];
+    try {
+      var mjAd = SP.montajJson && SP.montajJson.kaynak_dosya;
+      if (mjAd && SP.devre_id) {
+        var mjRes = await supa
+          .from('devre_dokumanlari')
+          .select('id, dosya_adi, storage_yolu, dokuman_tipi, yuklenme')
+          .eq('devre_id', SP.devre_id)
+          .eq('dosya_adi', mjAd)
+          .order('yuklenme', { ascending: false })
+          .limit(1);
+        MONTAJ_IZO = (mjRes.data || []).map(function(d) {
+          return {
+            id:           d.id,
+            dosya_adi:    d.dosya_adi    || '—',
+            storage_yolu: d.storage_yolu || '',
+            url:          '',
+            tarih:        d.yuklenme ? new Date(d.yuklenme).toLocaleString('tr-TR') : ''
+          };
+        });
+        await Promise.all(MONTAJ_IZO.map(async function(d) {
+          if (d.storage_yolu) d.url = await ARES.dosyaUrlAl(d.storage_yolu, 'devre-belgeleri') || '';
+        }));
+      }
+    } catch (e) {
+      console.warn('[spool_detay] montaj PDF yuklenemedi:', e);
+      MONTAJ_IZO = [];
     }
 
 
@@ -2802,6 +2835,18 @@ function renderBelgeler(){
         +'</div>';
       }).join('')
   ) : '';
+  // 116/Is3: MONTAJ PDF alt-grubu (🔧 turuncu) -- imalat izometriden (📐 mavi) AYRI ikon+renk.
+  var montajHtml = (typeof MONTAJ_IZO !== 'undefined' && MONTAJ_IZO.length) ? (
+    '<div style="padding:10px 16px 4px;font-size:13px;font-weight:600;color:#e67e22;">🔧 '+tv('sp_montaj_baslik','Montaj Resmi')+'</div>'
+    + MONTAJ_IZO.map(function(d){
+        return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bor);">'
+        +'<div style="width:32px;height:32px;border-radius:7px;background:rgba(230,126,34,.12);border:1px solid rgba(230,126,34,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e67e22;flex-shrink:0;">PDF</div>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(d.dosya_adi)+'</div>'
+        +'<div style="font-size:14px;color:var(--txd);">'+tv('sp_montaj_eslesen','montaj resmi')+(d.tarih?' — '+esc(d.tarih):'')+'</div></div>'
+        +(d.url?'<a href="'+d.url+'" target="_blank" class="ctx" title="Aç">↗</a>':'<span style="font-size:12px;color:var(--txd);">'+tv('sp_izo_acilamadi','açılamadı')+'</span>')
+        +'</div>';
+      }).join('')
+  ) : '';
   var belHtml = BELGELER.length ? BELGELER.map(function(b){
     var ext=(b.dosya_url||b.ad||'').split('.').pop().toUpperCase().slice(0,3)||'DOC';
     return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bor);">'
@@ -2816,7 +2861,7 @@ function renderBelgeler(){
     ? '<div style="padding:16px;text-align:center;color:var(--txd);font-size:14px;">'+tv('sp_no_docs','Henüz belge eklenmemiş')+'</div>'
     : '';
   if(cnt)cnt.textContent=BELGELER.length?BELGELER.length+' belge':'';
-  if(el)el.innerHTML=izoHtml+belHtml+bosMsj;
+  if(el)el.innerHTML=izoHtml+montajHtml+belHtml+bosMsj;
 }
 function belgeModalAc(){var l=T('belgeDosyaLbl');if(l)l.textContent='📁 Dosya seç';var a=T('belgeAd');if(a)a.value='';var t=T('belgeTur');if(t)t.value='';T('belgeModal').style.display='flex';}
 function belgeDosyaSec(input){var f=input.files[0];if(!f)return;var l=T('belgeDosyaLbl');if(l)l.textContent='✓ '+f.name;var a=T('belgeAd');if(a&&!a.value.trim())a.value=f.name.replace(/\.[^/.]+$/,'');}
