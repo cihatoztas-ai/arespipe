@@ -482,8 +482,31 @@ export function dosyaAdiParse(dosyaAdi) {
   return { pipeline_no: m[1].trim(), spool_no: m[2].toUpperCase() };
 }
 
+// 116/Is2: MONTAJ dosya adindan pipeline kokunu cikar. Montaj JSON'u pipeline_no TASIMAZ
+//   (pipe_no null gelir -- oturum 116'da DOGRULANDI: PDF icinde PIPE NO = dosya adi koku).
+//   Devre ici spool_no AMBIGU (M130-000-001 S01 vs M130-000-002 S01) -> pipeline SART.
+//   Kok = dosya adi basi; opsiyonel " N(M)" parca eki; sonra [._]<rev>.pdf eki.
+//   Iki aile: noktali (M130-000-002 1(2).1.pdf) + alt-cizgili (M130-000-001_1.pdf) -- ikisi de test edildi.
+//   NOT: Sadece okuJson.montaj varken cagrilir; imalat (S segmentli) bu fonksiyona gelmez.
+export function montajDosyaKok(dosyaAdi) {
+  if (!dosyaAdi || typeof dosyaAdi !== 'string') return null;
+  const m = dosyaAdi.match(/^(.+?)(?:\s+\d+\(\d+\))?[._]\d+\.pdf$/i);
+  if (!m) return null;
+  return m[1].trim();
+}
+
 export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) {
-  if (!devreId || !okuJson || !Array.isArray(okuJson.spoollar)) return;
+  if (!devreId || !okuJson) return;
+
+  // 116/Is2: MONTAJ DALI. Montajda okuJson.spoollar=[] (115/MK-115.1); gercek veri okuJson.montaj'da.
+  //   Montaj eslesmesi imalattan AYRI: bindirme/asme YOK (montaj agirligi != imalat agirligi,
+  //   MK-111.2 ezme yok). Eslesen spool'a montaj_json YAZ (Karar 2-A); spooller.alistirma'ya
+  //   DOKUNMA (Karar C). Imalat akisi degismez (montaj null -> bu blok atlanir).
+  if (okuJson.montaj) {
+    return await montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId);
+  }
+
+  if (!Array.isArray(okuJson.spoollar)) return;
 
   // Pipeline'i dosya adindan cikar (parse spoollar pipeline_no NULL).
   const dosyaAdi = okuJson.dosya_adi || null;
@@ -603,6 +626,105 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     .update({ parse_sonuc: yeniParse })
     .eq('id', kuyrukId);
   if (yzErr) console.error('[izo-eslestir] _eslesme yazma hatasi:', yzErr.message);
+
+  return ozet;
+}
+
+// 116/Is2: MONTAJ eslesme. Montaj.spool_listesi (S01..) + pipeline (dosya adi koku) -> spooller
+//   (devre_id sinirli, spool_no devre ici ambigu oldugundan pipeline SART). Eslesen spool'a
+//   montaj ust-verisini montaj_json kolonuna YAZ (Karar 2-A). spooller.alistirma'ya DOKUNMA (Karar C).
+//   Imalat bindirme/asme mantigi YOK -- montaj agirligi farkli anlam (MK-111.2 ezme yok).
+//   devre_dokumanlari.spool_id YAZILMAZ: montaj 1-cok (bir montaj N spool kapsar), tek kolona sigmaz.
+async function montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) {
+  const m = okuJson.montaj || {};
+  const dosyaAdi = okuJson.dosya_adi || null;
+  const pipelineKok = montajDosyaKok(dosyaAdi);   // pipeline = dosya adi koku | null
+  const spoolListesi = Array.isArray(m.spool_listesi) ? m.spool_listesi : [];
+
+  // Montaj ust-verisi (eslesen her spool'a yazilacak; alistirma salt-gosterim -- Karar C).
+  const montajVeri = {
+    pipeline_no: pipelineKok,
+    blok: m.blok || null,
+    sistem: m.sistem || null,
+    yuzey: m.yuzey || null,
+    guverte: Array.isArray(m.guverte) ? m.guverte : [],
+    continue_baglanti: Array.isArray(m.continue_baglanti) ? m.continue_baglanti : [],
+    toplam_agirlik_kg: (m.toplam_agirlik_kg != null) ? m.toplam_agirlik_kg : null,
+    alistirma: m.alistirma || null,   // salt-gosterim; spooller.alistirma'ya YAZILMAZ (Karar C)
+    tarih: m.tarih || null,
+    kaynak_dosya: dosyaAdi,
+    eslesme_at: new Date().toISOString(),
+  };
+
+  // O devredeki kabuk spool'lari cek (pipeline+spool anahtariyla harita).
+  const { data: spoollar, error: spErr } = await supa
+    .from('spooller')
+    .select('id, spool_no, pipeline_no, spool_id')
+    .eq('devre_id', devreId)
+    .eq('silindi', false);
+  if (spErr) {
+    console.error('[izo-montaj-eslestir] spool cekme hatasi:', spErr.message);
+    return;
+  }
+  const harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
+  for (const sp of (spoollar || [])) {
+    const k = normPipeline(sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
+    if (!harita.has(k)) harita.set(k, sp);
+  }
+
+  const detay = [];
+  for (const spoolNo of spoolListesi) {
+    if (!pipelineKok) {
+      detay.push({ spool_no: spoolNo, pipeline_no: null, durum: 'atanmamis', sebep: 'pipeline_kok_cikarilamadi' });
+      continue;
+    }
+    const anahtar = normPipeline(pipelineKok) + '|' + normSpoolNo(spoolNo);
+    const hedef = harita.get(anahtar) || null;
+    if (!hedef) {
+      detay.push({ spool_no: spoolNo, pipeline_no: pipelineKok, durum: 'atanmamis', sebep: 'kabukta_yok' });
+      continue;
+    }
+    // Eslesen spool'a montaj_json yaz (idempotent: tekrar islemede uzerine yazar).
+    const { error: upErr } = await supa
+      .from('spooller')
+      .update({ montaj_json: montajVeri, guncelleme: new Date().toISOString() })
+      .eq('id', hedef.id);
+    if (upErr) {
+      console.error('[izo-montaj-eslestir] montaj_json yazma hatasi:', upErr.message);
+      detay.push({ spool_no: spoolNo, pipeline_no: pipelineKok, durum: 'atanmamis', sebep: 'update_hata' });
+      continue;
+    }
+    detay.push({ spool_no: hedef.spool_no, pipeline_no: hedef.pipeline_no, durum: 'eslesti', spool_id: hedef.spool_id, spool_uuid: hedef.id });
+  }
+
+  const ozet = {
+    at: new Date().toISOString(),
+    tip: 'montaj',
+    devre_id: devreId,
+    dosya_adi: dosyaAdi,
+    pipeline_no: pipelineKok,
+    toplam: detay.length,
+    eslesen: detay.filter(d => d.durum === 'eslesti').length,
+    atanmamis: detay.filter(d => d.durum === 'atanmamis').length,
+    detay,
+  };
+
+  // parse_sonuc._eslesme yaz (oku-birlestir-yaz; mevcut parse_sonuc korunur).
+  const { data: mevcut, error: okErr } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .select('parse_sonuc')
+    .eq('id', kuyrukId)
+    .single();
+  if (okErr) {
+    console.error('[izo-montaj-eslestir] parse_sonuc okuma hatasi:', okErr.message);
+    return ozet;
+  }
+  const yeniParse = Object.assign({}, mevcut?.parse_sonuc || {}, { _eslesme: ozet });
+  const { error: yzErr } = await supa
+    .from('dosya_isleme_kuyrugu')
+    .update({ parse_sonuc: yeniParse })
+    .eq('id', kuyrukId);
+  if (yzErr) console.error('[izo-montaj-eslestir] _eslesme yazma hatasi:', yzErr.message);
 
   return ozet;
 }
