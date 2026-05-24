@@ -1,8 +1,10 @@
 # Format Tanitma Kilavuzu — AresPipe Izometri Parser
 
-> **Surum:** Oturum 118 (24 May 2026). 116'daki "format-tanitma-arayuzu-vizyon.md" notunun
-> kapsamli halefi.
-> **Durum:** MIMARI KARAR + GERCEK VERI ile dogrulanmis tasarim. Kod henuz yok; icraat sonraki oturum.
+> **Surum:** Oturum 118 (tasarim, 24 May 2026) + Oturum 119 (Asama 1 icraat, 25 May 2026).
+> 116'daki "format-tanitma-arayuzu-vizyon.md" notunun kapsamli halefi.
+> **Durum:** MIMARI KARAR + GERCEK VERI ile dogrulanmis tasarim. **Asama 1 (katman birlestirici) CANLI**
+> (oturum 119): tersan_cadmatic_spool katmanlara ayristirildi, registry ile baglandi, 8 gercek PDF'te
+> sifir regresyon. Detay Bolum 13. Siradaki: Asama 2 (eslestirme skoru).
 > **Veri tabani:** 15 Tersan PDF (6 gemi) + 4 capraz kaynak PDF (Sefine, Yonteknik, Royal, ada/PAOR)
 > + 4 ekran goruntusu (SEFT, Navis/Kongsberg, Salt, Cadmatic-Sefine) -> 5 metinli format ailesi + 1 image.
 
@@ -323,13 +325,38 @@ Arayuz parser URETMEZ, VERI TOPLAR. Cogu artik gorsel isaretlemeyle cevaplanir; 
 
 ## 13. Yol haritasi (kademeli)
 
-### Asama 0 — Bu kilavuz + facet haritasi (TAMAM, bu oturum)
+### Asama 0 — Bu kilavuz + facet haritasi (TAMAM, oturum 118)
 
-### Asama 1 — Katman birlestirici (kod, sonraki oturum)
-`l2-parser.js` onune evrensel<-aile<-malzeme<-gemi birlestirici. Mevcut `parse()` korunur. PILOT alan:
-boyut/cap (metrik vs inc+Sch); NB1110 + NB1137 ikisinde de calistigini kanitla (MK-51.2: 5+ ornek).
+### Asama 1 — Katman birlestirici (TAMAM, oturum 119)
+`l2-parser.js` onune evrensel<-aile<-malzeme<-gemi birlestirici eklendi. Mevcut `parse()` imzasi korundu.
 
-### Asama 2 — Eslestirme skoru + esik (kod)
+**Ne yapildi (icraat):**
+- `lib/format-paketleri.js` — calisan monolit `e1fb879d` (tersan_cadmatic_spool), katmanlara AYRISTIRILDI:
+  EVRENSEL (k0) <- A1_TERSAN_CADMATIC (k1, iskelet alanlar + groove/kaynak/bilezik/dirsek/flans)
+  <- MALZEME_KARBON (k2, metrik cap_mm/et_mm + boru_mm) <- MALZEME_PASLANMAZ (k2, boru_sch).
+  Hicbir regex degismedi, sadece dogru katmana tasindi. + boru_sch'in bugune kadar ATILAN
+  inc(grup2)/Sch(grup3) gruplari `nps_inc`/`schedule_kod` olarak yakalandi (somut kazanim).
+- `lib/katman-birlestirici.js` — `birlestir(paketler)` (override-only, specificity ile satir_tipleri
+  siralama: boru_sch her zaman boru_mm'den once), `paketSec` (token paketin kendi seselici'sinden),
+  `aileBirlestir(format_kodu, text)`.
+- **AILE_KAYIT (registry):** `format_kodu -> paketler`. parserKuralIle bunu sorar: katalog-yonetimliyse
+  paketlerden etkin kural, degilse DB parser_kural aynen. **Ozel-durum (`if format_id`) YOK** — yeni aile
+  = bir satir. Su an bagli: yalniz `tersan_cadmatic_spool`. Aday (bagli degil): `tersan_cadmatic_isometry`.
+  Asla: montaj + paor.
+- `api/izometri-oku.js:877` — tek nokta degisim: `parse(text, aileBirlestir(format_kodu,text) || parser_kural)`.
+- `test/asama1-pilot.mjs` — 22/22 yesil (composability + specificity + wiring + facet + registry).
+
+**Kanit (gercek veri, canli cikarimla = pdf-parse v1.1.1):** 8 Tersan spool PDF (6 gemi).
+Temiz metinli 6/8'de combiner ≡ monolit, **SIFIR REGRESYON**; G400-St.St'te combiner fazladan
+nps_inc/schedule_kod cikardi. MK-51.2 karsilandi.
+
+**NB1137 NOTU (kritik, MK-119.3):** NB1137'nin 2 imalat spool PDF'i L2'de FAIL — ama sebep format
+kurali DEGIL, **Cadmatic glyph kodlamasi** (pdf-parse v1.1.1 gomulu fontu yanlis Unicode'a ceviriyor:
+`aê~ïáåÖ` = "Drawing symbols"). Metin okunamadigi icin hicbir regex eslesmez -> L3'e duser (dogru,
+zaten calisan davranis). Facet override BUNU COZMEZ; sadece L3 (gorselden okuma) cozer. Bu, Bolum 5.1'deki
+"NB1137 kirilmasi"ndan (pipeline_no G-regex, MONTAJ formatinda, HALA ACIK) AYRI bir sorundur.
+
+### Asama 2 — Eslestirme skoru + esik (kod) [SIRADAKI]
 fingerprintSkor'u paket duzeyine cikar; en yakin aile onerisi + ikincil aday + esik (Bolum 6).
 
 ### Asama 3 — Facet kapsama raporu (UI, super admin)
@@ -352,6 +379,13 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - "Cok buyuk" / "yanimda olmayan" formatlar (Cihat'ta) — toplaninca aile listesi genisler.
 - proje_kodu: Tersan klasorden, digerleri baslik blogundan -> aile-bagimli cikarim kurali.
 - Capa esleme (koordinat->metin) icin pdftotext konumlu cikti + render koordinat hizalamasi.
+- **(119) Canli PDF cikarici PINLI:** `pdf-parse v1.1.1`, `pdf-parse/lib/pdf-parse.js` yolu (v2 Vercel'de
+  patlar + farkli metin uretir). Parite/test bu surumle yapilir. (MK-119.4)
+- **(119) 84c12f61 (tersan_cadmatic_isometry) baglama adayi:** malzeme tablosu aktif, muhtemelen A1 ailesi
+  ama "Montaj Resmi" gerilim formati. Kendi parser_kural'i + 1-2 gercek PDF dogrulaninca AILE_KAYIT'a
+  bir satir (ayni paketlerle ya da kendi facet override'iyla).
+- **(119) Cadmatic glyph onarimi:** bazi Cadmatic export'lari (or. NB1137 spool) v1.1.1'de bozuk glyph
+  -> L2 imkansiz -> L3. Glyph haritasi onarimi (ToUnicode) bir gun L2'yi acabilir; simdilik L3 dogru cozum.
 
 ---
 
@@ -366,6 +400,10 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **MK-118.7** — Isaretleme koordinat degil CAPA (metin + sabit etiket) olarak saklanir.
 - **MK-118.8** — Uc statu: firma-taslak -> firma-onayli -> evrensel; promote'ta sadece anonim kural cikar (KARAR-48.1).
 - **MK-118.9** — Eksik alan asla sessizce gecilmez; format-seviyesi duzeltme kuyrugun kalanina otomatik uygulanir (ayni aile + ozet).
+- **MK-119.1** — Katman birlestirici `parse()` ONUNDE; registry (AILE_KAYIT) `format_kodu`->paketler. Ozel-durum (`if format_id`) YOK; yeni aile = bir satir.
+- **MK-119.2** — Baglanan format icin parse kuralinin KAYNAGI kod paketleridir; DB satiri yalniz tanima(fingerprint) icin. DB parser_kural'i elle degistirmek parse'i ETKILEMEZ (Asama 3'te paketler DB'ye tasininca kalkar).
+- **MK-119.3** — Glyph != format. NB1137 imalat spool kirilmasi = Cadmatic glyph-kodlama (v1.1.1 yanlis Unicode), facet override degil L3 cozer. Bolum 5.1'deki pipeline_no kirilmasindan (montaj formati) ayri.
+- **MK-119.4** — Canli PDF cikarici pinli: pdf-parse v1.1.1 (`pdf-parse/lib/pdf-parse.js`). Parite testi bu surumle (v2 Vercel'de patlar + farkli metin).
 
 > Onceki ilgili kararlar: MK-50.2 (image-PDF L2 yapamaz), MK-50.3 (3+ ornek olmadan kural yazma),
 > MK-51.2 (regex 5+ gercek ornekle test), MK-117.1 (alistirma kelimeleri merkezi/evrensel),
