@@ -874,7 +874,12 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
       return { ok: false, sebep: 'pdf_text_bos', parser_seviye: 'l2_failed', http_status: 200 };
     }
     const { parse } = await import('../lib/l2-parser.js');
-    const sonuc = parse(text, formatBilgisi.parser_kural);
+    // 119: Katman birleştirici (Aşama 1). Format katalog-yönetimliyse (AILE_KAYIT)
+    // facet paketlerinden etkin kural üretilir; değilse DB parser_kural'ı aynen.
+    // parse() imzası korunur (MK-118.3). L2 fail → çağrı yerinde L3 fallback (217-235).
+    const { aileBirlestir } = await import('../lib/katman-birlestirici.js');
+    const aktifKural = aileBirlestir(formatBilgisi.format_kodu, text) || formatBilgisi.parser_kural;
+    const sonuc = parse(text, aktifKural);
     if (sonuc.ok) {
       const sure_ms = Date.now() - baslangic;
       // 115: MONTAJ vs IMALAT sekil ayrimi. l2-parser montaj_modu'nda
