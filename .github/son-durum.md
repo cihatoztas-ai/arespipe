@@ -1,199 +1,180 @@
-# Son Durum -- 115. Oturum (23 May 2026)
+# Son Durum -- 117. Oturum (24 May 2026)
 
-> 114 -> 115 gecisi. ANA TEMA hedefi: **montaj eslesme + gosterim** (114'un B-ertelemesi).
-> Sonuc: ADIM 1 (montaj L2 canli dogrulama) tamamlandi -- montaj artik canlida L2
-> deterministik calisiyor. Yol boyunca iki gizli bug tanilanip cozuldu (fingerprint
-> dosya-adi capazi + parserKuralIle montaj sekil patlamasi). Eslesme + gosterim
-> (Adim 3-4) 116'ya birakildi -- veri akiyor, ekranda henuz gorunmuyor (BEKLENEN).
+> 116 -> 117 gecisi. ANA TEMA: **IMALAT NOT -> spooller.imalat_not (temel) + ALISTIRMA
+> cikarimi (bonus).** Sonuc: KOD TARAFI TAM TAMAMLANDI ve canli (deploy edildi). Alistirma
+> cikarimi CANLI KANITLANDI (E120 -> VAR, ekranda gorundu). imalat_not yazimi kod canli AMA
+> eslesen bir devrede henuz dogrulanmadi (test devreleri yukleyen_id null sorununa takildi --
+> ACIK BORC, asagida). Parser mantigi 4 PDF lokal repro ile kanitlandi (VAR/KISMI/talimat/bos).
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**115'te montaj L2 hasati CANLIDA dogrulandi (ilk kez).** 114 montaj formatini + parser'i
-indirmisti ama hic canli montaj islenmemisti. 115 once iki tikanikligi acti, sonra yeni bir
-proje (M130) ile montaj L2'yi canli kanitladi.
+**117 imalat NOT + alistirma cikarimi kod tarafi bitti, deploy edildi (commit 450b74c).**
+Bulgu: parser motoru ZATEN not_metni slot'u + alistirma_ipucu mantigi tasiyordu ama (a) NOT
+cekme regex'i agirlik kolonunu yutuyordu + agirliksiz NOT satirina tutmuyordu, (b) eski
+alistirma kurali TERS calisiyordu (komple alistirma->KISMI diyor, gercek kismiyi kaciriyor),
+(c) spooller'a yazma + gosterim yoktu. 117 bunlari duzeltti.
 
-- **Migration 091 (fingerprint icerik-bazli ayrim) -- CANLI (COMMIT):** Montaj/imalat ayrimi
-  artik DOSYA ADINDAN BAGIMSIZ, icerik sinyalleriyle. Montaj formati `Continue:` baslik
-  imzasiyla taninir; imalat `Malzeme Listesi` + `Cut & Bending Info` ile. Iki formattan da
-  `dosya_adi_regex` KALDIRILDI. (B karari -- Cihat sectu.)
-- **izometri-oku.js 115 fix -- CANLI (commit b65ad3c, CI yesil):** `parserKuralIle` montaj
-  sekil patlamasi (`JSON.stringify(sonuc.parsed).substring` -> montaj_modu'nda parsed YOK ->
-  `l2_exception` -> L3 fallback) cozuldu + dispatcher'a montaj dali eklendi.
-- **Canli dogrulama (M130, yeni proje, cache MISS):** 3 montaj PDF'i -> format=montaj,
-  `parser_seviye=l2`, `montaj_var=true`, spool_listesi + continue dolu, $0. Imalat
-  PDF'leri eski dogru akiSta (montaj_var=false), regresyon yok.
+### Mimari (oturum kararlari)
+- **MK-117.1 (M1 -- merkezi alistirma motoru):** Alistirma TURETME kelimeleri format-bagimsiz
+  (Turkce imalat fizigi). l2-parser.js'de MERKEZI VARSAYILAN (ALISTIRMA_IPUCU_VARSAYILAN);
+  bir format kendi alistirma_ipucu_kurali'yla OVERRIDE edebilir. NOT *cekme* format-ozel kalir
+  (her formatin kendi not_metni regex'i). Kademeli (VAR baskin) + eski tek-deger formatina
+  geriye uyumlu. Sebep: ayni "Alistirma Parcasi"/"kaynamayacak" ifadesi PAOR'da da Tersan'da
+  da ayni anlam; her formata kopyalamak kopya kaymasi riski (Cihat tespiti).
+- **KARAR-117 (PDF baz):** PDF bir alistirma degeri URETTIYSE (VAR/KISMI) -> spooller.alistirma'ya
+  yaz (mevcut null/YOK/VAR/KISMI EZILIR, PDF otorite -- Cihat karari). PDF SESSIZSE (null) ->
+  DOKUNMA (KARAR-116.1: belirsiz->dokunma; PDF'in sessizligi "alistirma degil" demek degil).
+- **D2-genis (KARAR-117.2 -- NOT yazma):** imalat_not'u yaz AMA final alistirma 'VAR' (komple
+  alistirma parcasi) ise YAZMA (alistirma sutununda zaten gorunur, tekrar gereksiz -- Cihat).
+  KISMI / alistirma yok ama talimat var (orn "BSP adaptor kaynaklanacak") -> NOT'u yaz
+  (personele somut bilgi). Cihat: "notta alistirma bilgisi varsa tekrar gerekmez."
 
 ---
 
 ## YAPILANLAR (sirasiyla, veriyle)
 
-### 1) Tani: montaj neden imalat formatina dusuyor (D-yeni)
+### 1) DB: migration 093 (spooller.imalat_not) -- CANLI
+ALTER TABLE spooller ADD COLUMN imalat_not text (nullable). dry-run ROLLBACK -> dogrula ->
+COMMIT. Repo arsivi 093_spooller_imalat_not.sql ([skip ci]).
 
-M270 test devresi yuklendi (304 tank ventilation). Montaj PDF'leri (`*.1.pdf`) montaj
-formatina (39a2c81b) DEGIL eski imalat formatina (84c12f61) dusuyordu, `montaj:{}` uretmiyordu.
-- fingerprintSkor (izometri-oku.js): dosya_adi +5, uretici/baslik/tablo +1'er, ESIK=2.
-- Eski imalat formatinin `dosya_adi_regex`'i (`^M\d+-\d+-\d+\.\d+\.pdf$`) montaj dosyasini
-  (`M270-304-001.1.pdf`) +5 ile yakaliyordu; yeni montaj formatinin regex'i (`_` ayrac bekliyor)
-  M270 noktali adlandirmayi kacirip 0 puan aliyordu. Eski format 6, yeni montaj 2 -> eski kazaniyordu.
+### 2) parser_kural (Tersan imalat e1fb879d) -- CANLI (3 SQL)
+- NOT regex DUZELTILDI: eski `NOT:[ \t]*,?[ \t]*([^\s,][^\n]*)` (agirligi yutuyor) ->
+  `NOT: *,? *(.+?)(?: {3,}| +[0-9]+[.,][0-9]+ *kg|$)` (3+ bosluk veya agirlik kolonuna kadar kes).
+- Eski YANLIS alistirma_ipucu_kurali KALDIRILDI (jsonb - operator). Motor merkezi varsayilani kullanir.
+- flag 'im' EKLENDI: multiline -> $ her satir sonunu eslesir. KRITIK BULGU: agirliksiz NOT
+  satirlari (orn E120 "NOT: Alistirma Parcasidir," satir sonu, kg yok) flag'siz yakalanmiyordu.
 
-### 2) Olcum: icerik imzasi (pdftotext -layout, varsayma)
+### 3) lib/l2-parser.js -- CANLI (commit 44814fc)
+Dosya basina ALISTIRMA_IPUCU_VARSAYILAN sabiti (kademeler: VAR=["al.{2}t.rma +par[cc]as"];
+KISMI=["kaynat.lmayacak","kaynamayacak","sahada","gemide +montaj","a[cc].k +kalacak",
+"ba[gg]lanmayacak"]). Alistirma blogu (satir ~302) kademeli motorla degistirildi: format
+override > merkezi varsayilan; kademeli (ilk eslesen kazanir = VAR once); eski tek-deger geriye
+uyumlu. Gercek motor node ile 3 senaryo + geriye uyum test edildi (HEPSI OK).
 
-- Montaj PDF: `Continue:` VAR, `Malzeme Listesi`/`Cut & Bending` YOK.
-- Imalat PDF: `Malzeme Listesi` + `Cut & Bending Info` VAR, `Continue:` YOK.
-- Tam ayrim, cakisma yok. Icerik-bazli ayrim guvenli.
+### 4) api/kuyruk-isle-izometri.js -- CANLI (commit 44814fc + 450b74c)
+eslestir() imalat dali deg objesine: alistirma (dosya adi ALS -> VAR / parse ipucu -> VAR/KISMI;
+PDF baz, null ise dokunma) + imalat_not (D2-genis: alistirma 'VAR' degilse yaz). dosyaAdi ALS
+regex: `/(?:^|[-_ ])ALS(?:[-_. ]|$)/i` (FALSE yanlis pozitif onlendi). 4 senaryo izole test (OK).
 
-### 3) Migration 091 -- fingerprint icerik-bazli ayrim (B plani)
+### 5) spool_detay.html -- CANLI (commit 44814fc)
+SP.imalatNot map (s.imalat_not). renderNotlar(): imalat NOT'u kullanici notlarinin USTUNDE
+amber blok (📄, salt-okunur "Cizimden"). Kullanici notu bos olsa da imalat NOT gosterilir
+(eski early-return duzeltildi). QR onizlemeye de imalat NOT eklendi (personele gorunur).
+ANA SCRIPT node --check OK.
 
-- Montaj (39a2c81b): `dosya_adi_regex` KALDIR + `baslik_regex='Continue:'` EKLE.
-- Imalat (84c12f61): sadece `dosya_adi_regex` KALDIR (Malzeme/Cut/uretici dokunulmadi).
-- Skor matrisi sonrasi: montaj PDF -> montaj 2 / imalat 1; imalat PDF -> imalat 3 / montaj 1.
-- Supabase: dry-run (ROLLBACK) -> SELECT dogrula -> COMMIT. Kalici teyit edildi.
-
-### 4) Tani: format dogru ama montaj_modu cikti uretmiyor (kok neden)
-
-Fingerprint duzeldikten sonra montaj formatina dustu AMA `parser_seviye=l3`'e gidiyordu.
-- `ai_api_log._l2_fallback.l2_sebep` = `l2_exception:Cannot read properties of undefined
-  (reading 'substring')`.
-- KOK NEDEN: `parserKuralIle` (izometri-oku.js) `JSON.stringify(sonuc.parsed).substring(0,500)`
-  yapiyordu. l2-parser montaj_modu'nda `{ok, montaj:{}}` doner -- `parsed` YOK. `undefined.substring`
-  patliyor, try/catch yutuyor, L3 fallback tetikleniyor. (114 dersi tekrar: kural/parser var,
-  cagiran eski sekli bekliyor.)
-- l2-parser.js M270 metniyle LOKAL test edildi (pdf-parse + parse birebir): montaj:{} kusursuz
-  uretiliyor (spool_listesi, continue, agirlik, yuzey). Parser saglam, sorun cagirmadaydi.
-
-### 5) izometri-oku.js 115 fix (MK-115.1) -- MK-49.1 KORUNDU
-
-- `parserKuralIle`: montaj/imalat sekil ayrimi. `sonuc.montaj` varsa montaj-guvenli paketle
-  (substring patlamasi onlendi, `montaj` disari tasinir, `cevap_full` montaj govdesiyle yazilir).
-- Dispatcher: `parseSonuc.montaj` varsa spool-hattini (asmeFallbackDoldur + halusinasyonFiltresi +
-  batchSonucBirlestir) ATLA, `ozet.montaj` dondur, spooller'a DOKUNMA (114 B karari).
-- Fingerprint okuma/skorlama tarafina DOKUNULMADI (MK-49.1). Sadece parser sonuc paketleme +
-  dispatcher dal ayrimi.
-- Lokal: montaj -> l2 + montaj:{} (exception yok); imalat -> spoollar + montaj null (regresyon yok).
-
-### 6) Canli dogrulama (M130, cache MISS)
-
-Yeni proje M130 yuklendi (8 dosya, client-loop'ta 6 takildi -> butona tekrar basildi, drene oldu):
-- M130-000-001.1.pdf -> montaj, l2, spool_say=1, continue=1, agirlik=98, cache yok.
-- M130-000-002 1(2).1.pdf -> montaj, l2, spool_say=3, continue=1, agirlik=404 (COKLU SPOOL dogrulandi).
-- M130-000-002 2(2).1.pdf -> montaj, l2, spool_say=2, continue=2, agirlik=258.
-- alistirma=null (bu PDF'lerde -ALS/NOT sinyali yok -- BEKLENEN, eksiklik degil).
-- Imalat (`*.S0X.1.pdf`) -> 84c12f61, montaj_var=false, cache_hit=true (eski dogru sonuc).
+### 6) CANLI TEST (kismi)
+- **Alistirma KANITLANDI:** test devresi bcd05c0e, E120-722-1015/1016-ALS -> ALISTIRMA sutununda
+  VAR (dosya adi ALS'den). Ekran goruntusu ile dogrulandi.
+- **imalat_not KANITLANMADI:** "select ... where imalat_not is not null" -> 0 satir. Cunku
+  flag duzeltmesinden SONRA eslesen bir devrede NOT'u dolu PDF islenmedi. Eski kayitlar bayat
+  (flag oncesi parse). Sonraki oturum: eslesen devre + NOT'lu PDF ile dogrula.
+- **Parser mantigi 4 PDF lokal repro:** FM03-ALS->VAR, 317-19-ALS->VAR, G310->KISMI,
+  E120-1015->VAR, M110-2113 (BSP talimat)->NOT yazilir alistirma yok, M110-2104 (bos NOT)->hicbiri.
 
 ---
 
-## Commit'ler (115)
+## Commit'ler (117)
 
 | Hash | Mesaj |
 |------|-------|
-| `b65ad3c` | fix(115): montaj L2 sekil ayrimi -- parserKuralIle substring patlamasi + dispatcher montaj dali (MK-115.1) |
+| (093) | migration 093 spooller.imalat_not -- Supabase COMMIT (repo arsiv kapanista) |
+| 44814fc | feat(117): imalat NOT + alistirma (merkezi varsayilan motor + PDF baz) -- l2-parser + kuyruk-isle + spool_detay |
+| 450b74c | feat(117): D2-genis -- alistirma VAR ise imalat_not yazma; KISMI/talimat NOT'u yaz |
 
-CI: YESIL (kod commit'i, [skip ci] YOK). Vercel deploy basarili (M130 montaj L2 canli kaniti).
-Migration 091: Supabase'de COMMIT edildi. **NOT: repoya 091 dry-run arsivi eklenecek (asagida).**
+CI: kod commit'leri [skip ci] YOK. Vercel deploy basarili.
+**117 ACILIS TEYIDI (gelecek): migration 093 repoda mi (ls migrations/ | grep 093).**
 
 ---
 
-## DB Degisiklikleri (091, CANLI)
+## DB Degisiklikleri (CANLI)
 
 ```sql
--- Montaj formati: dosya adi bagimliligini kaldir, Continue: imzasi ekle
-UPDATE izometri_format_tanimlari
-SET fingerprint = (fingerprint - 'dosya_adi_regex')
-                  || jsonb_build_object('baslik_regex','Continue:')
-WHERE id = '39a2c81b-4f4b-4203-a912-cfe0c07770ad';
+-- 093: spooller.imalat_not
+ALTER TABLE spooller ADD COLUMN IF NOT EXISTS imalat_not text;
 
--- Imalat formati: sadece dosya adi bagimliligini kaldir
-UPDATE izometri_format_tanimlari
-SET fingerprint = (fingerprint - 'dosya_adi_regex')
-WHERE id = '84c12f61-650a-480b-ab61-12277ba09014';
+-- parser_kural (e1fb879d Tersan imalat): NOT regex + flag im, alistirma kurali kaldirildi
+-- not_metni.regex = 'NOT: *,? *(.+?)(?: {3,}| +[0-9]+[.,][0-9]+ *kg|$)'
+-- not_metni.flag  = 'im'
+-- alistirma_ipucu_kurali  -> SILINDI (motor merkezi varsayilani kullanir)
 ```
-
----
-
-## Mimari Kararlar (115)
-
-- **MK-115.1:** Montaj L2 ciktisi sekli `{ok, montaj:{}}` (imalat `{ok, parsed:{spoollar}}`).
-  `parserKuralIle` + dispatcher bu iki sekli ayrı ele alir. Montaj spool-hattini (asme/halusinasyon/
-  batchSonucBirlestir) atlar, ciktisi `parse_sonuc.montaj`'a yazilir, spooller'a DOKUNMAZ.
-- **MK-115.2 (B karari):** Format ayrimi DOSYA ADINDAN BAGIMSIZ, ICERIK sinyalleriyle. Montaj=
-  `Continue:`, imalat=`Malzeme Listesi`+`Cut & Bending`. Dosya_adi_regex iki formattan da kaldirildi.
-  Sebep: dosya adlandirma aileleri (M100 alt-cizgili, M270/M130 noktali) kirilgan; icerik saglam.
-- **MK-115.3:** Ayni proje birden cok gemiye yuklenebilir (ikiz gemi senaryosu) -- farkli devre_id
-  ile ayri kayit, HATA DEGIL. Eslesme/karsilastirma ayri katman (vizyon notu, asagida).
 
 ---
 
 ## Dersler (bu oturum)
 
-1. **Veriyi gor, varsayma -- yine kurtardi.** "Imalat malzeme cikarmiyor" sandim (yanlis JSON
-   anahtari `malzemeler` vs `malzeme_listesi` baktim); imalat HEP dogruydu. Sekil sorunu montajdaydi.
-2. **Cok ornek test bug cikarir.** M270 tek-spooldu; M130 coklu-spool (3+2) parser'in liste
-   toplamasini dogruladi. Tek ornek "calisiyor" yanilgisi verebilirdi.
-3. **Lokal repro altin degerinde.** l2-parser.js + pdf-parse'i lokal calistirip M270 metnine karsi
-   test ettik -> parser'in saglam, sorunun cagirmada (substring) oldugunu KESIN gorduk. Teori yerine.
-4. **fingerprintSkor negatif sinyal desteklemiyor** (sadece pozitif +puan). "X yoksa ceza" yok;
-   ayrimi pozitif imzayla kurmak gerekti (montaj=Continue var, imalat=Malzeme var).
-5. **Cache key = hash+format_id+tenant.** Format_id degisince ayni PDF cache MISS olur (montaj
-   yeni format aldigi icin taze parse). Ama ayni format+hash ile L3 cache'lenirse sonra HIT verir
-   -> test icin YENI dosya (M130) en temizi.
-6. **SQL Editor kuyrugu UPDATE edemiyor (RLS).** `dosya_isleme_kuyrugu` SELECT okunur ama UPDATE 0
-   satir (tenant RLS UPDATE politikasi). Yeniden isleme SAYFADAN ("Bekleyenleri isle", servis anahtari).
+1. **Sonraki-oturum notu (varsayim) DOGRULANDI ama ters yonde:** Not "parser NOT okumuyor olabilir"
+   demis; KOD okuyordu (motor hazirdi). 116'nin "koda bak" dersi yine gecerli.
+2. **Kural VAR ama YANLIS senaryosu:** Sifirdan yazmak yanlis olurdu (motoru bozardik). Mevcut
+   kurali okuyup "neden bos geliyor" kazindi -> eski alistirma TERS, NOT regex agirligi yutuyordu.
+3. **Canli test gercek bug yakalar:** Lokal 3 PDF'te calisan regex, agirliksiz NOT satirinda
+   (E120) tutmadi. $ multiline degildi. flag 'im' duzeltti. Lokal test yetmez, canli sart.
+4. **"hicbiri yok" -> kok neden zincir kazma:** dosya adi formati DEGIL, spool yok DEGIL, devre
+   yanlis DEGIL -> dosya_isleme_kuyrugu.durum='hata', 'kullanici_id zorunlu', yukleyen_id null.
+   Veriyi katman katman ele -- varsayma.
+5. **Mukerrer endisesi yersizdi:** alistirma (kolon) ve imalat_not (kolon) ve notlar (tablo) UC
+   AYRI yer. Idempotent kolon yazimi mukerrer not uretmez.
+6. **Unicode-paste tuzagi onlendi:** Turkce karakterli regex'i json.dumps(ensure_ascii) ile
+   \uXXXX'e cevirip backslash'siz yazdik -> SQL paste-guvenli.
 
 ---
 
-## 116'ya Acik Borc (oncelige gore)
+## 117'ye Acik Borc (oncelige gore)
 
-1. **MONTAJ ESLESME + GOSTERIM (114-115 B-ertelemesi, 116 ANA TEMA).** Montaj L2 verisi akiyor
-   (`parse_sonuc.montaj`), simdi: (a) ESLESME -- montaj.spool_listesi (S01..) + pipeline_no ->
-   `spooller` (devre_id ile sinirla, spool_no non-unique). (b) `montaj.alistirma` (PARCA/BAGLI) ->
-   `spooller.alistirma` (3-degerli enum YOK/VAR/KISMI). **KARAR gerekli:** PARCA->? BAGLI->?
-   Maplemeden ONCE spooller.alistirma gercek degerlerini SORGULA (pg_constraint). (c) GOSTERIM --
-   spool_detay.html montaj katmani karti (boru, continue, alistirma, guverte).
-2. **pipe_no enjeksiyonu (KARAR: A/B).** Parser `[[PIPE:...]]`'i text'ten okuyor; izometri-oku
-   dosya adindan enjekte etmeli (A=text basina enjekte / B=parametre). MK-49.1: A daha guvenli.
-   pipe_no su an null geliyor (spool_listesi yine dolu). Eslesmede pipeline_no+spool_no kullan.
-3. **Migration 091 repoya arsiv** -- dry-run ROLLBACK halinde `migrations/091_*.sql` commit et
-   ([skip ci] olabilir, doc/arsiv). (Bu oturumda Supabase'de COMMIT edildi, repoya konmamis olabilir.)
-4. **D1 kalan ($0.39 DIGER) + D3 ($1.60, PAOR 995b5514 + 15243262).**
-5. **Batch client-loop kirilganligi (508 / Failed to fetch).** M130'da 6/8 dosya takildi, tekrar
-   basinca drene oldu. Kullaniciyi tedirgin ediyor (Cihat: "burasi stabil olmali"). Sunucu-tarafi
-   drenaj (cron/worker) ideal. Cihat karari: "sayfa duzenlemeleri sirasinda yapariz" (115'te A secildi).
-6. **i18n borcu (G-01):** 113 wizard + 112 izo drenaj anahtarlari.
-7. **Mobil yonetici izometri PDF teshisi (112'den devir).**
-8. **`_N` alt-spool fallback (MK-110.2).**
-9. **Ikiz kolon temizligi (agirlik/agirlik_kg, durum/is_durumu) + web spool durum senkronu.**
-10. **Test verisi temizligi.** M270 (devre c1c688cc + 84e8d56e) + M130 demo kayitlari -- bilerek
-    iki kez yuklendi (rastgele test). Demo tenant'ta, silinebilir.
+1. **imalat_not CANLI DOGRULAMA (117 yarim kalan):** Eslesen bir devrede (yukleyen_id DOLU,
+   orn yeni temiz devre) NOT'u dolu bir PDF isle -> "select ... where imalat_not is not null"
+   dolu gelmeli. KISMI/talimat NOT -> imalat_not dolu; VAR (komple) -> imalat_not bos (D2). Spool
+   detayda amber 📄 blok + QR'da personele gorunum. KOD CANLI, sadece eslesen test eksik.
+2. **YUKLEYEN_ID NULL -> PARSE EDILEMIYOR (yeni kritik borc):** api/kuyruk-isle-izometri.js:305
+   dok.yukleyen_id null ise is 'yukleyen_id bos' hatasiyla kapanir (izometri-oku kullanici_id
+   zorunlu, satir 334). yukleyen_id'siz yuklenen dosyalar (test/import) HIC parse edilmiyor ->
+   eslesmiyor -> izometri/NOT/alistirma yazilamiyor. test devresi 3174e29f boyle takildi. Cozum:
+   dosyalara kullanici id ata VEYA sistem yuklemeleri icin kontrolu gevset (VERI SAHIPLIGI etkisi
+   dusunulmeli -- KARAR-48.1).
+3. **DESEN-DISI YONETIMI / FORMAT OGRENME (yeni stratejik tema):** Cihat tespiti -- ~10 PDF'le
+   desen kuruldu, desen-disi PDF'ler kiriliyor (agirliksiz NOT, bos NOT, yeni kelime, underscore
+   dosya adi). Profesyonel cozum: desen-disini SESSIZCE YUTMA, YUZEYE CIKAR. (a) parse sonucuna
+   "eksik/supheli alanlar" raporu ekle (NOT cikmadi, yuzey cikmadi, match_orani dusuk). (b) Izometri
+   Batch'te "tam parse N / eksik M" listesi -> insan gorur. (c) confidence + human-in-the-loop
+   (oneri_hazir/manuel_onay durumlari zaten var). (d) fingerprint ile desen-disilari grupla,
+   birikince yeni format kurali turet (format ogrenme dongusu -- eski acik borc). ILK ADIM:
+   eksik-alan raporu (en ucuz, en yuksek getiri). Sektor ilkesi: once OLC sonra en cok kirani duzelt.
+4. **NOT bos yakalama incelik:** Bos NOT ("NOT: ,") regex'i "," yakaliyor. eslestir if(ps.not_metni)
+   "," truthy -> ama bu PDF eslesmediginden yazilmadi. Eslesince "," imalat_not'a gidebilir. Regex'i
+   bos-NOT yakalamayacak sekilde sikilastir (dusuk oncelik).
+5. **Yuzey survivorship netlik (Cihat sordu):** test devresi 1015 yuzey "Boyali" (import/devre olusturma),
+   PDF "Siyah". bindir() cakismada sessiz ezmedi (Boyali kaldi). 117 yuzeye DOKUNMADI. Beklenen davranis.
+6. **i18n borcu (G-01):** sp_imalat_not_kaynak (117) + 113 wizard + 112 izo drenaj + 116 montaj kart.
+   tv() fallback ile calisiyor, ceviri (TR/EN/AR) eklenecek.
+7. **Batch client-loop kirilganligi (508).** Sunucu-tarafi drenaj ideal.
+8. **D1/D3 maliyet temizligi** (115'ten devir).
+9. **Mobil imalat NOT gosterimi (KARAR):** Web'de imalat NOT gorunuyor; mobil (IbSpoolDetay.jsx)
+   imalat_not okumuyor. Personel mobilde de gormeli mi? -> ayri is, mobil koda imalat_not render.
+10. **Web spool durum senkronu** (aktif_basamak/ilerleme DB-truth) + ikiz kolon temizligi.
+11. **Test verisi temizligi** (M270/M130/M235/M240/D130/E120/M110 demo).
 
 ---
 
-## Vizyon Notu (115'te dogan, ileri)
-
-- **Ikiz gemi eslestirme + tarihsel benchmark (hull kavrami).** Cihat: ayni proje 2-3 gemiye
-  yapilabiliyor (NB64/NB65 ikiz). Ayni devre 2. gemiye yuklenince ilk gemi verisiyle KARSILASTIRMA
-  (sure, hata orani, tekrar eden sorunlar) yapilabilir. Veri modelinde "gemi/hull" katmani gerek.
-  Montaj continue-grafi + spool topolojisi bunun zeminini sagliyor. SPOOL-AI-VIZYON'a eklenecek.
+## Vizyon Notu (ileri, bugunun isi DEGIL)
+- 3D/walk (MK-49.A). Ikiz gemi + hull benchmark (MK-115.3). montaj_json.continue_baglanti topoloji grafi.
 
 ---
 
-## Kritik Hatirlatmalar (115 dersleri)
-
-- **Veriyi gor, varsayma.** Yanlis JSON anahtari (`malzemeler` vs `malzeme_listesi`) beni yanli
-  yonlendirdi; SELECT/sema her zaman teyit.
-- **Lokal repro yap.** Parser + pdf-parse lokal -> kok neden kesin (cagirmadaki substring).
-- **Cok ornekle test (M130 coklu-spool).** 2 yetmez.
-- **CHECK/enum -> pg_constraint ile dogrula** (116'da spooller.alistirma maplemeden once SART).
-- **Migration: dry-run ROLLBACK -> dogrula -> COMMIT.** Repoda dry-run halinde arsivle.
-- **SQL Editor kuyrugu UPDATE edemiyor (RLS)** -- yeniden isleme sayfadan.
+## Kritik Hatirlatmalar (disiplinler)
+- **Veriyi gor, varsayma** -- kok neden zincir kazma (kullanici_id zorunlu dersi).
+- **Lokal repro + CANLI test** -- lokal yetmez (agirliksiz NOT flag bug'i canlida cikti).
+- **Cok ornekle test** (4 PDF: VAR/KISMI/talimat/bos).
+- **Unicode-paste:** json.dumps(ensure_ascii) ile \uXXXX, backslash'siz SQL.
+- **CHECK/enum/kolon adi -> information_schema/pg_constraint** ile dogrula (MK-108.4 -- bu oturum
+  format_adi, parser_seviye, olusturma, format_id kolon hatalari yasandi).
+- **Migration: dry-run ROLLBACK -> dogrula -> COMMIT.** Repoya arsivle.
 - **Push: add -> commit -> pull --rebase -> push.** Kod commit'i [skip ci] YOK.
-- **MK-49.1 korundu:** izometri-oku.js fingerprint skorlama tarafina DOKUNULMADI.
-- **Env:** `SUPABASE_SERVICE_KEY`; `SELF_BASE_URL=https://arespipe.vercel.app`.
-- **Proje bilgisi ~52'de donmus** -- guncel durum yalniz bu dosyalar + git'ten.
+- **Env:** SUPABASE_SERVICE_KEY. **Proje bilgisi ~52'de donmus** -- guncel durum yalniz bu dosyalar + git'ten.
+- **Untracked uygula_116_*.py betikleri HALA repoda duruyor** -- kapanista sil (rm uygula_116_*.py).
 
 ---
 
-> 116 acilisinda bu dosya, `CLAUDE-SON-OTURUM.md` ve `CLAUDE-SONRAKI-OTURUM.md` okunacak.
-> 116 ANA TEMA: **Montaj ESLESME + GOSTERIM + pipe_no enjeksiyonu** (114-115 B-ertelemesini
-> tamamla -- montaj L2 verisi akiyor, simdi spool'lara bagla ve ekranda goster). Yarim is birakma.
+> 117 acilisinda bu dosya, CLAUDE-SON-OTURUM.md ve CLAUDE-SONRAKI-OTURUM.md okunacak.
+> 117 ANA TEMA kod tarafi BITTI (alistirma canli kanitli, imalat_not kod canli eslesen-test bekliyor).
+> ONCELIK: (1) imalat_not canli dogrulama, (2) yukleyen_id null parse borcu, (3) desen-disi yonetimi.
