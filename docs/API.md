@@ -99,7 +99,7 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 11 endpoint. Son güncelleme: 2026-05-23.
+> Toplam 11 endpoint. Son güncelleme: 2026-05-24.
 
 - **`api/batch-baslat.js`** — api/batch-baslat.js -- 49. oturum — _=====================================================================_
 - **`api/batch-kuyruga-al.js`** — api/batch-kuyruga-al.js -- 49. oturum — _=====================================================================_
