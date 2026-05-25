@@ -1,34 +1,32 @@
-# CLAUDE-SON-OTURUM.md — Oturum 124 ozeti
+# Oturum 125 — Devre Wizard Omurga + Mockup
 
-**HEAD:** `4aafe23` | **CI:** yesil | Tur: KARAR + TESHIS oturumu (kod yazilmadi, 1 doc commit)
+**Kod yazılmadı.** Tasarım konsolidasyonu + profesyonel kıyas eleştirisi + uçtan uca mockup.
 
-## Bu oturum neydi
-Cihat acti: "kaldigimiz yerden devam" (montaj re-parse). Ama montaj kanit isi yarida kalip Cihat buyuk bir wizard vizyonu actı (11 maddelik kullanim senaryosu). Oturum bir KARAR GORUSMESINE donustu: wizard'in eksik parcalari netlestirildi, final kararlar alindi, kalici belgeye dokuldu. Sonunda yarim montaj kaniti kapatildi (teshisle, cozumle degil).
+## Yapılanlar
 
-## Yapilanlar
+1. **Omurga belge** `docs/DEVRE-WIZARD-OMURGA.md` (v2): dağınık 4 belge (97 mimari, 106 akış,
+   124 omurga, 117-123 format motoru) tek sentez. 18 bölüm + MK özeti + atıf haritası. Eskiler arşiv.
 
-### 1. Devre Wizard vizyon v3 — final kararlar (docs/DEVRE-WIZARD-VIZYON-v3.md, 337 satir)
-Uzun gorusme. Eksik parcalar tek tek kapatildi:
-- **Arka plan modeli:** 113/A client-loop kodu okundu, lock'suz/atomik dogrulandi -> sekme kapanirsa yarim is `bekliyor`'da kalir, hata'ya DUSMEZ. "Bekleyenleri isle"ye neden biz basiyoruz: tur sonu retry yok (helper satir ~188) + otomatik tetik yok. Karar: A-oto (otomatik tetik + retry) simdi; Yol 3 (server worker + Cron) final hedef ESIGE bagli. Asil kaldirac B degil L2 ogrenme (format ogrenilince 150 spool saniyeler surer).
-- **Taslak yeri:** Cihat'in sezgisi dogru -- taslak gercek devre degil, spool ID/QR onaya kadar uretilmez. Teknik dogru: mevcut dokuman+kuyruk katmanindan turet, yeni staging tablosu yok, onayda `devre_yeni` mantigini CAGIR (kopyalama).
-- **Mutabakat:** Excel 20 der PDF 21/18 cikarsa -> kabuk otorite, 4 durum, "fazla" sorar. Ogrenme: ilk L3 -> kural taslagi -> onay -> kalan L2. Spool-ozel vs format-kurali duzeltme ayrimi. Tenant-ozel -> cift dogrulama -> genel terfi (KARAR-48.1).
-- **L3 kapatma:** PAOR ornegi (resim izometri + Excel yeterli -> devrede L3 kapali).
-- Arsiv tarandi: SPOOL-AI-VIZYON v2.1, VIZYON-VE-MODULER-MIMARI (Vizyon 1/2/3/8), 97/99/106/113/48/120 kararlari -- hepsi v3 ile hizali, celiski yok. Fuzyon motoru (KARAR-97.x), Yaklasim Y, foto-AI altyapisi (oturum 100) baglandi.
-- 3 koruma banti: yeniden-yazma yok / borc yedirme yok / mockup'ta sinanacak. Bozulma risk haritasi (3 risk, hicbiri cikmaz degil). Borc x faz tablosu.
-- Cihat'in eklenen butun-program haritasi (kullanicilar/yetki, arsivleme, yarim birakma, QR foto analiz) "wizard disi" diye ayrildi -- kapsam sismesin.
+2. **Eleştiri kapanışı** (omurga 16.B): profesyonel programlarla tartıldı. AVEVA E3D / Smart 3D /
+   ISOGEN / SpoolGen izometri *üretir*, AresPipe *okur* (rakip değil tamamlayıcı); Voortman'a karşı
+   interaktif rapor avantajı. 6 eleştiri → hepsi bilinçli sınır ya da mevcut akışta çözülü:
+   çapa↔image-PDF (Excel'den veri), revizyon (mevcut iptal/pasif), parça kimliği (malzeme→kütüphane),
+   eşzamanlılık (devre-gemi tekilliği), tek-aşamalı onay (sadelik), 3D (erteleme).
 
-### 2. MK-124.1 — montaj kaniti = TESHIS (cozum degil)
-Tek-montaj test: `E120-722-1021-ALS.1.pdf` re-parse edildi.
-- Parse calisti (`islenen:1, manuel:1, hata:0`) ama `montaj_json` YINE dolmadi.
-- `parse_sonuc`: dosya 2 spool okundu, `_eslesme.sebep="dosya_adi_pipeline_yok"`, `eslesen:0`.
-- KOK NEDEN: parse `pipeline_no`'yu `722-1021-ALS` cikardi, gercek `E120-722-1021-ALS` -- `E120-` oneki dusuyor -> eslesme sifir -> montaj_json yazilamiyor.
-- **123 teshisi (bayat parse) YANLISTI.** Gercek borc: pipeline_no onek kaybi. 289 toplu re-parse plani gecersiz.
-- Iyi ki tek dosyayla olctuk -- korlemesine 289'a dokunsak hicbir sey duzelmezdi.
+3. **Mockup turu** (KORUMA-3 — ekranda sınandı):
+   - Giriş+klasör **TEK ekran** (tersane kilitli, proje, devre adı mecburi, opsiyonel meta sona,
+     klasör sürükle-bırak, **Excel zorunlu** kuralı).
+   - Klasör yüklendi → ağaç + IFS Excel bulundu → 25 spool kabuğu + revizyon-öncesi ayıkla.
+   - Mutabakat (taslak bandı, 4 durum, onay eksik/fazla çözülmeden kilitli).
+   - Çapa işaretleme (PDF + "yüzey işlem nerede?" + etiket+metin çapası, MK-118.7, formatın tümüne).
 
-## Bu oturumun MK kayitlari
-- **MK-124.1:** Montaj eslesme borcu = pipeline_no eslesme hatasi (`E120-` onek kaybi), bayat parse DEGIL. 123 teshisi duzeltildi. Cozum wizard eslestirme fazinda.
+4. **Yeni MK:** 125.1 (format yeni+L3 kapalı → L3 zorla), 125.2 (image-PDF öğrenme/çapa yok),
+   125.3 (Excel kabuk zorunlu / eski K3 düştü / kaynak seçim ekranı yok), 125.4 (wizard 2 adım /
+   meta opsiyonel / iş emri terfide).
 
-## Calisma yontemi notlari
-- Verification-first kazandi: montaj borcunu "cozmeden" once OLCTUK, teshis yanlis cikti, 289 hatadan kurtulduk.
-- Karar gorusmesi disiplinli yurudu: her "neden" kodla/DB ile dogrulandi (113 client-loop, drenaj helper, kuyruk durumu, parse_sonuc). Hicbir mimari karar tahminle alinmadi.
-- Kapsam korundu: Cihat'in cesur vizyonu fazlara bolundu, borclar yedirilmedi, "wizard disi" isler ayrildi.
+## Önemli düzeltmeler (gerçek devre_yeni.html görseliyle)
+- Tersane = tenant, **kilitli** (dropdown değil, tek seçenek).
+- İş emri no giriş ekranında **YOK** — terfide üretilir.
+- Kaynak seçim ekranı (K1/K2/K3) **kaldırıldı** — Excel zorunlu, sistem klasörde arar.
+- Malzeme/yüzey/termin/zone/alıştırma **opsiyonel**, sayfa sonunda, girilirse dökümanlarla doğrulanır.
+- 5 adımlı wizard → **2 adım**; "Oluştur Mutabakata Geç" → kibar "Devam Et".
