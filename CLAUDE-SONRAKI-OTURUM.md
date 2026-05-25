@@ -1,39 +1,38 @@
-# CLAUDE-SONRAKI-OTURUM.md — Oturum 123 ajandası
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 124 ajandası
 
 ## Açılış ritüeli (her zaman)
-1. `git status` (temiz mi, HEAD `cb3f432` mi)
+1. `git status` (temiz mi, HEAD `8f39de8` mi)
 2. CI rengi (`kontrol.js`)
 3. son-durum.md oku
 4. Ajanda onayı
 5. Açık geri-bildirim sayısı
 
-## ÖNCELİK 1 — Band-B uçtan uca L2 doğrulaması (kapanmamış kanıt)
-Oturum 122'de band-B METİN onarımı kanıtlandı (16 assertion + 8 PDF), ama **gerçek L2 motoru NB1137 spool PDF'lerine çalıştırılMADI** (l2-parser/paket modülleri o oturumda yoktu). Yap:
-- Gerçek motorda (parse + aileBirlestir tersan_cadmatic_spool) NB1137 spool PDF'lerini çalıştır.
-- Doğrula: malzeme satırları INSERT'leniyor mu, `cap_mm`/`schedule`/`malzeme`/`agirlik` doluyor mu, L2 açılıyor mu (L3 değil).
-- MK-51.2: 5+ gerçek PDF. Temiz PDF'lerde 0 regresyon (band-A oturumundaki gibi).
-- Beklenti güçlü ama TEYİT şart (MK-121.2: "tam onarıldı diye varsayma").
+## ÖNCELİK 1 — Montaj toplu re-parse (MK-123.D çözümü)
+Kök neden 123'te mühürlendi: ~289 montaj `parse_sonuc`'u BAYAT (`montaj_var=false`), bu yüzden `montajEslestir` çağrılmamış, `montaj_json` boş, spool detayda 🔧 Montaj Resmi gelmiyor. Yeni devre (Y100-817-012) yeni kodla DOĞRU eşleşti → mekanizma sağlam, sadece eski sonuçlar bayat.
 
-## ÖNCELİK 2 — band_b_meta → _l2_meta entegrasyonu (opsiyonel)
-izometri-oku.js `metinNormalle().metin`'i zaten kullanıyor (band-B otomatik). `band_b_meta` (cakisma/ce_kurtarma/eslenmeyen) parse sonucunun `_l2_meta`'sına yazılırsa çakışma/eşlenmeyen izlenebilir olur (MK-96 denetim). Gerekirse ekle.
+**Önce TEK montajla canlı kanıt (körlemesine 289'a dokunma):**
+- Aday: `E120-722-1021-ALS.1.pdf`, kuyruk_id `4d6a3607-e98d-45e6-9837-c021f1fc8d5c`, devre `e07ba2db-47d9-49e7-9d2b-35aa0d297cfa`. O devrede 2 spool (A-001010/S01, A-001011/S02), ikisinde montaj_json boş (123'te doğrulandı).
+- Adım 1: `UPDATE dosya_isleme_kuyrugu SET durum='bekliyor' WHERE id='4d6a3607-...';` (Supabase SQL Editor — TERMINALE DEĞİL).
+- Adım 2: drenajı tetikle (devre_detay "Bekleyenleri işle" butonu, devre-özgü MK-112.3; yoksa curl endpoint).
+- Doğrula: başlangıç sorgusu tekrar → `montaj_json_dolu=true` (A-001010, A-001011)?
+- Çalışırsa: 289 bayat montajı toplu re-parse. Worker satır 126 sadece `bekliyor`/`hata` işler → durumu `bekliyor`'a çekmek gerek. `eslestirme-backfill.js` endpoint bu iş için değerlendirilebilir.
 
-## ÖNCELİK 3 — Çok-dilli parse (KARAR-122.1, yol haritası hazır)
-1. Dil-bağımsız demir: boyut/DN/PN/SCH/malzeme kodu/standart/kg + Cadmatic tablo yapısı (kolon düzeni dil-bağımsız).
-2. Kapalı çok-dilli kavram sözlüğü: PIPE←boru/rohr/pipe, ELBOW←dirsek/bogen/elbow, REDUCER, FLANGE, TEE... (~30-50 tip). Sıfır-AI determinist lookup.
-3. Başlık boilerplate'inden dil tespiti: "No Adet Açıklama"(TR) / "No Qty Description"(EN) / "Nr Menge Beschreibung"(DE).
-4. Bilinmeyen terim → satır düşme YOK; yapısal alanlar parse, açıklamayı _l2_meta'da flag + öğrenme havuzu. AI sadece batch fallback.
+Başlangıç doğrulama sorgusu (Supabase SQL Editor):
+`SELECT spool_id, spool_no, pipeline_no, (montaj_json IS NOT NULL) AS montaj_json_dolu FROM spooller WHERE devre_id = 'e07ba2db-47d9-49e7-9d2b-35aa0d297cfa' AND pipeline_no = 'E120-722-1021-ALS' AND silindi IS NOT TRUE ORDER BY spool_no;`
 
-## Band-B tablo genişletme (veri gelince)
-- `ö` ve büyük Türkçe `Ö/Ü/İ/Ğ/Ş` çıkarsa: BANT_B_TABLO'ya ekle + kelime-başı kurtarmayı Ç gibi simetrik uygula (MK-122.4 — measure-first, spekülatif ekleme yok).
+## ÖNCELİK 2 — A-NOT parse kaynak düzeltmesi
+`izometri-oku`/L2 parser boş NOT alanını `","` (tek noktalama) ile yazıyor → `spooller.imalat_not`'a çöp birikiyor. 123/B render'da gizledi ama kaynak duruyor. "Anlamlı NOT yoksa null yaz" düzeltmesi (parse motoru — risk, dikkatli). İstersen mevcut çöp kayıtları için tek seferlik temizlik UPDATE (`imalat_not` sadece-noktalama olanları null'a çek).
+
+## ÖNCELİK 3 — boy_mm int yuvarlama borcu
+Motorda `_tipCevir` 95.25→95 yuvarlıyor; fitting kesim boyunda mm-altı kayıp. Motor değişikliği riskli — ayrı, dikkatli iş.
+
+## Demo tenant hazırlığı (Cihat'ın planı, henüz değil)
+Pilot tersaneye demo kullanıcı verip kendi ~50 gemilik arşivini wizard'dan girmelerini sağlamak (Cadmatic 40+ çeşit gelir, format öğrenme pasif zenginleşir). Davet ÖNCESİ: RLS/tenant izolasyon doğrulaması + 117 kontrolü. Spekülatif örnek toplama YOK.
 
 ## Açık borçlar (birikmiş)
-- 117 (yukleyen_id null, kuyruk-isle-izometri.js:305)
-- Aşama 2 (montaj tanıma, fingerprint "Continue:")
-- MK-120.6 (L3 politikası)
-- Web-side spool status sync (devre_detay, spool_detay.html)
-- Fitting library: DIN 86087, ASME B16.9 diğer gruplar
-
-## Hatırlatmalar
-- pdf-parse **v1.1.1** zorunlu (MK-119.4), lib yolu `./node_modules/pdf-parse/lib/pdf-parse.js`.
-- Modül dönüş sözleşmesi değişmez (MK-122.3) — additive alan ekle.
-- arespipe_kopyala sonrası `git status` (MK-101.1). Doc commit'leri `[skip ci]`.
+- 117 (yukleyen_id null, kuyruk-isle-izometri.js:305) — ~11 montaj/sistem yüklemesi etkiliyor.
+- MK-120.6 (L3 politikası tasarımı, uygulama bekliyor).
+- Montaj aşama tanıma (fingerprint "Continue:", 2/7 montaj taşımaz).
+- Fitting library: DIN 86087 (saddle), ASME B16.9 diğer malzeme grupları.
+- Çok-dilli parse (KARAR-122.1) — gerçek format çeşitliliği gelene kadar ertelendi.
+- ÖNCELİK 2 (band_b_meta → _l2_meta entegrasyonu, opsiyonel) — başlanmadı.

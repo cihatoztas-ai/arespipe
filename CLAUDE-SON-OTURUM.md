@@ -1,51 +1,42 @@
-# CLAUDE-SON-OTURUM.md — Oturum 122
+# CLAUDE-SON-OTURUM.md — Oturum 123 özeti
 
-**Konu:** Cadmatic glyph BAND-B ters tablosu türetimi + canlıya alma
-**Tarih bağlamı:** Oturum 121 (band-A) sonrası, açılış HEAD `bc8278b`
-**Kapanış HEAD:** `cb3f432` (T9 test) — CI **yeşil**
+**HEAD:** `8f39de8` | **CI:** yeşil | Önceki kapanış `cb3f432` (122) → bu oturum 3 commit.
 
----
+## Yapılanlar
 
-## Yapılanlar (özet)
+### 1. ÖNCELİK 1 — Band-B uçtan uca L2 mührü (MK-51.2 kapandı)
+- 13 gerçek NB1137 glyph spool PDF, gerçek L2 motorunda (container, pdf-parse v1.1.1 + lib modülleri) koşturuldu.
+- 13/13 `glyph_band_a_onarildi` + band-B + `parser_seviye=l2`. Y200 karbon + paslanmaz boru_sch kusursuz.
+- Mühür testi: `test/asama1-l2-canli.mjs`, PDF'siz `\u`-escape anonim fixture (müşteri ID nötrlendi, KARAR-48.1). 28/28 assertion.
+- Commit: `86ecf62` (ilk mühür) → `c1a5868`/`2505612`.
 
-### 1. Band-B ters tablosu (29 karakter, MK-96 çapraz doğrulandı)
-8 glyph spool PDF (M130-803-006R/009R, E100-722-2015/2016-ALS, M110-817-005/007 S01/S02, Y200-804-414 — hepsi aynı Cadmatic-Tersan fontu) üzerinden **sıkı satır hizalama** (uzunluk ≥10, birebir band-A eşleşme) + **bootstrap** (mevcut tabloyla kalan karakterleri öğren) ile türetildi. Her kod ≥2 bağımsız PDF'te tutarlı.
+### 2. Paslanmaz fitting kapsamı — MK-123.A/B/C
+Uçtan uca test 3 fitting boşluğu yakaladı (lib/format-paketleri.js):
+- **A:** `dirsek_sch` (paslanmaz emperyal dirsek, inç+Sch).
+- **B:** `kaynak` ağırlıksız ("Alın Kaynağı - Saha", sondaki ağırlık opsiyonel + SA/A dövme sınıfı, `kategori:'islem'`).
+- **C:** `manson` satır tipi + `reduksiyon_sch` (manşon+redüksiyon sessizce düşüyordu).
+- 13/13 PDF `ham=0`. Pilot T1 composability → üst-küme mantığı (drift guard + bilinen genişleme `['dirsek_sch','reduksiyon_sch','manson']`). Pilot 64/0, mühür 28/0.
+- Commit: `c1a5868`/`2505612` (lib/format-paketleri.js + asama1-l2-canli.mjs + asama1-pilot.mjs).
 
-Tam tablo (glyph → gerçek):
-```
-Ä→b  Å→c  Ç→d*  É→e  Ñ→f  Ö→g  Ü→h
-á→i  â→k  ã→m  ä→l  å→n  ç→o*  é→p
-ê→r  ë→s  ì→u  í→t  ï→w  ò→z  ó→y
-î→v  ñ→x  ć→ü        (* = çakışmalı, aşağıda)
-ğ→ğ  ş→ş  ı→ı  σ→ı  °→°   (identity + sigma)
-```
-- `ñ→x`: boyut ayıracı ("139.7x4.5"). 19 ñ'nin 16'sı rakam-çevreli.
-- `ć→ü`: "Düz", "Redüksiyon".
-- `°→°`: "45°" açı, identity.
-- Şifre yapısı: gerçek harf +29 → font cmap → Latin-1/Türkçe glyph.
+### 3. Montaj eşleşme bug'ı — kök neden teşhisi (MK-123.D)
+- Belirti: spool detayda imalat PDF geliyor, montaj gelmiyor.
+- DB teşhisi: 1026 spool / 25 montaj_json dolu / 645 montaj PDF. Montaj tarafı (parse + montajDosyaKok + spool_listesi + anahtar) KUSURSUZ — 7/7 PDF L2, pipeline eşleşmesi tam.
+- Kök neden: parse edilmiş ~289 montajın `parse_sonuc`'u BAYAT (`montaj_var=false`, eski kod yolu, format_kodu=null) → `montajEslestir` hiç çağrılmıyor → montaj_json yazılmıyor.
+- 117 elendi (495/645 yukleyen_id dolu).
+- KANIT: yeni devre wizard'dan yüklendi → `Y100-817-012` montajı 🔧 doğru geldi. Yeni kod (`izometri-oku.js:900-941`) güncel.
+- **Çözüm sıradaki oturuma:** eski 289 montajı re-parse (kod değişikliği yok).
 
-### 2. İki çakışma (MK-122.2) — bir glyph kodun gerçek Türkçe identity'siyle aynı kodpointe düşmesi
-- **Ç (U+00C7):** çoğunluk `d` (Adet/Düz/Detay), gerçek `Ç` (Çelik). KARAR B: kelime-başı + ardı küçük harf ise `Ç` (Türkçe imla: büyük harf yalnız kelime başında; "delik" diye terim yok), aksi `d`. → "Çelik" kurtarıldı.
-- **ç (U+00E7):** çoğunluk `o` (Boru/Boyut/No), gerçek `ç` yalnız "Açıklama" başlığında. DAİMA `o` (kelime-içi ayırt edilemez; başlık kozmetik, veri değil).
-- İkisi de `band_b_meta.cakisma=true` ile işaretli (MK-96 — sessiz bozma yok).
+### 4. 123/B — boş/çöp imalat_not gizleme (MK-123.E) — CANLI
+- `spooller.imalat_not = ","` çöpü amber NOT kartında görünüyordu (A-001017 örneği).
+- `spool_detay.html` iki yer (renderNotlar 2237 + QR önizleme 2201): trim + `/[\p{L}\p{N}]/u` kontrolü → çöp/boş gizlenir.
+- Filtre test edildi: `","` boşluk `—` `...` emoji → gizle; gerçek içerik → göster. 2 inline script JS parse OK.
+- Commit: `b7da2ce`/`8f39de8` (1 file, +6/-3).
 
-### 3. Kod: lib/glyph-onar.js band-B katmanı
-- `BANT_B_TABLO` (29 kod) + `CAKISMA` (Ç/ç) + `bandBOnar(text)` (kelime-başı Ç kurtarma, ç→o, eşlenmeyen flag).
-- `metinNormalle` band-A kapısının ARKASINDA band-B uygular (sadece `glyph_band_a=true`). Dönüş: `{metin, glyph_band_a, glyph_band_b, durum, band_b_meta}`.
-- **Temiz PDF byte-byte korunuyor** (kapı: ham'da çapa varsa band-B çalışmaz → gerçek Türkçe ç/ş bozulmaz). 5 temiz PDF'te doğrulandı.
-- Commit: `a0ef2f3` (feat) + `7d1faa1` (durum fix).
+## Bu oturumun MK kayıtları
+- **MK-123.A/B/C:** paslanmaz dirsek_sch / kaynak ağırlıksız / manşon+reduksiyon_sch.
+- **MK-123.D:** montaj eşleşme kök nedeni = parse bayatlığı (montaj_var=false donmuş parse_sonuc), 117 değil. Çözüm re-parse; yeni devre kanıtladı.
+- **MK-123.E:** render savunması — boş/çöp imalat_not gizle (trim + Unicode harf/rakam). Kaynak (parse `","`) ayrı borç.
 
-### 4. Test: test/asama1-pilot.mjs T9 (16 assertion)
-Gerçek NB1137 ham fixture'lar (`\u`-escape, pure-ASCII paste-güvenli). T9.1 onarım, T9.2 Çelik kurtarma, T9.3 Adet bozulmadı + ç→o başlık, T9.4 çakışma izi, T9.5 drift guard (temiz değişmez). Commit `cb3f432`. Pilot 47→63 test.
-
-### 5. Yakalanan regresyon (MK-122.3)
-`durum` string'i `glyph_band_a_onarildi` → `glyph_onarildi` yanlış yeniden adlandırılmıştı; T8.3 + durum'a bağlı kodu kırardı. Geri alındı. **Ders:** modül dönüş sözleşmesini değiştirme; yeni sinyal additive alan olarak eklenir.
-
----
-
-## MK kararları (122)
-- **MK-122.1 — Glyph ≠ dil:** Glyph onarımı font/encoding düzeltmesi, çeviri değil. Encoding katmanı (glyph-onar.js) dil-agnostik. Dil ayrımı L2 PARSE katmanında (çok-dilli kavram sözlüğü + başlıktan dil tespiti).
-- **MK-122.2 — Band-B çakışma çözümü:** Çoğunluk/Latin + kelime-başı büyük-Türkçe kurtarma (B) + `band_b_meta` flag. Yapısal alanlar (tetikleyici, ST37, boyut, kg) her durumda sağlam.
-- **MK-122.3 — Dönüş sözleşmesi değişmez:** Modülün dönüş alan adları/değerleri (örn. `durum`) geriye-uyum sözleşmesi; yeni bilgi additive alanla eklenir, mevcut korunur.
-- **MK-122.4 — Spekülatif onarım yok:** Gözlemlenmeyen karakter için (Ö/Ü/İ/Ğ/Ş büyük Türkçe, ö) kurtarma kuralı EKLENMEZ (measure-first / MK-121.2). Format öğrenme döngüsü yakalar.
-- **KARAR-122.1 — Çok-dilli parse yol haritası:** (1) dil-bağımsız demir (boyut/DN/PN/SCH/malzeme kodu/standart/kg + Cadmatic tablo yapısı), (2) kapalı çok-dilli kavram sözlüğü (PIPE←boru/rohr/pipe...), sıfır-AI determinist lookup, (3) başlık boilerplate'inden dil tespiti, (4) bilinmeyen terim → satır düşme YOK, `_l2_meta` flag + öğrenme havuzu, AI sadece batch fallback.
+## Çalışma yöntemi notları
+- Teşhis verification-first yürüdü: kod oku → DB sorgula → gerçek PDF motorda koştur → canlı kanıt. Hiçbir adımda körlemesine düzeltme yazılmadı.
+- Montaj kök nedeni tahminden (anahtar uyuşmazlığı / 117 / normSpoolNo eksik) ölçüme (bayat parse_sonuc) indirgendi — her şüphe DB/motor ile elendi.
