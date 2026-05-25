@@ -1,13 +1,15 @@
 # Format Tanitma Kilavuzu — AresPipe Izometri Parser
 
-> **Surum:** Oturum 118 (tasarim) + 119 (Asama 1 icraat) + 120 (registry ilk GENISLEME) + 121 (glyph band-A onarimi), 25 May 2026.
+> **Surum:** Oturum 118 (tasarim) + 119 (Asama 1 icraat) + 120 (registry ilk GENISLEME) + 121 (glyph band-A onarimi) + 122 (glyph band-B tam tablo) + 123 (uctan uca L2 muhru + paslanmaz fitting kapsami), 25 May 2026.
 > 116'daki "format-tanitma-arayuzu-vizyon.md" notunun kapsamli halefi.
 > **Durum:** MIMARI KARAR + GERCEK VERI ile dogrulanmis tasarim. **Asama 1 (katman birlestirici) CANLI**
 > (119): tersan_cadmatic_spool katmanlara ayristirildi, registry ile baglandi, 8 gercek PDF'te sifir
 > regresyon. **120: IKINCI aile baglandi** (tersan_cadmatic_montaj, yapisal olarak FARKLI: montaj_modu,
 > malzeme tablosuz) — "yeni aile = bir satir" iddiasi gercek farkliyla kanitlandi; NB1137 pipeline_no
 > kirilmasi (hayalet [[PIPE:]] markeri) duzeldi; 84c12f61 emekli; Cadmatic glyph = -29 Sezar (onarilabilir)
-> tespit edildi. Detay Bolum 13. Siradaki: Asama 2 (eslestirme skoru + tanima bosulugu) VEYA glyph onarimi.
+> tespit edildi. **121: glyph band-A CANLI; 122: glyph band-B tam tablo CANLI; 123: NB1137 spool/montaj
+> uctan uca gercek L2 motorunda MUHURLENDI + paslanmaz fitting kapsami (dirsek_sch/kaynak/manson).**
+> Detay Bolum 13. Siradaki: Asama 2 (eslestirme skoru + tanima bosulugu) + montaj toplu re-parse (MK-123.D).
 > **Veri tabani:** 15 Tersan PDF (6 gemi) + 4 capraz kaynak PDF (Sefine, Yonteknik, Royal, ada/PAOR)
 > + 4 ekran goruntusu (SEFT, Navis/Kongsberg, Salt, Cadmatic-Sefine) -> 5 metinli format ailesi + 1 image.
 
@@ -83,7 +85,7 @@ Asagidan yukariya, en genelden en ozele. Cakismada ust (ozel) kazanir.
 > ifadesi cok katiydi; MK-118.1 ile celisiyordu — duzeltildi.]
 >
 > **MK-118.5 — Surum de bir facet'tir; surum kaymasi = kismi tanima yolu.** Aile "SEFT" degil "SEFT@surum-X".
-> Ofis yeni surume gecince PDF eski paketin cogu kuralina uyar (yuksek guven), birkac alan kayar (orta,
+> Ofis yeni surume gecince PDF eski paketin cogu kuraline uyar (yuksek guven), birkac alan kayar (orta,
 > isaretli), bir-iki alan uymaz (insana sor). Sistem cokmez; tanidigini doldurur, kayani sorar; insanin
 > duzeltmesi yeni surum icin ince bir override paketi dogurur. Format kendini surum surum gunceller.
 
@@ -448,6 +450,85 @@ onarilir; NB1137 montaj/izometri L3 -> L2 (sifir-AI), temiz PDF'lerde sifir regr
 AT110-P2 1 spool), regresyon 0 (11 temiz byte-byte ayni), dürüst L3 2 (NB1137 spool band-B). Deterministik:
 onar29("pmlli=k^jb")="SPOOL NAME", onar29("bNMMJUNTJMMR")="E100-817-005".
 
+### Asama 1.7 — Cadmatic glyph BAND-B onarimi (TAMAM, oturum 122)
+Band-A (-29 Sezar, buyuk harf/rakam/noktalama) 121'de cozuldu. Band-B (kucuk harf + Turkce) aritmetik
+DEGIL: gercek harf +29 -> font cmap -> Latin-1/Turkce glyph. Ters tablo gerektirir, font-kapsamli.
+NB1137 spool malzeme tablosu (kucuk-harf tetikleyici) artik L2 okunur.
+
+**Turetim yontemi (MK-96 capraz dogrulama):** 8 glyph spool PDF (M130/M110/E100/Y200, ayni
+Cadmatic-Tersan fontu) + 3 temiz spool PDF (ground-truth). SIKI SATIR HIZALAMA: temiz PDF gercek metni
+ile glyph PDF band-A-onarilmis metnini, band-A iskeletine gore (uzunluk >=10, band-A karakterleri birebir
+esit) hizala -> band-B pozisyonlarinda glyph->gercek oy ver. >=%80 pay + >=2 PDF = kesin. Kalan
+karakterler BOOTSTRAP ile (mevcut tabloyu glyph kelimeye uygula, temiz kelimeyle eslestir, eksik
+pozisyonu ogren). Token bazli yontem GURULTULU (kisa token cakismasi) — satir bazli temiz.
+
+**Tam tablo (29 karakter, glyph -> gercek):**
+
+| glyph | gercek | glyph | gercek | glyph | gercek |
+|-------|--------|-------|--------|-------|--------|
+| Ä | b | á | i | ï | w |
+| Å | c | â | k | ò | z |
+| Ç | d * | ã | m | ó | y |
+| É | e | ä | l | î | v |
+| Ñ | f | å | n | ñ | x (boyut ayiraci) |
+| Ö | g | ç | o * | ć | ü |
+| Ü | h | é | p | ğ | ğ (identity) |
+| ê | r | ë | s | ş | ş (identity) |
+| ì | u | í | t | ı | ı (identity) |
+| σ | ı (sigma) | ° | ° (identity) | | |
+
+`* = cakismali (asagida).` Ornek: "Agirlik"->Agσrlik (σ->ı), "139.7x4.5" (ñ->x), "Duz" (ć->u), "45°" (identity).
+
+**Iki cakisma (MK-122.2):** Bir kucuk harfin glyph'i, gercek bir Turkce karakterin identity-render
+degeriyle AYNI kodpointe dusuyor:
+- **Ç (U+00C7):** cogunluk `d` (Adet/Duz/Detay), gercek `Ç` (Celik). KARAR B: kelime-basi (onu sinir) +
+  ardi kucuk harf -> `Ç`, aksi -> `d`. (Turkce imla: buyuk harf yalniz kelime basinda; "delik" diye terim
+  yok.) -> "Boru Dikissiz **Celik**" kurtarildi, "delik" degil.
+- **ç (U+00E7):** cogunluk `o` (Boru/Boyut/No), gercek `ç` yalniz "Aciklama" basliginda. DAIMA `o`
+  (kelime-ici ayirt edilemez; baslik kozmetik, veri degil). -> "Aciklama" basligi "Aoiklama" gorunur
+  (parse edilen alan DEGIL).
+
+Ikisi de `band_b_meta.cakisma=true` ile isaretli (MK-96 — sessiz bozma yok). Yapisal alanlar (tetikleyici
+Boru, ST37/316L, boyut, kg) her durumda saglam.
+
+**Kod (lib/glyph-onar.js):** `BANT_B_TABLO` (29) + `CAKISMA` + `bandBOnar(text)`. `metinNormalle` band-A
+kapisinin ARKASINDA cagirir (sadece `glyph_band_a=true`). Temiz PDF'lerde band-B CALISMAZ -> gercek Turkce
+ç/ş korunur (kapi, MK-121.1). Donus alanlari: `glyph_band_b`, `band_b_meta:{cakisma, ce_kurtarma, eslenmeyen}`.
+
+**Gizli sinir (MK-122.4):** `ö` ve buyuk Turkce `Ö/Ü/İ/Ğ/Ş` bu 8 PDF'te gozlemlenmedi -> tabloya
+EKLENMEDI (measure-first). Ç ile ayni yapida gizli cakismalari olabilir; ciktiklarinda simetrik kurtarma
+ile eklenir, format ogrenme dongusu yakalar.
+
+**Glyph != dil (MK-122.1):** Bu katman font/encoding duzeltmesi, ceviri DEGIL. Ters tablo kaynak metni
+hangi dilde yazildiysa o dilde geri verir. Dil ayrimi L2 PARSE katmaninda (cok-dilli kavram sozlugu +
+basliktan dil tespiti — KARAR-122.1).
+
+### Asama 1.8 — Uctan uca L2 muhru + paslanmaz fitting kapsami (TAMAM, oturum 123)
+Band-B'den sonra gercek L2 MOTORU (metinNormalle -> aileBirlestir('tersan_cadmatic_spool') -> parse) 13
+gercek NB1137 glyph spool PDF'ine kosturuldu. 121-122'de METIN onarimi kanitlanmisti; bu motorun
+gercekten L2 urettigi (L3 degil) HENUZ teyit edilmemisti (MK-51.2 son adim).
+
+**Ne kanitlandi:**
+- 13/13 PDF: `durum=glyph_band_a_onarildi`, band-B calisti, **hepsi `parser_seviye=l2`** (L3 DEGIL).
+- Y200 karbon kusursuz (dis_cap=139.7, et=4.5, ST37, 38.283kg). Paslanmaz boru_sch dogru (2", 10S, 316L).
+- Muhur testi: `test/asama1-l2-canli.mjs`, PDF'siz `\u`-escape anonim fixture (musteri pipe/proje ID'leri
+  KARAR-48.1 geregi notrlendi -> DEMO-000-00X/B0000). 28 assertion, 28/28.
+
+**Uctan uca testin yakaladigi 3 fitting kapsam bosulugu** (glyph/L2 hatasi DEGIL — paslanmaz fitting
+kapsami eksikligiydi; lib/format-paketleri.js):
+- **MK-123.A:** paslanmaz dirsek inc+Sch -> `dirsek_sch` (emperyal; tetik `Dirsek.*"\s*Sch`; spesifiklik 10
+  -> metrik CuNi dirseginI golgelemez).
+- **MK-123.B:** "Alin Kaynagi - Saha" -> `kaynak` pattern sondaki agirlik OPSIYONEL + `SA/A\d+` dovme sinifi.
+  Agirliksiz kaynak `kategori:'islem'` etiketiyle kalir (MK-122/123 "hepsini tut").
+- **MK-123.C:** Manson + Reduksiyon -> `manson` satir tipi + `reduksiyon_sch`. Onceden tetikleyici yoktu,
+  satir SESSIZCE dusuyordu (KARAR-122.1 "sessiz kayip yok" ihlali) -> giderildi.
+- 13/13 PDF `ham=0`. Pilot T1 composability -> UST-KUME mantigi (paketler e1fb879d monolitinin ust-kumesi,
+  MK-119.1 kasitli genisleme): setEsit yerine "eski tipler korundu (drift guard) + fazlalik yalniz bilinen
+  genisleme ['dirsek_sch','reduksiyon_sch','manson']". Pilot 64/0.
+
+**boy_mm int yuvarlama (kucuk borc):** motorda `_tipCevir` 95.25->95 yuvarliyor; fitting kesim boyunda
+mm-alti kayip. Motor degismedi (risk). Ayri borc.
+
 ### Asama 2 — Eslestirme skoru + esik (kod) [SIRADAKI]
 fingerprintSkor'u paket duzeyine cikar; en yakin aile onerisi + ikincil aday + esik (Bolum 6).
 **Somut motivasyon (120):** 39a2c81b fingerprint'i baslik_regex:"Continue:". Ama 2/7 montaj (G600-813,
@@ -479,11 +560,10 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **(120 COZULDU) 84c12f61 baglama:** aday DEGILDI — olu/yinelenmis satir. fingerprint SPOOL imzasi ister
   (montaj PDFinde yok), parser_kural spool kopyasi. Gercek montaj = 39a2c81b, registry'ye baglandi.
   84c12f61 aktif=false (emekli). (MK-120.1)
-- **(121 BAND-A TAMAM; BAND-B SIRADAKI) Cadmatic glyph onarimi:** NB1137 export'lari deterministik -29
+- **(121 BAND-A TAMAM; 122 BAND-B TAMAM) Cadmatic glyph onarimi:** NB1137 export'lari deterministik -29
   Sezar (band A: buyuk harf/rakam). 121'de `lib/glyph-onar.js` ile KAPILI onarildi -> NB1137 montaj L2,
-  sifir regresyon (MK-121.1/4). KALAN: band B (kucuk harf/Turkce) font cmap ters tablosu gerektirir
-  (aritmetik degil, MK-121.2); NB1137 spool malzeme tablosu hala L3. Band-B kendi oturumu (tam ~28-karakter
-  haritasi, 18 cikti / 10 Turkce-sembol eksik: Ñ Å Ü Ç ş ğ ñ ć ° + sigma->'i'; MK-96 capraz dogrulama).
+  sifir regresyon (MK-121.1/4). 122'de band B (kucuk harf/Turkce) 29-karakter ters tablo ile cozuldu
+  (MK-122.x); NB1137 spool malzeme tablosu artik L2 okunur. Detay Bolum 13 / Asama 1.7.
 - **(120 KESKINLESTI) Glyph TESPITI:** Latin-orandan capa-token'a cevrildi (MK-120.3 -> 121'de uygulandi):
   capa ham VEYA -29-onarilmis metinde mi. Capalar band-A kurtarilabilir TUMU-BUYUK token (MK-121.3).
 - **(120 YENI) Montaj tanima bosulugu:** 39a2c81b fingerprint'i "Continue:" ister; 2/7 montaj bunu tasimaz
@@ -492,6 +572,23 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
   L3 davranisi; PAOR Excel'liyse L3 gereksiz/onayli. UYGULAMA ONCESI: (a) kapsam karari (PAOR'da sadece
   malzeme mi geometri de mi), (b) izometri-oku.js fallback blogu l3_fallback_yapilir'i okuyor mu teyidi,
   (c) varsayilan politika tablosu. 117 borcuyla ayni aile (sessiz-bosluk onleme). (MK-120.6)
+- **(123 BULGU, cozum bekliyor) Montaj eslesme = PARSE BAYATLIGI, format hatasi DEGIL (MK-123.D):**
+  Spool detayda imalat PDF gelir, montaj gelmez. Imalat `pipeline_no` ile dogrudan eslesir; montaj
+  `spooller.montaj_json.kaynak_dosya` uzerinden (tek yazici: kuyruk-isle-izometri.js:702, `montajEslestir`).
+  1026 spool / 25 montaj_json dolu / 645 montaj PDF. Montaj tarafi KUSURSUZ (7/7 PDF gercek motorda L2,
+  montajDosyaKok dogru kok, spool_listesi dolu, anahtar temiz; pipeline eslesmesi tam). ASIL SEBEP:
+  ~289 montajin `parse_sonuc`'u BAYAT — `format_kodu=null`, `seviye=null`, `montaj_var=false`, montaj PDF
+  SPOOL gibi (aile registry + glyph gelmeden once) parse edilmis. `montaj_var=false` -> `montajEslestir`
+  hic cagrilmiyor -> montaj_json yazilmiyor. 117 DEGIL (495/645 yukleyen_id dolu). KANIT: yeni devre
+  wizard'dan yuklendi -> Y100-817-012 montaji DOGRU geldi; canli kod (izometri-oku.js:900-941) guncel.
+  COZUM: eski ~289 bayat montaji RE-PARSE (kod degisikligi yok; worker satir 126 yalniz bekliyor/hata
+  isler -> kuyruk durumu bekliyor'a cekilip devre-ozgu drenaj). Genel ders: **parse_sonuc bayatlanir;
+  registry/glyph eklendiginde eski sonuclar otomatik guncellenmez.** Asama 5 (kuyruk yeniden degerlendirme)
+  bunu sistematik cozecek; su an manuel re-parse.
+- **(123 BORC) Bos NOT alani parse'ta "," yazilir:** L2 parser bos NOT alanini tek noktalama (`,`) ile
+  doldurup `spooller.imalat_not`'a yaziyor. spool_detay.html 123/B'de render savunmasi ekledi (trim +
+  `/[\p{L}\p{N}]/u` -> sadece-noktalama/bos gizlenir, MK-123.E) ama KAYNAK duruyor — parse "anlamli NOT
+  yoksa null" yazmali. Mevcut cop kayitlar icin tek-seferlik temizlik UPDATE opsiyonu.
 
 ---
 
@@ -520,6 +617,14 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **MK-121.2** — Glyph IKI BANTLI. Band A (buyuk/rakam): glyph=gercek+29, aritmetik -29 TAM cozer (evrensel). Band B (kucuk harf/Turkce): pdf-parse glyph kodlarini font cmap'iyle Latin-1'e (0xC0+) cevirmis -> aritmetik DEGIL, font-ailesine ozel ters TABLO. "Tam onarildi" diye VARSAYMA; alan alan olc (SONRAKI uyarisi dogrulandi).
 - **MK-121.3** — Kapi capalari band-A kurtarilabilir TUMU-BUYUK token olmali (SPOOL NAME / PART NUMBER / WELDING NUMBER / CUT NUMBER). "Drawing symbols" / "Malzeme Listesi" / "Continue:" kucuk harf tasidigi icin -29 sonrasi gorunmez -> capa OLAMAZ.
 - **MK-121.4** — Glyph onarimi metin-cikarim sinirinda (Katman 0, aile-bagimsiz) ve fingerprint skorlama ONCESI olmali. Yalniz parse'i duzeltmek yetmez; icerik-tabanli tanima (baslik_regex/tablo_baslik_regex) da onarilmis metinle calismali -> kaymali ama dosya-adi-uymayan PDF'in sessiz yanlis-yonlendirmesi kapanir.
+- **MK-122.1** — Glyph != dil. Band-B ters tablosu font/encoding duzeltmesidir, ceviri DEGIL; kaynak hangi dildeyse o dilde geri verir. Dil ayrimi L2 parse katmaninda (cok-dilli kavram sozlugu + basliktan dil tespiti, KARAR-122.1).
+- **MK-122.2** — Band-B'de iki cakisma: bir kucuk harf glyph'i, gercek bir Turkce karakterin identity-render degeriyle ayni kodpointe duser. Ç (U+00C7): cogunluk `d`, kelime-basi+ardi-kucuk -> `Ç` (Celik kurtarma). ç (U+00E7): daima `o` (Aciklama basligi kozmetik). `band_b_meta.cakisma=true` ile isaretli (MK-96: sessiz bozma yok). Yapisal alanlar her durumda saglam.
+- **MK-122.4** — Band-B gizli sinir: `ö` + buyuk Turkce `Ö/Ü/İ/Ğ/Ş` 8 PDF'te gozlemlenmedi -> tabloya EKLENMEDI (measure-first). Ç gibi gizli cakismalari olabilir; ciktiklarinda simetrik kurtarma + format ogrenme dongusu ekler. Spekulatif ekleme YOK.
+- **MK-123.A** — Paslanmaz emperyal dirsek (inc+Sch) ayri satir tipi `dirsek_sch`; tetik `Dirsek.*"\s*Sch`, spesifiklik 10 -> metrik CuNi dirseginI golgelemez.
+- **MK-123.B** — `kaynak` pattern sondaki agirligi OPSIYONEL yapar + `SA/A\d+` dovme sinifi tanir. Agirliksiz kaynak ("Alin Kaynagi - Saha") `kategori:'islem'` ile korunur (atilmaz).
+- **MK-123.C** — `manson` satir tipi + `reduksiyon_sch` eklendi; onceden tetikleyici yoktu, satir sessizce dusuyordu (KARAR-122.1 ihlali). Sessiz kayip giderildi; "hepsini tut".
+- **MK-123.D** — Montaj eslesme bug'i = PARSE BAYATLIGI, format/anahtar/117 hatasi DEGIL. `parse_sonuc` registry/glyph gelmeden once uretildiyse `montaj_var=false` ile donar -> `montajEslestir` cagrilmaz -> montaj_json bos. Genel ders: parse_sonuc bayatlanir; yeni motor eski sonuclari otomatik guncellemez. Teshis veriyle (montaj tarafi+pipeline kusursuz, parse_sonuc bayat) muhurlendi; cozum re-parse (kod degisikligi yok). Yeni devre (Y100-817-012) yeni kodla dogru eslesti = mekanizma kaniti.
+- **MK-123.E** — Render savunmasi: gosterimden once cop/bos veri ele (imalat_not `,` -> trim + Unicode harf/rakam kontrolu, gizle). Belirti kapatmasi; KAYNAK (parse `,` yazmasi) ayri borc. Savunma kullaniciyi hangi cop gelirse gelsin korur ama kaynak da duzeltilmeli.
 
 > Onceki ilgili kararlar: MK-50.2 (image-PDF L2 yapamaz), MK-50.3 (3+ ornek olmadan kural yazma),
 > MK-51.2 (regex 5+ gercek ornekle test), MK-117.1 (alistirma kelimeleri merkezi/evrensel),
