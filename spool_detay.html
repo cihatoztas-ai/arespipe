@@ -2198,7 +2198,7 @@ function renderQrOnizleme(){
     html+='<div class="qr-satir" style="background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.22);">🏆 <div><div style="font-size:14px;color:var(--warn);font-weight:700;">'+tv('sp_qr_cert','SERTİFİKALI MALZEME')+': '+sertli.length+' '+tv('sp_items_unit','kalem')+'</div><div style="font-size:14px;color:var(--txm);margin-top:2px;">'+kodlar+'</div></div></div>';
   }
   // 117: Imalat NOT'u (cizimden) QR'da personele goster -- kullanici notlarinin ustunde.
-  if(SP&&SP.imalatNot) html+='<div class="qr-satir" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);">📄 <div style="font-size:14px;color:var(--tx);font-weight:600;">'+esc(SP.imalatNot)+'</div></div>';
+  if(SP&&SP.imalatNot){var _qIm=String(SP.imalatNot).trim();if(_qIm && /[\p{L}\p{N}]/u.test(_qIm)) html+='<div class="qr-satir" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);">📄 <div style="font-size:14px;color:var(--tx);font-weight:600;">'+esc(_qIm)+'</div></div>';}
   NOTLAR.forEach(function(n){html+='<div class="qr-satir" style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.18);">📌 <div style="font-size:14px;color:var(--tx);">'+esc(n.metin)+'</div></div>';});
   if(!html) html='<div style="text-align:center;padding:14px 0;color:var(--txd);font-size:14px;">'+tv('sp_qr_no_alerts','Gösterilecek uyarı yok')+'</div>';
   el.innerHTML=html;
@@ -2232,9 +2232,12 @@ function renderNotlar(){
   // 117: Imalat NOT'u (cizimden, salt-okunur) -- kullanici notlarinin USTUNDE, ayri stil (amber).
   //   Kaynak spooller.imalat_not (PDF NOT alani). Personel silemez/duzenleyemez.
   var imalatHtml='';
-  if(SP&&SP.imalatNot){
+  // 123: bos/cop imalat_not gizle. Anlamli icerik = trim sonrasi en az bir harf/rakam.
+  //   Parse bazen bos NOT alanini "," gibi tek noktalama ile dolduruyor (kaynak ayri borc: A).
+  var _imNot=(SP&&SP.imalatNot)?String(SP.imalatNot).trim():'';
+  if(_imNot && /[\p{L}\p{N}]/u.test(_imNot)){
     imalatHtml='<div class="not-item" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.30);">'
-      +'<div class="not-text">📄 '+esc(SP.imalatNot)+'</div>'
+      +'<div class="not-text">📄 '+esc(_imNot)+'</div>'
       +'<div class="not-meta">'+tv('sp_imalat_not_kaynak','Çizimden (imalat resmi) — salt okunur')+'</div></div>';
   }
   var kullaniciHtml=NOTLAR.length?NOTLAR.map(function(n){
