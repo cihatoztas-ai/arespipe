@@ -1,42 +1,34 @@
-# CLAUDE-SON-OTURUM.md — Oturum 123 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 124 ozeti
 
-**HEAD:** `8f39de8` | **CI:** yeşil | Önceki kapanış `cb3f432` (122) → bu oturum 3 commit.
+**HEAD:** `4aafe23` | **CI:** yesil | Tur: KARAR + TESHIS oturumu (kod yazilmadi, 1 doc commit)
 
-## Yapılanlar
+## Bu oturum neydi
+Cihat acti: "kaldigimiz yerden devam" (montaj re-parse). Ama montaj kanit isi yarida kalip Cihat buyuk bir wizard vizyonu actı (11 maddelik kullanim senaryosu). Oturum bir KARAR GORUSMESINE donustu: wizard'in eksik parcalari netlestirildi, final kararlar alindi, kalici belgeye dokuldu. Sonunda yarim montaj kaniti kapatildi (teshisle, cozumle degil).
 
-### 1. ÖNCELİK 1 — Band-B uçtan uca L2 mührü (MK-51.2 kapandı)
-- 13 gerçek NB1137 glyph spool PDF, gerçek L2 motorunda (container, pdf-parse v1.1.1 + lib modülleri) koşturuldu.
-- 13/13 `glyph_band_a_onarildi` + band-B + `parser_seviye=l2`. Y200 karbon + paslanmaz boru_sch kusursuz.
-- Mühür testi: `test/asama1-l2-canli.mjs`, PDF'siz `\u`-escape anonim fixture (müşteri ID nötrlendi, KARAR-48.1). 28/28 assertion.
-- Commit: `86ecf62` (ilk mühür) → `c1a5868`/`2505612`.
+## Yapilanlar
 
-### 2. Paslanmaz fitting kapsamı — MK-123.A/B/C
-Uçtan uca test 3 fitting boşluğu yakaladı (lib/format-paketleri.js):
-- **A:** `dirsek_sch` (paslanmaz emperyal dirsek, inç+Sch).
-- **B:** `kaynak` ağırlıksız ("Alın Kaynağı - Saha", sondaki ağırlık opsiyonel + SA/A dövme sınıfı, `kategori:'islem'`).
-- **C:** `manson` satır tipi + `reduksiyon_sch` (manşon+redüksiyon sessizce düşüyordu).
-- 13/13 PDF `ham=0`. Pilot T1 composability → üst-küme mantığı (drift guard + bilinen genişleme `['dirsek_sch','reduksiyon_sch','manson']`). Pilot 64/0, mühür 28/0.
-- Commit: `c1a5868`/`2505612` (lib/format-paketleri.js + asama1-l2-canli.mjs + asama1-pilot.mjs).
+### 1. Devre Wizard vizyon v3 — final kararlar (docs/DEVRE-WIZARD-VIZYON-v3.md, 337 satir)
+Uzun gorusme. Eksik parcalar tek tek kapatildi:
+- **Arka plan modeli:** 113/A client-loop kodu okundu, lock'suz/atomik dogrulandi -> sekme kapanirsa yarim is `bekliyor`'da kalir, hata'ya DUSMEZ. "Bekleyenleri isle"ye neden biz basiyoruz: tur sonu retry yok (helper satir ~188) + otomatik tetik yok. Karar: A-oto (otomatik tetik + retry) simdi; Yol 3 (server worker + Cron) final hedef ESIGE bagli. Asil kaldirac B degil L2 ogrenme (format ogrenilince 150 spool saniyeler surer).
+- **Taslak yeri:** Cihat'in sezgisi dogru -- taslak gercek devre degil, spool ID/QR onaya kadar uretilmez. Teknik dogru: mevcut dokuman+kuyruk katmanindan turet, yeni staging tablosu yok, onayda `devre_yeni` mantigini CAGIR (kopyalama).
+- **Mutabakat:** Excel 20 der PDF 21/18 cikarsa -> kabuk otorite, 4 durum, "fazla" sorar. Ogrenme: ilk L3 -> kural taslagi -> onay -> kalan L2. Spool-ozel vs format-kurali duzeltme ayrimi. Tenant-ozel -> cift dogrulama -> genel terfi (KARAR-48.1).
+- **L3 kapatma:** PAOR ornegi (resim izometri + Excel yeterli -> devrede L3 kapali).
+- Arsiv tarandi: SPOOL-AI-VIZYON v2.1, VIZYON-VE-MODULER-MIMARI (Vizyon 1/2/3/8), 97/99/106/113/48/120 kararlari -- hepsi v3 ile hizali, celiski yok. Fuzyon motoru (KARAR-97.x), Yaklasim Y, foto-AI altyapisi (oturum 100) baglandi.
+- 3 koruma banti: yeniden-yazma yok / borc yedirme yok / mockup'ta sinanacak. Bozulma risk haritasi (3 risk, hicbiri cikmaz degil). Borc x faz tablosu.
+- Cihat'in eklenen butun-program haritasi (kullanicilar/yetki, arsivleme, yarim birakma, QR foto analiz) "wizard disi" diye ayrildi -- kapsam sismesin.
 
-### 3. Montaj eşleşme bug'ı — kök neden teşhisi (MK-123.D)
-- Belirti: spool detayda imalat PDF geliyor, montaj gelmiyor.
-- DB teşhisi: 1026 spool / 25 montaj_json dolu / 645 montaj PDF. Montaj tarafı (parse + montajDosyaKok + spool_listesi + anahtar) KUSURSUZ — 7/7 PDF L2, pipeline eşleşmesi tam.
-- Kök neden: parse edilmiş ~289 montajın `parse_sonuc`'u BAYAT (`montaj_var=false`, eski kod yolu, format_kodu=null) → `montajEslestir` hiç çağrılmıyor → montaj_json yazılmıyor.
-- 117 elendi (495/645 yukleyen_id dolu).
-- KANIT: yeni devre wizard'dan yüklendi → `Y100-817-012` montajı 🔧 doğru geldi. Yeni kod (`izometri-oku.js:900-941`) güncel.
-- **Çözüm sıradaki oturuma:** eski 289 montajı re-parse (kod değişikliği yok).
+### 2. MK-124.1 — montaj kaniti = TESHIS (cozum degil)
+Tek-montaj test: `E120-722-1021-ALS.1.pdf` re-parse edildi.
+- Parse calisti (`islenen:1, manuel:1, hata:0`) ama `montaj_json` YINE dolmadi.
+- `parse_sonuc`: dosya 2 spool okundu, `_eslesme.sebep="dosya_adi_pipeline_yok"`, `eslesen:0`.
+- KOK NEDEN: parse `pipeline_no`'yu `722-1021-ALS` cikardi, gercek `E120-722-1021-ALS` -- `E120-` oneki dusuyor -> eslesme sifir -> montaj_json yazilamiyor.
+- **123 teshisi (bayat parse) YANLISTI.** Gercek borc: pipeline_no onek kaybi. 289 toplu re-parse plani gecersiz.
+- Iyi ki tek dosyayla olctuk -- korlemesine 289'a dokunsak hicbir sey duzelmezdi.
 
-### 4. 123/B — boş/çöp imalat_not gizleme (MK-123.E) — CANLI
-- `spooller.imalat_not = ","` çöpü amber NOT kartında görünüyordu (A-001017 örneği).
-- `spool_detay.html` iki yer (renderNotlar 2237 + QR önizleme 2201): trim + `/[\p{L}\p{N}]/u` kontrolü → çöp/boş gizlenir.
-- Filtre test edildi: `","` boşluk `—` `...` emoji → gizle; gerçek içerik → göster. 2 inline script JS parse OK.
-- Commit: `b7da2ce`/`8f39de8` (1 file, +6/-3).
+## Bu oturumun MK kayitlari
+- **MK-124.1:** Montaj eslesme borcu = pipeline_no eslesme hatasi (`E120-` onek kaybi), bayat parse DEGIL. 123 teshisi duzeltildi. Cozum wizard eslestirme fazinda.
 
-## Bu oturumun MK kayıtları
-- **MK-123.A/B/C:** paslanmaz dirsek_sch / kaynak ağırlıksız / manşon+reduksiyon_sch.
-- **MK-123.D:** montaj eşleşme kök nedeni = parse bayatlığı (montaj_var=false donmuş parse_sonuc), 117 değil. Çözüm re-parse; yeni devre kanıtladı.
-- **MK-123.E:** render savunması — boş/çöp imalat_not gizle (trim + Unicode harf/rakam). Kaynak (parse `","`) ayrı borç.
-
-## Çalışma yöntemi notları
-- Teşhis verification-first yürüdü: kod oku → DB sorgula → gerçek PDF motorda koştur → canlı kanıt. Hiçbir adımda körlemesine düzeltme yazılmadı.
-- Montaj kök nedeni tahminden (anahtar uyuşmazlığı / 117 / normSpoolNo eksik) ölçüme (bayat parse_sonuc) indirgendi — her şüphe DB/motor ile elendi.
+## Calisma yontemi notlari
+- Verification-first kazandi: montaj borcunu "cozmeden" once OLCTUK, teshis yanlis cikti, 289 hatadan kurtulduk.
+- Karar gorusmesi disiplinli yurudu: her "neden" kodla/DB ile dogrulandi (113 client-loop, drenaj helper, kuyruk durumu, parse_sonuc). Hicbir mimari karar tahminle alinmadi.
+- Kapsam korundu: Cihat'in cesur vizyonu fazlara bolundu, borclar yedirilmedi, "wizard disi" isler ayrildi.
