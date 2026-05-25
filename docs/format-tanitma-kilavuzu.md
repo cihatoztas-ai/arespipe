@@ -1,10 +1,13 @@
 # Format Tanitma Kilavuzu — AresPipe Izometri Parser
 
-> **Surum:** Oturum 118 (tasarim, 24 May 2026) + Oturum 119 (Asama 1 icraat, 25 May 2026).
+> **Surum:** Oturum 118 (tasarim) + 119 (Asama 1 icraat) + 120 (registry ilk GENISLEME), 25 May 2026.
 > 116'daki "format-tanitma-arayuzu-vizyon.md" notunun kapsamli halefi.
 > **Durum:** MIMARI KARAR + GERCEK VERI ile dogrulanmis tasarim. **Asama 1 (katman birlestirici) CANLI**
-> (oturum 119): tersan_cadmatic_spool katmanlara ayristirildi, registry ile baglandi, 8 gercek PDF'te
-> sifir regresyon. Detay Bolum 13. Siradaki: Asama 2 (eslestirme skoru).
+> (119): tersan_cadmatic_spool katmanlara ayristirildi, registry ile baglandi, 8 gercek PDF'te sifir
+> regresyon. **120: IKINCI aile baglandi** (tersan_cadmatic_montaj, yapisal olarak FARKLI: montaj_modu,
+> malzeme tablosuz) — "yeni aile = bir satir" iddiasi gercek farkliyla kanitlandi; NB1137 pipeline_no
+> kirilmasi (hayalet [[PIPE:]] markeri) duzeldi; 84c12f61 emekli; Cadmatic glyph = -29 Sezar (onarilabilir)
+> tespit edildi. Detay Bolum 13. Siradaki: Asama 2 (eslestirme skoru + tanima bosulugu) VEYA glyph onarimi.
 > **Veri tabani:** 15 Tersan PDF (6 gemi) + 4 capraz kaynak PDF (Sefine, Yonteknik, Royal, ada/PAOR)
 > + 4 ekran goruntusu (SEFT, Navis/Kongsberg, Salt, Cadmatic-Sefine) -> 5 metinli format ailesi + 1 image.
 
@@ -341,8 +344,8 @@ Arayuz parser URETMEZ, VERI TOPLAR. Cogu artik gorsel isaretlemeyle cevaplanir; 
   `aileBirlestir(format_kodu, text)`.
 - **AILE_KAYIT (registry):** `format_kodu -> paketler`. parserKuralIle bunu sorar: katalog-yonetimliyse
   paketlerden etkin kural, degilse DB parser_kural aynen. **Ozel-durum (`if format_id`) YOK** — yeni aile
-  = bir satir. Su an bagli: yalniz `tersan_cadmatic_spool`. Aday (bagli degil): `tersan_cadmatic_isometry`.
-  Asla: montaj + paor.
+  = bir satir. (120 GUNCELLEME: bagli = `tersan_cadmatic_spool` + `tersan_cadmatic_montaj`. Emekli:
+  `tersan_cadmatic_isometry` (84c12f61, aktif=false). Asla: paor.)
 - `api/izometri-oku.js:877` — tek nokta degisim: `parse(text, aileBirlestir(format_kodu,text) || parser_kural)`.
 - `test/asama1-pilot.mjs` — 22/22 yesil (composability + specificity + wiring + facet + registry).
 
@@ -350,14 +353,41 @@ Arayuz parser URETMEZ, VERI TOPLAR. Cogu artik gorsel isaretlemeyle cevaplanir; 
 Temiz metinli 6/8'de combiner ≡ monolit, **SIFIR REGRESYON**; G400-St.St'te combiner fazladan
 nps_inc/schedule_kod cikardi. MK-51.2 karsilandi.
 
-**NB1137 NOTU (kritik, MK-119.3):** NB1137'nin 2 imalat spool PDF'i L2'de FAIL — ama sebep format
-kurali DEGIL, **Cadmatic glyph kodlamasi** (pdf-parse v1.1.1 gomulu fontu yanlis Unicode'a ceviriyor:
-`aê~ïáåÖ` = "Drawing symbols"). Metin okunamadigi icin hicbir regex eslesmez -> L3'e duser (dogru,
-zaten calisan davranis). Facet override BUNU COZMEZ; sadece L3 (gorselden okuma) cozer. Bu, Bolum 5.1'deki
-"NB1137 kirilmasi"ndan (pipeline_no G-regex, MONTAJ formatinda, HALA ACIK) AYRI bir sorundur.
+**NB1137 NOTU (kritik, MK-119.3 + MK-120.3):** NB1137'nin imalat spool + montaj izometri PDF'leri L2'de
+FAIL — ama sebep format kurali DEGIL, **Cadmatic glyph kodlamasi**. 120'de olculdu: bu kodlama
+**deterministik -29 Sezar kaymasi** (gomulu font her ASCII karakteri -29 kaydiriyor: `pmlli=k^jb`+29 =
+"SPOOL NAME", `bNMMJUNTJMMR`+29 = "E100-817-005"). Cozulunce metin TEMIZ (pipe_no/tarih/sablon dogru).
+Su an L3'e duser (dogru, guvenli). Onarim (basit -29 geri kaydirma) L2'yi acabilir, sifir-AI. AYRICA
+glyph TESPITI Latin-oran ile YAPILAMAZ: kaymali metin yuksek Latin orani verir (harfler yanlis) ->
+yanlis-negatif. Dogru dedektor: beklenen capa token ham VEYA -29-kaymali metinde geciyor mu. Bu, Bolum
+5.1'deki "NB1137 kirilmasi"ndan (pipeline_no, montaj formati — 120'de DUZELDI) AYRI bir sorundur.
+
+### Asama 1.5 — Registry ilk GENISLEME: ikinci aile (TAMAM, oturum 120)
+Asama 1'in registry iddiasi ("yeni aile = bir satir, izometri-oku.js'e dokunmadan") ikinci aileyle
+KANITLANDI. Onemli: planlanan aday 84c12f61 degil 39a2c81b cikti (MK-120.1).
+
+**Ne yapildi:**
+- `MONTAJ_TERSAN` paketi (Katman 1) — 39a2c81b DB parser_kural'i paket sekline tasindi: montaj_modu,
+  liste_alanlar (guverte/spool_listesi/continue_baglanti), montaj_alistirma_kurali (-ALS), min_spool:1,
+  malzeme tablosu YOK. Yapisal olarak A1'den FARKLI -> "yeni aile = bir satir" A1 kopyasiyla degil
+  gercek farkliyla dogrulandi (MK-119.1'in guclu kaniti).
+- AILE_KAYIT'a `tersan_cadmatic_montaj: [EVRENSEL, MONTAJ_TERSAN]`. izometri-oku.js / l2-parser.js /
+  katman-birlestirici.js DEGISMEDI.
+- **+ 120 FIX (NB1137 pipeline_no kirilmasi, Bolum 5.1 acik borcu):** eski pipe_no regex'i hayalet
+  `[[PIPE:]]` markerini ariyordu; markeri ureten kod hic yoktu -> pipe_no HEP null -> -ALS alistirma
+  sinyali oluydu. Gercek SPOOL NAME satiri regex'iyle degistirildi ([A-Z]{1,3}\d{2,3} onek). MK-120.2.
+- 84c12f61 (tersan_cadmatic_isometry) aktif=false: olu/yinelenmis satir (fingerprint SPOOL imzasi ister
+  ama montaj PDFinde Malzeme Listesi+Cut&Bending YOK -> hic eslesmez; parser_kural spool kopyasi).
+
+**Kanit (gercek veri, pdf-parse v1.1.1):** 7 montaj PDF (6 gemi). Temiz metinli 5/5'te pipe_no DOLDU
+(onceden hep null); M100'de -ALS -> alistirma=PARCA (sinyal canlandi). Spool regresyon: 8/8 byte-byte
+ayni. Pilot 30/30 (T7 montaj drift guard eklendi). NB1137'nin 2 montaji glyph -29 -> L3 (MK-120.3).
 
 ### Asama 2 — Eslestirme skoru + esik (kod) [SIRADAKI]
 fingerprintSkor'u paket duzeyine cikar; en yakin aile onerisi + ikincil aday + esik (Bolum 6).
+**Somut motivasyon (120):** 39a2c81b fingerprint'i baslik_regex:"Continue:". Ama 2/7 montaj (G600-813,
+E100-817) "Continue:" tasimadigi icin bu aile olarak TANINMAYABILIR (parse'lari dogru ama route edilmez).
+Parse != tanima; skor + esik + ikincil aday bunu cozer.
 
 ### Asama 3 — Facet kapsama raporu (UI, super admin)
 parse_sonuc / dogrulama_uyarilari'ni okuyup alan-kapsama + facet kumeleri gosterir (eski "format envanter" borcu).
@@ -381,11 +411,15 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - Capa esleme (koordinat->metin) icin pdftotext konumlu cikti + render koordinat hizalamasi.
 - **(119) Canli PDF cikarici PINLI:** `pdf-parse v1.1.1`, `pdf-parse/lib/pdf-parse.js` yolu (v2 Vercel'de
   patlar + farkli metin uretir). Parite/test bu surumle yapilir. (MK-119.4)
-- **(119) 84c12f61 (tersan_cadmatic_isometry) baglama adayi:** malzeme tablosu aktif, muhtemelen A1 ailesi
-  ama "Montaj Resmi" gerilim formati. Kendi parser_kural'i + 1-2 gercek PDF dogrulaninca AILE_KAYIT'a
-  bir satir (ayni paketlerle ya da kendi facet override'iyla).
-- **(119) Cadmatic glyph onarimi:** bazi Cadmatic export'lari (or. NB1137 spool) v1.1.1'de bozuk glyph
-  -> L2 imkansiz -> L3. Glyph haritasi onarimi (ToUnicode) bir gun L2'yi acabilir; simdilik L3 dogru cozum.
+- **(120 COZULDU) 84c12f61 baglama:** aday DEGILDI — olu/yinelenmis satir. fingerprint SPOOL imzasi ister
+  (montaj PDFinde yok), parser_kural spool kopyasi. Gercek montaj = 39a2c81b, registry'ye baglandi.
+  84c12f61 aktif=false (emekli). (MK-120.1)
+- **(120 KESKINLESTI) Cadmatic glyph onarimi:** NB1137 export'lari (spool+izometri) v1.1.1'de **deterministik
+  -29 Sezar kaymasi**. Basit -29 geri kaydirma L2'yi acabilir (sifir-AI). Glyph TESPITI Latin-orandan
+  capa-token'a cevrilmeli (yanlis-negatif kapanir). Kendi oturumunu hak ediyor (onarici + bozuk-ornek testi).
+  (MK-120.3)
+- **(120 YENI) Montaj tanima bosulugu:** 39a2c81b fingerprint'i "Continue:" ister; 2/7 montaj bunu tasimaz
+  -> taninmayabilir (parse dogru, route yok). Asama 2'nin (paket skoru) somut isi.
 
 ---
 
@@ -404,6 +438,11 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **MK-119.2** — Baglanan format icin parse kuralinin KAYNAGI kod paketleridir; DB satiri yalniz tanima(fingerprint) icin. DB parser_kural'i elle degistirmek parse'i ETKILEMEZ (Asama 3'te paketler DB'ye tasininca kalkar).
 - **MK-119.3** — Glyph != format. NB1137 imalat spool kirilmasi = Cadmatic glyph-kodlama (v1.1.1 yanlis Unicode), facet override degil L3 cozer. Bolum 5.1'deki pipeline_no kirilmasindan (montaj formati) ayri.
 - **MK-119.4** — Canli PDF cikarici pinli: pdf-parse v1.1.1 (`pdf-parse/lib/pdf-parse.js`). Parite testi bu surumle (v2 Vercel'de patlar + farkli metin).
+- **MK-120.1** — Baglanacak satiri VERIYLE teyit et, isimle degil. 84c12f61 adi "Montaj Resmi" ama fingerprint'i SPOOL imzasi (montaj PDFinde yok) + parser_kural spool kopyasi = olu satir. Gercek montaj 39a2c81b.
+- **MK-120.2** — Ureten-kod-yok marker'a guvenme = sessiz null riski. 39a2c81b pipe_no [[PIPE:]] ariyordu, ureten yoktu -> pipe_no hep null, -ALS alistirma sinyali oldu. Cozum: gercek metin regex'i (MK-51.2 ile test).
+- **MK-120.3** — Glyph = deterministik -29 Sezar (onarilabilir) VE Latin-oran glyph dedektoru DEGIL (yanlis-negatif: kaymali metin yuksek Latin orani, harfler yanlis). Dogru dedektor: capa token ham VEYA -29-kaymali metinde mi. (MK-119.3'u keskinlestirir.)
+- **MK-120.4** — TUM_PAKETLER cok-aile envanteri. Tek-aile composability/birlestirme icin AILE_KAYIT[format_kodu] kullan, tum havuzu paketSec'e verme (montaj Katman 1 -> aileler karisir). Sizinti yalniz testteydi (T1/T3 yakaladi).
+- **MK-120.5** — DB kolonu serbest sanma: egitim_kaynagi CHECK-kisitli enum (vision_only vb.), not alani DEGIL. Notlar dokuman/MK'ye. (MK-101.5 tekrari: yazmadan once constraint kontrol.)
 
 > Onceki ilgili kararlar: MK-50.2 (image-PDF L2 yapamaz), MK-50.3 (3+ ornek olmadan kural yazma),
 > MK-51.2 (regex 5+ gercek ornekle test), MK-117.1 (alistirma kelimeleri merkezi/evrensel),
