@@ -77,8 +77,19 @@ const ikisiText = 'St.St 316L "Sch ... 168.3x4.5 Galvaniz';
 const etkin = birlestir(paketSec(ikisiText, SPOOL).secili);
 ok('alan kümesi e1fb879d ile aynı', setEsit(Object.keys(E1FB879D.alanlar), Object.keys(etkin.alanlar)),
    'etkin=' + Object.keys(etkin.alanlar).sort().join(','));
-ok('satir_tipleri kümesi e1fb879d ile aynı',
-   setEsit(E1FB879D.malzeme_tablosu.satir_tipleri.map(s => s.ad), etkin.malzeme_tablosu.satir_tipleri.map(s => s.ad)));
+// + 123 (MK-119.1 genisleme): paketler artik e1fb879d monolitinin UST-KUMESI.
+// Birebir esitlik (setEsit) yerine: (1) eski tiplerin HEPSI korundu (drift guard),
+// (2) fazlalik yalnizca bilinen genisleme (paslanmaz fitting kapsami, MK-123.A/C).
+// Boylece gercek drift (kaybolan tip / whitelist disi yeni tip) HALA yakalanir.
+const _BEKLENEN_GENISLEME_123 = ['dirsek_sch', 'reduksiyon_sch', 'manson'];
+const _e1Adlar = E1FB879D.malzeme_tablosu.satir_tipleri.map(s => s.ad);
+const _etkinAdlar = etkin.malzeme_tablosu.satir_tipleri.map(s => s.ad);
+const _eskiKorundu = _e1Adlar.every(x => _etkinAdlar.includes(x));
+const _beklenmeyen = _etkinAdlar.filter(x => !_e1Adlar.includes(x) && !_BEKLENEN_GENISLEME_123.includes(x));
+ok('satir_tipleri: eski tiplerin hepsi korundu (drift guard)', _eskiKorundu,
+   'kaybolan=' + _e1Adlar.filter(x => !_etkinAdlar.includes(x)).join(','));
+ok('satir_tipleri: fazlalik yalnizca bilinen genisleme (MK-123)', _beklenmeyen.length === 0,
+   'beklenmeyen=' + _beklenmeyen.join(','));
 ok('ekstraktor_tipi korunur', etkin.ekstraktor_tipi === E1FB879D.ekstraktor_tipi);
 ok('min_metin_uzunlugu korunur', etkin.min_metin_uzunlugu === E1FB879D.min_metin_uzunlugu);
 ok('kabul_kriterleri korunur',

@@ -18,7 +18,7 @@
 // KARAR-48.1 → repo'ya konmaz). Bu CI mühürü iki temsilci facet'i sabitler.
 // ============================================================================
 
-import { parse } from '../lib/l2-parser.js';
+import { parse, malzemeTablosuCikar } from '../lib/l2-parser.js';
 import { aileBirlestir } from '../lib/katman-birlestirici.js';
 import { metinNormalle } from '../lib/glyph-onar.js';
 
@@ -85,6 +85,38 @@ const t = metinNormalle(temiz);
 ok('3.1 durum=temiz (capa ham\u0027da)', t.durum === 'temiz', t.durum);
 ok('3.2 glyph_band_b=false', t.glyph_band_b === false);
 ok('3.3 metin AYNEN korundu (c/s bozulmadi)', t.metin === temiz);
+
+// 4) MK-123 FITTING GAP-FIX — dirsek(inc+Sch) / reduksiyon / manson / kaynak(islem)
+// Onceden: dirsek+kaynak ham_satir, manson+reduksiyon SESSIZCE dusuyordu (tetikleyici yok).
+// Generic muhendislik tanimlari (musteri-id yok). malzemeTablosuCikar dogrudan test.
+console.log('\n--- 4. MK-123 fitting gap-fix (dirsek/reduksiyon/manson/kaynak) ---');
+// 316L + Sch tokenlari -> paslanmaz facet secilir; A1 + paslanmaz satir tipleri etkin.
+const fittingBlok = [
+  "Malzeme Listesi",
+  "11Dirsek Diki\u015Fli 1.5D 316L SCH 10S - 2.2 S2-1/2\" Sch 10S 95.25316L0.85",
+  "21Red\u00FCksiyonKonsantrikDiki\u015Fsiz 316L 10S 2\" x 1-1/4\" Sch 76.2316L0.3",
+  "31Man\u015FonDN65 x DN15.0 19.05SA/A1050.0454",
+  "41Paslanmaz Al\u0131n Kayna\u011F\u0131 - SahaDN50 3ST37"
+].join("\n");
+const fitKural = aileBirlestir('tersan_cadmatic_spool', fittingBlok);
+const fitMlz = malzemeTablosuCikar(fittingBlok, fitKural.malzeme_tablosu);
+const bul = pred => fitMlz.find(m => !m.ham_satir && pred(m)) || {};
+const dr = bul(m => m.kategori === 'fitting' && m.schedule_kod && m.nps_kucuk === undefined);
+const rd = bul(m => m.nps_kucuk !== undefined);
+const mn = bul(m => /Man.on/i.test(m.tanim || ''));
+const ky = bul(m => m.kategori === 'islem');
+console.log('  [dirsek] nps=%s sch=%s kalite=%s kg=%s', dr.nps_inc, dr.schedule_kod, dr.kalite, dr.agirlik_kg);
+console.log('  [reduk ] nps=%s/%s kalite=%s kg=%s', rd.nps_inc, rd.nps_kucuk, rd.kalite, rd.agirlik_kg);
+console.log('  [manson] dn=%s kalite=%s kg=%s', mn.dn, mn.kalite, mn.agirlik_kg);
+console.log('  [kaynak] kat=%s dn=%s kalite=%s kg=%s', ky.kategori, ky.dn, ky.kalite, ky.agirlik_kg);
+ok('4.0 ham_satir YOK (hepsi pattern tuttu)', fitMlz.every(m => !m.ham_satir), fitMlz.filter(m=>m.ham_satir).length);
+ok('4.1 dirsek_sch nps=2-1/2', dr.nps_inc === '2-1/2', dr.nps_inc);
+ok('4.2 dirsek_sch kalite=316L + agirlik=0.85', /316L/.test(dr.kalite||'') && dr.agirlik_kg === 0.85, dr.kalite+'/'+dr.agirlik_kg);
+ok('4.3 reduksiyon cift olcu (2 x 1-1/4)', rd.nps_inc === '2' && rd.nps_kucuk === '1-1/4', rd.nps_inc+'/'+rd.nps_kucuk);
+ok('4.4 manson dn=65 + kalite=SA/A105', mn.dn === 65 && /SA\/A105/.test(mn.kalite||''), mn.dn+'/'+mn.kalite);
+ok('4.5 manson agirlik=0.0454', mn.agirlik_kg === 0.0454, mn.agirlik_kg);
+ok('4.6 kaynak kategori=islem (parca degil)', ky.kategori === 'islem', ky.kategori);
+ok('4.7 kaynak agirliksiz (kaynak=islem, kg null)', ky.agirlik_kg == null, ky.agirlik_kg);
 
 console.log('\n=== MUHUR SONUCU ===');
 console.log(`  Gecen: ${gecen} | Kalan: ${kalan}`);
