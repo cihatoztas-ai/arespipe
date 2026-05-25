@@ -1,6 +1,6 @@
 # Format Tanitma Kilavuzu — AresPipe Izometri Parser
 
-> **Surum:** Oturum 118 (tasarim) + 119 (Asama 1 icraat) + 120 (registry ilk GENISLEME), 25 May 2026.
+> **Surum:** Oturum 118 (tasarim) + 119 (Asama 1 icraat) + 120 (registry ilk GENISLEME) + 121 (glyph band-A onarimi), 25 May 2026.
 > 116'daki "format-tanitma-arayuzu-vizyon.md" notunun kapsamli halefi.
 > **Durum:** MIMARI KARAR + GERCEK VERI ile dogrulanmis tasarim. **Asama 1 (katman birlestirici) CANLI**
 > (119): tersan_cadmatic_spool katmanlara ayristirildi, registry ile baglandi, 8 gercek PDF'te sifir
@@ -320,9 +320,50 @@ Arayuz parser URETMEZ, VERI TOPLAR. Cogu artik gorsel isaretlemeyle cevaplanir; 
 ## 12. Isleme yolu sinirlari (veriden teyit)
 
 - **Image-PDF (PAOR/AVEVA):** metin yok -> L2 imkansiz -> ELLE GIRIS / L3 (MK-50.2). Faceted model zarifce
-  karsilar: iskelet eslesmez -> L3'e duser.
+  karsilar: iskelet eslesmez -> L3'e duser. **(120 EK, MK-120.6) PAOR projelerinin Excel'i var ->
+  malzeme oradan cekilebilir; L3 (vision AI) gereksiz olabilir. Bkz. asagida "L3 politikasi".**
 - **Cok sayfali (Sefine 7, Royal 14, Yonteknik 11):** Tersan hep 1 sayfa. Cok-sayfa L2 sinirina dikkat (51).
 - **Royal:** izometri/spool degil, AB makine detay cizimi; "izometri" filtresine girmeyebilir.
+
+### 12.1 — L3 politikasi: format basina otomatik / onayli / kapali (TASARIM, oturum 120; uygulama BEKLIYOR)
+
+**Sorun (Cihat, 120):** L3 = vision AI = maliyet. Bazi formatlarda (PAOR image-PDF) L3 ZORUNLU yol
+ama o projelerin Excel'i zaten var -> malzeme Excel'den gelir, L3 saf israf. Ote yandan L3'u duz
+"kapatmak" sessiz bosluk yaratir (117 / MK-118.9 ruhu): parse fail olur, sonra ne olacagi belirsiz kalir.
+
+**Karar — L3 tek bayrak (acik/kapali) DEGIL, format basina UC-DEGERLI politika.** AI maliyet disiplini
+(rule-based > AI) ile birebir; her L3 cagrisini ya gereksizse hic yapmaz ya da maliyeti GORUNUR/ONAYLI kilar.
+
+| Politika | Davranis | Ornek |
+|----------|----------|-------|
+| **otomatik** | L2 fail -> sessizce L3 (BUGUNKU davranis). L3 nadir guvenlik agi, akis kesintisiz. | Tersan spool/montaj |
+| **onayli** | L2 dener -> sonuc + kapsama gosterilir -> kullanici yetersiz bulursa "L3'e gonder (~$X)" der; ucreti bilerek devam eder. | PAOR; pahali/zor formatlar |
+| **kapali** | L3 hic yok; L2 yetmezse Excel/elle rotasi (sessiz degil, "Excel'den besleniyor" durumu). | Excel'i kesin, geometri gereksiz projeler |
+
+**Neden yeniden insa degil, ekleme:**
+1. Manuel onay ekrani ZATEN var (parser ne anladi, supheli kirmizi, eksik bos). "onayli"da o ekrana
+   tek aksiyon eklenir: "L2 sunu cikardi; yetersizse -> L3 (~$X)".
+2. "Tatmin etti mi?" sinyali ZATEN uretiliyor: l2-parser ciktisinda `alan_match_orani`,
+   `cikarilan_alan_sayisi`, `malzeme_satir_sayisi` var. Kullaniciya korlemesine sormuyoruz; somut
+   kapsama ("2/8 alan, malzeme listesi bos") gosterip karari ona biraktiriyoruz (Bolum 7 guven kademesi).
+
+**Incelikler:**
+- **Image-PDF ozel dali:** PAOR'da L2 "yetersiz" degil IMKANSIZ (metin yok) -> gosterilecek L2 sonucu yok.
+  Bu yuzden onayli akisin image dali farkli: "Bu PDF goruntu, L2 okuyamiyor. (a) Excel'den cek, (b) elle
+  gir, (c) L3 (~$X)". Metin-PDF (L2 kismi) ile image-PDF (L2 sifir) AYRI sunulur.
+- **Batch onayi (MK-118.9 kalibi):** kuyrukta tek tek onay 50'lik batch'i durdurur. Cozum: batch L2'yi
+  hepsine kosar -> inceleme kuyrugu -> "8 PDF L2'de yetersiz. Hepsini L3'e gonder? ~$1.20" TOPLU onay.
+- **Maliyet tahmini:** "~$X/PDF" `ai_api_log.maliyet_usd` format-basina ortalamadan gosterilir (onayin anlami bu).
+- **l3_fallback_yapilir mevcut altyapi:** parser zaten `parser_seviye: l3_fallback_yapilir ? 'l3' : 'l2'`
+  uretiyor; `parse_disi` + `requires_ai` bayraklari var. UYGULAMADAN ONCE TEYIT: cagri yeri
+  (izometri-oku.js L2-fail -> L3 fallback blogu) bu bayragi gercekten okuyor mu? "kapali"/"onayli" oraya baglanir.
+
+**Acik kapsam sorusu (Cihat karari, uygulama oncesi):** Excel = kabuk (spool + malzeme). Izometri/L3 =
+geometri + topoloji (Continue:) + alistirma + 3D yon dizilim. PAOR'da Excel malzemeyi verir ama
+geometri/topoloji/3D'yi VERMEZ. Bu projelerde izometriden SADECE malzeme mi isteniyor (o zaman L3
+gereksiz, "kapali"/"onayli" net kazanc), yoksa 3D montaj (MK-49.A) / alistirma topolojisi de lazim mi
+(o zaman L3 hala degerli -> "onayli" daha dogru)? Varsayilan oneri: PAOR = onayli (veya kapsam "sadece
+malzeme" cikarsa kapali); Tersan metin = otomatik (bugunku bozulmasin).
 
 ---
 
@@ -383,6 +424,30 @@ KANITLANDI. Onemli: planlanan aday 84c12f61 degil 39a2c81b cikti (MK-120.1).
 (onceden hep null); M100'de -ALS -> alistirma=PARCA (sinyal canlandi). Spool regresyon: 8/8 byte-byte
 ayni. Pilot 30/30 (T7 montaj drift guard eklendi). NB1137'nin 2 montaji glyph -29 -> L3 (MK-120.3).
 
+### Asama 1.6 — Cadmatic glyph BAND-A onarimi (TAMAM, oturum 121)
+Katman 0 (evrensel) metin on-isleme. NB1137 export'larindaki Cadmatic glyph -29 Sezar kaymasi KAPILI
+onarilir; NB1137 montaj/izometri L3 -> L2 (sifir-AI), temiz PDF'lerde sifir regresyon.
+
+**Ne yapildi:**
+- `lib/glyph-onar.js` (YENI, Katman 0): `onar29(text)` (her byte -29, sadece printable ASCII'ye duserse),
+  `capaVar(text)` (band-A capalari), `metinNormalle(text)` -> { metin, glyph_band_a, durum }.
+  KAPI: ham'da capa YOK ama -29-onarilmista VARSA onar; aksi DOKUNMA (MK-121.1). Saf fonksiyon.
+- `api/izometri-oku.js` 4 MINIMAL dokunus: import + pdfIpucuCikar normalize (fingerprint ONCESI ->
+  icerik-tabanli tanima da duzelir, MK-121.4) + parserKuralIle normalize + _l2_meta.glyph_band_a bayragi.
+  Motor/lib (l2-parser, katman-birlestirici, format-paketleri) DEGISMEDI.
+- `test/asama1-pilot.mjs` T8 (17 assertion, 47/47): deterministik -29, kapi, onarim->parse, drift guard.
+
+**BANT AYRIMI (kritik, MK-121.2):**
+- BAND A (buyuk harf/rakam/noktalama): glyph = gercek + 29. Aritmetik -29 TAM cozer (evrensel).
+  SPOOL NAME, pipe_no (E100-817-005), tarih, -S01, blok B1137 -> temiz. **BU OTURUMDA CANLI.**
+- BAND B (kucuk harf/Turkce): pdf-parse glyph kodlarini (0x80-0x97) font cmap'iyle Latin-1'e (0xC0+)
+  cevirmis -> aritmetik DEGIL, ters TABLO gerektirir, font-kapsamli. **Bu modul band B'ye DOKUNMAZ.**
+  -> NB1137 montaj L2; NB1137 spool malzeme tablosu (kucuk-harf tetikleyici) HALA L3 (dürüst, ayri borc).
+
+**Kanit (gercek veri, pdf-parse v1.1.1):** 15 Tersan PDF. Kazanc 2 (NB1137 montaj L3->L2: E100 6 spool,
+AT110-P2 1 spool), regresyon 0 (11 temiz byte-byte ayni), dürüst L3 2 (NB1137 spool band-B). Deterministik:
+onar29("pmlli=k^jb")="SPOOL NAME", onar29("bNMMJUNTJMMR")="E100-817-005".
+
 ### Asama 2 — Eslestirme skoru + esik (kod) [SIRADAKI]
 fingerprintSkor'u paket duzeyine cikar; en yakin aile onerisi + ikincil aday + esik (Bolum 6).
 **Somut motivasyon (120):** 39a2c81b fingerprint'i baslik_regex:"Continue:". Ama 2/7 montaj (G600-813,
@@ -414,12 +479,19 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **(120 COZULDU) 84c12f61 baglama:** aday DEGILDI — olu/yinelenmis satir. fingerprint SPOOL imzasi ister
   (montaj PDFinde yok), parser_kural spool kopyasi. Gercek montaj = 39a2c81b, registry'ye baglandi.
   84c12f61 aktif=false (emekli). (MK-120.1)
-- **(120 KESKINLESTI) Cadmatic glyph onarimi:** NB1137 export'lari (spool+izometri) v1.1.1'de **deterministik
-  -29 Sezar kaymasi**. Basit -29 geri kaydirma L2'yi acabilir (sifir-AI). Glyph TESPITI Latin-orandan
-  capa-token'a cevrilmeli (yanlis-negatif kapanir). Kendi oturumunu hak ediyor (onarici + bozuk-ornek testi).
-  (MK-120.3)
+- **(121 BAND-A TAMAM; BAND-B SIRADAKI) Cadmatic glyph onarimi:** NB1137 export'lari deterministik -29
+  Sezar (band A: buyuk harf/rakam). 121'de `lib/glyph-onar.js` ile KAPILI onarildi -> NB1137 montaj L2,
+  sifir regresyon (MK-121.1/4). KALAN: band B (kucuk harf/Turkce) font cmap ters tablosu gerektirir
+  (aritmetik degil, MK-121.2); NB1137 spool malzeme tablosu hala L3. Band-B kendi oturumu (tam ~28-karakter
+  haritasi, 18 cikti / 10 Turkce-sembol eksik: Ñ Å Ü Ç ş ğ ñ ć ° + sigma->'i'; MK-96 capraz dogrulama).
+- **(120 KESKINLESTI) Glyph TESPITI:** Latin-orandan capa-token'a cevrildi (MK-120.3 -> 121'de uygulandi):
+  capa ham VEYA -29-onarilmis metinde mi. Capalar band-A kurtarilabilir TUMU-BUYUK token (MK-121.3).
 - **(120 YENI) Montaj tanima bosulugu:** 39a2c81b fingerprint'i "Continue:" ister; 2/7 montaj bunu tasimaz
   -> taninmayabilir (parse dogru, route yok). Asama 2'nin (paket skoru) somut isi.
+- **(120 TASARIM, uygulama bekliyor) L3 politikasi (otomatik/onayli/kapali):** Bolum 12.1. Format basina
+  L3 davranisi; PAOR Excel'liyse L3 gereksiz/onayli. UYGULAMA ONCESI: (a) kapsam karari (PAOR'da sadece
+  malzeme mi geometri de mi), (b) izometri-oku.js fallback blogu l3_fallback_yapilir'i okuyor mu teyidi,
+  (c) varsayilan politika tablosu. 117 borcuyla ayni aile (sessiz-bosluk onleme). (MK-120.6)
 
 ---
 
@@ -443,6 +515,11 @@ PDF render + kutu cizme + capa esleme + uc statu. 116'da "v2/en zor" denmisti; C
 - **MK-120.3** — Glyph = deterministik -29 Sezar (onarilabilir) VE Latin-oran glyph dedektoru DEGIL (yanlis-negatif: kaymali metin yuksek Latin orani, harfler yanlis). Dogru dedektor: capa token ham VEYA -29-kaymali metinde mi. (MK-119.3'u keskinlestirir.)
 - **MK-120.4** — TUM_PAKETLER cok-aile envanteri. Tek-aile composability/birlestirme icin AILE_KAYIT[format_kodu] kullan, tum havuzu paketSec'e verme (montaj Katman 1 -> aileler karisir). Sizinti yalniz testteydi (T1/T3 yakaladi).
 - **MK-120.5** — DB kolonu serbest sanma: egitim_kaynagi CHECK-kisitli enum (vision_only vb.), not alani DEGIL. Notlar dokuman/MK'ye. (MK-101.5 tekrari: yazmadan once constraint kontrol.)
+- **MK-120.6 (TASARIM, uygulama bekliyor)** — L3 = maliyet; format basina UC-DEGERLI politika (otomatik/onayli/kapali), tek bayrak degil. "onayli"da L2 sonucu+kapsam gosterilir, kullanici ucreti bilerek L3'e gonderir; "kapali"da Excel/elle rotasi (sessiz degil). PAOR Excel'liyse L3 gereksiz. Mevcut altyapi: l3_fallback_yapilir + parse_disi + manuel onay ekrani + l2 match metrikleri. Detay Bolum 12.1. (AI maliyet disiplini + MK-118.9 sessiz-bosluk onleme.)
+- **MK-121.1** — Glyph onarimi KAPILI olmali: kapisiz -29 TEMIZ metni bozar (olcum: 11/11 temiz PDF L3'e dustu). Kapi: ham'da capa varsa DOKUNMA; yoksa ama -29-onarilmista varsa onar; ikisinde de yoksa DOKUNMA (dogal L3). Drift guard testi zorunlulugu kanitlar.
+- **MK-121.2** — Glyph IKI BANTLI. Band A (buyuk/rakam): glyph=gercek+29, aritmetik -29 TAM cozer (evrensel). Band B (kucuk harf/Turkce): pdf-parse glyph kodlarini font cmap'iyle Latin-1'e (0xC0+) cevirmis -> aritmetik DEGIL, font-ailesine ozel ters TABLO. "Tam onarildi" diye VARSAYMA; alan alan olc (SONRAKI uyarisi dogrulandi).
+- **MK-121.3** — Kapi capalari band-A kurtarilabilir TUMU-BUYUK token olmali (SPOOL NAME / PART NUMBER / WELDING NUMBER / CUT NUMBER). "Drawing symbols" / "Malzeme Listesi" / "Continue:" kucuk harf tasidigi icin -29 sonrasi gorunmez -> capa OLAMAZ.
+- **MK-121.4** — Glyph onarimi metin-cikarim sinirinda (Katman 0, aile-bagimsiz) ve fingerprint skorlama ONCESI olmali. Yalniz parse'i duzeltmek yetmez; icerik-tabanli tanima (baslik_regex/tablo_baslik_regex) da onarilmis metinle calismali -> kaymali ama dosya-adi-uymayan PDF'in sessiz yanlis-yonlendirmesi kapanir.
 
 > Onceki ilgili kararlar: MK-50.2 (image-PDF L2 yapamaz), MK-50.3 (3+ ornek olmadan kural yazma),
 > MK-51.2 (regex 5+ gercek ornekle test), MK-117.1 (alistirma kelimeleri merkezi/evrensel),

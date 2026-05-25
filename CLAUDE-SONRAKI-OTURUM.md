@@ -1,47 +1,53 @@
-# CLAUDE-SONRAKI-OTURUM — Oturum 121 gundemi
+# CLAUDE-SONRAKI-OTURUM — Oturum 122 gundemi
 
 ## Acilis rituali (CLAUDE.md)
 1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3`
-2. Bugun ne? (Glyph onarimi mi, Asama 2 mi, 117 borcu mu)
+2. Bugun ne? (Band B mi, Asama 2 mi, 117 mi, MK-120.6 mi)
 
 ## Once oku
-- `.github/son-durum.md` — 120 kapanisi, MK-120.1-5, acik borclar.
-- `docs/format-tanitma-kilavuzu.md` — Asama 1 TAMAM (Bolum 13), Asama 2 SIRADAKI (Bolum 6).
+- `.github/son-durum.md` — 121 kapanisi, MK-121.1-4, acik borclar.
+- `docs/format-tanitma-kilavuzu.md` — Asama 1.6 (glyph band-A) TAMAM; Asama 2 SIRADAKI (Bolum 6).
+- `lib/glyph-onar.js` — band-A onarici + capa-token kapisi (121'de yazildi).
 
 ## Karar verilecek (oturum basinda) — uc aday, hangisi once
-- **(A) Glyph onarimi (-29 Sezar) + dogru tespit.** YUKSEK KALDIRAC, taze bulgu.
-  NB1137 export'lari (spool+izometri) gomulu fontta -29 kaymali. Cozunce metin temiz (120'de kanit:
-  E100-817-005, B1137, SPOOL NAME hepsi dogru). Is: (1) evrensel katmana/on-isleme -29 onarici (capa
-  token ham metinde yoksa -29-kaymali dene, varsa onar); (2) glyph TESPITINI Latin-orandan capa-token'a
-  cevir (yanlis-negatif kapanir, MK-120.3); (3) bozuk-ornek testi (kontrol.js self-test deseni). Kazanim:
-  bir geminin TUM export'lari L3'ten L2'ye (sifir-AI) + sessiz yanlis-yonlendirme hatasi kapanir.
-  DIKKAT: kg/Turkce yuzey gibi ASCII-disi karakterler -29 bandi disinda kalabilir; once gercek metinde
-  hangi alanlarin temiz cozuldugunu olc (M100 spool degil, NB1137 ornekleriyle).
-- **(B) Asama 2 — eslestirme skoru + esik + tanima bosulugu.** fingerprintSkor'u paket duzeyine cikar;
-  "bu PDF A1'e %92, montaj'a %X". Somut motivasyon (120'den): 2/7 montaj "Continue:" tasimadigi icin
-  39a2c81b fingerprint'iyle TANINMAYABILIR (parse'lari dogru ama route edilmez). Skor+esik+ikincil aday bunu cozer.
-- **(C) 117 acik borc — yukleyen_id null.** Kucuk, canli sistemi etkiliyor. Cozum A: sistem id ata;
-  Cozum B: kontrolu gevset (veri sahipligi KARAR-48.1).
+- **(A) Glyph BAND B — lookup tablosu (glyph isini bitir).** ORTA-YUKSEK KALDIRAC. NB1137 spool'u da
+  L2'ye kazandirir (su an band-A onarildi ama malzeme tablosu band-B kucuk harf -> hala L3). Is:
+  (1) TAM band-B ters tablosu (gosterilen 0xC0+ -> gercek kucuk harf + Turkce ı/ş/ç/ğ/ö/ü + ° sembol).
+      121'de 18/28 cikti; EKSIK: Ñ Å Ü Ç ş ğ ñ ć ° + sigma(963)->'i'. Bunlar tam da malzeme basliginda
+      ("Aciklama/Boyut/Boy/Malzeme/Agirlik") ve satirlarda.
+  (2) MK-96 CAPRAZ DOGRULAMA: harita 2 bagimsiz NB1137 PDF'inde ayni gercek metni uretmeli; tek-kaynak
+      tahmin -> orijinali koru + isaretle.
+  (3) glyph-onar.js'e band-B katmani (band-A'dan SONRA, SADECE glyph_band_a=true ise uygula -> diger
+      formatlara dokunmaz, kapi guvenli).
+  (4) bozuk-ornek testi (T9): band-A+B fixture -> NB1137 spool malzeme satirlari dolu.
+  DIKKAT: Font-kapsamli (Cadmatic-Tersan). Eksik harita malzeme satirini SESSIZCE bozar -> her karakter
+  dogrulanmadan "tam" deme (MK-121.2). Veri: 121'deki tersan.zip yeterli (E100/AT110 spool'lari).
+- **(B) Asama 2 — eslestirme skoru + esik + tanima bosulugu.** fingerprintSkor'u paket duzeyine cikar.
+  Motivasyon (120/121): 2/7 montaj "Continue:" tasimadigi icin 39a2c81b olarak TANINMAYABILIR (parse
+  dogru, route yok). NOT: band-A onarimi (121) baslik capalarini actigi icin icerik-tanima KISMEN
+  duzeldi; ama montaj fingerprint hala "Continue:" (band B). Skor+esik+ikincil aday tam cozer.
+- **(C) 117 — yukleyen_id null.** Kucuk, canli sistemi etkiliyor. Veri sahipligi (KARAR-48.1) dikkat.
 
-Oneri sira: **(A) glyph** — taze, yuksek kaldirac, hem L2 kazanir hem TESPIT hatasini kapatir (sessiz
-yanlis-yonlendirme ileride yeni formatlari bozar). Sonra (B) tanima, sonra (C).
+Oneri sira: **(A) band B** — glyph isini tamamlar (band A + band B = NB1137 tam L2, sifir-AI), 121'in
+dogal devami, olcum verisi hazir. Sonra (B) tanima, sonra (C)/MK-120.6.
 
 ## Veri ihtiyaci (Cihat getirecek)
-- (A) icin: NB1137'nin 1-2 glyph'li PDF'i (spool tercih, izometri de olur). 120'deki tersan.zip'te
-  zaten var (E100-817-005.1, AT110-803-2311-P2.1, ve NB1137 spool'lari). Yeni indirmeye gerek yok;
-  ayni zip yeterli. Onarim sonrasi temiz-metinli PDF'lerle parite (sifir regresyon).
+- (A) icin: 121'deki tersan.zip YETERLI (NB1137 E100/AT110 spool + izometri). MK-96 icin iki ayri
+  NB1137 PDF capraz dogrulama. Yeni indirmeye gerek YOK.
 - (B) icin: ek PDF gerekmez; mevcut 7 montaj + 8 spool yeterli.
 
-## Teknik notlar (120'den tasinan)
+## Teknik notlar (121'den tasinan)
 - Parite/test HEP pdf-parse v1.1.1 (`pdf-parse/lib/pdf-parse.js`). v2 yaniltir/patlar. (MK-119.4)
-- Tek-aile composability icin AILE_KAYIT[format_kodu], TUM_PAKETLER DEGIL (montaj Katman 1 sizar). (MK-120.4)
-- DB kolonu serbest sanma; CHECK constraint yazmadan kontrol et. egitim_kaynagi enum'du. (MK-120.5/101.5)
-- Glyph -29 onarimi: ASCII printable band (0x21-0x7e) -29 geri kaydir. kg/Turkce gibi ust-band glyph'leri
-  bu basit kaymayla tam cozulmeyebilir -> alan alan dogrula, "tam onarildi" diye varsayma.
-- 39a2c81b DB parser_kural'i hala eski [[PIPE:]] iceriyor ama ZARARSIZ (registry-bagli, parse kaynagi kod
-  paketi, MK-119.2). Asama 3'te paketler DB'ye tasininca temizlenir; simdi dokunma.
+- Glyph IKI BANTLI (MK-121.2): band A aritmetik (-29, glyph-onar.js'te CANLI); band B font cmap ters
+  tablo (henuz yok). Band-B onarimi SADECE glyph_band_a=true icin uygulanmali (kapi guvenli kalsin).
+- Glyph onarimi metin-cikarim sinirinda, fingerprint ONCESI (MK-121.4) — band B de ayni noktada.
+- Band-B haritasi 121'de turetildi (band-harita.mjs mantigi): gosterilen char -> gercek char tek-eslemeli
+  (font sabit). Ama EKSIK + Turkce/sembol riskli. Her karakteri 2 PDF'te dogrula (MK-96).
+- glyph-onar.js capalari TUMU-BUYUK (band A). Band-B onarimi capalari ETKILEMEZ (capa zaten band-A'da acildi).
+- 39a2c81b DB parser_kural hala eski [[PIPE:]] (ZARARSIZ, registry-bagli, MK-119.2). Asama 3'te temizlenir.
 
 ## Aciklik
 - Asama 1 paketleri kod tarafinda (gecici, MK-119.2 ikiligi). Asama 3'te DB'ye tasininca tek kaynak DB olur.
-  Su an 2 aile (spool+montaj) bagli; 3-4 aile birikince DB'ye tasima mantikli.
-- 84c12f61 emekli (aktif=false). Tam silme YOK (append-only/gecmis, KARAR-48 ruhu). Gerekce son-durum.md'de.
+- 84c12f61 emekli (aktif=false, MK-120.1). Tam silme YOK (append-only/gecmis, KARAR-48 ruhu).
+- Band-A glyph onarimi (121) izometri-oku.js'in metin-cikarim noktalarinda; motor/lib (l2-parser,
+  katman-birlestirici, format-paketleri) DEGISMEDI.

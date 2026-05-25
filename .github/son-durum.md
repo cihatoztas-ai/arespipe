@@ -1,66 +1,70 @@
-# AresPipe — Son Durum (Oturum 120 kapanis, 25 May 2026)
+# AresPipe — Son Durum (Oturum 121 kapanis, 25 May 2026)
 
-> 119 (Asama 1 katman birlestirici) -> 120 (registry ILK GENISLEME: ikinci aile baglandi).
-> Montaj ailesi canli, CI yesil.
+> 120 (registry ilk genisleme: montaj ailesi) -> 121 (Cadmatic glyph band-A onarimi CANLI).
+> NB1137 montaj izometrileri artik L2 (sifir-AI); temiz PDF'lerde sifir regresyon.
 
 ## Bu oturum ne tipti
-KOD oturumu. Format-tanitma kilavuzunun (A isi) gercek-veri icraati: 84c12f61 baglama PLANI
-veriyle yeniden yonlendi -> dogru aile 39a2c81b (montaj) baglandi, 84c12f61 emekliye ayrildi,
-NB1137 pipeline_no kirilmasi (acik borc) kapatildi.
+KOD oturumu. SONRAKI-OTURUM onerisi (A) "glyph onarimi" icra edildi. Plan veriyle yonlendi:
+glyph IKI BANTLI cikti -> band A (buyuk harf/rakam) bu oturumda tam cozuldu; band B (kucuk
+harf/Turkce) olculdu, ayri oturuma birakildi (yarim haritayla "tam onarildi" demedik).
 
 ## Genel durum
-- Git: temiz. HEAD = 3c142f9 (feat 120). CI: ✅ YESIL (token-suz mesaj, [skip ci] yok, MK-119.5).
-- Mimari: cok-kiraci, RLS. Izometri L2 registry'de artik IKI aile: spool (A1) + montaj.
-- izometri-oku.js / l2-parser.js / katman-birlestirici.js DEGISMEDI (MK-119.1 kaniti).
+- Git: (push sonrasi) HEAD = 121 commit. CI: token-suz, [skip ci] yok (MK-119.5).
+- Mimari: cok-kiraci, RLS. Izometri L2 registry'de iki aile (spool A1 + montaj) + Katman 0 glyph on-isleme.
+- lib/l2-parser.js / lib/katman-birlestirici.js / lib/format-paketleri.js DEGISMEDI.
+- izometri-oku.js: 4 MINIMAL dokunus (import + 2 metin-normalize noktasi + 1 meta bayragi). Motor degismedi.
 
 ## Bu oturumun urunu
-- lib/format-paketleri.js: yeni MONTAJ_TERSAN paketi (Katman 1, montaj_modu, malzeme tablosuz).
-  AILE_KAYIT'a `tersan_cadmatic_montaj` satiri. TUM_PAKETLER guncellendi. A1/spool'a DOKUNULMADI.
-- + 120 FIX (NB1137 pipeline_no kirilmasi): pipe_no regex'i hayalet `[[PIPE:]]` markerindan
-  gercek SPOOL NAME satirina cevrildi ([A-Z]{1,3}\d{2,3} onek, Bolum 5.1). Marker'i ureten kod
-  hic yoktu -> pipe_no HEP null -> -ALS alistirma (PARCA) sinyali oluydu; artik canli.
-- test/asama1-pilot.mjs: T6 montaj assertion'i (artik BAGLI) + T7 montaj drift guard.
-  Composability testleri SPOOL ailesine baglandi (cok-aile sizintisi engellendi).
-- DB: 84c12f61 (tersan_cadmatic_isometry) aktif=false (emekli).
+- **lib/glyph-onar.js (YENI, Katman 0 evrensel):** KAPILI -29 Sezar onarici + capa-token tespiti.
+  `onar29(text)` (her byte -29, sadece printable ASCII'ye duserse), `capaVar(text)`, `metinNormalle(text)`.
+  Kapi: ham'da capa YOK ama -29-onarilmista VARSA onar; aksi halde DOKUNMA. Saf fonksiyon (yan etki/DB/AI yok).
+- **api/izometri-oku.js (4 dokunus):**
+  - import { metinNormalle }
+  - pdfIpucuCikar: cikarilan metni fingerprint skorlama ONCESI normalize -> icerik-tabanli tanima da duzelir
+    (kaymali export'ta capalar gizliydi, taninma yalniz dosya_adi_regex'e kaliyordu = sessiz yanlis-yonlendirme).
+  - parserKuralIle: parse ONCESI normalize + glyph gorunurluk logu ([glyph-band-a]).
+  - _l2_meta.glyph_band_a bayragi (DB log / format envanter metrigi).
+- **test/asama1-pilot.mjs:** T8 glyph band-A self-test (17 assertion). 47/47 yesil (onceki 30 + 17).
 
 ## Kanit (gercek veri, canli cikarim = pdf-parse v1.1.1, MK-119.4)
-7 Tersan montaj/izometri PDF (6 gemi). Temiz metinli 5/5'te pipe_no DOLDU (onceden hep null):
-M100/AT110-804/AT110-816/G400/G600. M100'de -ALS -> alistirma=PARCA (sinyal canlandi).
-Spool regresyon: 8/8 spool PDF BYTE-BYTE ayni (A1'e dokunulmadi). Pilot 30/30 yesil.
-NB1137'nin 2 montaji L2-fail: Cadmatic glyph -29 kaymasi (format degil) -> L3 (MK-120.3).
+15 Tersan PDF (6 gemi). Kapi + parse olcumu:
+- **Kazanc (2):** NB1137 montaj/izometri L3 -> L2. E100-817-005.1 -> pipe_no E100-817-005, 6 spool.
+  AT110-803-2311-P2.1 -> pipe_no AT110-803-2311-P2, 1 spool.
+- **Sifir regresyon (11):** temiz PDF'ler (nb1110/1124/1130/1135/1136) durum='temiz' -> metin DEGISMEDI
+  (byte-byte) -> parse birebir ayni.
+- **Dürüst L3 (2):** NB1137 spool (E100/AT110 .S01) band-A onarildi ama malzeme tablosu band-B (kucuk
+  harf tetikleyici "Boru Dik"/"Dirsek") -> hala L3 (malzeme_satir_az). Yanlis kazanc YOK.
+- Deterministik ispat: onar29("pmlli=k^jb")="SPOOL NAME", onar29("bNMMJUNTJMMR")="E100-817-005".
+
+## Kaydedilen MK kararlari (121)
+- MK-121.1 — Glyph onarimi KAPILI olmali. Kapisiz -29 TEMIZ metni bozar (olcum: 11/11 temiz PDF L3'e
+  dustu). Kapi: ham metinde capa varsa DOKUNMA; yoksa ama -29-onarilmista varsa onar; ikisinde de yoksa
+  DOKUNMA (dogal L3). Drift guard testi (T8) bu zorunlulugu kanitlar.
+- MK-121.2 — Glyph IKI BANTLI. Band A (buyuk harf/rakam/noktalama): glyph = gercek + 29, aritmetik -29
+  TAM cozer. Band B (kucuk harf/Turkce): pdf-parse glyph kodlarini (0x80-0x97) font cmap'iyle Latin-1'e
+  (0xC0+) cevirmis -> aritmetik DEGIL, font-kapsamli ters TABLO gerektirir. Band A evrensel, band B
+  font-ailesine ozel. SONRAKI'deki "kg/Turkce tam cozulmeyebilir" uyarisi DOGRULANDI -> alan alan olc,
+  "tam onarildi" diye VARSAYMA.
+- MK-121.3 — Kapi capalari BAND-A kurtarilabilir TUMU-BUYUK token olmali (SPOOL NAME, PART NUMBER,
+  WELDING NUMBER, CUT NUMBER). "Drawing symbols" / "Malzeme Listesi" / "Continue:" kucuk harf tasidigi
+  icin -29 sonrasi GORUNMEZ -> capa OLAMAZ. Capa secimi olcumle dogrulandi.
+- MK-121.4 — Glyph onarimi metin-cikarim sinirinda (Katman 0, aile-bagimsiz) ve fingerprint skorlama
+  ONCESI olmali. Yalniz parse'i duzeltmek yetmez; icerik-tabanli tanima (baslik_regex/tablo_baslik_regex)
+  da onarilmis metinle calismali -> kaymali ama dosya-adi-uymayan PDF'in sessiz yanlis-yonlendirmesi kapanir.
 
 ## Acik borclar
-- **NB1137 Cadmatic glyph (-29 kayma) — YENI TESPIT, ONARILABILIR:** NB1137 export'lari (spool+izometri)
-  gomulu fontta her ASCII karakteri -29 kaydiriyor (deterministik Sezar). Cozulunce metin temiz
-  (E100-817-005, B1137, SPOOL NAME hepsi dogru). Su an L3 (dogru, guvenli). Onarim L2'yi acar,
-  sifir-AI. Glyph TESPITI de bozuk: Latin-oran kontrolu yanlis-negatif verdi (kaymali metin yuksek
-  Latin orani). Dogru dedektor: capa token ham VEYA -29-kaymali metinde mi. Kendi oturumunu hak ediyor.
-- **Montaj tanima bosulugu (Asama 2):** 39a2c81b DB fingerprint'i baslik_regex:"Continue:". Ama 2/7
-  montaj (G600-813, E100-817) "Continue:" tasimiyor -> bu PDF'ler 39a2c81b olarak TANINMAYABILIR
-  (parse'lari dogru ama route edilmezler). Parse != tanima; Asama 2 (paket skoru) cozer.
-- **117 — yukleyen_id null (HALA ACIK):** api/izometri-oku.js kullanici_id zorunlu; sistem/kullanicisiz
-  yuklemeler parse edilemiyor. Wizard yuklemeleri etkilenmez.
-- **39a2c81b DB parser_kural'i hala eski [[PIPE:]] iceriyor (ZARARSIZ):** MK-119.2 geregi format
-  artik registry-bagli -> parse kaynagi KOD paketi, DB satiri yalniz tanima(fingerprint). DB kuralini
-  elle duzeltmek parse'i etkilemez. Asama 3'te paketler DB'ye tasininca temizlenir.
-
-## Kaydedilen MK kararlari (120)
-- MK-120.1 — Baglanacak satiri VERIYLE teyit et, isimle degil. 84c12f61 adi "Montaj Resmi" ama
-  fingerprint'i SPOOL imzasi ister (Malzeme Listesi+Cut&Bending; montaj PDFinde ikisi de YOK) ve
-  parser_kural'i spool kopyasi = olu satir. Gercek montaj parser'i 39a2c81b idi. 84c12f61 emekli.
-- MK-120.2 — Marker-bekleyen alan = sessiz null riski. 39a2c81b pipe_no [[PIPE:]] markerini ariyordu,
-  markeri ureten kod yoktu -> pipe_no hep null, -ALS alistirma sinyali oldu. Cozum: gercek metin regex'i.
-  Ureten-kod-yok bir marker'a guvenme; cikarimi gercek metinden test et (MK-51.2).
-- MK-120.3 — Glyph != format VE Latin-oran glyph dedektoru DEGIL. Cadmatic glyph = deterministik -29
-  Sezar kaymasi (onarilabilir). Latin-oran yanlis-negatif verir (kaymali metin yuksek Latin orani,
-  harfler yanlis). Dogru dedektor: beklenen capa token'lar ham VEYA -29-kaymali metinde geciyor mu.
-  (MK-119.3'u keskinlestirir.)
-- MK-120.4 — TUM_PAKETLER cok-aile envanteri. Tek-aile composability/birlestirme icin AILE_KAYIT
-  [format_kodu] kullan, tum havuzu paketSec'e verme (montaj Katman 1 -> aileler karisir). Uretimde
-  aileBirlestir zaten boyle yapar; sizinti yalniz testteydi, T1/T3 yakaladi.
-- MK-120.5 — egitim_kaynagi CHECK-kisitli enum (vision_only vb.), serbest not alani DEGIL. Notlar
-  dokuman/MK'ye yazilir. (MK-101.5 tekrari: yazmadan once constraint'i kontrol et.)
+- **NB1137 Cadmatic glyph BAND B (kucuk harf/Turkce) — SIRADAKI, kendi oturumu:** ~28 band-B karakterin
+  18'i haritalandi (gosterilen->gercek: ä->l, ë->s, í->t, Ö->g, â->k, vs.), 10 Turkce/sembol artik EKSIK
+  (Ñ Å Ü Ç ş ğ ñ ć ° + sigma->'i'). Tam harita malzeme tablosu basligini ("Aciklama Boyut Boy Malzeme
+  Agirlik") ve satirlarini acar -> NB1137 spool L2'ye gecer. Font-kapsamli (Cadmatic-Tersan); MK-96 capraz
+  dogrulama (2 kaynak) + tam karakter haritasi gerekir. Eksik harita malzeme satirlarini SESSIZCE bozabilir.
+- **Montaj tanima bosulugu (Asama 2):** 39a2c81b DB fingerprint'i "Continue:" ister; 2/7 montaj (G600-813,
+  E100-817) tasimaz. NOT: band-A onarimi capalari (SPOOL NAME) actigi icin icerik-tanima KISMEN duzeldi,
+  ama montaj fingerprint hala "Continue:" (kucuk harf, band B) -> tam cozum Asama 2 (paket skoru + esik).
+- **117 — yukleyen_id null (HALA ACIK):** sistem/kullanicisiz yuklemeler parse edilemiyor (api kullanici_id zorunlu).
+- **MK-120.6 — L3 politikasi (otomatik/onayli/kapali):** uygulama bekliyor (Bolum 12.1).
+- **39a2c81b DB parser_kural'i hala eski [[PIPE:]] iceriyor (ZARARSIZ, MK-119.2):** Asama 3'te DB'ye tasininca temizlenir.
 
 ## Siradaki (CLAUDE-SONRAKI-OTURUM.md'de detay)
-Glyph onarimi (-29, NB1137'yi L2'ye kazandirir + dedektor duzeltir) VEYA Asama 2 (eslestirme skoru
-+ tanima bosulugu). Glyph kaldiraci yuksek (bir geminin tum export'lari + sessiz yanlis-yonlendirme).
+Onerilen: **Band B lookup tablosu** (NB1137 spool'u da L2'ye kazandirir, glyph isini tamamlar — tam harita
++ MK-96 capraz dogrulama) VEYA **Asama 2** (tanima boslulugu). Sonra 117 / MK-120.6.
