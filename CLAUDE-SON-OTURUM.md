@@ -1,56 +1,51 @@
-# CLAUDE-SON-OTURUM — Oturum 121 (25 May 2026)
+# CLAUDE-SON-OTURUM.md — Oturum 122
 
-## Tip
-KOD oturumu. SONRAKI-OTURUM onerisi (A) glyph onarimi. Cihat "a olsun" -> band A icra edildi.
-Plan veriyle yonlendi: glyph IKI BANTLI cikti; band A tamamlandi, band B olculup ayri oturuma birakildi.
+**Konu:** Cadmatic glyph BAND-B ters tablosu türetimi + canlıya alma
+**Tarih bağlamı:** Oturum 121 (band-A) sonrası, açılış HEAD `bc8278b`
+**Kapanış HEAD:** `cb3f432` (T9 test) — CI **yeşil**
 
-## Akis (ne yaptik, ne kanitladik)
-1. Acilis: git temiz (ea18390, 120 kapanisi), CI yesil. Dosyalar + kilavuz son hali geldi.
-2. Kilavuz okundu (Bolum 5.1/6/13): glyph -29 bulgusu, Asama 1/2 baglami. -29 matematigi DOGRULANDI
-   (kilavuzdaki "+29" gosterimi ters yaziliydi; gercek: glyph - 29 = gercek; "pmlli"->"SPOOL").
-3. Dosyalar geldi (l2-parser, katman-birlestirici, format-paketleri, izometri-oku, pilot, tersan.zip).
-   izometri-oku.js incelendi: explicit "Latin-oran" dedektoru YOK. Glyph PDF -> kaymali metin ->
-   fingerprint sinyal 3/4 (baslik/tablo_baslik) KACIRIR, ama dosya_adi_regex (+5) tanimayi kurtarir ->
-   L2 kaymali metinde fail -> L3. Iki metin-cikarim noktasi: pdfIpucuCikar (629), parserKuralIle (871).
-4. OLCUM (kod yazmadan, SONRAKI'deki "once olc" disiplini):
-   - 4 NB1137 PDF: ham capalar=[] ; -29 sonrasi ["SPOOL NAME","PART NUMBER","WELDING NUMBER","CUT NUMBER"].
-   - BANT AYRIMI bulundu: band A (buyuk/rakam) -29 ile temiz; band B (kucuk harf) Latin-1'e (0xC0+)
-     cevrilmis, aritmetik degil ters tablo gerektirir. Band B kayma kod uzayinda uniform degil (gosterilen
-     uzayda -98..-122) -> font cmap.
-   - PARSE olcumu (15 PDF): KAPISIZ -29 TUM temiz PDF'leri BOZDU (L3'e dustu). NB1137 montaj L3->L2
-     kazandi. NB1137 spool -29 sonrasi HALA L3 (malzeme tablosu band-B). -> Kapi ZORUNLU.
-   - Band B tam haritasi denendi: 28 karakterin 18'i cikti, 10 Turkce/sembol artik (Ñ Å Ü Ç ş ğ ñ ć °
-     + sigma->'i'). Band A+B ile E100 spool metni neredeyse temiz ("5 kg","Paslanmaz","Malzeme Listesi")
-     ama eksik harita malzeme basligini bozuyor ("Ağσrlσk").
-5. KARAR (Cihat'a A/B/C): (A) band A bu oturum, (B) band A+B, (C) Asama 2. Cihat: (A).
-6. lib/glyph-onar.js yazildi (KAPILI, capa = tumu-buyuk band-A token). 15 PDF'te dogrulandi:
-   kazanc=2, regresyon=0, ayni=13. Kapi: temiz metin byte-byte degismez.
-7. izometri-oku.js'e 4 minimal dokunus (import + pdfIpucuCikar normalize + parserKuralIle normalize +
-   _l2_meta bayragi). Motor/lib DEGISMEDI. node --check temiz.
-8. Pilot'a T8 eklendi (17 assertion): deterministik -29, kapi (temiz/glyph/capasiz), onarim->parse,
-   ve KAPININ ZORUNLULUGU drift guard (kapisiz -29 montaji bozar). 47/47 yesil.
-9. Final dosyalar MD5'li outputs'a kopyalandi. Kapanis ucusu + kilavuz guncellemesi.
+---
 
-## Dosyalar
-- lib/glyph-onar.js (YENI, 85 satir) — Katman 0 glyph on-isleme.
-- api/izometri-oku.js (4 dokunus) — import + 2 normalize noktasi + meta bayragi.
-- test/asama1-pilot.mjs (T8 + 17 assertion, 47/47) — glyph band-A self-test + drift guard.
-- DEGISMEDI: lib/l2-parser.js, lib/katman-birlestirici.js, lib/format-paketleri.js.
+## Yapılanlar (özet)
 
-## MD5 (arespipe_kopyala icin)
-- lib/glyph-onar.js     837bcbc48a32b19d294cf15238b06cf7
-- api/izometri-oku.js   0b9f3c120a9b8c4152e45620083788e8
-- test/asama1-pilot.mjs c640a46873c81832e7a5a8b667ef755e
+### 1. Band-B ters tablosu (29 karakter, MK-96 çapraz doğrulandı)
+8 glyph spool PDF (M130-803-006R/009R, E100-722-2015/2016-ALS, M110-817-005/007 S01/S02, Y200-804-414 — hepsi aynı Cadmatic-Tersan fontu) üzerinden **sıkı satır hizalama** (uzunluk ≥10, birebir band-A eşleşme) + **bootstrap** (mevcut tabloyla kalan karakterleri öğren) ile türetildi. Her kod ≥2 bağımsız PDF'te tutarlı.
 
-## Commit (onerilen)
-feat(121): Cadmatic glyph band-A (-29) kapili onarim + capa-token tespiti (NB1137 montaj L2; sifir regresyon)
+Tam tablo (glyph → gerçek):
+```
+Ä→b  Å→c  Ç→d*  É→e  Ñ→f  Ö→g  Ü→h
+á→i  â→k  ã→m  ä→l  å→n  ç→o*  é→p
+ê→r  ë→s  ì→u  í→t  ï→w  ò→z  ó→y
+î→v  ñ→x  ć→ü        (* = çakışmalı, aşağıda)
+ğ→ğ  ş→ş  ı→ı  σ→ı  °→°   (identity + sigma)
+```
+- `ñ→x`: boyut ayıracı ("139.7x4.5"). 19 ñ'nin 16'sı rakam-çevreli.
+- `ć→ü`: "Düz", "Redüksiyon".
+- `°→°`: "45°" açı, identity.
+- Şifre yapısı: gerçek harf +29 → font cmap → Latin-1/Türkçe glyph.
 
-## Dersler (MK-121.1..4 — son-durum.md'de tam)
-- Glyph onarimi KAPILI olmali; kapisiz -29 temiz metni bozar (11/11 olcum). (MK-121.1)
-- Glyph IKI BANTLI: band A aritmetik (-29, evrensel), band B font cmap ters tablosu (font-ailesine ozel).
-  "Tam onarildi" diye varsayma; alan alan olc. SONRAKI uyarisi dogrulandi. (MK-121.2)
-- Kapi capalari band-A kurtarilabilir TUMU-BUYUK token olmali (kucuk-harfli "Drawing symbols" capa degil). (MK-121.3)
-- Onarim fingerprint ONCESI olmali (Katman 0): yalniz parse degil, icerik-tabanli tanima da duzelir ->
-  sessiz yanlis-yonlendirme kapanir. (MK-121.4)
-- Metodoloji teyidi: "once olc, sonra kod" (SONRAKI disiplini) bant ayrimini erken yakaladi; yarim
-  band-B haritasiyla spool'a girmekten kacindik (MK-96 ruhu: yarim kaynakla iddia etme).
+### 2. İki çakışma (MK-122.2) — bir glyph kodun gerçek Türkçe identity'siyle aynı kodpointe düşmesi
+- **Ç (U+00C7):** çoğunluk `d` (Adet/Düz/Detay), gerçek `Ç` (Çelik). KARAR B: kelime-başı + ardı küçük harf ise `Ç` (Türkçe imla: büyük harf yalnız kelime başında; "delik" diye terim yok), aksi `d`. → "Çelik" kurtarıldı.
+- **ç (U+00E7):** çoğunluk `o` (Boru/Boyut/No), gerçek `ç` yalnız "Açıklama" başlığında. DAİMA `o` (kelime-içi ayırt edilemez; başlık kozmetik, veri değil).
+- İkisi de `band_b_meta.cakisma=true` ile işaretli (MK-96 — sessiz bozma yok).
+
+### 3. Kod: lib/glyph-onar.js band-B katmanı
+- `BANT_B_TABLO` (29 kod) + `CAKISMA` (Ç/ç) + `bandBOnar(text)` (kelime-başı Ç kurtarma, ç→o, eşlenmeyen flag).
+- `metinNormalle` band-A kapısının ARKASINDA band-B uygular (sadece `glyph_band_a=true`). Dönüş: `{metin, glyph_band_a, glyph_band_b, durum, band_b_meta}`.
+- **Temiz PDF byte-byte korunuyor** (kapı: ham'da çapa varsa band-B çalışmaz → gerçek Türkçe ç/ş bozulmaz). 5 temiz PDF'te doğrulandı.
+- Commit: `a0ef2f3` (feat) + `7d1faa1` (durum fix).
+
+### 4. Test: test/asama1-pilot.mjs T9 (16 assertion)
+Gerçek NB1137 ham fixture'lar (`\u`-escape, pure-ASCII paste-güvenli). T9.1 onarım, T9.2 Çelik kurtarma, T9.3 Adet bozulmadı + ç→o başlık, T9.4 çakışma izi, T9.5 drift guard (temiz değişmez). Commit `cb3f432`. Pilot 47→63 test.
+
+### 5. Yakalanan regresyon (MK-122.3)
+`durum` string'i `glyph_band_a_onarildi` → `glyph_onarildi` yanlış yeniden adlandırılmıştı; T8.3 + durum'a bağlı kodu kırardı. Geri alındı. **Ders:** modül dönüş sözleşmesini değiştirme; yeni sinyal additive alan olarak eklenir.
+
+---
+
+## MK kararları (122)
+- **MK-122.1 — Glyph ≠ dil:** Glyph onarımı font/encoding düzeltmesi, çeviri değil. Encoding katmanı (glyph-onar.js) dil-agnostik. Dil ayrımı L2 PARSE katmanında (çok-dilli kavram sözlüğü + başlıktan dil tespiti).
+- **MK-122.2 — Band-B çakışma çözümü:** Çoğunluk/Latin + kelime-başı büyük-Türkçe kurtarma (B) + `band_b_meta` flag. Yapısal alanlar (tetikleyici, ST37, boyut, kg) her durumda sağlam.
+- **MK-122.3 — Dönüş sözleşmesi değişmez:** Modülün dönüş alan adları/değerleri (örn. `durum`) geriye-uyum sözleşmesi; yeni bilgi additive alanla eklenir, mevcut korunur.
+- **MK-122.4 — Spekülatif onarım yok:** Gözlemlenmeyen karakter için (Ö/Ü/İ/Ğ/Ş büyük Türkçe, ö) kurtarma kuralı EKLENMEZ (measure-first / MK-121.2). Format öğrenme döngüsü yakalar.
+- **KARAR-122.1 — Çok-dilli parse yol haritası:** (1) dil-bağımsız demir (boyut/DN/PN/SCH/malzeme kodu/standart/kg + Cadmatic tablo yapısı), (2) kapalı çok-dilli kavram sözlüğü (PIPE←boru/rohr/pipe...), sıfır-AI determinist lookup, (3) başlık boilerplate'inden dil tespiti, (4) bilinmeyen terim → satır düşme YOK, `_l2_meta` flag + öğrenme havuzu, AI sadece batch fallback.
