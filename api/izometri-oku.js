@@ -62,6 +62,11 @@ import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 // Yeni paket eklenmiyor (47 dersi: Vercel paket uyumlulugu container testi yetmiyor).
 import crypto from 'crypto';
 
+// 121: Katman 0 (evrensel) glyph on-isleme. Cadmatic band-A (-29 Sezar) glyph
+// kaymasini KAPILI onarir (ham'da capa yok ama -29-onarilmista varsa). Saf modul.
+// Metin cikarim sinirinda (fingerprint + L2 oncesi) calisir; temiz metni bozmaz. (MK-120.3)
+import { metinNormalle } from '../lib/glyph-onar.js';
+
 if (!ARES_BORU) {
   console.error('[izometri-oku] UYARI: ARES_BORU yuklenemedi -- helper fallback devre disi.');
 }
@@ -629,8 +634,14 @@ async function pdfIpucuCikar(pdf_base64, dosya_adi) {
     const result = await pdfParse(buffer);
     ipucu.producer = (result?.info?.Producer) || '';
     ipucu.creator = (result?.info?.Creator) || '';
+    // 121: glyph band-A kapili onarim (MK-120.3). Kaymali Cadmatic export'larinda
+    // capalar (SPOOL NAME vs.) gizliydi -> baslik_regex/tablo_baslik_regex KACIRIYORDU,
+    // taninma yalniz dosya_adi_regex'e kaliyordu (sessiz yanlis-yonlendirme riski).
+    // Onarim sonrasi icerik-tabanli tanima da calisir. Temiz metinde no-op (kapi).
+    const hamMetin = result?.text || '';
+    const { metin: normMetin } = metinNormalle(hamMetin);
     // Ilk 5K karakter yeter -- baslik ve tablo basligi ilk sayfada olur, daha fazlasi gereksiz islem.
-    ipucu.ilk_sayfa_metni = (result?.text || '').slice(0, 5000);
+    ipucu.ilk_sayfa_metni = normMetin.slice(0, 5000);
   } catch (e) {
     // pdf-parse Cadmatic glyph veya PAOR raster gibi durumlarda da hata atmaz genelde,
     // ama bozuk PDF'lerde patlarsa eksik ipucu donmesi yeterli (AI fallback'a guvenelim).
@@ -869,9 +880,18 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
   try {
     const buffer = Buffer.from(pdf_base64, 'base64');
     const pdfData = await pdfParse(buffer);
-    const text = pdfData.text || '';
-    if (!text.trim()) {
+    const hamText = pdfData.text || '';
+    if (!hamText.trim()) {
       return { ok: false, sebep: 'pdf_text_bos', parser_seviye: 'l2_failed', http_status: 200 };
+    }
+    // 121: glyph band-A kapili onarim (MK-120.3). Cadmatic -29 kaymasi varsa onarir;
+    // temiz metinde no-op (kapi: ham'da capa varsa dokunmaz -> sifir regresyon).
+    // Band B (kucuk harf/Turkce) onarmaz -> NB1137 montaj L2'ye gecer; NB1137 spool
+    // malzeme tablosu (band B) hala L3 (dogru/dürüst, ayri borc).
+    const { metin: text, glyph_band_a, durum: glyphDurum } = metinNormalle(hamText);
+    if (glyph_band_a) {
+      // Gorunurluk metrigi (format envanter UI / [L2-FAIL] kalibi).
+      console.log('[glyph-band-a]', { dosya_adi, durum: glyphDurum });
     }
     const { parse } = await import('../lib/l2-parser.js');
     // 119: Katman birleştirici (Aşama 1). Format katalog-yönetimliyse (AILE_KAYIT)
@@ -892,6 +912,7 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
       const _l2_meta = {
         parser_seviye: 'l2',
         montaj_modu: montajMi,
+        glyph_band_a: glyph_band_a,   // 121: bant-A glyph onarimi uygulandi mi (gorunurluk)
         alan_match_orani: sonuc.alan_match_orani,
         cikarilan_alan_sayisi: sonuc.cikarilan_alan_sayisi,
         toplam_alan_sayisi: sonuc.toplam_alan_sayisi,

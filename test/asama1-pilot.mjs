@@ -27,6 +27,7 @@
 import { parse } from '../lib/l2-parser.js';
 import { birlestir, facetAlgila, paketSec, aileBirlestir } from '../lib/katman-birlestirici.js';
 import { TUM_PAKETLER, AILE_KAYIT } from '../lib/format-paketleri.js';
+import { onar29, capaVar, metinNormalle } from '../lib/glyph-onar.js';
 
 // SPOOL ailesi (registry = tek kaynak). Composability testleri bunu kullanır.
 const SPOOL = AILE_KAYIT.tersan_cadmatic_spool;
@@ -144,6 +145,61 @@ ok('montaj parse ok:true', mr && mr.ok === true, mr && mr.sebep);
 ok('montaj pipe_no dolu (ARTIK null değil)', !!(mr && mr.montaj && mr.montaj.pipe_no), 'pipe_no=' + (mr && mr.montaj && mr.montaj.pipe_no));
 ok('montaj -ALS → alistirma=PARCA (sinyal canlandı)', mr && mr.montaj && mr.montaj.alistirma === 'PARCA');
 ok('montaj spool_listesi ≥ 1', !!(mr && mr.montaj && mr.montaj.spool_listesi.length >= 1));
+
+console.log('\n=== T8. Glyph band-A onarımı (oturum 121, MK-120.3) ===');
+// T8.1 — Deterministik -29 Sezar (gerçek NB1137 PDF'inden ham→gerçek çiftleri).
+ok('onar29: "pmlli=k^jb" → "SPOOL NAME"', onar29('pmlli=k^jb') === 'SPOOL NAME', onar29('pmlli=k^jb'));
+ok('onar29: "bNMMJUNTJMMR" → "E100-817-005"', onar29('bNMMJUNTJMMR') === 'E100-817-005', onar29('bNMMJUNTJMMR'));
+
+// Gerçeğe sadık sentetik glyph üretici: band-A (büyük harf/rakam/noktalama) +29 kaydır;
+// küçük harf a-z → band B'yi (0xC0+) taklit (onar29 dokunmaz, NB1137'de olduğu gibi).
+function glyphlestir(t) {
+  let o = '';
+  for (const ch of t) {
+    const c = ch.codePointAt(0);
+    if (c >= 0x61 && c <= 0x7a) o += String.fromCharCode(c + 0x80);   // a-z → band B taklidi
+    else if (c >= 0x20 && c <= 0x60) { const s = c + 29; o += (s <= 0x7e) ? String.fromCharCode(s) : ch; }
+    else o += ch;                                                      // \n vs. olduğu gibi
+  }
+  return o;
+}
+
+// T8.2 — KAPI: temiz metin (ham'da çapa var) → DOKUNULMAZ (regresyon önleme).
+const temizMontaj = montajSentetik;
+const nTemiz = metinNormalle(temizMontaj);
+ok('kapı: temiz metin durum=temiz', nTemiz.durum === 'temiz', nTemiz.durum);
+ok('kapı: temiz metin DEĞİŞMEDİ (byte-byte)', nTemiz.metin === temizMontaj);
+ok('kapı: temiz metin glyph_band_a=false', nTemiz.glyph_band_a === false);
+
+// T8.3 — KAPI: glyph metin (ham'da çapa yok, -29 sonrası var) → ONARILIR.
+const glyphMontaj = glyphlestir(temizMontaj);
+ok('glyph ham metinde çapa YOK (gizli)', capaVar(glyphMontaj) === false);
+const nGlyph = metinNormalle(glyphMontaj);
+ok('kapı: glyph durum=glyph_band_a_onarildi', nGlyph.durum === 'glyph_band_a_onarildi', nGlyph.durum);
+ok('kapı: glyph_band_a=true', nGlyph.glyph_band_a === true);
+ok('onarım band-A çapaları açtı (SPOOL NAME)', capaVar(nGlyph.metin) === true);
+ok('onarım: pipe_no metni geri geldi (M100-317-18-ALS)', nGlyph.metin.includes('M100-317-18-ALS'));
+
+// T8.4 — Onarım sonrası MONTAJ parse: pipe_no + spool_listesi (band A) dolu.
+const mGlyph = parse(nGlyph.metin, aileBirlestir('tersan_cadmatic_montaj', nGlyph.metin));
+ok('glyph→onarım→montaj parse ok:true', mGlyph && mGlyph.ok === true, mGlyph && mGlyph.sebep);
+ok('glyph→onarım: pipe_no dolu', !!(mGlyph && mGlyph.montaj && mGlyph.montaj.pipe_no), mGlyph && mGlyph.montaj && mGlyph.montaj.pipe_no);
+ok('glyph→onarım: spool_listesi ≥ 1', !!(mGlyph && mGlyph.montaj && mGlyph.montaj.spool_listesi.length >= 1));
+
+// T8.5 — KAPININ ZORUNLULUĞU (drift guard): KAPISIZ -29 temiz metni BOZAR.
+// (Ölçüm kanıtı: 121'de kapısız -29 tüm temiz PDF'leri L3'e düşürdü.)
+const koru29 = onar29(temizMontaj);
+const temizMontajPipe = mr && mr.montaj && mr.montaj.pipe_no;  // T7'deki temiz parse sonucu
+ok('kapısız -29 temiz metni DEĞİŞTİRİR (kapı şart)', koru29 !== temizMontaj);
+const mKorumasiz = parse(koru29, aileBirlestir('tersan_cadmatic_montaj', koru29));
+ok('kapısız -29 → montaj parse BOZULUR (kapı bunu önler)',
+   !(mKorumasiz && mKorumasiz.ok && mKorumasiz.montaj && mKorumasiz.montaj.pipe_no === temizMontajPipe),
+   'kapısız pipe_no=' + (mKorumasiz && mKorumasiz.montaj && mKorumasiz.montaj.pipe_no));
+
+// T8.6 — GÜVENLİK: çapasız/bilinmeyen metin → DOKUNULMAZ (doğal L3, MK-119.3).
+const yabanci = metinNormalle('rastgele izometri disi metin, hicbir capa yok 1234567890 abcdef');
+ok('çapasız metin durum=capa_yok', yabanci.durum === 'capa_yok', yabanci.durum);
+ok('çapasız metin DEĞİŞMEDİ', yabanci.metin === 'rastgele izometri disi metin, hicbir capa yok 1234567890 abcdef');
 
 console.log('\n=== SONUÇ ===');
 console.log(`  Geçen: ${gecen} | Kalan: ${kalan}`);
