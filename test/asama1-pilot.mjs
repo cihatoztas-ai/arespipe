@@ -14,6 +14,10 @@
 //   T7. MONTAJ drift guard (+120): montaj paketi = montaj sözleşmesi (montaj_modu,
 //       liste_alanlar, min_spool, pipe_no'nun [[PIPE:]] OLMADIĞI), ve gerçek parse'ta
 //       pipe_no dolu + `-ALS` → alistirma=PARCA (NB1137 pipeline_no kırılması düzeldi).
+//   T8. Glyph band-A onarımı (oturum 121): -29 Sezar kapısı, temiz PDF regresyonsuz.
+//   T9. Glyph band-B ters tablosu (oturum 122, MK-96): NB1137 spool malzeme tablosu
+//       L3→L2 (Boru/Çelik/boyut/Sertifikalı okunur); kelime-başı Ç kurtarma (MK-122);
+//       ç→o + Ç çakışma izi band_b_meta'da; temiz PDF gerçek Türkçe AYNEN korunur.
 //
 // + 120 NOT: TUM_PAKETLER artık ÇOK-AİLE envanteri (montaj dahil). Tek-aile
 // composability testleri SPOOL ailesini (registry) kullanmalı — tüm havuzu değil,
@@ -201,7 +205,51 @@ const yabanci = metinNormalle('rastgele izometri disi metin, hicbir capa yok 123
 ok('çapasız metin durum=capa_yok', yabanci.durum === 'capa_yok', yabanci.durum);
 ok('çapasız metin DEĞİŞMEDİ', yabanci.metin === 'rastgele izometri disi metin, hicbir capa yok 1234567890 abcdef');
 
+
+// ============================================================================
+// T9. Glyph BAND-B ters tablosu (oturum 122, MK-96 capraz dogrulama - 8 PDF).
+// PDF GEREKTIRMEZ: fixture'lar gercek NB1137 spool PDF'inin HAM pdf-parse
+// ciktisindan alindi (band-A kaymali + band-B glyph), \u-escape ile gomuldu
+// (Unicode paste-bozulma riskine karsi pure-ASCII). metinNormalle band-A->band-B
+// tam zinciri uygular. Kanit: NB1137 spool malzeme tablosu L3->L2.
+// ============================================================================
+console.log('\n=== T9. Glyph band-B ters tablo (oturum 122, MK-96) ===');
+
+// T9.1 - Gercek karbon malzeme satiri (E100-722-2015 ham): anchor + ham karbon
+// satiri -> band-A+B onarim. Beklenen: '1Boru Dikisli Celik ... 76.1x4.5 ...'.
+const t9CarbonRaw = "pmlli=k^jb\nN_\u00E7\u00EA\u00EC=a\u00E1\u00E2\u00E1\u015F\u00E4\u00E1=\u00C7\u00C9\u00E4\u00E1\u00E2=pqPTJ=PKN=p\u00C9\u00EA\u00ED\u00E1\u00D1\u00E1\u00E2~\u00E4\u03C3TSKN\u00F1QKRNNP=pqPTMKUVRT\nXXXXXXXXXXXXXXXXXXXX dolgu uzunluk icin";
+const t9c = metinNormalle(t9CarbonRaw);
+ok('T9.1 durum=glyph_band_a_onarildi', t9c.durum === 'glyph_band_a_onarildi', t9c.durum);
+ok('T9.1 glyph_band_b=true', t9c.glyph_band_b === true);
+ok('T9.1 tetikleyici Boru okundu', t9c.metin.includes('Boru'));
+ok('T9.1 boyut ayiraci x (76.1x4.5)', /76\.1x4\.5/.test(t9c.metin), t9c.metin);
+ok('T9.1 Sertifikali okundu (band-B)', t9c.metin.includes('Sertifikal\u0131'));
+
+// T9.2 - CELIK KURTARMA (MK-122 karar B): kelime-basi C -> Celik, delik DEGIL.
+ok('T9.2 Celik kurtarildi (kelime-basi C)', t9c.metin.includes('\u00C7elik'), t9c.metin);
+ok('T9.2 delik YOK (cakisma yanlis cozulmedi)', !t9c.metin.includes('delik'));
+ok('T9.2 band_b_meta.ce_kurtarma >= 1', t9c.band_b_meta && t9c.band_b_meta.ce_kurtarma >= 1, ''+(t9c.band_b_meta && t9c.band_b_meta.ce_kurtarma));
+
+// T9.3 - Header (ham): kelime-ici 'd' (Adet) YANLIS kurtarilmamali -> 'd'.
+const t9HeaderRaw = "pmlli=k^jb\nk\u00E7^\u00C7\u00C9\u00ED^\u00E7\u03C3\u00E2\u00E4~\u00E3~_\u00E7\u00F3\u00EC\u00ED_\u00E7\u00F3j~\u00E4\u00F2\u00C9\u00E3\u00C9^\u011F\u03C3\u00EA\u00E4\u03C3\u00E2\nXXXXXXXXXXXXXXXXXXXX dolgu uzunluk";
+const t9h = metinNormalle(t9HeaderRaw);
+ok('T9.3 Adet bozulmadi (kelime-ici d -> d)', t9h.metin.includes('Adet'), t9h.metin);
+ok('T9.3 Boyut/Malzeme/Agirlik okundu', t9h.metin.includes('Boyut') && t9h.metin.includes('Malzeme') && t9h.metin.includes('A\u011F\u0131rl\u0131k'));
+ok('T9.3 c->o cakismasi basligi (Ao\u0131klama kozmetik MK-122)', t9h.metin.includes('Ao\u0131klama'));
+
+// T9.4 - CAKISMA IZI (MK-96): ambiguous kod gorundu -> meta isaretli; eslenmeyen yok.
+ok('T9.4 band_b_meta.cakisma=true', t9c.band_b_meta.cakisma === true);
+ok('T9.4 eslenmeyen band-B karakteri YOK', t9c.band_b_meta.eslenmeyen.length === 0, JSON.stringify(t9c.band_b_meta.eslenmeyen));
+
+// T9.5 - KAPI / DRIFT GUARD: temiz metin (ham'da capa + gercek Turkce) -> band-B
+// CALISMAZ, gercek Turkce AYNEN korunur (regresyon onleme - kritik).
+const t9Temiz = "SPOOL NAME\n1Boru Diki\u015Fsiz \u00C7elik - 2.2 Sertifikal\u013148.3x4.53241 ST3715.751\nNoAdetA\u00E7\u0131klamaBoyutBoyMalzemeA\u011F\u0131rl\u0131k";
+const t9t = metinNormalle(t9Temiz);
+ok('T9.5 temiz durum=temiz', t9t.durum === 'temiz', t9t.durum);
+ok('T9.5 temiz glyph_band_b=false', t9t.glyph_band_b === false);
+ok('T9.5 temiz metin DEGISMEDI (gercek Turkce korundu)', t9t.metin === t9Temiz);
+
 console.log('\n=== SONUÇ ===');
 console.log(`  Geçen: ${gecen} | Kalan: ${kalan}`);
 if (kalan > 0) { console.log('  ⛔ PİLOT KIRMIZI'); process.exit(1); }
-console.log('  ✅ PİLOT YEŞİL (composability + wiring + montaj drift guard)');
+console.log('  ✅ PİLOT YEŞİL (composability + wiring + montaj drift guard + glyph band-A/B)');
