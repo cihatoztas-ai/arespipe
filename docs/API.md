@@ -99,11 +99,12 @@ if (req.method === 'OPTIONS') return res.status(200).end();
 ## 3. Endpoint Listesi
 
 <!-- AUTO-START:endpointler -->
-> Toplam 11 endpoint. Son güncelleme: 2026-05-25.
+> Toplam 12 endpoint. Son güncelleme: 2026-05-26.
 
 - **`api/batch-baslat.js`** — api/batch-baslat.js -- 49. oturum — _=====================================================================_
 - **`api/batch-kuyruga-al.js`** — api/batch-kuyruga-al.js -- 49. oturum — _=====================================================================_
 - **`api/batch-spoollari.js`** — api/batch-spoollari.js -- 49. oturum — _=====================================================================_
+- **`api/devre-inceleme.js`** — İnceleme & Onay okuma endpoint'i (oturum 127 / MK-127.3/4/5).
 - **`api/dosya-url-al.js`** — Supabase Storage dosyaları için signed URL üretir — _Yetki: JWT'den tenant_id okunur, yol ile eşleşmeli (cross-tenant bloklanır)_
 - **`api/eslestirme-backfill.js`** — Adim4 (110, MK-110.1): zaten islenmis izometri PDF'lerini kabuk spool'a baglar.
 - **`api/izometri-oku.js`** — api/izometri-oku.js -- Vercel Serverless Function (Node.js) — _=====================================================================_
