@@ -55,9 +55,12 @@ export default async function handler(req, res) {
     // Islenmis izometri kuyruk kayitlarini cek (parse_sonuc dolu olanlar).
     // devre_dokumanlari uzerinden devre_id'yi getir (eslestir devre context ister).
     // 129: devre_dokuman_id de cekilir -> eslestir 4. arg (PDF<->spool bagi).
+    // 129/B: 'devre_dokuman_id' adi PostgREST'te 'devre_dokumanlari' FK embed ile catisip
+    //   gölgelenebiliyor -> alias 'dok_id' ile ham uuid garantili gelir (test 14:13 koşusu
+    //   bunu kanitladi: cizim_durumu döndü, devre_dokumanlari.spool_id NULL kaldi).
     let q = supa
       .from('dosya_isleme_kuyrugu')
-      .select('id, devre_dokuman_id, parse_sonuc, devre_dokumanlari!inner(devre_id)')
+      .select('id, dok_id:devre_dokuman_id, parse_sonuc, devre_dokumanlari!inner(devre_id)')
       .eq('parser', 'izometri')
       .in('durum', ['oneri_hazir', 'manuel_onay'])
       .not('parse_sonuc', 'is', null)
@@ -116,16 +119,17 @@ export default async function handler(req, res) {
         rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dosya: okuJson.dosya_adi || null, spool: okuJson.spoollar.length, eslesen: es, atanmamis: at, yukseltilebilir: yuk });
       } else {
         // GERCEK: worker ile ayni eslestir() — bekliyor->kismi + _eslesme yaz.
-        // 129: 4. arg is.devre_dokuman_id -> devre_dokumanlari.spool_id bagi yazilir.
-        const ozet = await eslestir(supa, dvId, is.id, okuJson, is.devre_dokuman_id);
+        // 129/B: 4. arg is.dok_id (alias) -> devre_dokumanlari.spool_id bagi yazilir.
+        const dokId = is.dok_id || null;
+        const ozet = await eslestir(supa, dvId, is.id, okuJson, dokId);
         if (ozet) {
           rapor.toplam_spool += ozet.toplam;
           rapor.toplam_eslesen += ozet.eslesen;
           rapor.toplam_atanmamis += ozet.atanmamis;
           rapor.toplam_yukseltilen += ozet.yukseltilen;
-          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, spool: ozet.toplam, eslesen: ozet.eslesen, atanmamis: ozet.atanmamis, yukseltilen: ozet.yukseltilen });
+          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dok_id: dokId, spool: ozet.toplam, eslesen: ozet.eslesen, atanmamis: ozet.atanmamis, yukseltilen: ozet.yukseltilen });
         } else {
-          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, atlandi: 'eslestir null dondu' });
+          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dok_id: dokId, atlandi: 'eslestir null dondu' });
         }
       }
     }
