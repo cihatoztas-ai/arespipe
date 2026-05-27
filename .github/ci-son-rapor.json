@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-05-26T21:52:03.981Z",
-  "commit_sha": "7ee9bacc380172cfbcda58ab2edc59263cf1db18",
+  "tarih": "2026-05-27T04:50:21.500Z",
+  "commit_sha": "4449017032bd681be6221bbf8a1299b636c53f88",
   "commit_ref": "main",
-  "workflow_run": 951,
+  "workflow_run": 952,
   "ozet": {
     "hata": 0,
-    "uyari": 80,
-    "taranan_dosya": 124,
-    "sorunlu_dosya": 5,
+    "uyari": 81,
+    "taranan_dosya": 125,
+    "sorunlu_dosya": 6,
     "durum": "sari"
   },
   "kurallar": {
@@ -147,6 +147,20 @@
             3791,
             3795,
             3797
+          ]
+        }
+      ]
+    },
+    "G03_HAM_KALITE": {
+      "tip": "uyari",
+      "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "devre_wizard_v3.html",
+          "sayi": 1,
+          "satirlar": [
+            741
           ]
         }
       ]
@@ -398,6 +412,19 @@
           "tip": "uyari",
           "satir": 1481,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
+        }
+      ]
+    },
+    {
+      "dosya": "devre_wizard_v3.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "G03_HAM_KALITE",
+          "tip": "uyari",
+          "satir": 741,
+          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
     },
