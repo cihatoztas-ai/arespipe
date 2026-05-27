@@ -20,6 +20,10 @@
 // Idempotent: eslestir() yalniz 'bekliyor'->'kismi' yukseltir; tekrar calisinca
 //   zaten kismi/tam olanlara dokunmaz. Backfill'i bircok kez calistirmak guvenli.
 //
+// 129 (MK-129.x): eslestir() cagrisina is.devre_dokuman_id (4. arg) eklendi -> imalat
+//   izometri PDF<->spool bagi (devre_dokumanlari.spool_id) backfill'de de yazilir.
+//   Aksi halde cizim_durumu kismi olur ama spool_detay "Izometri Cizimleri" bos kalirdi.
+//
 // Env: SUPABASE_URL + SUPABASE_SERVICE_KEY (MK-101.4).
 
 import { createClient } from '@supabase/supabase-js';
@@ -50,9 +54,10 @@ export default async function handler(req, res) {
   try {
     // Islenmis izometri kuyruk kayitlarini cek (parse_sonuc dolu olanlar).
     // devre_dokumanlari uzerinden devre_id'yi getir (eslestir devre context ister).
+    // 129: devre_dokuman_id de cekilir -> eslestir 4. arg (PDF<->spool bagi).
     let q = supa
       .from('dosya_isleme_kuyrugu')
-      .select('id, parse_sonuc, devre_dokumanlari!inner(devre_id)')
+      .select('id, devre_dokuman_id, parse_sonuc, devre_dokumanlari!inner(devre_id)')
       .eq('parser', 'izometri')
       .in('durum', ['oneri_hazir', 'manuel_onay'])
       .not('parse_sonuc', 'is', null)
@@ -111,7 +116,8 @@ export default async function handler(req, res) {
         rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dosya: okuJson.dosya_adi || null, spool: okuJson.spoollar.length, eslesen: es, atanmamis: at, yukseltilebilir: yuk });
       } else {
         // GERCEK: worker ile ayni eslestir() — bekliyor->kismi + _eslesme yaz.
-        const ozet = await eslestir(supa, dvId, is.id, okuJson);
+        // 129: 4. arg is.devre_dokuman_id -> devre_dokumanlari.spool_id bagi yazilir.
+        const ozet = await eslestir(supa, dvId, is.id, okuJson, is.devre_dokuman_id);
         if (ozet) {
           rapor.toplam_spool += ozet.toplam;
           rapor.toplam_eslesen += ozet.eslesen;
