@@ -281,6 +281,9 @@
 //   Draft = OKUMA katmanı (MK-127.4): spooller'a YAZMAZ; kanonik bağ TERFİDE (ARES_KABUK.aktar).
 //   B canlı dolum (oturum 127): drenaj onIlerleme → endpoint yeniden çağrı (kırmızı→yeşil).
 //   Taslak işareti: devreler.durum='taslak' (terfide 'aktif'). DB ön-koşulu README'de.
+//   129/MK-127.4: terfi sonrası /api/eslestirme-backfill {devre_id} çağrılır (best-effort
+//     await) → izometri parse_sonuc'tan re-eşle → devre_dokumanlari.spool_id bağı yazılır.
+//     PDF/AI yok, $0. Hatası terfi'yi geri almaz; kullanıcıya toast'ta uyarı.
 //   AÇIK (sonraki faz, omurga 18.d): çapa görsel arayüzü, taslak_haric/taslak_not, değer düzeltme yazma.
 // ─────────────────────────────────────────────────────────────
 
@@ -955,9 +958,32 @@ async function onayEt() {
     // Terfi tamam → taslak 'aktif' + özet senkron (DB-truth)
     await supa.from('devreler').update({ durum: 'aktif' }).eq('id', WIZ.devre_id).eq('tenant_id', tid);
     if (r.eklenen > 0) await _devreOzetSenkron(supa, tid, WIZ.devre_id);
+    // 129/MK-127.4: terfi sonrası izometri parse_sonuc'undan kanonik eslestir() re-eşle
+    //   modunda çağrılır (PDF/AI yok, $0). Eski "terfi sonrası izometri spool'a bağlanmıyor"
+    //   boşluğu kapanır. Best-effort: backfill hatası terfi'yi geri almaz, sadece kullanıcıya
+    //   uyarı (toast) verilir; manuel /api/eslestirme-backfill çağrısıyla telafi edilebilir.
+    var izoEslesen = 0, izoHata = null;
+    try {
+      var bf = await fetch('/api/eslestirme-backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ devre_id: WIZ.devre_id })
+      });
+      var bfJson = await bf.json();
+      if (bfJson && bfJson.ok) {
+        izoEslesen = bfJson.toplam_yukseltilen || 0;
+      } else {
+        izoHata = (bfJson && bfJson.hata) || ('HTTP ' + bf.status);
+      }
+    } catch (eb) {
+      izoHata = eb.message;
+    }
     onayKapat();
-    toast('✓ Devre canlıya aktarıldı — ' + (r.eklenen || 0) + ' spool ID + QR üretildi');
-    setTimeout(function(){ location.href = 'devre_detay.html?id=' + WIZ.devre_id; }, 1000);
+    var msg = '✓ Devre canlıya aktarıldı — ' + (r.eklenen || 0) + ' spool ID + QR üretildi';
+    if (izoEslesen > 0) msg += ' + ' + izoEslesen + ' izometri eşleşmesi';
+    else if (izoHata) msg += ' (izometri eşleşmesi yapılamadı: ' + izoHata + ' — devre detaydan tekrar deneyin)';
+    toast(msg);
+    setTimeout(function(){ location.href = 'devre_detay.html?id=' + WIZ.devre_id; }, izoHata ? 2500 : 1000);
   } catch (e) {
     console.error('[v3] terfi:', e);
     if (btn) { btn.disabled = false; btn.textContent = 'Onayla ve Aktar'; }
