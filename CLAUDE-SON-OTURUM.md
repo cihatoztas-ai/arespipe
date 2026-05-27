@@ -1,82 +1,69 @@
-# Oturum 127 — Devre Wizard "İnceleme & Onay": kod-öncesi mimari + backend motoru
+# Oturum 128 — Devre Wizard v3 İnceleme & Onay frontend iskelesi (canlı test edildi)
 
-**Üretim kodu yazıldı (yeni dosyalar) ama canlıya alınmadı.** Mevcut `devre_wizard.html`'e sıfır
-dokunuş. Çekirdek (eşleştirme + 4-durum) gerçek veriyle test edildi, geçti. Frontend (v3.html) 128'e.
+**`devre_wizard_v3.html` yazıldı, push edildi, Demo Atölye'de gerçek veriyle test edildi.** İnceleme +
+B canlı dolum + terfi üçü de kanıtlandı. Mevcut `devre_wizard.html` (v2) sıfır dokunuş (MK-127.2).
+Bir mimari boşluk (terfi-yeniden-eşle) yüzeye çıktı → 129.
 
 ## Bağlam
 
-- Ritüel: git temiz, HEAD `1508742 docs(125)`. Omurga repo'da **v2** — v3 deltası (`OMURGA-GUNCELLEME-126.md`)
-  henüz işlenmemiş. Bu oturumda v3.1 olarak işlendi.
-- Cihat'ın yön çizgisi: "Tersan'ı dört dörtlük oturt → diğer formatları üstüne." + "mevcut wizard
-  kurallarını bozmadan yeni tasarımı üstüne giydir." + tekrar tekrar: "burası programın kalbi,
-  dikkatli olalım, geçiştirmeyelim, teknik olarak en doğru neyse onu yap."
+- Açılış: CI yeşil (127 push; emoji riski tetiklenmedi). HEAD `755d8bd` (docs AUTO).
+- Okunanlar: omurga v3.1 (tam) + `devre_wizard.html` v2 (1505 satır, DOM + modül yüzeyi) + mockup v5
+  (362) + `ares-kabuk.js` / `ares-normalize.js` / `ares-izometri-drenaj.js` (statik doğrulama için).
+- Cihat'ın yön çizgisi: "burası programın kalbi, geçiştirmeyelim" + "fonksiyon-önce yazmıştım, yeniden
+  düzenleme bu kadar zor olacak demedim" (refactor zorluğu = DOM/modül kontratını bozmadan yapıyı
+  değiştirmek; gerçek bir zorluk, normal).
 
-## Verification-first zinciri (MK-126.8 ruhu — her karar canlı koddan doğrulandı)
+## Kilitlenen karar (FAZ-1 yolu = A)
 
-1. **Mevcut `devre_wizard.html` (1505 satır) okundu.** DOM sözleşmesi + KORUMA-1 çağrı yüzeyi çıkarıldı:
-   panel/step, `selProje/dropZone/dosyaTbody/kabukOnayAlani/btnKabukOnayla/.kabuk-spool-cb`,
-   `ARES_KABUK.aktar/grupla`, `ARES_NORM`, `ARES_IZO_DRENAJ.izometriDreneEt({filtre:{devreId},onIlerleme})`.
-   `kabukTabloHtml` Alıştırma sütununu sabit "— (PDF bekliyor)" basıyor → birleştirme yok.
-2. **Şema:** `devre_dokumanlari`'da `parse_sonuc` YOK, `spool_id` VAR. `resim_no` hiçbir tabloda yok.
-   Güven dağınık: `ai_api_log.parser_seviye` + `ai_analizler.guven`.
-3. **`api/kuyruk-isle-izometri.js` eşleştirici:** iki yol — spool çizimi (`spool_id` yazar) + montaj
-   (`montaj_json`, 1-çok, `spool_id` yazmaz). Anahtar `normPipeline(dosyaAdiParse(dosya_adi))|normSpoolNo`.
-   `spooller`'dan okuyor → **terfi sonrası** çalışır.
-4. **Canlı veri (SQL):** `_eslesme` taslakta güvenilmez — M200 örneğinde parse `pipeline_no` dolu ama
-   `_eslesme` "dosya_adi_pipeline_yok" demiş (dosyaAdiParse `.S01.` segmenti istiyor, M200'de yok).
-   G400 örneğinde `bindirme_flag:true` (ağırlık %4.2) — gerçek 🟡 sinyali.
-5. **`dosyaAdiParse`/`montajDosyaKok` regex'leri** + **`lib/bindir.js`** (saf, DB yok) okundu.
-   `eslestirme-backfill.js` worker'dan `eslestir/normPipeline/normSpoolNo/dosyaAdiParse` import ediyor
-   → endpoint'in worker'dan import etmesi GÜVENLİ (kanıtlı). `bindir` `lib/bindir.js`'ten import'lu.
+- Omurga ideal (terfiye kadar devreler yok) taslak modu fazını (`taslak_haric`/`taslak_not` + nullable
+  kolonlar) gerektiriyor → omurga 18.d, sonraki faz. FAZ-1 için **canlı-kod yolu**: "İncele"de devre
+  `durum='taslak'`; terfide spool/QR + `'aktif'`. Belge yüklemek için devre_id şart (`devre_dokumanlari.
+  devre_id` NOT NULL + FK), bu yüzden devre Adım 1'de oluşur.
 
-## Kilitlenen kararlar (MK-127.1..5)
+## Yazılanlar / değişenler
 
-- **B** (İnceleme canlı dolum, drenaj `onIlerleme`) + **A** (server-side okuma endpoint).
-- **İzolasyon:** `devre_wizard_v3.html` + flag `devre_wizard_v3`, pilot Demo Atölye, v2 dokunulmaz.
-- **Tam-mirror eşleştirme:** dosya adından pipeline çıkmazsa fallback YOK → İnceleme = terfi önizlemesi.
-  M200 dürüstçe 🟠 (sebep ekranda) → terfide sessiz hata riski yok. MK-124.1 borcu görünür kılınır.
-- **A1:** 🟡 = ağırlık+yüzey çelişkisi (`bindir`) + güven<0.7. `kritik_uyari` 🟡 yapmaz (Tersan'da
-  her PDF'te DN yok = gürültü). Et/çap çelişkisi 128'e (kabuk çapı client'tan gelince).
-
-## Yazılanlar (yeni dosyalar)
-
-| Dosya | Ne | Test |
+| Dosya | Ne | Durum |
 |---|---|---|
-| `docs/DEVRE-WIZARD-OMURGA.md` (v3.1) | v2 + MK-126 deltası + MK-127.1..5 + canlı kod uzlaştırmaları | — |
-| `lib/izo-eslesme.js` | Saf 4-durum çekirdeği (DB/regex/yan-etki YOK), kanonik primitifleri DIŞARIDAN alır | self-test ✅ |
-| `api/devre-inceleme.js` | Okuma endpoint'i: kuyruk izometri parse'ı çek → `izometrileriDerle` → `incelemeTablosu`; SAF OKUMA | çekirdek test ✅ |
+| `devre_wizard_v3.html` | FAZ-1 iskele (1038 satır / 73178 byte): 2 adım, /api/devre-inceleme render, B drenaj, terfi. Flag arkasında, canlıya alınmaz | yazıldı + push |
+| `migrations/094_devreler_durum_taslak.sql` | devreler.durum CHECK + 'taslak' (idempotent) | yazıldı + push + canlı ALTER |
+| DB (SQL Editor) | feature_flags master 'devre_wizard_v3' + tenant_features flag (Demo Atölye) | uygulandı |
 
-**Test (gerçek M200+G400 verisiyle):** `🟡 G400/S01 [L2, güven 1, ÇELİŞKİ]` (bindir %4.2 ağırlık) ·
-`🔴 G400/S02` (izometri yok) · `🔴 M200/S01` · `🟠 M200-355C-355-ALS.1.pdf → dosya_adi_pipeline_yok` ·
-özet `{toplam:3, zayif:1, eksik:2, fazla:1, isleniyor:1}`. Beklenenle birebir.
+## Doğrulananlar
 
-## Mimari net (canlı koddan)
+- **Statik (canlı modülden):** `grupla().spoollar` alanları endpoint `kabuk_spoollar` ile birebir
+  (MK-128.3) → ana risk çözüldü, map yok. `ARES_NORM.marka/revFmt/malzemeEtiket`, `izometriDreneEt`
+  (`onIlerleme.faz`='bitti'/'tamam'), `aktar` imzaları tuttu.
+- **Canlı (Demo Atölye, gerçek IFS .xlsm + izometri PDF):**
+  - Adım 1: dosya auto-detect (bom_excel/izometri/diger), gizli atlandı, Excel-gate çalıştı.
+  - Terfi: iki devre, 8'er spool, kabuk doğru (çap/et/ağırlık/malzeme St37/Karbon Çelik/Galvaniz/
+    spool ID A-xxxx/marka NB1137-... ve NB1099C-...).
+  - İnceleme (Adım 2): 4-durum tablosu doldu (🟢4 okundu / 🔴4 eksik), "8 PDF işleniyor" şeridi
+    döndü (B drenaj canlı), izometri eşleşme `L2 %100` (dosya adı + seviye). → gündem 2+3+5 kanıt.
 
-- **Kabuk:** CLIENT'ta kanonik `ARES_KABUK.grupla` ile türetilir (yeni kopya yok; `kabukTuret` v3'te
-  kullanılmaz → İnceleme'de gördüğün = terfide INSERT edilen). Endpoint'e `kabuk_spoollar` olarak gider.
-- **Eşleştirme:** SERVER endpoint, worker primitiflerini + `bindir`'i import eder. İzometri
-  `parse_sonuc` `dosya_isleme_kuyrugu`'ndan okunur. Hiçbir şeye yazmaz.
-- **Dokunulmayanlar:** `ares-kabuk.js` INSERT yolu, `ares-normalize/olcu`, `izometri-oku.js` (MK-49.1),
-  `kuyruk-isle-izometri.js` (sadece import), devre_detay. → sıfır regresyon yüzeyi.
+## KEŞİF — terfi-yeniden-eşle boşluğu (MK-127.4)
+
+devre_detay (terfi sonrası canlı) izometriyi "okumuyor": v3 drenajı İnceleme'de (taslak, spool YOK)
+çalışıyor; kanonik eşleştirici `spooller`'dan okuduğu için terfiden önce bağ kuramıyor, terfiden sonra
+yeniden-eşle olmadığı için izometri öksüz. **İnceleme tablosu (taslak) izometriyi doğru okuyor** (test
+kanıtı); eksik olan terfi sonrası bağ. Çözüm 129 (öneri A: parse_sonuc'tan ucuz re-eşle, $0).
 
 ## Hatalar & düzeltmeler (bu oturum)
 
-- İlk turda "çapa = `spool_id`" demiştim; `grep` montaj yolunun `montaj_json` kullandığını gösterince
-  düzelttim (sadece `spool_id`'ye bakan birleştirme montaj spool'larını yanlış 🔴 yapardı).
-- İlk turda kabuk için "2a (endpoint kendi türetir)" önermiştim; `ares-kabuk.js`'in browser-global +
-  ESM-değil olduğunu görünce "2b-grupla (client kanonik grupla, yeni kopya yok)"ya çevirdim — isomorphic
-  refactor riskinden kaçındık.
-- İlk turda endpoint için "worker'a primitif taşıma refactor'u" gerekebilir demiştim; `backfill`'in
-  zaten import ettiğini görünce gereksiz olduğu anlaşıldı (sıfır worker dokunuşu).
+- Flag INSERT iki kez FK'ye takıldı: `tenant_features.feature_kod` master `feature_flags`'te yokmuş
+  (kolon `kod`, `feature_kod` değil) → master-önce ekleyince geçti (MK-128.2). Sütun adı uydurulmadı,
+  canlı SELECT ile doğrulandı.
+- Malzeme sekmesi ilk yazımda ham satır alanlarıyla (`r.kod/r.boy_mm`) basıyordu; raw satırlar
+  `ifs_kod/uzunluk_mm` kullanıyor → grupla `.bom` konsolide alanlarına çevrildi (kozmetik).
 
 ## Süreç notu
 
-Cihat birkaç kez "arka planı göremiyorum, sana güvenmek zorundayım" dedi. Buna karşılık her karar
-küçük, kendisinin doğrulayabileceği kontrollere bağlandı (tek SQL, grep, çalıştırılabilir self-test).
-v3.html ve endpoint'in DB'ye dokunan kısmı 128'de canlı testle doğrulanacak — sayfa pilot bitene
-kadar canlıya ALINMAZ.
+İskele büyük (1038 satır) ama tek parça yazıldı çünkü tüm girdiler (v2 + mockup + 3 modül) okunup
+statik doğrulandı; her kablolama (endpoint alanları, modül imzaları) canlı kaynaktan teyit edildi
+(uydurma yok). Cihat arka planı göremediği için her DB adımı tek SELECT'le kanıtlandı (constraint,
+flag master, tenant). Push + canlı test Cihat tarafından yapıldı; iskele flag arkasında, pilot bitene
+kadar canlıya alınmaz.
 
 ---
 
-> 128 açılışında: `docs/DEVRE-WIZARD-OMURGA.md` (v3.1) + `son-durum.md` + `CLAUDE-SONRAKI-OTURUM.md` oku.
-> İlk iş önerisi: `devre_wizard_v3.html` iskelesi (frontend-design, mockup v5 referans).
+> 129 açılışında: `son-durum.md` + omurga v3.1 + `CLAUDE-SONRAKI-OTURUM.md` oku.
+> İlk iş: terfi-yeniden-eşle (MK-127.4 = A teyidi sonrası) — "tam okuma"yı bu çözer.
