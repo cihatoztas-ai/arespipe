@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-05-27T16:33:31.341Z",
-  "commit_sha": "31f22e49f223f735c55b7861fab39bc0c62114cb",
+  "tarih": "2026-05-27T17:29:03.485Z",
+  "commit_sha": "6b28df6795cd58315768ad4411bf30621c08aac0",
   "commit_ref": "main",
-  "workflow_run": 956,
+  "workflow_run": 957,
   "ozet": {
     "hata": 0,
     "uyari": 81,
@@ -160,7 +160,7 @@
           "dosya": "devre_wizard_v3.html",
           "sayi": 1,
           "satirlar": [
-            741
+            744
           ]
         }
       ]
@@ -423,7 +423,7 @@
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 741,
+          "satir": 744,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
