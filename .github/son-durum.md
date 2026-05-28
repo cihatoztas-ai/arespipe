@@ -1,92 +1,94 @@
-# Son Durum — 131. Oturum (28 Mayıs 2026)
+# Son Durum — 132. Oturum (28 Mayıs 2026)
 
-> 130 → 131 geçişi. **Teşhis oturumu (kod yok, bilinçli).** 130'un K4 ikilemi (Yol 2 "format
-> öğret" vs Yol 1 "L3 montaj") **kökten çözüldü** — ikisi de değil. Gerçek AT110 PDF'leri (montaj +
-> imalat) gerçek parser + gerçek fingerprint + gerçek pdf-parse ile canlı çalıştırılarak kök sebep
-> kesinleştirildi: **tanıma (recognition) glyph-decode boşluğu.** Fix deterministik tek tabloya indi.
+> 131 → 132 geçişi. **Teşhis düzeltme oturumu (kod yok, bilinçli).** 131'in glyph band-B
+> tezi canlı kodla uçtan uca çalıştırılarak **çürütüldü.** Parse yolağı bugün tamamen
+> sağlam: glyph onarımı (band-A+B) çalışıyor, tanıma çalışıyor, dispatch L2'ye giriyor,
+> kaymış montaj PDF'i `montaj{}` üretiyor. 132'nin planlı "baş işi" (band-B tablosu)
+> **konusuz.** Yapılacak glyph işi yok.
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**131 başarıyla kapatıldı (teşhis mühürlendi).** Montaj/spool sorunu "format öğretme" değil "tanıma"
-çıktı. Tersan formatı zaten öğretilmiş (119 spool / 120 montaj); AT110 ona hiç ulaşamıyordu çünkü
-tanınmıyordu. Kök sebep mekanik olarak kanıtlandı; fix yönü (glyph band-B decode tablosu) de-risk
-edildi. Kod bilinçli olarak 132'ye (bulk + taze bağlam) bırakıldı.
+131 bir teşhis oturumuydu ve **canlı yolağı hiç çalıştırmamıştı.** Bayat bir kod yorumuna
+(`izometri-oku.js:889` "Band B onarmaz") + onarım-öncesi ham metne bakıp dört kez yanlış
+sonuca vardı. 132'de gerçek E100 + M100 PDF'leri (montaj + imalat) gerçek `pdf-parse`,
+gerçek `metinNormalle`, gerçek DB fingerprint'leri, gerçek `aileBirlestir` + `parse` ile
+uçtan uca koşuldu. Sonuç tek: **kod doğru çalışıyor.**
 
-### Yapılanlar (sırasıyla)
+### Dört turluk doğrulama (hepsi canlı kanıt)
 
-1. **Açılış ritüeli** — git temiz, HEAD `bbf0626` (130 doc, `[skip ci]`), CI yeşil (129 deploy Ready).
-   Devir dosyaları + PARSER-VE-YUKLEME-AKISI Bölüm 7-8 okundu. Function 12/12 (kod değişmedi).
+1. **metinNormalle band-B'yi onarıyor mu?** → EVET. Kaymış E100 montaj+imalat ham
+   pdf-parse çıktısına uygulandı: `SPOOL NAME`, `Malzeme Listesi`, `Cut & Bending Info`,
+   `Continue:` çapaları + tam malzeme satırları kurtarıldı. **0 eşlenmeyen karakter.**
+   (131'in "band-B tablosu yok" tezi yanlış; tablo 122'de eklenmiş, çalışıyor.)
 
-2. **Doğrulama kapısı (K4 "önce"):** Cihat 2 takım gerçek AT110 + M100 PDF gönderdi (montaj +
-   imalat). İçerik ayrımı kesin: **S-segmentsiz `_1.pdf` = montaj** (Continue: topolojisi VAR,
-   Malzeme Listesi YOK), **S-segmentli `_S01_1.pdf` = imalat** (Malzeme Listesi + W1-W5 + Cut&Bending).
-   S-segmentsiz dosyalar kapak değil, dolu montaj resmi. K4 hedefi doğrulandı.
+2. **Tanıma onarılmış metni skorluyor mu?** → EVET. `pdfIpucuCikar` (642) `metinNormalle`
+   çağırıp `normMetin`'i `ilk_sayfa_metni`'ne veriyor. Gerçek `fingerprintSkor`:
+   - E100 montaj → `tersan_cadmatic_montaj` (skor 2: üretici+1, `Continue:`+1)
+   - E100 imalat → `tersan_cadmatic_spool` (skor 3: üretici+1, Malzeme+1, Cut&Bending+1)
+   - M100 montaj/imalat (temiz) → aynı şekilde tanınıyor.
+   Producer=`Cadmatic`, Creator=`Piping Isometrics & Spools`. **Hepsi ≥2 → tanınıyor.**
 
-3. **Format zaten öğretilmiş — 130 çerçevesi düzeltildi:** `format-paketleri.js` + `l2-parser.js`
-   incelendi. İki aile de canlı: `tersan_cadmatic_spool` (e1fb879d, 119'da 6/8 PDF) +
-   `tersan_cadmatic_montaj` (39a2c81b, 120'de 7 montaj PDF / 6 gemi). `montaj_modu` l2-parser'da
-   çalışıyor. Yani **"Yol 2 = format öğret" yanlış kurulmuş** — öğretecek bir şey yok.
+3. **Dispatch L2'ye giriyor mu?** → EVET. DB `parser_kural` boş değil (`pk_bos=false`),
+   kapı (215) geçiyor → `parserKuralIle`. `requires_ai` dispatch'te kullanılmıyor.
 
-4. **Parser canlı testi (pdftotext):** Montaj parser AT110 montajını **kusursuz** okudu (pipe_no,
-   spool S01, yüzey, blok B1137, sistem, 8 kg — 6/6). İmalat başlığı okundu ama malzeme satırları
-   varyant (boşluklu) → ham düştü. → Demek ki parser hazır, PDF ona ulaşmıyor.
+4. **Uçtan uca L2 ne üretiyor?** → Dördü de `parser_seviye=l2`, parse.ok=true:
+   - E100 montaj (kaymış): montaj{} → pipe E100-817-005, spool[S01–S06], continue[Y100,
+     M110], blok B1137, Paslanmaz.
+   - E100 imalat (kaymış): spool S01, Paslanmaz, 5kg, 2 malzeme satırı.
+   - M100 montaj (temiz): montaj{} → pipe M100-317-18-ALS, spool[S01], alıştırma=PARCA.
+   - M100 imalat (temiz): spool S01, cap 168.3/et 4.5, 18.9kg, 7 malzeme satırı.
 
-5. **Tanıma kök sebebi (mühür):** Gerçek `pdf-parse` + gerçek fingerprint skorlamasıyla:
-   - AT110 montaj + imalat: Producer=`Cadmatic`, Creator=`Piping Isometrics & Spools` → üretici +1.
-   - Metin sinyalleri (`Continue:` / `Malzeme Listesi` / `Cut & Bending Info`) pdf-parse çıktısında
-     **dördü de bulunamadı** → skor **1 < eşik 2** → **TANINMADI → L3.** (130'un gözlemi doğruydu,
-     sebebi yanlış atfedilmişti.)
-   - **Linchpin:** Hem tanıma (`pdfIpucuCikar`, satır 634) hem L2 (`parserKuralIle`, satır 882)
-     **pdf-parse** kullanıyor — `-layout` değil. Metin modu sorun değil, **decode** sorun.
+### ai_api_log + DB yer-gerçeği (teşhisi mühürledi)
 
-6. **Glyph kök sebebi + deterministik kanıt:** `pdffonts` → font **gömülü-değil ArialMT, Identity-H,
-   ToUnicode YOK** (`uni: no`). Metin ham glyph-ID; pdftotext standart Arial sırasıyla çözüyor,
-   pdf-parse çözemeyip çöp veriyor (`pmlli`="SPOOL", `` `çåíáåìÉW ``="Continue:"). Çöp→doğru eşlemesi
-   **38 giriş, SIFIR çatışma** → tamamen deterministik:
-   - **Band-A (büyük harf + rakam):** tekdüze **+29** (`çöp - 29 = doğru`). glyph-onar **zaten yapıyor**.
-   - **Band-B (küçük harf + Türkçe):** sabit lookup tablosu (~20 giriş, aritmetik değil ama birebir
-     tutarlı). glyph-onar **yapmıyor** (l2-parser/izometri-oku satır 889: "Band B onarmaz"). **BOŞLUK BU.**
+- **SHA araması:** Bu 4 PDF'in canlı SHA256'ları ai_api_log'da arandı. Yalnız M100 imalat
+  kaydı var (22 May, l2, spool üretti — doğru). E100'ler bu byte'larla hiç yüklenmemiş →
+  bunlar **taze test örnekleri**, 130'un symptom'unu gören gerçek devre değil.
+- **Format dağılımı:** Montaj Cizimi (genel) l2=30 (23 May→27 May), l3 yalnız 3 (23 May
+  anlık). İmalat Resmi l2=95, l3 eski (1-9 May). Yani montaj/imalat **bugün L2 çalışıyor.**
+- **"Montaj Resmi" şüphesi temizlendi:** `tersan_cadmatic_isometry` `aktif=false` (120'de
+  emekli), üstelik fingerprint'i spool imzası (`Malzeme Listesi`+`Cut & Bending`) → montaja
+  hiç eşleşmez. Suçlu değil; sadece yanlış adlı emekli kopya.
+- **817-005 spool'ları DB'de yok** → symptom başka devrede (muhtemelen bayat veri).
 
 ---
 
-## Oturum 131 Kararları / Mühürlenen Bulgular
+## Mühürlenen Bulgular
 
 | # | Bulgu |
 |---|---|
-| B1 | AT110 montaj `_1.pdf` = gerçek montaj (Continue topoloji, Malzeme Listesi yok); imalat `_S01_1.pdf` = malzeme listeli spool. İçerik ayrımı kesin. |
-| B2 | Tersan formatı (spool+montaj) zaten öğretilmiş ve kanıtlanmış (119/120). 130'un "Yol 2 öğret" çerçevesi geçersiz. |
-| B3 | AT110 L3'e düşüyor çünkü **tanınmıyor**, parse yetersiz değil. Skor 1<2 (yalnız üretici sinyali). |
-| B4 | Kök: gömülü-değil ArialMT Identity-H + ToUnicode yok → pdf-parse glyph çözemiyor. Fingerprint band-B çapaları (Continue:/Malzeme Listesi/Cut&Bending) kaymış metinde tutmuyor. |
-| B5 | Çöp→doğru deterministik (38/0). Band-A=+29 (var), Band-B=sabit tablo (yok). **Fix = glyph-onar'a band-B tablosu.** Tek değişiklik tanıma + malzeme tablosu (NB1137 borcu) + montajı birden açar. izometri-oku.js'e dokunulmaz (MK-49.1 güvenli). Gömülü-değil ArialMT Identity-H her PDF'e genellenir. |
-| B6 | 119/120 neden çalıştı: o 6 gemi **temiz** export'tu (pdf-parse okudu). AT110/NB1137 kaymış varyant. Tersan = temiz + kaymış iki alt-sınıf. |
-| B7 | **K4 ÇÖZÜLDÜ:** ne Yol 2 ne Yol 1 — glyph band-B decode tablosu. |
-| B8 | Dosya şişmesi planı (Aşama 3 → paketler DB'ye, tek kaynak DB) DURUYOR (format-paketleri.js + MK-119.2). Şu an Aşama 1 (tek tersane). Tetik: 2. tersane formatı. Tersan tuning'i bitene kadar kod tarafında kal. |
+| B1 | `metinNormalle` band-A + band-B yapar (122'den beri). Kaymış Cadmatic tam çözülüyor (0 eşlenmeyen). |
+| B2 | Tanıma `normMetin` skorluyor (642). E100/M100 montaj+imalat tanınıyor (skor 2-3). |
+| B3 | Dispatch L2'ye giriyor (`pk_bos=false`). `requires_ai` dispatch'te kullanılmıyor. |
+| B4 | Uçtan uca: 4 PDF'in dördü de L2, montaj PDF'leri `montaj{}` üretiyor (kaymış E100 dahil). |
+| B5 | **131'in 4 tezi de yanlış:** band-B yok (yanlış), E100 tanınmıyor (yanlış), tanıma onarmıyor (yanlış), dispatch atlıyor (yanlış). Kök: bayat 889 yorumu + canlı yolak koşulmadı. |
+| B6 | 130'un montaj_json-null symptom'u = parse bug'ı DEĞİL. Kod doğru. Muhtemel sebep bayat veri (122 öncesi L3 parse). Çözüm: ilgili devrenin yeniden parse'ı; yeni kod değil. |
+| B7 | "Montaj Resmi" (`tersan_cadmatic_isometry`) aktif=false, montaja eşleşmez → suçsuz. Yine de temizlik borcu (yanlış ad) açık. |
 
 ---
 
 ## CI Son Durum
 
-- HEAD `bbf0626` (130 doc, `[skip ci]`). Bu oturumda da **kod push yok** — sadece doküman.
-- Function sayısı: **12/12** (Hobby tavanı; api/ değişmedi).
+- HEAD `2acef13` (131 doc). Bu oturumda da **kod push yok** — teşhis + doküman.
+- Function: 12/12 (api/ değişmedi).
 
 ---
 
-## 132'e Açık Borç (önceliğe göre)
+## 133'e Açık Borç (önceliğe göre)
 
-1. **Glyph band-B decode tablosu (B5 — baş iş):** `lib/glyph-onar.js`'e band-B lookup tablosunu ekle
-   (gated, deterministik). Önce a-z + Türkçe (ç,ğ,ı,ö,ş,ü) tabloyu tamamla (AT110+M100 PDF'lerinden,
-   font-seviyesi — over-fit değil). Dry-run: AT110 montaj+imalat → tanınıyor mu (skor ≥2) + parse
-   ediyor mu. **Bulk doğrular:** gelen gemilerin kaçı bu font sınıfında.
-2. **K1+K3 — bindirme_flag UI:** v3 İnceleme 🟡 + düzelt popup. Function tavanı bağımlı.
-3. **K2 — malzeme listesi kıyası:** Excel BOM × PDF malzeme_listesi diff. İnceleme UI sonrası.
-4. **MK-61.4 + doc:** PARSER-VE-YUKLEME-AKISI.md **Bölüm 7.3 EKLENDİ (131, bu push'ta)** + Bölüm 8 K4
-   mührü. Kalan: BRIEFING bilgi haritası satırı + 131 MK adaylarını (131.1-131.4) KARARLAR'a işle.
-5. **K5 — function konsolidasyon planı:** Katman 3 endpoint öncesi kuyruk-isle-* tek router.
-6. **v3 İnceleme & Onay giydirmesi (büyük, çok-oturumluk):** mockup v5 → v3, okuma endpoint (MK-127.3).
-7. **Taşınanlar:** 117 (`yukleyen_id`), web-spool sync, fitting (DIN 86087/ASME B16.9),
-   `spool_dokumanlari` bağ tablosu, "fazla" UX.
+1. **Hijyen (bu oturumda kararlaştırıldı, push'ta uygulanır):**
+   - `izometri-oku.js:887-890` bayat yorum düzeltmesi (comment-only, sıfır mantık).
+   - KARARLAR'a **MK-132.1** (canlı-yolak doğrulama disiplini) + **MK-132.2** (glyph band-B
+     gerçeği). **131.1-131.4 YAZILMAYACAK** (yanlış teşhis).
+   - PARSER-VE-YUKLEME-AKISI.md Bölüm 7.4 (132 düzeltmesi) — 7.3/8'in glyph tezini iptal eder.
+2. **K2 — malzeme listesi kıyası:** Excel BOM × PDF `malzeme_listesi` diff. En self-contained
+   gerçek iş. (133 baş iş adayı.)
+3. **K1+K3 — bindirme_flag UI:** v3 İnceleme 🟡 + düzelt popup. Function tavanı bağımlı.
+4. **(opsiyonel) Bayat-veri teyidi:** 130'un gerçek devresinde montaj_json null mı bak;
+   gerekiyorsa backfill (re-parse). Kuvvetle muhtemel veri işi, kod değil.
+5. **Taşınanlar:** "Montaj Resmi" emekli formatın silinmesi/yeniden adlandırılması,
+   K5 function konsolidasyon, v3 giydirme, 117 (`yukleyen_id`), web-spool sync, fitting.
 
 ---
 
@@ -97,12 +99,14 @@ edildi. Kod bilinçli olarak 132'ye (bulk + taze bağlam) bırakıldı.
 | son-durum.md | `.github/son-durum.md` | doc |
 | CLAUDE-SON-OTURUM.md | `CLAUDE-SON-OTURUM.md` | doc |
 | CLAUDE-SONRAKI-OTURUM.md | `CLAUDE-SONRAKI-OTURUM.md` | doc |
-| PARSER-VE-YUKLEME-AKISI.md | `docs/PARSER-VE-YUKLEME-AKISI.md` | **doc (Bölüm 7.3 + 8 K4 mührü, 131)** |
+| (elle) izometri-oku.js | `api/izometri-oku.js` | **comment-only fix (887-890)** |
+| (elle) KARARLAR.md | `KARARLAR.md` | MK-132.1 + MK-132.2 |
+| (elle) PARSER-VE-YUKLEME-AKISI.md | `docs/...` | Bölüm 7.4 (132 düzeltmesi) |
 
-Hepsi doc → commit `[skip ci]` ile gidebilir. (Bölüm 7.3 + Bölüm 8 K4 mührü 131'de işlendi.)
+Doc dosyaları `[skip ci]` ile gidebilir. izometri-oku.js comment-only ama CI tetikler (kod
+yolu) — yorum değişiminin lint'i geçmesi beklenir.
 
 ---
 
-> 132 açılışında: `son-durum.md` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` +
-> PARSER-VE-YUKLEME-AKISI Bölüm 7 + omurga v3.1 okunur. İlk iş: **glyph band-B decode tablosu**
-> (glyph-onar.js), dry-run AT110, sonra bulk.
+> 133 açılışında: `son-durum.md` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` +
+> PARSER Bölüm 7.4 okunur. **Glyph/tanıma konusu KAPALI.** İlk iş: K2 (malzeme listesi kıyası).
