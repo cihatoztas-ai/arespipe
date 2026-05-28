@@ -884,10 +884,11 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
     if (!hamText.trim()) {
       return { ok: false, sebep: 'pdf_text_bos', parser_seviye: 'l2_failed', http_status: 200 };
     }
-    // 121: glyph band-A kapili onarim (MK-120.3). Cadmatic -29 kaymasi varsa onarir;
-    // temiz metinde no-op (kapi: ham'da capa varsa dokunmaz -> sifir regresyon).
-    // Band B (kucuk harf/Turkce) onarmaz -> NB1137 montaj L2'ye gecer; NB1137 spool
-    // malzeme tablosu (band B) hala L3 (dogru/dürüst, ayri borc).
+    // 121/122: glyph kapili onarim (MK-120.3 band-A + 122 band-B). Gomulu-degil ArialMT
+    // Identity-H kaymasi varsa band-A (-29) VE band-B (a-z/Turkce tablo) onarir; temiz
+    // metinde no-op (kapi: ham'da capa varsa dokunmaz -> sifir regresyon).
+    // 132 DUZELTME (MK-132.2): eski yorum "Band B onarmaz" diyordu -> YANLIS. metinNormalle
+    // band-B'yi de yapar; kaymis E100/M100 montaj+imalat L2'de tam parse oldu, montaj{} uretti.
     const { metin: text, glyph_band_a, durum: glyphDurum } = metinNormalle(hamText);
     if (glyph_band_a) {
       // Gorunurluk metrigi (format envanter UI / [L2-FAIL] kalibi).
