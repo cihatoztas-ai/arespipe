@@ -1,158 +1,85 @@
-# Oturum 130 — Parser & Yükleme Akışı belgesi + spool detay UI çelişkisi + çapraz doğrulama
+# Oturum 131 — Montaj yol kararı (K4) + v3 giydirmesinde K1/K3
 
 ## Açılış ritüeli
 
-Git pull/status/log → CI rengi (129 push'unda KOD vardı: `eslestirme-backfill.js` alias
-fix + `devre_wizard_v3.html` onayEt entegrasyonu — sarı/yeşil beklenir, kırmızı
-olmamalı) → bu üç dosya oku: `son-durum.md`, `CLAUDE-SON-OTURUM.md`, bu dosya →
-ayrıca `docs/DEVRE-WIZARD-OMURGA.md` (v3.1) → gündem teyidi.
+Git pull/status/log → CI rengi (130 sadece doc push'u, `[skip ci]` → yeşil olmalı, kod yok) →
+şu dosyalar oku: `son-durum.md`, `CLAUDE-SON-OTURUM.md`, bu dosya → `docs/PARSER-VE-YUKLEME-AKISI.md`
+(özellikle **Bölüm 7 teşhis + Bölüm 8 kararlar**) → `docs/DEVRE-WIZARD-OMURGA.md` (v3.1) →
+gündem teyidi.
 
-**Function sayımı zorunlu (MK-129.3):** `ls api/*.js | wc -l` → 12 görmeli. 12'ye
-yaklaşıldığında konsolidasyon/Pro kararı.
+**Function sayımı zorunlu (MK-129.3):** `ls api/*.js | wc -l` → 12 görmeli.
 
-## 129 nerede bıraktı — kısa hatırlatma
+## 130 nerede bıraktı — kısa hatırlatma
 
-- A1 (terfi-yeniden-eşle, MK-127.4) **DB seviyesinde tam çalıştı**, iki vakada
-  kanıtlandı (`7fbdde63` + `3ce020f6`). v3 `onayEt`'e entegre, toast "8 izometri
-  eşleşmesi" gösteriyor.
-- **AMA:** yeni v3 testinde spool detay UI'da imalat izometri PDF görünmedi, sadece
-  montaj PDF var. Bu DB-UI çelişkisi 130'un ilk işi.
-- **Daha büyük keşif:** Cihat'ın tetikçi testi (POAR'ı kopyalayıp yeni isimle yükledi)
-  çapraz doğrulama katmanının eksikliğini açığa çıkardı — PDF içeriği × Excel kabuk
-  uyumsuzluğunu sistem yakalamıyor. Omurganın yapılmamış büyük adımı.
+- `docs/PARSER-VE-YUKLEME-AKISI.md` yazıldı (5 katman, kod yok). Tetikçi + montaj **tam teşhis**.
+- İki problem de mekanik bug değil mimari karar. **K1-K5 alındı** (Bölüm 8).
+- Kod bilinçli 131'e bırakıldı (gereksiz risk + bağlam).
 
 ## Yapılacaklar (sıra)
 
-### 1. **`docs/PARSER-VE-YUKLEME-AKISI.md` belgesi (Cihat onayı, 00:35) — yarım gün**
+### 1. **K4 — Montaj yol kararı + kod (baş iş)**
 
-**Kod yazılmadan belge yazılır.** İçerik:
+**Teşhis (130, kesin):** Montaj tespiti yalnız L2'de var (`lib/l2-parser.js` montaj_modu); L3'te
+montaj kavramı yok → format tanınmayan devrelerde montaj asla `montaj_json`'a yazılmıyor → spool
+detayda görünmüyor. `montajEslestir` + `spool_detay.html` okuma yolu **doğru çalışıyor** (sorun
+tespitte, eşleştirme/UI'da değil).
 
-- **Klasör yükleme akışı:** drop/folderInput → `dosyalariEkle` → `autoDetect` (uzantı +
-  klasör sözlüğü + BOM heuristic) → tip seçimi (UI override) → kuyruğa al → parser
-  yönlendirme (`bom_excel`→excel-generic, `izometri`→izometri, diğer→sakla).
-- **Katman katman sömürme planı (omurganın eksik kalan kısmı):**
-  1. **Katman 0: Güvenlik** — Excel kabuk zorunlu (MK-125.3). Excel yoksa İncele kapalı.
-  2. **Katman 1: Kabuk türetme** — `ARES_KABUK.grupla(satirlar)` → spool listesi
-     (pipeline, spool_no, çap, et, ağırlık, malzeme, kalite, yüzey).
-  3. **Katman 2: PDF içerik sömürme** — POAR/PAOR/AVEVA formatları, L1 (text-layer),
-     L2 (regex+layout), L3 (AI okuma — manuel toggle, **otomatik karar 130'a eklenecek**).
-  4. **Katman 3: Çapraz doğrulama (EKSİK)** — PDF içeriği × Excel kabuk:
-     - Pipeline çelişkisi (dosya adı vs PDF içindeki başlık metni)
-     - Et/çap/ağırlık (`bindir()` zaten var, %3 tolerans, `bindirme_flag` set ediyor
-       ama UI'da görünür değil)
-     - **Malzeme listesi karşılaştırması (HİÇ YOK)** — POAR'daki BOM tablosu Excel BOM
-       ile çakıştırılmalı, fark olunca operatöre göster
-  5. **Katman 4: Operatör onayı** — çelişki varsa "Düzelt" akışı (omurga 18.d "çapa")
-- **Parser kuralları:** `lib/excel-parser.js` tier'ları (L1 dictionary, L2 word-boundary
-  substring, sheet priority All/import, summary row filter), `api/izometri-oku.js`
-  format detection (POAR/PAOR/AVEVA), `dosyaAdiParse` regex'i (pipeline+spool
-  çıkarma), `bindir()` toleransları.
-- **Kayıt şeması:** `devre_dokumanlari` (`spool_id`, `parse_durumu`, `yukleyen_id`),
-  `dosya_isleme_kuyrugu` (`parser`, `durum` states, `parse_sonuc` JSONB yapısı),
-  `spooller.cizim_durumu` state machine (`bekliyor`→`kismi`→`tam`), `montaj_json`
-  şeması, `parse_sonuc._eslesme` özet alanı.
-- **MK referansları:** MK-49.x, MK-72.x, MK-97.x, MK-98.x, MK-99.x, MK-110.x,
-  MK-125.x, MK-126.x, MK-127.x, MK-128.x, MK-129.x — KARARLAR.md'den birebir.
+**Karar (ilk iş):**
+- **Yol 2 (önerilen, kalıcı):** AT110/Demo Atölye formatı için `parser_kural` + `montaj_modu`
+  öğret → L2 yoluna gir → montaj otomatik çıkar, $0, içerik okur. Format motoru zaten var.
+- **Yol 1 (evrensel emniyet ağı):** L3 prompt'a montaj/genel tespiti branch'i. **`izometri-oku.js`'e
+  dokunur (MK-49.1!)** + L3 maliyeti + MK-125.2 gerilimi. Çakışma kapısından (MK-127.1) geçir.
+- **Yol 3 elendi:** Cihat "içi okunarak" dedi.
 
-**Okuma sırası (130 ilk saat):** `KARARLAR.md` → `docs/DEVRE-WIZARD-OMURGA.md` →
-`lib/excel-parser.js` → `api/izometri-oku.js` → `api/kuyruk-isle-izometri.js`
-(`eslestir` + `bindir` + `montajEslestir`) → `ares-kabuk.js` (`grupla`, `aktar`) →
-`ares-normalize.js` → `devre_wizard.html` v2 (yükleme akışı kanonik). Belge yazılırken
-bu dosyalara birebir referans verilecek.
+**Önce:** Bu test devresinin (`7702313c` / AT110) S-segmentsiz PDF'lerinin **gerçekte ne olduğunu**
+doğrula — montaj çizimi mi yoksa pipeline genel/kapak sayfası mı? (Dosya adları `1(2)`/`2(2)` =
+"sayfa 1/2" gibi.) Montaj değilse K4'ün bu devredeki semptomu farklı kategoriye gidebilir.
 
-### 2. **Spool detay UI çelişkisi (DB-UI uyumsuzluğu)**
+### 2. **K1 + K3 — bindirme_flag UI (v3 İnceleme)**
 
-Yeni v3 testinde (`de0dbbdf-...`) toast doğru çıktı ama spool detayda imalat sekmesi
-boş, montaj geldi. Eski devrede (`7fbdde63`) tersi olmuştu. **SQL'le başla:**
+`_eslesme.detay[].bindirme_flag` zaten DB'de (`flag_sayisi` doğru). Eksik: v3 İnceleme ekranında
+🟡 "doğrulanmadı" + düzelt popup (mockup v5'te tasarlı — `mbadge`/`islemCell`). cizim_durumu
+enum'a DOKUNMA (K1). Bu, v3 İnceleme & Onay giydirmesinin parçası.
 
-```sql
--- Yeni v3 testinin durumu
-select s.spool_no, s.cizim_durumu,
-  (select count(*) from devre_dokumanlari dd
-     where dd.devre_id = s.devre_id and dd.spool_id = s.id) as bagli_dok,
-  (s.montaj_json is not null) as montaj_var
-from spooller s
-where s.devre_id = 'de0dbbdf-7c34-4f82-ad2e-5bd154fc864a'
-  and s.silindi = false
-order by s.spool_no;
-```
+### 3. **K2 — malzeme listesi kıyası** (İnceleme UI sonrası)
 
-Eğer `bagli_dok=1` ama UI boş → `spool_detay.html:1241-1243` sorgusunda `tenant_id`
-veya başka bir filtre eksik. Eğer `bagli_dok=0` → backfill çalışmadı ama toast yanlış
-sayı verdi (`toplam_yukseltilen` fallback'i `|| 0` ama gerçek 0 mı, eşleşen mi karışmış).
+Excel BOM × PDF `malzeme_listesi` diff. L3 `malzeme_listesi` zaten üretiliyor, hiç kullanılmıyor.
+Excel'de liste varsa kıyas + fark göster; yoksa PDF'ten oluştur (K2). Füzyon gerilimi (WN/SO flanş)
+→ "sıkı diff değil, fark varsa operatöre göster".
 
-### 3. **Çapraz doğrulama tasarımı** (belge yazıldıktan sonra)
+### 4. **K5 — function konsolidasyon planı**
 
-Belgeden çıkacak somut adımlar — şu an taslak:
-- `bindirme_flag` UI'da gösterilmeli (spool tablosunda "çelişki var" + detay popup)
-- Pipeline doğrulama: PDF içeriğindeki ana başlık (POAR header) `dosyaAdiParse`
-  çıktısıyla çakıştırılmalı, fark varsa uyarı
-- Malzeme listesi karşılaştırma: POAR BOM tablosu × Excel BOM, satır bazlı diff
-- L3 otomatik karar: PDF'in resim-PDF olduğu tespitinde otomatik L3 tetik (operatör
-  onaylar)
+Katman 3 server-side okuma endpoint'i (MK-127.3) = 13. function → tavan aşımı. Önce konsolidasyon
+planı: `kuyruk-isle-*` dosyalarını tek router'a indir. Pilot tetiğinde Pro (~$45/ay), şimdi değil.
 
-### 4. **Klasör ağacı + işaretleme** (128'den devreden, mockup v5)
+### 5. **MK-61.4 borcu**
 
-Adım 1'de Windows-gezgini benzeri aç-kapa klasör ağacı. İşaretleme (revizyon-öncesi
-klasörü eşleştirmeye sokma). `dokKlasorToggle` deseni var (devre_detay), Adım 2
-Dökümanlar sekmesinde Adım 1'e taşınacak.
+`BRIEFING.md` bilgi haritasına `PARSER-VE-YUKLEME-AKISI.md` satırı eklenmeli (130'da yazıldı, harita
+satırı eklenmedi). Ayrıca repo'daki **güncel `KARARLAR.md`'yi doğrula** — 130'da yüklenen bayattı
+(MK-74.3). 130 K1-K5 kararları + montaj/L3 boşluğu MK olarak işlenmeli.
 
-### 5. **"Fazla" UX hatası**
+### 6. **Diğer borçlar** (sıra dışı)
 
-Montaj/genel PDF'leri (dosya adı pipeline regex tutmayanlar) "fazla" olarak
-gösteriliyor — yanlış kategori. Mockup'ta "fazla" = `spool_no aday` çıkarılabilen
-ama kabukta olmayan (X26 örneği). Çözüm: `dosya_adi_pipeline_yok` sebepli olanlar
-ayrı kategori ("Montaj/Genel") veya Dökümanlar sekmesine.
-
-### 6. **Diğer borçlar** (sıra dışı, hazır olduklarında)
-
-- Onayla-drenaj guard + tooltip (128 borcu)
-- Devreler girişi (MK-126.4) — sidebar "Devre Yükle" + "Onay Bekleyen" liste +
-  canlı listelere `durum<>'taslak'` filtresi
-- Function limiti stratejisi (MK-129.3): konsolidasyon planı çıkar
-- 117 borcu (`yukleyen_id` null), web-spool sync (`aktif_basamak`/`ilerleme`)
-- Fitting kütüphanesi (DIN 86087, ASME B16.9)
+- "fazla" UX: S-segmentsiz montaj/genel PDF kategorisi (Problem 2 ile birleşik)
+- 117 (`yukleyen_id`), web-spool sync (`aktif_basamak`/`ilerleme`)
+- Fitting (DIN 86087, ASME B16.9), `spool_dokumanlari` bağ tablosu
 
 ## KORUMA bantları
 
-- **KORUMA-1:** Kanonik modüller (`ARES_KABUK`, `ARES_NORM`, `ARES_IZO_DRENAJ`,
-  `izometri-oku`, `eslestir`) **çağır, kopyalama.**
-- **KORUMA-2:** Canlı sayfalara dokunuş (devreler.html, proje_detay.html) → smoke test.
+- **KORUMA-1:** Kanonik modüller (`ARES_KABUK`, `ARES_NORM`, `izometri-oku`, eşleştirme primitifleri)
+  çağrılır, kopyalanmaz.
 - **KORUMA-3:** v3 izolasyonu (MK-127.2) — v2'ye dokunma.
-- **KORUMA-4 (yeni):** `ls api/*.js | wc -l` zorunlu (MK-129.3); 12'ye yaklaşma.
-- **KORUMA-5 (yeni):** Yeni endpoint yazmadan önce mevcut `api/*` envanteri zorunlu
-  + benzer adlı dosyaları aç (MK-129.2, MK-126.8 güçlendirmesi).
-
-## Sonraki fazlar (omurga 18.d — 130'da DEĞİL)
-
-- Çapa görsel arayüzü (PDF'te işaretle → formatın tümüne öğret)
-- Taslak modu tam: `taslak_haric`/`taslak_not` + nullable kolonlar
-- A2 et/çap çelişkisi: client `grupla` çıktısına çap (`capCikar`/`boyutParse`)
+- **KORUMA-4:** `ls api/*.js | wc -l` zorunlu; 12'ye yaklaşma (MK-129.3).
+- **MK-49.1:** `izometri-oku.js`'e dokunma — Yol 1 seçilirse çakışma kapısından (MK-127.1) geçir.
 
 ## Hatırlatmalar
 
-- MK-49.1: `izometri-oku.js`'e DOKUNMA
-- MK-126.8 + MK-129.2: yeni endpoint öncesi mevcut kod + DB + `api/*` envanteri
-- MK-129.1: PostgREST FK kolonu + embed çakışmasında alias zorunlu
-- MK-129.3: Hobby 12-function tavan kontrolü
-- MK-129.4: v3 terfi → backfill best-effort, hata yutar
-- Env: `SUPABASE_SERVICE_KEY` (ROLE değil, MK-101.4)
-- Storage path: `{tenant_id}/...` (MK-99.2)
-- Dry-run schema: `BEGIN...ROLLBACK` (MK-98.2)
-- Migration: `DROP IF EXISTS` idempotent (MK-99.1)
-
-## Plan tablosu (129 onayı)
-
-| Servis | Şimdi | Pilot tetiğinde | ~Maliyet |
-|---|---|---|---|
-| Vercel | Hobby | **Pro şart** | ~$20/ay |
-| Supabase | Free | **Pro şart** | ~$25/ay |
-| GitHub | Free | Free yeterli | $0 |
-
-Toplam pilot tetiğinde ~$45/ay. Tetik = ilk gerçek tersane anlaşması.
+- Env: `SUPABASE_SERVICE_KEY` (MK-101.4) · Storage path `{tenant_id}/...` (MK-99.2)
+- Dry-run schema `BEGIN...ROLLBACK` (MK-98.2) · Migration `DROP IF EXISTS` (MK-99.1)
+- Yeni durum değeri eklemeden `pg_get_constraintdef` kontrol (MK-101.5)
+- `sed` özel karakter/uzun dosyada kullanma → `create_file`/`str_replace` (129 dersi)
 
 ---
 
-> **130'un ilk somut adımı: belge yaz, kod yazma.** `docs/PARSER-VE-YUKLEME-AKISI.md`
-> hem 130-140 oturumlarının paylaşılan referansı, hem çapraz doğrulama katmanının
-> mimari yerini netleştirecek. Cihat onayı: 129 kapanışında alındı.
+> **131'in ilk somut adımı: K4 montaj yol kararı (2 vs 1).** Önce S-segmentsiz PDF'lerin gerçekte
+> ne olduğunu doğrula, sonra yolu seç. Kod yazmadan önce omurga + Bölüm 8 + çakışma kapısı (MK-127.1).

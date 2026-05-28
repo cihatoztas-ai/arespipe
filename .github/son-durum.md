@@ -1,196 +1,90 @@
-# Son Durum — 129. Oturum (27-28 Mayıs 2026)
+# Son Durum — 130. Oturum (28 Mayıs 2026)
 
-> 128 → 129 geçişi. Terfi-yeniden-eşle (MK-127.4) **DB seviyesinde tam kapatıldı**;
-> `eslestirme-backfill` (110'dan kalan) mükerrer endpoint girişimi temizlendi, alias fix'i
-> ile PDF↔spool bağı çalıştı, v3 `onayEt`'e entegre edildi. Ama yeni v3 testinde spool
-> detay sayfasında **imalat izometri sekmesi boş, sadece montaj görünüyor** — bu çelişki
-> 130'un baş maddesi. Ayrıca derin bir keşif: **PDF içeriği × Excel kabuk çapraz
-> doğrulaması yapılmıyor** — POAR'daki malzeme listesi Excel BOM ile çakıştırılmıyor,
-> dosya adı yanlışsa sistem sessizce yanlış bağ kuruyor. Bu, omurganın eksik kalmış
-> büyük katmanı.
+> 129 → 130 geçişi. **Belge oturumu + derin teşhis** — bilinçli olarak kod yazılmadı.
+> `docs/PARSER-VE-YUKLEME-AKISI.md` yazıldı (kod yazmadan, 8 kaynak dosya birebir okunarak):
+> klasör yükleme → kabuk → PDF sömürme → çapraz doğrulama → onay, beş katman. Ardından Cihat'ın
+> tetikçi testi + montaj sorunu **canlı SQL + kod** ile tam teşhis edildi. İki problem de mekanik
+> bug değil, **mimari karar** (K1-K5 alındı). Kod sonraki oturuma — taze bağlamla — bırakıldı.
 
 ---
 
 ## Bu Oturumun Sonucu
 
-**129 kısmi başarıyla kapatıldı.** Birincil hedef (terfi-yeniden-eşle, MK-127.4/A1) DB
-seviyesinde **iki ayrı vakada kanıtlandı** (eski devre `7fbdde63` + yeni v3 devresi
-`3ce020f6`). v3 `onayEt` entegrasyonu push edildi, toast'ta "8 izometri eşleşmesi"
-yazısı görüldü. Ama spool detay UI'da imalat sekmesi boş çıkıyor — DB doğru, ekran
-yanlış. Ek olarak **mimari boşluk** yüzeye çıktı: çapraz doğrulama katmanı eksik.
+**130 başarıyla kapatıldı (belge + teşhis).** Kilitli baş iş (`PARSER-VE-YUKLEME-AKISI.md`) bitti,
+canlı-veri kanıtıyla mühürlendi. İki problemin kök sebebi kesinleşti; beş karar (K1-K5) Cihat
+onayıyla alındı. Function tavanı 12/12 teyit edildi (yeni endpoint yok — KORUMA-4 korundu).
 
 ### Yapılanlar (sırasıyla)
 
-1. **Mevcut kodu okuma (MK-126.8):** `api/kuyruk-isle-izometri.js` — `birIsIsle`,
-   `eslestir`, `montajEslestir` gövdeleri canlı incelendi. Kuyruk şeması Supabase'den
-   doğrulandı (`devre_dokuman_id` FK, kuyrukta `devre_id` kolonu YOK; bağ
-   `devre_dokumanlari` üzerinden). `eslestir(supa, devreId, kuyrukId, okuJson,
-   devreDokumanId)` imzası teyit edildi.
+1. **Açılış ritüeli** — git temiz, HEAD `f557669`, CI yeşil (129 deploy Ready). 8 reading-order
+   dosyası birebir okundu (KARARLAR bayat çıktı — MK-74.3'te kalmış, kullanılmadı; MK'lar omurga
+   v3.1 + canlı kod + 129 devirden alındı).
 
-2. **İlk yanlış adım — mükerrer endpoint (MK-126.8 ihlali):** `api/devre-eslesme-yenile.js`
-   (145 satır) yazıldı, push edildi. Ama `api/eslestirme-backfill.js` (110/MK-110.1 ile
-   yazılmış) zaten **birebir aynı işi** yapıyordu (`{devre_id, kuru, limit}` body,
-   `eslestir` import, idempotent). Üstelik Vercel **Hobby plan 12 function limiti**
-   bu yeni dosya ile aşıldı → deploy 3 commit boyunca Error. `git rm` + `gp` ile geri
-   alındı, 12'ye dönüldü, deploy yeşillendi.
+2. **`docs/PARSER-VE-YUKLEME-AKISI.md` yazıldı** — beş katman (0 Güvenlik / 1 Kabuk / 2 PDF
+   sömürme / 3 Çapraz doğrulama EKSİK / 4 Onay), her katman koddan birebir referansla. MK-61.4
+   ile sahip + tazelik penceresi başlığa kondu. (BRIEFING.md bilgi haritası satırı **eklenmeli** —
+   açık borç.)
 
-3. **`eslestirme-backfill.js` fix'i (2 aşamalı, oturum içinde):**
-   - **B-1 (yetersiz):** select'e `devre_dokuman_id` eklendi, `eslestir`'in 4. argümanı
-     `is.devre_dokuman_id` olarak geçildi. Push edildi, deploy oldu — ama snapshot SQL
-     `bagli_dok=0` döndü, fix yansımadı.
-   - **B-2 (alias fix, MK-129.x):** PostgREST'te `devre_dokuman_id` (FK kolonu) +
-     `devre_dokumanlari!inner(devre_id)` (embed) çakışıyor → FK ham uuid gölgeleniyor.
-     Select'te `dok_id:devre_dokuman_id` alias'ı ile çözüldü. Push (`31f22e4`),
-     deploy Ready. Test: `curl` çıktısında her kayıtta `dok_id: "uuid-..."` görüldü →
-     snapshot SQL `bagli_dok=1` (8/8 spool) → spool detayda (`A-001036`) izometri
-     sekmesinde PDF göründü ✓ (eski devre `7fbdde63` testi).
+3. **Faz 0 teşhis (SQL + spool_detay.html):**
+   - **Tetikçi testi (`7702313c`):** sistem körü körüne kabul ETMEDİ — L3 okudu, `bindir` çelişki
+     yakaladı (`celiski_et_cap_farkli`, flag:true), `manuel_onay`'a düştü. AMA: (a) çelişkiye rağmen
+     `spool_id` yazıldı + `kismi` oldu, (b) **malzeme kıyası yok** (boyut tutsaydı kaçardı),
+     (c) flag UI'da görünmüyor.
+   - **Montaj UI bug DEĞİL:** `spool_detay.html:1262` montaj okuma yolu doğru; `montaj_json` null
+     olduğu için boş. Kök: **montaj tespiti yalnız L2'de var**; bu devre L3'e gitti (format
+     tanınmadı), L3 montaj bilmez → `montaj_json` hiç yazılmadı.
 
-4. **v3 `onayEt` entegrasyonu (`6b28df6`):** `devre_wizard_v3.html` `onayEt`
-   fonksiyonuna, terfi sonrası best-effort `await` ile backfill çağrısı eklendi:
-   - Toast birleştirme: "+ N izometri eşleşmesi" veya hata durumunda uyarı
-   - Hata yutar, terfi'yi geri almaz (terfi DB'de zaten oldu)
-   - Hata varsa yönlendirme 2.5 sn (mesaj okunabilsin), yoksa 1 sn
-   - **Yeni dosya yok, function limiti etkilenmez.**
-
-5. **Yeni v3 canlı testi (Demo Atölye, gerçek IFS .xlsm + izometri PDF):**
-   - Adım 1 → Adım 2 → Onayla → toast'ta "✓ 8 spool ID + QR + 8 izometri eşleşmesi" ✓
-   - devre_detay açıldı: spool listesi geldi, ama DURUM hâlâ "Bekliyor" görünüyor,
-     spool detayında **imalat izometri PDF YOK, sadece montaj PDF var** ✗
-   - DB kontrolünde toast doğruysa `cizim_durumu` `kismi` olmalı, `bagli_dok>=1` olmalı.
-     **DB-UI çelişkisi** — 130'un ilk işi.
+4. **K1-K5 kararları alındı** (detay: PARSER-VE-YUKLEME-AKISI.md Bölüm 8).
 
 ---
 
-## Yeni MK Kararları (129)
+## Oturum 130 Kararları (K1-K5)
 
-| MK | Karar |
-|----|-------|
-| MK-129.1 | PostgREST select'inde FK kolonu ile aynı tablo embed'i çakışırsa kolon ham uuid yerine embed objesine dönüşebilir — alias kullan (`dok_id:devre_dokuman_id`). Sebep: 14:13 koşusu cizim_durumu döndü ama spool_id bağı yazılamadı, kök sebep buydu. |
-| MK-129.2 | Yeni endpoint yazmadan önce mevcut `api/*` envanteri zorunlu (`ls api/*.js`) + adı benzer dosyaları aç (MK-126.8 güçlendirmesi). Bu oturumun mükerrer `devre-eslesme-yenile.js` hatası bu kontrolün atlanmasıyla oluştu. |
-| MK-129.3 | Vercel Hobby plan 12 serverless function tavanı: yeni `api/*` eklerken `ls api/*.js \| wc -l` ile sayım zorunlu, 11'de durup konsolidasyon/Pro kararı verilmeli. Pilot tetiğinde Pro'ya geçilir (lisans + hard-cap + cron + timeout zaten gerektiriyor). |
-| MK-129.4 | v3 terfi → backfill çağrısı **best-effort await**: hata terfi'yi geri almaz, kullanıcıya toast'ta uyarı verilir, manuel `/api/eslestirme-backfill {devre_id}` ile telafi edilebilir. Hata durumunda yönlendirme 2.5 sn (mesaj okunabilsin). |
-
----
-
-## ALTI ÇİZİLECEK KEŞİF — Çapraz doğrulama katmanı eksik (130'un en büyük maddesi)
-
-Cihat'ın tetikçi testi (bir POAR PDF'i kopyalayıp yeni isimle yükledi) şunu açığa çıkardı:
-**sistem PDF içeriği × Excel kabuğu çakıştırmasını yapmıyor.** Mevcut durum:
-
-- Pipeline kaynağı **yalnız dosya adı** (`api/kuyruk-isle-izometri.js:458` — koddaki
-  yorum açık). PDF içindeki pipeline metni doğrulanmıyor. Yanlış adlandırma → yanlış bağ.
-- `bindir()` fonksiyonu sadece **et/çap/ağırlık/yüzey** çelişkisini yakalıyor (%3
-  tolerans, `bindirme_flag`). **Malzeme listesi karşılaştırması YOK** — POAR'daki
-  BOM tablosu Excel BOM ile çakıştırılmıyor.
-- `bindirme_flag` ham hâlde DB'ye yazılıyor ama UI'da operatöre **görünür değil**
-  (sadece spool tablosunda "çelişki" yazısı, fark detayı yok).
-- L3 (AI okuma) **manuel toggle**, otomatik karar yok. POAR resim formatında L3
-  gerekli ama sistem onu otomatik tetiklemiyor.
-
-**Cihat'ın hatırlattığı omurga sözü:** "klasör yüklüyoruz, önce güvenlik için Excel
-kabuk çıkıyor, sonra katman katman dosyada ne varsa sömürüp elde edilebilecek tüm
-bilgileri sömürecektik, uyumsuzlukları uyaracaktık." Bunun büyük kısmı **yapılmadı.**
-İlk katman (et/çap bindirme) kısmen var, gerisi yok. Bu A1 hatası değil, omurganın
-yapılmamış büyük adımı.
-
-**130 baş maddesi:** `docs/PARSER-VE-YUKLEME-AKISI.md` belgesi + çapraz doğrulama
-katmanı tasarımı. Belge yazılmadan kod yazılmayacak (Cihat kararı, 00:18).
+| # | Karar |
+|---|---|
+| K1 | Çelişki varsa uyarı ver (İnceleme 🟡); aktif öğrenme düzeltmelerle zenginleşir; cizim_durumu enum'a dokunma |
+| K2 | Excel'de malzeme listesi varsa PDF ile karşılaştır, yoksa PDF'ten oluştur (malzeme her hâlükârda okunmalı) |
+| K3 | bindirme_flag → v3 İnceleme 🟡 + düzelt popup (mockup v5'te tasarlı) |
+| K4 | Montaj PDF ilgili spool'ların detayında görünmeli; içi okunarak eşleştirilmeli. **Yol kararı sonraki oturum:** 2 (format öğret, kalıcı) vs 1 (L3 montaj, evrensel) — yol 3 elendi |
+| K5 | Function tavanı 12/12; Katman 3 endpoint öncesi konsolidasyon; Pro'yu pilota sakla (MK-129.3) |
 
 ---
 
 ## CI Son Durum
 
-- Son push `6b28df6 feat(129): v3 onayEt'e backfill cagrisi`. CI koştu.
-- Önceki Error'lar (`5ff4b99`, `a7799fc`, `81cc59e`) **çözüldü** — mükerrer dosya
-  silinip 12'ye dönülünce deploy Ready, sonraki tüm push'lar Ready.
-- Function sayısı şu an: **12/12** (Hobby tavanı). 130'da yeni endpoint = tavan aşımı,
-  konsolidasyon veya Pro kararı şart.
+- HEAD `f557669` (129 kapanış doc, `[skip ci]`). Bu oturumda **kod push yok** — sadece doküman.
+- Function sayısı: **12/12** (Hobby tavanı, teyit edildi `ls api/*.js | wc -l`).
 
 ---
 
-## 130'a Açık Borç (önceliğe göre)
+## 131'e Açık Borç (önceliğe göre)
 
-1. **`docs/PARSER-VE-YUKLEME-AKISI.md` belgesi (Cihat onayı, 00:35).** İçerik: klasör
-   yükleme akışı (drop → autoDetect → kuyruk → parse), katman katman sömürme planı
-   (Excel kabuk → POAR içerik → tutarlılık check), parser kuralları (`lib/excel-parser.js`
-   tier'ları, `api/izometri-oku.js` L1/L2/L3 mantığı, dosya-adı regex, POAR/PAOR/AVEVA
-   format farkları), kayıt şeması (`devre_dokumanlari`, `dosya_isleme_kuyrugu`,
-   `spooller.cizim_durumu` state machine, `montaj_json` yapısı), MK referansları.
-   Belge yazılmadan yeni kod yok. **Yarım gün ayrılır.**
-
-2. **Spool detay UI çelişkisi (v3 testinde imalat sekmesi boş, montaj var):** Toast
-   doğru çıktı ("8 izometri eşleşmesi"), DB seviyesinde A1 önceki testte (eski devre
-   `7fbdde63`) kanıtlanmıştı ama yeni v3 devresinde spool detayda imalat PDF görünmedi.
-   Hipotez: `tenant_id` filtresi farkı, `silindi=false` durumu, veya devre_detay/
-   spool_detay'ın cache problemi. 130 açılışında: yeni devrenin `devre_id`'siyle SQL
-   snapshot + hard-refresh testi.
-
-3. **Çapraz doğrulama tasarımı** (yukarıdaki "Altı çizilecek keşif"in pratik adımları,
-   belge yazıldıktan sonra). PDF içeriği × Excel kabuk uyumsuzluk yakalama:
-   pipeline doğrulama, malzeme listesi karşılaştırma, `bindirme_flag` UI gösterimi,
-   L3 otomatik tetik kararı.
-
-4. **Klasör ağacı + işaretleme (128'den devreden borç):** Adım 1'de düz dosya tablosu
-   yerine mockup v5'teki Windows-gezgini benzeri aç-kapa klasör ağacı. Klasör
-   işaretleme (bilgi amaçlı / revizyon-öncesi → eşleştirmeye sokma). Şu an Adım 2
-   Dökümanlar sekmesinde var, Adım 1'e taşınacak.
-
-5. **"Fazla" UX hatası:** Mockup'ta "fazla" = "kabukta olmayan spool adayı"
-   (örn. mockup'taki X26). Canlı v3'te montaj/genel PDF'ler de "fazla" olarak
-   görünüyor (`dosya_adi_pipeline_yok` sebebiyle) — yanlış kategori. Montaj PDF'leri
-   ayrı bir kategori (örn. "Montaj/Genel") veya doğrudan Dökümanlar sekmesine.
-
-6. **Montaj PDF spool detayda eksik (önceden açıktı):** `spool_detay.html:1262`
-   `montaj_json`'dan okuyor ama bu testte sadece o görünüyor, imalat tersine. (2.
-   madde ile birleşik bakılacak.)
-
-7. **Onayla-drenaj guard + tooltip (128'den devreden borç).**
-
-8. **Devreler girişi (MK-126.4) — sidebar "Devre Yükle" + "Onay Bekleyen Devreler"
-   listesi + canlı listelere `durum<>'taslak'` filtresi.**
-
-9. **Function limiti stratejisi (MK-129.3'ün pratiği):** pilot tetiğine kadar
-   konsolidasyon (örn. `kuyruk-isle-*` dosyalarını tek router'a indirme), pilot
-   tetiğinde Vercel Pro + Supabase Pro (~$45/ay).
-
-10. **Önceden açık borçlar (taşındı):** 117 (`yukleyen_id`), web-spool sync
-    (`aktif_basamak`/`ilerleme`), fitting (DIN 86087 / ASME B16.9),
-    `spool_dokumanlari` bağ tablosu.
+1. **Montaj tespiti — yol kararı (K4):** Yol 2 (format öğret, AT110/Demo Atölye `parser_kural` +
+   `montaj_modu`) mı, Yol 1 (L3 prompt montaj branch, MK-49.1 dokunur) mı? Karar + kod.
+2. **K1+K3 — bindirme_flag UI:** v3 İnceleme ekranında 🟡 + düzelt popup. Function tavanı bağımlı.
+3. **K2 — malzeme listesi kıyası:** Excel BOM × PDF `malzeme_listesi` diff. İnceleme UI sonrası.
+4. **K5 — function konsolidasyon planı:** kuyruk-isle-* tek router'a indirme (Katman 3 endpoint için yer aç).
+5. **MK-61.4 borcu:** `BRIEFING.md` bilgi haritasına `PARSER-VE-YUKLEME-AKISI.md` satırı eklenmeli.
+6. **v3 İnceleme & Onay giydirmesi (büyük, çok-oturumluk):** mockup v5 → v3, okuma endpoint'i
+   (MK-127.3) + 4-durum render + çapa/füzyon UI. K1-K3 bunun içinde çözülür.
+7. **Önceden açık (taşındı):** 117 (`yukleyen_id`), web-spool sync, fitting (DIN 86087/ASME B16.9),
+   `spool_dokumanlari` bağ tablosu, "fazla" UX (S-segmentsiz montaj/genel kategori).
 
 ---
 
 ## Push Paketi
 
-| Dosya | Repo yolu | Tür | Durum |
-|-------|-----------|-----|-------|
-| api/eslestirme-backfill.js | `api/eslestirme-backfill.js` | **fix (B-2 alias)** | push edildi (`31f22e4`) |
-| devre_wizard_v3.html | `devre_wizard_v3.html` | **feat (onayEt → backfill)** | push edildi (`6b28df6`) |
-| son-durum.md | `.github/son-durum.md` | doc | bu commit |
-| CLAUDE-SON-OTURUM.md | `CLAUDE-SON-OTURUM.md` | doc | bu commit |
-| CLAUDE-SONRAKI-OTURUM.md | `CLAUDE-SONRAKI-OTURUM.md` | doc | bu commit |
+| Dosya | Repo yolu | Tür |
+|-------|-----------|-----|
+| PARSER-VE-YUKLEME-AKISI.md | `docs/PARSER-VE-YUKLEME-AKISI.md` | **YENİ doc (130 baş iş)** |
+| son-durum.md | `.github/son-durum.md` | doc |
+| CLAUDE-SON-OTURUM.md | `CLAUDE-SON-OTURUM.md` | doc |
+| CLAUDE-SONRAKI-OTURUM.md | `CLAUDE-SONRAKI-OTURUM.md` | doc |
 
-**Önceki başarısız commit'ler (referans):**
-- `5ff4b99 feat(129): /api/devre-eslesme-yenile` → mükerrer, deploy reddedildi (12-function)
-- `28a63cd revert(129): devre-eslesme-yenile sil` → düzeltme, 12'ye dön
-- `0a0e3b3 fix(129): backfill eslestir'e devre_dokuman_id gecir` → yetersiz, alias yoktu
+Hepsi doc → commit `[skip ci]` ile gidebilir.
 
 ---
 
-## Plan Tablosu (129 onayı, kapanışta yazılı)
-
-| Servis | Şimdi | Pilot tetiğinde | Sebep | ~Maliyet |
-|---|---|---|---|---|
-| Vercel | Hobby | **Pro şart** | Ticari lisans + hard-cap + function 60s/cron 10s + sık cron | ~$20/ay |
-| Supabase | Free | **Pro şart** | Haftalık auto-pause + 1GB storage limiti | ~$25/ay |
-| GitHub | Free | Free yeterli | Sadece kod+CI, müşteriye dokunmuyor | $0 |
-
-**Toplam pilot tetiğinde:** ~$45/ay. Tetik = ilk gerçek tersane anlaşması. Şu an
-free/Hobby'de kalınır.
-
----
-
-> 130 açılışında bu dosya + `CLAUDE-SONRAKI-OTURUM.md` + `docs/DEVRE-WIZARD-OMURGA.md`
-> (v3.1) okunur. İlk iş: **`docs/PARSER-VE-YUKLEME-AKISI.md` belgesini yazmak** —
-> kod yazılmadan, mevcut dosyalar (`lib/excel-parser.js`, `api/izometri-oku.js`,
-> `ares-kabuk.js`, `ares-normalize.js`, `KARARLAR.md`) sistematik okunup belgelenecek.
-> Sonra spool detay UI çelişkisi (2. madde) → çapraz doğrulama tasarımı (3. madde).
+> 131 açılışında: `son-durum.md` + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` +
+> `docs/PARSER-VE-YUKLEME-AKISI.md` (Bölüm 8 kararlar) + omurga v3.1 okunur. İlk iş: **K4 montaj
+> yol kararı** (2 vs 1), sonra v3 giydirmesinde K1+K3.
