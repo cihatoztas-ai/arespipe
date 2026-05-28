@@ -1,10 +1,14 @@
 # Parser ve Yükleme Akışı — Mimari Referans Belgesi
 
-> **AresPipe · Parser + Yükleme Katmanları · Tek Referans · 28 Mayıs 2026 (Oturum 130)**
+> **AresPipe · Parser + Yükleme Katmanları · Tek Referans · 28 Mayıs 2026 (Oturum 130-131)**
 >
 > **Sahip:** Cihat + Claude
 > **Tazelik penceresi:** Parser/eşleştirme kodu değiştikçe güncellenir; en geç 3 oturum sonra
 > (oturum 133) doğrulanır. Çapraz doğrulama katmanı kodlanınca Bölüm 4 yeniden yazılır.
+>
+> **131 güncellemesi:** Bölüm 7.3 eklendi (recognition glyph kök sebebi, canlı kanıtla). Bölüm 8 K4
+> mühürlendi — çözüm ne Yol 1 ne Yol 2, glyph band-B decode tablosu. Bölüm 7.2'nin "format tanınmadı"
+> tespiti 7.3'e bağlandı (sebep eksikti).
 >
 > **Bu belge ne:** Klasör yüklemeden spool kabuğuna, oradan PDF içerik sömürmeye ve çapraz
 > doğrulamaya kadar olan tüm akışın **tek ve birebir kod doğrulamalı** referansıdır. Oturum 130-140
@@ -417,6 +421,46 @@ hepsinde görünsün" davranışı hazır). Eksik tek şey: montajın L3 yolunda
 zaten içerikten (`m.spool_listesi`), ama pipeline yine dosya adından (`montajDosyaKok`) — K4'ün
 "içi okunarak" isteğinin pipeline ayağı Katman 3 ayak-a ile aynı kök.
 
+> **131 düzeltmesi:** Yukarıdaki "format tanınmadığı için L3'e gitti" tespiti doğru ama sebebi
+> eksikti — montaj L2'de VAR ve AT110'u okuyor; PDF ona ulaşamıyor çünkü tanıma katmanı glyph-decode
+> yüzünden düşüyor. Bkz. 7.3.
+
+### 7.3 Recognition glyph boşluğu — AT110 neden L3'e düştü (oturum 131)
+
+**Bağlam:** 130 "montaj L3'e gitti çünkü format tanınmadı" dedi; doğru ama sebep eksik atfedildi.
+131'de gerçek AT110 PDF'leri (montaj `AT110-803-2311-P2_1.pdf` + imalat `..._S01_1.pdf`) canlı kodla
+çalıştırılarak kök sebep mühürlendi.
+
+**Format zaten öğretilmiş:** `format-paketleri.js` iki Tersan ailesini taşıyor —
+`tersan_cadmatic_spool` (e1fb879d, oturum 119, 6/8 PDF) + `tersan_cadmatic_montaj` (39a2c81b, oturum
+120, 7 montaj PDF / 6 gemi). `l2-parser.js` `montaj_modu` çalışıyor. Montaj parser AT110 montajını
+**plain metinde kusursuz okudu** (pipe_no, spool S01, yüzey, blok B1137, sistem, 8 kg — 6/6). Yani
+parse değil, PDF'in parser'a **ulaşamaması** sorun.
+
+**Kök sebep — tanıma:** Gerçek `pdf-parse` + gerçek fingerprint skorlamasıyla AT110 montaj+imalat
+ikisi de: Producer=`Cadmatic` (+1), ama metin sinyalleri (`Continue:` / `Malzeme Listesi` /
+`Cut & Bending Info`) pdf-parse çıktısında **bulunamadı** → skor **1 < eşik 2** → L3. `pdffonts`:
+font **gömülü-değil ArialMT, Identity-H, ToUnicode YOK** (`uni: no`). Metin ham glyph-ID; pdftotext
+standart Arial sırasıyla çözüyor, pdf-parse çözemeyip çöp veriyor (`pmlli`="SPOOL",
+`` `çåíáåìÉW ``="Continue:").
+
+**Linchpin:** Hem tanıma (`pdfIpucuCikar`, satır 634) hem L2 (`parserKuralIle`, satır 882)
+**pdf-parse** kullanır — `-layout` değil. Yani metin modu değil, **decode** sorun.
+
+**Deterministik kanıt:** çöp→doğru eşleme **38 giriş / 0 çatışma.** Band-A (A-Z + 0-9) tekdüze **+29**
+(glyph-onar zaten yapıyor, MK-120.3). Band-B (a-z + Türkçe) **sabit lookup tablosu** (~20 giriş,
+aritmetik değil ama birebir tutarlı); glyph-onar **yapmıyor** (izometri-oku/l2-parser satır 889:
+"Band B onarmaz"). Boşluk tam burası.
+
+**Fix:** `lib/glyph-onar.js`'e band-B tablosu (gated — temiz metinde no-op). Tek değişiklik tanıma +
+montaj + kaymış spool malzeme tablosu (NB1137 borcu) üçünü birden açar. **izometri-oku.js'e
+dokunulmaz** (MK-49.1 güvenli). ArialMT standart glyph sırası → gömülü-değil ArialMT Identity-H her
+PDF'e genellenir.
+
+**Alt-sınıf uyarısı:** Tersan tek format değil — **temiz** (pdf-parse okur) vs **glyph-kaymış**
+(düşer) iki alt-sınıf. 119/120 temiz gemileri kanıtladı; AT110/NB1137 kaymış varyant. Bulk
+doğrulaması gelen gemilerin alt-sınıf dağılımını ölçer (kaç kaymış → tablo hepsini tek seferde kapatır).
+
 ---
 
 ## 8. Oturum 130 kararları (K1-K5) + montaj düzeltme yolları
@@ -440,9 +484,17 @@ zaten içerikten (`m.spool_listesi`), ama pipeline yine dosya adından (`montajD
 Cihat'ın "içi okunarak" şartı 3'ü eler. Kalıcı yol **2**, evrensel emniyet ağı **1**. Karar +
 sonra kod (sonraki oturum, taze bağlam).
 
+> **131 ÇÖZÜMÜ (mühür):** Üç yolun **hiçbiri.** Gerçek AT110 PDF'leri canlı kodla çalıştırıldı —
+> Tersan formatı zaten öğretilmiş (119 spool / 120 montaj), montaj parser AT110'u plain metinde
+> kusursuz okuyor. Sorun parse değil **tanıma**: gömülü-değil ArialMT Identity-H + ToUnicode yok →
+> pdf-parse glyph çözemiyor → fingerprint band-B çapaları (`Continue:`/`Malzeme Listesi`) kaçırılıyor
+> → skor 1<2 → L3 (detay Bölüm 7.3). **Gerçek fix: `lib/glyph-onar.js`'e band-B decode tablosu**
+> (gated, deterministik — çöp→doğru 38/0). izometri-oku.js'e dokunulmaz (MK-49.1). Yol 2 gereksizdi
+> (öğretilmiş), Yol 1 gereksizdi (L2 montaj çalışıyor). K4 artık karar değil, kod işi (132).
+
 ---
 
-## 8. MK atıf haritası (bu belgede geçenler)
+## 9. MK atıf haritası (bu belgede geçenler)
 
 | MK | Özet | Kaynak |
 |---|---|---|
@@ -466,6 +518,10 @@ sonra kod (sonraki oturum, taze bağlam).
 | MK-129.1/.2/.3/.4 | PostgREST alias; endpoint öncesi envanter; 12-function tavanı; backfill best-effort | 129 devir |
 | MK-WIZARD.1/.2/.3 | Boş şablon wizard'dan; eksik PDF≠eksik spool; kabuk kilidi | omurga |
 | KARAR-97.6/.7 | Klasör ağacı; çok-spoollu PDF 1 kopya + N referans | omurga |
+| MK-131.1 (aday) | Fingerprint çapaları pdf-parse'ın çözebildiği karakter sınıfında olmalı | 131 |
+| MK-131.2 (aday) | Gömülü-değil ArialMT Identity-H → glyph-onar band-B decode (gated, det.) | 131 |
+| MK-131.3 (aday) | "Öğretilmiş" ≠ "tanınıyor"; tanıma ve parse ayrı katman, ayrı doğrula | 131 |
+| MK-131.4 (aday) | Aynı tersane = temiz + glyph-kaymış iki alt-sınıf; bulk dağılımı ölç | 131 |
 
 ---
 
