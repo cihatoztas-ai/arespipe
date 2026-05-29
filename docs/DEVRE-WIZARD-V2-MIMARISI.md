@@ -195,3 +195,5 @@ Bu wizard tam buna hizmet ediyor: kullanıcı klasörü sürükle-bırak yapar (
 
 > **İlk yazım:** 18 Mayıs 2026 — 97. oturum.
 > **Bağlı belgeler:** `docs/VIZYON-VE-MODULER-MIMARI.md` (Vizyon 1 detaylandı), `docs/IZOMETRI-BATCH-NOTLARI.md` (parser mimarisinin temel kardeşi), `migrations/080_devre_wizard_v2_schema.sql` (DB).
+>
+> 
