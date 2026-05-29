@@ -32,3 +32,5 @@ mobile/dist/
 spool_detay.html.bak*
 devre_detay.html.bak-*
 _arsiv/
+.env*.local
+scripts/re-parse-s02.mjs
