@@ -599,6 +599,24 @@ basis/parse hatası, ya da gerçek BOM tutarsızlığı. K2 bu üçünü ayırt 
 >   tag'i ile UI dili değişir. Lib her iki durumda da aynı sapmaları üretir.
 > - 12-function tavanı: korundu. `lib/` altında yeni dosya, `api/*` sayısı sabit.
 
+> **134 GÜNCELLEMESİ — K2 canlı doğrulandı + K1+K3 v1 (uyarilar.html):**
+> - **Canlı re-parse doğrulama (MK-132.1):** S02 (`f713eee4…`) üretim ortamında yeniden eşleştirildi.
+>   Yöntem: durum→`bekliyor` → `kuyruk-isle-izometri` skipParse POST (`onceden_parse` = parse_sonuc
+>   eksi `_eslesme`) → server indir+izometri-oku atlar (Vision'a dokunmaz), satır 385 `eslestir`
+>   koşar → K2 tetiklenir. Sonuç **fixture'ı birebir tekrarladı** (k2-v3): eslesen 3, çelişki 1
+>   (dirsek 323.9 — PDF 212.41 kg vs Excel 35.01 kg, ~6×), montaj-info 1 (flanş), `malzeme_flag_sayisi`=1.
+>   K2 sadece lokal değil canlı yolakta da çelişkiyi yüzeye çıkarıyor.
+> - **Dirsek kök sebebi hâlâ açık (135 borcu):** 212.41/6 ≈ 35.4 ≈ Excel 35.01 → güçlü hipotez: PDF
+>   toplam-ağırlık, Excel birim-ağırlık veriyor olabilir (basis farkı, MK-133.2 PDF tarafı). 2-3
+>   devre örneğiyle doğrulanacak; doğruysa düzeltme l2-parser'da, K2 bug'ı değil.
+> - **K1+K3 v1 — yarısı (uyarilar.html):** İki yüzey ayrı veri yolu kullanıyor. `uyarilar.html`
+>   `_eslesme`'yi DOĞRUDAN okur → `malzeme_kiyas` elinde; `malzeme_flag_sayisi>0` → `celiski[]`=uyarı
+>   (🟡), `excel_fazla_montaj[]`=bilgi (ℹ). Soft sapma gösterilmez (134 karar: yalnız sert çelişki).
+>   `devre_wizard_v3` İnceleme ekranı ise `/api/devre-inceleme` çıktısını render eder; o endpoint
+>   `_eslesme`'yi KULLANMAZ (`izometrileriDerle` kendi eşleştirmesini sıfırdan yapar) → `malzeme_kiyas`
+>   çıktıda yok. **v3 rozeti 135'e** (devre-inceleme.js'e malzeme_kiyas taşıma + popup; seçenek A:
+>   `_eslesme`'den oku, yeniden hesaplama). Yeni endpoint yok (12/12).
+
 ---
 
 ## 8. Oturum 130 kararları (K1-K5) + montaj düzeltme yolları
@@ -670,6 +688,7 @@ sonra kod (sonraki oturum, taze bağlam).
 | **MK-133.1** | K2'de Excel'in referans rolü kaynak güvenine bağlı: ERP çıktısı (IFS) → otorite ("PDF sapıyor"); manuel Excel → parite (simetrik). Lib aynı sapmayı üretir, çıktı `meta.excel_guven` tag'i UI dili belirler. v1'de sabit 'otorite'; format paketinden türetimi backlog | 133 |
 | **MK-133.2** | `spool_malzemeleri.agirlik_kg` satır-toplamı semantik; per-adet türetimi `agirlik/adet`; fitting per-adet, boru toplam, dirsek toplam (özel) | 133 |
 | **MK-133.3** | Dirsek 90° stoktan farklı açılarla kesilir → artan parça fire değil geri-stok → adet kıyası yanıltıcı. v1 invariantı: PDF/Excel toplam ağırlık ≈ (±%15). Tam bin-packing (açı verisi gelince) v2 borcu | 133 |
+| **MK-134.1** | `[skip ci]` çok-commit push'ta tüm CI'yi atlar (HEAD mesajına bakılır → altındaki kod commit'i dahil atlanır). Kod commit'i + `[skip ci]` doc aynı push'ta doc-HEAD'de gönderilmez; kod ayrı/önce push (CI koşar) ya da HEAD=kod. Doğrulama: push sonrası kod hash'i için Actions run'ı göründü mü | 134 |
 
 ---
 

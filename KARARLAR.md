@@ -1961,3 +1961,25 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **İlişkili:** MK-133.1, MK-133.2.
 
 ---
+
+## MK-134.1 — `[skip ci]` çok-commit push'ta tüm CI'yi atlar (kod dahil)
+
+**Bağlam (134):** 133 paketi tek push'ta gitti; push HEAD'i `382bfaf docs(133) [skip ci]`, hemen
+altında `1a7b17c feat(133)` (K2 kodu). GitHub Actions bir push'ta tetiklenirken **HEAD commit'in
+mesajına** bakar; HEAD `[skip ci]` içerince **push'un tamamını atlar — altındaki kod commit'leri
+dahil**. Sonuç: K2 kodu CI/lint'ten hiç geçmeden canlıya gitti (Vercel HEAD ağacını deploy ettiği için
+kod çalışıyordu, ama `kontrol.js` görmemişti). İki bağımsız kaynaktan doğrulandı: Actions'ta `1a7b17c`
+için run yok; Vercel'de `1a7b17c` deployment'ı yok (yalnız `382bfaf`).
+
+**Kural:** Kod commit'i ile `[skip ci]` doc commit'i **aynı push'ta, doc HEAD'de** gönderilmez. İki
+geçerli düzen:
+- (A) Kod ayrı/önce push edilir (CI koşar, yeşil görülür), doc'lar sonra ayrı push (`[skip ci]`).
+- (B) Tek push olacaksa sıralama HEAD = kod commit'i olacak şekilde (doc commit'i altta) kurulur.
+
+**Doğrulama:** Push sonrası, kod commit'inin hash'i için GitHub Actions'ta bir run göründü mü kontrol
+edilir. Görünmediyse CI atlanmıştır → boş commit / küçük tetikleyici ile pipeline koşturulur.
+
+**Not:** Doc-only push'larda `[skip ci]` doğru ve istenir (gereksiz run yakmaz). Tuzak yalnız kod +
+doc'un tek push'ta karışıp doc'un HEAD olmasıdır.
+
+**İlişkili:** MK-132.1 (belge ≠ canlı gerçek; verify et), Faz B sapmama sistemi (kod CI'den geçmeli).
