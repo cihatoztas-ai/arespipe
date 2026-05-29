@@ -1,99 +1,84 @@
-# Son Durum — 134. Oturum (29 Mayıs 2026)
+# Son Durum — 135. Oturum (29 Mayıs 2026)
 
-> 133'ün K2 v1'i **canlı üretim ortamında doğrulandı** (S02 re-parse: dirsek 🟡 + montaj-info, 3/1/1
-> birebir). K1+K3 v1 yarısı bitti: `uyarilar.html`'e K2 malzeme uyarıları eklendi (çelişki=uyarı,
-> montaj-info=bilgi). v3 İnceleme rozeti 135'e bırakıldı (devre-inceleme.js `_eslesme` taşımıyor,
-> kendi eşleştirmesini yapıyor — büyük dokunuş). Bir CI tuzağı mühürlendi: **MK-134.1**. Yeni endpoint
-> yok (12/12), MK-49.1 korundu.
+> v3 İnceleme **K2 malzeme rozeti** tamamlandı (baş iş): `api/devre-inceleme.js`'e A2 enjeksiyonu
+> (`_eslesme.detay[]` → spool, lib SAF kaldı) + `izoCell` 🟡 rozet + `duzeltAc` malzeme kıyası bölümü.
+> Canlı lambda teyidi yapıldı (`/api/devre-inceleme` → `malzeme_flag:true`, dirsek çelişki + flanş montaj).
+> **Dirsek bulgusunun kökü çözüldü** (MK-135.2): PDF doğru, Excel BOM hatalı — K2 bug değil, gerçek
+> yakalama. Kozmetik: izo-eslesme self-test yorumu düzeltildi. Yeni endpoint yok (12/12), MK-49.1 korundu.
 
 ---
 
-## Açılış (kısa) — ve bir sürpriz
+## Açılış
 
-- Cihat'ın yüklediği 133 ritüel dosyaları "push henüz yok, HEAD f71342d" diyordu; **git ise paketin
-  çoktan origin'de olduğunu** gösterdi (`1a7b17c feat(133)` + `382bfaf docs(133)`). Belgeler push
-  öncesi snapshot'tı. Task 0 (toplu push) zaten yapılmış — re-do yok, verify ve geç (MK-132.1 ruhu).
-- **CI tuzağı yakalandı:** `1a7b17c` (K2 kodu) CI'den **hiç geçmemiş**. Sebep: 133 paketi tek push'ta
-  gitti, push HEAD'i `382bfaf docs(133) [skip ci]`. GitHub Actions push'un HEAD commit mesajına bakar
-  → `[skip ci]` → **push'un tüm CI'si atlandı, altındaki kod commit'i dahil**. Vercel kanıtı: `1a7b17c`
-  deployment'ı yok, sadece `382bfaf` deploy edildi. Kod canlıda (Vercel HEAD ağacını aldı) ama
-  lint'ten geçmemişti. → **MK-134.1**.
-- Düzeltme: bir .md'ye boş satır eklenip push → `76c983e` CI yeşil (#959), tüm ağaç (K2 dahil)
-  lint'ten geçti. Sonra `git pull` ile senkron.
+- git temiz, origin senkron, function 12/12. Adım 0: `5e9b0ec` (134 kod) CI'den geçmişti — kanıt araya
+  giren `ed2b37f` ci-son-rapor commit'i. MK-134.1 sırası doğru.
+- Patch öncesi 5 kaynak okundu (körlemesine yazma yok): `devre-inceleme.js`, `lib/izo-eslesme.js`,
+  `lib/malzeme-kiyas.js`, `kuyruk-isle-izometri.js` (_eslesme.detay şeması), `uyarilar.html` (mirror).
 
 ## Yapılanlar (sıra)
 
-### 1. Açılış doğrulama + CI tuzağı (MK-134.1)
+### 1. v3 İnceleme K2 malzeme rozeti — BAŞ İŞ ✅ (Seçenek A2)
 
-- function 12/12, `lib/malzeme-kiyas.js` 225 satır, KARARLAR MK-133×3, PARSER 7.5×6, son-durum 133 → hepsi teyit.
-- CI tuzağı teşhis + düzeltme (yukarıda). MK-134.1 mühürlendi.
+- **Karar A2 (MK-135.1):** Enjeksiyon **handler katmanında**; `lib/izo-eslesme.js` saf çekirdek olarak
+  KORUNDU (A1 lib'i kirletirdi — reddedildi). `_eslesme.detay[]` worker'da hazır; endpoint
+  `normPipeline|normSpoolNo` anahtarıyla `sonuc.spoollar[]`'a `malzeme_flag`+`malzeme_kiyas` iliştirir.
+  Yeniden hesaplama yok, ek sorgu yok (endpoint parse_sonuc'u zaten çekiyor).
+- **`api/devre-inceleme.js`:** handler'da incelemeTablosu sonrası malzeme haritası + spool iliştirme +
+  `ozet.malzeme_flag`. Bir spool'a çok izometri düşerse flag'li kazanır.
+- **`devre_wizard_v3.html`:** `izoCell(izo, flag, malzFlag)` → 🟡 malzeme rozeti (bindirme çelişkisinden
+  ayrı); `duzeltAc` → "Malzeme listesi kıyası (BOM ↔ PDF)" bölümü (celiski→🔧, excel_fazla_montaj→🔩,
+  soft GİZLİ, excel_guven dili). Yardımcılar uyarilar.html ile birebir (`MLZ_*_V3`, `_mlzFmtV3`, `malzemeKiyasBlok`).
+- **Test:** node --check (her iki dosya + inline JS), idempotency (2× → "zaten uygulanmış"), uçtan uca
+  smoke (S02 fixture → dirsek 🔧 + flanş 🔩 birebir). Commit `e6db101`.
+- **Canlı teyit (MK-132.1):** `/api/devre-inceleme` lambda'sı `g200` (b310cfc5…) için `ok:true`,
+  `ozet.malzeme_flag:1`, S02 `{durum:'okundu', malzeme_flag:true, kiyas_var:true}`, celiski(dirsek)+
+  montaj(flanş). SQL ile DB verisi de teyit edildi. **Server tarafı canlıda %100 çalışıyor.**
+- **Görsel teyit BEKLİYOR:** v3 wizard `?devre_id=` ile var olan taslağı AÇMIYOR (URL param okunmuyor)
+  → İnceleme tablosu ekranda açılamadı. Rozet/popup gözle görülemedi (kod kanıtlı; sadece render kaldı).
+  Yeni borç (#2). Kapsamlı görsel + çoklu-gemi testi sonraki güne (Cihat kararı).
 
-### 2. Vercel altyapı kurulumu (tek seferlik, gelecek oturumlara kazanım)
+### 2. Dirsek 🟡 bulgusu — KÖK TESPİTİ ✅ (MK-135.2)
 
-- `vercel login` (device auth) + `vercel link` → `cihatoztas-ais-projects/arespipe`.
-- `vercel env pull .env.local --environment=production` → prod env yerelde (gitignore'da, güvenli).
-- **Bulgu:** `SUPABASE_SERVICE_KEY` Vercel'de **Sensitive** → `env pull` çok-satırlı/tırnaklı yazıyor,
-  Node `--env-file` ve script kendi parser'ı okuyamadı (`URL true KEY false`). Çözüm: key Supabase
-  Dashboard → Legacy service_role'den alınıp tek seferlik env olarak verildi. Prod proje-ref
-  `ochvbepfiatzvyknkvsn` (arespipe-dev = prod DB; doğrulandı, yanlış DB riski yok).
+- S02 ham PDF malzeme listesi çekildi (konsolide öncesi). **Bulgu:**
+  - PDF: dirsek satırı **6 kez** (her biri adet:1, agirlik:35.402, boy:457) → konsolide 6×35.4=**212.41 kg**.
+  - Excel BOM: tek satır, **adet:6 ama agirlik:35.01** (= per-adet ~5.84 kg, DN323.9 için FİZİKSEL İMKANSIZ).
+- **Kök:** Eski "PDF toplam / Excel birim" hipotezi ÇÜRÜDÜ. PDF doğru (212.41 fiziksel makul); **Excel
+  BOM hatalı** — adet:6 yazıp ağırlığa tek dirseğin değerini koymuş (IFS export'unda adet×birim
+  çarpılmamış olabilir). **K2 bug DEĞİL — gerçek bir veri tutarsızlığını doğru yakaladı.** Parser'a dokunma.
+- Not: `excel_guven:'otorite'` dili bu vakada yanıltıcı ("PDF kontrol" diyor, gerçekte Excel hatalı).
+  MK-133.1 otomatik güven türetme işi gelince fitting ağırlık tutarsızlığında simetrik dil düşünülebilir (acil değil).
 
-### 3. K2 canlı re-parse doğrulama (BAŞ İŞ — ✅)
+### 3. Kozmetik — izo-eslesme self-test yorumu ✅
 
-- `scripts/re-parse-s02.mjs` (geçici, gitignore): durum→bekliyor → parse_sonuc çek (`_eslesme` çıkar)
-  → skipParse POST (`onceden_parse`) → DB'den taze çekip doğrula.
-- **skipParse yolağı (kuyruk-isle-izometri 270/301):** `onceden_parse` verilince server indir+izometri-oku
-  (Vision client-loop) atlar, ama satır 385'te **eslestir'i koşar** → K2 oradan tetiklenir. PDF'e
-  dokunmadan gerçek üretim eşleştirme yolağı çalıştırıldı.
-- **Sonuç — fixture birebir tekrar:** POST 200, `lib_versiyon: k2-v3`.
-  ```
-  eslesen:3 celiski:1 (dirsek) excel_fazla_montaj:1 (flans) malzeme_flag_sayisi:1
-  dirsek 323.9: PDF 212.41 kg vs Excel 35.01 kg (~6x) — gercek 🟡
-  ```
-  MK-132.1 tatmin: bulgu sadece lokal değil, canlı yolakta üretiliyor.
-- **Açık (135 borcu):** dirsek sapmasının KÖKÜ ayırt edilmedi (PDF parser / Excel basis / gerçek BOM).
-  Tek fixture; 2-3 örnek daha gerek.
-
-### 4. K1+K3 UI v1 — yarısı (uyarilar.html ✅, v3 İnceleme 135'e)
-
-- **İki ayrı yüzey, iki veri yolu doğrulandı:**
-  - `uyarilar.html` (492) → `_eslesme`'yi DOĞRUDAN okur → `malzeme_flag` + `malzeme_kiyas` elinde.
-  - `devre_wizard_v3` İnceleme (746) → `/api/devre-inceleme` dönüşü; endpoint `_eslesme`'yi KULLANMIYOR,
-    `izometrileriDerle` kendi eşleştirmesini sıfırdan yapıyor (satır 12: "eslestir ile birebir aynı
-    anahtar"). `malzeme_kiyas` çıktıya hiç girmiyor.
-- **Karar:** kolay yarı (uyarilar.html, API'siz) bu oturum; zor yarı (devre-inceleme.js'e malzeme_kiyas
-  taşıma + popup) 135'e.
-- **Patch (uyarilar.html, +56/-2):** `bindirme` bloğunun paraleli — `malzeme_flag_sayisi > 0` →
-  `celiski[]` = uyari (🟡, 🔧), `excel_fazla_montaj[]` = bilgi (ℹ, 🔩). Soft sapma GÖSTERİLMEZ
-  (134 karar 1). Yardımcılar: `MLZ_ALAN_AD`, `MLZ_PT_AD`, `_mlzFmt`. Idempotent (BND_+MLZ_ filtresi).
-  excel_guven='otorite' → "PDF Excel'den sapıyor" dili.
-- Atomik Python patch ile uygulandı; JS parse OK; commit `5e9b0ec` (CI tetikler, `[skip ci]` YOK — MK-134.1).
+- `lib/izo-eslesme.js` üst-yorumu "eksik:1" diyordu, kod `=== 2` (doğru). Yorum `eksik:2` yapıldı.
+  `node lib/izo-eslesme.js` → **SELF-TEST ✅ GEÇTİ**. Çalışan kod değişmedi.
 
 ## CI Son Durum
 
-- HEAD push'tan sonra `5e9b0ec feat(134)` (uyarilar.html). CI: kod commit'i → **yeşil beklenir**.
-- Doc'lar (bu üçlü + PARSER + KARARLAR) AYRI push, `[skip ci]` — MK-134.1 gereği koddan SONRA.
-- function 12/12 (sabit).
+- `e6db101 feat(135)` (K2 rozeti) push edildi — kod CI tetikledi.
+- Bu kapanış: tek push / iki commit → doc'lar `[skip ci]`, EN SON kozmetik kod commit'i (HEAD, CI koşar) — MK-134.1.
+- function 12/12 (sabit). MK-49.1 korundu, migration yok.
 
 ## Commit'ler
 
 | Hash | Mesaj | Tür |
 |---|---|---|
-| `53815bb` | chore(134): .gitignore — vercel env + geçici script `[skip ci]` | doc |
-| `5e9b0ec` | feat(134): uyarilar.html K2 malzeme uyarıları (MK-133.1/2/3) | **kod (CI)** |
-| (sonra) | docs(134): PARSER 7.5/7.6 + üçlü + MK-134.1 `[skip ci]` | doc |
+| `e6db101` | feat(135): v3 Inceleme K2 malzeme rozeti — A2 enjeksiyon + izoCell rozet + duzelt popup | **kod (CI)** |
+| (kapanış-1) | docs(135): kapanış üçlü + KARARLAR MK-135.1/.2 + PARSER 7.7 `[skip ci]` | doc |
+| (kapanış-2, HEAD) | style(135): izo-eslesme self-test yorumu eksik:2 | **kod (CI)** |
 
-## 135'e Açık Borç (önceliğe göre)
+## 136'ya Açık Borç (önceliğe göre)
 
-1. **v3 İnceleme rozeti (K1+K3 zor yarı):** `api/devre-inceleme.js` `izometrileriDerle`'ye malzeme_kiyas
-   taşıma (ya lib'i orada koş — spool_malzemeleri fetch gerekir — ya `_eslesme`'den oku) + v3 izoCell
-   🟡 rozet + düzelt popup (celiski + montaj-info dökümü). Yeni endpoint YOK (12/12).
-2. **Dirsek bulgusu kök tespiti:** PDF parser dirsek ağırlık çıkarımı vs Excel BOM basis. 2-3 devre örneği.
+1. **Kapsamlı görsel + çoklu-gemi testi:** Farklı format/gemi örnekleriyle K2 rozeti + popup'ı GERÇEK
+   tabloda gör; dirsek-tipi Excel tutarsızlığı başka gemilerde tekrar ediyor mu (MK-135.2 deseni).
+2. **v3 wizard `?devre_id=` ile taslak açma:** Var olan `oneri_hazir` taslağı yeniden açıp İnceleme'ye
+   getirme YOK. Test/inceleme için gerekli; ~20 dk UI işi. (Bugün ortaya çıktı.)
 3. **`excel_guven` otomatik türetme (MK-133.1 backlog):** format paketinden/parser_kural'dan; şimdilik sabit 'otorite'.
-4. **Pipeline doğrulama (Bölüm 4.4-1):** POAR header pipeline × dosyaAdiParse (L2/text-PDF server-side).
-5. **Taşınanlar:** "Montaj Resmi" emekli format temizliği, K5 function konsolidasyon, 117 (`yukleyen_id`),
+4. **Pipeline doğrulama (4.4-1):** POAR header pipeline × dosyaAdiParse.
+5. **Taşınanlar:** "Montaj Resmi" emekli format, K5 function konsolidasyon, 117 (`yukleyen_id`),
    web-spool sync, fitting (DIN 86087/ASME B16.9), `spool_dokumanlari` bağ tablosu, dirsek bin-packing v2.
 
 ---
 
-> 135 açılışında: bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` + PARSER Bölüm 7.5/7.6
-> + KARARLAR MK-134.1 okunur. **İlk iş: doc-push CI yeşil teyidi (kod zaten geçti), sonra v3 İnceleme rozeti.**
+> 136 açılışında: bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` + PARSER 7.7 +
+> KARARLAR MK-135.1/.2. **İlk iş: kapsamlı görsel test için ya wizard taslak-açma (#2) ya çoklu-gemi örnek yükleme.**

@@ -1,70 +1,48 @@
-# Oturum 135 — v3 İnceleme K2 rozeti (K1+K3 zor yarı) + dirsek kök tespiti
+# Oturum 136 — K2 kapsamlı görsel + çoklu-gemi testi (+ wizard taslak-açma)
 
 ## Açılış ritüeli
 
-Git pull/status/log → CI rengi (134 push: `5e9b0ec` kod CI'den geçti + doc paketi `[skip ci]`) →
-şu dosyalar oku: `son-durum.md` (134), `CLAUDE-SON-OTURUM.md` (134), bu dosya →
-`docs/PARSER-VE-YUKLEME-AKISI.md` **Bölüm 7.5 + 7.6** (K2 canlı + K1+K3 v1) → KARARLAR **MK-134.1** →
-gündem teyidi.
+Git pull/status/log → CI rengi (135 push: kapanış HEAD = `style(135)` kod commit'i, CI koşmuş olmalı;
+doc paketi `[skip ci]`) → şu dosyalar oku: `son-durum.md` (135), `CLAUDE-SON-OTURUM.md` (135), bu dosya
+→ `docs/PARSER-VE-YUKLEME-AKISI.md` **Bölüm 7.5–7.7** → KARARLAR **MK-135.1 / MK-135.2** → gündem teyidi.
 
-**Function sayımı (MK-129.3):** `ls api/*.js | wc -l` → 12 görmeli. (135'te de yeni endpoint YOK.)
+**Function sayımı (MK-129.3):** `ls api/*.js | wc -l` → 12 görmeli. (136'da da yeni endpoint YOK.)
 
-## 134 nerede bıraktı — kısa hatırlatma
+## 135 nerede bıraktı — kısa hatırlatma
 
-- K2 v1 **üretimde doğrulandı**: S02 re-parse, dirsek 🟡 (PDF 212.41 vs Excel 35.01 kg, ~6×) +
-  montaj-info (flanş). 3/1/1 fixture birebir.
-- K1+K3 v1 **yarısı bitti**: `uyarilar.html` K2 uyarıları canlı (çelişki=uyarı, montaj-info=bilgi).
-- **v3 İnceleme rozeti yapılmadı** (bu oturumun baş işi): `devre-inceleme.js` `_eslesme`'yi taşımıyor,
-  `izometrileriDerle` kendi eşleştirmesini yapıyor → malzeme_kiyas çıktıda yok.
-- MK-134.1 mühürlendi (CI [skip ci] çok-commit tuzağı).
-- Vercel CLI link'li + `.env.local` prod env yerelde (gitignore). `scripts/re-parse-s02.mjs` geçici
-  (gitignore) — başka spool doğrulamak için tekrar kullanılabilir.
+- **v3 İnceleme K2 rozeti BİTTİ** (A2, MK-135.1): server enjeksiyonu canlı kanıtlı (lambda + SQL + smoke).
+  AMA **rozet/popup gerçek tabloda gözle GÖRÜLMEDİ** — wizard `?devre_id=` ile taslak açamıyor (borç #2).
+- **Dirsek kökü çözüldü** (MK-135.2): Excel BOM hatalı, PDF doğru. K2 bug değil. Parser'a dokunma.
+- Kozmetik: izo-eslesme self-test yorumu düzeltildi.
+- Commit'ler: `e6db101` (K2 rozeti kod) + kapanış paketi.
 
 ## Yapılacaklar (sıra)
 
-### 0. Doc-push CI teyidi — açılışta
+### 1. v3 wizard taslak-açma (`?devre_id=`) — görsel testin ÖN KOŞULU
 
-134 kod commit'i (`5e9b0ec`) push'ta CI'den geçti mi (Actions yeşil run var mı) doğrula. Doc paketi
-ayrı `[skip ci]` ile gitmiş olmalı. Eğer 134 sonunda push yapılmadıysa: önce `5e9b0ec` push (kod, CI)
-→ yeşil → sonra doc'lar (MK-134.1 sıra).
+**Sorun:** `devre_wizard_v3.html` URL'deki `devre_id`'yi okumuyor (`WIZ.devre_id` null kalıyor); var olan
+`oneri_hazir` taslağı yeniden açıp İnceleme'ye getiremiyoruz → rozet ekranda görülemiyor.
+**Yapılacak:** Açılışta `new URLSearchParams(location.search).get('devre_id')` varsa: devreyi+kabuğu
+(BOM) yükle, Adım 2'ye (İnceleme) geç, `inceleGetir()` çağır. Mevcut sıfırdan-oluştur akışını bozmadan
+(param yoksa eski davranış). ~20 dk, orta risk (WIZ durum akışı). Atomik patch + node --check.
 
-### 1. v3 İnceleme K2 rozeti (BAŞ İŞ) — K1+K3 zor yarı
+**Bittiğinde GÖRSEL TEYİT (MK-132.1 görsel ayağı):**
+`arespipe.vercel.app/devre_wizard_v3.html?devre_id=b310cfc5-2a09-41be-8d3a-78c1af43b591` → S02 satırında
+🟡 malzeme rozeti + Düzelt popup'ta "🔧 Dirsek çelişkisi PDF 212.41 ↔ Excel 35.01" + "🔩 Flanş DN300 ×6".
 
-**Sorun:** `api/devre-inceleme.js` `izometrileriDerle` (satır 55) parse_sonuc'tan kendi eşleştirmesini
-yapar; `_eslesme.detay[].malzeme_kiyas`'a hiç bakmaz. v3 İnceleme (satır 746) bu endpoint'in çıktısını
-render eder → malzeme_kiyas görünmez.
+### 2. Çoklu-gemi / çoklu-format K2 testi
 
-**İki seçenek (135 başında karar):**
-- **A)** `izometrileriDerle` içinde, eşleşen her spool için `_eslesme`'den ilgili `detay[]` kaydını
-  bulup `malzeme_flag` + `malzeme_kiyas`'ı çıktıya iliştir. (Endpoint zaten parse_sonuc'u çekiyor;
-  `_eslesme` orada — ek sorgu yok. En küçük dokunuş.)
-- **B)** `malzemeKiyas` lib'ini endpoint'te yeniden koş (spool_malzemeleri fetch gerekir — endpoint
-  şu an çekmiyor). Daha ağır; gereksiz (eslestir zaten hesapladı, A onu okur).
-- **Öneri: A.** DRY — eslestir'in ürettiği malzeme_kiyas'ı taşı, yeniden hesaplama.
-
-**UI tarafı (devre_wizard_v3.html):**
-- Satır 746 `izoCell(s.izometri, s.bindirme_flag)` → ek `s.malzeme_flag` parametresi / ayrı rozet.
-- 🟡 rozet (bindirme rozetiyle yan yana ya da birleşik). Tıkla → düzelt popup'ına malzeme_kiyas dökümü:
-  celiski[] (sert sapma, agirlik_kg_toplam) + excel_fazla_montaj[] (montaj-info). Soft sapma gizli (134 karar 1).
-- `meta.excel_guven` dili: otorite→"PDF Excel'den sapıyor, PDF kontrol", parite→"ikisi de kontrol".
-- Mevcut düzelt popup'ı (duzeltAc, satır ~904) zaten bindirme detayını gösteriyor olabilir — malzeme
-  bölümünü oraya ekle (yeni popup değil).
-
-### 2. Dirsek bulgusu kök tespiti
-
-S02 dirsek PDF 212.41 vs Excel 35.01 kg (~6×). Üç hipotez, ayırt edilmedi:
-- PDF parser dirsek ağırlığını yanlış çıkarıyor (per-elbow ~35 → toplam 212 mantıklı mı? 6×35=210 ≈ 212
-  → PDF "adet × birim" topluyor olabilir; Excel "birim" veriyor olabilir → BASIS farkı!).
-- Excel BOM parse basis (35.01 = tek dirsek mi, 6'nın toplamı mı?).
-- Gerçek BOM hatası.
-- **İlk bakış hipotezi:** 212.41 / 6 ≈ 35.4 ≈ Excel 35.01. Yani **PDF toplam, Excel birim** olabilir →
-  MK-133.2 (agirlik_kg satır-toplam semantik) PDF tarafında ihlal? l2-parser dirsek satırını nasıl
-  topluyor, kontrol et. Bu doğruysa K2 bug'ı değil parser normalizasyon farkı — düzeltme l2-parser'da.
-- 2-3 farklı devre örneğiyle doğrula.
+Farklı gemi projelerinden gerçek örneklerle K2 rozeti + popup'ı pekiştir:
+- Dirsek-tipi Excel ağırlık tutarsızlığı (MK-135.2) **başka gemilerde de var mı** → desen mi, tek vaka mı.
+- Desen ise: IFS BOM `agirlik_kg` bazı satırlarda adet×birim çarpmıyor olabilir → K2 toleransı yerine
+  **IFS-normalizasyon kuralı** (adet>1 & per-adet fiziksel-imkansız → satır-toplam varsay) düşünülür.
+- Boru/bilezik/montaj kapsam ayrımının farklı formatlarda doğru çalıştığını gör (PARÇA_SOZLUK kapsama).
+- Excel'i manuel (parite) olan bir devre varsa: `excel_guven` dili farkını gözle.
 
 ### 3. (opsiyonel) excel_guven otomatik türetme — MK-133.1 backlog
 
-Format paketinden/parser_kural'dan: L1 + IFS format_id → otorite; aksi parite. Küçük helper, K2 lib'i değişmez.
+Format paketinden/parser_kural'dan: L1+IFS → otorite; aksi parite. MK-135.2 ışığında: fitting ağırlık
+tutarsızlığında otorite olsa bile dil yumuşatılabilir (simetrik). Küçük helper, K2 lib değişmez.
 
 ### 4. Diğer borçlar (öncelik dışı)
 
@@ -74,20 +52,22 @@ web-spool sync, fitting (DIN 86087/ASME B16.9), `spool_dokumanlari` bağ tablosu
 ## KORUMA bantları
 
 - **MK-49.1:** izometri-oku.js'e DOKUNMA.
-- **MK-129.3 / KORUMA-4:** `ls api/*.js | wc -l` = 12; yeni endpoint yok.
-- **MK-132.1:** Teşhis canlı yolak uçtan uca koşulmadan kapatılmaz.
+- **MK-129.3:** `ls api/*.js | wc -l` = 12; yeni endpoint yok.
+- **MK-132.1:** Teşhis canlı yolak uçtan uca koşulmadan kapatılmaz (135 görsel ayağı 136'ya kaldı).
 - **MK-133.1/.2/.3:** Excel kaynak güveni / agirlik_kg satır-toplam / dirsek malzeme-korunumu.
 - **MK-134.1:** Kod commit'i + `[skip ci]` doc'u aynı push'ta doc-HEAD'de gönderilmez (CI atlanır).
+- **MK-135.1:** v3 K2 enjeksiyonu handler'da (A2); lib saf.
+- **MK-135.2:** Dirsek sapması = Excel BOM hatası, parser doğru. Dokunma; desen 136'da araştırılır.
 
 ## Hatırlatmalar
 
-- Env: `.env.local` prod (gitignore) · `SUPABASE_SERVICE_KEY` Sensitive (env pull bozuk okur — Supabase
-  Dashboard Legacy service_role'den al, tek seferlik env ver).
-- re-parse testi: `node scripts/re-parse-s02.mjs https://arespipe.vercel.app` (SK env'iyle).
-- `sed` HTML'de kullanma → atomik Python patch / `str_replace`.
-- Doc `[skip ci]`; kod CI tetikler — koddan SONRA push (MK-134.1).
+- Env: `.env.local` prod (gitignore) · `SUPABASE_SERVICE_KEY` Sensitive (Supabase Dashboard Legacy
+  service_role'den tek seferlik al). re-parse: `node scripts/re-parse-s02.mjs <url>` (geçici, gitignore).
+- `sed` HTML/JS'de kullanma → atomik Python patch / `str_replace` (MK-129.3 ruhu).
+- Doc `[skip ci]`; kod CI tetikler — tek push/çok commit ise HEAD = kod (MK-134.1).
+- v3 test devresi: `g200` / `b310cfc5-2a09-41be-8d3a-78c1af43b591` (S02 dirsek çelişkili, K2 verisi hazır).
 
 ---
 
-> **135'in ilk somut adımı: doc-push CI teyidi, sonra v3 İnceleme malzeme_kiyas taşıma (seçenek A) +
-> rozet/popup.** Dirsek kök tespiti güçlü ikinci aday (212/6 ≈ Excel → basis hipotezi).
+> **136'nın ilk somut adımı: wizard taslak-açma (#1) → görsel teyit → çoklu-gemi testi (#2).**
+> K2'nin server tarafı bitti; kalan iş onu gözle görmek ve farklı gemilerle pekiştirmek.

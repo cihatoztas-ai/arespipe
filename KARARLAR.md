@@ -1983,3 +1983,55 @@ edilir. Görünmediyse CI atlanmıştır → boş commit / küçük tetikleyici 
 doc'un tek push'ta karışıp doc'un HEAD olmasıdır.
 
 **İlişkili:** MK-132.1 (belge ≠ canlı gerçek; verify et), Faz B sapmama sistemi (kod CI'den geçmeli).
+
+## MK-135.1 — v3 İnceleme K2 enjeksiyonu handler katmanında (A2); lib saf çekirdek korunur
+
+**Bağlam:** 134'te `uyarilar.html` K2 malzeme uyarılarını `_eslesme`'den DOĞRUDAN okuyordu (kolay yarı).
+v3 İnceleme ekranı (`devre_wizard_v3.html`) ise `/api/devre-inceleme` dönüşünü render eder; o endpoint
+`incelemeTablosu` (lib/izo-eslesme.js) ile kendi eşleştirmesini yapar ve `_eslesme.detay[].malzeme_kiyas`'a
+hiç bakmaz → malzeme_kiyas çıktıda yok.
+
+**Karar:** Enjeksiyon **handler katmanında** yapılır. `incelemeTablosu` dönüşünden SONRA,
+`izoKayitlar[].parse_sonuc._eslesme.detay[]`'dan (durum='eslesti' & malzeme_kiyas olan kayıtlar)
+`normPipeline(pipeline_no)|normSpoolNo(spool_no)` haritası kurulur; `sonuc.spoollar[]`'a `malzeme_flag`
++ `malzeme_kiyas` iliştirilir; `ozet.malzeme_flag` sayacı eklenir.
+
+**Gerekçe (A1 yerine A2):** `lib/izo-eslesme.js` "DB yok, regex yok, yan etki yok — saf birim-test
+edilebilir çekirdek" sözü taşır. malzeme_kiyas lib'in işi değil (worker'da `malzemeKiyas` hesaplıyor,
+sonuç `_eslesme.detay[]`'da hazır). A1 (lib'e taşıma) bu sözü bozar ve self-test'i riske atar. A2 lib'i
+dokunulmaz bırakır, K2'yi tek dosyada (endpoint) toplar. Endpoint parse_sonuc'u zaten çekiyor → ek sorgu
+yok; anahtar kabuk anahtarıyla birebir aynı → drift yok; eslestir hesapladı → yeniden hesaplama yok (DRY).
+
+**Çok-izometri kuralı:** Bir spool'a birden çok izometri (detay+montaj) düşerse flag'li kayıt öncelikli
+(flag yoksa ilk bulunan kalır).
+
+**Kanıt:** node --check (iki dosya + inline JS) ✓, idempotency ✓, smoke (S02 fixture) ✓, canlı lambda
+(`/api/devre-inceleme` g200 → malzeme_flag:true, celiski+montaj) ✓, SQL DB teyidi ✓. Yeni endpoint yok
+(12/12), MK-49.1 korundu. Commit `e6db101`.
+
+**Açık (136):** Görsel teyit — v3 wizard `?devre_id=` ile taslak açamadığından rozet/popup ekranda
+gözle görülmedi (kod kanıtlı). Wizard taslak-açma yeteneği 136 borcu.
+
+---
+
+## MK-135.2 — Dirsek 🟡 bulgusunun kökü: Excel BOM hatalı, PDF doğru — K2 bug değil
+
+**Bağlam:** 133/134'te K2 S02'de dirsek için 🟡 üretti: PDF 212.41 kg vs Excel 35.01 kg (~6×). Kök
+ayırt edilmemişti; hipotez "PDF toplam / Excel birim (basis farkı)" idi.
+
+**Bulgu (135, S02 ham PDF malzeme listesi — konsolide öncesi):**
+- PDF: dirsek satırı **6 kez** tekrar (her biri adet:1, agirlik:35.402 kg, boy:457 mm) → K2 konsolide
+  6×35.4 = **212.41 kg**. (PDF her parçayı ayrı satır yazar; borular da öyle.)
+- Excel BOM: **tek satır, adet:6 ama agirlik:35.01 kg** → per-adet ~5.84 kg.
+
+**Karar/sonuç:** Eski basis hipotezi **çürüdü**. DN323.9 (12") 1.5D dirsek per-adet ~35 kg fiziksel
+makul; 5.84 kg imkansız. **PDF doğru; Excel BOM hatalı** — adet:6 yazıp ağırlığa tek dirseğin değerini
+koymuş (IFS export'unda adet×birim çarpılmamış olası). **K2 bir bug değil — gerçek veri tutarsızlığını
+doğru yakaladı; sistemin var olma sebebi.** l2-parser'a/K2'ye düzeltme YAPILMAZ.
+
+**Yan not:** `excel_guven:'otorite'` dili bu vakada yanıltıcı ("PDF kontrol" diyor, gerçekte Excel
+hatalı). MK-133.1 otomatik güven türetme işi gelince, fitting ağırlık tutarsızlığında otorite olsa bile
+simetrik dil düşünülebilir (acil değil).
+
+**136 takip:** Desen başka gemilerde tekrar ediyor mu? Ediyorsa IFS-normalizasyon kuralı (adet>1 &
+per-adet fiziksel-imkansız → satır-toplam varsay) değerlendirilir; tek vaka ise olduğu gibi 🟡 bırakılır.
