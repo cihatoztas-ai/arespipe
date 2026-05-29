@@ -355,6 +355,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     await projeleriYukle();
     bindleri();
+    // ── MK-136: ?devre_id= ile var olan taslağı İnceleme'de yeniden aç (param yoksa eski sıfırdan akış) ──
+    var _did136 = new URLSearchParams(location.search).get('devre_id');
+    if (_did136) { try { await taslagiAc(_did136); } catch (e) { console.error('[v3] taslak aç:', e); } }
     document.documentElement.style.visibility = '';
   })();
 });
@@ -698,6 +701,56 @@ function incelemeKur() {
 function markaDevre() {
   var p = WIZ.proje_no || '', d = WIZ.devre_no || '';
   return p ? (p + ' — ' + d) : d;
+}
+
+// ── MK-136: var olan taslağı (?devre_id=) İnceleme'de yeniden aç ──
+// inceleBaslat'ın WIZ alanlarını DB'den yeniden kurar; spooller'a YAZMAZ (MK-127.4 OKUMA katmanı korunur).
+async function taslagiAc(devreId) {
+  var supa = ARES.supabase();
+  // 1) Devre
+  var _d = await supa.from('devreler')
+    .select('id, proje_id, devre_no, zone, termin, durum')
+    .eq('id', devreId).single();
+  if (_d.error || !_d.data) { console.warn('[v3] taslak bulunamadı:', devreId, _d.error); toast('Taslak devre bulunamadı'); return false; }
+  var dv = _d.data;
+  WIZ.devre_id    = dv.id;
+  WIZ.proje_id    = dv.proje_id;
+  WIZ.devre_no    = dv.devre_no || '';
+  WIZ.yeni_zone   = dv.zone || '';
+  WIZ.yeni_termin = dv.termin || '';
+  // Proje/tersane bilgisi projeleriYukle()'den hazır (ek sorgu yok)
+  var pj = (WIZ._projeler || []).find(function(p){ return p.id === dv.proje_id; });
+  WIZ.proje_no    = pj ? pj.proje_no : '';
+  WIZ.tersane_ad  = pj ? pj.tersane_ad : '';
+  if (dv.durum !== 'taslak') console.warn('[v3] taslak-açma: devre durumu', dv.durum, '(taslak değil — yine de İnceleme açılıyor)');
+
+  // 2) Belgeler → Dökümanlar ağacı için WIZ.dosyalar'ı özet olarak yeniden kur
+  var _docs = await supa.from('devre_dokumanlari')
+    .select('id, dosya_adi, klasor_yolu, uzanti, dokuman_tipi, boyut_byte')
+    .eq('devre_id', devreId).eq('aktif', true);
+  var docRows = _docs.data || [];
+  WIZ.dosyalar = docRows.map(function(x){
+    return { dosya_adi: x.dosya_adi, klasor_yolu: x.klasor_yolu || '', uzanti: x.uzanti, tip_kodu: x.dokuman_tipi, boyut: x.boyut_byte, durum: 'yuklendi' };
+  });
+
+  // 3) Kabuk: BOM excel kuyruk satırlarının parse_sonuc.satirlar → ARES_KABUK.grupla (KORUMA-1)
+  try {
+    var bomDocIds = docRows.filter(function(x){ return x.dokuman_tipi === 'bom_excel'; }).map(function(x){ return x.id; });
+    var kabukSatirlar = [];
+    if (bomDocIds.length) {
+      var kq = await supa.from('dosya_isleme_kuyrugu')
+        .select('parse_sonuc').in('devre_dokuman_id', bomDocIds).eq('parser', 'excel-generic');
+      (kq.data || []).forEach(function(row){ var ps = row.parse_sonuc; if (ps && Array.isArray(ps.satirlar)) kabukSatirlar = kabukSatirlar.concat(ps.satirlar); });
+    }
+    WIZ._kabukSatirlar = kabukSatirlar;
+    var model = (kabukSatirlar.length && typeof ARES_KABUK !== 'undefined' && ARES_KABUK.grupla) ? ARES_KABUK.grupla({ satirlar: kabukSatirlar }) : { spoollar: [] };
+    WIZ._kabukSpoollar = model.spoollar || [];
+  } catch (e) { console.warn('[v3] taslak kabuk türetilemedi:', e); WIZ._kabukSatirlar = []; WIZ._kabukSpoollar = []; }
+
+  // 4) Adım 2'ye geç + İnceleme + drenaj (sıfırdan akışın gosterAdim(2)+incelemeKur() ucu ile aynı)
+  gosterAdim(2);
+  incelemeKur();
+  return true;
 }
 
 // POST /api/devre-inceleme {devre_id, kabuk_spoollar} → 4-durum render (MK-127.3/5)
