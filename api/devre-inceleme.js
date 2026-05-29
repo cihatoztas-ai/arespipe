@@ -178,6 +178,36 @@ export default async function handler(req, res) {
     const izometriler = izometrileriDerle(izoKayitlar, kabukSpoollar);
     const sonuc = incelemeTablosu({ kabukSpoollar, izometriler, guvenEsigi: 0.7 });
 
+    // ── A2 (oturum 135): K2 malzeme kıyası enjeksiyonu — lib SAF kalır (izo-eslesme.js dokunulmaz).
+    //   _eslesme.detay[] worker'da hazır (kuyruk-isle-izometri eslestir). Anahtar = kabuk anahtarıyla
+    //   BİREBİR aynı (normPipeline|normSpoolNo). Yeniden hesaplama YOK — hazır raporu spool'a taşı.
+    //   Bir spool'a birden çok izometri (detay+montaj) düşerse: malzeme_flag'i olan ilk kayıt kazanır
+    //   (flag yoksa ilk bulunan). Soft sapma lib'de zaten celiski dışında — UI ek filtre gerektirmez.
+    const malzemeHarita = new Map();   // "PIPE|SPOOL" -> { malzeme_flag, malzeme_kiyas }
+    for (const kay of izoKayitlar) {
+      const detay = kay.parse_sonuc && kay.parse_sonuc._eslesme && Array.isArray(kay.parse_sonuc._eslesme.detay)
+        ? kay.parse_sonuc._eslesme.detay : null;
+      if (!detay) continue;
+      for (const d of detay) {
+        if (d.durum !== 'eslesti' || !d.malzeme_kiyas) continue;
+        const k = normPipeline(d.pipeline_no) + '|' + normSpoolNo(d.spool_no);
+        const onceki = malzemeHarita.get(k);
+        // flag'li kayit oncelikli; flag yoksa ilk gelen kalir.
+        if (!onceki || (d.malzeme_flag && !onceki.malzeme_flag)) {
+          malzemeHarita.set(k, { malzeme_flag: !!d.malzeme_flag, malzeme_kiyas: d.malzeme_kiyas });
+        }
+      }
+    }
+    let malzemeFlagSay = 0;
+    for (const s of (sonuc.spoollar || [])) {
+      const k = normPipeline(s.pipeline) + '|' + normSpoolNo(s.spoolNo);
+      const m = malzemeHarita.get(k);
+      s.malzeme_flag = m ? m.malzeme_flag : false;
+      s.malzeme_kiyas = m ? m.malzeme_kiyas : null;
+      if (s.malzeme_flag) malzemeFlagSay++;
+    }
+    if (sonuc.ozet) sonuc.ozet.malzeme_flag = malzemeFlagSay;   // özet şeridi/istatistik için
+
     return res.status(200).json({ ok: true, devre_id: devreId, ...sonuc });
   } catch (e) {
     return res.status(500).json({

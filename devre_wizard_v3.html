@@ -743,7 +743,7 @@ function renderInceleme(j) {
       '<td class="cap">' + capTxt + '</td><td class="et">' + etTxt + '</td><td class="agir">' + agTxt + '</td>' +
       '<td>' + matBadge(s.anaMalzeme) + '</td><td class="kalite">' + esc(s.kalite || '') + '</td>' +
       '<td>' + yuzeyBadge(s.yuzeyHam) + '</td><td>' + alistMb(s.alistirma) + '</td>' +
-      '<td>' + mbadge(s.durum) + '</td><td>' + izoCell(s.izometri, s.bindirme_flag) + '</td><td>' + islemCell(i, s.durum) + '</td></tr>';
+      '<td>' + mbadge(s.durum) + '</td><td>' + izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag) + '</td><td>' + islemCell(i, s.durum) + '</td></tr>';
   });
   // Fazla (turuncu) — kabukta yok, sorulur (MK-126.2)
   fz.forEach(function(f) {
@@ -813,13 +813,51 @@ function yuzeyBadge(y) {
   var cls = /galvaniz/i.test(y) ? 'yb-galvaniz' : /asit/i.test(y) ? 'yb-asit' : /boy/i.test(y) ? 'yb-boyali' : 'yb-siyah';
   return '<span class="yuzey-badge ' + cls + '">' + esc(y) + '</span>';
 }
-function izoCell(izo, flag) {
+function izoCell(izo, flag, malzFlag) {
   if (!izo || !izo.dosya_adi) return '<span class="gri">döküman yok</span>';
   var sev = (izo.seviye || '').toLowerCase();
   var sevCls = sev === 'l1' ? 'l1' : sev === 'l2' ? 'l2' : 'l3';
   var guvTxt = (izo.seviye || '?') + (izo.guven != null ? ' %' + Math.round(izo.guven * 100) : '');
   var dosya = esc(izo.dosya_adi.length > 26 ? '…' + izo.dosya_adi.slice(-24) : izo.dosya_adi);
-  return '<span class="izo">' + dosya + '</span><span class="guv ' + sevCls + '">' + esc(guvTxt) + (flag ? ' · çelişki' : '') + '</span>';
+  // 135/K2: malzeme listesi çelişkisi (Excel BOM ↔ PDF) ayrı 🟡 rozet — bindirme "çelişki"sinden bağımsız.
+  var malzRozet = malzFlag ? '<span class="guv" style="color:var(--warn);margin-left:4px;" title="Malzeme listesi (BOM) çelişkisi — Düzelt\'e bak">🟡 malzeme</span>' : '';
+  return '<span class="izo">' + dosya + '</span><span class="guv ' + sevCls + '">' + esc(guvTxt) + (flag ? ' · çelişki' : '') + '</span>' + malzRozet;
+}
+
+// ── 135/K2: malzeme kıyası popup yardımcıları (uyarilar.html MLZ_* ile birebir) ──
+var MLZ_ALAN_AD_V3 = { agirlik_kg_toplam: 'Toplam ağırlık', agirlik_kg: 'Ağırlık', agirlik_kg_per_adet: 'Per-adet ağırlık', adet: 'Adet', boy_mm: 'Boy', cap: 'Çap' };
+var MLZ_PT_AD_V3 = { boru: 'Boru', dirsek: 'Dirsek', flans: 'Flanş', te: 'Te', reduksiyon: 'Redüksiyon', kapak: 'Kapak', bilezik: 'Bilezik', civata: 'Cıvata', somun: 'Somun', conta: 'Conta', rondela: 'Rondela', nipel: 'Nipel', fitting: 'Fitting' };
+function _mlzFmtV3(v, alan) {
+  if (v == null) return '—';
+  var n = Number(v);
+  if (isNaN(n)) return String(v);
+  // adet birimsiz; ağırlık kg; boy mm; çap birimsiz.
+  if (alan === 'adet') return String(n);
+  if (alan === 'boy_mm') return n.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' mm';
+  return n.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' kg';
+}
+// s.malzeme_kiyas → popup HTML bloğu (celiski 🔧 + excel_fazla_montaj 🔩). Soft sapma GİZLİ.
+function malzemeKiyasBlok(mk) {
+  if (!mk) return '';
+  var celiski = mk.celiski || [], montaj = mk.excel_fazla_montaj || [];
+  if (!celiski.length && !montaj.length) return '';
+  var guvenNot = (mk.meta && mk.meta.excel_guven === 'otorite')
+    ? 'PDF, Excel (BOM) değerinden sapıyor — PDF kontrol edilmeli.'
+    : 'PDF ile Excel (BOM) arasında fark var — ikisi de kontrol edilmeli.';
+  var h = '<div class="dp-sec">Malzeme listesi kıyası (BOM ↔ PDF)</div>';
+  celiski.forEach(function (c) {
+    var sap = (c.sapmalar || []).filter(function (s) { return s.seviye !== 'soft'; }).map(function (s) {
+      return (MLZ_ALAN_AD_V3[s.alan] || s.alan) + ': PDF ' + _mlzFmtV3(s.pdf, s.alan) + ' ↔ Excel ' + _mlzFmtV3(s.excel, s.alan);
+    }).join(' · ');
+    h += '<div class="onay-warn" style="margin:4px 0;">🔧 <b>' + esc(MLZ_PT_AD_V3[c.pt] || c.pt) + ' çelişkisi</b> — ' + esc(guvenNot) + (sap ? ' ' + esc(sap) + '.' : '') + '</div>';
+  });
+  if (montaj.length) {
+    var liste = montaj.map(function (m) {
+      return (MLZ_PT_AD_V3[m.pt] || m.pt) + (m.dn ? ' DN' + m.dn : (m.cap ? ' Ø' + m.cap : '')) + (m.adet ? ' ×' + m.adet : '');
+    }).join(', ');
+    h += '<div class="onay-ok" style="margin:4px 0;">🔩 <b>Montaj malzemesi</b> (Excel\'de var, PDF\'te yok — sahada birleştirilir, normal): ' + esc(liste) + '</div>';
+  }
+  return h;
 }
 function islemCell(i, durum) {
   if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>';
@@ -914,6 +952,7 @@ function duzeltAc(i) {
   b += satir('Çap', s.cap, 'xl') + satir('Et', s.et, 'xl') + satir('Ağırlık', s.toplamKg != null ? (Number(s.toplamKg).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : '', 'xl');
   b += satir('Malzeme', s.anaMalzeme, 'xl') + satir('Kalite', s.kalite, 'xl') + satir('Yüzey', s.yuzeyHam, s.yuzeyHam ? izoSrc : 'bos') + satir('Alıştırma', s.alistirma, izoSrc);
   if (s.izometri) b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
+  if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
   b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Değer düzeltme yazma + çapa (PDF\'te işaretle → formatın tümüne öğret) <b>sonraki fazda</b> (omurga 8 / 18.d). Şimdilik salt görüntü.</p>';
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button><button class="btn-sm" style="color:var(--ac);padding:9px 14px;" onclick="toast(\'Çapa işaretleme: sonraki faz\')">📍 PDF\'te işaretle (çapa)</button></div>';
   document.getElementById('dpBody').innerHTML = b;
