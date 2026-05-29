@@ -268,6 +268,9 @@ const seviyeConfig = {
 const kategoriLabel = { devre:'Hareketsiz Devre', personel:'Personel', sistem:'Sistem', manuel:'Manuel', bindirme:'Bindirme Çelişkisi' };
 
 // 112/MK-112.5: bindirme celiski alan adlari + deger formatlama (uyari karti metni icin)
+const MLZ_ALAN_AD = { agirlik_kg_toplam: 'Toplam ağırlık', agirlik_kg: 'Ağırlık', adet: 'Adet', boy_mm: 'Boy', cap: 'Çap' };
+const MLZ_PT_AD = { boru: 'Boru', dirsek: 'Dirsek', flans: 'Flanş', te: 'Te', redüksiyon: 'Redüksiyon', kor: 'Kör', bilezik: 'Bilezik', kelepce: 'Kelepçe' };
+function _mlzFmt(v) { if (v == null) return '—'; const n = Number(v); return isNaN(n) ? String(v) : (n.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' kg'); }
 const ALAN_AD = { et:'et kalınlığı', cap:'çap', agirlik:'ağırlık', yuzey:'yüzey' };
 function _bndFmt(v){ return (v===null||v===undefined||v==='') ? '—' : String(v); }
 
@@ -512,9 +515,60 @@ async function bindirmeUyarilariYukle() {
       });
     });
 
+    // 134/K2 (MK-133.1/2/3): malzeme listesi capraz kiyasi uyarilari.
+    //   celiski (sert sapma, orn. dirsek toplam-agirlik) -> uyari (🟡).
+    //   excel_fazla_montaj (Excel'de var PDF'te yok, montaj parcasi) -> bilgi (ℹ).
+    //   Soft sapma (eslesen icindeki agirlik farki) GOSTERILMEZ (134 karar 1).
+    (data || []).forEach(function (row) {
+      const es = row.eslesme;
+      if (!es || !(es.malzeme_flag_sayisi > 0) || !Array.isArray(es.detay)) return;
+      es.detay.forEach(function (d) {
+        if (!d.malzeme_flag || !d.malzeme_kiyas) return;
+        const mk = d.malzeme_kiyas;
+        const spLbl = d.spool_id || d.spool_no || 'Spool';
+        const kaynak = d.pipeline_no || es.dosya_adi || '—';
+        const link = d.spool_uuid ? ('spool_detay.html?id=' + d.spool_uuid) : '';
+        const olus = row.bitis_at ? new Date(row.bitis_at).toLocaleString('tr-TR') : '';
+        const guvenNot = (mk.meta && mk.meta.excel_guven === 'otorite')
+          ? 'PDF, Excel (BOM) değerinden sapıyor — PDF kontrol edilmeli.'
+          : 'PDF ile Excel (BOM) arasında fark var — ikisi de kontrol edilmeli.';
+
+        // CELISKI -> uyari (🟡)
+        (mk.celiski || []).forEach(function (c, ci) {
+          const sap = (c.sapmalar || []).map(function (s) {
+            return (MLZ_ALAN_AD[s.alan] || s.alan) + ': PDF ' + _mlzFmt(s.pdf) + ' ↔ Excel ' + _mlzFmt(s.excel);
+          }).join(' · ');
+          yeni.push({
+            id: 'MLZ_' + (d.spool_uuid || d.spool_id || row.id) + '_c' + ci,
+            kategori: 'malzeme', seviye: 'uyari', goruldu: false,
+            baslik: spLbl + ' — ' + (MLZ_PT_AD[c.pt] || c.pt) + ' malzeme çelişkisi',
+            aciklama: guvenNot + ' ' + (sap || '') + '.',
+            kaynak: kaynak, link: link, olusturma: olus, ikon: '🔧'
+          });
+        });
+
+        // MONTAJ-INFO (excel_fazla_montaj) -> bilgi (ℹ)
+        const montaj = mk.excel_fazla_montaj || [];
+        if (montaj.length) {
+          const liste = montaj.map(function (m) {
+            return (MLZ_PT_AD[m.pt] || m.pt) + (m.dn ? ' DN' + m.dn : (m.cap ? ' Ø' + m.cap : '')) +
+                   (m.adet ? ' ×' + m.adet : '');
+          }).join(', ');
+          yeni.push({
+            id: 'MLZ_' + (d.spool_uuid || d.spool_id || row.id) + '_montaj',
+            kategori: 'malzeme', seviye: 'bilgi', goruldu: false,
+            baslik: spLbl + ' — montaj malzemesi (Excel\'de var, PDF\'te yok)',
+            aciklama: 'BOM\'da bulunan ancak izometri imalat listesinde olmayan montaj parçaları: ' +
+                      liste + '. Beklenen durum (cıvata/conta/flanş montajda eklenir), bilgi amaçlı.',
+            kaynak: kaynak, link: link, olusturma: olus, ikon: '🔩'
+          });
+        }
+      });
+    });
+
     if (yeni.length) {
-      // Idempotent: onceki BND_ uyarilarini cikar, taze listeyi ekle (re-run guvenli)
-      uyarilar = uyarilar.filter(function (u) { return u.kategori !== 'bindirme'; }).concat(yeni);
+      // Idempotent: onceki BND_ + MLZ_ uyarilarini cikar, taze listeyi ekle (re-run guvenli)
+      uyarilar = uyarilar.filter(function (u) { return u.kategori !== 'bindirme' && u.kategori !== 'malzeme'; }).concat(yeni);
       renderHepsi(); guncelBell(); guncelStatler();
     }
   } catch (e) {
