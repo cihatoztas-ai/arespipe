@@ -1904,3 +1904,60 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **[İPTAL atfı]** MK-131.1 / 131.2 / 131.4 (adaylar) yanlış teşhis olduğu için KARARLAR'a **alınmadı.** MK-131.3 ("öğretilmiş ≠ tanınıyor; tanıma ve parse ayrı katman, ayrı doğrula") doğruydu — özü MK-132.1'e taşındı.
 
 ---
+## MK-133.1 — Çapraz doğrulamada Excel'in referans rolü kaynak güvenine bağlıdır (29 May 2026, 133. oturum)
+
+**Karar:** K2 (malzeme listesi çapraz kıyası, `lib/malzeme-kiyas.js`) çıktısı `_eslesme.detay[].malzeme_kiyas`'a yazılırken Excel tarafının doğruluk otoritesi **sabit değildir**; Excel'in kaynak güvenine göre belirlenir. Kurumsal ERP çıktısı Excel (IFS .xlsm gibi, L1 format tespiti + yüksek güven) **otorite** kabul edilir; manuel/elle hazırlanmış Excel (format tanınmamış, L2/L3 düşük güven) **parite** olur.
+
+**Davranış farkı:**
+- **Otorite:** Çelişki dili "PDF Excel'den sapıyor", incelenen taraf PDF. `excel_fazla_fab` gerçek 🟡 (BOM'da var, PDF eksik → parser açığı ya da gerçek izometri eksiği).
+- **Parite:** Çelişki simetrik 🟡, "iki taraf da kontrol edilmeli" dilinde. Sapma birinde değil, dengeli.
+
+**Sebep:** Cihat'ın 133'teki nüansı — "Excel referans derken bu IFS dosyasını düşünerek söylüyorum. Eğer program çıktısı olmayan bir excel ise bu kadar rahat olamayız." Kurumsal ERP çıktısı parser confidence ≥ %90 ile L1'de gelirken, manuel Excel insan elinden çıkmıştır ve PDF kadar fallible'dır. K2'nin uygulamasının her iki vakada da çalışması, ama yorum dilinin (yani UI'ın operatöre söylediği şeyin) farklı olması gerekir.
+
+**Uygulama:**
+1. `malzemeKiyas(pdf, excel, { excel_guven: 'otorite' | 'parite' })` parametresi alır. Default `'otorite'`.
+2. Lib her iki davranışta da **aynı sapmaları üretir**; davranışsal değişiklik yok. Lib çıktıya `meta.excel_guven` tag'i koyar.
+3. Çağıran (eslestir / İnceleme UI) bu tag'e göre dil seçer.
+4. v1'de `eslestir` çağrısında `excel_guven` **sabit `'otorite'`** (IFS varsayımı). Otomatik türetme (format paketinden / `parser_kural` / AILE_KAYIT'tan) **backlog** olarak işaretlenir.
+
+**İlişkili:** MK-127.5 (4-durum İnceleme), MK-132.1 (canlı yolak doğrulama), MK-119.2 (parse kuralı kod paketinden), MK-133.2, MK-133.3.
+
+---
+
+## MK-133.2 — `spool_malzemeleri.agirlik_kg` satır-toplamı semantiktir (29 May 2026, 133. oturum)
+
+**Karar:** `spool_malzemeleri.agirlik_kg` kolonu **her zaman satırın toplam ağırlığını** ifade eder (per-adet değil). `adet > 1` olan fitting satırlarında bile değer satır-toplamıdır; per-adet ağırlık türetimi `agirlik_kg / adet` formülüyle yapılır (`adet` null veya 0 ise satır tek-parça kabul edilir).
+
+**Sebep:** 133 S02 fixture'ında (`G200-339b-001 S02`) basis ambiguity ortaya çıktı: PDF dirsek 6×35.4=212kg sum, Excel dirsek `agirlik_kg=35.01, adet=6`. Bu 35.01 per-adet mi (toplam 6×35.01=210, PDF ile %1 uyumlu) yoksa satır-toplam mı (per-elbow 5.84kg = DN300 için fiziksel olarak imkansız)? Cihat IFS BOM saklama düzenini bilen taraf olarak **satır-toplam** kararı verdi. Bu, `ares-kabuk.js` konsolidasyon mantığıyla da tutarlı: `c.agirlik_kg += parseFloat(r.agirlik_kg)` her zaman satır değerini toplar, basis dönüşümü yapmaz.
+
+**Uygulama:**
+- K2 kıyasında **fitting/montaj** parçaları (te, redüksiyon, flanş, bilezik, kapak, cıvata, conta…) per-adet ağırlık karşılaştırması: `pPer = p.agirlik_kg / p.adet` ve `ePer = e.agirlik_kg / e.adet`.
+- **Borularda** toplam ağırlık iki tarafta da kıyaslanabilir; PDF satırı (her parçanın kendi ağırlığı) konsolide edilirse Excel toplamına karşılık gelir. Adet kıyası borularda **anlamsızdır** (PDF = parça sayısı, Excel = tek satır).
+- **Dirsek istisnası:** bkz. MK-133.3.
+
+**Doğum kanıtı:** S02 fixture diff sonucu: boru 406.4 ve bilezik DN400 satır-toplam mantığıyla tam eşleşti (PDF tek parça = Excel total); boru 323.9 boy ve toplam ağırlık tutarlı (boy %0.2, kg %7.5 soft); fitting/montaj satırları per-adet bazlı olduğu hâlde Excel agirlik'ı bölmeden direkt kullanmak fiziksel olarak imkansız (5.84kg dirsek) → satır-toplam doğru basis.
+
+**İlişkili:** MK-110.3 (boyut parser tek ortak), MK-108.2 (tarihsel ikiz kolonlar — `agirlik` vs `agirlik_kg`), MK-133.1, MK-133.3.
+
+---
+
+## MK-133.3 — Dirsek için malzeme-korunumu invariantı; tam kesim-optimizasyonu sonraki sürüm (29 May 2026, 133. oturum)
+
+**Karar:** Dirsek için K2'de **adet kıyası kapalıdır**; geçerli invariant **toplam ağırlık** (PDF dirsek toplam kg ≈ Excel dirsek toplam kg, ±%15 fire/açı-detay yokluğu marjı). Tam bin-packing kesim-optimizasyonu (hangi açılar hangi 90° stoğundan birleşik çıkar, geri-stok envanteri) v2 borcudur; PDF açı verisi akmaya başlayınca yazılır.
+
+**Sebep:** Cihat'ın 133'teki kritik müdahalesi — "Dirsek standart 90° düşünüyoruz ama 27° de olabilir. 60 ve 20 dereceyi bir dirsekten keserim 10 derece fire olur. 45 derecede farklı başka bir dirsekten kesilir ve elimizde bir 45 ve bir 10 derece olur ve 10 derece muhtemelen fire olur. 3 adet dirsek kullanırız ve gerçekte 45 derece bir parça kalır." Dirsek standart 90° stoktan farklı açılarla kesilir; artan parça **fire değil geri-stoktur** (kullanılabilir parça olarak rafa döner). Bu yüzden basit adet kıyası (PDF'te 4 dirsek görünüyor → "4 stok" varsayımı) yanlıştır — karışık açılı dirsek setlerinde kapasite hesabı ham adetten daha derindir.
+
+İlk yaklaşımım (açı toplamı ≤ adet × 90 + fire toleransı) yanlış çerçeveydi, Cihat fire/geri-stok ayrımıyla düzeltti. Doğru invariant: malzeme-korunumu — 90° stoktan ne kesersen kes, kesilen parçalar toplam ağırlığı stoktan harcanan ağırlığı aşamaz (fire + trimleme + ölçü payı). Bu açıdan bağımsız; PDF açı bilmese bile ağırlık üzerinden geçer.
+
+**Uygulama (v1):**
+- `lib/malzeme-kiyas.js` içinde dirsek için **özel branch** (`p.pt === 'dirsek'`): toplam ağırlık invariantı (`agirlik_kg_toplam` ±%15 tol); adet ve boy IGNORE.
+- Diğer fitting/montaj parçaları (te, redüksiyon, flanş, bilezik, kapak, cıvata, conta) normal `else` dalında: adet exact match + per-adet ağırlık (±%5).
+- Boru ayrı dal: boy primary (±%5) + ağırlık soft (±%10, info-level); adet IGNORE.
+
+**v2 borcu:** Tam bin-packing kesim-optimizasyonu. Senaryo: 4×50° → 200° ≤ 3×90°=270° ama bin-pack'te aslında 4 stok gerekir (bir 90° iki 50°'yi alamaz — toplam 100° > 90°). v1 alt-sınırı geçen ama bin-packing'te sıkışan bu tür ender durumları yakalar. PDF açı verisi (kontur/regex parser) akmaya başlayınca yazılır.
+
+**Doğum kanıtı:** S02 fixture'da dirsek satırı şu an çelişki olarak yüzeyleniyor (PDF 212kg vs Excel 35.01kg, ~6× sapma) — fiziksel olarak DN300 1.5D dirsek başına ~35kg makul, Excel 35kg = 6 dirseğin toplamı dersek per-elbow ~5.84kg imkansız. Bu canlı veri ya gerçek bir BOM hatası, ya parser bug'ı, ya parse basis confusion'ı yansıtıyor — K2 yalın olarak sapmayı yüzeye çıkardı, sebep araştırması ayrı iş (134 gündemi).
+
+**İlişkili:** MK-133.1, MK-133.2.
+
+---
