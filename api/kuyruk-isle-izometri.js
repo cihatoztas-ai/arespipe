@@ -53,6 +53,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { bindir } from '../lib/bindir.js';   // 111/PARÇA2a: PDF→kabuk spool alan bindirme (et/çap/ağırlık/yüzey)
+import { malzemeKiyas } from '../lib/malzeme-kiyas.js';   // 133/K2: malzeme listesi kiyasi (MK-133.1/2/3)
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
@@ -530,6 +531,23 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     if (!harita.has(k)) harita.set(k, sp);
   }
 
+  // 133/K2 (MK-133.1/2/3): bu devrenin tum spool_malzemeleri'ni TEK seferde cek (N+1 yok).
+  //   Her eslesen spool icin malzemeKiyas'a Excel BOM tarafi olarak verilecek.
+  const spoolIds = (spoollar || []).map(s => s.id);
+  const malzemeHaritasi = new Map();   // spool_uuid -> spool_malzemeleri satirlari[]
+  if (spoolIds.length > 0) {
+    const { data: smRows, error: smErr } = await supa
+      .from('spool_malzemeleri')
+      .select('spool_id, tip, boyut, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, agirlik_kg, ifs_kod')
+      .in('spool_id', spoolIds);
+    if (smErr) console.error('[izo-eslestir] spool_malzemeleri batch hatasi:', smErr.message);
+    else for (const r of (smRows || [])) {
+      const arr = malzemeHaritasi.get(r.spool_id) || [];
+      arr.push(r);
+      malzemeHaritasi.set(r.spool_id, arr);
+    }
+  }
+
   const detay = [];
   let yukseltilen = 0;
 
@@ -554,6 +572,12 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
       // ps = parse_sonuc.spoollar[] elemani (et_mm, cap_mm, agirlik_kg, yuzey). hedef = kabuk spool.
       const b = bindir(ps, hedef);                 // {degisiklik, bindirme[], flagVar}
       const deg = Object.assign({}, b.degisiklik); // spooller UPDATE alanlari (bos olabilir)
+
+      // 133/K2 (MK-133.1/2/3): PDF malzeme_listesi <-> Excel spool_malzemeleri kiyas.
+      //   excel_guven='otorite' sabit (IFS varsayimi; format paketinden turetilmesi backlog).
+      //   spooller.UPDATE'e dokunmaz — yalniz parse_sonuc._eslesme.detay[].malzeme_kiyas'a yazilir.
+      const excelBom = malzemeHaritasi.get(hedef.id) || [];
+      const mk = malzemeKiyas(ps.malzeme_listesi || [], excelBom, { excel_guven: 'otorite' });
 
       // 3C + MK-WIZARD.3: yalniz bekliyor -> kismi. Bindirme degisiklikleriyle TEK UPDATE'te birlesir.
       const bekliyorduMu = (hedef.cizim_durumu === 'bekliyor');
@@ -598,7 +622,9 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
         spool_uuid: hedef.id,
         onceki_cizim_durumu: hedef.cizim_durumu,
         bindirme: b.bindirme,        // PARÇA2a: alan-bazli {kabuk,pdf,secilen,flag,sebep}
-        bindirme_flag: b.flagVar     // celiski var mi (uyarilar sayfasi icin)
+        bindirme_flag: b.flagVar,    // celiski var mi (uyarilar sayfasi icin)
+        malzeme_kiyas: mk,           // 133/K2: tam kiyas raporu (eslesen/celiski/fazla/islem)
+        malzeme_flag: mk.flagVar     // 133/K2: gercek 🟡 var mi (UI uyarilar icin)
       });
     } else {
       detay.push({
@@ -619,6 +645,7 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     atanmamis: detay.filter(d => d.durum === 'atanmamis').length,
     yukseltilen,
     bindirme_flag_sayisi: detay.filter(d => d.bindirme_flag).length,   // PARÇA2a: celiskili eslesme sayisi
+    malzeme_flag_sayisi: detay.filter(d => d.malzeme_flag).length,     // 133/K2: gercek malzeme bulgusu sayisi
     detay
   };
 
