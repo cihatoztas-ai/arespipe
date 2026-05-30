@@ -50,13 +50,8 @@
     .actions{ display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:8px; }
     .lock-note{ font-size:14px; color:var(--warn); margin-right:auto; } .locked{ display:flex; align-items:center; gap:8px; background:var(--sur2); border:1px solid var(--bor); border-radius:8px; padding:9px 11px; font-size:15px; }
 
-    /* ── Dosya tablosu (Adım 1 yükleme listesi) ── */
-    .dosya-tablo { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
-    .dosya-tablo thead th { text-align:left; padding:9px 11px; background:var(--sur2); color:var(--txm); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid var(--bor); }
-    .dosya-tablo tbody td { padding:9px 11px; border-bottom:1px solid var(--bor); color:var(--tx); vertical-align:middle; } .dosya-tablo tbody tr:hover{ background:var(--sur2); }
-    .dosya-tablo code { background:var(--sur2); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--txm); }
+    /* ── Adım 1 dosya listesi ortak ── */
     .tip-sel { padding:4px 8px; background:var(--bg); border:1px solid var(--bor); border-radius:6px; color:var(--tx); font-size:12px; font-family:inherit; } .tip-sel:focus{ outline:none; border-color:var(--ac); }
-    .btn-sil { background:transparent; border:none; color:var(--re); font-size:18px; cursor:pointer; padding:2px 8px; border-radius:4px; } .btn-sil:hover{ background:rgba(229,62,62,.1); }
     .yukleme-status { padding:18px; background:var(--bg); border:1px solid var(--bor); border-radius:10px; } .yukleme-status p{ margin:6px 0; font-size:14px; color:var(--tx); } .yukleme-status .muted{ color:var(--txd); font-size:13px; }
     .progress-bar{ height:8px; background:var(--sur2); border-radius:4px; overflow:hidden; margin:12px 0; } .progress-fill{ height:100%; background:var(--ac); transition:width .3s; }
 
@@ -100,6 +95,17 @@
     .fhead .chev{ display:inline-block; width:12px; color:var(--txd); } .fhead .cnt{ margin-left:auto; font-size:11px; font-weight:400; color:var(--txd); }
     .fitem{ display:flex; align-items:center; gap:8px; padding:6px 14px; border-bottom:1px solid var(--bor); font-size:13px; } .fitem .fn{ font-family:'JetBrains Mono',monospace; font-size:12px; } .fitem .tag{ margin-left:auto; }
     .fitem.excel{ color:var(--gr); font-weight:600; } .fchildren.kapali{ display:none; }
+    /* Adım 1 dosya ağacı — kontroller fitem içinde (KARAR-137.1/B) + hariç görseli (KARAR-137.2/2a, kozmetik) */
+    .fitem.haric{ opacity:.55; }
+    #tree1 .fhead.fhead-haric{ opacity:.6; }
+    #tree1 .fitem .fn{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #tree1 .ftools{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    #tree1 .fboyut{ font-size:11px; color:var(--txd); font-family:'JetBrains Mono',monospace; }
+    #tree1 .tip-sel{ padding:2px 6px; font-size:11px; }
+    #tree1 .btn-sil-tree{ background:transparent; border:none; color:var(--re); font-size:16px; cursor:pointer; padding:0 4px; border-radius:4px; opacity:0; transition:opacity .15s; }
+    #tree1 .fitem:hover .btn-sil-tree{ opacity:1; }
+    #tree1 .btn-sil-tree:hover{ background:rgba(229,62,62,.1); }
+    #tree1 .haric-rozet{ font-size:10px; font-weight:600; color:var(--warn); background:rgba(217,119,6,.12); border:1px solid rgba(217,119,6,.3); border-radius:8px; padding:1px 7px; margin-left:8px; }
 
     /* popup / onay modalı / toast */
     .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; }
@@ -187,10 +193,7 @@
       <div id="dosyaUyari" style="display:none;margin:10px 0;font-size:13px;color:var(--warn);"></div>
       <div id="bnExcelYok" class="banner warn hide">⚠ <span class="grow">Klasörde BOM/IFS Excel yok — kabuk kurulamaz. İncele kapalı. Boş şablonu doldurup yükleyin (MK-125.3).</span></div>
 
-      <table id="dosyaTablo" class="dosya-tablo" style="display:none">
-        <thead><tr><th>Dosya</th><th>Klasör Yolu</th><th>Tip (otomatik)</th><th>Boyut</th><th></th></tr></thead>
-        <tbody id="dosyaTbody"></tbody>
-      </table>
+      <div id="tree1" style="display:none;margin-top:12px;"></div>
     </div>
 
     <details class="card" style="padding:0;">
@@ -499,7 +502,7 @@ function dosyalariEkle(dosyalar) {
     if (mesajlar.length > 0) { uyari.textContent = 'ℹ️ ' + mesajlar.join(' · ') + '.'; uyari.style.display = ''; }
     else { uyari.style.display = 'none'; uyari.textContent = ''; }
   }
-  renderDosyaTablo();
+  renderDosyaListe();
   guncelleIncele();
 }
 function _adNorm(s) {
@@ -530,25 +533,79 @@ function parserBul(tip_kodu, uzanti) {
   if (t) return t.parser_yolu;
   return 'sakla';
 }
-function renderDosyaTablo() {
-  var tbody = document.getElementById('dosyaTbody');
-  tbody.innerHTML = '';
+// ── Adım 1 dosya ağacı: klasöre göre grupla, kontroller (tip-select + sil) fitem içinde (KARAR-137.1/B) ──
+// ── Hariç (revizyon-öncesi) klasörler görünür ama soluk işaretlenir; KOZMETİK — işleme dokunmaz (KARAR-137.2/2a) ──
+function renderDosyaListe() {
+  var box = document.getElementById('tree1');
+  if (!box) return;
+  if (!WIZ.dosyalar || WIZ.dosyalar.length === 0) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  box.style.display = '';
+  // klasör yoluna göre grupla, orijinal index'i koru (tip-select/sil için şart)
+  var gruplar = {};
   WIZ.dosyalar.forEach(function(d, i) {
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + esc(d.dosya_adi) + '</td><td><code>' + esc(d.klasor_yolu || '(kök)') + '</code></td><td>' + tipSelectHtml(i, d.tip_kodu) + '</td><td>' + formatBoyut(d.boyut) + '</td><td><button class="btn-sil" data-i="' + i + '" title="Kaldır">×</button></td>';
-    tbody.appendChild(tr);
+    var k = d.klasor_yolu || '(kök)';
+    if (!gruplar[k]) gruplar[k] = [];
+    gruplar[k].push({ d: d, i: i });
   });
-  document.getElementById('dosyaTablo').style.display = WIZ.dosyalar.length > 0 ? 'table' : 'none';
-  tbody.querySelectorAll('.tip-sel').forEach(function(s) {
-    s.addEventListener('change', function() { var i = parseInt(s.dataset.i); WIZ.dosyalar[i].tip_kodu = s.value; WIZ.dosyalar[i].parser_yolu = parserBul(s.value, WIZ.dosyalar[i].uzanti); guncelleIncele(); });
+  // sıralama: normal klasörler önce (alfabetik), hariç klasörler en sona
+  var keys = Object.keys(gruplar).sort(function(a, b) {
+    var ha = eskiRevMi(a), hb = eskiRevMi(b);
+    if (ha !== hb) return ha ? 1 : -1;
+    return a.localeCompare(b, 'tr');
   });
-  tbody.querySelectorAll('.btn-sil').forEach(function(b) {
+  var html = '', ilkAcik = true;
+  keys.forEach(function(k) {
+    var haric = eskiRevMi(k);
+    var inner = gruplar[k].map(function(o) {
+      var d = o.d, i = o.i;
+      var cls = (d.tip_kodu === 'bom_excel' ? ' excel' : '') + (haric ? ' haric' : '');
+      var tools = '<span class="ftools"><span class="fboyut">' + formatBoyut(d.boyut) + '</span>'
+        + tipSelectHtml(i, d.tip_kodu)
+        + '<button class="btn-sil-tree" data-i="' + i + '" title="Kaldır">×</button></span>';
+      return '<div class="fitem' + cls + '">📄 <span class="fn" title="' + esc(d.dosya_adi) + '">' + esc(d.dosya_adi) + '</span>' + tools + '</div>';
+    }).join('');
+    var etiket = esc(k === '(kök)' ? '(kök)' : k);
+    if (haric) etiket += ' <span class="haric-rozet">hariç · revizyon-öncesi</span>';
+    var acik = !haric && ilkAcik; if (acik) ilkAcik = false;
+    html += folHaric(etiket, gruplar[k].length, inner, acik, haric);
+  });
+  box.innerHTML = '<div class="ftree">' + html + '</div>';
+  // kontrolleri bağla (her render'da yeniden, splice sonrası index'ler kayar)
+  box.querySelectorAll('.tip-sel').forEach(function(s) {
+    s.addEventListener('change', function() {
+      var i = parseInt(s.dataset.i);
+      WIZ.dosyalar[i].tip_kodu = s.value;
+      WIZ.dosyalar[i].parser_yolu = parserBul(s.value, WIZ.dosyalar[i].uzanti);
+      renderDosyaListe(); guncelleIncele();
+    });
+  });
+  box.querySelectorAll('.btn-sil-tree').forEach(function(b) {
     b.addEventListener('click', function() {
       WIZ.dosyalar.splice(parseInt(b.dataset.i), 1);
       var _uy = document.getElementById('dosyaUyari'); if (_uy) { _uy.style.display = 'none'; _uy.textContent = ''; }
-      renderDosyaTablo(); guncelleIncele();
+      renderDosyaListe(); guncelleIncele();
     });
   });
+}
+// Hariç (revizyon-öncesi/üretime verilen vb.) klasör tespiti — KOZMETİK işaret, işleme akışı değişmez (KARAR-137.2/2a)
+function eskiRevMi(klasor_yolu) {
+  if (!klasor_yolu) return false;
+  var segs = String(klasor_yolu).split('/');
+  for (var i = 0; i < segs.length; i++) {
+    var s = _adNorm(segs[i]).trim();
+    if (!s) continue;
+    if (s === 'old' || s === 'eski' || s === 'kaplini'
+      || s.indexOf('eski-rev') !== -1 || s.indexOf('eski rev') !== -1
+      || s.indexOf('uretime verilen') !== -1 || s.indexOf('uretime-verilen') !== -1
+      || /^rev[ _-]?[0-9]+$/.test(s)) return true;
+  }
+  return false;
+}
+// fol() varyantı: hariç klasör başlığı soluk + 🗂 ikonu
+function folHaric(ad, cnt, inner, acik, haric) {
+  var ch = acik ? '▾' : '▸', kap = acik ? '' : ' kapali';
+  var hcls = haric ? ' fhead-haric' : '', ikon = haric ? '🗂' : '📁';
+  return '<div class="fhead' + hcls + '" onclick="fToggle(this)"><span class="chev">' + ch + '</span><span style="font-size:14px;">' + ikon + '</span><span style="flex:1;">' + ad + '</span><span class="cnt">' + cnt + '</span></div><div class="fchildren' + kap + '">' + inner + '</div>';
 }
 function tipSelectHtml(i, secili) {
   var tipler = ['izometri','bom_excel','sertifika','sartname','akis_semasi','3d_pdf','spool_imalat','stp','rhino','diger'];
