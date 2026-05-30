@@ -1851,3 +1851,56 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 **Açık borçtan çıkarılır:** `.github/son-durum.md` ve `CLAUDE-SONRAKI-OTURUM.md` dosyalarındaki "olusturma_at rename" maddesi 95 kapanışında silinir.
 
 ---
+
+---
+
+## MK-136.1 — Açı, malzeme kalemi kimliğinin parçasıdır
+Parser açıyı yakalar (`lib/excel-parser.js` SOZLUK → `aci`, BOM `Angle` kolonu); kabuk konsolide
+anahtarı açıyı içerir (`ares-kabuk.js`: `tanim|malzeme|dn|aci|tip`). Aynı DN×et×açı = aynı kalem;
+farklı açı = farklı kalem. Aynı çapın 15/22.5/30/45/60/90°'leri AYRI satır kalır, tek "Elbow DN"
+satırına çökmez. Malzeme sekmesinde "Açı" kolonu (v3). Sonraki depo/kesim adımının veri ön koşulu.
+
+## MK-136.2 — Malzeme listesi yapısı: MTO / IFS-CADMATIC konvansiyonu (uydurma yok)
+Tek **Ölçü** alanı (redüksiyon = kompound "büyük / küçük", küçük çap AYRI KOLON DEĞİL — IFS export'u
+`323.9x6.3 / 273.0x6.3` diye tek hücrede veriyor), tek paylaşımlı **Açı** alanı, **Description** +
+**IFS shortcode** (commodity kodu). Tip-başına kolon tanımlanmaz. Kaynak (IFS/CADMATIC export) esas
+alınır, şema uydurulmaz. `spool_malzemeleri` bu yapıyı yansıtır: `boyut` kompound + tek `aci` kolonu.
+Sektör dayanağı: MTO "reducing size" + "shortcode" + "description carries type/grade/wall/spec"
+konvansiyonu (whatispiping / wermac MTO-BOM). v3 malzeme kolonu "DN" → "Ölçü" olarak düzeltildi.
+
+## MK-136.3 — Dirsek/büküm temsili ingestion'da HAM korunur, normalize EDİLMEZ
+Segment adetleri, açı, yarıçap (1D/1.5D), seamless/welded olduğu gibi saklanır. İki konvansiyon da
+değiştirilmeden taşınır:
+- "Tek tek / segment" (G200: S02=15°×6=90°, S06=22.5°×4=90°, S05=15°×2=30°) — mitre/segment imzası.
+- "Toplam / tam fitting" (M100: Seamless 1×90°) — satın alınan standart fitting.
+Yöntem (fitting / büküm / mitre) etiketten KESİN türetilmez — "Elbow" etiketi hepsinde aynı; M130'da
+`Seamless 1.5D 87.6°` standart-dışı açı = aslında büküm ama etiket "Elbow". Açı-standartlığı (45/90 =
+fitting sinyali; 15/20/22.5/60/87.6 = büküm/mitre sinyali) + spool-içi tekrarın temiz toplama (90°)
+ulaşması + Seamless/Welded yalnızca HEURİSTİK sinyaldir. Kesin yöntem kararı OPERATÖRE aittir
+(spool_detay imalat planlama adımı: büküm/dirsek/mitre seçimi); gerekirse izometri geometrisi
+(içerik katmanı). **Otomatik segment↔toplam dönüşümü YASAK** — hangi tersanenin hangi konvansiyonu
+kullandığı + geometri bilinmeden yapılamaz, diğer konvansiyonda yanlış olur.
+
+## MK-136.4 — Dirsek kesim altyapısı boru kesim havuzunu yansıtır (kesim sayfası ertelendi)
+Kesilecek/işlenecek dirsekler, borular gibi kesim havuzuna gider. Boru havuzu (`kesim.html`)
+`kesim_kalemleri` → `spool_malzemeleri(dis_cap_mm, et_mm, malzeme, kalite)` join'iyle
+**malzeme × kalite × çap × et** anahtarında filtreleyip 6000mm stok boya optimize ediyor. Dirsek
+havuzu bunu birebir yansıtacak: anahtar **+ açı + yarıçap (1D/1.5D)**, stok = standart 90° dirsek.
+Operatör spool_detay'da büküm/dirsek/mitre seçer; havuza giden dirsek satınalma listesinden DÜŞER
+(çift malzeme önlenir) ve kaynak `spool_malzemeleri` kalemine bağlanır (izlenebilirlik).
+**Şu an yalnızca veri altyapısı hazırlanır; havuz filtresi + algoritma + kesim sayfası sonraki iş.**
+
+## MK-136.B — (AÇIK / ERTELENDİ) spool_malzemeleri.aci kalıcılığı
+Açı zinciri şu an BOM → parser → kabuk → malzeme sekmesi (göster) seviyesinde canlı. Eksik halka:
+`aktar()` açıyı `spool_malzemeleri`'ne YAZMIYOR (açı kabuk/önizleme katmanında, kalıcı spool satırında
+değil). Gelecekteki dirsek havuzunun `spool_malzemeleri.aci` okuması için gerekli. İş: `aci NUMERIC NULL`
+kolonu (migration, MK-98.2 BEGIN…ROLLBACK dry-run'lı) + `aktar()` malRows'a tek satır `aci: b.aci`.
+Wizard'ın kendisi buna muhtaç değil (sekme açıyı kabuktan gösteriyor); kesim havuzu kurulurken eklenecek.
+
+## MK-135.2 — REVİZYON (MK-136.1 ışığında)
+135'teki "S02 dirsek çelişkisi = Excel BOM hatası (adet×birim çarpılmamış)" tespiti EKSİKTİ. Açı
+kolonuyla görüldü: S02 = "15°, adet 6, 35.01 kg" → 6×15° segmentli 90° bend; Excel kendi içinde
+TUTARLI (per-adet/açı oranı sabit ≈0.389: 15°→5.83, 90°→35.01 kg). Kök sebep Excel değil, K2/PDF'in
+AÇI KÖRLÜĞÜ (her 15° segmenti tam 35.4 kg'lık 90° dirsek okumuş). Sonuç: K2 malzeme kıyası
+açı-farkındalığı kazanmadan dirsek çelişkilerine "Excel hatalı" DEMEMELİ — yoksa her segmentli bend
+yanlış çelişki üretir. "Excel'e dokunma / parser doğru" kararı geçerli ama gerekçesi değişti.
