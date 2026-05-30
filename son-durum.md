@@ -1,57 +1,55 @@
-# AresPipe — Güncel Durum (son güncelleme: Oturum 105, 21 May 2026)
+# Son Durum — 136. Oturum (30 Mayıs 2026)
 
-## Bu oturumda yapılanlar (105)
+> Çoklu-gemi BOM incelemesinden çıkan **açı** meselesi uçtan uca çözüldü: parser açıyı yakalıyor,
+> kabuk açıları ayrı kalem tutuyor, v3 malzeme sekmesinde "Açı" kolonu + redüksiyonda kompound "Ölçü".
+> MK-135.2 REVİZE edildi (S02 dirsek = Excel hatası DEĞİL, 6×15° segmentli bend; kök = K2 açı körlüğü).
+> devreler→wizard erişim wiring'i: v1/v2/v3 üçü birden erişilebilir (ayrı flag'li butonlar).
+> Yeni endpoint yok (12/12), MK-49.1 korundu, migration yok.
 
-"Küçük temizlik" açıldı; B-geometri Faz 1 (Tersan İmalat L2) tamamlandı + canlı teyit edilip
-iki üretim bug'ı düzeltildi; PAOR ana çizim feasibility kapatıldı (MK-105.6).
+## Yapılanlar (sıra)
 
-### İş 1 — PAOR isometric_view parse-dışı, saklama (CANLI, f45ceae)
-Ölçümle iso_view'in hiç yüklenmediği ($0 sızıntı) görüldü → önleyici. Migration 086 (parse_disi +
-'saklama' durum), kuyruk-isle/durum + batch UI. izometri-oku.js'e DOKUNULMADI (MK-49.1).
+### 1. taslagiAc — ?devre_id= ile taslak açma (bu oturum başı, zaten deploy + görsel teyit "evet görünüyor")
+v3 wizard URL param okuyup var olan oneri_hazir taslağı İnceleme'de açabiliyor. 135 görsel borcu kapandı.
 
-### B-geometri Faz 1 — Tersan İmalat L2 parser_kural (CANLI, $0, doğrulandı)
-- **Motor:** lib/l2-parser.js jenerik config-parser; server **pdf-parse** (jammed metin). Kod değişmedi.
-- **Kapsam:** 7 satır tipi (boru-mm, boru-SCH, groove, kaynak, Ic Bilezik, Dirsek, Flanş) ×
-  ST37/316L/AISI 316L/CuNi10Fe1./St.St/St*. Alanlar: spool_no, agirlik_kg, yuzey, tarih, cap_mm,
-  et_mm, **dn**. Türkçe karakter yok (tetikleyici ASCII, tanım `.+?`).
-- **Migration 087:** parser_kural HER İKİ Tersan formatına (MK-105.4 = A; tie-break-proof). Commit f33bbf7.
-- **Canlı teyit (ai_api_log):** 3 PDF → `parser_seviye='l2'`, `cagri_tipi='L2_deterministic'`,
-  `maliyet=0`. **L3 ($0.46) öldü.** Faz 1 kazancı canlıda kanıtlı.
+### 2. Çoklu-gemi BOM analizi (G200/G310/M100/M100-ALS/M130) → AÇI bulgusu
+- Gerçek tersane ham klasörü incelendi. BOM tek IFS/CADMATIC formatı → L1, hepsi okunur. İzometriler metin-PDF → L2, $0.
+- **Kök bulgu:** BOM ağırlığı AÇIYA bağlı (323.9x6.3: 15°→5.83, 90°→35.01 kg, oran sabit). Parser+kabuk açıyı
+  düşürüyordu (SOZLUK'ta yok + konsolide anahtarında yok) → farklı açılar tek satıra çöküyordu.
+- S02 "çelişkisi" = 6×15° segmentli 90° bend; Excel TUTARLI. 135'in "Excel hatalı" tespiti açı körlüğüymüş.
 
-### Migration 088 — canlı teyit sonrası 3 düzeltme (CANLI, dn_var=true)
-İlk yüklemede 3 spool manuel_onay'a düştü → teşhis: parse sonrası `halusinasyonFiltresi`
-(izometri-oku.js, DOKUNULMAZ) spool'a uygulanıyor. Üç sorun parser_kural'da giderildi:
-1. **Spool DN (kritik):** Madde 1 `if(!sp.dn)` → KRİTİK → manuel_onay. mm boru OD veriyor, DN değil.
-   Fix: `alanlar.dn` = malzeme satırı DN (`DN(\d+)\s+(?:\d|L=|OD:)`); NOT'taki "DN25 Drain" elenir. 8/8.
-2. **İki-haneli No (BUG1):** fitting/op pattern leading'i lazy idi → No≥10'da tanım başına fazladan
-   rakam ("1Flanş") + adet yanlış. Greedy yapıldı (`^\d+(\d)`). G200 çok-spoollu çizim çıktısında tespit.
-3. **NOT satırı (BUG2):** flans tetikleyici "Flan" NOT içindeki "flangler"ı ham satır yapıyordu.
-   Sıkılaştırıldı: `Flan\S*\s+D` (gerçek "Flanş Düz" tutar).
-- Doğrulama: 8 gerçek + montaj + sentetik (iki-haneli No + NOT) = **10/10**; test'e adet + "tanım
-  rakamla başlamaz" regresyon guard'ı eklendi. Commit 6e49fa2. **DB: dn_var=true, satir_tipi=7.**
-- Kalan zararsız: `malzeme_bos` (orta, tek başına manuel_onay yapmıyor — canlı veri kanıtladı).
+### 3. Açı zinciri — parser → kabuk → v3 malzeme sekmesi (PUSH: c660346)
+- `lib/excel-parser.js`: SOZLUK'a `aci` (angle/açı/derece) + SAYISAL_ALANLAR'a `aci`.
+- `ares-kabuk.js`: konsolide anahtarı `tanim|malzeme|dn|aci|tip` + bom kalemine `aci`. Geriye-uyumlu (aktar DB'ye yazmıyor).
+- `devre_wizard_v3.html`: malzeme tablosuna "Açı" kolonu; "DN" → "Ölçü" (redüksiyon kompound otomatik).
+- Gerçek G200 BOM ile test: açı yakalanıyor, açılar ayrı kalem (15°/30°/45°/60°/90° + 22.5°). node --check OK.
 
-### PAOR ana çizim — L2 imkânsız (MK-105.6)
-6 ana çizim: pdf-parse ~boş, pdftotext 1 char, pdffonts 0 font → metin katmanı yok (vektör/raster).
-Deterministik L2 mümkün değil; vision L3 zorunlu. $0.62 kaçınılmaz. iso_view = saklama (İş 1).
+### 4. KARARLAR.md — MK-136.1/.2/.3/.4 + MK-136.B + MK-135.2 revizyon (PUSH: 1aaffe9, [skip ci])
 
-## Mimari kararlar (105)
-- **MK-105.1** parse_disi bayrağı · **MK-105.2** 'saklama' terminal · **MK-105.3** ölç-sonra/pdf-parse gerçeği
-- **MK-105.4** Tersan fingerprint ayrışmaz → kural her iki formata · **MK-105.5** montaj=yerleşim, detay=yon_dizilim
-- **MK-105.6** PAOR ana çizim metinsiz → L2 imkânsız, L3 zorunlu
-- **MK-105.7** L2 spool, halusinasyonFiltresi'nin (izometri-oku) beklediği şemayı sağlamalı (spool dn yoksa
-  kritik → manuel_onay). parser_kural alanlarıyla karşılanır; filtreye dokunulmaz.
-- **MK-105.8** Üretim çıktısı, sentetik örneklerin yakalamadığı kenar durumları açar (iki-haneli No leading
-  split; içinde malzeme kelimesi geçen NOT). Canlı test + regresyon guard zorunlu.
-- (MK-51.2 uygulandı.)
+### 5. devreler.html — wizard erişim wiring (BU KAPANIŞTA PUSH)
+- Eski: "Klasör Yükle" tek buton → v2, sadece devre_wizard_v2 flag'iyle. v3'e erişim YOKTU.
+- Yeni: v2 ve v3 için AYRI butonlar, kendi flag'leriyle bağımsız. v1 = "Yeni Devre" (devre_yeni.html) zaten var.
+  → Karşılaştırma için üçü birden erişilebilir. node --check OK. MD5 2568fe0b904c95d8cc5cf3714e451179.
 
-## Maliyet tablosu (105 sonrası)
-- Tersan İmalat detay → **$0** (L2, yeni yüklemeler) · Tersan Montaj → L3 (geometri 106)
-- PAOR iso_view → saklama · PAOR ana çizim → **L3 kalıcı ($0.62)**, vision zorunlu
+### 6. spool_detay büküm/dirsek/mitre fikri — kararlaştırıldı (gelecek iş, MK-136.4)
+Operatör spool_detay'da yöntem seçer (büküm/dirsek/mitre); seçilen dirsek malzeme listesinden gelir, kesim
+havuzuna gider, satınalmadan düşer. Kesim sayfası + algoritma SONRA. Yöntem belirsizliği insana çözdürülür.
 
-## Önemli kalıcı hatırlatmalar
-- **izometri-oku.js'e DOKUNMA** (MK-49.1). · **İzometri batch = SADECE Excel** (MK-104.1).
-- parser_kural değişirse **DB + test/l2-tersan-kural.json İKİSİ** güncellenir; cache'li PDF eski parse'ı
-  döndürür → fix sonrası cache temizle ya da yeni dosya.
-- Kuralın yeri: DB (`izometri_format_tanimlari.parser_kural`, runtime); migration = tohum kaydı;
-  lib/l2-parser.js = jenerik motor. "Her format ayrı tutulur" = her formatın kendi DB satırı.
+## CI / commit
+- `c660346 feat(136)` açı kod (CI) · `1aaffe9 docs(136)` KARARLAR [skip ci]. function 12/12. MK-49.1 korundu.
+- Bu kapanış: devreler.html (kod, CI) + üçlü doc [skip ci]. Sıra MK-134.1: kod commit'i doc'lardan önce/HEAD'de.
+
+## 137'ye Açık Borç (öncelik)
+1. **devreler.html push + flag teyidi + GÖRSEL:** Demo Atölye'de devre_wizard_v2 VE devre_wizard_v3 flag'leri
+   aktif mi (`select * from tenant_features where feature_kod like 'devre_wizard%'`). İkisi de aktifse Devreler
+   sayfasında 3 buton görünür → v3 erişimi gözle doğrula.
+2. **GAP 1 — Adım 1 klasör ağacı:** v3 Adım 1 düz tablo (`dosyaTablo`); mockup'ta aç-kapa ağaç (+ eski-rev/hariç).
+   Bileşen v3'te VAR (buildTreeDok, Dökümanlar'da). Adım 1'e bağlanacak. ORTA iş, DOSYASIZ yapılabilir.
+3. **GAP 2 — düzelt-yazma + çapa/öğrenme:** v3 düzelt popup salt-okuma + çapa STUB (FAZ-1, omurga 8/18.d).
+   Wizard'ın değer önerisinin kalbi. BÜYÜK + TEST DOSYASI gerektirir (gerçek PDF'e karşı düzelt/öğret).
+4. **Test dosyaları bekleniyor** — gelince bol örnekle sağlamlaştırma + GAP 2 + çoklu-gemi K2 (M130 ideal: küçük/temiz/farklı format).
+5. **MK-136.B (ertelendi):** spool_malzemeleri.aci kalıcılık (kolon + aktar) — kesim havuzu kurulurken.
+6. GAP 3 (DEV modu) düşük öncelik. devreler.html'deki "(v2)/(v3)" etiketleri karar sonrası temizlenir.
+
+## "Wizard tamam" tanımı (v1/v2 iptali için)
+[ ] Devrelerden v3 açılıyor (137'de teyit)  [ ] mockup parite (GAP 1)  [ ] düzelt+çapa çalışıyor (GAP 2)
+[ ] 2-3 gerçek gemi sorunsuz (test dosyaları)  [ ] v1/v2/v3 karşılaştırıldı → v3 ikisinin işini görüyor
