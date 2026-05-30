@@ -355,10 +355,14 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span data-i18n="dr_new_circuit">Yeni Devre</span>
       </button>
-      <!-- 99: Devre Wizard girişi — feature flag 'devre_wizard_v2' açıkken görünür (init'te göster) -->
+      <!-- 99/136: Wizard girişleri — KARŞILAŞTIRMA FAZI: v2 ve v3 ayrı butonlar, kendi flag'leriyle bağımsız. v1 = yukarıdaki "Yeni Devre". -->
       <button class="btn-outline" id="btnYeniDevreWizard" onclick="location.href='devre_wizard.html'" style="display:none">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span data-i18n="dr_new_circuit_wizard">📁 Klasör Yükle</span>
+        <span>📁 Klasör Yükle (v2)</span>
+      </button>
+      <button class="btn-outline" id="btnYeniDevreWizardV3" onclick="location.href='devre_wizard_v3.html'" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>📁 Klasör Yükle (v3)</span>
       </button>
     </div>
   </div>
@@ -2540,12 +2544,14 @@ document.addEventListener('DOMContentLoaded', function() {
       var _tid = ARES.tenantId();
       if (!_tid) return;
       var _supa = ARES.supabase();
+      // 136: karşılaştırma fazı — v2 ve v3 wizard butonları kendi flag'leriyle BAĞIMSIZ gösterilir
+      // (üçü birden erişilebilsin: v1 "Yeni Devre" + v2 + v3). Karar verilince diğer ikisi flag ile kapatılır.
       var _r = await _supa.from('tenant_features')
-        .select('aktif').eq('tenant_id', _tid).eq('feature_kod', 'devre_wizard_v2').single();
-      if (_r.data && _r.data.aktif === true) {
-        var _btn = document.getElementById('btnYeniDevreWizard');
-        if (_btn) _btn.style.display = '';
-      }
+        .select('feature_kod, aktif').eq('tenant_id', _tid)
+        .in('feature_kod', ['devre_wizard_v2', 'devre_wizard_v3']);
+      var _wf = {}; (_r.data || []).forEach(function(f){ if (f.aktif === true) _wf[f.feature_kod] = true; });
+      if (_wf.devre_wizard_v2) { var _b2 = document.getElementById('btnYeniDevreWizard');   if (_b2) _b2.style.display = ''; }
+      if (_wf.devre_wizard_v3) { var _b3 = document.getElementById('btnYeniDevreWizardV3'); if (_b3) _b3.style.display = ''; }
     } catch(e) { /* flag yok veya hata — buton gizli kalır */ }
   })();
 
