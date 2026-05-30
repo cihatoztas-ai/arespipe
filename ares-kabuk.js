@@ -74,8 +74,8 @@
       var map={},sira=[];
       kalemler.forEach(function(r){
         var tip=tipBelirle(r.tanim);
-        var k=(r.tanim||'')+'|'+(r.malzeme||'')+'|'+(r.dn||'')+'|'+tip;
-        if(!map[k]){map[k]={tip:tip,tanim:r.tanim||'',malzeme:r.malzeme||'',dn:r.dn||'',standart:r.standart||'',ifs_kod:r.ifs_kod||'',boy_mm:0,adet:0,agirlik_kg:0};sira.push(k);}
+        var k=(r.tanim||'')+'|'+(r.malzeme||'')+'|'+(r.dn||'')+'|'+(r.aci||'')+'|'+tip;
+        if(!map[k]){map[k]={tip:tip,tanim:r.tanim||'',malzeme:r.malzeme||'',dn:r.dn||'',aci:(r.aci!=null?r.aci:''),standart:r.standart||'',ifs_kod:r.ifs_kod||'',boy_mm:0,adet:0,agirlik_kg:0};sira.push(k);}
         var c=map[k];
         if(tip==='boru'){c.boy_mm+=(parseFloat(r.uzunluk_mm)||0);}else{c.adet+=(parseFloat(r.adet)||0);}
         c.agirlik_kg+=(parseFloat(r.agirlik_kg)||0);

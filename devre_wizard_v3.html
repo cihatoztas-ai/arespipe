@@ -255,7 +255,7 @@
     <div id="tab-dok" class="hide"><div class="tablo-kart" style="border-left-color:var(--gr);"><div class="tablo-head"><div class="tablo-baslik">Yüklenen belgeler — tam liste (klasörler açılıp kapanır)</div></div><div style="padding:14px 18px;"><div id="treeDok"></div></div></div></div>
 
     <div id="tab-malz" class="hide"><div class="tablo-kart" style="border-left-color:var(--warn);"><div class="tablo-head"><div class="tablo-baslik">Malzeme listesi — BOM Excel'den</div></div>
-      <div class="tablo-wrap"><table class="dt" style="min-width:760px;"><thead><tr><th>Spool</th><th>Kod</th><th>Tanım</th><th>Malzeme</th><th style="text-align:right;">DN</th><th style="text-align:right;">Boy/Adet</th><th style="text-align:right;">kg</th></tr></thead>
+      <div class="tablo-wrap"><table class="dt" style="min-width:760px;"><thead><tr><th>Spool</th><th>Kod</th><th>Tanım</th><th>Malzeme</th><th style="text-align:right;">Ölçü</th><th style="text-align:right;">Açı</th><th style="text-align:right;">Boy/Adet</th><th style="text-align:right;">kg</th></tr></thead>
         <tbody id="malzBody"></tbody></table></div></div></div>
 
     <div id="tab-genel" class="hide"><div class="card"><div class="row2" id="genelGrid"></div></div></div>
@@ -950,11 +950,12 @@ function malzSekmesiRender() {
         '<td>' + esc(b.tanim || '') + '</td>' +
         '<td>' + matBadge(b.malzeme) + '</td>' +
         '<td style="text-align:right;">' + esc(b.dn || '') + '</td>' +
+        '<td style="text-align:right;">' + ((b.aci != null && b.aci !== '') ? esc(b.aci) + '°' : '') + '</td>' +
         '<td style="text-align:right;">' + esc(miktar) + '</td>' +
         '<td style="text-align:right;">' + esc(b.agirlik_kg != null ? Number(b.agirlik_kg).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '') + '</td></tr>';
     });
   });
-  if (!html) html = '<tr><td colspan="7" style="text-align:center;color:var(--txd);padding:18px;">BOM kalemi okunamadı.</td></tr>';
+  if (!html) html = '<tr><td colspan="8" style="text-align:center;color:var(--txd);padding:18px;">BOM kalemi okunamadı.</td></tr>';
   document.getElementById('malzBody').innerHTML = html;
 }
 function genelSekmesiRender() {
