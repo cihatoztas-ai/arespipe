@@ -1,40 +1,48 @@
-# Oturum 136 — Açı = malzeme kimliği + çoklu-gemi BOM analizi + erişim wiring
+# Oturum 137 — Malzeme hazırlık sistemi (web tarafı uçtan uca) + GAP 1 klasör ağacı
 
-Çoklu-gemi ham klasörünü incelerken çıkan **açı** meselesi, hem bir parser/kabuk açığını hem de
-135'in eksik kök-tespitini ortaya çıkardı. Açı uçtan uca taşındı, dirsek temsil belirsizliği
-(tek tek/toplam · fitting/büküm/mitre) prensibe bağlandı, devreler→v3 erişimi açıldı.
+Konu malzeme yönetimine kaydı: "devreyi imalata almadan önce malzemesi hazırlansın → personel sahada
+mobilden takip etsin → yönetici devreler tablosundan görsün." Cihat'ın tarifi okunup toparlandı; çıkan
+sistemin profesyonel karşılığı (MRP → kitting → staging → eksik raporu) teyit edildi, stok/depo bilinçli
+olarak DIŞARIDA bırakıldı (depo yazılımı ayrı, çelişmesin). Sonuç: web tarafı uçtan uca oturdu.
 
-## Bağlam — neden bu oturum açıya gitti
-135 v3 İnceleme K2 rozetini bitirmişti; S02 dirsek 🟡'sini "Excel BOM hatalı" diye kapatmıştık.
-136'da Cihat gerçek tersane klasörü yükledi → BOM'da `Angle` kolonu görüldü → ağırlığın açıya birebir
-orantılı olduğu (oran 0.389 sabit) ölçüldü → 135'in tespiti çürüdü: S02 = 6×15° segmentli bend, Excel doğru.
+## Bağlam — neden bu sıra
+Sistemin web tarafı meğer ~%70 kuruluymuş (4-durumlu yıldız + malzeme kontrol modalı), ama iki yapısal
+hatayla: (1) yıldız durumu localStorage'da → başka cihaz/mobil göremez; (2) modal `pipeline_malzemeleri`'nden
+okuyordu, o tablo terk edilmiş/boş — gerçek malzeme `spool_malzemeleri`'nde. İkisi de düzeltildi.
 
 ## Yapılanlar
-1. **Açı zinciri (c660346):** excel-parser SOZLUK+sayısal `aci`; ares-kabuk konsolide anahtarı+bom `aci`;
-   v3 malzeme sekmesi "Açı" kolonu + "DN"→"Ölçü". Gerçek G200 BOM ile test: açılar ayrı kalem. Geriye-uyumlu.
-2. **MK mühürleri (1aaffe9):** 136.1 (açı = kalem kimliği) · 136.2 (MTO/IFS yapısı, tip-başına kolon yok,
-   redüksiyon kompound Ölçü) · 136.3 (ham koruma, normalize yok, segment↔toplam dönüşümü yasak) ·
-   136.4 (kesim altyapısı boru havuzunu yansıtır, sayfa sonra) · 136.B (aci kalıcılık ertelendi) ·
-   135.2 REVİZYON (Excel doğru, kök = K2 açı körlüğü).
-3. **devreler.html erişim wiring (kapanışta push):** v2+v3 ayrı flag'li butonlar, v1 zaten var → üçü erişilebilir.
+1. **GAP 1 (wizard):** devre_wizard_v3 Adım 1 düz tablo → klasör ağacı. Kontroller fitem içinde (B),
+   eski/hariç klasör kozmetik işaret (2a). Mevcut ağaç altyapısı yeniden kullanıldı.
+2. **Migration 095 + 096:** kuyruk + teslim_adet kolonları. 095'te teslim_adet yanlışlıkla pipeline'a
+   eklenmişti; ölçümle (1750 kalem spool'da, 1 satır pipeline'da) gerçek kaynak görülüp 096 ile spool_malzemeleri'ne taşındı.
+3. **Yıldız motoru DB'ye:** localStorage → `devreler.malzeme_kuyrukta` + renk türetme. Çok-cihaz/mobil görünür.
+4. **Malzeme kaynağı spool_malzemeleri:** devre bazlı toplama (tip|çap|et|malzeme|kalite), satır-bazlı teslim,
+   kısmi (3/5) görünür, mobil kısmiyi ezmeyen kayıt (dirty-only).
+5. **Toplu çekim export:** `kalemler=[]` stub'ı gerçek batch veriye bağlandı + popup gesture fix.
+6. **Mobil 2-sekme mockup:** görsel referans (commit edilmedi), React inşasında kullanılacak.
 
 ## Kararlar / içgörüler
-- **Yöntem belirsizliği insana çözdürülür:** BOM'dan fitting/büküm/mitre kesin çıkmaz (etiket "Elbow" hepsinde;
-  M130 87.6° standart-dışı = büküm ama "Elbow" yazıyor). Operatör spool_detay'da seçer (MK-136.4). Bu, dün
-  "geometri/içerik katmanı gerekir" çıkmazını zarifçe çözüyor — gerçekte de imalatçı karar verir.
-- **Standart uydurma yok:** malzeme listesi IFS/CADMATIC + MTO konvansiyonunu mirror'lar (tek Ölçü kompound +
-  tek paylaşımlı Açı + Description + shortcode). Kaynak zaten böyle veriyor.
-- **Dürüst kalibrasyon:** açı işi değerliydi (135 hatasını düzeltti) ama wizard'ı "tamam"a taşımaktan saptı.
-  Gerçek blokaj GAP 2 (düzelt+çapa, FAZ-1 stub) — test dosyası olmadan anlamlı bitmiyor.
-
-## Mühürlenen MK — yukarıda (136.1/.2/.3/.4/.B + 135.2 revizyon, KARARLAR.md'de)
+- **Stok modülü yok, bilinçli:** Bu sayfa "malzemenin imalat sahasına gelmesi" (kit staging), envanter değil.
+  Depo yazılımıyla çelişmemek için sınır net. İleride gemi-bazlı BOM−teslim farkı stok kurmadan yapılabilir.
+- **Miktar bazlı başla:** boolean var/yok seni köşeye sıkıştırırdı; `teslim_adet` ile başlandı → ileride
+  rezervasyon/stok "üstüne takılır", rework olmaz. (Önerildi, Cihat onayladı.)
+- **Ölç, körlemesine yazma:** "malzeme var ama listelenmedi" → tahmin yerine COUNT'larla kök bulundu
+  (pipeline boş, spool dolu). Yanlış tablo düzeltildi. MK-126.8 ruhu.
+- **localStorage = tek-cihaz tuzağı:** Cihat'ın "başka bilgisayarda görünür mü" sorusu doğru içgüdü; motorun DB'ye taşınma gerekçesi buydu.
 
 ## Süreç notu
-Körlemesine yazma yok: her patch öncesi gerçek dosya/BOM okundu; açı bulgusu canlı BOM'la ölçülerek
-doğrulandı (oran sabiti); 135 kararı gerçek veriyle çürütülüp dürüstçe revize edildi ("tamam" demedik);
-mockup↔v3 gap'i tek tek tarandı, tahmin edilmedi; erişim wiring v2/v3'ü dışlamak yerine üçlü karşılaştırmaya
-açıldı (Cihat düzeltmesi). node --check + diff + MD5 her dosyada.
+Her DB değişikliği önce dry-run/ölçüm; her HTML patch öncesi gerçek kod okundu (mlKontrolAc/_mlPdf/_mlExcel
+zinciri); kaynak hatası tahminle değil 3 COUNT sorgusuyla teşhis edildi; mockup R-10 gereği koddan önce
+çizildi; mobil kısmi-teslim ezme riski fark edilip dirty-only kayıtla önlendi. node --check + MD5 her dosyada.
+MK-101.1 sessiz kayıp iki kez yakalandı (kopya MD5 tutmadı → tekrar kopyalandı).
 
----
-> 137 açılışında: son-durum + bu dosya + CLAUDE-SONRAKI-OTURUM + KARARLAR MK-136.* + PARSER (gerekirse).
-> İlk iş: devreler.html push + flag teyidi + 3-buton görsel → sonra GAP 1 (Adım 1 klasör ağacı).
+## Mühürlenecek MK (KARARLAR.md'ye — 138 açılışında ya da şimdi ayrı doc commit)
+- MK-137.1: malzeme hazırlık = yıldız DB kuyruk (`devreler.malzeme_kuyrukta`), renk `spool_malzemeleri`
+  teslim/ihtiyaç toplamından türetilir, miktar bazlı (`teslim_adet`). Stok/depo modülü DIŞARIDA.
+- MK-137.2: malzeme gerçek kaynağı `spool_malzemeleri` (spool_id→devre zinciri); `pipeline_malzemeleri` terk/boş.
+  Toplama anahtarı tip|çap|et|malzeme|kalite. Teslim satır bazında, ekranda birleşik.
+- MK-137.3: web manager modalı kısmiyi ezmesin → sadece dirty kalem yazılır (mobil kısmi teslim korunur).
+
+## Süreç
+> 138 açılışında: son-durum + bu dosya + CLAUDE-SONRAKI-OTURUM + (varsa) KARARLAR MK-137.*.
+> İlk iş: malzeme hazırlık deploy görsel teyit (export PDF/Excel gerçek veri) → eksik→Uyarılar VEYA mobil React.

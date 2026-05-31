@@ -1,84 +1,66 @@
-# Son Durum — 135. Oturum (29 Mayıs 2026)
+# Son Durum — 137. Oturum (31 Mayıs 2026)
 
-> v3 İnceleme **K2 malzeme rozeti** tamamlandı (baş iş): `api/devre-inceleme.js`'e A2 enjeksiyonu
-> (`_eslesme.detay[]` → spool, lib SAF kaldı) + `izoCell` 🟡 rozet + `duzeltAc` malzeme kıyası bölümü.
-> Canlı lambda teyidi yapıldı (`/api/devre-inceleme` → `malzeme_flag:true`, dirsek çelişki + flanş montaj).
-> **Dirsek bulgusunun kökü çözüldü** (MK-135.2): PDF doğru, Excel BOM hatalı — K2 bug değil, gerçek
-> yakalama. Kozmetik: izo-eslesme self-test yorumu düzeltildi. Yeni endpoint yok (12/12), MK-49.1 korundu.
-
----
-
-## Açılış
-
-- git temiz, origin senkron, function 12/12. Adım 0: `5e9b0ec` (134 kod) CI'den geçmişti — kanıt araya
-  giren `ed2b37f` ci-son-rapor commit'i. MK-134.1 sırası doğru.
-- Patch öncesi 5 kaynak okundu (körlemesine yazma yok): `devre-inceleme.js`, `lib/izo-eslesme.js`,
-  `lib/malzeme-kiyas.js`, `kuyruk-isle-izometri.js` (_eslesme.detay şeması), `uyarilar.html` (mirror).
+> Malzeme hazırlık sistemi web tarafı uçtan uca oturdu: yıldız motoru localStorage'dan DB'ye taşındı
+> (çok-cihaz + mobil görünür), malzeme kaynağı düzeltildi (`pipeline_malzemeleri` terk → `spool_malzemeleri`),
+> modal miktar bazlı + devre bazlı toplama, toplu çekim export'u gerçek veriye bağlandı.
+> GAP 1 (devre_wizard_v3 Adım 1 klasör ağacı) tamamlandı. Mobil 2-sekme görsel mockup hazır (referans).
+> Migration 095 + 096. Yeni endpoint yok (12/12), MK-49.1 korundu.
 
 ## Yapılanlar (sıra)
 
-### 1. v3 İnceleme K2 malzeme rozeti — BAŞ İŞ ✅ (Seçenek A2)
+### 1. GAP 1 — devre_wizard_v3 Adım 1 klasör ağacı (PUSH dahil)
+- Düz tablo (`dosyaTablo`/`dosyaTbody`) → aç-kapa klasör ağacı (`tree1`, mevcut `fol`/`fToggle` altyapısı yeniden kullanıldı).
+- KARAR-137.GAP1-B: kontroller fitem içinde — tip-select + hover sil korundu (işlev kaybı yok).
+- KARAR-137.GAP1-2a: eski/hariç klasörler (`eskiRevMi`: old/eski/eski-rev/üretime verilen/kaplini/revN)
+  soluk + "hariç" rozetiyle gösterilir — KOZMETİK, işleme akışı değişmez.
+- Ölü `.dosya-tablo`/`.btn-sil` CSS temizlendi. node --check OK.
 
-- **Karar A2 (MK-135.1):** Enjeksiyon **handler katmanında**; `lib/izo-eslesme.js` saf çekirdek olarak
-  KORUNDU (A1 lib'i kirletirdi — reddedildi). `_eslesme.detay[]` worker'da hazır; endpoint
-  `normPipeline|normSpoolNo` anahtarıyla `sonuc.spoollar[]`'a `malzeme_flag`+`malzeme_kiyas` iliştirir.
-  Yeniden hesaplama yok, ek sorgu yok (endpoint parse_sonuc'u zaten çekiyor).
-- **`api/devre-inceleme.js`:** handler'da incelemeTablosu sonrası malzeme haritası + spool iliştirme +
-  `ozet.malzeme_flag`. Bir spool'a çok izometri düşerse flag'li kazanır.
-- **`devre_wizard_v3.html`:** `izoCell(izo, flag, malzFlag)` → 🟡 malzeme rozeti (bindirme çelişkisinden
-  ayrı); `duzeltAc` → "Malzeme listesi kıyası (BOM ↔ PDF)" bölümü (celiski→🔧, excel_fazla_montaj→🔩,
-  soft GİZLİ, excel_guven dili). Yardımcılar uyarilar.html ile birebir (`MLZ_*_V3`, `_mlzFmtV3`, `malzemeKiyasBlok`).
-- **Test:** node --check (her iki dosya + inline JS), idempotency (2× → "zaten uygulanmış"), uçtan uca
-  smoke (S02 fixture → dirsek 🔧 + flanş 🔩 birebir). Commit `e6db101`.
-- **Canlı teyit (MK-132.1):** `/api/devre-inceleme` lambda'sı `g200` (b310cfc5…) için `ok:true`,
-  `ozet.malzeme_flag:1`, S02 `{durum:'okundu', malzeme_flag:true, kiyas_var:true}`, celiski(dirsek)+
-  montaj(flanş). SQL ile DB verisi de teyit edildi. **Server tarafı canlıda %100 çalışıyor.**
-- **Görsel teyit BEKLİYOR:** v3 wizard `?devre_id=` ile var olan taslağı AÇMIYOR (URL param okunmuyor)
-  → İnceleme tablosu ekranda açılamadı. Rozet/popup gözle görülemedi (kod kanıtlı; sadece render kaldı).
-  Yeni borç (#2). Kapsamlı görsel + çoklu-gemi testi sonraki güne (Cihat kararı).
+### 2. Migration 095 — malzeme hazırlık kolonları (DB + repo)
+- `devreler.malzeme_kuyrukta BOOLEAN DEFAULT false` (yıldız kuyruk üyeliği)
+- `pipeline_malzemeleri.teslim_adet NUMERIC DEFAULT 0` — **SONRADAN yanlış tablo çıktı, bkz. 096**
 
-### 2. Dirsek 🟡 bulgusu — KÖK TESPİTİ ✅ (MK-135.2)
+### 3. devreler.html — yıldız motoru localStorage → DB (PUSH)
+- localStorage helper'ları (`getStarMap/setStarMap/...ares_devre_star`) silindi → `_kuyrukDurum` (DB tabanlı).
+- Kuyruk üyeliği `devreler.malzeme_kuyrukta`'da; renk teslim/ihtiyaç toplamından TÜRETİLİR (`_kuyrukState`).
+- yildizToggle/mlKaydet/mlSifirla → DB update. Render öncesi `await kuyrukDurumYukle()`.
+- Sonuç: yıldız artık **her cihazda + mobilde** görünür (Cihat'ın "başka bilgisayarda görünmez mi" endişesi çözüldü).
 
-- S02 ham PDF malzeme listesi çekildi (konsolide öncesi). **Bulgu:**
-  - PDF: dirsek satırı **6 kez** (her biri adet:1, agirlik:35.402, boy:457) → konsolide 6×35.4=**212.41 kg**.
-  - Excel BOM: tek satır, **adet:6 ama agirlik:35.01** (= per-adet ~5.84 kg, DN323.9 için FİZİKSEL İMKANSIZ).
-- **Kök:** Eski "PDF toplam / Excel birim" hipotezi ÇÜRÜDÜ. PDF doğru (212.41 fiziksel makul); **Excel
-  BOM hatalı** — adet:6 yazıp ağırlığa tek dirseğin değerini koymuş (IFS export'unda adet×birim
-  çarpılmamış olabilir). **K2 bug DEĞİL — gerçek bir veri tutarsızlığını doğru yakaladı.** Parser'a dokunma.
-- Not: `excel_guven:'otorite'` dili bu vakada yanıltıcı ("PDF kontrol" diyor, gerçekte Excel hatalı).
-  MK-133.1 otomatik güven türetme işi gelince fitting ağırlık tutarsızlığında simetrik dil düşünülebilir (acil değil).
+### 4. KÖK BULGU — malzeme yanlış katmandan okunuyordu
+- Modal `pipeline_malzemeleri`'nden okuyordu; o tablo **terk edilmiş/pratikte boş** (tüm tenant'ta 1 satır/1 devre).
+- Gerçek malzeme `spool_malzemeleri`'nde: 1750 kalem. Bağ: `spool_malzemeleri.spool_id → spooller.devre_id`.
 
-### 3. Kozmetik — izo-eslesme self-test yorumu ✅
+### 5. Migration 096 — teslim_adet doğru tabloda (DB + repo)
+- `spool_malzemeleri.teslim_adet INTEGER DEFAULT 0`. (095'teki pipeline kolonu ölü kaldı, zararsız.)
 
-- `lib/izo-eslesme.js` üst-yorumu "eksik:1" diyordu, kod `=== 2` (doğru). Yorum `eksik:2` yapıldı.
-  `node lib/izo-eslesme.js` → **SELF-TEST ✅ GEÇTİ**. Çalışan kod değişmedi.
+### 6. devreler.html — malzeme kaynağı spool_malzemeleri + devre bazlı toplama (PUSH)
+- mlKontrolAc/kuyrukDurumYukle/_kuyrukTekDevre → spool→devre zinciri, `spool_malzemeleri`.
+- KARAR-137.MALZ-(a): toplama anahtarı `tip|dis_cap_mm|et_mm|malzeme|kalite` ("DN50 flanş ×5").
+- Teslim **satır bazında** tutulur (35 satır), ekranda birleşik gösterilir; kısmi teslim (3/5) görünür.
+- mlKaydet sadece **dirty** kalemleri yazar → mobilde girilen kısmi teslimleri EZMEZ. `hazir` yazmaz (spool_malzemeleri'nde o kolon yok).
 
-## CI Son Durum
+### 7. devreler.html — toplu çekim export gerçek veriye bağlandı (PUSH)
+- `_mlPdf`/`_mlExcel`'deki `var kalemler = []` stub'ı → `_malzemeAggregateBatch` (yıldızlı devrelerin malzemesi, batch).
+- Popup gesture fix: PDF penceresi tıklama anında (await öncesi) açılır, veri gelince yazılır.
 
-- `e6db101 feat(135)` (K2 rozeti) push edildi — kod CI tetikledi.
-- Bu kapanış: tek push / iki commit → doc'lar `[skip ci]`, EN SON kozmetik kod commit'i (HEAD, CI koşar) — MK-134.1.
-- function 12/12 (sabit). MK-49.1 korundu, migration yok.
+### 8. Mobil 2-sekme görsel mockup (referans, commit edilmedi)
+- `malzeme_hazirlik_mockup.html` — Devreler + Toplu Çekim sekmeleri, −/+ teslim sayaçları, eksik işareti,
+  üretim oran çubukları. AresPipe token'larıyla. React'e taşınırken referans.
 
-## Commit'ler
+## Borç temizliği
+- `mobile/dist/` zaten temiz çıktı: `git ls-files` boş + `.gitignore:27` `mobile/dist/` var. Borç düşürüldü.
 
-| Hash | Mesaj | Tür |
-|---|---|---|
-| `e6db101` | feat(135): v3 Inceleme K2 malzeme rozeti — A2 enjeksiyon + izoCell rozet + duzelt popup | **kod (CI)** |
-| (kapanış-1) | docs(135): kapanış üçlü + KARARLAR MK-135.1/.2 + PARSER 7.7 `[skip ci]` | doc |
-| (kapanış-2, HEAD) | style(135): izo-eslesme self-test yorumu eksik:2 | **kod (CI)** |
+## CI / commit
+- f.. wizard GAP1 · 095 sql · yıldız motoru DB · 096 sql · malzeme kaynağı spool · export gerçek veri.
+- Hepsi function 12/12, migration 095/096, MK-49.1 korundu. Doc commit'leri [skip ci].
 
-## 136'ya Açık Borç (önceliğe göre)
+## "Malzeme hazırlık" durumu
+[x] Yıldız DB kuyruk (çok-cihaz/mobil)  [x] Kaynak spool_malzemeleri + devre toplama  [x] Miktar bazlı, satır bazlı
+[x] Modal listeliyor + kısmi görünür  [x] Toplu çekim export gerçek veri
+[ ] Mobil React inşa (mockup hazır)  [ ] Eksik → Uyarılar entegrasyonu
 
-1. **Kapsamlı görsel + çoklu-gemi testi:** Farklı format/gemi örnekleriyle K2 rozeti + popup'ı GERÇEK
-   tabloda gör; dirsek-tipi Excel tutarsızlığı başka gemilerde tekrar ediyor mu (MK-135.2 deseni).
-2. **v3 wizard `?devre_id=` ile taslak açma:** Var olan `oneri_hazir` taslağı yeniden açıp İnceleme'ye
-   getirme YOK. Test/inceleme için gerekli; ~20 dk UI işi. (Bugün ortaya çıktı.)
-3. **`excel_guven` otomatik türetme (MK-133.1 backlog):** format paketinden/parser_kural'dan; şimdilik sabit 'otorite'.
-4. **Pipeline doğrulama (4.4-1):** POAR header pipeline × dosyaAdiParse.
-5. **Taşınanlar:** "Montaj Resmi" emekli format, K5 function konsolidasyon, 117 (`yukleyen_id`),
-   web-spool sync, fitting (DIN 86087/ASME B16.9), `spool_dokumanlari` bağ tablosu, dirsek bin-packing v2.
-
----
-
-> 136 açılışında: bu dosya + `CLAUDE-SON-OTURUM.md` + `CLAUDE-SONRAKI-OTURUM.md` + PARSER 7.7 +
-> KARARLAR MK-135.1/.2. **İlk iş: kapsamlı görsel test için ya wizard taslak-açma (#2) ya çoklu-gemi örnek yükleme.**
+## 138'e Açık Borç (öncelik)
+1. **Eksik → Uyarılar entegrasyonu:** Personel/yönetici "eksik" işaretleyince Uyarılar sayfasına düşsün. Şu an UI'da var, akış yok.
+2. **Mobil malzeme hazırlık React inşası:** mockup'a göre 2 sekme. `spool_malzemeleri.teslim_adet` + 095/096 ile bağlanır.
+3. **Wizard tamam blokajı (GAP 2):** düzelt-yazma + çapa — test dosyasına bağlı (bkz. eski sonraki-oturum notu).
+4. Test dosyaları bekleniyor (çoklu-gemi K2, M130).
+5. 129/130 terfi-sonrası imalat-izo görünmeme · 117 yukleyen_id · pipeline doğrulama · fitting kütüphane.
