@@ -1402,7 +1402,7 @@ async function sorgulaVeGoster() {
 // Durum: 0=yok, 1=kırmızı(malzeme bekleniyor), 2=sarı(eksik var), 3=yeşil(tamamlandı)
 // ── Malzeme hazırlık kuyruğu — DB tabanlı (migration 095) ──────────
 // Yıldız durumu artık localStorage'da DEĞİL: kuyruk üyeliği devreler.malzeme_kuyrukta'da,
-// renk pipeline_malzemeleri teslim/ihtiyaç toplamından TÜRETİLİR. Çok-cihaz + mobil görünür.
+// renk spool_malzemeleri teslim/ihtiyaç toplamından TÜRETİLİR. Çok-cihaz + mobil görünür.
 // _kuyrukDurum[devre_uuid] = { kuyrukta:true, ihtiyac, teslim, state(1|2|3) }
 var _kuyrukDurum = {};
 function _kuyrukState(ihtiyac, teslim) {
@@ -1417,13 +1417,20 @@ async function kuyrukDurumYukle() {
   var kd = await supa.from('devreler').select('id').eq('tenant_id', ARES.tenantId()).eq('malzeme_kuyrukta', true);
   var ids = (kd.data || []).map(function(x){ return x.id; });
   if (!ids.length) { guncelleMLButonu(); return; }
+  // spool -> devre haritası (spool_malzemeleri devre_id taşımaz, spool_id taşır)
+  var sp = await supa.from('spooller').select('id, devre_id').in('devre_id', ids);
+  var spoolDevre = {}; var spoolIds = [];
+  (sp.data || []).forEach(function(s){ spoolDevre[s.id] = s.devre_id; spoolIds.push(s.id); });
   var agg = {}; ids.forEach(function(id){ agg[id] = { ihtiyac:0, teslim:0 }; });
-  var pm = await supa.from('pipeline_malzemeleri').select('devre_id, adet, teslim_adet').in('devre_id', ids);
-  (pm.data || []).forEach(function(r){
-    var a = agg[r.devre_id]; if (!a) return;
-    a.ihtiyac += Number(r.adet) || 0;
-    a.teslim  += Number(r.teslim_adet) || 0;
-  });
+  if (spoolIds.length) {
+    var pm = await supa.from('spool_malzemeleri').select('spool_id, adet, teslim_adet').in('spool_id', spoolIds);
+    (pm.data || []).forEach(function(r){
+      var devreId = spoolDevre[r.spool_id]; if (!devreId) return;
+      var a = agg[devreId]; if (!a) return;
+      a.ihtiyac += Number(r.adet) || 0;
+      a.teslim  += Number(r.teslim_adet) || 0;
+    });
+  }
   ids.forEach(function(id){
     var a = agg[id];
     _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:a.ihtiyac, teslim:a.teslim, state:_kuyrukState(a.ihtiyac, a.teslim) };
@@ -1433,9 +1440,13 @@ async function kuyrukDurumYukle() {
 async function _kuyrukTekDevre(id) {
   var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
   if (!supa) { _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:0, teslim:0, state:1 }; return; }
-  var pm = await supa.from('pipeline_malzemeleri').select('adet, teslim_adet').eq('devre_id', id);
+  var sp = await supa.from('spooller').select('id').eq('devre_id', id);
+  var spoolIds = (sp.data || []).map(function(s){ return s.id; });
   var ihtiyac = 0, teslim = 0;
-  (pm.data || []).forEach(function(r){ ihtiyac += Number(r.adet)||0; teslim += Number(r.teslim_adet)||0; });
+  if (spoolIds.length) {
+    var pm = await supa.from('spool_malzemeleri').select('adet, teslim_adet').in('spool_id', spoolIds);
+    (pm.data || []).forEach(function(r){ ihtiyac += Number(r.adet)||0; teslim += Number(r.teslim_adet)||0; });
+  }
   _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:ihtiyac, teslim:teslim, state:_kuyrukState(ihtiyac, teslim) };
 }
 // Türetilmiş map {uuid: state} — eski getStarMap arayüzü (_doRender, _mlPdf, _mlExcel, guncelleMLButonu uyumu)
@@ -1500,29 +1511,46 @@ async function mlKontrolAc(id) {
   _mlkKalemler = [];
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa) {
-    var { data, error } = await supa.from('pipeline_malzemeleri')
-      .select('id, kod, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, teslim_adet, agirlik_kg, sertifikali, hazir')
-      .eq('devre_id', id)
-      .order('dis_cap_mm', { ascending: true });
-    if (!error && data) {
-      _mlkKalemler = data.map(function(k) {
-        var capMm = k.dis_cap_mm ? String(parseFloat(k.dis_cap_mm).toFixed(1)) + ' mm' : '—';
-        return {
-          id:       k.id,
-          tip:      k.kod || 'malzeme',
-          aciklama: k.tanim || k.kod || '—',
-          cap:      k.dis_cap_mm ? String(k.dis_cap_mm) : null,
-          capMm:    capMm,
-          malzeme:  k.malzeme || '—',
-          kalite:   k.kalite  || '—',
-          miktar:   k.adet    || null,
-          birim:    'adet',
-          agirlik:  k.agirlik_kg || null,
-          ihtiyac:  Number(k.adet) || 0,
-          teslim:   Number(k.teslim_adet) || 0,
-          hazir:    (Number(k.teslim_adet)||0) > 0 && (Number(k.teslim_adet)||0) >= (Number(k.adet)||0)
-        };
-      });
+    // Devrenin spool'larını al, malzemeyi spool seviyesinden çek, kalem bazında topla (tip+çap+et+malzeme+kalite)
+    var spRes = await supa.from('spooller').select('id').eq('devre_id', id);
+    var spoolIds = (spRes.data || []).map(function(s){ return s.id; });
+    if (spoolIds.length) {
+      var { data, error } = await supa.from('spool_malzemeleri')
+        .select('id, kod, tanim, aciklama, malzeme, kalite, tip, dis_cap_mm, et_mm, boy_mm, adet, teslim_adet, agirlik_kg, sertifikali')
+        .in('spool_id', spoolIds)
+        .order('dis_cap_mm', { ascending: true });
+      if (!error && data) {
+        var grup = {};
+        data.forEach(function(r) {
+          var key = [r.tip||'', r.dis_cap_mm||'', r.et_mm||'', r.malzeme||'', r.kalite||''].join('|');
+          if (!grup[key]) {
+            grup[key] = {
+              tip:      r.kod || r.tip || 'malzeme',
+              aciklama: r.tanim || r.aciklama || r.kod || '—',
+              cap:      r.dis_cap_mm ? String(r.dis_cap_mm) : null,
+              capMm:    r.dis_cap_mm ? String(parseFloat(r.dis_cap_mm).toFixed(1)) + ' mm' : '—',
+              malzeme:  r.malzeme || '—',
+              kalite:   r.kalite  || '—',
+              birim:    'adet',
+              agirlik:  0,
+              ihtiyac:  0,
+              teslim:   0,
+              rows:     []
+            };
+          }
+          var g = grup[key];
+          g.ihtiyac += Number(r.adet) || 0;
+          g.teslim  += Number(r.teslim_adet) || 0;
+          g.agirlik += Number(r.agirlik_kg) || 0;
+          g.rows.push({ id: r.id, adet: Number(r.adet) || 0 });
+        });
+        _mlkKalemler = Object.keys(grup).map(function(k) {
+          var g = grup[k];
+          g.miktar = g.ihtiyac;
+          g.hazir  = g.teslim > 0 && g.teslim >= g.ihtiyac;
+          return g;
+        });
+      }
     }
   }
 
@@ -1543,13 +1571,15 @@ function mlkRender() {
     return;
   }
   liste.innerHTML = _mlkKalemler.map(function(k, i) {
+    var durumLabel = k.hazir ? '✓ Hazır' : (k.teslim > 0 ? (k.teslim + '/' + k.ihtiyac) : '✗ Eksik');
+    var durumRenk  = k.hazir ? 'var(--gr)' : (k.teslim > 0 ? 'var(--warn)' : 'var(--re)');
     return '<div style="display:flex;align-items:center;gap:10px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;padding:10px 14px;">' +
       '<input type="checkbox" id="mlk_' + i + '" ' + (k.hazir ? 'checked' : '') + ' onchange="mlkToggle(' + i + ',this.checked)" style="width:16px;height:16px;accent-color:var(--gr);flex-shrink:0;">' +
       '<label for="mlk_' + i + '" style="flex:1;cursor:pointer;">' +
         '<div style="font-size:14px;color:var(--tx);font-weight:500;">' + esc(k.aciklama || k.tip) + '</div>' +
         '<div style="font-size:14px;color:var(--txd);margin-top:2px;">' + esc(k.cap ? formatCapMM(k.cap) + ' mm' : '') + (k.miktar ? ' · ' + k.miktar + ' ' + (k.birim || '') : '') + '</div>' +
       '</label>' +
-      '<span style="font-size:14px;color:' + (k.hazir ? 'var(--gr)' : 'var(--re)') + ';font-weight:700;">' + (k.hazir ? '✓ Hazır' : '✗ Eksik') + '</span>' +
+      '<span style="font-size:14px;color:' + durumRenk + ';font-weight:700;">' + durumLabel + '</span>' +
     '</div>';
   }).join('');
   mlkOzetGuncelle();
@@ -1558,6 +1588,7 @@ function mlkRender() {
 function mlkToggle(i, val) {
   _mlkKalemler[i].hazir = val;
   _mlkKalemler[i].teslim = val ? (Number(_mlkKalemler[i].ihtiyac) || 0) : 0;
+  _mlkKalemler[i]._dirty = true;
   mlkOzetGuncelle();
 }
 
@@ -1574,7 +1605,7 @@ function mlkOzetGuncelle() {
 }
 
 function mlHepsiniToggle(val) {
-  _mlkKalemler.forEach(function(k) { k.hazir = val; k.teslim = val ? (Number(k.ihtiyac)||0) : 0; });
+  _mlkKalemler.forEach(function(k) { k.hazir = val; k.teslim = val ? (Number(k.ihtiyac)||0) : 0; k._dirty = true; });
   mlkRender();
 }
 
@@ -1583,13 +1614,17 @@ async function mlKaydet() {
 
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa && _mlkKalemler.length) {
-    // Her kalem için teslim miktarını güncelle (hazir legacy uyumu için birlikte yazılır)
-    var updates = _mlkKalemler.map(function(k) {
-      return supa.from('pipeline_malzemeleri')
-        .update({ teslim_adet: Number(k.teslim) || 0, hazir: !!k.hazir })
-        .eq('id', k.id);
+    // Sadece kullanıcının değiştirdiği (dirty) kalemleri yaz → mobilde girilen kısmi teslimleri ezme.
+    // Web modalı checkbox: hazır→kalemin tüm satırları tam teslim, eksik→0. Teslim spool_malzemeleri satır bazında.
+    var updates = [];
+    _mlkKalemler.forEach(function(k) {
+      if (!k._dirty) return;
+      (k.rows || []).forEach(function(row) {
+        var t = k.hazir ? (Number(row.adet) || 0) : 0;
+        updates.push(supa.from('spool_malzemeleri').update({ teslim_adet: t }).eq('id', row.id));
+      });
     });
-    await Promise.all(updates);
+    if (updates.length) await Promise.all(updates);
   }
 
   var ihtiyac = _mlkKalemler.reduce(function(s,k){ return s + (Number(k.ihtiyac)||0); }, 0);
@@ -2139,7 +2174,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
 
   // İçerik — yıldız durumuna göre
   function devreIcerik(d) {
-    var kalemler = []; // pipeline_malzemeleri'nden mlKontrolAc ile yüklenir
+    var kalemler = []; // STUB: toplu çekim listesi henüz spool_malzemeleri'nden doldurulmuyor (mobil/Sekme-2 işi)
     var state = starMap[d.supaId];
     var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
     var toplam = kalemler.length;
