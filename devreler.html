@@ -1388,6 +1388,8 @@ async function sorgulaVeGoster() {
 
     // Filtre dropdown seçenekleri ilk yüklemede veriYukle'de _filterDataUygula ile doluyor
 
+    // Malzeme kuyruğu durumunu DB'den yükle (yıldız renkleri teslim/ihtiyaç toplamından türetilir)
+    await kuyrukDurumYukle();
     // Tablo render
     _doRender();
 
@@ -1398,14 +1400,49 @@ async function sorgulaVeGoster() {
 
 // ── YILDIZ SİSTEMİ ───────────────────────────────────────────────
 // Durum: 0=yok, 1=kırmızı(malzeme bekleniyor), 2=sarı(eksik var), 3=yeşil(tamamlandı)
-function getStarMap()   { try { return JSON.parse(localStorage.getItem('ares_devre_star') || '{}'); } catch(e) { return {}; } }
-function setStarMap(m)  { try { localStorage.setItem('ares_devre_star', JSON.stringify(m)); } catch(e) {} }
-function getStarState(id) { return getStarMap()[id] || 0; }
-function getOncelikler() {
-  var m = getStarMap();
-  return Object.keys(m).filter(function(k) { return m[k] > 0; });
+// ── Malzeme hazırlık kuyruğu — DB tabanlı (migration 095) ──────────
+// Yıldız durumu artık localStorage'da DEĞİL: kuyruk üyeliği devreler.malzeme_kuyrukta'da,
+// renk pipeline_malzemeleri teslim/ihtiyaç toplamından TÜRETİLİR. Çok-cihaz + mobil görünür.
+// _kuyrukDurum[devre_uuid] = { kuyrukta:true, ihtiyac, teslim, state(1|2|3) }
+var _kuyrukDurum = {};
+function _kuyrukState(ihtiyac, teslim) {
+  if (ihtiyac <= 0 || teslim <= 0) return 1;   // kalem yok ya da hiç teslim yok → kırmızı (bekliyor)
+  if (teslim >= ihtiyac)           return 3;   // hepsi teslim → yeşil
+  return 2;                                    // kısmen → sarı
 }
-function isStarred(id) { return getStarState(id) > 0; }
+async function kuyrukDurumYukle() {
+  _kuyrukDurum = {};
+  var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+  if (!supa) { guncelleMLButonu(); return; }
+  var kd = await supa.from('devreler').select('id').eq('tenant_id', ARES.tenantId()).eq('malzeme_kuyrukta', true);
+  var ids = (kd.data || []).map(function(x){ return x.id; });
+  if (!ids.length) { guncelleMLButonu(); return; }
+  var agg = {}; ids.forEach(function(id){ agg[id] = { ihtiyac:0, teslim:0 }; });
+  var pm = await supa.from('pipeline_malzemeleri').select('devre_id, adet, teslim_adet').in('devre_id', ids);
+  (pm.data || []).forEach(function(r){
+    var a = agg[r.devre_id]; if (!a) return;
+    a.ihtiyac += Number(r.adet) || 0;
+    a.teslim  += Number(r.teslim_adet) || 0;
+  });
+  ids.forEach(function(id){
+    var a = agg[id];
+    _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:a.ihtiyac, teslim:a.teslim, state:_kuyrukState(a.ihtiyac, a.teslim) };
+  });
+  guncelleMLButonu();
+}
+async function _kuyrukTekDevre(id) {
+  var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+  if (!supa) { _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:0, teslim:0, state:1 }; return; }
+  var pm = await supa.from('pipeline_malzemeleri').select('adet, teslim_adet').eq('devre_id', id);
+  var ihtiyac = 0, teslim = 0;
+  (pm.data || []).forEach(function(r){ ihtiyac += Number(r.adet)||0; teslim += Number(r.teslim_adet)||0; });
+  _kuyrukDurum[id] = { kuyrukta:true, ihtiyac:ihtiyac, teslim:teslim, state:_kuyrukState(ihtiyac, teslim) };
+}
+// Türetilmiş map {uuid: state} — eski getStarMap arayüzü (_doRender, _mlPdf, _mlExcel, guncelleMLButonu uyumu)
+function getStarMap() { var m = {}; Object.keys(_kuyrukDurum).forEach(function(k){ if (_kuyrukDurum[k].kuyrukta) m[k] = _kuyrukDurum[k].state; }); return m; }
+function getStarState(id) { var k = _kuyrukDurum[id]; return (k && k.kuyrukta) ? k.state : 0; }
+function isStarred(id) { return !!(_kuyrukDurum[id] && _kuyrukDurum[id].kuyrukta); }
+function getOncelikler() { return Object.keys(_kuyrukDurum).filter(function(k){ return _kuyrukDurum[k].kuyrukta; }); }
 
 var _STAR_CFG = [
   {cls:'empty',     icon:'☆', label:''},
@@ -1414,21 +1451,26 @@ var _STAR_CFG = [
   {cls:'st-green',  icon:'★', label:'Tamamlandı'}
 ];
 
-function yildizToggle(id) {
+async function yildizToggle(id) {
   var d = DEVRELER.find(function(x) { return x.supaId === id; });
   if (!d) return;
   var state = getStarState(id);
 
   if (state === 0) {
-    // 1. tıklama — yıldızı kırmızı yap, modal açma
-    var m = getStarMap();
-    m[id] = 1;
-    setStarMap(m);
+    // 1. tıklama — devreyi malzeme hazırlık kuyruğuna al (DB), kırmızı yap, modal açma
+    var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+    if (supa) {
+      var up = await supa.from('devreler').update({ malzeme_kuyrukta: true }).eq('id', id);
+      if (up.error) { showToast('Kuyruğa eklenemedi', 'error'); return; }
+    }
+    await _kuyrukTekDevre(id);
+    var k = _kuyrukDurum[id];
+    var cfg = _STAR_CFG[(k && k.state) ? k.state : 1];
     var el = document.getElementById('star_' + id);
     if (el) {
-      var cfg = _STAR_CFG[1];
       el.className = 'star-icon ' + cfg.cls;
       el.innerHTML = cfg.icon;
+      el.title = cfg.label || 'Malzeme durumu';
     }
     guncelleMLButonu();
   } else {
@@ -1459,7 +1501,7 @@ async function mlKontrolAc(id) {
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa) {
     var { data, error } = await supa.from('pipeline_malzemeleri')
-      .select('id, kod, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, agirlik_kg, sertifikali, hazir')
+      .select('id, kod, tanim, malzeme, kalite, dis_cap_mm, et_mm, boy_mm, adet, teslim_adet, agirlik_kg, sertifikali, hazir')
       .eq('devre_id', id)
       .order('dis_cap_mm', { ascending: true });
     if (!error && data) {
@@ -1476,7 +1518,9 @@ async function mlKontrolAc(id) {
           miktar:   k.adet    || null,
           birim:    'adet',
           agirlik:  k.agirlik_kg || null,
-          hazir:    !!k.hazir
+          ihtiyac:  Number(k.adet) || 0,
+          teslim:   Number(k.teslim_adet) || 0,
+          hazir:    (Number(k.teslim_adet)||0) > 0 && (Number(k.teslim_adet)||0) >= (Number(k.adet)||0)
         };
       });
     }
@@ -1513,6 +1557,7 @@ function mlkRender() {
 
 function mlkToggle(i, val) {
   _mlkKalemler[i].hazir = val;
+  _mlkKalemler[i].teslim = val ? (Number(_mlkKalemler[i].ihtiyac) || 0) : 0;
   mlkOzetGuncelle();
 }
 
@@ -1529,7 +1574,7 @@ function mlkOzetGuncelle() {
 }
 
 function mlHepsiniToggle(val) {
-  _mlkKalemler.forEach(function(k) { k.hazir = val; });
+  _mlkKalemler.forEach(function(k) { k.hazir = val; k.teslim = val ? (Number(k.ihtiyac)||0) : 0; });
   mlkRender();
 }
 
@@ -1538,32 +1583,29 @@ async function mlKaydet() {
 
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa && _mlkKalemler.length) {
-    // Her kalem için hazir durumunu güncelle
+    // Her kalem için teslim miktarını güncelle (hazir legacy uyumu için birlikte yazılır)
     var updates = _mlkKalemler.map(function(k) {
-      return supa.from('pipeline_malzemeleri').update({ hazir: !!k.hazir }).eq('id', k.id);
+      return supa.from('pipeline_malzemeleri')
+        .update({ teslim_adet: Number(k.teslim) || 0, hazir: !!k.hazir })
+        .eq('id', k.id);
     });
     await Promise.all(updates);
   }
 
-  var hazir = _mlkKalemler.filter(function(k) { return k.hazir; }).length;
-  var top = _mlkKalemler.length;
-  var m = getStarMap();
-  if (top === 0)        m[_mlkAktifId] = 1;
-  else if (hazir===top) m[_mlkAktifId] = 3;
-  else if (hazir > 0)   m[_mlkAktifId] = 2;
-  else                  m[_mlkAktifId] = 1;
-  setStarMap(m);
+  var ihtiyac = _mlkKalemler.reduce(function(s,k){ return s + (Number(k.ihtiyac)||0); }, 0);
+  var teslim  = _mlkKalemler.reduce(function(s,k){ return s + (Number(k.teslim)||0); }, 0);
+  _kuyrukDurum[_mlkAktifId] = { kuyrukta:true, ihtiyac:ihtiyac, teslim:teslim, state:_kuyrukState(ihtiyac, teslim) };
   modal('modalMlKontrol', false);
   renderTable(false);
   guncelleMLButonu();
   showToast('Malzeme listesi kaydedildi', 'success');
 }
 
-function mlSifirla() {
+async function mlSifirla() {
   if (_mlkAktifId === null) return;
-  var m = getStarMap();
-  delete m[_mlkAktifId];
-  setStarMap(m);
+  var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+  if (supa) { await supa.from('devreler').update({ malzeme_kuyrukta: false }).eq('id', _mlkAktifId); }
+  delete _kuyrukDurum[_mlkAktifId];
   modal('modalMlKontrol', false);
   renderTable(false);
   guncelleMLButonu();
