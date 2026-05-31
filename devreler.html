@@ -2156,7 +2156,7 @@ function malzemeListesiModalAc() {
   modal('modalML', true);
 }
 
-function malzemeListesiOlustur() {
+async function malzemeListesiOlustur() {
   var fmt = document.querySelector('input[name="mlFormat"]:checked');
   var format = fmt ? fmt.value : 'excel';
   modal('modalML', false);
@@ -2164,17 +2164,70 @@ function malzemeListesiOlustur() {
   var DURUM_LABEL = {1:'Malzeme Bekleniyor', 2:'Eksik Var', 3:'Tamamlandı'};
   var starred = _filtreliYildizlilar();
   if (!starred.length) { showToast('Aktif filtrede yıldızlı devre yok', 'error'); return; }
-  if (format === 'excel' || format === 'her_ikisi') _mlExcel(starred, starMap, DURUM_LABEL);
-  if (format === 'pdf'   || format === 'her_ikisi') _mlPdf(starred, starMap, DURUM_LABEL);
+  // PDF penceresini tıklama anında aç (await sonrası window.open popup engeline takılır), veriyi sonra yaz
+  var pdfWin = null;
+  if (format === 'pdf' || format === 'her_ikisi') {
+    pdfWin = window.open('', '_blank', 'width=900,height=700');
+    if (pdfWin) pdfWin.document.write('<p style="font-family:Arial,sans-serif;padding:48px;color:#334155;font-size:15px;">Malzeme listesi hazırlanıyor…</p>');
+  }
+  showToast('Malzeme listesi hazırlanıyor…', 'info');
+  var kalemMap = await _malzemeAggregateBatch(starred.map(function(d){ return d.supaId; }));
+  if (format === 'excel' || format === 'her_ikisi') _mlExcel(starred, starMap, DURUM_LABEL, kalemMap);
+  if (format === 'pdf'   || format === 'her_ikisi') _mlPdf(starred, starMap, DURUM_LABEL, kalemMap, pdfWin);
 }
 
-function _mlPdf(starred, starMap, DURUM_LABEL) {
+// Yıldızlı devrelerin malzemesini spool_malzemeleri'nden toplu çek + devre bazında topla (modal ile aynı mantık)
+// Dönüş: { devreUuid: [ {tip, aciklama, cap, malzeme, kalite, birim, miktar, ihtiyac, teslim, hazir} ] }
+async function _malzemeAggregateBatch(devreIds) {
+  var sonuc = {}; devreIds.forEach(function(id){ sonuc[id] = []; });
+  var supa = (typeof ARES !== 'undefined') ? ARES.supabase() : null;
+  if (!supa || !devreIds.length) return sonuc;
+  var sp = await supa.from('spooller').select('id, devre_id').in('devre_id', devreIds);
+  var spoolDevre = {}; var spoolIds = [];
+  (sp.data || []).forEach(function(s){ spoolDevre[s.id] = s.devre_id; spoolIds.push(s.id); });
+  if (!spoolIds.length) return sonuc;
+  var pm = await supa.from('spool_malzemeleri')
+    .select('spool_id, kod, tanim, aciklama, malzeme, kalite, tip, dis_cap_mm, et_mm, adet, teslim_adet')
+    .in('spool_id', spoolIds);
+  var grupDevre = {};
+  (pm.data || []).forEach(function(r){
+    var devreId = spoolDevre[r.spool_id]; if (!devreId) return;
+    if (!grupDevre[devreId]) grupDevre[devreId] = {};
+    var g = grupDevre[devreId];
+    var key = [r.tip||'', r.dis_cap_mm||'', r.et_mm||'', r.malzeme||'', r.kalite||''].join('|');
+    if (!g[key]) {
+      g[key] = {
+        tip:      r.tip || 'malzeme',
+        aciklama: r.tanim || r.aciklama || r.kod || '—',
+        cap:      r.dis_cap_mm ? String(r.dis_cap_mm) : null,
+        malzeme:  r.malzeme || '—',
+        kalite:   r.kalite  || '—',
+        birim:    'adet',
+        ihtiyac:  0, teslim: 0
+      };
+    }
+    g[key].ihtiyac += Number(r.adet) || 0;
+    g[key].teslim  += Number(r.teslim_adet) || 0;
+  });
+  devreIds.forEach(function(id){
+    var g = grupDevre[id] || {};
+    sonuc[id] = Object.keys(g).map(function(k){
+      var kalem = g[k];
+      kalem.miktar = kalem.ihtiyac;
+      kalem.hazir  = kalem.teslim > 0 && kalem.teslim >= kalem.ihtiyac;
+      return kalem;
+    });
+  });
+  return sonuc;
+}
+
+function _mlPdf(starred, starMap, DURUM_LABEL, kalemMap, pdfWin) {
   var DURUM_RENK = {1:'#e53e3e', 2:'#d97706', 3:'#16a36e'};
   var tarihStr = new Date().toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'});
 
   // İçerik — yıldız durumuna göre
   function devreIcerik(d) {
-    var kalemler = []; // STUB: toplu çekim listesi henüz spool_malzemeleri'nden doldurulmuyor (mobil/Sekme-2 işi)
+    var kalemler = (kalemMap && kalemMap[d.supaId]) || [];
     var state = starMap[d.supaId];
     var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
     var toplam = kalemler.length;
@@ -2247,7 +2300,7 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
 
   // Yeşil yıldızlıları listeden çıkar
   var liste = starred.filter(function(d) { return starMap[d.supaId] !== 3; });
-  if (!liste.length) { showToast('Tüm devreler hazır — eksik malzeme yok', 'info'); return; }
+  if (!liste.length) { showToast('Tüm devreler hazır — eksik malzeme yok', 'info'); if (pdfWin) pdfWin.close(); return; }
 
   // Devre kartları
   var kartlar = liste.map(function(d, idx) {
@@ -2274,8 +2327,9 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
     '</div>';
   }).join('');
 
-  var w = window.open('', '_blank', 'width=900,height=700');
+  var w = pdfWin || window.open('', '_blank', 'width=900,height=700');
   if (!w) { showToast('Popup engellendi — tarayıcı izni gerekli', 'error'); return; }
+  w.document.open();
 
   w.document.write('<!DOCTYPE html><html lang="tr"><head>' +
     '<meta charset="UTF-8">' +
@@ -2338,13 +2392,13 @@ function _mlPdf(starred, starMap, DURUM_LABEL) {
   w.document.close();
 }
 
-function _mlExcel(starred, starMap, DURUM_LABEL) {
+function _mlExcel(starred, starMap, DURUM_LABEL, kalemMap) {
   if (typeof XLSX === 'undefined') { showToast('Excel kütüphanesi yüklenemedi', 'error'); return; }
   try {
     var wb = XLSX.utils.book_new();
     var rows1 = [['#','Is Emri','Gemi','Devre','Zone','Spool','Agirlik (kg)','Malzeme Durumu','Tamamlanan','Toplam Kalem']];
     starred.forEach(function(d, i) {
-      var kalemler = [];
+      var kalemler = (kalemMap && kalemMap[d.supaId]) || [];
       var hazir = kalemler.filter(function(k) { return k.hazir; }).length;
       rows1.push([i+1, d.isEmri, d.projeNo, d.devre, d.zone, d.spool, Math.round(d.agirlik), DURUM_LABEL[starMap[d.supaId]] || '', hazir, kalemler.length]);
     });
@@ -2353,7 +2407,7 @@ function _mlExcel(starred, starMap, DURUM_LABEL) {
     XLSX.utils.book_append_sheet(wb, ws1, 'Ozet');
     var rows2 = [['Is Emri','Gemi','Devre','Kalem No','Tip','Aciklama','Dis Cap (mm)','Malzeme','Kalite','Miktar','Birim','Durum']];
     starred.forEach(function(d) {
-      var kalemler = [];
+      var kalemler = (kalemMap && kalemMap[d.supaId]) || [];
       var state = starMap[d.supaId];
       var hazirEx = kalemler.filter(function(k) { return k.hazir; }).length;
       var tamamEx = (state === 3) || (kalemler.length > 0 && hazirEx === kalemler.length);
