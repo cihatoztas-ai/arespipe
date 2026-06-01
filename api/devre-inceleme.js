@@ -97,22 +97,33 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
 
     const ps = kay.parse_sonuc;
 
-    // ── MONTAJ dalı: pipeline = dosya adı kökü (montajDosyaKok); spool'lar = montaj.spool_listesi.
+    // ── 138/B(b) MONTAJ BELGE dalı: dosya adından DETERMİNİSTİK tespit (AI yok, MK-49.1 korunur).
+    //   S-segmentsiz "*.1.pdf" montaj/genel çizimdir: dosyaAdiParse null AMA montajDosyaKok dolu.
+    //   Spool çetelesine GİRMEZ → 🟠 Fazla üretmez. İçerik (montaj{}) varsa spool_listesi anahtara
+    //   çevrilir (bağlı spool'lar görünür); yoksa (bayat cache) dosya adından montaj, icerik_okundu=false.
+    const _mkok = montajDosyaKok(dosyaAdi);
+    const _dpMontaj = dosyaAdiParse(dosyaAdi);
+    if (_mkok && !_dpMontaj) {
+      const liste = (ps.montaj && Array.isArray(ps.montaj.spool_listesi)) ? ps.montaj.spool_listesi : [];
+      izometriler.push({
+        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
+        montaj_belge: true,
+        montaj_icerik_okundu: !!(ps.montaj && liste.length > 0),
+        anahtarlar: liste.map((sp) => ({ pipeline: _mkok, spoolNo: sp })),
+      });
+      continue;
+    }
+
+    // ── MONTAJ (parse içeriği) dalı: nadiren S-segmentli ama montaj{} taşıyan PDF.
     if (ps.montaj) {
       const kok = montajDosyaKok(dosyaAdi);
       const liste = Array.isArray(ps.montaj.spool_listesi) ? ps.montaj.spool_listesi : [];
-      if (!kok || liste.length === 0) {
-        izometriler.push({
-          dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
-          anahtarlar: [], anahtar_yok_sebep: !kok ? 'montaj_pipeline_yok' : 'montaj_spool_listesi_bos',
-        });
-      } else {
-        izometriler.push({
-          dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
-          anahtarlar: liste.map((s) => ({ pipeline: kok, spoolNo: s })),
-          seviye: null, guven: null, bindirme_flag: false, kritik_uyari: false,   // montajda bindirme yok
-        });
-      }
+      izometriler.push({
+        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
+        montaj_belge: true,
+        montaj_icerik_okundu: !!(kok && liste.length > 0),
+        anahtarlar: (kok ? liste.map((sp) => ({ pipeline: kok, spoolNo: sp })) : []),
+      });
       continue;
     }
 

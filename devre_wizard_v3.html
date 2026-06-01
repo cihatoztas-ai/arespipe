@@ -825,7 +825,7 @@ async function inceleGetir() {
 }
 
 function renderInceleme(j) {
-  var sp = j.spoollar || [], fz = j.fazla || [], oz = j.ozet || {};
+  var sp = j.spoollar || [], fz = j.fazla || [], mn = j.montajlar || [], oz = j.ozet || {};
   // Özet şeridi
   setTxt('pToplam', oz.toplam != null ? oz.toplam : sp.length);
   setTxt('pOk', oz.okundu || 0); setTxt('pZayif', oz.zayif || 0);
@@ -863,6 +863,20 @@ function renderInceleme(j) {
       '<td>' + mbadge('fazla') + '</td><td><span class="izo">' + esc(f.dosya_adi || '') + '</span></td>' +
       '<td><button class="btn-sm" style="color:var(--co);" onclick="event.stopPropagation();toast(\'Spool ekleme: sonraki faz\')">Spool ekle?</button> <button class="btn-sm" style="color:var(--txm);" onclick="event.stopPropagation();toast(\'Yoksayıldı\')">Yoksay</button></td></tr>';
   });
+  // 138/B(b): MONTAJ ÇİZİMLERİ — ayrı bölüm. Spool DEĞİL → turuncu Fazla yerine nötr bilgi satırı.
+  if (mn.length) {
+    html += '<tr><td colspan="14" style="padding:10px 8px 4px;color:var(--txm);font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-top:1px solid var(--bd);">Montaj / genel çizimler (' + mn.length + ') — spool değil, ilgili spool\'lara bağlanır</td></tr>';
+    mn.forEach(function(m) {
+      var bagliTxt = (m.bagli_spoollar && m.bagli_spoollar.length)
+        ? (m.bagli_spoollar.length + ' spool\'a bağlı (' + esc(m.bagli_spoollar.join(', ')) + ')')
+        : (m.icerik_okundu ? 'eşleşen spool yok' : '<span style="color:var(--txd);">dosya adından tanındı (içerik okunamadı)</span>');
+      html += '<tr style="opacity:.92;">' +
+        '<td style="color:var(--txd);font-size:12px;">⛬</td>' +
+        '<td colspan="11" style="color:var(--txm);"><span class="izo">' + esc(m.dosya_adi || '') + '</span> · ' + bagliTxt + '</td>' +
+        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:var(--bd);color:var(--txm);font-size:11px;">montaj</span></td>' +
+        '<td>—</td></tr>';
+    });
+  }
   if (!html) html = '<tr><td colspan="14" style="text-align:center;color:var(--txd);padding:20px;">Kabuk boş — BOM Excel parse sonucu okunamadı.</td></tr>';
   document.getElementById('spoolBody').innerHTML = html;
 }
