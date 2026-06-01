@@ -19,11 +19,15 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { eslestir, normSpoolNo, normPipeline, dosyaAdiParse } from './kuyruk-isle-izometri.js';
-// 140: malzeme-kutuphane backfill cekirdegi + olcu motorlari (isomorphic, globalThis'e yazar).
-//   Sira onemli: ares-asme (ARES_BORU) ONCE, sonra ares-olcu (onu cagirir).
-import '../ares-asme.js';
-import '../ares-olcu.js';
-import { eslesmeAnahtari } from '../lib/malzeme-kutuphane-eslesme.js';
+// 140/MK-140.x: ares-asme/ares-olcu/eslesme-cekirdegi CommonJS (module.exports + IIFE).
+//   ESM `import` ile yuklenince Vercel'de module/require scope catismasi -> FUNCTION_INVOCATION_FAILED.
+//   Cozum: createRequire ile CJS yolundan yukle (IIFE guard'lari dogru calisir, globalThis'e yazar).
+//   ares-normalize'a DOKUNULMAZ. Sira: ares-asme (ARES_BORU) ONCE, sonra ares-olcu.
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+require('../ares-asme.js');   // globalThis.ARES_BORU
+require('../ares-olcu.js');   // globalThis.ARES_OLCU
+const { eslesmeAnahtari } = require('../lib/malzeme-kutuphane-eslesme.js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
