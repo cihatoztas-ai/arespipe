@@ -141,7 +141,7 @@
       <div class="page-title">Devre Yükle</div>
     </div>
     <div>
-      <button class="btn-outline" onclick="if(confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) location.href='devreler.html'">İptal</button>
+      <button class="btn-outline" onclick="wizardIptal()">İptal</button>
     </div>
   </div>
 
@@ -208,7 +208,7 @@
 
     <div class="actions">
       <span id="devamNot" class="lock-note">⚠ Önce klasör yükle (Excel kabuğu kurulmalı)</span>
-      <button class="btn ghost" onclick="location.href='devreler.html'">İptal</button>
+      <button class="btn ghost" onclick="wizardIptal()">İptal</button>
       <button id="btnBekleme" class="btn ghost" disabled onclick="beklemeyeAl()">⏸ Beklemeye Al</button>
       <button id="btnIncele" class="btn pri" disabled onclick="inceleBaslat()">İncele →</button>
     </div>
@@ -1091,6 +1091,23 @@ function markaCellMetin(s) {
   return [WIZ.proje_no, s.pipeline, s.spoolNo].filter(function(x){ return x; }).join('-');
 }
 function duzeltKapat() { document.getElementById('duzeltOverlay').classList.add('hide'); }
+
+// ── 138/B1: İptal — terfi olmamış taslağı soft-delete et (silindi=true), sonra çık. ──
+//   Taslak inceleBaslat'ta oluşuyor (devre_id + dökümanlar yazılıyor); onaylanmadan çıkılırsa
+//   yetim kalıyordu. silindi=true → devreler.html applyFilters (neq silindi true) anında gizler.
+//   Hard-delete + storage temizliği YOK (yeni endpoint gerektirir, MK-129.3 tavanı; toplu cleanup ileride).
+//   Terfi edilmişse (durum='aktif') DOKUNMA — sadece çık.
+async function wizardIptal() {
+  if (!confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) return;
+  try {
+    if (WIZ.devre_id) {
+      var supa = ARES.supabase(), tid = ARES.tenantId();
+      await supa.from('devreler').update({ silindi: true })
+        .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak');   // yalnız taslak; aktife dokunma
+    }
+  } catch (e) { console.error('[v3] iptal soft-delete:', e); }   // best-effort; çıkışı engelleme
+  location.href = 'devreler.html';
+}
 
 // ── Onay → terfi (KORUMA-1: ARES_KABUK.grupla + ARES_KABUK.aktar) ──
 function onayAc() {

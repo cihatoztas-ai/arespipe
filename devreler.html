@@ -1233,6 +1233,7 @@ async function sorgulaVeGoster() {
 
   function applyFilters(q, devreIds) {
     q = q.neq('silindi', true).eq('tenant_id', ARES.tenantId());
+    q = q.neq('durum', 'taslak');   // 138/A: taslaklar Aktif Devreler'de gorunmez (terfide 'aktif' olur)
     if (proje && _projeIdMap[proje]) q = q.eq('proje_id', _projeIdMap[proje]);
     if (firma) {
       var ids = _firmaProjeIds[firma] || [];
