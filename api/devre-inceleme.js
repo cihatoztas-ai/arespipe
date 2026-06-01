@@ -53,6 +53,30 @@ function kabukBindirHedef(sp) {
  * @param kabukSpoollar grupla().spoollar
  */
 export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
+  // 138/A: ayni dosya_adi icin birden cok kuyruk kaydi (tekrar yukleme/yeniden-parse) olusabilir.
+  //   En bilgilendirici kaydi sec; bos kopyalar Fazla (turuncu) uretmesin. Terfide de tek kanonik
+  //   kayit eslesir (montaj dali). Skor: montaj{} 3 > spoollar dolu 2 > islendi 1 > bos 0.
+  //   Esitlikte ilk gelen kalir. Adsiz kayitlar gruplanmaz, oldugu gibi gecer (gorunurluk korunur).
+  const _ad = (kay) => ((kay && (kay.dosya_adi || (kay.parse_sonuc && kay.parse_sonuc.dosya_adi))) || '').toString().trim().toUpperCase();
+  const _skor = (kay) => {
+    const ps = kay && kay.parse_sonuc;
+    if (!ps) return 0;
+    if (ps.montaj) return 3;
+    if (Array.isArray(ps.spoollar) && ps.spoollar.length > 0) return 2;
+    if (kay.islendi) return 1;
+    return 0;
+  };
+  const _enIyi = new Map();
+  const _adsiz = [];
+  for (const _k of (izoKayitlar || [])) {
+    const ad = _ad(_k);
+    if (!ad) { _adsiz.push(_k); continue; }
+    const sk = _skor(_k);
+    const onceki = _enIyi.get(ad);
+    if (!onceki || sk > onceki.s) _enIyi.set(ad, { kay: _k, s: sk });
+  }
+  const calisilacak = Array.from(_enIyi.values(), (v) => v.kay).concat(_adsiz);
+
   // Kabuk anahtar → bindir hedefi (ağırlık/yüzey çelişki kıyası için)
   const kabukMap = new Map();
   for (const sp of (kabukSpoollar || [])) {
@@ -62,7 +86,7 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
 
   const izometriler = [];
 
-  for (const kay of (izoKayitlar || [])) {
+  for (const kay of calisilacak) {
     const dosyaAdi = kay.dosya_adi || (kay.parse_sonuc && kay.parse_sonuc.dosya_adi) || null;
 
     // Henüz işlenmemiş → drenaj sürecek; isleniyor sayılır (anahtar yok).
