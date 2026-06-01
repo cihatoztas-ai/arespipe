@@ -63,7 +63,7 @@
 
   // ── GRUPLA: parse_sonuc.satirlar → gruplu spool modeli (gruplama + aynı özellikteki kalemleri topla)
   //    (devre_detay._onayGrupla AYNEN). ps: { satirlar:[...], secilen, guven }
-  //    Dönen: { spoollar:[{pipeline,spoolNo,rev,anaMalzeme,toplamKg,bom:[...]}], atanmamis, secilenSayfa, guven }
+  //    Dönen: { spoollar:[{pipeline,spoolNo,rev,anaMalzeme,toplamKg,cap,et,yuzeyHam,bom:[...]}], atanmamis, secilenSayfa, guven }
   function grupla(ps){
     var rows=ps.satirlar||[];
     function tipBelirle(tanim){
@@ -106,7 +106,14 @@
       var mc={};s.kalemler.forEach(function(r){if(r.malzeme){mc[r.malzeme]=(mc[r.malzeme]||0)+1;}});
       var anaMalzeme=Object.keys(mc).sort(function(a,b){return mc[b]-mc[a];})[0]||'';
       var topKg=s.kalemler.reduce(function(t,r){return t+(parseFloat(r.agirlik_kg)||0);},0);
-      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:konsolide(s.kalemler)};
+      var bom=konsolide(s.kalemler);
+      // 139/MK-139.1: çap/et spool BAŞLIĞINDA türet (taslak=terfi). aktar()'daki (satır 174-175) anaBoru→boyutParse
+      //   AYNEN buraya taşındı — tek kaynak. Önce yalnız aktar()'da koşuyordu → grupla başlığı cap'siz kalıyor,
+      //   wizard inceleme modalı s.cap/s.et okuyup "—" gösteriyor, terfide doluyor ("canlıya geçince çap çıkıyor"
+      //   sürprizi). Şimdi taslak önizleme = terfi. boyutParse ARES_OLCU yoksa {null,null} döner (zararsız guard).
+      var anaBoru=bom.filter(function(b){return b.tip==='boru';}).sort(function(a,b){return (b.boy_mm||0)-(a.boy_mm||0);})[0];
+      var bp=boyutParse(anaBoru?anaBoru.dn:'', anaBoru?anaBoru.malzeme:'');
+      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,cap:bp.dis_cap,et:bp.et,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:bom};
     });
     return {spoollar:spoollar,atanmamis:atanmamis,secilenSayfa:ps.secilen||'',guven:ps.guven||0};
   }
