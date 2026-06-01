@@ -1,46 +1,23 @@
-# Oturum 139 — B-çap kapanışı + operatör düzeltme döngüsü tasarım turu
+# CLAUDE — 140. Oturum Özeti
 
-Oturum iki somut işle başladı, bir tasarım turuyla bitti. Kural boyunca korundu: körlemesine yazma yok,
-her adım koşan kod/DB kanıtıyla, kod öncesi mimari doküman (MK-126.8 / MK-129'dan beri açık doküman borcu).
+**Tek cümle:** §13.7 teşhisi mühürlendi (matcher akışta yok), mm-kanonik eşleşme çekirdeği + backfill yazıldı; backfill runtime'ı (Vercel 500) açık borç olarak 141'e devredildi.
 
-## 1. B-çap sürprizi — ÇÖZÜLDÜ (MK-139.1)
-138'de kök bulunup 139'a bırakılmıştı. Fix planlı görünüyordu (grupla'ya türetme ekle) ama **iki parça**
-çıktı ve ikincisi ancak dosyalar tek tek okununca ortaya çıktı:
-- `ares-kabuk.js grupla()` spool başlığına cap/et yazmıyordu (türetme yalnız `aktar()`/terfide).
-- `lib/izo-eslesme.js incelemeTablosu` çıktı spool'unu **whitelist** ediyor (spread değil) → grupla
-  düzelse bile endpoint cap/et'i atıyor.
-Üç tur kısmi-kanıttan-yanlış-çıkarım yaşandı (endpoint "geçiriyor" → satır 42 "çıktı çapı" → asıl whitelist
-izo-eslesme'de), her biri bir sonraki dosyayla düzeltildi. **Ders:** MK-126.8 tam burada işe yaradı —
-endpoint/lib görülmeden mühürlenseydi yanlış olurdu. Kabuk spool'unun çıktıya taşınan alanları tek noktada
-(`incelemeTablosu` iki return dalı) belirleniyor.
-Fix: grupla'ya `aktar()` ile birebir türetme; incelemeTablosu iki dalda cap/et. Container'da node --check ×2 +
-orijinal self-test + uçtan uca halka testi. commit `862e965`, CI yeşil, Vercel Ready.
+## Akış
+- Açılış: BRIEFING bayat (138), Cihat kapanışa erteledi; 139 handoff'tan devam.
+- §13.7 teşhis turu (kod yok, sadece okuma+DB kanıtı): üç kez hipotez çürütüldü, kök "bağlama katmanı yok" + "kapsam dar" olarak mühürlendi.
+- 097 slip-on migration yazıldı → mevcut convention'la mükerrer çıkınca **iptal** (DB'yi önce okumama hatam; MK-126.8 ihlali, düzeltildi).
+- Cihat yönü düzeltti: kütüphane doldurma (C) değil, **matcher (A)** asıl tıkanan. C arka plana.
+- Çekirdek mm-kanonik yazıldı (Cihat'ın "her şey mm" netleştirmesiyle dn→mm düzeltildi), 4 format test yeşil.
+- Backfill `tip=malzeme` dalı eklendi (kardeş endpoint). Deploy → dry-run 500. createRequire fix → yine 500. Stack alınamadı (log timeout). Kapatıldı.
 
-## 2. PARSER dokümanı — Bölüm 13 + yol haritası
-Cihat dokümanı önce hazırlamak istedi (doğru — 129 borcu). Mevcut 1029 satıra cerrahi ekleme: Bölüm 13
-(operatör düzeltme döngüsü vizyonu, G2/G3/G4 var-yok kod kanıtıyla, Q1-Q6 karar), §12.2 ÇÖZÜLDÜ, banner 139.
-commit `4a5798f`. Sonra Cihat üç-faz yol haritasını netleştirdi → 0.0 bölümü.
+## Kararlar
+- MK-140.1: §13.7 kök = matcher yok (+ kapsam dar). Kanıt FK sayıları + zaman damgaları + grep.
+- MK-140.2: 097 iptal (mevcut EN-T01 convention'la mükerrer). Yeni flanş verisi gerekmez; karbon zaten dolu.
+- MK-140.3: matcher mm-kanonik (ares-olcu çıktısı), dn değil. ARES_NORM'a dokunma (malzeme kolonu normalize).
+- MK-140.4: backfill ayrı endpoint değil, `eslestirme-backfill.js` `tip=malzeme` dalı (12/12 korunur).
 
-## 3. Tasarım turu (kod yok)
-- **Q5 (popup düzeltme nereye):** Cihat "doğru olan neresi sence" dedi. Öneri+gerekçeyle **ayrı taslak-düzeltme
-  tablosu** seçildi; döngü (yayılma) kalıcı+sorgulanabilir düzeltme istediği için. Dokümana KARAR olarak işlendi.
-- **Q2 (değer mi kural mı):** türe göre ayırma önerildi (Tür A glyph=kural/$0, Tür B değer=o spool). Cihat
-  karar yerine **"neredeyiz/ne kalmış"ı görmek** istedi → Q2 140'a bırakıldı.
-- **Yol haritası (Cihat):** Faz 1 yapısal tamamlama → Faz 2 Tersan doygunluk testi → Faz 3 formatlar.
-
-## 4. Yeni teşhis borcu
-Cihat: "kütüphane var ama yüklenen malzemeler hiç tanınmıyor — wizard yaparken kopukluk oldu." Kök BİLİNMİYOR;
-tahmin yapılmadı. Teşhis planı §13.7'ye yazıldı, 140 ilk iş.
-
-## Süreç notu
-B-çap'ta üç patch container'da gerçek dosya kopyasında node --check + birim/halka testten geçti, MD5'le
-transfer edildi. Terminal yapıştırmada `#` yorum + `<placeholder>` zsh hatalarına yol açtı (benim yorumlu/
-placeholder'lı blok hatam) — çıplak komuta dönüldü. `arespipe_kopyala` üç argüman ister (kaynak/hedef/md5);
-ilk iki-argümanlı denemede sessizce kopyalamadı, MD5 yakaladı.
-
-## Mühür
-MK-139.1 (B-çap iki-parça fix; taslak=terfi). Q5 KARAR (ayrı taslak-düzeltme tablosu). Bölüm 13 + 0.0
-tasarım turu — Q1-Q4/Q6 açık.
-
-## 140 ilk iş
-Malzeme↔kütüphane tanıma kopukluğu TEŞHİSİ (§13.7) — kod yok, okuma turu. Sonra Q2 + G2a.
+## Hatalarım (kayıt)
+- `flansh_olculer`'ı boş varsayıp 097'yi DB okumadan yazdım (MK-126.8). Düzeltildi: iptal.
+- Matcher'ı dn'e bağladım; tasarım mm-kanonik. Düzeltildi.
+- Çok satırlı terminal yorumlarında parantez → zsh parse error (kendi kuralım). Tekrar etmemeli.
+- createRequire fix'ini stack görmeden yazdım; tutmadı. 141: önce log.

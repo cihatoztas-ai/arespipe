@@ -1,61 +1,43 @@
-# Oturum 140 — Malzeme↔kütüphane tanıma kopukluğu teşhisi + (Q2 kararı) + (varsa) G2a başlangıcı
+# CLAUDE — 141. Oturum Girişi
 
-## Açılış ritüeli
-Git pull/status/log → CI rengi (139 son kod commit'i = B-çap `862e965`, yeşil teyitli) →
-`son-durum.md` (139) + `CLAUDE-SON-OTURUM.md` (139) + bu dosya → KARARLAR **MK-139.1** (mühürlenmediyse işle) →
-gündem teyidi. **Function sayımı (MK-129.3):** `ls api/*.js | wc -l` → 12. 140'ta da yeni endpoint YOK hedefi.
+## İLK İŞ: backfill runtime 500'ünü çöz (stack ÖNCE, tahmin YOK)
+Dry-run komutu:
+```
+curl -s -i -X POST https://arespipe.vercel.app/api/eslestirme-backfill -H 'Content-Type: application/json' -d '{"tip":"malzeme","tenant_id":"00000000-0000-0000-0000-000000000001","kuru":true}'
+```
+Şu an: `HTTP 500 FUNCTION_INVOCATION_FAILED` (düz metin = modül-yükleme seviyesi, handler'a girmeden).
 
-## 139 nerede bıraktı
-- **B-çap ÇÖZÜLDÜ** (MK-139.1, `862e965`): taslak modal çapı terfi etmeden gösteriyor. CI yeşil, Vercel Ready.
-  Canlı görsel teyit Cihat'a kaldı (bir taslak devre incele → çap dolu mu).
-- **PARSER doküman** güncel: Bölüm 13 (operatör düzeltme döngüsü) + 0.0 üç-faz yol haritası + Q5 KARAR +
-  13.7 malzeme-kütüphane teşhis borcu.
-- **Yol haritası (Cihat):** Faz 1 yapısal tamamlama (İÇİNDEYİZ) → Faz 2 Tersan doygunluk → Faz 3 formatlar.
+### Stack'i AL (kritik — bunsuz yazma)
+- Vercel dashboard → Project → son deployment → Functions → `eslestirme-backfill` → **Runtime Logs**. EN GÜVENİLİR.
+- VEYA: `vercel logs https://arespipe.vercel.app` AÇIK pencere + **AYRI sekmede** curl → stack canlı düşer. (Tek pencerede takip modu 5dk'da kesiliyor, curl ateşlenmiyor — 140'ta bu yüzden alınamadı.)
 
-## 1. İlk iş — Malzeme↔kütüphane tanıma kopukluğu TEŞHİSİ (§13.7, kod yok)
-**Belirti (Cihat):** "Kütüphanemiz var ama yüklenen malzemeler hiç tanınmıyor — wizard kopukluğu."
-**Kök BİLİNMİYOR. TAHMİN YOK** (139 dersi: koşan koda güven; bu oturumda 3 kez kısmi-kanıttan yanlış çıkarım).
-Teşhis planı (sırayla, hepsi okuma/DB):
-1. `git ls-files | grep -iE "kutuphane|library|fitting|standart|malzeme"` → lookup kodunu bul.
-2. `ares-normalize.js` `malzemeKod`/`yuzeyKod` oku → normalize çıktı formatı.
-3. `SELECT COUNT(*)` + örnek satır → `fitting_olculer` anahtar kolonu formatı.
-4. Normalize çıktısı × kütüphane anahtarı GERÇEKTEN eşleşiyor mu — bir gerçek malzeme adıyla uçtan uca izle.
-5. Hangi katman FK'yı yazmalı ama yazmıyor → "kopukluk şurada" diye KANITLA.
-**K2 ile karıştırma:** §7.5 K2 = Excel↔PDF kıyası; bu = malzeme↔KÜTÜPHANE tanıma. Ayrı.
-Faz 2 (Tersan doygunluk) öncesi kapanmalı — malzeme tanınmadan doygunluk malzeme tarafını ölçemez.
+### Kanıtlananlar (tekrar deneme)
+- `node -e "require('./ares-asme.js')"` → OK (lokal). ares-asme require'da çökmüyor.
+- Zincir testi (yapışırken kırıldı, 141'de tek satır tekrar): `node -e "require('./ares-asme.js');require('./ares-olcu.js');const m=require('./lib/malzeme-kutuphane-eslesme.js');console.log('zincir',!!globalThis.ARES_OLCU,typeof m.eslesmeAnahtari)"` → 'zincir true function' bekleniyor.
+- createRequire fix denendi (`6fd32f7`) → 500 sürüyor. Yani kök CJS/ESM import biçiminden DAHA derin.
 
-## 2. Q2 kararı (G2a öncesi gerekli)
-Yayılma türü: **ÖNERİ** = türe ayır — Tür A (glyph/tanıma)=kural (format, anonim, $0, KARAR-48.1, =Band-B'nin
-operatör-beslemeli hâli, G3b motoru); Tür B (değer)=o spool, yayılmaz. Cihat 139'da kararı erteledi (önce
-neredeyiz görmek istedi). G2a'ya geçmeden en az bu netleşmeli. Q1 (yayılma anahtarı) Q2'ye bağlı.
+### Olası kökler (log seçecek — tahminle yazma)
+1. vercel.json `functions` runtime / `type:module` ile CJS dosya çatışması.
+2. ares-asme/ares-olcu içinde **çağrı-anı** (require değil, ilk kullanım) `window` referansı — serverless'ta patlar.
+3. supabase embed `spooller!inner(devre_id,tenant_id)` kolon/FK adı yanlış (ama bu handler-içi, 500 düz metin handler-öncesini gösteriyor → düşük olasılık).
 
-## 3. Faz 1 sıralaması (Q kararları gelince; her biri ayrı oturum)
-G2a (popup değer düzeltme, Q5 KARAR=ayrı taslak-düzeltme tablosu) → G3a (manuel yayılma, Q1/Q2) →
-G4+G3b (L3 eşiği + dedup, kural deposu olgunlaşınca). Görsel çapa G2b en sonda (ağır).
-**Q5 kod öncesi doğrula:** taslak yazmaları client-side supabase mı (inceleBaslat/wizardIptal kanıt) +
-yeni tabloya client-write RLS uygun mu. Ters çıkarsa parse_sonuc overlay'e dön.
+### Çözüm yönü (kanıta bağlı)
+- Kök import/runtime ise: server'da düzelt.
+- ares-asme server'da ısrarla sorunsa: **backfill'i browser'a taşı** (admin re-match deseni, MK-127.4 kardeşi). ARES_BORU/OLCU orada zaten yüklü+çalışıyor, ares-normalize'a dokunmadan. Server `tip=malzeme` dalını geri çek. Çekirdek (`lib/malzeme-kutuphane-eslesme.js`) aynen çağrılır.
 
-## Diğer borçlar (öncelik dışı)
-- pipeline-içi doğrulama (4.4-1) — bağımsız, istenirse araya girer.
-- Band-B glyph lookup (~10 karakter) — G3 Tür A ile birleşir.
-- kalite/alıştırma modal whitelist'te yok (render okuyor, boş) — küçük, incelemeTablosu iki dal.
-- Bayat-cache (Problem 1) — montajsız cache; acil değil.
-- (Faz 2/3) yukleyen_id · fitting kütüphane · mobil React · et/çap çelişki turu (ölçüm-önce).
+### Hedef (değişmez)
+Backfill koş (`kuru:false`) → DN300 PN16 karbon slip-on (122) `flansh_olculer_id` alır →
+```
+SELECT count(*) FROM spool_malzemeleri sm JOIN spooller s ON s.id=sm.spool_id
+WHERE s.tenant_id='00000000-0000-0000-0000-000000000001' AND sm.flansh_olculer_id IS NOT NULL;  -- 122+
+```
+spool_detay'da bir DN300 flanşı aç → standart sütunu YEŞİL → §13.7 kapanır.
 
-## KORUMA bantları
-- MK-49.1: izometri-oku.js'e DOKUNMA · MK-129.3: api/*.js = 12, yeni endpoint yok.
-- MK-139.1: grupla cap/et türetir + incelemeTablosu iki dal taşır (taslak=terfi).
-- MK-138.1/.2/.3: dosya_adi dedup · montaj deterministik + ayrı bölüm · taslak gizle + iptal soft-delete.
-- MK-126.8: yeni modül/endpoint öncesi mevcut kod+DB oku (139'da B-çap'ta üç kez kurtardı).
-- MK-101.1: arespipe_kopyala = ÜÇ argüman (kaynak hedef md5) + git status. MK-99.5: storage.objects SQL DELETE yasak.
+## SONRA
+- B: matcher'ı akışa taşı (parse/aktar sonrası), backfill kanıtlanınca. Çekirdek hazır, aynen kullanılır.
+- C (arka plan, organik): kütüphane kapsam — paslanmaz EN-1092-1 (matcher mm-eşler ama veri yok), fitting EN10253/B16.9 (elbow/reducer/tee — anahtar üretiliyor, veri yok). Süper-admin önerilerinden zamana yayılarak.
+- MK-139.1 görsel teyit: taslak incelemede çap terfi etmeden görünüyor mu.
 
-## Hatırlatmalar
-- Terminal yapıştırma: `#` yorum + `<placeholder>` + parantez = zsh hatası → çıplak komut, placeholder'sız.
-- HTML/JS'de sed yok → atomik str_replace/Python (anchor + assertion; çok-satırlı anchor'da GERÇEK dosya formatı).
-- PARSER.md'de UTF-8-olmayan bayt var (¶ benzeri) → Python ile bayt-düzeyi (rb/wb) düzenle, decode atla.
-- Doc [skip ci]; kod CI tetikler. Kod ve doc ayrı commit (MK-134.1).
-- Test verisi: Y100-St.St (NB1137/Watermist) · NB1099C 582-Sanitary (51 spool) · G200-303S.
-
----
-> 140 ilk somut adım: §13.7 teşhis planını sırayla koş → malzeme↔kütüphane kopukluğunun KÖKÜNÜ kanıtla.
-> Kod yok, okuma turu. Kök netleşince fix + Q2 + G2a sıralanır.
+## Hatırlatma
+- mm-kanonik matcher elbow `323.9x6.3` ve `2½" Sch 10S`'i de mm'e indiriyor (NULL değil) — fitting verisi dolunca eşleşir.
+- ares-normalize.js'e DOKUNMA (Cihat: çalışıyor, bozma; malzeme kolonu zaten normalize, gerekmiyor).
