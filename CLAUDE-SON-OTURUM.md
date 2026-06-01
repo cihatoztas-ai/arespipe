@@ -1,48 +1,46 @@
-# Oturum 137 — Malzeme hazırlık sistemi (web tarafı uçtan uca) + GAP 1 klasör ağacı
+# Oturum 139 — B-çap kapanışı + operatör düzeltme döngüsü tasarım turu
 
-Konu malzeme yönetimine kaydı: "devreyi imalata almadan önce malzemesi hazırlansın → personel sahada
-mobilden takip etsin → yönetici devreler tablosundan görsün." Cihat'ın tarifi okunup toparlandı; çıkan
-sistemin profesyonel karşılığı (MRP → kitting → staging → eksik raporu) teyit edildi, stok/depo bilinçli
-olarak DIŞARIDA bırakıldı (depo yazılımı ayrı, çelişmesin). Sonuç: web tarafı uçtan uca oturdu.
+Oturum iki somut işle başladı, bir tasarım turuyla bitti. Kural boyunca korundu: körlemesine yazma yok,
+her adım koşan kod/DB kanıtıyla, kod öncesi mimari doküman (MK-126.8 / MK-129'dan beri açık doküman borcu).
 
-## Bağlam — neden bu sıra
-Sistemin web tarafı meğer ~%70 kuruluymuş (4-durumlu yıldız + malzeme kontrol modalı), ama iki yapısal
-hatayla: (1) yıldız durumu localStorage'da → başka cihaz/mobil göremez; (2) modal `pipeline_malzemeleri`'nden
-okuyordu, o tablo terk edilmiş/boş — gerçek malzeme `spool_malzemeleri`'nde. İkisi de düzeltildi.
+## 1. B-çap sürprizi — ÇÖZÜLDÜ (MK-139.1)
+138'de kök bulunup 139'a bırakılmıştı. Fix planlı görünüyordu (grupla'ya türetme ekle) ama **iki parça**
+çıktı ve ikincisi ancak dosyalar tek tek okununca ortaya çıktı:
+- `ares-kabuk.js grupla()` spool başlığına cap/et yazmıyordu (türetme yalnız `aktar()`/terfide).
+- `lib/izo-eslesme.js incelemeTablosu` çıktı spool'unu **whitelist** ediyor (spread değil) → grupla
+  düzelse bile endpoint cap/et'i atıyor.
+Üç tur kısmi-kanıttan-yanlış-çıkarım yaşandı (endpoint "geçiriyor" → satır 42 "çıktı çapı" → asıl whitelist
+izo-eslesme'de), her biri bir sonraki dosyayla düzeltildi. **Ders:** MK-126.8 tam burada işe yaradı —
+endpoint/lib görülmeden mühürlenseydi yanlış olurdu. Kabuk spool'unun çıktıya taşınan alanları tek noktada
+(`incelemeTablosu` iki return dalı) belirleniyor.
+Fix: grupla'ya `aktar()` ile birebir türetme; incelemeTablosu iki dalda cap/et. Container'da node --check ×2 +
+orijinal self-test + uçtan uca halka testi. commit `862e965`, CI yeşil, Vercel Ready.
 
-## Yapılanlar
-1. **GAP 1 (wizard):** devre_wizard_v3 Adım 1 düz tablo → klasör ağacı. Kontroller fitem içinde (B),
-   eski/hariç klasör kozmetik işaret (2a). Mevcut ağaç altyapısı yeniden kullanıldı.
-2. **Migration 095 + 096:** kuyruk + teslim_adet kolonları. 095'te teslim_adet yanlışlıkla pipeline'a
-   eklenmişti; ölçümle (1750 kalem spool'da, 1 satır pipeline'da) gerçek kaynak görülüp 096 ile spool_malzemeleri'ne taşındı.
-3. **Yıldız motoru DB'ye:** localStorage → `devreler.malzeme_kuyrukta` + renk türetme. Çok-cihaz/mobil görünür.
-4. **Malzeme kaynağı spool_malzemeleri:** devre bazlı toplama (tip|çap|et|malzeme|kalite), satır-bazlı teslim,
-   kısmi (3/5) görünür, mobil kısmiyi ezmeyen kayıt (dirty-only).
-5. **Toplu çekim export:** `kalemler=[]` stub'ı gerçek batch veriye bağlandı + popup gesture fix.
-6. **Mobil 2-sekme mockup:** görsel referans (commit edilmedi), React inşasında kullanılacak.
+## 2. PARSER dokümanı — Bölüm 13 + yol haritası
+Cihat dokümanı önce hazırlamak istedi (doğru — 129 borcu). Mevcut 1029 satıra cerrahi ekleme: Bölüm 13
+(operatör düzeltme döngüsü vizyonu, G2/G3/G4 var-yok kod kanıtıyla, Q1-Q6 karar), §12.2 ÇÖZÜLDÜ, banner 139.
+commit `4a5798f`. Sonra Cihat üç-faz yol haritasını netleştirdi → 0.0 bölümü.
 
-## Kararlar / içgörüler
-- **Stok modülü yok, bilinçli:** Bu sayfa "malzemenin imalat sahasına gelmesi" (kit staging), envanter değil.
-  Depo yazılımıyla çelişmemek için sınır net. İleride gemi-bazlı BOM−teslim farkı stok kurmadan yapılabilir.
-- **Miktar bazlı başla:** boolean var/yok seni köşeye sıkıştırırdı; `teslim_adet` ile başlandı → ileride
-  rezervasyon/stok "üstüne takılır", rework olmaz. (Önerildi, Cihat onayladı.)
-- **Ölç, körlemesine yazma:** "malzeme var ama listelenmedi" → tahmin yerine COUNT'larla kök bulundu
-  (pipeline boş, spool dolu). Yanlış tablo düzeltildi. MK-126.8 ruhu.
-- **localStorage = tek-cihaz tuzağı:** Cihat'ın "başka bilgisayarda görünür mü" sorusu doğru içgüdü; motorun DB'ye taşınma gerekçesi buydu.
+## 3. Tasarım turu (kod yok)
+- **Q5 (popup düzeltme nereye):** Cihat "doğru olan neresi sence" dedi. Öneri+gerekçeyle **ayrı taslak-düzeltme
+  tablosu** seçildi; döngü (yayılma) kalıcı+sorgulanabilir düzeltme istediği için. Dokümana KARAR olarak işlendi.
+- **Q2 (değer mi kural mı):** türe göre ayırma önerildi (Tür A glyph=kural/$0, Tür B değer=o spool). Cihat
+  karar yerine **"neredeyiz/ne kalmış"ı görmek** istedi → Q2 140'a bırakıldı.
+- **Yol haritası (Cihat):** Faz 1 yapısal tamamlama → Faz 2 Tersan doygunluk testi → Faz 3 formatlar.
+
+## 4. Yeni teşhis borcu
+Cihat: "kütüphane var ama yüklenen malzemeler hiç tanınmıyor — wizard yaparken kopukluk oldu." Kök BİLİNMİYOR;
+tahmin yapılmadı. Teşhis planı §13.7'ye yazıldı, 140 ilk iş.
 
 ## Süreç notu
-Her DB değişikliği önce dry-run/ölçüm; her HTML patch öncesi gerçek kod okundu (mlKontrolAc/_mlPdf/_mlExcel
-zinciri); kaynak hatası tahminle değil 3 COUNT sorgusuyla teşhis edildi; mockup R-10 gereği koddan önce
-çizildi; mobil kısmi-teslim ezme riski fark edilip dirty-only kayıtla önlendi. node --check + MD5 her dosyada.
-MK-101.1 sessiz kayıp iki kez yakalandı (kopya MD5 tutmadı → tekrar kopyalandı).
+B-çap'ta üç patch container'da gerçek dosya kopyasında node --check + birim/halka testten geçti, MD5'le
+transfer edildi. Terminal yapıştırmada `#` yorum + `<placeholder>` zsh hatalarına yol açtı (benim yorumlu/
+placeholder'lı blok hatam) — çıplak komuta dönüldü. `arespipe_kopyala` üç argüman ister (kaynak/hedef/md5);
+ilk iki-argümanlı denemede sessizce kopyalamadı, MD5 yakaladı.
 
-## Mühürlenecek MK (KARARLAR.md'ye — 138 açılışında ya da şimdi ayrı doc commit)
-- MK-137.1: malzeme hazırlık = yıldız DB kuyruk (`devreler.malzeme_kuyrukta`), renk `spool_malzemeleri`
-  teslim/ihtiyaç toplamından türetilir, miktar bazlı (`teslim_adet`). Stok/depo modülü DIŞARIDA.
-- MK-137.2: malzeme gerçek kaynağı `spool_malzemeleri` (spool_id→devre zinciri); `pipeline_malzemeleri` terk/boş.
-  Toplama anahtarı tip|çap|et|malzeme|kalite. Teslim satır bazında, ekranda birleşik.
-- MK-137.3: web manager modalı kısmiyi ezmesin → sadece dirty kalem yazılır (mobil kısmi teslim korunur).
+## Mühür
+MK-139.1 (B-çap iki-parça fix; taslak=terfi). Q5 KARAR (ayrı taslak-düzeltme tablosu). Bölüm 13 + 0.0
+tasarım turu — Q1-Q4/Q6 açık.
 
-## Süreç
-> 138 açılışında: son-durum + bu dosya + CLAUDE-SONRAKI-OTURUM + (varsa) KARARLAR MK-137.*.
-> İlk iş: malzeme hazırlık deploy görsel teyit (export PDF/Excel gerçek veri) → eksik→Uyarılar VEYA mobil React.
+## 140 ilk iş
+Malzeme↔kütüphane tanıma kopukluğu TEŞHİSİ (§13.7) — kod yok, okuma turu. Sonra Q2 + G2a.

@@ -1,53 +1,61 @@
-# Oturum 138 — Malzeme hazırlık: eksik→Uyarılar VEYA mobil React (+ KARAR-137 mühür)
+# Oturum 140 — Malzeme↔kütüphane tanıma kopukluğu teşhisi + (Q2 kararı) + (varsa) G2a başlangıcı
 
 ## Açılış ritüeli
-Git pull/status/log → CI rengi (137 son kod commit'i = export gerçek veri, dfc6128 civarı) →
-şu dosyalar: `son-durum.md` (137), `CLAUDE-SON-OTURUM.md` (137), bu dosya → KARARLAR **MK-137.1/.2/.3**
-(henüz mühürlenmediyse önce onları KARARLAR.md'ye işle) → gündem teyidi.
-**Function sayımı (MK-129.3):** `ls api/*.js | wc -l` → 12. 138'de de yeni endpoint YOK hedefi.
+Git pull/status/log → CI rengi (139 son kod commit'i = B-çap `862e965`, yeşil teyitli) →
+`son-durum.md` (139) + `CLAUDE-SON-OTURUM.md` (139) + bu dosya → KARARLAR **MK-139.1** (mühürlenmediyse işle) →
+gündem teyidi. **Function sayımı (MK-129.3):** `ls api/*.js | wc -l` → 12. 140'ta da yeni endpoint YOK hedefi.
 
-## 137 nerede bıraktı
-- Malzeme hazırlık WEB tarafı uçtan uca çalışıyor: yıldız DB kuyruk, spool_malzemeleri kaynağı, modal +
-  toplu çekim export gerçek veri. Migration 095 + 096 uygulandı (DB + repo).
-- GAP 1 (wizard Adım 1 klasör ağacı) tamam.
-- Mobil 2-sekme mockup hazır (indirilenlerde / opsiyonel `docs/mockups/`'a commit edilebilir).
-- **Deploy görsel teyidi 137 sonunda yapılıyordu** — export PDF/Excel gerçek kalemleri basıyor mu, ilk iş doğrula.
+## 139 nerede bıraktı
+- **B-çap ÇÖZÜLDÜ** (MK-139.1, `862e965`): taslak modal çapı terfi etmeden gösteriyor. CI yeşil, Vercel Ready.
+  Canlı görsel teyit Cihat'a kaldı (bir taslak devre incele → çap dolu mu).
+- **PARSER doküman** güncel: Bölüm 13 (operatör düzeltme döngüsü) + 0.0 üç-faz yol haritası + Q5 KARAR +
+  13.7 malzeme-kütüphane teşhis borcu.
+- **Yol haritası (Cihat):** Faz 1 yapısal tamamlama (İÇİNDEYİZ) → Faz 2 Tersan doygunluk → Faz 3 formatlar.
 
-## Yapılacaklar (öncelik)
+## 1. İlk iş — Malzeme↔kütüphane tanıma kopukluğu TEŞHİSİ (§13.7, kod yok)
+**Belirti (Cihat):** "Kütüphanemiz var ama yüklenen malzemeler hiç tanınmıyor — wizard kopukluğu."
+**Kök BİLİNMİYOR. TAHMİN YOK** (139 dersi: koşan koda güven; bu oturumda 3 kez kısmi-kanıttan yanlış çıkarım).
+Teşhis planı (sırayla, hepsi okuma/DB):
+1. `git ls-files | grep -iE "kutuphane|library|fitting|standart|malzeme"` → lookup kodunu bul.
+2. `ares-normalize.js` `malzemeKod`/`yuzeyKod` oku → normalize çıktı formatı.
+3. `SELECT COUNT(*)` + örnek satır → `fitting_olculer` anahtar kolonu formatı.
+4. Normalize çıktısı × kütüphane anahtarı GERÇEKTEN eşleşiyor mu — bir gerçek malzeme adıyla uçtan uca izle.
+5. Hangi katman FK'yı yazmalı ama yazmıyor → "kopukluk şurada" diye KANITLA.
+**K2 ile karıştırma:** §7.5 K2 = Excel↔PDF kıyası; bu = malzeme↔KÜTÜPHANE tanıma. Ayrı.
+Faz 2 (Tersan doygunluk) öncesi kapanmalı — malzeme tanınmadan doygunluk malzeme tarafını ölçemez.
 
-### 1. Deploy görsel teyit (kısa)
-- Yıldızlı devre(ler) → "Malzeme Listesi" → PDF + Excel: "henüz oluşturulmadı" değil, gerçek kalem/eksik geliyor mu.
-- Yıldız çok-cihaz: bir tarayıcıda yıldızla, başka cihazda kırmızı görünüyor mu.
+## 2. Q2 kararı (G2a öncesi gerekli)
+Yayılma türü: **ÖNERİ** = türe ayır — Tür A (glyph/tanıma)=kural (format, anonim, $0, KARAR-48.1, =Band-B'nin
+operatör-beslemeli hâli, G3b motoru); Tür B (değer)=o spool, yayılmaz. Cihat 139'da kararı erteledi (önce
+neredeyiz görmek istedi). G2a'ya geçmeden en az bu netleşmeli. Q1 (yayılma anahtarı) Q2'ye bağlı.
 
-### 2. (A) Eksik → Uyarılar entegrasyonu — ORTA, dosyasız
-- Personel/yönetici bir kalemi "eksik/depoda yok" işaretleyince Uyarılar sayfasına düşsün.
-- Şu an UI'da "eksik" işareti var (modal + mockup), akış YOK. Uyarılar sayfası/şeması incelenecek (körlemesine yazma).
-- Karar gerekebilir: eksik nerede saklanır (spool_malzemeleri'ne flag mi, uyarı kaydı mı). Önce mevcut Uyarılar yapısını oku.
+## 3. Faz 1 sıralaması (Q kararları gelince; her biri ayrı oturum)
+G2a (popup değer düzeltme, Q5 KARAR=ayrı taslak-düzeltme tablosu) → G3a (manuel yayılma, Q1/Q2) →
+G4+G3b (L3 eşiği + dedup, kural deposu olgunlaşınca). Görsel çapa G2b en sonda (ağır).
+**Q5 kod öncesi doğrula:** taslak yazmaları client-side supabase mı (inceleBaslat/wizardIptal kanıt) +
+yeni tabloya client-write RLS uygun mu. Ters çıkarsa parse_sonuc overlay'e dön.
 
-### 3. (B) Mobil malzeme hazırlık React inşası — BÜYÜK
-- mockup'a göre 2 sekme (Devreler + Toplu Çekim). `mobile/` (React/Vite PWA) altına.
-- Veri: `devreler.malzeme_kuyrukta` + `spool_malzemeleri` (adet/teslim_adet), spool→devre zinciri.
-- Teslim girişi −/+ sayaç (kısmi). Mobil neredeyse boş (%2) → ilk gerçek modül, dikkatli.
-
-> Öneri: 138'de **A (eksik→Uyarılar)** ile başla — küçük, dosyasız, web sistemini tamamlar. Sonra B (mobil React) büyük blok olarak ayrı.
-
-### 4. Diğer borçlar (öncelik dışı)
-- GAP 2 (düzelt-yazma + çapa) — test dosyasına bağlı, gelince açılır.
-- 129/130 terfi-sonrası imalat-izo görünmeme · 117 yukleyen_id · pipeline doğrulama (4.4-1) · fitting (DIN 86087/ASME B16.9).
-- Toplu çekim export "yeşil hariç" davranışı: şu an state=3 devreler PDF'den çıkarılıyor (eksik odaklı) — istenirse "tam liste" modu eklenebilir.
+## Diğer borçlar (öncelik dışı)
+- pipeline-içi doğrulama (4.4-1) — bağımsız, istenirse araya girer.
+- Band-B glyph lookup (~10 karakter) — G3 Tür A ile birleşir.
+- kalite/alıştırma modal whitelist'te yok (render okuyor, boş) — küçük, incelemeTablosu iki dal.
+- Bayat-cache (Problem 1) — montajsız cache; acil değil.
+- (Faz 2/3) yukleyen_id · fitting kütüphane · mobil React · et/çap çelişki turu (ölçüm-önce).
 
 ## KORUMA bantları
-- MK-49.1: izometri-oku.js'e DOKUNMA. · MK-129.3: api/*.js = 12, yeni endpoint yok.
-- MK-137.1/.2/.3: yıldız=DB kuyruk · kaynak spool_malzemeleri (pipeline terk) · web modal dirty-only (mobil kısmiyi ezme).
-- MK-101.1: arespipe_kopyala + MD5 + git status mandatory (137'de 2 kez sessiz kayıp yakalandı).
-- MK-134.1: kod commit'i + [skip ci] doc aynı push'ta doc-HEAD'de gönderilmez.
+- MK-49.1: izometri-oku.js'e DOKUNMA · MK-129.3: api/*.js = 12, yeni endpoint yok.
+- MK-139.1: grupla cap/et türetir + incelemeTablosu iki dal taşır (taslak=terfi).
+- MK-138.1/.2/.3: dosya_adi dedup · montaj deterministik + ayrı bölüm · taslak gizle + iptal soft-delete.
+- MK-126.8: yeni modül/endpoint öncesi mevcut kod+DB oku (139'da B-çap'ta üç kez kurtardı).
+- MK-101.1: arespipe_kopyala = ÜÇ argüman (kaynak hedef md5) + git status. MK-99.5: storage.objects SQL DELETE yasak.
 
 ## Hatırlatmalar
-- sed HTML/JS'de yok → atomik str_replace/Python.
-- Çok satırlı terminal yapıştırmada `#` yorum + parantez = zsh parse error → yorumsuz, çıplak komut ver.
-- Doc [skip ci]; kod CI tetikler.
-- Test verisi: P26-184 / 7702313c-1bd1-4eef-80b5-e6a951697774 (35 malzeme kalemi, 8 spool) — malzeme modal/export testi için.
+- Terminal yapıştırma: `#` yorum + `<placeholder>` + parantez = zsh hatası → çıplak komut, placeholder'sız.
+- HTML/JS'de sed yok → atomik str_replace/Python (anchor + assertion; çok-satırlı anchor'da GERÇEK dosya formatı).
+- PARSER.md'de UTF-8-olmayan bayt var (¶ benzeri) → Python ile bayt-düzeyi (rb/wb) düzenle, decode atla.
+- Doc [skip ci]; kod CI tetikler. Kod ve doc ayrı commit (MK-134.1).
+- Test verisi: Y100-St.St (NB1137/Watermist) · NB1099C 582-Sanitary (51 spool) · G200-303S.
 
 ---
-> 138'in ilk somut adımı: deploy görsel teyit (#1) → eksik→Uyarılar (#2, A) ya da mobil React (#3, B).
-> Web malzeme sistemi tamam; kalan iki ucu (eksik akışı + mobil) bağlayınca uçtan uca biter.
+> 140 ilk somut adım: §13.7 teşhis planını sırayla koş → malzeme↔kütüphane kopukluğunun KÖKÜNÜ kanıtla.
+> Kod yok, okuma turu. Kök netleşince fix + Q2 + G2a sıralanır.
