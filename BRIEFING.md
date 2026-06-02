@@ -1,43 +1,49 @@
-# AresPipe BRIEFING — 141. Oturum Kapanışı
+# AresPipe BRIEFING — 142. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
 
 ## HEAD
-`9bef168` fix(spool_detay): flansh modal/MAP terk edilen spool_flansh_eslesme yerine FK'dan
-- `7e86e72` STANDART sutunu tip yerine FK · `ba6911c` tarayici backfill suʼper-admin sayfasi
+`b26831e` fix(142): reducer cift-cap eslesme - kucuk capla daralt (cap_kucuk_mm)
+- `b6d423a` fix(142): fitting kod hizalama - karbon ASME dili (90LR), tee Eq/Red ayrimi, ara-aci guard (3D)
+- (rebase: uzaktaki `327c65d` CI commit'i üstüne alındı, çakışma yok)
+- **DB:** migration `097_fitting_fk_backfill_142.sql` çalıştırıldı (COMMIT) — yüklenecek dosya
 
-## 141 — yapılanlar
-1. **MK-141.1 — Sunucu backfill çöktü → B PLANI.** `eslestirme-backfill` tip=malzeme dali Vercel'de modul-yukleme cokuyordu (ares-asme/ares-olcu serverless'ta patliyor, createRequire yetmedi). Stack 2 oturumdur alinamadi. Karar: backfill tek-seferlik veri isi → **tarayiciya tasindi** (MK-127.4 deseni). Server dali olu kaldi (142'de geri cekilecek mi karar).
-2. **MK-141.2 — admin/kutuphane-backfill.html.** Suʼper-admin sayfasi: ARES_OLCU/ARES_BORU+cekirdek tarayicida, RLS suʼper-admin oturumuyla cozuldu. Cekirdege browser-guard (`window.MALZEME_ESLESME`), CJS export korundu (tek kaynak MK-109.1). kutuphane.html + panel.html nav'a link. Yeni sunucu fn yok (12/12).
-3. **Backfill kostu (CANLI):** 1000 FK-bos satir, 308 anahtar, **142 lookup → 142 FK yazildi** (DB sayim 143). DN15..DN300 karbon slip-on/WN baglandi. M5 DN300 → EN-1092-1 canlida teyit + modal aciliyor.
-4. **MK-141.3 — spool_detay FK-oncelikli.** geomStandart + geomBagli + FLANSH_MAP artik tip yerine DOLU FK'ya bakar (kalem tip='fitting' ama flansh — kaynak veri yanlis). `spool_flansh_eslesme` OLU tablo (tek 41.oturum pilot kaydi) terk edildi; modal/MAP FK'dan. BORU_MAP'e dokunulmadi (runtime boruEslestir, ayri tasarim).
-5. **MK-141.4 — TESHIS: backfill kismi, IKI BUG.** Cihat yakaladi: taninan cok malzeme var, kutuphane dolu (flansh 15+ profil, fitting 897 satir) ama baglanmadi. Kanit:
-   - **BUG-A (fitting kod uyumsuzlugu, BUYUK):** cekirdek `parca_tipi:'elbow_90lr'` uretiyor; `fitting_olculer` profili `elbow_90lr|cunife:23`, ama karbon/paslanmaz fitting kutuphanede `45SW|karbon`, `90_3D|karbon` gibi FARKLI kodlarda. 897 fitting satiri, 0 baglandi. Cekirdek fitting anahtari ↔ kutuphane parca_tipi semasi UYUSMUYOR.
-   - **BUG-B (DN125 tolerans, KUCUK):** cekirdek DN125 karbon → cap_mm=141.3; kutuphane EN-T01 PN16'da 139.7 var. Fark 1.6 > tolerans ±0.6 → eslesmedi. ares-olcu DN125 mm sapmasi VEYA tolerans dar.
-   - **Paslanmaz flansh:** kutuphanede YOK (sadece karbon EN-T01 + cunife EN-T05) → C plani, dogru NULL.
+## 142 — yapılanlar (ANA İŞ: fitting bağlama, 0 → 102)
+1. **MK-142.1 — TEŞHIS: fitting HİÇ bağlanmamıştı.** Oturum başında çapraz sorgu: karbon fitting_fk=0/168, flanş 142, boru 67. Cihat "eskiden tanınıyordu" dedi → git+DB kanıtı: gördüğü **flanş+boru** idi; fitting bağı hiç kurulmamıştı. Regresyon değil, eksik. `7e86e72` (141) flanşı düzeltmişti, fitting'i bozmamıştı. Silinen dosya/kayıp veri YOK.
+2. **MK-142.2 — Çekirdek BUG-A: dil uyumsuzluğu.** `lib/malzeme-kutuphane-eslesme.js` her zaman semantik (`elbow_90lr`) + ölü `tee_reducing` üretiyordu. Kütüphane iki dil: cunife/DIN semantik, karbon/ASME native (`90LR`, `tee_eq`/`tee_red`). Düzeltme: malzeme grubuna göre elbow dili (`_elbowParcaTipi`), tee Eq/Red ayrımı, 1D→SR. → commit `b6d423a`.
+3. **MK-142.3 — Ara-açı 3D guard.** Elbow tanımda açı 45/90 dışındaysa (27°/22.5° "cut elbow") → NULL (standart fitting değil). 90LR'a bağlamak ölçüde zararsız ama 3D'de yanlış geometri (Cihat'ın gerekçesi). Veride şu an 0 ara-açı (76/76 'aci_yok'→90 varsayım). Türetme (90LR'dan + açı koru) → 3D oturumuna borç.
+4. **MK-142.4 — Reducer çift-çap (BUG değil, eksik eşleşme).** Reducer `boyut='219.1x6.3 / 114.3x4.5'` çift çaplı. Kütüphanede aynı büyük çapta birden çok meşru küçük-çap varyantı (DUPLICATE DEĞİL — silmek felaket olurdu, Cihat sezgisi doğru). Backfill tek-çapla arayıp `hit.length>1`→atlıyordu. Düzeltme: çekirdek `cap_kucuk_mm` üretir, lookup küçük çapla daraltır. → commit `b26831e`.
+5. **MK-142.5 — Backfill "her run farklı" → tek SQL (Yol A).** `admin/kutuphane-backfill.html` PostgREST `.limit()` sıralama garantisi olmadığından her çalıştırışta farklı satır yakalıyordu (kafa karıştırıcı). Karar: tarayıcı backfill BIRAKILDI (silinmedi, kullanılmıyor), çekirdek mantığı tek deterministik SQL UPDATE'e portlandı → `migrations/097`. `BEGIN...ROLLBACK` ile önce 102 doğrulandı, sonra COMMIT.
 
 ## §13.7 DURUM
-Baglama katmani KURULDU ve calisiyor (matcher→FK→render→modal uctan uca). 142 karbon flansh canli. **AMA** fitting tamamen, bazi flansh olculeri (DN125) ve paslanmaz baglanamadi — bug + kapsam. §13.7 "katman var" tarafi KAPANDI; "tum taninan baglanir" tarafi 142'ye.
+Bağlama katmanı **fitting tarafında da KAPANDI.** Karbon fitting 0 → 102 (elbow 69/76, reducer 33/71, flanş 204/290). Tek-kayıt + çift-çap + tolerans → sıfır yanlış eşleşme. Kalan bağlanmayanlar **kütüphane kapsamı** (C planı), bug değil.
 
-## AÇIK BORÇ (142 ilk is)
-- **BUG-A fitting kod kazisi (ILK IS):** cekirdek `elbow_90lr/elbow_45sr/reducer_conc/tee_eq` ↔ kutuphane `45SW/90_3D/...`. Hangisi kanonik? Kutuphane karbon fitting kodlamasi tutarsiz gorunuyor (`45SW`, `90_3D` vs cunife `elbow_90lr`). ONCE kutuphane parca_tipi semasini oku (tum distinct degerler), sonra cekirdegi/kutuphaneyi hizala. Tahminle yazma (MK-126.8).
-- **BUG-B DN125 tolerans:** ares-olcu DN125→141.3 mu 139.7 mi dogru? EN-1092-1 DN125 OD=139.7. ares-olcu'da DN125 sapmasi varsa duzelt; yoksa flansh toleransini gozden gecir (riskli, yanlis eslesme).
-- **Backfill idempotent:** iki bug duzelince admin/kutuphane-backfill.html tekrar kostur → kalanlar baglanir.
-- **tip='fitting' ama flansh = AYRI VERI BORCU:** render FK-oncelikli ile maskelendi ama tip alani yanlis (rapor/filtre/sayim etkilenebilir). Kok duzeltme ayri.
-- **Sunucu eslestirme-backfill tip=malzeme dali:** olu/cokuyor. Geri cekilsin mi (endpoint izometri'ye donsun, temizlik) yoksa dursun mu — karar 142.
-- **C plani (kapsam):** paslanmaz EN-1092-1 flansh, DN400+ slip-on, fitting karbon/paslanmaz veri. Organik, suʼper-admin.
-- **MK-139.1 gorsel teyit (taslak cap):** hala acik.
+## NEREDEYIZ (sınıf bazında, 142 canlı)
+| Sınıf | Toplam (karbon) | Bağlı | Bağlanmayan sebebi |
+|---|---|---|---|
+| Elbow | 76 | 69 | 4 SR + 3 çap kütüphanede yok |
+| Reducer | 71 | 33 | 38 varyant kütüphanede yok (114.3/76.1 ×20 dahil) |
+| Flanş | 290 | 204 | 86 organik flanş varyantı |
+| Tee | 21 | 0 | karbon tee_red kütüphanede YOK |
+| Paslanmaz fitting | 32 | 0 | paslanmaz fitting kütüphanede YOK |
+
+## AÇIK BORÇ (143 için, öncelik sırası)
+- **Migration 097 yükleme:** `migrations/097_fitting_fk_backfill_142.sql` repoya eklenip commit edilecek (zaten DB'de çalıştı; dosya tekrarlanabilirlik için).
+- **Backfill dosyası kaderi:** `admin/kutuphane-backfill.html` artık kullanılmıyor (tek-SQL kazandı). Sil mi (12-fn limiti değil, statik dosya — risk yok ama ölü kod) yoksa "acil toplu bağlama" aracı olarak dursun mu — KARAR 143.
+- **C planı (kütüphane kapsamı, organik):** karbon `tee_red`, reducer eksik varyantlar (özellikle 114.3/76.1 ×20), paslanmaz fitting, SR elbow, DN400+ flanş. Süper-admin ihtiyaç oldukça yükler ("Excel'i sömür → kütüphaneyi parça parça doldur").
+- **Ara-açı dirsek türetme (3D bağlantılı):** 27°/22.5° elbow → 90LR'dan ölçü türet + açıyı koru + 3D'ye `aci` ver. Şu an veride 0, MK-49.A (3D motoru) oturumunda tasarlanacak.
+- **tip='fitting' ama flanş = AYRI VERI BORCU (141'den devam):** render FK-öncelikli maskeliyor ama tip alanı yanlış (rapor/filtre/sayım). Kök düzeltme ayrı.
+- **MK-139.1 görsel teyit (taslak çap):** hâlâ açık.
 
 ## PLAN
-| Adim | Durum |
+| Adım | Durum |
 |---|---|
-| A·cekirdek (mm-kanonik) | ✅ repoda, test yesil |
-| A·backfill (tarayici, B plani) | ✅ calisti, 142 FK |
-| spool_detay FK-oncelikli (STANDART+modal) | ✅ canli teyit |
-| BUG-A fitting kod hizalama | ⚠ 142 ILK IS |
-| BUG-B DN125 tolerans | ⚠ 142 |
-| Backfill re-run (bug sonrasi) | bug'lar cozulunce |
-| C (kutuphane kapsam) | arka plan, organik |
+| Çekirdek fitting kod hizalama (90LR, tee, guard) | ✅ commit b6d423a |
+| Reducer çift-çap eşleşme | ✅ commit b26831e |
+| Backfill → tek deterministik SQL (097) | ✅ 102 bağlandı, canlı |
+| Migration 097 dosyalama | ⚠ 143 ilk iş (repoya commit) |
+| C planı kütüphane doldurma | arka plan, organik |
+| Ara-açı türetme | 3D oturumuna borç |
 
-## NEREDEYIZ
-Baglama katmani calisiyor, ispatlandi (142 canli). Sirada baglamanin KAPSAMI: fitting kod uyumsuzlugu cozulunce 897 satir devreye girer. Kutuphane doldurma (C) hala arka plan.
+## NEREDEYIZ — ÖZET
+Fitting bağlama bitti, 0→102 karbon fitting canlıda bağlı, doğrulandı (spool_detay A-000932 reducer STANDART=ASME B16.9). "Her run farklı" backfill kaosu deterministik SQL ile çözüldü. Sıra: 097 dosyalama + kütüphane kapsamını organik genişletme. Sistem "çalışır" — tanınan her fitting bağlanıyor, tanınmayan "kütüphanede yok" diye dürüstçe işaretleniyor.
