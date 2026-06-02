@@ -827,6 +827,30 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
   </div>
 </div>
 
+<!-- 144 Commit 2: KALEM DÜZENLE MODAL (BOM rötuşu, tip-uyarlamalı, basit tanım) -->
+<div class="mov" id="malzDuzenleModal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="mbox" style="max-width:560px;">
+    <div class="mhead"><span class="mtitle">✏️ Malzeme Kalemi Düzenle</span><button class="mclose" onclick="this.closest('.mov').style.display='none'">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="me_id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="fg"><label class="fl">Tip</label><select class="fi" id="me_tip" onchange="malzDuzenleTipVis()"><option value="boru">Boru</option><option value="fitting">Fitting (dirsek/te/redüksiyon)</option><option value="flansh">Flanş</option><option value="malzeme">Diğer</option></select></div>
+        <div class="fg"><label class="fl">Kod</label><input class="fi" id="me_kod" placeholder="M1"></div>
+        <div class="fg" style="grid-column:1/3;"><label class="fl">Açıklama</label><input class="fi" id="me_ac" placeholder="Pipe Seamless Steel Tube"></div>
+        <div class="fg"><label class="fl">Malzeme</label><select class="fi" id="me_malz"><option value="">Seçin...</option><option value="karbon">Karbon Çelik</option><option value="paslanmaz">Paslanmaz</option><option value="alum">Alüminyum</option><option value="bakir">Bakır Alaşım</option><option value="diger">Diğer</option></select></div>
+        <div class="fg"><label class="fl">Kalite / Standart</label><input class="fi" id="me_kal" list="kaliteListe" placeholder="St37, 316L, A106-B" autocomplete="off"></div>
+        <div class="fg"><label class="fl">Dış Çap (mm)</label><input class="fi" id="me_cap" inputmode="decimal" placeholder="219,1"></div>
+        <div class="fg" id="me_et_grup"><label class="fl">Et (mm)</label><input class="fi" id="me_et" inputmode="decimal" placeholder="6,3"></div>
+        <div class="fg" id="me_boy_grup"><label class="fl">Boy (mm)</label><input class="fi" id="me_boy" inputmode="decimal" placeholder="3897,4"></div>
+        <div class="fg"><label class="fl">Adet</label><input class="fi" id="me_adet" inputmode="numeric" placeholder="1"></div>
+        <div class="fg"><label class="fl">Ağırlık (kg)</label><input class="fi" id="me_agr" inputmode="decimal" placeholder="128,85"></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--txd);line-height:1.5;">Manuel düzeltme kütüphane eşleştirmesini kaldırır (basit tanım — fiziksel ölçü üretime gider). Düzeltilen kalemler "✎ Düzeltildi" damgası taşır.</div>
+    </div>
+    <div class="mfoot"><button class="btn" onclick="this.closest('.mov').style.display='none'">İptal</button><button class="btn btn-ac" onclick="malzDuzenleKaydet()">Kaydet</button></div>
+  </div>
+</div>
+
 <!-- KESİM MODAL -->
 <div class="mov" id="kesimModal" onclick="if(event.target===this)this.style.display='none'">
   <div class="mbox" style="max-width:500px;">
@@ -1001,7 +1025,7 @@ async function spoolYukle(supaId) {
     // ✅ FIX: devreler join eklendi — devre_no + ad + proje + tersane
     var res = await supa
       .from('spooller')
-      .select('*, spool_malzemeleri(id,tip,tanim,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),fitting_lib:fitting_olculer_id(geometri_std),flansh_lib:flansh_olculer_id(geometri_std),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad))), montaj_json')
+      .select('*, spool_malzemeleri(id,kod,tip,tanim,aciklama,adet,malzeme,kalite,dis_cap_mm,et_mm,boy_mm,agirlik_kg,guncelleme,sertifikali,heat_no,malzeme_ref_id,boru_olculer_id,fitting_olculer_id,flansh_olculer_id,uc_a_islemi,uc_b_islemi,uc_a_aciklama,uc_b_aciklama,uc_a_std,uc_b_std,malzeme_tanimlari(kategori_kod,kalite_kod,kalite_goster,standart,tenant_id),boru_lib:boru_olculer_id(standart,schedule_kod),fitting_lib:fitting_olculer_id(geometri_std),flansh_lib:flansh_olculer_id(geometri_std),uc_a_tip:uc_a_islemi(ad_tr,varsayilan_std),uc_b_tip:uc_b_islemi(ad_tr,varsayilan_std)), fotograflar(id,dosya_url,baslik,aciklama,yukleyen_id,yapan_id,olusturma,ai_skor,ai_durum,ai_uyari,ai_analiz,annotasyonlar), belgeler(*), devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(ad,kisa_ad))), montaj_json')
       .eq('id', supaId)
       .single();
 
@@ -1192,7 +1216,10 @@ async function spoolYukle(supaId) {
         tip_raw:        m.tip       || '',
         dis_cap_mm_raw: m.dis_cap_mm,
         et_mm_raw:      m.et_mm,
-        kalite_raw:     m.kalite    || ''
+        kalite_raw:     m.kalite    || '',
+        boy_mm_raw:     m.boy_mm,
+        agirlik_kg_raw: agr_gercek,
+        guncelleme:     m.guncelleme || null
       };
     });
 
@@ -2429,7 +2456,9 @@ function renderMalzeme(){
     +(ucIslemiSatiri
       ? '<td style="text-align:center;color:var(--txd);" title="Uç işlemi — Sertifika parent boruda">—</td>'
       : '<td style="text-align:center;"><input type="checkbox"'+(m.sert?' checked':'')+' data-mid="'+esc(m.id)+'" onclick="event.stopPropagation()" onchange="sertToggle(this.dataset.mid,this.checked)" style="width:14px;height:14px;accent-color:var(--gr);cursor:pointer;"></td>')
-    +'<td><button data-eid="'+esc(m.id)+'" onclick="event.stopPropagation();malzSil(this.dataset.eid)" class="ctx ctx-re" title="Sil">✕</button></td></tr>';
+    +'<td style="white-space:nowrap;">'
+    +(ucIslemiSatiri?'':'<button data-eid="'+esc(m.id)+'" onclick="event.stopPropagation();malzDuzenleAc(this.dataset.eid)" class="ctx" title="Düzenle" style="margin-right:3px;">✏️</button>')
+    +'<button data-eid="'+esc(m.id)+'" onclick="event.stopPropagation();malzSil(this.dataset.eid)" class="ctx ctx-re" title="Sil">✕</button></td></tr>';
   }).join('');
   sertGuncelle();
 }
@@ -2465,7 +2494,10 @@ function heatKaydet(id,val){
 //   Commit 2: kalem rötuşu → otomatik 'duzeltildi'; güvensiz→geri dönüşte düzeltme varsa 'duzeltildi'.
 function renderBomDurum(){
   var rozet=T('bomDurumRozet'), btn=T('bomGuvensizBtn');
-  var d=(SP&&SP.bomDurum)||'guvenilir';
+  var stored=(SP&&SP.bomDurum)||'guvenilir';
+  // 'duzeltildi' türetilir: bir kalem düzenlendiyse (guncelleme dolu). bom_durum yalnız operatör güvenini tutar.
+  var duzeltilmis=(typeof MALZEME!=='undefined' && MALZEME && MALZEME.some(function(x){return x.guncelleme;}));
+  var d=(stored==='guvensiz')?'guvensiz':(duzeltilmis?'duzeltildi':'guvenilir');
   var cfg={
     guvenilir:{txt:'✓ Güvenilir',                bg:'rgba(22,163,110,.12)', fg:'var(--gr)'},
     duzeltildi:{txt:'✎ Düzeltildi',              bg:'rgba(217,160,30,.14)', fg:'var(--warn)'},
@@ -2476,7 +2508,7 @@ function renderBomDurum(){
     rozet.setAttribute('style','margin-left:8px;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:'+cfg.bg+';color:'+cfg.fg+';');
   }
   if(btn){
-    var guvensiz=(d==='guvensiz');
+    var guvensiz=(stored==='guvensiz');
     btn.textContent=guvensiz?'✓ Güvenilir yap':'⚑ Güvensiz işaretle';
     btn.setAttribute('style','padding:5px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;'+
       (guvensiz
@@ -2563,6 +2595,79 @@ function malzSil(id){
   renderMalzeme();
   // ✅ FIX: Malzeme silme loglandı
   logEkle('MALZEME_SILINDI',bilgi);
+}
+
+// ── 144 Commit 2: kalem rötuşu (tip-uyarlamalı, basit tanım) ──
+function malzDuzenleTipVis(){
+  var tip=((T('me_tip')||{}).value||'boru');
+  var boyGrup=T('me_boy_grup'), etGrup=T('me_et_grup');
+  if(boyGrup) boyGrup.style.display=(tip==='boru')?'':'none';     // boy yalnız boruda
+  if(etGrup)  etGrup.style.display =(tip==='flansh')?'none':'';   // flanşta et yok
+}
+function malzDuzenleAc(id){
+  var m=MALZEME.find(function(x){return x.id===id;});
+  if(!m){toast('Kalem bulunamadı','er');return;}
+  var sv=function(eid,v){var e=T(eid);if(e)e.value=(v==null?'':v);};
+  var tip=(m.tip_raw||'boru').toLowerCase();
+  if(['boru','fitting','flansh','malzeme'].indexOf(tip)<0) tip='fitting';
+  var fmt=function(x){return (x==null||x==='')?'':String(x).replace('.',',');};
+  sv('me_id',m.id);
+  sv('me_tip',tip);
+  sv('me_kod',m.kod);
+  sv('me_ac',(m.ac&&m.ac!=='—')?m.ac:'');
+  var mKod=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeKod)?ARES_NORM.malzemeKod(m.malz):(m.malz||'');
+  sv('me_malz',mKod||'');
+  sv('me_kal',(m.kalite_raw||(m.kal!=='—'?m.kal:''))||'');
+  sv('me_cap',fmt(m.dis_cap_mm_raw));
+  sv('me_et', fmt(m.et_mm_raw));
+  sv('me_boy',fmt(m.boy_mm_raw));
+  sv('me_adet',(m.adet==null?'':m.adet));
+  sv('me_agr',fmt(m.agirlik_kg_raw));
+  malzDuzenleTipVis();
+  T('malzDuzenleModal').style.display='flex';
+}
+async function malzDuzenleKaydet(){
+  var id=((T('me_id')||{}).value||'');
+  var m=MALZEME.find(function(x){return x.id===id;});
+  if(!m){toast('Kalem bulunamadı','er');return;}
+  var g=function(eid){return((T(eid)||{}).value||'').trim();};
+  var num=function(v){if(v==='')return null;var n=Number(String(v).replace(',','.'));return isFinite(n)?n:null;};
+  var tip=g('me_tip')||'boru';
+  var cap=num(g('me_cap')), et=num(g('me_et')), boy=(tip==='boru')?num(g('me_boy')):null;
+  if(tip==='flansh') et=null;                          // flanşta et yok
+  var adetS=g('me_adet'); var adet=(adetS==='')?null:(parseInt(adetS,10)||null);
+  var agr=num(g('me_agr'));
+  if(cap!=null && et!=null && et>cap){toast('Et kalınlığı dış çaptan büyük olamaz','er');return;}  // MK-111.1
+  var veri={
+    tip:tip, kod:g('me_kod')||null, tanim:g('me_ac')||null,
+    malzeme:g('me_malz')||null, kalite:g('me_kal')||null,
+    dis_cap_mm:cap, et_mm:et, boy_mm:boy, adet:adet, agirlik_kg:agr,
+    guncelleme:new Date().toISOString()
+  };
+  // tip veya boyut değiştiyse kütüphane FK'sını kaldır (manuel = kütüphane zorlamaz, basit tanım)
+  var num0=function(v){return num(v==null?'':String(v));};
+  var boyutDegisti=(num0(m.dis_cap_mm_raw)!==cap)||(num0(m.et_mm_raw)!==et)||(num0(m.boy_mm_raw)!==boy);
+  var tipDegisti=((m.tip_raw||'').toLowerCase()!==tip);
+  if(tipDegisti||boyutDegisti){ veri.boru_olculer_id=null; veri.fitting_olculer_id=null; veri.flansh_olculer_id=null; }
+  if(m.supaId && ARES.mod==='supabase'){
+    var r=await ARES.supabase().from('spool_malzemeleri').update(veri).eq('id',m.supaId);
+    if(r.error){toast('Güncelleme hatası: '+r.error.message,'er');return;}
+  }
+  // in-memory güncelle → renderMalzeme yeniden çizer (tam reload yok)
+  m.tip_raw=tip; m.kod=veri.kod||m.kod; m.ac=veri.tanim||'—';
+  m.malz=veri.malzeme||'—'; m.kal=veri.kalite||'—'; m.kalite_raw=veri.kalite||'';
+  m.dis_cap_mm_raw=cap; m.et_mm_raw=et; m.boy_mm_raw=boy; m.adet=adet; m.agirlik_kg_raw=agr;
+  m.guncelleme=veri.guncelleme;
+  m.cap=(cap!=null)?(String(cap.toFixed(1)).replace('.',',')+' mm'):'—';
+  m.et =(et!=null)?(String(et).replace('.',',')+' mm'):'--';
+  m.boy=(boy!=null)?(boy+' mm'):'--';
+  m.agr=(agr!=null)?(String(agr.toFixed(2)).replace('.',',')+' kg'):'--';
+  m.agr_tahmin=false;
+  if(tipDegisti||boyutDegisti){ m.boru_olculer_id=null;m.fitting_olculer_id=null;m.flansh_olculer_id=null;m.geom_standart='';m.geom_schedule=''; }
+  T('malzDuzenleModal').style.display='none';
+  renderMalzeme(); sertGuncelle();
+  logEkle('Malzeme Kalemi Düzenlendi',(m.kod||'')+' — '+(m.ac||''));
+  toast('Kalem güncellendi','ok');
 }
 
 function newRowAc(){var nr=T('newRow'),at=T('addTrigger');if(nr)nr.style.display='table-row';if(at)at.style.display='none';setTimeout(function(){var e=T('nr_kod');if(e)e.focus();},50);}
