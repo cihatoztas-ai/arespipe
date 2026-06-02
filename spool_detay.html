@@ -3729,15 +3729,18 @@ async function flanshKutuphaneYukle(){
     if(!supa) return;
     var ids = MALZEME.map(function(m){return m.id;}).filter(Boolean);
     if(!ids.length) return;
+    // 141: spool_flansh_eslesme terk edildi (tek eski pilot kayit). Kanonik kaynak
+    //   = spool_malzemeleri.flansh_olculer_id FK (backfill buraya yazar). FK-oncelikli.
     var res = await supa
-      .from('spool_flansh_eslesme')
-      .select('spool_malzeme_id, flansh_olculer(*)')
-      .in('spool_malzeme_id', ids);
+      .from('spool_malzemeleri')
+      .select('id, flansh_olculer:flansh_olculer_id(*)')
+      .in('id', ids)
+      .not('flansh_olculer_id','is',null);
     if(res.error){ console.warn('Kütüphane eşleşme yüklenemedi:', res.error); return; }
     FLANSH_MAP = {};
     (res.data || []).forEach(function(row){
-      if(row.spool_malzeme_id && row.flansh_olculer){
-        FLANSH_MAP[row.spool_malzeme_id] = row.flansh_olculer;
+      if(row.id && row.flansh_olculer){
+        FLANSH_MAP[row.id] = row.flansh_olculer;
       }
     });
     // Tablo zaten render edilmişse satırları işaretlemek için yeniden render
