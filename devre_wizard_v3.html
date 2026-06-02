@@ -834,7 +834,8 @@ async function _duzeltmeleriYukle(j) {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     var res = await supa.from('taslak_duzeltmeleri')
       .select('pipeline_no, spool_no, alan, deger')
-      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id);
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
+      .eq('kalem_idx', -1);   // 145/B: yalnız spool-seviyesi; kalem düzeltmeleri ayrı overlay
     if (res.error) { console.warn('[v3] duzelt yukle:', res.error.message); return; }
     if (!res.data || !res.data.length) return;
     // (pipeline_no|spool_no) → { alan: deger }
@@ -1289,7 +1290,8 @@ async function duzeltKaydet(alan) {
   if (yeni === '') {
     var dr = await supa.from('taslak_duzeltmeleri').delete()
       .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
-      .eq('pipeline_no', s.pipeline || '').eq('spool_no', s.spoolNo || '').eq('alan', alan);
+      .eq('pipeline_no', s.pipeline || '').eq('spool_no', s.spoolNo || '').eq('alan', alan)
+      .eq('kalem_idx', -1);   // 145/B: spool-seviyesi = -1 (kalem-seviyesi ayrı yol)
     if (dr.error) { console.error('[v3] duzelt sil:', dr.error.message); toast('Düzeltme silinemedi'); return; }
     if (s._duzelt) delete s._duzelt[alan];
     _duzeltSatirCiz(s, alan);
@@ -1299,10 +1301,10 @@ async function duzeltKaydet(alan) {
   var row = {
     tenant_id: tid, devre_id: WIZ.devre_id,
     pipeline_no: s.pipeline || '', spool_no: s.spoolNo || '',
-    alan: alan, deger: yeni, kaynak: 'operator',
+    alan: alan, kalem_idx: -1, deger: yeni, kaynak: 'operator',
     duzelten: userId || null, updated_at: new Date().toISOString()
   };
-  var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan' });
+  var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });
   if (ur.error) { console.error('[v3] duzelt kaydet:', ur.error.message); toast('Kaydedilemedi: ' + ur.error.message); return; }
   if (!s._duzelt) s._duzelt = {};
   s._duzelt[alan] = yeni;
