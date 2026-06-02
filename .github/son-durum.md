@@ -1,75 +1,49 @@
-# Son Durum — 143. Oturum (2 Haziran 2026)
+# Son Durum — 145. Oturum (2 Haziran 2026)
 
-> **G2a tam tur kapandı: operatör değer-düzeltme döngüsü uçtan uca çalışıyor.**
-> Düzelt popup'ında 7 alan düzeltilir → tabloda görünür (kalıcı, DB'den) → terfide spooller'a yazılır.
-> Yeni endpoint YOK (12/12). Tüm yazma client-side + RLS. Migration 098 canlı.
+> **B'nin DB temeli + spool-seviyesi uyumu kuruldu (taslak_duzeltmeleri.kalem_idx).**
+> İki "borç" (C3 devre-bağı, dirsek normalizasyon) kanıtla ÇÜRÜTÜLDÜ — kod yazılmadı, yazsak sistemi bozardık.
+> Yeni endpoint YOK (12/12). Migration 100 canlı.
 
-## HEAD
-`68e2cec` feat(143): G2a overlay-B — terfide duzeltmeler spooller basligina yazilir
-
-## Commit zinciri (143)
-- `c7db87d` chore: terk edilen `kutuphane-backfill.html` silindi (deterministik yol=097) + 2 nav linki temizlendi
-- `0668bb9` migration(143): `098_taslak_duzeltmeleri.sql` — G2a tablosu (Q5: ayrı tablo) [skip ci]
-- `a0ee606` feat: G2a değer yazma (7 alan inline düzelt → `taslak_duzeltmeleri` upsert)
-- `dd84b64` fix: G2a 4 alan katı dropdown (malzeme/yüzey/alıştırma statik + kalite DB) + ağırlık NaN fix + popup tutarlılık
-- `77b775a` feat: G2a overlay-A — düzeltme DB'den yüklenir + tabloda gösterilir (dz-cell vurgu) + sayfa genişliği 1600
-- `68e2cec` feat: G2a overlay-B — terfide düzeltmeler spooller başlığına yazılır (`aktar` `duzeltmeler` param, opsiyonel)
+## HEAD (son push ~`561bcdf`)
+- `41c4afd` migration(145): 100 taslak_duzeltmeleri kalem_idx [skip ci]
+- `561bcdf` fix(145): wizard spool-seviyesi duzeltme kalem_idx:-1 (migration 100 constraint uyumu)
 
 ## Yapılanlar (sıra)
 
-### 1. C planı — backfill dosyası kararı: SİL (mekanik)
-- `admin/kutuphane-backfill.html` terk edilmişti (tek-SQL 097 kazandı, "her run farklı" kaosu).
-- İki nav linki vardı (`admin/kutuphane.html`, `admin/panel.html`) → `sed -i '' '/kutuphane-backfill/d'` ile temizlendi, dosya `git rm`. Sıfır referans kaldı. Statik dosya, 12-fn etkilemez.
+### 1. Tanı — ağırdan kolaya (C3 → dirsek → B)
+- Cihat "ağırdan kolaya, bağlam kopmadan" dedi. Sıra: A (C3 devre-bağı) → dirsek normalizasyon → B.
+- **C3 devre-bağı (A):** MK-126.8 okuma. `spooller`'da kaynak-izometri FK YOK (sadece devre_id). `eslestirme-backfill.js` (NOT iptal değil — iptal edilen `devre-eslesme-yenile.js` mükerrer dosyaydı, 129'da silindi) izometri↔spool eşleşmesini HER ZAMAN devre-kapsamlı yapar (MK-110.2, spool_no tekil değil). Kanıt: AT110-816-027/S01 13 farklı taslak devrede (TEST KİRLİLİĞİ); malzeme_flag izi SADECE g230/7ed93033'te. Oradaki spool A-001090 (9ce6869a) açıldı → C3 DOĞRU sarı "⚠ Doğrulanmadı" yaktı. **144 "inert" = yanlış spool test yanılgısı.** SIFIR KOD.
+- **Dirsek normalizasyon:** l2-parser ham ağırlık okur (parseFloat, adet-çarpımı yok, satır 149-172) = doğru. `malzeme-kiyas.js` zaten per-adet normalize (MK-133.2) + dirsek toplam-ağırlık invarianti (MK-133.3, TOL_DIRSEK_AG=0.15). Dirsek 6.72 vs 3.57 = %47 = gerçek-pozitif. **Normalizasyon "düzeltmesi" K2'yi bozardı.** Yapacak iş YOK.
 
-### 2. Migration 098 — taslak_duzeltmeleri tablosu (G2a zemini)
-- Q5 kararı (139): düzeltme `parse_sonuc`'a DEĞİL, ayrı sorgulanabilir tabloya.
-- Anahtar `UNIQUE (tenant_id, devre_id, pipeline_no, spool_no, alan)` → **upsert (üzerine yaz)**, geçmiş tutmuyor.
-- `alan` serbest text (CHECK yok). `deger` text. `duzelten` NULL serbest (yukleyen_id borcu vurmasın).
-- RLS: tek `ALL` policy `tenant_id = get_tenant_id()` (devre_dokumanlari deseni birebir).
-- Q5 kod-öncesi doğrulama YAPILDI: `inceleBaslat`/`wizardIptal` client-side supabase yazıyor (kanıt: 634/1100) + RLS deseni teyit edildi (`devre_dok_tenant` ALL/get_tenant_id). Ters çıkmadı, (b) yolu sağlam.
+### 2. B — kalem-seviyesi DB temeli (Migration 100)
+- Parse çıktısında kalem `kod` YOK (`malzeme_listesi[]`: adet/et/tanim/boy/kalite/malzeme/kategori/agirlik/dis_cap; bazı kalemler ham_satir bozuk). Tanım güvenilmez, aynı tip+çap tekrar eder → tek stabil kimlik = **dizi sırası (`kalem_idx`)**. Parse tek-sefer → sıra sabit (Cihat teyit).
+- **Karar Yol A:** `kalem_idx integer NOT NULL DEFAULT -1` (-1=spool, >=0=kalem). Tek TAM unique (kısmi index DEĞİL → PostgREST onConflict garantili; nullable+NULL!=NULL kalemleri çakıştırırdı).
+- Eski 5-kolon unique (`..._spool_no_key`) DROP → yeni 6-kolon `taslak_duzeltmeleri_anahtar_uq`. BEGIN...ROLLBACK dry-run → COMMIT. Eski satırlar otomatik -1.
 
-### 3. G2a — değer düzeltme döngüsü (ANA İŞ, tam tur)
-**Dosya: `devre_wizard_v3.html` (`duzeltAc` ve çevresi) + `ares-kabuk.js` (`aktar`).**
+### 3. Wizard uyum fix (devre_wizard_v3.html)
+- `duzeltKaydet` delete'e `.eq('kalem_idx',-1)`; upsert row'a `kalem_idx:-1` + onConflict `,kalem_idx`; `_duzeltmeleriYukle` okumaya `.eq('kalem_idx',-1)`. 3 nokta.
+- Terfi (`onayEt`) DEĞİŞMEDİ — `s._duzelt` overlay'inden topluyor (DB'den ayrı okumuyor), güvenli.
+- 10 script blok / 0 sözdizimi hatası (new Function denetimi).
 
-- **Değer yazma:** `duzeltAc` salt-görüntüden değer-yazmaya. Her satırda ✏️ → inline input/select → ✓/✕. Kaydet = `taslak_duzeltmeleri.upsert(onConflict)`. Boş bırak = düzeltmeyi sil. Enter/Escape kısayolu.
-- **7 alan + tip ayrımı:**
-  - Sayısal (input, virgül→nokta normalize): **çap, et, ağırlık**.
-  - Katı dropdown (kanonik KOD saklanır, etiket gösterilir): **malzeme** (ARES_NORM 5 kod), **yüzey** (ARES_NORM, malzemeye göre `uyumluYuzeyler` filtreli), **alıştırma** (VAR/KISMI/YOK), **kalite** (DB: `malzeme_tanimlari`, sistem `tenant_id IS NULL` + firma, `.or()` ile, cache).
-  - Listede olmayan eski değer → "(tanımsız)" diye gösterilir (veri kaybolmaz).
-- **Ağırlık NaN fix:** `Number(String(v).replace(',','.'))` + `isFinite` guard. Eski `8 → NaN kg` artık `8 kg`. Kayıt nokta, gösterim Türkçe virgül.
-- **Overlay-A (gösterim):** `inceleGetir` → `_duzeltmeleriYukle(j)` DB'den çeker, `spoollar[i]._duzelt`'e basar (anahtar `pipeline|spoolNo`). `renderInceleme` 7 alanda `_alanDeger` kullanır → düzeltme tabloda görünür, hücre turuncu `.dz-cell` vurgulu. `duzeltKapat` tabloyu yeniden çizer. **Sayfa yenilense de kalıcı** (DB'den).
-- **Overlay-B (terfi):** `ares-kabuk.js` `aktar`'a opsiyonel `duzeltmeler` parametresi. `{(pipeline|spoolNo):{alan:deger}}`. Spool BAŞLIK alanları (cap/et/agirlik/malzeme/kalite/yuzey/alistirma) düzeltme varsa onunla yazılır, yoksa parse. `devre_detay` göndermez → sıfır regresyon. Bonus: `alistirma` artık null değil, düzeltme yazılıyor.
-
-## CANLI DOĞRULAMA ✅
-- Image 1 (devre detay A-1095/A-1096): Malzeme **Paslanmaz**, Kalite **316L**, Yüzey **Asit**, Et **5,2 mm** → terfide düzeltmeler spooller'a yazıldı. Devre özeti de Paslanmaz/Asit. **Tam tur doğrulandı.**
+## CANLI DOĞRULAMA
+- Migration 100: dry-run temiz → COMMIT → 6-kolon constraint teyit.
+- Wizard: M130-722-1104/S01 (kalite/yuzey/alistirma) → DB'de kalem_idx=-1, toast "düzeltildi ✓", hata yok. Eski G310-306 kayıtları -1 aldı (regresyon yok). SQL ile DB kanıtı alındı.
+- C3: A-001090 spool_detay'da sarı "⚠ Doğrulanmadı" + Doğrula (ekran). Wizard İnceleme'de NB1099C spool'larında "doğrulanmadı" rozeti.
 
 ## NEREDEYIZ
-G2a (operatör düzeltme döngüsünün DEĞER kısmı) bitti: düzelt → tabloda gör (kalıcı) → terfide canlıya yaz.
-Yayılma (G3a), L3 eşiği (G4), BOM kalem düzeltme + güvensiz-bayrak HENÜZ yapılmadı.
-
-## 143'te ÇIKAN AMA YAPILMAYAN BULGULAR (143'ün işiyle ilgisiz, ayrı teşhis)
-1. **🔴 "Hep zayıf / %100 çelişki / okunamadı" (NB1124 G310 — Image 3):** Tüm spool'lar zayıf+çelişkili. İzometri PDF parse ediliyor ama eşleşmiyor/çelişki üretiyor. Format-özgü olabilir. **Taze bağlam + kanıt teşhisi gerekir (TAHMİN YOK).** En öncelikli.
-2. **PDF'ler spool detaya gelmedi (Image 1):** terfi sonrası izometri eşleştirme (`eslestirme-backfill`) izometrileri bağlamıyor. Memory borcu "129/130 terfi-sonrası imalat-izo görünmeme" ile aynı olabilir.
-3. **Native `confirm()` (Image 2):** wizard iptal "Vazgeçmek istediğinize emin misiniz?" tarayıcı kutusu → kendi modal'a çevrilmeli (kozmetik, küçük).
-
-## SONRAKİ OTURUM — ANA İŞ ADAYI
-**BOM malzeme listesi düzeltme + güvensiz-bayrak** (Cihat'ın asıl derdi):
-- Spool'un `spool_malzemeleri` kalemleri (spool detay malzeme sekmesi). Tersan/Cadmatic Excel'den temiz gelir ama Excel'siz formatlarda BOM güvenilmez → bu alan kritikleşir.
-- 3 durum: **güvenilir** (Excel temiz) / **küçük düzeltme** (operatör kalem rötuşu) / **güvensiz** (operatör "buna güvenmiyorum" → `malzeme_guvensiz=true`, canlıya çıkar ama damgalı, manuel takibe düşer).
-- Felsefe: yanlış-ama-güvenilir-görünen veri yerine "güvensiz" damgası → sessiz overwrite yok, görünür çelişki.
-- **Kod öncesi oku (MK-126.8):** `spool_malzemeleri` şeması, spool detay malzeme sekmesi render, K2 kıyas yapısı. Yeni bayrak kolonu migration gerekebilir.
-
-## Diğer açık borçlar (devam)
-- **G3a yayılma:** bir spool düzeltmesi aynı hatalı diğer spool'lara otomatik. Q1 (anahtar) + Q2 (değer-kopyala mı/kural-öğret mi) kararı GEREKLİ (139'da ertelendi).
-- **Durum/özet tutarlılığı:** düzeltilen satır hâlâ "zayıf/çelişki" + üst özet/stat eski parse değerini sayıyor. Düzeltme durum/stat/özet hesabına dahil edilmeli (gösterim, risksiz).
-- BUG-B DN125 (park) · MK-139.1 görsel teyit · tip='fitting' ama flanş · ara-açı dirsek (3D).
+B'nin DB+spool-seviyesi uyumu hazır. Kalem-seviyesi DÜZENLEME UI'si yok (146). C3 doğru. İki borç çürütüldü.
 
 ## Mühürlenecek MK (KARARLAR.md)
-- **MK-143.1:** Operatör düzeltmesi ayrı tabloda (`taslak_duzeltmeleri`), upsert (üzerine yaz). Client-side+RLS, yeni endpoint yok.
-- **MK-143.2:** Düzeltilebilir alanlardan malzeme/yüzey/alıştırma/kalite KATI dropdown (kanonik kod) — serbest yazı tabloları bozar. Kalite DB'den (`malzeme_tanimlari` sistem+firma).
-- **MK-143.3:** `ares-kabuk.aktar` opsiyonel `duzeltmeler` param ile spool başlığını ezer — devre_detay göndermez, sıfır regresyon. BOM kalemleri (spool_malzemeleri) overlay'e dahil DEĞİL (ayrı iş).
-- **MK-143.4:** Düzeltme overlay yalnız spooller BAŞLIK alanı; BOM güvenilirliği ayrı (güvensiz-bayrak işi).
+- **MK-145.1:** Kalem-seviyesi taslak düzeltme anahtarı = `kalem_idx` (dizi sırası). Terfi öncesi kod YOK, tanım güvenilmez, tip+çap tekrar → idx tek stabil kimlik. Parse tek-sefer → sabit.
+- **MK-145.2:** `taslak_duzeltmeleri` Yol A: `kalem_idx NOT NULL DEFAULT -1`, tek TAM 6-kolon unique. PostgREST onConflict garantili (kısmi index belirsiz, nullable çakışır).
+- **MK-145.3:** C3 DOĞRU çalışıyor. 144 "inert" = yanlış spool (izometrisi başka test devresinde) testi. Gerçek üretimde izometri kendi devresinde → backfill devre-kapsamlı eşleştirir → C3 doğru. D borcu = test kirliliği artefaktı, kod borcu DEĞİL.
+- **MK-145.4:** Dirsek/ağırlık çelişkisi NORMALİZASYON BORCU DEĞİL. K2 zaten per-adet (MK-133.2) + dirsek invarianti (MK-133.3). %47 sapma = gerçek-pozitif. l2-parser ham okur = doğru (MK-111.2). "Düzeltmek" K2'yi bozardı.
+
+## Yeni borçlar
+- **spool_detay kütüphane-tıklama bug:** FK DOLU kalem (Elbow S70349, fitting_olculer_id=bc420c9d) satırı tıklanınca kütüphane detayı açılmıyor. FK NULL olanlar beklenen. spool_detay satır-tıklama handler'ı. 145 dışı. Test: A-001090 (9ce6869a), kalem bed61203.
+- **B kalanı:** kalem-seviyesi düzenleme UI + kalem upsert (kalem_idx>=0) + terfide aktar'a kalem düzeltme taşıma.
 
 ## Hatalarım (kayıt)
-- "Ağırlık diğerlerinden farklı mı" diye gereksiz sordum → kafa karıştırdım; aslında tek fark gösterim formatıydı (toplamKg ham, ekranda formatlı). Cihat haklı olarak "tablo değeri neyse o" dedi.
-- İlk turda malzeme/kalite/yüzey/alıştırma'yı serbest text bıraktım — Cihat "bunlar tanımlı seçenekler olmalı, yazım farkı tabloları bozar" diye düzeltti. Doğru: kanonik dropdown. Ders: "DB kolon tipi text" ≠ "UI'da serbest giriş".
+- İlk iki teşhisim ("C3 kod gerekiyor", "dirsek normalizasyon borcu") körlemesine olsaydı yanlış olacaktı; okuma (MK-126.8) ikisini de çürüttü. Ders: "borç" listesindeki maddeleri de kanıtla doğrula, miras alıp körlemesine kovalama.
+- Kalem anahtarı için önce `kalem_kod` önerdim (Cihat onayladı), ama parse çıktısında kod OLMADIĞINI sonra gördüm → `kalem_idx`'e revize. Ders: anahtar kararından önce hedef verinin alanlarını gör.
+- spool_detay 4-numara tıklama teşhisinde "FK NULL" dedim, SQL tersini gösterdi (FK DOLU). Tahminden önce SQL.
