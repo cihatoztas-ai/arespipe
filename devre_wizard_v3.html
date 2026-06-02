@@ -1062,26 +1062,134 @@ function fol(ad, cnt, inner, acik) {
 }
 function fToggle(el) { var c = el.nextElementSibling; c.classList.toggle('kapali'); el.querySelector('.chev').textContent = c.classList.contains('kapali') ? '▸' : '▾'; }
 
-// ── Düzelt / okunan değerleri gör popup (FAZ-1: salt görüntü + çapa stub) ──
+// ── Düzelt / okunan değerleri gör popup (G2a: değer düzeltme yazma + çapa stub) ──
+// 7 düzeltilebilir alan. Düzeltme taslak_duzeltmeleri tablosuna yazılır (Q5: ayrı tablo, upsert).
+// Bu fazda OVERLAY YOK — düzeltme kalıcı kaydedilir ama önizleme/terfi değerini henüz değiştirmez.
+// alan kodu → spool objesindeki property + gösterim formatlayıcı
+var DUZELT_ALANLAR = {
+  cap:       { lbl:'Çap',       prop:'cap',        fmt:function(v){ return v; } },
+  et:        { lbl:'Et',        prop:'et',         fmt:function(v){ return v; } },
+  agirlik:   { lbl:'Ağırlık',   prop:'toplamKg',   fmt:function(v){ return v != null && v !== '' ? (Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : ''; } },
+  malzeme:   { lbl:'Malzeme',   prop:'anaMalzeme', fmt:function(v){ return v; } },
+  kalite:    { lbl:'Kalite',    prop:'kalite',     fmt:function(v){ return v; } },
+  yuzey:     { lbl:'Yüzey',     prop:'yuzeyHam',   fmt:function(v){ return v; } },
+  alistirma: { lbl:'Alıştırma', prop:'alistirma',  fmt:function(v){ return v; } }
+};
+var _duzeltSpoolIdx = null;   // aktif popup'taki spool indexi (kaydet için)
+
 function duzeltAc(i) {
   var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[i] : null;
   if (!s) return;
+  _duzeltSpoolIdx = i;
   var durumEt = { okundu:'okundu', zayif:'parse zayıf', eksik:'eksik (döküman yok)', fazla:'fazla' }[s.durum] || s.durum;
   document.getElementById('dpTitle').textContent = (markaCellMetin(s)) + ' — ' + durumEt;
+  // salt görüntü satırı (izometri meta gibi düzeltilemez alanlar)
   function satir(lbl, val, src) {
     var sl = { xl:'Excel', l2:'L2', l3:'L3', bos:'boş' }[src] || 'Excel';
     return '<div class="efld"><label>' + lbl + '</label><div class="locked" style="padding:7px 9px;font-size:14px;">' + esc(val != null && val !== '' ? String(val) : '—') + '</div><span class="src ' + (src || 'xl') + '">' + sl + '</span></div>';
   }
+  // düzeltilebilir satır (✏️ ile inline input açılır). dz = düzeltme kaynağı varsa rozet.
+  function dsatir(alan, src) {
+    var cfg = DUZELT_ALANLAR[alan];
+    var ham = s[cfg.prop];
+    var gor = cfg.fmt(ham);
+    var sl = { xl:'Excel', l2:'L2', l3:'L3', bos:'boş' }[src] || 'Excel';
+    var duzeltilmis = (s._duzelt && s._duzelt[alan] != null);
+    var srcRoz = duzeltilmis ? '<span class="src l3" title="operatör düzeltmesi">düzelt</span>' : '<span class="src ' + (src || 'xl') + '">' + sl + '</span>';
+    return '<div class="efld" id="ef-' + alan + '">' +
+      '<label>' + cfg.lbl + '</label>' +
+      '<div class="locked" id="lk-' + alan + '" style="padding:7px 9px;font-size:14px;">' +
+        '<span style="flex:1;">' + esc(gor != null && gor !== '' ? String(gor) : '—') + '</span>' +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="duzeltSatirAc(\'' + alan + '\')" title="Düzelt">✏️</button>' +
+      '</div>' + srcRoz + '</div>';
+  }
   var izoSrc = s.izometri ? (String(s.izometri.seviye || '').toLowerCase() === 'l3' ? 'l3' : 'l2') : 'bos';
   var b = '<div class="dp-sec">Okunan değerler (önizleme)</div>';
-  b += satir('Çap', s.cap, 'xl') + satir('Et', s.et, 'xl') + satir('Ağırlık', s.toplamKg != null ? (Number(s.toplamKg).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : '', 'xl');
-  b += satir('Malzeme', s.anaMalzeme, 'xl') + satir('Kalite', s.kalite, 'xl') + satir('Yüzey', s.yuzeyHam, s.yuzeyHam ? izoSrc : 'bos') + satir('Alıştırma', s.alistirma, izoSrc);
+  b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
+  b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc);
   if (s.izometri) b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
   if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
-  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Değer düzeltme yazma + çapa (PDF\'te işaretle → formatın tümüne öğret) <b>sonraki fazda</b> (omurga 8 / 18.d). Şimdilik salt görüntü.</p>';
+  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye yansıtma (overlay) <b>sonraki adımda</b>. Görsel çapa (PDF\'te işaretle) ayrı faz (omurga 8 / 18.d).</p>';
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button><button class="btn-sm" style="color:var(--ac);padding:9px 14px;" onclick="toast(\'Çapa işaretleme: sonraki faz\')">📍 PDF\'te işaretle (çapa)</button></div>';
   document.getElementById('dpBody').innerHTML = b;
   document.getElementById('duzeltOverlay').classList.remove('hide');
+}
+
+// ── G2a: bir satırı inline input'a çevir (ham değerle dolu) ──
+function duzeltSatirAc(alan) {
+  var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
+  if (!s) return;
+  var cfg = DUZELT_ALANLAR[alan];
+  // düzeltilmiş değer varsa onu, yoksa ham parse değerini göster (ağırlıkta formatsız ham sayı)
+  var mevcut = (s._duzelt && s._duzelt[alan] != null) ? s._duzelt[alan] : s[cfg.prop];
+  var v = (mevcut != null) ? String(mevcut) : '';
+  var lk = document.getElementById('lk-' + alan);
+  if (!lk) return;
+  lk.innerHTML =
+    '<input id="in-' + alan + '" type="text" value="' + esc(v) + '" style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;" ' +
+      'onkeydown="if(event.key===\'Enter\')duzeltKaydet(\'' + alan + '\');if(event.key===\'Escape\')duzeltSatirIptal(\'' + alan + '\');">' +
+    '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--gr);" onclick="duzeltKaydet(\'' + alan + '\')" title="Kaydet">✓</button>' +
+    '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--txd);" onclick="duzeltSatirIptal(\'' + alan + '\')" title="Vazgeç">✕</button>';
+  var inp = document.getElementById('in-' + alan); if (inp) { inp.focus(); inp.select(); }
+}
+
+// ── G2a: düzeltmeyi iptal et, satırı eski haline döndür ──
+function duzeltSatirIptal(alan) {
+  var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
+  if (s) _duzeltSatirCiz(s, alan);
+}
+
+// ── G2a: satırı (güncel değerle) yeniden çiz — locked görünüme dön ──
+function _duzeltSatirCiz(s, alan) {
+  var cfg = DUZELT_ALANLAR[alan];
+  var lk = document.getElementById('lk-' + alan);
+  if (!lk) return;
+  var duzeltilmis = (s._duzelt && s._duzelt[alan] != null);
+  var ham = duzeltilmis ? s._duzelt[alan] : s[cfg.prop];
+  var gor = cfg.fmt(ham);
+  lk.innerHTML =
+    '<span style="flex:1;">' + esc(gor != null && gor !== '' ? String(gor) : '—') + '</span>' +
+    '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="duzeltSatirAc(\'' + alan + '\')" title="Düzelt">✏️</button>';
+  // kaynak rozetini güncelle (düzeltildiyse "düzelt" rozeti)
+  var ef = document.getElementById('ef-' + alan);
+  if (ef) {
+    var roz = ef.querySelector('.src');
+    if (roz && duzeltilmis) { roz.className = 'src l3'; roz.textContent = 'düzelt'; roz.title = 'operatör düzeltmesi'; }
+  }
+}
+
+// ── G2a: düzeltmeyi taslak_duzeltmeleri tablosuna yaz (upsert, client-side+RLS) ──
+async function duzeltKaydet(alan) {
+  var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
+  if (!s) return;
+  var inp = document.getElementById('in-' + alan);
+  if (!inp) return;
+  var yeni = inp.value.trim();
+  var supa = ARES.supabase(), tid = ARES.tenantId();
+  var userId; try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+  // boş bırakma = düzeltmeyi sil (alanı parse değerine bırak)
+  if (yeni === '') {
+    var dr = await supa.from('taslak_duzeltmeleri').delete()
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
+      .eq('pipeline_no', s.pipeline || '').eq('spool_no', s.spoolNo || '').eq('alan', alan);
+    if (dr.error) { console.error('[v3] duzelt sil:', dr.error.message); toast('Düzeltme silinemedi'); return; }
+    if (s._duzelt) delete s._duzelt[alan];
+    _duzeltSatirCiz(s, alan);
+    toast(DUZELT_ALANLAR[alan].lbl + ' düzeltmesi kaldırıldı');
+    return;
+  }
+  var row = {
+    tenant_id: tid, devre_id: WIZ.devre_id,
+    pipeline_no: s.pipeline || '', spool_no: s.spoolNo || '',
+    alan: alan, deger: yeni, kaynak: 'operator',
+    duzelten: userId || null, updated_at: new Date().toISOString()
+  };
+  var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan' });
+  if (ur.error) { console.error('[v3] duzelt kaydet:', ur.error.message); toast('Kaydedilemedi: ' + ur.error.message); return; }
+  if (!s._duzelt) s._duzelt = {};
+  s._duzelt[alan] = yeni;
+  _duzeltSatirCiz(s, alan);
+  toast(DUZELT_ALANLAR[alan].lbl + ' düzeltildi ✓');
 }
 function markaCellMetin(s) {
   if (typeof ARES_NORM !== 'undefined' && ARES_NORM.marka) {
