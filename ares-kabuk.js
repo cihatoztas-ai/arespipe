@@ -132,6 +132,9 @@
   //                            //   → eski davranış (tek yüzey) korunur, sıfır regresyon.
   //      kuyrukIds             // opsiyonel: tamamlandı işaretlenecek dosya_isleme_kuyrugu id dizisi
   //                            //   (devre_detay tek id → [id]; wizard N BOM Excel → tümü)
+  //      duzeltmeler           // 143/G2a opsiyonel: { (pipeline|spoolNo): {cap,et,agirlik,malzeme,kalite,
+  //                            //   yuzey,alistirma} } — operatör düzeltmeleri spool BAŞLIĞINI ezer.
+  //                            //   devre_detay göndermez → eski davranış korunur (sıfır regresyon).
   //    }
   //    Dönen (Promise):
   //      { ok:true, eklenen:N, atlananlar:[spoolNo...], idMap }
@@ -143,6 +146,7 @@
     var yuzeySec=opts.yuzey||null;
     var perSpool=opts.perSpoolYuzey===true;
     var kuyrukIds=opts.kuyrukIds||[];
+    var duzeltmeler=opts.duzeltmeler||null;   // 143/G2a: {(pipeline|spoolNo):{alan:deger}} — opsiyonel, yoksa eski davranış
     if(!supa||!tid||!devreId){return {ok:false,hata:'ortam'};}      // Tenant/devre/db eksik
     if(!spoollar.length){return {ok:false,hata:'sec'};}             // Aktarılacak spool yok
 
@@ -186,16 +190,31 @@
         if(perSpool && s.yuzeyHam && typeof ARES_NORM!=='undefined' && ARES_NORM.yuzeyKod){
           yz=ARES_NORM.yuzeyKod(s.yuzeyHam)||yuzeySec;
         }
+        // 143/G2a overlay-B: operatör düzeltmesi (taslak_duzeltmeleri) varsa spool BAŞLIK alanlarını ezer.
+        //   duzeltmeler[(pipeline|spoolNo)] = { cap, et, agirlik, malzeme, kalite, yuzey, alistirma } (string).
+        //   Sadece spooller başlığı; spool_malzemeleri (BOM kalemleri) bu turda dokunulmaz (ayrı iş).
+        //   devre_detay duzeltmeler GÖNDERMEZ → bu blok atlanır, eski davranış korunur (sıfır regresyon).
+        var _dzKey=(s.pipeline||'')+'|'+s.spoolNo;
+        var _dz=(duzeltmeler && duzeltmeler[_dzKey]) ? duzeltmeler[_dzKey] : null;
+        // değer üretimi: düzeltme varsa onu kullan, yoksa parse değeri (sayısal alanlar NaN-güvenli)
+        var _sayi=function(v,fb){ if(v==null||v==='')return fb; var n=Number(String(v).replace(',','.')); return isFinite(n)?n:fb; };
+        var _capMm = (_dz && _dz.cap!=null && _dz.cap!=='') ? _sayi(_dz.cap, bp.dis_cap) : bp.dis_cap;
+        var _etMm  = (_dz && _dz.et!=null  && _dz.et!=='')  ? _sayi(_dz.et,  bp.et)      : bp.et;
+        var _agKg  = (_dz && _dz.agirlik!=null && _dz.agirlik!=='') ? _sayi(_dz.agirlik, (s.toplamKg||0)) : (s.toplamKg||0);
+        var _malHam = (_dz && _dz.malzeme!=null && _dz.malzeme!=='') ? _dz.malzeme : s.anaMalzeme;
+        var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.anaMalzeme||null);
+        var _yuzey  = (_dz && _dz.yuzey!=null && _dz.yuzey!=='') ? _dz.yuzey : yz;
+        var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : null;
         spoolRows.push({
           tenant_id:tid, devre_id:devreId,
           spool_no:s.spoolNo, spool_id:sid,
           pipeline_no:s.pipeline||null, rev:s.rev||'',
-          malzeme:malKod(s.anaMalzeme), kalite:s.anaMalzeme||null,
-          dis_cap_mm:bp.dis_cap, et_kalinligi_mm:bp.et,
-          agirlik:s.toplamKg||0, agirlik_kg:s.toplamKg||0, yuzey:yz,
+          malzeme:malKod(_malHam), kalite:_kalite,
+          dis_cap_mm:_capMm, et_kalinligi_mm:_etMm,
+          agirlik:_agKg, agirlik_kg:_agKg, yuzey:_yuzey,
           durum:'Bekliyor', is_durumu:'bekliyor', ilerleme:0, durduruldu:false,
           cizim_durumu:'bekliyor',
-          aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:null
+          aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:_alist
         });
       }
       var ins=await supa.from('spooller').insert(spoolRows);

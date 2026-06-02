@@ -1361,9 +1361,20 @@ async function onayEt() {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     // Kanonik tam BOM modeli (devre_detay ile aynı) — kabukTuret DEĞİL (KORUMA-1)
     var model = ARES_KABUK.grupla({ satirlar: WIZ._kabukSatirlar });
+    // 143/G2a overlay-B: operatör düzeltmelerini (pipeline|spoolNo)→{alan:deger} haritasına topla.
+    //   WIZ._inceleme.spoollar[i]._duzelt overlay-A'da DB'den yüklendi. aktar bunu spool başlığına bindirir.
+    var _duzeltHarita = {};
+    if (WIZ._inceleme && WIZ._inceleme.spoollar) {
+      WIZ._inceleme.spoollar.forEach(function(s){
+        if (s._duzelt && Object.keys(s._duzelt).length) {
+          _duzeltHarita[(s.pipeline || '') + '|' + (s.spoolNo || '')] = s._duzelt;
+        }
+      });
+    }
     var r = await ARES_KABUK.aktar({
       supa: supa, tid: tid, devreId: WIZ.devre_id,
-      spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: WIZ._bomIds
+      spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: WIZ._bomIds,
+      duzeltmeler: _duzeltHarita
     });
     if (!r.ok) throw new Error(r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || '')));
     // Terfi tamam → taslak 'aktif' + özet senkron (DB-truth)
