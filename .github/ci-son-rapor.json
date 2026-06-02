@@ -1,12 +1,12 @@
 {
-  "tarih": "2026-06-02T07:51:26.949Z",
-  "commit_sha": "b26831ec4a42d36a73c14c8cd64c3208ab63e4f8",
+  "tarih": "2026-06-02T08:51:35.410Z",
+  "commit_sha": "c7db87da6613e8457e4a81ccede7d51e7b0bbb45",
   "commit_ref": "main",
-  "workflow_run": 982,
+  "workflow_run": 983,
   "ozet": {
     "hata": 0,
     "uyari": 81,
-    "taranan_dosya": 128,
+    "taranan_dosya": 127,
     "sorunlu_dosya": 6,
     "durum": "sari"
   },
