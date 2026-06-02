@@ -17,7 +17,7 @@
     [data-theme="light-anthracite"] { --bg:#d8dde4; --sur:#e4e9ef; --sur2:#d0d7e0; --bor:#bcc5d0; --tx:#141e2b; --txm:#3a4f63; --txd:#637080; }
     *{ box-sizing:border-box; }
 
-    .page        { padding:28px; max-width:1340px; }
+    .page        { padding:28px; max-width:1600px; }
     .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
     .page-title  { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:800; color:var(--tx); line-height:1; }
     .breadcrumb  { font-size:14px; color:var(--txd); margin-bottom:6px; }
@@ -72,6 +72,7 @@
     .tablo-kart{ background:var(--sur); border:1px solid var(--bor); border-radius:14px; overflow:hidden; margin-bottom:16px; border-left:3px solid var(--ac); }
     .tablo-head{ display:flex; justify-content:space-between; align-items:center; padding:13px 18px 10px; border-bottom:1px solid var(--bor); flex-wrap:wrap; gap:8px; } .tablo-baslik{ font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--txd); } .tablo-wrap{ overflow-x:auto; }
     .dt{ width:100%; border-collapse:collapse; font-size:13px; min-width:1180px; }
+    .dt td.dz-cell{ background:rgba(217,119,6,.10); box-shadow:inset 2px 0 0 var(--warn); }
     .dt th{ text-align:left; padding:8px 10px; font-size:11px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.4px; background:var(--sur2); border-bottom:1px solid var(--bor); white-space:nowrap; }
     .dt td{ padding:9px 10px; border-bottom:1px solid var(--bor); vertical-align:middle; white-space:nowrap; } .dt tr:last-child td{ border-bottom:none; } .dt tbody tr:hover td{ background:rgba(45,142,255,.04); } .dt tbody tr.tikla{ cursor:pointer; }
     .marka{ font-weight:700; color:var(--ac); } .kalite{ color:var(--ac); font-weight:600; }
@@ -820,8 +821,33 @@ async function inceleGetir() {
     var j = await r.json();
     if (!r.ok) { console.warn('[v3] inceleme hata:', j && j.hata); return; }
     WIZ._inceleme = j;
+    await _duzeltmeleriYukle(j);   // G2a overlay-A1: kayıtlı düzeltmeleri spoollar'a bindir
     renderInceleme(j);
   } catch (e) { console.error('[v3] inceleGetir:', e); }
+}
+
+// ── G2a overlay-A1: bu devrenin kayıtlı düzeltmelerini DB'den çek, spoollar[i]._duzelt'e bas.
+//   Anahtar: (pipeline_no, spool_no, alan). Sayfa yenilense de düzeltme kalıcı görünür. ──
+async function _duzeltmeleriYukle(j) {
+  if (!j || !j.spoollar || !j.spoollar.length || !WIZ.devre_id) return;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var res = await supa.from('taslak_duzeltmeleri')
+      .select('pipeline_no, spool_no, alan, deger')
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id);
+    if (res.error) { console.warn('[v3] duzelt yukle:', res.error.message); return; }
+    if (!res.data || !res.data.length) return;
+    // (pipeline_no|spool_no) → { alan: deger }
+    var harita = {};
+    res.data.forEach(function(d) {
+      var k = (d.pipeline_no || '') + '|' + (d.spool_no || '');
+      (harita[k] = harita[k] || {})[d.alan] = d.deger;
+    });
+    j.spoollar.forEach(function(s) {
+      var k = (s.pipeline || '') + '|' + (s.spoolNo || '');
+      if (harita[k]) s._duzelt = harita[k];
+    });
+  } catch (e) { console.warn('[v3] duzelt yukle hata:', e); }
 }
 
 function renderInceleme(j) {
@@ -844,15 +870,22 @@ function renderInceleme(j) {
     var rev = (s.rev && s.rev !== '—') ? '<span class="rev-chip">' + esc(s.rev) + '</span>' : '<span class="gri">—</span>';
     var num = (s.spoolNo || '').replace(/^S?0*/i, '') || (i + 1);
     var sid = '<span class="gri">terfide</span>';
-    var capTxt = (s.cap != null) ? esc(String(s.cap)) : '<span class="gri">—</span>';
-    var etTxt  = (s.et != null) ? esc(String(s.et)) : '<span class="gri">—</span>';
-    var agTxt  = (s.toplamKg != null) ? (Number(s.toplamKg).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : '<span class="gri">—</span>';
+    // G2a overlay-A2: düzeltme varsa parse yerine düzeltilmiş değeri göster. _dz(alan)=düzeltildi mi.
+    var _dz = function(alan){ return (s._duzelt && s._duzelt[alan] != null); };
+    var _dv = function(alan){ return _alanDeger(s, alan); };
+    var _dzCls = function(alan){ return _dz(alan) ? ' dz-cell' : ''; };
+    var capV = _dv('cap'), etV = _dv('et'), agV = _dv('agirlik');
+    var malV = _dv('malzeme'), kalV = _dv('kalite'), yuzV = _dv('yuzey'), aliV = _dv('alistirma');
+    var capTxt = (capV != null && capV !== '') ? esc(String(capV)) : '<span class="gri">—</span>';
+    var etTxt  = (etV != null && etV !== '') ? esc(String(etV)) : '<span class="gri">—</span>';
+    var agN    = (agV != null && agV !== '') ? Number(String(agV).replace(',', '.')) : null;
+    var agTxt  = (agN != null && isFinite(agN)) ? (agN.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : '<span class="gri">—</span>';
     html += '<tr class="tikla" data-i="' + i + '" onclick="duzeltAc(' + i + ')">' +
       '<td style="color:var(--txd);font-size:12px;">' + esc(String(num)) + '</td>' +
       '<td>' + marka + '</td><td>' + rev + '</td><td>' + sid + '</td>' +
-      '<td class="cap">' + capTxt + '</td><td class="et">' + etTxt + '</td><td class="agir">' + agTxt + '</td>' +
-      '<td>' + matBadge(s.anaMalzeme) + '</td><td class="kalite">' + esc(s.kalite || '') + '</td>' +
-      '<td>' + yuzeyBadge(s.yuzeyHam) + '</td><td>' + alistMb(s.alistirma) + '</td>' +
+      '<td class="cap' + _dzCls('cap') + '">' + capTxt + '</td><td class="et' + _dzCls('et') + '">' + etTxt + '</td><td class="agir' + _dzCls('agirlik') + '">' + agTxt + '</td>' +
+      '<td class="' + _dzCls('malzeme').trim() + '">' + matBadge(malV) + '</td><td class="kalite' + _dzCls('kalite') + '">' + esc((typeof ARES_NORM !== 'undefined' && kalV) ? (ARES_NORM.kaliteGoster(kalV) || kalV) : (kalV || '')) + '</td>' +
+      '<td class="' + _dzCls('yuzey').trim() + '">' + yuzeyBadge(yuzV) + '</td><td class="' + _dzCls('alistirma').trim() + '">' + alistMb(aliV) + '</td>' +
       '<td>' + mbadge(s.durum) + '</td><td>' + izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag) + '</td><td>' + islemCell(i, s.durum) + '</td></tr>';
   });
   // Fazla (turuncu) — kabukta yok, sorulur (MK-126.2)
@@ -1283,7 +1316,11 @@ function markaCellMetin(s) {
   }
   return [WIZ.proje_no, s.pipeline, s.spoolNo].filter(function(x){ return x; }).join('-');
 }
-function duzeltKapat() { document.getElementById('duzeltOverlay').classList.add('hide'); }
+function duzeltKapat() {
+  document.getElementById('duzeltOverlay').classList.add('hide');
+  // G2a overlay: popup'ta yapılan düzeltmeler arkadaki tabloya yansısın (s._duzelt zaten güncel)
+  if (WIZ._inceleme) renderInceleme(WIZ._inceleme);
+}
 
 // ── 138/B1: İptal — terfi olmamış taslağı soft-delete et (silindi=true), sonra çık. ──
 //   Taslak inceleBaslat'ta oluşuyor (devre_id + dökümanlar yazılıyor); onaylanmadan çıkılırsa
