@@ -1130,15 +1130,15 @@ async function spoolYukle(supaId) {
       var master = m.malzeme_tanimlari || null;
       // 86.B — Standart kaynagi tip'e gore 3-dalli (sema asimetri: boru.standart vs fitting/flansh.geometri_std)
       // Sema dogrulamasi: information_schema.columns (MK-84.2 + MK-85.3)
-      var _tipNorm = (m.tip || '').toLowerCase();
+      // 141 (B): tip yerine DOLU geometri FK'ya gore standart (tip alani yanlis siniflanabiliyor; NB1137 flans tip=fitting)
       var geomStandart = '';
       var geom_sch = '';
-      if(_tipNorm === 'boru' && m.boru_lib){
+      if(m.boru_olculer_id && m.boru_lib){
         geomStandart = m.boru_lib.standart || '';
         geom_sch = m.boru_lib.schedule_kod || '';
-      } else if(_tipNorm === 'fitting' && m.fitting_lib){
+      } else if(m.fitting_olculer_id && m.fitting_lib){
         geomStandart = m.fitting_lib.geometri_std || '';
-      } else if(_tipNorm === 'flansh' && m.flansh_lib){
+      } else if(m.flansh_olculer_id && m.flansh_lib){
         geomStandart = m.flansh_lib.geometri_std || '';
       }
 
@@ -2334,11 +2334,10 @@ function renderMalzeme(){
     var kaliteStandart = m.kal_kaynak === 'sistem';
     var geomBagli = false;
     var tipR = (m.tip_raw || '').toLowerCase();
-    if(tipR === 'boru')         geomBagli = !!m.boru_olculer_id;
-    else if(tipR === 'fitting') geomBagli = !!m.fitting_olculer_id;
-    else if(tipR === 'flansh')  geomBagli = !!m.flansh_olculer_id;
+    // 141 (B): once DOLU geometri FK (tip yanlis olabilir), sonra tip fallback
+    if(m.boru_olculer_id || m.fitting_olculer_id || m.flansh_olculer_id) geomBagli = true;
     else if(tipR === 'malzeme') geomBagli = true; // malzeme için geometri yok, kalite yeterli
-    else                        geomBagli = false; // bilinmeyen tip → standart dışı
+    else                        geomBagli = false; // FK yok + malzeme degil → standart dışı
     // 85.D — Uç işlemi satırı (yiv, bevel, threaded vb.) standart-dışı sayılmaz
     //   Standart bilgisi sözlükten (uc_islemi_tipleri.varsayilan_std) gelir
     //   Kalite kontrolü parent borudan geliyor — yiv satırının kalitesi tekrar
