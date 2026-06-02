@@ -532,6 +532,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
     <div class="tablo-head">
       <span class="tablo-baslik"><span data-i18n="sp_tab_material">📦 Malzeme Listesi</span> <span id="malzemeCnt" style="font-weight:400;opacity:.7;"></span><span id="bomDurumRozet"></span></span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button id="bomDogrulaBtn" onclick="bomDogrula()" style="display:none;padding:5px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);">✓ Doğrula</button>
         <button id="bomGuvensizBtn" onclick="bomGuvensizToggle()" style="padding:5px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;background:rgba(200,55,55,.10);color:#d33;border:1px solid rgba(200,55,55,.28);">⚑ Güvensiz işaretle</button>
         <button id="pipelineAktarBtn" onclick="pipelineAktar()" style="display:none;padding:5px 12px;border-radius:7px;background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);font-size:14px;font-weight:600;cursor:pointer;">
           ⬇ Pipeline'dan Aktar (<span id="pmSayac">0</span> kalem)
@@ -2493,19 +2494,27 @@ function heatKaydet(id,val){
 //   Commit 1: rozet + güvensiz/güvenilir toggle (spooller.bom_durum, client-side UPDATE + RLS).
 //   Commit 2: kalem rötuşu → otomatik 'duzeltildi'; güvensiz→geri dönüşte düzeltme varsa 'duzeltildi'.
 function renderBomDurum(){
-  var rozet=T('bomDurumRozet'), btn=T('bomGuvensizBtn');
+  var rozet=T('bomDurumRozet'), btn=T('bomGuvensizBtn'), dogBtn=T('bomDogrulaBtn');
   var stored=(SP&&SP.bomDurum)||'guvenilir';
+  var karar =!!(SP&&SP.bomDurumZaman);   // operatör açık karar verdi (güvensiz / doğrula)
   // 'duzeltildi' türetilir: bir kalem düzenlendiyse (guncelleme dolu). bom_durum yalnız operatör güvenini tutar.
   var duzeltilmis=(typeof MALZEME!=='undefined' && MALZEME && MALZEME.some(function(x){return x.guncelleme;}));
-  var d=(stored==='guvensiz')?'guvensiz':(duzeltilmis?'duzeltildi':'guvenilir');
+  // C3: sistem K2 çelişkisi var + operatör henüz karar vermedi → 'dogrulanmadi' (türev, DB'ye yazılmaz)
+  var d=(stored==='guvensiz')?'guvensiz'
+       :(duzeltilmis)?'duzeltildi'
+       :(SP&&SP.k2Flag&&!karar)?'dogrulanmadi'
+       :'guvenilir';
   var cfg={
     guvenilir:{txt:'✓ Güvenilir',                bg:'rgba(22,163,110,.12)', fg:'var(--gr)'},
     duzeltildi:{txt:'✎ Düzeltildi',              bg:'rgba(217,160,30,.14)', fg:'var(--warn)'},
+    dogrulanmadi:{txt:'⚠ Doğrulanmadı (sistem)', bg:'rgba(217,160,30,.14)', fg:'var(--warn)'},
     guvensiz:{txt:'⚑ GÜVENSİZ — manuel takip',   bg:'rgba(200,55,55,.14)',  fg:'#d33'}
   }[d] || {txt:d, bg:'transparent', fg:'var(--txd)'};
   if(rozet){
     rozet.textContent=cfg.txt;
-    rozet.setAttribute('style','margin-left:8px;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:'+cfg.bg+';color:'+cfg.fg+';');
+    rozet.setAttribute('style','margin-left:8px;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:'+cfg.bg+';color:'+cfg.fg+';'+(d==='dogrulanmadi'?'cursor:help;':''));
+    if(d==='dogrulanmadi') rozet.setAttribute('title','Sistem BOM\u2019da çelişki buldu (K2 — PDF↔Excel kıyası). İnceleyip "Doğrula" ile onaylayın ya da "Güvensiz" işaretleyin.');
+    else rozet.removeAttribute('title');
   }
   if(btn){
     var guvensiz=(stored==='guvensiz');
@@ -2515,6 +2524,7 @@ function renderBomDurum(){
         ? 'background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);'
         : 'background:rgba(200,55,55,.10);color:#d33;border:1px solid rgba(200,55,55,.28);'));
   }
+  if(dogBtn){ dogBtn.style.display=(d==='dogrulanmadi')?'':'none'; }   // C3: yalnız doğrulanmadı'da görünür
 }
 
 async function bomGuvensizToggle(){
@@ -2529,6 +2539,48 @@ async function bomGuvensizToggle(){
   renderBomDurum();
   logEkle('BOM Güvenilirliği', yeni==='guvensiz' ? 'Güvensiz işaretlendi (manuel takip)' : 'Güvenilir yapıldı');
   toast(yeni==='guvensiz' ? 'Malzeme listesi güvensiz işaretlendi' : 'Güvenilir olarak işaretlendi','ok');
+}
+
+// C3: operatör sistem uyarısına rağmen "incelendi, iyi" der → bom_durum_zaman karar damgası (yeni kolon yok)
+async function bomDogrula(){
+  if(!SP.supaId || ARES.mod!=='supabase'){ toast(tv('sp_no_id','Spool ID bulunamadı'),'er'); return; }
+  var zaman=new Date().toISOString();
+  var r=await ARES.supabase().from('spooller')
+          .update({ bom_durum:'guvenilir', bom_durum_zaman:zaman }).eq('id', SP.supaId);
+  if(r.error){ toast('Güncelleme hatası: '+r.error.message,'er'); return; }
+  SP.bomDurum='guvenilir'; SP.bomDurumZaman=zaman;
+  renderBomDurum();
+  logEkle('BOM Güvenilirliği','Sistem K2 uyarısına rağmen güvenilir doğrulandı');
+  toast('BOM güvenilir olarak doğrulandı','ok');
+}
+
+// C3: K2 sinyalini (malzeme_flag) parse_sonuc._eslesme'den çek — devre-inceleme ile aynı kaynak, yeni endpoint yok
+async function bomK2SinyalYukle(){
+  try{
+    if(!SP.devre_id || !SP.pipeline || !SP.spoolNo || ARES.mod!=='supabase') return;
+    var supa=ARES.supabase(); if(!supa) return;
+    var res=await supa.from('dosya_isleme_kuyrugu')
+      .select('parse_sonuc, devre_dokumanlari!inner(devre_id,silindi)')
+      .eq('parser','izometri')
+      .eq('devre_dokumanlari.devre_id', SP.devre_id)
+      .eq('devre_dokumanlari.silindi', false);
+    if(res.error || !res.data) return;
+    var np=function(s){return String(s==null?'':s).trim().toUpperCase();};
+    var hedef=np(SP.pipeline)+'|'+np(SP.spoolNo);
+    var flag=false, kiyas=null;
+    res.data.forEach(function(row){
+      var es=row.parse_sonuc && row.parse_sonuc._eslesme;
+      var det=(es && Array.isArray(es.detay))?es.detay:null;
+      if(!det) return;
+      det.forEach(function(dd){
+        if(dd.durum!=='eslesti' || !dd.malzeme_kiyas) return;
+        if(np(dd.pipeline_no)+'|'+np(dd.spool_no)!==hedef) return;
+        if(dd.malzeme_flag){ flag=true; if(!kiyas) kiyas=dd.malzeme_kiyas; }
+      });
+    });
+    SP.k2Flag=flag; SP.k2Kiyas=kiyas;
+    renderBomDurum();
+  }catch(e){ console.warn('[bomK2SinyalYukle]',e); }
 }
 
 async function pipelineAktar(){
@@ -3818,6 +3870,7 @@ document.addEventListener('DOMContentLoaded',function(){
     renderMarkalar();renderTestler();renderMalzeme();renderNotlar();
     renderLog();renderBelgeler();renderQR();initTabs();
     kaliteleriDoldur(); // autocomplete — arkada yüklensin
+    bomK2SinyalYukle(); // C3: BOM K2 çelişki sinyali — arkada yüklensin, rozeti günceller
     if(typeof _applyI18n==='function')_applyI18n();
     document.documentElement.style.visibility='';
   })();
