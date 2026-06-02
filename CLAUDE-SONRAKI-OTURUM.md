@@ -1,62 +1,52 @@
-# CLAUDE — 144. Oturum Girişi
+# CLAUDE — 145. Oturum Girişi
 
 ## Açılış ritüeli
 1. `cd ~/Desktop/arespipe && git pull origin main && git status && git log --oneline -3` → çıktı.
-2. `cat BRIEFING.md` → 143 kapanış bağlamı.
-3. Function sayımı (MK-129.3): `ls api/*.js | wc -l` → **12** olmalı. 144'te de yeni endpoint YOK hedefi.
-4. `son-durum.md` (143) + `CLAUDE-SON-OTURUM.md` (143) + bu dosya oku.
-5. KARARLAR.md'ye MK-143.1/.2/.3/.4 işlenmediyse işle.
+2. `cat BRIEFING.md` → 144 kapanış bağlamı.
+3. Function sayımı (MK-129.3): `ls api/*.js | wc -l` → **12** olmalı. 145'te de yeni endpoint YOK hedefi.
+4. `son-durum.md` (144) + `CLAUDE-SON-OTURUM.md` (144) + bu dosya oku.
+5. KARARLAR.md'ye MK-144.1/.2/.3/.4 işlenmediyse işle.
 6. Gündem teyidi.
 
-## 143 nerede bıraktı
-- **G2a TAM TUR BİTTİ:** operatör değer-düzeltmesi düzelt→tablo→terfi uçtan uca, canlıda doğrulandı.
-- HEAD `68e2cec`. Migration 098 canlı (`taslak_duzeltmeleri`). Yeni endpoint yok (12/12).
-- Düzeltilebilir 7 alan: çap/et/ağırlık (sayısal) + malzeme/yüzey/alıştırma/kalite (katı dropdown, kanonik kod).
+## 144 nerede bıraktı
+- spool_detay BOM güvenilirliği TERFİ-SONRASI çalışıyor: kalem rötuşu (tip-uyarlamalı, basit tanım) + güvensiz/güvenilir/doğrula + türetilen "Düzeltildi". Canlı doğrulandı (C1, C2).
+- C3 (sistem-türevli "Doğrulanmadı") kodu doğru AMA inert: `bomK2SinyalYukle` `SP.devre_id` ile K2 arıyor, ama spool'un devresi ≠ izometrisinin devresi. Fail-safe yeşil (zararsız).
+- HEAD ~`de09c7e`. Migration 099 canlı. 12/12.
 
-## 144 — ANA İŞ ADAYI: BOM malzeme listesi düzeltme + güvensiz-bayrak
-**Cihat'ın asıl derdi.** Spool'un içindeki malzeme kalemleri (`spool_malzemeleri`, spool detay "Malzeme Listesi" sekmesi).
-Mantık (Cihat'ın tarif ettiği):
-- **Küçük sorun** → düzelt popup'ında kalem rötuşu (bir adet/çap yanlış).
-- **Büyük sorun / hiç güvenilmiyor** → spool/devre malzeme sekmesini **"güvensiz" işaretle**; canlıya çıkar ama damgalı, **manuel takibe** düşer. (Yanlış-ama-güvenilir-görünen veri yerine dürüst "güvensiz" → sessiz overwrite yok.)
-- 3 durum: **güvenilir** (Excel temiz, Tersan/Cadmatic) / **küçük düzeltme** / **güvensiz**.
-- Excel'siz formatlarda (Tersan dışı) BOM Excel'de olmayabilir → bu alan kritikleşir.
+## 145 — ANA İŞ: C3 devre-bağı (= D borcu, spool↔izometri devre kopukluğu)
+**Kanıt (144'te bulundu):** Spool `5d149e43` (AT110-816-027/S01) → `SP.devre_id=fb80d315` (devre "AT110-Drencher-Galv"). Ama o spool'un izometri parse'ı + K2 `malzeme_flag` → devre `7ed93033` ("g230"). pipeline+spool tenant'ta 13 farklı devrede tekrar → devre-bağımsız eşleşme YASAK (yanlış gemi).
 
-**KOD ÖNCESİ OKU (MK-126.8, tahmin yok — 143'te tablo/native-confirm yanlış varsayımdan kaçınıldı):**
-1. `spool_malzemeleri` şeması (`information_schema.columns`) — hangi alanlar, FK, mevcut bayrak var mı.
-2. Spool detay "Malzeme Listesi" sekmesi render (`spool_detay.html`) — kalemler nasıl gösteriliyor.
-3. K2 malzeme kıyas (`malzeme_kiyas` / `_eslesme`) — çelişki nasıl tespit ediliyor (zaten "%100 çelişki" üretiyor).
-4. Karar: güvensiz bayrak NEREDE? (spool seviyesi `spooller.malzeme_guvensiz` mi, devre mi, kalem mi). Migration gerekebilir → BEGIN...ROLLBACK.
-5. Kalem düzeltme `taslak_duzeltmeleri`'ye sığmaz (anahtar spool başlığı) → ayrı yapı mı, yoksa kalem-id bazlı mı? Tasarım kararı.
+**KOD ÖNCESİ OKU (MK-126.8 — tahmin yok):**
+1. Spool bir devrede, izometrisi başka devrede NASIL oluyor? Terfi akışı: devre wizard'da izometri `g230` devresine yüklenmiş, spool terfide `AT110-Drencher-Galv`'a mı gitmiş? `devre_dokumanlari` / spool oluşturma akışını oku.
+2. Spool → kaynak izometri devresi ilişkisi VAR MI? (spooller'da kaynak_devre/izo_devre kolonu? montaj_json? başka FK?) `information_schema` + spooller örnek satır.
+3. `eslestirme-backfill.js` (session 110) bu bağı kuruyor mu — terfi sonrası izometri eşleştirme neden bağlamıyor (DEVIR D borcu).
+4. Karar: C3 sinyalini (a) doğru devreyi türetip oradan mı çekeceğiz, (b) yoksa spool'un kendi parse referansından mı (spooller'da bir izometri/parse FK varsa).
 
-## ÖNCELİKLİ AYRI TEŞHİS (144'te ya da ayrı): "Hep zayıf / %100 çelişki"
-NB1124 G310 devresinde TÜM spool'lar "zayıf / doğrulanmadı / L2 %100 çelişki / okunamadı" (143 Image 3).
-- Bu format-özgü parse/eşleşme sorunu. "%100 çelişki" neyin çelişkisi — `devre-inceleme` endpoint + `izo-eslesme` neye bakıyor?
-- TAHMİN YOK. Kanıt teşhisi: bir spool'un izometri parse_sonuc'u + kabuk değerini yan yana koy, çelişki nerede.
-- Cihat "genelde yeşil oluyordu, bu gemide niye okuyamıyor" dedi → format/glyph farkı olabilir (NB1137 Band-B gibi).
-- **Eğer BOM işinden önce bu can sıkıyorsa, ısınma turu olarak teşhis (okuma) ile başlanabilir.**
+**Uyarı:** C3'ün yakaladığı flag'lerin BİR KISMI yanlış-pozitif olabilir — dirsek ağırlık çelişkisi (PDF agregat 6.72 vs Excel birim 3.57) = bilinen "dirsek normalizasyon" borcu. C3 doğru çalışsa bile bu flag'ler "gerçek çelişki mi normalizasyon mu" sorusunu açar. C3'ü canlandırırken bunu akılda tut (operatör "Doğrula" ile geçebilir, ama gürültü olabilir).
+
+## SONRAKİ: B — terfi öncesi BOM kalem rötuşu + güvensiz (wizard)
+- Wizard'da kalemler ZATEN görünür: "🔧 Malzeme Listesi" sekmesi (`#malzBody`, kaynak `WIZ._kabukSatirlar` = BOM parse satırları), SALT-OKUNUR.
+- İnceleme spool tablosunda `malzeme_flag` (K2) zaten yüzeyde (`izoCell`).
+- B = (1) wizard'da kalem düzenleme UI (G2a "Düzelt" popup'ı kalem-seviyeye genişletilebilir ya da yeni), (2) parse'tan gelen kalem sayfa yenilenince kaybolur → KALEM-SEVİYESİ TASLAK katmanı (G2a `taslak_duzeltmeleri` deseni; anahtar devre+pipeline+spool+kalem), (3) güvensiz bayrağı pre-terfi: spooller satırı yok → `(devre,pipeline,spool)` anahtarlı taslak, terfide `spooller.bom_durum`'a yaz, (4) terfide `ARES_KABUK.aktar` taslak kalem düzeltmelerini `spool_malzemeleri`'ye uygula.
+- A (144, terfi sonrası) B'nin VARIŞ NOKTASI — spooller.bom_durum + spool_malzemeleri düzenleme zaten hazır.
+
+## SONRAKİ: C4 — downstream damga
+- Güvensiz BOM → kesim/büküm/markalama'da GÖRÜNÜR uyarı (ENGEL DEĞİL, taşınan bayrak — "çizimle teyit et"). spool_malzemeleri zaten besliyor (dis_cap/et/boy/kalite). İstasyonların BOM tüketimini + nereye damga gireceğini oku.
 
 ## DİĞER AÇIK BORÇLAR
-- **Terfi sonrası izometri PDF spool detaya gelmiyor** (143 Image 1) — `eslestirme-backfill` / 129-130 borcu. Teşhis: terfi sonrası backfill çağrılıyor mu, dönüşü ne, izometri neden bağlanmıyor.
-- **Native confirm() → kendi modal** (143 Image 2, wizard iptal "Vazgeçmek istediğinize emin misiniz?"). Kozmetik, küçük. `confirm(` ara, kendi overlay deseninle değiştir.
-- **G3a yayılma:** bir spool düzeltmesi aynı hatalı diğer spool'lara otomatik. Q1 (anahtar) + Q2 (değer-kopyala/kural-öğret) kararı GEREKLİ. Cihat 143'te sordu ("aynı hata diğerinde de vardı düzelmesi gerekmez mi") → bu G3a, henüz yapılmadı.
-- **Durum/özet tutarlılığı:** düzeltilen satır hâlâ "zayıf/çelişki", üst özet/stat eski. Düzeltme durum/stat/özet hesabına dahil edilmeli (gösterim, risksiz, küçük).
-- BUG-B DN125 (park) · MK-139.1 görsel teyit · tip='fitting' ama flanş · ara-açı dirsek (3D, MK-49.A).
+- Kalite alanı datalist (MK-143.2 katı dropdown diyordu) — çalışıyor, basit-tanım'a uyuyor; ileride katı dropdown (düşük öncelik).
+- Dirsek ağırlık normalizasyonu (PDF agregat vs Excel birim) — l2-parser.
+- Band-B (NB1137 L3) · pipeline_no E120- prefix · yukleyen_id null · devre wizard folder tree · tip='fitting' ama flanş · BUG-B DN125 (park) · ara-açı dirsek (3D).
 
 ## KORUMA bantları
 - MK-49.1: izometri-oku.js'e DOKUNMA. · MK-129.3: api/*.js = 12, yeni endpoint yok.
-- MK-126.8: yeni modül/SQL öncesi mevcut kod+DB oku (143'te ares-normalize/tanimlar/ares-kabuk okundu, körlemesine yazılmadı).
+- MK-126.8: yeni modül/SQL/sinyal-çekme öncesi mevcut kod+DB+VERİ-AKIŞI oku (144 dersi: C3 devre-bağını öngörmedim).
 - MK-98.2: şema migration BEGIN...ROLLBACK dry-run → COMMIT.
-- MK-101.1: arespipe_kopyala = üç argüman (kaynak hedef md5) + git status.
-- MK-143.3: ares-kabuk paylaşılan modül — opsiyonel param ekle, devre_detay'ı bozma (sıfır regresyon).
-- Kod commit'i `[skip ci]` YOK; doc/migration `[skip ci]`. Kod ve doc ayrı commit.
+- MK-101.1: arespipe_kopyala = üç argüman + git status. Komutları TEK TEK (gp alias yapışıyor).
+- MK-134.1: `[skip ci]` HEAD'de push'un tüm CI'ını bastırır → kod ayrı, doc/migration ayrı push.
+- Kod commit `[skip ci]` YOK; doc/migration `[skip ci]`.
 
-## Hatırlatmalar (143 dersi)
-- Komutları TEK TEK ver — `gp` gibi alias bir sonraki kelimeye yapışıyor (143'te `gparespipe_kopyala` hatası oldu).
-- sed HTML/JS'de yok → atomik str_replace/Python.
-- Kanonik dropdown: malzeme/yüzey/alıştırma statik (ARES_NORM), kalite DB (malzeme_tanimlari, .or(tenant null + eq)).
-- "DB kolon tipi text" ≠ "UI serbest giriş" — tanımlı alanlar dropdown olmalı (yazım farkı tablo bozar).
-- Test verisi: NB1124 G310 (13 spool, hep zayıf — teşhis için iyi örnek) · NB1137 Watermist · A-1095/A-1096 (143'te düzeltme yazılan spool'lar).
-
----
-> 144 ilk somut adım: ya BOM güvensiz-bayrak (ana iş, önce spool_malzemeleri + spool detay sekmesi OKU)
-> ya da "hep zayıf" teşhisi (ısınma, okuma turu). Cihat hangisi can sıkıyorsa.
+## Kanonik dosyalar (144)
+- `spool_detay.html`: `renderBomDurum`/`bomGuvensizToggle`/`bomDogrula`/`bomK2SinyalYukle` (BOM güvenilirlik), `malzDuzenleAc`/`malzDuzenleTipVis`/`malzDuzenleKaydet` + `#malzDuzenleModal` (kalem rötuşu).
+- `migrations/099_bom_guvenilirlik.sql`.
+- C3 fix muhtemelen `bomK2SinyalYukle`'de (devre türetme) + olası `eslestirme-backfill.js` okuması.

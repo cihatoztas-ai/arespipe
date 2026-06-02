@@ -1,54 +1,45 @@
-# AresPipe BRIEFING — 143. Oturum Kapanışı
+# AresPipe BRIEFING — 144. Oturum Kapanışı
 
-> **Bu dosya tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
+> **Tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
 
-## HEAD
-`68e2cec` feat(143): G2a overlay-B — terfide duzeltmeler spooller basligina yazilir (aktar duzeltmeler param)
-- `77b775a` G2a overlay-A — düzeltme DB'den yüklenir + tabloda gösterilir (dz-cell vurgu) + sayfa 1600
-- `dd84b64` G2a 4 alan katı dropdown + ağırlık NaN fix + popup tutarlılık
-- `a0ee606` G2a değer yazma (7 alan → taslak_duzeltmeleri upsert)
-- `0668bb9` migration 098 taslak_duzeltmeleri [skip ci]
-- `c7db87d` kutuphane-backfill.html sil (ölü kod) + 2 nav linki
-- **DB:** migration `098_taslak_duzeltmeleri.sql` canlı (COMMIT). Yeni endpoint YOK (12/12).
+## HEAD (son push ~`de09c7e`)
+- `de09c7e` feat(144): C3 sistem-türevli BOM rengi — K2 malzeme_flag çek + dogrulanmadi + doğrula butonu
+- `d571134` feat(144): BOM kalem rötuşu C2 — tip-uyarlamalı malzeme düzenle modal + türetilen "duzeltildi"
+- `2e6a80c` migration(144): 099 bom_durum + spool_malzemeleri.guncelleme [skip ci]
+- `48512ba` feat(144): BOM güvenilirlik bayrağı C1 — bom_durum rozeti + güvensiz toggle
+- **DB:** migration `099_bom_guvenilirlik.sql` canlı (COMMIT). Yeni endpoint YOK (12/12).
 
-## 143 — yapılanlar (ANA İŞ: G2a operatör değer-düzeltme döngüsü, tam tur)
-1. **C planı — backfill dosyası: SİL.** `admin/kutuphane-backfill.html` terk edilmişti (097 SQL kazandı), 2 nav linkiyle silindi. Sıfır referans.
-2. **Migration 098 — taslak_duzeltmeleri.** Q5 (139): düzeltme parse_sonuc'a değil ayrı tabloya. Anahtar UNIQUE(tenant,devre,pipeline,spool,alan) → upsert. RLS get_tenant_id (devre_dok deseni). Q5 kod-öncesi doğrulandı (client-side yazma + RLS teyit).
-3. **G2a değer yazma.** `duzeltAc` salt-görüntüden değer-yazmaya. Her satırda ✏️ → inline → ✓/✕ → upsert. Boş=sil. Enter/Escape.
-4. **7 alan + tip:** çap/et/ağırlık = sayısal input (virgül→nokta NaN-fix). malzeme/yüzey/alıştırma/kalite = **KATI dropdown** (kanonik KOD saklanır, etiket gösterilir). Kalite DB'den (`malzeme_tanimlari` sistem+firma). Yüzey malzemeye göre uyumlu filtreli. Listede yok→"(tanımsız)".
-5. **Overlay-A (gösterim):** inceleGetir → DB'den düzeltme çekilir, spoollar._duzelt'e basılır, tabloda görünür (turuncu dz-cell), sayfa yenilense de kalıcı.
-6. **Overlay-B (terfi):** ares-kabuk.aktar opsiyonel `duzeltmeler` param. Spool BAŞLIK 7 alanı düzeltme varsa onunla yazılır. devre_detay göndermez → sıfır regresyon. (Bonus: alistirma artık yazılıyor.)
+## 144 — yapılanlar (ANA İŞ: BOM güvenilirlik + kalem rötuşu, spool_detay)
+1. **Migration 099.** `spooller.bom_durum` (text, default 'guvenilir', CHECK guvenilir/duzeltildi/guvensiz) + `bom_durum_not`/`bom_durum_zaman` + `spool_malzemeleri.guncelleme`. Son sonuncu latent-bug fix: sertToggle/heatKaydet `guncelleme` yazıyordu ama kolon yoktu → `_supaUpdate` sessizce console.warn'a düşüp fail ediyordu.
+2. **C1 — güvenilirlik bayrağı.** Malzeme Listesi başlığında rozet + "Güvensiz işaretle"/"Güvenilir yap" toggle. `spooller.bom_durum` client-side UPDATE + RLS. Canlı doğrulandı.
+3. **C2 — kalem rötuşu (tip-uyarlamalı).** Her satırda ✏️ (uç işlemi hariç) → modal: tip (boru/fitting/flanş/diğer) + kod/açıklama/malzeme(select)/kalite(datalist `kaliteListe`)/çap/et/boy/adet/ağırlık. Boy yalnız boruda, et flanşta gizli. Doğrudan `spool_malzemeleri` UPDATE (terfi-sonrası gerçek veri → taslak DEĞİL). virgül→nokta NaN-fix, MK-111.1 (et>çap engeli). Tip/boyut değişince kütüphane FK (boru/fitting/flansh_olculer_id) NULL'lanır = basit tanım, kütüphane zorlamaz. SELECT'e `kod/aciklama/adet/guncelleme` eklendi (kod artık gerçek, fallback değil). **Canlı doğrulandı** (NB1137 spool: malzeme/kalite/tip/boy değişti, render+log+kalıcılık tuttu).
+4. **C3 — sistem-türevli renk (KOD DOĞRU, AKTİF DEĞİL).** `bomK2SinyalYukle()` `dosya_isleme_kuyrugu.parse_sonuc._eslesme.detay[].malzeme_flag`'i çeker → operatör karar vermemiş + flag varsa sarı "⚠ Doğrulanmadı" + "✓ Doğrula" butonu (`bom_durum_zaman` karar damgası). **TAKILDI:** `bomK2SinyalYukle` `SP.devre_id` ile filtreliyor, ama spool'un devresi ≠ izometrisinin devresi (örnek: spool `AT110-Drencher-Galv`/`fb80d315`, izometri+flag `g230`/`7ed93033`). pipeline+spool 13 farklı devrede tekrar ettiği için devre-bağımsız eşleşme GÜVENSİZ. Sonuç: C3 fail-safe yeşile düşüyor — **zarar yok, hata yok, regresyon yok** ama "Doğrulanmadı" sarısı şimdilik HİÇ tetiklenmiyor. Devre-bağı (D borcu) çözülünce aktifleşir.
 
 ## §13 DURUM
-Operatör düzeltme döngüsünün **DEĞER kısmı (G2a) KAPANDI** — düzelt→tablo(kalıcı)→terfi(canlıya yaz). Canlı doğrulandı (A-1095/A-1096: Paslanmaz/316L/Asit spooller'a yazıldı). Yayılma (G3a), L3 eşiği (G4), BOM kalem düzeltme + güvensiz-bayrak HENÜZ yok.
+Operatör BOM güvenilirliği döngüsünün **terfi-sonrası (spool_detay) DEĞER + GÜVEN kısmı çalışıyor:** kalem rötuşla → "Düzeltildi"; güvensiz işaretle → kırmızı damga (manuel takip); güvenilir doğrula. Sistem-türevli "Doğrulanmadı" kod hazır ama devre-bağı borcuna bağlı (inert). Terfi-ÖNCESİ (wizard, B) ve downstream damga (kesim/büküm/markalama, C4) HENÜZ yok.
 
 ## CANLI DOĞRULAMA ✅
-spool_detay A-1095/A-1096 → Malzeme Paslanmaz, Kalite 316L, Yüzey Asit, Et 5,2mm. Terfide düzeltmeler spooller'a geçti, devre özeti senkron.
+- C1: güvensiz toggle + kalıcılık (F5) — geçti.
+- C2: NB1137-AT110-816-026-S01 kalem düzenleme (malzeme Paslanmaz, çap/boy değişti, kod gerçek geldi) — geçti.
+- C3: kod konsol+SQL ile doğrulandı (client sorgu 12 kayıt/8 flag döndürüyor) ama devre-bağı yüzünden UI'da sarı çıkmıyor.
 
-## 143'te ÇIKAN AMA YAPILMAYAN (143 işiyle ilgisiz — ayrı teşhis, sonraki oturum)
-- **🔴 NB1124 G310 "hep zayıf / %100 çelişki / okunamadı":** TÜM spool zayıf+çelişkili. Format-özgü parse/eşleşme. TAHMİN YOK, kanıt teşhisi gerekir. Öncelikli.
-- **Terfi sonrası izometri PDF spool detaya gelmiyor:** eslestirme-backfill / 129-130 borcu.
-- **Native confirm() → kendi modal:** wizard iptal "Vazgeçmek emin misiniz?" tarayıcı kutusu (kozmetik).
-
-## AÇIK BORÇ (144 için, öncelik sırası)
-1. **BOM malzeme listesi düzeltme + güvensiz-bayrak (ANA İŞ):** spool_malzemeleri kalemleri (spool detay Malzeme sekmesi). Küçük sorun→kalem rötuşu; büyük sorun→"güvensiz" işaretle, canlıya damgalı çıkar, manuel takibe düş. 3 durum: güvenilir/düzeltildi/güvensiz. Excel'siz formatlarda kritik. KOD ÖNCESİ: spool_malzemeleri şema + spool detay render + K2 kıyas oku (MK-126.8). Bayrak kolonu migration gerekebilir.
-2. **"Hep zayıf" teşhisi (öncelikli ayrı):** NB1124 G310 niye okuyamıyor — devre-inceleme + izo-eslesme kanıtla. Isınma turu olabilir.
-3. **G3a yayılma:** bir spool düzeltmesi aynı hatalı diğerlerine otomatik. Q1+Q2 kararı GEREKLİ (Cihat 143'te sordu).
-4. **Durum/özet tutarlılığı:** düzeltilen satır hâlâ "zayıf/çelişki", üst özet/stat eski. Düzeltme hesaba dahil (gösterim, risksiz).
-5. tip='fitting' ama flanş · BUG-B DN125 (park) · MK-139.1 görsel teyit · ara-açı dirsek (3D).
+## AÇIK BORÇ (145 için, öncelik)
+1. **C3 devre-bağı (ÖNCELİKLİ — C3'ü tamamlar):** Spool'un izometrisinin GERÇEK devresini bul (spool↔izometri devre kopukluğu). DEVIR'deki **D borcu (terfi sonrası izometri spool detaya gelmiyor) ile AYNI KÖK.** Çözülünce C3 sarısı kendiliğinden çalışır. Kanıt: spool.devre_id (fb80d315) ≠ K2/izometri devresi (7ed93033); pipeline+spool tenant'ta 13× tekrar (devre-bağımsız eşleşme yapılamaz).
+2. **B — terfi öncesi BOM kalem rötuşu + güvensiz (wizard):** Wizard'da kalemler ZATEN görünür ("🔧 Malzeme Listesi" sekmesi, `WIZ._kabukSatirlar`, salt-okunur). Düzenleme + güvensiz için G2a deseninde kalem-seviyesi TASLAK katmanı (parse'tan gelen kalem sayfa yenilenince kaybolur) + terfide `ARES_KABUK.aktar`'a taşıma. `malzeme_flag` İnceleme tablosunda zaten var. A (terfi sonrası, bu oturum) B'nin varış noktası.
+3. **C4 — downstream damga:** Kesim/büküm/markalama'da güvensiz görünür uyarı (ENGEL DEĞİL, taşınan bayrak). spool_malzemeleri zaten besliyor; istasyonların BOM tüketimini oku.
+4. Kalite alanı datalist kaldı (MK-143.2 katı dropdown diyordu) — çalışıyor, basit-tanım'a uyuyor; ileride katı dropdown'a çevrilebilir (düşük öncelik).
+5. Önceki borçlar: Dirsek ağırlık normalizasyonu (PDF agregat vs Excel birim — C3'ün yakaladığı flag'in bir kısmı bu, "yanlış pozitif" olabilir) · Band-B (NB1137 L3) · pipeline_no E120- prefix · yukleyen_id null · devre wizard folder tree · tip='fitting' ama flanş.
 
 ## PLAN
 | Adım | Durum |
 |---|---|
-| C — backfill dosyası sil | ✅ c7db87d |
-| Migration 098 taslak_duzeltmeleri | ✅ canlı + repo |
-| G2a değer yazma (7 alan) | ✅ a0ee606 |
-| G2a katı dropdown + NaN fix | ✅ dd84b64 |
-| G2a overlay-A (DB+tablo) | ✅ 77b775a |
-| G2a overlay-B (terfi) | ✅ 68e2cec, canlı doğrulandı |
-| BOM güvensiz-bayrak | 144 ana iş |
-| "Hep zayıf" teşhisi | 144 öncelikli ayrı |
-| G3a yayılma | sonra (Q1/Q2 gerekli) |
+| Migration 099 (bom_durum + guncelleme) | ✅ canlı |
+| C1 güvenilirlik bayrağı | ✅ 48512ba canlı |
+| C2 tip-uyarlamalı kalem rötuşu | ✅ d571134 canlı, doğrulandı |
+| C3 sistem-türevli renk | ⚠ de09c7e canlı ama devre-bağı borcuna bağlı (inert, zararsız) |
+| C3 devre-bağı (D borcu) | 145 öncelikli |
+| B terfi öncesi rötuş+güvensiz | 145 |
+| C4 downstream damga | sonra |
 
 ## NEREDEYIZ — ÖZET
-G2a bitti: operatör çap/et/ağırlık/malzeme/kalite/yüzey/alıştırma düzeltir, tabloda kalıcı görür, terfide canlıya yazılır. Kanonik dropdown'la yazım hatası riski yok, NaN giderildi, sıfır regresyon. Sıra: BOM malzeme listesinin güvenilirliği (küçük düzeltme + güvensiz-bayrak) ve "hep zayıf" format teşhisi.
+spool_detay'da BOM güvenilirliği uçtan uca: operatör kalem rötuşlar (tip-uyarlamalı, basit tanım), güvensiz işaretler (manuel takip damgası) veya güvenilir doğrular; "Düzeltildi" türetilir. Sistem-türevli "Doğrulanmadı" kodu hazır ama spool↔izometri devre kopukluğu (D borcu) yüzünden inert. Sıra: D borcunu çözüp C3'ü canlandırmak, sonra terfi-öncesi (B) ve downstream damga (C4).

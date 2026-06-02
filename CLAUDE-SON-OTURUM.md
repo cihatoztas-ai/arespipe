@@ -1,34 +1,28 @@
-# CLAUDE — 143. Oturum Özeti
+# CLAUDE — 144. Oturum Özeti
 
-**Tek cümle:** Operatör değer-düzeltme döngüsü (G2a) uçtan uca kuruldu — düzelt popup'ında 7 alan (3 sayısal + 4 katı dropdown) düzeltilir, `taslak_duzeltmeleri` tablosuna upsert edilir, inceleme tablosunda kalıcı görünür (DB'den, turuncu vurgu), terfide `spooller` başlığına yazılır; canlıda doğrulandı (Paslanmaz/316L/Asit spool'a geçti).
+**Tek cümle:** spool_detay'da BOM güvenilirliği uçtan uca kuruldu — tip-uyarlamalı kalem rötuşu (basit tanım, kütüphane zorlamaz) + güvensiz/güvenilir/doğrula toggle + türetilen "Düzeltildi"; sistem-türevli "Doğrulanmadı" (C3) kodu doğru ama spool↔izometri devre kopukluğu (D borcu) yüzünden inert.
 
 ## Akış
-- Açılış: 142 kapanış DEVIR + BRIEFING. C/A/B seçenekleri. Önce C (backfill kararı), sonra "ağır iş öne" → operatör düzeltme döngüsü (Bölüm 13, G2a).
-- C: `kutuphane-backfill.html` ölü kod → silindi (2 nav linki dahil). Migration 097 zaten yüklenmişti (bf13480), teyit edildi.
-- G2a kapıları: Q5 (139 kararı = ayrı tablo) kod-öncesi doğrulandı — taslak yazmaları client-side supabase (inceleBaslat/wizardIptal kanıt) + RLS deseni (`devre_dok_tenant` ALL/get_tenant_id) teyit. Ters çıkmadı. Q1/Q2 (yayılma) G2a'yı bloke etmiyor → girildi.
-- Migration 098: `taslak_duzeltmeleri` (BEGIN...ROLLBACK dry-run → COMMIT). Upsert anahtarı, RLS, indeks.
-- G2a inşası 4 commit: değer-yazma → dropdown+NaN → overlay-A (DB'den+tablo) → overlay-B (terfi).
-- Her commit canlı test edildi. Cihat iki düzeltme verdi: (1) ağırlık NaN, (2) 4 alan dropdown olmalı (serbest yazı tabloyu bozar). İkisi de uygulandı.
+- Açılış: 143 DEVIR + BRIEFING + git pull (temiz, 12/12). Gündem: A (BOM güvensiz-bayrak). "Ağır iş öne" → A.
+- MK-126.8 okuma önce: `spool_malzemeleri` şeması (güvensiz kolonu yok, `sertifikali` var, kalem `id` var) + spool_detay render (`_supaUpdate` filtre yok → guncelleme sessiz fail bulundu) + K2 (`devre-inceleme.js`/`izo-eslesme.js`: malzeme_flag parse_sonuc._eslesme'de, spooller'da değil).
+- Migration 099 (dry-run → COMMIT): bom_durum + not/zaman + spool_malzemeleri.guncelleme.
+- C1 (rozet+toggle) → C2 (tip-uyarlamalı kalem rötuşu) → C3 (sistem renk). Her biri kopyala+push+canlı test.
+- Cihat'ın yön verdiği kararlar: (a) "sistem doğru okuyamadığını düşünüyorsa güvensiz/sarı göstersin" → C3'ün gerekçesi (B yönü). (b) güvensiz BOM → kesim/büküm/markalama'yı ENGELLEMEZ, görünür damga taşır (C4). (c) sıkıntılı formatlarda kütüphane zorlamayız, basit tanımla ölçü gireriz → C2'nin FK-temizleme + tip-uyarlamalı tasarımı. (d) terfi öncesi (wizard) düzeltme daha iyi (B) ama spool_malzemeleri terfide oluştuğu için A önce, B varış noktası A.
 
-## Kararlar
-- MK-143.1: Düzeltme ayrı tablo + upsert + client-side/RLS.
-- MK-143.2: malzeme/yüzey/alıştırma/kalite KATI dropdown (kanonik kod). Kalite DB'den.
-- MK-143.3: aktar opsiyonel `duzeltmeler` param (spool başlığı override, sıfır regresyon).
-- MK-143.4: Overlay sadece spooller başlık; BOM ayrı (güvensiz-bayrak işi).
+## Kararlar (MK-144.1..4) — son-durum.md'de tam
+- 144.1 bom_durum (saklanan guvenilir/guvensiz, türetilen duzeltildi/dogrulanmadi, zaman=karar damgası).
+- 144.2 kalem rötuşu doğrudan spool_malzemeleri UPDATE (taslak değil), tip-uyarlamalı, FK temizleme.
+- 144.3 spool_malzemeleri.guncelleme latent-bug fix.
+- 144.4 C3 devre-bağı borcuna bağlı (spool.devre_id ≠ izometri devresi; pipeline+spool 13× tekrar → devre-bağımsız eşleşme yasak).
 
 ## Kanıt / yöntem
-- Hiçbir kod körlemesine yazılmadı: ares-normalize.js (malzeme/yüzey/kalite kaynakları), tanimlar.html (kalite DB sorgusu = malzeme_tanimlari), ares-kabuk.js (terfide cap/et BOM'dan türetiliyor → overlay-B'nin Yol-A gerektiği buradan çıktı) önce okundu.
-- Override mantığı + ağırlık fmt izole node testiyle doğrulandı (5.16 fallback / 8 düzeltme / 18,5→18.5 NaN-suz).
-- Her iki dosya `new Function` syntax kontrolünden geçti.
+- Hiçbir kod körlemesine yazılmadı: şema (information_schema), render, K2 modülleri, ARES_NORM/kaliteleriDoldur/duzenleModal deseni önce okundu.
+- Her commit `new Function` sözdizimi denetimi (2 blok, 0 hata) + canlı test.
+- C3 teşhisi: SQL (flag'li spool listesi, malzeme_kiyas içeriği) + tarayıcı konsolu (client sorgu 12/8) + SP.pipeline/spoolNo/devre_id dump → kök spool↔izometri devre kopukluğu olarak kanıtlandı (tahmin değil).
 
-## 143'te çıkan ama YAPILMAYAN (ayrı teşhis, sonraki oturum)
-1. NB1124 G310'da tüm spool "zayıf/%100 çelişki/okunamadı" — format-özgü parse/eşleşme sorunu. Taze bağlam + kanıt teşhisi (en öncelikli).
-2. Terfi sonrası izometri PDF spool detaya gelmiyor (eslestirme-backfill / 129-130 borcu).
-3. Native confirm() → kendi modal (kozmetik).
+## Hatalarım
+- C3'ü `SP.devre_id`'ye kilitledim, spool↔izometri devre kopukluğunu (bilinen D borcu) öngörmedim → C3 inert kaldı. Ders: sinyal-çekmeden önce "kaynak veri gerçekten hangi devrede" doğrula.
+- Test başında "nereye bakacağını" söylemedim.
 
-## Sonraki oturum ana iş
-BOM malzeme listesi düzeltme + güvensiz-bayrak (3 durum: güvenilir/düzeltildi/güvensiz). Cihat'ın asıl önemsediği. Excel'siz formatlarda BOM kritik. Kod öncesi spool_malzemeleri şeması + spool detay malzeme sekmesi + K2 kıyas oku.
-
-## Hatalarım (kayıt)
-- Ağırlık "farklı mı" sorusuyla gereksiz karmaşa yarattım; tek fark gösterim formatıydı.
-- malzeme/kalite/yüzey/alıştırma'yı ilk turda serbest text bıraktım — Cihat kanonik dropdown gerektiğini hatırlattı (yazım farkı tabloyu bozar). Ders: DB kolon tipi ≠ UI giriş kısıtı.
+## 145 ana iş
+C3 devre-bağı (D borcu) → C3 canlanır. Sonra B (terfi öncesi wizard rötuş+güvensiz, kalem taslak katmanı) + C4 (downstream damga).
