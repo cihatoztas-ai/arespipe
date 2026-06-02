@@ -1044,20 +1044,173 @@ var _incDeb;
 function inceleGetirDebounce() { clearTimeout(_incDeb); _incDeb = setTimeout(inceleGetir, 400); }
 
 // ── Malzeme sekmesi (kabuk satırlarından) ──
+/* ════════════════════════════════════════════════════════════════════
+   146/B — KALEM-SEVİYESİ RÖTUŞ (devre_wizard_v3.html script bloğuna EKLE)
+   Spool-seviyesi (DUZELT_ALANLAR/duzeltAc/...) DOKUNULMAZ; bu paralel yol.
+   Anahtar: WIZ._kalemDuzelt[(pipeline|spool)][idx]{alan:deger} = aktar.kalemDuzeltmeler
+   ════════════════════════════════════════════════════════════════════ */
+
+// Kalem-seviyesi düzenlenebilir alanlar (malzeme, DN, adet/boy, ağırlık).
+// kalite çap/et türetilir → ayrı alan yok. açı persist edilmiyor → dışarıda (146 notu).
+var KALEM_ALANLAR = {
+  malzeme: { lbl:'Malzeme', prop:'malzeme', tip:'select', secenekler:_malzemeSecenekler,
+    fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.malzemeEtiket(v) : v; } },
+  dn:      { lbl:'DN / Boyut', prop:'dn', tip:'text', fmt:function(v){ return v; } },
+  adet:    { lbl:'Adet', prop:'adet', tip:'sayi', tipGate:function(b){ return b.tip==='fitting'; }, fmt:function(v){ return v; } },
+  boy:     { lbl:'Boy (mm)', prop:'boy_mm', tip:'sayi', tipGate:function(b){ return b.tip==='boru'; }, fmt:function(v){ return v; } },
+  agirlik: { lbl:'Ağırlık', prop:'agirlik_kg', tip:'sayi', fmt:function(v){
+    if (v==null||v==='') return ''; var n=Number(String(v).replace(',','.'));
+    return isFinite(n) ? (n.toLocaleString('tr-TR',{maximumFractionDigits:1})+' kg') : String(v); } }
+};
+var _kalemDuzeltCtx = null;   // { sKey, idx, b, spoolNo }
+
+// DB'den kalem düzeltmelerini WIZ._kalemDuzelt'e yükle (gte kalem_idx 0 = kalem; -1 spool ayrı yol).
+async function _kalemDuzeltmeleriYukle() {
+  WIZ._kalemDuzelt = {};
+  if (!WIZ.devre_id) return;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var res = await supa.from('taslak_duzeltmeleri')
+      .select('pipeline_no, spool_no, alan, deger, kalem_idx')
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id).gte('kalem_idx', 0);
+    if (res.error) { console.warn('[v3] kalem duzelt yukle:', res.error.message); return; }
+    (res.data || []).forEach(function(d) {
+      var k = (d.pipeline_no || '') + '|' + (d.spool_no || '');
+      (WIZ._kalemDuzelt[k] = WIZ._kalemDuzelt[k] || {});
+      (WIZ._kalemDuzelt[k][d.kalem_idx] = WIZ._kalemDuzelt[k][d.kalem_idx] || {})[d.alan] = d.deger;
+    });
+  } catch (e) { console.warn('[v3] kalem duzelt yukle hata:', e); }
+}
+
+// ✏️ → modal'ı kalem alanlarıyla aç (duzeltOverlay/dpTitle/dpBody yeniden kullanılır)
+function kalemDuzeltAc(sKey, idx) {
+  var sp = WIZ._kabukSpoollar || [], b = null, spoolNo = '';
+  for (var i=0;i<sp.length;i++){ var k=(sp[i].pipeline||'')+'|'+(sp[i].spoolNo||''); if(k===sKey){ b=(sp[i].bom||[])[idx]; spoolNo=sp[i].spoolNo||''; break; } }
+  if (!b) return;
+  _kalemDuzeltCtx = { sKey:sKey, idx:idx, b:b, spoolNo:spoolNo };
+  var KD = WIZ._kalemDuzelt || {};
+  var d = (KD[sKey] && KD[sKey][idx]) ? KD[sKey][idx] : {};
+  document.getElementById('dpTitle').textContent = spoolNo + ' — ' + (b.tanim || 'kalem');
+  function dsatir(alan) {
+    var cfg = KALEM_ALANLAR[alan];
+    if (cfg.tipGate && !cfg.tipGate(b)) return '';   // adet sadece fitting, boy sadece boru
+    var deger = (d[alan] != null) ? d[alan] : b[cfg.prop];
+    var gor = cfg.fmt ? cfg.fmt(deger) : deger;
+    var duzeltilmis = (d[alan] != null);
+    var roz = duzeltilmis ? '<span class="src l3" title="operatör düzeltmesi">düzelt</span>' : '<span class="src xl">Excel</span>';
+    return '<div class="efld" id="kef-'+alan+'"><label>'+cfg.lbl+'</label>' +
+      '<div class="locked" id="klk-'+alan+'" style="padding:7px 9px;font-size:14px;">' +
+        '<span style="flex:1;">'+esc(gor!=null&&gor!==''?String(gor):'—')+'</span>' +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="kalemSatirAc(\''+alan+'\')" title="Düzelt">✏️</button>' +
+      '</div>'+roz+'</div>';
+  }
+  var bb = '<div class="dp-sec">Kalem — okunan değerler</div>';
+  bb += dsatir('malzeme') + dsatir('dn') + dsatir('adet') + dsatir('boy') + dsatir('agirlik');
+  bb += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir ve terfide BOM kalemine (spool_malzemeleri) yazılır.</p>';
+  bb += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
+  document.getElementById('dpBody').innerHTML = bb;
+  document.getElementById('duzeltOverlay').classList.remove('hide');
+  if (typeof _kaliteSecenekYukle === 'function') _kaliteSecenekYukle();
+}
+
+// ✏️ satır içi input/select aç (spool duzeltSatirAc eşi, kalem ctx'i)
+async function kalemSatirAc(alan) {
+  var ctx = _kalemDuzeltCtx; if (!ctx) return;
+  var b = ctx.b, cfg = KALEM_ALANLAR[alan];
+  var lk = document.getElementById('klk-'+alan); if (!lk) return;
+  var KD = WIZ._kalemDuzelt || {};
+  var d = (KD[ctx.sKey] && KD[ctx.sKey][ctx.idx]) ? KD[ctx.sKey][ctx.idx] : {};
+  var mevcut = (d[alan] != null) ? d[alan] : b[cfg.prop];
+  var mevcutStr = (mevcut != null) ? String(mevcut) : '', alanCtrl;
+  if (cfg.tip === 'select') {
+    var secenekler = (typeof cfg.secenekler === 'function') ? cfg.secenekler() : (cfg.secenekler || []);
+    var mevcutKod = mevcutStr;
+    if (typeof ARES_NORM !== 'undefined' && alan === 'malzeme') mevcutKod = ARES_NORM.malzemeKod(mevcutStr) || mevcutStr;
+    var opts = '<option value="">— seç —</option>', bulundu = false;
+    secenekler.forEach(function(o){ var sel=(o.kod===mevcutKod)?' selected':''; if(sel)bulundu=true; opts+='<option value="'+esc(o.kod)+'"'+sel+'>'+esc(o.etk)+'</option>'; });
+    if (!bulundu && mevcutStr) opts += '<option value="'+esc(mevcutStr)+'" selected>'+esc(mevcutStr)+' (tanımsız)</option>';
+    alanCtrl = '<select id="kin-'+alan+'" style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;">'+opts+'</select>';
+  } else {
+    alanCtrl = '<input id="kin-'+alan+'" type="text" value="'+esc(mevcutStr)+'" '+(cfg.tip==='sayi'?'inputmode="decimal" ':'')+'style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;" onkeydown="if(event.key===\'Enter\')kalemKaydet(\''+alan+'\');if(event.key===\'Escape\')kalemSatirIptal(\''+alan+'\');">';
+  }
+  lk.innerHTML = alanCtrl +
+    '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--gr);" onclick="kalemKaydet(\''+alan+'\')" title="Kaydet">✓</button>' +
+    '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--txd);" onclick="kalemSatirIptal(\''+alan+'\')" title="Vazgeç">✕</button>';
+  var c = document.getElementById('kin-'+alan); if (c) { c.focus(); if (c.select) c.select(); }
+}
+
+function kalemSatirIptal(alan) { _kalemSatirCiz(alan); }
+
+function _kalemSatirCiz(alan) {
+  var ctx = _kalemDuzeltCtx; if (!ctx) return;
+  var b = ctx.b, cfg = KALEM_ALANLAR[alan];
+  var lk = document.getElementById('klk-'+alan); if (!lk) return;
+  var KD = WIZ._kalemDuzelt || {};
+  var d = (KD[ctx.sKey] && KD[ctx.sKey][ctx.idx]) ? KD[ctx.sKey][ctx.idx] : {};
+  var gor = cfg.fmt ? cfg.fmt((d[alan]!=null)?d[alan]:b[cfg.prop]) : ((d[alan]!=null)?d[alan]:b[cfg.prop]);
+  lk.innerHTML = '<span style="flex:1;">'+esc(gor!=null&&gor!==''?String(gor):'—')+'</span>' +
+    '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="kalemSatirAc(\''+alan+'\')" title="Düzelt">✏️</button>';
+  var ef = document.getElementById('kef-'+alan);
+  if (ef) { var roz = ef.querySelector('.src'); var dz = (d[alan] != null);
+    if (roz) { if (dz) { roz.className='src l3'; roz.textContent='düzelt'; roz.title='operatör düzeltmesi'; } else { roz.className='src xl'; roz.textContent='Excel'; roz.title=''; } } }
+}
+
+// Kaydet: taslak_duzeltmeleri upsert/delete kalem_idx=idx (boş = sil). WIZ._kalemDuzelt güncellenir + tablo yeniden çizilir.
+async function kalemKaydet(alan) {
+  var ctx = _kalemDuzeltCtx; if (!ctx) return;
+  var ctrl = document.getElementById('kin-'+alan); if (!ctrl) return;
+  var cfg = KALEM_ALANLAR[alan];
+  var yeni = String(ctrl.value || '').trim();
+  if (cfg.tip === 'sayi' && yeni !== '') yeni = yeni.replace(',', '.');
+  var supa = ARES.supabase(), tid = ARES.tenantId();
+  var userId; try { userId = (await supa.auth.getUser()).data.user.id; } catch (e) { userId = null; }
+  var pipeline = ctx.sKey.split('|')[0], spoolNo = ctx.spoolNo;
+  WIZ._kalemDuzelt = WIZ._kalemDuzelt || {};
+  WIZ._kalemDuzelt[ctx.sKey] = WIZ._kalemDuzelt[ctx.sKey] || {};
+  WIZ._kalemDuzelt[ctx.sKey][ctx.idx] = WIZ._kalemDuzelt[ctx.sKey][ctx.idx] || {};
+  if (yeni === '') {
+    var dr = await supa.from('taslak_duzeltmeleri').delete()
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
+      .eq('pipeline_no', pipeline).eq('spool_no', spoolNo).eq('alan', alan).eq('kalem_idx', ctx.idx);
+    if (dr.error) { console.error('[v3] kalem sil:', dr.error.message); toast('Düzeltme silinemedi'); return; }
+    delete WIZ._kalemDuzelt[ctx.sKey][ctx.idx][alan];
+    _kalemSatirCiz(alan); malzSekmesiRender(); toast(cfg.lbl + ' düzeltmesi kaldırıldı'); return;
+  }
+  var row = { tenant_id:tid, devre_id:WIZ.devre_id, pipeline_no:pipeline, spool_no:spoolNo,
+    alan:alan, kalem_idx:ctx.idx, deger:yeni, kaynak:'operator', duzelten:userId||null, updated_at:new Date().toISOString() };
+  var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict:'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });
+  if (ur.error) { console.error('[v3] kalem kaydet:', ur.error.message); toast('Kaydedilemedi: ' + ur.error.message); return; }
+  WIZ._kalemDuzelt[ctx.sKey][ctx.idx][alan] = yeni;
+  _kalemSatirCiz(alan); malzSekmesiRender(); toast(cfg.lbl + ' düzeltildi ✓');
+}
+
+/* ─── malzSekmesiRender'ın TAMAMINI bununla değiştir (✏️ + overlay değer + "düzelt" rozeti) ─── */
 function malzSekmesiRender() {
-  // grupla().spoollar[].bom — konsolide temiz alanlar (tip/tanim/malzeme/dn/ifs_kod/boy_mm/adet/agirlik_kg)
-  var sp = WIZ._kabukSpoollar || [], html = '';
+  // ilk çağrıda kalem düzeltmelerini DB'den yükle, sonra yeniden çiz (parse değer → düzeltilmiş değer)
+  if (WIZ._kalemDuzelt == null) { _kalemDuzeltmeleriYukle().then(function(){ malzSekmesiRender(); }); }
+  var sp = WIZ._kabukSpoollar || [], html = '', KD = WIZ._kalemDuzelt || {};
   sp.forEach(function(s) {
-    (s.bom || []).forEach(function(b) {
-      var miktar = (b.tip === 'boru') ? ((b.boy_mm != null ? b.boy_mm : 0) + ' mm') : ((b.adet != null ? b.adet : 0) + ' ad');
+    var sKey = (s.pipeline || '') + '|' + (s.spoolNo || ''), kd = KD[sKey] || {};
+    (s.bom || []).forEach(function(b, idx) {
+      var d = kd[idx] || null;
+      var _malz = (d && d.malzeme != null && d.malzeme !== '') ? d.malzeme : b.malzeme;
+      var _dn   = (d && d.dn != null && d.dn !== '') ? d.dn : b.dn;
+      var _ag   = (d && d.agirlik != null && d.agirlik !== '') ? d.agirlik : b.agirlik_kg;
+      var _adet = (d && d.adet != null && d.adet !== '') ? d.adet : b.adet;
+      var _boy  = (d && d.boy != null && d.boy !== '') ? d.boy : b.boy_mm;
+      var miktar = (b.tip === 'boru') ? ((_boy != null ? _boy : 0) + ' mm') : ((_adet != null ? _adet : 0) + ' ad');
+      var duzeltilmis = d && Object.keys(d).length;
+      var roz = duzeltilmis ? ' <span class="src l3" style="font-size:10px;" title="operatör düzeltmesi">düzelt</span>' : '';
+      var skEsc = esc(sKey).replace(/'/g, "\\'");
       html += '<tr><td class="marka">' + esc(s.spoolNo || '') + '</td>' +
         '<td class="mono">' + esc(b.ifs_kod || (b.tanim || '').substring(0, 18)) + '</td>' +
         '<td>' + esc(b.tanim || '') + '</td>' +
-        '<td>' + matBadge(b.malzeme) + '</td>' +
-        '<td style="text-align:right;">' + esc(b.dn || '') + '</td>' +
+        '<td>' + matBadge(_malz) + roz + '</td>' +
+        '<td style="text-align:right;">' + esc(_dn || '') + '</td>' +
         '<td style="text-align:right;">' + ((b.aci != null && b.aci !== '') ? esc(b.aci) + '°' : '') + '</td>' +
         '<td style="text-align:right;">' + esc(miktar) + '</td>' +
-        '<td style="text-align:right;">' + esc(b.agirlik_kg != null ? Number(b.agirlik_kg).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '') + '</td></tr>';
+        '<td style="text-align:right;white-space:nowrap;">' + esc(_ag != null ? Number(_ag).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '') +
+          ' <button class="btn-sm" style="padding:1px 6px;font-size:11px;color:var(--ac);" onclick="kalemDuzeltAc(\'' + skEsc + '\',' + idx + ')" title="Düzelt">✏️</button></td></tr>';
     });
   });
   if (!html) html = '<tr><td colspan="8" style="text-align:center;color:var(--txd);padding:18px;">BOM kalemi okunamadı.</td></tr>';
@@ -1373,10 +1526,13 @@ async function onayEt() {
         }
       });
     }
+    // 146/B: kalem-seviyesi düzeltmeleri DB'den garanti yükle (malzeme sekmesi açılmamış olabilir → terfide kaybolmasın)
+    if (WIZ._kalemDuzelt == null) { try { await _kalemDuzeltmeleriYukle(); } catch (e) {} }
     var r = await ARES_KABUK.aktar({
       supa: supa, tid: tid, devreId: WIZ.devre_id,
       spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: WIZ._bomIds,
-      duzeltmeler: _duzeltHarita
+      duzeltmeler: _duzeltHarita,
+      kalemDuzeltmeler: WIZ._kalemDuzelt || null
     });
     if (!r.ok) throw new Error(r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || '')));
     // Terfi tamam → taslak 'aktif' + özet senkron (DB-truth)

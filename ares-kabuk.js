@@ -147,6 +147,7 @@
     var perSpool=opts.perSpoolYuzey===true;
     var kuyrukIds=opts.kuyrukIds||[];
     var duzeltmeler=opts.duzeltmeler||null;   // 143/G2a: {(pipeline|spoolNo):{alan:deger}} — opsiyonel, yoksa eski davranış
+    var kalemDuzeltmeler=opts.kalemDuzeltmeler||null;   // 146/B: {(pipeline|spoolNo):{idx:{malzeme,dn,boy,adet,agirlik}}} — kalem-seviyesi overlay, opsiyonel; idx = grupla bom[] sırası (MK-146.1)
     if(!supa||!tid||!devreId){return {ok:false,hata:'ortam'};}      // Tenant/devre/db eksik
     if(!spoollar.length){return {ok:false,hata:'sec'};}             // Aktarılacak spool yok
 
@@ -226,21 +227,31 @@
 
       // 3) spool_malzemeleri (konsolide BOM)
       var malRows=[];
+      var _ksayi=function(v,fb){ if(v==null||v==='')return fb; var n=Number(String(v).replace(',','.')); return isFinite(n)?n:fb; };
       spoollar.forEach(function(s){
         var sid=idMap[(s.pipeline||'')+'|'+s.spoolNo+'|'+(s.rev||'')];
         if(!sid)return;
-        s.bom.forEach(function(b){
-          var bp=boyutParse(b.dn, b.malzeme);
+        // 146/B: kalem-seviyesi düzeltmeler. _kdz[idx] = {malzeme,dn,boy,adet,agirlik}. idx = grupla bom[] sırası.
+        //   kalemDuzeltmeler yoksa _kdz null → tüm overlay parse değerine düşer = eski davranış (sıfır regresyon).
+        var _kdz=(kalemDuzeltmeler && kalemDuzeltmeler[(s.pipeline||'')+'|'+s.spoolNo]) ? kalemDuzeltmeler[(s.pipeline||'')+'|'+s.spoolNo] : null;
+        s.bom.forEach(function(b, idx){
+          var dz=(_kdz && _kdz[idx]) ? _kdz[idx] : null;
+          var _malHam = (dz && dz.malzeme!=null && dz.malzeme!=='') ? dz.malzeme : b.malzeme;
+          var _dn     = (dz && dz.dn!=null && dz.dn!=='') ? dz.dn : b.dn;
+          var _boy    = (dz && dz.boy!=null && dz.boy!=='') ? _ksayi(dz.boy, (b.boy_mm||0)) : (b.boy_mm||0);
+          var _adet   = (dz && dz.adet!=null && dz.adet!=='') ? _ksayi(dz.adet, (b.adet||0)) : (b.adet||0);
+          var _agKg   = (dz && dz.agirlik!=null && dz.agirlik!=='') ? _ksayi(dz.agirlik, (b.agirlik_kg||0)) : (b.agirlik_kg||0);
+          var bp=boyutParse(_dn, _malHam);
           malRows.push({
             tenant_id:tid, spool_id:sid,
             kod:(b.ifs_kod||(b.tanim||'').substring(0,20)||'IFS'),
-            tip:b.tip, tanim:b.tanim||null, boyut:b.dn||null,
-            malzeme:malKod(b.malzeme), kalite:b.malzeme||null,
+            tip:b.tip, tanim:b.tanim||null, boyut:_dn||null,
+            malzeme:malKod(_malHam), kalite:_malHam||null,
             dis_cap_mm:bp.dis_cap, et_mm:bp.et,
-            boy_mm:b.tip==='boru'?(b.boy_mm||null):null,
-            adet:b.tip==='fitting'?(Math.round(b.adet||0)||null):null,
-            miktar:b.tip==='boru'?((b.boy_mm||0)/1000):(b.adet||0),
-            agirlik_kg:b.agirlik_kg||0, ifs_kod:b.ifs_kod||null
+            boy_mm:b.tip==='boru'?(_boy||null):null,
+            adet:b.tip==='fitting'?(Math.round(_adet||0)||null):null,
+            miktar:b.tip==='boru'?((_boy||0)/1000):(_adet||0),
+            agirlik_kg:_agKg||0, ifs_kod:b.ifs_kod||null
           });
         });
       });
