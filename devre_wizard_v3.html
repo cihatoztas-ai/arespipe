@@ -1066,16 +1066,66 @@ function fToggle(el) { var c = el.nextElementSibling; c.classList.toggle('kapali
 // 7 düzeltilebilir alan. Düzeltme taslak_duzeltmeleri tablosuna yazılır (Q5: ayrı tablo, upsert).
 // Bu fazda OVERLAY YOK — düzeltme kalıcı kaydedilir ama önizleme/terfi değerini henüz değiştirmez.
 // alan kodu → spool objesindeki property + gösterim formatlayıcı
+// Sayısal alanlar serbest input; malzeme/yüzey/alıştırma/kalite KATI dropdown (kanonik kod saklanır).
+// tip:'sayi' → input (virgül→nokta normalize). tip:'select' → dropdown.
+//   secenekler: statik [{kod,etk}]  |  dinamik:'kalite' → DB'den (malzeme_tanimlari) yüklenir.
+// fmt(v): satırda gösterilecek metin. selectlerde kod→etiket (ARES_NORM), kayıtta kod tutulur.
+function _malzemeSecenekler(){
+  return ['karbon','paslanmaz','bakir','alum','diger'].map(function(k){
+    return { kod:k, etk:(typeof ARES_NORM!=='undefined'?ARES_NORM.tvMalzeme(k):k) };
+  });
+}
+function _yuzeySecenekler(malzemeHam){
+  var izinli = (typeof ARES_NORM!=='undefined' && ARES_NORM.uyumluYuzeyler)
+    ? ARES_NORM.uyumluYuzeyler(malzemeHam) : ['asit','galvaniz','siyah','boyali','diger'];
+  return izinli.map(function(k){
+    return { kod:k, etk:(typeof ARES_NORM!=='undefined'?ARES_NORM.tvYuzey(k):k) };
+  });
+}
 var DUZELT_ALANLAR = {
-  cap:       { lbl:'Çap',       prop:'cap',        fmt:function(v){ return v; } },
-  et:        { lbl:'Et',        prop:'et',         fmt:function(v){ return v; } },
-  agirlik:   { lbl:'Ağırlık',   prop:'toplamKg',   fmt:function(v){ return v != null && v !== '' ? (Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : ''; } },
-  malzeme:   { lbl:'Malzeme',   prop:'anaMalzeme', fmt:function(v){ return v; } },
-  kalite:    { lbl:'Kalite',    prop:'kalite',     fmt:function(v){ return v; } },
-  yuzey:     { lbl:'Yüzey',     prop:'yuzeyHam',   fmt:function(v){ return v; } },
-  alistirma: { lbl:'Alıştırma', prop:'alistirma',  fmt:function(v){ return v; } }
+  cap:       { lbl:'Çap',       prop:'cap',        tip:'sayi',   fmt:function(v){ return v; } },
+  et:        { lbl:'Et',        prop:'et',         tip:'sayi',   fmt:function(v){ return v; } },
+  agirlik:   { lbl:'Ağırlık',   prop:'toplamKg',   tip:'sayi',   fmt:function(v){
+    if (v == null || v === '') return '';
+    var n = Number(String(v).replace(',', '.'));
+    return isFinite(n) ? (n.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : String(v);
+  } },
+  malzeme:   { lbl:'Malzeme',   prop:'anaMalzeme', tip:'select', secenekler:_malzemeSecenekler,
+    fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.malzemeEtiket(v) : v; } },
+  kalite:    { lbl:'Kalite',    prop:'kalite',     tip:'select', dinamik:'kalite',
+    fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.kaliteGoster(v) : v; } },
+  yuzey:     { lbl:'Yüzey',     prop:'yuzeyHam',   tip:'select', secenekler:_yuzeySecenekler,
+    fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.yuzeyEtiket(v) : v; } },
+  alistirma: { lbl:'Alıştırma', prop:'alistirma',  tip:'select',
+    secenekler:function(){ return [{kod:'VAR',etk:'VAR'},{kod:'KISMI',etk:'KISMI'},{kod:'YOK',etk:'YOK'}]; },
+    fmt:function(v){ return v; } }
 };
-var _duzeltSpoolIdx = null;   // aktif popup'taki spool indexi (kaydet için)
+var _duzeltSpoolIdx = null;     // aktif popup'taki spool indexi (kaydet için)
+var _kaliteSecenek  = null;     // DB'den çekilen kalite listesi (cache: [{kod,etk}])
+
+// Düzeltme varsa onun değerini, yoksa parse değerini dön (tek kaynak).
+function _alanDeger(s, alan){
+  var cfg = DUZELT_ALANLAR[alan];
+  return (s._duzelt && s._duzelt[alan] != null) ? s._duzelt[alan] : s[cfg.prop];
+}
+
+// Kalite seçeneklerini DB'den çek (sistem tenant_id=null + firma tenant). Bir kez, cache'le.
+async function _kaliteSecenekYukle(){
+  if (_kaliteSecenek) return _kaliteSecenek;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var res = await supa.from('malzeme_tanimlari')
+      .select('kalite_kod, kalite_goster').eq('aktif', true)
+      .or('tenant_id.is.null,tenant_id.eq.' + tid)
+      .order('kalite_kod');
+    if (res.error) { console.warn('[v3] kalite yukle:', res.error.message); return (_kaliteSecenek = []); }
+    var gor = {}, list = [];
+    (res.data || []).forEach(function(r){
+      if (r.kalite_kod && !gor[r.kalite_kod]) { gor[r.kalite_kod] = 1; list.push({ kod:r.kalite_kod, etk:(r.kalite_goster || r.kalite_kod) }); }
+    });
+    return (_kaliteSecenek = list);
+  } catch(e){ console.warn('[v3] kalite yukle hata:', e); return (_kaliteSecenek = []); }
+}
 
 function duzeltAc(i) {
   var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[i] : null;
@@ -1088,11 +1138,11 @@ function duzeltAc(i) {
     var sl = { xl:'Excel', l2:'L2', l3:'L3', bos:'boş' }[src] || 'Excel';
     return '<div class="efld"><label>' + lbl + '</label><div class="locked" style="padding:7px 9px;font-size:14px;">' + esc(val != null && val !== '' ? String(val) : '—') + '</div><span class="src ' + (src || 'xl') + '">' + sl + '</span></div>';
   }
-  // düzeltilebilir satır (✏️ ile inline input açılır). dz = düzeltme kaynağı varsa rozet.
+  // düzeltilebilir satır (✏️ ile inline input/select açılır). Düzeltme varsa onu gösterir + "düzelt" rozeti.
   function dsatir(alan, src) {
     var cfg = DUZELT_ALANLAR[alan];
-    var ham = s[cfg.prop];
-    var gor = cfg.fmt(ham);
+    var deger = _alanDeger(s, alan);
+    var gor = cfg.fmt(deger);
     var sl = { xl:'Excel', l2:'L2', l3:'L3', bos:'boş' }[src] || 'Excel';
     var duzeltilmis = (s._duzelt && s._duzelt[alan] != null);
     var srcRoz = duzeltilmis ? '<span class="src l3" title="operatör düzeltmesi">düzelt</span>' : '<span class="src ' + (src || 'xl') + '">' + sl + '</span>';
@@ -1113,24 +1163,54 @@ function duzeltAc(i) {
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button><button class="btn-sm" style="color:var(--ac);padding:9px 14px;" onclick="toast(\'Çapa işaretleme: sonraki faz\')">📍 PDF\'te işaretle (çapa)</button></div>';
   document.getElementById('dpBody').innerHTML = b;
   document.getElementById('duzeltOverlay').classList.remove('hide');
+  // kalite seçeneklerini arka planda hazırla (✏️'ye basılınca hazır olsun)
+  _kaliteSecenekYukle();
 }
 
-// ── G2a: bir satırı inline input'a çevir (ham değerle dolu) ──
-function duzeltSatirAc(alan) {
+// ── G2a: bir satırı inline input/select'e çevir (mevcut değerle dolu) ──
+async function duzeltSatirAc(alan) {
   var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
   if (!s) return;
   var cfg = DUZELT_ALANLAR[alan];
-  // düzeltilmiş değer varsa onu, yoksa ham parse değerini göster (ağırlıkta formatsız ham sayı)
-  var mevcut = (s._duzelt && s._duzelt[alan] != null) ? s._duzelt[alan] : s[cfg.prop];
-  var v = (mevcut != null) ? String(mevcut) : '';
   var lk = document.getElementById('lk-' + alan);
   if (!lk) return;
-  lk.innerHTML =
-    '<input id="in-' + alan + '" type="text" value="' + esc(v) + '" style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;" ' +
-      'onkeydown="if(event.key===\'Enter\')duzeltKaydet(\'' + alan + '\');if(event.key===\'Escape\')duzeltSatirIptal(\'' + alan + '\');">' +
+  var mevcut = _alanDeger(s, alan);
+  var mevcutStr = (mevcut != null) ? String(mevcut) : '';
+  var alanCtrl;
+
+  if (cfg.tip === 'select') {
+    var secenekler;
+    if (cfg.dinamik === 'kalite') { secenekler = await _kaliteSecenekYukle(); }
+    else if (typeof cfg.secenekler === 'function') {
+      secenekler = (alan === 'yuzey') ? cfg.secenekler(_alanDeger(s, 'malzeme')) : cfg.secenekler();
+    } else { secenekler = cfg.secenekler || []; }
+    // mevcut değeri kanonik kodla eşle (parse ham gelebilir → kod'a indir)
+    var mevcutKod = mevcutStr;
+    if (typeof ARES_NORM !== 'undefined') {
+      if (alan === 'malzeme') mevcutKod = ARES_NORM.malzemeKod(mevcutStr) || mevcutStr;
+      else if (alan === 'yuzey') mevcutKod = ARES_NORM.yuzeyKod(mevcutStr) || mevcutStr;
+      else if (alan === 'kalite') mevcutKod = ARES_NORM.kaliteKod(mevcutStr) || mevcutStr;
+    }
+    var opts = '<option value="">— seç —</option>';
+    var bulundu = false;
+    secenekler.forEach(function(o){
+      var sel = (o.kod === mevcutKod) ? ' selected' : '';
+      if (sel) bulundu = true;
+      opts += '<option value="' + esc(o.kod) + '"' + sel + '>' + esc(o.etk) + '</option>';
+    });
+    // mevcut değer listede yoksa (eski/tanımsız) bilgi amaçlı disabled satır göster
+    if (!bulundu && mevcutStr) opts += '<option value="' + esc(mevcutStr) + '" selected>' + esc(mevcutStr) + ' (tanımsız)</option>';
+    alanCtrl = '<select id="in-' + alan + '" style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;">' + opts + '</select>';
+  } else {
+    alanCtrl = '<input id="in-' + alan + '" type="text" value="' + esc(mevcutStr) + '" inputmode="decimal" style="flex:1;background:var(--sur);border:1px solid var(--ac);border-radius:6px;padding:5px 8px;font-size:14px;color:inherit;font-family:inherit;" ' +
+      'onkeydown="if(event.key===\'Enter\')duzeltKaydet(\'' + alan + '\');if(event.key===\'Escape\')duzeltSatirIptal(\'' + alan + '\');">';
+  }
+
+  lk.innerHTML = alanCtrl +
     '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--gr);" onclick="duzeltKaydet(\'' + alan + '\')" title="Kaydet">✓</button>' +
     '<button class="btn-sm" style="padding:3px 9px;font-size:13px;color:var(--txd);" onclick="duzeltSatirIptal(\'' + alan + '\')" title="Vazgeç">✕</button>';
-  var inp = document.getElementById('in-' + alan); if (inp) { inp.focus(); inp.select(); }
+  var ctrl = document.getElementById('in-' + alan);
+  if (ctrl) { ctrl.focus(); if (ctrl.select) ctrl.select(); }
 }
 
 // ── G2a: düzeltmeyi iptal et, satırı eski haline döndür ──
@@ -1144,17 +1224,19 @@ function _duzeltSatirCiz(s, alan) {
   var cfg = DUZELT_ALANLAR[alan];
   var lk = document.getElementById('lk-' + alan);
   if (!lk) return;
-  var duzeltilmis = (s._duzelt && s._duzelt[alan] != null);
-  var ham = duzeltilmis ? s._duzelt[alan] : s[cfg.prop];
-  var gor = cfg.fmt(ham);
+  var gor = cfg.fmt(_alanDeger(s, alan));
   lk.innerHTML =
     '<span style="flex:1;">' + esc(gor != null && gor !== '' ? String(gor) : '—') + '</span>' +
     '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="duzeltSatirAc(\'' + alan + '\')" title="Düzelt">✏️</button>';
-  // kaynak rozetini güncelle (düzeltildiyse "düzelt" rozeti)
+  // kaynak rozetini güncelle: düzeltildiyse "düzelt" (turuncu), değilse Excel
   var ef = document.getElementById('ef-' + alan);
   if (ef) {
     var roz = ef.querySelector('.src');
-    if (roz && duzeltilmis) { roz.className = 'src l3'; roz.textContent = 'düzelt'; roz.title = 'operatör düzeltmesi'; }
+    var duzeltilmis = (s._duzelt && s._duzelt[alan] != null);
+    if (roz) {
+      if (duzeltilmis) { roz.className = 'src l3'; roz.textContent = 'düzelt'; roz.title = 'operatör düzeltmesi'; }
+      else { roz.className = 'src xl'; roz.textContent = 'Excel'; roz.title = ''; }
+    }
   }
 }
 
@@ -1162,12 +1244,15 @@ function _duzeltSatirCiz(s, alan) {
 async function duzeltKaydet(alan) {
   var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
   if (!s) return;
-  var inp = document.getElementById('in-' + alan);
-  if (!inp) return;
-  var yeni = inp.value.trim();
+  var ctrl = document.getElementById('in-' + alan);
+  if (!ctrl) return;
+  var cfg = DUZELT_ALANLAR[alan];
+  var yeni = String(ctrl.value || '').trim();
+  // sayısal alan: virgül→nokta normalize (kanonik kayıt; NaN önler)
+  if (cfg.tip === 'sayi' && yeni !== '') yeni = yeni.replace(',', '.');
   var supa = ARES.supabase(), tid = ARES.tenantId();
   var userId; try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
-  // boş bırakma = düzeltmeyi sil (alanı parse değerine bırak)
+  // boş seçim/giriş = düzeltmeyi sil (alanı parse değerine bırak)
   if (yeni === '') {
     var dr = await supa.from('taslak_duzeltmeleri').delete()
       .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
@@ -1175,7 +1260,7 @@ async function duzeltKaydet(alan) {
     if (dr.error) { console.error('[v3] duzelt sil:', dr.error.message); toast('Düzeltme silinemedi'); return; }
     if (s._duzelt) delete s._duzelt[alan];
     _duzeltSatirCiz(s, alan);
-    toast(DUZELT_ALANLAR[alan].lbl + ' düzeltmesi kaldırıldı');
+    toast(cfg.lbl + ' düzeltmesi kaldırıldı');
     return;
   }
   var row = {
@@ -1189,7 +1274,7 @@ async function duzeltKaydet(alan) {
   if (!s._duzelt) s._duzelt = {};
   s._duzelt[alan] = yeni;
   _duzeltSatirCiz(s, alan);
-  toast(DUZELT_ALANLAR[alan].lbl + ' düzeltildi ✓');
+  toast(cfg.lbl + ' düzeltildi ✓');
 }
 function markaCellMetin(s) {
   if (typeof ARES_NORM !== 'undefined' && ARES_NORM.marka) {
