@@ -259,7 +259,7 @@
     <div id="tab-dok" class="hide"><div class="tablo-kart" style="border-left-color:var(--gr);"><div class="tablo-head"><div class="tablo-baslik">Yüklenen belgeler — tam liste (klasörler açılıp kapanır)</div></div><div style="padding:14px 18px;"><div id="treeDok"></div></div></div></div>
 
     <div id="tab-malz" class="hide"><div class="tablo-kart" style="border-left-color:var(--warn);"><div class="tablo-head"><div class="tablo-baslik">Malzeme listesi — BOM Excel'den</div></div>
-      <div class="tablo-wrap"><table class="dt" style="min-width:760px;"><thead><tr><th>Spool</th><th>Kod</th><th>Tanım</th><th>Malzeme</th><th style="text-align:right;">Ölçü</th><th style="text-align:right;">Açı</th><th style="text-align:right;">Boy/Adet</th><th style="text-align:right;">kg</th></tr></thead>
+      <div class="tablo-wrap"><table class="dt" style="min-width:760px;"><thead><tr><th>Spool</th><th>Kod</th><th>Tanım</th><th>Malzeme</th><th style="text-align:right;">Ölçü</th><th style="text-align:right;">Açı</th><th style="text-align:right;">Boy/Adet</th><th style="text-align:right;">kg</th><th style="text-align:center;">Düzelt</th></tr></thead>
         <tbody id="malzBody"></tbody></table></div></div></div>
 
     <div id="tab-genel" class="hide"><div class="card"><div class="row2" id="genelGrid"></div></div></div>
@@ -1199,21 +1199,25 @@ function malzSekmesiRender() {
       var _adet = (d && d.adet != null && d.adet !== '') ? d.adet : b.adet;
       var _boy  = (d && d.boy != null && d.boy !== '') ? d.boy : b.boy_mm;
       var miktar = (b.tip === 'boru') ? ((_boy != null ? _boy : 0) + ' mm') : ((_adet != null ? _adet : 0) + ' ad');
-      var duzeltilmis = d && Object.keys(d).length;
-      var roz = duzeltilmis ? ' <span class="src l3" style="font-size:10px;" title="operatör düzeltmesi">düzelt</span>' : '';
+      // hücre-bazlı "düzelt" rozeti — yalnız o alan düzeltildiyse o hücrede çıkar
+      function roz(on){ return on ? ' <span class="src l3" style="font-size:10px;" title="operatör düzeltmesi">düzelt</span>' : ''; }
+      var dMal = !!(d && d.malzeme != null && d.malzeme !== '');
+      var dDn  = !!(d && d.dn != null && d.dn !== '');
+      var dMik = !!(d && (((d.adet != null && d.adet !== '')) || ((d.boy != null && d.boy !== ''))));
+      var dAg  = !!(d && d.agirlik != null && d.agirlik !== '');
       var skEsc = esc(sKey).replace(/'/g, "\\'");
       html += '<tr><td class="marka">' + esc(s.spoolNo || '') + '</td>' +
         '<td class="mono">' + esc(b.ifs_kod || (b.tanim || '').substring(0, 18)) + '</td>' +
         '<td>' + esc(b.tanim || '') + '</td>' +
-        '<td>' + matBadge(_malz) + roz + '</td>' +
-        '<td style="text-align:right;">' + esc(_dn || '') + '</td>' +
+        '<td>' + matBadge(_malz) + roz(dMal) + '</td>' +
+        '<td style="text-align:right;">' + esc(_dn || '') + roz(dDn) + '</td>' +
         '<td style="text-align:right;">' + ((b.aci != null && b.aci !== '') ? esc(b.aci) + '°' : '') + '</td>' +
-        '<td style="text-align:right;">' + esc(miktar) + '</td>' +
-        '<td style="text-align:right;white-space:nowrap;">' + esc(_ag != null ? Number(_ag).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '') +
-          ' <button class="btn-sm" style="padding:1px 6px;font-size:11px;color:var(--ac);" onclick="kalemDuzeltAc(\'' + skEsc + '\',' + idx + ')" title="Düzelt">✏️</button></td></tr>';
+        '<td style="text-align:right;">' + esc(miktar) + roz(dMik) + '</td>' +
+        '<td style="text-align:right;">' + esc(_ag != null ? Number(_ag).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '') + roz(dAg) + '</td>' +
+        '<td style="text-align:center;"><button class="btn-sm" style="padding:1px 6px;font-size:13px;color:var(--ac);" onclick="kalemDuzeltAc(\'' + skEsc + '\',' + idx + ')" title="Düzelt">✏️</button></td></tr>';
     });
   });
-  if (!html) html = '<tr><td colspan="8" style="text-align:center;color:var(--txd);padding:18px;">BOM kalemi okunamadı.</td></tr>';
+  if (!html) html = '<tr><td colspan="9" style="text-align:center;color:var(--txd);padding:18px;">BOM kalemi okunamadı.</td></tr>';
   document.getElementById('malzBody').innerHTML = html;
 }
 function genelSekmesiRender() {
