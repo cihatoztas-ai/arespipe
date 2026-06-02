@@ -170,12 +170,18 @@ td.mono{font-family:'JetBrains Mono',monospace;}
       if (!r){ rapor.standart_disi++; continue; }
       rapor.anahtar_uretildi++;
       var tablo = (r.hedef_kolon==='flansh_olculer_id') ? 'flansh_olculer' : 'fitting_olculer';
-      var ck = tablo+'|'+JSON.stringify(r.lookup)+'|'+r.cap_alani+'|'+r.cap_mm;
+      var ck = tablo+'|'+JSON.stringify(r.lookup)+'|'+r.cap_alani+'|'+r.cap_mm+'|'+(r.cap_kucuk_mm!=null?r.cap_kucuk_mm:'');
       var libId = cache.get(ck);
       if (libId === undefined){
         var lq = supa.from(tablo).select('id, '+r.cap_alani).eq('aktif', true);
         for (var k in r.lookup){ if (Object.prototype.hasOwnProperty.call(r.lookup,k)) lq = lq.eq(k, r.lookup[k]); }
-        lq = lq.gte(r.cap_alani, r.cap_mm-0.6).lte(r.cap_alani, r.cap_mm+0.6).limit(2);
+        lq = lq.gte(r.cap_alani, r.cap_mm-0.6).lte(r.cap_alani, r.cap_mm+0.6);
+        // 142: reducer gibi çift-çaplılarda küçük çapı da daralt (aynı büyük çapta
+        //   birden çok meşru varyant var → küçük çap olmadan belirsiz → hit.length>1 → atlanırdı)
+        if (r.cap_kucuk_alani && r.cap_kucuk_mm != null){
+          lq = lq.gte(r.cap_kucuk_alani, r.cap_kucuk_mm-0.6).lte(r.cap_kucuk_alani, r.cap_kucuk_mm+0.6);
+        }
+        lq = lq.limit(2);
         var lr = await lq;
         if (lr.error){ rapor.kayitlar.push({ id:m.id, hata:lr.error.message }); cache.set(ck, null); continue; }
         var hit = lr.data || [];
