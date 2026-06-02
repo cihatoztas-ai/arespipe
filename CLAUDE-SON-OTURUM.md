@@ -1,23 +1,20 @@
-# CLAUDE — 140. Oturum Özeti
+# CLAUDE — 141. Oturum Özeti
 
-**Tek cümle:** §13.7 teşhisi mühürlendi (matcher akışta yok), mm-kanonik eşleşme çekirdeği + backfill yazıldı; backfill runtime'ı (Vercel 500) açık borç olarak 141'e devredildi.
+**Tek cümle:** Sunucu backfill Vercel'de cokunce B plani'na gecildi (tarayici backfill, suʼper-admin), 142 karbon flansh FK yazildi, spool_detay FK-oncelikli yapildi; Cihat fitting+DN125'in baglanmadigini yakaladi → iki bug teshis edilip 142'ye birakildi.
 
 ## Akış
-- Açılış: BRIEFING bayat (138), Cihat kapanışa erteledi; 139 handoff'tan devam.
-- §13.7 teşhis turu (kod yok, sadece okuma+DB kanıtı): üç kez hipotez çürütüldü, kök "bağlama katmanı yok" + "kapsam dar" olarak mühürlendi.
-- 097 slip-on migration yazıldı → mevcut convention'la mükerrer çıkınca **iptal** (DB'yi önce okumama hatam; MK-126.8 ihlali, düzeltildi).
-- Cihat yönü düzeltti: kütüphane doldurma (C) değil, **matcher (A)** asıl tıkanan. C arka plana.
-- Çekirdek mm-kanonik yazıldı (Cihat'ın "her şey mm" netleştirmesiyle dn→mm düzeltildi), 4 format test yeşil.
-- Backfill `tip=malzeme` dalı eklendi (kardeş endpoint). Deploy → dry-run 500. createRequire fix → yine 500. Stack alınamadı (log timeout). Kapatıldı.
+- Acilis: BRIEFING 140, backfill runtime 500 borcu. Stack yine alinamadi (logs 5dk kesti) → kovalamacayi birak, B plani.
+- B plani: cekirdege browser-guard, admin/kutuphane-backfill.html. localhost'ta oturum anon (RLS 0) → canli deploy, suʼper-admin oturumu cozdu.
+- Backfill canli: 308 anahtar, 142 lookup, 142 FK. DN300 dogrulandi.
+- spool_detay: STANDART '—' cikti → kalem tip='fitting' ama flansh. geomStandart/geomBagli/FLANSH_MAP tip→FK-oncelikli. spool_flansh_eslesme olu tablo cikti (terk).
+- Cihat: "taninan cok malzeme vardi, sadece DN300 degil" → kazi: kutuphane DOLU (fitting 897), ama fitting kod uyumsuz + DN125 tolerans + paslanmaz yok.
 
 ## Kararlar
-- MK-140.1: §13.7 kök = matcher yok (+ kapsam dar). Kanıt FK sayıları + zaman damgaları + grep.
-- MK-140.2: 097 iptal (mevcut EN-T01 convention'la mükerrer). Yeni flanş verisi gerekmez; karbon zaten dolu.
-- MK-140.3: matcher mm-kanonik (ares-olcu çıktısı), dn değil. ARES_NORM'a dokunma (malzeme kolonu normalize).
-- MK-140.4: backfill ayrı endpoint değil, `eslestirme-backfill.js` `tip=malzeme` dalı (12/12 korunur).
+- MK-141.1: B plani — backfill tarayiciya. Sunucu ares-asme/ares-olcu serverless'ta cokuyor, browserda calisiyor.
+- MK-141.2: admin/kutuphane-backfill.html + cekirdek browser-guard (tek kaynak).
+- MK-141.3: spool_detay FK-oncelikli (tip yanlis siniflanabiliyor). spool_flansh_eslesme terk.
+- MK-141.4: iki bug teshisi — BUG-A fitting kod, BUG-B DN125 tolerans. Backfill kismi degil, kapsam+bug.
 
 ## Hatalarım (kayıt)
-- `flansh_olculer`'ı boş varsayıp 097'yi DB okumadan yazdım (MK-126.8). Düzeltildi: iptal.
-- Matcher'ı dn'e bağladım; tasarım mm-kanonik. Düzeltildi.
-- Çok satırlı terminal yorumlarında parantez → zsh parse error (kendi kuralım). Tekrar etmemeli.
-- createRequire fix'ini stack görmeden yazdım; tutmadı. 141: önce log.
+- "Neden sadece DN300" sorusunu basta "kutuphane dar" diye gectim — YANLIS. Cihat israr etti, olcunce kutuphane dolu cikti, iki gercek bug vardi. Ders: kullanici sezgisini olcmeden "kapsam eksigi" deyip gecme.
+- spool_detay STANDART'i tip→FK yaptim ama modal/FLANSH_MAP'i ayni anda kacirdim (Cihat yakaladi: cizgi+popup). Ayni kok, eksik tarama. Sonra duzeltildi.

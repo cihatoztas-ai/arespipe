@@ -1,43 +1,42 @@
-# CLAUDE — 141. Oturum Girişi
+# CLAUDE — 142. Oturum Girişi
 
-## İLK İŞ: backfill runtime 500'ünü çöz (stack ÖNCE, tahmin YOK)
-Dry-run komutu:
-```
-curl -s -i -X POST https://arespipe.vercel.app/api/eslestirme-backfill -H 'Content-Type: application/json' -d '{"tip":"malzeme","tenant_id":"00000000-0000-0000-0000-000000000001","kuru":true}'
-```
-Şu an: `HTTP 500 FUNCTION_INVOCATION_FAILED` (düz metin = modül-yükleme seviyesi, handler'a girmeden).
+## İLK İŞ: BUG-A fitting kod uyumsuzlugu (kazi ONCE, tahmin YOK)
+897 fitting_olculer satiri var, 0 baglandi. Cekirdek (lib/malzeme-kutuphane-eslesme.js) fitting icin:
+  elbow → 'elbow_'+aci+lr  (orn elbow_90lr, elbow_45sr)
+  reducer → 'reducer_'+ecc (reducer_conc/reducer_ecc)
+  tee → 'tee_reducing'
+Kutuphane fitting_olculer.parca_tipi GERCEK profili (141 kanit):
+  reducer_conc|cunife:79, reducer_ecc|cunife:79, elbow_90lr|cunife:23, elbow_45lr|cunife:23,
+  elbow_90sr|cunife:21, elbow_45sr|cunife:20, tee_eq|cunife:19, tee_red|cunife:30,
+  45SW|karbon:5, 90_3D|karbon:1
+→ cunife kodlari cekirdekle UYUMLU (elbow_90lr vb). Ama KARBON/PASLANMAZ fitting farkli kod (45SW, 90_3D).
+→ tee: cekirdek 'tee_reducing' uretiyor, kutuphane 'tee_eq'/'tee_red' → UYUSMUYOR.
 
-### Stack'i AL (kritik — bunsuz yazma)
-- Vercel dashboard → Project → son deployment → Functions → `eslestirme-backfill` → **Runtime Logs**. EN GÜVENİLİR.
-- VEYA: `vercel logs https://arespipe.vercel.app` AÇIK pencere + **AYRI sekmede** curl → stack canlı düşer. (Tek pencerede takip modu 5dk'da kesiliyor, curl ateşlenmiyor — 140'ta bu yüzden alınamadı.)
+### Kazi adimlari (142)
+1. Kutuphane parca_tipi TUM distinct degerleri + malzeme_grubu dagilimi (SELECT distinct).
+2. Spool fitting tanimlari → cekirdek ne uretiyor, hangi parca_tipi bekleniyor.
+3. Karar: kanonik kod hangisi? Cekirdek mi kutuphaneye uyacak, kutuphane mi normalize edilecek?
+   - cunife zaten elbow_90lr → cekirdek dogru. Karbon 45SW/90_3D → kutuphane tutarsiz olabilir.
+   - tee: cekirdek 'tee_reducing' yanlis olabilir (kutuphane tee_eq/tee_red ayirimi yapiyor — equal vs reducing).
+4. Hizala, backfill tekrar kostur (idempotent).
 
-### Kanıtlananlar (tekrar deneme)
-- `node -e "require('./ares-asme.js')"` → OK (lokal). ares-asme require'da çökmüyor.
-- Zincir testi (yapışırken kırıldı, 141'de tek satır tekrar): `node -e "require('./ares-asme.js');require('./ares-olcu.js');const m=require('./lib/malzeme-kutuphane-eslesme.js');console.log('zincir',!!globalThis.ARES_OLCU,typeof m.eslesmeAnahtari)"` → 'zincir true function' bekleniyor.
-- createRequire fix denendi (`6fd32f7`) → 500 sürüyor. Yani kök CJS/ESM import biçiminden DAHA derin.
-
-### Olası kökler (log seçecek — tahminle yazma)
-1. vercel.json `functions` runtime / `type:module` ile CJS dosya çatışması.
-2. ares-asme/ares-olcu içinde **çağrı-anı** (require değil, ilk kullanım) `window` referansı — serverless'ta patlar.
-3. supabase embed `spooller!inner(devre_id,tenant_id)` kolon/FK adı yanlış (ama bu handler-içi, 500 düz metin handler-öncesini gösteriyor → düşük olasılık).
-
-### Çözüm yönü (kanıta bağlı)
-- Kök import/runtime ise: server'da düzelt.
-- ares-asme server'da ısrarla sorunsa: **backfill'i browser'a taşı** (admin re-match deseni, MK-127.4 kardeşi). ARES_BORU/OLCU orada zaten yüklü+çalışıyor, ares-normalize'a dokunmadan. Server `tip=malzeme` dalını geri çek. Çekirdek (`lib/malzeme-kutuphane-eslesme.js`) aynen çağrılır.
-
-### Hedef (değişmez)
-Backfill koş (`kuru:false`) → DN300 PN16 karbon slip-on (122) `flansh_olculer_id` alır →
-```
-SELECT count(*) FROM spool_malzemeleri sm JOIN spooller s ON s.id=sm.spool_id
-WHERE s.tenant_id='00000000-0000-0000-0000-000000000001' AND sm.flansh_olculer_id IS NOT NULL;  -- 122+
-```
-spool_detay'da bir DN300 flanşı aç → standart sütunu YEŞİL → §13.7 kapanır.
+## İKİNCİ: BUG-B DN125 tolerans
+Cekirdek DN125 karbon → cap_mm=141.3. Kutuphane EN-T01 PN16'da 139.7 (DN125 gercek OD).
+Fark 1.6 > tolerans ±0.6 → eslesmedi.
+- ares-olcu.olcuParse('DN125') ciktisini kontrol et: 141.3 mu donuyor? EN OD=139.7. ares-olcu'da DN125 mapping hatasi olabilir.
+- Cozum: ares-olcu DN→OD tablosunda DN125 duzelt (139.7), VEYA flansh tolerans gozden gecir (riskli).
 
 ## SONRA
-- B: matcher'ı akışa taşı (parse/aktar sonrası), backfill kanıtlanınca. Çekirdek hazır, aynen kullanılır.
-- C (arka plan, organik): kütüphane kapsam — paslanmaz EN-1092-1 (matcher mm-eşler ama veri yok), fitting EN10253/B16.9 (elbow/reducer/tee — anahtar üretiliyor, veri yok). Süper-admin önerilerinden zamana yayılarak.
-- MK-139.1 görsel teyit: taslak incelemede çap terfi etmeden görünüyor mu.
+- Backfill re-run (iki bug sonrasi) → kalan karbon flansh + fitting baglanir.
+- Sunucu eslestirme-backfill tip=malzeme dali: geri cek (endpoint izometri'ye donsun) mi karar.
+- tip='fitting' ama flansh: ayri veri borcu (render maskeledi, kok duzeltilmedi).
+- C plani: paslanmaz EN-1092-1 flansh, DN400+ slip-on, fitting karbon/paslanmaz veri. Organik.
+- MK-139.1 gorsel teyit (taslak cap).
 
-## Hatırlatma
-- mm-kanonik matcher elbow `323.9x6.3` ve `2½" Sch 10S`'i de mm'e indiriyor (NULL değil) — fitting verisi dolunca eşleşir.
-- ares-normalize.js'e DOKUNMA (Cihat: çalışıyor, bozma; malzeme kolonu zaten normalize, gerekmiyor).
+## ARAÇ
+- admin/kutuphane-backfill.html canli, suʼper-admin oturumuyla acilir. Kuru→canli toggle. Idempotent.
+- Cekirdek window.MALZEME_ESLESME (browser) + module.exports (server CJS), tek kaynak.
+
+## Hatırlatma (141 dersi)
+- Kullanici sezgisini ("taninan cok malzeme vardi") OLCMEDEN "kapsam eksigi" deyip gecme. Olcunce iki bug cikti.
+- spool_detay modal/MAP FK'dan (spool_flansh_eslesme terk). BORU_MAP'e dokunma (runtime boruEslestir).

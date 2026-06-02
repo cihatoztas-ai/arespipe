@@ -1,45 +1,43 @@
-# AresPipe BRIEFING — 140. Oturum Kapanışı
+# AresPipe BRIEFING — 141. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
-> Not: 139 kapanışında BRIEFING bump'lanmamıştı; bu sürüm 138→140 atlayıp 139+140'ı içine alır.
 
 ## HEAD
-`6fd32f7` fix: backfill CJS modüllerini createRequire ile yükle
-- `61cba38` feat: malzeme-kütüphane eşleşme çekirdeği + backfill (mm-kanonik, tip=malzeme dalı)
-- `57fb404` chore(ci) [skip ci] · `16d5d15` 139 kapanış docs
+`9bef168` fix(spool_detay): flansh modal/MAP terk edilen spool_flansh_eslesme yerine FK'dan
+- `7e86e72` STANDART sutunu tip yerine FK · `ba6911c` tarayici backfill suʼper-admin sayfasi
 
-## 139'dan devreden (özet)
-- PARSER-VE-YUKLEME-AKISI.md: B-çap çözüldü; Bölüm 13 operatör düzeltme döngüsü vizyonu (G2/G3/G4, Q1–Q6).
-- MK-139.1: B-çap iki-parça fix (taslak=terfi). **Açık görsel teyit:** taslak incelemede çap terfi etmeden görünüyor mu — gözle bak.
-- §13.7: malzeme↔kütüphane tanıma kopukluğu teşhis borcu → 140'ta ele alındı.
+## 141 — yapılanlar
+1. **MK-141.1 — Sunucu backfill çöktü → B PLANI.** `eslestirme-backfill` tip=malzeme dali Vercel'de modul-yukleme cokuyordu (ares-asme/ares-olcu serverless'ta patliyor, createRequire yetmedi). Stack 2 oturumdur alinamadi. Karar: backfill tek-seferlik veri isi → **tarayiciya tasindi** (MK-127.4 deseni). Server dali olu kaldi (142'de geri cekilecek mi karar).
+2. **MK-141.2 — admin/kutuphane-backfill.html.** Suʼper-admin sayfasi: ARES_OLCU/ARES_BORU+cekirdek tarayicida, RLS suʼper-admin oturumuyla cozuldu. Cekirdege browser-guard (`window.MALZEME_ESLESME`), CJS export korundu (tek kaynak MK-109.1). kutuphane.html + panel.html nav'a link. Yeni sunucu fn yok (12/12).
+3. **Backfill kostu (CANLI):** 1000 FK-bos satir, 308 anahtar, **142 lookup → 142 FK yazildi** (DB sayim 143). DN15..DN300 karbon slip-on/WN baglandi. M5 DN300 → EN-1092-1 canlida teyit + modal aciliyor.
+4. **MK-141.3 — spool_detay FK-oncelikli.** geomStandart + geomBagli + FLANSH_MAP artik tip yerine DOLU FK'ya bakar (kalem tip='fitting' ama flansh — kaynak veri yanlis). `spool_flansh_eslesme` OLU tablo (tek 41.oturum pilot kaydi) terk edildi; modal/MAP FK'dan. BORU_MAP'e dokunulmadi (runtime boruEslestir, ayri tasarim).
+5. **MK-141.4 — TESHIS: backfill kismi, IKI BUG.** Cihat yakaladi: taninan cok malzeme var, kutuphane dolu (flansh 15+ profil, fitting 897 satir) ama baglanmadi. Kanit:
+   - **BUG-A (fitting kod uyumsuzlugu, BUYUK):** cekirdek `parca_tipi:'elbow_90lr'` uretiyor; `fitting_olculer` profili `elbow_90lr|cunife:23`, ama karbon/paslanmaz fitting kutuphanede `45SW|karbon`, `90_3D|karbon` gibi FARKLI kodlarda. 897 fitting satiri, 0 baglandi. Cekirdek fitting anahtari ↔ kutuphane parca_tipi semasi UYUSMUYOR.
+   - **BUG-B (DN125 tolerans, KUCUK):** cekirdek DN125 karbon → cap_mm=141.3; kutuphane EN-T01 PN16'da 139.7 var. Fark 1.6 > tolerans ±0.6 → eslesmedi. ares-olcu DN125 mm sapmasi VEYA tolerans dar.
+   - **Paslanmaz flansh:** kutuphanede YOK (sadece karbon EN-T01 + cunife EN-T05) → C plani, dogru NULL.
 
-## 140 — yapılanlar
-1. **§13.7 TEŞHİS MÜHÜRLENDİ (MK-140.1).** Kök: geometri kütüphanesini bağlayan **matcher akışta yok**. İkincil: kapsam dar.
-   - Kanıt: `spool_malzemeleri` 1753 satır; `fitting_fk=0`, `boru_fk=67`, `flansh_fk=1` (hepsi eski toplu script, 3 ayrı dakika). `malzeme_ref=%89` (kalite tarafı sağlam).
-   - Çürütülen hipotez: "normalize↔anahtar **format** uyuşmazlığı" değil — köprü hiç yok.
-   - `flansh_olculer`'da EN-1092-1 **zaten dolu** (karbon EN-T01/T05/T11/T12, PN10+PN16). DN300 PN16 karbon slip-on **mevcut**. Eksik olan **link**, karbon flanşta veri değil. Paslanmaz/fitting'te hem link hem kapsam eksik → süper-admin (organik).
-2. **097 İPTAL (MK-140.2).** Yazdığım slip-on migration mevcut EN-T01/'16' convention'la semantik mükerrerdi (`flansh_tipi='SO'`/`'PN16'` farklı etiket). Repodan silindi.
-3. **A·çekirdek YAZILDI (`lib/malzeme-kutuphane-eslesme.js`).** mm-kanonik (MK-140.3): `ares-olcu.olcuParse` her girdiyi (DN/inç+Sch/OD/çift) **mm**'e indirir; anahtar `dis_cap` mm (dn değil). Malzeme kolonu zaten normalize → ARES_NORM gerekmez (bakir→cunife). 4 format gerçek-modül testiyle yeşil (DN300→323.9, elbow 323.9→323.9, 2½"Sch10S→76.1; Weld-O-let/Ic Bilezik→NULL).
-4. **A·backfill YAZILDI (`api/eslestirme-backfill.js` `tip=malzeme` dalı).** Yeni endpoint yok (12/12). mm-toleranslı (±0.6) lookup, tek-net-eşleşme şartı, yarış guard'lı UPDATE, `kuru` dry-run.
+## §13.7 DURUM
+Baglama katmani KURULDU ve calisiyor (matcher→FK→render→modal uctan uca). 142 karbon flansh canli. **AMA** fitting tamamen, bazi flansh olculeri (DN125) ve paslanmaz baglanamadi — bug + kapsam. §13.7 "katman var" tarafi KAPANDI; "tum taninan baglanir" tarafi 142'ye.
 
-## AÇIK BORÇ (141 ilk iş)
-- **Backfill runtime ÇÖKÜYOR:** dry-run `HTTP 500 FUNCTION_INVOCATION_FAILED` (düz metin, handler'a girmeden = modül-yükleme seviyesi).
-  - `ares-asme.js` lokal `require` ile **OK** (kanıt). createRequire fix denendi (`6fd32f7`) → **yetmedi.**
-  - **Stack alınamadı** (vercel logs takip modu 5dk'da kesiyor, curl o pencerede ateşlenmedi).
-  - 141: ÖNCE gerçek stack (vercel dashboard → Functions → Runtime Logs, ya da logs penceresi açıkken AYRI sekmede curl). Tahminle yazma yok (MK-126.8).
-  - Olası kökler: vercel.json runtime CJS/ESM, modül-içi çağrı-anı `window`, supabase embed `spooller!inner` kolon. Log seçecek.
-  - Yön (kanıta bağlı): mm-kanonik ARES_BORU ister; server'da ısrarla sorun çıkarsa **browser'a taşı** (admin re-match deseni, çalışan modüllere dokunmadan) → server `tip=malzeme` dalını geri çek.
-- Hedef sabit: backfill koş → **DN300 PN16 karbon slip-on (122) flansh_olculer_id alır → spool_detay standart sütunu yeşil.**
-- MK-139.1 görsel teyit (taslak çap) hâlâ açık.
+## AÇIK BORÇ (142 ilk is)
+- **BUG-A fitting kod kazisi (ILK IS):** cekirdek `elbow_90lr/elbow_45sr/reducer_conc/tee_eq` ↔ kutuphane `45SW/90_3D/...`. Hangisi kanonik? Kutuphane karbon fitting kodlamasi tutarsiz gorunuyor (`45SW`, `90_3D` vs cunife `elbow_90lr`). ONCE kutuphane parca_tipi semasini oku (tum distinct degerler), sonra cekirdegi/kutuphaneyi hizala. Tahminle yazma (MK-126.8).
+- **BUG-B DN125 tolerans:** ares-olcu DN125→141.3 mu 139.7 mi dogru? EN-1092-1 DN125 OD=139.7. ares-olcu'da DN125 sapmasi varsa duzelt; yoksa flansh toleransini gozden gecir (riskli, yanlis eslesme).
+- **Backfill idempotent:** iki bug duzelince admin/kutuphane-backfill.html tekrar kostur → kalanlar baglanir.
+- **tip='fitting' ama flansh = AYRI VERI BORCU:** render FK-oncelikli ile maskelendi ama tip alani yanlis (rapor/filtre/sayim etkilenebilir). Kok duzeltme ayri.
+- **Sunucu eslestirme-backfill tip=malzeme dali:** olu/cokuyor. Geri cekilsin mi (endpoint izometri'ye donsun, temizlik) yoksa dursun mu — karar 142.
+- **C plani (kapsam):** paslanmaz EN-1092-1 flansh, DN400+ slip-on, fitting karbon/paslanmaz veri. Organik, suʼper-admin.
+- **MK-139.1 gorsel teyit (taslak cap):** hala acik.
 
-## PLAN (sabit)
-| Adım | Durum |
+## PLAN
+| Adim | Durum |
 |---|---|
-| §13.7 teşhis | ✅ mühür |
-| A·çekirdek (mm-kanonik) | ✅ repoda, test yeşil |
-| A·backfill | ⚠ yazıldı, **runtime çöküyor — 141 ilk iş** |
-| B (matcher'ı akışa taşı) | A kanıtlanınca |
-| C (kütüphane kapsam: paslanmaz/fitting) | arka plan, organik, süper-admin'den |
+| A·cekirdek (mm-kanonik) | ✅ repoda, test yesil |
+| A·backfill (tarayici, B plani) | ✅ calisti, 142 FK |
+| spool_detay FK-oncelikli (STANDART+modal) | ✅ canli teyit |
+| BUG-A fitting kod hizalama | ⚠ 142 ILK IS |
+| BUG-B DN125 tolerans | ⚠ 142 |
+| Backfill re-run (bug sonrasi) | bug'lar cozulunce |
+| C (kutuphane kapsam) | arka plan, organik |
 
-## NEREDEYİZ kuralı
-Kütüphane doldurma (C) arka plan; öncelik **bağlama katmanının çalışması.** Kütüphane eksiğine odaklanmak programı durdurur (Cihat, 140).
+## NEREDEYIZ
+Baglama katmani calisiyor, ispatlandi (142 canli). Sirada baglamanin KAPSAMI: fitting kod uyumsuzlugu cozulunce 897 satir devreye girer. Kutuphane doldurma (C) hala arka plan.
