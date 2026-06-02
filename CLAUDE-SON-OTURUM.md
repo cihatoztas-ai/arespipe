@@ -1,25 +1,34 @@
-# CLAUDE — 142. Oturum Özeti
+# CLAUDE — 143. Oturum Özeti
 
-**Tek cümle:** Fitting hiç bağlanmamış çıktı (0/168); BUG-A (çekirdek dil uyumsuzluğu) + reducer çift-çap düzeltildi, backfill'in "her run farklı" kaosu deterministik tek-SQL UPDATE ile bitirildi → karbon fitting 0 → 102 bağlandı.
+**Tek cümle:** Operatör değer-düzeltme döngüsü (G2a) uçtan uca kuruldu — düzelt popup'ında 7 alan (3 sayısal + 4 katı dropdown) düzeltilir, `taslak_duzeltmeleri` tablosuna upsert edilir, inceleme tablosunda kalıcı görünür (DB'den, turuncu vurgu), terfide `spooller` başlığına yazılır; canlıda doğrulandı (Paslanmaz/316L/Asit spool'a geçti).
 
 ## Akış
-- Açılış: BRIEFING 141, ilk iş BUG-A fitting kod kazısı (tahmin yok).
-- Kazı: kütüphane `parca_tipi` iki dil — cunife/DIN semantik (`elbow_90lr`), karbon/ASME native (`90LR`, `tee_eq/tee_red`). Çekirdek hep semantik + ölü `tee_reducing` üretiyordu.
-- Cihat "eskiden fitting tanınıyordu, wizard bozdu" → git+DB kanıtı: fitting_fk **hiç dolmamış**; gördüğü flanş+boru. `7e86e72` flanşı düzeltmişti, fitting'i bozmamış. Silinen dosya yok.
-- Çekirdek fix: malzeme grubuna göre elbow dili + tee Eq/Red + ara-açı 3D guard. Gerçek-veri node testi 11/11.
-- Canlı backfill: 89 bağlandı ama reducer 0. Reducer çekirdekten doğru anahtar üretiyordu → kütüphanede aynı büyük çapta çok varyant (çift çap eksiği).
-- Cihat "başka standart olmasın, silelim mi" → ölçüm: 219.1 reducer'ın 4 kaydı farklı KÜÇÜK çap (duplicate değil). Silme iptal, çekirdek+backfill çift-çap düzeltildi.
-- Backfill her run farklı sonuç (PostgREST limit sıralaması) → Cihat "mantığını anlamadım" → Yol A: tek deterministik SQL UPDATE. BEGIN...ROLLBACK → 102 → COMMIT.
+- Açılış: 142 kapanış DEVIR + BRIEFING. C/A/B seçenekleri. Önce C (backfill kararı), sonra "ağır iş öne" → operatör düzeltme döngüsü (Bölüm 13, G2a).
+- C: `kutuphane-backfill.html` ölü kod → silindi (2 nav linki dahil). Migration 097 zaten yüklenmişti (bf13480), teyit edildi.
+- G2a kapıları: Q5 (139 kararı = ayrı tablo) kod-öncesi doğrulandı — taslak yazmaları client-side supabase (inceleBaslat/wizardIptal kanıt) + RLS deseni (`devre_dok_tenant` ALL/get_tenant_id) teyit. Ters çıkmadı. Q1/Q2 (yayılma) G2a'yı bloke etmiyor → girildi.
+- Migration 098: `taslak_duzeltmeleri` (BEGIN...ROLLBACK dry-run → COMMIT). Upsert anahtarı, RLS, indeks.
+- G2a inşası 4 commit: değer-yazma → dropdown+NaN → overlay-A (DB'den+tablo) → overlay-B (terfi).
+- Her commit canlı test edildi. Cihat iki düzeltme verdi: (1) ağırlık NaN, (2) 4 alan dropdown olmalı (serbest yazı tabloyu bozar). İkisi de uygulandı.
 
 ## Kararlar
-- MK-142.1: Fitting hiç bağlanmamış (teşhis). Kullanıcının gördüğü flanş+boru; çapraz sorgu uzlaştırdı.
-- MK-142.2: Çekirdek fitting kodu malzeme grubuna göre çevirir (cunife semantik / karbon ASME native). Kütüphane veri olarak korunur (silinmez).
-- MK-142.3: Ara-açı elbow (45/90 dışı) → NULL (3D geometri koruması). Türetme 3D oturumuna.
-- MK-142.4: Reducer çift çap — büyük+küçük birlikte aranır. Aynı büyük çapta çok meşru varyant = duplicate değil.
-- MK-142.5: Toplu backfill deterministik olmalı; tarayıcı-döngü yerine tek SQL UPDATE (097).
+- MK-143.1: Düzeltme ayrı tablo + upsert + client-side/RLS.
+- MK-143.2: malzeme/yüzey/alıştırma/kalite KATI dropdown (kanonik kod). Kalite DB'den.
+- MK-143.3: aktar opsiyonel `duzeltmeler` param (spool başlığı override, sıfır regresyon).
+- MK-143.4: Overlay sadece spooller başlık; BOM ayrı (güvensiz-bayrak işi).
+
+## Kanıt / yöntem
+- Hiçbir kod körlemesine yazılmadı: ares-normalize.js (malzeme/yüzey/kalite kaynakları), tanimlar.html (kalite DB sorgusu = malzeme_tanimlari), ares-kabuk.js (terfide cap/et BOM'dan türetiliyor → overlay-B'nin Yol-A gerektiği buradan çıktı) önce okundu.
+- Override mantığı + ağırlık fmt izole node testiyle doğrulandı (5.16 fallback / 8 düzeltme / 18,5→18.5 NaN-suz).
+- Her iki dosya `new Function` syntax kontrolünden geçti.
+
+## 143'te çıkan ama YAPILMAYAN (ayrı teşhis, sonraki oturum)
+1. NB1124 G310'da tüm spool "zayıf/%100 çelişki/okunamadı" — format-özgü parse/eşleşme sorunu. Taze bağlam + kanıt teşhisi (en öncelikli).
+2. Terfi sonrası izometri PDF spool detaya gelmiyor (eslestirme-backfill / 129-130 borcu).
+3. Native confirm() → kendi modal (kozmetik).
+
+## Sonraki oturum ana iş
+BOM malzeme listesi düzeltme + güvensiz-bayrak (3 durum: güvenilir/düzeltildi/güvensiz). Cihat'ın asıl önemsediği. Excel'siz formatlarda BOM kritik. Kod öncesi spool_malzemeleri şeması + spool detay malzeme sekmesi + K2 kıyas oku.
 
 ## Hatalarım (kayıt)
-- "Fitting hiç çalışmadı" fazla kesindi — Cihat'ın gözlemi (flanş+boru) gerçekti. Çapraz sorgu ikisini uzlaştırdı. Ders: kullanıcı gözlemini "yanlış" diye geçme, ölç.
-- Reducer'ı "86 duplicate" sandım, silmeye gidecektim. Cihat "başka standart olmasın" itirazı doğruydu — farklı küçük çaplardı. Ders: silmeden önce TÜM ayırt edici kolonları (cap_kucuk dahil) karşılaştır (MK-98.2 ruhu).
-- "Elbow 1.5D → cap 1.5mm bug var" dedim — kendi test girdimle (boyut:'1.5D') kendimi yanılttım; gerçek veride boyut='168.3x4.5', bug yoktu. Ders: test girdisi gerçek veriden olmalı.
-- Backfill'i çoğaltıp koşturma (B) yerine tek-SQL (A) — Cihat'ın "anlamadım" tepkisi doğru sinyaldi, araç fazla karmaşıktı.
+- Ağırlık "farklı mı" sorusuyla gereksiz karmaşa yarattım; tek fark gösterim formatıydı.
+- malzeme/kalite/yüzey/alıştırma'yı ilk turda serbest text bıraktım — Cihat kanonik dropdown gerektiğini hatırlattı (yazım farkı tabloyu bozar). Ders: DB kolon tipi ≠ UI giriş kısıtı.

@@ -1,49 +1,54 @@
-# AresPipe BRIEFING — 142. Oturum Kapanışı
+# AresPipe BRIEFING — 143. Oturum Kapanışı
 
 > **Bu dosya tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
 
 ## HEAD
-`b26831e` fix(142): reducer cift-cap eslesme - kucuk capla daralt (cap_kucuk_mm)
-- `b6d423a` fix(142): fitting kod hizalama - karbon ASME dili (90LR), tee Eq/Red ayrimi, ara-aci guard (3D)
-- (rebase: uzaktaki `327c65d` CI commit'i üstüne alındı, çakışma yok)
-- **DB:** migration `097_fitting_fk_backfill_142.sql` çalıştırıldı (COMMIT) — yüklenecek dosya
+`68e2cec` feat(143): G2a overlay-B — terfide duzeltmeler spooller basligina yazilir (aktar duzeltmeler param)
+- `77b775a` G2a overlay-A — düzeltme DB'den yüklenir + tabloda gösterilir (dz-cell vurgu) + sayfa 1600
+- `dd84b64` G2a 4 alan katı dropdown + ağırlık NaN fix + popup tutarlılık
+- `a0ee606` G2a değer yazma (7 alan → taslak_duzeltmeleri upsert)
+- `0668bb9` migration 098 taslak_duzeltmeleri [skip ci]
+- `c7db87d` kutuphane-backfill.html sil (ölü kod) + 2 nav linki
+- **DB:** migration `098_taslak_duzeltmeleri.sql` canlı (COMMIT). Yeni endpoint YOK (12/12).
 
-## 142 — yapılanlar (ANA İŞ: fitting bağlama, 0 → 102)
-1. **MK-142.1 — TEŞHIS: fitting HİÇ bağlanmamıştı.** Oturum başında çapraz sorgu: karbon fitting_fk=0/168, flanş 142, boru 67. Cihat "eskiden tanınıyordu" dedi → git+DB kanıtı: gördüğü **flanş+boru** idi; fitting bağı hiç kurulmamıştı. Regresyon değil, eksik. `7e86e72` (141) flanşı düzeltmişti, fitting'i bozmamıştı. Silinen dosya/kayıp veri YOK.
-2. **MK-142.2 — Çekirdek BUG-A: dil uyumsuzluğu.** `lib/malzeme-kutuphane-eslesme.js` her zaman semantik (`elbow_90lr`) + ölü `tee_reducing` üretiyordu. Kütüphane iki dil: cunife/DIN semantik, karbon/ASME native (`90LR`, `tee_eq`/`tee_red`). Düzeltme: malzeme grubuna göre elbow dili (`_elbowParcaTipi`), tee Eq/Red ayrımı, 1D→SR. → commit `b6d423a`.
-3. **MK-142.3 — Ara-açı 3D guard.** Elbow tanımda açı 45/90 dışındaysa (27°/22.5° "cut elbow") → NULL (standart fitting değil). 90LR'a bağlamak ölçüde zararsız ama 3D'de yanlış geometri (Cihat'ın gerekçesi). Veride şu an 0 ara-açı (76/76 'aci_yok'→90 varsayım). Türetme (90LR'dan + açı koru) → 3D oturumuna borç.
-4. **MK-142.4 — Reducer çift-çap (BUG değil, eksik eşleşme).** Reducer `boyut='219.1x6.3 / 114.3x4.5'` çift çaplı. Kütüphanede aynı büyük çapta birden çok meşru küçük-çap varyantı (DUPLICATE DEĞİL — silmek felaket olurdu, Cihat sezgisi doğru). Backfill tek-çapla arayıp `hit.length>1`→atlıyordu. Düzeltme: çekirdek `cap_kucuk_mm` üretir, lookup küçük çapla daraltır. → commit `b26831e`.
-5. **MK-142.5 — Backfill "her run farklı" → tek SQL (Yol A).** `admin/kutuphane-backfill.html` PostgREST `.limit()` sıralama garantisi olmadığından her çalıştırışta farklı satır yakalıyordu (kafa karıştırıcı). Karar: tarayıcı backfill BIRAKILDI (silinmedi, kullanılmıyor), çekirdek mantığı tek deterministik SQL UPDATE'e portlandı → `migrations/097`. `BEGIN...ROLLBACK` ile önce 102 doğrulandı, sonra COMMIT.
+## 143 — yapılanlar (ANA İŞ: G2a operatör değer-düzeltme döngüsü, tam tur)
+1. **C planı — backfill dosyası: SİL.** `admin/kutuphane-backfill.html` terk edilmişti (097 SQL kazandı), 2 nav linkiyle silindi. Sıfır referans.
+2. **Migration 098 — taslak_duzeltmeleri.** Q5 (139): düzeltme parse_sonuc'a değil ayrı tabloya. Anahtar UNIQUE(tenant,devre,pipeline,spool,alan) → upsert. RLS get_tenant_id (devre_dok deseni). Q5 kod-öncesi doğrulandı (client-side yazma + RLS teyit).
+3. **G2a değer yazma.** `duzeltAc` salt-görüntüden değer-yazmaya. Her satırda ✏️ → inline → ✓/✕ → upsert. Boş=sil. Enter/Escape.
+4. **7 alan + tip:** çap/et/ağırlık = sayısal input (virgül→nokta NaN-fix). malzeme/yüzey/alıştırma/kalite = **KATI dropdown** (kanonik KOD saklanır, etiket gösterilir). Kalite DB'den (`malzeme_tanimlari` sistem+firma). Yüzey malzemeye göre uyumlu filtreli. Listede yok→"(tanımsız)".
+5. **Overlay-A (gösterim):** inceleGetir → DB'den düzeltme çekilir, spoollar._duzelt'e basılır, tabloda görünür (turuncu dz-cell), sayfa yenilense de kalıcı.
+6. **Overlay-B (terfi):** ares-kabuk.aktar opsiyonel `duzeltmeler` param. Spool BAŞLIK 7 alanı düzeltme varsa onunla yazılır. devre_detay göndermez → sıfır regresyon. (Bonus: alistirma artık yazılıyor.)
 
-## §13.7 DURUM
-Bağlama katmanı **fitting tarafında da KAPANDI.** Karbon fitting 0 → 102 (elbow 69/76, reducer 33/71, flanş 204/290). Tek-kayıt + çift-çap + tolerans → sıfır yanlış eşleşme. Kalan bağlanmayanlar **kütüphane kapsamı** (C planı), bug değil.
+## §13 DURUM
+Operatör düzeltme döngüsünün **DEĞER kısmı (G2a) KAPANDI** — düzelt→tablo(kalıcı)→terfi(canlıya yaz). Canlı doğrulandı (A-1095/A-1096: Paslanmaz/316L/Asit spooller'a yazıldı). Yayılma (G3a), L3 eşiği (G4), BOM kalem düzeltme + güvensiz-bayrak HENÜZ yok.
 
-## NEREDEYIZ (sınıf bazında, 142 canlı)
-| Sınıf | Toplam (karbon) | Bağlı | Bağlanmayan sebebi |
-|---|---|---|---|
-| Elbow | 76 | 69 | 4 SR + 3 çap kütüphanede yok |
-| Reducer | 71 | 33 | 38 varyant kütüphanede yok (114.3/76.1 ×20 dahil) |
-| Flanş | 290 | 204 | 86 organik flanş varyantı |
-| Tee | 21 | 0 | karbon tee_red kütüphanede YOK |
-| Paslanmaz fitting | 32 | 0 | paslanmaz fitting kütüphanede YOK |
+## CANLI DOĞRULAMA ✅
+spool_detay A-1095/A-1096 → Malzeme Paslanmaz, Kalite 316L, Yüzey Asit, Et 5,2mm. Terfide düzeltmeler spooller'a geçti, devre özeti senkron.
 
-## AÇIK BORÇ (143 için, öncelik sırası)
-- **Migration 097 yükleme:** `migrations/097_fitting_fk_backfill_142.sql` repoya eklenip commit edilecek (zaten DB'de çalıştı; dosya tekrarlanabilirlik için).
-- **Backfill dosyası kaderi:** `admin/kutuphane-backfill.html` artık kullanılmıyor (tek-SQL kazandı). Sil mi (12-fn limiti değil, statik dosya — risk yok ama ölü kod) yoksa "acil toplu bağlama" aracı olarak dursun mu — KARAR 143.
-- **C planı (kütüphane kapsamı, organik):** karbon `tee_red`, reducer eksik varyantlar (özellikle 114.3/76.1 ×20), paslanmaz fitting, SR elbow, DN400+ flanş. Süper-admin ihtiyaç oldukça yükler ("Excel'i sömür → kütüphaneyi parça parça doldur").
-- **Ara-açı dirsek türetme (3D bağlantılı):** 27°/22.5° elbow → 90LR'dan ölçü türet + açıyı koru + 3D'ye `aci` ver. Şu an veride 0, MK-49.A (3D motoru) oturumunda tasarlanacak.
-- **tip='fitting' ama flanş = AYRI VERI BORCU (141'den devam):** render FK-öncelikli maskeliyor ama tip alanı yanlış (rapor/filtre/sayım). Kök düzeltme ayrı.
-- **MK-139.1 görsel teyit (taslak çap):** hâlâ açık.
+## 143'te ÇIKAN AMA YAPILMAYAN (143 işiyle ilgisiz — ayrı teşhis, sonraki oturum)
+- **🔴 NB1124 G310 "hep zayıf / %100 çelişki / okunamadı":** TÜM spool zayıf+çelişkili. Format-özgü parse/eşleşme. TAHMİN YOK, kanıt teşhisi gerekir. Öncelikli.
+- **Terfi sonrası izometri PDF spool detaya gelmiyor:** eslestirme-backfill / 129-130 borcu.
+- **Native confirm() → kendi modal:** wizard iptal "Vazgeçmek emin misiniz?" tarayıcı kutusu (kozmetik).
+
+## AÇIK BORÇ (144 için, öncelik sırası)
+1. **BOM malzeme listesi düzeltme + güvensiz-bayrak (ANA İŞ):** spool_malzemeleri kalemleri (spool detay Malzeme sekmesi). Küçük sorun→kalem rötuşu; büyük sorun→"güvensiz" işaretle, canlıya damgalı çıkar, manuel takibe düş. 3 durum: güvenilir/düzeltildi/güvensiz. Excel'siz formatlarda kritik. KOD ÖNCESİ: spool_malzemeleri şema + spool detay render + K2 kıyas oku (MK-126.8). Bayrak kolonu migration gerekebilir.
+2. **"Hep zayıf" teşhisi (öncelikli ayrı):** NB1124 G310 niye okuyamıyor — devre-inceleme + izo-eslesme kanıtla. Isınma turu olabilir.
+3. **G3a yayılma:** bir spool düzeltmesi aynı hatalı diğerlerine otomatik. Q1+Q2 kararı GEREKLİ (Cihat 143'te sordu).
+4. **Durum/özet tutarlılığı:** düzeltilen satır hâlâ "zayıf/çelişki", üst özet/stat eski. Düzeltme hesaba dahil (gösterim, risksiz).
+5. tip='fitting' ama flanş · BUG-B DN125 (park) · MK-139.1 görsel teyit · ara-açı dirsek (3D).
 
 ## PLAN
 | Adım | Durum |
 |---|---|
-| Çekirdek fitting kod hizalama (90LR, tee, guard) | ✅ commit b6d423a |
-| Reducer çift-çap eşleşme | ✅ commit b26831e |
-| Backfill → tek deterministik SQL (097) | ✅ 102 bağlandı, canlı |
-| Migration 097 dosyalama | ⚠ 143 ilk iş (repoya commit) |
-| C planı kütüphane doldurma | arka plan, organik |
-| Ara-açı türetme | 3D oturumuna borç |
+| C — backfill dosyası sil | ✅ c7db87d |
+| Migration 098 taslak_duzeltmeleri | ✅ canlı + repo |
+| G2a değer yazma (7 alan) | ✅ a0ee606 |
+| G2a katı dropdown + NaN fix | ✅ dd84b64 |
+| G2a overlay-A (DB+tablo) | ✅ 77b775a |
+| G2a overlay-B (terfi) | ✅ 68e2cec, canlı doğrulandı |
+| BOM güvensiz-bayrak | 144 ana iş |
+| "Hep zayıf" teşhisi | 144 öncelikli ayrı |
+| G3a yayılma | sonra (Q1/Q2 gerekli) |
 
 ## NEREDEYIZ — ÖZET
-Fitting bağlama bitti, 0→102 karbon fitting canlıda bağlı, doğrulandı (spool_detay A-000932 reducer STANDART=ASME B16.9). "Her run farklı" backfill kaosu deterministik SQL ile çözüldü. Sıra: 097 dosyalama + kütüphane kapsamını organik genişletme. Sistem "çalışır" — tanınan her fitting bağlanıyor, tanınmayan "kütüphanede yok" diye dürüstçe işaretleniyor.
+G2a bitti: operatör çap/et/ağırlık/malzeme/kalite/yüzey/alıştırma düzeltir, tabloda kalıcı görür, terfide canlıya yazılır. Kanonik dropdown'la yazım hatası riski yok, NaN giderildi, sıfır regresyon. Sıra: BOM malzeme listesinin güvenilirliği (küçük düzeltme + güvensiz-bayrak) ve "hep zayıf" format teşhisi.
