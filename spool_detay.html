@@ -858,6 +858,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
     <div class="mhead"><span class="mtitle" data-i18n="sp_modal_cut_title">✂️ Kesim Ekle</span><button class="mclose" onclick="this.closest('.mov').style.display='none'">✕</button></div>
     <div class="mbody">
       <input type="hidden" id="km_eid">
+      <div id="km_uyari"></div>
       <div class="fg"><label class="fl" data-i18n="sp_material_label">Malzeme *</label><select class="fi" id="km_malz" onchange="kmMalzInfo()"></select></div>
       <div id="km_info" style="margin-bottom:12px;padding:6px 10px;background:var(--sur2);border-radius:7px;border:1px solid var(--bor);font-size:14px;color:var(--txm);min-height:24px;"></div>
       <div class="fg"><label class="fl" data-i18n="sp_cut_length_label">Kesim Uzunluğu (mm) *</label><input class="fi" id="km_olcu" type="number" placeholder="1250" style="font-size:16px;font-weight:700;"></div>
@@ -876,6 +877,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
     <div class="mhead"><span class="mtitle" data-i18n="sp_modal_bend_title">🔄 Büküm Ekle</span><button class="mclose" onclick="this.closest('.mov').style.display='none'">✕</button></div>
     <div class="mbody">
       <div class="fg"><label class="fl" data-i18n="sp_material_label">Malzeme *</label><select class="fi" id="bm_malz" onchange="bmMalzInfo()"></select></div>
+      <div id="bm_uyari"></div>
       <div id="bm_info" style="margin-bottom:12px;padding:6px 10px;background:var(--sur2);border-radius:7px;border:1px solid var(--bor);font-size:14px;color:var(--txm);min-height:24px;"></div>
       <div class="fg"><label class="fl" data-i18n="sp_cut_length_label">Kesim Uzunluğu (mm) *</label><input class="fi" id="bm_olcu" type="number" placeholder="2400" style="font-size:16px;font-weight:700;"></div>
       <div style="font-size:14px;color:var(--txd);margin-top:-8px;margin-bottom:12px;" data-i18n="sp_bend_note">Kesim listesine de "Büküm Borusu" olarak eklenecek.</div>
@@ -901,7 +903,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
           <label style="cursor:pointer;"><input type="radio" name="mTip" value="manuel" style="display:none;"><div class="mark-tip" data-v="manuel" data-i18n="sp_mark_manuel">Manuel</div></label>
         </div>
       </div>
-      <div id="mOtomatikSec" class="fg"><label class="fl" data-i18n="sp_material_label">Malzeme</label><select class="fi" id="mm_malz"></select></div>
+      <div id="mOtomatikSec" class="fg"><div id="mm_uyari"></div><label class="fl" data-i18n="sp_material_label">Malzeme</label><select class="fi" id="mm_malz" onchange="mmMalzInfo()"></select><div id="mm_info" style="margin-top:8px;"></div></div>
       <div id="mPlakaInfo" style="display:none;padding:10px 12px;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.25);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_plaka_info">Spool malzemesi otomatik atanır.</div>
       <div id="mManuelInfo" style="display:none;padding:10px 12px;background:rgba(100,116,139,.07);border:1px solid rgba(100,116,139,.2);border-radius:10px;font-size:14px;color:var(--txm);" data-i18n="sp_mark_manuel_info">Serbest markalama.</div>
     </div>
@@ -1561,9 +1563,75 @@ function logEkle(islem, ac) {
   renderLog();
 }
 
-function malzemeOpts(secili){
-  if(!MALZEME.length)return'<option value="">Malzeme listesi boş</option>';
-  return MALZEME.map(function(m){return'<option value="'+m.id+'"'+(m.id===secili?' selected':'')+'>'+esc(m.ac)+' — '+esc(m.kal)+' — '+esc(m.cap)+'</option>';}).join('');
+// ── C4 (147): istasyon modalları — tip filtresi + güvensiz BOM görünür + çizimden düzelt ──
+//   Güven spool-seviyesi (bom_durum / k2Flag). Kalem 'guncelleme' doluysa düzeltildi sayılır, uyarı taşımaz.
+//   tip alanı güvenilmez (MK-141: NB1137 flanş tip=fitting) → sınıf önce dolu geometri FK, sonra tanım kelimesi.
+function _spoolGuven(){
+  var stored=(SP&&SP.bomDurum)||'guvenilir';
+  if(stored==='guvensiz') return 'guvensiz';
+  var karar=!!(SP&&SP.bomDurumZaman);
+  if(SP&&SP.k2Flag&&!karar) return 'dogrulanmadi';
+  return null;
+}
+function _kalemUyarili(m){ return !!_spoolGuven() && !!m && !m.guncelleme; }
+function _kelimeVarSD(metin,kelime){
+  var k=String(kelime).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  try{return new RegExp('(^|[^a-z0-9])'+k+'([^a-z0-9]|$)','i').test(' '+String(metin||'').toLowerCase()+' ');}catch(e){return false;}
+}
+function _kalemSinif(m){
+  if(!m) return 'diger';
+  if(m.boru_olculer_id)   return 'boru';
+  if(m.flansh_olculer_id) return 'flans';
+  var t=m.ac||'';
+  if(['bilezik','ring','collar','stub'].some(function(k){return _kelimeVarSD(t,k);})) return 'bilezik';
+  if(['flans','flange'].some(function(k){return _kelimeVarSD(t,k);}))                 return 'flans';
+  if(['boru','pipe','tube'].some(function(k){return _kelimeVarSD(t,k);}))              return 'boru';
+  if(['dirsek','elbow','bend','tee','branch','reduksiyon','reducer','reduction','kapak','blind','cap'].some(function(k){return _kelimeVarSD(t,k);})) return 'fitting';
+  if(m.fitting_olculer_id) return 'fitting';
+  var tr=(m.tip_raw||'').toLowerCase();
+  if(tr==='boru')   return 'boru';
+  if(tr==='flansh') return 'flans';
+  if(tr==='fitting')return 'fitting';
+  return 'diger';
+}
+function _guvenSeritHTML(){
+  var g=_spoolGuven(); if(!g) return '';
+  var kirmizi=(g==='guvensiz');
+  var txt=kirmizi
+    ? tv('sp_bom_uyari_guvensiz','Bu spool\u2019un malzeme listesi güvensiz. İşlenecek parçanın ölçüsünü çizimden doğrulayıp düzeltin.')
+    : tv('sp_bom_uyari_dogrulanmadi','Sistem bu spool\u2019un BOM\u2019unda çelişki buldu (doğrulanmadı). Ölçüleri çizimden kontrol edin.');
+  var renk=kirmizi?'200,55,55':'217,160,30';
+  return '<div style="display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:9px;margin-bottom:12px;background:rgba('+renk+',.10);border:1px solid rgba('+renk+',.30);font-size:13px;color:'+(kirmizi?'#d33':'var(--warn)')+';line-height:1.5;"><span>'+(kirmizi?'\u2691':'\u26a0')+'</span><span>'+esc(txt)+'</span></div>';
+}
+function _kalemOnek(m){
+  if(!_kalemUyarili(m)) return '';
+  return (_spoolGuven()==='guvensiz') ? '\u2691 ' : '\u26a0 ';
+}
+function _kalemOnekSon(m){
+  if(!_kalemUyarili(m)) return '';
+  return (_spoolGuven()==='guvensiz')
+    ? '  ('+tv('sp_bom_rozet_guvensiz','güvensiz')+')'
+    : '  ('+tv('sp_bom_rozet_dogrulanmadi','doğrulanmadı')+')';
+}
+function _duzeltBtnHTML(m){
+  if(!_kalemUyarili(m)) return '';
+  return '<div style="margin-top:8px;"><button class="btn btn-sm" style="border-color:rgba(200,55,55,.4);color:#d33;" onclick="malzDuzenleAc(\''+esc(m.id)+'\')">\u270f\ufe0f '+tv('sp_cizimden_duzelt','Çizimden düzelt')+'</button></div>';
+}
+// C4 (147): düzeltme sonrası açık istasyon modalını tazele (önek/şerit/düzelt-btn güncellensin, seçim korunur)
+function _acikModalTazele(){
+  function acik(id){var e=T(id);return !!e&&e.style&&e.style.display==='flex';}
+  if(acik('kesimModal')){var s=T('km_malz'),v=s?s.value:'';if(s)s.innerHTML=malzemeOpts(v,['boru']);var u=T('km_uyari');if(u)u.innerHTML=_guvenSeritHTML();kmMalzInfo();}
+  if(acik('bukumModal')){var s2=T('bm_malz'),v2=s2?s2.value:'';if(s2)s2.innerHTML=malzemeOpts(v2,['boru']);var u2=T('bm_uyari');if(u2)u2.innerHTML=_guvenSeritHTML();bmMalzInfo();}
+  if(acik('markModal')){var s3=T('mm_malz'),v3=s3?s3.value:'';if(s3)s3.innerHTML=malzemeOpts(v3,['flans','bilezik']);var u3=T('mm_uyari');if(u3)u3.innerHTML=_guvenSeritHTML();mmMalzInfo();}
+}
+function malzemeOpts(secili, izinli){
+  var liste=MALZEME;
+  if(izinli && izinli.length){ liste=MALZEME.filter(function(m){return izinli.indexOf(_kalemSinif(m))>=0;}); }
+  if(!liste.length){
+    var bos=(izinli && izinli.length)?tv('sp_bu_tip_yok','Bu tipte malzeme yok'):'Malzeme listesi boş';
+    return '<option value="">'+esc(bos)+'</option>';
+  }
+  return liste.map(function(m){return'<option value="'+m.id+'"'+(m.id===secili?' selected':'')+'>'+_kalemOnek(m)+esc(m.ac)+' — '+esc(m.kal)+' — '+esc(m.cap)+_kalemOnekSon(m)+'</option>';}).join('');
 }
 
 // ── YÜKLEME ───────────────────────────────────────────────────
@@ -2718,6 +2786,7 @@ async function malzDuzenleKaydet(){
   if(tipDegisti||boyutDegisti){ m.boru_olculer_id=null;m.fitting_olculer_id=null;m.flansh_olculer_id=null;m.geom_standart='';m.geom_schedule=''; }
   T('malzDuzenleModal').style.display='none';
   renderMalzeme(); sertGuncelle();
+  try{_acikModalTazele();}catch(e){}
   logEkle('Malzeme Kalemi Düzenlendi',(m.kod||'')+' — '+(m.ac||''));
   toast('Kalem güncellendi','ok');
 }
@@ -2810,7 +2879,8 @@ function renderKesimler(){
   if(el)el.innerHTML=html;
 }
 function kesimModalAc(){
-  var km=T('km_malz');if(km)km.innerHTML=malzemeOpts('');
+  var km=T('km_malz');if(km)km.innerHTML=malzemeOpts('',['boru']);
+  var u=T('km_uyari');if(u)u.innerHTML=_guvenSeritHTML();
   T('km_eid').value='';var ko=T('km_olcu');if(ko)ko.value='';
   kmMalzInfo();T('kesimModal').style.display='flex';
 }
@@ -2818,7 +2888,8 @@ function kmMalzInfo(){var s=T('km_malz');if(!s)return;var m=MALZEME.find(functio
   // G-03: malzeme lokalize ('karbon' → 'Karbon Çelik'), kalite canonical ('ST37' → 'St 37')
   var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malz)||m.malz||'—'):(m.malz||'—');
   var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kal)||m.kal||'—'):(m.kal||'—');
-  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);font-weight:700;">'+esc(kg)+'</span> — '+esc(m.cap)+' — et: '+esc(m.et);
+  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);font-weight:700;">'+esc(kg)+'</span> — '+esc(m.cap)+' — et: '+esc(m.et)+_duzeltBtnHTML(m);
+  i.style.border=_kalemUyarili(m)?'1px solid rgba(200,55,55,.45)':'1px solid var(--bor)';
 }
 function kesimKaydet(){
   var mId=(T('km_malz')||{}).value||'',olcu=String((T('km_olcu')||{}).value||'').trim();
@@ -2874,12 +2945,13 @@ function renderBukumler(){
   }).join(''):'<div style="font-size:14px;color:var(--txd);">'+tv('sp_no_bends','Henüz büküm eklenmemiş')+'</div>';
   if(el)el.innerHTML=html;
 }
-function bukumModalAc(){var bm=T('bm_malz');if(bm)bm.innerHTML=malzemeOpts('');var bo=T('bm_olcu');if(bo)bo.value='';bmMalzInfo();T('bukumModal').style.display='flex';}
+function bukumModalAc(){var bm=T('bm_malz');if(bm)bm.innerHTML=malzemeOpts('',['boru']);var u=T('bm_uyari');if(u)u.innerHTML=_guvenSeritHTML();var bo=T('bm_olcu');if(bo)bo.value='';bmMalzInfo();T('bukumModal').style.display='flex';}
 function bmMalzInfo(){var s=T('bm_malz');if(!s)return;var m=MALZEME.find(function(x){return x.id===s.value;});var i=T('bm_info');if(!i)return;if(!m){i.innerHTML='Malzeme seçin';return;}
   // G-03: malzeme lokalize, kalite canonical
   var me=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(m.malz)||m.malz||'—'):(m.malz||'—');
   var kg=(typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(m.kal)||m.kal||'—'):(m.kal||'—');
-  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);">'+esc(kg)+'</span> — '+esc(m.cap);
+  i.innerHTML='<strong>'+esc(me)+'</strong> — <span style="color:var(--ac);">'+esc(kg)+'</span> — '+esc(m.cap)+_duzeltBtnHTML(m);
+  i.style.border=_kalemUyarili(m)?'1px solid rgba(200,55,55,.45)':'1px solid var(--bor)';
 }
 function bukumKaydet(){
   var mId=(T('bm_malz')||{}).value||'',olcu=String((T('bm_olcu')||{}).value||'').trim();
@@ -2930,7 +3002,9 @@ function renderMarkalar(){
   if(el)el.innerHTML=html;
 }
 function markModalAc(){
-  var mm=T('mm_malz');if(mm)mm.innerHTML=malzemeOpts('');
+  var mm=T('mm_malz');if(mm)mm.innerHTML=malzemeOpts('',['flans','bilezik']);
+  var u=T('mm_uyari');if(u)u.innerHTML=_guvenSeritHTML();
+  mmMalzInfo();
   var r=document.querySelector('input[name="mTip"][value="otomatik"]');if(r)r.checked=true;
   markTipGuncelle();
   var revEk2 = (typeof ARES_NORM !== 'undefined' && ARES_NORM.revFmt) ? ARES_NORM.revFmt(SP.rev) : '';
@@ -2943,6 +3017,14 @@ function markModalAc(){
     altEl.textContent=SP.spoolId?tv('sp_spool_id','Kısa Kod')+': '+SP.spoolId:'';
   }
   T('markModal').style.display='flex';
+}
+function mmMalzInfo(){
+  var s=T('mm_malz'),i=T('mm_info');if(!i)return;
+  var m=s?MALZEME.find(function(x){return x.id===s.value;}):null;
+  if(!m){i.innerHTML='';i.style.cssText='margin-top:8px;';return;}
+  var uy=_kalemUyarili(m);
+  i.style.cssText='margin-top:8px;'+(uy?'padding:8px 10px;border-radius:7px;border:1px solid rgba(200,55,55,.45);':'');
+  i.innerHTML=(uy?('<div style="font-size:13px;color:var(--txm);margin-bottom:2px;">'+esc(m.ac)+' — '+esc(m.cap)+'</div>'):'')+_duzeltBtnHTML(m);
 }
 function markTipGuncelle(){
   var tip=(document.querySelector('input[name="mTip"]:checked')||{}).value||'otomatik';
