@@ -1,30 +1,27 @@
-# CLAUDE — 145. Oturum Özeti
+# CLAUDE — 146. Oturum Özeti
 
-**Tek cümle:** B'nin (terfi öncesi BOM kalem rötuşu) DB temeli (`taslak_duzeltmeleri.kalem_idx`) + spool-seviyesi uyumu kuruldu ve canlı doğrulandı; iki miras "borç" (C3 devre-bağı, dirsek normalizasyon) okuma disipliniyle "borç değil" diye çürütüldü — kod yazsaydık çalışan sistemi bozardık.
+**Tek cümle:** B'nin kalanı (terfi öncesi kalem-seviyesi BOM rötuşu) uçtan uca kapandı — wizard ✏️ popup → taslak_duzeltmeleri (kalem_idx≥0) → terfide aktar overlay → spool_malzemeleri; NB1137'de canlı kanıtlandı, sıfır regresyon, 12/12 fonksiyon.
 
 ## Akış
-- Açılış: 145-DEVIR + 5 handoff + git pull (temiz, HEAD edaef05, 12/12). Cihat: "ağırdan kolaya, bağlam kopmadan". Sıra A (C3) → dirsek → B.
-- **A (C3 devre-bağı):** MK-126.8 okuma zinciri. spooller'da kaynak-izometri FK yok (sadece devre_id). `eslestirme-backfill.js` izometri↔spool'u HER ZAMAN devre-kapsamlı eşleştirir (MK-110.2). (Cihat "backfill iptal etmiştik" dedi → geçmiş arama: iptal edilen `devre-eslesme-yenile.js` mükerrer dosyaydı 129'da, backfill canlı.) Kanıt zinciri: spooller satırı (FK yok) → 40 parse kaydında pipeline geçiyor ama spool UUID hiç yok → AT110-816-027/S01 13 taslak devrede (test kirliliği) → malzeme_flag izi SADECE g230/7ed93033'te → A-001090 (9ce6869a) açıldı → C3 DOĞRU sarı yaktı. **144 "inert" = yanlış spool test yanılgısı.** Sıfır kod.
-- **Dirsek normalizasyon:** l2-parser (149-172) ham ağırlık okur, adet-çarpımı yok = doğru. malzeme-kiyas.js (155-190) zaten 3 dallı: boru/dirsek/diğer; dirsek toplam-ağırlık ±%15 (MK-133.3), diğer per-adet (MK-133.2). 6.72 vs 3.57 = %47 = gerçek çelişki. Yapacak iş yok.
-- **B:** parse çıktısı yapısı (jsonb spool[0]) → kalemde kod YOK, tanım güvenilmez → kalem_idx (dizi sırası). Migration 100 (Yol A: NOT NULL DEFAULT -1, tek tam 6-kolon unique). Dry-run → COMMIT. Wizard 3-nokta uyum fix. Canlı test (DB kanıtı: kalem_idx=-1, toast ✓).
+- Açılış: 145-DEVIR + 5 handoff + git pull (temiz, HEAD f91a8c7, 12/12). KARARLAR.md'ye MK-145.x eklendi. Parser dokümanı okundu (Bölüm 13 = operatör düzeltme döngüsü, B'nin tasarım omurgası; doküman 140'a kadar dolu, 141-145 yansımamış).
+- **Kod öncesi okuma (MK-126.8):** ares-kabuk grupla/aktar + wizard duzeltAc/duzeltKaydet/_duzeltmeleriYukle/malzSekmesiRender/onayEt okundu. **Kritik bulgu:** grupla `konsolide` kalemleri birleştirir → `bom[i]` ≠ ham `malzeme_listesi[i]`. MK-145.1'in "ham sırası" tanımı yanlıştı → kalem_idx = gruplu bom sırası (MK-146.1). Okumadan ham-indeksle yazsaydık yanlış kaleme yazardık.
+- **Bulgu 2:** aktar `duzeltmeler` (143/G2a) sadece spool başlığı; kalem için ayrı `kalemDuzeltmeler` param gerekti.
+- **Bulgu 3 (açı):** spool_malzemeleri'de açı kolonu yok → açı düzenlenebilir kümeden çıkarıldı (yazsak terfide kaybolur).
+- **Parça 3 (aktar) önce:** kalemDuzeltmeler contract'ını sabitledi. node --check + birim test 4/4.
+- **Parça 1+2 (wizard):** KALEM_ALANLAR + popup + kaydet/yükle + render. node --check (2/2 script blok). Bağlantı testi: WIZ._kalemDuzelt şekli = aktar.kalemDuzeltmeler, idx hizalı.
+- **Cihat "sen hallediver":** üç işlem dosyaya uygulandı (script ile, karakter-güvenli), denetlendi, verildi.
+- **Canlı test:** UI iki kusur gösterdi (rozet satır-seviyesi malzemede → yanıltıcı; ✏️ kg'yi kapatıyor). Düzeltildi: hücre-bazlı rozet + ayrı "Düzelt" kolonu. Terfi → spool_malzemeleri 3 kalem doğru idx'le (malzeme/adet/ağırlık), komşular parse değerinde.
 
-## Kararlar (MK-145.1..4) — son-durum.md'de tam
-- 145.1 kalem anahtarı = kalem_idx (dizi sırası; kod yok, tanım güvenilmez).
-- 145.2 Yol A: kalem_idx NOT NULL DEFAULT -1, tek tam unique (PostgREST onConflict garantili).
-- 145.3 C3 doğru (144 "inert" = yanlış spool); D borcu = test kirliliği artefaktı.
-- 145.4 dirsek/ağırlık çelişkisi gerçek-pozitif, normalizasyon borcu DEĞİL (K2 zaten doğru).
+## Kararlar / Mühür
+- **MK-146.1:** kalem_idx = gruplu grupla().bom[] sırası (ham DEĞİL; 145.1 revizyonu).
 
 ## Kanıt / yöntem
-- Hiçbir kod körlemesine yazılmadı. İki "borç" maddesi de SQL+kod okumayla çürütüldü ÖNCE.
-- C3 teşhisi: spooller şema + örnek satır + 40-kayıt pipeline taraması + 13-devre listesi + flag-izi devre sorgusu + canlı ekran. Tahmin değil.
-- Migration 100: BEGIN...ROLLBACK dry-run (satır sayısı korunumu) → COMMIT → constraint teyit.
-- Wizard: 10 script blok new Function denetimi (0 hata) + canlı DB doğrulama (taslak_duzeltmeleri SELECT, kalem_idx=-1).
+- Hiçbir şey körlemesine yazılmadı. grupla/aktar/wizard okundu ÖNCE. aktar overlay birim testli (sıfır regresyon mekanik kanıt). Terfi SQL ile DB'den doğrulandı (spool_malzemeleri 3 satır).
 
 ## Hatalarım
-- İki miras teşhisi ("C3 kod gerekiyor", "dirsek normalizasyon borcu") okumadan doğru sansaydım yanlış olacaktı. Ders: borç listesini de kanıtla doğrula.
-- Kalem anahtarı: önce kalem_kod önerdim (Cihat onayladı), parse'ta kod olmadığını sonra gördüm → kalem_idx. Ders: anahtardan önce hedef veri alanlarını gör.
-- spool_detay 4-numara: "FK NULL" dedim, SQL FK DOLU gösterdi. Tahminden önce SQL.
-- Bir noktada migration SQL'ini açıklarken fazla uzattım (Cihat "niye bu kadar karışık anlattın"). Ders: adım sayısını az tut.
+- "Commit etme" dedim ama kod zaten birlikte commit'lenmişti; gereksiz `git add ares-kabuk.js` önerdim git status okumadan. Ders: önce git log/status.
+- İlk render'da rozeti satır-seviyesi malzemeye koydum (yanıltıcı). Görsel niyeti test et.
+- (devam) Genelde fazla uzun açıklama eğilimi — adım sayısını az tut.
 
-## 146 ana iş
-A: B'nin kalanı — kalem-seviyesi rötuş UI (malzBody satır ✏️ + kalem upsert/overlay kalem_idx>=0 + terfide aktar'a taşıma). Temel hazır. Sonra spool_detay kütüphane-tıklama bug, C4 downstream damga.
+## 147 ana iş
+spool_detay kütüphane-tıklama bug (FK DOLU kalem açılmıyor; test A-001090/9ce6869a, kalem bed61203). Sonra C4 downstream damga. Eski borçlar: Band-B, pipeline_no E120-, yukleyen_id, folder tree.

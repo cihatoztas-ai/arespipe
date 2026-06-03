@@ -2035,3 +2035,12 @@ simetrik dil düşünülebilir (acil değil).
 
 **136 takip:** Desen başka gemilerde tekrar ediyor mu? Ediyorsa IFS-normalizasyon kuralı (adet>1 &
 per-adet fiziksel-imkansız → satır-toplam varsay) değerlendirilir; tek vaka ise olduğu gibi 🟡 bırakılır.
+
+## MK-145 (Oturum 145)
+- **MK-145.1:** Kalem-seviyesi taslak düzeltme anahtarı = `kalem_idx` (integer, `malzeme_listesi[]` dizi sırası). Terfi öncesi parse çıktısında `kod` YOK, `tanim` güvenilmez (ham_satir bozuk), aynı tip+çap tekrar → tek stabil kimlik dizi sırası. Parse tek-sefer → sıra sabit.
+- **MK-145.2:** `taslak_duzeltmeleri` Yol A: `kalem_idx NOT NULL DEFAULT -1` (-1=spool, >=0=kalem). Tek TAM 6-kolon unique (kısmi index DEĞİL) → PostgREST onConflict garantili.
+- **MK-145.3:** C3 (sistem-türevli "Doğrulanmadı") DOĞRU çalışıyor. 144 "inert" = yanlış spool (izometrisi başka test devresinde). Gerçek üretimde izometri kendi devresinde → backfill devre-kapsamlı eşleştirir → C3 doğru. D borcu = test kirliliği artefaktı, kod borcu DEĞİL.
+- **MK-145.4:** Dirsek/ağırlık çelişkisi NORMALİZASYON BORCU DEĞİL. K2 zaten per-adet (MK-133.2) + dirsek invarianti (MK-133.3). %47 sapma = gerçek-pozitif. l2-parser ham okur = doğru (MK-111.2).
+
+## MK-146 (Oturum 146)
+- **MK-146.1:** Kalem-seviyesi düzeltme anahtarı `kalem_idx` = **gruplu `ARES_KABUK.grupla().bom[]` dizi sırası** (ham `malzeme_listesi[]` sırası DEĞİL — MK-145.1 revizyonu). `konsolide` aynı tip+tanım+malzeme+dn+açı kalemleri birleştirir (`sira.push` ilk-görülme, `bom`'a sort YOK) → deterministik. Render (`WIZ._kabukSpoollar`) ve terfi (`grupla(WIZ._kabukSatirlar)`) aynı saf fonksiyonu çağırdığı için `bom[idx]` hizalı; obje kimliğine değil anahtara güvenilir. Canlı kanıt: NB1137 S01 — 3 kalem, her biri yalnız kendi düzeltilen alanını aldı (S82109 malzeme, S63043 adet, S67455 ağırlık), komşular parse değerinde.
