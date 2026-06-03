@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-06-03T08:22:20.809Z",
-  "commit_sha": "800db73ada3e9b3b5700099079e396b3bf008da2",
+  "tarih": "2026-06-03T16:29:19.319Z",
+  "commit_sha": "5dd7b4500662a168c91fab1c5acc9c10b565a776",
   "commit_ref": "main",
-  "workflow_run": 998,
+  "workflow_run": 999,
   "ozet": {
-    "hata": 0,
+    "hata": 1,
     "uyari": 80,
-    "taranan_dosya": 127,
-    "sorunlu_dosya": 5,
-    "durum": "sari"
+    "taranan_dosya": 131,
+    "sorunlu_dosya": 6,
+    "durum": "kirmizi"
   },
   "kurallar": {
     "G03_HAM_MALZEME": {
@@ -148,6 +148,18 @@
             4096,
             4098
           ]
+        }
+      ]
+    },
+    "ARES_LAYOUT_EKSIK": {
+      "tip": "hata",
+      "mesaj": "ares-layout.js yüklenmiyor.",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "format_tanit.html",
+          "sayi": 1,
+          "satirlar": []
         }
       ]
     }
@@ -398,6 +410,19 @@
           "tip": "uyari",
           "satir": 1481,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
+        }
+      ]
+    },
+    {
+      "dosya": "format_tanit.html",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 0,
+      "hatalar": [
+        {
+          "kod": "ARES_LAYOUT_EKSIK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "ares-layout.js yüklenmiyor."
         }
       ]
     },
