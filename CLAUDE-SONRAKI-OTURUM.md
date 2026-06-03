@@ -37,3 +37,10 @@ Okuma hatası değil; tersane Paslanmaz yazıp Asit kastediyor.
 ## Hatırlatma
 - Prototip/üretim ekranını repo kökünden servis et + giriş yapılı + flag aktif olmalı.
 - node testleri uploads'taki l2-parser/glyph-onar/izometri-oku ile yapılabilir.
+
+## EK NETLEŞTİRME (Cihat, oturum 148 sonrası) — B1 tetiği
+**Sorun**: zayıf/güvensiz satır çıkınca kullanıcı PDF'i elle arayıp açıp okunamayan yeri bulmak zorunda — "olacak iş değil".
+**Çözüm**: wizard inceleme'de zayıf satıra tıkla → **aynı ekranda o PDF render** (vendor pdfjs) → okunamayan alanı işaretle → düzelt → kapat. Akışı bölmeden, PDF avına çıkmadan.
+**Asıl kazanç (teach-once-fix-all)**: bu işaretleme formatı öğretir (kuralı düzeltir) → kapsam "formatın tümüne" ise o formatın TÜM zayıf PDF'leri tek hamlede düzelir (re-parse / G3). Tekil değer fix'i ise sadece o spool (taslak_duzeltmeleri, işaretli).
+**Tetik mantığı**: format hiç tanınmadı → tam tanıtma (format_tanit, bugünkü). Tanındı ama 1 alan zayıf → hedefli mini-çapa (B1).
+**Giriş noktaları**: wizard inceleme zayıf-satır + (sonra) spool_detay "çizimden düzelt".
