@@ -136,6 +136,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
     <div class="pdftool">
       <button class="t-btn gr" onclick="document.getElementById('fileInput').click()">📂 PDF aç</button>
       <input type="file" id="fileInput" accept="application/pdf" class="hide">
+      <button class="t-btn" id="btnAiOku" onclick="aiOku()" disabled style="border-color:var(--leg);color:var(--leg);" title="AI okusun → değerlerden deterministik kural sentezle">🟣 AI oku</button>
       <span style="width:1px;height:20px;background:var(--bor);"></span>
       <button class="t-btn" id="zOut" onclick="zoomBtn(-1)" disabled>−</button>
       <span class="zlbl" id="zLbl">—</span>
@@ -213,7 +214,7 @@ const ALANLAR=[
  { ad:'not_metni', l2tip:'string', tip:'serbest', anchor:{mod:'etiket',etiket:'NOT:',onek:'',birim:''}, ipucu:'NOT ardındaki metin → alıştırma ipucu buradan türer.' },
  { ad:'malzeme_tablosu', l2tip:'tablo', tip:'tablo', ipucu:'Malzeme listesi — Excel eksikse PDF buradan okunur. Tablo bölgesini işaretle; satır desenlerini SONA toplu AI çıkarır.' }
 ];
-function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a._dirty=false; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
+function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a._dirty=false; a._aiDeger=null; a._okudu=null; a._aiSatir=0; a._aiSatirlar=null; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
 ALANLAR.forEach(_initAlan);
 function resetAlanlar(){ ALANLAR.forEach(_initAlan); adim=0; }
 
@@ -310,6 +311,65 @@ function _otoBanner(ad,skor,top){
 function formatSecDegis(v){ if(v){ formatYukle(v); } else { _yeniKipeDon(); } }
 function _yeniKipeDon(){ _mode='yeni'; _formatId=null; _mevcutKural=null; _mevcutPrompt=''; resetAlanlar(); _alanlariKos(); document.getElementById('promptTmpl').value=''; _duzeltUiGuncelle(''); renderDots(); renderDetay(); toast('Yeni format tanıtma kipine dönüldü'); }
 
+/* ── AI-OKU (Increment 1) ─────────────────────────────────────────
+   AI değer BULUR (izometri-oku L3, mevcut endpoint — MK-49.1/129.3),
+   biz değerden cozumle ile KURAL sentezleriz, AI değeri == kural çıktısı
+   mı diye doğrularız. Eşleşen yeşil (→$0 mühür), AI-null+cozumle-dolu
+   mühürlenmez (sızıntı koruması — dn50 örneği), eşleşmeyen kırmızı (elle/AI).
+   izometri-oku'ya DOKUNULMAZ; sadece çağrılır. Yan etki: batch + ai_api_log
+   (maliyet görünürlüğü) + cache. spooller/izometri YAZILMAZ. */
+let _aiOkunuyor=false;
+async function aiOku(){
+  if(_aiOkunuyor)return;
+  if(!CANON_ALL){ toast('Önce PDF aç'); return; }
+  if(typeof ARES==='undefined'||!ARES.supabase){ toast('ARES yüklenemedi — uygulama içinden aç'); return; }
+  const fi=document.getElementById('fileInput'); const f=fi&&fi.files&&fi.files[0];
+  if(!f){ toast('Açık PDF bulunamadı (yeniden PDF aç)'); return; }
+  const tid=ARES.tenantId(); const ot=(ARES.oturumAl&&ARES.oturumAl())||null; const uid=ot&&ot.id;
+  if(!tid||!uid){ toast('Oturum/tenant yok — giriş yapılı aç'); return; }
+  _aiOkunuyor=true;
+  const btn=document.getElementById('btnAiOku'); const eski=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='🟣 AI okuyor…'; }
+  try{
+    const b64=await _fileBase64(f);
+    const r=await fetch('/api/izometri-oku',{ method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ tenant_id:tid, kullanici_id:uid, pdf_base64:b64, dosya_adi:f.name, dosya_sirasi:1, dosya_toplami:1 }) });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ toast('AI hata: '+(j.error||('HTTP '+r.status))); return; }
+    const spool=(Array.isArray(j.spoollar)&&j.spoollar[0])||null;
+    if(!spool){ toast('AI spool döndürmedi (montaj/boş olabilir)'); return; }
+    _aiSentezle(spool);
+  }catch(e){ console.error('[aiOku]',e); toast('AI oku hatası: '+e.message); }
+  finally{ _aiOkunuyor=false; if(btn){ btn.disabled=false; btn.textContent=eski||'🟣 AI oku'; } }
+}
+function _fileBase64(f){ return new Promise((res,rej)=>{ const fr=new FileReader();
+  fr.onload=()=>{ const s=String(fr.result||''); const i=s.indexOf(','); res(i>=0?s.slice(i+1):s); };
+  fr.onerror=()=>rej(new Error('dosya okunamadı')); fr.readAsDataURL(f); }); }
+function _esitDeger(a,b){ if(a==null||b==null)return a==b;
+  if(typeof a==='number'||typeof b==='number'){ const x=parseFloat(a),y=parseFloat(b); return !isNaN(x)&&!isNaN(y)&&x===y; }
+  return String(a).trim()===String(b).trim(); }
+/* AI'ın okuduğu spool'u cozumle ile kurala indir → yeşil/kırmızı/sızıntı. */
+function _aiSentezle(spool){
+  let yesil=0,kirmizi=0,sizinti=0;
+  ALANLAR.forEach(a=>{
+    if(a.tip==='tablo'){ const ml=Array.isArray(spool.malzeme_listesi)?spool.malzeme_listesi:[]; a._aiSatir=ml.length; a._aiSatirlar=ml; return; }
+    const aiVal=(spool[a.ad]!==undefined)?spool[a.ad]:null;
+    const c=cozumle(a.ad,CANON_ALL); const cd=c?c.deger:null;
+    a._aiDeger=aiVal;
+    if(aiVal==null && cd!=null){ a._okudu=null; sizinti++; return; }           // AI yok, cozumle dolu → mühürleme (alan-dışı sızıntı)
+    if(c && aiVal!=null && _esitDeger(cd,aiVal)){                                // YEŞİL: kural çıktısı == AI değeri
+      a.sample=String(cd); a.regex=c.regex; a.flag=c.flag||'i'; a.deger=cd; a._dirty=true; a._okudu=true; a.tani='auto'; yesil++;
+    } else if(aiVal!=null){ a._okudu=false; a.tani='fail'; kirmizi++; }          // KIRMIZI: AI dolu ama kural yakalayamadı → elle işaretle (B1)
+    else { a._okudu=null; }                                                      // ikisi de boş
+  });
+  _mode='yeni'; _formatId=null; _mevcutKural=null;
+  const k=ALANLAR.findIndex(a=>a.tip!=='tablo' && a._okudu===false); if(k>=0)adim=k;
+  _duzeltUiGuncelle('');
+  renderDots(); renderDetay();
+  const mt=ALANLAR.find(a=>a.tip==='tablo'); const ms=mt?(mt._aiSatir||0):0;
+  toast('🟣 AI okudu: '+yesil+' yeşil (→$0 kural) · '+kirmizi+' kırmızı'+(ms?(' · '+ms+' malzeme satırı'):'')+(sizinti?(' · '+sizinti+' sızıntı atlandı'):''));
+}
+
 let adim=0, scope='all', pdfDoc=null, pageNum=1, scale=1.2, markMode=false;
 let RAW_ALL='', CANON_ALL='', pageItems={}, spanRects=[];
 /* ── B1: düzeltme kipi ── */
@@ -342,7 +402,7 @@ function cozumle(ad, region){
   return null;
 }
 function renderDots(){
-  let h=''; ALANLAR.forEach((a,i)=>{ let cls=''; if(a.tip==='tablo'){ if(a.bbox)cls='dolu'; } else if(a.regex){ cls=(a._okudu===false)?'kirmizi':'dolu'; } h+='<div class="dot '+(i===adim?'aktif':'')+(cls?' '+cls:'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
+  let h=''; ALANLAR.forEach((a,i)=>{ let cls=''; if(a.tip==='tablo'){ if(a.bbox)cls='dolu'; } else if(a.regex){ cls=(a._okudu===false)?'kirmizi':'dolu'; } else if(a._okudu===false){ cls='kirmizi'; } h+='<div class="dot '+(i===adim?'aktif':'')+(cls?' '+cls:'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
   document.getElementById('dots').innerHTML=h;
 }
 function goAdim(i){ adim=Math.max(0,Math.min(ALANLAR.length-1,i)); markMode=false; setDraw(false); renderDots(); renderDetay(); }
@@ -358,6 +418,7 @@ function renderDetay(){
   h+='<button class="mark-btn '+(a.sample?'dolu':(markMode?'aktif':''))+'" style="font-size:14px;padding:13px;" onclick="toggleMark()">'
     +(a.sample?('✓ İşaretlendi <span class="mark-sel">'+escHtml(a.sample.slice(0,38))+(a.sample.length>38?'…':'')+'</span> — yeniden çiz'):(markMode?'✏️ Alanı kutuyla çevrele…':'📍 Bu alanı PDF\'te kutuyla çevrele'))+'</button>';
   h+='<div class="prev idle" id="prevBox" style="margin-top:10px;">Alanı işaretle — değeri ve kuralı kendim çözeyim.</div>';
+  if(a._aiDeger!=null && a._okudu===false){ h+='<div class="prev no" style="margin-top:8px;">🟣 AI gördü: <b>'+escHtml(String(a._aiDeger).slice(0,38))+(String(a._aiDeger).length>38?'…':'')+'</b> — kural yakalayamadı, bunu işaretle</div>'; }
   // ELLE AYARLA — fallback. Tanıyamadıysa otomatik açık.
   h+='<details class="sec"'+(a.tani==='fail'?' open':'')+' style="margin-top:12px;"><summary>Elle ayarla'+(a.tani==='auto'?' <span style="color:var(--gr)">· otomatik tanındı ✓</span>':(a.tani==='fail'?' <span style="color:var(--warn)">· tanıyamadım, düzelt</span>':''))+'</summary><div class="sec-b">';
   h+='<div class="fld"><label>Ne tür değer?</label><select class="sel" onchange="setTip(this.value)">'+tipOps+'</select></div>';
@@ -441,7 +502,7 @@ async function loadPdf(data){
     else { document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value=''; }
     { const ml=document.getElementById('markLayer'); if(ml) ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); }
     document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
-    ['zOut','zIn','zFit','pPrev','pNext'].forEach(id=>document.getElementById(id).disabled=false);
+    ['zOut','zIn','zFit','pPrev','pNext','btnAiOku'].forEach(id=>document.getElementById(id).disabled=false);
     try{ const m=await pdfDoc.getMetadata(); const p=(m.info&&(m.info.Producer||m.info.Creator))||''; if(p) document.getElementById('prodKey').value=String(p).split(/[\s,;]/)[0]; }catch(e){}
     await extractAll(); runDiag();
     if(_mode==='duzelt'){ _alanlariKos(); const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0&&!_problemAlan)adim=k; }
