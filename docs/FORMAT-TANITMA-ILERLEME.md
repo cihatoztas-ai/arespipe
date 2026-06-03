@@ -1,4 +1,7 @@
-# Format Tanıtma — Oturum 148 İlerleme & Adım B Tasarımı
+# Format Tanıtma — İlerleme Günlüğü (oturum 148'den itibaren)
+
+> Kronolojik ilerleme kaydı: 148 → 149 → 150 → … Her oturum sonuna kendi bölümünü ekler.
+> Eski adı FORMAT-TANITMA-148-ILERLEME.md idi; 150 kapanışında oturum-bağımsız ada çevrildi.
 
 ## ✅ TAMAMLANAN (oturum 148) — döngü uçtan uca çalışıyor
 - **format_tanit.html** üretimde: ARES bootstrap + `tenant_features` flag (`format_tanit`) + `/vendor/pdfjs-1.10.100/` + gerçek Supabase insert.
