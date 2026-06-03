@@ -13,7 +13,7 @@
 ## Açık küçük borçlar (format_tanit)
 - **INSERT→UPDATE**: aynı format tekrar tanıtılınca yeni satır yerine fingerprint'e göre güncelle (şu an elle siliyoruz). Test sırasında çift satır oluşabilir. ✅ 149'da kapandı
 - **bbox → PDF-point** normalize (şu an render-px, scale'e bağlı; konum_ipucu opsiyonel/l2 yoksayıyor). ⏳ açık
-- **Malzeme tablosu**: bölge işaretle → satır desenleri toplu AI (henüz stub). ⏳ açık
+- **Malzeme tablosu**: bölge işaretle → satır desenleri toplu AI (henüz stub). ⏳ açık → 150: tasarım DEĞİŞTİ, deterministik sentez (TABLO-TASARIM.md)
 - ares-layout nav entegrasyonu (şu an kendi çerçevesi). ⏳ 149'da atlama listesine alındı (bilinçli tam-ekran çerçeve)
 
 ## ADIM B — iki AYRI şey (oturum 149 başlangıcı)
@@ -67,3 +67,29 @@ B1 bitti; B2 (Paslanmaz→Asit, taslak_duzeltmeleri'ne işaretli değer düzeltm
 
 ## 150 ANA TEMA — SORU AĞACI
 "Elle ayarla" panelini yönlendirmeli akışa çevir. Tek deterministik motor, iki yerde: AI öncesi (ufak düzeltme) + AI sonrası (stragglar). Sonra AI merdiveni (operatör tetikli 2. çağrı + mühür). Detay: CLAUDE-SONRAKI-OTURUM.md.
+
+---
+
+## OTURUM 150 — TAMAMLANAN (AI-oku + schedule zinciri + tablo tasarımı)
+
+### Mimari dönüş (Cihat kararı) ✅
+Soru ağacı beyaz tahtası → "her format tanıtımında bir AI mantıklı, orayı anlat burayı anlat pratik olmaz."
+**AI önce okur**, elle işaretleme AI'ın kırmızı bıraktığının TAMİRİ (B1) oldu. İlke: AI değer BULUR, kural yazmaz —
+kuralı cozumle sentezler, **kural çıktısı == AI değeri** ground-truth (MK-51.2 çözümü). Sızıntı kuralı: AI null +
+cozumle dolu → mühürleme (M230 dn vakası node kanıtıyla yakalandı, 8/9 yeşil).
+
+### AI-oku (Increment 1) ✅ GEMİDE — `3393eb6`
+🟣 buton → mevcut /api/izometri-oku (MK-129.3 12/12 ✓, MK-49.1 dokunulmadı; yan etki analizi: batch+ai_api_log+cache,
+spooller/izometri YAZILMAZ, MK-117 güvenli) → spoollar[0] → _aiSentezle: yeşil mühür / kırmızı + "🟣 AI gördü: X"
+ipucu / sızıntı atla. malzeme_listesi `_aiSatirlar`'da saklanır (Increment 2 girdisi). Canlı: Y100-817-013 + 018.
+
+### Schedule türetme zinciri ✅ GEMİDE (uyuyor) — `6359555` + `30e995c`
+Y100 ailesi boyutu "2\" Sch 10S" yazar (60.3 metinde YOK) → çıkarma değil ÇEVİRME. Zincir: l2-parser spool.schedule
+geçişi + izometri-oku asmeFallbackDoldur→boruOlcuBul schedule paramı (**MK-49.1 kontrollü istisna**, undefined=no-op
+kanıtlı, ayrı commit). İlk schedule'lı kural kaydında canlanır. Çevirme TEK merkez: ARES_OLCU.olcuParse→ARES_BORU
+(Node-uyumlu; npsToDn('1-1/2')→40 doğrulandı).
+
+### Tablo motoru tasarımı kilitlendi (Cihat finali) → 151 ANA İŞ
+"Teaching'in tek sorusu: malzeme tablosu nerede" — çap/et/dn soruları öldü, Boyut sütunundan türerler.
+**TAM SPEC: docs/FORMAT-TANITMA-TABLO-TASARIM.md** — _tabloSentezle + l2-parser olcuParse/dominant-Boru +
+3-PDF mekanik test + kenar vakaları + sonrası kuyruğu. 151'de tartışma tekrarlanmaz.
