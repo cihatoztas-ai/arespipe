@@ -1909,5 +1909,11 @@
   "ts_tab_tamamlanan": "Tamamlanan",
   "ts_th_hata": "Hata Kaynağı",
   "ts_th_sonuc": "Test Sonucu",
-  "ts_title": "Test Yönetimi | AresPipe"
+  "ts_title": "Test Yönetimi | AresPipe",
+  "sp_bom_uyari_guvensiz": "Bu spool'un malzeme listesi güvensiz. İşlenecek parçanın ölçüsünü çizimden doğrulayıp düzeltin.",
+  "sp_bom_uyari_dogrulanmadi": "Sistem bu spool'un BOM'unda çelişki buldu (doğrulanmadı). Ölçüleri çizimden kontrol edin.",
+  "sp_bom_rozet_guvensiz": "güvensiz",
+  "sp_bom_rozet_dogrulanmadi": "doğrulanmadı",
+  "sp_bu_tip_yok": "Bu tipte malzeme yok",
+  "sp_cizimden_duzelt": "Çizimden düzelt"
 }

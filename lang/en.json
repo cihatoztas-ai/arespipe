@@ -1909,5 +1909,11 @@
   "ts_tab_tamamlanan": "Completed",
   "ts_th_hata": "Fault Source",
   "ts_th_sonuc": "Result",
-  "ts_title": "Test Management | AresPipe"
+  "ts_title": "Test Management | AresPipe",
+  "sp_bom_uyari_guvensiz": "This spool's material list is unsafe. Verify the part dimensions against the drawing and correct them.",
+  "sp_bom_uyari_dogrulanmadi": "The system found a conflict in this spool's BOM (not verified). Check dimensions against the drawing.",
+  "sp_bom_rozet_guvensiz": "unsafe",
+  "sp_bom_rozet_dogrulanmadi": "not verified",
+  "sp_bu_tip_yok": "No material of this type",
+  "sp_cizimden_duzelt": "Correct from drawing"
 }

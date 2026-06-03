@@ -1909,5 +1909,11 @@
   "ts_tab_tamamlanan": "مكتمل",
   "ts_th_hata": "مصدر الخطأ",
   "ts_th_sonuc": "النتيجة",
-  "ts_title": "إدارة الاختبارات | AresPipe"
+  "ts_title": "إدارة الاختبارات | AresPipe",
+  "sp_bom_uyari_guvensiz": "قائمة مواد هذا الـ spool غير موثوقة. تحقّق من أبعاد القطعة من الرسم وصحّحها.",
+  "sp_bom_uyari_dogrulanmadi": "اكتشف النظام تعارضًا في قائمة مواد هذا الـ spool (لم يُتحقّق منها). تحقّق من الأبعاد من الرسم.",
+  "sp_bom_rozet_guvensiz": "غير موثوق",
+  "sp_bom_rozet_dogrulanmadi": "لم يُتحقّق",
+  "sp_bu_tip_yok": "لا توجد مادة من هذا النوع",
+  "sp_cizimden_duzelt": "تصحيح من الرسم"
 }
