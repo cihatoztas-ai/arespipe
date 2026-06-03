@@ -2730,6 +2730,11 @@ function malzDuzenleAc(id){
   var sv=function(eid,v){var e=T(eid);if(e)e.value=(v==null?'':v);};
   var tip=(m.tip_raw||'boru').toLowerCase();
   if(['boru','fitting','flansh','malzeme'].indexOf(tip)<0) tip='fitting';
+  // C4 (147): kütüphane FK'sı yoksa (eşleşmemiş/güvensiz) tipi sınıflandırıcıdan al → ekran malzemeye uysun (flanşta et çıkmaz)
+  if(!(m.boru_olculer_id||m.fitting_olculer_id||m.flansh_olculer_id)){
+    var _tipMap={boru:'boru',flans:'flansh',fitting:'fitting',bilezik:'fitting',diger:tip};
+    var _sinif=_tipMap[_kalemSinif(m)]; if(_sinif) tip=_sinif;
+  }
   var fmt=function(x){return (x==null||x==='')?'':String(x).replace('.',',');};
   sv('me_id',m.id);
   sv('me_tip',tip);
