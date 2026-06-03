@@ -820,7 +820,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
         <div class="fg"><label class="fl" data-i18n="sp_stat_thickness">Et Kalınlığı</label><input class="fi" id="ed_et" placeholder="4,50 mm"></div>
         <div class="fg"><label class="fl" data-i18n="sp_weight_label">Ağırlık (kg)</label><input class="fi" id="ed_agr" placeholder="26,82 kg"></div>
         <div class="fg"><label class="fl" data-i18n="sp_stat_surface">Yüzey İşlemi</label><select class="fi" id="ed_yuz"><option value="" data-i18n="cmn_opt_sec">Seçin...</option><option value="asit" data-i18n="cmn_yuzey_asit">Asit</option><option value="galvaniz" data-i18n="cmn_yuzey_galvaniz">Galvaniz</option><option value="siyah" data-i18n="cmn_yuzey_siyah">Siyah</option><option value="boyali" data-i18n="cmn_yuzey_boyali">Boya</option><option value="diger" data-i18n="cmn_yuzey_diger">Diğer</option></select></div>
-        <div class="fg"><label class="fl" data-i18n="sp_stat_material">Malzeme</label><select class="fi" id="ed_malz"><option value="" data-i18n="cmn_opt_sec">Seçin...</option><option value="karbon" data-i18n="cmn_malzeme_karbon">Karbon Çelik</option><option value="paslanmaz" data-i18n="cmn_malzeme_paslanmaz">Paslanmaz</option><option value="alum" data-i18n="cmn_malzeme_alum">Alüminyum</option><option value="bakir" data-i18n="cmn_malzeme_bakir">Bakır Alaşım</option><option value="diger" data-i18n="cmn_malzeme_diger">Diğer</option></select></div>
+        <div class="fg"><label class="fl" data-i18n="sp_stat_material">Malzeme</label><select class="fi" id="ed_malz" onchange="kaliteDatalistCiz(this.value)"><option value="" data-i18n="cmn_opt_sec">Seçin...</option><option value="karbon" data-i18n="cmn_malzeme_karbon">Karbon Çelik</option><option value="paslanmaz" data-i18n="cmn_malzeme_paslanmaz">Paslanmaz</option><option value="alum" data-i18n="cmn_malzeme_alum">Alüminyum</option><option value="bakir" data-i18n="cmn_malzeme_bakir">Bakır Alaşım</option><option value="diger" data-i18n="cmn_malzeme_diger">Diğer</option></select></div>
         <div class="fg"><label class="fl" data-i18n="sp_quality_label">Kalite / Standart</label><input class="fi" id="ed_kal" list="kaliteListe" placeholder="St37, 316L, A106-B" autocomplete="off"><datalist id="kaliteListe"></datalist></div>
       </div>
     </div>
@@ -838,7 +838,7 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
         <div class="fg"><label class="fl">Tip</label><select class="fi" id="me_tip" onchange="malzDuzenleTipVis()"><option value="boru">Boru</option><option value="fitting">Fitting (dirsek/te/redüksiyon)</option><option value="flansh">Flanş</option><option value="malzeme">Diğer</option></select></div>
         <div class="fg"><label class="fl">Kod</label><input class="fi" id="me_kod" placeholder="M1"></div>
         <div class="fg" style="grid-column:1/3;"><label class="fl">Açıklama</label><input class="fi" id="me_ac" placeholder="Pipe Seamless Steel Tube"></div>
-        <div class="fg"><label class="fl">Malzeme</label><select class="fi" id="me_malz"><option value="">Seçin...</option><option value="karbon">Karbon Çelik</option><option value="paslanmaz">Paslanmaz</option><option value="alum">Alüminyum</option><option value="bakir">Bakır Alaşım</option><option value="diger">Diğer</option></select></div>
+        <div class="fg"><label class="fl">Malzeme</label><select class="fi" id="me_malz" onchange="kaliteDatalistCiz(this.value)"><option value="">Seçin...</option><option value="karbon">Karbon Çelik</option><option value="paslanmaz">Paslanmaz</option><option value="alum">Alüminyum</option><option value="bakir">Bakır Alaşım</option><option value="diger">Diğer</option></select></div>
         <div class="fg"><label class="fl">Kalite / Standart</label><input class="fi" id="me_kal" list="kaliteListe" placeholder="St37, 316L, A106-B" autocomplete="off"></div>
         <div class="fg"><label class="fl">Dış Çap (mm)</label><input class="fi" id="me_cap" inputmode="decimal" placeholder="219,1"></div>
         <div class="fg" id="me_et_grup"><label class="fl">Et (mm)</label><input class="fi" id="me_et" inputmode="decimal" placeholder="6,3"></div>
@@ -995,6 +995,7 @@ function tersaneBadge(ad){
 // ── STATE ─────────────────────────────────────────────────────
 var SP = {};
 var MALZEME = [];
+var KALITE_HAVUZ = [];   // C4 (147): kategori bilgili kalite havuzu (datalist süzme için)
 var PM = [];
 // 41. oturum — Parça kimliği kütüphanesi
 var KUTUPHANE_AKTIF = false;       // featureFlagKontrol sonucu
@@ -1463,7 +1464,7 @@ async function kaliteleriDoldur(){
     // 1) MASTER — sistem preset (tenant_id IS NULL) + firma özel (tenant_id = tenant)
     var masterRes=await supa
       .from('malzeme_tanimlari')
-      .select('kalite_goster, tenant_id')
+      .select('kalite_goster, kategori_kod, tenant_id')
       .or('tenant_id.is.null,tenant_id.eq.'+tenant)
       .eq('aktif',true)
       .order('kategori_kod').order('kalite_kod');
@@ -1490,7 +1491,7 @@ async function kaliteleriDoldur(){
         var v=(row.kalite_goster||'').trim();
         if(!v||gorulmus[v]) return;
         gorulmus[v]=1;
-        sirali.push({kod:v, kaynak: row.tenant_id ? 'firma' : 'sistem'});
+        sirali.push({kod:v, kaynak: row.tenant_id ? 'firma' : 'sistem', kat:(row.kategori_kod||'').toLowerCase()});
       });
     }
 
@@ -1514,19 +1515,23 @@ async function kaliteleriDoldur(){
         });
     }
 
-    // Datalist'e yaz
-    var dl=T('kaliteListe');
-    if(!dl) return;
-    dl.innerHTML='';
-    sirali.forEach(function(item){
-      var opt=document.createElement('option');
-      opt.value=item.kod;
-      opt.label=item.kaynak==='geçmiş'
-        ? 'geçmiş · ×'+item.sayi
-        : item.kaynak;
-      dl.appendChild(opt);
-    });
+    // C4 (147): havuzda tut (kategori bilgisiyle), datalist'i seçili malzeme kategorisine göre çiz
+    KALITE_HAVUZ=sirali;
+    kaliteDatalistCiz(null);
   }catch(e){console.warn('[kaliteleriDoldur]',e);}
+}
+// C4 (147): kalite datalist'ini malzeme kategorisine göre süz (geçmiş kategorisiz → her zaman kalır)
+function kaliteDatalistCiz(kat){
+  var dl=T('kaliteListe'); if(!dl) return;
+  kat=(kat||'').toLowerCase();
+  dl.innerHTML='';
+  (KALITE_HAVUZ||[]).forEach(function(item){
+    if(kat && item.kaynak!=='geçmiş' && item.kat && item.kat!==kat) return;   // kategori uyuşmayan master'ı ele
+    var opt=document.createElement('option');
+    opt.value=item.kod;
+    opt.label=item.kaynak==='geçmiş' ? ('geçmiş · ×'+item.sayi) : item.kaynak;
+    dl.appendChild(opt);
+  });
 }
 
 function ucLabel(v){
@@ -2742,6 +2747,7 @@ function malzDuzenleAc(id){
   sv('me_ac',(m.ac&&m.ac!=='—')?m.ac:'');
   var mKod=(typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeKod)?ARES_NORM.malzemeKod(m.malz):(m.malz||'');
   sv('me_malz',mKod||'');
+  kaliteDatalistCiz(mKod||'');   // C4 (147): kaliteyi kalemin malzemesine göre süz
   sv('me_kal',(m.kalite_raw||(m.kal!=='—'?m.kal:''))||'');
   sv('me_cap',fmt(m.dis_cap_mm_raw));
   sv('me_et', fmt(m.et_mm_raw));
@@ -3309,6 +3315,7 @@ function duzenleAc(){
   var em=T('ed_malz');if(em){
     var _mKod = (typeof ARES_NORM!=='undefined' && ARES_NORM.malzemeKod) ? ARES_NORM.malzemeKod(SP.malzeme) : (SP.malzeme||'');
     em.value = _mKod || '';
+    kaliteDatalistCiz(_mKod||'');   // C4 (147): kaliteyi spoolun malzemesine göre süz
   }
   T('duzenleModal').style.display='flex';
 }
