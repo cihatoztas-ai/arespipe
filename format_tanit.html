@@ -100,8 +100,17 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
 <div class="wrap">
   <!-- SOL: panel -->
   <div class="panel">
-    <h1 class="h1">Bu formatı tanıt <span class="gpill idle" id="gpill" title="glyph durumu">glyph —</span></h1>
-    <p class="sub">PDF'in okuduğu alanları sırayla işaretle → kural doğsun → aynı formatın tüm PDF'leri L2'den okunsun ($0). Koordinat değil kural saklanır.</p>
+    <h1 class="h1" id="hdrBaslik">Bu formatı tanıt <span class="gpill idle" id="gpill" title="glyph durumu">glyph —</span></h1>
+    <p class="sub" id="hdrAlt">PDF'in okuduğu alanları sırayla işaretle → kural doğsun → aynı formatın tüm PDF'leri L2'den okunsun ($0). Koordinat değil kural saklanır.</p>
+
+    <details class="sec" id="secDuzelt" style="margin:0 0 12px;"><summary>Mevcut formatı düzelt (tek alan)</summary>
+      <div class="sec-b">
+        <div class="fld" style="margin:0;"><label>Kayıtlı format seç → yükle → sorunlu alanı yeniden işaretle</label>
+          <select class="sel" id="fmtSec" onchange="if(this.value)formatYukle(this.value)"><option value="">— yükleniyor —</option></select></div>
+      </div>
+    </details>
+    <div id="duzeltBar" class="prev idle hide" style="margin:0 0 12px;"></div>
+
     <div class="dots" id="dots"></div>
     <div class="qcard" id="alanDetay"></div>
 
@@ -201,12 +210,64 @@ const ALANLAR=[
  { ad:'not_metni', l2tip:'string', tip:'serbest', anchor:{mod:'etiket',etiket:'NOT:',onek:'',birim:''}, ipucu:'NOT ardındaki metin → alıştırma ipucu buradan türer.' },
  { ad:'malzeme_tablosu', l2tip:'tablo', tip:'tablo', ipucu:'Malzeme listesi — Excel eksikse PDF buradan okunur. Tablo bölgesini işaretle; satır desenlerini SONA toplu AI çıkarır.' }
 ];
-function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
+function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a._dirty=false; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
 ALANLAR.forEach(_initAlan);
 function resetAlanlar(){ ALANLAR.forEach(_initAlan); adim=0; }
 
+/* ── B1: düzeltme kipi fonksiyonları ── */
+function _hydrateKural(){
+  if(!_mevcutKural||!_mevcutKural.alanlar)return;
+  ALANLAR.forEach(a=>{ const s=_mevcutKural.alanlar[a.ad]; if(s&&s.regex){ a.regex=s.regex; a.flag=s.flag||'i'; a._dirty=false; a.tani=''; } });
+}
+async function formatListele(){
+  const sel=document.getElementById('fmtSec'); if(!sel)return;
+  try{ const supa=ARES.supabase(), tid=ARES.tenantId();
+    const r=await supa.from('izometri_format_tanimlari').select('id,ad,format_kodu').eq('tenant_id',tid).eq('egitim_kaynagi','cizim_capa').eq('aktif',true).order('olusturma_at',{ascending:false});
+    if(r.error||!r.data||!r.data.length){ sel.innerHTML='<option value="">(kayıtlı çapa formatı yok)</option>'; return; }
+    sel.innerHTML='<option value="">— format seç —</option>'+r.data.map(f=>'<option value="'+f.id+'">'+escHtml(f.ad||f.format_kodu||f.id.slice(0,8))+'</option>').join('');
+  }catch(e){ console.error('[formatListele]',e); sel.innerHTML='<option value="">(liste alınamadı)</option>'; }
+}
+async function formatYukle(id){
+  try{ const supa=ARES.supabase();
+    const r=await supa.from('izometri_format_tanimlari').select('id,ad,format_kodu,parser_kural,fingerprint,cad_program').eq('id',id).single();
+    if(r.error||!r.data){ toast('Format yüklenemedi'); return; }
+    _mode='duzelt'; _formatId=r.data.id; _mevcutKural=r.data.parser_kural||{};
+    resetAlanlar(); _hydrateKural();
+    document.getElementById('fmtKod').value=r.data.format_kodu||'';
+    const fp=r.data.fingerprint||{};
+    document.getElementById('fnRegex').value=fp.dosya_adi_regex||'';
+    document.getElementById('prodKey').value=(fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||r.data.cad_program||'';
+    document.getElementById('baslikRegex').value=fp.baslik_regex||'';
+    if(_problemAlan){ const i=ALANLAR.findIndex(x=>x.ad===_problemAlan); if(i>=0)adim=i; }
+    _duzeltUiGuncelle(r.data.ad);
+    renderDots(); renderDetay();
+    toast('✓ Format yüklendi — sorunlu alanı PDF\'te yeniden işaretle, sonra Güncelle');
+  }catch(e){ console.error('[formatYukle]',e); toast('Yükleme hatası: '+e.message); }
+}
+function _duzeltUiGuncelle(ad){
+  const h=document.getElementById('hdrBaslik'); if(h&&h.firstChild) h.firstChild.nodeValue=(_mode==='duzelt'?'Formatı düzelt ':'Bu formatı tanıt ');
+  const bar=document.getElementById('duzeltBar');
+  if(_mode==='duzelt'){ bar.classList.remove('hide'); bar.className='prev ok'; bar.style.margin='0 0 12px';
+    bar.innerHTML='✏️ Düzeltme kipi: <b>'+escHtml(ad||_formatId.slice(0,8))+'</b>'+(_problemAlan?(' · sorunlu alan: <b>'+escHtml(_problemAlan)+'</b>'):'')+' — yalnız işaretlediğin alan güncellenir (kural patch, rebuild değil)';
+    const sel=document.getElementById('fmtSec'); if(sel)sel.value=_formatId;
+    const btn=document.getElementById('btnKaydet'); if(btn)btn.textContent='Güncelle';
+  } else { bar.classList.add('hide'); }
+}
+/* Mevcut kuralı derin kopyala, yalnız _dirty alanları üzerine yaz (read-before-write, MK-111.2). */
+function _patchedKural(base){
+  const out=JSON.parse(JSON.stringify(base||{})); out.alanlar=out.alanlar||{};
+  ALANLAR.forEach(a=>{ if(a._dirty&&a.tip!=='tablo'&&a.regex){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; out.alanlar[a.ad]=o; } });
+  return out;
+}
+
 let adim=0, scope='all', pdfDoc=null, pageNum=1, scale=1.2, markMode=false;
 let RAW_ALL='', CANON_ALL='', pageItems={}, spanRects=[];
+/* ── B1: düzeltme kipi ── */
+let _mode='yeni';      // 'yeni' = sıfırdan tanıt · 'duzelt' = mevcut formatın tek alanını düzelt
+let _formatId=null;    // düzeltilen satırın id'si (UPDATE hedefi)
+let _mevcutKural=null; // DB'den yüklenen parser_kural — PATCH'lenir, rebuild EDİLMEZ (MK-111.2)
+let _problemAlan=null; // tetikten gelen sorunlu alan adı (?alan=)
+function markDirty(){ const a=ALANLAR[adim]; if(a)a._dirty=true; }
 
 function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function genKod(s){ let o='',x=String(s),i=0; while(i<x.length){ if(/\d/.test(x[i])){let j=i;while(j<x.length&&/\d/.test(x[j]))j++;o+='\\d+';i=j;}else{o+=escRe(x[i]);i++;} } return o||'.+'; }
@@ -276,8 +337,8 @@ function setAnchor(v){ ALANLAR[adim].anchor.mod=v; reSynth(); renderDetay(); }
 function setAnc(k,v){ ALANLAR[adim].anchor[k]=v; reSynth(); }
 function setDonusum(v){ ALANLAR[adim].donusum.tip=v; renderDetay(); livePreview(); }
 function setDonusumPrefix(v){ ALANLAR[adim].donusum.prefix=v; livePreview(); }
-function setRegex(v){ ALANLAR[adim].regex=v; renderDots(); }
-function reSynth(){ const a=ALANLAR[adim]; a.regex=synth(a); const el=document.getElementById('regexOut'); if(el)el.value=a.regex; renderDots(); livePreview(); }
+function setRegex(v){ ALANLAR[adim].regex=v; markDirty(); renderDots(); }
+function reSynth(){ const a=ALANLAR[adim]; a.regex=synth(a); a._dirty=true; const el=document.getElementById('regexOut'); if(el)el.value=a.regex; renderDots(); livePreview(); }
 function livePreview(){
   const box=document.getElementById('prevBox'); if(!box)return; const a=ALANLAR[adim]; if(a.tip==='tablo')return;
   if(!a.regex){ box.className='prev idle'; box.textContent='Önce işaretle.'; return; }
@@ -307,7 +368,7 @@ function captureBox(bx){
   if(a.tip==='tablo'){ drawMarks(); renderDetay(); renderDots(); toast('✓ Tablo bölgesi işaretlendi — desenleri sonda toplu AI çıkarır'); return; }
   if(a.tip==='liste'&&a.liste&&!a.liste.some(w=>w.toLowerCase()===temiz.toLowerCase())) a.liste.unshift(temiz);
   const c=cozumle(a.ad, temiz);
-  if(c){ a.regex=c.regex; a.flag=c.flag||'i'; a.tani='auto'; }
+  if(c){ a.regex=c.regex; a.flag=c.flag||'i'; a.tani='auto'; a._dirty=true; }
   else { reSynth(); a.tani='fail'; }
   drawMarks(); renderDetay(); renderDots();
   toast(c?('✓ Tanındı: '+c.deger):'⚠ Otomatik tanıyamadım — "Elle ayarla"yı aç');
@@ -324,7 +385,9 @@ async function loadPdf(data){
   const lib=_lib(); if(!lib){ toast('pdfjs yüklenemedi — repo kökünden servis et'); return; }
   try{
     const task=lib.getDocument(data); pdfDoc=await (task.promise||task); pageNum=1;
-    resetAlanlar(); document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value='';
+    resetAlanlar();
+    if(_mode==='duzelt'){ _hydrateKural(); if(_problemAlan){ const i=ALANLAR.findIndex(x=>x.ad===_problemAlan); if(i>=0)adim=i; } }
+    else { document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value=''; }
     { const ml=document.getElementById('markLayer'); if(ml) ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); }
     document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
     ['zOut','zIn','zFit','pPrev','pNext'].forEach(id=>document.getElementById(id).disabled=false);
@@ -411,24 +474,63 @@ function buildParserKural(){
 }
 function buildKural(){ const {pk}=buildParserKural(); return { ad:(document.getElementById('fmtAd').value||'(adsız)'), format_kodu:document.getElementById('fmtKod').value||null, requires_ai:false, egitim_kaynagi:EGITIM_KAYNAGI, fingerprint:buildFingerprint(), parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' }; }
 async function kaydet(){
-  if(scope==='only'){ toast('"Sadece bu PDF" henüz bağlı değil (değer düzeltme ayrı mekanizma) — şimdilik "Formatın tümü" ile kaydet.'); return; }
+  if(typeof ARES==='undefined'||!ARES.supabase){ toast('ARES yüklenemedi — sayfayı uygulama içinden aç'); return; }
+  const supa=ARES.supabase(), tid=ARES.tenantId();
+  const btn=document.getElementById('btnKaydet'), sonuc=document.getElementById('kaydetSonuc');
+  const ok=h=>{ sonuc.className='prev ok'; sonuc.innerHTML=h; };
+  const no=m=>{ sonuc.className='prev no'; sonuc.textContent='✗ '+m; btn.disabled=false; btn.textContent=(_mode==='duzelt'?'Güncelle':'Kaydet'); };
+
+  // ── DÜZELTME KİPİ: yalnız _dirty alanları PATCH'le, satırı UPDATE et ──
+  if(_mode==='duzelt'){
+    const dirty=ALANLAR.filter(a=>a._dirty&&a.tip!=='tablo'&&a.regex);
+    if(!dirty.length){ toast('Değişiklik yok — bir alanı yeniden işaretle veya regex\'i düzenle'); return; }
+    btn.disabled=true; btn.textContent='Güncelleniyor…';
+    try{
+      const patched=_patchedKural(_mevcutKural);
+      const r=await supa.from('izometri_format_tanimlari').update({ parser_kural:patched, guncelleme_at:new Date().toISOString() }).eq('id',_formatId).select('id').single();
+      if(r.error){ return no(r.error.message); }
+      _mevcutKural=patched; dirty.forEach(a=>a._dirty=false);
+      ok('✓ Güncellendi · '+dirty.length+' alan ('+dirty.map(a=>a.ad).join(', ')+') · id <b>'+_formatId.slice(0,8)+'</b> — bu formatın PDF\'leri yeni kuralla L2\'den okunacak ($0)');
+      btn.textContent='✓ Güncellendi'; toast('✓ Format güncellendi');
+    }catch(e){ no(e.message); }
+    return;
+  }
+
+  // ── YENİ KİP ──
+  if(scope==='only'){ toast('"Sadece bu PDF" henüz bağlı değil (değer düzeltme ayrı mekanizma) — "Formatın tümü" ile kaydet.'); return; }
   const ad=(document.getElementById('fmtAd').value||'').trim();
   if(!ad){ toast('Önce formata bir ad ver'); document.getElementById('fmtAd').focus(); return; }
   if(ALANLAR.filter(a=>a.tip!=='tablo'&&a.regex).length<2){ toast('En az birkaç alan işaretle'); return; }
-  if(typeof ARES==='undefined'||!ARES.supabase){ toast('ARES yüklenemedi — sayfayı uygulama içinden aç'); return; }
-  const supa=ARES.supabase(), tid=ARES.tenantId(); const {pk}=buildParserKural();
-  const row={ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null,
-    cad_program:(document.getElementById('prodKey').value||'').trim()||null,
-    fingerprint:buildFingerprint(), parser_kural:pk, prompt_template:null,
-    egitim_kaynagi:EGITIM_KAYNAGI, requires_ai:false, requires_ocr:false, tenant_id:tid, aktif:true };
-  const btn=document.getElementById('btnKaydet'); btn.disabled=true; btn.textContent='Kaydediliyor…';
+  const {pk}=buildParserKural(), fp=buildFingerprint();
+  btn.disabled=true; btn.textContent='Kaydediliyor…';
   try{
+    // INSERT→UPDATE borcu: aynı dosya deseni + tenant zaten kayıtlı mı? (JS-tarafı eşleşme, küçük küme)
+    let mev=null;
+    if(fp.dosya_adi_regex){
+      const q=await supa.from('izometri_format_tanimlari').select('id,ad,parser_kural,fingerprint').eq('tenant_id',tid).eq('egitim_kaynagi',EGITIM_KAYNAGI);
+      if(!q.error&&q.data) mev=q.data.find(f=>f.fingerprint&&f.fingerprint.dosya_adi_regex===fp.dosya_adi_regex)||null;
+    }
+    if(mev&&confirm('Bu dosya deseni için zaten bir format var: "'+(mev.ad||mev.id.slice(0,8))+'".\n\nYeni satır yerine onu güncelleyeyim mi? (İşaretlediğin alanlar üzerine yazılır, diğerleri korunur.)')){
+      const base=mev.parser_kural||{}, merged=JSON.parse(JSON.stringify(base));
+      merged.alanlar=Object.assign({},base.alanlar||{},pk.alanlar);
+      if(pk.malzeme_tablosu) merged.malzeme_tablosu=pk.malzeme_tablosu;
+      merged.kabul_kriterleri=pk.kabul_kriterleri||base.kabul_kriterleri;
+      merged.ekstraktor_tipi=pk.ekstraktor_tipi||base.ekstraktor_tipi;
+      merged.min_metin_uzunlugu=pk.min_metin_uzunlugu||base.min_metin_uzunlugu;
+      const r=await supa.from('izometri_format_tanimlari').update({ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null, fingerprint:fp, parser_kural:merged, guncelleme_at:new Date().toISOString() }).eq('id',mev.id).select('id').single();
+      if(r.error){ return no(r.error.message); }
+      ok('✓ Güncellendi (mevcut format) · id <b>'+mev.id.slice(0,8)+'</b> — çift satır oluşmadı');
+      btn.textContent='✓ Güncellendi'; toast('✓ Mevcut format güncellendi'); return;
+    }
+    const row={ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null,
+      cad_program:(document.getElementById('prodKey').value||'').trim()||null,
+      fingerprint:fp, parser_kural:pk, prompt_template:null,
+      egitim_kaynagi:EGITIM_KAYNAGI, requires_ai:false, requires_ocr:false, tenant_id:tid, aktif:true };
     const r=await supa.from('izometri_format_tanimlari').insert(row).select('id').single();
-    if(r.error){ document.getElementById('kaydetSonuc').className='prev no'; document.getElementById('kaydetSonuc').textContent='✗ '+r.error.message; btn.disabled=false; btn.textContent='Kaydet'; return; }
-    document.getElementById('kaydetSonuc').className='prev ok';
-    document.getElementById('kaydetSonuc').innerHTML='✓ Kaydedildi · id <b>'+r.data.id.slice(0,8)+'</b> · aynı formatın sonraki PDF\'leri L2\'den okunacak ($0)';
+    if(r.error){ return no(r.error.message); }
+    ok('✓ Kaydedildi · id <b>'+r.data.id.slice(0,8)+'</b> · aynı formatın sonraki PDF\'leri L2\'den okunacak ($0)');
     btn.textContent='✓ Kaydedildi'; toast('✓ Format kaydedildi: '+ad);
-  }catch(e){ document.getElementById('kaydetSonuc').className='prev no'; document.getElementById('kaydetSonuc').textContent='✗ '+e.message; btn.disabled=false; btn.textContent='Kaydet'; }
+  }catch(e){ no(e.message); }
 }
 async function aresInit(){
   try{
@@ -455,6 +557,14 @@ async function aresInit(){
     var r=await ARES.supabase().from('tenant_features').select('aktif').eq('tenant_id',tid).eq('feature_kod','format_tanit').single();
     if(!r.data || r.data.aktif!==true){ alert('Bu özellik (format_tanit) tenant için aktif değil. Yöneticinizden aktivasyon talep edin.'); location.href='devreler.html'; return; }
   }catch(e){ console.error('[flag check]',e); alert('Özellik bayrağı kontrol edilemedi: '+e.message); location.href='devreler.html'; return; }
+  // B1: düzeltme kipi — picker doldur + URL param (tetik buradan besler)
+  try{
+    var qs=new URLSearchParams(location.search);
+    _problemAlan=qs.get('alan')||null;
+    await formatListele();
+    var fid=qs.get('format_id')||qs.get('fmt');
+    if(fid) await formatYukle(fid);
+  }catch(e){ console.error('[B1 init]',e); }
 }
 function buildKuralEski(){
   const alanlar={};
@@ -464,7 +574,7 @@ function buildKuralEski(){
   if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
   return { format_kodu:document.getElementById('fmtKod').value||'(adsız)', fingerprint:{dosya_adi_regex:document.getElementById('fnRegex').value||null,pdf_uretici_anahtar:document.getElementById('prodKey').value?[document.getElementById('prodKey').value]:[],baslik_regex:document.getElementById('baslikRegex').value||null}, parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' };
 }
-function tamamlaAc(){ document.getElementById('jsonOut').textContent=JSON.stringify(buildKural(),null,2); document.getElementById('tamamlaOverlay').classList.remove('hide'); }
+function tamamlaAc(){ const j=(_mode==='duzelt')?{_kip:'duzelt',hedef_id:_formatId,degisen_alanlar:ALANLAR.filter(a=>a._dirty&&a.regex).map(a=>a.ad),parser_kural:_patchedKural(_mevcutKural)}:buildKural(); document.getElementById('jsonOut').textContent=JSON.stringify(j,null,2); document.getElementById('tamamlaOverlay').classList.remove('hide'); }
 function tamamlaKapat(){ document.getElementById('tamamlaOverlay').classList.add('hide'); }
 let _tt; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600); }
 renderDots(); renderDetay(); aresInit();
