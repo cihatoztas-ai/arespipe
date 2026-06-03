@@ -1106,8 +1106,11 @@ async function asmeFallbackDoldur(spoollar) {
     }
 
     // DN'den cap_mm doldurma
+    // 150: MK-49.1 kontrollu istisna — schedule parametresi gecirilir. Mevcut tum
+    // formatlarda spool.schedule undefined -> boruOlcuBul falsy guard -> varsayilan
+    // yol birebir ayni (geriye uyumlu). Format kurali schedule cikarirsa dogru et dolar.
     if (!yeni.cap_mm) {
-      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu });
+      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu, schedule: yeni.schedule });
       if (olcu?.dis_cap_mm) {
         yeni.cap_mm = Number(olcu.dis_cap_mm);
         yeni.dolduruldu.cap_mm = olcu.kaynak;
@@ -1116,7 +1119,7 @@ async function asmeFallbackDoldur(spoollar) {
 
     // Et_mm yoksa veya kaynagi pdf_yok ise -> helper'dan default schedule
     if ((!yeni.et_mm || yeni.et_kaynagi === 'pdf_yok') && yeni.dn) {
-      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu });
+      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu, schedule: yeni.schedule });
       if (olcu?.et_mm) {
         yeni.et_mm = Number(olcu.et_mm);
         yeni.et_kaynagi = `${olcu.kaynak} (SCH ${olcu.schedule_kod})`;
