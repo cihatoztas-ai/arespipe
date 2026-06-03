@@ -21,7 +21,7 @@
 
   // ── Giriş/Mobil sayfaları atla ─────────────────────────────
   const PAGE = (window.location.pathname.split('/').pop() || 'index.html').replace('.html', '');
-  if (['giris', 'mobil'].some(p => PAGE.includes(p))) return;
+  if (['giris', 'mobil', 'format_tanit'].some(p => PAGE.includes(p))) return;
 
   // ── DİL YÖNETİCİSİ (Kural D-01) ────────────────────────────
   var _langData = {};
