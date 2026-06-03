@@ -1,40 +1,28 @@
-# Son Durum — 146. Oturum (3 Haziran 2026)
+# son-durum.md — Oturum 148 (2026-06-03)
 
-> **B'nin kalanı (kalem-seviyesi BOM rötuşu) UÇTAN UCA KAPANDI** — wizard ✏️ → taslak_duzeltmeleri (kalem_idx≥0) → terfide aktar overlay → spool_malzemeleri. Canlı kanıtlandı (NB1137).
-> Sıfır regresyon (aktar birim testli). Yeni endpoint YOK (12/12). Yeni migration YOK.
+## Bu oturumda ne yapıldı
+Format Tanıtma / Çapa ekranı **prototipten üretime** geçti ve uçtan uca çalışır halde.
 
-## HEAD (son push `1d9345b`)
-- `1d9345b` fix(146): kalem rotus UI — hucre-bazli rozet + ayri Duzelt kolonu
-- `f1b4d99` feat(146): kalem-seviyesi BOM rotus — wizard popup + aktar kalemDuzeltmeler overlay
+**Akış**: tanınmayan izometri PDF formatı → operatör alanları kabaca işaretler → deterministik `cozumle()` değer + boşluk-dayanıklı regex üretir → `izometri_format_tanimlari`'na insert → aynı formatın sonraki PDF'leri L2'den ($0, AI'sız) okunur.
 
-## Yapılanlar
-### 1. aktar kalem overlay (ares-kabuk.js)
-- Opsiyonel `kalemDuzeltmeler` param + malRows idx-anahtarlı overlay. Defaults parse değerine düşer → eski davranış (devre_detay göndermez). Birim test 4/4 (regresyon, dirsek ağırlık, boru boy/dn, komşu izolasyon).
+## Üretimde olanlar
+- **format_tanit.html** (repo kökü): ARES bootstrap (ares-store/lang/normalize/asme/olcu/kabuk.js) + `tenant_features` flag `format_tanit` (oturum-bekleme deseni devre_wizard_v3 ile birebir) + `/vendor/pdfjs-1.10.100/` + gerçek Supabase insert. Tema-duyarlı, kaydet sonrası "Kapat".
+- **vendor/pdfjs-1.10.100/** {pdf.js, pdf.worker.js} — node_modules/pdf-parse'tan kopyalandı (Vercel node_modules servis etmez).
+- Migration A: `egitim_kaynagi` CHECK → +`'cizim_capa'` (uygulandı).
+- feature_flags katalog: `format_tanit` (kod/ad/aciklama/varsayilan). tenant_features: Demo Atölye (00000000-...-0001) aktif.
 
-### 2. Wizard kalem UI (devre_wizard_v3.html)
-- `KALEM_ALANLAR` (malzeme/DN/adet-boy/ağırlık; kalite çap/et türev → ayrı yok; açı persist yok → dışarıda).
-- `kalemDuzeltAc` (duzeltOverlay yeniden kullanıldı) + satır aç/kaydet/iptal/çiz + `_kalemDuzeltmeleriYukle` (gte kalem_idx 0). Anahtar `WIZ._kalemDuzelt[(pipeline|spool)][idx]` = aktar.kalemDuzeltmeler şekli.
-- `malzSekmesiRender`: ✏️ ayrı "Düzelt" kolonu (9 kolon) + overlay değer + **hücre-bazlı** rozet.
-- onayEt: terfi öncesi garanti yükleme + aktar'a kalemDuzeltmeler.
-- Spool-seviyesi yol (kalem_idx=-1, DUZELT_ALANLAR/duzeltAc) DOKUNULMADI.
+## Doğrulanan gerçekler (ölçüldü)
+- pdfjs v1.10.100 tarayıcıda = sunucu (pdf-parse) ile birebir TEMİZ metin. Eski PDF.js v3 garbliyordu (atıldı). glyph onarımı bu ailede gereksiz (durum:temiz); band-B borcu ayrı PDF'lerle (NB1137).
+- `cozumle()` 9 alan + pipeline iki formatta (M100/ALS, M110/SP13) node ile doğrulandı. pipeline deseni çok-segmentli koda genellendi: `(-?[A-Z]+\d+(?:-[A-Z0-9]+)+)`.
+- **test-l2-format.mjs**: kaydedilen kural GERÇEK l2-parser'da → `parser_seviye: l2`, 7/8 (8.=pipeline, çapraz-format olduğu için beklenen), AI yok, $0. **Döngü kapandı.**
 
-## CANLI DOĞRULAMA (NB1137, devre 0739d514, S01)
-- spool_malzemeleri: S82109 malzeme/kalite='paslanmaz'; S63043 adet=3; S67455 agirlik_kg=25.000. Her kalem yalnız kendi alanı, komşular parse değerinde. idx hizası kanıtlandı.
+## Açık borçlar (format_tanit)
+- INSERT→UPDATE (fingerprint'e göre; şu an tekrar tanıtınca çift satır, elle siliniyor).
+- bbox → PDF-point normalize (render-px, scale-bağlı; konum_ipucu opsiyonel).
+- Malzeme tablosu satır desenleri = toplu AI (stub).
+- ares-layout nav entegrasyonu (kendi çerçevesi).
+- Test sırasında oluşan çift/bozuk `egitim_kaynagi='cizim_capa'` satırlarını temizle.
 
-## MÜHÜR
-- **MK-146.1:** kalem_idx = gruplu grupla().bom[] sırası (MK-145.1 revizyonu). konsolide deterministik, render+terfi aynı saf fonksiyon → idx hizalı.
-
-## İki UI kusuru (oturum içinde düzeltildi)
-- Rozet satır-seviyesinde malzeme hücresindeydi → "malzeme değişti" yanılgısı. Hücre-bazlı yapıldı.
-- ✏️ KG değerini kapatıyordu → ayrı "Düzelt" kolonuna alındı (thead +1).
-
-## NOT (davranış)
-- Malzeme düzeltince kalite de güncelleniyor (aktar kalite=ham malzeme). İstenirse 147+ ayrı alan.
-- açı: spool_malzemeleri'de kolon yok → düzenlenebilir değil (spool_detay editörü de doğrular).
-
-## NEREDEYIZ
-B kalanı kapandı. 147: spool_detay kütüphane-tıklama bug (FK dolu kalem açılmıyor; A-001090/9ce6869a, kalem bed61203), C4 downstream damga.
-
-## Hatalarım (kayıt)
-- "Commit etme, ikisini birlikte test edelim" dedim; Cihat zaten f1b4d99'da iki dosyayı birlikte commit etmişti (doğrusu da o). Gereksiz `git add ares-kabuk.js` önerdim → git status okumadan; sonra status okuyunca düzeldi. Ders: commit önerisinden önce git log/status.
-- İlk UI'da rozeti satır-seviyesinde malzemeye koydum → yanıltıcı. Render'da görsel-niyet test edilmeli (hangi alan = hangi hücre).
+## Değişmeyen kurallar (korundu)
+- izometri-oku.js DOKUNULMADI (MK-49.1). parser_kural→L2, prompt_template→L3 (s.589/721), fingerprint→tanıma; üçü hazır okuma noktası. requires_ai=false → L2 (s.590 doğrulandı).
+- Yeni endpoint YOK (MK-129.3, 12/12). Doğrudan Supabase.
