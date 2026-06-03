@@ -29,6 +29,7 @@ body{ margin:0; background:var(--bg); color:var(--tx); font-family:'Barlow',sans
 .dots{ display:flex; gap:5px; margin-bottom:14px; flex-wrap:wrap; }
 .dot{ display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--bor); border-radius:14px; font-size:11px; cursor:pointer; background:var(--sur); color:var(--txm); font-family:'JetBrains Mono',monospace; }
 .dot.aktif{ border-color:var(--ac); color:var(--ac); background:rgba(45,142,255,.08); } .dot.dolu{ border-color:var(--gr); color:var(--gr); }
+.dot.kirmizi{ border-color:var(--re); color:var(--re); background:rgba(229,62,62,.08); } .dot.kirmizi .d{ background:var(--re); }
 .dot .d{ width:6px; height:6px; border-radius:50%; background:var(--txd); } .dot.dolu .d{ background:var(--gr); } .dot.aktif .d{ background:var(--ac); }
 
 .qcard{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:16px; }
@@ -107,7 +108,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
     <details class="sec" id="secDuzelt" style="margin:0 0 12px;"><summary>Mevcut formatı düzelt (tek alan)</summary>
       <div class="sec-b">
         <div class="fld" style="margin:0;"><label>Kayıtlı format seç → yükle → sorunlu alanı yeniden işaretle</label>
-          <select class="sel" id="fmtSec" onchange="if(this.value)formatYukle(this.value)"><option value="">— yükleniyor —</option></select></div>
+          <select class="sel" id="fmtSec" onchange="formatSecDegis(this.value)"><option value="">— yükleniyor —</option></select></div>
       </div>
     </details>
     <div id="duzeltBar" class="prev idle hide" style="margin:0 0 12px;"></div>
@@ -158,6 +159,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
   <div class="pop-b">
     <div class="fld"><label>Format adı (zorunlu)</label><input class="inp" id="fmtAd" placeholder="örn. Tersan Cadmatic Spool"></div>
     <div class="fld"><label>Format kodu (ops.)</label><input class="inp mono" id="fmtKod2" placeholder="tersan_cadmatic_spool" oninput="document.getElementById('fmtKod').value=this.value"></div>
+    <div class="fld"><label>AI'a sözlü tarif (ops.) — yalnız L3 fallback'te kullanılır, deterministik kuralın yerine geçmez</label><textarea class="regex-out" id="promptTmpl" style="color:var(--tx);min-height:54px;" placeholder="örn. Yüzey her zaman antette 'Surface Treatment' kutusundadır. Ağırlık 'Total Weight' satırında kg'sız yazılır."></textarea></div>
     <div style="font-family:Barlow Condensed,sans-serif;font-weight:600;font-size:14px;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 8px;">Kapsam (MK-118.9)</div>
     <div class="radio" id="scOnly" onclick="setScope('only')"><span class="rd"></span> Sadece bu PDF <span style="margin-left:auto;color:var(--txd);font-size:12px;">(değer düzeltme — yakında)</span></div>
     <div class="radio sel" id="scAll" onclick="setScope('all')"><span class="rd"></span> Formatın tümüne <span style="margin-left:auto;color:var(--txd);font-size:12px;">varsayılan · yayılır (G3)</span></div>
@@ -230,19 +232,22 @@ async function formatListele(){
 }
 async function formatYukle(id){
   try{ const supa=ARES.supabase();
-    const r=await supa.from('izometri_format_tanimlari').select('id,ad,format_kodu,parser_kural,fingerprint,cad_program').eq('id',id).single();
+    const r=await supa.from('izometri_format_tanimlari').select('id,ad,format_kodu,parser_kural,fingerprint,cad_program,prompt_template').eq('id',id).single();
     if(r.error||!r.data){ toast('Format yüklenemedi'); return; }
     _mode='duzelt'; _formatId=r.data.id; _mevcutKural=r.data.parser_kural||{};
-    resetAlanlar(); _hydrateKural();
+    resetAlanlar(); _hydrateKural(); _alanlariKos();
     document.getElementById('fmtKod').value=r.data.format_kodu||'';
     const fp=r.data.fingerprint||{};
     document.getElementById('fnRegex').value=fp.dosya_adi_regex||'';
     document.getElementById('prodKey').value=(fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||r.data.cad_program||'';
     document.getElementById('baslikRegex').value=fp.baslik_regex||'';
-    if(_problemAlan){ const i=ALANLAR.findIndex(x=>x.ad===_problemAlan); if(i>=0)adim=i; }
+    document.getElementById('promptTmpl').value=r.data.prompt_template||''; _mevcutPrompt=r.data.prompt_template||'';
+    let atla=-1; if(_problemAlan){ atla=ALANLAR.findIndex(x=>x.ad===_problemAlan); }
+    if(atla<0){ const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0)atla=k; }
+    if(atla>=0)adim=atla;
     _duzeltUiGuncelle(r.data.ad);
     renderDots(); renderDetay();
-    toast('✓ Format yüklendi — sorunlu alanı PDF\'te yeniden işaretle, sonra Güncelle');
+    toast('✓ Format yüklendi — '+(CANON_ALL?'kırmızı alanı düzelt':'PDF aç, sorunlu alanı gör')+', sonra Güncelle');
   }catch(e){ console.error('[formatYukle]',e); toast('Yükleme hatası: '+e.message); }
 }
 function _duzeltUiGuncelle(ad){
@@ -261,6 +266,50 @@ function _patchedKural(base){
   return out;
 }
 
+/* ── A+B: oto-tespit + alan yeşil/kırmızı ── */
+/* Her alanın kayıtlı regex'ini açık PDF metnine koş → a._okudu (true okudu / false okuyamadı / null henüz PDF yok). */
+function _alanlariKos(){
+  if(!CANON_ALL){ ALANLAR.forEach(a=>a._okudu=null); return; }
+  ALANLAR.forEach(a=>{ if(a.tip==='tablo'||!a.regex){ a._okudu=null; return; } const s=_alanCikar(CANON_ALL,{regex:a.regex,grup:a.grup||1,tip:a.l2tip,flag:a.flag,post_processing:postProcessOf(a)}); a._okudu=(s!==null&&s!==undefined&&s!==''); a.deger=s; });
+}
+/* Tüm L2 formatlarının kurallarını bu PDF'e koş, en çok alan okuyan kazanır. Deterministik, $0, AI yok. */
+async function otoTespit(){
+  if(!CANON_ALL)return;
+  if(typeof ARES==='undefined'||!ARES.supabase)return;
+  try{
+    const supa=ARES.supabase(), tid=ARES.tenantId();
+    const r=await supa.from('izometri_format_tanimlari').select('id,ad,format_kodu,parser_kural,fingerprint,cad_program,prompt_template').eq('tenant_id',tid).eq('requires_ai',false);
+    if(r.error||!r.data||!r.data.length)return;
+    let best=null,bestSkor=0,bestTop=0;
+    r.data.forEach(f=>{ const al=(f.parser_kural&&f.parser_kural.alanlar)||{}; const keys=Object.keys(al); if(!keys.length)return; let skor=0; keys.forEach(k=>{ const o=al[k]; const s=_alanCikar(CANON_ALL,{regex:o.regex,grup:o.grup||1,tip:o.tip,flag:o.flag||'i',post_processing:o.post_processing}); if(s!==null&&s!==undefined&&s!=='')skor++; }); if(skor>bestSkor){ bestSkor=skor; best=f; bestTop=keys.length; } });
+    const tani=best&&(bestSkor>=3||(bestSkor>=2&&bestSkor>=bestTop*0.5));
+    if(tani){
+      _mode='duzelt'; _formatId=best.id; _mevcutKural=best.parser_kural||{};
+      _hydrateKural(); _alanlariKos();
+      document.getElementById('fmtKod').value=best.format_kodu||'';
+      const fp=best.fingerprint||{};
+      if(fp.dosya_adi_regex)document.getElementById('fnRegex').value=fp.dosya_adi_regex;
+      if((fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||best.cad_program)document.getElementById('prodKey').value=(fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||best.cad_program;
+      document.getElementById('baslikRegex').value=fp.baslik_regex||'';
+      document.getElementById('promptTmpl').value=best.prompt_template||''; _mevcutPrompt=best.prompt_template||'';
+      const sel=document.getElementById('fmtSec'); if(sel)sel.value=best.id;
+      _otoBanner(best.ad,bestSkor,bestTop);
+      const kirmizi=ALANLAR.filter(a=>a.regex&&a._okudu===false); if(kirmizi.length){ const i=ALANLAR.indexOf(kirmizi[0]); if(i>=0)adim=i; }
+      toast('🎯 Otomatik eşleşti: '+(best.ad||'')+' ('+bestSkor+'/'+bestTop+' alan okundu)');
+    } else {
+      toast('Eşleşen format yok — yeni format tanıt'+(best?(' · en yakın: '+(best.ad||'')+' ('+bestSkor+' alan)'):''));
+    }
+  }catch(e){ console.error('[otoTespit]',e); }
+}
+function _otoBanner(ad,skor,top){
+  const h=document.getElementById('hdrBaslik'); if(h&&h.firstChild)h.firstChild.nodeValue='Formatı düzelt ';
+  const bar=document.getElementById('duzeltBar'); bar.classList.remove('hide'); bar.className='prev ok'; bar.style.margin='0 0 12px';
+  bar.innerHTML='🎯 Otomatik eşleşti: <b>'+escHtml(ad||_formatId.slice(0,8))+'</b> · '+skor+'/'+top+' alan okundu — <span style="color:var(--re)">kırmızı</span> alan(lar)ı düzelt, sonra Güncelle';
+  const btn=document.getElementById('btnKaydet'); if(btn)btn.textContent='Güncelle';
+}
+function formatSecDegis(v){ if(v){ formatYukle(v); } else { _yeniKipeDon(); } }
+function _yeniKipeDon(){ _mode='yeni'; _formatId=null; _mevcutKural=null; _mevcutPrompt=''; resetAlanlar(); _alanlariKos(); document.getElementById('promptTmpl').value=''; _duzeltUiGuncelle(''); renderDots(); renderDetay(); toast('Yeni format tanıtma kipine dönüldü'); }
+
 let adim=0, scope='all', pdfDoc=null, pageNum=1, scale=1.2, markMode=false;
 let RAW_ALL='', CANON_ALL='', pageItems={}, spanRects=[];
 /* ── B1: düzeltme kipi ── */
@@ -268,6 +317,7 @@ let _mode='yeni';      // 'yeni' = sıfırdan tanıt · 'duzelt' = mevcut format
 let _formatId=null;    // düzeltilen satırın id'si (UPDATE hedefi)
 let _mevcutKural=null; // DB'den yüklenen parser_kural — PATCH'lenir, rebuild EDİLMEZ (MK-111.2)
 let _problemAlan=null; // tetikten gelen sorunlu alan adı (?alan=)
+let _mevcutPrompt='';  // yüklenen prompt_template (değişti mi kıyası için)
 function markDirty(){ const a=ALANLAR[adim]; if(a)a._dirty=true; }
 
 function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
@@ -292,7 +342,7 @@ function cozumle(ad, region){
   return null;
 }
 function renderDots(){
-  let h=''; ALANLAR.forEach((a,i)=>{ const dolu=!!a.regex||(a.tip==='tablo'&&!!a.bbox); h+='<div class="dot '+(i===adim?'aktif':'')+(dolu?' dolu':'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
+  let h=''; ALANLAR.forEach((a,i)=>{ let cls=''; if(a.tip==='tablo'){ if(a.bbox)cls='dolu'; } else if(a.regex){ cls=(a._okudu===false)?'kirmizi':'dolu'; } h+='<div class="dot '+(i===adim?'aktif':'')+(cls?' '+cls:'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
   document.getElementById('dots').innerHTML=h;
 }
 function goAdim(i){ adim=Math.max(0,Math.min(ALANLAR.length-1,i)); markMode=false; setDraw(false); renderDots(); renderDetay(); }
@@ -393,7 +443,10 @@ async function loadPdf(data){
     document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
     ['zOut','zIn','zFit','pPrev','pNext'].forEach(id=>document.getElementById(id).disabled=false);
     try{ const m=await pdfDoc.getMetadata(); const p=(m.info&&(m.info.Producer||m.info.Creator))||''; if(p) document.getElementById('prodKey').value=String(p).split(/[\s,;]/)[0]; }catch(e){}
-    await extractAll(); runDiag(); renderDots(); renderDetay(); await renderPage(); fitWidth();
+    await extractAll(); runDiag();
+    if(_mode==='duzelt'){ _alanlariKos(); const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0&&!_problemAlan)adim=k; }
+    else { await otoTespit(); }
+    renderDots(); renderDetay(); await renderPage(); fitWidth();
     toast('✓ '+pdfDoc.numPages+' sayfa — temiz metin (pdfjs '+((lib.version)||'1.10')+')');
   }catch(err){ toast('PDF açılamadı: '+err.message); }
 }
@@ -484,14 +537,17 @@ async function kaydet(){
   // ── DÜZELTME KİPİ: yalnız _dirty alanları PATCH'le, satırı UPDATE et ──
   if(_mode==='duzelt'){
     const dirty=ALANLAR.filter(a=>a._dirty&&a.tip!=='tablo'&&a.regex);
-    if(!dirty.length){ toast('Değişiklik yok — bir alanı yeniden işaretle veya regex\'i düzenle'); return; }
+    const promptYeni=(document.getElementById('promptTmpl').value||'').trim();
+    const promptDegisti=promptYeni!==(_mevcutPrompt||'').trim();
+    if(!dirty.length&&!promptDegisti){ toast('Değişiklik yok — bir alanı yeniden işaretle, regex düzenle veya AI tarifi gir'); return; }
     btn.disabled=true; btn.textContent='Güncelleniyor…';
     try{
       const patched=_patchedKural(_mevcutKural);
-      const r=await supa.from('izometri_format_tanimlari').update({ parser_kural:patched, guncelleme_at:new Date().toISOString() }).eq('id',_formatId).select('id').single();
+      const r=await supa.from('izometri_format_tanimlari').update({ parser_kural:patched, prompt_template:promptYeni||null, guncelleme_at:new Date().toISOString() }).eq('id',_formatId).select('id').single();
       if(r.error){ return no(r.error.message); }
-      _mevcutKural=patched; dirty.forEach(a=>a._dirty=false);
-      ok('✓ Güncellendi · '+dirty.length+' alan ('+dirty.map(a=>a.ad).join(', ')+') · id <b>'+_formatId.slice(0,8)+'</b> — bu formatın PDF\'leri yeni kuralla L2\'den okunacak ($0)');
+      _mevcutKural=patched; _mevcutPrompt=promptYeni; dirty.forEach(a=>a._dirty=false);
+      const ne=[]; if(dirty.length)ne.push(dirty.length+' alan ('+dirty.map(a=>a.ad).join(', ')+')'); if(promptDegisti)ne.push('AI tarifi');
+      ok('✓ Güncellendi · '+ne.join(' + ')+' · id <b>'+_formatId.slice(0,8)+'</b> — bu formatın PDF\'leri yeni kuralla L2\'den okunacak ($0)');
       btn.textContent='✓ Güncellendi'; toast('✓ Format güncellendi');
     }catch(e){ no(e.message); }
     return;
@@ -518,14 +574,14 @@ async function kaydet(){
       merged.kabul_kriterleri=pk.kabul_kriterleri||base.kabul_kriterleri;
       merged.ekstraktor_tipi=pk.ekstraktor_tipi||base.ekstraktor_tipi;
       merged.min_metin_uzunlugu=pk.min_metin_uzunlugu||base.min_metin_uzunlugu;
-      const r=await supa.from('izometri_format_tanimlari').update({ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null, fingerprint:fp, parser_kural:merged, guncelleme_at:new Date().toISOString() }).eq('id',mev.id).select('id').single();
+      const r=await supa.from('izometri_format_tanimlari').update({ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null, fingerprint:fp, parser_kural:merged, prompt_template:(document.getElementById('promptTmpl').value||'').trim()||null, guncelleme_at:new Date().toISOString() }).eq('id',mev.id).select('id').single();
       if(r.error){ return no(r.error.message); }
       ok('✓ Güncellendi (mevcut format) · id <b>'+mev.id.slice(0,8)+'</b> — çift satır oluşmadı');
       btn.textContent='✓ Güncellendi'; toast('✓ Mevcut format güncellendi'); return;
     }
     const row={ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null,
       cad_program:(document.getElementById('prodKey').value||'').trim()||null,
-      fingerprint:fp, parser_kural:pk, prompt_template:null,
+      fingerprint:fp, parser_kural:pk, prompt_template:(document.getElementById('promptTmpl').value||'').trim()||null,
       egitim_kaynagi:EGITIM_KAYNAGI, requires_ai:false, requires_ocr:false, tenant_id:tid, aktif:true };
     const r=await supa.from('izometri_format_tanimlari').insert(row).select('id').single();
     if(r.error){ return no(r.error.message); }
