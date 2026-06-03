@@ -30,6 +30,7 @@ body{ margin:0; background:var(--bg); color:var(--tx); font-family:'Barlow',sans
 .dot{ display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--bor); border-radius:14px; font-size:11px; cursor:pointer; background:var(--sur); color:var(--txm); font-family:'JetBrains Mono',monospace; }
 .dot.aktif{ border-color:var(--ac); color:var(--ac); background:rgba(45,142,255,.08); } .dot.dolu{ border-color:var(--gr); color:var(--gr); }
 .dot.kirmizi{ border-color:var(--re); color:var(--re); background:rgba(229,62,62,.08); } .dot.kirmizi .d{ background:var(--re); }
+.dot.turet{ border-color:var(--ac); color:var(--ac); background:rgba(45,142,255,.16); } .dot.turet .d{ background:var(--ac); }
 .dot .d{ width:6px; height:6px; border-radius:50%; background:var(--txd); } .dot.dolu .d{ background:var(--gr); } .dot.aktif .d{ background:var(--ac); }
 
 .qcard{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:16px; }
@@ -90,6 +91,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
 <script src="ares-normalize.js"></script>
 <script src="ares-asme.js"></script>
 <script src="ares-olcu.js"></script>
+<script src="ares-tablo-sentez.js"></script>
 <script src="ares-kabuk.js"></script>
 <script src="ares-layout.js"></script>
 </head>
@@ -214,7 +216,7 @@ const ALANLAR=[
  { ad:'not_metni', l2tip:'string', tip:'serbest', anchor:{mod:'etiket',etiket:'NOT:',onek:'',birim:''}, ipucu:'NOT ardındaki metin → alıştırma ipucu buradan türer.' },
  { ad:'malzeme_tablosu', l2tip:'tablo', tip:'tablo', ipucu:'Malzeme listesi — Excel eksikse PDF buradan okunur. Tablo bölgesini işaretle; satır desenlerini SONA toplu AI çıkarır.' }
 ];
-function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a._dirty=false; a._aiDeger=null; a._okudu=null; a._aiSatir=0; a._aiSatirlar=null; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
+function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a._dirty=false; a._aiDeger=null; a._okudu=null; a._aiSatir=0; a._aiSatirlar=null; a._turet=false; a._satirTipleri=null; a._tabloRapor=null; a._baslikTetik=null; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
 ALANLAR.forEach(_initAlan);
 function resetAlanlar(){ ALANLAR.forEach(_initAlan); adim=0; }
 
@@ -363,12 +365,40 @@ function _aiSentezle(spool){
     else { a._okudu=null; }                                                      // ikisi de boş
   });
   _mode='yeni'; _formatId=null; _mevcutKural=null;
+  const tz=_tabloSentezle();                                                     // Increment 2: AI satırlarından satir_tipleri sentezi + türetilmiş çipler
   const k=ALANLAR.findIndex(a=>a.tip!=='tablo' && a._okudu===false); if(k>=0)adim=k;
   _duzeltUiGuncelle('');
   renderDots(); renderDetay();
   const mt=ALANLAR.find(a=>a.tip==='tablo'); const ms=mt?(mt._aiSatir||0):0;
-  toast('🟣 AI okudu: '+yesil+' yeşil (→$0 kural) · '+kirmizi+' kırmızı'+(ms?(' · '+ms+' malzeme satırı'):'')+(sizinti?(' · '+sizinti+' sızıntı atlandı'):''));
+  let tMsg='';
+  if(tz&&tz.satir_tipleri.length){ tMsg=' · tablo: '+tz.satir_tipleri.length+' tip, '+tz.rapor.yesil+'/'+(tz.rapor.yesil+tz.rapor.kirmizi)+' satır ✓'; }
+  else if(ms){ tMsg=' · tablo sentezlenemedi (bölge işaretle)'; }
+  toast('🟣 AI okudu: '+yesil+' yeşil (→$0 kural) · '+kirmizi+' kırmızı'+(ms?(' · '+ms+' malzeme satırı'):'')+(sizinti?(' · '+sizinti+' sızıntı atlandı'):'')+tMsg);
 }
+
+/* ── INCREMENT 2 (151): tablo motoru — AI satır değerlerinden deterministik satir_tipleri.
+   Çekirdek TEK kaynak: ares-tablo-sentez.js (aynı kod Node mekanik testinde koşar, MK-126.8).
+   cap_mm/et_mm/dn ayrı kural YAZILMAZ — dominant Boru satırından olcuParse ile TÜRER (tasarım §4.1.5). ── */
+const TURETILEN_ALANLAR=['cap_mm','et_mm','dn'];
+function _tabloSentezle(){
+  const mt=ALANLAR.find(x=>x.tip==='tablo'); if(!mt)return null;
+  mt._satirTipleri=null; mt._tabloRapor=null; mt._baslikTetik=null;
+  const rows=Array.isArray(mt._aiSatirlar)?mt._aiSatirlar:[];
+  if(!rows.length||typeof ARES_TABLO_SENTEZ==='undefined'||!CANON_ALL)return null;
+  let sz=null;
+  try{ sz=ARES_TABLO_SENTEZ.sentezle(CANON_ALL,rows); }catch(e){ console.error('[tabloSentez]',e); return null; }
+  mt._tabloRapor=sz.rapor;
+  if(sz.rapor.yesil>0&&sz.satir_tipleri.length){ mt._satirTipleri=sz.satir_tipleri; mt._baslikTetik=sz.baslik_tetikleyici||null; }
+  if(sz.dominant){ _turetCip('cap_mm',sz.dominant.dis_cap); _turetCip('dn',sz.dominant.dn); _turetCip('et_mm',sz.dominant.et); }
+  return sz;
+}
+function _turetCip(ad,deger){
+  const a=ALANLAR.find(x=>x.ad===ad); if(!a||deger==null)return;
+  if(a._aiDeger!=null&&!_esitDeger(a._aiDeger,deger))return;                     // AI ile çelişiyorsa türetme — kırmızı/ipucu kalsın
+  a._turet=true; a.deger=deger; a._okudu=null; a.tani=''; a.regex=''; a._dirty=false;
+}
+function tabloSentezYenile(){ const sz=_tabloSentezle(); renderDots(); renderDetay();
+  toast(sz&&sz.satir_tipleri.length?('↻ Tablo: '+sz.satir_tipleri.length+' tip · '+sz.rapor.yesil+' yeşil · '+sz.rapor.kirmizi+' kırmızı'):'Tablo sentezlenemedi — önce 🟣 AI oku'); }
 
 let adim=0, scope='all', pdfDoc=null, pageNum=1, scale=1.2, markMode=false;
 let RAW_ALL='', CANON_ALL='', pageItems={}, spanRects=[];
@@ -378,7 +408,7 @@ let _formatId=null;    // düzeltilen satırın id'si (UPDATE hedefi)
 let _mevcutKural=null; // DB'den yüklenen parser_kural — PATCH'lenir, rebuild EDİLMEZ (MK-111.2)
 let _problemAlan=null; // tetikten gelen sorunlu alan adı (?alan=)
 let _mevcutPrompt='';  // yüklenen prompt_template (değişti mi kıyası için)
-function markDirty(){ const a=ALANLAR[adim]; if(a)a._dirty=true; }
+function markDirty(){ const a=ALANLAR[adim]; if(a){a._dirty=true; a._turet=false;} }
 
 function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function genKod(s){ let o='',x=String(s),i=0; while(i<x.length){ if(/\d/.test(x[i])){let j=i;while(j<x.length&&/\d/.test(x[j]))j++;o+='\\d+';i=j;}else{o+=escRe(x[i]);i++;} } return o||'.+'; }
@@ -402,7 +432,7 @@ function cozumle(ad, region){
   return null;
 }
 function renderDots(){
-  let h=''; ALANLAR.forEach((a,i)=>{ let cls=''; if(a.tip==='tablo'){ if(a.bbox)cls='dolu'; } else if(a.regex){ cls=(a._okudu===false)?'kirmizi':'dolu'; } else if(a._okudu===false){ cls='kirmizi'; } h+='<div class="dot '+(i===adim?'aktif':'')+(cls?' '+cls:'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
+  let h=''; ALANLAR.forEach((a,i)=>{ let cls=''; if(a.tip==='tablo'){ if(Array.isArray(a._satirTipleri)&&a._satirTipleri.length)cls='dolu'; else if(a._tabloRapor&&a._tabloRapor.kirmizi)cls='kirmizi'; else if(a.bbox)cls='dolu'; } else if(a._turet){ cls='turet'; } else if(a.regex){ cls=(a._okudu===false)?'kirmizi':'dolu'; } else if(a._okudu===false){ cls='kirmizi'; } h+='<div class="dot '+(i===adim?'aktif':'')+(cls?' '+cls:'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
   document.getElementById('dots').innerHTML=h;
 }
 function goAdim(i){ adim=Math.max(0,Math.min(ALANLAR.length-1,i)); markMode=false; setDraw(false); renderDots(); renderDetay(); }
@@ -414,6 +444,7 @@ function renderDetay(){
   const ancOps=ANCHOR_OPS.map(o=>'<option value="'+o[0]+'"'+(a.anchor.mod===o[0]?' selected':'')+'>'+o[1]+'</option>').join('');
   let h='<div class="qtitle">Soru '+(adim+1)+'/'+ALANLAR.length+' — '+a.ad+(a.opsiyonel?' (ops.)':'')+'</div>';
   h+='<p class="sub" style="margin:0 0 12px;">'+escHtml(a.ipucu)+'</p>';
+  if(a._turet){ h+='<div class="prev ok" style="margin-bottom:10px;border-color:rgba(45,142,255,.5);color:var(--ac);background:rgba(45,142,255,.08);">🧮 Türetilmiş ✓ — <b>'+escHtml(String(a.deger))+'</b> · malzeme tablosundaki dominant Boru satırından olcuParse ile çevrilir. Bu alan için ayrı kural <b>yazılmaz</b>. (Elle işaretlersen kural yazımına döner.)</div>'; }
   // TEK ADIM: alanı kabaca işaretle, gerisini çöz
   h+='<button class="mark-btn '+(a.sample?'dolu':(markMode?'aktif':''))+'" style="font-size:14px;padding:13px;" onclick="toggleMark()">'
     +(a.sample?('✓ İşaretlendi <span class="mark-sel">'+escHtml(a.sample.slice(0,38))+(a.sample.length>38?'…':'')+'</span> — yeniden çiz'):(markMode?'✏️ Alanı kutuyla çevrele…':'📍 Bu alanı PDF\'te kutuyla çevrele'))+'</button>';
@@ -436,10 +467,23 @@ function renderDetay(){
 function renderTablo(a,box){
   let h='<div class="qtitle">Soru '+(adim+1)+'/'+ALANLAR.length+' — malzeme_tablosu</div>';
   h+='<p class="sub" style="margin:0 0 12px;">'+escHtml(a.ipucu)+'</p>';
-  h+='<div class="q"><div class="q-lbl"><span class="q-num">1</span> Tablo bölgesini işaretle</div>'
+  // Increment 2: sentez raporu — AI satırlarından deterministik satir_tipleri
+  if(a._tabloRapor){
+    const r=a._tabloRapor, st=a._satirTipleri||[];
+    h+='<div class="prev '+(st.length?(r.kirmizi?'idle':'ok'):'no')+'" style="margin-bottom:10px;">'
+      +(st.length?('🧮 '+st.length+' satır tipi sentezlendi · '+r.yesil+' yeşil'+(r.kirmizi?(' · '+r.kirmizi+' kırmızı'):'')+(a._baslikTetik?(' · başlık: "'+escHtml(a._baslikTetik)+'"'):'')):'✗ Sentez başarısız — satır eşleşmedi')
+      +'</div>';
+    if(st.length){ h+='<div class="prev idle" style="margin-bottom:10px;font-size:11px;max-height:120px;overflow:auto;">'+st.map(t=>'<div><b>'+escHtml(t.ad)+'</b> ('+t.kategori+') /'+escHtml(t.tetikleyici_regex)+'/</div>').join('')+'</div>'; }
+    const kir=(r.satirlar||[]).filter(s=>s.durum==='kirmizi');
+    if(kir.length){ h+='<div class="prev no" style="margin-bottom:10px;font-size:11px;">'+kir.map(s=>'<div>✗ '+escHtml(s.tanim||'?')+' — '+escHtml(s.sebep||'')+'</div>').join('')+'<div style="margin-top:4px;color:var(--txd);">Kırmızı satırlar için bölge işaretle (fallback) ya da AI tarifi yaz.</div></div>'; }
+    h+='<button class="btn full" style="margin-bottom:12px;" onclick="tabloSentezYenile()">↻ Tablodan yeniden sentezle</button>';
+  } else if(a._aiSatir){
+    h+='<div class="prev idle" style="margin-bottom:10px;">🟣 AI '+a._aiSatir+' malzeme satırı gördü — sentez bekliyor. <button class="btn" onclick="tabloSentezYenile()" style="margin-left:6px;">Sentezle</button></div>';
+  }
+  h+='<div class="q"><div class="q-lbl"><span class="q-num">1</span> Tablo bölgesini işaretle (fallback)</div>'
     +'<button class="mark-btn '+(a.bbox?'dolu':(markMode?'aktif':''))+'" onclick="toggleMark()">'
     +(a.bbox?('✓ Tablo bölgesi işaretli ('+a.page+'. sayfa) — yeniden çiz'):(markMode?'✏️ Tabloyu kutuyla çevrele…':'📍 İşaretle → tabloyu çevrele'))+'</button></div>';
-  h+='<div class="q"><div class="q-lbl"><span class="q-num">2</span> Satır desenleri</div><div class="prev idle">7 satır-tipi tek tek çizilmez. <b style="font-family:inherit;">Toplu AI</b> bu bölgeden çıkarır (Tamamla\'da, onayla). Excel varsa zaten o öncelikli; bu Excel\'siz PDF için güvenlik ağı.</div></div>';
+  h+='<div class="q"><div class="q-lbl"><span class="q-num">2</span> Satır desenleri</div><div class="prev idle">🟣 AI oku → satır desenleri AI değerlerinden <b style="font-family:inherit;">deterministik sentezlenir</b> (kural çıktısı == AI değeri kanıtıyla). Çap/et/DN ayrı sorulmaz — Boyut sütunundan türer.</div></div>';
   h+='<div class="nav"><button class="btn" onclick="goAdim('+(adim-1)+')">‹</button><span class="sp"></span><button class="btn gr" onclick="tamamlaAc()">Tamamla</button></div>';
   box.innerHTML=h;
 }
@@ -580,11 +624,13 @@ function buildFingerprint(){
     baslik_regex:document.getElementById('baslikRegex').value||null };
 }
 function buildParserKural(){
-  const alanlar={};
-  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
   const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
-  const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:tabloVar?1:0,l3_fallback_yapilir:true}};
-  if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
+  const st=(mt&&Array.isArray(mt._satirTipleri)&&mt._satirTipleri.length)?mt._satirTipleri:null;
+  const alanlar={};
+  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ if(st&&a._turet&&TURETILEN_ALANLAR.includes(a.ad))return; const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
+  const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:(st||tabloVar)?1:0,l3_fallback_yapilir:true}};
+  if(st){ pk.malzeme_tablosu={aktif:true,satir_tipleri:st}; if(mt._baslikTetik)pk.malzeme_tablosu.baslik_tetikleyici=mt._baslikTetik; }   // Increment 2: sentezlendi — _toplu_ai_bekliyor YOK, cap/et/dn türetilmiş
+  else if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
   return {pk,tabloVar};
 }
 function buildKural(){ const {pk}=buildParserKural(); return { ad:(document.getElementById('fmtAd').value||'(adsız)'), format_kodu:document.getElementById('fmtKod').value||null, requires_ai:false, egitim_kaynagi:EGITIM_KAYNAGI, fingerprint:buildFingerprint(), parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' }; }
