@@ -1,0 +1,15 @@
+{
+  "alanlar": {
+    "et_mm": { "tip":"float","grup":1,"regex":"\\d+(?:\\.\\d+)?x(\\d+(?:\\.\\d+)?)" },
+    "tarih": { "tip":"string","grup":1,"regex":"(\\d{2}-\\d{2}-\\d{2})" },
+    "yuzey": { "tip":"string","grup":1,"regex":"(Galvaniz|Paslanmaz|CUNIFE|Siyah|Asit|Boyalı)" },
+    "cap_mm": { "tip":"float","grup":1,"regex":"(\\d+(?:\\.\\d+)?)x\\d+(?:\\.\\d+)?" },
+    "spool_no": { "tip":"string","grup":1,"regex":"-?(S\\d+)\\b" },
+    "not_metni": { "tip":"string","flag":"im","grup":1,"regex":"NOT\\s*:?\\s*(.+?)(?:\\n|$)" },
+    "agirlik_kg": { "tip":"float","grup":1,"regex":"(\\d+(?:\\.\\d+)?)\\s*kg" },
+    "pipeline_no": { "tip":"string","grup":1,"regex":"(-M\\d+-\\d+-SP\\d+)" }
+  },
+  "ekstraktor_tipi": "regex_text",
+  "kabul_kriterleri": { "min_malzeme_satir":0, "l3_fallback_yapilir":true, "min_overall_match_orani":0.5 },
+  "min_metin_uzunlugu": 100
+}
