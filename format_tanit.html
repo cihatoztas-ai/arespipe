@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){var t=localStorage.getItem('ares_theme')||'light-anthracite';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('ares_lang')||'tr';document.documentElement.setAttribute('lang',l);})();</script>
+<title>AresPipe — Format Tanıtma / Çapa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{ --ac:#2D8EFF; --gr:#16a36e; --re:#e53e3e; --warn:#d97706; --leg:#7c3aed; --co:#e07b3a;
+  --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e; --tx:#e6ecf4; --txd:#6b7a90; --txm:#94a3b8; }
+/* light temalar (light, light-anthracite vb.) — uygulama temasıyla uyumlu açık palet */
+[data-theme^="light"]{ --bg:#f5f6f8; --sur:#ffffff; --sur2:#eef1f5; --bor:#d8dee6; --tx:#1c2430; --txd:#8a97a8; --txm:#5c6b7e; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--tx); font-family:'Barlow',sans-serif; font-size:15px; -webkit-font-smoothing:antialiased; }
+.hide{ display:none!important; }
+.topbar{ height:50px; background:var(--sur); border-bottom:1px solid var(--bor); display:flex; align-items:center; padding:0 16px; gap:12px; }
+.brand{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:21px; } .brand b{ color:var(--ac); }
+.mockup-badge{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--warn); border:1px solid var(--warn); border-radius:6px; padding:2px 8px; }
+
+.wrap{ display:grid; grid-template-columns:440px 1fr; height:calc(100vh - 50px); }
+/* ── SOL: çalışma paneli ── */
+.panel{ overflow-y:auto; padding:16px 18px; background:var(--bg); border-right:1px solid var(--bor); }
+.h1{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; margin:0; display:flex; align-items:center; gap:10px; }
+.gpill{ font-size:11px; font-family:'JetBrains Mono',monospace; padding:2px 8px; border-radius:12px; cursor:default; }
+.gpill.ok{ background:rgba(22,163,110,.15); color:var(--gr); } .gpill.warn{ background:rgba(217,119,6,.15); color:var(--warn); } .gpill.idle{ background:var(--sur2); color:var(--txd); }
+.sub{ color:var(--txd); font-size:12.5px; margin:6px 0 14px; line-height:1.5; }
+.dots{ display:flex; gap:5px; margin-bottom:14px; flex-wrap:wrap; }
+.dot{ display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--bor); border-radius:14px; font-size:11px; cursor:pointer; background:var(--sur); color:var(--txm); font-family:'JetBrains Mono',monospace; }
+.dot.aktif{ border-color:var(--ac); color:var(--ac); background:rgba(45,142,255,.08); } .dot.dolu{ border-color:var(--gr); color:var(--gr); }
+.dot .d{ width:6px; height:6px; border-radius:50%; background:var(--txd); } .dot.dolu .d{ background:var(--gr); } .dot.aktif .d{ background:var(--ac); }
+
+.qcard{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:16px; }
+.qtitle{ font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--ac); margin-bottom:3px; }
+.q{ margin-bottom:13px; } .q:last-child{ margin-bottom:0; }
+.q-lbl{ font-size:13px; font-weight:600; color:var(--tx); margin-bottom:6px; display:flex; align-items:center; gap:7px; }
+.q-num{ width:19px; height:19px; border-radius:50%; background:var(--ac); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; flex-shrink:0; }
+.inp,.sel{ width:100%; background:var(--sur2); border:1px solid var(--bor); color:var(--tx); border-radius:7px; padding:7px 9px; font-size:14px; font-family:'Barlow',sans-serif; } .inp:focus,.sel:focus{ outline:none; border-color:var(--ac); }
+.inp.mono{ font-family:'JetBrains Mono',monospace; font-size:13px; }
+.fld label{ display:block; font-size:12px; color:var(--txm); margin-bottom:4px; }
+.row2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mark-btn{ width:100%; border:1px dashed var(--bor); color:var(--txm); border-radius:7px; padding:10px; font-size:13px; cursor:pointer; font-family:'Barlow',sans-serif; background:var(--sur2); }
+.mark-btn:hover{ border-color:var(--ac); color:var(--ac); } .mark-btn.dolu{ border-style:solid; border-color:var(--gr); color:var(--gr); background:rgba(22,163,110,.08); } .mark-btn.aktif{ border-style:solid; border-color:var(--ac); color:var(--ac); background:rgba(45,142,255,.1); }
+.mark-sel{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--tx); }
+.regex-out{ background:var(--bg); border:1px solid var(--bor); border-radius:7px; padding:8px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--co); width:100%; resize:vertical; min-height:42px; } .regex-out:focus{ outline:none; border-color:var(--ac); }
+.prev{ display:flex; align-items:center; gap:8px; margin-top:8px; padding:8px 11px; border-radius:7px; font-size:13px; }
+.prev.ok{ background:rgba(22,163,110,.1); border:1px solid rgba(22,163,110,.4); color:var(--gr); } .prev.no{ background:rgba(229,62,62,.1); border:1px solid rgba(229,62,62,.4); color:var(--re); } .prev.idle{ background:var(--sur2); border:1px solid var(--bor); color:var(--txd); }
+.prev b{ font-family:'JetBrains Mono',monospace; }
+.nav{ display:flex; gap:8px; margin-top:14px; } .nav .sp{ flex:1; }
+.btn{ font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:15px; border-radius:8px; padding:9px 15px; cursor:pointer; border:1px solid var(--bor); background:var(--sur2); color:var(--tx); } .btn:hover{ border-color:var(--ac); } .btn:disabled{ opacity:.4; cursor:not-allowed; }
+.btn.gr{ background:var(--gr); border-color:var(--gr); color:#fff; } .btn.gr:hover{ background:#13955f; } .btn.pri{ background:var(--ac); border-color:var(--ac); color:#fff; } .btn.full{ width:100%; }
+.btn.ai{ background:transparent; border-color:var(--leg); color:var(--leg); } .btn.ai:hover{ background:rgba(124,58,237,.1); }
+details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; background:var(--sur); } details.sec>summary{ cursor:pointer; padding:10px 13px; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:14px; color:var(--txm); text-transform:uppercase; letter-spacing:.5px; list-style:none; } details.sec>summary::-webkit-details-marker{ display:none; } details.sec>summary::before{ content:'▸ '; color:var(--txd); } details.sec[open]>summary::before{ content:'▾ '; }
+.sec-b{ padding:0 13px 13px; }
+.fld{ margin-bottom:9px; }
+.radio{ display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--bor); border-radius:7px; margin-bottom:7px; cursor:pointer; font-size:13px; } .radio.sel{ border-color:var(--ac); background:rgba(45,142,255,.07); } .radio .rd{ width:15px; height:15px; border-radius:50%; border:2px solid var(--txd); flex-shrink:0; } .radio.sel .rd{ border-color:var(--ac); background:var(--ac); box-shadow:inset 0 0 0 3px var(--sur); }
+.tinynote{ font-size:11.5px; color:var(--txd); line-height:1.5; margin:12px 0 0; padding-left:9px; border-left:2px solid var(--gr); }
+
+/* ── SAĞ: PDF ── */
+.pdfpane{ background:#33373f; position:relative; display:flex; flex-direction:column; overflow:hidden; }
+.pdftool{ display:flex; align-items:center; gap:8px; padding:7px 12px; background:var(--sur); border-bottom:1px solid var(--bor); flex-wrap:wrap; }
+.t-btn{ background:var(--sur2); border:1px solid var(--bor); color:var(--tx); border-radius:7px; padding:6px 11px; font-size:14px; cursor:pointer; font-family:'Barlow',sans-serif; } .t-btn:hover{ border-color:var(--ac); } .t-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.t-btn.gr{ background:var(--gr); border-color:var(--gr); color:#fff; }
+.zlbl{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--txm); min-width:48px; text-align:center; }
+.hint{ font-size:12px; color:var(--txd); margin-left:auto; }
+.scroll{ flex:1; overflow:auto; padding:20px; position:relative; }
+.scroll.panning{ cursor:grabbing; }
+.canvas-holder{ position:relative; margin:0 auto; box-shadow:0 6px 30px rgba(0,0,0,.5); width:max-content; }
+.canvas-holder canvas{ display:block; }
+.textLayer{ position:absolute; inset:0; overflow:hidden; line-height:1; }
+.textLayer span{ position:absolute; white-space:pre; color:transparent; transform-origin:0 0; }
+.markLayer{ position:absolute; inset:0; pointer-events:none; }
+.markLayer.drawing{ pointer-events:auto; cursor:crosshair; }
+.mk-box{ position:absolute; border:2px solid var(--ac); background:rgba(45,142,255,.18); border-radius:3px; }
+.mk-rubber{ position:absolute; border:2px dashed var(--gr); background:rgba(22,163,110,.15); }
+.empty-pdf{ flex:1; display:flex; align-items:center; justify-content:center; color:var(--txd); flex-direction:column; gap:14px; text-align:center; }
+.empty-pdf .big{ font-size:46px; }
+
+.overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:50; padding:24px; }
+.pop{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; width:640px; max-width:100%; max-height:86vh; display:flex; flex-direction:column; }
+.pop-h{ display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid var(--bor); } .pop-h h3{ margin:0; font-family:'Barlow Condensed',sans-serif; font-size:19px; } .pop-x{ margin-left:auto; background:none; border:none; color:var(--txd); font-size:22px; cursor:pointer; }
+.pop-b{ padding:16px; overflow:auto; }
+.json{ background:var(--bg); border:1px solid var(--bor); border-radius:8px; padding:13px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--txm); white-space:pre; overflow-x:auto; line-height:1.5; }
+.toast{ position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--sur2); border:1px solid var(--ac); color:var(--tx); padding:11px 18px; border-radius:9px; font-size:14px; opacity:0; transition:.25s; z-index:99; pointer-events:none; } .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-normalize.js"></script>
+<script src="ares-asme.js"></script>
+<script src="ares-olcu.js"></script>
+<script src="ares-kabuk.js"></script>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">Ares<b>Pipe</b></div>
+  <span class="mockup-badge">FORMAT TANITMA / ÇAPA</span>
+</div>
+
+<div class="wrap">
+  <!-- SOL: panel -->
+  <div class="panel">
+    <h1 class="h1">Bu formatı tanıt <span class="gpill idle" id="gpill" title="glyph durumu">glyph —</span></h1>
+    <p class="sub">PDF'in okuduğu alanları sırayla işaretle → kural doğsun → aynı formatın tüm PDF'leri L2'den okunsun ($0). Koordinat değil kural saklanır.</p>
+    <div class="dots" id="dots"></div>
+    <div class="qcard" id="alanDetay"></div>
+
+    <details class="sec" id="secKimlik">
+      <summary>Format kimliği (otomatik)</summary>
+      <div class="sec-b">
+        <div class="fld"><label>Format kodu</label><input class="inp mono" id="fmtKod" placeholder="örn. tersan_cadmatic_spool"></div>
+        <div class="fld"><label>Dosya adı regex</label><input class="inp mono" id="fnRegex" placeholder="PDF açınca türer"></div>
+        <div class="fld"><label>PDF üretici anahtarı</label><input class="inp mono" id="prodKey" placeholder="metadata"></div>
+        <div class="fld" style="margin:0;"><label>Başlık regex (ops.)</label><input class="inp mono" id="baslikRegex" placeholder="örn. Malzeme Listesi"></div>
+      </div>
+    </details>
+
+    <p class="tinynote">Excel kabuk varsa çalışma anında <b>o öncelikli</b> (bindir, MK-111.2). Buradaki PDF kuralları Excel eksikse devreye girer + K2 çapraz-kontrol.</p>
+
+    <button class="btn gr full" style="margin-top:14px;" onclick="tamamlaAc()">Tamamla → kapsam · AI · JSON</button>
+  </div>
+
+  <!-- SAĞ: PDF -->
+  <div class="pdfpane">
+    <div class="pdftool">
+      <button class="t-btn gr" onclick="document.getElementById('fileInput').click()">📂 PDF aç</button>
+      <input type="file" id="fileInput" accept="application/pdf" class="hide">
+      <span style="width:1px;height:20px;background:var(--bor);"></span>
+      <button class="t-btn" id="zOut" onclick="zoomBtn(-1)" disabled>−</button>
+      <span class="zlbl" id="zLbl">—</span>
+      <button class="t-btn" id="zIn" onclick="zoomBtn(1)" disabled>+</button>
+      <button class="t-btn" id="zFit" onclick="fitWidth()" disabled>Sığdır</button>
+      <span style="width:1px;height:20px;background:var(--bor);"></span>
+      <button class="t-btn" id="pPrev" onclick="gotoPage(-1)" disabled>‹</button>
+      <span class="zlbl" id="pLbl">—</span>
+      <button class="t-btn" id="pNext" onclick="gotoPage(1)" disabled>›</button>
+      <span class="hint" id="hintTxt">pinch / ctrl+tekerlek = imlece zoom · iki parmak = kaydır</span>
+    </div>
+    <div class="scroll" id="scrollArea">
+      <div class="empty-pdf" id="emptyPdf"><div class="big">📄</div><div>Tanınmayan formatın izometri PDF'ini aç.<br>Soldaki akış sırayla alanları işaretletir.</div></div>
+      <div class="canvas-holder hide" id="holder"><canvas id="pdfCanvas"></canvas><div class="textLayer" id="textLayer"></div><div class="markLayer" id="markLayer"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="tamamlaOverlay" class="overlay hide" onclick="if(event.target===this)tamamlaKapat()">
+  <div class="pop"><div class="pop-h"><h3>Tamamla — kural kaydı</h3><button class="pop-x" onclick="tamamlaKapat()">✕</button></div>
+  <div class="pop-b">
+    <div class="fld"><label>Format adı (zorunlu)</label><input class="inp" id="fmtAd" placeholder="örn. Tersan Cadmatic Spool"></div>
+    <div class="fld"><label>Format kodu (ops.)</label><input class="inp mono" id="fmtKod2" placeholder="tersan_cadmatic_spool" oninput="document.getElementById('fmtKod').value=this.value"></div>
+    <div style="font-family:Barlow Condensed,sans-serif;font-weight:600;font-size:14px;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 8px;">Kapsam (MK-118.9)</div>
+    <div class="radio" id="scOnly" onclick="setScope('only')"><span class="rd"></span> Sadece bu PDF <span style="margin-left:auto;color:var(--txd);font-size:12px;">(değer düzeltme — yakında)</span></div>
+    <div class="radio sel" id="scAll" onclick="setScope('all')"><span class="rd"></span> Formatın tümüne <span style="margin-left:auto;color:var(--txd);font-size:12px;">varsayılan · yayılır (G3)</span></div>
+    <button class="btn ai full" style="margin:10px 0;" onclick="aiPekistir()">🤖 Malzeme/zor alanlar için toplu AI (onay gerekir) — MK-148.1</button>
+    <div style="font-family:Barlow Condensed,sans-serif;font-weight:600;font-size:14px;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin:8px 0;">izometri_format_tanimlari'na yazılacak</div>
+    <p class="sub" style="margin:0 0 8px;">Doğrudan Supabase insert · requires_ai=false → L2 ($0) · l2-parser değişmeden okur.</p>
+    <div class="json" id="jsonOut"></div>
+    <div class="prev idle" id="kaydetSonuc" style="margin-top:10px;">Adı gir → Kaydet.</div>
+    <button class="btn gr full" id="btnKaydet" style="margin-top:10px;" onclick="kaydet()">Kaydet</button>
+  </div></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<!-- pdf-parse'ın pdfjs'i v1.10.100 — sunucu ile BİREBİR temiz metin. /vendor/'a kopyalanmalı (node_modules Vercel'de servis edilmez). -->
+<script src="/vendor/pdfjs-1.10.100/pdf.js"></script>
+<script>
+(function(){
+  if(window.PDFJS){ PDFJS.workerSrc='/vendor/pdfjs-1.10.100/pdf.worker.js'; }
+  else if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc='/vendor/pdfjs-1.10.100/pdf.worker.js'; }
+})();
+function _lib(){ return window.PDFJS || window.pdfjsLib; }
+function _util(){ const L=_lib(); return (L&&L.Util)||(window.pdfjsLib&&pdfjsLib.Util); }
+function _vp(page,s){ try{ return page.getViewport(s); }catch(e){ return page.getViewport({scale:s}); } }
+
+/* ===== GÖMÜLÜ MOTORLAR — PROTOTİP (üretimde import). glyph-onar.js + l2-parser.alanCikar BİREBİR. ===== */
+const CAPA_TOKENLAR=['SPOOL NAME','PART NUMBER','WELDING NUMBER','CUT NUMBER'];
+const BANT_B_TABLO={'Ä':'b','Å':'c','É':'e','Ñ':'f','Ö':'g','Ü':'h','á':'i','â':'k','ã':'m','ä':'l','å':'n','é':'p','ê':'r','ë':'s','ì':'u','í':'t','î':'v','ï':'w','ò':'z','ó':'y','ñ':'x','ć':'ü','ğ':'ğ','ş':'ş','ı':'ı','σ':'ı','°':'°'};
+const CAKISMA={'Ç':'d','ç':'o'};
+function _harfMi(ch){ if(!ch)return false; const c=ch.codePointAt(0); if((c>=0x41&&c<=0x5a)||(c>=0x61&&c<=0x7a))return true; if(c>=0x80)return true; return false; }
+function _kucukMi(ch){ if(!ch)return false; if(BANT_B_TABLO[ch]!==undefined)return true; if(CAKISMA[ch]!==undefined)return true; const c=ch.codePointAt(0); return c>=0x61&&c<=0x7a; }
+function _onar29(t){ if(typeof t!=='string'||!t.length)return t; let o=''; for(const ch of t){ const c=ch.codePointAt(0),r=c-29; o+=(r>=0x20&&r<=0x7e)?String.fromCharCode(r):ch; } return o; }
+function _bandB(t){ if(typeof t!=='string'||!t.length)return{metin:t,eslenmeyen:[]}; const ch=[...t],es=new Set(); let o=''; for(let i=0;i<ch.length;i++){ const c=ch[i]; if(BANT_B_TABLO[c]!==undefined){o+=BANT_B_TABLO[c];continue;} if(c==='Ç'){const p=i>0?ch[i-1]:'',n=i+1<ch.length?ch[i+1]:'';o+=((i===0||!_harfMi(p))&&_kucukMi(n))?'Ç':'d';continue;} if(c==='ç'){o+='o';continue;} if(c.codePointAt(0)>=0x80){es.add(c);o+=c;continue;} o+=c; } return{metin:o,eslenmeyen:[...es]}; }
+function _capaVar(t){ return typeof t==='string'&&CAPA_TOKENLAR.some(x=>t.includes(x)); }
+function metinNormalle(t){ if(typeof t!=='string'||!t.length)return{metin:t,durum:'bos',eslenmeyen:[]}; if(_capaVar(t))return{metin:t,durum:'temiz',eslenmeyen:[]}; const a=_onar29(t); if(_capaVar(a)){ const b=_bandB(a); return{metin:b.metin,durum:'glyph_onarildi',eslenmeyen:b.eslenmeyen}; } return{metin:t,durum:'capa_yok',eslenmeyen:[]}; }
+function _postProcess(d,k){ if(k.tip==='prefix_garanti'){ const p=k.prefix||''; if(typeof d!=='string')return d; return d.startsWith(p)?d:p+d; } return d; }
+function _alanCikar(t,a){ if(!a||!a.regex)return null; let re; try{re=new RegExp(a.regex,a.flag||'i');}catch(e){return null;} const m=t.match(re); if(!m)return a.fallback||null; let d=m[a.grup||1]; if(d===undefined)return a.fallback||null; if(a.tip==='int'){const n=parseInt(d,10);d=isNaN(n)?null:n;} else if(a.tip==='float'){const n=parseFloat(d);d=isNaN(n)?null:n;} else d=String(d).trim(); if(a.post_processing&&d!=null)d=_postProcess(d,a.post_processing); return d; }
+/* ===== /MOTORLAR ===== */
+
+const YUZEY_SOZ=['Galvaniz','Paslanmaz','CUNIFE','Siyah','Asit','Boyalı'];
+const TIP_OPS=[['float','Ondalık sayı'],['int','Tam sayı'],['tarih','Tarih (12-05-26)'],['kod','Kod deseni'],['liste','Sabit liste'],['serbest','Serbest metin']];
+const ANCHOR_OPS=[['satir','Kendi satırında'],['etiket','Etiketin ardından'],['onek','Kendi satırında + önek']];
+const ALANLAR=[
+ { ad:'spool_no', l2tip:'string', tip:'kod', anchor:{mod:'onek',etiket:'',onek:'-',birim:''}, ipucu:'Spool no — kabuğa bağlar.' },
+ { ad:'pipeline_no', l2tip:'string', tip:'kod', anchor:{mod:'etiket',etiket:'PIPE NO',onek:'',birim:''}, donusum:{tip:'yok',prefix:''}, ipucu:'PDF\'teki proje/hat no — "bizim formata çevir" ile E120- borcunu da kapatır.' },
+ { ad:'dn', l2tip:'int', tip:'int', anchor:{mod:'etiket',etiket:'DN',onek:'',birim:''}, ipucu:'"DN50" → 50.' },
+ { ad:'cap_mm', l2tip:'float', tip:'float', anchor:{mod:'satir',etiket:'',onek:'',birim:''}, ipucu:'Dış çap (mm).' },
+ { ad:'et_mm', l2tip:'float', tip:'float', anchor:{mod:'satir',etiket:'',onek:'',birim:''}, ipucu:'Et kalınlığı (mm).' },
+ { ad:'yuzey', l2tip:'string', tip:'liste', anchor:{mod:'satir',etiket:'',onek:'',birim:''}, liste:YUZEY_SOZ.slice(), ipucu:'Yüzey işlem — sabit sözlüğe genellenir.' },
+ { ad:'agirlik_kg', l2tip:'float', tip:'float', anchor:{mod:'satir',etiket:'',onek:'',birim:'kg'}, ipucu:'Ağırlık.' },
+ { ad:'tarih', l2tip:'string', tip:'tarih', anchor:{mod:'satir',etiket:'',onek:'',birim:''}, opsiyonel:true, ipucu:'Çizim tarihi (ops.).' },
+ { ad:'not_metni', l2tip:'string', tip:'serbest', anchor:{mod:'etiket',etiket:'NOT:',onek:'',birim:''}, ipucu:'NOT ardındaki metin → alıştırma ipucu buradan türer.' },
+ { ad:'malzeme_tablosu', l2tip:'tablo', tip:'tablo', ipucu:'Malzeme listesi — Excel eksikse PDF buradan okunur. Tablo bölgesini işaretle; satır desenlerini SONA toplu AI çıkarır.' }
+];
+function _initAlan(a){ a.sample=''; a.bbox=null; a.page=0; a.regex=''; a.deger=null; a.tani=''; a.flag=(a.tip==='serbest'?'im':'i'); if(a.donusum)a.donusum={tip:'yok',prefix:''}; if(a.ad==='yuzey')a.liste=YUZEY_SOZ.slice(); }
+ALANLAR.forEach(_initAlan);
+function resetAlanlar(){ ALANLAR.forEach(_initAlan); adim=0; }
+
+let adim=0, scope='all', pdfDoc=null, pageNum=1, scale=1.2, markMode=false;
+let RAW_ALL='', CANON_ALL='', pageItems={}, spanRects=[];
+
+function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function genKod(s){ let o='',x=String(s),i=0; while(i<x.length){ if(/\d/.test(x[i])){let j=i;while(j<x.length&&/\d/.test(x[j]))j++;o+='\\d+';i=j;}else{o+=escRe(x[i]);i++;} } return o||'.+'; }
+function coreFor(a){ if(a.tip==='float')return'\\d+(?:\\.\\d+)?'; if(a.tip==='int')return'\\d+'; if(a.tip==='tarih')return'\\d{2}-\\d{2}-\\d{2}'; if(a.tip==='kod')return genKod(a.sample); if(a.tip==='liste'){const L=(a.liste&&a.liste.length?a.liste:[a.sample]);return L.map(escRe).join('|');} if(a.tip==='serbest')return'.+?'; return escRe(a.sample||'.+'); }
+function synth(a){ const g='('+coreFor(a)+')',an=a.anchor; if(an.mod==='etiket'){ let re=escRe(an.etiket||'')+'\\s*'+g; if(an.birim)re+='\\s*'+escRe(an.birim); return re; } let pre=(an.mod==='onek'&&an.onek)?escRe(an.onek):''; return '\\n'+pre+g+(an.birim?'\\s*'+escRe(an.birim):'')+'\\n'; }
+function escHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function postProcessOf(a){ return (a.donusum&&a.donusum.tip==='onek'&&a.donusum.prefix)?{tip:'prefix_garanti',prefix:a.donusum.prefix}:null; }
+
+/* Bölge→değer otomatik çözümleyici. Operatör kaba işaretler, bu deterministik çözer ($0). Boşluk-dayanıklı regex üretir (tarayıcı↔sunucu taşınabilir). AI: yalnız tanıyamadıklarına, sonda, toplu. */
+function cozumle(ad, region){
+  const T=region||'';
+  if(ad==='spool_no'){ const m=T.match(/-?(S\d+(?:_\d+)?)\b/i); if(m) return {deger:m[1], regex:'-?('+genKod(m[1])+')\\b', flag:'i'}; }
+  if(ad==='pipeline_no'){ const m=T.match(/(-?[A-Z]+\d+(?:-[A-Z0-9]+)+)/); if(m) return {deger:m[1], regex:'('+genKod(m[1])+')', flag:'i'}; }
+  if(ad==='dn'){ const m=T.match(/DN\s*(\d+)/i); if(m) return {deger:+m[1], regex:'DN\\s*(\\d+)', flag:'i'}; }
+  if(ad==='cap_mm'){ const m=T.match(/(\d+(?:\.\d+)?)x\d+(?:\.\d+)?/); if(m) return {deger:+m[1], regex:'(\\d+(?:\\.\\d+)?)x\\d+(?:\\.\\d+)?', flag:'i'}; }
+  if(ad==='et_mm'){ const m=T.match(/\d+(?:\.\d+)?x(\d+(?:\.\d+)?)/); if(m) return {deger:+m[1], regex:'\\d+(?:\\.\\d+)?x(\\d+(?:\\.\\d+)?)', flag:'i'}; }
+  if(ad==='agirlik_kg'){ const m=T.match(/(\d+(?:\.\d+)?)\s*kg/i); if(m) return {deger:+m[1], regex:'(\\d+(?:\\.\\d+)?)\\s*kg', flag:'i'}; }
+  if(ad==='yuzey'){ for(const w of YUZEY_SOZ){ if(new RegExp(escRe(w),'i').test(T)) return {deger:w, regex:'('+YUZEY_SOZ.map(escRe).join('|')+')', flag:'i'}; } }
+  if(ad==='tarih'){ const m=T.match(/(\d{2}-\d{2}-\d{2})/); if(m) return {deger:m[1], regex:'(\\d{2}-\\d{2}-\\d{2})', flag:'i'}; }
+  if(ad==='not_metni'){ const m=T.match(/NOT\s*:?\s*(.+)/i); if(m) return {deger:m[1].trim(), regex:'NOT\\s*:?\\s*(.+?)(?:\\n|$)', flag:'im'}; }
+  return null;
+}
+function renderDots(){
+  let h=''; ALANLAR.forEach((a,i)=>{ const dolu=!!a.regex||(a.tip==='tablo'&&!!a.bbox); h+='<div class="dot '+(i===adim?'aktif':'')+(dolu?' dolu':'')+'" onclick="goAdim('+i+')"><span class="d"></span>'+a.ad+'</div>'; });
+  document.getElementById('dots').innerHTML=h;
+}
+function goAdim(i){ adim=Math.max(0,Math.min(ALANLAR.length-1,i)); markMode=false; setDraw(false); renderDots(); renderDetay(); }
+
+function renderDetay(){
+  const a=ALANLAR[adim], box=document.getElementById('alanDetay');
+  if(a.tip==='tablo'){ return renderTablo(a,box); }
+  const tipOps=TIP_OPS.map(o=>'<option value="'+o[0]+'"'+(a.tip===o[0]?' selected':'')+'>'+o[1]+'</option>').join('');
+  const ancOps=ANCHOR_OPS.map(o=>'<option value="'+o[0]+'"'+(a.anchor.mod===o[0]?' selected':'')+'>'+o[1]+'</option>').join('');
+  let h='<div class="qtitle">Soru '+(adim+1)+'/'+ALANLAR.length+' — '+a.ad+(a.opsiyonel?' (ops.)':'')+'</div>';
+  h+='<p class="sub" style="margin:0 0 12px;">'+escHtml(a.ipucu)+'</p>';
+  // TEK ADIM: alanı kabaca işaretle, gerisini çöz
+  h+='<button class="mark-btn '+(a.sample?'dolu':(markMode?'aktif':''))+'" style="font-size:14px;padding:13px;" onclick="toggleMark()">'
+    +(a.sample?('✓ İşaretlendi <span class="mark-sel">'+escHtml(a.sample.slice(0,38))+(a.sample.length>38?'…':'')+'</span> — yeniden çiz'):(markMode?'✏️ Alanı kutuyla çevrele…':'📍 Bu alanı PDF\'te kutuyla çevrele'))+'</button>';
+  h+='<div class="prev idle" id="prevBox" style="margin-top:10px;">Alanı işaretle — değeri ve kuralı kendim çözeyim.</div>';
+  // ELLE AYARLA — fallback. Tanıyamadıysa otomatik açık.
+  h+='<details class="sec"'+(a.tani==='fail'?' open':'')+' style="margin-top:12px;"><summary>Elle ayarla'+(a.tani==='auto'?' <span style="color:var(--gr)">· otomatik tanındı ✓</span>':(a.tani==='fail'?' <span style="color:var(--warn)">· tanıyamadım, düzelt</span>':''))+'</summary><div class="sec-b">';
+  h+='<div class="fld"><label>Ne tür değer?</label><select class="sel" onchange="setTip(this.value)">'+tipOps+'</select></div>';
+  if(a.tip==='liste') h+='<div class="fld"><label>Sözlük (| ile)</label><input class="inp mono" value="'+escHtml((a.liste||[]).join('|'))+'" onchange="setListe(this.value)"></div>';
+  h+='<div class="fld"><label>Neye çapalı?</label><select class="sel" onchange="setAnchor(this.value)">'+ancOps+'</select></div>';
+  if(a.anchor.mod==='etiket') h+='<div class="fld"><label>Etiket</label><input class="inp mono" value="'+escHtml(a.anchor.etiket||'')+'" onchange="setAnc(\'etiket\',this.value)"></div>';
+  if(a.anchor.mod==='onek') h+='<div class="fld"><label>Önek</label><input class="inp mono" value="'+escHtml(a.anchor.onek||'')+'" onchange="setAnc(\'onek\',this.value)"></div>';
+  if(a.donusum){ h+='<div class="fld"><label>Bizim formata çevir?</label><select class="sel" onchange="setDonusum(this.value)"><option value="yok"'+(a.donusum.tip==='yok'?' selected':'')+'>Çevirme</option><option value="onek"'+(a.donusum.tip==='onek'?' selected':'')+'>Başına önek ekle</option></select></div>';
+    if(a.donusum.tip==='onek') h+='<div class="fld"><label>Önek (örn. E120-)</label><input class="inp mono" value="'+escHtml(a.donusum.prefix||'')+'" onchange="setDonusumPrefix(this.value)" placeholder="E120-"></div>'; }
+  h+='<div class="fld" style="margin:0;"><label>Kural (regex) — düzenlenebilir</label><textarea class="regex-out" id="regexOut" onchange="setRegex(this.value)" oninput="livePreview()">'+escHtml(a.regex||'')+'</textarea></div>';
+  h+='</div></details>';
+  h+='<div class="nav"><button class="btn" onclick="goAdim('+(adim-1)+')" '+(adim===0?'disabled':'')+'>‹</button><span class="sp"></span>'+(adim<ALANLAR.length-1?'<button class="btn pri" onclick="goAdim('+(adim+1)+')">Sonraki ›</button>':'<button class="btn gr" onclick="tamamlaAc()">Tamamla</button>')+'</div>';
+  box.innerHTML=h; livePreview();
+}
+function renderTablo(a,box){
+  let h='<div class="qtitle">Soru '+(adim+1)+'/'+ALANLAR.length+' — malzeme_tablosu</div>';
+  h+='<p class="sub" style="margin:0 0 12px;">'+escHtml(a.ipucu)+'</p>';
+  h+='<div class="q"><div class="q-lbl"><span class="q-num">1</span> Tablo bölgesini işaretle</div>'
+    +'<button class="mark-btn '+(a.bbox?'dolu':(markMode?'aktif':''))+'" onclick="toggleMark()">'
+    +(a.bbox?('✓ Tablo bölgesi işaretli ('+a.page+'. sayfa) — yeniden çiz'):(markMode?'✏️ Tabloyu kutuyla çevrele…':'📍 İşaretle → tabloyu çevrele'))+'</button></div>';
+  h+='<div class="q"><div class="q-lbl"><span class="q-num">2</span> Satır desenleri</div><div class="prev idle">7 satır-tipi tek tek çizilmez. <b style="font-family:inherit;">Toplu AI</b> bu bölgeden çıkarır (Tamamla\'da, onayla). Excel varsa zaten o öncelikli; bu Excel\'siz PDF için güvenlik ağı.</div></div>';
+  h+='<div class="nav"><button class="btn" onclick="goAdim('+(adim-1)+')">‹</button><span class="sp"></span><button class="btn gr" onclick="tamamlaAc()">Tamamla</button></div>';
+  box.innerHTML=h;
+}
+function setTip(v){ const a=ALANLAR[adim]; a.tip=v; a.flag=(v==='serbest'?'im':'i'); reSynth(); renderDetay(); }
+function setListe(v){ ALANLAR[adim].liste=v.split('|').map(s=>s.trim()).filter(Boolean); reSynth(); }
+function setAnchor(v){ ALANLAR[adim].anchor.mod=v; reSynth(); renderDetay(); }
+function setAnc(k,v){ ALANLAR[adim].anchor[k]=v; reSynth(); }
+function setDonusum(v){ ALANLAR[adim].donusum.tip=v; renderDetay(); livePreview(); }
+function setDonusumPrefix(v){ ALANLAR[adim].donusum.prefix=v; livePreview(); }
+function setRegex(v){ ALANLAR[adim].regex=v; renderDots(); }
+function reSynth(){ const a=ALANLAR[adim]; a.regex=synth(a); const el=document.getElementById('regexOut'); if(el)el.value=a.regex; renderDots(); livePreview(); }
+function livePreview(){
+  const box=document.getElementById('prevBox'); if(!box)return; const a=ALANLAR[adim]; if(a.tip==='tablo')return;
+  if(!a.regex){ box.className='prev idle'; box.textContent='Önce işaretle.'; return; }
+  if(!CANON_ALL){ box.className='prev idle'; box.textContent='PDF aç → metin çıkar.'; return; }
+  const pp=postProcessOf(a); const s=_alanCikar(CANON_ALL,{regex:a.regex,grup:1,tip:a.l2tip,flag:a.flag,post_processing:pp}); a.deger=s;
+  if(s!==null&&s!==undefined&&s!==''){ box.className='prev ok'; box.innerHTML='✓ → <b>'+escHtml(String(s))+'</b>'+(pp?' <span style="color:var(--txd)">(dönüşüm)</span>':'')+' <span style="color:var(--txd)">l2.alanCikar</span>'; }
+  else { box.className='prev no'; box.innerHTML='✗ Eşleşme yok — regex/işaretlemeyi düzelt'; }
+  renderDots();
+}
+
+/* ── kutu seçim ── */
+function toggleMark(){ markMode=!markMode; setDraw(markMode); renderDetay(); if(markMode)toast('PDF\'te bir kutu çiz'); }
+function setDraw(on){ const ml=document.getElementById('markLayer'); if(ml)ml.classList.toggle('drawing',!!on); }
+(function(){ const ml=document.getElementById('markLayer'); let sx,sy,rub=null;
+  ml.addEventListener('mousedown',e=>{ if(!markMode)return; const r=ml.getBoundingClientRect(); sx=e.clientX-r.left; sy=e.clientY-r.top; rub=document.createElement('div'); rub.className='mk-rubber'; ml.appendChild(rub); e.stopPropagation(); });
+  ml.addEventListener('mousemove',e=>{ if(!markMode||!rub)return; const r=ml.getBoundingClientRect(); const x=e.clientX-r.left,y=e.clientY-r.top; rub.style.left=Math.min(sx,x)+'px'; rub.style.top=Math.min(sy,y)+'px'; rub.style.width=Math.abs(x-sx)+'px'; rub.style.height=Math.abs(y-sy)+'px'; });
+  ml.addEventListener('mouseup',e=>{ if(!markMode||!rub)return; const r=ml.getBoundingClientRect(); const x=e.clientX-r.left,y=e.clientY-r.top; const bx={left:Math.min(sx,x),top:Math.min(sy,y),w:Math.abs(x-sx),h:Math.abs(y-sy)}; rub.remove(); rub=null; captureBox(bx); });
+})();
+function captureBox(bx){
+  if(bx.w<4||bx.h<4){ toast('Çok küçük'); return; }
+  const hits=spanRects.filter(s=>{ const cx=s.left+s.w/2,cy=s.top+s.h/2; return cx>=bx.left&&cx<=bx.left+bx.w&&cy>=bx.top&&cy<=bx.top+bx.h; });
+  if(!hits.length){ toast('Kutuda metin yok (raster bölge olabilir)'); return; }
+  let s=Infinity,e=-Infinity,L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;
+  hits.forEach(h=>{ s=Math.min(s,h.gstart); e=Math.max(e,h.gend); L=Math.min(L,h.left); T=Math.min(T,h.top); R=Math.max(R,h.left+h.w); B=Math.max(B,h.top+h.h); });
+  const temiz=CANON_ALL.slice(s,e).trim(); const a=ALANLAR[adim];
+  a.sample=temiz; a.bbox={left:L,top:T,w:R-L,h:B-T}; a.page=pageNum; markMode=false; setDraw(false);
+  if(a.tip==='tablo'){ drawMarks(); renderDetay(); renderDots(); toast('✓ Tablo bölgesi işaretlendi — desenleri sonda toplu AI çıkarır'); return; }
+  if(a.tip==='liste'&&a.liste&&!a.liste.some(w=>w.toLowerCase()===temiz.toLowerCase())) a.liste.unshift(temiz);
+  const c=cozumle(a.ad, temiz);
+  if(c){ a.regex=c.regex; a.flag=c.flag||'i'; a.tani='auto'; }
+  else { reSynth(); a.tani='fail'; }
+  drawMarks(); renderDetay(); renderDots();
+  toast(c?('✓ Tanındı: '+c.deger):'⚠ Otomatik tanıyamadım — "Elle ayarla"yı aç');
+}
+function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)return; ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); const a=ALANLAR[adim]; if(a.bbox&&a.page===pageNum){ const d=document.createElement('div'); d.className='mk-box'; d.style.left=a.bbox.left+'px'; d.style.top=a.bbox.top+'px'; d.style.width=a.bbox.w+'px'; d.style.height=a.bbox.h+'px'; ml.appendChild(d); } }
+
+/* ── PDF.js (v1.10.100) ── */
+document.getElementById('fileInput').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f)return; document.getElementById('hintTxt').textContent=f.name;
+  const fn=f.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+'); document.getElementById('fnRegex').value='^'+fn+'$';
+  const fr=new FileReader(); fr.onload=()=>loadPdf(new Uint8Array(fr.result)); fr.readAsArrayBuffer(f);
+});
+async function loadPdf(data){
+  const lib=_lib(); if(!lib){ toast('pdfjs yüklenemedi — repo kökünden servis et'); return; }
+  try{
+    const task=lib.getDocument(data); pdfDoc=await (task.promise||task); pageNum=1;
+    resetAlanlar(); document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value='';
+    { const ml=document.getElementById('markLayer'); if(ml) ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); }
+    document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
+    ['zOut','zIn','zFit','pPrev','pNext'].forEach(id=>document.getElementById(id).disabled=false);
+    try{ const m=await pdfDoc.getMetadata(); const p=(m.info&&(m.info.Producer||m.info.Creator))||''; if(p) document.getElementById('prodKey').value=String(p).split(/[\s,;]/)[0]; }catch(e){}
+    await extractAll(); runDiag(); renderDots(); renderDetay(); await renderPage(); fitWidth();
+    toast('✓ '+pdfDoc.numPages+' sayfa — temiz metin (pdfjs '+((lib.version)||'1.10')+')');
+  }catch(err){ toast('PDF açılamadı: '+err.message); }
+}
+async function extractAll(){
+  RAW_ALL='\n'; pageItems={};
+  for(let p=1;p<=pdfDoc.numPages;p++){
+    const page=await pdfDoc.getPage(p); const tc=await page.getTextContent(); const items=tc.items||[];
+    const lines={}; items.forEach(it=>{ if(!it.transform)return; const y=Math.round(it.transform[5]); (lines[y]=lines[y]||[]).push(it); });
+    const ys=Object.keys(lines).map(Number).sort((a,b)=>b-a); const arr=[];
+    ys.forEach(y=>{ const row=lines[y].sort((a,b)=>a.transform[4]-b.transform[4]);
+      row.forEach((it,k)=>{ const gstart=RAW_ALL.length; RAW_ALL+=it.str; const gend=RAW_ALL.length; arr.push({str:it.str,tx:it.transform,w:it.width||0,gstart,gend}); if(k<row.length-1)RAW_ALL+=' '; });
+      RAW_ALL+='\n';
+    });
+    pageItems[p]=arr;
+  }
+  CANON_ALL=metinNormalle(RAW_ALL).metin;
+}
+function runDiag(){ const d=metinNormalle(RAW_ALL); const pill=document.getElementById('gpill'); const es=d.eslenmeyen||[];
+  if(d.durum==='temiz'){ pill.className='gpill ok'; pill.textContent='glyph: temiz ✓'; pill.title='Metin zaten temiz (pdf-parse ile aynı)'; }
+  else if(d.durum==='glyph_onarildi'){ pill.className=es.length?'gpill warn':'gpill ok'; pill.textContent='glyph: onarıldı'+(es.length?(' ('+es.length+' eksik)'):' ✓'); pill.title=es.length?('Eşlenmeyen: '+es.join(' ')):'Band A+B onarıldı'; }
+  else { pill.className='gpill warn'; pill.textContent='glyph: '+d.durum; pill.title='Onarım uygulanmadı'; }
+}
+let _rendering=false, _pendingRender=false, _renderTask=null;
+async function renderPage(){
+  if(_rendering){ _pendingRender=true; return; }
+  _rendering=true;
+  try{
+    const page=await pdfDoc.getPage(pageNum); const vp=_vp(page,scale);
+    const canvas=document.getElementById('pdfCanvas'),ctx=canvas.getContext('2d');
+    const W=Math.floor(vp.width),H=Math.floor(vp.height); canvas.width=W; canvas.height=H; document.getElementById('holder').style.width=W+'px';
+    _renderTask=page.render({canvasContext:ctx,viewport:vp});
+    await _renderTask.promise; _renderTask=null;
+    const tl=document.getElementById('textLayer'); tl.innerHTML=''; tl.style.width=W+'px'; tl.style.height=H+'px';
+    const ml=document.getElementById('markLayer'); ml.style.width=W+'px'; ml.style.height=H+'px';
+    spanRects=[]; const U=_util();
+    (pageItems[pageNum]||[]).forEach(it=>{ const m=U.transform(vp.transform,it.tx); const fs=Math.hypot(m[2],m[3]); const left=m[4],top=m[5]-fs,w=(it.w||0)*scale||fs*0.5,h=fs;
+      const sp=document.createElement('span'); sp.textContent=it.str; sp.style.left=left+'px'; sp.style.top=top+'px'; sp.style.fontSize=fs+'px'; sp.style.fontFamily='sans-serif'; tl.appendChild(sp);
+      spanRects.push({gstart:it.gstart,gend:it.gend,left,top,w,h}); });
+    document.getElementById('zLbl').textContent=Math.round(scale*100)+'%'; document.getElementById('pLbl').textContent=pageNum+' / '+pdfDoc.numPages; drawMarks();
+  }catch(e){ if(!(e&&/cancel/i.test(e.message||''))) console.warn('[render]',e); }
+  _rendering=false;
+  if(_pendingRender){ _pendingRender=false; renderPage(); }
+}
+function zoomBtn(d){ setScale(scale*(d>0?1.2:1/1.2)); }
+function setScale(ns){ scale=Math.max(0.4,Math.min(5,ns)); renderPage(); }
+function fitWidth(){ if(!pdfDoc)return; pdfDoc.getPage(pageNum).then(pg=>{ const vp=_vp(pg,1); const w=document.getElementById('scrollArea').clientWidth-40; scale=Math.max(0.4,Math.min(5,w/vp.width)); renderPage(); }); }
+function gotoPage(d){ if(!pdfDoc)return; const n=pageNum+d; if(n<1||n>pdfDoc.numPages)return; pageNum=n; renderPage(); }
+
+/* imleç-zoom (pinch/ctrl+wheel) + drag-pan (mark dışı) */
+(function(){ const sa=document.getElementById('scrollArea');
+  sa.addEventListener('wheel',e=>{ if(!pdfDoc||!e.ctrlKey)return; e.preventDefault();
+    const r=sa.getBoundingClientRect(); const cxV=e.clientX-r.left, cyV=e.clientY-r.top; const cx=sa.scrollLeft+cxV, cy=sa.scrollTop+cyV;
+    const old=scale; const ns=Math.max(0.4,Math.min(5, scale*(e.deltaY<0?1.12:1/1.12))); if(ns===old)return; scale=ns;
+    renderPage().then(()=>{ const ratio=ns/old; sa.scrollLeft=cx*ratio-cxV; sa.scrollTop=cy*ratio-cyV; });
+  },{passive:false});
+  let pan=false,px,py,sl,st;
+  sa.addEventListener('mousedown',e=>{ if(markMode)return; if(e.target.closest('.markLayer'))return; pan=true; px=e.clientX; py=e.clientY; sl=sa.scrollLeft; st=sa.scrollTop; sa.classList.add('panning'); });
+  window.addEventListener('mousemove',e=>{ if(!pan)return; sa.scrollLeft=sl-(e.clientX-px); sa.scrollTop=st-(e.clientY-py); });
+  window.addEventListener('mouseup',()=>{ pan=false; sa.classList.remove('panning'); });
+})();
+
+/* ── tamamla / json ── */
+function setScope(s){ scope=s; document.getElementById('scOnly').classList.toggle('sel',s==='only'); document.getElementById('scAll').classList.toggle('sel',s==='all'); }
+function aiPekistir(){ toast('🤖 (Prototip) Toplu AI: akış bitince onayınla tüm alanları birden pekiştirir + sisteme dahil eder (MK-148.1).'); }
+/* egitim_kaynagi: migration A ile 'cizim_capa'. B seçtiysen → 'pdf_excel'. */
+const EGITIM_KAYNAGI='cizim_capa';
+function buildFingerprint(){
+  return { dosya_adi_regex:document.getElementById('fnRegex').value||null,
+    pdf_uretici_anahtar:document.getElementById('prodKey').value?[document.getElementById('prodKey').value]:[],
+    baslik_regex:document.getElementById('baslikRegex').value||null };
+}
+function buildParserKural(){
+  const alanlar={};
+  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
+  const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
+  const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:tabloVar?1:0,l3_fallback_yapilir:true}};
+  if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
+  return {pk,tabloVar};
+}
+function buildKural(){ const {pk}=buildParserKural(); return { ad:(document.getElementById('fmtAd').value||'(adsız)'), format_kodu:document.getElementById('fmtKod').value||null, requires_ai:false, egitim_kaynagi:EGITIM_KAYNAGI, fingerprint:buildFingerprint(), parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' }; }
+async function kaydet(){
+  if(scope==='only'){ toast('"Sadece bu PDF" henüz bağlı değil (değer düzeltme ayrı mekanizma) — şimdilik "Formatın tümü" ile kaydet.'); return; }
+  const ad=(document.getElementById('fmtAd').value||'').trim();
+  if(!ad){ toast('Önce formata bir ad ver'); document.getElementById('fmtAd').focus(); return; }
+  if(ALANLAR.filter(a=>a.tip!=='tablo'&&a.regex).length<2){ toast('En az birkaç alan işaretle'); return; }
+  if(typeof ARES==='undefined'||!ARES.supabase){ toast('ARES yüklenemedi — sayfayı uygulama içinden aç'); return; }
+  const supa=ARES.supabase(), tid=ARES.tenantId(); const {pk}=buildParserKural();
+  const row={ ad, format_kodu:(document.getElementById('fmtKod').value||'').trim()||null,
+    cad_program:(document.getElementById('prodKey').value||'').trim()||null,
+    fingerprint:buildFingerprint(), parser_kural:pk, prompt_template:null,
+    egitim_kaynagi:EGITIM_KAYNAGI, requires_ai:false, requires_ocr:false, tenant_id:tid, aktif:true };
+  const btn=document.getElementById('btnKaydet'); btn.disabled=true; btn.textContent='Kaydediliyor…';
+  try{
+    const r=await supa.from('izometri_format_tanimlari').insert(row).select('id').single();
+    if(r.error){ document.getElementById('kaydetSonuc').className='prev no'; document.getElementById('kaydetSonuc').textContent='✗ '+r.error.message; btn.disabled=false; btn.textContent='Kaydet'; return; }
+    document.getElementById('kaydetSonuc').className='prev ok';
+    document.getElementById('kaydetSonuc').innerHTML='✓ Kaydedildi · id <b>'+r.data.id.slice(0,8)+'</b> · aynı formatın sonraki PDF\'leri L2\'den okunacak ($0)';
+    btn.textContent='✓ Kaydedildi'; toast('✓ Format kaydedildi: '+ad);
+  }catch(e){ document.getElementById('kaydetSonuc').className='prev no'; document.getElementById('kaydetSonuc').textContent='✗ '+e.message; btn.disabled=false; btn.textContent='Kaydet'; }
+}
+async function aresInit(){
+  try{
+    var bekle=0;
+    while(bekle<80){
+      if(typeof ARES==='undefined'){ await new Promise(function(r){setTimeout(r,100);}); bekle++; continue; }
+      var supa=ARES.supabase();
+      if(supa){
+        var ses=await supa.auth.getSession();
+        if(ses.data && ses.data.session){
+          await ARES.oturumKontrol();
+          if(!await ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin','operator'])) return;
+          break;
+        }
+        if(bekle>20){ location.href='giris.html'; return; }
+      }
+      await new Promise(function(r){setTimeout(r,100);}); bekle++;
+    }
+  }catch(e){ console.error('[ARES auth]',e); }
+  // Feature flag (MK-127.2): format_tanit
+  try{
+    var tid=ARES.tenantId();
+    if(!tid){ location.href='giris.html'; return; }
+    var r=await ARES.supabase().from('tenant_features').select('aktif').eq('tenant_id',tid).eq('feature_kod','format_tanit').single();
+    if(!r.data || r.data.aktif!==true){ alert('Bu özellik (format_tanit) tenant için aktif değil. Yöneticinizden aktivasyon talep edin.'); location.href='devreler.html'; return; }
+  }catch(e){ console.error('[flag check]',e); alert('Özellik bayrağı kontrol edilemedi: '+e.message); location.href='devreler.html'; return; }
+}
+function buildKuralEski(){
+  const alanlar={};
+  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
+  const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
+  const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:tabloVar?1:0,l3_fallback_yapilir:true}};
+  if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
+  return { format_kodu:document.getElementById('fmtKod').value||'(adsız)', fingerprint:{dosya_adi_regex:document.getElementById('fnRegex').value||null,pdf_uretici_anahtar:document.getElementById('prodKey').value?[document.getElementById('prodKey').value]:[],baslik_regex:document.getElementById('baslikRegex').value||null}, parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' };
+}
+function tamamlaAc(){ document.getElementById('jsonOut').textContent=JSON.stringify(buildKural(),null,2); document.getElementById('tamamlaOverlay').classList.remove('hide'); }
+function tamamlaKapat(){ document.getElementById('tamamlaOverlay').classList.add('hide'); }
+let _tt; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600); }
+renderDots(); renderDetay(); aresInit();
+</script>
+</body>
+</html>
