@@ -1,37 +1,47 @@
-# CLAUDE-SON-OTURUM.md — Oturum 152 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 153 özeti
 
 ## Tek cümle
-İçerik-öncelikli fingerprint gemiye bindi (fn kimlikten hızlandırıcı/tie-breaker'a indi, tablo_baslik 4. sinyal,
-içerik gate + içerik-dedup, mekanik kanıt 5/5), AI-oku'nun 150 kalıntısı kip-dönüşü ve kural-ezme bug'ları
-düzeltildi, tablo motorunun İLK kural kaydı canlıya indi (cadmatic_spool_nps_v1, satir_tipleri=2); canlı turda
-3-3 kardeş-format beraberliği ve schedule-körü yanlış-et bug'ı (3.68≠2.77) saha kanıtıyla belgelendi — final
-kanıt (taze Y100 → et 2.77) cache engeli yüzünden 153'e devredildi.
+Wizard yol haritası (5 faz, işaretlenebilir) yazıldı; drenaj çok-tur koşuya alındı (MK-153.1) ve 269 işlik
+tahliye canlıda tamamlandı (L2 %83, $1.15); MK-117 kökü bulunup kapatıldı (11 yetim yukleyen_id);
+a093eaaa'daki çöp cap/et regex'i temizlendi ve MK-111.2 bindirme koruması sahada kanıtlandı; Y200 turu
+fn tie-breaker + kardeş-format ayrımını canlıda doğruladı — schedule et kanıtı Y200 satır öğretimine kaldı.
 
 ## Kilitli kararlar
-1. **fn rolü netleşti (MK-152.1):** kimlik İÇERİK, fn = hızlandırıcı + kardeş-format tie-breaker'ı. 3-3
-   beraberlik teorik değil — taze S03/S04 turunda e1fb879d kazandı, fn `^Y\d+-\d+-\d+\.S\d+` ile çözüldü.
-2. **Düzeltme-kipi tablo patch'i kabul_kriterleri'ne dokunmaz:** aynı format birden çok notasyon ailesine
-   hizmet edebilir (M=ODxet, Y=NPS+Sch); min_malzeme_satir yükseltmek öğretilmemiş aileyi L3'e geriletirdi.
-3. **Erteleme istisnası (Cihat onayı, plan A):** tek kural kaydı yapıldı — zinciri uyandırmak + canlı
-   doğrulama borcu için. Seferberlik hâlâ ertelemede (Faz 2 tetikler bağlanınca).
-4. **MK-117 ayrı iş değil:** iki-kuyruk teşhisi yukleyen_id borcunu Faz 2 tetik paketinin içine yerleştirdi.
+1. **Tetik mimarisi = client-loop, cron YOK:** Claude'un cron→drenaj zinciri önerisi iki kez revize edilip
+   geri çekildi (508 saha kanıtı + MK-113/A blanket + 60s bütçe çatışması). Kalıcı tetik yüzü W-2.7
+   İşlenenler sekmesi; bugünlük global drenaj konsoldan koşuldu (modül zaten destekliyor, kod değişmedi).
+2. **Önce tahliye, sonra format seferberliği (Cihat):** "Burayı bitirirsek başka kullanıcılar bir taraftan
+   format tanıtabilecek." B seçeneği (önce Y200 öğret) reddedildi; tahliye A yolu seçildi ve doğru çıktı.
+3. **Yol haritası tek doküman:** Cihat "eski usul tek tek işaretlemek" istedi → docs/WIZARD-YOL-HARITASI.md
+   oturum kapanışlarında güncellenecek (BRIEFING gibi tek-aktif, ama kalıcı/işaretli).
 
-## Süreç dersleri (152)
-- **Kendi kuralını çiğneme bedeli:** iki kez şema/anahtar tahmini yaptım (maliyet/dosya_adi kolonları;
-  `?` operatörü null tuzağı) — ikisi de MK-85.3'ün kapsamı, ikisi de sorgu çıktısıyla yakalandı. JSONB
-  doluluk denetimi artık `->>` ile (MK-152.2).
-- **Test kırmızısı = testin işi:** test-fingerprint-icerik ilk koşuda 2 kırmızı verdi; kök neden testin
-  uydurduğu ipucu alan adıydı (producer/creator). Gerçek koddan okumadan yazılan fixture yanıltır.
-- **"Yapıldı sanılan" kontrolü:** MK-49.B bileşenini gömülü sandım, kullanıcı "öyle bir sekme yok" dedi;
-  kanıt zaten elimdeydi (grep'te batch endpoint'lerini çağıran HTML yok). Plan ↔ gerçek ayrımı için grep şart.
-- **Excel export = bedava saha kanıtı:** batch çıktısındaki 3.91/3.68 et değerleri Sch40-körü fallback'i iki
-  ayrı turda belgeledi; Excel'in 2.77'si ground-truth görevi gördü ("Excel'i sömür" felsefesi kendini doğruladı).
+## Süreç dersleri (153)
+- **Kendi önerini de MK-127.1'den geçir:** cron zinciri önerim hem MK-112.1 hem MK-113/A ile çelişiyordu;
+  read-before-write (kuyruk-isle başlığı + drenaj modül başlığı + 508 hata kayıtları) ikisini de yakaladı.
+  Tasarım önerisi vermeden ilgili modülün BAŞLIK yorumlarını okumak en ucuz sigorta.
+- **MK-85.3 üç kez ders verdi:** ai_api_log.dosya_adi yok (istek_kisaltma), spooller'da dn/schedule/
+  et_kaynagi yok (dis_cap_mm/et_kalinligi_mm), durum CHECK'i tahmin edilmedi. Şema sorgusu önce.
+- **MK-153.2 (yeni tuzak):** Supabase SQL editörü her çalıştırmayı ayrı oturumda koşar; BEGIN bir
+  çalıştırmada COMMIT diğerinde = sessiz ROLLBACK. İlk onarım böyle kaybedildi, canlı turda 2358
+  çelişkileri geri gelince yakalandı. Veri onarımı tek-statement.
+- **"Erken sevinme" düzeltmesi:** 19:01 L2 logunu drenaj kanıtı sandım; kuyruk hâlâ bekliyordu —
+  log, Cihat'ın format_tanit AI-oku çağrısıydı. Kanıt = kuyruk durumu + log + parse_sonuc ÜÇLÜSÜ birlikte.
+- **Hata mesajı arkeolojisi işe yarıyor:** 30 eski 'hata' kaydının dağılımı (18×508 + 11×kullanici_id)
+  hem tasarım kararını (508→cron iptali) hem MK-117'nin gerçek boyutunu (11 dosya, tek aile) verdi.
 
-## Dosyalar (152)
-format_tanit.html (785→~800: fingerprint UI+gate+dedup, köprü, AI-oku fix) · test-fingerprint-icerik.mjs (YENİ).
-DB (veri UPDATE): a093eaaa fingerprint{baslik, tablo_baslik, fn-tiebreaker} + format_kodu + parser_kural.malzeme_tablosu{satir_tipleri:2}.
+## Canlı kanıt envanteri (153)
+- MK-153.1 çok-tur: konsolda tur1(200)→tur2(57), 257/257; ikinci koşu 12/12, hata 0.
+- L2 ekonomisi: 206 L2 ($0) / 41 L3 ($1.1473) → %83. 52'deki "%70+ pilot eşiği" İLK KEZ sahada aşıldı.
+- Kardeş-format ayrımı: Y200 spool→a093eaaa, Y200 montaj→39a2c81b, ikisi L2 $0.
+- MK-111.2: PDF et/cap=2358 (çöp) → bindir ezmedi, kabuk 4.5/139.7 seçildi, flag basıldı, manuel_onay.
+- Onarım sonrası: 2358 flag'leri yok, bindirme_flag=false, ağırlık %1.9 tolerans, K2 excel_fazla_fab dolu.
+
+## Dosyalar (153)
+ares-izometri-drenaj.js (193→225: çok-tur + _birIsIsle ayrıştı; çağıran API'ler değişmedi) ·
+docs/WIZARD-YOL-HARITASI.md (YENİ) · handoff dosyaları + BRIEFING.md tazelendi (147'de kalmıştı — MK-56.2 deliği).
+DB: 4 veri onarımı (çöp regex #-, cache sha düşürme, S01 reset, 11 yetim yukleyen_id) — migration YOK.
 
 ## Kapanış durumu
-0bac952 HEAD, CI yeşil, 12/12 ✓. a093eaaa routing'de 4 sinyalli (Y-spool dosyalarında +5 ile kazanır), tablo
-kayıtlı ama **schedule zinciri final kanıtı bekliyor** (taze dosya yok — cache hit zinciri test ettirmiyor).
-dosya_isleme_kuyrugu'da 100+ tetiksiz bekleyen duruyor (bilinçli — tahliye Faz 2/153).
+HEAD `b919512` + kapanış doc commit'i. CI yeşil, 12/12 ✓. Kuyruk: bekliyor=3 (IFS xlsm, excel hattı),
+hata=1 (Donatım formu — beklenen). manuel_onay=277, oneri_hazir=1011 — onay UI akıbeti 154'te tartışılacak.
+Hayalet devre "hgtrghh" bilerek duruyor (W-2.13 test verisi).
