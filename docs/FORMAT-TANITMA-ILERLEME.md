@@ -133,3 +133,39 @@ zinciri canlı doğrulanacak (et_kaynagi 'SCH 10S').
 
 ### 152 ana iş
 **yukleyen_id null (MK-117)** — kuyruk-isle-izometri.js:305 gate'i; dosyalar parse'a hiç girmiyor.
+
+---
+
+## OTURUM 152 — TAMAMLANAN (içerik-fingerprint gemide + İLK kural kaydı + saha bulguları)
+
+### İçerik-öncelikli fingerprint ✅ GEMİDE — `0246eb0`
+fn kimlikten çıktı (otomatik basılmaz, placeholder öneri, kip dönüşünde boş — a093eaaa kanalı kökten kapalı) ·
+tablo_baslik_regex 4. sinyal (UI + sentezden otomatik) · içerik gate (baslik zorunlu + ≥2 sinyal + PDF'te
+tutma) · dedup içerik-öncelikli (baslik birincil, fn fallback, uyum testi PDF METNİNE). Mekanik kanıt:
+test-fingerprint-icerik.mjs 5/5 — fingerprintSkor SALT-OKUNUR ayıklanır (MK-49.1 ✓); ders: ipucu alanları
+producer/creator.
+
+### AI-oku düzeltme-kipi onarımı ✅ — `60d2897` + `0bac952`
+150 kalıntısı koşulsuz kip dönüşü kaldırıldı (düzelt kipinde formata bağlı kalınır) · çalışan kayıtlı kural
+AI doğrulamasında EZİLMEZ (MK-111.2) · düzeltme kipine TABLO KÖPRÜSÜ: taze sentez patch'e girer,
+kabul_kriterleri DOKUNULMAZ (min_satir=0 → kardeş aile L3'e gerilemez).
+
+### İLK KURAL KAYDI ✅ (erteleme istisnası, Cihat onayı)
+a093eaaa "tersan deneme" → format_kodu=cadmatic_spool_nps_v1, satir_tipleri=2, fingerprint 4 sinyal
+(baslik "Cut & Bending Info" + tablo "No Adet Açıklama" + Cadmatic + fn tie-breaker ^Y\d+-\d+-\d+\.S\d+).
+Tümü SQL veri UPDATE (migration yok), her biri konsol/SELECT kanıtlı.
+
+### Saha bulguları (153 girdisi)
+- **3-3 kardeş-format beraberliği CANLI:** taze S03/S04 turu e1fb879d'ye düştü (içerik sinyalleri özdeş) →
+  fn tie-breaker rolü saha-gerekçeli (MK-152.1).
+- **Sch40-körü yanlış-et belgelendi:** batch et=3.68/3.91, doğrusu 2.77 (PDF SCH10S + Excel) — schedule
+  zincirinin düzelteceği bug iki ayrı exportta. **Final kanıt taze dosya bekliyor** (cache sha256 engeli,
+  MK-152.4; elde girilmemiş Y100 kalmadı).
+- **İKİ KUYRUK:** dosya_isleme_kuyrugu TETİKSİZ (100+ bekleyen, deneme=0, 22 May'dan beri); MK-49.B bileşeni
+  devre detay'da YOK (plan, yapılmış sanılmıştı). MK-117 Faz 2 tetik paketiyle birleşti (MK-152.3).
+- JSONB denetim tuzağı: `?` anahtar-varlığı ≠ doluluk; `->>'k' IS NOT NULL` (MK-152.2) — a093eaaa baslik
+  null'u dolu sanılmış, routing fiilen körmüş; onarıldı.
+
+### 153 ana iş
+Taze Y100 final kanıtı (et 2.77 + format a093eaaa; dosya yoksa cache-bypass A/B/C) → Faz 2 tetikler
+(dosya_isleme_kuyrugu çağıranı + MK-117 + tahliye + wizard "Formatı düzelt" butonu) → Faz 3 propagasyon.
