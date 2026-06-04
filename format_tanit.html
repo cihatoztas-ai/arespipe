@@ -370,15 +370,19 @@ function _aiSentezle(spool){
     const c=cozumle(a.ad,CANON_ALL); const cd=c?c.deger:null;
     a._aiDeger=aiVal;
     if(aiVal==null && cd!=null){ a._okudu=null; sizinti++; return; }           // AI yok, cozumle dolu → mühürleme (alan-dışı sızıntı)
+    // 152: düzeltme kipinde ÇALIŞAN kayıtlı kural EZİLMEZ (MK-111.2) — AI değeriyle yalnız DOĞRULANIR
+    if(_mode==='duzelt' && a.regex && a._okudu===true && aiVal!=null && _esitDeger(a.deger,aiVal)){ a.tani='auto'; yesil++; return; }
     if(c && aiVal!=null && _esitDeger(cd,aiVal)){                                // YEŞİL: kural çıktısı == AI değeri
       a.sample=String(cd); a.regex=c.regex; a.flag=c.flag||'i'; a.deger=cd; a._dirty=true; a._okudu=true; a.tani='auto'; yesil++;
     } else if(aiVal!=null){ a._okudu=false; a.tani='fail'; kirmizi++; }          // KIRMIZI: AI dolu ama kural yakalayamadı → elle işaretle (B1)
     else { a._okudu=null; }                                                      // ikisi de boş
   });
-  _mode='yeni'; _formatId=null; _mevcutKural=null; _fpYenidenUret();
+  // 152: kip dönüşü YALNIZ yeni kipte — otoTespit eşleşmesiyle düzeltme kipindeysek formata bağlı kalırız
+  // (150 tasarım kalıntısı: AI-oku hep yeni kipe atıyordu → "tersan deneme" güncellenemiyordu, gate yanlış tetikleniyordu)
+  if(_mode!=='duzelt'){ _mode='yeni'; _formatId=null; _mevcutKural=null; _fpYenidenUret(); }
   const tz=_tabloSentezle();                                                     // Increment 2: AI satırlarından satir_tipleri sentezi + türetilmiş çipler
   const k=ALANLAR.findIndex(a=>a.tip!=='tablo' && a._okudu===false); if(k>=0)adim=k;
-  _duzeltUiGuncelle('');
+  if(_mode!=='duzelt')_duzeltUiGuncelle('');
   renderDots(); renderDetay();
   const mt=ALANLAR.find(a=>a.tip==='tablo'); const ms=mt?(mt._aiSatir||0):0;
   let tMsg='';
