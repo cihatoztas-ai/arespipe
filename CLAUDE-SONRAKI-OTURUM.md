@@ -1,39 +1,30 @@
-# CLAUDE-SONRAKI-OTURUM.md — Oturum 151 açılışı
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 152 açılışı
 
 ## Açılış ritüeli
-1. `git pull` + `git status` temiz mi · 2. `ls api/*.js | wc -l` = 12 (MK-129.3)
-3. **docs/FORMAT-TANITMA-TABLO-TASARIM.md OKU — 151'in tek kaynağı, tasarım tartışması TEKRARLANMAZ**
-4. Bu dosya + son-durum.md oku · 5. CI yeşil mi (`73f3f38` sonrası — 150 kodları: AI-oku + schedule zinciri)
-6. Ajanda onayı
+1. `git pull` + `git status` temiz · 2. `ls api/*.js | wc -l` = 12 (MK-129.3)
+3. CI: `f38749a` yeşil mi (ci-son-rapor otomatik commit'i kanıt sayılır)
+4. Bu dosya + son-durum.md + CLAUDE-SON-OTURUM.md oku · 5. Ajanda onayı
 
-## Durum (150 kapanışında)
-AI-oku (Increment 1) canlıda: 🟣 buton → izometri-oku L3 → değer-çapalı kural sentezi → yeşil/kırmızı + "AI gördü"
-ipucu. Schedule zinciri gemide ama UYUYOR (schedule çıkaran kural yok — Increment 2 ile canlanır). MK-49.1'e tek
-kontrollü istisna işlendi (kayıt: son-durum.md). 12/12, izometri-oku başkaca değişmedi, CI bekleniyor.
+## ANA İŞ: yukleyen_id NULL BORCU (MK-117)
+Belirti: kullanıcısız yüklenen dosyalar `api/kuyruk-isle-izometri.js:305` "yukleyen_id boş" ile düşer →
+parse/eşleşme/izometri/NOT/alıştırma zinciri hiç başlamaz.
+İki aday çözüm (A/B/C ile sunulacak): (a) yükleme noktalarında kullanıcı atamasını garanti et (oturum id'si
+zaten ARES.oturumAl()'da), (b) sistem-kaynaklı yüklemeler için gate'i kontrollü gevşet (veri sahipliği/RLS
+etkisi tartılmalı). Mevcut null kayıtlar için backfill kararı ayrıca verilecek.
 
-## ANA İŞ: INCREMENT 2 — TABLO MOTORU
-Spec satır satır hazır: **docs/FORMAT-TANITMA-TABLO-TASARIM.md** (§4). Özet hatırlatma (detay oraya):
-- format_tanit `_tabloSentezle(aiSatirlar)`: AI satır değerlerinden satir_tipleri sentezi (değer-çapalı satır bulma →
-  tip sınıflandırma → pattern+grup_haritasi; Boyut HAM yakalanır) + client doğrulama (desen→olcuParse→AI kıyas) +
-  "türetilmiş ✓" çipleri + kural yazımı (alanlar.cap_mm/et_mm/dn YAZILMAZ; _toplu_ai_bekliyor kalkar).
-- lib/l2-parser: satır boyut → ARES_OLCU.olcuParse (Node; ares-asme import SIRASI önce) + dominant Boru satırından
-  spool dn/cap/et/schedule türetimi → asmeFallback zinciri canlanır.
-- Mekanik test ZORUNLU (commit öncesi): M230 + Y100-817-013 + Y100-817-018 (redüksiyon) — beklenenler tasarım §4.2.3.
+## Read-before-write (koda BAŞLAMADAN)
+1. `api/kuyruk-isle-izometri.js` 280-340 (gate'in tam bağlamı + hata yolu)
+2. Dosya kayıt noktaları: hangi akışlar yukleyen_id'siz INSERT atıyor (wizard? batch? sistem?)
+3. İlgili tablo şeması: `SELECT column_name,is_nullable FROM information_schema.columns WHERE table_name='dosya_isleme_kuyrugu'` + dosya tablosu (adını Cihat'tan/koddan doğrula — MK-85.3)
+4. Kaç kayıt etkileniyor: `SELECT count(*) ... WHERE yukleyen_id IS NULL` (tablo adı doğrulandıktan sonra)
 
-## Koda BAŞLAMADAN (read-before-write, tasarım §7)
-1. format_tanit.html güncel 701 satırlık hali (tamamlaAc/buildParserKural/kaydet üç yolu — tablo yazımı bağlanacak).
-2. **Cihat'tan 1 SELECT:** tersan kuralının `parser_kural->'malzeme_tablosu'` dökümü (satir_tipleri dolu mu? Hiç görülmedi).
-3. ares-asme Node require davranışı (globalThis'e ARES_BORU) — l2-parser import sırası kanıtı.
-4. CI yeşil + canlıda M230 bir kez daha okutulup regresyon-sıfır teyidi (izometri-oku istisnası sonrası).
-
-## Increment 2 SONRASI kuyruk (tasarım §6 — sıralı)
-Pekiştirme bağlama (taslak satır+prompt_template) → requires_ai dürüstlüğü → tetik butonu (uyarilar/wizard) →
-propagasyon (eslestirme-backfill) → bbox normalize · boruOlcuBul DB fallback schedule filtresi · ai_api_log pay ölçümü.
+## ERTELENEN paket (152'de DOKUNMA, sırası gelince)
+Format tanıtma bağlama: içerik-öncelikli fingerprint (dosya-adı sinyal, kimlik değil — MK-151.5 ruhu) →
+batch+wizard tetik butonları (?format_id=&alan= hazır) → propagasyon (eslestirme-backfill) → teaching zorla-L3
+(izometri-oku DEĞİŞMEDEN). + Windows render bulgusu ayrı oturum.
 
 ## Hatırlatmalar
-- MK-49.1: izometri-oku DOKUNMA (150 istisnası kapandı, yenisi A/B/C kapısından geçer). MK-129.3: 12/12.
-- MK-111.2: patch-not-rebuild; tablo post-process mevcut dolu alanı EZMEZ. MK-134.1: kod commit `[skip ci]`SİZ.
-- MK-51.1: arespipe_kopyala + MD5. zsh: komutlar yorumsuz. Canlı test: uygulama içinden, flag aktif.
-- İlk schedule'lı kural kaydında canlı kanıt: Y100 spool et'i 10S'ten dolmalı (et_kaynagi 'SCH 10S' etiketi).
+MK-49.1 izometri-oku DOKUNMA · MK-129.3 12/12 · MK-134.1 kod commit [skip ci]siz · MK-51.1 arespipe_kopyala+MD5
+· MK-85.3/98.2 şema önce, migration BEGIN/ROLLBACK · zsh komutlar yorumsuz · MK-151.4 kanıtlar gerçek veriyle.
 
-> 151 açılışında: ritüel → tasarım dokümanı → "tablo motoruna başlıyoruz, SELECT'i atar mısın?" — başka soru yok.
+> 152 açılışı: ritüel → "yukleyen_id'ye başlıyoruz, kuyruk-isle 280-340 + dosya INSERT noktalarını okuyorum" — başka soru yok.

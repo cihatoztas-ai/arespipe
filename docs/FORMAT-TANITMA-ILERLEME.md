@@ -96,3 +96,40 @@ kanıtlı, ayrı commit). İlk schedule'lı kural kaydında canlanır. Çevirme 
 "Teaching'in tek sorusu: malzeme tablosu nerede" — çap/et/dn soruları öldü, Boyut sütunundan türerler.
 **TAM SPEC: docs/FORMAT-TANITMA-TABLO-TASARIM.md** — _tabloSentezle + l2-parser olcuParse/dominant-Boru +
 3-PDF mekanik test + kenar vakaları + sonrası kuyruğu. 151'de tartışma tekrarlanmaz.
+
+---
+
+## OTURUM 151 — TAMAMLANAN (Increment 2: TABLO MOTORU gemide + bulaşma fix + ERTELEME kararı)
+
+### Tablo motoru ✅ GEMİDE — `593c51b`
+- **ares-tablo-sentez.js (YENİ, UMD, tek kaynak):** AI satır değerlerinden deterministik satir_tipleri —
+  değer-çapalı satır bulma → span-ikame desen sentezi → satır-bazlı doğrulama (runtime tetik sırası + desen +
+  olcuParse; kanıt = kural çıktısı == AI değeri). Aynı kod client (format_tanit) + Node (test) — MK-126.8.
+- **l2-parser:** ares-asme/ares-olcu yan-etki import (sıra: asme önce) + olcuZenginlestir (boyut ham →
+  olcuParse, dolu EZİLMEZ) + spoolOlcuTuret (dominant boru → cap/dn/schedule; et yalnız metin-kaynaklı
+  'tablo'; asme-türetilen et spool'a YAZILMAZ → asmeFallback zinciri dürüst kaynakla doldurur).
+- **format_tanit:** AI-oku sonrası otomatik sentez · 🧮 türetilmiş çipler (cap/et/dn kural YAZILMAZ) ·
+  sentez raporu UI + ↻ · buildParserKural gerçek satir_tipleri yazar, `_toplu_ai_bekliyor` KALKTI.
+- **3-PDF mekanik test YEŞİL:** Y100-817-012 (sondaki-sıfır 4.3820) · M230-306-SP20 (yapışık 60.3x4.53200
+  doğru kırpıldı; İç Bilezik DN50 → spool.dn NULL — **dn sızıntısı yapısal öldü**) · G400-817-015 (SA/A105,
+  ManşonDN40 tetik dersi). test-tablo-motoru.mjs repo'da (--dump + kıyas).
+
+### a093eaaa bulaşma vakası ✅ onarıldı + panzehir `f38749a`
+Oto-tespit eski formatın dosya desenini fingerprint inputuna yazıyor, kip dönüşü geri almıyordu → dedup
+"tersan test"i bulup Y100 verisiyle EZDİ. SQL onarımı (veri UPDATE, migration değil) + kod: _fpAuto (yeni kipe
+her dönüşte fingerprint açık PDF'ten) + dedup onayına hedef ad/desen + uyumsuzluk uyarısı. Konsol kanıtlı.
+
+### Bulgular (kuyruğa işlendi)
+- Teaching'de taze-L3 garantisi yok (router mevcut aileye L2 düşürür; ai_api_log kanıtı — tek gerçek L3
+  $0.0204, gerisi $0). Zorla-L3 tasarımı kuyrukta, izometri-oku DEĞİŞMEDEN.
+- Windows'ta render bozuk ama `glyph: onarıldı ✓` (kurallar çalışır) — pilot operatörleri Windows'ta, ayrı oturum.
+- Format adlandırma: ad=kullanıcı, format_kodu=sistematik; **sistem kodu (Y100/M230) format kimliği DEĞİL** →
+  fingerprint içerik-öncelikli olmalı (dosya-adı yalnız sinyal). Bağlama paketinin önkoşulu.
+
+### KARAR (Cihat): format TANITMA ERTELENDİ
+Yapısal kısım tamam ve kanıtlı; kural kaydı veri girişidir. Batch + wizard'a tetik bağlanınca (içerik-öncelikli
+fingerprint sonrası) çok kişiyle/örnekle yapılacak. Y100 kuralı bilinçli KAYDEDİLMEDİ — ilk kayıtta schedule
+zinciri canlı doğrulanacak (et_kaynagi 'SCH 10S').
+
+### 152 ana iş
+**yukleyen_id null (MK-117)** — kuyruk-isle-izometri.js:305 gate'i; dosyalar parse'a hiç girmiyor.
