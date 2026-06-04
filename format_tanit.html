@@ -311,7 +311,13 @@ function _otoBanner(ad,skor,top){
   const btn=document.getElementById('btnKaydet'); if(btn)btn.textContent='Güncelle';
 }
 function formatSecDegis(v){ if(v){ formatYukle(v); } else { _yeniKipeDon(); } }
-function _yeniKipeDon(){ _mode='yeni'; _formatId=null; _mevcutKural=null; _mevcutPrompt=''; resetAlanlar(); _alanlariKos(); document.getElementById('promptTmpl').value=''; _duzeltUiGuncelle(''); renderDots(); renderDetay(); toast('Yeni format tanıtma kipine dönüldü'); }
+const _fpAuto={fn:'',prod:''}; // açık PDF'ten türetilen kimlik (hidrasyon kalıntısına panzehir)
+function _fpYenidenUret(){
+  if(_fpAuto.fn) document.getElementById('fnRegex').value=_fpAuto.fn;
+  if(_fpAuto.prod) document.getElementById('prodKey').value=_fpAuto.prod;
+  document.getElementById('baslikRegex').value='';
+}
+function _yeniKipeDon(){ _mode='yeni'; _formatId=null; _mevcutKural=null; _mevcutPrompt=''; _fpYenidenUret(); resetAlanlar(); _alanlariKos(); document.getElementById('promptTmpl').value=''; _duzeltUiGuncelle(''); renderDots(); renderDetay(); toast('Yeni format tanıtma kipine dönüldü'); }
 
 /* ── AI-OKU (Increment 1) ─────────────────────────────────────────
    AI değer BULUR (izometri-oku L3, mevcut endpoint — MK-49.1/129.3),
@@ -364,7 +370,7 @@ function _aiSentezle(spool){
     } else if(aiVal!=null){ a._okudu=false; a.tani='fail'; kirmizi++; }          // KIRMIZI: AI dolu ama kural yakalayamadı → elle işaretle (B1)
     else { a._okudu=null; }                                                      // ikisi de boş
   });
-  _mode='yeni'; _formatId=null; _mevcutKural=null;
+  _mode='yeni'; _formatId=null; _mevcutKural=null; _fpYenidenUret();
   const tz=_tabloSentezle();                                                     // Increment 2: AI satırlarından satir_tipleri sentezi + türetilmiş çipler
   const k=ALANLAR.findIndex(a=>a.tip!=='tablo' && a._okudu===false); if(k>=0)adim=k;
   _duzeltUiGuncelle('');
@@ -535,6 +541,7 @@ function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)retu
 document.getElementById('fileInput').addEventListener('change',function(e){
   const f=e.target.files[0]; if(!f)return; document.getElementById('hintTxt').textContent=f.name;
   const fn=f.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+'); document.getElementById('fnRegex').value='^'+fn+'$';
+  _fpAuto.fn='^'+fn+'$'; _fpAuto.prod=''; // açık PDF'in öz kimliği — kip dönüşünde geri yüklenir (a093eaaa bulaşma dersi)
   const fr=new FileReader(); fr.onload=()=>loadPdf(new Uint8Array(fr.result)); fr.readAsArrayBuffer(f);
 });
 async function loadPdf(data){
@@ -547,7 +554,7 @@ async function loadPdf(data){
     { const ml=document.getElementById('markLayer'); if(ml) ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); }
     document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
     ['zOut','zIn','zFit','pPrev','pNext','btnAiOku'].forEach(id=>document.getElementById(id).disabled=false);
-    try{ const m=await pdfDoc.getMetadata(); const p=(m.info&&(m.info.Producer||m.info.Creator))||''; if(p) document.getElementById('prodKey').value=String(p).split(/[\s,;]/)[0]; }catch(e){}
+    try{ const m=await pdfDoc.getMetadata(); const p=(m.info&&(m.info.Producer||m.info.Creator))||''; if(p){ const pk0=String(p).split(/[\s,;]/)[0]; document.getElementById('prodKey').value=pk0; _fpAuto.prod=pk0; } }catch(e){}
     await extractAll(); runDiag();
     if(_mode==='duzelt'){ _alanlariKos(); const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0&&!_problemAlan)adim=k; }
     else { await otoTespit(); }
@@ -674,7 +681,16 @@ async function kaydet(){
       const q=await supa.from('izometri_format_tanimlari').select('id,ad,parser_kural,fingerprint').eq('tenant_id',tid).eq('egitim_kaynagi',EGITIM_KAYNAGI);
       if(!q.error&&q.data) mev=q.data.find(f=>f.fingerprint&&f.fingerprint.dosya_adi_regex===fp.dosya_adi_regex)||null;
     }
-    if(mev&&confirm('Bu dosya deseni için zaten bir format var: "'+(mev.ad||mev.id.slice(0,8))+'".\n\nYeni satır yerine onu güncelleyeyim mi? (İşaretlediğin alanlar üzerine yazılır, diğerleri korunur.)')){
+    let mevOnay=false;
+    if(mev){
+      const acikAd=(document.getElementById('fileInput').files[0]||{}).name||'';
+      let uyum=false; try{ uyum=new RegExp(mev.fingerprint.dosya_adi_regex).test(acikAd); }catch(e){}
+      let msg='Bu dosya deseniyle kayıtlı format: "'+(mev.ad||mev.id.slice(0,8))+'"\ndesen: '+mev.fingerprint.dosya_adi_regex+'\n';
+      if(!uyum) msg+='\n⚠️ DİKKAT: Açık PDF ('+acikAd+') bu desene UYMUYOR — FARKLI bir formatın üzerine yazıyor olabilirsin!\n';
+      msg+='\nYeni satır yerine onu güncelleyeyim mi? (İşaretlediğin alanlar üzerine yazılır, diğerleri korunur.)';
+      mevOnay=confirm(msg);
+    }
+    if(mev&&mevOnay){
       const base=mev.parser_kural||{}, merged=JSON.parse(JSON.stringify(base));
       merged.alanlar=Object.assign({},base.alanlar||{},pk.alanlar);
       if(pk.malzeme_tablosu) merged.malzeme_tablosu=pk.malzeme_tablosu;
