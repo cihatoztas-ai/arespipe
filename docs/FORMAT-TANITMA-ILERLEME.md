@@ -169,3 +169,36 @@ Tümü SQL veri UPDATE (migration yok), her biri konsol/SELECT kanıtlı.
 ### 153 ana iş
 Taze Y100 final kanıtı (et 2.77 + format a093eaaa; dosya yoksa cache-bypass A/B/C) → Faz 2 tetikler
 (dosya_isleme_kuyrugu çağıranı + MK-117 + tahliye + wizard "Formatı düzelt" butonu) → Faz 3 propagasyon.
+
+---
+
+## OTURUM 153 — TAMAMLANAN (tahliye + MK-117 kapanışı + çöp regex onarımı; satır öğretimi 154'e)
+
+### Tetik kararı + tahliye ✅ (spec Madde 4'ün gövdesi kapandı)
+- **Tetik = client-loop, cron YOK:** cron→drenaj zinciri önerisi 508 saha kanıtıyla (18× eski kayıt)
+  geri çekildi; MK-113/A blanket. ares-izometri-drenaj.js **çok-tur koşuya** alındı (`b919512`, MK-153.1):
+  liste bitince yeniden çekilir, görülen-set ile iş başına TEK deneme korunur.
+- **TAHLİYE:** 269 iş canlıda (konsol global drenaj, tur1→tur2 kanıtlı). **L2=206 / L3=41 → %83, $1.15.**
+  bekliyor 233→3 (IFS xlsm = excel hattı). 52'nin "%70+ pilot eşiği" ilk kez sahada aşıldı.
+- **MK-117 KAPANDI:** "kullanici_id zorunlu" kökü = devre_dokumanlari.yukleyen_id NULL, tek küme
+  (M110-722-21xx, 11 dosya). Veri onarımı → ikinci tur 12/12 hatasız. (MK-153.3)
+
+### a093eaaa çöp regex vakası ✅ onarıldı (kod kapısı W-3.9'a)
+- cap_mm/et_mm'de jenerik `\n(\d+)\n` (eski tanıtma kalıntısı) → format_tanit'te kırmızı tutarsızlık +
+  üretimde et/cap=2358 çöpü. `#-` ile düşürüldü; ilk deneme Supabase editör BEGIN/COMMIT ayrımıyla
+  ROLLBACK yedi (**MK-153.2: veri onarımı TEK çalıştırma**). Canlı kanıt: yeniden parse →
+  `celiski_et_cap_farkli` flag'leri yok, bindirme_flag=false. **MK-111.2 sahada kendini kanıtladı**
+  (çöp PDF değeri kabuğu EZEMEDİ, flag+manuel_onay'a düştü).
+- Kalıcı panzehir AÇIK → **W-3.9:** TURETILEN_ALANLAR'a kayıtlı regex koşulmaz/yazılmaz/çip türetilmiş.
+
+### Y200 kanıt turu (kısmi) — schedule et kanıtı 154'e
+- Y200-804-414.S01 → **a093eaaa + L2 + $0** (fn tie-breaker `^Y\d+-\d+-\d+\.S\d+` Y200'de canlı ✓);
+  S'siz dosya → 39a2c81b montaj (kardeş ayrımı canlı ✓).
+- **AÇIK:** satir_tipleri (Y100 316L sentezi) Y200'ün ST37/"Welded Steel Tube" satırlarını TUTMUYOR →
+  PDF malzeme listesi boş → et üretilmedi → schedule zinciri tetiklenmedi. Bug değil kapsama boşluğu.
+- **154:** format_tanit düzeltme kipi + tablo köprüsüyle Y200 satır öğretimi (cache sha düşürme
+  gerekebilir, MK-152.4) → et kanıtı kapanır.
+
+### Yol haritası
+İlerleme aynası artık **docs/WIZARD-YOL-HARITASI.md** (153'te doğdu): format tanıtma çift-taraflı
+tetikler = Faz 3 (W-3.1 wizard / W-3.2 izometri batch / W-3.3 L3 devre anahtarı / W-3.9 panzehir).

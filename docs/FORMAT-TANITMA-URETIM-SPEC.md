@@ -221,3 +221,18 @@ canlı doğrulanacak (et_kaynagi 'SCH 10S'). **152 ana iş: yukleyen_id null (MK
   bileşeni devre detay'da YOK (plan, yapılmış sanılmıştı). MK-117 bu paketin içinde (MK-152.3).
 - Madde 5 (propagasyon): ⏳ — önkoşulu (içerik kimliği + fn tie-breaker) artık hazır.
 - bbox normalize / kaydet modal UX / format_kodu otomatik öneri: ⏳ değişmedi.
+
+---
+
+## OTURUM 153 GÜNCELLEME — Madde 4 (tetik) gövdesi kapandı, kanıt yöntemi değişti
+
+- **Madde 4 (tetik):** dosya_isleme_kuyrugu artık fiilen sürülebiliyor — ares-izometri-drenaj.js çok-tur
+  (MK-153.1), tahliye 269 iş canlı (L2 %83, $1.15), MK-117 kapandı. Cron BİLİNÇLİ eklenmedi (508 kanıtı,
+  MK-113/A). Kalan UI parçası: wizard "Formatı düzelt" butonu + İşlenenler sekmesi (W-2.7/W-3.1, yol haritasında).
+- **Kanıt yöntemi:** "taze dosya" şartına alternatif kanıtlandı — ai_api_log.pdf_sha256 hedefli NULL'lama +
+  kuyruk reset = aynı dosyayla temiz tur (MK-152.4 uyumlu, izometri-oku DEĞİŞMEDEN).
+- **Yeni kapı bulgusu:** TURETILEN_ALANLAR'da kayıtlı eski/çöp regex varsa _alanlariKos koşturuyor (kırmızı
+  tutarsızlık) ve runtime çöp üretiyor (et/cap=2358 vakası, onarıldı). Kod panzehiri = W-3.9 (154 ana iş).
+- **satir_tipleri kapsama dersi:** tek PDF'ten sentez o ailenin TÜM kalite/tanım varyantlarını kapsamaz
+  (Y100 316L ↔ Y200 ST37). Düzeltme kipi + tablo köprüsü (152) tam bu iş için — 154'te ilk canlı kullanımı.
+- İzleme: docs/WIZARD-YOL-HARITASI.md (Faz 3 = bu spec'in tetik/yayılım maddelerinin ürün hali).
