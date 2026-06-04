@@ -12,10 +12,18 @@
 //      -> server SERVICE_ROLE ile lock + parse_sonuc yaz + eslestir (skip-parse modu, 113/A)
 //   4) onIlerleme callback -> UI guncelle
 //
-// "tek altyatri" (anlasma): izometri-batch + devre_wizard + devre_detay AYNI bu modulu cagirir.
+// "tek altyapi" (anlasma): izometri-batch + devre_wizard + devre_detay AYNI bu modulu cagirir.
 //
 // 508 NEDEN BITER: 2. ve 3. adim ikisi de browser->server. Hicbir server baska server cagirmaz.
 //   izometri-oku.js'e DOKUNULMAZ (MK-49.1) — sadece cagiran taraf (server degil) browser oldu.
+//
+// 153 — COK-TUR KOSU (MK-153.1):
+//   Eski davranis: liste BIR kez cekilirdi (global modda 200 limit). 200+ bekleyende tek
+//   basis listeyi bitirip duruyordu -> operator tekrar basmak zorunda kaliyordu.
+//   Yeni davranis: dis while dongusu — liste biter bitmez yeniden cekilir, islenecek YENI
+//   is kalmayana dek devam. 113'un "her is BIR kez denenir, AI'a iki kez odenmez" garantisi
+//   AYNEN korunur: bu kosuda gorulen is id'leri atlanir (gorulen-set). Yani 'hata'ya dusen
+//   bir is ayni basista tekrar denenmez; bir SONRAKI basista yeniden denenebilir.
 //
 // Bagimliliklar (sayfada global):
 //   - ARES.supabase()        (ares-store.js)
@@ -23,12 +31,13 @@
 //   - ARES.dosyaUrlAl(yol, bucket)  (ares-store.js, MK-112.4 — imzali URL doner)
 //   - ARES.userId()          (opsiyonel — yoksa dok.yukleyen_id kullanilir)
 //
-// Son guncelleme: 22 Mayis 2026 (113. oturum — client-loop, MK-113.x)
+// Son guncelleme: 4 Haziran 2026 (153. oturum — cok-tur kosu, MK-153.1)
 
 (function (g) {
   'use strict';
 
   var VARSAYILAN_BUCKET = 'devre-belgeleri';
+  var MAX_TUR = 50;   // guvenlik tavani (50 tur x 200 is = 10.000 is — pratikte erisilemez)
 
   // ── PDF -> base64 (imzali URL ile; private bucket RLS'e takilmaz, MK-112.4) ──
   async function _pdfBase64(bucket, yol) {
@@ -76,7 +85,7 @@
         .filter(function (x) { return x.dok; });
     }
 
-    // Global (cron benzeri / izometri-batch genel) — bir seferde sinirli cek.
+    // Global (izometri-batch genel) — bir seferde sinirli cek (cok-tur kosu gerisini alir).
     var qr2 = await supa.from('dosya_isleme_kuyrugu')
       .select('id, durum, devre_dokuman_id')
       .eq('parser', 'izometri')
@@ -97,17 +106,67 @@
       .filter(function (x) { return x.dok; });
   }
 
-  // ── ANA: bekleyen izometrileri tek tek drene et (client-loop). ──
+  // ── Tek isi isle (1: indir+parse, 2: kaydet+eslestir). Asla throw ETMEZ. ──
+  async function _birIsIsle(item, bucket, uid) {
+    var dok = item.dok;
+
+    // 1+2) imzali URL -> base64 -> izometri-oku (parse)
+    var oncedenParse = null, parseHttp = 0;
+    try {
+      var b64 = await _pdfBase64(bucket, dok.storage_yolu);
+      var pr = await fetch('/api/izometri-oku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: dok.tenant_id,
+          kullanici_id: dok.yukleyen_id || uid,
+          batch_id: null,
+          pdf_base64: b64,
+          dosya_adi: dok.dosya_adi,
+          dosya_sirasi: 1,
+          dosya_toplami: 1
+        })
+      });
+      parseHttp = pr.status;
+      var pt = await pr.text();
+      try { oncedenParse = pt ? JSON.parse(pt) : {}; }
+      catch (e) { oncedenParse = { ok: false, error: 'izometri-oku cevabi JSON degil' }; }
+    } catch (e) {
+      // indirme / parse cagri hatasi -> server'a "basarisiz" bildir (kuyruk 'hata'ya gecsin)
+      oncedenParse = { ok: false, error: 'tarayici parse/indirme: ' + ((e && e.message) || e) };
+      parseHttp = 0;
+    }
+
+    // 3) kaydet + eslestir (server SERVICE_ROLE, skip-parse modu — server->server YOK)
+    var wj = {};
+    try {
+      var wr = await fetch('/api/kuyruk-isle-izometri', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_id: item.id,
+          onceden_parse: oncedenParse,
+          onceden_parse_http: parseHttp
+        })
+      });
+      try { wj = await wr.json(); } catch (e) { wj = { durum: 'hata', hata: 'kaydet cevabi JSON degil' }; }
+    } catch (e) {
+      wj = { durum: 'hata', hata: 'kaydet cagri: ' + ((e && e.message) || e) };
+    }
+
+    return wj;
+  }
+
+  // ── ANA: bekleyen izometrileri drene et (client-loop, COK-TUR — MK-153.1). ──
   //    opts = {
   //      filtre:      {devreId} | {} (global),
   //      bucket:      'devre-belgeleri' (vars.) | 'izometri-pdfs' (batch),
-  //      onIlerleme:  function(durum) — {faz, sira, toplam, dosya, sonuc?, ozet}
+  //      onIlerleme:  function(durum) — {faz, tur?, sira, toplam, dosya, sonuc?, ozet}
   //    }
-  //    Doner: { toplam, islenen, oneri, manuel, hata, kalan }
+  //    Doner: { toplam, islenen, oneri, manuel, hata, kalan, tur }
   //
-  //    Liste BIR KEZ cekilir, uzerinde yurunur (her is BIR kez denenir) -> sonsuz/re-pay
-  //    dongusu YOK. (Eski drenajda 'hata' tekrar cekilip ayni PDF yeniden parse edilip
-  //    AI tekrar odenebiliyordu; burada tek kosuda her PDF bir kez.)
+  //    Her is bu kosuda EN FAZLA BIR kez denenir (gorulen-set) -> AI'a cifte odeme YOK
+  //    (113 garantisi). Liste bitince yeniden cekilir; islenecek yeni is kalmayinca durur.
   async function izometriDreneEt(opts) {
     opts = opts || {};
     var filtre = opts.filtre || {};
@@ -117,74 +176,47 @@
     var tid = ARES.tenantId();
     var uid = (ARES.userId && ARES.userId()) || null;
 
-    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, kalan: 0 };
+    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, kalan: 0, tur: 0 };
+    var gorulen = {};   // is_id -> true (bu kosuda bir kez — 113: AI'a cifte odeme yok)
 
-    var liste = await _bekleyenleriCek(supa, tid, filtre);
-    ozet.toplam = liste.length;
-    if (!liste.length) { onIlerleme({ faz: 'bos', ozet: ozet }); return ozet; }
+    while (ozet.tur < MAX_TUR) {
+      ozet.tur++;
 
-    for (var i = 0; i < liste.length; i++) {
-      var item = liste[i];
-      var dok = item.dok;
-      onIlerleme({ faz: 'basliyor', sira: i + 1, toplam: liste.length, dosya: dok.dosya_adi, ozet: ozet });
-
-      // 1+2) imzali URL -> base64 -> izometri-oku (parse)
-      var oncedenParse = null, parseHttp = 0;
+      var liste;
       try {
-        var b64 = await _pdfBase64(bucket, dok.storage_yolu);
-        var pr = await fetch('/api/izometri-oku', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tenant_id: dok.tenant_id,
-            kullanici_id: dok.yukleyen_id || uid,
-            batch_id: null,
-            pdf_base64: b64,
-            dosya_adi: dok.dosya_adi,
-            dosya_sirasi: 1,
-            dosya_toplami: 1
-          })
-        });
-        parseHttp = pr.status;
-        var pt = await pr.text();
-        try { oncedenParse = pt ? JSON.parse(pt) : {}; }
-        catch (e) { oncedenParse = { ok: false, error: 'izometri-oku cevabi JSON degil' }; }
+        liste = await _bekleyenleriCek(supa, tid, filtre);
       } catch (e) {
-        // indirme / parse cagri hatasi -> server'a "basarisiz" bildir (kuyruk 'hata'ya gecsin)
-        oncedenParse = { ok: false, error: 'tarayici parse/indirme: ' + ((e && e.message) || e) };
-        parseHttp = 0;
+        if (ozet.tur === 1) throw e;   // ilk turda liste bile gelmiyorsa gercek hata: yukari
+        break;                          // sonraki turlarda: eldekiyle bitir, kalan'i tahmin etme
       }
 
-      // 3) kaydet + eslestir (server SERVICE_ROLE, skip-parse modu — server->server YOK)
-      var wj = {};
-      try {
-        var wr = await fetch('/api/kuyruk-isle-izometri', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            is_id: item.id,
-            onceden_parse: oncedenParse,
-            onceden_parse_http: parseHttp
-          })
-        });
-        try { wj = await wr.json(); } catch (e) { wj = { durum: 'hata', hata: 'kaydet cevabi JSON degil' }; }
-      } catch (e) {
-        wj = { durum: 'hata', hata: 'kaydet cagri: ' + ((e && e.message) || e) };
+      liste = liste.filter(function (x) { return !gorulen[x.id]; });
+      if (!liste.length) break;        // islenecek YENI is yok -> kosu bitti
+      ozet.toplam += liste.length;
+
+      for (var i = 0; i < liste.length; i++) {
+        var item = liste[i];
+        gorulen[item.id] = true;
+        onIlerleme({ faz: 'basliyor', tur: ozet.tur, sira: ozet.islenen + 1, toplam: ozet.toplam, dosya: item.dok.dosya_adi, ozet: ozet });
+
+        var wj = await _birIsIsle(item, bucket, uid);
+
+        ozet.islenen++;
+        if (wj.durum === 'oneri_hazir') ozet.oneri++;
+        else if (wj.durum === 'manuel_onay') ozet.manuel++;
+        else ozet.hata++;
+
+        onIlerleme({ faz: 'bitti', tur: ozet.tur, sira: ozet.islenen, toplam: ozet.toplam, dosya: item.dok.dosya_adi, sonuc: wj, ozet: ozet });
       }
-
-      ozet.islenen++;
-      if (wj.durum === 'oneri_hazir') ozet.oneri++;
-      else if (wj.durum === 'manuel_onay') ozet.manuel++;
-      else ozet.hata++;
-
-      onIlerleme({ faz: 'bitti', sira: i + 1, toplam: liste.length, dosya: dok.dosya_adi, sonuc: wj, ozet: ozet });
     }
 
-    // Kalan (kosu sirasinda eklenmis olabilir / 'hata' kalanlar)
-    try { ozet.kalan = (await _bekleyenleriCek(supa, tid, filtre)).length; }
-    catch (e) { ozet.kalan = 0; }
+    // Kalan = bu kosuda dokunulmamis bekleyen/hata (gorulen haric) — bir sonraki basis alir.
+    try {
+      var son = await _bekleyenleriCek(supa, tid, filtre);
+      ozet.kalan = son.filter(function (x) { return !gorulen[x.id]; }).length;
+    } catch (e) { ozet.kalan = 0; }
 
-    onIlerleme({ faz: 'tamam', ozet: ozet });
+    onIlerleme({ faz: (ozet.islenen || ozet.kalan) ? 'tamam' : 'bos', ozet: ozet });
     return ozet;
   }
 
