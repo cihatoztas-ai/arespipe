@@ -122,9 +122,10 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
       <summary>Format kimliği (otomatik)</summary>
       <div class="sec-b">
         <div class="fld"><label>Format kodu</label><input class="inp mono" id="fmtKod" placeholder="örn. tersan_cadmatic_spool"></div>
-        <div class="fld"><label>Dosya adı regex</label><input class="inp mono" id="fnRegex" placeholder="PDF açınca türer"></div>
+        <div class="fld"><label>Dosya adı regex (hızlandırıcı, ops. — kimlik DEĞİL)</label><input class="inp mono" id="fnRegex" placeholder="boş bırakılabilir"></div>
         <div class="fld"><label>PDF üretici anahtarı</label><input class="inp mono" id="prodKey" placeholder="metadata"></div>
-        <div class="fld" style="margin:0;"><label>Başlık regex (ops.)</label><input class="inp mono" id="baslikRegex" placeholder="örn. Malzeme Listesi"></div>
+        <div class="fld"><label>Başlık regex (içerik kimliği — zorunlu)</label><input class="inp mono" id="baslikRegex" placeholder="örn. Malzeme Listesi"></div>
+        <div class="fld" style="margin:0;"><label>Tablo başlık regex (ops.)</label><input class="inp mono" id="tabloBaslik" placeholder="tablo sentezinden dolar"></div>
       </div>
     </details>
 
@@ -244,6 +245,7 @@ async function formatYukle(id){
     document.getElementById('fnRegex').value=fp.dosya_adi_regex||'';
     document.getElementById('prodKey').value=(fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||r.data.cad_program||'';
     document.getElementById('baslikRegex').value=fp.baslik_regex||'';
+    { const tb=document.getElementById('tabloBaslik'); if(tb)tb.value=fp.tablo_baslik_regex||''; }
     document.getElementById('promptTmpl').value=r.data.prompt_template||''; _mevcutPrompt=r.data.prompt_template||'';
     let atla=-1; if(_problemAlan){ atla=ALANLAR.findIndex(x=>x.ad===_problemAlan); }
     if(atla<0){ const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0)atla=k; }
@@ -294,6 +296,7 @@ async function otoTespit(){
       if(fp.dosya_adi_regex)document.getElementById('fnRegex').value=fp.dosya_adi_regex;
       if((fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||best.cad_program)document.getElementById('prodKey').value=(fp.pdf_uretici_anahtar&&fp.pdf_uretici_anahtar[0])||best.cad_program;
       document.getElementById('baslikRegex').value=fp.baslik_regex||'';
+      { const tb=document.getElementById('tabloBaslik'); if(tb)tb.value=fp.tablo_baslik_regex||''; }
       document.getElementById('promptTmpl').value=best.prompt_template||''; _mevcutPrompt=best.prompt_template||'';
       const sel=document.getElementById('fmtSec'); if(sel)sel.value=best.id;
       _otoBanner(best.ad,bestSkor,bestTop);
@@ -313,9 +316,11 @@ function _otoBanner(ad,skor,top){
 function formatSecDegis(v){ if(v){ formatYukle(v); } else { _yeniKipeDon(); } }
 const _fpAuto={fn:'',prod:''}; // açık PDF'ten türetilen kimlik (hidrasyon kalıntısına panzehir)
 function _fpYenidenUret(){
-  if(_fpAuto.fn) document.getElementById('fnRegex').value=_fpAuto.fn;
+  // MK-151.5: fn değer olarak GERİ YÜKLENMEZ — hidrasyon kalıntısı kanalı kökten kapalı; öneri placeholder'da kalır.
+  const fnEl=document.getElementById('fnRegex'); fnEl.value=''; if(_fpAuto.fn)fnEl.placeholder='öneri: '+_fpAuto.fn;
   if(_fpAuto.prod) document.getElementById('prodKey').value=_fpAuto.prod;
   document.getElementById('baslikRegex').value='';
+  const tb=document.getElementById('tabloBaslik'); if(tb)tb.value='';
 }
 function _yeniKipeDon(){ _mode='yeni'; _formatId=null; _mevcutKural=null; _mevcutPrompt=''; _fpYenidenUret(); resetAlanlar(); _alanlariKos(); document.getElementById('promptTmpl').value=''; _duzeltUiGuncelle(''); renderDots(); renderDetay(); toast('Yeni format tanıtma kipine dönüldü'); }
 
@@ -394,7 +399,9 @@ function _tabloSentezle(){
   let sz=null;
   try{ sz=ARES_TABLO_SENTEZ.sentezle(CANON_ALL,rows); }catch(e){ console.error('[tabloSentez]',e); return null; }
   mt._tabloRapor=sz.rapor;
-  if(sz.rapor.yesil>0&&sz.satir_tipleri.length){ mt._satirTipleri=sz.satir_tipleri; mt._baslikTetik=sz.baslik_tetikleyici||null; }
+  if(sz.rapor.yesil>0&&sz.satir_tipleri.length){ mt._satirTipleri=sz.satir_tipleri; mt._baslikTetik=sz.baslik_tetikleyici||null;
+    // İçerik kimliği güçlendirme (MK-151.5): tetikleyici fingerprint.tablo_baslik_regex'e de akar (literal → escape)
+    if(mt._baslikTetik){ const tb=document.getElementById('tabloBaslik'); if(tb&&!tb.value)tb.value=String(mt._baslikTetik).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); } }
   if(sz.dominant){ _turetCip('cap_mm',sz.dominant.dis_cap); _turetCip('dn',sz.dominant.dn); _turetCip('et_mm',sz.dominant.et); }
   return sz;
 }
@@ -540,8 +547,10 @@ function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)retu
 /* ── PDF.js (v1.10.100) ── */
 document.getElementById('fileInput').addEventListener('change',function(e){
   const f=e.target.files[0]; if(!f)return; document.getElementById('hintTxt').textContent=f.name;
-  const fn=f.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+'); document.getElementById('fnRegex').value='^'+fn+'$';
-  _fpAuto.fn='^'+fn+'$'; _fpAuto.prod=''; // açık PDF'in öz kimliği — kip dönüşünde geri yüklenir (a093eaaa bulaşma dersi)
+  // MK-151.5: dosya adı KİMLİK değil, hızlandırıcı. Otomatik BASILMAZ — öneri placeholder'da, operatör isterse alır.
+  const fn=f.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+');
+  const fnEl=document.getElementById('fnRegex'); fnEl.value=''; fnEl.placeholder='öneri: ^'+fn+'$';
+  _fpAuto.fn='^'+fn+'$'; _fpAuto.prod=''; // açık PDF'in öz kimliği (yalnız öneri) — kip dönüşünde kalıntı temizlenir (a093eaaa dersi)
   const fr=new FileReader(); fr.onload=()=>loadPdf(new Uint8Array(fr.result)); fr.readAsArrayBuffer(f);
 });
 async function loadPdf(data){
@@ -550,7 +559,7 @@ async function loadPdf(data){
     const task=lib.getDocument(data); pdfDoc=await (task.promise||task); pageNum=1;
     resetAlanlar();
     if(_mode==='duzelt'){ _hydrateKural(); if(_problemAlan){ const i=ALANLAR.findIndex(x=>x.ad===_problemAlan); if(i>=0)adim=i; } }
-    else { document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value=''; }
+    else { document.getElementById('fmtKod').value=''; document.getElementById('baslikRegex').value=''; const _tb=document.getElementById('tabloBaslik'); if(_tb)_tb.value=''; }
     { const ml=document.getElementById('markLayer'); if(ml) ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); }
     document.getElementById('emptyPdf').classList.add('hide'); document.getElementById('holder').classList.remove('hide');
     ['zOut','zIn','zFit','pPrev','pNext','btnAiOku'].forEach(id=>document.getElementById(id).disabled=false);
@@ -628,7 +637,8 @@ const EGITIM_KAYNAGI='cizim_capa';
 function buildFingerprint(){
   return { dosya_adi_regex:document.getElementById('fnRegex').value||null,
     pdf_uretici_anahtar:document.getElementById('prodKey').value?[document.getElementById('prodKey').value]:[],
-    baslik_regex:document.getElementById('baslikRegex').value||null };
+    baslik_regex:document.getElementById('baslikRegex').value||null,
+    tablo_baslik_regex:(document.getElementById('tabloBaslik')&&document.getElementById('tabloBaslik').value)||null };
 }
 function buildParserKural(){
   const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
@@ -673,20 +683,31 @@ async function kaydet(){
   if(!ad){ toast('Önce formata bir ad ver'); document.getElementById('fmtAd').focus(); return; }
   if(ALANLAR.filter(a=>a.tip!=='tablo'&&a.regex).length<2){ toast('En az birkaç alan işaretle'); return; }
   const {pk}=buildParserKural(), fp=buildFingerprint();
+  // ── İÇERİK KİMLİĞİ GATE (MK-151.5): fn olmadan skor ≥2 garantisi ──
+  // fingerprintSkor: baslik +1 · uretici +1 · tablo_baslik +1 · fn +5 (yalnız hızlandırıcı).
+  const icerikSinyal=(fp.baslik_regex?1:0)+(fp.tablo_baslik_regex?1:0)+(fp.pdf_uretici_anahtar.length?1:0);
+  if(!fp.baslik_regex){ toast('Başlık regex zorunlu — format kimliği İÇERİKTİR, dosya adı değil (MK-151.5)'); return; }
+  if(icerikSinyal<2){ toast('İçerik kimliği zayıf — Başlık regex\'e ek en az 1 içerik sinyali gerek (üretici anahtarı veya tablo başlığı)'); return; }
+  try{ if(CANON_ALL&&!new RegExp(fp.baslik_regex,'i').test(CANON_ALL)){ toast('⚠️ Başlık regex açık PDF metninde TUTMUYOR — kontrol et'); return; } }catch(e){ toast('Başlık regex geçersiz: '+e.message); return; }
   btn.disabled=true; btn.textContent='Kaydediliyor…';
   try{
-    // INSERT→UPDATE borcu: aynı dosya deseni + tenant zaten kayıtlı mı? (JS-tarafı eşleşme, küçük küme)
+    // INSERT→UPDATE dedup — İÇERİK-ÖNCELİKLİ (MK-151.5): birincil anahtar baslik_regex, fn yalnız fallback
     let mev=null;
-    if(fp.dosya_adi_regex){
+    {
       const q=await supa.from('izometri_format_tanimlari').select('id,ad,parser_kural,fingerprint').eq('tenant_id',tid).eq('egitim_kaynagi',EGITIM_KAYNAGI);
-      if(!q.error&&q.data) mev=q.data.find(f=>f.fingerprint&&f.fingerprint.dosya_adi_regex===fp.dosya_adi_regex)||null;
+      if(!q.error&&q.data){
+        mev=q.data.find(f=>f.fingerprint&&f.fingerprint.baslik_regex&&f.fingerprint.baslik_regex===fp.baslik_regex)
+          ||(fp.dosya_adi_regex?q.data.find(f=>f.fingerprint&&f.fingerprint.dosya_adi_regex&&f.fingerprint.dosya_adi_regex===fp.dosya_adi_regex):null)
+          ||null;
+      }
     }
     let mevOnay=false;
     if(mev){
-      const acikAd=(document.getElementById('fileInput').files[0]||{}).name||'';
-      let uyum=false; try{ uyum=new RegExp(mev.fingerprint.dosya_adi_regex).test(acikAd); }catch(e){}
-      let msg='Bu dosya deseniyle kayıtlı format: "'+(mev.ad||mev.id.slice(0,8))+'"\ndesen: '+mev.fingerprint.dosya_adi_regex+'\n';
-      if(!uyum) msg+='\n⚠️ DİKKAT: Açık PDF ('+acikAd+') bu desene UYMUYOR — FARKLI bir formatın üzerine yazıyor olabilirsin!\n';
+      const mfp=mev.fingerprint||{};
+      // İçerik uyum testi: hedefin baslik_regex'i AÇIK PDF METNİNDE tutuyor mu (dosya adı değil)
+      let uyum=false; try{ uyum=!!(mfp.baslik_regex&&CANON_ALL&&new RegExp(mfp.baslik_regex,'i').test(CANON_ALL)); }catch(e){}
+      let msg='Kayıtlı format bulundu: "'+(mev.ad||mev.id.slice(0,8))+'"\nbaşlık: '+(mfp.baslik_regex||'—')+(mfp.dosya_adi_regex?('\ndosya deseni: '+mfp.dosya_adi_regex):'')+'\n';
+      if(!uyum) msg+='\n⚠️ DİKKAT: Bu formatın başlık deseni açık PDF\'in İÇERİĞİNDE tutmuyor — FARKLI bir formatın üzerine yazıyor olabilirsin!\n';
       msg+='\nYeni satır yerine onu güncelleyeyim mi? (İşaretlediğin alanlar üzerine yazılır, diğerleri korunur.)';
       mevOnay=confirm(msg);
     }
@@ -752,7 +773,7 @@ function buildKuralEski(){
   const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
   const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:tabloVar?1:0,l3_fallback_yapilir:true}};
   if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
-  return { format_kodu:document.getElementById('fmtKod').value||'(adsız)', fingerprint:{dosya_adi_regex:document.getElementById('fnRegex').value||null,pdf_uretici_anahtar:document.getElementById('prodKey').value?[document.getElementById('prodKey').value]:[],baslik_regex:document.getElementById('baslikRegex').value||null}, parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' };
+  return { format_kodu:document.getElementById('fmtKod').value||'(adsız)', fingerprint:buildFingerprint(), parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' };
 }
 function tamamlaAc(){ const j=(_mode==='duzelt')?{_kip:'duzelt',hedef_id:_formatId,degisen_alanlar:ALANLAR.filter(a=>a._dirty&&a.regex).map(a=>a.ad),parser_kural:_patchedKural(_mevcutKural)}:buildKural(); document.getElementById('jsonOut').textContent=JSON.stringify(j,null,2); document.getElementById('tamamlaOverlay').classList.remove('hide'); }
 function tamamlaKapat(){ document.getElementById('tamamlaOverlay').classList.add('hide'); }
