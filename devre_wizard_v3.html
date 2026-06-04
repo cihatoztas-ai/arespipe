@@ -1481,18 +1481,39 @@ function duzeltKapat() {
   if (WIZ._inceleme) renderInceleme(WIZ._inceleme);
 }
 
-// ── 138/B1: İptal — terfi olmamış taslağı soft-delete et (silindi=true), sonra çık. ──
+// ── 138/B1 + W-2.13 (154): İptal — terfi olmamış taslağı soft-delete et + kuyruğunu temizle. ──
 //   Taslak inceleBaslat'ta oluşuyor (devre_id + dökümanlar yazılıyor); onaylanmadan çıkılırsa
 //   yetim kalıyordu. silindi=true → devreler.html applyFilters (neq silindi true) anında gizler.
+//   154 eki: kuyruk işleri de 'iptal'e çekilir — 153/154'te onay havuzunun %32'si (350 iş)
+//   silinmiş taslakların yetimi çıktı. Aynı küme: bekliyor/oneri_hazir/manuel_onay.
+//   'isleniyor' KASTEN dışarıda (worker'ın elindeki işle yarış koşulu); 'tamamlandi' tarihsel kayıt.
+//   Kaçaklar drenajın silinmiş-devre filtresinde yakalanır (ikinci savunma hattı).
 //   Hard-delete + storage temizliği YOK (yeni endpoint gerektirir, MK-129.3 tavanı; toplu cleanup ileride).
-//   Terfi edilmişse (durum='aktif') DOKUNMA — sadece çık.
+//   Terfi edilmişse (durum='aktif') update 0 satır döner → kuyruğa da DOKUNULMAZ — sadece çık.
 async function wizardIptal() {
   if (!confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) return;
   try {
     if (WIZ.devre_id) {
       var supa = ARES.supabase(), tid = ARES.tenantId();
-      await supa.from('devreler').update({ silindi: true })
-        .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak');   // yalnız taslak; aktife dokunma
+      var up = await supa.from('devreler')
+        .update({ silindi: true, silinme_tarihi: new Date().toISOString() })
+        .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak')   // yalnız taslak; aktife dokunma
+        .select('id');
+      if (!up.error && up.data && up.data.length) {
+        // Taslak gerçekten silindi → terminal olmayan kuyruk işlerini kapat (sessiz yetim yok, B-6).
+        var dk = await supa.from('devre_dokumanlari').select('id')
+          .eq('devre_id', WIZ.devre_id).eq('tenant_id', tid);
+        var ids = (dk.data || []).map(function (d) { return d.id; });
+        if (ids.length) {
+          var kq = await supa.from('dosya_isleme_kuyrugu')
+            .update({ durum: 'iptal', hata_mesaji: 'yetim onleme: wizard iptali (W-2.13)' })
+            .in('devre_dokuman_id', ids)
+            .in('durum', ['bekliyor', 'oneri_hazir', 'manuel_onay'])
+            .select('id');
+          if (kq.error) console.error('[v3] iptal kuyruk temizligi:', kq.error.message);
+          else console.log('[v3] iptal: ' + ((kq.data || []).length) + ' kuyruk isi iptale cekildi (W-2.13)');
+        }
+      }
     }
   } catch (e) { console.error('[v3] iptal soft-delete:', e); }   // best-effort; çıkışı engelleme
   location.href = 'devreler.html';

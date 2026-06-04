@@ -31,7 +31,12 @@
 //   - ARES.dosyaUrlAl(yol, bucket)  (ares-store.js, MK-112.4 — imzali URL doner)
 //   - ARES.userId()          (opsiyonel — yoksa dok.yukleyen_id kullanilir)
 //
-// Son guncelleme: 4 Haziran 2026 (153. oturum — cok-tur kosu, MK-153.1)
+// 154 — SILINMIS-DEVRE FILTRESI (W-2.13 ikinci savunma hatti):
+//   _bekleyenleriCek silinmis (silindi=true) devrelerin islerini HIC dondurmez — wizard iptali
+//   kuyrugu temizlemeyi kacirirsa bile yetim is islenmez, AI'a odenmez. Atlanan is konsola yazilir
+//   (sessiz kaybolma yok, B-6). Gorulen-set / cok-tur mantigi (MK-153.1) degismedi.
+//
+// Son guncelleme: 4 Haziran 2026 (154. oturum — silinmis-devre filtresi, W-2.13)
 
 (function (g) {
   'use strict';
@@ -65,6 +70,14 @@
 
     if (filtre.devreId) {
       // Devre-ozgu (MK-112.3 ile ayni mantik: once dok id'leri, sonra queue .in()).
+      // 154 / W-2.13 ikinci savunma hatti: devre silinmisse isleri HIC alinmaz (sessiz degil, konsola yazilir).
+      var dvr = await supa.from('devreler').select('id, silindi')
+        .eq('id', filtre.devreId).eq('tenant_id', tid).maybeSingle();
+      if (dvr.error) throw new Error('devre okuma: ' + dvr.error.message);
+      if (!dvr.data || dvr.data.silindi === true) {
+        console.warn('[drenaj] devre silinmis/yok — isler atlandi (W-2.13):', filtre.devreId);
+        return [];
+      }
       var dr = await supa.from('devre_dokumanlari')
         .select('id, tenant_id, devre_id, storage_yolu, dosya_adi, uzanti, yukleyen_id')
         .eq('tenant_id', tid).eq('devre_id', filtre.devreId);
@@ -101,9 +114,31 @@
       .in('id', dids);
     if (dr2.error) throw new Error('dok okuma: ' + dr2.error.message);
     var dmap = {}; (dr2.data || []).forEach(function (d) { dmap[d.id] = d; });
-    return rows
+
+    // 154 / W-2.13 ikinci savunma hatti: silinmis devrelerin yetim isleri listeye GIRMEZ.
+    // (Veri onarimi yetimleri 'iptal'e cekti; bu filtre gelecekteki kacaklar icin sigorta.)
+    // Gorulen-set'e dokunmaya gerek yok: yetim hic donmedigi icin tur mantigi (MK-153.1) aynen isler.
+    var devreIds = {};
+    (dr2.data || []).forEach(function (d) { if (d.devre_id) devreIds[d.devre_id] = true; });
+    var dIdList = Object.keys(devreIds);
+    var olu = {};   // silinmis devre id -> true
+    if (dIdList.length) {
+      var sv = await supa.from('devreler').select('id')
+        .in('id', dIdList).eq('silindi', true);
+      if (!sv.error) (sv.data || []).forEach(function (d) { olu[d.id] = true; });
+      // sv.error: filtre sigortadir — okunamadiysa isleri DUSURME (yanlis pozitif atlamadan kotu degil).
+    }
+
+    var sonuc = rows
       .map(function (q) { return { id: q.id, durum: q.durum, dok: dmap[q.devre_dokuman_id] }; })
       .filter(function (x) { return x.dok; });
+    var oluSayi = 0;
+    sonuc = sonuc.filter(function (x) {
+      if (x.dok.devre_id && olu[x.dok.devre_id]) { oluSayi++; return false; }
+      return true;
+    });
+    if (oluSayi) console.warn('[drenaj] ' + oluSayi + ' yetim is atlandi (devre silinmis, W-2.13)');
+    return sonuc;
   }
 
   // ── Tek isi isle (1: indir+parse, 2: kaydet+eslestir). Asla throw ETMEZ. ──
