@@ -663,14 +663,26 @@ async function kaydet(){
     const dirty=ALANLAR.filter(a=>a._dirty&&a.tip!=='tablo'&&a.regex);
     const promptYeni=(document.getElementById('promptTmpl').value||'').trim();
     const promptDegisti=promptYeni!==(_mevcutPrompt||'').trim();
-    if(!dirty.length&&!promptDegisti){ toast('Değişiklik yok — bir alanı yeniden işaretle, regex düzenle veya AI tarifi gir'); return; }
+    // Increment 2 köprüsü (152): taze tablo sentezi düzeltme kipinde de patch'e girer.
+    // kabul_kriterleri'ne BİLEREK dokunulmaz (min_malzeme_satir aynen kalır): aynı format birden çok
+    // notasyon ailesine hizmet edebilir (M=ODxet, Y=NPS+Sch) — min'i yükseltmek tablosu henüz
+    // öğretilmemiş aileyi L3'e geriletirdi (a093eaaa onarımını koruma).
+    const _mt=ALANLAR.find(x=>x.tip==='tablo');
+    let yeniMt=null;
+    if(_mt&&Array.isArray(_mt._satirTipleri)&&_mt._satirTipleri.length){
+      yeniMt={aktif:true,satir_tipleri:_mt._satirTipleri};
+      if(_mt._baslikTetik)yeniMt.baslik_tetikleyici=_mt._baslikTetik;
+    }
+    const tabloDegisti=!!(yeniMt&&JSON.stringify((_mevcutKural&&_mevcutKural.malzeme_tablosu)||null)!==JSON.stringify(yeniMt));
+    if(!dirty.length&&!promptDegisti&&!tabloDegisti){ toast('Değişiklik yok — bir alanı yeniden işaretle, regex düzenle, AI tarifi gir veya AI-oku ile tablo sentezle'); return; }
     btn.disabled=true; btn.textContent='Güncelleniyor…';
     try{
       const patched=_patchedKural(_mevcutKural);
+      if(tabloDegisti)patched.malzeme_tablosu=yeniMt;
       const r=await supa.from('izometri_format_tanimlari').update({ parser_kural:patched, prompt_template:promptYeni||null, guncelleme_at:new Date().toISOString() }).eq('id',_formatId).select('id').single();
       if(r.error){ return no(r.error.message); }
       _mevcutKural=patched; _mevcutPrompt=promptYeni; dirty.forEach(a=>a._dirty=false);
-      const ne=[]; if(dirty.length)ne.push(dirty.length+' alan ('+dirty.map(a=>a.ad).join(', ')+')'); if(promptDegisti)ne.push('AI tarifi');
+      const ne=[]; if(dirty.length)ne.push(dirty.length+' alan ('+dirty.map(a=>a.ad).join(', ')+')'); if(promptDegisti)ne.push('AI tarifi'); if(tabloDegisti)ne.push('malzeme tablosu ('+yeniMt.satir_tipleri.length+' satır tipi'+(yeniMt.baslik_tetikleyici?' + tetikleyici':'')+')');
       ok('✓ Güncellendi · '+ne.join(' + ')+' · id <b>'+_formatId.slice(0,8)+'</b> — bu formatın PDF\'leri yeni kuralla L2\'den okunacak ($0)');
       btn.textContent='✓ Güncellendi'; toast('✓ Format güncellendi');
     }catch(e){ no(e.message); }
