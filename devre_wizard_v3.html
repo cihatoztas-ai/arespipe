@@ -37,6 +37,17 @@
     .step{ display:flex; align-items:center; gap:9px; padding:8px 14px; border-radius:9px; background:var(--sur); border:1px solid var(--bor); color:var(--txd); font-size:15px; }
     .step .num{ width:22px; height:22px; border-radius:50%; background:var(--sur2); color:var(--txd); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; font-family:'Barlow Condensed',sans-serif; }
     .step.aktif{ border-color:var(--ac); color:var(--tx); } .step.aktif .num{ background:var(--ac); color:#fff; } .step.bitti .num{ background:var(--gr); color:#fff; } .step-sep{ color:var(--txd); }
+    /* ── İşlenenler (W-2.7, 154) ── */
+    .isl-btn{ margin-left:auto; display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:9px; background:var(--sur); border:1px solid var(--bor); color:var(--txm); font-size:15px; cursor:pointer; font-family:'Barlow',sans-serif; }
+    .isl-btn:hover{ border-color:var(--ac); color:var(--ac); } .isl-btn.aktif{ border-color:var(--ac); color:var(--tx); }
+    .isl-rozet{ background:var(--ac); color:#fff; border-radius:10px; padding:1px 8px; font-size:13px; font-weight:700; font-family:'Barlow Condensed',sans-serif; }
+    .isl-satir{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 16px; border:1px solid var(--bor); border-radius:10px; margin-bottom:10px; background:var(--sur2); }
+    .isl-satir.hazir{ border-color:var(--gr); }
+    .isl-durum{ display:inline-flex; align-items:center; gap:6px; border-radius:7px; padding:3px 10px; font-size:13px; white-space:nowrap; }
+    .isl-durum.isleniyor{ background:rgba(217,119,6,.14); color:var(--warn); }
+    .isl-durum.hazir{ background:rgba(22,163,110,.14); color:var(--gr); }
+    .isl-durum.hatali{ background:rgba(229,62,62,.12); color:var(--re); }
+    @media (max-width:760px){ .isl-satir{ grid-template-columns:1fr; gap:8px; } }
 
     /* ── Kartlar / form (Adım 1) ── */
     .card{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:18px; margin-bottom:16px; }
@@ -151,6 +162,7 @@
     <div class="step aktif" id="stp1"><span class="num">1</span> Devre &amp; Belgeler</div>
     <span class="step-sep">→</span>
     <div class="step" id="stp2"><span class="num">2</span> İnceleme &amp; Onay</div>
+    <button class="isl-btn" id="btnIslenenler" onclick="islenenlerAc()" title="Taslak devrelerin işleme havuzu">⏳ İşlenenler <span class="isl-rozet" id="islRozet">0</span></button>
   </div>
 
   <!-- ══════════ ADIM 1 — DEVRE & BELGELER ══════════ -->
@@ -265,6 +277,21 @@
     <div id="tab-genel" class="hide"><div class="card"><div class="row2" id="genelGrid"></div></div></div>
   </section>
 
+  <!-- ══════════ İŞLENENLER (W-2.7, 154) — taslak devre havuzu, panel 3 ══════════ -->
+  <section data-panel="3" class="hide">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <h2 class="card-t" style="margin:0 0 4px;">İşlenenler</h2>
+          <div style="font-size:13px;color:var(--txd);">Taslak devreler — arka plan işleme ve terfi bekleyenler. Durum kuyruktan anlık türetilir.</div>
+        </div>
+        <button class="btn pri" id="btnIslDrenaj" onclick="islenenlerDrenaj()">▶ Bekleyenleri işle</button>
+      </div>
+      <div id="islListe"><div class="gri">Yükleniyor…</div></div>
+      <div style="font-size:12px;color:var(--txd);margin-top:10px;">Öneri/manuel sayıları onay havuzunun bu devreye düşen payıdır; onay akışına satırdaki İncele ile girilir. İşleme bu sekme açıkken yürür.</div>
+    </div>
+  </section>
+
 </div></div></div>
 
 <!-- Düzelt / okunan değerleri gör popup (FAZ-1: salt okuma + çapa stub) -->
@@ -362,6 +389,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── MK-136: ?devre_id= ile var olan taslağı İnceleme'de yeniden aç (param yoksa eski sıfırdan akış) ──
     var _did136 = new URLSearchParams(location.search).get('devre_id');
     if (_did136) { try { await taslagiAc(_did136); } catch (e) { console.error('[v3] taslak aç:', e); } }
+    // ── W-2.7 (154): ?sekme=islenenler → doğrudan İşlenenler havuzu; değilse rozet sayısı dolsun ──
+    else if (new URLSearchParams(location.search).get('sekme') === 'islenenler') { islenenlerAc(); }
+    else { islenenRozetYenile(); }
     document.documentElement.style.visibility = '';
   })();
 });
@@ -1490,33 +1520,156 @@ function duzeltKapat() {
 //   Kaçaklar drenajın silinmiş-devre filtresinde yakalanır (ikinci savunma hattı).
 //   Hard-delete + storage temizliği YOK (yeni endpoint gerektirir, MK-129.3 tavanı; toplu cleanup ileride).
 //   Terfi edilmişse (durum='aktif') update 0 satır döner → kuyruğa da DOKUNULMAZ — sadece çık.
-async function wizardIptal() {
-  if (!confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) return;
+//   Çekirdek _taslakIptalEt: hem üst bar İptal (wizardIptal) hem İşlenenler satır iptali (islenenlerIptal) çağırır.
+async function _taslakIptalEt(devreId) {
   try {
-    if (WIZ.devre_id) {
-      var supa = ARES.supabase(), tid = ARES.tenantId();
-      var up = await supa.from('devreler')
-        .update({ silindi: true, silinme_tarihi: new Date().toISOString() })
-        .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak')   // yalnız taslak; aktife dokunma
-        .select('id');
-      if (!up.error && up.data && up.data.length) {
-        // Taslak gerçekten silindi → terminal olmayan kuyruk işlerini kapat (sessiz yetim yok, B-6).
-        var dk = await supa.from('devre_dokumanlari').select('id')
-          .eq('devre_id', WIZ.devre_id).eq('tenant_id', tid);
-        var ids = (dk.data || []).map(function (d) { return d.id; });
-        if (ids.length) {
-          var kq = await supa.from('dosya_isleme_kuyrugu')
-            .update({ durum: 'iptal', hata_mesaji: 'yetim onleme: wizard iptali (W-2.13)' })
-            .in('devre_dokuman_id', ids)
-            .in('durum', ['bekliyor', 'oneri_hazir', 'manuel_onay'])
-            .select('id');
-          if (kq.error) console.error('[v3] iptal kuyruk temizligi:', kq.error.message);
-          else console.log('[v3] iptal: ' + ((kq.data || []).length) + ' kuyruk isi iptale cekildi (W-2.13)');
-        }
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var up = await supa.from('devreler')
+      .update({ silindi: true, silinme_tarihi: new Date().toISOString() })
+      .eq('id', devreId).eq('tenant_id', tid).eq('durum', 'taslak')   // yalnız taslak; aktife dokunma
+      .select('id');
+    if (!up.error && up.data && up.data.length) {
+      // Taslak gerçekten silindi → terminal olmayan kuyruk işlerini kapat (sessiz yetim yok, B-6).
+      var dk = await supa.from('devre_dokumanlari').select('id')
+        .eq('devre_id', devreId).eq('tenant_id', tid);
+      var ids = (dk.data || []).map(function (d) { return d.id; });
+      if (ids.length) {
+        var kq = await supa.from('dosya_isleme_kuyrugu')
+          .update({ durum: 'iptal', hata_mesaji: 'yetim onleme: wizard iptali (W-2.13)' })
+          .in('devre_dokuman_id', ids)
+          .in('durum', ['bekliyor', 'oneri_hazir', 'manuel_onay'])
+          .select('id');
+        if (kq.error) console.error('[v3] iptal kuyruk temizligi:', kq.error.message);
+        else console.log('[v3] iptal: ' + ((kq.data || []).length) + ' kuyruk isi iptale cekildi (W-2.13)');
       }
     }
   } catch (e) { console.error('[v3] iptal soft-delete:', e); }   // best-effort; çıkışı engelleme
+}
+async function wizardIptal() {
+  if (!confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) return;
+  if (WIZ.devre_id) await _taslakIptalEt(WIZ.devre_id);
   location.href = 'devreler.html';
+}
+
+// ══════════ İŞLENENLER (W-2.7, 154) — taslak devre havuzu ══════════
+//   Durum SENKRONSUZ türetilir (154/B kararı): kolon yok, tek doğruluk kaynağı kuyruk.
+//   taslak + bekleyen/işlenen iş → 'işleniyor' · iş yok + hata var → 'hatalı' · iş yok → 'hazır'.
+//   Öneri/manuel sayıları bilgi amaçlı (dar kapsam — onay akışı UI'sı ayrı oturum konusu).
+//   Sorgular iki adımlı, embed YOK (MK-108.4 ruhu).
+async function islenenlerAc() {
+  gosterAdim(3);
+  await islenenlerYukle();
+}
+
+function _islRozet(n) { var el = document.getElementById('islRozet'); if (el) el.textContent = n; }
+
+async function islenenRozetYenile() {
+  try {
+    var r = await ARES.supabase().from('devreler').select('id', { count: 'exact', head: true })
+      .eq('tenant_id', ARES.tenantId()).eq('durum', 'taslak').neq('silindi', true);
+    if (!r.error) _islRozet(r.count || 0);
+  } catch (e) { /* rozet kozmetik — sessiz geç */ }
+}
+
+async function islenenlerYukle() {
+  var kut = document.getElementById('islListe');
+  if (!kut) return;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var dv = await supa.from('devreler')
+      .select('id, devre_no, olusturma')
+      .eq('tenant_id', tid).eq('durum', 'taslak').neq('silindi', true)
+      .order('olusturma', { ascending: false });
+    if (dv.error) throw new Error(dv.error.message);
+    var devreler = dv.data || [];
+    _islRozet(devreler.length);
+    if (!devreler.length) { kut.innerHTML = '<div class="gri">İşlenen taslak devre yok. Yeni devre yüklemek için Adım 1\'e dönün.</div>'; return; }
+
+    var dIds = devreler.map(function (d) { return d.id; });
+    var dk = await supa.from('devre_dokumanlari').select('id, devre_id').in('devre_id', dIds).eq('aktif', true);
+    var doklar = dk.data || [];
+    var dok2devre = {}, dokSay = {};
+    doklar.forEach(function (x) { dok2devre[x.id] = x.devre_id; dokSay[x.devre_id] = (dokSay[x.devre_id] || 0) + 1; });
+
+    var say = {};   // devre_id -> sayaçlar
+    var dokIds = doklar.map(function (x) { return x.id; });
+    if (dokIds.length) {
+      var kq = await supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, durum').in('devre_dokuman_id', dokIds);
+      if (kq.error) throw new Error(kq.error.message);
+      (kq.data || []).forEach(function (q) {
+        var did = dok2devre[q.devre_dokuman_id]; if (!did) return;
+        var s = say[did] || (say[did] = { acik: 0, hata: 0, oneri: 0, manuel: 0, toplam: 0 });
+        s.toplam++;
+        if (q.durum === 'bekliyor' || q.durum === 'isleniyor') s.acik++;
+        else if (q.durum === 'hata') s.hata++;
+        else if (q.durum === 'oneri_hazir') s.oneri++;
+        else if (q.durum === 'manuel_onay') s.manuel++;
+      });
+    }
+
+    var h = '';
+    devreler.forEach(function (d) {
+      var s = say[d.id] || { acik: 0, hata: 0, oneri: 0, manuel: 0, toplam: 0 };
+      var hazir = false, durumHtml;
+      if (s.acik > 0) durumHtml = '<span class="isl-durum isleniyor">⏳ İşleniyor — kalan ' + s.acik + '/' + s.toplam + '</span>';
+      else if (s.hata > 0) durumHtml = '<span class="isl-durum hatali">⚠ ' + s.hata + ' hata</span>';
+      else { hazir = true; durumHtml = '<span class="isl-durum hazir">✓ Hazır</span>'; }
+      var trh = '';
+      try { trh = d.olusturma ? new Date(d.olusturma).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; } catch (e) {}
+      h += '<div class="isl-satir' + (hazir ? ' hazir' : '') + '">' +
+        '<div><div style="font-weight:600;font-size:15px;">' + esc(d.devre_no || '(adsız)') + '</div>' +
+        '<div style="font-size:13px;color:var(--txd);">' + (dokSay[d.id] || 0) + ' belge · ' + esc(trh) + '</div></div>' +
+        '<div>' + durumHtml + '</div>' +
+        '<div style="font-size:13px;color:var(--txm);">öneri: <b>' + s.oneri + '</b> · manuel: <b>' + s.manuel + '</b></div>' +
+        '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
+        '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + (s.acik > 0 ? ' disabled' : '') + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : 'İncele') + '</button>' +
+        '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">✕</button>' +
+        '</div></div>';
+    });
+    kut.innerHTML = h;
+  } catch (e) {
+    console.error('[v3] islenenler:', e);
+    kut.innerHTML = '<div class="gri">Liste yüklenemedi: ' + esc((e && e.message) || e) + '</div>';
+  }
+}
+
+async function islenenlerIncele(devreId) {
+  try { await taslagiAc(devreId); }   // başarıda kendisi gosterAdim(2)+incelemeKur yapar (MK-136)
+  catch (e) { console.error('[v3] islenen incele:', e); toast('Taslak açılamadı'); }
+}
+
+async function islenenlerIptal(devreId, btn) {
+  if (!confirm('Bu taslak silinecek ve bekleyen işleri iptal edilecek. Emin misiniz?')) return;
+  if (btn) btn.disabled = true;
+  await _taslakIptalEt(devreId);
+  if (WIZ.devre_id === devreId) WIZ.devre_id = null;   // açık taslak buysa bağ kopar
+  await islenenlerYukle();
+}
+
+// ── Global drenajın kalıcı yüzü (MK-153.1 çok-tur; "sekmeyi açık tut" çözümü) ──
+//   filtre:{} = tenant'ın TÜM bekleyen izometri işleri (konsol global drenajının UI karşılığı).
+async function islenenlerDrenaj() {
+  if (WIZ._islDrenaj) return;
+  if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modülü yüklenmedi'); return; }
+  WIZ._islDrenaj = true;
+  var b = document.getElementById('btnIslDrenaj');
+  if (b) b.disabled = true;
+  try {
+    var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
+      filtre: {}, bucket: 'devre-belgeleri',
+      onIlerleme: function (d) {
+        if (b && d.faz === 'basliyor') b.textContent = '⏳ İşleniyor ' + d.sira + '/' + d.toplam + (d.tur > 1 ? ' (tur ' + d.tur + ')' : '') + '…';
+        if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // her 3 işte satır durumları tazelensin
+      }
+    });
+    if (oz && oz.islenen) toast(oz.islenen + ' iş işlendi (öneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else toast('Bekleyen iş yok');
+  } catch (e) { console.error('[v3] islenen drenaj:', e); toast('Drenaj hatası'); }
+  finally {
+    WIZ._islDrenaj = false;
+    if (b) { b.disabled = false; b.textContent = '▶ Bekleyenleri işle'; }
+    await islenenlerYukle();
+  }
 }
 
 // ── Onay → terfi (KORUMA-1: ARES_KABUK.grupla + ARES_KABUK.aktar) ──
@@ -1624,9 +1777,11 @@ function tabGit(t, el) {
 function gosterAdim(n) {
   document.querySelector('[data-panel="1"]').classList.toggle('hide', n !== 1);
   document.querySelector('[data-panel="2"]').classList.toggle('hide', n !== 2);
+  var p3 = document.querySelector('[data-panel="3"]'); if (p3) p3.classList.toggle('hide', n !== 3);
   document.getElementById('stp1').classList.toggle('aktif', n === 1);
-  document.getElementById('stp1').classList.toggle('bitti', n > 1);
+  document.getElementById('stp1').classList.toggle('bitti', n === 2);
   document.getElementById('stp2').classList.toggle('aktif', n === 2);
+  var ib = document.getElementById('btnIslenenler'); if (ib) ib.classList.toggle('aktif', n === 3);
   window.scrollTo(0, 0);
 }
 function setTxt(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }

@@ -364,6 +364,11 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         <span>📁 Klasör Yükle (v3)</span>
       </button>
+      <!-- W-2.7 (154): İşlenenler — wizard taslak havuzuna giriş (v3 flag'iyle birlikte açılır) -->
+      <button class="btn-outline" id="btnIslenenler" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'" style="display:none" title="Yüklenen taslak devrelerin işleme havuzu">
+        <span>⏳ İşlenenler</span>
+        <span id="islRozetDr" style="background:var(--ac);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;">0</span>
+      </button>
     </div>
   </div>
 
@@ -2683,7 +2688,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .in('feature_kod', ['devre_wizard_v2', 'devre_wizard_v3']);
       var _wf = {}; (_r.data || []).forEach(function(f){ if (f.aktif === true) _wf[f.feature_kod] = true; });
       if (_wf.devre_wizard_v2) { var _b2 = document.getElementById('btnYeniDevreWizard');   if (_b2) _b2.style.display = ''; }
-      if (_wf.devre_wizard_v3) { var _b3 = document.getElementById('btnYeniDevreWizardV3'); if (_b3) _b3.style.display = ''; }
+      if (_wf.devre_wizard_v3) {
+        var _b3 = document.getElementById('btnYeniDevreWizardV3'); if (_b3) _b3.style.display = '';
+        // W-2.7 (154): İşlenenler butonu v3 ile birlikte açılır; rozet = bekleyen taslak sayısı
+        var _bi = document.getElementById('btnIslenenler'); if (_bi) _bi.style.display = '';
+        try {
+          var _ic = await _supa.from('devreler').select('id', { count: 'exact', head: true })
+            .eq('tenant_id', _tid).eq('durum', 'taslak').neq('silindi', true);
+          var _ir = document.getElementById('islRozetDr');
+          if (_ir && !_ic.error) _ir.textContent = _ic.count || 0;
+        } catch (e) { /* rozet kozmetik */ }
+      }
     } catch(e) { /* flag yok veya hata — buton gizli kalır */ }
   })();
 
