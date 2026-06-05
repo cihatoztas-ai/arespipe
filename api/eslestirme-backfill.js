@@ -19,15 +19,24 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { eslestir, normSpoolNo, normPipeline, dosyaAdiParse } from './kuyruk-isle-izometri.js';
-// 140/MK-140.x: ares-asme/ares-olcu/eslesme-cekirdegi CommonJS (module.exports + IIFE).
-//   ESM `import` ile yuklenince Vercel'de module/require scope catismasi -> FUNCTION_INVOCATION_FAILED.
-//   Cozum: createRequire ile CJS yolundan yukle (IIFE guard'lari dogru calisir, globalThis'e yazar).
-//   ares-normalize'a DOKUNULMAZ. Sira: ares-asme (ARES_BORU) ONCE, sonra ares-olcu.
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-require('../ares-asme.js');   // globalThis.ARES_BORU
-require('../ares-olcu.js');   // globalThis.ARES_OLCU
-const { eslesmeAnahtari } = require('../lib/malzeme-kutuphane-eslesme.js');
+// 157 (MK-157.2): 140'in createRequire cozumu Vercel runtime'inda OLU DOGMUS — Vercel'in modul
+//   yukleyicisi (/opt/rust/nodejs.js) require(ESM) desteklemiyor; "type":"module" nedeniyle
+//   ares-asme.js ESM sayilir -> ERR_REQUIRE_ESM, MODUL YUKLEMEDE tum endpoint coker (izometri
+//   dali DAHIL — terfi sonrasi otomatik backfill bu yuzden 140'tan beri hep dustu, 129/130
+//   "terfi sonrasi izometri baglanmiyor" borcunun koku). Lokal Node 20.19+/22 require(esm)
+//   destekledigi icin lokalde gorunmuyordu (kanit: node 20.11 ile birebir repro, 157).
+//   COZUM: zincir modul seviyesinden cikti, YALNIZ tip=malzeme dalinda dinamik import() ile
+//   yuklenir. Uc dosya da UMD-guard'li ("typeof module" kontrollu) -> ESM olarak calisinca
+//   module.exports atlanir, globalThis.ARES_BORU / ARES_OLCU / MALZEME_ESLESME dolar.
+//   Sira korunur: ares-asme (ARES_BORU) ONCE, sonra ares-olcu. ares-normalize'a DOKUNULMAZ.
+let _cjsHazir = false;
+async function cjsZinciriYukle() {
+  if (_cjsHazir) return;
+  await import('../ares-asme.js');                     // globalThis.ARES_BORU
+  await import('../ares-olcu.js');                     // globalThis.ARES_OLCU
+  await import('../lib/malzeme-kutuphane-eslesme.js'); // globalThis.MALZEME_ESLESME
+  _cjsHazir = true;
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_KEY;
@@ -36,8 +45,11 @@ export const config = { maxDuration: 60 };
 
 // ── 140: tip=malzeme — spool_malzemeleri.boyut -> kutuphane FK (mm-kanonik) ──
 async function malzemeBackfill(supa, { tenantId, devreId, kuru, limit }) {
+  await cjsZinciriYukle();   // 157: lazy — yukleme hatasi handler try/catch'inde JSON 500 olur, fonksiyon cokmez
   const OLCU = (typeof globalThis !== 'undefined' && globalThis.ARES_OLCU) ? globalThis.ARES_OLCU : null;
   if (!OLCU) return { hata: 'ARES_OLCU yuklenemedi (ares-olcu import?)' };
+  const eslesmeAnahtari = globalThis.MALZEME_ESLESME && globalThis.MALZEME_ESLESME.eslesmeAnahtari;
+  if (!eslesmeAnahtari) return { hata: 'MALZEME_ESLESME yuklenemedi (malzeme-kutuphane-eslesme import?)' };
 
   let q = supa
     .from('spool_malzemeleri')
