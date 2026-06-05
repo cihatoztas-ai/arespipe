@@ -671,6 +671,15 @@ async function inceleBaslat(beklemeyeAlMi) {
   var supa = ARES.supabase();
   var tid = ARES.tenantId();
   var userId; try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+  // MK-153.3 (155): yukleyen_id NULL kökeni burasıydı — getUser düşünce sessiz null ile DEVAM ediliyordu.
+  // Önce session fallback; o da yoksa hiçbir şey (taslak devre dahil) oluşturulmadan iptal.
+  // Gerekçe: izometri-oku kullanici_id ister → null'la yüklemek garantili kuyruk yetimi (117 ailesi).
+  if (!userId) { try { userId = (await supa.auth.getSession()).data.session.user.id; } catch(e) {} }
+  if (!userId) {
+    box.querySelector('p').innerHTML = '<strong style="color:#e53e3e;">Oturum doğrulanamadı — sayfayı yenileyip tekrar deneyin. Hiçbir dosya yüklenmedi.</strong>';
+    toast('Oturum doğrulanamadı — yükleme iptal edildi');
+    return;
+  }
 
   // 1) Taslak devre oluştur (durum='taslak'; terfide 'aktif' olur). is_emri terfide ideal ama
   //    devreler.is_emri_no NOT NULL → v2 ile aynı: oluştururken üret. malzeme/yuzey null, agirlik 0.

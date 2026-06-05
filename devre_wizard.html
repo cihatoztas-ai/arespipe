@@ -789,6 +789,12 @@ async function adim3_yukle() {
   var tid = ARES.tenantId();
   var userId;
   try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+  // MK-153.3 (155): getUser düşünce sessiz null'la devam edilmez — session fallback + sert iptal.
+  if (!userId) { try { userId = (await supa.auth.getSession()).data.session.user.id; } catch(e) {} }
+  if (!userId) {
+    box.querySelector('p').innerHTML = '<strong style="color:#e53e3e;">Oturum doğrulanamadı — sayfayı yenileyip tekrar deneyin. Hiçbir dosya yüklenmedi.</strong>';
+    return;
+  }
 
   // 113/B — Yeni devre modu: dosya yüklemeden ÖNCE devreyi oluştur (öksüz devre olmasın).
   // Alan seti devre_yeni.html ile aynı (MK-109.1: çıkar/çağır, yeniden yazma yok).
