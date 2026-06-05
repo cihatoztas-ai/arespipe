@@ -262,3 +262,46 @@ istisna açılmadı; 0.8 mm imalat toleransında ihmal edilebilir, kayıt için 
 W-3.9 panzehiri (hâlâ İLK) → Y200 ST37 satır öğretimi — ARTIK ADRESİ BELLİ: a093eaaa AILE_KAYIT'ta
 DEĞİL → onun öğretimi DB parser_kural'a (152 köprüsüyle); e1fb879d ailesininki pakete (MK-155.1)
 → W-1.6 tam kanıt. Yeni aday: NB1124 tablosuz çizim sayfaları W-2.4 dışlamasının somut test vakası.
+
+## OTURUM 156 — TEŞHİS OTURUMU: NB1124 kabuk vakası + ÜÇ-KATMAN modeli + v4 kanıt eki
+
+### Ana ders — MK-156.3 (kapsama üç katman)
+**Format kapsaması = KİMLİK + SATIR + BELGE SINIFI (dışlama).** 31-PDF kanıt belgesi yalnız SATIR
+katmanına bakıyordu; 156'nın saha vakası üç katmanın AYRI AYRI kırılabildiğini gösterdi:
+- NB1124 (hhbjşlö): kabuk SAĞLAM (IFS Excel 66 satır → 22 temiz spool anahtarı), satır motoru
+  SAĞLAM (155 redüksiyon mührü aynı ailede) — kırık olan KİMLİK: 44 PDF'in 37'si pipeline_no NULL.
+- 22 dosya format NULL = TABLOSUZ ÇİZİM (.SXX'siz) — BELGE SINIFI sorunu: bunlar öğretilecek
+  format değil DIŞLANACAK sınıf (W-2.4); L3'e gidip manuel_onay'ı şişirdi, para yaktı.
+- e1fb879d ailesinde 20/22 dosya `10Ax6A 1(2).S01.1.pdf` kalıbı kimlik çıkarımı dışı (yalnız
+  `12Ax12D.S01.1.pdf` çözüldü). 4 dosyada pipeline'a SYSTEM adı yazılmış (yanlış alan kapma).
+**kabukta_yok teşhis sırası (tekrarlanabilir):** kabuk anahtarları → PDF anahtarları → format/
+kimlik kırılımı. Üç sorgu, kök neden; parser suçlaması yok.
+
+### Yapılan
+1. Teşhis zinciri (yukarıda) — kod yazılmadı, Tur 1 157'ye tanımlandı.
+2. **v4 kanıt eki (B1124 = 5. GEMİ, 6 PDF / 2 tam çift):** docs/IZO-KANIT-SETI'ye bölüm 8.
+   Yeni sınıflar: Flanş Dablin ⚠? · **Tee metrik ?** (matriste HİÇ yoktu — tip teyidi 157'nin
+   ilk grep'i) · Çelik Alın Kaynağı "- Saha" varyantı ⚠. Güçlenen kanıtlar: Lama 2. örnek (DN200),
+   Detay A 3., çift-hane et 2. (219.1x12.5; cut bloğu metin katmanında KESİK — extractor teyidi),
+   4-segment 2. (M110-262-803-537). Yapısal: Continue+sayfa eki ("M110-722-509 1(2)") · 722
+   ailesi B1124'te de · NOT'ta yüzey çelişkisi ("İçi Galvaniz Dışı Siyah") · "GEMİ BAŞINA TEK
+   ADLANDIRMA" VARSAYIMI ÖLDÜ (B1124'te zone'lu AT100/M110 + zone'suz 10Ax6A yan yana).
+3. **31-PDF yol haritası eleştirisi işlendi:** Madde 0 (kimlik) iş paketinin BAŞINA (W-3.10);
+   tetik örtüşme denetimi her yeni tip checklist'ine (MK-155.3 riski: 'Red.ser'↔'reduksiyon',
+   'Dış Bilezik'↔'Ic Bilezik'); ST/SA kalite genişletmeleri KESİŞEN değişiklik → önce kalıcı
+   lokal regresyon fikstürü (gerçek ham_satir'lardan, 155'in 9/9'unun büyütülmüşü).
+
+### Açık doğrulamalar (157)
+- ✖ "sessiz kayıp" iddiası belge analizinden: motor tetiksiz satırı ham_satir'a düşürüyor mu?
+  Tek canlı örnekle teyit — düşüyorsa ✖→⚠, 158 öncelik sırası değişir.
+- Tee tipi var mı (grep satir_tipleri + format-paketleri.js).
+- 6 B1124 PDF'i ORİJİNAL adlarla yüklenecek (Downloads "(1)" eki var — MK-52.1); Tur 1 ham_satir
+  kaynağı bunlar.
+
+### Tur planı (155 yöntemi her turda: öğret → deploy → sha düşür [SONRASI dahil] → reset → kanıt)
+- **Tur 1 (157):** kimlik adresi read-before-write → Madde 0 + flange_en + W-2.4 dışlama + Tee
+  teyidi → KANIT: hhbjşlö kabukta_yok 22→0 (+ redüksiyon regresyonu bedava, 10Ax6A sette).
+- **Tur 2 (158):** regresyon fikstürü KUR → sessiz kayıplar (Dış Bilezik · Redüser · Lama ·
+  Manşon · Flange EN artığı · Tee?).
+- **Tur 3 (159):** ⚠ ham düşenler toplu (kesirli NPS · Detay A/C dalları · ağırlıksız kaynak
+  +"- Saha" · ST\d{2}(?:\.\d)? · Flanş Dablin dalı) — fikstür üstünde.

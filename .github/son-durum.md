@@ -1,56 +1,63 @@
-# son-durum.md — Oturum 155 (2026-06-05)
+# son-durum.md — Oturum 156 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **W-2.11/A + W-2.12 GEMİDE — `bca6a01`:** devre_detay ?taslak=1 önizleme kipi. TASLAK_KIP flag +
-   `_tkKilit()` çekirdeği — 19/19 yazma fonksiyonu (13 doğrudan supa + inlineEdit/spoolDurdur/
-   spoolKaldir/spoolSil/spoolIptal/onayAktar) tek satır guard (MK-154.2 deseni: çağrılır, kopyalanmaz).
-   Amber bant + TASLAK rozeti + kilit toast'ları; 3 dil anahtarı ×3 dosya (1917→1920). Render'a sıfır
-   dokunuş. Canlı: normal kip regresyon ✓, taslak kip kilit ✓.
-2. **MK-153.3 KAPANDI — `50ef94b` içinde:** yukleyen_id NULL kökeni bulundu — iki wizard'da
-   `getUser` düşünce sessiz null'la DEVAM ediliyordu (117 ailesinin doğum yeri). Fix: session
-   fallback + sert iptal (taslak devre dahil hiçbir şey oluşturulmadan durur, status box + toast).
-3. **PLANSIZ FORMAT SAPMASI (Cihat onayı, NB1124 "faciası"):** redüksiyon satır tipi öğretildi —
-   ama İLK TUR DB'ye yapıldı ve OKUNMADI → **MK-155.1 kritik ders:** AILE_KAYIT'lı formatlarda
-   (e1fb879d!) etkin kural format-paketleri.js'ten derlenir (izometri-oku:902 aileBirlestir||DB),
-   DB parser_kural yalnız fallback. Doğru tur: 'reduksiyon' tipi MALZEME_PASLANMAZ facet'ine
-   (`50ef94b`), 20 ham satır / 8 benzersiz örnek, gerçek aileBirlestir ile 9/9 lokal + saha mührü:
-   10Ax6A ham=false boy=177 kalite=316L kg=14.8, L2 güven 1, $0 (eski: 22.3sn L3 + boş tablo).
-4. **123.C 'reduksiyon_sch' DEVROLUNDU (A kararı):** nps_inc/nps_kucuk tüketicisiz (grep kanıt);
-   motor ilk-tetikleyen kısıtında örtüşen tipler tuzak → tek genel tip. MK-155.3.
-5. **Cache düşürme tuzağı öğrenildi:** L2 sonuçları da sha'lı loglanıyor — kural deploy'undan SONRA
-   o günün sha'ları da NULL'lanmalı (ilk reset eski sonucu yeniden üretti, ikinci tur temiz).
-6. **devreler.html stat sayacı şüphesi KAPANDI (kod kanıtı):** count 1299 applyFilters'tan geçiyor
-   (silindi≠true + durum≠taslak ZATEN var, 138/A); 2696 rozet sayacı bilerek taslak sayıyor (154).
-   Yapılacak iş yok — 154 dersi tekrar: eski şüphe yeniden ölçülür.
+1. **ONAY HAVUZU TASARIMI BAĞLANDI (3 karar, kod yok):** (a) onay yüzü = devre_detay'a yeni
+   "Onay Kuyruğu" sekmesi + devreler.html rozet — KANIT: 953 işin TAMAMI aktif devrelerdeydi,
+   İşlenenler taslak yüzüdür (MK-156.2); (b) tek liste iki davranış — oneri_hazir yeşil/toplu,
+   manuel_onay amber/tekil, uyarı içeriği parse_sonuc.spoollar[].uyarilar'dan (kod+mesaj+agirlik,
+   yeni veri üretimi YOK; atanmamis ayrı alt grup "eşleştir" butonlu); (c) toplu onay YALNIZ
+   oneri_hazir + devre kapsamı, kritik uyarılı satır toplu akışa girmez. 157 read-before-write:
+   "onayla" tüketicisi kodda var mı?
+2. **TEST ÇÖPÜ TEMİZLİĞİ (671 iş iptal):** dry-run + üç istisna (g200, 265-overboard, hhbjşlö)
+   → havuz 998→327 (230 öneri + 97 manuel). hata_mesaji='oturum 156: test devresi temizligi'.
+   157 onay UI'ının test yatağı bilinçli korundu.
+3. **İşlenenler→"Önizle" GEMİDE — `df11ac1` (canlı kanıtlı):** satıra 👁 buton →
+   devre_detay?id=X&taslak=1 YENİ SEKMEDE (bilinçli: drenaj client-loop'u ölmesin, MK-153.1).
+   Bant+kilit+toast canlı ✓. W-2.11 köprüsü kapandı.
+4. **YAPISAL BULGU — MK-156.1:** taslak önizleme BOŞ GÖVDE gösterir: devre_detay spooller'dan
+   render eder, taslaklar spooller'a YAZMAZ (MK-127.4, spooller=0 kanıtlı). B-4 vaadi delik —
+   önizleme taslak VERİ katmanını (kabuk grupla + kuyruk önerileri) okumalı = W-2.14 (157+ tasarım).
+5. **NB1124 (hhbjşlö) KABUK TEŞHİSİ MÜHÜRLENDİ — MK-156.3:** kabuk SAĞLAM (Excel 66 satır →
+   22 spool, temiz anahtarlar: 10Ax6A|S01...). Kırık taraf PDF KİMLİĞİ: 44 PDF'in 37'si
+   pipeline_no NULL. Anatomi: 22 dosya format NULL = TABLOSUZ ÇİZİM (W-2.4 vakası, L3'e gidip
+   manuel_onay'ı şişirmiş); e1fb879d ailesinde 20/22 dosya `10Ax6A 1(2).S01.1.pdf` kalıbı kimlik
+   çıkarımı dışı (yalnız `12Ax12D.S01.1.pdf` kalıbı çözülmüş, 2 dosya). Satır değil KİMLİK sorunu.
+6. **İZO-KANIT-SETİ v4 EKİ HAZIR** (B1124 = 5. gemi, 6 PDF): yeni sınıflar Flanş Dablin ⚠ +
+   Tee metrik ? (matriste hiç yoktu, tip teyidi gerek) + kaynak "- Saha" varyantı; Lama 2.,
+   Detay A 3., çift-hane et 2., 4-segment 2. kanıt; Continue+sayfa eki ("M110-722-509 1(2)");
+   "gemi başına tek adlandırma" varsayımı ÖLDÜ (B1124'te zone'lu + zone'suz yan yana).
+7. **31-PDF yol haritası eleştirisi:** belge yalnız SATIR kapsaması; üç katman olmalı —
+   KİMLİK + SATIR + BELGE SINIFI (dışlama). Madde 0 (pipeline kimlik çıkarımı) iş paketine eklendi.
 
-## Bulgular (155)
-- NB1124 tablosuz çizim sayfaları (.SXX'siz) işlemeye girmiş → W-2.4 dışlamasının somut test vakası.
-- NB1124 kabuk eşleşmesi 0 (kabukta_yok) → spool_kalite yükseltmesi koşmuyor; parser değil kabuk konusu.
-- Motor boy_mm'i int'e çevirir (177.8→177) — MK-155.2, istisna açılmadı (MK-118.3).
-- Cihat İşlenenler'den bir test devresini sildi — 154 hijyeni (W-2.13) sayesinde güvenli.
+## Bulgular (156)
+- devre_dokumanlari.parse_durumu 'bekliyor' kalıyor (kuyruk işleri bitmiş olsa da, hhbjşlö 44 PDF
+  + bom excel) — senkron borcu mu bilinçli mi, 157 teyit.
+- B1124 PDF'leri Downloads "(1)" ekiyle geldi — sisteme ORİJİNAL adla yüklenmeli (MK-52.1).
+- ✖ "sessiz kayıp" iddiası belge analizinden; motor tetiksiz satırı ham_satir'a düşürüyor mu
+  tek canlı örnekle teyit edilmeli (ediyorsa ✖→⚠, öncelik değişir).
 
-## Commit'ler (155)
+## Commit'ler (156)
 | Hash | Mesaj |
 |------|-------|
-| `bca6a01` | feat(155): W-2.11/A devre_detay ?taslak=1 onizleme kipi — 19 yazma noktasi _tkKilit + bant/rozet (W-2.12), 3 dil anahtari |
-| `50ef94b` | fix(155): redüksiyon satir tipi PASLANMAZ facet'ine (NB1124, 8 ornek kanitli; 123.C devralindi/A) + MK-153.3 yukleyen_id sert iptal (iki wizard) |
-DB (veri UPDATE, migration YOK): e1fb879d parser_kural tip 7→8 (ölü ama fallback'e tutarlı, bilinçli
-bırakıldı) · ai_api_log format+bugün sha NULL ×2 tur · NB1124 kuyruk reset (.SXX, ~22 iş).
-CI yeşil. 12/12 ✓. izometri-oku DOKUNULMADI ✓ (902 satırı sadece OKUNDU).
+| `df11ac1` | feat(156): Islenenler satirina Onizle butonu — ?taslak=1 koprusu yeni sekmede (W-2.11 acik ucu kapandi) |
+DB (veri UPDATE, migration YOK): 671 kuyruk işi → iptal (test temizliği). CI yeşil. 12/12 ✓.
+izometri-oku DOKUNULMADI ✓. Repo raw erişimiyle kod okuma yapıldı (yeni yöntem, işe yaradı).
 
 ## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-155.1:** AILE_KAYIT'lı formatlarda satır öğretimi DB parser_kural'a DEĞİL
-  lib/format-paketleri.js katmanına yapılır (= kod + deploy); aileBirlestir DB'yi okumaz, DB kural
-  yalnız fallback. format_tanit ürünleşmesi bu ikiliği hesaba katmalı (156+ tasarım sorusu).
-- **MK-155.2:** l2 motoru boy_mm'i int'e çevirir; motora tip istisnası açılmaz (MK-118.3),
-  tek-ondalık boy kaybı (≤0.9mm) kabul edilen tolerans.
-- **MK-155.3:** Motor "ilk tetikleyen tipte kalır, pattern tutmazsa ham düşer" — örtüşen
-  tetikleyicili satır tipleri tuzaktır; genel tip + görünür ham_satir düşüşü (B-6) tercih edilir.
-  123.C bu gerekçeyle 155 genel 'reduksiyon' tipine devroldu.
+- **MK-156.1:** Taslak önizleme kipi (?taslak=1) spooller'dan render eder; taslak spooller'a
+  yazmaz (MK-127.4) → her taslak önizlemesi yapısal boş gövde. B-4, önizleme taslak veri
+  katmanını okuyana dek (W-2.14) kapanmaz.
+- **MK-156.2:** Onay yükü AKTİF devrelerde yaşar — onay yüzü İşlenenler'e (taslak yüzü) değil
+  devre_detay'a kurulur. Tasarım yerleşimi sezgiyle değil yük dağılımı sorgusuyla seçilir.
+- **MK-156.3:** Format kapsaması ÜÇ katman: KİMLİK çıkarımı + SATIR tipleri + BELGE SINIFI
+  (dışlama). Üçü ayrı ayrı kırılabilir; kabukta_yok teşhisinde sıra: kabuk anahtarları → PDF
+  anahtarları → format/kimlik kıyası.
 
-## 156 ANA İŞ
-1) İşlenenler→"Önizle" köprüsü (?taslak=1'e buton — W-2.11'in açık ucu, küçük).
-2) Onay havuzu tasarım sohbeti (~953 iş: oneri_hazir 690+ / manuel_onay 263+) — kod yok, konuşma.
-3) Format kuyruğu: W-3.9 panzehiri (hâlâ İLK) → Y200 ST37 öğretimi (adres artık belli: a093eaaa=DB,
-   e1fb879d ailesi=paket) → W-1.6 tam kanıt.
-4) Küçükler: NB1124 kabuk eşleşmesi (kabukta_yok ×22) · W-2.4 dışlama (NB1124 test vakası hazır).
+## 157 ANA İŞ
+1) Format Tur 1 — NB1124 kapanışı: kimlik çıkarımı read-before-write (NEREDE yaşıyor?) →
+   Madde 0 kalıpları + flange_en + W-2.4 dışlama kararı + Tee grep teyidi → kanıt hedefi
+   kabukta_yok 22→0 (saha hazır: hhbjşlö).
+2) Onay Kuyruğu sekmesi: "onayla" tüketicisi read-before-write → implementasyon (157-158).
+3) W-2.14 taslak önizleme veri katmanı (tasarım).
+4) Küçükler: parse_durumu senkron teyidi · IZO-KANIT-SETI v4 yapıştır (+ad sadeleştirme kararı) ·
+   6 B1124 PDF'ini orijinal adlarla yükle · Y200 ST37 + W-3.9 (sıra gelirse).

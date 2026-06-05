@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 155)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 156)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -14,7 +14,7 @@
 - [ ] B-1 Operatör klasörü sürükler, bilgi-amaçlı klasörleri (revizyon öncesi vb.) baştan dışlar.
 - [ ] B-2 Excel kabuk + PDF eşleştirme arka planda kendi kendine yürür; operatör beklemez, butona basmaz.
 - [ ] B-3 Tanınmayan format = kırmızı satır + "Formatı tanıt" butonu; öğretilen kural kalıcı kaydedilir, aynı aile bir daha AI'a gitmez.
-- [~] B-4 Taslak gerçek devre detay görünümünde kontrol EDİLEBİLİYOR (155: ?taslak=1 kipi canlı); kalan: İşlenenler→Önizle köprüsü + onay akışıyla bağ.
+- [~] B-4 Taslak gerçek devre detay görünümünde kontrol EDİLEBİLİYOR; köprü TAMAM (156: İşlenenler→Önizle, df11ac1) ama MK-156.1: önizleme spooller'dan render eder, taslak spooller'a yazmaz (MK-127.4) → BOŞ GÖVDE. Kalan: W-2.14 taslak veri katmanı + onay akışıyla bağ.
 - [~] B-5 "İşlenenler" takibi GEMİDE (154); paralel yükleme akışı (W-2.9) açık.
 - [ ] B-6 Hiçbir belge/satır sessizce kaybolmaz: eşleşmeyen, çelişen, tanınmayan her şey görünür.
 
@@ -52,7 +52,7 @@
 - [ ] W-2.1 Adım 1: tersane ve proje AYRI seçim alanları (aynı kutuda değil).
 - [ ] W-2.2 "Mevcut devre / yeni devre" ayrımı kalkar. Mevcut devreye ekleme = devre detay "Spool ekle" → wizard'ın devre kipi (?devre_id=); onay sonrası devre detaya dönüş.
 - [ ] W-2.3 Klasör ağacı: sürükle-bırakta Windows gezgini görünümü (mockup v5, MK-97.6). Klasör/dosya bazında dahil/hariç işareti.
-- [ ] W-2.4 "Bilgi amaçlı" klasör dışlama: revizyon-öncesi klasörler işlemeye GİRMEZ → eski PDF'in Excel kabuğuna eşleşmesi kökten engellenir. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.)
+- [ ] W-2.4 "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler VE tablosuz çizimler (.SXX'siz) işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 156 KANITI: NB1124'te 22 tablosuz çizim L3'e gitti, manuel_onay'ı şişirdi, para yaktı — ARTIK ERTELENEMEZ, Tur 1 kapsamında (157).
 - [ ] W-2.5 İlerleme göstergesi ikiye ayrılır: (a) dosyaların sisteme yüklenmesi, (b) arka plan işleme (kuyruk). Tek çubuk ikisini karıştırmaz.
 
 ### Onay ve terfi (durum makinesi)
@@ -63,12 +63,23 @@
 - [ ] W-2.10 Devre detay "Spool ekle" → ekleme yapıldıysa buton "Eklenenleri işle"ye döner → İşlenenler sekmesine yönlendirir → onay → devre detaya geri.
 
 ### Taslak önizleme (en büyük parça — karar gerekli)
-- [x] W-2.11 GEMİDE (155, canlı kanıtlı): devre_detay ?taslak=1 kipi — TASLAK_KIP flag + _tkKilit() çekirdeği (19/19 yazma fonksiyonu tek satır guard, MK-154.2 deseni) + amber bant/rozet. Render'a sıfır dokunuş; normal kipte davranış birebir (regresyon ✓). Açık köprü: İşlenenler'den "Önizle" butonu (İncele Adım 2'de kaldı — iki kapı iki amaç, buton 156).
+- [x] W-2.11 GEMİDE (155, canlı kanıtlı): devre_detay ?taslak=1 kipi — TASLAK_KIP flag + _tkKilit() çekirdeği (19/19 yazma fonksiyonu tek satır guard, MK-154.2 deseni) + amber bant/rozet. Render'a sıfır dokunuş; normal kipte davranış birebir (regresyon ✓). Köprü KAPANDI (156, df11ac1): İşlenenler satırında 👁 Önizle → ?taslak=1 YENİ SEKMEDE (drenaj loop'u ölmesin); İncele Adım 2'de kaldı (iki kapı iki amaç). YENİ AÇIK UÇ: MK-156.1 boş gövde → W-2.14.
       A) devre_detay.html taslak kipi (?taslak=1): birebir aynılık garantili, çift bakım yok; risk = canlı-kritik sayfaya kip.
       B) Ortak render modülü + wizard içinde çizim: canlı sayfa dokunulmaz; risk = refactor maliyeti / kopya kod (MK-126.8).
       → Karar öncesi read-before-write: devre_detay taslak devreyle bugün ne kadar sorunsuz açılıyor?
 - [x] W-2.12 GEMİDE (155, W-2.11 ile birlikte): amber sticky bant ("ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli") + başlık TASLAK rozeti + kilit toast'ları; 3 dil anahtarı (tr/en/ar). Tam ekran filigran bilinçli eklenmedi (bant+rozet+toast yeterli, ekran kirliliği yok).
 - [x] W-2.13 KAPANDI (154, canlı kanıtlı): (a) veri onarımı — 356 yetim kuyruk işi 'iptal'e çekildi (281'i silinmiş taslakların oneri_hazir'ı; onay havuzunun %32'si hayaletmiş), 20 taslak koloni silindi; (b) wizardIptal → _taslakIptalEt çekirdeği: soft-delete+silinme_tarihi+kuyruk temizliği ('isleniyor' yarış koşulu nedeniyle hariç, MK-154.2); (c) drenaj ikinci savunma hattı: silinmiş devrenin işi HİÇ alınmaz, konsola yazılır. NOT: 'aktif hayalet' bulgusu doğrulanmadı — 138/A filtresi zaten çalışıyordu, hgtrghh aktif değildi.
+- [ ] W-2.14 (156, MK-156.1) Taslak önizleme VERİ katmanı: ?taslak=1 kipinde spooller yerine taslak
+      katmanı (ARES_KABUK.grupla modeli + kuyruk önerileri) render edilmeli — taslak spooller'a
+      yazmaz (MK-127.4), mevcut önizleme boş gövde. Gerilim: 155'in "render'a sıfır dokunuş"
+      disiplini ↔ veri kaynağı değişimi; tasarım kararı 157.
+- [ ] W-2.15 (156 kararları) ONAY KUYRUĞU sekmesi — devre_detay'a (MK-156.2: yük AKTİF devrelerde,
+      953 işin tamamı; İşlenenler taslak yüzü). Tek liste iki davranış: oneri_hazir yeşil/TOPLU
+      (yalnız devre kapsamı, kritik uyarılı satır girmez) · manuel_onay amber/TEKİL (içerik
+      parse_sonuc.spoollar[].uyarilar: kod+mesaj+agirlik — hazır JSONB, yeni veri üretimi YOK) ·
+      atanmamis ayrı alt grup ("eşleştir"). devreler.html'e bekleyen-onay rozeti. ÖNKOŞUL
+      read-before-write (157): oneri_hazir "onayla" tüketicisi kodda var mı? Test yatağı hazır:
+      g200 + 265-overboard + hhbjşlö (327 iş).
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI
 
@@ -84,6 +95,13 @@
 - [ ] W-3.7 Windows render sorunu: pilot operatörleri Windows'ta — format_tanit PDF görüntüsü Windows'ta düzgün olmadan "son kullanıcı kolay" hedefi sağlanamaz.
 - [ ] W-3.8 Band-B glyph tablosu (~20 karakter): NB1137 spool ailesi L3'ten L2'ye iner ($0).
 - [ ] W-3.9 (153 bulgu) format_tanit TURETILEN_ALANLAR panzehiri: cap_mm/et_mm/dn için kayıtlı (eski/çöp) regex olsa bile _alanlariKos KOŞMAZ, patch YAZMAZ, çip 🧮 türetilmişe zorlanır. (Çöp regex'in ekrana kırmızı, üretime 2358 bastığı kanıtlandı; veri onarıldı ama kod kapısı açık.)
+- [ ] W-3.10 (156, MK-156.3) Pipeline KİMLİK çıkarımı ("Madde 0"): kapsama = KİMLİK + SATIR +
+      BELGE SINIFI üç katman. Kalıplar: zone'suz <NPS>x<NPS> ("10Ax6A 1(2).S01.1.pdf") · " 1(2)"
+      sayfa segmenti · 4-segment (M110-262-803-537, 2 kanıt) · zone-harf eki (355C/332A) ·
+      Continue+sayfa eki · DOSYA ADI OTORİTE (başlık kesilebilir, v3). 156 kanıtı: NB1124'te
+      20/22 spool PDF'i kimlik çıkarımı dışı → kabukta_yok. ÖNKOŞUL: çıkarımın adresi
+      read-before-write (MK-155.1 satır içindi — bu FARKLI mekanizma olabilir). Aynı gemide
+      zone'lu+zone'suz yan yana yaşar (v4 — "gemi başına tek adlandırma" varsayımı öldü).
 
 ## FAZ 4 — VERİ SAĞLIĞI VE PROPAGASYON
 

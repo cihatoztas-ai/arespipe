@@ -1,73 +1,54 @@
-# Oturum 138 — Wizard inceleme: montaj ayrımı + mükerrer-kayıt dedup + taslak hijyeni
+# CLAUDE-SON-OTURUM.md — Oturum 156 özeti
 
-Oturum, Cihat'ın farklı gemilerden gerçek devreler yükleyip wizard inceleme ekranında çıkan sorunları
-tek tek kapatmasıyla geçti ("problemleri çöze çöze gidelim"). Üç kök sorun bulundu ve kapatıldı; hepsi
-ölçümle (DB sorgusu + container birim testi) doğrulandı, körlemesine fix yok (§11.1 / MK-126.8).
+## Tek cümle
+Onay havuzu tasarımı veriyle bağlandı (yer=devre_detay, tek liste/iki davranış, toplu onay sınırlı
+— MK-156.2), 671 test işi temizlenip havuz 327'ye indi, İşlenenler→Önizle köprüsü gemiye bindi
+(df11ac1, canlı kanıtlı) ve aynı köprünün ilk ekranı iki yapısal gerçeği açığa çıkardı: taslak
+önizleme yapısal boş gövde gösterir (MK-156.1) ve NB1124'ün kabukta_yok ×22'si satır değil
+KİMLİK sorunudur (MK-156.3) — kabuk 22 spool'la sapasağlam, 44 PDF'in 37'si pipeline NULL.
 
-## Akış — neden bu sıra
-Açılışta BRIEFING 70 döneminde bayat çıktı (oturum-saglik BAYAT verdi); 137 kapanışı için yeniden yazıldı
-(3-dosya sistemi BRIEFING'i 67 oturum güncellememiş — script `son-durum.md`'ye bağlanmalı, 139+ borç).
-Sonra gerçek Y100/NB1137 + NB1099C devreleriyle wizard sürüldü.
+## Kilitli kararlar
+1. **Onay yüzü (Cihat onaylı akış):** devre_detay'a "Onay Kuyruğu" sekmesi + devreler.html rozet.
+   Kanıt: 953 işin tamamı aktif devrelerdeydi (taslakta yalnız günün NB1124 turu). İşlenenler
+   taslak yüzü olarak kalır.
+2. **Tek liste, iki davranış:** oneri_hazir yeşil + toplu onaylanabilir; manuel_onay amber +
+   tekil, satır açılınca parse_sonuc.spoollar[].uyarilar (kod+mesaj+agirlik) listelenir;
+   atanmamis ayrı alt grup ("onayla" değil "eşleştir"). Yeni veri üretimi yok — JSONB yeterli.
+3. **Toplu onay sınırı:** yalnız oneri_hazir + devre kapsamı; kritik uyarılı satır toplu akışa
+   girmez; manuel_onay terfiyi bloklamaz ama görünür kalır (B-6 / güvensiz BOM felsefesi).
+4. **Test yatağı stratejisi:** "hepsini sil" yerine g200 + 265-overboard + hhbjşlö korundu —
+   157 onay UI'ı gerçek veriyle test edilebilsin (141+86+55 + 45 iş).
 
-## Yapılanlar
+## Süreç dersleri (156)
+- **Teşhis zinciri tasarımı değiştirdi:** "onay yüzü İşlenenler'e" ön kararı, yük dağılımı
+  sorgusuyla çürüdü (MK-156.2). Tasarım yerleşimi sezgiyle değil sorguyla.
+- **Önizleme kipi ilk gününde teşhis aracı oldu:** 0 spool ekranı MK-127.4'ün doğal sonucuydu —
+  155'in canlı kanıtı bant/kilit'i test etmişti, VERİYİ değil. "Kanıt neyi kanıtladı?" sorusu
+  kapanış kanıt envanterlerine eklenmeli.
+- **kabukta_yok teşhis sırası işledi (MK-156.3):** kabuk anahtarları → PDF anahtarları → format
+  kıyası. Üç sorguda kök neden; panik yok, parser suçlaması yok (parser da kabuk da temizdi).
+- **Repo raw okuma yöntemi:** devre_wizard_v3 + devre_detay + ares-kabuk doğrudan
+  raw.githubusercontent'ten okundu — MK-126.8 için dosya yapıştırma trafiği bitti. Sonraki
+  oturumlarda standart yol.
+- **Placeholder tuzağı (küçük):** UPDATE şablonundaki '<NB1124_DEVRE_ID>' yer tutucusu SQL'e
+  aynen gitti → uuid hatası. Yer tutuculu şablon vermek yerine önce id sorgusu, sonra dolu
+  komut — bu sırayla verilmeli.
+- **31-PDF belgesi tek katmanlıydı:** satır kapsaması mükemmel ama bugünün kırığı kimlikte.
+  Belge eleştirisi → üç katman modeli (MK-156.3) + Madde 0.
 
-### 1. Montaj "Fazla" sorunu — üç turda kök sebep (teşhis revizyonu)
-- **İlk hipotez (doküman §11.1-A):** `montajDosyaKok` `Y100-817-NNN.1.pdf`'i tutmuyor. **ÇÜRÜDÜ** —
-  `node -e` ile kanıtlandı: `montajDosyaKok('Y100-817-007.1.pdf')='Y100-817-007'`, `dosyaAdiParse=null`.
-  Regex sağlam.
-- **Gerçek kök:** Aynı montaj PDF'i bir devrede `montaj{}` üretmiş, **başka yüklemede `cache_hit` ile
-  montajsız** gelmiş (`parse_sonuc._cache_meta.cache_hit=true`, `original_log_id` montajsız eski parse).
-  Boş kopya spool dalına düşüp `dosya_adi_pipeline_yok` → 🟠 Fazla.
-- **`api/devre-inceleme.js` `izometrileriDerle` montaj dalı ZATEN VARDI** ama yalnız `ps.montaj` varsa
-  çalışıyordu; bayat-cache montajsız kayıt o dalı atlıyordu.
+## Canlı kanıt envanteri (156)
+- Önizle butonu: yeni sekme + amber bant + kilit toast ✓ (Cihat turu, ekran görüntülü).
+  NOT: bu kanıt köprüyü kanıtlar, taslak VERİSİNİN göründüğünü değil (W-2.14 açık).
+- Temizlik: dry-run 716 → üç istisnayla 671 iptal → kalan 230+97=327 (beklenen değerlerle birebir).
+- NB1124 zinciri: spooller=0 ✓ · Excel 66 satır/oneri_hazir ✓ · kabuk 22 benzersiz anahtar ✓ ·
+  PDF 37/44 pipeline NULL ✓ · format kırılımı (22 NULL-format tablosuz + e1fb879d 20 kalıp-dışı) ✓.
 
-### 2. Fix 138/A — dosya_adi bazlı dedup (api/devre-inceleme.js)
-- Aynı `dosya_adi` için en bilgilendirici kayıt seçilir (montaj{} 3 > spoollar dolu 2 > işlendi 1 > boş 0).
-- Container'da gerçek dosyaya patch + node --check + senaryo testi GEÇTİ.
+## Dosyalar (156)
+devre_wizard_v3.html (1833→1840: 👁 Önizle + islenenlerOnizle, yeni sekme gerekçeli).
+Commit: df11ac1. DB: 671 kuyruk UPDATE (iptal), migration YOK. izometri-oku DOKUNULMADI.
+Yeni belge: IZO-KANIT-SETI v4 eki (B1124 partisi — ayrı dosya, yapıştırılacak).
 
-### 3. Feat 138/B — montaj ayrı bölüm (3 dosya, tek commit)
-- **Tespit deterministik:** `montajDosyaKok!=null && dosyaAdiParse==null` → montaj belge. AI yok (MK-49.1).
-  `montaj{}` parse'ta olmasa da (bayat-cache) dosya adından montaj sayılır → `icerik_okundu=false`.
-- `lib/izo-eslesme.js`: `montaj_belge` filtresi (Fazla'ya girmez) + `montajlar[]` + `ozet.montaj`. Self-test
-  korundu, montaj birim testi GEÇTİ.
-- `api/devre-inceleme.js`: dosya-adı-tabanlı montaj-belge dalı (eski `if(ps.montaj)` kapsandı, `montaj_belge`
-  işareti eklendi).
-- `devre_wizard_v3.html`: `j.montajlar` → ayrı "Montaj / genel çizimler" bölümü (nötr, Fazla değil).
-- **İlk commit eksik gitti** (izo-eslesme patch a2 anchor tutmadı — gerçek dosyada çok-satırlı return,
-  benim anchor'ım tek-satırdı). Cihat tam dosyayı yükledi; doğru anchor'la tamamlandı, ayrı commit'le
-  push edildi. **Doğrulama:** G400-817-015'te "0 fazla", montaj çeteleden çıktı.
-
-### 4. Fix 138/A+B1 — taslak hijyeni (devreler.html + devre_wizard_v3.html)
-- **A:** `applyFilters`'a `.neq('durum','taslak')` (tek nokta → count/liste/id tutarlı).
-- **B1:** `wizardIptal()` soft-delete (`silindi=true`, yalnız taslak). İki İptal butonu (üst-bar + Adım 1)
-  ona bağlandı. node --check (izole fonksiyon) OK.
-- **Kök:** `inceleBaslat()` "İncele →" anında taslak INSERT ediyor (devre_id storage/kuyruk için lazım);
-  terk edilince yetim kalıyordu.
-
-### 5. Temizlik
-- 15 boş devre (9 taslak + 6 aktif, hepsi çöp/yarım test) soft-delete. `bos_kalan=0`.
-- 6 aktif-boş = eski v2 artığı (Nisan-Mayıs); yeni kod boş kabukta devreyi aktif yapmıyor → sistemik değil.
-
-## Kararlar / içgörüler
-- **Teşhis iki kez revize edildi, ikisi de ölçümle.** "Regex tutmuyor" hipotezi `node -e` ile çürütüldü;
-  asıl kök bayat-cache. **Doküman hipotezine değil, koşan koda güven** (131→132→7.4 dersinin tekrarı).
-- **MK-126.8 işe yaradı:** montaj dalı zaten vardı (devre-inceleme.js) — yeniden yazmadan mevcut dalı
-  genişlettik. `montajDosyaKok` da vardı, dokunmadık.
-- **Soft-delete > hard-delete:** yeni endpoint (MK-129.3 tavanı) + storage/FK riski yerine `silindi=true` +
-  mevcut filtre. Tek UPDATE, anında çözer, geri alınabilir.
-- **Anchor patch dersi:** çok-satırlı kod bloklarını anchor olarak alırken GERÇEK dosyanın birebir
-  formatını kullan (boşluk/satır kırılımı). Tek-satıra sıkıştırılmış anchor `count==0` ile sessiz
-  başarısız oldu; assertion yakaladı (dosyayı bozmadı). Cihat tam dosya yükleyince düzeldi.
-
-## Süreç notu
-Her teşhis adımı DB sorgusu/container testiyle; üç JS patch'i container'da `node --check` + birim testten
-geçirildi; HTML patch'i izole fonksiyon node --check'i ile doğrulandı. Patch'ler anchor+assertion korumalı
-(yanlış dosyada sessiz çalışmaz). Tüm fix'ler canlıda görsel doğrulandı.
-
-## Mühürler (KARARLAR.md — 138 açılış/kapanışta)
-MK-138.1 (dosya_adi dedup) · MK-138.2 (montaj deterministik tespit + ayrı bölüm) · MK-138.3 (taslak gizle +
-iptal soft-delete).
-
-## 139 ilk iş
-B-çap sürprizi: `ares-kabuk.js grupla()` spool başlığına cap/et yazmıyor → modal "—", terfide doluyor.
-Fix planlı (grupla'ya boyutParse türetmesi → taslak=terfi). Detay: son-durum + CLAUDE-SONRAKI-OTURUM.
+## Kapanış durumu
+HEAD df11ac1 + kapanış doc commit'i. 12/12 ✓. Onay havuzu: tasarım tamam, kod 157'de.
+NB1124: teşhis tamam, öğretim Tur 1 157'de (saha hazır). W-2.11 köprü olarak kapandı,
+B-4 W-2.14'e devretti. Kanıt seti 37 PDF / 5 gemi.
