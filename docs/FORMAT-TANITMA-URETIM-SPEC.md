@@ -250,3 +250,15 @@ bölümünde). Spec'i etkileyen zemin değişiklikleri:
    ai_api_log) bundan sonra temiz havuzdan okunur; eski oranlar yetim gürültüsü içeriyordu.
 3. **W-3.9 hâlâ AÇIK KOD KAPISI:** TURETILEN_ALANLAR panzehiri yazılmadı — Y200 öğretim turundan
    ÖNCE kapanmak zorunda (153 bulaşma vakasının tekrarını önler). 155+ format paketinin ilk maddesi.
+
+## OTURUM 155 GÜNCELLEME — kural kayıt hedefi İKİLİ çıktı (mimari düzeltme)
+
+NB1124 saha turunda kanıtlandı (ayrıntı FORMAT-TANITMA-ILERLEME.md 155): AILE_KAYIT'lı formatlarda
+etkin kural lib/format-paketleri.js'ten derlenir, DB parser_kural okunmaz (izometri-oku:902).
+Spec'in "öğretilen kural kalıcı kaydedilir" maddesi iki hedefli hale gelir:
+- **Paket-katmanlı aile** (tersan_cadmatic_spool/montaj): kayıt = format-paketleri.js + deploy.
+  format_tanit UI'ı bu aileler için doğrudan DB'ye yazamaz — ya paket-taslağı üretir (PR akışı)
+  ya da AILE_KAYIT dışına alınana dek operatör öğretimi bu ailelerde devre dışı kalır. KARAR 156+.
+- **DB-kurallı format** (a093eaaa vb.): mevcut akış geçerli, değişiklik yok.
+Cache düşürme + kuyruk reset reçetesi (153 yöntemi) ikinci kez canlı doğrulandı; tek ek:
+deploy SONRASI aynı günün L2 sha kayıtları da düşürülür (155'te öğrenilen tuzak).

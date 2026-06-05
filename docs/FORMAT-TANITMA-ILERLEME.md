@@ -221,3 +221,44 @@ Y200 satır öğretimi (→ W-1.6 schedule et kanıtı) ERTELENDİ. Kimseyi blok
 ### 155+ format kuyruğu (değişmedi)
 W-3.9 panzehiri (İLK — Y200 öğretiminden önce kod kapısı kapanmalı, 153 bulaşma dersi) →
 Y200 ST37 satır öğretimi (kabul_kriterleri DOKUNULMAZ, cache sha düşürme MK-152.4) → W-1.6 kanıt.
+
+---
+
+## OTURUM 155 — PLANSIZ SAHA TURU: NB1124 redüksiyon öğretimi + KRİTİK MİMARİ DERS
+
+### Tetik
+W-2.11 canlı testi sırasında NB1124 devresi (22 spool, e1fb879d ailesi) inceleme ekranında
+"facia" görünümü: tüm satırlar L3 %100, çap/et/kalite boş. Teşhis üç bilinen borcun bileşkesi
+çıktı: (1) redüksiyon satır tipi öğretilmemiş (Y200 dersinin tekrarı), (2) tablosuz çizim
+sayfaları işlemeye girmiş (W-2.4 sınıfı), (3) kabuk eşleşmesi 0 (kabukta_yok).
+
+### KRİTİK DERS — MK-155.1 (bugünün ana kazanımı)
+**e1fb879d satır öğretimi DB parser_kural'a yapılmaz.** İlk tur DB'ye yapıldı (tip 7→8,
+RETURNING kanıtlı) ve HİÇ OKUNMADI: izometri-oku:902 `aileBirlestir(format_kodu) || DB_kural` —
+AILE_KAYIT'ta kayıtlı formatlar (tersan_cadmatic_spool, tersan_cadmatic_montaj) için etkin kural
+**lib/format-paketleri.js katmanlarından** derlenir, DB kural yalnız fallback. Paket-katmanlı
+ailelerde satır öğretimi = KOD DEĞİŞİKLİĞİ + DEPLOY. (W-3.x format_tanit ürünleşmesi bu gerçeği
+hesaba katmalı: kayıt hedefi format'a göre DB veya paket olabilir — tasarım sorusu, 156+.)
+
+### Yapılan (kanıt zinciri)
+1. **'reduksiyon' tipi → MALZEME_PASLANMAZ facet'i** (format-paketleri.js, commit 50ef94b):
+   20 gerçek ham_satir / 8 benzersiz örnek; pattern lokalde gerçek aileBirlestir ile 9/9
+   (8 redüksiyon + boru_sch regresyonu). Sayısal kuyruk = boy(B16.9 H, tek ondalık) + kalite + kg.
+2. **123.C 'reduksiyon_sch' DEVROLUNDU (A kararı, Cihat):** nps_inc/nps_kucuk tüketicisiz (grep
+   kanıtlı); motor "ilk tetikleyen tipte kalır, pattern tutmazsa ham düşer" kısıtında örtüşen
+   tetikleyicili iki tip tuzaktı → tek genel tip. Sökemezse ham_satir görünür düşer (B-6). MK-155.3.
+3. **Cache düşürme MK-152.4 yöntemi İKİNCİ KEZ kanıtlandı:** format+tarih hedefli pdf_sha256 NULL
+   + kuyruk reset (.SXX filtreli — tablosuz çizimler bilerek dışarıda, gereksiz L3 maliyeti yok).
+   Tuzak notu: L2 sonuçları da sha'lı loglanıyor → kural deploy'undan SONRA o günün sha'ları da
+   düşürülmeli (ilk reset turu bu yüzden eski sonucu yeniden üretti).
+4. **Saha mührü:** 10Ax6A → ham=false, boy=177, kalite=316L, kg=14.8, sure_ms 2217, güven 1,
+   notlar "L2 deterministik parse". Eski tur: 22.3 sn L3 + boş tablo. $0.
+
+### Bilinen sınır — MK-155.2
+Motor sözleşmesi boy_mm'i int'e çevirir (177.8→177). MK-118.3 (motor yeniden yazılmaz) gereği
+istisna açılmadı; 0.8 mm imalat toleransında ihmal edilebilir, kayıt için not.
+
+### 156+ format kuyruğu (güncel)
+W-3.9 panzehiri (hâlâ İLK) → Y200 ST37 satır öğretimi — ARTIK ADRESİ BELLİ: a093eaaa AILE_KAYIT'ta
+DEĞİL → onun öğretimi DB parser_kural'a (152 köprüsüyle); e1fb879d ailesininki pakete (MK-155.1)
+→ W-1.6 tam kanıt. Yeni aday: NB1124 tablosuz çizim sayfaları W-2.4 dışlamasının somut test vakası.

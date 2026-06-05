@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 154)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 155)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -14,7 +14,7 @@
 - [ ] B-1 Operatör klasörü sürükler, bilgi-amaçlı klasörleri (revizyon öncesi vb.) baştan dışlar.
 - [ ] B-2 Excel kabuk + PDF eşleştirme arka planda kendi kendine yürür; operatör beklemez, butona basmaz.
 - [ ] B-3 Tanınmayan format = kırmızı satır + "Formatı tanıt" butonu; öğretilen kural kalıcı kaydedilir, aynı aile bir daha AI'a gitmez.
-- [ ] B-4 Taslak, gerçek devre detay görünümünde (taslak temalı) kontrol edilir; onayla → aktif devreler.
+- [~] B-4 Taslak gerçek devre detay görünümünde kontrol EDİLEBİLİYOR (155: ?taslak=1 kipi canlı); kalan: İşlenenler→Önizle köprüsü + onay akışıyla bağ.
 - [~] B-5 "İşlenenler" takibi GEMİDE (154); paralel yükleme akışı (W-2.9) açık.
 - [ ] B-6 Hiçbir belge/satır sessizce kaybolmaz: eşleşmeyen, çelişen, tanınmayan her şey görünür.
 
@@ -41,10 +41,10 @@
 
 - [x] W-1.1 Kuyruk tetiği KARARI (153): client-loop, cron YOK — 508 saha kanıtı + MK-113/A blanket. Yeni endpoint yok (12/12 ✓). Kalıcı tetik yüzü = W-2.7 İşlenenler sekmesi.
 - [x] W-1.2 Client-loop TAM (154): MK-153.1 çok-tur koşu + kalıcı UI yüzü W-2.7 İşlenenler'de "Bekleyenleri işle" — konsol global drenaj devri bitti, canlı kanıtlı.
-- [x] W-1.3 MK-117 KAPANDI (153): kök = devre_dokumanlari.yukleyen_id NULL, tek küme (M110-722-21xx, 11 dosya), veri onarımıyla sahiplendirildi → 12/12 hatasız. (Null INSERT atan akışın tespiti açık kuyrukta.)
+- [x] W-1.3 MK-117 KAPANDI (153): kök = devre_dokumanlari.yukleyen_id NULL, tek küme (M110-722-21xx, 11 dosya), veri onarımıyla sahiplendirildi → 12/12 hatasız. (Null INSERT akışı 155'te KAPANDI: iki wizard'da getUser sessiz-null fallback'i → session fallback + sert iptal; hiçbir şey yüklenmeden durur.)
 - [x] W-1.4 TAHLİYE TAMAM (153): 269 iş işlendi, bekliyor 233→3 (kalan IFS xlsm = excel hattı). Rapor: L2=206 (%83, $0) / L3=41 ($1.15) — 52'nin %70+ pilot eşiği sahada aşıldı.
 - [x] W-1.5 Buton yedek + konsol global drenaj yolu çalışıyor (153).
-- [~] W-1.6 KANIT kısmi (153, Y200 ile): format a093eaaa+L2+$0 ✓ · kardeş ayrımı (montaj→39a2c81b) ✓ · MK-111.2 bindirme koruması canlı ✓ · çöp cap/et regex temizlendi ✓. AÇIK: schedule et kanıtı — satir_tipleri Y200 ST37 satırlarını tutmuyor → 154 satır öğretimi + cache düşürme.
+- [~] W-1.6 KANIT kısmi (153, Y200 ile): format a093eaaa+L2+$0 ✓ · kardeş ayrımı (montaj→39a2c81b) ✓ · MK-111.2 bindirme koruması canlı ✓ · çöp cap/et regex temizlendi ✓. AÇIK: schedule et kanıtı — satir_tipleri Y200 ST37 satırlarını tutmuyor → satır öğretimi + cache düşürme. 155: yöntem NB1124 redüksiyonla İKİNCİ KEZ uçtan uca kanıtlandı (öğret→sha düşür→reset→L2 $0); KRİTİK ADRES DERSİ MK-155.1 — e1fb879d ailesi öğretimi DB'ye değil format-paketleri.js'e (aileBirlestir DB'yi okumaz).
 
 ## FAZ 2 — WIZARD AKIŞ YENİDEN TASARIMI (153 geri bildirimleri)
 
@@ -63,11 +63,11 @@
 - [ ] W-2.10 Devre detay "Spool ekle" → ekleme yapıldıysa buton "Eklenenleri işle"ye döner → İşlenenler sekmesine yönlendirir → onay → devre detaya geri.
 
 ### Taslak önizleme (en büyük parça — karar gerekli)
-- [~] W-2.11 KARAR VERİLDİ = A (154): devre_detay ?taslak=1 kipi — birebir aynılık, çift bakım yok; kip salt-görsel (filigran+yazma kilidi), render koduna dokunulmaz. Kanıt: hgtrghh taslağını sayfa sorunsuz açtı. UYGULAMA 155 ana işi.
+- [x] W-2.11 GEMİDE (155, canlı kanıtlı): devre_detay ?taslak=1 kipi — TASLAK_KIP flag + _tkKilit() çekirdeği (19/19 yazma fonksiyonu tek satır guard, MK-154.2 deseni) + amber bant/rozet. Render'a sıfır dokunuş; normal kipte davranış birebir (regresyon ✓). Açık köprü: İşlenenler'den "Önizle" butonu (İncele Adım 2'de kaldı — iki kapı iki amaç, buton 156).
       A) devre_detay.html taslak kipi (?taslak=1): birebir aynılık garantili, çift bakım yok; risk = canlı-kritik sayfaya kip.
       B) Ortak render modülü + wizard içinde çizim: canlı sayfa dokunulmaz; risk = refactor maliyeti / kopya kod (MK-126.8).
       → Karar öncesi read-before-write: devre_detay taslak devreyle bugün ne kadar sorunsuz açılıyor?
-- [ ] W-2.12 Taslak görsel dili: renk/rozet/filigran ile "bu bir simülasyon" açık; yazma işlemleri kilitli veya taslağa yazar.
+- [x] W-2.12 GEMİDE (155, W-2.11 ile birlikte): amber sticky bant ("ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli") + başlık TASLAK rozeti + kilit toast'ları; 3 dil anahtarı (tr/en/ar). Tam ekran filigran bilinçli eklenmedi (bant+rozet+toast yeterli, ekran kirliliği yok).
 - [x] W-2.13 KAPANDI (154, canlı kanıtlı): (a) veri onarımı — 356 yetim kuyruk işi 'iptal'e çekildi (281'i silinmiş taslakların oneri_hazir'ı; onay havuzunun %32'si hayaletmiş), 20 taslak koloni silindi; (b) wizardIptal → _taslakIptalEt çekirdeği: soft-delete+silinme_tarihi+kuyruk temizliği ('isleniyor' yarış koşulu nedeniyle hariç, MK-154.2); (c) drenaj ikinci savunma hattı: silinmiş devrenin işi HİÇ alınmaz, konsola yazılır. NOT: 'aktif hayalet' bulgusu doğrulanmadı — 138/A filtresi zaten çalışıyordu, hgtrghh aktif değildi.
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI

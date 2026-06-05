@@ -1,62 +1,56 @@
-# son-durum.md — Oturum 153 (2026-06-04)
+# son-durum.md — Oturum 155 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **WIZARD-YOL-HARITASI.md doğdu (docs/):** 5 fazlı, işaretlenebilir uçtan uca harita (başarı tanımı +
-   Faz 0 tamamlananlar + Faz 1 kuyruk + Faz 2 wizard akışı + Faz 3 çift-taraflı format tanıtma +
-   Faz 4 veri sağlığı + Faz 5 canlı kanıt turu). Cihat'ın 153 geri bildirimleri W-2.x maddelerine işlendi.
-2. **MK-153.1 GEMİDE — `b919512`:** ares-izometri-drenaj.js çok-tur koşu. Dış while: liste bitince
-   yeniden çekilir, işlenecek YENİ iş kalmayınca durur; görülen-set ile iş başına TEK deneme korunur
-   (113'ün "AI'a çifte ödeme yok" garantisi). "Bekleyenleri işle'ye tekrar tekrar basma" derdi bitti.
-3. **TAHLİYE TAMAMLANDI (canlı, konsol global drenaj):** 257 iş tek basışta (tur2'ye geçiş konsolda
-   kanıtlı) + onarım sonrası 12 iş = **269 iş**. Sonuç: L2=206 / L3=41 → **L2 %83, toplam $1.15.**
-   bekliyor 233→3 (kalan 3 = IFS xlsm, excel kuyruğu — izometri drenajı doğru şekilde dokunmadı).
-4. **MK-117 KAPANDI:** "kullanici_id zorunlu" hatalarının tamamı tek küme — M110-722-21xx ailesi
-   (11 dosya, devre_dokumanlari.yukleyen_id NULL). Veri onarımı: UPDATE ile sahiplendirme →
-   ikinci drenaj turu 12/12 hatasız. Bekleyen 233'te null YOKTU (null'lar 'hata'da saklanıyormuş).
-5. **a093eaaa çöp regex onarımı:** cap_mm/et_mm'de jenerik `\n(\d+)\n` kuralı (eski tanıtma turu
-   kalıntısı) → `#-` ile düşürüldü. İlk deneme ROLLBACK yedi (MK-153.2), tek-statement tekrarı oturdu.
-   Canlı kanıt: S01 yeniden parse → 2358'li `celiski_et_cap_farkli` flag'leri kayboldu, bindirme_flag=false.
-6. **Y200 kanıt turu (kısmi W-1.6):** Y200-804-414.S01 → format a093eaaa + L2 + $0 (fn tie-breaker
-   canlı ✓); S'siz dosya 39a2c81b montaj formatına doğru ayrıştı (kardeş ayrımı canlı ✓). MK-111.2
-   sahada: PDF çöp et/cap=2358 üretti, bindir EZMEDİ, kabuğu seçip flag bastı. Schedule et kanıtı
-   AÇIK: satir_tipleri Y200'ün ST37 satırlarını tutmadı → PDF malzeme listesi boş → et üretilmedi.
+1. **W-2.11/A + W-2.12 GEMİDE — `bca6a01`:** devre_detay ?taslak=1 önizleme kipi. TASLAK_KIP flag +
+   `_tkKilit()` çekirdeği — 19/19 yazma fonksiyonu (13 doğrudan supa + inlineEdit/spoolDurdur/
+   spoolKaldir/spoolSil/spoolIptal/onayAktar) tek satır guard (MK-154.2 deseni: çağrılır, kopyalanmaz).
+   Amber bant + TASLAK rozeti + kilit toast'ları; 3 dil anahtarı ×3 dosya (1917→1920). Render'a sıfır
+   dokunuş. Canlı: normal kip regresyon ✓, taslak kip kilit ✓.
+2. **MK-153.3 KAPANDI — `50ef94b` içinde:** yukleyen_id NULL kökeni bulundu — iki wizard'da
+   `getUser` düşünce sessiz null'la DEVAM ediliyordu (117 ailesinin doğum yeri). Fix: session
+   fallback + sert iptal (taslak devre dahil hiçbir şey oluşturulmadan durur, status box + toast).
+3. **PLANSIZ FORMAT SAPMASI (Cihat onayı, NB1124 "faciası"):** redüksiyon satır tipi öğretildi —
+   ama İLK TUR DB'ye yapıldı ve OKUNMADI → **MK-155.1 kritik ders:** AILE_KAYIT'lı formatlarda
+   (e1fb879d!) etkin kural format-paketleri.js'ten derlenir (izometri-oku:902 aileBirlestir||DB),
+   DB parser_kural yalnız fallback. Doğru tur: 'reduksiyon' tipi MALZEME_PASLANMAZ facet'ine
+   (`50ef94b`), 20 ham satır / 8 benzersiz örnek, gerçek aileBirlestir ile 9/9 lokal + saha mührü:
+   10Ax6A ham=false boy=177 kalite=316L kg=14.8, L2 güven 1, $0 (eski: 22.3sn L3 + boş tablo).
+4. **123.C 'reduksiyon_sch' DEVROLUNDU (A kararı):** nps_inc/nps_kucuk tüketicisiz (grep kanıt);
+   motor ilk-tetikleyen kısıtında örtüşen tipler tuzak → tek genel tip. MK-155.3.
+5. **Cache düşürme tuzağı öğrenildi:** L2 sonuçları da sha'lı loglanıyor — kural deploy'undan SONRA
+   o günün sha'ları da NULL'lanmalı (ilk reset eski sonucu yeniden üretti, ikinci tur temiz).
+6. **devreler.html stat sayacı şüphesi KAPANDI (kod kanıtı):** count 1299 applyFilters'tan geçiyor
+   (silindi≠true + durum≠taslak ZATEN var, 138/A); 2696 rozet sayacı bilerek taslak sayıyor (154).
+   Yapılacak iş yok — 154 dersi tekrar: eski şüphe yeniden ölçülür.
 
-## Bulgular (153)
-- **Hayalet devre:** wizard iptal edilse de Adım 1 taslağı DB'de durum='aktif' kalıyor ("hgtrghh",
-  aktif listede görünüyor) → W-2.13 yeni madde. 233 birikiminin bir kısmının kaynağı muhtemelen bu.
-- **MK-113/A blanket'tir:** Claude'un cron→drenaj zinciri önerisi 508 kanıtıyla GERİ ÇEKİLDİ
-  (18× "izometri-oku HTTP 508" = eski self-chain dönemi). Tetik = client-loop; cron eklenmedi.
-  (Not: Vercel cron limiti artık 100/proje — "tek cron hakkı" varsayımı eskimiş; yine de kullanılmadı.)
-- **format_tanit kırmızı tutarsızlığı:** TURETILEN_ALANLAR'da kayıtlı (eski) regex varsa _alanlariKos
-  koşup kırmızı basıyor; kaynak = çöp kural. Kalıcı panzehir W-3.9 (koşma + yazma + çip türetilmiş).
-- ares-izometri-drenaj.js vercel.json no-cache listesinde DEĞİL → patch sonrası hard-reload gerekti.
+## Bulgular (155)
+- NB1124 tablosuz çizim sayfaları (.SXX'siz) işlemeye girmiş → W-2.4 dışlamasının somut test vakası.
+- NB1124 kabuk eşleşmesi 0 (kabukta_yok) → spool_kalite yükseltmesi koşmuyor; parser değil kabuk konusu.
+- Motor boy_mm'i int'e çevirir (177.8→177) — MK-155.2, istisna açılmadı (MK-118.3).
+- Cihat İşlenenler'den bir test devresini sildi — 154 hijyeni (W-2.13) sayesinde güvenli.
 
-## Commit'ler (153)
+## Commit'ler (155)
 | Hash | Mesaj |
 |------|-------|
-| `b919512` | fix(153): drenaj cok-tur kosu — tek basista tum bekleyenler, is basina tek deneme korunur (MK-153.1) |
-DB (veri UPDATE, migration YOK): a093eaaa parser_kural #- cap_mm/et_mm · ai_api_log pdf_sha256 hedefli
-düşürme (a093eaaa, 6 saat) · S01 kuyruk reset · devre_dokumanlari 11 yetim yukleyen_id ataması.
-CI yeşil. 12/12 ✓. izometri-oku DOKUNULMADI ✓.
+| `bca6a01` | feat(155): W-2.11/A devre_detay ?taslak=1 onizleme kipi — 19 yazma noktasi _tkKilit + bant/rozet (W-2.12), 3 dil anahtari |
+| `50ef94b` | fix(155): redüksiyon satir tipi PASLANMAZ facet'ine (NB1124, 8 ornek kanitli; 123.C devralindi/A) + MK-153.3 yukleyen_id sert iptal (iki wizard) |
+DB (veri UPDATE, migration YOK): e1fb879d parser_kural tip 7→8 (ölü ama fallback'e tutarlı, bilinçli
+bırakıldı) · ai_api_log format+bugün sha NULL ×2 tur · NB1124 kuyruk reset (.SXX, ~22 iş).
+CI yeşil. 12/12 ✓. izometri-oku DOKUNULMADI ✓ (902 satırı sadece OKUNDU).
 
 ## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-153.1:** Drenaj çok-tur koşar (liste bitince yeniden çek); iş başına tek deneme (görülen-set)
-  değişmez kuraldır. Global drenaj UI'sızdır (konsol) — kalıcı yüzü W-2.7 İşlenenler sekmesi.
-- **MK-153.2:** Supabase SQL editöründe BEGIN ve COMMIT ayrı çalıştırmalara bölünürse oturum kapanışı
-  ROLLBACK eder. Veri onarımı TEK çalıştırmada: tek-statement UPDATE + ardından SELECT doğrulama.
-- **MK-153.3:** "kullanici_id zorunlu" sınıfı hataların kökü devre_dokumanlari.yukleyen_id NULL;
-  onarım veri UPDATE ile sahiplendirme. Hangi akışın null INSERT attığı hâlâ tespit edilmedi (kuyrukta).
+- **MK-155.1:** AILE_KAYIT'lı formatlarda satır öğretimi DB parser_kural'a DEĞİL
+  lib/format-paketleri.js katmanına yapılır (= kod + deploy); aileBirlestir DB'yi okumaz, DB kural
+  yalnız fallback. format_tanit ürünleşmesi bu ikiliği hesaba katmalı (156+ tasarım sorusu).
+- **MK-155.2:** l2 motoru boy_mm'i int'e çevirir; motora tip istisnası açılmaz (MK-118.3),
+  tek-ondalık boy kaybı (≤0.9mm) kabul edilen tolerans.
+- **MK-155.3:** Motor "ilk tetikleyen tipte kalır, pattern tutmazsa ham düşer" — örtüşen
+  tetikleyicili satır tipleri tuzaktır; genel tip + görünür ham_satir düşüşü (B-6) tercih edilir.
+  123.C bu gerekçeyle 155 genel 'reduksiyon' tipine devroldu.
 
-## 154 ANA İŞ
-1) **W-3.9 format_tanit panzehiri** (türetilmiş alanlara kayıtlı regex koşulmaz/yazılmaz) +
-   **Y200 satır öğretimi** → schedule et kanıtı kapanır (W-1.6 tam ✓).
-2) **Faz 2 başlangıcı:** W-2.11 kararı (taslak önizleme A/B) + W-2.6/2.7 durum makinesi + İşlenenler
-   sekmesi (hayalet devre W-2.13 bununla çözülür).
-3) Küçükler: drenaj JS no-cache başlığı (vercel.json, MK-101.3 ile) · Excel kuyruğu tetiği (3 IFS xlsm
-   neden bekliyor) · manuel_onay 277 + oneri_hazir 1011 birikiminin onay UI akıbeti (tartışılacak).
-
-## Açık kuyruk (öncelik korunarak)
-W-3.9 + Y200 satır öğretimi · Faz 2 (durum makinesi/İşlenenler/klasör ağacı W-2.3-4/W-2.13) ·
-B2↔B1 köprü UI · cache-bypass/zorla-L3 teaching · et_mm UX · kaydet modal UX · format_kodu öneri ·
-bbox normalize · Windows render · Band-B · dirsek 323.9 · E120 prefix · Excel kuyruk tetiği ·
-drenaj JS no-cache · hayalet devre temizliği ("hgtrghh" + sayım).
+## 156 ANA İŞ
+1) İşlenenler→"Önizle" köprüsü (?taslak=1'e buton — W-2.11'in açık ucu, küçük).
+2) Onay havuzu tasarım sohbeti (~953 iş: oneri_hazir 690+ / manuel_onay 263+) — kod yok, konuşma.
+3) Format kuyruğu: W-3.9 panzehiri (hâlâ İLK) → Y200 ST37 öğretimi (adres artık belli: a093eaaa=DB,
+   e1fb879d ailesi=paket) → W-1.6 tam kanıt.
+4) Küçükler: NB1124 kabuk eşleşmesi (kabukta_yok ×22) · W-2.4 dışlama (NB1124 test vakası hazır).
