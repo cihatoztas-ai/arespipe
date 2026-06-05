@@ -1121,7 +1121,7 @@ async function _kalemDuzeltmeleriYukle() {
 }
 
 // ✏️ → modal'ı kalem alanlarıyla aç (duzeltOverlay/dpTitle/dpBody yeniden kullanılır)
-function kalemDuzeltAc(sKey, idx) {
+function kalemDuzeltAc(sKey, idx, donusIdx) {
   var sp = WIZ._kabukSpoollar || [], b = null, spoolNo = '';
   for (var i=0;i<sp.length;i++){ var k=(sp[i].pipeline||'')+'|'+(sp[i].spoolNo||''); if(k===sKey){ b=(sp[i].bom||[])[idx]; spoolNo=sp[i].spoolNo||''; break; } }
   if (!b) return;
@@ -1145,7 +1145,8 @@ function kalemDuzeltAc(sKey, idx) {
   var bb = '<div class="dp-sec">Kalem — okunan değerler</div>';
   bb += dsatir('malzeme') + dsatir('dn') + dsatir('adet') + dsatir('boy') + dsatir('agirlik');
   bb += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir ve terfide BOM kalemine (spool_malzemeleri) yazılır.</p>';
-  bb += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
+  var _geri = (donusIdx != null) ? '<button class="btn ghost" onclick="duzeltAc(' + donusIdx + ')">← Spool\'a dön</button>' : '';
+  bb += '<div class="actions" style="margin-top:6px;">' + _geri + '<button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
   document.getElementById('dpBody').innerHTML = bb;
   document.getElementById('duzeltOverlay').classList.remove('hide');
   if (typeof _kaliteSecenekYukle === 'function') _kaliteSecenekYukle();
@@ -1330,6 +1331,30 @@ var DUZELT_ALANLAR = {
     fmt:function(v){ return v; } }
 };
 var _duzeltSpoolIdx = null;     // aktif popup'taki spool indexi (kaydet için)
+var _duzeltSpoolSKey = null;    // 159: aktif spool'un kabuk anahtarı (pipeline|spoolNo) — kalem köprüsü
+
+// 159: spool modalındaki kalem ✏️ → 146/B kalem modalı (geri-dönüş indeksiyle)
+function _spoolKalemAc(idx) {
+  if (_duzeltSpoolSKey == null) return;
+  kalemDuzeltAc(_duzeltSpoolSKey, idx, _duzeltSpoolIdx);
+}
+
+// 159: spool modalından izometri PDF'ini aç — storage_yolu o an çekilir (dokAc-102 lazy deseni)
+async function izoPdfAc() {
+  var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
+  var dosyaAdi = (s && s.izometri && s.izometri.dosya_adi) || '';
+  if (!dosyaAdi) { toast('Dosya bilgisi yok'); return; }
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var r = await supa.from('devre_dokumanlari').select('storage_yolu')
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id).eq('dosya_adi', dosyaAdi).limit(1);
+    var yol = (r.data && r.data[0] && r.data[0].storage_yolu) || '';
+    if (!yol) { toast('Dosya kaydı bulunamadı: ' + dosyaAdi); return; }
+    var url = (ARES.dosyaUrlAl ? await ARES.dosyaUrlAl(yol, 'devre-belgeleri') : '') || '';
+    if (url) window.open(url, '_blank', 'noopener');
+    else toast('Dosya açılamadı');
+  } catch (e) { console.warn('[v3] izoPdfAc:', e); toast('Dosya açılamadı'); }
+}
 var _kaliteSecenek  = null;     // DB'den çekilen kalite listesi (cache: [{kod,etk}])
 
 // Düzeltme varsa onun değerini, yoksa parse değerini dön (tek kaynak).
@@ -1383,10 +1408,37 @@ function duzeltAc(i) {
       '</div>' + srcRoz + '</div>';
   }
   var izoSrc = s.izometri ? (String(s.izometri.seviye || '').toLowerCase() === 'l3' ? 'l3' : 'l2') : 'bos';
+  // 159: kabuk köprüsü — inceleme anahtarı = kabuk anahtarı (pipeline|spoolNo, 1231 formülü)
+  _duzeltSpoolSKey = (s.pipeline || '') + '|' + (s.spoolNo || '');
   var b = '<div class="dp-sec">Okunan değerler (önizleme)</div>';
   b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
   b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc);
-  if (s.izometri) b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
+  // 159: spool'un BOM kalemleri — 146/B kalem rötuşuna modal içinden giriş (kopya akış yok)
+  if (WIZ._kalemDuzelt == null) { _kalemDuzeltmeleriYukle().then(function(){ if (_duzeltSpoolIdx === i && !document.getElementById('duzeltOverlay').classList.contains('hide')) duzeltAc(i); }); }
+  var _kb = null, _ksp = WIZ._kabukSpoollar || [];
+  for (var _ki = 0; _ki < _ksp.length; _ki++) { if (((_ksp[_ki].pipeline || '') + '|' + (_ksp[_ki].spoolNo || '')) === _duzeltSpoolSKey) { _kb = _ksp[_ki]; break; } }
+  if (_kb && (_kb.bom || []).length) {
+    var _kd = (WIZ._kalemDuzelt && WIZ._kalemDuzelt[_duzeltSpoolSKey]) ? WIZ._kalemDuzelt[_duzeltSpoolSKey] : {};
+    b += '<div class="dp-sec">Malzemeler (' + _kb.bom.length + ' kalem)</div><div style="max-height:190px;overflow:auto;">';
+    _kb.bom.forEach(function(bm, idx) {
+      var dz = _kd[idx] || {};
+      var malzG = (dz.malzeme != null) ? dz.malzeme : (bm.malzeme || '');
+      if (typeof ARES_NORM !== 'undefined' && malzG) malzG = ARES_NORM.malzemeEtiket(malzG) || malzG;
+      var dnG = (dz.dn != null) ? dz.dn : (bm.dn || '');
+      var mikG = (bm.tip === 'boru') ? (((dz.boy != null) ? dz.boy : bm.boy_mm) ? (((dz.boy != null) ? dz.boy : bm.boy_mm) + ' mm') : '')
+                                     : (((dz.adet != null) ? dz.adet : bm.adet) ? (((dz.adet != null) ? dz.adet : bm.adet) + ' ad') : '');
+      var roz = Object.keys(dz).length ? '<span class="src l3" title="operatör düzeltmesi" style="margin-left:6px;">düzelt</span>' : '';
+      b += '<div class="locked" style="padding:6px 9px;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">' +
+        '<span style="flex:1;">' + esc(bm.tanim || malzG || 'kalem') + (dnG ? ' · ' + esc(String(dnG)) : '') + (mikG ? ' · ' + esc(String(mikG)) : '') + '</span>' + roz +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Kalemi düzelt">✏️</button></div>';
+    });
+    b += '</div>';
+  }
+  if (s.izometri) {
+    b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
+    // 159: PDF'i dosya aramadan aç — storage_yolu lazy (dokAc-102 deseni)
+    b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="izoPdfAc()">📄 PDF\'i aç</button></div>';
+  }
   if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
   b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye yansıtma (overlay) <b>sonraki adımda</b>. Görsel çapa (PDF\'te işaretle) ayrı faz (omurga 8 / 18.d).</p>';
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button><button class="btn-sm" style="color:var(--ac);padding:9px 14px;" onclick="toast(\'Çapa işaretleme: sonraki faz\')">📍 PDF\'te işaretle (çapa)</button></div>';
