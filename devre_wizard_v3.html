@@ -1436,12 +1436,12 @@ function duzeltAc(i) {
   }
   if (s.izometri) {
     b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
-    // 159: PDF'i dosya aramadan aç — storage_yolu lazy (dokAc-102 deseni)
-    b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="izoPdfAc()">📄 PDF\'i aç</button></div>';
+    // 159/W-3.1: köprü — sol panel değerler, sağda çizim; format_tanit dosyayı ?dok= ile hazır açar
+    b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="cizimdenOku()">🧭 Çizimden oku (format tanıt)</button></div>';
   }
   if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
-  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye yansıtma (overlay) <b>sonraki adımda</b>. Görsel çapa (PDF\'te işaretle) ayrı faz (omurga 8 / 18.d).</p>';
-  b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button><button class="btn-sm" style="color:var(--ac);padding:9px 14px;" onclick="toast(\'Çapa işaretleme: sonraki faz\')">📍 PDF\'te işaretle (çapa)</button></div>';
+  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye overlay olarak yansır. Görsel okuma (sol bilgi + sağ izometri) format tanıtma modülünde — köprü sonraki oturumda (159 kararı).</p>';
+  b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
   document.getElementById('dpBody').innerHTML = b;
   document.getElementById('duzeltOverlay').classList.remove('hide');
   // kalite seçeneklerini arka planda hazırla (✏️'ye basılınca hazır olsun)
