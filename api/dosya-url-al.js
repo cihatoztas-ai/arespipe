@@ -12,7 +12,7 @@ const SIGNED_URL_SURE_SN = 3600; // 1 saat
 // 112/MK-112.4: cok-bucket destegi (allow-list). Body'den bucket gelmezse 'arespipe-dosyalar'
 //   (geriye uyumlu — mevcut foto/dosya cagrilarinin hicbiri bozulmaz). Allow-list disi bucket
 //   reddedilir (keyfi bucket adi ile storage yoklamayi engeller — guvenlik).
-const IZINLI_BUCKETLAR = ['arespipe-dosyalar', 'devre-belgeleri'];
+const IZINLI_BUCKETLAR = ['arespipe-dosyalar', 'devre-belgeleri', 'izometri-pdfs'];  // 160: izometri-pdfs = batch köprüsü (W-3.2); yol tenant_id/ prefix'li, tenant kontrolü aynen geçerli
 const VARSAYILAN_BUCKET = 'arespipe-dosyalar';
 
 export default async function handler(req, res) {

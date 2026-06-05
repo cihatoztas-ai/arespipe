@@ -149,6 +149,12 @@
       type: 'item', key: 'izobatch', label: 'İzometri Batch', i18n: 'nav_izobatch', href: 'izometri-batch.html',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>'
     },
+    {
+      // 160 (MK-159.2): format_tanit ayrı modül — menüden işsiz giriş (picker kipi). Sayfa kendi
+      // feature flag'iyle korunur (tenant_features.format_tanit); flag'siz tenant yönlendirilir.
+      type: 'item', key: 'format_tanit', label: 'Format Tanıt', i18n: 'nav_format_tanit', href: 'format_tanit.html',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/></svg>'
+    },
     { type: 'sep', label: 'ÜRETİM', i18n: 'nav_uretim' },
     {
       type: 'item', key: 'kesim', label: 'Kesim', i18n: 'nav_kesim', href: 'kesim.html',

@@ -251,6 +251,7 @@ async function formatYukle(id){
     if(atla<0){ const k=ALANLAR.findIndex(a=>a.regex&&a._okudu===false); if(k>=0)atla=k; }
     if(atla>=0)adim=atla;
     _duzeltUiGuncelle(r.data.ad);
+    _paketUyari(r.data.format_kodu);
     renderDots(); renderDetay();
     toast('✓ Format yüklendi — '+(CANON_ALL?'kırmızı alanı düzelt':'PDF aç, sorunlu alanı gör')+', sonra Güncelle');
   }catch(e){ console.error('[formatYukle]',e); toast('Yükleme hatası: '+e.message); }
@@ -300,6 +301,7 @@ async function otoTespit(){
       document.getElementById('promptTmpl').value=best.prompt_template||''; _mevcutPrompt=best.prompt_template||'';
       const sel=document.getElementById('fmtSec'); if(sel)sel.value=best.id;
       _otoBanner(best.ad,bestSkor,bestTop);
+      _paketUyari(best.format_kodu);
       const kirmizi=ALANLAR.filter(a=>a.regex&&a._okudu===false); if(kirmizi.length){ const i=ALANLAR.indexOf(kirmizi[0]); if(i>=0)adim=i; }
       toast('🎯 Otomatik eşleşti: '+(best.ad||'')+' ('+bestSkor+'/'+bestTop+' alan okundu)');
     } else {
@@ -315,6 +317,8 @@ function _otoBanner(ad,skor,top){
 }
 function formatSecDegis(v){ if(v){ formatYukle(v); } else { _yeniKipeDon(); } }
 const _fpAuto={fn:'',prod:''}; // açık PDF'ten türetilen kimlik (hidrasyon kalıntısına panzehir)
+let _isPdf=null; // W-3.1/3.2 köprüsü (MK-159.2): ?is= ile işten yüklenen PDF — {bytes,ad,isId,kaynak}
+const _PAKET_AILELER=['tersan_cadmatic_spool','tersan_cadmatic_montaj']; // MK-155.1: bu ailelerde etkin kural format-paketleri.js'ten derlenir, DB patch'i runtime'da okunmaz
 function _fpYenidenUret(){
   // MK-151.5: fn değer olarak GERİ YÜKLENMEZ — hidrasyon kalıntısı kanalı kökten kapalı; öneri placeholder'da kalır.
   const fnEl=document.getElementById('fnRegex'); fnEl.value=''; if(_fpAuto.fn)fnEl.placeholder='öneri: '+_fpAuto.fn;
@@ -337,16 +341,16 @@ async function aiOku(){
   if(!CANON_ALL){ toast('Önce PDF aç'); return; }
   if(typeof ARES==='undefined'||!ARES.supabase){ toast('ARES yüklenemedi — uygulama içinden aç'); return; }
   const fi=document.getElementById('fileInput'); const f=fi&&fi.files&&fi.files[0];
-  if(!f){ toast('Açık PDF bulunamadı (yeniden PDF aç)'); return; }
+  if(!f&&!_isPdf){ toast('Açık PDF bulunamadı (yeniden PDF aç)'); return; }
   const tid=ARES.tenantId(); const ot=(ARES.oturumAl&&ARES.oturumAl())||null; const uid=ot&&ot.id;
   if(!tid||!uid){ toast('Oturum/tenant yok — giriş yapılı aç'); return; }
   _aiOkunuyor=true;
   const btn=document.getElementById('btnAiOku'); const eski=btn?btn.textContent:'';
   if(btn){ btn.disabled=true; btn.textContent='🟣 AI okuyor…'; }
   try{
-    const b64=await _fileBase64(f);
+    const b64=f?await _fileBase64(f):_bytesBase64(_isPdf.bytes);
     const r=await fetch('/api/izometri-oku',{ method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ tenant_id:tid, kullanici_id:uid, pdf_base64:b64, dosya_adi:f.name, dosya_sirasi:1, dosya_toplami:1 }) });
+      body:JSON.stringify({ tenant_id:tid, kullanici_id:uid, pdf_base64:b64, dosya_adi:(f?f.name:_isPdf.ad), dosya_sirasi:1, dosya_toplami:1 }) });
     const j=await r.json().catch(()=>({}));
     if(!r.ok){ toast('AI hata: '+(j.error||('HTTP '+r.status))); return; }
     const spool=(Array.isArray(j.spoollar)&&j.spoollar[0])||null;
@@ -549,12 +553,17 @@ function captureBox(bx){
 function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)return; ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); const a=ALANLAR[adim]; if(a.bbox&&a.page===pageNum){ const d=document.createElement('div'); d.className='mk-box'; d.style.left=a.bbox.left+'px'; d.style.top=a.bbox.top+'px'; d.style.width=a.bbox.w+'px'; d.style.height=a.bbox.h+'px'; ml.appendChild(d); } }
 
 /* ── PDF.js (v1.10.100) ── */
-document.getElementById('fileInput').addEventListener('change',function(e){
-  const f=e.target.files[0]; if(!f)return; document.getElementById('hintTxt').textContent=f.name;
+function _fnOnerUygula(ad){
   // MK-151.5: dosya adı KİMLİK değil, hızlandırıcı. Otomatik BASILMAZ — öneri placeholder'da, operatör isterse alır.
-  const fn=f.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+');
+  document.getElementById('hintTxt').textContent=ad;
+  const fn=ad.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.pdf$/i,'\\.pdf').replace(/\d+/g,'\\d+');
   const fnEl=document.getElementById('fnRegex'); fnEl.value=''; fnEl.placeholder='öneri: ^'+fn+'$';
   _fpAuto.fn='^'+fn+'$'; _fpAuto.prod=''; // açık PDF'in öz kimliği (yalnız öneri) — kip dönüşünde kalıntı temizlenir (a093eaaa dersi)
+}
+document.getElementById('fileInput').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f)return;
+  _isPdf=null; // yerel dosya açıldı → köprü PDF'i devre dışı (AI-oku artık fileInput'tan okur)
+  _fnOnerUygula(f.name);
   const fr=new FileReader(); fr.onload=()=>loadPdf(new Uint8Array(fr.result)); fr.readAsArrayBuffer(f);
 });
 async function loadPdf(data){
@@ -749,6 +758,40 @@ async function kaydet(){
     btn.textContent='✓ Kaydedildi'; toast('✓ Format kaydedildi: '+ad);
   }catch(e){ no(e.message); }
 }
+/* ── W-3.1/3.2 köprüsü (MK-159.2): ?is=<kuyruk_is_id>&kaynak=devre|batch — PDF işten açılır, operatör dosya ARAMAZ.
+   kaynak=devre → dosya_isleme_kuyrugu→devre_dokumanlari (bucket devre-belgeleri)
+   kaynak=batch → is_kuyrugu.storage_path (bucket izometri-pdfs) ── */
+function _bytesBase64(u8){ let s=''; const CH=0x8000; for(let i=0;i<u8.length;i+=CH){ s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH)); } return btoa(s); }
+async function _isYukle(isId,kaynak){
+  const supa=ARES.supabase();
+  let dosyaAdi=null,yol=null,bucket=null,bilgi='';
+  if(kaynak==='batch'){
+    const r=await supa.from('is_kuyrugu').select('id,dosya_adi,storage_path,durum').eq('id',isId).single();
+    if(r.error||!r.data)throw new Error('Batch işi okunamadı: '+((r.error&&r.error.message)||'kayıt yok'));
+    dosyaAdi=r.data.dosya_adi; yol=r.data.storage_path; bucket='izometri-pdfs'; bilgi='batch işi · '+(r.data.durum||'');
+  }else{
+    const r=await supa.from('dosya_isleme_kuyrugu').select('id,durum,parse_sonuc,devre_dokumanlari(storage_yolu,dosya_adi)').eq('id',isId).single();
+    if(r.error||!r.data||!r.data.devre_dokumanlari)throw new Error('Kuyruk işi okunamadı: '+((r.error&&r.error.message)||'kayıt/doküman yok'));
+    dosyaAdi=r.data.devre_dokumanlari.dosya_adi; yol=r.data.devre_dokumanlari.storage_yolu; bucket='devre-belgeleri';
+    const fmt=r.data.parse_sonuc&&r.data.parse_sonuc.format; bilgi='devre işi · '+(r.data.durum||'')+(fmt?(' · son okuma: '+fmt):'');
+  }
+  if(!yol)throw new Error('İş kaydında dosya yolu boş');
+  let buf=null;
+  try{ const u=await ARES.dosyaUrlAl(yol,bucket); if(u){ const rs=await fetch(u); if(rs.ok)buf=await rs.arrayBuffer(); } }catch(e){ console.warn('[isYukle] signed url:',e.message); }
+  if(!buf){ const dl=await supa.storage.from(bucket).download(yol); if(dl.error||!dl.data)throw new Error('Dosya indirilemedi ('+bucket+'): '+((dl.error&&dl.error.message)||'')); buf=await dl.data.arrayBuffer(); }
+  _isPdf={bytes:new Uint8Array(buf),ad:dosyaAdi||yol.split('/').pop(),isId:isId,kaynak:kaynak};
+  _fnOnerUygula(_isPdf.ad);
+  await loadPdf(_isPdf.bytes.slice()); // slice: pdfjs buffer'ı detach edebilir; AI-oku için orijinal korunur
+  toast('📎 İşten yüklendi: '+_isPdf.ad+' ('+bilgi+')');
+}
+/* MK-155.1 uyarısı: paket-katmanlı ailede DB kural patch'i runtime'da OKUNMAZ — deploy gerekir. */
+function _paketUyari(kod){
+  if(!kod||_PAKET_AILELER.indexOf(kod)<0)return;
+  const bar=document.getElementById('duzeltBar');
+  const m=' <span style="color:var(--warn)">⚠ Paket-katmanlı format ('+escHtml(kod)+') — kural düzeltmesi deploy olmadan etkinleşmez (MK-155.1).</span>';
+  if(bar&&!bar.classList.contains('hide')) bar.innerHTML+=m;
+  else toast('⚠ '+kod+' paket-katmanlı — kural düzeltmesi deploy gerektirir (MK-155.1)');
+}
 async function aresInit(){
   try{
     var bekle=0;
@@ -781,6 +824,8 @@ async function aresInit(){
     await formatListele();
     var fid=qs.get('format_id')||qs.get('fmt');
     if(fid) await formatYukle(fid);
+    var isId=qs.get('is'); // W-3.1/3.2: işten gelen köprü
+    if(isId){ try{ await _isYukle(isId, qs.get('kaynak')||'devre'); }catch(e2){ console.error('[isYukle]',e2); toast('İş yüklenemedi: '+e2.message); } }
   }catch(e){ console.error('[B1 init]',e); }
 }
 function buildKuralEski(){

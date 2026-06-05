@@ -130,6 +130,9 @@ table.st tr:hover td{background:rgba(99,102,241,.03);}
 
 /* Format badge (dosya listesi) */
 .format-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+/* W-3.2 (160): bilinmeyen format satırı → format_tanit köprüsü */
+.btn-tanit{margin-left:6px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(45,142,255,.12);color:var(--ac);border:1px solid rgba(45,142,255,.35);}
+.btn-tanit:hover{background:rgba(45,142,255,.22);}
 .fb-eslesti{background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);}
 .fb-bilinmeyen{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.4);}
 .fb-bekliyor{background:rgba(107,122,144,.12);color:var(--txd);border:1px solid var(--bor);}
@@ -337,6 +340,12 @@ function dosyaEkle(files) {
   document.getElementById('fileInput').value = '';
 }
 
+// W-3.2 köprüsü (MK-159.2): bilinmeyen format → format_tanit, PDF iş kaydından açılır (is_kuyrugu/izometri-pdfs)
+function formatTanit(idx) {
+  var d = _dosyalar[idx];
+  if (!d || !d.is_id) return;
+  window.open('format_tanit.html?is=' + encodeURIComponent(d.is_id) + '&kaynak=batch', '_blank');
+}
 function dosyaSil(idx) {
   if (_calisıyor) return;
   _dosyalar.splice(idx, 1);
@@ -401,6 +410,7 @@ function renderDosyalar() {
       formatHtml = '<span class="format-badge fb-bekliyor">—</span>';
     } else if (d.format === 'bilinmeyen') {
       formatHtml = '<span class="format-badge fb-bilinmeyen">⚠ '+tv('izb_format_bilinmeyen','Bilinmeyen')+'</span>';
+      if (d.is_id) formatHtml += '<button class="btn-tanit" title="'+tv('izb_format_tanit_t','Formatı tanıt — PDF işten açılır')+'" onclick="formatTanit('+i+')">'+tv('izb_format_tanit','Tanıt')+'</button>';
     } else if (d.format) {
       formatHtml = '<span class="format-badge fb-eslesti" title="'+esc(d.format)+'">'+esc(d.format)+'</span>';
     } else {
@@ -658,6 +668,7 @@ function pollingUygula(durum) {
     if (!ad) return;
     var k = kayitMap[ad];
     if (k) {
+      d.is_id = k.id;   // W-3.2 köprüsü: format_tanit?is= hedefi
       d.durum = k.durum === 'tamam' ? 'tamam'
               : k.durum === 'saklama' ? 'saklama'
               : k.durum === 'hata' ? 'hata'
@@ -746,7 +757,7 @@ async function aktifBatchKontrol() {
         return {
           file: { name: k.dosya_adi, size: 0 },
           durum: k.durum, format: null, spooller: [], hata: k.hata_mesaji || null,
-          storage_path: k.storage_path, _resume: true
+          storage_path: k.storage_path, is_id: k.id, _resume: true
         };
       });
       document.getElementById('progressWrap').style.display = 'block';
@@ -763,7 +774,7 @@ async function aktifBatchKontrol() {
         file: { name: k.dosya_adi, size: 0 },
         durum: k.durum === 'bekliyor' ? 'kuyrukta' : k.durum,
         format: null, spooller: [], hata: k.hata_mesaji || null,
-        storage_path: k.storage_path, _resume: true
+        storage_path: k.storage_path, is_id: k.id, _resume: true
       };
     });
     document.getElementById('btnBasla').disabled = true;

@@ -91,7 +91,7 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
 
     // Henüz işlenmemiş → drenaj sürecek; isleniyor sayılır (anahtar yok).
     if (!kay.islendi || !kay.parse_sonuc) {
-      izometriler.push({ dosya_adi: dosyaAdi, parse_durumu: 'bekliyor', anahtarlar: [] });
+      izometriler.push({ dosya_adi: dosyaAdi, parse_durumu: 'bekliyor', anahtarlar: [], is_id: kay.is_id || null });
       continue;
     }
 
@@ -107,7 +107,7 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
       const liste = (ps.montaj && Array.isArray(ps.montaj.spool_listesi)) ? ps.montaj.spool_listesi : [];
       izometriler.push({
         dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
-        montaj_belge: true,
+        montaj_belge: true, is_id: kay.is_id || null,
         montaj_icerik_okundu: !!(ps.montaj && liste.length > 0),
         anahtarlar: liste.map((sp) => ({ pipeline: _mkok, spoolNo: sp })),
       });
@@ -120,7 +120,7 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
       const liste = Array.isArray(ps.montaj.spool_listesi) ? ps.montaj.spool_listesi : [];
       izometriler.push({
         dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
-        montaj_belge: true,
+        montaj_belge: true, is_id: kay.is_id || null,
         montaj_icerik_okundu: !!(kok && liste.length > 0),
         anahtarlar: (kok ? liste.map((sp) => ({ pipeline: kok, spoolNo: sp })) : []),
       });
@@ -158,12 +158,12 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
 
     if (anahtarlar.length === 0) {
       izometriler.push({
-        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
+        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi', is_id: kay.is_id || null,
         anahtarlar: [], anahtar_yok_sebep: 'dosya_adi_pipeline_yok',
       });
     } else {
       izometriler.push({
-        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi',
+        dosya_adi: dosyaAdi, parse_durumu: 'tamamlandi', is_id: kay.is_id || null,
         anahtarlar,
         et_kaynagi: etKaynagi, guven, bindirme_flag: flagVar,
         // NOT: A1'de kritik_uyari'yı 🟡 tetiği olarak KULLANMIYORUZ (Tersan'da çok yaygın = gürültü).
@@ -204,6 +204,7 @@ export default async function handler(req, res) {
     if (qErr) return res.status(500).json({ hata: 'Kuyruk okuma hatasi: ' + qErr.message });
 
     const izoKayitlar = (isler || []).map((is) => ({
+      is_id: is.id,   // W-3.1 köprüsü (MK-159.2): format_tanit?is= hedefi
       dosya_adi: is.devre_dokumanlari?.dosya_adi || null,
       // İşlendi = parse_sonuc dolu (oneri_hazir/manuel_onay). bekliyor/isleniyor → henüz değil.
       islendi: !!is.parse_sonuc && ['oneri_hazir', 'manuel_onay'].includes(is.durum),
@@ -242,6 +243,15 @@ export default async function handler(req, res) {
       if (s.malzeme_flag) malzemeFlagSay++;
     }
     if (sonuc.ozet) sonuc.ozet.malzeme_flag = malzemeFlagSay;   // özet şeridi/istatistik için
+
+    // ── W-3.1 köprüsü (MK-159.2): iş id'sini satıra taşı — lib SAF kalır (K2 enjeksiyon deseni).
+    //   format_tanit?is=<id>&kaynak=devre hedefi. Eşleme dosya_adi üzerinden (derlenen kanonik kayıtlar).
+    const isIdHarita = new Map();
+    for (const z of izometriler) { if (z.dosya_adi && z.is_id) isIdHarita.set(z.dosya_adi, z.is_id); }
+    for (const s of (sonuc.spoollar || [])) {
+      if (s.izometri && s.izometri.dosya_adi) s.izometri.is_id = isIdHarita.get(s.izometri.dosya_adi) || null;
+    }
+    for (const f of (sonuc.fazla || [])) { if (f.dosya_adi) f.is_id = isIdHarita.get(f.dosya_adi) || null; }
 
     return res.status(200).json({ ok: true, devre_id: devreId, ...sonuc });
   } catch (e) {

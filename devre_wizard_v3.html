@@ -1056,9 +1056,26 @@ function malzemeKiyasBlok(mk) {
   return h;
 }
 function islemCell(i, durum) {
-  if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>';
+  if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>' + _tanitBtn(i);
   if (durum === 'eksik') return '<button class="btn-sm" style="color:var(--txm);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Tamamla</button>';
-  return '—';
+  return _tanitBtn(i) || '—';
+}
+// ── W-3.1 köprüsü (MK-159.2): zayıf VEYA L3 okunmuş satır → "Tanıt" → format_tanit?is=&kaynak=devre.
+//   PDF'i format_tanit işten kendisi açar (storage), operatör dosya ARAMAZ. Değer düzeltme bu buton DEĞİL:
+//   tekil değer işi mevcut Düzelt modalında kalır (kip ayrımı, 160 kararı).
+function _tanitBtn(i) {
+  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
+  var s = sp[i], iz = s && s.izometri;
+  if (!iz || !iz.is_id) return '';
+  var l3 = /l3/i.test(String(iz.seviye || ''));
+  if (s.durum !== 'zayif' && !l3) return '';
+  return '<button class="btn-sm" style="color:var(--ac);" title="Formatı tanıt / okuma yerini düzelt — PDF işten açılır" onclick="event.stopPropagation();formatTanitAc(' + i + ')">Tanıt</button>';
+}
+function formatTanitAc(i) {
+  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
+  var iz = sp[i] && sp[i].izometri;
+  if (!iz || !iz.is_id) return;
+  window.open('format_tanit.html?is=' + encodeURIComponent(iz.is_id) + '&kaynak=devre', '_blank');
 }
 
 // ── B canlı dolum: drenaj onIlerleme → endpoint yeniden çağrı (kırmızı→yeşil) ──
