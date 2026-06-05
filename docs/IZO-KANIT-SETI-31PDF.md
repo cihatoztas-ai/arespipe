@@ -268,3 +268,29 @@ EK adım: kabuk/PDF anahtarlarından ÖNCE devre durumu (taslak/aktif) kontrol e
   eslestir() montajı içinde dallar (kuyruk-isle:506), backfill montajı da işler. Teşhis sırası:
   VERİ → UI → kod.
 - Ad kararı (31PDF → güncel sayı) hâlâ AÇIK — v4 eki yapıştırılınca birlikte (159 küçük işi).
+
+## 159 EKİ — NOT/ALIŞTIRMA ZİNCİRİ FORMAT-BAZLI SAYIM (kanıt SQL + ekran)
+
+Bu setin NOT örnekleri ("Alistirma Parcasidir (Kaynatma!!)", "Blok erection alıştırma
+spooludur!!", "Uretilmeyecek") 159'da tüm havuza karşı sayıldı (LATERAL parse_sonuc.spoollar[];
+kolon gerçeği: parser='izometri', not alanları SPOOL-BAŞINA):
+
+| Format | dosya | spool | not_var | alistirma_var | KISMI |
+|---|---|---|---|---|---|
+| Tersan M110 İmalat Resmi | 555 | 555 | **515** | 73 | 1 |
+| Tersan M110 Montaj Çizimi (genel) | 320 | 7 | 0 | 0 | 0 |
+| Tersan M110 Montaj Resmi | 239 | 239 | 0 | 0 | 0 |
+| format-yok | 218 | 307 | 0 | 0 | 0 |
+| PAOR Ana Çizim / Isometric View | 27+27 | 39+27 | 0 | 0 | 0 |
+| tersan deneme | 1 | 1 | 1 | 0 | 0 |
+
+Okuma: İmalat ailesinde zincir SAĞLIKLI (%93 not üretimi); Montaj/PAOR sıfırları YAPISAL —
+kurallarında not_metni alanı tanımsız (kopukluk değil, hiç bağlanmamış; ihtiyaç teyidi sahadan).
+**Ekran kanıtı (bcmbvö S01, P26-218):** ALIŞTIRMA: KISMI rozeti + QR personel uyarıları
+("ALAŞTIRMA KISMI — bazı parçalar sahada alaştırılacak" + "Dablin Flange Boruya
+KAYNATILMAYACAK!!! Gemide montaj esnasında" imalat_not) — NOT→alıştırma→QR zinciri uçtan uca
+üretimde; 158 ekindeki "159 taraması" maddesi KAPANDI. KISMI kuralının canlı örneği de bu spool.
+
+AÇIK kalanlar (değişmedi): 6 B1124 PDF'i ORİJİNAL adlarla yükleme (MK-52.1) · v4 ekinin
+yapıştırılması + belge AD KARARI (31PDF → güncel sayı) · ✖ sessiz-kayıp doğrulaması (Dış
+Bilezik / Redüser metrik / Flange EN — tetiksiz satır ham_satir'a düşüyor mu, tek canlı örnek).

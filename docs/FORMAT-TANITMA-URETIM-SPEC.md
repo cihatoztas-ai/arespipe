@@ -304,3 +304,30 @@ pipeline_kok_cikarilamadi) atanmamışlı grupta "Detay" ile sebep-bazlı okunur
 sekmedir; format_tanit köprüsü (uyarı satırından tek tıkla öğretime) ileriki tasarım. format_tanit
 koduna 158'de dokunulmadı. Teşhis kuralı genişledi (MK-158.1): VERİ (SQL) → UI → kod; benzer adlı
 devre ≠ aynı devre.
+
+## OTURUM 159 NOTU — ÜRÜN KİMLİĞİ + DEĞER KİPİ KARARI (ürünleşme tasarımının çatısı)
+
+156-158 notlarının vardığı yer 159'da Cihat kararıyla kilitlendi (MK-159.2):
+
+- **format_tanit AYRI MODÜLDÜR** (izometri batch gibi) — wizard/spool modalına PDF görüntüleyici
+  GÖMÜLMEZ (159'da modal-içi "çapa" stub'ı kaldırıldı; spec'in v4 çapa mirası bu bağlamda yalnız
+  format_tanit ekranında yaşar). Tüm taraflar aynı çekirdeği kullanır, çift taraflı gelişir.
+- **Köprü sözleşmesi (W-3.1/3.2):** giriş `format_tanit?is_id=<kuyruk_is_id>` — sayfa dosyayı
+  (storage_yolu), formatı (parse_sonuc.format / oto-tespit) ve spool bağlamını İŞTEN okur;
+  operatör dosya aramaz. Spec Madde 4'ün (tetik) nihai biçimi budur; mevcut `?format_id=&alan=`
+  girişleri korunur.
+- **İKİ KİP tek ekranda (sol bilgi + sağ PDF):**
+  - **B1 KURAL kipi (mevcut):** "okuma yerini düzelt" → parser_kural/paket patch (adres MK-155.1
+    ikiliğine tabi — 160 mimari kararı).
+  - **B2 DEĞER kipi (YENİ, ürünleşme):** "değer yanlış/boş, doğrusu şu" → `taslak_duzeltmeleri`
+    upsert (işaretli, kaynak ezilmez — MK-111.2; wizard'ın kullandığı onConflict altılısı aynen).
+    149'daki B2 tasarımı değişmeden ürünleşir; format-geneli deger_haritasi hâlâ son çare.
+- **W-3.4 yayılım sözleşmesi:** kural kaydı sonrası kardeş işler kuyruğa geri (155 reçetesi:
+  deploy [paket ailesiyse] → sha düşür SONRASI dahil → reset → kanıt).
+- **NOT alanı kapsama gerçeği (159 taraması):** not_metni yalnız İmalat Resmi kuralında tanımlı
+  (515/555 üretiyor); Montaj/PAOR ailelerinde alan yok → 0. Yeni format tanıtımlarında NOT
+  bloğu varsa alan tanımı checklist'e (alistirma_ipucu_kurali varsayılanı format override
+  edebilir — l2-parser:62-67).
+
+160 ana işi bu notun uygulanmasıdır: FORMAT-YONETIM-MIMARI.md (tek otorite + öğretim adresi
+tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunulmadı.

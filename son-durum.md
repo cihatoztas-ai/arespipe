@@ -1,74 +1,91 @@
-# son-durum.md — Oturum 158 (2026-06-05)
+# son-durum.md — Oturum 159 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **W-2.15 ONAY KUYRUĞU SEKMESİ (ana iş, canlı kanıtlı KAPANDI):** devre_detay'a 6. sekme.
-   Tek liste 4 grup: ⚠ İnceleme bekleyen (manuel_onay — "Uyarıları gör" lazy uyarı listesi
-   kod+mesaj+agirlik renkli + ✓Kapat tekil →tamamlandi) · 📊 Excel BOM (mevcut
-   onayModalAc→onayAktar→aktar köprüsü, yeniden icat yok) · 🔗 Atanmamış içeren ("Detay" →
-   `parse_sonuc._eslesme.detay[]` spool_no+sebep; aksiyonsuz, B-6 görünürlük) · ✅ Temiz öneri
-   ("Tümünü kapat" toplu →tamamlandi, veri işlemi YOK). Liste sorgusu hafif: PostgREST JSON
-   alias (`atan:parse_sonuc->_eslesme->>atanmamis`); uyarı/detay satır-başına lazy. Sekme
-   rozeti açılışta embed-count ile dolar; `?sekme=onay` deep-link; kapatmalar `_tkKilit` guard'lı.
-   **Kanıt:** g200 rozet 141, tekil kapatma manuel_onay 55→54+tamamlandi+1 (SQL) · hhbjşlö toplu
-   24→0 + excel 1 yerinde + manuel 20 dokunulmadı (SQL) · aw231 atanmamışlı 8 + `S02 —
-   kabukta_yok` detayı ekranda.
-2. **devreler.html ROZETLERİ:** devre satırında `✅ N` (kuyruk gerçeği; tek sorgu
-   `devre_dokumanlari!inner(devre_id)` embed → JS gruplaması → renderTable sonrası enjeksiyon;
-   tıkla → `devre_detay?id=X&sekme=onay`) + İşlenenler'e turuncu ikinci rozet
-   (bekliyor+isleniyor sayısı, >0'da görünür) — 157 bulgusu kapandı. Kanıt: hhbjşlö `✅ 21`
-   (20m+1excel, matematik birebir), bcmghbnv `✅ 76`.
-3. **W-2.14/A TASLAK VERİ KATMANI (canlı kanıtlı GEMİDE) — MK-156.1 boş gövde KAPANDI:**
-   spoolYukle başında tek `if(TASLAK_KIP)` → `_taslakSpoolYukle`: devrenin excel-generic kuyruk
-   işleri (oneri_hazir+manuel_onay, N iş satirlar concat) → `ARES_KABUK.grupla` → sentetik
-   spooller satırı → mevcut `_spoolMap`. Render'a sıfır dokunuş (155 disiplini); akt=-1 →
-   "Bekliyor", kesim/büküm boş — dürüst önizleme. Kanıt: bchmgbcmbn önizlemesi 4 spool DOLU,
-   cap 60,3 / et 4,5 / ağırlıklar wizard Adım 2 ile birebir.
-4. **Önizleme rötuşları (`fix(158)`):** (a) amber bant body→`.main-content`, top:52px/z:140 —
-   topbar (z:150) örtülmez; (b) terfi hizası: kalite=anaMalzeme, malzeme=malKod(ham) — kalite
-   kolonu doldu; (c) `taslak_duzeltmeleri` (kalem_idx=-1, alan/deger) overlay'i önizlemede
-   ARES_KABUK.aktar ile AYNI ezme kuralıyla okunur (cap/et/agirlik/malzeme/kalite/yuzey/
-   alistirma); (d) goSpool taslakta toast'la kilitli (sahte id ile spool_detay açılmaz).
-5. **ÜÇ TEŞHİS KANITLA DEVRİLDİ — patch YAZILMADI (MK-158.1):**
-   (a) "265 sekmesi boş" → benzer adlı iki devre: d222 (NB1137, 0 doküman) ayrı kayıt; 141 öneri
-   aw231'de (NB1124) ve sekme orada doğruydu. (b) "backfill'de montaj dalı yok" → `eslestir()`
-   montajı içinde dallıyor (kuyruk-isle:506 `okuJson.montaj`), montajda spoollar=[] Array →
-   backfill ön filtresinden geçer; nitekim montaj işleri eslesen=1. (c) "montaj spool detaya
-   gelmedi" → SQL: 28/36 spool montaj_json DOLU; bakılan spool ALS çiftsiz 8'dendi. UI (116/Is3)
-   zinciri de sağlam. 215'te görünüp ilk bakışta 217'de görünmemesinin açıklaması veri değil
-   örneklem yanılgısıydı.
-6. **Canlı doğrulamalar:** terfi sonrası alıştırma sütunu DOLDU — NOT→alıştırma zinciri
-   (l2-parser `alistirma_ipucu_kurali` kademeli VAR/KISMI + eslestir `deg.alistirma` +
-   `deg.imalat_not`) sağlam, taslakta görünmemesi yapısal (MK-157.1). Montaj göz teyidi (157
-   küçük işi) yapıldı sayılır: UI render + veri katmanı uçtan uca doğrulandı.
+1. **İŞ EMRİ NUMARASI TERFİYE TAŞINDI (ana iş 1, canlı kanıtlı KAPANDI):**
+   - **Migration 101** (`migrations/101_is_emri_terfide.sql`): `devreler.is_emri_no` DROP NOT NULL +
+     `devreler_is_emri_terfi_check` (durum='taslak' OR is_emri_no IS NOT NULL). Dry-run ihlal=0 →
+     COMMIT; `is_nullable=YES` SELECT teyitli. Ön-kontrol: aktif 131 / taslak 24 / durduruldu 1,
+     numarasız 0; `not_empty` CHECK NULL'u geçirir (çakışma yok); `sonraki_no` RPC atomik
+     (UPDATE…RETURNING satır kilidi) — terfiye taşıma yarış-güvenli.
+   - **Wizard taslak INSERT:** `sonrakiNo('is_emri')` çağrısı kalktı, `is_emri_no: null`.
+   - **onayEt terfi:** mevcut numara SELECT (eski dönem taslakları numarasını KORUR, ekstra yakım
+     yok) → boşsa RPC üret → `update({durum:'aktif', is_emri_no}).eq('durum','taslak')` guard'lı;
+     0 satır = zaten aktif (console.warn, üretilen yedek numara yanar — nadir, kabul).
+   - **KANIT:** taslak açma sayaç 217→217 (yakmadı) · iptal 217 sabit · yeni taslak+terfi 217→218,
+     P26-218 = bcmbvö aktif · eski taslak bchmgbcmbn P26-216'sını KORUYARAK terfi, sayaç 218 sabit.
+   - **Karar netleşmesi (Cihat):** kural istisnasız — "canlıya çıkan her devre +1, taslakta numara
+     yok". Kalan canlı taslakların numarası NULL'lanır (dry-run `sifirlanan=1`; **COMMIT teyidi 160
+     açılışında sorulacak**). devre_detay TASLAK_KIP: numarasız taslakta "Terfide üretilecek"
+     (`dv_is_emri_terfide`, tr/en/ar üçlüsü eklendi).
+2. **PDF NOT OKUMA KANIT TURU (ana iş 2 KAPANDI):** format-bazlı dağılım SQL'i (kolon gerçeği:
+   `parser='izometri'`; NOT alanları top-level değil **spool-başına** `parse_sonuc.spoollar[]`;
+   format adı `parse_sonuc->>'format'` — ilk şablon `is_tipi` varsayımıyla patladı, MK-126.8
+   ihlal itirafı). Sonuç: **Tersan M110 İmalat Resmi 515/555 not_var + 73 alıştırma + 1 KISMI**;
+   Montaj/PAOR/format-yok 0 = YAPISAL (kurallarında not_metni alanı tanımsız — "koptu" değil
+   "hiç bağlanmadı"; ihtiyaç doğarsa format kuralına alan eklenir, acil değil). **Ekran kanıtı
+   (bcmbvö S01):** ALIŞTIRMA: KISMI rozeti + QR personel uyarıları ("ALAŞTIRMA KISMI — bazı
+   parçalar sahada" + "Dablin Flange KAYNATILMAYACAK" imalat_not) — 158 küçüğü "KISMI canlı örnek"
+   ve "imalat_not UI teyidi" birlikte kapandı.
+3. **HİKAYE + PROFESYONEL KIYAS (Cihat istedi):** Spoolgen/Isogen/PCF dünyasıyla karşılaştırma —
+   yapısal çelişki YOK, bilinçli ters istikamet (onlarda veri 3D modelden yapısal doğar, bizde PDF
+   ham madde). Dört boşluk tartışıldı, Cihat cevaplarıyla kapandı/konumlandı:
+   (a) veri kaynağı çoğullaşacak — Rhino/STEP/PCF ileride aynı kabuğa inen alternatif kapılar
+   (mimari hazır: yeni kaynak = yeni katman); (b) iş bitiminde **devre bazlı kalite dosyası**
+   verilecek (kaynak izlenebilirliğinin bizdeki karşılığı); (c) spec-doğrulama bilinçli kapsam
+   dışı; (d) revizyon sütunu VAR, çizimlerin rev numarası tabloya işlenecek.
+   **Cihat teşhisi (oturumun pusulası):** en büyük yapısal eksik = zayıf satırların düzenlenmesi +
+   format yönetim mantığının doğru kurulması.
+4. **SPOOL DÜZELT MODALI ZENGİNLEŞTİRİLDİ (`feat(159)`, 159b):** (a) **📄 PDF'i aç** — İzometri
+   bölümünde; `devre_dokumanlari.storage_yolu` tıklama anında çekilir (dokAc-102 lazy deseni) →
+   `ARES.dosyaUrlAl(yol,'devre-belgeleri')` → yeni sekme. (b) **Malzemeler (N kalem)** bölümü —
+   kabuk BOM kalemleri overlay değerleri + "düzelt" rozetiyle listelenir; ✏️ → mevcut 146/B kalem
+   modalı (`kalemDuzeltAc` 3. param `donusIdx`, **"← Spool'a dön"**); köprü anahtarı inceleme =
+   kabuk (`pipeline|spoolNo`, 1231 formülü birebir); `_kalemDuzeltmeleriYukle` lazy + modal
+   tazeleme. Render'a ve mevcut kalem altyapısına sıfır müdahale. **Canlı görünüm kanıtı** (ekran:
+   MALZEMELER 3 KALEM + PDF'i aç, NB1137 M130-817-008-S01); ✏️/dön/PDF **tıklama testleri 160
+   açılışına**.
+5. **ÇAPA STUB KALDIRILDI (`fix(159)`, 159c):** Cihat kararı — format tanıma AYRI MODÜL olunca
+   modal-içi görsel çapa ölü doğdu. "Sol bilgi + sağ izometri + büyüt-oku-yaz + genele yay" ekranı
+   = format_tanit anatomisi; wizard'a ikinci PDF görüntüleyici GÖMÜLMEZ (çift bakım). Doğru yol:
+   format_tanit'e **DEĞER KİPİ** (B2'nin ürünleşmesi) + `?is_id=` dosya-taşımalı köprü → 160 ana
+   işi. (omurga 8/18.d çapa maddesi düştü.)
+6. **HAFIZA DÜZELTMESİ (MK-159.3):** 146/B kalem rötuşu uçtan uca TAMMIŞ — wizard UI + upsert +
+   `ARES_KABUK.aktar(kalemDuzeltmeler)` overlay dahil. 145 devrindeki "B kalanı" kaydı eskimişti;
+   read-before-write yakaladı, gereksiz yeniden-yazım önlendi.
 
-## Bulgular (158)
-- **İş emri numarası taslak INSERT'inde üretiliyor** — karar "iptal taslaklara numara atanmaz,
-  terfide üretilir"di; taslak önizlemede P26-216 görünüyor, listede 199→201→204→207→215→217
-  sıçramalı. 159 teşhis: wizard INSERT + terfi akışı (read-before-write).
-- PDF NOT okuma: Cihat "koptu" gözlemi bu vakada doğrulanMAdı (alıştırma doldu); genel sağlık
-  için format-bazlı `not_metni` tarama + imalat_not UI görünürlük teyidi 159'a.
-- hhbjşlö'nün 1 excel önerisi açık duruyor (onay modalından henüz aktarılmadı).
+## Bulgular (159)
+- Format yönetim mimarisi soruları netleşti (160 tasarım girdisi): tek otorite kim (DB
+  parser_kural vs format-paketleri.js, MK-155.1 ikiliği) · öğretilen kural nereye yazılır ·
+  aileye nasıl yayılır (W-3.4) · eskiyen kural nasıl emekli edilir · DEĞER düzeltme (B2 →
+  taslak_duzeltmeleri) ile KURAL düzeltme (B1 → parser_kural/paket) tek ekranda nasıl ayrışır.
+- Montaj/PAOR formatlarında not_metni alanı tanımsız — SAYFA-EKSIKLERI adayı (acil değil).
 
-## Commit'ler (158)
+## Commit'ler (159)
 | Commit | Mesaj |
-|------|-------|
-| 8174485 öncesi | `feat(158): Onay Kuyrugu sekmesi (W-2.15) — ...` |
-| 486e096 | `feat(158): devreler.html onay rozetleri — ...` |
-| 0a591ea | `feat(158): W-2.14/A taslak onizleme veri katmani — ...` |
-| rötuş | `fix(158): taslak onizleme rotuslari — bant/kalite/duzeltme-overlay` |
-| doc | kapanış dosyaları (bu commit) |
-DB: migration YOK, veri UPDATE YOK. 12/12 ✓. izometri-oku DOKUNULMADI ✓. CI yeşil beklenir.
+|---|---|
+| kod | `feat(159): is emri numarasi terfiye tasindi — ... (migration 101)` |
+| kod | `feat(159): spool duzelt modali — PDF'i ac + Malzemeler bolumu (146/B koprusu, Spool'a don)` |
+| kod | `fix(159): capa stub kaldirildi ...` (**159c — transfer+commit 160 açılışında teyit**) |
+| doc | kapanış dosyaları |
+DB: **Migration 101 UYGULANDI** (kalıcılık SELECT teyitli) + taslak NULL temizliği dry-run'lı
+(COMMIT teyidi açık). 12/12 ✓. izometri-oku DOKUNULMADI ✓.
 
-## MK kayıtları (KARARLAR.md'ye işlenecek — MK-157.x ile birlikte)
-- **MK-158.1 (süreç):** Teşhis sırası VERİ (SQL) → UI → kod. Benzer adlı devre ≠ aynı devre.
-  158'de üç "kırık" hipotez kanıtla öldü; sıfır gereksiz patch.
-- **MK-158.2:** Onay Kuyruğu toplu kapatma = yalnız temiz izometri önerileri; atanmamışlı (B-6)
-  ve excel (109/A) girmez; `_eslesme` özetsiz eski kayıtlar girer (havuz temizlenebilirliği).
-- **MK-158.3:** Taslak önizleme = terfi: kalite=anaMalzeme, malzeme=malKod, taslak_duzeltmeleri
-  overlay aktar ezme kuralıyla. Alıştırma/izometri taslakta yapısal yok; terfiden sonra dolar.
+## MK kayıtları (KARARLAR.md'ye işlenecek — MK-157.x/158.x ile birlikte birikti)
+- **MK-159.1:** İş emri numarası YALNIZ terfide üretilir (`sonraki_no` RPC atomik;
+  `eq('durum','taslak')` guard; eski numaralı taslak numarasını korur — geçiş bitti, artık hepsi
+  NULL). Taslak/iptal numara yakmaz. Migration 101 + `dv_is_emri_terfide` üç dil.
+- **MK-159.2:** Format tanıtma AYRI MODÜLDÜR (izometri batch gibi); görsel okuma (sol bilgi + sağ
+  PDF) format_tanit'te yaşar, wizard/batch'ten `?is_id=` dosya-taşımalı köprüyle girilir; modal-içi
+  çapa İPTAL. format_tanit'e DEĞER KİPİ (B2: taslak_duzeltmeleri'ne işaretli) + KURAL KİPİ (B1)
+  tek ekranda ayrışır; W-3.4 kardeş yayılımı tamamlar.
+- **MK-159.3 (süreç):** Devir hafızası eskiyebilir — kod gerçeği > devir kaydı. 146/B "kalan iş"
+  sanılan paket uçtan uca tammış; read-before-write çift-yazımı önledi.
 
-## 159 ANA İŞ
-1) İş emri numarası terfiye taşıma teşhisi+fix. 2) NOT okuma format-bazlı kanıt turu +
-imalat_not UI teyidi. 3) Format hattı (Sefine / Y200 ST37+W-3.9 / W-2.4 tasarımı).
-Küçükler: KARARLAR.md MK işleme · EN/AR anahtarları · 6 B1124 PDF · IZO-KANIT-SETI v4 ·
-✖ sessiz-kayıp · hhbjşlö excel aktarımı.
+## 160 ANA İŞ
+**FORMAT YÖNETİM MİMARİSİ** (Cihat 2 no'lu teşhisi): tasarım dokümanı + W-3.1/3.2 köprüleri
+(?is_id=) + format_tanit değer kipi + W-3.4 kardeş yayılımı. Tasarım soruları yukarıda (Bulgular).
+Küçükler: 159c transfer/commit teyidi · modal tıklama testleri (✏️/dön/PDF + Malzeme sekmesi
+regresyonu: köprüsüz kalem modalında "Spool'a dön" GÖRÜNMEMELİ) · taslak NULL COMMIT teyidi ·
+KARARLAR.md MK-157/158/159 işleme · EN/AR (dv_tab_onay, dv_onayk_*, dv_taslak_spool_yok) ·
+hhbjşlö 1 excel · 6 B1124 PDF orijinal adlarla · IZO-KANIT v4 yapıştır + ad kararı · ✖ sessiz-kayıp
+doğrulaması · W-2.18 (önizlemede izometri overlay) sırası geldiğinde.

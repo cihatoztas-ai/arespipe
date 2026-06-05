@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 158)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 159)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -87,14 +87,40 @@
       bekleyen-iş rozeti (157 bulgusu kapandı). KANIT: g200 tekil 55→54 · hhbjşlö toplu 24→0
       (excel+manuel dokunulmadı) · aw231 atanmamışlı 8 + kabukta_yok detayı. "Eşleştir" aksiyonu
       bilinçli ertelendi (gerçek eşleştirme aracı ayrı tasarım).
+- [x] W-2.16 KAPANDI (159, canlı kanıtlı — MK-159.1): iş emri numarası YALNIZ TERFİDE üretilir.
+      Migration 101 (is_emri_no DROP NOT NULL + durum='taslak' OR dolu CHECK) · taslak INSERT
+      null · onayEt: mevcut numara korunur → yoksa sonraki_no RPC (atomik) →
+      eq('durum','taslak') guard'lı update. KANIT: sayaç 217→218 tek terfiyle; iptal yakmadı;
+      P26-218=bcmbvö. Kural istisnasız: kalan taslakların numarası NULL'lanır (160 teyidi).
+      devre_detay TASLAK_KIP "Terfide üretilecek" (tr/en/ar).
+- [x] W-2.17 KAPANDI (159, görünüm kanıtlı; tıklama testleri 160 açılışı): spool düzelt modalı
+      zenginleştirme — 📄 PDF'i aç (storage_yolu lazy, dokAc-102 deseni, dosyaUrlAl
+      devre-belgeleri) + Malzemeler (N kalem) bölümü → 146/B kalem modalına köprü (kalemDuzeltAc
+      donusIdx paramı, "← Spool'a dön"; köprü anahtarı = kabuk anahtarı pipeline|spoolNo).
+      Çapa stub KALDIRILDI (MK-159.2: görsel okuma format_tanit'te; omurga 8/18.d düştü).
+      NOT (MK-159.3): 146/B zaten uçtan uca tamdı (aktar.kalemDuzeltmeler dahil) — 145 "B kalanı"
+      kaydı eskimişti.
+- [ ] W-2.18 (159 tasarım bulgusu — Cihat akışının kilit taşı): ÖNİZLEMEDE İZOMETRİ PARSE VERİSİ.
+      Taslak önizleme bugün yalnız Excel kabuk + düzeltme overlay gösterir; L2'nin söktüğü her şey
+      (malzeme_listesi, alıştırma, ölçüler) terfiden SONRA iner (MK-157.1 yapısal sınır). Hedef:
+      kuyruktaki izometri işlerinin parse_sonuc.spoollar[] verisi DB'ye yazılmadan önizleme
+      satırlarına üçüncü katman olarak bindirilir (excel kabuk + izometri overlay + düzeltme
+      overlay). Operatör onaydan ÖNCE PDF'ten geleni görür.
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI
 
 > İlke: format öğretme ayrı bir "yazılımcı seansı" değil, akışın içinde tek tıkla girilen bir adım.
 > Giriş noktaları hazır: format_tanit ?format_id=&alan= + picker (149).
 
-- [ ] W-3.1 Wizard inceleme: zayıf/çelişkili/L3/tanınmadı rozetli satıra "Formatı düzelt / tanıt" butonu → format_tanit.
-- [ ] W-3.2 İzometri batch sayfası: aynı buton/köprü (tanınmadı satırı → format_tanit). İki taraf AYNI çekirdeği kullanır, kopya akış yok.
+- [ ] W-3.1 Wizard inceleme: zayıf/çelişkili/L3/tanınmadı rozetli satıra "Formatı düzelt / tanıt"
+      butonu → format_tanit. 159 NETLEŞMESİ (MK-159.2): köprü `?is_id=` ile DOSYA TAŞIR —
+      format_tanit PDF'i storage'dan kendisi açar, format/spool bağlamını işten okur; operatör
+      dosya ARAMAZ. format_tanit'e DEĞER KİPİ eklenir (B2 ürünleşmesi: değer →
+      taslak_duzeltmeleri işaretli; "alan hep burada" → B1 kural patch) — sol bilgi + sağ PDF
+      tek ekran, wizard'a ikinci PDF görüntüleyici GÖMÜLMEZ. 160 ANA İŞ paketi.
+- [ ] W-3.2 İzometri batch sayfası: aynı buton/köprü (tanınmadı satırı → format_tanit `?is_id=`).
+      İki taraf AYNI çekirdeği kullanır, kopya akış yok. (159: Cihat kararı — format tanıtma
+      izometri batch gibi AYRI MODÜL kimliğinde kalır, hepsi aynı altyapı, çift taraflı gelişir.)
 - [ ] W-3.3 L2-fail davranış seçimi devre düzeyinde: "AI'a gitsin (L3)" / "AI kapalı — tanınmayanı bana göster". Kapalıyken dosya sessiz kaybolmaz, "tanınmadı → formatı tanıt" satırı olur. (Muhtemel küçük migration — MK-98.2 dry-run.)
 - [ ] W-3.4 Öğretilen kural kaydedilince: aynı devredeki kardeş dosyalar otomatik yeniden işlenir (kuyruğa geri) — operatör tek PDF öğretir, gerisi kendiliğinden okunur.
 - [ ] W-3.5 Son kullanıcı dili sadeleştirme: format_tanit metinleri operatör diliyle (B1 "okuma yerini düzelt" ↔ B2 "değeri düzelt" ayrımı ekranda anlaşılır); et_mm "runtime'da ASME'den dolar" mesajı; kaydet modal otomatik kapanış + toast.
@@ -131,13 +157,30 @@
 
 ---
 
-## SIRA ÖNERİSİ (Claude)
+## SIRA ÖNERİSİ (Claude — 159 güncel)
 
-1. **FAZ 1** (W-1.1→1.6): "neden biz basıyoruz" + MK-117 + tahliye + Y100 kanıtı. Diğer her şeyin altyapısı.
-2. **W-2.11 kararı + W-2.6/2.7** (durum makinesi + İşlenenler sekmesi): akışın omurgası; UI maddeleri (W-2.1, 2.5, 2.8) bunun üstüne ucuz.
-3. **W-2.3/2.4** (klasör ağacı + dışlama): eşleşme kirliliğini kökten keser.
-4. **FAZ 3** (çift taraflı tanıtma + L3 anahtarı + sadeleştirme).
-5. **FAZ 4 → FAZ 5** kanıt turu.
+1. ~~FAZ 1~~ ✓ · ~~omurga (W-2.6/2.7/2.11/2.14/2.15)~~ ✓ · ~~W-2.16/2.17~~ ✓ (159).
+2. **160: FORMAT YÖNETİM MİMARİSİ** (Cihat teşhisi): tek otorite (DB vs paket, MK-155.1) +
+   öğretim adresi tablosu + format_tanit DEĞER KİPİ + W-3.1/3.2 `?is_id=` köprüleri + W-3.4
+   kardeş yayılımı. Çıktı: FORMAT-YONETIM-MIMARI.md + ilk köprü canlı.
+3. **W-2.18** (önizlemede izometri overlay) — Cihat akışının kalan kilit taşı.
+4. W-2.3/2.4 (klasör ağacı + dışlama) — 159'da fiili öncelik FAZ 3'e kaydı, geriye düştü.
+5. FAZ 3 kalanları (W-3.3 L3 anahtarı, W-3.5-3.9) → FAZ 4 → FAZ 5 kanıt turu.
+
+## UFUK (159 profesyonel kıyas — Spoolgen/Isogen/PCF dünyasıyla; çelişki değil konumlanma)
+
+- **U-1 Çoklu veri kaynağı:** PDF bugünün tersane gerçeği (dizayn ofisi PCF vermez); ileride
+  Rhino / STEP / PCF-IDF aynı kabuğa inen alternatif kapılar olur. Mimari hazır: Excel kabuk
+  otorite + katman bindirme → yeni kaynak = yeni katman, kırılma yok. Yapısal veri varsa parse
+  atlanır (IFS köprüsü deseni).
+- **U-2 Devre bazlı kalite dosyası:** iş bitiminde devreye ait kalite dosyası çıktısı (Cihat:
+  benzer yapı var). Profesyonel araçların kaynak/weld izlenebilirliğinin bizdeki karşılığı;
+  kaynak-numarası düzeyine inilecekse bu pakette tasarlanır.
+- **U-3 Spec-doğrulama:** boru sınıfı (piping spec) otoritesi bilinçli kapsam DIŞI — sistem
+  BOM→kütüphane çapraz doğrulamayla (K2, 2-kaynak konsensüsü) ilerler. Tersane spec verirse
+  yeniden değerlendirilir.
+- **U-4 Revizyon derinliği:** rev sütunu VAR; çizimlerin hangi revizyonda olduğu tabloya
+  işlenecek (Cihat planı). İleri adım (rev-diff: "rev2'de ne değişti") ihtiyaç doğunca.
 
 ## AÇIK KARARLAR (Cihat)
 

@@ -359,3 +359,35 @@ fingerprint tarafında sıfır değişiklik. Format hattını doğrudan ilgilend
 
 159 format sırası (değişmedi): Sefine şablonu (IFS köprüsü, en ucuz) / Y200 ST37 + W-3.9 /
 W-2.4 sınıflandırma+yönlendirme tasarımı (YENI-VERI-KAYNAKLARI-ANALIZ.md girdileriyle).
+
+---
+
+## OTURUM 159 — FORMAT KODUNA DOKUNULMADI; YÖNETİM MİMARİSİ 160 ANA İŞİ OLARAK DOĞDU
+
+159'un ana işleri iş emri terfisi + NOT kanıt turu + spool modal zenginleştirmesiydi; format_tanit /
+l2-parser / fingerprint tarafında sıfır kod değişikliği. Hattı doğrudan şekillendiren üç çıktı:
+
+1. **NOT/alıştırma format dağılımı (kanıt SQL, LATERAL spoollar[]):** Tersan M110 İmalat Resmi
+   555 dosyada 515 not_var + 73 alistirma_var + 1 KISMI — zincir SAĞLIKLI. Tersan M110 Montaj
+   (genel+resmi) 559 dosyada 0, PAOR (Ana Çizim + Isometric View) 54 dosyada 0, format-yok 218'de
+   0 — YAPISAL: bu kuralların not_metni alanı tanımsız ("koptu" değil "hiç bağlanmadı"). İhtiyaç
+   doğarsa formata alan eklenir (montaj belgelerinde NOT bloğu var mı önce saha teyidi). Ekran
+   kanıtı: KISMI rozeti + imalat_not QR personel uyarısı canlıda (bcmbvö S01) — 150'lerden beri
+   kurulan NOT→alıştırma/imalat_not zinciri uçtan uca üretimde.
+2. **MK-159.2 — format_tanit'in ürün kimliği KİLİTLENDİ (Cihat kararı):** AYRI MODÜL (izometri
+   batch gibi), tüm taraflar aynı altyapıyı kullanır, çift taraflı gelişir. Wizard spool modalına
+   gömme/çapa fikri İPTAL (159'da çapa stub'ı koddan kaldırıldı). Operatör akışı: zayıf/tanınmadı
+   satırı → `format_tanit?is_id=` (dosya+format+spool bağlamı İŞTEN okunur, PDF storage'dan
+   otomatik açılır — "dosyayı bulup açmak uzun iş" şikâyetinin kalıcı çözümü). format_tanit'e
+   **DEĞER KİPİ** eklenecek: B2'nin ürünleşmesi — operatör sağdaki PDF'ten okuyup değer yazarsa
+   `taslak_duzeltmeleri`'ne (işaretli, MK-111.2); "bu alan hep burada" derse B1 kural patch.
+   İki kip tek ekranda ayrışır.
+3. **160 ANA İŞ — FORMAT YÖNETİM MİMARİSİ:** karar soruları sabitlendi: (a) tek otorite — DB
+   parser_kural vs format-paketleri.js ikiliği (MK-155.1) nasıl çözülür; (b) öğretim adresi
+   tablosu (format türü → yazma hedefi); (c) değer/kural kipi ayrımı; (d) W-3.1/3.2 köprüleri;
+   (e) W-3.4 kardeş yayılımı (155 reçetesi: deploy → sha düşür → reset → kanıt). Çıktı:
+   docs/FORMAT-YONETIM-MIMARI.md + ilk köprü canlı.
+
+Format hattı klasik kuyruğu değişmedi (Y200 ST37 + W-3.9 panzehiri / Sefine şablonu / W-2.4),
+ancak sırası yönetim mimarisinin ARKASINA alındı — öğretim turlarına girmeden "neyi nereye
+yazdığımız" netleşmeli (155 adres dersinin mantıksal sonucu).
