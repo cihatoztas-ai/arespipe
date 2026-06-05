@@ -1940,3 +1940,126 @@ tek nokta → count/liste/id tutarlı). Wizard iptalinde (`wizardIptal()`) tasla
 `durum='taslak'`; aktife dokunmaz). Kök: `inceleBaslat()` "İncele →" anında taslak INSERT ediyor (devre_id
 storage/kuyruk için lazım), terk edilince yetim kalıyordu. Hard-delete + storage temizliği yeni endpoint
 gerektirdiğinden (MK-129.3 tavanı) ertelendi — toplu cleanup ileride.
+
+---
+
+## ⚠ BOŞLUK NOTU — MK-139 … MK-153 (160'ta tespit)
+
+160 açılış kontrolünde görüldü: bu dosyaya en son MK-138.3 işlenmiş; 139–159 arası ~20 oturumun
+kararları oturum devir dosyalarında kalmış, buraya hiç gelmemiş (MK-159.3'ün ikiz vakası: devir
+"157-159 birikti" diyordu, gerçek boşluk 139'dan başlıyor). 160'ta yalnız **kaynak-kanıtlı tam
+metni elde olan 154+ seti** işlendi (kaynaklar: FORMAT-TANITMA-URETIM-SPEC.md, FORMAT-TANITMA-
+ILERLEME.md, WIZARD-YOL-HARITASI.md, oturum 159 kapanış dosyaları). **139–153 geri-doldurma ayrı
+iştir** — o oturumların devir dosyaları/arşivi okunarak yapılır, ezberden YAZILMAZ (MK-126.8).
+Bilinen adaylar (referansları yaşayan dokümanlarda geçiyor): MK-139.1, MK-145.3/4, MK-148.1,
+MK-150.x, MK-151.4/5, MK-152.1/2/3/4, MK-153.1/2/3.
+
+---
+
+## MK-154.1 [MIMARI] — Taslak işleme durumu kolon değil, kuyruktan TÜRETİLİR
+"işleniyor/hazır" devre kolonu açılmadı: taslak + açık kuyruk işi = işleniyor; iş kalmadı = hazır.
+Migration sıfır, senkron borcu sıfır; durum CHECK'i (taslak/aktif/iptal) değişmedi. Kuyruk =
+gerçeğin kaynağı ilkesinin ilk büyük uygulaması (devamı MK-157.4). (Kaynak: W-2.6, 154.)
+
+## MK-154.2 [MIMARI] — Tek-nokta yazma kilidi deseni + 'isleniyor' işlere dokunulmaz
+İki bağlı kural: (a) bir kipte yazmayı kilitlemek = her yazma fonksiyonunun başına TEK satır guard
+(taslak önizleme `_tkKilit()` 19/19 fonksiyon — render'a dokunmadan); (b) taslak iptali/kuyruk
+temizliği `durum='isleniyor'` işleri ATLAR — worker o anda üzerinde çalışıyor olabilir (yarış
+koşulu), iş kendi akışında biter. (Kaynak: W-2.11/W-2.13, 154-155.)
+
+## MK-155.1 [MIMARI] — AILE_KAYIT'lı formatta etkin kural PAKETTEN derlenir; DB parser_kural OKUNMAZ
+izometri-oku ~900: `aileBirlestir(format_kodu) || DB_parser_kural`. AILE_KAYIT'taki formatlarda
+(160 itibarıyla: tersan_cadmatic_spool, tersan_cadmatic_montaj) etkin kural lib/format-paketleri.js
+facet katmanlarından derlenir; DB kuralı yalnız fallback. Bu ailelerde satır/alan öğretimi = KOD
+DEĞİŞİKLİĞİ + DEPLOY. Kanıt: 155 NB1124 turu — DB'ye yapılan ilk öğretim (tip 7→8, RETURNING'li)
+HİÇ okunmadı. Çözüm çerçevesi: docs/FORMAT-YONETIM-MIMARI.md §3 + MK-160.1. (Kaynak: SPEC/ILERLEME 155.)
+
+## MK-155.2 [MIMARI] — Motor boy_mm'i int'e çevirir; istisna açılmadı
+177.8 → 177. MK-118.3 (motor yeniden yazılmaz) gereği kabul; 0.8 mm imalat toleransında ihmal
+edilebilir. Bilinçli sınır, bug değil. (Kaynak: ILERLEME 155.)
+
+## MK-155.3 [MIMARI] — Örtüşen tetikleyicili iki satır tipi TUZAKTIR; tek genel tip
+Motor sözleşmesi: satır İLK tetikleyen tipte kalır, o tipin deseni tutmazsa ham_satir'a düşer
+(görünür — B-6). Bu yüzden tetikleyicileri kesişen iki ayrı tip ('reduksiyon' ↔ 'reduksiyon_sch';
+risk adayları 'Red.ser', 'Dış/İç Bilezik') yazılmaz — tek genel tip + desen alternation. Yeni tip
+eklerken tetik örtüşme denetimi checklist maddesi. (Kaynak: ILERLEME 155-156.)
+
+## MK-156.3 [MIMARI] — Format kapsaması ÜÇ katman; format_tanit yalnız SATIR/ALAN öğretir
+KİMLİK çıkarımı + SATIR tipleri + BELGE SINIFI (dışlama) ayrı ayrı kırılır. "Formatı tanıttım"
+satır katmanını çözer; kimlik (pipeline çıkarımı) ve dışlama (W-2.4) ayrı mekanizmadır — tanıtma
+sonrası süren kabukta_yok'ta kullanıcı format öğretimine değil kimlik/eşleşmeye yönlendirilir.
+Adres tablosunun tamamı: docs/FORMAT-YONETIM-MIMARI.md §1-2. (Kaynak: SPEC 156, NB1124 vakası.)
+
+## MK-157.1 [DISIPLIN] — kabukta_yok teşhisinde İLK kontrol: devre durumu
+Taslak devrede spooller tablosu YAPISAL boştur (kabuk terfide yazılır) → kabukta_yok taslakta
+normaldir, parser/eşleşme suçlanmaz. Teşhis sırası: devre durumu → kabuk anahtarları → PDF
+anahtarları → format kıyası. (Kaynak: SPEC 157; 156'nın "20/22 kimlik kırık" teşhisini devirdi.)
+
+## MK-157.2 [DISIPLIN] — Vercel repro standardı: node@20.11
+Vercel runtime require(ESM) desteklemez; Node 20.19+/22 lokalde bunu MASKELER. eslestirme-backfill
+140'tan beri bu yüzden ölüydü (modül-seviyesi createRequire zinciri tüm endpoint'i çökertiyordu;
+fix: lazy import(), yalnız tip=malzeme dalında). Runtime hatası repro'su node@20.11 ile yapılır.
+(Kaynak: ILERLEME 157.)
+
+## MK-157.3 [MIMARI] — İçerik-fakir belge sınıflarında dosya_adi_regex ŞARTTIR
+Montaj gibi başlıksız/tablosuz formatlar içerik sinyalleriyle eşik (2) altında kalır → format NULL
+→ genel L3 (maliyet + halüsinasyon). Fingerprint'e dosya_adi_regex öğretilir (montaj: 36/36 ad
+testi, iki yönde güvenli; `.S01` imalat için doğal guard). İçerik-öncelik ilkesi (MK-152.1)
+geçerli kalır — bu, sinyalin hiç olmadığı sınıflar için zorunlu tamamlayıcıdır. (Kaynak: ILERLEME 157.)
+
+## MK-157.4 [MIMARI] — Kuyruk durumu ≠ eşleşme durumu
+dosya_isleme_kuyrugu.durum işin İŞLENDİĞİNİ söyler (oneri_hazir/manuel_onay/hata); spool'a
+EŞLEŞTİĞİNİ söylemez. Eşleşme parse_sonuc._eslesme / spool tablolarından okunur. Teşhiste ikisi
+karıştırılmaz ("kuyruk = gerçeğin kaynağı" ilkesi yalnız İŞLEME durumu için geçerlidir).
+(Kaynak: 157 devri.)
+
+## MK-158.1 [DISIPLIN] — Teşhis sırası: VERİ (SQL) → UI → kod; benzer adlı devre ≠ aynı devre
+Şikâyet geldiğinde önce DB sorgusuyla veri gerçeği, sonra UI'ın o veriyi nasıl gösterdiği, en son
+kod okuması. Ve: ada benzeyen iki devre aynı devre sayılmaz — kimlik id'den doğrulanır (145.3
+test-kirliliği dersinin genellemesi). (Kaynak: 158 devri.)
+
+## MK-158.2 [URUN] — Onay Kuyruğu grupları + toplu kapatma sınırı
+devre_detay "Onay Kuyruğu" 4 grup: manuel_onay (amber, TEKİL kapatılır) · excel önerisi (mevcut
+modal köprüsü) · atanmamış izometri ("Detay" ile sebep-bazlı; B-6 görünürlük, TOPLU kapatmaya
+GİRMEZ) · temiz öneri (TOPLU →tamamlandi, veri işlemi YOK; _eslesme özeti olmayan öneriler de bu
+gruba girer). atanmamis bir kuyruk durumu değil, _eslesme özetinden türetilir. (Kaynak: W-2.15, 158.)
+
+## MK-158.3 [MIMARI] — Taslak önizleme terfi hizası
+Önizleme satırları terfiyle AYNI çekirdekten türetilir (ARES_KABUK.grupla): kalite=anaMalzeme,
+malzeme=malKod, taslak_duzeltmeleri (kalem_idx=-1) overlay'i aktar'ın ezme kuralıyla okunur.
+Alıştırma/izometri verisi taslakta YAPISAL yoktur (MK-157.1) — terfiden sonra dolar. (Kaynak: W-2.14, 158.)
+
+## MK-159.1 [MIMARI] — İş emri numarası YALNIZ terfide üretilir
+Migration 101: is_emri_no DROP NOT NULL + (durum='taslak' OR is_emri_no IS NOT NULL) CHECK.
+Taslak INSERT null; onayEt: mevcut numara korunur → yoksa sonraki_no RPC (atomik UPDATE…RETURNING)
+→ eq('durum','taslak') guard'lı update. Taslak/iptal numara YAKMAZ. Kural istisnasız: tüm canlı
+taslakların numarası NULL (geçiş temizliği 159-160'ta COMMIT'li). Kanıt: sayaç 217→218 tek
+terfiyle, P26-218=bcmbvö. devre_detay taslakta "Terfide üretilecek" (tr/en/ar). (Kaynak: son-durum 159.)
+
+## MK-159.2 [URUN] — format_tanit AYRI MODÜLDÜR; köprü dosya taşır; iki kip tek ekranda ayrışır
+Görsel okuma (sol bilgi + sağ PDF) yalnız format_tanit'te yaşar; wizard/spool modalına ikinci PDF
+görüntüleyici GÖMÜLMEZ (159'da modal-içi çapa stub'ı kaldırıldı). Giriş: `format_tanit?is=<id>
+&kaynak=devre|batch` — dosya/format/spool bağlamı İŞTEN okunur, operatör dosya ARAMAZ (160'ta
+gemiye alındı, W-3.1/3.2). KURAL kipi (B1, okuma yeri) ↔ DEĞER kipi (B2, taslak_duzeltmeleri'ne
+işaretli) ayrımı: MK-160.2. (Kaynak: 159 devri + ILERLEME 159.)
+
+## MK-159.3 [DISIPLIN] — Kod gerçeği > devir hafızası
+Devir kayıtları eskiyebilir: 145'in "B kalanı" borcu 159'da uçtan uca TAM çıktı (146/B kalem
+rötuşu aktar.kalemDuzeltmeler dahil gemideymiş); read-before-write çift-yazımı önledi. 160'ta
+ikinci vaka: "MK-157/158/159 birikti" devri, gerçek KARARLAR.md boşluğunun 139'dan başladığını
+gizliyordu. "Eski borç kaydı ≠ hâlâ borç" ve "eski 'işlendi' kaydı ≠ gerçekten işli" — iki yönde
+de dosya gerçeği esastır. (Kaynak: 159 devri + 160 tespiti.)
+
+## MK-160.1 [MIMARI] — Öğretim adresi: kısa vadede ikilik kabul, format_tanit ADRES-BİLİNÇLİ; yeni aile AILE_KAYIT'a EKLENMEZ
+MK-155.1 ikiliğinin yönetimi: DB-kurallı formatta öğretim DB'ye (bugünkü akış); AILE_KAYIT'lı
+formatta format_tanit ⚠ "paket-katmanlı — deploy gerektirir" uyarısı gösterir (160'ta gemide),
+sessiz başarısızlık yok. Yeni format aileleri AILE_KAYIT'a eklenmez — ikilik büyümez. Uzun vade
+YÖN: facet katmanları DB'ye taşınır (aileBirlestir DB'den derler), tetik = paket ailelerinde
+öğretim talebi; ayrı planlı paket. Tam analiz: docs/FORMAT-YONETIM-MIMARI.md §3.
+
+## MK-160.2 [URUN] — Kip sözlüğü: "sadece bu spool" → Düzelt · "hepsi okunmuyor" → Tanıt
+Tekil değer düzeltme wizard inceleme Düzelt modalında kalır (taslak_duzeltmeleri, işaretli);
+sistematik okuma sorunu Tanıt → format_tanit (kural öğretimi). format_tanit SAF KURAL kipidir —
+B2 değer kipi ancak W-3.5 dil/rozet ayrımıyla ("okuma yerini düzelt" ↔ "değeri düzelt") birlikte
+eklenir; etiketsiz kip karışımı yasak. (Kaynak: 160 Cihat-Claude kip tartışması.)
+
