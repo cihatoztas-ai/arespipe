@@ -1631,6 +1631,7 @@ async function islenenlerYukle() {
         '<div>' + durumHtml + '</div>' +
         '<div style="font-size:13px;color:var(--txm);">öneri: <b>' + s.oneri + '</b> · manuel: <b>' + s.manuel + '</b></div>' +
         '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
+        '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı gerçek devre görünümünde önizle (salt-okunur)" onclick="islenenlerOnizle(\'' + d.id + '\')">👁 Önizle</button>' +
         '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + (s.acik > 0 ? ' disabled' : '') + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : 'İncele') + '</button>' +
         '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">✕</button>' +
         '</div></div>';
@@ -1645,6 +1646,12 @@ async function islenenlerYukle() {
 async function islenenlerIncele(devreId) {
   try { await taslagiAc(devreId); }   // başarıda kendisi gosterAdim(2)+incelemeKur yapar (MK-136)
   catch (e) { console.error('[v3] islenen incele:', e); toast('Taslak açılamadı'); }
+}
+
+// ── W-2.11 köprüsü (156): taslağı gerçek devre detay görünümünde önizle ──
+//   YENİ SEKME zorunlu: İşlenenler açıkken drenaj client-loop'u koşar (MK-153.1) — navigasyon döngüyü öldürür.
+function islenenlerOnizle(devreId) {
+  window.open('devre_detay.html?id=' + encodeURIComponent(devreId) + '&taslak=1', '_blank');
 }
 
 async function islenenlerIptal(devreId, btn) {
