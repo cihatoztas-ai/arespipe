@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (oturum 153)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 154)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -15,7 +15,7 @@
 - [ ] B-2 Excel kabuk + PDF eşleştirme arka planda kendi kendine yürür; operatör beklemez, butona basmaz.
 - [ ] B-3 Tanınmayan format = kırmızı satır + "Formatı tanıt" butonu; öğretilen kural kalıcı kaydedilir, aynı aile bir daha AI'a gitmez.
 - [ ] B-4 Taslak, gerçek devre detay görünümünde (taslak temalı) kontrol edilir; onayla → aktif devreler.
-- [ ] B-5 Aynı anda birden çok devre yüklenebilir; "İşlenenler" sekmesinden takip edilir.
+- [~] B-5 "İşlenenler" takibi GEMİDE (154); paralel yükleme akışı (W-2.9) açık.
 - [ ] B-6 Hiçbir belge/satır sessizce kaybolmaz: eşleşmeyen, çelişen, tanınmayan her şey görünür.
 
 ---
@@ -40,7 +40,7 @@
 > 100+ kayıt 22 Mayıs'tan beri bekliyor (MK-152.3). Client-loop sayfa kapanınca ölüyor → "duruyor" hissi.
 
 - [x] W-1.1 Kuyruk tetiği KARARI (153): client-loop, cron YOK — 508 saha kanıtı + MK-113/A blanket. Yeni endpoint yok (12/12 ✓). Kalıcı tetik yüzü = W-2.7 İşlenenler sekmesi.
-- [~] W-1.2 Client-loop: MK-153.1 çok-tur koşu gemide + canlı kanıtlı (257 iş tek basış, tur1→tur2). "Sekmeyi açık tut" zorunluluğu W-2.7'ye kadar sürer; global drenaj şimdilik konsoldan.
+- [x] W-1.2 Client-loop TAM (154): MK-153.1 çok-tur koşu + kalıcı UI yüzü W-2.7 İşlenenler'de "Bekleyenleri işle" — konsol global drenaj devri bitti, canlı kanıtlı.
 - [x] W-1.3 MK-117 KAPANDI (153): kök = devre_dokumanlari.yukleyen_id NULL, tek küme (M110-722-21xx, 11 dosya), veri onarımıyla sahiplendirildi → 12/12 hatasız. (Null INSERT atan akışın tespiti açık kuyrukta.)
 - [x] W-1.4 TAHLİYE TAMAM (153): 269 iş işlendi, bekliyor 233→3 (kalan IFS xlsm = excel hattı). Rapor: L2=206 (%83, $0) / L3=41 ($1.15) — 52'nin %70+ pilot eşiği sahada aşıldı.
 - [x] W-1.5 Buton yedek + konsol global drenaj yolu çalışıyor (153).
@@ -56,19 +56,19 @@
 - [ ] W-2.5 İlerleme göstergesi ikiye ayrılır: (a) dosyaların sisteme yüklenmesi, (b) arka plan işleme (kuyruk). Tek çubuk ikisini karıştırmaz.
 
 ### Onay ve terfi (durum makinesi)
-- [ ] W-2.6 Devre durum makinesi: taslak → işleniyor → hazır → aktif. Onay artık DOĞRUDAN aktif listeye atmaz.
-- [ ] W-2.7 Wizard'a "İşlenenler" sekmesi: onaylanan devreler burada bekler; eşleşme/parse bitince operatör buradan aktif devrelere GÖNDERİR (manuel terfi).
-- [ ] W-2.8 "Onayla" ve "Devreyi görüntüle" butonları paralel değil SIRALI akışa çevrilir.
+- [x] W-2.6 ÇÖZÜLDÜ (154, B kararı / MK-154.1): işleniyor/hazır KOLON DEĞİL, kuyruktan TÜRETİLİR (taslak+açık iş=işleniyor; iş yok=hazır). Migration sıfır, senkron borcu sıfır; CHECK zaten taslak/aktif/iptal tutuyordu. Onay→aktif terfisi mevcut akışta (sıralı, W-2.8).
+- [x] W-2.7 İşlenenler GEMİDE (154, canlı kanıtlı): wizard panel 3 + stepper girişi + devreler.html rozetli buton (?sekme=islenenler). Satır=türetilmiş durum (işleniyor X/Y · N hata · hazır) + öneri/manuel sayaçları (dar kapsam: sayı+köprü, onay UI ayrı oturum) + İncele→taslagiAc + satır iptali (W-2.13 çekirdeği). "Bekleyenleri işle"=global drenaj UI yüzü.
+- [x] W-2.8 ZATEN SIRALIYMIŞ (154 kod okuması): onayEt → terfi → backfill → toast → otomatik devre_detay yönlendirmesi (1-2.5sn). Paralel "görüntüle" butonu kodda yok; kod değişikliği yapılmadı.
 - [ ] W-2.9 Paralel devre yükleme: bir devrenin işlemesi sürerken yeni devre yüklenebilir; ikisi de İşlenenler'de ayrı satır.
 - [ ] W-2.10 Devre detay "Spool ekle" → ekleme yapıldıysa buton "Eklenenleri işle"ye döner → İşlenenler sekmesine yönlendirir → onay → devre detaya geri.
 
 ### Taslak önizleme (en büyük parça — karar gerekli)
-- [ ] W-2.11 KARAR: taslak önizleme mimarisi.
+- [~] W-2.11 KARAR VERİLDİ = A (154): devre_detay ?taslak=1 kipi — birebir aynılık, çift bakım yok; kip salt-görsel (filigran+yazma kilidi), render koduna dokunulmaz. Kanıt: hgtrghh taslağını sayfa sorunsuz açtı. UYGULAMA 155 ana işi.
       A) devre_detay.html taslak kipi (?taslak=1): birebir aynılık garantili, çift bakım yok; risk = canlı-kritik sayfaya kip.
       B) Ortak render modülü + wizard içinde çizim: canlı sayfa dokunulmaz; risk = refactor maliyeti / kopya kod (MK-126.8).
       → Karar öncesi read-before-write: devre_detay taslak devreyle bugün ne kadar sorunsuz açılıyor?
 - [ ] W-2.12 Taslak görsel dili: renk/rozet/filigran ile "bu bir simülasyon" açık; yazma işlemleri kilitli veya taslağa yazar.
-- [ ] W-2.13 (153 canlı bulgu) Wizard iptali taslağı TEMİZLER veya 'iptal' işaretler: bugün iptal edilen wizard devresi durum='aktif' kalıyor ("hgtrghh" hayaleti, aktif listede görünüyor + kuyruğa yetim iş bırakıyor). Mevcut hayaletlerin sayımı + temizliği dahil.
+- [x] W-2.13 KAPANDI (154, canlı kanıtlı): (a) veri onarımı — 356 yetim kuyruk işi 'iptal'e çekildi (281'i silinmiş taslakların oneri_hazir'ı; onay havuzunun %32'si hayaletmiş), 20 taslak koloni silindi; (b) wizardIptal → _taslakIptalEt çekirdeği: soft-delete+silinme_tarihi+kuyruk temizliği ('isleniyor' yarış koşulu nedeniyle hariç, MK-154.2); (c) drenaj ikinci savunma hattı: silinmiş devrenin işi HİÇ alınmaz, konsola yazılır. NOT: 'aktif hayalet' bulgusu doğrulanmadı — 138/A filtresi zaten çalışıyordu, hgtrghh aktif değildi.
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI
 
@@ -92,8 +92,8 @@
 - [ ] W-4.3 Dirsek 323.9 ağırlık normalizasyonu (PDF toplam ↔ Excel birim; l2-parser tarafı, K2 bug'ı değil).
 - [ ] W-4.4 bbox → PDF-point normalize (konum_ipucu).
 - [ ] W-4.5 K1+K3 bulgularının uyarilar.html + wizard inceleme ekranında yüzeye çıkması (K2 deseniyle).
-- [ ] W-4.6 (153) vercel.json: ares-izometri-drenaj.js no-cache başlığına eklenir (patch sonrası hard-reload gerekti; önce `git show HEAD:vercel.json`, MK-101.3).
-- [ ] W-4.7 (153) Excel kuyruğu tetik haritası: 3 IFS xlsm 'bekliyor' — excel hattını kim sürüyor? (MK-152.3 deseniyle envanter.)
+- [x] W-4.6 KAPANDI (154): vercel.json'a ares-izometri-drenaj.js no-cache başlığı eklendi (1e89804).
+- [x] W-4.7 CEVAPLANDI (154): 3 IFS xlsm 'bekliyor' YETİMMİŞ (sahipleri taslak/silinmiş devre) — excel hattı tetiksiz değildi; W-2.13 onarımıyla kapandı, bekliyor=0.
 
 ## FAZ 5 — UÇTAN UCA CANLI KANIT (MK-132.1: canlı test olmadan kapanmaz)
 
@@ -113,6 +113,6 @@
 
 ## AÇIK KARARLAR (Cihat)
 
-- K-1: W-2.11 → A mı B mi? (Claude önerisi: A, read-before-write sonrası kesinleşir.)
+- ~~K-1~~ CEVAPLANDI (154): W-2.11 = A (devre_detay ?taslak=1 kipi). Uygulama 155.
 - K-2: W-3.3 L3 anahtarının varsayılanı ne olsun? (Öneri: pilot döneminde AÇIK; format kütüphanesi olgunlaşınca devre bazında kapatılır.)
 - K-3: W-1.1 cron zinciri Hobby tek-cron hakkıyla mı, yoksa İşlenenler sekmesi client-loop'u yeterli mi? (Öneri: ikisi birden — sekme anlık, cron emniyet ağı.)

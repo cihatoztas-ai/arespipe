@@ -1,59 +1,56 @@
-# son-durum.md — Oturum 151 (2026-06-04)
+# son-durum.md — Oturum 154 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **Increment 2 — TABLO MOTORU GEMİDE (`593c51b`):** `ares-tablo-sentez.js` (YENİ, UMD, client+Node tek
-   kaynak): değer-çapalı satır bulma → span-ikame desen sentezi → satır-bazlı doğrulama (kural çıktısı == AI
-   değeri). l2-parser: ares-asme/ares-olcu yan-etki import + `olcuZenginlestir` (boyut ham→olcuParse, MK-111.2)
-   + `spoolOlcuTuret` (dominant boru→cap/dn/schedule; et yalnız metin-kaynaklı, asme-türetilen et pdf_yok kalır
-   → asmeFallback zinciri). format_tanit: AI-oku sonrası otomatik sentez, 🧮 türetilmiş çipler (cap/et/dn kural
-   YAZILMAZ), sentez raporu UI, buildParserKural gerçek satir_tipleri yazar (_toplu_ai_bekliyor kalktı).
-2. **3-PDF mekanik test YEŞİL (§4.2.3):** Y100-817-012 (NPS+Sch, sondaki-sıfır ağırlık) + M230-306-SP20
-   (ODxet yapışık 60.3x4.53200 doğru kırpıldı; İç Bilezik DN50 → spool.dn NULL = dn sızıntısı yapısal öldü) +
-   G400-817-015 (SA/A105, Manşon, kaynak satırı). test-tablo-motoru.mjs repo'da (--dump + kıyas kipleri).
-3. **Kenar vakaları (canlıda bulundu, kapatıldı):** kalite lastIndexOf · genSeg ondalık · KALITE_CORE SA/A105
-   · tetik aday-doğrulama (ManşonDN40 vakası) · degerSpan bitişik-span + sondaki-sıfır genişleme.
-4. **a093eaaa BULAŞMA VAKASI:** oto-tespit eski formatın dosya desenini fingerprint inputuna yazıyor, kip
-   dönüşü geri almıyordu → dedup M-ailesi satırını bulup Y100 verisiyle EZDİ. SQL onarımı yapıldı (et_mm ODxet'e
-   geri, malzeme_tablosu kaldırıldı, min_malzeme_satir=0 — veri UPDATE, migration DEĞİL). Kod fix `f38749a`:
-   `_fpAuto` panzehiri (yeni kipe her dönüşte fingerprint açık PDF'ten) + dedup onayına desen/uyum uyarısı.
-   Canlı kanıt: _fpAuto doğru doluyor, _yeniKipeDon sonrası desen ^Y'ye dönüyor (konsoldan doğrulandı).
-5. **AI buton/maliyet teyidi (ai_api_log):** buton çalışıyor — tek gerçek L3 (claude-sonnet-4-5, $0.0204,
-   06-02); gerisi L2 $0 + cache. Kesinti görünmemesi: Anthropic ön yüklü krediden düşüyor (Console→Credits).
-   BULGU: bugünkü Y100-007 okumaları L2'ydi → teaching'de "taze L3 ground-truth" garantisi yok (kuyruk).
+1. **Yapısal öncelik kararı (Cihat, açılış):** format işleri (W-3.9 + Y200 öğretimi → W-1.6 kanıtı)
+   ERTELENDİ; oturum sistemin iskelet eksiklerine ayrıldı.
+2. **W-2.13 KAPANDI — yetim keşfi + onarımı:** envanter sorgusu onay havuzunun %32'sinin
+   (oneri_hazir'ın 319/1011'i) taslak/silinmiş devrelere ait olduğunu gösterdi. Onarım (MK-153.2
+   tek-statement disipliniyle, kademeli): 294 silinmiş-devre yetimi → 'iptal'; 20 taslak test
+   kolonisi (klavye-ezmesi, 0 spool) silindi → 44 işi daha 'iptal'; toplam 356, hepsi
+   hata_mesaji='yetim: devre silinmis (154 onarimi)' etiketli. tamamlandi'lara DOKUNULMADI.
+   **bekliyor 3→0: IFS xlsm'ler de yetimmiş → W-4.7 kendiliğinden cevaplandı.**
+3. **W-2.13 kod tarafı — `1e89804`:** (a) wizardIptal: silinme_tarihi + kuyruk temizliği
+   (bekliyor/oneri_hazir/manuel_onay → 'iptal'; .select('id') ile "gerçekten taslaktı" doğrulaması);
+   (b) ares-izometri-drenaj.js: silinmiş devrenin işi HİÇ alınmaz (iki dal; sorgu hatasında
+   düşürmez — sigorta yanlış pozitif üretmez); (c) vercel.json drenaj no-cache (W-4.6).
+   Canlı kanıt: 2 test devresi, 6 iş iptale çekildi, sayılar birebir.
+4. **W-2.6 ÇÖZÜLDÜ (B / MK-154.1):** durum kolonu eklenMEdi — işleniyor/hazır kuyruktan türetilir.
+   Keşif: devreler CHECK'i zaten taslak/aktif/iptal tutuyordu, wizard zaten durum='taslak' yazıyordu.
+5. **W-2.7 GEMİDE — `e7cd787`:** İşlenenler (wizard panel 3): mockup→onay→kod (R-10). Stepper
+   girişi + rozet; devreler.html'e v3-flag'li buton (?sekme=islenenler); türetilmiş durum satırları;
+   öneri/manuel sayaçları (dar kapsam kararı); İncele→taslagiAc (MK-136 altyapısı, sıfır yeni akış);
+   satır iptali→_taslakIptalEt çekirdeği (wizardIptal'dan ayrıştı, kopya yok); "Bekleyenleri işle"
+   = global drenajın kalıcı UI yüzü → W-1.2 de [x], konsol devri bitti. 5-adım canlı tur ✓.
+6. **W-2.8 kod okumasıyla [x]:** onayEt zaten sıralı (terfi→backfill→toast→otomatik devre_detay).
+7. **W-2.11 = A kilitlendi:** devre_detay ?taslak=1 kipi; uygulama 155 ana işi.
 
-## KARAR (Cihat): format tanıtma ERTELENDİ
-Yapısal kısım tamam ve kanıtlı; kural tanıtmak veri girişi, kod değil. Batch/wizard'a tetik bağlanınca çok
-kişiyle, çok örnekle yapılacak. Bağlamadan önce: **fingerprint içerik-öncelikli olmalı** — Y100/M230 sistem
-kodudur, format değildir; dosya-adı deseni kimlik değil yalnız hızlandırıcı sinyal olmalı (Cihat tespiti).
+## Bulgular (154)
+- **153 "aktif hayalet" bulgusu doğrulanmadı:** aktif+spoolsuz+silinmemiş devre 0 çıktı; 138/A
+  filtresi çalışıyordu. Ders: eski oturum bulgusu da yeniden ölçülür.
+- devreler.html ~1294 stat sayacı filtresiz şüphesi (155'e not).
+- MK-85.3 iki kez: devreler.created_at YOK (olusturma) · hata_mesaji tahmini şanslı tuttu.
+- Push reddi: CI rapor commit'i (f89a79e) araya girdi → `git pull --rebase` temiz çözdü.
 
-## Commit'ler (151)
+## Commit'ler (154)
 | Hash | Mesaj |
 |------|-------|
-| `593c51b` | feat(151): tablo motoru — deterministik satir_tipleri sentezi + olcuParse spool türetimi |
-| `f38749a` | fix(format_tanit): fingerprint bulaşması panzehiri + dedup onayına desen/uyum uyarısı |
-CI: 593c51b yeşil (bfddc8b oto-rapor kanıtı); f38749a yeşil teyidi 152 açılışında. DB: migration YOK
-(a093eaaa onarımı tek seferlik veri UPDATE). 12/12 fonksiyon ✓. izometri-oku DOKUNULMADI ✓.
+| `1e89804` | fix(154): W-2.13 yetim onleme — wizard iptali kuyrugu temizler, drenaj silinmis devreyi atlar; drenaj JS no-cache (W-4.6) |
+| `e7cd787` | feat(154): W-2.7 Islenenler sekmesi — taslak havuzu, turetilmis durum, global drenaj UI yuzu + devreler.html girisi |
+DB (veri UPDATE, migration YOK): 356 yetim 'iptal' + 20 taslak silindi. CI yeşil. 12/12 ✓.
+izometri-oku DOKUNULMADI ✓.
 
 ## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-151.1:** Tablo motoru sözleşmesi — satir_tipleri sentezi ares-tablo-sentez.js'te (UMD tek kaynak,
-  client=test). Doğrulama satır-bazlı: runtime tetik sırası + desen + olcuParse, kanıt = kural çıktısı == AI değeri.
-- **MK-151.2:** dn/cap/schedule HEP dominant boru satırından türer; asme-türetilmiş et spool'a YAZILMAZ
-  (pdf_yok + schedule → asmeFallback doldurur, kaynak etiketi dürüst kalır).
-- **MK-151.3:** Yeni kipe her dönüşte fingerprint açık PDF'ten yeniden üretilir (_fpAuto); hidrasyon kalıntısı
-  kaydedilemez. Dedup onayı hedefin adı+desenini gösterir, uyumsuzlukta açık uyarı.
-- **MK-151.4:** Container kanıtları GERÇEK AI/saha çıktısıyla beslenir — fabrike tanımlar tetik_karisti sınıfı
-  hataları gizledi (ManşonDN40 dersi).
-- **MK-151.5:** Format adlandırma — ad=kullanıcı etiketi, format_kodu=sistematik (cad+tip+notasyon+sürüm).
-  Sistem kodu (Y100/M230) format kimliğine GİRMEZ.
+- **MK-154.1:** Devre işleme durumu (işleniyor/hazır) kolon değil TÜRETMEdir — tek doğruluk kaynağı
+  dosya_isleme_kuyrugu. Durum-senkron kodu yazılmaz; UI her açılışta kuyruktan sayar.
+- **MK-154.2:** Taslak iptal çekirdeği `_taslakIptalEt`: soft-delete (silindi+silinme_tarihi) +
+  terminal-olmayan işler (bekliyor/oneri_hazir/manuel_onay) 'iptal'. 'isleniyor' yarış koşulu
+  nedeniyle dokunulmaz; 'tamamlandi' tarihsel kayıt. Çağrılır, kopyalanmaz.
 
-## 152 ANA İŞ: yukleyen_id null borcu (MK-117)
-Kullanıcısız yüklenen dosyalar `api/kuyruk-isle-izometri.js:305`'te 'yukleyen_id boş' ile düşüyor → parse yok →
-eşleşme yok → izometri/NOT/alıştırma yazılmıyor. Çözüm yönü: dosyalara kullanıcı ata VEYA sistem yüklemeleri
-için gate'i gevşet (veri sahipliğine dikkat). Read-before-write: kuyruk-isle:300-320 + dosya kayıt noktaları +
-ilgili tablo şemaları.
+## KUYRUK SON DURUM
+oneri_hazir=690 · tamamlandi=367+ · iptal=356+ · manuel_onay=263 · hata=1 (Donatım, beklenen) ·
+bekliyor=0. Gerçek onay havuzu ~953 — onay UI akıbeti tasarlanmadı (155+ tartışma).
 
-## Açık kuyruk (öncelik sırası korunarak)
-Format tanıtma bağlama paketi (içerik-öncelikli fingerprint → batch+wizard tetik → propagasyon → zorla-L3
-teaching) · Windows render bulgusu (glyph onarıldı ✓ ama görüntü bozuk — pilot operatörleri Windows'ta, ayrı
-oturum) · kaydet modal UX (kayıtta otomatik kapan+toast) · format_kodu otomatik öneri · pekiştirme bağlama ·
-requires_ai dürüstlüğü · bbox normalize · Band-B · dirsek 323.9 · E120 prefix · folder tree.
+## 155 ANA İŞ
+1) W-2.11/A uygulaması (devre_detay ?taslak=1: önce yazma noktaları envanteri, sonra kilit+filigran).
+2) MK-153.3 av turu (yukleyen_id NULL INSERT akışı).
+3) Küçükler: stat sayacı şüphesi · onay havuzu tasarım tartışması · ertelenmiş format paketi.

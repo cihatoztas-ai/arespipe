@@ -1,49 +1,58 @@
-# AresPipe BRIEFING — 153. Oturum Kapanışı
+# AresPipe BRIEFING — 154. Oturum Kapanışı
 
 > **Tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
-> (147→153 arası bu dosya güncellenmemişti — delik kapatıldı; ilerleme aynası artık docs/WIZARD-YOL-HARITASI.md.)
+> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (154 işaretleri işlendi).
 
 ## HEAD
-- `b919512` fix(153): drenaj cok-tur kosu (MK-153.1) + üstüne kapanış doc commit'i.
-- **DB:** migration YOK. Endpoint YOK (12/12). 4 veri onarımı (aşağıda).
+- `e7cd787` feat(154): W-2.7 İşlenenler sekmesi (+ `1e89804` W-2.13 yetim önleme, araya CI raporu girdi → pull --rebase ile çözüldü).
+- **DB:** migration YOK. Endpoint YOK (12/12). Veri onarımı: 356 yetim kuyruk işi 'iptal' + 20 test taslağı silindi.
 
-## 153 — yapılanlar
-1. **docs/WIZARD-YOL-HARITASI.md (YENİ):** 5 fazlı işaretlenebilir uçtan uca harita; Cihat'ın wizard
-   geri bildirimleri W-2.x olarak işlendi. Oturum kapanışlarında işaretler güncellenir.
-2. **MK-153.1:** ares-izometri-drenaj.js çok-tur koşu — liste bitince yeniden çekilir; görülen-set ile
-   iş başına TEK deneme (AI'a çifte ödeme yok) korunur. "Tekrar tekrar basma" bitti.
-3. **TAHLİYE:** 269 iş canlıda işlendi (konsoldan global drenaj). **L2 %83 (206/41), toplam $1.15.**
-   bekliyor 233→3 (kalan IFS xlsm = excel hattı). 52'nin "%70+ pilot eşiği" ilk kez sahada aşıldı.
-4. **MK-117 KAPANDI:** kök = devre_dokumanlari.yukleyen_id NULL, tek küme (M110-722-21xx, 11 dosya);
-   veri onarımıyla sahiplendirildi, ikinci tur 12/12 hatasız.
-5. **a093eaaa çöp regex onarımı:** cap_mm/et_mm jenerik `\n(\d+)\n` → `#-` ile düşürüldü. İlk deneme
-   Supabase editör BEGIN/COMMIT ayrımı yüzünden ROLLBACK (MK-153.2: onarım TEK çalıştırma).
-6. **Y200 kanıt turu:** spool→a093eaaa L2 $0 (fn tie-breaker canlı ✓), montaj→39a2c81b (kardeş ayrımı ✓).
-   MK-111.2 sahada: PDF çöp et/cap=2358 → bindir EZMEDİ, flag+manuel_onay. Onarım sonrası tur temiz.
-   **Schedule et kanıtı AÇIK:** satir_tipleri Y200 ST37 satırlarını tutmuyor → 154'te satır öğretimi.
+## 154 — yapılanlar (yapısal öncelik kararı: format işleri ERTELENDİ, sistem iskeleti tamamlandı)
+1. **W-2.13 KAPANDI (canlı kanıtlı):** onay havuzunun %32'si (350 iş) silinmiş/taslak devrelerin
+   yetimi çıktı → veri onarımı (356 iş 'iptal', hata_mesaji etiketli) + 20 taslak koloni silindi.
+   Kod: wizardIptal → `_taslakIptalEt` çekirdeği (soft-delete + silinme_tarihi + kuyruk temizliği;
+   'isleniyor' yarış koşulu nedeniyle HARİÇ — MK-154.2) + drenaj ikinci savunma hattı (silinmiş
+   devrenin işi hiç alınmaz, konsola yazılır). Canlı test: 2 devre × 3 iş iptale çekildi, birebir.
+2. **W-2.6 ÇÖZÜLDÜ (B kararı / MK-154.1):** işleniyor/hazır KOLON DEĞİL, kuyruktan türetilir.
+   Migration sıfır, senkron borcu sıfır. CHECK zaten taslak/aktif/iptal tutuyordu (138 mirası).
+3. **W-2.7 GEMİDE (canlı kanıtlı):** İşlenenler — wizard panel 3 + stepper girişi + devreler.html
+   rozetli buton (v3 flag'iyle, ?sekme=islenenler). Türetilmiş durum satırları + öneri/manuel
+   sayaçları (dar kapsam) + İncele→taslagiAc + satır iptali + **"Bekleyenleri işle" = global
+   drenajın kalıcı UI yüzü** → konsoldan koşturma devri bitti (W-1.2 de [x]).
+4. **W-2.8 zaten sıralıymış:** kod okuması — onayEt zaten terfi→backfill→toast→otomatik devre_detay.
+   Paralel "görüntüle" butonu yok. Kod değişmedi, harita [x].
+5. **W-4.6** drenaj JS no-cache ✓ · **W-4.7 cevaplandı:** 3 IFS xlsm yetimmiş (excel hattı tetiksiz
+   değildi) → bekliyor=0.
+6. **W-2.11 KARARI = A:** devre_detay ?taslak=1 kipi (filigran + yazma kilidi, render'a dokunulmaz).
+   Kanıt: hgtrghh taslağını sayfa sorunsuz açmıştı. UYGULAMA 155 ana işi.
 
 ## Bulgular
-- **Hayalet devre (W-2.13):** wizard iptali taslağı durum='aktif' bırakıyor ("hgtrghh" canlı örnek, bilerek duruyor).
-- **MK-113/A blanket:** cron→drenaj zinciri önerisi 508 saha kanıtıyla geri çekildi; tetik=client-loop,
-  kalıcı yüz W-2.7 İşlenenler sekmesi. (Vercel cron limiti artık 100/proje ama kullanılmadı.)
-- format_tanit TURETILEN_ALANLAR kayıtlı regex'i koşturup kırmızı basıyor → W-3.9 kod panzehiri 154'te.
-- ares-izometri-drenaj.js vercel.json no-cache listesinde değil (patch sonrası hard-reload gerekti).
+- "Aktif hayalet" (153 bulgusu) DOĞRULANMADI: 138/A filtresi zaten çalışıyordu; hgtrghh aktif değildi.
+  Sorun yalnız kuyruk yetimleriydi.
+- devreler.html ~1294 stat sayacı `select('id',{count:'exact'})` filtresiz görünüyor — taslak+silinmiş
+  kayıtlar stat pill'i şişiriyor olabilir. 155'te bakılacak (kod kanıtı yok, sadece şüphe).
+- MK-153.3 hâlâ açık: yukleyen_id NULL INSERT atan akış meçhul (yeni vaka görülmedi).
+- MK-85.3 yine ders verdi: devreler'de created_at yok (olusturma); hata_mesaji tahmini şanslı tuttu.
 
 ## MK (KARARLAR.md'ye)
-- **MK-153.1** drenaj çok-tur + iş başına tek deneme değişmez · **MK-153.2** Supabase SQL onarımı tek
-  çalıştırma (BEGIN/COMMIT bölünürse sessiz ROLLBACK) · **MK-153.3** "kullanici_id zorunlu" kökü
-  yukleyen_id NULL; null INSERT atan akış hâlâ meçhul.
+- **MK-154.1** Devre işleme durumu (işleniyor/hazır) kolonda tutulmaz, kuyruktan türetilir — tek
+  doğruluk kaynağı dosya_isleme_kuyrugu; senkron kodu yazılmaz.
+- **MK-154.2** Taslak iptali = soft-delete (silindi+silinme_tarihi) + terminal-olmayan kuyruk işleri
+  (bekliyor/oneri_hazir/manuel_onay) 'iptal'; 'isleniyor' yarış koşulu nedeniyle dokunulmaz,
+  'tamamlandi' tarihsel kayıt. Çekirdek `_taslakIptalEt` — kopyalanmaz, çağrılır.
 
-## KUYRUK SON DURUM
-oneri_hazir=1011 · tamamlandi=363 · manuel_onay=277 · hata=1 (Donatım formu, beklenen) · bekliyor=3 (IFS xlsm).
+## KUYRUK SON DURUM (son ölçüm + kanıt turu)
+oneri_hazir=690 · tamamlandi=367+ · iptal=356+ · manuel_onay=263 · hata=1 (Donatım, beklenen) ·
+**bekliyor=0**. Gerçek onay havuzu ilk kez net: ~953 iş — onay UI akıbeti hâlâ tasarlanmadı.
 
-## 154 ANA İŞ
-1) W-3.9 format_tanit panzehiri + **Y200 satır öğretimi → W-1.6 tam kapanış** (cache düşürme gerekebilir).
-2) Faz 2: W-2.11 kararı (taslak önizleme A/B; "hgtrghh"nin sorunsuz açılması A lehine) + W-2.6/2.7
-   durum makinesi + İşlenenler sekmesi + W-2.13 iptal temizliği.
-3) Küçükler: drenaj JS no-cache · excel kuyruk tetiği · manuel_onay/oneri_hazir birikiminin onay UI akıbeti.
+## 155 ANA İŞ
+1) **W-2.11/A uygulaması:** devre_detay.html ?taslak=1 kipi — taslak görsel dili (W-2.12: filigran/
+   rozet) + yazma işlemleri kilidi. Read-before-write: devre_detay'ın yazma noktaları envanteri önce.
+2) **MK-153.3 av turu:** yukleyen_id NULL INSERT atan akışın tespiti (grep + muhtemel tek satır fix).
+3) Küçükler: devreler.html stat sayacı filtre şüphesi · manuel_onay 263 + oneri_hazir 690 onay UI
+   tasarım tartışması · (ertelenmiş format işleri: W-3.9 panzehiri + Y200 satır öğretimi → W-1.6).
 
 ## NEREDEYIZ — ÖZET
-Faz 1 (kuyruk/tahliye/MK-117) fiilen kapandı; sistem 269 işlik gerçek yükte %83 L2 ile koştu. Sıra:
-schedule kanıtının kapanışı + wizard Faz 2 (durum makinesi, İşlenenler, taslak önizleme). Harita:
-docs/WIZARD-YOL-HARITASI.md.
+Faz 1 TAM kapandı (W-1.2 son parçaydı). Faz 2'nin omurgası kuruldu: durum türetme (W-2.6) +
+İşlenenler (W-2.7) + iptal hijyeni (W-2.13) canlı; sıra taslak önizlemede (W-2.11/A → 155).
+Format/kanıt işleri (W-1.6, W-3.9) bilinçli ertelendi — yapısal öncelik kararı (Cihat, 154 açılışı).
