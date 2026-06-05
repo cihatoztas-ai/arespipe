@@ -1524,6 +1524,7 @@ function sayfaDoldur(){
   setText('gTersane',DEVRE.tersane);setText('gGemi',DEVRE.projeNo);
   setText('gDevre',DEVRE.devre);setText('gZone',DEVRE.zone);
   setText('gIsEmri',DEVRE.isEmri);
+  if(TASLAK_KIP&&!DEVRE.isEmri)setText('gIsEmri',tv('dv_is_emri_terfide','Terfide üretilecek'));   // 159: numara terfide üretilir
   if(DEVRE.isEmri){var bar=document.getElementById('isEmriBar');if(bar){bar.style.display='flex';setText('isEmriNo',DEVRE.isEmri);}}
   var tiInput=document.getElementById('tersaneIsEmriInput');if(tiInput&&DEVRE.tersaneIsEmri)tiInput.value=DEVRE.tersaneIsEmri;
   dpDoldur(DEVRE.terminTarihi||'');

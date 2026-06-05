@@ -681,12 +681,11 @@ async function inceleBaslat(beklemeyeAlMi) {
     return;
   }
 
-  // 1) Taslak devre oluştur (durum='taslak'; terfide 'aktif' olur). is_emri terfide ideal ama
-  //    devreler.is_emri_no NOT NULL → v2 ile aynı: oluştururken üret. malzeme/yuzey null, agirlik 0.
+  // 1) Taslak devre oluştur (durum='taslak'; terfide 'aktif' olur).
+  //    159: is_emri_no artık TERFİDE üretilir (migration 101: DROP NOT NULL + taslak-harici CHECK).
+  //    Eski davranış iptal edilen taslaklara numara yakıyordu (199→201→204... sıçramaları).
   try {
     box.querySelector('p').innerHTML = '<strong>Taslak devre oluşturuluyor…</strong>';
-    var isEmriNo = await ARES.sonrakiNo('is_emri');
-    if (!isEmriNo || !String(isEmriNo).trim()) throw new Error('is_emri_no üretilemedi');
     var basamakSnapshot = await ARES.basamakSnapshotOlustur();
     var ilkBasamak = (basamakSnapshot && basamakSnapshot.length) ? basamakSnapshot[0].sistem_adi : 'on_imalat';
     var _dr = await supa.from('devreler').insert({
@@ -696,7 +695,7 @@ async function inceleBaslat(beklemeyeAlMi) {
       basamak_snapshot: basamakSnapshot, aktif_basamak: ilkBasamak,
       durum: 'taslak',          // MK-127: taslak; terfide 'aktif'
       ilerleme: 0, agirlik: 0,
-      is_emri_no: String(isEmriNo).trim(), alistirma_devresi: false
+      is_emri_no: null, alistirma_devresi: false   // 159: numara terfide üretilir
     }).select('id').single();
     if (_dr.error) throw _dr.error;
     WIZ.devre_id = _dr.data.id;
@@ -1729,8 +1728,24 @@ async function onayEt() {
       kalemDuzeltmeler: WIZ._kalemDuzelt || null
     });
     if (!r.ok) throw new Error(r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || '')));
-    // Terfi tamam → taslak 'aktif' + özet senkron (DB-truth)
-    await supa.from('devreler').update({ durum: 'aktif' }).eq('id', WIZ.devre_id).eq('tenant_id', tid);
+    // Terfi tamam → numara üret + taslak 'aktif' + özet senkron (DB-truth)
+    // 159: is_emri_no TERFİDE üretilir. Eski dönem taslakları (numara taslakta üretilmişti)
+    //   mevcut numarasını KORUR — ekstra yakım yok. eq('durum','taslak') guard'ı çift terfide
+    //   ikinci yazımı engeller (yarışta üretilen yedek numara yanar — nadir, kabul edildi).
+    var _isEmri = null;
+    var _dq = await supa.from('devreler').select('is_emri_no')
+      .eq('id', WIZ.devre_id).eq('tenant_id', tid).single();
+    if (_dq.data && _dq.data.is_emri_no && String(_dq.data.is_emri_no).trim()) {
+      _isEmri = String(_dq.data.is_emri_no).trim();
+    } else {
+      var _yeniNo = await ARES.sonrakiNo('is_emri');
+      if (!_yeniNo || !String(_yeniNo).trim()) throw new Error('is_emri_no üretilemedi');
+      _isEmri = String(_yeniNo).trim();
+    }
+    var _up = await supa.from('devreler').update({ durum: 'aktif', is_emri_no: _isEmri })
+      .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak').select('id');
+    if (_up.error) throw _up.error;
+    if (!_up.data || !_up.data.length) console.warn('[v3] terfi update 0 satır — devre zaten aktif olabilir; numara kullanılmadı:', _isEmri);
     if (r.eklenen > 0) await _devreOzetSenkron(supa, tid, WIZ.devre_id);
     // 129/MK-127.4: terfi sonrası izometri parse_sonuc'undan kanonik eslestir() re-eşle
     //   modunda çağrılır (PDF/AI yok, $0). Eski "terfi sonrası izometri spool'a bağlanmıyor"

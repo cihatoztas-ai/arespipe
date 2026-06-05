@@ -1918,5 +1918,6 @@
   "sp_bom_rozet_guvensiz": "güvensiz",
   "sp_bom_rozet_dogrulanmadi": "doğrulanmadı",
   "sp_bu_tip_yok": "Bu tipte malzeme yok",
-  "sp_cizimden_duzelt": "Çizimden düzelt"
+  "sp_cizimden_duzelt": "Çizimden düzelt",
+  "dv_is_emri_terfide": "Terfide üretilecek"
 }

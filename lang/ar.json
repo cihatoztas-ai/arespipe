@@ -1918,5 +1918,6 @@
   "sp_bom_rozet_guvensiz": "غير موثوق",
   "sp_bom_rozet_dogrulanmadi": "لم يُتحقّق",
   "sp_bu_tip_yok": "لا توجد مادة من هذا النوع",
-  "sp_cizimden_duzelt": "تصحيح من الرسم"
+  "sp_cizimden_duzelt": "تصحيح من الرسم",
+  "dv_is_emri_terfide": "سيُنشأ عند الترقية"
 }

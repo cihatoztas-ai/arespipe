@@ -1918,5 +1918,6 @@
   "sp_bom_rozet_guvensiz": "unsafe",
   "sp_bom_rozet_dogrulanmadi": "not verified",
   "sp_bu_tip_yok": "No material of this type",
-  "sp_cizimden_duzelt": "Correct from drawing"
+  "sp_cizimden_duzelt": "Correct from drawing",
+  "dv_is_emri_terfide": "Generated on promotion"
 }
