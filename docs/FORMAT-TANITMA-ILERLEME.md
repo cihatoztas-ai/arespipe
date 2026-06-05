@@ -202,3 +202,22 @@ Taze Y100 final kanıtı (et 2.77 + format a093eaaa; dosya yoksa cache-bypass A/
 ### Yol haritası
 İlerleme aynası artık **docs/WIZARD-YOL-HARITASI.md** (153'te doğdu): format tanıtma çift-taraflı
 tetikler = Faz 3 (W-3.1 wizard / W-3.2 izometri batch / W-3.3 L3 devre anahtarı / W-3.9 panzehir).
+
+---
+
+## OTURUM 154 — FORMAT İŞİ YOK (bilinçli erteleme, kayıt için)
+
+### Karar (Cihat, 154 açılışı)
+"Format tanıtımından çok sistemin yapısal eksiklerini tamamlamamız lazım" — W-3.9 panzehiri +
+Y200 satır öğretimi (→ W-1.6 schedule et kanıtı) ERTELENDİ. Kimseyi bloklamıyor; W-1.6 [~] kalır.
+
+### 154'ün format hattına dolaylı katkıları
+- **Yetim temizliği format isabetini netleştirdi:** oneri_hazir 1011→690 — eski birikimin %32'si
+  silinmiş/taslak devre yetimiymiş. Format başarı oranları artık temiz havuz üstünden okunur.
+- **bekliyor=0:** 3 IFS xlsm "excel hattı tetiksiz mi" sorusu kapandı — yetimlerdi (W-4.7).
+- **İşlenenler sekmesi (W-2.7) gemide:** W-3.1'in ("tanınmadı → Formatı tanıt" satır butonu) doğal
+  evi hazır oldu — format tanıtma akışın içine bu sekme/inceleme üzerinden bağlanacak.
+
+### 155+ format kuyruğu (değişmedi)
+W-3.9 panzehiri (İLK — Y200 öğretiminden önce kod kapısı kapanmalı, 153 bulaşma dersi) →
+Y200 ST37 satır öğretimi (kabul_kriterleri DOKUNULMAZ, cache sha düşürme MK-152.4) → W-1.6 kanıt.

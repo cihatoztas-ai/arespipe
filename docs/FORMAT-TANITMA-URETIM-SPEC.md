@@ -236,3 +236,17 @@ canlı doğrulanacak (et_kaynagi 'SCH 10S'). **152 ana iş: yukleyen_id null (MK
 - **satir_tipleri kapsama dersi:** tek PDF'ten sentez o ailenin TÜM kalite/tanım varyantlarını kapsamaz
   (Y100 316L ↔ Y200 ST37). Düzeltme kipi + tablo köprüsü (152) tam bu iş için — 154'te ilk canlı kullanımı.
 - İzleme: docs/WIZARD-YOL-HARITASI.md (Faz 3 = bu spec'in tetik/yayılım maddelerinin ürün hali).
+
+---
+
+## OTURUM 154 GÜNCELLEME — format işi yok; zemin değişiklikleri
+
+Format maddelerine dokunulmadı (yapısal öncelik kararı — ayrıntı FORMAT-TANITMA-ILERLEME.md 154
+bölümünde). Spec'i etkileyen zemin değişiklikleri:
+1. **Madde 4 (tetik) yüzü tamamlandı:** global drenaj artık İşlenenler sekmesinden ("Bekleyenleri
+   işle", W-2.7) — konsol devri bitti. Spec'in "operatör butona basar, sistem gerisini halleder"
+   hedefi tetik tarafında sağlandı.
+2. **Kuyruk hijyeni:** 356 yetim 'iptal' (W-2.13) — format isabet/maliyet ölçümleri (L2 oranı,
+   ai_api_log) bundan sonra temiz havuzdan okunur; eski oranlar yetim gürültüsü içeriyordu.
+3. **W-3.9 hâlâ AÇIK KOD KAPISI:** TURETILEN_ALANLAR panzehiri yazılmadı — Y200 öğretim turundan
+   ÖNCE kapanmak zorunda (153 bulaşma vakasının tekrarını önler). 155+ format paketinin ilk maddesi.
