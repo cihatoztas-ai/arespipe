@@ -262,3 +262,22 @@ Spec'in "öğretilen kural kalıcı kaydedilir" maddesi iki hedefli hale gelir:
 - **DB-kurallı format** (a093eaaa vb.): mevcut akış geçerli, değişiklik yok.
 Cache düşürme + kuyruk reset reçetesi (153 yöntemi) ikinci kez canlı doğrulandı; tek ek:
 deploy SONRASI aynı günün L2 sha kayıtları da düşürülür (155'te öğrenilen tuzak).
+
+## OTURUM 156 GÜNCELLEME — kapsam sınırı netleşti (kod yok, teşhis dersi)
+
+**MK-156.3 (NB1124 vakası):** format kapsaması ÜÇ katman — KİMLİK çıkarımı + SATIR tipleri +
+BELGE SINIFI (dışlama). **format_tanit bu üçünden yalnız SATIR/ALAN katmanını öğretir.** NB1124'te
+kabuk ve satır motoru sağlamken 20/22 PDF kimlik çıkarımı yüzünden kabukta_yok düştü; 22 tablosuz
+çizim de (öğretilecek format değil, DIŞLANACAK belge sınıfı — W-2.4) L3'e gidip havuzu şişirdi.
+
+**Ürünleşme sonucu:** operatör "formatı tanıttım" dediğinde sorun bitmeyebilir — UI bu sınırı
+bilmeli:
+- "Tanıt" akışı yalnız alan/satır sorunlarını çözer; kimlik (pipeline çıkarımı, W-3.10) ve dışlama
+  (W-2.4) ayrı mekanizma. Tanıtma sonrası hâlâ kabukta_yok varsa kullanıcıya "kimlik/eşleşme
+  sorunu — format öğretimiyle çözülmez" tipi yönlendirme gerekir (uyarı dili 157+ tasarım).
+- MK-155.1 ikili kayıt hedefi (155 bölümü) geçerli: AILE_KAYIT'lı format → paket (kod+deploy),
+  kayıtsız → DB. Üç-katman modeliyle birlikte format_tanit'in "neyi nereye yazdığı" tablosu
+  ürünleşme tasarımının ilk sayfası olmalı.
+
+156'da format_tanit koduna dokunulmadı; teşhis günlüğü FORMAT-TANITMA-ILERLEME.md 156 bölümünde,
+kanıt envanteri docs/IZO-KANIT-SETI-31PDF.md v4 ekinde (B1124, 5. gemi).
