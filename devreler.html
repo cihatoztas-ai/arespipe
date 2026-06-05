@@ -368,6 +368,7 @@
       <button class="btn-outline" id="btnIslenenler" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'" style="display:none" title="Yüklenen taslak devrelerin işleme havuzu">
         <span>⏳ İşlenenler</span>
         <span id="islRozetDr" style="background:var(--ac);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;">0</span>
+        <span id="islRozetIs" style="display:none;background:var(--warn);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;">0</span>
       </button>
     </div>
   </div>
@@ -1931,7 +1932,7 @@ function _doRender() {
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
       '<td>' + tersaneBadge(d.tersane) + '</td>' +
       '<td style="font-family:\'Barlow\',sans-serif;font-size:15px;font-weight:600;color:var(--ac);letter-spacing:.2px;">' + esc(d.projeNo) + '</td>' +
-      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + esc(d.devre) + (iptalBilgi ? '<span class="iptal-badge" style="margin-left:8px;">⊘ İptal</span>' : '') + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + esc(d.devre) + (iptalBilgi ? '<span class="iptal-badge" style="margin-left:8px;">⊘ İptal</span>' : '') + '<span class="onay-roz" data-sid="' + d.supaId + '" onclick="event.stopPropagation();location.href=\'devre_detay.html?id=' + d.supaId + '&sekme=onay\'" style="display:none;margin-left:8px;cursor:pointer;padding:1px 7px;border-radius:10px;background:rgba(217,119,6,.15);color:var(--warn);font-size:12px;font-weight:700;" title="Onay bekleyen iş — tıkla"></span></td>' +
       '<td style="font-size:14px;color:var(--txd);">' + esc(d.zone) + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + d.spool + '</td>' +
       '<td style="text-align:right;font-size:14px;color:var(--txm);">' + Math.round(d.agirlik).toLocaleString('tr-TR') + ' kg</td>' +
@@ -1957,6 +1958,33 @@ function _doRender() {
   if (count) count.textContent = '('+_ssTotal+' '+tv('cmn_devre','devre')+')';
   _updateSortHeaders();
   guncelleMLButonu();
+  _onayRozetBas(); // W-2.15 (158): sayfa/sıralama değişiminde rozetler yeniden basılır
+}
+
+// ── ONAY ROZETLERİ (W-2.15, 158): devre satırında bekleyen onay sayısı — KUYRUK gerçeği (MK-157 dersi)
+var _onayRozCache = null;
+async function _onayRozetleriYukle() {
+  try {
+    var supa = ARES.supabase(); if (!supa) return;
+    var r = await supa.from('dosya_isleme_kuyrugu')
+      .select('durum,devre_dokumanlari!inner(devre_id)')
+      .in('durum', ['oneri_hazir', 'manuel_onay']);
+    if (r.error) return;
+    _onayRozCache = {};
+    (r.data || []).forEach(function(k) {
+      var did = k.devre_dokumanlari && k.devre_dokumanlari.devre_id;
+      if (did) _onayRozCache[did] = (_onayRozCache[did] || 0) + 1;
+    });
+    _onayRozetBas();
+  } catch (e) { /* rozet kozmetik */ }
+}
+function _onayRozetBas() {
+  if (!_onayRozCache) return;
+  document.querySelectorAll('.onay-roz').forEach(function(s) {
+    var n = _onayRozCache[s.getAttribute('data-sid')] || 0;
+    if (n > 0) { s.textContent = '✅ ' + n; s.style.display = ''; }
+    else { s.style.display = 'none'; }
+  });
 }
 
 function devreAc(id) {
@@ -2697,9 +2725,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .eq('tenant_id', _tid).eq('durum', 'taslak').neq('silindi', true);
           var _ir = document.getElementById('islRozetDr');
           if (_ir && !_ic.error) _ir.textContent = _ic.count || 0;
+          // 158 (157 bulgusu): rozet KUYRUK gerçeğini de göstersin — taslak 0 iken kuyrukta iş bekleyebilir
+          var _iq = await _supa.from('dosya_isleme_kuyrugu').select('id', { count: 'exact', head: true })
+            .in('durum', ['bekliyor', 'isleniyor']);
+          var _ii = document.getElementById('islRozetIs');
+          if (_ii && !_iq.error && (_iq.count || 0) > 0) {
+            _ii.textContent = _iq.count; _ii.style.display = '';
+            _ii.title = _iq.count + ' iş kuyrukta bekliyor/işleniyor';
+          }
         } catch (e) { /* rozet kozmetik */ }
       }
     } catch(e) { /* flag yok veya hata — buton gizli kalır */ }
+    _onayRozetleriYukle(); // W-2.15 (158): satır onay rozetleri (flag'den bağımsız)
   })();
 
   bagla('scMalzeme',      malzemeModalAc);
