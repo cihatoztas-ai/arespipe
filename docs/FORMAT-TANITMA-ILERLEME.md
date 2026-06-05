@@ -336,3 +336,26 @@ temizlendi.
 ### 158'e
 Onay Kuyruğu read-before-write cevaplandı (excel tüketici VAR; izometri oneri_hazir bilinçli yok;
 izometri manuel_onay DELİK) → saf implementasyon. Format hattı sıradaki: Y200 ST37 + W-3.9.
+
+## OTURUM 158 — FORMAT KODUNA DOKUNULMADI; hattı besleyen kazanımlar
+
+158'in ana işi Onay Kuyruğu (W-2.15) + taslak önizleme (W-2.14) idi; format_tanit / l2-parser /
+fingerprint tarafında sıfır değişiklik. Format hattını doğrudan ilgilendiren üç kazanım:
+
+1. **Format uyarılarının tüketim yüzü doğdu:** parse uyarıları (dn_bulunamadi,
+   pipeline_no_uyusmuyor, guven_skoru_dusuk, malzeme_bos...) artık devre_detay Onay Kuyruğu
+   sekmesinde kod+mesaj+ağırlık renkli listeleniyor ve tekil kapatılabiliyor — 157'de tespit
+   edilen "manuel_onay tüketicisi YOK" deliği kapandı. Format öğretim oturumları artık canlı
+   uyarı havuzundan beslenebilir (hangi format hangi uyarıyı üretiyor, tek ekranda).
+2. **kabukta_yok artık operatöre görünür:** atanmamışlı dosyalar ayrı grupta, "Detay" →
+   spool_no + sebep (kabukta_yok / pipeline_kok_cikarilamadi). 157 kapsam-sınırı notundaki
+   "kimlik/eşleşme sorunu format öğretimiyle çözülmez" yönlendirmesinin UI zemini hazır;
+   buradan format_tanit/eşleştirme köprüsü ileride (uyarı dili tasarımı).
+3. **NOT→alıştırma zinciri CANLI doğrulandı:** bcmghbnv mbn terfisinde alistirma sütunu doldu
+   (l2-parser alistirma_ipucu_kurali + eslestir deg.alistirma). Montaj ailesi parantezli adlarda
+   da tuttu: `M100-317-xx-ALS N(2).1.pdf` → 157 regex'inin `(?:\s+\d+\(\d+\))?` parçası sahada
+   çalıştı, 28/36 spool montaj_json aldı. Cihat'ın "not okuma koptu" gözlemi bu vakada
+   doğrulanmadı; 159'a format-bazlı not_metni taraması + imalat_not UI teyidi.
+
+159 format sırası (değişmedi): Sefine şablonu (IFS köprüsü, en ucuz) / Y200 ST37 + W-3.9 /
+W-2.4 sınıflandırma+yönlendirme tasarımı (YENI-VERI-KAYNAKLARI-ANALIZ.md girdileriyle).

@@ -1,56 +1,74 @@
-# son-durum.md — Oturum 154 (2026-06-05)
+# son-durum.md — Oturum 158 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **Yapısal öncelik kararı (Cihat, açılış):** format işleri (W-3.9 + Y200 öğretimi → W-1.6 kanıtı)
-   ERTELENDİ; oturum sistemin iskelet eksiklerine ayrıldı.
-2. **W-2.13 KAPANDI — yetim keşfi + onarımı:** envanter sorgusu onay havuzunun %32'sinin
-   (oneri_hazir'ın 319/1011'i) taslak/silinmiş devrelere ait olduğunu gösterdi. Onarım (MK-153.2
-   tek-statement disipliniyle, kademeli): 294 silinmiş-devre yetimi → 'iptal'; 20 taslak test
-   kolonisi (klavye-ezmesi, 0 spool) silindi → 44 işi daha 'iptal'; toplam 356, hepsi
-   hata_mesaji='yetim: devre silinmis (154 onarimi)' etiketli. tamamlandi'lara DOKUNULMADI.
-   **bekliyor 3→0: IFS xlsm'ler de yetimmiş → W-4.7 kendiliğinden cevaplandı.**
-3. **W-2.13 kod tarafı — `1e89804`:** (a) wizardIptal: silinme_tarihi + kuyruk temizliği
-   (bekliyor/oneri_hazir/manuel_onay → 'iptal'; .select('id') ile "gerçekten taslaktı" doğrulaması);
-   (b) ares-izometri-drenaj.js: silinmiş devrenin işi HİÇ alınmaz (iki dal; sorgu hatasında
-   düşürmez — sigorta yanlış pozitif üretmez); (c) vercel.json drenaj no-cache (W-4.6).
-   Canlı kanıt: 2 test devresi, 6 iş iptale çekildi, sayılar birebir.
-4. **W-2.6 ÇÖZÜLDÜ (B / MK-154.1):** durum kolonu eklenMEdi — işleniyor/hazır kuyruktan türetilir.
-   Keşif: devreler CHECK'i zaten taslak/aktif/iptal tutuyordu, wizard zaten durum='taslak' yazıyordu.
-5. **W-2.7 GEMİDE — `e7cd787`:** İşlenenler (wizard panel 3): mockup→onay→kod (R-10). Stepper
-   girişi + rozet; devreler.html'e v3-flag'li buton (?sekme=islenenler); türetilmiş durum satırları;
-   öneri/manuel sayaçları (dar kapsam kararı); İncele→taslagiAc (MK-136 altyapısı, sıfır yeni akış);
-   satır iptali→_taslakIptalEt çekirdeği (wizardIptal'dan ayrıştı, kopya yok); "Bekleyenleri işle"
-   = global drenajın kalıcı UI yüzü → W-1.2 de [x], konsol devri bitti. 5-adım canlı tur ✓.
-6. **W-2.8 kod okumasıyla [x]:** onayEt zaten sıralı (terfi→backfill→toast→otomatik devre_detay).
-7. **W-2.11 = A kilitlendi:** devre_detay ?taslak=1 kipi; uygulama 155 ana işi.
+1. **W-2.15 ONAY KUYRUĞU SEKMESİ (ana iş, canlı kanıtlı KAPANDI):** devre_detay'a 6. sekme.
+   Tek liste 4 grup: ⚠ İnceleme bekleyen (manuel_onay — "Uyarıları gör" lazy uyarı listesi
+   kod+mesaj+agirlik renkli + ✓Kapat tekil →tamamlandi) · 📊 Excel BOM (mevcut
+   onayModalAc→onayAktar→aktar köprüsü, yeniden icat yok) · 🔗 Atanmamış içeren ("Detay" →
+   `parse_sonuc._eslesme.detay[]` spool_no+sebep; aksiyonsuz, B-6 görünürlük) · ✅ Temiz öneri
+   ("Tümünü kapat" toplu →tamamlandi, veri işlemi YOK). Liste sorgusu hafif: PostgREST JSON
+   alias (`atan:parse_sonuc->_eslesme->>atanmamis`); uyarı/detay satır-başına lazy. Sekme
+   rozeti açılışta embed-count ile dolar; `?sekme=onay` deep-link; kapatmalar `_tkKilit` guard'lı.
+   **Kanıt:** g200 rozet 141, tekil kapatma manuel_onay 55→54+tamamlandi+1 (SQL) · hhbjşlö toplu
+   24→0 + excel 1 yerinde + manuel 20 dokunulmadı (SQL) · aw231 atanmamışlı 8 + `S02 —
+   kabukta_yok` detayı ekranda.
+2. **devreler.html ROZETLERİ:** devre satırında `✅ N` (kuyruk gerçeği; tek sorgu
+   `devre_dokumanlari!inner(devre_id)` embed → JS gruplaması → renderTable sonrası enjeksiyon;
+   tıkla → `devre_detay?id=X&sekme=onay`) + İşlenenler'e turuncu ikinci rozet
+   (bekliyor+isleniyor sayısı, >0'da görünür) — 157 bulgusu kapandı. Kanıt: hhbjşlö `✅ 21`
+   (20m+1excel, matematik birebir), bcmghbnv `✅ 76`.
+3. **W-2.14/A TASLAK VERİ KATMANI (canlı kanıtlı GEMİDE) — MK-156.1 boş gövde KAPANDI:**
+   spoolYukle başında tek `if(TASLAK_KIP)` → `_taslakSpoolYukle`: devrenin excel-generic kuyruk
+   işleri (oneri_hazir+manuel_onay, N iş satirlar concat) → `ARES_KABUK.grupla` → sentetik
+   spooller satırı → mevcut `_spoolMap`. Render'a sıfır dokunuş (155 disiplini); akt=-1 →
+   "Bekliyor", kesim/büküm boş — dürüst önizleme. Kanıt: bchmgbcmbn önizlemesi 4 spool DOLU,
+   cap 60,3 / et 4,5 / ağırlıklar wizard Adım 2 ile birebir.
+4. **Önizleme rötuşları (`fix(158)`):** (a) amber bant body→`.main-content`, top:52px/z:140 —
+   topbar (z:150) örtülmez; (b) terfi hizası: kalite=anaMalzeme, malzeme=malKod(ham) — kalite
+   kolonu doldu; (c) `taslak_duzeltmeleri` (kalem_idx=-1, alan/deger) overlay'i önizlemede
+   ARES_KABUK.aktar ile AYNI ezme kuralıyla okunur (cap/et/agirlik/malzeme/kalite/yuzey/
+   alistirma); (d) goSpool taslakta toast'la kilitli (sahte id ile spool_detay açılmaz).
+5. **ÜÇ TEŞHİS KANITLA DEVRİLDİ — patch YAZILMADI (MK-158.1):**
+   (a) "265 sekmesi boş" → benzer adlı iki devre: d222 (NB1137, 0 doküman) ayrı kayıt; 141 öneri
+   aw231'de (NB1124) ve sekme orada doğruydu. (b) "backfill'de montaj dalı yok" → `eslestir()`
+   montajı içinde dallıyor (kuyruk-isle:506 `okuJson.montaj`), montajda spoollar=[] Array →
+   backfill ön filtresinden geçer; nitekim montaj işleri eslesen=1. (c) "montaj spool detaya
+   gelmedi" → SQL: 28/36 spool montaj_json DOLU; bakılan spool ALS çiftsiz 8'dendi. UI (116/Is3)
+   zinciri de sağlam. 215'te görünüp ilk bakışta 217'de görünmemesinin açıklaması veri değil
+   örneklem yanılgısıydı.
+6. **Canlı doğrulamalar:** terfi sonrası alıştırma sütunu DOLDU — NOT→alıştırma zinciri
+   (l2-parser `alistirma_ipucu_kurali` kademeli VAR/KISMI + eslestir `deg.alistirma` +
+   `deg.imalat_not`) sağlam, taslakta görünmemesi yapısal (MK-157.1). Montaj göz teyidi (157
+   küçük işi) yapıldı sayılır: UI render + veri katmanı uçtan uca doğrulandı.
 
-## Bulgular (154)
-- **153 "aktif hayalet" bulgusu doğrulanmadı:** aktif+spoolsuz+silinmemiş devre 0 çıktı; 138/A
-  filtresi çalışıyordu. Ders: eski oturum bulgusu da yeniden ölçülür.
-- devreler.html ~1294 stat sayacı filtresiz şüphesi (155'e not).
-- MK-85.3 iki kez: devreler.created_at YOK (olusturma) · hata_mesaji tahmini şanslı tuttu.
-- Push reddi: CI rapor commit'i (f89a79e) araya girdi → `git pull --rebase` temiz çözdü.
+## Bulgular (158)
+- **İş emri numarası taslak INSERT'inde üretiliyor** — karar "iptal taslaklara numara atanmaz,
+  terfide üretilir"di; taslak önizlemede P26-216 görünüyor, listede 199→201→204→207→215→217
+  sıçramalı. 159 teşhis: wizard INSERT + terfi akışı (read-before-write).
+- PDF NOT okuma: Cihat "koptu" gözlemi bu vakada doğrulanMAdı (alıştırma doldu); genel sağlık
+  için format-bazlı `not_metni` tarama + imalat_not UI görünürlük teyidi 159'a.
+- hhbjşlö'nün 1 excel önerisi açık duruyor (onay modalından henüz aktarılmadı).
 
-## Commit'ler (154)
-| Hash | Mesaj |
+## Commit'ler (158)
+| Commit | Mesaj |
 |------|-------|
-| `1e89804` | fix(154): W-2.13 yetim onleme — wizard iptali kuyrugu temizler, drenaj silinmis devreyi atlar; drenaj JS no-cache (W-4.6) |
-| `e7cd787` | feat(154): W-2.7 Islenenler sekmesi — taslak havuzu, turetilmis durum, global drenaj UI yuzu + devreler.html girisi |
-DB (veri UPDATE, migration YOK): 356 yetim 'iptal' + 20 taslak silindi. CI yeşil. 12/12 ✓.
-izometri-oku DOKUNULMADI ✓.
+| 8174485 öncesi | `feat(158): Onay Kuyrugu sekmesi (W-2.15) — ...` |
+| 486e096 | `feat(158): devreler.html onay rozetleri — ...` |
+| 0a591ea | `feat(158): W-2.14/A taslak onizleme veri katmani — ...` |
+| rötuş | `fix(158): taslak onizleme rotuslari — bant/kalite/duzeltme-overlay` |
+| doc | kapanış dosyaları (bu commit) |
+DB: migration YOK, veri UPDATE YOK. 12/12 ✓. izometri-oku DOKUNULMADI ✓. CI yeşil beklenir.
 
-## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-154.1:** Devre işleme durumu (işleniyor/hazır) kolon değil TÜRETMEdir — tek doğruluk kaynağı
-  dosya_isleme_kuyrugu. Durum-senkron kodu yazılmaz; UI her açılışta kuyruktan sayar.
-- **MK-154.2:** Taslak iptal çekirdeği `_taslakIptalEt`: soft-delete (silindi+silinme_tarihi) +
-  terminal-olmayan işler (bekliyor/oneri_hazir/manuel_onay) 'iptal'. 'isleniyor' yarış koşulu
-  nedeniyle dokunulmaz; 'tamamlandi' tarihsel kayıt. Çağrılır, kopyalanmaz.
+## MK kayıtları (KARARLAR.md'ye işlenecek — MK-157.x ile birlikte)
+- **MK-158.1 (süreç):** Teşhis sırası VERİ (SQL) → UI → kod. Benzer adlı devre ≠ aynı devre.
+  158'de üç "kırık" hipotez kanıtla öldü; sıfır gereksiz patch.
+- **MK-158.2:** Onay Kuyruğu toplu kapatma = yalnız temiz izometri önerileri; atanmamışlı (B-6)
+  ve excel (109/A) girmez; `_eslesme` özetsiz eski kayıtlar girer (havuz temizlenebilirliği).
+- **MK-158.3:** Taslak önizleme = terfi: kalite=anaMalzeme, malzeme=malKod, taslak_duzeltmeleri
+  overlay aktar ezme kuralıyla. Alıştırma/izometri taslakta yapısal yok; terfiden sonra dolar.
 
-## KUYRUK SON DURUM
-oneri_hazir=690 · tamamlandi=367+ · iptal=356+ · manuel_onay=263 · hata=1 (Donatım, beklenen) ·
-bekliyor=0. Gerçek onay havuzu ~953 — onay UI akıbeti tasarlanmadı (155+ tartışma).
-
-## 155 ANA İŞ
-1) W-2.11/A uygulaması (devre_detay ?taslak=1: önce yazma noktaları envanteri, sonra kilit+filigran).
-2) MK-153.3 av turu (yukleyen_id NULL INSERT akışı).
-3) Küçükler: stat sayacı şüphesi · onay havuzu tasarım tartışması · ertelenmiş format paketi.
+## 159 ANA İŞ
+1) İş emri numarası terfiye taşıma teşhisi+fix. 2) NOT okuma format-bazlı kanıt turu +
+imalat_not UI teyidi. 3) Format hattı (Sefine / Y200 ST37+W-3.9 / W-2.4 tasarımı).
+Küçükler: KARARLAR.md MK işleme · EN/AR anahtarları · 6 B1124 PDF · IZO-KANIT-SETI v4 ·
+✖ sessiz-kayıp · hhbjşlö excel aktarımı.

@@ -293,3 +293,14 @@ kanıtla sabitledi:
   `montajDosyaKok` (worker, parse SONRASI). format_tanit'in ve fingerprint'in kapsamı dışında.
 Teşhis kuralı: kabukta_yok görünce sıra = devre durumu (taslak? MK-157.1) → kabuk anahtarları →
 PDF anahtarları → format kıyası. Kuyruk durumu ≠ eşleşme durumu (MK-157.4).
+
+## OTURUM 158 NOTU — Uyarıların ve eşleşme sebeplerinin tüketim yüzü (kapsam sınırı notlarının devamı)
+
+156/157 notlarının pratiği 158'de doğdu: format_tanit'in kapsamı DIŞINDA kalan iki sınıf artık
+operatöre görünür — (a) parse uyarıları (manuel_onay) Onay Kuyruğu sekmesinde kod+mesaj+ağırlık
+ile listelenir ve tekil kapatılır; (b) eşleşme başarısızlıkları (kabukta_yok,
+pipeline_kok_cikarilamadi) atanmamışlı grupta "Detay" ile sebep-bazlı okunur. 157'deki
+"tanıtma sonrası hâlâ kabukta_yok varsa kullanıcıya yönlendirme gerekir" maddesinin UI zemini bu
+sekmedir; format_tanit köprüsü (uyarı satırından tek tıkla öğretime) ileriki tasarım. format_tanit
+koduna 158'de dokunulmadı. Teşhis kuralı genişledi (MK-158.1): VERİ (SQL) → UI → kod; benzer adlı
+devre ≠ aynı devre.

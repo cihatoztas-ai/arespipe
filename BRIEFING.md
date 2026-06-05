@@ -1,56 +1,61 @@
-# AresPipe BRIEFING — 157. Oturum Kapanışı
+# AresPipe BRIEFING — 158. Oturum Kapanışı
 
 > **Tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
-> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (157 işaretleri işlendi).
+> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (158 işaretleri işlendi).
 
 ## HEAD
-- Kod: `fix(157): eslestirme-backfill ERR_REQUIRE_ESM — CJS zinciri lazy import()` + kapanış doc commit'i üstte.
-- **DB:** migration YOK. Endpoint YOK (12/12). Veri: 39a2c81b fingerprint'e dosya_adi_regex eklendi
-  (montaj öğretimi) + hhbjşlö 22 montaj işi reset→yeniden işlendi. izometri-oku DOKUNULMADI.
+- Kod: 4 commit — `feat(158)` Onay Kuyruğu sekmesi · `feat(158)` devreler.html rozetleri ·
+  `feat(158)` W-2.14/A taslak veri katmanı · `fix(158)` rötuşlar (bant/kalite/duzeltme-overlay).
+  Kapanış doc commit'i üstte. **DB:** migration YOK, veri UPDATE YOK (yalnız UI'dan kuyruk durum
+  geçişleri). Endpoint YOK (12/12). izometri-oku DOKUNULMADI.
 
-## 157 — yapılanlar (Format Tur 1: NB1124 TAM KAPANIŞ, 44/44)
-1. **Teşhis İKİ KEZ devrildi (kanıtla):** (a) dosyaAdiParse regex'i zone'suz `<NPS>x<NPS>` dahil
-   9/9 kalıbı ZATEN tutuyordu — Madde 0 regex genişletmesi gereksizdi; (b) kabukta_yok ×22
-   YAPISALDI: taslak devrede spooller boş, eslestir spooller'dan okur (MK-157.1, MK-156.1'in ikizi);
-   (c) ".SXX'siz 22 dosya" tablosuz çizim değil M+İ çiftinin MONTAJ kanadıydı (MK-157.3).
-2. **eslestirme-backfill 140'tan beri production'da ÖLÜYMÜŞ:** ERR_REQUIRE_ESM — Vercel runtime
-   require(ESM) desteklemiyor, modül yüklemede tüm endpoint çöküyordu (MK-157.2). 129-130
-   "terfi sonrası izometri bağlanmıyor" borcunun köküydü → fix: CJS zinciri lazy import(),
-   yalnız tip=malzeme dalında. Repro standardı: node@20.11 (lokal 20.19+/22 Vercel'i temsil etmez).
-3. **Kanıt zinciri:** hhbjşlö terfi (22 spool) → backfill canlı → kabukta_yok 22→0, eslesti 22,
-   cizim_durumu 22×kismi.
-4. **Montaj öğretimi:** 39a2c81b'ye dosya_adi_regex (DB fingerprint; 36/36 lokal ad testi: montaj
-   tutar, imalat/diğer tutmaz — `.SXX` doğal guard) → 22 iş reset → drenaj → 22/22 montaj L2 **$0**,
-   montaj eşleşmesi 22/22 (eslesen=1/atanmamis=0 her dosyada), 22 sahte manuel_onay temizlendi.
-   Cache güvenliydi: anahtar (sha, format_id) ve format NULL'ken cache hiç sorgulanmıyor.
-5. **Onay Kuyruğu read-before-write (158 önkoşulu):** excel oneri_hazir tüketicisi VAR
-   (onayModalAc→onayAktar→aktar); izometri oneri_hazir tüketicisi BİLİNÇLİ YOK (109/A — veri
-   otomatik uygulanır, "toplu onay"=durum kapatma geçişi); izometri manuel_onay tüketicisi YOK =
-   DELİK (uyarılar hiçbir UI'da açılmıyor) — 158 sekmesinin asıl işi.
-6. **parse_durumu kararı:** ölü/yedek alan — UI 102'den beri kuyruk-truth kullanıyor (kuyrukMap);
-   izometri dokümanları 'bekliyor' kalır, zararsız. DOKUNMA; KARARLAR notu: kuyruk=truth.
+## 158 — yapılanlar
+1. **W-2.15 Onay Kuyruğu sekmesi KAPANDI (canlı kanıtlı):** devre_detay 6. sekme, 4 grup —
+   manuel_onay amber/TEKİL (uyarı listesi `parse_sonuc.spoollar[].uyarilar` lazy + ✓Kapat) ·
+   excel öneri → mevcut onayModalAc köprüsü · atanmamışlı izometri (B-6: görünür, "Detay" →
+   `_eslesme.detay[]` spool+sebep; toplu kapatmaya GİRMEZ) · temiz öneri TOPLU kapatma
+   (→tamamlandi, veri işlemi YOK; `_eslesme` özetsiz eskiler girer — MK-158.2). Sekme rozeti +
+   `?sekme=onay` deep-link + `_tkKilit` guard. Kanıt: g200 tekil 55→54 ✓ · hhbjşlö toplu 24→0,
+   excel 1 yerinde ✓ · 265/aw231 atanmamışlı grup 8 + `kabukta_yok` detayı görünür ✓.
+2. **devreler.html rozetleri:** satırda `✅ N` = devrenin bekleyen onay sayısı (KUYRUK gerçeği,
+   tek toplu sorgu, tıkla→`?sekme=onay`) + İşlenenler butonuna turuncu bekleyen-iş rozeti
+   (bekliyor+isleniyor; 157 "rozet 0 ama 22 iş" bulgusu kapandı).
+3. **W-2.14/A GEMİDE (canlı kanıtlı) — MK-156.1 boş gövde KAPANDI:** `?taslak=1` kipinde
+   spoolYukle tek `if` ile dallanır: excel kuyruk önerileri (N iş birleşir) → `ARES_KABUK.grupla`
+   (terfiyle aynı çekirdek, MK-139.1 cap/et başlıkta) → sentetik satır → `_spoolMap`. Render'a
+   sıfır dokunuş. Rötuşlar: kalite=anaMalzeme + malzeme=malKod (terfi hizası, MK-158.3) ·
+   `taslak_duzeltmeleri` (kalem_idx=-1) overlay'i önizlemede aktar semantiğiyle okunur · amber
+   bant main-content'e taşındı (topbar z-150 örtülüyordu; bant top:52/z:140) · goSpool taslakta
+   kilitli. Kanıt: bchmgbcmbn 4 spool dolu önizleme, cap/et/ağırlık wizard'la birebir.
+4. **Üç teşhis kanıtla devrildi (MK-158.1):** (a) "265 sekmesi boş" → benzer adlı İKİ devre
+   varmış (d222/NB1137 dokümansız; 141 öneri aw231/NB1124'te ve doğru görünüyordu); (b) "backfill
+   montaj dalı yok" → `eslestir()` montajı İÇİNDE dallıyor (kuyruk-isle:506), montajda
+   spoollar=[] Array olduğundan ön filtreden geçer; (c) "montaj spool detaya gelmedi" → 28/36
+   spool'da montaj_json DOLUYDU, bakılan spool ALS çiftsiz 8'dendi — sistem tasarlandığı gibi.
+5. **Canlı doğrulamalar:** terfi sonrası `alistirma` doldu (NOT→alıştırma zinciri sağlam:
+   l2-parser `alistirma_ipucu_kurali` + eslestir `deg.alistirma`/`imalat_not`) · montaj_json
+   backfill yoluyla da yazılıyor · spool_detay "Montaj Resmi" UI'ı çalışıyor (116/Is3).
 
-## ⚠ MK-157.1 / 157.2 / 157.3
-**MK-157.1:** Taslak devrede kabukta_yok YAPISALDIR (MK-127.4 sonucu). kabukta_yok teşhisinde İLK
-kontrol = devre durumu (taslak/aktif); format/regex suçlamadan önce.
-**MK-157.2:** Vercel runtime require(ESM) desteklemez; lokal modül yükleme testi Vercel'i temsil
-etmez. Modül-seviyesi require şüphesinde repro: `npm exec node@20.11`. Serverless'ta UMD/CJS
-dosyalar dinamik import() ile, mümkünse yalnız ilgili dalda lazy yüklenir.
-**MK-157.3:** `.SXX`'siz Cadmatic PDF = montaj adayı (M+İ çifti), "tablosuz çizim" değil. Montaj
-fingerprint'inde içerik sinyali tek başına yetmez (tek-segmentlide "Continue:" yok, malzeme tablosu
-zaten yok) → dosya_adi_regex şart. W-2.4 dışlamanın "ertelenemez" gerekçesi düştü (vaka örneksiz kaldı).
+## ⚠ MK-158.1 / 158.2 / 158.3
+**MK-158.1 (süreç):** Teşhis sırası VERİ (SQL) → UI → ancak ondan sonra kod. Benzer adlı devre ≠
+aynı devre (157.4'ün UI ikizi). 158'de üç "kırık" kanıtla sağlam çıktı — patch yazılmadı.
+**MK-158.2:** Toplu kapatma kapsamı: yalnız temiz izometri önerileri. Atanmamışlı (B-6) ve excel
+(veri 109/A aktarımıyla kapanır) GİRMEZ; `_eslesme` özetsiz eski kayıtlar GİRER.
+**MK-158.3:** Taslak önizleme = terfi: kalite=anaMalzeme, malzeme=malKod, duzeltme overlay aynı
+ezme kuralı. Alıştırma/izometri verisi taslakta YAPISAL yok (MK-157.1) — terfiden sonra dolar.
 
-## 158 ANA İŞ
-1) **Onay Kuyruğu sekmesi implementasyonu** (tasarım 156 + read-before-write 157 tamam): izometri
-   manuel_onay uyarı listesi (parse_sonuc.spoollar[].uyarilar) + tekil kapatma; oneri_hazir toplu
-   kapatma geçişi (oneri_hazir→tamamlandi, veri işlemi yok); atanmamis "eşleştir"; devreler.html
-   rozet. Test yatağı: g200 + 265-overboard (hhbjşlö artık çözüldü — yeşil yol örneği olarak iyi).
-   Havuz sayısı değişti (22 manuel→öneri) — 158 açılışında SQL ile yeniden say.
-2) W-2.14 tasarımı (taslak önizleme veri katmanı). 3) Küçükler: İşlenenler rozeti kuyruk gerçeğini
-   göstermiyor (0 taslak ≠ 0 bekleyen iş — 157 bulgusu) · 6 B1124 PDF orijinal adla yükle (MK-52.1)
-   · IZO-KANIT-SETI v4 yapıştır + ad kararı · ✖ sessiz-kayıp doğrulaması · Y200 ST37 + W-3.9.
+## 159 ANA İŞ ADAYLARI
+1) **İş emri numarası taslakta üretiliyor** (karar terfide üretilmesiydi — iptal taslaklar numara
+   yakıyor, P26-2xx sıçramalı): wizard taslak INSERT + terfi akışı read-before-write → numara
+   üretimini terfiye taşı. 2) **PDF NOT okuma kanıt turu:** mekanizma var ve bu vakada çalıştı;
+   Cihat'ın "koptu" gözlemi için format-bazlı tarama (hangi formatta `not_metni` üretilmiyor) +
+   `imalat_not`'un spool detayda görünürlük teyidi. 3) Format hattı: Sefine şablonu (en ucuz,
+   IFS köprüsü hazır) / Y200 ST37 + W-3.9 / W-2.4 sınıflandırma+yönlendirme tasarımı.
+Küçükler: KARARLAR.md'ye MK-157.x+158.x · EN/AR anahtarları (dv_onayk_*, dv_tab_onay,
+dv_taslak_spool_yok) · 6 B1124 PDF orijinal ad (MK-52.1) · IZO-KANIT-SETI v4 · ✖ sessiz-kayıp ·
+hhbjşlö 1 excel önerisi hâlâ açık (onay modalından aktarılmadı).
 
 ## NEREDEYIZ — ÖZET
-NB1124 vakası 44/44 kapandı ve üç yapısal ders bıraktı; backfill dirildi (129-130 borcu kapandı);
-montaj ailesi zone'suz adlandırmayı da tanıyor. Onay Kuyruğu'nun önünde engel kalmadı: tasarım,
-veri ve tüketici haritası tamam — 158 saf implementasyon. Sıfır migration, tek kod commit'i, 12/12.
+Onay havuzunun yüzü artık var: W-2.15 + W-2.14 aynı oturumda gemide ve canlı kanıtlı; taslak→
+önizleme→terfi→onay zinciri uçtan uca çalışıyor. Sıfır migration, sıfır endpoint, 12/12. 158'in
+mirası süreç dersi: kanıt üç hipotezi öldürdü, kod tabanı sanıldığından sağlam.

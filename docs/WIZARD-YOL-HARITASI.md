@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 157)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 158)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -14,7 +14,7 @@
 - [ ] B-1 Operatör klasörü sürükler, bilgi-amaçlı klasörleri (revizyon öncesi vb.) baştan dışlar.
 - [ ] B-2 Excel kabuk + PDF eşleştirme arka planda kendi kendine yürür; operatör beklemez, butona basmaz.
 - [ ] B-3 Tanınmayan format = kırmızı satır + "Formatı tanıt" butonu; öğretilen kural kalıcı kaydedilir, aynı aile bir daha AI'a gitmez.
-- [~] B-4 Taslak gerçek devre detay görünümünde kontrol EDİLEBİLİYOR; köprü TAMAM (156: İşlenenler→Önizle, df11ac1) ama MK-156.1: önizleme spooller'dan render eder, taslak spooller'a yazmaz (MK-127.4) → BOŞ GÖVDE. Kalan: W-2.14 taslak veri katmanı + onay akışıyla bağ.
+- [x] B-4 KAPANDI (158): taslak gerçek devre detay görünümünde kontrol EDİLEBİLİYOR — köprü (156, df11ac1) + veri katmanı (158, W-2.14/A) canlı kanıtlı; onay=terfi wizard'dan (W-2.8 sıralı akış). MK-127.4 korunur.
 - [~] B-5 "İşlenenler" takibi GEMİDE (154); paralel yükleme akışı (W-2.9) açık.
 - [ ] B-6 Hiçbir belge/satır sessizce kaybolmaz: eşleşmeyen, çelişen, tanınmayan her şey görünür.
 
@@ -69,20 +69,24 @@
       → Karar öncesi read-before-write: devre_detay taslak devreyle bugün ne kadar sorunsuz açılıyor?
 - [x] W-2.12 GEMİDE (155, W-2.11 ile birlikte): amber sticky bant ("ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli") + başlık TASLAK rozeti + kilit toast'ları; 3 dil anahtarı (tr/en/ar). Tam ekran filigran bilinçli eklenmedi (bant+rozet+toast yeterli, ekran kirliliği yok).
 - [x] W-2.13 KAPANDI (154, canlı kanıtlı): (a) veri onarımı — 356 yetim kuyruk işi 'iptal'e çekildi (281'i silinmiş taslakların oneri_hazir'ı; onay havuzunun %32'si hayaletmiş), 20 taslak koloni silindi; (b) wizardIptal → _taslakIptalEt çekirdeği: soft-delete+silinme_tarihi+kuyruk temizliği ('isleniyor' yarış koşulu nedeniyle hariç, MK-154.2); (c) drenaj ikinci savunma hattı: silinmiş devrenin işi HİÇ alınmaz, konsola yazılır. NOT: 'aktif hayalet' bulgusu doğrulanmadı — 138/A filtresi zaten çalışıyordu, hgtrghh aktif değildi.
-- [ ] W-2.14 (156, MK-156.1) Taslak önizleme VERİ katmanı: ?taslak=1 kipinde spooller yerine taslak
-      katmanı (ARES_KABUK.grupla modeli + kuyruk önerileri) render edilmeli — taslak spooller'a
-      yazmaz (MK-127.4), mevcut önizleme boş gövde. Gerilim: 155'in "render'a sıfır dokunuş"
-      disiplini ↔ veri kaynağı değişimi; tasarım kararı 157.
-- [ ] W-2.15 (156 kararları) ONAY KUYRUĞU sekmesi — devre_detay'a (MK-156.2: yük AKTİF devrelerde,
-      953 işin tamamı; İşlenenler taslak yüzü). Tek liste iki davranış: oneri_hazir yeşil/TOPLU
-      (yalnız devre kapsamı, kritik uyarılı satır girmez) · manuel_onay amber/TEKİL (içerik
-      parse_sonuc.spoollar[].uyarilar: kod+mesaj+agirlik — hazır JSONB, yeni veri üretimi YOK) ·
-      atanmamis ayrı alt grup ("eşleştir"). devreler.html'e bekleyen-onay rozeti. ÖNKOŞUL
-      CEVAPLANDI (157): excel oneri_hazir tüketicisi VAR (onayModalAc→onayAktar→aktar);
-      izometri oneri_hazir BİLİNÇLİ YOK (109/A, veri otomatik uygulanır → "toplu onay"=durum
-      kapatma geçişi); izometri manuel_onay YOK=DELİK (sekmenin asıl işi). 158 saf implementasyon.
-      Test yatağı: g200 + 265-overboard (hhbjşlö 157'de çözüldü, yeşil-yol örneği; havuz sayısı
-      158 açılışında SQL ile yeniden sayılır).
+- [x] W-2.14 GEMİDE (158, A kararı — canlı kanıtlı; MK-156.1 boş gövde KAPANDI): spoolYukle tek
+      `if(TASLAK_KIP)` ile dallanır → excel kuyruk önerileri (N iş birleşir) → ARES_KABUK.grupla
+      (terfiyle aynı çekirdek, MK-139.1 cap/et başlıkta) → sentetik satır → _spoolMap. Render'a
+      sıfır dokunuş (155 disiplini korundu). Terfi hizası (MK-158.3): kalite=anaMalzeme,
+      malzeme=malKod, taslak_duzeltmeleri (kalem_idx=-1) overlay'i aktar ezme kuralıyla okunur.
+      goSpool taslakta kilitli; amber bant main-content'e taşındı (topbar örtme fix). Alıştırma/
+      izometri verisi taslakta YAPISAL yok (MK-157.1) — terfiden sonra dolar (158'de kanıtlandı).
+      B refactor'ü (ortak render modülü) reddedildi: üçüncü tüketici doğarsa yeniden açılır.
+- [x] W-2.15 KAPANDI (158, canlı kanıtlı): devre_detay 6. sekme "✅ Onay Kuyruğu", 4 grup —
+      manuel_onay amber/TEKİL (lazy uyarı listesi spoollar[].uyarilar + ✓Kapat →tamamlandi) ·
+      excel öneri (mevcut onayModalAc köprüsü) · atanmamışlı izometri ("Detay" → _eslesme.detay
+      spool+sebep; B-6 görünür, toplu kapatmaya GİRMEZ) · temiz öneri TOPLU (→tamamlandi, veri
+      işlemi YOK; _eslesme özetsizler girer — MK-158.2). atanmamis kuyruk durumu DEĞİL,
+      _eslesme özetinden türetilir (PostgREST JSON alias). Sekme rozeti + ?sekme=onay deep-link
+      + _tkKilit guard. devreler.html: satır rozeti ✅N (kuyruk gerçeği, köprülü) + İşlenenler'e
+      bekleyen-iş rozeti (157 bulgusu kapandı). KANIT: g200 tekil 55→54 · hhbjşlö toplu 24→0
+      (excel+manuel dokunulmadı) · aw231 atanmamışlı 8 + kabukta_yok detayı. "Eşleştir" aksiyonu
+      bilinçli ertelendi (gerçek eşleştirme aracı ayrı tasarım).
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI
 
@@ -107,10 +111,11 @@
 
 ## FAZ 4 — VERİ SAĞLIĞI VE PROPAGASYON
 
-- [~] W-4.1 Propagasyon: eslestirme-backfill 157'de DİRİLDİ — 140'tan beri production'da ölüydü
-      (ERR_REQUIRE_ESM, MK-157.2; fix: CJS zinciri lazy import). Terfi-sonrası otomatik backfill
-      artık çalışıyor (hhbjşlö 22/22 kanıt; 129-130 borcu kapandı). Kalan: eski L3 / yanlış-format
-      aile yeniden parse turu (alias deseni: dok_id:devre_dokuman_id).
+- [~] W-4.1 Propagasyon: eslestirme-backfill 157'de DİRİLDİ (ERR_REQUIRE_ESM, MK-157.2). 158
+      kanıtı: backfill MONTAJI da eşler — eslestir() montaj dalını içinde barındırır
+      (kuyruk-isle:506), montajda spoollar=[] Array olduğundan ön filtreden geçer; bcmghbnv
+      terfisinde 28/36 spool montaj_json doldu, spool_detay "Montaj Resmi" UI'ı çalışıyor
+      (116/Is3 göz teyidi TAMAM). Kalan: eski L3 / yanlış-format aile yeniden parse turu.
 - [ ] W-4.2 pipeline_no E120- prefix normalizasyonu (wizard eşleştirme/mutabakat fazında; 289 montaj kaydını yeniden parse ETMEK çözüm değil).
 - [ ] W-4.3 Dirsek 323.9 ağırlık normalizasyonu (PDF toplam ↔ Excel birim; l2-parser tarafı, K2 bug'ı değil).
 - [ ] W-4.4 bbox → PDF-point normalize (konum_ipucu).

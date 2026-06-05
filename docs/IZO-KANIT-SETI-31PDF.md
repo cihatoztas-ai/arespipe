@@ -253,3 +253,18 @@ SONUÇ: NB1124 44/44 kapandı. Madde 0 "kimlik çıkarımı genişletmesi" bu se
 üç-katman modeli (MK-156.3) geçerli kalır ama bu vakanın kırığı katmanlarda değil, (a) taslak
 yaşam döngüsünde, (b) ölü backfill'de, (c) montaj fingerprint eksiğindeydi. Teşhis sırasına
 EK adım: kabuk/PDF anahtarlarından ÖNCE devre durumu (taslak/aktif) kontrol edilir.
+
+## 158 EKİ — ALS/montaj ailesi CANLI doğrulama (bcmghbnv mbn, NB1124)
+
+- Parantezli montaj adları sahada tuttu: `M100-317-xx-ALS N(2).1.pdf` ailesi (örn. 21/27/32/33/
+  47/50/55/56 çiftleri) 157 regex'inin `(?:\s+\d+\(\d+\))?` parçasıyla montaj olarak tanındı;
+  terfi + backfill sonrası **28/36 spool montaj_json aldı** (eslesen=1/atanmamis=0 her dosyada),
+  spool_detay "Montaj Resmi" bölümü (116/Is3) render etti. 8 boş spool = ALS çifti sahada yok
+  (doğru davranış, kırık değil).
+- **NOT→alıştırma zinciri kanıtı:** terfi sonrası `alistirma` sütunu doldu (`.ALS` ad sinyali +
+  alistirma_ipucu). Bu setteki NOT örnekleri ("Alistirma Parcasidir (Kaynatma!!)", "Blok erection
+  alıştırma spooludur!!", "Uretilmeyecek") 159 not_metni taramasının test satırlarıdır.
+- Süreç (MK-158.1): "montaj spool detaya gelmedi" şüphesi SQL+kod kanıtıyla üç adımda çürüdü —
+  eslestir() montajı içinde dallar (kuyruk-isle:506), backfill montajı da işler. Teşhis sırası:
+  VERİ → UI → kod.
+- Ad kararı (31PDF → güncel sayı) hâlâ AÇIK — v4 eki yapıştırılınca birlikte (159 küçük işi).
