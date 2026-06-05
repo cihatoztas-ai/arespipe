@@ -1320,6 +1320,7 @@ async function devreYukle(){
 async function spoolYukle(){
   var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
   if(!devreId)return;
+  if(TASLAK_KIP){await _taslakSpoolYukle(devreId);return;}   // W-2.14 (158): veri kaynağı adaptörü
   try{
     // Nested select ile kesim/büküm/markalama sayıları dahil
     var supa=ARES.supabase();
@@ -1409,6 +1410,40 @@ function _sevkRender(list){
       +'<div style="color:var(--txm);font-size:12px;margin-top:2px;">'+'('+(d.sevkiyat_spooller||[]).length+' spool) '+esc(spools)+'</div>'
       +'</div>';
   }).join('');
+}
+
+// ── W-2.14 (158): TASLAK VERİ KATMANI — ?taslak=1 kipinde spooller yerine kuyruk önerisi render edilir.
+// MK-127.4 bozulmaz (spooller'a yazılmaz); render'a sıfır dokunuş (155 disiplini): sentetik satır → _spoolMap.
+// Kapsam dürüst: yalnız Excel BOM kabuk önizlemesi; izometri eşleşmesi taslakta yapısal olarak yoktur (MK-157.1).
+async function _taslakSpoolYukle(devreId){
+  try{
+    var supa=ARES.supabase();
+    var dd=await supa.from('devre_dokumanlari').select('id').eq('devre_id',devreId).eq('silindi',false).eq('aktif',true);
+    var ids=(dd.data||[]).map(function(d){return d.id;});
+    var satirlar=[];
+    if(ids.length){
+      var rk=await supa.from('dosya_isleme_kuyrugu')
+        .select('id,parse_sonuc')
+        .in('devre_dokuman_id',ids)
+        .eq('parser','excel-generic')
+        .in('durum',['oneri_hazir','manuel_onay']);
+      ((rk&&rk.data)||[]).forEach(function(k){
+        var ps=k.parse_sonuc;if(typeof ps==='string'){try{ps=JSON.parse(ps);}catch(e){ps=null;}}
+        if(ps&&Array.isArray(ps.satirlar))satirlar=satirlar.concat(ps.satirlar);
+      });
+    }
+    if(!satirlar.length){SPOOLS=[];return;}
+    var model=ARES_KABUK.grupla({satirlar:satirlar});
+    SPOOLS=(model.spoollar||[]).map(function(sp,i){
+      return _spoolMap({
+        id:'taslak-'+i,
+        pipeline_no:sp.pipeline, spool_no:sp.spoolNo, rev:sp.rev,
+        dis_cap_mm:sp.cap, et_kalinligi_mm:sp.et,
+        agirlik_kg:sp.toplamKg, malzeme:sp.anaMalzeme, yuzey:sp.yuzeyHam,
+        aktif_basamak:'', kesim_kalemleri:[], bukum_kalemleri:[], markalama_kalemleri:[]
+      },i);
+    });
+  }catch(e){console.warn('taslakSpoolYukle:',e);SPOOLS=[];}
 }
 
 function _spoolMap(s,i){
@@ -1621,6 +1656,7 @@ function inlineEdit(td,alan,lk,tip,seç,mevcut){if(_tkKilit())return;
 
 // ── NAVİGASYON
 function goSpool(lk){
+  if(TASLAK_KIP){showToast(tv('dv_taslak_spool_yok','Önizleme — spool detayı terfiden sonra açılır'),'i');return;}
   var s=SPOOLS.find(function(x){return x._lk===lk;});if(!s)return;
   localStorage.setItem('ares_aktif_spool',JSON.stringify(Object.assign({},s,{
     _devre:DEVRE.devre,_projeNo:DEVRE.projeNo,_isEmri:DEVRE.isEmri,_tersane:DEVRE.tersane
