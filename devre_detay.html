@@ -417,6 +417,7 @@ tr.sk-row:hover td{background:transparent !important;}
   <button class="tab" data-tab="dokumanlar" data-i18n="dv_tab_docs">📁 Dökümanlar</button>
   <button class="tab" data-tab="malzeme" data-i18n="sp_tab_material">🔧 Malzeme Listesi</button>
   <button class="tab" data-tab="islemler" data-i18n="sp_tab_log">🕗 İşlem Kayıtları</button>
+  <button class="tab" data-tab="onay">✅ <span data-i18n="dv_tab_onay">Onay Kuyruğu</span> <span id="onaySekmeRozet" style="display:none;background:var(--warn);color:#fff;border-radius:10px;padding:0 7px;font-size:11px;font-weight:700;">0</span></button>
 </div>
 
 <!-- ═══ SPOOL LİSTESİ ═══ -->
@@ -610,6 +611,20 @@ tr.sk-row:hover td{background:transparent !important;}
   <div id="plMalzBos" style="display:none;padding:28px;text-align:center;color:var(--txd);background:var(--sur);border:1px solid var(--bor);border-radius:12px;">
     <div data-i18n="dv_pl_empty">Henüz pipeline malzeme listesi eklenmemiş.</div>
     <div style="font-size:12px;opacity:.7;margin-top:5px;" data-i18n="dv_pl_empty_hint">+ Malzeme Ekle butonu ile pipeline numarası ve malzeme listesini girin.</div>
+  </div>
+</div>
+
+<!-- ═══ ONAY KUYRUĞU (W-2.15, 158) ═══ -->
+<div id="panOnay" style="display:none;">
+  <div class="tablo-kart" style="border-left:3px solid var(--warn);">
+    <div class="tablo-head">
+      <div class="tablo-baslik">✅ <span data-i18n="dv_onayk_baslik">Onay Kuyruğu</span></div>
+      <span id="onaykOzet" style="font-size:12px;color:var(--txd);">—</span>
+    </div>
+    <div id="onaykListe" style="padding:6px 0;"></div>
+    <div id="onaykBos" style="display:none;padding:28px;text-align:center;color:var(--txd);">
+      <div data-i18n="dv_onayk_bos">Onay bekleyen iş yok 🎉</div>
+    </div>
   </div>
 </div>
 
@@ -1496,7 +1511,7 @@ function statGuncelle(){
 
 // ── SEKMELER
 function initTabs(){
-  var paneller={spooller:'panSpooller',genel:'panGenel',dokumanlar:'panDokumanlar',malzeme:'panMalzeme',islemler:'panIslemler'};
+  var paneller={spooller:'panSpooller',genel:'panGenel',dokumanlar:'panDokumanlar',malzeme:'panMalzeme',islemler:'panIslemler',onay:'panOnay'};
   document.querySelectorAll('.tab').forEach(function(btn){
     btn.addEventListener('click',function(){
       document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
@@ -1505,6 +1520,7 @@ function initTabs(){
       var el=document.getElementById(paneller[btn.dataset.tab]);if(el)el.style.display='block';
       if(btn.dataset.tab==='malzeme'){spoolMalzYukle();plMalzYukle();}
       if(btn.dataset.tab==='dokumanlar'){belgelerYukle();}
+      if(btn.dataset.tab==='onay'){onayKuyruguYukle();}
     });
   });
 }
@@ -2295,6 +2311,165 @@ async function onayAktar(kuyrukId){if(_tkKilit())return;
   if(typeof spoolYukle==='function')await spoolYukle();
   if(typeof belgelerYukle==='function')await belgelerYukle();
 }
+
+// ── ONAY KUYRUĞU SEKMESİ (W-2.15, 158)
+// Tek liste dört grup: manuel_onay (amber/TEKİL, uyarı listesi = parse_sonuc.spoollar[].uyarilar)
+//   · excel oneri_hazir (mevcut onayModalAc köprüsü — yeniden icat YOK, 109/A)
+//   · atanmamışlı izometri oneri_hazir (görünür kalır, B-6; toplu kapatmaya GİRMEZ)
+//   · temiz izometri oneri_hazir (TOPLU kapatma = yalnız durum geçişi →tamamlandi, veri işlemi YOK).
+// atanmamis kuyruk durumu DEĞİL; parse_sonuc._eslesme özeti (kuyruk-isle-izometri 4B).
+var _ONAYK={liste:[],uy:{},det:{}};
+async function onayRozetSay(){
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(!supa||!devreId)return;
+  try{
+    var r=await supa.from('dosya_isleme_kuyrugu')
+      .select('id,devre_dokumanlari!inner(devre_id)',{count:'exact',head:true})
+      .eq('devre_dokumanlari.devre_id',devreId)
+      .in('durum',['oneri_hazir','manuel_onay']);
+    if(!r.error)_onayRozetYaz(r.count||0);
+  }catch(e){/* rozet kozmetik */}
+}
+function _onayRozetYaz(n){
+  var el=document.getElementById('onaySekmeRozet');
+  if(el){el.textContent=n;el.style.display=n>0?'':'none';}
+}
+async function onayKuyruguYukle(){
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  var elL=document.getElementById('onaykListe');
+  if(!supa||!devreId||!elL)return;
+  elL.innerHTML='<div style="padding:20px;text-align:center;color:var(--txd);">'+tv('dv_onayk_yukleniyor','Yükleniyor...')+'</div>';
+  var dd=await supa.from('devre_dokumanlari')
+    .select('id,dosya_adi').eq('devre_id',devreId).eq('silindi',false).eq('aktif',true);
+  if(dd.error){console.warn('onayk dd:',dd.error);elL.innerHTML='';return;}
+  var adMap={};(dd.data||[]).forEach(function(d){adMap[d.id]=d.dosya_adi||'';});
+  _ONAYK.adMap=adMap;
+  var ids=Object.keys(adMap);
+  if(!ids.length){_ONAYK.liste=[];_onaykRender(adMap);return;}
+  var rk=await supa.from('dosya_isleme_kuyrugu')
+    .select('id,devre_dokuman_id,parser,durum,bitis_at,atan:parse_sonuc->_eslesme->>atanmamis,esl:parse_sonuc->_eslesme->>eslesen')
+    .in('devre_dokuman_id',ids).in('durum',['oneri_hazir','manuel_onay'])
+    .order('bitis_at',{ascending:false});
+  if(rk.error){console.warn('onayk kuyruk:',rk.error);elL.innerHTML='';return;}
+  _ONAYK.liste=rk.data||[];
+  _onaykRender(adMap);
+}
+function _onaykRender(adMap){
+  adMap=adMap||_ONAYK.adMap||{};
+  var elL=document.getElementById('onaykListe'),elB=document.getElementById('onaykBos'),elO=document.getElementById('onaykOzet');
+  var L=_ONAYK.liste;
+  var manuel=L.filter(function(k){return k.durum==='manuel_onay';});
+  var excelO=L.filter(function(k){return k.durum==='oneri_hazir'&&k.parser!=='izometri';});
+  var izoO=L.filter(function(k){return k.durum==='oneri_hazir'&&k.parser==='izometri';});
+  var atanli=izoO.filter(function(k){return parseInt(k.atan||'0',10)>0;});
+  var temiz=izoO.filter(function(k){return !(parseInt(k.atan||'0',10)>0);});
+  _onayRozetYaz(L.length);
+  if(elO)elO.textContent=L.length?(manuel.length+' '+tv('dv_onayk_manuel_kisa','incele')+' · '+(excelO.length+izoO.length)+' '+tv('dv_onayk_oneri_kisa','öneri')):'—';
+  if(!L.length){elL.innerHTML='';if(elB)elB.style.display='block';return;}
+  if(elB)elB.style.display='none';
+  var dil=document.documentElement.getAttribute('lang')||'tr';
+  function trh(b){return b?new Date(b).toLocaleDateString(dil):'';}
+  function satir(k,btns,altId){
+    var ad=esc(adMap[k.devre_dokuman_id]||k.devre_dokuman_id);
+    var es=(k.esl!=null||k.atan!=null)?'<span style="font-size:11px;color:var(--txd);">'+tv('dv_onayk_eslesen','eşleşen')+' '+(k.esl||0)+(parseInt(k.atan||'0',10)>0?' · <b style="color:var(--warn);">'+tv('dv_onayk_atanmamis','atanmamış')+' '+k.atan+'</b>':'')+'</span>':'';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:1px solid var(--bor);flex-wrap:wrap;">'
+      +'<div style="flex:1;min-width:200px;"><div style="font-size:13px;font-weight:600;">'+ad+'</div>'
+      +'<div style="font-size:11px;color:var(--txd);">'+esc(k.parser||'')+' · '+trh(k.bitis_at)+' '+es+'</div></div>'
+      +btns+'</div>'
+      +(altId?'<div id="'+altId+'" style="display:none;padding:6px 18px 12px 30px;border-bottom:1px solid var(--bor);background:rgba(0,0,0,.12);"></div>':'');
+  }
+  function grupBas(renk,baslik,sag){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 18px 6px;font-size:12px;font-weight:800;color:'+renk+';text-transform:uppercase;letter-spacing:.4px;">'+baslik+'<span style="flex:1;"></span>'+(sag||'')+'</div>';
+  }
+  var h='';
+  if(manuel.length){
+    h+=grupBas('var(--warn)','⚠ '+tv('dv_onayk_g_manuel','İnceleme bekleyen')+' ('+manuel.length+')');
+    h+=manuel.map(function(k){
+      var btns='<button class="btn" onclick="onayUyariAc(\''+esc(k.id)+'\')" style="color:var(--warn);border-color:rgba(186,117,23,.35);font-weight:600;">'+tv('dv_onayk_uyari_gor','Uyarıları gör')+'</button>';
+      if(k.parser!=='izometri')btns+='<button class="btn" onclick="onayModalAc(\''+esc(k.id)+'\')" style="color:var(--warn);border-color:rgba(186,117,23,.35);font-weight:600;">'+tv('dv_onay_review','İncele / Düzelt')+'</button>';
+      btns+='<button class="btn" onclick="onayTekilKapat(\''+esc(k.id)+'\')" style="color:var(--gr);border-color:rgba(29,158,117,.35);font-weight:600;">✓ '+tv('dv_onayk_kapat','Kapat')+'</button>';
+      return satir(k,btns,'onayUy_'+k.id);
+    }).join('');
+  }
+  if(excelO.length){
+    h+=grupBas('var(--gr)','📊 '+tv('dv_onayk_g_excel','Excel BOM — onay bekliyor')+' ('+excelO.length+')');
+    h+=excelO.map(function(k){
+      return satir(k,'<button class="btn" onclick="onayModalAc(\''+esc(k.id)+'\')" style="color:var(--gr);border-color:rgba(29,158,117,.35);font-weight:600;">'+tv('dv_onay_preview','Önizle / Onayla')+'</button>','');
+    }).join('');
+  }
+  if(atanli.length){
+    h+=grupBas('var(--warn)','🔗 '+tv('dv_onayk_g_atanli','Atanmamış spool içeren')+' ('+atanli.length+')');
+    h+=atanli.map(function(k){
+      return satir(k,'<button class="btn" onclick="onayDetayAc(\''+esc(k.id)+'\')" style="color:var(--txd);border-color:var(--bor);">'+tv('dv_onayk_detay','Detay')+'</button>','onayDet_'+k.id);
+    }).join('');
+  }
+  if(temiz.length){
+    h+=grupBas('var(--gr)','✅ '+tv('dv_onayk_g_temiz','Öneri hazır — otomatik bağlandı')+' ('+temiz.length+')',
+      '<button class="btn" onclick="onayTopluKapat()" style="color:var(--gr);border-color:rgba(29,158,117,.35);font-weight:700;">✓ '+tv('dv_onayk_toplu','Tümünü kapat')+' ('+temiz.length+')</button>');
+    h+=temiz.map(function(k){return satir(k,'','');}).join('');
+  }
+  elL.innerHTML=h;
+}
+// Uyarı listesi (lazy): parse_sonuc.spoollar[].uyarilar — kod+mesaj+agirlik (hazır JSONB)
+async function onayUyariAc(kid){
+  var div=document.getElementById('onayUy_'+kid);if(!div)return;
+  if(div.style.display!=='none'){div.style.display='none';return;}
+  div.style.display='block';
+  if(_ONAYK.uy[kid]){div.innerHTML=_ONAYK.uy[kid];return;}
+  div.innerHTML='<span style="color:var(--txd);font-size:12px;">'+tv('dv_onayk_yukleniyor','Yükleniyor...')+'</span>';
+  var supa=_supa();if(!supa)return;
+  var r=await supa.from('dosya_isleme_kuyrugu').select('parse_sonuc').eq('id',kid).maybeSingle();
+  if(r.error||!r.data){div.innerHTML='<span style="color:var(--re);font-size:12px;">'+tv('dv_onayk_uyari_yok','Kayıt okunamadı')+'</span>';return;}
+  var ps=r.data.parse_sonuc;if(typeof ps==='string'){try{ps=JSON.parse(ps);}catch(e){ps=null;}}
+  var h='',n=0;
+  ((ps&&ps.spoollar)||[]).forEach(function(s){
+    var uy=s.uyarilar||[];if(!uy.length)return;
+    h+='<div style="font-size:12px;font-weight:700;margin-top:6px;">'+esc(s.spool_no||s.spool_id||'?')+'</div>';
+    uy.forEach(function(u){n++;
+      var renk=u.agirlik==='kritik'?'var(--re)':u.agirlik==='orta'?'var(--warn)':'var(--txd)';
+      h+='<div style="font-size:12px;padding:2px 0;"><b style="color:'+renk+';">['+esc(u.agirlik||'')+']</b> '+esc(u.kod||'')+' — '+esc(u.mesaj||'')+'</div>';
+    });
+  });
+  if(!n)h='<span style="color:var(--txd);font-size:12px;">'+tv('dv_onayk_uyari_bos','Uyarı kaydı bulunamadı')+'</span>';
+  _ONAYK.uy[kid]=h;div.innerHTML=h;
+}
+// Eşleşme detayı (lazy): parse_sonuc._eslesme.detay[] — atanmamış spool + sebep (B-6: görünür kalır)
+async function onayDetayAc(kid){
+  var div=document.getElementById('onayDet_'+kid);if(!div)return;
+  if(div.style.display!=='none'){div.style.display='none';return;}
+  div.style.display='block';
+  if(_ONAYK.det[kid]){div.innerHTML=_ONAYK.det[kid];return;}
+  div.innerHTML='<span style="color:var(--txd);font-size:12px;">'+tv('dv_onayk_yukleniyor','Yükleniyor...')+'</span>';
+  var supa=_supa();if(!supa)return;
+  var r=await supa.from('dosya_isleme_kuyrugu').select('es:parse_sonuc->_eslesme').eq('id',kid).maybeSingle();
+  var es=r&&r.data?r.data.es:null;
+  var det=(es&&es.detay)||[];
+  var h=det.filter(function(d){return d.durum==='atanmamis';}).map(function(d){
+    return '<div style="font-size:12px;padding:2px 0;"><b>'+esc(d.spool_no||'?')+'</b> — '+esc(d.sebep||'')+(d.pipeline_no?' ('+esc(d.pipeline_no)+')':'')+'</div>';
+  }).join('');
+  if(!h)h='<span style="color:var(--txd);font-size:12px;">'+tv('dv_onayk_detay_bos','Detay kaydı bulunamadı')+'</span>';
+  _ONAYK.det[kid]=h;div.innerHTML=h;
+}
+// Tekil kapatma (manuel_onay): yalnız durum geçişi →tamamlandi (veri işlemi YOK; kuyruk=truth)
+async function onayTekilKapat(kid){if(_tkKilit())return;
+  var supa=_supa();if(!supa)return;
+  var r=await supa.from('dosya_isleme_kuyrugu').update({durum:'tamamlandi'}).eq('id',kid).eq('durum','manuel_onay');
+  if(r.error){showToast(tv('dv_onayk_kapat_hata','Kapatılamadı: ')+r.error.message,'e');return;}
+  _ONAYK.liste=_ONAYK.liste.filter(function(k){return k.id!==kid;});
+  _onaykRender();showToast(tv('dv_onayk_kapatildi','İş kapatıldı'),'success');
+}
+// Toplu kapatma: YALNIZ temiz izometri önerileri (atanmamışlı + excel GİRMEZ — B-6 / 109-A)
+async function onayTopluKapat(){if(_tkKilit())return;
+  var supa=_supa();if(!supa)return;
+  var ids=_ONAYK.liste.filter(function(k){return k.durum==='oneri_hazir'&&k.parser==='izometri'&&!(parseInt(k.atan||'0',10)>0);}).map(function(k){return k.id;});
+  if(!ids.length)return;
+  var r=await supa.from('dosya_isleme_kuyrugu').update({durum:'tamamlandi'}).in('id',ids).eq('durum','oneri_hazir');
+  if(r.error){showToast(tv('dv_onayk_kapat_hata','Kapatılamadı: ')+r.error.message,'e');return;}
+  var set={};ids.forEach(function(i){set[i]=true;});
+  _ONAYK.liste=_ONAYK.liste.filter(function(k){return !set[k.id];});
+  _onaykRender();showToast(ids.length+' '+tv('dv_onayk_toplu_ok','iş kapatıldı'),'success');
+}
+
 // 102: dosyayı açarken signed URL'i o an üret (lazy) — load'da 20+ URL üretme yükü kalkar
 async function dokAc(kaynak,path){
   if(!path){showToast(tv('dv_dok_acilamadi','Dosya açılamadı'),'e');return;}
@@ -3017,6 +3192,12 @@ document.addEventListener('DOMContentLoaded', function() {
       await notYukle();
       renderIslemler();
       initTabs();
+      // W-2.15 (158): ?sekme=onay deep-link + sekme rozeti açılışta dolar
+      (function(){
+        var _sek=new URLSearchParams(location.search).get('sekme');
+        if(_sek){var tb=document.querySelector('.tab[data-tab="'+_sek+'"]');if(tb)tb.click();}
+      })();
+      onayRozetSay();
       if (typeof _applyI18n === 'function') _applyI18n();
 
       // Spool_detay'dan dönüldüğünde spoolları yenile
