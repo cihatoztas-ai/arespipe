@@ -281,3 +281,15 @@ bilmeli:
 
 156'da format_tanit koduna dokunulmadı; teşhis günlüğü FORMAT-TANITMA-ILERLEME.md 156 bölümünde,
 kanıt envanteri docs/IZO-KANIT-SETI-31PDF.md v4 ekinde (B1124, 5. gemi).
+
+## OTURUM 157 NOTU — Kimlik mekanizmasının adresi NETLEŞTİ (156 kapsam sınırı notunun devamı)
+
+156 notu doğruydu: format_tanit yalnız satır/alan öğretir. 157 kimlik tarafının iki ayrı adresini
+kanıtla sabitledi:
+- **Tanıma (format seçimi):** `izometri_format_tanimlari.fingerprint` (4 sinyal: dosya_adı=5,
+  producer=1, başlık=1, tablo=1; eşik 2, en yüksek skor kazanır). Montaj gibi içerik-fakir
+  belge sınıflarında dosya_adi_regex ŞARTTIR (MK-157.3).
+- **Eşleştirme (pipeline+spool anahtarı):** `kuyruk-isle-izometri.dosyaAdiParse` /
+  `montajDosyaKok` (worker, parse SONRASI). format_tanit'in ve fingerprint'in kapsamı dışında.
+Teşhis kuralı: kabukta_yok görünce sıra = devre durumu (taslak? MK-157.1) → kabuk anahtarları →
+PDF anahtarları → format kıyası. Kuyruk durumu ≠ eşleşme durumu (MK-157.4).

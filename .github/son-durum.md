@@ -1,63 +1,73 @@
-# son-durum.md — Oturum 156 (2026-06-05)
+# son-durum.md — Oturum 157 (2026-06-05)
 
 ## Bu oturumda ne yapıldı
-1. **ONAY HAVUZU TASARIMI BAĞLANDI (3 karar, kod yok):** (a) onay yüzü = devre_detay'a yeni
-   "Onay Kuyruğu" sekmesi + devreler.html rozet — KANIT: 953 işin TAMAMI aktif devrelerdeydi,
-   İşlenenler taslak yüzüdür (MK-156.2); (b) tek liste iki davranış — oneri_hazir yeşil/toplu,
-   manuel_onay amber/tekil, uyarı içeriği parse_sonuc.spoollar[].uyarilar'dan (kod+mesaj+agirlik,
-   yeni veri üretimi YOK; atanmamis ayrı alt grup "eşleştir" butonlu); (c) toplu onay YALNIZ
-   oneri_hazir + devre kapsamı, kritik uyarılı satır toplu akışa girmez. 157 read-before-write:
-   "onayla" tüketicisi kodda var mı?
-2. **TEST ÇÖPÜ TEMİZLİĞİ (671 iş iptal):** dry-run + üç istisna (g200, 265-overboard, hhbjşlö)
-   → havuz 998→327 (230 öneri + 97 manuel). hata_mesaji='oturum 156: test devresi temizligi'.
-   157 onay UI'ının test yatağı bilinçli korundu.
-3. **İşlenenler→"Önizle" GEMİDE — `df11ac1` (canlı kanıtlı):** satıra 👁 buton →
-   devre_detay?id=X&taslak=1 YENİ SEKMEDE (bilinçli: drenaj client-loop'u ölmesin, MK-153.1).
-   Bant+kilit+toast canlı ✓. W-2.11 köprüsü kapandı.
-4. **YAPISAL BULGU — MK-156.1:** taslak önizleme BOŞ GÖVDE gösterir: devre_detay spooller'dan
-   render eder, taslaklar spooller'a YAZMAZ (MK-127.4, spooller=0 kanıtlı). B-4 vaadi delik —
-   önizleme taslak VERİ katmanını (kabuk grupla + kuyruk önerileri) okumalı = W-2.14 (157+ tasarım).
-5. **NB1124 (hhbjşlö) KABUK TEŞHİSİ MÜHÜRLENDİ — MK-156.3:** kabuk SAĞLAM (Excel 66 satır →
-   22 spool, temiz anahtarlar: 10Ax6A|S01...). Kırık taraf PDF KİMLİĞİ: 44 PDF'in 37'si
-   pipeline_no NULL. Anatomi: 22 dosya format NULL = TABLOSUZ ÇİZİM (W-2.4 vakası, L3'e gidip
-   manuel_onay'ı şişirmiş); e1fb879d ailesinde 20/22 dosya `10Ax6A 1(2).S01.1.pdf` kalıbı kimlik
-   çıkarımı dışı (yalnız `12Ax12D.S01.1.pdf` kalıbı çözülmüş, 2 dosya). Satır değil KİMLİK sorunu.
-6. **İZO-KANIT-SETİ v4 EKİ HAZIR** (B1124 = 5. gemi, 6 PDF): yeni sınıflar Flanş Dablin ⚠ +
-   Tee metrik ? (matriste hiç yoktu, tip teyidi gerek) + kaynak "- Saha" varyantı; Lama 2.,
-   Detay A 3., çift-hane et 2., 4-segment 2. kanıt; Continue+sayfa eki ("M110-722-509 1(2)");
-   "gemi başına tek adlandırma" varsayımı ÖLDÜ (B1124'te zone'lu + zone'suz yan yana).
-7. **31-PDF yol haritası eleştirisi:** belge yalnız SATIR kapsaması; üç katman olmalı —
-   KİMLİK + SATIR + BELGE SINIFI (dışlama). Madde 0 (pipeline kimlik çıkarımı) iş paketine eklendi.
+1. **FORMAT TUR 1 — NB1124 TAM KAPANIŞ (44/44):** Teşhis iki kez kanıtla devrildi:
+   (a) dosyaAdiParse regex'i 9/9 kalıbı (zone'suz `<NPS>x<NPS>` + segment dahil) ZATEN tutuyordu —
+   Madde 0 regex genişletmesi bu aile için gereksizdi; (b) kabukta_yok ×22 YAPISALDI: hhbjşlö
+   TASLAK devreydi, eslestir() spooller'dan okur, taslak spooller'a yazmaz (MK-157.1; MK-156.1'in
+   eşleştirme ikizi); (c) 156'nın "22 tablosuz çizim / W-2.4 vakası" teşhisi yanlıştı — bunlar
+   M+İ çiftinin MONTAJ kanadıydı (MK-157.3). 156'nın "12Ax12D çözülmüş" okuması da kuyruk durumu
+   ile eşleşme durumunun karışmasıymış (oneri_hazir ≠ eslesti).
+2. **eslestirme-backfill DİRİLDİ — `fix(157)` commit:** 140'tan beri production'da ölüymüş:
+   modül-seviyesi `createRequire` zinciri → Vercel runtime require(ESM) desteklemiyor →
+   ERR_REQUIRE_ESM, FUNCTION_INVOCATION_FAILED (izometri dalı dahil). Lokal Node 20.19+/22
+   require(esm) desteklediği için lokalde görünmüyordu; repro node@20.11 ile birebir alındı.
+   Fix: CJS zinciri (ares-asme/ares-olcu/malzeme-kutuphane-eslesme) lazy `import()`'a taşındı,
+   yalnız tip=malzeme dalında yüklenir (üçü de UMD-guard'lı → globalThis dolar). 3 lokal test
+   yeşil (20.11 yükleme + globalThis smoke + 22 regresyon). **129-130 "terfi sonrası izometri
+   bağlanmıyor" borcu KAPANDI** (kökü buydu).
+3. **Kanıt zinciri (canlı):** hhbjşlö terfi (22 spool + otomatik backfill — ilk seferde HTML 500
+   ile düştü, log ERR_REQUIRE_ESM gösterdi) → fix deploy → kuru dry-run 22 eşleşebilir → gerçek
+   koşu → **kabukta_yok 22→0, eslesti 22, cizim_durumu 22×kismi**.
+4. **MONTAJ ÖĞRETİMİ (zone'suz aile):** 39a2c81b fingerprint'ine dosya_adi_regex eklendi (DB,
+   dry-run→COMMIT; ilk seferde COMMIT atlandı, `fingerprint ? 'dosya_adi_regex'` teyidiyle
+   yakalandı). Regex 36/36 lokal ad testi: tüm montaj kalıpları tutar (zone'suz, M110/AT,
+   alt-çizgili, segmentli), imalat/diğer tutmaz — `.S01` segmenti `[._]\d+` kuralına uymadığı
+   için doğal guard. Skor matrisi: montaj dosyada montaj 6-7 vs imalat 1; imalat dosyada imalat
+   3+ vs montaj ≤2. 22 iş reset → global drenaj → **22/22 montaj L2 ($0, _l2_meta=object),
+   montaj_var=true, montaj eşleşmesi 22/22, 22 sahte manuel_onay temizlendi.** Cache güvenliydi:
+   anahtar (sha, format_id); format NULL'ken cache sorgulanmıyor → eski çöp dönemez.
+5. **Onay Kuyruğu read-before-write (158 önkoşulu):** excel oneri_hazir tüketicisi VAR
+   (onayModalAc→onayAktar→ARES_KABUK.aktar→tamamlandi); izometri oneri_hazir tüketicisi BİLİNÇLİ
+   YOK (109/A — veri eslestir/bindir ile otomatik; "toplu onay" = durum kapatma geçişi olacak);
+   izometri manuel_onay tüketicisi YOK = DELİK (buton yalnız excel dalında, uyarılar hiçbir UI'da
+   açılmıyor) — 158 sekmesinin asıl yeni işi.
+6. **parse_durumu KARARI:** ölü/yedek alan. Yazan: wizard INSERT + aktar (yalnız Excel
+   dokümanları); izometri dokümanları hep 'bekliyor'. Okuyan devre_detay ama 102'den beri
+   güvenmiyor (kuyrukMap = truth). DOKUNULMADI; KARARLAR notu: kuyruk=truth, parse_durumu=yedek.
 
-## Bulgular (156)
-- devre_dokumanlari.parse_durumu 'bekliyor' kalıyor (kuyruk işleri bitmiş olsa da, hhbjşlö 44 PDF
-  + bom excel) — senkron borcu mu bilinçli mi, 157 teyit.
-- B1124 PDF'leri Downloads "(1)" ekiyle geldi — sisteme ORİJİNAL adla yüklenmeli (MK-52.1).
-- ✖ "sessiz kayıp" iddiası belge analizinden; motor tetiksiz satırı ham_satir'a düşürüyor mu
-  tek canlı örnekle teyit edilmeli (ediyorsa ✖→⚠, öncelik değişir).
+## Bulgular (157)
+- İşlenenler rozeti + boş-durum metni kuyruk gerçeğini göstermiyor: rozet taslak devre sayısı
+  (0), kuyrukta 22 bekliyor vardı; "Bekleyenleri işle" GLOBAL çalışır (filtre:{}) — UI küçük işi 158.
+- Vercel toast'ı backfill HTML hatasını "Unexpected token A... is not valid JSON" diye gösterdi —
+  best-effort tasarımı doğru çalıştı (terfi geri alınmadı), hata mesajı yüzeye çıktı.
 
-## Commit'ler (156)
-| Hash | Mesaj |
+## Commit'ler (157)
+| Commit | Mesaj |
 |------|-------|
-| `df11ac1` | feat(156): Islenenler satirina Onizle butonu — ?taslak=1 koprusu yeni sekmede (W-2.11 acik ucu kapandi) |
-DB (veri UPDATE, migration YOK): 671 kuyruk işi → iptal (test temizliği). CI yeşil. 12/12 ✓.
-izometri-oku DOKUNULMADI ✓. Repo raw erişimiyle kod okuma yapıldı (yeni yöntem, işe yaradı).
+| kod | `fix(157): eslestirme-backfill ERR_REQUIRE_ESM — CJS zinciri modul seviyesinden lazy import()'a tasindi, izometri dali malzeme bagimliligindan bagimsizlasti (140'tan beri olu endpoint)` |
+| doc | kapanış dosyaları (bu commit) |
+DB (veri UPDATE, migration YOK): 39a2c81b fingerprint dosya_adi_regex + hhbjşlö 22 iş reset.
+CI yeşil beklenir. 12/12 ✓. izometri-oku DOKUNULMADI ✓. Repo raw + lokal node repro yöntemi işledi.
 
 ## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-156.1:** Taslak önizleme kipi (?taslak=1) spooller'dan render eder; taslak spooller'a
-  yazmaz (MK-127.4) → her taslak önizlemesi yapısal boş gövde. B-4, önizleme taslak veri
-  katmanını okuyana dek (W-2.14) kapanmaz.
-- **MK-156.2:** Onay yükü AKTİF devrelerde yaşar — onay yüzü İşlenenler'e (taslak yüzü) değil
-  devre_detay'a kurulur. Tasarım yerleşimi sezgiyle değil yük dağılımı sorgusuyla seçilir.
-- **MK-156.3:** Format kapsaması ÜÇ katman: KİMLİK çıkarımı + SATIR tipleri + BELGE SINIFI
-  (dışlama). Üçü ayrı ayrı kırılabilir; kabukta_yok teşhisinde sıra: kabuk anahtarları → PDF
-  anahtarları → format/kimlik kıyası.
+- **MK-157.1:** Taslak devrede kabukta_yok YAPISALDIR (eslestir spooller'dan okur; taslak
+  spooller'a yazmaz, MK-127.4). kabukta_yok teşhisinde İLK kontrol = devre durumu.
+- **MK-157.2:** Vercel runtime require(ESM) desteklemez; lokal Node 20.19+/22 destekler → lokal
+  modül yükleme Vercel'i temsil ETMEZ. Repro standardı: `npm exec node@20.11`. Serverless'ta
+  UMD/CJS dosyalar dinamik import() ile, mümkünse yalnız ilgili dalda lazy yüklenir.
+- **MK-157.3:** `.SXX`'siz Cadmatic PDF = montaj adayı (M+İ çifti), tablosuz çizim varsayma.
+  Montaj fingerprint'i içerik sinyaliyle yetinemez (tek-segmentlide "Continue:" yok, malzeme
+  tablosu yapısal olarak yok) → dosya_adi_regex şart. W-2.4'ün "ertelenemez" gerekçesi düştü.
+- **MK-157.4 (süreç):** Kuyruk DURUMU ≠ eşleşme DURUMU (oneri_hazir olmak eslesti demek değil) —
+  156'daki "2 dosya çözülmüş" yanılgısının kökü. Teşhis sorgularında iki kolon ayrı okunur.
 
-## 157 ANA İŞ
-1) Format Tur 1 — NB1124 kapanışı: kimlik çıkarımı read-before-write (NEREDE yaşıyor?) →
-   Madde 0 kalıpları + flange_en + W-2.4 dışlama kararı + Tee grep teyidi → kanıt hedefi
-   kabukta_yok 22→0 (saha hazır: hhbjşlö).
-2) Onay Kuyruğu sekmesi: "onayla" tüketicisi read-before-write → implementasyon (157-158).
-3) W-2.14 taslak önizleme veri katmanı (tasarım).
-4) Küçükler: parse_durumu senkron teyidi · IZO-KANIT-SETI v4 yapıştır (+ad sadeleştirme kararı) ·
-   6 B1124 PDF'ini orijinal adlarla yükle · Y200 ST37 + W-3.9 (sıra gelirse).
+## 158 ANA İŞ
+1) Onay Kuyruğu sekmesi implementasyonu (devre_detay): manuel_onay uyarı listesi
+   (parse_sonuc.spoollar[].uyarilar, kod+mesaj+agirlik) + tekil kapatma · oneri_hazir toplu
+   kapatma geçişi (→tamamlandi, veri işlemi YOK) · atanmamis "eşleştir" · devreler.html rozet.
+   Havuz sayısını açılışta SQL ile yeniden say (157'de 22 manuel→öneri kaydı).
+   Test yatağı: g200 + 265-overboard (hhbjşlö yeşil-yol örneği).
+2) W-2.14 tasarımı (taslak önizleme veri katmanı — MK-127.4 bozulmaz).
+3) Küçükler: İşlenenler rozet/boş-durum düzeltmesi · 6 B1124 PDF orijinal adla yükle (MK-52.1) ·
+   IZO-KANIT-SETI v4 yapıştır + ad kararı · ✖ sessiz-kayıp doğrulaması · Y200 ST37 + W-3.9.

@@ -231,3 +231,25 @@ zone'lu dosyaları (AT100/M110, B1124) aynı geminin standart adlandırması; zo
 ailesiyle (4Ax2A, 10Ax6A) AYNI gemide yan yana yaşıyor. Madde 0 (kimlik çıkarımı) her iki kalıbı
 da tek gemi içinde kapsamak zorunda — "gemi başına tek adlandırma" varsayımı v4 ile resmen öldü.
 
+### 8g. ⚠ 157 DÜZELTMESİ — 8f'nin teşhisi KANITLA DEVRİLDİ (MK-157.1/3/4)
+
+8f'deki "kırık nokta KİMLİK çıkarımı, `10Ax6A 1(2).S01.1.pdf` kalıbı kapsam dışı" cümlesi
+**yanlıştı**. 157 kanıt zinciri (node regex testi + SQL anatomi + canlı tur):
+
+1. **dosyaAdiParse kalıbı ZATEN tutuyordu** (9/9: zone'suz, segmentli, 4-segment, zone-harf).
+   Pipeline 22/22 doğru çıkmıştı; sebep `kabukta_yok` idi.
+2. **kabukta_yok YAPISALDI** (MK-157.1): hhbjşlö TASLAK devreydi — eslestir() spooller'dan okur,
+   taslak spooller'a yazmaz (MK-127.4). Terfi + backfill sonrası 22/22 eşleşti.
+3. **Backfill 140'tan beri production'da ölüydü** (ERR_REQUIRE_ESM, MK-157.2) — "terfi sonrası
+   bağlanmıyor" algısının gerçek kökü. fix(157) ile dirildi.
+4. **`.SXX`'siz 22 dosya "tablosuz çizim" değil M+İ çiftinin MONTAJ kanadıydı** (MK-157.3).
+   Montaj fingerprint'inde dosya_adi_regex yoktu; "Continue:" tek-segmentlide ateşlenmez, malzeme
+   tablosu yapısal yok → producer 1 < eşik 2 → NULL → genel L3 çöpü. 39a2c81b'ye dosya_adi_regex
+   öğretildi (36/36 ad testi) → 22/22 montaj L2/$0, eşleşme 22/22.
+5. **MK-157.4:** 8f dönemindeki "yalnız 12Ax12D çözülmüş" okuması kuyruk durumu (oneri_hazir) ile
+   eşleşme durumunun (eslesti) karışmasıydı — ikisi ayrı kolondur.
+
+SONUÇ: NB1124 44/44 kapandı. Madde 0 "kimlik çıkarımı genişletmesi" bu set için GEREKSİZDİ;
+üç-katman modeli (MK-156.3) geçerli kalır ama bu vakanın kırığı katmanlarda değil, (a) taslak
+yaşam döngüsünde, (b) ölü backfill'de, (c) montaj fingerprint eksiğindeydi. Teşhis sırasına
+EK adım: kabuk/PDF anahtarlarından ÖNCE devre durumu (taslak/aktif) kontrol edilir.

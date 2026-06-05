@@ -305,3 +305,34 @@ kimlik kırılımı. Üç sorgu, kök neden; parser suçlaması yok.
   Manşon · Flange EN artığı · Tee?).
 - **Tur 3 (159):** ⚠ ham düşenler toplu (kesirli NPS · Detay A/C dalları · ağırlıksız kaynak
   +"- Saha" · ST\d{2}(?:\.\d)? · Flanş Dablin dalı) — fikstür üstünde.
+
+## OTURUM 157 — FORMAT TUR 1: NB1124 TAM KAPANIŞ (44/44, regex patch'i YAZILMADAN)
+
+### Teşhis iki kez devrildi (kanıtla)
+- dosyaAdiParse (kuyruk-isle-izometri) zone'suz `<NPS>x<NPS>` + segment dahil 9/9 kalıbı ZATEN
+  tutuyordu — 156'nın Madde 0 regex genişletmesi gereksizdi.
+- kabukta_yok ×22 yapısaldı: taslak devrede spooller boş (MK-157.1).
+- `.SXX`'siz 22 dosya montaj kanadıydı, tablosuz çizim değil (MK-157.3).
+
+### Asıl kırık: eslestirme-backfill 140'tan beri ÖLÜ
+ERR_REQUIRE_ESM — Vercel runtime require(ESM) desteklemiyor, modül-seviyesi createRequire zinciri
+tüm endpoint'i çökertiyordu (izometri dalı dahil). Lokal Node 20.19+/22 maskeler; repro standardı
+node@20.11 (MK-157.2). fix(157): CJS zinciri lazy import(), yalnız tip=malzeme dalında.
+129-130 "terfi sonrası izometri bağlanmıyor" borcu KAPANDI.
+
+### Montaj öğretimi (39a2c81b — DB fingerprint)
+Anatomi: montaj formatında dosya_adi_regex YOK; "Continue:" tek-segmentlide ateşlenmez; malzeme
+tablosu yapısal yok → producer 1 < eşik 2 → NULL → genel L3 (1 halüsinasyon spool + manuel_onay).
+Öğretim: dosya_adi_regex eklendi —
+`^(?:[A-Z]{1,2}\d{2,3}[A-Z]?(?:-[\dA-Z]+)+|\d+[A-Z]x\d+[A-Z])(?:\s+\d+\(\d+\))?[._]\d+\.pdf$`
+36/36 ad testi (montaj ✓ / imalat ✗ — `.S01` doğal guard / diğer ✗). Skor iki yönde güvenli.
+Cache düşürme GEREKMEDİ: anahtar (sha, format_id); format NULL'ken cache sorgulanmıyor.
+
+### Kanıt (canlı)
+Terfi 22 spool → backfill kabukta_yok 22→0, eslesti 22, kismi 22 · montaj reset+drenaj →
+22/22 format=montaj, montaj_var=true, eşleşme 22/22, **_l2_meta 22/22 ($0)**, sahte manuel_onay
+temizlendi.
+
+### 158'e
+Onay Kuyruğu read-before-write cevaplandı (excel tüketici VAR; izometri oneri_hazir bilinçli yok;
+izometri manuel_onay DELİK) → saf implementasyon. Format hattı sıradaki: Y200 ST37 + W-3.9.

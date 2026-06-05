@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 156)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 157)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -52,7 +52,7 @@
 - [ ] W-2.1 Adım 1: tersane ve proje AYRI seçim alanları (aynı kutuda değil).
 - [ ] W-2.2 "Mevcut devre / yeni devre" ayrımı kalkar. Mevcut devreye ekleme = devre detay "Spool ekle" → wizard'ın devre kipi (?devre_id=); onay sonrası devre detaya dönüş.
 - [ ] W-2.3 Klasör ağacı: sürükle-bırakta Windows gezgini görünümü (mockup v5, MK-97.6). Klasör/dosya bazında dahil/hariç işareti.
-- [ ] W-2.4 "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler VE tablosuz çizimler (.SXX'siz) işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 156 KANITI: NB1124'te 22 tablosuz çizim L3'e gitti, manuel_onay'ı şişirdi, para yaktı — ARTIK ERTELENEMEZ, Tur 1 kapsamında (157).
+- [ ] W-2.4 "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler vb. işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 157 REVİZYON (MK-157.3): 156'nın "22 tablosuz çizim" kanıtı DÜŞTÜ — o dosyalar M+İ çiftinin MONTAJ kanadıydı, montaj öğretimiyle 22/22 L2/$0 çözüldü. Madde örneksiz tasarım maddesi olarak açık kalır; "ertelenemez" değil.
 - [ ] W-2.5 İlerleme göstergesi ikiye ayrılır: (a) dosyaların sisteme yüklenmesi, (b) arka plan işleme (kuyruk). Tek çubuk ikisini karıştırmaz.
 
 ### Onay ve terfi (durum makinesi)
@@ -78,8 +78,11 @@
       (yalnız devre kapsamı, kritik uyarılı satır girmez) · manuel_onay amber/TEKİL (içerik
       parse_sonuc.spoollar[].uyarilar: kod+mesaj+agirlik — hazır JSONB, yeni veri üretimi YOK) ·
       atanmamis ayrı alt grup ("eşleştir"). devreler.html'e bekleyen-onay rozeti. ÖNKOŞUL
-      read-before-write (157): oneri_hazir "onayla" tüketicisi kodda var mı? Test yatağı hazır:
-      g200 + 265-overboard + hhbjşlö (327 iş).
+      CEVAPLANDI (157): excel oneri_hazir tüketicisi VAR (onayModalAc→onayAktar→aktar);
+      izometri oneri_hazir BİLİNÇLİ YOK (109/A, veri otomatik uygulanır → "toplu onay"=durum
+      kapatma geçişi); izometri manuel_onay YOK=DELİK (sekmenin asıl işi). 158 saf implementasyon.
+      Test yatağı: g200 + 265-overboard (hhbjşlö 157'de çözüldü, yeşil-yol örneği; havuz sayısı
+      158 açılışında SQL ile yeniden sayılır).
 
 ## FAZ 3 — FORMAT TANIMA ÇİFT TARAFLI + SON KULLANICI KOLAYLIĞI
 
@@ -95,17 +98,19 @@
 - [ ] W-3.7 Windows render sorunu: pilot operatörleri Windows'ta — format_tanit PDF görüntüsü Windows'ta düzgün olmadan "son kullanıcı kolay" hedefi sağlanamaz.
 - [ ] W-3.8 Band-B glyph tablosu (~20 karakter): NB1137 spool ailesi L3'ten L2'ye iner ($0).
 - [ ] W-3.9 (153 bulgu) format_tanit TURETILEN_ALANLAR panzehiri: cap_mm/et_mm/dn için kayıtlı (eski/çöp) regex olsa bile _alanlariKos KOŞMAZ, patch YAZMAZ, çip 🧮 türetilmişe zorlanır. (Çöp regex'in ekrana kırmızı, üretime 2358 bastığı kanıtlandı; veri onarıldı ama kod kapısı açık.)
-- [ ] W-3.10 (156, MK-156.3) Pipeline KİMLİK çıkarımı ("Madde 0"): kapsama = KİMLİK + SATIR +
-      BELGE SINIFI üç katman. Kalıplar: zone'suz <NPS>x<NPS> ("10Ax6A 1(2).S01.1.pdf") · " 1(2)"
-      sayfa segmenti · 4-segment (M110-262-803-537, 2 kanıt) · zone-harf eki (355C/332A) ·
-      Continue+sayfa eki · DOSYA ADI OTORİTE (başlık kesilebilir, v3). 156 kanıtı: NB1124'te
-      20/22 spool PDF'i kimlik çıkarımı dışı → kabukta_yok. ÖNKOŞUL: çıkarımın adresi
-      read-before-write (MK-155.1 satır içindi — bu FARKLI mekanizma olabilir). Aynı gemide
-      zone'lu+zone'suz yan yana yaşar (v4 — "gemi başına tek adlandırma" varsayımı öldü).
+- [x] W-3.10 KAPANDI (157, kanıtla): kimlik çıkarımı adresi = kuyruk-isle-izometri.dosyaAdiParse;
+      mevcut regex listelenen TÜM kalıpları (zone'suz <NPS>x<NPS>, segment, 4-segment, zone-harf)
+      ZATEN tutuyordu (9/9 node testi). 156'nın "20/22 kimlik dışı" teşhisi yanlıştı — kabukta_yok
+      taslak-yapısaldı (MK-157.1) + .SXX'siz dosyalar montajdı (MK-157.3, 39a2c81b'ye
+      dosya_adi_regex öğretildi, 36/36 test, 22/22 L2/$0). NB1124 44/44 çözüldü. Kalan: yeni
+      gemilerde kanıt sürdürme (montaj fingerprint'i artık zone'suz adları da tanır).
 
 ## FAZ 4 — VERİ SAĞLIĞI VE PROPAGASYON
 
-- [ ] W-4.1 Propagasyon: eslestirme-backfill ile eski L3 / yanlış-format aile yeniden parse (alias deseni: dok_id:devre_dokuman_id).
+- [~] W-4.1 Propagasyon: eslestirme-backfill 157'de DİRİLDİ — 140'tan beri production'da ölüydü
+      (ERR_REQUIRE_ESM, MK-157.2; fix: CJS zinciri lazy import). Terfi-sonrası otomatik backfill
+      artık çalışıyor (hhbjşlö 22/22 kanıt; 129-130 borcu kapandı). Kalan: eski L3 / yanlış-format
+      aile yeniden parse turu (alias deseni: dok_id:devre_dokuman_id).
 - [ ] W-4.2 pipeline_no E120- prefix normalizasyonu (wizard eşleştirme/mutabakat fazında; 289 montaj kaydını yeniden parse ETMEK çözüm değil).
 - [ ] W-4.3 Dirsek 323.9 ağırlık normalizasyonu (PDF toplam ↔ Excel birim; l2-parser tarafı, K2 bug'ı değil).
 - [ ] W-4.4 bbox → PDF-point normalize (konum_ipucu).
