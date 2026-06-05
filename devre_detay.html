@@ -971,9 +971,10 @@ function _tkBanner(){
   document.body.classList.add('taslak-kip');
   var b=document.createElement('div');
   b.id='taslakBant';
-  b.style.cssText='position:sticky;top:0;z-index:999;background:linear-gradient(90deg,rgba(217,119,6,.95),rgba(180,83,9,.95));color:#fff;text-align:center;font-size:13px;font-weight:700;letter-spacing:.5px;padding:7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);';
+  b.style.cssText='position:sticky;top:52px;z-index:140;background:linear-gradient(90deg,rgba(217,119,6,.95),rgba(180,83,9,.95));color:#fff;text-align:center;font-size:13px;font-weight:700;letter-spacing:.5px;padding:7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);';
   b.textContent='⚠ '+tv('dv_taslak_banner','ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli');
-  document.body.insertBefore(b,document.body.firstChild);
+  var _mc=document.querySelector('.main-content')||document.body;
+  _mc.insertBefore(b,_mc.firstChild);   // 158: body yerine main-content — sabit topbar/menü örtülmez
   var h=document.querySelector('h1,.page-title,#devreBaslik');
   if(h){
     var r=document.createElement('span');
@@ -1434,12 +1435,34 @@ async function _taslakSpoolYukle(devreId){
     }
     if(!satirlar.length){SPOOLS=[];return;}
     var model=ARES_KABUK.grupla({satirlar:satirlar});
+    // Spool-seviyesi operatör düzeltmeleri (143/G2a, kalem_idx=-1) — terfi (ARES_KABUK.aktar) ile AYNI semantik:
+    // düzeltme varsa başlığı ezer; kalite = düzeltme yoksa anaMalzeme; malzeme = malKod(ham). Taslak = terfi (MK-139.1 ruhu).
+    var dz={};
+    try{
+      var tid=(typeof ARES!=='undefined'&&ARES.tenantId)?ARES.tenantId():null;
+      if(tid){
+        var rd=await supa.from('taslak_duzeltmeleri')
+          .select('pipeline_no,spool_no,alan,deger')
+          .eq('tenant_id',tid).eq('devre_id',devreId).eq('kalem_idx',-1);
+        ((rd&&rd.data)||[]).forEach(function(d){
+          var k=(d.pipeline_no||'')+'|'+(d.spool_no||'');
+          (dz[k]=dz[k]||{})[d.alan]=d.deger;
+        });
+      }
+    }catch(e){/* düzeltme overlay'i kozmetik — okunamadıysa ham öneri gösterilir */}
+    var malKod=function(h){return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeKod)?(ARES_NORM.malzemeKod(h)||h):h;};
+    var sayi=function(v,fb){if(v==null||v==='')return fb;var n=Number(String(v).replace(',','.'));return isFinite(n)?n:fb;};
     SPOOLS=(model.spoollar||[]).map(function(sp,i){
+      var d=dz[(sp.pipeline||'')+'|'+sp.spoolNo]||null;
+      var v=function(a,fb){return (d&&d[a]!=null&&d[a]!=='')?d[a]:fb;};
+      var malHam=v('malzeme',sp.anaMalzeme);
       return _spoolMap({
         id:'taslak-'+i,
         pipeline_no:sp.pipeline, spool_no:sp.spoolNo, rev:sp.rev,
-        dis_cap_mm:sp.cap, et_kalinligi_mm:sp.et,
-        agirlik_kg:sp.toplamKg, malzeme:sp.anaMalzeme, yuzey:sp.yuzeyHam,
+        dis_cap_mm:sayi(v('cap',null),sp.cap), et_kalinligi_mm:sayi(v('et',null),sp.et),
+        agirlik_kg:sayi(v('agirlik',null),sp.toplamKg),
+        malzeme:malKod(malHam), kalite:v('kalite',sp.anaMalzeme||null),
+        yuzey:v('yuzey',sp.yuzeyHam), alistirma:v('alistirma',null),
         aktif_basamak:'', kesim_kalemleri:[], bukum_kalemleri:[], markalama_kalemleri:[]
       },i);
     });
