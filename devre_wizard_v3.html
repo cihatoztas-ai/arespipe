@@ -124,14 +124,33 @@
     .pop{ background:var(--sur); border:1px solid var(--bor); border-radius:14px; width:560px; max-width:100%; max-height:88vh; overflow:auto; }
     .dp-head{ display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--bor); position:sticky; top:0; background:var(--sur); } .dp-head h3{ font-family:'Barlow Condensed',sans-serif; font-size:20px; margin:0; } .dp-x{ margin-left:auto; background:none; border:none; color:var(--txd); font-size:22px; cursor:pointer; }
     .dp-body{ padding:16px 18px; } .dp-sec{ font-size:12px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.5px; margin:18px 0 9px; } .dp-sec:first-child{ margin-top:0; }
-    /* 160 (MK-160.3): Düzelt modalı yan PDF paneli — sol form, sağ tarayıcı yerleşik PDF (embed) */
-    .pop.dp-genis{ width:min(1180px,96vw); height:88vh; max-height:88vh; overflow:hidden; display:flex; flex-direction:column; }
+    /* 160 (MK-160.3): Düzelt/İncele modalı yan PDF paneli — sol form, sağ pdf.js SALT görüntüleyici */
+    .pop.dp-genis{ width:min(1700px,97vw); height:93vh; max-height:93vh; overflow:hidden; display:flex; flex-direction:column; }
     .dp-genis .dp-body{ flex:1; min-height:0; padding:0; }
-    .dp-split{ display:grid; grid-template-columns:500px 1fr; height:100%; }
+    .dp-split{ display:grid; grid-template-columns:460px 1fr; height:100%; }
     .dp-form{ overflow-y:auto; padding:16px 18px; border-right:1px solid var(--bor); min-width:0; }
-    .dp-pdf{ background:#3a3f47; min-width:0; }
-    .dp-pdf embed,.dp-pdf iframe{ width:100%; height:100%; border:0; display:block; }
+    .dp-pdf{ background:#3a3f47; min-width:0; display:flex; flex-direction:column; }
     .dp-pdf-bos{ display:flex; align-items:center; justify-content:center; height:100%; color:#cfd6df; font-size:13px; padding:20px; text-align:center; }
+    .dpv-tabs{ display:flex; gap:6px; padding:8px 10px 0; flex-wrap:wrap; }
+    .dpv-tab{ font-size:11.5px; padding:4px 10px; border-radius:8px 8px 0 0; cursor:pointer; background:rgba(255,255,255,.08); color:#cfd6df; border:1px solid rgba(255,255,255,.12); border-bottom:none; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dpv-tab.aktif{ background:#fff; color:#222; font-weight:700; }
+    .dpv-bar{ display:flex; align-items:center; gap:4px; padding:6px 10px; background:rgba(0,0,0,.25); }
+    .dpv-bar button{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); color:#eef2f7; border-radius:6px; padding:3px 10px; font-size:13px; cursor:pointer; }
+    .dpv-bar button:hover{ background:rgba(255,255,255,.22); }
+    .dpv-bar .dpv-info{ color:#cfd6df; font-size:12px; margin:0 6px; font-family:'JetBrains Mono',monospace; }
+    .dpv-wrap{ flex:1; overflow:auto; cursor:grab; position:relative; }
+    .dpv-wrap.pan{ cursor:grabbing; }
+    .dpv-wrap canvas{ display:block; margin:8px auto; box-shadow:0 2px 14px rgba(0,0,0,.45); background:#fff; }
+    /* 160: kalem inline düzeltme paneli (modal değişmez, PDF açık kalır) */
+    .kalem-inline{ border:1px dashed var(--bor); border-radius:8px; padding:8px 10px; margin:2px 0 8px; background:rgba(45,142,255,.04); }
+    /* 160: PDF'ten okunan ham veri dökümü */
+    .ham-row{ display:grid; grid-template-columns:120px 1fr; gap:8px; font-size:12.5px; margin-bottom:4px; align-items:start; }
+    .ham-row label{ color:var(--txd); font-family:'JetBrains Mono',monospace; font-size:11px; padding-top:1px; word-break:break-all; }
+    .ham-row span{ color:var(--tx); word-break:break-word; white-space:pre-wrap; }
+    .ham-tablo{ overflow-x:auto; margin:2px 0 8px; }
+    .ham-tablo table{ border-collapse:collapse; font-size:11px; font-family:'JetBrains Mono',monospace; }
+    .ham-tablo th,.ham-tablo td{ border:1px solid var(--bor); padding:3px 6px; text-align:left; white-space:nowrap; }
+    .ham-tablo th{ background:rgba(127,127,127,.1); color:var(--txd); }
     @media (max-width:980px){ .dp-split{ grid-template-columns:1fr; } .dp-pdf{ display:none; }
       .pop.dp-genis{ width:560px; height:auto; max-height:88vh; overflow:auto; display:block; }
       .dp-genis .dp-body{ padding:16px 18px; } }
@@ -1069,7 +1088,8 @@ function malzemeKiyasBlok(mk) {
 function islemCell(i, durum) {
   if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>';
   if (durum === 'eksik') return '<button class="btn-sm" style="color:var(--txm);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Tamamla</button>';
-  return '—';
+  // 160 (Cihat): modal her satırda açılır — sağlamlarda yeşil "İncele" (aynı ekran, önizleme amaçlı)
+  return '<button class="btn-sm" style="color:var(--gr);" onclick="event.stopPropagation();duzeltAc(' + i + ')">İncele</button>';
 }
 // 160 KARARI (Cihat): zayıf satır akışı format_tanit'e GİTMEZ — değer işi Düzelt modalında, PDF yan panelde
 //   (MK-160.3). Format öğretimi (kural) batch sayfası "Tanıt" + nav girişiyle yaşar. spool.izometri.is_id
@@ -1348,10 +1368,36 @@ var DUZELT_ALANLAR = {
 var _duzeltSpoolIdx = null;     // aktif popup'taki spool indexi (kaydet için)
 var _duzeltSpoolSKey = null;    // 159: aktif spool'un kabuk anahtarı (pipeline|spoolNo) — kalem köprüsü
 
-// 159: spool modalındaki kalem ✏️ → 146/B kalem modalı (geri-dönüş indeksiyle)
+// 160 (Cihat): kalem ✏️ ayrı modala GİTMEZ — satırın altında inline panel açılır, PDF açık kalır.
+//   Aynı kalemKaydet/kalemSatirAc motoru kullanılır (klk-/kin- id'leri inline'da doğar; ctx aynı).
+//   Malzeme sekmesindeki köprüsüz kalemDuzeltAc yolu AYNEN duruyor (146/B).
 function _spoolKalemAc(idx) {
-  if (_duzeltSpoolSKey == null) return;
-  kalemDuzeltAc(_duzeltSpoolSKey, idx, _duzeltSpoolIdx);
+  var ref = WIZ._spoolKalemRef; if (!ref || !ref.bom || !ref.bom[idx]) return;
+  var kap = document.getElementById('kal-inline-' + idx); if (!kap) return;
+  // açıksa kapat (toggle)
+  if (!kap.classList.contains('hide')) { kap.classList.add('hide'); kap.innerHTML = ''; return; }
+  // diğer açık panelleri kapat (tek ctx — kalemKaydet karışmasın)
+  document.querySelectorAll('.kalem-inline').forEach(function(el) { el.classList.add('hide'); el.innerHTML = ''; });
+  var b = ref.bom[idx];
+  _kalemDuzeltCtx = { sKey: ref.sKey, idx: idx, b: b, spoolNo: ref.spoolNo };
+  var KD = WIZ._kalemDuzelt || {};
+  var d = (KD[ref.sKey] && KD[ref.sKey][idx]) ? KD[ref.sKey][idx] : {};
+  var bb = '';
+  Object.keys(KALEM_ALANLAR).forEach(function(alan) {
+    var cfg = KALEM_ALANLAR[alan];
+    if (cfg.tipGate && !cfg.tipGate(b)) return;
+    var deger = (d[alan] != null) ? d[alan] : b[cfg.prop];
+    var gor = cfg.fmt ? cfg.fmt(deger) : deger;
+    var roz = (d[alan] != null) ? '<span class="src l3" title="operatör düzeltmesi">düzelt</span>' : '<span class="src xl">Excel</span>';
+    bb += '<div class="efld" id="kef-' + alan + '"><label>' + cfg.lbl + '</label>' +
+      '<div class="locked" id="klk-' + alan + '" style="padding:7px 9px;font-size:14px;">' +
+        '<span style="flex:1;">' + esc(gor != null && gor !== '' ? String(gor) : '—') + '</span>' +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="kalemSatirAc(\'' + alan + '\')" title="Düzelt">✏️</button>' +
+      '</div>' + roz + '</div>';
+  });
+  bb += '<div class="actions" style="margin-top:4px;"><button class="btn-sm" style="color:var(--txd);" onclick="_spoolKalemAc(' + idx + ')">▲ Kapat</button></div>';
+  kap.innerHTML = bb;
+  kap.classList.remove('hide');
 }
 
 // 159: spool modalından izometri PDF'ini aç — storage_yolu o an çekilir (dokAc-102 lazy deseni)
@@ -1370,29 +1416,189 @@ async function izoPdfAc() {
     else toast('Dosya açılamadı');
   } catch (e) { console.warn('[v3] izoPdfAc:', e); toast('Dosya açılamadı'); }
 }
-// ── 160 (MK-160.3): Düzelt modalı sağ PDF paneli. izoPdfAc ile AYNI çözüm zinciri (dokAc-102 lazy),
-//   signed URL 10 dk cache'lenir (modal re-render'ında yeniden imzalanmaz). embed = tarayıcı yerleşik
-//   görüntüleyici; pdf.js/çapa altyapısının kopyası DEĞİL (MK-159.2 korunur). ──
+// ── 160 (MK-160.3 rev, Cihat kararı): sağ panel = pdf.js SALT GÖRÜNTÜLEYİCİ — sayfa gez + zoom + drag-pan
+//   + izometri↔montaj sekmeleri. MK-159.2 İNCELTMESİ: yasak olan öğretim/çapa ALTYAPISININ kopyasıdır;
+//   salt görüntüleyici serbest. Vendor format_tanit ile AYNI (/vendor/pdfjs-1.10.100) — script lazy yüklenir.
+//   URL çözümü izoPdfAc ile aynı zincir (dokAc-102 lazy), 10 dk cache.
 var _duzeltPdfCache = {};   // dosya_adi → {url, ts}
-async function _duzeltPdfGoster(s) {
-  var kap = document.getElementById('dpPdf'); if (!kap) return;
-  var dosyaAdi = (s && s.izometri && s.izometri.dosya_adi) || '';
-  if (!dosyaAdi) return;   // placeholder zaten "izometri yok" diyor
+var DPV = { doc:null, page:1, pages:1, scale:null, dosyalar:[], aktif:0, _seq:0 };
+function _pdfjsHazirla(){ return new Promise(function(res, rej){
+  if (window.PDFJS || window.pdfjsLib) return res();
+  var sc = document.createElement('script'); sc.src = '/vendor/pdfjs-1.10.100/pdf.js';
+  sc.onload = function(){ res(); }; sc.onerror = function(){ rej(new Error('pdf.js yüklenemedi')); };
+  document.head.appendChild(sc);
+}); }
+function _pdfjsLib(){
+  var L = window.PDFJS || window.pdfjsLib;
   try {
-    var c = _duzeltPdfCache[dosyaAdi];
-    var url = (c && (Date.now() - c.ts) < 600000) ? c.url : null;
-    if (!url) {
-      var supa = ARES.supabase(), tid = ARES.tenantId();
-      var r = await supa.from('devre_dokumanlari').select('storage_yolu')
-        .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id).eq('dosya_adi', dosyaAdi).limit(1);
-      var yol = (r.data && r.data[0] && r.data[0].storage_yolu) || '';
-      if (!yol) { kap.innerHTML = '<div class="dp-pdf-bos">Dosya kaydı bulunamadı: ' + esc(dosyaAdi) + '</div>'; return; }
-      url = (ARES.dosyaUrlAl ? await ARES.dosyaUrlAl(yol, 'devre-belgeleri') : '') || '';
-      if (!url) { kap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; return; }
-      _duzeltPdfCache[dosyaAdi] = { url: url, ts: Date.now() };
+    if (window.PDFJS && !PDFJS.workerSrc) PDFJS.workerSrc = '/vendor/pdfjs-1.10.100/pdf.worker.js';
+    else if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs-1.10.100/pdf.worker.js';
+  } catch (e) {}
+  return L;
+}
+async function _duzeltPdfUrl(dosyaAdi) {
+  var c = _duzeltPdfCache[dosyaAdi];
+  if (c && (Date.now() - c.ts) < 600000) return c.url;
+  var supa = ARES.supabase(), tid = ARES.tenantId();
+  var r = await supa.from('devre_dokumanlari').select('storage_yolu')
+    .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id).eq('dosya_adi', dosyaAdi).limit(1);
+  var yol = (r.data && r.data[0] && r.data[0].storage_yolu) || '';
+  if (!yol) return null;
+  var url = (ARES.dosyaUrlAl ? await ARES.dosyaUrlAl(yol, 'devre-belgeleri') : '') || '';
+  if (url) _duzeltPdfCache[dosyaAdi] = { url: url, ts: Date.now() };
+  return url || null;
+}
+// spool'a bağlı PDF listesi: izometri + (kok==pipeline && bagli_spoollar∋spoolNo) montajlar
+function _spoolPdfListesi(s) {
+  var list = [];
+  if (s.izometri && s.izometri.dosya_adi) list.push({ ad: s.izometri.dosya_adi, tip: 'izometri' });
+  var pl = String(s.pipeline || '').trim().toUpperCase(), sn = String(s.spoolNo || '').trim().toUpperCase();
+  ((WIZ._inceleme && WIZ._inceleme.montajlar) || []).forEach(function(m) {
+    if (String(m.kok || '').trim().toUpperCase() !== pl) return;
+    var sps = (m.bagli_spoollar && m.bagli_spoollar.length ? m.bagli_spoollar : (m.tum_spoollar || []));
+    for (var i = 0; i < sps.length; i++) {
+      if (String(sps[i] || '').trim().toUpperCase() === sn) { list.push({ ad: m.dosya_adi, tip: 'montaj' }); return; }
     }
-    kap.innerHTML = '<embed src="' + url.replace(/"/g, '&quot;') + '#toolbar=1" type="application/pdf">';
-  } catch (e) { console.warn('[v3] duzeltPdf:', e); if (kap) kap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; }
+  });
+  return list;
+}
+function _duzeltPdfGoster(s) {
+  var kap = document.getElementById('dpPdf'); if (!kap) return;
+  DPV.dosyalar = _spoolPdfListesi(s); DPV.aktif = 0; DPV.doc = null;
+  if (!DPV.dosyalar.length) return;   // placeholder zaten "izometri yok" diyor
+  kap.innerHTML = '<div class="dpv-tabs" id="dpvTabs"></div>' +
+    '<div class="dpv-bar">' +
+      '<button onclick="dpvSayfa(-1)" title="Önceki sayfa">◀</button>' +
+      '<span class="dpv-info" id="dpvSayfaInfo">–</span>' +
+      '<button onclick="dpvSayfa(1)" title="Sonraki sayfa">▶</button>' +
+      '<span style="flex:1"></span>' +
+      '<button onclick="dpvZoom(0.8)" title="Uzaklaş">−</button>' +
+      '<button onclick="dpvZoom(1.25)" title="Yakınlaş">+</button>' +
+      '<button onclick="dpvSigdir()" title="Sığdır">⊡</button>' +
+      '<button onclick="dpvYeniSekme()" title="Yeni sekmede aç">↗</button>' +
+    '</div>' +
+    '<div class="dpv-wrap" id="dpvWrap"><div class="dp-pdf-bos">PDF yükleniyor…</div></div>';
+  _dpvTabsCiz();
+  _dpvPanBagla();
+  dpvSec(0);
+}
+function _dpvTabsCiz() {
+  var t = document.getElementById('dpvTabs'); if (!t) return;
+  t.innerHTML = DPV.dosyalar.map(function(d, i) {
+    var etk = (d.tip === 'montaj' ? '🗺 ' : '📐 ') + d.ad;
+    return '<div class="dpv-tab' + (i === DPV.aktif ? ' aktif' : '') + '" title="' + esc(d.ad) + '" onclick="dpvSec(' + i + ')">' + esc(etk) + '</div>';
+  }).join('');
+}
+async function dpvSec(i) {
+  if (!DPV.dosyalar[i]) return;
+  DPV.aktif = i; DPV.page = 1; DPV.scale = null; _dpvTabsCiz();
+  var wrap = document.getElementById('dpvWrap'); if (wrap) wrap.innerHTML = '<div class="dp-pdf-bos">PDF yükleniyor…</div>';
+  var seq = ++DPV._seq;   // hızlı sekme geçişinde yarışı kes
+  try {
+    var url = await _duzeltPdfUrl(DPV.dosyalar[i].ad);
+    if (seq !== DPV._seq) return;
+    if (!url) { if (wrap) wrap.innerHTML = '<div class="dp-pdf-bos">Dosya kaydı bulunamadı: ' + esc(DPV.dosyalar[i].ad) + '</div>'; return; }
+    await _pdfjsHazirla();
+    var lib = _pdfjsLib();
+    var task = lib.getDocument(url);
+    var doc = await (task.promise || task);
+    if (seq !== DPV._seq) return;
+    DPV.doc = doc; DPV.pages = doc.numPages || 1;
+    await _dpvCiz();
+  } catch (e) { console.warn('[v3] dpv:', e); if (wrap && seq === DPV._seq) wrap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; }
+}
+async function _dpvCiz() {
+  var wrap = document.getElementById('dpvWrap'); if (!wrap || !DPV.doc) return;
+  var pg = await DPV.doc.getPage(DPV.page);
+  var vp0 = pg.getViewport(1);
+  if (DPV.scale == null) {
+    DPV.scale = Math.max(0.1, Math.min((wrap.clientWidth - 20) / vp0.width, (wrap.clientHeight - 20) / vp0.height));
+  }
+  var dpr = window.devicePixelRatio || 1;
+  var vp = pg.getViewport(DPV.scale * dpr);
+  var cv = document.createElement('canvas');
+  cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+  cv.style.width = Math.floor(vp.width / dpr) + 'px'; cv.style.height = Math.floor(vp.height / dpr) + 'px';
+  var t = pg.render({ canvasContext: cv.getContext('2d'), viewport: vp });
+  await (t.promise || t);
+  wrap.innerHTML = ''; wrap.appendChild(cv);
+  var inf = document.getElementById('dpvSayfaInfo'); if (inf) inf.textContent = DPV.page + '/' + DPV.pages;
+}
+function dpvSayfa(d) { if (!DPV.doc) return; var y = DPV.page + d; if (y < 1 || y > DPV.pages) return; DPV.page = y; _dpvCiz(); }
+function dpvZoom(f) { if (!DPV.doc) return; DPV.scale = Math.min(8, Math.max(0.1, (DPV.scale || 1) * f)); _dpvCiz(); }
+function dpvSigdir() { if (!DPV.doc) return; DPV.scale = null; _dpvCiz(); }
+async function dpvYeniSekme() {
+  var d = DPV.dosyalar[DPV.aktif]; if (!d) return;
+  try { var url = await _duzeltPdfUrl(d.ad); if (url) window.open(url, '_blank', 'noopener'); else toast('Dosya açılamadı'); }
+  catch (e) { toast('Dosya açılamadı'); }
+}
+// drag-pan (scroll tabanlı) + wheel zoom — delegasyon dpPdf üstünde, dpvWrap her sekmede yeniden doğsa da çalışır
+function _dpvPanBagla() {
+  var kap = document.getElementById('dpPdf'); if (!kap || kap._panBagli) return; kap._panBagli = true;
+  var pan = null;
+  kap.addEventListener('mousedown', function(e) {
+    var w = document.getElementById('dpvWrap'); if (!w || !w.contains(e.target)) return;
+    pan = { x: e.clientX, y: e.clientY, sl: w.scrollLeft, st: w.scrollTop, w: w };
+    w.classList.add('pan'); e.preventDefault();
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!pan) return;
+    pan.w.scrollLeft = pan.sl - (e.clientX - pan.x);
+    pan.w.scrollTop  = pan.st - (e.clientY - pan.y);
+  });
+  window.addEventListener('mouseup', function() { if (pan) { pan.w.classList.remove('pan'); pan = null; } });
+  kap.addEventListener('wheel', function(e) {
+    var w = document.getElementById('dpvWrap'); if (!w || !w.contains(e.target) || !DPV.doc) return;
+    e.preventDefault(); dpvZoom(e.deltaY < 0 ? 1.15 : 0.87);
+  }, { passive: false });
+}
+// ── 160: PDF'ten okunan HAM veri dökümü (W-2.18'in modal hali) — iş kaydının parse dalı, alan listesi
+//   sabitlenmeden generic çizilir: kesimler/koordinatlar/notlar dahil format ne ürettiyse görünür. ──
+var _hamCache = {};   // is_id → parse spool dalı (null = bulunamadı)
+async function _duzeltHamYukle(s) {
+  var hedef = document.getElementById('dpHam'); if (!hedef) return;
+  var isId = s.izometri && s.izometri.is_id;
+  if (!isId) { hedef.innerHTML = '<span class="sub" style="font-size:12px;">İş kaydı bulunamadı (parse dökümü yok)</span>'; return; }
+  try {
+    var dal = _hamCache[isId];
+    if (dal === undefined) {
+      var supa = ARES.supabase();
+      var r = await supa.from('dosya_isleme_kuyrugu').select('parse_sonuc').eq('id', isId).single();
+      var ps = (r.data && r.data.parse_sonuc) || {};
+      var list = ps.spoollar || [], hedefNo = String(s.spoolNo || '').trim().toUpperCase();
+      dal = null;
+      for (var i = 0; i < list.length; i++) { if (String(list[i].spool_no || '').trim().toUpperCase() === hedefNo) { dal = list[i]; break; } }
+      if (!dal && list.length === 1) dal = list[0];
+      _hamCache[isId] = dal;
+    }
+    hedef.innerHTML = dal ? _hamRender(dal) : '<span class="sub" style="font-size:12px;">Bu spool için parse dalı bulunamadı</span>';
+  } catch (e) { console.warn('[v3] ham:', e); hedef.innerHTML = '<span class="sub" style="font-size:12px;">Okunamadı</span>'; }
+}
+var _HAM_SIRA = ['dn', 'cap_mm', 'et_mm', 'agirlik_kg', 'yuzey', 'alistirma_ipucu', 'not_metni'];   // bilinenler önce
+function _hamRender(o) {
+  var h = '', islendi = { spool_no: 1 };
+  function tek(k) {
+    var v = o[k]; if (v == null || v === '') return;
+    if (Array.isArray(v)) {
+      if (!v.length) return;
+      if (typeof v[0] === 'object' && v[0] !== null) { h += _hamTablo(k, v); return; }
+      h += _hamSatir(k, v.join(', ')); return;
+    }
+    if (typeof v === 'object') { h += _hamSatir(k, JSON.stringify(v, null, 0)); return; }
+    h += _hamSatir(k, String(v));
+  }
+  _HAM_SIRA.forEach(function(k) { if (k in o) { tek(k); islendi[k] = 1; } });
+  Object.keys(o).forEach(function(k) { if (!islendi[k]) tek(k); });
+  return h || '<span class="sub" style="font-size:12px;">—</span>';
+}
+function _hamSatir(k, v) { return '<div class="ham-row"><label>' + esc(k) + '</label><span>' + esc(v) + '</span></div>'; }
+function _hamTablo(k, arr) {
+  var cols = {}; arr.forEach(function(r) { Object.keys(r || {}).forEach(function(c) { var x = r[c]; if (x != null && x !== '') cols[c] = 1; }); });
+  var cl = Object.keys(cols).slice(0, 8);
+  var h = '<div class="ham-row" style="grid-template-columns:1fr;"><label>' + esc(k) + ' (' + arr.length + ')</label></div><div class="ham-tablo"><table><thead><tr>';
+  cl.forEach(function(c) { h += '<th>' + esc(c) + '</th>'; }); h += '</tr></thead><tbody>';
+  arr.forEach(function(r) { h += '<tr>'; cl.forEach(function(c) { var v = (r || {})[c]; if (v != null && typeof v === 'object') v = JSON.stringify(v); h += '<td>' + esc(v != null ? String(v) : '') + '</td>'; }); h += '</tr>'; });
+  return h + '</tbody></table></div>';
 }
 var _kaliteSecenek  = null;     // DB'den çekilen kalite listesi (cache: [{kod,etk}])
 
@@ -1408,13 +1614,13 @@ async function _kaliteSecenekYukle(){
   try {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     var res = await supa.from('malzeme_tanimlari')
-      .select('kalite_kod, kalite_goster').eq('aktif', true)
+      .select('kalite_kod, kalite_goster, kategori_kod').eq('aktif', true)
       .or('tenant_id.is.null,tenant_id.eq.' + tid)
       .order('kalite_kod');
     if (res.error) { console.warn('[v3] kalite yukle:', res.error.message); return (_kaliteSecenek = []); }
     var gor = {}, list = [];
     (res.data || []).forEach(function(r){
-      if (r.kalite_kod && !gor[r.kalite_kod]) { gor[r.kalite_kod] = 1; list.push({ kod:r.kalite_kod, etk:(r.kalite_goster || r.kalite_kod) }); }
+      if (r.kalite_kod && !gor[r.kalite_kod]) { gor[r.kalite_kod] = 1; list.push({ kod:r.kalite_kod, etk:(r.kalite_goster || r.kalite_kod), kat:String(r.kategori_kod || '').toLowerCase() }); }
     });
     return (_kaliteSecenek = list);
   } catch(e){ console.warn('[v3] kalite yukle hata:', e); return (_kaliteSecenek = []); }
@@ -1469,24 +1675,29 @@ function duzeltAc(i) {
       var roz = Object.keys(dz).length ? '<span class="src l3" title="operatör düzeltmesi" style="margin-left:6px;">düzelt</span>' : '';
       b += '<div class="locked" style="padding:6px 9px;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">' +
         '<span style="flex:1;">' + esc(bm.tanim || malzG || 'kalem') + (dnG ? ' · ' + esc(String(dnG)) : '') + (mikG ? ' · ' + esc(String(mikG)) : '') + '</span>' + roz +
-        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Kalemi düzelt">✏️</button></div>';
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Kalemi düzelt">✏️</button></div>' +
+        '<div class="kalem-inline hide" id="kal-inline-' + idx + '"></div>';   // 160: yerinde düzeltme (modal değişmez, PDF açık kalır)
     });
     b += '</div>';
+    WIZ._spoolKalemRef = { sKey: _duzeltSpoolSKey, bom: _kb.bom, spoolNo: s.spoolNo || '' };   // 160: inline kalem bağlamı
   }
   if (s.izometri) {
     b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
+    // 160 (W-2.18'in modal hali): L2/L3'ün söktüğü HER ŞEY — kesimler, notlar, koordinatlar dahil — terfiden önce görünür
+    b += '<div class="dp-sec">PDF\'ten okunan (ham)</div><div id="dpHam"><span class="sub" style="font-size:12px;">yükleniyor…</span></div>';
     // 160 (MK-160.3): PDF sağ panelde — buton yalnız yeni-sekme yedeği. (159'un ölü cizimdenOku butonu kaldırıldı.)
     b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="izoPdfAc()">↗ PDF\'i yeni sekmede aç</button></div>';
   }
   if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
   b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye overlay olarak yansır. Sağdaki PDF\'ten okuyup ✏️ ile yazabilirsin.</p>';
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
-  // 160 (MK-160.3): sol form + sağ PDF (tarayıcı yerleşik görüntüleyici — MK-159.2 ihlali değil: ikinci pdf.js altyapısı YOK)
+  // 160 (MK-160.3 rev): sol form + sağ pdf.js SALT görüntüleyici (sayfa/zoom/pan + izometri↔montaj sekmeleri)
   document.getElementById('duzeltPop').classList.add('dp-genis');
   document.getElementById('dpBody').innerHTML = '<div class="dp-split"><div class="dp-form">' + b + '</div>' +
     '<div class="dp-pdf" id="dpPdf"><div class="dp-pdf-bos">' + (s.izometri && s.izometri.dosya_adi ? 'PDF yükleniyor…' : 'Bu spool\'a bağlı izometri PDF\'i yok') + '</div></div></div>';
   document.getElementById('duzeltOverlay').classList.remove('hide');
   _duzeltPdfGoster(s);
+  _duzeltHamYukle(s);
   // kalite seçeneklerini arka planda hazırla (✏️'ye basılınca hazır olsun)
   _kaliteSecenekYukle();
 }
@@ -1504,7 +1715,13 @@ async function duzeltSatirAc(alan) {
 
   if (cfg.tip === 'select') {
     var secenekler;
-    if (cfg.dinamik === 'kalite') { secenekler = await _kaliteSecenekYukle(); }
+    if (cfg.dinamik === 'kalite') {
+      secenekler = await _kaliteSecenekYukle();
+      // 160 (Cihat): kalite listesi seçili malzemeye süzülür (paslanmaz → yalnız paslanmaz kaliteleri).
+      //   kategori_kod uzayı = ARES_NORM malzeme kodları (tanimlar.html master tablo). Süzgeç boş kalırsa tüm liste (emniyet).
+      var _mk = (typeof ARES_NORM !== 'undefined') ? (ARES_NORM.malzemeKod(String(_alanDeger(s, 'malzeme') || '')) || '') : '';
+      if (_mk) { var _f = secenekler.filter(function(o) { return (o.kat || '') === _mk; }); if (_f.length) secenekler = _f; }
+    }
     else if (typeof cfg.secenekler === 'function') {
       secenekler = (alan === 'yuzey') ? cfg.secenekler(_alanDeger(s, 'malzeme')) : cfg.secenekler();
     } else { secenekler = cfg.secenekler || []; }
