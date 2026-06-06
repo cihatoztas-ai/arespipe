@@ -582,7 +582,9 @@ function captureBox(bx){
   let s=Infinity,e=-Infinity,L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;
   hits.forEach(h=>{ s=Math.min(s,h.gstart); e=Math.max(e,h.gend); L=Math.min(L,h.left); T=Math.min(T,h.top); R=Math.max(R,h.left+h.w); B=Math.max(B,h.top+h.h); });
   const temiz=CANON_ALL.slice(s,e).trim(); const a=ALANLAR[adim];
-  a.sample=temiz; a.bbox={left:L,top:T,w:R-L,h:B-T}; a.page=pageNum; markMode=false; setDraw(false);
+  // 164/W-4.4: bbox SCALE-1 (PDF viewport birimi) uzayında saklanır (norm:1). Önceki kayıtlar
+  //   öğretim anındaki zoom'da kaydedildiği için belirsizdi — norm'suz bbox tüketici tarafından KULLANILMAZ.
+  a.sample=temiz; a.bbox={left:L/scale,top:T/scale,w:(R-L)/scale,h:(B-T)/scale,norm:1}; a.page=pageNum; markMode=false; setDraw(false);
   if(a.tip==='tablo'){ drawMarks(); renderDetay(); renderDots(); toast('✓ Tablo bölgesi işaretlendi — desenleri sonda toplu AI çıkarır'); return; }
   if(a.tip==='liste'&&a.liste&&!a.liste.some(w=>w.toLowerCase()===temiz.toLowerCase())) a.liste.unshift(temiz);
   const c=cozumle(a.ad, temiz);
@@ -591,7 +593,7 @@ function captureBox(bx){
   drawMarks(); renderDetay(); renderDots();
   toast(c?('✓ Tanındı: '+c.deger):'⚠ Otomatik tanıyamadım — "Elle ayarla"yı aç');
 }
-function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)return; ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); const a=ALANLAR[adim]; if(a.bbox&&a.page===pageNum){ const d=document.createElement('div'); d.className='mk-box'; d.style.left=a.bbox.left+'px'; d.style.top=a.bbox.top+'px'; d.style.width=a.bbox.w+'px'; d.style.height=a.bbox.h+'px'; ml.appendChild(d); } }
+function drawMarks(){ const ml=document.getElementById('markLayer'); if(!ml)return; ml.querySelectorAll('.mk-box').forEach(n=>n.remove()); const a=ALANLAR[adim]; if(a.bbox&&a.page===pageNum){ const k=a.bbox.norm?scale:1; /* 164/W-4.4: norm bbox scale-1 uzayında — çizimde aktif zoom'a çarpılır */ const d=document.createElement('div'); d.className='mk-box'; d.style.left=(a.bbox.left*k)+'px'; d.style.top=(a.bbox.top*k)+'px'; d.style.width=(a.bbox.w*k)+'px'; d.style.height=(a.bbox.h*k)+'px'; ml.appendChild(d); } }
 
 /* ── PDF.js (v1.10.100) ── */
 function _fnOnerUygula(ad){

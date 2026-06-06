@@ -1737,6 +1737,32 @@ function dpvSigdir() { if (!DPV.doc) return; DPV.scale = null; DPV.panX = 0; DPV
 // ── W-2.19 ALTYAPI (160): belirli sayfadaki bölgeye uç + sarı vurgu. bbox = {x,y,w,h}, PDF scale=1
 //   viewport uzayında (sol-üst orijin). Çağıran henüz YOK — değer→koordinat envanteri 161 işi;
 //   konsoldan denenebilir: dpvZoomTo(1, {x:100, y:80, w:200, h:40}) ──
+// ── 164/W-2.19 ucuz dilim: Malzemeler 🔍 → format kuralındaki tablo bölgesine zoom+vurgu.
+//   Koordinat kaynağı = parser_kural.malzeme_tablosu.konum_ipucu (W-4.4: yalnız norm:1 bbox kullanılır;
+//   norm'suz eski kayıt belirsiz zoom'da alınmıştı — tahminle kullanılmaz, dürüst toast atılır).
+var _tabloKonumCache = {};   // format_id → konum_ipucu | null (null = bakıldı, yok)
+async function _tabloZoom() {
+  var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
+  var fid = s && s.izometri && s.izometri.format_id;
+  if (!fid) { toast('İzometri format bilgisi yok'); return; }
+  var ki = _tabloKonumCache[fid];
+  if (ki === undefined) {
+    try {
+      var supa = ARES.supabase();
+      var r = await supa.from('izometri_format_tanimlari').select('parser_kural').eq('id', fid).single();
+      var pk = (r.data && r.data.parser_kural) || {};
+      ki = (pk.malzeme_tablosu && pk.malzeme_tablosu.konum_ipucu) || null;
+    } catch (e) { console.warn('[v3] tablo konum:', e); ki = null; }
+    _tabloKonumCache[fid] = ki;
+  }
+  if (!ki || !ki.bbox || !ki.bbox.norm) { toast('Bu format için normalize tablo bölgesi kayıtlı değil — format_tanit ile (yeniden) işaretlenmeli'); return; }
+  // izometri sekmesi aktif değilse (örn. Excel kipi) önce ona geç
+  var hedef = 0;
+  for (var i = 0; i < (DPV.dosyalar || []).length; i++) { if (DPV.dosyalar[i].tip === 'izometri') { hedef = i; break; } }
+  if (DPV.aktif !== hedef || !DPV.doc) { await dpvSec(hedef); }
+  if (!DPV.doc) return;   // sekme yüklenemedi (dpvSec kendi mesajını bastı)
+  await dpvZoomTo(ki.sayfa || 1, { x: ki.bbox.left, y: ki.bbox.top, w: ki.bbox.w, h: ki.bbox.h });
+}
 async function dpvZoomTo(sayfa, bbox) {
   if (!DPV.doc || !bbox) return;
   var wrap = document.getElementById('dpvWrap'); if (!wrap) return;
@@ -1917,7 +1943,9 @@ function duzeltAc(i) {
   if (_kb && (_kb.bom || []).length) {
     var _kd = (WIZ._kalemDuzelt && WIZ._kalemDuzelt[_duzeltSpoolSKey]) ? WIZ._kalemDuzelt[_duzeltSpoolSKey] : {};
     b += '<div class="dp-sec">Malzemeler (' + _kb.bom.length + ' kalem)' +
-      ' <button class="btn-sm" style="padding:1px 8px;font-size:11px;color:var(--gr);" onclick="_spoolKalemEkle()" title="PDF/Excel\'de olmayan kalemi ekle">+ Ekle</button></div>' +
+      ' <button class="btn-sm" style="padding:1px 8px;font-size:11px;color:var(--gr);" onclick="_spoolKalemEkle()" title="PDF/Excel\'de olmayan kalemi ekle">+ Ekle</button>' +
+      ((s.izometri && s.izometri.format_id) ? ' <button class="btn-sm" style="padding:1px 8px;font-size:11px;color:var(--ac);" onclick="_tabloZoom()" title="PDF\'te malzeme tablosu bölgesine odaklan (W-2.19)">🔍 Tablo</button>' : '') +
+      '</div>' +
       '<div style="max-height:230px;overflow:auto;">';
     _kb.bom.forEach(function(bm, idx) {
       var dz = _kd[idx] || {};
