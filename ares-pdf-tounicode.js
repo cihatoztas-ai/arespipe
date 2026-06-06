@@ -66,9 +66,10 @@
     try {
       var s = _lat1(u8);
 
-      // Kapı 1: yapı klasik mi?
-      if (/\/Type\s*\/XRef/.test(s)) { out.sebep = 'xref_stream'; return out; }
-      if (s.indexOf('/ObjStm') !== -1) { out.sebep = 'objstm'; return out; }
+      // Yapı tespiti (161 genişlemesi): klasik xref VEYA XRef stream — ikisi de desteklenir.
+      //   ObjStm engel değil: hedef font düz baytlardaysa artımlı yeniden-tanım kazanır (Y200 kanıtı);
+      //   düz baytlarda değilse zaten hedef_font_yok ile çıkılır.
+      var xStream = /\/Type\s*\/XRef\b/.test(s);
 
       // Kapı 2: ToUnicode'suz Identity-H Type0 fontları bul.
       //   NOT: tek dev regex stream'li objelerde komşuyu yutar (161 testinde kanıtlandı) —
@@ -129,15 +130,35 @@
         ek += h.num + ' 0 obj\n' + yeniDict + '\nendobj\n';
       });
 
-      // Klasik xref (her obje ayrı alt-bölüm — numaralar ardışık olmayabilir)
-      var xrefOfs = taban + ek.length;
-      ek += 'xref\n';
-      ofsetler.forEach(function (o) {
-        var p = String(o.ofs); while (p.length < 10) p = '0' + p;
-        ek += o.num + ' 1\n' + p + ' 00000 n \n';
-      });
-      ek += 'trailer\n<< /Size ' + (cmapNum + 1) + ' /Root ' + rootM[1] + ' /Prev ' + prevXref + ' >>\n' +
-            'startxref\n' + xrefOfs + '\n%%EOF\n';
+      var xrefOfs;
+      if (!xStream) {
+        // Klasik xref (her obje ayrı alt-bölüm — numaralar ardışık olmayabilir)
+        xrefOfs = taban + ek.length;
+        ek += 'xref\n';
+        ofsetler.forEach(function (o) {
+          var p = String(o.ofs); while (p.length < 10) p = '0' + p;
+          ek += o.num + ' 1\n' + p + ' 00000 n \n';
+        });
+        ek += 'trailer\n<< /Size ' + (cmapNum + 1) + ' /Root ' + rootM[1] + ' /Prev ' + prevXref + ' >>\n' +
+              'startxref\n' + xrefOfs + '\n%%EOF\n';
+      } else {
+        // XRef STREAM eki (PDF 1.5+ tabanlar — Y200 ailesi): çapraz referans da stream objesi olmalı.
+        //   /W [1 4 2] = tip(1B) + ofset(4B BE) + gen(2B); /Filter yok (sıkıştırmasız, geçerli).
+        var xrefNum = cmapNum + 1;
+        xrefOfs = taban + ek.length;
+        var girisler = ofsetler.concat([{ num: xrefNum, ofs: xrefOfs }]);
+        var idx = girisler.map(function (o) { return o.num + ' 1'; }).join(' ');
+        var bin = '';
+        girisler.forEach(function (o) {
+          bin += String.fromCharCode(1,
+            (o.ofs >>> 24) & 0xff, (o.ofs >>> 16) & 0xff, (o.ofs >>> 8) & 0xff, o.ofs & 0xff,
+            0, 0);
+        });
+        ek += xrefNum + ' 0 obj\n<< /Type /XRef /Size ' + (xrefNum + 1) + ' /Root ' + rootM[1] +
+              ' /Prev ' + prevXref + ' /W [1 4 2] /Index [' + idx + '] /Length ' + bin.length + ' >>\n' +
+              'stream\n' + bin + '\nendstream\nendobj\n' +
+              'startxref\n' + xrefOfs + '\n%%EOF\n';
+      }
 
       var ekU8 = _bytes(ek);
       var yeni = new Uint8Array(u8.length + ekU8.length);
