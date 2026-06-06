@@ -124,6 +124,17 @@
     .pop{ background:var(--sur); border:1px solid var(--bor); border-radius:14px; width:560px; max-width:100%; max-height:88vh; overflow:auto; }
     .dp-head{ display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--bor); position:sticky; top:0; background:var(--sur); } .dp-head h3{ font-family:'Barlow Condensed',sans-serif; font-size:20px; margin:0; } .dp-x{ margin-left:auto; background:none; border:none; color:var(--txd); font-size:22px; cursor:pointer; }
     .dp-body{ padding:16px 18px; } .dp-sec{ font-size:12px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.5px; margin:18px 0 9px; } .dp-sec:first-child{ margin-top:0; }
+    /* 160 (MK-160.3): Düzelt modalı yan PDF paneli — sol form, sağ tarayıcı yerleşik PDF (embed) */
+    .pop.dp-genis{ width:min(1180px,96vw); height:88vh; max-height:88vh; overflow:hidden; display:flex; flex-direction:column; }
+    .dp-genis .dp-body{ flex:1; min-height:0; padding:0; }
+    .dp-split{ display:grid; grid-template-columns:500px 1fr; height:100%; }
+    .dp-form{ overflow-y:auto; padding:16px 18px; border-right:1px solid var(--bor); min-width:0; }
+    .dp-pdf{ background:#3a3f47; min-width:0; }
+    .dp-pdf embed,.dp-pdf iframe{ width:100%; height:100%; border:0; display:block; }
+    .dp-pdf-bos{ display:flex; align-items:center; justify-content:center; height:100%; color:#cfd6df; font-size:13px; padding:20px; text-align:center; }
+    @media (max-width:980px){ .dp-split{ grid-template-columns:1fr; } .dp-pdf{ display:none; }
+      .pop.dp-genis{ width:560px; height:auto; max-height:88vh; overflow:auto; display:block; }
+      .dp-genis .dp-body{ padding:16px 18px; } }
     .efld{ display:grid; grid-template-columns:90px 1fr 70px; gap:10px; align-items:center; margin-bottom:9px; } .efld label{ font-size:14px; color:var(--txm); } .efld .src{ font-size:10px; padding:1px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; text-align:center; }
     .src.xl{ background:rgba(22,163,110,.14); color:var(--gr); } .src.l2{ background:rgba(45,142,255,.14); color:var(--ac); } .src.l3{ background:rgba(217,119,6,.14); color:var(--warn); } .src.bos{ background:rgba(229,62,62,.14); color:var(--re); }
     .onay-warn{ background:rgba(229,62,62,.1); border:1px solid rgba(229,62,62,.4); color:var(--re); border-radius:9px; padding:12px 14px; font-size:14px; margin:12px 0; } .onay-ok{ background:rgba(22,163,110,.1); border:1px solid rgba(22,163,110,.4); color:var(--gr); border-radius:9px; padding:12px 14px; font-size:14px; margin:12px 0; }
@@ -1056,29 +1067,13 @@ function malzemeKiyasBlok(mk) {
   return h;
 }
 function islemCell(i, durum) {
-  if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>' + _tanitBtn(i);
+  if (durum === 'zayif') return '<button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Düzelt</button>';
   if (durum === 'eksik') return '<button class="btn-sm" style="color:var(--txm);" onclick="event.stopPropagation();duzeltAc(' + i + ')">Tamamla</button>';
-  return _tanitBtn(i) || '—';
+  return '—';
 }
-// ── W-3.1 köprüsü (MK-159.2): zayıf VEYA L3 okunmuş satır → "Tanıt" → format_tanit?is=&kaynak=devre.
-//   PDF'i format_tanit işten kendisi açar (storage), operatör dosya ARAMAZ. Değer düzeltme bu buton DEĞİL:
-//   tekil değer işi mevcut Düzelt modalında kalır (kip ayrımı, 160 kararı).
-function _tanitBtn(i) {
-  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
-  var s = sp[i], iz = s && s.izometri;
-  if (!iz || !iz.is_id) return '';
-  var l3 = /l3/i.test(String(iz.seviye || ''));
-  if (s.durum !== 'zayif' && !l3) return '';
-  return '<button class="btn-sm" style="color:var(--ac);" title="Formatı tanıt / okuma yerini düzelt — PDF işten açılır" onclick="event.stopPropagation();formatTanitAc(' + i + ')">Tanıt</button>';
-}
-function formatTanitAc(i) {
-  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
-  var s = sp[i], iz = s && s.izometri;
-  if (!iz || !iz.is_id) return;
-  // 160/B2: değer kipi bağlamı — kabuk anahtarı (pipeline|spoolNo) HAM taşınır (duzeltKaydet ile aynı uzay)
-  window.open('format_tanit.html?is=' + encodeURIComponent(iz.is_id) + '&kaynak=devre'
-    + '&pl=' + encodeURIComponent(s.pipeline || '') + '&sn=' + encodeURIComponent(s.spoolNo || ''), '_blank');
-}
+// 160 KARARI (Cihat): zayıf satır akışı format_tanit'e GİTMEZ — değer işi Düzelt modalında, PDF yan panelde
+//   (MK-160.3). Format öğretimi (kural) batch sayfası "Tanıt" + nav girişiyle yaşar. spool.izometri.is_id
+//   API'de duruyor (devre-inceleme) — ileride köprü gerekirse hazır.
 
 // ── B canlı dolum: drenaj onIlerleme → endpoint yeniden çağrı (kırmızı→yeşil) ──
 async function drenajiBaslat() {
@@ -1166,6 +1161,7 @@ function kalemDuzeltAc(sKey, idx, donusIdx) {
   bb += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir ve terfide BOM kalemine (spool_malzemeleri) yazılır.</p>';
   var _geri = (donusIdx != null) ? '<button class="btn ghost" onclick="duzeltAc(' + donusIdx + ')">← Spool\'a dön</button>' : '';
   bb += '<div class="actions" style="margin-top:6px;">' + _geri + '<button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
+  document.getElementById('duzeltPop').classList.remove('dp-genis');   // 160: kalem modalı dar (PDF'siz)
   document.getElementById('dpBody').innerHTML = bb;
   document.getElementById('duzeltOverlay').classList.remove('hide');
   if (typeof _kaliteSecenekYukle === 'function') _kaliteSecenekYukle();
@@ -1374,6 +1370,30 @@ async function izoPdfAc() {
     else toast('Dosya açılamadı');
   } catch (e) { console.warn('[v3] izoPdfAc:', e); toast('Dosya açılamadı'); }
 }
+// ── 160 (MK-160.3): Düzelt modalı sağ PDF paneli. izoPdfAc ile AYNI çözüm zinciri (dokAc-102 lazy),
+//   signed URL 10 dk cache'lenir (modal re-render'ında yeniden imzalanmaz). embed = tarayıcı yerleşik
+//   görüntüleyici; pdf.js/çapa altyapısının kopyası DEĞİL (MK-159.2 korunur). ──
+var _duzeltPdfCache = {};   // dosya_adi → {url, ts}
+async function _duzeltPdfGoster(s) {
+  var kap = document.getElementById('dpPdf'); if (!kap) return;
+  var dosyaAdi = (s && s.izometri && s.izometri.dosya_adi) || '';
+  if (!dosyaAdi) return;   // placeholder zaten "izometri yok" diyor
+  try {
+    var c = _duzeltPdfCache[dosyaAdi];
+    var url = (c && (Date.now() - c.ts) < 600000) ? c.url : null;
+    if (!url) {
+      var supa = ARES.supabase(), tid = ARES.tenantId();
+      var r = await supa.from('devre_dokumanlari').select('storage_yolu')
+        .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id).eq('dosya_adi', dosyaAdi).limit(1);
+      var yol = (r.data && r.data[0] && r.data[0].storage_yolu) || '';
+      if (!yol) { kap.innerHTML = '<div class="dp-pdf-bos">Dosya kaydı bulunamadı: ' + esc(dosyaAdi) + '</div>'; return; }
+      url = (ARES.dosyaUrlAl ? await ARES.dosyaUrlAl(yol, 'devre-belgeleri') : '') || '';
+      if (!url) { kap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; return; }
+      _duzeltPdfCache[dosyaAdi] = { url: url, ts: Date.now() };
+    }
+    kap.innerHTML = '<embed src="' + url.replace(/"/g, '&quot;') + '#toolbar=1" type="application/pdf">';
+  } catch (e) { console.warn('[v3] duzeltPdf:', e); if (kap) kap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; }
+}
 var _kaliteSecenek  = null;     // DB'den çekilen kalite listesi (cache: [{kod,etk}])
 
 // Düzeltme varsa onun değerini, yoksa parse değerini dön (tek kaynak).
@@ -1455,14 +1475,18 @@ function duzeltAc(i) {
   }
   if (s.izometri) {
     b += '<div class="dp-sec">İzometri</div>' + satir('Dosya', s.izometri.dosya_adi, izoSrc) + satir('Seviye', s.izometri.seviye, izoSrc) + satir('Güven', s.izometri.guven != null ? ('%' + Math.round(s.izometri.guven * 100)) : '', izoSrc);
-    // 159/W-3.1: köprü — sol panel değerler, sağda çizim; format_tanit dosyayı ?dok= ile hazır açar
-    b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="cizimdenOku()">🧭 Çizimden oku (format tanıt)</button></div>';
+    // 160 (MK-160.3): PDF sağ panelde — buton yalnız yeni-sekme yedeği. (159'un ölü cizimdenOku butonu kaldırıldı.)
+    b += '<div class="actions" style="margin:2px 0 6px;"><button class="btn-sm" style="color:var(--ac);padding:7px 12px;" onclick="izoPdfAc()">↗ PDF\'i yeni sekmede aç</button></div>';
   }
   if (s.malzeme_kiyas) b += malzemeKiyasBlok(s.malzeme_kiyas);   // 135/K2: BOM↔PDF malzeme kıyası
-  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye overlay olarak yansır. Görsel okuma (sol bilgi + sağ izometri) format tanıtma modülünde — köprü sonraki oturumda (159 kararı).</p>';
+  b += '<p class="sub" style="font-size:13px;margin:10px 0 4px;">Düzeltme bu devreye kaydedilir; önizlemeye/terfiye overlay olarak yansır. Sağdaki PDF\'ten okuyup ✏️ ile yazabilirsin.</p>';
   b += '<div class="actions" style="margin-top:6px;"><button class="btn ghost" onclick="duzeltKapat()">Kapat</button></div>';
-  document.getElementById('dpBody').innerHTML = b;
+  // 160 (MK-160.3): sol form + sağ PDF (tarayıcı yerleşik görüntüleyici — MK-159.2 ihlali değil: ikinci pdf.js altyapısı YOK)
+  document.getElementById('duzeltPop').classList.add('dp-genis');
+  document.getElementById('dpBody').innerHTML = '<div class="dp-split"><div class="dp-form">' + b + '</div>' +
+    '<div class="dp-pdf" id="dpPdf"><div class="dp-pdf-bos">' + (s.izometri && s.izometri.dosya_adi ? 'PDF yükleniyor…' : 'Bu spool\'a bağlı izometri PDF\'i yok') + '</div></div></div>';
   document.getElementById('duzeltOverlay').classList.remove('hide');
+  _duzeltPdfGoster(s);
   // kalite seçeneklerini arka planda hazırla (✏️'ye basılınca hazır olsun)
   _kaliteSecenekYukle();
 }
@@ -1586,6 +1610,7 @@ function markaCellMetin(s) {
 }
 function duzeltKapat() {
   document.getElementById('duzeltOverlay').classList.add('hide');
+  document.getElementById('duzeltPop').classList.remove('dp-genis');   // 160: sonraki açılış (kalem modalı vb.) dar başlar
   // G2a overlay: popup'ta yapılan düzeltmeler arkadaki tabloya yansısın (s._duzelt zaten güncel)
   if (WIZ._inceleme) renderInceleme(WIZ._inceleme);
 }
