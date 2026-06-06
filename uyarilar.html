@@ -265,7 +265,7 @@ const seviyeConfig = {
   uyari:  { renk:'var(--warn)', sinif:'uk-uyari',     ikonSinif:'uk-ikon-uyari',   badge:'ba' },
   bilgi:  { renk:'var(--ac)',   sinif:'uk-bilgi',     ikonSinif:'uk-ikon-bilgi',   badge:'bb' },
 };
-const kategoriLabel = { devre:'Hareketsiz Devre', personel:'Personel', sistem:'Sistem', manuel:'Manuel', bindirme:'Bindirme Çelişkisi' };
+const kategoriLabel = { devre:'Hareketsiz Devre', personel:'Personel', sistem:'Sistem', manuel:'Manuel', bindirme:'Bindirme Çelişkisi', malzeme:'Malzeme Kıyası', format_sinyal:'Format Kuralı Şüphesi' };
 
 // 112/MK-112.5: bindirme celiski alan adlari + deger formatlama (uyari karti metni icin)
 const MLZ_ALAN_AD = { agirlik_kg_toplam: 'Toplam ağırlık', agirlik_kg: 'Ağırlık', adet: 'Adet', boy_mm: 'Boy', cap: 'Çap' };
@@ -606,7 +606,57 @@ guncelBell();
 guncelStatler();
 
 // 112/MK-112.5: canli bindirme celiski uyarilarini yukle (mock render'in ustune, gelince re-render)
+// ===== 163/MK-162.2: G2A FORMAT KURALI ŞÜPHESİ SİNYALİ (g2a_duzeltme_sinyali görünümü) =====
+// Düzelt=değer / Tanıt=kural ayrımı KORUNUR: bu kutu hiçbir şeyi kurala çevirmez.
+// Birikim (aynı alan+değer yönünde 3+ düzeltme) yalnız UZMANA sinyaldir; kural değişikliği
+// atölyede sunucu metniyle kanıtlanıp SQL ile yapılır (MK-162.3). Görünüm: migration 102,
+// security_invoker=true (RLS korunur — tenant yalnız kendi birikimini görür).
+async function g2aSinyalYukle() {
+  try {
+    if (typeof ARES === 'undefined' || !ARES.supabase) return;
+    let supa = ARES.supabase();
+    for (let bekle = 0; !supa && bekle < 10; bekle++) {
+      await new Promise(function (r) { setTimeout(r, 300); });
+      supa = ARES.supabase();
+    }
+    if (!supa) { console.warn('[uyarilar] supabase hazir degil — g2a atlandi'); return; }
+    const { data, error } = await supa
+      .from('g2a_duzeltme_sinyali')
+      .select('alan, seviye, duzeltilen_deger, duzeltme_sayisi, devre_sayisi, spool_sayisi, son_duzeltme')
+      .order('duzeltme_sayisi', { ascending: false })
+      .limit(20);
+    if (error) { console.warn('[uyarilar] g2a cekme hatasi:', error.message); return; }
+
+    const yeni = [];
+    (data || []).forEach(function (s) {
+      const deger = (s.duzeltilen_deger == null || s.duzeltilen_deger === '') ? '—' : s.duzeltilen_deger;
+      yeni.push({
+        id: 'G2A_' + s.seviye + '_' + s.alan + '_' + deger,
+        kategori: 'format_sinyal', seviye: 'bilgi', goruldu: false,
+        baslik: '"' + s.alan + '" alanı ' + s.duzeltme_sayisi + ' kez aynı yönde düzeltildi',
+        aciklama: 'Operatörler ' + s.spool_sayisi + ' spool / ' + s.devre_sayisi + ' devrede "' + s.alan +
+                  '" (' + s.seviye + ' seviyesi) alanını "' + deger + '" değerine düzeltti. Sistematik birikim, ' +
+                  'format kuralının bu alanı yanlış okuduğuna işaret edebilir — atölyede (sunucu metniyle) incelenmeli. ' +
+                  'Düzeltmeler kurala otomatik dönüşmez (MK-162.2).',
+        kaynak: 'g2a_duzeltme_sinyali',
+        link: '',
+        olusturma: s.son_duzeltme ? new Date(s.son_duzeltme).toLocaleString('tr-TR') : '',
+        ikon: '📐'
+      });
+    });
+
+    if (yeni.length) {
+      // Idempotent: önceki G2A uyarılarını çıkar, taze listeyi ekle (re-run güvenli)
+      uyarilar = uyarilar.filter(function (u) { return u.kategori !== 'format_sinyal'; }).concat(yeni);
+      renderHepsi(); guncelBell(); guncelStatler();
+    }
+  } catch (e) {
+    console.warn('[uyarilar] g2a yukleme hatasi:', e);
+  }
+}
+
 bindirmeUyarilariYukle();
+g2aSinyalYukle();
 
 // Bu sayfayı açan ziyaretçi gördü — bell sönsün
 setTimeout(()=>{
