@@ -2624,7 +2624,7 @@ async function belgelerYukle(){
       .eq('devre_id',devreId).eq('silindi',false)
       .order('olusturma',{ascending:false}),
     supa.from('devre_dokumanlari')
-      .select('id,dosya_adi,klasor_yolu,uzanti,dokuman_tipi,storage_yolu,boyut_byte,yuklenme,parse_durumu')
+      .select('id,dosya_adi,klasor_yolu,uzanti,dokuman_tipi,storage_yolu,boyut_byte,yuklenme')
       .eq('devre_id',devreId).eq('silindi',false).eq('aktif',true)
       .order('yuklenme',{ascending:false})
   ]);
@@ -2676,11 +2676,12 @@ async function belgelerYukle(){
     var adSiz=ad.replace(/\.[^/.]+$/,'');
     var klasor=d.klasor_yolu||'';
     var kq=kuyrukMap[d.id]||null;
+    // 164/MK-163.6 A: _parseDurumu kaldırıldı — kolon BAYAT, tüketicisi yoktu (grep kanıtı);
+    // parse durumu tek kaynağı kuyruk gerçeği (_kuyrukDurum, 102 fix).
     return{
       _kaynak:'devre_dokumanlari',
       _bucket:'devre-belgeleri',
       _klasor:klasor,
-      _parseDurumu:d.parse_durumu||'bekliyor',
       _kuyrukId:kq?kq.id:null,
       _kuyrukParser:kq?kq.parser:null,
       _kuyrukDurum:kq?kq.durum:null,
