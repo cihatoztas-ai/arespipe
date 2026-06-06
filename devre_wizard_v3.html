@@ -1282,8 +1282,11 @@ async function kalemKaydet(alan) {
     delete WIZ._kalemDuzelt[ctx.sKey][ctx.idx][alan];
     _kalemSatirCiz(alan); malzSekmesiRender(); toast(cfg.lbl + ' düzeltmesi kaldırıldı'); return;
   }
+  // 164/A: BOM kalemi Excel'den gelir; kalem_idx >= bom.length ise operatörün eklediği kalemdir (160) — önceki değer yok.
+  var ref164 = WIZ._spoolKalemRef;
+  var dKaynak164 = (ref164 && ref164.bom && ctx.idx >= ref164.bom.length) ? 'operator' : 'excel';
   var row = { tenant_id:tid, devre_id:WIZ.devre_id, pipeline_no:pipeline, spool_no:spoolNo,
-    alan:alan, kalem_idx:ctx.idx, deger:yeni, kaynak:'operator', duzelten:userId||null, updated_at:new Date().toISOString() };
+    alan:alan, kalem_idx:ctx.idx, deger:yeni, kaynak:'operator', deger_kaynagi:dKaynak164, duzelten:userId||null, updated_at:new Date().toISOString() };
   var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict:'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });
   if (ur.error) { console.error('[v3] kalem kaydet:', ur.error.message); toast('Kaydedilemedi: ' + ur.error.message); return; }
   WIZ._kalemDuzelt[ctx.sKey][ctx.idx][alan] = yeni;
@@ -2057,6 +2060,7 @@ async function duzeltKaydet(alan) {
     tenant_id: tid, devre_id: WIZ.devre_id,
     pipeline_no: s.pipeline || '', spool_no: s.spoolNo || '',
     alan: alan, kalem_idx: -1, deger: yeni, kaynak: 'operator',
+    deger_kaynagi: 'excel',   // 164/A: spool başlık değerleri Excel kabuktan gelir (rozet 'Excel') — sinyal adresi Excel hattı
     duzelten: userId || null, updated_at: new Date().toISOString()
   };
   var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });

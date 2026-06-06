@@ -906,6 +906,7 @@ async function b2Kaydet(alan){
   const row={ tenant_id:tid, devre_id:_b2Ctx.devreId,
     pipeline_no:_b2Ctx.pipeline, spool_no:_b2Ctx.spoolNo,
     alan:alan, kalem_idx:-1, deger:yeni, kaynak:'operator',
+    deger_kaynagi:'izometri', format_id:(_formatId||null),   // 164/A: B2 PDF parse değerini düzeltir — sinyal bu formata bağlanır
     duzelten:userId, updated_at:new Date().toISOString() };
   const ur=await supa.from('taslak_duzeltmeleri').upsert(row,{onConflict:'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx'});
   if(ur.error){ toast('Kaydedilemedi: '+ur.error.message); return; }

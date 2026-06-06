@@ -622,7 +622,7 @@ async function g2aSinyalYukle() {
     if (!supa) { console.warn('[uyarilar] supabase hazir degil — g2a atlandi'); return; }
     const { data, error } = await supa
       .from('g2a_duzeltme_sinyali')
-      .select('alan, seviye, duzeltilen_deger, duzeltme_sayisi, devre_sayisi, spool_sayisi, son_duzeltme')
+      .select('alan, seviye, duzeltilen_deger, duzeltme_sayisi, devre_sayisi, spool_sayisi, son_duzeltme, deger_kaynagi, format_id, format_ad')
       .order('duzeltme_sayisi', { ascending: false })
       .limit(20);
     if (error) { console.warn('[uyarilar] g2a cekme hatasi:', error.message); return; }
@@ -630,13 +630,28 @@ async function g2aSinyalYukle() {
     const yeni = [];
     (data || []).forEach(function (s) {
       const deger = (s.duzeltilen_deger == null || s.duzeltilen_deger === '') ? '—' : s.duzeltilen_deger;
+      // 164/A: sinyalin adresi değerin KAYNAĞINA göre değişir (164-B1 bulgusu: v1 metni
+      // Excel-kaynaklı değerler için PDF format kuralını gösteriyordu — yanlış adres).
+      const kayn = s.deger_kaynagi || null;
+      let adres;
+      if (kayn === 'izometri') {
+        const fmt = s.format_ad || (s.format_id ? String(s.format_id).slice(0, 8) : 'bilinmeyen format');
+        adres = 'Değerin kaynağı PDF izometri parse (format: "' + fmt + '") — format kuralının bu alanı yanlış ' +
+                'okuduğuna işaret edebilir, atölyede (sunucu metniyle) incelenmeli.';
+      } else if (kayn === 'excel') {
+        adres = 'Değerin kaynağı Excel kabuk — şüphe PDF format kuralında DEĞİL, Excel okuma hattında; ' +
+                'Excel şablonu/parser incelenmeli.';
+      } else if (kayn === 'operator') {
+        adres = 'Operatörün eklediği kalemde düzeltme — sistem okuması yok, format şüphesi oluşturmaz (bilgi amaçlı).';
+      } else {
+        adres = 'Değer kaynağı kayıtlı değil (103 öncesi düzeltme) — Excel kabuk olası; kesin adres yeni birikimle netleşir.';
+      }
       yeni.push({
-        id: 'G2A_' + s.seviye + '_' + s.alan + '_' + deger,
+        id: 'G2A_' + (kayn || 'eski') + '_' + (s.format_id || '') + '_' + s.seviye + '_' + s.alan + '_' + deger,
         kategori: 'format_sinyal', seviye: 'bilgi', goruldu: false,
         baslik: '"' + s.alan + '" alanı ' + s.duzeltme_sayisi + ' kez aynı yönde düzeltildi',
         aciklama: 'Operatörler ' + s.spool_sayisi + ' spool / ' + s.devre_sayisi + ' devrede "' + s.alan +
-                  '" (' + s.seviye + ' seviyesi) alanını "' + deger + '" değerine düzeltti. Sistematik birikim, ' +
-                  'format kuralının bu alanı yanlış okuduğuna işaret edebilir — atölyede (sunucu metniyle) incelenmeli. ' +
+                  '" (' + s.seviye + ' seviyesi) alanını "' + deger + '" değerine düzeltti. ' + adres + ' ' +
                   'Düzeltmeler kurala otomatik dönüşmez (MK-162.2).',
         kaynak: 'g2a_duzeltme_sinyali',
         link: '',
