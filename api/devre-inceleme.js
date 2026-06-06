@@ -38,8 +38,10 @@ export const config = { maxDuration: 30 };
 //    A1: et/çap kabukta yok (null) → bindir kabuk_bos sayar, flag üretmez. Ağırlık+yüzey aktif.
 function kabukBindirHedef(sp) {
   return {
-    et_kalinligi_mm: null,                // A1: client çapı/et'i göndermiyor (sonraki tur)
-    dis_cap_mm: null,
+    // W-2.20 (161): MK-139.1'den beri client cap/et GÖNDERİYOR (grupla başlıkta türetir) —
+    //   "client göndermiyor" notu bayattı (MK-159.3 üçüncü vaka). Önizleme artık et/çap çelişkisini de görür.
+    et_kalinligi_mm: (sp.et != null) ? sp.et : null,
+    dis_cap_mm: (sp.cap != null) ? sp.cap : null,
     agirlik_kg: (sp.toplamKg != null) ? sp.toplamKg : null,
     yuzey: sp.yuzeyHam || null,
   };
@@ -141,14 +143,19 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
       const sn = (dp ? dp.spool_no : null) || psp.spool_no || null;
       if (!pl || !sn) continue;                    // anahtarsız → bu psp eşleşmeye katılamaz
 
-      anahtarlar.push({ pipeline: pl, spoolNo: sn });
+      const a = { pipeline: pl, spoolNo: sn };
+      anahtarlar.push(a);
 
       // A1: ağırlık+yüzey çelişkisi — eşleşen kabuk spool'una karşı bindir.
       const k = normPipeline(pl) + '|' + normSpoolNo(sn);
       const hedef = kabukMap.get(k);
       if (hedef) {
         const b = bindir(psp, hedef);              // {degisiklik, bindirme[], flagVar}
-        if (b.flagVar) flagVar = true;
+        if (b.flagVar) {
+          flagVar = true;
+          // W-2.20 (161): HANGİ alan çelişti — flag'li bindirme satırları anahtarla taşınır
+          a.bindirme_celiski = b.bindirme.filter((x) => x.flag === true);
+        }
       }
       // güven/seviye/kritik sinyalleri (psp seviyesinde)
       if (typeof psp.guven_skoru === 'number') guven = (guven == null) ? psp.guven_skoru : Math.min(guven, psp.guven_skoru);
@@ -243,6 +250,24 @@ export default async function handler(req, res) {
       if (s.malzeme_flag) malzemeFlagSay++;
     }
     if (sonuc.ozet) sonuc.ozet.malzeme_flag = malzemeFlagSay;   // özet şeridi/istatistik için
+
+    // ── W-2.20 (161): bindirme çelişki DETAYI enjeksiyonu — K2 deseniyle aynı (lib SAF kalır).
+    //   izometrileriDerle anahtarlarına iliştirilen flag'li bindirme satırları spool'a taşınır;
+    //   operatör HANGİ alanın çeliştiğini modalda görür. İlk çelişkili kayıt kazanır (malzeme kuralı).
+    const bindirmeHarita = new Map();   // "PIPE|SPOOL" -> { dosya_adi, celiski[] }
+    for (const z of izometriler) {
+      for (const a of (z.anahtarlar || [])) {
+        if (!a.bindirme_celiski || !a.bindirme_celiski.length) continue;
+        const kb = normPipeline(a.pipeline) + '|' + normSpoolNo(a.spoolNo);
+        if (!bindirmeHarita.has(kb)) bindirmeHarita.set(kb, { dosya_adi: z.dosya_adi || null, celiski: a.bindirme_celiski });
+      }
+    }
+    for (const s of (sonuc.spoollar || [])) {
+      const kb = normPipeline(s.pipeline) + '|' + normSpoolNo(s.spoolNo);
+      const bc = bindirmeHarita.get(kb);
+      s.bindirme_celiski = bc ? bc.celiski : null;
+      s.bindirme_dosya = bc ? bc.dosya_adi : null;
+    }
 
     // ── W-3.1 köprüsü (MK-159.2): iş id'sini satıra taşı — lib SAF kalır (K2 enjeksiyon deseni).
     //   format_tanit?is=<id>&kaynak=devre hedefi. Eşleme dosya_adi üzerinden (derlenen kanonik kayıtlar).

@@ -1869,6 +1869,17 @@ function duzeltAc(i) {
   _duzeltSpoolSKey = (s.pipeline || '') + '|' + (s.spoolNo || '');
   var b = '';
   if (s.durum === 'zayif') b += '<div class="sub" style="font-size:12px;margin-bottom:8px;color:var(--warn);">ℹ Zayıf rozeti parse/çelişki kalitesini gösterir — düzeltme yapman rozeti DEĞİŞTİRMEZ; düzeltmeler "düzelt" işaretiyle kaydedilir ve terfide uygulanır.</div>';
+  // W-2.20 (161): HANGİ alan çelişti — operatör neyi düzelteceğini görür (kaynak: bindir; kabuk korunur, ezme yok)
+  if (s.bindirme_celiski && s.bindirme_celiski.length) {
+    var _BAD = { et:'Et (mm)', cap:'Çap (mm)', agirlik:'Ağırlık (kg)', yuzey:'Yüzey' };
+    b += '<div class="dp-sec" style="color:var(--warn);">⚠ Çelişen alanlar — Excel/kabuk ↔ PDF' +
+      (s.bindirme_dosya ? ' <span style="font-weight:400;text-transform:none;letter-spacing:0;">(' + esc(s.bindirme_dosya) + ')</span>' : '') + '</div>';
+    s.bindirme_celiski.forEach(function (c) {
+      b += '<div class="efld"><label>' + esc(_BAD[c.alan] || c.alan) + '</label>' +
+        '<div class="locked" style="padding:7px 9px;font-size:13px;">Kabuk(Excel) <b>' + esc(c.kabuk != null ? String(c.kabuk) : '—') + '</b> ↔ PDF <b>' + esc(c.pdf != null ? String(c.pdf) : '—') + '</b> · kabuk korunur</div>' +
+        '<span class="src l2">PDF</span></div>';
+    });
+  }
   b += '<div class="dp-sec">Okunan değerler (önizleme)</div>';
   b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
   b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
