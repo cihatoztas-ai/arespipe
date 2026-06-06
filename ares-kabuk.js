@@ -133,7 +133,7 @@
   //      kuyrukIds             // opsiyonel: tamamlandı işaretlenecek dosya_isleme_kuyrugu id dizisi
   //                            //   (devre_detay tek id → [id]; wizard N BOM Excel → tümü)
   //      duzeltmeler           // 143/G2a opsiyonel: { (pipeline|spoolNo): {cap,et,agirlik,malzeme,kalite,
-  //                            //   yuzey,alistirma} } — operatör düzeltmeleri spool BAŞLIĞINI ezer.
+  //                            //   yuzey,alistirma,not} } — operatör düzeltmeleri spool BAŞLIĞINI ezer (not→imalat_not, 160).
   //                            //   devre_detay göndermez → eski davranış korunur (sıfır regresyon).
   //    }
   //    Dönen (Promise):
@@ -206,6 +206,9 @@
         var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.anaMalzeme||null);
         var _yuzey  = (_dz && _dz.yuzey!=null && _dz.yuzey!=='') ? _dz.yuzey : yz;
         var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : null;
+        // 160: NOT overlay'i → spooller.imalat_not. DİKKAT (devir notu): terfi sonrası eslestir (117/D2)
+        //   alistirma!=='VAR' iken imalat_not'u parse NOT'uyla tazeler — operatör NOT'u o durumda ezilebilir.
+        var _not    = (_dz && _dz.not!=null && _dz.not!=='') ? _dz.not : null;
         spoolRows.push({
           tenant_id:tid, devre_id:devreId,
           spool_no:s.spoolNo, spool_id:sid,
@@ -215,7 +218,8 @@
           agirlik:_agKg, agirlik_kg:_agKg, yuzey:_yuzey,
           durum:'Bekliyor', is_durumu:'bekliyor', ilerleme:0, durduruldu:false,
           cizim_durumu:'bekliyor',
-          aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:_alist
+          aktif_basamak:dv.aktif_basamak||null, basamak_snapshot:dv.basamak_snapshot||null, alistirma:_alist,
+          imalat_not:_not
         });
       }
       var ins=await supa.from('spooller').insert(spoolRows);
@@ -254,6 +258,29 @@
             agirlik_kg:_agKg||0, ifs_kod:b.ifs_kod||null
           });
         });
+        // 160: OPERATÖR EKLEDİĞİ kalemler — kalem_idx >= bom.length (PDF/Excel'de olmayan satır, kod 'OPR').
+        //   Alanlar taslak_duzeltmeleri'nden gelir (tanim,tip,malzeme,dn,adet,boy,agirlik); en az biri doluysa yazılır.
+        if(_kdz){
+          Object.keys(_kdz).forEach(function(ik){
+            var idx2=parseInt(ik,10);
+            if(!isFinite(idx2)||idx2<s.bom.length)return;
+            var dz=_kdz[ik]||{};
+            var dolu=['tanim','malzeme','dn','adet','boy','agirlik'].some(function(a){return dz[a]!=null&&dz[a]!=='';});
+            if(!dolu)return;
+            var _tip2=(dz.tip==='boru')?'boru':'fitting';
+            var bp2=boyutParse(dz.dn||null, dz.malzeme||null);
+            malRows.push({
+              tenant_id:tid, spool_id:sid,
+              kod:'OPR', tip:_tip2, tanim:dz.tanim||null, boyut:dz.dn||null,
+              malzeme:malKod(dz.malzeme||null), kalite:dz.malzeme||null,
+              dis_cap_mm:bp2.dis_cap, et_mm:bp2.et,
+              boy_mm:_tip2==='boru'?(_ksayi(dz.boy,0)||null):null,
+              adet:_tip2==='fitting'?(Math.round(_ksayi(dz.adet,0))||null):null,
+              miktar:_tip2==='boru'?((_ksayi(dz.boy,0))/1000):(_ksayi(dz.adet,0)||0),
+              agirlik_kg:_ksayi(dz.agirlik,0)||0, ifs_kod:null
+            });
+          });
+        }
       });
       if(malRows.length){var mr=await supa.from('spool_malzemeleri').insert(malRows);if(mr.error)console.warn('[kabuk] spool_malzemeleri:',mr.error.message);}
 

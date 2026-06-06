@@ -125,7 +125,11 @@
     .dp-head{ display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--bor); position:sticky; top:0; background:var(--sur); } .dp-head h3{ font-family:'Barlow Condensed',sans-serif; font-size:20px; margin:0; } .dp-x{ margin-left:auto; background:none; border:none; color:var(--txd); font-size:22px; cursor:pointer; }
     .dp-body{ padding:16px 18px; } .dp-sec{ font-size:12px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.5px; margin:18px 0 9px; } .dp-sec:first-child{ margin-top:0; }
     /* 160 (MK-160.3): Düzelt/İncele modalı yan PDF paneli — sol form, sağ pdf.js SALT görüntüleyici */
-    .pop.dp-genis{ width:min(1700px,97vw); height:93vh; max-height:93vh; overflow:hidden; display:flex; flex-direction:column; }
+    /* 160 fix: fixed+calc — modal viewport'tan BÜYÜYEMEZ (flex-ortalama taşma klipsi sorunu biter), üst bara da girmez */
+    #duzeltOverlay{ z-index:600; }
+    .pop.dp-genis{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:min(1700px, calc(100vw - 16px)); height:calc(100vh - 16px); max-height:calc(100vh - 16px);
+      overflow:hidden; display:flex; flex-direction:column; }
     .dp-genis .dp-body{ flex:1; min-height:0; padding:0; }
     .dp-split{ display:grid; grid-template-columns:460px 1fr; height:100%; }
     .dp-form{ overflow-y:auto; padding:16px 18px; border-right:1px solid var(--bor); min-width:0; }
@@ -138,9 +142,11 @@
     .dpv-bar button{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); color:#eef2f7; border-radius:6px; padding:3px 10px; font-size:13px; cursor:pointer; }
     .dpv-bar button:hover{ background:rgba(255,255,255,.22); }
     .dpv-bar .dpv-info{ color:#cfd6df; font-size:12px; margin:0 6px; font-family:'JetBrains Mono',monospace; }
-    .dpv-wrap{ flex:1; overflow:auto; cursor:grab; position:relative; }
+    .dpv-wrap{ flex:1; overflow:hidden; cursor:grab; position:relative; }
+    .dpv-holder{ position:relative; width:max-content; margin:0 auto; will-change:transform; }
+    .dpv-vurgu{ position:absolute; border:3px solid #f59e0b; background:rgba(245,158,11,.16); border-radius:4px; pointer-events:none; }
     .dpv-wrap.pan{ cursor:grabbing; }
-    .dpv-wrap canvas{ display:block; margin:8px auto; box-shadow:0 2px 14px rgba(0,0,0,.45); background:#fff; }
+    .dpv-wrap canvas{ display:block; box-shadow:0 2px 14px rgba(0,0,0,.45); background:#fff; }
     /* 160: kalem inline düzeltme paneli (modal değişmez, PDF açık kalır) */
     .kalem-inline{ border:1px dashed var(--bor); border-radius:8px; padding:8px 10px; margin:2px 0 8px; background:rgba(45,142,255,.04); }
     /* 160: PDF'ten okunan ham veri dökümü */
@@ -152,7 +158,7 @@
     .ham-tablo th,.ham-tablo td{ border:1px solid var(--bor); padding:3px 6px; text-align:left; white-space:nowrap; }
     .ham-tablo th{ background:rgba(127,127,127,.1); color:var(--txd); }
     @media (max-width:980px){ .dp-split{ grid-template-columns:1fr; } .dp-pdf{ display:none; }
-      .pop.dp-genis{ width:560px; height:auto; max-height:88vh; overflow:auto; display:block; }
+      .pop.dp-genis{ position:static; transform:none; width:560px; max-width:100%; height:auto; max-height:88vh; overflow:auto; display:block; }
       .dp-genis .dp-body{ padding:16px 18px; } }
     .efld{ display:grid; grid-template-columns:90px 1fr 70px; gap:10px; align-items:center; margin-bottom:9px; } .efld label{ font-size:14px; color:var(--txm); } .efld .src{ font-size:10px; padding:1px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; text-align:center; }
     .src.xl{ background:rgba(22,163,110,.14); color:var(--gr); } .src.l2{ background:rgba(45,142,255,.14); color:var(--ac); } .src.l3{ background:rgba(217,119,6,.14); color:var(--warn); } .src.bos{ background:rgba(229,62,62,.14); color:var(--re); }
@@ -1134,6 +1140,15 @@ var KALEM_ALANLAR = {
     if (v==null||v==='') return ''; var n=Number(String(v).replace(',','.'));
     return isFinite(n) ? (n.toLocaleString('tr-TR',{maximumFractionDigits:1})+' kg') : String(v); } }
 };
+// 160: OPERATÖR KALEM EKLEME — yeni kalem (kalem_idx >= bom.length) için ek alanlar.
+//   Mevcut kalem düzeltme alan setine SIZMAZ (aktar mevcut-kalem dalı tanim/tip okumaz — sessiz boşluk olmasın).
+var YENI_KALEM_EK = {
+  tanim: { lbl:'Tanım', prop:'tanim', tip:'text', fmt:function(v){ return v; } },
+  tip:   { lbl:'Tip',   prop:'tip',   tip:'select',
+    secenekler:function(){ return [{kod:'fitting',etk:'Fitting'},{kod:'boru',etk:'Boru'}]; },
+    fmt:function(v){ return v; } }
+};
+function _kalemCfg(alan){ return KALEM_ALANLAR[alan] || YENI_KALEM_EK[alan]; }
 var _kalemDuzeltCtx = null;   // { sKey, idx, b, spoolNo }
 
 // DB'den kalem düzeltmelerini WIZ._kalemDuzelt'e yükle (gte kalem_idx 0 = kalem; -1 spool ayrı yol).
@@ -1164,7 +1179,7 @@ function kalemDuzeltAc(sKey, idx, donusIdx) {
   var d = (KD[sKey] && KD[sKey][idx]) ? KD[sKey][idx] : {};
   document.getElementById('dpTitle').textContent = spoolNo + ' — ' + (b.tanim || 'kalem');
   function dsatir(alan) {
-    var cfg = KALEM_ALANLAR[alan];
+    var cfg = _kalemCfg(alan);
     if (cfg.tipGate && !cfg.tipGate(b)) return '';   // adet sadece fitting, boy sadece boru
     var deger = (d[alan] != null) ? d[alan] : b[cfg.prop];
     var gor = cfg.fmt ? cfg.fmt(deger) : deger;
@@ -1190,7 +1205,7 @@ function kalemDuzeltAc(sKey, idx, donusIdx) {
 // ✏️ satır içi input/select aç (spool duzeltSatirAc eşi, kalem ctx'i)
 async function kalemSatirAc(alan) {
   var ctx = _kalemDuzeltCtx; if (!ctx) return;
-  var b = ctx.b, cfg = KALEM_ALANLAR[alan];
+  var b = ctx.b, cfg = _kalemCfg(alan);
   var lk = document.getElementById('klk-'+alan); if (!lk) return;
   var KD = WIZ._kalemDuzelt || {};
   var d = (KD[ctx.sKey] && KD[ctx.sKey][ctx.idx]) ? KD[ctx.sKey][ctx.idx] : {};
@@ -1217,7 +1232,7 @@ function kalemSatirIptal(alan) { _kalemSatirCiz(alan); }
 
 function _kalemSatirCiz(alan) {
   var ctx = _kalemDuzeltCtx; if (!ctx) return;
-  var b = ctx.b, cfg = KALEM_ALANLAR[alan];
+  var b = ctx.b, cfg = _kalemCfg(alan);
   var lk = document.getElementById('klk-'+alan); if (!lk) return;
   var KD = WIZ._kalemDuzelt || {};
   var d = (KD[ctx.sKey] && KD[ctx.sKey][ctx.idx]) ? KD[ctx.sKey][ctx.idx] : {};
@@ -1233,7 +1248,7 @@ function _kalemSatirCiz(alan) {
 async function kalemKaydet(alan) {
   var ctx = _kalemDuzeltCtx; if (!ctx) return;
   var ctrl = document.getElementById('kin-'+alan); if (!ctrl) return;
-  var cfg = KALEM_ALANLAR[alan];
+  var cfg = _kalemCfg(alan);
   var yeni = String(ctrl.value || '').trim();
   if (cfg.tip === 'sayi' && yeni !== '') yeni = yeni.replace(',', '.');
   var supa = ARES.supabase(), tid = ARES.tenantId();
@@ -1361,6 +1376,7 @@ var DUZELT_ALANLAR = {
     fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.kaliteGoster(v) : v; } },
   yuzey:     { lbl:'Yüzey',     prop:'yuzeyHam',   tip:'select', secenekler:_yuzeySecenekler,
     fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.yuzeyEtiket(v) : v; } },
+  not:       { lbl:'Not',       prop:'not',        tip:'metin',  fmt:function(v){ return v; } },   // 160: PDF NOT'u (imalat_not) — terfide aktar overlay'i yazar
   alistirma: { lbl:'Alıştırma', prop:'alistirma',  tip:'select',
     secenekler:function(){ return [{kod:'VAR',etk:'VAR'},{kod:'KISMI',etk:'KISMI'},{kod:'YOK',etk:'YOK'}]; },
     fmt:function(v){ return v; } }
@@ -1372,20 +1388,23 @@ var _duzeltSpoolSKey = null;    // 159: aktif spool'un kabuk anahtarı (pipeline
 //   Aynı kalemKaydet/kalemSatirAc motoru kullanılır (klk-/kin- id'leri inline'da doğar; ctx aynı).
 //   Malzeme sekmesindeki köprüsüz kalemDuzeltAc yolu AYNEN duruyor (146/B).
 function _spoolKalemAc(idx) {
-  var ref = WIZ._spoolKalemRef; if (!ref || !ref.bom || !ref.bom[idx]) return;
+  var ref = WIZ._spoolKalemRef; if (!ref || !ref.bom) return;
+  var yeniKalem = (idx >= ref.bom.length);   // 160: operatör eklediği kalem — b boş, ek alanlar (tanım/tip) açılır
+  if (!yeniKalem && !ref.bom[idx]) return;
   var kap = document.getElementById('kal-inline-' + idx); if (!kap) return;
   // açıksa kapat (toggle)
   if (!kap.classList.contains('hide')) { kap.classList.add('hide'); kap.innerHTML = ''; return; }
   // diğer açık panelleri kapat (tek ctx — kalemKaydet karışmasın)
   document.querySelectorAll('.kalem-inline').forEach(function(el) { el.classList.add('hide'); el.innerHTML = ''; });
-  var b = ref.bom[idx];
+  var b = yeniKalem ? {} : ref.bom[idx];
   _kalemDuzeltCtx = { sKey: ref.sKey, idx: idx, b: b, spoolNo: ref.spoolNo };
   var KD = WIZ._kalemDuzelt || {};
   var d = (KD[ref.sKey] && KD[ref.sKey][idx]) ? KD[ref.sKey][idx] : {};
-  var bb = '';
-  Object.keys(KALEM_ALANLAR).forEach(function(alan) {
-    var cfg = KALEM_ALANLAR[alan];
-    if (cfg.tipGate && !cfg.tipGate(b)) return;
+  var bb = yeniKalem ? '<div class="sub" style="font-size:12px;margin-bottom:6px;">Yeni kalem — her alan ✏️→✓ ile kaydedilir; terfide spool_malzemeleri\'ne eklenir.</div>' : '';
+  var _alanlar = yeniKalem ? ['tanim','tip','malzeme','dn','adet','boy','agirlik'] : Object.keys(KALEM_ALANLAR);
+  _alanlar.forEach(function(alan) {
+    var cfg = _kalemCfg(alan);
+    if (!yeniKalem && cfg.tipGate && !cfg.tipGate(b)) return;
     var deger = (d[alan] != null) ? d[alan] : b[cfg.prop];
     var gor = cfg.fmt ? cfg.fmt(deger) : deger;
     var roz = (d[alan] != null) ? '<span class="src l3" title="operatör düzeltmesi">düzelt</span>' : '<span class="src xl">Excel</span>';
@@ -1398,6 +1417,33 @@ function _spoolKalemAc(idx) {
   bb += '<div class="actions" style="margin-top:4px;"><button class="btn-sm" style="color:var(--txd);" onclick="_spoolKalemAc(' + idx + ')">▲ Kapat</button></div>';
   kap.innerHTML = bb;
   kap.classList.remove('hide');
+}
+// 160: PDF/Excel'de olmayan kalemi operatör ekler — kalem_idx >= bom.length, taslak_duzeltmeleri'nde yaşar,
+//   terfide aktar yeni spool_malzemeleri satırı olarak yazar (kod 'OPR').
+function _spoolKalemEkle() {
+  var ref = WIZ._spoolKalemRef; if (!ref || !ref.bom) return;
+  var KD = (WIZ._kalemDuzelt && WIZ._kalemDuzelt[ref.sKey]) ? WIZ._kalemDuzelt[ref.sKey] : {};
+  var enB = ref.bom.length - 1;
+  Object.keys(KD).forEach(function(k){ var n = Number(k); if (isFinite(n) && n > enB) enB = n; });
+  var yeniIdx = enB + 1;
+  WIZ._kalemDuzelt = WIZ._kalemDuzelt || {}; WIZ._kalemDuzelt[ref.sKey] = WIZ._kalemDuzelt[ref.sKey] || {};
+  WIZ._kalemDuzelt[ref.sKey][yeniIdx] = WIZ._kalemDuzelt[ref.sKey][yeniIdx] || {};
+  duzeltAc(_duzeltSpoolIdx);   // listeyi yeni satırla tazele
+  setTimeout(function(){ _spoolKalemAc(yeniIdx); var el = document.getElementById('kal-inline-' + yeniIdx); if (el) el.scrollIntoView({ block: 'nearest' }); }, 60);
+}
+async function _spoolKalemSil(idx) {
+  var ref = WIZ._spoolKalemRef; if (!ref) return;
+  if (!confirm('Eklenen kalem kaldırılsın mı?')) return;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var dr = await supa.from('taslak_duzeltmeleri').delete()
+      .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
+      .eq('pipeline_no', ref.sKey.split('|')[0]).eq('spool_no', ref.spoolNo)
+      .eq('kalem_idx', idx);
+    if (dr.error) { toast('Kaldırılamadı: ' + dr.error.message); return; }
+    if (WIZ._kalemDuzelt && WIZ._kalemDuzelt[ref.sKey]) delete WIZ._kalemDuzelt[ref.sKey][idx];
+    duzeltAc(_duzeltSpoolIdx); toast('Kalem kaldırıldı');
+  } catch (e) { toast('Kaldırılamadı'); }
 }
 
 // 159: spool modalından izometri PDF'ini aç — storage_yolu o an çekilir (dokAc-102 lazy deseni)
@@ -1454,7 +1500,7 @@ function _spoolPdfListesi(s) {
   if (s.izometri && s.izometri.dosya_adi) list.push({ ad: s.izometri.dosya_adi, tip: 'izometri' });
   var pl = String(s.pipeline || '').trim().toUpperCase(), sn = String(s.spoolNo || '').trim().toUpperCase();
   ((WIZ._inceleme && WIZ._inceleme.montajlar) || []).forEach(function(m) {
-    if (String(m.kok || '').trim().toUpperCase() !== pl) return;
+    if (String(m.kok || '').trim().toUpperCase() !== pl) { console.debug('[v3] dpv montaj eşleşmedi:', m.dosya_adi, 'kok=', m.kok, 'pipeline=', pl); return; }
     var sps = (m.bagli_spoollar && m.bagli_spoollar.length ? m.bagli_spoollar : (m.tum_spoollar || []));
     for (var i = 0; i < sps.length; i++) {
       if (String(sps[i] || '').trim().toUpperCase() === sn) { list.push({ ad: m.dosya_adi, tip: 'montaj' }); return; }
@@ -1491,7 +1537,7 @@ function _dpvTabsCiz() {
 }
 async function dpvSec(i) {
   if (!DPV.dosyalar[i]) return;
-  DPV.aktif = i; DPV.page = 1; DPV.scale = null; _dpvTabsCiz();
+  DPV.aktif = i; DPV.page = 1; DPV.scale = null; DPV.panX = 0; DPV.panY = 0; DPV.vurgu = null; _dpvTabsCiz();
   var wrap = document.getElementById('dpvWrap'); if (wrap) wrap.innerHTML = '<div class="dp-pdf-bos">PDF yükleniyor…</div>';
   var seq = ++DPV._seq;   // hızlı sekme geçişinde yarışı kes
   try {
@@ -1521,12 +1567,35 @@ async function _dpvCiz() {
   cv.style.width = Math.floor(vp.width / dpr) + 'px'; cv.style.height = Math.floor(vp.height / dpr) + 'px';
   var t = pg.render({ canvasContext: cv.getContext('2d'), viewport: vp });
   await (t.promise || t);
-  wrap.innerHTML = ''; wrap.appendChild(cv);
+  // 160 fix: transform-pan — holder canvas+vurguyu birlikte taşır; fit halinde bile dikey/yatay pan çalışır
+  var hold = document.createElement('div'); hold.className = 'dpv-holder'; hold.id = 'dpvHolder';
+  hold.appendChild(cv);
+  if (DPV.vurgu) {
+    var vu = document.createElement('div'); vu.className = 'dpv-vurgu';
+    vu.style.left = (DPV.vurgu.x * DPV.scale) + 'px'; vu.style.top = (DPV.vurgu.y * DPV.scale) + 'px';
+    vu.style.width = (DPV.vurgu.w * DPV.scale) + 'px'; vu.style.height = (DPV.vurgu.h * DPV.scale) + 'px';
+    hold.appendChild(vu);
+  }
+  hold.style.transform = 'translate(' + (DPV.panX || 0) + 'px,' + (DPV.panY || 0) + 'px)';
+  wrap.innerHTML = ''; wrap.appendChild(hold);
   var inf = document.getElementById('dpvSayfaInfo'); if (inf) inf.textContent = DPV.page + '/' + DPV.pages;
 }
-function dpvSayfa(d) { if (!DPV.doc) return; var y = DPV.page + d; if (y < 1 || y > DPV.pages) return; DPV.page = y; _dpvCiz(); }
+function dpvSayfa(d) { if (!DPV.doc) return; var y = DPV.page + d; if (y < 1 || y > DPV.pages) return; DPV.page = y; DPV.vurgu = null; _dpvCiz(); }
 function dpvZoom(f) { if (!DPV.doc) return; DPV.scale = Math.min(8, Math.max(0.1, (DPV.scale || 1) * f)); _dpvCiz(); }
-function dpvSigdir() { if (!DPV.doc) return; DPV.scale = null; _dpvCiz(); }
+function dpvSigdir() { if (!DPV.doc) return; DPV.scale = null; DPV.panX = 0; DPV.panY = 0; DPV.vurgu = null; _dpvCiz(); }
+// ── W-2.19 ALTYAPI (160): belirli sayfadaki bölgeye uç + sarı vurgu. bbox = {x,y,w,h}, PDF scale=1
+//   viewport uzayında (sol-üst orijin). Çağıran henüz YOK — değer→koordinat envanteri 161 işi;
+//   konsoldan denenebilir: dpvZoomTo(1, {x:100, y:80, w:200, h:40}) ──
+async function dpvZoomTo(sayfa, bbox) {
+  if (!DPV.doc || !bbox) return;
+  var wrap = document.getElementById('dpvWrap'); if (!wrap) return;
+  DPV.page = Math.min(Math.max(1, sayfa || 1), DPV.pages);
+  DPV.scale = Math.max(0.1, Math.min(6, Math.min(wrap.clientWidth / (bbox.w * 2.4), wrap.clientHeight / (bbox.h * 2.4))));
+  DPV.vurgu = bbox;
+  DPV.panX = wrap.clientWidth / 2 - (bbox.x + bbox.w / 2) * DPV.scale;
+  DPV.panY = wrap.clientHeight / 2 - (bbox.y + bbox.h / 2) * DPV.scale;
+  await _dpvCiz();
+}
 async function dpvYeniSekme() {
   var d = DPV.dosyalar[DPV.aktif]; if (!d) return;
   try { var url = await _duzeltPdfUrl(d.ad); if (url) window.open(url, '_blank', 'noopener'); else toast('Dosya açılamadı'); }
@@ -1538,13 +1607,16 @@ function _dpvPanBagla() {
   var pan = null;
   kap.addEventListener('mousedown', function(e) {
     var w = document.getElementById('dpvWrap'); if (!w || !w.contains(e.target)) return;
-    pan = { x: e.clientX, y: e.clientY, sl: w.scrollLeft, st: w.scrollTop, w: w };
+    pan = { x: e.clientX, y: e.clientY, px: (DPV.panX || 0), py: (DPV.panY || 0), w: w };
     w.classList.add('pan'); e.preventDefault();
   });
   window.addEventListener('mousemove', function(e) {
     if (!pan) return;
-    pan.w.scrollLeft = pan.sl - (e.clientX - pan.x);
-    pan.w.scrollTop  = pan.st - (e.clientY - pan.y);
+    // 160 fix: transform-pan — scroll değil (fit'te scroll alanı yoktu, dikey pan çalışmıyordu)
+    DPV.panX = pan.px + (e.clientX - pan.x);
+    DPV.panY = pan.py + (e.clientY - pan.y);
+    var h = document.getElementById('dpvHolder');
+    if (h) h.style.transform = 'translate(' + DPV.panX + 'px,' + DPV.panY + 'px)';
   });
   window.addEventListener('mouseup', function() { if (pan) { pan.w.classList.remove('pan'); pan = null; } });
   kap.addEventListener('wheel', function(e) {
@@ -1657,14 +1729,16 @@ function duzeltAc(i) {
   _duzeltSpoolSKey = (s.pipeline || '') + '|' + (s.spoolNo || '');
   var b = '<div class="dp-sec">Okunan değerler (önizleme)</div>';
   b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
-  b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc);
+  b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
   // 159: spool'un BOM kalemleri — 146/B kalem rötuşuna modal içinden giriş (kopya akış yok)
   if (WIZ._kalemDuzelt == null) { _kalemDuzeltmeleriYukle().then(function(){ if (_duzeltSpoolIdx === i && !document.getElementById('duzeltOverlay').classList.contains('hide')) duzeltAc(i); }); }
   var _kb = null, _ksp = WIZ._kabukSpoollar || [];
   for (var _ki = 0; _ki < _ksp.length; _ki++) { if (((_ksp[_ki].pipeline || '') + '|' + (_ksp[_ki].spoolNo || '')) === _duzeltSpoolSKey) { _kb = _ksp[_ki]; break; } }
   if (_kb && (_kb.bom || []).length) {
     var _kd = (WIZ._kalemDuzelt && WIZ._kalemDuzelt[_duzeltSpoolSKey]) ? WIZ._kalemDuzelt[_duzeltSpoolSKey] : {};
-    b += '<div class="dp-sec">Malzemeler (' + _kb.bom.length + ' kalem)</div><div style="max-height:190px;overflow:auto;">';
+    b += '<div class="dp-sec">Malzemeler (' + _kb.bom.length + ' kalem)' +
+      ' <button class="btn-sm" style="padding:1px 8px;font-size:11px;color:var(--gr);" onclick="_spoolKalemEkle()" title="PDF/Excel\'de olmayan kalemi ekle">+ Ekle</button></div>' +
+      '<div style="max-height:230px;overflow:auto;">';
     _kb.bom.forEach(function(bm, idx) {
       var dz = _kd[idx] || {};
       var malzG = (dz.malzeme != null) ? dz.malzeme : (bm.malzeme || '');
@@ -1677,6 +1751,18 @@ function duzeltAc(i) {
         '<span style="flex:1;">' + esc(bm.tanim || malzG || 'kalem') + (dnG ? ' · ' + esc(String(dnG)) : '') + (mikG ? ' · ' + esc(String(mikG)) : '') + '</span>' + roz +
         '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Kalemi düzelt">✏️</button></div>' +
         '<div class="kalem-inline hide" id="kal-inline-' + idx + '"></div>';   // 160: yerinde düzeltme (modal değişmez, PDF açık kalır)
+    });
+    // 160: operatörün EKLEDİĞİ kalemler (kalem_idx >= bom.length) — "YENİ" rozetiyle listelenir
+    var _yeniIdxler = Object.keys(_kd).map(Number).filter(function(x){ return isFinite(x) && x >= _kb.bom.length; }).sort(function(a,c){ return a-c; });
+    _yeniIdxler.forEach(function(idx) {
+      var dz = _kd[idx] || {};
+      var oz = [dz.tanim, dz.malzeme && (typeof ARES_NORM!=='undefined' ? ARES_NORM.malzemeEtiket(dz.malzeme) : dz.malzeme), dz.dn,
+                (dz.boy ? dz.boy + ' mm' : (dz.adet ? dz.adet + ' ad' : null))].filter(function(x){ return x; }).join(' · ');
+      b += '<div class="locked" style="padding:6px 9px;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">' +
+        '<span style="flex:1;">' + esc(oz || 'yeni kalem') + '</span><span class="src l3" title="operatör ekledi">YENİ</span>' +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Düzenle">✏️</button>' +
+        '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--warn);" onclick="_spoolKalemSil(' + idx + ')" title="Kalemi kaldır">🗑</button></div>' +
+        '<div class="kalem-inline hide" id="kal-inline-' + idx + '"></div>';
     });
     b += '</div>';
     WIZ._spoolKalemRef = { sKey: _duzeltSpoolSKey, bom: _kb.bom, spoolNo: s.spoolNo || '' };   // 160: inline kalem bağlamı
