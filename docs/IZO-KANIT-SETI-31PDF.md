@@ -341,3 +341,19 @@ Yeni gözlem (160 testi): E100-722 ailesinde Windows glyph bozulması canvas'ta 
   Y200/G200 bölge kodlarıdır, format kimliği değil (aynı desen başka bölgelerde olur).
 - Mevcut açıklar değişmedi: 6 B1124 orijinal ad · v4 yapıştırma + AD kararı · ✖ sessiz-kayıp.
   Test yatakları KORUNUYOR (g200 + aw231 + NB1137 chvvnb + ykjfytjk — silme).
+
+---
+
+## 163 NOTU (2026-06-06) — kimlik güncellemesi + metodoloji sınırının tablo-hattı izdüşümü
+- **AD/KOD DEĞİŞTİ (bu belgedeki eski referanslar için):** a093eaaa = artık **"Tersan Cadmatic
+  Spool — Öğretim (çok-notasyon)"**, format_kodu **`tersan_cadmatic_spool_ogretim_v1`**
+  ("tersan deneme" ve "cadmatic_spool_nps_v1" tarihte kaldı). e1fb879d = "Tersan Cadmatic
+  İmalat (Spool) — Katalog", 39a2c81b = "Tersan Cadmatic Montaj — Katalog". pipeline_no kuralı
+  değişmedi (doğrulamalı).
+- **Metodoloji sınırının ÜÇÜNCÜ kardeşi:** tablo SENTEZİ (ares-tablo-sentez "yeşil" kanıtı)
+  format_tanit içinde CANON_ALL = TARAYICI metni üzerinde koşar — yani bölüm-1 sınırı
+  (görüntüleyici metni) ve 162 sınırı (extractAll görsel sıra) gibi, sentez yeşili de tek
+  başına üretim kanıtı DEĞİLDİR. Üretim kanıtı: kayıt sonrası drenaj + `is_kuyrugu ⟕
+  ai_api_log` JOIN (parser_seviye=l2, maliyet 0, ham_satir düşmesi yok).
+- PDF envanteri değişmedi (163'te dosya işi yoktu — yapısal oturum). Açıklar aynen: 6 B1124
+  orijinal ad · v4 yapıştırma + AD kararı · ✖ sessiz-kayıp. Test yatakları KORUNUYOR.

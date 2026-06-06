@@ -285,3 +285,40 @@ Durum değişiklikleri (160 güncellemesinin üstüne):
   aciliyet düştü, tasarım borcu duruyor.
 - **163 YÖNÜ (Cihat):** yapısal eksikler — W-1.x kuyruk drenajı (100+ stuck) + W-3.11 + W-3.12;
   format ÇEŞİTLİLİĞİ sonraya, toplu tanıtımlar diğer bilgisayardan.
+
+---
+
+## 163 GÜNCELLEMESİ (2026-06-06) — YAPISAL TEMİZLİK: W-3.11/W-3.12 kapandı, iki hayalet borç silindi
+- **W-3.11 → KAPANDI (hüküm + patch):** tablo yazım yolu SAĞLAMDI (152 köprüsü `kaydet`
+  içinde); gerçek kapı `_tabloSentezle`'nin `yesil>0` şartı + sentezin TARAYICI metnine
+  (CANON_ALL) koşması — B1'in tablo izdüşümü. 162 "değişiklik yok" semptomu kırık yol olmadan
+  üretilebiliyor. Patch (13/13 mekanik test): D1 toast tablo durumunu ayrıştırır ("yeşil kanıt
+  0 — YAZILMAZ" / "kayıtlıyla AYNI" / "AI oku") · D2 `_tabloYeniMt/_tabloDegistiMi` tek kaynak
+  → tamamlaAc önizlemesi = kaydet yazımı (162'nin "modal gösterdi" yanılgısının kökü) · D3
+  `_patchedKural`'a W-3.9 kapısı (türetilen alan sızıntısı — 153/2358'in açık kapısı kapandı).
+  ATÖLYE REÇETESİNE EK ŞART: Güncelle öncesi "🧮 N satır tipi · yeşil>0" kutusu görülmeli.
+- **W-3.12 → KAPANDI:** çekirdek `ares-alan-cikar.js` (kök, IIFE — ares-tablo-sentez deseni);
+  l2-parser ince delege (export imzaları aynen), format_tanit kopyaları silindi. Kopyada
+  whitelist'e ek **format_template dalı da eksikmiş**. Sessiz `fallback` taraması (F1): 6
+  format / 27 alan kuralında fallback/whitelist/format_template kullanımı SIFIR → B4 bugün
+  TEORİK; görünürlük gerekirse tek yerden eklenir.
+- **FAZ 1 girişindeki "100+ stuck (MK-152.3)" notu TARİHSELDİR — 163 denetimi:** kuyrukta
+  bekliyor=0 (K1/K2 SQL kanıtı); 153-154 zaten çözmüştü (W-1.1/1.2/1.4). Tek kalıntı (19 May
+  excel `hata`: Donatım Kontrol Formu = BOM dışı) iz notuyla iptal. **MK-117 de aynı durumda:**
+  W-1.3'ün 153/155 kapanışı taze SQL ile teyitli (2 legacy null, hepsi final). DERS → MK-163.1:
+  devir borçları taşınmadan TAZELENİR.
+- **Onay birikimi temizliği:** 428 oneri_hazir/manuel_onay'ın 281'i 22 May test kalıntısıydı
+  (P26-039 + P26-149) → toplu iptal (Cihat). Kalan ~147 = 5-6 Haz taze kuşağı → W-2.15 Onay
+  Kuyruğu'ndan ürün-akışı eritme turu 164 adayı.
+- **B3 ad/kod (B5'in kökü görünür):** a093eaaa → "Tersan Cadmatic Spool — Öğretim
+  (çok-notasyon)" / `tersan_cadmatic_spool_ogretim_v1` · e1fb879d → "Tersan Cadmatic İmalat
+  (Spool) — Katalog" · 39a2c81b → "Tersan Cadmatic Montaj — Katalog". a093eaaa ile e1fb879d
+  AYNI yapısal aile (spool PDF'inde iki başlık da var); ayrım KAYNAK: katalog-paket vs
+  DB-öğretim (MK-119.2 ikiliği). format_kodu YASAK kümesi = AILE_KAYIT anahtarları.
+- **G2a köprüsünün v1'i gemide (MK-162.2):** migration 102 `g2a_duzeltme_sinyali`
+  (security_invoker=true) + uyarilar.html 📐 "Format Kuralı Şüphesi" kutusu. v2 = format bağı
+  (parse_sonuc anahtar keşfi 164'te).
+- **YENİ BORÇ (MK-163.6):** `devre_dokumanlari.parse_durumu` bayat (1611 'bekliyor' / kuyruk 0)
+  — UI kuyruktan okuyor (102 fix), canlı bug değil; emekli-mi-trigger-mı kararı açık.
+- **OPR (f) → reçeteyle Cihat'ta:** mekanik kanıt tamam (ares-kabuk 261-274); canlı tur =
+  + Ekle → terfi → `spool_malzemeleri kod='OPR'` SELECT.

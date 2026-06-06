@@ -386,3 +386,24 @@ tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunul
 - **a093eaaa pipeline_no kuralı gemide:** `\n([A-Z]\d+-\d+-\d+)\n` (SQL, kanıtlı). `cozumle()`
   oto-çözümün çapa-bypass kusuru ve sessiz `fallback` dalı (alanCikar) açık borç olarak kayıtta.
 - **B2 değer kipi:** uykuda kalmaya devam (atölye kararıyla aciliyeti daha da düştü).
+
+---
+
+## 163 GERÇEKLEŞME NOTU (2026-06-06) — motor tek kaynak + tablo hattı hükümleri
+- **alanCikar/postProcess artık SPEC'in de tek adresi:** `ares-alan-cikar.js` (kök, IIFE,
+  ares-tablo-sentez deseni). l2-parser ve format_tanit DELEGE — bu gövdeler bir daha hiçbir
+  yere kopyalanmaz (162/B7 kapandı; kopyada whitelist + format_template eksikti). `alanCikar`
+  sözleşmesi değişmedi: fallback/whitelist/format_template/post_processing dalları çekirdekte;
+  F1 canlı taraması 27 kayıtlı kuralın hiçbirinde bu üç özelliğin kullanılmadığını gösterdi
+  (B4 sessiz-fallback borcu TEORİK statüde, görünürlük tek yerden eklenir).
+- **Tablo öğretimi yazım sözleşmesi netleşti (W-3.11):** düzeltme kipinde tablo patch'i
+  `_tabloYeniMt()` + `_tabloDegistiMi()` tek kaynağından üretilir; `kaydet` ve `tamamlaAc`
+  AYNI bindirmeyi kullanır (önizleme = yazım). `_satirTipleri` yalnız sentez `yesil>0` ise
+  doğar ve sentez CANON_ALL (tarayıcı metni) üzerinde koşar — MK-162.3'ün tablo izdüşümü:
+  nihai kanıt makamı yine drenaj SQL'idir. "Değişiklik yok" toast'ı artık tablo durumunu
+  ayrıştırır (yeşil-0 / aynı / AI-oku-gerekli) — sessiz belirsizlik kapandı.
+- **W-3.9 kapısı yazım katmanına da kondu (D3):** `_patchedKural` türetilen alanları (cap/et/dn)
+  `_turetZorunlu()` altında patch'e YAZMAZ — sayan filtre ile yazan filtre eşitlendi.
+- **Kimlik notu:** a093eaaa ad/kod düzeldi (`tersan_cadmatic_spool_ogretim_v1`); format_kodu
+  hiçbir zaman AILE_KAYIT anahtarlarına eşitlenemez (MK-119.2 — eşitlenirse DB kuralı yerine
+  paket koşar).

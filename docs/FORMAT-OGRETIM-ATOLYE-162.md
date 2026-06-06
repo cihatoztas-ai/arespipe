@@ -141,3 +141,28 @@ motor kopyası tekleştirme (B7) · sessiz fallback taraması (B4) · format ad/
    kardeş kuyruk reset (.SXX filtresi) → drenaj → kanıt JOIN: format_id=a093eaaa +
    parser_seviye=l2 + maliyet_usd=0 + pipeline=Y200-804-414 + ham_satir düşmesi yok.
 6. Ad düzeltmesi: UPDATE ad ("tersan deneme" → yapısal ad, B3 ilkesi).
+
+---
+
+## 163 SONUÇ EKİ (2026-06-06) — bulguların akıbeti
+- **B6 → HÜKME BAĞLANDI:** yazım yolu SAĞLAMDI; kapı = sentez `yesil>0` şartı (ve sentezin
+  CANON_ALL/tarayıcı metninde koşması — B1'in tablo izdüşümü). Bonus kusur: `tamamlaAc`
+  önizlemesi tablo patch'ini içermiyordu (önizleme≠yazım). Üçü de yamalandı (D1/D2/D3,
+  13/13 test). **REÇETE 2. ADIMINA EK ŞART:** Güncelle'den önce "🧮 N satır tipi sentezlendi ·
+  X yeşil" kutusu görülmeli; "Sentez başarısız" varken Güncelle'ye basılmaz (yeni toast zaten
+  "tablo YAZILMAZ" der).
+- **B7 → KAPANDI:** çekirdek `ares-alan-cikar.js`; kopyalar silindi (whitelist'e ek
+  format_template dalının da eksik olduğu görüldü). l2-parser/format_tanit delege.
+- **B4 → ÖLÇÜLDÜ, TEORİK:** F1 taraması — 27 kayıtlı alan kuralında fallback/whitelist/
+  format_template kullanımı SIFIR. Davranış bilinçli korundu; görünürlük ihtiyacı doğarsa
+  artık TEK yerden eklenir (çekirdek başlık yorumunda işli).
+- **B3 → UYGULANDI:** a093eaaa ad+kod (`tersan_cadmatic_spool_ogretim_v1`) + iki katalog
+  ailesinin adı yapısala döndü. format_kodu YASAK kümesi = AILE_KAYIT anahtarları (MK-119.2).
+- **B5 → KÖKÜ GÖRÜNÜR:** a093eaaa ↔ e1fb879d aynı yapısal aile; iki format aynı spool
+  PDF'inin iki ayrı başlığına parmak basıyor. Çapraz-doğrulama tasarım borcu DURUYOR
+  (aciliyet atölye modeliyle düşük).
+- **B8 güncel kalemler:** "100+ stuck dosya_isleme_kuyrugu" ve MK-117 HAYALET çıktı —
+  153-155'te çözülmüş, 163 SQL denetimi teyitli (MK-163.1 dersi). Onay birikiminin 281'i
+  (22 May test kuşağı) iptal edildi.
+- **MK-162.2 yakın işi GEMİDE:** migration 102 `g2a_duzeltme_sinyali` + uyarilar kutusu;
+  v2 (format bağı) 164 keşfine bağlı.

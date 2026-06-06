@@ -2106,3 +2106,68 @@ Açıklama gerekiyorsa blok yorum /* */ anchor'ın ÖNÜNE konur.
 ## MK-161.5 [DISIPLIN] — Kanıt çıktısı head ile kesilmez
 E120'de poppler çıktısının ilk 8 satırı rakamdı, "çorba" sanılıp yanlış yöne -29 map
 yazıldı. Kontrol grubu tam çıktıyla kurulur; uzunsa dosyaya yaz, grep'le sorgula.
+
+
+## MK-162.1 [URUN] — format_tanit operatör ürünü değil, UZMAN ARACIDIR (atölye kararı)
+161+162'de iki uzman, kaynak kod + SQL erişimiyle tek alanın kuralını ancak motor içlerini
+söküp kanıtlayabildi; UI testi iki kez yanılttı (B1 metin ayrışması), adres iki oturumda iki
+kez yanlış formata gitmek üzereydi (B5). Menü girişi kaldırıldı (6a27723); sayfa feature-flag
+ile yaşar (MK-159.2), batch "Tanıt" köprüsü uzman girişidir. Öğretim akışı = ATÖLYE (Cihat+
+Claude): zip → sunucu-metni dökümü → mekanik kural kanıtı → SQL kayıt → drenaj kanıtı.
+Kullanıcıya açılma şartı: C yolu (L3 çıktılarından otomatik kural ÖNERİSİ + uzman onayı).
+Tek kaynak: docs/FORMAT-OGRETIM-ATOLYE-162.md. (Kaynak: 162.)
+
+## MK-162.2 [URUN] — G2a düzeltme birikimi → kural ÖNERİSİ köprüsü (MK-160.2 inceltmesi)
+Düzelt=değer / Tanıt=kural ayrımı KORUNUR: operatör düzeltmesi hiçbir zaman doğrudan kurala
+dönüşmez. taslak_duzeltmeleri etiketli veridir; aynı yönde sistematik birikim (örn. 3+) uzmana
+"format kuralı şüphesi" SİNYALİ olur; BİRİKİM öneriye dönüşür, öneri ONAYDAN geçer. Yakın iş
+(163'te gemide): g2a_duzeltme_sinyali görünümü + uyarilar kutusu. (Kaynak: 162.)
+
+## MK-162.3 [DISIPLIN] — Format öğretiminde kanıt makamı SUNUCU METNİDİR
+format_tanit UI testi görsel-sıra metniyle (extractAll) koşar — bu sınıf alanlarda yeşil/
+kırmızı KANIT DEĞİLDİR. Kanıt: lokal pdf-parse+glyph-onar dökümü + drenaj SQL'i. Hibrit
+kayıtta SQL-önce yazılan alana UI'da DOKUNULMAZ (dirty → Güncelle ezer). 163 eki: tablo
+SENTEZİ de CANON_ALL (tarayıcı metni) üzerinde koşar — tablo öğretiminin nihai kanıtı da
+drenaj JOIN'idir. (Kaynak: 162 + 163.)
+
+## MK-163.1 [DISIPLIN] — Devir borcu taşınmadan TAZELENİR ("eski borç kaydı ≠ hâlâ borç", devir ikizi)
+162 devri "100+ stuck kuyruk (MK-152.3)" ve "MK-117 açık" taşıyordu; ikisi de 153-155'te
+çözülmüştü — 163'te taze SQL denetimiyle hayalet çıktılar. Kural: ajandaya giren her devir
+borcu için açılış teyitlerinde 1 tazeleme sorgusu ("borç hâlâ borç mu?"). MK-159 dersinin
+("dosya gerçeği esastır") devir-dosyası izdüşümü. (Kaynak: 163.)
+
+## MK-163.2 [TEKNIK] — W-3.11 hükmü: tablo yazım yolu sağlam; kapı sentez yeşilidir; önizleme=yazım
+Düzeltme kipinde tablo patch'i tek kaynaktan üretilir: _tabloYeniMt() + _tabloDegistiMi();
+kaydet ve tamamlaAc AYNI bindirmeyi görür (D2). "Değişiklik yok" toast'ı tablo durumunu
+ayrıştırır — sessiz fallback yok (D1). _patchedKural W-3.9 kapısını uygular: türetilen alan
+(cap/et/dn) elle işaretlense de patch'e SIZAMAZ — sayan filtre = yazan filtre (D3; 153/2358
+vakasının açık kapısıydı). _satirTipleri yalnız sentez yesil>0 ise doğar. (Kaynak: 163.)
+
+## MK-163.3 [MIMARI] — alanCikar/postProcess TEK KAYNAK: ares-alan-cikar.js
+Gövdeler kök IIFE çekirdeğinde (ares-tablo-sentez deseni); lib/l2-parser.js ve format_tanit
+DELEGEDİR, export imzaları değişmez (izometri-oku dinamik import'u etkilenmez). Bu gövdeler
+bir daha HİÇBİR dosyaya kopyalanmaz. 162/B7 kapandı (kopyada whitelist + format_template
+eksikti); B4 sessiz-fallback F1 ölçümüyle teorik (27 kuralda kullanım sıfır) — görünürlük
+ihtiyacı doğarsa tek yerden eklenir. (Kaynak: 163.)
+
+## MK-163.4 [VERI/URUN] — Format ad/kod yapısal kimliktir; format_kodu YASAK kümesi = AILE_KAYIT anahtarları
+Ad şablon/dizayn-ofisi/kaynağı anlatır (B3): a093eaaa = "Tersan Cadmatic Spool — Öğretim
+(çok-notasyon)" / tersan_cadmatic_spool_ogretim_v1; e1fb879d ve 39a2c81b "— Katalog" ekli.
+format_kodu ASLA AILE_KAYIT anahtarlarına (tersan_cadmatic_spool, tersan_cadmatic_montaj)
+eşitlenmez — eşitlenirse aileBirlestir DB kuralı yerine paketleri koşturur (MK-119.2 / MK-155.1
+ikiliği). B5'in kökü kayda geçti: a093eaaa ↔ e1fb879d aynı yapısal aile, ayrım KAYNAK
+(öğretim-DB vs katalog-paket). (Kaynak: 163.)
+
+## MK-163.5 [URUN] — G2a sinyal hattı v1: görünüm + kutu; format bağı v2'de
+migration 102 g2a_duzeltme_sinyali: alan+seviye+değer yönünde 3+ düzeltme birikimi;
+security_invoker=true ZORUNLU (yoksa view sahip yetkisiyle koşar, taslak_duzeltmeleri RLS'i
+bypass = çok-tenant sızıntı). uyarilar.html 📐 kutusu yalnız UZMANA sinyaldir — hiçbir şey
+otomatik kurala dönüşmez (MK-162.2). v1'de format bağı bilinçli YOK (tablo format taşımıyor);
+v2 = parse_sonuc anahtar keşfi VEYA düzeltme kaydına format_id kolonu. (Kaynak: 163.)
+
+## MK-163.6 [BORC] — devre_dokumanlari.parse_durumu BAYAT denormalize kolon
+1611 kayıt 'bekliyor' / kuyrukta bekleyen 0: kolon insert'te yazılır, yalnız terfi yolu
+(ares-kabuk:307) günceller. UI kuyruk gerçeğini ayrıca çeker (devre_detay:2635 — 102. oturum
+fix'i) → canlı bug DEĞİL, tek-kaynak borcu. Karar açık: emekli (yorum + okuyan-kalmadı grep
+kanıtı) ya da trigger. Kuyruk durumları (oneri_hazir/manuel_onay/iptal) kolon CHECK kümesine
+1:1 oturmadığından TAHMİNLE toplu backfill YAPILMAZ. (Kaynak: 163.)
