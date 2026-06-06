@@ -96,6 +96,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
 <script src="ares-normalize.js"></script>
 <script src="ares-asme.js"></script>
 <script src="ares-olcu.js"></script>
+<script src="ares-pdf-tounicode.js"></script>
 <script src="ares-tablo-sentez.js"></script>
 <script src="ares-kabuk.js"></script>
 <script src="ares-layout.js"></script>
@@ -592,6 +593,8 @@ document.getElementById('fileInput').addEventListener('change',function(e){
 async function loadPdf(data){
   const lib=_lib(); if(!lib){ toast('pdfjs yüklenemedi — repo kökünden servis et'); return; }
   try{
+    // 161: Cadmatic bozuk /ToUnicode onarımı (bellekte) — canvas glyph çorbası biter, metin katmanı düzelir
+    if(typeof ARES_PDF_TOUNICODE!=='undefined'){ const _o=ARES_PDF_TOUNICODE.onar(data); if(_o.uygulandi)console.info('[format_tanit] pdf-tounicode:',_o.sebep); data=_o.data; }
     const task=lib.getDocument(data); pdfDoc=await (task.promise||task); pageNum=1;
     resetAlanlar();
     if(_mode==='duzelt'){ _hydrateKural(); if(_problemAlan){ const i=ALANLAR.findIndex(x=>x.ad===_problemAlan); if(i>=0)adim=i; } }

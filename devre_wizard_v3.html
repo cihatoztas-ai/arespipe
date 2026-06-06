@@ -185,6 +185,7 @@
   <script src="ares-normalize.js"></script>
   <script src="ares-asme.js"></script>
   <script src="ares-olcu.js"></script>
+  <script src="ares-pdf-tounicode.js"></script>
   <script src="ares-kabuk.js"></script>
   <script src="ares-izometri-drenaj.js"></script>
   <script src="ares-layout.js"></script>
@@ -1601,7 +1602,12 @@ async function dpvSec(i) {
     wrap.classList.remove('excel-kip');
     await _pdfjsHazirla();
     var lib = _pdfjsLib();
-    var task = lib.getDocument(url);
+    // 161: Cadmatic bozuk /ToUnicode onarımı (bellekte, storage'a yazılmaz) — canvas glyph çorbası biter
+    var _pb = await (await fetch(url)).arrayBuffer();
+    if (seq !== DPV._seq) return;
+    var _on = (typeof ARES_PDF_TOUNICODE !== 'undefined') ? ARES_PDF_TOUNICODE.onar(_pb) : { data: new Uint8Array(_pb) };
+    if (_on.uygulandi) console.info('[v3] pdf-tounicode:', _on.sebep);
+    var task = lib.getDocument({ data: _on.data });
     var doc = await (task.promise || task);
     if (seq !== DPV._seq) return;
     DPV.doc = doc; DPV.pages = doc.numPages || 1;
