@@ -2085,3 +2085,24 @@ devre-inceleme endpoint'i bu alanları eslestir'in 117 kurallarıyla BİREBİR (
 alistirma_ipucu + NOT + kabuk_bos yüzey kuralı) satıra enjekte eder — yalnız GÖSTERİM için.
 Kalıcı yazım yine terfi/eslestir hattındadır; endpoint DB'ye yazmaz. Kural çatallanması yasak:
 eslestir kuralı değişirse enjeksiyon da aynı kaynaktan güncellenir. (Kaynak: son-durum 160, W-2.14.)
+
+## MK-161.1 [DISIPLIN] — Canlı HTML testinde İLK adım sert yenile
+Cmd+Shift+R atılmadan test sonucu kanıt sayılmaz. 161'de deploy doğruyken tarayıcı cache'i
+aynı oturumda ÜÇ kez sahte iz üretti ("PDF açılamadı" düz metni repo kodunda üretilemezdi).
+
+## MK-161.2 [MIMARI] — pdf-tounicode katmanı: görüntü onarımı ≠ çıkarım onarımı
+ares-pdf-tounicode.js canvas/metin GÖRÜNTÜ katmanını onarır (Cadmatic'in geçersiz
+/ToUnicode /Identity-H girdisi); glyph-onar.js ÇIKARIM katmanıdır. Tounicode bellekte,
+kapılı (gerçek ToUnicode'a dokunmaz), idempotent, storage'a asla yazmaz.
+
+## MK-161.3 [URUN] — kg/mm gösterimi tek ondalık (f1, tr-TR)
+Tüm kg ve uzunluk gösterimleri f1() ile tek ondalık. İstisna: et/çap HAM kalır —
+spec değeridir, 3.05 bilgi taşır.
+
+## MK-161.4 [DISIPLIN] — Tek-satır anchor'a satır-içi // yorum eklenmez
+Satırın devamını yorumlar, parantez dengesi patlar (W-3.9 yamasında yaşandı).
+Açıklama gerekiyorsa blok yorum /* */ anchor'ın ÖNÜNE konur.
+
+## MK-161.5 [DISIPLIN] — Kanıt çıktısı head ile kesilmez
+E120'de poppler çıktısının ilk 8 satırı rakamdı, "çorba" sanılıp yanlış yöne -29 map
+yazıldı. Kontrol grubu tam çıktıyla kurulur; uzunsa dosyaya yaz, grep'le sorgula.
