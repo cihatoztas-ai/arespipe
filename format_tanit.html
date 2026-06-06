@@ -280,8 +280,21 @@ function _duzeltUiGuncelle(ad){
 /* Mevcut kuralı derin kopyala, yalnız _dirty alanları üzerine yaz (read-before-write, MK-111.2). */
 function _patchedKural(base){
   const out=JSON.parse(JSON.stringify(base||{})); out.alanlar=out.alanlar||{};
-  ALANLAR.forEach(a=>{ if(a._dirty&&a.tip!=='tablo'&&a.regex){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; out.alanlar[a.ad]=o; } });
+  // W-3.11/D3 (163): kaydet'in dirty SAYACI ile buradaki YAZIM aynı filtreyi görür — W-3.9 türetilen
+  // alan (cap/et/dn) elle işaretlense de patch'e SIZAMAZ (153 vakası: çöp regex üretime basmıştı).
+  ALANLAR.forEach(a=>{ if(a._dirty&&a.tip!=='tablo'&&a.regex&&!(TURETILEN_ALANLAR.includes(a.ad)&&_turetZorunlu())){ const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; out.alanlar[a.ad]=o; } });
   return out;
+}
+/* W-3.11/D2 (163): tablo patch'i TEK kaynak — kaydet ve tamamlaAc aynı bindirmeyi görür (önizleme=yazım) */
+function _tabloYeniMt(){
+  const mt=ALANLAR.find(x=>x.tip==='tablo');
+  if(!(mt&&Array.isArray(mt._satirTipleri)&&mt._satirTipleri.length))return null;
+  const y={aktif:true,satir_tipleri:mt._satirTipleri};
+  if(mt._baslikTetik)y.baslik_tetikleyici=mt._baslikTetik;
+  return y;
+}
+function _tabloDegistiMi(yeniMt){
+  return !!(yeniMt&&JSON.stringify((_mevcutKural&&_mevcutKural.malzeme_tablosu)||null)!==JSON.stringify(yeniMt));
 }
 
 /* ── A+B: oto-tespit + alan yeşil/kırmızı ── */
@@ -707,13 +720,20 @@ async function kaydet(){
     // notasyon ailesine hizmet edebilir (M=ODxet, Y=NPS+Sch) — min'i yükseltmek tablosu henüz
     // öğretilmemiş aileyi L3'e geriletirdi (a093eaaa onarımını koruma).
     const _mt=ALANLAR.find(x=>x.tip==='tablo');
-    let yeniMt=null;
-    if(_mt&&Array.isArray(_mt._satirTipleri)&&_mt._satirTipleri.length){
-      yeniMt={aktif:true,satir_tipleri:_mt._satirTipleri};
-      if(_mt._baslikTetik)yeniMt.baslik_tetikleyici=_mt._baslikTetik;
+    const yeniMt=_tabloYeniMt();
+    const tabloDegisti=_tabloDegistiMi(yeniMt);
+    if(!dirty.length&&!promptDegisti&&!tabloDegisti){
+      // W-3.11/D1 (163): tablo durumu ayrıştırılır — "değişiklik yok" sessiz fallback olmasın (B6)
+      let tMsg='';
+      if(_mt){
+        const aiN=Array.isArray(_mt._aiSatirlar)?_mt._aiSatirlar.length:0;
+        if(yeniMt) tMsg=' · (tablo sentezi kayıtlıyla AYNI)';
+        else if(aiN) tMsg=' · (DİKKAT: '+aiN+' AI satırı var ama yeşil kanıt 0 — tablo YAZILMAZ; ↻ sentezle / bölgeyi kontrol et)';
+        else if(_mt.bbox) tMsg=' · (tablo bölgesi işaretli ama AI satırı yok — 🟣 AI oku)';
+      }
+      toast('Değişiklik yok — bir alanı yeniden işaretle, regex düzenle, AI tarifi gir veya AI-oku ile tablo sentezle'+tMsg);
+      return;
     }
-    const tabloDegisti=!!(yeniMt&&JSON.stringify((_mevcutKural&&_mevcutKural.malzeme_tablosu)||null)!==JSON.stringify(yeniMt));
-    if(!dirty.length&&!promptDegisti&&!tabloDegisti){ toast('Değişiklik yok — bir alanı yeniden işaretle, regex düzenle, AI tarifi gir veya AI-oku ile tablo sentezle'); return; }
     btn.disabled=true; btn.textContent='Güncelleniyor…';
     try{
       const patched=_patchedKural(_mevcutKural);
@@ -945,7 +965,17 @@ function buildKuralEski(){
   if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
   return { format_kodu:document.getElementById('fmtKod').value||'(adsız)', fingerprint:buildFingerprint(), parser_kural:pk, kapsam:scope==='all'?'format_tumu':'sadece_bu_pdf' };
 }
-function tamamlaAc(){ const j=(_mode==='duzelt')?{_kip:'duzelt',hedef_id:_formatId,degisen_alanlar:ALANLAR.filter(a=>a._dirty&&a.regex).map(a=>a.ad),parser_kural:_patchedKural(_mevcutKural)}:buildKural(); document.getElementById('jsonOut').textContent=JSON.stringify(j,null,2); document.getElementById('tamamlaOverlay').classList.remove('hide'); }
+function tamamlaAc(){
+  let j;
+  if(_mode==='duzelt'){
+    // W-3.11/D2 (163): önizleme = yazım — kaydet'in bindirdiği tablo patch'i JSON'da da görünür
+    j={_kip:'duzelt',hedef_id:_formatId,degisen_alanlar:ALANLAR.filter(a=>a._dirty&&a.regex).map(a=>a.ad),parser_kural:_patchedKural(_mevcutKural)};
+    const y=_tabloYeniMt();
+    if(_tabloDegistiMi(y)){ j.parser_kural.malzeme_tablosu=y; j.degisen_alanlar.push('malzeme_tablosu ('+y.satir_tipleri.length+' tip)'); }
+  } else j=buildKural();
+  document.getElementById('jsonOut').textContent=JSON.stringify(j,null,2);
+  document.getElementById('tamamlaOverlay').classList.remove('hide');
+}
 function tamamlaKapat(){ document.getElementById('tamamlaOverlay').classList.add('hide'); }
 let _tt; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600); }
 renderDots(); renderDetay(); aresInit();
