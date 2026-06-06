@@ -1637,6 +1637,10 @@ async function _dpvCiz() {
 function _dpvExcelCiz(si) {
   var wrap = document.getElementById('dpvWrap'); if (!wrap || !DPV.wb) return;
   var adlar = DPV.wb.SheetNames || [];
+  // 161 fix: !ref'siz (boş) sayfa sheet_to_html'i patlatıyor (undefined.indexOf — IFS ilk sayfası
+  //   boş olabilir). İlk çağrıda dolu ilk sayfaya kay; boş seçimde not çiz, sheetbar görünür kalsın.
+  function _wsDolu(k){ var w = DPV.wb.Sheets[adlar[k]]; return !!(w && w['!ref']); }
+  if (si === 0 && !_wsDolu(0)) { for (var j = 1; j < adlar.length; j++) { if (_wsDolu(j)) { si = j; break; } } }
   var ws = DPV.wb.Sheets[adlar[si]]; if (!ws) { wrap.innerHTML = '<div class="dp-pdf-bos">Sayfa okunamadı</div>'; return; }
   var sec = '';
   if (adlar.length > 1) {
@@ -1644,7 +1648,10 @@ function _dpvExcelCiz(si) {
       return '<button class="' + (k === si ? 'aktif' : '') + '" onclick="_dpvExcelCiz(' + k + ')">' + esc(a) + '</button>';
     }).join('') + '</div>';
   }
-  wrap.innerHTML = '<div class="dpv-excel">' + sec + XLSX.utils.sheet_to_html(ws, { editable: false }) + '</div>';
+  var govde;   // 161 fix: sheetbar tıklamaları dpvSec try'ının DIŞINDA — hata lokalde yakalanır
+  try { govde = ws['!ref'] ? XLSX.utils.sheet_to_html(ws, { editable: false }) : '<div class="dp-pdf-bos">Bu sayfa boş</div>'; }
+  catch (e) { govde = '<div class="dp-pdf-bos">Sayfa çizilemedi: ' + esc((e && e.message) || '') + '</div>'; }
+  wrap.innerHTML = '<div class="dpv-excel">' + sec + govde + '</div>';
 }
 function dpvSayfa(d) { if (!DPV.doc) return; var y = DPV.page + d; if (y < 1 || y > DPV.pages) return; DPV.page = y; DPV.vurgu = null; _dpvCiz(); }
 function dpvZoom(f) { if (!DPV.doc) return; DPV.scale = Math.min(5, Math.max(0.1, (DPV.scale || 1) * f)); _dpvCiz(); }
