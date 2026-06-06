@@ -1150,6 +1150,10 @@ function inceleGetirDebounce() { clearTimeout(_incDeb); _incDeb = setTimeout(inc
 var KALEM_ALANLAR = {
   malzeme: { lbl:'Malzeme', prop:'malzeme', tip:'select', secenekler:_malzemeSecenekler,
     fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.malzemeEtiket(v) : v; } },
+  // 164 (Cihat bulgusu): kalem seviyesinde kalite girilemiyordu (paslanmaz seçilir ama 304/316L yok).
+  //   Spool-seviyesi DUZELT_ALANLAR.kalite ile AYNI desen: dinamik liste (malzeme_tanimlari) + malzeme süzgeci.
+  kalite:  { lbl:'Kalite', prop:'kalite', tip:'select', dinamik:'kalite',
+    fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.kaliteGoster(v) : v; } },
   dn:      { lbl:'DN / Boyut', prop:'dn', tip:'text', fmt:function(v){ return v; } },
   adet:    { lbl:'Adet', prop:'adet', tip:'sayi', tipGate:function(b){ return b.tip==='fitting'; }, fmt:function(v){ return v; } },
   boy:     { lbl:'Boy (mm)', prop:'boy_mm', tip:'sayi', tipGate:function(b){ return b.tip==='boru'; }, fmt:function(v){ return f1(v); } },
@@ -1229,9 +1233,20 @@ async function kalemSatirAc(alan) {
   var mevcut = (d[alan] != null) ? d[alan] : b[cfg.prop];
   var mevcutStr = (mevcut != null) ? String(mevcut) : '', alanCtrl;
   if (cfg.tip === 'select') {
-    var secenekler = (typeof cfg.secenekler === 'function') ? cfg.secenekler() : (cfg.secenekler || []);
+    var secenekler;
+    if (cfg.dinamik === 'kalite') {
+      // 164: spool-seviyesi (duzeltSatirAc 1969) ile AYNI yol — dinamik liste + seçili malzemeye süzgeç.
+      secenekler = await _kaliteSecenekYukle();
+      var _mkal = (typeof ARES_NORM !== 'undefined') ? (ARES_NORM.malzemeKod(String(((d.malzeme != null) ? d.malzeme : b.malzeme) || '')) || '') : '';
+      if (_mkal) { var _fk = secenekler.filter(function(o){ return (o.kat || '') === _mkal; }); if (_fk.length) secenekler = _fk; }
+    } else {
+      secenekler = (typeof cfg.secenekler === 'function') ? cfg.secenekler() : (cfg.secenekler || []);
+    }
     var mevcutKod = mevcutStr;
-    if (typeof ARES_NORM !== 'undefined' && alan === 'malzeme') mevcutKod = ARES_NORM.malzemeKod(mevcutStr) || mevcutStr;
+    if (typeof ARES_NORM !== 'undefined') {
+      if (alan === 'malzeme') mevcutKod = ARES_NORM.malzemeKod(mevcutStr) || mevcutStr;
+      else if (alan === 'kalite') mevcutKod = ARES_NORM.kaliteKod(mevcutStr) || mevcutStr;
+    }
     var opts = '<option value="">— seç —</option>', bulundu = false;
     secenekler.forEach(function(o){ var sel=(o.kod===mevcutKod)?' selected':''; if(sel)bulundu=true; opts+='<option value="'+esc(o.kod)+'"'+sel+'>'+esc(o.etk)+'</option>'; });
     if (!bulundu && mevcutStr) opts += '<option value="'+esc(mevcutStr)+'" selected>'+esc(mevcutStr)+' (tanımsız)</option>';
@@ -1421,7 +1436,7 @@ function _spoolKalemAc(idx) {
   var KD = WIZ._kalemDuzelt || {};
   var d = (KD[ref.sKey] && KD[ref.sKey][idx]) ? KD[ref.sKey][idx] : {};
   var bb = yeniKalem ? '<div class="sub" style="font-size:12px;margin-bottom:6px;">Yeni kalem — her alan ✏️→✓ ile kaydedilir; terfide spool_malzemeleri\'ne eklenir.</div>' : '';
-  var _alanlar = yeniKalem ? ['tanim','tip','malzeme','dn','adet','boy','agirlik'] : Object.keys(KALEM_ALANLAR);
+  var _alanlar = yeniKalem ? ['tanim','tip','malzeme','kalite','dn','adet','boy','agirlik'] : Object.keys(KALEM_ALANLAR);
   _alanlar.forEach(function(alan) {
     var cfg = _kalemCfg(alan);
     if (!yeniKalem && cfg.tipGate && !cfg.tipGate(b)) return;
@@ -2056,11 +2071,18 @@ async function duzeltKaydet(alan) {
     toast(cfg.lbl + ' düzeltmesi kaldırıldı');
     return;
   }
+  // 164/A v2.1: kaynak ALAN-BAZLI — dsatir rozet kuralının birebir eşi (sabit 'excel' YANLIŞTI, aynı oturumda düzeltildi).
+  //   yuzey: PDF doldurduysa izometri; alistirma/not: izometri eşleşmesi varsa izometri, yoksa operator (bos = sistem okuması yok);
+  //   cap/et/agirlik/malzeme/kalite: Excel kabuk.
+  var _izoAlan = (alan === 'alistirma' || alan === 'not') ? !!s.izometri
+               : (alan === 'yuzey' ? !!(s.izometri && s.yuzeyHam) : false);
+  var _izoYok = (alan === 'alistirma' || alan === 'not' || alan === 'yuzey') && !_izoAlan;
   var row = {
     tenant_id: tid, devre_id: WIZ.devre_id,
     pipeline_no: s.pipeline || '', spool_no: s.spoolNo || '',
     alan: alan, kalem_idx: -1, deger: yeni, kaynak: 'operator',
-    deger_kaynagi: 'excel',   // 164/A: spool başlık değerleri Excel kabuktan gelir (rozet 'Excel') — sinyal adresi Excel hattı
+    deger_kaynagi: _izoAlan ? 'izometri' : (_izoYok ? 'operator' : 'excel'),
+    format_id: _izoAlan ? ((s.izometri && s.izometri.format_id) || null) : null,
     duzelten: userId || null, updated_at: new Date().toISOString()
   };
   var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });

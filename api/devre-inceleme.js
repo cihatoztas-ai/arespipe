@@ -289,6 +289,9 @@ export default async function handler(req, res) {
       //   spooller YOK (MK-157.1), eslestir bu alanları ancak terfi sonrası yazar. Önizleme satırına
       //   AYNI kurallarla türetilip taşınır; kalıcı yazım yine terfi/eslestir hattında.
       const ps = psHarita.get(s.izometri.dosya_adi);
+      // 164/A v2.1: parse_sonuc kökündeki format_id önizleme izometrisine taşınır —
+      //   izometri-kaynaklı düzeltmeler (G2a) formata adreslenebilsin.
+      if (ps && s.izometri.format_id == null) s.izometri.format_id = ps.format_id || null;
       const dal = ps ? (((ps.spoollar || []).find((d) => _norm(d.spool_no) === _norm(s.spoolNo)))
                        || (((ps.spoollar || []).length === 1) ? ps.spoollar[0] : null)) : null;
       // 117 kuralı BİREBİR (kuyruk-isle-izometri ~587): dosya adı ALS → VAR; değilse alistirma_ipucu

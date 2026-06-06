@@ -245,12 +245,14 @@
           var _boy    = (dz && dz.boy!=null && dz.boy!=='') ? _ksayi(dz.boy, (b.boy_mm||0)) : (b.boy_mm||0);
           var _adet   = (dz && dz.adet!=null && dz.adet!=='') ? _ksayi(dz.adet, (b.adet||0)) : (b.adet||0);
           var _agKg   = (dz && dz.agirlik!=null && dz.agirlik!=='') ? _ksayi(dz.agirlik, (b.agirlik_kg||0)) : (b.agirlik_kg||0);
+          // 164: kalite düzeltmesi varsa onu yaz; yoksa eski davranış (ham malzeme metni — Excel hamı çoğu zaman kaliteyi içerir).
+          var _kal    = (dz && dz.kalite!=null && dz.kalite!=='') ? dz.kalite : (_malHam||null);
           var bp=boyutParse(_dn, _malHam);
           malRows.push({
             tenant_id:tid, spool_id:sid,
             kod:(b.ifs_kod||(b.tanim||'').substring(0,20)||'IFS'),
             tip:b.tip, tanim:b.tanim||null, boyut:_dn||null,
-            malzeme:malKod(_malHam), kalite:_malHam||null,
+            malzeme:malKod(_malHam), kalite:_kal,
             dis_cap_mm:bp.dis_cap, et_mm:bp.et,
             boy_mm:b.tip==='boru'?(_boy||null):null,
             adet:b.tip==='fitting'?(Math.round(_adet||0)||null):null,
@@ -265,14 +267,14 @@
             var idx2=parseInt(ik,10);
             if(!isFinite(idx2)||idx2<s.bom.length)return;
             var dz=_kdz[ik]||{};
-            var dolu=['tanim','malzeme','dn','adet','boy','agirlik'].some(function(a){return dz[a]!=null&&dz[a]!=='';});
+            var dolu=['tanim','malzeme','kalite','dn','adet','boy','agirlik'].some(function(a){return dz[a]!=null&&dz[a]!=='';});
             if(!dolu)return;
             var _tip2=(dz.tip==='boru')?'boru':'fitting';
             var bp2=boyutParse(dz.dn||null, dz.malzeme||null);
             malRows.push({
               tenant_id:tid, spool_id:sid,
               kod:'OPR', tip:_tip2, tanim:dz.tanim||null, boyut:dz.dn||null,
-              malzeme:malKod(dz.malzeme||null), kalite:dz.malzeme||null,
+              malzeme:malKod(dz.malzeme||null), kalite:(dz.kalite!=null&&dz.kalite!=='')?dz.kalite:(dz.malzeme||null),
               dis_cap_mm:bp2.dis_cap, et_mm:bp2.et,
               boy_mm:_tip2==='boru'?(_ksayi(dz.boy,0)||null):null,
               adet:_tip2==='fitting'?(Math.round(_ksayi(dz.adet,0))||null):null,
