@@ -1597,7 +1597,11 @@ async function dpvSec(i) {
     if (seq !== DPV._seq) return;
     DPV.doc = doc; DPV.pages = doc.numPages || 1;
     await _dpvCiz();
-  } catch (e) { console.warn('[v3] dpv:', e); if (wrap && seq === DPV._seq) wrap.innerHTML = '<div class="dp-pdf-bos">PDF açılamadı</div>'; }
+  } catch (e) {
+    console.warn('[v3] dpv:', DPV.dosyalar[i] && DPV.dosyalar[i].tip, e);
+    if (wrap && seq === DPV._seq) wrap.innerHTML = '<div class="dp-pdf-bos">' +
+      ((DPV.dosyalar[i] && DPV.dosyalar[i].tip === 'excel') ? 'Excel açılamadı: ' : 'PDF açılamadı: ') + esc((e && e.message) || '') + '</div>';
+  }
 }
 async function _dpvCiz() {
   var wrap = document.getElementById('dpvWrap'); if (!wrap || !DPV.doc) return;
@@ -1607,6 +1611,9 @@ async function _dpvCiz() {
     DPV.scale = Math.max(0.1, Math.min((wrap.clientWidth - 20) / vp0.width, (wrap.clientHeight - 20) / vp0.height));
   }
   var dpr = window.devicePixelRatio || 1;
+  // 160 fix: tarayıcı canvas sınırı (~8k px) — aşımda scale kısılır, yoksa canvas BOŞ çizer (PDF "kaybolur")
+  var _enB = 7500 / Math.max(vp0.width, vp0.height);
+  if (DPV.scale * dpr > _enB) DPV.scale = _enB / dpr;
   var vp = pg.getViewport(DPV.scale * dpr);
   var cv = document.createElement('canvas');
   cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
@@ -1640,7 +1647,7 @@ function _dpvExcelCiz(si) {
   wrap.innerHTML = '<div class="dpv-excel">' + sec + XLSX.utils.sheet_to_html(ws, { editable: false }) + '</div>';
 }
 function dpvSayfa(d) { if (!DPV.doc) return; var y = DPV.page + d; if (y < 1 || y > DPV.pages) return; DPV.page = y; DPV.vurgu = null; _dpvCiz(); }
-function dpvZoom(f) { if (!DPV.doc) return; DPV.scale = Math.min(8, Math.max(0.1, (DPV.scale || 1) * f)); _dpvCiz(); }
+function dpvZoom(f) { if (!DPV.doc) return; DPV.scale = Math.min(5, Math.max(0.1, (DPV.scale || 1) * f)); _dpvCiz(); }
 function dpvSigdir() { if (!DPV.doc) return; DPV.scale = null; DPV.panX = 0; DPV.panY = 0; DPV.vurgu = null; _dpvCiz(); }
 // ── W-2.19 ALTYAPI (160): belirli sayfadaki bölgeye uç + sarı vurgu. bbox = {x,y,w,h}, PDF scale=1
 //   viewport uzayında (sol-üst orijin). Çağıran henüz YOK — değer→koordinat envanteri 161 işi;
@@ -1675,8 +1682,15 @@ function _dpvPanBagla() {
     // 160 fix: transform-pan — scroll değil (fit'te scroll alanı yoktu, dikey pan çalışmıyordu)
     DPV.panX = pan.px + (e.clientX - pan.x);
     DPV.panY = pan.py + (e.clientY - pan.y);
+    // 160 fix: pan sınırı — görüntü panelin tamamen dışına kaçamaz (≥80px görünür kalır)
     var h = document.getElementById('dpvHolder');
-    if (h) h.style.transform = 'translate(' + DPV.panX + 'px,' + DPV.panY + 'px)';
+    if (h) {
+      var hw = h.offsetWidth, hh = h.offsetHeight, ww = pan.w.clientWidth, wh = pan.w.clientHeight, P = 80;
+      var ofs = Math.max(0, (ww - hw) / 2);   // holder margin:auto ofseti
+      DPV.panX = Math.min(ww - P - ofs, Math.max(P - hw - ofs, DPV.panX));
+      DPV.panY = Math.min(wh - P, Math.max(P - hh, DPV.panY));
+      h.style.transform = 'translate(' + DPV.panX + 'px,' + DPV.panY + 'px)';
+    }
   });
   window.addEventListener('mouseup', function() { if (pan) { pan.w.classList.remove('pan'); pan = null; } });
   kap.addEventListener('wheel', function(e) {
@@ -1763,6 +1777,14 @@ function duzeltAc(i) {
   if (!s) return;
   _duzeltSpoolIdx = i;
   var durumEt = { okundu:'okundu', zayif:'parse zayıf', eksik:'eksik (döküman yok)', fazla:'fazla' }[s.durum] || s.durum;
+  // 160: zayıf SEBEBİ başlıkta (zayifMi kriterleri: bindirme çelişkisi / kritik uyarı / düşük güven)
+  if (s.durum === 'zayif') {
+    var _seb = [];
+    if (s.bindirme_flag || (s.izometri && s.izometri.bindirme_flag)) _seb.push('Excel↔PDF çelişkisi');
+    if (s.izometri && s.izometri.kritik_uyari) _seb.push('kritik uyarı');
+    if (s.izometri && typeof s.izometri.guven === 'number' && s.izometri.guven < 0.99 ) { if (s.izometri.guven < 0.7) _seb.push('düşük güven (%' + Math.round(s.izometri.guven * 100) + ')'); }
+    if (_seb.length) durumEt += ' · ' + _seb.join(' + ');
+  }
   document.getElementById('dpTitle').textContent = (markaCellMetin(s)) + ' — ' + durumEt;
   // salt görüntü satırı (izometri meta gibi düzeltilemez alanlar)
   function satir(lbl, val, src) {
@@ -1787,7 +1809,9 @@ function duzeltAc(i) {
   var izoSrc = s.izometri ? (String(s.izometri.seviye || '').toLowerCase() === 'l3' ? 'l3' : 'l2') : 'bos';
   // 159: kabuk köprüsü — inceleme anahtarı = kabuk anahtarı (pipeline|spoolNo, 1231 formülü)
   _duzeltSpoolSKey = (s.pipeline || '') + '|' + (s.spoolNo || '');
-  var b = '<div class="dp-sec">Okunan değerler (önizleme)</div>';
+  var b = '';
+  if (s.durum === 'zayif') b += '<div class="sub" style="font-size:12px;margin-bottom:8px;color:var(--warn);">ℹ Zayıf rozeti parse/çelişki kalitesini gösterir — düzeltme yapman rozeti DEĞİŞTİRMEZ; düzeltmeler "düzelt" işaretiyle kaydedilir ve terfide uygulanır.</div>';
+  b += '<div class="dp-sec">Okunan değerler (önizleme)</div>';
   b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
   b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
   // 159: spool'un BOM kalemleri — 146/B kalem rötuşuna modal içinden giriş (kopya akış yok)
