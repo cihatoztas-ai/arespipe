@@ -331,3 +331,21 @@ devre ≠ aynı devre.
 
 160 ana işi bu notun uygulanmasıdır: FORMAT-YONETIM-MIMARI.md (tek otorite + öğretim adresi
 tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunulmadı.
+
+---
+
+## 160 GERÇEKLEŞME NOTU (2026-06-06)
+- **Köprü sözleşmesi GEMİDE:** `format_tanit?is=<id>&kaynak=devre|batch` — kaynak=devre →
+  dosya_isleme_kuyrugu→devre_dokumanlari (devre-belgeleri), kaynak=batch → is_kuyrugu.storage_path
+  (izometri-pdfs, dosya-url-al allow-list'e eklendi). Yükleyici `_isYukle` PDF'i işten açar,
+  `_fnOnerUygula` + otoTespit zinciri aynen koşar; `_isPdf` global'i AI-oku'yu köprü PDF'iyle besler.
+- **MK-155.1 ⚠ banner ÜRETİMDE:** otoTespit/formatYukle paket-katmanlı aile görünce "kural
+  düzeltmesi deploy olmadan etkinleşmez" uyarısı basar (`_PAKET_UYARI`/`_PAKET_AILELER`).
+- **Giriş noktaları:** nav "Format Tanıt" (picker kipi) + batch "Tanıt" (bilinmeyen satır, W-3.2).
+  **Wizard kanadı (W-3.1) İPTAL** — Cihat 160 kararı: zayıf satır akışı format_tanit'e GİTMEZ;
+  değer işi spool modalında (yan PDF panel, MK-160.3). `spool.izometri.is_id` API'de duruyor.
+- **B2 DEĞER KİPİ format_tanit'te UYKUDA:** kart + motor gemide (wizard Düzelt sözleşmesi birebir:
+  onConflict altılısı, kalem_idx=-1, kanonik kodlar, boş=sil) ama köprü `&pl=&sn=` göndermediği
+  sürece görünmez. Uyandırma şartı: bağlam taşıyan bir köprü (ileride devre_detay/batch'ten).
+- Öğretim adresi tablosu + tek otorite kararı: **docs/FORMAT-YONETIM-MIMARI.md** (MK-160.1:
+  adres-bilinçli ikilik; yeni aile AILE_KAYIT'a eklenmez; uzun vade yön = facet→DB).

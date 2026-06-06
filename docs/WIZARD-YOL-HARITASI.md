@@ -187,3 +187,34 @@
 - ~~K-1~~ CEVAPLANDI (154): W-2.11 = A (devre_detay ?taslak=1 kipi). Uygulama 155.
 - K-2: W-3.3 L3 anahtarının varsayılanı ne olsun? (Öneri: pilot döneminde AÇIK; format kütüphanesi olgunlaşınca devre bazında kapatılır.)
 - K-3: W-1.1 cron zinciri Hobby tek-cron hakkıyla mı, yoksa İşlenenler sekmesi client-loop'u yeterli mi? (Öneri: ikisi birden — sekme anlık, cron emniyet ağı.)
+
+---
+
+## 160 GÜNCELLEMESİ (2026-06-06) — spool modalı "büyük ekran"a evrildi
+Durum değişiklikleri (yukarıdaki maddelerin üstüne):
+- **W-3.1 → İPTAL (Cihat kararı):** zayıf satırdan format_tanit'e köprü YOK — değer işi spool
+  modalında çözülür; format öğretimi batch Tanıt + nav'dan. `spool.izometri.is_id` devre-inceleme
+  API'de duruyor (ileride köprü gerekirse hazır).
+- **W-3.2 → GEMİDE:** batch "Tanıt" → `format_tanit?is=&kaynak=batch`. Canlı tık testi 161'de
+  (is_kuyrugu client SELECT RLS riski — hata mesajı artık sebebi söylüyor).
+- **W-2.18 → KAPANDI (modal hali):** "PDF'ten okunan (ham)" bölümü — parse dalı generic döküm
+  (kesimler/koordinat/not/malzeme tablosu, alan listesi sabitlenmeden). + Önizleme enjeksiyonu:
+  alıştırma (117 kuralı birebir: ALS dosya→VAR / alistirma_ipucu) + NOT + yüzey (kabuk_bos kuralı)
+  endpoint'te satıra taşınır (MK-160.5 adayı).
+- **W-2.19 → YENİ, YARIM:** `dpvZoomTo(sayfa,bbox)` + sarı vurgu altyapısı gemide (konsoldan
+  denenebilir); değere-tıkla bağlantısı KOORDİNAT ENVANTERİ ister (motor alan konumu yazmıyor) —
+  161+ tasarım işi. Dilim 2: kural bölgelerinden koordinat / motor alan-konum eki.
+- **YENİ — spool modalı büyük ekran (MK-160.3):** pdfjs SALT görüntüleyici (sayfa/zoom/drag-pan
+  sınırlı/canvas-emniyetli) + sekmeler 📐izometri ↔ 🗺montaj ↔ 📊Excel (SheetJS vendor) + inline
+  kalem düzeltme + **kalem EKLEME** (kalem_idx≥bom.length → aktar `kod:'OPR'` satırı, MK-160.4
+  adayı) + NOT alanı düzeltilebilir (aktar `not`→imalat_not) + kalite-malzeme süzgeci
+  (kategori_kod) + her satırda buton (zayıf=Düzelt sarı, sağlam=İncele yeşil) + zayıf SEBEBİ
+  başlıkta (çelişki/kritik/güven) + "düzeltme rozeti değiştirmez" bilgi notu.
+- **YENİ AÇIKLAR (160 testinden):** (a) zayıf ÇELİŞKİ DETAYI — hangi alan çelişti, bindirme/_eslesme
+  listesi modalda gösterilmeli (operatör neyi düzelteceğini bilsin); (b) Excel sekmesi ilk testte
+  açılmadı — hata mesajı detaylandırıldı, 161'de vendor `/vendor/xlsx.full.min.js` 404 kontrolü;
+  (c) yüksek zoom'da sol form scrollbar kaybı — canvas emniyeti (7500px) sonrası tekrar test;
+  (d) operatör NOT overlay'i ↔ eslestir D2 ezme etkileşimi (terfi sonrası parse NOT'u tazeler);
+  (e) bu modal devre_detay'a da taşınacak (spool önizleme — Cihat istedi); (f) glyph bozulması
+  canvas'ta (pilot/Windows konusu, metin katmanı sağlıklı).
+- K-2 (W-3.3 L3 anahtarı varsayılanı) ve K-3 (cron zinciri) AÇIK duruyor.

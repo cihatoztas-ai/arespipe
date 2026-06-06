@@ -1,54 +1,42 @@
-# CLAUDE-SON-OTURUM.md — Oturum 156 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 160 özeti
 
 ## Tek cümle
-Onay havuzu tasarımı veriyle bağlandı (yer=devre_detay, tek liste/iki davranış, toplu onay sınırlı
-— MK-156.2), 671 test işi temizlenip havuz 327'ye indi, İşlenenler→Önizle köprüsü gemiye bindi
-(df11ac1, canlı kanıtlı) ve aynı köprünün ilk ekranı iki yapısal gerçeği açığa çıkardı: taslak
-önizleme yapısal boş gövde gösterir (MK-156.1) ve NB1124'ün kabukta_yok ×22'si satır değil
-KİMLİK sorunudur (MK-156.3) — kabuk 22 spool'la sapasağlam, 44 PDF'in 37'si pipeline NULL.
+Format yönetim mimarisi karar tablosuyla yazıldı (MK-160.1/2) ve `?is=` köprü altyapısı gemiye
+alındı; ama oturumun ağırlık merkezi Cihat'ın yön düzeltmesiyle kaydı — "zayıf satırdan format
+ekranına gitme, PDF'i düzeltme ekranının YANINA koy" — ve spool modalı aynı gün içinde canlı test
+döngüsüyle pdfjs görüntüleyicili (pan/zoom/izometri↔montaj↔Excel sekmeli), inline kalemli, kalem
+EKLEMELİ, ham-parse dökümlü "büyük ekran"a evrildi (MK-160.3/4/5 adayları).
 
-## Kilitli kararlar
-1. **Onay yüzü (Cihat onaylı akış):** devre_detay'a "Onay Kuyruğu" sekmesi + devreler.html rozet.
-   Kanıt: 953 işin tamamı aktif devrelerdeydi (taslakta yalnız günün NB1124 turu). İşlenenler
-   taslak yüzü olarak kalır.
-2. **Tek liste, iki davranış:** oneri_hazir yeşil + toplu onaylanabilir; manuel_onay amber +
-   tekil, satır açılınca parse_sonuc.spoollar[].uyarilar (kod+mesaj+agirlik) listelenir;
-   atanmamis ayrı alt grup ("onayla" değil "eşleştir"). Yeni veri üretimi yok — JSONB yeterli.
-3. **Toplu onay sınırı:** yalnız oneri_hazir + devre kapsamı; kritik uyarılı satır toplu akışa
-   girmez; manuel_onay terfiyi bloklamaz ama görünür kalır (B-6 / güvensiz BOM felsefesi).
-4. **Test yatağı stratejisi:** "hepsini sil" yerine g200 + 265-overboard + hhbjşlö korundu —
-   157 onay UI'ı gerçek veriyle test edilebilsin (141+86+55 + 45 iş).
+## Kanıt zinciri
+1. KARARLAR.md dosya gerçeği: son işli kayıt MK-138.3 → 139-159 boşluğu (MK-159.3 ikinci vaka);
+   154-160 seti her kaydın sonunda kaynak referansıyla işlendi, 139-153 boşluk notu dosyada.
+2. Köprü read-before-write: iki kuyruk/iki bucket keşfi sözleşmeyi değiştirdi (`&kaynak=` ayrımı);
+   devre-inceleme is_id taşıması mekanik testle kanıtlandı (test-isid.mjs, 6/6: zayıf+L3 koşulları,
+   fazla satırı, dedup).
+3. Canlı test döngüsü (3 ekran görüntüsü turu): fit sorunu → fixed+calc çözümü → montaj sekmesi
+   fit'le birlikte GELDİ (ayrı bug değildi); alıştırma boşluğu → MK-157.1 yapısal kökü → endpoint
+   enjeksiyonu 117 kuralı birebir; pan dikey çalışmıyor → scroll-pan'ın fit halinde taşma alanı
+   olmadığı teşhisi → transform-pan.
+4. "PDF 3 satır / kabuk 2 kalem" itirazı: toplamlar örtüşüyor (1+1 flanş = 2 ad konsolide) —
+   atlama değil; yine de kalem-ekleme ihtiyacı gerçek, OPR kapısı açıldı.
 
-## Süreç dersleri (156)
-- **Teşhis zinciri tasarımı değiştirdi:** "onay yüzü İşlenenler'e" ön kararı, yük dağılımı
-  sorgusuyla çürüdü (MK-156.2). Tasarım yerleşimi sezgiyle değil sorguyla.
-- **Önizleme kipi ilk gününde teşhis aracı oldu:** 0 spool ekranı MK-127.4'ün doğal sonucuydu —
-  155'in canlı kanıtı bant/kilit'i test etmişti, VERİYİ değil. "Kanıt neyi kanıtladı?" sorusu
-  kapanış kanıt envanterlerine eklenmeli.
-- **kabukta_yok teşhis sırası işledi (MK-156.3):** kabuk anahtarları → PDF anahtarları → format
-  kıyası. Üç sorguda kök neden; panik yok, parser suçlaması yok (parser da kabuk da temizdi).
-- **Repo raw okuma yöntemi:** devre_wizard_v3 + devre_detay + ares-kabuk doğrudan
-  raw.githubusercontent'ten okundu — MK-126.8 için dosya yapıştırma trafiği bitti. Sonraki
-  oturumlarda standart yol.
-- **Placeholder tuzağı (küçük):** UPDATE şablonundaki '<NB1124_DEVRE_ID>' yer tutucusu SQL'e
-  aynen gitti → uuid hatası. Yer tutuculu şablon vermek yerine önce id sorgusu, sonra dolu
-  komut — bu sırayla verilmeli.
-- **31-PDF belgesi tek katmanlıydı:** satır kapsaması mükemmel ama bugünün kırığı kimlikte.
-  Belge eleştirisi → üç katman modeli (MK-156.3) + Madde 0.
+## Süreç dersleri (160)
+- **Ezber yorum = MK-126.8 minyatürü:** wizard yamasında comment'i dosyadan kopyalamak yerine
+  hatırlayarak yazınca eşleşme patladı; çare anchor-tabanlı kesme. İkinci tuzak: eklenen helper'ın
+  kendisi aranan deseni içeriyordu (sayaç 5→6) — global değişim ÖNCE, helper ekleme SONRA.
+- **159 ölü butonu (cizimdenOku):** 159c temizliğinde fonksiyon silinmiş, buton kalmış —
+  ReferenceError. Read-before-write turu yakaladı; "kaldırılan özelliğin TÜM dokunuşları" kapanış
+  kontrolü olmalı.
+- Cihat'ın "kızacaksın ama..." kalıbı üç kez geldi ve üçü de ürünü büyüttü (yan PDF, Excel sekmesi,
+  zoomTo) — yön düzeltmeleri maliyet değil, tasarım girdisi. MK-159.2 çiğnenmeden İNCELTİLDİ
+  (öğretim altyapısı ≠ salt görüntüleyici) — kural koruma ile ürün isteği bağdaştı.
+- Push edilmemiş paket üstüne yeni istek geldiğinde: aynı dosyalara bindir, TEK birleşik MD5 listesi
+  ver — iki ayrı transfer listesi karışıklık kaynağı.
 
-## Canlı kanıt envanteri (156)
-- Önizle butonu: yeni sekme + amber bant + kilit toast ✓ (Cihat turu, ekran görüntülü).
-  NOT: bu kanıt köprüyü kanıtlar, taslak VERİSİNİN göründüğünü değil (W-2.14 açık).
-- Temizlik: dry-run 716 → üç istisnayla 671 iptal → kalan 230+97=327 (beklenen değerlerle birebir).
-- NB1124 zinciri: spooller=0 ✓ · Excel 66 satır/oneri_hazir ✓ · kabuk 22 benzersiz anahtar ✓ ·
-  PDF 37/44 pipeline NULL ✓ · format kırılımı (22 NULL-format tablosuz + e1fb879d 20 kalıp-dışı) ✓.
-
-## Dosyalar (156)
-devre_wizard_v3.html (1833→1840: 👁 Önizle + islenenlerOnizle, yeni sekme gerekçeli).
-Commit: df11ac1. DB: 671 kuyruk UPDATE (iptal), migration YOK. izometri-oku DOKUNULMADI.
-Yeni belge: IZO-KANIT-SETI v4 eki (B1124 partisi — ayrı dosya, yapıştırılacak).
-
-## Kapanış durumu
-HEAD df11ac1 + kapanış doc commit'i. 12/12 ✓. Onay havuzu: tasarım tamam, kod 157'de.
-NB1124: teşhis tamam, öğretim Tur 1 157'de (saha hazır). W-2.11 köprü olarak kapandı,
-B-4 W-2.14'e devretti. Kanıt seti 37 PDF / 5 gemi.
+## Dosyalar (160, son halleriyle)
+devre_wizard_v3.html 1907→~2280 (büyük modal paketi; **son MD5 840eabc19db575fca8792c55db2545bb —
+push teyidi 161 açılışında**) · format_tanit.html 800→845+B2 · izometri-batch.html 980→991 ·
+ares-layout.js +nav · ares-kabuk.js 290→320 (not overlay + OPR kalem) · api/devre-inceleme.js
+253→~300 (is_id + alıştırma/NOT/yüzey enjeksiyonu) · api/dosya-url-al.js +izometri-pdfs ·
+vendor/xlsx.full.min.js (YENİ, SheetJS 0.18.5) · test-isid.mjs (YENİ) ·
+docs/FORMAT-YONETIM-MIMARI.md (YENİ) · docs/KARARLAR.md +123 satır. Migration YOK. 12/12 ✓.

@@ -391,3 +391,25 @@ l2-parser / fingerprint tarafında sıfır kod değişikliği. Hattı doğrudan 
 Format hattı klasik kuyruğu değişmedi (Y200 ST37 + W-3.9 panzehiri / Sefine şablonu / W-2.4),
 ancak sırası yönetim mimarisinin ARKASINA alındı — öğretim turlarına girmeden "neyi nereye
 yazdığımız" netleşmeli (155 adres dersinin mantıksal sonucu).
+
+---
+
+## Oturum 160 (2026-06-06) — köprü altyapısı + mimari doküman; öğretim turu YOK
+1. **`?is=&kaynak=` yükleyici** format_tanit'e eklendi (845 satır): iki kuyruk/iki bucket çözümü,
+   signed-URL→storage-download yedekli indirme, `_isPdf` + `_bytesBase64` ile AI-oku köprü uyumu,
+   `_fnOnerUygula` ortak helper (MK-151.5 davranışı birebir korunarak fileInput'tan ayrıştırıldı).
+2. **MK-155.1 ⚠ uyarısı:** `_PAKET_AILELER=[tersan_cadmatic_spool, tersan_cadmatic_montaj]` —
+   oto-tespit/format yükleme paket ailesine düşerse banner. Sessiz başarısızlık bitti.
+3. **Batch W-3.2 köprüsü:** kuyruk-durum `id` → `_dosyalar[].is_id` (canlı polling + 2 resume yolu);
+   "⚠ Bilinmeyen" rozetinin yanında **Tanıt** butonu. Nav'a "Format Tanıt" girişi (ares-layout).
+4. **B2 kartı** (amber, "DEĞERİ DÜZELT — yalnız bu spool") format_tanit'e kondu ama AYNI OTURUMDA
+   UYKUYA alındı — Cihat değer işini wizard spool modalında istedi (yan PDF panel). Kod durur,
+   `&pl=&sn=` gelirse uyanır. Kip ayrımı sözlüğü: MK-160.2.
+5. **docs/FORMAT-YONETIM-MIMARI.md:** dört katman (K1 belge sınıfı / K2 kimlik / K3 satır-alan /
+   K4 değer) × yazma hedefi × etkinleşme tablosu; tek otorite kararı (MK-160.1) ve W-3.4 yayılım
+   sözleşmesi tek sayfada.
+6. **KARARLAR.md gerçeği:** 139–159 hiç işlenmemişti (MK-159.3 ikinci vaka) — 154–160 seti
+   kaynak-kanıtlı işlendi, 139–153 boşluk notu dosyada. MK-160.3 (salt görüntüleyici inceltmesi),
+   MK-160.4 (OPR kalem ekleme), MK-160.5 (önizleme parse enjeksiyonu) 161'de işlenecek.
+Format hattı klasik kuyruğu (Y200 ST37 + W-3.9 panzehiri / Sefine / W-2.4) değişmedi; ilk gerçek
+öğretim turu artık köprüden girilerek yapılabilir (batch Tanıt → canlı test 161 açılışında).
