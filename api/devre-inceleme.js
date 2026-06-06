@@ -248,8 +248,31 @@ export default async function handler(req, res) {
     //   format_tanit?is=<id>&kaynak=devre hedefi. Eşleme dosya_adi üzerinden (derlenen kanonik kayıtlar).
     const isIdHarita = new Map();
     for (const z of izometriler) { if (z.dosya_adi && z.is_id) isIdHarita.set(z.dosya_adi, z.is_id); }
+    // 160: parse_sonuc haritası (dosya_adi → ps) — spoollar dolu kayıt tercih edilir (bayat/boş kopya MK-138.1)
+    const psHarita = new Map();
+    for (const z of izoKayitlar) {
+      if (!z.dosya_adi || !z.parse_sonuc) continue;
+      const eski2 = psHarita.get(z.dosya_adi);
+      if (eski2 && (eski2.spoollar || []).length && !(z.parse_sonuc.spoollar || []).length) continue;
+      psHarita.set(z.dosya_adi, z.parse_sonuc);
+    }
+    const _norm = (v) => String(v == null ? '' : v).trim().toUpperCase();
     for (const s of (sonuc.spoollar || [])) {
-      if (s.izometri && s.izometri.dosya_adi) s.izometri.is_id = isIdHarita.get(s.izometri.dosya_adi) || null;
+      if (!s.izometri || !s.izometri.dosya_adi) continue;
+      s.izometri.is_id = isIdHarita.get(s.izometri.dosya_adi) || null;
+      // 160 (Cihat bulgusu): PDF'in okuduğu alıştırma/NOT/yüzey önizlemede de görünsün — taslakta
+      //   spooller YOK (MK-157.1), eslestir bu alanları ancak terfi sonrası yazar. Önizleme satırına
+      //   AYNI kurallarla türetilip taşınır; kalıcı yazım yine terfi/eslestir hattında.
+      const ps = psHarita.get(s.izometri.dosya_adi);
+      const dal = ps ? (((ps.spoollar || []).find((d) => _norm(d.spool_no) === _norm(s.spoolNo)))
+                       || (((ps.spoollar || []).length === 1) ? ps.spoollar[0] : null)) : null;
+      // 117 kuralı BİREBİR (kuyruk-isle-izometri ~587): dosya adı ALS → VAR; değilse alistirma_ipucu
+      const _als = /(?:^|[-_ ])ALS(?:[-_. ]|$)/i.test(s.izometri.dosya_adi) ? 'VAR'
+                 : ((dal && dal.alistirma_ipucu) || null);
+      if (s.alistirma == null && _als) s.alistirma = _als;
+      if (s.not == null && dal && dal.not_metni) s.not = dal.not_metni;
+      // bindir'in kabuk_bos_dolduruldu kuralıyla uyumlu: kabuk yüzeyi boşsa PDF yüzeyi gösterilir
+      if ((s.yuzeyHam == null || s.yuzeyHam === '') && dal && dal.yuzey) s.yuzeyHam = dal.yuzey;
     }
     for (const f of (sonuc.fazla || [])) { if (f.dosya_adi) f.is_id = isIdHarita.get(f.dosya_adi) || null; }
 
