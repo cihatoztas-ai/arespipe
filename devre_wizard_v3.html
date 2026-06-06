@@ -693,6 +693,9 @@ function tipSelectHtml(i, secili) {
   return '<select class="tip-sel" data-i="' + i + '">' + opts + '</select>';
 }
 function formatBoyut(b) { if (b < 1024) return b + ' B'; if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB'; return (b/1024/1024).toFixed(1) + ' MB'; }
+// 161: ağırlık/uzunluk gösterimi — virgülden sonra HER ZAMAN tek basamak (float çöpü biter: 1670.50006 → 1670,5)
+function f1(v){ if (v == null || v === '') return ''; var n = Number(String(v).replace(',', '.'));
+  return isFinite(n) ? n.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : String(v); }
 
 function l3Toggle() {
   WIZ.l3_acik = !WIZ.l3_acik;
@@ -967,7 +970,7 @@ function renderInceleme(j) {
     var capTxt = (capV != null && capV !== '') ? esc(String(capV)) : '<span class="gri">—</span>';
     var etTxt  = (etV != null && etV !== '') ? esc(String(etV)) : '<span class="gri">—</span>';
     var agN    = (agV != null && agV !== '') ? Number(String(agV).replace(',', '.')) : null;
-    var agTxt  = (agN != null && isFinite(agN)) ? (agN.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : '<span class="gri">—</span>';
+    var agTxt  = (agN != null && isFinite(agN)) ? (f1(agN) + ' kg') : '<span class="gri">—</span>';
     html += '<tr class="tikla" data-i="' + i + '" onclick="duzeltAc(' + i + ')">' +
       '<td style="color:var(--txd);font-size:12px;">' + esc(String(num)) + '</td>' +
       '<td>' + marka + '</td><td>' + rev + '</td><td>' + sid + '</td>' +
@@ -1078,8 +1081,8 @@ function _mlzFmtV3(v, alan) {
   if (isNaN(n)) return String(v);
   // adet birimsiz; ağırlık kg; boy mm; çap birimsiz.
   if (alan === 'adet') return String(n);
-  if (alan === 'boy_mm') return n.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' mm';
-  return n.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' kg';
+  if (alan === 'boy_mm') return f1(n) + ' mm';   // 161: tek basamak standardı
+  return f1(n) + ' kg';
 }
 // s.malzeme_kiyas → popup HTML bloğu (celiski 🔧 + excel_fazla_montaj 🔩). Soft sapma GİZLİ.
 function malzemeKiyasBlok(mk) {
@@ -1148,10 +1151,10 @@ var KALEM_ALANLAR = {
     fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.malzemeEtiket(v) : v; } },
   dn:      { lbl:'DN / Boyut', prop:'dn', tip:'text', fmt:function(v){ return v; } },
   adet:    { lbl:'Adet', prop:'adet', tip:'sayi', tipGate:function(b){ return b.tip==='fitting'; }, fmt:function(v){ return v; } },
-  boy:     { lbl:'Boy (mm)', prop:'boy_mm', tip:'sayi', tipGate:function(b){ return b.tip==='boru'; }, fmt:function(v){ return v; } },
+  boy:     { lbl:'Boy (mm)', prop:'boy_mm', tip:'sayi', tipGate:function(b){ return b.tip==='boru'; }, fmt:function(v){ return f1(v); } },
   agirlik: { lbl:'Ağırlık', prop:'agirlik_kg', tip:'sayi', fmt:function(v){
     if (v==null||v==='') return ''; var n=Number(String(v).replace(',','.'));
-    return isFinite(n) ? (n.toLocaleString('tr-TR',{maximumFractionDigits:1})+' kg') : String(v); } }
+    return isFinite(n) ? (f1(n)+' kg') : String(v); } }
 };
 // 160: OPERATÖR KALEM EKLEME — yeni kalem (kalem_idx >= bom.length) için ek alanlar.
 //   Mevcut kalem düzeltme alan setine SIZMAZ (aktar mevcut-kalem dalı tanim/tip okumaz — sessiz boşluk olmasın).
@@ -1300,7 +1303,7 @@ function malzSekmesiRender() {
       var _ag   = (d && d.agirlik != null && d.agirlik !== '') ? d.agirlik : b.agirlik_kg;
       var _adet = (d && d.adet != null && d.adet !== '') ? d.adet : b.adet;
       var _boy  = (d && d.boy != null && d.boy !== '') ? d.boy : b.boy_mm;
-      var miktar = (b.tip === 'boru') ? ((_boy != null ? _boy : 0) + ' mm') : ((_adet != null ? _adet : 0) + ' ad');
+      var miktar = (b.tip === 'boru') ? (f1(_boy != null ? _boy : 0) + ' mm') : ((_adet != null ? _adet : 0) + ' ad');
       // hücre-bazlı "düzelt" rozeti — yalnız o alan düzeltildiyse o hücrede çıkar
       function roz(on){ return on ? ' <span class="src l3" style="font-size:10px;" title="operatör düzeltmesi">düzelt</span>' : ''; }
       var dMal = !!(d && d.malzeme != null && d.malzeme !== '');
@@ -1381,7 +1384,7 @@ var DUZELT_ALANLAR = {
   agirlik:   { lbl:'Ağırlık',   prop:'toplamKg',   tip:'sayi',   fmt:function(v){
     if (v == null || v === '') return '';
     var n = Number(String(v).replace(',', '.'));
-    return isFinite(n) ? (n.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' kg') : String(v);
+    return isFinite(n) ? (f1(n) + ' kg') : String(v);
   } },
   malzeme:   { lbl:'Malzeme',   prop:'anaMalzeme', tip:'select', secenekler:_malzemeSecenekler,
     fmt:function(v){ return (typeof ARES_NORM!=='undefined' && v) ? ARES_NORM.malzemeEtiket(v) : v; } },
@@ -1876,7 +1879,7 @@ function duzeltAc(i) {
       (s.bindirme_dosya ? ' <span style="font-weight:400;text-transform:none;letter-spacing:0;">(' + esc(s.bindirme_dosya) + ')</span>' : '') + '</div>';
     s.bindirme_celiski.forEach(function (c) {
       b += '<div class="efld"><label>' + esc(_BAD[c.alan] || c.alan) + '</label>' +
-        '<div class="locked" style="padding:7px 9px;font-size:13px;">Kabuk(Excel) <b>' + esc(c.kabuk != null ? String(c.kabuk) : '—') + '</b> ↔ PDF <b>' + esc(c.pdf != null ? String(c.pdf) : '—') + '</b> · kabuk korunur</div>' +
+        '<div class="locked" style="padding:7px 9px;font-size:13px;">Kabuk(Excel) <b>' + esc(c.kabuk != null ? (c.alan === 'agirlik' ? f1(c.kabuk) : String(c.kabuk)) : '—') + '</b> ↔ PDF <b>' + esc(c.pdf != null ? (c.alan === 'agirlik' ? f1(c.pdf) : String(c.pdf)) : '—') + '</b> · kabuk korunur</div>' +
         '<span class="src l2">PDF</span></div>';
     });
   }
@@ -1897,7 +1900,7 @@ function duzeltAc(i) {
       var malzG = (dz.malzeme != null) ? dz.malzeme : (bm.malzeme || '');
       if (typeof ARES_NORM !== 'undefined' && malzG) malzG = ARES_NORM.malzemeEtiket(malzG) || malzG;
       var dnG = (dz.dn != null) ? dz.dn : (bm.dn || '');
-      var mikG = (bm.tip === 'boru') ? (((dz.boy != null) ? dz.boy : bm.boy_mm) ? (((dz.boy != null) ? dz.boy : bm.boy_mm) + ' mm') : '')
+      var mikG = (bm.tip === 'boru') ? (((dz.boy != null) ? dz.boy : bm.boy_mm) ? (f1((dz.boy != null) ? dz.boy : bm.boy_mm) + ' mm') : '')
                                      : (((dz.adet != null) ? dz.adet : bm.adet) ? (((dz.adet != null) ? dz.adet : bm.adet) + ' ad') : '');
       var roz = Object.keys(dz).length ? '<span class="src l3" title="operatör düzeltmesi" style="margin-left:6px;">düzelt</span>' : '';
       b += '<div class="locked" style="padding:6px 9px;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">' +
@@ -1910,7 +1913,7 @@ function duzeltAc(i) {
     _yeniIdxler.forEach(function(idx) {
       var dz = _kd[idx] || {};
       var oz = [dz.tanim, dz.malzeme && (typeof ARES_NORM!=='undefined' ? ARES_NORM.malzemeEtiket(dz.malzeme) : dz.malzeme), dz.dn,
-                (dz.boy ? dz.boy + ' mm' : (dz.adet ? dz.adet + ' ad' : null))].filter(function(x){ return x; }).join(' · ');
+                (dz.boy ? f1(dz.boy) + ' mm' : (dz.adet ? dz.adet + ' ad' : null))].filter(function(x){ return x; }).join(' · ');
       b += '<div class="locked" style="padding:6px 9px;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">' +
         '<span style="flex:1;">' + esc(oz || 'yeni kalem') + '</span><span class="src l3" title="operatör ekledi">YENİ</span>' +
         '<button class="btn-sm" style="padding:2px 8px;font-size:12px;color:var(--ac);" onclick="_spoolKalemAc(' + idx + ')" title="Düzenle">✏️</button>' +
