@@ -53,8 +53,8 @@
 ### Giriş ve yükleme
 - [ ] W-2.1 Adım 1: tersane ve proje AYRI seçim alanları (aynı kutuda değil).
 - [ ] W-2.2 "Mevcut devre / yeni devre" ayrımı kalkar. Mevcut devreye ekleme = devre detay "Spool ekle" → wizard'ın devre kipi (?devre_id=); onay sonrası devre detaya dönüş.
-- [ ] W-2.3 Klasör ağacı: sürükle-bırakta Windows gezgini görünümü (mockup v5, MK-97.6). Klasör/dosya bazında dahil/hariç işareti.
-- [ ] W-2.4 "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler vb. işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 157 REVİZYON (MK-157.3): 156'nın "22 tablosuz çizim" kanıtı DÜŞTÜ — o dosyalar M+İ çiftinin MONTAJ kanadıydı, montaj öğretimiyle 22/22 L2/$0 çözüldü. Madde örneksiz tasarım maddesi olarak açık kalır; "ertelenemez" değil.
+- [~] W-2.3 **[YARIM — 137: gruplu ağaç + tip-seçici + sil GEMİDE; AÇIK: gerçek iç-içe görünüm + manuel dahil/hariç tiki; kutu mutabakatı 164]** Klasör ağacı: sürükle-bırakta Windows gezgini görünümü (mockup v5, MK-97.6). Klasör/dosya bazında dahil/hariç işareti.
+- [~] W-2.4 **[YARIM — 137: otomatik revizyon-öncesi TESPİTİ + rozet GEMİDE ama KOZMETİK (KARAR-137.2/2a: işleme dokunmaz); AÇIK: hariç=işlemeye girmez + görünür kayıt; kutu mutabakatı 164]** "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler vb. işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 157 REVİZYON (MK-157.3): 156'nın "22 tablosuz çizim" kanıtı DÜŞTÜ — o dosyalar M+İ çiftinin MONTAJ kanadıydı, montaj öğretimiyle 22/22 L2/$0 çözüldü. Madde örneksiz tasarım maddesi olarak açık kalır; "ertelenemez" değil.
 - [ ] W-2.5 İlerleme göstergesi ikiye ayrılır: (a) dosyaların sisteme yüklenmesi, (b) arka plan işleme (kuyruk). Tek çubuk ikisini karıştırmaz.
 
 ### Onay ve terfi (durum makinesi)
