@@ -321,3 +321,23 @@ Yeni gözlem (160 testi): E100-722 ailesinde Windows glyph bozulması canvas'ta 
   (E120'de de eşdeğer risk görüldü). Doğru çapa: başlık bloğu deseni.
 - Mevcut açıklar değişmedi: 6 B1124 orijinal ad · v4 yapıştırma + belge AD KARARI · ✖ sessiz-kayıp
   doğrulaması. Test yatağı NB1137 ykjfytjk taslağı KORUNUYOR (silme).
+
+---
+
+## 162 NOTU (2026-06-06) — Y200 sunucu-metni dökümü kanıt yatağına girdi + metin ayrışması bulgusu
+- **Y200-804-414.S01.1 SUNUCU METNİ ilk kez mekanik döküldü** (pdf-parse + glyph-onar, lokal node
+  — MK-132.1'e UYGUN: gerçek extractor çıktısı). Ham döküm band-A çorbası (`vOMMJUMQJQNQ`),
+  `metinNormalle` → `glyph_band_a_onarildi`. Kritik sıra gerçeği: değer satırı (`Y200-804-414`,
+  satır 17) Continue satırlarından (65: ` Y110-804-414/S02`, 70: ` G200-804-414`) ÖNCE; Continue
+  değerleri satır BAŞINDA BOŞLUKLU → `\n(...)\n` deseni doğal eler. Malzeme satırı (54):
+  `1 Boru Dikişli delik ST37- 3.1 Sertifikalı 139.7x4.5 2553 ST37 38.283`.
+- **YENİ METODOLOJİ SINIRI (bölüm 1 sınırının İKİZİ):** format_tanit'in tarayıcı metni
+  (`extractAll`: pdf.js + Y-koordinat gruplama = GÖRSEL sıra) ≠ sunucu metni (content-stream
+  sırası). Aynı regex iki metinde farklı "ilk eşleşme" verir (UI: G200 · çapasız sunucu: Y110 ·
+  doğru kural sunucu: Y200). UI yeşil/kırmızısı kanıt DEĞİL; kanıt = lokal pdf-parse dökümü +
+  drenaj SQL'i. Detay: docs/FORMAT-OGRETIM-ATOLYE-162.md B1.
+- **161'in çapa yasağı kurala dönüştü:** a093eaaa `pipeline_no` = `\n([A-Z]\d+-\d+-\d+)\n`
+  (jsonb_set ile gemide; sunucu metninde Y200-804-414 mekanik kanıtlı). `[A-Z]` bilinçli:
+  Y200/G200 bölge kodlarıdır, format kimliği değil (aynı desen başka bölgelerde olur).
+- Mevcut açıklar değişmedi: 6 B1124 orijinal ad · v4 yapıştırma + AD kararı · ✖ sessiz-kayıp.
+  Test yatakları KORUNUYOR (g200 + aw231 + NB1137 chvvnb + ykjfytjk — silme).

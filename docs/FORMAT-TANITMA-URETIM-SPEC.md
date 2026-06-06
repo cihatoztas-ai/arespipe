@@ -366,3 +366,23 @@ tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunul
   PDF'lerinde en yakın DB formatına "eşleşti" der ve MK-155.1 ⚠ banner'ı tetiklenmez. Üretim
   formatı teyidi (fingerprint/kuyruk gerçeği) olmadan "otomatik eşleşti" güven ifadesi verilmemeli
   — çapraz doğrulama tasarımı açık iş.
+
+---
+
+## 162 GERÇEKLEŞME NOTU (2026-06-06) — ÜRÜN KİMLİĞİ KARARI DEVRİLDİ: UZMAN ARACI (MK-162.1)
+- **159'un "ürünleşme çatısı" ve FAZ-3 ilkesi ("öğretme akışın içinde tek tıkla") REVİZE:**
+  161+162 sahası gösterdi ki tek alanın kuralı bile motor içleri sökülerek kanıtlanabiliyor;
+  UI testi iki kez yanılttı, adres iki oturumda iki kez yanlış formata gidiyordu. **format_tanit
+  = uzman aracı.** Menüden kalktı (`6a27723`); feature-flag (MK-159.2) yaşam kapısı; batch
+  Tanıt köprüsü uzman girişi. Öğretim akışı artık ATÖLYE: zip → sunucu-metni dökümü (pdf-parse+
+  glyph-onar, lokal node) → kural mekanik kanıt → SQL kayıt (jsonb_set, şema-önce) → drenaj
+  kanıtı. Tek kaynak: docs/FORMAT-OGRETIM-ATOLYE-162.md (bulgular B1-B8 + reçete).
+- **Spec'in test-makamı maddesi değişti:** UI yeşil/kırmızı (149'un "B" maddesi) görsel-sıra
+  metniyle koşuyor (`extractAll`), sunucu content-stream metniyle AYRIŞIYOR (B1) — bu sınıf
+  alanlarda kanıt makamı lokal döküm + drenaj SQL'idir. UI/sunucu metin hizalaması C yoluna
+  (otomatik kural önerisi + onay) devredildi; atölyede zaten sunucu metniyle çalışılıyor.
+- **Soru ağacı (150) küçülüyor (Cihat):** cap/et/dn alan SORUSU kalkar — malzeme sentezi türetir
+  (W-3.9 zorunlu kılıyor). Çekirdek: kimlik (spool_no, pipeline_no) + malzeme bölgesi.
+- **a093eaaa pipeline_no kuralı gemide:** `\n([A-Z]\d+-\d+-\d+)\n` (SQL, kanıtlı). `cozumle()`
+  oto-çözümün çapa-bypass kusuru ve sessiz `fallback` dalı (alanCikar) açık borç olarak kayıtta.
+- **B2 değer kipi:** uykuda kalmaya devam (atölye kararıyla aciliyeti daha da düştü).

@@ -1,45 +1,55 @@
-# CLAUDE-SON-OTURUM.md — Oturum 161 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 162 özeti
 
 ## Tek cümle
-Plan "büyük modal canlı test + Y200 öğretim turu"ydu; test seti üç gerçek kökü söktü (cache,
-IFS boş sayfası, min-height zinciri), W-2.20 kapanırken altından "et/çap çelişkisi önizlemede
-hiç tespit edilmiyormuş" kök bulgusu çıktı, ve Cihat'ın "önce şunu çözsek" yön vermesiyle oturumun
-ağırlık merkezi GLYPH CANVAS'a kaydı — kök neden Cadmatic'in geçersiz `/ToUnicode /Identity-H`
-girdisi olarak kanıtlandı, ares-pdf-tounicode.js iki PDF tabanında (klasik xref + XRef stream)
-mekanik 5/5+5/5 + canlıda "glyph: temiz ✓" ile gemiye alındı; Y200 öğretim KAYDI bilinçli 162'ye.
+Plan "Y200 satır öğretimi kaydı + yayılım"dı; pipeline_no'da kural/AI/UI'nin ÜÇ farklı değer
+vermesi (G200/Y110/Y200) ve Cihat'ın "format tanıma mantığını elden geçirsek mi" + "normal
+kullanıcı bunu yapamaz" yön vermeleriyle oturum yapısal incelemeye döndü — tarayıcı/sunucu
+METİN AYRIŞMASI kök bulgu olarak kanıtlandı, pipeline_no kuralı sunucu metninde mekanik kanıtla
+SQL'den gemiye alındı, ve format_tanit ÜRÜN OLMAKTAN ÇIKARILDI (MK-162.1 atölye kararı, menüden
+kaldırma `6a27723`); Y200 malzeme kaydı reçeteyle diğer bilgisayara devredildi.
 
 ## Kanıt zinciri
-1. **Excel "PDF açılamadı":** repo kodunda o düz metin ÜRETİLEMEZ (catch hep "Excel açılamadı: "+
-   sebep yazar) → deploy MD5 = lokal → tek kalan şüpheli tarayıcı cache'i → sert yenile sonrası
-   gerçek hata geldi ("undefined.indexOf" = boş sayfa `!ref`) — 160'ın "hata mesajını detaylandır"
-   yatırımı ilk gününde kendini ödedi.
-2. **W-2.20 testi KIRMIZI başladı** → kabukBindirHedef'te "client cap/et göndermiyor" bayat notu
-   (ares-kabuk.js:66 kanıtıyla MK-139.1'den beri gönderiliyor) → düzeltme W-2.20'yi "gösterim"den
-   "ilk kez tespit"e büyüttü. test-w220 6/6 + test-isid 6/6.
-3. **Glyph:** pdffonts (ArialMT CID/Identity-H, emb=no uni=no) → ham obje dump'ında
-   `/ToUnicode /Identity-H` İSMİ → pypdf identity-CMap spike: pdf.js 1.10 orijinalden çorba,
-   yamalıdan "SPOOL NAME/Ağırlık/Flanş Düz Çelik" → JS modülü → Y200'de kapı `xref_stream` dedi →
-   XRef-stream eki eklendi → iki ailede 5/5 + idempotent + poppler çapraz → canlı ekran temiz.
-4. **Adres freni işledi:** E120'de otoTespit "tersan deneme" dedi; format envanteri + kuyruk SQL'i
-   → üretim e1fb879d (paket), a093eaaa = Y-ailesi → yanlış kayda öğretim yazılmadan durduruldu;
-   bonus: otoTespit'in ⚠ banner'ı atlattığı yapısal açık kayda geçti.
+1. **G200/Y110/Y200 üçlüsü:** UI "etiketin ardından PIPE NO" seçiliyken kural G200 buldu →
+   alanCikar okundu (çapa kavramı motorda yok, düz match — DOĞRU tasarım; synth çapayı regex'e
+   gömüyor; `cozumle()` oto-çözüm bunu BYPASS ediyor, DB'deki çıplak `(Y\d+...)` oradan).
+2. **Sunucu metni dökümü (lokal node, pdf-parse+glyph-onar):** ham döküm band-A çorbası →
+   `glyph_band_a_onarildi`; değer satırı (17) Continue'lardan (65/70) ÖNCE, Continue'lar satır
+   başı BOŞLUKLU. İki mekanik test: `^([A-Z]\d+-\d+-\d+)$`(m) ve synth-deseni `\n(...)\n` →
+   her ikisi Y200-804-414. UI'nin G200'ü = `extractAll` GÖRSEL sıra (Y-koordinat gruplama) ≠
+   sunucu content-stream sırası. **UI yeşil/kırmızı bu sınıf alanlarda kanıt değil.**
+3. **Kural SQL'den gemide:** şema-önce SELECT (parser_kural yapısı + kaçış konvansiyonu) →
+   jsonb_set → doğrulama SELECT. a093eaaa pipeline_no = `\n([A-Z]\d+-\d+-\d+)\n`. `[A-Z]`
+   bilinçli — Cihat: Y200 bölge kodudur, format kimliği değil (aynı desen başka bölgelerde).
+4. **E100 vakası (otoTespit 3. tetik):** açık PDF E100-817-005'ti (Y200 değil!), otoTespit yine
+   "tersan deneme" (5/6); malzeme öğretildi, Güncelle "DEĞİŞİKLİK YOK" dedi → DB teyidi
+   satir_tipi_sayisi=0 (temiz — şans). İKİ bulgu: yanlış-adres riski canlı + tablo öğretiminin
+   düzeltme-kipi YAZIM yolu şüphesi (B6/W-3.11: `_patchedKural` `tip!=='tablo'` filtreli).
+5. **Hibrit sıra dersi:** SQL-önce yazılan alana UI'da dokunulmaz — dirty olursa Güncelle ezer
+   (`_patchedKural` derin-kopya + yalnız-dirty, MK-111.2 → dokunulmadıkça SQL güvende).
 
-## Süreç dersleri (161)
-- **Cache üç kez tuzak kurdu** — canlı HTML testinin ilk adımı sert yenile (MK-161.1).
-- **MK-126.8 minyatürü yine:** tek-satır anchor'a satır-içi `//` yorum → satırın kalanı yorumlandı,
-  parantez patladı; blok yorum öne (MK-161.4). Ve `head -8` kesilmiş kanıt = yanlış kontrol grubu
-  (MK-161.5: poppler'ı "çorba" sanıp yanlış yöne -29 map yazdırdı).
-- **MK-85.3 ihlali (kabul):** is_kuyrugu.parse_sonuc ezberden — şema-önce kuralı bir kez daha.
-- **"Kızacaksın ama" deseninin 161 hali:** "önce şunu bir çözsek" — yön düzeltmesi yine ürünü
-  büyüttü (glyph çözümü pilot-Windows engelini kaldırdı). Ayrıca yanlış anlamayı (pipeline_no ≠
-  font çorbası) Cihat tek cümleyle düzeltti; varsayım yerine ekran gerçeği.
-- **Eksik transfer yakalama:** "✅ MD5" + "git: değişiklik yok" kombinasyonu = dosya ZATEN gemide
-  (78bddb3) — panik yok, git log kanıtı yeter.
+## Karar (Cihat) — MK-162.1 ATÖLYE
+format_tanit operatör ürünü DEĞİL, uzman aracı: menüden kaldırıldı (`6a27723`, ares-layout.js
+-6 satır; sayfa feature-flag'le yaşar, batch Tanıt köprüsü uzman girişi). Öğretim = Cihat+Claude
+atölyesi (zip → sunucu-metni dökümü → mekanik kural kanıtı → SQL kayıt → drenaj kanıtı).
+Kullanıcıya açılma şartı: C yolu (L3 çıktılarından otomatik kural ÖNERİSİ + uzman onayı).
+MK-162.2: G2a düzeltme birikimi → öneri köprüsü (Düzelt=değer/Tanıt=kural KORUNUR).
+Wizard sadeleşmesi: cap/et/dn sorusu kalkar (malzeme sentezi türetir). Borç listesi buduması:
+format_tanit EN/AR + B2 kartı DÜŞTÜ; W-2.19 ve UI/sunucu metin hizalaması C'ye indi.
 
-## Dosyalar (161, son halleriyle — hepsi pushlu)
-ares-pdf-tounicode.js (YENİ, 178; **67bf9263b97e03da204fe1dc38356b2c**) · devre_wizard_v3.html
-~2407+ (excel kipi + W-2.20 UI + f1 + tounicode entegrasyonu) · format_tanit.html 951+ (W-3.9 +
-tounicode) · api/devre-inceleme.js 309+ (bindirme_celiski enjeksiyonu + kabukBindirHedef düzeltmesi)
-· test-w220.mjs (YENİ). Migration YOK. 12/12 ✓. izometri-oku DOKUNULMADI.
-KARARLAR.md lokalde MK-160.3/4/5 işli, COMMITSIZ — kapanış doc commit'inde.
-CI: son run kırmızı ama sebep bot rapor-commit yarışı (kural kontrolü yeşil) — re-run yeter.
+## Süreç dersleri (162)
+- **MK-85.3 İKİNCİ ihlal (kabul):** `is_kuyrugu.format_id` ezberden — gerçek: format_id/
+  parser_seviye/maliyet_usd/pdf_sha256 = **ai_api_log** kolonları, kuyruk `ai_api_log_id` ile
+  bağlanır. Aynı oturumda "tekrarlamayacağım" deyip tekrarlandı — şema-önce İSTİSNASIZ.
+- Yer tutucu disiplini: `PDF_YOLUNU_BURAYA` / `<tam-uuid>` iki kez Cihat'a hata yaşattı —
+  eldeki gerçek değer komuta GÖMÜLÜR.
+- "Değişiklik yok" toast'ı çift anlamlı: bu kez kurtarıcı (yanlış PDF yazılmadı), ama yazım
+  yolu kırığının da belirtisi olabilir — Y200'de ayrıştırılacak.
+- E100 tablo dili (NPS+Sch `2" Sch 10S/316L`) ≠ Y200 (ODxet `139.7x4.5`) — a093eaaa
+  format_kodu "cadmatic_spool_nps_v1" ad/kod/aile haritası gözden geçirilmeli.
+
+## Dosyalar/commit'ler (162 — hepsi pushlu)
+KARARLAR.md (MK-161.1..161.5 işlendi, `[skip ci]` doc commit) · ares-layout.js −6 satır
+(`6a27723`, CI'lı) · docs/FORMAT-OGRETIM-ATOLYE-162.md (YENİ — B1-B8 bulguları + atölye modeli +
+Y200 reçetesi; MD5 ddeaf572d125846b5e1e474bcff21084). DB: a093eaaa pipeline_no jsonb_set (tek
+UPDATE, doğrulama SELECT'li). Migration YOK. 12/12 ✓. izometri-oku DOKUNULMADI. CI: sabah teyidi
+yeşil (161'in bot yarışı kendiliğinden çözülmüş; re-run gerekmedi).

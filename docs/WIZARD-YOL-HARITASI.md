@@ -258,3 +258,30 @@ Durum değişiklikleri (160 güncellemesinin üstüne):
   formatıyla çapraz doğrulanmadan "eşleşti" güveni verilmez.
 - **KALAN:** Y200 ST37 satır öğretimi KAYDI + W-3.4 yayılım (sha düşür→reset→kanıt) → 162 ilk iş ·
   OPR kalem-ekleme (f) SQL kanıtı yapılmadı · "tersan deneme" AD düzeltmesi (pilotta kötü görünür).
+
+---
+
+## 162 GÜNCELLEMESİ (2026-06-06) — FAZ 3 İLKESİ REVİZE: format öğretimi ATÖLYEYE alındı (MK-162.1)
+- **FAZ 3'ün giriş ilkesi ("format öğretme akışın içinde tek tıkla") DEVRİLDİ:** 161+162 kanıtı
+  (UI testi iki kez yanılttı — tarayıcı GÖRSEL-sıra metni ≠ sunucu content-stream metni; adres
+  iki kez yanlış formata gidiyordu — E120/161 + E100/162) → **format_tanit uzman aracı.** Menü
+  girişi kaldırıldı (`6a27723`), feature-flag korur, batch "Tanıt" köprüsü uzman girişi olarak
+  kalır. Operatör formata HİÇ dokunmaz; bilinmeyen format L3'le çalışır, uzman atölyesi (Cihat+
+  Claude: zip → sunucu-metni dökümü → kural kanıtı → SQL kayıt → drenaj kanıtı) formatı $0'a
+  indirir. W-3.x ailesinin "son kullanıcı kolaylığı" maddeleri C yoluna devredildi (otomatik
+  kural önerisi + uzman onayı; G2a düzeltme birikimi köprüsü MK-162.2 ile beslenir).
+- **W-3.4 yayılımın ön adımı gemide:** a093eaaa pipeline_no = `\n([A-Z]\d+-\d+-\d+)\n` (SQL,
+  sunucu metninde mekanik kanıtlı — Continue tuzağı baştaki boşlukla doğal eleniyor; `[A-Z]`
+  çünkü bölge kodu ≠ format). KALAN: malzeme satır öğretimi kaydı (diğer bilgisayar, reçete:
+  docs/FORMAT-OGRETIM-ATOLYE-162.md) → sha düşür → kardeş reset → L2/$0 kanıt.
+- **YENİ AÇIK — W-3.11 (B6 şüphesi):** düzeltme kipinde tablo öğretimi Güncelle'de "değişiklik
+  yok" dedi (E100 vakası — yanlış PDF olması bizi kurtardı ama): `_patchedKural` `tip!=='tablo'`
+  filtreli, tablonun AYRI yazım yolu doğrulanmadı. Y200 kaydında 1 numaralı kontrol; kırıksa
+  tamir 163 yapısal işi.
+- **YENİ AÇIK — W-3.12:** format_tanit `_alanCikar` = l2-parser KOPYASI ve sapmış (whitelist
+  yok) → tek kaynağa bağlanmalı (ares-tablo-sentez deseni). + `alanCikar` sessiz `fallback`
+  dalı taranmalı (eşleşmeme ≠ fallback-uydurma ayrımı çağırana gitmeli).
+- otoTespit çapraz doğrulama (161 açığı) üçüncü vakayla pekişti (E100) — atölye modelinde
+  aciliyet düştü, tasarım borcu duruyor.
+- **163 YÖNÜ (Cihat):** yapısal eksikler — W-1.x kuyruk drenajı (100+ stuck) + W-3.11 + W-3.12;
+  format ÇEŞİTLİLİĞİ sonraya, toplu tanıtımlar diğer bilgisayardan.
