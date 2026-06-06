@@ -96,6 +96,7 @@ details.sec{ margin-top:14px; border:1px solid var(--bor); border-radius:9px; ba
 <script src="ares-normalize.js"></script>
 <script src="ares-asme.js"></script>
 <script src="ares-olcu.js"></script>
+<script src="ares-alan-cikar.js"></script>
 <script src="ares-pdf-tounicode.js"></script>
 <script src="ares-tablo-sentez.js"></script>
 <script src="ares-kabuk.js"></script>
@@ -207,8 +208,11 @@ function _onar29(t){ if(typeof t!=='string'||!t.length)return t; let o=''; for(c
 function _bandB(t){ if(typeof t!=='string'||!t.length)return{metin:t,eslenmeyen:[]}; const ch=[...t],es=new Set(); let o=''; for(let i=0;i<ch.length;i++){ const c=ch[i]; if(BANT_B_TABLO[c]!==undefined){o+=BANT_B_TABLO[c];continue;} if(c==='Ç'){const p=i>0?ch[i-1]:'',n=i+1<ch.length?ch[i+1]:'';o+=((i===0||!_harfMi(p))&&_kucukMi(n))?'Ç':'d';continue;} if(c==='ç'){o+='o';continue;} if(c.codePointAt(0)>=0x80){es.add(c);o+=c;continue;} o+=c; } return{metin:o,eslenmeyen:[...es]}; }
 function _capaVar(t){ return typeof t==='string'&&CAPA_TOKENLAR.some(x=>t.includes(x)); }
 function metinNormalle(t){ if(typeof t!=='string'||!t.length)return{metin:t,durum:'bos',eslenmeyen:[]}; if(_capaVar(t))return{metin:t,durum:'temiz',eslenmeyen:[]}; const a=_onar29(t); if(_capaVar(a)){ const b=_bandB(a); return{metin:b.metin,durum:'glyph_onarildi',eslenmeyen:b.eslenmeyen}; } return{metin:t,durum:'capa_yok',eslenmeyen:[]}; }
-function _postProcess(d,k){ if(k.tip==='prefix_garanti'){ const p=k.prefix||''; if(typeof d!=='string')return d; return d.startsWith(p)?d:p+d; } return d; }
-function _alanCikar(t,a){ if(!a||!a.regex)return null; let re; try{re=new RegExp(a.regex,a.flag||'i');}catch(e){return null;} const m=t.match(re); if(!m)return a.fallback||null; let d=m[a.grup||1]; if(d===undefined)return a.fallback||null; if(a.tip==='int'){const n=parseInt(d,10);d=isNaN(n)?null:n;} else if(a.tip==='float'){const n=parseFloat(d);d=isNaN(n)?null:n;} else d=String(d).trim(); if(a.post_processing&&d!=null)d=_postProcess(d,a.post_processing); return d; }
+/* W-3.12 (163): kopya gövdeler SİLİNDİ — çekirdek TEK kaynak: ares-alan-cikar.js (162/B7).
+   Kopya kanonikten sapmıştı (whitelist + format_template dalları eksikti); artık UI testi
+   ile server parse hattı AYNI motoru koşar. Çağrı noktaları değişmedi. */
+const _postProcess=(d,k)=>ARES_ALAN_CIKAR.postProcess(d,k);
+const _alanCikar=(t,a)=>ARES_ALAN_CIKAR.alanCikar(t,a);
 /* ===== /MOTORLAR ===== */
 
 const YUZEY_SOZ=['Galvaniz','Paslanmaz','CUNIFE','Siyah','Asit','Boyalı'];
