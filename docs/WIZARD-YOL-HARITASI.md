@@ -6,6 +6,8 @@
 > Format öğretme ÇİFT TARAFLI: hem wizard hem izometri batch sayfasından aynı akışa girilir.
 >
 > İşaretleme: `[x]` bitti · `[~]` kısmen · `[ ]` açık. Madde kodları (W-xx) oturumlarda referans için.
+> **KUTU MUTABAKATI (164):** ek bölümlerde hükme bağlanan maddelerin gövde kutuları çevrildi —
+> ham `[ ]` sayımı artık güncel durumu verir. Mutabakat etiketi maddenin başındadır; ekler tarihçedir.
 
 ---
 
@@ -100,7 +102,7 @@
       Çapa stub KALDIRILDI (MK-159.2: görsel okuma format_tanit'te; omurga 8/18.d düştü).
       NOT (MK-159.3): 146/B zaten uçtan uca tamdı (aktar.kalemDuzeltmeler dahil) — 145 "B kalanı"
       kaydı eskimişti.
-- [ ] W-2.18 (159 tasarım bulgusu — Cihat akışının kilit taşı): ÖNİZLEMEDE İZOMETRİ PARSE VERİSİ.
+- [x] W-2.18 **[KAPANDI modal hali — 160; kutu mutabakatı 164]** (159 tasarım bulgusu — Cihat akışının kilit taşı): ÖNİZLEMEDE İZOMETRİ PARSE VERİSİ.
       Taslak önizleme bugün yalnız Excel kabuk + düzeltme overlay gösterir; L2'nin söktüğü her şey
       (malzeme_listesi, alıştırma, ölçüler) terfiden SONRA iner (MK-157.1 yapısal sınır). Hedef:
       kuyruktaki izometri işlerinin parse_sonuc.spoollar[] verisi DB'ye yazılmadan önizleme
@@ -112,22 +114,22 @@
 > İlke: format öğretme ayrı bir "yazılımcı seansı" değil, akışın içinde tek tıkla girilen bir adım.
 > Giriş noktaları hazır: format_tanit ?format_id=&alan= + picker (149).
 
-- [ ] W-3.1 Wizard inceleme: zayıf/çelişkili/L3/tanınmadı rozetli satıra "Formatı düzelt / tanıt"
+- [x] W-3.1 **[İPTAL — 162/MK-162.1, kutu mutabakatı 164]** Wizard inceleme: zayıf/çelişkili/L3/tanınmadı rozetli satıra "Formatı düzelt / tanıt"
       butonu → format_tanit. 159 NETLEŞMESİ (MK-159.2): köprü `?is_id=` ile DOSYA TAŞIR —
       format_tanit PDF'i storage'dan kendisi açar, format/spool bağlamını işten okur; operatör
       dosya ARAMAZ. format_tanit'e DEĞER KİPİ eklenir (B2 ürünleşmesi: değer →
       taslak_duzeltmeleri işaretli; "alan hep burada" → B1 kural patch) — sol bilgi + sağ PDF
       tek ekran, wizard'a ikinci PDF görüntüleyici GÖMÜLMEZ. 160 ANA İŞ paketi.
-- [ ] W-3.2 İzometri batch sayfası: aynı buton/köprü (tanınmadı satırı → format_tanit `?is_id=`).
+- [x] W-3.2 **[GEMİDE — 161 canlı tık kanıtlı, kutu mutabakatı 164]** İzometri batch sayfası: aynı buton/köprü (tanınmadı satırı → format_tanit `?is_id=`).
       İki taraf AYNI çekirdeği kullanır, kopya akış yok. (159: Cihat kararı — format tanıtma
       izometri batch gibi AYRI MODÜL kimliğinde kalır, hepsi aynı altyapı, çift taraflı gelişir.)
 - [ ] W-3.3 L2-fail davranış seçimi devre düzeyinde: "AI'a gitsin (L3)" / "AI kapalı — tanınmayanı bana göster". Kapalıyken dosya sessiz kaybolmaz, "tanınmadı → formatı tanıt" satırı olur. (Muhtemel küçük migration — MK-98.2 dry-run.)
 - [ ] W-3.4 Öğretilen kural kaydedilince: aynı devredeki kardeş dosyalar otomatik yeniden işlenir (kuyruğa geri) — operatör tek PDF öğretir, gerisi kendiliğinden okunur.
-- [ ] W-3.5 Son kullanıcı dili sadeleştirme: format_tanit metinleri operatör diliyle (B1 "okuma yerini düzelt" ↔ B2 "değeri düzelt" ayrımı ekranda anlaşılır); et_mm "runtime'da ASME'den dolar" mesajı; kaydet modal otomatik kapanış + toast.
-- [ ] W-3.6 format_kodu otomatik öneri (operatöre sistematik kod sorulmaz, sistem önerir).
-- [ ] W-3.7 Windows render sorunu: pilot operatörleri Windows'ta — format_tanit PDF görüntüsü Windows'ta düzgün olmadan "son kullanıcı kolay" hedefi sağlanamaz.
+- [x] W-3.5 **[C YOLUNA DEVİR — 162/MK-162.1, wizard kapsamından çıktı; kutu mutabakatı 164]** Son kullanıcı dili sadeleştirme: format_tanit metinleri operatör diliyle (B1 "okuma yerini düzelt" ↔ B2 "değeri düzelt" ayrımı ekranda anlaşılır); et_mm "runtime'da ASME'den dolar" mesajı; kaydet modal otomatik kapanış + toast.
+- [x] W-3.6 **[C YOLUNA DEVİR — 162/MK-162.1; kutu mutabakatı 164]** format_kodu otomatik öneri (operatöre sistematik kod sorulmaz, sistem önerir).
+- [~] W-3.7 **[ÇÖZÜLDÜ — 161 kök neden; AÇIK: yalnız Windows CANLI TEYİDİ; kutu mutabakatı 164]** Windows render sorunu: pilot operatörleri Windows'ta — format_tanit PDF görüntüsü Windows'ta düzgün olmadan "son kullanıcı kolay" hedefi sağlanamaz.
 - [ ] W-3.8 Band-B glyph tablosu (~20 karakter): NB1137 spool ailesi L3'ten L2'ye iner ($0).
-- [ ] W-3.9 (153 bulgu) format_tanit TURETILEN_ALANLAR panzehiri: cap_mm/et_mm/dn için kayıtlı (eski/çöp) regex olsa bile _alanlariKos KOŞMAZ, patch YAZMAZ, çip 🧮 türetilmişe zorlanır. (Çöp regex'in ekrana kırmızı, üretime 2358 bastığı kanıtlandı; veri onarıldı ama kod kapısı açık.)
+- [x] W-3.9 **[KAPANDI — 153 + 163/D3 yazım katmanı; kutu mutabakatı 164]** (153 bulgu) format_tanit TURETILEN_ALANLAR panzehiri: cap_mm/et_mm/dn için kayıtlı (eski/çöp) regex olsa bile _alanlariKos KOŞMAZ, patch YAZMAZ, çip 🧮 türetilmişe zorlanır. (Çöp regex'in ekrana kırmızı, üretime 2358 bastığı kanıtlandı; veri onarıldı ama kod kapısı açık.)
 - [x] W-3.10 KAPANDI (157, kanıtla): kimlik çıkarımı adresi = kuyruk-isle-izometri.dosyaAdiParse;
       mevcut regex listelenen TÜM kalıpları (zone'suz <NPS>x<NPS>, segment, 4-segment, zone-harf)
       ZATEN tutuyordu (9/9 node testi). 156'nın "20/22 kimlik dışı" teşhisi yanlıştı — kabukta_yok
@@ -144,7 +146,7 @@
       (116/Is3 göz teyidi TAMAM). Kalan: eski L3 / yanlış-format aile yeniden parse turu.
 - [ ] W-4.2 pipeline_no E120- prefix normalizasyonu (wizard eşleştirme/mutabakat fazında; 289 montaj kaydını yeniden parse ETMEK çözüm değil).
 - [ ] W-4.3 Dirsek 323.9 ağırlık normalizasyonu (PDF toplam ↔ Excel birim; l2-parser tarafı, K2 bug'ı değil).
-- [ ] W-4.4 bbox → PDF-point normalize (konum_ipucu).
+- [x] W-4.4 **[KAPANDI — 164: yakalama-anı scale-1 normalize + norm:1; norm'suz bbox tüketilmez]** bbox → PDF-point normalize (konum_ipucu).
 - [ ] W-4.5 K1+K3 bulgularının uyarilar.html + wizard inceleme ekranında yüzeye çıkması (K2 deseniyle).
 - [x] W-4.6 KAPANDI (154): vercel.json'a ares-izometri-drenaj.js no-cache başlığı eklendi (1e89804).
 - [x] W-4.7 CEVAPLANDI (154): 3 IFS xlsm 'bekliyor' YETİMMİŞ (sahipleri taslak/silinmiş devre) — excel hattı tetiksiz değildi; W-2.13 onarımıyla kapandı, bekliyor=0.
