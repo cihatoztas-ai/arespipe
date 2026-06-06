@@ -1,73 +1,79 @@
-# son-durum.md — Oturum 157 (2026-06-05)
+# son-durum.md — Oturum 161 (2026-06-06)
 
 ## Bu oturumda ne yapıldı
-1. **FORMAT TUR 1 — NB1124 TAM KAPANIŞ (44/44):** Teşhis iki kez kanıtla devrildi:
-   (a) dosyaAdiParse regex'i 9/9 kalıbı (zone'suz `<NPS>x<NPS>` + segment dahil) ZATEN tutuyordu —
-   Madde 0 regex genişletmesi bu aile için gereksizdi; (b) kabukta_yok ×22 YAPISALDI: hhbjşlö
-   TASLAK devreydi, eslestir() spooller'dan okur, taslak spooller'a yazmaz (MK-157.1; MK-156.1'in
-   eşleştirme ikizi); (c) 156'nın "22 tablosuz çizim / W-2.4 vakası" teşhisi yanlıştı — bunlar
-   M+İ çiftinin MONTAJ kanadıydı (MK-157.3). 156'nın "12Ax12D çözülmüş" okuması da kuyruk durumu
-   ile eşleşme durumunun karışmasıymış (oneri_hazir ≠ eslesti).
-2. **eslestirme-backfill DİRİLDİ — `fix(157)` commit:** 140'tan beri production'da ölüymüş:
-   modül-seviyesi `createRequire` zinciri → Vercel runtime require(ESM) desteklemiyor →
-   ERR_REQUIRE_ESM, FUNCTION_INVOCATION_FAILED (izometri dalı dahil). Lokal Node 20.19+/22
-   require(esm) desteklediği için lokalde görünmüyordu; repro node@20.11 ile birebir alındı.
-   Fix: CJS zinciri (ares-asme/ares-olcu/malzeme-kutuphane-eslesme) lazy `import()`'a taşındı,
-   yalnız tip=malzeme dalında yüklenir (üçü de UMD-guard'lı → globalThis dolar). 3 lokal test
-   yeşil (20.11 yükleme + globalThis smoke + 22 regresyon). **129-130 "terfi sonrası izometri
-   bağlanmıyor" borcu KAPANDI** (kökü buydu).
-3. **Kanıt zinciri (canlı):** hhbjşlö terfi (22 spool + otomatik backfill — ilk seferde HTML 500
-   ile düştü, log ERR_REQUIRE_ESM gösterdi) → fix deploy → kuru dry-run 22 eşleşebilir → gerçek
-   koşu → **kabukta_yok 22→0, eslesti 22, cizim_durumu 22×kismi**.
-4. **MONTAJ ÖĞRETİMİ (zone'suz aile):** 39a2c81b fingerprint'ine dosya_adi_regex eklendi (DB,
-   dry-run→COMMIT; ilk seferde COMMIT atlandı, `fingerprint ? 'dosya_adi_regex'` teyidiyle
-   yakalandı). Regex 36/36 lokal ad testi: tüm montaj kalıpları tutar (zone'suz, M110/AT,
-   alt-çizgili, segmentli), imalat/diğer tutmaz — `.S01` segmenti `[._]\d+` kuralına uymadığı
-   için doğal guard. Skor matrisi: montaj dosyada montaj 6-7 vs imalat 1; imalat dosyada imalat
-   3+ vs montaj ≤2. 22 iş reset → global drenaj → **22/22 montaj L2 ($0, _l2_meta=object),
-   montaj_var=true, montaj eşleşmesi 22/22, 22 sahte manuel_onay temizlendi.** Cache güvenliydi:
-   anahtar (sha, format_id); format NULL'ken cache sorgulanmıyor → eski çöp dönemez.
-5. **Onay Kuyruğu read-before-write (158 önkoşulu):** excel oneri_hazir tüketicisi VAR
-   (onayModalAc→onayAktar→ARES_KABUK.aktar→tamamlandi); izometri oneri_hazir tüketicisi BİLİNÇLİ
-   YOK (109/A — veri eslestir/bindir ile otomatik; "toplu onay" = durum kapatma geçişi olacak);
-   izometri manuel_onay tüketicisi YOK = DELİK (buton yalnız excel dalında, uyarılar hiçbir UI'da
-   açılmıyor) — 158 sekmesinin asıl yeni işi.
-6. **parse_durumu KARARI:** ölü/yedek alan. Yazan: wizard INSERT + aktar (yalnız Excel
-   dokümanları); izometri dokümanları hep 'bekliyor'. Okuyan devre_detay ama 102'den beri
-   güvenmiyor (kuyrukMap = truth). DOKUNULMADI; KARARLAR notu: kuyruk=truth, parse_durumu=yedek.
+1. **AÇILIŞ TEYİTLERİ:** 160 son paketi (840eabc1) + vendor (31e9848e) zaten pushluymuş ✓ ·
+   deploy MD5 = lokal ✓ vendor 200 ✓ · KARARLAR MK-160.3/4/5 heredoc'la işlendi (commit kapanışta).
+2. **Excel kipi vakası KAPANDI (3 kök):** (a) ilk "PDF açılamadı" = tarayıcı CACHE'i (eski HTML —
+   deploy doğruydu); (b) gerçek hata "Excel açılamadı: undefined.indexOf" = IFS'in BOŞ İLK SAYFASI
+   (`!ref` yok) → dolu sayfaya oto-kayma + "Bu sayfa boş" + sheet_to_html lokal try; (c) scroll
+   çalışmıyor + sol form scrollbar kaybı = grid/flex `min-height:auto` zinciri → `.dp-split>*` +
+   `.dpv-wrap` min-height:0 (160'ın "yüksek zoom scrollbar" raporu da aynı kök). + Excel UX: hücre
+   seç → oklarla gez (Enter=aşağı), üstte hücre çubuğu (adres + TAM içerik), td max-width 280px +
+   çift tık kolon genişlet/daralt, user-select serbest.
+3. **kg/mm TEK ONDALIK standardı:** `f1()` (tr-TR, min/max 1) — 10 gösterim noktası bağlandı
+   (tablo kg · kıyas popup mm/kg · kalem boy/ağırlık · BOM miktar · modal kalem satırları · YENİ
+   kalem özeti · çelişki bölümü ağırlık). et/çap BİLEREK ham (spec değeri, 3.05 bilgi taşır).
+4. **W-2.20 KAPANDI:** "⚠ Çelişen alanlar" modalda — `Et: Kabuk(Excel) 4.5 ↔ PDF 3.05 · kabuk
+   korunur` + kaynak dosya adı. K2 enjeksiyon deseni (lib SAF): izometrileriDerle anahtarına
+   `bindirme_celiski` → handler haritayla `s.bindirme_celiski`/`s.bindirme_dosya`. **KÖK BULGU:**
+   kabukBindirHedef'in "client cap/et göndermiyor" notu BAYATTI (MK-159.3 #3) — null'lanıyordu;
+   düzeltildi → et/çap çelişkisi önizlemede İLK KEZ tespit ediliyor (okundu→zayıf düşüşleri gürültü
+   değil). Mekanik: test-w220.mjs 6/6 (repoda) + test-isid.mjs 6/6 regresyonsuz.
+5. **W-3.9 PANZEHİRİ GEMİDE (Y200 ön şartı):** `_turetZorunlu()` altı kapı — hydrate çöp regex'i
+   yüklemez · _alanlariKos koşmaz · markDirty elle dönüşü keser · iki patch yolu yazmaz · çip
+   metni uyarlanır. 153 "2358" vakası kod seviyesinde kapalı.
+6. **GLYPH CANVAS ÇÖZÜLDÜ (oturumun ağır işi, canlı kanıtlı "glyph: temiz ✓"):** kök neden =
+   Cadmatic'in GEÇERSİZ `/ToUnicode /Identity-H` satırı (isim; CMap stream ref değil; ArialMT
+   gömülü değil, pdffonts uni=no) — pdf.js glyph→unicode kuramayıp çorba basıyor; Acrobat/Chrome
+   sistem Arial'ıyla maskeliyor. Çare: **ares-pdf-tounicode.js** (YENİ, 178 satır) — bellekte
+   ARTIMLI identity-ToUnicode (0x20-0x17F); İKİ taban: klasik xref (E120) + **XRef stream**
+   (Y200, /W[1 4 2] sıkıştırmasız ek); ObjStm engel değil (son sürüm kazanır). Kapılı: gerçek
+   ToUnicode'lu dosyaya DOKUNMAZ; idempotent; storage'a YAZILMAZ (salt görüntü/metin). Kanıt:
+   pdf.js 1.10 mekanik 5/5+5/5 çapa + poppler çapraz. Entegrasyon: wizard dpvSec (fetch→onar→
+   getDocument({data})) + format_tanit loadPdf.
+7. **Köprü + adres SAHA TEYİDİ:** batch Tanıt → `?is=&kaynak=batch` canlı (RLS sorunsuz); E120'de
+   otoTespit "tersan deneme"ye eşleşti → MK-158.1 freni → DB teyidi: E120/M ailesi üretimde
+   **e1fb879d (paket)**, a093eaaa = **Y-ailesinin DB formatı** (`(Y\d+...)` regex'i DOĞRU, dar
+   değil) → yanlış kayda öğretim ÖNLENDİ. Y200'de 6/6 yeşil; satır öğretimi kaydı 162'ye.
+8. **MK-85.3 ihlali (Claude, kabul):** `is_kuyrugu.parse_sonuc` kolonu şemadan doğrulanmadan
+   yazıldı → hata; şema-önce ile düzeltildi (is_kuyrugu sonuçları ai_api_log'da; format_id/
+   parser_seviye DOĞRUDAN KOLON).
 
-## Bulgular (157)
-- İşlenenler rozeti + boş-durum metni kuyruk gerçeğini göstermiyor: rozet taslak devre sayısı
-  (0), kuyrukta 22 bekliyor vardı; "Bekleyenleri işle" GLOBAL çalışır (filtre:{}) — UI küçük işi 158.
-- Vercel toast'ı backfill HTML hatasını "Unexpected token A... is not valid JSON" diye gösterdi —
-  best-effort tasarımı doğru çalıştı (terfi geri alınmadı), hata mesajı yüzeye çıktı.
+## Bulgular (161)
+- **otoTespit açığı (W-2.4/K2 belirtisi):** yalnız requires_ai=false tarar → paket-aile PDF'inde
+  tek DB formatına "eşleşti ✓" der, MK-155.1 ⚠ banner HİÇ tetiklenmez — yanlış adrese yazım bir
+  tık mesafede. Çapraz doğrulama tasarımı açık.
+- Y200 Continue satırları FARKLI pipeline'a işaret edebiliyor (Y110-804-414/S02, G200-804-414) —
+  pipeline çapası Continue'dan yazılmaz.
+- E120-722-1015 ailesi kuyruğu komple `iptal` durumda (taslak iptali kalıntısı, bilgi).
+- "tersan deneme" ADI yanıltıcı (üretim Y-formatı) — ad düzeltmesi ucuz kapanış işi.
 
-## Commit'ler (157)
-| Commit | Mesaj |
-|------|-------|
-| kod | `fix(157): eslestirme-backfill ERR_REQUIRE_ESM — CJS zinciri modul seviyesinden lazy import()'a tasindi, izometri dali malzeme bagimliligindan bagimsizlasti (140'tan beri olu endpoint)` |
-| doc | kapanış dosyaları (bu commit) |
-DB (veri UPDATE, migration YOK): 39a2c81b fingerprint dosya_adi_regex + hhbjşlö 22 iş reset.
-CI yeşil beklenir. 12/12 ✓. izometri-oku DOKUNULMADI ✓. Repo raw + lokal node repro yöntemi işledi.
+## Commit'ler (161)
+| Hash | İçerik |
+|---|---|
+| 78bddb3 | feat(161) W-2.20 (wizard UI + api/devre-inceleme + test-w220.mjs) + excel kipi paketi (guard/scroll/gezinme) + f1 |
+| 73a3ee3 | feat(161) glyph paketi: ares-pdf-tounicode.js (YENİ) + wizard/format_tanit entegrasyon + W-3.9 panzehiri |
+| (push) | fix(161) pdf-tounicode XRef-stream tabanlar (Y200) — son MD5 67bf9263b97e03da204fe1dc38356b2c |
+DB değişikliği YOK (migration yok, veri UPDATE yok). 12/12 ✓. izometri-oku DOKUNULMADI ✓.
 
-## MK kayıtları (KARARLAR.md'ye işlenecek)
-- **MK-157.1:** Taslak devrede kabukta_yok YAPISALDIR (eslestir spooller'dan okur; taslak
-  spooller'a yazmaz, MK-127.4). kabukta_yok teşhisinde İLK kontrol = devre durumu.
-- **MK-157.2:** Vercel runtime require(ESM) desteklemez; lokal Node 20.19+/22 destekler → lokal
-  modül yükleme Vercel'i temsil ETMEZ. Repro standardı: `npm exec node@20.11`. Serverless'ta
-  UMD/CJS dosyalar dinamik import() ile, mümkünse yalnız ilgili dalda lazy yüklenir.
-- **MK-157.3:** `.SXX`'siz Cadmatic PDF = montaj adayı (M+İ çifti), tablosuz çizim varsayma.
-  Montaj fingerprint'i içerik sinyaliyle yetinemez (tek-segmentlide "Continue:" yok, malzeme
-  tablosu yapısal olarak yok) → dosya_adi_regex şart. W-2.4'ün "ertelenemez" gerekçesi düştü.
-- **MK-157.4 (süreç):** Kuyruk DURUMU ≠ eşleşme DURUMU (oneri_hazir olmak eslesti demek değil) —
-  156'daki "2 dosya çözülmüş" yanılgısının kökü. Teşhis sorgularında iki kolon ayrı okunur.
+## ⚠ CI DURUMU — kırmızı ama KURAL İHLALİ DEĞİL
+"Kural Kontrolü" adımı YEŞİL geçti; düşen adım bot'un ci-son-rapor.json commit'i — bizim ardışık
+push'larımızla yarışıp rebase ÇAKIŞMASI yedi (deneme 1/5, manuel müdahale hatası). Çözüm: Actions
+sayfasından son run'a "Re-run failed jobs" (yarış bitti, temiz geçer) VEYA bir sonraki CI'lı push
+kendiliğinden tazeler. 162 açılış teyidi #1.
 
-## 158 ANA İŞ
-1) Onay Kuyruğu sekmesi implementasyonu (devre_detay): manuel_onay uyarı listesi
-   (parse_sonuc.spoollar[].uyarilar, kod+mesaj+agirlik) + tekil kapatma · oneri_hazir toplu
-   kapatma geçişi (→tamamlandi, veri işlemi YOK) · atanmamis "eşleştir" · devreler.html rozet.
-   Havuz sayısını açılışta SQL ile yeniden say (157'de 22 manuel→öneri kaydı).
-   Test yatağı: g200 + 265-overboard (hhbjşlö yeşil-yol örneği).
-2) W-2.14 tasarımı (taslak önizleme veri katmanı — MK-127.4 bozulmaz).
-3) Küçükler: İşlenenler rozet/boş-durum düzeltmesi · 6 B1124 PDF orijinal adla yükle (MK-52.1) ·
-   IZO-KANIT-SETI v4 yapıştır + ad kararı · ✖ sessiz-kayıp doğrulaması · Y200 ST37 + W-3.9.
+## MK kayıtları (161 — KARARLAR'a işlenecek, metinler hazır)
+- **MK-161.1 [DISIPLIN]:** Canlı HTML testinde İLK adım sert yenile (Cmd+Shift+R) — deploy doğru,
+  tarayıcı bayattı; aynı oturumda ÜÇ kez yarım saatlik sahte iz bıraktı.
+- **MK-161.2 [MIMARI]:** pdf-tounicode katmanı — görüntü onarımı (canvas) ≠ çıkarım onarımı
+  (glyph-onar); bellekte, kapılı, idempotent, storage'a yazmaz.
+- **MK-161.3 [URUN]:** kg/mm gösterimi her yerde tek ondalık (f1, tr-TR); et/çap ham kalır.
+- **MK-161.4 [DISIPLIN]:** Tek-satır anchor'a satır-İÇİ `//` yorum eklenmez (satırın devamını
+  yorumlar, parantez dengesi patlar — W-3.9 yamasında yaşandı); blok yorum `/* */` öne konur.
+- **MK-161.5 [DISIPLIN]:** Kanıt çıktısı `head` ile kesilmez — E120'de poppler "çorba" sanıldı,
+  ilk 8 satır rakamdı; tam çıktı kontrol grubunu değiştirdi.
+
+## 162 ANA ADAYLAR (Cihat sıralar)
+CI re-run + KARARLAR commit teyidi → **Y200 ST37 satır öğretimi KAYDI + W-3.4 yayılım** (sha
+düşür → kardeş reset → L2/$0 kanıt) → OPR kalem-ekleme (f) SQL kanıtı → otoTespit çapraz doğrulama
+tasarımı → devre_detay'a modal taşıma.

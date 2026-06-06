@@ -349,3 +349,20 @@ tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunul
   sürece görünmez. Uyandırma şartı: bağlam taşıyan bir köprü (ileride devre_detay/batch'ten).
 - Öğretim adresi tablosu + tek otorite kararı: **docs/FORMAT-YONETIM-MIMARI.md** (MK-160.1:
   adres-bilinçli ikilik; yeni aile AILE_KAYIT'a eklenmez; uzun vade yön = facet→DB).
+
+---
+
+## 161 GERÇEKLEŞME NOTU (2026-06-06)
+- **TÜRETİLEN_ALANLAR davranışı KESİNLEŞTİ (W-3.9):** satir_tipleri aktifken (oturum sentezi VEYA
+  DB'deki mevcut kural) cap_mm/et_mm/dn için: kayıtlı regex YÜKLENMEZ ve KOŞULMAZ, çip 🧮 zorunlu,
+  elle işaretleme kural yazımına DÖNDÜRMEZ (toast'la söyler), hiçbir patch yolu (yeni kip
+  buildParserKural / düzelt kipi dirty) bu alanlara kural YAZMAZ. Tek mekanizma: `_turetZorunlu()`.
+- **Görüntü katmanı onarımı eklendi (metin motorundan AYRI):** pdf-parse/pdfjs 1.10 metin motoru
+  değişmedi; canvas çorbasının kökü Cadmatic'in geçersiz `/ToUnicode /Identity-H` girdisi.
+  `ares-pdf-tounicode.js` loadPdf'te belleğe artımlı identity-ToUnicode enjekte eder (klasik xref +
+  XRef stream tabanlar; kapılı — gerçek ToUnicode'lu dosyaya dokunmaz; storage'a YAZILMAZ;
+  idempotent). glyph-onar (çıkarım katmanı) aynen yerinde — iki onarım farklı katmanlardır.
+- **otoTespit sınırı kayda geçti:** yalnız requires_ai=false formatlar yarışır → paket-aile
+  PDF'lerinde en yakın DB formatına "eşleşti" der ve MK-155.1 ⚠ banner'ı tetiklenmez. Üretim
+  formatı teyidi (fingerprint/kuyruk gerçeği) olmadan "otomatik eşleşti" güven ifadesi verilmemeli
+  — çapraz doğrulama tasarımı açık iş.

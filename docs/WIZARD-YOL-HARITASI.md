@@ -218,3 +218,43 @@ Durum değişiklikleri (yukarıdaki maddelerin üstüne):
   (e) bu modal devre_detay'a da taşınacak (spool önizleme — Cihat istedi); (f) glyph bozulması
   canvas'ta (pilot/Windows konusu, metin katmanı sağlıklı).
 - K-2 (W-3.3 L3 anahtarı varsayılanı) ve K-3 (cron zinciri) AÇIK duruyor.
+
+---
+
+## 161 GÜNCELLEMESİ (2026-06-06) — modal açıkları kapandı + glyph canvas ÇÖZÜLDÜ
+Durum değişiklikleri (160 güncellemesinin üstüne):
+- **W-2.20 (160 açığı a) → KAPANDI (canlı kanıtlı):** zayıf ÇELİŞKİ DETAYI modalda — "⚠ Çelişen
+  alanlar" bölümü, satır bazlı `Et: Kabuk(Excel) 4.5 ↔ PDF 3.05 · kabuk korunur` + kaynak dosya.
+  Veri yolu K2 enjeksiyon deseni (lib SAF): izometrileriDerle anahtarına `bindirme_celiski`
+  (flag'li bindir satırları) → endpoint haritayla spool'a taşır. BONUS KÖK BULGU: `kabukBindirHedef`
+  "client cap/et göndermiyor" BAYAT notuyla et/çap'ı null'luyordu (MK-159.3 üçüncü vaka) —
+  MK-139.1'den beri gönderiliyor; düzeltildi → **et/çap çelişkisi önizlemede İLK KEZ doğuyor**
+  (bazı "okundu" spool'lar zayıfa düşebilir; gürültü değil, görünmeyen gerçek çelişki).
+  Mekanik test: test-w220.mjs 6/6 + test-isid.mjs 6/6 regresyonsuz.
+- **W-3.9 → KAPANDI:** `_turetZorunlu()` (oturum sentezi VEYA DB satir_tipleri aktif) altı kapı:
+  hydrate çöp regex'i yüklemez · _alanlariKos koşmaz · markDirty elle dönüşü keser (toast) ·
+  buildParserKural + düzelt-kipi patch'i yazmaz · çip metni zorunluda "elle dönüş" cümlesini
+  gizler. 153'ün "2358" vakası kod seviyesinde kapalı.
+- **W-3.7 → ÇÖZÜLDÜ (canlı kanıtlı, "glyph: temiz ✓"):** kök neden = Cadmatic'in GEÇERSİZ
+  `/ToUnicode /Identity-H` satırı (isim; stream referansı değil) + font gömülü değil → pdf.js
+  glyph→unicode kuramayıp canvas'a çorba basıyordu (Acrobat/Chrome sistem Arial'ıyla maskeliyor).
+  Çare: **ares-pdf-tounicode.js** — bellekte ARTIMLI ToUnicode (identity 0x20-0x17F) enjeksiyonu,
+  iki taban: klasik xref (E120) + XRef stream (Y200). Kanıt: pdf.js 1.10 mekanik 5/5+5/5 çapa,
+  idempotent, poppler çapraz; kapılı (gerçek ToUnicode'lu/yapısı uymayan dosyaya DOKUNMAZ),
+  storage'a YAZILMAZ. Entegrasyon: wizard dpvSec + format_tanit loadPdf.
+- **W-3.2 köprü CANLI KANITLANDI:** batch Tanıt → `?is=&kaynak=batch` ile format_tanit PDF'i işten
+  açtı (RLS sorunsuz); otoTespit a093eaaa 6/6 yeşil (Y200), spool_no→S01.
+- **160 açıkları (b)+(c) KAPANDI:** Excel sekmesi — vendor 200 ✓; gerçek kök = IFS'in BOŞ İLK
+  SAYFASI (`!ref` yok) sheet_to_html'i patlatıyordu → dolu sayfaya oto-kayma + "Bu sayfa boş" notu
+  + lokal try. Scroll/scrollbar kaybı kökü = grid/flex `min-height:auto` zinciri (`.dp-split>*` +
+  `.dpv-wrap` min-height:0) — sol form scrollbar'ı da aynı fix'le döndü. + Excel UX: hücre seç →
+  oklarla gez, üstte hücre çubuğu (adres+TAM içerik), td max-width 280px + çift tık kolon toggle.
+- **YENİ — kg/mm tek ondalık standardı:** `f1()` yardımcısı (tr-TR, min/max 1) — float çöpü
+  (1670.5000610000002) bitti; 10 gösterim noktası bağlandı; et/çap BİLEREK dokunulmadı (spec değeri).
+- **YENİ AÇIK (161 saha bulgusu — W-2.4/K2 belirtisi):** format_tanit otoTespit yalnız
+  `requires_ai=false` formatları tarar → paket-ailesi PDF'inde (E120, üretimde e1fb879d) tek DB
+  formatına ("tersan deneme"/a093eaaa) "otomatik eşleşti ✓" der, ⚠ MK-155.1 banner'ı HİÇ tetiklenmez
+  — operatör yanlış adrese yazmaya bir tık mesafede. Çare adayı: otoTespit sonucu fingerprint/üretim
+  formatıyla çapraz doğrulanmadan "eşleşti" güveni verilmez.
+- **KALAN:** Y200 ST37 satır öğretimi KAYDI + W-3.4 yayılım (sha düşür→reset→kanıt) → 162 ilk iş ·
+  OPR kalem-ekleme (f) SQL kanıtı yapılmadı · "tersan deneme" AD düzeltmesi (pilotta kötü görünür).

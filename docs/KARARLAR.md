@@ -2063,3 +2063,25 @@ sistematik okuma sorunu Tanıt → format_tanit (kural öğretimi). format_tanit
 B2 değer kipi ancak W-3.5 dil/rozet ayrımıyla ("okuma yerini düzelt" ↔ "değeri düzelt") birlikte
 eklenir; etiketsiz kip karışımı yasak. (Kaynak: 160 Cihat-Claude kip tartışması.)
 
+
+## MK-160.3 [MIMARI] — MK-159.2 inceltmesi: yasak olan ÖĞRETİM ALTYAPISI kopyasıdır; SALT görüntüleyici serbest
+format_tanit'in öğretim/çapa altyapısı (bölge seçimi, kural yazımı, fingerprint) başka ekrana
+KOPYALANMAZ — bu MK-159.2'nin özüdür. Ancak salt PDF görüntüleyici (pdfjs render + pan + zoom +
+sekme, vendor format_tanit ile ORTAK, lazy yüklenir) serbesttir. Spool modalı yan paneli bu
+kapsamda pdfjs viewer oldu; embed denemesi pan ihtiyacıyla aynı gün aşıldı. Kural koruma ile ürün
+isteği bağdaştı: operatör PDF'i düzeltme ekranının YANINDA görür, öğretime yönlendirilmez.
+(Kaynak: son-durum 160; Cihat yön düzeltmesi "buradan format tanıma ekranı çıkmasın".)
+
+## MK-160.4 [URUN] — Operatör kalem ekleme (OPR kapısı): kalem_idx≥bom.length, aktar kod='OPR'
+PDF'te olup kabukta olmayan gerçek eksikler için "+ Ekle": yeni kalem taslak_duzeltmeleri'nde
+kalem_idx≥bom.length ile yaşar (YENİ rozeti + 🗑, terfi öncesi silinebilir); terfide aktar
+spool_malzemeleri'ne kod='OPR' satırı yazar. tanim/tip ek alanları YALNIZ yeni kalemde — mevcut
+kalem düzeltme setine sızmaz. Kaynak izi korunur: OPR = operatör beyanı, parse çıktısı değil
+(Parça Kimliği Prensibi ihlal edilmez). (Kaynak: son-durum 160; "PDF 3 satır / kabuk 2 kalem" vakası.)
+
+## MK-160.5 [MIMARI] — Önizleme parse enjeksiyonu: eslestir'in terfi-sonrası alanları endpoint'te AYNI kurallarla taşınır
+Taslakta spooller yapısal yok (MK-157.1) → alıştırma/NOT/yüzey önizlemede boş kalıyordu.
+devre-inceleme endpoint'i bu alanları eslestir'in 117 kurallarıyla BİREBİR (ALS dosya→VAR /
+alistirma_ipucu + NOT + kabuk_bos yüzey kuralı) satıra enjekte eder — yalnız GÖSTERİM için.
+Kalıcı yazım yine terfi/eslestir hattındadır; endpoint DB'ye yazmaz. Kural çatallanması yasak:
+eslestir kuralı değişirse enjeksiyon da aynı kaynaktan güncellenir. (Kaynak: son-durum 160, W-2.14.)

@@ -413,3 +413,26 @@ yazdığımız" netleşmeli (155 adres dersinin mantıksal sonucu).
    MK-160.4 (OPR kalem ekleme), MK-160.5 (önizleme parse enjeksiyonu) 161'de işlenecek.
 Format hattı klasik kuyruğu (Y200 ST37 + W-3.9 panzehiri / Sefine / W-2.4) değişmedi; ilk gerçek
 öğretim turu artık köprüden girilerek yapılabilir (batch Tanıt → canlı test 161 açılışında).
+
+---
+
+## Oturum 161 (2026-06-06) — köprü canlı kanıt + W-3.9 gemide + glyph canvas çözümü + ADRES SAHA TEYİDİ
+1. **Köprü (W-3.2) canlı:** batch "Tanıt" → `format_tanit?is=&kaynak=batch` PDF'i işten açtı; RLS
+   sorunu çıkmadı. Y200'de otoTespit 6/6 yeşil (a093eaaa), `spool_no → S01` l2.alanCikar canlı.
+2. **ADRES TABLOSU SAHADA DOĞRULANDI (E120 frenli vaka):** E120 PDF'inde otoTespit "tersan
+   deneme"ye eşleşti; MK-158.1 freniyle yazmadan önce DB teyidi yapıldı → E120/M ailesi üretimde
+   **e1fb879d (paket)**, montaj 39a2c81b; **a093eaaa = Y-ailesinin DB formatı** (`(Y\d+-\d+-\d+)`
+   regex'i dar değil DOĞRU — aile sınırı). Yanlış kayda öğretim son anda önlendi ("tanıttım ama
+   düzelmedi" tuzağı). AÇIK: otoTespit requires_ai=false dışını taramadığından paket-aile PDF'inde
+   ⚠ banner tetiklenmiyor — çapraz doğrulama gerekiyor (yol haritası 161 maddesi).
+3. **W-3.9 panzehiri GEMİDE:** `_turetZorunlu()` altı kapı (hydrate/koş/markDirty/iki patch
+   yolu/çip metni) — DB'de satir_tipleri aktifken cap/et/dn'ye çöp regex koşulmaz/yazılmaz, elle
+   dönüş kapalı. Y200 öğretim turunun ön şartı (FORMAT-YONETIM-MIMARI §6) kapandı.
+4. **Glyph CANVAS çözümü (W-3.7):** kök neden Cadmatic'in geçersiz `/ToUnicode /Identity-H` ismi
+   (pdffonts uni=no) — pdf.js atar, poppler/Acrobat hoşgörür. `ares-pdf-tounicode.js`: bellekte
+   artımlı identity-ToUnicode; klasik xref (E120) + XRef stream (Y200) tabanları; pdf.js 1.10
+   mekanik 5/5+5/5 + idempotent + kapılı; canlı ekran "glyph: temiz ✓". format_tanit loadPdf +
+   wizard dpvSec entegre. Metin katmanı onarımı (glyph-onar, L1) ayrı ve yerinde durur.
+5. **Öğretim KAYDI yapılmadı (bilinçli):** oturum doldu; Y200 ST37 satır öğretimi + W-3.4 yayılım
+   reçetesi (kural sonrası sha düşür → kardeş reset → L2/$0 kanıt) 162'nin ilk işi. Alanlar 6/6
+   hazır, tek eksik malzeme_tablosu satır öğretimi + kaydet.

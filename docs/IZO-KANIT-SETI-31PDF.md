@@ -305,3 +305,19 @@ Listesi_Rev0.xlsx). Spool modalı / viewer / kalem-ekleme / Excel-kipi testleri 
 — SİLME. Mevcut açıklar değişmedi (6 B1124 orijinal ad · v4 yapıştırma + ad kararı · ✖ sessiz-kayıp).
 Yeni gözlem (160 testi): E100-722 ailesinde Windows glyph bozulması canvas'ta belirgin
 ("aê~ ï..."), satır METNİ ham dökümde sağlıklı — görüntü katmanı sorunu (pilot konusu, motor değil).
+
+---
+
+## 161 NOTU (2026-06-06) — glyph CANVAS vakası ÇÖZÜLDÜ + 2 yeni kanıt PDF'i
+- **160 gözlemi kapandı:** canvas çorbasının kökü Cadmatic'in geçersiz `/ToUnicode /Identity-H`
+  girdisi (ArialMT CID/Identity-H, gömülü değil, pdffonts uni=no). `ares-pdf-tounicode.js`
+  bellekte identity-ToUnicode enjekte eder; canlı ekran kanıtı "glyph: temiz ✓" (Y200-804-414).
+- **Kanıt yatağına 2 PDF eklendi (yapı çeşitliliği):** `E120-722-1015-ALS.S01.1` (B1137, ALS,
+  klasik xref tabanı — pdf-tounicode klasik yol kanıtı 5/5) · `Y200-804-414.S01.1` (B1137,
+  Galvaniz 39 kg, **XRef stream + ObjStm tabanı** — xref-stream yolu kanıtı 5/5; ST37 NPS+Sch
+  satırı `139.7x4.5`, a093eaaa ailesinin öğretim adayı).
+- **Regex çapa YASAĞI kanıtı:** Y200'ün Continue satırı FARKLI pipeline'a işaret ediyor
+  (`Continue: Y110-804-414/S02` ve `G200-804-414`) — pipeline_no çapası Continue'dan YAZILMAZ
+  (E120'de de eşdeğer risk görüldü). Doğru çapa: başlık bloğu deseni.
+- Mevcut açıklar değişmedi: 6 B1124 orijinal ad · v4 yapıştırma + belge AD KARARI · ✖ sessiz-kayıp
+  doğrulaması. Test yatağı NB1137 ykjfytjk taslağı KORUNUYOR (silme).
