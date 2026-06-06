@@ -1073,9 +1073,11 @@ function _tanitBtn(i) {
 }
 function formatTanitAc(i) {
   var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
-  var iz = sp[i] && sp[i].izometri;
+  var s = sp[i], iz = s && s.izometri;
   if (!iz || !iz.is_id) return;
-  window.open('format_tanit.html?is=' + encodeURIComponent(iz.is_id) + '&kaynak=devre', '_blank');
+  // 160/B2: değer kipi bağlamı — kabuk anahtarı (pipeline|spoolNo) HAM taşınır (duzeltKaydet ile aynı uzay)
+  window.open('format_tanit.html?is=' + encodeURIComponent(iz.is_id) + '&kaynak=devre'
+    + '&pl=' + encodeURIComponent(s.pipeline || '') + '&sn=' + encodeURIComponent(s.spoolNo || ''), '_blank');
 }
 
 // ── B canlı dolum: drenaj onIlerleme → endpoint yeniden çağrı (kırmızı→yeşil) ──
