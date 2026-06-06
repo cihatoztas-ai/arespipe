@@ -2171,3 +2171,26 @@ v2 = parse_sonuc anahtar keşfi VEYA düzeltme kaydına format_id kolonu. (Kayna
 fix'i) → canlı bug DEĞİL, tek-kaynak borcu. Karar açık: emekli (yorum + okuyan-kalmadı grep
 kanıtı) ya da trigger. Kuyruk durumları (oneri_hazir/manuel_onay/iptal) kolon CHECK kümesine
 1:1 oturmadığından TAHMİNLE toplu backfill YAPILMAZ. (Kaynak: 163.)
+
+## MK-164.1 [DISIPLIN] — Rozet varsayılanı ≠ kaynak kuralı
+UI bir değerin kaynağını gösteriyorsa (rozet/badge), o göstergeyi üreten KURAL kaynağın tek
+gerçeğidir; yazan kod bu kuralın BİREBİR EŞİNİ kullanır. Varsayılan değerden ("rozet default
+Excel") kaynak çıkarımı yapılmaz. 164'te sabit `deger_kaynagi:'excel'` yaması ekran kanıtıyla
+(L2 rozetli yuzey/alistirma/not) aynı oturumda çürütüldü → dsatir kuralının eşi yazıldı.
+Ek ders: JSONB teşhis SELECT'lerinde anahtar adı tahmini MK-85.3 ihlalinin kardeşidir — önce
+1 örnek satırın `jsonb_pretty` dökümü. (Kaynak: 164.)
+
+## MK-164.2 [MIMARI] — konum_ipucu.bbox normalize standardı (W-4.4)
+`parser_kural.*.konum_ipucu.bbox` SCALE-1 (PDF viewport birimi) uzayında ve `norm:1`
+bayrağıyla saklanır; captureBox yakalama ANINDA böler, drawMarks çizimde aktif zoom'la çarpar.
+TÜKETİCİ SÖZLEŞMESİ: norm'suz bbox kullanılmaz (öğretim-anı zoom'u kaydedilmediğinden uzayı
+belirsizdir) — dürüst toast, tahmin yok. İlk tüketici: wizard 🔍 Tablo (dpvZoomTo, W-2.19
+ucuz dilim). (Kaynak: 164.)
+
+## MK-164.3 [URUN] — G2a kaynak sözlüğü (migration 103)
+`taslak_duzeltmeleri.deger_kaynagi` ∈ {excel, izometri, operator} (CHECK'li):
+excel = düzeltilen değer Excel kabuktan · izometri = PDF parse değerinden (`format_id` DOLU —
+sinyal formata adreslenir) · operator = sistem okuması yokken operatör girdisi (yeni kalem /
+boş alan) · NULL = 103 öncesi kayıt, "bilinmiyor". Geriye dönük TAHMİN BACKFILL YASAK.
+Uyarı kartı adresi kaynağa dallanır; Düzelt=değer / Tanıt=kural ayrımı ve uzman onayı AYNEN
+(MK-160.2/162.2). (Kaynak: 164.)

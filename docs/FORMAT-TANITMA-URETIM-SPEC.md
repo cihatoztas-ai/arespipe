@@ -407,3 +407,22 @@ tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunul
 - **Kimlik notu:** a093eaaa ad/kod düzeldi (`tersan_cadmatic_spool_ogretim_v1`); format_kodu
   hiçbir zaman AILE_KAYIT anahtarlarına eşitlenemez (MK-119.2 — eşitlenirse DB kuralı yerine
   paket koşar).
+
+
+---
+
+## 164 GERÇEKLEŞME NOTU (2026-06-06) — konum_ipucu normalize standardı + G2a kaynak sözleşmesi
+- **konum_ipucu.bbox artık NORMALİZE (W-4.4 kapandı):** captureBox yakalama ANINDA `bbox/scale`
+  yazar + `norm:1` bayrağı. Tüketici sözleşmesi: **norm'suz bbox KULLANILMAZ** (öğretim
+  anındaki zoom bilinmediğinden uzayı belirsizdir — tahmin yok, dürüst toast). drawMarks
+  norm-duyarlı (çizimde × aktif scale). İlk tüketici: wizard 🔍 Tablo (dpvZoomTo, W-2.19
+  ucuz dilim). Y200 tablo öğretimi norm bbox'ı otomatik üretir.
+- **G2a kaynak sözleşmesi (migration 103):** düzeltme satırı `deger_kaynagi` taşır —
+  `excel` (kabuk değeri) / `izometri` (PDF parse değeri, `format_id` DOLU) / `operator`
+  (sistem okuması yokken operatör girdisi) / NULL (103 öncesi, bilinmiyor). format_tanit
+  b2Kaydet `izometri`+`_formatId` yazar; wizard alan-bazlı (dsatir kuralının eşi). Birikim
+  sinyali artık formata adreslenebilir — öneri yine UZMAN onayından geçer (MK-162.2 korunur).
+- **Kimlik/teşhis notu (165 girdisi):** M130-817-008.S01 kuyruğu e1fb879d (katalog-paket)
+  ile L2 — cap/et şüphesi PAKET kuralında aranır (MK-155.1: paket-katmanlı ailede DB patch
+  runtime'da okunmaz; düzeltme = paket kodu + deploy).
+

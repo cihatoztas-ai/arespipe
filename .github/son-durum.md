@@ -1,81 +1,60 @@
-# son-durum.md — Oturum 163 (2026-06-06)
+# son-durum.md — Oturum 164 (2026-06-06, akşam)
 
-## Bu oturumda ne yapıldı (tema: YAPISAL EKSİKLER — 162 kararı)
-1. **MK-55.1 ihlali tespit + onarım:** açılış sağlık scripti BRIEFING'i 158'de buldu (159-162
-   kapanışlarında güncellenmemiş). Onarım kapanış paketine katlandı; BRIEFING artık 163.
-2. **W-3.11/B6 HÜKMÜ + PATCH:** tablo yazım yolu SAĞLAM (152 köprüsü `kaydet` içinde duruyor);
-   gerçek kapı `_tabloSentezle`'nin `yesil>0` şartı + sentezin TARAYICI metnine koşması (B1'in
-   tablo izdüşümü) → 162 "değişiklik yok" semptomu kırık yol olmadan üretilebiliyor. Patch
-   (format_tanit 954→984): **D1** toast tablo durumunu ayrıştırır ("yeşil kanıt 0 — YAZILMAZ" /
-   "kayıtlıyla AYNI" / "AI oku") · **D2** `_tabloYeniMt()`+`_tabloDegistiMi()` tek kaynak →
-   tamamlaAc JSON önizlemesi = kaydet yazımı (162'nin "modal gösterdi ama yazılmadı" yanılgısının
-   kökü buydu) · **D3** `_patchedKural`'a W-3.9 kapısı (türetilen alan elle dirty + başka alan
-   dirty → çöp regex patch'e SIZIYORDU; 153/2358'in açık kapısı kapandı). 13/13 mekanik test.
-3. **MK-152.3 DENETİMİ → HAYALET BORÇ:** K1/K2 kompozisyon SQL'i: kuyrukta **bekliyor=0**
-   ("100+ stuck" 152 tarihliydi; 153-154 zaten çözmüş: W-1.1 client-loop kararı + W-1.4 tahliye
-   + W-2.7 UI yüzü). Tek kalıntı: 19 May excel `hata` = "Donatım Kontrol Formu.xlsx" (BOM değil,
-   parser'ın fail demesi DOĞRU) → iz notuyla `iptal`.
-4. **MK-117 YENİDEN-DENETİM → 153/155 kapanışı TEYİT:** null'lu doküman 2 (23 May, ikisi de
-   final), bağlı bitmemiş iş 0; wizard'lar `yukleyen_id:userId` yazıyor; client-loop `||uid`
-   bağışık. Satır-306 kontrolü emekli server yolunda doğru bekçi olarak KALIR (sistem-kullanıcı
-   icat edilmedi).
-5. **W-3.12 KAPANDI — B7 bitti:** kopyada whitelist'e ek **format_template dalı da eksikti**
-   (yeni bulgu). Çekirdek `ares-alan-cikar.js`'e (kök, IIFE, ares-tablo-sentez deseni) taşındı;
-   l2-parser ince delege (yan-etki import zaten desendi: ares-asme/olcu; export imzaları AYNEN —
-   izometri-oku dinamik import'u etkilenmez); format_tanit kopyaları `const` delegeye indi
-   (3 çağrı noktası dokunulmadan). Kanıt: git-HEAD eski gövde == çekirdek 13/13 vaka +
-   l2-parser canlı delegasyon testi. **F1 taraması:** 6 format / 27 alan kuralında fallback /
-   whitelist / format_template kullanımı **SIFIR** → B4 sessiz-fallback bugün TEORİK; görünürlük
-   ihtiyacı doğarsa artık TEK yerden eklenir.
-6. **B3 ad/kod düzeltmeleri (3 format):** a093eaaa → ad "Tersan Cadmatic Spool — Öğretim
-   (çok-notasyon)", kod `tersan_cadmatic_spool_ogretim_v1` ("nps" düştü: format hem NPS+Sch hem
-   ODxet satırına hizmet ediyor; yeni kod AILE_KAYIT anahtarlarıyla ÇAKIŞMIYOR — MK-119.2
-   güvenli; pipeline_no kuralı doğrulama SELECT'iyle DOKUNULMAMIŞ teyitli). e1fb879d →
-   "Tersan Cadmatic İmalat (Spool) — Katalog" · 39a2c81b → "Tersan Cadmatic Montaj — Katalog"
-   (yalnız ad; kodlar katalog anahtarı, dokunulmadı). **B5 kökü görünür:** a093eaaa ile e1fb879d
-   AYNI yapısal aile — spool PDF'inde hem "Malzeme Listesi" (e1fb879d parmağı) hem "Cut &
-   Bending Info" (a093eaaa parmağı) var; ayrım ŞABLON değil KAYNAK (katalog-paket vs DB-öğretim).
-7. **Onay birikimi temizliği:** O1/O2 dağılımı → 428 bekleyenin 281'i 22 May test kalıntısı
-   (P26-039: 141 · P26-149: 86+54) → Cihat kararıyla toplu `iptal` (dry-run 281 ✓ → UPDATE →
-   doğrulama 0 ✓). 5-6 Haz taze kuşağı (P26-215/216/217 + UUID'li devreler) DOKUNULMADI.
-8. **G2a sinyal hattı v1 (MK-162.2 yakın işi):** migration 102 `g2a_duzeltme_sinyali` görünümü
-   (alan+seviye+değer yönünde 3+ birikim; `security_invoker=true` ZORUNLU — yoksa view RLS'i
-   bypass ederdi; format bağı bilinçli v2'ye: taslak_duzeltmeleri format taşımıyor) + uyarilar
-   `g2aSinyalYukle()` 📐 "Format Kuralı Şüphesi" kutusu (bindirme deseninin izinde, idempotent)
-   + serbest onarım: `malzeme` kategorisinin eksik etiketi eklendi (ekran ham anahtar basıyordu).
-9. **OPR (f):** mekanik kanıt tamam (ares-kabuk 261-274: kalem_idx≥bom.length → kod='OPR');
-   canlı tur Cihat'a devredildi (ekran erişimi yoktu) — reçete CLAUDE-SONRAKI'da.
+## Bu oturumda ne yapıldı (tema: G2a KAYNAK BAĞI + ürün rötuşları)
+1. **Açılış teyitleri (MK-163.1 ilk uygulama):** d97e4a6 origin'de ✓ · onay kuşağı 147→162
+   (P26-217=76; eritme 165'e) · G2a v1 canlı 7 sinyal (kutu + konsol temiz) · parse_sonuc
+   anahtar keşfi: **format_id VAR** → v2 tasarımı açıldı · OPR: 0 satır (borç sürdü).
+2. **164-B1 BULGUSU:** G2a v1 sinyallerinin değer kaynağı EXCEL KABUK (rozet kodu + BOM
+   zinciri kanıtı); v1 kart metni PDF format kuralına YANLIŞ adres veriyordu.
+3. **G2a v2 — Cihat kararı A (kayıt-zamanı bağ):** migration 103 `deger_kaynagi`
+   (excel/izometri/operator CHECK) + `format_id` FK + görünüm v2 kaynak kırılımlı
+   (security_invoker korunur; dry-run 7 sinyal birebir NULL kovasında) · wizard/format_tanit
+   yazım noktaları + uyarilar kart adresi kaynak-dallı. Eski satır NULL='bilinmiyor',
+   tahmin backfill YOK. (`1ed95e9`)
+4. **MK-164.1 — aynı-oturum öz-düzeltme:** sabit 'excel' YANLIŞTI; NB1137 modal ekranı
+   (yuzey/alistirma/not L2 rozetli) yakaladı. v2.1: kaynak alan-bazlı (dsatir kuralının
+   birebir eşi), izometri ise format_id dolu; devre-inceleme `ps.format_id`'yi önizleme
+   izometrisine taşır. 10/10 mantık testi. (`7e8469b` içinde)
+5. **MK-163.6 HÜKMÜ — A yumuşak emeklilik:** grep kanıtı: `_parseDurumu` tüketicisiz
+   (2707/2793 yalnız `_kuyrukDurum`); devre-inceleme/izo-eslesme'deki `parse_durumu` ÇIKTI
+   alanı (kolon değil). SELECT'ten çıkarıldı + ölü alan silindi (`5a80fa7`) + kolona BAYAT
+   COMMENT (canlı SQL). Yazımlar sürer; yeni kod OKUMAZ.
+6. **Kalem KALİTE alanı (Cihat bulgusu):** kalem editöründe kalite YOKTU; kabuk iki dalda da
+   `kalite`'ye ham malzeme yazıyordu (OPR: 'paslanmaz'). KALEM_ALANLAR+yeni-kalem listesi+
+   dinamik süzgeçli dropdown (spool yolu birebir; `_kaliteSecenekYukle` ortak) + kabukta
+   `dz.kalite` tercihi, yoksa eski davranış (sıfır regresyon). 6/6 test. (`7e8469b` içinde)
+7. **W-2.19 ucuz dilim + W-4.4 KAPANDI (`a36f66b`):** captureBox bbox'ı yakalama anında
+   scale-1'e normalize (`norm:1`); drawMarks norm-duyarlı; wizard Malzemeler **🔍 Tablo** →
+   konum_ipucu (YALNIZ norm) → izometri sekmesi → dpvZoomTo+vurgu. Norm'suz eski kayıt
+   kullanılmaz (dürüst toast). Bugün norm bölge yok → Y200 öğretimiyle canlanır.
+8. **Canlı kanıtlar:** kalite(spool)→`excel` ✓ · yeni kalem(idx5)→`operator` ✓ · 📐 kart
+   "kaynak kayıtlı değil (103 öncesi)" metni canlı ✓.
 
-## Bulgular (163)
-- **MK-163.1 dersi:** devir dosyalarındaki borç kalemleri taşınırken TAZELENMİYOR — MK-117 ve
-  MK-152.3 birer hayalet borçtu. Açılış teyitlerine "borç hâlâ borç mu" SQL denetimi girer.
-- **parse_durumu BAYAT (MK-163.6 borcu):** `devre_dokumanlari.parse_durumu` 1611 'bekliyor' ama
-  kuyrukta 0 — insert'te yazılıyor, yalnız terfi yolu (ares-kabuk:307) güncelliyor. UI zaten
-  kuyruk gerçeğini çekiyor (devre_detay:2635, 102. oturum fix'i) → canlı bug DEĞİL; kolon ya
-  emekli edilir ya trigger'lanır (kuyruk durumları kolon CHECK kümesine 1:1 oturmuyor — tahminle
-  backfill YAPILMADI).
-- `devreler.ad` bu veride NULL — kimlik `is_emri_no`; sorgular `COALESCE(ad,is_emri_no,id8)`.
-- Sentez kanıt makamı tablo hattında da TARAYICI metni (CANON_ALL) — MK-162.3'ün izdüşümü;
-  atölyede drenaj kanıtı bunu telafi ediyor, UI hizalaması C yolunda.
+## Bulgular (164)
+- **42.2/3.56 vakası (YENİ 165 BORCU):** M130-817-008.S01 bindirme çap 60.3↔42.2, et
+  2.77↔3.56. Kuyruk: format **e1fb879d KATALOG-PAKET**, et_mm=3.56, satirlar=0 — adres
+  PAKET kuralı (MK-155.1: kod+deploy). Hipotez: redüksiyon küçük ucu (1-1/4"=42.16) çap
+  seçimi; et schedule karışması. Teşhis SELECT'inde cap anahtarı teyitsizdi — JSONB anahtarı
+  örnekten doğrulanmadan hüküm yok (MK-85.3 izdüşümü).
+- **88543b1 bot "docs AUTO" commit'i** (ARCHITECTURE/ONBOARDING) doğal CI davranışı.
+- W-2.19 tam dilim (alan-bazlı konum) tasarım borcu: motor konum eki B1 metin-ayrışmasına
+  komşu — izometri-oku'ya dokunmadan tasarlanmalı.
 
-## Commit'ler (163)
+## Commit'ler (164)
 | Hash | İçerik |
 |---|---|
-| (sabah) | fix(163): W-3.11 tablo patch tek kaynak + degisiklik-yok ayristirma D1-D2-D3 (CI'lı) |
-| 70bd41f | feat(163): migration 102 g2a duzeltme sinyal gorunumu MK-162.2 (CI'lı) |
-| d97e4a6 | feat(163): uyarilar g2a kutusu + malzeme etiketi — **push teyidi: `gp`** |
-| (kapanış) | docs(163): BRIEFING onarımı + 8 dosya devir paketi + KARARLAR MK-162/163 [skip ci] |
-DB: migration 102 COMMIT ✓ · ad/kod UPDATE×3 (guard'lı+doğrulamalı) · kuyruk iptal 1+281.
-Migration dosyası: 102. 12/12 ✓. izometri-oku DOKUNULMADI ✓.
+| 1ed95e9 | feat(164): g2a v2 kaynak bağı — migration 103 + 3 yazım noktası + kart adresi |
+| 5a80fa7 | chore(164): parse_durumu yumuşak emeklilik — ölü okuma kaldırıldı MK-163.6 |
+| 7e8469b | fix(164): kaynak alan-bazlı MK-164.1 + kalem kalite + kabuk kalite tercihi |
+| a36f66b | feat(164): W-2.19 ucuz dilim — tablo bölgesine zoom + W-4.4 bbox normalize |
+DB: migration 103 COMMIT ✓ · parse_durumu BAYAT COMMENT ✓. 12/12 ✓. izometri-oku ✓.
 
-## MK kayıtları (163 — KARARLAR.md'ye İŞLENDİ, kapanış paketinde)
-MK-162.1/162.2/162.3 (162'den bekleyen) + MK-163.1 (hayalet borç/devir tazeleme) + MK-163.2
-(W-3.11 hükmü, D1-D3) + MK-163.3 (alanCikar tek kaynak) + MK-163.4 (format ad/kod + AILE_KAYIT
-yasak kümesi) + MK-163.5 (G2a sinyal hattı v1) + MK-163.6 (parse_durumu bayat kolon borcu).
+## MK kayıtları (164 — KARARLAR.md'ye işlendi, bu pakette)
+MK-164.1 (rozet varsayılanı ≠ kaynak kuralı) · MK-164.2 (konum_ipucu norm standardı) ·
+MK-164.3 (G2a kaynak sözlüğü + backfill yasağı).
 
-## 164 ADAYLARI
-OPR (f) canlı kanıt (Cihat UI turu + SELECT) · Atölye: Y200 malzeme kaydı + W-3.4 yayılım
-(diğer bilgisayar; 163 ek şartı: Güncelle öncesi yeşil sentez kutusu) · taze onay kuşağının
-ürün akışıyla eritilmesi (W-2.15 Onay Kuyruğu) · G2a v2 format bağı (parse_sonuc anahtar keşfi)
-· parse_durumu kararı (emekli/trigger) · KÜÇÜKLER: EN/AR operatör anahtarları · IZO-KANIT v4 ·
-✖ sessiz-kayıp · W-2.20 canlı göz · hhbjşlö 1 excel önerisi · 6 B1124 orijinal ad.
+## 165 ADAYLARI
+İzometri-kaynak canlı kanıt (1 alistirma düzeltmesi + SELECT) · OPR terfi kanıtı · 42.2/3.56
+katalog-paket cap/et incelemesi (sunucu parse_sonuc dökümü + paket kuralı, atölye) · Y200
+tablo öğretimi (reçete; 🔍 Tablo canlanır) · taze onay eritme (162 kayıt) · KÜÇÜKLER (önceki
+liste: EN/AR anahtarları · 6 B1124 orijinal ad · ✖ sessiz-kayıp · W-2.20 canlı göz · vb.).

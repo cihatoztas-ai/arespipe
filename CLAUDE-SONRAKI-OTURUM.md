@@ -1,61 +1,59 @@
-# CLAUDE-SONRAKI-OTURUM.md — Oturum 164 açılışı
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 165 açılışı
 
 ## Açılış ritüeli
-1. `git pull` + `./scripts/oturum-saglik.sh 164` (BRIEFING artık 163 — TEMİZ geçmeli)
+1. `git pull` + `./scripts/oturum-saglik.sh 165` (BRIEFING 164 — TEMİZ geçmeli)
 2. `ls api/*.js | wc -l` = 12 (MK-129.3)
-3. Bu dosya + .github/son-durum.md + CLAUDE-SON-OTURUM.md oku; gerekirse
-   docs/FORMAT-OGRETIM-ATOLYE-162.md (163 sonuç ekiyle) + WIZARD-YOL-HARITASI (163 bölümü)
-4. Kod okuma: repo raw · 5. Teşhis: VERİ→UI→kod (MK-158.1) · 6. Ajanda onayı (Cihat sıralar)
+3. Bu dosya + .github/son-durum.md + CLAUDE-SON-OTURUM.md oku; gerekirse WIZARD-YOL-HARITASI
+   (164 işaretleri) + FORMAT-OGRETIM-ATOLYE-162.md (164 ekiyle)
+4. Kod okuma: repo raw/klon · 5. Teşhis: VERİ→UI→kod (MK-158.1) · 6. Ajanda onayı (Cihat sıralar)
 
-## AÇILIŞ TEYİTLERİ (5 dk)
-1. **CI + push:** `d97e4a6` (uyarilar G2a kutusu) push'landı mı — 163'te `gp` yapıştırma
-   kazasıyla yarım kalmıştı; `git log origin/main -1` ile teyit. Kapanış doc commit'i + bot
-   raporu yeşil mi.
-2. **MK-163.1 uygulaması (yeni standart):** ajandadaki her DEVİR borcu için 1 tazeleme SQL'i —
-   "borç hâlâ borç mu?" (163'te MK-117 ve MK-152.3 hayalet çıktı; tekrarı olmasın).
-3. **G2a canlı göz:** uyarilar.html SERT YENİLE (MK-161.1) → konsolda `g2a cekme hatasi` YOK;
-   3+ birikim yoksa kutu görünmez (NORMAL).
-4. **OPR (f):** Cihat ayrı yaptıysa kanıt SELECT çıktısı; yapmadıysa 164 küçük işi.
+## AÇILIŞ TEYİTLERİ (5 dk — MK-163.1: her devir borcuna 1 tazeleme SQL'i)
+1. **CI:** 164'ün 4 kod commit'i + kapanış doc commit'i yeşil mi (`a36f66b` sonrası bot raporu).
+2. **İzometri-kaynak kanıtı (2 dk):** wizard'da L2 rozetli bir alana (Alıştırma ideal) 1
+   düzeltme → `SELECT alan, deger, deger_kaynagi, format_id FROM taslak_duzeltmeleri ORDER BY
+   updated_at DESC LIMIT 3;` → `izometri` + format_id DOLU görülmeli (excel/operator zaten ✓).
+3. **OPR terfi kanıtı:** taslakta OPR kalemi duruyor; devre terfi edilince
+   `SELECT * FROM spool_malzemeleri WHERE kod='OPR' ORDER BY olusturma DESC LIMIT 5;`
+   (kolon adı `olusturma` — `olusturma_at` DEĞİL). Satır + kalite kolonunda operatör değeri
+   görülürse f borcu TAM kapanır.
+4. **G2a kart tazeliği:** uyarilar sert yenile — yeni kaynaklı düzeltmeler 3+ birikince kart
+   "Excel hattı" / "PDF formatı (AD)" dallarını göstermeye başlar (NULL kova "bilinmiyor"
+   kalır, NORMAL).
 
-## 164 ADAYLARI (Cihat sıralar)
-1. **OPR (f) canlı kanıt (5 dk, Cihat UI + 1 SELECT):** taslak devre önizleme → spool modal →
-   Malzemeler → + Ekle ("OPR test") → terfi → `SELECT * FROM spool_malzemeleri WHERE kod='OPR'
-   ORDER BY 1 DESC LIMIT 5;` — satır görünürse borç kapanır (mekanik taraf ares-kabuk:261-274
-   kanıtlı).
-2. **ATÖLYE HATTI (Cihat tetikler, diğer bilgisayar):** Y200 malzeme tablosu kaydı — reçete
-   ATOLYE-162.md + **163 EK ŞARTI: Güncelle'den önce tablo adımında "🧮 N satır tipi sentezlendi
-   · X yeşil" kutusu GÖRÜLMEDEN Güncelle'ye basılmaz** (yeşil=0 ise yeni D1 toast'ı zaten
-   "tablo YAZILMAZ" diyecek). Sonra yayılım: hedefli pdf_sha256 NULL (155 tuzağı) → kardeş
-   reset (.SXX) → drenaj → kanıt JOIN (`is_kuyrugu k LEFT JOIN ai_api_log l ON
-   l.id=k.ai_api_log_id`: format_id=a093eaaa + parser_seviye=l2 + maliyet_usd=0).
-   Format ÇEŞİTLİLİĞİ (zip atölyesi) bundan sonra.
-3. **Taze onay kuşağı (ürün akışı):** ~147 oneri_hazir/manuel_onay (P26-215/216/217 + UUID'li
-   devreler, 5-6 Haz) — W-2.15 Onay Kuyruğu sekmesinden eritme turu; takılan yer = ürün bulgusu.
-4. **G2a v2 format bağı (keşif → karar):** `SELECT DISTINCT jsonb_object_keys(parse_sonuc)
-   FROM dosya_isleme_kuyrugu WHERE parse_sonuc IS NOT NULL;` — format_id/format_kodu varsa
-   görünüm parse_sonuc'tan zenginleşir; yoksa düzeltme kaydına format_id kolonu tasarlanır.
-5. **parse_durumu kararı (MK-163.6):** kolon emekli mi (yorum + okuyan kalmadığının grep
-   kanıtı) trigger mı? Kuyruk durumları CHECK kümesine 1:1 oturmuyor — tahmin backfill YOK.
-6. **KÜÇÜKLER:** EN/AR operatör anahtarları (wizard/devre_detay; format_tanit DÜŞTÜ) ·
-   IZO-KANIT v4 yapıştırma + AD kararı · ✖ sessiz-kayıp doğrulaması · W-2.20 canlı göz
-   (okundu→zayıf dağılımı; 161 et/çap fix'i sonrası) · hhbjşlö 1 excel önerisi ·
-   6 B1124 PDF orijinal adlarla (MK-52.1) · K-2 (W-3.3 L3 anahtarı varsayılanı) AÇIK.
+## 165 ADAYLARI (Cihat sıralar)
+1. **42.2/3.56 KATALOG-PAKET incelemesi (atölye, ağır):** M130-817-008.S01 — kuyruk format
+   **e1fb879d** (paket; MK-155.1: düzeltme=KOD+DEPLOY, DB patch koşmaz). Adımlar: (a) örnek
+   parse_sonuc TAM dökümü (`SELECT jsonb_pretty(parse_sonuc) ... LIMIT 1` — anahtar adlarını
+   ÖRNEKTEN teyit, MK-85.3; 164'te cap anahtarı tahminle null dönmüştü) · (b) paketteki cap/et
+   seçim kuralını oku (lib/format-paketleri.js, e1fb879d ailesi) · (c) hipotez testi:
+   redüksiyon küçük ucu (1-1/4"=42.16) çap seçimi + schedule et (3.56) karışması ·
+   (d) düzeltme paket kodunda + node testi + deploy + drenaj kanıtı.
+2. **Y200 tablo öğretimi (Cihat tetikler, diğer bilgisayar):** reçete ATOLYE-162 + 163
+   yeşil-kutu şartı + **164 eki: kayıt artık NORM bbox üretir → wizard 🔍 Tablo butonu
+   otomatik canlanır** (öğretimin ilk operatör-görünür temettüsü; kanıtı modalda zoom'un
+   tabloya oturması). Sonra yayılım + drenaj JOIN kanıtı (değişmedi).
+3. **Taze onay kuşağı eritme (162 kayıt):** W-2.15 Onay Kuyruğu'ndan ürün-akışı turu;
+   P26-217 (76) ile başla; takılan yer = ürün bulgusu.
+4. **W-2.19 tam dilim TASARIMI (karar, kod değil):** alan-bazlı konum = motor konum eki —
+   B1 metin-ayrışmasına komşu (konum tarayıcı uzayında, kural sunucu metninde) ve
+   izometri-oku'ya DOKUNMADAN olmalı. Tasarım tartışması 165'te, kod sonra.
+5. **KÜÇÜKLER:** EN/AR operatör anahtarları (wizard/devre_detay) · 6 B1124 orijinal ad
+   (MK-52.1) · ✖ sessiz-kayıp doğrulaması · W-2.20 canlı göz · IZO-KANIT v4 yapıştırma + AD
+   kararı · hhbjşlö 1 excel önerisi · K-2 (W-3.3) AÇIK.
 
 ## Hatırlatmalar
 MK-49.1 izometri-oku DOKUNMA · MK-129.3 12/12 · MK-134.1 kod commit [skip ci]siz · MK-85.3
-şema-önce İSTİSNASIZ · MK-158.1 VERİ→UI→kod · MK-161.1 sert yenile · **MK-162.3 kanıt makamı
-SUNUCU METNİ — 163 eki: tablo SENTEZİ de tarayıcı metninde koşar (CANON_ALL), tablo öğretiminin
-nihai kanıtı da drenaj SQL'idir** · MK-163.1 devir borcu tazelenir · `_tabloYeniMt/_tabloDegistiMi`
-tek kaynak — kaydet/tamamlaAc tablo işi BURADAN, kopya açma · **ARES_ALAN_CIKAR tek kaynak** —
-alanCikar/postProcess gövdesi bir daha HİÇBİR yere kopyalanmaz (l2-parser+format_tanit delege) ·
-a093eaaa = "Tersan Cadmatic Spool — Öğretim", kod `tersan_cadmatic_spool_ogretim_v1` ("tersan
-deneme"/"nps_v1" ARTIK YOK — eski adla arama yapma) · format_kodu YASAK kümesi = AILE_KAYIT
-anahtarları (`tersan_cadmatic_spool`, `tersan_cadmatic_montaj`) — eşitlenirse DB kuralı yerine
-paket koşar (MK-119.2) · `devreler.ad` NULL olabilir → COALESCE(ad,is_emri_no) · g2a görünümü
-`security_invoker=true` — view'a dokunan bunu KORUR · komut blokları terminale TEK TEK
-yapıştırılır (`gp` kazası) · test yatakları: g200 + aw231 + NB1137 chvvnb + ykjfytjk — SİLME ·
-şema: format_id/parser_seviye/maliyet/pdf_sha256 → ai_api_log; is_kuyrugu → ai_api_log_id JOIN ·
-dosya_isleme_kuyrugu'nda ai_api_log bağı YOK (parse_sonuc JSONB var).
+şema-önce İSTİSNASIZ — **164 eki: JSONB anahtarları da örnek dökümden teyit edilir, tahmin
+SELECT'i hüküm üretmez** · MK-158.1 VERİ→UI→kod · MK-161.1 sert yenile · MK-162.3 kanıt makamı
+sunucu metni/drenaj SQL'i · MK-163.1 devir borcu tazelenir · **MK-164.1 rozet varsayılanı ≠
+kaynak kuralı — yazan kod, gösteren kuralın birebir eşini kullanır** · **MK-164.2 konum_ipucu
+bbox = scale-1 + norm:1; norm'suz bbox TÜKETİLMEZ** · **MK-164.3 G2a kaynak sözlüğü:
+excel/izometri/operator, NULL=bilinmiyor, tahmin backfill YASAK** · ARES_ALAN_CIKAR tek
+kaynak · a093eaaa = "Tersan Cadmatic Spool — Öğretim" / e1fb879d = "— Katalog" (42.2 vakası
+BUNUN paketi) · format_kodu YASAK kümesi = AILE_KAYIT anahtarları (MK-119.2) ·
+`spool_malzemeleri.olusturma` (at'sız) · `devreler.ad` NULL olabilir → COALESCE ·
+g2a görünümü security_invoker=true KORUNUR · komut blokları TEK TEK · test yatakları
+(g200 + aw231 + NB1137 chvvnb + ykjfytjk) SİLME · parse_durumu kolonu BAYAT — YENİ KOD OKUMAZ.
 
-> 164 açılışı: ritüel → 4 teyit → Cihat sıralamasıyla adaylar (öneri: OPR → atölye/Y200 →
-> taze onay turu → G2a v2 keşfi → parse_durumu → küçükler) → kapanış (BRIEFING dahil — MK-55.1).
+> 165 açılışı: ritüel → 4 teyit → Cihat sıralamasıyla adaylar (öneri: kanıt ikilisi →
+> 42.2 atölyesi VEYA Y200 → onay eritme → küçükler) → kapanış (BRIEFING dahil — MK-55.1).

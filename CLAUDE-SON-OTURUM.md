@@ -1,55 +1,56 @@
-# CLAUDE-SON-OTURUM.md — Oturum 163 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 164 özeti
 
 ## Tek cümle
-Plan ve gerçekleşme bu kez ÖRTÜŞTÜ: 162'nin "yapısal eksikler" kararı uygulandı — W-3.11 hükme
-bağlanıp üç kusur (D1/D2/D3) yamalandı, W-3.12 ile alanCikar TEK kaynağa indi (B7 bitti, B4
-ölçülüp teorikleşti), MK-152.3 ve MK-117'nin 153-155'te zaten kapanmış HAYALET borçlar olduğu
-taze SQL'le kanıtlandı, üç formatın ad/kod kimliği yapısala çevrildi (B3, B5'in kökü görünür
-oldu), 281 test-kalıntısı onay kaydı iptal edildi ve G2a sinyal hattının v1'i (migration 102 +
-uyarilar kutusu) gemiye alındı; OPR (f) canlı kanıtı reçeteyle Cihat'a devredildi.
+164'ün omurgası "yanlış adres" oldu: G2a v1 sinyallerinin değer kaynağının Excel kabuk olduğu
+kanıtlandı (164-B1) ve Cihat'ın A kararıyla kayıt-zamanı kaynak bağı (migration 103 +
+deger_kaynagi/format_id) gemiye alındı; aynı refleks oturum içinde Claude'un kendi sabit-'excel'
+yamasını çürüttü (MK-164.1 → alan-bazlı v2.1), parse_durumu MK-163.6 borcu grep kanıtıyla
+yumuşak emekliliğe ayrıldı, Cihat'ın yakaladığı kalem-kalite boşluğu (ve kabuğun kalite=malzeme
+saçması) kapatıldı, W-2.19 ucuz dilimi W-4.4 bbox-normalize standardıyla birlikte gemiye girip
+Y200 öğretimine bağlandı; izometri-kaynak ve OPR-terfi kanıtları ile 42.2/3.56 katalog-paket
+vakası 165'e devredildi.
 
-## Kanıt zinciri (yöntem: her hükümden önce repo-raw kod okuma + canlı SQL — MK-126.8/85.3)
-1. **W-3.11:** `kaydet` düzeltme-kipi tablo köprüsü (152) YERİNDE; `_tabloSentezle` yalnız
-   `sz.rapor.yesil>0` ise `_satirTipleri` set ediyor ve sentez `CANON_ALL` (tarayıcı/görsel-sıra)
-   üzerinde koşuyor → 162 E100 "değişiklik yok" semptomu kırık yol OLMADAN mekanik üretilebilir.
-   Bonus kusur: `tamamlaAc` düzelt-kipinde tablo patch'ini JSON'a KOYMUYORDU (önizleme≠yazım) —
-   162'nin "modal satir_tipleri gösterdi" izlenimi büyük olasılıkla DB'nin boş listesiydi.
-   D3: `_patchedKural` W-3.9 türetilen-alan filtresinden YOKSUNDU (sayan filtre ≠ yazan filtre).
-   Patch sonrası 13/13 senaryo (162 semptomu, Y200 hedefi, önizleme==yazım, sızıntı kapısı).
-2. **W-3.12:** kopya `_alanCikar`'da whitelist + format_template dalları eksik; `_postProcess`
-   bugün eş ama ayrı yaşıyordu. Vercel'in kök-dosya import'unu bundle'ladığı ares-asme/olcu
-   emsaliyle kanıtlı → `ares-alan-cikar.js` IIFE çekirdek; l2-parser delege (Python tek-geçiş
-   replace assert'i gövdelerin bayt-eş taşındığını ayrıca doğruladı); eşlik 13/13 (git-HEAD
-   gövdesi referans) + node'da gerçek l2-parser import edilip delegasyon canlı test edildi.
-   F1: 27 kuralda üç özellik de SIFIR kullanım → B4 teorik, tekleştirme tam zamanında ÖNLEM.
-3. **Hayalet borçlar:** K1 kompozisyonu (parser×durum) bekliyor=0 gösterdi; K2 boş döndü.
-   WIZARD-YOL-HARITASI okuması W-1.1/1.2/1.4 ve W-1.3'ün 153-155 kapanışlarını ortaya çıkardı —
-   162 devri eski notlardan sürüklemişti. M117a/b: null'lu 2 doküman final, bağlı bitmemiş iş 0.
-   Tek gerçek kalıntı (Donatım Kontrol Formu, BOM-dışı) iz notuyla iptal.
-4. **B3/B5:** format haritası SQL'i + `AILE_KAYIT` okuması: yasak küme tam 2 anahtar; a093eaaa
-   kodu katalog-dışı → değişim güvenli. Guard'lı UPDATE'ler (id LIKE + eski kod/kod eşitliği) +
-   doğrulama SELECT'lerinde `pipeline_kural` değişmemiş teyidi. B5'in kökü: iki format aynı
-   spool PDF'inin İKİ ayrı başlığına parmak basıyor; ayrım KAYNAK (MK-119.2 ikiliği).
-5. **Onay temizliği:** O2 (COALESCE kimlikli) iki kuşağı ayırdı; dry-run 281 → UPDATE →
-   doğrulama 0. Veri silinmedi, `iptal`+iz notu (ilke).
-6. **G2a v1:** migration 102 — `security_invoker=true` bilinçli ve ZORUNLU (Postgres view'ları
-   sahip yetkisiyle koşar; onsuz taslak_duzeltmeleri RLS'i bypass = çok-tenant sızıntı). Eşik 3+
-   (MK-162.2). uyarilar entegrasyonu bindirme yükleyicisinin birebir deseni; self-test 4/4,
-   tam koşu 0 hata/102 uyarı (baseline).
+## Kanıt zinciri (yöntem: repo-raw/klon kod okuma + canlı SQL + EKRAN kanıtı — MK-126.8/85.3)
+1. **164-B1:** rozet kodu (wizard 1204/2027 varsayılan 'Excel') + BOM=excel-generic satirlar
+   zinciri + format_id'nin yalnız izometri parse_sonuc'unda olması → v1 sinyalleri Excel
+   kaynaklı, kart metni PDF formatına yanlış adres. A/B/C sunuldu; Cihat "nereden dönecez"
+   sorusuyla C'nin dönüşsüzlüğünü yakaladı → A'nın gerçek maliyeti çıkarıldı (yazım noktaları
+   kaynağı ZATEN biliyor) → A.
+2. **Migration 103:** MK-98.2 dry-run → 7 sinyal birebir NULL kovası → COMMIT. CHECK üçlüsü +
+   FK ON DELETE SET NULL + görünüm v2 (kolonlar SONA — CREATE OR REPLACE kısıtı) +
+   security_invoker korunur.
+3. **MK-164.1:** Cihat'ın NB1137 modal ekranı yuzey/alistirma/not'u L2 rozetiyle gösterdi —
+   sabit 'excel' yanlış. duzeltAc dsatir kuralı kaynağın alan-bazlı gerçeğiydi
+   (cap/et/agirlik/malzeme/kalite=xl · yuzey[yuzeyHam]/alistirma/not=izoSrc|bos) → kaydet bu
+   kuralın birebir eşini yazar; izometri ise format_id (devre-inceleme'ye 1 satır:
+   ps.format_id taşıma). 10/10 vaka.
+4. **MK-163.6:** grep — `_parseDurumu` kurulup HİÇ tüketilmiyor (2707/2793 yalnız
+   _kuyrukDurum); devre-inceleme/izo-eslesme'deki parse_durumu kolon değil ÇIKTI alanı (isim
+   çakışması). A: SELECT'ten kolon çıkarıldı + alan silindi + BAYAT COMMENT. Davranış sıfır.
+5. **Kalite:** KALEM_ALANLAR'da alan yok + ares-kabuk iki dalda `kalite:ham-malzeme`.
+   kalemSatirAc async'ti, `_kaliteSecenekYukle` globaldi → spool yolunun birebiri (dinamik
+   liste + malzeme süzgeci + kaliteKod eşleme). Kabuk: dz.kalite tercihi, fallback eski
+   davranış. 6/6.
+6. **W-2.19/W-4.4:** saklanan bbox öğretim-anı zoom pikselindeydi (scale kaydedilmiyor) =
+   belirsiz uzay → yakalama anında normalize (norm:1) tek doğru nokta (sample çıkarımı
+   scale-uzayında bitmişken). bbox'ın tek geometrik tüketicisi drawMarks (kırpma yok) —
+   regresyonsuz. Tüketici sözleşmesi: norm'suz KULLANILMAZ. 6/6 (gidiş-dönüş kimliği dahil).
+7. **42.2 vakası:** kuyruk SQL → format e1fb879d (KATALOG-PAKET), et_mm=3.56, satirlar=0;
+   cap anahtarı null/teyitsiz. Hüküm ERTELENDİ (MK-85.3) — 165 atölye girdisi.
 
-## Süreç dersleri (163)
-- **MK-163.1:** "Eski borç kaydı ≠ hâlâ borç" (MK-159 dersinin devir-dosyası ikizi) — borç
-  kalemi taşınmadan önce tek SQL'lik tazeleme. 163'ün en ucuz, en değerli çıktısı.
-- D2 sınıfı kusur ("önizleme ≠ yazım") ile MK-85.3 aynı ailedendir: gösterilen şey ile yazılan
-  şeyin AYNI koddan üretilmesi şart — `_tabloYeniMt` tek kaynağı bunun için.
-- `gp` yapıştırma kazası: iki komut bloğu birleşince `gparespipe_kopyala` oldu, commit lokalde
-  kaldı — kapanışta "push teyidi" maddesi olarak işaretlendi. Komut blokları TEK TEK yapıştır.
-- Cihat 162-tipi sapmaya izin vermedi ("oturum çok taze, devam") — A-B-C-D sıralı net ajanda
-  ile 6 başlık tek oturumda kapandı; ağır iş öne ilkesi yine doğrulandı.
+## Süreç dersleri (164)
+- **MK-164.1:** UI'da kaynak gösteren kural varsa, yazan kod o kuralın BİREBİR EŞİNİ kullanır;
+  varsayılan rozetten çıkarım yapılmaz. (Ekran görüntüsü = geçerli kanıt türü; kendi yamanı
+  da çürütebilir.)
+- Cihat'ın "ileride döneriz nereden dönecez" itirazı doğruydu: kaynaksız birikim + backfill
+  yasağı = dönüşü olmayan veri. Erteleme kararlarında "dönüş yolu var mı" sorusu standart.
+- "Çok hızlısın" anına denk gelen kullanıcı bulgusu (kalite) en değerli ürün girdisiydi —
+  hız, kullanıcının ekran gözlemini beklemeyi unutturmamalı.
+- JSONB teşhis SELECT'lerinde anahtar adı tahmini = MK-85.3 ihlalinin kardeşi (olusturma_at
+  kazası + cap anahtarı). Önce 1 örnek satır dökümü.
 
-## Dosyalar/commit'ler (163)
-format_tanit.html (954→984, W-3.11 D1-D3) · **ares-alan-cikar.js (YENİ, 78)** · lib/l2-parser.js
-(421→407, delege) · uyarilar.html (624→674, G2a kutusu; `d97e4a6` push teyidi) · migrations/
-102_g2a_duzeltme_sinyali.sql (YENİ, 50; `70bd41f`). DB: migration 102 COMMIT · 3 format ad/kod ·
-282 kuyruk iptal. Doc paketi: BRIEFING (158→163 onarımı) + üçlü + 4 yol-haritası 163 bölümleri +
-ATOLYE-162 163-sonuç eki + KARARLAR MK-162.1..3 ve MK-163.1..6. 12/12 ✓ · izometri-oku ✓.
+## Dosyalar/commit'ler (164)
+`1ed95e9` (migrations/103 YENİ + wizard + format_tanit + uyarilar) · `5a80fa7` (devre_detay)
+· `7e8469b` (wizard + api/devre-inceleme + ares-kabuk) · `a36f66b` (wizard + format_tanit).
+DB: migration 103 COMMIT + parse_durumu BAYAT COMMENT. Doc paketi: BRIEFING + üçlü + 5 yol
+haritası 164 ekleri (kesintisiz) + KARARLAR MK-164.1..3. 12/12 ✓ · izometri-oku ✓.

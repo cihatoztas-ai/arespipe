@@ -166,3 +166,21 @@ motor kopyası tekleştirme (B7) · sessiz fallback taraması (B4) · format ad/
   (22 May test kuşağı) iptal edildi.
 - **MK-162.2 yakın işi GEMİDE:** migration 102 `g2a_duzeltme_sinyali` + uyarilar kutusu;
   v2 (format bağı) 164 keşfine bağlı.
+
+
+---
+
+## 164 EKİ (2026-06-06) — MK-162.2 v2 gemide + atölyeye yeni girdiler
+- **MK-162.2 v2 TAMAM (A kararı):** düzeltme kaydı kaynağını taşır (`deger_kaynagi` +
+  `format_id`, migration 103). 164-B1: v1 sinyallerinin kaynağı Excel kabuktu — kart metni
+  PDF format kuralına yanlış adres veriyordu; artık kaynak-dallı. format_tanit B2 düzeltmesi
+  `izometri`+öğretilen format_id yazar → birikim doğrudan formata adreslenir. Düzelt=değer /
+  Tanıt=kural ayrımı AYNEN (öneri uzman onayından geçer).
+- **Y200 reçetesine 164 eki:** tablo bölgesi işaretleme artık NORM bbox üretir (W-4.4) ve
+  kayıt sonrası wizard'daki **🔍 Tablo** zoom'u otomatik canlanır — öğretimin operatör-görünür
+  ilk temettüsü. Reçete sırası değişmedi (163 yeşil-kutu şartı dahil).
+- **Atölyeye yeni vaka:** M130-817-008.S01 cap 42.2/et 3.56 (kuyruk: e1fb879d KATALOG-PAKET,
+  L2). Adres paket kuralı (MK-155.1 — DB patch değil, kod+deploy). Hipotez: redüksiyon küçük
+  ucu çap seçimi + schedule et karışması. İnceleme yöntemi: sunucu parse_sonuc dökümü +
+  paket kuralı okuması; JSONB anahtarları örnekten teyit (MK-85.3).
+- B5 çapraz-doğrulama tasarım borcu DURUYOR (değişmedi).

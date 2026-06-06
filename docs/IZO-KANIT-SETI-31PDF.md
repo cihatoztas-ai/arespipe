@@ -357,3 +357,22 @@ Yeni gözlem (160 testi): E100-722 ailesinde Windows glyph bozulması canvas'ta 
   ai_api_log` JOIN (parser_seviye=l2, maliyet 0, ham_satir düşmesi yok).
 - PDF envanteri değişmedi (163'te dosya işi yoktu — yapısal oturum). Açıklar aynen: 6 B1124
   orijinal ad · v4 yapıştırma + AD kararı · ✖ sessiz-kayıp. Test yatakları KORUNUYOR.
+
+
+---
+
+## 164 NOTU (2026-06-06) — kanıt setine yeni vaka: NB1137 M130-817 çifti cap/et şüphesi
+- **YENİ VAKA (165 incelemesi):** `M130-817-008.S01.1.pdf` (NB1137, Watermist) — UI bindirme:
+  çap kabuk 60.3 ↔ PDF 42.2 · et kabuk 2.77 ↔ PDF 3.56 · ağırlık 9.0 ↔ 10.0. Kuyruk gerçeği:
+  format **e1fb879d (Tersan Cadmatic İmalat — Katalog)**, parse et_mm=3.56, satirlar=0,
+  seviye anahtarı boş. Hipotez: BOM'da 2" boru + "2 x 1-1/4" redüksiyon var; 42.2 = 1-1/4"
+  NPS dış çapı → spool çapı redüksiyonun KÜÇÜK ucundan seçilmiş olabilir; et=3.56 schedule
+  ailesi (10S/40 karışması) şüphesi. **Metodoloji:** teşhis SELECT'inde `dis_cap_mm` anahtarı
+  null döndü — anahtar adı information_schema/örnek-JSONB ile TEYİT edilmeden hüküm yok
+  (MK-85.3'ün JSONB izdüşümü). Sunucu parse_sonuc dökümü atölyede çıkarılacak.
+- Aile notu: aynı dosyada hem "Malzeme Listesi" hem "Cut & Bending Info" başlıkları (B5 kökü)
+  — kuyruk e1fb879d'yi seçmiş; a093eaaa öğretim kuralları bu dosyada KOŞMUYOR demektir.
+  cap/et düzeltmesi paket koduna yazılır (MK-155.1, deploy gerekir).
+- Envanter değişmedi; açıklar aynen (6 B1124 orijinal ad · v4 yapıştırma + AD kararı ·
+  ✖ sessiz-kayıp). Test yatakları KORUNUYOR.
+

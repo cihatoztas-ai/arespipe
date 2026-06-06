@@ -322,3 +322,44 @@ Durum değişiklikleri (160 güncellemesinin üstüne):
   — UI kuyruktan okuyor (102 fix), canlı bug değil; emekli-mi-trigger-mı kararı açık.
 - **OPR (f) → reçeteyle Cihat'ta:** mekanik kanıt tamam (ares-kabuk 261-274); canlı tur =
   + Ekle → terfi → `spool_malzemeleri kod='OPR'` SELECT.
+
+---
+
+## 164 İŞARETLERİ (2026-06-06) — G2a kaynak bağı + ürün rötuşları
+- **G2a v2 GEMİDE (MK-162.2 v2, Cihat: A kararı):** migration 103 — `taslak_duzeltmeleri`'ne
+  `deger_kaynagi` (CHECK: excel/izometri/operator) + `format_id` (FK, ON DELETE SET NULL);
+  `g2a_duzeltme_sinyali` görünümü kaynak kırılımlı (security_invoker korunur). **164-B1
+  bulgusu:** v1 sinyallerinin değer kaynağı Excel kabuktu; v1 kart metni PDF format kuralına
+  YANLIŞ adres veriyordu. Karar gerekçesi: görünüm-zamanı çıkarım = tahmin; kayıt-zamanı bağ =
+  gerçek (eski satırlar NULL='bilinmiyor', backfill YOK).
+- **MK-164.1 (aynı-oturum öz-düzeltme):** ilk yama sabit `'excel'` yazıyordu — ekran kanıtı
+  (NB1137 modalı: yuzey/alistirma/not L2 rozetli) yanlışı yakaladı. v2.1: kaynak ALAN-BAZLI,
+  dsatir rozet kuralının birebir eşi (cap/et/agirlik/malzeme/kalite→excel ·
+  yuzey[yuzeyHam varsa]/alistirma/not→izometri+format_id · izometri eşleşmesi yoksa→operator).
+  `devre-inceleme` artık `parse_sonuc.format_id`'yi önizleme izometrisine taşır. 10/10 test.
+- **W-2.15 onay kuşağı tazelendi:** 147 değil **162** (manuel_onay 27 + oneri_hazir 135);
+  P26-217 tek başına 76. Eritme turu yapılmadı → 165 adayı.
+- **W-2.19 UCUZ DİLİM GEMİDE + W-4.4 KAPANDI:** format_tanit bbox'ı artık YAKALAMA ANINDA
+  scale-1'e normalize kaydeder (`norm:1`); drawMarks norm-duyarlı çizer. Wizard Malzemeler
+  başlığına **🔍 Tablo** — `parser_kural.malzeme_tablosu.konum_ipucu` (YALNIZ norm'lu bbox) →
+  izometri sekmesi → `dpvZoomTo`+sarı vurgu. Norm'suz eski kayıt KULLANILMAZ (dürüst toast,
+  tahmin yok). Bugün hiçbir formatta norm bölge yok → **Y200 tablo öğretimi yapıldığı an
+  buton canlanır** (tek reçetede birleşti). Tam dilim (alan-bazlı konum = motor konum eki,
+  B1 metin-ayrışmasına komşu) ayrı tasarım borcu.
+- **Kalem KALİTE alanı (Cihat bulgusu):** kalem editöründe kalite yoktu (paslanmaz seçilir,
+  304/316L girilemezdi); üstelik kabuk her iki dalda `kalite`'ye HAM MALZEME yazıyordu
+  (OPR'de 'paslanmaz' saçması). KALEM_ALANLAR + yeni-kalem listesi + dinamik süzgeçli dropdown
+  (spool yolunun birebiri) + kabukta `dz.kalite` tercihi (yoksa eski davranış — sıfır regresyon).
+- **MK-163.6 KAPANDI — parse_durumu A (yumuşak emeklilik):** grep kanıtı `_parseDurumu`'nun
+  TÜKETİCİSİ YOKTU (2707/2793 yalnız `_kuyrukDurum`); devre-inceleme/izo-eslesme'deki aynı ad
+  ÇIKTI alanıdır, kolon değil. SELECT'ten çıkarıldı, ölü alan silindi, kolona BAYAT COMMENT
+  (yazımlar sürer, veri silinmez, YENİ KOD OKUMAZ).
+- **Canlı kanıtlar:** kalite(spool)→`excel` ✓ · yeni kalem(idx≥bom)→`operator` ✓ · 📐 kart yeni
+  "kaynak kayıtlı değil (103 öncesi)" metni canlı ✓. **AÇIK:** izometri-kaynak kanıtı (1
+  alistirma düzeltmesi + SELECT) · OPR TERFİ kanıtı (`spool_malzemeleri kod='OPR'` hâlâ 0 —
+  taslak kaydı doğdu, terfi turu eksik).
+- **YENİ BORÇ (165):** M130-817-008.S01 PDF çap 42.2 / et 3.56 ↔ kabuk 60.3 / 2.77. Kuyruk
+  gerçeği: format **e1fb879d (KATALOG-PAKET)** — adres paket kuralı, DB-öğretim değil. Hipotez:
+  redüksiyonun küçük ucu (1-1/4"=42.16) spool çapı seçilmiş; et schedule ailesiyle akraba.
+  Teşhis SELECT'inde cap anahtarı null döndü (anahtar adı TEYİTSİZ — MK-85.3), satirlar=0,
+  seviye=null → parse_sonuc şeması atölyede sunucu verisiyle incelenir.
