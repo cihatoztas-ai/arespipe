@@ -232,7 +232,10 @@ function resetAlanlar(){ ALANLAR.forEach(_initAlan); adim=0; }
 /* ── B1: düzeltme kipi fonksiyonları ── */
 function _hydrateKural(){
   if(!_mevcutKural||!_mevcutKural.alanlar)return;
-  ALANLAR.forEach(a=>{ const s=_mevcutKural.alanlar[a.ad]; if(s&&s.regex){ a.regex=s.regex; a.flag=s.flag||'i'; a._dirty=false; a.tani=''; } });
+  const tz=_turetZorunlu();   // W-3.9
+  ALANLAR.forEach(a=>{ const s=_mevcutKural.alanlar[a.ad]; if(s&&s.regex){
+    if(tz&&TURETILEN_ALANLAR.includes(a.ad)){ a._turet=true; a.regex=''; a._dirty=false; a._okudu=null; return; }   // W-3.9: çöp regex yüklenmez
+    a.regex=s.regex; a.flag=s.flag||'i'; a._dirty=false; a.tani=''; } });
 }
 async function formatListele(){
   const sel=document.getElementById('fmtSec'); if(!sel)return;
@@ -284,7 +287,10 @@ function _patchedKural(base){
 /* Her alanın kayıtlı regex'ini açık PDF metnine koş → a._okudu (true okudu / false okuyamadı / null henüz PDF yok). */
 function _alanlariKos(){
   if(!CANON_ALL){ ALANLAR.forEach(a=>a._okudu=null); return; }
-  ALANLAR.forEach(a=>{ if(a.tip==='tablo'||!a.regex){ a._okudu=null; return; } const s=_alanCikar(CANON_ALL,{regex:a.regex,grup:a.grup||1,tip:a.l2tip,flag:a.flag,post_processing:postProcessOf(a)}); a._okudu=(s!==null&&s!==undefined&&s!==''); a.deger=s; });
+  const tz=_turetZorunlu();   // W-3.9
+  ALANLAR.forEach(a=>{ if(a.tip==='tablo'||!a.regex){ a._okudu=null; return; }
+    if(tz&&TURETILEN_ALANLAR.includes(a.ad)){ a._turet=true; a._okudu=null; return; }   // W-3.9: çöp regex koşulmaz
+    const s=_alanCikar(CANON_ALL,{regex:a.regex,grup:a.grup||1,tip:a.l2tip,flag:a.flag,post_processing:postProcessOf(a)}); a._okudu=(s!==null&&s!==undefined&&s!==''); a.deger=s; });
 }
 /* Tüm L2 formatlarının kurallarını bu PDF'e koş, en çok alan okuyan kazanır. Deterministik, $0, AI yok. */
 async function otoTespit(){
@@ -407,6 +413,15 @@ function _aiSentezle(spool){
    Çekirdek TEK kaynak: ares-tablo-sentez.js (aynı kod Node mekanik testinde koşar, MK-126.8).
    cap_mm/et_mm/dn ayrı kural YAZILMAZ — dominant Boru satırından olcuParse ile TÜRER (tasarım §4.1.5). ── */
 const TURETILEN_ALANLAR=['cap_mm','et_mm','dn'];
+/* W-3.9 (161): satir_tipleri AKTİFKEN cap/et/dn türetilmiş ZORUNLU — kayıtlı (eski/çöp) regex
+   koşulmaz, patch'e yazılmaz, elle işaretleme kural yazımına DÖNEMEZ (153: çöp regex ekrana
+   kırmızı, üretime 2358 basmıştı; veri onarıldı, bu kapı kodu kapatır). */
+function _turetZorunlu(){
+  const mt=ALANLAR.find(x=>x.tip==='tablo');
+  if(mt&&Array.isArray(mt._satirTipleri)&&mt._satirTipleri.length)return true;
+  const db=_mevcutKural&&_mevcutKural.malzeme_tablosu;
+  return !!(db&&db.aktif&&Array.isArray(db.satir_tipleri)&&db.satir_tipleri.length);
+}
 function _tabloSentezle(){
   const mt=ALANLAR.find(x=>x.tip==='tablo'); if(!mt)return null;
   mt._satirTipleri=null; mt._tabloRapor=null; mt._baslikTetik=null;
@@ -437,7 +452,7 @@ let _formatId=null;    // düzeltilen satırın id'si (UPDATE hedefi)
 let _mevcutKural=null; // DB'den yüklenen parser_kural — PATCH'lenir, rebuild EDİLMEZ (MK-111.2)
 let _problemAlan=null; // tetikten gelen sorunlu alan adı (?alan=)
 let _mevcutPrompt='';  // yüklenen prompt_template (değişti mi kıyası için)
-function markDirty(){ const a=ALANLAR[adim]; if(a){a._dirty=true; a._turet=false;} }
+function markDirty(){ const a=ALANLAR[adim]; if(!a)return; if(TURETILEN_ALANLAR.includes(a.ad)&&_turetZorunlu()){ a._turet=true; a._dirty=false; toast('Bu alan tablodan türetilir (🧮) — ayrı kural yazılmaz (W-3.9)'); return; } a._dirty=true; a._turet=false; }
 
 function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function genKod(s){ let o='',x=String(s),i=0; while(i<x.length){ if(/\d/.test(x[i])){let j=i;while(j<x.length&&/\d/.test(x[j]))j++;o+='\\d+';i=j;}else{o+=escRe(x[i]);i++;} } return o||'.+'; }
@@ -473,7 +488,7 @@ function renderDetay(){
   const ancOps=ANCHOR_OPS.map(o=>'<option value="'+o[0]+'"'+(a.anchor.mod===o[0]?' selected':'')+'>'+o[1]+'</option>').join('');
   let h='<div class="qtitle">Soru '+(adim+1)+'/'+ALANLAR.length+' — '+a.ad+(a.opsiyonel?' (ops.)':'')+'</div>';
   h+='<p class="sub" style="margin:0 0 12px;">'+escHtml(a.ipucu)+'</p>';
-  if(a._turet){ h+='<div class="prev ok" style="margin-bottom:10px;border-color:rgba(45,142,255,.5);color:var(--ac);background:rgba(45,142,255,.08);">🧮 Türetilmiş ✓ — <b>'+escHtml(String(a.deger))+'</b> · malzeme tablosundaki dominant Boru satırından olcuParse ile çevrilir. Bu alan için ayrı kural <b>yazılmaz</b>. (Elle işaretlersen kural yazımına döner.)</div>'; }
+  if(a._turet){ h+='<div class="prev ok" style="margin-bottom:10px;border-color:rgba(45,142,255,.5);color:var(--ac);background:rgba(45,142,255,.08);">🧮 Türetilmiş ✓ — <b>'+(a.deger!=null&&a.deger!==''?escHtml(String(a.deger)):'—')+'</b> · malzeme tablosundaki dominant Boru satırından olcuParse ile çevrilir. Bu alan için ayrı kural <b>yazılmaz</b>.'+(_turetZorunlu()?'':' (Elle işaretlersen kural yazımına döner.)')+'</div>'; }
   // TEK ADIM: alanı kabaca işaretle, gerisini çöz
   h+='<button class="mark-btn '+(a.sample?'dolu':(markMode?'aktif':''))+'" style="font-size:14px;padding:13px;" onclick="toggleMark()">'
     +(a.sample?('✓ İşaretlendi <span class="mark-sel">'+escHtml(a.sample.slice(0,38))+(a.sample.length>38?'…':'')+'</span> — yeniden çiz'):(markMode?'✏️ Alanı kutuyla çevrele…':'📍 Bu alanı PDF\'te kutuyla çevrele'))+'</button>';
@@ -665,7 +680,7 @@ function buildParserKural(){
   const mt=ALANLAR.find(x=>x.ad==='malzeme_tablosu'); const tabloVar=!!(mt&&mt.bbox);
   const st=(mt&&Array.isArray(mt._satirTipleri)&&mt._satirTipleri.length)?mt._satirTipleri:null;
   const alanlar={};
-  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ if(st&&a._turet&&TURETILEN_ALANLAR.includes(a.ad))return; const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
+  ALANLAR.forEach(a=>{ if(a.tip!=='tablo'&&a.regex){ /* W-3.9: türetilmişe kural YAZILMAZ */ if(TURETILEN_ALANLAR.includes(a.ad)&&(a._turet||st||_turetZorunlu()))return; const o={tip:a.l2tip,grup:1,regex:a.regex}; if(a.flag!=='i')o.flag=a.flag; const pp=postProcessOf(a); if(pp)o.post_processing=pp; if(a.bbox)o.konum_ipucu={sayfa:a.page,bbox:a.bbox,ornek:a.sample}; alanlar[a.ad]=o; } });
   const pk={ekstraktor_tipi:'regex_text',min_metin_uzunlugu:100,alanlar,kabul_kriterleri:{min_overall_match_orani:0.5,min_malzeme_satir:(st||tabloVar)?1:0,l3_fallback_yapilir:true}};
   if(st){ pk.malzeme_tablosu={aktif:true,satir_tipleri:st}; if(mt._baslikTetik)pk.malzeme_tablosu.baslik_tetikleyici=mt._baslikTetik; }   // Increment 2: sentezlendi — _toplu_ai_bekliyor YOK, cap/et/dn türetilmiş
   else if(tabloVar) pk.malzeme_tablosu={aktif:true,_toplu_ai_bekliyor:true,konum_ipucu:{sayfa:mt.page,bbox:mt.bbox},satir_tipleri:[]};
@@ -681,7 +696,7 @@ async function kaydet(){
 
   // ── DÜZELTME KİPİ: yalnız _dirty alanları PATCH'le, satırı UPDATE et ──
   if(_mode==='duzelt'){
-    const dirty=ALANLAR.filter(a=>a._dirty&&a.tip!=='tablo'&&a.regex);
+    const dirty=ALANLAR.filter(a=>a._dirty&&a.tip!=='tablo'&&a.regex&&!(TURETILEN_ALANLAR.includes(a.ad)&&_turetZorunlu()));   // W-3.9
     const promptYeni=(document.getElementById('promptTmpl').value||'').trim();
     const promptDegisti=promptYeni!==(_mevcutPrompt||'').trim();
     // Increment 2 köprüsü (152): taze tablo sentezi düzeltme kipinde de patch'e girer.
