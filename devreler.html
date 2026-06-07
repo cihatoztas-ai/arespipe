@@ -1144,9 +1144,10 @@ function _mapDevre(d, i, spoolByDevre, offset) {
       // Çoğunluktan aza sırala
       var malzemeArr = Object.keys(malzemeSayim).sort(function(a,b){ return malzemeSayim[b] - malzemeSayim[a]; });
       var yuzeyArr   = Object.keys(yuzeySayim).sort(function(a,b){ return yuzeySayim[b] - yuzeySayim[a]; });
-      // Sapma: çoğunluk DIŞINDA kalan spool adedi
-      var malzemeSapma = malzemeArr.length > 1 ? (malzemeliSayi - malzemeSayim[malzemeArr[0]]) : 0;
-      var yuzeySapma   = yuzeyArr.length   > 1 ? (yuzeyliSayi   - yuzeySayim[yuzeyArr[0]])     : 0;
+      // Sapma (166, Cihat): çoğunluk DIŞINDAKİ farklı TÜR sayısı — spool adedi DEĞİL.
+      //   (galvaniz + 11 siyah → +1 · galvaniz + siyah + asit → +2). Spool adetleri tooltip'te.
+      var malzemeSapma = malzemeArr.length > 1 ? (malzemeArr.length - 1) : 0;
+      var yuzeySapma   = yuzeyArr.length   > 1 ? (yuzeyArr.length   - 1) : 0;
       var prj  = d.projeler || {};
       var trs  = prj.tersaneler || {};
       var sonIslem = d.guncelleme
@@ -1166,6 +1167,8 @@ function _mapDevre(d, i, spoolByDevre, offset) {
         yuzey:         yuzeyArr.length   ? yuzeyArr   : (d.yuzey   ? [_normalizeYuzey(d.yuzey)||d.yuzey]       : []),
         malzemeSapma:  malzemeSapma,
         yuzeySapma:    yuzeySapma,
+        malzemeSayim:  malzemeSayim,   // 166: tooltip — tür başına spool adedi
+        yuzeySayim:    yuzeySayim,
         ilerleme:      avgIler,
         durum:         d.durum         || 'baslamadi',
         sonIslem:      sonIslem,
@@ -1898,11 +1901,14 @@ function _doRender() {
       else                          cls = 'mb-diger';
       return '<span class="mat-badge ' + cls + '">' + esc(label) + '</span>';
     }).join('') + (d.malzemeSapma > 0 ? (function(){
+      // 166: +N = farklı TÜR sayısı; tooltip tür başına spool adedi verir.
       var digerList = d.malzeme.slice(1).map(function(k){
         var kn = _normalizeMalzeme(k) || k;
-        return (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kn, kn) : kn;
+        var et = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvMalzeme(kn, kn) : kn;
+        var sy = (d.malzemeSayim && d.malzemeSayim[kn]) ? (' (' + d.malzemeSayim[kn] + ')') : '';
+        return et + sy;
       }).join(', ');
-      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' spool farklı malzeme' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.malzemeSapma + '</span>';
+      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.malzemeSapma + ' farklı malzeme türü' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.malzemeSapma + '</span>';
     })() : '');
     var yuzeyBadge = d.yuzey.slice(0, 1).map(function(y) {
       var yn = _normalizeYuzey(y) || y;
@@ -1911,11 +1917,14 @@ function _doRender() {
       var label = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(yn, yn) : yn;
       return '<span class="yuzey-badge ' + cls + '">' + esc(label) + '</span>';
     }).join('') + (d.yuzeySapma > 0 ? (function(){
+      // 166: +N = farklı TÜR sayısı (galvaniz + 11 siyah → +1); tooltip tür başına spool adedi verir.
       var digerList = d.yuzey.slice(1).map(function(k){
         var kn = _normalizeYuzey(k) || k;
-        return (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(kn, kn) : kn;
+        var et = (typeof ARES_NORM !== 'undefined') ? ARES_NORM.tvYuzey(kn, kn) : kn;
+        var sy = (d.yuzeySayim && d.yuzeySayim[kn]) ? (' (' + d.yuzeySayim[kn] + ')') : '';
+        return et + sy;
       }).join(', ');
-      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' spool farklı yüzey' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.yuzeySapma + '</span>';
+      return '<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:700;background:rgba(217,119,6,.15);color:var(--warn);margin:1px;" title="' + d.yuzeySapma + ' farklı yüzey türü' + (digerList ? ': ' + esc(digerList) : '') + '">⚠ +' + d.yuzeySapma + '</span>';
     })() : '');
     var pc = progColor(d.ilerleme);
     var rowCls = iptalBilgi ? ' class="row-iptal"' : '';
