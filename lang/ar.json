@@ -1919,5 +1919,7 @@
   "sp_bom_rozet_dogrulanmadi": "لم يُتحقّق",
   "sp_bu_tip_yok": "لا توجد مادة من هذا النوع",
   "sp_cizimden_duzelt": "تصحيح من الرسم",
-  "dv_is_emri_terfide": "سيُنشأ عند الترقية"
+  "dv_is_emri_terfide": "سيُنشأ عند الترقية",
+  "dv_taslak_banner_yol": "التحرير والموافقة في المعالج",
+  "dv_taslak_wizard": "التحرير والموافقة في المعالج"
 }

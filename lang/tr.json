@@ -1919,5 +1919,7 @@
   "sp_bom_rozet_dogrulanmadi": "doğrulanmadı",
   "sp_bu_tip_yok": "Bu tipte malzeme yok",
   "sp_cizimden_duzelt": "Çizimden düzelt",
-  "dv_is_emri_terfide": "Terfide üretilecek"
+  "dv_is_emri_terfide": "Terfide üretilecek",
+  "dv_taslak_banner_yol": "düzenleme ve onay Wizard'da",
+  "dv_taslak_wizard": "Wizard'da düzenle & onayla"
 }

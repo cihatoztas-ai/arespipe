@@ -972,7 +972,7 @@ function _tkBanner(){
   var b=document.createElement('div');
   b.id='taslakBant';
   b.style.cssText='position:sticky;top:52px;z-index:140;background:linear-gradient(90deg,rgba(217,119,6,.95),rgba(180,83,9,.95));color:#fff;text-align:center;font-size:13px;font-weight:700;letter-spacing:.5px;padding:7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);';
-  b.textContent='⚠ '+tv('dv_taslak_banner','ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli');
+  b.textContent='⚠ '+tv('dv_taslak_banner','ÖNİZLEME — TASLAK DEVRE · değişiklikler kilitli')+' · '+tv('dv_taslak_banner_yol','düzenleme ve onay Wizard\u0027da');
   var _mc=document.querySelector('.main-content')||document.body;
   _mc.insertBefore(b,_mc.firstChild);   // 158: body yerine main-content — sabit topbar/menü örtülmez
   var h=document.querySelector('h1,.page-title,#devreBaslik');
@@ -982,6 +982,28 @@ function _tkBanner(){
     r.textContent=tv('dv_taslak_rozet','TASLAK');
     h.appendChild(r);
   }
+  // 166 (MK-165.7/2 KAPANIŞI + Cihat tutarlılık bulgusu): taslak kipinde rol = SALT kontrol penceresi.
+  //   Aktif-devre aksiyon butonları (Düzenle/Etiketler/Aktar/Durdur/KK/Sevkiyat) kilitli-görünür yerine
+  //   GİZLENİR ("bozuk buton" hissi biter); tek aksiyon = Wizard köprüsü (?devre_id= — MK-136).
+  //   Geri dönmek istenirse: aşağıdaki forEach satırını silmek yeterli (kilitler _tkKilit'te duruyor).
+  try{
+    var geriBtn=document.querySelector('button[onclick*="devreler.html"]');
+    if(geriBtn&&geriBtn.parentElement){
+      Array.prototype.forEach.call(geriBtn.parentElement.children,function(el){ if(el!==geriBtn)el.style.display='none'; });
+      var wb=document.createElement('button');
+      wb.className='btn';
+      wb.style.cssText='border-color:rgba(45,142,255,.45);color:var(--ac);font-weight:700;';
+      wb.textContent='✏️ '+tv('dv_taslak_wizard','Wizard\u0027da düzenle & onayla');
+      wb.onclick=function(){
+        var id=new URLSearchParams(location.search).get('id');
+        if(id)location.href='devre_wizard_v3.html?devre_id='+encodeURIComponent(id);
+      };
+      geriBtn.parentElement.appendChild(wb);
+    }
+    // spool listesi yazma butonları (+Spool Ekle / Şablon / Excel) taslakta gizli — yazım evi Wizard
+    var se=document.querySelector('button[onclick*="spoolEkleBaslat"]');
+    if(se&&se.parentElement)se.parentElement.style.display='none';
+  }catch(e){console.warn('[taslak-kip] buton sadeleştirme:',e);}
 }
 
 // ── ARES erişim yardımcıları (ARES yüklenememiş olabilir)

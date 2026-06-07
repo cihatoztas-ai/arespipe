@@ -347,6 +347,8 @@
       <div class="onay-bar">
         <span class="lock-note" style="color:var(--txm);">Eksik spool'lar silinmez; bilgilerini buradan tamamlayabilir veya eksik bırakabilirsin.</span>
         <button class="btn ghost" onclick="gosterAdim(1)">← Geri</button>
+        <!-- 166: iki kapı birbirine bağlandı — Adım 2'den gerçek görünüme tek tık (yeni sekme: drenaj loop yaşar) -->
+        <button class="btn ghost" onclick="if(WIZ.devre_id)window.open('devre_detay.html?id='+encodeURIComponent(WIZ.devre_id)+'&taslak=1','_blank','noopener')" title="Taslağı gerçek devre detay görünümünde kontrol et">👁 Önizle</button>
         <button id="btnOnay" class="btn pri" onclick="onayAc()">Devreyi Onayla</button>
       </div>
     </div>
