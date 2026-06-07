@@ -2424,7 +2424,17 @@
         var aday = api.disCap(dnler[i], malzeme);
         if (aday != null && Math.abs(aday - od) <= tol) adaylar.push(dnler[i]);
       }
-      return adaylar.length === 1 ? adaylar[0] : null;
+      if (adaylar.length === 1) return adaylar[0];
+      if (adaylar.length > 1) return null;
+      // 165-EK: ASME taramasi BOS kaldiysa DIN/EN (EN 10220) ek haritasi — yalniz
+      // ASME tablosunda HIC olmayan yaygin OD'ler (tekil, catisma yok). FWC vakasi:
+      // 76.1 (DIN DN65) null donuyordu -> spool dn'i islem satirinin DN'ine kaliyordu.
+      var DIN_EK = { '33.7': 25, '42.4': 32, '76.1': 65, '139.7': 125 };
+      var anahtarlar = Object.keys(DIN_EK);
+      for (var j = 0; j < anahtarlar.length; j++) {
+        if (Math.abs(Number(anahtarlar[j]) - od) <= tol) return DIN_EK[anahtarlar[j]];
+      }
+      return null;
     },
 
     /**
