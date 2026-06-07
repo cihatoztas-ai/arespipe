@@ -1748,6 +1748,7 @@ function _dpvExcelCiz(si) {
   function _wsDolu(k){ var w = DPV.wb.Sheets[adlar[k]]; return !!(w && w['!ref']); }
   if (si === 0 && !_wsDolu(0)) { for (var j = 1; j < adlar.length; j++) { if (_wsDolu(j)) { si = j; break; } } }
   var ws = DPV.wb.Sheets[adlar[si]]; if (!ws) { wrap.innerHTML = '<div class="dp-pdf-bos">Sayfa okunamadı</div>'; return; }
+  DPV.xs = si;   // 166: aktif sayfa indeksi — hücre arama (✏️ → hücreye git) hedeflemesi
   var sec = '';
   if (adlar.length > 1) {
     sec = '<div class="dpv-sheetbar">' + adlar.map(function(a, k) {
@@ -1831,7 +1832,8 @@ async function _tabloZoom() {
   if (!ki || !ki.bbox || !ki.bbox.norm) {
     // 166: norm bölge henüz öğretilmemiş (Y200 reçetesi bekliyor) → ölü toast yerine başlık METNİ
     //   araması. Tersan şablonu "Malzeme Listesi" başlığı basar; bulunamazsa _pdfDegerZoom dürüst söyler.
-    await _pdfDegerZoom(['Malzeme Listesi', 'Material List']);
+    //   pdfZorla=true: 🔍 Tablo PDF bölgesi demektir, Excel sekmesinde bile PDF'e geçilir.
+    await _pdfDegerZoom(['Malzeme Listesi', 'Material List'], true);
     return;
   }
   // izometri sekmesi aktif değilse (örn. Excel kipi) önce ona geç
@@ -1890,10 +1892,13 @@ async function _sayfaYerlesim(p) {
   _TLC.sayfalar[p] = y;
   return y;
 }
-async function _pdfDegerZoom(adaylar) {
+async function _pdfDegerZoom(adaylar, pdfZorla) {
   adaylar = (adaylar || []).map(_araNorm).filter(function(a){ return a && a.length >= 2; });
   adaylar = adaylar.filter(function(a, i){ return adaylar.indexOf(a) === i; });
   if (!adaylar.length) return;                     // boş alan ✏️'si — aranacak değer yok, zoom işi yok
+  // 166 (Cihat): Excel sekmesi AÇIKKEN ✏️ → PDF'e zorla geçilmez, değer EXCEL HÜCRESİNDE aranır.
+  //   pdfZorla yalnız 🔍 Tablo'dan gelir (o PDF bölgesi demektir).
+  if (!pdfZorla && DPV.excel && DPV.wb) { return _excelDegerGit(adaylar); }
   var hedef = -1;
   for (var i = 0; i < (DPV.dosyalar || []).length; i++) { if (DPV.dosyalar[i].tip === 'izometri') { hedef = i; break; } }
   if (hedef < 0) return;                           // PDF paneli yok (izometrisiz spool)
@@ -1946,6 +1951,63 @@ async function _pdfDegerZoom(adaylar) {
   await dpvZoomTo(b.sayfa, { x: b.x - (W - b.w) / 2, y: b.y - (H - b.h) / 2, w: W, h: H }, b);
   // 166: görünürlük — NE arandığı her zoom'da söylenir ("neyi nereden okuduğunu görmek lazım")
   toast('🔍 "' + _ARA.aranan + '" — ' + (_ARA.i + 1) + '/' + _ARA.liste.length + (_ARA.liste.length > 1 ? ' · aynı ✏️ ile sonrakine geç' : ''));
+}
+// ── 166: EXCEL HÜCRE-GİT — ✏️ değeri aktif sayfada DOM'dan arar; yoksa diğer sayfaları workbook
+//   verisinden tarar ve bulunan sayfaya geçer. Hücre seçilir (sec + hücre çubuğu) ve ortalanır.
+//   Tekrar ✏️ = sonraki eşleşme (PDF tarafıyla aynı gezinme sözleşmesi). Bulunamazsa dürüst toast.
+var _ARAX = { anahtar: null, liste: [], i: 0, aranan: '' };
+function _excelHucreAdres(td) {
+  var n = +td.dataset.c, ad = '';
+  do { ad = String.fromCharCode(65 + (n % 26)) + ad; n = Math.floor(n / 26) - 1; } while (n >= 0);
+  return ad + (+td.dataset.r + 1);
+}
+function _excelDomTara(adaylar) {
+  var wrap = document.getElementById('dpvWrap'); if (!wrap) return [];
+  var L = [];
+  wrap.querySelectorAll('.dpv-excel table td').forEach(function(td) {
+    var v = _araNorm(td.textContent); if (!v) return;
+    for (var a = 0; a < adaylar.length; a++) { if (v.indexOf(adaylar[a]) !== -1) { L.push(td); return; } }
+  });
+  return L;
+}
+function _excelDegerGit(adaylar) {
+  var anahtar = 'x|' + (DPV.xs || 0) + '|' + adaylar.join('|');
+  // td referansları sayfa yeniden çizilince kopar — isConnected ile tazelik kontrolü
+  if (_ARAX.anahtar === anahtar && _ARAX.liste.length && _ARAX.liste[0].isConnected) {
+    _ARAX.i = (_ARAX.i + 1) % _ARAX.liste.length;
+  } else {
+    _ARAX = { anahtar: anahtar, liste: _excelDomTara(adaylar), i: 0, aranan: adaylar[0] };
+    if (!_ARAX.liste.length && DPV.wb && typeof XLSX !== 'undefined') {
+      // aktif sayfada yok → diğer sayfaları workbook hücre değerlerinden tara, bulunan sayfaya geç
+      var adlar = DPV.wb.SheetNames || [];
+      for (var s = 0; s < adlar.length && !_ARAX.liste.length; s++) {
+        if (s === (DPV.xs || 0)) continue;
+        var ws = DPV.wb.Sheets[adlar[s]]; if (!ws || !ws['!ref']) continue;
+        var R = XLSX.utils.decode_range(ws['!ref']), bulundu = false;
+        for (var r = R.s.r; r <= R.e.r && !bulundu; r++) {
+          for (var c = R.s.c; c <= R.e.c && !bulundu; c++) {
+            var cell = ws[XLSX.utils.encode_cell({ r: r, c: c })]; if (!cell) continue;
+            var v = _araNorm(cell.w != null ? cell.w : cell.v); if (!v) continue;
+            for (var a = 0; a < adaylar.length; a++) { if (v.indexOf(adaylar[a]) !== -1) { bulundu = true; break; } }
+          }
+        }
+        if (bulundu) {
+          _dpvExcelCiz(s);   // sayfaya geç (DPV.xs günceller), sonra DOM'dan yeniden konumlan
+          _ARAX = { anahtar: 'x|' + s + '|' + adaylar.join('|'), liste: _excelDomTara(adaylar), i: 0, aranan: adaylar[0] };
+        }
+      }
+    }
+  }
+  if (!_ARAX.liste.length) {
+    toast('🔍 "' + (_ARAX.aranan || adaylar[0]) + '" Excel\u0027de bulunamadı — değer PDF kaynaklı olabilir');
+    return;
+  }
+  var td = _ARAX.liste[_ARAX.i];
+  try { td.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }); } catch (e) { td.scrollIntoView(); }
+  _dpvHucreSec(td);
+  var sheetAd = (DPV.wb && DPV.wb.SheetNames && DPV.wb.SheetNames[DPV.xs || 0]) || '';
+  toast('🔍 "' + _ARAX.aranan + '" — ' + _excelHucreAdres(td) + (sheetAd ? ' (' + sheetAd + ')' : '') +
+        ' · ' + (_ARAX.i + 1) + '/' + _ARAX.liste.length + (_ARAX.liste.length > 1 ? ' · aynı ✏️ ile sonrakine geç' : ''));
 }
 // Alan → arama adayları (öncelik sırasıyla; ham değerler önce, normalize etiketler sonra)
 function _alanAdaylar(alan, s) {
