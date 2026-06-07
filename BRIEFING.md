@@ -57,3 +57,24 @@
 (boyut sentezi yokluğu, dn çapası, fallback çift körlüğü) açığa çıkardı ve hepsi gerçek-PDF
 kanıtıyla kapandı; tersan.zip koşumu modeli uçtan uca doğruladı ve kalıcı araç bıraktı;
 açılış teyit üçlüsü mühürlendi. 12/12, izometri-oku dokunulmadı, migration yok.
+
+---
+
+## 165-EK (aynı gün, kapanış sonrası) — FWC + Sounding paketleri: 3 fix, 180 PDF ham=0
+Kapanıştan sonra Cihat 2 paket daha verdi; atölye aracı farkı dakikalar içinde çıkardı:
+- **FWC (24 PDF):** 14 ham → 2 desen: Victaulic Groove işlem satırı (12×, glyph yaralı ama
+  yapısı sağlam) + 'Bilezik Detay B' **L='Lİ** (165 tetikinin itirafı: 'Bilezik Detay' L='li
+  satırı da yutup ham düşürüyordu). Ayrıca dn=25↔cap76.1 tutarsızlığı: 76.1 DIN DN65,
+  dnBul ASME-only → null → dn işlem satırından geliyordu.
+- **Sounding (141 PDF!):** 52 ham → HEPSİ tek desen (Detay C, L='li, ±L150/L200 etiketi).
+- **Fix'ler (commit: tek 165-ek commit'i):** (1) bilezik_detay BİRLEŞİK pattern — opsiyonel
+  `L=`; semantik düzeltme: boy_mm = L UZUNLUĞU (klasik konvansiyon; Detay-A'da boy null,
+  genişlik haritalanmaz). (2) YENİ `victaulic_groove` işlem tipi (tetik 'Victaulic'; OD ve
+  glyph-yaralı kalite kuyruğu HARİTALANMAZ — uydurma yok). (3) dnBul DIN/EN ek haritası
+  (33.7→25, 42.4→32, 76.1→65, 139.7→125) — yalnız ASME taraması boş kalınca; tek-eşleşme
+  dürüstlüğü aynen. 12/12 mekanik test + **3 paket 180 PDF: fail 0 · ham 0** (tersan
+  regresyonu dahil).
+- **Katman dökümü (165 sohbet kararına veri):** iki paketin tüm farkı = 2×K2 deseni + 1×K0
+  rötuşu; K0+K1 bedava taşındı. 166 adayına ek: FORMAT-KATMAN-HARITASI.md (kural envanterinin
+  K0/K1/K2/K3 haritası) + "v1 üretimde" tanımı tartışması. FWC zip'inde IFS excel'leri de var
+  → ileride uçtan uca devre testi malzemesi.
