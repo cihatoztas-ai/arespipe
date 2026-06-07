@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-06-07T19:01:02.620Z",
-  "commit_sha": "c3778f0a71f9eacde9b0b1b58a57fae5400f35e2",
+  "tarih": "2026-06-07T19:10:32.998Z",
+  "commit_sha": "78eaed97f7e41e906737d4206db2870b54360c9c",
   "commit_ref": "main",
-  "workflow_run": 1058,
+  "workflow_run": 1059,
   "ozet": {
     "hata": 0,
     "uyari": 102,
@@ -20,7 +20,7 @@
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
-            2291
+            2313
           ]
         }
       ]
@@ -34,7 +34,7 @@
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
-            1617
+            1639
           ]
         },
         {
@@ -55,59 +55,59 @@
           "dosya": "devre_detay.html",
           "sayi": 56,
           "satirlar": [
-            1240,
-            1241,
-            1242,
-            1243,
-            1244,
-            1245,
+            1262,
+            1263,
+            1264,
+            1265,
             1266,
             1267,
-            1268,
-            1269,
-            1270,
-            1271,
-            1272,
-            1683,
-            2252,
-            2256,
-            2259,
-            2322,
-            2324,
-            2326,
-            2339,
-            2343,
+            1288,
+            1289,
+            1290,
+            1291,
+            1292,
+            1293,
+            1294,
+            1705,
+            2274,
+            2278,
+            2281,
+            2344,
+            2346,
             2348,
-            2350,
-            2357,
-            2364,
+            2361,
+            2365,
             2370,
-            2413,
-            2439,
-            2446,
-            2458,
-            2460,
+            2372,
+            2379,
+            2386,
+            2392,
+            2435,
             2461,
-            2462,
-            2467,
-            2469,
-            2473,
-            2475,
-            2479,
+            2468,
             2480,
-            2494,
-            2505,
-            2522,
-            2529,
-            2531,
-            2542,
-            2547,
-            2587,
-            2607,
-            2620,
-            2622,
-            2767,
-            2786
+            2482,
+            2483,
+            2484,
+            2489,
+            2491,
+            2495,
+            2497,
+            2501,
+            2502,
+            2516,
+            2527,
+            2544,
+            2551,
+            2553,
+            2564,
+            2569,
+            2609,
+            2629,
+            2642,
+            2644,
+            2789,
+            2808
           ]
         },
         {
@@ -180,349 +180,349 @@
         {
           "kod": "G03_HAM_MALZEME",
           "tip": "uyari",
-          "satir": 2291,
+          "satir": 2313,
           "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "G03_HAM_YUZEY",
           "tip": "uyari",
-          "satir": 1617,
+          "satir": 1639,
           "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1240,
+          "satir": 1262,
           "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1241,
+          "satir": 1263,
           "mesaj": "tv('dv_stage_imalat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1242,
+          "satir": 1264,
           "mesaj": "tv('dv_stage_kaynak') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1243,
+          "satir": 1265,
           "mesaj": "tv('dv_stage_on_kontrol') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1244,
+          "satir": 1266,
           "mesaj": "tv('dv_stage_kk') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1245,
+          "satir": 1267,
           "mesaj": "tv('dv_stage_sevkiyat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1266,
+          "satir": 1288,
           "mesaj": "tv('dv_dok_bom') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1267,
+          "satir": 1289,
           "mesaj": "tv('dv_dok_spool_im') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1268,
+          "satir": 1290,
           "mesaj": "tv('dv_dok_3dpdf') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1269,
+          "satir": 1291,
           "mesaj": "tv('dv_dok_sartname') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1270,
+          "satir": 1292,
           "mesaj": "tv('dv_dok_pid') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1271,
+          "satir": 1293,
           "mesaj": "tv('dv_dok_step') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1272,
+          "satir": 1294,
           "mesaj": "tv('dv_dok_rhino') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 1683,
+          "satir": 1705,
           "mesaj": "tv('dv_taslak_spool_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2252,
+          "satir": 2274,
           "mesaj": "tv('dv_db_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2256,
+          "satir": 2278,
           "mesaj": "tv('dv_onay_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2259,
+          "satir": 2281,
           "mesaj": "tv('dv_onay_bos') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2322,
+          "satir": 2344,
           "mesaj": "tv('dv_onay_yuzey') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2324,
+          "satir": 2346,
           "mesaj": "tv('dv_onay_bos_birak') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2326,
+          "satir": 2348,
           "mesaj": "tv('dv_onay_aktar') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2339,
+          "satir": 2361,
           "mesaj": "tv('dv_onay_ctx_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2343,
+          "satir": 2365,
           "mesaj": "tv('dv_onay_ortam') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2348,
+          "satir": 2370,
           "mesaj": "tv('dv_onay_sec') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2350,
+          "satir": 2372,
           "mesaj": "tv('dv_onay_aktariliyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2357,
+          "satir": 2379,
           "mesaj": "tv('dv_onay_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2364,
+          "satir": 2386,
           "mesaj": "tv('dv_onay_hepsi_var') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2370,
+          "satir": 2392,
           "mesaj": "tv('dv_onay_ok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2370,
+          "satir": 2392,
           "mesaj": "tv('dv_onay_atlandi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2413,
+          "satir": 2435,
           "mesaj": "tv('dv_onayk_yukleniyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2439,
+          "satir": 2461,
           "mesaj": "tv('dv_onayk_manuel_kisa') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2439,
+          "satir": 2461,
           "mesaj": "tv('dv_onayk_oneri_kisa') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2446,
+          "satir": 2468,
           "mesaj": "tv('dv_onayk_eslesen') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2446,
+          "satir": 2468,
           "mesaj": "tv('dv_onayk_atanmamis') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2458,
+          "satir": 2480,
           "mesaj": "tv('dv_onayk_g_manuel') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2460,
+          "satir": 2482,
           "mesaj": "tv('dv_onayk_uyari_gor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2461,
+          "satir": 2483,
           "mesaj": "tv('dv_onay_review') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2462,
+          "satir": 2484,
           "mesaj": "tv('dv_onayk_kapat') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2467,
+          "satir": 2489,
           "mesaj": "tv('dv_onayk_g_excel') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2469,
+          "satir": 2491,
           "mesaj": "tv('dv_onay_preview') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2473,
+          "satir": 2495,
           "mesaj": "tv('dv_onayk_g_atanli') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2475,
+          "satir": 2497,
           "mesaj": "tv('dv_onayk_detay') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2479,
+          "satir": 2501,
           "mesaj": "tv('dv_onayk_g_temiz') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2480,
+          "satir": 2502,
           "mesaj": "tv('dv_onayk_toplu') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2494,
+          "satir": 2516,
           "mesaj": "tv('dv_onayk_uyari_yok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2505,
+          "satir": 2527,
           "mesaj": "tv('dv_onayk_uyari_bos') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2522,
+          "satir": 2544,
           "mesaj": "tv('dv_onayk_detay_bos') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2529,
+          "satir": 2551,
           "mesaj": "tv('dv_onayk_kapat_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2531,
+          "satir": 2553,
           "mesaj": "tv('dv_onayk_kapatildi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2542,
+          "satir": 2564,
           "mesaj": "tv('dv_onayk_toplu_ok') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2547,
+          "satir": 2569,
           "mesaj": "tv('dv_dok_acilamadi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2587,
+          "satir": 2609,
           "mesaj": "tv('dv_izo_drenaj_basladi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2607,
+          "satir": 2629,
           "mesaj": "tv('dv_izo_drenaj_hata') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2620,
+          "satir": 2642,
           "mesaj": "tv('dv_izo_drenaj_bitti') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2622,
+          "satir": 2644,
           "mesaj": "tv('dv_izo_drenaj_kismi') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2767,
+          "satir": 2789,
           "mesaj": "tv('dv_dok_search_match') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 2786,
+          "satir": 2808,
           "mesaj": "tv('dv_dok_search_empty') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
