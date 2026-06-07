@@ -1826,7 +1826,12 @@ async function _tabloZoom() {
     } catch (e) { console.warn('[v3] tablo konum:', e); ki = null; }
     _tabloKonumCache[fid] = ki;
   }
-  if (!ki || !ki.bbox || !ki.bbox.norm) { toast('Bu format için normalize tablo bölgesi kayıtlı değil — format_tanit ile (yeniden) işaretlenmeli'); return; }
+  if (!ki || !ki.bbox || !ki.bbox.norm) {
+    // 166: norm bölge henüz öğretilmemiş (Y200 reçetesi bekliyor) → ölü toast yerine başlık METNİ
+    //   araması. Tersan şablonu "Malzeme Listesi" başlığı basar; bulunamazsa _pdfDegerZoom dürüst söyler.
+    await _pdfDegerZoom(['Malzeme Listesi', 'Material List']);
+    return;
+  }
   // izometri sekmesi aktif değilse (örn. Excel kipi) önce ona geç
   var hedef = 0;
   for (var i = 0; i < (DPV.dosyalar || []).length; i++) { if (DPV.dosyalar[i].tip === 'izometri') { hedef = i; break; } }
@@ -1840,7 +1845,8 @@ async function _tabloZoom() {
 //   format öğretimi GEREKTİRMEZ. Metin 161'in ToUnicode onarımından geçmiş geliyor (isabet yüksek).
 //   Bulunamazsa DÜRÜST toast — uydurma zoom yok. Aynı ✏️'ye tekrar basmak SONRAKİ eşleşmeye gezdirir
 //   (DN50 gibi çok geçen değerlerde). Arama sonuçları değer-anahtarıyla cache'lenir.
-var _ARA = { anahtar: null, liste: [], i: 0 };
+var _ARA = { anahtar: null, liste: [], i: 0, aranan: '' };
+var _TLC = { seq: null, sayfalar: {} };   // sayfa metin-yerleşimi cache'i (doc değişince düşer)
 function _araNorm(s) {
   return String(s == null ? '' : s)
     .replace(/İ/g,'i').replace(/I/g,'i')             // Türkçe İ tuzağı: toLowerCase 'i̇' (i+U+0307) üretir
@@ -1849,11 +1855,43 @@ function _araNorm(s) {
     .replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
     .replace(/\s+/g,' ').trim();
 }
+// Sayfanın metin yerleşimi: item'lar device (scale-1, sol-üst) uzayında + taban çizgisine göre SATIR grupları.
+//   Cadmatic metni PARÇALI basar ("Paslanmaz" → "Pas"+"lanmaz") — tek-item araması yetmez (166 saha bulgusu);
+//   satır metni (boşluklu + boşluksuz) ikinci arama yüzeyidir.
+async function _sayfaYerlesim(p) {
+  if (_TLC.seq !== DPV._seq) _TLC = { seq: DPV._seq, sayfalar: {} };
+  if (_TLC.sayfalar[p]) return _TLC.sayfalar[p];
+  var pg = await DPV.doc.getPage(p);
+  var vp0 = pg.getViewport(1);
+  var m = vp0.transform;                              // PDF kullanıcı uzayı → scale-1 viewport (rotasyon dahil)
+  var tc = await pg.getTextContent();
+  var its = [];
+  (tc.items || []).forEach(function(it) {
+    if (!it.str || !String(it.str).trim()) return;
+    var e = it.transform[4], f = it.transform[5];
+    var fh = Math.max(6, Math.hypot(it.transform[2], it.transform[3]));
+    var dx = m[0]*e + m[2]*f + m[4], dy = m[1]*e + m[3]*f + m[5];
+    its.push({ t: _araNorm(it.str), x: dx, y: dy - fh, w: Math.max(it.width || 0, fh * 0.6), h: fh * 1.35, by: dy });
+  });
+  its.sort(function(a, b) { return (a.by - b.by) || (a.x - b.x); });
+  var satirlar = [], cur = null;
+  its.forEach(function(o) {
+    if (cur && Math.abs(o.by - cur.by) <= Math.max(2.5, cur.h * 0.45)) { cur.list.push(o); }
+    else { cur = { by: o.by, h: o.h, list: [o] }; satirlar.push(cur); }
+  });
+  satirlar.forEach(function(sa) {
+    sa.list.sort(function(a, b) { return a.x - b.x; });
+    sa.text  = sa.list.map(function(o){ return o.t; }).join(' ');
+    sa.text2 = sa.list.map(function(o){ return o.t; }).join('');   // parçalı basım: "dn"+"50" → "dn50"
+  });
+  var y = { its: its, satirlar: satirlar };
+  _TLC.sayfalar[p] = y;
+  return y;
+}
 async function _pdfDegerZoom(adaylar) {
   adaylar = (adaylar || []).map(_araNorm).filter(function(a){ return a && a.length >= 2; });
-  // tekrarsızlaştır (aynı aday iki kez aranmasın)
   adaylar = adaylar.filter(function(a, i){ return adaylar.indexOf(a) === i; });
-  if (!adaylar.length) return;                     // boş alan ✏️'si — sessiz, zoom işi yok
+  if (!adaylar.length) return;                     // boş alan ✏️'si — aranacak değer yok, zoom işi yok
   var hedef = -1;
   for (var i = 0; i < (DPV.dosyalar || []).length; i++) { if (DPV.dosyalar[i].tip === 'izometri') { hedef = i; break; } }
   if (hedef < 0) return;                           // PDF paneli yok (izometrisiz spool)
@@ -1861,41 +1899,51 @@ async function _pdfDegerZoom(adaylar) {
   if (!DPV.doc) return;
   var anahtar = DPV.aktif + '|' + adaylar.join('|');
   if (_ARA.anahtar !== anahtar) {
-    _ARA = { anahtar: anahtar, liste: [], i: 0 };
+    _ARA = { anahtar: anahtar, liste: [], i: 0, aranan: adaylar[0] };
     try {
       for (var p = 1; p <= DPV.pages; p++) {
-        var pg = await DPV.doc.getPage(p);
-        var vp0 = pg.getViewport(1);
-        var m = vp0.transform;                     // PDF kullanıcı uzayı → scale-1 viewport (sol-üst orijin); rotasyonu da taşır
-        var tc = await pg.getTextContent();
-        (tc.items || []).forEach(function(it) {
-          var nstr = _araNorm(it.str);
-          if (!nstr) return;
+        var Y = await _sayfaYerlesim(p);
+        // GEÇİŞ 1 — sıkı: aday tek item içinde (dar vurgu)
+        Y.its.forEach(function(o) {
           for (var a = 0; a < adaylar.length; a++) {
-            // item adayı içerir (kısa değerler) VEYA uzun aday item'ı içerir (satır parçalanmış metinler)
-            if (nstr.indexOf(adaylar[a]) !== -1 || (adaylar[a].length >= 12 && nstr.length >= 6 && adaylar[a].indexOf(nstr) !== -1)) {
-              var e = it.transform[4], f = it.transform[5];
-              var fh = Math.max(6, Math.hypot(it.transform[2], it.transform[3]));   // glif yüksekliği ≈ font boyu
-              var dx = m[0]*e + m[2]*f + m[4], dy = m[1]*e + m[3]*f + m[5];          // taban çizgisi, sol-üst orijinli
-              _ARA.liste.push({ sayfa: p, x: dx, y: dy - fh, w: Math.max(it.width || 0, fh * 2), h: fh * 1.35 });
+            if (o.t.indexOf(adaylar[a]) !== -1) { _ARA.liste.push({ sayfa: p, x: o.x, y: o.y, w: o.w, h: o.h }); return; }
+          }
+        });
+        // GEÇİŞ 2 — satır: parçalı metin (boşluklu + boşluksuz birleştirme), vurgu satırın tamamı
+        Y.satirlar.forEach(function(sa) {
+          for (var a = 0; a < adaylar.length; a++) {
+            var ad = adaylar[a], ad2 = ad.replace(/ /g, '');
+            if (sa.text.indexOf(ad) !== -1 || sa.text2.indexOf(ad2) !== -1) {
+              var x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
+              sa.list.forEach(function(o){ x1 = Math.min(x1, o.x); x2 = Math.max(x2, o.x + o.w); y1 = Math.min(y1, o.y); y2 = Math.max(y2, o.y + o.h); });
+              _ARA.liste.push({ sayfa: p, x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
               return;
             }
           }
         });
       }
+      // mükerrer eleme: merkezi, mevcut bir eşleşmenin kutusu içinde kalanlar düşer (item↔satır çakışması)
+      var tekil = [];
+      _ARA.liste.forEach(function(b) {
+        var cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+        var var_ = tekil.some(function(o){ return o.sayfa === b.sayfa && cx >= o.x - 4 && cx <= o.x + o.w + 4 && cy >= o.y - 4 && cy <= o.y + o.h + 4; });
+        if (!var_) tekil.push(b);
+      });
+      tekil.sort(function(a, b) { return (a.sayfa - b.sayfa) || (a.y - b.y) || (a.x - b.x); });   // yukarıdan aşağı gezinme
+      _ARA.liste = tekil;
     } catch (er) { console.warn('[v3] değer arama:', er); }
   } else if (_ARA.liste.length) {
     _ARA.i = (_ARA.i + 1) % _ARA.liste.length;     // aynı değere tekrar basıldı → sonraki eşleşme
   }
   if (!_ARA.liste.length) {
-    toast('"' + adaylar[0] + '" PDF metninde bulunamadı — değer Excel kaynaklı ya da çizimde farklı yazılmış olabilir');
+    toast('🔍 "' + _ARA.aranan + '" PDF metninde bulunamadı — değer Excel kaynaklı ya da çizimde farklı yazılmış olabilir');
     return;
   }
   var b = _ARA.liste[_ARA.i];
-  // bağlam penceresi: minik metin kutusu en az 280×150'ye genişletilir (aşırı zoom önlenir); vurgu sıkı kutuda
   var W = Math.max(b.w + 40, 280), H = Math.max(b.h + 40, 150);
   await dpvZoomTo(b.sayfa, { x: b.x - (W - b.w) / 2, y: b.y - (H - b.h) / 2, w: W, h: H }, b);
-  if (_ARA.liste.length > 1) toast('Eşleşme ' + (_ARA.i + 1) + '/' + _ARA.liste.length + ' — aynı ✏️ ile sonrakine geç');
+  // 166: görünürlük — NE arandığı her zoom'da söylenir ("neyi nereden okuduğunu görmek lazım")
+  toast('🔍 "' + _ARA.aranan + '" — ' + (_ARA.i + 1) + '/' + _ARA.liste.length + (_ARA.liste.length > 1 ? ' · aynı ✏️ ile sonrakine geç' : ''));
 }
 // Alan → arama adayları (öncelik sırasıyla; ham değerler önce, normalize etiketler sonra)
 function _alanAdaylar(alan, s) {
