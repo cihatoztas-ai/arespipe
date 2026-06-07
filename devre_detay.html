@@ -2393,6 +2393,18 @@ async function onayRozetSay(){
 function _onayRozetYaz(n){
   var el=document.getElementById('onaySekmeRozet');
   if(el){el.textContent=n;el.style.display=n>0?'':'none';}
+  // 166/K2-A: AKTİF devrede rozet 0 ise sekme GİZLİ (wizard artığı görünümü biter — Cihat kararı).
+  //   Taslakta her zaman görünür (onay akışının evi orası). Sekme o an açıksa gizlenmez (halının
+  //   altından çekme yok); kapanmış son işten sonra sayfa yenilenince kaybolur.
+  try{
+    var tb=document.querySelector('.tab[data-tab="onay"]');
+    if(tb){
+      var taslakMi=(typeof TASLAK_KIP!=='undefined'&&TASLAK_KIP)||((window.DEVRE&&DEVRE.durum)==='taslak');
+      var acikMi=tb.classList.contains('aktif')||tb.classList.contains('active')
+        ||new URLSearchParams(location.search).get('sekme')==='onay';   // deep-link korunur
+      tb.style.display=(n>0||taslakMi||acikMi)?'':'none';
+    }
+  }catch(e){/* kozmetik */}
 }
 async function onayKuyruguYukle(){
   var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');

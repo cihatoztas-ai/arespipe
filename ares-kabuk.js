@@ -129,6 +129,10 @@
   //      yuzey,                // opsiyonel TEK yüzey kodu (tüm spool'lara — devre_detay modalı böyle)
   //      perSpoolYuzey,        // 109/B1: true ise her spool kendi yuzeyHam'ından kod alır (wizard).
   //                            //   yuzeyHam boşsa yine `yuzey` param'ına düşer. devre_detay GÖNDERMEZ
+  //      malzemeVarsayilan,    // 166 opsiyonel: spool anaMalzeme'si BOM'dan çıkmadıysa düşülecek ham malzeme
+  //                            //   (Adım 1 elle giriş — doküman öncelikli yedek). Göndermeyen = eski davranış.
+  //      alistirmaVarsayilan,  // 166 opsiyonel: 'VAR' | null — düzeltme/izometri alıştırma vermediyse düşülecek
+  //                            //   değer (alıştırma devresi işareti). Göndermeyen = eski davranış (null).
   //                            //   → eski davranış (tek yüzey) korunur, sıfır regresyon.
   //      kuyrukIds             // opsiyonel: tamamlandı işaretlenecek dosya_isleme_kuyrugu id dizisi
   //                            //   (devre_detay tek id → [id]; wizard N BOM Excel → tümü)
@@ -145,6 +149,8 @@
     var spoollar=(opts.spoollar||[]).slice();
     var yuzeySec=opts.yuzey||null;
     var perSpool=opts.perSpoolYuzey===true;
+    var malzVars=opts.malzemeVarsayilan||null;        // 166: doküman-öncelikli malzeme yedeği
+    var alistVars=opts.alistirmaVarsayilan||null;     // 166: 'VAR' | null — alıştırma yedeği
     var kuyrukIds=opts.kuyrukIds||[];
     var duzeltmeler=opts.duzeltmeler||null;   // 143/G2a: {(pipeline|spoolNo):{alan:deger}} — opsiyonel, yoksa eski davranış
     var kalemDuzeltmeler=opts.kalemDuzeltmeler||null;   // 146/B: {(pipeline|spoolNo):{idx:{malzeme,dn,boy,adet,agirlik}}} — kalem-seviyesi overlay, opsiyonel; idx = grupla bom[] sırası (MK-146.1)
@@ -202,10 +208,10 @@
         var _capMm = (_dz && _dz.cap!=null && _dz.cap!=='') ? _sayi(_dz.cap, bp.dis_cap) : bp.dis_cap;
         var _etMm  = (_dz && _dz.et!=null  && _dz.et!=='')  ? _sayi(_dz.et,  bp.et)      : bp.et;
         var _agKg  = (_dz && _dz.agirlik!=null && _dz.agirlik!=='') ? _sayi(_dz.agirlik, (s.toplamKg||0)) : (s.toplamKg||0);
-        var _malHam = (_dz && _dz.malzeme!=null && _dz.malzeme!=='') ? _dz.malzeme : s.anaMalzeme;
+        var _malHam = (_dz && _dz.malzeme!=null && _dz.malzeme!=='') ? _dz.malzeme : (s.anaMalzeme || malzVars);
         var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.anaMalzeme||null);
         var _yuzey  = (_dz && _dz.yuzey!=null && _dz.yuzey!=='') ? _dz.yuzey : yz;
-        var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : null;
+        var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : alistVars;
         // 160: NOT overlay'i → spooller.imalat_not. DİKKAT (devir notu): terfi sonrası eslestir (117/D2)
         //   alistirma!=='VAR' iken imalat_not'u parse NOT'uyla tazeler — operatör NOT'u o durumda ezilebilir.
         var _not    = (_dz && _dz.not!=null && _dz.not!=='') ? _dz.not : null;

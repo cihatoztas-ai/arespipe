@@ -202,7 +202,8 @@
       </div>
       <div class="page-title">Devre Yükle</div>
     </div>
-    <div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-outline" onclick="location.href='devreler.html'" title="Devreler listesine dön — taslak silinmez, İşlenenler'den sürdürülür">← Geri</button>
       <button class="btn-outline" onclick="wizardIptal()">İptal</button>
     </div>
   </div>
@@ -235,7 +236,36 @@
           <input type="text" id="yeniZone" class="inp" placeholder="(opsiyonel)" autocomplete="off">
         </div>
       </div>
-      <p class="sub" style="margin:0;">Sadece <b>proje + devre adı</b> zorunlu. Malzeme/yüzey/termin opsiyonel — girilirse dökümanlarla doğrulanır, boşsa BOM'dan okunur. İş emri no burada yok; <b>onayda (terfide)</b> üretilir.</p>
+      <!-- 166: malzeme/yüzey/alıştırma — DOKÜMAN ÖNCELİKLİ yedek değerler. BOM/PDF'ten okunan değer
+           bunları EZER; buradakiler yalnız dokümanda bulunamayan spool'lara iner (okunamayan PDF /
+           manuel Excel senaryosu). Kanonik kodlar = ARES_NORM sözlüğü (G2a düzelt modalıyla aynı). -->
+      <div class="row2">
+        <div class="fld"><label>Malzeme <span style="font-weight:400;color:var(--txd);">(opsiyonel — doküman ezer)</span></label>
+          <select id="yeniMalzeme" class="sel">
+            <option value="">— Dokümandan okunsun —</option>
+            <option value="karbon">Karbon Çelik</option>
+            <option value="paslanmaz">Paslanmaz</option>
+            <option value="bakir">Bakır Alaşım</option>
+            <option value="alum">Alüminyum</option>
+            <option value="diger">Diğer</option>
+          </select>
+        </div>
+        <div class="fld"><label>Yüzey işlem <span style="font-weight:400;color:var(--txd);">(opsiyonel — doküman ezer)</span></label>
+          <select id="yeniYuzey" class="sel">
+            <option value="">— Dokümandan okunsun —</option>
+            <option value="asit">Asit</option>
+            <option value="galvaniz">Galvaniz</option>
+            <option value="siyah">Siyah</option>
+            <option value="boyali">Boyalı</option>
+            <option value="diger">Diğer</option>
+          </select>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:14px;color:var(--txm);">
+        <input type="checkbox" id="yeniAlistirma" style="width:16px;height:16px;accent-color:var(--warn);cursor:pointer;">
+        🔄 Alıştırma devresi <span style="color:var(--txd);">(işaretliyse, dokümanda alıştırma bilgisi olmayan spool'lar VAR sayılır)</span>
+      </label>
+      <p class="sub" style="margin:0;">Sadece <b>proje + devre adı</b> zorunlu. Malzeme/yüzey/alıştırma/termin opsiyonel — <b>dokümandan okunan değer her zaman önceliklidir</b>; buraya girilenler yalnız dokümanda bulunamayan spool'larda kullanılır (okunamayan PDF / manuel Excel için güvenlik ağı). Çelişkiler inceleme ekranında görünür. İş emri no burada yok; <b>onayda (terfide)</b> üretilir.</p>
     </div>
 
     <div class="card">
@@ -251,6 +281,9 @@
           <button class="btn-outline" onclick="document.getElementById('folderInput').click()">📁 Klasör Seç</button>
           <button class="btn-outline" onclick="document.getElementById('fileInput').click()">📄 Dosya Seç</button>
         </div>
+        <!-- 166: "Bu siteye N dosya yüklensin mi?" penceresi Chrome'un güvenlik onayıdır (webkitdirectory) —
+             hiçbir site özelleştiremez/bastıramaz. Sürükle-bırak yolunda bu pencere ÇIKMAZ. -->
+        <div style="margin-top:8px;font-size:12px;color:var(--txd);" onclick="event.stopPropagation()">İpucu: klasörü <b>sürükleyip bırakırsan</b> onay penceresi çıkmaz. "Klasör Seç" kullanırsan tarayıcı güvenlik onayı sorar — <b>Yükle</b>'ye bas, bu normaldir.</div>
       </div>
 
       <div id="dosyaUyari" style="display:none;margin:10px 0;font-size:13px;color:var(--warn);"></div>
@@ -373,6 +406,7 @@ var WIZ = {
   tersane_ad: '',
   devre_id: null, devre_no: '',
   yeni_zone: '', yeni_termin: '',
+  yeni_malzeme: '', yeni_yuzey: '', yeni_alistirma: false,   // 166: doküman-öncelikli yedek değerler
   l3_acik: false,
   dosyalar: [],            // {file, klasor_yolu, dosya_adi, uzanti, tip_kodu, parser_yolu, boyut, durum}
   dokuman_tipleri: [],
@@ -488,8 +522,19 @@ function projeDropdownDoldur(tersaneAd) {
 
 function bindleri() {
   document.getElementById('selTersane').addEventListener('change', function(e){
+    // 166: seçili proje yeni tersane filtresine uyuyorsa KORUNUR (eski davranış sıfırlayıp
+    //   yeniden seçtiriyordu — kozmetik kusur, Cihat 166 bulgusu).
+    var onceki = document.getElementById('selProje').value;
     projeDropdownDoldur(e.target.value);
-    WIZ.proje_id = null; WIZ.proje_no = '';
+    var sp = document.getElementById('selProje');
+    var korunur = onceki && Array.prototype.some.call(sp.options, function(o){ return o.value === onceki; });
+    if (korunur) {
+      sp.value = onceki;
+      var opt = sp.options[sp.selectedIndex];
+      WIZ.proje_id = onceki; WIZ.proje_no = opt.dataset.no || ''; WIZ.tersane_ad = opt.dataset.ts || '';
+    } else {
+      WIZ.proje_id = null; WIZ.proje_no = '';
+    }
     guncelleIncele();
   });
   document.getElementById('selProje').addEventListener('change', function(e) {
@@ -497,6 +542,14 @@ function bindleri() {
     if (pid) {
       var opt = e.target.options[e.target.selectedIndex];
       WIZ.proje_id = pid; WIZ.proje_no = opt.dataset.no || ''; WIZ.tersane_ad = opt.dataset.ts || '';
+      // 166: ters senkron — proje seçilince tersane dropdown'ı projenin tersanesine oturur,
+      //   liste o tersaneye filtrelenir, seçim korunur ("Tersan — NB1124" karışık etiketi biter).
+      var ts = document.getElementById('selTersane');
+      if (opt.dataset.ts && ts.value !== opt.dataset.ts) {
+        ts.value = opt.dataset.ts;
+        projeDropdownDoldur(opt.dataset.ts);
+        document.getElementById('selProje').value = pid;
+      }
     } else { WIZ.proje_id = null; WIZ.proje_no = ''; }
     guncelleIncele();
   });
@@ -509,6 +562,11 @@ function bindleri() {
       guncelleIncele();
     });
   });
+  // 166: malzeme/yüzey/alıştırma yedek değerleri
+  var _ym = document.getElementById('yeniMalzeme'), _yy = document.getElementById('yeniYuzey'), _ya = document.getElementById('yeniAlistirma');
+  if (_ym) _ym.addEventListener('change', function(){ WIZ.yeni_malzeme = _ym.value || ''; });
+  if (_yy) _yy.addEventListener('change', function(){ WIZ.yeni_yuzey = _yy.value || ''; });
+  if (_ya) _ya.addEventListener('change', function(){ WIZ.yeni_alistirma = !!_ya.checked; });
 
   // Drag-drop (v2 ile birebir)
   var dz = document.getElementById('dropZone');
@@ -744,11 +802,11 @@ async function inceleBaslat(beklemeyeAlMi) {
     var _dr = await supa.from('devreler').insert({
       tenant_id: tid, proje_id: WIZ.proje_id, devre_no: WIZ.devre_no,
       zone: WIZ.yeni_zone || null, termin: WIZ.yeni_termin || null,
-      malzeme: null, yuzey: null,
+      malzeme: WIZ.yeni_malzeme || null, yuzey: WIZ.yeni_yuzey || null,   // 166: elle girilen yedek (doküman terfide ezer)
       basamak_snapshot: basamakSnapshot, aktif_basamak: ilkBasamak,
       durum: 'taslak',          // MK-127: taslak; terfide 'aktif'
       ilerleme: 0, agirlik: 0,
-      is_emri_no: null, alistirma_devresi: false   // 159: numara terfide üretilir
+      is_emri_no: null, alistirma_devresi: !!WIZ.yeni_alistirma   // 159: numara terfide üretilir · 166: alıştırma Adım 1'den
     }).select('id').single();
     if (_dr.error) throw _dr.error;
     WIZ.devre_id = _dr.data.id;
@@ -819,8 +877,9 @@ async function inceleBaslat(beklemeyeAlMi) {
   } catch (e) { console.warn('[v3] kabuk türetilemedi:', e); WIZ._kabukSpoollar = []; }
 
   if (beklemeyeAlMi) {
-    toast('⏸ Taslak oluşturuldu — "Onay Bekleyen Devreler" listesinden sürdürebilirsin');
-    setTimeout(function(){ location.href = 'devreler.html'; }, 1100);
+    toast('⏸ Taslak oluşturuldu — İşlenenler listesinden sürdürebilirsin');
+    // 166: varış İşlenenler — direkt işle ile aynı evrende kal (devreler.html'e atmak kopukluk yaratıyordu)
+    setTimeout(function(){ location.href = 'devre_wizard_v3.html?sekme=islenenler'; }, 1100);
     return;
   }
 
@@ -858,7 +917,7 @@ async function taslagiAc(devreId) {
   var supa = ARES.supabase();
   // 1) Devre
   var _d = await supa.from('devreler')
-    .select('id, proje_id, devre_no, zone, termin, durum')
+    .select('id, proje_id, devre_no, zone, termin, durum, malzeme, yuzey, alistirma_devresi')
     .eq('id', devreId).single();
   if (_d.error || !_d.data) { console.warn('[v3] taslak bulunamadı:', devreId, _d.error); toast('Taslak devre bulunamadı'); return false; }
   var dv = _d.data;
@@ -867,6 +926,9 @@ async function taslagiAc(devreId) {
   WIZ.devre_no    = dv.devre_no || '';
   WIZ.yeni_zone   = dv.zone || '';
   WIZ.yeni_termin = dv.termin || '';
+  WIZ.yeni_malzeme   = dv.malzeme || '';            // 166: yedek değerler taslak açılışında geri gelir
+  WIZ.yeni_yuzey     = dv.yuzey || '';
+  WIZ.yeni_alistirma = dv.alistirma_devresi === true;
   // Proje/tersane bilgisi projeleriYukle()'den hazır (ek sorgu yok)
   var pj = (WIZ._projeler || []).find(function(p){ return p.id === dv.proje_id; });
   WIZ.proje_no    = pj ? pj.proje_no : '';
@@ -2338,7 +2400,14 @@ async function onayEt() {
     if (WIZ._kalemDuzelt == null) { try { await _kalemDuzeltmeleriYukle(); } catch (e) {} }
     var r = await ARES_KABUK.aktar({
       supa: supa, tid: tid, devreId: WIZ.devre_id,
-      spoollar: model.spoollar, yuzey: null, perSpoolYuzey: true, kuyrukIds: WIZ._bomIds,
+      spoollar: model.spoollar,
+      // 166: doküman-öncelikli yedekler — perSpoolYuzey=true: spool kendi yuzeyHam'ını bulursa O kazanır,
+      //   bulamazsa Adım 1'de girilen değere düşer. malzeme/alıştırma için aynı desen (kabukta yeni opsiyonel param).
+      yuzey: (typeof ARES_NORM !== 'undefined' && ARES_NORM.yuzeyKod && WIZ.yeni_yuzey) ? (ARES_NORM.yuzeyKod(WIZ.yeni_yuzey) || null) : (WIZ.yeni_yuzey || null),
+      perSpoolYuzey: true,
+      malzemeVarsayilan: WIZ.yeni_malzeme || null,
+      alistirmaVarsayilan: WIZ.yeni_alistirma ? 'VAR' : null,
+      kuyrukIds: WIZ._bomIds,
       duzeltmeler: _duzeltHarita,
       kalemDuzeltmeler: WIZ._kalemDuzelt || null
     });
@@ -2382,10 +2451,36 @@ async function onayEt() {
     } catch (eb) {
       izoHata = eb.message;
     }
+    // 166/K2-A: terfi sonrası TEMİZ izometri önerileri otomatik kapanır — backfill veriyi zaten tüketti,
+    //   açık kalmaları aktif devrede "wizard artığı" oluyordu (Cihat 166 bulgusu; onay kuşağı birikiminin kökü).
+    //   Filtre devre_detay onayTopluKapat'ın BİREBİRİ: parser='izometri' · oneri_hazir · _eslesme.atanmamis>0 DEĞİL.
+    //   Atanmamışlı işler ve manuel_onay AÇIK KALIR (B-6: sessiz kayıp yok). Backfill hata verdiyse HİÇBİRİNE
+    //   dokunulmaz (devre detaydan tekrar denenebilir). Best-effort: hatası terfiyi geri almaz.
+    var izoKapanan = 0;
+    if (!izoHata) {
+      try {
+        var _dd = await supa.from('devre_dokumanlari').select('id').eq('devre_id', WIZ.devre_id).eq('tenant_id', tid);
+        var _ddIds = (_dd.data || []).map(function(d){ return d.id; });
+        if (_ddIds.length) {
+          var _iq = await supa.from('dosya_isleme_kuyrugu')
+            .select('id, atan:parse_sonuc->_eslesme->>atanmamis')
+            .in('devre_dokuman_id', _ddIds).eq('parser', 'izometri').eq('durum', 'oneri_hazir');
+          var _temizIds = (_iq.data || [])
+            .filter(function(k){ return !(parseInt(k.atan || '0', 10) > 0); })
+            .map(function(k){ return k.id; });
+          if (_temizIds.length) {
+            var _ik = await supa.from('dosya_isleme_kuyrugu').update({ durum: 'tamamlandi' })
+              .in('id', _temizIds).eq('durum', 'oneri_hazir').select('id');
+            if (!_ik.error) izoKapanan = (_ik.data || []).length;
+          }
+        }
+      } catch (ek) { console.warn('[v3] terfi öneri kapanışı:', ek); }
+    }
     onayKapat();
     var msg = '✓ Devre canlıya aktarıldı — ' + (r.eklenen || 0) + ' spool ID + QR üretildi';
     if (izoEslesen > 0) msg += ' + ' + izoEslesen + ' izometri eşleşmesi';
-    else if (izoHata) msg += ' (izometri eşleşmesi yapılamadı: ' + izoHata + ' — devre detaydan tekrar deneyin)';
+    if (izoKapanan > 0) msg += ' · ' + izoKapanan + ' öneri otomatik kapandı';
+    if (izoHata) msg += ' (izometri eşleşmesi yapılamadı: ' + izoHata + ' — devre detaydan tekrar deneyin)';
     toast(msg);
     setTimeout(function(){ location.href = 'devre_detay.html?id=' + WIZ.devre_id; }, izoHata ? 2500 : 1000);
   } catch (e) {
