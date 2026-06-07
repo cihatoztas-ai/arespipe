@@ -1494,6 +1494,15 @@ function _spoolKalemAc(idx) {
   // diğer açık panelleri kapat (tek ctx — kalemKaydet karışmasın)
   document.querySelectorAll('.kalem-inline').forEach(function(el) { el.classList.add('hide'); el.innerHTML = ''; });
   var b = yeniKalem ? {} : ref.bom[idx];
+  // 166/W-2.19: kalem ✏️ → tanım/DN değerine PDF'te zoom. Tanım Excel kabuktan gelir; PDF'te
+  //   birebir geçmeyebilir → aday sırası: tanım kısaltması → DN → boyut. Bulunamazsa dürüst toast.
+  if (!yeniKalem) {
+    var _kAd = [];
+    if (b.tanim) { _kAd.push(String(b.tanim).slice(0, 36)); var _tk = String(b.tanim).split(/\s+/).slice(0, 3).join(' '); if (_tk.length >= 6) _kAd.push(_tk); }
+    if (b.dn) _kAd.push(String(b.dn));
+    if (b.boyut) _kAd.push(String(b.boyut));
+    _pdfDegerZoom(_kAd);
+  }
   _kalemDuzeltCtx = { sKey: ref.sKey, idx: idx, b: b, spoolNo: ref.spoolNo };
   var KD = WIZ._kalemDuzelt || {};
   var d = (KD[ref.sKey] && KD[ref.sKey][idx]) ? KD[ref.sKey][idx] : {};
@@ -1825,12 +1834,91 @@ async function _tabloZoom() {
   if (!DPV.doc) return;   // sekme yüklenemedi (dpvSec kendi mesajını bastı)
   await dpvZoomTo(ki.sayfa || 1, { x: ki.bbox.left, y: ki.bbox.top, w: ki.bbox.w, h: ki.bbox.h });
 }
-async function dpvZoomTo(sayfa, bbox) {
+// ── 166/W-2.19 TAM DİLİM — KALEM-ZOOM (Cihat fikri): ✏️'ye basılan alanın DEĞERİ pdf.js metin
+//   katmanında aranır, bulunduğu yere zoom+sarı vurgu. Konum TARAYICI uzayında (B1 ile uyumlu:
+//   kural sunucu metninde kalır, konum görüntüleyiciden gelir), motor/izometri-oku'ya SIFIR dokunuş,
+//   format öğretimi GEREKTİRMEZ. Metin 161'in ToUnicode onarımından geçmiş geliyor (isabet yüksek).
+//   Bulunamazsa DÜRÜST toast — uydurma zoom yok. Aynı ✏️'ye tekrar basmak SONRAKİ eşleşmeye gezdirir
+//   (DN50 gibi çok geçen değerlerde). Arama sonuçları değer-anahtarıyla cache'lenir.
+var _ARA = { anahtar: null, liste: [], i: 0 };
+function _araNorm(s) {
+  return String(s == null ? '' : s)
+    .replace(/İ/g,'i').replace(/I/g,'i')             // Türkçe İ tuzağı: toLowerCase 'i̇' (i+U+0307) üretir
+    .toLowerCase().replace(/\u0307/g,'')
+    .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i')
+    .replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
+    .replace(/\s+/g,' ').trim();
+}
+async function _pdfDegerZoom(adaylar) {
+  adaylar = (adaylar || []).map(_araNorm).filter(function(a){ return a && a.length >= 2; });
+  // tekrarsızlaştır (aynı aday iki kez aranmasın)
+  adaylar = adaylar.filter(function(a, i){ return adaylar.indexOf(a) === i; });
+  if (!adaylar.length) return;                     // boş alan ✏️'si — sessiz, zoom işi yok
+  var hedef = -1;
+  for (var i = 0; i < (DPV.dosyalar || []).length; i++) { if (DPV.dosyalar[i].tip === 'izometri') { hedef = i; break; } }
+  if (hedef < 0) return;                           // PDF paneli yok (izometrisiz spool)
+  if (DPV.aktif !== hedef || !DPV.doc) { await dpvSec(hedef); }
+  if (!DPV.doc) return;
+  var anahtar = DPV.aktif + '|' + adaylar.join('|');
+  if (_ARA.anahtar !== anahtar) {
+    _ARA = { anahtar: anahtar, liste: [], i: 0 };
+    try {
+      for (var p = 1; p <= DPV.pages; p++) {
+        var pg = await DPV.doc.getPage(p);
+        var vp0 = pg.getViewport(1);
+        var m = vp0.transform;                     // PDF kullanıcı uzayı → scale-1 viewport (sol-üst orijin); rotasyonu da taşır
+        var tc = await pg.getTextContent();
+        (tc.items || []).forEach(function(it) {
+          var nstr = _araNorm(it.str);
+          if (!nstr) return;
+          for (var a = 0; a < adaylar.length; a++) {
+            // item adayı içerir (kısa değerler) VEYA uzun aday item'ı içerir (satır parçalanmış metinler)
+            if (nstr.indexOf(adaylar[a]) !== -1 || (adaylar[a].length >= 12 && nstr.length >= 6 && adaylar[a].indexOf(nstr) !== -1)) {
+              var e = it.transform[4], f = it.transform[5];
+              var fh = Math.max(6, Math.hypot(it.transform[2], it.transform[3]));   // glif yüksekliği ≈ font boyu
+              var dx = m[0]*e + m[2]*f + m[4], dy = m[1]*e + m[3]*f + m[5];          // taban çizgisi, sol-üst orijinli
+              _ARA.liste.push({ sayfa: p, x: dx, y: dy - fh, w: Math.max(it.width || 0, fh * 2), h: fh * 1.35 });
+              return;
+            }
+          }
+        });
+      }
+    } catch (er) { console.warn('[v3] değer arama:', er); }
+  } else if (_ARA.liste.length) {
+    _ARA.i = (_ARA.i + 1) % _ARA.liste.length;     // aynı değere tekrar basıldı → sonraki eşleşme
+  }
+  if (!_ARA.liste.length) {
+    toast('"' + adaylar[0] + '" PDF metninde bulunamadı — değer Excel kaynaklı ya da çizimde farklı yazılmış olabilir');
+    return;
+  }
+  var b = _ARA.liste[_ARA.i];
+  // bağlam penceresi: minik metin kutusu en az 280×150'ye genişletilir (aşırı zoom önlenir); vurgu sıkı kutuda
+  var W = Math.max(b.w + 40, 280), H = Math.max(b.h + 40, 150);
+  await dpvZoomTo(b.sayfa, { x: b.x - (W - b.w) / 2, y: b.y - (H - b.h) / 2, w: W, h: H }, b);
+  if (_ARA.liste.length > 1) toast('Eşleşme ' + (_ARA.i + 1) + '/' + _ARA.liste.length + ' — aynı ✏️ ile sonrakine geç');
+}
+// Alan → arama adayları (öncelik sırasıyla; ham değerler önce, normalize etiketler sonra)
+function _alanAdaylar(alan, s) {
+  var cfg = DUZELT_ALANLAR[alan]; if (!cfg || !s) return [];
+  var v = (s._duzelt && s._duzelt[alan] != null && s._duzelt[alan] !== '') ? s._duzelt[alan] : s[cfg.prop];
+  var L = [];
+  if (alan === 'not') return (v ? [String(v).slice(0, 40)] : []);
+  if (v != null && v !== '') L.push(String(v));
+  if (alan === 'yuzey' && s.yuzeyHam) L.push(String(s.yuzeyHam));
+  if (alan === 'malzeme' && v && typeof ARES_NORM !== 'undefined') L.push(ARES_NORM.malzemeEtiket(v));
+  if (alan === 'kalite' && v && typeof ARES_NORM !== 'undefined') L.push(ARES_NORM.kaliteGoster(v) || '');
+  if (alan === 'alistirma') L.push('ALIŞTIRMA');
+  if ((alan === 'cap' || alan === 'et' || alan === 'agirlik') && v != null && v !== '') {
+    var t = String(v); L.push(t.replace('.', ','), t.replace(',', '.'));
+  }
+  return L;
+}
+async function dpvZoomTo(sayfa, bbox, vurguBox) {
   if (!DPV.doc || !bbox) return;
   var wrap = document.getElementById('dpvWrap'); if (!wrap) return;
   DPV.page = Math.min(Math.max(1, sayfa || 1), DPV.pages);
   DPV.scale = Math.max(0.1, Math.min(6, Math.min(wrap.clientWidth / (bbox.w * 2.4), wrap.clientHeight / (bbox.h * 2.4))));
-  DPV.vurgu = bbox;
+  DPV.vurgu = vurguBox || bbox;   // 166: vurgu sıkı kutuda kalabilir, zoom bağlam penceresine göre
   DPV.panX = wrap.clientWidth / 2 - (bbox.x + bbox.w / 2) * DPV.scale;
   DPV.panY = wrap.clientHeight / 2 - (bbox.y + bbox.h / 2) * DPV.scale;
   await _dpvCiz();
@@ -2062,6 +2150,7 @@ function duzeltAc(i) {
 async function duzeltSatirAc(alan) {
   var s = (WIZ._inceleme && WIZ._inceleme.spoollar) ? WIZ._inceleme.spoollar[_duzeltSpoolIdx] : null;
   if (!s) return;
+  _pdfDegerZoom(_alanAdaylar(alan, s));   // 166/W-2.19: ✏️ alanın değerine PDF'te zoom (async, edit'i bekletmez)
   var cfg = DUZELT_ALANLAR[alan];
   var lk = document.getElementById('lk-' + alan);
   if (!lk) return;
