@@ -524,3 +524,24 @@ Format hattı kuyruğu: Y200 malzeme kaydı + W-3.4 yayılım Cihat'ta (diğer b
    şeması atölyede incelenecek (cap anahtarı SELECT'te teyitsizdi — MK-85.3).
 Kanıt durumu: kalite→excel ✓ · idx5→operator ✓ · 📐 yeni metin ✓ · izometri-kaynak + OPR terfi AÇIK.
 
+
+---
+
+## 165. OTURUM (2026-06-07) — atölye modelinin ilk TAM uygulaması + parse zinciri onarımı
+1. **42.2/3.56 vakası kapandı (3 kök, 2 commit):** emperyal satırda boyut sentezi (MK-165.1)
+   + dn HEP dominant borudan / dnBul ters eşleme (MK-165.2) + fallback çift körlüğü bypass'ı
+   — satır-kaynaklı asme et spool'a yazılır (MK-165.3, 151 revizyonu). Drenaj kanıtı:
+   dn=50 · 60.3 · 2.77 (SCH 10S); UI bindirme uyarısında et/çap kalemi yok.
+2. **Atölye modeli (MK-162.1) ilk kez UÇTAN UCA koştu:** Cihat zip verdi (tersan.zip, 6 gemi
+   15 PDF) → Claude sunucu metni döküm + mekanik kural testi → paket kod + deploy → drenaj
+   kanıtı. Araç kalıcılaştı: `scripts/atolye-kosum.mjs` (MK-165.5). Sonuç: 15/15 L2, ham 0.
+3. **bilezik_detay satır tipi (af90f85):** 'Bilezik Detay A' varyantı — 7 ham (İç) + 3 SESSİZ
+   (Dış, tetik uymuyordu — MK-123.C sınıfının ikinci vakası). 10/10 gerçek satır + tetik ayrımı.
+4. **Teyit üçlüsü mühürlendi:** izometri-kaynak (format_id DOLU — MK-164.3 üç dalı tamam) ·
+   OPR terfi (f borcu KAPANDI; kalite fallback nüansı — operatör girmedi, regresyon değil) ·
+   G2a kart eşik davranışı doğru (1'er sinyal dal doğurmaz, NORMAL).
+5. **Süreç dersleri:** log hedefleme original_log_id üzerinden + UPDATE etkisi SELECT teyidi
+   (MK-165.4) · drenaj filtreli — reset edilen satır devresi açılmadan işlenmez · commit'ler
+   ayrı bloklar (MK-165.6).
+Format hattı kuyruğu: Y200 öğretimi (Cihat, diğer bilgisayar; reçete aynen) · ~10 zip paketi
+hedefi (atölye standardıyla) · onay kuşağı eritme (162) · OPR dn→dis_cap kabuk borcu (MK-165.7).

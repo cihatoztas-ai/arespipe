@@ -376,3 +376,32 @@ Yeni gözlem (160 testi): E100-722 ailesinde Windows glyph bozulması canvas'ta 
 - Envanter değişmedi; açıklar aynen (6 B1124 orijinal ad · v4 yapıştırma + AD kararı ·
   ✖ sessiz-kayıp). Test yatakları KORUNUYOR.
 
+
+---
+
+## 165 EKİ (2026-06-07) — M130 vakası KAPANDI + tersan.zip KOŞULABİLİR set (metodoloji değişimi)
+- **164 NOTU'ndaki vaka HÜKME BAĞLANDI:** hipotez yarı doğruydu — 42.2 redüksiyon ucundan
+  değil, alan-regex dn'inin KAYNAK satırına (DN32) çapa atması + asmeFallbackDoldur'un DN32
+  lookup'ından (cap "ares_boru", et "ares_boru (SCH 40)"=3.56). "satirlar=0" yanılgıydı: 3
+  satır temiz parse olmuştu, ama emperyal boru satırı `boyut` alanı taşımadığından dominant
+  aday olamıyordu. Üç fix (MK-165.1/2/3) + drenaj kanıtı: dn=50 · 60.3 · 2.77 (SCH 10S).
+  Fallback ÇİFT KÖRLÜĞÜ (helper malzeme-kör + DB schedule-kör) bu setteki tüm eski et
+  sapmalarının (3.68/3.91/3.56) ortak köküydü — emperyal aile için kurudu.
+- **METODOLOJİ DEĞİŞİMİ — bölüm-başı MK-132.1 sınırı ÇÖZÜLDÜ:** `scripts/atolye-kosum.mjs`
+  (165) satır metinlerini GERÇEK sunucu hattından (pdfParse+glyph-onar+aileBirlestir+L2)
+  döker — bu belgenin "görüntüleyici metni regex'e kaynak olamaz" uyarısı artık pratikte
+  aşılır: yeni desen regex'i script'in ham_satir dökümünden yazılır, elle yapıştırma gerekmez.
+  **v4 YAPIŞTIRMA İHTİYACI DÜŞTÜ (AD kararıyla birlikte Cihat'ta):** kanıt seti artık
+  "yapıştırılan analiz" değil "koşulan zip" olabilir.
+- **YENİ KOŞULABİLİR SET — tersan.zip (6 gemi · 15 PDF · 7 montaj/imalat çifti + Y110 tek):**
+  nb1110 M100-317-18-ALS (çift) · nb1124 AT110-804-751-T (çift) + G600-813-534 (çift) ·
+  nb1130 AT110-816-026 (çift) · nb1135 Y110-813-2204 (tek spool) · nb1136 G400-817-015 (çift)
+  · nb1137 E100-817-005 (çift) + AT110-803-2311-P2 (çift). Koşum sonucu (165 fix'leri
+  sonrası): **15/15 L2 · fail 0 · ham 0**; montaj 7/7 (pipe/spool/continue/blok dolu;
+  M100-ALS alıştırma=PARCA ✓); NB1137 dosyalarında glyph band-A onarımı devrede.
+  Set bulguları: bilezik_detay (3 gemi, 7 ham İç + 3 SESSİZ Dış — kapandı, af90f85) ·
+  AT110-804 dn=null (DN hiç basılmıyor — dnBul ile kapandı, f86ff81) ·
+  **E100-817-005 (162'nin hiç işlenmemiş E-vakası) İLK KEZ söküldü.** PDF'ler Cihat
+  arşivinde; repo yalnız script taşır.
+- Eski açıklar: 6 B1124 orijinal ad · ✖ sessiz-kayıp doğrulaması AYNEN. Test yatakları
+  KORUNUYOR.

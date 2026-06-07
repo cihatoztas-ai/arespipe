@@ -2194,3 +2194,66 @@ sinyal formata adreslenir) · operator = sistem okuması yokken operatör girdis
 boş alan) · NULL = 103 öncesi kayıt, "bilinmiyor". Geriye dönük TAHMİN BACKFILL YASAK.
 Uyarı kartı adresi kaynağa dallanır; Düzelt=değer / Tanıt=kural ayrımı ve uzman onayı AYNEN
 (MK-160.2/162.2). (Kaynak: 164.)
+
+## MK-165.1 [TEKNIK] — Emperyal satırda boyut sentezi: nps_inc+schedule_kod → yerel boyutStr
+boru_sch/dirsek_sch tipi satırlar `boyut` alanı TAŞIMAZ (NPS ve schedule ayrık yakalanır) —
+olcuZenginlestir bu yüzden atlıyor, satır dominant-boru adayı olamıyordu (42.2/3.56 vakasının
+1. kökü). Çözüm: boyut yoksa nps_inc+schedule_kod'dan YEREL string sentezi ('2" Sch 10S') →
+olcuParse NPS yolu DN/OD/et'i ARES_BORU'dan çözer. `m.boyut`'a YAZILMAZ (ham yakalama ilkesi —
+sentez türetilmiş veridir, kaynak alanı kirletmez). sch'siz nps-only: dis_cap+dn dolar, et
+null kalır. (Kaynak: 165, commit 5edbba1.)
+
+## MK-165.2 [MIMARI] — dn HEP dominant borudan: kenar §5 kodlandı + dnBul ters eşleme
+spoolOlcuTuret dn'i dominant borudan HER ZAMAN yazar (alan-regex değerini ezer) — kenar §5'in
+("dn HEP dominant borudan, İç Bilezik/kaynak ASLA") birebir kodlanması. M130-817-008.S01'de
+alan-regex tek DN'i kaynak satırından (DN32) almıştı; dominant boru temiz satırdan gelir,
+tablo bozuksa dominant yok = ezme yok. MK-111.2 "dolu ezilmez" ÖĞRETİM-PATCH bağlamıdır; parse
+türetiminde kenar §5 üstündür. Dominant borunun dn'i yoksa (saf ODxet çizimleri, AT110-804):
+ARES_BORU.dnBul(od, malzeme) ters eşleme — dnListesi×disCap taraması, ±0.15mm, TEK-eşleşme
+şartı, cunife dahil; ASME-dışı OD (76.1) null kalır ve dn_bulunamadi uyarısı HAKLI olarak
+sürer (uydurma yok). (Kaynak: 165, commit'ler 5edbba1 + f86ff81.)
+
+## MK-165.3 [MIMARI] — asmeFallbackDoldur ÇİFT KÖR; satır-kaynaklı asme et spool'a yazılır (151 revizyonu)
+151'in "schedule-türetilmiş et spool'a yazılmaz, asmeFallbackDoldur schedule-bilinçli doldurur"
+varsayımı İKİ yönden çürük çıktı (kanıt: ikinci drenaj turu et=1.65 "boru_olculer (SCH SCH5)"):
+(1) helper yolu MALZEME-KÖR — malzeme_en_kodu null → 'karbon' varsayımı → karbon tablosunda
+10S yok → fail; (2) DB yolu SCHEDULE-KÖR — boru_olculer sorgusunda schedule_kod filtresi YOK,
+limit=1 rastgele ilk satırı (SCH5) seçer. İkisi de izometri-oku İÇİNDE (MK-49.1 dokunulmaz) →
+çözüm dışarıdan: satırın KENDİ kalitesi (doğru malzeme) + BASILI schedule ile hesaplanan asme
+et artık spoolOlcuTuret'te spool'a yazılır; etiket fallback'in birebir eşi 'ares_boru (SCH X)'
+(MK-164.1 ruhu: tüketici yüzeyi değişmez) → kör fallback'e hiç girilmez. 153'teki 3.68/3.91
+bulgusunun kökü buydu (emperyal aile için kurudu). sch'siz satır eski davranışta (fallback'e
+gider). (Kaynak: 165, commit 1596481; bağımsız kanıt: G400-817-015 + E100-817-005 → 2.77.)
+
+## MK-165.4 [DISIPLIN] — Log hedefleme original_log_id üzerinden; UPDATE etkisi SELECT teyidiyle
+ai_api_log.cevap_full KUYRUK katmanının alanlarını (dosya_adi vb.) TAŞIMAZ — cevap_full'a
+ILIKE ile sha temizliği 0 satır günceller ve Supabase'in "Success. No rows returned" mesajı
+bunu MASKELER (UPDATE'te de aynı mesaj). Doğru adres: kuyruk parse_sonuc._cache_meta.
+original_log_id → o kayıtların pdf_sha256'ları → hedefli NULL. Her UPDATE'in etkisi ayrı
+SELECT ile teyit edilir. Ek ders: drenaj FİLTRELİDİR (wizard is_id / devre dokuman listesi) —
+'bekliyor'a reset edilen satır, ait olduğu devre AÇILMADAN işlenmez; başka devreye yükleme
+YENİ satır yaratır, eskisini akıtmaz. (Kaynak: 165 — iki kez yaşandı.)
+
+## MK-165.5 [ATOLYE] — Zip-paket regresyon standardı: scripts/atolye-kosum.mjs
+Atölye modelinin (MK-162.1) koşulabilir hali: `node scripts/atolye-kosum.mjs <pdf_klasoru>` —
+pdfParse → glyph-onar → aileBirlestir → L2.parse (sunucu hattının birebiri), PDF başına tek
+satır envanter + ham satır dökümü, ~30 sn/15 PDF. Her parser/paket değişikliği gerçek-PDF
+setiyle taranır (MK-105.8: üretim PDF'i > sentetik; MK-132.1 sınırını da çözer — satır
+metinleri GERÇEK extractor çıktısından). İlk uygulama (tersan.zip, 6 gemi/15 PDF): bilezik_detay
+vakası — 7 HAM (İç, L='siz varyant pattern'e takılıyor) + 3 SESSİZ (Dış, tetik 'Ic Bilezik'
+hiç uymuyor — MK-123.C sınıfı); yeni tip spesifiklik 6 / tetik 'Bilezik Detay', 10/10 satır +
+tetik ayrımı kanıtlı. (Kaynak: 165, commit af90f85.)
+
+## MK-165.6 [DISIPLIN] — Commit'ler ayrı komut bloklarında; && zinciri "nothing to commit"te kırılır
+Zincirli çift-commit kalıbında ilk `git commit` "nothing to commit" ile non-zero çıkarsa &&
+zinciri KESİLİR ve ikinci commit + push SESSİZCE koşmaz (165'te yaşandı: bilezik commit'i
+önceki turda atılmıştı, dnBul commit'i zincirde kayboldu). Standart: her commit ayrı blok;
+zincir yalnız tek-commit akışında. (Kaynak: 165.)
+
+## MK-165.7 [BORC] — 165 ürün borçları: OPR dn→dis_cap sapması · taslak→wizard köprüsü · uyarı mükerrerliği
+(1) OPR kalem editöründeki "dn" alanı kabukta fakir boyutParse'tan geçip dis_cap_mm'e OD
+sanılarak yazılıyor (DN200 girişi → dis_cap 200.0; doğrusu 219.1) — çözüm adayı: kabukta
+ARES_OLCU.olcuParse + ARES_BORU.dnBul (165'te eklendi, simetrik iş). (2) devre_detay taslak
+önizlemesi kilitli ve wizard'a "düzenle" köprüsü YOK — MK-136 ?devre_id= URL'i var ama
+görünür değil; kullanıcı düzeltme yolunu bulamıyor. (3) uyarilar'da aynı uyarının 2-3 dk
+arayla mükerrer kayıtları (örn. A-000954 20:01:17 + 20:03:23) — teşhis edilmedi. (Kaynak: 165.)

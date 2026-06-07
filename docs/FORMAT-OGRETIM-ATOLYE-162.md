@@ -184,3 +184,22 @@ motor kopyası tekleştirme (B7) · sessiz fallback taraması (B4) · format ad/
   ucu çap seçimi + schedule et karışması. İnceleme yöntemi: sunucu parse_sonuc dökümü +
   paket kuralı okuması; JSONB anahtarları örnekten teyit (MK-85.3).
 - B5 çapraz-doğrulama tasarım borcu DURUYOR (değişmedi).
+
+---
+
+## 165 EKİ (2026-06-07) — atölye modelinin ilk TAM uygulaması (Bölüm 2 akışı uçtan uca koştu)
+- **Akış birebir işledi:** (1) Cihat zip verdi (tersan.zip — 6 gemi/15 PDF: nb1110/1124/1130/
+  1135/1136/1137); (2) Claude sunucu metni döktü (pdfParse+glyph-onar); (3) kural adayları
+  mekanik test edildi (bilezik_detay: 10/10 gerçek satır); (4) kayıt PAKET KODUYLA (katalog
+  ailesi — MK-155.1, SQL değil); (5) kanıt: koşum 15/15 L2 · ham 0 + canlı drenaj JOIN
+  (M130 S01/S02 → 60.3/2.77/SCH 10S).
+- **Araç kalıcılaştı:** `scripts/atolye-kosum.mjs <pdf_klasoru>` (MK-165.5) — adım 2-3-5'in
+  otomasyonu; ~30 sn/15 PDF. "Çeşitli gemilerden ~10 paket" hedefi (Cihat) bu araçla işlenir.
+- **Atölyenin ilk iki tür hasadı:** (a) SESSİZ düşüş yakalama — 'Dış Bilezik Detay' satırları
+  ham bile değildi (tetik uymuyor, B4/MK-123.C sınıfı), yalnız gerçek-set taramasıyla görünür;
+  (b) motor-katmanı kökü — 42.2/3.56 vakasında suçlu paket regex'i değil, zincirdi (boyut
+  sentezi eksikliği + dn çapası + fallback çift körlüğü). Atölye yalnız "format öğretimi"
+  değil, PARSE ZİNCİRİ teşhis aracı olarak da çalışıyor.
+- **B1 teyidi pekişti (MK-162.3):** UI yine yanılttı (kuyruk "satirlar=0" okuması ↔ gerçek 3
+  temiz satır); hüküm parse_sonuc jsonb_pretty dökümü + drenaj SQL'inden verildi.
+- 164 ekindeki M130 vakası kapandı; reçeteler (Y200 dahil) değişmedi.

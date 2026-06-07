@@ -1,54 +1,59 @@
-# AresPipe BRIEFING — 164. Oturum Kapanışı
+# AresPipe BRIEFING — 165. Oturum Kapanışı
 
 > **Tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
-> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (164 işaretleri işlendi).
+> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (165 işaretleri işlendi).
 
 ## HEAD
-- Kod: 4 commit — `1ed95e9` feat(164) G2a v2 kaynak bağı (migration 103 + 3 yazım noktası +
-  kart adresi) · `5a80fa7` chore(164) parse_durumu yumuşak emeklilik · `7e8469b` fix(164)
-  kaynak alan-bazlı MK-164.1 + kalem kalite alanı + kabuk kalite tercihi · `a36f66b` feat(164)
-  W-2.19 ucuz dilim + W-4.4 bbox normalize. Kapanış doc commit'i üstte.
-- **DB:** migration 103 COMMIT (deger_kaynagi CHECK + format_id FK + görünüm v2,
-  security_invoker korunur; dry-run: 7 sinyal birebir NULL kovası) · `devre_dokumanlari.
-  parse_durumu` BAYAT COMMENT'i. Endpoint YOK (12/12). izometri-oku DOKUNULMADI.
-- Değişen dosyalar: migrations/103 (YENİ) · devre_wizard_v3.html (3 dalga) · format_tanit.html
-  · uyarilar.html · devre_detay.html · ares-kabuk.js · api/devre-inceleme.js.
+- Kod: 4 commit — `5edbba1` fix(165) emperyal boru NPS sentezi + dn dominant borudan ·
+  `1596481` fix(165) asme et spool'a satır kalitesi+schedule ile (kör fallback bypass) ·
+  `af90f85` feat(165) bilezik_detay satır tipi + atölye koşum aracı (scripts/atolye-kosum.mjs
+  YENİ) · `f86ff81` feat(165) ARES_BORU.dnBul OD→DN ters eşleme + spool dn türetimi.
+  Kapanış doc commit'i üstte.
+- **DB:** migration YOK. ai_api_log'da M130 S01/S02'nin iki pdf_sha256'sı NULL (cache
+  temizliği — veri silinmedi). Endpoint YOK (12/12). izometri-oku DOKUNULMADI (okundu).
+- Değişen dosyalar: lib/l2-parser.js (3 dalga) · lib/format-paketleri.js · ares-asme.js ·
+  scripts/atolye-kosum.mjs (YENİ). **ares-asme tarayıcıda da yüklü → deploy sonrası sert
+  yenile (MK-161.1).**
 
-## 164 — yapılanlar (tema: G2a KAYNAK BAĞI + ürün rötuşları; A/ucuz-dilim kararları Cihat'ın)
-1. **Açılış teyitleri (MK-163.1 işledi):** d97e4a6 origin'de ✓ · onay kuşağı 147→**162**
-   (P26-217=76) · G2a v1 CANLI (7 sinyal, kutu+konsol temiz) · OPR taslak kaydı doğdu ama
-   TERFİ kanıtı hâlâ açık · 88543b1 = bot "docs AUTO" (doğal).
-2. **164-B1 BULGUSU → G2a v2 (A):** v1 sinyallerinin değer kaynağı EXCEL KABUKTU — kart
-   "PDF format kuralı" diye yanlış adres gösteriyordu. Migration 103 + yazım noktaları
-   kaynak yazar + kart kaynak-dallı. Eski satırlar NULL='bilinmiyor', backfill YOK.
-3. **MK-164.1 (öz-düzeltme, aynı oturum):** ilk yama sabit 'excel' — ekran kanıtı (L2 rozetli
-   yuzey/alistirma/not) çürüttü. v2.1: kaynak ALAN-BAZLI (dsatir rozet kuralının birebir eşi;
-   izometri ise format_id DOLU — devre-inceleme ps.format_id taşır). 10/10 test.
-   **Ders: rozet varsayılanı ≠ kaynak kuralı.**
-4. **MK-163.6 KAPANDI (A yumuşak emeklilik):** `_parseDurumu` tüketicisi YOKTU (grep);
-   devre-inceleme/izo-eslesme'deki ad ÇIKTI alanı. Ölü okuma silindi + kolona BAYAT COMMENT
-   (yazımlar sürer, yeni kod OKUMAZ, veri silinmez).
-5. **Kalem KALİTE alanı (Cihat bulgusu):** editörde yoktu + kabuk kalite'ye HAM MALZEME
-   yazıyordu (OPR'de 'paslanmaz'). Dinamik süzgeçli dropdown (spool yolu birebir) + kabukta
-   dz.kalite tercihi (yoksa eski davranış — sıfır regresyon).
-6. **W-2.19 ucuz dilim + W-4.4 KAPANDI:** bbox yakalama anında scale-1 normalize (norm:1);
-   wizard **🔍 Tablo** → konum_ipucu (yalnız norm) → dpvZoomTo+vurgu; norm'suz kullanılmaz
-   (dürüst toast). Bugün norm bölge yok → **Y200 tablo öğretimiyle canlanır.**
-7. **Canlı kanıtlar:** kalite(spool)→excel ✓ · yeni kalem→operator ✓ · 📐 yeni metin ✓.
+## 165 — yapılanlar (tema: 42.2/3.56 ATÖLYESİ + parse zinciri onarımı; kararlar Cihat'ın)
+1. **42.2/3.56 KAPANDI:** parse_sonuc dökümü → üç kök: emperyal satırda `boyut` alanı yok
+   (NPS+sch ayrık → olcuZenginlestir atlıyor, dominant boru doğmuyor) · spool dn alan-regex'i
+   KAYNAK satırına çapalı (DN32) · asmeFallbackDoldur cap/et'i DN32+varsayılan SCH 40'tan
+   uydurdu (42.2/3.56). Fix: NPS'ten YEREL boyut sentezi (MK-165.1) + **dn HEP dominant
+   borudan** (kenar §5 kodlandı, MK-165.2).
+2. **Fallback ÇİFT KÖRLÜĞÜ (MK-165.3):** drenaj-1 et=1.65 (SCH5!) verdi → izometri-oku içi
+   fallback'in helper yolu MALZEME-KÖR + DB yolu SCHEDULE-KÖR kanıtlandı (153'ün 3.68/3.91
+   kökü). 151 revizyonu: satır kalitesi+basılı schedule'la hesaplanan asme et SPOOL'A YAZILIR
+   (etiket fallback'in birebir eşi). **Drenaj kanıtı: dn=50 · 60.3 · 2.77 · SCH 10S**; UI
+   bindirme uyarısında et/çap kalemi yok (A-001211/12 yalnız ağırlık yuvarlaması).
+3. **tersan.zip atölyesi (MK-162.1 ilk TAM uygulama):** 6 gemi/15 PDF → 15/15 L2 · ham 0.
+   **bilezik_detay** eklendi (7 ham İç + 3 SESSİZ Dış — MK-123.C sınıfı); **E100-817-005
+   ilk kez söküldü**; bağımsız fix kanıtı G400-817-015 → 2.77. Araç: `node
+   scripts/atolye-kosum.mjs <klasör>` (MK-165.5). Hedef: ~10 çeşitli paket daha (Cihat).
+4. **dnBul (MK-165.2):** DN basmayan ODxet çizimi (AT110-804) → dominant borunun OD'sinden
+   ters eşleme (tek-eşleşme, ±0.15; cunife dahil; 76.1 → null, uydurma yok) → dn=50.
+5. **Teyit üçlüsü MÜHÜRLENDİ:** izometri-kaynak ✓ (alistirma/yuzey → `izometri` +
+   format_id=e1fb879d DOLU) · **OPR TERFİ ✓ f borcu KAPANDI** (satır indi; kalite='paslanmaz'
+   regresyon DEĞİL — operatör kalite girmedi, fallback; adet=null boru için tasarım) ·
+   G2a kart ✓ (eşik 3+ doğru; 1'er sinyal dal doğurmaz, NORMAL).
+6. **Süreç (MK-165.4/6):** sha temizliği original_log_id üzerinden (cevap_full kuyruk alanı
+   taşımaz; "No rows returned" maskeler → SELECT teyidi) · drenaj FİLTRELİ (satırın devresi
+   açılmadan işlenmez; M130 için MK-136 `?devre_id=` URL'i kullanıldı) · commit'ler AYRI
+   bloklar (&&  zinciri "nothing to commit"te kırılır).
 
-## ⚠ 165'e işaretler
-- **İzometri-kaynak kanıtı:** 1 alistirma düzeltmesi → SELECT'te `izometri`+format_id DOLU.
-- **OPR TERFİ kanıtı:** taslak OPR kalemi var; terfi → `SELECT * FROM spool_malzemeleri
-  WHERE kod='OPR'` hâlâ 0.
-- **42.2/3.56 vakası (YENİ BORÇ):** M130-817-008.S01 — kuyruk formatı **e1fb879d
-  KATALOG-PAKET** → adres paket kuralı (MK-155.1: kod+deploy). Hipotez: redüksiyon küçük ucu
-  (1-1/4"=42.16) çap seçimi + schedule et karışması. JSONB anahtarları örnekten teyit edilmeden
-  hüküm yok (cap anahtarı SELECT'te null/teyitsizdi — MK-85.3).
-- Y200 atölyesi (reçete + 163 yeşil-kutu şartı + 164 eki: 🔍 canlanması) · taze onay eritme
-  (162 kayıt) · KARARLAR'a MK-164.1..3 işlendi (bu pakette).
+## ⚠ 166'ya işaretler
+- **MK-165.7 borçları:** OPR kalem "dn" girişi kabukta dis_cap_mm'e OD sanılıyor
+  (DN200→200.0; doğrusu 219.1 — fakir boyutParse; çözüm adayı olcuParse+dnBul) ·
+  devre_detay taslak → wizard "düzenle" köprüsü YOK (MK-136 URL'i görünmez) · uyarı
+  MÜKERRERLİĞİ (aynı uyarı 2-3 dk arayla çift).
+- M130-817-006 eski et uyarısı (2.77↔3.91) duruyor — drenaj dışıydı, düşük öncelik.
+- Y200 öğretimi (reçete aynen) · onay kuşağı eritme (162; P26-217=76) · W-2.19 tam dilim
+  tasarımı · IZO-KANIT v4 yapıştırma ihtiyacı DÜŞTÜ (atolye-kosum var; AD kararı Cihat'ta).
+- Test devresi: **"bn ömn"** (77bfbc98) — M130 dosyaları + OPR kalemi burada; SİLME.
+- KARARLAR'a MK-165.1..7 işlendi (bu pakette).
 
 ## NEREDEYIZ — ÖZET
-164 "yanlış adres" oturumuydu: G2a sinyalinin söylediği ile gerçeğin kaynağı ayrıştı, kayıt-
-zamanı bağ kuruldu; aynı refleks oturum içinde Claude'un kendi sabit-'excel' hatasını da
-yakaladı (MK-164.1). parse_durumu hükme bağlandı, kalite boşluğu kapandı, zoom altyapısı
-Y200 öğretimine bağlanarak gemiye alındı. 12/12, izometri-oku dokunulmadı.
+165 atölye modelinin rüştünü ispatladığı oturumdu: 164'ün tek vakası üç ayrı zincir kusurunu
+(boyut sentezi yokluğu, dn çapası, fallback çift körlüğü) açığa çıkardı ve hepsi gerçek-PDF
+kanıtıyla kapandı; tersan.zip koşumu modeli uçtan uca doğruladı ve kalıcı araç bıraktı;
+açılış teyit üçlüsü mühürlendi. 12/12, izometri-oku dokunulmadı, migration yok.

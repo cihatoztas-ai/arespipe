@@ -426,3 +426,20 @@ tablosu + kip ayrımı) + ilk köprü canlı. format_tanit koduna 159'da dokunul
   ile L2 — cap/et şüphesi PAKET kuralında aranır (MK-155.1: paket-katmanlı ailede DB patch
   runtime'da okunmaz; düzeltme = paket kodu + deploy).
 
+
+---
+
+## 165 EKİ — paket katmanına işleyen kazanımlar
+- **165 girdisindeki vaka KAPANDI:** adres gerçekten paket+motor katmanıydı (MK-155.1 doğru
+  yönlendirdi) — düzeltmeler kod+deploy ile gitti (l2-parser nps sentezi + dn/dnBul + asme-et
+  yazımı; format-paketleri bilezik_detay). DB patch koşmadı, izometri-oku DOKUNULMADI.
+- **asmeFallbackDoldur gerçeği (MK-165.3):** izometri-oku içindeki fallback helper yolu
+  MALZEME-KÖR, DB yolu SCHEDULE-KÖR — "fallback schedule-bilinçli doldurur" varsayımına
+  yaslanaN tasarım yapılmaz; et güvencesi L2 satır-kaynaklı yazımla sağlanır (etiket
+  fallback'le birebir: 'ares_boru (SCH X)').
+- **Yeni motor API'si:** `ARES_BORU.dnBul(od, malzeme, tol=0.15)` — OD→DN ters eşleme,
+  tek-eşleşme şartı, cunife dahil. Öğretim/sentez tarafı da kullanabilir (örn. 🧮 dn çipi
+  ODxet ailelerinde).
+- **Atölye standardı:** format öğretim/doğrulama döngüsünün kanıt aracı artık
+  `scripts/atolye-kosum.mjs <pdf_klasoru>` — sunucu hattının birebiri; C yolu (otomatik kural
+  önerisi) olgunlaşana dek mekanik kanıt makamı budur (MK-162.3 ile uyumlu).

@@ -365,3 +365,35 @@ Durum değişiklikleri (160 güncellemesinin üstüne):
   redüksiyonun küçük ucu (1-1/4"=42.16) spool çapı seçilmiş; et schedule ailesiyle akraba.
   Teşhis SELECT'inde cap anahtarı null döndü (anahtar adı TEYİTSİZ — MK-85.3), satirlar=0,
   seviye=null → parse_sonuc şeması atölyede sunucu verisiyle incelenir.
+
+---
+
+## 165 İŞARETLERİ (2026-06-07) — 42.2/3.56 KAPANDI + atölye standardı + teyit üçlüsü
+- **42.2/3.56 VAKASI KAPANDI (164 borcu):** parse_sonuc dökümü hükmü verdi — dn=32 (alan-regex
+  KAYNAK satırına çapa atmış), cap 42.2 + et 3.56 `asmeFallbackDoldur`'dan (dolduruldu:
+  "ares_boru (SCH 40)"; 164'ün "satirlar=0" okuması yanılgıydı, 3 satır temizdi). Üç kök:
+  emperyal satırda boyut alanı yok (MK-165.1) · dn ilk-eşleşme yanlış çapası (MK-165.2) ·
+  fallback ÇİFT KÖRLÜĞÜ (helper malzeme-kör + DB schedule-kör — MK-165.3; 153'ün 3.68/3.91
+  kökü). Drenaj kanıtı: S01+S02 **dn=50 · 60.3 · 2.77 · ares_boru (SCH 10S)**, cache_hit yok;
+  yeni bindirme uyarılarında (A-001211/12) et/çap kalemi YOK, yalnız ağırlık yuvarlaması.
+  Bağımsız set kanıtı: G400-817-015 + E100-817-005 → 2.77. Commit'ler: 5edbba1 + 1596481.
+- **Atölye koşum aracı GEMİDE (MK-165.5):** `scripts/atolye-kosum.mjs <klasör>` — tersan.zip
+  (6 gemi/15 PDF) 30 sn'de tarandı, 15/15 L2 + sonda ham=0. Bilezik Detay satır tipi eklendi
+  (af90f85): 7 ham (İç) + 3 SESSİZ (Dış) satır kurtarıldı. Cihat hedefi: ~10 çeşitli paket
+  daha → emperyal/metrik vektör-PDF ailesinde açık kalmaz (PAOR/image-PDF L3'te kalır).
+- **dnBul GEMİDE (f86ff81):** DN basmayan ODxet çizimleri (AT110-804) → spool dn dominant
+  borunun OD'sinden ters eşleme (tek-eşleşme, uydurma yok); 76.1 gibi ASME-dışı null kalır.
+- **AÇILIŞ TEYİT ÜÇLÜSÜ MÜHÜRLENDİ:** (a) izometri-kaynak ✓ — alistirma=YOK + yuzey=asit →
+  `deger_kaynagi='izometri'` + format_id=e1fb879d DOLU (üç dal tamam); (b) **OPR TERFİ ✓ —
+  f borcu KAPANDI:** satır spool_malzemeleri'ne indi (boy/ağırlık/malzeme/miktar doğru;
+  adet=null boru için TASARIM). Nüans: kalite='paslanmaz' regresyon DEĞİL — operatör kalite
+  GİRMEDİĞİ için fallback; dz.kalite tercihi canlıda nötr kaldı (164'ün 6/6 testiyle kanıtlı
+  sayıldı); (c) G2a kart ✓ — eşik (3+) doğru; bugünkü 1'er izometri sinyali dal doğurmadı
+  (NORMAL), NULL kova 7 kart doğru metinle duruyor.
+- **YENİ BORÇLAR (MK-165.7):** OPR "dn" alanı → dis_cap'e OD sanılıyor (DN200→200.0, doğrusu
+  219.1; fakir boyutParse) · devre_detay taslak görünümünden wizard'a "düzenle" köprüsü yok
+  (MK-136 URL'i görünmez) · uyarı mükerrerliği (aynı uyarı 2-3 dk arayla çift).
+- **DÜŞÜK ÖNCELİK:** M130-817-006 eski et uyarısı (2.77↔3.91) duruyor — drenaj kapsamı
+  dışıydı; doğal parse'ta düzelir ya da sha+reset reçetesi.
+- W-2.15 onay kuşağı (162 kayıt) ERİTİLMEDİ → 166 adayı. Y200 öğretimi bekliyor (diğer
+  bilgisayar). W-2.19 tam dilim tasarımı duruyor.
