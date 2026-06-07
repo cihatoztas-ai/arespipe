@@ -2408,6 +2408,26 @@
     },
 
     /**
+     * 165: OD(mm) → DN ters eşleme. Tablo-kesin: tolerans (varsayılan ±0.15mm)
+     * içinde TEK eşleşme varsa DN döner; eşleşme yok ya da birden çoksa null —
+     * UYDURMA YOK. Kullanım: DN basmayan ODxet çizimlerinde (AT110-804 vakası)
+     * spool başı dn türetimi. dnListesi/disCap üstünden gider → cunife dahil
+     * doğru tablo taranır; ASME-dışı OD'ler (örn. 76.1 DIN/EN) null kalır (dürüst).
+     */
+    dnBul: function(dis_cap_mm, malzeme, tolerans) {
+      var od = Number(dis_cap_mm);
+      if (!isFinite(od) || od <= 0) return null;
+      var tol = (tolerans == null ? 0.15 : Number(tolerans));
+      var adaylar = [];
+      var dnler = api.dnListesi(malzeme);
+      for (var i = 0; i < dnler.length; i++) {
+        var aday = api.disCap(dnler[i], malzeme);
+        if (aday != null && Math.abs(aday - od) <= tol) adaylar.push(dnler[i]);
+      }
+      return adaylar.length === 1 ? adaylar[0] : null;
+    },
+
+    /**
      * DN+SCH+malzeme'den iç çap (mm). (OD - 2 × et)
      */
     icCap: function(dn, schedule, malzeme) {
