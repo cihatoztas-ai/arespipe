@@ -1,45 +1,53 @@
-# CLAUDE-SON-OTURUM.md — 167 (2026-06-08)
+# CLAUDE-SON-OTURUM.md — 168 (2026-06-08)
 
 ## NE YAPTIK
-**CRON / SAYFA-KAPALI İZOMETRİ İŞLEME.** 166'nın "ANA TASARIM" olarak bıraktığı tek büyük mimari soruyu
-(MK-166.1) kapattık: izometri parse artık sayfa kapalıyken de ilerliyor. Çözüm minimal-risk yoldan
-kuruldu — mevcut kanıtlı motoru cron'dan da çağırdık, yeni mantık/endpoint yazmadık. Format öğretimi
-yine bilinçli atlandı (Cihat: tema yalnız cron).
+167'nin kurdugu sayfa-kapali izometri isleme mimarisini UCTAN UCA KANITLADIK, schedule'in hic
+kosmama nedenini bulup duzelttik, gece cron zincirini dogruladik ve 2 oturumdur acik KARARLAR.md
+kapanis borcunu kapattik. Yeni KOD YAZILMADI — gun dogrulama + arsivleme + teshis gunuydu. Bir yanlis
+teshis web arastirmasiyla yakalanip gereksiz koddan kacinildi.
 
-## KARARLAR (Cihat onaylı)
-- Frekans: GitHub Actions `*/3` dış tetik (Hobby cron dakikalık veremiyor) + gece Vercel cron yedek.
-  Pro ŞART DEĞİL. "Yüklerken dakikalar içinde" hedefini dış tetik karşılıyor.
-- Güvenlik: CRON_SECRET SERT mod (env yoksa 500). Ama yalnız GLOBAL yola (batch_id YOK) → tarayıcının
-  mevcut açık PDF batch akışı (batch_id'li) kırılmasın. Güvenlik baştan, sonraya bırakılmadı.
-- Risk: minimal-risk yol seçildi — is_kuyrugu (çalışan PDF sistemi) mantığına DOKUNULMADI; izometri dalı
-  yalnızca eklendi.
+## ANA KAZANIMLAR
+1. **167 UCTAN UCA KANITLANDI.** workflow_dispatch (Run workflow) → /api/kuyruk-isle global tetik →
+   HTTP 200 + `{"izometri":{"calisti":true,"islenen":4,"kalan_var":true}}`. Iki turda da 4'er izometri
+   isi SUNUCU tarafinda (tarayicisiz) islendi. 167'de mekanizma (401/200) kanitliydi; 168'de gercek
+   islerle uctan uca dogrulandi. Kuyruk eridi: oneri_hazir 465→480, manuel_onay 78→79.
+2. **Schedule'in kosmama nedeni bulundu + duzeltildi.** izometri-cron.yml HEAD agacinda DEGILDI
+   (tree-exit=1; c2f97ab'de eklenip 63cc716'da dusmus). GitHub schedule yalniz varsayilan dalin HEAD
+   AGACINDA commit'li workflow'u tetikler. `git add + commit + push` → `ee33cf9` (PAT'ta workflow scope
+   varmis, push gecti). Artik schedule tetiklenme sansina sahip (henuz kosmadi — MK-168.1).
+3. **Gece cron zinciri DOGRULANDI, kod gerekmedi.** Once "Vercel gece cron MK-167.2 secret kapisina
+   takilir, 500 alir" diye teshis koydum (MK-168.5 taslak). Web arastirmasi: Vercel cron, CRON_SECRET
+   env tanimliysa OTOMATIK `Authorization: Bearer <CRON_SECRET>` gonderir (resmi davranis). Kodumuz
+   (kuyruk-isle.js:114-116) tam o pattern'i bekliyor. CRON_SECRET Vercel Production'da TANIMLI (ekran
+   teyidi). → gece cron 200 alir, izometri suruler, KOD DEGISMEZ. Yanlis teshis geri cekildi.
+4. **KARARLAR.md kapanis borcu KAPANDI.** docs/KARARLAR.md sonuna MK-166.1..6 + MK-85.3 + MK-167.1/2/3
+   + MK-168.1..5 append (+61 satir, `bf87c6a`, [skip ci]). MD5 dogrulama + ASCII teyit (Turkce karakter
+   yok, sadece em-dash/ok — mevcut formatla uyumlu) yapildi. 2 oturumdur acik borc bitti.
 
-## TEKNİK ÖZ
-- **MK-167.3:** kuyruk-isle.js → helper `izoDrenajCalistir(baslangic)`; is_kuyrugu sonrası KALAN bütçeyle
-  `drenajTuru` (kuyruk-isle-izometri.js, zaten export, MK-112.1 iç-döngü). maxMs tavanı 50s = tarayıcı
-  drenajıyla AYNI (cron daha agresif olamaz). Erken-return + ana-return, yalnız `!batch_id`.
-- **MK-167.1:** birIsIsle lock → `.eq('id').in('durum',['bekliyor','hata']).select('id')`; boş dönüş =
-  başka worker kaptı → `sonuc:'atlandi'`. Çift izometri-oku (çift batch+maliyet) önlendi.
-- **MK-167.2:** /api/kuyruk-isle batch_id YOK → Bearer CRON_SECRET zorunlu (401/500); batch_id'li açık
-  (frontend tek çağrı izometri-batch.html:514 batch_id taşıyor — grep doğruladı). 0 regresyon.
-- **Workflow:** .github/workflows/izometri-cron.yml (*/3, workflow_dispatch, concurrency, --max-time 75,
-  200 değilse step kırmızı). WEB'den eklendi (PAT workflow-scope yok).
-- 12/12 (import lib-içi) · migration yok · izometri-oku dokunulmadı · sunucu-tarafı (tarayıcı yenile yok).
+## TESHIS — C/A/B SIRASINDAN
+- **C (eslestirme) yapildi → BUG DEGIL cikti.** "Fazla / kabukta yok" satirlari, devre TASLAK + kabukta
+  spool YOK (terfi edilmemis) icindir. Matcher spooller'dan okur (127 mimarisi), spool terfide uretilir
+  → taslakta eslesen=0/atanmamis=N BEKLENEN. `_1`-eki anahtar bug'i hipotezi iki "no rows" sorgusuyla
+  CURUDU (kabukta hic spool yok). Tahminle "fix" yazmaktan kacinildi (MK-126.8). **Gercek test 169:**
+  taslagi terfi et → kabuk dolar mi + eslestirme-backfill "Fazla"lari baglar mi.
+- **A ve B HENUZ YAPILMADI** — 169'a tasindi:
+  - A: devre yuklenince "islensin mi/siraya mi" sorusunu KALDIR (otomatik kuyruk + Islenenler takip).
+  - B: ST35.8/ST37 KARBON tanit (once "Diger" kaynagini bul: excel-parser/ARES_NORM/kutuphane).
 
-## KANIT
-- secret'sız 401 · secret'li 200 + izometri.calisti:true · kuyruk bekliyor=0 → islenen:0 (beklenen).
-- Uçtan uca doğal-yol testi KULLANICI'da (PDF yükle→sayfa kapat→*/3→SQL). Sonuç sonraki oturuma.
-
-## ÖZ-İHLAL / TUZAKLAR
-- Bir kere SQL kolon adını (`olusturulma`) tahmin ettim → şema `olusturma`. MK-85.3 dersini kendim
-  ihlal ettim, anında düzelttim. Bir de tasarım taslağı bloğunu SQL editörüne yapıştıracak gibi sundum
-  (kafa karıştırdı) — düzeltildi.
-- Operasyonel: arespipe_kopyala arg sırası · zsh `()`/`*`/`!` parse · workflow push scope.
+## OZ-IHLAL / TUZAKLAR (168)
+- MK-85.3'u 2 kez ihlal ettim: SQL'de `dosya_adi` ve `batch_id` kolonlarini tahmin ettim, ikisi de
+  "does not exist". information_schema ile duzeltildi. Tahminle SQL yazma — bu oturumun en tekrarli hatasi.
+- MK-126.8 iki kez bos commit'ten korudu: (a) _1-eki eslestirme "fix"i — veri sordum, bug yoktu;
+  (b) drenaj retry tavani (MK-168.2) — kodu okudum, drenaj zaten bekliyor-only cekiyor, tavan gereksiz.
+- MK-168.5 yanlis teshis (gece cron 500) — web arastirmasiyla curutuldu, kod yazilmadan duzeltildi.
 
 ## COMMIT'LER
-`0e7108d` (kod — feat 167). Workflow GitHub web'inden ayrı (commit reposunda `Create izometri-cron.yml`).
-Üzerine CI botu `ci-son-rapor.json` [skip ci].
+`ee33cf9` (ci: izometri-cron.yml agaca) · `bf87c6a` (docs: KARARLAR.md MK-166/167/168 [skip ci]).
+Aralarda CI botu ci-son-rapor.json.
 
-## KAPANIŞ BORCU (168'de HATIRLA)
-- **KARARLAR.md'ye MK-166.1..6 + MK-85.3 + MK-167.1/2/3 işle** (kök dosya — bu pakette DEĞİL, 2 oturumdur açık).
-- 168 açılışında `git pull --rebase` (workflow uzağa web'den eklendi, lokalle ayrışık).
+## KAPANIS BORCU (169'da HATIRLA)
+- **GECE CRON GERCEK TESTI:** buyuk devre yuklendi-yatildi → sabah SQL ile bekliyor dustu mu bak.
+- **A + B** (UI sorusu kaldir + ST35.8/ST37 karbon) — C-A-B sirasinin kalani.
+- **Terfi-sonrasi eslestirme testi** (C bulgusunun gercek dogrulamasi; _1-eki anahtar sorunu varsa orada).
+- **W-2.UI** yukleme ekrani takilmasi (78 belge senkron) — pilot riski.
+- **MK-168.1** schedule gun-ici otomatik yok · **MK-168.3** izometri-oku 508 (buyuk/ayri is).

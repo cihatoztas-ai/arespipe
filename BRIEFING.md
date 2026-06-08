@@ -1,79 +1,98 @@
-# AresPipe BRIEFING — 166. Oturum Kapanışı
+# AresPipe BRIEFING — 168. Oturum Kapanisi
 
-> **Tek aktif bağlam dosyası (MK-56.2).** Sohbet açılışında `cat BRIEFING.md` çıktısını yapıştır.
-> İlerleme aynası: docs/WIZARD-YOL-HARITASI.md (166 İŞARETLERİ eklendi).
+> **Tek aktif baglam dosyasi (MK-56.2).** Sohbet acilisinda `cat BRIEFING.md` ciktisini yapistir.
+> Ilerleme aynasi: docs/WIZARD-YOL-HARITASI.md. Tum kararlar: docs/KARARLAR.md (168'de MK-166/167/168 islendi).
 
 ## HEAD
-- **Tema:** DÜZEN TURU — wizard/devre_detay sayfa düzeni tutarlılaştırma + "okundu ama yüzeye
-  çıkmadı" hissini bitirme. Format öğretimi bu oturum ATLANDI (Cihat kararı).
-- **Bookend commit'ler:** `d5b8c9e` (ilk — wizard düzen paketi) → `595c435` (son — okunan değer
-  A/B/C). Aradakiler topic bazlı: +N rozet · kalem-zoom v1/v2 · taslak rol+köprü · excel hücre-git ·
-  yükle/paralel/karar ekranı. Açılışta `git log --oneline` ile sırala.
-- **DB:** migration YOK. Endpoint YOK (12/12 — MK-129.3). izometri-oku DOKUNULMADI (okundu).
-- **Değişen dosyalar:** devre_wizard_v3.html (çok dalga) · devreler.html · devre_detay.html ·
-  ares-kabuk.js · ares-normalize.js · lib/izo-eslesme.js · api/devre-inceleme.js · lang/{tr,en,ar}.json.
-  **TARAYICIDA yüklü → deploy sonrası sert yenile (MK-161.1): ares-kabuk.js, ares-normalize.js.**
+- **Tema:** 167'nin uctan uca DOGRULANMASI + KARARLAR.md kapanis borcunun kapatilmasi. Yeni kod
+  YAZILMADI; gun mekanizma kanitlama + karar arsivleme + teshis gunuydu.
+- **Son commit'ler (bugun):**
+  - `ee33cf9` — ci(168): izometri-cron.yml AGACA islendi (schedule tetikleyici icin sart; oncesi
+    agacta degildi → schedule hic kosmamisti).
+  - `bf87c6a` — docs(168): KARARLAR.md MK-166/167/168 islendi (2 oturumdur acik kapanis borcu KAPANDI) [skip ci].
+- **DB:** migration YOK. Endpoint YOK (12/12 — MK-129.3). izometri-oku DOKUNULMADI (MK-49.1).
+- **Onceki HEAD (167):** `0e7108d` (feat 167: cron izometri drenaj + claim guard + CRON_SECRET gate).
 
-## 166 — yapılanlar (kararlar Cihat'ın)
-1. **W-2.1 KAPANDI:** tersane/proje çift yönlü senkron (proje seçilince tersane oturur; tersane
-   değişince uyumlu proje korunur). "Tersan — NB1124" karışık etiketi bitti.
-2. **MK-165.7/2 KAPANDI — taslak→wizard köprüsü:** devre_detay ?taslak=1 = SALT kontrol penceresi.
-   Aktif-devre aksiyon butonları + spool listesi yazma butonları GİZLENDİ; tek aksiyon "✏️ Wizard'da
-   düzenle & onayla" (?devre_id=). Ters köprü: Adım 2'ye "👁 Önizle". İki kapı bağlandı (3 dil anahtarı).
-3. **K2-A:** terfide backfill başarılıysa TEMİZ izometri önerileri otomatik `tamamlandi`; atanmamışlı +
-   manuel_onay AÇIK (B-6); backfill hatalıysa dokunma. Onay Kuyruğu sekmesi aktif devrede rozet=0 ise
-   gizli (taslakta hep görünür). Onay kuşağı birikiminin büyüme kaynağı kurudu.
-4. **Adım 1 yedek alanları:** malzeme/yüzey/alıştırma — DOKÜMAN ÖNCELİKLİ (BOM/PDF ezer); aktar'a
-   opsiyonel `malzemeVarsayilan`/`alistirmaVarsayilan` (devre_detay göndermez → 0 regresyon). Eski
-   "opsiyonel" yardım-metni yalanı düzeldi. **← Geri** butonu (taslağı silmeden devrelere döner).
-5. **devreler +N rozeti DÜZELDİ:** çoğunluk dışı SPOOL ADEDİ değil farklı TÜR SAYISI (galvaniz+11
-   siyah → +1; üç tür → +2). Adet tooltip'e taşındı.
-6. **YÜKLE AKIŞI YENİDEN:** Adım 1'de tek "⬆ Yükle" (İncele/Beklemeye Al kalktı). PARALEL HAVUZ
-   (6 eşzamanlı — 356 dosya dakikalar). Bitince KARAR EKRANI: ➕ Yeni Devre (sıfırdan) · 🔍 İncele &
-   Onayla · 📋 İşlenenler'e Git. izometri SIRAYA alınır, BURADA İŞLENMEZ (istemci drenajı — MK-166.1).
-   Küçük devrede uyarısız; her ekranda çıkış görünür.
-7. **W-2.19 TAM DİLİM — kalem-zoom (Cihat fikri):** ✏️ alan değerini pdf.js metin katmanında arar →
-   zoom+vurgu. SATIR GRUPLAMA (MK-166.2) Cadmatic parçalı metnini yakalar. Görünürlük toast'ı + çoklu
-   eşleşme gezinme. 🔍 Tablo norm bbox yoksa "Malzeme Listesi" başlık-arama fallback.
-8. **Excel hücre-git:** Excel sekmesi açıkken ✏️ → değer hücrede aranır (sayfa-geçişli), hücre
-   seçilir+ortalanır. PDF tarafıyla simetrik.
-9. **OKUNAN-DEĞER YÜZEYE (A/B/C):**
-   - **A:** kabuk çap/et boşsa (fitting-only spool, düz boru yok — MK-166.3) izometri ham'ından göster;
-     terfide backfill yazar.
-   - **B:** grupla baskın kalem KALİTESİNİ türetir (`anaKalite` 316L) → izo-eslesme passthrough → aktar
-     dz.kalite > kalem kalitesi > anaMalzeme; **terfide spool kalite'sine 316L yazılır.**
-   - **C (MK-166.4):** yüzey stainless okuyorsa → `asit` (yuzeyKod + yuzeyBadge normalize, tabloda "Asit").
+## 168 — KANITLANANLAR (kod yok, dogrulama)
+1. **167 sayfa-kapali isleme UCTAN UCA KANITLANDI.** GitHub `workflow_dispatch` (Run workflow) →
+   `/api/kuyruk-isle` global tetik → **HTTP 200** + JSON `{"izometri":{"calisti":true,"islenen":4,
+   "kalan_var":true}}`. Iki ayri dispatch turunda da 4'er izometri isi sunucu tarafinda (tarayicisiz)
+   islendi. Kuyruk eridi: 167 snapshot (oneri_hazir=465/manuel_onay=78) → 168 (oneri_hazir=480/
+   manuel_onay=79). Mekanizma + sunucu drenaji SAGLAM.
+2. **Git anomalisi cozuldu:** `izometri-cron.yml` HEAD agacinda DEGILDI (tree-exit=1) — `c2f97ab`'de
+   eklenip `63cc716`'da agactan dusmus. GitHub `schedule`'i yalniz workflow varsayilan dalin HEAD
+   AGACINDA commit'li ise tetikler → bu yuzden schedule hic kosmamisti. `ee33cf9` ile agaca islendi.
+3. **Gece cron zinciri DOGRULANDI (kod degisikligi GEREKMEZ):** vercel.json cron `/api/kuyruk-isle`
+   @ 03:00 + `CRON_SECRET` Vercel Production'da TANIMLI (ekranla teyit, "Production and Preview").
+   Vercel cron, CRON_SECRET env varsa otomatik `Authorization: Bearer <CRON_SECRET>` gonderir (resmi
+   davranis, web arastirmasiyla dogrulandi) → MK-167.2 kapisi bu pattern'i ZATEN kabul eder → gece
+   cron 200 alir, izometri suruler. (Once "gece cron 500 alir" diye yanlis teshis konuldu — MK-168.5,
+   arastirma ile cozuldu, geri cekildi, kod yazilmadi.)
+4. **KARARLAR.md kapanis borcu KAPANDI:** MK-166.1..6 + MK-85.3 + MK-167.1/2/3 + MK-168.1..5 islendi
+   (`bf87c6a`, +61 satir, docs/KARARLAR.md sonuna append). 2 oturumdur acik borc bitti.
 
-## ⚠ 167'ye işaretler
-- **CRON / sayfa-kapalı izometri (167 ANA TASARIM — MK-166.1):** izometri parse İSTEMCİ drenajı
-  (`ARES_IZO_DRENAJ`, sunucu worker'ı yok). vercel.json'da cron VAR (`/api/kuyruk-isle`, 03:00 günlük)
-  ama yanlış kuyruğu (`is_kuyrugu`) süpürüyor; wizard kuyruğu `dosya_isleme_kuyrugu` tarayıcıyla
-  boşalıyor. ÇÖZÜM: `kuyruk-isle.js`'e izometri dalı ekle (YENİ ENDPOINT YOK — 12/12 koru) + atomik
-  claim guard (cron↔tarayıcı çift-işleme) + frekans (Hobby gece-1 / Pro dakika / dış zamanlayıcı).
-  self-chain deseni hazır; **Pro ŞART DEĞİL** (frekans+timeout'u açar). Bu oturumda araştırıldı/karar
-  verildi → 167'de uygula.
-- **MK-165.7/1 OPR dn→dis_cap** (DN200→200.0, doğrusu 219.1; olcuParse+dnBul) — AÇIK.
-- **MK-165.7/3 uyarı mükerrerliği** (aynı uyarı 2-3 dk arayla çift) — AÇIK.
-- **Onay kuşağı eritme** (162 kayıt; P26-217=76) · **Y200 öğretimi** (diğer bilgisayar) — AÇIK.
-- **W-2.5** tam değil (iki ayrı çubuk değil) · **W-2.9** eşzamanlı paralel devre değil.
-- **KARARLAR.md'ye MK-166.1..6 işlenmeli** (kök dosya — bu pakette DEĞİL).
-- **Küçükler:** kalem-zoom aday-listesi inceltme · karar ekranı küçük-devre canlı doğrulama ·
-  okunan-değer A/B/C canlı teyit (deploy+sert yenile sonrası G200 inceleme + bir terfi → spooller SELECT).
-- Test devresi: **"bn ömn"** (77bfbc98) + **"b nn"** (e0af361d, taslak) — SİLME.
+## ⚠ 169 — SABAH ILK IS: GECE CRON GERCEK TESTI
+> 168 sonunda kullanici buyuk bir devre yukleyip yatti. Beklenti: 03:00 Vercel cron izometriyi sursun.
+```sql
+SELECT durum, COUNT(*), MAX(bitis_at) AS son
+FROM dosya_isleme_kuyrugu WHERE parser='izometri'
+GROUP BY durum ORDER BY durum;
+```
+Beklenen: `bekliyor` dusmus, `oneri_hazir`/`manuel_onay` artmis, `son` ~03:00 zaman damgali. Agir/cok-
+sayfali PDF'ler `hata`'da (508, MK-168.3) kalabilir; gerisi islenmis olmali. Cron 200 mi — Vercel →
+Logs / Deployments → cron calismasi.
 
-## MK kayıtları (166 — KARARLAR.md'ye İŞLENECEK, bu pakette değil)
-- **MK-166.1:** izometri parse İSTEMCİ drenajı; sayfa-kapalı işleme cron+sunucu-worker gerektirir.
-- **MK-166.2:** değer→koordinat aramasında SATIR GRUPLAMA şart (Cadmatic parçalı metin); tek-item yetmez.
-- **MK-166.3:** kabuk fitting-only spool'da cap/et türetemez (düz boru yok) → izometri ham'dan yüzeye + backfill terfide.
-- **MK-166.4:** yüzey alanı stainless okuyorsa → asit (paslanmaz yüzey işlemi asitlemedir).
-- **MK-166.5:** taslak önizleme = salt kontrol penceresi (kilitli butonlar gizli, tek aksiyon Wizard köprüsü).
-- **MK-166.6:** Yükle = paralel havuz + karar ekranı; izometri SIRADA (işlemez), işleme İncele&Onayla / İşlenenler'de.
-- **MK-85.3 öz-ihlal:** spooller kolon adı tahmin edildi (cap_mm yanlış; doğrusu **dis_cap_mm / et_kalinligi_mm**). Şema-önce istisnasız.
+## ACIK BORCLAR (oncelik sirasi)
+- **C-A-B sirasi:** C (eslestirme) yapildi → bug DEGIL cikti (asagi). **A ve B HENUZ YAPILMADI:**
+  - **A (UI):** Devre yuklenince "islensin mi / siraya mi atayim" SORUSU KALDIRILSIN. Yuklenen her
+    dokuman otomatik islenecekler kuyruguna dussun, kullanici "Islenenler"den takip etsin (167 felsefesi:
+    yukle-kapat-git). Yer: devre_wizard_v3.html yukle akisi / MK-49.B upload bileseni. Once kaynagi bul
+    (MK-126.8), sonra dokun.
+  - **B (malzeme):** ST35.8 ve ST37 KARBON CELIK ama sistem "Diger" diyor. Once "Diger"i kim yaziyor
+    bul (excel-parser sozlugu / ARES_NORM / kutuphane eslesme), sonra ekle. izometri-oku DOKUNMA.
+- **C bulgusu (eslestirme — bug DEGIL):** "Fazla / kabukta yok" satirlari, devre TASLAK + kabukta spool
+  YOK (terfi edilmemis) oldugu icindir. Matcher `spooller`'dan okur (127 mimarisi), spool terfide
+  uretilir. eslesen=0/atanmamis=N TASLAK devrede BEKLENEN. Anahtar/_1-eki bug'i HIPOTEZI iki "no rows"
+  ile CURUDU. **Gercek test 169:** taslak devreyi "Incele & Onayla" ile TERFI et → kabuk doluyor mu +
+  eslestirme-backfill "Fazla"lari bagliyor mu (o zaman _1-eki anahtar sorunu varsa GORUNUR). Onay
+  kusagi: oneri_hazir=480 + manuel_onay=79; aktif devrelerde 277 atanmamis (terfi-sonrasi re-esle/anahtar
+  ayri borc).
+- **W-2.UI (168 tespit):** Devre yukleme/acilis ekrani 78 belgede UZUN SURE "yukleniyor"da takiliyor
+  (senkron tum-dokuman yukleme). Pilot riski (Windows operator). Cozum: acilista ozet/sayac + lazy-load.
+- **MK-168.1:** GitHub `*/3` schedule tetiklenmiyor (45+ dk, workflow sayfasi yalniz workflow_dispatch
+  gosterdi). Gun-ICI otomatik tetik YOK. Yedek: manuel dispatch + gece Vercel cron. 169'da Actions'tan
+  schedule kosusu cikti mi izle; gelmezse frekansi seyret veya gece cron'a yaslan (Pro SART DEGIL).
+- **MK-168.3:** izometri-oku HTTP 508 (Loop Detected). Cron/drenaj yolu `opts.oncedenParse` olmadan
+  cagrilinca sunucu kendi icinden izometri-oku'yu HTTP cagirir → Vercel self-call 508. Agir/cok-sayfali
+  PDF'lerde (M100-355-401/402-HC, 15-17 sayfa). izometri-oku DOKUNULMAZ (MK-49.1) → cozum CAGRI
+  KATMANINDA (cron yolu icin client-parse esdegeri ya da farkli cagri mimarisi). BUYUK, AYRI IS. 508
+  isleri 'hata'da kalir, drenaji BOGMAZ (MK-168.2), ama parse olamaz. Su an 4 is 'hata'da.
+- **Y200 ogretimi** (diger bilgisayar; rece FORMAT-OGRETIM-ATOLYE-162.md'de) — ACIK.
+- **W-2.5** (iki ayri cubuk: yukleme + arka isleme) · **W-2.9** (eszamanli paralel devre) — ACIK.
 
-## NEREDEYIZ — ÖZET
-166 "düzen turu"ydu: wizard ve devre_detay'ın aynı işin farklı kapıları olduğu tutarsızlık giderildi
-(taslak = salt kontrol + Wizard köprüsü), yükleme akışı seri-yükleme dostu hâle geldi (paralel havuz +
-karar ekranı), büyük devreler için izometri sıraya alınıp beklemeden geçildi, ve "okundu ama yüzeye
-çıkmadı" sınıfı üç kusur kapandı (çap/et izometriden, kalite kalemden→316L terfide, yüzey paslanmaz→asit).
-Asıl mimari soru — sayfa-kapalı işleme — araştırıldı ve 167'nin ana tasarımı olarak netleşti (cron
-worker'a izometri dalı; Pro şart değil). 12/12, izometri-oku dokunulmadı, migration yok.
+## MK kayitlari (168 — docs/KARARLAR.md'ye ISLENDI, `bf87c6a`)
+- **MK-168.1:** GitHub schedule gecikmesi/guvenilmezligi; schedule tetigi icin workflow HEAD agacinda
+  commit'li olmali (ee33cf9). Yedek: gece Vercel cron + manuel dispatch.
+- **MK-168.2 (YANLIS ALARM, kapatildi):** "drenaj hata'yi sonsuz retry'lar" YANLIS. Cekme sorgusu
+  `.eq('durum','bekliyor')` → hata HIC cekilmez. Claim'deki 'hata' yalniz wizard is_id manuel-retry icin.
+  Tavan gereksiz. Kod okumadan (MK-126.8) tavan eklenmedi → bos commit'ten korundu.
+- **MK-168.3:** izometri-oku HTTP 508 server self-call (yukarida).
+- **MK-168.4:** Ayni tenant ici cok-kullanici yukleme GUVENLI. Koruma RLS degil (ayni tenant) —
+  MK-167.1 atomik claim guard: coklu worker (her kullanicinin tarayici drenaji + cron) ayni isi kapamaz,
+  cift izometri-oku/cift maliyet yok. Sinir: backlog hiz siniri (4'er/tur, ~50s) + agir PDF 508.
+- **MK-168.5 (DUZELTILDI):** Vercel cron `Authorization: Bearer <CRON_SECRET>`'i otomatik gonderir
+  (resmi davranis, env tanimliysa). MK-167.2 kapisi bunu zaten kabul eder → gece cron 200, kod DEGISMEZ.
+  Onceki "gece cron 500 alir" teshisi YANLISTI.
+
+## TEST DEVRELERI — SILME
+"bn omn" (77bfbc98) · "b nn" (e0af361d, taslak). Ayrica 168 test yuklemeleri: devre ae39c5c2 (taslak,
+78 belge) ve bcb3192a (M100-355-401/402-HC, 508 veren agir PDF'ler).
+
+## NEREDEYIZ — OZET
+167, izometri parse'i sayfa kapaliyken de ilerletme mimarisini kurmustu (MK-166.1 ana tasarim). 168 bunu
+UCTAN UCA KANITLADI (dispatch → islenen:4), schedule'in hic kosmama nedenini (workflow agacta degildi)
+bulup duzeltti (ee33cf9), gece cron zincirini dogruladi (CRON_SECRET Production'da → Bearer gecer → kod
+yok), ve 2 oturumdur acik KARARLAR.md kapanis borcunu kapatti (bf87c6a). Bir yanlis teshis (MK-168.5)
+web arastirmasiyla yakalanip gereksiz koddan kacinildi. Acik isler: A/B (UI sorusu kaldir + ST35.8/ST37
+karbon), terfi-sonrasi eslestirme testi, W-2.UI yukleme takilmasi, MK-168.1 schedule, MK-168.3 508.
+12/12, izometri-oku dokunulmadi, migration yok.
