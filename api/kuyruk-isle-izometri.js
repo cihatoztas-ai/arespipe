@@ -540,6 +540,23 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     if (!harita.has(k)) harita.set(k, sp);
   }
 
+  // 169/A2: operator elle eslestirme overlay'i (_pdf_spool_map). Fazla PDF spool_no'su (orn. S46_1)
+  //   -> hedef kabuk spool_no (S46). dosyaAdiParse S46_1 cikarinca asagida S46'ya map'lenir.
+  //   Anahtar normPipeline|normSpoolNo(fazla) ile kurulur (harita ile ayni uzay). Overlay yoksa bos.
+  const pdfSpoolMap = new Map();   // normPipeline|normSpoolNo(fazla) -> hedef kabuk spool_no (ham)
+  try {
+    const { data: ovr, error: ovrErr } = await supa
+      .from('taslak_duzeltmeleri')
+      .select('pipeline_no, spool_no, deger')
+      .eq('devre_id', devreId).eq('alan', '_pdf_spool_map').eq('kalem_idx', -1);
+    if (ovrErr) console.error('[izo-eslestir] _pdf_spool_map cekme hatasi:', ovrErr.message);
+    else for (const o of (ovr || [])) {
+      if (!o.spool_no || !o.deger) continue;
+      const mk = normPipeline(o.pipeline_no) + '|' + normSpoolNo(o.spool_no);
+      pdfSpoolMap.set(mk, o.deger);   // deger = hedef kabuk spool_no (ham; asagida normSpoolNo'lanir)
+    }
+  } catch (e) { console.error('[izo-eslestir] _pdf_spool_map istisna:', e.message); }
+
   // 133/K2 (MK-133.1/2/3): bu devrenin tum spool_malzemeleri'ni TEK seferde cek (N+1 yok).
   //   Her eslesen spool icin malzemeKiyas'a Excel BOM tarafi olarak verilecek.
   const spoolIds = (spoollar || []).map(s => s.id);
@@ -571,7 +588,16 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     } else if (!spoolHam) {
       atanmaSebep = 'spool_no_yok';
     } else {
-      const anahtar = normPipeline(pipelineHam) + '|' + normSpoolNo(spoolHam);
+      let anahtar = normPipeline(pipelineHam) + '|' + normSpoolNo(spoolHam);
+      // 169/A2: dogrudan tutmuyorsa operator overlay'ine bak (S46_1 -> S46). Tutarsa anahtari hedefe cevir.
+      if (!harita.has(anahtar) && pdfSpoolMap.has(anahtar)) {
+        const hedefSp = pdfSpoolMap.get(anahtar);
+        const eslesAnahtar = normPipeline(pipelineHam) + '|' + normSpoolNo(hedefSp);
+        if (harita.has(eslesAnahtar)) {
+          anahtar = eslesAnahtar;
+          console.log('[izo-eslestir] A2 overlay map: ' + spoolHam + ' -> ' + hedefSp + ' (' + (dosyaAdi || '') + ')');
+        }
+      }
       hedef = harita.get(anahtar) || null;
       if (!hedef) atanmaSebep = 'kabukta_yok';   // B: pipeline+spool devrede yok -> atanmamis
     }
