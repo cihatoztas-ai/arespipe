@@ -343,6 +343,8 @@
       <span class="lock" id="lockNote">⚠ eksik/fazla onayda uyarı çıkarır</span>
     </div>
 
+    <div id="teshisBandi" class="hide" style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:11px 14px;font-size:15px;margin-bottom:16px;font-weight:600;"></div>
+
     <div class="tabs">
       <button class="tab active" onclick="tabGit('spool',this)">📦 Spool Listesi</button>
       <button class="tab" onclick="tabGit('dok',this)">📁 Dökümanlar</button>
@@ -363,6 +365,7 @@
         <button class="btn ghost" onclick="gosterAdim(1)">← Geri</button>
         <!-- 166: iki kapı birbirine bağlandı — Adım 2'den gerçek görünüme tek tık (yeni sekme: drenaj loop yaşar) -->
         <button class="btn ghost" onclick="if(WIZ.devre_id)window.open('devre_detay.html?id='+encodeURIComponent(WIZ.devre_id)+'&taslak=1','_blank','noopener')" title="Taslağı gerçek devre detay görünümünde kontrol et">👁 Önizle</button>
+        <button class="btn ghost" style="color:var(--warn);" onclick="k3ExcelKontrol()" title="Excel eksik/yanlışsa: taslağı iptal et, Excel'i düzeltip yeniden yükle">⚠ Excel'i kontrol et / İptal</button>
         <button id="btnOnay" class="btn pri" onclick="onayAc()">Devreyi Onayla</button>
       </div>
     </div>
@@ -1044,12 +1047,43 @@ async function _duzeltmeleriYukle(j) {
   } catch (e) { console.warn('[v3] duzelt yukle hata:', e); }
 }
 
+// 169: TESHIS BANDI — durumu okur, operatoru dogru yonlendirir (Cihat kurali: Excel = dayanak).
+//   kabuk=0 -> Excel okunamadi/eksik · fazla>0 -> sayi/yazim uyusmazligi, Excel'i kontrol et
+//   eksik>0 -> izometri gelmemis · hepsi temiz -> bant gizli.
+function teshisBandiCiz(oz, spLen) {
+  var el = document.getElementById('teshisBandi'); if (!el) return;
+  var kabuk = (oz && oz.toplam != null) ? oz.toplam : (spLen || 0);
+  var fazla = (oz && oz.fazla) || 0, eksik = (oz && oz.eksik) || 0;
+  var renkRe = 'background:rgba(229,62,62,.12);border:1px solid var(--re);color:var(--re);';
+  var renkWa = 'background:rgba(217,119,6,.14);border:1px solid var(--warn);color:var(--warn);';
+  var taban = 'display:flex;align-items:center;gap:10px;border-radius:9px;padding:11px 14px;font-size:15px;margin-bottom:16px;font-weight:600;';
+  var html = '', stil = '';
+  if (kabuk === 0) {
+    stil = taban + renkRe;
+    html = '🛑 <span>Kabukta <b>0 spool</b> var — bu devrenin Excel listesi okunamadi ya da eksik. '
+         + 'PDF\'ler eslesemez cunku karsilastirilacak liste yok. <b>Excel\'i kontrol edip yeniden yukleyin.</b></span>';
+  } else if (fazla > 0) {
+    stil = taban + renkWa;
+    html = '⚠ <span>Excel\'de <b>' + kabuk + ' spool</b> var, <b>' + fazla + ' izometri</b> eslesemedi. '
+         + 'Excel referans alinir — eslesmeyen PDF\'ler ya <b>yanlis yazimli</b> ya da <b>Excel eksik</b>. '
+         + 'Lutfen Excel\'i manuel kontrol edin (asagidaki turuncu satirlar eslesmeyen cizimlerdir).</span>';
+  } else if (eksik > 0) {
+    stil = taban + renkWa;
+    html = 'ℹ <span><b>' + eksik + ' spool</b>\'un izometrisi gelmemis (Excel\'de var, PDF yok). '
+         + 'Eksik birakip terfi edebilir ya da cizimleri yukleyebilirsiniz.</span>';
+  } else {
+    el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return;
+  }
+  el.className = ''; el.style.cssText = stil; el.innerHTML = html;
+}
+
 function renderInceleme(j) {
   var sp = j.spoollar || [], fz = j.fazla || [], mn = j.montajlar || [], oz = j.ozet || {};
   // Özet şeridi
   setTxt('pToplam', oz.toplam != null ? oz.toplam : sp.length);
   setTxt('pOk', oz.okundu || 0); setTxt('pZayif', oz.zayif || 0);
   setTxt('pEksik', oz.eksik || 0); setTxt('pFazla', oz.fazla || 0);
+  teshisBandiCiz(oz, sp.length);
   // "N PDF işleniyor" (B canlı dolum)
   var isStrip = document.getElementById('islenStrip');
   if (oz.isleniyor && oz.isleniyor > 0) { isStrip.classList.remove('hide'); setTxt('islenTxt', oz.isleniyor + ' PDF işleniyor…'); }
@@ -1088,7 +1122,7 @@ function renderInceleme(j) {
       '<td><span class="gri">— (kabukta yok)</span></td><td><span class="gri">—</span></td><td>—</td>' +
       '<td colspan="6" class="gri">' + esc(f.dosya_adi || '') + (f.sebep ? ' · ' + esc(f.sebep) : '') + '</td>' +
       '<td>' + mbadge('fazla') + '</td><td><span class="izo">' + esc(f.dosya_adi || '') + '</span></td>' +
-      '<td><button class="btn-sm" style="color:var(--co);" onclick="event.stopPropagation();toast(\'Spool ekleme: sonraki faz\')">Spool ekle?</button> <button class="btn-sm" style="color:var(--txm);" onclick="event.stopPropagation();toast(\'Yoksayıldı\')">Yoksay</button></td></tr>';
+      '<td><button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();toast(\'Bu çizim Excel\\\'de yok. Excel referans alınır — Excel listesini manuel kontrol edin (eksikse Excel\\\'e ekleyip yeniden yükleyin).\')">⚠ Excel\'i kontrol et</button></td></tr>';
   });
   // 138/B(b): MONTAJ ÇİZİMLERİ — ayrı bölüm. Spool DEĞİL → turuncu Fazla yerine nötr bilgi satırı.
   if (mn.length) {
@@ -2472,6 +2506,17 @@ async function _taslakIptalEt(devreId) {
     }
   } catch (e) { console.error('[v3] iptal soft-delete:', e); }   // best-effort; çıkışı engelleme
 }
+// 169: K3 — Excel eksik/yanlissa temiz cikis. Taslagi iptal et (mevcut _taslakIptalEt: soft-delete +
+//   kuyruk temizligi) -> TAZE wizard'a don. Boylece operator Excel'i duzeltip yeniden yukler;
+//   ayni duvara carpmaz (Cihat 169: 'iptal edip basa donse gene ayni hata' sorununun cozumu).
+async function k3ExcelKontrol() {
+  if (!confirm('Excel listesi eksik/yanlis gorunuyor.\n\nBu taslak iptal edilecek ve bekleyen isleri temizlenecek. '
+    + 'Excel\'i kontrol edip duzelttikten sonra YENIDEN yukleyeceksiniz.\n\nDevam edilsin mi?')) return;
+  if (WIZ.devre_id) { try { await _taslakIptalEt(WIZ.devre_id); } catch (e) { console.warn('[v3] k3 iptal:', e); } }
+  toast('Taslak iptal edildi — Excel\'i duzeltip yeniden yukleyebilirsiniz');
+  setTimeout(function(){ location.href = 'devre_wizard_v3.html'; }, 900);
+}
+
 async function wizardIptal() {
   if (!confirm('Vazgeçmek istediğinize emin misiniz? Yüklenmemiş dosyalar kaybolacak.')) return;
   if (WIZ.devre_id) await _taslakIptalEt(WIZ.devre_id);
@@ -2610,12 +2655,36 @@ async function islenenlerDrenaj() {
 function onayAc() {
   var oz = (WIZ._inceleme && WIZ._inceleme.ozet) || {};
   var fz = (WIZ._inceleme && WIZ._inceleme.fazla) || [];
+  var kabuk = (oz.toplam != null) ? oz.toplam : ((WIZ._kabukSpoollar || []).length);
+  // 169: kabuk=0 ise terfi anlamsiz (aktarilacak spool yok) — sert engel, Excel'e yonlendir.
+  if (kabuk === 0) {
+    var b0 = '<div class="onay-warn">🛑 <b>Kabukta 0 spool var</b> — aktarilacak bir sey yok. '
+      + 'Bu devrenin Excel listesi okunamadi/eksik. Once Excel\'i kontrol edip yeniden yukleyin.</div>'
+      + '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Kapat</button>'
+      + '<button class="btn pri" onclick="onayKapat();k3ExcelKontrol()">Excel\'i kontrol et</button></div>';
+    document.getElementById('onayBody').innerHTML = b0;
+    document.getElementById('onayOverlay').classList.remove('hide');
+    return;
+  }
+  var sorunlu = (oz.eksik || 0) + (fz.length || 0);
   var b = '<p style="font-size:15px;margin:0 0 4px;"><b>' + esc(WIZ.devre_no) + '</b> Devreler listesine (canlıya) aktarılacak.</p>' +
-    '<p class="sub" style="margin:0 0 4px;">' + (oz.toplam || WIZ._kabukSpoollar.length) + ' spool için spool ID + QR üretilecek, iş emri açılacak.</p>';
+    '<p class="sub" style="margin:0 0 4px;">' + kabuk + ' spool için spool ID + QR üretilecek, iş emri açılacak.</p>';
   if (oz.eksik) b += '<div class="onay-warn">⚠ <b>' + oz.eksik + ' spool eksik bilgiyle aktarılıyor</b> (izometri yok). Sonradan tamamlanabilir — listede gözden kaçmasın.</div>';
-  if (fz.length) b += '<div class="onay-warn">⚠ <b>' + fz.length + ' fazla döküman kararsız</b> — karar vermeden aktarılırsa yoksayılır.</div>';
-  if (!oz.eksik && !fz.length) b += '<div class="onay-ok">✓ Tüm bilgiler tam — temiz aktarım.</div>';
-  b += '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Vazgeç</button><button class="btn pri" id="btnOnayEt" onclick="onayEt()">Onayla ve Aktar</button></div>';
+  if (fz.length) b += '<div class="onay-warn">⚠ <b>' + fz.length + ' izometri eşleşmedi</b> — Excel referans alınır; bu çizimler terfide bağlanmaz. Excel\'i kontrol etmeniz önerilir.</div>';
+  if (!sorunlu) {
+    b += '<div class="onay-ok">✓ Tüm bilgiler tam — temiz aktarım.</div>';
+    b += '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Vazgeç</button>'
+      + '<button class="btn pri" id="btnOnayEt" onclick="onayEt()">Onayla ve Aktar</button></div>';
+  } else {
+    // 169: SERT KAPI — sorunlu varken sessiz gecmez; operator bilerek onaylar (kutu isaretlenmeden buton kapali).
+    b += '<label style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;cursor:pointer;font-size:14px;color:var(--tx);">'
+      + '<input type="checkbox" id="onayKabul" style="width:16px;height:16px;accent-color:var(--re);cursor:pointer;" '
+      + 'onchange="var bb=document.getElementById(\'btnOnayEt\'); if(bb)bb.disabled=!this.checked;">'
+      + '<span>' + sorunlu + ' spool/çizim sorunlu olduğunu anladım, yine de terfi etmek istiyorum.</span></label>';
+    b += '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Vazgeç</button>'
+      + '<button class="btn" onclick="onayKapat();k3ExcelKontrol()" title="Taslağı iptal edip Excel düzeltmesi sonrası yeniden yükle">Excel\'i kontrol et</button>'
+      + '<button class="btn pri" id="btnOnayEt" disabled onclick="onayEt()">Yine de Onayla ve Aktar</button></div>';
+  }
   document.getElementById('onayBody').innerHTML = b;
   document.getElementById('onayOverlay').classList.remove('hide');
 }
