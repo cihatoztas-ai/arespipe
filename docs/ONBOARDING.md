@@ -156,7 +156,7 @@ Cihat Claude ile düzenli oturumlar yapıyor (oturum numaralı kayıtlar projede
 ## 8. Hızlı İstatistikler
 
 <!-- AUTO-START:istatistikler -->
-> Son güncelleme: 2026-06-07 (otomatik)
+> Son güncelleme: 2026-06-08 (otomatik)
 
 - **Web sayfa:** 49
 - **Mobil ekran (React):** 17
