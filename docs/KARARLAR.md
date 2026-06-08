@@ -2257,3 +2257,64 @@ ARES_OLCU.olcuParse + ARES_BORU.dnBul (165'te eklendi, simetrik iş). (2) devre_
 önizlemesi kilitli ve wizard'a "düzenle" köprüsü YOK — MK-136 ?devre_id= URL'i var ama
 görünür değil; kullanıcı düzeltme yolunu bulamıyor. (3) uyarilar'da aynı uyarının 2-3 dk
 arayla mükerrer kayıtları (örn. A-000954 20:01:17 + 20:03:23) — teşhis edilmedi. (Kaynak: 165.)
+
+## MK-85.3 (hatirlatma — 167'de bir kez ihlal edilip duzeltildi)
+Sema-once: SQL kolon/anahtar adlari TAHMIN edilmez, once `information_schema` veya canli sorgu ile
+dogrulanir. Spooller olcu kolonlari: `dis_cap_mm` ve `et_kalinligi_mm` (cap/et degil). 167'de bir kez
+`olusturulma` tahmin edildi, sema `olusturma` cikti — aninda duzeltildi. JSONB teshis SELECT'lerinde
+anahtar adi tahmini de bu ihlalin kardesidir; once gercek anahtari gor.
+
+## MK-166 (Oturum 166)
+- **MK-166.1 (ANA TASARIM):** izometri parse ISTEMCI drenaji ile yurur; sayfa-kapali isleme
+  cron + sunucu-worker gerektirir. 166'nin tek buyuk mimari maddesi — 167'de uctan uca kuruldu.
+- **MK-166.2:** Deger->koordinat aramasinda (kalem-zoom / hucre-git) SATIR GRUPLAMA sart. Cadmatic
+  parcali metin uretir (tek kelime birden cok text node'a bolunur) → tek-item arama yetmez, satir
+  bazinda gruplayip ara.
+- **MK-166.3:** Kabuk fitting-only spool'da cap/et turetemez (icinde duz boru yok). Bu durumda cap/et
+  degeri izometri parse dalinin ham ciktisindan gosterilir; terfide backfill ayni degeri yazar.
+- **MK-166.4 (genelleme):** Yuzey alani stainless okuyorsa (paslanmaz/316/304/...) → `asit`
+  (paslanmaz yuzey islemi asitlemedir). yuzeyKod + yuzeyBadge normalize; tabloda "Asit" gosterilir.
+- **MK-166.5:** Taslak onizleme = salt KONTROL penceresi. Kilitli butonlar gizli, tek aksiyon Wizard
+  koprusu. (MK-165.7/2 kapandi.)
+- **MK-166.6:** Yukle akisi = paralel havuz + karar ekrani (yeni devre / incele / islenenler), tek
+  "Yukle" butonu. izometri SIRADA alinir, BURADA ISLENMEZ — isleme Incele&Onayla akisinda veya
+  Islenenler listesinde (istemci drenaji gercegi, MK-166.1 ile tutarli).
+
+## MK-167 (Oturum 167)
+- **MK-167.1 — Atomik claim guard:** `birIsIsle` lock'u
+  `UPDATE ... deneme_sayisi+1 ... .eq('id').in('durum',['bekliyor','hata']).select('id')`. Satir
+  donerse is bizim; bos donerse baska worker (cron <-> tarayici drenaji, ayni tenant ici cok-kullanici)
+  zaten kapmis → `sonuc:'atlandi'` sessiz gec. Cift izometri-oku (cift batch + cift maliyet) onlenir;
+  idempotent. `'hata'` dahil → wizard manuel-retry (is_id modu) korunur.
+- **MK-167.2 — CRON_SECRET gate (sert mod):** `/api/kuyruk-isle` GLOBAL yol (batch_id YOK) → Bearer
+  CRON_SECRET ZORUNLU (env yoksa 500, yanlis/eksik token 401). batch_id'li cagri (frontend PDF batch,
+  izometri-batch.html) ACIK kaldi → 0 regresyon. Gate scope'a gore ayrilir; mevcut acik akis kirilmaz.
+- **MK-167.3 — Cron izometri drenaji = mevcut worker'a dal:** `kuyruk-isle.js`, is_kuyrugu (PDF)
+  sonrasi KALAN zaman butcesiyle `drenajTuru` (kuyruk-isle-izometri.js, zaten export, MK-112.1 ic-dongu)
+  cagrilir. YENI ENDPOINT YOK (12/12 korunur — MK-129.3; import lib-ici). Butce 60s-gecen-8s; maxMs
+  tavani 50s = tarayici drenajiyla AYNI (cron daha agresif olamaz). izometri-oku DOKUNULMADI (MK-49.1).
+
+## MK-168 (Oturum 168)
+- **MK-168.1 — GitHub schedule gecikmesi/guvenilmezligi:** Yeni eklenen `*/3` schedule ilk kosusunu
+  35+ dk'da yapmadi; workflow sayfasi yalniz `workflow_dispatch` tetikleyicisini gosterdi. GitHub
+  schedule yeni workflow'u tanimakta gecikir + dusuk-oncelikli kuyrukta atlayabilir (bilinen davranis).
+  Mekanizma `workflow_dispatch`/curl ile KANITLI (200 + izometri.calisti:true, islenen:4). Yedek:
+  vercel.json gece cron (03:00) + manuel dispatch. NOT: schedule tetikleyicinin calismasi icin
+  workflow varsayilan dalin (main) HEAD AGACINDA commit'li olmali — 168'de `izometri-cron.yml` agaca
+  islendi (commit ee33cf9); oncesi `tree-exit=1` (agacta yoktu) → schedule hic tetiklenmemisti.
+- **MK-168.2 — (YANLIS ALARM, kapatildi):** "Drenaj `hata` islerini sonsuz retry'lar" endisesi YANLIS.
+  Drenaj cekme sorgusu `.eq('durum','bekliyor')` → `hata` HIC cekilmez. `birIsIsle` claim'indeki
+  `'hata'` yalniz wizard `is_id` manuel-retry icindir, cron/drenaj icin degil. Tavan gereksiz.
+  Ders: kod okumadan (MK-126.8) tavan eklenmedi → bos commit'ten korundu.
+- **MK-168.3 — izometri-oku HTTP 508 (Loop Detected):** Cron/drenaj yolu `opts.oncedenParse` olmadan
+  cagrilinca sunucu kendi icinden `izometri-oku`'yu HTTP ile cagirir → Vercel self-call "loop detected"
+  (508). Tarayici yolu PDF'i client'ta parse edip gonderir (skipParse) → 508'i asar; cron yolunda o
+  kestirme YOK → agir/cok-sayfali PDF'lerde (M100-355-401/402-HC, 15-17 sayfa) 508. izometri-oku
+  DOKUNULMAZ (MK-49.1) → kok neden orada duzeltilemez; cozum cagri katmaninda (cron yolu icin
+  skip-parse esdegeri ya da farkli cagri mimarisi). BUYUK, AYRI IS. 508 isleri 'hata'da kalir, drenaji
+  bogmaz (MK-168.2), ama parse de olamaz.
+- **MK-168.4 — Ayni tenant ici cok-kullanici yukleme guvenli:** Ayni firma (tenant) icinde birden cok
+  kullanici ayni anda devre yukleyebilir; ortak kuyrugu paylasirlar. Koruma RLS DEGIL (ayni tenant) —
+  koruma tamamen MK-167.1 atomik claim guard'dir: birden cok worker (her kullanicinin tarayici drenaji
+  + cron) ayni isi kapamaz, cift izometri-oku / cift maliyet olmaz. Sinir: backlog hiz siniri (4'er/tur,
+  ~50s butce) + agir PDF 508 (MK-168.3). Dogal kullanim (hizli yukle-cik, arkada isle) desteklenir.
