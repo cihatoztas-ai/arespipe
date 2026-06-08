@@ -1,50 +1,51 @@
-# son-durum.md — 166. Oturum (2026-06-08)
+# son-durum.md — 167. Oturum (2026-06-08)
 
 ## TEMA
-DÜZEN TURU: wizard/devre_detay sayfa düzeni tutarlılaştırma + "okundu ama yüzeye çıkmadı"
-hissini bitirme. Format öğretimi bu oturum ATLANDI (Cihat kararı).
+CRON / SAYFA-KAPALI İZOMETRİ İŞLEME: 166'nın "ANA TASARIM" maddesi (MK-166.1) uçtan uca kuruldu.
+Format öğretimi yine ATLANDI (Cihat kararı). Tema yalnız buydu.
 
 ## DURUM
-- HEAD bookend: `d5b8c9e` (wizard düzen paketi) → `595c435` (okunan değer A/B/C).
-- 12/12 fonksiyon (yeni endpoint yok). Migration YOK. izometri-oku DOKUNULMADI.
-- TARAYICIDA yüklü (deploy sonrası sert yenile — MK-161.1): ares-kabuk.js, ares-normalize.js.
+- Commit: `0e7108d` (kod — feat 167). Workflow GitHub WEB'den eklendi (PAT'ta `workflow` scope yok).
+- 12/12 fonksiyon (yeni endpoint YOK — import lib-içi). Migration YOK. izometri-oku DOKUNULMADI.
+- Değişen dosyalar SUNUCU tarafı → tarayıcı sert-yenile GEREKMEZ.
+- ⚠ 168 açılışı: lokal diskte izometri-cron.yml var ama uzağa WEB'den eklendi → `git pull --rebase`.
 
-## YAPILANLAR (7 ana + A/B/C)
-1. **W-2.1 KAPANDI** — tersane/proje çift yönlü senkron (karışık etiket bitti).
-2. **MK-165.7/2 KAPANDI** — taslak (?taslak=1) = salt kontrol penceresi; kilitli aksiyon butonları
-   gizli, tek aksiyon "✏️ Wizard'da düzenle & onayla"; Adım 2'ye "👁 Önizle" ters köprüsü. 3 dil anahtarı.
-3. **K2-A** — terfide temiz izometri önerileri otomatik tamamlandi (atanmamış+manuel açık; backfill
-   hatalıysa dokunma); Onay Kuyruğu sekmesi aktifte rozet=0 ise gizli.
-4. **Adım 1 yedek alanları** (malzeme/yüzey/alıştırma — doküman öncelikli; aktar opsiyonel param;
-   0 regresyon) + **← Geri** butonu.
-5. **devreler +N rozeti** — spool adedi değil TÜR sayısı (adet tooltip'e).
-6. **YÜKLE AKIŞI** — tek "⬆ Yükle" + paralel havuz (6) + karar ekranı (Yeni Devre/İncele&Onayla/
-   İşlenenler). izometri SIRADA, burada işlenmez (MK-166.1). Küçük devrede uyarısız.
-7. **W-2.19 kalem-zoom** (✏️ → değer pdf.js metin katmanında ara → zoom+vurgu; satır gruplama
-   MK-166.2; çoklu eşleşme gezinme) + **Excel hücre-git** (sayfa-geçişli, simetrik).
-- **A/B/C okunan-değer yüzeye:** A çap/et izometri ham'dan (MK-166.3) · B kalite kalemden
-  (anaKalite→316L terfide) · C yüzey paslanmaz→asit (MK-166.4).
+## YAPILANLAR (4 + secret kurulumu)
+1. **MK-167.3 — CRON izometri drenaj dalı:** kuyruk-isle.js, is_kuyrugu (PDF) SONRASI KALAN zaman
+   bütçesiyle dosya_isleme_kuyrugu/izometri'yi sürer. Yeni mantık YOK — drenajTuru (kuyruk-isle-izometri.js,
+   MK-112.1) çağrılır. Bütçe 60s−geçen−8s; maxMs tavanı 50s = tarayıcı drenajıyla AYNI. Erken+ana return;
+   YALNIZ batch_id YOK iken (global) → tarayıcı PDF batch dokunulmaz. Kalan iş varsa secret'li self-chain.
+2. **MK-167.1 — Atomik claim guard:** birIsIsle lock → `.in('durum',['bekliyor','hata']).select('id')`;
+   boş dönüş = başka worker kaptı → `sonuc:'atlandi'`. Cron↔tarayıcı çift-izometri-oku önlendi.
+   'hata' dahil → wizard manuel-retry korunur.
+3. **MK-167.2 — CRON_SECRET gate (sert):** /api/kuyruk-isle global yol (batch_id YOK) Bearer secret
+   ZORUNLU (env yoksa 500, yanlış/eksik 401). batch_id'li (izometri-batch.html:514, body'de batch_id)
+   AÇIK → 0 regresyon (grep'le doğrulandı).
+4. **Dış tetik:** .github/workflows/izometri-cron.yml (*/3 + workflow_dispatch + concurrency) →
+   POST /api/kuyruk-isle {} + Bearer. GitHub 5-10 dk oturabilir (sayfa-kapalı backlog eritici).
+   YEDEK: vercel.json gece cron (03:00) DEĞİŞMEDİ.
+5. **Secret:** CRON_SECRET → Vercel (Production+Preview) + GitHub Actions secret, birebir aynı.
 
-## DEĞİŞEN DOSYALAR
-devre_wizard_v3.html · devreler.html · devre_detay.html · ares-kabuk.js · ares-normalize.js ·
-lib/izo-eslesme.js · api/devre-inceleme.js · lang/{tr,en,ar}.json.
+## KANIT (mekanizma)
+- secret'sız curl → **401** (gate çalışıyor) · secret'li → **200** + izometri.calisti:true.
+- Kuyruk anlık: izometri bekliyor=0 (iptal=1336·manuel_onay=70·oneri_hazir=400·tamamlandi=183) →
+  0 işlemesi BEKLENEN. Uçtan uca doğal-yol testi KULLANICI'da (PDF yükle→sayfa kapat→*/3→SQL teyit).
 
-## AÇIK (167)
-- **CRON / sayfa-kapalı izometri (167 ana tasarım — MK-166.1):** kuyruk-isle.js'e dosya_isleme_kuyrugu
-  izometri dalı + atomik claim guard + frekans (Hobby gece / Pro dakika / dış zamanlayıcı). Yeni endpoint
-  yok (12/12 koru). Pro şart değil (self-chain Hobby'de yürür). Araştırıldı/karar verildi → 167'de uygula.
-- MK-165.7/1 OPR dn→dis_cap (DN200→200.0, doğrusu 219.1) · MK-165.7/3 uyarı mükerrerliği.
-- Onay kuşağı eritme (162 kayıt; P26-217=76) · Y200 öğretimi (diğer bilgisayar).
-- W-2.5 (iki çubuk değil) · W-2.9 (eşzamanlı paralel devre değil).
-- KARARLAR.md'ye MK-166.1..6 işlenecek (bu pakette değil — kök dosya).
-- Canlı teyit borcu: deploy+sert yenile → G200 inceleme (çap/et dolu, kalite 316L, yüzey Asit) +
-  bir terfi → `SELECT spool_no, dis_cap_mm, et_kalinligi_mm, kalite, yuzey, alistirma FROM spooller`.
+## AÇIK (168)
+- **Uçtan uca doğal-yol testi sonucu** (kullanıcıdan).
+- **KARARLAR.md'ye İŞLE (kök dosya, pakette DEĞİL):** MK-166.1..6 + MK-85.3 + MK-167.1/2/3.
+- MK-165.7/1 OPR dn→dis_cap (DN200→200.0 vs 219.1) · MK-165.7/3 uyarı mükerrerliği.
+- Onay kuşağı eritme (GÜNCEL: oneri_hazir=400 + manuel_onay=70) · Y200 öğretimi (diğer bilgisayar).
+- W-2.5 (iki ayrı çubuk) · W-2.9 (eşzamanlı paralel devre).
 
-## MK (166 — KARARLAR.md'ye işlenecek)
-MK-166.1 (izometri istemci drenajı) · MK-166.2 (satır gruplama) · MK-166.3 (fitting-only cap/et
-izometriden) · MK-166.4 (yüzey stainless→asit) · MK-166.5 (taslak=salt kontrol) · MK-166.6 (yükle=
-paralel havuz+karar ekranı). Öz-ihlal: MK-85.3 (spooller kolon adı tahmin — doğrusu dis_cap_mm/
-et_kalinligi_mm).
+## MK (167 — KARARLAR.md'ye işlenecek)
+MK-167.1 (atomik claim guard) · MK-167.2 (global tetik CRON_SECRET zorunlu, batch_id'li açık) ·
+MK-167.3 (cron izometri drenajı = mevcut worker'a dal, drenajTuru tekrar, yeni endpoint yok).
+
+## OPERASYONEL DERSLER (167 — MK değil, hatırlatma)
+- `arespipe_kopyala <kaynak> <hedef> <md5>` — sıra: indirilen ÖNCE, repo hedefi SONRA.
+- zsh yorum/komutta `()`, `*` (glob), `!` parse eder → tek-tırnak heredoc veya yorumsuz komut.
+- `.github/workflows/` push'u PAT'ta `workflow` scope ister; yoksa `git reset --soft HEAD~1` + WEB'den ekle.
 
 ## TEST DEVRELERİ — SİLME
 "bn ömn" (77bfbc98) · "b nn" (e0af361d, taslak).

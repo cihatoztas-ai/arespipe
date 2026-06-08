@@ -215,3 +215,14 @@ motor kopyası tekleştirme (B7) · sessiz fallback taraması (B4) · format ad/
   parçalı Cadmatic metni dahil). 🔍 Tablo butonu norm bbox yoksa "Malzeme Listesi" başlığını arıyor;
   Y200 tablo öğretimi yapıldığı an `konum_ipucu` norm bbox'ına otomatik terfi eder (reçete değişmedi).
 - B5 çapraz-doğrulama tasarım borcu DURUYOR (değişmedi). otoTespit güveni (B5) hâlâ açık.
+
+---
+
+## 167 EKİ (2026-06-08) — format öğretimi yine ATLANDI (CRON oturumu)
+- Cihat kararı: 167 tema = sayfa-kapalı izometri işleme (166'nın MK-166.1 ana tasarımı). Format
+  tanıtma maddelerine girilmedi. Y200 öğretim reçetesi (yukarıda) AYNEN bekliyor — diğer bilgisayar
+  gerektiğinde; reçete değişmedi.
+- Atölye aracı (`scripts/atolye-kosum.mjs`) ve C-yolu vizyonu değişmedi.
+- İlgili tek dolaylı kazanım: izometri kuyruğu artık sayfa kapalıyken de drene oluyor (GitHub Actions
+  `*/3` dış tetik + gece Vercel cron yedeği). Öğretim sonrası kardeş-kuyruk reset → drenaj kanıt akışı
+  (reçete 5. adım) artık sayfa açık tutmayı gerektirmiyor; backlog arka planda erir.

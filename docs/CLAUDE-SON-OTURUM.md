@@ -1,39 +1,45 @@
-# CLAUDE-SON-OTURUM.md — 166 (2026-06-08)
+# CLAUDE-SON-OTURUM.md — 167 (2026-06-08)
 
 ## NE YAPTIK
-**DÜZEN TURU.** Wizard ve devre_detay'ın aynı işin farklı kapıları olduğu tutarsızlıkları giderdik,
-yükleme akışını seri-yükleme dostu hâle getirdik, ve "okundu ama yüzeye çıkmadı" sınıfı üç kusuru
-kapattık. Format öğretimi bilinçli atlandı (Cihat: önce düzen, sonra bol veri).
+**CRON / SAYFA-KAPALI İZOMETRİ İŞLEME.** 166'nın "ANA TASARIM" olarak bıraktığı tek büyük mimari soruyu
+(MK-166.1) kapattık: izometri parse artık sayfa kapalıyken de ilerliyor. Çözüm minimal-risk yoldan
+kuruldu — mevcut kanıtlı motoru cron'dan da çağırdık, yeni mantık/endpoint yazmadık. Format öğretimi
+yine bilinçli atlandı (Cihat: tema yalnız cron).
 
 ## KARARLAR (Cihat onaylı)
-- Yükle akışı: kullanıcı dosyalar alınana kadar bekler → sonra KARAR EKRANI (Yeni Devre / İncele &
-  Onayla / İşlenenler). Belirsizlik bitsin diye her ekranda çıkış görünür, hiçbir seçim tek yönlü değil.
-  Yeni Devre = sıfırdan (proje taşınmaz). Küçük devrede uyarı yok (butonlar zaten altta).
-- Kalem-zoom: ✏️ → değeri PDF/Excel'de bul → oraya götür (format öğretimi gerektirmeyen "tam dilim").
-- Okunan-değer: A çap/et izometriden · B kalite kalemden (316L terfide yazılsın — evet) · C yüzey
-  "paslanmaz" yazıyorsa → asit (SADECE yüzeyde yazıyorsa; boş+malzeme paslanmaz dahil DEĞİL).
+- Frekans: GitHub Actions `*/3` dış tetik (Hobby cron dakikalık veremiyor) + gece Vercel cron yedek.
+  Pro ŞART DEĞİL. "Yüklerken dakikalar içinde" hedefini dış tetik karşılıyor.
+- Güvenlik: CRON_SECRET SERT mod (env yoksa 500). Ama yalnız GLOBAL yola (batch_id YOK) → tarayıcının
+  mevcut açık PDF batch akışı (batch_id'li) kırılmasın. Güvenlik baştan, sonraya bırakılmadı.
+- Risk: minimal-risk yol seçildi — is_kuyrugu (çalışan PDF sistemi) mantığına DOKUNULMADI; izometri dalı
+  yalnızca eklendi.
 
 ## TEKNİK ÖZ
-- **Paralel havuz** (`_havuzKos`, 6 eşzamanlı) — 356 dosya sıralı yarım saat → dakikalar. 4/4 test.
-- **izometri parse İSTEMCİ drenajı** keşfedildi (sunucu cron'u yok) → "Yükle" izometriyi SIRAYA koyar,
-  İŞLEMEZ; işleme İncele&Onayla'da (o devre) ya da İşlenenler'de (toplu, sayfa açık). MK-166.1.
-- **A:** devre-inceleme — kabuk cap/et boşsa izometri dal cap_mm/et_mm yüzeye (fitting-only spool;
-  MK-166.3). **B:** ares-kabuk grupla `anaKalite` + spool `kalite` + aktar zinciri (dz>kalem>anaMalzeme);
-  izo-eslesme iki return'e passthrough. **C:** ares-normalize yuzeyKod stainless→asit + wizard
-  yuzeyBadge kanonik etiket. 7/7 test.
-- 12/12 (yeni endpoint yok) · migration yok · izometri-oku dokunulmadı.
+- **MK-167.3:** kuyruk-isle.js → helper `izoDrenajCalistir(baslangic)`; is_kuyrugu sonrası KALAN bütçeyle
+  `drenajTuru` (kuyruk-isle-izometri.js, zaten export, MK-112.1 iç-döngü). maxMs tavanı 50s = tarayıcı
+  drenajıyla AYNI (cron daha agresif olamaz). Erken-return + ana-return, yalnız `!batch_id`.
+- **MK-167.1:** birIsIsle lock → `.eq('id').in('durum',['bekliyor','hata']).select('id')`; boş dönüş =
+  başka worker kaptı → `sonuc:'atlandi'`. Çift izometri-oku (çift batch+maliyet) önlendi.
+- **MK-167.2:** /api/kuyruk-isle batch_id YOK → Bearer CRON_SECRET zorunlu (401/500); batch_id'li açık
+  (frontend tek çağrı izometri-batch.html:514 batch_id taşıyor — grep doğruladı). 0 regresyon.
+- **Workflow:** .github/workflows/izometri-cron.yml (*/3, workflow_dispatch, concurrency, --max-time 75,
+  200 değilse step kırmızı). WEB'den eklendi (PAT workflow-scope yok).
+- 12/12 (import lib-içi) · migration yok · izometri-oku dokunulmadı · sunucu-tarafı (tarayıcı yenile yok).
 
-## ÖZ-İHLAL
-- **MK-85.3:** spooller kolon adını tahmin ettim (cap_mm) — doğrusu `dis_cap_mm` / `et_kalinligi_mm`.
-  aktar insert'inden teyit ettim, düzelttim. Şema-önce istisnasız.
+## KANIT
+- secret'sız 401 · secret'li 200 + izometri.calisti:true · kuyruk bekliyor=0 → islenen:0 (beklenen).
+- Uçtan uca doğal-yol testi KULLANICI'da (PDF yükle→sayfa kapat→*/3→SQL). Sonuç sonraki oturuma.
 
-## CRON (167'ye devredilen ana tasarım)
-Vercel sunucusuz — Pro'da bile always-on worker yok; sayfa-kapalı işleme CRON gerektirir. Mevcut
-`vercel.json` cron'u (`/api/kuyruk-isle`, 03:00) `is_kuyrugu`'yu süpürüyor; wizard kuyruğu
-(`dosya_isleme_kuyrugu`) tarayıcıyla boşalıyor. Çözüm: o worker'a izometri dalı + claim guard + frekans
-(Hobby gece-1 / Pro dakika / dış zamanlayıcı). Pro şart değil (self-chain Hobby'de yürür). Detay
-WIZARD-YOL-HARITASI 166 İŞARETLERİ + BRIEFING'de.
+## ÖZ-İHLAL / TUZAKLAR
+- Bir kere SQL kolon adını (`olusturulma`) tahmin ettim → şema `olusturma`. MK-85.3 dersini kendim
+  ihlal ettim, anında düzelttim. Bir de tasarım taslağı bloğunu SQL editörüne yapıştıracak gibi sundum
+  (kafa karıştırdı) — düzeltildi.
+- Operasyonel: arespipe_kopyala arg sırası · zsh `()`/`*`/`!` parse · workflow push scope.
 
 ## COMMIT'LER
-Bookend: `d5b8c9e` → `595c435`. Aradakiler topic bazlı (+N rozet · kalem-zoom v1/v2 · taslak rol+köprü ·
-excel hücre-git · yükle/paralel/karar ekranı) — `git log --oneline` ile sırala.
+`0e7108d` (kod — feat 167). Workflow GitHub web'inden ayrı (commit reposunda `Create izometri-cron.yml`).
+Üzerine CI botu `ci-son-rapor.json` [skip ci].
+
+## KAPANIŞ BORCU (168'de HATIRLA)
+- **KARARLAR.md'ye MK-166.1..6 + MK-85.3 + MK-167.1/2/3 işle** (kök dosya — bu pakette DEĞİL, 2 oturumdur açık).
+- 168 açılışında `git pull --rebase` (workflow uzağa web'den eklendi, lokalle ayrışık).
