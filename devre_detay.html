@@ -961,6 +961,13 @@ if(typeof window.tv==='undefined'){
 // ── W-2.11/A (155): TASLAK ÖNİZLEME KİPİ — ?taslak=1
 // Salt-görsel kip: render'a dokunulmaz, tüm yazma fonksiyonları _tkKilit() ile kilitlenir (MK-154.2 deseni: çekirdek çağrılır, kopyalanmaz).
 var TASLAK_KIP=new URLSearchParams(location.search).get('taslak')==='1';
+// 170: TEK-YUZEY BIRLESTIRME -- taslak devre artik yalnizca wizard'da incelenir/onaylanir.
+//   ?taslak=1 onizleme cizilmeden dogrudan wizard'a yonlendirilir (tek kanonik taslak yuzeyi).
+//   Asagidaki taslak-kip kodu (_tkBanner/_tkKilit/_taslakSpoolYukle) artik ulasilmaz; veri silinmedi.
+if(TASLAK_KIP){
+  var _tkWizId=new URLSearchParams(location.search).get('id');
+  if(_tkWizId){ location.replace('devre_wizard_v3.html?devre_id='+encodeURIComponent(_tkWizId)); }
+}
 function _tkKilit(){
   if(!TASLAK_KIP)return false;
   showToast(tv('dv_taslak_kilit','Önizleme kipi — taslakta değişiklik kilitli'),'i');

@@ -363,8 +363,7 @@
       <div class="onay-bar">
         <span class="lock-note" style="color:var(--txm);">Eksik spool'lar silinmez; bilgilerini buradan tamamlayabilir veya eksik bırakabilirsin.</span>
         <button class="btn ghost" onclick="gosterAdim(1)">← Geri</button>
-        <!-- 166: iki kapı birbirine bağlandı — Adım 2'den gerçek görünüme tek tık (yeni sekme: drenaj loop yaşar) -->
-        <button class="btn ghost" onclick="if(WIZ.devre_id)window.open('devre_detay.html?id='+encodeURIComponent(WIZ.devre_id)+'&taslak=1','_blank','noopener')" title="Taslağı gerçek devre detay görünümünde kontrol et">👁 Önizle</button>
+        <!-- 170: tek-yuzey birlestirme -- "Onizle" (devre_detay?taslak=1) butonu kaldirildi; taslak yalnizca wizard'da incelenir. -->
         <button class="btn ghost" style="color:var(--warn);" onclick="k3ExcelKontrol()" title="Excel eksik/yanlışsa: taslağı iptal et, Excel'i düzeltip yeniden yükle">⚠ Excel'i kontrol et / İptal</button>
         <button id="btnOnay" class="btn pri" onclick="onayAc()">Devreyi Onayla</button>
       </div>
@@ -2711,7 +2710,6 @@ async function islenenlerYukle() {
         '<div>' + durumHtml + '</div>' +
         '<div style="font-size:13px;color:var(--txm);">öneri: <b>' + s.oneri + '</b> · manuel: <b>' + s.manuel + '</b></div>' +
         '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
-        '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı gerçek devre görünümünde önizle (salt-okunur)" onclick="islenenlerOnizle(\'' + d.id + '\')">👁 Önizle</button>' +
         '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + (s.acik > 0 ? ' disabled' : '') + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : 'İncele') + '</button>' +
         '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">✕</button>' +
         '</div></div>';
