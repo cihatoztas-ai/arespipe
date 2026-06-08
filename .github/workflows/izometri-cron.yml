@@ -1,0 +1,34 @@
+# Sayfa-kapali izometri isleme tetikleyicisi (167/MK-167.3).
+#   */3 = her 3 dk; GitHub pratikte 5-10 dk oturabilir (saniye hassasiyeti DEGIL — arka plan drenaji).
+#   Acil tek devre zaten tarayici butonuyla anlik islenir; bu, sayfa kapaliyken backlog'u eritir.
+# Hedef: POST /api/kuyruk-isle (batch_id YOK -> global yol) + Bearer CRON_SECRET.
+#   kuyruk-isle: once is_kuyrugu (PDF) sonra izometri drenaji (drenajTuru) — KALAN zaman butcesiyle.
+
+on:
+  schedule:
+    - cron: '*/3 * * * *'
+  workflow_dispatch: {}   # elle tetik (test/dogrulama)
+
+# Ust uste binmeyi engelle (uzun calisan tetik + sonraki tur)
+concurrency:
+  group: izometri-drenaj
+  cancel-in-progress: false
+
+jobs:
+  drenaj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: kuyruk-isle global tetik
+        run: |
+          code=$(curl -s -o /tmp/out.txt -w "%{http_code}" \
+            -X POST "https://arespipe.vercel.app/api/kuyruk-isle" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            --max-time 75)
+          echo "HTTP $code"
+          cat /tmp/out.txt || true
+          echo ""
+          # 200 disi -> step KIRMIZI (secret yanlis/eksikse hemen gorunur)
+          test "$code" = "200"
