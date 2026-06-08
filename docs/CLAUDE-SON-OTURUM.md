@@ -1,42 +1,39 @@
-# CLAUDE-SON-OTURUM.md — Oturum 160 özeti
+# CLAUDE-SON-OTURUM.md — 166 (2026-06-08)
 
-## Tek cümle
-Format yönetim mimarisi karar tablosuyla yazıldı (MK-160.1/2) ve `?is=` köprü altyapısı gemiye
-alındı; ama oturumun ağırlık merkezi Cihat'ın yön düzeltmesiyle kaydı — "zayıf satırdan format
-ekranına gitme, PDF'i düzeltme ekranının YANINA koy" — ve spool modalı aynı gün içinde canlı test
-döngüsüyle pdfjs görüntüleyicili (pan/zoom/izometri↔montaj↔Excel sekmeli), inline kalemli, kalem
-EKLEMELİ, ham-parse dökümlü "büyük ekran"a evrildi (MK-160.3/4/5 adayları).
+## NE YAPTIK
+**DÜZEN TURU.** Wizard ve devre_detay'ın aynı işin farklı kapıları olduğu tutarsızlıkları giderdik,
+yükleme akışını seri-yükleme dostu hâle getirdik, ve "okundu ama yüzeye çıkmadı" sınıfı üç kusuru
+kapattık. Format öğretimi bilinçli atlandı (Cihat: önce düzen, sonra bol veri).
 
-## Kanıt zinciri
-1. KARARLAR.md dosya gerçeği: son işli kayıt MK-138.3 → 139-159 boşluğu (MK-159.3 ikinci vaka);
-   154-160 seti her kaydın sonunda kaynak referansıyla işlendi, 139-153 boşluk notu dosyada.
-2. Köprü read-before-write: iki kuyruk/iki bucket keşfi sözleşmeyi değiştirdi (`&kaynak=` ayrımı);
-   devre-inceleme is_id taşıması mekanik testle kanıtlandı (test-isid.mjs, 6/6: zayıf+L3 koşulları,
-   fazla satırı, dedup).
-3. Canlı test döngüsü (3 ekran görüntüsü turu): fit sorunu → fixed+calc çözümü → montaj sekmesi
-   fit'le birlikte GELDİ (ayrı bug değildi); alıştırma boşluğu → MK-157.1 yapısal kökü → endpoint
-   enjeksiyonu 117 kuralı birebir; pan dikey çalışmıyor → scroll-pan'ın fit halinde taşma alanı
-   olmadığı teşhisi → transform-pan.
-4. "PDF 3 satır / kabuk 2 kalem" itirazı: toplamlar örtüşüyor (1+1 flanş = 2 ad konsolide) —
-   atlama değil; yine de kalem-ekleme ihtiyacı gerçek, OPR kapısı açıldı.
+## KARARLAR (Cihat onaylı)
+- Yükle akışı: kullanıcı dosyalar alınana kadar bekler → sonra KARAR EKRANI (Yeni Devre / İncele &
+  Onayla / İşlenenler). Belirsizlik bitsin diye her ekranda çıkış görünür, hiçbir seçim tek yönlü değil.
+  Yeni Devre = sıfırdan (proje taşınmaz). Küçük devrede uyarı yok (butonlar zaten altta).
+- Kalem-zoom: ✏️ → değeri PDF/Excel'de bul → oraya götür (format öğretimi gerektirmeyen "tam dilim").
+- Okunan-değer: A çap/et izometriden · B kalite kalemden (316L terfide yazılsın — evet) · C yüzey
+  "paslanmaz" yazıyorsa → asit (SADECE yüzeyde yazıyorsa; boş+malzeme paslanmaz dahil DEĞİL).
 
-## Süreç dersleri (160)
-- **Ezber yorum = MK-126.8 minyatürü:** wizard yamasında comment'i dosyadan kopyalamak yerine
-  hatırlayarak yazınca eşleşme patladı; çare anchor-tabanlı kesme. İkinci tuzak: eklenen helper'ın
-  kendisi aranan deseni içeriyordu (sayaç 5→6) — global değişim ÖNCE, helper ekleme SONRA.
-- **159 ölü butonu (cizimdenOku):** 159c temizliğinde fonksiyon silinmiş, buton kalmış —
-  ReferenceError. Read-before-write turu yakaladı; "kaldırılan özelliğin TÜM dokunuşları" kapanış
-  kontrolü olmalı.
-- Cihat'ın "kızacaksın ama..." kalıbı üç kez geldi ve üçü de ürünü büyüttü (yan PDF, Excel sekmesi,
-  zoomTo) — yön düzeltmeleri maliyet değil, tasarım girdisi. MK-159.2 çiğnenmeden İNCELTİLDİ
-  (öğretim altyapısı ≠ salt görüntüleyici) — kural koruma ile ürün isteği bağdaştı.
-- Push edilmemiş paket üstüne yeni istek geldiğinde: aynı dosyalara bindir, TEK birleşik MD5 listesi
-  ver — iki ayrı transfer listesi karışıklık kaynağı.
+## TEKNİK ÖZ
+- **Paralel havuz** (`_havuzKos`, 6 eşzamanlı) — 356 dosya sıralı yarım saat → dakikalar. 4/4 test.
+- **izometri parse İSTEMCİ drenajı** keşfedildi (sunucu cron'u yok) → "Yükle" izometriyi SIRAYA koyar,
+  İŞLEMEZ; işleme İncele&Onayla'da (o devre) ya da İşlenenler'de (toplu, sayfa açık). MK-166.1.
+- **A:** devre-inceleme — kabuk cap/et boşsa izometri dal cap_mm/et_mm yüzeye (fitting-only spool;
+  MK-166.3). **B:** ares-kabuk grupla `anaKalite` + spool `kalite` + aktar zinciri (dz>kalem>anaMalzeme);
+  izo-eslesme iki return'e passthrough. **C:** ares-normalize yuzeyKod stainless→asit + wizard
+  yuzeyBadge kanonik etiket. 7/7 test.
+- 12/12 (yeni endpoint yok) · migration yok · izometri-oku dokunulmadı.
 
-## Dosyalar (160, son halleriyle)
-devre_wizard_v3.html 1907→~2280 (büyük modal paketi; **son MD5 840eabc19db575fca8792c55db2545bb —
-push teyidi 161 açılışında**) · format_tanit.html 800→845+B2 · izometri-batch.html 980→991 ·
-ares-layout.js +nav · ares-kabuk.js 290→320 (not overlay + OPR kalem) · api/devre-inceleme.js
-253→~300 (is_id + alıştırma/NOT/yüzey enjeksiyonu) · api/dosya-url-al.js +izometri-pdfs ·
-vendor/xlsx.full.min.js (YENİ, SheetJS 0.18.5) · test-isid.mjs (YENİ) ·
-docs/FORMAT-YONETIM-MIMARI.md (YENİ) · docs/KARARLAR.md +123 satır. Migration YOK. 12/12 ✓.
+## ÖZ-İHLAL
+- **MK-85.3:** spooller kolon adını tahmin ettim (cap_mm) — doğrusu `dis_cap_mm` / `et_kalinligi_mm`.
+  aktar insert'inden teyit ettim, düzelttim. Şema-önce istisnasız.
+
+## CRON (167'ye devredilen ana tasarım)
+Vercel sunucusuz — Pro'da bile always-on worker yok; sayfa-kapalı işleme CRON gerektirir. Mevcut
+`vercel.json` cron'u (`/api/kuyruk-isle`, 03:00) `is_kuyrugu`'yu süpürüyor; wizard kuyruğu
+(`dosya_isleme_kuyrugu`) tarayıcıyla boşalıyor. Çözüm: o worker'a izometri dalı + claim guard + frekans
+(Hobby gece-1 / Pro dakika / dış zamanlayıcı). Pro şart değil (self-chain Hobby'de yürür). Detay
+WIZARD-YOL-HARITASI 166 İŞARETLERİ + BRIEFING'de.
+
+## COMMIT'LER
+Bookend: `d5b8c9e` → `595c435`. Aradakiler topic bazlı (+N rozet · kalem-zoom v1/v2 · taslak rol+köprü ·
+excel hücre-git · yükle/paralel/karar ekranı) — `git log --oneline` ile sırala.

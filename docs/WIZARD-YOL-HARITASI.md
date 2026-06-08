@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 159)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 166)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -51,7 +51,7 @@
 ## FAZ 2 — WIZARD AKIŞ YENİDEN TASARIMI (153 geri bildirimleri)
 
 ### Giriş ve yükleme
-- [ ] W-2.1 Adım 1: tersane ve proje AYRI seçim alanları (aynı kutuda değil).
+- [x] W-2.1 **[KAPANDI — 166]** Adım 1: tersane ve proje AYRI seçim alanları + çift yönlü senkron (proje seçilince tersane oturur; tersane değişince uyumlu proje korunur). "Tersan — NB1124" karışık etiketi bitti.
 - [ ] W-2.2 "Mevcut devre / yeni devre" ayrımı kalkar. Mevcut devreye ekleme = devre detay "Spool ekle" → wizard'ın devre kipi (?devre_id=); onay sonrası devre detaya dönüş.
 - [~] W-2.3 **[YARIM — 137: gruplu ağaç + tip-seçici + sil GEMİDE; AÇIK: gerçek iç-içe görünüm + manuel dahil/hariç tiki; kutu mutabakatı 164]** Klasör ağacı: sürükle-bırakta Windows gezgini görünümü (mockup v5, MK-97.6). Klasör/dosya bazında dahil/hariç işareti.
 - [~] W-2.4 **[YARIM — 137: otomatik revizyon-öncesi TESPİTİ + rozet GEMİDE ama KOZMETİK (KARAR-137.2/2a: işleme dokunmaz); AÇIK: hariç=işlemeye girmez + görünür kayıt; kutu mutabakatı 164]** "Bilgi amaçlı" klasör/belge dışlama: revizyon-öncesi klasörler vb. işlemeye GİRMEZ. (Hariç tutulanlar kayıtta görünür kalır, sessiz silinmez.) 157 REVİZYON (MK-157.3): 156'nın "22 tablosuz çizim" kanıtı DÜŞTÜ — o dosyalar M+İ çiftinin MONTAJ kanadıydı, montaj öğretimiyle 22/22 L2/$0 çözüldü. Madde örneksiz tasarım maddesi olarak açık kalır; "ertelenemez" değil.
@@ -397,3 +397,74 @@ Durum değişiklikleri (160 güncellemesinin üstüne):
   dışıydı; doğal parse'ta düzelir ya da sha+reset reçetesi.
 - W-2.15 onay kuşağı (162 kayıt) ERİTİLMEDİ → 166 adayı. Y200 öğretimi bekliyor (diğer
   bilgisayar). W-2.19 tam dilim tasarımı duruyor.
+
+---
+
+## 166 İŞARETLERİ (2026-06-08) — DÜZEN TURU (sayfa düzeni + okunan-değer fidelity; format öğretimi atlandı)
+> Tema: wizard/devre_detay sayfa düzenini tutarlılaştırma + "okundu ama yüzeye çıkmadı" hissini bitirme.
+> izometri-oku DOKUNULMADI · 12/12 (yeni endpoint yok) · migration YOK.
+
+- **W-2.1 KAPANDI:** tersane/proje çift yönlü senkron (yukarıda işaretlendi).
+- **MK-165.7/2 KAPANDI — taslak→wizard köprüsü:** devre_detay ?taslak=1 kipinde aktif-devre
+  aksiyon butonları (Düzenle/Etiketler/Aktar/Durdur/KK/Sevkiyat + spool listesi yazma butonları)
+  GİZLENDİ (kilitli-görünür "bozuk" hissi bitti); tek aksiyon = "✏️ Wizard'da düzenle & onayla"
+  (?devre_id=, MK-136). Ters köprü: Adım 2'ye "👁 Önizle" (devre_detay ?taslak=1 yeni sekme).
+  İki kapı bağlandı; rol netleşti = taslak önizleme SALT kontrol penceresi. 3 dil anahtarı eklendi.
+- **K2-A GEMİDE — terfide öneri kapanışı:** onayEt backfill başarılıysa o devrenin TEMİZ izometri
+  önerilerini (`_eslesme.atanmamis>0 DEĞİL`) otomatik `tamamlandi` yapar; atanmamışlı + manuel_onay
+  AÇIK kalır (B-6); backfill hatalıysa hiçbirine dokunmaz. devre_detay Onay Kuyruğu sekmesi aktif
+  devrede rozet=0 ise GİZLİ (taslakta hep görünür). Wizard artığı görünümü bitti; onay kuşağı
+  birikiminin büyüme kaynağı kurudu.
+- **Adım 1 yedek alanları:** malzeme/yüzey/alıştırma — DOKÜMAN ÖNCELİKLİ (BOM/PDF ezer), yalnız
+  dokümanda bulunamayan spool'a iner (okunamayan PDF/manuel Excel güvenlik ağı). aktar'a opsiyonel
+  `malzemeVarsayilan`/`alistirmaVarsayilan` (yuzey param zaten vardı; devre_detay göndermez → 0
+  regresyon). Adım 1 yardım metni artık doğru (eski "opsiyonel" yalanı düzeldi).
+- **← Geri butonu** (Adım 1 başlık) — taslağı silmeden devrelere döner.
+- **devreler +N rozeti DÜZELDİ:** malzeme/yüzey "⚠ +N" artık çoğunluk dışı SPOOL ADEDİ değil farklı
+  TÜR SAYISI (galvaniz+11 siyah → +1; galvaniz+siyah+asit → +2). Spool adedi tooltip'e taşındı.
+- **YÜKLE AKIŞI YENİDEN (W-2.5/2.9'a kısmi cevap):** Adım 1'de iki buton (İncele/Beklemeye Al)
+  yerine TEK "⬆ Yükle". Dosyalar PARALEL HAVUZla (6 eşzamanlı) yüklenir (356 dosya sıralı yarım
+  saat yerine dakikalar). Bitince KARAR EKRANI: ➕ Yeni Devre Yükle (sıfırdan) · 🔍 İncele & Onayla ·
+  📋 İşlenenler'e Git. izometri SIRAYA alınır, BURADA İŞLENMEZ (istemci drenajı gerçeği — MK-166.1).
+  Küçük devrede uyarısız; her ekranda çıkış yolu görünür, seçim tek yönlü değil.
+- **W-2.19 TAM DİLİM GEMİDE (kalem-zoom — Cihat fikri):** düzelt modalında ✏️'ye basınca alanın
+  DEĞERİ pdf.js metin katmanında aranır → zoom + sarı vurgu. Konum tarayıcı uzayında (B1 uyumlu),
+  motor/izometri-oku'ya dokunmaz, format öğretimi gerektirmez. SATIR GRUPLAMA (MK-166.2): Cadmatic
+  parçalı metnini ("Pas"+"lanmaz") boşluklu+boşluksuz satırda yakalar; tek-item araması yetmiyordu.
+  Görünürlük toast'ı ("🔍 'x' — 1/N"), çoklu eşleşme gezinme (aynı ✏️ → sonraki). 🔍 Tablo norm
+  bbox yoksa "Malzeme Listesi" başlık-arama fallback'i (Y200 öğretiminde hassas bbox'a terfi eder).
+- **Excel hücre-git:** Excel sekmesi açıkken ✏️ → değer hücrede aranır (aktif sayfa DOM + diğer
+  sayfalar workbook taraması, sayfa-geçişli), hücre seçilir+ortalanır+hücre çubuğu dolar. PDF
+  tarafıyla simetrik sözleşme. (🔍 Tablo istisna: pdfZorla — PDF bölgesi demektir.)
+- **OKUNAN-DEĞER YÜZEYE (Cihat A/B/C — "okunmamış hissi"ni bitirdi):**
+  - **A (görünüm):** devre-inceleme — kabuk çap/et boşsa (fitting-ağırlıklı spool'da düz boru yok →
+    kabuk türetemez, MK-166.3) izometri parse dalından gösterilir; terfide backfill aynı değeri yazar.
+  - **B (terfi+görünüm):** grupla baskın kalem KALİTESİNİ türetir (`anaKalite`, 316L), spool çıktısına
+    `kalite` ekler (izo-eslesme passthrough); aktar zinciri dz.kalite > kalem kalitesi > anaMalzeme →
+    **terfide spool kalite'sine 316L yazılır.**
+  - **C (genelleme — MK-166.4):** yüzey alanı stainless okuyorsa (paslanmaz/316/304/...) → `asit`
+    (paslanmaz yüzey işlemi asitlemedir); yuzeyKod + yuzeyBadge normalize → tabloda da "Asit".
+
+### 166 — değişen dosyalar
+devre_wizard_v3.html (çok dalga) · devreler.html · devre_detay.html · ares-kabuk.js · ares-normalize.js ·
+lib/izo-eslesme.js · api/devre-inceleme.js · lang/{tr,en,ar}.json. **TARAYICIDA yüklü → sert yenile
+(MK-161.1): ares-kabuk.js, ares-normalize.js.** Bookend commit'ler: `d5b8c9e` (ilk — wizard düzen
+paketi) → `595c435` (son — okunan değer A/B/C). Aradakiler topic bazlı (+N rozet · kalem-zoom v1/v2 ·
+taslak rol+köprü · excel hücre-git · yükle/paralel/karar ekranı) — açılışta `git log --oneline` ile sırala.
+
+### 166 — AÇIK KALANLAR / 167 ADAYLARI
+- **CRON / sayfa-kapalı izometri işleme (167 ANA TASARIM — MK-166.1):** izometri parse İSTEMCİ
+  drenajı (sunucu worker'ı yok). Çözüm: `kuyruk-isle.js` (mevcut cron+self-chain worker) `is_kuyrugu`
+  yanına `dosya_isleme_kuyrugu` izometri dalı eklesin (YENİ ENDPOINT YOK — 12/12 koru) + atomik claim
+  guard (cron↔tarayıcı çift-işleme önlenir) + frekans kararı (Hobby gece-1 / Pro dakika / dış
+  zamanlayıcı). Pro ŞART DEĞİL — self-chain Hobby'de de yürür; Pro frekansı+timeout'u açar.
+- **MK-165.7/1 OPR dn→dis_cap kabuk düzeltmesi** (DN200→200.0, doğrusu 219.1; olcuParse+dnBul) — AÇIK.
+- **MK-165.7/3 uyarı mükerrerliği** (aynı uyarı 2-3 dk arayla çift) — AÇIK.
+- **W-2.5** tam değil (yükleme çubuğu netleşti ama "iki ayrı çubuk: yükleme+işleme" değil) ·
+  **W-2.9** eşzamanlı paralel devre değil (karar ekranı SERİ yüklemeyi akıttı).
+- **Onay kuşağı eritme** (162 kayıt; P26-217=76) — AÇIK · **Y200 öğretimi** (diğer bilgisayar) — AÇIK.
+- **W-2.19 hassas bbox hali** Y200 tablo öğretiminde gelir (kalem-zoom değer-arama şimdi çalışıyor).
+- **KARARLAR.md'ye MK-166.1..6 işlenmeli** (kök dosya — bu pakette DEĞİL, ayrı append).
+- **Küçükler:** kalem-zoom yanlış-yere-gitme aday-listesi inceltmesi · karar ekranı küçük-devre canlı doğrulama.
+- **MK-85.3 öz-ihlal notu:** spooller kolon adı tahmin edildi (cap_mm yanlış; doğrusu dis_cap_mm /
+  et_kalinligi_mm). Şema-önce istisnasız.

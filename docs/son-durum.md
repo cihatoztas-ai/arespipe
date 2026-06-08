@@ -1,70 +1,50 @@
-# son-durum.md — Oturum 160 (2026-06-06)
+# son-durum.md — 166. Oturum (2026-06-08)
 
-## Bu oturumda ne yapıldı
-1. **AÇILIŞ TEYİTLERİ:** 159c commit'i (ea94f38) zaten pushluymuş ✓ · taslak NULL temizliği
-   COMMIT'li (sorgu=0) ✓ · modal tıklama testleri canlı turda dolaylı yapıldı (✏️/PDF çalışıyor).
-2. **KÖPRÜ ALTYAPISI (W-3.2 + format_tanit `?is=` yükleyici):** iki kuyruk/iki bucket bulgusu
-   (dosya_isleme_kuyrugu→devre-belgeleri / is_kuyrugu→izometri-pdfs) → `?is=<id>&kaynak=devre|batch`
-   sözleşmesi. format_tanit işten PDF açar (signed-URL→download yedekli), AI-oku köprü PDF'iyle
-   çalışır, paket-katmanlı ailede ⚠ MK-155.1 banner. Batch "Tanıt" butonu (bilinmeyen satır) +
-   nav "Format Tanıt" girişi + dosya-url-al allow-list'e izometri-pdfs + devre-inceleme `is_id`
-   taşıma (lib SAF, K2 deseni; mekanik test 6/6 yeşil, test-isid.mjs repoda).
-3. **docs/FORMAT-YONETIM-MIMARI.md (ana iş çıktısı):** dört katman (K1-K4) × yazma hedefi ×
-   etkinleşme tablosu; tek otorite kararı MK-160.1 (adres-bilinçli ikilik, yeni aile AILE_KAYIT'a
-   eklenmez, uzun vade facet→DB); kip sözlüğü MK-160.2 (Düzelt=değer/tekil ↔ Tanıt=kural/format).
-4. **KARARLAR.md BÜYÜK BULGU + GERİ DOLDURMA:** dosyada en son MK-138.3 işliydi — 139-159 hiç
-   işlenmemiş (MK-159.3'ün ikinci vakası: "157-159 birikti" devri boşluğu küçük gösteriyordu).
-   154-160 seti kaynak-kanıtlı işlendi (18 kayıt), 139-153 BOŞLUK NOTU dosyada (ezberden yazılmadı,
-   MK-126.8). MK-160.3/4/5 161'de işlenecek.
-5. **YÖN DEĞİŞİMİ (Cihat) → SPOOL MODALI "BÜYÜK EKRAN":** W-3.1 wizard köprüsü İPTAL ("buradan
-   format tanıma ekranı çıkmasın") — değer işi Düzelt modalında, PDF YANINDA. Aynı gün canlı test
-   döngüsüyle evrim: (a) yan PDF paneli → pdfjs SALT görüntüleyici (MK-159.2 inceltmesi MK-160.3:
-   öğretim altyapısı kopyası yasak, salt görüntüleyici serbest; vendor format_tanit ile aynı, lazy);
-   sayfa/zoom(5x tavan + 7500px canvas emniyeti)/drag-pan(transform tabanlı, sınırlı — görüntü
-   kaybolamaz). (b) Sekmeler: 📐izometri ↔ 🗺montaj (kok+bagli_spoollar eşleşmesi — fit
-   düzeltmesinden sonra GELDİ) ↔ 📊**Excel** (SheetJS vendor/xlsx.full.min.js, sheet seçici, doğal
-   scroll; ilk testte açılmadı — hata mesajı detaylandırıldı, 161 kontrolü). (c) Modal fit:
-   fixed+calc — viewport'tan büyüyemez, z-index 600. (d) Her satırda buton: zayıf=Düzelt(sarı),
-   sağlam=İncele(yeşil). (e) Kalem ✏️ INLINE (modal değişmez, PDF açık kalır; aynı kalemKaydet
-   motoru, _kalemCfg birleşik lookup). (f) **KALEM EKLEME**: "+ Ekle" → kalem_idx≥bom.length,
-   YENİ rozeti + 🗑; terfide aktar `kod:'OPR'` spool_malzemeleri satırı (tanim/tip ek alanları
-   yalnız yeni kalemde — mevcut düzeltme setine sızmaz). (g) "PDF'TEN OKUNAN (HAM)" bölümü —
-   parse dalının generic dökümü (W-2.18 modal hali). (h) Önizleme enjeksiyonu (devre-inceleme):
-   alıştırma 117 kuralı BİREBİR (ALS dosya→VAR / alistirma_ipucu) + NOT + yüzey (kabuk_bos kuralı).
-   (i) NOT alanı düzeltilebilir → aktar `not`→imalat_not overlay (D2 ezme etkileşimi notlu).
-   (j) Kalite süzgeci: kategori_kod ile malzemeye göre (paslanmaz→paslanmaz kaliteleri).
-   (k) Zayıf SEBEBİ başlıkta (çelişki/kritik/güven) + "düzeltme rozeti değiştirmez" bilgi notu.
-   (l) W-2.19 altyapısı: `dpvZoomTo(sayfa,bbox)` + sarı vurgu — bağlantı koordinat envanteri (161+).
-   (m) 159 ölü butonu temizlendi (cizimdenOku — tanımsız fonksiyon, ReferenceError atıyordu).
+## TEMA
+DÜZEN TURU: wizard/devre_detay sayfa düzeni tutarlılaştırma + "okundu ama yüzeye çıkmadı"
+hissini bitirme. Format öğretimi bu oturum ATLANDI (Cihat kararı).
 
-## Bulgular (160)
-- "PDF 3 satır / kabuk 2 kalem" vakası muhtemelen KONSOLİDE (1+1 flanş = "2 ad"), atlama değil —
-  ama gerçek eksikler için kalem-ekleme kapısı artık var. ZAYIF ÇELİŞKİ DETAYI açık: hangi alanın
-  çeliştiği modalda gösterilmiyor (bindirme/_eslesme listesi) — operatör neyi düzelteceğini bilmeli.
-- Glyph bozulması canvas'ta belirgin (E100-722 ailesi), metin katmanı/ham döküm SAĞLIKLI —
-  Windows/pilot görüntü konusu.
-- Yüksek zoom'da sol form scrollbar kaybı raporlandı — canvas emniyeti (7500px) sonrası tekrar test.
+## DURUM
+- HEAD bookend: `d5b8c9e` (wizard düzen paketi) → `595c435` (okunan değer A/B/C).
+- 12/12 fonksiyon (yeni endpoint yok). Migration YOK. izometri-oku DOKUNULMADI.
+- TARAYICIDA yüklü (deploy sonrası sert yenile — MK-161.1): ares-kabuk.js, ares-normalize.js.
 
-## Commit'ler (160) — Cihat push etti / EDECEK
-| Durum | İçerik |
-|---|---|
-| pushlu | feat(160) köprü paketi (6 dosya + test-isid.mjs) |
-| pushlu | docs(160) FORMAT-YONETIM-MIMARI (01bc368) + KARARLAR 154-160 (aeed56d) |
-| pushlu | feat(160) B2 değer kipi (sonra uykuya alındı) · feat+fix büyük modal paketi · Excel kipi |
-| **BEKLİYOR** | son düzeltme paketi: devre_wizard_v3.html (840eabc19db575fca8792c55db2545bb) — zayıf sebep + canvas/pan emniyeti + hata mesajları |
-DB değişikliği YOK (migration yok). 12/12 ✓. izometri-oku DOKUNULMADI ✓ (yalnız salt okuma).
+## YAPILANLAR (7 ana + A/B/C)
+1. **W-2.1 KAPANDI** — tersane/proje çift yönlü senkron (karışık etiket bitti).
+2. **MK-165.7/2 KAPANDI** — taslak (?taslak=1) = salt kontrol penceresi; kilitli aksiyon butonları
+   gizli, tek aksiyon "✏️ Wizard'da düzenle & onayla"; Adım 2'ye "👁 Önizle" ters köprüsü. 3 dil anahtarı.
+3. **K2-A** — terfide temiz izometri önerileri otomatik tamamlandi (atanmamış+manuel açık; backfill
+   hatalıysa dokunma); Onay Kuyruğu sekmesi aktifte rozet=0 ise gizli.
+4. **Adım 1 yedek alanları** (malzeme/yüzey/alıştırma — doküman öncelikli; aktar opsiyonel param;
+   0 regresyon) + **← Geri** butonu.
+5. **devreler +N rozeti** — spool adedi değil TÜR sayısı (adet tooltip'e).
+6. **YÜKLE AKIŞI** — tek "⬆ Yükle" + paralel havuz (6) + karar ekranı (Yeni Devre/İncele&Onayla/
+   İşlenenler). izometri SIRADA, burada işlenmez (MK-166.1). Küçük devrede uyarısız.
+7. **W-2.19 kalem-zoom** (✏️ → değer pdf.js metin katmanında ara → zoom+vurgu; satır gruplama
+   MK-166.2; çoklu eşleşme gezinme) + **Excel hücre-git** (sayfa-geçişli, simetrik).
+- **A/B/C okunan-değer yüzeye:** A çap/et izometri ham'dan (MK-166.3) · B kalite kalemden
+  (anaKalite→316L terfide) · C yüzey paslanmaz→asit (MK-166.4).
 
-## MK kayıtları
-- **MK-160.1 + MK-160.2** KARARLAR.md'de İŞLİ (aeed56d).
-- **MK-160.3 (161'de işlenecek):** MK-159.2 İNCELTMESİ — yasak olan öğretim/çapa ALTYAPISININ
-  kopyasıdır; SALT görüntüleyici (render+pan+zoom+sekme, vendor ortak) serbesttir. Spool modalı
-  yan paneli bu kapsamda pdfjs viewer oldu; embed denemesi aynı gün aşıldı (pan ihtiyacı).
-- **MK-160.4 (161'de):** Operatör kalem ekleme — kalem_idx≥bom.length taslak_duzeltmeleri'nde
-  yaşar; aktar `kod:'OPR'` ile spool_malzemeleri'ne yazar; tanim/tip ek alanları yalnız yeni kalem.
-- **MK-160.5 (161'de):** Önizleme parse enjeksiyonu — taslakta spooller yok (MK-157.1) diye
-  eslestir'in terfi-sonrası yazdığı alanlar (alıştırma/NOT/yüzey) endpoint'te AYNI kurallarla
-  (117 birebir) satıra taşınır; kalıcı yazım yine terfi/eslestir hattında.
+## DEĞİŞEN DOSYALAR
+devre_wizard_v3.html · devreler.html · devre_detay.html · ares-kabuk.js · ares-normalize.js ·
+lib/izo-eslesme.js · api/devre-inceleme.js · lang/{tr,en,ar}.json.
 
-## 161 ANA ADAYLAR (Cihat sıralar)
-Son paket push+deploy → büyük modal canlı test seti (aşağıda, SONRAKI dosyada) → zayıf ÇELİŞKİ
-DETAYI (W-2.20) → format hattı ilk köprülü öğretim turu (batch Tanıt) → devre_detay'a modal taşıma.
+## AÇIK (167)
+- **CRON / sayfa-kapalı izometri (167 ana tasarım — MK-166.1):** kuyruk-isle.js'e dosya_isleme_kuyrugu
+  izometri dalı + atomik claim guard + frekans (Hobby gece / Pro dakika / dış zamanlayıcı). Yeni endpoint
+  yok (12/12 koru). Pro şart değil (self-chain Hobby'de yürür). Araştırıldı/karar verildi → 167'de uygula.
+- MK-165.7/1 OPR dn→dis_cap (DN200→200.0, doğrusu 219.1) · MK-165.7/3 uyarı mükerrerliği.
+- Onay kuşağı eritme (162 kayıt; P26-217=76) · Y200 öğretimi (diğer bilgisayar).
+- W-2.5 (iki çubuk değil) · W-2.9 (eşzamanlı paralel devre değil).
+- KARARLAR.md'ye MK-166.1..6 işlenecek (bu pakette değil — kök dosya).
+- Canlı teyit borcu: deploy+sert yenile → G200 inceleme (çap/et dolu, kalite 316L, yüzey Asit) +
+  bir terfi → `SELECT spool_no, dis_cap_mm, et_kalinligi_mm, kalite, yuzey, alistirma FROM spooller`.
+
+## MK (166 — KARARLAR.md'ye işlenecek)
+MK-166.1 (izometri istemci drenajı) · MK-166.2 (satır gruplama) · MK-166.3 (fitting-only cap/et
+izometriden) · MK-166.4 (yüzey stainless→asit) · MK-166.5 (taslak=salt kontrol) · MK-166.6 (yükle=
+paralel havuz+karar ekranı). Öz-ihlal: MK-85.3 (spooller kolon adı tahmin — doğrusu dis_cap_mm/
+et_kalinligi_mm).
+
+## TEST DEVRELERİ — SİLME
+"bn ömn" (77bfbc98) · "b nn" (e0af361d, taslak).

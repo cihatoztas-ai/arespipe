@@ -203,3 +203,15 @@ motor kopyası tekleştirme (B7) · sessiz fallback taraması (B4) · format ad/
 - **B1 teyidi pekişti (MK-162.3):** UI yine yanılttı (kuyruk "satirlar=0" okuması ↔ gerçek 3
   temiz satır); hüküm parse_sonuc jsonb_pretty dökümü + drenaj SQL'inden verildi.
 - 164 ekindeki M130 vakası kapandı; reçeteler (Y200 dahil) değişmedi.
+
+---
+
+## 166 EKİ (2026-06-08) — format öğretimi ATLANDI (düzen turu)
+- Cihat kararı: bu oturum format tanıtma maddelerine girilmedi; sayfa düzeni + okunan-değer
+  fidelity'sine odaklanıldı (bkz. WIZARD-YOL-HARITASI 166 İŞARETLERİ). Y200 öğretim reçetesi
+  (yukarıdaki) AYNEN bekliyor — diğer bilgisayar gerektiğinde.
+- **W-2.19 komşusu — kalem-zoom GEMİDE:** "değer→koordinat envanteri" tasarım borcuna girmeden,
+  ✏️'ye basınca alan değeri pdf.js metin katmanında aranıp zoom yapılıyor (satır gruplama ile
+  parçalı Cadmatic metni dahil). 🔍 Tablo butonu norm bbox yoksa "Malzeme Listesi" başlığını arıyor;
+  Y200 tablo öğretimi yapıldığı an `konum_ipucu` norm bbox'ına otomatik terfi eder (reçete değişmedi).
+- B5 çapraz-doğrulama tasarım borcu DURUYOR (değişmedi). otoTespit güveni (B5) hâlâ açık.
