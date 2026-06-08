@@ -345,6 +345,7 @@
     </div>
 
     <div id="teshisBandi" class="hide" style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:11px 14px;font-size:15px;margin-bottom:16px;font-weight:600;"></div>
+    <div id="hataBandi" class="hide" style="margin-bottom:16px;"></div>
 
     <div class="tabs">
       <button class="tab active" onclick="tabGit('spool',this)">📦 Spool Listesi</button>
@@ -1022,6 +1023,7 @@ async function inceleGetir() {
     WIZ._inceleme = j;
     await _duzeltmeleriYukle(j);   // G2a overlay-A1: kayıtlı düzeltmeleri spoollar'a bindir
     renderInceleme(j);
+    hataBandiYukle();
   } catch (e) { console.error('[v3] inceleGetir:', e); }
 }
 
@@ -1153,6 +1155,32 @@ async function k2Kaldir(hedefKey) {
 // 169: TESHIS BANDI — durumu okur, operatoru dogru yonlendirir (Cihat kurali: Excel = dayanak).
 //   kabuk=0 -> Excel okunamadi/eksik · fazla>0 -> sayi/yazim uyusmazligi, Excel'i kontrol et
 //   eksik>0 -> izometri gelmemis · hepsi temiz -> bant gizli.
+
+// 170/#3: dosya seviyesi hata bandi -- bu devrenin islenemeyen (durum=hata) belgelerini gosterir.
+//   Veri istemci tarafindan cekilir (devre-inceleme API'si hata dondurmuyor); server/12-12 degismez.
+async function hataBandiYukle() {
+  var el = document.getElementById('hataBandi'); if (!el) return;
+  if (!WIZ.devre_id) { el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return; }
+  try {
+    var supa = ARES.supabase();
+    var dk = await supa.from('devre_dokumanlari').select('id, dosya_adi').eq('devre_id', WIZ.devre_id).eq('aktif', true);
+    var doklar = (dk && dk.data) || [];
+    if (!doklar.length) { el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return; }
+    var ad = {}; doklar.forEach(function (x) { ad[x.id] = x.dosya_adi; });
+    var ids = doklar.map(function (x) { return x.id; });
+    var kq = await supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, hata_mesaji').eq('durum', 'hata').in('devre_dokuman_id', ids);
+    var hatalar = (kq && kq.data) || [];
+    if (!hatalar.length) { el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return; }
+    var liste = hatalar.map(function (h) {
+      return '<li style="margin:2px 0;"><b>' + esc(ad[h.devre_dokuman_id] || '(belge)') + '</b>' + (h.hata_mesaji ? ' &mdash; ' + esc(h.hata_mesaji) : '') + '</li>';
+    }).join('');
+    el.className = '';
+    el.style.cssText = 'border-radius:9px;padding:11px 14px;font-size:14px;margin-bottom:16px;background:rgba(229,62,62,.10);border:1px solid var(--re);color:var(--re);';
+    el.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">&#9888; ' + hatalar.length + ' belge işlenemedi (hata)</div>'
+      + '<ul style="margin:0;padding-left:18px;font-weight:400;">' + liste + '</ul>'
+      + '<div style="margin-top:6px;font-size:12px;font-weight:400;">Bu PDF dosyaları okunamadı; ilgili spool satırları eksik görünür. Dosyayı kontrol edip yeniden yükleyebilir ya da İşlenenler ekranından tekrar işleyebilirsiniz.</div>';
+  } catch (e) { console.warn('[v3] hataBandi:', e); }
+}
 function teshisBandiCiz(oz, spLen) {
   var el = document.getElementById('teshisBandi'); if (!el) return;
   var kabuk = (oz && oz.toplam != null) ? oz.toplam : (spLen || 0);
