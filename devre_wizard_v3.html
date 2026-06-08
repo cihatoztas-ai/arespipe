@@ -400,6 +400,8 @@
 <div id="duzeltOverlay" class="overlay hide" onclick="if(event.target===this)duzeltKapat()"><div class="pop" id="duzeltPop"><div class="dp-head"><h3 id="dpTitle">—</h3><button class="dp-x" onclick="duzeltKapat()">✕</button></div><div class="dp-body" id="dpBody"></div></div></div>
 <!-- Onay modalı -->
 <div id="onayOverlay" class="overlay hide" onclick="if(event.target===this)onayKapat()"><div class="pop" style="width:480px;"><div class="dp-head"><h3>🚀 Devreyi canlıya aktar</h3><button class="dp-x" onclick="onayKapat()">✕</button></div><div class="dp-body" id="onayBody"></div></div></div>
+<!-- 169/A1: K2 elle eslestirme popup (fazla PDF -> Excel kabuk spool) -->
+<div id="k2Overlay" class="overlay hide" onclick="if(event.target===this)k2Kapat()"><div class="pop" style="width:520px;"><div class="dp-head"><h3>🔗 PDF'i Excel spool'una eşleştir</h3><button class="dp-x" onclick="k2Kapat()">✕</button></div><div class="dp-body" id="k2Body"></div></div></div>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -435,6 +437,7 @@ var WIZ = {
   _kabukSatirlar: [],      // BOM parse_sonuc.satirlar — grupla + malzeme sekmesi
   _kabukSpoollar: [],      // ARES_KABUK.grupla().spoollar — endpoint kabuk_spoollar
   _inceleme: null,         // /api/devre-inceleme son dönüşü {spoollar, fazla, ozet}
+  _pdfMap: {},             // 169/A1: elle eslestirme overlay — (pipeline|spoolNo_fazla) -> hedef kabuk spool_no
   _drenajCalisiyor: false,
   _inceleMeAcik: false
 };
@@ -1033,18 +1036,118 @@ async function _duzeltmeleriYukle(j) {
       .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
       .eq('kalem_idx', -1);   // 145/B: yalnız spool-seviyesi; kalem düzeltmeleri ayrı overlay
     if (res.error) { console.warn('[v3] duzelt yukle:', res.error.message); return; }
-    if (!res.data || !res.data.length) return;
-    // (pipeline_no|spool_no) → { alan: deger }
-    var harita = {};
+    if (!res.data || !res.data.length) { WIZ._pdfMap = {}; return; }
+    // (pipeline_no|spool_no) → { alan: deger }. 169/A1: '_pdf_spool_map' AYRI tutulur (deger duzeltmesi degil, eslestirme).
+    var harita = {}, pdfMap = {};
     res.data.forEach(function(d) {
       var k = (d.pipeline_no || '') + '|' + (d.spool_no || '');
+      if (d.alan === '_pdf_spool_map') { pdfMap[k] = d.deger; return; }   // fazla PDF -> hedef kabuk spool
       (harita[k] = harita[k] || {})[d.alan] = d.deger;
     });
+    WIZ._pdfMap = pdfMap;
     j.spoollar.forEach(function(s) {
       var k = (s.pipeline || '') + '|' + (s.spoolNo || '');
       if (harita[k]) s._duzelt = harita[k];
     });
   } catch (e) { console.warn('[v3] duzelt yukle hata:', e); }
+}
+
+// 169/A1: elle baglanmis fazla PDF'i eksik spool satirinda goster (izometri hucresi).
+function izoBagliCell(bagliPdfler) {
+  var t = bagliPdfler.join(', ');
+  return '<span class="izo" style="color:var(--ac);">🔗 ' + esc(t) + '</span>'
+    + '<span class="guv l2" title="Operator elle baglacdi — terfide PDF bu spool\'a baglanir">elle</span>';
+}
+// Bagli satirin islem hucresi — bagi sokme dugmesi.
+function islemBagliCell(hedefKey, bagliPdfler) {
+  var hk = esc(hedefKey).replace(/'/g, "\\'");
+  return '<button class="btn-sm" style="color:var(--txd);" onclick="event.stopPropagation();k2Kaldir(\'' + hk + '\')" title="Eslestirmeyi kaldir">🔗 bağı sök</button>';
+}
+
+// ── 169/A1: K2 ELLE ESLESTIRME POPUP ──────────────────────────────────────────
+//   Fazla PDF (orn. S46_1) -> Excel'deki mevcut eksik spool (S46). Excel'i DELMEZ (sayi sabit),
+//   yeni spool YOK. Overlay taslak_duzeltmeleri'ne yazilir (alan='_pdf_spool_map'). Terfide A2 uygular.
+var _k2Fazla = null;   // o an eslestirilen fazla {pipeline, spoolNo, dosya_adi, sebep}
+function k2Ac(f) {
+  _k2Fazla = f;
+  // Sol panel adaylari: AYNI pipeline'daki EKSIK (dokuman yok) kabuk spool'lari (Excel'de var, PDF yok).
+  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
+  var plF = String(f.pipeline || '').trim().toUpperCase();
+  var adaylar = sp.filter(function(s){
+    return s.durum === 'eksik' && String(s.pipeline || '').trim().toUpperCase() === plF;
+  });
+  // Zaten baska bir fazlaya baglanmis kabuk spool'larini cikar (cift bag onleme).
+  var bagliHedefler = {};
+  if (WIZ._pdfMap) Object.keys(WIZ._pdfMap).forEach(function(k){
+    var pl = k.split('|')[0] || ''; bagliHedefler[pl + '|' + WIZ._pdfMap[k]] = true;
+  });
+  var liste = adaylar.map(function(s){
+    var hk = (s.pipeline || '') + '|' + (s.spoolNo || '');
+    var bagli = bagliHedefler[hk];
+    var spEsc = esc(s.spoolNo || '').replace(/'/g, "\\'");
+    return '<div class="locked" style="padding:8px 11px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">'
+      + '<span style="flex:1;">' + esc(markaCellMetin(s)) + '</span>'
+      + (bagli ? '<span class="src l2">zaten bağlı</span>'
+               : '<button class="btn-sm" style="color:var(--gr);" onclick="k2Bagla(\'' + spEsc + '\')">Bağla →</button>')
+      + '</div>';
+  }).join('');
+  if (!liste) liste = '<div class="sub" style="color:var(--warn);font-size:13px;">Bu pipeline\'da eşleşmemiş (eksik) kabuk spool\'u yok. '
+    + 'Bu durumda PDF Excel\'de OLMAYAN bir spool\'a ait olabilir — Excel\'i kontrol edin (Excel = dayanak).</div>';
+  var b = '<div class="sub" style="font-size:13px;margin:0 0 12px;">PDF: <b>' + esc(_k2Fazla.dosya_adi || _k2Fazla.spoolNo || '') + '</b>'
+    + ' (parse: <b>' + esc(_k2Fazla.spoolNo || '') + '</b>). Excel\'deki hangi spool\'a ait? '
+    + '<br>Yazım farkı (ör. S46_1 → S46) ise eşleştir — Excel sayısı değişmez, yeni spool eklenmez.</div>';
+  b += '<div class="dp-sec">Eşleşmemiş Excel spool\'ları (aynı pipeline)</div>' + liste;
+  b += '<div class="actions" style="margin-top:10px;"><button class="btn ghost" onclick="k2Kapat()">Kapat</button></div>';
+  document.getElementById('k2Body').innerHTML = b;
+  document.getElementById('k2Overlay').classList.remove('hide');
+}
+function k2Kapat() { document.getElementById('k2Overlay').classList.add('hide'); _k2Fazla = null; }
+
+// Bagla: overlay'i taslak_duzeltmeleri'ne yaz (fazla anahtari -> hedef kabuk spool_no).
+async function k2Bagla(hedefSpoolNo) {
+  if (!_k2Fazla) return;
+  var f = _k2Fazla;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    var userId; try { userId = (await supa.auth.getUser()).data.user.id; } catch(e) { userId = null; }
+    var row = { tenant_id: tid, devre_id: WIZ.devre_id,
+      pipeline_no: f.pipeline || '', spool_no: f.spoolNo || '',
+      alan: '_pdf_spool_map', kalem_idx: -1, deger: hedefSpoolNo,
+      kaynak: 'operator', deger_kaynagi: 'operator', duzelten: userId || null,
+      updated_at: new Date().toISOString() };
+    var ur = await supa.from('taslak_duzeltmeleri').upsert(row, { onConflict: 'tenant_id,devre_id,pipeline_no,spool_no,alan,kalem_idx' });
+    if (ur.error) { console.error('[v3/A1] k2 bagla:', ur.error.message); toast('Eşleştirme kaydedilemedi: ' + ur.error.message); return; }
+    WIZ._pdfMap = WIZ._pdfMap || {};
+    WIZ._pdfMap[(f.pipeline || '') + '|' + (f.spoolNo || '')] = hedefSpoolNo;
+    k2Kapat();
+    toast('🔗 ' + (f.spoolNo || '') + ' → ' + hedefSpoolNo + ' eşleştirildi (terfide bağlanır)');
+    if (WIZ._inceleme) renderInceleme(WIZ._inceleme);   // fazla duser, eksik satir 'baglandi' olur
+  } catch (e) { console.error('[v3/A1] k2 bagla hata:', e); toast('Eşleştirme kaydedilemedi'); }
+}
+
+// Kaldir: bagi sok (overlay sil). hedefKey = 'pipeline|hedefSpoolNo'.
+async function k2Kaldir(hedefKey) {
+  var pl = hedefKey.split('|')[0] || '', hedefSp = hedefKey.split('|')[1] || '';
+  // _pdfMap'te bu hedefe baglanmis fazla anahtar(lar)ini bul.
+  var silinecek = [];
+  Object.keys(WIZ._pdfMap || {}).forEach(function(fk){
+    var fpl = fk.split('|')[0] || '';
+    if (fpl === pl && WIZ._pdfMap[fk] === hedefSp) silinecek.push(fk);
+  });
+  if (!silinecek.length) return;
+  try {
+    var supa = ARES.supabase(), tid = ARES.tenantId();
+    for (var i = 0; i < silinecek.length; i++) {
+      var fsp = silinecek[i].split('|')[1] || '';
+      var dr = await supa.from('taslak_duzeltmeleri').delete()
+        .eq('tenant_id', tid).eq('devre_id', WIZ.devre_id)
+        .eq('pipeline_no', pl).eq('spool_no', fsp).eq('alan', '_pdf_spool_map').eq('kalem_idx', -1);
+      if (dr.error) { console.error('[v3/A1] k2 kaldir:', dr.error.message); toast('Kaldırılamadı'); return; }
+      delete WIZ._pdfMap[silinecek[i]];
+    }
+    toast('Eşleştirme kaldırıldı');
+    if (WIZ._inceleme) renderInceleme(WIZ._inceleme);
+  } catch (e) { console.error('[v3/A1] k2 kaldir hata:', e); toast('Kaldırılamadı'); }
 }
 
 // 169: TESHIS BANDI — durumu okur, operatoru dogru yonlendirir (Cihat kurali: Excel = dayanak).
@@ -1091,9 +1194,19 @@ function renderInceleme(j) {
   // stat-grid
   statGridRender(sp);
 
+  // 169/A1: ters harita — hedef kabuk (pipeline|spoolNo) -> bagli fazla PDF spool_no(lar)
+  var _bagliTers = {};
+  if (WIZ._pdfMap) Object.keys(WIZ._pdfMap).forEach(function(fk){
+    var hedefSp = WIZ._pdfMap[fk];                 // orn. 'S46'
+    var pl = (fk.split('|')[0] || ''), fsp = (fk.split('|')[1] || '');
+    var hk = pl + '|' + hedefSp;                   // hedef kabuk anahtari
+    (_bagliTers[hk] = _bagliTers[hk] || []).push(fsp);
+  });
   // Spool tablosu
   var html = '';
   sp.forEach(function(s, i) {
+    var _hk = (s.pipeline || '') + '|' + (s.spoolNo || '');
+    var _bagliPdf = _bagliTers[_hk] || null;       // bu kabuk spool'una elle baglanmis fazla PDF(ler)
     var marka = markaCell(s);
     var rev = (s.rev && s.rev !== '—') ? '<span class="rev-chip">' + esc(s.rev) + '</span>' : '<span class="gri">—</span>';
     var num = (s.spoolNo || '').replace(/^S?0*/i, '') || (i + 1);
@@ -1114,15 +1227,19 @@ function renderInceleme(j) {
       '<td class="cap' + _dzCls('cap') + '">' + capTxt + '</td><td class="et' + _dzCls('et') + '">' + etTxt + '</td><td class="agir' + _dzCls('agirlik') + '">' + agTxt + '</td>' +
       '<td class="' + _dzCls('malzeme').trim() + '">' + matBadge(malV) + '</td><td class="kalite' + _dzCls('kalite') + '">' + esc((typeof ARES_NORM !== 'undefined' && kalV) ? (ARES_NORM.kaliteGoster(kalV) || kalV) : (kalV || '')) + '</td>' +
       '<td class="' + _dzCls('yuzey').trim() + '">' + yuzeyBadge(yuzV) + '</td><td class="' + _dzCls('alistirma').trim() + '">' + alistMb(aliV) + '</td>' +
-      '<td>' + mbadge(s.durum) + '</td><td>' + izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag) + '</td><td>' + islemCell(i, s.durum) + '</td></tr>';
+      '<td>' + mbadge(s.durum) + '</td><td>' + (_bagliPdf ? izoBagliCell(_bagliPdf) : izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag)) + '</td><td>' + (_bagliPdf ? islemBagliCell(_hk, _bagliPdf) : islemCell(i, s.durum)) + '</td></tr>';
   });
   // Fazla (turuncu) — kabukta yok, sorulur (MK-126.2)
-  fz.forEach(function(f) {
+  fz.forEach(function(f, fi) {
+    // 169/A1: bu fazla PDF zaten bir kabuk spool'una baglandiysa (overlay) — burada GOSTERME (eslesti).
+    var fKey = (f.pipeline || '') + '|' + (f.spoolNo || '');
+    if (WIZ._pdfMap && WIZ._pdfMap[fKey]) return;
+    var fjson = esc(JSON.stringify(f)).replace(/'/g, '&#39;');
     html += '<tr><td style="color:var(--txd);font-size:12px;">?</td>' +
       '<td><span class="gri">— (kabukta yok)</span></td><td><span class="gri">—</span></td><td>—</td>' +
       '<td colspan="6" class="gri">' + esc(f.dosya_adi || '') + (f.sebep ? ' · ' + esc(f.sebep) : '') + '</td>' +
       '<td>' + mbadge('fazla') + '</td><td><span class="izo">' + esc(f.dosya_adi || '') + '</span></td>' +
-      '<td><button class="btn-sm" style="color:var(--warn);" onclick="event.stopPropagation();toast(\'Bu çizim Excel\\\'de yok. Excel referans alınır — Excel listesini manuel kontrol edin (eksikse Excel\\\'e ekleyip yeniden yükleyin).\')">⚠ Excel\'i kontrol et</button></td></tr>';
+      '<td><button class="btn-sm" style="color:var(--ac);" onclick=\'event.stopPropagation();k2Ac(' + fjson + ')\' title="Bu PDF\'i Excel\'deki bir spool\'a bagla (yazim farki — orn. S46_1 -> S46)">🔗 Eşleştir</button></td></tr>';
   });
   // 138/B(b): MONTAJ ÇİZİMLERİ — ayrı bölüm. Spool DEĞİL → turuncu Fazla yerine nötr bilgi satırı.
   if (mn.length) {
