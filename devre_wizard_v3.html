@@ -1161,8 +1161,11 @@ function matBadge(m) {
 }
 function yuzeyBadge(y) {
   if (!y) return '<span class="gri">— okunamadı</span>';
-  var cls = /galvaniz/i.test(y) ? 'yb-galvaniz' : /asit/i.test(y) ? 'yb-asit' : /boy/i.test(y) ? 'yb-boyali' : 'yb-siyah';
-  return '<span class="yuzey-badge ' + cls + '">' + esc(y) + '</span>';
+  // 166/C: ham yerine kanonik kod/etiket — yuzeyKod 'Paslanmaz'/'316'→'asit' yapar (terfiyle aynı normalize).
+  var kod = (typeof ARES_NORM !== 'undefined' && ARES_NORM.yuzeyKod) ? (ARES_NORM.yuzeyKod(y) || '') : '';
+  var etk = (typeof ARES_NORM !== 'undefined' && ARES_NORM.yuzeyEtiket) ? ARES_NORM.yuzeyEtiket(y) : y;
+  var cls = kod === 'galvaniz' ? 'yb-galvaniz' : kod === 'asit' ? 'yb-asit' : kod === 'boyali' ? 'yb-boyali' : 'yb-siyah';
+  return '<span class="yuzey-badge ' + cls + '">' + esc(etk) + '</span>';
 }
 function izoCell(izo, flag, malzFlag) {
   if (!izo || !izo.dosya_adi) return '<span class="gri">döküman yok</span>';

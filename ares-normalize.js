@@ -52,6 +52,9 @@
     if (!h) return '';
     if (['asit','galvaniz','siyah','boyali','diger'].indexOf(h) !== -1) return h;
     if (/asit|acid/.test(h))         return 'asit';
+    // 166 (Cihat): yüzey alanı paslanmaz/stainless okuyorsa → asit. Paslanmaz çelik yüzey işlemi
+    //   asitlemedir; kaynakta malzeme adı yüzeye sızdığında doğru kanonik kod 'asit'tir.
+    if (/paslanmaz|stainless|inox|316|304|321|347/.test(h)) return 'asit';
     if (/galvaniz|galvan/.test(h))   return 'galvaniz';
     if (/siyah|black/.test(h))       return 'siyah';
     if (/boyal|boya|paint/.test(h))  return 'boyali';

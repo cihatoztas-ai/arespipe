@@ -105,6 +105,10 @@
       var s=spoolMap[k];
       var mc={};s.kalemler.forEach(function(r){if(r.malzeme){mc[r.malzeme]=(mc[r.malzeme]||0)+1;}});
       var anaMalzeme=Object.keys(mc).sort(function(a,b){return mc[b]-mc[a];})[0]||'';
+      // 166 (Cihat/B): baskın kalem KALİTESİ (örn. 316L) → spool kalite. Kabuk eskiden kalite türetmiyordu,
+      //   316L kalem tanımında belliyken spool kalite '—' kalıyordu (okunmamış hissi). anaMalzeme ile aynı desen.
+      var kc={};s.kalemler.forEach(function(r){if(r.kalite){kc[r.kalite]=(kc[r.kalite]||0)+1;}});
+      var anaKalite=Object.keys(kc).sort(function(a,b){return kc[b]-kc[a];})[0]||'';
       var topKg=s.kalemler.reduce(function(t,r){return t+(parseFloat(r.agirlik_kg)||0);},0);
       var bom=konsolide(s.kalemler);
       // 139/MK-139.1: çap/et spool BAŞLIĞINDA türet (taslak=terfi). aktar()'daki (satır 174-175) anaBoru→boyutParse
@@ -113,7 +117,7 @@
       //   sürprizi). Şimdi taslak önizleme = terfi. boyutParse ARES_OLCU yoksa {null,null} döner (zararsız guard).
       var anaBoru=bom.filter(function(b){return b.tip==='boru';}).sort(function(a,b){return (b.boy_mm||0)-(a.boy_mm||0);})[0];
       var bp=boyutParse(anaBoru?anaBoru.dn:'', anaBoru?anaBoru.malzeme:'');
-      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,toplamKg:topKg,cap:bp.dis_cap,et:bp.et,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:bom};
+      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,kalite:anaKalite||null,toplamKg:topKg,cap:bp.dis_cap,et:bp.et,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:bom};
     });
     return {spoollar:spoollar,atanmamis:atanmamis,secilenSayfa:ps.secilen||'',guven:ps.guven||0};
   }
@@ -209,7 +213,7 @@
         var _etMm  = (_dz && _dz.et!=null  && _dz.et!=='')  ? _sayi(_dz.et,  bp.et)      : bp.et;
         var _agKg  = (_dz && _dz.agirlik!=null && _dz.agirlik!=='') ? _sayi(_dz.agirlik, (s.toplamKg||0)) : (s.toplamKg||0);
         var _malHam = (_dz && _dz.malzeme!=null && _dz.malzeme!=='') ? _dz.malzeme : (s.anaMalzeme || malzVars);
-        var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.anaMalzeme||null);
+        var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.kalite || s.anaMalzeme||null);   // 166/B: kalem kalitesi (316L) öncelikli
         var _yuzey  = (_dz && _dz.yuzey!=null && _dz.yuzey!=='') ? _dz.yuzey : yz;
         var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : alistVars;
         // 160: NOT overlay'i → spooller.imalat_not. DİKKAT (devir notu): terfi sonrası eslestir (117/D2)

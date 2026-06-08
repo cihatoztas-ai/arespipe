@@ -299,6 +299,10 @@ export default async function handler(req, res) {
                  : ((dal && dal.alistirma_ipucu) || null);
       if (s.alistirma == null && _als) s.alistirma = _als;
       if (s.not == null && dal && dal.not_metni) s.not = dal.not_metni;
+      // 166 (Cihat/A): kabuk ÇAP/ET boşsa (fitting-ağırlıklı spool'da düz boru yok → kabuk türetemez)
+      //   izometri parse dalından göster. "okunmamış hissi" biter; terfide backfill zaten bu değeri yazar.
+      if ((s.cap == null || s.cap === '') && dal && dal.cap_mm != null) s.cap = dal.cap_mm;
+      if ((s.et  == null || s.et  === '') && dal && dal.et_mm  != null) s.et  = dal.et_mm;
       // bindir'in kabuk_bos_dolduruldu kuralıyla uyumlu: kabuk yüzeyi boşsa PDF yüzeyi gösterilir
       if ((s.yuzeyHam == null || s.yuzeyHam === '') && dal && dal.yuzey) s.yuzeyHam = dal.yuzey;
     }
