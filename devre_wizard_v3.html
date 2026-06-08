@@ -302,11 +302,25 @@
     <!-- İnceleme oluşturulurken ilerleme -->
     <div id="hazirlikKutu" class="card hide"><div class="yukleme-status" id="yuklemeStatus"><p>Hazırlanıyor…</p><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div></div>
 
+    <!-- 166: YÜKLEME SONRASI KARAR EKRANI — dosyalar alınıp kabuk kurulunca çıkar. Her zaman 3 çıkış yolu
+         görünür (kullanıcı asla kilitli kalmaz); hiçbir seçim tek yönlü değil (devre İşlenenler'de yaşar). -->
+    <div id="sonucKuti" class="card hide" style="border-color:rgba(34,197,94,.4);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:22px;">✅</span>
+        <h3 id="sonucBaslik" style="margin:0;font-size:17px;">Belgeler alındı — kabuk hazır</h3>
+      </div>
+      <p id="sonucMetin" class="sub" style="margin:0 0 14px;"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn pri" onclick="kararIncele()">🔍 İncele &amp; Onayla</button>
+        <button class="btn" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'">📋 İşlenenler'e Git</button>
+        <button class="btn ghost" onclick="wizardSifirla()">➕ Yeni Devre Yükle</button>
+      </div>
+    </div>
+
     <div class="actions">
       <span id="devamNot" class="lock-note">⚠ Önce klasör yükle (Excel kabuğu kurulmalı)</span>
       <button class="btn ghost" onclick="wizardIptal()">İptal</button>
-      <button id="btnBekleme" class="btn ghost" disabled onclick="beklemeyeAl()">⏸ Beklemeye Al</button>
-      <button id="btnIncele" class="btn pri" disabled onclick="inceleBaslat()">İncele →</button>
+      <button id="btnYukle" class="btn pri" disabled onclick="yukleBaslat()">⬆ Yükle</button>
     </div>
   </section>
 
@@ -584,8 +598,7 @@ function bomVarMi() { return WIZ.dosyalar.some(function(d){ return d.tip_kodu ==
 function guncelleIncele() {
   var bom = bomVarMi();
   var hazir = !!(WIZ.proje_id && WIZ.devre_no && bom);
-  document.getElementById('btnIncele').disabled = !hazir;
-  document.getElementById('btnBekleme').disabled = !hazir;
+  document.getElementById('btnYukle').disabled = !hazir;
   var n = document.getElementById('devamNot');
   document.getElementById('bnExcelYok').classList.toggle('hide', !(WIZ.dosyalar.length > 0 && !bom));
   if (!WIZ.proje_id || !WIZ.devre_no) { n.textContent = '⚠ Proje ve devre adı zorunlu'; n.style.color = 'var(--warn)'; }
@@ -765,20 +778,15 @@ function l3Toggle() {
   b.style.color = WIZ.l3_acik ? 'var(--gr)' : 'var(--txd)';
   toast(WIZ.l3_acik ? 'L3 açıldı — görüntü-PDF\'ler AI ile okunacak (~$ batch)' : 'L3 kapalı — sıfır maliyet, yalnız metin-PDF');
 }
-function beklemeyeAl() {
-  // FAZ-1: taslak devre + dosyalar zaten yüklenip kuyruğa girince "onay bekleyen" listesinde durur.
-  // Bu turda "İncele" akışını çalıştırıp Step 2'ye geçmeden taslağı oluşturur; liste girişi (MK-126.4) sonraki iş.
-  inceleBaslat(true);
-}
 
 // ─────────────────────────────────────────────────────────────
 // İNCELE → : taslak devre oluştur + dosyaları yükle/kuyrukla + BOM parse + kabuk → Step 2
 //   (v2 adim3_yukle akışının 2-adıma uyarlanmış hâli; kanonik modüller çağrılır)
 // ─────────────────────────────────────────────────────────────
-async function inceleBaslat(beklemeyeAlMi) {
-  document.getElementById('btnIncele').disabled = true;
-  document.getElementById('btnBekleme').disabled = true;
+async function yukleBaslat() {
+  document.getElementById('btnYukle').disabled = true;
   var kutu = document.getElementById('hazirlikKutu'); kutu.classList.remove('hide');
+  document.getElementById('sonucKuti').classList.add('hide');
   var box = document.getElementById('yuklemeStatus');
   var fill = document.getElementById('progressFill');
   var supa = ARES.supabase();
@@ -815,16 +823,16 @@ async function inceleBaslat(beklemeyeAlMi) {
   } catch (e) {
     console.error('[v3] taslak devre:', e);
     box.innerHTML = '<div style="padding:14px;border:1px solid var(--re);background:rgba(220,38,38,.08);border-radius:10px;color:var(--re);font-weight:600;">✗ Taslak devre oluşturulamadı: ' + esc(hataMesajiTr(e)) + '</div>';
-    document.getElementById('btnIncele').disabled = false; document.getElementById('btnBekleme').disabled = false;
+    document.getElementById('btnYukle').disabled = false;
     return;
   }
 
-  // 2) Dosyaları yükle + kuyrukla (v2 adim3_yukle birebir: bom→excel-generic, izometri→izometri, else→sakla)
+  // 2) Dosyaları yükle + kuyrukla — 166: PARALEL HAVUZ (6 eşzamanlı). 356 dosya sıralı yarım saat
+  //    yerine birkaç dakika. Her dosya: storage upload + devre_dokumanlari insert + kuyruk insert.
+  //    bom→excel-generic · izometri→izometri (yalnız SIRAYA, işlemez) · diğer→sakla(tamamlandi).
   var basarili = 0, basarisiz = 0, tetiklenecek = [], tetiklenecekIzo = [];
-  for (var i = 0; i < WIZ.dosyalar.length; i++) {
-    var d = WIZ.dosyalar[i];
-    fill.style.width = Math.round((i / WIZ.dosyalar.length) * 100) + '%';
-    box.querySelector('p').innerHTML = '<strong>' + (i+1) + ' / ' + WIZ.dosyalar.length + ':</strong> ' + esc(d.dosya_adi);
+  var toplam = WIZ.dosyalar.length, biten = 0;
+  async function _dosyaYukle(d) {
     try {
       var bomExcelMi = (d.tip_kodu === 'bom_excel');
       var izometriMi = (d.tip_kodu === 'izometri');
@@ -854,7 +862,13 @@ async function inceleBaslat(beklemeyeAlMi) {
       }
       basarili++;
     } catch (e) { console.error('[v3] yükleme:', d.dosya_adi, e); basarisiz++; }
+    finally {
+      biten++;
+      fill.style.width = Math.round((biten / toplam) * 100) + '%';
+      box.querySelector('p').innerHTML = '<strong>Belgeler yükleniyor:</strong> ' + biten + ' / ' + toplam;
+    }
   }
+  await _havuzKos(WIZ.dosyalar, 6, _dosyaYukle);   // 166: 6 eşzamanlı yükleme
 
   // 3) BOM Excel'leri parse ettir (senkron — kabuk için gerekli). /api/kuyruk-isle-excel {is_id}
   for (var p = 0; p < tetiklenecek.length; p++) {
@@ -864,6 +878,7 @@ async function inceleBaslat(beklemeyeAlMi) {
     catch (e) { console.warn('[v3] BOM parse tetik:', e); }
   }
   WIZ._bomIds = tetiklenecek.map(function(t){ return t.id; });
+  WIZ._izoIds = tetiklenecekIzo.map(function(t){ return t.id; });   // 166: karar ekranı sayımı + sonraki drenaj
 
   // 4) Kabuk kur: BOM parse_sonuc.satirlar → ARES_KABUK.grupla (KORUMA-1, kabukTuret KULLANMA)
   fill.style.width = '100%';
@@ -878,18 +893,41 @@ async function inceleBaslat(beklemeyeAlMi) {
     WIZ._kabukSpoollar = model.spoollar || [];
   } catch (e) { console.warn('[v3] kabuk türetilemedi:', e); WIZ._kabukSpoollar = []; }
 
-  if (beklemeyeAlMi) {
-    toast('⏸ Taslak oluşturuldu — İşlenenler listesinden sürdürebilirsin');
-    // 166: varış İşlenenler — direkt işle ile aynı evrende kal (devreler.html'e atmak kopukluk yaratıyordu)
-    setTimeout(function(){ location.href = 'devre_wizard_v3.html?sekme=islenenler'; }, 1100);
-    return;
-  }
-
-  // 5) Step 2'ye geç + İnceleme + B canlı dolum başlat
+  // 5) KARAR EKRANI (166): dosyalar alındı, kabuk hazır. İzometri SIRADA — burada İŞLENMEZ
+  //    (işleme istemci drenajı: İncele&Onayla bu devreyi işler+izler · İşlenenler hepsini topluca).
+  //    Küçük devrede uyarı yok; 3 çıkış yolu hep görünür, hiçbiri tek yönlü değil (devre İşlenenler'de yaşar).
   kutu.classList.add('hide');
+  var sk = document.getElementById('sonucKuti');
+  var spoolN = (WIZ._kabukSpoollar || []).length;
+  var izoN = (WIZ._izoIds || []).length;
+  document.getElementById('sonucBaslik').textContent =
+    basarisiz > 0 ? (basarili + ' belge alındı · ' + basarisiz + ' başarısız — kabuk hazır')
+                  : (basarili + ' belge alındı — kabuk hazır');
+  var mt = '<b>' + spoolN + ' spool</b> kabuğu kuruldu.';
+  if (izoN > 0) mt += ' <b>' + izoN + '</b> izometri çizimi işlem sırasına alındı — “İncele &amp; Onayla”da işlenip eşleştirilir, ya da İşlenenler’den toplu işlersin.';
+  mt += ' Bu devre artık İşlenenler’de; istediğin an dönebilirsin.';
+  document.getElementById('sonucMetin').innerHTML = mt;
+  sk.classList.remove('hide');
+  sk.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// 166: yükleme havuzu — items üzerinde fn'i en çok n eşzamanlı koşturur (sıralı await yerine)
+async function _havuzKos(items, n, fn) {
+  var idx = 0;
+  async function isci() { while (idx < items.length) { var k = idx++; await fn(items[k]); } }
+  var isciler = []; for (var w = 0; w < Math.min(n, items.length); w++) isciler.push(isci());
+  await Promise.all(isciler);
+}
+
+// 166: karar ekranından "İncele & Onayla" → Adım 2 (incelemeKur drenajı bu devrenin izometrisini işler+izler)
+function kararIncele() {
+  document.getElementById('sonucKuti').classList.add('hide');
   gosterAdim(2);
   incelemeKur();
 }
+
+// 166: "Yeni Devre Yükle" → SIFIRDAN (S2 kararı: proje/tersane taşınmaz). Taze sayfa = garantili temiz state.
+function wizardSifirla() { location.href = 'devre_wizard_v3.html'; }
 
 // ─────────────────────────────────────────────────────────────
 // ADIM 2 — İNCELEME (server-side eşleştirme render + B canlı dolum)
