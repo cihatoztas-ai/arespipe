@@ -2711,7 +2711,8 @@ async function islenenlerYukle() {
         '<div>' + durumHtml + '</div>' +
         '<div style="font-size:13px;color:var(--txm);">öneri: <b>' + s.oneri + '</b> · manuel: <b>' + s.manuel + '</b></div>' +
         '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
-        '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + (s.acik > 0 ? ' disabled' : '') + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : 'İncele') + '</button>' +
+        (s.acik > 0 ? '<button class="btn pri" style="font-size:14px;padding:6px 12px;" title="Bu devreyi oncelikli isle" onclick="islenenlerDrenajDevre(\'' + d.id + '\', this)">▶ İşle</button>' : '') +
+        '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : (s.acik > 0 ? 'İzle' : 'İncele')) + '</button>' +
         '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">✕</button>' +
         '</div></div>';
     });
@@ -2743,6 +2744,23 @@ async function islenenlerIptal(devreId, btn) {
 
 // ── Global drenajın kalıcı yüzü (MK-153.1 çok-tur; "sekmeyi açık tut" çözümü) ──
 //   filtre:{} = tenant'ın TÜM bekleyen izometri işleri (konsol global drenajının UI karşılığı).
+
+// 170: tek devreyi oncelikli isle (per-satir buton). Global 'Bekleyenleri isle' sirayla; bu yalniz bu devreyi.
+async function islenenlerDrenajDevre(devreId, btn) {
+  if (WIZ._islDrenaj) { toast('Zaten islem suruyor'); return; }
+  if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modulu yuklenmedi'); return; }
+  WIZ._islDrenaj = true;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ İşleniyor…'; }
+  try {
+    var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
+      filtre: { devreId: devreId }, bucket: 'devre-belgeleri',
+      onIlerleme: function (d) { if (btn && d.faz === 'basliyor') btn.textContent = '⏳ ' + d.sira + '/' + d.toplam + '…'; }
+    });
+    if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else toast('Bu devrede bekleyen is yok');
+  } catch (e) { console.error('[v3] devre drenaj:', e); toast('Drenaj hatasi'); }
+  finally { WIZ._islDrenaj = false; await islenenlerYukle(); }
+}
 async function islenenlerDrenaj() {
   if (WIZ._islDrenaj) return;
   if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modülü yüklenmedi'); return; }
