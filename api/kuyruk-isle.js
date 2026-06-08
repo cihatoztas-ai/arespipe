@@ -37,12 +37,16 @@
 //                 Refactor 51+'a ertelendi.
 // =====================================================================
 
+import { createClient } from '@supabase/supabase-js';
+import { drenajTuru } from './kuyruk-isle-izometri.js';
+
 export const config = { maxDuration: 60 };
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 const STORAGE_BUCKET = 'izometri-pdfs';
+const CRON_SECRET = process.env.CRON_SECRET;
 
 // Self-fetch için kendi base URL'imiz.
 // 49 ders: VERCEL_URL deployment-spesifik URL verir (arespipe-xxx-...vercel.app),
@@ -62,6 +66,31 @@ const STALE_LOCK_DAKIKA = 5;       // 'isleniyor' kayıt 5 dk üstündeyse stale
 const MAX_DENEME = 3;              // 3 deneme sonra durum='hata'
 const DEFAULT_MAX_ISLEM = 2;       // Function başına işlenecek max PDF
 
+// --- 167/MK-167.3: izometri kuyrugu drenaj yardimcisi ---
+//   is_kuyrugu (PDF) yolundan AYRI: dosya_isleme_kuyrugu/parser=izometri'yi surer.
+//   drenajTuru (kuyruk-isle-izometri.js, kanitli ic-dongu MK-112.1) — YENI MANTIK YOK.
+//   maxMs tavani 50sn = tarayici drenajiyla AYNI (cron tarayicidan agresif DEGIL).
+//   Butce<=5sn ise ATLA. Kalan is varsa CRON_SECRET'li self-chain (best-effort; */3 dis tetik asil surucu).
+async function izoDrenajCalistir(baslangic) {
+  const kalanMs = 60000 - (Date.now() - baslangic) - 8000;
+  if (kalanMs <= 5000) return { calisti: false, islenen: 0, kalan_var: false, sebep: 'butce_yok' };
+  try {
+    const supa = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+    const r = await drenajTuru(supa, SELF_BASE_URL, { maxIs: 4, maxMs: Math.min(kalanMs, 50000) });
+    if (r.kalan_var && CRON_SECRET) {
+      fetch(`${SELF_BASE_URL}/api/kuyruk-isle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CRON_SECRET}` },
+        body: JSON.stringify({}),
+      }).catch(e => console.error('[kuyruk-isle] izo-chain hatasi (yutuldu):', e.message));
+    }
+    return { calisti: true, islenen: r.islenen.length, kalan_var: r.kalan_var };
+  } catch (e) {
+    console.error('[kuyruk-isle] izometri drenaj hatasi (yutuldu):', e.message);
+    return { calisti: false, islenen: 0, kalan_var: false, hata: e.message };
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -70,6 +99,25 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // --- 167/MK-167.2: global tetik korumasi ---
+  //   batch_id'li cagri = tarayici PDF batch akisi (pilot, ACIK — regresyon yok).
+  //   batch_id YOK = global/cron/dis tetik -> CRON_SECRET ZORUNLU (Bearer).
+  {
+    const _batchId = req.body && req.body.batch_id;
+    if (!_batchId) {
+      if (!CRON_SECRET) {
+        console.error('[kuyruk-isle] CRON_SECRET env TANIMSIZ — global tetik reddedildi');
+        return res.status(500).json({ error: 'CRON_SECRET yapilandirilmamis' });
+      }
+      const authH = req.headers.authorization || '';
+      const token = authH.startsWith('Bearer ') ? authH.slice(7) : null;
+      if (token !== CRON_SECRET) {
+        console.warn('[kuyruk-isle] 401 — global tetik, gecersiz/eksik Bearer');
+        return res.status(401).json({ error: 'Yetkisiz tetik' });
+      }
+    }
   }
 
   const baslangic = Date.now();
@@ -94,7 +142,9 @@ export default async function handler(req, res) {
     const bekleyenler = await supaFetch(url);
 
     if (!bekleyenler || bekleyenler.length === 0) {
-      console.log('[kuyruk-isle] Kuyrukta is yok', batch_id ? `(batch=${batch_id})` : '(global)');
+      console.log('[kuyruk-isle] is_kuyrugu bos', batch_id ? `(batch=${batch_id})` : '(global)');
+      // 167: PDF kuyrugu bos olsa da izometri kuyrugu dolu olabilir (global tetikte).
+      const izo = batch_id ? { calisti: false } : await izoDrenajCalistir(baslangic);
       return res.status(200).json({
         ok: true,
         islenen: 0,
@@ -102,6 +152,7 @@ export default async function handler(req, res) {
         hata: 0,
         kalan_bekleyen: 0,
         chain_baslatildi: false,
+        izometri: izo,
         sure_ms: Date.now() - baslangic,
       });
     }
@@ -156,8 +207,11 @@ export default async function handler(req, res) {
       console.log(`[kuyruk-isle] Chain baslatildi, ${kalan} kayit kaldi`);
     }
 
+    // 167: is_kuyrugu (PDF) bitti; KALAN zaman butcesiyle izometri kuyrugunu sur (yalniz global).
+    const izo = batch_id ? { calisti: false } : await izoDrenajCalistir(baslangic);
+
     const sure_ms = Date.now() - baslangic;
-    console.log(`[kuyruk-isle] Bitti — islenen: ${bekleyenler.length}, basarili: ${basarili}, saklanan: ${saklanan}, hata: ${hata}, kalan: ${kalan}, sure: ${sure_ms}ms`);
+    console.log(`[kuyruk-isle] Bitti — islenen: ${bekleyenler.length}, basarili: ${basarili}, saklanan: ${saklanan}, hata: ${hata}, kalan: ${kalan}, izo: ${izo.islenen || 0}(kalan:${izo.kalan_var || false}), sure: ${sure_ms}ms`);
 
     return res.status(200).json({
       ok: true,
@@ -167,6 +221,7 @@ export default async function handler(req, res) {
       hata,
       kalan_bekleyen: kalan,
       chain_baslatildi,
+      izometri: izo,
       sure_ms,
     });
 

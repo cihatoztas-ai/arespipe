@@ -269,18 +269,27 @@ async function birIsIsle(supa, baseUrl, is, opts = {}) {
   const oncedenParseHttp = opts.oncedenParseHttp;
   const skipParse = (oncedenParse !== undefined && oncedenParse !== null);
 
-  // 1) Durumu 'isleniyor' yap (lock)
-  const { error: lockError } = await supa
+  // 1) Durumu 'isleniyor' yap (ATOMIK CLAIM GUARD — 167/MK-167.1)
+  //    .in('durum',['bekliyor','hata']) + .select(): satir DONERSE biz kaptik.
+  //    Bos donerse baska worker (cron <-> tarayici drenaji) zaten kapmis -> sessizce atla.
+  //    'hata' dahil: wizard manuel-retry (is_id modu, durum='hata') korunur.
+  const { data: lockRows, error: lockError } = await supa
     .from('dosya_isleme_kuyrugu')
     .update({
       durum: 'isleniyor',
       alindi_at: new Date().toISOString(),
       deneme_sayisi: (is.deneme_sayisi || 0) + 1
     })
-    .eq('id', is.id);
+    .eq('id', is.id)
+    .in('durum', ['bekliyor', 'hata'])
+    .select('id');
 
   if (lockError) {
     return { _status: 500, sonuc: 'hata', is_id: is.id, hata: 'Lock alınamadı: ' + lockError.message };
+  }
+  if (!lockRows || lockRows.length === 0) {
+    // Yaris: bu isi baska worker kapti. Cift izometri-oku YOK. Sessiz atla.
+    return { _status: 200, sonuc: 'atlandi', is_id: is.id, hata: null };
   }
 
   // 2) Doküman bilgisini al
