@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 166)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 169)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -520,3 +520,34 @@ izometri-cron.yml var ama uzağa web'den eklendi → `git pull --rebase` ile sen
 - Devreden (değişmedi): MK-165.7/1 OPR dn→dis_cap (DN200→200.0 vs 219.1) · MK-165.7/3 uyarı mükerrerliği ·
   onay kuşağı eritme (GÜNCEL: oneri_hazir=400 + manuel_onay=70) · Y200 öğretimi (diğer bilgisayar) ·
   W-2.5 (iki ayrı çubuk) · W-2.9 (eşzamanlı paralel devre) · W-2.19 hassas bbox (Y200 tablo öğretiminde).
+
+
+---
+
+## 169 — CIKIS KAPILARI + ELLE ESLESTIRME (canli kanitli)
+
+> Cihat tespiti: operator "eslesmedi/eksik" duvarinda tikaniyor, cikis yok. Iptal edip basa donse
+> ayni hatayi aliyor -> gelistiriciye ulasmasi gerekiyor. Bu, B-2 + B-6'nin pratikteki bosllugu.
+
+- [x] **A acigi — operator artik tikanmiyor (canli).** devre_wizard_v3 inceleme:
+  - Teshis bandi: kabuk=0 / fazla>0 / eksik>0 durumunu okur, dogru yonlendirir (Excel=dayanak mesaji).
+  - Sert onay kapisi: eslesmemis/eksik varken "Onayla" sessiz gecmez (onay kutusu sarti); kabuk=0'da engel.
+  - K3 cikis: "Excel'i kontrol et / Iptal" -> _taslakIptalEt -> taze wizard (ayni duvara carpmaz).
+  - Commit 1960fca.
+- [x] **A1 — K2 elle eslestirme UI (canli).** Fazla PDF (S46_1) "🔗 Eslestir" -> popup, ayni pipeline'in
+  eksik Excel spool'lari (S46), "Bagla". Overlay taslak_duzeltmeleri (alan='_pdf_spool_map'). Excel sayisi
+  DEGISMEZ, yeni spool YOK. Commit 5f19c6e.
+- [x] **A2 — terfide gercek bag (canli).** eslestir() overlay'i okur, S46_1->S46 map'ler, PDF verisini
+  hedef spool'a bindirir, cizim_durumu eksik->kismi. Terfi SQL kaniti (2f88d92e). Commit 09ae6ca.
+
+### Cihat kurali (169 — kalici)
+Excel = guvenlik dayanagi. Excel'de N spool varsa PDF'ten N!= yuklenmez; sistem Excel'i ASLA delmez.
+Eslesmeyen PDF -> ya yanlis yazim (elle eslestir) ya Excel eksik (insana yonlendir). Sayi farkinda
+otomatik ekleme YOK. `_1`-eki cozumu DAR (devre-bazli overlay); global normSpoolNo'ya DOKUNULMADI.
+
+### 169 — acik (170 adaylari)
+- Modal yanlis sayi (KUCUK): onayAc eslestirme overlay'ini okumuyor, "12 eslesemedi" gosteriyor
+  (terfi mantigi dogru, sadece sayi). Cozum: onayAc'ta WIZ._pdfMap'i fazladan dus.
+- spool_detay PDF gorunmuyor (TESHIS EDILMEDI): terfi sonrasi spool_detay'da PDF yok. Once kaynak bul.
+- kismi/bekliyor karisik: elle eslestirilen 12 hedeften bazi kismi bazi bekliyor — dogrula.
+- B-6 (sessiz kayip yok): fazla/eslesmeyen artik gorunur + eslestirilebilir; modal sayisi henuz tam degil.

@@ -1,53 +1,52 @@
-# CLAUDE-SON-OTURUM.md — 168 (2026-06-08)
+# CLAUDE-SON-OTURUM.md — 169 (2026-06-08)
 
 ## NE YAPTIK
-167'nin kurdugu sayfa-kapali izometri isleme mimarisini UCTAN UCA KANITLADIK, schedule'in hic
-kosmama nedenini bulup duzelttik, gece cron zincirini dogruladik ve 2 oturumdur acik KARARLAR.md
-kapanis borcunu kapattik. Yeni KOD YAZILMADI — gun dogrulama + arsivleme + teshis gunuydu. Bir yanlis
-teshis web arastirmasiyla yakalanip gereksiz koddan kacinildi.
+Devre yukleme wizard'inin "cikis kapilari"ni kapattik. Cihat'in tespiti: operator "eslesmedi/eksik"
+duvarina carpinca tikaniyor, cikis yok — iptal edip basa donse bile ayni hatayi aliyor, sonunda
+gelistiriciye ulasmasi gerekiyor. Bunu cozduk + ucusan `_1`-eki eslestirme problemini elle eslestirmeyle
+cozduk. UCTAN UCA CANLI KANITLANDI.
 
 ## ANA KAZANIMLAR
-1. **167 UCTAN UCA KANITLANDI.** workflow_dispatch (Run workflow) → /api/kuyruk-isle global tetik →
-   HTTP 200 + `{"izometri":{"calisti":true,"islenen":4,"kalan_var":true}}`. Iki turda da 4'er izometri
-   isi SUNUCU tarafinda (tarayicisiz) islendi. 167'de mekanizma (401/200) kanitliydi; 168'de gercek
-   islerle uctan uca dogrulandi. Kuyruk eridi: oneri_hazir 465→480, manuel_onay 78→79.
-2. **Schedule'in kosmama nedeni bulundu + duzeltildi.** izometri-cron.yml HEAD agacinda DEGILDI
-   (tree-exit=1; c2f97ab'de eklenip 63cc716'da dusmus). GitHub schedule yalniz varsayilan dalin HEAD
-   AGACINDA commit'li workflow'u tetikler. `git add + commit + push` → `ee33cf9` (PAT'ta workflow scope
-   varmis, push gecti). Artik schedule tetiklenme sansina sahip (henuz kosmadi — MK-168.1).
-3. **Gece cron zinciri DOGRULANDI, kod gerekmedi.** Once "Vercel gece cron MK-167.2 secret kapisina
-   takilir, 500 alir" diye teshis koydum (MK-168.5 taslak). Web arastirmasi: Vercel cron, CRON_SECRET
-   env tanimliysa OTOMATIK `Authorization: Bearer <CRON_SECRET>` gonderir (resmi davranis). Kodumuz
-   (kuyruk-isle.js:114-116) tam o pattern'i bekliyor. CRON_SECRET Vercel Production'da TANIMLI (ekran
-   teyidi). → gece cron 200 alir, izometri suruler, KOD DEGISMEZ. Yanlis teshis geri cekildi.
-4. **KARARLAR.md kapanis borcu KAPANDI.** docs/KARARLAR.md sonuna MK-166.1..6 + MK-85.3 + MK-167.1/2/3
-   + MK-168.1..5 append (+61 satir, `bf87c6a`, [skip ci]). MD5 dogrulama + ASCII teyit (Turkce karakter
-   yok, sadece em-dash/ok — mevcut formatla uyumlu) yapildi. 2 oturumdur acik borc bitti.
+1. **A acigi (tikanma) KAPANDI.** Teshis bandi durumu okuyup yon gosterir; sert onay kapisi sessiz
+   terfiyi keser (onay kutusu sarti, kabuk=0'da engel); K3 "Excel'i kontrol et / Iptal" temiz cikis
+   verir (taze wizard'a doner — ayni duvara carpmaz). Canli test: bant "Excel'de 165 spool, 3 eslesemedi"
+   dogru cikti.
+2. **A1 (K2 elle eslestirme UI) KAPANDI.** Fazla PDF (S46_1) "🔗 Eslestir" -> popup, ayni pipeline'in
+   eksik Excel spool'lari (S46) listelenir, "Bagla". Overlay taslak_duzeltmeleri'ne yazilir
+   (alan='_pdf_spool_map'). Excel sayisi DEGISMEZ, yeni spool YOK (Cihat kurali). Tablo aninda guncellenir.
+   12 eslestirme tek devrede sorunsuz.
+3. **A2 (terfide gercek bag) KAPANDI.** eslestir() (kuyruk-isle-izometri.js, izometri-oku DEGIL) overlay'i
+   okur; dosyaAdiParse S46_1 cikarinca S46'ya map'ler -> harita.get tutar -> bindir -> cizim_durumu
+   eksik->kismi. Terfi sonrasi SQL (2f88d92e): elle eslestirilen hedefler 'kismi' + cap/et dolu. KANITLI.
 
-## TESHIS — C/A/B SIRASINDAN
-- **C (eslestirme) yapildi → BUG DEGIL cikti.** "Fazla / kabukta yok" satirlari, devre TASLAK + kabukta
-  spool YOK (terfi edilmemis) icindir. Matcher spooller'dan okur (127 mimarisi), spool terfide uretilir
-  → taslakta eslesen=0/atanmamis=N BEKLENEN. `_1`-eki anahtar bug'i hipotezi iki "no rows" sorgusuyla
-  CURUDU (kabukta hic spool yok). Tahminle "fix" yazmaktan kacinildi (MK-126.8). **Gercek test 169:**
-  taslagi terfi et → kabuk dolar mi + eslestirme-backfill "Fazla"lari baglar mi.
-- **A ve B HENUZ YAPILMADI** — 169'a tasindi:
-  - A: devre yuklenince "islensin mi/siraya mi" sorusunu KALDIR (otomatik kuyruk + Islenenler takip).
-  - B: ST35.8/ST37 KARBON tanit (once "Diger" kaynagini bul: excel-parser/ARES_NORM/kutuphane).
+## KURAL (Cihat — kritik, gelecek oturumlar uysun)
+- **Excel = guvenlik dayanagi.** Excel'de N spool varsa PDF'ten N!= yuklenmez. Sistem Excel'i ASLA delmez.
+  Eslesmeyen PDF -> ya yanlis yazim (elle eslestir, S46_1->S46) ya Excel eksik (insana yonlendir).
+  Sayi farkinda (Excel 20 / PDF 22) otomatik ekleme YOK — operatoru manuel kontrole yonlendir.
+- `_1`-eki cozumu DAR tutuldu (devre-bazli overlay), global normSpoolNo'ya DOKUNULMADI (regresyon riski —
+  baska devrede S02 ve S02_1 ayri spool olabilir, global soyma felaket olur).
 
-## OZ-IHLAL / TUZAKLAR (168)
-- MK-85.3'u 2 kez ihlal ettim: SQL'de `dosya_adi` ve `batch_id` kolonlarini tahmin ettim, ikisi de
-  "does not exist". information_schema ile duzeltildi. Tahminle SQL yazma — bu oturumun en tekrarli hatasi.
-- MK-126.8 iki kez bos commit'ten korudu: (a) _1-eki eslestirme "fix"i — veri sordum, bug yoktu;
-  (b) drenaj retry tavani (MK-168.2) — kodu okudum, drenaj zaten bekliyor-only cekiyor, tavan gereksiz.
-- MK-168.5 yanlis teshis (gece cron 500) — web arastirmasiyla curutuldu, kod yazilmadan duzeltildi.
+## OZ-IHLAL / TUZAKLAR (169)
+- "Kabuk bos" ILK TESHISIM YANLISTI: spooller terfi-sonrasi dolar, taslakta kabuk _kabukSpoollar'da
+  (Excel parse). SQL ile duzeltildi (MK-126.8 — once veri). Sonrasinda her adimda SQL ile dogruladim.
+- 595c435 (166 commit) once suclu sanildi ("bugun bozuldu"); git show ile masum cikti (sadece kalite
+  alani eklemis, anahtara dokunmamis). Tahminle suclamadan once kanit (MK-132.1).
+- Sema-once (MK-85.3): bu sefer HIC kolon tahmin etmedim — information_schema + CHECK dogrulamasi her
+  SQL oncesi. proje_no yok proje_id var; devreler.ad NULL; taslak_duzeltmeleri.alan serbest text (CHECK yok)
+  -> _pdf_spool_map guvenle yazildi.
+- A2 anchor 1 ilk denemede 2 kez bulundu (eslestir + montajEslestir ayni harita kalibi) -> patch ABORT
+  etti, dosya bozulmadi -> eslestir'e ozgu "133/K2 TEK seferde" yorumuyla benzersiz kilindi.
 
 ## COMMIT'LER
-`ee33cf9` (ci: izometri-cron.yml agaca) · `bf87c6a` (docs: KARARLAR.md MK-166/167/168 [skip ci]).
+`1960fca` (fix 169 cikis kapilari) · `5f19c6e` (feat 169/A1 K2 eslestirme) · `09ae6ca` (feat 169/A2 terfi map).
 Aralarda CI botu ci-son-rapor.json.
 
-## KAPANIS BORCU (169'da HATIRLA)
-- **GECE CRON GERCEK TESTI:** buyuk devre yuklendi-yatildi → sabah SQL ile bekliyor dustu mu bak.
-- **A + B** (UI sorusu kaldir + ST35.8/ST37 karbon) — C-A-B sirasinin kalani.
-- **Terfi-sonrasi eslestirme testi** (C bulgusunun gercek dogrulamasi; _1-eki anahtar sorunu varsa orada).
-- **W-2.UI** yukleme ekrani takilmasi (78 belge senkron) — pilot riski.
-- **MK-168.1** schedule gun-ici otomatik yok · **MK-168.3** izometri-oku 508 (buyuk/ayri is).
+## KAPANIS BORCU (170'de HATIRLA)
+- **Modal yanlis sayi (KUCUK, ilk is adayi):** onayAc modali _pdf_spool_map overlay'ini okumuyor —
+  12 eslestirilse de "12 eslesemedi" gosteriyor. Terfi mantigi dogru. Cozum: onayAc'ta WIZ._pdfMap'i
+  fazla sayisindan dus. devre_wizard_v3.html.
+- **spool_detay PDF gorunmuyor (TESHIS EDILMEDI):** terfi sonrasi spool_detay'da PDF yok. Once kaynak
+  (spool_detay.html PDF cekme + devre_dokumanlari.spool_id bagi terfide yazildi mi).
+- **kismi/bekliyor karisik:** elle eslestirilen 12 hedeften bazi 'kismi' bazi 'bekliyor' — beklenen mi
+  (montaj vs imalat) yoksa A2 atladi mi dogrula.
+- W-2.UI yukleme takilmasi · MK-168.1 schedule · MK-168.3 508 · gece cron gercek testi (yine bos).

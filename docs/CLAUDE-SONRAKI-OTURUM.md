@@ -1,69 +1,60 @@
-# CLAUDE-SONRAKI-OTURUM.md — 169 Acilisi
+# CLAUDE-SONRAKI-OTURUM.md — 170 Acilisi
 
 ## ACILIS RITUELI
-1. `git pull --rebase && git status && git log --oneline -6` — `bf87c6a` (docs 168 KARARLAR) ve
-   `ee33cf9` (izometri-cron.yml agaca) gorunmeli + CI botu ci-son-rapor.json. Git temiz olmali
-   (168'de lokal=origin dogrulandi, ayrisma YOK).
-2. Fonksiyon sayimi: `ls api/*.js | wc -l` → **12** (MK-129.3 tavani; workflow Vercel fonksiyonu degil).
+1. `git pull --rebase && git status && git log --oneline -6` — `09ae6ca` (A2), `5f19c6e` (A1),
+   `1960fca` (cikis kapilari) gorunmeli + CI botu ci-son-rapor.json. Git temiz olmali.
+2. Fonksiyon sayimi: `ls api/*.js | wc -l` -> **12** (MK-129.3 tavani).
 3. `cat BRIEFING.md` (tek aktif baglam) + bu dosya.
 4. Agir is one (context taze).
 
-## 169 — ILK IS: GECE CRON GERCEK TESTI TEYIDI
-> 168 sonunda buyuk bir devre yuklendi, sayfa kapatildi, beklendi. 03:00 Vercel cron izometriyi
-> surmeli (CRON_SECRET Production'da → Bearer otomatik → MK-167.2 kabul → 200). Bu, manuel dispatch'le
-> kanitlanan mekanizmanin OTOMATIK halinin ilk gercek testi.
+## 170 — ILK IS ADAYLARI (kucukten buyuge)
 
-**Teyit SQL:**
-```sql
-SELECT durum, COUNT(*), MAX(bitis_at) AS son
-FROM dosya_isleme_kuyrugu WHERE parser='izometri'
-GROUP BY durum ORDER BY durum;
-```
-Beklenen: `bekliyor` dusmus, `oneri_hazir`/`manuel_onay` artmis, `son` ~03:00 (Europe/Istanbul'a cevir:
-UTC+3 → DB UTC saklar, 00:00 UTC civari) zaman damgali. Agir/cok-sayfali PDF'ler `hata`'da (508,
-MK-168.3) kalabilir; gerisi islenmis olmali. Vercel → Logs/Deployments → 03:00 cron calismasi 200 mu.
-**Cron 200 ama islenmediyse:** CRON_SECRET son deploy'dan SONRA eklendiyse redeploy gerekebilir (env
-yansimasi). Once Vercel cron log'unun HTTP kodunu gor.
+### A) MODAL YANLIS SAYI (kucuk, hizli) — onayAc duzeltmesi
+> 169 tespit: "Devreyi Onayla" modali eslestirme overlay'ini OKUMUYOR. Operator 12 fazlayi
+> eslestirdi ama modal hala "12 izometri eslesemedi" + "12 spool eksik" gosteriyor. Terfi mantigi
+> DOGRU (terfi sonrasi SQL kanitladi — A2 calisti), sadece modal sayisi yanlis -> gereksiz tedirginlik.
+- **Yer:** devre_wizard_v3.html, `onayAc()` fonksiyonu. `oz.fazla` / `oz.eksik`'i ham okuyor.
+- **Cozum:** onayAc'ta WIZ._pdfMap'teki eslestirme sayisini fazladan dus:
+  `fazla_efektif = oz.fazla - eslestirilenSayisi`. Eslestirilen eksik hedefler de "elle baglandi"
+  sayilmali (eksik sayisindan dusmeli ya da ayri "X elle baglandi" satiri). Once renderInceleme'nin
+  fazla/eksik'i nasil say(may)digina bak (MK-126.8) — bant zaten WIZ._pdfMap'i kullaniyor, modal kullanmiyor.
+- Saf UI, kucuk. Python patch + abort-on-mismatch.
 
-## 169 — C-A-B KALANI (C yapildi, A+B sirada)
-- **A (UI — onerilen ilk is):** Devre yuklenince "islensin mi / siraya mi atayim" SORUSUNU KALDIR.
-  Yuklenen her dokuman otomatik islenecekler kuyruguna dussun → kullanici "Islenenler"den takip etsin
-  (167 felsefesi: yukle-kapat-git). **Once kaynagi bul (MK-126.8):** soru nerede soruluyor —
-  devre_wizard_v3.html yukle akisi mi, MK-49.B upload bileseni mi? grep ile bul, sonra dokun. Kucuk UX.
-- **B (malzeme):** ST35.8 ve ST37 KARBON CELIK ama sistem "Diger" diyor. **Once "Diger"i kim yaziyor
-  bul** (lib/excel-parser.js sozlugu / ARES_NORM regex / lib/malzeme-kutuphane-eslesme.js), sonra
-  karbon eslesmesi ekle. izometri-oku DOKUNMA (MK-49.1).
+### B) spool_detay PDF GORUNMUYOR (TESHIS EDILMEDI — once kaynak bul)
+> 169 tespit (Cihat): terfi sonrasi spool_detay sayfasinda PDF'ler gorunmuyor. HENUZ BAKILMADI.
+- **Once teshis (MK-126.8), tahminle dokunma.** Kontrol sirasi:
+  1. `grep -n "storage_yolu\|dosya_url\|spool_id\|devre_dokumanlari\|pdf" spool_detay.html` — PDF cekme yolu.
+  2. SQL: terfi edilen devrede `devre_dokumanlari.spool_id` DOLU mu? (eslestirme-backfill terfide
+     bunu yazar; yazilmadiysa spool_detay PDF'i bulamaz). Ornek: devre 2f88d92e.
+     `SELECT spool_id, dosya_adi FROM devre_dokumanlari WHERE devre_id='2f88d92e-...' AND spool_id IS NOT NULL LIMIT 10;`
+  3. spool_id NULL ise -> bag yazilmamis (backfill/eslestir spool_detay'in bekledigi kolonu doldurmuyor).
+     spool_id DOLU ama PDF yoksa -> spool_detay'in cekme sorgusu/bucket yolu sorunu.
+- A1/A2 ile iliskili olabilir (elle eslestirilen PDF'ler spool_detay'da gorunur mu) — ama tum PDF'ler
+  icin mi yoksa sadece eslestirilenler icin mi gorunmuyor, ONCE bunu ayir.
 
-## 169 — TERFI-SONRASI ESLESTIRME TESTI (C bulgusunun gercek dogrulamasi)
-> 168'de "Fazla/kabukta yok" satirlarinin bug DEGIL, terfi-edilmemis-kabuk oldugu kanitlandi (taslak
-> devre, spooller bos). Gercek dogrulama: bir taslak devreyi "Incele & Onayla" ile TERFI et →
-> (a) spooller doluyor mu (terfi kabugu yaziyor mu), (b) eslestirme-backfill "Fazla"lari bagliyor mu.
-> EGER backfill sonrasi `_1`-ekli dosyalar (orn. S02_1.1.pdf) hala atanmamis kaliyorsa → O ZAMAN
-> gercek bir anahtar sorunu var (dosyaAdiParse `S02_1` cikariyor, kabuk `S02` → tutmuyor); cozum
-> normSpoolNo'da guvenli `_\d+` soyma + birim test (kabukta `S02_1` rakip YOKSA). Kabukta hem S02 hem
-> S02_1 varsa AYRI spool → soyma FELAKET → dokunma. Veriden karar ver.
-- Onay kusagi GUNCEL: oneri_hazir=480 + manuel_onay=79. Aktif devrelerde 277 atanmamis (terfi-sonrasi
-  re-esle kosmus mu / anahtar neden tutmuyor — ayri borc, dogal ornekle).
+### C) kismi/bekliyor KARISIK (dogrulama)
+> Terfi SQL'inde (2f88d92e) elle eslestirilen 12 hedeften bazi 'kismi' bazi 'bekliyor' cikti.
+- Beklenen mi (montaj cizimleri imalattan ayri, bindirme yok -> cizim_durumu degismez) yoksa A2
+  bazilarini atladi mi? Vercel log'unda `[izo-eslestir] A2 overlay map: ...` satirlarini say (12 olmali).
+  12 log varsa hepsi map'lendi -> 'bekliyor' kalanlar baska sebep (PDF montaj/icerik okunamadi).
 
-## ACIK BORCLAR (oncelik)
-- **W-2.UI** (168 tespit): yukleme/acilis ekrani 78 belgede UZUN "yukleniyor"da takiliyor (senkron
-  tum-dokuman). Pilot riski (Windows operator). Cozum: ozet/sayac + lazy-load.
-- **MK-168.1** GitHub `*/3` schedule gun-ICI otomatik tetiklenmiyor. 169'da Actions → izometri-kuyruk-
-  drenaj'da schedule kosusu cikti mi izle. Gelmezse: frekansi seyret veya gece cron'a yaslan (Pro SART
-  DEGIL). Mekanizma manuel dispatch + gece cron ile zaten calisiyor.
-- **MK-168.3** izometri-oku HTTP 508 (server self-call). Agir/cok-sayfali PDF cron yolunda 508.
-  izometri-oku DOKUNULMAZ → cozum cagri katmaninda (client-parse esdegeri / farkli cagri). BUYUK is.
-- **Y200 ogretimi** (diger bilgisayar; rece FORMAT-OGRETIM-ATOLYE-162.md'de aynen) — schedule et kaniti.
-- **W-2.5** (iki ayri cubuk: yukleme + arka isleme) · **W-2.9** (eszamanli paralel devre).
+## ACIK BORCLAR (devir)
+- **W-2.UI** (168): yukleme/acilis ekrani uzun "yukleniyor"da takiliyor (senkron tum-dokuman). Pilot riski.
+- **MK-168.1** GitHub schedule gun-ici otomatik yok. **MK-168.3** izometri-oku 508 (agir/cok-sayfali PDF,
+  cagri katmaninda cozum — buyuk is).
+- **Gece cron GERCEK testi:** 03:00 Vercel cron otomatik izometri surmesi — 168'de de 169'da da
+  kanitlanmadi (gunduz drenaji eritti, gece penceresi bos). Mekanizma manuel dispatch + gunduz drenajiyla
+  CALISIYOR; gozetimsiz gece yolu hala ispatsiz. Buyuk devre yukle-yat-sabah-SQL ile bak.
+- **Y200 ogretimi** (diger bilgisayar; rece FORMAT-OGRETIM-ATOLYE-162.md) · **W-2.5** · **W-2.9**.
 
 ## ILKE HATIRLATMALARI
-izometri-oku DOKUNULMAZ (MK-49.1) · 12/12 tavan (MK-129.3) · sema-once (MK-85.3 — 168'de 2 kez ihlal
-edip duzelttim: dosya_adi + batch_id kolonlari; information_schema ile dogrula, TAHMIN ETME) ·
-once-oku-sonra-dokun (MK-126.8 — 168'de iki bos commit'ten korudu) · arespipe_kopyala MD5 (MK-51.1,
-sira: kaynak ONCE/hedef SONRA) + git status (MK-101.1) · migration olursa BEGIN…ROLLBACK dry-run
-(MK-98.2) · commit'ler ayri blok (kod vs doc) · KARARLAR.md = docs/KARARLAR.md (kok DEGIL, eski) ·
-node --check + birim test ship oncesi · docs/ klasorune kapanis [skip ci] · zsh `()`/`*`/`!` tuzagi.
+izometri-oku DOKUNULMAZ (MK-49.1) · 12/12 tavan (MK-129.3) · sema-once: information_schema/CHECK ile
+dogrula, TAHMIN ETME (MK-85.3 — 169'da hic isirmadik, devam) · once-oku-sonra-dokun (MK-126.8 — 169'da
+yanlis "kabuk bos" teshisini SQL ile duzeltti, 166'yi suclamadan once git show) · patch + abort-on-mismatch
++ MD5 + .bak yedek + node --check (JS) · Excel = dayanak, Excel'i delme (Cihat 169 kurali) · `_1`-eki cozumu
+DAR (devre-bazli overlay, global normSpoolNo'ya dokunma) · commit'ler ayri blok (kod vs doc) ·
+docs/ klasorune kapanis [skip ci] · zsh `()`/`*`/`!` tuzagi · tek satir commit mesaji.
 
 ## TEST DEVRELERI — SILME
-"bn omn" (77bfbc98) · "b nn" (e0af361d, taslak) · 168 yuklemeleri: ae39c5c2 (taslak, 78 belge),
-bcb3192a (M100-355-401/402-HC, 508 veren agir PDF'ler).
+Sistemde GERCEK devre YOK, hepsi test (Cihat). 169: `2f88d92e` (vhjgvnbv/NB1137, 165 spool, 12 elle
+eslestirme + terfi — A1/A2 kaniti, SILME). `bcb3192a` silindi=true (iptal kalinti).
