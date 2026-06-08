@@ -311,8 +311,9 @@
       </div>
       <p id="sonucMetin" class="sub" style="margin:0 0 14px;"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn pri" onclick="kararIncele()">🔍 İncele &amp; Onayla</button>
-        <button class="btn" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'">📋 İşlenenler'e Git</button>
+        <!-- 170: karar-ekrani -- "Incele & Onayla" cikti (izometri burada islenmez); islenenler/cik/yeni devre. -->
+        <button class="btn pri" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'">📋 İşlenenler'e Git</button>
+        <button class="btn" onclick="location.href='devreler.html'">Çık</button>
         <button class="btn ghost" onclick="wizardSifirla()">➕ Yeni Devre Yükle</button>
       </div>
     </div>
@@ -909,7 +910,7 @@ async function yukleBaslat() {
     basarisiz > 0 ? (basarili + ' belge alındı · ' + basarisiz + ' başarısız — kabuk hazır')
                   : (basarili + ' belge alındı — kabuk hazır');
   var mt = '<b>' + spoolN + ' spool</b> kabuğu kuruldu.';
-  if (izoN > 0) mt += ' <b>' + izoN + '</b> izometri çizimi işlem sırasına alındı — “İncele &amp; Onayla”da işlenip eşleştirilir, ya da İşlenenler’den toplu işlersin.';
+  if (izoN > 0) mt += ' <b>' + izoN + '</b> izometri çizimi işlem sırasına alındı — İşlenenler’de “Bekleyenleri işle” ile işlenip eşleştirilir.';
   mt += ' Bu devre artık İşlenenler’de; istediğin an dönebilirsin.';
   document.getElementById('sonucMetin').innerHTML = mt;
   sk.classList.remove('hide');
