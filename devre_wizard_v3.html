@@ -64,6 +64,25 @@
     [data-panel="1"] .fld label span{ text-transform:none; letter-spacing:0; font-family:'Barlow',sans-serif; }
     [data-panel="1"] .inp, [data-panel="1"] .sel{ border-radius:9px; }
     [data-panel="1"] .inp:focus, [data-panel="1"] .sel:focus{ border-color:var(--ac); box-shadow:0 0 0 3px rgba(45,142,255,.15); outline:none; }
+    /* 171/ANIM: yukleme tarama animasyonu — .ftree.ai-tarama gelince aktif (salt gorsel) */
+    .ftree{ position:relative; }
+    .ai-scan{ display:none; position:absolute; left:0; right:0; top:0; height:2px; z-index:6; pointer-events:none; animation:tScan 2.8s cubic-bezier(.4,.1,.5,.95) infinite; }
+    .ftree.ai-tarama .ai-scan{ display:block; }
+    .ai-scan .iz{ position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(180deg, transparent, rgba(45,142,255,.13)); }
+    .ai-scan .core{ position:absolute; left:0; right:0; top:0; height:2px; box-shadow:0 0 12px 1px rgba(45,142,255,.5); background:linear-gradient(90deg, transparent, var(--ac) 12%, #cfe4ff 50%, var(--ac) 88%, transparent); background-size:220% 100%; animation:shimmer 2s linear infinite; }
+    @keyframes shimmer{ to{ background-position:-220% 0; } }
+    .ai-scan .spark{ position:absolute; right:12px; top:-4px; width:10px; height:10px; border-radius:50%; background:radial-gradient(circle,#fff 0%,var(--ac) 45%,transparent 72%); box-shadow:0 0 9px 3px rgba(45,142,255,.8); }
+    @keyframes tScan{ 0%{ top:0; opacity:0; } 5%{ opacity:1; } 95%{ opacity:1; } 100%{ top:100%; opacity:0; } }
+    .ftree.ai-tarama .ftools{ opacity:0; transition:opacity .25s; }
+    .ftree.ai-tarama .fhead{ box-shadow:inset 3px 0 0 var(--ac); }  /* calisirken mavi sol cizgi; bitince DUZ (yesil yok) */
+    .ftree.ai-tarama .fhead .cnt{ color:var(--ac); }
+    .ftree.ai-tarama .fitem{ opacity:.5; transition:opacity .3s, background .3s; }
+    .ftree.ai-tarama .fitem.okundu{ opacity:1; background:rgba(45,142,255,.07); }
+    .ftree.ai-tarama .fitem.okundu .fn{ color:var(--ac); }
+    .ftree.ai-tarama .fitem:not(.okundu){ animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{ opacity:.45; } 50%{ opacity:.85; } }
+    .ftree.ai-tarama .fitem.okundu::after{ content:'\2713'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--ac); font-weight:700; font-size:14px; }
+    @media (prefers-reduced-motion: reduce){ .ai-scan,.ai-scan .core,.ftree.ai-tarama .fitem:not(.okundu){ animation:none; } }
     .l3-row{ display:flex; align-items:center; gap:10px; background:var(--sur2); border:1px solid var(--bor); border-radius:8px; padding:9px 12px; margin-bottom:12px; font-size:14px; } .l3-row .hint{ color:var(--txd); font-size:13px; } .l3-tag{ margin-left:auto; }
     .banner{ display:flex; align-items:center; gap:10px; border-radius:9px; padding:11px 13px; font-size:15px; margin:12px 0; } .banner.ok{ background:rgba(22,163,110,.12); color:var(--gr); border:1px solid rgba(22,163,110,.4); } .banner.warn{ background:rgba(217,119,6,.12); color:var(--warn); border:1px solid rgba(217,119,6,.4); } .banner .grow{ flex:1; }
     .actions{ display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:8px; }
@@ -739,7 +758,7 @@ function renderDosyaListe() {
     var acik = !haric && ilkAcik; if (acik) ilkAcik = false;
     html += folHaric(etiket, gruplar[k].length, inner, acik, haric);
   });
-  box.innerHTML = '<div class="ftree">' + html + '</div>';
+  box.innerHTML = '<div class="ftree"><div class="ai-scan"><span class="iz"></span><span class="core"></span><span class="spark"></span></div>' + html + '</div>';   // 171/ANIM: tarama elemani
   // kontrolleri bağla (her render'da yeniden, splice sonrası index'ler kayar)
   box.querySelectorAll('.tip-sel').forEach(function(s) {
     s.addEventListener('change', function() {
@@ -848,6 +867,9 @@ async function yukleBaslat() {
   //    bom→excel-generic · izometri→izometri (yalnız SIRAYA, işlemez) · diğer→sakla(tamamlandi).
   var basarili = 0, basarisiz = 0, tetiklenecek = [], tetiklenecekIzo = [];
   var toplam = WIZ.dosyalar.length, biten = 0;
+  // 171/ANIM: agaca tarama efektini ac (salt gorsel). _aiItems = sirayla isaretlenecek satirlar.
+  var _aiTree = document.querySelector('#tree1 .ftree'); if (_aiTree) _aiTree.classList.add('ai-tarama');
+  var _aiItems = _aiTree ? Array.prototype.slice.call(_aiTree.querySelectorAll('.fitem')) : [];
   async function _dosyaYukle(d) {
     try {
       var bomExcelMi = (d.tip_kodu === 'bom_excel');
@@ -882,6 +904,9 @@ async function yukleBaslat() {
       biten++;
       fill.style.width = Math.round((biten / toplam) * 100) + '%';
       box.querySelector('p').innerHTML = '<strong>Belgeler yükleniyor:</strong> ' + biten + ' / ' + toplam;
+      // 171/ANIM: gercek ilerlemeye gore satirlari isaretle (oran-bazli; paralel havuzda sira onemsiz)
+      var _hedef = Math.round((biten / toplam) * _aiItems.length);
+      for (var _ai = 0; _ai < _hedef && _ai < _aiItems.length; _ai++) _aiItems[_ai].classList.add('okundu');
     }
   }
   await _havuzKos(WIZ.dosyalar, 6, _dosyaYukle);   // 166: 6 eşzamanlı yükleme
@@ -913,6 +938,7 @@ async function yukleBaslat() {
   //    (işleme istemci drenajı: İncele&Onayla bu devreyi işler+izler · İşlenenler hepsini topluca).
   //    Küçük devrede uyarı yok; 3 çıkış yolu hep görünür, hiçbiri tek yönlü değil (devre İşlenenler'de yaşar).
   kutu.classList.add('hide');
+  if (_aiTree) { _aiItems.forEach(function(el){ el.classList.add('okundu'); }); _aiTree.classList.remove('ai-tarama'); }   // 171/ANIM: tarama bitti
   var sk = document.getElementById('sonucKuti');
   var spoolN = (WIZ._kabukSpoollar || []).length;
   var izoN = (WIZ._izoIds || []).length;
