@@ -165,16 +165,16 @@
     .inc-hero{ background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--warn); border-radius:10px; padding:7px 14px; display:flex; align-items:center; gap:11px; flex-shrink:0; min-width:196px; }
     .inc-hero-ic{ font-size:21px; line-height:1; }
     .inc-hero-name{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; line-height:1; color:var(--tx); letter-spacing:.3px; }
-    .inc-hero-sub{ font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--warn); margin-top:4px; }
+    .inc-hero-sub{ font-size:14px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--warn); margin-top:5px; }
     .inc-pills{ display:flex; gap:6px; flex:1; flex-wrap:wrap; min-width:0; }
-    .inc-pill{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:6px 12px; flex:1; min-width:90px; display:flex; flex-direction:column; justify-content:center; gap:3px; }
-    .inc-pill .pl{ font-size:9px; letter-spacing:.5px; text-transform:uppercase; font-weight:600; color:var(--txd); }
-    .inc-pill .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:21px; line-height:1; color:var(--tx); letter-spacing:.3px; }
-    .inc-pill .nplus{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:700; color:var(--warn); background:rgba(217,119,6,.15); border-radius:9px; padding:1px 6px; vertical-align:2px; cursor:help; margin-left:4px; }
+    .inc-pill{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; flex-direction:column; gap:3px; }
+    .inc-pill .pl{ font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .inc-pill .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; line-height:1; color:var(--tx); letter-spacing:.3px; white-space:nowrap; }
+    .inc-pill .nplus{ font-family:'Barlow',sans-serif; font-size:14px; font-weight:700; color:var(--warn); background:rgba(217,119,6,.15); border-radius:9px; padding:1px 7px; cursor:help; margin-left:5px; }
     .inc-prog{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
-    .inc-pp{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bor); border-radius:8px; padding:4px 11px; min-width:70px; flex:1; display:flex; flex-direction:column; gap:2px; }
-    .inc-pp .pl{ font-size:8px; letter-spacing:.4px; text-transform:uppercase; font-weight:600; color:var(--txd); display:flex; align-items:center; gap:5px; }
-    .inc-pp .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; line-height:1; color:var(--tx); }
+    .inc-pp{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bor); border-radius:8px; padding:7px 12px; min-width:120px; flex:1; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .inc-pp .pl{ font-size:14px; letter-spacing:.3px; text-transform:uppercase; font-weight:500; color:var(--txm); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .inc-pp .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:18px; line-height:1; color:var(--tx); white-space:nowrap; }
     .inc-pp.run{ border-left-color:var(--ac); } .inc-pp.run .pv{ color:var(--ac); }
     .inc-pp.done{ border-left-color:var(--gr); } .inc-pp.done .pv{ color:var(--gr); }
     .inc-pp.ok{ border-left-color:var(--gr); } .inc-pp.ok .pv{ color:var(--gr); }
@@ -1081,7 +1081,7 @@ function wizardSifirla() { location.href = 'devre_wizard_v3.html'; }
 function incelemeKur() {
   document.getElementById('incBaslik').textContent = markaDevre();
   var _sub = document.getElementById('incHeroSub');
-  if (_sub) _sub.textContent = (WIZ.tersane_ad ? WIZ.tersane_ad + ' · ' : '') + 'taslak · onay = terfi';
+  if (_sub) _sub.textContent = 'taslak · onay = terfi';
   malzSekmesiRender();
   genelSekmesiRender();
   buildTreeDok();
@@ -1397,34 +1397,31 @@ function _incStreakSal() {
   var lay = document.getElementById('incScan'); if (!lay) return;
   var kart = lay.parentNode; if (!kart) return;
   var kr = kart.getBoundingClientRect();
-  if (kr.height < 40) return;
-  lay.style.height = kr.height + 'px';                 // 174-C: katman yuksekligini karta esitle (height:0 fix)
-  var vh = window.innerHeight || 800;
-  var vTop = Math.max(kr.top, 60), vBot = Math.min(kr.bottom, vh);
-  var bant = vBot - vTop;
-  if (bant < 40) return;                               // tablo ekranda degil -> streak yok
+  if (kr.height < 60) return;
+  lay.style.height = kr.height + 'px';                 // katman = kart yuksekligi (height:0 fix)
   var p = _incPal[_incPi++ % _incPal.length];
   var s = document.createElement('div'); s.className = 'stk'; s.style.height = p.h + 'px';
-  var localTop = (vTop - kr.top) + Math.random() * Math.max(20, bant - 120);   // gorunen bant icinde, kart-local
-  s.style.top = localTop + 'px';
+  s.style.top = '0px';
   s.innerHTML = '<div class="wk" style="background:linear-gradient(180deg,transparent,rgba(' + p.c + ',' + (p.o * 0.13) + '),transparent);"></div>'
     + '<div class="ln" style="background:linear-gradient(90deg,transparent,rgba(' + p.c + ',' + p.o + ') 50%,transparent);"></div>';
-  s.style.opacity = '0'; s.style.transform = 'translateY(0)';
+  s.style.opacity = '0'; s.style.transform = 'translateY(-12px)';
   lay.appendChild(s);
-  var dur = 2000 + Math.random() * 900, dist = 110 + Math.random() * 45;
+  // 174-D: SABIT HIZ ~1.4px/ms -> bastan sona tam akis; uzun tabloda da puruzsuz, takilma yok
+  var dist = kr.height + 24;
+  var dur = Math.max(2800, Math.round(dist / 1.4));
   requestAnimationFrame(function () {
-    s.style.transition = 'transform ' + dur + 'ms cubic-bezier(.45,.08,.55,.95), opacity ' + dur + 'ms ease';
+    s.style.transition = 'transform ' + dur + 'ms linear, opacity 300ms ease';
     s.style.transform = 'translateY(' + dist + 'px)'; s.style.opacity = '1';
   });
-  setTimeout(function () { s.style.opacity = '0'; }, dur * 0.7);
-  setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, dur + 160);
+  setTimeout(function () { s.style.opacity = '0'; }, Math.max(300, dur - 340));
+  setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, dur + 220);
 }
 function _incScanBasla() {
   var lay = document.getElementById('incScan'); if (!lay) return;
   lay.classList.add('on');
   if (_incScanT) return;
   _incStreakSal();
-  _incScanT = setInterval(_incStreakSal, 1100);   // seyreltilmis salma
+  _incScanT = setInterval(_incStreakSal, 1500);   // ~1.5sn'de bir yeni cizgi (cogu havada, surekli sweep)
 }
 function _incScanDur() {
   if (_incScanT) { clearInterval(_incScanT); _incScanT = null; }
@@ -1522,7 +1519,7 @@ function statGridRender(sp) {
     if (s.anaMalzeme) malzSay[s.anaMalzeme] = (malzSay[s.anaMalzeme] || 0) + 1;
     if (s.yuzeyHam) yuzSay[s.yuzeyHam] = (yuzSay[s.yuzeyHam] || 0) + 1;
   });
-  var agTxt = agirlik ? (agirlik.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' <small style="font-size:12px;color:var(--txd);font-weight:400;">kg</small>') : '<span style="color:var(--txd);">—</span>';
+  var agTxt = agirlik ? (agirlik.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' <small style="font-size:14px;color:var(--txd);font-weight:400;">kg</small>') : '<span style="color:var(--txd);">—</span>';
   document.getElementById('statGrid').innerHTML =
     _incPill('Kabuk', toplam) +
     _incPill('Ağırlık', agTxt) +
@@ -1562,16 +1559,17 @@ function _terminFmt(t) {
 function progPillsRender(oz) {
   var ok = oz.okundu || 0, zy = oz.zayif || 0, ek = oz.eksik || 0, fz = oz.fazla || 0, run = oz.isleniyor || 0;
   var prc = ok + zy + fz, tot = prc + run, html = '';
+  var bol = function(t) { return ' <span style="font-size:14px;color:var(--txd);font-weight:500;">/ ' + t + '</span>'; };
   if (tot > 0) {
     if (run > 0)
-      html += '<div class="inc-pp run"><div class="pl"><span class="inc-dot"></span> İşleniyor</div><div class="pv">' + prc + '<span style="font-size:10px;color:var(--txd);"> / ' + tot + '</span></div></div>';
+      html += '<div class="inc-pp run"><span class="pl"><span class="inc-dot"></span> İşleniyor</span><span class="pv">' + prc + bol(tot) + '</span></div>';
     else
-      html += '<div class="inc-pp done"><div class="pl"><span style="color:var(--gr);font-weight:700;">✓</span> İşlenen</div><div class="pv">' + tot + '<span style="font-size:10px;color:var(--txd);"> / ' + tot + '</span></div></div>';
+      html += '<div class="inc-pp done"><span class="pl"><span style="color:var(--gr);font-weight:700;">✓</span> İşlenen</span><span class="pv">' + tot + bol(tot) + '</span></div>';
   }
-  html += '<div class="inc-pp ok"><div class="pl">Okundu</div><div class="pv">' + ok + '</div></div>';
-  html += '<div class="inc-pp zy"><div class="pl">Zayıf</div><div class="pv">' + zy + '</div></div>';
-  html += '<div class="inc-pp ek"><div class="pl">Eksik</div><div class="pv">' + ek + '</div></div>';
-  if (fz > 0) html += '<div class="inc-pp fz"><div class="pl">Fazla</div><div class="pv">' + fz + '</div></div>';
+  html += '<div class="inc-pp ok"><span class="pl">Okundu</span><span class="pv">' + ok + '</span></div>';
+  html += '<div class="inc-pp zy"><span class="pl">Zayıf</span><span class="pv">' + zy + '</span></div>';
+  html += '<div class="inc-pp ek"><span class="pl">Eksik</span><span class="pv">' + ek + '</span></div>';
+  if (fz > 0) html += '<div class="inc-pp fz"><span class="pl">Fazla</span><span class="pv">' + fz + '</span></div>';
   var el = document.getElementById('incProg'); if (el) el.innerHTML = html;
 }
 function statKart(ikon, emo, lbl, val) {
