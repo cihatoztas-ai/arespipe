@@ -261,6 +261,12 @@
           </select>
         </div>
       </div>
+      <!-- 171/TERMIN-YUKARI: termin opsiyonel details'ten Devre kartina tasindi -->
+      <div class="row2">
+        <div class="fld"><label>Termin <span style="font-weight:400;color:var(--txd);">(opsiyonel)</span></label>
+          <input type="date" id="yeniTermin" class="inp">
+        </div>
+      </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:14px;color:var(--txm);">
         <input type="checkbox" id="yeniAlistirma" style="width:16px;height:16px;accent-color:var(--warn);cursor:pointer;">
         🔄 Alıştırma devresi <span style="color:var(--txd);">(işaretliyse, dokümanda alıştırma bilgisi olmayan spool'lar VAR sayılır)</span>
@@ -293,12 +299,6 @@
       <div id="tree1" style="display:none;margin-top:12px;"></div>
     </div>
 
-    <details class="card" style="padding:0;">
-      <summary style="cursor:pointer;padding:14px 18px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;color:var(--txm);">Opsiyonel detaylar (termin)</summary>
-      <div style="padding:0 18px 16px;">
-        <div class="fld" style="max-width:300px;"><label>Termin</label><input type="date" id="yeniTermin" class="inp"></div>
-      </div>
-    </details>
 
     <!-- İnceleme oluşturulurken ilerleme -->
     <div id="hazirlikKutu" class="card hide"><div class="yukleme-status" id="yuklemeStatus"><p>Hazırlanıyor…</p><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div></div>
