@@ -2362,3 +2362,66 @@ git add -A + commit + pull --rebase + push. CI botu araya ci-son-rapor.json comm
 **MK-171.10 (ilke) — Sayfa YARIM birakilmaz.** Fonksiyon bitince "gorseli sonra" deyip gecmek borc
 biriktirir (Cihat'in dile getirdigi endise). Bir sayfa ele alindiginda fonksiyon+gorsel+cila ayni
 oturumda bitirilmeye calisilir. Erteleme zorunluysa docs/UI-BORC.md'ye ACIK kayit dusulur.
+# KARARLAR.md — 172. OTURUM EKI (MK-172.1 .. MK-172.10)
+
+> Bu blogu docs/KARARLAR.md kok dosyasinin sonuna ekle (kok dosya pakette degildi).
+
+## MK-172.1 — Devreler tek giris: yesil "Devre Ekle" -> wizard v3
+v1 (devre_yeni.html) ve v2 (devre_wizard.html) EMEKLI + git rm (gecmis korur). devreler.html'de tek YESIL
+"Devre Ekle" butonu kosulsuz devre_wizard_v3.html'e gider; flag gating (tenant_features.devre_wizard_v3)
+sorgusu + Islenenler nav butonu + v3-outline KALDIRILDI. proje_detay.html "Yeni Devre" da v3'e baglandi.
+Gerekce: v3 artik tek yol; pilot flag donemi bitti. tenant_features satiri DB'de durur, okunmaz.
+
+## MK-172.2 — Devreler tablosunda "Son guncelleme" damgasi
+Tablo basligindaki devre sayisi (ust stat kartinda zaten var) kaldirildi; saga "Son guncelleme: GG/AA/YYYY
+SS:DD" geldi. veriYukle (acilista 1 kez, filtreden bagimsiz, RLS tenant-scoped) en yeni olusturma + en yeni
+non-null guncelleme ceker, JS max'ini gosterir. KURAL: PostgREST .order(col,{ascending:false}) NULL'lari
+BASA alir -> guncelleme-only sorgu bos doner; olusturma yedegi + .not('guncelleme','is',null) sart.
+
+## MK-172.3 — Imalat sira numarasi kaldirildi
+devreler satirindaki sira-input (ares_devre_sira localStorage) goruntuden kaldirildi; yildiz (malzeme
+durumu rozeti) kaldi. siraGuncelle/getSiraMap olu kod oldu (ileride temizlik).
+
+## MK-172.4 — Native termin takvimi
+Ozel takvim popup'i (#takvimPopup + takvimAc/terminKaydet/terminTemizle/takvimKapat) emekli. Satirda gizli
+<input type=date>; termin-btn'e tiklayinca terminAc -> input.showPicker() (yedek focus+click). onchange ->
+terminSec aninda Supabase'e yazar (Kaydet butonu yok). Temizleme native picker'in kendi temizlemesiyle (bos->null).
+
+## MK-172.5 — Buyuk .in() listelerini DILIMLE (Bad Request korumasi)
+Cok ogeli .in() listesi (yuzlerce UUID) URL'i sisirip PostgREST 400 "Bad Request" verir. Cozum: idleri
+dilimleyip (orn 150) sirayla cek, birlestir (_inDilimli). islenenlerYukle'de devre_dokumanlari +
+dosya_isleme_kuyrugu sorgulari boylece bolundu. GENEL KURAL: tenant geneli .in() sorgularinda dilim sart.
+Ipucu: "Bad Request" (kolon hatasi degil aciklayici mesaj gelmemesi) + "hacim artinca bozuldu" = buyuk-.in().
+
+## MK-172.6 — Islenenler ekrani redesign (kutu-per-satir)
+Eski .isl-satir (sade grid) -> mockup: kart hover/yukselme, durum-renkli ince kenar (hazir/isleniyor/hatali),
+isleniyor satirinda animasyonlu progress (gercek biten/toplam), oneri/manuel cikti blogu, baslikta
+"N hazir . M isleniyor" ozeti. Render _islSatirHtml + _islOzetYaz helper'larina ayrildi.
+
+## MK-172.7 — Drenaj durdur()/interrupt: tek-drenaj + oncelik
+ares-izometri-drenaj.js'e isbirlikci iptal: durdur() bayrak set eder, dongu her is/tur arasinda kontrol
+eder (devam eden is biter, sonrakine gecmeden durur — 113 cift-odeme garantisi korunur), ozet.iptal doner.
+Wizard'da tek-drenaj: yeni drenaj baslamadan kosani durdurup bekler (_drenajOnceDurdur + WIZ._aktifDrenaj +
+_drenajTk token). Bir devre islenirken baska "Isle"ye basinca mevcut durur, oncelikli baslar. islenenlerDrenaj
+(global) + drenajiBaslat (Inceleme oto) da ayni mekanizmaya bagli. SONUC: iki eszamanli client-loop'un
+ayni isi cekip urettigi 409 (Conflict) seli BITTI. GECE CRON (kuyruk-isle.js izoDrenajCalistir, server-side)
+AYRI koddur, bu degisiklikten ETKILENMEZ; lock sayesinde cron ile in-page cakismaz.
+
+## MK-172.8 — Islenenler yukleme: shimmer iskelet + cascade reveal
+"Yukleniyor" statik beklemesi kaldirildi. Gercek satir yoksa acilista ANINDA shimmer iskelet (devreler 14.
+oturum .sk deseni). Veri gelince satirlar yukaridan asagi kademeli acilir (_islCascade, --ci ile 45ms artan
+gecikme, ilk 20 satir; devreler _cascadeIn deseni). Yenilemede (drenaj 3'luk tazeleme) ci=null -> animasyon
+YOK (flicker/ziplama yok). Ders: bekleme hissini iki-fazli render degil, ANINDA iskelet kapatir.
+
+## MK-172.9 — per-device "Isleniyor" butonu: beyaz + yanip sonen nokta
+"Isle"ye basinca buton mavi yerine beyaz "Isleniyor" + solunda yanip sonen mavi nokta (kum saati YOK).
+Render WIZ._islDrenajDevreId'yi bilir -> 3'luk liste yenilemesinde durum korunur. Islenenler nav butonundaki
+kum saati de yanip sonen noktaya cevrildi (sayfadaki diger kum saatleri ayni formata).
+
+## MK-172.10 — Step 1 "<- Geri" -> Islenenler listesi
+Wizard Adim 1 header Geri butonu devreler.html yerine islenenlerAc() (panel 3 / liste) cagirir. devreler'e
+cikis breadcrumb "Devreler" veya "Iptal" ile. Gerekce: Islenenler listesi wizard'in dogal "geri" hub'i.
+
+## EK NOT (172 ANIM-FIX)
+.ftree { overflow:hidden } — Step 1 tarama cizgisi (tScan top:0->100%) tasip gecici yatay scrollbar
+yaratiyordu; clip'lendi. (Bu, MK-172.8 cascade'inden AYRI bir kozmetik fix.)
