@@ -2318,3 +2318,47 @@ anahtar adi tahmini de bu ihlalin kardesidir; once gercek anahtari gor.
   koruma tamamen MK-167.1 atomik claim guard'dir: birden cok worker (her kullanicinin tarayici drenaji
   + cron) ayni isi kapamaz, cift izometri-oku / cift maliyet olmaz. Sinir: backlog hiz siniri (4'er/tur,
   ~50s butce) + agir PDF 508 (MK-168.3). Dogal kullanim (hizli yukle-cik, arkada isle) desteklenir.
+
+
+## 171. Oturum — Devre Yukleme Ekrani Yeniden Tasarim (2026-06-09)
+
+**MK-171.1 — Inceleme cetelesi Fazla satiri 14 hucre.** "kabukta yok / Fazla" satiri tam 14 kolon:
+# + colspan10 aciklama + DURUM + IZOMETRI(dosya adi TEK sefer) + ISLEM(Eslestir). Onceki 13-hucre
+kayma + cift dosya-adi bug'i kapandi. Montaj satiri (colspan11) zaten saglamdi, dokunulmaz.
+
+**MK-171.2 — Hata bandi retry = once hata->bekliyor, sonra mevcut drenaj.** Izometri drenajinin IS-SECEN
+filtresi yalniz durum=bekliyor ceker (kuyruk-isle-izometri.js:209); 'hata' satiri seim asamasinda elenir.
+Bu yuzden "yeniden dene" = hata satirlarini bekliyor'a cevir (+hata_mesaji:null) + mevcut
+islenenlerDrenajDevre cagir. deneme_sayisi'ye DOKUNULMAZ (izo drenajinda MAX guard yok). Yeni endpoint yok.
+
+**MK-171.3 — Tek tiklama-tek input picker.** Drop alani KENDI onclick'iyle pencere ACMAZ; sadece iki
+buton acar (Klasor Sec / Dosya Sec), her biri type="button" + event.stopPropagation(). Cift-.click()
+cakismasi (dropZone folder + buton file) bu sekilde kokten engellenir.
+
+**MK-171.4 — Devre seviyesi NOT alani YOK.** devreler tablosunda not/aciklama kolonu yoktur (yalniz
+yuzey_aciklama, o yuzeye ozeldir). Devre formuna serbest not eklenmez (information_schema teyidi — MK-85.3).
+Termin OPSIYONEL ama formun GORUNUR parcasidir (gizli details'te degil).
+
+**MK-171.5 — Paylasilan class restyle SCOPE ile yapilir, global degil.** .fld/.card-t/.sel/.inp Adim 2'de
+de kullanilir; gorsel degisiklik [data-panel="1"] altina scope'lanir (yuksek ozgulluk, global kurallar durur).
+Bir paneli restyle etmek digerini ETKILEMEZ. Markup'a dokunmadan salt CSS ile yapilir.
+
+**MK-171.6 — Yukleme animasyonu GERCEK ilerlemeye baglanir, sahte timer'a degil.** .ftree.ai-tarama scan
+efekti + .fitem'ler biten/toplam oranina gore kademeli .okundu. Paralel havuzda (6 esz.) sira onemsiz
+oldugu icin oran-bazli isaretleme dogru yaklasimdir. Klasor basliginda SOL CIZGI YOK (ne mavi ne yesil) —
+tarama cizgisi + satir mavilesme + ✓ yeterli gostergedir (Cihat karari).
+
+**MK-171.7 — Yukleme sonrasi karar ekrani MODAL.** #sonucKuti akista degil, ortada modal + backdrop+blur.
+wizardSifirla zaten location.href ile sayfayi yeniler -> modal elle kapatilmaz. Salt UI, server degismez.
+
+**MK-171.8 — Ilerleme cubugu agacin USTUNDE.** Progress (#hazirlikKutu) #tree1'in onunde, agaca bitisik
+ince cizgi. Popup icerigi: ✓ ikon + baslik + 4 ozet kutu (belge/izometri/BOM/diger gercek sayilar) +
+<small> aciklamali butonlar.
+
+**MK-171.9 (operasyonel) — Push HEP `gpc` ile.** ~/.zshrc'de gp() ve gpc() kuruldu. gpc "mesaj" =
+git add -A + commit + pull --rebase + push. CI botu araya ci-son-rapor.json commit'i attigi icin manuel
+`git push` surekli reddediliyordu; gpc rebase'i otomatik halleder. Manuel push YAPILMAZ.
+
+**MK-171.10 (ilke) — Sayfa YARIM birakilmaz.** Fonksiyon bitince "gorseli sonra" deyip gecmek borc
+biriktirir (Cihat'in dile getirdigi endise). Bir sayfa ele alindiginda fonksiyon+gorsel+cila ayni
+oturumda bitirilmeye calisilir. Erteleme zorunluysa docs/UI-BORC.md'ye ACIK kayit dusulur.
