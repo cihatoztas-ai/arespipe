@@ -168,6 +168,19 @@
     .dt td.dz-cell{ background:rgba(217,119,6,.10); box-shadow:inset 2px 0 0 var(--warn); }
     .dt th{ text-align:left; padding:8px 10px; font-size:11px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.4px; background:var(--sur2); border-bottom:1px solid var(--bor); white-space:nowrap; }
     .dt td{ padding:9px 10px; border-bottom:1px solid var(--bor); vertical-align:middle; white-space:nowrap; } .dt tr:last-child td{ border-bottom:none; } .dt tbody tr:hover td{ background:rgba(45,142,255,.04); } .dt tbody tr.tikla{ cursor:pointer; }
+    /* 174: inceleme tablosu acilis iskeleti (devreler _islSkSh tonu) + cascade (.3s/55ms) + islenme taramasi */
+    .tablo-kart{ position:relative; }
+    .dt .sk{ display:inline-block; background:linear-gradient(90deg,var(--bor) 0%,var(--sur2) 50%,var(--bor) 100%); background-size:340px 100%; animation:_islSkSh 1.4s ease-in-out infinite; border-radius:4px; color:transparent; vertical-align:middle; }
+    .dt .sk.c{ width:78%; height:14px; } .dt .sk.s{ width:42%; height:14px; }
+    #spoolBody tr.sk-row td{ cursor:default; } #spoolBody tr.sk-row:hover td{ background:transparent; }
+    #spoolBody.acilis tr{ opacity:0; animation:_islCascade .3s ease forwards; }
+    #spoolBody.acilis tr:nth-child(1){animation-delay:0ms} #spoolBody.acilis tr:nth-child(2){animation-delay:55ms} #spoolBody.acilis tr:nth-child(3){animation-delay:110ms} #spoolBody.acilis tr:nth-child(4){animation-delay:165ms} #spoolBody.acilis tr:nth-child(5){animation-delay:220ms} #spoolBody.acilis tr:nth-child(6){animation-delay:275ms} #spoolBody.acilis tr:nth-child(7){animation-delay:330ms} #spoolBody.acilis tr:nth-child(8){animation-delay:385ms} #spoolBody.acilis tr:nth-child(9){animation-delay:440ms} #spoolBody.acilis tr:nth-child(10){animation-delay:495ms} #spoolBody.acilis tr:nth-child(11){animation-delay:550ms} #spoolBody.acilis tr:nth-child(12){animation-delay:605ms} #spoolBody.acilis tr:nth-child(13){animation-delay:660ms} #spoolBody.acilis tr:nth-child(14){animation-delay:715ms} #spoolBody.acilis tr:nth-child(15){animation-delay:770ms} #spoolBody.acilis tr:nth-child(16){animation-delay:825ms} #spoolBody.acilis tr:nth-child(17){animation-delay:880ms} #spoolBody.acilis tr:nth-child(18){animation-delay:935ms} #spoolBody.acilis tr:nth-child(19){animation-delay:990ms} #spoolBody.acilis tr:nth-child(20){animation-delay:1045ms} #spoolBody.acilis tr:nth-child(n+21){animation-delay:1045ms}
+    .inc-scan{ position:absolute; left:0; right:0; top:64px; bottom:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
+    .inc-scan.on{ display:block; }
+    .inc-scan .stk{ position:absolute; left:0; right:0; will-change:transform,opacity; }
+    .inc-scan .ln{ position:absolute; left:0; right:0; top:0; height:100%; }
+    .inc-scan .wk{ position:absolute; left:0; right:0; top:-10px; height:22px; }
+    @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr,.inc-scan .stk{ animation:none; transition:none; } }
     .marka{ font-weight:700; color:var(--ac); } .kalite{ color:var(--ac); font-weight:600; }
     .rev-chip{ font-size:12px; font-weight:700; padding:1px 5px; border-radius:4px; background:rgba(217,119,6,.12); color:var(--warn); }
     .cap{ color:var(--txm); } .et{ color:var(--txd); } .agir{ color:var(--txm); }
@@ -448,6 +461,7 @@
           <thead><tr><th style="width:30px;">#</th><th>Marka</th><th>Rev</th><th>Spool ID</th><th>Çap</th><th>Et</th><th>Ağırlık</th><th>Malzeme</th><th>Kalite</th><th>Yüzey</th><th>Alıştırma</th><th>Durum</th><th>İzometri</th><th>İşlem</th></tr></thead>
           <tbody id="spoolBody"><tr><td colspan="14" style="text-align:center;color:var(--txd);padding:20px;">Yükleniyor…</td></tr></tbody>
         </table></div>
+        <div class="inc-scan" id="incScan"></div>
       </div>
       <div class="onay-bar">
         <span class="lock-note" style="color:var(--txm);">Eksik spool'lar silinmez; bilgilerini buradan tamamlayabilir veya eksik bırakabilirsin.</span>
@@ -1060,6 +1074,7 @@ function incelemeKur() {
   malzSekmesiRender();
   genelSekmesiRender();
   buildTreeDok();
+  WIZ._incAcildi = false; _spoolIskelet();   // 174: acilis = iskelet (devreler tonu) -> cascade
   inceleGetir();
   drenajiBaslat();
 }
@@ -1348,6 +1363,55 @@ function teshisBandiCiz(oz, spLen) {
   el.className = ''; el.style.cssText = stil; el.innerHTML = html;
 }
 
+// 174: ACILIS (iskelet+cascade, devreler tonu) + ISLENME TARAMASI (aralikli mavi/yesil cizgi) ──
+function _spoolIskelet() {
+  var b = document.getElementById('spoolBody'); if (!b) return;
+  b.classList.remove('acilis');
+  var r = '';
+  for (var i = 0; i < 10; i++) {
+    r += '<tr class="sk-row">'
+      + '<td><span class="sk s"></span></td><td><span class="sk c"></span></td>'
+      + '<td><span class="sk s"></span></td><td><span class="sk s"></span></td>'
+      + '<td><span class="sk s"></span></td><td><span class="sk s"></span></td>'
+      + '<td><span class="sk s"></span></td><td><span class="sk c"></span></td>'
+      + '<td><span class="sk s"></span></td><td><span class="sk c"></span></td>'
+      + '<td><span class="sk s"></span></td><td><span class="sk s"></span></td>'
+      + '<td><span class="sk c"></span></td><td><span class="sk s"></span></td></tr>';
+  }
+  b.innerHTML = r;
+}
+var _incScanT = null, _incPi = 0;
+var _incPal = [ {c:'45,142,255',o:0.50,h:2}, {c:'22,163,110',o:0.32,h:1}, {c:'45,142,255',o:0.30,h:1}, {c:'22,163,110',o:0.55,h:2}, {c:'45,142,255',o:0.40,h:1} ];
+function _incStreakSal() {
+  var lay = document.getElementById('incScan'); if (!lay) return;
+  var H = lay.clientHeight; if (H < 24) return;
+  var p = _incPal[_incPi++ % _incPal.length];
+  var s = document.createElement('div'); s.className = 'stk'; s.style.height = p.h + 'px';
+  s.style.top = (Math.random() * Math.max(0, H - 150)) + 'px';
+  s.innerHTML = '<div class="wk" style="background:linear-gradient(180deg,transparent,rgba(' + p.c + ',' + (p.o * 0.13) + '),transparent);"></div>'
+    + '<div class="ln" style="background:linear-gradient(90deg,transparent,rgba(' + p.c + ',' + p.o + ') 50%,transparent);"></div>';
+  s.style.opacity = '0'; s.style.transform = 'translateY(0)';
+  lay.appendChild(s);
+  var dur = 2000 + Math.random() * 900, dist = 120 + Math.random() * 45;
+  requestAnimationFrame(function () {
+    s.style.transition = 'transform ' + dur + 'ms cubic-bezier(.45,.08,.55,.95), opacity ' + dur + 'ms ease';
+    s.style.transform = 'translateY(' + dist + 'px)'; s.style.opacity = '1';
+  });
+  setTimeout(function () { s.style.opacity = '0'; }, dur * 0.7);
+  setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, dur + 160);
+}
+function _incScanBasla() {
+  var lay = document.getElementById('incScan'); if (!lay) return;
+  lay.classList.add('on');
+  if (_incScanT) return;
+  _incStreakSal();
+  _incScanT = setInterval(_incStreakSal, 1100);   // seyreltilmis salma
+}
+function _incScanDur() {
+  if (_incScanT) { clearInterval(_incScanT); _incScanT = null; }
+  var lay = document.getElementById('incScan'); if (lay) { lay.classList.remove('on'); lay.innerHTML = ''; }
+}
+
 function renderInceleme(j) {
   var sp = j.spoollar || [], fz = j.fazla || [], mn = j.montajlar || [], oz = j.ozet || {};
   // Özet şeridi
@@ -1425,7 +1489,18 @@ function renderInceleme(j) {
     });
   }
   if (!html) html = '<tr><td colspan="14" style="text-align:center;color:var(--txd);padding:20px;">Kabuk boş — BOM Excel parse sonucu okunamadı.</td></tr>';
-  document.getElementById('spoolBody').innerHTML = html;
+  var _sb = document.getElementById('spoolBody');
+  var _ilkAcilis = !WIZ._incAcildi;
+  if (!_ilkAcilis) _sb.classList.remove('acilis');   // 174: yenileme (drenaj) -> cascade tekrarlamaz
+  _sb.innerHTML = html;
+  if (_ilkAcilis) {                                    // 174: ilk acilis -> yukaridan asagi cascade
+    WIZ._incAcildi = true; _sb.classList.add('acilis');
+    setTimeout(function () { _sb.classList.remove('acilis'); }, 1500);
+  }
+  // 174: islenme taramasi — acilis cascade'i ile KARISMAZ (ilk aciliista cascade sonrasi baslar)
+  if (oz.isleniyor && oz.isleniyor > 0) {
+    if (_ilkAcilis) setTimeout(_incScanBasla, 1550); else _incScanBasla();
+  } else { _incScanDur(); }
 }
 
 function statGridRender(sp) {
