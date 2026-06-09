@@ -2790,6 +2790,18 @@ async function islenenRozetYenile() {
   } catch (e) { /* rozet kozmetik — sessiz geç */ }
 }
 
+// 172/ISL-FIX: büyük .in() listesi URL'i şişirip "Bad Request" (400) veriyordu (çok belgeli taslaklarda).
+//   idleri dilimleyip sırayla çek, birleştir. boyut=150 → ~150*37 char güvenli URL altında.
+async function _inDilimli(idler, boyut, sorguFn) {
+  var out = [];
+  for (var i = 0; i < idler.length; i += boyut) {
+    var r = await sorguFn(idler.slice(i, i + boyut));
+    if (r.error) throw new Error(r.error.message);
+    out = out.concat(r.data || []);
+  }
+  return out;
+}
+
 async function islenenlerYukle() {
   var kut = document.getElementById('islListe');
   if (!kut) return;
@@ -2805,26 +2817,26 @@ async function islenenlerYukle() {
     if (!devreler.length) { kut.innerHTML = '<div class="gri">İşlenen taslak devre yok. Yeni devre yüklemek için Adım 1\'e dönün.</div>'; return; }
 
     var dIds = devreler.map(function (d) { return d.id; });
-    var dk = await supa.from('devre_dokumanlari').select('id, devre_id').in('devre_id', dIds).eq('aktif', true);
-    var doklar = dk.data || [];
+    var doklar = await _inDilimli(dIds, 150, function (dilim) {
+      return supa.from('devre_dokumanlari').select('id, devre_id').in('devre_id', dilim).eq('aktif', true);
+    });
     var dok2devre = {}, dokSay = {};
     doklar.forEach(function (x) { dok2devre[x.id] = x.devre_id; dokSay[x.devre_id] = (dokSay[x.devre_id] || 0) + 1; });
 
     var say = {};   // devre_id -> sayaçlar
     var dokIds = doklar.map(function (x) { return x.id; });
-    if (dokIds.length) {
-      var kq = await supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, durum').in('devre_dokuman_id', dokIds);
-      if (kq.error) throw new Error(kq.error.message);
-      (kq.data || []).forEach(function (q) {
-        var did = dok2devre[q.devre_dokuman_id]; if (!did) return;
-        var s = say[did] || (say[did] = { acik: 0, hata: 0, oneri: 0, manuel: 0, toplam: 0 });
-        s.toplam++;
-        if (q.durum === 'bekliyor' || q.durum === 'isleniyor') s.acik++;
-        else if (q.durum === 'hata') s.hata++;
-        else if (q.durum === 'oneri_hazir') s.oneri++;
-        else if (q.durum === 'manuel_onay') s.manuel++;
-      });
-    }
+    var kuyrukRows = dokIds.length ? await _inDilimli(dokIds, 150, function (dilim) {
+      return supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, durum').in('devre_dokuman_id', dilim);
+    }) : [];
+    kuyrukRows.forEach(function (q) {
+      var did = dok2devre[q.devre_dokuman_id]; if (!did) return;
+      var s = say[did] || (say[did] = { acik: 0, hata: 0, oneri: 0, manuel: 0, toplam: 0 });
+      s.toplam++;
+      if (q.durum === 'bekliyor' || q.durum === 'isleniyor') s.acik++;
+      else if (q.durum === 'hata') s.hata++;
+      else if (q.durum === 'oneri_hazir') s.oneri++;
+      else if (q.durum === 'manuel_onay') s.manuel++;
+    });
 
     var h = '', ozHazir = 0, ozRun = 0, ozErr = 0;
     devreler.forEach(function (d) {
@@ -2903,7 +2915,10 @@ async function islenenlerDrenajDevre(devreId, btn) {
   try {
     var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
       filtre: { devreId: devreId }, bucket: 'devre-belgeleri',
-      onIlerleme: function (d) { if (btn && d.faz === 'basliyor') btn.textContent = '⏳ ' + d.sira + '/' + d.toplam + '…'; }
+      onIlerleme: function (d) {
+        if (btn && d.faz === 'basliyor') btn.textContent = '⏳ ' + d.sira + '/' + d.toplam + '…';
+        if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // 172/ISL-FIX: ilerlemeyi canlı izle
+      }
     });
     if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
     else toast('Bu devrede bekleyen is yok');
