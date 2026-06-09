@@ -1,4 +1,4 @@
-# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 169)
+# WIZARD YOL HARİTASI — Devre Yüklemesi Uçtan Uca (son güncelleme: oturum 170)
 
 > Amaç: Yazılımcı olmayan bir operatör, elindeki klasörü wizard'a bıraksın; sistem kabuğu kursun,
 > belgeleri arka planda işlesin, tanımadığı formatı operatöre kolayca öğretsin, operatör taslağı
@@ -551,3 +551,43 @@ otomatik ekleme YOK. `_1`-eki cozumu DAR (devre-bazli overlay); global normSpool
 - spool_detay PDF gorunmuyor (TESHIS EDILMEDI): terfi sonrasi spool_detay'da PDF yok. Once kaynak bul.
 - kismi/bekliyor karisik: elle eslestirilen 12 hedeften bazi kismi bazi bekliyor — dogrula.
 - B-6 (sessiz kayip yok): fazla/eslesmeyen artik gorunur + eslestirilebilir; modal sayisi henuz tam degil.
+
+
+---
+
+## 170 ISARETLERI (2026-06-08) — AKIS SADELESTIRME (tek-yuzey + karar ekrani + Islenenler Isle/Izle + hata bandi)
+
+> Tema: devre yukleme uctan uca, Cihat modeline gore sadelestirildi. "Yok onizle, oradan wizard'a git"
+> kafa karisikligi kaldirildi. Hepsi canli, 12/12, izometri-oku dokunulmadi, migration yok.
+
+- [x] **TEK-YUZEY BIRLESTIRME (MK-170.1)** — W-2.11/W-2.12 ONIZLEME EMEKLI. Taslak devre artik YALNIZCA
+  wizard'da incelenir/onaylanir. devre_detay ?taslak=1 onizleme CIZMEDEN wizard'a yonlenir
+  (location.replace, catch-all). Wizard'dan iki "Onizle" butonu (onay-bar + Islenenler satiri) kaldirildi.
+  166'nin koprusu (MK-165.7/2) bilincli geri alindi; dormant kod silinmedi. B-4 yeniden cerceve: "taslak
+  gercek devre detay gorunumunde kontrol" yerine "taslak tek yuzeyde (wizard Adim 2) incelenir".
+- [x] **KARAR EKRANI SADELESTI (MK-170.2)** — 166 karar ekranindan (Yeni Devre · Incele & Onayla ·
+  Islenenler'e Git) "Incele & Onayla" CIKTI. Izometri karar ekraninda islenmez (MK-166.1 pekisti).
+  Yeni cikislar: Islenenler'e Git (birincil) / Cik (devreler.html) / Yeni Devre Yukle. Metin "Islenenler'de
+  Bekleyenleri isle ile islenip eslesir"e cevrildi.
+- [x] **PER-DEVRE ISLE (MK-170.3)** — W-2.7 genisledi. Islenenler satirinda s.acik>0 iken "Isle":
+  yalniz o devreyi oncelikli isler (drenaj zaten filtre:{devreId} destekliyordu). Global "Bekleyenleri isle"
+  sirayla devam eder; WIZ._islDrenaj kilidi paylasilir (cift drenaj yok).
+- [x] **ISLENIRKEN IZLE (MK-170.4 — regresyon duzeltmesi)** — Onizle kaldirilinca isleniyorken liste gorme
+  kaybolmustu (Incele s.acik>0 disabled). Disabled kaldirildi; isleniyorken etiket "Izle", Adim 2 canli
+  dolar. (B-5/B-6 ruhu: isleyen devrenin durumu her an gorulebilir.)
+- [x] **DOSYA SEVIYESI HATA BANDI (MK-170.5)** — B-6 (sessiz kayip yok) guclendi. Cetelede, o devrenin
+  islenemeyen (durum=hata) belgeleri kirmizi bantta dosya adi + hata_mesaji ile gorunur. "eksik (PDF yok)"
+  ile "hata (PDF patladi)" ayrisir. Veri istemci tarafi cekilir (devre-inceleme API hata dondurmuyor);
+  server/12-12 DEGISMEDI. Salt-gorunur.
+
+### 170 — ACIK (171 adaylari)
+- **B (spool seviyesi hata rozeti):** patlayan dosyayi tam spool satirina esle (dosya-adi->spool parse; kirilgan).
+- **Tekrar dene:** hata bandina "yeniden isle" butonu (durum hata->bekliyor; kuyruga yazma — dikkatli).
+- W-2.9 eszamanli paralel devre (karar ekrani seri akitti) · W-2.5 iki ayri ilerleme cubugu.
+- Eski devir: dosya_isleme_kuyrugu takili kayitlar · gece cron GERCEK testi (yine bos) · Y200/format ogretimi.
+
+### 170 disiplin
+- HTML cerrahi duzenlemeler: Python patch + abort-on-mismatch (anchor tekil) + .bak + MD5 once/sonra +
+  idempotent marker. node --check HTML'e uygulanmaz -> ayiklanan JS'e uygulanir (her degisiklikte gecti).
+- Tum kod commit'leri ayri ve CI tetikli; docs kapanis [skip ci].
+
