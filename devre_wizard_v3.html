@@ -197,10 +197,9 @@
     #spoolBody tr.sk-row td{ cursor:default; } #spoolBody tr.sk-row:hover td{ background:transparent; }
     #spoolBody.acilis tr{ opacity:0; animation:_islCascade .3s ease forwards; }
     #spoolBody.acilis tr:nth-child(1){animation-delay:0ms} #spoolBody.acilis tr:nth-child(2){animation-delay:55ms} #spoolBody.acilis tr:nth-child(3){animation-delay:110ms} #spoolBody.acilis tr:nth-child(4){animation-delay:165ms} #spoolBody.acilis tr:nth-child(5){animation-delay:220ms} #spoolBody.acilis tr:nth-child(6){animation-delay:275ms} #spoolBody.acilis tr:nth-child(7){animation-delay:330ms} #spoolBody.acilis tr:nth-child(8){animation-delay:385ms} #spoolBody.acilis tr:nth-child(9){animation-delay:440ms} #spoolBody.acilis tr:nth-child(10){animation-delay:495ms} #spoolBody.acilis tr:nth-child(11){animation-delay:550ms} #spoolBody.acilis tr:nth-child(12){animation-delay:605ms} #spoolBody.acilis tr:nth-child(13){animation-delay:660ms} #spoolBody.acilis tr:nth-child(14){animation-delay:715ms} #spoolBody.acilis tr:nth-child(15){animation-delay:770ms} #spoolBody.acilis tr:nth-child(16){animation-delay:825ms} #spoolBody.acilis tr:nth-child(17){animation-delay:880ms} #spoolBody.acilis tr:nth-child(18){animation-delay:935ms} #spoolBody.acilis tr:nth-child(19){animation-delay:990ms} #spoolBody.acilis tr:nth-child(20){animation-delay:1045ms} #spoolBody.acilis tr:nth-child(n+21){animation-delay:1045ms}
-    .inc-scan{ position:absolute; left:0; right:0; top:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
+    .inc-scan{ position:absolute; left:0; right:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
     .inc-scan.on{ display:block; }
     .inc-scan.on .ai-scan{ display:block; }
-    .inc-scan .ai-scan{ animation-duration:3s; }
     @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr,.inc-scan .ai-scan,.inc-scan .ai-scan .core{ animation:none; transition:none; } }
     .marka{ font-weight:700; color:var(--ac); } .kalite{ color:var(--ac); font-weight:600; }
     .rev-chip{ font-size:12px; font-weight:700; padding:1px 5px; border-radius:4px; background:rgba(217,119,6,.12); color:var(--warn); }
@@ -1391,18 +1390,30 @@ function _spoolIskelet() {
   b.innerHTML = r;
 }
 var _incScanT = null;
-// 174-E: tarama = klasor ai-scan AYNEN. #incScan yuksekligi = kart yuksekligi (ai-scan top:0->100% tablo sonu).
-function _incScanYukseklik() {
+// 174-F: tarama = klasor ai-scan, SABIT/SAKIN hiz. Cizgi tum tabloyu degil, EKRANDA GORUNEN dilimi suzer.
+//   #incScan'i gorunen tablo dilimine oturt; ai-scan suresi = dilim / hiz (px/sn SABIT -> klasor tonu).
+function _incScanGuncelle() {
   var lay = document.getElementById('incScan'); if (!lay || !lay.parentNode) return;
-  var h = lay.parentNode.getBoundingClientRect().height;
-  if (h > 60) lay.style.height = h + 'px';
+  var kr = lay.parentNode.getBoundingClientRect();
+  var vh = window.innerHeight || 800;
+  var bTop = Math.max(kr.top, 60), bBot = Math.min(kr.bottom, vh);
+  var band = Math.round(bBot - bTop);
+  if (band < 80) { lay.style.height = '0px'; return; }     // tablo ekranda degil
+  lay.style.top = Math.round(bTop - kr.top) + 'px';         // kart-local: gorunen dilim
+  lay.style.height = band + 'px';
+  var sc = lay.querySelector('.ai-scan');
+  if (sc) {                                                 // ~180px/sn sabit hiz; 2.8-4.2s arasi sure
+    var bandQ = Math.round(band / 40) * 40;                 // kucuk scroll titremesi sureyi sifirlamasin
+    var dur = Math.min(4200, Math.max(2800, Math.round(bandQ / 0.18)));
+    if (sc._dur !== dur) { sc.style.animationDuration = dur + 'ms'; sc._dur = dur; }
+  }
 }
 function _incScanBasla() {
   var lay = document.getElementById('incScan'); if (!lay) return;
-  _incScanYukseklik();
+  _incScanGuncelle();
   lay.classList.add('on');
   if (_incScanT) return;
-  _incScanT = setInterval(_incScanYukseklik, 1200);   // tablo buyurse 100% takip etsin
+  _incScanT = setInterval(_incScanGuncelle, 350);           // scroll/resize takibi
 }
 function _incScanDur() {
   if (_incScanT) { clearInterval(_incScanT); _incScanT = null; }
