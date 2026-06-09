@@ -172,7 +172,7 @@
     .inc-pill .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:21px; line-height:1; color:var(--tx); letter-spacing:.3px; }
     .inc-pill .nplus{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:700; color:var(--warn); background:rgba(217,119,6,.15); border-radius:9px; padding:1px 6px; vertical-align:2px; cursor:help; margin-left:4px; }
     .inc-prog{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
-    .inc-pp{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bor); border-radius:8px; padding:4px 11px; min-width:60px; display:flex; flex-direction:column; gap:2px; }
+    .inc-pp{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bor); border-radius:8px; padding:4px 11px; min-width:70px; flex:1; display:flex; flex-direction:column; gap:2px; }
     .inc-pp .pl{ font-size:8px; letter-spacing:.4px; text-transform:uppercase; font-weight:600; color:var(--txd); display:flex; align-items:center; gap:5px; }
     .inc-pp .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; line-height:1; color:var(--tx); }
     .inc-pp.run{ border-left-color:var(--ac); } .inc-pp.run .pv{ color:var(--ac); }
@@ -197,7 +197,7 @@
     #spoolBody tr.sk-row td{ cursor:default; } #spoolBody tr.sk-row:hover td{ background:transparent; }
     #spoolBody.acilis tr{ opacity:0; animation:_islCascade .3s ease forwards; }
     #spoolBody.acilis tr:nth-child(1){animation-delay:0ms} #spoolBody.acilis tr:nth-child(2){animation-delay:55ms} #spoolBody.acilis tr:nth-child(3){animation-delay:110ms} #spoolBody.acilis tr:nth-child(4){animation-delay:165ms} #spoolBody.acilis tr:nth-child(5){animation-delay:220ms} #spoolBody.acilis tr:nth-child(6){animation-delay:275ms} #spoolBody.acilis tr:nth-child(7){animation-delay:330ms} #spoolBody.acilis tr:nth-child(8){animation-delay:385ms} #spoolBody.acilis tr:nth-child(9){animation-delay:440ms} #spoolBody.acilis tr:nth-child(10){animation-delay:495ms} #spoolBody.acilis tr:nth-child(11){animation-delay:550ms} #spoolBody.acilis tr:nth-child(12){animation-delay:605ms} #spoolBody.acilis tr:nth-child(13){animation-delay:660ms} #spoolBody.acilis tr:nth-child(14){animation-delay:715ms} #spoolBody.acilis tr:nth-child(15){animation-delay:770ms} #spoolBody.acilis tr:nth-child(16){animation-delay:825ms} #spoolBody.acilis tr:nth-child(17){animation-delay:880ms} #spoolBody.acilis tr:nth-child(18){animation-delay:935ms} #spoolBody.acilis tr:nth-child(19){animation-delay:990ms} #spoolBody.acilis tr:nth-child(20){animation-delay:1045ms} #spoolBody.acilis tr:nth-child(n+21){animation-delay:1045ms}
-    .inc-scan{ position:absolute; left:0; right:0; top:64px; bottom:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
+    .inc-scan{ position:absolute; left:0; right:0; top:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
     .inc-scan.on{ display:block; }
     .inc-scan .stk{ position:absolute; left:0; right:0; will-change:transform,opacity; }
     .inc-scan .ln{ position:absolute; left:0; right:0; top:0; height:100%; }
@@ -1395,15 +1395,23 @@ var _incScanT = null, _incPi = 0;
 var _incPal = [ {c:'45,142,255',o:0.50,h:2}, {c:'22,163,110',o:0.32,h:1}, {c:'45,142,255',o:0.30,h:1}, {c:'22,163,110',o:0.55,h:2}, {c:'45,142,255',o:0.40,h:1} ];
 function _incStreakSal() {
   var lay = document.getElementById('incScan'); if (!lay) return;
-  var H = lay.clientHeight; if (H < 24) return;
+  var kart = lay.parentNode; if (!kart) return;
+  var kr = kart.getBoundingClientRect();
+  if (kr.height < 40) return;
+  lay.style.height = kr.height + 'px';                 // 174-C: katman yuksekligini karta esitle (height:0 fix)
+  var vh = window.innerHeight || 800;
+  var vTop = Math.max(kr.top, 60), vBot = Math.min(kr.bottom, vh);
+  var bant = vBot - vTop;
+  if (bant < 40) return;                               // tablo ekranda degil -> streak yok
   var p = _incPal[_incPi++ % _incPal.length];
   var s = document.createElement('div'); s.className = 'stk'; s.style.height = p.h + 'px';
-  s.style.top = (Math.random() * Math.max(0, H - 150)) + 'px';
+  var localTop = (vTop - kr.top) + Math.random() * Math.max(20, bant - 120);   // gorunen bant icinde, kart-local
+  s.style.top = localTop + 'px';
   s.innerHTML = '<div class="wk" style="background:linear-gradient(180deg,transparent,rgba(' + p.c + ',' + (p.o * 0.13) + '),transparent);"></div>'
     + '<div class="ln" style="background:linear-gradient(90deg,transparent,rgba(' + p.c + ',' + p.o + ') 50%,transparent);"></div>';
   s.style.opacity = '0'; s.style.transform = 'translateY(0)';
   lay.appendChild(s);
-  var dur = 2000 + Math.random() * 900, dist = 120 + Math.random() * 45;
+  var dur = 2000 + Math.random() * 900, dist = 110 + Math.random() * 45;
   requestAnimationFrame(function () {
     s.style.transition = 'transform ' + dur + 'ms cubic-bezier(.45,.08,.55,.95), opacity ' + dur + 'ms ease';
     s.style.transform = 'translateY(' + dist + 'px)'; s.style.opacity = '1';
