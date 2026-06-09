@@ -56,6 +56,14 @@
     .inp,.sel{ width:100%; background:var(--sur2); border:1px solid var(--bor); color:var(--tx); border-radius:8px; padding:9px 11px; font-size:15px; font-family:'Barlow',sans-serif; } .inp:focus,.sel:focus{ outline:none; border-color:var(--ac); }
     .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .drop{ border:2px dashed var(--bor); border-radius:12px; padding:26px; text-align:center; color:var(--txd); cursor:pointer; transition:.15s; } .drop:hover,.drop.drag-over{ border-color:var(--ac); color:var(--txm); background:rgba(45,142,255,.05); } .drop .big{ font-size:32px; margin-bottom:6px; }
+    /* 171/GORSEL: Adim 1 formu mockup gorunumu — SCOPED, Adim 2 ETKILENMEZ */
+    [data-panel="1"] .card-t{ font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--txm); display:flex; align-items:center; gap:9px; }
+    [data-panel="1"] .card-t::after{ content:''; flex:1; height:1px; background:var(--bor); }
+    [data-panel="1"] .card-t span{ text-transform:none; letter-spacing:0; }
+    [data-panel="1"] .fld label{ font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.7px; color:var(--txd); }
+    [data-panel="1"] .fld label span{ text-transform:none; letter-spacing:0; font-family:'Barlow',sans-serif; }
+    [data-panel="1"] .inp, [data-panel="1"] .sel{ border-radius:9px; }
+    [data-panel="1"] .inp:focus, [data-panel="1"] .sel:focus{ border-color:var(--ac); box-shadow:0 0 0 3px rgba(45,142,255,.15); outline:none; }
     .l3-row{ display:flex; align-items:center; gap:10px; background:var(--sur2); border:1px solid var(--bor); border-radius:8px; padding:9px 12px; margin-bottom:12px; font-size:14px; } .l3-row .hint{ color:var(--txd); font-size:13px; } .l3-tag{ margin-left:auto; }
     .banner{ display:flex; align-items:center; gap:10px; border-radius:9px; padding:11px 13px; font-size:15px; margin:12px 0; } .banner.ok{ background:rgba(22,163,110,.12); color:var(--gr); border:1px solid rgba(22,163,110,.4); } .banner.warn{ background:rgba(217,119,6,.12); color:var(--warn); border:1px solid rgba(217,119,6,.4); } .banner .grow{ flex:1; }
     .actions{ display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:8px; }
