@@ -41,13 +41,33 @@
     .isl-btn{ margin-left:auto; display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:9px; background:var(--sur); border:1px solid var(--bor); color:var(--txm); font-size:15px; cursor:pointer; font-family:'Barlow',sans-serif; }
     .isl-btn:hover{ border-color:var(--ac); color:var(--ac); } .isl-btn.aktif{ border-color:var(--ac); color:var(--tx); }
     .isl-rozet{ background:var(--ac); color:#fff; border-radius:10px; padding:1px 8px; font-size:13px; font-weight:700; font-family:'Barlow Condensed',sans-serif; }
-    .isl-satir{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 16px; border:1px solid var(--bor); border-radius:10px; margin-bottom:10px; background:var(--sur2); }
-    .isl-satir.hazir{ border-color:var(--gr); }
-    .isl-durum{ display:inline-flex; align-items:center; gap:6px; border-radius:7px; padding:3px 10px; font-size:13px; white-space:nowrap; }
-    .isl-durum.isleniyor{ background:rgba(217,119,6,.14); color:var(--warn); }
-    .isl-durum.hazir{ background:rgba(22,163,110,.14); color:var(--gr); }
-    .isl-durum.hatali{ background:rgba(229,62,62,.12); color:var(--re); }
-    @media (max-width:760px){ .isl-satir{ grid-template-columns:1fr; gap:8px; } }
+    /* 172/ISL-UI: işlenenler havuzu — kutu-per-satır (mockup) */
+    .isl-ozet{ font-size:13px; color:var(--txm); font-family:'JetBrains Mono',monospace; } .isl-ozet b{ color:var(--tx); font-weight:600; } .isl-ozet .run{ color:var(--warn); }
+    .isl-liste{ display:flex; flex-direction:column; gap:11px; }
+    .isl-satir{ display:grid; grid-template-columns:minmax(180px,1.6fr) 220px 150px auto; gap:18px; align-items:center; background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:15px 20px; transition:border-color .15s, box-shadow .15s, transform .15s; }
+    .isl-satir:hover{ box-shadow:0 2px 12px rgba(0,0,0,.10); transform:translateY(-1px); }
+    .isl-satir.hazir{ border-color:rgba(22,163,110,.45); }
+    .isl-satir.isleniyor{ border-color:rgba(217,119,6,.5); }
+    .isl-satir.hatali{ border-color:rgba(229,62,62,.45); }
+    .isl-ad{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:18px; letter-spacing:.2px; }
+    .isl-meta{ font-size:12px; color:var(--txd); font-family:'JetBrains Mono',monospace; margin-top:3px; }
+    .isl-st{ display:inline-flex; align-items:center; gap:8px; font-size:13.5px; color:var(--txm); }
+    .isl-st .dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .isl-st.s-ok .dot{ background:var(--gr); } .isl-st.s-ok .lbl{ color:var(--gr); font-weight:600; }
+    .isl-st.s-run .dot{ background:var(--warn); animation:islBlink 1.4s ease-in-out infinite; } .isl-st.s-run .lbl{ color:var(--warn); font-weight:600; }
+    .isl-st.s-err .dot{ background:var(--re); } .isl-st.s-err .lbl{ color:var(--re); font-weight:600; }
+    .isl-st .kalan{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--txd); }
+    @keyframes islBlink{ 0%,100%{ opacity:1; } 50%{ opacity:.25; } }
+    .isl-prog{ margin-top:8px; height:3px; width:170px; background:var(--bg); border-radius:2px; overflow:hidden; }
+    .isl-prog .f{ height:100%; background:var(--warn); border-radius:2px; position:relative; overflow:hidden; }
+    .isl-prog .f::after{ content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent); transform:translateX(-100%); animation:islSh 1.8s ease-in-out infinite; }
+    @keyframes islSh{ to{ transform:translateX(220%); } }
+    .isl-cikti{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--txd); line-height:1.7; }
+    .isl-cikti .o{ color:var(--ac); } .isl-cikti .m{ color:var(--txm); } .isl-cikti b{ font-weight:600; }
+    .isl-akt{ display:flex; align-items:center; gap:7px; justify-content:flex-end; flex-wrap:wrap; }
+    .isl-x{ background:transparent; border:none; color:var(--txd); font-size:17px; cursor:pointer; padding:4px 7px; border-radius:7px; line-height:1; } .isl-x:hover{ background:rgba(229,62,62,.10); color:var(--re); }
+    @media (max-width:760px){ .isl-satir{ grid-template-columns:1fr; gap:10px; } .isl-prog{ width:100%; } }
+    @media (prefers-reduced-motion: reduce){ .isl-st.s-run .dot,.isl-prog .f::after,.isl-satir{ animation:none; transition:none; } }
 
     /* ── Kartlar / form (Adım 1) ── */
     .card{ background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:18px; margin-bottom:16px; }
@@ -436,9 +456,12 @@
           <h2 class="card-t" style="margin:0 0 4px;">İşlenenler</h2>
           <div style="font-size:13px;color:var(--txd);">Taslak devreler — arka plan işleme ve terfi bekleyenler. Durum kuyruktan anlık türetilir.</div>
         </div>
-        <button class="btn pri" id="btnIslDrenaj" onclick="islenenlerDrenaj()">▶ Bekleyenleri işle</button>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <span class="isl-ozet" id="islOzet"></span>
+          <button class="btn pri" id="btnIslDrenaj" onclick="islenenlerDrenaj()">▶ Bekleyenleri işle</button>
+        </div>
       </div>
-      <div id="islListe"><div class="gri">Yükleniyor…</div></div>
+      <div id="islListe" class="isl-liste"><div class="gri">Yükleniyor…</div></div>
       <div style="font-size:12px;color:var(--txd);margin-top:10px;">Öneri/manuel sayıları onay havuzunun bu devreye düşen payıdır; onay akışına satırdaki İncele ile girilir. İşleme bu sekme açıkken yürür.</div>
     </div>
   </section>
@@ -2803,27 +2826,46 @@ async function islenenlerYukle() {
       });
     }
 
-    var h = '';
+    var h = '', ozHazir = 0, ozRun = 0, ozErr = 0;
     devreler.forEach(function (d) {
       var s = say[d.id] || { acik: 0, hata: 0, oneri: 0, manuel: 0, toplam: 0 };
-      var hazir = false, durumHtml;
-      if (s.acik > 0) durumHtml = '<span class="isl-durum isleniyor">⏳ İşleniyor — kalan ' + s.acik + '/' + s.toplam + '</span>';
-      else if (s.hata > 0) durumHtml = '<span class="isl-durum hatali">⚠ ' + s.hata + ' hata</span>';
-      else { hazir = true; durumHtml = '<span class="isl-durum hazir">✓ Hazır</span>'; }
+      var durumCls, durumHtml, satirCls;
+      if (s.acik > 0) {
+        ozRun++; satirCls = 'isleniyor';
+        var biten = Math.max(0, s.toplam - s.acik);
+        var pct = s.toplam > 0 ? Math.round(biten / s.toplam * 100) : 0;
+        durumHtml = '<span class="isl-st s-run"><span class="dot"></span><span class="lbl">İşleniyor</span><span class="kalan">kalan ' + s.acik + ' / ' + s.toplam + '</span></span>' +
+                    '<div class="isl-prog"><div class="f" style="width:' + Math.max(pct, 6) + '%;"></div></div>';
+      } else if (s.hata > 0) {
+        ozErr++; satirCls = 'hatali';
+        durumHtml = '<span class="isl-st s-err"><span class="dot"></span><span class="lbl">' + s.hata + ' hata</span></span>';
+      } else {
+        ozHazir++; satirCls = 'hazir';
+        durumHtml = '<span class="isl-st s-ok"><span class="dot"></span><span class="lbl">Hazır</span></span>';
+      }
+      var hazir = satirCls === 'hazir';
       var trh = '';
       try { trh = d.olusturma ? new Date(d.olusturma).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; } catch (e) {}
-      h += '<div class="isl-satir' + (hazir ? ' hazir' : '') + '">' +
-        '<div><div style="font-weight:600;font-size:15px;">' + esc(d.devre_no || '(adsız)') + '</div>' +
-        '<div style="font-size:13px;color:var(--txd);">' + (dokSay[d.id] || 0) + ' belge · ' + esc(trh) + '</div></div>' +
+      h += '<div class="isl-satir ' + satirCls + '">' +
+        '<div><div class="isl-ad">' + esc(d.devre_no || '(adsız)') + '</div>' +
+          '<div class="isl-meta">' + (dokSay[d.id] || 0) + ' belge · ' + esc(trh) + '</div></div>' +
         '<div>' + durumHtml + '</div>' +
-        '<div style="font-size:13px;color:var(--txm);">öneri: <b>' + s.oneri + '</b> · manuel: <b>' + s.manuel + '</b></div>' +
-        '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
-        (s.acik > 0 ? '<button class="btn pri" style="font-size:14px;padding:6px 12px;" title="Bu devreyi oncelikli isle" onclick="islenenlerDrenajDevre(\'' + d.id + '\', this)">▶ İşle</button>' : '') +
-        '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;"' + ' onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : (s.acik > 0 ? 'İzle' : 'İncele')) + '</button>' +
-        '<button class="btn ghost" style="font-size:14px;padding:6px 10px;" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">✕</button>' +
+        '<div class="isl-cikti"><span class="o"><b>' + s.oneri + '</b> öneri</span><br><span class="m"><b>' + s.manuel + '</b> manuel</span></div>' +
+        '<div class="isl-akt">' +
+          (s.acik > 0 ? '<button class="btn pri" style="font-size:14px;padding:6px 12px;" title="Bu devreyi öncelikli işle" onclick="islenenlerDrenajDevre(\'' + d.id + '\', this)">▶ İşle</button>' : '') +
+          '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;" onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : (s.acik > 0 ? 'İzle' : 'İncele')) + '</button>' +
+          '<button class="isl-x" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">×</button>' +
         '</div></div>';
     });
     kut.innerHTML = h;
+    var oz = document.getElementById('islOzet');
+    if (oz) {
+      var parts = [];
+      if (ozHazir) parts.push('<b>' + ozHazir + '</b> hazır');
+      if (ozRun)   parts.push('<span class="run"><b>' + ozRun + '</b> işleniyor</span>');
+      if (ozErr)   parts.push('<b>' + ozErr + '</b> hata');
+      oz.innerHTML = parts.join(' · ');
+    }
   } catch (e) {
     console.error('[v3] islenenler:', e);
     kut.innerHTML = '<div class="gri">Liste yüklenemedi: ' + esc((e && e.message) || e) + '</div>';

@@ -1018,10 +1018,13 @@ async function veriYukle() {
   try {
     // 3 sorgu paralel: tersaneler + projeler + filter verisi (spooller)
     // (14. oturum: filterRes tenant_id filtresi eklendi + Promise.all'a alındı)
+    // (172/HEAD: +2 sorgu — tablo son güncelleme damgası; açılışta 1 kez, filtreden bağımsız, RLS tenant-scoped)
     var results = await Promise.all([
       supa.from('tersaneler').select('ad,kisa_ad').eq('tenant_id', ARES.tenantId()),
       supa.from('projeler').select('id, proje_no, tersaneler(ad,kisa_ad)').eq('tenant_id', ARES.tenantId()),
-      supa.from('spooller').select('devre_id, malzeme, yuzey').eq('tenant_id', ARES.tenantId())
+      supa.from('spooller').select('devre_id, malzeme, yuzey').eq('tenant_id', ARES.tenantId()),
+      supa.from('devreler').select('olusturma').order('olusturma', { ascending: false }).limit(1),
+      supa.from('devreler').select('guncelleme').not('guncelleme', 'is', null).order('guncelleme', { ascending: false }).limit(1)
     ]);
     var tersaneSet = {}, projeSet = {};
     (results[0].data||[]).forEach(function(t){ var k=t.kisa_ad||t.ad; tersaneSet[k]=true; });
@@ -1061,6 +1064,22 @@ async function veriYukle() {
       return { devre_id: s.devre_id, malzeme_norm: _normalizeMalzeme(s.malzeme)||null, yuzey: _normalizeYuzey(s.yuzey)||null };
     }).filter(function(s){ return s.malzeme_norm || s.yuzey; });
     _filterDataUygula();
+
+    // 172/HEAD: tablo son güncelleme damgası — en yeni olusturma (eklenen) vs en yeni guncelleme, hangisi büyükse
+    (function(){
+      var upd = document.getElementById('tableUpdated');
+      if (!upd) return;
+      var o = (results[3] && results[3].data && results[3].data[0]) ? results[3].data[0].olusturma : null;
+      var g = (results[4] && results[4].data && results[4].data[0]) ? results[4].data[0].guncelleme : null;
+      var en = null;
+      if (o) en = new Date(o);
+      if (g) { var gd = new Date(g); if (!en || gd > en) en = gd; }
+      if (en && !isNaN(en)) {
+        var p = function(n){ return ('0'+n).slice(-2); };
+        upd.textContent = 'Son güncelleme: ' + p(en.getDate()) + '/' + p(en.getMonth()+1) + '/' + en.getFullYear() + ' ' + p(en.getHours()) + ':' + p(en.getMinutes());
+      } else { upd.textContent = ''; }
+    })();
+
     await sorgulaVeGoster();
 
   } catch(e) {
@@ -1277,31 +1296,18 @@ async function sorgulaVeGoster() {
 
     var rpcIds = allDevreIds.length ? allDevreIds : ['00000000-0000-0000-0000-000000000000'];
 
-    // Paralel: liste + count + RPC istatistik + son güncelleme (172/HEAD: filtreden bağımsız, RLS tenant-scoped)
+    // Paralel: liste + count + RPC istatistik
     var results = await Promise.all([
       listeQ,
       countQ,
-      supa.rpc('devre_istatistik', { devre_ids: rpcIds }),
-      supa.from('devreler').select('guncelleme').order('guncelleme', { ascending: false }).limit(1).maybeSingle()
+      supa.rpc('devre_istatistik', { devre_ids: rpcIds })
     ]);
     var devRes   = results[0];
     var countRes = results[1];
     var rpcRes   = results[2];
-    var sonGuncRes = results[3];
 
     if (devRes.error)  { console.warn('[Devreler] listeQ:', devRes.error); return; }
     if (rpcRes.error)  { console.warn('[Devreler] rpcRes:', rpcRes.error); }
-
-    // 172/HEAD: tablo son güncelleme damgası
-    (function(){
-      var upd = document.getElementById('tableUpdated');
-      if (!upd) return;
-      var g = (sonGuncRes && sonGuncRes.data) ? sonGuncRes.data.guncelleme : null;
-      if (g) {
-        var dt = new Date(g), p = function(n){ return ('0'+n).slice(-2); };
-        upd.textContent = 'Son güncelleme: ' + p(dt.getDate()) + '/' + p(dt.getMonth()+1) + '/' + dt.getFullYear() + ' ' + p(dt.getHours()) + ':' + p(dt.getMinutes());
-      } else { upd.textContent = ''; }
-    })();
 
     _ssTotal = countRes.count || 0;
 
