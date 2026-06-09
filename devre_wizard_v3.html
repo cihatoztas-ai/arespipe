@@ -42,9 +42,22 @@
     .isl-btn:hover{ border-color:var(--ac); color:var(--ac); } .isl-btn.aktif{ border-color:var(--ac); color:var(--tx); }
     .isl-rozet{ background:var(--ac); color:#fff; border-radius:10px; padding:1px 8px; font-size:13px; font-weight:700; font-family:'Barlow Condensed',sans-serif; }
     .isl-btn-dot{ width:8px; height:8px; border-radius:50%; background:var(--ac); display:inline-block; flex-shrink:0; animation:islBlink 1.1s ease-in-out infinite; }   /* 172: kum saati yerine yanıp sönen nokta */
+    /* 172/ISL-SK: anında animasyonlu iskelet (devreler 14. oturum deseni) — bekleme hissi yok */
+    @keyframes _islSkSh { 0%{ background-position:-340px 0; } 100%{ background-position:calc(340px + 100%) 0; } }
+    .isl-satir.isl-sk{ pointer-events:none; }
+    .isl-sk-el{ display:block; background:linear-gradient(90deg, var(--bor) 0%, var(--sur2) 50%, var(--bor) 100%); background-size:340px 100%; animation:_islSkSh 1.4s ease-in-out infinite; border-radius:5px; }
+    .isl-sk-ad{ width:55%; height:18px; margin-bottom:7px; }
+    .isl-sk-meta{ width:38%; height:12px; }
+    .isl-sk-st{ width:100px; height:14px; }
+    .isl-sk-cik{ width:70px; height:30px; }
+    .isl-sk-btn{ width:120px; height:30px; margin-left:auto; }
     /* 172/ISL-UI: işlenenler havuzu — kutu-per-satır (mockup) */
     .isl-ozet{ font-size:13px; color:var(--txm); font-family:'JetBrains Mono',monospace; } .isl-ozet b{ color:var(--tx); font-weight:600; } .isl-ozet .run{ color:var(--warn); }
     .isl-liste{ display:flex; flex-direction:column; gap:11px; }
+    /* 172/ISL-CASCADE: satırlar yukarıdan aşağı kademeli açılır (devreler tablo deseni) */
+    @keyframes _islCascade { from{ opacity:0; transform:translateY(-10px); } to{ opacity:1; transform:translateY(0); } }
+    .isl-satir[data-ci]{ opacity:0; animation:_islCascade .22s ease forwards; animation-delay:calc(var(--ci,0) * 45ms); }
+    @media (prefers-reduced-motion: reduce){ .isl-satir[data-ci]{ animation:none; opacity:1; } }
     .isl-satir{ display:grid; grid-template-columns:minmax(180px,1.6fr) 220px 150px auto; gap:18px; align-items:center; background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:15px 20px; transition:border-color .15s, box-shadow .15s, transform .15s; }
     .isl-satir:hover{ box-shadow:0 2px 12px rgba(0,0,0,.10); transform:translateY(-1px); }
     .isl-satir.hazir{ border-color:rgba(22,163,110,.45); }
@@ -2828,15 +2841,16 @@ async function _inDilimli(idler, boyut, sorguFn) {
   return out;
 }
 
-// 172/ISL-PROG: tek satır HTML'i. say=null → durum henüz bilinmiyor (faz 1, hızlı render).
-function _islSatirHtml(d, dokSay, say) {
+// 172/ISL-PROG: tek satır HTML'i. say=null → durum henüz bilinmiyor. ci=sayı → cascade animasyonu (ilk açılış).
+function _islSatirHtml(d, dokSay, say, ci) {
+  var ciAttr = (ci != null) ? ' data-ci="' + ci + '" style="--ci:' + ci + ';"' : '';
   var trh = '';
   try { trh = d.olusturma ? new Date(d.olusturma).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; } catch (e) {}
   var head = '<div><div class="isl-ad">' + esc(d.devre_no || '(adsız)') + '</div>' +
              '<div class="isl-meta">' + (dokSay[d.id] || 0) + ' belge · ' + esc(trh) + '</div></div>';
   var xBtn = '<button class="isl-x" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">×</button>';
   if (!say) {
-    return '<div class="isl-satir">' + head +
+    return '<div class="isl-satir"' + ciAttr + '>' + head +
       '<div><span class="isl-st"><span class="dot" style="background:var(--bor);"></span><span class="lbl" style="color:var(--txd);">durum yükleniyor…</span></span></div>' +
       '<div class="isl-cikti m">—</div>' +
       '<div class="isl-akt"><button class="btn" style="font-size:14px;padding:6px 12px;" onclick="islenenlerIncele(\'' + d.id + '\')">İncele</button>' + xBtn + '</div></div>';
@@ -2857,7 +2871,7 @@ function _islSatirHtml(d, dokSay, say) {
     durumHtml = '<span class="isl-st s-ok"><span class="dot"></span><span class="lbl">Hazır</span></span>';
   }
   var hazir = satirCls === 'hazir';
-  return '<div class="isl-satir ' + satirCls + '">' + head +
+  return '<div class="isl-satir ' + satirCls + '"' + ciAttr + '>' + head +
     '<div>' + durumHtml + '</div>' +
     '<div class="isl-cikti"><span class="o"><b>' + s.oneri + '</b> öneri</span><br><span class="m"><b>' + s.manuel + '</b> manuel</span></div>' +
     '<div class="isl-akt">' +
@@ -2884,9 +2898,27 @@ function _islOzetYaz(say) {
   oz.innerHTML = parts.join(' · ');
 }
 
+// 172/ISL-SK: tek iskelet satır (shimmer) — veri gelmeden anında gösterilir.
+function _islSkSatir() {
+  return '<div class="isl-satir isl-sk">' +
+    '<div><span class="isl-sk-el isl-sk-ad"></span><span class="isl-sk-el isl-sk-meta"></span></div>' +
+    '<div><span class="isl-sk-el isl-sk-st"></span></div>' +
+    '<div><span class="isl-sk-el isl-sk-cik"></span></div>' +
+    '<div class="isl-akt"><span class="isl-sk-el isl-sk-btn"></span></div>' +
+    '</div>';
+}
+
 async function islenenlerYukle() {
   var kut = document.getElementById('islListe');
   if (!kut) return;
+  // 172/ISL-SK: gerçek satır yoksa (ilk açılış) ANINDA animasyonlu iskelet — "Yükleniyor" beklemesi gider.
+  var gercekVar = !!kut.querySelector('.isl-satir:not(.isl-sk)');
+  if (!gercekVar) {
+    var skN = parseInt((document.getElementById('islRozet') || {}).textContent, 10) || 4;
+    skN = Math.min(Math.max(skN, 3), 6);
+    var skH = ''; for (var sj = 0; sj < skN; sj++) skH += _islSkSatir();
+    kut.innerHTML = skH;
+  }
   try {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     var dv = await supa.from('devreler')
@@ -2909,13 +2941,6 @@ async function islenenlerYukle() {
     var dok2devre = {}, dokSay = {};
     doklar.forEach(function (x) { dok2devre[x.id] = x.devre_id; dokSay[x.devre_id] = (dokSay[x.devre_id] || 0) + 1; });
 
-    // 172/ISL-PROG: ilk açılışta listeyi HEMEN çiz (durum yok) — "Yükleniyor" duvarı gitti.
-    //   Yenilemede (satır zaten varsa) faz-1'i ATLA → flicker yok.
-    var ilkYukleme = !kut.querySelector('.isl-satir');
-    if (ilkYukleme) {
-      kut.innerHTML = devreler.map(function (d) { return _islSatirHtml(d, dokSay, null); }).join('');
-    }
-
     // FAZ 2: kuyruk durumları (en ağır sorgu) — gelince satırları gerçek durumla doldur.
     var dokIds = doklar.map(function (x) { return x.id; });
     var say = {};
@@ -2931,7 +2956,11 @@ async function islenenlerYukle() {
       else if (q.durum === 'oneri_hazir') s.oneri++;
       else if (q.durum === 'manuel_onay') s.manuel++;
     });
-    kut.innerHTML = devreler.map(function (d) { return _islSatirHtml(d, dokSay, say); }).join('');
+    // 172/ISL-CASCADE: ilk açılışta (iskeletten sonra) satırlar yukarıdan aşağı kademeli açılsın;
+    //   yenilemede (drenaj sırasında) animasyon YOK → flicker/zıplama olmaz.
+    kut.innerHTML = devreler.map(function (d, idx) {
+      return _islSatirHtml(d, dokSay, say, gercekVar ? null : Math.min(idx, 19));
+    }).join('');
     _islOzetYaz(say);
   } catch (e) {
     console.error('[v3] islenenler:', e);
