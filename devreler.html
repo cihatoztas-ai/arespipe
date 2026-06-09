@@ -191,11 +191,7 @@
     .star-icon.st-red    { color:var(--re); }
     .star-icon.st-yellow { color:#eab308; }
     .star-icon.st-green  { color:var(--gr); }
-    .sira-input { width:26px; height:26px; text-align:center; font-size:14px; font-weight:700; font-family:'Barlow Condensed',sans-serif; background:transparent; border:2px solid transparent; border-radius:50%; color:var(--txm); outline:none; padding:0; margin-left:4px; vertical-align:middle; transition:all .15s; cursor:text; line-height:1; }
-    .sira-input:hover  { border-color:var(--bor); }
-    .sira-input:focus  { border-color:var(--ac); color:var(--tx); }
-    .sira-input.has-val { border-color:var(--re); color:var(--re); font-weight:800; }
-    .sira-input::placeholder { color:var(--bor); font-weight:400; font-size:14px; }
+    /* 173/C: .sira-input CSS kaldirildi — 172/SIRA'da satir sira-input emekli, HTML'de eslesen element yok. */
     .act-btn { display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;border:1px solid var(--bor);background:transparent;color:var(--txd);cursor:pointer;transition:all .15s;flex-shrink:0; }
     .act-btn:hover { background:var(--sur2); }
     .act-btn.edit:hover   { border-color:var(--ac);color:var(--ac); }
@@ -322,17 +318,8 @@
     .termin-yakin   { color:var(--warn); }
     .termin-normal  { color:var(--gr); }
     .termin-yok     { color:var(--txd); }
-    /* Takvim popup */
-    .takvim-popup { position:fixed; z-index:2000; background:var(--sur); border:1px solid var(--bor); border-radius:12px; padding:16px; box-shadow:0 12px 40px rgba(0,0,0,.4); display:none; }
-    .takvim-popup.open { display:block; }
-    .takvim-baslik { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.6px; margin-bottom:10px; }
-    .takvim-input  { padding:8px 12px; border-radius:8px; border:1px solid var(--bor); background:var(--sur2); color:var(--tx); font-size:14px; font-family:'Barlow',sans-serif; outline:none; width:100%; box-sizing:border-box; transition:border-color .15s; }
-    .takvim-input:focus { border-color:var(--ac); }
-    .takvim-actions { display:flex; gap:6px; margin-top:10px; }
-    .takvim-temizle { flex:1; padding:7px; border-radius:7px; border:1px solid var(--bor); background:transparent; color:var(--re); font-size:14px; font-family:'Barlow',sans-serif; cursor:pointer; transition:all .15s; }
-    .takvim-temizle:hover { border-color:var(--re); background:rgba(229,62,62,.06); }
-    .takvim-kaydet  { flex:2; padding:7px; border-radius:7px; border:none; background:var(--ac); color:#fff; font-size:14px; font-weight:700; font-family:'Barlow',sans-serif; cursor:pointer; transition:opacity .15s; }
-    .takvim-kaydet:hover { opacity:.85; }
+    /* 173/C: eski takvim-popup CSS kaldirildi — 172/TERMIN native picker'a gecildi, popup olu koddu. */
+
 
     @media(max-width:768px){ .page{ padding:16px; } }
   </style>
@@ -1725,14 +1712,7 @@ async function iptalOnayla() {
   showToast('Devre iptal edildi', 'success');
 }
 
-// ── SIRA NUMARASI ────────────────────────────────────────────────
-function getSiraMap() { try { return JSON.parse(localStorage.getItem('ares_devre_sira') || '{}'); } catch(e) { return {}; } }
-function siraGuncelle(id, val) {
-  var m = getSiraMap();
-  var v = String(val).trim();
-  if (v === '') delete m[id]; else m[id] = v;
-  try { localStorage.setItem('ares_devre_sira', JSON.stringify(m)); } catch(e) {}
-}
+// 173/C: SIRA NUMARASI (getSiraMap/siraGuncelle) kaldirildi — 172/SIRA'da sira-input emekli, olu koddu.
 
 // ── FİLTRE & SIRALAMA ────────────────────────────────────────────
 var oncelikFiltreAktif = false;
@@ -1838,7 +1818,6 @@ function _doRender() {
   var count = document.getElementById('tableCount');
   if (!tbody) return;
   var _starCache  = getStarMap();
-  var _siraCache  = getSiraMap();
   var _terminCache = getTerminMap();
   // Client-side sort — mevcut sayfadaki satırları sıralar
   var liste = _applySortTo(DEVRELER);
