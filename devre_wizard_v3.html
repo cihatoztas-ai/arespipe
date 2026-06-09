@@ -3020,7 +3020,8 @@ async function islenenlerDrenajDevre(devreId, btn) {
   if (tk === WIZ._drenajTk) {           // 172/DURDUR: araya yeni drenaj girmediyse temizle
     WIZ._islDrenaj = false; WIZ._islDrenajDevreId = null; WIZ._aktifDrenaj = null;
     if (oz && oz.iptal) toast('Durduruldu (' + oz.islenen + ' is islendi)');
-    else if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + (oz.atlandi ? ', atlandi ' + oz.atlandi : '') + ')');
+    else if (oz && oz.atlandi) toast(oz.atlandi + ' is zaten isleniyordu (atlandi)');   // 173/IS1: claim-first — baska isleyici almis
     else if (oz) toast('Bu devrede bekleyen is yok');
     await islenenlerYukle();
   }
