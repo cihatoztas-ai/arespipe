@@ -41,7 +41,9 @@
     .isl-btn{ margin-left:auto; display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:9px; background:var(--sur); border:1px solid var(--bor); color:var(--txm); font-size:15px; cursor:pointer; font-family:'Barlow',sans-serif; }
     .isl-btn:hover{ border-color:var(--ac); color:var(--ac); } .isl-btn.aktif{ border-color:var(--ac); color:var(--tx); }
     .isl-rozet{ background:var(--ac); color:#fff; border-radius:10px; padding:1px 8px; font-size:13px; font-weight:700; font-family:'Barlow Condensed',sans-serif; }
-    .isl-btn-dot{ width:8px; height:8px; border-radius:50%; background:var(--ac); display:inline-block; flex-shrink:0; animation:islBlink 1.1s ease-in-out infinite; }   /* 172: kum saati yerine yanıp sönen nokta */
+    /* 173/IS1: nav pili sürekli yanıp sönen nokta kaldırıldı (sade navigasyon). Tek işleme butonu = #btnIslDrenaj. */
+    #btnIslDrenaj.isl-run{ background:#fff; color:#1a2433; border:1px solid var(--bor); cursor:default; display:inline-flex; align-items:center; gap:8px; }
+    #btnIslDrenaj.isl-run .nokta{ width:8px; height:8px; border-radius:50%; background:var(--ac); flex-shrink:0; animation:islBlink 1.1s ease-in-out infinite; }
     /* 172/ISL-SK: anında animasyonlu iskelet (devreler 14. oturum deseni) — bekleme hissi yok */
     @keyframes _islSkSh { 0%{ background-position:-340px 0; } 100%{ background-position:calc(340px + 100%) 0; } }
     .isl-satir.isl-sk{ pointer-events:none; }
@@ -293,7 +295,7 @@
     <div class="step aktif" id="stp1"><span class="num">1</span> Devre &amp; Belgeler</div>
     <span class="step-sep">→</span>
     <div class="step" id="stp2"><span class="num">2</span> İnceleme &amp; Onay</div>
-    <button class="isl-btn" id="btnIslenenler" onclick="islenenlerAc()" title="Taslak devrelerin işleme havuzu"><span class="isl-btn-dot"></span> İşlenenler <span class="isl-rozet" id="islRozet">0</span></button>
+    <button class="isl-btn" id="btnIslenenler" onclick="islenenlerAc()" title="Taslak devrelerin işleme havuzu">İşlenenler <span class="isl-rozet" id="islRozet">0</span></button>
   </div>
 
   <!-- ══════════ ADIM 1 — DEVRE & BELGELER ══════════ -->
@@ -3032,12 +3034,12 @@ async function islenenlerDrenaj() {
   WIZ._islDrenaj = true;
   WIZ._islDrenajDevreId = null;   // global mod (tek devre değil)
   var b = document.getElementById('btnIslDrenaj');
-  if (b) b.disabled = true;
+  if (b) { b.disabled = true; b.classList.add('isl-run'); b.innerHTML = '<span class="nokta"></span> İşleniyor…'; }   // 173/IS1: tek buton, beyaz + yanıp sönen nokta
   await islenenlerYukle();
   var pr = window.ARES_IZO_DRENAJ.izometriDreneEt({
     filtre: {}, bucket: 'devre-belgeleri',
     onIlerleme: function (d) {
-      if (b && d.faz === 'basliyor') b.textContent = 'İşleniyor ' + d.sira + '/' + d.toplam + (d.tur > 1 ? ' (tur ' + d.tur + ')' : '') + '…';
+      if (b && d.faz === 'basliyor') b.innerHTML = '<span class="nokta"></span> İşleniyor ' + d.sira + '/' + d.toplam + (d.tur > 1 ? ' (tur ' + d.tur + ')' : '') + '…';
       if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // her 3 işte satır durumları tazelensin
     }
   });
@@ -3045,9 +3047,10 @@ async function islenenlerDrenaj() {
   var oz; try { oz = await pr; } catch (e) { console.error('[v3] islenen drenaj:', e); toast('Drenaj hatası'); }
   if (tk === WIZ._drenajTk) {
     WIZ._islDrenaj = false; WIZ._aktifDrenaj = null;
-    if (b) { b.disabled = false; b.textContent = '▶ Bekleyenleri işle'; }
+    if (b) { b.disabled = false; b.classList.remove('isl-run'); b.textContent = '▶ Bekleyenleri işle'; }
     if (oz && oz.iptal) toast('Durduruldu (' + oz.islenen + ' iş işlendi)');
-    else if (oz && oz.islenen) toast(oz.islenen + ' iş işlendi (öneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else if (oz && oz.islenen) toast(oz.islenen + ' iş işlendi (öneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + (oz.atlandi ? ', atlandı ' + oz.atlandi : '') + ')');
+    else if (oz && oz.atlandi) toast(oz.atlandi + ' iş zaten işleniyordu (atlandı)');   // 173/IS1: claim-first — başka işleyici almış
     else if (oz) toast('Bekleyen iş yok');
     await islenenlerYukle();
   }
