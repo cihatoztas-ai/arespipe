@@ -44,6 +44,11 @@
   var VARSAYILAN_BUCKET = 'devre-belgeleri';
   var MAX_TUR = 50;   // guvenlik tavani (50 tur x 200 is = 10.000 is — pratikte erisilemez)
 
+  // 172/DURDUR: isbirlikci iptal. durdur() cagrilinca devam eden is biter, SONRAKI ise gecmeden durur.
+  //   AI'a cifte odeme yok (113): zaten islenmis is gorulen-set'te; iptal yalnizca yeni ise baslamayi engeller.
+  var _iptal = false;
+  function durdur() { _iptal = true; }
+
   // ── PDF -> base64 (imzali URL ile; private bucket RLS'e takilmaz, MK-112.4) ──
   async function _pdfBase64(bucket, yol) {
     if (!(ARES && typeof ARES.dosyaUrlAl === 'function')) {
@@ -211,10 +216,12 @@
     var tid = ARES.tenantId();
     var uid = (ARES.userId && ARES.userId()) || null;
 
-    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, kalan: 0, tur: 0 };
+    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, kalan: 0, tur: 0, iptal: false };
     var gorulen = {};   // is_id -> true (bu kosuda bir kez — 113: AI'a cifte odeme yok)
+    _iptal = false;     // 172/DURDUR: her yeni kosu temiz baslar
 
     while (ozet.tur < MAX_TUR) {
+      if (_iptal) break;   // 172/DURDUR: tur arasi iptal
       ozet.tur++;
 
       var liste;
@@ -230,6 +237,7 @@
       ozet.toplam += liste.length;
 
       for (var i = 0; i < liste.length; i++) {
+        if (_iptal) break;   // 172/DURDUR: is arasi iptal (devam eden is zaten bitti, yenisine baslama)
         var item = liste[i];
         gorulen[item.id] = true;
         onIlerleme({ faz: 'basliyor', tur: ozet.tur, sira: ozet.islenen + 1, toplam: ozet.toplam, dosya: item.dok.dosya_adi, ozet: ozet });
@@ -251,10 +259,11 @@
       ozet.kalan = son.filter(function (x) { return !gorulen[x.id]; }).length;
     } catch (e) { ozet.kalan = 0; }
 
-    onIlerleme({ faz: (ozet.islenen || ozet.kalan) ? 'tamam' : 'bos', ozet: ozet });
+    ozet.iptal = _iptal;   // 172/DURDUR: cagiran iptal mi normal bitis mi ayirsin
+    onIlerleme({ faz: _iptal ? 'iptal' : ((ozet.islenen || ozet.kalan) ? 'tamam' : 'bos'), ozet: ozet });
     return ozet;
   }
 
-  g.ARES_IZO_DRENAJ = { izometriDreneEt: izometriDreneEt };
+  g.ARES_IZO_DRENAJ = { izometriDreneEt: izometriDreneEt, durdur: durdur };
 
 })(typeof window !== 'undefined' ? window : this);

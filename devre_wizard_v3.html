@@ -514,8 +514,21 @@ var WIZ = {
   _inceleme: null,         // /api/devre-inceleme son dönüşü {spoollar, fazla, ozet}
   _pdfMap: {},             // 169/A1: elle eslestirme overlay — (pipeline|spoolNo_fazla) -> hedef kabuk spool_no
   _drenajCalisiyor: false,
+  _islDrenaj: false,        // 172: tek-drenaj kilidi (liste + İnceleme ortak)
+  _islDrenajDevreId: null,  // 172/ISL-BTN: render bu devreyi "İşleniyor" gösterir
+  _aktifDrenaj: null,       // 172/DURDUR: o an koşan izometriDreneEt promise'i (interrupt için)
+  _drenajTk: 0,             // 172/DURDUR: koşu token'ı — eski koşu yenisinin state'ini temizlemesin
   _inceleMeAcik: false
 };
+
+// 172/DURDUR: yeni bir drenaj başlatmadan önce koşan varsa durdur ve bitmesini bekle.
+//   Tek anda TEK drenaj → 409 yarışı biter, "öncelikliye geç" mümkün olur.
+async function _drenajOnceDurdur() {
+  if (window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.durdur === 'function' && WIZ._aktifDrenaj) {
+    window.ARES_IZO_DRENAJ.durdur();
+    try { await WIZ._aktifDrenaj; } catch (e) {}
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
@@ -1511,18 +1524,27 @@ function islemCell(i, durum) {
 async function drenajiBaslat() {
   if (WIZ._drenajCalisiyor) return;
   if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { console.warn('[v3] ARES_IZO_DRENAJ yok — drenaj atlandı'); return; }
+  // 172/DURDUR: liste/başka drenaj koşuyorsa durdur — tek anda tek drenaj (409 yarışı biter).
+  if (WIZ._islDrenaj) { await _drenajOnceDurdur(); WIZ._islDrenaj = false; WIZ._islDrenajDevreId = null; }
   WIZ._drenajCalisiyor = true;
+  var tk = ++WIZ._drenajTk;
   try {
     var supa = ARES.supabase(), tid = ARES.tenantId();
-    await window.ARES_IZO_DRENAJ.izometriDreneEt({
+    var pr = window.ARES_IZO_DRENAJ.izometriDreneEt({
       supa: supa, tid: tid, filtre: { devreId: WIZ.devre_id }, bucket: 'devre-belgeleri',
       onIlerleme: function (d) {
         // Her PDF bitince (faz 'bitti') tabloyu tazele; 'tamam'da son kez.
         if (d.faz === 'bitti' || d.faz === 'tamam') inceleGetirDebounce();
       }
     });
+    WIZ._aktifDrenaj = pr;
+    await pr;
   } catch (e) { console.error('[v3] drenaj:', e); }
-  finally { WIZ._drenajCalisiyor = false; inceleGetir(); }
+  finally {
+    WIZ._drenajCalisiyor = false;
+    if (tk === WIZ._drenajTk) WIZ._aktifDrenaj = null;
+    inceleGetir();
+  }
 }
 var _incDeb;
 function inceleGetirDebounce() { clearTimeout(_incDeb); _incDeb = setTimeout(inceleGetir, 400); }
@@ -2915,43 +2937,56 @@ async function islenenlerIptal(devreId, btn) {
 
 // 170: tek devreyi oncelikli isle (per-satir buton). Global 'Bekleyenleri isle' sirayla; bu yalniz bu devreyi.
 async function islenenlerDrenajDevre(devreId, btn) {
-  if (WIZ._islDrenaj) { toast('Zaten islem suruyor'); return; }
   if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modulu yuklenmedi'); return; }
+  if (WIZ._islDrenaj && WIZ._islDrenajDevreId === devreId) { toast('Bu devre zaten isleniyor'); return; }
+  // 172/DURDUR: baska bir drenaj suruyorsa durdur, bitmesini bekle, oncelikli devreye gec
+  if (WIZ._islDrenaj) { toast('Mevcut islem durduruluyor, oncelikli devreye geciliyor…'); await _drenajOnceDurdur(); }
+  var tk = ++WIZ._drenajTk;
   WIZ._islDrenaj = true;
   WIZ._islDrenajDevreId = devreId;     // 172/ISL-BTN: render bu devreyi "İşleniyor" (beyaz + nokta) gösterir
   await islenenlerYukle();             // tıklanan satır anında İşleniyor görünümüne geçsin
-  try {
-    var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
-      filtre: { devreId: devreId }, bucket: 'devre-belgeleri',
-      onIlerleme: function (d) {
-        if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // 172/ISL-FIX: ilerlemeyi canlı izle
-      }
-    });
-    if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
-    else toast('Bu devrede bekleyen is yok');
-  } catch (e) { console.error('[v3] devre drenaj:', e); toast('Drenaj hatasi'); }
-  finally { WIZ._islDrenaj = false; WIZ._islDrenajDevreId = null; await islenenlerYukle(); }
+  var pr = window.ARES_IZO_DRENAJ.izometriDreneEt({
+    filtre: { devreId: devreId }, bucket: 'devre-belgeleri',
+    onIlerleme: function (d) {
+      if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // 172/ISL-FIX: ilerlemeyi canlı izle
+    }
+  });
+  WIZ._aktifDrenaj = pr;
+  var oz; try { oz = await pr; } catch (e) { console.error('[v3] devre drenaj:', e); toast('Drenaj hatasi'); }
+  if (tk === WIZ._drenajTk) {           // 172/DURDUR: araya yeni drenaj girmediyse temizle
+    WIZ._islDrenaj = false; WIZ._islDrenajDevreId = null; WIZ._aktifDrenaj = null;
+    if (oz && oz.iptal) toast('Durduruldu (' + oz.islenen + ' is islendi)');
+    else if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else if (oz) toast('Bu devrede bekleyen is yok');
+    await islenenlerYukle();
+  }
 }
 async function islenenlerDrenaj() {
-  if (WIZ._islDrenaj) return;
   if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modülü yüklenmedi'); return; }
+  if (WIZ._islDrenaj && !WIZ._islDrenajDevreId) { toast('Zaten tüm bekleyenler işleniyor'); return; }
+  // 172/DURDUR: bir devre öncelikli işleniyorsa onu durdurup global'e geç
+  if (WIZ._islDrenaj) { toast('Mevcut işlem durduruluyor, tüm bekleyenlere geçiliyor…'); await _drenajOnceDurdur(); }
+  var tk = ++WIZ._drenajTk;
   WIZ._islDrenaj = true;
+  WIZ._islDrenajDevreId = null;   // global mod (tek devre değil)
   var b = document.getElementById('btnIslDrenaj');
   if (b) b.disabled = true;
-  try {
-    var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
-      filtre: {}, bucket: 'devre-belgeleri',
-      onIlerleme: function (d) {
-        if (b && d.faz === 'basliyor') b.textContent = '⏳ İşleniyor ' + d.sira + '/' + d.toplam + (d.tur > 1 ? ' (tur ' + d.tur + ')' : '') + '…';
-        if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // her 3 işte satır durumları tazelensin
-      }
-    });
-    if (oz && oz.islenen) toast(oz.islenen + ' iş işlendi (öneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
-    else toast('Bekleyen iş yok');
-  } catch (e) { console.error('[v3] islenen drenaj:', e); toast('Drenaj hatası'); }
-  finally {
-    WIZ._islDrenaj = false;
+  await islenenlerYukle();
+  var pr = window.ARES_IZO_DRENAJ.izometriDreneEt({
+    filtre: {}, bucket: 'devre-belgeleri',
+    onIlerleme: function (d) {
+      if (b && d.faz === 'basliyor') b.textContent = 'İşleniyor ' + d.sira + '/' + d.toplam + (d.tur > 1 ? ' (tur ' + d.tur + ')' : '') + '…';
+      if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // her 3 işte satır durumları tazelensin
+    }
+  });
+  WIZ._aktifDrenaj = pr;
+  var oz; try { oz = await pr; } catch (e) { console.error('[v3] islenen drenaj:', e); toast('Drenaj hatası'); }
+  if (tk === WIZ._drenajTk) {
+    WIZ._islDrenaj = false; WIZ._aktifDrenaj = null;
     if (b) { b.disabled = false; b.textContent = '▶ Bekleyenleri işle'; }
+    if (oz && oz.iptal) toast('Durduruldu (' + oz.islenen + ' iş işlendi)');
+    else if (oz && oz.islenen) toast(oz.islenen + ' iş işlendi (öneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
+    else if (oz) toast('Bekleyen iş yok');
     await islenenlerYukle();
   }
 }
