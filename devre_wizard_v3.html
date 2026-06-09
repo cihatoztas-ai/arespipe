@@ -1263,10 +1263,11 @@ function renderInceleme(j) {
     var fKey = (f.pipeline || '') + '|' + (f.spoolNo || '');
     if (WIZ._pdfMap && WIZ._pdfMap[fKey]) return;
     var fjson = esc(JSON.stringify(f)).replace(/'/g, '&#39;');
+    // 171/FAZLA-14KOL: fazla satiri tam 14 kolon (# + colspan10 aciklama + DURUM + IZOMETRI + ISLEM). Dosya adi TEK sefer (izometri hucresi).
     html += '<tr><td style="color:var(--txd);font-size:12px;">?</td>' +
-      '<td><span class="gri">— (kabukta yok)</span></td><td><span class="gri">—</span></td><td>—</td>' +
-      '<td colspan="6" class="gri">' + esc(f.dosya_adi || '') + (f.sebep ? ' · ' + esc(f.sebep) : '') + '</td>' +
-      '<td>' + mbadge('fazla') + '</td><td><span class="izo">' + esc(f.dosya_adi || '') + '</span></td>' +
+      '<td colspan="10" class="gri">Excel kabuğunda karşılığı yok — eşleşmemiş izometri</td>' +
+      '<td>' + mbadge('fazla') + '</td>' +
+      '<td><span class="izo">' + esc(f.dosya_adi || '') + '</span>' + (f.sebep ? ' <span class="gri" style="font-size:11px;">· ' + esc(f.sebep) + '</span>' : '') + '</td>' +
       '<td><button class="btn-sm" style="color:var(--ac);" onclick=\'event.stopPropagation();k2Ac(' + fjson + ')\' title="Bu PDF\'i Excel\'deki bir spool\'a bagla (yazim farki — orn. S46_1 -> S46)">🔗 Eşleştir</button></td></tr>';
   });
   // 138/B(b): MONTAJ ÇİZİMLERİ — ayrı bölüm. Spool DEĞİL → turuncu Fazla yerine nötr bilgi satırı.
