@@ -1277,8 +1277,10 @@ async function hataBandiYukle() {
     if (!doklar.length) { el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return; }
     var ad = {}; doklar.forEach(function (x) { ad[x.id] = x.dosya_adi; });
     var ids = doklar.map(function (x) { return x.id; });
-    var kq = await supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, hata_mesaji').eq('durum', 'hata').in('devre_dokuman_id', ids);
-    var hatalar = (kq && kq.data) || [];
+    // 173/B (MK-172.5 sinifi): ayni buyuk ids -> SELECT .in() de URL'i sisirir. _inDilimli ile dilimle.
+    var hatalar = await _inDilimli(ids, 150, function (dilim) {
+      return supa.from('dosya_isleme_kuyrugu').select('devre_dokuman_id, hata_mesaji').eq('durum', 'hata').in('devre_dokuman_id', dilim);
+    });
     if (!hatalar.length) { el.className = 'hide'; el.style.cssText = ''; el.innerHTML = ''; return; }
     var liste = hatalar.map(function (h) {
       return '<li style="margin:2px 0;"><b>' + esc(ad[h.devre_dokuman_id] || '(belge)') + '</b>' + (h.hata_mesaji ? ' &mdash; ' + esc(h.hata_mesaji) : '') + '</li>';
@@ -1303,10 +1305,15 @@ async function hataYenidenDene(btn) {
     var dk = await supa.from('devre_dokumanlari').select('id').eq('devre_id', WIZ.devre_id).eq('aktif', true);
     var ids = ((dk && dk.data) || []).map(function (x) { return x.id; });
     if (!ids.length) { toast('Belge bulunamadi'); return; }
-    var up = await supa.from('dosya_isleme_kuyrugu')
-      .update({ durum: 'bekliyor', hata_mesaji: null })
-      .in('devre_dokuman_id', ids).eq('durum', 'hata');
-    if (up && up.error) { console.error('[v3/171/RETRY] retry update:', up.error.message); toast('Yeniden deneme baslatilamadi: ' + up.error.message); return; }
+    // 173/B (MK-172.5 sinifi): cok belgeli devrede ids yuzlerce -> tek .in() URL'i sisirip 400 verir.
+    //   172'deki _inDilimli desenini UPDATE'e uyarla: 150'lik dilimlerle 'bekliyor'a cek.
+    for (var _bi = 0; _bi < ids.length; _bi += 150) {
+      var _dilim = ids.slice(_bi, _bi + 150);
+      var up = await supa.from('dosya_isleme_kuyrugu')
+        .update({ durum: 'bekliyor', hata_mesaji: null })
+        .in('devre_dokuman_id', _dilim).eq('durum', 'hata');
+      if (up && up.error) { console.error('[v3/173/B] retry update dilim:', up.error.message); toast('Yeniden deneme baslatilamadi: ' + up.error.message); return; }
+    }
   } catch (e) { console.error('[v3/171/RETRY] retry:', e); toast('Yeniden deneme baslatilamadi'); return; }
   finally { if (btn) { btn.disabled = false; btn.innerHTML = '\u21BB Hepsini yeniden dene'; } }
   await islenenlerDrenajDevre(WIZ.devre_id);   // mevcut drenaji yeniden kullan (yeni endpoint yok)
