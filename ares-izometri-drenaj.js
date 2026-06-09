@@ -146,9 +146,28 @@
     return sonuc;
   }
 
-  // ── Tek isi isle (1: indir+parse, 2: kaydet+eslestir). Asla throw ETMEZ. ──
+  // ── Tek isi isle (0: claim, 1: indir+parse, 2: kaydet+eslestir). Asla throw ETMEZ. ──
   async function _birIsIsle(item, bucket, uid) {
     var dok = item.dok;
+
+    // 0) 173/CLAIM-FIRST: parse'tan ONCE isi claim et. Baska worker (cron/baska sekme) kapmissa
+    //    PDF indirmeyiz, izometri-oku CAGIRMAYIZ -> bos L3 odemesi olmaz (508/409 israfi biter).
+    //    Claim cagrisi patlarsa da parse'a girmeyiz (emin degilsek odeme yapma) -> sonraki tur dener.
+    try {
+      var cr = await fetch('/api/kuyruk-isle-izometri', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_id: item.id, claim_only: true })
+      });
+      var cj = {};
+      try { cj = await cr.json(); } catch (e) { cj = {}; }
+      if (cj.claimed !== true) {
+        // Baskasi kapmis ya da claim verilmedi -> sessiz atla (HATA DEGIL, ISLENEN DEGIL).
+        return { sonuc: 'atlandi', durum: null, hata: cj.sebep || cj.hata || null };
+      }
+    } catch (e) {
+      return { sonuc: 'atlandi', durum: null, hata: 'claim cagri: ' + ((e && e.message) || e) };
+    }
 
     // 1+2) imzali URL -> base64 -> izometri-oku (parse)
     var oncedenParse = null, parseHttp = 0;
@@ -186,7 +205,8 @@
         body: JSON.stringify({
           is_id: item.id,
           onceden_parse: oncedenParse,
-          onceden_parse_http: parseHttp
+          onceden_parse_http: parseHttp,
+          zaten_claim: true   // 173/CLAIM-FIRST: is yukarida claim_only ile kilitlendi
         })
       });
       try { wj = await wr.json(); } catch (e) { wj = { durum: 'hata', hata: 'kaydet cevabi JSON degil' }; }
@@ -216,7 +236,7 @@
     var tid = ARES.tenantId();
     var uid = (ARES.userId && ARES.userId()) || null;
 
-    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, kalan: 0, tur: 0, iptal: false };
+    var ozet = { toplam: 0, islenen: 0, oneri: 0, manuel: 0, hata: 0, atlandi: 0, kalan: 0, tur: 0, iptal: false };
     var gorulen = {};   // is_id -> true (bu kosuda bir kez — 113: AI'a cifte odeme yok)
     _iptal = false;     // 172/DURDUR: her yeni kosu temiz baslar
 
@@ -244,10 +264,15 @@
 
         var wj = await _birIsIsle(item, bucket, uid);
 
-        ozet.islenen++;
-        if (wj.durum === 'oneri_hazir') ozet.oneri++;
-        else if (wj.durum === 'manuel_onay') ozet.manuel++;
-        else ozet.hata++;
+        // 173/CLAIM-FIRST: claim baskasinda -> 'atlandi'. ISLENEN DEGIL, HATA DEGIL (bos L3 yok zaten).
+        if (wj && wj.sonuc === 'atlandi') {
+          ozet.atlandi++;
+        } else {
+          ozet.islenen++;
+          if (wj.durum === 'oneri_hazir') ozet.oneri++;
+          else if (wj.durum === 'manuel_onay') ozet.manuel++;
+          else ozet.hata++;
+        }
 
         onIlerleme({ faz: 'bitti', tur: ozet.tur, sira: ozet.islenen, toplam: ozet.toplam, dosya: item.dok.dosya_adi, sonuc: wj, ozet: ozet });
       }

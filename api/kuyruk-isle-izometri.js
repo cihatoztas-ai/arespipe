@@ -107,6 +107,10 @@ export default async function handler(req, res) {
   // Spesifik is_id mi yoksa drenaj mi? (drenaj devre-ozgu olabilir: body.devre_id)
   const istenenIsId = req.body?.is_id || null;
   const istenenDevreId = req.body?.devre_id || null;
+  // 173/CLAIM-FIRST: claim_only -> SADECE atomik claim (indirme/izometri-oku YOK, L3 odenmez).
+  //   zaten_claim -> sonuc-post'ta bu is'i tarayici ONCEDEN claim_only ile kilitledi; guard gevsesin.
+  const claimOnly = req.body?.claim_only === true;
+  const zatenClaim = req.body?.zaten_claim === true;
 
   try {
     // 108/Adim3: stale lock temizligi — 'isleniyor'da 5dk+ takili izometri isleri (worker crash)
@@ -124,7 +128,35 @@ export default async function handler(req, res) {
       if (error || !data) {
         return res.status(404).json({ hata: 'İş bulunamadı: ' + (error?.message || 'null') });
       }
-      if (data.durum !== 'bekliyor' && data.durum !== 'hata') {
+
+      // 173/CLAIM-FIRST (S1): tarayici parse'tan ONCE claim ister. SADECE atomik claim'i calistir
+      //   (birIsIsle'deki ile ayni guard: bekliyor|hata -> isleniyor + select). Satir donerse biz kaptik.
+      //   Bos donerse baska worker (cron/baska sekme) zaten kapmis -> claimed:false. Indirme/izometri-oku YOK.
+      if (claimOnly) {
+        if (data.durum !== 'bekliyor' && data.durum !== 'hata') {
+          return res.status(200).json({ claimed: false, sebep: `durum=${data.durum}` });
+        }
+        const { data: cRows, error: cErr } = await supa
+          .from('dosya_isleme_kuyrugu')
+          .update({
+            durum: 'isleniyor',
+            alindi_at: new Date().toISOString(),
+            deneme_sayisi: (data.deneme_sayisi || 0) + 1
+          })
+          .eq('id', data.id)
+          .in('durum', ['bekliyor', 'hata'])
+          .select('id');
+        if (cErr) {
+          return res.status(500).json({ claimed: false, hata: 'claim hatasi: ' + cErr.message });
+        }
+        const kapildi = !!(cRows && cRows.length > 0);
+        return res.status(200).json({ claimed: kapildi, is_id: data.id });
+      }
+
+      // Normal sonuc-post: zaten_claim ise is 'isleniyor'dadir (kendi claim'imiz) -> guard'a izin ver.
+      const guardGecerli = (data.durum === 'bekliyor' || data.durum === 'hata') ||
+                           (zatenClaim && data.durum === 'isleniyor');
+      if (!guardGecerli) {
         return res.status(409).json({
           hata: `İş zaten '${data.durum}' durumunda, tekrar işlenemez`
         });
@@ -132,7 +164,8 @@ export default async function handler(req, res) {
       // 113/A — tarayici (client-loop) parse sonucunu gonderdiyse skip-parse modu (server->server YOK)
       const sonuc = await birIsIsle(supa, baseUrl, data, {
         oncedenParse: req.body?.onceden_parse,
-        oncedenParseHttp: req.body?.onceden_parse_http
+        oncedenParseHttp: req.body?.onceden_parse_http,
+        zatenClaim   // 173/CLAIM-FIRST (S2): claim_only'de kilitlendi -> birIsIsle re-claim'i atlasin
       });
       const httpKod = sonuc._status || 200;
       delete sonuc._status;   // ic alan, disari sizmasin (eski sozlesme korunur)
@@ -273,23 +306,27 @@ async function birIsIsle(supa, baseUrl, is, opts = {}) {
   //    .in('durum',['bekliyor','hata']) + .select(): satir DONERSE biz kaptik.
   //    Bos donerse baska worker (cron <-> tarayici drenaji) zaten kapmis -> sessizce atla.
   //    'hata' dahil: wizard manuel-retry (is_id modu, durum='hata') korunur.
-  const { data: lockRows, error: lockError } = await supa
-    .from('dosya_isleme_kuyrugu')
-    .update({
-      durum: 'isleniyor',
-      alindi_at: new Date().toISOString(),
-      deneme_sayisi: (is.deneme_sayisi || 0) + 1
-    })
-    .eq('id', is.id)
-    .in('durum', ['bekliyor', 'hata'])
-    .select('id');
+  // 173/CLAIM-FIRST (S2): zatenClaim ise is claim_only adiminda ZATEN 'isleniyor'a alindi.
+  //    Burada tekrar denersek guard bos doner -> yanlislikla 'atlandi'. Bu durumda re-claim'i ATLA.
+  if (!opts.zatenClaim) {
+    const { data: lockRows, error: lockError } = await supa
+      .from('dosya_isleme_kuyrugu')
+      .update({
+        durum: 'isleniyor',
+        alindi_at: new Date().toISOString(),
+        deneme_sayisi: (is.deneme_sayisi || 0) + 1
+      })
+      .eq('id', is.id)
+      .in('durum', ['bekliyor', 'hata'])
+      .select('id');
 
-  if (lockError) {
-    return { _status: 500, sonuc: 'hata', is_id: is.id, hata: 'Lock alınamadı: ' + lockError.message };
-  }
-  if (!lockRows || lockRows.length === 0) {
-    // Yaris: bu isi baska worker kapti. Cift izometri-oku YOK. Sessiz atla.
-    return { _status: 200, sonuc: 'atlandi', is_id: is.id, hata: null };
+    if (lockError) {
+      return { _status: 500, sonuc: 'hata', is_id: is.id, hata: 'Lock alınamadı: ' + lockError.message };
+    }
+    if (!lockRows || lockRows.length === 0) {
+      // Yaris: bu isi baska worker kapti. Cift izometri-oku YOK. Sessiz atla.
+      return { _status: 200, sonuc: 'atlandi', is_id: is.id, hata: null };
+    }
   }
 
   // 2) Doküman bilgisini al
