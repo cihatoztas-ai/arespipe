@@ -2425,3 +2425,45 @@ cikis breadcrumb "Devreler" veya "Iptal" ile. Gerekce: Islenenler listesi wizard
 ## EK NOT (172 ANIM-FIX)
 .ftree { overflow:hidden } — Step 1 tarama cizgisi (tScan top:0->100%) tasip gecici yatay scrollbar
 yaratiyordu; clip'lendi. (Bu, MK-172.8 cascade'inden AYRI bir kozmetik fix.)
+
+# KARARLAR.md — 173. OTURUM EKI (MK-173.1 .. MK-173.4)
+
+## MK-173.1 — CLAIM-FIRST: atomik lock parse'tan ONCE
+In-page izometri drenajinda tarayici PARSE'tan (PDF indir + izometri-oku = L3 vision, pahali) ONCE isi "claim"
+eder. Claim baskasinda (gece cron / baska sekme) ise parse YAPILMAZ -> bos L3 odemesi ve 409/508 israfi biter.
+KOK NEDEN: server claim'i (MK-167.1) zaten atomikti AMA parse'tan SONRA calisiyordu; sira yanlisti. Atomik lock
+dogru yerde degilse ise yaramaz — claim-ONCE-parse.
+Uygulama (yeni endpoint YOK — MK-129.3; izometri-oku DOKUNULMAZ — MK-49.1):
+- kuyruk-isle-izometri.js is_id dalina `claim_only:true` modu (SADECE atomik claim, indirme/izometri-oku yok),
+  {claimed:true/false} doner. `zaten_claim:true` -> sonuc-post guard'i durum='isleniyor'a izin verir (kendi
+  claim'imiz). birIsIsle: zatenClaim ise re-claim ATLANIR (yoksa bos doner -> yanlislikla 'atlandi').
+- ares-izometri-drenaj.js _birIsIsle parse ONCESI claim postlar; claimed:false -> {sonuc:'atlandi'} (parse yok).
+  ozet.atlandi sayaci (islenen DEGIL, hata DEGIL).
+- deneme_sayisi claim'de 1x artar (sonuc-post'ta artmaz). Tarayici claim sonrasi cokerse staleLockTemizle toparlar.
+- Gece cron (drenajTuru->birIsIsle opts'suz) normal re-claim yolunda, ETKILENMEZ. Eski client geriye uyumlu.
+
+## MK-173.2 — Buyuk .in() dilimle: AYNI fonksiyon degil, AYNI ids'i kullanan komsu sorgular da (MK-172.5 genisletme)
+Bir fonksiyondaki buyuk .in() (URL sismesi -> 400) duzeltilirken, AYNI ids'i kullanan KOMSU sorgular da taranir;
+tek nokta yetmez. devre_wizard_v3.html: hataYenidenDene UPDATE 150'lik dilim dongusuyle bolundu; hataBandiYukle
+SELECT (ayni ids) _inDilimli(150) ile bolundu — yoksa retry butonunu barindiran bant once 400 yer, buton hic
+gorunmez, UPDATE fix'i etkisiz kalirdi.
+
+## MK-173.3 — Olu kod silmeden once grep kaniti + cagiranlari ayni patch'te kaldir
+Olu kod silmeden once her sembol grep'le "tanim var, cagri yok" diye kanitlanir. Bir tanim siliniyorsa onu cagiran
+TUM satirlar AYNI patch'te kaldirilir (ReferenceError onlemi). 173/C: getSiraMap/siraGuncelle + _siraCache atamasi
++ .sira-input/.takvim-popup CSS (172 SIRA/TERMIN emeklileri) silindi. _siraCache atanip okunmuyordu; getSiraMap
+silinince onu cagiran satir ayni patch'te gitti. Native termin picker (.termin-* + .termin-dt) AKTIF, dokunulmadi.
+
+## MK-173.4 — Tek aksiyon = tek buton + tek blink sinyali
+Bir aksiyon icin TEK buton; islem sinyali (yanip sonen nokta) TEK yerde (aksiyon butonu) durur. Cakisan ikinci bir
+"yanip sonen buton" (nav pili) gurultudur, kaldirilir. devre_wizard_v3.html: #btnIslDrenaj bosta mavi .btn.pri,
+islerken beyaz + yanip sonen mavi nokta (.isl-run; id+class specificity .btn.pri:disabled greyini ezer). Nav pili
+#btnIslenenler sureki blink (.isl-btn-dot) kaldirildi -> sade "Islenenler (sayi)" navigasyonu (Adim 1/2 giris
+kapisi oldugu icin silinmez). ozet.atlandi (MK-173.1) toast'ta gosterilir (global + per-satir): claim-first ile
+"baska isleyici almis" NORMAL sonuctur, hata DEGIL.
+
+## EK NOT (173 ISLENMEYEN / AYRI OTURUM)
+IS2 (terfi "Aktariliyor..." donmus hissi -> iskelet/cascade animasyon) Cihat karari ile AYRI OTURUMA (buyuk).
+W-2.5 (Step-1 iki ilerleme cubugu progressFill + islenStrip) gorsel/UX karar, ekranda gosterilmeden tahminle
+birlestirilmez (MK-132.1). Islerken nav piline capraz-gorunum noktasi tek-buton istegine sadik kalmak icin KASTEN
+konmadi.

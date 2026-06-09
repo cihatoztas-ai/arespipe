@@ -1,69 +1,83 @@
-# CLAUDE-SON-OTURUM.md — 172 (2026-06-09)
+# CLAUDE-SON-OTURUM.md — 173 (2026-06-09)
 
 ## NE YAPTIK
-Iki ekrani elden gecirdik: (A) devreler.html sadelestirme, (B) devre_wizard_v3.html Islenenler (kuyruk)
-ekrani uctan uca. v1 (devre_yeni.html) ve v2 (devre_wizard.html) emekli edilip silindi; tek giris yesil
-"Devre Ekle" -> wizard v3 oldu. Islenenler ekraninda once "acilmiyor" sanilan sorun aslinda liste
-sorgusunun "Bad Request" vermesiymis (buyuk .in()); cozuldu. Ardindan mockup'a gore redesign, drenajin
-durdurulabilir/onceliklenebilir hale gelmesi (409 yarisi da boylece bitti) ve yukleme animasyonu
-(iskelet + cascade) eklendi. Sayfa yarim birakilmadi.
+Dort is: A (claim-first izometri drenaj), B (buyuk .in() dilimleme), C (devreler olu kod temizligi),
+IS1 (Islenenler tek isleme butonu). Hepsi canli + CI yesil. izometri-oku/cron/server-drenaj DOKUNULMADI,
+DB migration YOK, 12/12 endpoint korundu. HEAD: 343af6c.
 
-## A) devreler.html
-- MK-172.1: v1 "Yeni Devre" + v3-outline + Islenenler butonu kaldirildi; tek YESIL "Devre Ekle" -> v3
-  (kosulsuz, flag gating bloku sadelestirildi — kaldirilan butonlara referans + 2 gereksiz count sorgusu gitti).
-- MK-172.2: tablo basliginda devre sayisi kaldirildi; saga "Son guncelleme" damgasi. veriYukle Promise.all'a
-  2 sorgu eklendi (en yeni olusturma + en yeni non-null guncelleme), JS'te max alinir, GG/AA/YYYY SS:DD.
-  KRITIK: PostgREST order desc NULL'lari basa alir -> ilk fix (sorgulaVeGoster'da, guncelleme-only) calismadi;
-  veriYukle'ye tasindi + olusturma yedegi eklendi.
-- MK-172.3: satir render'indan sira-input kaldirildi (yildiz kaldi), ilk kolon daraltildi.
-- MK-172.4: termin ozel popup (#takvimPopup + takvimAc/terminKaydet/Temizle/Kapat) emekli; native
-  <input type=date> + showPicker(). terminAc(event,id) -> showPicker; onchange -> terminSec aninda kaydeder.
-- proje_detay.html: "Yeni Devre" butonu window.location 'devre_yeni.html' -> 'devre_wizard_v3.html'.
-- git rm devre_yeni.html devre_wizard.html (grep ile inbound link tarandi: tek canli link proje_detay'daydi,
-  o cevrildi; kalan referanslar yorum/doc — kurallar.html, ares-olcu.js, excel-parser.js, izometri-batch).
+## A — CLAIM-FIRST (MK-173.1, commit f3b0765)
+Belirti: in-page client drenaji (ares-izometri-drenaj.js _birIsIsle) sirasi (1) PDF indir (2) izometri-oku
+cagir (L3, 11-25sn, PAHALI) (3) kuyruk-isle-izometri postla idi. Is bu arada cron/baska sekme tarafindan
+kapilmissa server is_id dalinda 409/508 doner -> 2. adimda odenen L3 BOSA gider.
+Onemli tespit: server claim'i (birIsIsle adim1, MK-167.1) ZATEN atomik (UPDATE bekliyor|hata->isleniyor +
+select). Sorun claim'in PARSE'tan SONRA olmasi. Cozum = claim'i parse ONCESINE almak.
 
-## B) devre_wizard_v3.html — ISLENENLER
-- MK-172.5 (Bad Request): islenenlerYukle'deki .in() sorgulari _inDilimli(idler,150,sorguFn) ile bolundu.
-  Patlayan, dosya_isleme_kuyrugu.in('devre_dokuman_id', dokIds) idi (yuzlerce belge -> URL sismesi -> 400).
-  devre_dokumanlari.in() de defensif olarak bolundu.
-- MK-172.6 (redesign): .isl-* CSS mockup'a yukseltildi (kutu-per-satir, hover, durum-renkli kenar,
-  isl-prog animasyonlu bar, isl-cikti oneri/manuel, baslikta isl-ozet "N hazir . M isleniyor").
-  islenenlerYukle render'i yeni markup'a + _islSatirHtml helper'ina cevrildi.
-- MK-172.9 (buton): _islSatirHtml aktif drenaj devresinde (WIZ._islDrenajDevreId) "Isle" yerine beyaz
-  ".isl-isleniyor-btn" + yanip sonen mavi nokta basar. Nav butonu (#btnIslenenler) kum saati -> .isl-btn-dot.
-- MK-172.7 (durdur/oncelik): ares-izometri-drenaj.js'e _iptal bayragi + durdur() + her is/tur arasi
-  iptal kontrolu; ozet.iptal eklendi. Wizard'a _drenajOnceDurdur() + WIZ._aktifDrenaj + _drenajTk token.
-  islenenlerDrenajDevre / islenenlerDrenaj / drenajiBaslat: yeni drenaj baslamadan koşani durdurup bekler
-  -> tek anda tek drenaj. islenenlerDrenajDevre baska devre islenirken cagrilirsa "durdurulup oncelikliye
-  gec". per-device drenajda da liste 3'luk canli yenileme eklendi (global'de zaten vardi).
-- MK-172.8 (animasyon): islenenlerYukle gercek satir yoksa ANINDA shimmer iskelet (_islSkSatir, devreler
-  .sk deseni). Son render'da ilk acilista cascade (_islSatirHtml(...,ci) -> data-ci + --ci; CSS _islCascade
-  45ms gecikme). Yenilemede ci=null -> animasyon yok (flicker yok). Iki-fazli/faz-1 names render KALDIRILDI
-  (iskelet+cascade onu gereksiz kildi).
-- MK-172.10: Adim 1 header "<- Geri" location.href='devreler.html' -> islenenlerAc().
-- ANIM-FIX: .ftree { overflow:hidden } — Step 1 tarama cizgisi (tScan top:0->100%) tasip gecici yatay
-  scrollbar yaratiyordu, clip'lendi.
+Server (api/kuyruk-isle-izometri.js):
+- body: claimOnly = body.claim_only===true; zatenClaim = body.zaten_claim===true.
+- is_id dalinda: claimOnly ise SADECE atomik claim'i calistir (indirme/izometri-oku YOK), {claimed:true/false}
+  dondur. Normal sonuc-post'ta guard gevsetildi: bekliyor|hata VEYA (zatenClaim && durum=='isleniyor') -> izin
+  (kendi claim'imiz; yoksa 409). birIsIsle'ye zatenClaim gecirildi.
+- birIsIsle: `if (!opts.zatenClaim) { ... re-claim ... }` — zatenClaim ise re-claim ATLANIR (claim_only'de
+  kilitlendi, tekrar denerse bos doner -> yanlislikla 'atlandi' olurdu).
 
-## ares-izometri-drenaj.js
-- var _iptal + durdur() + while/for iptal kontrolu + ozet.iptal + g.ARES_IZO_DRENAJ.durdur export.
-  Cron AYRI dosya (server-side), etkilenmez. 113 garantisi (gorulen-set, AI'a cift odeme yok) korundu.
+Client (ares-izometri-drenaj.js):
+- _birIsIsle basina 0) adim: POST {is_id, claim_only:true}. cj.claimed!==true (ya da claim cagri patlar) ->
+  {sonuc:'atlandi'} don (indirme/izometri-oku YOK). claimed:true -> devam.
+- sonuc-post'a zaten_claim:true eklendi.
+- ozet.atlandi sayaci; dongude wj.sonuc==='atlandi' -> ozet.atlandi++ (islenen DEGIL, hata DEGIL).
 
-## OZ-IHLAL / TUZAKLAR (172)
-- "acilmiyor" tahminden once kod statik okundu (MK-132.1); gercek belirti ekran goruntusuyle netlesti
-  (Bad Request, sonra 409 seli, sonra Yukleniyor hissi). Her adimda once kanit, sonra fix.
-- Yanlis animasyon eklendi (Step 1 ai-scan cizgisi) -> Cihat "tablo cascade'i" dedi -> geri alinip _cascadeIn.
-- Iki-fazli render "Yukleniyor"u tam kapatmadi (ilk 2 sorgu sirasinda statik yazi); dogru cozum iskelet.
-- _drenajCalisiyor (Inceleme) vs _islDrenaj (liste) AYRI bayraklardi -> ikisi yarisip 409 uretti; tek-drenaj
-  birlestirmesi cozum oldu.
+Garantiler: deneme_sayisi claim'de 1x artar (sonuc-post'ta artmaz). Tarayici claim sonrasi cokerse is
+'isleniyor'da kalir, staleLockTemizle 5dk sonra toparlar. Gece cron drenajTuru->birIsIsle opts'suz cagirir,
+zatenClaim undefined -> normal re-claim, ETKILENMEZ. Eski (zaten_claim gondermeyen) client geriye uyumlu.
 
-## COMMIT'LER (172, ozet)
-4146bc9 (devreler+proje_detay+v1/v2 rm) ... ardindan wizard: Bad Request fix · redesign · isleniyor butonu ·
-durdur/oncelik+409 · iskelet · cascade. (Cihat her birini gpc ile pushladi.) Final kod commit'i cascade fix.
-12/12, migration yok, izometri-oku/server dokunulmadi.
+## B — BUYUK .in() DILIMLE (MK-173.2, commit b8c5819; MK-172.5 sinifi)
+devre_wizard_v3.html:
+- hataYenidenDene: UPDATE dosya_isleme_kuyrugu .in('devre_dokuman_id', ids) cok belgeli devrede yuzlerce id ->
+  URL sismesi -> 400. 150'lik dilim dongusu (for _bi += 150) ile bolundu; mevcut hata yonetimi (console.error +
+  spesifik toast + return) korundu.
+- hataBandiYukle: AYNI buyuk ids ile SELECT de patlardi -> retry butonunu barindiran bant 400 yer, buton hic
+  gorunmezdi. _inDilimli(ids,150,...) ile bolundu. Kapsam 1 satir genisletildi (sessiz degil, Cihat'a soylendi).
 
-## KAPANIS BORCU (173'te HATIRLA)
-- 508/claim-first (in-page bos L3 odemesini bitir; izometri-oku dokunma).
-- hataYenidenDene UPDATE .in() dilimle (latent buyuk-.in()).
-- devreler olu kod temizligi (sira* + eski takvim CSS).
-- KARARLAR.md (kok): MK-172.1..10 islenecek (ek dosya: KARARLAR-172-ek.md).
-- Eski: spool-seviyesi hata rozeti · kuyruk takili · W-2.9 · W-2.5 · Y200.
+## C — DEVRELER OLU KOD (MK-173.3, commit 826a2b5)
+devreler.html (172/SIRA + 172/TERMIN emeklileri):
+- getSiraMap + siraGuncelle (JS) silindi (tek referans kendi tanimlariydi; cagri yok).
+- _doRender'daki _siraCache atamasi silindi (atanip okunmuyordu + getSiraMap artik yok).
+- .sira-input CSS (5 kural) silindi (HTML'de eslesen element yok).
+- eski .takvim-popup/.takvim-* CSS silindi (172 native picker'a gecmisti; popup markup zaten yoktu).
+- AKTIF kalan: .termin-* + native .termin-dt gizli date input + native picker mantigi. DOKUNULMADI.
+- Hepsi 173/C tombstone yorumla isaretli. brace dengeli, inline syntax OK. 2760->2739.
+
+## IS1 — TEK ISLEME BUTONU (MK-173.4, commit f1c39ca + 343af6c)
+Belirti (Cihat): Islenenler ekraninda hem yanip sonen "Islenenler N" nav pili HEM "Bekleyenleri isle" butonu var,
+kafa karistirici. Istek: TEK buton; bosta mavi, tetikte beyaz + yanip sonen mavi nokta.
+devre_wizard_v3.html:
+- #btnIslDrenaj = tek buton. CSS `.isl-run` (id+class specificity .btn.pri:disabled greyini ezer): beyaz bg, koyu
+  metin, .nokta yanip soner. islenenlerDrenaj: basta classList.add('isl-run') + innerHTML nokta+Isleniyor; basliyor
+  fazinda innerHTML nokta + "Isleniyor N/M..."; bitince classList.remove + mavi metne don.
+- Nav pili #btnIslenenler: <span class="isl-btn-dot"> (sureki blink) markup'tan cikarildi; .isl-btn-dot CSS kurali
+  silindi. Pil artik sade "Islenenler (sayi)" navigasyonu (Adim 1/2 giris kapisi, silinmedi).
+- ozet.atlandi toast: global (islenenlerDrenaj) + per-satir (islenenlerDrenajDevre) — "... hata X, atlandi Y" +
+  "N is zaten isleniyordu (atlandi)" dali (islenen=0 ama atlandi>0 durumu).
+
+## OZ-IHLAL / TUZAKLAR (173)
+- A'da: ilk dururken "server claim eksik mi" diye dusunulebilirdi; kod okununca claim'in VAR ama YANLIS SIRADA
+  oldugu gorulduгu. Once server akisi (kuyruk-isle-izometri.js) + client loop (ares-izometri-drenaj.js) tam
+  okundu, sonra tasarim (MK-126.8/132.1). Tahmin edilmedi.
+- B'de: sadece UPDATE'i dilimleyip komsu SELECT'i unutmak fix'i etkisiz kilardi (bant once patlar). Akisin
+  tamami tarandi.
+- C'de: _siraCache atanip okunmuyordu; getSiraMap silinince onu cagiran satir AYNI patch'te gitti (ReferenceError
+  onlendi). Silmeden once grep ile "olu mu" kanitlandi.
+- IS1: blink TEK yerde (aksiyon butonu). Cross-view nav noktasi KASTEN konmadi (tek buton istegine sadik).
+
+## COMMIT'LER (173)
+f3b0765 (A) · b8c5819 (B) · 826a2b5 (C) · f1c39ca (IS1 cekirdek) · 343af6c (IS1 per-satir, HEAD).
+Aralarda chore(ci) ci-son-rapor.json [skip ci] commit'leri (CI botu). 12/12, migration yok, izometri-oku
+dokunulmadi.
+
+## KAPANIS BORCU (174'te HATIRLA)
+- IS2: terfi "Aktariliyor..." donmus hissi -> iskelet/cascade animasyon (Cihat: AYRI OTURUM, buyuk).
+- W-2.5: Step-1 iki ilerleme cubugu (progressFill + islenStrip) -> tek cubuk; gorsel karar, ekranda goster.
+- Spool-seviyesi hata rozeti (dosya-adi->spool esleme, kirilgan): devre_detay/spool_detay tarafi olabilir.
+- KARARLAR (kok): MK-173.1..4 docs/KARARLAR.md koke ISLENDI (172 zaten kokteydi). Kokte MK-169/170/171 EKSIK
+  (168'den 172'ye atliyor) — eski borc, icerik bulununca isle.
+- Eski: kuyruk takili kayitlar · W-2.9 paralel devre · Y200/format ogretimi.

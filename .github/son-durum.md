@@ -1,48 +1,39 @@
-# son-durum.md — 172. Oturum (2026-06-09)
+# son-durum.md — 173. Oturum (2026-06-09)
 
 ## TEMA
-DEVRELER SADELESTIRME + ISLENENLER (kuyruk) EKRANI UCTAN UCA. v1/v2 emekli, tek giris yesil "Devre Ekle".
-Islenenler Bad Request cozumu + redesign + drenaj durdur/oncelik + iskelet/cascade animasyon.
+A/B/C teknik borc temizligi + IS1 (Islenenler tek isleme butonu). Hepsi canli + CI yesil.
 
 ## DURUM
-- Degisen dosyalar: devreler.html · proje_detay.html · devre_wizard_v3.html · ares-izometri-drenaj.js
-- Silinen: devre_yeni.html (v1) · devre_wizard.html (v2) — git rm (gecmis korur).
-- 12/12 fonksiyon (yeni endpoint YOK). Migration YOK. izometri-oku DOKUNULMADI. Server kodu degismedi.
-- Ilk 172 kod commit'i: 4146bc9. Wizard fix/redesign/durdur/iskelet/cascade commit'leri ardindan geldi.
-- CI: kod commit'leri [skip ci] YOK ile gitti (CI kosar). Kapanis doc'lari [skip ci] ILE.
+- HEAD: 343af6c (origin/main ile senkron). Onceki kapanis: f7104b5.
+- Degisen dosyalar: api/kuyruk-isle-izometri.js · ares-izometri-drenaj.js · devreler.html · devre_wizard_v3.html
+- 12/12 fonksiyon (yeni endpoint YOK). Migration YOK. izometri-oku DOKUNULMADI. Gece cron AYRI/etkilenmedi.
+- CI: kod commit'leri [skip ci] YOK ile gitti (kostu, yesil). Kapanis doc'lari [skip ci] ILE.
 
 ## YAPILANLAR (hepsi canli)
-1. Devreler tek giris (MK-172.1) — yesil "Devre Ekle" -> wizard v3; v1+v2 emekli+rm; proje_detay -> v3.
-2. Son guncelleme damgasi (MK-172.2) — tablo basligi sagi; max(olusturma, non-null guncelleme), acilista 1 kez.
-3. Imalat sira no kaldirildi (MK-172.3) — yildiz kalir.
-4. Native termin takvimi (MK-172.4) — showPicker, aninda kayit; ozel popup emekli.
-5. Islenenler Bad Request fix (MK-172.5) — buyuk .in() -> _inDilimli (150) ile bolundu.
-6. Islenenler redesign (MK-172.6) — kutu-per-satir mockup + ozet.
-7. Drenaj durdur/oncelik (MK-172.7) — tek-drenaj + interrupt; 409 yarisi cozuldu. Gece cron AYRI/etkilenmez.
-8. Yukleme animasyonu (MK-172.8) — aninda shimmer iskelet + cascade reveal; yenilemede animasyon yok.
-9. Isleniyor butonu (MK-172.9) — beyaz + yanip sonen nokta; nav butonu kum saati de noktaya.
-10. Step 1 Geri -> Islenenler listesi (MK-172.10).
+1. A — claim-first (MK-173.1, f3b0765): parse ONCESI atomik claim; baskasi kapmissa parse atlanir -> bos L3 odemesi
+   biter (409/508 israfi). Server: claim_only modu + zaten_claim guard gevsetme + birIsIsle re-claim atlama.
+   Client: claim postu -> claimed:false ise parse YOK; ozet.atlandi sayaci. Gece cron normal yolda, etkilenmez.
+2. B — buyuk .in() dilimle (MK-173.2, b8c5819, MK-172.5 sinifi): hataYenidenDene UPDATE + hataBandiYukle SELECT
+   150'lik dilimlere bolundu (cok belgeli devrede 400 biter).
+3. C — devreler olu kod (MK-173.3, 826a2b5): sira* JS + .sira-input/.takvim-popup CSS silindi (172 emeklileri).
+   Native termin picker dokunulmadi. 2760->2739 satir.
+4. IS1 — tek isleme butonu (MK-173.4, f1c39ca + 343af6c): #btnIslDrenaj bosta mavi / islerken beyaz+yanip sonen
+   nokta; nav pili sureki blink kaldirildi (sade nav); atlandi toast (global + per-satir).
 
-## GECE CRON
-- Cihat canli test etti, calisiyor (sabah kirmizilar gitmis). "Gece cron gercek testi" ACIK BORCU KAPANDI.
+## OPERASYONEL DERSLER (173)
+- "Server claim'i var ama PARSE'tan sonra" = bos L3'un kok nedeni. Atomik lock dogru yerde degilse ise yaramiyor;
+  sira (claim-once-parse) onemli. izometri-oku'ya dokunmadan, mevcut endpoint'e parametre ile cozuldu.
+- Buyuk .in() bir fonksiyonda duzeltilince KOMSU ayni-ids SELECT'i de patlar — akisin tamamina bak (retry butonu
+  bandi 400 yerse buton hic gorunmez). Tek satir genisletme akisi kurtardi.
+- Olu kod silmeden ONCE her sembolu grep'le "tanim var, cagri yok" kanitla; _siraCache atanip okunmuyordu, silinen
+  getSiraMap'i cagiran satir AYNI patch'te kaldirildi (yoksa ReferenceError).
+- Tek-buton: blink sinyali TEK yerde olmali (aksiyon butonu). Nav pilinin sureki blink'i gurultuydu, kaldirildi.
 
-## OPERASYONEL DERSLER (172)
-- "Bad Request" cogu zaman buyuk .in() URL sismesidir; kolon hatasi olsa aciklayici mesaj gelirdi.
-  Rozet sayisinin gelmesi = ilk sorgu OK, sonraki .in() patliyor ipucu verdi. _inDilimli kalici cozum.
-- 409 (Conflict) seli = iki client-loop ayni isi cekiyor (lock calisiyor ama bos efor + L3 maliyeti).
-  Tek-drenaj + durdur() yarisini bitirdi.
-- "Yukleniyor" hissi: iki-fazli render YETMEDI (ilk 2 sorgu sirasinda hala statik yazi). Cozum devreler'in
-  kendi deseni: ANINDA shimmer iskelet + cascade. Onceki yarim fix dersi: bekleme hissini iskelet kapatir.
-- Iki yanlis animasyon turu var: (a) Step 1 cizgi-tarama (ai-scan), (b) devreler satir cascade (_cascadeIn).
-  Cihat'in "tema" dedigi (b) cascade. Once sehven (a) eklendi, geri alinip (b) konuldu.
-
-## ACIK (172 sonu)
-- 508/claim-first: in-page drenaj zaten islenmis ise client parse edip 409/508 yiyor (bos L3). Claim-first
-  (parse ONCESI lock) adayi. izometri-oku dokunulmaz.
-- hataYenidenDene UPDATE .in() dilimli degil (latent buyuk-.in()).
-- devreler olu kod (sira* + eski takvim CSS) temizligi.
-- Parallel drenaj (kasten yapilmadi). Islenenler salt-izleme poll'u (onerildi).
-- Eski: spool-seviyesi hata rozeti · kuyruk takili kayitlar · W-2.9 · W-2.5 · Y200/format ogretimi.
+## ACIK (173 sonu)
+- IS2 terfi animasyonu (AYRI OTURUM, buyuk). W-2.5 iki cubuk (gorsel karar, ekranda goster). Spool-seviyesi hata
+  rozeti (kendi oturumu). Opsiyonel nav capraz-sinyal (konmadi). Eski: kuyruk takili · W-2.9 · Y200.
+- KARARLAR: MK-173.1..4 docs/KARARLAR.md koke islendi (172 zaten kokteydi). Kokte MK-169/170/171 eksik (eski borc).
 
 ## TEST DEVRELERI — SILME
-Hepsi test. 172: NB1099C, NB1124, M120-Galv. 170: NB1099C. 171: M110-St.St, E120-St.St. SILME.
+Hepsi test. 173: cgghmcmhgvm120, cghfdkv, hthth, thjjy, kfyukfyl, kgcdkgc, uogyol. 172: NB1099C, NB1124, M120-Galv.
+170: NB1099C. 171: M110-St.St, E120-St.St. SILME.

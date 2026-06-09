@@ -1,56 +1,55 @@
-# CLAUDE-SONRAKI-OTURUM.md — 173 Acilisi
+# CLAUDE-SONRAKI-OTURUM.md — 174 Acilisi
 
 ## ACILIS RITUELI
 1. `git pull --rebase origin main && git status && git log --oneline -8`
-   -> 172 commit'leri gorunmeli (devreler sadelestirme, islenenler fix/redesign/durdur, iskelet/cascade,
-      KARARLAR MK-172.x doc). Git temiz olmali.
+   -> 173 commit'leri gorunmeli: 343af6c(IS1 per-satir,HEAD) · f1c39ca(IS1) · 826a2b5(C) · b8c5819(B) ·
+      f3b0765(A) · f7104b5(172 docs). Git temiz olmali.
 2. Fonksiyon sayimi: `ls api/*.js | wc -l` -> 12 (MK-129.3 tavani).
 3. `cat BRIEFING.md` + bu dosya.
-4. PUSH = HEP `gpc "mesaj"` (add+commit+rebase+push). Manuel git push yapma (CI botu araya commit atinca reddediyor).
-   Kod commit'i [skip ci] YOK; doc/migration commit'i [skip ci] ILE (ama HEAD'de degilse — MK-134.1).
+4. PUSH = HEP `gpc "mesaj"`. Kod commit'i [skip ci] YOK; doc/migration commit'i [skip ci] ILE (HEAD'de degilse — MK-134.1).
 
-## 173 — ILK IS ADAYLARI
+## 174 — ILK IS ADAYLARI
 
-### A) 508 / CLAIM-FIRST — bos L3 odemesini bitir (oncelik adayi)
-> Belirti: in-page drenajda zaten islenmis/baska processor'un aldigi isler icin client ONCE PDF indirir +
-  izometri-oku (L3 vision, pahali) cagirir, SONRA kuyruk-isle-izometri 409/508 doner. Yani bos yere L3 odenir.
-> izometri-oku DOKUNULMAZ (MK-49.1). Fikir: _birIsIsle'de parse ONCESI isi "claim" (lock/owner damgasi)
-  et; claim basarisizsa (baskasi almis) parse'i ATLA. kuyruk-isle-izometri server'da lock yapiyor; oradan
-  "claim-only" bir mod ya da on-kontrol gerekebilir. ONCE server akisini oku (kuyruk-isle-izometri.js),
-  TAHMIN ETME (MK-85.3/126.8). Server endpoint sayisi 12/12 — yeni endpoint EKLEME, mevcut moda parametre.
+### A) IS2 — terfi "Aktariliyor..." donmus hissi (BUYUK, bu oturum icin ayrildi)
+> Belirti: devre_wizard_v3.html "Devreyi canliya aktar" modalinda buyuk devrede terfi uzun surer; "Aktariliyor..."
+  statik kalir, ekran donmus hissi verir. Cozum: klasor yuklemedeki desen (172 iskelet+cascade / 171 progressFill)
+  terfi sirasinda da calissin. ONCE terfi handler'ini (eslestir/terfi akisi) + modal markup'ini OKU (MK-126.8),
+  TAHMIN ETME. Buyuk olabilir; mockup'a gore ilerleme/animasyon. Server/endpoint EKLEME (12/12).
 
-### B) hataYenidenDene UPDATE buyuk-.in() (MK-172.5 sinifi, latent)
-> devre_wizard_v3.html hataYenidenDene: dosya_isleme_kuyrugu.update(...).in('devre_dokuman_id', ids)
-  ids cok belgeli devrede yuzlerce -> ayni URL sismesi riski. _inDilimli mantigini UPDATE'e uyarla
-  (dilim dilim update). Su an patlamadi ama buyuk devrede patlar.
+### B) W-2.5 — Step-1 iki ilerleme cubugu (kucuk-orta, gorsel karar)
+> devre_wizard_v3.html Adim 1'de iki ayri sinyal var: hazirlikKutu progressFill (hazirlik/yukleme cubugu, ~satir 382)
+  + islenStrip "N PDF isleniyor..." (~satir 430/1360). Hangisi gereksiz/cakisiyor = Cihat ekranda gostersin, sonra
+  tek cubuga indir. Tahminle birlestirme (MK-132.1).
 
-### C) DEVRELER OLU KOD TEMIZLIGI (kucuk, opsiyonel)
-> siraGuncelle / getSiraMap / _siraCache + eski .takvim-* / .sira-input CSS artik kullanilmiyor (172'de
-  sira-input ve ozel takvim kaldirildi). Otomatik calismaz, zararsiz. Tek temiz patch ile sil.
+### C) Spool-seviyesi hata rozeti (orta, kirilgan)
+> Eski borc: dosya-adi -> spool eslemesiyle spool satirinda hata rozeti. devre_wizard_v3.html'de izi YOK ->
+  muhtemelen devre_detay.html / spool_detay.html ya da hic baslanmamis. ONCE nerede olacagina karar + ilgili
+  dosyayi oku. dosya-adi->spool eslemesi kirilgan (pipeline+spool anahtari; _1 sonek tuzagi).
 
-### D) ESKI DEVIR (170/171'den)
-- spool-seviyesi hata rozeti (dosya-adi->spool esleme; kirilgan) · dosya_isleme_kuyrugu takili kayitlar ·
-  W-2.9 paralel devre · W-2.5 iki ilerleme cubugu · Y200/format ogretimi (diger bilgisayar, zip workflow).
-- NOT: "gece cron gercek testi" 172'de Cihat tarafindan dogrulandi -> KAPANDI.
+### D) ESKI DEVIR
+- kuyruk takili kayitlar (dosya_isleme_kuyrugu otomatik trigger yok; client-loop/cron drenaji mekanizma).
+- W-2.9 paralel devre · Y200/format ogretimi (diger bilgisayar, zip workflow — Cihat ertelemis).
+- Opsiyonel: islerken nav piline capraz-gorunum noktasi (baska sekme/cron ilerlemesi). 173'te KASTEN konmadi.
 
-### E) OPSIYONEL — ISLENENLER SALT-IZLEME POLL
-> Mimari: drenaj client-loop (MK-153.1), islemek icin sekme acik kalmali ya da gece cron. Eger Cihat
-  "drenaj baslatmadan da ilerlemeyi izleyeyim" isterse: panel acikken islenenlerYukle'yi periyodik (orn
-  4sn) poll'la (cron/baska tarayici ilerlemesi gorunur). Mimariyi degistirmez, salt gorunurluk.
+### E) KARARLAR (kok) BAKIM
+> MK-173.1..4 docs/KARARLAR.md koke ISLENDI (173 ayri ek dosya YOK). 172-ek de zaten kokteydi. ACIK: kokte
+  MK-169/170/171 EKSIK (MK-168'den dogrudan MK-172'ye atliyor). Eski borc — o oturumlarin karar icerigi bulununca
+  (CLAUDE-SON-OTURUM arsivleri / commit gecmisi) koke islenmeli. Numarayi uydurma, kaynaktan al.
 
 ## ILKE HATIRLATMALARI
 izometri-oku DOKUNULMAZ (MK-49.1) · 12/12 tavan, YENI ENDPOINT EKLEME (MK-129.3) · sema-once: information_schema,
 TAHMIN ETME (MK-85.3) · once-oku-sonra-dokun (MK-126.8) · canli-pipeline tani, statik tahmin degil (MK-132.1) ·
-buyuk .in() listelerini DILIMLE (MK-172.5) · tek-drenaj/durdur deseni (MK-172.7) · gece cron AYRI (server-side),
-client drenajdan bagimsiz · HTML cerrahi: str_replace/Python + abort-on-mismatch + .bak + JS node --check /
-HTML inline-script syntax check · PUSH = gpc · Excel = dayanak, delme · zsh ()/*/! tirnak tuzagi.
+buyuk .in() DILIMLE (MK-172.5/173.2) · claim-once-parse (MK-173.1: atomik lock parse'tan ONCE) · gece cron AYRI
+(server-side), client drenajdan bagimsiz · HTML cerrahi: str_replace/Python + abort-on-mismatch + .bak +
+node --check (JS) / inline-script syntax + brace dengesi (HTML) · PUSH = gpc · Excel = dayanak, delme ·
+zsh ()/*/! tirnak tuzagi · MD5'li arespipe_kopyala (uc arguman).
 
-## 172'DE EKLENEN MARKER'LAR (idempotent, tekrar patch korumasi)
-devreler.html: 172/BTN · 172/HEAD · 172/SIRA · 172/TERMIN.
-devre_wizard_v3.html: 172/ISL-FIX · 172/ISL-UI · 172/ISL-BTN · 172/ISL-PROG · 172/ISL-SK · 172/ISL-CASCADE ·
-  172/ANIM-FIX · 172/DURDUR.
-ares-izometri-drenaj.js: 172/DURDUR.
+## 173'TE EKLENEN MARKER'LAR (idempotent, tekrar patch korumasi)
+api/kuyruk-isle-izometri.js: 173/CLAIM-FIRST (S1/S2) · ares-izometri-drenaj.js: 173/CLAIM-FIRST.
+devre_wizard_v3.html: 173/B (hataYenidenDene+hataBandi dilim) · 173/IS1 (isl-run buton, nav sade, atlandi toast).
+devreler.html: 173/C (sira* + .sira-input/.takvim-popup tombstone).
 Ayni bolgeye dokunulacaksa bu marker'lar grep'le bulunur.
 
 ## TEST DEVRELERI — SILME
-Hepsi test. 172: NB1099C, NB1124, M120-Galv. 170: NB1099C. 171: M110-St.St, E120-St.St. SILME.
+Hepsi test. 173: cgghmcmhgvm120, cghfdkv, hthth, thjjy, kfyukfyl, kgcdkgc, uogyol. 172: NB1099C, NB1124, M120-Galv.
+170: NB1099C. 171: M110-St.St, E120-St.St. SILME.
