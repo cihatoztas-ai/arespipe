@@ -152,6 +152,7 @@
     .table-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--bor); flex-wrap:wrap; gap:10px; }
     .table-title  { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; }
     .table-count  { font-size:14px; font-weight:400; color:var(--txm); margin-left:8px; }
+    .table-updated { font-size:13px; font-weight:400; color:var(--txd); white-space:nowrap; }
     .table-scroll { overflow-x:auto; }
     .data-table   { width:100%; border-collapse:collapse; font-size:14px; white-space:nowrap; min-width:1100px; }
     .data-table th { padding:10px 12px; text-align:left; font-size:14px; font-weight:600; color:var(--txd); text-transform:uppercase; letter-spacing:.5px; background:var(--sur2); border-bottom:1px solid var(--bor); }
@@ -314,6 +315,9 @@
     .termin-cell { white-space:nowrap; }
     .termin-btn  { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-family:'Barlow',sans-serif; cursor:pointer; transition:all .15s; }
     .termin-btn:hover { background:var(--sur2); border-color:var(--bor); }
+    /* 172/TERMIN: tıklayınca native takvim açılsın diye buton üstüne render'lı (görünmez) date input */
+    .termin-wrap { position:relative; display:inline-block; }
+    .termin-dt   { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; border:0; padding:0; margin:0; pointer-events:none; }
     .termin-gecmis  { color:var(--re); }
     .termin-yakin   { color:var(--warn); }
     .termin-normal  { color:var(--gr); }
@@ -351,21 +355,12 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span data-i18n="dr_export" data-i18n="dr_export">Dışa Aktar</span>
       </button>
-      <button class="btn-primary" onclick="location.href='devre_yeni.html'">
+      <!-- 172/BTN: v1 (devre_yeni.html) EMEKLİ + v3-outline + İşlenenler KALDIRILDI (Cihat görsel sadeleştirme).
+           Tek giriş = yeşil "Devre Ekle" → wizard v3 (koşulsuz; flag gating kalktı). devre_yeni.html / devre_wizard.html
+           dosyaları DURUR, giriş kalktı (MK-162.1 deseni). -->
+      <button class="btn-primary" id="btnDevreEkle" onclick="location.href='devre_wizard_v3.html'" style="background:var(--gr);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span data-i18n="dr_new_circuit">Yeni Devre</span>
-      </button>
-      <!-- 99/136: Wizard girişleri. 166: v2 butonu EMEKLİ (Cihat kararı) — devre_wizard.html dosyası
-           durur, giriş kalktı (MK-162.1 deseni); flag devre_wizard_v2 artık sorgulanmaz. v1 = yukarıdaki "Yeni Devre". -->
-      <button class="btn-outline" id="btnYeniDevreWizardV3" onclick="location.href='devre_wizard_v3.html'" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span>📁 Klasör Yükle (v3)</span>
-      </button>
-      <!-- W-2.7 (154): İşlenenler — wizard taslak havuzuna giriş (v3 flag'iyle birlikte açılır) -->
-      <button class="btn-outline" id="btnIslenenler" onclick="location.href='devre_wizard_v3.html?sekme=islenenler'" style="display:none" title="Yüklenen taslak devrelerin işleme havuzu">
-        <span>⏳ İşlenenler</span>
-        <span id="islRozetDr" style="background:var(--ac);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;">0</span>
-        <span id="islRozetIs" style="display:none;background:var(--warn);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;">0</span>
+        <span>Devre Ekle</span>
       </button>
     </div>
   </div>
@@ -467,18 +462,19 @@
     <div class="table-header">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <span class="table-title" data-i18n="dr_circuit_list">Devre Listesi</span>
-        <span class="table-count" id="tableCount"></span>
         <button class="btn-outline" id="btnMalzemeListesi" disabled style="height:30px;font-size:14px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span data-i18n="dr_mat_list_export">Malzeme Listesi Çıkar</span>
         </button>
       </div>
+      <!-- 172/HEAD: devre sayısı kaldırıldı (üstte stat kartında zaten var); sağda tablonun son güncellenme zamanı -->
+      <span class="table-updated" id="tableUpdated"></span>
     </div>
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width:70px;"></th>
+            <th style="width:44px;"></th>
             <th style="width:36px;">#</th>
             <th class="sort-th" data-sort="isEmri" onclick="sortBy('isEmri')" style="cursor:pointer;">
               <span data-i18n="cmn_th_is_emri">İş Emri</span> <span class="sort-arrow-wrap"></span>
@@ -517,15 +513,7 @@
 
 </div></div></div>
 
-<!-- ═══ TAKVİM POPUP ═══ -->
-<div class="takvim-popup" id="takvimPopup">
-  <div class="takvim-baslik">Termin Tarihi</div>
-  <input type="date" class="takvim-input" id="takvimInput">
-  <div class="takvim-actions">
-    <button class="takvim-temizle" onclick="terminTemizle()">✕ Kaldır</button>
-    <button class="takvim-kaydet"  onclick="terminKaydet()">Kaydet</button>
-  </div>
-</div>
+<!-- 172/TERMIN: eski TAKVİM POPUP kaldırıldı — native date picker kullanılıyor (satır içi gizli input). -->
 
 <!-- ═══ DONUT TOOLTIP (global) ═══ -->
 <div class="donut-tooltip" id="donutTooltip"></div>
@@ -832,56 +820,24 @@ function terminGoster(isoDate) {
   return gun + '/' + ay + '/' + yil;
 }
 
-// Takvim popup
-var _takvimAktifId = null;
-function takvimAc(e, id) {
+// 172/TERMIN: native takvim — butona tıkla, tarayıcının kendi takvimi açılsın, seçince ANINDA kaydet.
+//   Kaydet/Kaldır popup'ı kalktı. Temizleme: native picker'ın kendi "temizle"si onchange'i boş döndürür → null.
+function terminAc(e, id) {
   e.stopPropagation();
-  _takvimAktifId = id;
-  var popup = document.getElementById('takvimPopup');
-  var inp   = document.getElementById('takvimInput');
-  if (!popup || !inp) return;
-  var d = DEVRELER.find(function(x){ return x.supaId === id; });
-  inp.value = d && d.terminTarihi ? d.terminTarihi.split('T')[0] : '';
-  var rect = e.currentTarget.getBoundingClientRect();
-  var top  = rect.bottom + 6;
-  var left = rect.left;
-  if (left + 220 > window.innerWidth) left = window.innerWidth - 228;
-  if (top + 140 > window.innerHeight) top = rect.top - 148;
-  popup.style.top  = top + 'px';
-  popup.style.left = left + 'px';
-  popup.classList.add('open');
-  setTimeout(function() { inp.focus(); }, 50);
+  var inp = document.getElementById('tdt_' + id);
+  if (!inp) return;
+  if (typeof inp.showPicker === 'function') { try { inp.showPicker(); return; } catch (_) {} }
+  inp.focus(); inp.click(); // showPicker desteklemeyen tarayıcı için yedek
 }
-async function terminKaydet() {
-  if (_takvimAktifId === null) return;
-  var inp = document.getElementById('takvimInput');
-  var val = inp ? inp.value : '';
-  takvimKapat();
+async function terminSec(id, val) {
   var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
   if (supa) {
-    var { error } = await supa.from('devreler').update({ termin: val || null }).eq('id', _takvimAktifId);
+    var { error } = await supa.from('devreler').update({ termin: val || null }).eq('id', id);
     if (error) { console.warn('Termin kaydet:', error); return; }
   }
-  var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
+  var d = DEVRELER.find(function(x){ return x.supaId === id; });
   if (d) d.terminTarihi = val || null;
   renderTable(false);
-}
-async function terminTemizle() {
-  if (_takvimAktifId === null) return;
-  takvimKapat();
-  var supa = typeof ARES !== 'undefined' ? ARES.supabase() : null;
-  if (supa) {
-    var { error } = await supa.from('devreler').update({ termin: null }).eq('id', _takvimAktifId);
-    if (error) { console.warn('Termin temizle:', error); return; }
-  }
-  var d = DEVRELER.find(function(x){ return x.supaId === _takvimAktifId; });
-  if (d) d.terminTarihi = null;
-  renderTable(false);
-}
-function takvimKapat() {
-  var popup = document.getElementById('takvimPopup');
-  if (popup) popup.classList.remove('open');
-  _takvimAktifId = null;
 }
 
 // ── VERİ ─────────────────────────────────────────────────────────
@@ -1321,18 +1277,31 @@ async function sorgulaVeGoster() {
 
     var rpcIds = allDevreIds.length ? allDevreIds : ['00000000-0000-0000-0000-000000000000'];
 
-    // Paralel: liste + count + RPC istatistik
+    // Paralel: liste + count + RPC istatistik + son güncelleme (172/HEAD: filtreden bağımsız, RLS tenant-scoped)
     var results = await Promise.all([
       listeQ,
       countQ,
-      supa.rpc('devre_istatistik', { devre_ids: rpcIds })
+      supa.rpc('devre_istatistik', { devre_ids: rpcIds }),
+      supa.from('devreler').select('guncelleme').order('guncelleme', { ascending: false }).limit(1).maybeSingle()
     ]);
     var devRes   = results[0];
     var countRes = results[1];
     var rpcRes   = results[2];
+    var sonGuncRes = results[3];
 
     if (devRes.error)  { console.warn('[Devreler] listeQ:', devRes.error); return; }
     if (rpcRes.error)  { console.warn('[Devreler] rpcRes:', rpcRes.error); }
+
+    // 172/HEAD: tablo son güncelleme damgası
+    (function(){
+      var upd = document.getElementById('tableUpdated');
+      if (!upd) return;
+      var g = (sonGuncRes && sonGuncRes.data) ? sonGuncRes.data.guncelleme : null;
+      if (g) {
+        var dt = new Date(g), p = function(n){ return ('0'+n).slice(-2); };
+        upd.textContent = 'Son güncelleme: ' + p(dt.getDate()) + '/' + p(dt.getMonth()+1) + '/' + dt.getFullYear() + ' ' + p(dt.getHours()) + ':' + p(dt.getMinutes());
+      } else { upd.textContent = ''; }
+    })();
 
     _ssTotal = countRes.count || 0;
 
@@ -1932,7 +1901,6 @@ function _doRender() {
     return '<tr' + rowCls + ' data-ci="' + Math.min(_ci++, 19) + '" onclick="devreAc(\'' + d.supaId + '\')">' +
       '<td class="star-cell" onclick="event.stopPropagation();">' +
         '<span id="star_' + d.supaId + '" class="star-icon ' + starCfg.cls + '" onclick="yildizToggle(\'' + d.supaId + '\')" title="' + esc(starCfg.label || 'Malzeme durumu') + '">' + starCfg.icon + '</span>' +
-        '<input class="sira-input' + (_siraCache[d.supaId] ? ' has-val' : '') + '" id="sira_' + d.supaId + '" data-sid="' + d.supaId + '" type="text" maxlength="3" placeholder="—" value="' + esc(_siraCache[d.supaId] || '') + '" onclick="event.stopPropagation()" onchange="siraGuncelle(this.dataset.sid,this.value);this.classList.toggle(\'has-val\',this.value.trim()!==\'\')" onkeydown="if(event.key===\'Enter\')this.blur()" title="İmalat sıra numarası">' +
       '</td>' +
       '<td style="color:var(--txd);font-size:14px;">' + (globalIdx + 1) + '</td>' +
       '<td style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--leg);">' + esc(d.isEmri) + '</td>' +
@@ -1947,10 +1915,13 @@ function _doRender() {
       '<td><div class="prog-cell"><span class="prog-pct" style="color:' + pc + '">%' + d.ilerleme + '</span><div class="prog-mini"><div class="prog-fill" style="width:' + d.ilerleme + '%;background:' + pc + ';"></div></div></div></td>' +
       '<td style="font-size:14px;color:var(--txd);">' + tarihFormat(esc(d.sonIslem || '—')) + '</td>' +
       '<td class="termin-cell" onclick="event.stopPropagation();">' +
-        '<button class="termin-btn ' + terminRenk(_terminCache[d.supaId]) + '" onclick="takvimAc(event,\'' + d.supaId + '\')">' +
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
-          terminGoster(_terminCache[d.supaId]) +
-        '</button>' +
+        '<span class="termin-wrap">' +
+          '<button type="button" class="termin-btn ' + terminRenk(_terminCache[d.supaId]) + '" onclick="terminAc(event,\'' + d.supaId + '\')">' +
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+            terminGoster(_terminCache[d.supaId]) +
+          '</button>' +
+          '<input type="date" class="termin-dt" id="tdt_' + d.supaId + '" value="' + (_terminCache[d.supaId] ? esc(String(_terminCache[d.supaId]).split('T')[0]) : '') + '" onchange="terminSec(\'' + d.supaId + '\', this.value)">' +
+        '</span>' +
       '</td>' +
       '<td class="act-cell" onclick="event.stopPropagation();">' +
         '<button class="act-btn edit" onclick="devreDuzenle(event,\'' + d.supaId + '\')" title="Düzenle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
@@ -2698,51 +2669,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target.classList.contains('modal-ov')) { e.target.classList.remove('open'); return; }
     var closeTarget = e.target.closest('[data-close]');
     if (closeTarget) { modal(closeTarget.dataset.close, false); }
-    // Takvim popup dışına tıklama
-    var popup = document.getElementById('takvimPopup');
-    if (popup && popup.classList.contains('open') && !popup.contains(e.target) && !e.target.closest('.termin-btn')) {
-      takvimKapat();
-    }
+    // 172/TERMIN: takvim popup dış-tık bloğu kaldırıldı (native picker'da gereksiz).
   });
 
   // Buton bağlamaları
   var bagla = function(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
 
-  // 99: Devre Wizard feature flag kontrolü — pilot tenant'larda butonu göster
-  // (spool_detay.html:2984 pattern'iyle aynı, ARES.tenantId() zaten hazır)
-  (async function() {
-    try {
-      var _tid = ARES.tenantId();
-      if (!_tid) return;
-      var _supa = ARES.supabase();
-      // 166: v2 EMEKLİ — yalnız v3 flag'i sorgulanır (tenant_features.devre_wizard_v2 satırı DB'de
-      //   dursa da artık okunmaz; veri silinmedi). İşlenenler v3 ile birlikte açılır.
-      var _r = await _supa.from('tenant_features')
-        .select('feature_kod, aktif').eq('tenant_id', _tid)
-        .eq('feature_kod', 'devre_wizard_v3');
-      var _wf = {}; (_r.data || []).forEach(function(f){ if (f.aktif === true) _wf[f.feature_kod] = true; });
-      if (_wf.devre_wizard_v3) {
-        var _b3 = document.getElementById('btnYeniDevreWizardV3'); if (_b3) _b3.style.display = '';
-        // W-2.7 (154): İşlenenler butonu v3 ile birlikte açılır; rozet = bekleyen taslak sayısı
-        var _bi = document.getElementById('btnIslenenler'); if (_bi) _bi.style.display = '';
-        try {
-          var _ic = await _supa.from('devreler').select('id', { count: 'exact', head: true })
-            .eq('tenant_id', _tid).eq('durum', 'taslak').neq('silindi', true);
-          var _ir = document.getElementById('islRozetDr');
-          if (_ir && !_ic.error) _ir.textContent = _ic.count || 0;
-          // 158 (157 bulgusu): rozet KUYRUK gerçeğini de göstersin — taslak 0 iken kuyrukta iş bekleyebilir
-          var _iq = await _supa.from('dosya_isleme_kuyrugu').select('id', { count: 'exact', head: true })
-            .in('durum', ['bekliyor', 'isleniyor']);
-          var _ii = document.getElementById('islRozetIs');
-          if (_ii && !_iq.error && (_iq.count || 0) > 0) {
-            _ii.textContent = _iq.count; _ii.style.display = '';
-            _ii.title = _iq.count + ' iş kuyrukta bekliyor/işleniyor';
-          }
-        } catch (e) { /* rozet kozmetik */ }
-      }
-    } catch(e) { /* flag yok veya hata — buton gizli kalır */ }
-    _onayRozetleriYukle(); // W-2.15 (158): satır onay rozetleri (flag'den bağımsız)
-  })();
+  // 172/BTN: wizard v3 artık TEK giriş (yeşil "Devre Ekle"). Eski flag-toggle + İşlenenler rozet
+  //   bloğu kaldırıldı — kaldırılan butonlara (btnYeniDevreWizardV3/btnIslenenler/islRozet*) referans
+  //   ediyordu ve 2 gereksiz count sorgusu atıyordu. tenant_features.devre_wizard_v3 satırı DB'de durur,
+  //   artık okunmaz (veri silinmedi). Satır onay rozetleri flag'den bağımsızdı, korunuyor:
+  _onayRozetleriYukle(); // W-2.15 (158): satır onay rozetleri
 
   bagla('scMalzeme',      malzemeModalAc);
   bagla('scCap',          capModalAc);
