@@ -160,6 +160,28 @@
     .mut-strip .lbl{ color:var(--txd); text-transform:uppercase; letter-spacing:.5px; font-size:12px; font-weight:700; margin-right:4px; } .mchip{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:16px; background:var(--sur2); border:1px solid var(--bor); } .mchip b{ font-family:'Barlow Condensed',sans-serif; }
     .dot{ width:9px; height:9px; border-radius:50%; } .d-gr{ background:var(--gr); } .d-warn{ background:var(--warn); } .d-re{ background:var(--re); } .d-co{ background:var(--co); } .mut-strip .lock{ margin-left:auto; color:var(--warn); font-size:14px; }
     .mut-strip .isleniyor{ margin-left:auto; color:var(--ac); font-size:13px; display:inline-flex; align-items:center; gap:7px; }
+    /* 174-B: Adim 2 pill basligi (devreler stat-pill temasi) */
+    .inc-hd{ display:flex; align-items:stretch; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+    .inc-hero{ background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--warn); border-radius:10px; padding:7px 14px; display:flex; align-items:center; gap:11px; flex-shrink:0; min-width:196px; }
+    .inc-hero-ic{ font-size:21px; line-height:1; }
+    .inc-hero-name{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; line-height:1; color:var(--tx); letter-spacing:.3px; }
+    .inc-hero-sub{ font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--warn); margin-top:4px; }
+    .inc-pills{ display:flex; gap:6px; flex:1; flex-wrap:wrap; min-width:0; }
+    .inc-pill{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:6px 12px; flex:1; min-width:90px; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+    .inc-pill .pl{ font-size:9px; letter-spacing:.5px; text-transform:uppercase; font-weight:600; color:var(--txd); }
+    .inc-pill .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:21px; line-height:1; color:var(--tx); letter-spacing:.3px; }
+    .inc-pill .nplus{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:700; color:var(--warn); background:rgba(217,119,6,.15); border-radius:9px; padding:1px 6px; vertical-align:2px; cursor:help; margin-left:4px; }
+    .inc-prog{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .inc-pp{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--bor); border-radius:8px; padding:4px 11px; min-width:60px; display:flex; flex-direction:column; gap:2px; }
+    .inc-pp .pl{ font-size:8px; letter-spacing:.4px; text-transform:uppercase; font-weight:600; color:var(--txd); display:flex; align-items:center; gap:5px; }
+    .inc-pp .pv{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; line-height:1; color:var(--tx); }
+    .inc-pp.run{ border-left-color:var(--ac); } .inc-pp.run .pv{ color:var(--ac); }
+    .inc-pp.done{ border-left-color:var(--gr); } .inc-pp.done .pv{ color:var(--gr); }
+    .inc-pp.ok{ border-left-color:var(--gr); } .inc-pp.ok .pv{ color:var(--gr); }
+    .inc-pp.zy{ border-left-color:var(--warn); } .inc-pp.zy .pv{ color:var(--warn); }
+    .inc-pp.ek{ border-left-color:var(--re); } .inc-pp.ek .pv{ color:var(--re); }
+    .inc-pp.fz{ border-left-color:var(--co); } .inc-pp.fz .pv{ color:var(--co); }
+    .inc-dot{ width:7px; height:7px; border-radius:50%; background:var(--ac); display:inline-block; animation:islBlink 1.1s ease-in-out infinite; }
     .spin{ display:inline-block; width:11px; height:11px; border:2px solid var(--ac); border-top-color:transparent; border-radius:50%; animation:sp .8s linear infinite; vertical-align:-1px; } @keyframes sp{ to{ transform:rotate(360deg); } }
     .tabs{ display:flex; gap:4px; border-bottom:2px solid var(--bor); margin-bottom:18px; } .tab{ padding:10px 18px; border:none; background:none; font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; color:var(--txd); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; } .tab:hover{ color:var(--tx); } .tab.active{ color:var(--ac); border-bottom-color:var(--ac); }
     .tablo-kart{ background:var(--sur); border:1px solid var(--bor); border-radius:14px; overflow:hidden; margin-bottom:16px; border-left:3px solid var(--ac); }
@@ -427,22 +449,14 @@
 
   <!-- ══════════ ADIM 2 — İNCELEME & ONAY ══════════ -->
   <section data-panel="2" class="hide">
-    <h1 class="h1" id="incBaslik">— <span style="font-size:16px;color:var(--txd);font-family:Barlow,sans-serif;font-weight:400;">— inceleme ve onay (taslak)</span></h1>
-    <div class="meta-line" id="incMeta"></div>
-    <div class="preview-band">⚠ ÖNİZLEME (taslak) — bu devre henüz canlı değil. Onay = canlıya terfi.</div>
-
-    <div class="stat-grid" id="statGrid"></div>
-
-    <div class="mut-strip">
-      <span class="lbl">Özet</span>
-      <span class="mchip"><b id="pToplam">—</b> kabuk</span>
-      <span class="mchip"><span class="dot d-gr"></span><b id="pOk">—</b> okundu</span>
-      <span class="mchip"><span class="dot d-warn"></span><b id="pZayif">—</b> zayıf</span>
-      <span class="mchip"><span class="dot d-re"></span><b id="pEksik">—</b> eksik</span>
-      <span class="mchip"><span class="dot d-co"></span><b id="pFazla">—</b> fazla</span>
-      <span class="isleniyor hide" id="islenStrip"><span class="spin"></span><span id="islenTxt"></span></span>
-      <span class="lock" id="lockNote">⚠ eksik/fazla onayda uyarı çıkarır</span>
+    <div class="inc-hd">
+      <div class="inc-hero">
+        <div class="inc-hero-ic">📦</div>
+        <div><div class="inc-hero-name" id="incBaslik">—</div><div class="inc-hero-sub" id="incHeroSub">taslak · onay = terfi</div></div>
+      </div>
+      <div class="inc-pills" id="statGrid"></div>
     </div>
+    <div class="inc-prog" id="incProg"></div>
 
     <div id="teshisBandi" class="hide" style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:11px 14px;font-size:15px;margin-bottom:16px;font-weight:600;"></div>
     <div id="hataBandi" class="hide" style="margin-bottom:16px;"></div>
@@ -1065,12 +1079,9 @@ function wizardSifirla() { location.href = 'devre_wizard_v3.html'; }
 // ADIM 2 — İNCELEME (server-side eşleştirme render + B canlı dolum)
 // ─────────────────────────────────────────────────────────────
 function incelemeKur() {
-  document.getElementById('incBaslik').innerHTML = esc(markaDevre()) + ' <span style="font-size:16px;color:var(--txd);font-family:Barlow,sans-serif;font-weight:400;">— inceleme ve onay (taslak)</span>';
-  var meta = document.getElementById('incMeta');
-  meta.innerHTML = '<span>Proje: <b>' + esc(WIZ.proje_no) + '</b></span>' +
-    (WIZ.tersane_ad ? '<span>Tersane: <b>' + esc(WIZ.tersane_ad) + '</b></span>' : '') +
-    (WIZ.yeni_termin ? '<span>Termin: <b>' + esc(WIZ.yeni_termin) + '</b></span>' : '') +
-    '<span>İş emri: <b class="gri">terfide üretilecek</b></span>';
+  document.getElementById('incBaslik').textContent = markaDevre();
+  var _sub = document.getElementById('incHeroSub');
+  if (_sub) _sub.textContent = (WIZ.tersane_ad ? WIZ.tersane_ad + ' · ' : '') + 'taslak · onay = terfi';
   malzSekmesiRender();
   genelSekmesiRender();
   buildTreeDok();
@@ -1414,17 +1425,10 @@ function _incScanDur() {
 
 function renderInceleme(j) {
   var sp = j.spoollar || [], fz = j.fazla || [], mn = j.montajlar || [], oz = j.ozet || {};
-  // Özet şeridi
-  setTxt('pToplam', oz.toplam != null ? oz.toplam : sp.length);
-  setTxt('pOk', oz.okundu || 0); setTxt('pZayif', oz.zayif || 0);
-  setTxt('pEksik', oz.eksik || 0); setTxt('pFazla', oz.fazla || 0);
+  // 174-B: pill basligi — teshis + spool pill'leri (ust) + ilerleme pill'leri (alt)
   teshisBandiCiz(oz, sp.length);
-  // "N PDF işleniyor" (B canlı dolum)
-  var isStrip = document.getElementById('islenStrip');
-  if (oz.isleniyor && oz.isleniyor > 0) { isStrip.classList.remove('hide'); setTxt('islenTxt', oz.isleniyor + ' PDF işleniyor…'); }
-  else { isStrip.classList.add('hide'); }
-  // stat-grid
   statGridRender(sp);
+  progPillsRender(oz);
 
   // 169/A1: ters harita — hedef kabuk (pipeline|spoolNo) -> bagli fazla PDF spool_no(lar)
   var _bagliTers = {};
@@ -1510,15 +1514,57 @@ function statGridRender(sp) {
     if (s.anaMalzeme) malzSay[s.anaMalzeme] = (malzSay[s.anaMalzeme] || 0) + 1;
     if (s.yuzeyHam) yuzSay[s.yuzeyHam] = (yuzSay[s.yuzeyHam] || 0) + 1;
   });
-  var malz = _enSik(malzSay), yuz = _enSik(yuzSay);
-  var malzG = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeEtiket && malz) ? (ARES_NORM.malzemeEtiket(malz) || malz) : (malz || '—');
-  var termin = WIZ.yeni_termin || '—';
+  var agTxt = agirlik ? (agirlik.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' <small style="font-size:12px;color:var(--txd);font-weight:400;">kg</small>') : '<span style="color:var(--txd);">—</span>';
   document.getElementById('statGrid').innerHTML =
-    statKart('ac','📦','Spool', toplam) +
-    statKart('gr','⚖️','Ağırlık', agirlik ? (agirlik.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' <small style="font-size:13px;">kg</small>') : '—') +
-    statKart('warn','🔩','Malzeme', '<span style="font-size:16px;">' + esc(malzG) + '</span>') +
-    statKart('ac','🎨','Yüzey', '<span style="font-size:16px;">' + esc(yuz || '—') + '</span>') +
-    statKart('leg','📅','Termin', '<span style="font-size:15px;">' + esc(termin) + '</span>');
+    _incPill('Kabuk', toplam) +
+    _incPill('Ağırlık', agTxt) +
+    _incPill('Malzeme', _baskinNplus(malzSay, 'malzeme')) +
+    _incPill('Yüzey', _baskinNplus(yuzSay, 'yuzey')) +
+    _incPill('Termin', _terminFmt(WIZ.yeni_termin));
+}
+function _incPill(lbl, val) {
+  return '<div class="inc-pill"><div class="pl">' + lbl + '</div><div class="pv">' + val + '</div></div>';
+}
+// 174-B: devreler kurali — baskin (en sik) + ⚠+N (N = farkli TUR sayisi; tooltip tur basina adet)
+function _baskinNplus(say, tip) {
+  var keys = Object.keys(say || {});
+  if (!keys.length) return '<span style="color:var(--txd);">—</span>';
+  keys.sort(function(a, b) { return say[b] - say[a]; });
+  var lbl = _olcuEtiket(keys[0], tip);
+  var n = keys.length - 1;
+  if (n <= 0) return esc(lbl);
+  var diger = keys.slice(1).map(function(k) { return _olcuEtiket(k, tip) + ' (' + say[k] + ')'; }).join(', ');
+  var tipAd = (tip === 'malzeme') ? 'malzeme' : 'yüzey';
+  return esc(lbl) + '<span class="nplus" title="' + n + ' farklı ' + tipAd + ' türü: ' + esc(diger) + '">+' + n + '</span>';
+}
+function _olcuEtiket(v, tip) {
+  if (typeof ARES_NORM === 'undefined' || !v) return v || '';
+  if (tip === 'malzeme') return (ARES_NORM.malzemeEtiket ? (ARES_NORM.malzemeEtiket(v) || v) : v);
+  return (ARES_NORM.yuzeyEtiket ? (ARES_NORM.yuzeyEtiket(v) || v) : v);
+}
+// 174-B: termin tarih formati (17 Tem). Parse edilemezse ham deger.
+function _terminFmt(t) {
+  if (!t) return '<span style="color:var(--txd);">—</span>';
+  var d = new Date(t);
+  if (isNaN(d.getTime())) return esc(String(t));
+  var ay = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()];
+  return d.getDate() + ' ' + ay;
+}
+// 174-B: ilerleme pill'leri — İŞLENİYOR (mavi) -> İŞLENEN (yesil+tik) + OKUNDU/ZAYIF/EKSİK (+FAZLA>0)
+function progPillsRender(oz) {
+  var ok = oz.okundu || 0, zy = oz.zayif || 0, ek = oz.eksik || 0, fz = oz.fazla || 0, run = oz.isleniyor || 0;
+  var prc = ok + zy + fz, tot = prc + run, html = '';
+  if (tot > 0) {
+    if (run > 0)
+      html += '<div class="inc-pp run"><div class="pl"><span class="inc-dot"></span> İşleniyor</div><div class="pv">' + prc + '<span style="font-size:10px;color:var(--txd);"> / ' + tot + '</span></div></div>';
+    else
+      html += '<div class="inc-pp done"><div class="pl"><span style="color:var(--gr);font-weight:700;">✓</span> İşlenen</div><div class="pv">' + tot + '<span style="font-size:10px;color:var(--txd);"> / ' + tot + '</span></div></div>';
+  }
+  html += '<div class="inc-pp ok"><div class="pl">Okundu</div><div class="pv">' + ok + '</div></div>';
+  html += '<div class="inc-pp zy"><div class="pl">Zayıf</div><div class="pv">' + zy + '</div></div>';
+  html += '<div class="inc-pp ek"><div class="pl">Eksik</div><div class="pv">' + ek + '</div></div>';
+  if (fz > 0) html += '<div class="inc-pp fz"><div class="pl">Fazla</div><div class="pv">' + fz + '</div></div>';
+  var el = document.getElementById('incProg'); if (el) el.innerHTML = html;
 }
 function statKart(ikon, emo, lbl, val) {
   return '<div class="stat-kart"><div class="stat-ikon ' + ikon + '">' + emo + '</div><div><div class="stat-lbl">' + lbl + '</div><div class="stat-val">' + val + '</div></div></div>';
