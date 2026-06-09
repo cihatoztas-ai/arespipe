@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-06-09T11:42:05.033Z",
-  "commit_sha": "6e98b92fb60904c63295b1eb89be785f395fe292",
+  "tarih": "2026-06-09T12:09:40.216Z",
+  "commit_sha": "4146bc92d416ac8c1c70057fd8d15cb4f291be73",
   "commit_ref": "main",
-  "workflow_run": 1081,
+  "workflow_run": 1082,
   "ozet": {
     "hata": 0,
-    "uyari": 102,
-    "taranan_dosya": 135,
-    "sorunlu_dosya": 5,
+    "uyari": 101,
+    "taranan_dosya": 133,
+    "sorunlu_dosya": 4,
     "durum": "sari"
   },
   "kurallar": {
@@ -28,20 +28,13 @@
     "G03_HAM_YUZEY": {
       "tip": "uyari",
       "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 2,
+      "sayi": 1,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
             1646
-          ]
-        },
-        {
-          "dosya": "devre_wizard.html",
-          "sayi": 1,
-          "satirlar": [
-            1487
           ]
         }
       ]
@@ -524,19 +517,6 @@
           "tip": "uyari",
           "satir": 2815,
           "mesaj": "tv('dv_dok_search_empty') kullanılıyor ama lang/tr.json'da yok"
-        }
-      ]
-    },
-    {
-      "dosya": "devre_wizard.html",
-      "hata_sayisi": 0,
-      "uyari_sayisi": 1,
-      "hatalar": [
-        {
-          "kod": "G03_HAM_YUZEY",
-          "tip": "uyari",
-          "satir": 1487,
-          "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
     },
