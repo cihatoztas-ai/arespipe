@@ -66,6 +66,9 @@
     .isl-cikti .o{ color:var(--ac); } .isl-cikti .m{ color:var(--txm); } .isl-cikti b{ font-weight:600; }
     .isl-akt{ display:flex; align-items:center; gap:7px; justify-content:flex-end; flex-wrap:wrap; }
     .isl-x{ background:transparent; border:none; color:var(--txd); font-size:17px; cursor:pointer; padding:4px 7px; border-radius:7px; line-height:1; } .isl-x:hover{ background:rgba(229,62,62,.10); color:var(--re); }
+    /* 172/ISL-BTN: per-device "İşleniyor" — mavi yerine beyaz, solunda yanıp sönen mavi nokta, kum saati yok */
+    .isl-isleniyor-btn{ display:inline-flex; align-items:center; gap:8px; background:#fff; color:#1a2433; border:1px solid var(--bor); font-family:'Barlow',sans-serif; font-weight:600; font-size:14px; padding:6px 12px; border-radius:8px; cursor:default; }
+    .isl-isleniyor-btn .nokta{ width:8px; height:8px; border-radius:50%; background:var(--ac); flex-shrink:0; animation:islBlink 1.1s ease-in-out infinite; }
     @media (max-width:760px){ .isl-satir{ grid-template-columns:1fr; gap:10px; } .isl-prog{ width:100%; } }
     @media (prefers-reduced-motion: reduce){ .isl-st.s-run .dot,.isl-prog .f::after,.isl-satir{ animation:none; transition:none; } }
 
@@ -2864,7 +2867,11 @@ async function islenenlerYukle() {
         '<div>' + durumHtml + '</div>' +
         '<div class="isl-cikti"><span class="o"><b>' + s.oneri + '</b> öneri</span><br><span class="m"><b>' + s.manuel + '</b> manuel</span></div>' +
         '<div class="isl-akt">' +
-          (s.acik > 0 ? '<button class="btn pri" style="font-size:14px;padding:6px 12px;" title="Bu devreyi öncelikli işle" onclick="islenenlerDrenajDevre(\'' + d.id + '\', this)">▶ İşle</button>' : '') +
+          (s.acik > 0
+            ? (d.id === WIZ._islDrenajDevreId
+                ? '<button class="isl-isleniyor-btn" disabled><span class="nokta"></span>İşleniyor</button>'
+                : '<button class="btn pri" style="font-size:14px;padding:6px 12px;" title="Bu devreyi öncelikli işle" onclick="islenenlerDrenajDevre(\'' + d.id + '\', this)">▶ İşle</button>')
+            : '') +
           '<button class="btn' + (hazir ? ' gr' : '') + '" style="font-size:14px;padding:6px 12px;" onclick="islenenlerIncele(\'' + d.id + '\')">' + (hazir ? 'İncele &amp; Onayla' : (s.acik > 0 ? 'İzle' : 'İncele')) + '</button>' +
           '<button class="isl-x" title="Taslağı iptal et" onclick="islenenlerIptal(\'' + d.id + '\', this)">×</button>' +
         '</div></div>';
@@ -2911,19 +2918,19 @@ async function islenenlerDrenajDevre(devreId, btn) {
   if (WIZ._islDrenaj) { toast('Zaten islem suruyor'); return; }
   if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.izometriDreneEt === 'function')) { toast('Drenaj modulu yuklenmedi'); return; }
   WIZ._islDrenaj = true;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ İşleniyor…'; }
+  WIZ._islDrenajDevreId = devreId;     // 172/ISL-BTN: render bu devreyi "İşleniyor" (beyaz + nokta) gösterir
+  await islenenlerYukle();             // tıklanan satır anında İşleniyor görünümüne geçsin
   try {
     var oz = await window.ARES_IZO_DRENAJ.izometriDreneEt({
       filtre: { devreId: devreId }, bucket: 'devre-belgeleri',
       onIlerleme: function (d) {
-        if (btn && d.faz === 'basliyor') btn.textContent = '⏳ ' + d.sira + '/' + d.toplam + '…';
         if (d.faz === 'bitti' && d.sira % 3 === 0) islenenlerYukle();   // 172/ISL-FIX: ilerlemeyi canlı izle
       }
     });
     if (oz && oz.islenen) toast(oz.islenen + ' is islendi (oneri ' + oz.oneri + ', manuel ' + oz.manuel + ', hata ' + oz.hata + ')');
     else toast('Bu devrede bekleyen is yok');
   } catch (e) { console.error('[v3] devre drenaj:', e); toast('Drenaj hatasi'); }
-  finally { WIZ._islDrenaj = false; await islenenlerYukle(); }
+  finally { WIZ._islDrenaj = false; WIZ._islDrenajDevreId = null; await islenenlerYukle(); }
 }
 async function islenenlerDrenaj() {
   if (WIZ._islDrenaj) return;
