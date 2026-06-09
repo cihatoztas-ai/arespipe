@@ -272,14 +272,15 @@
       <h2 class="card-t">Belgeler <span style="font-size:13px;color:var(--txd);font-family:Barlow,sans-serif;font-weight:400;">— Excel kabuğu zorunlu (MK-125.3)</span></h2>
       <div class="l3-row"><span>L3 — görüntü-PDF AI okuma</span><span class="hint">kapalıyken sıfır maliyet (yalnız metin-PDF); açıkken taranan PDF'ler de okunur (~$ batch)</span><span class="l3-tag"><button class="btn-sm" id="l3Btn" style="color:var(--txd);" onclick="l3Toggle()">Kapalı</button></span></div>
 
-      <div id="dropZone" class="drop" onclick="document.getElementById('folderInput').click()">
-        <div class="big">📂</div>Klasörü buraya sürükle-bırak veya tıkla<br>
+      <!-- 171/PICKER-FIX: dropZone tiklamayla pencere ACMAZ; iki net buton acar (cakisma onlendi) -->
+      <div id="dropZone" class="drop">
+        <div class="big">📂</div>Klasörü ya da dosyaları buraya <b>sürükle-bırak</b><br>
         <span style="font-size:13px;">izometri PDF'leri + IFS/BOM Excel'i içeren devre klasörü</span>
         <input type="file" id="fileInput" multiple style="display:none">
         <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
         <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
-          <button class="btn-outline" onclick="document.getElementById('folderInput').click()">📁 Klasör Seç</button>
-          <button class="btn-outline" onclick="document.getElementById('fileInput').click()">📄 Dosya Seç</button>
+          <button type="button" class="btn-outline" onclick="event.stopPropagation();document.getElementById('folderInput').click()">📁 Klasör Seç</button>
+          <button type="button" class="btn-outline" onclick="event.stopPropagation();document.getElementById('fileInput').click()">📄 Dosya Seç</button>
         </div>
         <!-- 166: "Bu siteye N dosya yüklensin mi?" penceresi Chrome'un güvenlik onayıdır (webkitdirectory) —
              hiçbir site özelleştiremez/bastıramaz. Sürükle-bırak yolunda bu pencere ÇIKMAZ. -->
