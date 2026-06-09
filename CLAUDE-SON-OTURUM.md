@@ -1,51 +1,50 @@
-# CLAUDE-SON-OTURUM.md — Oturum 165 özeti
+# CLAUDE-SON-OTURUM.md — 171 (2026-06-09)
 
-## Tek cümle
-165 "kanıt zinciri" oturumuydu: 164'ten devreden 42.2/3.56 vakası parse_sonuc dökümüyle üç
-köke ayrıştırıldı (emperyal satırda boyut alanı yokluğu + dn alan-regex'inin kaynak satırına
-çapası + asmeFallbackDoldur'un çift körlüğü — helper malzeme-kör, DB yolu schedule-kör) ve
-iki commit'le kapatılıp drenajda 60.3/2.77/SCH 10S ile mühürlendi; Cihat'ın verdiği
-tersan.zip ile atölye modeli (MK-162.1) ilk kez uçtan uca koştu (15/15 L2, bilezik_detay'ın
-7 ham + 3 SESSİZ satırı kurtarıldı, E100-817-005 ilk kez söküldü, araç scripts/atolye-kosum.mjs
-olarak kalıcılaştı), dnBul ters eşlemesiyle DN basmayan çizimler çözüldü ve açılış teyit
-üçlüsü (izometri-kaynak format_id'li ✓ · OPR terfi ✓ · G2a kart eşiği ✓) mühürlendi.
+## NE YAPTIK
+Devre yukleme ekranini (devre_wizard_v3.html Adim 1 + belge yukleme) bastan asagi elden gecirdik.
+Cihat'in derdi: "ust form kaba, termin opsiyonelde kel alaka, picker bug'li, animasyon/popup yok".
+Once 3 mockup turu (v1->v2->v3) ile tasarimi netlestirdik (canli koda sadik: alistirma checkbox kalir,
+malzeme/yuzey gercek secenekler, tersane/proje ayri, opsiyonel kalkar). Sonra 8 kucuk patch ile canliya
+indirdik. KRITIK: sayfayi YARIM BIRAKMADIK — Cihat "sonra duzeltiriz deyip biriken borc var, korkutuyor"
+dedi; biz de bu sayfayi fonksiyon+gorsel TAM bitirerek o endiseye dogrudan yanit verdik.
 
-## Kanıt zinciri (yöntem: parse_sonuc jsonb_pretty + repo klon kod okuma + mekanik node testleri + drenaj SQL + EKRAN)
-1. **Vaka dökümü:** dn=32 · cap 42.2 · et 3.56 · `dolduruldu: {et_mm:"ares_boru (SCH 40)",
-   cap_mm:"ares_boru"}` · malzeme_listesi 3 TEMİZ satır ("satirlar=0" 164 yanılgısı).
-   et=3.56 imzası regex'ten gelemezdi (tek-ondalık yakalama) → fallback'i işaret etti.
-2. **Fix-1 + repro:** olcuZenginlestir boyutsuz emperyal satırı atlıyordu → NPS sentezi
-   (yerel boyutStr, m.boyut kirletilmez) + spoolOlcuTuret dn'i HEP dominant borudan (kenar
-   §5). 9/9 test; drenaj-1 cap/dn düzeldi AMA et=1.65 "boru_olculer (SCH SCH5)".
-3. **Çift körlük:** izometri-oku içi boruOlcuBul okundu (MK-49.1 — yalnız okuma): helper
-   `malzeme_en_kodu||'karbon'` → karbon tablosunda 10S yok → fail; DB sorgusunda
-   schedule_kod filtresi YOK + limit=1 → SCH5. → Fix-2: satır-kaynaklı asme et spool'a,
-   etiket fallback'in birebir eşi (MK-164.1 ruhu). 13/13; drenaj-2: 2.77/2.77 ✓; UI bindirme
-   uyarısında et/çap kalemi yok ✓.
-4. **Atölye:** tersan.zip 15 PDF gerçek hat koşumu → bilezik 'Detay A' dökümünde 'Dış'
-   satırlarının SESSİZ düştüğü görüldü (ham bile değil — yalnız set taramasıyla yakalanır);
-   yeni tip 10/10 + tetik ayrımı; set sonrası ham=0. dnBul: 10 birim + 3 zincir; AT110-804
-   gerçek PDF'te dn=50.
-5. **Teyitler (Cihat ekranı + SQL):** taslak_duzeltmeleri → izometri+format_id DOLU ✓;
-   spool_malzemeleri OPR satırı ✓ (kalite fallback'i kod okumasıyla regresyon DEĞİL diye
-   ayrıştırıldı: dz.kalite girilmemişti); uyarilar kartı eşik davranışı doğru ✓ — bonus:
-   A-001211/12 fix'in ürün-yüzü kanıtı olarak listede.
+## ANA KAZANIMLAR (hepsi canli, TEK dosya: devre_wizard_v3.html)
+1. MK-171.1 — Fazla satiri 14-kolon hizalama. Cetelede "kabukta yok/Fazla" 13 hucre uretip kayma +
+   dosya adi 2x basiyordu. # + colspan10 + DURUM + IZOMETRI(tek dosya adi) + ISLEM(Eslestir) = 14.
+   Montaj satiri (colspan11) zaten saglam, dokunulmadi.
+2. MK-171.2 — Hata bandina "Hepsini yeniden dene". Bulgu: izo drenaj IS-SECEN filtresi sadece
+   durum=bekliyor ceker (kuyruk-isle-izometri.js:209); hata satiri orada elenir. Cozum: o devrenin hata
+   satirlarini bekliyor'a cevir (+hata_mesaji:null) + mevcut islenenlerDrenajDevre cagir. deneme_sayisi'ye
+   dokunma (izo drenajinda MAX guard yok). Yeni endpoint yok. CANLI TEST EDILEMEDI (durum=hata satiri yoktu).
+3. MK-171.3 — Picker cakisma fix. dropZone onclick="folderInput.click()" KALDIR + butonlara type=button
+   + stopPropagation. "Dosya Sec -> klasor penceresi -> kapat -> dosya penceresi" cift-click cakismasi cozuldu.
+4. MK-171.4 — Termin Devre kartina tasindi; "Opsiyonel detaylar (termin)" details karti kaldirildi.
+   termin zaten INSERT'te (termin: WIZ.yeni_termin), listener ID-bazli -> state/INSERT degismedi.
+   NOT ALANI IPTAL: devreler tablosunda not kolonu YOK (yuzey_aciklama var ama o farkli). Uydurmusuz.
+5. MK-171.5 — Adim 1 gorsel restyle. SALT CSS, SCOPED [data-panel="1"]. Etiket uppercase Barlow Condensed,
+   kart basligi ayrac cizgili, input 9px+odak halkasi. Adim 2 (.fld/.card-t paylasilan) ETKILENMEZ.
+6. MK-171.6 — Yukleme tarama animasyonu. Mockup efekti canli agaca bagli (.ftree class'lari AYNI cikti).
+   Scan cizgisi + .fitem'ler GERCEK ilerlemeye (biten/toplam) gore kademeli .okundu. SOL CIZGI YOK (Cihat).
+7. MK-171.7 — Karar ekrani modal. #sonucKuti ortada (backdrop+blur). wizardSifirla zaten sayfa yeniler.
+8. MK-171.8 — Progress agac USTUNE (mockup duzeni) + popup mockup icerigi: ✓ + baslik + 4 ozet kutu
+   (belge/izometri/BOM/diger gercek sayilar) + <small> butonlar.
 
-## Süreç dersleri (165)
-- **MK-165.4:** cevap_full kuyruk alanı taşımaz; sha temizliği original_log_id üzerinden;
-  Supabase "Success. No rows returned" UPDATE'te de gelir → her UPDATE etkisi SELECT'le.
-  Drenaj FİLTRELİ: reset edilen satır, devresi açılmadan işlenmez (başka devre yüklemek
-  yeni satır yaratır, eskiyi akıtmaz).
-- **MK-165.6:** && zinciri "nothing to commit"te kırılır, sonraki commit sessiz kaybolur →
-  commit'ler ayrı bloklar.
-- Hipotez disiplini işledi: "ham-sayan kabul" hipotezim dökümle ÇÜRÜDÜ ve düşürüldü; hüküm
-  yalnız örnek-teyitli anahtarlardan (MK-85.3) verildi.
-- UI yardımcı metni ciddiye al: kullanıcının "taslakta spool'a girilmiyor" itirazı doğruydu —
-  doğru adres devre_detay önizlemesi değil wizard ?devre_id= akışıydı (köprü eksiği MK-165.7).
+## OZ-IHLAL / TUZAKLAR (171)
+- Mockup'ta alistirmayi SELECT yapmistim; canlida CHECKBOX'mis + Cihat "bozmayalim" demisti -> v3'te
+  checkbox'a donuldu. "Bos->ezme" mantigi zaten 166'da kurulu (doküman oncelikli yedek deger), yeni guard yazilmadi.
+- "Not alani" 2 mockup boyunca durdu; information_schema sorgusu kolonun OLMADIGINI gosterdi -> iptal. (MK-85.3 ise yaradi.)
+- wizardSifirla anchor'i ilk patch'te cok-satir varsayildi -> abort-on-mismatch dosyayi korudu; grep'le
+  tek-satir tanim bulundu (location.href ile sayfa yeniler), anchor cikarildi.
+- Push surekli reddedildi (CI botu) -> Cihat "gozum korktu" dedi. Gercek sorun git akisiydi, kod degil ->
+  gp/gpc alias kuruldu, bitti.
 
-## Dosyalar/commit'ler (165)
-`5edbba1` (l2-parser: nps sentezi + dn dominant) · `1596481` (l2-parser: asme et yazımı) ·
-`af90f85` (format-paketleri: bilezik_detay + scripts/atolye-kosum.mjs YENİ) · `f86ff81`
-(ares-asme: dnBul + l2-parser: dn türetimi). DB: migration yok; ai_api_log 2 sha NULL.
-Doc paketi: BRIEFING + üçlü + KARARLAR MK-165.1..7 + 4 yol-haritası/atölye eki (kesintisiz).
-12/12 ✓ · izometri-oku ✓ (dokunulmadı).
+## COMMIT'LER
+9d2054f (fazla 14-kolon) · bb4fdf9 (retry) · ceca372 (picker) · 3668a14 (termin) · 351fe89 (gorsel) ·
+03d6c74 (animasyon) · 2279d3d (modal) · b23192a (progress+popup). Final HEAD b23192a. 12/12, migration yok,
+izometri-oku dokunulmadi.
+
+## KAPANIS BORCU (172'de HATIRLA)
+- Hata bandi retry'i GERCEK durum=hata satiriyla canli dogrula (bu oturum yoktu).
+- docs/UI-BORC.md BOS iskelet — Cihat dolduracak; tarama Claude Code oturumu ister (bu sohbetten olmaz).
+- KARARLAR.md (kok, pakette degil): MK-171.1..8 + gecikmis MK-166/167/170.
+- Eski devir: spool-seviyesi hata rozeti · kuyruk takili · gece cron gercek testi · W-2.9 · W-2.5 · Y200.
