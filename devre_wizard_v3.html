@@ -199,10 +199,9 @@
     #spoolBody.acilis tr:nth-child(1){animation-delay:0ms} #spoolBody.acilis tr:nth-child(2){animation-delay:55ms} #spoolBody.acilis tr:nth-child(3){animation-delay:110ms} #spoolBody.acilis tr:nth-child(4){animation-delay:165ms} #spoolBody.acilis tr:nth-child(5){animation-delay:220ms} #spoolBody.acilis tr:nth-child(6){animation-delay:275ms} #spoolBody.acilis tr:nth-child(7){animation-delay:330ms} #spoolBody.acilis tr:nth-child(8){animation-delay:385ms} #spoolBody.acilis tr:nth-child(9){animation-delay:440ms} #spoolBody.acilis tr:nth-child(10){animation-delay:495ms} #spoolBody.acilis tr:nth-child(11){animation-delay:550ms} #spoolBody.acilis tr:nth-child(12){animation-delay:605ms} #spoolBody.acilis tr:nth-child(13){animation-delay:660ms} #spoolBody.acilis tr:nth-child(14){animation-delay:715ms} #spoolBody.acilis tr:nth-child(15){animation-delay:770ms} #spoolBody.acilis tr:nth-child(16){animation-delay:825ms} #spoolBody.acilis tr:nth-child(17){animation-delay:880ms} #spoolBody.acilis tr:nth-child(18){animation-delay:935ms} #spoolBody.acilis tr:nth-child(19){animation-delay:990ms} #spoolBody.acilis tr:nth-child(20){animation-delay:1045ms} #spoolBody.acilis tr:nth-child(n+21){animation-delay:1045ms}
     .inc-scan{ position:absolute; left:0; right:0; top:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
     .inc-scan.on{ display:block; }
-    .inc-scan .stk{ position:absolute; left:0; right:0; will-change:transform,opacity; }
-    .inc-scan .ln{ position:absolute; left:0; right:0; top:0; height:100%; }
-    .inc-scan .wk{ position:absolute; left:0; right:0; top:-10px; height:22px; }
-    @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr,.inc-scan .stk{ animation:none; transition:none; } }
+    .inc-scan.on .ai-scan{ display:block; }
+    .inc-scan .ai-scan{ animation-duration:3s; }
+    @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr,.inc-scan .ai-scan,.inc-scan .ai-scan .core{ animation:none; transition:none; } }
     .marka{ font-weight:700; color:var(--ac); } .kalite{ color:var(--ac); font-weight:600; }
     .rev-chip{ font-size:12px; font-weight:700; padding:1px 5px; border-radius:4px; background:rgba(217,119,6,.12); color:var(--warn); }
     .cap{ color:var(--txm); } .et{ color:var(--txd); } .agir{ color:var(--txm); }
@@ -475,7 +474,7 @@
           <thead><tr><th style="width:30px;">#</th><th>Marka</th><th>Rev</th><th>Spool ID</th><th>Çap</th><th>Et</th><th>Ağırlık</th><th>Malzeme</th><th>Kalite</th><th>Yüzey</th><th>Alıştırma</th><th>Durum</th><th>İzometri</th><th>İşlem</th></tr></thead>
           <tbody id="spoolBody"><tr><td colspan="14" style="text-align:center;color:var(--txd);padding:20px;">Yükleniyor…</td></tr></tbody>
         </table></div>
-        <div class="inc-scan" id="incScan"></div>
+        <div class="inc-scan" id="incScan"><div class="ai-scan"><div class="iz"></div><div class="core"></div></div></div>
       </div>
       <div class="onay-bar">
         <span class="lock-note" style="color:var(--txm);">Eksik spool'lar silinmez; bilgilerini buradan tamamlayabilir veya eksik bırakabilirsin.</span>
@@ -1391,41 +1390,23 @@ function _spoolIskelet() {
   }
   b.innerHTML = r;
 }
-var _incScanT = null, _incPi = 0;
-var _incPal = [ {c:'45,142,255',o:0.50,h:2}, {c:'22,163,110',o:0.32,h:1}, {c:'45,142,255',o:0.30,h:1}, {c:'22,163,110',o:0.55,h:2}, {c:'45,142,255',o:0.40,h:1} ];
-function _incStreakSal() {
-  var lay = document.getElementById('incScan'); if (!lay) return;
-  var kart = lay.parentNode; if (!kart) return;
-  var kr = kart.getBoundingClientRect();
-  if (kr.height < 60) return;
-  lay.style.height = kr.height + 'px';                 // katman = kart yuksekligi (height:0 fix)
-  var p = _incPal[_incPi++ % _incPal.length];
-  var s = document.createElement('div'); s.className = 'stk'; s.style.height = p.h + 'px';
-  s.style.top = '0px';
-  s.innerHTML = '<div class="wk" style="background:linear-gradient(180deg,transparent,rgba(' + p.c + ',' + (p.o * 0.13) + '),transparent);"></div>'
-    + '<div class="ln" style="background:linear-gradient(90deg,transparent,rgba(' + p.c + ',' + p.o + ') 50%,transparent);"></div>';
-  s.style.opacity = '0'; s.style.transform = 'translateY(-12px)';
-  lay.appendChild(s);
-  // 174-D: SABIT HIZ ~1.4px/ms -> bastan sona tam akis; uzun tabloda da puruzsuz, takilma yok
-  var dist = kr.height + 24;
-  var dur = Math.max(2800, Math.round(dist / 1.4));
-  requestAnimationFrame(function () {
-    s.style.transition = 'transform ' + dur + 'ms linear, opacity 300ms ease';
-    s.style.transform = 'translateY(' + dist + 'px)'; s.style.opacity = '1';
-  });
-  setTimeout(function () { s.style.opacity = '0'; }, Math.max(300, dur - 340));
-  setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, dur + 220);
+var _incScanT = null;
+// 174-E: tarama = klasor ai-scan AYNEN. #incScan yuksekligi = kart yuksekligi (ai-scan top:0->100% tablo sonu).
+function _incScanYukseklik() {
+  var lay = document.getElementById('incScan'); if (!lay || !lay.parentNode) return;
+  var h = lay.parentNode.getBoundingClientRect().height;
+  if (h > 60) lay.style.height = h + 'px';
 }
 function _incScanBasla() {
   var lay = document.getElementById('incScan'); if (!lay) return;
+  _incScanYukseklik();
   lay.classList.add('on');
   if (_incScanT) return;
-  _incStreakSal();
-  _incScanT = setInterval(_incStreakSal, 1500);   // ~1.5sn'de bir yeni cizgi (cogu havada, surekli sweep)
+  _incScanT = setInterval(_incScanYukseklik, 1200);   // tablo buyurse 100% takip etsin
 }
 function _incScanDur() {
   if (_incScanT) { clearInterval(_incScanT); _incScanT = null; }
-  var lay = document.getElementById('incScan'); if (lay) { lay.classList.remove('on'); lay.innerHTML = ''; }
+  var lay = document.getElementById('incScan'); if (lay) lay.classList.remove('on');
 }
 
 function renderInceleme(j) {
