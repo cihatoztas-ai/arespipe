@@ -3289,17 +3289,28 @@ async function onayEt() {
     //   uyarı (toast) verilir; manuel /api/eslestirme-backfill çağrısıyla telafi edilebilir.
     _onayFazGoster('İzometri eşleştiriliyor…', 96);
     var izoEslesen = 0, izoHata = null;
+    // 176/MK-176.5: backfill artik SAYFALI (batch + budget, MK-176.2/4). Tek fetch yerine CLIENT-LOOP:
+    //   bitti=true olana dek after_id ilerleterek cagrilir (MK-113/A: sunucu-sunucu YOK). Cok-belgeli
+    //   devrede de timeout OLMAZ -> izoHata=null kalir -> asagidaki auto-close calisir. Eski tek-fetch
+    //   buyuk devrede (orn. 356 PDF) timeout edip izoHata set ediyordu -> auto-close atlaniyordu = 14
+    //   devrenin kirli kalmasinin koku (MK-176.4 teshisi). Herhangi tur hata/bos -> izoHata set, dur.
     try {
-      var bf = await fetch('/api/eslestirme-backfill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ devre_id: WIZ.devre_id })
-      });
-      var bfJson = await bf.json();
-      if (bfJson && bfJson.ok) {
-        izoEslesen = bfJson.toplam_yukseltilen || 0;
-      } else {
-        izoHata = (bfJson && bfJson.hata) || ('HTTP ' + bf.status);
+      var _afterId = null, _tur = 0;
+      while (_tur < 60) {   // guvenlik tavani: 60 tur x 40 = 2400 kayit (her devreden fazlasiyla buyuk)
+        _tur++;
+        var bf = await fetch('/api/eslestirme-backfill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ devre_id: WIZ.devre_id, after_id: _afterId })
+        });
+        if (!bf.ok) { izoHata = 'HTTP ' + bf.status; break; }
+        var bfJson = await bf.json();
+        if (!bfJson || !bfJson.ok) { izoHata = (bfJson && bfJson.hata) || 'gecersiz yanit'; break; }
+        izoEslesen += bfJson.toplam_yukseltilen || 0;
+        if (bfJson.bitti) break;            // tum kayitlar islendi -> dur
+        if (!bfJson.son_id) break;          // ilerleme yok -> sonsuz dongu korumasi
+        _afterId = bfJson.son_id;
+        _onayFazGoster('İzometri eşleştiriliyor… (' + izoEslesen + ')', 96);
       }
     } catch (eb) {
       izoHata = eb.message;
