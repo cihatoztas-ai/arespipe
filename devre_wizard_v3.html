@@ -168,6 +168,20 @@
     .inc-hero-sub{ font-size:14px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--warn); margin-top:5px; }
     .inc-devre-adi{ font-size:22px; font-weight:700; color:var(--tx); margin:2px 0 10px; line-height:1.25; letter-spacing:.2px; }
     .inc-hero-tag{ font-size:16px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--warn); }
+    /* 174-IS2: terfi modal durum + AI tarama kutusu + minimal cizgi */
+    #onayBaslik .hdot{ width:9px; height:9px; border-radius:50%; background:var(--ac); display:inline-block; margin-right:8px; vertical-align:1px; animation:islBlink 1s infinite; }
+    #onayBaslik .htick{ display:inline-flex; width:18px; height:18px; border-radius:50%; background:var(--gr); color:#fff; align-items:center; justify-content:center; font-size:12px; margin-right:8px; vertical-align:-4px; }
+    .onay-scanbox{ position:relative; overflow:hidden; border:1px solid var(--bor); border-radius:10px; background:var(--sur2); height:78px; margin:14px 0 0; }
+    .onay-scanbox .o-rows{ position:absolute; inset:0; padding:9px 12px; display:flex; flex-direction:column; gap:7px; }
+    .onay-scanbox .o-rows i{ display:block; height:7px; border-radius:3px; background:var(--bor); transition:background .4s; }
+    .onay-scanbox .o-rows i:nth-child(1){ width:62%; } .onay-scanbox .o-rows i:nth-child(2){ width:80%; }
+    .onay-scanbox .o-rows i:nth-child(3){ width:54%; } .onay-scanbox .o-rows i:nth-child(4){ width:72%; }
+    #onayProg .ai-scan{ display:block; }
+    .onay-scanbox.bitti .ai-scan{ display:none !important; }
+    .onay-scanbox.bitti .o-rows i{ background:rgba(22,163,110,.28); }
+    .onay-ln{ height:4px; background:var(--sur2); border-radius:3px; overflow:hidden; margin:10px 0 0; }
+    .onay-ln > span{ display:block; height:100%; background:var(--ac); border-radius:3px; width:0; transition:width .35s ease; }
+    .onay-faz{ font-size:13px; color:var(--txm); margin-top:8px; min-height:18px; }
     .inc-pills{ display:flex; gap:6px; flex:1; flex-wrap:wrap; min-width:0; }
     .inc-pill{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; flex-direction:column; gap:3px; }
     .inc-pill .pl{ font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -514,7 +528,7 @@
 <!-- Düzelt / okunan değerleri gör popup (FAZ-1: salt okuma + çapa stub) -->
 <div id="duzeltOverlay" class="overlay hide" onclick="if(event.target===this)duzeltKapat()"><div class="pop" id="duzeltPop"><div class="dp-head"><h3 id="dpTitle">—</h3><button class="dp-x" onclick="duzeltKapat()">✕</button></div><div class="dp-body" id="dpBody"></div></div></div>
 <!-- Onay modalı -->
-<div id="onayOverlay" class="overlay hide" onclick="if(event.target===this)onayKapat()"><div class="pop" style="width:480px;"><div class="dp-head"><h3>🚀 Devreyi canlıya aktar</h3><button class="dp-x" onclick="onayKapat()">✕</button></div><div class="dp-body" id="onayBody"></div></div></div>
+<div id="onayOverlay" class="overlay hide" onclick="if(event.target===this)onayKapat()"><div class="pop" style="width:480px;"><div class="dp-head"><h3 id="onayBaslik">Devreyi canlıya aktar</h3><button class="dp-x" onclick="onayKapat()">✕</button></div><div class="dp-body" id="onayBody"></div></div></div>
 <!-- 169/A1: K2 elle eslestirme popup (fazla PDF -> Excel kabuk spool) -->
 <div id="k2Overlay" class="overlay hide" onclick="if(event.target===this)k2Kapat()"><div class="pop" style="width:520px;"><div class="dp-head"><h3>🔗 PDF'i Excel spool'una eşleştir</h3><button class="dp-x" onclick="k2Kapat()">✕</button></div><div class="dp-body" id="k2Body"></div></div></div>
 <div id="toast" class="toast"></div>
@@ -3154,12 +3168,17 @@ function onayAc() {
     return;
   }
   var sorunlu = (oz.eksik || 0) + (fz.length || 0);
+  var progHtml = '<div id="onayProg" class="hide">'
+    + '<div class="onay-scanbox" id="onayScan"><div class="o-rows"><i></i><i></i><i></i><i></i></div><div class="ai-scan"><div class="iz"></div><div class="core"></div></div></div>'
+    + '<div class="onay-ln"><span id="onayLn"></span></div>'
+    + '<div class="onay-faz" id="onayFaz"></div></div>';
   var b = '<p style="font-size:15px;margin:0 0 4px;"><b>' + esc(WIZ.devre_no) + '</b> Devreler listesine (canlıya) aktarılacak.</p>' +
     '<p class="sub" style="margin:0 0 4px;">' + kabuk + ' spool için spool ID + QR üretilecek, iş emri açılacak.</p>';
   if (oz.eksik) b += '<div class="onay-warn">⚠ <b>' + oz.eksik + ' spool eksik bilgiyle aktarılıyor</b> (izometri yok). Sonradan tamamlanabilir — listede gözden kaçmasın.</div>';
   if (fz.length) b += '<div class="onay-warn">⚠ <b>' + fz.length + ' izometri eşleşmedi</b> — Excel referans alınır; bu çizimler terfide bağlanmaz. Excel\'i kontrol etmeniz önerilir.</div>';
   if (!sorunlu) {
     b += '<div class="onay-ok">✓ Tüm bilgiler tam — temiz aktarım.</div>';
+    b += progHtml;
     b += '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Vazgeç</button>'
       + '<button class="btn pri" id="btnOnayEt" onclick="onayEt()">Onayla ve Aktar</button></div>';
   } else {
@@ -3168,6 +3187,7 @@ function onayAc() {
       + '<input type="checkbox" id="onayKabul" style="width:16px;height:16px;accent-color:var(--re);cursor:pointer;" '
       + 'onchange="var bb=document.getElementById(\'btnOnayEt\'); if(bb)bb.disabled=!this.checked;">'
       + '<span>' + sorunlu + ' spool/çizim sorunlu olduğunu anladım, yine de terfi etmek istiyorum.</span></label>';
+    b += progHtml;
     b += '<div class="actions"><button class="btn ghost" onclick="onayKapat()">Vazgeç</button>'
       + '<button class="btn" onclick="onayKapat();k3ExcelKontrol()" title="Taslağı iptal edip Excel düzeltmesi sonrası yeniden yükle">Excel\'i kontrol et</button>'
       + '<button class="btn pri" id="btnOnayEt" disabled onclick="onayEt()">Yine de Onayla ve Aktar</button></div>';
@@ -3177,9 +3197,28 @@ function onayAc() {
 }
 function onayKapat() { document.getElementById('onayOverlay').classList.add('hide'); }
 
+// 174-IS2: terfi modal durum/faz yardimcilari
+function _onayBaslikDurum(mod) {
+  var h = document.getElementById('onayBaslik'); if (!h) return;
+  if (mod === 'isleniyor') h.innerHTML = '<span class="hdot"></span>Devreyi canlıya aktarılıyor';
+  else if (mod === 'bitti') h.innerHTML = '<span class="htick">✓</span>Devre canlıya aktarıldı';
+  else h.textContent = 'Devreyi canlıya aktar';
+}
+function _onayFazGoster(txt, pct) {
+  var f = document.getElementById('onayFaz'); if (f) { f.style.display = ''; f.textContent = txt; }
+  var l = document.getElementById('onayLn'); if (l) l.style.width = pct + '%';
+}
+
 async function onayEt() {
   var btn = document.getElementById('btnOnayEt');
-  if (btn) { btn.disabled = true; btn.textContent = 'Aktarılıyor…'; }
+  // 174-IS2: ilerleme modu — baslik durum + scanbox + faz; tum aksiyon butonlari pasif
+  var _aktBtnlar = document.querySelectorAll('#onayBody .actions .btn');
+  _aktBtnlar.forEach(function (b) { b.disabled = true; });
+  if (btn) btn.textContent = 'Aktarılıyor…';
+  _onayBaslikDurum('isleniyor');
+  var _pg = document.getElementById('onayProg'); if (_pg) _pg.classList.remove('hide');
+  var _sbx = document.getElementById('onayScan'); if (_sbx) _sbx.classList.remove('bitti');
+  _onayFazGoster('Spool ID + QR üretiliyor…', 55);
   try {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     // Kanonik tam BOM modeli (devre_detay ile aynı) — kabukTuret DEĞİL (KORUMA-1)
@@ -3210,6 +3249,7 @@ async function onayEt() {
       kalemDuzeltmeler: WIZ._kalemDuzelt || null
     });
     if (!r.ok) throw new Error(r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || '')));
+    _onayFazGoster('İş emri açılıyor…', 78);
     // Terfi tamam → numara üret + taslak 'aktif' + özet senkron (DB-truth)
     // 159: is_emri_no TERFİDE üretilir. Eski dönem taslakları (numara taslakta üretilmişti)
     //   mevcut numarasını KORUR — ekstra yakım yok. eq('durum','taslak') guard'ı çift terfide
@@ -3228,11 +3268,13 @@ async function onayEt() {
       .eq('id', WIZ.devre_id).eq('tenant_id', tid).eq('durum', 'taslak').select('id');
     if (_up.error) throw _up.error;
     if (!_up.data || !_up.data.length) console.warn('[v3] terfi update 0 satır — devre zaten aktif olabilir; numara kullanılmadı:', _isEmri);
+    _onayFazGoster('Özet senkronlanıyor…', 90);
     if (r.eklenen > 0) await _devreOzetSenkron(supa, tid, WIZ.devre_id);
     // 129/MK-127.4: terfi sonrası izometri parse_sonuc'undan kanonik eslestir() re-eşle
     //   modunda çağrılır (PDF/AI yok, $0). Eski "terfi sonrası izometri spool'a bağlanmıyor"
     //   boşluğu kapanır. Best-effort: backfill hatası terfi'yi geri almaz, sadece kullanıcıya
     //   uyarı (toast) verilir; manuel /api/eslestirme-backfill çağrısıyla telafi edilebilir.
+    _onayFazGoster('İzometri eşleştiriliyor…', 96);
     var izoEslesen = 0, izoHata = null;
     try {
       var bf = await fetch('/api/eslestirme-backfill', {
@@ -3274,15 +3316,24 @@ async function onayEt() {
         }
       } catch (ek) { console.warn('[v3] terfi öneri kapanışı:', ek); }
     }
-    onayKapat();
+    // 174-IS2: modal'i hemen kapatma — bitti durumunu goster, sonra yonlen
+    _onayBaslikDurum('bitti');
+    _onayFazGoster('', 100);
+    var _sb2 = document.getElementById('onayScan'); if (_sb2) _sb2.classList.add('bitti');
+    var _fz2 = document.getElementById('onayFaz'); if (_fz2) _fz2.style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = 'Devre detayına git'; btn.onclick = function () { location.href = 'devre_detay.html?id=' + WIZ.devre_id; }; }
     var msg = '✓ Devre canlıya aktarıldı — ' + (r.eklenen || 0) + ' spool ID + QR üretildi';
     if (izoEslesen > 0) msg += ' + ' + izoEslesen + ' izometri eşleşmesi';
     if (izoKapanan > 0) msg += ' · ' + izoKapanan + ' öneri otomatik kapandı';
     if (izoHata) msg += ' (izometri eşleşmesi yapılamadı: ' + izoHata + ' — devre detaydan tekrar deneyin)';
     toast(msg);
-    setTimeout(function(){ location.href = 'devre_detay.html?id=' + WIZ.devre_id; }, izoHata ? 2500 : 1000);
+    setTimeout(function(){ location.href = 'devre_detay.html?id=' + WIZ.devre_id; }, izoHata ? 3000 : 1500);
   } catch (e) {
     console.error('[v3] terfi:', e);
+    // 174-IS2: hata — ilerleme modunu geri al, butonlar tekrar aktif
+    _onayBaslikDurum(null);
+    var _pgE = document.getElementById('onayProg'); if (_pgE) _pgE.classList.add('hide');
+    var _bE = document.querySelectorAll('#onayBody .actions .btn'); _bE.forEach(function (b) { b.disabled = false; });
     if (btn) { btn.disabled = false; btn.textContent = 'Onayla ve Aktar'; }
     var body = document.getElementById('onayBody');
     var p = document.createElement('div'); p.className = 'onay-warn'; p.textContent = '✗ ' + hataMesajiTr(e) + ' Tekrar deneyebilirsiniz.';
