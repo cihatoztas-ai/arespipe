@@ -305,6 +305,20 @@ export default async function handler(req, res) {
       if ((s.et  == null || s.et  === '') && dal && dal.et_mm  != null) s.et  = dal.et_mm;
       // bindir'in kabuk_bos_dolduruldu kuralıyla uyumlu: kabuk yüzeyi boşsa PDF yüzeyi gösterilir
       if ((s.yuzeyHam == null || s.yuzeyHam === '') && dal && dal.yuzey) s.yuzeyHam = dal.yuzey;
+      // 174 (Cihat): kabuk KALİTE boşsa izometri parse'tan baskın kalite göster. Excel BOM'da ayrı
+      //   kalite kolonu yok (kalite malzeme metnine gömülü → grupla '—' üretir); PDF/izometri
+      //   malzeme_listesi kalite taşır. cap/et/yuzey boşluk-doldurma deseninin AYNISI ("okunmamış
+      //   hissi" biter). Terfide aynı değer yazılsın → Faz-1b (aktar birlesik overlay).
+      if ((s.kalite == null || s.kalite === '') && dal) {
+        let _pk = dal.kalite || null;
+        if (!_pk && Array.isArray(dal.malzeme_listesi)) {
+          const _kc = {};
+          for (const _r of dal.malzeme_listesi) { if (_r && _r.kalite) _kc[_r.kalite] = (_kc[_r.kalite] || 0) + 1; }
+          const _kk = Object.keys(_kc);
+          if (_kk.length) _pk = _kk.sort((a, b) => _kc[b] - _kc[a])[0];
+        }
+        if (_pk) { s.kalite = _pk; s.kalite_kaynak = 'izometri'; }
+      }
     }
     for (const f of (sonuc.fazla || [])) { if (f.dosya_adi) f.is_id = isIdHarita.get(f.dosya_adi) || null; }
 
