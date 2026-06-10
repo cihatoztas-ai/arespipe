@@ -2662,7 +2662,7 @@ function duzeltAc(i) {
   }
   b += '<div class="dp-sec">Okunan değerler (önizleme)</div>';
   b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
-  b += dsatir('malzeme', 'xl') + dsatir('kalite', 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
+  b += dsatir('malzeme', 'xl') + dsatir('kalite', s.kalite_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
   // 159: spool'un BOM kalemleri — 146/B kalem rötuşuna modal içinden giriş (kopya akış yok)
   if (WIZ._kalemDuzelt == null) { _kalemDuzeltmeleriYukle().then(function(){ if (_duzeltSpoolIdx === i && !document.getElementById('duzeltOverlay').classList.contains('hide')) duzeltAc(i); }); }
   var _kb = null, _ksp = WIZ._kabukSpoollar || [];
@@ -3233,6 +3233,18 @@ async function onayEt() {
         }
       });
     }
+    // 174 Faz-1b: endpoint'in ürettiği birleşik (PDF/Excel merge) KALİTE'yi terfiye taşı → önizleme=terfi.
+    //   _inceleme.spoollar[i].kalite (Faz-1a: kabuk boşsa izometri malzeme_listesi baskın kalitesi) overlay
+    //   olarak geçer; aktar önceliği: operatör düzeltmesi > birleşik > grupla anaMalzeme fallback.
+    //   Yoksa (eksik/PDF'siz spool veya kalite boş) eski davranış — sıfır regresyon.
+    var _birlesikHarita = {};
+    if (WIZ._inceleme && WIZ._inceleme.spoollar) {
+      WIZ._inceleme.spoollar.forEach(function(s){
+        var bl = {};
+        if (s.kalite != null && s.kalite !== '') bl.kalite = s.kalite;
+        if (Object.keys(bl).length) _birlesikHarita[(s.pipeline || '') + '|' + (s.spoolNo || '')] = bl;
+      });
+    }
     // 146/B: kalem-seviyesi düzeltmeleri DB'den garanti yükle (malzeme sekmesi açılmamış olabilir → terfide kaybolmasın)
     if (WIZ._kalemDuzelt == null) { try { await _kalemDuzeltmeleriYukle(); } catch (e) {} }
     var r = await ARES_KABUK.aktar({
@@ -3246,6 +3258,7 @@ async function onayEt() {
       alistirmaVarsayilan: WIZ.yeni_alistirma ? 'VAR' : null,
       kuyrukIds: WIZ._bomIds,
       duzeltmeler: _duzeltHarita,
+      birlesikler: _birlesikHarita,
       kalemDuzeltmeler: WIZ._kalemDuzelt || null
     });
     if (!r.ok) throw new Error(r.hata === 'ortam' ? 'Tenant/devre bağlamı eksik.' : r.hata === 'sec' ? 'Oluşturulacak spool yok.' : ('Hata: ' + (r.hata || '')));
