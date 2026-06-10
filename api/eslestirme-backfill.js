@@ -144,8 +144,11 @@ export default async function handler(req, res) {
   const devreId  = req.body?.devre_id || null;
   const kuru     = req.body?.kuru === true;
   const afterId  = req.body?.after_id || null;
-  const batch    = Math.min(Number(req.body?.batch) || Number(req.body?.limit) || 120, 300);
-  const BUTCE_MS = 45000;   // 60sn tavani altinda guvenli kesim; kalan kayit sonraki tura
+  const batch    = Math.min(Number(req.body?.batch) || Number(req.body?.limit) || 40, 200);
+  const BUTCE_MS = 40000;   // 60sn tavanindan 20sn pay: bir yavas eslestir + yanit + fetch tasmasi guvenli
+  const _t0      = Date.now();   // 176/MK-176.4: budget FONKSIYON GIRISINDEN olculur — batch SELECT'in
+  //   (dolu parse_sonuc JSONB transferi) wall-clock maliyeti de tavana sayilsin (eski hata: _baslangic
+  //   fetch'ten SONRA basliyordu -> agir fetch + 45s islem 60s'yi asip hard-timeout veriyordu, MK-176.4).
 
   try {
     let q = supa
@@ -167,7 +170,6 @@ export default async function handler(req, res) {
       toplam_spool: 0, toplam_eslesen: 0, toplam_atanmamis: 0, toplam_yukseltilen: 0, kayitlar: []
     };
 
-    const _baslangic = Date.now();
     let _sonId = afterId;     // imlec: bu turda islenen SON (en buyuk) id
     let _kesildi = false;     // zaman butcesi nedeniyle erken kesildi mi
 
@@ -179,7 +181,7 @@ export default async function handler(req, res) {
 
     for (const is of (isler || [])) {
       // Butce kontrolu islemden ONCE: _sonId her zaman TAM islenmis son kaydi gosterir.
-      if (Date.now() - _baslangic > BUTCE_MS) { _kesildi = true; break; }
+      if (Date.now() - _t0 > BUTCE_MS) { _kesildi = true; break; }
       _sonId = is.id;
       const dvId = is.devre_dokumanlari?.devre_id;
       const okuJson = is.parse_sonuc;
@@ -216,9 +218,10 @@ export default async function handler(req, res) {
         const dokId = is.dok_id || null;
         const ozet = await eslestir(supa, dvId, is.id, okuJson, dokId, _ctx);
         if (ozet) {
-          rapor.toplam_spool += ozet.toplam; rapor.toplam_eslesen += ozet.eslesen;
-          rapor.toplam_atanmamis += ozet.atanmamis; rapor.toplam_yukseltilen += ozet.yukseltilen;
-          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dok_id: dokId, spool: ozet.toplam, eslesen: ozet.eslesen, atanmamis: ozet.atanmamis, yukseltilen: ozet.yukseltilen });
+          // 176/MK-176.4: montaj ozet'inde 'yukseltilen' alani YOK -> (||0) ile NaN/null onlenir.
+          rapor.toplam_spool += (ozet.toplam || 0); rapor.toplam_eslesen += (ozet.eslesen || 0);
+          rapor.toplam_atanmamis += (ozet.atanmamis || 0); rapor.toplam_yukseltilen += (ozet.yukseltilen || 0);
+          rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dok_id: dokId, spool: ozet.toplam, eslesen: ozet.eslesen, atanmamis: ozet.atanmamis, yukseltilen: ozet.yukseltilen || 0 });
         } else {
           rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dok_id: dokId, atlandi: 'eslestir null dondu' });
         }
