@@ -158,6 +158,7 @@
     var kuyrukIds=opts.kuyrukIds||[];
     var duzeltmeler=opts.duzeltmeler||null;   // 143/G2a: {(pipeline|spoolNo):{alan:deger}} — opsiyonel, yoksa eski davranış
     var kalemDuzeltmeler=opts.kalemDuzeltmeler||null;   // 146/B: {(pipeline|spoolNo):{idx:{malzeme,dn,boy,adet,agirlik}}} — kalem-seviyesi overlay, opsiyonel; idx = grupla bom[] sırası (MK-146.1)
+    var birlesikler=opts.birlesikler||null;   // 174 Faz-1b: {(pipeline|spoolNo):{kalite}} — endpoint birleşik (PDF/Excel merge) overlay, opsiyonel; yoksa eski davranış (sıfır regresyon)
     if(!supa||!tid||!devreId){return {ok:false,hata:'ortam'};}      // Tenant/devre/db eksik
     if(!spoollar.length){return {ok:false,hata:'sec'};}             // Aktarılacak spool yok
 
@@ -207,13 +208,16 @@
         //   devre_detay duzeltmeler GÖNDERMEZ → bu blok atlanır, eski davranış korunur (sıfır regresyon).
         var _dzKey=(s.pipeline||'')+'|'+s.spoolNo;
         var _dz=(duzeltmeler && duzeltmeler[_dzKey]) ? duzeltmeler[_dzKey] : null;
+        var _bl=(birlesikler && birlesikler[_dzKey]) ? birlesikler[_dzKey] : null;   // 174 Faz-1b: birleşik (PDF/Excel) overlay
         // değer üretimi: düzeltme varsa onu kullan, yoksa parse değeri (sayısal alanlar NaN-güvenli)
         var _sayi=function(v,fb){ if(v==null||v==='')return fb; var n=Number(String(v).replace(',','.')); return isFinite(n)?n:fb; };
         var _capMm = (_dz && _dz.cap!=null && _dz.cap!=='') ? _sayi(_dz.cap, bp.dis_cap) : bp.dis_cap;
         var _etMm  = (_dz && _dz.et!=null  && _dz.et!=='')  ? _sayi(_dz.et,  bp.et)      : bp.et;
         var _agKg  = (_dz && _dz.agirlik!=null && _dz.agirlik!=='') ? _sayi(_dz.agirlik, (s.toplamKg||0)) : (s.toplamKg||0);
         var _malHam = (_dz && _dz.malzeme!=null && _dz.malzeme!=='') ? _dz.malzeme : (s.anaMalzeme || malzVars);
-        var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite : (s.kalite || s.anaMalzeme||null);   // 166/B: kalem kalitesi (316L) öncelikli
+        var _kalite = (_dz && _dz.kalite!=null && _dz.kalite!=='') ? _dz.kalite
+                    : (_bl && _bl.kalite!=null && _bl.kalite!=='') ? _bl.kalite
+                    : (s.kalite || s.anaMalzeme||null);   // 174 Faz-1b: operatör > birleşik(PDF/Excel) > grupla taban (166/B kalem kalitesi)
         var _yuzey  = (_dz && _dz.yuzey!=null && _dz.yuzey!=='') ? _dz.yuzey : yz;
         var _alist  = (_dz && _dz.alistirma!=null && _dz.alistirma!=='') ? _dz.alistirma : alistVars;
         // 160: NOT overlay'i → spooller.imalat_not. DİKKAT (devir notu): terfi sonrası eslestir (117/D2)
