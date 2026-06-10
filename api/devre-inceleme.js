@@ -301,10 +301,13 @@ export default async function handler(req, res) {
       if (s.not == null && dal && dal.not_metni) s.not = dal.not_metni;
       // 166 (Cihat/A): kabuk ÇAP/ET boşsa (fitting-ağırlıklı spool'da düz boru yok → kabuk türetemez)
       //   izometri parse dalından göster. "okunmamış hissi" biter; terfide backfill zaten bu değeri yazar.
-      if ((s.cap == null || s.cap === '') && dal && dal.cap_mm != null) s.cap = dal.cap_mm;
-      if ((s.et  == null || s.et  === '') && dal && dal.et_mm  != null) s.et  = dal.et_mm;
+      // 175: cap/et/yuzey boşluk-doldurma + KAYNAK izi (kalite deseninin eşi, satır ~320).
+      //   Sadece _inceleme.spoollar çıktısı zenginleşir; DB'ye yazım YOK, lib SAF (MK-164.3).
+      //   Wizard rozeti bu bayraklara göre L2/L3 gösterir (sabit 'xl' boşluğu kapanır).
+      if ((s.cap == null || s.cap === '') && dal && dal.cap_mm != null) { s.cap = dal.cap_mm; s.cap_kaynak = 'izometri'; }
+      if ((s.et  == null || s.et  === '') && dal && dal.et_mm  != null) { s.et  = dal.et_mm;  s.et_kaynak  = 'izometri'; }
       // bindir'in kabuk_bos_dolduruldu kuralıyla uyumlu: kabuk yüzeyi boşsa PDF yüzeyi gösterilir
-      if ((s.yuzeyHam == null || s.yuzeyHam === '') && dal && dal.yuzey) s.yuzeyHam = dal.yuzey;
+      if ((s.yuzeyHam == null || s.yuzeyHam === '') && dal && dal.yuzey) { s.yuzeyHam = dal.yuzey; s.yuzey_kaynak = 'izometri'; }
       // 174 (Cihat): kabuk KALİTE boşsa izometri parse'tan baskın kalite göster. Excel BOM'da ayrı
       //   kalite kolonu yok (kalite malzeme metnine gömülü → grupla '—' üretir); PDF/izometri
       //   malzeme_listesi kalite taşır. cap/et/yuzey boşluk-doldurma deseninin AYNISI ("okunmamış

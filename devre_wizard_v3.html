@@ -2661,8 +2661,8 @@ function duzeltAc(i) {
     });
   }
   b += '<div class="dp-sec">Okunan değerler (önizleme)</div>';
-  b += dsatir('cap', 'xl') + dsatir('et', 'xl') + dsatir('agirlik', 'xl');
-  b += dsatir('malzeme', 'xl') + dsatir('kalite', s.kalite_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('yuzey', s.yuzeyHam ? izoSrc : 'bos') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
+  b += dsatir('cap', s.cap_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('et', s.et_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('agirlik', 'xl');
+  b += dsatir('malzeme', 'xl') + dsatir('kalite', s.kalite_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('yuzey', s.yuzey_kaynak === 'izometri' ? izoSrc : 'xl') + dsatir('alistirma', izoSrc) + dsatir('not', izoSrc);
   // 159: spool'un BOM kalemleri — 146/B kalem rötuşuna modal içinden giriş (kopya akış yok)
   if (WIZ._kalemDuzelt == null) { _kalemDuzeltmeleriYukle().then(function(){ if (_duzeltSpoolIdx === i && !document.getElementById('duzeltOverlay').classList.contains('hide')) duzeltAc(i); }); }
   var _kb = null, _ksp = WIZ._kabukSpoollar || [];
