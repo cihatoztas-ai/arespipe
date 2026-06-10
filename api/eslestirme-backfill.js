@@ -18,7 +18,7 @@
 // Env: SUPABASE_URL + SUPABASE_SERVICE_KEY (MK-101.4).
 
 import { createClient } from '@supabase/supabase-js';
-import { eslestir, normSpoolNo, normPipeline, dosyaAdiParse } from './kuyruk-isle-izometri.js';
+import { eslestir, normSpoolNo, normPipeline, dosyaAdiParse, kabukYukle } from './kuyruk-isle-izometri.js';
 // 157 (MK-157.2): 140'in createRequire cozumu Vercel runtime'inda OLU DOGMUS — Vercel'in modul
 //   yukleyicisi (/opt/rust/nodejs.js) require(ESM) desteklemiyor; "type":"module" nedeniyle
 //   ares-asme.js ESM sayilir -> ERR_REQUIRE_ESM, MODUL YUKLEMEDE tum endpoint coker (izometri
@@ -171,6 +171,12 @@ export default async function handler(req, res) {
     let _sonId = afterId;     // imlec: bu turda islenen SON (en buyuk) id
     let _kesildi = false;     // zaman butcesi nedeniyle erken kesildi mi
 
+    // 176/MK-176.3: devre-bazli backfill -> kabuk (3 SELECT) batch basina TEK yuklenir, her eslestir'e
+    //   ctx olarak gecer (kayit basi tekrar yukleme biter -> ~1.3sn/kayit darbogazi cozulur). Global
+    //   backfill'de (devreId YOK) batch farkli devreleri kapsayabilir -> ctx YOK, eslestir kendi yukler.
+    //   kuru dali eslestir cagirmaz -> ctx gereksiz. Hata (null) -> ctx yok say (eslestir kendi dener).
+    const _ctx = (!kuru && devreId) ? (await kabukYukle(supa, devreId) || null) : null;
+
     for (const is of (isler || [])) {
       // Butce kontrolu islemden ONCE: _sonId her zaman TAM islenmis son kaydi gosterir.
       if (Date.now() - _baslangic > BUTCE_MS) { _kesildi = true; break; }
@@ -208,7 +214,7 @@ export default async function handler(req, res) {
         rapor.kayitlar.push({ kuyruk_id: is.id, devre_id: dvId, dosya: okuJson.dosya_adi || null, spool: okuJson.spoollar.length, eslesen: es, atanmamis: at, yukseltilebilir: yuk });
       } else {
         const dokId = is.dok_id || null;
-        const ozet = await eslestir(supa, dvId, is.id, okuJson, dokId);
+        const ozet = await eslestir(supa, dvId, is.id, okuJson, dokId, _ctx);
         if (ozet) {
           rapor.toplam_spool += ozet.toplam; rapor.toplam_eslesen += ozet.eslesen;
           rapor.toplam_atanmamis += ozet.atanmamis; rapor.toplam_yukseltilen += ozet.yukseltilen;

@@ -542,25 +542,12 @@ export function montajDosyaKok(dosyaAdi) {
   return m[1].trim();
 }
 
-export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) {
-  if (!devreId || !okuJson) return;
-
-  // 116/Is2: MONTAJ DALI. Montajda okuJson.spoollar=[] (115/MK-115.1); gercek veri okuJson.montaj'da.
-  //   Montaj eslesmesi imalattan AYRI: bindirme/asme YOK (montaj agirligi != imalat agirligi,
-  //   MK-111.2 ezme yok). Eslesen spool'a montaj_json YAZ (Karar 2-A); spooller.alistirma'ya
-  //   DOKUNMA (Karar C). Imalat akisi degismez (montaj null -> bu blok atlanir).
-  if (okuJson.montaj) {
-    return await montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId);
-  }
-
-  if (!Array.isArray(okuJson.spoollar)) return;
-
-  // Pipeline'i dosya adindan cikar (parse spoollar pipeline_no NULL).
-  const dosyaAdi = okuJson.dosya_adi || null;
-  const dosyaParse = dosyaAdiParse(dosyaAdi);   // {pipeline_no, spool_no} | null
-
-  // O devredeki kabuk spool'lari cek. Anahtar = pipeline_no|spool_no (devre ici tekil).
-  // 111/PARÇA2a: bindirme kiyasi icin et/cap/agirlik/yuzey de cekilir.
+// 176/MK-176.3: KABUK YUKLEME — eslestir'in DEVRE-KAPSAMLI 3 SELECT'ini (spooller +
+//   taslak_duzeltmeleri _pdf_spool_map + spool_malzemeleri) tek yere topla. Backfill bunu
+//   batch basina TEK cagirir, eslestir/montajEslestir'e ctx olarak gecer -> kayit basi tekrar
+//   yukleme biter (1.3sn/kayit darbogazinin koku). Drenaj yolu ctx VERMEZ -> eslestir kendi
+//   cagirir -> davranis BIT-AYNI (MK-109.1 tek-kaynak korunur). spErr'de null doner.
+export async function kabukYukle(supa, devreId) {
   const { data: spoollar, error: spErr } = await supa
     .from('spooller')
     .select('id, spool_no, pipeline_no, spool_id, cizim_durumu, et_kalinligi_mm, dis_cap_mm, agirlik, agirlik_kg, yuzey')
@@ -568,7 +555,7 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     .eq('silindi', false);
   if (spErr) {
     console.error('[izo-eslestir] spool cekme hatasi:', spErr.message);
-    return;
+    return null;
   }
 
   const harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
@@ -577,9 +564,7 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     if (!harita.has(k)) harita.set(k, sp);
   }
 
-  // 169/A2: operator elle eslestirme overlay'i (_pdf_spool_map). Fazla PDF spool_no'su (orn. S46_1)
-  //   -> hedef kabuk spool_no (S46). dosyaAdiParse S46_1 cikarinca asagida S46'ya map'lenir.
-  //   Anahtar normPipeline|normSpoolNo(fazla) ile kurulur (harita ile ayni uzay). Overlay yoksa bos.
+  // 169/A2: operator elle eslestirme overlay'i (_pdf_spool_map).
   const pdfSpoolMap = new Map();   // normPipeline|normSpoolNo(fazla) -> hedef kabuk spool_no (ham)
   try {
     const { data: ovr, error: ovrErr } = await supa
@@ -590,12 +575,11 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
     else for (const o of (ovr || [])) {
       if (!o.spool_no || !o.deger) continue;
       const mk = normPipeline(o.pipeline_no) + '|' + normSpoolNo(o.spool_no);
-      pdfSpoolMap.set(mk, o.deger);   // deger = hedef kabuk spool_no (ham; asagida normSpoolNo'lanir)
+      pdfSpoolMap.set(mk, o.deger);
     }
   } catch (e) { console.error('[izo-eslestir] _pdf_spool_map istisna:', e.message); }
 
-  // 133/K2 (MK-133.1/2/3): bu devrenin tum spool_malzemeleri'ni TEK seferde cek (N+1 yok).
-  //   Her eslesen spool icin malzemeKiyas'a Excel BOM tarafi olarak verilecek.
+  // 133/K2: bu devrenin tum spool_malzemeleri'ni TEK seferde cek (N+1 yok).
   const spoolIds = (spoollar || []).map(s => s.id);
   const malzemeHaritasi = new Map();   // spool_uuid -> spool_malzemeleri satirlari[]
   if (spoolIds.length > 0) {
@@ -610,6 +594,32 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
       malzemeHaritasi.set(r.spool_id, arr);
     }
   }
+
+  return { spoollar, harita, pdfSpoolMap, malzemeHaritasi };
+}
+
+export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId, ctx) {
+  if (!devreId || !okuJson) return;
+
+  // 116/Is2: MONTAJ DALI. Montajda okuJson.spoollar=[] (115/MK-115.1); gercek veri okuJson.montaj'da.
+  //   Montaj eslesmesi imalattan AYRI: bindirme/asme YOK (montaj agirligi != imalat agirligi,
+  //   MK-111.2 ezme yok). Eslesen spool'a montaj_json YAZ (Karar 2-A); spooller.alistirma'ya
+  //   DOKUNMA (Karar C). Imalat akisi degismez (montaj null -> bu blok atlanir).
+  if (okuJson.montaj) {
+    return await montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId, ctx);
+  }
+
+  if (!Array.isArray(okuJson.spoollar)) return;
+
+  // Pipeline'i dosya adindan cikar (parse spoollar pipeline_no NULL).
+  const dosyaAdi = okuJson.dosya_adi || null;
+  const dosyaParse = dosyaAdiParse(dosyaAdi);   // {pipeline_no, spool_no} | null
+
+  // 176/MK-176.3: kabuk DEVRE BASINA TEK yuklenir. ctx (backfill batch) verilirse yeniden
+  //   yuklenmez -> 3 SELECT/kayit -> 0. ctx YOKSA (drenaj) kendi yukler: davranis BIT-AYNI.
+  const _kabuk = ctx || await kabukYukle(supa, devreId);
+  if (!_kabuk) return;   // spErr (kabukYukle null) -> bugunku 'return' davranisi
+  const { spoollar, harita, pdfSpoolMap, malzemeHaritasi } = _kabuk;
 
   const detay = [];
   let yukseltilen = 0;
@@ -674,7 +684,12 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
         if (bekliyorduMu) q = q.eq('cizim_durumu', 'bekliyor');
         const { data: upData, error: upErr } = await q.select('id');
         if (upErr) console.error('[izo-eslestir] spooller update hatasi:', upErr.message);
-        else if (bekliyorduMu && upData && upData.length > 0) yukseltilen++;
+        else if (bekliyorduMu && upData && upData.length > 0) {
+          yukseltilen++;
+          hedef.cizim_durumu = 'kismi';   // 176/MK-176.3: ctx-cache tutarliligi — ayni batch'te ayni
+          //   spool'a 2. kayit STALE 'bekliyor' gorup guard'i yanlis tetiklemesin (et/cap atlanmasin).
+          //   Drenajda harita tek-kullanimlik -> zararsiz.
+        }
       }
 
       // 2b: PDF<->spool kalici bagi (spool detay sayfasi bu PDF'e erisecek). Idempotent.
@@ -746,7 +761,7 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId)
 //   montaj ust-verisini montaj_json kolonuna YAZ (Karar 2-A). spooller.alistirma'ya DOKUNMA (Karar C).
 //   Imalat bindirme/asme mantigi YOK -- montaj agirligi farkli anlam (MK-111.2 ezme yok).
 //   devre_dokumanlari.spool_id YAZILMAZ: montaj 1-cok (bir montaj N spool kapsar), tek kolona sigmaz.
-async function montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) {
+async function montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId, ctx) {
   const m = okuJson.montaj || {};
   const dosyaAdi = okuJson.dosya_adi || null;
   const pipelineKok = montajDosyaKok(dosyaAdi);   // pipeline = dosya adi koku | null
@@ -767,20 +782,26 @@ async function montajEslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId) 
     eslesme_at: new Date().toISOString(),
   };
 
-  // O devredeki kabuk spool'lari cek (pipeline+spool anahtariyla harita).
-  const { data: spoollar, error: spErr } = await supa
-    .from('spooller')
-    .select('id, spool_no, pipeline_no, spool_id')
-    .eq('devre_id', devreId)
-    .eq('silindi', false);
-  if (spErr) {
-    console.error('[izo-montaj-eslestir] spool cekme hatasi:', spErr.message);
-    return;
-  }
-  const harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
-  for (const sp of (spoollar || [])) {
-    const k = normPipeline(sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
-    if (!harita.has(k)) harita.set(k, sp);
+  // 176/MK-176.3: ctx (backfill batch) varsa kabuk haritasini yeniden yukleme. eslestir'in superset
+  //   spooller select'i montaj alanlarini (id/spool_no/pipeline_no/spool_id) zaten kapsar. ctx YOKSA bugunku gibi.
+  let harita;
+  if (ctx && ctx.harita) {
+    harita = ctx.harita;
+  } else {
+    const { data: spoollar, error: spErr } = await supa
+      .from('spooller')
+      .select('id, spool_no, pipeline_no, spool_id')
+      .eq('devre_id', devreId)
+      .eq('silindi', false);
+    if (spErr) {
+      console.error('[izo-montaj-eslestir] spool cekme hatasi:', spErr.message);
+      return;
+    }
+    harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
+    for (const sp of (spoollar || [])) {
+      const k = normPipeline(sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
+      if (!harita.has(k)) harita.set(k, sp);
+    }
   }
 
   const detay = [];
