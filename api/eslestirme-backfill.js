@@ -131,10 +131,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── izometri akisi (ORIJINAL, degismedi) ──
-  const devreId = req.body?.devre_id || null;
-  const kuru    = req.body?.kuru === true;
-  const limit   = Math.min(Number(req.body?.limit) || 500, 2000);
+  // ── izometri akisi (176/MK-176.2: SAYFALAMA — terfi timeout koku) ──
+  //   ESKI: tum oneri_hazir/manuel_onay kayitlari TEK invocation'da islenirdi. Cok-belgeli
+  //   devrede (orn. 356 PDF) her eslestir() kabugu bastan yukler (3 SELECT) + eslesme basina
+  //   2 UPDATE -> ~1800 DB turu -> 60sn maxDuration asilir -> FUNCTION_INVOCATION_TIMEOUT ->
+  //   terfide izoHata -> auto-close atlanir -> kuyruk birikir (129/130 borcunun GERCEK koku;
+  //   157 ESM fix'inin altinda kalan olcek sorunu — MK-176.1 teshis).
+  //   YENI: keyset imleci (id ASC + after_id) + sinirli batch + zaman butcesi. Istemci/terfi
+  //   client-loop ile bitti=true olana dek cagirir (MK-113/A: sunucu-sunucu YOK). eslestir()'e
+  //   DOKUNULMAZ (MK-109.1 tek-kaynak). eslestir durum'u degistirmez -> imlec tekrar secmez;
+  //   idempotent (bekliyor->kismi tekrar guvenli).
+  const devreId  = req.body?.devre_id || null;
+  const kuru     = req.body?.kuru === true;
+  const afterId  = req.body?.after_id || null;
+  const batch    = Math.min(Number(req.body?.batch) || Number(req.body?.limit) || 120, 300);
+  const BUTCE_MS = 45000;   // 60sn tavani altinda guvenli kesim; kalan kayit sonraki tura
 
   try {
     let q = supa
@@ -143,8 +154,10 @@ export default async function handler(req, res) {
       .eq('parser', 'izometri')
       .in('durum', ['oneri_hazir', 'manuel_onay'])
       .not('parse_sonuc', 'is', null)
-      .limit(limit);
+      .order('id', { ascending: true })
+      .limit(batch);
     if (devreId) q = q.eq('devre_dokumanlari.devre_id', devreId);
+    if (afterId) q = q.gt('id', afterId);
 
     const { data: isler, error: qErr } = await q;
     if (qErr) return res.status(500).json({ hata: 'Kuyruk okuma hatasi: ' + qErr.message });
@@ -154,7 +167,14 @@ export default async function handler(req, res) {
       toplam_spool: 0, toplam_eslesen: 0, toplam_atanmamis: 0, toplam_yukseltilen: 0, kayitlar: []
     };
 
+    const _baslangic = Date.now();
+    let _sonId = afterId;     // imlec: bu turda islenen SON (en buyuk) id
+    let _kesildi = false;     // zaman butcesi nedeniyle erken kesildi mi
+
     for (const is of (isler || [])) {
+      // Butce kontrolu islemden ONCE: _sonId her zaman TAM islenmis son kaydi gosterir.
+      if (Date.now() - _baslangic > BUTCE_MS) { _kesildi = true; break; }
+      _sonId = is.id;
       const dvId = is.devre_dokumanlari?.devre_id;
       const okuJson = is.parse_sonuc;
       if (!dvId || !okuJson || !Array.isArray(okuJson.spoollar)) {
@@ -199,7 +219,12 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ ok: true, ...rapor });
+    // bitti: bu tur batch'i DOLDURMADI ve zaman butcesiyle KESILMEDI -> baska kayit yok.
+    //   Istemci/terfi bunu gorunce loop'u durdurur. Aksi halde after_id=son_id ile devam eder.
+    const _islenenSay = (isler || []).length;
+    const bitti = !_kesildi && _islenenSay < batch;
+
+    return res.status(200).json({ ok: true, son_id: _sonId, bitti, kesildi: _kesildi, ...rapor });
   } catch (e) {
     return res.status(500).json({ hata: 'Beklenmedik hata: ' + e.message, stack: e.stack?.split('\n').slice(0, 3).join(' | ') });
   }
