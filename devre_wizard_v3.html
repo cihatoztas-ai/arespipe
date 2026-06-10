@@ -162,10 +162,12 @@
     .mut-strip .isleniyor{ margin-left:auto; color:var(--ac); font-size:13px; display:inline-flex; align-items:center; gap:7px; }
     /* 174-B: Adim 2 pill basligi (devreler stat-pill temasi) */
     .inc-hd{ display:flex; align-items:stretch; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-    .inc-hero{ background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--warn); border-radius:10px; padding:7px 14px; display:flex; align-items:center; gap:11px; flex-shrink:0; min-width:196px; }
+    .inc-hero{ background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--warn); border-radius:10px; padding:7px 16px; display:flex; align-items:center; gap:11px; flex-shrink:0; }
     .inc-hero-ic{ font-size:21px; line-height:1; }
     .inc-hero-name{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; line-height:1; color:var(--tx); letter-spacing:.3px; }
     .inc-hero-sub{ font-size:14px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--warn); margin-top:5px; }
+    .inc-devre-adi{ font-size:22px; font-weight:700; color:var(--tx); margin:2px 0 10px; line-height:1.25; letter-spacing:.2px; }
+    .inc-hero-tag{ font-size:16px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--warn); }
     .inc-pills{ display:flex; gap:6px; flex:1; flex-wrap:wrap; min-width:0; }
     .inc-pill{ background:var(--sur); border:1px solid var(--bor); border-left:3px solid var(--leg); border-radius:8px; padding:9px 11px; flex:1 1 0; min-width:128px; box-sizing:border-box; display:flex; flex-direction:column; gap:3px; }
     .inc-pill .pl{ font-size:14px; color:var(--txm); letter-spacing:.3px; line-height:1.2; text-transform:uppercase; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -197,10 +199,7 @@
     #spoolBody tr.sk-row td{ cursor:default; } #spoolBody tr.sk-row:hover td{ background:transparent; }
     #spoolBody.acilis tr{ opacity:0; animation:_islCascade .3s ease forwards; }
     #spoolBody.acilis tr:nth-child(1){animation-delay:0ms} #spoolBody.acilis tr:nth-child(2){animation-delay:55ms} #spoolBody.acilis tr:nth-child(3){animation-delay:110ms} #spoolBody.acilis tr:nth-child(4){animation-delay:165ms} #spoolBody.acilis tr:nth-child(5){animation-delay:220ms} #spoolBody.acilis tr:nth-child(6){animation-delay:275ms} #spoolBody.acilis tr:nth-child(7){animation-delay:330ms} #spoolBody.acilis tr:nth-child(8){animation-delay:385ms} #spoolBody.acilis tr:nth-child(9){animation-delay:440ms} #spoolBody.acilis tr:nth-child(10){animation-delay:495ms} #spoolBody.acilis tr:nth-child(11){animation-delay:550ms} #spoolBody.acilis tr:nth-child(12){animation-delay:605ms} #spoolBody.acilis tr:nth-child(13){animation-delay:660ms} #spoolBody.acilis tr:nth-child(14){animation-delay:715ms} #spoolBody.acilis tr:nth-child(15){animation-delay:770ms} #spoolBody.acilis tr:nth-child(16){animation-delay:825ms} #spoolBody.acilis tr:nth-child(17){animation-delay:880ms} #spoolBody.acilis tr:nth-child(18){animation-delay:935ms} #spoolBody.acilis tr:nth-child(19){animation-delay:990ms} #spoolBody.acilis tr:nth-child(20){animation-delay:1045ms} #spoolBody.acilis tr:nth-child(n+21){animation-delay:1045ms}
-    .inc-scan{ position:absolute; left:0; right:0; overflow:hidden; pointer-events:none; z-index:3; display:none; }
-    .inc-scan.on{ display:block; }
-    .inc-scan.on .ai-scan{ display:block; }
-    @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr,.inc-scan .ai-scan,.inc-scan .ai-scan .core{ animation:none; transition:none; } }
+    @media (prefers-reduced-motion:reduce){ .dt .sk,#spoolBody.acilis tr{ animation:none; transition:none; } }
     .marka{ font-weight:700; color:var(--ac); } .kalite{ color:var(--ac); font-weight:600; }
     .rev-chip{ font-size:12px; font-weight:700; padding:1px 5px; border-radius:4px; background:rgba(217,119,6,.12); color:var(--warn); }
     .cap{ color:var(--txm); } .et{ color:var(--txd); } .agir{ color:var(--txm); }
@@ -328,7 +327,6 @@
     <div class="step aktif" id="stp1"><span class="num">1</span> Devre &amp; Belgeler</div>
     <span class="step-sep">→</span>
     <div class="step" id="stp2"><span class="num">2</span> İnceleme &amp; Onay</div>
-    <button class="isl-btn" id="btnIslenenler" onclick="islenenlerAc()" title="Taslak devrelerin işleme havuzu">İşlenenler <span class="isl-rozet" id="islRozet">0</span></button>
   </div>
 
   <!-- ══════════ ADIM 1 — DEVRE & BELGELER ══════════ -->
@@ -447,10 +445,11 @@
 
   <!-- ══════════ ADIM 2 — İNCELEME & ONAY ══════════ -->
   <section data-panel="2" class="hide">
+    <h2 class="inc-devre-adi" id="incBaslik">—</h2>
     <div class="inc-hd">
       <div class="inc-hero">
         <div class="inc-hero-ic">📦</div>
-        <div><div class="inc-hero-name" id="incBaslik">—</div><div class="inc-hero-sub" id="incHeroSub">taslak · onay = terfi</div></div>
+        <div class="inc-hero-tag">TASLAK DEVRE</div>
       </div>
       <div class="inc-pills" id="statGrid"></div>
     </div>
@@ -473,7 +472,6 @@
           <thead><tr><th style="width:30px;">#</th><th>Marka</th><th>Rev</th><th>Spool ID</th><th>Çap</th><th>Et</th><th>Ağırlık</th><th>Malzeme</th><th>Kalite</th><th>Yüzey</th><th>Alıştırma</th><th>Durum</th><th>İzometri</th><th>İşlem</th></tr></thead>
           <tbody id="spoolBody"><tr><td colspan="14" style="text-align:center;color:var(--txd);padding:20px;">Yükleniyor…</td></tr></tbody>
         </table></div>
-        <div class="inc-scan" id="incScan"><div class="ai-scan"><div class="iz"></div><div class="core"></div></div></div>
       </div>
       <div class="onay-bar">
         <span class="lock-note" style="color:var(--txm);">Eksik spool'lar silinmez; bilgilerini buradan tamamlayabilir veya eksik bırakabilirsin.</span>
@@ -1078,8 +1076,6 @@ function wizardSifirla() { location.href = 'devre_wizard_v3.html'; }
 // ─────────────────────────────────────────────────────────────
 function incelemeKur() {
   document.getElementById('incBaslik').textContent = markaDevre();
-  var _sub = document.getElementById('incHeroSub');
-  if (_sub) _sub.textContent = 'taslak · onay = terfi';
   malzSekmesiRender();
   genelSekmesiRender();
   buildTreeDok();
@@ -1389,36 +1385,6 @@ function _spoolIskelet() {
   }
   b.innerHTML = r;
 }
-var _incScanT = null;
-// 174-F: tarama = klasor ai-scan, SABIT/SAKIN hiz. Cizgi tum tabloyu degil, EKRANDA GORUNEN dilimi suzer.
-//   #incScan'i gorunen tablo dilimine oturt; ai-scan suresi = dilim / hiz (px/sn SABIT -> klasor tonu).
-function _incScanGuncelle() {
-  var lay = document.getElementById('incScan'); if (!lay || !lay.parentNode) return;
-  var kr = lay.parentNode.getBoundingClientRect();
-  var vh = window.innerHeight || 800;
-  var bTop = Math.max(kr.top, 60), bBot = Math.min(kr.bottom, vh);
-  var band = Math.round(bBot - bTop);
-  if (band < 80) { lay.style.height = '0px'; return; }     // tablo ekranda degil
-  lay.style.top = Math.round(bTop - kr.top) + 'px';         // kart-local: gorunen dilim
-  lay.style.height = band + 'px';
-  var sc = lay.querySelector('.ai-scan');
-  if (sc) {                                                 // ~180px/sn sabit hiz; 2.8-4.2s arasi sure
-    var bandQ = Math.round(band / 40) * 40;                 // kucuk scroll titremesi sureyi sifirlamasin
-    var dur = Math.min(4200, Math.max(2800, Math.round(bandQ / 0.18)));
-    if (sc._dur !== dur) { sc.style.animationDuration = dur + 'ms'; sc._dur = dur; }
-  }
-}
-function _incScanBasla() {
-  var lay = document.getElementById('incScan'); if (!lay) return;
-  _incScanGuncelle();
-  lay.classList.add('on');
-  if (_incScanT) return;
-  _incScanT = setInterval(_incScanGuncelle, 350);           // scroll/resize takibi
-}
-function _incScanDur() {
-  if (_incScanT) { clearInterval(_incScanT); _incScanT = null; }
-  var lay = document.getElementById('incScan'); if (lay) lay.classList.remove('on');
-}
 
 function renderInceleme(j) {
   var sp = j.spoollar || [], fz = j.fazla || [], mn = j.montajlar || [], oz = j.ozet || {};
@@ -1498,10 +1464,6 @@ function renderInceleme(j) {
     WIZ._incAcildi = true; _sb.classList.add('acilis');
     setTimeout(function () { _sb.classList.remove('acilis'); }, 1500);
   }
-  // 174: islenme taramasi — acilis cascade'i ile KARISMAZ (ilk aciliista cascade sonrasi baslar)
-  if (oz.isleniyor && oz.isleniyor > 0) {
-    if (_ilkAcilis) setTimeout(_incScanBasla, 1550); else _incScanBasla();
-  } else { _incScanDur(); }
 }
 
 function statGridRender(sp) {
