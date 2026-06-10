@@ -1,26 +1,22 @@
-# son-durum.md — Oturum 174 kapanışı
+# son-durum.md — Oturum 175 kapanışı (HEAD eb12c0c)
 
-## Aktif iş
-**devre_wizard_v3.html** — Adım 2 İnceleme & Onay. İki ana iş tamamlandı:
-1. **IS2 terfi modal** (önceki turda push'landı): roketsiz; başlık durum taşıyor (yanıp sönen nokta → yeşil tik; "aktarılıyor"→"aktarıldı"); popup içi AI tarama kutusu (klasör `ai-scan`, sınırlı); minimal ilerleme çizgisi + gerçek fazlar (Spool ID/QR→İş emri→Özet→İzometri); butonlar altta (aktarırken pasif, bitince "Devre detayına git"). `ares-kabuk.js` `aktar` DOKUNULMADI (tek atomik insert korundu; gerçek per-spool sayaç REDDEDİLDİ).
-2. **Excel↔PDF kalite merge — Faz 1 (kalite)** TAMAM (önizleme + terfi + etiket).
+## Özet
+Excel↔PDF katman birleştirmenin **kalite-sonrası kalanı** ele alındı + beklenmedik bir veri-bütünlüğü hatası kovalandı/kapatıldı. Faz 2 (gerçek çelişki kazananı) zemini temizlenip sonraki oturuma bırakıldı.
 
-## Faz 1 (kalite) — ne yapıldı
-- **Faz 1a** (`/api/devre-inceleme.js`, PUSH'LANDI): kabuk kalitesi boşsa izometri parse `malzeme_listesi` baskın kalitesini doldurur (`s.kalite` + `s.kalite_kaynak='izometri'`). cap/et/yüzey 166/A deseninin aynısı; `lib` SAF. **Kanıt ekranda:** Kalite "—" → "St 37".
-- **Faz 1b** (`ares-kabuk.js` + `devre_wizard_v3.html`, BU PUSH'TA): `aktar`'a opsiyonel `birlesikler` overlay; kalite önceliği **operatör _dz > birleşik _bl > grupla taban**. Wizard `_birlesikHarita`'yı `_inceleme.spoollar.kalite`'den toplar → terfi birebir önizlemedeki kaliteyi yazar. Toplamsal/geri-uyumlu (devre_detay `birlesikler` göndermez → eski davranış).
-- **Etiket** (`devre_wizard_v3.html`, BU PUSH'TA): `dsatir('kalite', s.kalite_kaynak==='izometri' ? izoSrc : 'xl')` → izometriden gelen kalite "L2" rozeti.
+## Yapılanlar (sırayla)
+1. **Faz 1b kapsam kararı = B (böl):** alan başına tek yazıcı. kalite→birlesikler, cap/et/yüzey/not→backfill/eslestir/bindir. A (tek kanal) reddedildi çünkü backfill devre_detay yolunu da besliyor (MK-49.B); birlesikler'e taşımak çift-yazım borcu yaratırdı. Canlı SQL ile uçtan uca kanıtlandı (MK-175.1).
+2. **Wizard kaynak rozeti (MK-175.2, PUSH eb12c0c):** önizlemede cap/et/yüzey artık dinamik L2/Excel rozeti gösteriyor (sabit 'xl' boşluğu kapandı). Türetilmiş — şema dokunulmadı. 2 dosya: api/devre-inceleme.js + devre_wizard_v3.html.
+3. **NPS→mm sızıntısı (MK-175.3):** Faz 2'ye geçerken çelişki örneklerine bakınca 46/76 çap çelişkisinin SAHTE olduğu görüldü (Excel'de NPS, mm değil). Kök = eski "fakir boyutParse" verisi (kod sağlam, olcuParse 14 format birebir doğru). 58 spool düzeltildi (46 cap + 12 cap/et), 21.30 gerçek mm'lere dokunulmadı. BEGIN...COMMIT dry-run'lı, hepsi onaylandı.
 
-## Kanıtlanan kök (DATA→UI→code)
-- Excel BOM satırında **kalite/grade kolonu YOK** (keys: dn,adet,birim,tanim,system,malzeme,standart,_satir_no,agirlik_kg,parca_tipi). Kalite `malzeme` metnine gömülü (ST37 / ASTM A536 G65-45-12 / Victaulic Groove-Steel).
-- PDF/izometri parse `malzeme_listesi` kalite (ST37) taşır. `grupla` PDF'e bakmadığı için `anaKalite` boş üretiyordu → spool kalite '—'.
-- Konsol: `grupla.kalite: undefined | inceleme.kalite: undefined` (server düşürmüyor; grupla üretmiyor).
+## Canlı durum
+- HEAD = eb12c0c, origin/main senkron, working tree temiz. Fonksiyon: 12/12.
+- DB: spooller `dis_cap_mm` sızıntısı 0 (kalan 23 satır gerçek 21.30). 58 spool onarıldı.
+- Wizard önizleme: kalite + cap + et + yüzey hepsi kaynak rozetli (L2/Excel).
 
-## Dosya md5 (bu push)
-- `ares-kabuk.js` = 6d6bd775959e15d6ba30dab071f9b780
-- `devre_wizard_v3.html` = bd397c2382e2a825a14e03160ce59562 (Faz 1b + etiket birlikte)
-- `api/devre-inceleme.js` = fc3053d23fed683c62c85d7ded78d34d (Faz 1a — ZATEN PUSH'LANDI)
+## Faz 2 için bırakılan zemin (sonraki oturum)
+- Çap çelişkisi gürültüsü temizlendi: 76→~30 gerçek çelişki. et 57, yüzey 5.
+- **Kritik bulgu:** referans/manuel provenance sinyali (`excel-parser` `seviye`/`guven`) `spooller`'da KALICI KOLON OLARAK YOK. SQL doğruladı. Sinyal dosya-bazında (L1 & guven≥70 = referans). bindir'e bu sinyali taşıma tasarımı gerekli (devreler kolonu mu, akış-içi bayrak mı). Yeni soru/bayrak gerekmez ama taşıma kanalı tasarlanmalı.
 
-## Mimari karar (Cihat, bu oturum)
-- Çatışınca (Excel≠PDF dolu): **referans Excel → Excel öne; manuel Excel → PDF öne; çelişki gösterilir.** Sinyal = `excel-parser` `seviye`(L1/L2)+`guven` (L1 & guven≥70 → referans).
-- Boş alan: **PDF doldurur** (koşulsuz).
-- Merge yeri: **/api/devre-inceleme** (tek nokta; Excel kabuk + PDF parse ikisi de orada).
+## Dosya md5 (bu oturum, push edilmiş)
+- api/devre-inceleme.js = ceeab43e8d741ce5040a6baff02f141b
+- devre_wizard_v3.html = ca4c7722c163ba70000bab5c6994a470

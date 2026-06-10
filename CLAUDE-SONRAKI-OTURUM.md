@@ -1,38 +1,34 @@
-# CLAUDE-SONRAKI-OTURUM.md — Oturum 175 giriş planı
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 176 giriş planı
 
 ## Ritüel (önce)
-`git pull && git status && git log --oneline -5` + fonksiyon sayısı 12/12 + handoff oku.
+`git pull && git status && git log --oneline -5` + fonksiyon 12/12 + handoff oku. HEAD bekle: eb12c0c (+ bu oturumun doc commit'i).
 
 ## Bağlam: nerede kaldık
-Excel↔PDF **alan-seviyesi katman birleştirme** kurguyu tamamlama işindeyiz. Kurgu: bir spool'un bilgisini farklı dokümanlardan toplayıp tek ortama getir (gerçek imalat: Excel'de yoksa PDF'ten al). **Faz 1 (kalite) BİTTİ** (önizleme + terfi + etiket, kanıtlı). Kök sorun ("iki ıraksak merge yolu") kalite için kapandı; **gerisi açık.**
+Excel↔PDF katman birleştirmenin alan-doldurma + rozet kısmı BİTTİ (kalite 174, cap/et/yüzey 175). NPS→mm veri sızıntısı kapatıldı (58 spool). **Faz 2 (gerçek çelişki kazananı) sıradaki büyük iş.**
 
-## SIRADAKİ İŞ (öncelik sırası)
+## SIRADAKİ İŞ
 
-### 1) Faz 1b kapsam genişletme — TEK MERGE KANALI (kök çözümün kalanı) ⭐
-**Sorun:** Şu an iki merge yolu var. Kalite `birlesikler` kanalıyla terfiye taşındı. Ama **cap/et/yüzey/not/alıştırma** terfi tarafında AYRI bir yolda (`/api/eslestirme-backfill` — terfi sonrası izometri parse_sonuc'tan re-yazım). Bu yüzden Faz 1b'de bilerek SADECE kalite alındı (çift-yazım riski).
-**Yapılacak:**
-- `api/eslestirme-backfill.js` YÜKLE + OKU (bende yok). Hangi alanları yazıyor net gör.
-- Karar: ya (a) tüm gap-fill alanlarını `birlesikler` kanalına topla (aktar tek merge yazsın, backfill'i o alanlardan çek) → İKİ YOL TEKE İNER; ya da (b) backfill'in doğru/yeterli yazdığını kanıtla, böl. 
-- `birlesikler` kanalı generik kuruldu (`{kalite}` şu an, `{kalite,yuzey,cap,et,not,alistirma}`'ya genişler). aktar'da öncelik deseni hazır (operatör _dz > _bl > taban).
-- Endpoint zaten s.cap/s.et/s.yuzeyHam/s.not/s.alistirma üretiyor → wizard `_birlesikHarita`'ya eklemek kolay; aktar satırlarına `_bl.X` önceliği eklenir.
+### 1) Faz 2 — çelişki kazananı ⭐ (asıl iş)
+İki kaynak DOLU ve farklıysa kazananı provenance'a göre seç:
+- **Referans Excel** (IFS/Cadmatic export, sözlük başlığı tanındı = `seviye=L1` & `guven>=70`) → Excel kazanır (mevcut "kabuk korunur" davranışı zaten doğru).
+- **Manuel Excel** (düşük güven) → PDF kazanır (bindir şu an kabuğu koruyor → bunu çevir).
+- Çelişki rozeti her halükârda korunur.
 
-### 2) Faz 2 — çelişki kazananı
-İki kaynak DOLU ve farklıysa: **referans Excel → Excel; manuel Excel → PDF.** Çelişki rozeti korunur (zaten gösteriliyor "kabuk korunur").
-- Sinyal HAZIR: `lib/excel-parser.js` dönüşü `seviye`(L1/L2) + `guven`. Kural: **L1 & guven≥70 → referans Excel** (sözlük başlığı tanındı = IFS/Cadmatic export); aksi → manuel.
-- Bu sinyali kabuk_spoollar'a/devreye taşı → `/api/devre-inceleme`'de `bindir` "kabuk korunur" yerine provenance-koşullu kazanan seç. Yeni soru/bayrak GEREKMEZ.
-- excel-parser bende var (yüklendi).
+**KRİTİK TASARIM SORUNU (175'te bulundu):** sinyal `spooller`'da kalıcı kolon olarak YOK (SQL doğruladı). `excel-parser` dönüşü `seviye`/`guven` **dosya-bazında** (satır değil — bir IFS export ya tanınır ya tanınmaz, satır satır değişmez → kural basit). Ama `bindir(pdfSpool, kabukSpool)`'a bu sinyal ulaşmıyor.
+**Yapılacak karar:**
+- (a) `devreler` (veya uygun) tabloya bir bayrak: `excel_referans boolean` → şema migration (MK-85.3 information_schema önce, MK-98.2 dry-run). Kalıcı, devre_detay yolu da kullanır.
+- (b) Akış-içi taşıma: terfi/önizleme nesnesine `excelReferans` iliştir, bindir'e `opts` parametresi. Şema yok ama devre_detay yolu için ayrıca düşünülmeli.
+- bindir'e `opts.excelReferans` ekle: referans & çelişki → kabuk kazanır (mevcut); !referans & çelişki → `deg`'e PDF değerini yaz + flag korunur.
+- **Önce:** Excel yüklenince `seviye`/`guven` nereye yazılıyor/atılıyor izle (kuyruk parse_sonuc'ta mı, hiç saklanmıyor mu). excel-parser bende var.
 
-### 3) Üçüncü belge katmanı (ileride)
-Kurgu "Excel→PDF→diğer belgeler". Şu an Excel + izometri PDF var. Sertifika/başka doküman katmanı tasarlanmadı. Düşük öncelik.
+### 2) ESKİ AÇIK
+- **KARARLAR.md MK-169/170/171 boşluğu** (168→172 atlıyor) — 175'te de kapatılmadı. Eski oturum özetlerinden türetilip doldurulmalı.
+- **MK-117 (yukleyen_id null):** devre_dokumanlari yukleyen_id null → kuyruk-isle-izometri.js:305 abort. Çözüm: user ID ata VEYA sistem yüklemesi için kontrolü gevşet.
+- **1 1/4" boşluklu kesir bug:** `olcuParse("1 1/4\"")`→1 (regex boşlukta kesiliyor); tireli doğru. `ares-olcu.js` branch-1 regex'i + ondalık NPS (1.25/1.5) genişletme. Düşük öncelik.
+- **Gece cron (03:00):** hâlâ ispatsız (gündüz drenajı kuyruğu boşaltıyor).
 
-## ESKİ AÇIK BORÇLAR (carry-over)
-- **KARARLAR.md boşluğu:** MK-169/170/171 girişleri eksik (168→172 atlıyor). Bu oturumda 174 eklendi; 169/170/171 hâlâ boş.
-- **yukleyen_id null (MK-117):** devre_dokumanlari'nda yukleyen_id null → `kuyruk-isle-izometri.js:305` "kullanici_id zorunlu" abort → izometri/NOT/alıştırma yazılmaz. Çözüm: dosyalara user ID ata VEYA sistem yüklemeleri için kontrolü gevşet.
-- **Gece cron (03:00 İstanbul):** üçüncü oturumdur ispatsız — gündüz tarayıcı drenajı kuyruğu boşaltıyor.
-- **Kaynak etiketi (cap/et):** cap/et PDF'ten dolduğunda (166/A) hâlâ "Excel" rozeti (kalite gibi `_kaynak` bayrağı yok). Faz 1b genişlerken eklenebilir.
+## TEST DEVRESİ TEMİZLİĞİ (birikiyor)
+Carry-over listesi 174'ten devam. G200-333-OD01/03/04/06 ve M200-355C-*-ALS devreleri 175 düzeltme turunda dokunuldu — bunlar GERÇEK test/prod verisi, silme listesine alınmamalı, sadece dis_cap düzeltildi.
 
-## TEST DEVRESİ SİLME (birikiyor)
-174 yeni: cgghmcmhgvm120 (+ NB1137-D100-577 test). 173: cgghmcmhgvm120/cghfdkv/hthth/thjjy/kfyukfyl/kgcdkgc/uogyol. 172: NB1099C/NB1124/M120-Galv. 170: NB1099C. 171: M110-St.St/E120-St.St. → Temizlik turu yapılabilir.
-
-## İLK HAMLE (175)
-"eslestirme-backfill.js'i yükle" iste → oku → madde 1 kararını ver (tek kanal mı, böl mü) → uygula. Bu, kök "iki merge yolu"nu kapatır.
+## İLK HAMLE (176)
+"excel-parser seviye/guven Excel yüklemede nereye gidiyor" izle (kuyruk parse_sonuc'ta saklanıyor mu?) → Faz 2 madde 1 (a/b) kararını ver → bindir opts taşıma kanalını kur. Bu, kök "Excel referans mı manuel mi" sinyalini bindir'e ulaştırır = Faz 2'nin kalbi.

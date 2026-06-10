@@ -1,27 +1,20 @@
-# CLAUDE-SON-OTURUM.md — Oturum 174 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 175 özeti
 
-## Yapılanlar (sırayla)
-1. **IS2 terfi modal yeniden tasarım** (3 tur iterasyon, mockup'la onaylandı):
-   - Roket ikonu kaldırıldı (çocuksu).
-   - Başlık durumu taşır: aktarırken yanıp sönen mavi nokta + "Devreyi canlıya aktarılıyor"; bitince yeşil ✓ + "Devre canlıya aktarıldı" (alttaki ayrı yazı başlığa birleşti).
-   - Popup içi AI tarama kutusu (`.onay-scanbox`, klasör `ai-scan` reuse, 78px sınırlı, spark yok).
-   - Minimal ilerleme çizgisi (4px, `.onay-ln`) + faz metni (`_onayFazGoster`): gerçek await'lere bağlı (sahte tik yok).
-   - Butonlar altta (Vazgeç/Excel'i kontrol et/Aktar); aktarırken pasif; bitince "Devre detayına git".
-   - Helper'lar: `_onayBaslikDurum`, `_onayFazGoster`. `ares-kabuk.js` `aktar` DOKUNULMADI (tek insert; per-spool sayaç A yolu REDDEDİLDİ — Cihat "tik yapmayalım").
-   - Push'landı (Cihat "yeterince iyi").
+## Yapılanlar
+1. **Faz 1b kapsam = B (böl)** — alan başına tek yazıcı. Karar A/B/C olarak sunuldu; A (tek kanal) reddedildi: backfill HEM wizard HEM devre_detay'ı besler (MK-49.B), birlesikler yalnız wizard → A çift-yazım borcu olur. B kanıtlandı (MK-175.1).
+2. **Kaynak rozeti türetildi (MK-175.2, PUSH eb12c0c)** — wizard cap/et/yüzey dinamik L2/Excel; inceleme endpoint `_kaynak='izometri'` izi. Türetilmiş (şema yok), kalite (174) deseninin eşi.
+3. **NPS→mm sızıntısı kapatıldı (MK-175.3)** — 58 spool. Kök eski veri (kod sağlam, kanıtlı). Dry-run'lı UPDATE.
 
-2. **Excel↔PDF kalite merge teşhisi + Faz 1**:
-   - Cihat sorusu: "okunduğu halde boş bırakılan alanlar var, neden?" + "Excel ayrı PDF ayrı çalışıyor gibi".
-   - Teşhis (DATA→UI→code, 3 hipotez veriyle elendi): grupla kalite üretmiyor çünkü Excel BOM'da kalite kolonu yok; PDF/izometri biliyor ama grupla PDF'e bakmıyor. İki ıraksak merge yolu (önizleme endpoint kısmi / terfi aktar grupla+düzeltme).
-   - **Faz 1a:** devre-inceleme kalite boşluk-doldurma (PUSH'landı, kanıtlandı: St 37 göründü).
-   - **Faz 1b:** birlesikler overlay kanalı (ares-kabuk + wizard) → terfi=önizleme.
-   - **Etiket:** kalite kaynak rozeti dinamik (izometri→L2).
+## Yöntem / disiplin (bu oturumda işe yarayanlar)
+- **MK-158.1 (DATA→UI→code) bu oturumu kurtardı:** Faz 2 koduna girmeden çelişki örneklerine bakınca 46/76'nın sahte (NPS sızıntısı) olduğu çıktı. Kör otomasyon `dis_cap_mm=4`'ü otoriter yapardı = felaket. Veriyle yön doğrulanmadan kod yazılmadı.
+- **Kök ayırma zinciri:** çelişki örneği → NPS şüphesi → olcuParse lokal repro → ARES_BORU.disCap doğru → olcuParse 14 format doğru → tarih analizi (son 6 gün temiz) → "kod değil veri" sonucu. Her adım veriyle.
+- **MK-98.2:** tüm DB düzeltmeleri BEGIN...ROLLBACK dry-run, kontrol SELECT'leri, sonra COMMIT. Hiç kör UPDATE yok.
+- **Fiziksel kural ayracı:** `dis_cap_mm < 30` tek başına sızıntı DEĞİL (21.3 gerçek ½"). Gerçek imza `cap <= et` (fiziksel imkansız). Bu ayrım 21.30'ları korudu.
+- HTML/JS yamaları: Python str_replace + abort-on-mismatch (anchor 1/1) + .bak + node --check (wizard inline JS extract, raw HTML değil).
 
-## Kararlar
-- IS2: gerçek per-spool sayaç reddedildi (aktar tek insert; modülü parçalamak gerekirdi). Faz-bazlı gerçek ilerleme + AI tarama canlılığı yeterli.
-- Kalite merge: tek nokta /api/devre-inceleme; boş→PDF koşulsuz; çatışma→referans/manuel (Faz 2).
-- Faz 1b KAPSAM: sadece kalite. cap/et/yüzey/not terfi-sonrası `eslestirme-backfill` yolunda → çift-yazım riski yüzünden `birlesikler`'e ALINMADI.
+## Cihat'ın iki kritik müdahalesi
+1. "1 1/4" 114.3 okuyor" gözlemi → ayrı bir boşluklu-kesir bug'ı ortaya çıkardı (kaydedildi, düşük öncelik).
+2. "çap ve et birlikte oluyor ya, doğru mu bu karar" → benim "eti backfill'e bırak" önerimi sorguladı; HAKLIYDI — aynı deterministik kaynağı bölmek "iki ıraksak yol" hatasının tekrarıydı. cap+et birlikte yazıldı.
 
-## Disiplin
-- Tüm yamalar Python str_replace + abort-on-mismatch + `.bak` + `node --check`.
-- MK-158.1 (DATA→UI→code) bu oturumda 3 kez hipotez çürüttü — iyi ki kanıtladık.
+## Karar günlüğü
+KARARLAR.md'ye MK-175.1/2/3 + açık notlar (1 1/4 bug, MK-169/170/171 boşluğu hâlâ açık).

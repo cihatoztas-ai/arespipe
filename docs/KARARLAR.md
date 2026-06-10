@@ -2467,3 +2467,38 @@ IS2 (terfi "Aktariliyor..." donmus hissi -> iskelet/cascade animasyon) Cihat kar
 W-2.5 (Step-1 iki ilerleme cubugu progressFill + islenStrip) gorsel/UX karar, ekranda gosterilmeden tahminle
 birlestirilmez (MK-132.1). Islerken nav piline capraz-gorunum noktasi tek-buton istegine sadik kalmak icin KASTEN
 konmadi.
+# KARARLAR.md — Oturum 175 ekleri (HEAD eb12c0c sonrası)
+
+## MK-175.1 — Excel↔PDF cap/et/yüzey boş-doldurma uçtan uca kanıtlandı (DATA-first)
+Faz 1b'nin kalanı için karar: **B (böl) mimarisi** — alan başına TEK yazıcı.
+- kalite → `birlesikler` kanalı (terfi-zamanı, wizard `_birlesikHarita`). backfill kalite YAZMAZ (Excel BOM'da kalite kolonu yok + bindir kalite üretmez).
+- cap/et/yüzey/not → `eslestirme-backfill` → `eslestir()` → `bindir()` (terfi-sonrası + devre_detay yolu). birlesikler bunları YAZMAZ.
+- **Neden A (tek kanal) reddedildi:** backfill HEM wizard HEM devre_detay yolunu besler (MK-49.B); birlesikler yalnız wizard. Alan boş-doldurma backfill'den çıkamaz → "tek kanal" aslında ikinci yazıcı ekler, çift-yazım borcu yaratır.
+- **Kanıt (canlı SQL):** `parse_sonuc._eslesme.detay[].bindirme` `kabuk_bos_dolduruldu` kayıtları spooller kolonlarıyla birebir eşleşti; linkage `pdf_bagli=true`. Saha dağılımı (flag/sebep):
+  - yüzey: 624 dolduruldu / 218 eşit / 5 çelişki
+  - et: 61 dolduruldu / 697 eşit / 57 çelişki
+  - cap: 15 dolduruldu / 724 eşit / 76 çelişki (NOT: bunların 46'sı sahte — MK-175.3)
+- `bindir` davranışı saf boş-doldurma: pdf yoksa dokunma; kabuk boş→doldur; eşit→geç; farklı→kabuk korunur+flag (ezme yok). Ağırlık %3 tolerans.
+
+## MK-175.2 — Wizard cap/et/yüzey kaynak rozeti türetildi (PUSH: eb12c0c)
+**Sorun:** wizard Adım 2 önizlemede cap/et rozeti sabit 'xl' (Excel) basıyordu; yüzey `yuzeyHam` varlığına bakıyordu (Excel yüzeyi de yanlışlıkla L2 diyordu). Kalite (174) dinamikti, cap/et/yüzey değildi.
+**Çözüm (TÜRETİLMİŞ — şema dokunulmadı, MK-164.3 uyumlu, retroaktif kaynak yazımı YOK):**
+- `api/devre-inceleme.js`: cap/et/yüzey boş-doldururken `s.cap_kaynak / s.et_kaynak / s.yuzey_kaynak = 'izometri'` izi (kalite deseninin eşi, ~satır 307-310). Yalnız `_inceleme.spoollar` çıktısı zenginleşir, DB'ye yazım yok, lib SAF.
+- `devre_wizard_v3.html` (~satır 2664-2665): `dsatir('cap'/'et'/'yuzey', s.X_kaynak==='izometri' ? izoSrc : 'xl')`.
+- MD5: devre-inceleme.js = ceeab43e8d741ce5040a6baff02f141b · devre_wizard_v3.html = ca4c7722c163ba70000bab5c6994a470
+- devre_detay'da kaynak rozeti YOK (Cihat teyit etti) → kapsam yalnız wizard. (Cihat: önizleme ekranına ileride devre_detay'dan erişim verilecek → rozetler oraya bedavaya taşınır.)
+
+## MK-175.3 — NPS→mm dis_cap_mm sızıntısı kapatıldı (58 spool, DATA düzeltme)
+**Belirti:** çap çelişkilerinde Excel kabuk değeri "3"/"4" (NPS, inç), PDF "88.9"/"114.3" (gerçek mm). 76 çap çelişkisinin 46'sı bu yüzden SAHTE.
+**Kök (kanıtlı):** ESKİ VERİ — kod sağlam. `ARES_OLCU.olcuParse` 14 gerçek format birebir test edildi (`4" Sch 10S`→114.3, `DN100`→114.3, `3" x 2-1/2"`→88.9, `4" / 4" Sch.10S`→114.3, slash/nokta/çift-NPS dahil), hepsi DOĞRU. `ARES_BORU.disCap(100)=114.3` doğru. Sızıntı ≤21 Mayıs "fakir boyutParse" döneminden (SCH/inç bilmiyordu, `4" Sch 10S`→dis_cap=4). Tarih kanıtı: yığın 22-23 Mayıs (olcuParse 22 Mayıs/111. oturumda geldi); son 6 günde yeni sızıntı YOK → kod fix gerekmez.
+**Düzeltme (BEGIN...COMMIT, dry-run önce):**
+- Faz A: `dis_cap_mm IN (2,3,4) AND dis_cap_mm <= et_kalinligi_mm` (fiziksel imkansız) → CASE 2→60.3, 3→88.9, 4→114.3. **46 spool.** (Dış çap malzeme-bağımsız — paslanmaz da karbon da aynı, kanıtlı.)
+- Faz B: et=null şüpheliler (12 spool, hepsi ham boyut `4" Sch 10S`/DN100) → cap=114.3 + **et=3.05 birlikte** (Cihat kararı: çap ve et aynı deterministik kaynaktan ayrılmaz; eti backfill'e bırakmak "iki ıraksak yol" hatasının tekrarı olurdu). id-bazlı hedefli UPDATE.
+- 21.30 (gerçek ½" mm dış çap, 23 satır) DOKUNULMADI — `<30` tek başına sızıntı değil; gerçek imza `cap <= et`.
+- **Veri silinmez:** kaynak ham `boyut` `spool_malzemeleri`'nde korunuyor, yeniden türetilebilir → onarım, kayıp değil.
+- Sonuç: tüm `<30` sızıntı 0; kalan 23 satır hepsi gerçek 21.30.
+
+## Açık (bu oturumda KAPATILMADI)
+- **KARARLAR.md MK-169/170/171 boşluğu** HÂLÂ var (168→172 atlıyor). Bu oturum 174+175 eklendi; 169/170/171 boş.
+- **MK-117 (yukleyen_id null)** duruyor.
+- **`1 1/4"` boşluklu kesir** ayrı nadir bug: `olcuParse("1 1/4\"")`→dis_cap=1 (regex `[\d.\-\/]+` boşlukta kesiliyor). Tireli (`1-1/4"`)→42.2 doğru. Düşük öncelik, sahada nadir; istenirse `ares-olcu.js` regex'i boşluklu kesir + ondalık NPS (1.25/1.5) için genişletilir.
