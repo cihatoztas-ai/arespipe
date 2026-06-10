@@ -620,6 +620,7 @@ tr.sk-row:hover td{background:transparent !important;}
     <div class="tablo-head">
       <div class="tablo-baslik">✅ <span data-i18n="dv_onayk_baslik">Onay Kuyruğu</span></div>
       <span id="onaykOzet" style="font-size:12px;color:var(--txd);">—</span>
+      <button id="onaykRecovery" class="btn" onclick="onayRecovery(this)" style="margin-left:auto;font-size:12px;color:var(--ac);border-color:rgba(43,127,255,.35);font-weight:600;" title="İzometri parse sonuçlarını spool'lara yeniden bağlar + temiz önerileri kapatır (yeniden parse YOK, $0)">↻ <span data-i18n="dv_onayk_recovery">İzometriyi yeniden eşleştir</span></button>
     </div>
     <div id="onaykListe" style="padding:6px 0;"></div>
     <div id="onaykBos" style="display:none;padding:28px;text-align:center;color:var(--txd);">
@@ -2569,6 +2570,46 @@ async function onayTopluKapat(){if(_tkKilit())return;
   var set={};ids.forEach(function(i){set[i]=true;});
   _ONAYK.liste=_ONAYK.liste.filter(function(k){return !set[k.id];});
   _onaykRender();showToast(ids.length+' '+tv('dv_onayk_toplu_ok','iş kapatıldı'),'success');
+}
+
+// 176/MK-176.6: RECOVERY — terfi-sirasi backfill timeout'u yuzunden kuyrukta kalmis (kirli) devreler icin.
+//   Backfill artik SAYFALI/guvenli (MK-176.2/4); burada CLIENT-LOOP ile (bitti=true'ya dek after_id
+//   ilerleterek) cagrilir = wizard terfi loop'unun (MK-176.5) devre_detay esi. Yeniden PARSE YOK ($0) —
+//   yalniz mevcut parse_sonuc'tan eslestir() spool'a baglar (bekliyor->kismi) + _eslesme bayraklarini
+//   tazeler (bayat atanmamis gercek degerine duser). Loop temiz biterse: kuyrugu yeniden yukle (taze
+//   bayrak) -> onayTopluKapat (yalniz TEMIZ izometri; atanmamis/manuel ACIK kalir, B-6) -> spool listesi.
+//   Hata olursa hicbiri kapatilmaz (idempotent, tekrar denenebilir).
+async function onayRecovery(btn){
+  var supa=_supa();var devreId=DEVRE.supaId||localStorage.getItem('ares_aktif_devre_id');
+  if(!supa||!devreId)return;
+  var _eski=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.style.opacity='.6';btn.innerHTML='⏳ '+tv('dv_onayk_recovery_calisiyor','Eşleştiriliyor…');}
+  var toplam=0,hata=null,afterId=null,tur=0;
+  try{
+    while(tur<60){   // guvenlik tavani: 60 tur x 40 = 2400 kayit
+      tur++;
+      var bf=await fetch('/api/eslestirme-backfill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({devre_id:devreId,after_id:afterId})});
+      if(!bf.ok){hata='HTTP '+bf.status;break;}
+      var j=await bf.json();
+      if(!j||!j.ok){hata=(j&&j.hata)||'gecersiz yanit';break;}
+      toplam+=j.toplam_yukseltilen||0;
+      if(btn)btn.innerHTML='⏳ '+tv('dv_onayk_recovery_calisiyor','Eşleştiriliyor…')+' ('+toplam+')';
+      if(j.bitti)break;            // tum kayitlar islendi
+      if(!j.son_id)break;          // ilerleme yok -> sonsuz dongu korumasi
+      afterId=j.son_id;
+    }
+  }catch(e){hata=e.message;}
+  if(hata){
+    showToast(tv('dv_onayk_recovery_hata','Yeniden eşleştirme hatası: ')+hata,'e');
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=_eski;}
+    return;
+  }
+  // Backfill bitti -> taze _eslesme bayraklariyla kuyrugu yeniden yukle, sonra TEMIZleri kapat.
+  await onayKuyruguYukle();
+  await onayTopluKapat();
+  if(typeof spoolYukle==='function')await spoolYukle();
+  showToast(toplam+' '+tv('dv_onayk_recovery_ok','spool yeniden eşleşti'),'success');
+  if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=_eski;}
 }
 
 // 102: dosyayı açarken signed URL'i o an üret (lazy) — load'da 20+ URL üretme yükü kalkar
