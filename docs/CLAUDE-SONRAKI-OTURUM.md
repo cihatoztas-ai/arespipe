@@ -1,39 +1,58 @@
-# CLAUDE-SONRAKI-OTURUM.md — 171 Acilisi
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 177 giriş planı
 
-## ACILIS RITUELI
-1. `git pull --rebase && git status && git log --oneline -6` — 05ca11e (hata bandi), b55157b (Isle/Izle),
-   faa5079 (karar ekrani) gorunmeli + CI botu ci-son-rapor.json. Git temiz olmali.
-2. Fonksiyon sayimi: `ls api/*.js | wc -l` -> 12 (MK-129.3 tavani).
-3. `cat BRIEFING.md` (tek aktif baglam) + bu dosya.
-4. Agir is one (context taze).
+## Ritüel (önce)
+`git pull && git status && git log --oneline -5` + fonksiyon 12/12 + handoff oku. HEAD bekle: eab6532
+(+ 176 doc commit'i).
 
-## 171 — ILK IS ADAYLARI
+## Bağlam: nerede kaldık
+176'da terfi-sonrası izometri eşleştirme borcu (129/130) **kökünden** kapandı — kök backfill TIMEOUT'tu.
+Backfill artık sayfalı/cache'li/güvenli; wizard terfi client-loop; devre_detay'da recovery butonu.
+Faz 2 (Excel↔PDF çelişki kazananı) DATA ile gereksiz çıkıp KAPATILDI (MK-176.1).
 
-### A) B — SPOOL SEVIYESI HATA ROZETI
-> 170/#3 dosya seviyesinde cozdu (hata bandi: hangi belge patladi + sebep). B = bunu spool satirina tasi.
-- Patlayan dosya adini dosyaAdiParse ile pipeline+spoolNo'ya cevirip cetele satirini "hata" rozetle
-  (su an "eksik / dokuman yok" gibi gorunuyor). UYARI: dosya-adi->spool esleme KIRILGAN; tutmazsa
-  satiri rozetleme, bant yeterli. izometri-oku DOKUNULMAZ (dosyaAdiParse'i nereden cagiracagini once bul).
+## SIRADAKİ İŞ
 
-### B) TEKRAR DENE (hata bandina)
-> Patlayan PDF'i yeniden kuyruga sok. Kucuk ama YAZMA: durum hata->bekliyor (+ deneme_sayisi?).
-- Once drenaj claim/retry mantigini oku (MK-167.1 claim guard, deneme_sayisi) — durum sifirlamak yeterli
-  mi yoksa baska alan lazim mi. Once-oku-sonra-yaz.
+### 1) MK-176.7 — Onay Kuyruğu → İnceleme ekranı taşıma ⭐ (Cihat'ın ana fikri)
+Cihat: aktif devrede ayrı "onay kuyruğu" yerine, wizard İnceleme/düzenleme ekranını
+spool_detay/devre_detay'da göster → veri isteyen oraya bakar, ayrı kuyruğa gerek kalmaz.
+**KOD YAZMADAN ÖNCE kapsam araştırması (MK-126.8):**
+- `devre-inceleme.js` (saf-okuma, 4-durum) **taslak-dışı/aktif** devrede çalışır mı, anlamı ne? Şu an
+  "İnceleme = terfinin önizlemesi"; aktif devrede terfi yok → eylem semantiği (düzeltme/eşleştirme) ne olur?
+- `spool_detay.html` mevcut yapısı (bu oturumda HİÇ açılmadı — yükletilmeli).
+- `izo-eslesme.js` saf çekirdek (var); UI taşıma sadece render + endpoint çağrısı meselesi mi?
+- Karar: Onay Kuyruğu sekmesini İnceleme görünümüyle DEĞİŞTİR mi, yoksa spool_detay'a EK bir görünüm mü?
+- Not: atanmamış/manuel/post-terfi-Excel sinyalleri sessizce kaybolmamalı (B-6) — yeni görünüm bunları taşımalı.
 
-### C) ESKI DEVIR
-- dosya_isleme_kuyrugu takili kayitlar (drain trigger/cron) · gece cron GERCEK testi (yine bos) ·
-  W-2.9 paralel devre · W-2.5 iki ilerleme cubugu · Y200/format ogretimi (diger bilgisayar).
+### 2) 13 kirli devrenin recovery'si tamamlanmalı
+kfukfuyk (P26-227) temizlendi. Kalan 13 aktif devrede recovery butonu tek tek çalıştırılmalı. Yaygınlık
+sorgusu (176'da: 14 devre / 1127 kuyruk) tekrar koşulup ilerleme izlenebilir:
+```sql
+SELECT COUNT(DISTINCT d.id) AS etkilenen, SUM(1) AS acik
+FROM devreler d JOIN devre_dokumanlari dd ON dd.devre_id=d.id
+JOIN dosya_isleme_kuyrugu k ON k.devre_dokuman_id=dd.id
+WHERE d.durum='aktif' AND k.parser='izometri' AND k.durum IN ('oneri_hazir','manuel_onay');
+```
 
-## ILKE HATIRLATMALARI
-izometri-oku DOKUNULMAZ (MK-49.1) · 12/12 tavan (MK-129.3) · sema-once: information_schema/CHECK,
-TAHMIN ETME (MK-85.3) · once-oku-sonra-dokun (MK-126.8) · HTML cerrahi: Python patch + abort-on-mismatch
-(anchor tekil) + .bak + MD5 + idempotent marker; node --check ayiklanan JS'e · commit'ler ayri (kod vs doc) ·
-docs/ klasorune kapanis [skip ci] · Excel = dayanak, delme (Cihat 169) · zsh ()/*/! tuzagi · tek satir commit.
+### 3) B testi (wizard terfi loop canlı doğrulama)
+Yeni test devresi (Tersan BOM + birkaç izometri) → terfi → "İzometri eşleştiriliyor… (N)" → aktif olunca
+Onay Kuyruğu 0/gizli olmalı (temizler terfide otomatik kapandı, MK-176.5). A testi geçti, B teyit için.
 
-## DORMANT KOD (170'te birakildi, silinmedi — bilerek)
-- devre_detay.html: TASLAK_KIP / _tkBanner / _tkKilit / _taslakSpoolYukle artik ulasilmaz (redirect once).
-- devre_wizard_v3.html: islenenlerOnizle() ve kararIncele() referanssiz. Geri donulmek istenirse hazir.
+## ESKİ AÇIK
+- **Recovery i18n:** `dv_onayk_recovery` + `_calisiyor` + `_hata` + `_ok` (4 anahtar × 3 dil) — şu an
+  `tv()` TR fallback. EN/AR için lang dosyalarına eklenmeli (G-01).
+- **`1 1/4"` boşluklu kesir bug:** `olcuParse("1 1/4\"")`→1 (regex boşlukta kesiliyor). `ares-olcu.js`
+  branch-1 regex + ondalık NPS (1.25/1.5). Düşük öncelik (175'ten).
+- **MK-117 (yukleyen_id null):** wizard yüklemeleri artık `yukleyen_id` dolu (devre_wizard_v3:999), borç
+  DİĞER yükleme yolları için. Açık.
+- **Gece cron (03:00):** hâlâ ispatsız (gündüz drenajı + recovery kuyruğu boşaltıyor).
+- **Backfill throughput follow-up (opsiyonel):** ~0.45sn/kayıt; yazma round-trip'leri baskın. `_eslesme`
+  writeback'in re-read'i (kuyruk-isle-izometri ~725) backfill'de gereksiz (okuJson zaten elde) — opsiyonel
+  parametreyle atlanabilir → ~0.6→0.45sn'ye. Sadece UX hızlanır; doğruluk etkilenmez. Gerekirse.
 
-## TEST DEVRELERI — SILME
-Sistemde GERCEK devre YOK, hepsi test (Cihat). 170: NB1099C ailesi — vmh cvv
-(841b117f-ef40-4b9c-b600-488444e734b8), hvbjhovojh, ovvmhc, gsdhh, b nn, hvbn o, gcmhgcm. SILME.
+## İLK HAMLE (177)
+`spool_detay.html`'i yükle + `devre-inceleme.js`'in aktif-devre semantiğini incele → MK-176.7 için
+"taşı mı / ek görünüm mü" kararını A/B sun → ancak ondan sonra kod. Bu oturumun keystone'u MK-176.7.
+
+## Açık takip: 176'da KAPANAN
+- ✅ Backfill timeout (129/130 borcu) — kökünden, kanıtlı.
+- ✅ Faz 2 — kapatıldı (gereksiz).
+- ✅ Wizard terfi temizliği + devre_detay recovery.
