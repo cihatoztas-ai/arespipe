@@ -415,11 +415,11 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   cursor: pointer;
 }
 .logo-mark {
-  width: 28px; height: 28px; border-radius: 7px; background: var(--ac);
+  width: 34px; height: 34px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800;
-  color: white; flex-shrink: 0; letter-spacing: -0.5px;
 }
+.logo-mark .ares-amblem { width: 100%; height: 100%; display: block; overflow: hidden; }
+.logo-mark.logo-mark-tenant img { width: 30px; height: 30px; object-fit: contain; border-radius: 6px; display: block; }
 .logo-text {
   font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800;
   color: var(--sb-tx) !important; letter-spacing: 0.5px; transition: opacity 0.15s;
@@ -537,7 +537,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         </svg>
       </button>
       <div class="sidebar-logo">
-        <div class="logo-mark"><img class="menu-amblem" src="/assets/marka/arespipe-mark-koyu.svg" style="width:20px;height:20px;display:block;"></div>
+        <div class="logo-mark"></div>
         <div class="logo-text">AresPipe</div>
       </div>
       <div class="sidebar-nav"></div>
@@ -599,6 +599,12 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   }
 
   // ── Logo güncelle ──────────────────────────────────────────
+  const ARES_AMBLEM_SVG = '<svg class="ares-amblem" viewBox="0 0 84 84" aria-hidden="true"><defs><linearGradient id="ambPipe" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#1E5FD0"/><stop offset=".5" stop-color="#2D6CDF"/><stop offset="1" stop-color="#9CC4FF"/></linearGradient><linearGradient id="ambScan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BCD6FF" stop-opacity="0"/><stop offset=".5" stop-color="#BCD6FF" stop-opacity=".95"/><stop offset="1" stop-color="#BCD6FF" stop-opacity="0"/></linearGradient></defs><rect x="0" y="36.5" width="84" height="11" rx="5" fill="#2D6CDF" opacity="0.12"/><rect x="0" y="40.2" width="84" height="3.6" rx="1.8" fill="url(#ambPipe)"/><circle cx="42" cy="42" r="30" fill="none" stroke="var(--sb-tx)" stroke-width="13"/><rect x="36" y="36" width="12" height="12" rx="3" fill="#34C46F"/><g fill="var(--sb-bg)"><circle cx="63.2" cy="20.8" r="4.2"/><circle cx="20.8" cy="20.8" r="4.2"/><circle cx="20.8" cy="63.2" r="4.2"/><circle cx="63.2" cy="63.2" r="4.2"/></g><g transform="translate(0,120)"><rect x="0" y="-2" width="84" height="12" rx="6" fill="url(#ambScan)"/><rect x="0" y="2.4" width="84" height="2.6" rx="1.3" fill="#EAF2FF"/><animateTransform class="ares-tara-anim" attributeName="transform" type="translate" begin="indefinite" dur="1.3s" values="0 -16;0 90" keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.2 1" fill="remove" repeatCount="1"/></g></svg>';
+  function _aresTara(scope) {
+    if (!scope) return;
+    const a = scope.querySelector('.ares-tara-anim');
+    if (a && a.beginElement) { try { a.beginElement(); } catch (e) {} }
+  }
   function updateLogoFromSettings() {
     const logoMark = document.querySelector('.logo-mark');
     const logoText = document.querySelector('.logo-text');
@@ -606,11 +612,12 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     const aresLogo = localStorage.getItem('ares_logo_ares');
     const firma    = JSON.parse(localStorage.getItem('ares_firma') || '{}');
     if (aresLogo) {
-      logoMark.innerHTML = `<img src="${aresLogo}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;">`;
-      logoMark.style.background = 'transparent';
+      logoMark.classList.add('logo-mark-tenant');
+      logoMark.innerHTML = `<img src="${aresLogo}" alt="">`;
     } else {
-      logoMark.innerHTML = '<img class="menu-amblem" src="/assets/marka/arespipe-mark-koyu.svg" style="width:20px;height:20px;display:block;">';
-      logoMark.style.background = '';
+      logoMark.classList.remove('logo-mark-tenant');
+      logoMark.innerHTML = ARES_AMBLEM_SVG;
+      _aresTara(logoMark);
     }
     logoText.textContent = firma.kisaAdi || 'AresPipe';
   }
@@ -908,6 +915,8 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 
     _guvenlikKoruma();
     updateLogoFromSettings();
+    const _slogo = document.querySelector('.sidebar-logo');
+    if (_slogo) _slogo.addEventListener('mouseenter', () => _aresTara(_slogo));
 
     // Transition'ı geri aç (visibility artık loadLang callback'inde)
     requestAnimationFrame(function () {
