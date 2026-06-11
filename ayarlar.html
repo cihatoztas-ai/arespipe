@@ -566,18 +566,8 @@ function logolariYukle() {
 
 // ── Sidebar logoyu güncelle ───────────────────────────────────
 function updateSidebarLogo() {
-  const aresLogo = localStorage.getItem('ares_logo_ares');
-  const firma    = JSON.parse(localStorage.getItem('ares_firma') || '{}');
-  const logoMark = document.getElementById('sidebarLogoMark');
-  const logoText = document.getElementById('sidebarLogoText');
-  if (aresLogo && logoMark) {
-    logoMark.innerHTML = `<img src="${aresLogo}" style="width:24px;height:24px;object-fit:contain;border-radius:4px;">`;
-  } else if (logoMark) {
-    logoMark.innerHTML = 'AP';
-  }
-  if (logoText && firma.kisaAdi) {
-    logoText.textContent = firma.kisaAdi;
-  }
+  // Tek kaynak: yeni amblem/wordmark mantigini ares-layout yonetir
+  if (window.aresRefreshLogo) window.aresRefreshLogo();
 }
 
 // ── Tema seçimi ───────────────────────────────────────────────
