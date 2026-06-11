@@ -1,46 +1,59 @@
-# son-durum.md — Oturum 176 kapanışı (HEAD eab6532)
+# son-durum.md — Oturum 177 kapanışı (HEAD 87c36c1)
 
 ## Özet
-**Terfi-sonrası izometri eşleştirme borcu (129/130) gerçek kökünden kapatıldı.** Önce Faz 2
-(Excel↔PDF çelişki kazananı) DATA ile gereksiz bulunup kapatıldı; sonra Cihat'ın devre_detay
-"Onay Kuyruğu" sorusu, kuyruğun temizlenememesinin **terfi-sırası backfill TIMEOUT'u** olduğunu
-ortaya çıkardı. Backfill sayfalandı + kabuk-cache + budget-sağlamlaştırma yapıldı; wizard terfi
-client-loop'a çevrildi; devre_detay'a recovery butonu eklendi. Canlı test geçti.
+**Kütüphane veri girişi için migration döngüsü kırıldı: `seed-from-json.mjs` aracı kuruldu ve canlı kanıtlandı.**
+Eskiden JSON elle SQL INSERT'e çevrilip Supabase dashboard'a yapıştırılıyordu (darboğaz Cihat'ta).
+Artık: `PDF → JSON → node scripts/seed-from-json.mjs <dosya> --yaz → DB`. İdempotent upsert.
+İlk canlı test: Sandvik paslanmaz boru **52 satır yazıldı, 0 hata** — gerçek bir kütüphane eksiği kapandı.
+
+(Not: Bu oturumda ayrıca devre malzeme takip sayfası + 2" SCH10S et düzeltmesi konuşuldu; aşağıda.)
 
 ## Yapılanlar (sırayla)
-1. **Faz 2 KAPATILDI (MK-176.1):** excel-generic 184/184 referans (L1/95), manuel-flip 0 vaka.
-   Mevcut `bindir` (kabuk kazanır + flag) %100 doğru. Kod yazılmadı.
-2. **Kök teşhis (MK-176.2):** devre_detay Onay Kuyruğu 228+ → DATA: 14 aktif devre / 1127 açık kuyruk.
-   spooller 206 bekliyor / 19 kısmi; %70 atanmamış (çoğu BAYAT). Backfill curl → `FUNCTION_INVOCATION_TIMEOUT`.
-   Ölçüm: non-kuru ~1.3sn/kayıt, 356 kayıt > 60sn → timeout → izoHata → auto-close atlanıyor (domino).
-3. **Backfill sayfalama (MK-176.2, PUSH e9f28e1):** keyset imleç + batch + budget + `son_id`/`bitti`.
-4. **Backfill kabuk-cache (MK-176.3, PUSH ced2672, 2 dosya):** `kabukYukle` export + `eslestir`/`montaj`
-   opsiyonel `ctx`. ctx yoksa drenaj BİT-AYNI (MK-109.1). Promote sonrası bellek cizim_durumu güncel.
-5. **Backfill budget+batch (MK-176.4, PUSH 7803420):** `_t0` fonksiyon girişinde, BUTCE 40s, batch 40,
-   montaj NaN guard. **Kanıt:** kfukfuyk 356 PDF → 8 tur, timeout YOK, spooller bekliyor→0.
-6. **Wizard terfi client-loop (MK-176.5, PUSH c51ad31):** tek-fetch → loop, izoHata→auto-close kökü kapandı.
-7. **devre_detay recovery butonu (MK-176.6, PUSH eab6532):** "↻ İzometriyi yeniden eşleştir".
-   **Kanıt:** kfukfuyk önce oneri 311/manuel 45 → sonra tamamlandi 314/manuel 45/oneri 0.
+1. **Malzeme takip sayfası tartışıldı, KAPATILDI.** Cihat fikir: yıldızlı devrelerin malzemesi için ayrı
+   sayfa + "ezik/yamuk" not+foto + uyarılar sayfası. Kapsam araştırması yapıldı (devreler.html yıldız sistemi
+   zaten DB-tabanlı kuyruk + teslim_adet). `malzeme_uyarilari` tablosu için dry-run (MK-98.2) yapıldı ama
+   **Cihat "bu kadar işe gerek var mı" dedi → tam sistem yerine basit "genel not → uyarılar" fikrine indirildi,
+   sonraki oturuma bırakıldı.** Hiçbir şey canlıya yazılmadı (dry-run ROLLBACK). Repoda iz yok.
+2. **2" SCH10S paslanmaz et düzeltmesi (f3887e4).** Cihat oturum öncesi yapmış: `asmeFallbackDoldur` kör
+   schedule fallback 3.91→2.77, MK-49.1 istisnası. Zaten commit+push'lu (bu sohbette yapılmadı, sadece teyit).
+3. **seed-from-json.mjs kuruldu (MK-177.1, commit 3243e51).** Node ESM, dependency yok (supabase-js zaten kurulu).
+   - `--dry-run` varsayılan; `--yaz` gerçek; `--tablo X` zorlama; `--uyari-yaz` opsiyonel.
+   - Sadece `_db_aksiyonu IN (YENI_DN/YENI_SCH/YENI_SCH_KOMB)` satırları yazar; MEVCUT_TEYIT atlar.
+   - `_`-alanları + generated kolonları otomatik atar (MK-177.2 — kendi kendini iyileştiren retry).
+   - upsert `onConflict` = tablo unique-key (script içi `UNIQUE_KEY` haritası).
+4. **Sandvik canlı seed (MK-177.1 kanıt).** `sandvik_b3619m_b3610m_paslanmaz_v1.json`: 121 satır, 52 YENI / 69 MEVCUT.
+   `--yaz` → 52 yazıldı, 0 hata. **DB teyit:** B36.19M paslanmaz 89 (5S=20,10S=23,40S=23,80S=23),
+   B36.10M paslanmaz 43 (20=8,120=7,160=14,XXS=14) — beklentiyle birebir.
+5. **Service key kuruldu.** `.env.local`'de `SUPABASE_SERVICE_KEY` boştu (Vercel CLI secret çekmez). Supabase
+   yeni `sb_secret_` formatından oluşturuldu, eklendi. `.env.local` gitignore'da (güvenli, teyit edildi).
 
 ## Canlı durum
-- HEAD = eab6532, origin/main senkron, working tree temiz. **Fonksiyon: 12/12** (yeni endpoint yok).
-- Değişen dosyalar (4): api/eslestirme-backfill.js, api/kuyruk-isle-izometri.js, devre_wizard_v3.html,
-  devre_detay.html.
-- kfukfuyk (P26-227, test devresi) temiz: spooller hepsi kismi, kuyruk oneri_hazir 0.
+- HEAD = **87c36c1**, origin/main senkron. Tek kod commit'i bu oturumdan: `3243e51` (seed script, 214 satır).
+- **Fonksiyon: 12/12** (seed bir CLI script'i, serverless değil — tavanı etkilemez).
+- DB: boru_olculer paslanmaz 132 (Sandvik +52 sonrası), B36.19M=89 + B36.10M=43.
+
+## WORKING TREE — DİKKAT (dokunulmadı, kasıtlı)
+- **migration/ → schema/+data/ taşıması commit BEKLİYOR.** Önceki bir oturumda 98 migration dosyası
+  `migrations/schema/` (56) + `migrations/data/` (42)'ye taşınmış ama commit edilmemiş. git bunu
+  "deleted düz dosyalar + untracked schema/data/" gösteriyor. **Bu oturumun işi DEĞİL — dokunulmadı.**
+  `gp` autostash ile rebase'in altından sağ salim geçirdi. Sonraki kütüphane oturumu kendi planıyla commit'lemeli.
+- `sandvik_...json` proje kökünde untracked (commit'lenmedi — veri DB'de, repoda gereksiz).
 
 ## Açık (sonraki oturum)
-- **13 kirli devre kaldı:** recovery butonu her birinde tek tek çalıştırılmalı (kfukfuyk hariç 13).
-- **B testi yapılmadı:** yeni devre terfi → wizard loop canlı doğrulama (A geçti, B'nin de geçmesi olası).
-- **MK-176.7 (ana sonraki konu):** Onay Kuyruğu yerine wizard İnceleme ekranını spool_detay/devre_detay'da
-  göster (Cihat fikri). Kapsam araştırması gerek — kod yazmadan önce devre-inceleme.js taslak-dışı bağlam
-  + spool_detay.html.
-- Recovery i18n: 4 anahtar × 3 dil eksik (`dv_onayk_recovery`, `_calisiyor`, `_hata`, `_ok` — şu an TR fallback).
-- `1 1/4"` boşluklu-kesir bug (ares-olcu.js, düşük öncelik, 175'ten).
-- Gece cron (03:00) hâlâ ispatsız.
-- Backfill throughput follow-up (opsiyonel): `_eslesme` writeback re-read'ini okuJson'dan türetip atla.
+- **MK-176.7 (hâlâ keystone):** Onay Kuyruğu yerine wizard İnceleme ekranını spool_detay/devre_detay'da göster.
+  177'de el atılmadı (gündem kütüphane oldu). spool_detay.html + devre-inceleme.js kapsam araştırması bekliyor.
+- **Fitting/flanş seed (MK-177.3 — kütüphane devamı):** DIN 28011 cap (21) + DIN 86087 saddle DB'de YOK
+  (teyitli), JSON'lar `~/Downloads`'ta hazır. AMA: `fitting_olculer` doğal UNIQUE constraint'i YOK (sadece id pkey)
+  → upsert imkansız; eski cunife JSON'larında `_db_aksiyonu` yok → script "yazılacak yok" der. **Önce unique key
+  kararı** (öneri: `standart+malzeme_grubu+parca_tipi+cap_buyuk_dn+cap_kucuk_dn`, dolu 897-satır tabloda
+  MK-98.2 dry-run ile teyit — mevcut veri tekrar ediyorsa ALTER patlar), **sonra** script uyarlama (filtre +
+  onConflict + `_db_aksiyonu` yoksa hepsini yaz).
+- **KUTUPHANE-YUKLEME-TAKIP.md BAYAT:** v4/95'te kalmış. DB gerçeği: boru karbon 297 / paslanmaz 132 / al 50 /
+  cunife 68; fitting cunife 328 / karbon 569; flanş cunife 48 / karbon 308. Güncellenmeli.
+- Seed tolerans notu: et_min/et_max artık DB'nin sabit %12.5 toleransıyla hesaplanıyor; Sandvik'in gerçek
+  tolerans bandı isteniyorsa `tolerans_et_yuzde` kolonuna yazılmalı (düşük öncelik).
+- 13 kirli devre recovery (176'dan) + B testi (wizard terfi loop canlı) — hâlâ açık.
+- Recovery i18n (4 anahtar × 3 dil), `1 1/4"` boşluklu-kesir bug, gece cron ispatı — devam.
 
 ## Dosya md5 (bu oturum, push edilmiş)
-- api/eslestirme-backfill.js   = 7d54016fdbb80de63c6d7afb77269c2f
-- api/kuyruk-isle-izometri.js  = 6ab41f02de523a133fee1608471d52da
-- devre_wizard_v3.html         = f74e12469366b69c13784c588d428a96
-- devre_detay.html             = 3db37a83ffcd5870de0b0bef85f3af5d
+- scripts/seed-from-json.mjs = 5234b69806c6364aa2cea4512402d5b9

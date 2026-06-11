@@ -1,4 +1,4 @@
-# AresPipe — BRIEFING (Oturum 175 girişi)
+# AresPipe — BRIEFING (Oturum 178 girişi)
 
 **Proje:** Vardiya/tersane pipe spool yönetimi SaaS. Tek geliştirici: Cihat. Tüm çalışma Türkçe.
 **Repo:** github.com/cihatoztas-ai/arespipe · **Prod:** arespipe.vercel.app
@@ -9,6 +9,7 @@
 - L2 deterministik parse ($0) tercih; L3 Vision AI ($~0.03) yalnız fallback.
 - Veri silinmez; status `iptal`/`silindi` + audit.
 - Server-to-server Vercel çağrısı yok (MK-113/A); drenaj client-loop.
+- **Kütüphane verisi (boru/fitting/flanş ölçüleri) artık migration ile DEĞİL, seed script ile girer** (MK-177.1). Akış: `PDF → JSON → node scripts/seed-from-json.mjs <dosya> [--yaz] → DB`. İdempotent upsert.
 
 ## Değişmez kurallar
 - `izometri-oku.js` dokunulmaz (MK-49.1). Şema-önce (MK-85.3). Oku-sonra-yaz (MK-126.8).
@@ -20,6 +21,7 @@
 ## Araçlar
 - `arespipe_kopyala <kaynak> <hedef> <md5>` (3 argüman zorunlu).
 - `gp` (fetch+rebase+push) · `gpc "msg"` (add+commit+rebase+push).
+- **`scripts/seed-from-json.mjs <dosya> [--yaz] [--tablo X] [--uyari-yaz]`** — JSON katalog → DB idempotent upsert. `--dry-run` varsayılan (güvenli). `_`-alanlarını + generated kolonları (et_min/et_max/ic_cap) otomatik atar. `.env.local`'den `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` okur. Tablo unique-key haritası script içinde (`UNIQUE_KEY`): boru_olculer kanıtlı; **fitting_olculer/flansh_olculer için unique key HENÜZ tanımsız** (bkz. sonraki oturum).
 - `lib/excel-parser.js` (BOM parse; `seviye` L1/L2 + `guven`), `lib/l2-parser.js`, `lib/format-paketleri.js` (AILE_KAYIT), `lib/izo-eslesme.js` (4-durum), `lib/bindir.js` (Excel↔PDF alan kıyas/overlay), `lib/glyph-onar.js`.
 - `ares-kabuk.js` (ARES_KABUK.grupla/aktar — paylaşılan), `ares-izometri-drenaj.js`, `ares-olcu.js`.
-- `docs/KARARLAR.md` (karar günlüğü) · `docs/WIZARD-YOL-HARITASI.md`.
+- `docs/KARARLAR.md` (karar günlüğü) · `docs/WIZARD-YOL-HARITASI.md` · `docs/KUTUPHANE-YUKLEME-TAKIP.md` (kütüphane durum — **BAYAT, DB ile güncellenmeli**).
