@@ -1,59 +1,39 @@
-# CLAUDE-SONRAKI-OTURUM.md — Oturum 178 giriş planı
+# CLAUDE-SONRAKI-OTURUM.md — Oturum 179 giriş planı
 
 ## Ritüel (önce)
-`git pull && git status && git log --oneline -5` + fonksiyon 12/12 + handoff oku. HEAD bekle: 87c36c1 (+ 177 doc commit'i).
-**DİKKAT git status:** working tree'de yarım migration taşıması (deleted düz dosyalar + untracked schema/data/)
-GÖRÜNECEK — bu NORMAL, 177'nin işi değil (aşağıda). Panik yok.
+`git pull && git status && git log --oneline -5` + fonksiyon 12/12 + handoff oku.
+HEAD bekle: 178 doc commit'i (KUTUPHANE-DURUM + handoff), altında 178 kod commit'i (seed-from-json.mjs).
+**git status'ta yarım `migrations/` taşıması + `.bak`'lar GÖRÜNECEK — NORMAL, 178 işi değil. Panik yok.**
 
-## Bağlam: nerede kaldık (177)
-Kütüphane veri girişi migration'dan KURTARILDI: `scripts/seed-from-json.mjs` (idempotent upsert) kuruldu,
-Sandvik paslanmaz boru ile kanıtlandı (52 satır, 0 hata). Commit 3243e51 → push 87c36c1. Fonksiyon 12/12.
-Malzeme takip sayfası tartışıldı ama Cihat ölçeği küçülttü ("genel not → uyarılar") + ertelendi. MK-176.7 (Onay
-Kuyruğu → İnceleme taşıma) hâlâ el atılmadı.
+## Bağlam: nerede kaldık (178)
+Paslanmaz B16.9 fitting kütüphanesi başladı. **90LR (19) + 45LR (19) DB'de** (fitting_olculer 897→935).
+Seed kapısı açıldı (`fitting_olculer_dogal_uk`, NULLS NOT DISTINCT 7-alan). `seed-from-json.mjs` fitting'e uyarlandı.
+Yöntem KESİN: %100 referans, türetme YASAK, ≥2 kaynak çapraz-doğrulama (MK-178.1). Kaynaklar: dynamicforge A403 (birincil)
++ buyfittingsonline (gerçek SS kg) + Sandvik/Alleima (otorite). Eski TAKİP belgesi emekli, yeni `docs/KUTUPHANE-DURUM.md`.
 
-## SIRADAKİ İŞ — Cihat açılışta seçer
+## SIRADAKİ İŞ — paslanmaz B16.9 devamı (sırayla)
+Veri büyük kısmı **dynamicforge çekiminde elimde** (90SR, end cap, konsantrik reducer gördüm; eksantrik/tee/stub ek çekim).
+Her parça tipi için: dynamicforge çek → buyfittingsonline ile ≥2 nokta-kontrol → JSON (karbon alan kullanımı aynalanır:
+90LR→ucu_uca_a, 45LR→ucu_uca_b, reducer→ucu_uca_f + cap_kucuk_*, cap→ucu_uca_h, stub→stub_lap_*) → seed-from-json.mjs.
+Sıra: **90SR → end cap → reducer_conc → reducer_ecc → tee_eq → stub_end → (sonra B16.11 socket).**
 
-### SEÇENEK A) Kütüphane devamı — fitting/flanş seed (MK-177.3)
-**Gerçek eksik (DB teyitli, 177):** DIN 28011 cap (21 satır) + DIN 86087 saddle → `fitting_olculer`'da YOK.
-JSON'lar `~/Downloads`'ta hazır (`din28011_cap_kme_v1.json`, `din86087_saddle_kme_v1.json`), parse gerekmez.
-**ENGELLER (kod yazmadan çöz):**
-1. `fitting_olculer` doğal UNIQUE constraint YOK (sadece id pkey). Upsert için gerekli.
-   - Öneri unique key: `(standart, malzeme_grubu, parca_tipi, cap_buyuk_dn, cap_kucuk_dn)` — ama DOĞRULA.
-   - MK-98.2 dry-run: `BEGIN; ALTER TABLE fitting_olculer ADD CONSTRAINT ... UNIQUE(...); ROLLBACK;` —
-     mevcut 897 satır o kombinasyonu TEKRAR ediyorsa ALTER patlar. Önce `GROUP BY ... HAVING COUNT(*)>1` ile çakışma ara.
-2. Eski cunife JSON'larında `_db_aksiyonu` YOK → script şu an "yazılacak yok" der. Script uyarlaması:
-   `_db_aksiyonu` alanı hiç yoksa TÜM satırları yaz (yeni davranış, flag'le: `--hepsi` veya otomatik algıla).
-3. JSON alanları (`agirlik_kg, cap_buyuk/kucuk_mm/dn/nps, ucu_uca_*_mm, yaricap_mm, parca_tipi, sanity_gecti`)
-   ↔ `fitting_olculer` kolonları eşleşmesini information_schema ile teyit et (boru'da agirlik_kg_m'di, fitting'de agirlik_kg).
-   `sanity_gecti` muhtemelen DB kolonu değil → atılmalı (script `_` ile başlamadığı için elle ele alınmalı).
-4. `UNIQUE_KEY` haritasına `fitting_olculer: [...]` ekle, yeni md5, kopyala.
-Sonra: --dry-run → --yaz → DB sayım teyit. Saddle'ın fitting mi flanş mı olduğunu JSON meta'dan kontrol et.
+Seed artık akıcı: `node scripts/seed-from-json.mjs <dosya>` (dry-run) → `--yaz`. JSON `notlar` nested obje bırak (script stringify eder),
+`_db_aksiyonu: YENI` / şüpheli satır `FLAG_SUPHELI`.
 
-### SEÇENEK B) MK-176.7 — Onay Kuyruğu → İnceleme taşıma ⭐ (asıl keystone, 176'dan beri bekliyor)
-Cihat fikri: aktif devrede ayrı "onay kuyruğu" yerine wizard İnceleme/düzenleme ekranını spool_detay/devre_detay'da
-göster. **Kod yazmadan kapsam araştırması (MK-126.8):** `spool_detay.html` yapısı (henüz hiç açılmadı, yüklet),
-`devre-inceleme.js` aktif-devre semantiği (terfi yok → "düzeltme/eşleştirme" eylemi ne olur), karar: sekmeyi
-DEĞİŞTİR mi / spool_detay'a EK görünüm mü. B-6: atanmamış/manuel/post-terfi-Excel sinyalleri sessizce kaybolmamalı.
+## AÇIK İŞLER / BORÇ
+- **45LR + ≥DN300 90LR 2.kaynak teyit** (tek-kaynak dynamicforge; DN50/100 buyfittingsonline ile doğrula).
+- **DN90 (3.1/2") 90LR FLAG_SUPHELI** — 40S=1.83<DN80 2.18; ikinci kaynak bul, çöz, yaz.
+- **cunife cap** (fitting'de cunife elbow/tee/reducer var, cap ❌) + **DIN flanş eksikleri** (DIN 86087 cunife flanş → flansh tablosu).
+- **boru/flanş kırılım tazeleme:** KUTUPHANE-DURUM §9 sorgusuyla granül durumu doldur (şu an total bilinir, standart×schedule değil).
+- **Quirk temizliği (okuma kodu görülünce tek seferde):** yaricap_mm karbon 1.5×OD vs paslanmaz 1.5×NPS; 45° uç-uca karbon
+  ucu_uca_b vs şema ucu_uca_c; standart vs geometri_std otoritesi. devre_detay / 3D render (MK-49.A) hangi alanı okuyor — yüklet, bak.
+- **flansh_olculer unique constraint YOK** — flanşa geçince MK-98.2 dry-run.
+- Önceki borçlar: `migrations/` taşıması commit, MK-117 (yukleyen_id null), 13 kirli devre recovery, gece cron ispatı, `1 1/4"` kesir bug.
 
-### SEÇENEK C) Malzeme takip — basit sürüm (177'de küçültüldü)
-Cihat'ın indirgenmiş fikri: yıldızlı devre malzeme listesinde **genel not alanı** → personel "ezik/yamuk/eksik"
-yazar → bir uyarılar görünümüne düşer. Yıldız sistemine DOKUNMA (devreler.html, DB-tabanlı kuyruk, çalışıyor).
-Tam QC sistemi (ayrı tablo/foto/sayfa) İSTENMEDİ — basit tut. Mobil sonra.
+## İLK HAMLE (179)
+Cihat onaylarsa düz sırayla **90SR** çek. Yöntem kanıtlandı, araç hazır, kapı açık — akış hızlı olmalı.
 
-## TEMİZLİK / BORÇ
-- **migration/ → schema/+data/ taşıması (önceki oturum, commit bekliyor):** Cihat netleştirmeli — bu ayrım
-  KASITLI ve kalıcı mı? Evetse ayrı commit'le (README dahil). Emin değilse o işi başlatan oturumun planına bırak.
-  177 buna DOKUNMADI.
-- **KUTUPHANE-YUKLEME-TAKIP.md güncelle:** v4/95'te bayat. DB gerçeği: boru karbon 297/paslanmaz 132/al 50/
-  cunife 68; fitting cunife 328/karbon 569; flanş cunife 48/karbon 308. (paslanmaz boru Sandvik +52 ile büyüdü.)
-- **KARARLAR.md MK-169/170/171 boşluğu** — 176'da kapatıldı denmişti, teyit et.
-- 13 kirli devre recovery + B testi (176'dan). Recovery i18n (4×3). `1 1/4"` kesir bug. Gece cron ispatı.
-- MK-117 (yukleyen_id null) — devam.
-
-## İLK HAMLE (178)
-Cihat A/B/C seçer. Hiçbiri demezse: **B (MK-176.7)** asıl keystone, en uzun bekleyen. A en hızlı somut kazanım
-(gerçek eksik + araç hazır) ama fitting unique-key kararı gerektirir. Önce Cihat'ın gündemini al.
-
-## 177'de KAPANAN
-- ✅ Kütüphane seed akışı (migration döngüsü kırıldı) — kanıtlı (Sandvik 52, 0 hata).
-- ✅ Malzeme takip — tartışıldı, küçültüldü, ertelendi (overkill önlendi).
+## 178'de KAPANAN
+- ✅ Paslanmaz B16.9 90LR + 45LR (38 satır) — çapraz-doğrulanmış, seed'li.
+- ✅ Seed kapısı (fitting unique constraint) + seed-from-json.mjs fitting uyarlaması.
+- ✅ Kütüphane dokümanı yenilendi (KUTUPHANE-DURUM.md), eski TAKİP emekli.

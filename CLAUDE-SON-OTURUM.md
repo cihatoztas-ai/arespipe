@@ -1,52 +1,48 @@
-# CLAUDE-SON-OTURUM.md — Oturum 177 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 178 özeti
 
 ## Ana tema
-**Kütüphane veri girişinin migration darboğazı kırıldı.** `seed-from-json.mjs` idempotent upsert aracı yazıldı,
-Sandvik paslanmaz boru ile canlı kanıtlandı (52 satır, 0 hata). Cihat'ın eski "bu mantıklı gelmiyor" sezgisi
-(veri = migration değil) doğrulandı: veri kataloğu schema versiyonu değil, "doğru hâl"dir → upsert doğru araç.
+**Paslanmaz B16.9 fitting kütüphanesi başladı, cunife-seviyesi rigorla.** Yöntem oturdu: %100 referans, türetme yasak,
+≥2 kaynak çapraz-doğrulama. 90LR + 45LR seed'lendi (fitting_olculer 897→935). Seed kapısı (unique constraint) açıldı,
+seed aracı fitting'e uyarlandı, kütüphane dokümanı yenilendi.
 
 ## Yapılanlar
-1. **Malzeme takip sayfası — tartışıldı, küçültüldü, ertelendi.** Tam QC sistemi (ayrı sayfa + uyarılar +
-   foto + `malzeme_uyarilari` tablosu) tasarlandı, dry-run'a kadar gidildi. Cihat "bu kadar işe gerek var mı"
-   deyince DURULDU → "genel not alanı → uyarılara gider" basit fikrine indirildi, sonraki oturuma. Hiçbir şey
-   yazılmadı (dry-run ROLLBACK, repoda iz yok). **Doğru hamle: Cihat'ın ölçek sezgisine uyuldu, dayatılmadı.**
-2. **seed-from-json.mjs (MK-177.1).** Brifing (`MIGRATION-DUZELTME-BRIFING.md`) planı izlendi. JSON oku →
-   YENI satırları filtrele → upsert. `--dry-run` varsayılan güvenli. Commit 3243e51, push 87c36c1.
-3. **Generated kolon engeli → kendi kendini iyileştirme (MK-177.2).** İlk `--yaz` "cannot insert a non-DEFAULT
-   value into column et_min_mm" verdi. `boru_olculer`'da et_min_mm/et_max_mm/ic_cap_mm GENERATED (DB hesaplıyor).
-   Hardcode yerine: upsert hatasından kolon adını regex'le yakala → düş → retry. Her tabloda çalışır, hardcode yok.
-4. **Sandvik canlı seed.** 52 satır, 0 hata. DB teyit beklentiyle birebir (B36.19M=89, B36.10M=43).
+1. **Grup seçimi DATA'dan (MK-158.1).** Eski takip belgesi bayat (fitting=0 diyordu, gerçek 897) → DB GROUP BY ile
+   sıradaki gerçek eksik belirlendi. Cihat: paslanmaz B16.9+B16.11 fitting.
+2. **Ağırlık kuralı (MK-178.1).** Cihat net: türetme/formül/yoğunluk-faktörü YASAK; karbon-bazlı ağırlık kabul değil;
+   her değer referanstan, tablo ikinci kaynakla doğrulanır. Sandvik paslanmazda otorite.
+3. **Kaynak + çapraz-doğrulama.** dynamicforge A403/A815 ↔ buyfittingsonline gerçek SS ürün kg → DN40/50/80 90LR'de
+   **<%1 örtüşme**. ZIZI karbon-bazlı çizelge %7 sapma + iç typo (DN200 STD>Sch40 imkansız) → elendi. Ölçü B16.9/MSS-SP-43.
+4. **JSON üretimi + doğrulama.** 90LR 20 satır (DN90 FLAG_SUPHELI), 45LR 19. Python ile JSON geçerlilik + fiziksel
+   monotonluk kontrolü (tek anomali = zaten flag'li DN90).
+5. **Seed kapısı (MK-178.2).** MK-98.2 dry-run (çakışma yok) → constraint eklendi (NULLS NOT DISTINCT 7-alan).
+   Seed: INSERT...ON CONFLICT → teyit 45LR=19/90LR=19.
+6. **seed-from-json.mjs uyarlaması.** UNIQUE_KEY fitting 7-alan + notlar stringify (tablo-bilinçli) + 'YENI' aksiyonu.
+   node --check temiz.
+7. **Doküman.** KUTUPHANE-DURUM.md (kapsam+takip+yöntem+kural). Eski TAKİP → docs/arsiv/ (git mv).
 
-## Yöntem / disiplin (bu oturumda işe yarayanlar)
-- **MK-85.3 (şema-önce) tekrar tekrar kurtardı:** unique key DB'den çekildi (boru: 5 alan); kolon adları
-  information_schema'dan teyit edildi (15/15 eşleşti); generated kolonlar `is_generated` ile saptandı.
-  Hiçbiri tahmin değil. Fitting'e geçerken aynı disiplin "unique key YOK" gerçeğini çıkardı → seed durduruldu.
-- **MK-126.8 (önce oku):** JSON yapısı (meta/satirlar/uyari/beta + alan adları + `_db_aksiyonu` dağılımı)
-  seed'den önce incelendi. devreler.html yıldız sistemi kod okunarak anlaşıldı (malzeme sayfası tartışması).
-- **--dry-run disiplini:** her `--yaz` öncesi dry-run; ilk generated-kolon hatası DB'ye hiçbir şey yazmadan
-  yakalandı (52/52 reddedildi, tablo temiz kaldı).
-- **Cihat'ın ölçek sezgisi > Claude'un sistem kurma eğilimi:** hem malzeme sayfasında (tam QC → basit not)
-  hem migration'da (Claude sistem kurmaya meyilli, Cihat "gerek var mı"). İkisinde de Cihat haklıydı.
+## Yöntem / disiplin (işe yarayanlar)
+- **MK-158.1 (DATA önce):** sıradaki grup belgeden değil DB GROUP BY'dan seçildi → bayat belge tuzağına düşülmedi.
+- **MK-96 çapraz-doğrulama gerçekten iş yaptı:** ZIZI'yi eledi, dynamicforge+buyfittingsonline'ı <%1 ile onayladı.
+- **MK-85.3/126.8:** fitting_olculer şema + karbon satır kalıbı seed JSON'undan önce okundu (kolon adları, hangi alanda ne).
+- **MK-98.2 dry-run:** constraint öncesi çakışma kontrolü; Supabase editör BEGIN/ROLLBACK'i yutsa da pg_get_constraintdef ile teyit.
+- **Fiziksel sanity (yeni alışkanlık):** ağırlık DN ile monoton artmalı → DN90 anomalisi otomatik yakalandı, flag'lendi.
 
 ## Cihat'ın kritik müdahaleleri
-1. "Stok tutmuyoruz" → malzeme sayfası MRP değil, teslim+QC kapısı olarak yeniden çerçevelendi.
-2. "Bu kadar işe gerek var mı" → tam QC sistemi basit nota indirildi (overkill önlendi).
-3. "Migration yarısı başka şey, sorun olmaz mı" → kavram netleşti: veri tabloda yaşar, migration sadece
-   giriş kapısı; iki kapı (migration + seed) aynı `boru_olculer`'a yazar, tek hakikat.
-4. "Bunlar yüklenmiştir, arşivden bak" → conversation_search ile 95/96 oturumları bulundu, sezgisi doğrulandı
-   (cunife fitting 328 = TAM). DB sayımıyla takip belgesinin bayatlığı ortaya çıktı.
+1. "türetme diye bir seçenek asla yok, hepsi referans belgelerden %100 doğru" → ağırlık metodolojisi sertleşti (MK-178.1).
+2. "ağırlık önemli, bir kaynakta yoksa başka referanstan; tabloyu başka kaynaktan doğrula" → MK-96 disiplini birebir.
+3. "paslanmazda sandvik referans alınabilir" → Sandvik/Alleima otorite kaynak (5S-Sch160, 304/316+dupleks teyitli).
+4. "md dosyası basit olmuş, takip çizelgesi de vardı" → KUTUPHANE-DURUM tablo-tablo/parça-tipi takiple zenginleştirildi
+   (sahte sayı yok: fitting DB-birebir, boru/flanş "tazelenecek" işaretli).
+5. "biz şu şekilde yapıyorduk, aynen devam" → atölye/referans-çekme akışı (Claude çeker, kullanıcı yüklemez) hatırlatıldı.
 
 ## Tuzaklar / öğrenmeler
-- **`fitting_olculer` doğal unique key YOK** (sadece id pkey). Boru'dan farklı → upsert için önce constraint
-  kararı gerekir. Dolu 897-satır tabloya UNIQUE ALTER riskli (mevcut tekrar varsa patlar) → dry-run şart.
-- **Eski cunife JSON'larında `_db_aksiyonu` yok** (94-96 dönemi, YENI/MEVCUT sistemi sonradan eklendi) →
-  script şu an bunları "yazılacak yok" sayar; fitting seed'inde uyarlama gerekir.
-- **`.env.local` Vercel CLI dosyası secret çekmez** → service key boş (`""`) geliyordu. Supabase yeni
-  `sb_secret_` formatından elle eklendi. (Eski `service_role` legacy sekmesinde de var, alternatif.)
-- **Supabase secret key adı tire kabul etmez** (`seed-script` ✗ → `seed_script` ✓).
-- **migration/ → schema/data/ taşıması working tree'de yarım** — önceki oturum işi, bu oturum dokunmadı,
-  `gp` autostash ile korudu. Sonraki kütüphane oturumu commit'lemeli.
+- **Handoff "JSON'lar hazır" demişti — değildi** (177 yanlış sayım). Tamamlandı-iddiası şüpheyle karşılandı, doğrulandı.
+- **Karbon kütüphanesinde quirk'ler var:** yaricap_mm=1.5×OD (muhtemel hata, doğrusu 1.5×NPS); 45° uç-uca ucu_uca_b'de
+  (şema ucu_uca_c der). Paslanmaz uyumluluk için karbon FIELD kullanımı aynalandı; quirk'ler ayrı temizlik (okuma kodu gerek).
+- **Supabase SQL editörü BEGIN/ROLLBACK'i her zaman tutmuyor** — dry-run ALTER kalıcı oldu; DDL sonrası HER ZAMAN
+  pg_get_constraintdef ile teyit (tanım doğruysa sorun yok).
+- **Public B16.9 ağırlık çizelgeleri karbon-bazlı** (Projectmaterials açıkça yazıyor) → paslanmaz için A403-özgü kaynak şart.
 
-## Karar günlüğü
-KARARLAR.md'ye **MK-177.1** (seed akışı), **MK-177.2** (generated-kolon kendi kendini iyileştirme),
-**MK-177.3** (fitting/flanş seed — unique key kararı bekliyor) eklenecek.
+## Karar günlüğü (KARARLAR.md'ye)
+**MK-178.1** referans-çekme/türetme-yasak/≥2-kaynak; **MK-178.2** fitting unique-key (NULLS NOT DISTINCT 7-alan);
+**MK-178.3** kaynak hiyerarşisi (dynamicforge A403 + buyfittingsonline + Sandvik/Alleima); + iki quirk notu (yaricap, 45°-alan).
