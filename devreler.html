@@ -2367,11 +2367,10 @@ function _mlPdf(starred, starMap, DURUM_LABEL, kalemMap, pdfWin) {
     /* Üst bilgi — her sayfada */
     '<div class="ph">' +
       '<div class="lf">' +
-        '<div class="lf-box">AM</div>' +
-        '<span class="lf-ad">ARESMAK</span>' +
+        (window.aresFirmaLogo?window.aresFirmaLogo(40):'<span class="lf-ad">ARESMAK</span>') +
       '</div>' +
       '<div class="la">' +
-        (window.aresLogoPrint?window.aresLogoPrint(26):'<span class="la-ad">AresPipe</span>') +
+        (window.aresLogoPrint?window.aresLogoPrint(34):'<span class="la-ad">AresPipe</span>') +
       '</div>' +
     '</div>' +
 
@@ -2593,9 +2592,9 @@ async function _tabelaPdf() {
     '</div>' +
 
     '<div class="ph">' +
-      '<div class="lf"><div class="lf-box">AM</div><span class="lf-ad">ARESMAK</span></div>' +
+      '<div class="lf">' + (window.aresFirmaLogo?window.aresFirmaLogo(40):'<span class="lf-ad">ARESMAK</span>') + '</div>' +
       '<div class="la">' +
-        (window.aresLogoPrint?window.aresLogoPrint(26):'<span class="la-ad">AresPipe</span>') +
+        (window.aresLogoPrint?window.aresLogoPrint(34):'<span class="la-ad">AresPipe</span>') +
       '</div>' +
     '</div>' +
 

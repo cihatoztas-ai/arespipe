@@ -3260,14 +3260,14 @@ function fmPdfYazdir(){
     +'<div class="page">'
       +'<div class="head">'
         +'<div class="head-left">'
-          +'<div class="logo-box">FİRMA LOGOSU</div>'
+          +(window.aresFirmaLogo?window.aresFirmaLogo(34):'<div class="logo-box">FİRMA LOGOSU</div>')
           +'<div class="head-meta">'
             +'<div class="head-title">✂️ Kesim Planı — '+esc(kl.no)+'</div>'
             +'<div class="head-sub">'+tarihStr+' · '+esc(malzLabel)+' '+esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(ilk.kalite)||ilk.kalite||''):(ilk.kalite||''))+' · Ø'+esc(ilk.cap||'')+' · et '+esc(ilk.kalinlik||'')+' · Stok '+params.standartLen+'mm · Kerf '+params.kerf+'mm</div>'
           +'</div>'
         +'</div>'
         +'<div class="brand">'
-          +(window.aresLogoPrint?window.aresLogoPrint(26):'<span class="brand-name">AresPipe</span>')
+          +(window.aresLogoPrint?window.aresLogoPrint(34):'<span class="brand-name">AresPipe</span>')
         +'</div>'
       +'</div>'
       +'<div class="stat-row">'
@@ -3536,10 +3536,10 @@ function exportKesimPdf() {
     /* Sayfa Başlığı */
     +'<div class="ph">'
       +'<div class="ph-firma">'
-        +'<div class="ph-firma-box">FİRMA LOGOSU</div>'
+        +(window.aresFirmaLogo?window.aresFirmaLogo(38):'<div class="ph-firma-box">FİRMA LOGOSU</div>')
       +'</div>'
       +'<div class="ph-ap">'
-        +(window.aresLogoPrint?window.aresLogoPrint(26):'<span class="ph-ap-ad">AresPipe</span>')
+        +(window.aresLogoPrint?window.aresLogoPrint(34):'<span class="ph-ap-ad">AresPipe</span>')
       +'</div>'
     +'</div>'
 

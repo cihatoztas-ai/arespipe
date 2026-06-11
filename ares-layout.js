@@ -652,6 +652,15 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   window.aresBelgeBasligi = aresBelgeBasligi;
   window.aresRefreshLogo  = updateLogoFromSettings;
   window.aresLogoPrint = function (h) { return ARES_LOGO_PRINT.replace('height:34px', 'height:' + (h||34) + 'px'); };
+  window.aresFirmaLogo = function (h) {
+    h = h || 38;
+    var logo = '', firma = {};
+    try { logo = localStorage.getItem('ares_logo_firma') || ''; } catch (e) {}
+    try { firma = JSON.parse(localStorage.getItem('ares_firma') || '{}'); } catch (e) {}
+    if (logo) return '<img src="' + logo + '" style="height:' + h + 'px;max-width:220px;object-fit:contain;display:block;">';
+    var ad = firma.ad || firma.kisaAdi || '';
+    return ad ? '<span style="font:800 17px Arial,sans-serif;color:#16202B;letter-spacing:.5px;">' + ad + '</span>' : '';
+  };
 
   // ── Topbar oluştur ─────────────────────────────────────────
   function buildTopbar() {
