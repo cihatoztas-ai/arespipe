@@ -9,12 +9,12 @@
 //   node scripts/seed-from-json.mjs <dosya.json> --tablo boru_olculer   # tablo zorla (JSON'da yoksa)
 //
 // Davranış:
-//   - Sadece _db_aksiyonu IN (YENI_DN, YENI_SCH, YENI_SCH_KOMB) satırları yazılır.
-//   - MEVCUT_TEYIT atlanır (zaten DB'de).
-//   - _ ile başlayan iç alanlar (_db_aksiyonu, _sanity_*) DB'ye gönderilmez.
+//   - Sadece _db_aksiyonu IN (YENI, YENI_DN, YENI_SCH, YENI_SCH_KOMB) satırları yazılır.
+//   - MEVCUT_TEYIT / FLAG_SUPHELI atlanır.
+//   - _ ile başlayan iç alanlar (_db_aksiyonu, _sanity_*, _nps) DB'ye gönderilmez.
 //   - upsert + onConflict=UNIQUE_KEY → idempotent: var olan satır BOZULMAZ, eksik eklenir.
-//   - uyari_satirlar: not amaçlı, varsayılan YAZILMAZ (zaten MEVCUT_TEYIT olabilir);
-//     --uyari-yaz verilirse YENI olanları da yazar.
+//   - notlar gibi TEXT kolonlarda nested obje → JSON.stringify (tablo-bilinçli; boru_olculer JSONB'ye dokunma).
+//   - uyari_satirlar: not amaçlı, varsayılan YAZILMAZ; --uyari-yaz verilirse YENI olanları da yazar.
 //   - kapsam_disi_oneri_beta: HİÇ dokunulmaz.
 
 import fs from 'node:fs';
@@ -24,12 +24,19 @@ import { createClient } from '@supabase/supabase-js';
 // DB'den teyit edilen gerçek unique constraint'ler. Yeni tablo eklenirse buraya yaz.
 const UNIQUE_KEY = {
   boru_olculer:   ['standart', 'malzeme_grubu', 'dn', 'schedule_tipi', 'schedule_deger'],
-  // fitting/flansh için constraint'ler eklenince doldurulacak (şimdilik boru kanıtlı):
-  fitting_olculer: null,
-  flansh_olculer:  null,
+  // fitting_olculer_dogal_uk (Oturum 178, NULLS NOT DISTINCT) — DB'den teyitli:
+  fitting_olculer: ['standart', 'malzeme_grubu', 'parca_tipi', 'cap_buyuk_dn', 'cap_kucuk_dn', 'schedule_kod', 'class_no'],
+  flansh_olculer:  null,  // constraint eklenince doldurulacak
 };
 
-const YENI_AKSIYONLAR = new Set(['YENI_DN', 'YENI_SCH', 'YENI_SCH_KOMB']);
+// TEXT kolon olup JSON içerebilen alanlar (nested obje → stringify).
+// DİKKAT: boru_olculer.notlar JSONB → buraya EKLEME (supabase-js JSON gönderir, çift-encode olur).
+const TEXT_JSON_KOLONLAR = {
+  fitting_olculer: ['notlar'],
+  flansh_olculer:  ['notlar'],
+};
+
+const YENI_AKSIYONLAR = new Set(['YENI', 'YENI_DN', 'YENI_SCH', 'YENI_SCH_KOMB']);
 
 // ── Argümanlar ─────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -101,12 +108,17 @@ if (!uniqueKey) {
   process.exit(1);
 }
 
-// ── Satırları hazırla: _ alanlarını at, YENI olanları seç ──────────
+// ── Satırları hazırla: _ alanlarını at, TEXT-JSON kolonları stringify ──
+const stringifyKolonlar = new Set(TEXT_JSON_KOLONLAR[tablo] || []);
 function temizle(row) {
   const o = {};
   for (const k of Object.keys(row)) {
-    if (k.startsWith('_')) continue;           // iç alanlar (_db_aksiyonu, _sanity_*) DB'ye gitmez
-    o[k] = row[k];
+    if (k.startsWith('_')) continue;           // iç alanlar (_db_aksiyonu, _sanity_*, _nps) DB'ye gitmez
+    let v = row[k];
+    if (stringifyKolonlar.has(k) && v !== null && typeof v === 'object') {
+      v = JSON.stringify(v);                    // TEXT kolon: nested obje → string
+    }
+    o[k] = v;
   }
   return o;
 }
@@ -131,11 +143,11 @@ console.log(`Dosya       : ${dosya}`);
 console.log(`Bağlantı    : ${host}`);
 console.log(`Tablo       : ${tablo}`);
 console.log(`UNIQUE KEY  : (${uniqueKey.join(', ')})`);
-console.log(`Kaynak      : ${meta.kaynak || '—'}`);
+console.log(`Kaynak      : ${meta.kaynak || meta.kaynak_birincil || '—'}`);
 console.log('────────────────────────────────────────────');
 console.log(`JSON satır       : ${satirlar.length}`);
 console.log(`  YENI (yazılacak): ${yeniSatirlar.length}`);
-console.log(`  MEVCUT (atlandı): ${atlanan}`);
+console.log(`  Atlanan         : ${atlanan} (MEVCUT_TEYIT / FLAG_SUPHELI vb.)`);
 console.log(`Uyarı satır      : ${uyariSatirlar.length}${UYARI_YAZ ? ` (${uyariYazilan} YENI dahil edildi)` : ' (dahil edilmedi — --uyari-yaz ile eklenir)'}`);
 console.log(`Beta/kapsam-dışı : ${doc.kapsam_disi_oneri_beta ? 'var (dokunulmaz)' : 'yok'}`);
 console.log('────────────────────────────────────────────');
@@ -150,7 +162,8 @@ if (!YAZ) {
   console.log('🔍 DRY-RUN (hiçbir şey yazılmadı). İlk 5 satır önizleme:\n');
   yazilacak.slice(0, 5).forEach((r, i) => {
     const kimlik = uniqueKey.map(k => `${k}=${r[k]}`).join(', ');
-    console.log(`  ${i + 1}. ${kimlik}  | OD=${r.dis_cap_mm} et=${r.et_mm} kg/m=${r.agirlik_kg_m}`);
+    const agr = (r.agirlik_kg ?? r.agirlik_kg_m ?? '—');
+    console.log(`  ${i + 1}. ${kimlik}  | kg=${agr}`);
   });
   if (yazilacak.length > 5) console.log(`  … +${yazilacak.length - 5} satır daha`);
   console.log(`\nGerçek yazmak için: node ${process.argv[1].split('/').pop()} ${dosya} --yaz`);
