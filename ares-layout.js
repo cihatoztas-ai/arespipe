@@ -537,7 +537,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
         </svg>
       </button>
       <div class="sidebar-logo">
-        <div class="logo-mark">AP</div>
+        <div class="logo-mark"><img class="menu-amblem" src="/assets/marka/arespipe-mark-koyu.svg" style="width:20px;height:20px;display:block;"></div>
         <div class="logo-text">AresPipe</div>
       </div>
       <div class="sidebar-nav"></div>
@@ -609,7 +609,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
       logoMark.innerHTML = `<img src="${aresLogo}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;">`;
       logoMark.style.background = 'transparent';
     } else {
-      logoMark.innerHTML = 'AP';
+      logoMark.innerHTML = '<img class="menu-amblem" src="/assets/marka/arespipe-mark-koyu.svg" style="width:20px;height:20px;display:block;">';
       logoMark.style.background = '';
     }
     logoText.textContent = firma.kisaAdi || 'AresPipe';
