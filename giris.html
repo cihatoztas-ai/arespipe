@@ -2,6 +2,10 @@
 <html lang="tr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/assets/marka/arespipe-favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/marka/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/marka/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/marka/icon-180.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giriş | AresPipe</title>
 <!-- ✅ A3: Flash prevention -->
@@ -120,6 +124,11 @@ html,body{height:100%;overflow:hidden;}
   letter-spacing:2px;line-height:1;margin-bottom:6px;
 }
 .logo-altyazi{font-size:14px;color:var(--txd);}
+.giris-logo-img{height:46px;width:auto;display:block;margin-bottom:10px;}
+.logo-koyu{display:none;}
+[data-theme=dark] .logo-acik{display:none;}
+[data-theme=dark] .logo-koyu{display:block;}
+.sol-amblem{width:52px;height:52px;display:block;margin-bottom:14px;}
 
 .form-grup{margin-bottom:18px;}
 .form-etiket{
@@ -201,6 +210,7 @@ html,body{height:100%;overflow:hidden;}
       <span class="etiket-yazi">v3.0 · 2026</span>
     </div>
     <div class="sol-brand">
+      <img class="sol-amblem" src="/assets/marka/arespipe-mark-koyu.svg" alt="">
       <div class="brand-ad">ARESPIPE</div>
       <div class="brand-cizgi"></div>
       <div class="brand-alt" data-i18n="giris_altyazi">Tersane Boru İmalat Takip Sistemi</div>
@@ -217,7 +227,8 @@ html,body{height:100%;overflow:hidden;}
 
     <div class="form-wrap">
       <div class="logo-alan">
-        <div class="logo-baslik">ARESPIPE</div>
+        <img class="giris-logo-img logo-acik" src="/assets/marka/arespipe-logo-yatay.svg" alt="AresPipe">
+        <img class="giris-logo-img logo-koyu" src="/assets/marka/arespipe-logo-yatay-koyu.svg" alt="AresPipe">
         <div class="logo-altyazi" data-i18n="giris_hosgeldiniz">Hoş geldiniz</div>
       </div>
 
