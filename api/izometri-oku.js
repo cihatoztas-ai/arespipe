@@ -1105,25 +1105,55 @@ async function asmeFallbackDoldur(spoollar) {
       continue;
     }
 
-    // DN'den cap_mm doldurma
-    // 150: MK-49.1 kontrollu istisna — schedule parametresi gecirilir. Mevcut tum
-    // formatlarda spool.schedule undefined -> boruOlcuBul falsy guard -> varsayilan
-    // yol birebir ayni (geriye uyumlu). Format kurali schedule cikarirsa dogru et dolar.
+    // 174 (MK-49.1 kontrollu istisna — KÖR FALLBACK DUZELTMESI):
+    // Eski yol spool.schedule null gelince boruOlcuBul -> varsayilanSchedule(dn)='40'
+    // + malzeme yok -> 'karbon' uyduruyordu => 2" 10S paslanmaz icin et=3.91 (YANLIS;
+    // dogru 2.77). Schedule/kalite aslinda dominant boru satirinin tanim+kalite
+    // alaninda mevcut ('Boru ... Paslanmaz 316L SCH10S ...'); fallback bunu gormezden
+    // geliyordu. Cozum: dominant boru satirindan schedule (tanim regex) + malzeme
+    // (kalite/malzeme) turet, boruOlcuBul'a gecir. Bulunamazsa varsayilana DUSME,
+    // et=null + uyari birak (veri uydurma).
+    const _ml = Array.isArray(yeni.malzeme_listesi) ? yeni.malzeme_listesi : [];
+    const _dominantBoru =
+      _ml.find(m => m && /boru|pipe/i.test(String(m.kategori || ''))) || _ml[0] || null;
+
+    // schedule: spool.schedule -> dominant boru tanim regex ('SCH10S','Sch 10S','SCH 40S')
+    let _sched = yeni.schedule || null;
+    if (!_sched && _dominantBoru) {
+      const _t = String(_dominantBoru.tanim || _dominantBoru.malzeme_standardi || '');
+      const _sm = _t.match(/SCH\.?\s*(\d{1,3}S?)\b/i);
+      if (_sm) _sched = _sm[1].toUpperCase();
+    }
+    // malzeme: spool.malzeme_en_kodu -> dominant boru kalite/malzeme
+    const _malz =
+      yeni.malzeme_en_kodu ||
+      (_dominantBoru && (_dominantBoru.kalite || _dominantBoru.malzeme)) ||
+      null;
+
+    // DN'den cap_mm doldurma (turetilmis schedule+malzeme ile)
     if (!yeni.cap_mm) {
-      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu, schedule: yeni.schedule });
+      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: _malz, schedule: _sched });
       if (olcu?.dis_cap_mm) {
         yeni.cap_mm = Number(olcu.dis_cap_mm);
         yeni.dolduruldu.cap_mm = olcu.kaynak;
       }
     }
 
-    // Et_mm yoksa veya kaynagi pdf_yok ise -> helper'dan default schedule
+    // Et_mm yoksa veya kaynagi pdf_yok ise -> turetilmis schedule+malzeme ile doldur.
+    // boruOlcuBul artik schedule yoksa null doner (varsayilana dusmez) -> et bos kalir.
     if ((!yeni.et_mm || yeni.et_kaynagi === 'pdf_yok') && yeni.dn) {
-      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: yeni.malzeme_en_kodu, schedule: yeni.schedule });
+      const olcu = await boruOlcuBul({ dn: yeni.dn, malzeme_en_kodu: _malz, schedule: _sched });
       if (olcu?.et_mm) {
         yeni.et_mm = Number(olcu.et_mm);
         yeni.et_kaynagi = `${olcu.kaynak} (SCH ${olcu.schedule_kod})`;
         yeni.dolduruldu.et_mm = yeni.et_kaynagi;
+      } else if (!_sched) {
+        // schedule turetilemedi -> et uydurma; gorunur uyari birak (Excel kabugu dolduracak)
+        yeni.uyarilar.push({
+          kod: 'et_schedule_yok',
+          mesaj: `Et doldurulamadi: schedule cikarilamadi (DN${yeni.dn}). varsayilana dusulmedi.`,
+          agirlik: 'bilgi',
+        });
       }
     }
 
@@ -1195,18 +1225,31 @@ async function boruOlcuBul({ dn, malzeme_en_kodu, schedule }) {
 
   // 1. Once ARES_BORU helper'a sor (hizli, in-memory) -- helper yuklendiyse
   if (ARES_BORU) {
-    const sch = schedule ? String(schedule) : ARES_BORU.varsayilanSchedule(dnInt);
+    // 174 (MK-49.1 istisna): schedule yoksa ARTIK varsayilanSchedule'a DUSMUYORUZ.
+    // Eski hal: schedule null -> varsayilanSchedule(dn)='40' -> 2" 10S icin et=3.91
+    // (YANLIS). Schedule bilinmiyorsa et uydurmak yanlis; cap icin schedule gerekmez
+    // (disCap schedule-bagimsiz), o yuzden cap yine doner; et icin schedule sart.
+    const sch = schedule ? String(schedule) : null;
     // Helper malzeme normalize ediyor: 'P235GH' -> 'karbon', '316L' -> 'paslanmaz' vb.
     const malzeme = malzeme_en_kodu || 'karbon';
 
     const od = ARES_BORU.disCap(dnInt, malzeme);
-    const et = ARES_BORU.etKalinligi(dnInt, sch, malzeme);
+    const et = sch ? ARES_BORU.etKalinligi(dnInt, sch, malzeme) : null;
 
     if (od && et) {
       return {
         dis_cap_mm: od,
         et_mm: et,
         schedule_kod: sch,
+        kaynak: 'ares_boru',
+      };
+    }
+    // schedule yok ama cap var -> sadece cap don (et null; cagiran et'i bos birakir)
+    if (od && !et) {
+      return {
+        dis_cap_mm: od,
+        et_mm: null,
+        schedule_kod: null,
         kaynak: 'ares_boru',
       };
     }
@@ -1220,8 +1263,17 @@ async function boruOlcuBul({ dn, malzeme_en_kodu, schedule }) {
     } else {
       path += '&standart=eq.ASME-B36.10M';
     }
+    // 174 (MK-49.1 istisna): schedule varsa kesin eslestir. Yoksa rastgele bir
+    // schedule satirinin et'ini dondurmek = et uydurma; o yuzden schedule yoksa
+    // sadece cap don, et=null birak.
+    if (schedule) {
+      path += `&schedule_kod=eq.${encodeURIComponent(String(schedule))}`;
+    }
     const data = await supaFetch(path);
     if (data?.[0]) {
+      if (!schedule) {
+        return { dis_cap_mm: data[0].dis_cap_mm, et_mm: null, schedule_kod: null, kaynak: 'boru_olculer' };
+      }
       return { ...data[0], kaynak: 'boru_olculer' };
     }
   } catch (e) {
