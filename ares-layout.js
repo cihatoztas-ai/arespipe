@@ -651,6 +651,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
   }
   window.aresBelgeBasligi = aresBelgeBasligi;
   window.aresRefreshLogo  = updateLogoFromSettings;
+  window.aresLogoPrint = function (h) { return ARES_LOGO_PRINT.replace('height:34px', 'height:' + (h||34) + 'px'); };
 
   // ── Topbar oluştur ─────────────────────────────────────────
   function buildTopbar() {
