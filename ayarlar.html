@@ -633,3 +633,12 @@ function showToast(msg, type = 'info') {
 }
 
 // ── INIT ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  try { firmaYukle(); }    catch (e) { console.error('firmaYukle', e); }
+  try { logolariYukle(); } catch (e) { console.error('logolariYukle', e); }
+  try { temaYukle(); }     catch (e) { console.error('temaYukle', e); }
+  try { lisansYukle(); }   catch (e) { console.error('lisansYukle', e); }
+});
+</script>
+</body>
+</html>
