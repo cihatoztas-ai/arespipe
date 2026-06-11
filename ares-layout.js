@@ -428,7 +428,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
 .logo-text.logo-text-svg svg { height: 34px; width: auto; display: block; }
 .sidebar.collapsed .sidebar-logo { padding: 0; justify-content: center; gap: 0; }
 .sidebar.collapsed .logo-mark { width: 30px; height: 30px; }
-.sidebar.collapsed .logo-text { opacity: 0; pointer-events: none; }
+.sidebar.collapsed .logo-text { display: none; }
 .sidebar-nav { flex: 1; padding: 10px 8px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .sidebar-nav::-webkit-scrollbar { display: none; }
 .sidebar-footer { padding: 10px 8px; border-top: 1px solid var(--sb-bor) !important; flex-shrink: 0; }
