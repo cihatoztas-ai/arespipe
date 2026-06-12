@@ -790,7 +790,8 @@ async function _paorTara(){
       if(!paorOk)continue;
       grp.forEach(function(d){
         if(/\.xlsx?$/i.test(d.dosya_adi)){ d.tip_kodu='paor_bom'; d.parser_yolu='sakla'; }
-        else { d.tip_kodu='diger'; d.parser_yolu='sakla'; }   // iso+vektor: L3'e gitmez, saklanir
+        else if(WIZ.l3_acik && d===imalat){ d.tip_kodu='izometri'; d.parser_yolu='izometri'; }   // 182/MK-182: L3 acik -> PAOR fab PDF L3 okunur (spool-bolme)
+        else { d.tip_kodu='diger'; d.parser_yolu='sakla'; }   // iso+vektor veya L3 kapali: L3'e gitmez, saklanir
       });
       bulundu.push({klasor:keys[ki], xlsxFile:xlsx.file, isoFile:iso.file, imalatFile:imalat?imalat.file:null});
     }
@@ -1013,6 +1014,7 @@ function l3Toggle() {
   b.textContent = WIZ.l3_acik ? 'Açık' : 'Kapalı';
   b.style.color = WIZ.l3_acik ? 'var(--gr)' : 'var(--txd)';
   toast(WIZ.l3_acik ? 'L3 açıldı — görüntü-PDF\'ler AI ile okunacak (~$ batch)' : 'L3 kapalı — sıfır maliyet, yalnız metin-PDF');
+  if (typeof _paorTara === 'function') _paorTara();   // 182/MK-182: PAOR fab PDF L3 routing'ini tazele (toggle-sonra-drop)
 }
 
 // ─────────────────────────────────────────────────────────────

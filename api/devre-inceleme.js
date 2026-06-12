@@ -25,7 +25,7 @@
 // Env: SUPABASE_URL + SUPABASE_SERVICE_KEY (MK-101.4).
 
 import { createClient } from '@supabase/supabase-js';
-import { normPipeline, normSpoolNo, dosyaAdiParse, montajDosyaKok } from './kuyruk-isle-izometri.js';
+import { normPipeline, normSpoolNo, dosyaAdiParse, montajDosyaKok, spoolNormalize } from './kuyruk-isle-izometri.js';
 import { bindir } from '../lib/bindir.js';
 import { incelemeTablosu } from '../lib/izo-eslesme.js';
 
@@ -140,7 +140,9 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
     for (const psp of spoollar) {
       // KANONİK: pipeline yalnız dosya adından; spool dosya adı yoksa parse.
       const pl = dp ? dp.pipeline_no : null;
-      const sn = (dp ? dp.spool_no : null) || psp.spool_no || null;
+      let   sn = (dp ? dp.spool_no : null) || psp.spool_no || null;
+      // 182/MK-182: format-bazli spool normalize (PAOR L3 '[1]' -> 'S01'), eslestir ile birebir.
+      if (sn && dp?.spool_norm) sn = spoolNormalize(sn, dp.spool_norm);
       if (!pl || !sn) continue;                    // anahtarsız → bu psp eşleşmeye katılamaz
 
       const a = { pipeline: pl, spoolNo: sn };

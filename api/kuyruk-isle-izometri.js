@@ -522,11 +522,37 @@ export const normPipeline = (s) => String(s == null ? '' : s).trim().toUpperCase
 // Dosya adindan {pipeline_no, spool_no} cikar. Formata-ozgu (Tersan/M100). Tutmazsa null.
 //   "M100-317-30-ALS 1(2).S01.1.pdf" -> {pipeline_no:'M100-317-30-ALS', spool_no:'S01'}
 //   "M100-317-55-ALS 1(2).S01_1.1.pdf" -> {..., spool_no:'S01_1'}
+// 182/MK-182: DEKLARATIF desen tablosu (aile-bazli). Gelecek format = TABLO SATIRI (kod degil).
+//   Tersan/M100 deseni BIREBIR korundu (regresyon yok). PAOR: pipeline dosya adinda
+//   (11D-PAOR-{pipeline}-{rev}.pdf), spool dosya adinda YOK -> parse'tan (L3 spool-bolme),
+//   [n]->S0n normalize ile Excel kabugunun S0n'ine eslesir (Tersan kurali: pipeline dosya adindan).
+const DOSYA_DESENLERI = [
+  { aile: 'tersan', re: /^(.+?)(?:\s+\d+\(\d+\))?\.(S\d+(?:_\d+)?)\.\d+\.pdf$/i, pl: 1, sp: 2,    sp_norm: null },
+  { aile: 'paor',   re: /^11D-PAOR-(\d{5}-\d{6})-[A-Z0-9]+\.pdf$/i,              pl: 1, sp: null, sp_norm: 'koseli_to_S' },
+];
 export function dosyaAdiParse(dosyaAdi) {
   if (!dosyaAdi || typeof dosyaAdi !== 'string') return null;
-  const m = dosyaAdi.match(/^(.+?)(?:\s+\d+\(\d+\))?\.(S\d+(?:_\d+)?)\.\d+\.pdf$/i);
-  if (!m) return null;
-  return { pipeline_no: m[1].trim(), spool_no: m[2].toUpperCase() };
+  for (const d of DOSYA_DESENLERI) {
+    const m = dosyaAdi.match(d.re);
+    if (m) return {
+      pipeline_no: m[d.pl].trim(),
+      spool_no: d.sp != null ? m[d.sp].toUpperCase() : null,
+      aile: d.aile,
+      spool_norm: d.sp_norm || null,
+    };
+  }
+  return null;
+}
+
+// 182/MK-182: format-bazli spool_no normalize (eslesme oncesi). 'koseli_to_S': L3 '[1]' -> 'S01'.
+//   Bilinmeyen kural veya tutmayan deger -> dokunmaz (olduğu gibi doner). normSpoolNo kirletilmez.
+export function spoolNormalize(sp, kural) {
+  if (!sp || !kural) return sp;
+  if (kural === 'koseli_to_S') {
+    const m = String(sp).match(/^\[?(\d+)\]?$/);
+    if (m) return 'S' + String(m[1]).padStart(2, '0');
+  }
+  return sp;
 }
 
 // 116/Is2: MONTAJ dosya adindan pipeline kokunu cikar. Montaj JSON'u pipeline_no TASIMAZ
@@ -627,7 +653,9 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId,
   for (const ps of okuJson.spoollar) {
     // Pipeline: dosya adindan (tum PDF tek pipeline). Spool: oncelik dosya adi, yoksa parse.
     const pipelineHam = dosyaParse?.pipeline_no || null;
-    const spoolHam    = dosyaParse?.spool_no || ps.spool_no || null;
+    let   spoolHam    = dosyaParse?.spool_no || ps.spool_no || null;
+    // 182/MK-182: format-bazli spool normalize (PAOR L3 '[1]' -> 'S01' kabuk eslesmesi icin).
+    if (spoolHam && dosyaParse?.spool_norm) spoolHam = spoolNormalize(spoolHam, dosyaParse.spool_norm);
 
     let hedef = null, atanmaSebep = null;
     if (!pipelineHam) {
