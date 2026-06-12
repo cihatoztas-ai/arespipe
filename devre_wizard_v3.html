@@ -321,7 +321,7 @@
   <script src="ares-kabuk.js"></script>
   <script src="ares-izometri-drenaj.js"></script>
   <script src="ares-layout.js"></script>
-  <!-- PAOR (181): pdfjs vendored + paor.js ESM koprusu (XLSX zaten _xlsxHazirla ile) -->
+  <!-- PAOR (181): pdfjs vendored + paor.js ESM koprusu -->
   <script src="/vendor/pdfjs-1.10.100/pdf.js"></script>
   <script>
     if(window.PDFJS){ PDFJS.workerSrc="/vendor/pdfjs-1.10.100/pdf.worker.js"; }
@@ -754,7 +754,7 @@ function bindleri() {
 
 // ── İncele butonu kapısı: proje + devre adı + en az bir BOM Excel (MK-125.3) ──
 function bomVarMi() { return WIZ.dosyalar.some(function(d){ return d.tip_kodu === 'bom_excel'; }); }
-// ── PAOR (181): icerik-tanimali tanima + KABUK adaptoru. paor.js cekirdegi (DOKUNULMAZ).
+// ── PAOR (181): icerik-tanima + KABUK adaptoru (KALICI: parse_sonuc'a yazilir). paor.js DOKUNULMAZ.
 function _paorOkuBuf(file){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(new Error('dosya okunamadi'));};r.readAsArrayBuffer(file);});}
 async function _paorPdfMetin(buf){
   var lib=window.PDFJS||window.pdfjsLib; if(!lib)throw new Error('pdfjs yok');
@@ -765,7 +765,7 @@ async function _paorPdfMetin(buf){
   var ys=Object.keys(satir).map(Number).sort(function(a,b){return b-a;});
   return ys.map(function(y){return satir[y].sort(function(a,b){return a.x-b.x;}).map(function(o){return o.s;}).join(' ');}).join('\n');
 }
-// Drop sonrasi: icerikten PAOR gruplari tani. Dosyalari 'diger'/'sakla'ya zorla (L3/excel-generic'ten koru; yine saklanir).
+// Drop sonrasi: icerikten PAOR tani. xlsx -> 'paor_bom' (kabuk), PDF'ler -> 'diger'/'sakla' (L3'ten koru, yine saklanir).
 async function _paorTara(){
   try{
     if(!WIZ.dosyalar||!WIZ.dosyalar.length){ WIZ._paorGruplar=[]; return; }
@@ -788,15 +788,17 @@ async function _paorTara(){
         paorOk=toks.every(function(t){return hdr.some(function(h){return h.toLowerCase().indexOf(t.toLowerCase())>=0;});});
       }catch(e){ paorOk=false; }
       if(!paorOk)continue;
-      grp.forEach(function(d){ d.tip_kodu='diger'; d.parser_yolu='sakla'; });   // L3/excel-generic'ten koru
+      grp.forEach(function(d){
+        if(/\.xlsx?$/i.test(d.dosya_adi)){ d.tip_kodu='paor_bom'; d.parser_yolu='sakla'; }
+        else { d.tip_kodu='diger'; d.parser_yolu='sakla'; }   // iso+vektor: L3'e gitmez, saklanir
+      });
       bulundu.push({klasor:keys[ki], xlsxFile:xlsx.file, isoFile:iso.file, imalatFile:imalat?imalat.file:null});
     }
     WIZ._paorGruplar=bulundu;
     renderDosyaListe(); guncelleIncele();
   }catch(e){ console.warn('[v3] _paorTara:',e); WIZ._paorGruplar=WIZ._paorGruplar||[]; }
 }
-// ADAPTOR: bir PAOR grubu (xlsx+iso) -> ARES_KABUK.grupla satir sekli. 1 cizim = 1 spool (S01).
-//   dn -> "DN"+sayi METNI (olcuParse DN dali; ham sayi yanlis cap verir). et kalem listesinde (Tersan ile ayni).
+// ADAPTOR: PAOR grubu (xlsx+iso) -> ARES_KABUK.grupla satir sekli. 1 cizim=1 spool (S01). dn -> "DN"+sayi METNI.
 async function _paorKabukSatirlar(grp){
   if(!window.PAOR) return [];
   var xb=await _paorOkuBuf(grp.xlsxFile);
@@ -1064,7 +1066,7 @@ async function yukleBaslat() {
   // 2) Dosyaları yükle + kuyrukla — 166: PARALEL HAVUZ (6 eşzamanlı). 356 dosya sıralı yarım saat
   //    yerine birkaç dakika. Her dosya: storage upload + devre_dokumanlari insert + kuyruk insert.
   //    bom→excel-generic · izometri→izometri (yalnız SIRAYA, işlemez) · diğer→sakla(tamamlandi).
-  var basarili = 0, basarisiz = 0, tetiklenecek = [], tetiklenecekIzo = [];
+  var basarili = 0, basarisiz = 0, tetiklenecek = [], tetiklenecekIzo = [], tetiklenecekPaor = [];
   var toplam = WIZ.dosyalar.length, biten = 0;
   // 171/ANIM: agaca tarama efektini ac (salt gorsel). _aiItems = sirayla isaretlenecek satirlar.
   var _aiTree = document.querySelector('#tree1 .ftree'); if (_aiTree) _aiTree.classList.add('ai-tarama');
@@ -1073,6 +1075,7 @@ async function yukleBaslat() {
     try {
       var bomExcelMi = (d.tip_kodu === 'bom_excel');
       var izometriMi = (d.tip_kodu === 'izometri');
+      var paorBomMi = (d.tip_kodu === 'paor_bom');
       var storage_klasor = d.klasor_yolu ? slugifyPath(d.klasor_yolu) + '/' : '';
       var path = tid + '/projeler/' + WIZ.proje_id + '/devreler/' + WIZ.devre_id + '/' + storage_klasor + slugifyPath(d.dosya_adi);
       var up = await supa.storage.from('devre-belgeleri').upload(path, d.file, { upsert: false });
@@ -1080,7 +1083,7 @@ async function yukleBaslat() {
       var _ddi = await supa.from('devre_dokumanlari').insert({
         tenant_id: tid, devre_id: WIZ.devre_id, storage_yolu: path,
         klasor_yolu: d.klasor_yolu || '', dosya_adi: d.dosya_adi, uzanti: d.uzanti,
-        boyut_byte: d.boyut, dokuman_tipi: d.tip_kodu,
+        boyut_byte: d.boyut, dokuman_tipi: (paorBomMi ? 'bom_excel' : d.tip_kodu),
         parse_durumu: (bomExcelMi || izometriMi) ? 'bekliyor' : 'tamamlandi',
         versiyon: 1, aktif: true, yukleyen_id: userId   // NOT: izometri parse için yukleyen_id dolu (117 borcu)
       }).select('id').single();
@@ -1093,6 +1096,12 @@ async function yukleBaslat() {
         var _qi = await supa.from('dosya_isleme_kuyrugu').insert({ tenant_id: tid, devre_dokuman_id: _ddi.data.id, parser: 'izometri', oncelik: 100, durum: 'bekliyor', deneme_sayisi: 0 }).select('id').single();
         if (_qi.error) throw _qi.error;
         tetiklenecekIzo.push({ id: _qi.data.id, ad: d.dosya_adi });
+      } else if (paorBomMi) {
+        var _grp = (WIZ._paorGruplar || []).find(function(x){ return x.xlsxFile === d.file; });
+        var _sat = _grp ? await _paorKabukSatirlar(_grp) : [];
+        var _qp = await supa.from('dosya_isleme_kuyrugu').insert({ tenant_id: tid, devre_dokuman_id: _ddi.data.id, parser: 'excel-generic', oncelik: 100, durum: 'tamamlandi', deneme_sayisi: 0, parse_sonuc: { satirlar: _sat, secilen: 'PAOR', guven: 100 }, alindi_at: new Date().toISOString(), bitis_at: new Date().toISOString() }).select('id').single();
+        if (_qp.error) throw _qp.error;
+        tetiklenecekPaor.push({ id: _qp.data.id, ad: d.dosya_adi });
       } else {
         var _q = await supa.from('dosya_isleme_kuyrugu').insert({ tenant_id: tid, devre_dokuman_id: _ddi.data.id, parser: 'sakla', oncelik: 100, durum: 'tamamlandi', deneme_sayisi: 0, alindi_at: new Date().toISOString(), bitis_at: new Date().toISOString() });
         if (_q.error) throw _q.error;
@@ -1117,7 +1126,7 @@ async function yukleBaslat() {
     try { await fetch('/api/kuyruk-isle-excel', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_id: t.id }) }); }
     catch (e) { console.warn('[v3] BOM parse tetik:', e); }
   }
-  WIZ._bomIds = tetiklenecek.map(function(t){ return t.id; });
+  WIZ._bomIds = tetiklenecek.map(function(t){ return t.id; }).concat(tetiklenecekPaor.map(function(t){ return t.id; }));
   WIZ._izoIds = tetiklenecekIzo.map(function(t){ return t.id; });   // 166: karar ekranı sayımı + sonraki drenaj
 
   // 4) Kabuk kur: BOM parse_sonuc.satirlar → ARES_KABUK.grupla (KORUMA-1, kabukTuret KULLANMA)
@@ -1127,16 +1136,6 @@ async function yukleBaslat() {
     if (WIZ._bomIds.length) {
       var kq = await supa.from('dosya_isleme_kuyrugu').select('id, parse_sonuc, durum').in('id', WIZ._bomIds);
       (kq.data || []).forEach(function(row) { var ps = row.parse_sonuc; if (ps && Array.isArray(ps.satirlar)) kabukSatirlar = kabukSatirlar.concat(ps.satirlar); });
-    }
-    // PAOR (181): istemcide uretilen kabuk satirlari (kuyruk yok) -> kabukSatirlar'a kat. Sistem grupla'si aynen calisir.
-    if (WIZ._paorGruplar && WIZ._paorGruplar.length && window.PAOR) {
-      try {
-        await _xlsxHazirla();
-        for (var pgi = 0; pgi < WIZ._paorGruplar.length; pgi++) {
-          var pr = await _paorKabukSatirlar(WIZ._paorGruplar[pgi]);
-          if (pr && pr.length) kabukSatirlar = kabukSatirlar.concat(pr);
-        }
-      } catch (ep) { console.warn('[v3] PAOR kabuk satir:', ep); }
     }
     WIZ._kabukSatirlar = kabukSatirlar;
     var model = (kabukSatirlar.length && typeof ARES_KABUK !== 'undefined' && ARES_KABUK.grupla) ? ARES_KABUK.grupla({ satirlar: kabukSatirlar }) : { spoollar: [] };
