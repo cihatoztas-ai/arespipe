@@ -1,48 +1,64 @@
-# CLAUDE-SON-OTURUM.md — Oturum 178 özeti
+# CLAUDE-SON-OTURUM.md — Oturum 179 (Logo / Marka / Antet turu)
 
-## Ana tema
-**Paslanmaz B16.9 fitting kütüphanesi başladı, cunife-seviyesi rigorla.** Yöntem oturdu: %100 referans, türetme yasak,
-≥2 kaynak çapraz-doğrulama. 90LR + 45LR seed'lendi (fitting_olculer 897→935). Seed kapısı (unique constraint) açıldı,
-seed aracı fitting'e uyarlandı, kütüphane dokümanı yenilendi.
+## Özet
+AresPipe'ın logo/marka kimliği uygulama geneline yerleştirildi: menü, giriş, favicon,
+dışa aktarılan belge antetleri, devreler/kesim print header'ları, 4 hata sayfası ve admin
+favicon'ları. Belge anteti için ares-layout.js'te tek kaynak helper altyapısı kuruldu.
+Tüm iş canlıda. Türkçe yürütüldü.
 
-## Yapılanlar
-1. **Grup seçimi DATA'dan (MK-158.1).** Eski takip belgesi bayat (fitting=0 diyordu, gerçek 897) → DB GROUP BY ile
-   sıradaki gerçek eksik belirlendi. Cihat: paslanmaz B16.9+B16.11 fitting.
-2. **Ağırlık kuralı (MK-178.1).** Cihat net: türetme/formül/yoğunluk-faktörü YASAK; karbon-bazlı ağırlık kabul değil;
-   her değer referanstan, tablo ikinci kaynakla doğrulanır. Sandvik paslanmazda otorite.
-3. **Kaynak + çapraz-doğrulama.** dynamicforge A403/A815 ↔ buyfittingsonline gerçek SS ürün kg → DN40/50/80 90LR'de
-   **<%1 örtüşme**. ZIZI karbon-bazlı çizelge %7 sapma + iç typo (DN200 STD>Sch40 imkansız) → elendi. Ölçü B16.9/MSS-SP-43.
-4. **JSON üretimi + doğrulama.** 90LR 20 satır (DN90 FLAG_SUPHELI), 45LR 19. Python ile JSON geçerlilik + fiziksel
-   monotonluk kontrolü (tek anomali = zaten flag'li DN90).
-5. **Seed kapısı (MK-178.2).** MK-98.2 dry-run (çakışma yok) → constraint eklendi (NULLS NOT DISTINCT 7-alan).
-   Seed: INSERT...ON CONFLICT → teyit 45LR=19/90LR=19.
-6. **seed-from-json.mjs uyarlaması.** UNIQUE_KEY fitting 7-alan + notlar stringify (tablo-bilinçli) + 'YENI' aksiyonu.
-   node --check temiz.
-7. **Doküman.** KUTUPHANE-DURUM.md (kapsam+takip+yöntem+kural). Eski TAKİP → docs/arsiv/ (git mv).
+## Yapılanlar (hepsi push edildi)
 
-## Yöntem / disiplin (işe yarayanlar)
-- **MK-158.1 (DATA önce):** sıradaki grup belgeden değil DB GROUP BY'dan seçildi → bayat belge tuzağına düşülmedi.
-- **MK-96 çapraz-doğrulama gerçekten iş yaptı:** ZIZI'yi eledi, dynamicforge+buyfittingsonline'ı <%1 ile onayladı.
-- **MK-85.3/126.8:** fitting_olculer şema + karbon satır kalıbı seed JSON'undan önce okundu (kolon adları, hangi alanda ne).
-- **MK-98.2 dry-run:** constraint öncesi çakışma kontrolü; Supabase editör BEGIN/ROLLBACK'i yutsa da pg_get_constraintdef ile teyit.
-- **Fiziksel sanity (yeni alışkanlık):** ağırlık DN ile monoton artmalı → DN90 anomalisi otomatik yakalandı, flag'lendi.
+### Menü (ares-layout.js)
+- `.logo-mark` mavi kutu kaldırıldı → şeffaf, inline `ARES_AMBLEM_SVG` (ring=`--sb-tx`, bolts=`--sb-bg`, tema otomatik).
+- Barlow Condensed "AresPipe" metni → gerçek `ARES_WORDMARK_SVG` (Ares=`--sb-tx`, Pipe=`--ac`). Emblem 40px, wordmark ~34px.
+- Açılış + hover'da MAVİ tarama (`#4C8DF5`); loop yok, SMIL `beginElement()` ile tetikli.
+- Daraltma fix: gizlenen wordmark `display:none` (opacity:0 değil — yer kaplayıp amblemi ekran dışına itiyordu); collapsed amblem 30px ortalı (`justify-content:center`), toggle ile çakışmıyor.
+- `updateLogoFromSettings` null-guard'lı; `window.aresRefreshLogo` ile expose.
 
-## Cihat'ın kritik müdahaleleri
-1. "türetme diye bir seçenek asla yok, hepsi referans belgelerden %100 doğru" → ağırlık metodolojisi sertleşti (MK-178.1).
-2. "ağırlık önemli, bir kaynakta yoksa başka referanstan; tabloyu başka kaynaktan doğrula" → MK-96 disiplini birebir.
-3. "paslanmazda sandvik referans alınabilir" → Sandvik/Alleima otorite kaynak (5S-Sch160, 304/316+dupleks teyitli).
-4. "md dosyası basit olmuş, takip çizelgesi de vardı" → KUTUPHANE-DURUM tablo-tablo/parça-tipi takiple zenginleştirildi
-   (sahte sayı yok: fitting DB-birebir, boru/flanş "tazelenecek" işaretli).
-5. "biz şu şekilde yapıyorduk, aynen devam" → atölye/referans-çekme akışı (Claude çeker, kullanıcı yüklemez) hatırlatıldı.
+### Giriş (giris.html)
+- Dağınık caps+amblem+slogan → tek temiz inline yatay logo (sol beyaz #FFFFFF ring, sağ tema-uyumlu).
+- Serif slogan fix: `.brand-alt` + `.etiket-yazi` → `font-family:'Barlow'` (body'den serif'e düşüyordu).
+- Sağ logo 62px. Açılış+hover tarama tetikleyici.
 
-## Tuzaklar / öğrenmeler
-- **Handoff "JSON'lar hazır" demişti — değildi** (177 yanlış sayım). Tamamlandı-iddiası şüpheyle karşılandı, doğrulandı.
-- **Karbon kütüphanesinde quirk'ler var:** yaricap_mm=1.5×OD (muhtemel hata, doğrusu 1.5×NPS); 45° uç-uca ucu_uca_b'de
-  (şema ucu_uca_c der). Paslanmaz uyumluluk için karbon FIELD kullanımı aynalandı; quirk'ler ayrı temizlik (okuma kodu gerek).
-- **Supabase SQL editörü BEGIN/ROLLBACK'i her zaman tutmuyor** — dry-run ALTER kalıcı oldu; DDL sonrası HER ZAMAN
-  pg_get_constraintdef ile teyit (tanım doğruysa sorun yok).
-- **Public B16.9 ağırlık çizelgeleri karbon-bazlı** (Projectmaterials açıkça yazıyor) → paslanmaz için A403-özgü kaynak şart.
+### Favicon (assets/marka/)
+- Eski küçük halka → belirgin büyük (r=29, sw=11, kutu rx=18, full-width pipe, iri yeşil). SVG + 16/32 PNG.
+- 38+ app + giriş + 11 admin hepsi `/assets/marka/arespipe-favicon.svg` kullanıyor (tek değişimle hepsi).
 
-## Karar günlüğü (KARARLAR.md'ye)
-**MK-178.1** referans-çekme/türetme-yasak/≥2-kaynak; **MK-178.2** fitting unique-key (NULLS NOT DISTINCT 7-alan);
-**MK-178.3** kaynak hiyerarşisi (dynamicforge A403 + buyfittingsonline + Sandvik/Alleima); + iki quirk notu (yaricap, 45°-alan).
+### Belge anteti altyapısı (ares-layout.js — GLOBAL, tek kaynak)
+- `window.aresBelgeBasligi(o)` → sol firma logosu/adı + sağ sabit-renkli AresPipe; `o={baslik, altbilgi, firmaAdi}`. Self-contained inline-style + inline SVG (ayrı print window'da çalışır).
+- `window.aresLogoPrint(h)` → istenen yükseklikte sabit-renkli print logosu (beyaz kağıt).
+- `window.aresFirmaLogo(h)` → `ares_logo_firma` (base64) varsa o `<img>`, yoksa `ares_firma.ad/kisaAdi` metni. Tenant bazlı.
+- `window.aresRefreshLogo` = `updateLogoFromSettings` (menü canlı yenileme).
+- Sabit print renkleri: ring #16202B, bolts #FFFFFF, Ares #16202B, Pipe #2D6CDF, green #22A35A.
+
+### devre_detay.html
+- Rapor (`<h1>` → `aresBelgeBasligi`) + etiket sayfası (grid öncesi antet). Eski `.bar` (print'te gizli) korundu.
+
+### devreler.html + kesim.html
+- Print header'daki temsilî mavi-kutu+"AresPipe" yazısı → gerçek logo (`aresLogoPrint(34)`), 2'şer çıktı.
+- Sol "AM/ARESMAK" ve "FİRMA LOGOSU" placeholder → dinamik `aresFirmaLogo(40/38/34)`.
+
+### Hata sayfaları (403/404/500/session-expired)
+- `⬡ AresPipe` yazı-logosu → tema-uyumlu inline amblem+wordmark (koyuda beyaz, açıkta lacivert; bolts=`--bg`, pipe/Pipe=`--ac`, green sabit #34C46F). Bu sayfalar ares-layout yüklemiyor → inline gömüldü.
+
+### admin/ (11 sayfa)
+- Favicon HİÇ yoktu → 4 satırlık blok eklendi (perl idempotent, `<meta viewport>` anchor).
+
+### ayarlar.html
+- `updateSidebarLogo()` → tek kaynak (`aresRefreshLogo`).
+- **KRİTİK FIX:** Upload'lanan dosya `// ── INIT ──`'da kesikti → deploy edilince INIT bloğu (firmaYukle/logolariYukle/temaYukle/lisansYukle) + `</script></body></html>` kayboldu, sayfa initialize olmadı/bölümler açılmadı. INIT + kapanış elle geri eklendi (644 satır, tam).
+
+## Commit'ler (mesajlarla; rebase ile hash kayabilir)
+1. favicon: amblem daha belirgin (buyuk halka)
+2. menu: daraltinca amblem kayboluyordu - wordmark display:none
+3. belge: logolu antet altyapisi (helper) + devre_detay rapor/etiket + ayarlar logo tek kaynak
+4. logo: print header brand gercek logo (devreler/kesim) + 4 hata sayfasi amblem + aresLogoPrint helper
+5. antet: firma logosu dinamik (tenant bazli) + AresPipe 34px
+6. admin: favicon eklendi (11 sayfa)
+7. fix: ayarlar.html eksik INIT blogu + kapanis etiketleri geri eklendi
+HEAD ≈ 3f979e3 (+ ayarlar fix).
+
+## Marka sepeti (GitHub'da hazır)
+`assets/marka/`: amblem, yatay logo açık/koyu, favicon SVG+16/32, icon-180/512/1024.
+Kodda inline string'ler: `ARES_AMBLEM_SVG`, `ARES_WORDMARK_SVG`, `ARES_LOGO_PRINT` + 3 helper.
+İhtiyaç halinde dosya çekmeden tek satırla logo basılabilir.
