@@ -321,6 +321,13 @@
   <script src="ares-kabuk.js"></script>
   <script src="ares-izometri-drenaj.js"></script>
   <script src="ares-layout.js"></script>
+  <!-- PAOR (181): pdfjs vendored + paor.js ESM koprusu (XLSX zaten _xlsxHazirla ile) -->
+  <script src="/vendor/pdfjs-1.10.100/pdf.js"></script>
+  <script>
+    if(window.PDFJS){ PDFJS.workerSrc="/vendor/pdfjs-1.10.100/pdf.worker.js"; }
+    else if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc="/vendor/pdfjs-1.10.100/pdf.worker.js"; }
+  </script>
+  <script type="module">import * as P from "/lib/paor.js"; window.PAOR = (P && P.default) || P;</script>
 </head>
 <body>
 <div class="app-shell"><div class="main-content"><div class="page">
@@ -747,14 +754,57 @@ function bindleri() {
 
 // ── İncele butonu kapısı: proje + devre adı + en az bir BOM Excel (MK-125.3) ──
 function bomVarMi() { return WIZ.dosyalar.some(function(d){ return d.tip_kodu === 'bom_excel'; }); }
+// ── PAOR (181): icerik-tanimali tanima + Yol-1 pipeline malzeme. paor.js cekirdegi (DOKUNULMAZ).
+function _paorOkuBuf(file){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(new Error('dosya okunamadi'));};r.readAsArrayBuffer(file);});}
+async function _paorPdfMetin(buf){
+  var lib=window.PDFJS||window.pdfjsLib; if(!lib)throw new Error('pdfjs yok');
+  var task=lib.getDocument(buf); var pdf=await(task.promise||task);
+  var page=await pdf.getPage(1); var tc=await page.getTextContent();
+  var satir={};
+  (tc.items||[]).forEach(function(it){ var y=Math.round(((it.transform&&it.transform[5])||0)); var x=((it.transform&&it.transform[4])||0); if(!satir[y])satir[y]=[]; satir[y].push({x:x,s:it.str}); });
+  var ys=Object.keys(satir).map(Number).sort(function(a,b){return b-a;});
+  return ys.map(function(y){return satir[y].sort(function(a,b){return a.x-b.x;}).map(function(o){return o.s;}).join(' ');}).join('\n');
+}
+// Drop sonrasi: icerikten PAOR gruplari tani. Tanindiysa dosyalari 'diger'/'sakla'ya zorla (L3/excel-generic'ten koru).
+async function _paorTara(){
+  try{
+    if(!WIZ.dosyalar||!WIZ.dosyalar.length){ WIZ._paorGruplar=[]; return; }
+    var g={}; WIZ.dosyalar.forEach(function(d){ var k=d.klasor_yolu||'(kok)'; if(!g[k])g[k]=[]; g[k].push(d); });
+    var keys=Object.keys(g); var bulundu=[]; var xlsxYuklendi=false;
+    for(var ki=0;ki<keys.length;ki++){
+      var grp=g[keys[ki]];
+      var xlsx=grp.find(function(d){return /\.xlsx?$/i.test(d.dosya_adi);});
+      var iso=grp.find(function(d){return /Isometric_View/i.test(d.dosya_adi)&&/\.pdf$/i.test(d.dosya_adi);});
+      var imalat=grp.find(function(d){return /\.pdf$/i.test(d.dosya_adi)&&!/Isometric_View/i.test(d.dosya_adi);});
+      if(!xlsx||!iso)continue;
+      if(!xlsxYuklendi){ try{await _xlsxHazirla();}catch(e){return;} xlsxYuklendi=true; }
+      var paorOk=false;
+      try{
+        var buf=await _paorOkuBuf(xlsx.file);
+        var wb=XLSX.read(buf,{type:'array'}); var ws=wb.Sheets[wb.SheetNames[0]];
+        var row0=XLSX.utils.sheet_to_json(ws,{header:1,defval:''})[0]||[];
+        var hdr=row0.map(function(c){return String(c).trim();});
+        var toks=['DPN','Part Name','Make/Buy'];
+        paorOk=toks.every(function(t){return hdr.some(function(h){return h.toLowerCase().indexOf(t.toLowerCase())>=0;});});
+      }catch(e){ paorOk=false; }
+      if(!paorOk)continue;
+      grp.forEach(function(d){ d.tip_kodu='diger'; d.parser_yolu='sakla'; });   // L3/excel-generic'ten koru
+      bulundu.push({klasor:keys[ki], xlsxFile:xlsx.file, isoFile:iso.file, imalatFile:imalat?imalat.file:null});
+    }
+    WIZ._paorGruplar=bulundu;
+    renderDosyaListe(); guncelleIncele();
+  }catch(e){ console.warn('[v3] _paorTara:',e); WIZ._paorGruplar=WIZ._paorGruplar||[]; }
+}
 function guncelleIncele() {
   var bom = bomVarMi();
-  var hazir = !!(WIZ.proje_id && WIZ.devre_no && bom);
+  var paorVar = !!(WIZ._paorGruplar && WIZ._paorGruplar.length);
+  var hazir = !!(WIZ.proje_id && WIZ.devre_no && (bom || paorVar));
   document.getElementById('btnYukle').disabled = !hazir;
   var n = document.getElementById('devamNot');
-  document.getElementById('bnExcelYok').classList.toggle('hide', !(WIZ.dosyalar.length > 0 && !bom));
+  document.getElementById('bnExcelYok').classList.toggle('hide', !(WIZ.dosyalar.length > 0 && !bom && !paorVar));
   if (!WIZ.proje_id || !WIZ.devre_no) { n.textContent = '⚠ Proje ve devre adı zorunlu'; n.style.color = 'var(--warn)'; }
-  else if (!bom) { n.textContent = '⚠ BOM/IFS Excel kabuğu yok — İncele kapalı (MK-125.3)'; n.style.color = 'var(--warn)'; }
+  else if (!bom && !paorVar) { n.textContent = '⚠ BOM/IFS Excel kabuğu yok — İncele kapalı (MK-125.3)'; n.style.color = 'var(--warn)'; }
+  else if (paorVar && !bom) { n.textContent = '✓ PAOR tanındı (' + WIZ._paorGruplar.length + ' pipeline) — pipeline malzemesi olarak işlenecek (spool-bölme OCR sonrası)'; n.style.color = 'var(--gr)'; }
   else { n.textContent = '✓ Kabuk hazır — büyükse beklemeye al, ya da hemen incele'; n.style.color = 'var(--gr)'; }
 }
 
@@ -810,6 +860,7 @@ function dosyalariEkle(dosyalar) {
   }
   renderDosyaListe();
   guncelleIncele();
+  _paorTara();
 }
 function _adNorm(s) {
   var tr = { 'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c' };
@@ -1051,6 +1102,36 @@ async function yukleBaslat() {
     WIZ._kabukSpoollar = model.spoollar || [];
   } catch (e) { console.warn('[v3] kabuk türetilemedi:', e); WIZ._kabukSpoollar = []; }
 
+  // 4b) PAOR (181): pipeline_malzemeleri (Yol 1; kabuk YOK, spool YARATILMAZ MK-180.6). PDF'ler zaten devre_dokumanlari'nda.
+  WIZ._paorPipeline = 0; WIZ._paorKalem = 0;
+  try {
+    if (WIZ._paorGruplar && WIZ._paorGruplar.length && window.PAOR) {
+      await _xlsxHazirla();
+      for (var pg = 0; pg < WIZ._paorGruplar.length; pg++) {
+        var grp = WIZ._paorGruplar[pg];
+        try {
+          var xb = await _paorOkuBuf(grp.xlsxFile);
+          var wbp = XLSX.read(xb, { type:'array' }); var wsp = wbp.Sheets[wbp.SheetNames[0]];
+          var rowsp = XLSX.utils.sheet_to_json(wsp, { header:1, defval:'' });
+          var hdrp = (rowsp[0]||[]).map(function(c){return String(c).trim();});
+          var _colp = function(nn){return hdrp.findIndex(function(h){return h.toLowerCase()===nn.toLowerCase();});};
+          var iD=_colp('DPN'), iP=_colp('Part Name'), iU=_colp('Unit'), iQ=_colp('Quantity');
+          var bomp=[];
+          for (var ri=1; ri<rowsp.length; ri++){ var rr=rowsp[ri]; var pnn=String(rr[iP]||'').trim(); if(!pnn)continue; bomp.push({dpn:(rr[iD]!=null&&rr[iD]!=='')?String(rr[iD]).trim():null,partName:pnn,unit:rr[iU],qty:rr[iQ]}); }
+          if (!bomp.length) continue;
+          var isoMetin = await _paorPdfMetin(await _paorOkuBuf(grp.isoFile));
+          var kimlik = window.PAOR.kimlikCoz(isoMetin);
+          if (!kimlik || !kimlik.pipeline_no) continue;
+          var satirlarp = window.PAOR.convert(bomp, kimlik, { tenant_id: tid, devre_id: WIZ.devre_id });
+          var temizp = satirlarp.map(function(s){ var o={}; Object.keys(s).forEach(function(k){ if(k!=='_bayrak') o[k]=s[k]; }); return o; });
+          var insp = await supa.from('pipeline_malzemeleri').insert(temizp);
+          if (!insp.error) { WIZ._paorPipeline++; WIZ._paorKalem += temizp.length; }
+          else console.warn('[v3] PAOR insert:', insp.error.message);
+        } catch (ep) { console.warn('[v3] PAOR grup:', ep); }
+      }
+    }
+  } catch (e) { console.warn('[v3] PAOR isleme:', e); }
+
   // 5) KARAR EKRANI (166): dosyalar alındı, kabuk hazır. İzometri SIRADA — burada İŞLENMEZ
   //    (işleme istemci drenajı: İncele&Onayla bu devreyi işler+izler · İşlenenler hepsini topluca).
   //    Küçük devrede uyarı yok; 3 çıkış yolu hep görünür, hiçbiri tek yönlü değil (devre İşlenenler'de yaşar).
@@ -1066,6 +1147,7 @@ async function yukleBaslat() {
   var _setN = function(id, v){ var e = document.getElementById(id); if (e) e.textContent = v; };
   _setN('skBelge', basarili); _setN('skIzo', izoN); _setN('skBom', _bomN); _setN('skDiger', _digerN);
   var mt = '<b>' + spoolN + ' spool</b> kabuğu kuruldu. Spool eşleştirme ve okuma <b>İşlenenler</b> ekranında yapılır.';
+  if (WIZ._paorPipeline) mt += '<br><b>' + WIZ._paorPipeline + ' PAOR pipeline</b> · ' + (WIZ._paorKalem||0) + ' kalem pipeline malzemesi yazıldı (devre detayında).';
   document.getElementById('sonucMetin').innerHTML = mt;
   sk.classList.remove('hide');
   var _ska = document.getElementById('sonucArka'); if (_ska) _ska.classList.add('acik');   // 171/POPUP: backdrop ac
