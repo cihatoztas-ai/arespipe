@@ -2044,3 +2044,21 @@ per-adet fiziksel-imkansız → satır-toplam varsay) değerlendirilir; tek vaka
 
 ## MK-146 (Oturum 146)
 - **MK-146.1:** Kalem-seviyesi düzeltme anahtarı `kalem_idx` = **gruplu `ARES_KABUK.grupla().bom[]` dizi sırası** (ham `malzeme_listesi[]` sırası DEĞİL — MK-145.1 revizyonu). `konsolide` aynı tip+tanım+malzeme+dn+açı kalemleri birleştirir (`sira.push` ilk-görülme, `bom`'a sort YOK) → deterministik. Render (`WIZ._kabukSpoollar`) ve terfi (`grupla(WIZ._kabukSatirlar)`) aynı saf fonksiyonu çağırdığı için `bom[idx]` hizalı; obje kimliğine değil anahtara güvenilir. Canlı kanıt: NB1137 S01 — 3 kalem, her biri yalnız kendi düzeltilen alanını aldı (S82109 malzeme, S63043 adet, S67455 ağırlık), komşular parse değerinde.
+
+### MK-172.1 — Belge anteti tek kaynak (helper mimarisi)
+aresBelgeBasligi(o), aresLogoPrint(h), aresFirmaLogo(h) ares-layout.js icinde window'a expose; tum app sayfalari ares-layout yukledigi icin global. Print fonksiyonlari ayri window'a document.write ile yazdigindan helper'lar STRING dondurur, string-concat ile gomulur. Ayri print window self-contained: asset YOLU calismaz -> AresPipe inline SVG, firma logosu base64. window.aresRefreshLogo = updateLogoFromSettings ile menu canli yenilenir.
+
+### MK-172.2 — Logo renk baglami (print sabit / ekran tema-uyumlu)
+Print logosu SABIT renk (tema degiskensiz, beyaz kagit): ring #16202B, bolts #FFFFFF, Ares #16202B, Pipe #2D6CDF, green #22A35A. Menu ve hata-sayfasi logosu TEMA-UYUMLU degisken: ring=--sb-tx/--tx, bolts=--sb-bg/--bg, Pipe & --ac, green sabit #34C46F.
+
+### MK-172.3 — Menu daraltma: gizlenen wordmark display:none
+Daraltilmis sidebar'da wordmark opacity:0 ile gizlenirse flex'te yer kaplamaya devam eder; justify-content:center amblemi negatif x'e itip ekran disina atar (amblem kaybolur). Cozum: .sidebar.collapsed .logo-text{display:none} + amblem 30px ortali.
+
+### MK-172.4 — Tarama core rengi MAVI (#4C8DF5)
+Amblem tarama core'u beyaz (#EAF2FF) yapilirsa menude/koyu temada beyaz cizgi olarak okunur. Core mavi (#4C8DF5), glow #2D6CDF olmali.
+
+### MK-172.5 — Tenant logo akisi
+Iki yukleme (ayarlar, base64): ares_logo_firma (firma, belge anteti SOL) ve ares_logo_ares (AresPipe white-label, MENU; print'i etkilemez). aresFirmaLogo(h): logo varsa img, yoksa ares_firma.ad/kisaAdi metni. SEFFAF PNG gerekir; RGB/siyah-zemin antette siyah kutu cikarir.
+
+### MK-172.6 — (SUREC/UYARI) Upload butunlugu kontrolu
+Buyuk HTML upload'lari kesik gelebilir. Patch/ship ONCESI grep -c "</html>" ile dogrula. Bu oturumda ayarlar.html kesik upload yuzunden INIT + kapanis etiketleri kaybiyla deploy edildi, sayfa initialize olmadi, elle tamamlandi.
