@@ -2654,3 +2654,39 @@ boru_olculer.notlar JSONB'ye DOKUNMA, çift-encode olur); YENI_AKSIYONLAR'a 'YEN
 - `yaricap_mm`: karbon satırları 1.5×OD tutuyor (DN100=171.4, muhtemel hata); paslanmaz 1.5×NPS (doğru, =A). Hizalanacak.
 - 45° uç-uca: karbon `ucu_uca_b_mm` kullanıyor; şema yorumu `ucu_uca_c_mm` der. Paslanmaz uyumluluk için b kullandı.
 - `standart` vs `geometri_std` ikiliği — kod hangisini otorite alıyor netleşmeli.
+<!-- docs/KARARLAR.md SONUNA EKLENECEK — Oturum 181 -->
+
+## Oturum 181 — PAOR/AVEVA wizard entegrasyonu (12 Haziran 2026)
+
+**MK-181.1 — PAOR = format adaptörü, ayrı hat DEĞİL.**
+PAOR Excel-BOM, Tersan IFS ile aynı kabuk→terfi hattından geçer. PAOR xlsx → `dokuman_tipi='bom_excel'`; kabuk satırları İSTEMCİDE üretilip (`paor.js` partNameParse/kimlikCoz/convert) `dosya_isleme_kuyrugu.parse_sonuc.satirlar`'a yazılır (sunucu PAOR formatını parse edemez — server excel-generic parser PAOR şemasını tanımaz). Böylece yükleme, re-open (`taslagiAc`) ve terfi AYNI yerden (`parse_sonuc.satirlar` → `ARES_KABUK.grupla`) kabuğu kurar. Sidecar (`pipeline_malzemeleri` + kabuk-bypass) TERK EDİLDİ — devre taslakta kalıyordu, spool oluşmuyordu.
+
+**MK-181.2 — İçerik-tanıma, dosya adı değil.**
+PAOR wizard drop'unda içerikten tanınır: xlsx başlık token'ları (`DPN` + `Part Name` + `Make/Buy`) + Isometric_View.pdf varlığı. Buton yok; mevcut wizard `dosyalariEkle` sonrası `_paorTara()` ile. xlsx → `tip_kodu='paor_bom'`, PDF'ler → `'diger'`.
+
+**MK-181.3 — 1 çizim = 1 spool (S01); dn → "DN"+sayı metni.**
+PAOR Excel pipeline-seviyesi (spool_no kolonu yok) → doğal eşleme her çizim = tek spool (`spool_no='S01'`). Çizim-içi `SPOOL[1][2]` bölünmesi L3/Faz 2'ye ertelendi. `dn` alanı `ARES_OLCU.olcuParse`'a METİN olarak verilir (`"DN125"`) — ham sayı (`125`) DN dalına düşmez, dis_cap=125 yanlış çıkar. Doğrulandı: DN125→141.3, DN50→60.3 (ASME tablosu, ARES_BORU).
+
+**MK-181.4 — PAOR PDF'leri 'diger'/'sakla', L3'e gitmez (MALİYET kararı, teknik tavan DEĞİL).**
+181 hattında PAOR iso+vektör PDF'leri `'diger'/'sakla'` → L3 koşmaz (çizim başına ~37sn + para). `devre_dokumanlari`'na saklanır, belge olarak ulaşılır. **ÖNEMLİ DÜZELTME:** Bu, L3'ün PAOR'u okuyamadığı anlamına GELMEZ. Bkz MK-181.6.
+
+**MK-181.5 — PAOR kabuk başlık et=null = Tersan davranışıyla aynı.**
+Kabuk spool başlığı çap/et'i anaBoru `dn`'inden `olcuParse` ile türer; DN dalı sch'siz → et=null. Bu Tersan IFS'te de böyle (et ayrı kolon değilse). Gerçek et kalem listesinde (`parse_sonuc.satirlar[].` partNameParse et_mm). Sıfır regresyon.
+
+**MK-181.6 — PAOR L3 hattı MEVCUT, AKTİF ve spool-bölme YAPIYOR (180/181 mimari düzeltmesi).**
+`izometri_format_tanimlari`: `paor_aveva_ana` (id `995b5514`, aktif, requires_ai, egitim_kaynagi=vision_only, kullanım 68) fab çizimini (`-A.pdf`) L3/Vision ile okur. Kanıt (`parse_sonuc`, `11D-PAOR-52600-102773-A.pdf`): **3 spool ayrıldı** ([1][2][3]), spool [1] için 11 kalemlik malzeme listesi (et_mm/kalite/kategori/DIN std), cap 60.3, güven 0.82. Yani:
+- Spool-bölme L3'te ZATEN var — OCR gereksiz (Vision görüntüyü okur, çıkarılabilir metin şart değil).
+- 180'in "PAOR = Excel, L3 değil" kararı MALİYET temelliydi; teknik imkânsızlık değildi.
+- **Eşleştirme kopuk:** L3 pipeline'ı parse_sonuc'a yazıyor (`52600-102773`) ama `devre-inceleme.js` + kanonik eşleştirici pipeline'ı DOSYA ADINDAN istiyor (MK-127.3, fallback yok). PAOR dosya adında pipeline yok → spool'lar atanmamış.
+- **182 işi:** PAOR pipeline-fallback (Tersan-güvenli) + L3 maliyet-tetik politikası + Excel($0)/L3(spool-bölme) hibridi.
+
+**MK-181.7 — Vendored pdfjs istemci tarafı PAOR parse için.**
+`vendor/pdfjs-1.10.100/pdf.js` + worker wizard'a eklendi; `paor.js` ESM `<script type="module">` ile `window.PAOR`'a köprülendi. Isometric_View.pdf'ten pipeline_no istemcide çıkarılır (`_paorPdfMetin` y-koordinat satır rekonstrüksiyonu).
+
+---
+**Carry — önceki oturum kararları (boşsa doldurulacak):** MK-180.1–7, MK-169/170/171 (MK-163.1: taze SQL ile doğrula).
+
+**Fantom borç düşümleri:**
+- `tur` kolonu bug'ı FANTOM: `plExcelYukle` şemaya uyarlanıyor, `plMalzKaydet` tur'suz çalışıyor. Borç listesinden düşüldü.
+- `ares-olcu.js` repo KÖKÜNDE var (handoff-180 "YOK" demişti — yanlıştı).
+- handoff-180 "dispatch worker'a bağla" yönü YANLIŞTI — doğru yer wizard kabuk hattı, senkron istemci (bu oturumda kanıtlandı).
