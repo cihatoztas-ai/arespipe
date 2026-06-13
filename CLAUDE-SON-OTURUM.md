@@ -1,31 +1,27 @@
-# CLAUDE — Son Oturum Özeti (181)
+# CLAUDE — Son Oturum Özeti (182)
 
 ## Yapılan iş
-PAOR/AVEVA Excel-BOM formatını Devre Yükle wizard'ına **format adaptörü** olarak bağladım. Tersan IFS ile aynı kabuk→terfi hattı; PAOR sadece farklı kaynaktan aynı `parse_sonuc.satirlar` şeklini besliyor.
+PAOR/AVEVA L3 spool-bölme okumasını paylaşılan kabuk→incele→terfi hattına bağladım. ÜÇ kod parçası, ikisi commit'li:
+1. **Matcher fix** (commit `3ec8f4e`): PAOR dosya-adı deseni + spool normalize.
+2. **#2a wizard aktivasyon** (commit `3ec8f4e`): L3 açıkken PAOR fab PDF L3 yoluna.
+3. **Pozisyon-bazlı düzeltme** (bu oturum son commit): matcher kimliği array-index'ten (canlı veri keşfi sonrası — aşağı).
 
-### Mimari yolculuk (düzeltmelerle — sonraki Claude için ders)
-1. **Yanlış yer 1:** Önce `devre_detay.html`'e drop zone düşünüldü → yanlış. Doğru yer `devre_wizard_v3.html` Adım 1 drop (zaten klasör-walk + folder grouping var).
-2. **Yanlış yaklaşım (181-3):** Sidecar — PAOR→`pipeline_malzemeleri`, kabuk-bypass. Devre taslakta kaldı, spool oluşmadı. Cihat: "PAOR farklı format, AYNI sistem." → terk edildi.
-3. **Doğru mimari (181-4→181-5):** PAOR = kabuk hattına besleyen adaptör. 181-4 kabuğu **bellekte** kurdu → re-open'da (`taslagiAc`) boş döndü çünkü o, `dokuman_tipi='bom_excel'` + `parser='excel-generic'` + `parse_sonuc.satirlar`'dan kuruyor. 181-5 bunu **kalıcı** yaptı: PAOR xlsx → `paor_bom` → `dokuman_tipi='bom_excel'` + istemci-üretimli `parse_sonuc` kuyruğa yazılır. Yükleme/re-open/terfi aynı yerden.
+## En önemli ders: "test etmeden #2b'ye geçelim" → canlı veri matcher'ı çürüttü
+Cihat #2b'ye test dosyasız geçmek istedi. Test dosyası yoktu ama **mevcut 3616 batch kaydı** vardı. SQL ile şekli kilitlerken üç sessiz hata yakalandı (canlı testte değil, şema-keşfinde — MK-158.1 DATA→UI→kod):
+- **L3 `spool_no` GÜVENİLİR KİMLİK DEĞİL.** 4 format varyantı (`[1]`/`1`/`S01`/`S03_1`) + **9 kayıt çakışan no** (`[1]/[1]`, `S01/S01`: L3 iki spool'a aynı no vermiş). Metin-normalize çakışanı tek anahtara indirir → ikinci spool birinciyi ezer (B-6 sessiz kayıp). → Kimlik POZİSYONA çevrildi (idx0→S01). MK-182.2-DÜZELTME.
+- **Malzeme yeri KAYIT-BAZLI**, "hep pipeline-seviyesi" yanlış. Kimi kayıt malzemeyi yalnız spool[0]'da (s1=0), kimi her spool'da tam (s1=11) tutuyor. → #2b malzemeyi kayıttan türetmeli. MK-182.5.
+- **Kapsam dar:** 2862 kayıt 1-spool (#2a yeter), yalnız ~34 çok-spool (gerçek #2b), 754 sıfır-spool (ayrı kategori). MK-182.6.
 
-### Adaptör (kanıtlanmış, `_paorKabukSatirlar`)
-- `partNameParse` → tanim/malzeme/kalite/dn; `kimlikCoz(isoMetin)` → pipeline_no.
-- `dn`→`"DN"+sayı` METNİ (ham sayı olcuParse'ta yanlış çap verir — DN125→141.3 doğru, 125→125 yanlış).
-- et=null spool başlığında (DN dalı sch'siz) = Tersan davranışıyla aynı; gerçek et kalem listesinde.
-- node'da gerçek `ares-olcu`/`ares-asme`/`grupla` ile 7 dosyada doğrulandı: 7 spool, doğru çap/malzeme.
+## Pozisyon-bazlı fix (uygulandı, node --check + 7/7 varyant testi)
+`DOSYA_DESENLERI` PAOR satırı `sp_kaynak:'pozisyon'`. `eslestir` (kuyruk-isle-izometri.js) + devre-inceleme eşleştirme döngüsü index'li: PAOR'da `spoolHam='S'+(idx+1)`, L3 `spool_no` yok sayılır. `else` dalı = Tersan, BİREBİR değişmedi (regresyon yok). 7/7 varyant (çakışanlar dahil) benzersiz S0n. MD5: kuyruk `0a65b39b...`, devre-inceleme `f125c676...`.
 
-### Commit zinciri
-- `6ee7c6b` 181 paor wizard entegrasyon (icerik-tanimali drop) — ilk
-- `0c2c4ea` 181 paor wizard kabuk hatti adaptor 1cizim1spool — 181-4
-- `9ee8460` 181 paor kabuk kalici parse_sonuc yazimi — 181-5 (HEAD, doğru sürüm)
+## Mimari netleşme (181 handoff düzeltmeleri)
+- "PAOR L3 iptal/kopuk" YANLIŞ — batch'te çalışıyor (0 hata). "İptal" = devre-eşleştirme silosu, batch değil. (MK-182.1)
+- "Pipeline dosya adında yok" YANLIŞ — var (`52600-102773`); eksik olan dosyaAdiParse deseniydi. (MK-182.2)
+- Revert boşluğu YOK; MK-181/169/170/171 sağlam; borç 117 düzeltilmiş.
 
-## KRİTİK — sonraki oturumun ana konusu (L3 keşfi)
-Oturum sonunda Cihat "L3 PAOR'u tanıyordu, sildik mi?" diye sordu. **Kontrol ettim — silinmemiş, AKTİF.** `paor_aveva_ana` formatı L3/Vision ile fab çizimini okuyor: **3 spool ayırıyor, 11 kalem malzeme çıkarıyor** (parse_sonuc `52600-102773`, durum=iptal, 4 Haz). Yani:
-- **Spool-bölme L3'te zaten var** (Cihat'ın "OCR kurunca ayırırız" beklentisi → aslında L3 yapıyor, OCR gereksiz).
-- **Benim 180/181 "L3 değil" mimarim eksikti** — maliyet kararıydı, teknik tavan değil. Cihat'a bunu yanlış aktardım, düzelttim.
-- **Eşleştirme kopuk:** L3 pipeline'ı parse_sonuc'a yazıyor ama `devre-inceleme.js:134` dosya adından istiyor (PAOR dosya adında pipeline yok) → 3/3 atanmamış.
-
-Bu yüzden 181'i apar topar L3'e bağlamadım — eşleştirici-pipeline-fallback (Tersan'la ortak kod, dikkatli) + L3 maliyet-tetik kararı tasarım işi, 182'ye.
+## Test edilmedi (test dosyası yoktu) — 183'te toplu test
+Mantık + sözdizimi + canlı-veri-şekli doğrulandı, ama uçtan-uca CANLI test EDİLMEDİ.
 
 ## Disiplin
-Tüm patch'ler anchor-doğrulamalı Python (abort-on-mismatch, .bak, idempotent), `node --check`, MD5. paor.js'e dokunulmadı. Sistem kodu (grupla/aktar/taslagiAc) değişmedi — yalnız wizard'a adaptör eklendi.
+Server JS: `node --check` + MD5 `arespipe_kopyala`. HTML (wizard): anchor-Python patch. `izometri-oku.js` + `paor.js` dokunulmadı. Kod commit'leri `[skip ci]` YOK.

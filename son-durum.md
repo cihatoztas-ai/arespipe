@@ -1,27 +1,26 @@
-# son-durum.md — Oturum 179 sonu
+# son-durum.md — Oturum 182 sonu
 
 ## HEAD
-≈ `3f979e3` (+ ayarlar.html fix commit'i). Fonksiyon sayısı: 12/12 (değişmedi, bu tur sadece frontend).
+`3ec8f4e` (matcher fix + #2a wizard) + bu oturum son commit (pozisyon-bazlı matcher fix). Fonksiyon: 12/12 (yeni api yok). Not: CI-bot `[skip ci]` rapor commit'leri araya girebilir → `git pull --rebase`.
 
-## Canlıda (bu tur)
-- **Menü logosu** — kutusuz amblem (40px) + gerçek wordmark, mavi açılış/hover tarama, daraltma fix (wordmark `display:none`, amblem 30px ortalı).
-- **Giriş** — tek temiz inline logo (sol beyaz, sağ tema-uyumlu), serif slogan düzeltildi, sağ logo 62px.
-- **Favicon** — belirgin büyük halka; 38+ app + giriş + 11 admin hepsi `/assets/marka/`.
-- **Belge anteti altyapısı** — `aresBelgeBasligi` / `aresLogoPrint` / `aresFirmaLogo` / `aresRefreshLogo` (ares-layout.js, global).
-- **devre_detay** — rapor + etiket çıktılarında logolu antet.
-- **devreler + kesim** — print header AresPipe gerçek logo (34px) + sol firma dinamik (`aresFirmaLogo`).
-- **403/404/500/session-expired** — `⬡ AresPipe` yazı → tema-uyumlu amblem.
-- **admin (11)** — favicon eklendi.
-- **ayarlar.html** — tek-kaynak logo + KESİK DOSYA FIX (INIT + kapanış etiketleri geri eklendi).
+## Canlıya (bu tur)
+- **Matcher fix + #2a** (`3ec8f4e`): deklaratif `DOSYA_DESENLERI` + PAOR deseni; wizard L3 açıkken fab PDF → L3 yolu.
+- **Pozisyon-bazlı matcher fix** (son commit): PAOR spool kimliği array-index'ten (`S0n`), L3 `spool_no` yok sayılır. `eslestir` + devre-inceleme döngüleri. MD5 kuyruk `0a65b39b...`, devre-inceleme `f125c676...`.
+
+## Neden pozisyon (canlı veri keşfi)
+"Test etmeden #2b" yerine mevcut 3616 batch kaydından şekli kilitledik → matcher'ın ilk `koseli_to_S` deseni ÇÜRÜDÜ: L3 `spool_no` 4 varyant + **9 çakışan kayıt** (`[1]/[1]`, `S01/S01`) → metin-normalize sessiz kayıp (B-6). Pozisyon (idx0→S01) hepsini çözer. (MK-182.2-DÜZELTME)
 
 ## Hemen sıradaki / kullanıcı adımı
-- **Cihat:** Ayarlar → Firma Logosu → **ŞEFFAF** ARESMAK PNG yükle (yüklenen RGB/siyah-zemindi → antette siyah kutu). Kod hazır.
-- **Doğrula:** Deploy edilen ayarlar.html tam mı (`</html>` ile bitiyor) + Logo Yönetimi açılıyor mu.
+- **183 ilk iş — TOPLU CANLI TEST:** PAOR klasörü + L3 ON → S01 attach (R1/R2) + marka + [2]/[3] fazla. (182'de test dosyası yoktu.)
+- CI yeşil mi doğrula.
 
 ## Açık işler (kısa)
-Logo/marka: mobile favicon · PWA manifest · admin topbar amblem · og:image · white-label print kararı.
-Logo-dışı borçlar: MK-117 (`yukleyen_id` null) · gece cron ispatı · `migrations/` ayrımı notu · KARARLAR MK-169/170/171 boşluğu · IS2 · W-2.5.
-Detaylar: CLAUDE-SONRAKI-OTURUM.md.
+- **#2b** gerçek S02/S03: kabuk 1→N (`sonuc_spool_sayisi`) + malzeme KAYIT-BAZLI (boş→pipeline, dolu→per-spool, MK-182.5) + 0/1/N üç durum (MK-182.6) + cap/et zenginleştirme pozisyon-eşle. Kapsam DAR (~34 çok-spool). Tasarım: CLAUDE-SONRAKI-OTURUM.md.
+- 181-3 artığı temizliği · D-182.2 imalat/montaj malzeme · PAOR agirlik_kg · NPS→mm bug (PAOR'u etkilemez) · W-2.5 · spool hata rozeti.
 
-## Uyarı (süreç)
-Büyük HTML upload'ları kesik gelebilir → ship öncesi `grep -c "</html>"` kontrolü. ayarlar.html bu yüzden kesik deploy edildi, elle tamamlandı (MK notu eklendi).
+## Kapanan (182)
+- Açık borç 117 (`yukleyen_id` null) — wizard `yukleyen_id: userId` ile DÜZELTİLMİŞ (MK-182.3).
+- Revert boşluğu endişesi — YOK (MK-181/169/170/171 sağlam).
+
+## Disiplin notu
+PAOR ayrışması Tersan'ı bozmuyor: spool kimliği `sp_kaynak:'pozisyon'` (Tersan dosya-adı `else` dalında değişmedi), malzeme kayıt-bazlı (Tersan per-spool kalır). Kural aynı (Excel=malzeme/kimlik, L3=sayı+bölme), uygulama veri-şeklinden ayrışıyor.

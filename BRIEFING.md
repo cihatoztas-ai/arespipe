@@ -12,7 +12,7 @@ Excel BOM ve mühendislik dökümanlarını işleyip yapısal imalat verisi çı
 
 ## Mimari ilkeler
 - Excel = spool kimliğinin tek doğruluk kaynağı; PDF üstüne biner.
-- L2 deterministik parse ($0) tercih; L3 Vision AI (~$0.03/çağrı) yalnız fallback.
+- L2 deterministik parse ($0) tercih; L3 Vision AI (~$0.03–0.05/çağrı) yalnız fallback / spool-bölme.
 - Veri silinmez; `iptal`/`silindi` status + audit notu.
 - Server-to-server Vercel çağrısı YOK (MK-113/A); kuyruk drenajı client-loop orkestrasyon.
 
@@ -30,4 +30,4 @@ Excel BOM ve mühendislik dökümanlarını işleyip yapısal imalat verisi çı
 - Tenant logoları: `ares_logo_firma` (firma, antette) + `ares_logo_ares` (white-label menü), ayarlar Logo Yönetimi'nden base64.
 
 ## Şu anki odak
-Logo/marka turu tamamlandı (Oturum 179). Sıradaki: mobile favicon, PWA manifest, admin topbar amblem, white-label print kararı. Detay: CLAUDE-SONRAKI-OTURUM.md.
+PAOR/AVEVA L3 spool-bölme entegrasyonu (Oturum 181–182). PAOR = ayrı hat değil, Tersan ile aynı kabuk→incele→terfi hattından geçen farklı tersane/format (katmanlı kural: evrensel < aile < format < gemi). Matcher fix + wizard L3 aktivasyonu canlıda (`3ec8f4e`); **toplu canlı test + #2b** (gerçek S02/S03: kabuk genişletme + `pipeline_malzemeleri`) sırada. Detay: CLAUDE-SONRAKI-OTURUM.md.

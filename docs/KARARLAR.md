@@ -2690,3 +2690,48 @@ Kabuk spool başlığı çap/et'i anaBoru `dn`'inden `olcuParse` ile türer; DN 
 - `tur` kolonu bug'ı FANTOM: `plExcelYukle` şemaya uyarlanıyor, `plMalzKaydet` tur'suz çalışıyor. Borç listesinden düşüldü.
 - `ares-olcu.js` repo KÖKÜNDE var (handoff-180 "YOK" demişti — yanlıştı).
 - handoff-180 "dispatch worker'a bağla" yönü YANLIŞTI — doğru yer wizard kabuk hattı, senkron istemci (bu oturumda kanıtlandı).
+
+---
+
+## Oturum 182 — PAOR/AVEVA L3 spool-bölme: matcher + wizard aktivasyon (12 Haziran 2026)
+
+**MK-182.1 — PAOR L3 spool-bölme AKTİF; MK-180 bir MALİYET kuralıydı, teknik tavan değil.**
+`paor_aveva_ana` (id `995b5514`) batch sayfasında fab `-A.pdf`'i L3/Vision ile okuyor ve spool ayırıyor — `izometri_batch_kayitlari`'nda ~3616 tamamlandı, **0 hata**, ~$0.05/çizim. 181 handoff'un "iptal" anlatımı `dosya_isleme_kuyrugu` (devre-eşleştirme silosu) idi, batch silosu DEĞİL — L3 PAOR okuması hep çalışıyordu. Spool-bölme için OCR gereksiz (Vision görüntüyü okur).
+
+**MK-182.2 — Eşleştirme pipeline'ı DOSYA ADINDAN; deklaratif DOSYA_DESENLERI tablosu (DB migration YOK).**
+PAOR pipeline dosya adında ZATEN var (`11D-PAOR-52600-102773-A.pdf` → `52600-102773`). 181 handoff'un "pipeline dosya adında yok" teşhisi yanlıştı — yalnız PAOR deseni `dosyaAdiParse`'da eksikti. Çözüm: `kuyruk-isle-izometri.js` + `devre-inceleme.js`'e deklaratif `DOSYA_DESENLERI` tablosu (Tersan satırı bire bir korundu + PAOR satırı). Kural koda gömülü — DB migration gerekmedi.
+
+**MK-182.2-DÜZELTME — Spool kimliği POZİSYON-BAZLI (array index), metin-normalize DEĞİL.**
+İlk tasarım `koseli_to_S` deseniyle (`[1]`→`S01`) eşleştiriyordu. Canlı veri (50+ çok-spool kayıt) bunu çürüttü — L3 `spool_no` TEK FORMAT DEĞİL ve GÜVENİLİR KİMLİK DEĞİL:
+- 4 varyant: `["[1]","[2]"]` (koseli, 11 kayıt), `["S01","S02"]` (S, 13), `["1","2"]` (çıplak, 2), `["S03_1","S02_1"]` (diğer, 1).
+- **9 kayıt ÇAKIŞAN** `spool_no` (`[1]/[1]`×3, `S01/S01`×2, `S02/S02`×1...): L3 iki ayrı spool görmüş ama ikisine de AYNI no vermiş. Metin-normalize bunları tek anahtara indirir → eşleştiricide ikinci spool birinciyi ezer (**B-6 sessiz veri kaybı**).
+Karar: `DOSYA_DESENLERI` satırına `sp_kaynak:'pozisyon'`. PAOR'da `spoolHam = 'S'+(index+1)` (idx0→S01, idx1→S02) — L3 `spool_no` YOK SAYILIR. Gerekçe: kimlik Excel kabuğunda (MK-127.3); L3 yalnız "kaçıncı spool" sırasını taşır, numara gürültü. `eslestir` + `devre-inceleme` döngüleri index'li (`else` dalı = Tersan, birebir değişmedi). `spoolNormalize`/`koseli_to_S` jenerik util olarak kaldı (PAOR kullanmıyor). 7/7 varyant (çakışanlar dahil) benzersiz S0n üretti, çakışma bitti.
+
+**MK-182.3 — R1/R2 invariant korundu + açık borç 117 KAPANDI.**
+Matcher fix yalnız çıktı-zenginleştirme (MK-164.3). Kimlik hâlâ Excel kabuğu — L3 spool YARATMAZ. Açık borç 117 (`yukleyen_id` null) wizard satır 1089'da `yukleyen_id: userId` ile DÜZELTİLMİŞ (doğrulandı). Borç kapandı.
+
+**MK-182.4 — Spool markası = ARES_NORM.marka yan ürünü (kayıp değildi).**
+PAOR spool etiketi `proje-pipeline-spool-RevN` formatı `ares-normalize.js:175`'te otomatik üretilir; ayrı iş gerekmez.
+
+**MK-182.5 — Malzeme yeri KAYIT-BAZLI; tek kural ("hep pipeline-seviyesi") YANLIŞ.**
+İlk tasarım "malzeme hep `pipeline_malzemeleri`, spool'a N× yazma" diyordu. Canlı veri çürüttü — L3 malzeme dağılımı kayda göre değişiyor:
+- `e79177be`: spool[0]=11 kalem, spool[1]=**0** → malzeme yalnız ilk spool'da (pipeline-paylaşımlı niyet).
+- `882f0456`: spool[0]=11, spool[1]=**11** → her spool TAM kendi listesi (per-spool).
+- `3ebc8d29`: 6 / 3 (karışık).
+Karar (#2b'ye): malzeme yerleşimi **kayıttan türetilmeli** — `spoollar[n].malzeme_listesi` boşsa pipeline-paylaşımlı (`pipeline_malzemeleri`), doluysa per-spool. Tek kural dayatma. D1 (mükerrer toplama önleme) hâlâ geçerli ama uygulama kayıt-duyarlı.
+
+**MK-182.6 — Çok-spool KENAR DURUM; sıfır-spool AYRI kategori.**
+`sonuc_spool_sayisi` dağılımı (3616 tamamlanmış): **2862× 1-spool** (çoğunluk → #2a yeter, genişletme gerekmez), **~34× çok-spool** (gerçek #2b kapsamı: 22×2, 4×3, kalanı 4–10), **754× 0-spool** (L3 hiç spool çıkaramadı — boş/okunamaz; #2b genişletme 0'a bölmemeli, S01 boş kabuk kalır). #2b dar kapsamlı + üç durumu (0/1/N) ayrı ele almalı.
+
+**#2a (wizard aktivasyon, commit `3ec8f4e`):**
+`_paorTara`: L3 açıkken fab(`imalat`) PDF → `'izometri'` (drenaj+matcher); iso/L3-kapalı → `'sakla'`. `l3Toggle` → `_paorTara()` tazeler. Bu olmadan matcher fix uyuyordu. Anchor-Python patch, MD5 `6fa0a155...`.
+
+**Pozisyon-fix (bu oturum son kod commit'i):**
+`eslestir` (kuyruk-isle-izometri.js) + devre-inceleme eşleştirme döngüsü index-bazlı; PAOR `sp_kaynak:'pozisyon'`. MD5 kuyruk `0a65b39b958016f4ad5070b43b1914e5`, devre-inceleme `f125c676c352180927c261ede053937d`. `node --check` temiz, 7/7 varyant testi geçti.
+
+**Açık (183):**
+- **Toplu canlı test:** PAOR klasörü + L3 ON → `S01` attach (R1/R2) + marka + `[2]/[3]` fazla (182'de test dosyası yoktu).
+- **#2b — gerçek S02/S03:** kabuk genişletme (1→N, `sonuc_spool_sayisi`) + malzeme yerleşimi KAYIT-BAZLI (MK-182.5) + terfi ayrışması. 0/1/N üç durum (MK-182.6). `aktar` zaten N spool yaratıyor; PAOR adaptörü şu an 1 üretiyor.
+- **cap/et zenginleştirme:** `devre-inceleme.js` ~287-298 `dal` lookup (find-by-spool_no) HENÜZ pozisyon-duyarlı DEĞİL → #2b'de kabuk N'e çıkınca index-eşlemeli yap (S0(i+1) ← L3 spool[i]). Pre-#2b regresyon değil.
+- **D-182.2:** imalat/montaj malzeme ayrımı (civata/conta=montaj).
+- **181-3 artığı:** test taslakları + 247 satır sidecar `pipeline_malzemeleri` temizliği (önce `SELECT COUNT`, MK-153.2).
