@@ -137,12 +137,19 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
     let flagVar = false;
     let guven = null, etKaynagi = null, kritik = false;
 
-    for (const psp of spoollar) {
-      // KANONİK: pipeline yalnız dosya adından; spool dosya adı yoksa parse.
+    for (let _ppi = 0; _ppi < spoollar.length; _ppi++) {
+      const psp = spoollar[_ppi];
+      // KANONİK: pipeline yalnız dosya adından.
       const pl = dp ? dp.pipeline_no : null;
-      let   sn = (dp ? dp.spool_no : null) || psp.spool_no || null;
-      // 182/MK-182: format-bazli spool normalize (PAOR L3 '[1]' -> 'S01'), eslestir ile birebir.
-      if (sn && dp?.spool_norm) sn = spoolNormalize(sn, dp.spool_norm);
+      // 182/MK-182: spool kimligi 'pozisyon' (PAOR) -> array index (idx0->S01); eslestir ile birebir.
+      //   L3 spool_no guvenilmez (cakisma/varyant). Diger formatlar: parse spool_no + opsiyonel sp_norm.
+      let sn;
+      if (dp?.spool_kaynak === 'pozisyon') {
+        sn = 'S' + String(_ppi + 1).padStart(2, '0');
+      } else {
+        sn = (dp ? dp.spool_no : null) || psp.spool_no || null;
+        if (sn && dp?.spool_norm) sn = spoolNormalize(sn, dp.spool_norm);
+      }
       if (!pl || !sn) continue;                    // anahtarsız → bu psp eşleşmeye katılamaz
 
       const a = { pipeline: pl, spoolNo: sn };

@@ -524,11 +524,11 @@ export const normPipeline = (s) => String(s == null ? '' : s).trim().toUpperCase
 //   "M100-317-55-ALS 1(2).S01_1.1.pdf" -> {..., spool_no:'S01_1'}
 // 182/MK-182: DEKLARATIF desen tablosu (aile-bazli). Gelecek format = TABLO SATIRI (kod degil).
 //   Tersan/M100 deseni BIREBIR korundu (regresyon yok). PAOR: pipeline dosya adinda
-//   (11D-PAOR-{pipeline}-{rev}.pdf), spool dosya adinda YOK -> parse'tan (L3 spool-bolme),
-//   [n]->S0n normalize ile Excel kabugunun S0n'ine eslesir (Tersan kurali: pipeline dosya adindan).
+//   (11D-PAOR-{pipeline}-{rev}.pdf), spool dosya adinda YOK + L3 spool_no GUVENILMEZ
+//   (ayni cizimde cakisma/varyant) -> sp_kaynak:'pozisyon': array index'ten S0n uret (eslestir'de).
 const DOSYA_DESENLERI = [
   { aile: 'tersan', re: /^(.+?)(?:\s+\d+\(\d+\))?\.(S\d+(?:_\d+)?)\.\d+\.pdf$/i, pl: 1, sp: 2,    sp_norm: null },
-  { aile: 'paor',   re: /^11D-PAOR-(\d{5}-\d{6})-[A-Z0-9]+\.pdf$/i,              pl: 1, sp: null, sp_norm: 'koseli_to_S' },
+  { aile: 'paor',   re: /^11D-PAOR-(\d{5}-\d{6})-[A-Z0-9]+\.pdf$/i,              pl: 1, sp: null, sp_kaynak: 'pozisyon' },
 ];
 export function dosyaAdiParse(dosyaAdi) {
   if (!dosyaAdi || typeof dosyaAdi !== 'string') return null;
@@ -539,6 +539,7 @@ export function dosyaAdiParse(dosyaAdi) {
       spool_no: d.sp != null ? m[d.sp].toUpperCase() : null,
       aile: d.aile,
       spool_norm: d.sp_norm || null,
+      spool_kaynak: d.sp_kaynak || null,
     };
   }
   return null;
@@ -650,12 +651,21 @@ export async function eslestir(supa, devreId, kuyrukId, okuJson, devreDokumanId,
   const detay = [];
   let yukseltilen = 0;
 
-  for (const ps of okuJson.spoollar) {
-    // Pipeline: dosya adindan (tum PDF tek pipeline). Spool: oncelik dosya adi, yoksa parse.
+  for (let _psi = 0; _psi < okuJson.spoollar.length; _psi++) {
+    const ps = okuJson.spoollar[_psi];
+    // Pipeline: dosya adindan (tum PDF tek pipeline).
     const pipelineHam = dosyaParse?.pipeline_no || null;
-    let   spoolHam    = dosyaParse?.spool_no || ps.spool_no || null;
-    // 182/MK-182: format-bazli spool normalize (PAOR L3 '[1]' -> 'S01' kabuk eslesmesi icin).
-    if (spoolHam && dosyaParse?.spool_norm) spoolHam = spoolNormalize(spoolHam, dosyaParse.spool_norm);
+    // 182/MK-182: spool kimligi. 'pozisyon' (PAOR): L3 spool_no GUVENILMEZ -- ayni cizimde
+    //   [1]/[1], S01/S01 cakismalari + ciplak/S/diger varyantlar (canli veri). Array index'ten
+    //   uret (idx0->S01). L3 kimlik kaynagi DEGIL (kimlik Excel kabugunda); index 'kacinci spool'.
+    //   Diger formatlar (Tersan): dosya adi spool -> parse spool_no -> opsiyonel sp_norm (degismedi).
+    let spoolHam;
+    if (dosyaParse?.spool_kaynak === 'pozisyon') {
+      spoolHam = 'S' + String(_psi + 1).padStart(2, '0');
+    } else {
+      spoolHam = dosyaParse?.spool_no || ps.spool_no || null;
+      if (spoolHam && dosyaParse?.spool_norm) spoolHam = spoolNormalize(spoolHam, dosyaParse.spool_norm);
+    }
 
     let hedef = null, atanmaSebep = null;
     if (!pipelineHam) {
