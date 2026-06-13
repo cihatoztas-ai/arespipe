@@ -87,7 +87,7 @@
       var sn=(r.spool_no||'').trim();
       if(!sn){atanmamis.push(r);return;}
       var key=(r.pipeline_no||'').trim()+'|'+sn+'|'+(r.rev||'').trim();
-      if(!spoolMap[key]){spoolMap[key]={pipeline:(r.pipeline_no||'').trim(),spoolNo:sn,rev:(r.rev||'').trim(),kalemler:[]};sirayla.push(key);}
+      if(!spoolMap[key]){spoolMap[key]={pipeline:(r.pipeline_no||'').trim(),cizim_no:(r.cizim_no||'').trim(),spoolNo:sn,rev:(r.rev||'').trim(),kalemler:[]};sirayla.push(key);}
       spoolMap[key].kalemler.push(r);
     });
     // Karar 2: spool_no'suz satırlar — pipeline'da tek spool varsa ona bağla, çoksa Atanmamış
@@ -117,7 +117,7 @@
       //   sürprizi). Şimdi taslak önizleme = terfi. boyutParse ARES_OLCU yoksa {null,null} döner (zararsız guard).
       var anaBoru=bom.filter(function(b){return b.tip==='boru';}).sort(function(a,b){return (b.boy_mm||0)-(a.boy_mm||0);})[0];
       var bp=boyutParse(anaBoru?anaBoru.dn:'', anaBoru?anaBoru.malzeme:'');
-      return {pipeline:s.pipeline,spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,kalite:anaKalite||null,toplamKg:topKg,cap:bp.dis_cap,et:bp.et,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:bom};
+      return {pipeline:s.pipeline,cizim_no:s.cizim_no||'',spoolNo:s.spoolNo,rev:s.rev,anaMalzeme:anaMalzeme,kalite:anaKalite||null,toplamKg:topKg,cap:bp.dis_cap,et:bp.et,yuzeyHam:_yuzeyHamCikar(s.kalemler),bom:bom};
     });
     return {spoollar:spoollar,atanmamis:atanmamis,secilenSayfa:ps.secilen||'',guven:ps.guven||0};
   }

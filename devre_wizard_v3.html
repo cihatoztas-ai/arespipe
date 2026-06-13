@@ -811,6 +811,7 @@ async function _paorKabukSatirlar(grp){
   var isoMetin=await _paorPdfMetin(await _paorOkuBuf(grp.isoFile));
   var kimlik=window.PAOR.kimlikCoz(isoMetin);
   if(!kimlik||!kimlik.pipeline_no) return [];
+  var cizimNo=(String(grp&&grp.xlsxFile&&grp.xlsxFile.name||'').match(/(\d{5}-\d{6})/)||[])[1]||'';
   var out=[];
   for(var i=1;i<rows.length;i++){
     var r=rows[i]; var pn=String(r[iP]||'').trim(); if(!pn)continue;
@@ -819,7 +820,7 @@ async function _paorKabukSatirlar(grp){
     var isPipe=(p.tur==='boru')||unit==='M';
     var q=parseFloat(String(r[iQ]==null?'':r[iQ]).replace(',','.')); if(isNaN(q))q=null;
     out.push({
-      pipeline_no:kimlik.pipeline_no, spool_no:'S01', rev:'',
+      cizim_no:cizimNo, pipeline_no:kimlik.pipeline_no, spool_no:'S01', rev:'',
       tanim:p.tanim, malzeme:p.malzeme, kalite:p.kalite,
       dn:(p.dn!=null)?('DN'+p.dn):'',
       uzunluk_mm:(isPipe&&q!=null)?Math.round(q*1000):'',

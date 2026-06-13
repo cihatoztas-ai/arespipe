@@ -82,7 +82,7 @@ export function izometrileriDerle(izoKayitlar, kabukSpoollar) {
   // Kabuk anahtar → bindir hedefi (ağırlık/yüzey çelişki kıyası için)
   const kabukMap = new Map();
   for (const sp of (kabukSpoollar || [])) {
-    const k = normPipeline(sp.pipeline) + '|' + normSpoolNo(sp.spoolNo);
+    const k = normPipeline(sp.cizim_no || sp.pipeline) + '|' + normSpoolNo(sp.spoolNo);
     if (!kabukMap.has(k)) kabukMap.set(k, kabukBindirHedef(sp));
   }
 
