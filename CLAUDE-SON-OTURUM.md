@@ -1,27 +1,30 @@
-# CLAUDE — Son Oturum Özeti (182)
+# CLAUDE — Son Oturum Özeti (183)
 
 ## Yapılan iş
-PAOR/AVEVA L3 spool-bölme okumasını paylaşılan kabuk→incele→terfi hattına bağladım. ÜÇ kod parçası, ikisi commit'li:
-1. **Matcher fix** (commit `3ec8f4e`): PAOR dosya-adı deseni + spool normalize.
-2. **#2a wizard aktivasyon** (commit `3ec8f4e`): L3 açıkken PAOR fab PDF L3 yoluna.
-3. **Pozisyon-bazlı düzeltme** (bu oturum son commit): matcher kimliği array-index'ten (canlı veri keşfi sonrası — aşağı).
+PAOR/AVEVA inceleme eşleştirmesini çalışır hale getirdim: **drawing-no köprüsü** (Faz 1). PAOR'da kabuk pipeline'ı ile PDF dosya-adı drawing-no'su ayrı namespace olduğundan eşleşmiyordu; köprüyü kurdum, L3 açık canlı testte **EKSİK 0** ile kanıtladım. 3 kod commit, 4 dosya, hepsi eklemeli, Tersan'a sıfır dokunuş.
 
-## En önemli ders: "test etmeden #2b'ye geçelim" → canlı veri matcher'ı çürüttü
-Cihat #2b'ye test dosyasız geçmek istedi. Test dosyası yoktu ama **mevcut 3616 batch kaydı** vardı. SQL ile şekli kilitlerken üç sessiz hata yakalandı (canlı testte değil, şema-keşfinde — MK-158.1 DATA→UI→kod):
-- **L3 `spool_no` GÜVENİLİR KİMLİK DEĞİL.** 4 format varyantı (`[1]`/`1`/`S01`/`S03_1`) + **9 kayıt çakışan no** (`[1]/[1]`, `S01/S01`: L3 iki spool'a aynı no vermiş). Metin-normalize çakışanı tek anahtara indirir → ikinci spool birinciyi ezer (B-6 sessiz kayıp). → Kimlik POZİSYONA çevrildi (idx0→S01). MK-182.2-DÜZELTME.
-- **Malzeme yeri KAYIT-BAZLI**, "hep pipeline-seviyesi" yanlış. Kimi kayıt malzemeyi yalnız spool[0]'da (s1=0), kimi her spool'da tam (s1=11) tutuyor. → #2b malzemeyi kayıttan türetmeli. MK-182.5.
-- **Kapsam dar:** 2862 kayıt 1-spool (#2a yeter), yalnız ~34 çok-spool (gerçek #2b), 754 sıfır-spool (ayrı kategori). MK-182.6.
+## Köprü mimarisi (MK-183.1)
+- **Sorun:** kabuk `pipeline=Z05-SCUPPER_SYSTEM_002` (Excel İÇERİĞİ, marka/ekran) ≠ PDF `52600-102770` (dosya adı drawing-no). Eşleştirme anahtarı farklı string → hiç tutmuyor.
+- **Çözüm:** kabuk satırına `cizim_no` (Excel DOSYA ADINDAN `(\d{5}-\d{6})`) ekle. Eşleştirmeyi PAOR'da `cizim_no | pozisyon-spool`'dan kur. PDF tarafı zaten drawing-no veriyor. Pipeline ekranda `Z05-...` KALIR.
+- **3 değişiklik:**
+  1. `devre_wizard_v3.html _paorKabukSatirlar`: `cizimNo` çıkar + push'a `cizim_no` (62893a9)
+  2. `ares-kabuk.js grupla`: `cizim_no` pas-through (Tersan→`''`) (62893a9)
+  3. `lib/izo-eslesme.js incelemeTablosu`: `_kabukAnahtarKaynak = sp.cizim_no || sp.pipeline` helper, durum hesabı (116) + montaj seti (179) (11689c2)
+- `devre-inceleme.js:85` kabukMap (bindir kıyası) da `cizim_no || pipeline` (62893a9).
 
-## Pozisyon-bazlı fix (uygulandı, node --check + 7/7 varyant testi)
-`DOSYA_DESENLERI` PAOR satırı `sp_kaynak:'pozisyon'`. `eslestir` (kuyruk-isle-izometri.js) + devre-inceleme eşleştirme döngüsü index'li: PAOR'da `spoolHam='S'+(idx+1)`, L3 `spool_no` yok sayılır. `else` dalı = Tersan, BİREBİR değişmedi (regresyon yok). 7/7 varyant (çakışanlar dahil) benzersiz S0n. MD5: kuyruk `0a65b39b...`, devre-inceleme `f125c676...`.
+## En önemli ders: 5 sanılan bug = 1 kök neden (L3 kapalı) — MK-183.2
+İlk testlerde L3 KAPALI yüklenmişti:
+- L3 kapalı → fab PDF "sakla" yolu (wizard 794), `dokuman_tipi:diger parser:sakla spool_say:0` → eşleşecek izometri YOK.
+- Terk edilen taslakların kuyruğu `iptal` (W-2.13, `_taslakIptalEt`) → endpoint görmez → "isleniyor".
+- Her birini SQL/kod ile doğruladım (MK-158.1 sağlam) ama asıl çözüm L3 AÇIK doğru test. Cihat fark etti.
+- KURAL: PAOR test = L3 AÇIK şart. `iptal` Tersan'da 2473 kayıt — global kabul listesine ASLA ekleme.
 
-## Mimari netleşme (181 handoff düzeltmeleri)
-- "PAOR L3 iptal/kopuk" YANLIŞ — batch'te çalışıyor (0 hata). "İptal" = devre-eşleştirme silosu, batch değil. (MK-182.1)
-- "Pipeline dosya adında yok" YANLIŞ — var (`52600-102773`); eksik olan dosyaAdiParse deseniydi. (MK-182.2)
-- Revert boşluğu YOK; MK-181/169/170/171 sağlam; borç 117 düzeltilmiş.
+## Canlı test (geçti)
+L3 AÇIK + PAOR drop → İŞLENEN 3/3, OKUNDU 2, ZAYIF 1, EKSİK 0. Üç S01 kendi drawing'ine eşleşti.
 
-## Test edilmedi (test dosyası yoktu) — 183'te toplu test
-Mantık + sözdizimi + canlı-veri-şekli doğrulandı, ama uçtan-uca CANLI test EDİLMEDİ.
+## Kapsam dışı (kasten — #2b)
+- **Terfi (aktar→spooller):** Faz1 yalnız İNCELEME. Terfi `cizim_no` köprüsü taşımıyor.
+- **Çok-spool bölme + BOM dağıtımı:** Cihat canlıda yakaladı, #2b işi.
 
 ## Disiplin
-Server JS: `node --check` + MD5 `arespipe_kopyala`. HTML (wizard): anchor-Python patch. `izometri-oku.js` + `paor.js` dokunulmadı. Kod commit'leri `[skip ci]` YOK.
+`node --check` 3/3 OK. anchor-Python patch + `.bak` + abort-on-mismatch (5/5, 2/2). `izometri-oku.js` + `paor.js` DOKUNULMADI. Kod commit `[skip ci]` YOK. `.bak` temizlendi.
