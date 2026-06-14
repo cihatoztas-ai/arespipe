@@ -2735,3 +2735,18 @@ Karar (#2b'ye): malzeme yerleşimi **kayıttan türetilmeli** — `spoollar[n].m
 - **cap/et zenginleştirme:** `devre-inceleme.js` ~287-298 `dal` lookup (find-by-spool_no) HENÜZ pozisyon-duyarlı DEĞİL → #2b'de kabuk N'e çıkınca index-eşlemeli yap (S0(i+1) ← L3 spool[i]). Pre-#2b regresyon değil.
 - **D-182.2:** imalat/montaj malzeme ayrımı (civata/conta=montaj).
 - **181-3 artığı:** test taslakları + 247 satır sidecar `pipeline_malzemeleri` temizliği (önce `SELECT COUNT`, MK-153.2).
+
+## MK-184.1 — Şef konsolidasyonu (borç)
+Spool-kimlik stratejisi duplike/satır-içi: devre-inceleme.js:147 + kuyruk-isle-izometri.js:663 aynı `if(sp_kaynak==='pozisyon') S0n` mantığı; spoolNormalize eslestir'de var inceleme'de yok. Çözüm: kanonik spoolAnahtarlariUret(dp, spoollar) helper, iki tüketici çağırsın.
+
+## MK-184.2 — eslesenIzoIdx ölü kod
+izo-eslesme.js: 184/A FAZLA anahtar-seviyesine geçti, eslesenIzoIdx artık kullanılmıyor (populate kalıyor). Temizlik borcu.
+
+## MK-184.3 — PAOR terfi köprüsü (spooller.cizim_no)
+PAOR'da kabuk pipeline (Z##-..., Excel/ekran) ≠ PDF drawing-no (52600-NNNNNN). Köprü: spooller.cizim_no (migration 104) → aktar kabuk entry'sinden yazar, kabukYukle harita anahtarı normPipeline(cizim_no || pipeline_no), eslestir dokunulmadı (zaten drawing-no pipeline). Tersan: cizim_no NULL → fallback → birebir. Canlı kanıt: gbdgfnd 779/780/781 terfi+backfill, eslesti.
+
+## MK-184.4 — montajEslestir cizim_no boşluğu
+kuyruk-isle-izometri.js:840 ctx-siz harita cizim_no taşımıyor → drain-yolu PAOR-montaj bağlama kopuk. Backfill yolu (ctx.harita, 826) kabukYukle düzeltmesini devralır → kapsanıyor. Drain-yolu için 840+831'e cizim_no eklenmeli (Tersan fallback güvenli, PAOR montaj test edilmemiş).
+
+## MK-184.5 — Migration sırası
+Şema değişen işte: migration APPLY (canlı DB, SQL Editor) → SONRA kod deploy. Supabase migration auto-apply DEĞİL; APPLY + repo commit ayrı işlerdir.
