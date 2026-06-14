@@ -1,33 +1,44 @@
-# BRIEFING.md — AresPipe (proje bağlam dökümanı)
+# BRIEFING — AresPipe Aktif Bağlam (184 sonu)
 
-## Ne
-AresPipe = tersane boru spool yönetimi için çok-tenant'lı SaaS. İzometrik PDF çizimleri,
-Excel BOM ve mühendislik dökümanlarını işleyip yapısal imalat verisi çıkarır.
+## Proje
+Çok-tenant tersane pipe spool yönetimi SaaS. Stack: Supabase/Postgres (RLS), Vercel serverless (Hobby, 12 fn tavanı), vanilla JS/HTML web + React Native PWA. Tüm iş Türkçe, MK-kararları + numaralı oturum disiplini.
 
-## Stack
-- Supabase/PostgreSQL (RLS) · Vercel serverless (Hobby, **12 fonksiyon tavanı — MK-129.3**)
-- Vanilla JS/HTML çok-sayfalı web frontend · React Native mobil PWA (`arespipe-mob`)
-- Repo: `github.com/cihatoztas-ai/arespipe` · Prod: `arespipe.vercel.app`
-- Tüm iş Türkçe. Cihat tek geliştirici + ürün sahibi (terse, A/B/C kararlar, terminal çıktısı yapıştırarak onay, görsel karşılaştırma sever).
+## PAOR/AVEVA durumu — uçtan uca CANLI
+PAOR formatı (yeni tersane) artık tam akış: **yükle → incele → terfi → izometri bağla.**
+- **Format:** Excel BOM (`lib/paor.js`) + fab PDF (`-A.pdf`, text'siz vektör, L3) + Isometric_View PDF. Drawing-no `52600-NNNNNN` PDF dosya adından; Excel pipeline `Z##-SCUPPER_...` ekran/marka.
+- **183 (Faz1):** İnceleme köprüsü — drawing-no ile eşleştirme (`izo-eslesme _kabukAnahtarKaynak = cizim_no || pipeline`).
+- **184/A:** Çok-spool bölme. L3 N spool → kabuk S01..SN. Fix = FAZLA anahtar-seviyesi (`izo-eslesme`) + wizard `_paorBolShell` shell enjeksiyon. 7-spool testi geçti.
+- **184/#2b:** Terfi köprüsü. `spooller.cizim_no` (migration 104) → aktar yazar, kabukYukle harita anahtarı, eslestir bağlar. Tek-spool testi geçti.
 
-## Mimari ilkeler
-- Excel = spool kimliğinin tek doğruluk kaynağı; PDF üstüne biner.
-- L2 deterministik parse ($0) tercih; L3 Vision AI (~$0.03–0.05/çağrı) yalnız fallback / spool-bölme.
-- Veri silinmez; `iptal`/`silindi` status + audit notu.
-- Server-to-server Vercel çağrısı YOK (MK-113/A); kuyruk drenajı client-loop orkestrasyon.
+## Mimari ilkeler (PAOR'a özgü)
+- **Üç tüketici, tek anahtar mantığı:** inceleme / terfi-bağlama / (montaj) → hepsi `cizim_no || pipeline_no | S0n`. Tersan cizim_no boş → pipeline_no fallback → birebir.
+- **Spool kimliği POZİSYON:** parse spool_no GÜVENİLMEZ ("[1]"); endpoint idx→S0n üretir (`devre-inceleme.js:147`, `dosyaAdiParse spool_kaynak:'pozisyon'`).
+- **M1 (A):** S02..SN boş shell (BOM S01'de); B sonra dağıtır.
+- **izometri-oku.js / paor.js DOKUNULMAZ** (MK-49.1). Format mantığı `format-paketleri` / matcher tablosunda.
 
-## Disiplin
-- Şema-önce SQL (MK-85.3), yazmadan-önce-oku (MK-126.8), `izometri-oku.js` dokunulmaz (MK-49.1).
-- HTML değişiklikleri: idempotent Python patch + `.bak` + `node --check` (çıkarılan JS üzerinde) + MD5'li `arespipe_kopyala` + ayrı küçük commit'ler.
-- Git: `gpc "mesaj"` (add+commit+rebase+push). `[skip ci]` token'ı HEAD commit'te tüm push'ta CI'yı atlar (MK-134.1) → kod commit'leri HEAD olmalı.
-- Açılış ritüeli: `git pull && git status && git log --oneline -3` + fonksiyon 12/12 + handoff oku.
+## Sonraki iş (185) — öneri
+1. **Çok-spool köprü doğrulaması (769/771):** S02/S03'ün cizim_no'yla bağlandığını canlı gör (tek-spool S01 doğrulandı, mantık aynı).
+2. **B — BOM dağıtımı (MK-182.5):** kayıt-bazlı (boş→pipeline-paylaşımlı, dolu→per-spool). Tersan'ı bozma.
+3. **MK-184.1 şef konsolidasyonu:** spoolAnahtarlariUret tek-kaynak helper.
 
-## Marka kimliği (Oturum 179'da yerleşti)
-- Amblem: 4-delikli flanş halkası + boru çubuğu + yeşil merkez. Yatay logo: amblem + "AresPipe" (Ares koyu, Pipe mavi `--ac`).
-- `assets/marka/`: amblem, yatay logo açık/koyu, favicon SVG+16/32, icon-180/512/1024.
-- Kod helper'ları (ares-layout.js, global): `aresBelgeBasligi(o)` (belge anteti), `aresLogoPrint(h)` (print logosu), `aresFirmaLogo(h)` (tenant firma logosu/adı), `aresRefreshLogo` (menü canlı yenileme).
-- Renk bağlamı (MK): print = sabit (ring #16202B, Pipe #2D6CDF); menü/hata = tema-uyumlu (`--sb-tx`/`--tx`, `--ac`).
-- Tenant logoları: `ares_logo_firma` (firma, antette) + `ares_logo_ares` (white-label menü), ayarlar Logo Yönetimi'nden base64.
+## Kritik test kuralları
+- L3 AÇIK + TAZE devre + hard-refresh (MK-183.2).
+- Devre-scoped SQL (MK-163.1) — global LIKE yanıltır.
+- Şema değişen işte: migration APPLY → SONRA kod deploy (MK-184.5). Supabase auto-apply DEĞİL.
 
-## Şu anki odak
-PAOR/AVEVA L3 spool-bölme entegrasyonu (Oturum 181–182). PAOR = ayrı hat değil, Tersan ile aynı kabuk→incele→terfi hattından geçen farklı tersane/format (katmanlı kural: evrensel < aile < format < gemi). Matcher fix + wizard L3 aktivasyonu canlıda (`3ec8f4e`); **toplu canlı test + #2b** (gerçek S02/S03: kabuk genişletme + `pipeline_malzemeleri`) sırada. Detay: CLAUDE-SONRAKI-OTURUM.md.
+## Anahtar dosyalar
+- `lib/izo-eslesme.js` (saf eşleştirme çekirdeği; 184/A FAZLA anahtar-seviyesi + self-test)
+- `api/kuyruk-isle-izometri.js` (dosyaAdiParse, DOSYA_DESENLERI, kabukYukle [184/2b cizim_no], eslestir, montajEslestir)
+- `ares-kabuk.js` (grupla, aktar [184/2b cizim_no yazar])
+- `api/devre-inceleme.js` (inceleme endpoint, pozisyon→S0n)
+- `devre_wizard_v3.html` (_paorKabukSatirlar, _paorBolShell, inceleGetir, terfi onayEt)
+- `migrations/schema/104_spooller_cizim_no.sql`
+
+## Açık borçlar (özet — detay CLAUDE-SONRAKI-OTURUM.md)
+MK-184.1 şef konsolidasyon · MK-184.2 eslesenIzoIdx ölü kod · MK-184.3 KARARLAR.md backfill · MK-184.4 montaj köprü (kio:840) · MK-184.5 migration sırası · PAOR veri-kalite (agirlik/kalite/et/D-182.2) · çok-spool köprü tam test · L3 routing kırılganlık · mükerrer devre temizliği.
+
+## Repo / DB
+- Repo `github.com/cihatoztas-ai/arespipe` @ `~/Desktop/arespipe`. Prod `arespipe.vercel.app`.
+- Supabase `ochvbepfiatzvyknkvsn` (arespipe-dev = prod). SQL Editor wrapper'sız.
+- `arespipe_kopyala <src> <dst> <md5>` (3-arg). `gpc` = add+commit+rebase+push. `gp` = commit içermez (184'te tuzak — yalnız push).
+- Migration: `migrations/schema/NNN_*.sql` (son 104). APPLY canlıya elle (SQL Editor) + dosya commit, İKİSİ ayrı.

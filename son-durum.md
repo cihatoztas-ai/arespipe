@@ -1,26 +1,36 @@
-# son-durum.md — Oturum 182 sonu
+# son-durum.md — Oturum 184 sonu
 
 ## HEAD
-`3ec8f4e` (matcher fix + #2a wizard) + bu oturum son commit (pozisyon-bazlı matcher fix). Fonksiyon: 12/12 (yeni api yok). Not: CI-bot `[skip ci]` rapor commit'leri araya girebilir → `git pull --rebase`.
+`7df320b` civarı (184 #2b migration 104 push'u sonrası; CI-bot `[skip ci]` rapor commit'leri araya girer → `git pull --rebase`). Fonksiyon **12/12** (yeni api yok). Çalışma ağacı TEMİZ.
 
-## Canlıya (bu tur)
-- **Matcher fix + #2a** (`3ec8f4e`): deklaratif `DOSYA_DESENLERI` + PAOR deseni; wizard L3 açıkken fab PDF → L3 yolu.
-- **Pozisyon-bazlı matcher fix** (son commit): PAOR spool kimliği array-index'ten (`S0n`), L3 `spool_no` yok sayılır. `eslestir` + devre-inceleme döngüleri. MD5 kuyruk `0a65b39b...`, devre-inceleme `f125c676...`.
+Commit zinciri (184):
+- `38060f2` — A fix: izo-eslesme FAZLA anahtar-seviyesi (B-6 + MK-182.6) + self-test
+- `77c64f1` — #2b kod: ares-kabuk aktar cizim_no yazar + kuyruk-isle kabukYukle harita anahtarı
+- `886412b` — #2b migration: 104_spooller_cizim_no.sql
 
-## Neden pozisyon (canlı veri keşfi)
-"Test etmeden #2b" yerine mevcut 3616 batch kaydından şekli kilitledik → matcher'ın ilk `koseli_to_S` deseni ÇÜRÜDÜ: L3 `spool_no` 4 varyant + **9 çakışan kayıt** (`[1]/[1]`, `S01/S01`) → metin-normalize sessiz kayıp (B-6). Pozisyon (idx0→S01) hepsini çözer. (MK-182.2-DÜZELTME)
+## Canlıya (184 — hepsi EKLEMELİ, Tersan'a sıfır dokunuş)
+- **A** (`38060f2`): `lib/izo-eslesme.js` FAZLA izometri-seviyesi → anahtar-seviyesi. `kabukAnahtarSet` öne taşındı (tek tanım). Çok-spool kısmi eşleşmede S02..SN fazla'ya düşer (eskiden sessizce yutuluyordu = B-6). Wizard `_paorBolShell` (önceden canlı) bu fazla'dan shell enjekte eder.
+- **#2b kod** (`77c64f1`): `ares-kabuk.js aktar` spoolRows'a `cizim_no:s.cizim_no||null`. `api/kuyruk-isle-izometri.js kabukYukle` SELECT'e cizim_no + harita anahtarı `cizim_no || pipeline_no`. `eslestir` + `montajEslestir` dokunulmadı.
+- **#2b migration** (`886412b`): `migrations/schema/104_spooller_cizim_no.sql` → `spooller.cizim_no text`. **Canlı DB'ye APPLY edildi** (information_schema count=1 doğrulandı). Repo + canlı senkron.
 
-## Hemen sıradaki / kullanıcı adımı
-- **183 ilk iş — TOPLU CANLI TEST:** PAOR klasörü + L3 ON → S01 attach (R1/R2) + marka + [2]/[3] fazla. (182'de test dosyası yoktu.)
-- CI yeşil mi doğrula.
+## CANLI TEST — İKİSİ DE GEÇTİ ✅
+**A (çok-spool):** Taze devre, 773/774/775 (L3=3/2/2) → İŞLENEN 7/7, KABUK 7, EKSİK 0. Üç çizim S01..SN bölündü. Terfi → 7 `spooller` (A-002155..2161), benzersiz. S02/S03 boş shell (0 kg).
 
-## Açık işler (kısa)
-- **#2b** gerçek S02/S03: kabuk 1→N (`sonuc_spool_sayisi`) + malzeme KAYIT-BAZLI (boş→pipeline, dolu→per-spool, MK-182.5) + 0/1/N üç durum (MK-182.6) + cap/et zenginleştirme pozisyon-eşle. Kapsam DAR (~34 çok-spool). Tasarım: CLAUDE-SONRAKI-OTURUM.md.
-- 181-3 artığı temizliği · D-182.2 imalat/montaj malzeme · PAOR agirlik_kg · NPS→mm bug (PAOR'u etkilemez) · W-2.5 · spool hata rozeti.
+**#2b (köprü):** Taze devre gbdgfnd, 779/780/781 (tek-spool) →
+- Yazma yarısı: terfi → 3 satır, hepsinde `cizim_no` dolu (52600-102779/780/781), pipeline_no `Z10-...` (marka korundu).
+- Okuma yarısı: backfill → `parse_sonuc._eslesme.eslesen:1, atanmamis:0`, `detay[0].durum:"eslesti"`, spool_uuid bağlı, yüzey kabuk_bos_dolduruldu→Galvaniz.
 
-## Kapanan (182)
-- Açık borç 117 (`yukleyen_id` null) — wizard `yukleyen_id: userId` ile DÜZELTİLMİŞ (MK-182.3).
-- Revert boşluğu endişesi — YOK (MK-181/169/170/171 sağlam).
+## Köprü mimarisi özeti (MK-184.3 — KARARLAR.md'ye EKLENECEK)
+PAOR'da iki kimlik ayrı namespace: kabuk pipeline `Z10-SCUPPER_SYSTEM_001` (Excel içeriği, ekranda görünür) vs PDF drawing-no `52600-102779`. Köprü: `spooller.cizim_no`'ya drawing-no yaz (`aktar`), eşleştirmeyi `cizim_no || pipeline_no`'dan kur (`kabukYukle` harita; inceleme tarafı `izo-eslesme _kabukAnahtarKaynak` zaten 183'te). Ekranda pipeline `Z10-...` KALIR. Tersan: cizim_no NULL → fallback → BİREBİR.
+
+## Açık işler (carry — taze SQL ile doğrula, MK-163.1)
+- **Çok-spool köprü tam-kapsam:** #2b yalnız tek-spool (S01) köprüsüyle test edildi. S02/S03 bağlama (769/771 seti) canlı görülmedi — mantık aynı, hızlı doğrulanmalı.
+- **B — BOM dağıtımı (MK-182.5):** S02..SN boş shell; kayıt-bazlı dağıtım (malzeme_listesi boş→pipeline-paylaşımlı, dolu→per-spool). Tersan'ı bozma.
+- **MK-184.1** şef konsolidasyonu (spoolAnahtarlariUret tek-kaynak; pozisyon dalı duplike kio:663+devre-inceleme:147; spoolNormalize inceleme'de yok).
+- **MK-184.2** eslesenIzoIdx ölü kod. **MK-184.4** montajEslestir kio:840 cizim_no'suz (drain-yolu PAOR montaj). **MK-184.5** migration-önce/kod-sonra sırası.
+- **MK-184.3** KARARLAR.md'ye eklenmedi (commit'te yalnız .sql) — 185 açılışında backfill.
+- PAOR veri-kalite paketi: agirlik_kg null (K2), kalem-kalite "karbon" (ares-kabuk dikkat), et boş, D-182.2 malzeme çelişkileri.
+- L3 routing d===imalat kırılganlığı (wizard 793). NPS→mm bug (Tersan Faz2). Mükerrer test devresi temizliği.
 
 ## Disiplin notu
-PAOR ayrışması Tersan'ı bozmuyor: spool kimliği `sp_kaynak:'pozisyon'` (Tersan dosya-adı `else` dalında değişmedi), malzeme kayıt-bazlı (Tersan per-spool kalır). Kural aynı (Excel=malzeme/kimlik, L3=sayı+bölme), uygulama veri-şeklinden ayrışıyor.
+PAOR ayrışması Tersan'ı bozmuyor: izo-eslesme tek-anahtarda birebir; aktar cizim_no Tersan'da null; kabukYukle harita `|| pipeline_no` fallback. Üçü de self-test/canlı kanıtlı. Migration idempotent (ADD COLUMN IF NOT EXISTS).
