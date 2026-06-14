@@ -577,7 +577,7 @@ export function montajDosyaKok(dosyaAdi) {
 export async function kabukYukle(supa, devreId) {
   const { data: spoollar, error: spErr } = await supa
     .from('spooller')
-    .select('id, spool_no, pipeline_no, spool_id, cizim_durumu, et_kalinligi_mm, dis_cap_mm, agirlik, agirlik_kg, yuzey')
+    .select('id, spool_no, pipeline_no, cizim_no, spool_id, cizim_durumu, et_kalinligi_mm, dis_cap_mm, agirlik, agirlik_kg, yuzey')
     .eq('devre_id', devreId)
     .eq('silindi', false);
   if (spErr) {
@@ -587,7 +587,9 @@ export async function kabukYukle(supa, devreId) {
 
   const harita = new Map();   // "PIPELINE|SPOOL" -> spool kaydi
   for (const sp of (spoollar || [])) {
-    const k = normPipeline(sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
+    // 184/2b: PAOR kabuk anahtari cizim_no (drawing-no) — izometri tarafiyla ayni namespace.
+    //   Tersan: cizim_no null -> pipeline_no fallback -> BIREBIR ayni (regresyon yok).
+    const k = normPipeline(sp.cizim_no || sp.pipeline_no) + '|' + normSpoolNo(sp.spool_no);
     if (!harita.has(k)) harita.set(k, sp);
   }
 

@@ -227,6 +227,7 @@
           tenant_id:tid, devre_id:devreId,
           spool_no:s.spoolNo, spool_id:sid,
           pipeline_no:s.pipeline||null, rev:s.rev||'',
+          cizim_no:s.cizim_no||null,   // 184/2b: PAOR drawing-no koprusu (terfi yazimi). Tersan -> null.
           malzeme:malKod(_malHam), kalite:_kalite,
           dis_cap_mm:_capMm, et_kalinligi_mm:_etMm,
           agirlik:_agKg, agirlik_kg:_agKg, yuzey:_yuzey,
