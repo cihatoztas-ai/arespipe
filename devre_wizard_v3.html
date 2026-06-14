@@ -830,6 +830,32 @@ async function _paorKabukSatirlar(grp){
   }
   return out;
 }
+
+// 184/A (MK-182.6): PAOR cok-spool bolme — grupla CIKTI katmaninda bos shell enjekte.
+//   N sinyali = inceleme.fazla'daki (cizim_no | S0k, sebep:'kabukta_yok') kayitlar (S1 karari).
+//   M1: BOM S01'de kalir; S02..SN bos shell (bom:[]), display pipeline+cizim_no+rev sibling S01'den devralir.
+//   Tersan passthrough: cizim_no'suz spool -> sibling bulunmaz -> atlanir (eski 'fazla sor' akisi korunur).
+//   SAF: WIZ._kabukSatirlar'a (ham Excel) DOKUNMAZ; yalniz grupla ciktisini genisletir.
+function _paorBolShell(spoollar, fazla) {
+  if (!Array.isArray(fazla) || !fazla.length) return spoollar;       // Tersan / extra yok -> passthrough
+  var varOlan = {};
+  spoollar.forEach(function (s) { varOlan[((s.cizim_no || s.pipeline) || '') + '|' + s.spoolNo] = true; });
+  var ekstra = [];
+  fazla.forEach(function (f) {
+    if (f.sebep !== 'kabukta_yok' || !f.pipeline || !f.spoolNo) return;   // yalniz gercek kabukta-yok
+    var key = f.pipeline + '|' + f.spoolNo;
+    if (varOlan[key]) return;
+    // sibling: ayni cizim_no'lu kabuk spool'u (PAOR isareti). Tersan'da cizim_no '' -> eslesmez -> atla.
+    var sib = spoollar.find(function (s) { return (s.cizim_no || '') !== '' && (s.cizim_no || '') === f.pipeline; });
+    if (!sib) return;
+    varOlan[key] = true;
+    ekstra.push({
+      pipeline: sib.pipeline, cizim_no: sib.cizim_no, spoolNo: f.spoolNo, rev: sib.rev || '',
+      anaMalzeme: '', kalite: null, toplamKg: 0, cap: null, et: null, yuzeyHam: sib.yuzeyHam || '', bom: []
+    });
+  });
+  return ekstra.length ? spoollar.concat(ekstra) : spoollar;
+}
 function guncelleIncele() {
   var bom = bomVarMi();
   var paorVar = !!(WIZ._paorGruplar && WIZ._paorGruplar.length);
@@ -1263,6 +1289,19 @@ async function inceleGetir() {
     });
     var j = await r.json();
     if (!r.ok) { console.warn('[v3] inceleme hata:', j && j.hata); return; }
+    // 184/A: PAOR cok-spool bolme. Cagri #1 fazla'yi verir; helper bos shell uretirse
+    //   WIZ._kabukSpoollar'i genislet (terfi truth) + TEK re-call -> S02..SN artik eslesir, fazla bosalir.
+    //   Tersan'da helper passthrough -> bol===kabuk -> tek cagri -> birebir eski davranis.
+    var _bol = _paorBolShell(WIZ._kabukSpoollar, j.fazla);
+    if (_bol.length > (WIZ._kabukSpoollar || []).length) {
+      WIZ._kabukSpoollar = _bol;
+      var r2 = await fetch('/api/devre-inceleme', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ devre_id: WIZ.devre_id, kabuk_spoollar: WIZ._kabukSpoollar })
+      });
+      var j2 = await r2.json();
+      if (r2.ok) j = j2; else console.warn('[v3] inceleme re-call hata:', j2 && j2.hata);
+    }
     WIZ._inceleme = j;
     await _duzeltmeleriYukle(j);   // G2a overlay-A1: kayıtlı düzeltmeleri spoollar'a bindir
     renderInceleme(j);
@@ -3320,7 +3359,12 @@ async function onayEt() {
   try {
     var supa = ARES.supabase(), tid = ARES.tenantId();
     // Kanonik tam BOM modeli (devre_detay ile aynı) — kabukTuret DEĞİL (KORUMA-1)
-    var model = ARES_KABUK.grupla({ satirlar: WIZ._kabukSatirlar });
+    // 184/A: terfi genisletilmis kabugu kullanir (inceleGetir'de PAOR S02..SN shell eklendi).
+    //   inceleme.fazla 2. call'da tuketildi -> burada helper'i tekrar cagirma; stored array terfi truth'u.
+    //   Bos/yoksa fresh grupla'ya fallback (Tersan = grupla ciktisi, tam bom, birebir eski).
+    var model = { spoollar: (WIZ._kabukSpoollar && WIZ._kabukSpoollar.length)
+      ? WIZ._kabukSpoollar
+      : ARES_KABUK.grupla({ satirlar: WIZ._kabukSatirlar }).spoollar };
     // 143/G2a overlay-B: operatör düzeltmelerini (pipeline|spoolNo)→{alan:deger} haritasına topla.
     //   WIZ._inceleme.spoollar[i]._duzelt overlay-A'da DB'den yüklendi. aktar bunu spool başlığına bindirir.
     var _duzeltHarita = {};
