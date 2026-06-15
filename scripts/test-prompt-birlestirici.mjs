@@ -1,0 +1,30 @@
+// scripts/test-prompt-birlestirici.mjs — 186 / MK-186.1
+// Calistir (repo kokunden): node scripts/test-prompt-birlestirici.mjs
+import fs from 'node:fs';
+import { EVRENSEL_PROMPT, promptBirlestir } from '../lib/prompt-birlestirici.js';
+let g=0,k=0; const ok=(a,c)=>{c?(g++,console.log('  ✓',a)):(k++,console.log('  ✗ KALDI:',a));};
+const src=fs.readFileSync('api/izometri-oku.js','utf8');
+const OLD=src.match(/const YAKLASIM_Y_PROMPT = `([\s\S]*?)`;/)[1];
+const mig=fs.readFileSync('migrations/schema/105_paor_ana_prompt_spool_guclendir.sql','utf8');
+const MIG=mig.match(/SET prompt_template = E'([\s\S]*?)',\s*\n\s*guncelleme_at/)[1].replace(/\\n/g,'\n').replace(/''/g,"'");
+console.log('[1] Round-trip'); ok('EVRENSEL===MIG105',EVRENSEL_PROMPT===MIG); ok('len 7025',EVRENSEL_PROMPT.length===7025);
+console.log('[2] Tersan bos-ek -> saf evrensel');
+ok('null->EVRENSEL',promptBirlestir({prompt_ek:null})===EVRENSEL_PROMPT);
+ok('undefined->EVRENSEL',promptBirlestir(undefined)===EVRENSEL_PROMPT);
+ok('""->EVRENSEL',promptBirlestir({prompt_ek:''})===EVRENSEL_PROMPT);
+ok('whitespace->EVRENSEL',promptBirlestir({prompt_ek:'  \n '})===EVRENSEL_PROMPT);
+ok('header yok',!promptBirlestir({}).includes('FORMAT-OZEL EKLER'));
+console.log('[3] Format-ozel ek');
+const ek="PAOR'da SPOOL kutusu ERECTION ALTINDADIR.";
+ok('birlesim dogru',promptBirlestir({prompt_ek:ek})===EVRENSEL_PROMPT+'\n\n## FORMAT-OZEL EKLER\n'+ek);
+ok('trim',promptBirlestir({prompt_ek:'  '+ek+'  '}).endsWith(ek));
+console.log('[4] Guclendirilmis madde3');
+['SAYI SINIRI YOK','HER KOSELI PARANTEZ BIR SPOOL','[1] [2] [3] [4]','Acili <> ile koseli [] FARKLIDIR'].forEach(m=>ok('icerir '+m,EVRENSEL_PROMPT.includes(m)));
+console.log('[5] TERSAN REGRESYON');
+const M3='3. SPOOL SAYISINI',M4='\n4. MALZEME LISTESINDE AYRIM YAP.';
+const sl=s=>({p:s.slice(0,s.indexOf(M3)),s:s.slice(s.indexOf(M4))});
+const a=sl(OLD),b=sl(EVRENSEL_PROMPT);
+ok('prefix birebir',a.p===b.p); ok('suffix birebir',a.s===b.s);
+console.log('[6] Evrensel kurallar korundu');
+['SADECE PDF','PIPELINE NUMARASI DOSYA ADIYLA UYUSMALI','FABRICATION MATERIAL LIST','CIKTI FORMATI','EN 10216-1 P235GH'].forEach(m=>ok('icerir '+m,EVRENSEL_PROMPT.includes(m)));
+console.log(`\nSONUC: ${g} gecti, ${k} kaldi`); process.exit(k?1:0);

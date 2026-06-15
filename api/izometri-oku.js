@@ -66,6 +66,8 @@ import crypto from 'crypto';
 // kaymasini KAPILI onarir (ham'da capa yok ama -29-onarilmista varsa). Saf modul.
 // Metin cikarim sinirinda (fingerprint + L2 oncesi) calisir; temiz metni bozmaz. (MK-120.3)
 import { metinNormalle } from '../lib/glyph-onar.js';
+// 186 / MK-186.1: L3 sistem prompt'u kompozisyonla uretilir (evrensel cekirdek + format ek).
+import { promptBirlestir } from '../lib/prompt-birlestirici.js';
 
 if (!ARES_BORU) {
   console.error('[izometri-oku] UYARI: ARES_BORU yuklenemedi -- helper fallback devre disi.');
@@ -587,6 +589,7 @@ async function formatTani({ pdf_base64, dosya_adi, tenant_id }) {
       format_kodu: enIyiFmt.format_kodu || null,         // 47: kolondan oku, 48+ parserKuralIle kullanacak
       parser_kural: enIyiFmt.parser_kural || {},
       prompt_template: enIyiFmt.prompt_template,
+      prompt_ek: enIyiFmt.prompt_ek || null,             // 186: format-ozel L3 prompt eki (kompozisyon)
       requires_ai: enIyiFmt.requires_ai !== false,        // 47: default true (raster/glyph durumlari)
       requires_ocr: enIyiFmt.requires_ocr === true,       // 47: default false (48+ icin yer rezervi)
       fingerprint_skor: enIyiSkor,                        // 47: log/debug icin
@@ -600,6 +603,7 @@ async function formatTani({ pdf_base64, dosya_adi, tenant_id }) {
     format_kodu: null,
     parser_kural: {},
     prompt_template: null,
+    prompt_ek: null,                                   // 186: tanimsiz format -> saf evrensel prompt
     requires_ai: true,                                 // tanimsiz format -> AI fallback gerek
     requires_ocr: false,
     fingerprint_skor: 0,
@@ -718,7 +722,9 @@ function fingerprintEsler(fingerprint, ipucu, esik = 2) {
 
 async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta }) {
   const baslangic = Date.now();
-  const sistem_prompt = formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT;
+  // 186 / MK-186.1: override -> KOMPOZISYON. EVRENSEL_PROMPT + (format.prompt_ek varsa).
+  // Eski: formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT (prompt_template step 7'de temizlenir).
+  const sistem_prompt = promptBirlestir(formatBilgisi);
 
   const istek = {
     model: VISION_MODEL,
@@ -954,6 +960,9 @@ async function parserKuralIle({ pdf_base64, dosya_adi, formatBilgisi, tenant_id,
 // 6. YAKLASIM Y PROMPT (K4/36 + K12/42)
 // =====================================================================
 
+// DEPRECATED (186 / MK-186.1): Bu sabit ARTIK KULLANILMIYOR. Tek kaynak:
+//   lib/prompt-birlestirici.js EVRENSEL_PROMPT (= bu + guclendirilmis madde 3).
+//   BURAYI DUZENLEME -> drift olur. Step 7'de (mig 105 geri alma) silinecek.
 const YAKLASIM_Y_PROMPT = `Sen bir tersane boru imalat sisteminin veri cikarma asistanisin.
 Sana bir izometri PDF'i verilecek. Bu PDF'ten spool (boru parcasi) listesini cikarman gerekiyor.
 
