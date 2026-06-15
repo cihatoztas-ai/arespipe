@@ -1,35 +1,40 @@
-# CLAUDE — Son Oturum Özeti (184)
+# CLAUDE — Son Oturum Özeti (185)
 
-## Yapılan iş — iki büyük iş canlıda kapandı
-**A (çok-spool bölme)** + **#2b (terfi köprüsü)**. PAOR/AVEVA artık uçtan uca: yükle → incele → terfi → bağla. Tersan'a sıfır dokunuş (her ikisinde fallback ile birebir korundu, self-test'le sabitlendi).
+## Üç iş + bir teşhis maratonu
 
-## A — PAOR çok-spool bölme (MK-182.6 üç-durum 0/1/N)
-**Sorun:** PAOR fab PDF'i N spool içeriyor (102773→3, 774→2, 775→2; 769→2, 771→2) ama kabuk her çizimi tek S01 tutuyordu → S02/S03 ayrılmıyordu.
+### 1. Kapsam-etiketli malzeme görünümü (MK-185.1) — PUSH'LANDI f7936ff
+"Spool malzeme listesinde montaj kalemlerini (civata/conta/vana) imalat kalemlerinden ayır" isteği. Başta "B — BOM dağıtımı" sanıldı; araştırınca gerçek ihtiyaç netleşti:
+- **PAOR Excel'de spool ayrımı YOK** (doğrulandı: 3 Excel, hepsi çizim-toplamı BOM, S01/S02 kolonu yok). Per-spool dağıtım yalnız PDF geometrisinde → L3 işi, şimdilik yapılamaz.
+- **pipeline_malzemeleri altyapısı ZATEN var** (spool_detay pipeline_no ile okuyor) → mükerrer yazma yok.
+- **Gerçek iş:** kapsam-etiketli görünüm. `ares-normalize.kapsamEtiket(tanim)` → imalat|montaj|islem. spool_detay'da 3 çip (default imalat+işlem açık, montaj kapalı) + rozet. Veri silinmez.
+- Flanş kritik: malzeme-kiyas'ta montaj (kıyas beklentisi) ama iş-akışında imalat (kaynaklı). kapsamEtiket AYRI helper, sözlüğe dokunulmadı → Tersan kıyası korundu.
+- 16/16 birim test (boru/dirsek/te/flanş/doubler/sleeve=imalat; vana/strainer/civata/somun/conta/rondela=montaj; yiv/kaynak=işlem).
 
-**Kök neden (DATA→UI→kod ile bulundu, MK-158.1):** İlk varsayım "S1: extra spool'lar inceleme.fazla'ya düşer" idi. Canlı test çürüttü gibi göründü ama devre-scoped olmayan SQL yanılttı. Gerçek kök: `lib/izo-eslesme.js` FAZLA mantığı **izometri-seviyesindeydi** — çok-anahtarlı bir izometride (S01+S02) S01 kabuğa tutunca `eslesenIzoIdx.has(idx)` tüm izometriyi "eşleşti" sayıp **S02 anahtarını sessizce yutuyordu** (B-6 ihlali, yalnız PAOR değil latent bug). `dosyaAdiParse` zaten `spool_kaynak:'pozisyon'` döndürüyordu (node-teyit), endpoint S01/S02 üretiyordu — fazla'ya hiç gitmiyordu.
+### 2. PAOR spool-sayma hatası → prompt fix (MK-185.2)
+**En uzun teşhis.** 782 çizimi 3 spool olmalı (SPOOL [1][2][3]), sistem 1 saydı. "19 olmalıydı, 17 saydı, 2 kayıp" (780'in eksik S02+S03).
+**Yanlış izler ve eleme:**
+- İlk hipotez cache (22 May L3 cache, 1 spool). Invalidate ettik → taze L3 DE 1 okudu.
+- "Köstebek oyunu": her test yeni cache yazıyor, prompt fix'i maskeliyor. 782 için 3 ayrı cache invalidate edildi.
+- Görsel inceleme (PDF render + SPOOL kutusu kırpma): kutu NET, [1][2][3] okunabilir → model görüyor ama saymıyor.
+- **Kök neden:** varsayılan YAKLASIM_Y_PROMPT madde 3 yalnız "[1][2]=2 spool" örneği. Model 2'ye şartlanmış (few-shot). 6 çizimden 5'i (2 spool) doğru, tek 3-spool (782) yanlış = imza. Cihat'ın "ikiden fazla olunca şaşırıyor" sezgisi DOĞRU.
+**Fix:** paor_aveva_ana (995b5514) prompt_template'i = varsayılanın TAMAMI + güçlendirilmiş madde 3 (2/3/4/5+ örnek, SPOOL kutusu vurgusu, <> kesim vs [] spool ayrımı). Migration 105 (E-string tek satır — multi-line yapıştırma SQL Editor'de bölünüyordu, E'...\n...' ile çözüldü). Canlı APPLY (length=7025). izometri-oku DOKUNULMADI (prompt_template:721 override).
+**Kanıt:** 119-spool seti (12 çizim) yüklendi → 773 + 782 artık **3 spool** (S03 üretildi). Prompt fix ÇALIŞIYOR.
 
-**Fix:** FAZLA'yı **anahtar-seviyesine** çevir — her izometri için `kabukAnahtarSet`'te olmayan anahtarları (S02..SN) ayrı fazla'ya yaz. `kabukAnahtarSet` fazla bloğundan öne taşındı (tek tanım). Format-agnostik (`if paor` YOK). Tersan tek-anahtar → birebir aynı. Wizard `_paorBolShell` helper'ı (zaten canlıydı) bu fazla'dan boş shell (M1: BOM S01'de, S02..SN bom:[]) enjekte eder + tek re-call → S02 eşleşir. (commit `38060f2`)
+### 3. Mimari spec (MK-185.3) → 186
+Cihat: "İleride başka formatlar gelince karmaşıklaşmaz mı? Halı altına mı süpürüyoruz?" → EVET. İki yapısal boşluk yazıya döküldü (docs/186-PROMPT-CACHE-MIMARI-SPEC.md):
+- Prompt override → ölçeklenmiyor (evrensel kural yayılmaz). Çözüm: KOMPOZİSYON (evrensel çekirdek + format ek).
+- Cache anahtarında prompt sürümü yok → değişince donar. Çözüm: prompt_hash/timestamp anahtara.
+- Kilit içgörü: parser'da katman kompozisyonu ZATEN var (format-paketleri 0-3), prompt'ta yok.
+- Engel: MK-49.1 → lib/prompt-birlestirici.js ile aş (izometri-oku ince kalır).
 
-**Canlı test GEÇTİ:** Taze devre (773/774/775) → İŞLENEN 7/7, **KABUK 7**, EKSİK 0. 001→S01+S02+S03, 002→S01+S02, 003→S01+S02. Terfi → `spooller`'da 7 benzersiz satır (A-002155..2161). S02/S03 boş shell (0 kg, malzeme null), S01 dolu.
-
-## #2b — PAOR terfi köprüsü (spooller.cizim_no)
-**Sorun:** Faz1 (183) yalnız İNCELEME köprüsünü kurdu. Terfi-sonrası izometri→spool bağlama `spooller`'da cizim_no olmadan koptu: `eslestir` PDF tarafı drawing-no (`52600-102779`) verir ama `spooller.pipeline_no` = `Z10-...` → tutmaz.
-
-**Çözüm — dört nokta:**
-1. **Migration 104** (`migrations/schema/104_spooller_cizim_no.sql`): `spooller.cizim_no text` (nullable). Canlıya APPLY edildi (count=1 doğrulandı), dosya repoda.
-2. **`ares-kabuk.js aktar`:** `spoolRows`'a `cizim_no:s.cizim_no||null` (kabuk entry'sinden; A'nın shell'leri sibling S01'den cizim_no devraldığı için S02/S03 de dolu).
-3. **`kuyruk-isle-izometri.js kabukYukle`:** SELECT'e `cizim_no` + harita anahtarı `normPipeline(sp.cizim_no || sp.pipeline_no)`.
-4. **`eslestir`:** DOKUNULMADI — zaten drawing-no pipeline kullanıyor; harita cizim_no'ya geçince otomatik tutar.
-(commit `77c64f1`, migration `886412b`)
-
-**`montajEslestir` (kio:840) BİLİNÇLİ dokunulmadı** — ctx-siz harita cizim_no taşımıyor; backfill yolu (ctx.harita) zaten kabukYukle düzeltmesini devralır. Drain-yolu PAOR-montaj boşluğu → MK-184.4 (PAOR montaj test edilmemiş, dikkatli).
-
-**Canlı test GEÇTİ:** Taze devre gbdgfnd (779/780/781, tek-spool — bu çizimlerde spool marker yok, fab PDF text'siz, Excel/iso'da S0n yok → parse doğru 1 okudu). Terfi → 3 satır, hepsinde `cizim_no` dolu (`52600-1027xx`). Backfill → `_eslesme.eslesen:1, atanmamis:0`, `detay[0].durum:"eslesti"`, S01 spool'una bağlandı, yüzey `kabuk_bos_dolduruldu→Galvaniz`.
+## Cache temizlik (185 sonu)
+46 PAOR Ana eski-prompt cache + tümü invalidate (format_id=995b5514 scoped, Tersan'a SIFIR dokunuş, DRY ile kanıtlandı). PAOR Ana aktif cache=0 → temiz başlangıç. Tersan cache'leri (76) korundu.
 
 ## En önemli dersler
-- **MK-184.5 — sıra:** Şema değişen işte **migration APPLY (canlı DB) → SONRA kod deploy.** Bu turda kod önce gitti (`aktar` cizim_no yazacak, kolon yoktu → terfi PATLAR riski), terfi denenmeden migration yetişti. Supabase migration auto-apply DEĞİL — SQL Editor APPLY + repo commit ayrı.
-- **Devre-scoped SQL şart (MK-163.1):** Mükerrer test devreleri biriktiği için `LIKE '%cizim%'` global sorgu yanlış devreden veri çekip saatler kaybettirdi. Spool UUID veya devre_id ile scope'la.
-- **Orkestra şefi kısmen var (~%40):** `DOSYA_DESENLERI` tablosu (yönlendirme) VAR; tüketici-strateji (spool kimlik) iki yerde DUPLİKE → MK-184.1 konsolidasyon borcu.
+- **Cache köstebek oyunu:** prompt sürümü cache anahtarında olmayınca, her test eski/yeni karışık cache yazıp teşhisi saatlerce sabote eder. 186 mimarisinin asıl gerekçesi.
+- **Few-shot şartlanması gerçek:** prompt'ta tek örnek (2 spool) modeli oraya kilitliyor. Çözüm: değer aralığı örneklemek (2/3/4/5+).
+- **DATA→UI→kod (MK-158.1) işledi:** cache_hit, original_log_id, istek_full, sonuc_json — her adım DB'den doğrulandı, varsayım yok. ai_cagri_sayisi=0 → "L3 çalışmadı, cache" ayrımı kritikti.
+- **Tersan izolasyonu:** her müdahalede format_id/scope ile Tersan'a değmediği DRY'la kanıtlandı (Cihat'ın "tersana etkisi?" sorusu format_id=null 251 + Tersan L3 76 cache'ini ortaya çıkardı — global temizlik felaket olurdu).
 
 ## Disiplin
-Server/lib JS: `node --check` (hepsi OK). HTML: anchor-Python patch (`.bak` + abort-on-mismatch). `izo-eslesme.js` self-test'e çok-spool kısmi-eşleşme + Tersan tek-anahtar regresyon vakası eklendi (ikisi ✅). MD5'li `arespipe_kopyala`. `izometri-oku.js`/`paor.js` DOKUNULMADI (MK-49.1). Kod commit'leri `[skip ci]` YOK; migration `.sql` `[skip ci]` (saf SQL). Fonksiyon 12/12 değişmedi.
+ares-normalize/spool_detay: node --check (inline JS OK), 16/16 test. Migration 105: E-string, canlı APPLY + repo. Cache UPDATE'leri BEGIN/ROLLBACK dry-run (MK-98.2) sonra COMMIT. izometri-oku.js/paor.js/malzeme-kiyas.js/ares-kabuk.js DOKUNULMADI. Fonksiyon 12/12.

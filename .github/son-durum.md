@@ -1,30 +1,36 @@
-# son-durum.md — Oturum 183 sonu
+# son-durum.md — Oturum 185 sonu
 
 ## HEAD
-`11689c2` (183 PAOR Faz1b: incelemeTablosu kabuk anahtari cizim_no kaynakli). Fonksiyon: **12/12** (yeni api yok). Çalışma ağacı TEMİZ. Not: CI-bot `[skip ci]` rapor commit'leri araya girer → `git pull --rebase`.
+185 push'u sonrası. Önceki kod commit: `f7936ff` (kapsam çip). 185 kapanış commit'i bu push'la gelir. Fonksiyon **12/12** (yeni api yok). Çalışma ağacı temiz olmalı.
 
-## Canlıya (bu tur — 3 kod commit, hepsi EKLEMELI, Tersan'a sıfır dokunuş)
-- **Faz1** (`62893a9`): PAOR `cizim_no` köprüsü kuruldu. `_paorKabukSatirlar` (wizard) Excel dosya adından `(\d{5}-\d{6})` drawing-no çıkarıp kabuk satırına `cizim_no` ekler. `ares-kabuk.js grupla` `cizim_no` pas-through (Tersan→`''`). `devre-inceleme.js:85` kabukMap anahtarı `cizim_no || pipeline`.
-- **Faz1b** (`11689c2`): ASIL köprü — `lib/izo-eslesme.js incelemeTablosu` kabuk anahtarı `_kabukAnahtarKaynak = sp.cizim_no || sp.pipeline` (helper, 2 çağrı: durum hesabı + montaj seti). İzometri tarafı (`a.pipeline`) DEĞİŞMEDİ — zaten drawing-no taşıyor.
+## 185'te yapılanlar (3 iş)
 
-## Köprü neden gerekliydi (canlı veri)
-PAOR'da iki kimlik ayrı namespace: kabuk pipeline = `Z05-SCUPPER_SYSTEM_002` (Excel İÇERİĞİ, marka/ekranda görünür) vs PDF dosya-adı drawing-no = `52600-102770`. Köprü yok → eşleşmiyordu. Çözüm: kabuk satırına `cizim_no` (Excel DOSYA ADINDAN) ekle, eşleştirmeyi PAOR'da `cizim_no | pozisyon-spool`'dan kur. PDF tarafı zaten `dosyaAdiParse.pipeline_no = 52600-102770` veriyor → iki taraf aynı namespace. Ekranda pipeline `Z05-...` KALIR (marka korunur). (MK-183.1)
+### 1. Kapsam-etiketli malzeme görünümü (MK-185.1) — PUSH'LANDI (f7936ff)
+spool_detay malzeme listesinde imalat/montaj/işlem çip filtresi + rozet. `ares-normalize.kapsamEtiket(tanim)` global helper (TEK kaynak). Default: imalat+işlem açık, montaj kapalı. Veri silinmez, filtrelenir (montaj-ekibi versiyonuna hazır). Tersan'a sıfır risk. 16/16 birim test geçti. Dosyalar: ares-normalize.js + spool_detay.html.
+> NOT: Bu "B — BOM dağıtımı" diye açıldı ama gerçek ihtiyaç kapsam-etiketli görünüm çıktı (daha sağlam yer). devre_detay'a aynı çip HENÜZ YOK (carry — istenirse).
 
-## CANLI TEST — GEÇTİ
-L3 AÇIK + PAOR klasörü (3 xlsx + 3 fab `-A.pdf` + 3 iso `-Isometric_View.pdf`) drop → İnceleme: **İŞLENEN 3/3, OKUNDU 2, ZAYIF 1, EKSİK 0**. M_001→102769, M_002→102770, M_003→102771 üçü de kendi PDF'ine eşleşti.
+### 2. PAOR spool-sayma hatası → prompt fix (MK-185.2) — CANLI
+**Kök neden zinciri (uzun teşhis):** PAOR 782 çizimi 3 spool (SPOOL [1][2][3]) ama sistem 1 saydı. (a) Önce cache sanıldı (22 May eski L3 cache). (b) Cache invalidate edilince taze L3 DE 1 okudu → cache değil. (c) Görsel inceleme: SPOOL kutusu NET, model görüyor. (d) Kök: varsayılan prompt madde 3 yalnız "[1][2]=2" örneği → model 2'ye şartlanmış (few-shot). 6 çizimden 5'i (2 spool) doğru, tek 3-spool yanlış.
+**Fix:** paor_aveva_ana prompt_template'ine güçlendirilmiş madde 3 (2/3/4/5+ örnek). Migration 105 (E-string tek satır, canlı APPLY edildi, length=7025 doğrulandı). izometri-oku DOKUNULMADI. Canlı kanıt: 773+782 → 3 spool ✓.
 
-## EN ÖNEMLİ DERS — tek kök neden L3
-Oturum boyunca 5 "ayrı bug" sanıldı (PDF `parser:sakla`, kuyruk `durum:iptal`, `d===imalat` routing, anahtar katmanı, namespace). GERÇEKTE TEK KÖK NEDEN: **ilk testlerde L3 kapalıydı.** L3 kapalı → fab PDF "sakla" yoluna düşer (wizard 794), parse yok. L3 AÇIK doğru testte zincir tamamlandı. (MK-183.2)
-- `iptal` damgası: `_taslakIptalEt` (wizard 2966-2987, W-2.13) terk edilen taslağın kuyruğunu `iptal`'e çeker — DOĞRU davranış, Tersan'da 2473 iptal kaydı bu. ASLA global kabul listesine ekleme.
+### 3. Mimari spec (MK-185.3) → 186'ya devir
+Prompt override + manuel cache temizliği ölçeklenmiyor (halı-altı). Kalıcı çözüm tasarımı: docs/186-PROMPT-CACHE-MIMARI-SPEC.md (247 satır). Prompt kompozisyon + cache prompt-sürümü. 186'da uygulanacak.
 
-## #2b — gerçek S02/S03 + BOM dağıtımı (ANA İŞ, Cihat bugün yakaladı)
-1. **Çok-spool bölme:** 102769/102771 fab PDF'i 2 spool ([1],[2]) içeriyor, kabuk her çizimi tek S01 tutuyor → S02 ayrılmadı. Üç-durum 0/1/N (MK-182.6).
-2. **BOM dağıtımı:** Her PAOR çiziminin KENDİ Excel'i var (ayrı), malzeme tüm spool'lara karışıyor → kayıt-bazlı atama (MK-182.5).
+## Cache durumu (185 sonu)
+- 782 sha (540dab50) + tüm PAOR Ana eski-prompt cache'leri invalidate edildi.
+- **PAOR Ana (995b5514) aktif cache = 0** → her PAOR çizimi taze L3 + yeni prompt ile parse edilir (ilk yüklemeler L3 maliyeti, sonra yeni-promptlu cache). 186 mimarisine kadar temiz başlangıç.
+- Tersan cache'leri (e1fb879d/39a2c81b/84c12f61 = 76) DOKUNULMADI.
 
-## Açık işler (carry, MK-163.1)
-- **Terfi köprüsü:** Faz1 yalnız İNCELEME. `spooller.cizim_no` kolonu YOK → migration (MK-98.2) + `aktar`/`kabukYukle`/`eslestir` cizim_no anahtarı. #2b paketi.
-- **L3 routing `d===imalat`** (wizard 793): referans eşitliği kırılgan, dosya-adı eşleşmesine geç.
-- Mükerrer test devresi temizliği · 181-3 artığı · D-182.2 · PAOR agirlik_kg · NPS→mm (Tersan Faz2).
+## Migration
+- **104** (184): spooller.cizim_no — canlı + repo senkron.
+- **105** (185): paor_aveva_ana prompt_template — canlı APPLY (length=7025) + repo. MK-184.5 senkron.
 
-## Disiplin
-`cizim_no` Tersan satırında boş → `|| pipeline` fallback → eski davranış BİREBİR. izo-eslesme.js eklemeli + fallback'li (lib SAF). `izometri-oku.js` + `paor.js` dokunulmadı.
+## Açık işler (carry — taze SQL ile doğrula, MK-163.1)
+- **MK-185.3** prompt+cache mimarisi → 186 (spec hazır).
+- devre_detay'a kapsam çip (185.1 spool_detay'da; devre_detay carry).
+- 184 carry: MK-184.1 şef konsolidasyon, 184.2 ölü kod, 184.4 montaj köprü, B-tam BOM per-spool (PAOR Excel'de spool ayrımı YOK — yalnız PDF geometrisinde, L3 prompt işi).
+- PAOR veri-kalite: agirlik_kg null (K2), et boş, D-182.2 çelişkiler.
+- format_id=null 251 cache envanteri (186 §6).
+
+## Disiplin notu
+Tersan kırmızı çizgisi korundu: kapsam çip global ama Tersan montaj=0; prompt fix yalnız paor_aveva_ana; cache temizlik format_id scoped (DRY kanıtlı, sadece 995b5514). malzeme-kiyas.js + ares-kabuk.js + izometri-oku.js DOKUNULMADI.

@@ -1,36 +1,36 @@
-# son-durum.md — Oturum 184 sonu
+# son-durum.md — Oturum 185 sonu
 
 ## HEAD
-`7df320b` civarı (184 #2b migration 104 push'u sonrası; CI-bot `[skip ci]` rapor commit'leri araya girer → `git pull --rebase`). Fonksiyon **12/12** (yeni api yok). Çalışma ağacı TEMİZ.
+185 push'u sonrası. Önceki kod commit: `f7936ff` (kapsam çip). 185 kapanış commit'i bu push'la gelir. Fonksiyon **12/12** (yeni api yok). Çalışma ağacı temiz olmalı.
 
-Commit zinciri (184):
-- `38060f2` — A fix: izo-eslesme FAZLA anahtar-seviyesi (B-6 + MK-182.6) + self-test
-- `77c64f1` — #2b kod: ares-kabuk aktar cizim_no yazar + kuyruk-isle kabukYukle harita anahtarı
-- `886412b` — #2b migration: 104_spooller_cizim_no.sql
+## 185'te yapılanlar (3 iş)
 
-## Canlıya (184 — hepsi EKLEMELİ, Tersan'a sıfır dokunuş)
-- **A** (`38060f2`): `lib/izo-eslesme.js` FAZLA izometri-seviyesi → anahtar-seviyesi. `kabukAnahtarSet` öne taşındı (tek tanım). Çok-spool kısmi eşleşmede S02..SN fazla'ya düşer (eskiden sessizce yutuluyordu = B-6). Wizard `_paorBolShell` (önceden canlı) bu fazla'dan shell enjekte eder.
-- **#2b kod** (`77c64f1`): `ares-kabuk.js aktar` spoolRows'a `cizim_no:s.cizim_no||null`. `api/kuyruk-isle-izometri.js kabukYukle` SELECT'e cizim_no + harita anahtarı `cizim_no || pipeline_no`. `eslestir` + `montajEslestir` dokunulmadı.
-- **#2b migration** (`886412b`): `migrations/schema/104_spooller_cizim_no.sql` → `spooller.cizim_no text`. **Canlı DB'ye APPLY edildi** (information_schema count=1 doğrulandı). Repo + canlı senkron.
+### 1. Kapsam-etiketli malzeme görünümü (MK-185.1) — PUSH'LANDI (f7936ff)
+spool_detay malzeme listesinde imalat/montaj/işlem çip filtresi + rozet. `ares-normalize.kapsamEtiket(tanim)` global helper (TEK kaynak). Default: imalat+işlem açık, montaj kapalı. Veri silinmez, filtrelenir (montaj-ekibi versiyonuna hazır). Tersan'a sıfır risk. 16/16 birim test geçti. Dosyalar: ares-normalize.js + spool_detay.html.
+> NOT: Bu "B — BOM dağıtımı" diye açıldı ama gerçek ihtiyaç kapsam-etiketli görünüm çıktı (daha sağlam yer). devre_detay'a aynı çip HENÜZ YOK (carry — istenirse).
 
-## CANLI TEST — İKİSİ DE GEÇTİ ✅
-**A (çok-spool):** Taze devre, 773/774/775 (L3=3/2/2) → İŞLENEN 7/7, KABUK 7, EKSİK 0. Üç çizim S01..SN bölündü. Terfi → 7 `spooller` (A-002155..2161), benzersiz. S02/S03 boş shell (0 kg).
+### 2. PAOR spool-sayma hatası → prompt fix (MK-185.2) — CANLI
+**Kök neden zinciri (uzun teşhis):** PAOR 782 çizimi 3 spool (SPOOL [1][2][3]) ama sistem 1 saydı. (a) Önce cache sanıldı (22 May eski L3 cache). (b) Cache invalidate edilince taze L3 DE 1 okudu → cache değil. (c) Görsel inceleme: SPOOL kutusu NET, model görüyor. (d) Kök: varsayılan prompt madde 3 yalnız "[1][2]=2" örneği → model 2'ye şartlanmış (few-shot). 6 çizimden 5'i (2 spool) doğru, tek 3-spool yanlış.
+**Fix:** paor_aveva_ana prompt_template'ine güçlendirilmiş madde 3 (2/3/4/5+ örnek). Migration 105 (E-string tek satır, canlı APPLY edildi, length=7025 doğrulandı). izometri-oku DOKUNULMADI. Canlı kanıt: 773+782 → 3 spool ✓.
 
-**#2b (köprü):** Taze devre gbdgfnd, 779/780/781 (tek-spool) →
-- Yazma yarısı: terfi → 3 satır, hepsinde `cizim_no` dolu (52600-102779/780/781), pipeline_no `Z10-...` (marka korundu).
-- Okuma yarısı: backfill → `parse_sonuc._eslesme.eslesen:1, atanmamis:0`, `detay[0].durum:"eslesti"`, spool_uuid bağlı, yüzey kabuk_bos_dolduruldu→Galvaniz.
+### 3. Mimari spec (MK-185.3) → 186'ya devir
+Prompt override + manuel cache temizliği ölçeklenmiyor (halı-altı). Kalıcı çözüm tasarımı: docs/186-PROMPT-CACHE-MIMARI-SPEC.md (247 satır). Prompt kompozisyon + cache prompt-sürümü. 186'da uygulanacak.
 
-## Köprü mimarisi özeti (MK-184.3 — KARARLAR.md'ye EKLENECEK)
-PAOR'da iki kimlik ayrı namespace: kabuk pipeline `Z10-SCUPPER_SYSTEM_001` (Excel içeriği, ekranda görünür) vs PDF drawing-no `52600-102779`. Köprü: `spooller.cizim_no`'ya drawing-no yaz (`aktar`), eşleştirmeyi `cizim_no || pipeline_no`'dan kur (`kabukYukle` harita; inceleme tarafı `izo-eslesme _kabukAnahtarKaynak` zaten 183'te). Ekranda pipeline `Z10-...` KALIR. Tersan: cizim_no NULL → fallback → BİREBİR.
+## Cache durumu (185 sonu)
+- 782 sha (540dab50) + tüm PAOR Ana eski-prompt cache'leri invalidate edildi.
+- **PAOR Ana (995b5514) aktif cache = 0** → her PAOR çizimi taze L3 + yeni prompt ile parse edilir (ilk yüklemeler L3 maliyeti, sonra yeni-promptlu cache). 186 mimarisine kadar temiz başlangıç.
+- Tersan cache'leri (e1fb879d/39a2c81b/84c12f61 = 76) DOKUNULMADI.
+
+## Migration
+- **104** (184): spooller.cizim_no — canlı + repo senkron.
+- **105** (185): paor_aveva_ana prompt_template — canlı APPLY (length=7025) + repo. MK-184.5 senkron.
 
 ## Açık işler (carry — taze SQL ile doğrula, MK-163.1)
-- **Çok-spool köprü tam-kapsam:** #2b yalnız tek-spool (S01) köprüsüyle test edildi. S02/S03 bağlama (769/771 seti) canlı görülmedi — mantık aynı, hızlı doğrulanmalı.
-- **B — BOM dağıtımı (MK-182.5):** S02..SN boş shell; kayıt-bazlı dağıtım (malzeme_listesi boş→pipeline-paylaşımlı, dolu→per-spool). Tersan'ı bozma.
-- **MK-184.1** şef konsolidasyonu (spoolAnahtarlariUret tek-kaynak; pozisyon dalı duplike kio:663+devre-inceleme:147; spoolNormalize inceleme'de yok).
-- **MK-184.2** eslesenIzoIdx ölü kod. **MK-184.4** montajEslestir kio:840 cizim_no'suz (drain-yolu PAOR montaj). **MK-184.5** migration-önce/kod-sonra sırası.
-- **MK-184.3** KARARLAR.md'ye eklenmedi (commit'te yalnız .sql) — 185 açılışında backfill.
-- PAOR veri-kalite paketi: agirlik_kg null (K2), kalem-kalite "karbon" (ares-kabuk dikkat), et boş, D-182.2 malzeme çelişkileri.
-- L3 routing d===imalat kırılganlığı (wizard 793). NPS→mm bug (Tersan Faz2). Mükerrer test devresi temizliği.
+- **MK-185.3** prompt+cache mimarisi → 186 (spec hazır).
+- devre_detay'a kapsam çip (185.1 spool_detay'da; devre_detay carry).
+- 184 carry: MK-184.1 şef konsolidasyon, 184.2 ölü kod, 184.4 montaj köprü, B-tam BOM per-spool (PAOR Excel'de spool ayrımı YOK — yalnız PDF geometrisinde, L3 prompt işi).
+- PAOR veri-kalite: agirlik_kg null (K2), et boş, D-182.2 çelişkiler.
+- format_id=null 251 cache envanteri (186 §6).
 
 ## Disiplin notu
-PAOR ayrışması Tersan'ı bozmuyor: izo-eslesme tek-anahtarda birebir; aktar cizim_no Tersan'da null; kabukYukle harita `|| pipeline_no` fallback. Üçü de self-test/canlı kanıtlı. Migration idempotent (ADD COLUMN IF NOT EXISTS).
+Tersan kırmızı çizgisi korundu: kapsam çip global ama Tersan montaj=0; prompt fix yalnız paor_aveva_ana; cache temizlik format_id scoped (DRY kanıtlı, sadece 995b5514). malzeme-kiyas.js + ares-kabuk.js + izometri-oku.js DOKUNULMADI.
