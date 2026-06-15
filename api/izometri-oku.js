@@ -85,6 +85,20 @@ const SUPABASE_KEY      = process.env.SUPABASE_SERVICE_KEY;
 const VISION_MODEL = process.env.ANTHROPIC_VISION_MODEL || 'claude-sonnet-4-5';
 const TEXT_MODEL   = process.env.ANTHROPIC_TEXT_MODEL   || 'claude-haiku-4-5-20251001';
 
+// 186 / MK-186.4 (Step 5): cache surumleme. istek_surum = parse mantiginin "surumu".
+//   Prompt/crop/model degisince DEGISIR -> cache anahtarina girer -> eski cache otomatik MISS
+//   (manuel invalidate dansi biter). PARSE_SURUM mantik degisirse ELLE artirilir (or. temp).
+//   sistem_prompt + KIRPIM_TALIMATI hash'e girer -> prompt/crop-talimati degisimi OTOMATIK.
+const PARSE_SURUM = '186.5-temp0-crop';
+
+// SPOOL kutusu zoom kirpimi (2. gorsel) talimati -- TEK KAYNAK (hem istege hem hash'e).
+const KIRPIM_TALIMATI =
+  'IKINCI GORSEL = bu cizimin malzeme kolonunun (SPOOL kutusu dahil) YAKINLASTIRILMIS (zoom) halidir.\n' +
+  'SPOOL SAYISINI ONCELIKLE BU GORSELDEN BELIRLE: "SPOOL" basligi altindaki [1] [2] [3] ... gibi\n' +
+  'KOSELI PARANTEZleri tek tek say. Kac koseli parantez varsa O KADAR spool uret (spool_no S01, S02, ...).\n' +
+  'Tam-sayfa PDF\'te bu parantezler kucuk gorunup kacirilabilir; bu zoom\'da nettir, GUVEN.\n' +
+  'DIKKAT: acili <1> <2> = PIPE CUT-LENGTHS (kesim parcasi), spool DEGIL. Yalniz koseli [] say.';
+
 // Maliyet hesabi (USD per 1M token, Anthropic pricing 2026)
 // Sonnet 4.5: input $3, output $15
 // Haiku 4.5:  input $0.80, output $4
@@ -188,8 +202,10 @@ export default async function handler(req, res) {
     // HIT: Vision AI cagrilmaz, eski cevap dondurulur (~0.5 sn, $0).
     // Hash buffer'dan hesaplanir; sonra visionAIParse'a parametre olarak gecer (yeni Buffer.from cagirma).
     const pdf_sha256 = pdfHashHesapla(Buffer.from(pdf_base64, 'base64'));
+    // 186/MK-186.4 (Step 5): istek surumu (prompt+crop+model) -> cache anahtarina girer.
+    const istek_surum = istekSurumHesapla({ formatBilgisi, kirpimVar: !!spool_kirpim_b64 });
     const cacheKayit = formatBilgisi.format_id
-      ? await cacheKontrol({ pdf_sha256, format_id: formatBilgisi.format_id, tenant_id })
+      ? await cacheKontrol({ pdf_sha256, format_id: formatBilgisi.format_id, tenant_id, istek_surum })
       : null;
 
     // --- 2.4 Parser secimi ---
@@ -235,7 +251,7 @@ export default async function handler(req, res) {
         parseSonuc = await visionAIParse({
           pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
           tenant_id, kullanici_id, batch_id,
-          l2_fallback_meta, spool_kirpim_b64,
+          l2_fallback_meta, spool_kirpim_b64, istek_surum,
         });
         if (parseSonuc.ok) {
           parseSonuc._l2_fallback = l2_fallback_meta;
@@ -245,7 +261,7 @@ export default async function handler(req, res) {
       // L3 -- Vision AI (Yaklasim Y)
       parseSonuc = await visionAIParse({
         pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
-        tenant_id, kullanici_id, batch_id, spool_kirpim_b64,
+        tenant_id, kullanici_id, batch_id, spool_kirpim_b64, istek_surum,
       });
     }
 
@@ -512,11 +528,20 @@ function pdfHashHesapla(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
+// 186 / MK-186.4 (Step 5): bu cizim icin kullanilacak istegin "surum" parmak izi.
+//   Ayni PDF + ayni surum -> cache HIT. Prompt/crop/model degisince surum degisir -> MISS.
+function istekSurumHesapla({ formatBilgisi, kirpimVar }) {
+  const sp = promptBirlestir(formatBilgisi);
+  const girdi = PARSE_SURUM + '|' + VISION_MODEL + '|' + sp + '|' +
+                (kirpimVar ? KIRPIM_TALIMATI : 'kirpim_yok');
+  return crypto.createHash('sha256').update(girdi).digest('hex').slice(0, 16);
+}
+
 // Cache lookup: ayni PDF (hash) + ayni format + ayni tenant icin onceki basarili Vision AI cevabi.
 // 021 migration'in partial index'ini kullanir: WHERE basarili=true AND pdf_sha256 IS NOT NULL.
 // HIT  : { id, cevap_full, sure_ms, olusturma_at } doner
 // MISS : null doner (akis visionAIParse'a devam eder)
-async function cacheKontrol({ pdf_sha256, format_id, tenant_id }) {
+async function cacheKontrol({ pdf_sha256, format_id, tenant_id, istek_surum }) {
   if (!pdf_sha256 || !format_id || !tenant_id) return null;
   try {
     const data = await supaFetch(
@@ -526,6 +551,7 @@ async function cacheKontrol({ pdf_sha256, format_id, tenant_id }) {
       `&tenant_id=eq.${tenant_id}` +
       `&basarili=eq.true` +
       `&cevap_full=not.is.null` +
+      (istek_surum ? `&istek_surum=eq.${istek_surum}` : ``) +   // 186/MK-186.4: surum eslesmeli (eski NULL -> MISS)
       `&order=olusturma_at.desc&limit=1` +
       `&select=id,cevap_full,sure_ms,olusturma_at`
     );
@@ -721,7 +747,7 @@ function fingerprintEsler(fingerprint, ipucu, esik = 2) {
 // 5. VISION AI PARSER (Yaklasim Y)
 // =====================================================================
 
-async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta, spool_kirpim_b64 }) {
+async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta, spool_kirpim_b64, istek_surum }) {
   const baslangic = Date.now();
   // 186 / MK-186.1: override -> KOMPOZISYON. EVRENSEL_PROMPT + (format.prompt_ek varsa).
   // Eski: formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT (prompt_template step 7'de temizlenir).
@@ -740,12 +766,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
     });
     _content.push({
       type: 'text',
-      text:
-        'IKINCI GORSEL = bu cizimin malzeme kolonunun (SPOOL kutusu dahil) YAKINLASTIRILMIS (zoom) halidir.\n' +
-        'SPOOL SAYISINI ONCELIKLE BU GORSELDEN BELIRLE: "SPOOL" basligi altindaki [1] [2] [3] ... gibi\n' +
-        'KOSELI PARANTEZleri tek tek say. Kac koseli parantez varsa O KADAR spool uret (spool_no S01, S02, ...).\n' +
-        'Tam-sayfa PDF\'te bu parantezler kucuk gorunup kacirilabilir; bu zoom\'da nettir, GUVEN.\n' +
-        'DIKKAT: acili <1> <2> = PIPE CUT-LENGTHS (kesim parcasi), spool DEGIL. Yalniz koseli [] say.',
+      text: KIRPIM_TALIMATI,   // 186/MK-186.4: TEK KAYNAK -- istek_surum hash'i ile birebir ayni
     });
   }
   _content.push({
@@ -882,6 +903,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
     pdf_sha256,
     kaynak: 'izometri_oku', cagri_tipi: 'L3_vision', model: VISION_MODEL,
     parser_seviye: 'l3',
+    istek_surum,   // 186/MK-186.4: cache surumleme -- bir sonraki ayni-surum yuklemesi HIT
     input_tokens, output_tokens, maliyet_usd, sure_ms,
     basarili: true, http_status: 200,
     cevap_kisaltma: JSON.stringify(parsed).substring(0, 500),
