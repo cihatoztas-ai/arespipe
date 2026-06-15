@@ -729,6 +729,9 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
   const istek = {
     model: VISION_MODEL,
     max_tokens: 8192,
+    temperature: 0,   // 186 / MK-186.2: spool-sayma ekstraksiyonu deterministik olsun.
+                      //   Varsayilan 1.0 -> ayni cizim run-to-run 3<->1 zipliyordu (782 kaniti:
+                      //   ayni 4821-token prompt, 12:51=3 / 14:30=1). temp=0 varyansi keser.
     system: sistem_prompt,
     messages: [{
       role: 'user',
