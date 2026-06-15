@@ -231,6 +231,36 @@
     return /^rev/i.test(r) ? r : 'Rev' + r;
   }
 
+  // ── KAPSAM ETİKETİ (185) — malzeme iş-akışı sınıfı: imalat | montaj | islem ──
+  // MK-185.1: spool_detay malzeme listesinde gösterim çipi (İmalat/Montaj/İşlem).
+  //   · imalat = spool'a KAYNAKLA birleşen (boru, dirsek, te, flanş, bilezik/stub,
+  //     doubler, sleeve). Kesim/büküm/markalama bu kalemlerle çalışır.
+  //   · montaj = sahada eklenen (vana/armatür, civata, somun, conta, rondela,
+  //     strainer). Veri SİLİNMEZ; çiple gizlenir (default kapalı). Montaj-ekibi
+  //     versiyonunda bu çip açılır — tekrar iş yok.
+  //   · islem  = malzeme değil iş (yiv/groove, kaynak). Tersan malzeme listesinde
+  //     "işlem" etiketiyle gelir; imalat akışında kalır.
+  // DİKKAT: malzeme-kiyas.js'in `kapsam`'ından FARKLI (o PDF↔Excel kıyas beklentisi;
+  //   flans orada montaj). Bu UI iş-akışı etiketi — flanş burada imalat (kaynaklı).
+  //   Tek kaynak BURASI (global). Backend filtre gerekirse köprü ileride kurulur.
+  var _KAPSAM_ISLEM  = ['kaynak','welding','weld','yiv','groove','thread','tornalama','dis cekme','lehim','solder','braze'];
+  var _KAPSAM_MONTAJ = ['vana','valve','armatur','strainer','suzgec','civata','bolt','stud','somun','nut','conta','gasket','seal','rondela','washer','nipel','nipple','u-bolt','u bolt'];
+  var _KAPSAM_IMALAT = ['boru','pipe','tube','dirsek','elbow','bend','tee','branch','reduksiyon','reducer','reduction','konik','kapak','blind','kor tapa','cap','bilezik','ring','collar','stub','flans','flange','doubler','sleeve'];
+  function _kapsamGecer(hamAscii, kw){
+    var k = kw.toLowerCase();
+    var re = new RegExp('(^|[^a-z0-9])' + k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([^a-z0-9]|$)');
+    return re.test(hamAscii);
+  }
+  // Öncelik: islem > montaj > imalat. Bilinmeyen → imalat (güvenli varsayım).
+  function kapsamEtiket(tanim){
+    var h = _ascii(tanim);
+    if(!h) return 'imalat';
+    for(var i=0;i<_KAPSAM_ISLEM.length;i++)  if(_kapsamGecer(h,_KAPSAM_ISLEM[i]))  return 'islem';
+    for(var j=0;j<_KAPSAM_MONTAJ.length;j++) if(_kapsamGecer(h,_KAPSAM_MONTAJ[j])) return 'montaj';
+    for(var k=0;k<_KAPSAM_IMALAT.length;k++) if(_kapsamGecer(h,_KAPSAM_IMALAT[k])) return 'imalat';
+    return 'imalat';
+  }
+
   // Namespace
   g.ARES_NORM = {
     malzemeKod: malzemeKod,     yuzeyKod: yuzeyKod,     durumKod: durumKod,
@@ -243,6 +273,7 @@
     uyumluYuzeyler: uyumluYuzeyler,
     marka: marka,
     revFmt: revFmt,
+    kapsamEtiket: kapsamEtiket,
     _ascii: _ascii,
   };
 

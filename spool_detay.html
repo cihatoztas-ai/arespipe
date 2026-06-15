@@ -135,6 +135,13 @@ body{background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;min-he
 .tablo-kart{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;margin-bottom:16px;}
 .tablo-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--bor);}
 .tablo-baslik{font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.6px;}
+.kapsam-cip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:14px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bor);background:transparent;color:var(--txd);opacity:.55;transition:opacity .15s,background .15s;}
+.kapsam-cip.aktif{opacity:1;}
+.kapsam-cip.cip-imalat.aktif{background:rgba(22,163,110,.12);color:var(--gr);border-color:rgba(22,163,110,.35);}
+.kapsam-cip.cip-islem.aktif{background:rgba(59,130,246,.12);color:var(--ac);border-color:rgba(59,130,246,.35);}
+.kapsam-cip.cip-montaj.aktif{background:rgba(139,92,246,.14);color:var(--leg);border-color:rgba(139,92,246,.4);}
+.kapsam-cip .cip-say{font-size:11px;opacity:.75;font-weight:700;}
+.kapsam-rozet{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;color:#fff;vertical-align:middle;letter-spacing:.3px;}
 .tablo-scroll{overflow-x:auto;}
 .data-tablo{width:100%;border-collapse:collapse;font-size:14px;}
 .data-tablo th{padding:8px 12px;text-align:left;font-size:14px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
@@ -535,6 +542,11 @@ tr.malz-tanimsiz td:first-child{padding-left:9px;}
   <div class="tablo-kart cl-warn">
     <div class="tablo-head">
       <span class="tablo-baslik"><span data-i18n="sp_tab_material">📦 Malzeme Listesi</span> <span id="malzemeCnt" style="font-weight:400;opacity:.7;"></span><span id="bomDurumRozet"></span></span>
+      <div id="kapsamCipler" style="display:flex;gap:6px;align-items:center;margin-left:4px;">
+        <button type="button" class="kapsam-cip cip-imalat aktif" data-kapsam="imalat" onclick="kapsamCipToggle('imalat')" title="Kaynakla birleşen imalat kalemleri">🔧 <span data-i18n="sp_cip_imalat">İmalat</span> <span class="cip-say" id="cipSayImalat">0</span></button>
+        <button type="button" class="kapsam-cip cip-islem aktif" data-kapsam="islem" onclick="kapsamCipToggle('islem')" title="Yiv/kaynak işlemleri">⚙️ <span data-i18n="sp_cip_islem">İşlem</span> <span class="cip-say" id="cipSayIslem">0</span></button>
+        <button type="button" class="kapsam-cip cip-montaj" data-kapsam="montaj" onclick="kapsamCipToggle('montaj')" title="Sahada eklenen montaj malzemeleri (vana, civata, conta...)">🔩 <span data-i18n="sp_cip_montaj">Montaj</span> <span class="cip-say" id="cipSayMontaj">0</span></button>
+      </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button id="bomDogrulaBtn" onclick="bomDogrula()" style="display:none;padding:5px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.3);">✓ Doğrula</button>
         <button id="bomGuvensizBtn" onclick="bomGuvensizToggle()" style="padding:5px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;background:rgba(200,55,55,.10);color:#d33;border:1px solid rgba(200,55,55,.28);">⚑ Güvensiz işaretle</button>
@@ -1222,6 +1234,10 @@ async function spoolYukle(supaId) {
         sert:        m.sertifikali || false,
         // 44. oturum — boru lookup için ham değerler (saklanır, render'da gösterilmez)
         tip_raw:        m.tip       || '',
+        // 185: iş-akışı kapsam etiketi (imalat|montaj|islem) — çip filtresi + rozet.
+        //   Uç işlemi satırı → islem (DB zaten biliyor). Aksi → tanimdan türet.
+        kapsam: ( (m.uc_a_islemi || m.uc_b_islemi) ? 'islem'
+                  : (window.ARES_NORM && ARES_NORM.kapsamEtiket ? ARES_NORM.kapsamEtiket(m.tanim || m.aciklama || '') : 'imalat') ),
         dis_cap_mm_raw: m.dis_cap_mm,
         et_mm_raw:      m.et_mm,
         kalite_raw:     m.kalite    || '',
@@ -2401,6 +2417,37 @@ function diKaydet(){
 }
 
 // ── MALZEME ───────────────────────────────────────────────────
+// ── 185: KAPSAM ÇİP SİSTEMİ — imalat|montaj|islem görünürlük filtresi ──
+// Default: imalat+islem AÇIK, montaj KAPALI (kesim-odaklı görünüm). Kullanıcı
+// montaj çipine basınca montaj kalemleri görünür. Veri hiç silinmez (B kararı).
+var KAPSAM_AKTIF = { imalat:true, islem:true, montaj:false };
+var _KAPSAM_ETIKET = { imalat:'İmalat', montaj:'Montaj', islem:'İşlem' };
+var _KAPSAM_RENK   = { imalat:'var(--gr)', montaj:'var(--leg)', islem:'var(--ac)' };
+function kapsamCipToggle(k){
+  KAPSAM_AKTIF[k] = !KAPSAM_AKTIF[k];
+  var btn = document.querySelector('.kapsam-cip[data-kapsam="'+k+'"]');
+  if(btn) btn.classList.toggle('aktif', KAPSAM_AKTIF[k]);
+  renderMalzeme();
+}
+function kapsamSayacGuncelle(){
+  var say = { imalat:0, montaj:0, islem:0 };
+  (MALZEME||[]).forEach(function(m){ var k=m.kapsam||'imalat'; if(say[k]==null)k='imalat'; say[k]++; });
+  var map = { imalat:'cipSayImalat', montaj:'cipSayMontaj', islem:'cipSayIslem' };
+  Object.keys(map).forEach(function(k){
+    var el=document.getElementById(map[k]); if(el)el.textContent=say[k];
+    // İçi boş kapsamın çipini soluklaştır (örn. PAOR'da İşlem 0, Tersan'da Montaj 0)
+    var btn=document.querySelector('.kapsam-cip[data-kapsam="'+k+'"]');
+    if(btn) btn.style.opacity = say[k]? '1' : '.4';
+  });
+}
+function _kapsamRozetHTML(k){
+  if(!_KAPSAM_ETIKET[k]) k='imalat';
+  // İmalat varsayılan/baskın olduğu için rozet GÖSTERME (gürültüyü azalt);
+  // yalnız montaj + islem rozet alır (ayrıştırıcı sinyal).
+  if(k==='imalat') return '';
+  return '<span class="kapsam-rozet" style="background:'+_KAPSAM_RENK[k]+';" title="'+_KAPSAM_ETIKET[k]+' kalemi">'+_KAPSAM_ETIKET[k]+'</span> ';
+}
+
 function renderMalzeme(){
   renderBomDurum();   // 144: güvenilirlik rozeti her render'da güncel
   var body=T('malzemeBody'),cnt=T('malzemeCnt');if(!body)return;
@@ -2412,7 +2459,15 @@ function renderMalzeme(){
     body.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--txd);padding:16px;">'+(PM.length?'Pipeline malzemeleri mevcut — yukarıdaki butonu kullanın':tv('sp_no_materials','Henüz malzeme eklenmemiş'))+'</td></tr>';
     sertGuncelle();return;
   }
-  body.innerHTML=MALZEME.map(function(m,i){
+  // 185: kapsam çip filtresi — aktif kapsamlara göre süz; sayaçları güncelle.
+  kapsamSayacGuncelle();
+  var _gorMalz = MALZEME.filter(function(m){ return KAPSAM_AKTIF[m.kapsam || 'imalat'] !== false; });
+  if(!_gorMalz.length && MALZEME.length){
+    // Tümü filtrelendi (örn. yalnız montaj var, montaj çipi kapalı)
+    body.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--txd);padding:16px;">'+tv('sp_all_filtered','Aktif filtrede malzeme yok — yukarıdaki çiplerden açın')+'</td></tr>';
+    sertGuncelle();return;
+  }
+  body.innerHTML=_gorMalz.map(function(m,i){
     // Malzeme etiketini lokalize et: 'karbon' → 'Karbon Çelik', 'diger' → 'Diğer' vb.
     var malzEtiket = (typeof ARES_NORM !== 'undefined' && ARES_NORM.malzemeEtiket)
       ? ARES_NORM.malzemeEtiket(m.malz || '')
@@ -2520,7 +2575,8 @@ function renderMalzeme(){
     }
     trAttrs = trClasses.length ? ' class="'+trClasses.join(' ')+'"' + trOnclick + trTitle : '';
 
-    return'<tr'+trAttrs+'><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+esc(m.ac)+'</td>'
+    var _kapRozet = _kapsamRozetHTML(m.kapsam || 'imalat');
+    return'<tr'+trAttrs+'><td style="color:var(--txd);">'+(i+1)+'</td><td><strong>'+esc(m.kod)+'</strong></td><td>'+_kapRozet+esc(m.ac)+'</td>'
     +'<td style="color:var(--txm);">'+esc(malzEtiket)+'</td><td'+kalAttrs+'>'+esc(kalEtiket)+'</td>'
     +'<td'+stdAttrs+stdTitle+'>'+stdGoster+'</td>'
     +'<td>'+esc(m.cap)+'</td><td>'+esc(m.et)+'</td><td>'+esc(m.boy)+'</td>'
