@@ -403,6 +403,13 @@ async function birIsIsle(supa, baseUrl, is, opts = {}) {
                  `izometri-oku HTTP ${okuYanit.status}`;
   } else if ((okuJson.manuel_onay_sayisi || 0) > 0) {
     yeniDurum = 'manuel_onay';
+  } else if (okuJson._sayim_kirpimsiz === true && dosyaAdiParse(dok.dosya_adi)?.spool_kaynak === 'pozisyon') {
+    // 187/MK-187.1 (B): SPOOL kutusu kirpimi gelmedi (sessiz fallback) + spool sayisi PDF-pozisyon
+    //   kaynakli (PAOR; Excel'de spool listesi YOK). Sayim model'e bagli ve guvenilmez -> insan onayi.
+    //   spool_kaynak != 'pozisyon' (Tersan / Excel-listeli) ise yoksayilir: liste otoriter, gozle-say gereksiz.
+    yeniDurum = 'manuel_onay';
+    okuJson._sayim_uyarisi = 'SPOOL kirpimi gelmedi -- sayim guvenilmez, cizimi gozle dogrula (crop yok)';
+    console.warn('[kuyruk-isle-izometri] B/sayim_kirpimsiz -> manuel_onay:', dok.dosya_adi);
   } else {
     yeniDurum = 'oneri_hazir';
   }

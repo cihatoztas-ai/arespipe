@@ -224,6 +224,8 @@ export default async function handler(req, res) {
         ok: true,
         spoollar,
         ham_cevap: parsed,
+        // 187/MK-187.1 (B): kirpimsiz parse cache'ten geliyorsa bayragi geri tasi (gorunurluk surer).
+        _sayim_kirpimsiz: parsed?._sayim_kirpimsiz === true,
         _cache_meta: {
           cache_hit: true,
           original_log_id: cacheKayit.id,
@@ -342,6 +344,12 @@ export default async function handler(req, res) {
     // 48: Cache hit ise meta bilgisini response'a ekle (test/analytics gorunurlugu icin)
     if (parseSonuc._cache_meta) {
       ozet._cache_meta = parseSonuc._cache_meta;
+    }
+    // 187/MK-187.1 (B): SPOOL kirpimi gelmediyse bayragi yanit ozetine tasi. kuyruk-isle-izometri
+    //   bunu spool_kaynak='pozisyon' (PAOR; Excel spool listesi YOK) ile birlikte degerlendirip
+    //   cizimi manuel_onay'a ("gozle say") dusurur. Kaynak != pozisyon ise yoksayilir.
+    if (parseSonuc._sayim_kirpimsiz) {
+      ozet._sayim_kirpimsiz = true;
     }
 
     console.log('[izometri-oku] Tamamlandi:', dosya_adi, ozet.spool_sayisi, 'spool,', sure_ms, 'ms', parseSonuc._cache_meta ? '(CACHE HIT)' : '');
@@ -895,8 +903,15 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
   // boylece sonraki ayni PDF yuklemesi visionAIParse cagrilmadan eski sonucu doner.
   // 52: parser_seviye='l3' set edildi (eski kayitlarda NULL'di) + L2 fail->L3 fallback
   //     durumunda cevap_full icine _l2_fallback meta yediriyoruz (gorunurluk icin).
-  const cevap_full_yedirilmis = l2_fallback_meta
-    ? { ...parsed, _l2_fallback: l2_fallback_meta }
+  // 187/MK-187.1 (B): SPOOL kutusu kirpimi GELMEDI mi? (sessiz-fallback emniyet agi)
+  //   crop yalniz vision'da kullanilir; yoksa model tam-sayfada [n]'leri kacirip eksik sayabilir.
+  //   Bayrak cevap_full'a yedirilir -> cache'te yasar (kirpimsiz parse cache'ten gelirse de tasinir).
+  //   Tek basina manuel_onay'a DUSURMEZ: escalation karari kuyruk-isle-izometri'de spool_kaynak'a baglidir.
+  const _sayimKirpimsiz = !spool_kirpim_b64;
+  const cevap_full_yedirilmis = (l2_fallback_meta || _sayimKirpimsiz)
+    ? { ...parsed,
+        ...(l2_fallback_meta ? { _l2_fallback: l2_fallback_meta } : {}),
+        ...(_sayimKirpimsiz ? { _sayim_kirpimsiz: true } : {}) }
     : parsed;
   await aiApiLogYaz({
     tenant_id, kullanici_id, batch_id, format_id: formatBilgisi.format_id,
@@ -914,7 +929,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
   await batchTokenSayaclariArtir({ batch_id, input_tokens, output_tokens, maliyet_usd });
 
   const spoollar = Array.isArray(parsed.spoollar) ? parsed.spoollar : [];
-  return { ok: true, spoollar, ham_cevap: parsed };
+  return { ok: true, spoollar, ham_cevap: parsed, _sayim_kirpimsiz: _sayimKirpimsiz };
 }
 
 // Format-spesifik parser (51'de aktif edildi -- lib/l2-parser.js'e baglandi)
