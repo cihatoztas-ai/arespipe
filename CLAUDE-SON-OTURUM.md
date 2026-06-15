@@ -1,40 +1,28 @@
-# CLAUDE — Son Oturum Özeti (185)
+# CLAUDE — Son Oturum Özeti (186)
 
-## Üç iş + bir teşhis maratonu
+## 185.3 prompt+cache mimari borcu KAPANDI — 4 iş, hepsi canlı + veriyle kanıtlı
 
-### 1. Kapsam-etiketli malzeme görünümü (MK-185.1) — PUSH'LANDI f7936ff
-"Spool malzeme listesinde montaj kalemlerini (civata/conta/vana) imalat kalemlerinden ayır" isteği. Başta "B — BOM dağıtımı" sanıldı; araştırınca gerçek ihtiyaç netleşti:
-- **PAOR Excel'de spool ayrımı YOK** (doğrulandı: 3 Excel, hepsi çizim-toplamı BOM, S01/S02 kolonu yok). Per-spool dağıtım yalnız PDF geometrisinde → L3 işi, şimdilik yapılamaz.
-- **pipeline_malzemeleri altyapısı ZATEN var** (spool_detay pipeline_no ile okuyor) → mükerrer yazma yok.
-- **Gerçek iş:** kapsam-etiketli görünüm. `ares-normalize.kapsamEtiket(tanim)` → imalat|montaj|islem. spool_detay'da 3 çip (default imalat+işlem açık, montaj kapalı) + rozet. Veri silinmez.
-- Flanş kritik: malzeme-kiyas'ta montaj (kıyas beklentisi) ama iş-akışında imalat (kaynaklı). kapsamEtiket AYRI helper, sözlüğe dokunulmadı → Tersan kıyası korundu.
-- 16/16 birim test (boru/dirsek/te/flanş/doubler/sleeve=imalat; vana/strainer/civata/somun/conta/rondela=montaj; yiv/kaynak=işlem).
+### MK-186.1 — Prompt override → KOMPOZİSYON (+ Step 7 temizlik)
+185'in GEÇİCİ override'ı (paor prompt_template) kalıcı kompozisyona taşındı. `lib/prompt-birlestirici.js`: `EVRENSEL_PROMPT` (eski YAKLASIM_Y + güçlendirilmiş madde 3 = 7025 char) + `promptBirlestir(formatBilgisi)` = EVRENSEL + (prompt_ek varsa). **Kilit kanıt:** mig105 prompt'u = YAKLASIM_Y + YALNIZ güçlendirilmiş madde 3 (prefix/suffix birebir) → PAOR'a özgü kural YOK → PAOR prompt_ek BOŞ (saf evrensel). 25/25 birim test (Tersan regresyon mekanik kanıtlı). MK-49.1 esnetme (prompt lib'de, izometri-oku ince). Mig106 prompt_ek kolonu.
+**Step 7 (temizlik):** ölü YAKLASIM_Y_PROMPT (140 satır) izometri-oku'dan SİLİNDİ; mig108 ile mig105 prompt_template geri alındı (NULL, id-scoped 995b5514). Regresyonsuz (güçlü madde-3 EVRENSEL'de baki) + cache-nötr (istek_surum prompt_template kullanmaz). MK-155.1 tuzağı kapandı.
 
-### 2. PAOR spool-sayma hatası → prompt fix (MK-185.2)
-**En uzun teşhis.** 782 çizimi 3 spool olmalı (SPOOL [1][2][3]), sistem 1 saydı. "19 olmalıydı, 17 saydı, 2 kayıp" (780'in eksik S02+S03).
-**Yanlış izler ve eleme:**
-- İlk hipotez cache (22 May L3 cache, 1 spool). Invalidate ettik → taze L3 DE 1 okudu.
-- "Köstebek oyunu": her test yeni cache yazıyor, prompt fix'i maskeliyor. 782 için 3 ayrı cache invalidate edildi.
-- Görsel inceleme (PDF render + SPOOL kutusu kırpma): kutu NET, [1][2][3] okunabilir → model görüyor ama saymıyor.
-- **Kök neden:** varsayılan YAKLASIM_Y_PROMPT madde 3 yalnız "[1][2]=2 spool" örneği. Model 2'ye şartlanmış (few-shot). 6 çizimden 5'i (2 spool) doğru, tek 3-spool (782) yanlış = imza. Cihat'ın "ikiden fazla olunca şaşırıyor" sezgisi DOĞRU.
-**Fix:** paor_aveva_ana (995b5514) prompt_template'i = varsayılanın TAMAMI + güçlendirilmiş madde 3 (2/3/4/5+ örnek, SPOOL kutusu vurgusu, <> kesim vs [] spool ayrımı). Migration 105 (E-string tek satır — multi-line yapıştırma SQL Editor'de bölünüyordu, E'...\n...' ile çözüldü). Canlı APPLY (length=7025). izometri-oku DOKUNULMADI (prompt_template:721 override).
-**Kanıt:** 119-spool seti (12 çizim) yüklendi → 773 + 782 artık **3 spool** (S03 üretildi). Prompt fix ÇALIŞIYOR.
+### MK-186.2 — temperature: 0
+visionAIParse'ta temp set edilmemişti (1.0). 782 kanıtı: AYNI 4821-token prompt, 12:51=3 / 14:30=1 → saf varyans (kod değil). temp=0 → deterministik. Bu olmadan "fix tuttu mu" testleri gürültülüydü.
 
-### 3. Mimari spec (MK-185.3) → 186
-Cihat: "İleride başka formatlar gelince karmaşıklaşmaz mı? Halı altına mı süpürüyoruz?" → EVET. İki yapısal boşluk yazıya döküldü (docs/186-PROMPT-CACHE-MIMARI-SPEC.md):
-- Prompt override → ölçeklenmiyor (evrensel kural yayılmaz). Çözüm: KOMPOZİSYON (evrensel çekirdek + format ek).
-- Cache anahtarında prompt sürümü yok → değişince donar. Çözüm: prompt_hash/timestamp anahtara.
-- Kilit içgörü: parser'da katman kompozisyonu ZATEN var (format-paketleri 0-3), prompt'ta yok.
-- Engel: MK-49.1 → lib/prompt-birlestirici.js ile aş (izometri-oku ince kalır).
+### MK-186.3 — SPOOL kutusu zoom kırpımı (eksik-sayım KÖK çözümü)
+**En önemli iş.** 780/782 tam-sayfada 1 sayılıyordu (gerçek 3). Teşhis: prompt zaten max güçlüydü + temp=0 yine 1 → prompt tavanı. AMA Claude SPOOL kutusunu ZOOM'layınca [1][2][3]'ü anında okudu → kök = ÇÖZÜNÜRLÜK. Çözüm: drain (mevcut pdf.js) PDF sağ malzeme kolonunu yüksek-DPI render→crop→`spool_kirpim_b64` POST'a ekler; izometri-oku varsa 2. görsel (image) + KIRPIM_TALIMATI olarak L3'e verir. **Tek L3 çağrısı** (ikinci çağrı/timeout YOK), **yeni endpoint YOK** (12/12), client-render (MK-113/A). Hata→null (graceful).
+**Kanıt:** 780 14:30 spool=1/input_tokens=4821 (crop yok) → 17:21 spool=3/6582 (crop). Yeni 769-778 (KABUK 20): 10/10 TAM doğru. NOT: Claude'un DÜŞÜK-RES montaj ilk okumaları 769/775'te yanlıştı (3 sandı), yüksek-zoom'da 2 çıktı → MODEL HAKLIYDI. Ders: yer-hakikati de yeterli çözünürlükte okunmalı (MK-162.3).
 
-## Cache temizlik (185 sonu)
-46 PAOR Ana eski-prompt cache + tümü invalidate (format_id=995b5514 scoped, Tersan'a SIFIR dokunuş, DRY ile kanıtlandı). PAOR Ana aktif cache=0 → temiz başlangıç. Tersan cache'leri (76) korundu.
+### MK-186.4 — Cache sürümleme (istek_surum) — köstebek oyunu KALICI bitti
+185-186'nın asıl acısı çözüldü. `istek_surum` = sha256(PARSE_SURUM|model|promptBirlestir|crop-modu+KIRPIM_TALIMATI)[:16] → cache anahtarına girer. cacheKontrol `&istek_surum=eq.X`; eski NULL → MISS → bir kerelik temiz tazeleme. KIRPIM_TALIMATI + crop talimatı TEK KAYNAK (istek=hash birebir). Mig107 kolon.
+**Kanıt:** 769-778 İKİ kez yüklendi → 13/13 çizim `l3_odeme=1` (ikinci yükleme yeni L3 YAZMADI = HIT, $0). Manuel `UPDATE basarili=false` invalidate dansı bitti.
 
 ## En önemli dersler
-- **Cache köstebek oyunu:** prompt sürümü cache anahtarında olmayınca, her test eski/yeni karışık cache yazıp teşhisi saatlerce sabote eder. 186 mimarisinin asıl gerekçesi.
-- **Few-shot şartlanması gerçek:** prompt'ta tek örnek (2 spool) modeli oraya kilitliyor. Çözüm: değer aralığı örneklemek (2/3/4/5+).
-- **DATA→UI→kod (MK-158.1) işledi:** cache_hit, original_log_id, istek_full, sonuc_json — her adım DB'den doğrulandı, varsayım yok. ai_cagri_sayisi=0 → "L3 çalışmadı, cache" ayrımı kritikti.
-- **Tersan izolasyonu:** her müdahalede format_id/scope ile Tersan'a değmediği DRY'la kanıtlandı (Cihat'ın "tersana etkisi?" sorusu format_id=null 251 + Tersan L3 76 cache'ini ortaya çıkardı — global temizlik felaket olurdu).
+- **Prompt tavanı gerçek:** madde-3 zaten max güçlüyken + temp=0 yine eksik sayıyorsa, DAHA fazla prompt çözmez. Çözüm modalite değişimi (görsel zoom), prompt değil. "Crop demo'su işe yarıyor mu" → ÖNCE ucuz prompt fix dene, yetmezse zoom (kanıt-temelli tırmanış).
+- **Çözünürlük > prompt:** model küçük glyph'leri (parantez) tam-sayfada kaçırır; aynı içeriği zoom'da rahat okur. Kırpılmış görsel hem modeli besler HEM insana onay aracı olur (tek artefakt, çift fayda).
+- **Cache sürümlemesi mimarinin asıl gerekçesiydi:** prompt/crop her değiştiğinde elle invalidate = saatlerce köstebek. istek_surum bunu kökten bitirdi. Bundan sonra parse mantığı değişimi otomatik tazeleniyor.
+- **Yer-hakikati de çözünürlük ister:** düşük-res montajdan saymak HATALI sonuç verdi (769/775), model haklı çıktı. Kıyasta her iki taraf da yeterli zoom'da okunmalı.
+- **Drift tuzağı:** /tmp klon depth-1'di (185 baseline); Step 5'i orada yazınca deploy edilmiş HEAD'den koptu. Çözüm: `git fetch --depth 1 && git reset --hard origin/main` ile GERÇEK HEAD'e senkron, ONDAN düzenle. (Bir kez bu yüzden dosya bozuldu, recover edildi.)
 
 ## Disiplin
-ares-normalize/spool_detay: node --check (inline JS OK), 16/16 test. Migration 105: E-string, canlı APPLY + repo. Cache UPDATE'leri BEGIN/ROLLBACK dry-run (MK-98.2) sonra COMMIT. izometri-oku.js/paor.js/malzeme-kiyas.js/ares-kabuk.js DOKUNULMADI. Fonksiyon 12/12.
+prompt-birlestirici 25/25 test. node --check her dosyada. Migration 106/107/108 APPLY + repo (107/108 bu oturumda repoya eklendi — APPLY edilmişti, dosya eksikti, MK-184.5). Cache/prompt değişiklikleri istek_surum sayesinde otomatik tazeleniyor. Tersan: EVRENSEL+boş-ek birebir, mig108 id-scoped, crop fab-PDF → DOKUNULMADI. Fonksiyon 12/12. Commit'ler [skip ci]'siz (kod), handoff [skip ci].

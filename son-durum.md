@@ -1,36 +1,44 @@
-# son-durum.md — Oturum 185 sonu
+# son-durum.md — Oturum 186 sonu
 
 ## HEAD
-185 push'u sonrası. Önceki kod commit: `f7936ff` (kapsam çip). 185 kapanış commit'i bu push'la gelir. Fonksiyon **12/12** (yeni api yok). Çalışma ağacı temiz olmalı.
+186 kapanışı. Son kod commit'leri: crop `543711d` (MK-186.3) → cache sürümleme `ad45644` (MK-186.4) → Step 7 temizlik `332827e` (MK-186.1). CI HEAD `6a545c2`. Fonksiyon **12/12** (yeni api yok). Çalışma ağacı temiz olmalı.
 
-## 185'te yapılanlar (3 iş)
+## 186'da yapılanlar (185.3 borcu KAPANDI — 4 iş, hepsi canlı + veriyle kanıtlı)
 
-### 1. Kapsam-etiketli malzeme görünümü (MK-185.1) — PUSH'LANDI (f7936ff)
-spool_detay malzeme listesinde imalat/montaj/işlem çip filtresi + rozet. `ares-normalize.kapsamEtiket(tanim)` global helper (TEK kaynak). Default: imalat+işlem açık, montaj kapalı. Veri silinmez, filtrelenir (montaj-ekibi versiyonuna hazır). Tersan'a sıfır risk. 16/16 birim test geçti. Dosyalar: ares-normalize.js + spool_detay.html.
-> NOT: Bu "B — BOM dağıtımı" diye açıldı ama gerçek ihtiyaç kapsam-etiketli görünüm çıktı (daha sağlam yer). devre_detay'a aynı çip HENÜZ YOK (carry — istenirse).
+### MK-186.1 — Prompt override → KOMPOZİSYON + Step 7 temizlik
+`lib/prompt-birlestirici.js`: EVRENSEL_PROMPT + promptBirlestir(EVRENSEL + format.prompt_ek). PAOR prompt_ek BOŞ (kanıt: mig105 = YAKLASIM_Y + yalnız güçlendirilmiş madde 3, PAOR'a özgü kural yok). 25/25 test. izometri-oku ince (MK-49.1). Migration 106 (prompt_ek kolonu). **Step 7:** ölü YAKLASIM_Y_PROMPT silindi (-140 satır), mig108 ile prompt_template NULL'landı (mig105 geri al, id-scoped). Regresyonsuz + cache-nötr.
 
-### 2. PAOR spool-sayma hatası → prompt fix (MK-185.2) — CANLI
-**Kök neden zinciri (uzun teşhis):** PAOR 782 çizimi 3 spool (SPOOL [1][2][3]) ama sistem 1 saydı. (a) Önce cache sanıldı (22 May eski L3 cache). (b) Cache invalidate edilince taze L3 DE 1 okudu → cache değil. (c) Görsel inceleme: SPOOL kutusu NET, model görüyor. (d) Kök: varsayılan prompt madde 3 yalnız "[1][2]=2" örneği → model 2'ye şartlanmış (few-shot). 6 çizimden 5'i (2 spool) doğru, tek 3-spool yanlış.
-**Fix:** paor_aveva_ana prompt_template'ine güçlendirilmiş madde 3 (2/3/4/5+ örnek). Migration 105 (E-string tek satır, canlı APPLY edildi, length=7025 doğrulandı). izometri-oku DOKUNULMADI. Canlı kanıt: 773+782 → 3 spool ✓.
+### MK-186.2 — temperature: 0
+Vision çağrısında temp set edilmemişti (1.0) → aynı çizim 3↔1 zıplıyordu. temp=0 → deterministik.
 
-### 3. Mimari spec (MK-185.3) → 186'ya devir
-Prompt override + manuel cache temizliği ölçeklenmiyor (halı-altı). Kalıcı çözüm tasarımı: docs/186-PROMPT-CACHE-MIMARI-SPEC.md (247 satır). Prompt kompozisyon + cache prompt-sürümü. 186'da uygulanacak.
+### MK-186.3 — SPOOL kutusu zoom kırpımı (eksik-sayım KÖK çözümü)
+Model tam-sayfada küçük [n]'leri kaçırıyordu (çözünürlük, prompt değil). drain (pdf.js) sağ malzeme kolonunu kırpıp `spool_kirpim_b64` gönderir → izometri-oku 2. görsel + KIRPIM_TALIMATI olarak L3'e verir. Tek çağrı, yeni endpoint yok. **Kanıt:** 780 1→3 (input_tokens 4821→6582); yeni 769-778 seti 10/10 doğru (yüksek-zoom yer-hakikati).
 
-## Cache durumu (185 sonu)
-- 782 sha (540dab50) + tüm PAOR Ana eski-prompt cache'leri invalidate edildi.
-- **PAOR Ana (995b5514) aktif cache = 0** → her PAOR çizimi taze L3 + yeni prompt ile parse edilir (ilk yüklemeler L3 maliyeti, sonra yeni-promptlu cache). 186 mimarisine kadar temiz başlangıç.
-- Tersan cache'leri (e1fb879d/39a2c81b/84c12f61 = 76) DOKUNULMADI.
+### MK-186.4 — Cache sürümleme (istek_surum) — köstebek KALICI bitti
+istek_surum = sha256(PARSE_SURUM|model|prompt|crop)[:16] cache anahtarına girer. Prompt/crop değişince otomatik MISS. Migration 107 (istek_surum kolonu). **Kanıt:** 769-778 iki kez yüklendi → 13/13 `l3_odeme=1` (ikinci yükleme $0 HIT). Manuel invalidate dansı bitti.
 
 ## Migration
-- **104** (184): spooller.cizim_no — canlı + repo senkron.
-- **105** (185): paor_aveva_ana prompt_template — canlı APPLY (length=7025) + repo. MK-184.5 senkron.
+- **104** (184): spooller.cizim_no.
+- **105** (185): paor prompt_template — **186'da mig108 ile NULL'landı** (kompozisyona geçti, dosya tarihsel kalır).
+- **106** (186): prompt_ek kolonu — APPLY + repo.
+- **107** (186): ai_api_log.istek_surum — APPLY + repo (bu oturumda repoya eklendi).
+- **108** (186): prompt_template NULL (mig105 geri al, id-scoped) — APPLY + repo.
+
+## Spool sayımı — GÜVENDE Mİ? (Cihat'ın sorusu — dürüst cevap)
+Eskisinden çok daha güvende + PAOR pilotu için uçtan-uca doğrulandı. AMA kurşun-geçirmez değil; kalan riskler (→ Sonraki Oturum):
+1. Kırpma bölgesi (_SPOOL_KIRP) bir heuristik (PAOR SPOOL kutusu sağ kolonda varsayımı; ~13 çizimde doğru).
+2. Crop render patlarsa SESSİZ fallback (crop'suz tam-sayfa → eksik-sayım riski). Belirti: input_tokens ~4821.
+3. Sayımı hâlâ model yapıyor (temp=0 deterministik ama doğru garantisi değil).
+4. Çok-spool ucu (5-6 [n]) test edilmedi.
+→ Gerçek emniyet ağı = göz-onayı (Dökümanlar'da kırpılmış kutu + sayı; crop zaten o görseli üretiyor). Şu an opsiyonel.
 
 ## Açık işler (carry — taze SQL ile doğrula, MK-163.1)
-- **MK-185.3** prompt+cache mimarisi → 186 (spec hazır).
-- devre_detay'a kapsam çip (185.1 spool_detay'da; devre_detay carry).
-- 184 carry: MK-184.1 şef konsolidasyon, 184.2 ölü kod, 184.4 montaj köprü, B-tam BOM per-spool (PAOR Excel'de spool ayrımı YOK — yalnız PDF geometrisinde, L3 prompt işi).
-- PAOR veri-kalite: agirlik_kg null (K2), et boş, D-182.2 çelişkiler.
-- format_id=null 251 cache envanteri (186 §6).
+- **Emniyet ağı (opsiyonel):** Dökümanlar'da çizim-başı SPOOL göz-onayı (kırpılmış kutu + sayı stepper). Yukarı-düzeltme (1→3) = kabuk genişletme = #2b'ye bağlı.
+- **Crop sertleştirme:** sessiz-fallback alarmı (input_tokens eşik altı → "crop yok, gözle say" bayrağı); _SPOOL_KIRP bölge ayarı; çok-spool ucu testi.
+- **184 carry:** MK-184.1 şef konsolidasyon, 184.2 ölü kod (eslesenIzoIdx), 184.4 montaj köprü drain-yolu.
+- **B-tam BOM per-spool:** PAOR Excel'de spool ayrımı YOK; per-spool yalnız PDF geometrisi.
+- **PAOR veri-kalite:** agirlik_kg null, et boş, D-182.2 imalat/montaj çelişki (= "Zayıf/doğrulanmadı" rozetleri; SAYIM hatası DEĞİL).
+- **format_id=null 251 cache envanteri.** NPS→mm bug (Tersan Faz2).
 
 ## Disiplin notu
-Tersan kırmızı çizgisi korundu: kapsam çip global ama Tersan montaj=0; prompt fix yalnız paor_aveva_ana; cache temizlik format_id scoped (DRY kanıtlı, sadece 995b5514). malzeme-kiyas.js + ares-kabuk.js + izometri-oku.js DOKUNULMADI.
+Tersan kırmızı çizgisi korundu: tüm 186 müdahaleleri PAOR scoped (crop fab-PDF, mig108 id-scoped 995b5514, EVRENSEL+boş-ek = Tersan birebir). 25/25 + 10/10 + 13/13 kanıt. malzeme-kiyas.js / ares-kabuk.js / paor.js DOKUNULMADI. izometri-oku yalnız cache/istek plumbing (prompt mantığı lib'de). Fonksiyon 12/12.
