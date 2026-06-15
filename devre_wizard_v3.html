@@ -507,7 +507,7 @@
       </div>
     </div>
 
-    <div id="tab-dok" class="hide"><div class="tablo-kart" style="border-left-color:var(--gr);"><div class="tablo-head"><div class="tablo-baslik">Yüklenen belgeler — tam liste (klasörler açılıp kapanır)</div></div><div style="padding:14px 18px;"><div id="treeDok"></div></div></div></div>
+    <div id="tab-dok" class="hide"><div id="gozOnayiKart"></div><div class="tablo-kart" style="border-left-color:var(--gr);"><div class="tablo-head"><div class="tablo-baslik">Yüklenen belgeler — tam liste (klasörler açılıp kapanır)</div></div><div style="padding:14px 18px;"><div id="treeDok"></div></div></div></div>
 
     <div id="tab-malz" class="hide"><div class="tablo-kart" style="border-left-color:var(--warn);"><div class="tablo-head"><div class="tablo-baslik">Malzeme listesi — BOM Excel'den</div></div>
       <div class="tablo-wrap"><table class="dt" style="min-width:760px;"><thead><tr><th>Spool</th><th>Kod</th><th>Tanım</th><th>Malzeme</th><th style="text-align:right;">Ölçü</th><th style="text-align:right;">Açı</th><th style="text-align:right;">Boy/Adet</th><th style="text-align:right;">kg</th><th style="text-align:center;">Düzelt</th></tr></thead>
@@ -2041,7 +2041,79 @@ function fol(ad, cnt, inner, acik) {
   var ch = acik ? '▾' : '▸', kap = acik ? '' : ' kapali';
   return '<div class="fhead" onclick="fToggle(this)"><span class="chev">' + ch + '</span><span style="font-size:14px;">📁</span><span style="flex:1;">' + esc(ad) + '</span><span class="cnt">' + cnt + '</span></div><div class="fchildren' + kap + '">' + inner + '</div>';
 }
-function fToggle(el) { var c = el.nextElementSibling; c.classList.toggle('kapali'); el.querySelector('.chev').textContent = c.classList.contains('kapali') ? '▸' : '▾'; }
+function fToggle(el) { var c = el.nextElementSibling; c.classList.toggle('kapali'); el.querySelector('.chev').textContent = c.classList.contains('kapali') ? '\u25b8' : '\u25be'; }
+
+// \u2500\u2500 187/MK-187.2 (A1): PAOR cizim-basi SPOOL goz-onayi (gorsel cetele) \u2500\u2500
+//   Her PAOR cizimi icin: PDF'ten kac spool cikarildi (spoollar.length) + kirpilan SPOOL
+//   kutusu thumbnail (istemcide _spoolKirpim ile YENIDEN uretilir; modelin gordugu goruntunun
+//   AYNISI -- deterministik, $0 depolama, geriye-donuk). Operator bakip "sayi dogru mu" gozle
+//   teyit eder. SALT-GORSEL: mudahale (ekle/cikar = kabuk mutasyonu / #2b) A2'de. Sadece PAOR.
+function _paorCizimMi(dosyaAdi){ return /(?:^|[^A-Za-z0-9])PAOR[-_]/i.test(String(dosyaAdi || '')); }
+function _gozOnayiCizimleri(){
+  var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
+  var grup = {};
+  sp.forEach(function(s){
+    var da = (s.izometri && s.izometri.dosya_adi) || '';
+    if (!da || !_paorCizimMi(da)) return;
+    if (!grup[da]) grup[da] = [];
+    grup[da].push(s.spoolNo || '?');
+  });
+  return Object.keys(grup).sort().map(function(da){
+    return { dosya_adi: da, marklar: grup[da].slice().sort(), adet: grup[da].length };
+  });
+}
+function _gozOnayiRender(){
+  var kart = document.getElementById('gozOnayiKart');
+  if (!kart) return;
+  var cizimler = _gozOnayiCizimleri();
+  if (!cizimler.length){ kart.innerHTML = ''; return; }   // PAOR yoksa panel gosterme
+  if (kart._render) return;                                // bir kez render (thumbnail tekrar uretilmesin)
+  kart._render = true;
+  var ic = cizimler.map(function(c, idx){
+    return '<div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--bor);">' +
+      '<div id="gozThumb' + idx + '" style="flex:0 0 230px;min-height:90px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--txd);font-size:12px;text-align:center;padding:6px;">k\u0131rp\u0131m y\u00fckleniyor\u2026</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:600;font-size:13px;margin-bottom:4px;word-break:break-all;">' + esc(c.dosya_adi) + '</div>' +
+        '<div style="font-size:13px;margin-bottom:6px;">PDF\'ten <b style="color:var(--ac);">' + c.adet + '</b> spool \u00e7\u0131kar\u0131ld\u0131</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + c.marklar.map(function(m){ return '<span class="rev-chip">' + esc(m) + '</span>'; }).join('') + '</div>' +
+        '<div style="font-size:11px;color:var(--txd);margin-top:8px;">K\u0131rp\u0131lan SPOOL kutusunu say\u0131yla kar\u015f\u0131la\u015ft\u0131r. Say\u0131 yanl\u0131\u015fsa d\u00fczeltme (ekle/\u00e7\u0131kar) sonraki ad\u0131mda gelecek.</div>' +
+      '</div></div>';
+  }).join('');
+  kart.innerHTML = '<div class="tablo-kart" style="border-left-color:var(--warn);"><div class="tablo-head"><div class="tablo-baslik">\ud83d\udcd0 SPOOL g\u00f6z-onay\u0131 \u2014 k\u0131rp\u0131lan kutu vs PDF say\u0131s\u0131 (PAOR)</div></div><div style="padding:8px 18px;">' + ic + '</div></div>';
+  cizimler.forEach(function(c, idx){ _gozOnayiThumbYukle(c.dosya_adi, idx); });
+}
+function _ab2b64(buf){
+  var bytes = new Uint8Array(buf), CH = 0x8000, parts = [];
+  for (var i = 0; i < bytes.length; i += CH){ parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + CH))); }
+  return btoa(parts.join(''));
+}
+async function _gozOnayiThumbYukle(dosyaAdi, idx){
+  var hedef = document.getElementById('gozThumb' + idx);
+  if (!hedef) return;
+  try {
+    if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.spoolKirpim === 'function')){
+      hedef.textContent = 'k\u0131rp\u0131m fonksiyonu yok'; return;
+    }
+    var url = await _duzeltPdfUrl(dosyaAdi);
+    if (!url){ hedef.textContent = 'PDF bulunamad\u0131'; return; }
+    var resp = await fetch(url);
+    var buf = await resp.arrayBuffer();
+    var b64 = _ab2b64(buf);
+    var kirpim = await window.ARES_IZO_DRENAJ.spoolKirpim(b64);
+    if (!kirpim){ hedef.innerHTML = '<span class="gri">k\u0131rp\u0131m \u00fcretilemedi (kutu bulunamad\u0131)</span>'; return; }
+    hedef.innerHTML = '<img src="data:image/png;base64,' + kirpim + '" style="max-width:100%;border-radius:6px;cursor:zoom-in;" onclick="_gozBuyut(this.src)" title="B\u00fcy\u00fctmek i\u00e7in t\u0131kla">';
+  } catch (e){
+    console.warn('[v3] goz-onayi thumb:', e);
+    if (hedef) hedef.textContent = 'k\u0131rp\u0131m hatas\u0131';
+  }
+}
+function _gozBuyut(src){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  ov.onclick = function(){ ov.remove(); };
+  ov.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" style="max-width:92%;max-height:92%;border-radius:8px;">';
+  document.body.appendChild(ov);
+}
 
 // ── Düzelt / okunan değerleri gör popup (G2a: değer düzeltme yazma + çapa stub) ──
 // 7 düzeltilebilir alan. Düzeltme taslak_duzeltmeleri tablosuna yazılır (Q5: ayrı tablo, upsert).
@@ -3529,6 +3601,7 @@ function tabGit(t, el) {
   ['spool','dok','malz','genel'].forEach(function(x){ document.getElementById('tab-' + x).classList.toggle('hide', x !== t); });
   document.querySelectorAll('.tabs .tab').forEach(function(b){ b.classList.remove('active'); });
   el.classList.add('active');
+  if (t === 'dok') { try { _gozOnayiRender(); } catch (e) { console.warn('[v3] goz-onayi:', e); } }
 }
 function gosterAdim(n) {
   document.querySelector('[data-panel="1"]').classList.toggle('hide', n !== 1);

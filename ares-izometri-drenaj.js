@@ -348,6 +348,6 @@
     return ozet;
   }
 
-  g.ARES_IZO_DRENAJ = { izometriDreneEt: izometriDreneEt, durdur: durdur };
+  g.ARES_IZO_DRENAJ = { izometriDreneEt: izometriDreneEt, durdur: durdur, spoolKirpim: _spoolKirpim };
 
 })(typeof window !== 'undefined' ? window : this);
