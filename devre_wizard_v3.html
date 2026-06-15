@@ -2049,6 +2049,7 @@ function fToggle(el) { var c = el.nextElementSibling; c.classList.toggle('kapali
 //   AYNISI -- deterministik, $0 depolama, geriye-donuk). Operator bakip "sayi dogru mu" gozle
 //   teyit eder. SALT-GORSEL: mudahale (ekle/cikar = kabuk mutasyonu / #2b) A2'de. Sadece PAOR.
 function _paorCizimMi(dosyaAdi){ return /(?:^|[^A-Za-z0-9])PAOR[-_]/i.test(String(dosyaAdi || '')); }
+var _gozThumbCache = {};   // 187/A2: dosya_adi -> kirpim b64 (override re-render'i hizlandirir)
 function _gozOnayiCizimleri(){
   var sp = (WIZ._inceleme && WIZ._inceleme.spoollar) || [];
   var grup = {};
@@ -2059,7 +2060,8 @@ function _gozOnayiCizimleri(){
     grup[da].push(s.spoolNo || '?');
   });
   return Object.keys(grup).sort().map(function(da){
-    return { dosya_adi: da, marklar: grup[da].slice().sort(), adet: grup[da].length };
+    var _m = String(da).match(/PAOR-(\d{5}-\d{6})/i);
+    return { dosya_adi: da, cizim_no: _m ? _m[1] : null, marklar: grup[da].slice().sort(), adet: grup[da].length };
   });
 }
 function _gozOnayiRender(){
@@ -2076,7 +2078,14 @@ function _gozOnayiRender(){
         '<div style="font-weight:600;font-size:13px;margin-bottom:4px;word-break:break-all;">' + esc(c.dosya_adi) + '</div>' +
         '<div style="font-size:13px;margin-bottom:6px;">PDF\'ten <b style="color:var(--ac);">' + c.adet + '</b> spool \u00e7\u0131kar\u0131ld\u0131</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + c.marklar.map(function(m){ return '<span class="rev-chip">' + esc(m) + '</span>'; }).join('') + '</div>' +
-        '<div style="font-size:11px;color:var(--txd);margin-top:8px;">K\u0131rp\u0131lan SPOOL kutusunu say\u0131yla kar\u015f\u0131la\u015ft\u0131r. Say\u0131 yanl\u0131\u015fsa d\u00fczeltme (ekle/\u00e7\u0131kar) sonraki ad\u0131mda gelecek.</div>' +
+        (c.cizim_no
+          ? '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+              '<span style="font-size:12px;color:var(--txd);">Gerçek spool sayısı:</span>' +
+              '<input id="a2sayi' + idx + '" type="number" min="1" value="' + c.adet + '" style="width:64px;padding:4px 6px;border:1px solid var(--bor);border-radius:6px;background:var(--sur);color:var(--tx);font-size:13px;">' +
+              '<button onclick="_a2SayiYukselt(\'' + c.cizim_no + '\', document.getElementById(\'a2sayi' + idx + '\').value)" style="padding:4px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:12px;cursor:pointer;">Uygula</button>' +
+              '<span style="font-size:11px;color:var(--txd);">PDF eksik saydıysa artır → eksik spool eklenir (kabuğa yazılmaz, terfide kesinleşir)</span>' +
+            '</div>'
+          : '<div style="font-size:11px;color:var(--txd);margin-top:8px;">Çizim no çözülemedi — sayı düzeltme kapalı.</div>') +
       '</div></div>';
   }).join('');
   kart.innerHTML = '<div class="tablo-kart" style="border-left-color:var(--warn);"><div class="tablo-head"><div class="tablo-baslik">\ud83d\udcd0 SPOOL g\u00f6z-onay\u0131 \u2014 k\u0131rp\u0131lan kutu vs PDF say\u0131s\u0131 (PAOR)</div></div><div style="padding:8px 18px;">' + ic + '</div></div>';
@@ -2090,6 +2099,7 @@ function _ab2b64(buf){
 async function _gozOnayiThumbYukle(dosyaAdi, idx){
   var hedef = document.getElementById('gozThumb' + idx);
   if (!hedef) return;
+  if (_gozThumbCache[dosyaAdi]){ hedef.innerHTML = '<img src="data:image/png;base64,' + _gozThumbCache[dosyaAdi] + '" style="max-width:100%;border-radius:6px;cursor:zoom-in;" onclick="_gozBuyut(this.src)">'; return; }
   try {
     if (!(window.ARES_IZO_DRENAJ && typeof window.ARES_IZO_DRENAJ.spoolKirpim === 'function')){
       hedef.textContent = 'k\u0131rp\u0131m fonksiyonu yok'; return;
@@ -2113,6 +2123,36 @@ function _gozBuyut(src){
   ov.onclick = function(){ ov.remove(); };
   ov.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" style="max-width:92%;max-height:92%;border-radius:8px;">';
   document.body.appendChild(ov);
+}
+
+// ── 187/MK-187.3 (A2 dilim-1): PAOR spool sayisi operator override (YUKARI) ──
+//   Operator A1 panelinde gercek sayiyi girince sentetik 'fazla' uretip MEVCUT _paorBolShell
+//   motoruna (184/A) verir -> bos shell enjekte -> inceleGetir() yeniden eslestirir + render.
+//   Kabuk mutasyonu YOK: terfi-oncesi katman (WIZ._kabukSpoollar). Terfide aktar kesinlestirir.
+//   Yalniz artirma; azaltma + shell malzeme devralma (MK-182.5) dilim-2.
+async function _a2SayiYukselt(cizimNo, hedefDeger){
+  try {
+    var hedef = parseInt(hedefDeger, 10);
+    if (!cizimNo || !isFinite(hedef) || hedef < 1){ if (typeof toast === 'function') toast('Geçersiz sayı'); return; }
+    var kabuk = WIZ._kabukSpoollar || [];
+    var mevcut = kabuk.filter(function(s){ return (s.cizim_no || '') === cizimNo; });
+    if (!mevcut.length){ if (typeof toast === 'function') toast('Kabukta bu çizim yok (cizim_no: ' + cizimNo + ')'); return; }
+    var simdi = mevcut.length;
+    if (hedef === simdi){ if (typeof toast === 'function') toast('Sayı zaten ' + simdi); return; }
+    if (hedef < simdi){ if (typeof toast === 'function') toast('Şimdilik yalnız artırma (azaltma dilim-2)'); return; }
+    // sentetik fazla: S0(simdi+1)..S0(hedef) -> _paorBolShell sibling S01'i bulup shell enjekte eder
+    var synth = [];
+    for (var k = simdi + 1; k <= hedef; k++){
+      synth.push({ pipeline: cizimNo, spoolNo: 'S' + String(k).padStart(2, '0'), sebep: 'kabukta_yok' });
+    }
+    var bol = _paorBolShell(kabuk, synth);
+    if (bol.length <= kabuk.length){ if (typeof toast === 'function') toast('Genişletilemedi (kardeş S01 / cizim_no eşleşmedi)'); return; }
+    WIZ._kabukSpoollar = bol;
+    if (typeof toast === 'function') toast('Çizim ' + cizimNo + ' → ' + hedef + ' spool, yeniden eşleştiriliyor…');
+    await inceleGetir();                       // MEVCUT motor: re-eslestir + renderInceleme
+    var kart = document.getElementById('gozOnayiKart'); if (kart) kart._render = false;   // A1 panelini tazele
+    _gozOnayiRender();
+  } catch (e){ console.warn('[v3] A2 sayi yukselt:', e); if (typeof toast === 'function') toast('Düzeltme hatası'); }
 }
 
 // ── Düzelt / okunan değerleri gör popup (G2a: değer düzeltme yazma + çapa stub) ──
