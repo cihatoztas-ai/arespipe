@@ -67,6 +67,63 @@
     return btoa(bin);
   }
 
+  // ── 186 / MK-186.3: SPOOL kutusu zoom kirpimi (tarayicida, pdf.js ile) ──
+  //   Model tam-sayfada kucuk [n] parantezlerini kaciriyor (780/782: gercek 3, model 1).
+  //   Cizimin SAG malzeme kolonunu (SPOOL kutusu orada) yuksek-cozunurlukte render edip kirpar,
+  //   PNG base64 doner -> izometri-oku 2. gorsel olarak L3'e verir. Hata -> null (parse BOZULMAZ).
+  //   Kirpma bolgesi ayarlanabilir (sonuca gore daraltilabilir).
+  var _SPOOL_KIRP = { x0: 0.44, y0: 0.00, x1: 1.00, y1: 0.62, hedefGen: 1500 };
+
+  function _pdfjsYukle() {
+    return new Promise(function (res) {
+      if (window.PDFJS || window.pdfjsLib) return res(window.PDFJS || window.pdfjsLib);
+      var sc = document.createElement('script');
+      sc.src = '/vendor/pdfjs-1.10.100/pdf.js';
+      sc.onload = function () { res(window.PDFJS || window.pdfjsLib); };
+      sc.onerror = function () { res(null); };
+      document.head.appendChild(sc);
+    });
+  }
+
+  async function _spoolKirpim(b64) {
+    try {
+      var lib = await _pdfjsYukle();
+      if (!lib) return null;
+      try {
+        if (window.PDFJS && !window.PDFJS.workerSrc) window.PDFJS.workerSrc = '/vendor/pdfjs-1.10.100/pdf.worker.js';
+        else if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc)
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs-1.10.100/pdf.worker.js';
+      } catch (e) {}
+      // base64 -> Uint8Array
+      var bin = atob(b64), len = bin.length, bytes = new Uint8Array(len);
+      for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+      var task = lib.getDocument({ data: bytes });
+      var doc = await (task.promise || task);
+      var page = await doc.getPage(1);
+      var vp1 = page.getViewport(1);
+      var kolonGen1 = vp1.width * (_SPOOL_KIRP.x1 - _SPOOL_KIRP.x0);
+      var olcek = Math.max(1.5, Math.min(4, _SPOOL_KIRP.hedefGen / Math.max(1, kolonGen1)));
+      var vp = page.getViewport(olcek);
+      var cv = document.createElement('canvas');
+      cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
+      var ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+      var rt = page.render({ canvasContext: ctx, viewport: vp });
+      await (rt.promise || rt);
+      var cx = Math.floor(vp.width * _SPOOL_KIRP.x0);
+      var cy = Math.floor(vp.height * _SPOOL_KIRP.y0);
+      var cw = Math.max(1, Math.ceil(vp.width * (_SPOOL_KIRP.x1 - _SPOOL_KIRP.x0)));
+      var ch = Math.max(1, Math.ceil(vp.height * (_SPOOL_KIRP.y1 - _SPOOL_KIRP.y0)));
+      var kc = document.createElement('canvas'); kc.width = cw; kc.height = ch;
+      kc.getContext('2d').drawImage(cv, cx, cy, cw, ch, 0, 0, cw, ch);
+      var url = kc.toDataURL('image/png');
+      return (url && url.indexOf(',') >= 0) ? url.split(',')[1] : null;
+    } catch (e) {
+      console.warn('[drenaj] spool kirpim hatasi (yutuldu, kirpimsiz devam):', (e && e.message) || e);
+      return null;
+    }
+  }
+
   // ── Bekleyen izometri islerini cek. filtre: {devreId} (devre-ozgu) | {} (global) ──
   //    PostgREST embed'e GUVENMEZ (FK adi varsaymadan) -> iki adimli: queue + dok ayri,
   //    JS'te birlestir (MK-108.4 ruhu: yapiyi bakarak dogrula, embed adina bel baglama).
@@ -173,6 +230,7 @@
     var oncedenParse = null, parseHttp = 0;
     try {
       var b64 = await _pdfBase64(bucket, dok.storage_yolu);
+      var spoolKirpim = await _spoolKirpim(b64);   // 186/MK-186.3: SPOOL zoom kirpimi (hata->null)
       var pr = await fetch('/api/izometri-oku', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,7 +241,8 @@
           pdf_base64: b64,
           dosya_adi: dok.dosya_adi,
           dosya_sirasi: 1,
-          dosya_toplami: 1
+          dosya_toplami: 1,
+          spool_kirpim_b64: spoolKirpim || null
         })
       });
       parseHttp = pr.status;

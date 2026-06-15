@@ -125,6 +125,7 @@ export default async function handler(req, res) {
     const {
       tenant_id, kullanici_id, batch_id: batchIdGiris,
       pdf_base64, dosya_adi, dosya_sirasi, dosya_toplami,
+      spool_kirpim_b64,   // 186/MK-186.3: SPOOL kutusu zoom kirpimi (drain'de pdf.js ile uretilir, opsiyonel)
     } = req.body || {};
 
     if (!tenant_id)    return res.status(400).json({ error: 'tenant_id zorunlu' });
@@ -234,7 +235,7 @@ export default async function handler(req, res) {
         parseSonuc = await visionAIParse({
           pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
           tenant_id, kullanici_id, batch_id,
-          l2_fallback_meta,
+          l2_fallback_meta, spool_kirpim_b64,
         });
         if (parseSonuc.ok) {
           parseSonuc._l2_fallback = l2_fallback_meta;
@@ -244,7 +245,7 @@ export default async function handler(req, res) {
       // L3 -- Vision AI (Yaklasim Y)
       parseSonuc = await visionAIParse({
         pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
-        tenant_id, kullanici_id, batch_id,
+        tenant_id, kullanici_id, batch_id, spool_kirpim_b64,
       });
     }
 
@@ -720,11 +721,37 @@ function fingerprintEsler(fingerprint, ipucu, esik = 2) {
 // 5. VISION AI PARSER (Yaklasim Y)
 // =====================================================================
 
-async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta }) {
+async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi, tenant_id, kullanici_id, batch_id, l2_fallback_meta, spool_kirpim_b64 }) {
   const baslangic = Date.now();
   // 186 / MK-186.1: override -> KOMPOZISYON. EVRENSEL_PROMPT + (format.prompt_ek varsa).
   // Eski: formatBilgisi.prompt_template || YAKLASIM_Y_PROMPT (prompt_template step 7'de temizlenir).
   const sistem_prompt = promptBirlestir(formatBilgisi);
+
+  // 186 / MK-186.3: SPOOL kutusu zoom kirpimi (drain'de pdf.js ile uretildi) varsa,
+  //   ikinci gorsel olarak ekle. Model tam-sayfada kucuk [n] parantezlerini kaciriyor
+  //   (780/782: gercek 3, model 1). Zoom'lu kutuda sayim guvenilir. Kirpim yoksa eski davranis.
+  const _content = [
+    { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 } },
+  ];
+  if (spool_kirpim_b64) {
+    _content.push({
+      type: 'image',
+      source: { type: 'base64', media_type: 'image/png', data: spool_kirpim_b64 },
+    });
+    _content.push({
+      type: 'text',
+      text:
+        'IKINCI GORSEL = bu cizimin malzeme kolonunun (SPOOL kutusu dahil) YAKINLASTIRILMIS (zoom) halidir.\n' +
+        'SPOOL SAYISINI ONCELIKLE BU GORSELDEN BELIRLE: "SPOOL" basligi altindaki [1] [2] [3] ... gibi\n' +
+        'KOSELI PARANTEZleri tek tek say. Kac koseli parantez varsa O KADAR spool uret (spool_no S01, S02, ...).\n' +
+        'Tam-sayfa PDF\'te bu parantezler kucuk gorunup kacirilabilir; bu zoom\'da nettir, GUVEN.\n' +
+        'DIKKAT: acili <1> <2> = PIPE CUT-LENGTHS (kesim parcasi), spool DEGIL. Yalniz koseli [] say.',
+    });
+  }
+  _content.push({
+    type: 'text',
+    text: `Bu izometri PDF'inden spool listesini cikar. Dosya adi: ${dosya_adi}\n\nKURAL: PDF'te yazili olmayan hicbir alani UYDURMA. Yoksa null don.`,
+  });
 
   const istek = {
     model: VISION_MODEL,
@@ -733,19 +760,7 @@ async function visionAIParse({ pdf_base64, pdf_sha256, dosya_adi, formatBilgisi,
                       //   Varsayilan 1.0 -> ayni cizim run-to-run 3<->1 zipliyordu (782 kaniti:
                       //   ayni 4821-token prompt, 12:51=3 / 14:30=1). temp=0 varyansi keser.
     system: sistem_prompt,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 },
-        },
-        {
-          type: 'text',
-          text: `Bu izometri PDF'inden spool listesini cikar. Dosya adi: ${dosya_adi}\n\nKURAL: PDF'te yazili olmayan hicbir alani UYDURMA. Yoksa null don.`,
-        },
-      ],
-    }],
+    messages: [{ role: 'user', content: _content }],
   };
 
   let claudeRes, data, text;
