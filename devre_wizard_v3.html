@@ -1281,7 +1281,7 @@ async function taslagiAc(devreId) {
 }
 
 // POST /api/devre-inceleme {devre_id, kabuk_spoollar} → 4-durum render (MK-127.3/5)
-async function inceleGetir() {
+async function inceleGetir(bolAtla) {
   try {
     var r = await fetch('/api/devre-inceleme', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1292,20 +1292,23 @@ async function inceleGetir() {
     // 184/A: PAOR cok-spool bolme. Cagri #1 fazla'yi verir; helper bos shell uretirse
     //   WIZ._kabukSpoollar'i genislet (terfi truth) + TEK re-call -> S02..SN artik eslesir, fazla bosalir.
     //   Tersan'da helper passthrough -> bol===kabuk -> tek cagri -> birebir eski davranis.
-    var _bol = _paorBolShell(WIZ._kabukSpoollar, j.fazla);
-    if (_bol.length > (WIZ._kabukSpoollar || []).length) {
-      WIZ._kabukSpoollar = _bol;
-      var r2 = await fetch('/api/devre-inceleme', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ devre_id: WIZ.devre_id, kabuk_spoollar: WIZ._kabukSpoollar })
-      });
-      var j2 = await r2.json();
-      if (r2.ok) j = j2; else console.warn('[v3] inceleme re-call hata:', j2 && j2.hata);
+    if (!bolAtla) {   // 187/A2fix: operator override'tan cagrilinca re-expansion ATLA (idempotent set)
+      var _bol = _paorBolShell(WIZ._kabukSpoollar, j.fazla);
+      if (_bol.length > (WIZ._kabukSpoollar || []).length) {
+        WIZ._kabukSpoollar = _bol;
+        var r2 = await fetch('/api/devre-inceleme', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ devre_id: WIZ.devre_id, kabuk_spoollar: WIZ._kabukSpoollar })
+        });
+        var j2 = await r2.json();
+        if (r2.ok) j = j2; else console.warn('[v3] inceleme re-call hata:', j2 && j2.hata);
+      }
     }
     WIZ._inceleme = j;
     await _duzeltmeleriYukle(j);   // G2a overlay-A1: kayıtlı düzeltmeleri spoollar'a bindir
     renderInceleme(j);
     hataBandiYukle();
+    try { var _dk = document.getElementById('tab-dok'); if (_dk && !_dk.classList.contains('hide') && typeof _gozOnayiRender === 'function') _gozOnayiRender(); } catch (_e) {}
   } catch (e) { console.error('[v3] inceleGetir:', e); }
 }
 
@@ -2061,7 +2064,9 @@ function _gozOnayiCizimleri(){
   });
   return Object.keys(grup).sort().map(function(da){
     var _m = String(da).match(/PAOR-(\d{5}-\d{6})/i);
-    return { dosya_adi: da, cizim_no: _m ? _m[1] : null, marklar: grup[da].slice().sort(), adet: grup[da].length };
+    var _ci = _m ? _m[1] : null;
+    var _ka = _ci ? (WIZ._kabukSpoollar || []).filter(function(s){ return (s.cizim_no || '') === _ci; }).length : grup[da].length;
+    return { dosya_adi: da, cizim_no: _ci, marklar: grup[da].slice().sort(), adet: grup[da].length, kabukAdet: _ka };
   });
 }
 function _gozOnayiRender(){
@@ -2069,21 +2074,21 @@ function _gozOnayiRender(){
   if (!kart) return;
   var cizimler = _gozOnayiCizimleri();
   if (!cizimler.length){ kart.innerHTML = ''; return; }   // PAOR yoksa panel gosterme
-  if (kart._render) return;                                // bir kez render (thumbnail tekrar uretilmesin)
-  kart._render = true;
+  // 187/A2fix: guard kaldirildi -> her render guncel kabukAdet'i gosterir (thumbnail cache zaten var).
   var ic = cizimler.map(function(c, idx){
     return '<div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--bor);">' +
       '<div id="gozThumb' + idx + '" style="flex:0 0 230px;min-height:90px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--txd);font-size:12px;text-align:center;padding:6px;">k\u0131rp\u0131m y\u00fckleniyor\u2026</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-weight:600;font-size:13px;margin-bottom:4px;word-break:break-all;">' + esc(c.dosya_adi) + '</div>' +
         '<div style="font-size:13px;margin-bottom:6px;">PDF\'ten <b style="color:var(--ac);">' + c.adet + '</b> spool \u00e7\u0131kar\u0131ld\u0131</div>' +
+        (c.kabukAdet !== c.adet ? '<div style="font-size:12px;margin-bottom:6px;color:var(--warn);">D\u00fczeltildi \u2192 kabukta <b>' + c.kabukAdet + '</b> spool</div>' : '') +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + c.marklar.map(function(m){ return '<span class="rev-chip">' + esc(m) + '</span>'; }).join('') + '</div>' +
         (c.cizim_no
           ? '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
               '<span style="font-size:12px;color:var(--txd);">Gerçek spool sayısı:</span>' +
-              '<input id="a2sayi' + idx + '" type="number" min="1" value="' + c.adet + '" style="width:64px;padding:4px 6px;border:1px solid var(--bor);border-radius:6px;background:var(--sur);color:var(--tx);font-size:13px;">' +
+              '<input id="a2sayi' + idx + '" type="number" min="1" value="' + c.kabukAdet + '" style="width:64px;padding:4px 6px;border:1px solid var(--bor);border-radius:6px;background:var(--sur);color:var(--tx);font-size:13px;">' +
               '<button onclick="_a2SayiYukselt(\'' + c.cizim_no + '\', document.getElementById(\'a2sayi' + idx + '\').value)" style="padding:4px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:12px;cursor:pointer;">Uygula</button>' +
-              '<span style="font-size:11px;color:var(--txd);">PDF eksik saydıysa artır → eksik spool eklenir (kabuğa yazılmaz, terfide kesinleşir)</span>' +
+              '<span style="font-size:11px;color:var(--txd);">Gerçek sayıyı yaz → ayarlanır (artır=ekle, azalt=çıkar). Kabuğa yazılmaz, terfide kesinleşir.</span>' +
             '</div>'
           : '<div style="font-size:11px;color:var(--txd);margin-top:8px;">Çizim no çözülemedi — sayı düzeltme kapalı.</div>') +
       '</div></div>';
@@ -2131,27 +2136,30 @@ function _gozBuyut(src){
 //   Kabuk mutasyonu YOK: terfi-oncesi katman (WIZ._kabukSpoollar). Terfide aktar kesinlestirir.
 //   Yalniz artirma; azaltma + shell malzeme devralma (MK-182.5) dilim-2.
 async function _a2SayiYukselt(cizimNo, hedefDeger){
+  // 187/MK-187.4: IDEMPOTENT "N'e AYARLA" (yukari ekle / asagi cikar). Tekrar bassan da sonuc = N.
   try {
     var hedef = parseInt(hedefDeger, 10);
     if (!cizimNo || !isFinite(hedef) || hedef < 1){ if (typeof toast === 'function') toast('Geçersiz sayı'); return; }
-    var kabuk = WIZ._kabukSpoollar || [];
-    var mevcut = kabuk.filter(function(s){ return (s.cizim_no || '') === cizimNo; });
-    if (!mevcut.length){ if (typeof toast === 'function') toast('Kabukta bu çizim yok (cizim_no: ' + cizimNo + ')'); return; }
-    var simdi = mevcut.length;
+    var kabuk = (WIZ._kabukSpoollar || []);
+    var ait = kabuk.filter(function(s){ return (s.cizim_no || '') === cizimNo; });
+    if (!ait.length){ if (typeof toast === 'function') toast('Kabukta bu çizim yok (cizim_no: ' + cizimNo + ')'); return; }
+    var simdi = ait.length;                                  // mevcut kabuk spool sayisi = SET tabani
     if (hedef === simdi){ if (typeof toast === 'function') toast('Sayı zaten ' + simdi); return; }
-    if (hedef < simdi){ if (typeof toast === 'function') toast('Şimdilik yalnız artırma (azaltma dilim-2)'); return; }
-    // sentetik fazla: S0(simdi+1)..S0(hedef) -> _paorBolShell sibling S01'i bulup shell enjekte eder
-    var synth = [];
-    for (var k = simdi + 1; k <= hedef; k++){
-      synth.push({ pipeline: cizimNo, spoolNo: 'S' + String(k).padStart(2, '0'), sebep: 'kabukta_yok' });
+    if (hedef > simdi){
+      // YUKARI: S0(simdi+1)..S0(hedef) ekle (sentetik fazla -> _paorBolShell sibling S01'den shell)
+      var synth = [];
+      for (var k = simdi + 1; k <= hedef; k++){ synth.push({ pipeline: cizimNo, spoolNo: 'S' + String(k).padStart(2, '0'), sebep: 'kabukta_yok' }); }
+      var bol = _paorBolShell(kabuk, synth);
+      if (bol.length <= kabuk.length){ if (typeof toast === 'function') toast('Genişletilemedi (kardeş S01 / cizim_no eşleşmedi)'); return; }
+      WIZ._kabukSpoollar = bol;
+    } else {
+      // ASAGI: S0(hedef+1)..S0(simdi) cikar (yalniz bu cizimin ust spool'lari)
+      var sil = {};
+      for (var k2 = hedef + 1; k2 <= simdi; k2++){ sil['S' + String(k2).padStart(2, '0')] = true; }
+      WIZ._kabukSpoollar = kabuk.filter(function(s){ return !((s.cizim_no || '') === cizimNo && sil[s.spoolNo]); });
     }
-    var bol = _paorBolShell(kabuk, synth);
-    if (bol.length <= kabuk.length){ if (typeof toast === 'function') toast('Genişletilemedi (kardeş S01 / cizim_no eşleşmedi)'); return; }
-    WIZ._kabukSpoollar = bol;
-    if (typeof toast === 'function') toast('Çizim ' + cizimNo + ' → ' + hedef + ' spool, yeniden eşleştiriliyor…');
-    await inceleGetir();                       // MEVCUT motor: re-eslestir + renderInceleme
-    var kart = document.getElementById('gozOnayiKart'); if (kart) kart._render = false;   // A1 panelini tazele
-    _gozOnayiRender();
+    if (typeof toast === 'function') toast('Çizim ' + cizimNo + ' → ' + hedef + ' spool');
+    await inceleGetir(true);                                 // re-eslestir + render; _paorBolShell ATLA (idempotent)
   } catch (e){ console.warn('[v3] A2 sayi yukselt:', e); if (typeof toast === 'function') toast('Düzeltme hatası'); }
 }
 
