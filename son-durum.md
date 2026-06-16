@@ -1,44 +1,34 @@
-# son-durum.md — Oturum 186 sonu
+# son-durum.md — Oturum 187 sonu
 
 ## HEAD
-186 kapanışı. Son kod commit'leri: crop `543711d` (MK-186.3) → cache sürümleme `ad45644` (MK-186.4) → Step 7 temizlik `332827e` (MK-186.1). CI HEAD `6a545c2`. Fonksiyon **12/12** (yeni api yok). Çalışma ağacı temiz olmalı.
+187 kapanışı. Kod commit'leri: B `1afe670` → A1 `87dc444` → A2-dilim1 `c93d66e` → A2-fix `0e50dd3`. Fonksiyon **12/12** (yeni api yok). Migration yok. Çalışma ağacı temiz olmalı.
 
-## 186'da yapılanlar (185.3 borcu KAPANDI — 4 iş, hepsi canlı + veriyle kanıtlı)
+## 187'de yapılanlar — spool sayım emniyeti (B + A1 + A2), hepsi canlı + commitli
 
-### MK-186.1 — Prompt override → KOMPOZİSYON + Step 7 temizlik
-`lib/prompt-birlestirici.js`: EVRENSEL_PROMPT + promptBirlestir(EVRENSEL + format.prompt_ek). PAOR prompt_ek BOŞ (kanıt: mig105 = YAKLASIM_Y + yalnız güçlendirilmiş madde 3, PAOR'a özgü kural yok). 25/25 test. izometri-oku ince (MK-49.1). Migration 106 (prompt_ek kolonu). **Step 7:** ölü YAKLASIM_Y_PROMPT silindi (-140 satır), mig108 ile prompt_template NULL'landı (mig105 geri al, id-scoped). Regresyonsuz + cache-nötr.
+### MK-187.1 (B) — sessiz-fallback emniyet ağı (1afe670)
+crop yalnız vision'da kullanılır; yoksa model tam-sayfada [n]'leri kaçırıp eksik sayabilir. izometri-oku `_sayim_kirpimsiz = !spool_kirpim_b64` taşır (cevap_full'a yedirilir, cache'te yaşar). kuyruk-isle-izometri: `_sayim_kirpimsiz && spool_kaynak='pozisyon'` → `manuel_onay` (gözle say) + `parse_sonuc._sayim_uyarisi`. Tek başına manuel_onay'a düşürmez; karar spool_kaynak'a bağlı → Tersan/Excel-listeli ETKİLENMEZ.
 
-### MK-186.2 — temperature: 0
-Vision çağrısında temp set edilmemişti (1.0) → aynı çizim 3↔1 zıplıyordu. temp=0 → deterministik.
+### MK-187.2 (A1) — PAOR çizim-başı SPOOL göz-onayı (87dc444)
+Dökümanlar sekmesinde her PAOR çizimi için: kırpılan SPOOL kutusu thumbnail + "PDF'ten N spool" + S0n. Thumbnail istemcide `_spoolKirpim` ile YENİDEN üretilir (deterministik = modelin gördüğünün aynısı, $0 depolama, geriye-dönük). `_spoolKirpim` drain public API'ye eklendi. Thumbnail cache. Risk #1/#3 (crop bölgesi yanlış / model crop'la bile yanlış saymış) gözle yakalanır. B ise #2'yi (sessiz fail) kapatır.
 
-### MK-186.3 — SPOOL kutusu zoom kırpımı (eksik-sayım KÖK çözümü)
-Model tam-sayfada küçük [n]'leri kaçırıyordu (çözünürlük, prompt değil). drain (pdf.js) sağ malzeme kolonunu kırpıp `spool_kirpim_b64` gönderir → izometri-oku 2. görsel + KIRPIM_TALIMATI olarak L3'e verir. Tek çağrı, yeni endpoint yok. **Kanıt:** 780 1→3 (input_tokens 4821→6582); yeni 769-778 seti 10/10 doğru (yüksek-zoom yer-hakikati).
+### MK-187.3 (A2 dilim-1) — spool sayısı operator override (c93d66e)
+A1 panelinde "Gerçek spool sayısı" + Uygula. Sentetik `fazla` (S0k, sebep:'kabukta_yok') üret → MEVCUT `_paorBolShell` (184/A) boş shell enjekte → `inceleGetir`. Terfi-öncesi katman (WIZ._kabukSpoollar); kabuk mutasyonu yok, terfide (aktar) kesinleşir.
 
-### MK-186.4 — Cache sürümleme (istek_surum) — köstebek KALICI bitti
-istek_surum = sha256(PARSE_SURUM|model|prompt|crop)[:16] cache anahtarına girer. Prompt/crop değişince otomatik MISS. Migration 107 (istek_surum kolonu). **Kanıt:** 769-778 iki kez yüklendi → 13/13 `l3_odeme=1` (ikinci yükleme $0 HIT). Manuel invalidate dansı bitti.
+### MK-187.4 (A2 fix) — override idempotent + bug (0e50dd3)
+SORUN (canlı kanıt): 102769 PDF=2, ama Uygula sonrası kabukta 5-7 (katlanma). Sebep: (1) "N'e kadar EKLE" mantığı, (2) inceleGetir kendi _paorBolShell'ini server fazla'sıyla tekrar çalıştırıyordu, (3) panel guard + sayı PDF-bağlı. ÇÖZÜM: idempotent "N'e AYARLA" (yukarı ekle/aşağı çıkar), `inceleGetir(bolAtla)` re-expansion atlar, panel guard kaldırıldı + panel kabuk-gerçeğini gösterir ("Düzeltildi → kabukta M", giriş=kabuk sayısı).
 
-## Migration
-- **104** (184): spooller.cizim_no.
-- **105** (185): paor prompt_template — **186'da mig108 ile NULL'landı** (kompozisyona geçti, dosya tarihsel kalır).
-- **106** (186): prompt_ek kolonu — APPLY + repo.
-- **107** (186): ai_api_log.istek_surum — APPLY + repo (bu oturumda repoya eklendi).
-- **108** (186): prompt_template NULL (mig105 geri al, id-scoped) — APPLY + repo.
-
-## Spool sayımı — GÜVENDE Mİ? (Cihat'ın sorusu — dürüst cevap)
-Eskisinden çok daha güvende + PAOR pilotu için uçtan-uca doğrulandı. AMA kurşun-geçirmez değil; kalan riskler (→ Sonraki Oturum):
-1. Kırpma bölgesi (_SPOOL_KIRP) bir heuristik (PAOR SPOOL kutusu sağ kolonda varsayımı; ~13 çizimde doğru).
-2. Crop render patlarsa SESSİZ fallback (crop'suz tam-sayfa → eksik-sayım riski). Belirti: input_tokens ~4821.
-3. Sayımı hâlâ model yapıyor (temp=0 deterministik ama doğru garantisi değil).
-4. Çok-spool ucu (5-6 [n]) test edilmedi.
-→ Gerçek emniyet ağı = göz-onayı (Dökümanlar'da kırpılmış kutu + sayı; crop zaten o görseli üretiyor). Şu an opsiyonel.
+## Bugün netleşen DATA bulguları (hepsi DATA-first, MK-158.1)
+- **PAOR Excel'de spool ayrımı YOK (kesin):** her BOM Excel `farkli_spool=1` (hepsi "S01"), `pipeline_malzemeleri` pipeline-seviyesi. D (Excel↔PDF çapraz-kontrol) bu yüzden ölü — spool sayısı yalnız PDF'ten.
+- **Spool sayısı PDF-pozisyon'dan** (devre-inceleme.js:148, idx→S0n).
+- **1→N genişleme MEVCUT:** `_paorBolShell` (184/A, MK-182.6) PDF fazla'sını boş shell olarak enjekte ediyor. Override aynı motoru sentetik fazla ile kullanır.
+- **crop evrensel çalışıyor:** tüm PAOR parse'larında input_tokens=6582 (crop gitti). Sayımlar tutarlı (102773→3, 102780→3, 102782→3, çoğu 2/1).
 
 ## Açık işler (carry — taze SQL ile doğrula, MK-163.1)
-- **Emniyet ağı (opsiyonel):** Dökümanlar'da çizim-başı SPOOL göz-onayı (kırpılmış kutu + sayı stepper). Yukarı-düzeltme (1→3) = kabuk genişletme = #2b'ye bağlı.
-- **Crop sertleştirme:** sessiz-fallback alarmı (input_tokens eşik altı → "crop yok, gözle say" bayrağı); _SPOOL_KIRP bölge ayarı; çok-spool ucu testi.
-- **184 carry:** MK-184.1 şef konsolidasyon, 184.2 ölü kod (eslesenIzoIdx), 184.4 montaj köprü drain-yolu.
-- **B-tam BOM per-spool:** PAOR Excel'de spool ayrımı YOK; per-spool yalnız PDF geometrisi.
-- **PAOR veri-kalite:** agirlik_kg null, et boş, D-182.2 imalat/montaj çelişki (= "Zayıf/doğrulanmadı" rozetleri; SAYIM hatası DEĞİL).
-- **format_id=null 251 cache envanteri.** NPS→mm bug (Tersan Faz2).
+- **A2-dilim2 (SIRADAKİ ASIL):** Override ile eklenen spool "Eksik/döküman yok" alıyor — YANLIŞ (PDF o spool için de çizilmiş). Kök sebep: eşleştirme `pipeline|spoolNo`, izometri tarafında eklenen spoolNo yok. ÇÖZÜM: shell kardeş S01'in is_id/dosya_adi'sini DEVRALSIN + devre-inceleme durum/sıralama yansıtsın (S01→S02→S03 ardışık).
+- shell malzeme devralma (MK-182.5: S0n malzeme "—" boş; S01 pipeline malzemesini paylaşsın).
+- A2 aşağı-düzeltme fazla-render netleştirme. Override kalıcılığı = bellekte, terfide kesinleşir (TASARIM, bug değil).
+- `b4af5c2b` cizim_no=null devrelerde override sibling eşleşmezse genişlemez (toast verir).
+- 186 carry: crop sertleştirme (çok-spool ucu), format_id=null cache envanteri, NPS→mm (Tersan Faz2).
 
 ## Disiplin notu
-Tersan kırmızı çizgisi korundu: tüm 186 müdahaleleri PAOR scoped (crop fab-PDF, mig108 id-scoped 995b5514, EVRENSEL+boş-ek = Tersan birebir). 25/25 + 10/10 + 13/13 kanıt. malzeme-kiyas.js / ares-kabuk.js / paor.js DOKUNULMADI. izometri-oku yalnız cache/istek plumbing (prompt mantığı lib'de). Fonksiyon 12/12.
+Tüm 187 müdahaleleri PAOR-scoped (spool_kaynak='pozisyon' / `-PAOR-` deseni). Tersan / Excel-listeli formatlar dokunulmadı. Migration/api/şema YOK → fonksiyon 12/12. Her patch anchor-doğrulamalı Python + .bak + MD5 (MK-172.6); B/A1 izole JS node --check; hepsi MD5 birebir + idempotent ABORT testi geçti. Commit'ler [skip ci]'siz (kod), handoff [skip ci].

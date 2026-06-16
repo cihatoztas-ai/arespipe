@@ -1,39 +1,43 @@
-# BRIEFING — AresPipe Aktif Bağlam (186 sonu)
+# BRIEFING — AresPipe Aktif Bağlam (187 sonu)
 
 ## Proje
 Çok-tenant tersane pipe spool yönetimi SaaS. Stack: Supabase/Postgres (RLS), Vercel serverless (Hobby, 12 fn tavanı), vanilla JS/HTML web + React Native PWA. Tüm iş Türkçe, MK-kararları + numaralı oturum disiplini.
 
 ## Format durumu — Tersan (L2+L3) + PAOR (L3) CANLI
-- **Tersan:** Cadmatic, L2 deterministik parser (format-paketleri katman 0-3) + L3 fallback.
-- **PAOR/AVEVA:** uçtan uca canlı. Excel BOM (lib/paor.js) + fab PDF (-A.pdf, text'siz vektör, L3) + Isometric_View. spooller.cizim_no köprüsü (184).
+- **Tersan:** Cadmatic, L2 deterministik (format-paketleri katman 0-3) + L3 fallback.
+- **PAOR/AVEVA:** uçtan uca canlı. Excel BOM (lib/paor.js → `pipeline_malzemeleri`, pipeline-seviyesi) + fab PDF (-A.pdf, L3 vision) + Isometric_View. Spool sayısı PDF-pozisyon'dan (devre-inceleme.js:148, idx→S0n). spooller.cizim_no köprüsü.
 
-## 186'da yapılanlar (185.3 prompt+cache mimari borcu KAPANDI)
-- **MK-186.1 (332827e):** prompt override→KOMPOZİSYON. lib/prompt-birlestirici.js (EVRENSEL_PROMPT + format.prompt_ek). PAOR prompt_ek BOŞ. Step 7: ölü YAKLASIM_Y_PROMPT silindi, mig108 prompt_template geri al.
-- **MK-186.2:** temperature 0 (varyans bitti).
-- **MK-186.3 (543711d):** SPOOL kutusu zoom kırpımı → L3 2. görsel. Eksik-sayım KÖK çözümü (çözünürlük, prompt değil). 780→3, yeni set 10/10.
-- **MK-186.4 (ad45644):** cache sürümleme (istek_surum). Köstebek kalıcı bitti (13/13 l3_odeme=1). Manuel invalidate dansı yok.
+## 187'de yapılanlar — SPOOL SAYIM EMNİYETİ (B + A1 + A2)
+- **MK-187.1 (B, 1afe670):** Sessiz-fallback emniyet ağı. crop yok (`!spool_kirpim_b64`, vision) + `spool_kaynak='pozisyon'` (PAOR) → çizim `manuel_onay`'a ("gözle say"). izometri-oku `_sayim_kirpimsiz` taşır; kuyruk-isle-izometri escalate eder. Tersan/Excel-listeli (kaynak≠pozisyon) ETKİLENMEZ.
+- **MK-187.2 (A1, 87dc444):** PAOR çizim-başı SPOOL göz-onayı (Dökümanlar sekmesi). Kırpılan SPOOL kutusu thumbnail (istemcide `_spoolKirpim` YENİDEN üretir = deterministik, $0 depolama, geriye-dönük) + "PDF'ten N spool" + S0n markaları. `_spoolKirpim` drain'de expose edildi (MK-109.1).
+- **MK-187.3 (A2 dilim-1, c93d66e):** PAOR spool sayısı operator override. A1 panelinde "Gerçek spool sayısı" girişi → sentetik `fazla` üret → MEVCUT `_paorBolShell` motoru (184/A) → `inceleGetir`. Terfi-öncesi katman (`WIZ._kabukSpoollar`), kabuk mutasyonu yok.
+- **MK-187.4 (A2 fix, 0e50dd3):** Override BUG düzeltme — katlanma (7 yazınca kabuk şişiyordu). İdempotent "N'e AYARLA" (yukarı ekle/aşağı çıkar), `inceleGetir(bolAtla)` re-expansion atlar, panel guard kaldırıldı + panel kabuk-gerçeğini gösterir ("Düzeltildi → kabukta M").
 
-## Mimari ilkeler
-- **Tersan kırmızı çizgisi:** her PAOR müdahalesi format_id/scope ile izole, kanıtla. malzeme-kiyas.js/ares-kabuk.js/paor.js DOKUNULMAZ. izometri-oku INCE (prompt mantığı lib'de — MK-49.1 esnetme).
-- **Prompt = KOMPOZİSYON:** EVRENSEL_PROMPT (çekirdek, spool-sayma güçlü madde-3 burada) + format.prompt_ek (kısa, format-özel). Yeni format = kısa ek. Evrensel düzeltme tüm formatlara yayılır. prompt_template ARTIK KULLANILMAZ (mig108 NULL'ladı, MK-155.1).
-- **Cache = sürümlü:** anahtar pdf_sha256+format_id+tenant_id+basarili **+ istek_surum** (=sha256 PARSE_SURUM|model|prompt|crop). Prompt/crop değişince otomatik MISS. Eski NULL → MISS (temiz tazeleme). Manuel invalidate GEREKMEZ.
-- **SPOOL sayma = crop-destekli:** drain pdf.js ile SPOOL kolonunu kırpar (spool_kirpim_b64) → L3 2. görsel + KIRPIM_TALIMATI. Çözünürlük modelin kaçırmasını çözer. Tek çağrı, 12/12 korunur.
-- **Spool kimliği:** PAOR pozisyon (idx→S0n). cizim_no || pipeline_no eşleştirme anahtarı.
+## Mimari ilkeler (187 eklentileri)
+- **Spool sayım emniyeti = 2 katman:** B (otomatik, sessiz-fail → manuel_onay) + A1 (görsel çetele, gözle teyit). İkisi de YALNIZ PAOR (spool_kaynak='pozisyon' / `-PAOR-` deseni). Tersan kırmızı çizgisi korunur.
+- **Override = idempotent SET:** operatör N yazar → kabuk tam N olur (artır=ekle, azalt=çıkar). Tekrar bassa katlanmaz. `inceleGetir(true)` ile re-expansion atlanır.
+- **1→N genişleme MEVCUT (184/A, MK-182.6):** `_paorBolShell` PDF fazla'sını boş shell olarak enjekte. Override sentetik fazla ile aynı motoru kullanır.
+- **PAOR Excel'de spool ayrımı YOK (kanıtlı):** her BOM Excel `farkli_spool=1` (hepsi S01); `pipeline_malzemeleri` pipeline-seviyesi. Spool sayısı yalnız PDF'ten.
 
 ## Kritik kurallar
-- L3 AÇIK + TAZE devre + hard-refresh (MK-183.2). Devre-scoped SQL (MK-163.1). **Migration APPLY→kod deploy + repo commit AYRI (MK-184.5).** information_schema kolon doğrula (MK-85.3). BEGIN/ROLLBACK dry-run (MK-98.2). DATA→UI→kod (MK-158.1), kanıt=server verisi (MK-162.3).
+L3 AÇIK + TAZE devre + hard-refresh (MK-183.2). Devre-scoped SQL (MK-163.1). Migration APPLY→deploy+repo AYRI (MK-184.5). information_schema kolon doğrula (MK-85.3). BEGIN/ROLLBACK dry-run (MK-98.2). DATA→UI→kod (MK-158.1), kanıt=server verisi (MK-162.3). HTML patch = anchor-doğrulamalı Python + .bak + MD5 (MK-172.6).
 
 ## Anahtar dosyalar
-- lib/prompt-birlestirici.js (EVRENSEL_PROMPT + promptBirlestir — 186, prompt TEK KAYNAK)
-- ares-izometri-drenaj.js (_spoolKirpim crop — 186; client-loop drenaj)
-- api/izometri-oku.js (cacheKontrol + istek_surum + KIRPIM_TALIMATI/PARSE_SURUM — 186; YAKLASIM_Y_PROMPT SİLİNDİ; prompt mantığı YOK, lib'de)
-- lib/izo-eslesme.js, api/kuyruk-isle-izometri.js, ares-kabuk.js, api/devre-inceleme.js, devre_wizard_v3.html (PAOR çekirdek)
-- migrations 106/107/108 (186)
+- api/izometri-oku.js (`_sayim_kirpimsiz` — B; cache/prompt plumbing — 186)
+- api/kuyruk-isle-izometri.js (durum kararı: B escalation, spool_kaynak='pozisyon')
+- ares-izometri-drenaj.js (`_spoolKirpim` expose — A1; `_SPOOL_KIRP` crop)
+- devre_wizard_v3.html (A1 göz-onayı paneli `_gozOnayiRender` + A2 override `_a2SayiYukselt`; `_paorBolShell` 184/A; `inceleGetir(bolAtla)`)
+- api/devre-inceleme.js (4-durum eşleştirme `pipeline|spoolNo`; spool N üretimi :148)
+- ares-kabuk.js (`grupla`/`aktar` — terfi yazımı; idempotent)
+- lib/paor.js (PAOR Excel → pipeline_malzemeleri)
 
-## Açık borçlar
-Spool-sayım sertleştirme (emniyet ağı/sessiz-fallback alarmı/çok-spool testi/_SPOOL_KIRP ayarı) · B-tam BOM per-spool · format_id=null 251 cache envanteri · 184 carry (184.1/184.2/184.4) · PAOR veri-kalite (agirlik/et/D-182.2 = "Zayıf" rozetleri, sayım değil) · NPS→mm (Tersan Faz2) · devre_detay kapsam çip (185 carry).
+## Açık borçlar (öncelikli → A2-dilim2)
+- **A2-dilim2 (SIRADAKİ ASIL):** Override ile eklenen spool "Eksik/döküman yok" alıyor → YANLIŞ. Kök sebep: eşleştirme `pipeline|spoolNo`, izometri tarafında eklenen spoolNo yok. ÇÖZÜM: `_paorBolShell` shell'i kardeş S01'in `is_id`/`dosya_adi`'sini devralsın → aynı-PDF spool'u olsun; devre-inceleme durum + **sıralama** (S01→S02→S03 ardışık) bunu yansıtsın.
+- shell malzeme devralma (MK-182.5: S0n, S01'in pipeline malzemesini paylaşsın — şu an "—" boş).
+- A2 aşağı-düzeltme: PDF'ten az yazınca kalanlar `fazla` render olur (honest ama UI'da netleştir).
+- `b4af5c2b` gibi cizim_no=null devrelerde override (sibling eşleşmezse toast verir, genişlemez).
+- 186 carry: crop sertleştirme (çok-spool ucu), format_id=null cache envanteri, NPS→mm (Tersan Faz2).
 
 ## Repo / DB
-- Repo github.com/cihatoztas-ai/arespipe @ ~/Desktop/arespipe. Prod arespipe.vercel.app.
-- Supabase ochvbepfiatzvyknkvsn. SQL Editor wrapper'sız. arespipe_kopyala <src> <dst> <md5>. gpc=add+commit+rebase+push.
-- Migration son: 108. APPLY canlıya elle + dosya repo commit (ayrı iş, MK-184.5).
+- Repo github.com/cihatoztas-ai/arespipe @ ~/Desktop/arespipe. Prod arespipe.vercel.app. Supabase ochvbepfiatzvyknkvsn.
+- Migration son: 108 (187'de yeni migration YOK). Fonksiyon 12/12. gpc=add+commit+rebase+push. arespipe_kopyala <src> <dst> <md5>.
