@@ -561,7 +561,7 @@ body { background: var(--bg); color: var(--tx); font-family: 'Barlow', sans-seri
     // Rol kontrolü
     var _oturum2 = (typeof ARES !== 'undefined' && ARES.oturumAl) ? ARES.oturumAl() : null;
     var _rol = _oturum2 ? _oturum2.rol : null;
-    var _OPERATOR_KEYS = ['index', 'uyari', 'tezgah'];
+    var _OPERATOR_KEYS = ['index', 'uyari', 'tezgah', 'uygulamalar'];
 
     return NAV.map(item => {
       // Operatör sadece belirli sayfaları görsün
