@@ -2786,3 +2786,11 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 
 ## D-187.1 — PAOR Excel'de spool ayrımı YOK (DATA ile kesinleşti)
 187 boyunca "PAOR Excel spool listesi taşıyor mu" sorusu tek tek SQL ile kovalandı (MK-158.1). Bulgular: (a) `pipeline_malzemeleri` pipeline-seviyesi, spool yok; (b) BOM Excel parse_sonuc.satirlar'da `spool_no` DOLU geliyor ama (c) her Excel `farkli_spool=1` — hepsi "S01", yani tek etiket, AYRIM YOK. SONUÇ: PAOR'da spool sayısı YALNIZ PDF-pozisyon'dan gelir (devre-inceleme.js:148, idx→S0n). Excel↔PDF çapraz-kontrol (D) bu yüzden ölü — Excel bağımsız spool adedi taşımıyor. Ders: katman katman doğrula; "satırda spool_no var" ≠ "spool ayrımı var".
+
+## MK-188 (oturum 188) — override spool sibling devralma + siralama + malzeme
+
+- MK-188.1: incelemeTablosu (lib/izo-eslesme.js) — operator override ile eklenen PAOR shell spool'u (kendi spoolNo anahtari izometri haritasinda YOK) ayni cizimde (cizim_no) kardes spool eslestiyse 'eksik' yerine 'zayif' say + temsil izometriyi kardesten DEVRAL (override_kardes:true). GUARD: yalniz sp._malzeme_devralindi===true (override shell). Tersan S01/S02 ayni pipeline anahtarini paylasir ama override degil -> devralma YOK, gercek eksik kirmizi kalir (B-6 korunur).
+- MK-188.2: incelemeTablosu return oncesi stabil sirala — pipeline sonra spoolNo, localeCompare numeric. _paorBolShell concat ile shell'i sona ekliyordu -> liste dagilik. Artik S01->S02->...->SN ardisik.
+- MK-182.5 KAPANDI: _paorBolShell (devre_wizard_v3.html) shell uretirken sibling S01'in pipeline-seviyesi malzemesini devralir: anaMalzeme/kalite/cap/et/bom + _malzeme_devralindi:true. toplamKg=0 (kardesin agirligi degil), et de spesifik -> devralinmaz (null kalir).
+- D-188.1 (canli-dogrulandi): NB138/102769 — model 1 okudu, operator 10 dedi. S02-S07 artik zayif + izometri=...-PAOR-52600-102769-A (kardes PDF), malzeme Karbon Celik/St37 devralindi, EKSIK=0, siralama S01->S07 ardisik. Commit c0a4314.
+- Commit: c0a4314 (kod, skip ci yok). Self-test 3/3 GECTI (127 regresyon yok, 184/A korundu, 188/A yeni).
