@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/assets/marka/arespipe-favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/marka/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/marka/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/marka/icon-180.png">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Uygulamalar | AresPipe</title>
+<!-- ✅ A3: Flash prevention — ares_theme + ares_lang + visibility -->
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+*{margin:0;padding:0;box-sizing:border-box;}
+.page{padding:28px 28px 40px;}
+a{color:var(--ac);cursor:pointer;text-decoration:none;}
+
+/* ── BAŞLIK ── */
+.uyg-head{display:flex;align-items:flex-end;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+.uyg-crumb{font-size:14px;color:var(--txd);margin-bottom:6px;}
+.uyg-crumb a{color:var(--txd);}
+.uyg-crumb a:hover{color:var(--ac);}
+.uyg-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;color:var(--tx);}
+.uyg-sub{font-size:14px;color:var(--txm);margin-top:4px;}
+.uyg-ozet{margin-left:auto;background:var(--sur);border:1px solid var(--bor);border-radius:99px;padding:6px 14px;font-size:14px;color:var(--txm);}
+.uyg-ozet b{font-weight:600;}
+.uyg-ozet .o-ak{color:var(--gr);}
+.uyg-ozet .o-yk{color:var(--txd);}
+
+/* ── KART GRID ── */
+.uyg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+
+.uyg-card{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:172px;transition:border-color .15s,transform .12s;}
+.uyg-card.aktif{cursor:pointer;}
+.uyg-card.aktif:hover{border-color:var(--ac);transform:translateY(-2px);}
+.uyg-card.yakinda{opacity:.72;}
+
+.uyg-card-top{display:flex;align-items:center;justify-content:space-between;}
+.uyg-ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.uyg-ic.aktif{background:rgba(45,142,255,0.16);color:var(--ac);}
+.uyg-ic.yakinda{background:var(--sur2);color:var(--txd);}
+.uyg-ic svg{width:22px;height:22px;}
+
+.uyg-rozet{font-size:10px;font-weight:800;letter-spacing:0.6px;padding:3px 9px;border-radius:99px;}
+.uyg-rozet.aktif{color:var(--gr);background:rgba(22,163,110,0.14);}
+.uyg-rozet.yakinda{color:var(--txm);border:1px solid var(--bor);}
+
+.uyg-ad{font-size:16px;font-weight:600;color:var(--tx);}
+.uyg-desc{font-size:13px;color:var(--txm);line-height:1.5;margin-top:4px;}
+
+.uyg-foot{margin-top:auto;font-size:14px;}
+.uyg-foot.aktif{display:flex;align-items:center;gap:6px;color:var(--ac);font-weight:600;}
+.uyg-foot.aktif svg{width:16px;height:16px;}
+.uyg-foot.yakinda{color:var(--txd);font-size:13px;}
+</style>
+<!-- ÇEKİRDEK (sıra: store → lang → layout → normalize) -->
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
+<script src="ares-normalize.js"></script>
+</head>
+<body>
+<div class="app-shell">
+<div class="main-content">
+<div class="page">
+
+  <div class="uyg-head">
+    <div>
+      <div class="uyg-crumb">
+        <a href="index.html" data-i18n="nav_ana_sayfa">Ana Sayfa</a>
+        <span> / </span>
+        <span data-i18n="nav_uygulamalar">Uygulamalar</span>
+      </div>
+      <div class="uyg-title" data-i18n="nav_uygulamalar">Uygulamalar</div>
+      <div class="uyg-sub" data-i18n="uyg_alt">AresPipe araç ve yardımcı modülleri</div>
+    </div>
+    <div class="uyg-ozet" id="uygOzet"></div>
+  </div>
+
+  <div class="uyg-grid" id="uygGrid"></div>
+
+</div><!-- /.page -->
+</div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+<script>
+'use strict';
+
+// ✅ D1: esc()
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// İkon SVG'leri (sidebar tarzı: fill yok, stroke currentColor)
+var _IK = {
+  izobatch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>',
+  kutuphane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+  kesimopt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>'
+};
+
+// ── Uygulama kataloğu ── (yeni uygulama = buraya bir satır)
+var UYGULAMALAR = [
+  { key:'izobatch',  durum:'aktif',   href:'izometri-batch.html', ad:'nav_izobatch',     desc:'uyg_izobatch_desc' },
+  { key:'kutuphane', durum:'yakinda', href:null,                  ad:'uyg_kutuphane_ad', desc:'uyg_kutuphane_desc' },
+  { key:'kesimopt',  durum:'yakinda', href:null,                  ad:'uyg_kesimopt_ad',  desc:'uyg_kesimopt_desc' }
+];
+
+function _tv(k, fb){ return (typeof window.tv === 'function') ? window.tv(k, fb) : fb; }
+
+function kartHTML(u){
+  var ik = _IK[u.key] || '';
+  if (u.durum === 'aktif'){
+    return '<a class="uyg-card aktif" href="'+esc(u.href)+'">'
+      + '<div class="uyg-card-top">'
+      +   '<div class="uyg-ic aktif">'+ik+'</div>'
+      +   '<span class="uyg-rozet aktif" data-i18n="uyg_rozet_aktif">AKTİF</span>'
+      + '</div>'
+      + '<div><div class="uyg-ad" data-i18n="'+u.ad+'"></div>'
+      +   '<div class="uyg-desc" data-i18n="'+u.desc+'"></div></div>'
+      + '<div class="uyg-foot aktif"><span data-i18n="uyg_ac">Aç</span>'
+      +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
+      + '</div></a>';
+  }
+  return '<div class="uyg-card yakinda">'
+    + '<div class="uyg-card-top">'
+    +   '<div class="uyg-ic yakinda">'+ik+'</div>'
+    +   '<span class="uyg-rozet yakinda" data-i18n="uyg_yakinda">Yakında</span>'
+    + '</div>'
+    + '<div><div class="uyg-ad" data-i18n="'+u.ad+'"></div>'
+    +   '<div class="uyg-desc" data-i18n="'+u.desc+'"></div></div>'
+    + '<div class="uyg-foot yakinda" data-i18n="uyg_hazirlaniyor">Hazırlanıyor</div>'
+  + '</div>';
+}
+
+function render(){
+  var grid = document.getElementById('uygGrid');
+  if (grid) grid.innerHTML = UYGULAMALAR.map(kartHTML).join('');
+
+  var ak = UYGULAMALAR.filter(function(u){ return u.durum === 'aktif'; }).length;
+  var yk = UYGULAMALAR.length - ak;
+  var ozet = document.getElementById('uygOzet');
+  if (ozet){
+    ozet.innerHTML = '<b class="o-ak">'+ak+'</b> <span data-i18n="uyg_aktif">aktif</span>'
+      + ' · <b class="o-yk">'+yk+'</b> <span data-i18n="uyg_bekliyor">yakında</span>';
+  }
+
+  // yeni eklenen data-i18n düğümlerini çevir
+  if (typeof window.applyI18n === 'function') window.applyI18n();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ SB-01: Auth kontrolü + sayfa başlatma
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    var _bekle = 0;
+    while (_bekle < 80) {
+      var _supa = ARES.supabase();
+      if (_supa) {
+        var _ses = await _supa.auth.getSession();
+        if (_ses.data && _ses.data.session) {
+          await ARES.oturumKontrol();
+          if (!await ARES.sayfaYetkiKontrol(['yonetici', 'firma_admin', 'super_admin'])) return;
+          break;
+        }
+        if (_bekle > 20) { location.href = 'giris.html'; return; }
+      }
+      await new Promise(function(r){ setTimeout(r, 100); });
+      _bekle++;
+    }
+    render();
+  })();
+});
+</script>
+</body>
+</html>

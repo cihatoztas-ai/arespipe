@@ -146,8 +146,8 @@
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
     },
     {
-      type: 'item', key: 'izobatch', label: 'İzometri Batch', i18n: 'nav_izobatch', href: 'izometri-batch.html',
-      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>'
+      type: 'item', key: 'uygulamalar', label: 'Uygulamalar', i18n: 'nav_uygulamalar', href: 'uygulamalar.html',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'
     },
     { type: 'sep', label: 'ÜRETİM', i18n: 'nav_uretim' },
     {
@@ -239,7 +239,7 @@
     if (p.includes('rapor')) return 'raporlar';
     if (p.includes('etiketleme')) return 'etiketleme';
     if (p.includes('ayarlar')) return 'ayarlar';
-    if (p.includes('izometri') || p.includes('izobatch')) return 'izobatch';
+    if (p.includes('uygulama') || p.includes('izometri') || p.includes('izobatch')) return 'uygulamalar';
     if (p.includes('sorgula')) return ''; // sorgula — sidebar'da aktif öğe yok
     if (p.includes('qr')) return ''; // qr_tara sayfası — sidebar aktif öğe yok
     return '';
