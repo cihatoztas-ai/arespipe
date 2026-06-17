@@ -227,7 +227,7 @@
     .mb-bakir{ background:rgba(217,119,6,.10); color:var(--warn); border:1px solid rgba(217,119,6,.25); }
     .mb-diger{ background:var(--sur2); color:var(--txd); border:1px solid var(--bor); }
     .yb-galvaniz{ background:rgba(22,163,110,.1); color:var(--gr); } .yb-asit{ background:rgba(45,142,255,.1); color:var(--ac); } .yb-boyali{ background:rgba(217,119,6,.1); color:var(--warn); } .yb-siyah{ background:rgba(107,122,144,.15); color:var(--txm); }
-    .mbadge{ display:inline-flex; align-items:center; gap:5px; font-weight:600; } .stamp{ font-size:10px; font-family:'JetBrains Mono',monospace; border:1px solid var(--warn); color:var(--warn); border-radius:4px; padding:0 5px; margin-left:5px; }
+    .mbadge{ display:inline-flex; align-items:center; gap:5px; font-weight:600; } .stamp{ font-size:10px; font-family:'JetBrains Mono',monospace; border:1px solid var(--warn); color:var(--warn); border-radius:4px; padding:0 5px; margin-left:5px; } .stamp-kardes{ border-color:var(--ac); color:var(--ac); }
     .izo{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--txm); } .guv{ font-size:10px; padding:1px 5px; border-radius:4px; margin-left:5px; } .guv.l1{ background:rgba(22,163,110,.14); color:var(--gr); } .guv.l2{ background:rgba(45,142,255,.14); color:var(--ac); } .guv.l3{ background:rgba(217,119,6,.14); color:var(--warn); }
     .mb{ display:inline-block; padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; } .mb-y{ background:rgba(22,163,110,.15); color:var(--gr); } .mb-n{ background:rgba(229,62,62,.15); color:var(--re); } .mb-p{ background:rgba(217,119,6,.15); color:var(--warn); } .mb-0{ background:rgba(100,116,139,.12); color:var(--txd); }
     .collapsed-row td{ text-align:center; color:var(--txd); font-size:14px; background:var(--sur2); font-style:italic; }
@@ -1585,7 +1585,7 @@ function renderInceleme(j) {
       '<td class="cap' + _dzCls('cap') + '">' + capTxt + '</td><td class="et' + _dzCls('et') + '">' + etTxt + '</td><td class="agir' + _dzCls('agirlik') + '">' + agTxt + '</td>' +
       '<td class="' + _dzCls('malzeme').trim() + '">' + matBadge(malV) + '</td><td class="kalite' + _dzCls('kalite') + '">' + esc((typeof ARES_NORM !== 'undefined' && kalV) ? (ARES_NORM.kaliteGoster(kalV) || kalV) : (kalV || '')) + '</td>' +
       '<td class="' + _dzCls('yuzey').trim() + '">' + yuzeyBadge(yuzV) + '</td><td class="' + _dzCls('alistirma').trim() + '">' + alistMb(aliV) + '</td>' +
-      '<td>' + mbadge(s.durum) + '</td><td>' + (_bagliPdf ? izoBagliCell(_bagliPdf) : izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag)) + '</td><td>' + (_bagliPdf ? islemBagliCell(_hk, _bagliPdf) : islemCell(i, s.durum)) + '</td></tr>';
+      '<td>' + mbadge(s.durum, s.override_kardes) + '</td><td>' + (_bagliPdf ? izoBagliCell(_bagliPdf) : izoCell(s.izometri, s.bindirme_flag, s.malzeme_flag)) + '</td><td>' + (_bagliPdf ? islemBagliCell(_hk, _bagliPdf) : islemCell(i, s.durum)) + '</td></tr>';
   });
   // Fazla (turuncu) — kabukta yok, sorulur (MK-126.2)
   fz.forEach(function(f, fi) {
@@ -1702,10 +1702,17 @@ function markaCell(s) {
   }
   return '<span class="marka">' + esc(marka) + '</span>';
 }
-function mbadge(d) {
+function mbadge(d, overrideKardes) {
   var c = { okundu:'var(--gr)', zayif:'var(--warn)', eksik:'var(--re)', fazla:'var(--co)' }[d] || 'var(--txd)';
   var t = { okundu:'🟢 Okundu', zayif:'🟡 Zayıf', eksik:'🔴 Eksik', fazla:'🟠 Fazla' }[d] || d;
-  var s = (d === 'zayif') ? '<span class="stamp">doğrulanmadı</span>' : '';
+  // 188/D-188.1: override ile eklenen spool (kardes S01 ile AYNI PDF) — L3-zayif degil.
+  //   'dogrulanmadi' (parse kalite) yerine 'kardes PDF' (mavi/notr) rozeti. Operator ayirt etsin.
+  var s = '';
+  if (d === 'zayif') {
+    s = overrideKardes
+      ? '<span class="stamp stamp-kardes" title="Operator override ile eklendi — izometri kardes S01 ile ayni PDF (52600-102769 gibi). Parse zayifligi degil.">kardeş PDF</span>'
+      : '<span class="stamp">doğrulanmadı</span>';
+  }
   return '<span class="mbadge" style="color:' + c + ';">' + t + '</span>' + s;
 }
 function alistMb(v) {
