@@ -2794,3 +2794,15 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 - MK-182.5 KAPANDI: _paorBolShell (devre_wizard_v3.html) shell uretirken sibling S01'in pipeline-seviyesi malzemesini devralir: anaMalzeme/kalite/cap/et/bom + _malzeme_devralindi:true. toplamKg=0 (kardesin agirligi degil), et de spesifik -> devralinmaz (null kalir).
 - D-188.1 (canli-dogrulandi): NB138/102769 — model 1 okudu, operator 10 dedi. S02-S07 artik zayif + izometri=...-PAOR-52600-102769-A (kardes PDF), malzeme Karbon Celik/St37 devralindi, EKSIK=0, siralama S01->S07 ardisik. Commit c0a4314.
 - Commit: c0a4314 (kod, skip ci yok). Self-test 3/3 GECTI (127 regresyon yok, 184/A korundu, 188/A yeni).
+
+## MK-188 ek (oturum 188 devam) — rozet + detay siralama
+
+- MK-188.3 (188/D, a17ab3a): mbadge(devre_wizard_v3.html) override_kardes:true spool icin "kardes PDF"
+  rozeti (mavi, .stamp-kardes) — "dogrulanmadi" (parse-zayif, turuncu) ile gorsel ayrim. CANLI DOGRULANDI:
+  NB138/102769 S03-S07 mavi "kardes PDF", S01/S02 turuncu "dogrulanmadi".
+- MK-188.4 (188/E, 2d20c4f): devre_detay.html spool yukleme .order('spool_no') -> .order('pipeline_no')
+  .order('spool_no'). Tek-alan spool_no tum S01'leri one topluyor, pipeline karisiyordu. CANLI DOGRULANDI:
+  001-S01..S07 -> 002-S01 -> 003-S01..S02 ardisik. Alan adi pipeline_no (information_schema + kod teyitli).
+- D-188.2 (canli): override terfi sonrasi KALICI — devre_detay 10 kayit, spool_id A-2195..A-2204 atandi.
+  Override kaybi YALNIZ terfi-oncesi hard refresh'te (WIZ._kabukSpoollar bellekte) = TASARIM, terfide kesinlesir.
+- Commit zinciri: c0a4314 (A2-dilim2) -> a17ab3a (rozet) -> 2d20c4f (detay sira). Hepsi kod, [skip ci] yok.
