@@ -1363,7 +1363,8 @@ async function spoolYukle(){
       .select('*, kesim_kalemleri(id,kesildi), bukum_kalemleri(id,bukuldu), markalama_kalemleri(id,markalandi)')
       .eq('devre_id',devreId)
       .eq('silindi',false)
-      .order('spool_no');
+      .order('pipeline_no', { ascending: true })   // 188/E: once pipeline (Z05-..._001/002/003), sonra spool_no
+      .order('spool_no', { ascending: true });     //   tek-alan 'spool_no' tum S01'leri one topluyordu -> pipeline karisik
     var data=(res.data||[]);
     SPOOLS=data.map(function(s,i){return _spoolMap(s,i);});
   }catch(e){
