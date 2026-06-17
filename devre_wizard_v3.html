@@ -849,9 +849,14 @@ function _paorBolShell(spoollar, fazla) {
     var sib = spoollar.find(function (s) { return (s.cizim_no || '') !== '' && (s.cizim_no || '') === f.pipeline; });
     if (!sib) return;
     varOlan[key] = true;
+    // 188/A (MK-182.5): sibling S01 pipeline-seviyesi malzeme tanimini DEVRAL (anaMalzeme/kalite/cap/et/bom
+    //   ortak pipeline ozelligi). toplamKg DEVRALINMAZ -> 0 (kardesin agirligi bu spool'un degil; gercek
+    //   deger terfide/parse'ta gelir, yanlis agirlik yazmaktan iyidir).
     ekstra.push({
       pipeline: sib.pipeline, cizim_no: sib.cizim_no, spoolNo: f.spoolNo, rev: sib.rev || '',
-      anaMalzeme: '', kalite: null, toplamKg: 0, cap: null, et: null, yuzeyHam: sib.yuzeyHam || '', bom: []
+      anaMalzeme: sib.anaMalzeme || '', kalite: (sib.kalite != null ? sib.kalite : null),
+      toplamKg: 0, cap: (sib.cap != null ? sib.cap : null), et: (sib.et != null ? sib.et : null),
+      yuzeyHam: sib.yuzeyHam || '', bom: Array.isArray(sib.bom) ? sib.bom.slice() : [], _malzeme_devralindi: true
     });
   });
   return ekstra.length ? spoollar.concat(ekstra) : spoollar;
