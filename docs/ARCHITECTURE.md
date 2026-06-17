@@ -277,7 +277,7 @@ Belge yazımı maliyetli. Hiçbir insan "51 tablomuz var" kısmını sürekli g�
 <!-- AUTO-START:istatistikler -->
 > Son güncelleme: 2026-06-17 (otomatik)
 
-- **Web sayfa:** 47
+- **Web sayfa:** 48
 - **Mobil ekran (React):** 17
 - **Tablo:** 0
 - **API endpoint:** 12
