@@ -1,25 +1,47 @@
-# CLAUDE — Son Oturum Özeti (187)
+# CLAUDE — Son Oturum (190)
 
-## Spool sayım emniyeti kuruldu: B + A1 + A2 (override), hepsi canlı + commitli
+> **Tarih:** 18 Haziran 2026 · **Oturum:** 190
+> Başlangıç: Kütüphane faz planına devam (Faz 3). Asıl keşif: spool_detay kütüphane matcher'ı kopuktu.
 
-### MK-187.1 (B) — sessiz-fallback emniyet ağı
-Crop (SPOOL kutusu zoom kırpımı, 186.3) yalnız vision'da kullanılır; render patlarsa SESSİZCE crop'suz tam-sayfaya düşer → model eksik sayabilir, alarm yoktu. Çözüm: izometri-oku vision yolunda `_sayim_kirpimsiz = !spool_kirpim_b64` üretip cevap_full'a yedirir (cache'te yaşar) + yanıt özetine taşır. kuyruk-isle-izometri durum kararında `okuJson._sayim_kirpimsiz && dosyaAdiParse(dok.dosya_adi)?.spool_kaynak === 'pozisyon'` → `manuel_onay`. KİLİT: spool_kaynak='pozisyon' = PAOR (Excel'de spool listesi YOK, sayı PDF'ten). Excel-listeli (kaynak≠pozisyon) → liste otoriter, gözle-say gereksiz → yoksayılır. Tersan'a sıfır temas.
+---
 
-### MK-187.2 (A1) — görsel çetele (gözle teyit)
-B otomatik #2'yi kapatır; A1 ise crop GİTSE bile model yanlış saydığında (#1/#3) operatörün gözle yakalamasını sağlar. Dökümanlar sekmesinde çizim-başı: kırpılan SPOOL kutusu + "PDF'ten N spool" + S0n. Kilit karar: crop'u parse anında DEPOLAMA — istemcide `_spoolKirpim` ile YENİDEN üret (deterministik → modelin gördüğünün aynısı). $0 depolama, migration yok, parse/drain yoluna (186 cache + Tersan) dokunmadan, GERİYE-DÖNÜK (tüm PAOR devreleri re-parse'siz). `_spoolKirpim` drain'de expose (MK-109.1, kopyalama yok). Thumbnail cache (override re-render hızlı).
+## Ne yapıldı
 
-### MK-187.3 + MK-187.4 (A2) — operator override + idempotent fix
-Cihat'ın senaryosu: "PDF 3 var ama 1 saydı → S02/S03 ekle, PDF okumuş gibi devam et." Mekanizma ZATEN vardı (`_paorBolShell`, 184/A) — PDF fazla'sını shell olarak enjekte ediyor. A2 = operatörün sentetik fazla'yı elle söylemesi. dilim-1 (c93d66e) çalıştı ama BUG: katlanma (7 yazınca kabuk şişti). Sebep ÜÇLÜ: "N'e kadar EKLE" mantığı + inceleGetir'in kendi _paorBolShell re-call'u + panel guard/PDF-bağlı sayı. Fix (0e50dd3): idempotent "N'e AYARLA" (yukarı/aşağı), `inceleGetir(bolAtla)` re-expansion atlar, panel kabuk-gerçeğini gösterir.
+### 1. ✅ Faz 3 — Kütüphane karşılaştırma peer mantığı (DEPLOY, commit `e93860f`)
+`kutuphane.html` — üç düzeltme, iki noktada:
+- **Boru:** "en yakın et" → **DN + dış çap + et tam eşleşme (±0.05)**. Schedule kayması bitti (alu SCH10 ↔ çelik SCH40 artık olmaz). CuNi metrik serisi (OD 57/108) dış çapla otomatik ayrışır.
+- **Fitting:** `.eq('parca_tipi')` → `.in('parca_tipi', rawCodesFor(p, normTip(...)))` — çapraz-standart eşi (`90LR` ASME ↔ `elbow_90lr` DIN) yakalanır.
+- **Flanş:** `basinc_sinifi` her zaman anahtarda (önleyici; canlıda boş yok).
+- Veri-doğrulamalı: PROBE-1 → et malzemeler arası birebir çakışıyor, OD nominal oynuyor.
 
-## En önemli dersler
-- **DATA-first her şeyi değiştirdi:** "PAOR Excel'de spool var mı" sorusunu tek tek SQL'le kovaladık. Sırasıyla: pipeline_malzemeleri'nde yok → parse_sonuc satırlarında spool_no VAR sandık → ama `farkli_spool=1` (hepsi S01) → spool YOK kesinleşti. Varsayımla gitseydik A2 yanlış kurulurdu.
-- **Mekanizma çoğu zaman zaten vardır:** A2 için 1→N genişletmeyi sıfırdan kurmaya hazırlanmıştık; `_paorBolShell` (184/A) zaten yapıyordu. Önce kodu okumak (MK-126.8) yarım günü kurtardı.
-- **Override idempotent OLMALI:** "N'e kadar ekle" mantığı, geri-bildirim eksikliğiyle birleşince felakete döndü (operatör tekrar bastıkça katladı). "N'e AYARLA" (set) + net geri-bildirim doğru tasarım.
-- **Geri-bildirim mantık kadar önemli:** A2 mantıksal olarak çalışıyordu ama panel eski sayıyı gösterince Cihat "değişti mi anlamadım" dedi — ve testi bug'ı ortaya çıkardı. Sessiz başarı = başarısızlık gibi görünür.
-- **Crop'u depolamak yerine yeniden-üretmek:** deterministik fonksiyon (aynı PDF→aynı kırpım) sayesinde A1 sıfır depolama + geriye-dönük çalıştı. Modelin gördüğünün AYNISI.
+### 2. ✅ "Duplicate" araştırması → HATA DEĞİL
+`boru_olculer`'da 43 grup "çift" görünüyordu. BEGIN/ROLLBACK ile bakıldı: aynı et iki schedule adıyla (STD≡SCH40, XS≡SCH80). ASME gerçeği, bilinçli yazılmış, arama iki adı da bulsun diye. **Silinmedi.** Görsel birleştirme ("STD / 40") program bitince.
 
-## Yarım kalan (dürüst)
-A2 "eklenen spool Eksik damgası alıyor + sıralama karışık" sorunu ÇÖZÜLMEDİ — server eşleştirmeye (devre-inceleme `pipeline|spoolNo`) dokunuyor, gece yarısı dokunmamak için A2-dilim2'ye bırakıldı. Tanı net (→ Sonraki Oturum). Override kalıcılığı bellekte (terfide kesinleşir) = TASARIM.
+### 3. ✅ spool_detay boru matcher KOPUK BAĞI bulundu + düzeltildi (commit BEKLENİYOR — MD5 `60d62eea003f1cd2f57fbd6ee5805d41`)
+**Şikâyet:** spool detayda hiçbir malzeme kütüphaneye tanınmıyor.
+**Eleme (DATA önce, kademe kademe):**
+- feature flag `kutuphane_parca_kimligi` → tenant 1 için `aktif=true` ✓
+- `tip='boru'` → 2357 satır, 2230 ölçülü ✓
+- Konsol: `KUTUPHANE_AKTIF=true`, sarmalayıcı kurulu, tenant doğru, `BORU_LIB=8` ama **`BORU_MAP=0`** ← kopma burada
+- Sebep: spool OD **324**, kütüphane OD **323.9** = 0.1mm fark; matcher toleransı `<0.05` → eleniyor.
+**Fix (`spool_detay.html`, `boruEslestir`):** tek `tol=0.05` → **OD ±1.0mm, et ±0.06** ayrık tolerans. OD nominal yuvarlamadan oynar; et farklı DN'leri zaten ayırır → OD gevşetmek güvenli. Canlıda doğrulandı: `["DIN-86019 323.9×4"]` tek temiz eşleşme.
 
-## Disiplin
-Tüm patch'ler anchor-doğrulamalı Python + .bak + MD5 birebir + idempotent ABORT testi. B/A1/A2 izole JS node --check temiz. PAOR-scoped (spool_kaynak='pozisyon'). Tersan dokunulmadı. Migration/api yok → 12/12. Kod commit'leri [skip ci]'siz; handoff [skip ci].
+### 4. ✅ KUTUPHANE-DURUM.md güncellendi (MD5 `ec683de200a1465125773f7ef68d30fd`)
+B8 (karşılaştırma kuralları + çözüldü), B13 (Faz 3 ✅, Faz 4/5 ertelendi), B14 (yeni borçlar).
+
+---
+
+## Dosyalar / commit'ler
+
+| Dosya | Durum | MD5 | Commit |
+|---|---|---|---|
+| `kutuphane.html` | ✅ canlıda | — | `e93860f` |
+| `spool_detay.html` | ⚠ deploy bekliyor | `60d62eea003f1cd2f57fbd6ee5805d41` | — |
+| `docs/KUTUPHANE-DURUM.md` | deploy bekliyor | `ec683de200a1465125773f7ef68d30fd` | — |
+
+---
+
+## Yan tespitler (gelecek işler)
+- **FK boş:** runtime matcher ekranı besliyor ama DB'ye `boru_olculer_id`/`flansh_olculer_id` yazmıyor (boru 67/2230). → `geom_standart` boş kalıyor (modal standardı gösteriyor ama malzeme tablosu "—"), süper admin "eksik" listesi FK-null saydığı için 30+ yanlış-pozitif. → **FK backfill** sıradaki en öncelikli iş.
+- **316L tier şüphesi:** Bir 316L boru modalında "ASME-B36.10M" (karbon std) göründü — paslanmaz için `B36.19M` beklenirdi. Backfill öncesi tier kalite ayrımı doğrulanmalı.
+- **Renk kodu görsel:** sol-kenar çizgisi tablo kenarıyla karışıyor → `#` kolonuna nokta (mavi/turuncu/gri). Mantık (KARAR-86.A 3-dallı) hazır.

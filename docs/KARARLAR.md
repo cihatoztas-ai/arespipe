@@ -2806,3 +2806,13 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 - D-188.2 (canli): override terfi sonrasi KALICI — devre_detay 10 kayit, spool_id A-2195..A-2204 atandi.
   Override kaybi YALNIZ terfi-oncesi hard refresh'te (WIZ._kabukSpoollar bellekte) = TASARIM, terfide kesinlesir.
 - Commit zinciri: c0a4314 (A2-dilim2) -> a17ab3a (rozet) -> 2d20c4f (detay sira). Hepsi kod, [skip ci] yok.
+
+## Oturum 190 (18 Haziran 2026)
+
+**MK-190.1 — spool_detay boru matcher OD toleransı:** `boruEslestir` tek `tol=0.05` kullanıyordu; spool OD'si kütüphane OD'sinden nominal yuvarlamayla oynuyor (CuNi 324 vs 323.9 = 0.1mm) → eşleşme tutmaz, `BORU_MAP=0`, hiçbiri tanınmaz. Fix: ayrık tolerans — **OD ±1.0mm** (nominal yuvarlama), **et ±0.06** (schedule kimliği, sıkı). OD±1mm farklı boru zaten farklı DN'e düştüğü için OD gevşetmek yanlış eşleşme yapmaz. (MD5 `60d62eea003f1cd2f57fbd6ee5805d41`)
+
+**MK-190.2 — Runtime matcher FK yazmaz:** `BORU_MAP`/`FLANSH_MAP` (spool_detay runtime eşleşmesi) yalnızca ekranı/modalı besler; DB'ye `boru_olculer_id`/`flansh_olculer_id` FK YAZMAZ. Malzeme tablosundaki `geom_standart` ve süper admin "eksik-veri kuyruğu" kalıcı FK'ya bağlı → runtime eşleşse bile FK boşsa tablo "—" gösterir, liste yanlış-pozitif verir. FK backfill ayrı iş; aynı OD-tolerans (MK-190.1) mantığını kullanmalı.
+
+**MK-190.3 — Kütüphane karşılaştırma peer kimliği:** Boru peer = DN+OD+et tam (±0.05), "en yakın et" DEĞİL (schedule kaydırıyordu). Fitting peer = `rawCodesFor(normTip)` ile çapraz-standart (ham `.eq('parca_tipi')` `90LR`↔`elbow_90lr` kaçırıyordu). Flanş = basinc_sinifi her zaman anahtarda. (commit `e93860f`)
+
+**MK-190.4 — boru_olculer çift-etiket ≠ duplicate:** Aynı et iki schedule adıyla (STD≡SCH40, XS≡SCH80) ASME gerçeğidir, bilinçli yazılmış (arama iki adı da bulsun). Duplicate sanıp SİLME. Görsel birleştirme tabloda ("STD / 40") opsiyonel kozmetik. Önce BEGIN/ROLLBACK ile teşhis, sonra karar verildi (MK-98.2 işe yaradı).

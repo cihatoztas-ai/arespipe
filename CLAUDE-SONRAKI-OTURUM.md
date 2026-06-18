@@ -1,36 +1,53 @@
-# CLAUDE — Sonraki Oturum (189) Brifingi
+# CLAUDE — Sonraki Oturum (191) Brifingi
 
-## Acilis ritueli
-cd ~/Desktop/arespipe && git pull --rebase && git status && git log --oneline -6 && ls api/*.js | wc -l
-(12 olmali). Sonra oku: bu dosya + son-durum.md + CLAUDE-SON-OTURUM.md + BRIEFING.md. CI yesil, Vercel Ready mi.
+> **Önceki:** Oturum 190 (18 Haz 2026). Kütüphane Faz 3 + spool_detay matcher kopuk bağı düzeltildi.
 
-## DURUM: 188 A2-dilim2 + 2 ufak eksik KAPANDI (hepsi canli-dogrulandi)
-- A2-dilim2 (c0a4314): override spool "Eksik" yanlis damgasi gitti + siralama + malzeme devralma (MK-182.5 kapandi).
-- 188/D (a17ab3a): "kardes PDF" rozeti (override_kardes mavi, parse-zayif turuncu).
-- 188/E (2d20c4f): devre detay siralama pipeline_no->spool_no.
-- Canli: NB138/102769 — S01-S07 sirali, kardes PDF rozeti, terfi sonrasi 10 kayit kalici (A-2195..A-2204).
+---
 
-## SIRADAKI — secim (189 acilisinda A/B/C oner)
-A) shell ET devralma: S03+ override spool'larda ET bos ("—"). _paorBolShell et=null uretir (spesifik say).
-   Pipeline ortak et degeri varsa (pipeline_malzemeleri?) devralinabilir mi — DATA ile bak. KUCUK.
-B) 187 carry: A2 asagi-duzeltme fazla-render netlestirme (PDF'ten az sayi yazinca kalan spool fazla render).
-C) 186 carry: crop sertlestirme (cok-spool 5-6 ucu), format_id=null cache envanteri, NPS->mm (Tersan Faz2).
-   Tersan Faz2 buyuk kalem — yeni sohbet/oturum konusu olabilir.
+## Açılış ritüeli (her oturum)
+```
+cd ~/Desktop/arespipe && git pull --rebase && git status && git log --oneline -3
+ls api/*.js | wc -l    # 12 tavan (MK-129.3)
+```
+Handoff oku: bu dosya + `CLAUDE-SON-OTURUM.md` + `docs/KUTUPHANE-DURUM.md`.
 
-## Acik isler (carry — taze SQL, MK-163.1)
-- Taslak-kaydet (P2 dusuk): terfi-oncesi override kalicilik (WIZ._kabukSpoollar bellekte). Gercek akis
-  terfi-oncesi hard refresh gerektirmez -> dusuk oncelik. Istenirse draft DB kayit.
-- b4af5c2b cizim_no=null devreler: override sibling cizim_no ile eslesmezse genismez (toast). Kabuk null
-  cizim_no'yu nasil aldi — gerekirse incele.
-- yukleyen_id null debt (MK-117): api/kuyruk-isle-izometri.js:305 null yukleyen_id'de abort.
-- Guvenlik: Supabase + GitHub 2FA (en yuksek oncelik, hala acik); pg_dump off-platform backup.
+## İLK İŞ — 190 deploy'u indi mi teyit et
+190 kapanışında 2 dosya deploy bekliyordu. `git log`'da şu commit'ler VAR MI:
+- `spool_detay boru matcher OD tolerans` (MD5 `60d62eea...`)
+- `KUTUPHANE-DURUM B8/B13/B14`
+Yoksa önce onları yükle (Downloads'tan `arespipe_kopyala`).
+Sonra bir boru spool detayı aç → satırlar tanınıyor mu (mavi/tıklanabilir, modal açılıyor) gör.
 
-## Notlar (188 canli-dogrulanmis)
-- incelemeTablosu (lib/izo-eslesme.js): KABUK OTORITE. _kabukAnahtarKaynak = cizim_no||pipeline.
-  _cizimDevral: _norm(cizim_no)->ilk eslesen izometri. Devralma GUARD = sp._malzeme_devralindi===true.
-- _paorBolShell (devre_wizard_v3.html ~839): sibling S01'den shell; malzeme devralir, toplamKg=0, et=null.
-- mbadge(d, overrideKardes): override_kardes -> "kardes PDF" mavi rozet (.stamp-kardes).
-- devre_detay.html spool yukleme: .order('pipeline_no').order('spool_no'). Alan pipeline_no.
-- Self-test (node lib/izo-eslesme.js): 3 vaka (127 eksik korunur, 184/A kismi eslesme, 188/A override).
-  Hepsi GECMELI; degisiklikte once self-test kosur.
-- PAOR spool kaynagi = PDF-pozisyon. Excel YALNIZ S01 verir (farkli_spool=1).
+---
+
+## Öncelikli gündem (sıra)
+
+### 1. 🔴 FK backfill (en öncelikli)
+**Amaç:** runtime eşleşmelerini DB'ye kalıcı yaz (`boru_olculer_id` + `flansh_olculer_id`). Çözer: (a) malzeme tablosunda standart "—" yerine ad gösterimi (`geom_standart` dolar), (b) süper admin "eksik" listesi 30+ → gerçek sayıya iner.
+**ÖNCE mantık doğrula (koda/yazıma geçmeden):**
+- Matcher 316L boruyu hangi standarda bağlıyor? Beklenen `ASME-B36.19M` (paslanmaz), ama 190'da modalda `B36.10M` (karbon) göründü → tier kalite ayrımı şüpheli. `boruEslestir` tier 1 (`KALITE_STANDART_HARITA` regex) doğru daraltıyor mu, canlıda/SQL ile teyit. Yanlışsa tier'ı düzelt, SONRA backfill.
+- Backfill **aynı OD-tolerans mantığını** kullanmalı (OD±1mm, et±0.06) — yoksa 324↔323.9 yine kaçar.
+- **BEGIN/ROLLBACK dry-run** (MK-98.2), veri-silme yok, sadece FK UPDATE.
+
+### 2. 🟡 Renkli durum noktası (backfill SONRASI)
+`spool_detay.html` render (~satır 2486-2580). Sol-kenar çizgisi → `#` kolonuna nokta:
+- 🔵 mavi = standart (geomBagli + kaliteStandart)
+- 🟡 turuncu = ara ölçü (`malz-arasolc`)
+- ⚪ gri = kütüphanede yok (`malz-tanimsiz`)
+Mantık (KARAR-86.A 3-dallı) DURUYOR — sadece çizgi→nokta. Satır tıklama + modal AYNEN kalır. Konum: `#` kolonu (Cihat onayı). Backfill sonrası çünkü renkler değişecek.
+
+### 3. 🟡 Gerçekten eksik 9 boru ölçüsü
+PROBE'da kütüphanede karşılığı OLMAYANLAR: 60.3×4.5 paslanmaz · 65×2 / 125×2.5 / 200×3 1.4571 (EN ince-cidar paslanmaz, EN 10216-5) · 48.3×4.5 St37 · 48.3×6.3 St37 · 60.3×6.3 St37 · 139.7×4.5 St37. Standart mı ara-ölçü mü ayrımı → standartsa JSON/seed, ara-ölçüyse süper-admin. (Not: bunların bir kısmı backfill + matcher fix sonrası "eksik" listesinden düşebilir — backfill'i bekle.)
+
+---
+
+## Ertelenenler (kayıtta, atlanmadı)
+- **Faz 4/5** — fitting/flanş SVG kesit-şema + medya/3D/DXF (Cihat: program bitince).
+- **boru_olculer çift-etiket görsel birleştirme** ("STD / 40") — saf kozmetik.
+- **2FA + pg_dump off-platform yedek** — Cihat ayrı oturum yapacak. 2FA adımları hazır, yedek için `pg_dump --version` + yedek konumu kararı bekliyor.
+- **schedule_tipi etiket normalize** (sch_no/designator/SCH karışık, paslanmaz "SCH" öneksiz).
+
+## Sabit kurallar (hatırlatma)
+- DATA → UI → kod (MK-158.1). Kolon adı tahmin etme, `information_schema` (MK-85.3).
+- `izometri-oku.js` dokunulmaz (MK-49.1). 12 endpoint tavanı (MK-129.3).
+- HTML patch: anchor + `node --check` inline JS + `grep -c "</html>"` (MK-172.6) + MD5.
