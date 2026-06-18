@@ -4188,10 +4188,12 @@ function boruEslestir(spoolMalzRendered){
   var T = parseFloat(spoolMalzRendered.et_mm_raw);
   if(!D || !T) return null;
 
-  var tol = 0.05; // 0.05 mm — standart tablolarda sapma yok ama float güvenliği
+  // OD nominal yuvarlamadan oynar (324↔323.9, 21.3↔21.34) → gevşek;
+  //   et schedule kimliğini belirler → sıkı. OD±1mm farklı boru zaten farklı DN'e düşer.
+  var TOL_OD = 1.0, TOL_ET = 0.06;
   var adaylar = BORU_LIB.filter(function(r){
-    return Math.abs(parseFloat(r.dis_cap_mm) - D) < tol &&
-           Math.abs(parseFloat(r.et_mm)      - T) < tol;
+    return Math.abs(parseFloat(r.dis_cap_mm) - D) <= TOL_OD &&
+           Math.abs(parseFloat(r.et_mm)      - T) <= TOL_ET;
   });
   if(!adaylar.length) return null;
   if(adaylar.length === 1) return adaylar[0];
