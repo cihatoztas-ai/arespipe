@@ -11,6 +11,7 @@
 // Davranış:
 //   - Sadece _db_aksiyonu IN (YENI, YENI_DN, YENI_SCH, YENI_SCH_KOMB) satırları yazılır.
 //   - MEVCUT_TEYIT / FLAG_SUPHELI atlanır.
+//   - Seed-gate lint (MK-191.1): grup/standart çelişen satır REDDEDİLİR (--yaz olsa bile yazılmaz).
 //   - _ ile başlayan iç alanlar (_db_aksiyonu, _sanity_*, _nps) DB'ye gönderilmez.
 //   - upsert + onConflict=UNIQUE_KEY → idempotent: var olan satır BOZULMAZ, eksik eklenir.
 //   - notlar gibi TEXT kolonlarda nested obje → JSON.stringify (tablo-bilinçli; boru_olculer JSONB'ye dokunma).
@@ -37,6 +38,70 @@ const TEXT_JSON_KOLONLAR = {
 };
 
 const YENI_AKSIYONLAR = new Set(['YENI', 'YENI_DN', 'YENI_SCH', 'YENI_SCH_KOMB']);
+
+// ── Seed-gate lint (MK-191.1, Oturum 191) ──────────────────────────
+// Matcher (spool_detay::boruEslestir) GRUP eksenine güveniyor: her satır doğru
+// malzeme_grubu taşımalı + standartla çelişmemeli. Yanlış satır DB'ye GİRMEDEN yakalanır.
+// (191'de bir 316L boru karbon B36.10M'e bağlanıyordu — kök: grup ekseni yok + etiket kayması.)
+const GECERLI_GRUPLAR = new Set(['karbon', 'paslanmaz', 'cunife', 'aluminyum']);
+
+// standart/geometri_std → İZİNLİ malzeme grupları (canlı DB gerçeği, 191).
+// Geometri-paylaşan standartlar birden çok grup içerir (B36.10M karbon+paslanmaz vb.).
+// Anahtar = KANONİK standart kodu; matcher (indexOf) + stdEtiket sözlüğü bu forma bağlı.
+const STD_GRUP = {
+  // boru
+  'ASME-B36.10M': ['karbon', 'paslanmaz'],
+  'ASME-B36.19M': ['paslanmaz'],
+  'ASTM-B241':    ['aluminyum'],
+  'DIN-2448':     ['karbon'],
+  'EN-10216-1':   ['karbon'],
+  'DIN-86019':    ['cunife'],
+  'EEMUA-144':    ['cunife'],
+  // fitting
+  'ASME-B16.9':   ['karbon', 'paslanmaz'],
+  'ASME-B16.11':  ['karbon'],
+  'DIN-86088':    ['cunife'],
+  'DIN-86089':    ['cunife'],
+  'DIN-86090':    ['cunife'],
+  // flanş (geometri_std)
+  'B16.5':        ['karbon', 'paslanmaz'],
+  'DIN-86037-2':  ['cunife'],
+  'EN-1092-1':    ['karbon', 'paslanmaz'],
+  'EN-1092-3':    ['cunife'],
+};
+
+// Bir satırı denetle → { ok, sebep?, uyari? }
+//   ok:false → satır YAZILMAZ (FLAG_SUPHELI gibi), sebep raporlanır.
+//   uyari    → satır yazılır ama not düşülür (bilinmeyen standart vb.).
+function lintSatir(row) {
+  const grup = String(row.malzeme_grubu ?? '').trim();
+  // Guard A — malzeme_grubu zorunlu + enum
+  if (!grup) return { ok: false, sebep: 'malzeme_grubu boş (matcher grup ekseni buna bağlı)' };
+  if (!GECERLI_GRUPLAR.has(grup)) {
+    return { ok: false, sebep: `malzeme_grubu geçersiz: "${grup}" (geçerli: ${[...GECERLI_GRUPLAR].join('|')})` };
+  }
+  // Guard B — standart ↔ grup tutarlılığı (boru/fitting: standart, flanş: geometri_std)
+  const std = String(row.standart ?? row.geometri_std ?? '').trim();
+  if (!std) return { ok: true, uyari: 'standart/geometri_std boş → grup-tutarlılık denetlenemedi' };
+  const izin = STD_GRUP[std];
+  if (!izin) return { ok: true, uyari: `bilinmeyen standart "${std}" → STD_GRUP haritasına bilinçli ekle` };
+  if (!izin.includes(grup)) {
+    return { ok: false, sebep: `standart "${std}" ile grup "${grup}" çelişiyor (izinli: ${izin.join('|')})` };
+  }
+  return { ok: true };
+}
+
+// Bir satır dizisini lint'ten geçir → { gecen, reddedilen, uyarili }
+function lintUygula(satirlar) {
+  const gecen = [], reddedilen = [], uyarili = [];
+  for (const r of satirlar) {
+    const L = lintSatir(r);
+    if (!L.ok) { reddedilen.push({ row: r, sebep: L.sebep }); continue; }
+    if (L.uyari) uyarili.push({ row: r, uyari: L.uyari });
+    gecen.push(r);
+  }
+  return { gecen, reddedilen, uyarili };
+}
 
 // ── Argümanlar ─────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -126,15 +191,23 @@ function temizle(row) {
 const yeniSatirlar = satirlar.filter(r => YENI_AKSIYONLAR.has(r._db_aksiyonu || ''));
 const atlanan = satirlar.length - yeniSatirlar.length;
 
-let yazilacak = yeniSatirlar.map(temizle);
+// ── Seed-gate lint (MK-191.1): grup/standart denetimi — reddedilen DB'ye GİRMEZ ──
+const lintAna = lintUygula(yeniSatirlar);
+let yazilacak = lintAna.gecen.map(temizle);
 
-// Uyarı satırları: varsayılan dahil edilmez; --uyari-yaz ile YENI olanlar eklenir
+// Uyarı satırları: varsayılan dahil edilmez; --uyari-yaz ile YENI olanlar eklenir (lint dahil)
 let uyariYazilan = 0;
+let lintUyariEk = { reddedilen: [], uyarili: [] };
 if (UYARI_YAZ) {
-  const uy = uyariSatirlar.filter(r => YENI_AKSIYONLAR.has(r._db_aksiyonu || '')).map(temizle);
-  uyariYazilan = uy.length;
-  yazilacak = yazilacak.concat(uy);
+  const uyYeni = uyariSatirlar.filter(r => YENI_AKSIYONLAR.has(r._db_aksiyonu || ''));
+  lintUyariEk = lintUygula(uyYeni);
+  uyariYazilan = lintUyariEk.gecen.length;
+  yazilacak = yazilacak.concat(lintUyariEk.gecen.map(temizle));
 }
+
+// Lint raporu (ana + uyarı birleşik)
+const lintReddedilen = lintAna.reddedilen.concat(lintUyariEk.reddedilen);
+const lintUyarili = lintAna.uyarili.concat(lintUyariEk.uyarili);
 
 // ── Rapor başlığı ──────────────────────────────────────────────────
 const host = (() => { try { return new URL(SUPA_URL).host; } catch { return SUPA_URL; } })();
@@ -146,15 +219,35 @@ console.log(`UNIQUE KEY  : (${uniqueKey.join(', ')})`);
 console.log(`Kaynak      : ${meta.kaynak || meta.kaynak_birincil || '—'}`);
 console.log('────────────────────────────────────────────');
 console.log(`JSON satır       : ${satirlar.length}`);
-console.log(`  YENI (yazılacak): ${yeniSatirlar.length}`);
+console.log(`  YENI            : ${yeniSatirlar.length}`);
+console.log(`  Lint geçen      : ${lintAna.gecen.length}${UYARI_YAZ ? ` (+${lintUyariEk.gecen.length} uyarı-satır)` : ''}`);
+console.log(`  Lint reddedilen : ${lintReddedilen.length} (grup/standart çelişkisi — YAZILMAZ)`);
 console.log(`  Atlanan         : ${atlanan} (MEVCUT_TEYIT / FLAG_SUPHELI vb.)`);
 console.log(`Uyarı satır      : ${uyariSatirlar.length}${UYARI_YAZ ? ` (${uyariYazilan} YENI dahil edildi)` : ' (dahil edilmedi — --uyari-yaz ile eklenir)'}`);
 console.log(`Beta/kapsam-dışı : ${doc.kapsam_disi_oneri_beta ? 'var (dokunulmaz)' : 'yok'}`);
 console.log('────────────────────────────────────────────');
 
+// ── Lint detay raporu ──────────────────────────────────────────────
+if (lintReddedilen.length || lintUyarili.length) {
+  console.log('──── Seed-gate lint (MK-191.1) ────');
+  if (lintReddedilen.length) {
+    console.log(`  ⛔ Reddedilen (YAZILMAYACAK): ${lintReddedilen.length}`);
+    lintReddedilen.slice(0, 10).forEach((x, i) => {
+      const kim = uniqueKey.map(k => `${k}=${x.row[k]}`).join(', ');
+      console.log(`     ${i + 1}. ${kim}  → ${x.sebep}`);
+    });
+    if (lintReddedilen.length > 10) console.log(`     … +${lintReddedilen.length - 10} satır daha`);
+  }
+  if (lintUyarili.length) {
+    console.log(`  ⚠  Uyarı (yazılır): ${lintUyarili.length}`);
+    [...new Set(lintUyarili.map(x => x.uyari))].slice(0, 8).forEach(u => console.log(`     • ${u}`));
+  }
+  console.log('───────────────────────────────────');
+}
+
 if (yazilacak.length === 0) {
-  console.log('Yazılacak YENI satır yok. Çıkılıyor.');
-  process.exit(0);
+  console.log('Yazılacak (lint geçen) YENI satır yok. Çıkılıyor.');
+  process.exit(lintReddedilen.length ? 1 : 0);
 }
 
 // ── DRY-RUN ────────────────────────────────────────────────────────
@@ -222,6 +315,6 @@ for (let i = 0; i < yazilacak.length; i += BATCH) {
 }
 
 console.log('────────────────────────────────────────────');
-console.log(`Sonuç: ${eklenenToplam} satır yazıldı/güncellendi, ${hata} hata.`);
+console.log(`Sonuç: ${eklenenToplam} satır yazıldı/güncellendi, ${hata} hata, ${lintReddedilen.length} lint-reddi.`);
 console.log('────────────────────────────────────────────');
 process.exit(hata > 0 ? 1 : 0);
