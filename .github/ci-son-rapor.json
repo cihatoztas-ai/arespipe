@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-06-18T13:19:13.053Z",
-  "commit_sha": "7a947933d9b8e95ae28e93b7b86b57ce588a7831",
+  "tarih": "2026-06-18T13:54:36.971Z",
+  "commit_sha": "48621635fe2b9a0c71e81e51140c92a1683789da",
   "commit_ref": "main",
-  "workflow_run": 1152,
+  "workflow_run": 1153,
   "ozet": {
     "hata": 0,
     "uyari": 107,
@@ -147,8 +147,8 @@
           "dosya": "kutuphane.html",
           "sayi": 2,
           "satirlar": [
-            286,
-            358
+            287,
+            359
           ]
         },
         {
@@ -740,13 +740,13 @@
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 286,
+          "satir": 287,
           "mesaj": "tv('kt_yukleniyor') kullanılıyor ama lang/tr.json'da yok"
         },
         {
           "kod": "I18N_EKSIK",
           "tip": "uyari",
-          "satir": 358,
+          "satir": 359,
           "mesaj": "tv('kt_bos') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
