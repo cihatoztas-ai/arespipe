@@ -104,6 +104,21 @@
 - paslanmaz 45LR + ≥DN300 90LR tek-kaynak → 2. kaynak nokta-kontrolü.
 - Eksik P0 boşluklar: cunife cap (0), paslanmaz B16.11 socket (0), DIN flanş eksikleri.
 
+## A9. Grup↔Standart tutarlılığı — matcher'ın hayati bağımlılığı (191 keşfi)
+
+**Tespit edilen problem (191):** `spool_detay` boru matcher'ı (`boruEslestir`) OD/et ile aday buluyordu ama **malzeme grubunu sormuyordu.** Canlı veride karbon `ASME-B36.10M` ile paslanmaz `ASME-B36.19M` **neredeyse her OD+et'te çakışıyor** (P2 ile doğrulandı; dahası `B36.10M` aynı ölçüde HEM karbon HEM paslanmaz satır içeriyor — standart adı grubu ayırmaz). Sonuç: bir **316L boru karbon `B36.10M`'e** bağlanıyordu (modalda yanlış standart). İki kayma yolu vardı: (a) çakışmada tier-2 "ASME" substring'i grubu ayıramıyor; (b) o ölçüde **tek aday yanlış grupsa**, `length===1` erken-dönüşü onu körlemesine veriyordu.
+
+**Fix (191 / 191b):** matcher'a **Tier-0 grup ekseni** eklendi — `_boruGrupBelirle(kalite, malzeme)` ile grup türetilir (`316L/paslanmaz/1.4571`→paslanmaz, `St 37`→karbon …), aday `malzeme_grubu`'na daraltılır, **grup belli + o ölçüde aynı-grup yok → null** (yanlış-grup bağlamaz, seed bekler). Grup-narrow `length===1` dönüşünden ÖNCE çalışır. Paslanmazda dimensyonel `B36.19M` tercih edilir. FK backfill **aynı mantığın SQL aynası** (join'de `bl.malzeme_grubu = grup` guard'ı) — boru ~1674 satır, dry-run grup-tutarlı doğrulandı, sıfır yanlış-grup. (Kaynak: `spool_detay.html::boruEslestir` + `boru` FK backfill SQL.)
+
+**Kritik bağımlılık:** matcher'ın grup ekseni **her satırda doğru `malzeme_grubu`'na** güveniyor. Yeni bir JSON yanlış/eksik grupla gelirse kayma geri döner. Bu yüzden engelleme **seed kapısında**, veri tazeyken yapılır:
+
+**Seed-gate lint (MK-191.1) — `scripts/seed-from-json.mjs` satır başına 3 denetim:**
+1. **`malzeme_grubu` zorunlu + enum:** `{karbon, paslanmaz, cunife, aluminyum}` dışı/boş → `FLAG_SUPHELI`, yazma.
+2. **standart↔grup whitelist:** `DIN-2448/EN-10216-1→karbon` · `ASME-B36.19M→paslanmaz` · `ASME-B36.10M→karbon|paslanmaz` · `ASTM-B241→aluminyum` · `DIN-86019/EEMUA-144→cunife`. Bilinen standart + uymayan grup → flag. **Yeni/bilinmeyen standart → yaz ama uyar** (haritayı bilinçli genişlet).
+3. **Kanonik standart kodu:** `ASME-B36.19M` formatı (`B36.19`/`ASME B36.19M` değil) — matcher `indexOf('B36.19')` + `stdEtiket` sözlüğü buna bağlı.
+
+> **Çakışma silinmez:** 60.3×2.77'de hem karbon hem paslanmaz satırın OLMASI gerekir (ikisi de gerçek boru). Çakışma fiziksel gerçektir; matcher **grup ekseninde** çözer, seed **grup doğruluğunu** garanti eder. Veri tarafında yapılacak iş yok, sadece etiket tutarlılığı.
+
 ---
 ---
 
@@ -211,7 +226,7 @@ DB kodları tutarsız → `stdEtiket()` temizler: `B16.5`→"ASME B16.5" (öneks
 
 ## B14. Açık UI / veri borçları (190 sonu)
 - ✅ Karşılaştırma mantık hatası (B8) — **çözüldü 190**.
-- **FK backfill (sıradaki, en öncelikli):** spool_detay runtime matcher ekranda eşleştiriyor ama DB'ye `boru_olculer_id`/`flansh_olculer_id` FK yazmıyor (boru 67/2230 dolu). Sonuç: (a) modal standardı gösteriyor ama malzeme tablosu "—" gösteriyor (`geom_standart` boş); (b) süper admin "eksik" listesi FK-null saydığı için 30+ yanlış-pozitif veriyor. Backfill aynı OD-tolerans mantığını (±1mm OD, ±0.06 et) kullanmalı. Önce backfill mantık doğrulaması: 316L boru `ASME-B36.19M`'e mi yoksa yanlışlıkla `B36.10M`'e mi bağlanıyor (tier kalite ayrımı) — canlıda teyit, gerekirse tier düzelt.
+- **FK backfill (191'de YAPILDI — boru):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu (boru 67/2230). Sonuç: (a) modal standart gösteriyor ama tablo `geom_standart` boş → "—"; (b) süper admin "eksik" listesi FK-null → 30+ yanlış-pozitif. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), aynı mantığın SQL aynasıyla boru FK backfill yapıldı (OD±1/et±0.06 + grup guard). 316L→`ASME-B36.19M`, St37→DIN/B36.10M/Ozel/EN — hepsi grup-tutarlı. **Kalan:** flanş + fitting FK backfill — bunlarda spool_detay'de runtime matcher YOK (flanş sadece dolu FK'yı okur, fitting hiç eşleştirmez) → %100 FK'ya bağımlı, grup-bilinçli backfill gerekiyor. Mevcut flanş/fitting FK'larında grup çelişkisi denetlendi → temiz.
 - **Renkli durum noktası (görsel, backfill sonrası):** `#` kolonuna nokta (🔵 standart / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz`). Mevcut sol-kenar çizgisi tablo kenarıyla karışıyor. Mantık (3-dallı KARAR-86.A) duruyor, sadece çizgi→nokta. Satır tıklama + modal aynen kalır. Backfill sonrası yapılmalı (renkler değişecek).
 - **Gerçekten eksik 9 boru ölçüsü:** PROBE'da kütüphanede karşılığı olmayanlar (60.3×4.5 paslanmaz, 65×2/125×2.5/200×3 1.4571 = EN ince-cidar paslanmaz, 48.3×4.5/6.3 St37, 139.7×4.5 St37). Standart mı ara ölçü mü ayrımı → JSON/süper-admin.
 - **`boru_olculer` ASME çift-etiket (görsel birleştirme, ertelendi):** 43 grup, STD≡SCH40 / XS≡SCH80 gibi aynı et iki schedule adıyla. Veri DOĞRU (silinmez), arama iki adı da bulsun diye bilinçli. Tabloda "STD / 40" diye birleştirme = saf kozmetik, program bitince.
