@@ -175,8 +175,9 @@ function rawCodesFor(p,norm){ if(!p.tip) return []; return p.tip.filter(function
 
 function stdEtiket(s){ if(!s)return '—'; var m={'ASME-B16.9':'ASME B16.9','ASME-B16.11':'ASME B16.11','ASME-B36.10M':'ASME B36.10M','ASME-B36.19M':'ASME B36.19M','ASTM-B241':'ASTM B241','DIN-2448':'DIN 2448','DIN-86019':'DIN 86019','DIN-86088':'DIN 86088','DIN-86089':'DIN 86089','DIN-86090':'DIN 86090','DIN-86037-2':'DIN 86037-2','EN-10216-1':'EN 10216-1','EN-1092-1':'EN 1092-1','EN-1092-3':'EN 1092-3','EEMUA-144':'EEMUA 144','B16.5':'ASME B16.5','Ozel':'Özel'}; return m[s]||String(s).replace(/-/g,' '); }
 function malEtiket(m){ var x={karbon:'Karbon',paslanmaz:'Paslanmaz',cunife:'CuNi',aluminyum:'Alüminyum'}; return x[m]||m||'—'; }
-function tipEtiket(k){ if(!k)return '—'; var m={'90lr':'90° Dirsek (LR)','90LR':'90° Dirsek (LR)','elbow_90lr':'90° Dirsek (LR)','90_3d':'90° Dirsek (3D)','90_3D':'90° Dirsek (3D)','90sw':'90° Dirsek (SW)','90SW':'90° Dirsek (SW)','90sr':'90° Dirsek (SR)','elbow_90sr':'90° Dirsek (SR)','45lr':'45° Dirsek (LR)','45LR':'45° Dirsek (LR)','elbow_45lr':'45° Dirsek (LR)','45_3d':'45° Dirsek (3D)','45_3D':'45° Dirsek (3D)','45sw':'45° Dirsek (SW)','45SW':'45° Dirsek (SW)','45sr':'45° Dirsek (SR)','elbow_45sr':'45° Dirsek (SR)','tee_eq':'Eşit Tee','tee_red':'Redüksiyonlu Tee','tee_eq_sw':'Eşit Tee (SW)','cross_sw':'Çapraz (SW)','reducer_conc':'Konsantrik Redüksiyon','reducer_ecc':'Eksantrik Redüksiyon','cap':'Kep','cap_sw':'Kep (SW)','coupling_full':'Manşon (tam)','coupling_half':'Manşon (yarım)','stub_end':'Stub End','WN':'Welding Neck (WN)','SO':'Slip-On (SO)','BL':'Kör (BL)','LJ':'Lap Joint (LJ)','EN-T01':'EN Tip 01','EN-T05':'EN Tip 05','EN-T11':'EN Tip 11','EN-T12':'EN Tip 12'}; return m[k]||k; }
+function tipEtiket(k){ if(!k)return '—'; var m={'90lr':'90° Dirsek (LR)','90LR':'90° Dirsek (LR)','elbow_90lr':'90° Dirsek (LR)','90_3d':'90° Dirsek (3D)','90_3D':'90° Dirsek (3D)','90sw':'90° Dirsek (SW)','90SW':'90° Dirsek (SW)','90sr':'90° Dirsek (SR)','elbow_90sr':'90° Dirsek (SR)','45lr':'45° Dirsek (LR)','45LR':'45° Dirsek (LR)','elbow_45lr':'45° Dirsek (LR)','45_3d':'45° Dirsek (3D)','45_3D':'45° Dirsek (3D)','45sw':'45° Dirsek (SW)','45SW':'45° Dirsek (SW)','45sr':'45° Dirsek (SR)','elbow_45sr':'45° Dirsek (SR)','tee_eq':'Eşit Tee','tee_red':'Redüksiyonlu Tee','tee_eq_sw':'Eşit Tee (SW)','cross_sw':'Çapraz (SW)','reducer_conc':'Konsantrik Redüksiyon','reducer_ecc':'Eksantrik Redüksiyon','cap':'Kep','cap_sw':'Kep (SW)','coupling_full':'Manşon (tam)','coupling_half':'Manşon (yarım)','stub_end':'Stub End','WN':'Welding Neck (WN)','SO':'Slip-On (SO)','BL':'Kör (BL)','LJ':'Lap Joint (LJ)','EN-T01':'Düz / Slip-on — EN Type 01','EN-T05':'Kör — EN Type 05','EN-T11':'Boyunlu (WN) — EN Type 11','EN-T12':'Lap Joint — EN Type 12'}; return m[k]||k; }
 function tipIcon(t){
+  var EQ={'EN-T11':'WN','EN-T01':'SO','EN-T05':'BL','EN-T12':'LJ'}; if(EQ[t]) t=EQ[t];
   if(/^90/.test(t)) return '<path d="M9 26 V15 Q9 9 15 9 H26" fill="none"/>';
   if(/^45/.test(t)) return '<path d="M7 25 L25 9" fill="none"/>';
   if(t==='reducer_conc') return '<path d="M5 9 H13 L25 11 V21 L13 23 H5 Z M5 9 V23" fill="none"/>';
@@ -257,7 +258,7 @@ function ddCiz(anchorBtn){
   else { list=allVals(field).filter(function(v){ return matches('parca').concat(matches(field)).length; }); list=allVals(field); }
   // sıralama
   list.sort();
-  var left=anchorBtn?Math.max(0,anchorBtn.offsetLeft-100):20;
+  var hostW=(document.getElementById('kfDD').parentElement||{}).clientWidth||1000; var left=anchorBtn?Math.max(0,Math.min(anchorBtn.offsetLeft,hostW-430)):20;
   var html='<div class="kf-dd-panel" style="left:'+left+'px;">';
   list.forEach(function(v){
     var on=String(st[field])===String(v), ok=field==='parca'?true:!!valid[v];
@@ -365,7 +366,7 @@ function render(){
   }
   var cols=kolonlar(p), rows=dispRows();
   var aktif = Object.keys(st.colFilt).some(function(k){return st.colFilt[k]&&st.colFilt[k].length;}) || st.colSort.k;
-  document.getElementById('kfSecLbl').innerHTML='<span>'+esc(stdEtiket(st.std)||'Tüm standartlar')+' · '+esc(st.mal?malEtiket(st.mal):'tüm malzemeler')+' — '+rows.length+'/'+st.rows.length+' kayıt</span>'+(aktif?'<button class="kf-temizle" id="kfTemizle">süzgeç/sıralama temizle</button>':'');
+  document.getElementById('kfSecLbl').innerHTML='<span>'+esc(st.std?stdEtiket(st.std):'Tüm standartlar')+' · '+esc(st.mal?malEtiket(st.mal):'tüm malzemeler')+' — '+rows.length+'/'+st.rows.length+' kayıt</span>'+(aktif?'<button class="kf-temizle" id="kfTemizle">süzgeç/sıralama temizle</button>':'');
   document.getElementById('kfThead').innerHTML='<tr>'+cols.map(function(c){ var fset=st.colFilt[c.key]; var act=(fset&&fset.length)||st.colSort.k===c.key; var ar=st.colSort.k===c.key?(st.colSort.dir>0?' ↑':' ↓'):''; return '<th class="'+(act?'act':'')+'" data-k="'+esc(c.key)+'">'+esc(c.b)+ar+(fset&&fset.length?' <span style="color:var(--ac);">['+fset.length+']</span>':'')+'<span class="car">▾</span></th>'; }).join('')+'</tr>';
   document.getElementById('kfTbody').innerHTML=rows.map(function(r){ var on=st.sel&&r.id===st.sel.id; return '<tr data-id="'+esc(r.id)+'" class="'+(on?'on':'')+'">'+cols.map(function(c){return '<td>'+c.f(r)+'</td>';}).join('')+'</tr>'; }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('#kfThead th'),function(th){ th.onclick=function(ev){ ev.stopPropagation(); st.openDD=null; document.getElementById('kfDD').innerHTML=''; st.openColLeft=th.offsetLeft; st.openCol=st.openCol===th.dataset.k?null:th.dataset.k; colMenuCiz(); }; });
