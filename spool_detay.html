@@ -4181,6 +4181,18 @@ var KALITE_STANDART_HARITA = [
   { regex: /^TP\s*\d+|^A\s*312/i,         stdAnahtar: 'ASTM' }   // TP304, TP316, A312
 ];
 
+// 191: Spool kalite/malzeme yazımından kütüphane malzeme_grubu'na (karbon/paslanmaz/aluminyum/cunife)
+//   Veri gerçeği (P1): paslanmaz boru "316L"/"paslanmaz"/"1.4571" yazılı → tier-1 prefix'leri tutmuyordu.
+//   Sıra önemli: paslanmaz → cunife → alüminyum → karbon (geniş "karbon" kuralı en sonda).
+function _boruGrupBelirle(kalite, malzeme){
+  var hep = (kalite||'').toString() + ' ' + (malzeme||'').toString();
+  if(/paslan|316|304|321|347|1\.4\d|TP\s*3|A\s*312|A\s*403/i.test(hep)) return 'paslanmaz';
+  if(/cuni|cu.?ni|90\/10|70\/30|C7\d{3}|kupro/i.test(hep))             return 'cunife';
+  if(/alu|alümin|alumin|5083|6061|6082|B\s*241/i.test(hep))            return 'aluminyum';
+  if(/karbon|\bSt\s*\d|A\s*106|A\s*53|API\s*5L|P\d{3}/i.test(hep))      return 'karbon';
+  return null;
+}
+
 // Bir spool malzemesini boru kütüphanesine eşleştir; tier'lı kararla tek satır seçer
 function boruEslestir(spoolMalzRendered){
   if(!BORU_LIB || !BORU_LIB.length) return null;
@@ -4198,7 +4210,25 @@ function boruEslestir(spoolMalzRendered){
   if(!adaylar.length) return null;
   if(adaylar.length === 1) return adaylar[0];
 
-  // Tier 1: kalite kodu prefix
+  // Tier 0 (191): malzeme GRUBU ekseni — asıl ayrım burada.
+  //   Veri gerçeği (P2): karbon B36.10M ile paslanmaz B36.19M neredeyse her OD+et'te çakışıyor;
+  //   B36.10M aynı OD/et'te hem karbon hem paslanmaz içeriyor → standart adı ayırmaz, grup ayırır.
+  var grup = _boruGrupBelirle(spoolMalzRendered.kalite_raw, spoolMalzRendered.malz);
+  if(grup){
+    var g = adaylar.filter(function(r){ return (r.malzeme_grubu||'') === grup; });
+    if(g.length === 1) return g[0];
+    if(g.length > 1)   adaylar = g;
+    // paslanmaz: dimensyonel standart B36.19M; kalın cidarda (B36.19M'de yoksa) B36.10M:paslanmaz kalır
+    if(grup === 'paslanmaz'){
+      var s19 = adaylar.filter(function(r){ return (r.standart||'').indexOf('B36.19') >= 0; });
+      if(s19.length){
+        s19.sort(function(a,b){ return (b.edisyon_yili||0) - (a.edisyon_yili||0); });
+        return s19[0];
+      }
+    }
+  }
+
+  // Tier 1: kalite kodu prefix (grup içinde standart ailesi tercihi)
   var kalite = (spoolMalzRendered.kalite_raw || '').trim();
   if(kalite){
     for(var i=0; i<KALITE_STANDART_HARITA.length; i++){
