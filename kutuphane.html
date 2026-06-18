@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/assets/marka/arespipe-favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/marka/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/marka/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/marka/icon-180.png">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kütüphane | AresPipe</title>
+<script>(function(){
+  var t=localStorage.getItem('ares_theme')||'light-anthracite';
+  var l=localStorage.getItem('ares_lang')||'tr';
+  document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.setAttribute('lang',l);
+  document.documentElement.style.visibility='hidden';
+})()</script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ac:#2D8EFF;--gr:#16a36e;--re:#e53e3e;--warn:#d97706;--leg:#7c3aed;}
+[data-theme=dark]{--bg:#0d1117;--sur:#161b24;--sur2:#1c2333;--bor:#262f3e;--tx:#e6ecf4;--txd:#6b7a90;--txm:#94a3b8;}
+[data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
+*{margin:0;padding:0;box-sizing:border-box;}
+.page{padding:28px 28px 40px;}
+a{color:var(--ac);cursor:pointer;text-decoration:none;}
+.kf-baslik{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1;}
+.kf-alt{font-size:14px;color:var(--txm);margin-top:4px;margin-bottom:18px;}
+.kf-ara-wrap{position:relative;margin-bottom:16px;max-width:560px;}
+.kf-ara-ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--txd);font-size:15px;}
+.kf-ara{width:100%;height:40px;background:var(--sur);border:1px solid var(--bor);border-radius:9px;color:var(--tx);font-size:14px;font-family:'Barlow',sans-serif;padding:0 12px 0 34px;outline:none;}
+.kf-ara:focus{border-color:var(--ac);}
+.kf-ara::placeholder{color:var(--txd);}
+.kf-adim{margin-bottom:16px;}
+.kf-adim-bas{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.kf-num{width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;background:var(--bor);color:var(--txd);}
+.kf-num.on{background:var(--ac);color:#fff;}
+.kf-adim-lbl{font-size:14px;font-weight:600;color:var(--txd);}
+.kf-adim-lbl.on{color:var(--tx);}
+.kf-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}
+.kf-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 6px;border-radius:10px;border:1px solid var(--bor);background:var(--sur);cursor:pointer;transition:border-color .12s;}
+.kf-tile:hover{border-color:var(--ac);}
+.kf-tile.on{border-color:var(--ac);background:rgba(45,142,255,0.10);}
+.kf-tile svg{width:28px;height:28px;}
+.kf-tile span{font-size:12px;font-weight:600;color:var(--txm);}
+.kf-tile.on span{color:var(--ac);}
+.kf-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.kf-pill{height:32px;padding:0 13px;border-radius:99px;border:1px solid var(--bor);background:transparent;color:var(--txm);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;}
+.kf-pill:hover{border-color:var(--ac);}
+.kf-pill.on{border-color:var(--ac);background:rgba(45,142,255,0.16);color:var(--ac);}
+.kf-bos{font-size:12px;color:var(--txd);}
+.kf-tb{display:flex;align-items:center;gap:10px;margin:6px 0 8px;flex-wrap:wrap;}
+.kf-cnt{font-size:13px;color:var(--txm);}
+.kf-tog{height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--bor);background:transparent;color:var(--txm);font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif;}
+.kf-tog.on{border-color:var(--ac);background:rgba(45,142,255,0.14);color:var(--ac);}
+.kf-tablo-wrap{overflow-x:auto;border:1px solid var(--bor);border-radius:10px;}
+table.kf{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;}
+table.kf th{text-align:left;padding:9px 11px;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;background:var(--sur2);border-bottom:1px solid var(--bor);}
+table.kf td{padding:9px 11px;border-bottom:1px solid var(--bor);color:var(--tx);}
+table.kf tbody tr:hover{background:var(--sur);cursor:pointer;}
+.kf-std-bdg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);}
+.kf-durum{font-size:13px;color:var(--txm);padding:18px 4px;}
+.kf-mg-bdg{font-size:11px;padding:1px 7px;border-radius:5px;border:1px solid var(--bor);color:var(--txm);}
+</style>
+<script src="ares-store.js"></script>
+<script src="ares-lang.js"></script>
+<script src="ares-layout.js"></script>
+<script src="ares-normalize.js"></script>
+</head>
+<body>
+<div class="app-shell">
+<div class="main-content">
+<div class="page">
+
+  <div class="kf-baslik" data-i18n="nav_kutuphane">Kütüphane</div>
+  <div class="kf-alt" data-i18n="kt_alt">Standart parça referansı — ara, daralt, ölçüleri gör</div>
+
+  <div class="kf-ara-wrap">
+    <span class="kf-ara-ic">&#8980;</span>
+    <input id="ktAra" class="kf-ara" type="text" data-i18n-placeholder="kt_ara_ph" placeholder="Parça, çap, standart ara… (örn. DN100, 90LR, B16.9)">
+  </div>
+
+  <div class="kf-adim">
+    <div class="kf-adim-bas"><span class="kf-num on">1</span><span class="kf-adim-lbl on" data-i18n="kt_adim1">Ne arıyorsun?</span></div>
+    <div id="ktTiles" class="kf-tiles"></div>
+  </div>
+
+  <div class="kf-adim">
+    <div class="kf-adim-bas"><span id="ktN2" class="kf-num">2</span><span id="ktL2" class="kf-adim-lbl" data-i18n="kt_adim2">Standart</span></div>
+    <div id="ktStd" class="kf-pills"></div>
+  </div>
+
+  <div class="kf-adim">
+    <div class="kf-adim-bas"><span id="ktN3" class="kf-num">3</span><span id="ktL3" class="kf-adim-lbl" data-i18n="kt_adim3">Malzeme</span></div>
+    <div id="ktMal" class="kf-pills"></div>
+  </div>
+
+  <div id="ktTbBar" class="kf-tb" style="display:none;">
+    <span id="ktCnt" class="kf-cnt"></span>
+    <span style="margin-left:auto;display:flex;gap:6px;">
+      <button id="togDN" class="kf-tog on" data-tog="dn">DN</button>
+      <button id="togNPS" class="kf-tog" data-tog="nps">NPS</button>
+    </span>
+  </div>
+  <div id="ktTablo"></div>
+  <div id="ktDurum" class="kf-durum" data-i18n="kt_basla">Başlamak için bir parça tipi seç ya da yukarıdan ara.</div>
+
+</div>
+</div>
+</div>
+
+<script>
+'use strict';
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function _tv(k,fb){return (typeof window.tv==='function')?window.tv(k,fb):fb;}
+function num(v,d){ if(v==null||v==='')return '—'; var n=Number(v); return isNaN(n)?esc(v):(d!=null?n.toFixed(d):String(n)); }
+
+var PARCALAR = [
+  {k:'boru',     ad:'Boru',       tablo:'boru_olculer',    stdCol:'standart',     tip:null, ic:'<circle cx="14" cy="14" r="10"/><circle cx="14" cy="14" r="5.5"/>'},
+  {k:'dirsek',   ad:'Dirsek',     tablo:'fitting_olculer', stdCol:'standart',     tip:['90LR','45LR','90_3D','45_3D','elbow_90lr','elbow_45lr','elbow_90sr','elbow_45sr','90SW','45SW'], ic:'<path d="M8 24 V14 Q8 8 14 8 H24" fill="none"/>'},
+  {k:'tee',      ad:'Tee',        tablo:'fitting_olculer', stdCol:'standart',     tip:['tee_eq','tee_red','tee_eq_sw','cross_sw'], ic:'<path d="M4 18 H24 M14 18 V6" fill="none"/>'},
+  {k:'reduksiyon',ad:'Redüksiyon',tablo:'fitting_olculer', stdCol:'standart',     tip:['reducer_conc','reducer_ecc'], ic:'<path d="M4 9 H12 L24 5 V23 L12 19 H4 Z" fill="none"/>'},
+  {k:'cap',      ad:'Cap',        tablo:'fitting_olculer', stdCol:'standart',     tip:['cap','cap_sw'], ic:'<path d="M5 6 H20 Q26 14 20 22 H5" fill="none"/>'},
+  {k:'baglanti', ad:'Bağlantı',   tablo:'fitting_olculer', stdCol:'standart',     tip:['coupling_full','coupling_half','stub_end'], ic:'<rect x="6" y="9" width="16" height="10" rx="2" fill="none"/>'},
+  {k:'flansh',   ad:'Flanş',      tablo:'flansh_olculer',  stdCol:'geometri_std', tip:null, ic:'<rect x="9" y="4" width="6" height="20" rx="1"/><path d="M15 9 L23 12 V16 L15 19" fill="none"/>'}
+];
+
+function stdEtiket(s){
+  if(!s) return '—';
+  var m={'ASME-B16.9':'ASME B16.9','ASME-B16.11':'ASME B16.11','ASME-B36.10M':'ASME B36.10M','ASME-B36.19M':'ASME B36.19M',
+    'ASTM-B241':'ASTM B241','DIN-2448':'DIN 2448','DIN-86019':'DIN 86019','DIN-86088':'DIN 86088','DIN-86089':'DIN 86089',
+    'DIN-86090':'DIN 86090','DIN-86037-2':'DIN 86037-2','EN-10216-1':'EN 10216-1','EN-1092-1':'EN 1092-1','EN-1092-3':'EN 1092-3',
+    'EEMUA-144':'EEMUA 144','B16.5':'ASME B16.5','Ozel':'Özel'};
+  return m[s] || String(s).replace(/-/g,' ');
+}
+function malEtiket(m){ var x={karbon:'Karbon',paslanmaz:'Paslanmaz',cunife:'CuNi',aluminyum:'Alüminyum'}; return x[m]||m||'—'; }
+function tipEtiket(k){
+  if(!k) return '—';
+  var m={'90LR':'90° Dirsek (LR)','elbow_90lr':'90° Dirsek (LR)','90_3D':'90° Dirsek (3D)','90SW':'90° Dirsek (SW)','elbow_90sr':'90° Dirsek (SR)',
+    '45LR':'45° Dirsek (LR)','elbow_45lr':'45° Dirsek (LR)','45_3D':'45° Dirsek (3D)','45SW':'45° Dirsek (SW)','elbow_45sr':'45° Dirsek (SR)',
+    'tee_eq':'Eşit Tee','tee_red':'Redüksiyonlu Tee','tee_eq_sw':'Eşit Tee (SW)','cross_sw':'Çapraz (SW)',
+    'reducer_conc':'Konsantrik Redüksiyon','reducer_ecc':'Eksantrik Redüksiyon',
+    'cap':'Kep','cap_sw':'Kep (SW)','coupling_full':'Manşon (tam)','coupling_half':'Manşon (yarım)','stub_end':'Stub End'};
+  return m[k]||k;
+}
+
+var st = { parca:null, std:new Set(), mal:new Set(), dn:true, q:'', rows:[], _dagilim:[] };
+
+function pCfg(){ return PARCALAR.filter(function(p){return p.k===st.parca;})[0]; }
+function setAdim(numId,lblId,on){ document.getElementById(numId).classList.toggle('on',on); document.getElementById(lblId).classList.toggle('on',on); }
+
+function tiles(){
+  document.getElementById('ktTiles').innerHTML = PARCALAR.map(function(p){
+    var on = st.parca===p.k;
+    return '<button class="kf-tile'+(on?' on':'')+'" data-p="'+p.k+'">'
+      +'<svg viewBox="0 0 28 28" stroke="currentColor" stroke-width="1.8" fill="currentColor" style="color:'+(on?'var(--ac)':'var(--txm)')+'">'+p.ic+'</svg>'
+      +'<span>'+esc(p.ad)+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#ktTiles .kf-tile'),function(b){
+    b.onclick=function(){ secParca(b.dataset.p); };
+  });
+}
+
+function secParca(k){
+  st.parca=k; st.std.clear(); st.mal.clear(); st.rows=[]; st._dagilim=[];
+  tiles(); adim2Yukle();
+}
+
+async function adim2Yukle(){
+  var p=pCfg();
+  var box=document.getElementById('ktStd');
+  setAdim('ktN2','ktL2',true);
+  box.innerHTML='<span class="kf-bos">Yükleniyor…</span>';
+  var supa=ARES.supabase();
+  if(!(supa && ARES.mod==='supabase')){ box.innerHTML='<span class="kf-bos">Bağlantı yok.</span>'; return; }
+  var q=supa.from(p.tablo).select(p.stdCol+', malzeme_grubu').is('tenant_id',null);
+  if(p.tip){ q=q.in('parca_tipi', p.tip); }
+  var res=await q;
+  if(res.error){ console.warn('[kutuphane] std:',res.error.message); box.innerHTML='<span class="kf-bos">Hata.</span>'; return; }
+  st._dagilim = res.data||[];
+  var stdSet={}; st._dagilim.forEach(function(r){ var s=r[p.stdCol]; if(s) stdSet[s]=(stdSet[s]||0)+1; });
+  var liste=Object.keys(stdSet).sort();
+  if(!liste.length){ box.innerHTML='<span class="kf-bos">Bu parça için veri yok.</span>'; return; }
+  box.innerHTML=liste.map(function(s){
+    return '<button class="kf-pill" data-s="'+esc(s)+'">'+esc(stdEtiket(s))+' <span style="opacity:.6;font-size:11px;">'+stdSet[s]+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('.kf-pill'),function(b){
+    b.onclick=function(){ var s=b.dataset.s; if(st.std.has(s))st.std.delete(s);else st.std.add(s); adim2Isaretle(); };
+  });
+  document.getElementById('ktMal').innerHTML='<span class="kf-bos">← önce standart seç</span>';
+  setAdim('ktN3','ktL3',false);
+  guncelle(); render();
+}
+
+function adim2Isaretle(){
+  var box=document.getElementById('ktStd');
+  Array.prototype.forEach.call(box.querySelectorAll('.kf-pill'),function(b){
+    b.classList.toggle('on', st.std.has(b.dataset.s));
+  });
+  st.mal.clear();
+  adim3Yukle();
+}
+
+function adim3Yukle(){
+  var box=document.getElementById('ktMal');
+  var p=pCfg();
+  if(st.std.size===0){ box.innerHTML='<span class="kf-bos">← önce standart seç</span>'; setAdim('ktN3','ktL3',false); guncelle(); render(); return; }
+  setAdim('ktN3','ktL3',true);
+  var malSet={};
+  st._dagilim.forEach(function(r){ if(st.std.has(r[p.stdCol]) && r.malzeme_grubu){ malSet[r.malzeme_grubu]=(malSet[r.malzeme_grubu]||0)+1; } });
+  var liste=Object.keys(malSet).sort();
+  if(!liste.length){ box.innerHTML='<span class="kf-bos">Malzeme bilgisi yok.</span>'; guncelle(); render(); return; }
+  box.innerHTML=liste.map(function(m){
+    return '<button class="kf-pill'+(st.mal.has(m)?' on':'')+'" data-m="'+esc(m)+'">'+esc(malEtiket(m))+' <span style="opacity:.6;font-size:11px;">'+malSet[m]+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('.kf-pill'),function(b){
+    b.onclick=function(){ var m=b.dataset.m; if(st.mal.has(m))st.mal.delete(m);else st.mal.add(m); b.classList.toggle('on',st.mal.has(m)); tabloYukle(); };
+  });
+  guncelle(); render();
+}
+
+async function tabloYukle(){
+  var p=pCfg();
+  if(!p || st.std.size===0 || st.mal.size===0){ st.rows=[]; render(); return; }
+  var supa=ARES.supabase();
+  if(!(supa && ARES.mod==='supabase')){ return; }
+  var q=supa.from(p.tablo).select('*').is('tenant_id',null)
+    .in(p.stdCol, Array.from(st.std)).in('malzeme_grubu', Array.from(st.mal));
+  if(p.tip){ q=q.in('parca_tipi', p.tip); }
+  var res=await q;
+  if(res.error){ console.warn('[kutuphane] tablo:',res.error.message); toast(_tv('kt_db_hata','Veritabanı hatası.')); return; }
+  st.rows = res.data||[];
+  var dnK = (p.tablo==='boru_olculer')?'dn':(p.tablo==='flansh_olculer'?'cap_dn':'cap_buyuk_dn');
+  st.rows.sort(function(a,b){ return (a[dnK]||0)-(b[dnK]||0); });
+  render();
+}
+
+function kolonlar(p){
+  if(p.tablo==='boru_olculer') return [
+    {b:'DN/NPS', f:function(r){ return st.dn?('DN'+(r.dn||'—')):('DN'+(r.dn||'—')); }},
+    {b:'Standart', f:function(r){ return '<span class="kf-std-bdg">'+esc(stdEtiket(r.standart))+'</span>'; }},
+    {b:'Ø mm', f:function(r){ return num(r.dis_cap_mm,1); }},
+    {b:'Sch', f:function(r){ return esc(r.schedule_deger||r.schedule_kod||'—'); }},
+    {b:'Et mm', f:function(r){ return num(r.et_mm,2); }},
+    {b:'İç çap', f:function(r){ return num(r.ic_cap_mm,1); }},
+    {b:'kg/m', f:function(r){ return num(r.agirlik_kg_m,2); }},
+    {b:'Malzeme', f:function(r){ return '<span class="kf-mg-bdg">'+esc(malEtiket(r.malzeme_grubu))+'</span>'; }}
+  ];
+  if(p.tablo==='flansh_olculer') return [
+    {b:'DN/NPS', f:function(r){ return st.dn?('DN'+(r.cap_dn||'—')):(r.cap_nps||('DN'+(r.cap_dn||'—'))); }},
+    {b:'Standart', f:function(r){ return '<span class="kf-std-bdg">'+esc(stdEtiket(r.geometri_std))+'</span>'; }},
+    {b:'Tip', f:function(r){ return esc(r.flansh_tipi||'—'); }},
+    {b:'Class/PN', f:function(r){ return esc(r.basinc_sinifi||'—'); }},
+    {b:'Ø mm', f:function(r){ return num(r.flansh_od_mm,1); }},
+    {b:'Kal.', f:function(r){ return num(r.flansh_kalinlik_mm,1); }},
+    {b:'Bolt', f:function(r){ return (r.bolt_count!=null?r.bolt_count:'—')+'×'+(r.bolt_holes_inch||'—'); }},
+    {b:'kg', f:function(r){ return num(r.agirlik_kg,1); }},
+    {b:'Malzeme', f:function(r){ return '<span class="kf-mg-bdg">'+esc(malEtiket(r.malzeme_grubu))+'</span>'; }}
+  ];
+  return [
+    {b:'DN/NPS', f:function(r){ var dn='DN'+(r.cap_buyuk_dn||'—')+(r.cap_kucuk_dn?('×'+r.cap_kucuk_dn):''); var nps=(r.cap_buyuk_nps||'')+(r.cap_kucuk_nps?('×'+r.cap_kucuk_nps):''); return st.dn?dn:(nps||dn); }},
+    {b:'Standart', f:function(r){ return '<span class="kf-std-bdg">'+esc(stdEtiket(r.standart))+'</span>'; }},
+    {b:'Tip', f:function(r){ return esc(tipEtiket(r.parca_tipi)); }},
+    {b:'Sch', f:function(r){ return esc(r.schedule_deger||r.schedule_kod||'—'); }},
+    {b:'Et mm', f:function(r){ return num(r.et_mm,2); }},
+    {b:'A mm', f:function(r){ return num(r.ucu_uca_a_mm,1); }},
+    {b:'kg', f:function(r){ return num(r.agirlik_kg,2); }},
+    {b:'Malzeme', f:function(r){ return '<span class="kf-mg-bdg">'+esc(malEtiket(r.malzeme_grubu))+'</span>'; }}
+  ];
+}
+
+function guncelle(){
+  var hazir = st.parca && st.std.size && st.mal.size;
+  document.getElementById('ktTbBar').style.display = hazir ? 'flex' : 'none';
+}
+
+function render(){
+  guncelle();
+  var p=pCfg();
+  var tbl=document.getElementById('ktTablo');
+  var durum=document.getElementById('ktDurum');
+  if(!p || st.std.size===0 || st.mal.size===0){
+    tbl.innerHTML=''; durum.style.display='block';
+    durum.textContent=_tv('kt_basla','Başlamak için bir parça tipi seç ya da yukarıdan ara.');
+    return;
+  }
+  durum.style.display='none';
+  var rows=st.rows;
+  if(st.q){
+    var q=st.q.toLowerCase();
+    rows=rows.filter(function(r){
+      return Object.keys(r).some(function(k){ var v=r[k]; return v!=null && String(v).toLowerCase().indexOf(q)>=0; })
+        || stdEtiket(r[p.stdCol]).toLowerCase().indexOf(q)>=0
+        || (r.parca_tipi && tipEtiket(r.parca_tipi).toLowerCase().indexOf(q)>=0);
+    });
+  }
+  document.getElementById('ktCnt').textContent = rows.length+' / '+st.rows.length+' kayıt';
+  var cols=kolonlar(p);
+  var head='<thead><tr>'+cols.map(function(c){return '<th>'+esc(c.b)+'</th>';}).join('')+'</tr></thead>';
+  var body='<tbody>'+rows.map(function(r){
+    return '<tr>'+cols.map(function(c){return '<td>'+c.f(r)+'</td>';}).join('')+'</tr>';
+  }).join('')+'</tbody>';
+  tbl.innerHTML='<div class="kf-tablo-wrap"><table class="kf">'+head+body+'</table></div>';
+}
+
+var _tt;
+function toast(msg){
+  var el=document.getElementById('_kt_toast');
+  if(!el){ el=document.createElement('div'); el.id='_kt_toast';
+    el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--re);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;font-family:Barlow,sans-serif;';
+    document.body.appendChild(el); }
+  el.textContent=msg; el.style.display='block';
+  if(_tt)clearTimeout(_tt); _tt=setTimeout(function(){el.style.display='none';},3500);
+}
+
+function togKur(){
+  Array.prototype.forEach.call(document.querySelectorAll('.kf-tog'),function(b){
+    b.onclick=function(){
+      st.dn = b.dataset.tog==='dn';
+      document.getElementById('togDN').classList.toggle('on',st.dn);
+      document.getElementById('togNPS').classList.toggle('on',!st.dn);
+      render();
+    };
+  });
+}
+function araKur(){ document.getElementById('ktAra').addEventListener('input',function(e){ st.q=e.target.value; render(); }); }
+
+document.addEventListener('DOMContentLoaded', function(){
+  (async function(){
+    var _bekle=0;
+    while(_bekle<80){
+      var _supa=ARES.supabase();
+      if(_supa){
+        var _ses=await _supa.auth.getSession();
+        if(_ses.data && _ses.data.session){
+          await ARES.oturumKontrol();
+          if(!await ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin','operator'])) return;
+          break;
+        }
+        if(_bekle>20){ location.href='giris.html'; return; }
+      }
+      await new Promise(function(r){ setTimeout(r,100); });
+      _bekle++;
+    }
+    tiles(); araKur(); togKur();
+  })();
+});
+</script>
+</body>
+</html>

@@ -239,7 +239,7 @@
     if (p.includes('rapor')) return 'raporlar';
     if (p.includes('etiketleme')) return 'etiketleme';
     if (p.includes('ayarlar')) return 'ayarlar';
-    if (p.includes('uygulama') || p.includes('izometri') || p.includes('izobatch')) return 'uygulamalar';
+    if (p.includes('uygulama') || p.includes('kutuphane') || p.includes('izometri') || p.includes('izobatch')) return 'uygulamalar';
     if (p.includes('sorgula')) return ''; // sorgula — sidebar'da aktif öğe yok
     if (p.includes('qr')) return ''; // qr_tara sayfası — sidebar aktif öğe yok
     return '';
