@@ -4208,23 +4208,26 @@ function boruEslestir(spoolMalzRendered){
            Math.abs(parseFloat(r.et_mm)      - T) <= TOL_ET;
   });
   if(!adaylar.length) return null;
-  if(adaylar.length === 1) return adaylar[0];
 
-  // Tier 0 (191): malzeme GRUBU ekseni — asıl ayrım burada.
+  // Tier 0 (191): malzeme GRUBU ekseni — asıl ayrım, length===1 erken-dönüşünden ÖNCE.
   //   Veri gerçeği (P2): karbon B36.10M ile paslanmaz B36.19M neredeyse her OD+et'te çakışıyor;
   //   B36.10M aynı OD/et'te hem karbon hem paslanmaz içeriyor → standart adı ayırmaz, grup ayırır.
   var grup = _boruGrupBelirle(spoolMalzRendered.kalite_raw, spoolMalzRendered.malz);
   if(grup){
     var g = adaylar.filter(function(r){ return (r.malzeme_grubu||'') === grup; });
-    if(g.length === 1) return g[0];
-    if(g.length > 1)   adaylar = g;
-    // paslanmaz: dimensyonel standart B36.19M; kalın cidarda (B36.19M'de yoksa) B36.10M:paslanmaz kalır
-    if(grup === 'paslanmaz'){
-      var s19 = adaylar.filter(function(r){ return (r.standart||'').indexOf('B36.19') >= 0; });
-      if(s19.length){
-        s19.sort(function(a,b){ return (b.edisyon_yili||0) - (a.edisyon_yili||0); });
-        return s19[0];
-      }
+    // 191b: grup belli ama o ölçüde o grup YOK → yanlış-grup bağlama, null dön (seed bekler).
+    //   Tek aday yanlış grupsa da buraya takılır; aşağıdaki length===1 dönüşü artık grup-güvenli.
+    if(!g.length) return null;
+    adaylar = g;
+  }
+  if(adaylar.length === 1) return adaylar[0];
+
+  // paslanmaz: dimensyonel standart B36.19M; kalın cidarda (B36.19M'de yoksa) B36.10M:paslanmaz kalır
+  if(grup === 'paslanmaz'){
+    var s19 = adaylar.filter(function(r){ return (r.standart||'').indexOf('B36.19') >= 0; });
+    if(s19.length){
+      s19.sort(function(a,b){ return (b.edisyon_yili||0) - (a.edisyon_yili||0); });
+      return s19[0];
     }
   }
 
