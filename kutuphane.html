@@ -405,8 +405,8 @@ async function karsilastirYukle(){
   if(!r||!supa){ document.getElementById('kfCmpBlok').style.display='none'; return; }
   var q=supa.from(p.tablo).select('*').is('tenant_id',null);
   if(p.tablo==='boru_olculer'){ q=q.eq('dn',r.dn); }
-  else if(p.tablo==='flansh_olculer'){ q=q.eq('flansh_tipi',r.flansh_tipi).eq('cap_dn',r.cap_dn); if(r.basinc_sinifi) q=q.eq('basinc_sinifi',r.basinc_sinifi); }
-  else { q=q.eq('parca_tipi',r.parca_tipi).eq('cap_buyuk_dn',r.cap_buyuk_dn); q=(r.cap_kucuk_dn==null)?q.is('cap_kucuk_dn',null):q.eq('cap_kucuk_dn',r.cap_kucuk_dn); }
+  else if(p.tablo==='flansh_olculer'){ q=q.eq('flansh_tipi',r.flansh_tipi).eq('cap_dn',r.cap_dn); q=(r.basinc_sinifi==null||r.basinc_sinifi==='')?q.is('basinc_sinifi',null):q.eq('basinc_sinifi',r.basinc_sinifi); }
+  else { var _raws=rawCodesFor(p,normTip(r.parca_tipi)); if(!_raws||!_raws.length) _raws=[r.parca_tipi]; q=q.in('parca_tipi',_raws).eq('cap_buyuk_dn',r.cap_buyuk_dn); q=(r.cap_kucuk_dn==null)?q.is('cap_kucuk_dn',null):q.eq('cap_kucuk_dn',r.cap_kucuk_dn); }
   var res=await q;
   if(res.error){ console.warn('[kutuphane] cmp:',res.error.message); document.getElementById('kfCmpBlok').style.display='none'; return; }
   karsilastirCiz(p,r,res.data||[]);
@@ -414,8 +414,8 @@ async function karsilastirYukle(){
 function karsilastirCiz(p,sel,peers){
   var items;
   if(p.tablo==='boru_olculer'){
-    var grup={}, selEt=Number(sel.et_mm)||0;
-    peers.forEach(function(r){ var key=r.malzeme_grubu+'|'+r.standart; var cur=grup[key]; if(!cur||Math.abs((Number(r.et_mm)||0)-selEt)<Math.abs((Number(cur.et_mm)||0)-selEt)) grup[key]=r; });
+    var grup={}, selEt=Number(sel.et_mm)||0, selOd=Number(sel.dis_cap_mm)||0, TOL=0.05;
+    peers.forEach(function(r){ var et=Number(r.et_mm)||0, od=Number(r.dis_cap_mm)||0; if(Math.abs(od-selOd)>0.1)return; if(Math.abs(et-selEt)>TOL)return; var key=r.malzeme_grubu+'|'+r.standart, cur=grup[key]; if(!cur||r.id===sel.id||Math.abs(et-selEt)<Math.abs((Number(cur.et_mm)||0)-selEt)) grup[key]=r; });
     items=Object.keys(grup).map(function(k){return grup[k];});
   } else { items=peers.slice(); }
   items.sort(function(a,b){ if(a.id===sel.id)return -1; if(b.id===sel.id)return 1; return String(a.malzeme_grubu).localeCompare(String(b.malzeme_grubu)); });
