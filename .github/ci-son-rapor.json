@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-06-18T10:53:48.546Z",
-  "commit_sha": "fd25a3f8b42c644d215075eae7ae4eece1ae32d3",
+  "tarih": "2026-06-18T12:02:55.881Z",
+  "commit_sha": "c340e3ea3401d4c3ab082caa23e6b9f0d868c986",
   "commit_ref": "main",
-  "workflow_run": 1150,
+  "workflow_run": 1151,
   "ozet": {
     "hata": 0,
-    "uyari": 105,
+    "uyari": 107,
     "taranan_dosya": 138,
-    "sorunlu_dosya": 4,
+    "sorunlu_dosya": 5,
     "durum": "sari"
   },
   "kurallar": {
@@ -42,7 +42,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 103,
+      "sayi": 105,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -141,6 +141,14 @@
             718,
             725,
             787
+          ]
+        },
+        {
+          "dosya": "kutuphane.html",
+          "sayi": 2,
+          "satirlar": [
+            188,
+            256
           ]
         },
         {
@@ -721,6 +729,25 @@
           "tip": "uyari",
           "satir": 787,
           "mesaj": "tv('izb_dosya') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "kutuphane.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 188,
+          "mesaj": "tv('kt_yukleniyor') kullanılıyor ama lang/tr.json'da yok"
+        },
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 256,
+          "mesaj": "tv('kt_bos') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
