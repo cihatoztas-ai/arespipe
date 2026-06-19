@@ -2985,3 +2985,29 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 ## MK-193 (Oturum 193)
 
 **MK-193.1 — Eşit tee kütüphane konvansiyonu (iki-çap matcher):** Backfill iki-çap kontrollü (A10.3 "her iki çap da şart" / A10.4 "iki-çap kontrollü") olduğundan, kütüphanedeki eşit tee `cap_kucuk_dn = cap_buyuk_dn` (+ `cap_kucuk_mm`) ile yazılır, NULL bırakılmaz — yoksa `NULL = dn_k` join'i düşer, satır görünür ama bağlanmaz. Referans aynalarken **bağlanması-kanıtlı aileyi** seç (cunife eşit tee), test edilmemiş aileyi (karbon eşit tee — spool'da hiç görünmemiş) değil. Genel ilke: kütüphane satırının "doğru görünmesi" yetmez, matcher join'inde **bağlanabilir** olması da şart — ikisi farklı denetimdir. (193: paslanmaz tee_eq seed +21, ilk üretimde karbon aynalandı→cap_kucuk_dn NULL, UPDATE ile cunife konvansiyonuna hizalandı, sonra backfill +65.)
+
+## MK-194 (Oturum 194)
+
+### MK-194.1 [DISIPLIN] — Doküman tek-otorite + senkron politikası (MK-62.3 şablonu)
+
+**Karar:** Çok-kopyalı her doküman için **tek otorite dizin** tanımlanır. Otorite-dışı kopyalar ya kaldırılır ya "TAŞINDI" stub'ına indirgenir; izin verilen ayna kopyalar otoriteyle **birebir md5-eşit** tutulur. Çatallanma (aynı dosyanın iki yerde farklı içerikle yaşaması) yasaktır.
+
+**Otorite atamaları:**
+
+| Doküman | Otorite | Otorite-dışı kopya |
+|---|---|---|
+| `KARARLAR.md` | **`docs/`** | Kök `./KARARLAR.md` → "TAŞINDI" stub (194'te indirgendi) |
+| `BRIEFING.md` | **kök `./`** (MK-56.2 ile uyumlu) | `docs/BRIEFING.md` → kaldırıldı (194, bayat 167) |
+| `CLAUDE-SON-OTURUM.md` | **kök `./`** | `docs/CLAUDE-SON-OTURUM.md` → kaldırıldı (194) |
+| `CLAUDE-SONRAKI-OTURUM.md` | **kök `./`** | `docs/CLAUDE-SONRAKI-OTURUM.md` → kaldırıldı (194) |
+| `son-durum.md` | **kök `./`** | `docs/son-durum.md` → kaldırıldı (194). `.github/son-durum.md` → **kök'ün aynası** (README.md + docs/DEVRE-WIZARD-OMURGA.md linklediği için tutulur, md5-eşit kalır) |
+
+**MK-56.2 revizyonu (kısmi iptal):** MK-56.2 "handoff üçlüsü (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) yasak, tek aktif bağlam BRIEFING.md" diyordu. Pratikte bu kural 63-65 ve sonrasında defalarca ihlal edildi; handoff dosyaları her oturum canlı yazılıyor (CLAUDE.md açılış ritüeli satır 63 de kök handoff'ları okuyor). 194'te gerçek durumla hizalandı: **handoff üçlüsü GEÇERLİDİR, otorite dizini kök.** MK-56.2'nin "BRIEFING tek aktif bağlam" özü korunur (BRIEFING birincil giriş), ama handoff dosyalarının varlığı artık ihlal değildir. `docs/KARARLAR.md:393` (oturum-saglik.sh üç dosyayı kontrol eder) **bayattır** — script yalnız BRIEFING.md kontrol ediyor.
+
+**Otorite-dışı konum eylemi:** Sil (handoff/BRIEFING gibi her oturum yeniden üretilen efemeral dosyalar) veya "TAŞINDI" stub (KARARLAR gibi kök dizine elle bakan birini yönlendirmek için). Stub tek blok: "bu dosya otorite değil → <otorite yolu>".
+
+**Kapanış doğrulaması:** Oturum kapanışında, izin verilen ayna kopyalar (şu an yalnız `.github/son-durum.md` ↔ kök `son-durum.md`) **md5-eşit** mi diye kontrol edilir; eşit değilse çatal uyarısı verilir. İleride `oturum-saglik.sh`'e bu md5 kontrolü eklenebilir (backlog).
+
+**Sebep:** Repo iki dosya için ters yönde otorite tutuyordu (KARARLAR→docs, BRIEFING→kök) + handoff 3 yerde kopyalıydı + kök KARARLAR 172'de çatallanıp 7 MK numara çakışması üretmişti (bkz. `docs/DOKUMAN-SAGLIK-TARAMASI-193.md`, `docs/KARARLAR-BIRLESTIRME-PLANI-194.md`). Tek-otorite kuralı bu dağınıklığın yeniden üremesini engeller. Şablon: MK-62.3 (`lang/` tek-otorite, `mobile/src/lang/` türetilir).
+
+**İlişkili:** MK-56.2 (BRIEFING tek aktif bağlam — kısmi revize), MK-62.3 (lang tek-otorite şablonu), MK-53.1 (KARARLAR doğdu).
