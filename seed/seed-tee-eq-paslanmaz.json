@@ -4,7 +4,7 @@
     "kaynak": "ASME B16.9 (boyut) + dogrulanmis karbon B16.9 tee_eq ayna",
     "kapsam": "paslanmaz tee_eq, DN15-DN600 (gemi-gercekci, secenek B)",
     "oturum": 193,
-    "not": "Olculer malzeme-bagimsiz (B16.9). agirlik_kg null (MK-96: tee teorik kutle yok, paslanmaz uretici katalogundan ayrica). cap_kucuk/schedule/class_no/et/C uygulanmaz (esit tee, schedule-agnostik buttweld)."
+    "not": "Olculer malzeme-bagimsiz (B16.9). agirlik_kg null (MK-96). DUZELTME(193): esit tee konvansiyonu cunife-uyumlu -> cap_kucuk_dn=cap_buyuk_dn, cap_kucuk_mm=cap_buyuk_mm (iki-cap kontrollu matcher icin sart, A10.3/A10.4). et/C/schedule/class_no uygulanmaz."
   },
   "satirlar": [
     {
@@ -18,6 +18,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 15,
       "cap_buyuk_mm": 21.3,
+      "cap_kucuk_dn": 15,
+      "cap_kucuk_mm": 21.3,
       "ucu_uca_m_mm": 25
     },
     {
@@ -31,6 +33,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 20,
       "cap_buyuk_mm": 26.7,
+      "cap_kucuk_dn": 20,
+      "cap_kucuk_mm": 26.7,
       "ucu_uca_m_mm": 29
     },
     {
@@ -44,6 +48,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 25,
       "cap_buyuk_mm": 33.4,
+      "cap_kucuk_dn": 25,
+      "cap_kucuk_mm": 33.4,
       "ucu_uca_m_mm": 38
     },
     {
@@ -57,6 +63,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 32,
       "cap_buyuk_mm": 42.2,
+      "cap_kucuk_dn": 32,
+      "cap_kucuk_mm": 42.2,
       "ucu_uca_m_mm": 48
     },
     {
@@ -70,6 +78,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 40,
       "cap_buyuk_mm": 48.3,
+      "cap_kucuk_dn": 40,
+      "cap_kucuk_mm": 48.3,
       "ucu_uca_m_mm": 57
     },
     {
@@ -83,6 +93,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 50,
       "cap_buyuk_mm": 60.3,
+      "cap_kucuk_dn": 50,
+      "cap_kucuk_mm": 60.3,
       "ucu_uca_m_mm": 64
     },
     {
@@ -96,6 +108,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 65,
       "cap_buyuk_mm": 73,
+      "cap_kucuk_dn": 65,
+      "cap_kucuk_mm": 73,
       "ucu_uca_m_mm": 76
     },
     {
@@ -109,6 +123,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 80,
       "cap_buyuk_mm": 88.9,
+      "cap_kucuk_dn": 80,
+      "cap_kucuk_mm": 88.9,
       "ucu_uca_m_mm": 86
     },
     {
@@ -122,6 +138,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 90,
       "cap_buyuk_mm": 101.6,
+      "cap_kucuk_dn": 90,
+      "cap_kucuk_mm": 101.6,
       "ucu_uca_m_mm": 95
     },
     {
@@ -135,6 +153,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 100,
       "cap_buyuk_mm": 114.3,
+      "cap_kucuk_dn": 100,
+      "cap_kucuk_mm": 114.3,
       "ucu_uca_m_mm": 105
     },
     {
@@ -148,6 +168,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 125,
       "cap_buyuk_mm": 141.3,
+      "cap_kucuk_dn": 125,
+      "cap_kucuk_mm": 141.3,
       "ucu_uca_m_mm": 124
     },
     {
@@ -161,6 +183,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 150,
       "cap_buyuk_mm": 168.3,
+      "cap_kucuk_dn": 150,
+      "cap_kucuk_mm": 168.3,
       "ucu_uca_m_mm": 143
     },
     {
@@ -174,6 +198,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 200,
       "cap_buyuk_mm": 219.1,
+      "cap_kucuk_dn": 200,
+      "cap_kucuk_mm": 219.1,
       "ucu_uca_m_mm": 178
     },
     {
@@ -187,6 +213,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 250,
       "cap_buyuk_mm": 273,
+      "cap_kucuk_dn": 250,
+      "cap_kucuk_mm": 273,
       "ucu_uca_m_mm": 216
     },
     {
@@ -200,6 +228,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 300,
       "cap_buyuk_mm": 323.8,
+      "cap_kucuk_dn": 300,
+      "cap_kucuk_mm": 323.8,
       "ucu_uca_m_mm": 254
     },
     {
@@ -213,6 +243,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 350,
       "cap_buyuk_mm": 355.6,
+      "cap_kucuk_dn": 350,
+      "cap_kucuk_mm": 355.6,
       "ucu_uca_m_mm": 279
     },
     {
@@ -226,6 +258,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 400,
       "cap_buyuk_mm": 406.4,
+      "cap_kucuk_dn": 400,
+      "cap_kucuk_mm": 406.4,
       "ucu_uca_m_mm": 305
     },
     {
@@ -239,6 +273,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 450,
       "cap_buyuk_mm": 457,
+      "cap_kucuk_dn": 450,
+      "cap_kucuk_mm": 457,
       "ucu_uca_m_mm": 343
     },
     {
@@ -252,6 +288,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 500,
       "cap_buyuk_mm": 508,
+      "cap_kucuk_dn": 500,
+      "cap_kucuk_mm": 508,
       "ucu_uca_m_mm": 381
     },
     {
@@ -265,6 +303,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 550,
       "cap_buyuk_mm": 558.8,
+      "cap_kucuk_dn": 550,
+      "cap_kucuk_mm": 558.8,
       "ucu_uca_m_mm": 419
     },
     {
@@ -278,6 +318,8 @@
       "malzeme_grubu": "paslanmaz",
       "cap_buyuk_dn": 600,
       "cap_buyuk_mm": 609.6,
+      "cap_kucuk_dn": 600,
+      "cap_kucuk_mm": 609.6,
       "ucu_uca_m_mm": 432
     }
   ]
