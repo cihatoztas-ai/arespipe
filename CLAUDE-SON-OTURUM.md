@@ -1,49 +1,59 @@
-# CLAUDE — Son Oturum (191)
+# CLAUDE — Son Oturum (192)
 
-> **Tarih:** 18 Haziran 2026 · **Oturum:** 191
-> Ana tema: spool_detay boru matcher'ı **grup-kör**dü → 316L'ler karbon B36.10M'e bağlanıyordu. Kök neden bulundu, matcher + FK backfill + seed-gate lint ile uçtan uca kapatıldı.
-
----
-
-## Ne yapıldı (hepsi commit + yeşil)
-
-### 1. ✅ Boru matcher Tier-0 grup ekseni (`99c2fb9`)
-`spool_detay.html::boruEslestir` — OD/et ile aday buluyordu ama **malzeme grubunu sormuyordu**. Canlı veride karbon `ASME-B36.10M` ile paslanmaz `ASME-B36.19M` neredeyse her OD+et'te çakışıyor (P2 ile doğrulandı; B36.10M aynı ölçüde HEM karbon HEM paslanmaz içeriyor → standart adı grubu ayırmaz). Sonuç: 316L boru karbon B36.10M'e bağlanıyordu (modal yanlış standart).
-- **Fix:** `_boruGrupBelirle(kalite, malzeme)` helper + Tier-0 grup-narrow. Kalite/malzeme → grup (316L/1.4571/paslanmaz→paslanmaz, St 37→karbon…), aday `malzeme_grubu`'na daraltılır. Paslanmazda dimensyonel `B36.19M` tercih edilir.
-- Veri doğrulaması: P1 (316L→597 satır "316L" yazımı, hiçbiri eski tier-1 prefix'ine uymuyordu), P2 (çakışma yaygın), P3 (mevcut 67 FK = St37 karbon, doğru).
-
-### 2. ✅ 191b — grup-narrow `length===1` ÖNCESİNE alındı (`d1fd876`)
-İlk fix'te bir kayma kaldı: o ölçüde **tek aday yanlış grupsa**, fonksiyon başındaki `if(adaylar.length===1) return` grup kontrolünden önce çalışıp onu körlemesine veriyordu (DOĞRULAMA 1'de `paslanmaz→karbon DIN-2448 · 1` satırı yakaladı). Grup-narrow erken-dönüşten öne alındı; **grup belli + o ölçüde aynı-grup yok → null** (yanlış-grup bağlamaz, seed bekler). Deploy MD5: `6fcc5cd425faa671ed51fa421072196e`.
-
-### 3. ✅ Boru FK backfill — COMMIT
-Matcher'ın birebir SQL aynası (grup-narrow + B36.19 tercihi + tier-1 kalite-prefix + tier-2 öncelik + `bl.malzeme_grubu=grup` guard). Sadece boş FK'ları doldurdu, mevcut bağlara dokunmadı. **Sonuç: 1674 bağlı / 556 boş.** Verify: tüm satırlar grup-tutarlı (316L→B36.19M, St37→DIN-2448/B36.10M/Ozel/EN, CuNi→DIN-86019), sıfır grup çelişkisi. → tablo STANDART kolonu artık dolu, satır mavi.
-- **556 boş = kütüphanede gerçekten karşılığı olmayan ölçüler** (matcher hatası DEĞİL): ST35.8 48.3×4.5 (496), St37 DIN-OD'ler 139.7/48.3/60.3 @ 4.5/6.3 cidar, EN ince-cidar paslanmaz 1.4571 65×2/125×2.5/200×3. **Tolerans gevşetme YANLIŞ çözüm** (190'da düzelen schedule kimliğini bozar) → seed işi.
-
-### 4. ✅ Seed-gate lint MK-191.1 (`76a528c`)
-`scripts/seed-from-json.mjs` — yeni JSON satırı DB'ye girmeden 2 guard:
-- **Guard A:** `malzeme_grubu` zorunlu + enum {karbon, paslanmaz, cunife, aluminyum}. Boş/geçersiz ("cuni" gibi) → reddedilir.
-- **Guard B:** `STD_GRUP` haritasıyla standart↔grup tutarlılığı (boru/fitting `standart`, flanş `geometri_std`). Bilinen std + uymayan grup → reddedilir; bilinmeyen/kanonik-olmayan kod → yazılır+uyarır.
-- Reddedilen `--yaz`'da bile yazılmaz. 7 senaryo testi geçti. Eski upsert/generated-kolon/idempotent akışı korundu.
-
-### 5. ✅ KUTUPHANE-DURUM.md — A9 + B14 (yüklenecek)
-A9 (yeni bölüm): grup↔standart tutarlılığı, 191 keşfi, seed-gate lint kuralı. B14: boru backfill "YAPILDI", flanş/fitting kalan. **MD5: `754cf657a0060a60221616fedd55d99d` — Cihat'ın elinde, kapanışta yüklenecek.**
+> **Tarih:** 19 Haziran 2026 · **Oturum:** 192
+> Ana tema: **flanş + fitting FK backfill**. Boru'dan (191) farklı: bunlarda spool_detay'de runtime matcher YOK → tablo %100 FK'ya bağımlı. Grup-bilinçli birebir eşleştirmeyle dolduruldu. **Tamamen DB işi, kod commit'i yok.** Tam teknik kayıt: `docs/KUTUPHANE-DURUM.md` **A10** (bu oturumda eklendi).
 
 ---
 
-## Yan tespitler (doğrulanan, ileriye not)
-- **Flanş ağırlık (carbon vs cunife) KOPYA DEĞİL** — fiziksel doğru (yoğunluk 7.85 vs 8.9). DN200/250/300'de çoğul karbon satırı = farklı PN → flanş backfill anahtarı `basinc_sinifi` içermeli.
-- **Kütüphane malzeme filtresi DOĞRU çalışıyor** (Karbon EN-1092-1 23 kayıt / CuNi EN-1092-3 19 kayıt; DN/Ø/PN aynı çünkü EN delme şablonu paylaşımlı, sadece kalınlık+ağırlık değişir — bug değil).
-- **Flanş/fitting `tip` alanı güvenilmez:** flanşlar `tip='fitting'` altında (817 ipuçlu satır), `tip='flansh'` sadece 12. DN/PN/tip yapısal kolonda YOK, `tanim` metnine gömülü → backfill text-parse gerektirir.
+## Yöntem (her ailede aynı ritim)
+DATA→UI→kod (MK-158.1) · her adım `BEGIN/ROLLBACK` dry-run (MK-98.2) · sadece `IS NULL` doldur, mevcuda dokunma (MK-111.2) · grup-çelişki sayacı=0 teyit · sonra COMMIT. Kolon adı tahmin yok, `information_schema` (MK-85.3).
 
----
+## Ne yapıldı (4 aile, +690 bağ)
 
-## Commit'ler (191)
-| Hash | İş |
+### 1. ✅ Flanş FK backfill — +262 (467 toplam / 349 boş)
+- **Hedef:** karbon EN-1092-1 (lib'de paslanmaz flanş YOK → paslanmaz scope dışı).
+- **DN:** `boyut` kolonundan (`DN300`→300). `dis_cap_mm` GÜVENİLMEZ (karbon'da OD, paslanmaz'da DN, ANSI'de inç).
+- **Tip haritası (notlar-teyitli):** Slip-On→**EN-T12** (Hubbed Slip-On; T01=Plate, Slip-On DEĞİL — spool "TYPE01" yazsa bile T12), WN→T11, Blind→T05 (hub+bore=0), Set-On→null.
+- **PN (KARAR-1/A):** EN PN deseni DN-bağımlı (DN≤150 PN16, DN200/250 ikisi, DN300+ PN10). Spool PN o DN'de yoksa tek-PN'e düş. 258 exact + 4 fallback, 0 belirsizlik.
+
+### 2. ✅ Elbow FK backfill — +358 (427 toplam / 1 boş)
+- Hepsi 90° 1.5D → `90LR`(karbon/paslanmaz) / `elbow_90lr`(cunife). Lib'de paslanmaz 90LR VAR.
+- **DN 3 yol:** `DN125` / `139.7x4.5`(OD→DN) / `4" Sch 10S`(NPS→DN, kesirli inç dahil).
+- `dis_cap_mm` paslanmazda BOZUK (`4" → 4.00`) → sadece `boyut` string'inden türet.
+- Schedule anahtarda değil (lib `schedule_deger=null`). 1D dirsek (1 satır) lib'de yok → **atlanmadı, seed sayıldı**.
+
+### 3. ✅ Reducer FK backfill — +67
+- Hepsi konsantrik → `reducer_conc`. Paslanmaz reducer lib'de YOK → seed (33). Hedef karbon.
+- **Çift çap (sol=büyük, sağ=küçük):** `139.7x4.5 / 114.3x4.5` OD-çifti VEYA tanim'da `DN80XDN50` (boyut eksik vakası). Anahtar `cap_buyuk_dn + cap_kucuk_dn` ikisi de.
+
+### 4. ✅ Tee FK backfill — +3 cunife
+- **MK-192.1:** tip GEOMETRİDEN (`dn_b=dn_k→tee_eq`, else `tee_red`), tanim'dan DEĞİL (cunife tanim "reducing" demiyor ama 324x219 redüksiyonlu). Tanim'a güvenmek 324x219'u tee_eq'e yanlış bağlardı (dry-run yakaladı).
+- Lib: tee_eq karbon+cunife, tee_red cunife. **karbon tee_red YOK, paslanmaz tee YOK** → karbon/paslanmaz tee tamamen seed. Sadece 3 cunife bağlandı.
+
+## Yanlış-bağ önleme dersleri (192)
+- **Grup çelişkisi LİTERAL `=` ile değil, GRUP EKSENİNDE denetlenir.** `karbon çelik`≠`karbon`, `bakir`≠`cunife` (literal) ama aynı grup → literal denetim yanlış-pozitif verir (A105 flanşı sahte alarm verdi, gerçekte doğruydu).
+- **`tip='fitting'` çöp kutusu:** 2280'in ~660'ı gerçek parça. `~* '\mtee\M'` kelime-sınırı ŞART (`ILIKE '%tee%'` "S**tee**l"i yakalar → 848 sahte tee).
+- **`dis_cap_mm` formata göre anlam değiştiriyor + bazen bozuk** → eşleştirmede asla kullanma, DN'i `boyut` string'inden parse et.
+
+## Eksik-rapor (A10.6 — seed yol haritası, 192'nin en değerli çıktısı)
+Backfill = ölçme aracı. Lib'de karşılığı olmayan parça sessizce atlanmaz, sayılır. Backfill toplamsal (`IS NULL`), kütüphane büyüyünce tekrar çalışır, eski bağ bozulmaz.
+1. 🔴 Paslanmaz tee (~75) · 2. 🔴 Karbon tee_red (~21) · 3. 🟡 Paslanmaz reducer (33) · 4. 🟡 Paslanmaz flanş seti · 5. ⚪ 1D dirsek (1) · 6. 556 boru ölçüsü (devir).
+**Scope-dışı (parça değil, seed edilemez):** butt-weld 644, imalat-detay 523, olet 194, bağlantı-elemanı 139, özel ürün.
+
+## Commit'ler (192)
+| Tür | İçerik |
 |---|---|
-| `99c2fb9` | boru matcher Tier-0 malzeme grubu ekseni |
-| `d1fd876` | 191b: grup-narrow length===1 öncesine |
-| `76a528c` | seed-gate lint MK-191.1 |
-| (DB) | boru FK backfill COMMIT — 1674 bağlı |
+| (DB) | flanş FK backfill — +262 COMMIT |
+| (DB) | elbow FK backfill — +358 COMMIT |
+| (DB) | reducer FK backfill — +67 COMMIT |
+| (DB) | cunife tee FK backfill — +3 COMMIT |
+| doc | handoff 3 + KUTUPHANE-DURUM A10/B14 `[skip ci]` |
+
+**Kod commit'i YOK** — repo'ya gidecek JS/SQL dosyası üretilmedi.
 
 ## KARARLAR.md'ye eklenecek
-**MK-191.1 — Seed-gate lint:** Kütüphaneye yeni satır eklenirken `malzeme_grubu` zorunlu+enum ve standart↔grup tutarlı olmalı; matcher grup eksenine bağlı, yanlış etiket DB'ye girmeden reddedilir. Çakışma (aynı OD/et'te karbon+paslanmaz) fiziksel gerçektir, silinmez — matcher grup ekseniyle çözer, seed grup doğruluğunu garanti eder.
+**MK-192.1 — Tee eşit/redüksiyonlu ayrımı geometriden:** Tee'nin `tee_eq` mi `tee_red` mi olduğu `tanim` metnindeki kelimeden ("reducing") DEĞİL, iki çapın eşitliğinden türetilir (`cap_buyuk=cap_kucuk → eq`, değilse `red`). Tanim güvenilmez (cunife tee "reducing" demez ama çapları redüksiyonlu olabilir). Genel ilke: parça tip-alt-sınıfı yapısal ölçüden çıkarılabiliyorsa, serbest-metin etiketine güvenme.
+
+**MK-192.2 — Backfill bir ölçme aracıdır:** FK backfill "bitirme işi" değil. Kütüphanede karşılığı olmayan spool parçası sessizce atlanmaz, **görünür eksik (seed adayı) olarak sayılır**. Backfill toplamsaldır (`IS NULL` doldurur, mevcudu ezmez) → kütüphane zenginleştikçe `IS NULL` ile tekrar çalıştırılır, eski doğru bağlar bozulmaz. "Önce kütüphaneyi tamamla" ile "önce bağla" yanlış ikilem; doğru döngü: bağla → eksiği ölç → o ölçüye göre seed → tekrar bağla.
+
+**MK-192.3 — Grup çelişkisi grup ekseninde denetlenir:** Spool↔kütüphane grup tutarlılığı literal string eşitliğiyle (`sm.malzeme = f.malzeme_grubu`) denetlenmez — `karbon çelik`/`A105`→karbon, `bakir`→cunife gibi varyantlar yanlış-pozitif üretir. Denetim `_grupBelirle` ekseniyle normalize edilerek yapılır.

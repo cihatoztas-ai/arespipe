@@ -1,43 +1,27 @@
-# son-durum.md — Oturum 188 sonu (FINAL)
+# Son Durum — 192. Oturum (19 Haziran 2026)
 
-## HEAD
-2d20c4f. Kod commit zinciri: c0a4314 (A2-dilim2) -> a17ab3a (188/D rozet) -> 2d20c4f (188/E detay sira).
-Fonksiyon 12/12. Migration yok. Self-test 3/3. CI gecti.
+> 191 → 192. Boru FK backfill'inden sonra **flanş + fitting FK backfill** uçtan uca yapıldı. Tamamen DB işi — repo'ya kod gitmedi.
 
-## 188'de yapilanlar — A2-dilim2 + 2 ufak eksik, HEPSI CANLI DOGRULANDI
+## Sonuç
+**192 başarıyla kapatıldı.** 4 backfill ailesi (flanş + elbow + reducer + tee), **+690 yeni FK bağı**, sıfır yanlış-bağ, tüm grup-çelişki sayaçları 0. Spool↔kütüphane bağı boru+flanş+fitting'te tamamlandı. Kalan boşlar = kütüphanede karşılığı olmayan (seed) veya parça-olmayan (scope dışı). Kod commit'i YOK; sadece handoff + KUTUPHANE-DURUM A10 doc commit'i.
 
-### A2-dilim2 (c0a4314) — override spool damga + siralama + malzeme
-- MK-188.1: incelemeTablosu (lib/izo-eslesme.js) override shell sibling izometri devralma. Override ile
-  eklenen PAOR spool (spoolNo anahtari haritada YOK) ayni cizimde kardes eslestiyse 'eksik' yerine 'zayif'
-  + izometri kardesten devralinir (override_kardes:true). GUARD: sp._malzeme_devralindi===true (sadece
-  _paorBolShell override shell'leri). Tersan dokunulmaz (B-6 korunur).
-- MK-188.2: incelemeTablosu return oncesi stabil sirala (pipeline -> spoolNo, localeCompare numeric).
-- MK-182.5 KAPANDI: _paorBolShell (devre_wizard_v3.html) sibling S01 malzemesini devralir
-  (anaMalzeme/kalite/cap/bom + _malzeme_devralindi:true). toplamKg=0, et=null (spesifik).
+## Yapılanlar (hepsi DB, `BEGIN/ROLLBACK` dry-run → COMMIT)
+1. **Flanş FK backfill** — +262 (467 toplam bağlı / 349 boş). Karbon EN-1092-1. DN `boyut`'tan (dis_cap_mm güvenilmez). Tip: Slip-On→**EN-T12** (notlar-teyitli, T01 değil!), WN→T11, Blind→T05, Set-On→null. PN fallback KARAR-1/A (büyük DN'de PN16→PN10). 258 exact + 4 fallback.
+2. **Elbow FK backfill** — +358 (427 toplam / 1 boş = 1D). Hepsi 90° 1.5D → 90LR (karbon/paslanmaz) / elbow_90lr (cunife). DN 3 yol: DN-düz / OD→DN / NPS→DN. Schedule anahtarda değil.
+3. **Reducer FK backfill** — +67. Karbon reducer_conc (paslanmaz lib'de yok→seed). Çift çap: OD-çifti `A x e / B x e` veya tanim `DNxXDNy`. sol=büyük, sağ=küçük.
+4. **Tee FK backfill** — +3 cunife. **MK-192.1:** tip geometriden (`dn_b=dn_k→tee_eq`, else `tee_red`), tanim'dan değil. Karbon tee_red + paslanmaz tee lib'de yok → seed.
 
-### 188/D (a17ab3a) — "kardes PDF" rozeti
-mbadge override_kardes:true icin "kardes PDF" (mavi .stamp-kardes), "dogrulanmadi" (turuncu) ile ayrim.
+## Fitting toplam
+530 bağlı / 1750 boş. Boş'un ~%90'ı **scope dışı** (butt-weld 644, imalat 523, olet 194, bağlantı 139, diğer) — parça değil, seed edilemez. Kalan ~93 = lib-eksik tee/reducer/paslanmaz (seed).
 
-### 188/E (2d20c4f) — devre detay siralama
-devre_detay.html .order('spool_no') -> .order('pipeline_no').order('spool_no'). Tek-alan tum S01'leri
-one topluyordu. Alan pipeline_no (kod + information_schema teyitli).
+## CI / commit
+**Kod commit'i YOK** (tamamen DB UPDATE). Doc commit'i: handoff 3 dosya + KUTUPHANE-DURUM.md (A10 + B14) → `[skip ci]`.
 
-## Canli dogrulamalar
-- D-188.1: NB138/102769, model 1 okudu operator 10 dedi. S01-S07 zayif, izometri=kardes PDF, malzeme
-  devralindi, EKSIK=0, sirali. S03+ "kardes PDF" mavi rozet, S01/S02 "dogrulanmadi" turuncu.
-- D-188.2: override terfi sonrasi KALICI. devre_detay 10 kayit, spool_id A-2195..A-2204. Detay siralama
-  001-S01..S07 -> 002-S01 -> 003-S01..S02 ardisik (hard refresh sonrasi). Override kaybi yalniz terfi-
-  oncesi hard refresh'te = TASARIM.
+## Açık borçlar (öncelik sırası)
+1. 🟡 **Renk noktası (KARAR-86.A)** — ÖNÜ AÇILDI. Tüm FK bitti, nokta artık yanıltıcı değil. **193'ün ilk işi.** `#` kolonu 🔵/🟡/⚪.
+2. 🔴 **Kütüphane seed yol haritası (A10.6):** paslanmaz tee (~75), karbon tee_red (~21), paslanmaz reducer (33), paslanmaz flanş seti, 1D dirsek (1), 556 boru ölçüsü.
+3. 🟡 Olet (~194) library karşılığı değerlendirmesi (branch fitting).
+4. flansh_olculer UNIQUE constraint · 2FA+pg_dump · MK-176.7 wizard review.
 
-## Acik isler (carry — taze SQL, MK-163.1)
-- Taslak-kaydet (P2): terfi-oncesi override kalicilik (WIZ._kabukSpoollar bellekte). Gercek akis terfi-
-  oncesi yenileme gerektirmez -> dusuk oncelik. Istenirse draft DB kayit.
-- shell ET devralma: S03+ ET bos (override spesifik alan devralmaz). Pipeline ortak et varsa devralinsin mi?
-- b4af5c2b cizim_no=null devreler: override sibling cizim_no ile eslesmezse genismez (toast).
-- 187 carry: A2 asagi-duzeltme fazla-render netlestirme.
-- 186 carry: crop sertlestirme (cok-spool ucu), format_id=null cache envanteri, NPS->mm (Tersan Faz2).
-- yukleyen_id null debt (MK-117): kuyruk-isle-izometri.js:305 abort.
-
-## Disiplin notu
-188 tamami PAOR-scoped (guard _malzeme_devralindi). Tersan dokunulmadi. Migration/api/sema YOK -> 12/12.
-3 kod commit, hepsi anchor-Python+.bak+MD5, self-test 3/3, canli dogrulandi. Doc commit [skip ci].
+## Sonraki oturum notu
+İlk iş: renk noktası (KARAR-86.A 3-dallı, çizgi→nokta). Sonra kütüphane seed (A10.6 listesinden, en kalabalık = paslanmaz tee). Backfill toplamsaldır → seed sonrası backfill'i `IS NULL` ile tekrar çalıştır, eski bağlar bozulmaz.
