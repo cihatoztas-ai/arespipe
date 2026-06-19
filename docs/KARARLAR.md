@@ -390,7 +390,7 @@ Her tema kombinasyonu **AA kontrast** üzerinde tutulur (özellikle açık tema'
 
 #### MK-55.1 [DISIPLIN] — Oturum sağlık script'i (mekanik açılış/kapanış kontrolü)
 
-**Karar:** Her oturum **açılış ve kapanışında** `scripts/oturum-saglik.sh` çalıştırılır. Üç ritüel dosyasının (`CLAUDE-SONRAKI-OTURUM.md`, `CLAUDE-SON-OTURUM.md`, `.github/son-durum.md`) güncel olup olmadığını mekanik kontrol eder.
+**Karar:** Her oturum **açılış ve kapanışında** `scripts/oturum-saglik.sh` çalıştırılır. Üç ritüel dosyasının (`CLAUDE-SONRAKI-OTURUM.md`, `CLAUDE-SON-OTURUM.md`, `.github/son-durum.md`) güncel olup olmadığını mekanik kontrol eder. **[BAYAT — 194]:** Script artık yalnız BRIEFING.md kontrol ediyor; üç-dosya kontrolü geçerli değil. Bkz. MK-194.1.
 
 **Açılış modu** — `./scripts/oturum-saglik.sh N`:
 - `CLAUDE-SONRAKI-OTURUM.md` başlığı `# N. Oturum` ile başlamalı
@@ -1066,7 +1066,7 @@ Yeni i18n anahtarı eklenirken/güncellenirken hedef sadece `lang/{tr,en,ar}.jso
 **Çözüm (66+ için kalıcı):**
 1. **Kapanış başlangıcında zorunlu komut:** `./scripts/oturum-saglik.sh N --kapanis` her oturum sonunda çalıştırılır. Çıktısı yeşil değilse kapanış commit'i atılmaz.
 2. **Claude tarafında otomatik kontrol:** Kullanıcı *"X'i kapatıyoruz"* dediği anda Claude şu üçünü tek seferde kontrol eder: (a) BRIEFING.md başlık güncel mi (N. Oturum Kapanışı yazıyor mu), (b) `arespipe_kopyala` her dosya transferinde kullanıldı mı, (c) `gp` push'larda kullanıldı mı. Eksik varsa kapanışa geçmeden tamamlatır.
-3. **Eski 3-dosya mimarisi yasak:** `.github/son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` **YAZILMAZ** (MK-56.2). Bağlam BRIEFING.md, kararlar KARARLAR.md, kapanış orkestra script'i + Claude raporu (MK-56.4 / MK-60.3). Bu üç dosya repo köküne tekrar dönerse bu MK-56.2 ihlali kabul edilir, derhal arşive taşınır.
+3. **Eski 3-dosya mimarisi yasak:** `.github/son-durum.md`, `CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md` **YAZILMAZ** (MK-56.2). Bağlam BRIEFING.md, kararlar KARARLAR.md, kapanış orkestra script'i + Claude raporu (MK-56.4 / MK-60.3). Bu üç dosya repo köküne tekrar dönerse bu MK-56.2 ihlali kabul edilir, derhal arşive taşınır. **[REVİZE — 194/MK-194.1]:** Bu yasak kaldırıldı. Handoff üçlüsü geçerlidir, otorite dizini kök. Detay: MK-194.1.
 
 **Geçerlilik:** ✅ Aktif (KRİTİK). Bu karar MK-52.1, MK-52.2, MK-56.2, MK-56.4, MK-60.3'ün hepsini birlikte canlı tutan bekçi karardır. 66 açılışında bu sapmanın delili `docs/arsiv/*-yanlis-yazim.md` dosyaları ve 193e49f commit'i ile korundu.
 
