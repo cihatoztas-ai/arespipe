@@ -1854,6 +1854,149 @@ CREATE POLICY is_kayitlari_tenant ON is_kayitlari
 
 ---
 
+## MK-132.1 — Teşhis canlı yolak uçtan uca çalıştırılmadan kapatılmaz (28 May 2026, 132. oturum)
+
+**Karar:** Bir parse/eşleştirme teşhisi, ilgili kod yolağı **uçtan uca canlı çalıştırılmadan** sonuçlandırılmaz. Tek başına kanıt SAYILMAZ: (a) kod yorumu — bayat olabilir; (b) onarım-öncesi ham metin — pipeline'ın gördüğü metin değil; (c) "format öğretilmiş" durumu — tanındığı anlamına gelmez. Doğrulama zinciri tam koşulmalı: `pdf-parse → metinNormalle → fingerprintSkor (gerçek DB fingerprint) → aileBirlestir → parse`.
+
+**Sebep:** 131 bir teşhis oturumuydu ve bu zinciri **hiç koşmadı.** `izometri-oku.js:889`'daki bayat yorum ("Band B onarmaz") + onarım-öncesi ham metne bakarak "E100 glyph band-B boşluğu yüzünden L3'e düşüyor" sonucuna vardı. 132'de gerçek E100+M100 PDF'leri canlı kodla koşuldu: dört tez de (band-B yok / tanınmıyor / tanıma onarmıyor / dispatch atlıyor) yanlış çıktı. metinNormalle band-A+B onarıyor, E100 tanınıyor (skor 2-3), dispatch L2'ye giriyor, kaymış montaj `montaj{}` üretiyor. Dört turluk yanlış teşhisin tek sebebi: canlı yolak koşulmadı.
+
+**Uygulama:**
+1. Şüpheli format için gerçek PDF'i `pdf-parse` ile ham al; çöp mü doğrula.
+2. `metinNormalle` uygula; çapaları onarılmış metinde ara (ham'da değil).
+3. Gerçek DB fingerprint'leriyle `fingerprintSkor` çalıştır; skor ≥2 mi (tanıma).
+4. `aileBirlestir(format_kodu, text)` + `parse` ile uçtan uca; montaj/spool çıktısını gör.
+5. Mümkünse ai_api_log'da PDF'in SHA256'sıyla gerçek `parser_seviye`'yi teyit et (yer-gerçeği).
+
+**İlişkili:** MK-63.B (planlandı ≠ yapıldı, cross-check), MK-70.2 (silent fail yakalama), MK-132.2.
+
+---
+
+## MK-132.2 — glyph-onar band-A VE band-B yapar, tanıma + L2'ye bağlıdır (28 May 2026, 132. oturum)
+
+**Karar:** `lib/glyph-onar.js` `metinNormalle` fonksiyonu band-A (-29 Sezar) **ve** band-B (a-z + Türkçe ters tablo) onarımını birlikte yapar (band-B 122'de eklendi). Bu fonksiyon hem tanıma yolağına (`izometri-oku.js:642`, `normMetin` skorlanır) hem L2 yolağına (`:891`) bağlıdır. Gömülü-değil ArialMT Identity-H + ToUnicode-yok kaymış Cadmatic PDF'leri bu sayede L2'de **tam parse edilir** (montaj `montaj{}` + imalat malzeme listesi dahil). "glyph band-B boşluğu" diye bir eksik **yoktur.**
+
+**Sebep:** 131 `izometri-oku.js:889`'daki bayat yorumu ("Band B onarmaz") modülün yapamadığı sandı. Gerçekte yorum 121'den kalma (band-B 122'de eklendi, yorum güncellenmedi). 132 kanıtı: kaymış E100 montaj+imalat ham çöpüne `metinNormalle` uygulandı → `SPOOL NAME`/`Malzeme Listesi`/`Cut & Bending Info`/`Continue:` + malzeme satırları tam kurtarıldı, **0 eşlenmeyen karakter.** Uçtan uca: E100 montaj L2 → pipe E100-817-005, spool[S01–S06], B1137, Paslanmaz.
+
+**Uygulama:**
+- `izometri-oku.js:887-890` bayat yorumu düzeltildi (comment-only, MK-49.1 yalnız yorum istisnası): "121/122: band-A VE band-B onarır … 132 DUZELTME: eski 'Band B onarmaz' YANLIS."
+- Onarım **kapılı** kalır (MK-120.3 / 121.1): ham metinde çapa varsa dokunmaz (temiz PDF'lerde sıfır regresyon, gerçek Türkçe karakterler korunur).
+- `docs/PARSER-VE-YUKLEME-AKISI.md` Bölüm 7.4 bu kanıtı tutar; Bölüm 7.3 + Bölüm 8 K4 131-mührü `[IPTAL]`.
+
+**İlişkili:** MK-49.1 (izometri-oku.js'e dokunulmaz — yorum istisnası), MK-120.3 (band-A -29 kapılı), MK-119.2 (AILE_KAYIT'te format için kural kod paketlerinden), MK-132.1.
+
+**[İPTAL atfı]** MK-131.1 / 131.2 / 131.4 (adaylar) yanlış teşhis olduğu için KARARLAR'a **alınmadı.** MK-131.3 ("öğretilmiş ≠ tanınıyor; tanıma ve parse ayrı katman, ayrı doğrula") doğruydu — özü MK-132.1'e taşındı.
+
+---
+## MK-133.1 — Çapraz doğrulamada Excel'in referans rolü kaynak güvenine bağlıdır (29 May 2026, 133. oturum)
+
+**Karar:** K2 (malzeme listesi çapraz kıyası, `lib/malzeme-kiyas.js`) çıktısı `_eslesme.detay[].malzeme_kiyas`'a yazılırken Excel tarafının doğruluk otoritesi **sabit değildir**; Excel'in kaynak güvenine göre belirlenir. Kurumsal ERP çıktısı Excel (IFS .xlsm gibi, L1 format tespiti + yüksek güven) **otorite** kabul edilir; manuel/elle hazırlanmış Excel (format tanınmamış, L2/L3 düşük güven) **parite** olur.
+
+**Davranış farkı:**
+- **Otorite:** Çelişki dili "PDF Excel'den sapıyor", incelenen taraf PDF. `excel_fazla_fab` gerçek 🟡 (BOM'da var, PDF eksik → parser açığı ya da gerçek izometri eksiği).
+- **Parite:** Çelişki simetrik 🟡, "iki taraf da kontrol edilmeli" dilinde. Sapma birinde değil, dengeli.
+
+**Sebep:** Cihat'ın 133'teki nüansı — "Excel referans derken bu IFS dosyasını düşünerek söylüyorum. Eğer program çıktısı olmayan bir excel ise bu kadar rahat olamayız." Kurumsal ERP çıktısı parser confidence ≥ %90 ile L1'de gelirken, manuel Excel insan elinden çıkmıştır ve PDF kadar fallible'dır. K2'nin uygulamasının her iki vakada da çalışması, ama yorum dilinin (yani UI'ın operatöre söylediği şeyin) farklı olması gerekir.
+
+**Uygulama:**
+1. `malzemeKiyas(pdf, excel, { excel_guven: 'otorite' | 'parite' })` parametresi alır. Default `'otorite'`.
+2. Lib her iki davranışta da **aynı sapmaları üretir**; davranışsal değişiklik yok. Lib çıktıya `meta.excel_guven` tag'i koyar.
+3. Çağıran (eslestir / İnceleme UI) bu tag'e göre dil seçer.
+4. v1'de `eslestir` çağrısında `excel_guven` **sabit `'otorite'`** (IFS varsayımı). Otomatik türetme (format paketinden / `parser_kural` / AILE_KAYIT'tan) **backlog** olarak işaretlenir.
+
+**İlişkili:** MK-127.5 (4-durum İnceleme), MK-132.1 (canlı yolak doğrulama), MK-119.2 (parse kuralı kod paketinden), MK-133.2, MK-133.3.
+
+---
+
+## MK-133.2 — `spool_malzemeleri.agirlik_kg` satır-toplamı semantiktir (29 May 2026, 133. oturum)
+
+**Karar:** `spool_malzemeleri.agirlik_kg` kolonu **her zaman satırın toplam ağırlığını** ifade eder (per-adet değil). `adet > 1` olan fitting satırlarında bile değer satır-toplamıdır; per-adet ağırlık türetimi `agirlik_kg / adet` formülüyle yapılır (`adet` null veya 0 ise satır tek-parça kabul edilir).
+
+**Sebep:** 133 S02 fixture'ında (`G200-339b-001 S02`) basis ambiguity ortaya çıktı: PDF dirsek 6×35.4=212kg sum, Excel dirsek `agirlik_kg=35.01, adet=6`. Bu 35.01 per-adet mi (toplam 6×35.01=210, PDF ile %1 uyumlu) yoksa satır-toplam mı (per-elbow 5.84kg = DN300 için fiziksel olarak imkansız)? Cihat IFS BOM saklama düzenini bilen taraf olarak **satır-toplam** kararı verdi. Bu, `ares-kabuk.js` konsolidasyon mantığıyla da tutarlı: `c.agirlik_kg += parseFloat(r.agirlik_kg)` her zaman satır değerini toplar, basis dönüşümü yapmaz.
+
+**Uygulama:**
+- K2 kıyasında **fitting/montaj** parçaları (te, redüksiyon, flanş, bilezik, kapak, cıvata, conta…) per-adet ağırlık karşılaştırması: `pPer = p.agirlik_kg / p.adet` ve `ePer = e.agirlik_kg / e.adet`.
+- **Borularda** toplam ağırlık iki tarafta da kıyaslanabilir; PDF satırı (her parçanın kendi ağırlığı) konsolide edilirse Excel toplamına karşılık gelir. Adet kıyası borularda **anlamsızdır** (PDF = parça sayısı, Excel = tek satır).
+- **Dirsek istisnası:** bkz. MK-133.3.
+
+**Doğum kanıtı:** S02 fixture diff sonucu: boru 406.4 ve bilezik DN400 satır-toplam mantığıyla tam eşleşti (PDF tek parça = Excel total); boru 323.9 boy ve toplam ağırlık tutarlı (boy %0.2, kg %7.5 soft); fitting/montaj satırları per-adet bazlı olduğu hâlde Excel agirlik'ı bölmeden direkt kullanmak fiziksel olarak imkansız (5.84kg dirsek) → satır-toplam doğru basis.
+
+**İlişkili:** MK-110.3 (boyut parser tek ortak), MK-108.2 (tarihsel ikiz kolonlar — `agirlik` vs `agirlik_kg`), MK-133.1, MK-133.3.
+
+---
+
+## MK-133.3 — Dirsek için malzeme-korunumu invariantı; tam kesim-optimizasyonu sonraki sürüm (29 May 2026, 133. oturum)
+
+**Karar:** Dirsek için K2'de **adet kıyası kapalıdır**; geçerli invariant **toplam ağırlık** (PDF dirsek toplam kg ≈ Excel dirsek toplam kg, ±%15 fire/açı-detay yokluğu marjı). Tam bin-packing kesim-optimizasyonu (hangi açılar hangi 90° stoğundan birleşik çıkar, geri-stok envanteri) v2 borcudur; PDF açı verisi akmaya başlayınca yazılır.
+
+**Sebep:** Cihat'ın 133'teki kritik müdahalesi — "Dirsek standart 90° düşünüyoruz ama 27° de olabilir. 60 ve 20 dereceyi bir dirsekten keserim 10 derece fire olur. 45 derecede farklı başka bir dirsekten kesilir ve elimizde bir 45 ve bir 10 derece olur ve 10 derece muhtemelen fire olur. 3 adet dirsek kullanırız ve gerçekte 45 derece bir parça kalır." Dirsek standart 90° stoktan farklı açılarla kesilir; artan parça **fire değil geri-stoktur** (kullanılabilir parça olarak rafa döner). Bu yüzden basit adet kıyası (PDF'te 4 dirsek görünüyor → "4 stok" varsayımı) yanlıştır — karışık açılı dirsek setlerinde kapasite hesabı ham adetten daha derindir.
+
+İlk yaklaşımım (açı toplamı ≤ adet × 90 + fire toleransı) yanlış çerçeveydi, Cihat fire/geri-stok ayrımıyla düzeltti. Doğru invariant: malzeme-korunumu — 90° stoktan ne kesersen kes, kesilen parçalar toplam ağırlığı stoktan harcanan ağırlığı aşamaz (fire + trimleme + ölçü payı). Bu açıdan bağımsız; PDF açı bilmese bile ağırlık üzerinden geçer.
+
+**Uygulama (v1):**
+- `lib/malzeme-kiyas.js` içinde dirsek için **özel branch** (`p.pt === 'dirsek'`): toplam ağırlık invariantı (`agirlik_kg_toplam` ±%15 tol); adet ve boy IGNORE.
+- Diğer fitting/montaj parçaları (te, redüksiyon, flanş, bilezik, kapak, cıvata, conta) normal `else` dalında: adet exact match + per-adet ağırlık (±%5).
+- Boru ayrı dal: boy primary (±%5) + ağırlık soft (±%10, info-level); adet IGNORE.
+
+**v2 borcu:** Tam bin-packing kesim-optimizasyonu. Senaryo: 4×50° → 200° ≤ 3×90°=270° ama bin-pack'te aslında 4 stok gerekir (bir 90° iki 50°'yi alamaz — toplam 100° > 90°). v1 alt-sınırı geçen ama bin-packing'te sıkışan bu tür ender durumları yakalar. PDF açı verisi (kontur/regex parser) akmaya başlayınca yazılır.
+
+**Doğum kanıtı:** S02 fixture'da dirsek satırı şu an çelişki olarak yüzeyleniyor (PDF 212kg vs Excel 35.01kg, ~6× sapma) — fiziksel olarak DN300 1.5D dirsek başına ~35kg makul, Excel 35kg = 6 dirseğin toplamı dersek per-elbow ~5.84kg imkansız. Bu canlı veri ya gerçek bir BOM hatası, ya parser bug'ı, ya parse basis confusion'ı yansıtıyor — K2 yalın olarak sapmayı yüzeye çıkardı, sebep araştırması ayrı iş (134 gündemi).
+
+**İlişkili:** MK-133.1, MK-133.2.
+
+---
+
+## MK-134.1 — `[skip ci]` çok-commit push'ta tüm CI'yi atlar (kod dahil)
+
+**Bağlam (134):** 133 paketi tek push'ta gitti; push HEAD'i `382bfaf docs(133) [skip ci]`, hemen
+altında `1a7b17c feat(133)` (K2 kodu). GitHub Actions bir push'ta tetiklenirken **HEAD commit'in
+mesajına** bakar; HEAD `[skip ci]` içerince **push'un tamamını atlar — altındaki kod commit'leri
+dahil**. Sonuç: K2 kodu CI/lint'ten hiç geçmeden canlıya gitti (Vercel HEAD ağacını deploy ettiği için
+kod çalışıyordu, ama `kontrol.js` görmemişti). İki bağımsız kaynaktan doğrulandı: Actions'ta `1a7b17c`
+için run yok; Vercel'de `1a7b17c` deployment'ı yok (yalnız `382bfaf`).
+
+**Kural:** Kod commit'i ile `[skip ci]` doc commit'i **aynı push'ta, doc HEAD'de** gönderilmez. İki
+geçerli düzen:
+- (A) Kod ayrı/önce push edilir (CI koşar, yeşil görülür), doc'lar sonra ayrı push (`[skip ci]`).
+- (B) Tek push olacaksa sıralama HEAD = kod commit'i olacak şekilde (doc commit'i altta) kurulur.
+
+**Doğrulama:** Push sonrası, kod commit'inin hash'i için GitHub Actions'ta bir run göründü mü kontrol
+edilir. Görünmediyse CI atlanmıştır → boş commit / küçük tetikleyici ile pipeline koşturulur.
+
+**Not:** Doc-only push'larda `[skip ci]` doğru ve istenir (gereksiz run yakmaz). Tuzak yalnız kod +
+doc'un tek push'ta karışıp doc'un HEAD olmasıdır.
+
+**İlişkili:** MK-132.1 (belge ≠ canlı gerçek; verify et), Faz B sapmama sistemi (kod CI'den geçmeli).
+
+## MK-135.1 — v3 İnceleme K2 enjeksiyonu handler katmanında (A2); lib saf çekirdek korunur
+
+**Bağlam:** 134'te `uyarilar.html` K2 malzeme uyarılarını `_eslesme`'den DOĞRUDAN okuyordu (kolay yarı).
+v3 İnceleme ekranı (`devre_wizard_v3.html`) ise `/api/devre-inceleme` dönüşünü render eder; o endpoint
+`incelemeTablosu` (lib/izo-eslesme.js) ile kendi eşleştirmesini yapar ve `_eslesme.detay[].malzeme_kiyas`'a
+hiç bakmaz → malzeme_kiyas çıktıda yok.
+
+**Karar:** Enjeksiyon **handler katmanında** yapılır. `incelemeTablosu` dönüşünden SONRA,
+`izoKayitlar[].parse_sonuc._eslesme.detay[]`'dan (durum='eslesti' & malzeme_kiyas olan kayıtlar)
+`normPipeline(pipeline_no)|normSpoolNo(spool_no)` haritası kurulur; `sonuc.spoollar[]`'a `malzeme_flag`
++ `malzeme_kiyas` iliştirilir; `ozet.malzeme_flag` sayacı eklenir.
+
+**Gerekçe (A1 yerine A2):** `lib/izo-eslesme.js` "DB yok, regex yok, yan etki yok — saf birim-test
+edilebilir çekirdek" sözü taşır. malzeme_kiyas lib'in işi değil (worker'da `malzemeKiyas` hesaplıyor,
+sonuç `_eslesme.detay[]`'da hazır). A1 (lib'e taşıma) bu sözü bozar ve self-test'i riske atar. A2 lib'i
+dokunulmaz bırakır, K2'yi tek dosyada (endpoint) toplar. Endpoint parse_sonuc'u zaten çekiyor → ek sorgu
+yok; anahtar kabuk anahtarıyla birebir aynı → drift yok; eslestir hesapladı → yeniden hesaplama yok (DRY).
+
+**Çok-izometri kuralı:** Bir spool'a birden çok izometri (detay+montaj) düşerse flag'li kayıt öncelikli
+(flag yoksa ilk bulunan kalır).
+
+**Kanıt:** node --check (iki dosya + inline JS) ✓, idempotency ✓, smoke (S02 fixture) ✓, canlı lambda
+(`/api/devre-inceleme` g200 → malzeme_flag:true, celiski+montaj) ✓, SQL DB teyidi ✓. Yeni endpoint yok
+(12/12), MK-49.1 korundu. Commit `e6db101`.
+
+**Açık (136):** Görsel teyit — v3 wizard `?devre_id=` ile taslak açamadığından rozet/popup ekranda
+gözle görülmedi (kod kanıtlı). Wizard taslak-açma yeteneği 136 borcu.
+
+---
+
 ## MK-136.1 — Açı, malzeme kalemi kimliğinin parçasıdır
 Parser açıyı yakalar (`lib/excel-parser.js` SOZLUK → `aci`, BOM `Angle` kolonu); kabuk konsolide
 anahtarı açıyı içerir (`ares-kabuk.js`: `tanim|malzeme|dn|aci|tip`). Aynı DN×et×açı = aynı kalem;
@@ -2393,10 +2536,8 @@ dilimleyip (orn 150) sirayla cek, birlestir (_inDilimli). islenenlerYukle'de dev
 dosya_isleme_kuyrugu sorgulari boylece bolundu. GENEL KURAL: tenant geneli .in() sorgularinda dilim sart.
 Ipucu: "Bad Request" (kolon hatasi degil aciklayici mesaj gelmemesi) + "hacim artinca bozuldu" = buyuk-.in().
 
-## MK-172.6 — Islenenler ekrani redesign (kutu-per-satir)
-Eski .isl-satir (sade grid) -> mockup: kart hover/yukselme, durum-renkli ince kenar (hazir/isleniyor/hatali),
-isleniyor satirinda animasyonlu progress (gercek biten/toplam), oneri/manuel cikti blogu, baslikta
-"N hazir . M isleniyor" ozeti. Render _islSatirHtml + _islOzetYaz helper'larina ayrildi.
+## MK-172.6 — (SUREC/UYARI) Upload butunlugu kontrolu
+Buyuk HTML upload'lari kesik gelebilir. Patch/ship ONCESI grep -c "</html>" ile dogrula. Bu oturumda ayarlar.html kesik upload yuzunden INIT + kapanis etiketleri kaybiyla deploy edildi, sayfa initialize olmadi, elle tamamlandi.
 
 ## MK-172.7 — Drenaj durdur()/interrupt: tek-drenaj + oncelik
 ares-izometri-drenaj.js'e isbirlikci iptal: durdur() bayrak set eder, dongu her is/tur arasinda kontrol
@@ -2425,6 +2566,30 @@ cikis breadcrumb "Devreler" veya "Iptal" ile. Gerekce: Islenenler listesi wizard
 ## EK NOT (172 ANIM-FIX)
 .ftree { overflow:hidden } — Step 1 tarama cizgisi (tScan top:0->100%) tasip gecici yatay scrollbar
 yaratiyordu; clip'lendi. (Bu, MK-172.8 cascade'inden AYRI bir kozmetik fix.)
+
+# KARARLAR.md — 172. OTURUM EKI-2 (MK-172.11 .. MK-172.16 — kök KARARLAR çatalından taşındı, 194)
+
+> 194 birleştirmesi (bkz. docs/KARARLAR-BIRLESTIRME-PLANI-194.md): kök ./KARARLAR.md çatalında 172.1–172.6 farklı kararlara atanmıştı. Kökün anteti/logo/menü/tarama/tenant-logo kararları çakışmasız yeni numaralara (172.11–172.15) taşındı. Yetim "İşlenenler redesign" (eski docs 172.6) → 172.16. Upload bütünlüğü (kök 172.6) canlı atıf nedeniyle 172.6 olarak korundu.
+
+### MK-172.11 — Belge anteti tek kaynak (helper mimarisi) [eski kök 172.1]
+aresBelgeBasligi(o), aresLogoPrint(h), aresFirmaLogo(h) ares-layout.js icinde window'a expose; tum app sayfalari ares-layout yukledigi icin global. Print fonksiyonlari ayri window'a document.write ile yazdigindan helper'lar STRING dondurur, string-concat ile gomulur. Ayri print window self-contained: asset YOLU calismaz -> AresPipe inline SVG, firma logosu base64. window.aresRefreshLogo = updateLogoFromSettings ile menu canli yenilenir.
+
+### MK-172.12 — Logo renk baglami (print sabit / ekran tema-uyumlu) [eski kök 172.2]
+Print logosu SABIT renk (tema degiskensiz, beyaz kagit): ring #16202B, bolts #FFFFFF, Ares #16202B, Pipe #2D6CDF, green #22A35A. Menu ve hata-sayfasi logosu TEMA-UYUMLU degisken: ring=--sb-tx/--tx, bolts=--sb-bg/--bg, Pipe & --ac, green sabit #34C46F.
+
+### MK-172.13 — Menu daraltma: gizlenen wordmark display:none [eski kök 172.3]
+Daraltilmis sidebar'da wordmark opacity:0 ile gizlenirse flex'te yer kaplamaya devam eder; justify-content:center amblemi negatif x'e itip ekran disina atar (amblem kaybolur). Cozum: .sidebar.collapsed .logo-text{display:none} + amblem 30px ortali.
+
+### MK-172.14 — Tarama core rengi MAVI (#4C8DF5) [eski kök 172.4]
+Amblem tarama core'u beyaz (#EAF2FF) yapilirsa menude/koyu temada beyaz cizgi olarak okunur. Core mavi (#4C8DF5), glow #2D6CDF olmali.
+
+### MK-172.15 — Tenant logo akisi [eski kök 172.5]
+Iki yukleme (ayarlar, base64): ares_logo_firma (firma, belge anteti SOL) ve ares_logo_ares (AresPipe white-label, MENU; print'i etkilemez). aresFirmaLogo(h): logo varsa img, yoksa ares_firma.ad/kisaAdi metni. SEFFAF PNG gerekir; RGB/siyah-zemin antette siyah kutu cikarir.
+
+### MK-172.16 — Islenenler ekrani redesign (kutu-per-satir) [eski docs 172.6, yetim taşındı]
+Eski .isl-satir (sade grid) -> mockup: kart hover/yukselme, durum-renkli ince kenar (hazir/isleniyor/hatali),
+isleniyor satirinda animasyonlu progress (gercek biten/toplam), oneri/manuel cikti blogu, baslikta
+"N hazir . M isleniyor" ozeti. Render _islSatirHtml + _islOzetYaz helper'larina ayrildi.
 
 # KARARLAR.md — 173. OTURUM EKI (MK-173.1 .. MK-173.4)
 
