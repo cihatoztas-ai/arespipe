@@ -1,6 +1,6 @@
-# CLAUDE — Sonraki Oturum (193) Brifingi
+# CLAUDE — Sonraki Oturum (194) Brifingi
 
-> **Önceki:** Oturum 192 (19 Haz 2026). Flanş + fitting FK backfill tamamlandı (+690 bağ, sıfır yanlış-bağ). Spool↔kütüphane bağı boru+flanş+fitting'te bitti. Tam kayıt: `docs/KUTUPHANE-DURUM.md` **A10**.
+> **Önceki:** Oturum 193 (19 Haz 2026). Renk durum noktası shipped (`7acb6a0`). Paslanmaz tee_eq seed +21 + backfill +65 (fitting 530→**595**). Konvansiyon dersi MK-193.1. Tam kayıt: `docs/KUTUPHANE-DURUM.md` **A10.7**.
 
 ---
 
@@ -9,45 +9,50 @@
 cd ~/Desktop/arespipe && git pull --rebase && git status && git log --oneline -3
 ls api/*.js | wc -l    # 12 tavan (MK-129.3)
 ```
-Handoff oku: bu dosya + `CLAUDE-SON-OTURUM.md` + `docs/KUTUPHANE-DURUM.md` (A10 + B14 güncel).
+Handoff oku: bu dosya + `CLAUDE-SON-OTURUM.md` + `docs/KUTUPHANE-DURUM.md` (A10.7 + B14 güncel).
 
-## İLK İŞ — 192 doc commit'i indi mi
-192'de **kod commit'i YOK** (tamamen DB UPDATE'leri canlıda yapıldı). `git log`'da sadece doc commit'i olmalı: KUTUPHANE-DURUM A10/B14 + handoff `[skip ci]`. Kod aranmaz. İstersen canlı teyit: bir karbon flanş/elbow spool detayı aç → STANDART kolonu dolu + satır mavi mi (FK yazıldı).
+## İLK İŞ — 193 indi mi
+`git log` son commit'ler: `7acb6a0` (kod, durum noktası) + seed JSON `fa1a992` + bu kapanış doc'u. Canlı teyit: bir spool detayı aç → `#` kolonunda durum noktaları görünüyor mu (🔵/🟡/⚪). Bir paslanmaz `4"/4"` tee spool'u → STANDART dolu + satır mavi (FK bağlandı, 65/65).
+
+---
+
+## Öncelikli gündem (A10.6 seed yol haritası — kalanlar)
+
+### 1. 🔴 Paslanmaz tee_red + karbon tee_red (~31 satır)
+- Paslanmaz `tee_red` (~10, DN150×100 `6"/4"`) + karbon `tee_red` (~21). **İkisinde de library referansı YOK** (karbon tee_red=0, paslanmaz tee=0).
+- Redüksiyonlu tee `tee_eq`'ten zor: `cap_buyuk_dn` + `cap_kucuk_dn` + run/branch uç-uca (C ve M ayrı) gerekir. B16.9 reducing-tee tablosu kaynak.
+- **Konvansiyon (MK-193.1 türevi):** red tee'de `cap_kucuk_dn ≠ cap_buyuk_dn` zaten (gerçek redüksiyon) → null sorunu yok ama iki çap da dolu olmalı.
+- Talep: `spool_malzemeleri` `tip='fitting' + tanim ~* '\mtee\M' + boyut`'ta sol≠sağ. Sayım + NPS→DN açık eşleme (tee_eq'teki gibi).
+- Backfill toplamsal → seed sonra `IS NULL` ile tekrar (MK-192.2).
+
+### 2. 🟡 Paslanmaz reducer (33 satır, A10.6 #3)
+- Sch 10S + 80S. Library'de paslanmaz reducer yok. ASME B16.9 reducer_conc, çift-çap.
+- `flansh_olculer UNIQUE constraint YOK` sorunu reducer'ı etkilemez (fitting tablosu, UK var).
+
+### 3. 🟡 Paslanmaz flanş seti (A10.6 #4)
+- 316L WN EN-1092-1, AISI316 SO, B16.5-150LBS-316L. **flansh_olculer UNIQUE constraint YOK** → seed öncesi DDL gerekir (BEGIN/ROLLBACK dry-run). `seed-from-json.mjs` UNIQUE_KEY haritası `flansh_olculer: null` → constraint eklenince doldur.
 
 ---
 
-## Öncelikli gündem
-
-### 1. 🟡 Renk noktası (KARAR-86.A) — ÖNÜ AÇILDI, ilk iş
-192'de tüm FK (boru+flanş+fitting) bitti → nokta artık yanıltıcı değil. `spool_detay.html` render: sol-kenar çizgisi → `#` kolonuna **nokta** (🔵 standart `geomBagli+kaliteStandart` / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz`). Mantık (3-dallı KARAR-86.A) hazır, sadece çizgi→nokta görsel. Satır tıklama + modal AYNEN kalır.
-- HTML patch deseni: anchor + `node --check` + `grep -c "</html>"` (MK-172.6) + MD5 + `arespipe_kopyala` → `gpc`.
-- ÖNCE render kodunu oku (MK-126.8), nokta sınıflarının nasıl atandığını gör.
-
-### 2. 🔴 Kütüphane seed (A10.6 yol haritası)
-Backfill'in ürettiği eksik listesi — en kalabalıktan:
-- Paslanmaz tee (eşit+red, ~75) · karbon tee_red (~21) · paslanmaz reducer (33, Sch 10S+80S) · paslanmaz flanş seti (316L WN/SO, B16.5-150LBS) · 1D dirsek (1) · 556 boru ölçüsü (devir).
-- Yöntem A4/A5/A6 (referans-çekme, ≥2 kaynak MK-96, %100 referanstan). Seed `node scripts/seed-from-json.mjs` — artık lint-korumalı (MK-191.1, grup zorunlu + standart↔grup).
-- **flansh_olculer UNIQUE constraint YOK** → flanş seed gerekirse önce DDL (BEGIN/ROLLBACK dry-run).
-- **Seed sonrası:** flanş/fitting FK backfill'i `IS NULL` ile TEKRAR çalıştır (toplamsal, eski bağ bozulmaz) → yeni seed'lenenler bağlanır. SQL'ler A10.1–A10.4'te.
-
-### 3. 🟡 Olet değerlendirmesi (~194 satır)
-Weld-O-let branch fitting. Library'de karşılığı var mı, varsa hangi tabloya? Scope-dışı mı seed mi kararı — DATA ile (A10.6'da "şüpheli" işaretli).
-
----
+## Yöntem (193'te kanıtlandı — tekrar et)
+- **DATA→UI→kod (MK-158.1):** önce talep sayımı (SELECT), sonra dry-run, sonra UPDATE.
+- **Seed konvansiyonu:** referans aynalarken bağlanması-kanıtlı aileyi seç (MK-193.1). Eşit tee `cap_kucuk_dn=cap_buyuk_dn`.
+- **`dis_cap_mm` BOZUK** her formatta → DN'i `boyut`'tan parse et, açık NPS→DN eşleme (genel regex değil, `1-1/2` kesir tuzağı).
+- **Backfill iki-çap kontrollü:** `cap_buyuk_dn` + `cap_kucuk_dn` ikisi de join'de.
+- Seed: `node scripts/seed-from-json.mjs <json>` dry-run → `--yaz`. Lint (MK-191.1) grup+standart zorunlu.
+- Backfill: BEGIN/ROLLBACK dry-run (MK-98.2), sadece `IS NULL` (MK-111.2), grup-çelişki=0, COMMIT. Toplamsal.
 
 ## Ertelenenler (kayıtta)
-- flansh_olculer UNIQUE constraint (seed upsert için).
+- `flansh_olculer` UNIQUE constraint (paslanmaz flanş seed öncesi şart).
+- Olet (~194) library karşılığı değerlendirmesi (branch fitting, şüpheli).
 - 2FA (Supabase+GitHub) + pg_dump off-platform yedek — ayrı oturum.
-- MK-176.7 wizard review ekranı → spool_detay/devre_detay.
-- boru_olculer ASME çift-etiket görsel birleştirme — kozmetik.
-- Kütüphane Faz 4/5 (gerçek kesit-şema SVG, foto/3D/DXF) — Cihat: program bitince.
+- MK-176.7 wizard review → spool_detay/devre_detay.
+- ~556 boru ölçüsü (devir, A8/B14).
+- Kütüphane Faz 4/5 (gerçek kesit-şema SVG, foto/3D/DXF) — program bitince.
 
 ## Sabit kurallar
-- DATA → UI → kod (MK-158.1). Kolon adı tahmin etme, `information_schema` (MK-85.3).
 - `izometri-oku.js` dokunulmaz (MK-49.1). 12 endpoint tavanı (MK-129.3).
-- Backfill: BEGIN/ROLLBACK dry-run önce (MK-98.2), sadece NULL doldur (MK-111.2), mevcuda dokunma. Toplamsal.
-- Grup çelişkisi grup ekseninde denetlenir, literal `=` değil (MK-192.3).
-- Tee/tip alt-sınıfı yapısal ölçüden, serbest-metinden değil (MK-192.1).
-- Seed: grup zorunlu + standart↔grup lint (MK-191.1) otomatik.
-- HTML patch: anchor + `node --check` + `grep -c "</html>"` (MK-172.6) + MD5.
-- `dis_cap_mm` eşleştirmede güvenilmez (format-bağımlı + bazen bozuk) → DN'i `boyut`'tan parse et.
+- Kolon adı tahmin etme, `information_schema` (MK-85.3). Kod yazmadan önce mevcudu oku (MK-126.8).
+- HTML patch: anchor + `node --check`(inline JS) + `grep -c "</html>"` (MK-172.6) + MD5 + `arespipe_kopyala` → `gpc`.
+- Kod commit `[skip ci]` YOK; doc/veri commit `[skip ci]` (MK-134.1).
+- Grup çelişkisi grup ekseninde, literal `=` değil (MK-192.3). Tee tip-alt-sınıfı geometriden (MK-192.1).

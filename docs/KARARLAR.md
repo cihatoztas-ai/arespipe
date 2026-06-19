@@ -2816,3 +2816,7 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 **MK-190.3 — Kütüphane karşılaştırma peer kimliği:** Boru peer = DN+OD+et tam (±0.05), "en yakın et" DEĞİL (schedule kaydırıyordu). Fitting peer = `rawCodesFor(normTip)` ile çapraz-standart (ham `.eq('parca_tipi')` `90LR`↔`elbow_90lr` kaçırıyordu). Flanş = basinc_sinifi her zaman anahtarda. (commit `e93860f`)
 
 **MK-190.4 — boru_olculer çift-etiket ≠ duplicate:** Aynı et iki schedule adıyla (STD≡SCH40, XS≡SCH80) ASME gerçeğidir, bilinçli yazılmış (arama iki adı da bulsun). Duplicate sanıp SİLME. Görsel birleştirme tabloda ("STD / 40") opsiyonel kozmetik. Önce BEGIN/ROLLBACK ile teşhis, sonra karar verildi (MK-98.2 işe yaradı).
+
+## MK-193 (Oturum 193)
+
+**MK-193.1 — Eşit tee kütüphane konvansiyonu (iki-çap matcher):** Backfill iki-çap kontrollü (A10.3 "her iki çap da şart" / A10.4 "iki-çap kontrollü") olduğundan, kütüphanedeki eşit tee `cap_kucuk_dn = cap_buyuk_dn` (+ `cap_kucuk_mm`) ile yazılır, NULL bırakılmaz — yoksa `NULL = dn_k` join'i düşer, satır görünür ama bağlanmaz. Referans aynalarken **bağlanması-kanıtlı aileyi** seç (cunife eşit tee), test edilmemiş aileyi (karbon eşit tee — spool'da hiç görünmemiş) değil. Genel ilke: kütüphane satırının "doğru görünmesi" yetmez, matcher join'inde **bağlanabilir** olması da şart — ikisi farklı denetimdir. (193: paslanmaz tee_eq seed +21, ilk üretimde karbon aynalandı→cap_kucuk_dn NULL, UPDATE ile cunife konvansiyonuna hizalandı, sonra backfill +65.)

@@ -1,42 +1,30 @@
-# son-durum.md — 170. Oturum (2026-06-08)
+# Son Durum — 193. Oturum (19 Haziran 2026)
 
-## TEMA
-AKIS SADELESTIRME — devre yukleme uctan uca, Cihat modeline gore. Iki sayfa tek yuzey; karar ekrani
-sadelesti; Islenenler'e per-devre Isle + isleniyorken Izle; cetelede dosya seviyesi hata bandi.
+> 192 → 193. Üç iş tamam: renk durum noktası (kod), paslanmaz tee_eq seed (+21), tee_eq FK backfill (+65). Bir konvansiyon hatası backfill öncesi yakalandı (MK-193.1).
 
-## DURUM
-- Commit'ler (170): tek-yuzey birlestirme (devre_detay ?taslak=1 -> wizard + iki Onizle kaldir) ·
-  faa5079 (karar ekrani) · b55157b (per-devre Isle + Izle) · 05ca11e (hata bandi). Onceki HEAD 8ef315c.
-  Final HEAD 05ca11e.
-- 12/12 fonksiyon (yeni endpoint YOK). Migration YOK. izometri-oku DOKUNULMADI (MK-49.1).
+## Sonuç
+**193 başarıyla kapatıldı.** A10.6 seed yol haritasının #1 maddesi (paslanmaz tee) **eşit-kısmı kapandı**. `fitting_olculer` 935 → **956** (+21 paslanmaz tee_eq). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ. Kod 1 commit (CI tetikli), veri 2 commit (`[skip ci]`), 2 DB COMMIT (UPDATE konvansiyon + backfill).
 
-## YAPILANLAR (hepsi canli)
-1. Tek-yuzey (MK-170.1): taslak yalniz wizard; devre_detay ?taslak=1 -> wizard yonlenir; iki Onizle
-   kaldirildi. 166 koprusu (MK-165.7/2) bilincli geri alindi; dormant kod silinmedi.
-2. Karar ekrani (MK-170.2): Incele & Onayla cikti -> Islenenler'e Git / Cik / Yeni Devre. Izometri
-   karar ekraninda islenmez.
-3. Per-devre Isle (MK-170.3): Islenenler satirinda s.acik>0 iken "Isle" (oncelik); global Bekleyenleri
-   isle sirayla; WIZ._islDrenaj paylasilir.
-4. Isleniyorken Izle (MK-170.4, regresyon): Incele disabled kaldirildi; isleniyorken "Izle" + canli dolum.
-5. Dosya seviyesi hata bandi (MK-170.5): durum=hata belgeler ad+sebep ile gorunur; "eksik" vs "hata"
-   ayrisir; istemci tarafi cekim, server degismedi.
+## Yapılanlar
+1. **Renk durum noktası** (KARAR-86.A) — `spool_detay.html`, commit `7acb6a0`. Sol-kenar çizgi → `#` kolonu nokta (🔵/🟡/⚪/şeffaf). Mantık `trClasses`'ten birebir, satır tıklama + modal aynen. Doğrulama temiz.
+2. **Paslanmaz tee_eq seed** +21 (DN15–600, kapsam B). Kaynak: doğrulanmış karbon B16.9 ayna (ölçü malzeme-bağımsız, MK-96). Ağırlık null. `seed/seed-tee-eq-paslanmaz.json`.
+3. **MK-193.1 düzeltme** — seed ilk halde karbon aynalandı (`cap_kucuk_dn=NULL`) → iki-çap matcher'da bağlanmazdı. Cunife konvansiyonuna (`cap_kucuk_dn=cap_buyuk_dn`) UPDATE ile hizalandı. Backfill öncesi yakalandı.
+4. **tee_eq FK backfill** +65 — `boyut`'tan açık NPS→DN eşleme (DN40/100/150). DATA-first: SELECT sayım → dry-run → COMMIT.
 
-## OPERASYONEL DERSLER (170)
-- Read-before-write (MK-126.8): wizard cetele tablosu ZATEN tam kolonlu cikti (canliya yakin + Durum +
-  Izometri) -> tabloya gereksiz dokunmaktan kacinildi; "yok onizle" kafa karisikligi 2 cerrahi edit
-  (redirect + buton kaldirma) ile cozuldu.
-- Onizle kaldirma bir REGRESYON dogurdu (isleniyorken liste gorme) -> ayni turda Izle ile geri kazanildi.
-- Drenaj motoru zaten filtre:{devreId} destekliyordu (Step 2 kullaniyordu) -> per-devre Isle ucuz oldu.
-- "Bos Incele" patlama degil, s.acik>0 disabled idi (mevcut tasarim) -> teshis kod ile, suclamadan once.
+## Kalan (A10.6 — seed yol haritası)
+- 🔴 Paslanmaz `tee_red` (~10, `6"/4"` DN150×100) + karbon `tee_red` (~21) — library referansı YOK, redüksiyonlu (çift-çap + C/M).
+- 🟡 Paslanmaz reducer (33, Sch 10S+80S).
+- 🟡 Paslanmaz flanş seti (UNIQUE constraint DDL gerekir).
+- ⚪ 1D dirsek (1), ~556 boru ölçüsü (devir).
 
-## DEGISEN DOSYALAR
-devre_detay.html (taslak=1 -> wizard redirect; onizleme dormant) ·
-devre_wizard_v3.html (iki Onizle kaldir · karar buton+metin · per-devre Isle · Izle · hata bandi).
+## CI / commit
+Kod: `7acb6a0` (durum noktası, `[skip ci]` YOK → CI tetikli). Veri: `4deb188` + `fa1a992` (seed JSON, `[skip ci]`). DB: konvansiyon UPDATE + backfill COMMIT (repo'ya gitmez).
 
-## ACIK (170 sonu)
-B spool-seviyesi hata rozeti · tekrar-dene · W-2.9 paralel · W-2.5 iki cubuk · dosya_isleme_kuyrugu takili
-· gece cron gercek testi · Y200/format ogretimi (pakette degismedi) · KARARLAR.md MK-170.1..5 islenecek.
+## Açık borçlar (öncelik)
+1. 🔴 tee_red seed (paslanmaz ~10 + karbon ~21) — **194'ün ilk işi**.
+2. 🟡 Paslanmaz reducer + flanş seti seed (A10.6 #3–4).
+3. flansh_olculer UNIQUE constraint (flanş seed öncesi).
+4. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
-## TEST DEVRELERI — SILME
-Hepsi test. 170: NB1099C ailesi (vmh cvv=841b117f-ef40-4b9c-b600-488444e734b8, hvbjhovojh, ovvmhc,
-gsdhh, b nn, hvbn o, gcmhgcm).
+## Sonraki oturum notu
+İlk iş: tee_red seed (referans = B16.9 reducing-tee tablosu; talep `boyut` sol≠sağ). Konvansiyon MK-193.1: çift-çap dolu. Seed sonrası backfill `IS NULL` ile tekrar (toplamsal).

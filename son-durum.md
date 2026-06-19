@@ -1,27 +1,30 @@
-# Son Durum — 192. Oturum (19 Haziran 2026)
+# Son Durum — 193. Oturum (19 Haziran 2026)
 
-> 191 → 192. Boru FK backfill'inden sonra **flanş + fitting FK backfill** uçtan uca yapıldı. Tamamen DB işi — repo'ya kod gitmedi.
+> 192 → 193. Üç iş tamam: renk durum noktası (kod), paslanmaz tee_eq seed (+21), tee_eq FK backfill (+65). Bir konvansiyon hatası backfill öncesi yakalandı (MK-193.1).
 
 ## Sonuç
-**192 başarıyla kapatıldı.** 4 backfill ailesi (flanş + elbow + reducer + tee), **+690 yeni FK bağı**, sıfır yanlış-bağ, tüm grup-çelişki sayaçları 0. Spool↔kütüphane bağı boru+flanş+fitting'te tamamlandı. Kalan boşlar = kütüphanede karşılığı olmayan (seed) veya parça-olmayan (scope dışı). Kod commit'i YOK; sadece handoff + KUTUPHANE-DURUM A10 doc commit'i.
+**193 başarıyla kapatıldı.** A10.6 seed yol haritasının #1 maddesi (paslanmaz tee) **eşit-kısmı kapandı**. `fitting_olculer` 935 → **956** (+21 paslanmaz tee_eq). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ. Kod 1 commit (CI tetikli), veri 2 commit (`[skip ci]`), 2 DB COMMIT (UPDATE konvansiyon + backfill).
 
-## Yapılanlar (hepsi DB, `BEGIN/ROLLBACK` dry-run → COMMIT)
-1. **Flanş FK backfill** — +262 (467 toplam bağlı / 349 boş). Karbon EN-1092-1. DN `boyut`'tan (dis_cap_mm güvenilmez). Tip: Slip-On→**EN-T12** (notlar-teyitli, T01 değil!), WN→T11, Blind→T05, Set-On→null. PN fallback KARAR-1/A (büyük DN'de PN16→PN10). 258 exact + 4 fallback.
-2. **Elbow FK backfill** — +358 (427 toplam / 1 boş = 1D). Hepsi 90° 1.5D → 90LR (karbon/paslanmaz) / elbow_90lr (cunife). DN 3 yol: DN-düz / OD→DN / NPS→DN. Schedule anahtarda değil.
-3. **Reducer FK backfill** — +67. Karbon reducer_conc (paslanmaz lib'de yok→seed). Çift çap: OD-çifti `A x e / B x e` veya tanim `DNxXDNy`. sol=büyük, sağ=küçük.
-4. **Tee FK backfill** — +3 cunife. **MK-192.1:** tip geometriden (`dn_b=dn_k→tee_eq`, else `tee_red`), tanim'dan değil. Karbon tee_red + paslanmaz tee lib'de yok → seed.
+## Yapılanlar
+1. **Renk durum noktası** (KARAR-86.A) — `spool_detay.html`, commit `7acb6a0`. Sol-kenar çizgi → `#` kolonu nokta (🔵/🟡/⚪/şeffaf). Mantık `trClasses`'ten birebir, satır tıklama + modal aynen. Doğrulama temiz.
+2. **Paslanmaz tee_eq seed** +21 (DN15–600, kapsam B). Kaynak: doğrulanmış karbon B16.9 ayna (ölçü malzeme-bağımsız, MK-96). Ağırlık null. `seed/seed-tee-eq-paslanmaz.json`.
+3. **MK-193.1 düzeltme** — seed ilk halde karbon aynalandı (`cap_kucuk_dn=NULL`) → iki-çap matcher'da bağlanmazdı. Cunife konvansiyonuna (`cap_kucuk_dn=cap_buyuk_dn`) UPDATE ile hizalandı. Backfill öncesi yakalandı.
+4. **tee_eq FK backfill** +65 — `boyut`'tan açık NPS→DN eşleme (DN40/100/150). DATA-first: SELECT sayım → dry-run → COMMIT.
 
-## Fitting toplam
-530 bağlı / 1750 boş. Boş'un ~%90'ı **scope dışı** (butt-weld 644, imalat 523, olet 194, bağlantı 139, diğer) — parça değil, seed edilemez. Kalan ~93 = lib-eksik tee/reducer/paslanmaz (seed).
+## Kalan (A10.6 — seed yol haritası)
+- 🔴 Paslanmaz `tee_red` (~10, `6"/4"` DN150×100) + karbon `tee_red` (~21) — library referansı YOK, redüksiyonlu (çift-çap + C/M).
+- 🟡 Paslanmaz reducer (33, Sch 10S+80S).
+- 🟡 Paslanmaz flanş seti (UNIQUE constraint DDL gerekir).
+- ⚪ 1D dirsek (1), ~556 boru ölçüsü (devir).
 
 ## CI / commit
-**Kod commit'i YOK** (tamamen DB UPDATE). Doc commit'i: handoff 3 dosya + KUTUPHANE-DURUM.md (A10 + B14) → `[skip ci]`.
+Kod: `7acb6a0` (durum noktası, `[skip ci]` YOK → CI tetikli). Veri: `4deb188` + `fa1a992` (seed JSON, `[skip ci]`). DB: konvansiyon UPDATE + backfill COMMIT (repo'ya gitmez).
 
-## Açık borçlar (öncelik sırası)
-1. 🟡 **Renk noktası (KARAR-86.A)** — ÖNÜ AÇILDI. Tüm FK bitti, nokta artık yanıltıcı değil. **193'ün ilk işi.** `#` kolonu 🔵/🟡/⚪.
-2. 🔴 **Kütüphane seed yol haritası (A10.6):** paslanmaz tee (~75), karbon tee_red (~21), paslanmaz reducer (33), paslanmaz flanş seti, 1D dirsek (1), 556 boru ölçüsü.
-3. 🟡 Olet (~194) library karşılığı değerlendirmesi (branch fitting).
-4. flansh_olculer UNIQUE constraint · 2FA+pg_dump · MK-176.7 wizard review.
+## Açık borçlar (öncelik)
+1. 🔴 tee_red seed (paslanmaz ~10 + karbon ~21) — **194'ün ilk işi**.
+2. 🟡 Paslanmaz reducer + flanş seti seed (A10.6 #3–4).
+3. flansh_olculer UNIQUE constraint (flanş seed öncesi).
+4. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
 ## Sonraki oturum notu
-İlk iş: renk noktası (KARAR-86.A 3-dallı, çizgi→nokta). Sonra kütüphane seed (A10.6 listesinden, en kalabalık = paslanmaz tee). Backfill toplamsaldır → seed sonrası backfill'i `IS NULL` ile tekrar çalıştır, eski bağlar bozulmaz.
+İlk iş: tee_red seed (referans = B16.9 reducing-tee tablosu; talep `boyut` sol≠sağ). Konvansiyon MK-193.1: çift-çap dolu. Seed sonrası backfill `IS NULL` ile tekrar (toplamsal).

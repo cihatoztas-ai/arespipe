@@ -1,59 +1,48 @@
-# CLAUDE — Son Oturum (192)
+# CLAUDE — Son Oturum (193)
 
-> **Tarih:** 19 Haziran 2026 · **Oturum:** 192
-> Ana tema: **flanş + fitting FK backfill**. Boru'dan (191) farklı: bunlarda spool_detay'de runtime matcher YOK → tablo %100 FK'ya bağımlı. Grup-bilinçli birebir eşleştirmeyle dolduruldu. **Tamamen DB işi, kod commit'i yok.** Tam teknik kayıt: `docs/KUTUPHANE-DURUM.md` **A10** (bu oturumda eklendi).
+> **Tarih:** 19 Haziran 2026 · **Oturum:** 193
+> Üç iş: **(1) renk durum noktası** (KARAR-86.A, kod) · **(2) paslanmaz tee_eq seed** (+21) · **(3) tee_eq FK backfill** (+65). Backfill öncesi bir konvansiyon hatası yakalandı → **MK-193.1**. Tam teknik kayıt: `docs/KUTUPHANE-DURUM.md` **A10.7** + **B14**.
 
 ---
 
-## Yöntem (her ailede aynı ritim)
-DATA→UI→kod (MK-158.1) · her adım `BEGIN/ROLLBACK` dry-run (MK-98.2) · sadece `IS NULL` doldur, mevcuda dokunma (MK-111.2) · grup-çelişki sayacı=0 teyit · sonra COMMIT. Kolon adı tahmin yok, `information_schema` (MK-85.3).
+## 1. ✅ Renk durum noktası (KARAR-86.A) — kod, commit `7acb6a0`
+`spool_detay.html`: satırın sol-kenar 3px çizgisi tablo kenarıyla karışıyordu → **`#` kolonundaki noktaya** taşındı.
+- 🔵 standart (`geomBagli+kaliteStandart`) / 🟡 ara ölçü (`malz-arasolc`) / ⚪ kütüphanede yok (`malz-tanimsiz`) / şeffaf = uç-işlemi (hizalama korunur).
+- `noktaSinif` mevcut `trClasses`'ten **birebir** okunur — yeni mantık yok, 3-dallı karar aynen. Satır tıklama + modal **aynen**.
+- CSS: `malz-tiklanabilir/standartdisi/arasolc/tanimsiz` `border-left` çizgileri + `td:first-child` telafileri kaldırıldı; ölü `malz-standartdisi` temizlendi; `.nokta*` eklendi.
+- Doğrulama: tek gerçek `</html>` (MK-172.6), inline JS sözdizimi temiz, +7 satır.
 
-## Ne yapıldı (4 aile, +690 bağ)
+## 2. ✅ Paslanmaz tee_eq seed — +21 satır (`fitting_olculer`)
+- Kapsam **B**: DN15–DN600 (gemi-gerçekçi). Karbonun DN650–1200 dev ölçüleri atlandı.
+- **Kaynak (MK-96):** B16.9 uç-uca (M) malzeme-bağımsız → birincil referans = doğrulanmış karbon B16.9 tee_eq (OD + M birebir). `et_mm`/`agirlik_kg` taşınmadı.
+- `agirlik_kg = null` (MK-96: tee teorik kütle yok; paslanmaz katalogdan ≥2 kaynakla sonra).
+- `seed/seed-tee-eq-paslanmaz.json` + `scripts/seed-from-json.mjs` (lint 21/0 red, idempotent). Commit `4deb188` (ilk) → `fa1a992` (konvansiyon düzeltme).
 
-### 1. ✅ Flanş FK backfill — +262 (467 toplam / 349 boş)
-- **Hedef:** karbon EN-1092-1 (lib'de paslanmaz flanş YOK → paslanmaz scope dışı).
-- **DN:** `boyut` kolonundan (`DN300`→300). `dis_cap_mm` GÜVENİLMEZ (karbon'da OD, paslanmaz'da DN, ANSI'de inç).
-- **Tip haritası (notlar-teyitli):** Slip-On→**EN-T12** (Hubbed Slip-On; T01=Plate, Slip-On DEĞİL — spool "TYPE01" yazsa bile T12), WN→T11, Blind→T05 (hub+bore=0), Set-On→null.
-- **PN (KARAR-1/A):** EN PN deseni DN-bağımlı (DN≤150 PN16, DN200/250 ikisi, DN300+ PN10). Spool PN o DN'de yoksa tek-PN'e düş. 258 exact + 4 fallback, 0 belirsizlik.
+## 3. 🔴 MK-193.1 — Eşit tee konvansiyon hatası (backfill ÖNCESİ yakalandı)
+Seed ilk üretimde **karbon aynalandı → `cap_kucuk_dn = NULL`**. Ama backfill **iki-çap kontrollü** (A10.3/A10.4): `NULL = dn_k` join'i düşer → satır görünür ama **bağlanmaz**. Karbon eşit tee bu konvansiyonu hiç test etmemişti (spool'da karbon eşit tee yok). Bağlanması-kanıtlı aile = **cunife** (`cap_kucuk_dn = cap_buyuk_dn`). 21 satır `UPDATE` ile hizalandı (`cap_kucuk_dn=cap_buyuk_dn`, `cap_kucuk_mm=cap_buyuk_mm`), JSON provenance düzeltildi. **Körlemesine çalıştırılsaydı 0 eşleşme + yanlış teşhis.**
 
-### 2. ✅ Elbow FK backfill — +358 (427 toplam / 1 boş)
-- Hepsi 90° 1.5D → `90LR`(karbon/paslanmaz) / `elbow_90lr`(cunife). Lib'de paslanmaz 90LR VAR.
-- **DN 3 yol:** `DN125` / `139.7x4.5`(OD→DN) / `4" Sch 10S`(NPS→DN, kesirli inç dahil).
-- `dis_cap_mm` paslanmazda BOZUK (`4" → 4.00`) → sadece `boyut` string'inden türet.
-- Schedule anahtarda değil (lib `schedule_deger=null`). 1D dirsek (1 satır) lib'de yok → **atlanmadı, seed sayıldı**.
+## 4. ✅ tee_eq FK backfill — +65 spool bağı
+Talep `spool_malzemeleri.boyut`'tan (NPS-inç çift; `dis_cap_mm` BOZUK: `4"`→`4.00`). 4 distinct boyut → **açık NPS→DN eşleme** (`1-1/2` kesir tuzağı yok):
+| boyut | tip | DN | adet |
+|---|---|---:|---:|
+| `4" / 4"` | eşit | 100 | 62 ✓ |
+| `6" / 6"` | eşit | 150 | 2 ✓ |
+| `1-1/2" / 1-1/2"` | eşit | 40 | 1 ✓ |
+| `6" / 4"` | **red** | 150×100 | 10 → kalır (tee_red seed) |
+62+2+1 = **65** (her DN tek fitting_id). DATA-first: önce SELECT sayım (65), sonra BEGIN/ROLLBACK dry-run (65), sonra COMMIT.
 
-### 3. ✅ Reducer FK backfill — +67
-- Hepsi konsantrik → `reducer_conc`. Paslanmaz reducer lib'de YOK → seed (33). Hedef karbon.
-- **Çift çap (sol=büyük, sağ=küçük):** `139.7x4.5 / 114.3x4.5` OD-çifti VEYA tanim'da `DN80XDN50` (boyut eksik vakası). Anahtar `cap_buyuk_dn + cap_kucuk_dn` ikisi de.
+## Sonuç (canlı)
+`fitting_olculer` 935 → **956** (+21). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ.
 
-### 4. ✅ Tee FK backfill — +3 cunife
-- **MK-192.1:** tip GEOMETRİDEN (`dn_b=dn_k→tee_eq`, else `tee_red`), tanim'dan DEĞİL (cunife tanim "reducing" demiyor ama 324x219 redüksiyonlu). Tanim'a güvenmek 324x219'u tee_eq'e yanlış bağlardı (dry-run yakaladı).
-- Lib: tee_eq karbon+cunife, tee_red cunife. **karbon tee_red YOK, paslanmaz tee YOK** → karbon/paslanmaz tee tamamen seed. Sadece 3 cunife bağlandı.
-
-## Yanlış-bağ önleme dersleri (192)
-- **Grup çelişkisi LİTERAL `=` ile değil, GRUP EKSENİNDE denetlenir.** `karbon çelik`≠`karbon`, `bakir`≠`cunife` (literal) ama aynı grup → literal denetim yanlış-pozitif verir (A105 flanşı sahte alarm verdi, gerçekte doğruydu).
-- **`tip='fitting'` çöp kutusu:** 2280'in ~660'ı gerçek parça. `~* '\mtee\M'` kelime-sınırı ŞART (`ILIKE '%tee%'` "S**tee**l"i yakalar → 848 sahte tee).
-- **`dis_cap_mm` formata göre anlam değiştiriyor + bazen bozuk** → eşleştirmede asla kullanma, DN'i `boyut` string'inden parse et.
-
-## Eksik-rapor (A10.6 — seed yol haritası, 192'nin en değerli çıktısı)
-Backfill = ölçme aracı. Lib'de karşılığı olmayan parça sessizce atlanmaz, sayılır. Backfill toplamsal (`IS NULL`), kütüphane büyüyünce tekrar çalışır, eski bağ bozulmaz.
-1. 🔴 Paslanmaz tee (~75) · 2. 🔴 Karbon tee_red (~21) · 3. 🟡 Paslanmaz reducer (33) · 4. 🟡 Paslanmaz flanş seti · 5. ⚪ 1D dirsek (1) · 6. 556 boru ölçüsü (devir).
-**Scope-dışı (parça değil, seed edilemez):** butt-weld 644, imalat-detay 523, olet 194, bağlantı-elemanı 139, özel ürün.
-
-## Commit'ler (192)
-| Tür | İçerik |
-|---|---|
-| (DB) | flanş FK backfill — +262 COMMIT |
-| (DB) | elbow FK backfill — +358 COMMIT |
-| (DB) | reducer FK backfill — +67 COMMIT |
-| (DB) | cunife tee FK backfill — +3 COMMIT |
-| doc | handoff 3 + KUTUPHANE-DURUM A10/B14 `[skip ci]` |
-
-**Kod commit'i YOK** — repo'ya gidecek JS/SQL dosyası üretilmedi.
+## Commit'ler (193)
+| Tür | Hash | İçerik |
+|---|---|---|
+| kod | `7acb6a0` | spool_detay durum noktası (KARAR-86.A) — CI tetikli |
+| veri | `4deb188` | paslanmaz tee_eq seed JSON (21) `[skip ci]` |
+| veri | `fa1a992` | seed düzeltme cap_kucuk_dn=cap_buyuk_dn `[skip ci]` |
+| (DB) | — | tee_eq konvansiyon UPDATE (21) COMMIT |
+| (DB) | — | tee_eq FK backfill (+65) COMMIT |
+| doc | (bu kapanış) | A10.7 + B14 + handoff + KARARLAR `[skip ci]` |
 
 ## KARARLAR.md'ye eklenecek
-**MK-192.1 — Tee eşit/redüksiyonlu ayrımı geometriden:** Tee'nin `tee_eq` mi `tee_red` mi olduğu `tanim` metnindeki kelimeden ("reducing") DEĞİL, iki çapın eşitliğinden türetilir (`cap_buyuk=cap_kucuk → eq`, değilse `red`). Tanim güvenilmez (cunife tee "reducing" demez ama çapları redüksiyonlu olabilir). Genel ilke: parça tip-alt-sınıfı yapısal ölçüden çıkarılabiliyorsa, serbest-metin etiketine güvenme.
-
-**MK-192.2 — Backfill bir ölçme aracıdır:** FK backfill "bitirme işi" değil. Kütüphanede karşılığı olmayan spool parçası sessizce atlanmaz, **görünür eksik (seed adayı) olarak sayılır**. Backfill toplamsaldır (`IS NULL` doldurur, mevcudu ezmez) → kütüphane zenginleştikçe `IS NULL` ile tekrar çalıştırılır, eski doğru bağlar bozulmaz. "Önce kütüphaneyi tamamla" ile "önce bağla" yanlış ikilem; doğru döngü: bağla → eksiği ölç → o ölçüye göre seed → tekrar bağla.
-
-**MK-192.3 — Grup çelişkisi grup ekseninde denetlenir:** Spool↔kütüphane grup tutarlılığı literal string eşitliğiyle (`sm.malzeme = f.malzeme_grubu`) denetlenmez — `karbon çelik`/`A105`→karbon, `bakir`→cunife gibi varyantlar yanlış-pozitif üretir. Denetim `_grupBelirle` ekseniyle normalize edilerek yapılır.
+**MK-193.1 — Eşit tee kütüphane konvansiyonu (iki-çap matcher):** Backfill iki-çap kontrollü olduğundan, kütüphanedeki eşit tee `cap_kucuk_dn = cap_buyuk_dn` (+ `cap_kucuk_mm`) ile yazılır, NULL bırakılmaz — yoksa `NULL = dn_k` join'i düşer, satır görünür ama bağlanmaz. Referans aynalarken **bağlanması-kanıtlı aileyi** seç (cunife eşit tee), test edilmemiş aileyi (karbon eşit tee — spool'da hiç görünmemiş) değil. Genel ilke: kütüphane satırının "doğru görünmesi" yetmez, matcher join'inde **bağlanabilir** olması da şart; ikisi farklı denetimdir.

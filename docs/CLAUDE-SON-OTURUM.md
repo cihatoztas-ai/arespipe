@@ -1,41 +1,48 @@
-# CLAUDE-SON-OTURUM.md — 170 (2026-06-08)
+# CLAUDE — Son Oturum (193)
 
-## NE YAPTIK
-Devre yukleme akisini Cihat'in zihinsel modeline oturttuk. Onun cumlesiyle: yeni devre ekle -> bilgi gir,
-klasor birak -> dosyalar alinir -> "kuyruga alindi" karar ekrani (ne yapmak istersin) -> Islenenler'de
-bekle -> istersek bir devreyi onden isle, yoksa hepsini sirayla -> tek sayfada ilerleme + hangisinde sorun
-var -> duzenle/incele -> canliya al. "Yok onizle, oradan wizard'a git" kafa karisikligini kokten kaldirdik.
+> **Tarih:** 19 Haziran 2026 · **Oturum:** 193
+> Üç iş: **(1) renk durum noktası** (KARAR-86.A, kod) · **(2) paslanmaz tee_eq seed** (+21) · **(3) tee_eq FK backfill** (+65). Backfill öncesi bir konvansiyon hatası yakalandı → **MK-193.1**. Tam teknik kayıt: `docs/KUTUPHANE-DURUM.md` **A10.7** + **B14**.
 
-## ANA KAZANIMLAR (hepsi canli)
-1. TEK-YUZEY (MK-170.1). devre_detay ?taslak=1 ARTIK onizleme cizmiyor; location.replace ile wizard'a
-   yonleniyor (catch-all). Wizard'dan iki "Onizle" butonu (onay-bar + Islenenler satiri) kaldirildi.
-   Bulgu: wizard Adim 2 zaten "devre_detay tabanli" (MK-126.7) — yani onizleme bir TEKRARDI; ustelik ayni
-   devrede yuzeyi farkli hesapliyordu (Diger vs Siyah) + uretim kolonlari (Ilerleme/Bukum/Kesim) taslakta
-   anlamsizdi. 166 koprusu (MK-165.7/2) bilincli geri alindi; dormant kod silinmedi.
-2. KARAR EKRANI SADELESTI (MK-170.2). Popup'tan "Incele & Onayla" cikti -> Islenenler'e Git / Cik /
-   Yeni Devre. Izometri karar ekraninda islenmez (yukleme yalniz kuyruga atar).
-3. PER-DEVRE ISLE (MK-170.3). Islenenler satirina "Isle" (yalniz o devre, oncelik). Drenaj motoru zaten
-   filtre:{devreId} destekliyordu -> ucuz. Global "Bekleyenleri isle" sirayla; WIZ._islDrenaj paylasilir.
-4. ISLENIRKEN IZLE (MK-170.4, regresyon duzeltmesi). Onizle'yi kaldirinca isleniyorken liste gorme
-   kaybolmustu (Incele s.acik>0 disabled). Disabled kaldirildi; isleniyorken "Izle" + canli dolum.
-5. DOSYA SEVIYESI HATA BANDI (MK-170.5). devre-inceleme API hata dondurmuyor -> istemci tarafi
-   dosya_isleme_kuyrugu durum='hata' cekip cetele ustunde kirmizi bant (dosya adi + hata_mesaji).
-   "eksik" ile "hata" ayrisir. Server/12-12 degismedi. Salt-gorunur.
+---
 
-## OZ-IHLAL / TUZAKLAR (170)
-- "Bos Incele" patlama saniliyordu; aslinda s.acik>0 disabled (mevcut tasarim). Suclamadan once kod
-  okundu (MK-126.8/132.1). Ama disabled gorunmuyordu -> Izle ile cozuldu.
-- Onizle'yi kaldirmak isleniyorken-liste-gorme regresyonu dogurdu; ayni turda yakalanip Izle ile kapatildi.
-- Wizard cetele tablosu zaten tam kolonluymus (mockup'ta az kolon dar onizleme yuzundendi) -> tabloya
-  gereksiz dokunmaktan donuldu.
-- Merge patch'i ilk denemede repoya inmemisti (script bulunamadi); MD5/git ile durum dogrulanip duzeltildi.
+## 1. ✅ Renk durum noktası (KARAR-86.A) — kod, commit `7acb6a0`
+`spool_detay.html`: satırın sol-kenar 3px çizgisi tablo kenarıyla karışıyordu → **`#` kolonundaki noktaya** taşındı.
+- 🔵 standart (`geomBagli+kaliteStandart`) / 🟡 ara ölçü (`malz-arasolc`) / ⚪ kütüphanede yok (`malz-tanimsiz`) / şeffaf = uç-işlemi (hizalama korunur).
+- `noktaSinif` mevcut `trClasses`'ten **birebir** okunur — yeni mantık yok, 3-dallı karar aynen. Satır tıklama + modal **aynen**.
+- CSS: `malz-tiklanabilir/standartdisi/arasolc/tanimsiz` `border-left` çizgileri + `td:first-child` telafileri kaldırıldı; ölü `malz-standartdisi` temizlendi; `.nokta*` eklendi.
+- Doğrulama: tek gerçek `</html>` (MK-172.6), inline JS sözdizimi temiz, +7 satır.
 
-## COMMIT'LER
-tek-yuzey birlestirme (devre_detay + wizard) · faa5079 (karar ekrani) · b55157b (per-devre Isle + Izle) ·
-05ca11e (hata bandi). Final HEAD 05ca11e. 12/12, izometri-oku dokunulmadi, migration yok.
+## 2. ✅ Paslanmaz tee_eq seed — +21 satır (`fitting_olculer`)
+- Kapsam **B**: DN15–DN600 (gemi-gerçekçi). Karbonun DN650–1200 dev ölçüleri atlandı.
+- **Kaynak (MK-96):** B16.9 uç-uca (M) malzeme-bağımsız → birincil referans = doğrulanmış karbon B16.9 tee_eq (OD + M birebir). `et_mm`/`agirlik_kg` taşınmadı.
+- `agirlik_kg = null` (MK-96: tee teorik kütle yok; paslanmaz katalogdan ≥2 kaynakla sonra).
+- `seed/seed-tee-eq-paslanmaz.json` + `scripts/seed-from-json.mjs` (lint 21/0 red, idempotent). Commit `4deb188` (ilk) → `fa1a992` (konvansiyon düzeltme).
 
-## KAPANIS BORCU (171'de HATIRLA)
-- B: spool seviyesi hata rozeti (dosya-adi->spool esleme; kirilgan, dikkatli).
-- Tekrar dene: hata bandina yeniden-isle (kuyruga yazma).
-- KARARLAR.md (kok dosya, pakette degil): MK-170.1..5 + devreden gecikmis MK-166/167 islenecek.
-- W-2.9 paralel · W-2.5 iki cubuk · dosya_isleme_kuyrugu takili · gece cron gercek testi · Y200.
+## 3. 🔴 MK-193.1 — Eşit tee konvansiyon hatası (backfill ÖNCESİ yakalandı)
+Seed ilk üretimde **karbon aynalandı → `cap_kucuk_dn = NULL`**. Ama backfill **iki-çap kontrollü** (A10.3/A10.4): `NULL = dn_k` join'i düşer → satır görünür ama **bağlanmaz**. Karbon eşit tee bu konvansiyonu hiç test etmemişti (spool'da karbon eşit tee yok). Bağlanması-kanıtlı aile = **cunife** (`cap_kucuk_dn = cap_buyuk_dn`). 21 satır `UPDATE` ile hizalandı (`cap_kucuk_dn=cap_buyuk_dn`, `cap_kucuk_mm=cap_buyuk_mm`), JSON provenance düzeltildi. **Körlemesine çalıştırılsaydı 0 eşleşme + yanlış teşhis.**
+
+## 4. ✅ tee_eq FK backfill — +65 spool bağı
+Talep `spool_malzemeleri.boyut`'tan (NPS-inç çift; `dis_cap_mm` BOZUK: `4"`→`4.00`). 4 distinct boyut → **açık NPS→DN eşleme** (`1-1/2` kesir tuzağı yok):
+| boyut | tip | DN | adet |
+|---|---|---:|---:|
+| `4" / 4"` | eşit | 100 | 62 ✓ |
+| `6" / 6"` | eşit | 150 | 2 ✓ |
+| `1-1/2" / 1-1/2"` | eşit | 40 | 1 ✓ |
+| `6" / 4"` | **red** | 150×100 | 10 → kalır (tee_red seed) |
+62+2+1 = **65** (her DN tek fitting_id). DATA-first: önce SELECT sayım (65), sonra BEGIN/ROLLBACK dry-run (65), sonra COMMIT.
+
+## Sonuç (canlı)
+`fitting_olculer` 935 → **956** (+21). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ.
+
+## Commit'ler (193)
+| Tür | Hash | İçerik |
+|---|---|---|
+| kod | `7acb6a0` | spool_detay durum noktası (KARAR-86.A) — CI tetikli |
+| veri | `4deb188` | paslanmaz tee_eq seed JSON (21) `[skip ci]` |
+| veri | `fa1a992` | seed düzeltme cap_kucuk_dn=cap_buyuk_dn `[skip ci]` |
+| (DB) | — | tee_eq konvansiyon UPDATE (21) COMMIT |
+| (DB) | — | tee_eq FK backfill (+65) COMMIT |
+| doc | (bu kapanış) | A10.7 + B14 + handoff + KARARLAR `[skip ci]` |
+
+## KARARLAR.md'ye eklenecek
+**MK-193.1 — Eşit tee kütüphane konvansiyonu (iki-çap matcher):** Backfill iki-çap kontrollü olduğundan, kütüphanedeki eşit tee `cap_kucuk_dn = cap_buyuk_dn` (+ `cap_kucuk_mm`) ile yazılır, NULL bırakılmaz — yoksa `NULL = dn_k` join'i düşer, satır görünür ama bağlanmaz. Referans aynalarken **bağlanması-kanıtlı aileyi** seç (cunife eşit tee), test edilmemiş aileyi (karbon eşit tee — spool'da hiç görünmemiş) değil. Genel ilke: kütüphane satırının "doğru görünmesi" yetmez, matcher join'inde **bağlanabilir** olması da şart; ikisi farklı denetimdir.

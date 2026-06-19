@@ -1,24 +1,30 @@
-# Son Durum — 191. Oturum (18 Haziran 2026)
+# Son Durum — 193. Oturum (19 Haziran 2026)
 
-> 190 → 191. Boru matcher grup-kör bug'ı (316L→karbon B36.10M) uçtan uca kapatıldı.
+> 192 → 193. Üç iş tamam: renk durum noktası (kod), paslanmaz tee_eq seed (+21), tee_eq FK backfill (+65). Bir konvansiyon hatası backfill öncesi yakalandı (MK-193.1).
 
 ## Sonuç
-**191 başarıyla kapatıldı.** 4 iş, hepsi commit + CI yeşil. Boru tarafı (matcher + FK) tamam; flanş/fitting backfill 192'ye scope'landı (text-parse gerektiriyor).
+**193 başarıyla kapatıldı.** A10.6 seed yol haritasının #1 maddesi (paslanmaz tee) **eşit-kısmı kapandı**. `fitting_olculer` 935 → **956** (+21 paslanmaz tee_eq). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ. Kod 1 commit (CI tetikli), veri 2 commit (`[skip ci]`), 2 DB COMMIT (UPDATE konvansiyon + backfill).
 
 ## Yapılanlar
-1. **Boru matcher Tier-0 grup ekseni** (`99c2fb9` + `d1fd876`) — 316L artık ASME-B36.19M'e bağlanıyor; karbon↔paslanmaz çakışması grup ekseninde çözülüyor; grup belli + o ölçüde aynı-grup yok → null (yanlış-grup bağlamaz). Deploy MD5 `6fcc5cd425faa671ed51fa421072196e`.
-2. **Boru FK backfill — COMMIT** — 1674 bağlı / 556 boş. Tüm bağlar grup-tutarlı. 556 = kütüphanede eksik ölçü (seed işi), tolerans değil.
-3. **Seed-gate lint MK-191.1** (`76a528c`) — `scripts/seed-from-json.mjs`: grup zorunlu+enum + standart↔grup whitelist. Yanlış satır DB'ye girmeden reddedilir.
-4. **KUTUPHANE-DURUM.md A9+B14** (MD5 `754cf657…`) — Cihat'ın elinde, yüklenecek.
+1. **Renk durum noktası** (KARAR-86.A) — `spool_detay.html`, commit `7acb6a0`. Sol-kenar çizgi → `#` kolonu nokta (🔵/🟡/⚪/şeffaf). Mantık `trClasses`'ten birebir, satır tıklama + modal aynen. Doğrulama temiz.
+2. **Paslanmaz tee_eq seed** +21 (DN15–600, kapsam B). Kaynak: doğrulanmış karbon B16.9 ayna (ölçü malzeme-bağımsız, MK-96). Ağırlık null. `seed/seed-tee-eq-paslanmaz.json`.
+3. **MK-193.1 düzeltme** — seed ilk halde karbon aynalandı (`cap_kucuk_dn=NULL`) → iki-çap matcher'da bağlanmazdı. Cunife konvansiyonuna (`cap_kucuk_dn=cap_buyuk_dn`) UPDATE ile hizalandı. Backfill öncesi yakalandı.
+4. **tee_eq FK backfill** +65 — `boyut`'tan açık NPS→DN eşleme (DN40/100/150). DATA-first: SELECT sayım → dry-run → COMMIT.
 
-## CI
-✅ YEŞİL — son kod commit'i `76a528c` (seed lint). `node --check` geçti.
+## Kalan (A10.6 — seed yol haritası)
+- 🔴 Paslanmaz `tee_red` (~10, `6"/4"` DN150×100) + karbon `tee_red` (~21) — library referansı YOK, redüksiyonlu (çift-çap + C/M).
+- 🟡 Paslanmaz reducer (33, Sch 10S+80S).
+- 🟡 Paslanmaz flanş seti (UNIQUE constraint DDL gerekir).
+- ⚪ 1D dirsek (1), ~556 boru ölçüsü (devir).
 
-## Açık borçlar (öncelik sırası)
-1. 🔴 Flanş + fitting FK backfill — text-parse (tip='fitting' altında flanşlar, DN/PN/tip `tanim`'da). Anahtar `flansh_tipi+cap_dn+basinc_sinifi+grup`. → 192.
-2. 🟡 Renk noktası (# kolonu, KARAR-86.A) — tüm backfill bitince.
-3. 🟡 556 eksik boru ölçüsü — seed (ST35.8 48.3×4.5 vb.).
-4. flansh_olculer UNIQUE constraint · 2FA+pg_dump · MK-176.7 wizard review.
+## CI / commit
+Kod: `7acb6a0` (durum noktası, `[skip ci]` YOK → CI tetikli). Veri: `4deb188` + `fa1a992` (seed JSON, `[skip ci]`). DB: konvansiyon UPDATE + backfill COMMIT (repo'ya gitmez).
+
+## Açık borçlar (öncelik)
+1. 🔴 tee_red seed (paslanmaz ~10 + karbon ~21) — **194'ün ilk işi**.
+2. 🟡 Paslanmaz reducer + flanş seti seed (A10.6 #3–4).
+3. flansh_olculer UNIQUE constraint (flanş seed öncesi).
+4. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
 ## Sonraki oturum notu
-İlk iş: 191 deploy + KUTUPHANE-DURUM indi mi teyit, 316L spool'da STANDART kolonu mavi/ASME-B36.19M mi. Sonra flanş backfill — ama önce `tanim` parse çeşitliliğini SQL ile gör (DATA→UI→kod).
+İlk iş: tee_red seed (referans = B16.9 reducing-tee tablosu; talep `boyut` sol≠sağ). Konvansiyon MK-193.1: çift-çap dolu. Seed sonrası backfill `IS NULL` ile tekrar (toplamsal).

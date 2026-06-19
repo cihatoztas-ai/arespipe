@@ -2,7 +2,7 @@
 
 > **Bu belge `KUTUPHANE-DURUM.md` (Oturum 178) içeriğini KORUR + Oturum 189 sayfa mimarisiyle ZENGİNLEŞTİRİR.**
 > İki bölüm: **A — Veri durumu** (ne yüklü, nasıl yüklenir) · **B — Sayfa mimarisi** (kütüphane.html nasıl çalışır).
-> Son güncelleme: **Oturum 192 (19 Haziran 2026)** — A10 eklendi (flanş+fitting FK backfill tam kayıt + eksik-rapor), B14 güncellendi.
+> Son güncelleme: **Oturum 193 (19 Haziran 2026)** — A10.7 eklendi (paslanmaz tee_eq seed + backfill, eşit-tee konvansiyon düzeltmesi MK-193.1), B14 güncellendi. (192: A10 flanş+fitting FK backfill tam kayıt + eksik-rapor.)
 > Bu oturumda boru/flanş standart×malzeme kırılımı **canlı DB'den birebir tazelendi** (178'de "sonraki oturum" denmişti — artık burada).
 
 ---
@@ -232,6 +232,33 @@
 
 > Bu ayrım `tip='fitting'` çöp-kutusu gerçeğinden doğdu: 2280 "fitting"in sadece ~660'ı gerçek kütüphane parçası (elbow/reducer/tee), gerisi yukarıdaki kategoriler. **`tanim ~* '\mtee\M'` gibi kelime-sınırı şart** — `ILIKE '%tee%'` "S**tee**l"i yakalar (848 sahte tee → 99 gerçek).
 
+### A10.7 — Paslanmaz tee_eq seed + backfill (193) — A10.6'nın ilk kalemi kapandı
+
+A10.6'nın #1 maddesi (paslanmaz tee, ~75) iki adımda işlendi: **eşit kısım kapandı, redüksiyonlu kaldı.**
+
+**1. Seed — +21 satır `fitting_olculer` (paslanmaz tee_eq, DN15–DN600).**
+- **Kaynak (MK-96, %100 referanstan):** B16.9 uç-uca (M) ölçüsü **malzeme-bağımsız** → birincil referans = doğrulanmış **karbon B16.9 tee_eq** satırları (aynı standart, OD + M birebir taşındı). Schedule'a bağlı `et_mm` ve `agirlik_kg` taşınmadı.
+- `agirlik_kg = null` (MK-96: tee teorik kütle yok, üretim sapması %50–200; paslanmaz üretici kataloğundan ≥2 kaynakla sonra).
+- Kapsam **B (gemi-gerçekçi, DN15–600)** seçildi; karbonun DN650–1200 dev ölçüleri atlandı (gerekirse backfill toplamsal, sonra eklenir).
+- Araç: `seed/seed-tee-eq-paslanmaz.json` + `scripts/seed-from-json.mjs` (lint geçen 21/0 red, idempotent upsert). Provenance repo'da.
+
+**2. 🔴 MK-193.1 — Eşit tee konvansiyon düzeltmesi (yakalandı, backfill öncesi).**
+Seed ilk üretimde karbon aynalandı → `cap_kucuk_dn = NULL`. Ama backfill **iki-çap kontrollü** (A10.3 "her iki çap da şart" / A10.4 "iki-çap kontrollü"): `NULL = dn_k` join'i düşer → satır görünür ama **bağlanmaz**. Karbon eşit tee bu konvansiyonu hiç test etmemişti (spool'da karbon eşit tee yok). Bağlanması-kanıtlı aile **cunife**'dir (`cap_kucuk_dn = cap_buyuk_dn`). 21 satır `UPDATE` ile hizalandı (`cap_kucuk_dn = cap_buyuk_dn`, `cap_kucuk_mm = cap_buyuk_mm`).
+> **Genel ilke (MK-193.1):** Kütüphaneye referans aynalarken, **bağlanması-kanıtlı** aileyi seç; geometrisi aynı olsa da matcher'a karşı test edilmemiş aileyi (boş-konvansiyonlu) körlemesine kopyalama. Eşit tee daima `cap_kucuk_dn = cap_buyuk_dn` ile yazılır.
+
+**3. Backfill — +65 spool bağı.** Talep `spool_malzemeleri.boyut`'tan (NPS-inç çift, sol/sağ; `dis_cap_mm` yine BOZUK: `4"`→`4.00`). Distinct 4 boyut → **açık NPS→DN eşleme** (genel regex değil; `1-1/2` kesir tuzağı yok):
+
+| boyut | tip | DN | spool satır | sonuç |
+|---|---|---:|---:|---|
+| `4" / 4" Sch.10S` | eşit | 100 | 62 | ✓ bağlandı |
+| `6" / 6" Sch.10S` | eşit | 150 | 2 | ✓ bağlandı |
+| `1-1/2" / 1-1/2" Sch.10S` | eşit | 40 | 1 | ✓ bağlandı |
+| `6" / 4" Sch 10S` | **redüksiyonlu** | 150×100 | 10 | **tee_red — seed yok → kalır** |
+
+62+2+1 = **65 bağ** (her DN tek `fitting_id`, çoklu-eşleşme yok). 10 redüksiyonlu MK-192.2 gereği görünür kaldı = paslanmaz `tee_red` seed talebi (A10.6 #1'in kalan yarısı + #2 karbon tee_red ile birleşir).
+
+**Sonuç (193 sonu):** `fitting_olculer` 935 → **956** (+21). Spool fitting bağı **530 → 595** (+65). Sıfır yanlış-bağ.
+
 ---
 ---
 
@@ -339,8 +366,8 @@ DB kodları tutarsız → `stdEtiket()` temizler: `B16.5`→"ASME B16.5" (öneks
 
 ## B14. Açık UI / veri borçları (190 sonu)
 - ✅ Karşılaştırma mantık hatası (B8) — **çözüldü 190**.
-- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**.
-- **Renkli durum noktası (görsel — ÖNÜ AÇILDI, 193'ün ilk işi):** `#` kolonuna nokta (🔵 standart / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz`). Mevcut sol-kenar çizgisi tablo kenarıyla karışıyor. Mantık (3-dallı KARAR-86.A) duruyor, sadece çizgi→nokta. Satır tıklama + modal aynen kalır. **Artık yapılabilir:** boru+flanş+fitting FK'ları bittiği için nokta renkleri yanıltıcı olmadan render edilir (önceki "backfill sonrası" şartı karşılandı).
+- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**. **193:** A10.6 #1 eşit-kısmı kapandı — paslanmaz tee_eq seed +21 + backfill +65 (fitting toplam **595**), tam kayıt A10.7'de. Kalan: paslanmaz `tee_red` (~10) + karbon `tee_red` (~21) + reducer/flanş seed (A10.6 #2–4).
+- **Renkli durum noktası (KARAR-86.A — ✅ 193'te SHIPPED, commit `7acb6a0`):** Sol-kenar 3px çizgi `#` kolonundaki noktaya taşındı (🔵 standart `geomBagli+kaliteStandart` / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz` / şeffaf=uç-işlemi, hizalama korunur). `spool_detay.html`: `noktaSinif` mevcut `trClasses`'ten birebir okunur (yeni mantık yok), satır tıklama + modal aynen. CSS `malz-*` çizgileri kaldırıldı, `.nokta*` eklendi.
 - **Gerçekten eksik 9 boru ölçüsü:** PROBE'da kütüphanede karşılığı olmayanlar (60.3×4.5 paslanmaz, 65×2/125×2.5/200×3 1.4571 = EN ince-cidar paslanmaz, 48.3×4.5/6.3 St37, 139.7×4.5 St37). Standart mı ara ölçü mü ayrımı → JSON/süper-admin.
 - **`boru_olculer` ASME çift-etiket (görsel birleştirme, ertelendi):** 43 grup, STD≡SCH40 / XS≡SCH80 gibi aynı et iki schedule adıyla. Veri DOĞRU (silinmez), arama iki adı da bulsun diye bilinçli. Tabloda "STD / 40" diye birleştirme = saf kozmetik, program bitince.
 - İkon çizim kalitesi, boru dışı kesit, FOTO/3D/DXF, sayısal aralık süzgeci — Faz 4/5 ile ertelendi.
