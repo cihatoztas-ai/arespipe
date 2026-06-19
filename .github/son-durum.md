@@ -1,30 +1,31 @@
-# Son Durum — 193. Oturum (19 Haziran 2026)
+# Son Durum — 194. Oturum (19 Haziran 2026)
 
-> 192 → 193. Üç iş tamam: renk durum noktası (kod), paslanmaz tee_eq seed (+21), tee_eq FK backfill (+65). Bir konvansiyon hatası backfill öncesi yakalandı (MK-193.1).
+> 193 → 194. Bu oturum **doküman sağlık** oturumu: KARARLAR çatallanması birleştirildi, doküman tek-otorite kuralı (MK-194.1) doğdu, kopya temizliği + revizyon damgaları yapıldı. Kod/DB değişmedi.
 
 ## Sonuç
-**193 başarıyla kapatıldı.** A10.6 seed yol haritasının #1 maddesi (paslanmaz tee) **eşit-kısmı kapandı**. `fitting_olculer` 935 → **956** (+21 paslanmaz tee_eq). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ. Kod 1 commit (CI tetikli), veri 2 commit (`[skip ci]`), 2 DB COMMIT (UPDATE konvansiyon + backfill).
+**194 doküman sağlık işi başarıyla kapatıldı.** İki `KARARLAR.md` çatalı (kök 172'de donmuş vs docs 193 güncel) birleştirildi; 7 MK numara çakışması (135.2 + 172.1–172.6) atıf-doğru çözüldü; çoklu kopya dağınıklığı tek-otorite kuralına bağlandı. Sıfır kod, sıfır DB değişikliği — tamamen doküman katmanı.
 
 ## Yapılanlar
-1. **Renk durum noktası** (KARAR-86.A) — `spool_detay.html`, commit `7acb6a0`. Sol-kenar çizgi → `#` kolonu nokta (🔵/🟡/⚪/şeffaf). Mantık `trClasses`'ten birebir, satır tıklama + modal aynen. Doğrulama temiz.
-2. **Paslanmaz tee_eq seed** +21 (DN15–600, kapsam B). Kaynak: doğrulanmış karbon B16.9 ayna (ölçü malzeme-bağımsız, MK-96). Ağırlık null. `seed/seed-tee-eq-paslanmaz.json`.
-3. **MK-193.1 düzeltme** — seed ilk halde karbon aynalandı (`cap_kucuk_dn=NULL`) → iki-çap matcher'da bağlanmazdı. Cunife konvansiyonuna (`cap_kucuk_dn=cap_buyuk_dn`) UPDATE ile hizalandı. Backfill öncesi yakalandı.
-4. **tee_eq FK backfill** +65 — `boyut`'tan açık NPS→DN eşleme (DN40/100/150). DATA-first: SELECT sayım → dry-run → COMMIT.
+1. **Sağlık taraması** — `docs/DOKUMAN-SAGLIK-TARAMASI-193.md` (commit `2e92243`). 79 .md, çatallanma + otorite tersliği tespit edildi.
+2. **Birleştirme planı 1.5** — `docs/KARARLAR-BIRLESTIRME-PLANI-194.md` (commit `8d88690`). Atıf-doğru numara haritası.
+3. **KARARLAR birleştirme** (commit `ea9cca9`) — A-kuralları (132.1/132.2/133.1-3/134.1/135.1) numara korunarak docs'a taşındı; 172.6=upload (kök, canlı atıf) korundu; kökün 5 kararı 172.11–172.15; yetim redesign → 172.16; 135.2 docs revizyonu kaldı. Çift-tanımlı MK = 0.
+4. **Doküman tek-otorite (MK-194.1)** (commit `36cea8a`) — kök KARARLAR → stub; docs/BRIEFING + 3 docs handoff kopyası kaldırıldı. Otorite: KARARLAR→docs, BRIEFING→kök, handoff→kök.
+5. **Revizyon damgaları** (commit `daaccab`) — MK-56.2/MK-55.1 bayat metinlerine [REVİZE]/[BAYAT] atfı (silme yok, KARARLAR kendi kuralını silmez).
+6. **194 kapanış** (bu commit) — KUTUPHANE-DURUM otorite tablosuna eklendi + handoff x3 + son-durum.
 
-## Kalan (A10.6 — seed yol haritası)
-- 🔴 Paslanmaz `tee_red` (~10, `6"/4"` DN150×100) + karbon `tee_red` (~21) — library referansı YOK, redüksiyonlu (çift-çap + C/M).
-- 🟡 Paslanmaz reducer (33, Sch 10S+80S).
-- 🟡 Paslanmaz flanş seti (UNIQUE constraint DDL gerekir).
-- ⚪ 1D dirsek (1), ~556 boru ölçüsü (devir).
+## Otorite haritası (MK-194.1)
+- KARARLAR.md → **docs/** · BRIEFING.md → **kök** · handoff üçlüsü → **kök** · KUTUPHANE-DURUM.md → **docs/** (tek kopya)
+- `.github/son-durum.md` = kök'ün aynası (README + OMURGA linkleri), md5-eşit tutulur.
 
-## CI / commit
-Kod: `7acb6a0` (durum noktası, `[skip ci]` YOK → CI tetikli). Veri: `4deb188` + `fa1a992` (seed JSON, `[skip ci]`). DB: konvansiyon UPDATE + backfill COMMIT (repo'ya gitmez).
+## Commit zinciri (194)
+`2e92243` (rapor) → `8d88690` (plan) → `ea9cca9` (birleştirme) → `36cea8a` (tek-otorite/MK-194.1) → `daaccab` (revizyon damgaları) → bu kapanış.
 
 ## Açık borçlar (öncelik)
-1. 🔴 tee_red seed (paslanmaz ~10 + karbon ~21) — **194'ün ilk işi**.
-2. 🟡 Paslanmaz reducer + flanş seti seed (A10.6 #3–4).
-3. flansh_olculer UNIQUE constraint (flanş seed öncesi).
-4. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
+1. 🔴 **tee_red seed** (paslanmaz ~10 + karbon ~21) — A10.6 #1, **195'in ilk işi** (193'ten devir).
+2. 🟡 Paslanmaz reducer + flanş seti seed (A10.6 #3–4) · flansh_olculer UNIQUE constraint.
+3. ⚙️ `oturum-saglik.sh`'e ayna md5-eşitlik kontrolü ekle (MK-194.1 backlog).
+4. 📝 Kök `BRIEFING.md` 187 → 194 tazeleme (handoff'lar ilerde, BRIEFING geride).
+5. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
 ## Sonraki oturum notu
-İlk iş: tee_red seed (referans = B16.9 reducing-tee tablosu; talep `boyut` sol≠sağ). Konvansiyon MK-193.1: çift-çap dolu. Seed sonrası backfill `IS NULL` ile tekrar (toplamsal).
+İlk iş: tee_red seed (referans = B16.9 reducing-tee tablosu; talep `boyut` sol≠sağ, `6"/4"` DN150×100). Konvansiyon MK-193.1: red tee'de çift-çap zaten farklı, ikisi de dolu. Seed sonrası backfill `IS NULL` ile tekrar (toplamsal).

@@ -3001,6 +3001,7 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 | `CLAUDE-SON-OTURUM.md` | **kök `./`** | `docs/CLAUDE-SON-OTURUM.md` → kaldırıldı (194) |
 | `CLAUDE-SONRAKI-OTURUM.md` | **kök `./`** | `docs/CLAUDE-SONRAKI-OTURUM.md` → kaldırıldı (194) |
 | `son-durum.md` | **kök `./`** | `docs/son-durum.md` → kaldırıldı (194). `.github/son-durum.md` → **kök'ün aynası** (README.md + docs/DEVRE-WIZARD-OMURGA.md linklediği için tutulur, md5-eşit kalır) |
+| `KUTUPHANE-DURUM.md` | **`docs/`** | Tek kopya, çatal yok (194 taramasında doğrulandı) |
 
 **MK-56.2 revizyonu (kısmi iptal):** MK-56.2 "handoff üçlüsü (`CLAUDE-SON-OTURUM.md`, `CLAUDE-SONRAKI-OTURUM.md`, `.github/son-durum.md`) yasak, tek aktif bağlam BRIEFING.md" diyordu. Pratikte bu kural 63-65 ve sonrasında defalarca ihlal edildi; handoff dosyaları her oturum canlı yazılıyor (CLAUDE.md açılış ritüeli satır 63 de kök handoff'ları okuyor). 194'te gerçek durumla hizalandı: **handoff üçlüsü GEÇERLİDİR, otorite dizini kök.** MK-56.2'nin "BRIEFING tek aktif bağlam" özü korunur (BRIEFING birincil giriş), ama handoff dosyalarının varlığı artık ihlal değildir. `docs/KARARLAR.md:393` (oturum-saglik.sh üç dosyayı kontrol eder) **bayattır** — script yalnız BRIEFING.md kontrol ediyor.
 

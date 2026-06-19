@@ -1,48 +1,54 @@
-# CLAUDE — Son Oturum (193)
+# CLAUDE — Son Oturum (194)
 
-> **Tarih:** 19 Haziran 2026 · **Oturum:** 193
-> Üç iş: **(1) renk durum noktası** (KARAR-86.A, kod) · **(2) paslanmaz tee_eq seed** (+21) · **(3) tee_eq FK backfill** (+65). Backfill öncesi bir konvansiyon hatası yakalandı → **MK-193.1**. Tam teknik kayıt: `docs/KUTUPHANE-DURUM.md` **A10.7** + **B14**.
+> **Tarih:** 19 Haziran 2026 · **Oturum:** 194 (doküman sağlık)
+> İki `KARARLAR.md` çatalı birleştirildi, **doküman tek-otorite kuralı MK-194.1** doğdu, kopya temizliği + revizyon damgaları. **Kod/DB değişmedi** — tamamen doküman katmanı. 5 commit + 1 kapanış.
 
 ---
 
-## 1. ✅ Renk durum noktası (KARAR-86.A) — kod, commit `7acb6a0`
-`spool_detay.html`: satırın sol-kenar 3px çizgisi tablo kenarıyla karışıyordu → **`#` kolonundaki noktaya** taşındı.
-- 🔵 standart (`geomBagli+kaliteStandart`) / 🟡 ara ölçü (`malz-arasolc`) / ⚪ kütüphanede yok (`malz-tanimsiz`) / şeffaf = uç-işlemi (hizalama korunur).
-- `noktaSinif` mevcut `trClasses`'ten **birebir** okunur — yeni mantık yok, 3-dallı karar aynen. Satır tıklama + modal **aynen**.
-- CSS: `malz-tiklanabilir/standartdisi/arasolc/tanimsiz` `border-left` çizgileri + `td:first-child` telafileri kaldırıldı; ölü `malz-standartdisi` temizlendi; `.nokta*` eklendi.
-- Doğrulama: tek gerçek `</html>` (MK-172.6), inline JS sözdizimi temiz, +7 satır.
+## 1. ✅ Sağlık taraması — commit `2e92243`
+`docs/DOKUMAN-SAGLIK-TARAMASI-193.md`. 79 .md tarandı. Bulgular:
+- **KARARLAR.md çatallanmış:** kök 172.6'da donmuş (108 MK) vs docs 193 güncel (250 MK). 7 MK numara çakışması.
+- **BRIEFING çatallanmış + çapraz:** kök 187 (güncel) vs docs 167 (bayat).
+- **Otorite tersliği:** KARARLAR→docs ama BRIEFING→kök (ters yön).
+- Handoff üçlüsü 3 yerde senkron (kök/docs/.github).
 
-## 2. ✅ Paslanmaz tee_eq seed — +21 satır (`fitting_olculer`)
-- Kapsam **B**: DN15–DN600 (gemi-gerçekçi). Karbonun DN650–1200 dev ölçüleri atlandı.
-- **Kaynak (MK-96):** B16.9 uç-uca (M) malzeme-bağımsız → birincil referans = doğrulanmış karbon B16.9 tee_eq (OD + M birebir). `et_mm`/`agirlik_kg` taşınmadı.
-- `agirlik_kg = null` (MK-96: tee teorik kütle yok; paslanmaz katalogdan ≥2 kaynakla sonra).
-- `seed/seed-tee-eq-paslanmaz.json` + `scripts/seed-from-json.mjs` (lint 21/0 red, idempotent). Commit `4deb188` (ilk) → `fa1a992` (konvansiyon düzeltme).
+## 2. ✅ Birleştirme planı 1.5 — commit `8d88690`
+`docs/KARARLAR-BIRLESTIRME-PLANI-194.md`. **İlke: canlı atıf gerçek tarihi belirler.** Numara haritası:
+- 172.6 = kök "upload `</html>`" (BRIEFING+3 handoff atfı) → **korunur**.
+- 172.5 = docs ".in() dilimle" (`devre_wizard_v3.html` atfı) → korunur.
+- Yetim docs redesign → 172.16. Kökün 5 kararı → 172.11–172.15. **Atıf dokunuşu = sıfır.**
 
-## 3. 🔴 MK-193.1 — Eşit tee konvansiyon hatası (backfill ÖNCESİ yakalandı)
-Seed ilk üretimde **karbon aynalandı → `cap_kucuk_dn = NULL`**. Ama backfill **iki-çap kontrollü** (A10.3/A10.4): `NULL = dn_k` join'i düşer → satır görünür ama **bağlanmaz**. Karbon eşit tee bu konvansiyonu hiç test etmemişti (spool'da karbon eşit tee yok). Bağlanması-kanıtlı aile = **cunife** (`cap_kucuk_dn = cap_buyuk_dn`). 21 satır `UPDATE` ile hizalandı (`cap_kucuk_dn=cap_buyuk_dn`, `cap_kucuk_mm=cap_buyuk_mm`), JSON provenance düzeltildi. **Körlemesine çalıştırılsaydı 0 eşleşme + yanlış teşhis.**
+## 3. ✅ KARARLAR birleştirme — commit `ea9cca9` (+169/−4)
+- **A-kuralları** (132.1, 132.2, 133.1-3, 134.1, 135.1) — docs'ta yoktu ama canlı kod atıf yapıyordu (`lib/malzeme-kiyas.js`, `api/izometri-oku.js` vb.) → numara korunarak 136.1 öncesine eklendi.
+- **172.x:** yetim redesign 172.6 slotundan çıkarıldı → upload (kök 172.6) eklendi → 172.11–172.16 bloğu (kökün 5'i + redesign) 173 EKİ öncesine.
+- **135.2:** docs revizyonu kaldı (kökün "Excel hatalı" yanlış sonucu alınmadı).
+- Doğrulama: çift-tanımlı MK = 0; 172.6 tek + anlamı upload; benzersiz MK 184 → 197 (+13).
 
-## 4. ✅ tee_eq FK backfill — +65 spool bağı
-Talep `spool_malzemeleri.boyut`'tan (NPS-inç çift; `dis_cap_mm` BOZUK: `4"`→`4.00`). 4 distinct boyut → **açık NPS→DN eşleme** (`1-1/2` kesir tuzağı yok):
-| boyut | tip | DN | adet |
-|---|---|---:|---:|
-| `4" / 4"` | eşit | 100 | 62 ✓ |
-| `6" / 6"` | eşit | 150 | 2 ✓ |
-| `1-1/2" / 1-1/2"` | eşit | 40 | 1 ✓ |
-| `6" / 4"` | **red** | 150×100 | 10 → kalır (tee_red seed) |
-62+2+1 = **65** (her DN tek fitting_id). DATA-first: önce SELECT sayım (65), sonra BEGIN/ROLLBACK dry-run (65), sonra COMMIT.
+## 4. ✅ Doküman tek-otorite MK-194.1 — commit `36cea8a` (+30/−2276)
+- Kök `./KARARLAR.md` → **7 satırlık TAŞINDI stub** (silinmedi, yönlendirme).
+- `docs/BRIEFING.md` + `docs/{CLAUDE-SON,CLAUDE-SONRAKI,son-durum}.md` → `git rm` (kod atfı yoktu).
+- **Otorite:** KARARLAR→docs · BRIEFING→kök · handoff→kök · `.github/son-durum.md`=kök aynası.
+- **MK-56.2 kısmi revize:** handoff üçlüsü artık geçerli (gerçek pratikle hizalandı), BRIEFING birincil özü korundu.
 
-## Sonuç (canlı)
-`fitting_olculer` 935 → **956** (+21). Spool fitting bağı 530 → **595** (+65). Sıfır yanlış-bağ.
+## 5. ✅ Revizyon damgaları — commit `daaccab` (+2/−2)
+KARARLAR kendi kuralını **silmez, REVİZE damgalar:**
+- `:1069` "3-dosya yasak" → **[REVİZE — 194/MK-194.1]** (yasak kalktı).
+- `:393` "oturum-saglik.sh üç dosya kontrol" → **[BAYAT — 194]** (script artık yalnız BRIEFING).
 
-## Commit'ler (193)
+## 6. ✅ 194 kapanış — bu commit
+KUTUPHANE-DURUM.md (tek kopya, çatal yok) MK-194.1 otorite tablosuna eklendi + handoff x3 + son-durum (kök + .github aynası md5-eşit).
+
+## Commit'ler (194)
 | Tür | Hash | İçerik |
 |---|---|---|
-| kod | `7acb6a0` | spool_detay durum noktası (KARAR-86.A) — CI tetikli |
-| veri | `4deb188` | paslanmaz tee_eq seed JSON (21) `[skip ci]` |
-| veri | `fa1a992` | seed düzeltme cap_kucuk_dn=cap_buyuk_dn `[skip ci]` |
-| (DB) | — | tee_eq konvansiyon UPDATE (21) COMMIT |
-| (DB) | — | tee_eq FK backfill (+65) COMMIT |
-| doc | (bu kapanış) | A10.7 + B14 + handoff + KARARLAR `[skip ci]` |
+| doc | `2e92243` | sağlık taraması raporu `[skip ci]` |
+| doc | `8d88690` | birleştirme planı 1.5 `[skip ci]` |
+| doc | `ea9cca9` | KARARLAR çatallanması birleştirildi `[skip ci]` |
+| doc | `36cea8a` | doküman tek-otorite MK-194.1 + kopya temizliği `[skip ci]` |
+| doc | `daaccab` | MK-56.2/55.1 revizyon damgaları `[skip ci]` |
+| doc | (bu kapanış) | KUTUPHANE-DURUM otorite + handoff x3 `[skip ci]` |
 
-## KARARLAR.md'ye eklenecek
-**MK-193.1 — Eşit tee kütüphane konvansiyonu (iki-çap matcher):** Backfill iki-çap kontrollü olduğundan, kütüphanedeki eşit tee `cap_kucuk_dn = cap_buyuk_dn` (+ `cap_kucuk_mm`) ile yazılır, NULL bırakılmaz — yoksa `NULL = dn_k` join'i düşer, satır görünür ama bağlanmaz. Referans aynalarken **bağlanması-kanıtlı aileyi** seç (cunife eşit tee), test edilmemiş aileyi (karbon eşit tee — spool'da hiç görünmemiş) değil. Genel ilke: kütüphane satırının "doğru görünmesi" yetmez, matcher join'inde **bağlanabilir** olması da şart; ikisi farklı denetimdir.
+## Ders (194)
+- **Çatallanmada kör birleştirme yasak** — aynı MK iki dosyada farklı karar olabilir. Canlı atıf (kod/handoff) hangi anlamın "doğru" olduğunu belirler; doğru atıfları fork-kazasına uydurma.
+- **KARARLAR kendi kuralını silmez** — revizyon damgası alır (tarih korunur).
+- Tek-otorite + ayna md5 disiplini = çatallanma tekrar üremez (MK-194.1, MK-62.3 şablonu).
