@@ -18,6 +18,13 @@ Handoff oku: bu dosya + `CLAUDE-SON-OTURUM.md` + `docs/KUTUPHANE-DURUM.md` (A10.
 
 ## Öncelikli gündem (A10.6 seed yol haritası — kalanlar)
 
+### 0. 🔴 DOKÜMAN SAĞLIK — birleştirme + otorite düzeltme (193 taraması, ilk iş)
+Tam rapor: `docs/DOKUMAN-SAGLIK-TARAMASI-193.md` (commit `2e92243`). Üç iş:
+- **KARARLAR çatallanması:** kök `./KARARLAR.md` (172'de bayat, 108 MK) vs `docs/KARARLAR.md` (193 güncel, 250 MK, OTORİTE). **7 MK numara çakışması** — özellikle MK-172.1–172.6 iki dosyada TAMAMEN FARKLI kararlara atanmış (kök: logo/antet/tarama-rengi; docs: devre-wizard/termin-takvimi/redesign). Her çakışan numara için karar gerekir: hangisi numarayı korur, diğeri hangi yeni numaraya kayar. Kör birleştirme YASAK (ikisi de geçerli karar). Kökte docs'ta olmayan 16 benzersiz kural da var (MK-108.2, 134.1 vb.) — bunlar docs'a taşınmalı.
+- **BRIEFING:** kök `./BRIEFING.md` (187) vs `docs/BRIEFING.md` (167 bayat). Çatallanmış + yön ters. Ayrıca kök BRIEFING bile 187'de kalmış — handoff'lar 193'te, yani 6 oturum geride. Güncelle + tek otorite belirle.
+- **Otorite kuralı:** Repo şu an iki dosya için TERS yönde otorite tutuyor (KARARLAR→docs, BRIEFING→kök). Yeni bir MK kuralıyla netleştir: her doküman için tek otorite dizin + senkron politikası. Yoksa bu dağınıklık tekrar üretilir.
+- Araç: Claude Code (repo-içi tarama/diff/birleştirme için ideal). Yöntem: önce çakışmaları yan yana göster, kullanıcı her birine karar versin, sonra uygula — kör ezme yok.
+
 ### 1. 🔴 Paslanmaz tee_red + karbon tee_red (~31 satır)
 - Paslanmaz `tee_red` (~10, DN150×100 `6"/4"`) + karbon `tee_red` (~21). **İkisinde de library referansı YOK** (karbon tee_red=0, paslanmaz tee=0).
 - Redüksiyonlu tee `tee_eq`'ten zor: `cap_buyuk_dn` + `cap_kucuk_dn` + run/branch uç-uca (C ve M ayrı) gerekir. B16.9 reducing-tee tablosu kaynak.
