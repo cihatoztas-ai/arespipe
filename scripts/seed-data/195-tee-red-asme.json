@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "tablo": "fitting_olculer",
+    "kaynak": "ASME B16.9 reducing outlet tee (C run / M outlet merkez-uc)",
+    "kapsam": "tee_red ASME — paslanmaz DN150x100 + karbon DN200x150/DN100x65/DN80x50 (195 talep sayimi)",
+    "oturum": 195,
+    "not": "Olculer kilitli/kaynakli (kullanici verdi, uydurma/yuvarlama yok). C=run merkez-uc, M=outlet merkez-uc. agirlik_kg null (MK-96). cap_*_nps null (matcher mm/dn kullanir). onConflict: fitting_olculer_dogal_uk (schedule_kod/class_no null)."
+  },
+  "satirlar": [
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true,
+      "tenant_id": null,
+      "aktif": true,
+      "geometri_std": "ASME B16.9",
+      "standart": "ASME-B16.9",
+      "parca_tipi": "tee_red",
+      "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null,
+      "cap_buyuk_dn": 150,
+      "cap_buyuk_mm": 168.3,
+      "cap_kucuk_nps": null,
+      "cap_kucuk_dn": 100,
+      "cap_kucuk_mm": 114.3,
+      "ucu_uca_c_mm": 143,
+      "ucu_uca_m_mm": 130,
+      "agirlik_kg": null,
+      "notlar": {
+        "kaynak": "ASME B16.9 reducing outlet tee",
+        "dogrulama": "iki bagimsiz kaynak ozdes (piping-world + ferrobend)",
+        "C_run_M_outlet": true,
+        "oturum": 195
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true,
+      "tenant_id": null,
+      "aktif": true,
+      "geometri_std": "ASME B16.9",
+      "standart": "ASME-B16.9",
+      "parca_tipi": "tee_red",
+      "malzeme_grubu": "karbon",
+      "cap_buyuk_nps": null,
+      "cap_buyuk_dn": 200,
+      "cap_buyuk_mm": 219.1,
+      "cap_kucuk_nps": null,
+      "cap_kucuk_dn": 150,
+      "cap_kucuk_mm": 168.3,
+      "ucu_uca_c_mm": 178,
+      "ucu_uca_m_mm": 168,
+      "agirlik_kg": null,
+      "notlar": {
+        "kaynak": "ASME B16.9 reducing outlet tee",
+        "dogrulama": "iki bagimsiz kaynak ozdes (piping-world + ferrobend)",
+        "C_run_M_outlet": true,
+        "oturum": 195
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true,
+      "tenant_id": null,
+      "aktif": true,
+      "geometri_std": "ASME B16.9",
+      "standart": "ASME-B16.9",
+      "parca_tipi": "tee_red",
+      "malzeme_grubu": "karbon",
+      "cap_buyuk_nps": null,
+      "cap_buyuk_dn": 100,
+      "cap_buyuk_mm": 114.3,
+      "cap_kucuk_nps": null,
+      "cap_kucuk_dn": 65,
+      "cap_kucuk_mm": 73.0,
+      "ucu_uca_c_mm": 105,
+      "ucu_uca_m_mm": 95,
+      "agirlik_kg": null,
+      "notlar": {
+        "kaynak": "ASME B16.9 reducing outlet tee",
+        "dogrulama": "iki bagimsiz kaynak ozdes (piping-world + ferrobend)",
+        "C_run_M_outlet": true,
+        "oturum": 195
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true,
+      "tenant_id": null,
+      "aktif": true,
+      "geometri_std": "ASME B16.9",
+      "standart": "ASME-B16.9",
+      "parca_tipi": "tee_red",
+      "malzeme_grubu": "karbon",
+      "cap_buyuk_nps": null,
+      "cap_buyuk_dn": 80,
+      "cap_buyuk_mm": 88.9,
+      "cap_kucuk_nps": null,
+      "cap_kucuk_dn": 50,
+      "cap_kucuk_mm": 60.3,
+      "ucu_uca_c_mm": 86,
+      "ucu_uca_m_mm": 76,
+      "agirlik_kg": null,
+      "notlar": {
+        "kaynak": "ASME B16.9 reducing outlet tee",
+        "dogrulama": "iki bagimsiz kaynak ozdes (piping-world + ferrobend)",
+        "C_run_M_outlet": true,
+        "oturum": 195
+      }
+    }
+  ]
+}
