@@ -1,7 +1,12 @@
-# BRIEFING — AresPipe Aktif Bağlam (187 sonu)
+# BRIEFING — AresPipe Aktif Bağlam (195 sonu)
 
 ## Proje
 Çok-tenant tersane pipe spool yönetimi SaaS. Stack: Supabase/Postgres (RLS), Vercel serverless (Hobby, 12 fn tavanı), vanilla JS/HTML web + React Native PWA. Tüm iş Türkçe, MK-kararları + numaralı oturum disiplini.
+
+## 195 kapanışı — KÜTÜPHANE tee_red (A10.6 #1 KAPANDI)
+- **Seed:** ASME B16.9 reducing tee 4 satır (paslanmaz DN150×100 + karbon DN200×150/DN100×65/DN80×50). `fitting_olculer` 956 → **960**. C=run / M=outlet merkez-uç, iki-kaynak çapraz doğrulama (piping-world+ferrobend). `scripts/seed-data/195-tee-red-asme.json` (commit `dd3541b`).
+- **Backfill:** `spool_malzemeleri.fitting_olculer_id` iki-çap + grup eşleşmesi, `WHERE IS NULL`, **+31 BOM bağı** (10/10/10/1). Canlı teyit geçti (NB1124 / A-001301).
+- **Açık (taşındı):** (1) cunife reducing tee matcher'da tee_eq görünüyor — tanımda "reducing" yok (`lib/malzeme-kutuphane-eslesme.js:97`), 1 satır. (2) matcher tee lookup `cap_kucuk` süzmüyor (`:98`) — latent. (3) Kalan A10.6: paslanmaz reducer seed; paslanmaz flanş seed + `flansh_olculer` UNIQUE constraint DDL (Supabase SQL editör — REST yetmez).
 
 ## Format durumu — Tersan (L2+L3) + PAOR (L3) CANLI
 - **Tersan:** Cadmatic, L2 deterministik (format-paketleri katman 0-3) + L3 fallback.

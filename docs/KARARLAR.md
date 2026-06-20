@@ -3012,3 +3012,19 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 **Sebep:** Repo iki dosya için ters yönde otorite tutuyordu (KARARLAR→docs, BRIEFING→kök) + handoff 3 yerde kopyalıydı + kök KARARLAR 172'de çatallanıp 7 MK numara çakışması üretmişti (bkz. `docs/DOKUMAN-SAGLIK-TARAMASI-193.md`, `docs/KARARLAR-BIRLESTIRME-PLANI-194.md`). Tek-otorite kuralı bu dağınıklığın yeniden üremesini engeller. Şablon: MK-62.3 (`lang/` tek-otorite, `mobile/src/lang/` türetilir).
 
 **İlişkili:** MK-56.2 (BRIEFING tek aktif bağlam — kısmi revize), MK-62.3 (lang tek-otorite şablonu), MK-53.1 (KARARLAR doğdu).
+
+## MK-195 (Oturum 195)
+
+### MK-195.1 [KUTUPHANE] — tee_red ASME konvansiyonu: C=run / M=outlet + iki-kaynak çapraz doğrulama
+
+**Karar:** ASME B16.9 reducing (redüksiyonlu) tee kütüphane satırlarında merkez-uç ölçüleri iki ayrı kolona yazılır: **`ucu_uca_c_mm` = run merkez-uç (büyük/ana hat)**, **`ucu_uca_m_mm` = outlet merkez-uç (branch/küçük)**. Eşit tee'de (tek merkez-uç) yalnız `ucu_uca_m_mm` doluydu (193); redüksiyonda ikisi de gerekir. `agirlik_kg = null` (MK-96: tee teorik kütle yok), `cap_*_nps = null` (matcher mm/dn kullanır).
+
+**Doğrulama disiplini:** Ölçü değerleri **iki bağımsız kaynaktan özdeş** olmalı (195'te piping-world + ferrobend reducing-tee tabloları karşılaştırıldı, birebir aynı). Tek kaynak yeterli değil — uydurma/türetme/yuvarlama YOK, kaynaklı ve kilitli değer.
+
+**Backfill konvansiyonu (MK-193.1 türevi):** tee_red BOM→library bağı **iki çaptan** kurulur (BOM büyük çap = `cap_buyuk_dn` VE küçük çap = `cap_kucuk_dn`) + malzeme grubu. Tek-çap (yalnız büyük) eşleştirme YASAK — matcher'daki `cap_kucuk` boşluğunu (`lib/malzeme-kutuphane-eslesme.js:98`) backfill'e taşımaz. Çap parse: `boyut` alanı `" / "` (boşluklu slash) ile bölünür; `1-1/2` kesir tuzağı bu ayraçla önlenir.
+
+**Kanıt (195):** Seed 4 satır (paslanmaz DN150×100 + karbon DN200×150/DN100×65/DN80×50), `fitting_olculer` 956→960, lint 4/4. Backfill +31 BOM bağı (10/10/10/1), 0 regresyon. Canlı teyit: paslanmaz DN150×100 (NB1124 / A-001301 / `Tee Reducing 316L 6"/4"`) FK doğru satıra bağlandı. `scripts/seed-data/195-tee-red-asme.json` commit `dd3541b`.
+
+**Açık (taşındı):** (a) cunife reducing tee'nin tanımında "reducing" yok → matcher (`:97` tanim-bazlı `/reducing|red\b/`) onu tee_eq sayar (1 satır, DN300×200, runtime yanlış sınıflama). (b) matcher tee lookup `cap_kucuk` süzmüyor (`:98`) — mevcut talepte (her grup+büyük-çap tek küçük-çaplı) bağ doğru ama tasarım eksik, latent.
+
+**İlişkili:** MK-193.1 (eşit tee iki-çap matcher konvansiyonu), MK-96 (tee ölçü malzeme-bağımsız, teorik kütle yok), MK-191.1 (seed-gate lint grup/standart).
