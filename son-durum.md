@@ -1,32 +1,33 @@
-# Son Durum — 196. Oturum (21 Haziran 2026)
+# Son Durum — 197. Oturum (21 Haziran 2026) — YARIM KAPANIŞ
 
-> 195 → 196. **Kütüphane seed** oturumu: A10.6 #3 (paslanmaz reducer) kapandı — 14 library satırı + 38 BOM bağı, canlı teyit + schedule çoğaltmama kanıtı geçti.
+> 196 → 197. **Flanş DDL ön koşulu** bitti (A10.6 #4 hazırlık). Paslanmaz flanş seed **sonraki oturuma** kaldı. Kod/DB: yalnız 1 şema migration (partial UNIQUE index, canlıda COMMIT'li).
 
-## Sonuç
-**196 başarıyla kapatıldı. A10.6 #3 (paslanmaz reducer) tamamlandı.** ASME B16.9 concentric reducer 14 satır seed (paslanmaz, DN40×32 → DN300×250), `fitting_olculer` 960 → **974**. Backfill iki-çap kontrollü +38 BOM bağı, spool fitting bağı 626 → **664** (fiili sayım). Sıfır regresyon, sıfır yanlış-bağ.
+## Sonuç (197 — yarım)
+A10.6 #4 (paslanmaz flanş) seed'inin önündeki **`flansh_olculer` UNIQUE constraint engeli kaldırıldı.** Partial unique index canlıda kuruldu + repo senkron. Seed'in kendisi (talep sayımı + script uyarlaması + ölçüler) 198'e devredildi.
 
-## Yapılanlar
-1. **Talep sayımı (salt-okunur)** — BOM'da 38 paslanmaz reducer, hepsi `reducer_conc` (eccentric 0). Schedule: 10S 18 + 80S 15 + 40S 5. Boyut ayraç `" x "` (reducer formatı, tee'nin `" / "`'ından farklı) + 1-1/2 kesir-tuzağı fix. 14 distinct DN-çifti.
-2. **OD konvansiyonu doğrulama** — karbon `reducer_conc` + 195 tee_red ile birebir (DN300=323.8, DN250=273.0, DN200=219.1, DN65=73.0…). cunife DIN serisi (324/267) ayrı, kullanılmadı.
-3. **Seed** — `scripts/seed-data/196-reducer-conc-paslanmaz.json` (14 satır, `ucu_uca_f_mm`=reducer boyu, `schedule_kod=null`, `agirlik_kg` primary=40S + `notlar.agirlik_schedule_bagimli_kg`={10S,40S,80S}). Lint 14/14, idempotent. `fitting_olculer` 960 → **974**. Commit `ab1ce78`.
-4. **Backfill** — `spool_malzemeleri.fitting_olculer_id`, `WHERE IS NULL` + iki-çap + grup=paslanmaz + `reducer_conc`. **38 satır** bağlandı. Fiili `IS NOT NULL` 626 → **664**.
-5. **Canlı teyit** — DN200×150 örnek (spool A-001124/S01, `Conc. reducer 8"x6"`): 5 BOM (3×80S + 2×10S) **tek** library satırına bağlı → **schedule library satırını çoğaltmadı** (schedule_kod=null konvansiyonu kanıtlandı).
+## Yapılanlar (197)
+1. **`flansh_olculer_dogal_uk` partial UNIQUE index** — canlıda COMMIT'li (Supabase panel) + repo senkron. Migration `migrations/schema/109_flansh_olculer_unique_index.sql`, commit **`bf27968`** (şema commit'i, `[skip ci]` YOK → CI tetikli).
+   - **7 kolon:** `geometri_std, flansh_tipi, basinc_sinifi, cap_dn, yuzey_tipi, malzeme_grubu, tenant_id`. `cap_dn` (cap_nps DEĞİL — 92 null + format tutarsızlığı). `NULLS NOT DISTINCT` (fitting_olculer_dogal_uk deseni).
+   - **Partial WHERE:** cunife DIN-86037-2 lap-joint ailesi (29 satır, hepsi LJ+cunife) kapsam DIŞI — S1/S2 cidar varyantı gerçek çift (bore/ağırlık farklı, MK-190.4), silinmedi, partition dışında bırakıldı.
+   - **Ön keşif (196 sonu):** 356 flanş, dışlamasız 5 çift / dışlamalı 0 çift; pre-flight + BEGIN/ROLLBACK dry-run ile doğrulandı.
 
-## Değerlerin kaynağı (MK-196.1)
-F (ucu_uca_f_mm) = ASME B16.9 reducer boyu, **iki bağımsız kaynak özdeş** (piping-world + octalpipefittings, 14/14). agirlik = S&S Stainless (paslanmaz 10S/40S/80S); 40S/80S karbon-soylu tabloyla <%15 doğrulandı, 10S tek-SS-kaynak. OD = kütüphane-içi ASME konvansiyonu.
+## SONRAKİ OTURUM İLK İŞ — paslanmaz flanş seed (A10.6 #4), 3 alt-iş
+1. **Talep sayımı (read-only):** BOM'da paslanmaz flanş — tip/PN/DN kırılımı (reducer/tee deseni; `boyut` parse + `\bflange\b`).
+2. **`seed-from-json.mjs` flanş dalı: upsert DEĞİL, check-then-insert.** supabase-js `upsert(onConflict=kolonlar)` partial index'e oturmaz (PostgREST `ON CONFLICT (cols)` WHERE'siz → arbiter eşleşmez, hata). Çözüm: anahtar tuple'larını SELECT → var olanı ele → düz INSERT. **Kod değişikliği** → `node --check` + self-test.
+3. **Flanş ölçüleri:** 316L WN EN-1092-1 + B16.5 — OD / kalınlık / hub / bolt-circle / delik sayısı+çapı. İki kaynaktan çapraz-doğrulama (MK-96). Flanşta alan çok (tee/reducer'dan geniş).
 
-## Commit (196)
-- `ab1ce78` — veri: paslanmaz reducer_conc seed JSON (14) `[skip ci]`
-- (bu kapanış) — doküman: handoff + BRIEFING + KARARLAR MK-196.1 + KUTUPHANE-DURUM A10.9 `[skip ci]`
-- (DB) — seed upsert (14) + backfill UPDATE (38) — repoya gitmez
+## Commit (197)
+- `bf27968` — şema: flansh_olculer dogal UNIQUE index (partial) — CI tetikli (`[skip ci]` YOK)
+- (bu yarım-kapanış) — doküman: son-durum `[skip ci]`
 
 ## Açık borçlar (öncelik)
-1. 🔴 **Kalan A10.6 #4:** paslanmaz flanş seti (316L WN EN-1092-1, AISI316 SO, B16.5-150LBS) seed + **`flansh_olculer` UNIQUE constraint DDL** (Supabase SQL editör — REST yetmez).
-2. 🟡 **Cunife reducing tee matcher'da `tee_eq` görünüyor** — tanımda "reducing" yok (`lib/malzeme-kutuphane-eslesme.js:97`), 1 satır runtime.
-3. 🟡 **Matcher tee lookup `cap_kucuk` süzmüyor** (`lib/malzeme-kutuphane-eslesme.js:98`) — latent.
-4. ⚙️ `oturum-saglik.sh`'e ayna md5-eşitlik kontrolü (MK-194.1 backlog).
-5. 📝 Kök `BRIEFING.md` 187-dönemi spool-sayım içeriği — tam tazeleme borcu.
-6. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
+1. 🔴 **A10.6 #4 paslanmaz flanş seed** — ön koşul bitti, seed 198'in ilk işi (yukarıdaki 3 alt-iş).
+2. 🟡 Cunife reducing tee matcher'da `tee_eq` (`lib/malzeme-kutuphane-eslesme.js:97`) — tanım-bazlı, 1 satır.
+3. 🟡 Matcher tee lookup `cap_kucuk` süzmüyor (`lib/malzeme-kutuphane-eslesme.js:98`) — latent.
+4. 🟢 **cunife-LJ-DIN ailesi partial index DIŞINDA** — S1/S2 ayırıcı kolon (cidar/et) netleşince ele al, o aileye de uniqueness kazandır.
+5. ⚙️ `oturum-saglik.sh`'e ayna md5-eşitlik kontrolü (MK-194.1 backlog).
+6. 📝 Kök `BRIEFING.md` 187-dönemi spool-sayım içeriği — tam tazeleme borcu.
+7. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
 ## Sonraki oturum notu
-İlk iş: A10.6 #4 paslanmaz flanş seti. **ÖNCE** `flansh_olculer` UNIQUE constraint DDL'ini Supabase SQL editörden uygula (BEGIN/ROLLBACK dry-run, MK-98.2) — REST'ten yapılamaz (pg_constraint/DDL erişimi yok). Sonra seed JSON + backfill, reducer/tee deseniyle.
+İlk iş: paslanmaz flanş seed talep sayımı (read-only) → seed-from-json.mjs check-then-insert uyarlaması → ölçü seed + backfill. UNIQUE index hazır (`flansh_olculer_dogal_uk`), ama upsert oturmaz → check-then-insert şart.
