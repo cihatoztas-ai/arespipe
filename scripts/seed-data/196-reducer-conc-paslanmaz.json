@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "tablo": "fitting_olculer",
+    "kaynak": "ASME B16.9 concentric reducer — paslanmaz (316/316L), F boyu + 10S/40S/80S agirlik",
+    "kapsam": "paslanmaz reducer_conc 14 distinct DN-cifti (A10.6 #3, 196 talep sayimi: 38 BOM satiri)",
+    "oturum": 196,
+    "not": "Olculer kilitli/kaynakli (uydurma/turetme/yuvarlama yok). OD kutuphane-ici ASME B16.9 konvansiyonu (karbon reducer_conc + 195 tee_red ile birebir). F=ucu_uca_f_mm (reducer boyu). agirlik_kg primary=40S (STD-esdeger, karbon deseni). schedule_kod=null (reducer konvansiyonu); schedule-bagimli agirlik notlar JSONB'de. et_mm/class_no null. onConflict: fitting_olculer_dogal_uk."
+  },
+  "satirlar": [
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 300, "cap_buyuk_mm": 323.8,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 250, "cap_kucuk_mm": 273.0,
+      "ucu_uca_f_mm": 203, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 14.70,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 6.55, "40S": 14.70, "80S": 19.48},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 300, "cap_buyuk_mm": 323.8,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 200, "cap_kucuk_mm": 219.1,
+      "ucu_uca_f_mm": 203, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 13.70,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 6.11, "40S": 13.70, "80S": 19.07},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 300, "cap_buyuk_mm": 323.8,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 150, "cap_kucuk_mm": 168.3,
+      "ucu_uca_f_mm": 203, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 12.40,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 5.73, "40S": 12.40, "80S": 18.39},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 250, "cap_buyuk_mm": 273.0,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 150, "cap_kucuk_mm": 168.3,
+      "ucu_uca_f_mm": 178, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 8.78,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 3.87, "40S": 8.78, "80S": 13.50},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 200, "cap_buyuk_mm": 219.1,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 150, "cap_kucuk_mm": 168.3,
+      "ucu_uca_f_mm": 152, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 5.71,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 2.85, "40S": 5.71, "80S": 9.24},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 150, "cap_buyuk_mm": 168.3,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 100, "cap_kucuk_mm": 114.3,
+      "ucu_uca_f_mm": 140, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 3.30,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 1.62, "40S": 3.30, "80S": 5.44},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 100, "cap_buyuk_mm": 114.3,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 80, "cap_kucuk_mm": 88.9,
+      "ucu_uca_f_mm": 102, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 1.45,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.748, "40S": 1.45, "80S": 2.129},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 100, "cap_buyuk_mm": 114.3,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 50, "cap_kucuk_mm": 60.3,
+      "ucu_uca_f_mm": 102, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 1.27,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.656, "40S": 1.27, "80S": 1.780},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 80, "cap_buyuk_mm": 88.9,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 65, "cap_kucuk_mm": 73.0,
+      "ucu_uca_f_mm": 89, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.983,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.548, "40S": 0.983, "80S": 1.291},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 80, "cap_buyuk_mm": 88.9,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 50, "cap_kucuk_mm": 60.3,
+      "ucu_uca_f_mm": 89, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.846,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.478, "40S": 0.846, "80S": 1.178},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 65, "cap_buyuk_mm": 73.0,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 50, "cap_kucuk_mm": 60.3,
+      "ucu_uca_f_mm": 89, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.724,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.432, "40S": 0.724, "80S": 0.938},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 65, "cap_buyuk_mm": 73.0,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 40, "cap_kucuk_mm": 48.3,
+      "ucu_uca_f_mm": 89, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.661,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.396, "40S": 0.661, "80S": 0.856},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 50, "cap_buyuk_mm": 60.3,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 32, "cap_kucuk_mm": 42.2,
+      "ucu_uca_f_mm": 76, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.352,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.258, "40S": 0.352, "80S": 0.525},
+        "oturum": 196
+      }
+    },
+    {
+      "_db_aksiyonu": "YENI",
+      "sistem_preset": true, "tenant_id": null, "aktif": true,
+      "geometri_std": "ASME B16.9", "standart": "ASME-B16.9",
+      "parca_tipi": "reducer_conc", "malzeme_grubu": "paslanmaz",
+      "cap_buyuk_nps": null, "cap_buyuk_dn": 40, "cap_buyuk_mm": 48.3,
+      "cap_kucuk_nps": null, "cap_kucuk_dn": 32, "cap_kucuk_mm": 42.2,
+      "ucu_uca_f_mm": 64, "schedule_kod": null, "et_mm": null, "class_no": null,
+      "agirlik_kg": 0.263,
+      "notlar": {
+        "kaynak": "ASME B16.9 concentric reducer",
+        "F_dogrulama": "iki bagimsiz kaynak ozdes (piping-world + octalpipefittings), 14/14 identik",
+        "agirlik_kaynak": "S&S Stainless (paslanmaz 10S/40S/80S)",
+        "agirlik_dogrulama": "40S/80S karbon-soylu tablo ile <%15 dogrulandi; 10S tek SS-kaynagi (karbon tablo 10S buyuk boylarda sapar, paslanmaz icin yetkili degil)",
+        "agirlik_schedule_bagimli_kg": {"10S": 0.195, "40S": 0.263, "80S": 0.331},
+        "oturum": 196
+      }
+    }
+  ]
+}
