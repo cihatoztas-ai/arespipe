@@ -1,31 +1,32 @@
-# Son Durum — 195. Oturum (20 Haziran 2026)
+# Son Durum — 196. Oturum (21 Haziran 2026)
 
-> 194 → 195. **Kütüphane seed** oturumu: A10.6 #1 (tee_red ASME) kapandı — 4 library satırı + 31 BOM bağı, canlı teyit geçti.
+> 195 → 196. **Kütüphane seed** oturumu: A10.6 #3 (paslanmaz reducer) kapandı — 14 library satırı + 38 BOM bağı, canlı teyit + schedule çoğaltmama kanıtı geçti.
 
 ## Sonuç
-**195 başarıyla kapatıldı. A10.6 #1 (tee_red) tamamlandı.** ASME B16.9 reducing tee 4 satır seed (paslanmaz DN150×100 + karbon DN200×150/DN100×65/DN80×50), `fitting_olculer` 956 → **960**. Backfill iki-çap kontrollü +31 BOM bağı. Sıfır regresyon, sıfır yanlış-bağ.
+**196 başarıyla kapatıldı. A10.6 #3 (paslanmaz reducer) tamamlandı.** ASME B16.9 concentric reducer 14 satır seed (paslanmaz, DN40×32 → DN300×250), `fitting_olculer` 960 → **974**. Backfill iki-çap kontrollü +38 BOM bağı, spool fitting bağı 626 → **664** (fiili sayım). Sıfır regresyon, sıfır yanlış-bağ.
 
 ## Yapılanlar
-1. **Talep sayımı (salt-okunur)** — BOM'da 99 gerçek tee (`\btee\b`, steel substring elendi). Yapısal reducing (boyut sol≠sağ, `" / "` split + 1-1/2 kesir-tuzağı fix): paslanmaz 10, karbon 21, cunife 1. tee_eq çapraz kontrolü 193 backfill'iyle (65) birebir tuttu.
-2. **Seed** — `scripts/seed-data/195-tee-red-asme.json` (4 satır, ASME B16.9, `C=run / M=outlet` merkez-uç, `agirlik_kg=null` MK-96). Lint 4/4 geçti, idempotent upsert. `fitting_olculer` 956 → **960**. Commit `dd3541b`.
-3. **Backfill** — `spool_malzemeleri.fitting_olculer_id`, `WHERE IS NULL` + iki-çap + grup eşleşmesi. **31 satır** bağlandı (10/10/10/1). DB'de canlı (repoda iz yok).
-4. **Canlı teyit** — paslanmaz DN150×100 örnek (proje NB1124, spool A-001301/S01, `Tee Reducing 316L 6"/4"`) FK doğru library satırına işaret ediyor. ✅
+1. **Talep sayımı (salt-okunur)** — BOM'da 38 paslanmaz reducer, hepsi `reducer_conc` (eccentric 0). Schedule: 10S 18 + 80S 15 + 40S 5. Boyut ayraç `" x "` (reducer formatı, tee'nin `" / "`'ından farklı) + 1-1/2 kesir-tuzağı fix. 14 distinct DN-çifti.
+2. **OD konvansiyonu doğrulama** — karbon `reducer_conc` + 195 tee_red ile birebir (DN300=323.8, DN250=273.0, DN200=219.1, DN65=73.0…). cunife DIN serisi (324/267) ayrı, kullanılmadı.
+3. **Seed** — `scripts/seed-data/196-reducer-conc-paslanmaz.json` (14 satır, `ucu_uca_f_mm`=reducer boyu, `schedule_kod=null`, `agirlik_kg` primary=40S + `notlar.agirlik_schedule_bagimli_kg`={10S,40S,80S}). Lint 14/14, idempotent. `fitting_olculer` 960 → **974**. Commit `ab1ce78`.
+4. **Backfill** — `spool_malzemeleri.fitting_olculer_id`, `WHERE IS NULL` + iki-çap + grup=paslanmaz + `reducer_conc`. **38 satır** bağlandı. Fiili `IS NOT NULL` 626 → **664**.
+5. **Canlı teyit** — DN200×150 örnek (spool A-001124/S01, `Conc. reducer 8"x6"`): 5 BOM (3×80S + 2×10S) **tek** library satırına bağlı → **schedule library satırını çoğaltmadı** (schedule_kod=null konvansiyonu kanıtlandı).
 
-## Değerlerin kaynağı
-ASME B16.9 reducing outlet tee, iki bağımsız kaynak özdeş (piping-world + ferrobend). C = run merkez-uç, M = outlet merkez-uç (MK-195.1).
+## Değerlerin kaynağı (MK-196.1)
+F (ucu_uca_f_mm) = ASME B16.9 reducer boyu, **iki bağımsız kaynak özdeş** (piping-world + octalpipefittings, 14/14). agirlik = S&S Stainless (paslanmaz 10S/40S/80S); 40S/80S karbon-soylu tabloyla <%15 doğrulandı, 10S tek-SS-kaynak. OD = kütüphane-içi ASME konvansiyonu.
 
-## Commit (195)
-- `dd3541b` — veri: tee_red ASME seed JSON (4 satır) `[skip ci]`
-- (bu kapanış) — doküman: handoff + BRIEFING + KARARLAR MK-195.1 `[skip ci]`
-- (DB) — seed upsert (4) + backfill UPDATE (31) — repoya gitmez
+## Commit (196)
+- `ab1ce78` — veri: paslanmaz reducer_conc seed JSON (14) `[skip ci]`
+- (bu kapanış) — doküman: handoff + BRIEFING + KARARLAR MK-196.1 + KUTUPHANE-DURUM A10.9 `[skip ci]`
+- (DB) — seed upsert (14) + backfill UPDATE (38) — repoya gitmez
 
 ## Açık borçlar (öncelik)
-1. 🟡 **Cunife reducing tee matcher'da `tee_eq` görünüyor** — tanımda "reducing" yok (`lib/malzeme-kutuphane-eslesme.js:97` tanim-bazlı), 1 satır (DN300×200) runtime yanlış sınıflama.
-2. 🟡 **Matcher tee lookup `cap_kucuk` süzmüyor** (`lib/malzeme-kutuphane-eslesme.js:98`) — latent; mevcut talepte her (grup,büyük-çap) tek küçük-çaplı olduğu için bağ doğru ama tasarım eksik.
-3. 🔴 **Kalan A10.6:** paslanmaz reducer seed (#3); paslanmaz flanş seed (#4) + **`flansh_olculer` UNIQUE constraint DDL** (Supabase SQL editör işi — REST yetmez, `pg_constraint`/DDL erişimi yok).
+1. 🔴 **Kalan A10.6 #4:** paslanmaz flanş seti (316L WN EN-1092-1, AISI316 SO, B16.5-150LBS) seed + **`flansh_olculer` UNIQUE constraint DDL** (Supabase SQL editör — REST yetmez).
+2. 🟡 **Cunife reducing tee matcher'da `tee_eq` görünüyor** — tanımda "reducing" yok (`lib/malzeme-kutuphane-eslesme.js:97`), 1 satır runtime.
+3. 🟡 **Matcher tee lookup `cap_kucuk` süzmüyor** (`lib/malzeme-kutuphane-eslesme.js:98`) — latent.
 4. ⚙️ `oturum-saglik.sh`'e ayna md5-eşitlik kontrolü (MK-194.1 backlog).
-5. 📝 Kök `BRIEFING.md` hâlâ 187-dönemi spool-sayım içeriği taşıyor (A2-dilim2 vb.) — tam tazeleme borcu.
+5. 📝 Kök `BRIEFING.md` 187-dönemi spool-sayım içeriği — tam tazeleme borcu.
 6. Olet değerlendirmesi · 2FA+pg_dump · MK-176.7 wizard review.
 
 ## Sonraki oturum notu
-İlk iş: A10.6 #3 paslanmaz reducer seed (Sch 10S+80S, ASME B16.9 reducer_conc, çift-çap). Sonra #4 flanş seti — ama önce `flansh_olculer` UNIQUE constraint DDL'ini Supabase SQL editörden uygula (REST'ten yapılamaz).
+İlk iş: A10.6 #4 paslanmaz flanş seti. **ÖNCE** `flansh_olculer` UNIQUE constraint DDL'ini Supabase SQL editörden uygula (BEGIN/ROLLBACK dry-run, MK-98.2) — REST'ten yapılamaz (pg_constraint/DDL erişimi yok). Sonra seed JSON + backfill, reducer/tee deseniyle.

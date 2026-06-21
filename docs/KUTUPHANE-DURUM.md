@@ -2,7 +2,7 @@
 
 > **Bu belge `KUTUPHANE-DURUM.md` (Oturum 178) içeriğini KORUR + Oturum 189 sayfa mimarisiyle ZENGİNLEŞTİRİR.**
 > İki bölüm: **A — Veri durumu** (ne yüklü, nasıl yüklenir) · **B — Sayfa mimarisi** (kütüphane.html nasıl çalışır).
-> Son güncelleme: **Oturum 195 (20 Haziran 2026)** — A10.8 eklendi (tee_red ASME seed +4 + backfill +31, A10.6 #1 tee_red **tamamen kapandı**, MK-195.1), B14 + A10.6 yol haritası güncellendi. `fitting_olculer` güncel toplam **960**. (193: A10.7 paslanmaz tee_eq seed +21 + backfill +65, MK-193.1.)
+> Son güncelleme: **Oturum 196 (21 Haziran 2026)** — A10.9 eklendi (paslanmaz reducer_conc seed +14 + backfill +38, A10.6 #3 **kapandı**, MK-196.1), B14 + A10.6 yol haritası güncellendi. `fitting_olculer` güncel toplam **974**. (195: A10.8 tee_red ASME +4/+31; 193: A10.7 paslanmaz tee_eq +21/+65.)
 > Bu oturumda boru/flanş standart×malzeme kırılımı **canlı DB'den birebir tazelendi** (178'de "sonraki oturum" denmişti — artık burada).
 
 ---
@@ -218,7 +218,7 @@
 **Kütüphane eksikleri (öncelik sırasıyla — seed adayları):**
 1. ✅ **Paslanmaz tee** (eşit + redüksiyonlu, ~75 satır) — **KAPANDI**: eşit 193'te (A10.7, +21 seed/+65 bağ), redüksiyonlu 195'te (A10.8, paslanmaz tee_red DN150×100 seed + 10 bağ).
 2. ✅ **Karbon `tee_red`** (~21 satır) — **KAPANDI 195** (A10.8): 3 ASME satır (DN200×150/DN100×65/DN80×50) + 21 bağ.
-3. 🟡 **Paslanmaz reducer** (33 satır, Sch 10S + 80S) — library'de paslanmaz reducer yok
+3. ✅ **Paslanmaz reducer** — **KAPANDI 196** (A10.9): 14 `reducer_conc` ASME satır seed + 38 BOM bağı (10S/40S/80S hepsi 14 satıra; schedule çoğaltmadı). Talep 38 satır (handoff "~33" = 10S+80S; +5 Sch40S).
 4. 🟡 **Paslanmaz flanş seti** (316L WN EN-1092-1, AISI316 SO, B16.5-150LBS) — library'de paslanmaz flanş yok
 5. ⚪ **1D dirsek** (1 satır) — library'de 1D radius sınıfı yok
 6. (boru tarafından devreden — A8/B14) ~556 boru ölçüsü
@@ -292,6 +292,24 @@ A10.6'nın #1 (paslanmaz tee redüksiyonlu kalan) + #2 (karbon `tee_red`) maddel
 **🟡 Açık (taşındı, runtime gösterim):** (a) cunife reducing tee'nin `tanim`'ında "reducing" yok → matcher (`lib/malzeme-kutuphane-eslesme.js:97`, tanim-bazlı `/reducing|red\b/`) onu `tee_eq` sayar (1 satır DN300×200; MK-192.1 yapısal kuralı SQL backfill'de uygulandı ama JS matcher'da değil). (b) matcher tee lookup (`:98`) yalnız `cap_buyuk_mm` ile arıyor, `cap_kucuk` süzmüyor — mevcut talepte her (grup, büyük-çap) tek küçük-çaplı olduğu için bağ doğru, ama tasarım eksik (latent).
 
 **Sonuç (195 sonu):** `fitting_olculer` 956 → **960** (+4). Spool fitting bağı 595 → **626** (+31). Sıfır yanlış-bağ. A10.6 #1+#2 kapandı; kalan #3 paslanmaz reducer + #4 paslanmaz flanş.
+
+### A10.9 — Paslanmaz reducer seed + backfill (196) — A10.6 #3 kapandı
+
+A10.6'nın #3 maddesi (paslanmaz reducer). Library'de ASME paslanmaz `reducer_conc` artık var; tüm paslanmaz reducer spool talebi bağlandı.
+
+**0. Talep sayımı (salt-okunur, DATA-first).** BOM'da **38 paslanmaz reducer**, **hepsi `reducer_conc`** (eccentric 0). Boyut ayraç **`" x "`** (örn. `8" x 6" Sch 80S`) — tee/eşit'in `" / "`'ından FARKLI; parser format-duyarlı (`" / "` varsa o, yoksa `" x "`) + 1-1/2 kesir-tuzağı fix. 14 distinct DN-çifti. Schedule: 10S 18 + 80S 15 + 40S 5 (handoff "~33" = 10S+80S; +5 Sch40S yeni).
+
+**1. Seed — +14 satır `fitting_olculer` (paslanmaz `reducer_conc`).** DN40×32 → DN300×250.
+- **OD = kütüphane-içi tek konvansiyon** (MK-196.1): karbon `reducer_conc` + 195 tee_red ile birebir (DN300=323.8, DN250=273.0, DN200=219.1, DN65=73.0…). cunife DIN (324/267) AYRI, kullanılmadı.
+- **`ucu_uca_f_mm`** = reducer boyu (reducer'da tek geometri alanı; C/M/A/B/H, et_mm, schedule_* = null). **İki bağımsız kaynak özdeş** (piping-world + octalpipefittings, 14/14).
+- **`agirlik_kg` primary = 40S** (STD-eşdeğer, karbon deseni); `notlar.agirlik_schedule_bagimli_kg` = `{10S, 40S, 80S}`. Kaynak S&S Stainless; 40S/80S <%15 doğrulandı, **10S tek-SS-kaynak** (güven `notlar`'da işaretli).
+- `schedule_kod=null`. Araç: `scripts/seed-data/196-reducer-conc-paslanmaz.json` + `seed-from-json.mjs` (lint 14/14, idempotent). Commit `ab1ce78`.
+
+**2. Backfill — +38 spool bağı (iki-çap kontrollü).** `spool_malzemeleri.fitting_olculer_id`, `WHERE IS NULL` (MK-111.2) + iki çap (`cap_buyuk_dn` VE `cap_kucuk_dn`) + grup=paslanmaz + `reducer_conc`. 38/38 bağlandı, 0 regresyon, 0 parse hatası.
+
+**3. 🔵 schedule_kod=null çoğaltmama (kanıtlandı).** Reducer library satırı schedule taşımaz → farklı schedule'lı (10S/40S/80S) aynı DN-çifti tek library satırına bağlanır. **Canlı kanıt:** DN200×150 → 5 BOM (3×80S + 2×10S) hepsi tek `fitting_olculer_id` (spool A-001124, `Conc. reducer 8"x6"`). Ağırlık schedule'a göre `notlar` JSONB'den.
+
+**Sonuç (196 sonu):** `fitting_olculer` 960 → **974** (+14). Spool fitting bağı 626 → **664** (+38, fiili `IS NOT NULL` sayımı). Sıfır yanlış-bağ. A10.6 #3 kapandı; kalan #4 paslanmaz flanş + `flansh_olculer` UNIQUE constraint DDL.
 
 ---
 ---
@@ -400,7 +418,7 @@ DB kodları tutarsız → `stdEtiket()` temizler: `B16.5`→"ASME B16.5" (öneks
 
 ## B14. Açık UI / veri borçları (190 sonu)
 - ✅ Karşılaştırma mantık hatası (B8) — **çözüldü 190**.
-- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**. **193:** A10.6 #1 eşit-kısmı kapandı — paslanmaz tee_eq seed +21 + backfill +65 (fitting toplam **595**), tam kayıt A10.7'de. **195:** A10.6 #1 redüksiyonlu kısmı + #2 karbon tee_red kapandı — tee_red ASME seed +4 (fitting **960**) + backfill +31 (fitting bağ **626**), tam kayıt A10.8'de. Kalan: paslanmaz reducer + paslanmaz flanş seed (A10.6 #3–4).
+- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**. **193:** A10.6 #1 eşit-kısmı kapandı — paslanmaz tee_eq seed +21 + backfill +65 (fitting toplam **595**), tam kayıt A10.7'de. **195:** A10.6 #1 redüksiyonlu kısmı + #2 karbon tee_red kapandı — tee_red ASME seed +4 (fitting **960**) + backfill +31 (fitting bağ **626**), tam kayıt A10.8'de. **196:** A10.6 #3 paslanmaz reducer kapandı — reducer_conc ASME seed +14 (fitting **974**) + backfill +38 (fitting bağ **664**, fiili sayım), tam kayıt A10.9'da. Kalan: paslanmaz flanş seed (A10.6 #4) + `flansh_olculer` UNIQUE constraint DDL.
 - **Renkli durum noktası (KARAR-86.A — ✅ 193'te SHIPPED, commit `7acb6a0`):** Sol-kenar 3px çizgi `#` kolonundaki noktaya taşındı (🔵 standart `geomBagli+kaliteStandart` / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz` / şeffaf=uç-işlemi, hizalama korunur). `spool_detay.html`: `noktaSinif` mevcut `trClasses`'ten birebir okunur (yeni mantık yok), satır tıklama + modal aynen. CSS `malz-*` çizgileri kaldırıldı, `.nokta*` eklendi.
 - **Gerçekten eksik 9 boru ölçüsü:** PROBE'da kütüphanede karşılığı olmayanlar (60.3×4.5 paslanmaz, 65×2/125×2.5/200×3 1.4571 = EN ince-cidar paslanmaz, 48.3×4.5/6.3 St37, 139.7×4.5 St37). Standart mı ara ölçü mü ayrımı → JSON/süper-admin.
 - **`boru_olculer` ASME çift-etiket (görsel birleştirme, ertelendi):** 43 grup, STD≡SCH40 / XS≡SCH80 gibi aynı et iki schedule adıyla. Veri DOĞRU (silinmez), arama iki adı da bulsun diye bilinçli. Tabloda "STD / 40" diye birleştirme = saf kozmetik, program bitince.

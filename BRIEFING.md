@@ -1,7 +1,12 @@
-# BRIEFING — AresPipe Aktif Bağlam (195 sonu)
+# BRIEFING — AresPipe Aktif Bağlam (196 sonu)
 
 ## Proje
 Çok-tenant tersane pipe spool yönetimi SaaS. Stack: Supabase/Postgres (RLS), Vercel serverless (Hobby, 12 fn tavanı), vanilla JS/HTML web + React Native PWA. Tüm iş Türkçe, MK-kararları + numaralı oturum disiplini.
+
+## 196 kapanışı — KÜTÜPHANE paslanmaz reducer (A10.6 #3 KAPANDI)
+- **Seed:** ASME B16.9 concentric reducer 14 satır (paslanmaz, DN40×32 → DN300×250). `fitting_olculer` 960 → **974**. `ucu_uca_f_mm`=reducer boyu (iki-kaynak özdeş: piping-world+octalpipefittings), OD kütüphane konvansiyonu, `agirlik_kg` primary=40S + `notlar` 10S/40S/80S, `schedule_kod=null`. `scripts/seed-data/196-reducer-conc-paslanmaz.json` (commit `ab1ce78`). MK-196.1.
+- **Backfill:** `fitting_olculer_id` iki-çap + grup=paslanmaz + `reducer_conc`, `WHERE IS NULL`, **+38 BOM bağı** (fiili `IS NOT NULL` 626→**664**). Canlı teyit: DN200×150 (A-001124) — 5 BOM (3×80S+2×10S) tek library satırına → **schedule çoğaltmadı** (schedule_kod=null kanıtı).
+- **Açık (taşındı):** (1) kalan A10.6 #4 paslanmaz flanş + `flansh_olculer` UNIQUE DDL (Supabase SQL editör). (2) cunife reducing tee matcher'da tee_eq (`lib/malzeme-kutuphane-eslesme.js:97`). (3) matcher tee `cap_kucuk` süzmüyor (`:98`). (4) oturum-saglik.sh md5 kontrolü. (5) BRIEFING 187-dönemi tam tazeleme.
 
 ## 195 kapanışı — KÜTÜPHANE tee_red (A10.6 #1 KAPANDI)
 - **Seed:** ASME B16.9 reducing tee 4 satır (paslanmaz DN150×100 + karbon DN200×150/DN100×65/DN80×50). `fitting_olculer` 956 → **960**. C=run / M=outlet merkez-uç, iki-kaynak çapraz doğrulama (piping-world+ferrobend). `scripts/seed-data/195-tee-red-asme.json` (commit `dd3541b`).

@@ -3028,3 +3028,22 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 **Açık (taşındı):** (a) cunife reducing tee'nin tanımında "reducing" yok → matcher (`:97` tanim-bazlı `/reducing|red\b/`) onu tee_eq sayar (1 satır, DN300×200, runtime yanlış sınıflama). (b) matcher tee lookup `cap_kucuk` süzmüyor (`:98`) — mevcut talepte (her grup+büyük-çap tek küçük-çaplı) bağ doğru ama tasarım eksik, latent.
 
 **İlişkili:** MK-193.1 (eşit tee iki-çap matcher konvansiyonu), MK-96 (tee ölçü malzeme-bağımsız, teorik kütle yok), MK-191.1 (seed-gate lint grup/standart).
+
+## MK-196 (Oturum 196)
+
+### MK-196.1 [KUTUPHANE] — Paslanmaz reducer: F çift-kaynak, OD kütüphane-konvansiyonu, ağırlık 40S-primary, schedule_kod=null çoğaltmama
+
+**Karar:** ASME B16.9 concentric reducer kütüphane satırlarında:
+- **`ucu_uca_f_mm`** = reducer boyu (uçtan uca), DN-çiftine bağlı tek değer (reducer'da C/M/A/B/H kullanılmaz, F tek geometri alanı).
+- **OD = kütüphane-içi tek konvansiyon:** yeni paslanmaz satırlar, mevcut **karbon `reducer_conc`** + 195 tee_red ile **birebir** OD kullanır (DN300=323.8, DN250=273.0, DN200=219.1, DN150=168.3, DN100=114.3, DN80=88.9, DN65=73.0, DN50=60.3, DN40=48.3, DN32=42.2). cunife DIN serisi (324/267/57…) AYRI — paslanmaz ASME'ye karıştırılmaz. Standart-içi tutarlılık, gruplar-arası değil.
+- **`agirlik_kg` primary = 40S** (STD-eşdeğer, karbon reducer deseni). Schedule-bağımlı varyantlar `notlar.agirlik_schedule_bagimli_kg` = `{10S, 40S, 80S}`.
+
+**Ağırlık güven derecesi (MK-96 türevi):** F **iki bağımsız kaynaktan özdeş** (piping-world + octalpipefittings, 14/14 identik). Ağırlık = S&S Stainless (paslanmaz); 40S/80S karbon-soylu tabloyla <%15 doğrulandı, **10S tek-SS-kaynak** (karbon tablo 10S büyük boylarda sapar, paslanmaz için yetkili değil) — `notlar.agirlik_dogrulama`'da açıkça işaretli. Tek-kaynak değer kabul edildi ama güven seviyesi kayıtlı.
+
+**`schedule_kod=null` çoğaltmama konvansiyonu (kanıtlandı):** reducer library satırı schedule taşımaz (`schedule_kod=null`). Farklı schedule'lı (10S/40S/80S) aynı DN-çifti BOM kalemleri **tek** library satırına bağlanır — schedule satırı çoğaltmaz. Ağırlık schedule'a göre `notlar` JSONB'den okunur. Canlı kanıt (196): DN200×150 → 5 BOM (3×80S + 2×10S) hepsi tek `fitting_olculer_id`'ye bağlı.
+
+**Boyut ayraç dersi:** reducer BOM `boyut` ayracı **`" x "`** (örn. `8" x 6" Sch 80S`); tee/eşit `" / "` kullanır. Parser format-duyarlı olmalı (`" / "` varsa o, yoksa `" x "`), 1-1/2 kesir tuzağına dikkat.
+
+**Kanıt (196):** Seed 14 satır `reducer_conc` paslanmaz, lint 14/14, `fitting_olculer` 960→**974**. Backfill iki-çap kontrollü +38 BOM bağı, fiili `IS NOT NULL` 626→**664**, 0 regresyon. `scripts/seed-data/196-reducer-conc-paslanmaz.json` commit `ab1ce78`. A10.6 #3 kapandı; kalan #4 paslanmaz flanş.
+
+**İlişkili:** MK-195.1 (tee_red ASME, C/M konvansiyonu), MK-193.1 (iki-çap matcher), MK-96 (referans çift-kaynak doğrulama), MK-192.2 (backfill toplamsal IS NULL).
