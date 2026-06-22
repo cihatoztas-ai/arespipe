@@ -3047,3 +3047,56 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 **Kanıt (196):** Seed 14 satır `reducer_conc` paslanmaz, lint 14/14, `fitting_olculer` 960→**974**. Backfill iki-çap kontrollü +38 BOM bağı, fiili `IS NOT NULL` 626→**664**, 0 regresyon. `scripts/seed-data/196-reducer-conc-paslanmaz.json` commit `ab1ce78`. A10.6 #3 kapandı; kalan #4 paslanmaz flanş.
 
 **İlişkili:** MK-195.1 (tee_red ASME, C/M konvansiyonu), MK-193.1 (iki-çap matcher), MK-96 (referans çift-kaynak doğrulama), MK-192.2 (backfill toplamsal IS NULL).
+
+## MK-197 (Oturum 197)
+
+### MK-197.1 [KUTUPHANE] — `flansh_olculer_dogal_uk` partial UNIQUE index (cunife-LJ-DIN dışlamalı)
+
+**Karar:** `flansh_olculer` doğal UNIQUE index'i **partial** kuruldu (migration 109, canlıda COMMIT'li): 7 kolon `(geometri_std, flansh_tipi, basinc_sinifi, cap_dn, yuzey_tipi, malzeme_grubu, tenant_id)`, `NULLS NOT DISTINCT` (fitting_olculer_dogal_uk deseni). `cap_dn` seçildi (`cap_nps` değil — 92 null + format tutarsızlığı). **Partial WHERE:** cunife DIN-86037-2 lap-joint ailesi (29 satır, S1/S2 cidar varyantı gerçek çift — MK-190.4) kapsam DIŞI bırakıldı, silinmedi. Paslanmaz flanş seed'in (A10.6 #4) ön koşuluydu.
+
+**Kanıt:** Commit `bf27968` (CI tetikli, `[skip ci]` YOK). Pre-flight + BEGIN/ROLLBACK dry-run ile dışlamalı 0 çift doğrulandı. 198'de bu index check-then-insert ile kullanıldı (MK-198.1).
+
+**İlişkili:** MK-178.2 (fitting unique constraint), MK-190.4 (cunife S1/S2), MK-98.2 (dry-run).
+
+## MK-198 (Oturum 198)
+
+### MK-198.1 [MIMARI] — Partial UNIQUE index'li tabloya check-then-insert (supabase-js upsert/onConflict oturmaz)
+
+**Sorun:** `flansh_olculer_dogal_uk` (migration 109, MK-197.1) **partial** index — cunife-LJ-DIN ailesi `WHERE` ile dışlanmış. supabase-js `.upsert({onConflict: cols})` PostgREST'te WHERE'siz `ON CONFLICT (cols)` üretir → partial index predicate'i ile eşleşmez (arbiter bulunamaz, INSERT hata verir).
+
+**Karar:** Partial UNIQUE index'li tablolar için `seed-from-json.mjs`'te ayrı **check-then-insert** dalı (`CHECK_THEN_INSERT` set):
+- UNIQUE_KEY alanlarıyla `tenant_id IS NULL` SELECT (null alan → `.is`, dolu → `.eq`) → 1+ satır dönerse ATLA.
+- Yoksa `_` prefix iç-alanları strip + INSERT (generated-kolon hatasında kolonu düşür-tekrar dene).
+- DRY-RUN'da SELECT **gerçekten** yapılır (var/yok doğru raporlanır), INSERT edilmez.
+- İdempotent: ikinci koşu hepsini ATLANDI sayar.
+`UNIQUE_KEY.flansh_olculer = ['geometri_std','flansh_tipi','basinc_sinifi','cap_dn','malzeme_grubu','yuzey_tipi']` (partial index'in mantıksal anahtarı).
+
+**Kanıt:** Commit `1bb83d3`. 20 paslanmaz flanş: DRY-RUN 20 EKLENECEK → `--yaz` 20 EKLENDI → re-run 20 ATLANACAK. self-test 4/4. `STD_GRUP`'a `ASME-B16.5` eklendi (lint uyarısı giderildi).
+
+**İlişkili:** MK-197.1 (partial index), MK-191.1 (seed-gate lint), MK-178.2 (fitting full-index upsert yeterliydi — orada partial yok).
+
+### MK-198.2 [KUTUPHANE] — PN10≡PN16 flanş özdeşlik doğrulama (EN-1092-1 DN10–150 ortak gövde)
+
+**Karar:** EN-1092-1 küçük DN'lerde (DN10–150) PN10 ve PN16 flanş **geometrisi özdeştir** (ortak gövde/delik şablonu: aynı OD, bolt-circle, bolt sayısı, kalınlık). Library'de PN10 DN65 satırı, doğrulanmış PN16 DN65 satırından `basinc_sinifi` 16→10 ile aynalanır — körlemesine değil, **çift-kaynak doğrulanarak** (MK-96).
+
+**Doğrulama:** Wermac PN10+PN16 çift tablo birebir + RoyMech PN16 cross-check (2026-06-22). Satırda `notlar.pn_ozdeslik` + `pn_ozdeslik_dogrulandi=true` (varsayım→doğrulandı terfisi).
+
+**İlke:** Seed tarafında PN özdeşliği kaynak-doğrulamalı yazılır, varsayım kalmaz (backfill tarafındaki gevşek A10.1 KARAR-1/A'dan farklı disiplin).
+
+**İlişkili:** MK-96 (çift-kaynak), MK-198.3 (flanş backfill).
+
+### MK-198.3 [KUTUPHANE] — Parse-tabanlı flanş backfill (tanim+boyut, dis_cap_mm kullanma, 192 simetrik)
+
+**Karar:** `spool_malzemeleri`'nde flanş tip/PN/DN/std **yapısal kolon DEĞİL** — serbest metin `tanim` + `boyut`'ta (information_schema teyidi, MK-126.8: geometri_std/flansh_tipi/basinc_sinifi/cap_dn kolonları BOM'da YOK). Backfill **parse-tabanlı** (192 karbon flanş simetrik):
+- tip: `tanim`'dan (Slip-On→EN-T12, Welding Neck→EN-T11 / B16.5'te WN)
+- PN: `tanim`'dan ("PN 16"→"16", "150LBS"→"150")
+- DN: `boyut`'tan, 3 format (`DN65` / `100 x 114.3`→sol / çıplak NPS→DN map)
+- **`dis_cap_mm` KULLANILMAZ** (null veya OD, güvenilmez — A10.1)
+- std-isimsiz SO → EN-1092-1 varsay (raporla — 198'de 46 satır)
+- anahtar = std+tip+PN+DN+grup=paslanmaz; yuzey_tipi BOM'da yok → library hepsi RF, anahtardan çıkar.
+
+**Tooling:** Direkt PG/transaction yok (supabase-js=PostgREST). BEGIN/ROLLBACK yerine **JS-simülasyon dry-run** (haritayı hesapla+say, DB'ye hiç dokunma) → idempotent per-row `.update(...).is('flansh_olculer_id', null)`. `scripts/backfill-flansh-paslanmaz-198.mjs` commit `7282fc8`.
+
+**Kanıt:** EŞLEŞTİ 304/304, EŞLEŞMEDİ 0. Flanş FK bağı 467→**771**. Kalan 45 null = 40 karbon + 5 cunife (A11 triyajı).
+
+**İlişkili:** MK-192.2 (toplamsal IS NULL), MK-111.2 (sadece IS NULL), MK-126.8 (information_schema), MK-98.2 (dry-run önce), MK-163.1 (devre-scoped).
