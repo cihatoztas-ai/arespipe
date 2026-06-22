@@ -14,6 +14,8 @@
 //   - Seed-gate lint (MK-191.1): grup/standart çelişen satır REDDEDİLİR (--yaz olsa bile yazılmaz).
 //   - _ ile başlayan iç alanlar (_db_aksiyonu, _sanity_*, _nps) DB'ye gönderilmez.
 //   - upsert + onConflict=UNIQUE_KEY → idempotent: var olan satır BOZULMAZ, eksik eklenir.
+//   - flansh_olculer (partial UNIQUE index, migration 109) → upsert oturmaz: check-then-insert
+//     (UNIQUE_KEY ile SELECT, varsa ATLA, yoksa INSERT). DRY-RUN'da SELECT yapılır ama INSERT edilmez.
 //   - notlar gibi TEXT kolonlarda nested obje → JSON.stringify (tablo-bilinçli; boru_olculer JSONB'ye dokunma).
 //   - uyari_satirlar: not amaçlı, varsayılan YAZILMAZ; --uyari-yaz verilirse YENI olanları da yazar.
 //   - kapsam_disi_oneri_beta: HİÇ dokunulmaz.
@@ -27,8 +29,14 @@ const UNIQUE_KEY = {
   boru_olculer:   ['standart', 'malzeme_grubu', 'dn', 'schedule_tipi', 'schedule_deger'],
   // fitting_olculer_dogal_uk (Oturum 178, NULLS NOT DISTINCT) — DB'den teyitli:
   fitting_olculer: ['standart', 'malzeme_grubu', 'parca_tipi', 'cap_buyuk_dn', 'cap_kucuk_dn', 'schedule_kod', 'class_no'],
-  flansh_olculer:  null,  // constraint eklenince doldurulacak
+  // flansh_olculer_dogal_uk (Oturum 197, migration 109 — PARTIAL UNIQUE, cunife-LJ-DIN WHERE ile dışlanmış).
+  // partial index → supabase-js .upsert({onConflict}) hedefleyemez → check-then-insert dalı (CHECK_THEN_INSERT).
+  // Buradaki anahtar = partial index'in MANTIKSAL anahtarı (paslanmaz/karbon satırlar bu tuple'la çakışır).
+  flansh_olculer:  ['geometri_std', 'flansh_tipi', 'basinc_sinifi', 'cap_dn', 'malzeme_grubu', 'yuzey_tipi'],
 };
+
+// Partial UNIQUE index'li tablolar: upsert onConflict oturmaz → SELECT-önce-INSERT-sonra.
+const CHECK_THEN_INSERT = new Set(['flansh_olculer']);
 
 // TEXT kolon olup JSON içerebilen alanlar (nested obje → stringify).
 // DİKKAT: boru_olculer.notlar JSONB → buraya EKLEME (supabase-js JSON gönderir, çift-encode olur).
@@ -63,8 +71,9 @@ const STD_GRUP = {
   'DIN-86088':    ['cunife'],
   'DIN-86089':    ['cunife'],
   'DIN-86090':    ['cunife'],
-  // flanş (geometri_std)
+  // flanş (geometri_std — bazı satırlarda standart kolonu 'ASME-B16.5' formatında dolu)
   'B16.5':        ['karbon', 'paslanmaz'],
+  'ASME-B16.5':   ['karbon', 'paslanmaz'],
   'DIN-86037-2':  ['cunife'],
   'EN-1092-1':    ['karbon', 'paslanmaz'],
   'EN-1092-3':    ['cunife'],
@@ -248,6 +257,91 @@ if (lintReddedilen.length || lintUyarili.length) {
 if (yazilacak.length === 0) {
   console.log('Yazılacak (lint geçen) YENI satır yok. Çıkılıyor.');
   process.exit(lintReddedilen.length ? 1 : 0);
+}
+
+// ── Check-then-insert dalı (partial UNIQUE index'li tablolar) ───────
+// flansh_olculer: SELECT ile var mı bak → yoksa INSERT, varsa ATLA.
+// DRY-RUN'da SELECT GERÇEKTEN yapılır (var/yok doğru raporlanır), INSERT edilmez.
+if (CHECK_THEN_INSERT.has(tablo)) {
+  const supa = createClient(SUPA_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  const GEN_RE2 = /non-DEFAULT value into column "([^"]+)"/;
+  const dusurulen2 = new Set();
+
+  // Flanş etiketi (rapor için — DB alanı değil, anahtar alanlardan türetilir)
+  function flanshEtiket(r) {
+    if (r.geometri_std === 'B16.5') return `B16.5 WN Cl${r.basinc_sinifi}`;
+    const t = r.flansh_tipi === 'EN-T11' ? 'EN WN PN'
+            : r.flansh_tipi === 'EN-T12' ? 'EN SO PN'
+            : `${r.flansh_tipi} PN`;
+    return t + r.basinc_sinifi;
+  }
+  // UNIQUE_KEY alanlarıyla tenant-NULL SELECT (null alan → .is, dolu → .eq)
+  async function varMi(r) {
+    let q = supa.from(tablo).select('id').is('tenant_id', null);
+    for (const k of uniqueKey) {
+      const v = r[k];
+      q = (v === null || v === undefined) ? q.is(k, null) : q.eq(k, v);
+    }
+    const { data, error } = await q.limit(1);
+    if (error) throw error;
+    return (data && data.length > 0);
+  }
+
+  const sonuc = [];   // { etiket, dn, aksiyon }
+  let nEkle = 0, nAtla = 0, nHata = 0;
+
+  for (const r of yazilacak) {
+    const etiket = flanshEtiket(r), dn = r.cap_dn;
+    let aksiyon;
+    try {
+      if (await varMi(r)) {
+        aksiyon = YAZ ? 'ATLANDI' : 'ATLANACAK';
+        nAtla++;
+      } else if (!YAZ) {
+        aksiyon = 'EKLENECEK';
+        nEkle++;
+      } else {
+        // gerçek INSERT (generated-kolon hatasında kolonu düşür, tekrar dene)
+        let payload = { ...r };
+        let deneme = 6, ok = false, sonHata = null;
+        while (deneme-- > 0) {
+          const { error } = await supa.from(tablo).insert(payload);
+          if (!error) { ok = true; break; }
+          const m = error.message.match(GEN_RE2);
+          if (m) {
+            const kol = m[1];
+            if (!dusurulen2.has(kol)) {
+              dusurulen2.add(kol);
+              console.log(`  ℹ  '${kol}' generated kolon — düşürülüp tekrar deneniyor.`);
+            }
+            delete payload[kol];
+            continue;
+          }
+          sonHata = error; break;
+        }
+        if (ok) { aksiyon = 'EKLENDI'; nEkle++; }
+        else { aksiyon = `HATA(${sonHata ? sonHata.message : 'bilinmeyen'})`; nHata++; }
+      }
+    } catch (e) {
+      aksiyon = `HATA(${e.message})`; nHata++;
+    }
+    sonuc.push({ etiket, dn, aksiyon });
+  }
+
+  // Satır başına rapor tablosu
+  console.log(`\n${YAZ ? '✍  YAZMA' : '🔍 DRY-RUN (INSERT yok, SELECT gerçek)'} — ${tablo}\n`);
+  console.log('  etiket'.padEnd(18) + 'DN'.padStart(5) + '   aksiyon');
+  console.log('  ' + '-'.repeat(48));
+  for (const s of sonuc) {
+    console.log('  ' + s.etiket.padEnd(16) + String(s.dn).padStart(5) + '   ' + s.aksiyon);
+  }
+  console.log('  ' + '-'.repeat(48));
+  const ekleEt = YAZ ? 'EKLENDI' : 'EKLENECEK';
+  const atlaEt = YAZ ? 'ATLANDI' : 'ATLANACAK';
+  console.log(`\nSonuç: ${nEkle} ${ekleEt}, ${nAtla} ${atlaEt}(zaten var), ${nHata} HATA, ${lintReddedilen.length} lint-reddi.`);
+  if (!YAZ) console.log(`\nGerçek yazmak için: node ${process.argv[1].split('/').pop()} ${dosya} --yaz`);
+  console.log('────────────────────────────────────────────');
+  process.exit(nHata > 0 ? 1 : 0);
 }
 
 // ── DRY-RUN ────────────────────────────────────────────────────────
