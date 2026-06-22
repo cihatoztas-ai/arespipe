@@ -1,7 +1,14 @@
-# AresPipe BRIEFING — 198. Oturum Kapanışı
+# AresPipe BRIEFING — 199. Oturum Kapanışı
 
 ## Proje
 Çok-tenant tersane pipe spool yönetimi SaaS. Stack: Supabase/Postgres (RLS), Vercel serverless (Hobby, 12 fn tavanı), vanilla JS/HTML web + React Native PWA. Tüm iş Türkçe, MK-kararları + numaralı oturum disiplini.
+
+## 199 kapanışı — KALİTE KONTROL tasarımı (kod yok, spec + mockup)
+- **Eksen değişti:** 199 kütüphane değil, ÜRETİM ZİNCİRİ işi. Kod değişmedi — salt-okuma keşif + tasarım dokümanı.
+- **Bulgu:** kalite_kontrol.html durum-modeli DB constraint'iyle uyumsuz (`bekleyen` yazıyor, DB `bekliyor` bekliyor). Reconciliation 58-59'da sadece mobilde yapılmış, vanilla geride kalmış → davetler KK ekranına düşmüyordu ("kaliteye gönderiyorum görünmüyor"un kaynağı). Karar: sayfa yeniden yazılacak (MK-199.1).
+- **KK mimarisi netleşti:** web omurga / mobil izleme (MK-199.2) · iki katman havuz+davetiye (MK-199.3) · tersane-tek guard (MK-199.4) · varsayılan-onay sonuç modeli + Faz 1 personel/foto/açıklama (MK-199.5) · client-side PDF + Storage (MK-199.6).
+- **Çıktı:** `docs/KALITE-KONTROL-TASARIM.md` (tam kodlama spec) + `docs/kalite-kontrol-mockup.html`. Sonraki oturum (200) implementasyon.
+- **Handoff hijyen (MK-199.7):** ayna sapması temizlendi — kök `son-durum.md` + `CLAUDE-SON-OTURUM.md` silindi. Kanonik: `.github/son-durum.md`, `docs/KARARLAR.md`, `CLAUDE-SONRAKI-OTURUM.md`.
 
 ## 198 kapanışı — KÜTÜPHANE paslanmaz flanş (A10.6 #4 KAPANDI)
 - **Seed:** 20 paslanmaz flanş satırı `flansh_olculer`'a (356 → **376**). Karbon EN-T11/EN-T12/B16.5-WN satırlarından **bit-bit mirror** (MK-96, hiçbir ölçü elle yazılmadı; flanş geometrisi malzemeden bağımsız). Dağılım: EN WN PN16 (8 DN), EN SO PN16 (5 DN), EN SO PN10 (1=DN65), B16.5 WN Cl150 (6 DN). `scripts/seed-data/paslanmaz-flansh-198.json`.
@@ -36,6 +43,7 @@ Kod commit `[skip ci]` YOK; doc/veri `[skip ci]` (MK-134.1). Devre-scoped SQL (M
 - `lib/malzeme-kutuphane-eslesme.js` (runtime matcher — flanşta YOK, %100 FK)
 
 ## Açık borçlar (öncelik)
+0. 🔵 **KK sayfası implementasyonu (Oturum 200)** — spec `docs/KALITE-KONTROL-TASARIM.md` hazır, mockup onaylı. Tersane davet formu şablonu kullanıcıdan bekleniyor (spec 7.2).
 1. 🟡 **A11 — kütüphane kapsamlı denetim** (PLANLANDI): tutarlılık tarama aracı (`scripts/kutuphane-tutarlilik.sh`), 6 boyut, Gör→Triyaj→Düzelt. İlk gerçek-hata adayı: `fitting_olculer.yaricap_mm` karbon LR = 1.5×OD (hatalı, doğru=1.5×nominal), 28 grup/66 satır (A8 borcu).
 2. 🟢 A10.6 #5 — 1D dirsek (1 satır).
 3. 🟡 cunife reducing tee matcher `tee_eq` (`lib/malzeme-kutuphane-eslesme.js:97`, tanım-bazlı) — 1 satır; tee lookup `cap_kucuk` süzmüyor (`:98`, latent).
