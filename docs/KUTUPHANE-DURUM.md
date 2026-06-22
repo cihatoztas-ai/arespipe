@@ -2,7 +2,7 @@
 
 > **Bu belge `KUTUPHANE-DURUM.md` (Oturum 178) içeriğini KORUR + Oturum 189 sayfa mimarisiyle ZENGİNLEŞTİRİR.**
 > İki bölüm: **A — Veri durumu** (ne yüklü, nasıl yüklenir) · **B — Sayfa mimarisi** (kütüphane.html nasıl çalışır).
-> Son güncelleme: **Oturum 196 (21 Haziran 2026)** — A10.9 eklendi (paslanmaz reducer_conc seed +14 + backfill +38, A10.6 #3 **kapandı**, MK-196.1), B14 + A10.6 yol haritası güncellendi. `fitting_olculer` güncel toplam **974**. (195: A10.8 tee_red ASME +4/+31; 193: A10.7 paslanmaz tee_eq +21/+65.)
+> Son güncelleme: **Oturum 198 (22 Haziran 2026)** — A10.10 eklendi (paslanmaz flanş seed **20** + backfill **304/304**, A10.6 #4 **kapandı**, PN10 DN65 özdeşlik doğrulandı), **A11 kapsamlı denetim planı** eklendi. `flansh_olculer` güncel toplam **376** (paslanmaz 0→20). A1/A10.0 eski sayım tutarsızlığı (375/67) canlıya hizalandı. (196: A10.9 reducer +14/+38; 195: A10.8 tee_red +4/+31; 193: A10.7 tee_eq +21/+65.)
 > Bu oturumda boru/flanş standart×malzeme kırılımı **canlı DB'den birebir tazelendi** (178'de "sonraki oturum" denmişti — artık burada).
 
 ---
@@ -17,7 +17,7 @@
 | `malzeme_kataloglari` | ~120 spec | 20 | başlangıç |
 | `boru_olculer` | ~280 | **547** (karbon 297 / paslanmaz 132 / alüminyum 50 / cunife 68) | iyi |
 | `fitting_olculer` | ~2.500 | **935** (cunife 328 / karbon 569 / paslanmaz 38) | büyüyor |
-| `flansh_olculer` | ~800 | **375** (karbon 308 / cunife 67) | orta |
+| `flansh_olculer` | ~800 | **376** (karbon 308 / paslanmaz 20 / cunife 48) — *198 canlı* | orta |
 | `fitting_malzeme_uyum` | ~8.000 | 0 | script-üretimi (sonra) |
 | `tenant_spec_seti` + `spec_kural` | ~500-1.000 | 0 | 2. tersane gelince |
 
@@ -134,7 +134,7 @@
 | **Fitting toplam** | +428 | **530** | 1750 | %~90 scope-dışı (parça değil) + lib-eksik tee/reducer |
 | **TOPLAM** | **+690** | — | — | sıfır yanlış-bağ; tüm çelişki sayaçları 0 |
 
-> **Veri gözlemi (192 taze sayım):** `flansh_olculer` GROUP BY malzeme_grubu = karbon 308 + cunife 48 (A1/A2 ile çapraz-kontrol et; A1 cunife'yi 67 yazıyor, A2 detayı 29+19=48'e topluyor — küçük tutarsızlık, sonraki tazelemede netlenir). `fitting_olculer` parça-tipi envanteri A2 ile uyumlu.
+> **Veri gözlemi (198 canlı tazeleme — tutarsızlık ÇÖZÜLDÜ):** `flansh_olculer` GROUP BY malzeme_grubu = **karbon 308 + paslanmaz 20 + cunife 48 = 376** (canlı GROUP BY birebir). Eski A1 "375 / cunife 67" yazımı yanlıştı; cunife gerçekte 48 (A2 detayı 29+19 ile tutuyor), toplam 198 öncesi 356 idi, paslanmaz seed ile 376. **Canlı esas — eski sayımlar bu tazelemede düzeltildi.** `fitting_olculer` parça-tipi envanteri A2 ile uyumlu.
 
 ### A10.1 — Flanş eşleştirme (karbon EN-1092-1)
 
@@ -219,7 +219,7 @@
 1. ✅ **Paslanmaz tee** (eşit + redüksiyonlu, ~75 satır) — **KAPANDI**: eşit 193'te (A10.7, +21 seed/+65 bağ), redüksiyonlu 195'te (A10.8, paslanmaz tee_red DN150×100 seed + 10 bağ).
 2. ✅ **Karbon `tee_red`** (~21 satır) — **KAPANDI 195** (A10.8): 3 ASME satır (DN200×150/DN100×65/DN80×50) + 21 bağ.
 3. ✅ **Paslanmaz reducer** — **KAPANDI 196** (A10.9): 14 `reducer_conc` ASME satır seed + 38 BOM bağı (10S/40S/80S hepsi 14 satıra; schedule çoğaltmadı). Talep 38 satır (handoff "~33" = 10S+80S; +5 Sch40S).
-4. 🟡 **Paslanmaz flanş seti** (316L WN EN-1092-1, AISI316 SO, B16.5-150LBS) — library'de paslanmaz flanş yok
+4. ✅ **Paslanmaz flanş seti** (316L WN EN-1092-1, AISI316 SO, B16.5-150LBS) — **KAPANDI 198** (A10.10): 20 satır seed (karbon-mirror, MK-96) + 304/304 BOM bağı (%100). PN10 DN65 özdeşlik doğrulandı.
 5. ⚪ **1D dirsek** (1 satır) — library'de 1D radius sınıfı yok
 6. (boru tarafından devreden — A8/B14) ~556 boru ölçüsü
 
@@ -310,6 +310,65 @@ A10.6'nın #3 maddesi (paslanmaz reducer). Library'de ASME paslanmaz `reducer_co
 **3. 🔵 schedule_kod=null çoğaltmama (kanıtlandı).** Reducer library satırı schedule taşımaz → farklı schedule'lı (10S/40S/80S) aynı DN-çifti tek library satırına bağlanır. **Canlı kanıt:** DN200×150 → 5 BOM (3×80S + 2×10S) hepsi tek `fitting_olculer_id` (spool A-001124, `Conc. reducer 8"x6"`). Ağırlık schedule'a göre `notlar` JSONB'den.
 
 **Sonuç (196 sonu):** `fitting_olculer` 960 → **974** (+14). Spool fitting bağı 626 → **664** (+38, fiili `IS NOT NULL` sayımı). Sıfır yanlış-bağ. A10.6 #3 kapandı; kalan #4 paslanmaz flanş + `flansh_olculer` UNIQUE constraint DDL.
+
+### A10.10 — Paslanmaz flanş seed + backfill (198) — A10.6 #4 KAPANDI
+
+A10.6'nın son veri maddesi (#4 paslanmaz flanş). Ön koşul `flansh_olculer_dogal_uk` partial UNIQUE index 197'de kurulmuştu (migration 109); 198 seed + backfill ile aileyi kapattı. **Library'de artık paslanmaz flanş var (0 → 20); tüm paslanmaz flanş spool talebi bağlandı (304/304).**
+
+**0. Talep sayımı (salt-okunur, DATA-first).** BOM'da `\bflange\b` kelime-sınırı (steel tuzağı: ham `%flange%` → 304 gerçek paslanmaz flanş, hepsi `flansh_olculer_id IS NULL`). Tip/PN/DN **`tanim`+`boyut`'tan parse** (yapısal kolon YOK; A10.1 deseni). 20 distinct kombinasyon: EN WN PN16 (8 DN), EN SO PN16 (5 DN), EN SO PN10 (1 DN=65), B16.5 WN Class150 (6 DN). `dis_cap_mm` KULLANILMADI (null veya OD, güvenilmez — A10.1).
+
+**1. Seed — +20 satır `flansh_olculer` (paslanmaz).**
+- **🔴 MK-96 mirror — hiçbir ölçü elle yazılmadı.** Flanş geometrisi malzemeden bağımsız (DN+PN+tip sabit → OD/BC/kalınlık/hub/bolt aynı, 316L vs A105 farketmez). 19 satır mevcut karbon EN-T11/EN-T12/B16.5-WN satırından **SELECT ile bit-bit aynalandı**; sadece `malzeme_grubu='paslanmaz'`, `agirlik_kg=null`, `notlar` (yeni) değişti. Geri-doğrulama: 20/20 OK, 3 izinli alan dışı birebir eşit.
+- **PN10 DN65 (1 satır):** kaynak EN-T12 PN16 DN65, `basinc_sinifi` 16→10. **Özdeşlik DOĞRULANDI** (Wermac PN10+PN16 çift tablo birebir + RoyMech PN16 cross-check, 2026-06-22, MK-96; EN-1092-1 DN10–150 ortak gövde). `notlar.pn_ozdeslik_dogrulandi=true`.
+- Dağılım: EN-T11/16 (8), EN-T12/16 (5), EN-T12/10 (1), B16.5/WN/150 (6).
+- **🔵 check-then-insert (upsert DEĞİL):** `flansh_olculer_dogal_uk` **partial** index (cunife-LJ-DIN WHERE dışı) → supabase-js `upsert(onConflict)` partial index'i hedefleyemez (PostgREST `ON CONFLICT (cols)` WHERE'siz → arbiter eşleşmez). Çözüm: `seed-from-json.mjs`'e `CHECK_THEN_INSERT` dalı (SELECT-önce, yoksa INSERT). Commit `1bb83d3`. Araç: `scripts/seed-data/paslanmaz-flansh-198.json` (karbon-mirror, geri-doğrulamalı). Seed idempotent (re-run → 20 ATLANACAK).
+
+**2. Backfill — +304 spool bağı (parse-tabanlı, 192 karbon flanş ile simetrik).** `spool_malzemeleri.flansh_olculer_id`, `WHERE IS NULL` (toplamsal, MK-111.2). Flanşta runtime matcher YOK → %100 FK'ya bağımlı (A10). Eşleştirme anahtarı = `geometri_std + flansh_tipi + basinc_sinifi + cap_dn + grup=paslanmaz` (yuzey_tipi BOM'da yok → library hepsi RF, anahtardan çıkarıldı). Parse: tip `tanim`'dan (Slip-On→EN-T12, Welding Neck→EN-T11/WN), PN `tanim`'dan, DN `boyut`'tan (3 format: `DN65` / `100 x 114.3`→sol / çıplak NPS→DN). **46 satırda SO std-isimsiz → EN-1092-1 varsayıldı** (A10.1). Araç: `scripts/backfill-flansh-paslanmaz-198.mjs` (idempotent per-row update, commit `7282fc8`). **EŞLEŞTİ 304/304, EŞLEŞMEDİ 0** — JS-simülasyon dry-run (transaction yok) ile önce doğrulandı, sonra `--yaz`. Canlı teyit: `Flange Welding Neck ANSI B16.5 150LBS boyut="6"` → library `B16.5/WN/150/DN150/paslanmaz` (6"→DN150 NPS doğru).
+
+**3. Kalan flanş artığı (kayıt, A11 kapsamında).** Backfill sonrası flanş BOM 816 toplam → **771 dolu / 45 null**. Kalan 45 null = **40 karbon + 5 cunife** (192'nin Set-On/özel-ürün artıkları — library tip karşılığı yok; paslanmaz 0). Bunlar A11 denetiminde triyaj edilecek.
+
+**Sonuç (198 sonu):** `flansh_olculer` 356 → **376** (+20, paslanmaz 0→20). Spool flanş FK bağı 467 → **771** (+304). Sıfır yanlış-bağ. **A10.6 #4 KAPANDI** → A10.6'da kalan tek madde #5 (1D dirsek, 1 satır, düşük öncelik).
+
+## A11 — Kütüphane Kapsamlı Denetim Planı (PLANLANDI, uygulanmadı)
+
+> **Durum:** PLANLANDI, uygulanmadı. Oturum 198'de oluşturuldu; uygulaması ayrı bir A11 oturumuna ayrıldı.
+> **Kapsam:** `fitting_olculer` + `flansh_olculer` + `boru_olculer` ve bunlara bağlı backfill bütünlüğü.
+> **Neden ayrı oturum:** Denetim parça parça düzeltmeyle çözülemeyecek kadar geniş — bütünsel geçiş gerektiriyor.
+
+**Neden bu plan var.** Oturum 198 boyunca kütüphanede bir dizi sorun **tesadüfen** açığa çıktı (her biri başka iş yapılırken bir sorgunun yan ürünü). Asıl problem **görünürlük eksikliği**: bütünsel tarama aracı yok, dolayısıyla ne kadar sorun olduğunu bilmiyoruz. Karar: temizliği parça parça kovalamayı bırak; **önce gör, sonra triyaj et, sonra düzelt**.
+
+**Çerçeve — "Gör → Triyaj → Düzelt".** Önceki *düzelt→araç→kuyrukla* sırası terstir (bilinen sorunu kovalayıp bilmediklerini sonraya atar = parça parça). Doğru sıra:
+- **Katman 1 — Görünürlük:** tüm kütüphaneyi tara, rapor çıkar (düzeltme YOK).
+- **Katman 2 — Triyaj:** bulguları sınıflandır + önceliklendir.
+- **Katman 3 — Düzeltme:** haritadan seçilen sırayla, MK-158.1 disiplininde.
+> İlke: Görünürlük olmadan düzeltme = parça parça. Görünürlük önce = bütünsel.
+
+**Katman 1 — Denetim aracı (6 boyut).** Oturum 198'in ad-hoc çapraz-malzeme sorgusu yalnızca 1 boyuttu; araç çok-boyutlu olmalı:
+1. **Çapraz-malzeme geometri çelişkisi** — aynı `(standart,parça_tipi,çap)` için farklı `malzeme_grubu` satırlarının malzemeden-bağımsız geometrisi birebir mi? ≤0.5mm = gürültü (yeşil), üstü = gerçek çelişki. *Örnek:* yaricap_mm karbon 1.5×OD (hatalı) vs paslanmaz 1.5×nominal, 28 grup/66 satır.
+2. **Yuvarlama konvansiyonu sapması** — inç→mm hassasiyet tutarsızlığı (paslanmaz 38.1 vs karbon 38). Kozmetik, ~29 grup.
+3. **Formül-türetme izleri** — bilinen formüle (yaricap=1.5×OD gibi) %100 uyan satır kümeleri = kaynaktan değil türetmeden gelmiş (MK-96 ihlali).
+4. **Backfill kapsama boşluğu** — `*_olculer_id IS NULL` kalan BOM = eksik seed haritası (MK-192.2). *Bilinen:* 45 flanş null (40 karbon + 5 cunife).
+5. **Belge vs canlı sayım** — `KUTUPHANE-DURUM.md` sayıları canlı `COUNT(*)` ile tutuyor mu (elle güncellendiği için kayar).
+6. **`notlar` kaynak-izi eksikliği** — `kaynak_birincil`/`kaynak_cross_check`/`wieland_dogrulandi` boş satırlar = MK-96 doğrulamasız girmiş, denetim adayı.
+
+> **Araç kalıcılaştırma:** Oturum 198'in ad-hoc tutarlılık sorgusu → `scripts/kutuphane-tutarlilik.sh` (her seed sonrası çalıştırılabilir). Denetimin *deterministik* ayağı; "AI bağımlılığı azalsın, kurallar biriksin" vizyonuyla uyumlu.
+
+**Katman 2 — Triyaj.** Her bulgu: **(a) gerçek hata** (düzelt), **(b) konvansiyon farkı** (hizalanabilir, acil değil), **(c) gürültü** (dokunma). Her gerçek-hata: etkilenen satır + kök neden + düzeltme yöntemi + bağımlılık.
+
+**Katman 3 — Sıralı düzeltme.** Haritadan seçilen sırayla, her biri: MK-158.1 (DATA→UI→code, önce okuma kodunu gör) · MK-98.2 (dry-run→say→COMMIT) · MK-96 (iki kaynak, türetme yok) · MK-126.8 (`information_schema` teyit).
+
+**Bilinen borç envanteri (198 itibarıyla):**
+| # | Borç | Kategori | Ölçek | Not |
+|---|------|----------|-------|-----|
+| 1 | `fitting_olculer.yaricap_mm` karbon LR (1.5×OD) | Gerçek hata | 28 grup/66 satır | A8 borcu. Önce okuma kodu (MK-158.1), sonra dry-run UPDATE. Doğru = 1.5×nominal. |
+| 2 | Yuvarlama konvansiyonu (inç→mm) | Konvansiyon | ~29 grup | Kozmetik, düşük öncelik. |
+| 3 | Bağlanamamış flanş artığı | Backfill boşluğu | 45 (40 karbon+5 cunife) | 192 Set-On/özel artıkları, eksik seed. |
+| 4 | KUTUPHANE-DURUM sayım tutarsızlığı | Belge | — | A10.0 işaretli; 198'de flanş için çözüldü, genel tarama gerek. |
+| 5 | Tutarlılık tarama aracı yok | Araç eksiği | — | Katman 1'in temeli. |
+
+**A11 oturumu açıldığında:** (1) bu bölümü oku — agenda hazır. (2) Katman 1 aracını yaz, raporu üret. (3) "Zannettiğimizden fazla mı?" sorusunu kanıta bağla. (4) Triyaj. (5) En yüksek öncelikli gerçek-hatadan (muhtemelen yaricap) başla.
+
+**Kapsam dışı (A11 DEĞİL):** yeni seed işleri (reducer/dirsek), parser/Excel-BOM hattı, PAOR/AVEVA. A11 yalnızca *mevcut referans verisinin bütünlüğü* ile ilgilenir.
 
 ---
 ---
@@ -418,7 +477,7 @@ DB kodları tutarsız → `stdEtiket()` temizler: `B16.5`→"ASME B16.5" (öneks
 
 ## B14. Açık UI / veri borçları (190 sonu)
 - ✅ Karşılaştırma mantık hatası (B8) — **çözüldü 190**.
-- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**. **193:** A10.6 #1 eşit-kısmı kapandı — paslanmaz tee_eq seed +21 + backfill +65 (fitting toplam **595**), tam kayıt A10.7'de. **195:** A10.6 #1 redüksiyonlu kısmı + #2 karbon tee_red kapandı — tee_red ASME seed +4 (fitting **960**) + backfill +31 (fitting bağ **626**), tam kayıt A10.8'de. **196:** A10.6 #3 paslanmaz reducer kapandı — reducer_conc ASME seed +14 (fitting **974**) + backfill +38 (fitting bağ **664**, fiili sayım), tam kayıt A10.9'da. Kalan: paslanmaz flanş seed (A10.6 #4) + `flansh_olculer` UNIQUE constraint DDL.
+- **FK backfill (boru 191 ✅ · flanş+fitting 192 ✅ — TAMAMLANDI):** spool_detay matcher önce ekranda eşliyor, FK'yı DB'ye yazmıyordu. **191:** matcher Tier-0 grup ekseniyle düzeltildi (bkz. A9), boru FK backfill (OD±1/et±0.06 + grup guard) → 1674 bağlı. **192:** flanş + fitting FK backfill yapıldı (bunlarda runtime matcher YOK, %100 FK'ya bağımlı) — grup-bilinçli birebir eşleştirme, **tam kayıt A10'da**. Flanş +262 (467 toplam), fitting +428 (530 toplam: elbow 358 + reducer 67 + cunife tee 3). Sıfır yanlış-bağ, tüm çelişki sayaçları 0. Kalan boşlar = library'de karşılığı olmayan (paslanmaz tee/reducer/flanş, karbon tee_red, 1D) veya parça-olmayan (butt-weld/imalat/bağlantı/olet) → **A10.6 eksik-raporu = seed yol haritası**. **193:** A10.6 #1 eşit-kısmı kapandı — paslanmaz tee_eq seed +21 + backfill +65 (fitting toplam **595**), tam kayıt A10.7'de. **195:** A10.6 #1 redüksiyonlu kısmı + #2 karbon tee_red kapandı — tee_red ASME seed +4 (fitting **960**) + backfill +31 (fitting bağ **626**), tam kayıt A10.8'de. **196:** A10.6 #3 paslanmaz reducer kapandı — reducer_conc ASME seed +14 (fitting **974**) + backfill +38 (fitting bağ **664**, fiili sayım), tam kayıt A10.9'da. **197:** `flansh_olculer_dogal_uk` partial UNIQUE index kuruldu (migration 109, A10.6 #4 ön koşulu). **198:** A10.6 #4 paslanmaz flanş kapandı — seed +20 (flansh **376**) + backfill +304 (flanş bağ 467→**771**, %100), check-then-insert + parse-mirror, tam kayıt A10.10'da. Kalan: A10.6 #5 (1D dirsek, 1 satır) + A11 denetim.
 - **Renkli durum noktası (KARAR-86.A — ✅ 193'te SHIPPED, commit `7acb6a0`):** Sol-kenar 3px çizgi `#` kolonundaki noktaya taşındı (🔵 standart `geomBagli+kaliteStandart` / 🟡 ara ölçü `malz-arasolc` / ⚪ kütüphanede yok `malz-tanimsiz` / şeffaf=uç-işlemi, hizalama korunur). `spool_detay.html`: `noktaSinif` mevcut `trClasses`'ten birebir okunur (yeni mantık yok), satır tıklama + modal aynen. CSS `malz-*` çizgileri kaldırıldı, `.nokta*` eklendi.
 - **Gerçekten eksik 9 boru ölçüsü:** PROBE'da kütüphanede karşılığı olmayanlar (60.3×4.5 paslanmaz, 65×2/125×2.5/200×3 1.4571 = EN ince-cidar paslanmaz, 48.3×4.5/6.3 St37, 139.7×4.5 St37). Standart mı ara ölçü mü ayrımı → JSON/süper-admin.
 - **`boru_olculer` ASME çift-etiket (görsel birleştirme, ertelendi):** 43 grup, STD≡SCH40 / XS≡SCH80 gibi aynı et iki schedule adıyla. Veri DOĞRU (silinmez), arama iki adı da bulsun diye bilinçli. Tabloda "STD / 40" diye birleştirme = saf kozmetik, program bitince.
