@@ -3100,3 +3100,35 @@ CANLI BUG (NB138): 102769 PDF=2 spool, ama Uygula sonrası kabukta 5-7 (S01..S07
 **Kanıt:** EŞLEŞTİ 304/304, EŞLEŞMEDİ 0. Flanş FK bağı 467→**771**. Kalan 45 null = 40 karbon + 5 cunife (A11 triyajı).
 
 **İlişkili:** MK-192.2 (toplamsal IS NULL), MK-111.2 (sadece IS NULL), MK-126.8 (information_schema), MK-98.2 (dry-run önce), MK-163.1 (devre-scoped).
+
+## MK-199 (Oturum 199)
+
+### MK-199.1 [MIMARI] — kalite_kontrol.html durum-modeli DB constraint'iyle uyumsuz → yeniden yazılacak
+
+kalite_kontrol.html `durum`'u 'bekleyen'/'onaylandi'/'reddedildi' okuyup yazıyordu; DB CHECK constraint 000_initial_schema'dan beri `durum ∈ {bekliyor, tamamlandi}`. Reconciliation oturum 58-59'da SADECE mobilde (MSpoolDetay.jsx junction'a) yapıldı, vanilla geride kaldı → davetler KK ekranına hiç düşmedi ("kaliteye gönderiyorum görünmüyor" şikâyetinin kaynağı). Karar: sayfa tek tek düzeltilmeyecek, yeni modelle YENİDEN yazılacak. Kanonik: `kk_davetler.durum ∈ {bekliyor, tamamlandi}` (paket açık/kapalı); `kk_davet_spooller.sonuc ∈ {bekliyor, onay, ret}` (spool sonucu, ayrı katman). devre_detay zaten doğru ('bekliyor').
+
+### MK-199.2 [MIMARI] — KK omurgası web, mobil salt-izleme
+
+KK yazma akışının tamamı (havuz, davet oluştur, sonuç gir, kapat) web'de. Mobil yalnızca izler; ileride (Faz 3) sadece kontrol esnasında foto/açıklama ekleyebilir. İki yazan-yüzey yasak (tutarsızlık riski). Web yazar, mobil okur — aynı şema, tek yazıcı.
+
+### MK-199.3 [MIMARI] — KK iki katmanlı yapı (havuz + davetiye paketi)
+
+Havuz = `aktif_basamak='on_kontrol'` (davete hazır). Davetiye = takip no (KK+yıl+sıra, örn. KK26-005) ile kilitlenmiş spool grubu, `aktif_basamak='kk'`. Davet imalat tam bitmeden de gönderilebilir (saha gerçeği — tersane personeli günler sonra gelir). Basamak ilerletme manuel (MK-126: otomatik ilerleme yok). Davet butonla kapanır; onay→arşiv+ileri, ret→havuz (tamir+yeni davet no), bekleyen→havuz.
+
+### MK-199.4 [MIMARI] — Tersane-tek zorunlu guard
+
+Bir davet paketinde yalnızca tek tersane olabilir (spooller→devreler→projeler→tersaneler zincirinden türetilir). Farklı tersane seçilirse sistem engeller (tersane verisinin yanlış tersaneye gitmemesi). Gemi/proje daraltması manuel filtre, zorunlu değil.
+
+### MK-199.5 [URUN] — KK sonuç modeli: varsayılan onay + Faz 1 hata girişi
+
+Sonuç ekranında tüm spool varsayılan ONAY. Tik kaldırılınca RET (uyarı çıkar) → personel (QR adayı: `is_kayitlari.personel_id`) + foto + açıklama girilir. Bu giriş Faz 1 (Faz 2 değil). Ret fotoğrafı spool_detay resim galerisine de bağlanır. Faz 2'de kalan: personel sayfasında hata raporu gösterimi.
+
+### MK-199.6 [MIMARI] — KK belge: client-side PDF + Storage
+
+Davet PDF'i paket oluşumuyla atomik, CLIENT-SIDE üretilir (jsPDF/pdfmake — Python/reportlab DEĞİL, 12/12 endpoint tavanı). Supabase Storage'a yüklenir, `kk_davetler.pdf_yolu`'na yol. İç liste devre-gruplu, devre başına X/Y oran. Tersane formu ayrı belge (şablon kullanıcıdan gelecek). Üç sekme (havuz/açık/arşiv) tek tutarlı açılır-devre tablosu formatı.
+
+### MK-199.7 [DISIPLIN] — Handoff tek kanonik kaynak (ayna yasak)
+
+198 kapanışında ayna sapması oluştu (kök son-durum.md 197'de kaldı, .github/ 198'de; CLAUDE-SON-OTURUM.md 194'te). Kök neden: aynı veri iki yerde → sapar (KK bekleyen/bekliyor, vanilla/mobil sapmasının kardeşi). Karar: KANONİK kaynaklar tek — son-durum=`.github/son-durum.md`, KARARLAR=`docs/KARARLAR.md`, sonraki=`CLAUDE-SONRAKI-OTURUM.md`. Kök `son-durum.md` ve `CLAUDE-SON-OTURUM.md` silindi (199). MK-194.1 backlog'undaki oturum-saglik.sh md5 kontrolü artık "çoğul handoff dosyası var mı" taramasını da içermeli (gelecek iş).
+
+**İlişkili:** MK-194.1 (doküman tek-otorite), MK-62.3 (ayna senkron şablonu), MK-198.x (KK bug forensics), MK-126 (manuel basamak ilerletme).

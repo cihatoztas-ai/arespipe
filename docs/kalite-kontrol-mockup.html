@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalite Kontrol — Mockup (Oturum 199)</title>
+<style>
+:root{--bg:#fff;--bg2:#f6f5f1;--bg3:#efede6;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8985;--bd:rgba(0,0,0,.12);--info:#185fa5;--infobg:#e6f1fb;--warn:#854f0b;--warnbg:#faeeda;--suc:#3b6d11;--sucbg:#eaf3de;--dan:#a32d2d;--danbg:#fcebeb;--rad:8px;--radlg:12px}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--tx);max-width:760px;margin:0 auto;padding:24px;background:#fafafa;font-size:14px}
+.not{background:var(--warnbg);color:var(--warn);padding:10px 14px;border-radius:var(--rad);font-size:13px;margin-bottom:20px}
+h1{font-size:22px;font-weight:500;margin:0 0 6px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:18px 0}
+.tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:14px;color:var(--tx2);cursor:pointer}
+.tab.akt{border-bottom-color:var(--info);color:var(--tx)}
+.liste{border:1px solid var(--bd);border-radius:var(--radlg);overflow:hidden}
+.dbas{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg2);cursor:pointer;border-top:1px solid var(--bd)}
+.dbas:first-child{border-top:none}
+.dad{font-size:13px;font-weight:500}.dsub{font-size:11px;color:var(--tx2)}
+.oran{margin-left:auto;background:var(--bg);border:1px solid var(--bd);padding:2px 8px;border-radius:var(--rad);font-size:12px;color:var(--tx2)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-weight:400;color:var(--tx3);font-size:11px;padding:7px 8px;background:var(--bg3)}
+td{padding:8px;border-top:1px solid var(--bd)}
+.sid{font-family:monospace;color:#534ab7;font-weight:500}
+.mat{padding:2px 7px;border-radius:var(--rad);font-size:11px}
+.matcu{background:#faece7;color:#993c1d}.matka{background:#f1efe8;color:#444441}
+.pkt{background:var(--bg);border:1px solid var(--bd);border-radius:var(--radlg);overflow:hidden;margin-bottom:14px}
+.pkthead{padding:14px 18px;border-bottom:1px solid var(--bd)}
+.no{font-family:monospace;font-size:15px;font-weight:500;color:var(--info)}
+.badge{font-size:12px;padding:2px 10px;border-radius:var(--rad)}
+.bw{background:var(--warnbg);color:var(--warn)}.bs{background:var(--sucbg);color:var(--suc)}
+.son{padding:2px 8px;border-radius:var(--rad);font-size:11px}
+.sonok{background:var(--sucbg);color:var(--suc)}.sonret{background:var(--danbg);color:var(--dan)}.sonbek{background:var(--bg2);color:var(--tx2)}
+</style></head>
+<body>
+<div class="not"><b>Mockup — Oturum 199.</b> Kalite Kontrol sayfası tasarımı. Üç sekme tek format: açılır devre tablosu. Spec: docs/KALITE-KONTROL-TASARIM.md</div>
+<h1>Kalite Kontrol</h1>
+<div style="font-size:13px;color:var(--tx2)">Havuz · Açık Davetiyeler · Arşiv — hepsi aynı açılır devre tablosu. Başlık: tersane / gemi / devre / zone / malzeme / ağırlık / X-Y adet.</div>
+<div class="tabs"><button class="tab akt">Havuz 23</button><button class="tab">Açık Davetiyeler 2</button><button class="tab">Arşiv 14</button></div>
+
+<div class="liste">
+  <div class="dbas"><span>▾</span><div><div class="dad">M120-721-0001 · zone Z-04</div><div class="dsub">Tersan Tuzla · gemi 1137 · Bakır Alaşım · 321,2 kg</div></div><span class="oran">4/20 spool</span></div>
+  <table><thead><tr><th>#</th><th>MARKA</th><th>REV</th><th>SPOOL ID</th><th>ÇAP</th><th>ET</th><th>AĞIRLIK</th><th>MALZEME</th><th>KALİTE</th><th>YÜZEY</th></tr></thead><tbody>
+    <tr><td>1</td><td style="color:var(--info)">NB1137-M120-721-0001-S01</td><td>—</td><td class="sid">A-2205</td><td>324,0 mm</td><td>4,0 mm</td><td>42,23 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
+    <tr><td>2</td><td style="color:var(--info)">NB1137-M120-721-0001-S02</td><td>—</td><td class="sid">A-2206</td><td>219,0 mm</td><td>3,0 mm</td><td>76,77 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
+    <tr><td>3</td><td style="color:var(--info)">NB1137-M120-721-0001-S03</td><td>—</td><td class="sid">A-2207</td><td>324,0 mm</td><td>4,0 mm</td><td>83,47 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
+  </tbody></table>
+</div>
+
+<div style="margin-top:24px;padding:14px;background:var(--bg2);border-radius:var(--radlg);font-size:13px;color:var(--tx2)">
+<b style="color:var(--tx)">Açık Davetiyeler / Arşiv — aynı format:</b> davet başlığı (KK26-005 · tersane · tarih · durum · PDF · Sonuç gir) + altında aynı açılır devre tablosu; son kolon "Yüzey" yerine "Sonuç" (onay/ret/bekliyor). Davetiye oluştur modalı: pakete giren devreleri özetler (devre · malzeme · X/Y spool · ağırlık · toplam). Sonuç gir: tümü varsayılan onay; tik kaldırınca uyarı + personel(QR aday)/foto/açıklama; foto spool detay galerisine işlenir. Daveti Kapat: özet onay (onay→arşiv, ret+bekleyen→havuz).
+</div>
+</body></html>
