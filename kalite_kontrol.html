@@ -317,6 +317,11 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
     <div class="modh"><h2><span data-i18n="kk_belgeler">Davet Belgeleri</span> — <span class="no" id="belgeNo"></span></h2><button class="x" onclick="modKapat('m-belge')">×</button></div>
     <div class="belge-defer">ⓘ <span data-i18n="kk_belge_defer">Galeri / not / belge görsel taslaktır — Storage bağı ve kapsam modeli (paket/spool) sonraki parçada kodlanacak.</span></div>
     <div class="belge-sec">
+      <h4>📄 <span data-i18n="kk_belge_liste_pdf">Kalite Kontrol Listesi</span></h4>
+      <p class="page-alt" style="margin:0 0 8px;" data-i18n="kk_belge_liste_pdf_alt">Bu paketin güncel spool listesi — yazdır veya PDF olarak kaydet. Arşivde de aynı yerden erişilir.</p>
+      <button class="btn btn-pri sm" onclick="belgeListePdf()" data-i18n="kk_btn_liste_pdf">📄 Liste PDF Aç</button>
+    </div>
+    <div class="belge-sec">
       <h4>🖼 <span data-i18n="kk_belge_galeri">Resim Galerisi</span></h4>
       <div class="gallery"><div class="gitem add">＋ <span data-i18n="kk_belge_foto_ekle">Foto ekle</span></div></div>
     </div>
@@ -657,11 +662,14 @@ function _kkListePdf(spoollar,opts){
         +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:600;color:#2D8EFF;">'+esc(s.kalite||'—')+'</td>'
         +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;">'+_pdfYuzChip(s.yuzey)+'</td></tr>';
     }).join('');
+    var topD=_devreToplam[g.devre_id]||g.spoollar.length;
     return '<div style="margin-bottom:16px;break-inside:avoid;page-break-inside:avoid;">'
-      +'<div style="display:flex;align-items:baseline;gap:8px;background:#f1f5f9;border-left:3px solid #2D8EFF;padding:5px 10px;border-radius:4px;margin-bottom:6px;">'
-        +'<b style="font-size:14px;color:#1e293b;">'+esc(g.proje_no||'—')+' / '+esc(g.devre_no||'—')+'</b>'
-        +(g.zone?'<span style="font-size:12px;color:#94a3b8;">'+esc(g.zone)+'</span>':'')
-        +'<span style="margin-left:auto;font-size:12px;color:#64748b;">'+g.spoollar.length+' spool · '+_fmt(grupAgirlik(g.spoollar))+' kg</span></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;background:#f1f5f9;border-left:3px solid #2D8EFF;padding:7px 12px;border-radius:5px;margin-bottom:6px;flex-wrap:wrap;">'
+        +'<span style="display:inline-block;padding:2px 9px;border-radius:6px;font-size:11px;font-weight:800;letter-spacing:.4px;background:rgba(124,58,237,.10);color:#6b21a8;text-transform:uppercase;white-space:nowrap;">'+esc(g.tersane||'—')+'</span>'
+        +'<b style="font-size:15px;color:#1e293b;">'+esc(g.proje_no||'—')+'</b>'
+        +'<span style="font-size:13px;color:#475569;">'+esc(g.devre_no||'—')+'</span>'
+        +(g.zone?'<span style="font-size:12px;color:#94a3b8;">· zone '+esc(g.zone)+'</span>':'')
+        +'<span style="margin-left:auto;font-size:13px;color:#1e293b;font-weight:700;">'+g.spoollar.length+' / '+topD+' spool · '+_fmt(grupAgirlik(g.spoollar))+' kg</span></div>'
       +'<table style="width:100%;border-collapse:collapse;">'
         +'<thead><tr style="background:#e9edf2;border-bottom:1.5px solid #bcc5d0;">'
         +'<th style="padding:6px 8px;text-align:right;font-size:10px;color:#637080;text-transform:uppercase;width:30px;">#</th>'
@@ -682,7 +690,7 @@ function _kkListePdf(spoollar,opts){
   w.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">'
     +'<title>'+tvv('kk_pdf_baslik','Kalite Kontrol Listesi')+' — AresPipe</title><style>'
     +'@page{size:A4 landscape;margin:14mm 12mm;}'
-    +'body{margin:0;padding:84px 0 40px;font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    +'body{margin:0;padding:112px 0 40px;font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
     +'.toolbar{position:fixed;top:0;left:0;right:0;height:44px;background:#334155;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;gap:8px;z-index:10000;}'
     +'.ph{position:fixed;top:44px;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 12mm;border-bottom:1px solid #e2e8f0;background:#fff;z-index:9999;}'
     +'.pf{position:fixed;bottom:0;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;border-top:1px solid #e2e8f0;background:#fff;font-size:12px;color:#94a3b8;z-index:9999;}'
@@ -762,7 +770,7 @@ function paketDrawerAc(pid,arsiv){
   var onay=d.spoollar.filter(function(s){return s._sonuc==='gecti';}).length;
   var ret=d.spoollar.filter(function(s){return s._sonuc==='tamir'||s._sonuc==='hatali';}).length;
   var kg=grupAgirlik(d.spoollar);
-  var act='<span class="iconbtn" title="'+tvv('kk_belgeler','Belgeler')+'" onclick="belgeAc(\''+esc(d.davet_no)+'\')">📁</span>';
+  var act='<span class="iconbtn" title="'+tvv('kk_belgeler','Belgeler')+'" onclick="belgeAc(\''+esc(String(d.id))+'\')">📁</span>';
   act+= d.pdf_yolu ? '<span class="iconbtn" title="PDF" onclick="window.open(\''+esc(d.pdf_yolu)+'\')">📄</span>' : '<span class="iconbtn" title="'+tvv('kk_pdf_uret','PDF üret')+'" onclick="kkDavetPdf(\''+esc(String(d.id))+'\')">📄</span>';
   if(!arsiv)act+='<button class="btn btn-pri sm" onclick="sonucAc(\''+d.id+'\')">'+tvv('kk_btn_sonuc','Sonuç Gir')+'</button>';
   var statLine=arsiv
@@ -806,7 +814,9 @@ function _drawerYenile(){
     if(ex)paketDrawerAc(_drawerKey,_drawerArsiv); else drawerKapat();
   }
 }
-function belgeAc(no){document.getElementById('belgeNo').textContent=no;modAc('m-belge');}
+var _aktifBelgeDavet=null;
+function belgeAc(davetId){var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});_aktifBelgeDavet=d?d.id:null;document.getElementById('belgeNo').textContent=d?d.davet_no:davetId;modAc('m-belge');}
+function belgeListePdf(){if(_aktifBelgeDavet)kkDavetPdf(_aktifBelgeDavet);}
 function belgeKapat(){modKapat('m-belge');}
 
 /* ───────── SONUÇ GİR ───────── */
