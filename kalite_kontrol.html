@@ -793,9 +793,27 @@ function paketDrawerAc(pid,arsiv){
 
 /* ───────── DRAWER altyapı ───────── */
 var _drawerTip=null, _drawerKey=null, _drawerArsiv=false;
+function _drawerKonumla(){
+  var dr=document.getElementById('drawer'); if(!dr)return;
+  var top=0;
+  // 1) ares-layout üst bar: ekran tepesine sabit/yapışık, geniş, makul yükseklik
+  document.querySelectorAll('header,[class*="topbar"],[class*="top-bar"],[class*="navbar"],[class*="header"],[id*="topbar"],[id*="header"]').forEach(function(el){
+    if(el.id==='drawer'||(el.closest&&(el.closest('#drawer')||el.closest('.modbg')||el.closest('.drawerbg')))||el.classList.contains('table-header')||el.classList.contains('modh'))return;
+    var cs=getComputedStyle(el); if(cs.position!=='fixed'&&cs.position!=='sticky')return;
+    var r=el.getBoundingClientRect();
+    if(r.top<=2&&r.height>=40&&r.height<=160&&r.width>=window.innerWidth*0.5&&r.bottom>top)top=r.bottom;
+  });
+  // 2) bulunamazsa: içerik alanının (header altından başlar) üst offset'i
+  if(!top){var pg=document.querySelector('.page')||document.querySelector('.main-content');if(pg){var pr=pg.getBoundingClientRect();if(pr.top>=40&&pr.top<=200)top=pr.top;}}
+  top=Math.round(top)||64;
+  dr.style.top=top+'px';
+  dr.style.height='calc(100vh - '+top+'px)';
+}
+window.addEventListener('resize',function(){var dr=document.getElementById('drawer');if(dr&&dr.classList.contains('acik'))_drawerKonumla();});
 function _drawerCiz(head,body){
   document.getElementById('drawerHead').innerHTML=head;
   document.getElementById('drawerBody').innerHTML=body;
+  _drawerKonumla();
   document.getElementById('drawer').classList.add('acik');
   document.getElementById('drawer-bg').classList.add('acik');
 }
