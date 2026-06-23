@@ -550,15 +550,28 @@ function modAc(id){document.getElementById(id).classList.remove('gizli');}
 function modKapat(id){document.getElementById(id).classList.add('gizli');}
 document.querySelectorAll('.modbg').forEach(function(m){m.onclick=function(e){if(e.target===m)m.classList.add('gizli');};});
 
-/* ───────── INIT ───────── */
+/* ───────── INIT — kanonik auth-ready döngüsü (MK-200.4: getSession→oturumKontrol→tenantKod→yetki) ───────── */
 document.addEventListener('DOMContentLoaded', function(){
   (async function(){
     try{
-      if(typeof ARES!=='undefined'&&ARES.mod==='supabase'){
-        if(ARES.tenantKod) await ARES.tenantKod();
-        if(ARES.sayfaYetkiKontrol && !await ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin','operator'])) return;
-        await personelYukle();
-        await veriYukle();
+      var _b=0;
+      while(_b<80){
+        if(typeof ARES==='undefined'){ await new Promise(function(r){setTimeout(r,100);}); _b++; continue; }
+        var supa=ARES.supabase();
+        if(supa){
+          var _ses=await supa.auth.getSession();
+          if(_ses.data && _ses.data.session){
+            await ARES.oturumKontrol();                                   // ← _oturum'u DOLDURUR (eksikse giris.html redirect)
+            if(ARES.tenantKod) await ARES.tenantKod();
+            if(ARES.sayfaYetkiKontrol && !await ARES.sayfaYetkiKontrol(['yonetici','firma_admin','super_admin','operator'])) return;
+            await personelYukle();
+            await veriYukle();
+            return;
+          }
+          if(_b>20){ location.href='giris.html'; return; }
+        }
+        await new Promise(function(r){setTimeout(r,100);});
+        _b++;
       }
     }catch(e){console.error('[KK] init:',e);toast(tvv('kk_hata','Hata')+': '+(e.message||e),'er');}
   })();
