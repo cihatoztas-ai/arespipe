@@ -99,7 +99,7 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .dgrup .o{margin-left:auto;font-size:11px;color:var(--txd);}
 
 /* ── MODAL ── */
-.modbg{position:fixed;inset:0;background:rgba(5,8,14,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+.modbg{position:fixed;inset:0;background:rgba(5,8,14,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:70;}
 .mod{background:var(--sur);border:1px solid var(--bor);border-radius:12px;width:100%;max-width:560px;max-height:88vh;overflow:auto;box-shadow:0 16px 50px rgba(0,0,0,.4);}
 .mod.gen{max-width:700px;}
 .modh{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--bor);position:sticky;top:0;background:var(--sur);}
@@ -190,11 +190,11 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .btn.sm{padding:5px 11px;font-size:12px;}
 
 /* ── SAĞDAN DRAWER ── */
-.drawerbg{position:fixed;inset:0;background:rgba(5,8,14,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s;}
+.drawerbg{position:fixed;inset:0;background:rgba(5,8,14,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;}
 .drawerbg.acik{opacity:1;pointer-events:auto;}
-.drawer{position:fixed;top:0;right:0;height:100vh;width:min(660px,94vw);background:var(--sur);border-left:1px solid var(--bor);box-shadow:-10px 0 44px rgba(0,0,0,.32);z-index:45;transform:translateX(101%);transition:transform .24s ease;display:flex;flex-direction:column;}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(860px,95vw);background:var(--sur);border-left:1px solid var(--bor);box-shadow:-10px 0 44px rgba(0,0,0,.32);z-index:61;transform:translateX(101%);transition:transform .24s ease;display:flex;flex-direction:column;}
 .drawer.acik{transform:translateX(0);}
-.drawer-head{padding:16px 20px 14px;border-bottom:1px solid var(--bor);background:var(--sur2);flex:0 0 auto;}
+.drawer-head{padding:20px 22px 14px;border-bottom:1px solid var(--bor);background:var(--sur2);flex:0 0 auto;}
 .drawer-body{padding:14px 0 32px;overflow-y:auto;flex:1 1 auto;}
 .dw-top{display:flex;align-items:flex-start;gap:12px;}
 .dw-no{font-family:'Barlow Condensed',monospace;font-size:22px;font-weight:700;color:var(--ac);line-height:1.05;}
@@ -279,7 +279,8 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
     <div class="modb" id="olusturGovde"></div>
     <div class="modf">
       <button class="btn btn-gho" onclick="modKapat('m-olustur')" data-i18n="cmn_vazgec">Vazgeç</button>
-      <button class="btn btn-pri ml-a" id="olusturBtn" onclick="davetiyeOnayla()" data-i18n="kk_btn_olustur_pdf">Oluştur · kilitle</button>
+      <button class="btn btn-gho ml-a" id="pdfOnizleBtn" onclick="kkPdfOnizle()" data-i18n="kk_btn_pdf_onizle">📄 PDF Önizle</button>
+      <button class="btn btn-pri" id="olusturBtn" onclick="davetiyeOnayla()" data-i18n="kk_btn_olustur_pdf">Oluştur · kilitle</button>
     </div>
   </div>
 </div>
@@ -574,6 +575,137 @@ async function davetiyeOnayla(){
   btn.textContent=tvv('kk_btn_olustur_pdf','Oluştur · kilitle');
 }
 
+/* ───────── KK LİSTE PDF (yazdır tabanlı — devreler.html _tabelaPdf konvansiyonu) ───────── */
+function kkPdfOnizle(){
+  var sec=seciliSpoollar();
+  if(!sec.length){toast(tvv('kk_toast_secim_yok','Önce spool seçin'),'er');return;}
+  _kkListePdf(sec,{});
+}
+function kkDavetPdf(davetId){
+  var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
+  if(!d){toast(tvv('kk_davet_yok','Davet bulunamadı'),'er');return;}
+  _kkListePdf(d.spoollar,{davetNo:d.davet_no,tarih:d.tarih,durum:d.durum});
+}
+function _pdfMatChip(raw){
+  var c={karbon:['rgba(45,142,255,.10)','#1760a8'],paslanmaz:['rgba(124,58,237,.10)','#6b21a8'],
+    bakir:['rgba(217,119,6,.10)','#b45309'],alum:['rgba(22,163,110,.12)','#0f7a52']}[matKod(raw)]||['rgba(100,116,139,.10)','#475569'];
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:11px;font-size:12px;font-weight:700;background:'+c[0]+';color:'+c[1]+';white-space:nowrap;">'+esc(matEtiket(raw))+'</span>';
+}
+function _pdfYuzChip(raw){
+  if(raw==null||raw===''){return '<span style="color:#94a3b8;">—</span>';}
+  var k=String(raw).toLowerCase();
+  var c=k.indexOf('galv')>=0?['rgba(22,163,110,.12)','#0f7a52']
+    :(k.indexOf('asit')>=0||k.indexOf('asid')>=0)?['rgba(124,58,237,.10)','#6b21a8']
+    :(k.indexOf('boya')>=0||k.indexOf('epoks')>=0)?['rgba(217,119,6,.10)','#b45309']
+    :['rgba(100,116,139,.10)','#475569'];
+  return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;background:'+c[0]+';color:'+c[1]+';white-space:nowrap;">'+yuzeyEtiket(raw)+'</span>';
+}
+function _kkListePdf(spoollar,opts){
+  opts=opts||{};
+  if(!spoollar||!spoollar.length){toast(tvv('kk_toast_secim_yok','Önce spool seçin'),'er');return;}
+  var w=window.open('','_blank','width=1100,height=750');
+  if(!w){toast(tvv('sp_popup_blocked','Popup engelleyici kapatın'),'er');return;}
+  var gruplar=devreGrupla(spoollar);
+  var tarihStr=new Date(opts.tarih||Date.now()).toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var noStr=opts.davetNo?esc(opts.davetNo):('<span style="color:#94a3b8;font-weight:600;">'+tvv('kk_no_atanir','KK… (oluşturulunca atanır)')+'</span>');
+  var tersane=esc(spoollar[0]._tersane||'—');
+  var projeler=[...new Set(spoollar.map(function(s){return s._proje_no;}).filter(Boolean))];
+  var gemiStr=!projeler.length?'—':(projeler.length===1?esc(projeler[0]):projeler.length+' '+tvv('kk_gemi','gemi'));
+  var topKg=grupAgirlik(spoollar);
+
+  function _sk(et,dg,rk){return '<div style="border:1px solid #bcc5d0;border-left:3px solid '+rk+';border-radius:8px;padding:8px 14px;min-width:130px;background:#e9edf2;">'
+    +'<div style="font-size:10px;color:#637080;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700;">'+et+'</div>'
+    +'<div style="font-size:17px;font-weight:800;color:#1e293b;">'+dg+'</div></div>';}
+  var statHtml='<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'
+    +_sk(tvv('kk_tersane','Tersane'),tersane,'#2D8EFF')
+    +_sk(tvv('kk_gemi_proje','Gemi / Proje'),gemiStr,'#7c3aed')
+    +_sk(tvv('kk_kapsam','Kapsam'),gruplar.length+' '+tvv('kk_sec_devre','devre')+' · '+spoollar.length+' spool','#16a36e')
+    +_sk(tvv('kk_top_agirlik','Toplam Ağırlık'),_fmt(topKg)+' kg','#0891b2')
+    +'</div>';
+
+  var ozetSat=gruplar.map(function(g){var top=_devreToplam[g.devre_id]||g.spoollar.length;
+    return '<tr><td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;"><b style="color:#1e293b;">'+esc(g.proje_no||'—')+'</b> / '+esc(g.devre_no||'—')+(g.zone?' / <span style="color:#94a3b8;">'+esc(g.zone)+'</span>':'')+'</td>'
+      +'<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">'+_pdfMatChip(g.spoollar[0].malzeme)+'</td>'
+      +'<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;font-weight:600;">'+g.spoollar.length+' / '+top+'</td>'
+      +'<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;color:#64748b;">'+_fmt(grupAgirlik(g.spoollar))+' kg</td></tr>';
+  }).join('');
+  var ozetTab='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px;">'
+    +'<thead><tr style="background:#e9edf2;border-bottom:2px solid #bcc5d0;">'
+    +'<th style="padding:7px 8px;text-align:left;font-size:11px;color:#637080;text-transform:uppercase;letter-spacing:.4px;">'+tvv('kk_th_gemi_devre','Gemi / Devre / Zone')+'</th>'
+    +'<th style="padding:7px 8px;text-align:left;font-size:11px;color:#637080;text-transform:uppercase;letter-spacing:.4px;">'+tvv('cmn_malzeme','Malzeme')+'</th>'
+    +'<th style="padding:7px 8px;text-align:right;font-size:11px;color:#637080;text-transform:uppercase;letter-spacing:.4px;">'+tvv('kk_th_spool','Spool')+'</th>'
+    +'<th style="padding:7px 8px;text-align:right;font-size:11px;color:#637080;text-transform:uppercase;letter-spacing:.4px;">'+tvv('cmn_agirlik','Ağırlık')+'</th>'
+    +'</tr></thead><tbody>'+ozetSat+'</tbody>'
+    +'<tfoot><tr style="border-top:2px solid #bcc5d0;font-weight:800;">'
+    +'<td style="padding:7px 8px;font-size:13px;">'+tvv('cmn_toplam','TOPLAM')+'</td>'
+    +'<td style="padding:7px 8px;font-size:13px;color:#64748b;">'+gruplar.length+' '+tvv('kk_sec_devre','devre')+'</td>'
+    +'<td style="padding:7px 8px;text-align:right;font-size:13px;">'+spoollar.length+' spool</td>'
+    +'<td style="padding:7px 8px;text-align:right;font-size:13px;">'+_fmt(topKg)+' kg</td>'
+    +'</tr></tfoot></table>';
+
+  var spoolBloklari=gruplar.map(function(g){
+    var sat=g.spoollar.map(function(s,i){
+      return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';">'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;text-align:right;color:#94a3b8;font-size:12px;">'+(i+1)+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#2D8EFF;">'+esc(marka(s))+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;">'+esc(s.rev||'—')+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-size:13px;font-weight:700;color:#6b3fd4;">'+esc(markaId(s.spool_id))+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;">'+_fmt(s.dis_cap_mm)+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;">'+_fmt(s.et_mm)+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;font-weight:600;">'+_fmt(s.agirlik)+' kg</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;">'+_pdfMatChip(s.malzeme)+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:600;color:#2D8EFF;">'+esc(s.kalite||'—')+'</td>'
+        +'<td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;">'+_pdfYuzChip(s.yuzey)+'</td></tr>';
+    }).join('');
+    return '<div style="margin-bottom:16px;break-inside:avoid;page-break-inside:avoid;">'
+      +'<div style="display:flex;align-items:baseline;gap:8px;background:#f1f5f9;border-left:3px solid #2D8EFF;padding:5px 10px;border-radius:4px;margin-bottom:6px;">'
+        +'<b style="font-size:14px;color:#1e293b;">'+esc(g.proje_no||'—')+' / '+esc(g.devre_no||'—')+'</b>'
+        +(g.zone?'<span style="font-size:12px;color:#94a3b8;">'+esc(g.zone)+'</span>':'')
+        +'<span style="margin-left:auto;font-size:12px;color:#64748b;">'+g.spoollar.length+' spool · '+_fmt(grupAgirlik(g.spoollar))+' kg</span></div>'
+      +'<table style="width:100%;border-collapse:collapse;">'
+        +'<thead><tr style="background:#e9edf2;border-bottom:1.5px solid #bcc5d0;">'
+        +'<th style="padding:6px 8px;text-align:right;font-size:10px;color:#637080;text-transform:uppercase;width:30px;">#</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">'+tvv('kk_th_marka','Marka')+'</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">Rev</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">Spool ID</th>'
+        +'<th style="padding:6px 8px;text-align:right;font-size:10px;color:#637080;text-transform:uppercase;">Çap</th>'
+        +'<th style="padding:6px 8px;text-align:right;font-size:10px;color:#637080;text-transform:uppercase;">Et</th>'
+        +'<th style="padding:6px 8px;text-align:right;font-size:10px;color:#637080;text-transform:uppercase;">'+tvv('cmn_agirlik','Ağırlık')+'</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">'+tvv('cmn_malzeme','Malzeme')+'</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">'+tvv('kk_th_kalite','Kalite')+'</th>'
+        +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;">'+tvv('kk_th_yuzey','Yüzey')+'</th>'
+        +'</tr></thead><tbody>'+sat+'</tbody></table></div>';
+  }).join('');
+
+  var durumRoz=opts.durum?(' &nbsp;·&nbsp; <span style="font-size:13px;color:'+(opts.durum==='tamamlandi'?'#16a36e':'#d97706')+';font-weight:700;">'+(opts.durum==='tamamlandi'?tvv('kk_durum_tamam','Tamamlandı'):tvv('kk_durum_bekliyor','Beklemede'))+'</span>'):'';
+
+  w.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">'
+    +'<title>'+tvv('kk_pdf_baslik','Kalite Kontrol Listesi')+' — AresPipe</title><style>'
+    +'@page{size:A4 landscape;margin:14mm 12mm;}'
+    +'body{margin:0;padding:84px 0 40px;font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    +'.toolbar{position:fixed;top:0;left:0;right:0;height:44px;background:#334155;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;gap:8px;z-index:10000;}'
+    +'.ph{position:fixed;top:44px;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 12mm;border-bottom:1px solid #e2e8f0;background:#fff;z-index:9999;}'
+    +'.pf{position:fixed;bottom:0;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;border-top:1px solid #e2e8f0;background:#fff;font-size:12px;color:#94a3b8;z-index:9999;}'
+    +'.lf-ad{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:1px;}.la-ad{font-size:15px;font-weight:800;color:#2D8EFF;}'
+    +'.ic{padding:0 12mm;}'
+    +'@media print{.toolbar{display:none!important;}.ph{top:0;}body{padding:60px 0 32px;}}'
+    +'</style></head><body>'
+    +'<div class="toolbar">'
+      +'<button onclick="window.print()" style="padding:6px 14px;background:#2D8EFF;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;">🖨 '+tvv('cmn_yazdir_pdf','Yazdır / PDF')+'</button>'
+      +'<button onclick="window.close()" style="padding:6px 12px;background:transparent;color:#94a3b8;border:1px solid #475569;border-radius:6px;font-size:14px;cursor:pointer;">✕ '+tvv('cmn_kapat','Kapat')+'</button></div>'
+    +'<div class="ph">'
+      +'<div style="display:flex;align-items:center;gap:8px;">'+(window.aresFirmaLogo?window.aresFirmaLogo(40):'<span class="lf-ad">'+tersane+'</span>')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;">'+(window.aresLogoPrint?window.aresLogoPrint(34):'<span class="la-ad">AresPipe</span>')+'</div></div>'
+    +'<div class="pf">'+tvv('kk_pdf_footer','Bu belge AresPipe tarafından üretilmiştir.')+'</div>'
+    +'<div class="ic">'
+      +'<div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:10px;margin-bottom:14px;">'
+        +'<div style="font-size:19px;font-weight:800;letter-spacing:.5px;">'+tvv('kk_pdf_baslik','KALİTE KONTROL LİSTESİ')+'</div>'
+        +'<div style="font-size:13px;color:#64748b;text-align:right;"><b style="color:#1e293b;">No:</b> '+noStr+' &nbsp;·&nbsp; '+tarihStr+durumRoz+'</div></div>'
+      +statHtml+ozetTab+spoolBloklari
+    +'</div></body></html>');
+  w.document.close();
+}
+
 /* ───────── AÇIK / ARŞİV — iki kademe accordion (mockup v3) ───────── */
 function _gemiOzet(d){var p=[...new Set(d.spoollar.map(function(s){return s._proje_no;}).filter(Boolean))];if(!p.length)return '—';if(p.length===1)return esc(p[0]);return p.length+' '+tvv('kk_gemi','gemi');}
 function _yuzBadge(raw){var k=String(raw||'').toLowerCase();var cls=k.indexOf('galv')>=0?'yb-galvaniz':(k.indexOf('asit')>=0||k.indexOf('asid')>=0)?'yb-asit':(k.indexOf('boya')>=0||k.indexOf('epoks')>=0)?'yb-boyali':'yb-siyah';return '<span class="yuzey-badge '+cls+'">'+yuzeyEtiket(raw)+'</span>';}
@@ -631,7 +763,7 @@ function paketDrawerAc(pid,arsiv){
   var ret=d.spoollar.filter(function(s){return s._sonuc==='tamir'||s._sonuc==='hatali';}).length;
   var kg=grupAgirlik(d.spoollar);
   var act='<span class="iconbtn" title="'+tvv('kk_belgeler','Belgeler')+'" onclick="belgeAc(\''+esc(d.davet_no)+'\')">📁</span>';
-  act+= d.pdf_yolu ? '<span class="iconbtn" title="PDF" onclick="window.open(\''+esc(d.pdf_yolu)+'\')">📄</span>' : '<span class="iconbtn dis" title="'+tvv('kk_pdf_yok','PDF yok')+'">📄</span>';
+  act+= d.pdf_yolu ? '<span class="iconbtn" title="PDF" onclick="window.open(\''+esc(d.pdf_yolu)+'\')">📄</span>' : '<span class="iconbtn" title="'+tvv('kk_pdf_uret','PDF üret')+'" onclick="kkDavetPdf(\''+esc(String(d.id))+'\')">📄</span>';
   if(!arsiv)act+='<button class="btn btn-pri sm" onclick="sonucAc(\''+d.id+'\')">'+tvv('kk_btn_sonuc','Sonuç Gir')+'</button>';
   var statLine=arsiv
     ? '<span class="okc">'+onay+' '+tvv('kk_onay','onay')+'</span> · <span class="retc">'+ret+' '+tvv('kk_ret','ret')+'</span>'
