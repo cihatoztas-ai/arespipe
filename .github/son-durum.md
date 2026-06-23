@@ -1,31 +1,33 @@
-# Son Durum — 200. Oturum (23 Haziran 2026) — KALİTE KONTROL faz-1 iskelet CANLI
+# AresPipe — Son Durum (Oturum 202 kapanış)
 
-> Önceki: 199 — KK tasarım keşfi + spec + mockup. Detay: docs/KALITE-KONTROL-TASARIM.md + MK-199.x.
+> Hedef: `.github/son-durum.md` · commit `[skip ci]`
 
-## Oturum 200 — KK implementasyonu faz-1 (şema + sayfa + auth + CI), CANLI
+## Tek cümle
+KK (Kalite Kontrol) modülü: accordion → master-detail sağ drawer dönüşümü **tamamlandı + canlıda**; Davetiye listesi **PDF**'i (yatay A4, firma logosu otomatik) **eklendi + canlıda doğrulandı**.
 
-DURUM: kod + DB değişti, canlı. CI yeşil.
+## Bu oturumda biten (canlı)
+- **KK sayfası render katmanı drawer'a geçti** (devreler.html `data-table` sistemi; satıra tıkla → sağ drawer). İş mantığına dokunulmadı.
+- **KK Liste PDF** (`_kkListePdf`): yatay A4, yazdır-tabanlı (yeni pencere + `window.print()`), devreler.html `_tabelaPdf` konvansiyonu.
+  - Üst: sol `window.aresFirmaLogo()` (ayardan, localStorage `ares_logo_firma`), sağ `window.aresLogoPrint()` (AresPipe).
+  - 4 stat-pill (Tersane / Gemi-Proje / Kapsam / Toplam Ağırlık), devre özeti tablosu + TOPLAM, devre-başına spool tabloları (#·Marka·Rev·SpoolID·Çap·Et·Ağırlık·Malzeme·Kalite·Yüzey).
+  - Footer: "Bu belge AresPipe tarafından üretilmiştir."
+  - Erişim: (1) Davetiye Oluştur modalı **📄 PDF Önizle**, (2) açık/arşiv satırı **📄** (`kkDavetPdf`), (3) Belgeler popup **📄 Liste PDF Aç** (`belgeListePdf`).
+- Canlı doğrulama: logo geldi, içerik doğru. Düzeltilen: üstte kesilme (body padding-top 84→112), devre başlığı drawer-stili zenginleştirildi (tersane chip + gemi + devre + zone + x/y spool · kg).
 
-NE YAPILDI:
-- **Migration 110 CANLI — DOĞRULANDI** (commit `696d90a`): kk_davetler +kapanis_ts/pdf_yolu/olusturan_id, kk_davet_spooller +sonuc_ts/personel_id/foto_yolu, sayac_tanimlari kk satırı (7 tenant). Constraint değişmedi. **NOT:** ilk denemede BEGIN/ROLLBACK dry-run COMMIT'siz kalmıştı (kolonlar yoktu, davet yazılamıyordu) — Cihat panelde gerçek APPLY yaptı. `information_schema` 6 kolon + 7 kk sayaç teyitli, **KK26-004 üretildi** (sayfa uçtan uca davet yazıyor).
-- **kalite_kontrol.html baştan yazıldı** (commit `23a7b59`): yeni model `durum=bekliyor/tamamlandi`, `sonuc` UI ikili **onay=gecti / ret=tamir** (hatali gösterilir, MK-72.11). 3 sekme Havuz/Açık/Arşiv (tek açılır-devre tablo formatı), gerçek program teması (mockup :root taşınmadı), G-05 matBadge. Eski `bekleyen/onaylandi/reddedildi` modeli TAMAMEN kalktı. Tersane-tek guard + KK26 sayaç + davetiye oluştur + sonuç gir (varsayılan onay) + daveti kapat (basamak geçişleri: onay→sevkiyat, ret/bekleyen→on_kontrol).
-- **Auth init fix** (commit `64148f8`): kanonik oturum-ready döngüsü. İlk rewrite'ta `ARES.oturumKontrol()` atlanmıştı → `_oturum` null → sayfa giris.html'e atıyordu. getSession→oturumKontrol→tenantKod→sayfaYetkiKontrol döngüsü eklendi, ARES.mod guard kaldırıldı. ÇÖZÜLDÜ.
-- **CI fix** (23a7b59 içinde): `kontrol.js` `_arsiv/` + `docs/` tarama dışı (app sayfası değil — mockup/prototip ARES_LAYOUT_EKSIK veriyordu). CI 0 hata, yeşil. self-test 4/4.
+## Canlı `kalite_kontrol.html`
+- md5: `fc7f469eaf43689808761bb7ab5f9e88`
+- 12/12 Vercel endpoint korunuyor; tamamı client-side; pdfmake VENDOR'LANMADI (yazdır-tabanlı).
 
-## Commit (200)
-- `696d90a` — migration 110 (şema, CI tetikli)
-- `23a7b59` — kalite_kontrol rewrite + kontrol.js _arsiv/docs dışla (kod)
-- `64148f8` — auth init fix (kod)
-- (bu kapanış) — handoff + KARARLAR 200 ([skip ci])
+## Kilitli teknik kararlar (değişmedi)
+- `kk_davetler.durum` ∈ {bekliyor, tamamlandi}; `kk_davet_spooller.sonuc` ∈ {gecti, hatali, tamir, bekliyor} (MK-200.1). UI: onay→gecti, ret→tamir.
+- KK26 sayaç: `sayac_tanimlari` tip=kk, prefix=KK, yil_ekle=true, digits=3. İlk `sonraki_no()` öncesi sayaç satırı var olmalı.
+- `spooller.aktif_basamak`: …→on_kontrol (havuz) → kk (davette) → sevkiyat. ET = `spooller.et_kalinligi_mm`.
+- Tersane-tek guard: bir davet paketinde tek tersane.
+- Logo mekanizması: DB/Storage'da firma logosu YOK; `ares-layout.js` localStorage `ares_logo_firma` + `ares_logo_ares`. PDF helper'ları (`aresFirmaLogo`/`aresLogoPrint`) buradan okur.
 
-## Açık (sonraki oturum, öncelik)
-1. 🔴 **devre_detay A-FIX (post-kapanış bulgusu):** "Kalite Kontrole Gönder" (`gonderKaydet`, _gonderTip='kk', 1979-1989) ESKİ model — `aktif_basamak`'a dokunmuyor, doğrudan `kk_davetler` (durum=bekliyor, `davet_no='KK-'+Date.now()` SAYAÇ DEĞİL) + junction yaratıyor → spool havuza (on_kontrol) girmiyor, Açık Davetiyeler'de garip no ile beliriyor ("Havuz'da kayboldu" şikâyetinin sebebi). **A fix:** insert+junction KALDIR → `spooller.update({aktif_basamak:'on_kontrol'})`; davet YALNIZ KK sayfasından (KK26 sayaç). Canlı kanıt: TÜM eski davetler `KK-xxxxx`, bekliyor davet spool'ları on_imalat(11)/on_kontrol(11)/argon(2)/imalat(2).
-2. 🔴 **Eski `KK-xxxxx` davet temizliği:** A-fix sonrası mevcut eski-format bekliyor davetler (sayaç-dışı no, tutarsız basamak) — veri temizliği.
-3. 🔴 **CANLI TEST (uçtan uca):** ET kolonu (`et_kalinligi_mm` vs `et_mm` ŞÜPHESİ — havuz tablosunda boş geliyorsa fix), davet→sonuç→kapat round-trip. Migration artık canlı → KK26 üretiliyor (KK26-004 doğrulandı).
-2. 🟡 **DEFER:** client-side PDF (Bölüm 7, pdfmake vendored — vendor'da YOK), spool_detay+devre_detay entegrasyonu (Bölüm 8), ret foto Storage+galeri (`fotograflar.spool_id` çift-bağ), is_kayitlari QR personel adayı (şimdilik kullanicilar fallback).
-3. 🟢 A-002210 çift davet temizliği (tek UPDATE, MK-98.2).
-4. ⚪ Sonuç Gir: modal mı inline mi kararı.
-5. (200 öncesi devir) A11 kütüphane denetimi · operasyon-sayfası küçük borçları (kesim D-02, markalama ms-i18n, bukum ölü kod).
-
-## Sonraki oturum
-İlk iş: **KK canlı uçtan-uca test** — Cihat hard-refresh → sekmeler Havuz/Açık/Arşiv görünüyor mu, havuzda spool ET kolonu dolu mu, davetiye oluştur→KK26 üret→sonuç gir→kapat çalışıyor mu. Sonra DEFER kalemler. Detay: CLAUDE-SONRAKI-OTURUM.md.
+## Açık (sıradaki oturum)
+- i18n: yeni `kk_pdf_*`, `kk_th_kalite/yuzey`, `kk_no_atanir`, `kk_belge_liste_pdf*`, `cmn_yazdir_pdf` anahtarları `tvv()` Türkçe fallback'iyle çalışıyor → `lang/{tr,en,ar}.json`'a eklenmeli.
+- PDF kalıcılığı kararı: yazdır-tabanlı PDF Storage'a otomatik yazılamaz. Mevcut çözüm **on-demand yeniden üretim** (pakete bağlı, hep güncel). Donmuş snapshot dosyası isteniyorsa ayrı Storage-upload işi.
+- Belgeler popup gerçek Storage bağı (galeri/not hâlâ taslak).
+- spool_detay / devre_detay KK çapraz-linkleri.
+- BUG: spool_detay'da `aktif_basamak='kk'` spool sevkte görünüyor.
