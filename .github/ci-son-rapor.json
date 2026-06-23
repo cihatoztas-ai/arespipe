@@ -1,14 +1,14 @@
 {
-  "tarih": "2026-06-22T08:37:02.895Z",
-  "commit_sha": "bd3756d0432f2bb620e500ca2727b14f95422012",
+  "tarih": "2026-06-23T07:10:32.694Z",
+  "commit_sha": "696d90a18dc52c19ca30e2e80403ab3cee19bf7c",
   "commit_ref": "main",
-  "workflow_run": 1162,
+  "workflow_run": 1163,
   "ozet": {
-    "hata": 0,
-    "uyari": 107,
-    "taranan_dosya": 141,
-    "sorunlu_dosya": 5,
-    "durum": "sari"
+    "hata": 1,
+    "uyari": 108,
+    "taranan_dosya": 143,
+    "sorunlu_dosya": 6,
+    "durum": "kirmizi"
   },
   "kurallar": {
     "G03_HAM_MALZEME": {
@@ -172,6 +172,30 @@
             4163,
             4165
           ]
+        }
+      ]
+    },
+    "ARES_LAYOUT_EKSIK": {
+      "tip": "hata",
+      "mesaj": "ares-layout.js yüklenmiyor.",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "docs/kalite-kontrol-mockup.html",
+          "sayi": 1,
+          "satirlar": []
+        }
+      ]
+    },
+    "ARES_NORMALIZE_EKSIK": {
+      "tip": "uyari",
+      "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "docs/kalite-kontrol-mockup.html",
+          "sayi": 1,
+          "satirlar": []
         }
       ]
     }
@@ -547,6 +571,25 @@
           "tip": "uyari",
           "satir": 2861,
           "mesaj": "tv('dv_dok_search_empty') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "docs/kalite-kontrol-mockup.html",
+      "hata_sayisi": 1,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "ARES_LAYOUT_EKSIK",
+          "tip": "hata",
+          "satir": null,
+          "mesaj": "ares-layout.js yüklenmiyor."
+        },
+        {
+          "kod": "ARES_NORMALIZE_EKSIK",
+          "tip": "uyari",
+          "satir": null,
+          "mesaj": "ares-normalize.js yüklenmiyor — ARES_NORM.malzemeEtiket/kaliteGoster/yuzeyEtiket kullanılamaz. (Bölüm 2.2 — SC-01)"
         }
       ]
     },
