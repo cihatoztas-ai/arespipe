@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-06-23T19:16:46.783Z",
-  "commit_sha": "42c6bf0c9dc4fdc23146447b8586d9932fe7898e",
+  "tarih": "2026-06-23T21:08:50.185Z",
+  "commit_sha": "169f22faac5b20426b145359a1aa05b71154d7db",
   "commit_ref": "main",
-  "workflow_run": 1170,
+  "workflow_run": 1171,
   "ozet": {
     "hata": 0,
-    "uyari": 109,
+    "uyari": 110,
     "taranan_dosya": 142,
-    "sorunlu_dosya": 5,
+    "sorunlu_dosya": 6,
     "durum": "sari"
   },
   "kurallar": {
@@ -173,6 +173,20 @@
             4159,
             4163,
             4165
+          ]
+        }
+      ]
+    },
+    "G03_HAM_KALITE": {
+      "tip": "uyari",
+      "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "kalite_kontrol.html",
+          "sayi": 1,
+          "satirlar": [
+            657
           ]
         }
       ]
@@ -743,6 +757,19 @@
           "tip": "uyari",
           "satir": 787,
           "mesaj": "tv('izb_dosya') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "kalite_kontrol.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "G03_HAM_KALITE",
+          "tip": "uyari",
+          "satir": 657,
+          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
     },
