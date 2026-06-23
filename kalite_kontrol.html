@@ -56,12 +56,20 @@ table.kk-tab{width:100%;border-collapse:collapse;font-size:13px;}
 input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointer;margin:0;}
 
 /* ── MALZEME ROZETİ (G-05) ── */
-.mb{display:inline-block;padding:2px 8px;border-radius:10px;font-size:13px;font-weight:500;white-space:nowrap;}
-.mb-celik{background:rgba(45,142,255,.12);color:var(--ac);border:1px solid rgba(45,142,255,.28);}   /* karbon → mavi (G-05) */
-.mb-pas  {background:rgba(124,58,237,.12);color:var(--leg);border:1px solid rgba(124,58,237,.28);}  /* paslanmaz → mor */
-.mb-bakir{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.28);}   /* bakır → amber */
-.mb-alum {background:rgba(22,163,110,.12);color:var(--gr);border:1px solid rgba(22,163,110,.28);}   /* alüm → yeşil */
-.mb-diger{background:var(--sur2);color:var(--txm);border:1px solid var(--bor);}                      /* diğer → gri */
+:root{--mat-karbon-bg:rgba(45,142,255,.10);--mat-karbon-fg:var(--ac);--mat-karbon-bd:rgba(45,142,255,.25);--mat-paslanmaz-bg:rgba(124,58,237,.10);--mat-paslanmaz-fg:var(--leg);--mat-paslanmaz-bd:rgba(124,58,237,.25);--mat-bakir-bg:rgba(217,119,6,.10);--mat-bakir-fg:var(--warn);--mat-bakir-bd:rgba(217,119,6,.25);--mat-alum-bg:rgba(22,163,110,.10);--mat-alum-fg:var(--gr);--mat-alum-bd:rgba(22,163,110,.25);--mat-diger-bg:var(--sur2);--mat-diger-fg:var(--txd);--mat-diger-bd:var(--bor);}
+[data-theme=dark]{--mat-karbon-bg:rgba(45,142,255,.18);--mat-paslanmaz-bg:rgba(124,58,237,.18);--mat-bakir-bg:rgba(217,119,6,.18);--mat-alum-bg:rgba(22,163,110,.18);}
+.mb{display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:500;white-space:nowrap;margin:1px;}
+.mb-celik{background:var(--mat-karbon-bg);color:var(--mat-karbon-fg);border:1px solid var(--mat-karbon-bd);}
+.mb-pas{background:var(--mat-paslanmaz-bg);color:var(--mat-paslanmaz-fg);border:1px solid var(--mat-paslanmaz-bd);}
+.mb-bakir{background:var(--mat-bakir-bg);color:var(--mat-bakir-fg);border:1px solid var(--mat-bakir-bd);}
+.mb-alum{background:var(--mat-alum-bg);color:var(--mat-alum-fg);border:1px solid var(--mat-alum-bd);}
+.mb-diger{background:var(--mat-diger-bg);color:var(--mat-diger-fg);border:1px solid var(--mat-diger-bd);}
+/* yüzey badge — devreler ile birebir */
+.yuzey-badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:14px;font-weight:500;margin:1px;}
+.yb-asit{background:rgba(45,142,255,.1);color:var(--ac);}
+.yb-galvaniz{background:rgba(22,163,110,.1);color:var(--gr);}
+.yb-boyali{background:rgba(217,119,6,.12);color:var(--warn);}
+.yb-siyah{background:rgba(107,122,144,.15);color:var(--txm);}
 
 /* ── AKSİYON BAR (havuz alt, sticky) ── */
 .aksbar{position:sticky;bottom:0;margin-top:14px;display:flex;align-items:center;gap:12px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;box-shadow:0 -2px 12px rgba(0,0,0,.18);}
@@ -168,7 +176,7 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .subrow>td{padding:0;border-bottom:1px solid var(--bor);}
 .subwrap{display:none;background:var(--sur2);padding:2px 0 6px;}
 .grow.open + .subrow .subwrap{display:block;}
-table.sub{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
+table.sub{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:auto;}
 table.sub thead th{text-align:left;font-size:10px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.3px;padding:7px 10px;}
 table.sub th.num,table.sub td.num{text-align:right;}
 table.sub td{padding:8px 10px;border-top:1px solid var(--bor);color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -334,6 +342,20 @@ function sonucCls(s){return {gecti:'sonok',tamir:'sonret',hatali:'sonret',bekliy
 function matKod(raw){return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeKod)?ARES_NORM.malzemeKod(raw):String(raw||'').toLowerCase();}
 function matEtiket(raw){return (typeof ARES_NORM!=='undefined'&&ARES_NORM.malzemeEtiket)?(ARES_NORM.malzemeEtiket(raw)||raw||'—'):(raw||'—');}
 function matBadge(raw){var kod=matKod(raw);var cls={karbon:'mb-celik',paslanmaz:'mb-pas',bakir:'mb-bakir',alum:'mb-alum',diger:'mb-diger'}[kod]||'mb-diger';return '<span class="mb '+cls+'">'+esc(matEtiket(raw))+'</span>';}
+function tersaneBadge(ad){
+  var palette=[
+    {lb:'rgba(217,119,6,.12)',lc:'#7c3a00',db:'rgba(217,119,6,.22)',dc:'#fbbf24'},
+    {lb:'rgba(124,58,237,.12)',lc:'#4c1d95',db:'rgba(124,58,237,.22)',dc:'#a78bfa'},
+    {lb:'rgba(236,72,153,.1)',lc:'#831843',db:'rgba(236,72,153,.2)',dc:'#f9a8d4'},
+    {lb:'rgba(22,163,110,.1)',lc:'#065f46',db:'rgba(22,163,110,.18)',dc:'#34d399'},
+    {lb:'rgba(239,68,68,.1)',lc:'#991b1b',db:'rgba(239,68,68,.18)',dc:'#fc8181'}
+  ];
+  var hash=0,t=ad||'';
+  for(var i=0;i<t.length;i++)hash=(hash*31+t.charCodeAt(i))%palette.length;
+  var c=palette[hash],dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=dark?c.db:c.lb,color=dark?c.dc:c.lc;
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:'+bg+';color:'+color+';">'+esc(t||'—')+'</span>';
+}
 function kaliteGoster(raw){return esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.kaliteGoster)?(ARES_NORM.kaliteGoster(raw)||raw||'—'):(raw||'—'));}
 function yuzeyEtiket(raw){return esc((typeof ARES_NORM!=='undefined'&&ARES_NORM.yuzeyEtiket)?(ARES_NORM.yuzeyEtiket(raw)||raw||'—'):(raw||'—'));}
 function markaId(sid){return (typeof ARES!=='undefined'&&ARES.markaId)?ARES.markaId(sid):(sid||'');}
@@ -441,7 +463,7 @@ function havuzRender(){
     h+='<tr class="grow" onclick="tgl(this)">'
       +'<td class="cchev"><span class="chev">\u25B6</span></td>'
       +'<td><input type="checkbox" class="kkcheck" '+(grupSecili?'checked':'')+' onclick="event.stopPropagation();grupSec(\''+g.devre_id+'\',this.checked)"></td>'
-      +'<td><span class="ters">'+esc(g.tersane)+'</span></td><td class="gemi">'+esc(g.proje_no||'—')+'</td>'
+      +'<td>'+tersaneBadge(g.tersane)+'</td><td class="gemi">'+esc(g.proje_no||'—')+'</td>'
       +'<td class="devre-ad">'+esc(g.devre_no||'—')+'</td><td class="zone">'+(g.zone?esc(g.zone):'—')+'</td>'
       +'<td class="num"><span class="ratio">'+g.spoollar.length+'/'+top+'</span></td>'
       +'<td class="num agir">'+_fmt(grupAgirlik(g.spoollar))+' kg</td>'
@@ -518,8 +540,7 @@ async function davetiyeOnayla(){
 
 /* ───────── AÇIK / ARŞİV — iki kademe accordion (mockup v3) ───────── */
 function _gemiOzet(d){var p=[...new Set(d.spoollar.map(function(s){return s._proje_no;}).filter(Boolean))];if(!p.length)return '—';if(p.length===1)return esc(p[0]);return p.length+' '+tvv('kk_gemi','gemi');}
-function _yuzCls(raw){var k=String(raw||'').toLowerCase();if(k.indexOf('galv')>=0)return 'galv';if(k.indexOf('asit')>=0||k.indexOf('asid')>=0)return 'asit';if(k.indexOf('boya')>=0||k.indexOf('epoks')>=0)return 'boya';return 'diger';}
-function _yuzBadge(raw){return '<span class="yuz '+_yuzCls(raw)+'">'+yuzeyEtiket(raw)+'</span>';}
+function _yuzBadge(raw){var k=String(raw||'').toLowerCase();var cls=k.indexOf('galv')>=0?'yb-galvaniz':(k.indexOf('asit')>=0||k.indexOf('asid')>=0)?'yb-asit':(k.indexOf('boya')>=0||k.indexOf('epoks')>=0)?'yb-boyali':'yb-siyah';return '<span class="yuzey-badge '+cls+'">'+yuzeyEtiket(raw)+'</span>';}
 function _altTablo(spoollar){
   var h='<table class="sub"><thead><tr><th class="num">#</th><th>'+tvv('kk_th_marka','Marka')+'</th><th>Rev</th><th>Spool ID</th><th class="num">Çap</th><th class="num">Et</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th><th>'+tvv('cmn_malzeme','Malzeme')+'</th><th>'+tvv('kk_th_sonuc','Sonuç')+'</th></tr></thead><tbody>';
   spoollar.forEach(function(s,i){
@@ -560,7 +581,7 @@ function paketTablo(list,arsiv){
     h+='<tr class="prow" onclick="pktTgl(\''+pid+'\',this)">'
       +'<td class="cchev"><span class="chev">▶</span></td><td class="cidx">·</td>'
       +'<td><span class="no">'+esc(d.davet_no)+'</span></td>'
-      +'<td><span class="ters">'+esc(d._tersane)+'</span></td>'
+      +'<td>'+tersaneBadge(d._tersane)+'</td>'
       +'<td class="devre-ad">'+_gemiOzet(d)+' · '+gruplar.length+' '+tvv('kk_sec_devre','devre')+'</td>'
       +'<td>'+sonCell+'</td>'
       +'<td class="num"><span class="ratio">'+d.spoollar.length+'</span></td>'
@@ -573,7 +594,7 @@ function paketTablo(list,arsiv){
       var dSon=arsiv?'<span class="okc">'+dOnay+'</span>/<span class="retc">'+dRet+'</span>':'<span class="son sonbek">'+tvv('kk_durum_bekliyor','bekliyor')+'</span>';
       h+='<tr class="grow drow" data-pkg="'+pid+'" onclick="tgl(this)">'
         +'<td class="cchev"><span class="chev">▶</span></td><td class="cidx"></td>'
-        +'<td><span class="ters">'+esc(g.tersane)+'</span></td><td class="gemi">'+esc(g.proje_no||'—')+'</td>'
+        +'<td>'+tersaneBadge(g.tersane)+'</td><td class="gemi">'+esc(g.proje_no||'—')+'</td>'
         +'<td class="devre-ad">'+esc(g.devre_no||'—')+'</td><td class="zone">'+(g.zone?esc(g.zone):'—')+'</td>'
         +'<td class="num"><span class="ratio">'+g.spoollar.length+'/'+top+'</span></td>'
         +'<td class="num agir">'+_fmt(grupAgirlik(g.spoollar))+' kg</td>'
