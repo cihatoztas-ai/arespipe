@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-06-23T21:08:50.185Z",
-  "commit_sha": "169f22faac5b20426b145359a1aa05b71154d7db",
+  "tarih": "2026-06-23T21:38:33.417Z",
+  "commit_sha": "6f7f6654f3e52a6f74235f73dcc19c272979f728",
   "commit_ref": "main",
-  "workflow_run": 1171,
+  "workflow_run": 1172,
   "ozet": {
     "hata": 0,
     "uyari": 110,
@@ -186,7 +186,7 @@
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
-            657
+            662
           ]
         }
       ]
@@ -768,7 +768,7 @@
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 657,
+          "satir": 662,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
