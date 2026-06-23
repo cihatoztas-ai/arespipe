@@ -50,7 +50,9 @@ function log(mesaj) {
 function htmlDosyalariniGetir(dizin, liste = []) {
   const girisler = fs.readdirSync(dizin, { withFileTypes: true });
   for (const giris of girisler) {
-    if (giris.name.startsWith('.') || giris.name === 'node_modules') continue;
+    // 200: _arsiv (arşivlenmiş prototipler) + docs (tasarım mockup/dokümanı) app sayfası DEĞİL
+    //      → ARES_LAYOUT vb. app kuralları uygulanmaz, taramadan dışla.
+    if (giris.name.startsWith('.') || giris.name === 'node_modules' || giris.name === '_arsiv' || giris.name === 'docs') continue;
     const tamYol = path.join(dizin, giris.name);
     if (giris.isDirectory()) {
       htmlDosyalariniGetir(tamYol, liste);

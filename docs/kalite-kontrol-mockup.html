@@ -1,49 +1,373 @@
 <!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kalite Kontrol — Mockup (Oturum 199)</title>
+<title>Kalite Kontrol — Mockup (Oturum 200)</title>
 <style>
-:root{--bg:#fff;--bg2:#f6f5f1;--bg3:#efede6;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8985;--bd:rgba(0,0,0,.12);--info:#185fa5;--infobg:#e6f1fb;--warn:#854f0b;--warnbg:#faeeda;--suc:#3b6d11;--sucbg:#eaf3de;--dan:#a32d2d;--danbg:#fcebeb;--rad:8px;--radlg:12px}
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--tx);max-width:760px;margin:0 auto;padding:24px;background:#fafafa;font-size:14px}
-.not{background:var(--warnbg);color:var(--warn);padding:10px 14px;border-radius:var(--rad);font-size:13px;margin-bottom:20px}
+:root{--bg:#fff;--bg2:#f6f5f1;--bg3:#efede6;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8985;--bd:rgba(0,0,0,.12);--info:#185fa5;--infobg:#e6f1fb;--warn:#854f0b;--warnbg:#faeeda;--suc:#3b6d11;--sucbg:#eaf3de;--dan:#a32d2d;--danbg:#fcebeb;--rad:8px;--radlg:12px;--mor:#534ab7}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--tx);max-width:820px;margin:0 auto;padding:24px;background:#fafafa;font-size:14px}
+.not{background:var(--warnbg);color:var(--warn);padding:10px 14px;border-radius:var(--rad);font-size:13px;margin-bottom:20px;line-height:1.5}
 h1{font-size:22px;font-weight:500;margin:0 0 6px}
+.alt{font-size:13px;color:var(--tx2);margin:0 0 4px}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:18px 0}
-.tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:14px;color:var(--tx2);cursor:pointer}
+.tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:14px;color:var(--tx2);cursor:pointer;display:flex;align-items:center;gap:7px}
 .tab.akt{border-bottom-color:var(--info);color:var(--tx)}
-.liste{border:1px solid var(--bd);border-radius:var(--radlg);overflow:hidden}
+.cnt{background:var(--bg3);color:var(--tx2);font-size:11px;padding:1px 7px;border-radius:20px}
+.tab.akt .cnt{background:var(--infobg);color:var(--info)}
+.view{display:block}.gizli{display:none}
+
+/* filtre */
+.filtre{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+.filtre select,.filtre input{font-size:13px;padding:6px 9px;border:1px solid var(--bd);border-radius:var(--rad);background:var(--bg);color:var(--tx)}
+.filtre .ip{flex:1;min-width:120px}
+.filtre .tmz{background:none;border:none;color:var(--info);font-size:12px;cursor:pointer}
+
+/* açılır devre listesi */
+.liste{border:1px solid var(--bd);border-radius:var(--radlg);overflow:hidden;background:var(--bg)}
 .dbas{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg2);cursor:pointer;border-top:1px solid var(--bd)}
 .dbas:first-child{border-top:none}
-.dad{font-size:13px;font-weight:500}.dsub{font-size:11px;color:var(--tx2)}
-.oran{margin-left:auto;background:var(--bg);border:1px solid var(--bd);padding:2px 8px;border-radius:var(--rad);font-size:12px;color:var(--tx2)}
+.ok{color:var(--tx3);width:12px;display:inline-block;transition:transform .15s}
+.dbas.kapali .ok{transform:rotate(-90deg)}
+.dad{font-size:13px;font-weight:500}.dsub{font-size:11px;color:var(--tx2);margin-top:1px}
+.oran{margin-left:auto;background:var(--bg);border:1px solid var(--bd);padding:2px 8px;border-radius:var(--rad);font-size:12px;color:var(--tx2);white-space:nowrap}
+.giztab{display:none}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;font-weight:400;color:var(--tx3);font-size:11px;padding:7px 8px;background:var(--bg3)}
-td{padding:8px;border-top:1px solid var(--bd)}
-.sid{font-family:monospace;color:#534ab7;font-weight:500}
-.mat{padding:2px 7px;border-radius:var(--rad);font-size:11px}
+td{padding:8px;border-top:1px solid var(--bd);vertical-align:middle}
+.mrk{color:var(--info)}
+.sid{font-family:monospace;color:var(--mor);font-weight:500}
+.mat{padding:2px 7px;border-radius:var(--rad);font-size:11px;white-space:nowrap}
 .matcu{background:#faece7;color:#993c1d}.matka{background:#f1efe8;color:#444441}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--info);cursor:pointer;margin:0}
+
+/* aksiyon bar (havuz alt) */
+.aksbar{position:sticky;bottom:0;margin-top:14px;display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--radlg);padding:12px 16px;box-shadow:0 -2px 10px rgba(0,0,0,.04)}
+.aksbar .sec{font-size:13px;color:var(--tx2)}.aksbar .sec b{color:var(--tx)}
+.btn{font-size:13px;padding:8px 16px;border-radius:var(--rad);border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer}
+.btn-pri{background:var(--info);border-color:var(--info);color:#fff}
+.btn-pri:disabled{background:var(--bg3);border-color:var(--bd);color:var(--tx3);cursor:not-allowed}
+.btn-dan{background:var(--dan);border-color:var(--dan);color:#fff}
+.btn-gho{background:none;border:none;color:var(--tx2)}
+.ml-a{margin-left:auto}
+
+/* davet paketi (acik / arsiv) */
 .pkt{background:var(--bg);border:1px solid var(--bd);border-radius:var(--radlg);overflow:hidden;margin-bottom:14px}
-.pkthead{padding:14px 18px;border-bottom:1px solid var(--bd)}
-.no{font-family:monospace;font-size:15px;font-weight:500;color:var(--info)}
-.badge{font-size:12px;padding:2px 10px;border-radius:var(--rad)}
+.pkthead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--bd);background:var(--bg2)}
+.no{font-family:monospace;font-size:15px;font-weight:600;color:var(--info)}
+.badge{font-size:11px;padding:2px 10px;border-radius:var(--rad)}
 .bw{background:var(--warnbg);color:var(--warn)}.bs{background:var(--sucbg);color:var(--suc)}
-.son{padding:2px 8px;border-radius:var(--rad);font-size:11px}
-.sonok{background:var(--sucbg);color:var(--suc)}.sonret{background:var(--danbg);color:var(--dan)}.sonbek{background:var(--bg2);color:var(--tx2)}
+.meta{font-size:12px;color:var(--tx2)}
+.pdf{font-size:12px;color:var(--info);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.son{padding:2px 9px;border-radius:var(--rad);font-size:11px;display:inline-block}
+.sonok{background:var(--sucbg);color:var(--suc)}.sonret{background:var(--danbg);color:var(--dan)}.sonbek{background:var(--bg3);color:var(--tx2)}
+.dgrup{padding:8px 14px;font-size:12px;color:var(--tx2);background:var(--bg2);border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+.dgrup .o{margin-left:auto;font-size:11px;color:var(--tx3)}
+.ozet{display:flex;gap:14px;font-size:12px;color:var(--tx2);padding:2px 0}
+.ozet b{color:var(--tx)}
+
+/* modal */
+.modbg{position:fixed;inset:0;background:rgba(20,20,18,.42);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.mod{background:var(--bg);border-radius:var(--radlg);width:100%;max-width:560px;max-height:88vh;overflow:auto;box-shadow:0 16px 50px rgba(0,0,0,.22)}
+.mod.gen{max-width:680px}
+.modh{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--bg)}
+.modh h2{font-size:16px;font-weight:500;margin:0}
+.modh .x{margin-left:auto;background:none;border:none;font-size:20px;color:var(--tx3);cursor:pointer;line-height:1}
+.modb{padding:18px}
+.modf{display:flex;gap:10px;align-items:center;padding:14px 18px;border-top:1px solid var(--bd);position:sticky;bottom:0;background:var(--bg)}
+
+/* tersane guard */
+.guard{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--rad);font-size:13px;margin-bottom:14px}
+.guard-ok{background:var(--sucbg);color:var(--suc)}
+.guard-no{background:var(--danbg);color:var(--dan)}
+.tgl{font-size:11px;color:var(--info);background:none;border:1px dashed var(--info);border-radius:20px;padding:2px 9px;cursor:pointer;margin-left:auto}
+
+/* ozet tablo */
+.otab{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+.otab th{background:var(--bg3)}
+.otab td{padding:9px 8px}
+.otab tfoot td{border-top:2px solid var(--bd);font-weight:600;color:var(--tx);background:var(--bg2)}
+.tno-not{font-size:12px;color:var(--tx2);margin-top:12px;padding:9px 12px;background:var(--bg2);border-radius:var(--rad)}
+.tno-not code{color:var(--mor);font-family:monospace}
+
+/* sonuc gir */
+.sgr{border:1px solid var(--bd);border-radius:var(--rad);margin-bottom:8px;overflow:hidden}
+.sgr-bas{display:flex;align-items:center;gap:11px;padding:10px 12px}
+.sgr-bas .ad{font-size:13px;color:var(--info);font-family:monospace}
+.sgr-bas .det{font-size:11px;color:var(--tx2);margin-top:1px}
+.sgr-bas .sid{margin-left:auto}
+.sgr.ret{border-color:var(--dan);background:var(--danbg)}
+.sgr.ret .sgr-bas{background:var(--danbg)}
+.retf{padding:0 12px 12px;display:grid;gap:9px}
+.retf label{font-size:12px;color:var(--tx2);display:block;margin-bottom:3px}
+.retf select,.retf textarea,.retf .foto{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rad);background:var(--bg);font-family:inherit}
+.retf textarea{resize:vertical;min-height:48px}
+.retf .foto{display:flex;align-items:center;gap:8px;color:var(--tx2);cursor:pointer}
+.retf .uy{font-size:12px;color:var(--dan);display:flex;align-items:center;gap:6px}
+.dur-onay{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:var(--rad);background:var(--sucbg);color:var(--suc)}
+.dur-ret{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:var(--rad);background:var(--danbg);color:var(--dan)}
+
+/* kapat ozet */
+.kap-sat{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.kap-sat:last-child{border-bottom:none}
+.kap-sat .n{font-weight:600;font-size:16px;width:34px;text-align:center}
+.kap-uy{font-size:12px;color:var(--dan);margin-top:12px;display:flex;gap:6px;align-items:center}
 </style></head>
 <body>
-<div class="not"><b>Mockup — Oturum 199.</b> Kalite Kontrol sayfası tasarımı. Üç sekme tek format: açılır devre tablosu. Spec: docs/KALITE-KONTROL-TASARIM.md</div>
+
+<div class="not"><b>Mockup — Oturum 200 (R-10).</b> 199'da Havuz tablosu çizilmiş, gerisi yalnızca yazıyla anlatılmıştı. Bu sürüm <b>eksik ekranları görsele döktü</b>: Açık Davetiyeler + Arşiv sekmeleri, Davetiye Oluştur modalı (tersane-tek guard dahil), Sonuç Gir ekranı (varsayılan onay + RET hata girişi), Daveti Kapat onayı. Sekmeler ve butonlar tıklanabilir. Spec: <code>docs/KALITE-KONTROL-TASARIM.md</code></div>
+
 <h1>Kalite Kontrol</h1>
-<div style="font-size:13px;color:var(--tx2)">Havuz · Açık Davetiyeler · Arşiv — hepsi aynı açılır devre tablosu. Başlık: tersane / gemi / devre / zone / malzeme / ağırlık / X-Y adet.</div>
-<div class="tabs"><button class="tab akt">Havuz 23</button><button class="tab">Açık Davetiyeler 2</button><button class="tab">Arşiv 14</button></div>
+<p class="alt">Havuz · Açık Davetiyeler · Arşiv — üçü de aynı açılır devre tablosu formatı (MK-199.6). Başlık: tersane / gemi / devre / zone / malzeme / ağırlık / <b>X/Y adet</b>.</p>
 
-<div class="liste">
-  <div class="dbas"><span>▾</span><div><div class="dad">M120-721-0001 · zone Z-04</div><div class="dsub">Tersan Tuzla · gemi 1137 · Bakır Alaşım · 321,2 kg</div></div><span class="oran">4/20 spool</span></div>
-  <table><thead><tr><th>#</th><th>MARKA</th><th>REV</th><th>SPOOL ID</th><th>ÇAP</th><th>ET</th><th>AĞIRLIK</th><th>MALZEME</th><th>KALİTE</th><th>YÜZEY</th></tr></thead><tbody>
-    <tr><td>1</td><td style="color:var(--info)">NB1137-M120-721-0001-S01</td><td>—</td><td class="sid">A-2205</td><td>324,0 mm</td><td>4,0 mm</td><td>42,23 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
-    <tr><td>2</td><td style="color:var(--info)">NB1137-M120-721-0001-S02</td><td>—</td><td class="sid">A-2206</td><td>219,0 mm</td><td>3,0 mm</td><td>76,77 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
-    <tr><td>3</td><td style="color:var(--info)">NB1137-M120-721-0001-S03</td><td>—</td><td class="sid">A-2207</td><td>324,0 mm</td><td>4,0 mm</td><td>83,47 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td style="color:var(--info)">CuNi 90/10</td><td>Diğer</td></tr>
-  </tbody></table>
+<div class="tabs">
+  <button class="tab akt" data-v="havuz">Havuz <span class="cnt">23</span></button>
+  <button class="tab" data-v="acik">Açık Davetiyeler <span class="cnt">2</span></button>
+  <button class="tab" data-v="arsiv">Arşiv <span class="cnt">14</span></button>
 </div>
 
-<div style="margin-top:24px;padding:14px;background:var(--bg2);border-radius:var(--radlg);font-size:13px;color:var(--tx2)">
-<b style="color:var(--tx)">Açık Davetiyeler / Arşiv — aynı format:</b> davet başlığı (KK26-005 · tersane · tarih · durum · PDF · Sonuç gir) + altında aynı açılır devre tablosu; son kolon "Yüzey" yerine "Sonuç" (onay/ret/bekliyor). Davetiye oluştur modalı: pakete giren devreleri özetler (devre · malzeme · X/Y spool · ağırlık · toplam). Sonuç gir: tümü varsayılan onay; tik kaldırınca uyarı + personel(QR aday)/foto/açıklama; foto spool detay galerisine işlenir. Daveti Kapat: özet onay (onay→arşiv, ret+bekleyen→havuz).
+<!-- ════════════ HAVUZ ════════════ -->
+<section id="v-havuz" class="view">
+  <div class="filtre">
+    <select><option>Tersane: hepsi</option><option>Tersan Tuzla</option><option>Tersan Yalova</option></select>
+    <select><option>Proje: hepsi</option><option>NB1137</option><option>NB1124</option></select>
+    <select><option>Gemi: hepsi</option><option>1137</option><option>1124</option></select>
+    <input class="ip" placeholder="Devre / spool ara…">
+    <button class="tmz">temizle</button>
+  </div>
+
+  <div class="liste">
+    <!-- devre 1 acik -->
+    <div class="dbas" onclick=" tg(this) "><span class="ok">▾</span>
+      <input type="checkbox" checked onclick="event.stopPropagation()">
+      <div><div class="dad">M120-721-0001 · zone Z-04</div><div class="dsub">Tersan Tuzla · gemi 1137 · Bakır Alaşım · 321,2 kg</div></div>
+      <span class="oran">havuzda 4/20 spool</span>
+    </div>
+    <table>
+      <thead><tr><th></th><th>#</th><th>MARKA</th><th>REV</th><th>SPOOL ID</th><th>ÇAP</th><th>ET</th><th>AĞIRLIK</th><th>MALZEME</th><th>KALİTE</th><th>YÜZEY</th></tr></thead>
+      <tbody>
+        <tr><td><input type="checkbox" checked></td><td>1</td><td class="mrk">NB1137-M120-721-0001-S01</td><td>—</td><td class="sid">A-2205</td><td>324,0</td><td>4,0</td><td>42,23 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td class="mrk">CuNi 90/10</td><td>Diğer</td></tr>
+        <tr><td><input type="checkbox" checked></td><td>2</td><td class="mrk">NB1137-M120-721-0001-S02</td><td>—</td><td class="sid">A-2206</td><td>219,0</td><td>3,0</td><td>76,77 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td class="mrk">CuNi 90/10</td><td>Diğer</td></tr>
+        <tr><td><input type="checkbox" checked></td><td>3</td><td class="mrk">NB1137-M120-721-0001-S03</td><td>—</td><td class="sid">A-2207</td><td>324,0</td><td>4,0</td><td>83,47 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td class="mrk">CuNi 90/10</td><td>Diğer</td></tr>
+        <tr><td><input type="checkbox" checked></td><td>4</td><td class="mrk">NB1137-M120-721-0001-S04</td><td>—</td><td class="sid">A-2208</td><td>168,3</td><td>3,0</td><td>118,73 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td class="mrk">CuNi 90/10</td><td>Diğer</td></tr>
+      </tbody>
+    </table>
+
+    <!-- devre 2 kapali -->
+    <div class="dbas kapali" onclick=" tg(this) "><span class="ok">▾</span>
+      <input type="checkbox" onclick="event.stopPropagation()">
+      <div><div class="dad">M100-540-0002 · zone Z-01</div><div class="dsub">Tersan Tuzla · gemi 1137 · Karbon Çelik · 642,8 kg</div></div>
+      <span class="oran">havuzda 8/14 spool</span>
+    </div>
+    <table class="giztab">
+      <thead><tr><th></th><th>#</th><th>MARKA</th><th>REV</th><th>SPOOL ID</th><th>ÇAP</th><th>ET</th><th>AĞIRLIK</th><th>MALZEME</th><th>KALİTE</th><th>YÜZEY</th></tr></thead>
+      <tbody>
+        <tr><td><input type="checkbox"></td><td>1</td><td class="mrk">NB1137-M100-540-0002-S01</td><td>R1</td><td class="sid">A-2410</td><td>273,0</td><td>6,3</td><td>96,40 kg</td><td><span class="mat matka">Karbon Çelik</span></td><td class="mrk">A106 Gr.B</td><td>Boya</td></tr>
+        <tr><td><input type="checkbox"></td><td>2</td><td class="mrk">NB1137-M100-540-0002-S02</td><td>—</td><td class="sid">A-2411</td><td>219,0</td><td>6,3</td><td>71,15 kg</td><td><span class="mat matka">Karbon Çelik</span></td><td class="mrk">A106 Gr.B</td><td>Boya</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="aksbar">
+    <span class="sec"><b>4</b> spool seçili · <b>1</b> devre · <b>321,2 kg</b></span>
+    <button class="btn btn-pri ml-a" onclick="ac('m-olustur')">Davetiye Oluştur</button>
+  </div>
+</section>
+
+<!-- ════════════ AÇIK DAVETİYELER ════════════ -->
+<section id="v-acik" class="view gizli">
+
+  <div class="pkt">
+    <div class="pkthead">
+      <span class="no">KK26-005</span>
+      <span class="badge bw">Bekliyor</span>
+      <span class="meta">02.06.2026 · Tersan Tuzla · 15 spool / 2 devre</span>
+      <a class="pdf" href="#" onclick="return false">⤓ davet.pdf</a>
+      <button class="btn btn-pri ml-a" onclick="ac('m-sonuc')">Sonuç Gir</button>
+    </div>
+
+    <div class="dgrup">▾ <b>M120-721-0001</b> · zone Z-04 · Bakır Alaşım <span class="o">bu pakette 15/20</span></div>
+    <table>
+      <thead><tr><th>#</th><th>MARKA</th><th>REV</th><th>SPOOL ID</th><th>ÇAP</th><th>AĞIRLIK</th><th>MALZEME</th><th>SONUÇ</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="mrk">NB1137-M120-721-0001-S01</td><td>—</td><td class="sid">A-2205</td><td>324,0</td><td>42,23 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonbek">bekliyor</span></td></tr>
+        <tr><td>2</td><td class="mrk">NB1137-M120-721-0001-S02</td><td>—</td><td class="sid">A-2206</td><td>219,0</td><td>76,77 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonbek">bekliyor</span></td></tr>
+        <tr><td>3</td><td class="mrk">NB1137-M120-721-0001-S03</td><td>—</td><td class="sid">A-2207</td><td>324,0</td><td>83,47 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonbek">bekliyor</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pkt">
+    <div class="pkthead">
+      <span class="no">KK26-006</span>
+      <span class="badge bw">Bekliyor</span>
+      <span class="meta">11.06.2026 · Tersan Tuzla · 6 spool / 1 devre</span>
+      <a class="pdf" href="#" onclick="return false">⤓ davet.pdf</a>
+      <button class="btn btn-pri ml-a" onclick="ac('m-sonuc')">Sonuç Gir</button>
+    </div>
+    <div class="dgrup">▸ <b>M100-540-0002</b> · zone Z-01 · Karbon Çelik <span class="o">bu pakette 6/14</span></div>
+  </div>
+
+</section>
+
+<!-- ════════════ ARŞİV ════════════ -->
+<section id="v-arsiv" class="view gizli">
+
+  <div class="pkt">
+    <div class="pkthead">
+      <span class="no">KK26-004</span>
+      <span class="badge bs">Tamamlandı</span>
+      <span class="meta">davet 24.05 · kapanış 29.05 · Tersan Tuzla · <b style="color:var(--suc)">12 onay</b> · <b style="color:var(--dan)">2 ret</b></span>
+      <a class="pdf ml-a" href="#" onclick="return false">⤓ davet.pdf</a>
+    </div>
+    <div class="dgrup">▾ <b>M120-721-0001</b> · zone Z-04 · Bakır Alaşım <span class="o">kontrol 14/20</span></div>
+    <table>
+      <thead><tr><th>#</th><th>MARKA</th><th>SPOOL ID</th><th>AĞIRLIK</th><th>MALZEME</th><th>SONUÇ</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="mrk">NB1137-M120-721-0001-S05</td><td class="sid">A-2209</td><td>55,10 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonok">onay</span></td></tr>
+        <tr><td>2</td><td class="mrk">NB1137-M120-721-0001-S06</td><td class="sid">A-2210</td><td>61,40 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonret">ret · kaynak hatası</span></td></tr>
+        <tr><td>3</td><td class="mrk">NB1137-M120-721-0001-S07</td><td class="sid">A-2211</td><td>48,90 kg</td><td><span class="mat matcu">Bakır Alaşım</span></td><td><span class="son sonok">onay</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pkt">
+    <div class="pkthead">
+      <span class="no">KK26-003</span>
+      <span class="badge bs">Tamamlandı</span>
+      <span class="meta">davet 18.05 · kapanış 21.05 · Tersan Tuzla · <b style="color:var(--suc)">9 onay</b> · <b style="color:var(--dan)">0 ret</b></span>
+      <a class="pdf ml-a" href="#" onclick="return false">⤓ davet.pdf</a>
+    </div>
+    <div class="dgrup">▸ <b>M100-540-0002</b> · zone Z-01 · Karbon Çelik <span class="o">kontrol 9/14</span></div>
+  </div>
+
+</section>
+
+<!-- ════════════ MODAL: DAVETİYE OLUŞTUR ════════════ -->
+<div id="m-olustur" class="modbg gizli">
+  <div class="mod">
+    <div class="modh"><h2>Davetiye Oluştur</h2><button class="x" onclick="kapat('m-olustur')">×</button></div>
+    <div class="modb">
+      <div id="guard-ok" class="guard guard-ok">✓ Tek tersane: <b>Tersan Tuzla</b>. Paket oluşturulabilir.
+        <button class="tgl" onclick="guardTgl()">farklı tersane senaryosu →</button></div>
+      <div id="guard-no" class="guard guard-no gizli">✕ Bir davet paketinde yalnızca tek tersane olabilir. Seçimde <b>2 tersane</b> var (Tersan Tuzla + Tersan Yalova). İşlem engellendi.
+        <button class="tgl" onclick="guardTgl()">← tek tersane</button></div>
+
+      <table class="otab">
+        <thead><tr><th>DEVRE · ZONE</th><th>MALZEME</th><th>SPOOL</th><th>AĞIRLIK</th></tr></thead>
+        <tbody>
+          <tr><td>M120-721-0001 · Z-04</td><td><span class="mat matcu">Bakır Alaşım</span></td><td>4/20</td><td>321,2 kg</td></tr>
+        </tbody>
+        <tfoot><tr><td>TOPLAM</td><td>1 devre</td><td>4 spool</td><td>321,2 kg</td></tr></tfoot>
+      </table>
+
+      <div class="tno-not">Takip no <b>oluşturulunca atanır</b> (<code>KK26-007</code> sıradaki) — vazgeçilirse sayaç tüketilmez. Oluşturma anında davet PDF'i client-side üretilip Storage'a arşivlenir (MK-199.6).</div>
+    </div>
+    <div class="modf">
+      <button class="btn btn-gho" onclick="kapat('m-olustur')">Vazgeç</button>
+      <button class="btn btn-pri ml-a" id="olustur-btn">Oluştur · PDF üret · kilitle</button>
+    </div>
+  </div>
 </div>
+
+<!-- ════════════ MODAL: SONUÇ GİR ════════════ -->
+<div id="m-sonuc" class="modbg gizli">
+  <div class="mod gen">
+    <div class="modh"><h2>Sonuç Gir — <span class="no">KK26-005</span></h2><button class="x" onclick="kapat('m-sonuc')">×</button></div>
+    <div class="modb">
+      <p class="alt" style="margin-bottom:12px">Tüm spool'lar <b>varsayılan onay</b>. Yalnızca sorunlu spool'un tikini kaldır → RET (personel + foto + açıklama istenir). Kısmi sonuçlandırma serbest.</p>
+
+      <!-- onay -->
+      <div class="sgr">
+        <div class="sgr-bas">
+          <input type="checkbox" checked onclick="retTgl(this,'r1')">
+          <div><div class="ad">NB1137-M120-721-0001-S01</div><div class="det">324,0 mm · 42,23 kg · Bakır Alaşım</div></div>
+          <span class="sid">A-2205</span>
+          <span class="dur-onay">onay</span>
+        </div>
+      </div>
+
+      <!-- ret acik -->
+      <div class="sgr ret" id="row-r2">
+        <div class="sgr-bas">
+          <input type="checkbox" onclick="retTgl(this,'r2')">
+          <div><div class="ad">NB1137-M120-721-0001-S02</div><div class="det">219,0 mm · 76,77 kg · Bakır Alaşım</div></div>
+          <span class="sid">A-2206</span>
+          <span class="dur-ret">RET</span>
+        </div>
+        <div class="retf">
+          <div class="uy">⚠ Bu spool RET işaretlenecek — personel, foto ve açıklama gerekir.</div>
+          <div><label>Sorumlu personel <span style="color:var(--tx3)">(QR adayları)</span></label>
+            <select><option>Ahmet Y. (argon kaynağı · QR)</option><option>Mehmet K. (markalama · QR)</option><option>— elle başka personel —</option></select></div>
+          <div><label>Fotoğraf</label><div class="foto">📷 Fotoğraf ekle (Storage + spool galeri)</div></div>
+          <div><label>Açıklama (hata notu)</label><textarea placeholder="örn. kaynak dikişinde gözenek, yeniden kaynak gerekli"></textarea></div>
+        </div>
+      </div>
+
+      <!-- onay -->
+      <div class="sgr">
+        <div class="sgr-bas">
+          <input type="checkbox" checked onclick="retTgl(this,'r3')">
+          <div><div class="ad">NB1137-M120-721-0001-S03</div><div class="det">324,0 mm · 83,47 kg · Bakır Alaşım</div></div>
+          <span class="sid">A-2207</span>
+          <span class="dur-onay">onay</span>
+        </div>
+      </div>
+    </div>
+    <div class="modf">
+      <button class="btn btn-gho" onclick="kapat('m-sonuc')">Kapat</button>
+      <span class="alt ml-a" style="margin:0">2 onay · 1 ret</span>
+      <button class="btn" onclick="kapat('m-sonuc')">Kaydet</button>
+      <button class="btn btn-dan" onclick="kapat('m-sonuc');ac('m-kapat')">Daveti Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: DAVETİ KAPAT ONAY ════════════ -->
+<div id="m-kapat" class="modbg gizli">
+  <div class="mod">
+    <div class="modh"><h2>Daveti Kapat — <span class="no">KK26-005</span></h2><button class="x" onclick="kapat('m-kapat')">×</button></div>
+    <div class="modb">
+      <div class="kap-sat"><span class="n" style="color:var(--suc)">2</span> <b>onay</b> → arşive, basamak ilerler (sevkiyata uygun)</div>
+      <div class="kap-sat"><span class="n" style="color:var(--dan)">1</span> <b>ret</b> → havuza döner (tamir + yeni davet no)</div>
+      <div class="kap-sat"><span class="n" style="color:var(--tx2)">0</span> <b>hâlâ bekleyen</b> → havuza döner (Ön Kontrol)</div>
+      <div class="kap-uy">⚠ Bu işlem geri alınamaz. Davet <code>tamamlandı</code> olarak damgalanır (MK-126: otomatik kapanma yok, kapatan sensin).</div>
+    </div>
+    <div class="modf">
+      <button class="btn btn-gho" onclick="kapat('m-kapat')">Vazgeç</button>
+      <button class="btn btn-dan ml-a" onclick="kapat('m-kapat')">Onayla · Kapat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// sekme gecisi
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('akt'));
+  t.classList.add('akt');
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('gizli'));
+  document.getElementById('v-'+t.dataset.v).classList.remove('gizli');
+});
+// devre ac/kapa
+function tg(el){
+  el.classList.toggle('kapali');
+  var tab=el.nextElementSibling;
+  if(tab&&tab.tagName==='TABLE') tab.classList.toggle('giztab');
+}
+// modal
+function ac(id){document.getElementById(id).classList.remove('gizli')}
+function kapat(id){document.getElementById(id).classList.add('gizli')}
+document.querySelectorAll('.modbg').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.add('gizli')});
+// tersane guard toggle (mockup gosterimi)
+function guardTgl(){
+  document.getElementById('guard-ok').classList.toggle('gizli');
+  document.getElementById('guard-no').classList.toggle('gizli');
+  document.getElementById('olustur-btn').disabled=!document.getElementById('guard-no').classList.contains('gizli');
+}
+// ret ac/kapa
+function retTgl(cb,id){
+  var row=cb.closest('.sgr');
+  if(cb.checked){row.classList.remove('ret');var f=row.querySelector('.retf');if(f)f.remove();
+    var d=row.querySelector('.dur-ret');if(d){d.className='dur-onay';d.textContent='onay'}}
+  else{row.classList.add('ret');var d=row.querySelector('.dur-onay');if(d){d.className='dur-ret';d.textContent='RET'}}
+}
+</script>
 </body></html>
