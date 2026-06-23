@@ -3132,3 +3132,29 @@ Davet PDF'i paket oluşumuyla atomik, CLIENT-SIDE üretilir (jsPDF/pdfmake — P
 198 kapanışında ayna sapması oluştu (kök son-durum.md 197'de kaldı, .github/ 198'de; CLAUDE-SON-OTURUM.md 194'te). Kök neden: aynı veri iki yerde → sapar (KK bekleyen/bekliyor, vanilla/mobil sapmasının kardeşi). Karar: KANONİK kaynaklar tek — son-durum=`.github/son-durum.md`, KARARLAR=`docs/KARARLAR.md`, sonraki=`CLAUDE-SONRAKI-OTURUM.md`. Kök `son-durum.md` ve `CLAUDE-SON-OTURUM.md` silindi (199). MK-194.1 backlog'undaki oturum-saglik.sh md5 kontrolü artık "çoğul handoff dosyası var mı" taramasını da içermeli (gelecek iş).
 
 **İlişkili:** MK-194.1 (doküman tek-otorite), MK-62.3 (ayna senkron şablonu), MK-198.x (KK bug forensics), MK-126 (manuel basamak ilerletme).
+
+## MK-200 (Oturum 200)
+
+### MK-200.1 [MIMARI] — KK sonuç constraint {gecti,hatali,tamir,bekliyor} DEĞİŞMEZ; UI ikili onay=gecti/ret=tamir
+
+`kk_davet_spooller.sonuc` CHECK constraint'i (000_initial_schema'dan beri) `{gecti, hatali, tamir, bekliyor}`. 199'da MK-199.1 yanlışlıkla `{bekliyor, onay, ret}` yazmıştı (enum forensics eksikti) — **200 pre-flight'ta düzeltildi.** Constraint'e DOKUNULMAZ. UI ikili modeli mevcut enum'a oturur: **onay=`gecti`, ret=`tamir`**. `hatali` UI'dan YAZILMAZ ama gelmiş veride GÖSTERİLİR (sonret rozeti). Görünür adlar MK-72.11 (Onay/Ret/Hatalı, sistem adı SQL'de). `kk_davetler.durum` ∈ {bekliyor, tamamlandi} (paket açık/kapalı).
+
+**İlişkili:** MK-199.1 (düzeltildi), MK-72.11 (görünür ad), MK-126.8 (varsayma, doğrula).
+
+### MK-200.2 [MIMARI] — `not_` reuse, `hata_notu` eklenmedi
+
+`kk_davet_spooller.not_` zaten var ve pre-flight'ta TÜM satırlarda boştu (0/24) → ret hata notu için `not_` yeniden kullanıldı, ayrı `hata_notu` kolonu EKLENMEDİ. Migration 110 junction'a yalnız `sonuc_ts/personel_id/foto_yolu` ekledi.
+
+**İlişkili:** MK-200.1, MK-126.8.
+
+### MK-200.3 [MIMARI] — `exec_sql` RPC SELECT-only; DDL/migration panelden
+
+`exec_sql(query)` RPC guard'ı `"Sadece SELECT sorgusu çalıştırılabilir"` → DDL/DML çalıştıramaz, DO-block dry-run da yapamaz. Spec 7.3'teki "exec_sql ile transaction mümkün" notu YANLIŞTI. Migration dry-run + APPLY **Supabase SQL editöründen** (BEGIN/ROLLBACK), `exec_sql` yalnız okuma/pre-flight için. (Migration 110 böyle uygulandı: panel BEGIN/ROLLBACK 3/3/7 → COMMIT, repo sync `696d90a`.)
+
+**İlişkili:** MK-98.2 (dry-run), MK-184.5 (APPLY→repo), MK-126.8.
+
+### MK-200.4 [DISIPLIN] — Yeni sayfa rewrite'larında kanonik auth-ready döngüsü ATLANMAZ
+
+Yeni/yeniden-yazılan sayfaların DOMContentLoaded init'i **kanonik auth-ready döngüsünü** kullanmalı: `getSession() → ARES.oturumKontrol() → tenantKod() → sayfaYetkiKontrol()`. 200'de kalite_kontrol.html ilk rewrite'ında `oturumKontrol()` atlanmıştı → `_oturum` null → `sayfaYetkiKontrol` (ares-store:844 `if(!_oturum)`) sayfayı **giris.html'e atıyordu** (rol reddi index.html'e atar; giris.html = oturum yok demek). `ARES.mod==='supabase'` guard'ı da kırılgandı (mod async set ediliyorsa init hiç çalışmaz). Fix commit `64148f8`. Eski sayfaların init deseni referans.
+
+**İlişkili:** MK-126.8 (mevcut deseni oku, varsayma), MK-129.3 (12 endpoint — client-side auth).
