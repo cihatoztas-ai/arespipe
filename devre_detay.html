@@ -1973,20 +1973,17 @@ async function gonderKaydet(){if(_tkKilit())return;
   document.getElementById('mGonder').style.display='none';
   var supa=_supa();var tersaneId=DEVRE.tersaneId||null;
   var not_=document.getElementById('gonderNot').value.trim()||null;
-  var hedef=_gonderTip==='kk'?tv('sp_btn_qc','KK'):tv('sp_btn_shipment','Sevkiyat');
+  var hedef=_gonderTip==='kk'?tv('sp_lbl_on_kontrol','Ön Kontrol'):tv('sp_btn_shipment','Sevkiyat');
   if(supa&&tersaneId&&_tid()){
     var tarih=new Date().toISOString().split('T')[0];
     if(_gonderTip==='kk'){
-      // kk_davetler + kk_davet_spooller
-      var kkRes=await supa.from('kk_davetler').insert({
-        tenant_id:_tid(),tersane_id:tersaneId,
-        davet_no:'KK-'+Date.now().toString().slice(-6),
-        tarih:tarih,durum:'bekliyor',not_:not_
-      }).select('id').single();
-      if(kkRes.error){showToast(tv('dv_error_prefix','Hata')+': '+kkRes.error.message,'e');return;}
-      var kkId=kkRes.data.id;
-      var kkSpoolRows=secili.filter(function(s){return s.supaId;}).map(function(s){return{tenant_id:_tid(),davet_id:kkId,spool_id:s.supaId,sonuc:'bekliyor'};});
-      if(kkSpoolRows.length){await supa.from('kk_davet_spooller').insert(kkSpoolRows);}
+      // MK-199.3: KK daveti YALNIZ kalite_kontrol.html'den (KK26 sayaç) açılır.
+      // Buradan sadece Ön Kontrol havuzuna it: aktif_basamak='on_kontrol'.
+      var okIds=secili.filter(function(s){return s.supaId;}).map(function(s){return s.supaId;});
+      if(okIds.length){
+        var okRes=await supa.from('spooller').update({aktif_basamak:'on_kontrol'}).in('id',okIds);
+        if(okRes.error){showToast(tv('dv_error_prefix','Hata')+': '+okRes.error.message,'e');return;}
+      }
     }else{
       // sevkiyatlar + sevkiyat_spooller
       var sevRes=await supa.from('sevkiyatlar').insert({
@@ -2000,8 +1997,10 @@ async function gonderKaydet(){if(_tkKilit())return;
       if(sevSpoolRows.length){await supa.from('sevkiyat_spooller').insert(sevSpoolRows);}
     }
   }
-  logEkle(_gonderTip==='kk'?'kk_daveti':'sevkiyata_gonderildi',secili.map(function(s){return s.spoolNo;}).join(', ')+' → '+hedef);
-  showToast(secili.length+' '+tv('dv_unit_spool','spool')+' '+hedef+' '+tv('dv_added_to_list','listesine eklendi'),'success');
+  logEkle(_gonderTip==='kk'?'on_kontrole_gonderildi':'sevkiyata_gonderildi',secili.map(function(s){return s.spoolNo;}).join(', ')+' → '+hedef);
+  showToast(_gonderTip==='kk'
+    ?secili.length+' '+tv('dv_unit_spool','spool')+' '+tv('dv_on_kontrol_havuz','Ön Kontrol havuzuna gönderildi')
+    :secili.length+' '+tv('dv_unit_spool','spool')+' '+hedef+' '+tv('dv_added_to_list','listesine eklendi'),'success');
   kkSevkYukle();
 }
 
