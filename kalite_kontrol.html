@@ -1047,14 +1047,7 @@ function belgeUretilenCiz(){
     tvv('kk_belge_liste_alt','Bu paketin güncel spool listesi'),
     '<button class="btn sm" onclick="kkDavetPdf(\''+esc(String(d.id))+'\')">PDF</button>'
    +'<button class="btn sm gho" onclick="kkListeExcel(\''+esc(String(d.id))+'\')">Excel</button>');
-  var ters=String(d._tersane||'').toLowerCase();
-  if(ters.indexOf('tersan')>=0){
-    _davetDevreler(d).forEach(function(dv){
-      rows+=_uretRow('📋', tvv('kk_boru_takip','Boru Takip Formu')+' · '+tvv('kk_devre','Devre')+' '+esc(dv.devre_no),
-        tvv('kk_boru_takip_alt','TERSAN malzeme izlenebilirlik · yarı dolu (heat boş)'),
-        '<span class="uret-yakinda">'+tvv('kk_hazirlaniyor','hazırlanıyor')+'</span>');
-    });
-  }
+  /* Boru Takip Formu (TERSAN) — üretim akışı bağlanınca buraya gerçek PDF/Excel satırları gelecek */
   el.innerHTML='<div class="flist uretilen">'+rows+'</div>';
 }
 function kkListeExcel(davetId){
