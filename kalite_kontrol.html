@@ -1054,7 +1054,8 @@ function belgeUretilenCiz(){
     _davetDevreler(d).forEach(function(dv){
       rows+=_uretRow('📋', tvv('kk_boru_takip','Boru Takip Formu')+' \u00b7 '+tvv('kk_devre','Devre')+' '+esc(dv.devre_no),
         tvv('kk_boru_takip_alt','TERSAN · malzeme izlenebilirlik'),
-        '<button class="btn sm gho" onclick="boruTakipExcel(\''+esc(String(d.id))+'\',\''+esc(String(dv.devre_id))+'\')">Excel</button>');
+        '<button class="btn sm" onclick="boruTakipPdf(\''+esc(String(d.id))+'\',\''+esc(String(dv.devre_id))+'\')">PDF</button>'
+       +'<button class="btn sm gho" onclick="boruTakipExcel(\''+esc(String(d.id))+'\',\''+esc(String(dv.devre_id))+'\')">Excel</button>');
     });
   }
   el.innerHTML='<div class="flist uretilen">'+rows+'</div>';
@@ -1084,28 +1085,32 @@ function _btEtPn(tip,tanim,et,boyut){
   return etFromBoyut();
 }
 function _btParcaStr(arr){arr=arr.slice().sort(function(a,b){return a-b;});var out=[],i=0;while(i<arr.length){var j=i;while(j+1<arr.length&&arr[j+1]===arr[j]+1)j++;out.push(i===j?String(arr[i]):arr[i]+'-'+arr[j]);i=j+1;}return out.join(', ');}
-async function boruTakipExcel(davetId, devreId){
+async function _btFormVeri(davetId, devreId){
   var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
-  if(!d){toast(tvv('kk_davet_yok','Davet bulunamadı'),'er');return;}
+  if(!d){toast(tvv('kk_davet_yok','Davet bulunamadı'),'er');return null;}
   var spools=d.spoollar.filter(function(s){return String(s.devre_id)===String(devreId);});
-  if(!spools.length){toast(tvv('kk_spool_yok','Spool bulunamadı'),'er');return;}
-  var dv=spools[0];
+  if(!spools.length){toast(tvv('kk_spool_yok','Spool bulunamadı'),'er');return null;}
+  var supa=ARES.supabase(), tid=ARES.tenantId();
+  var ids=spools.map(function(s){return s.id;}).filter(Boolean);
+  var mr=await supa.from('spool_malzemeleri').select('spool_id,kod,tip,tanim,boyut,dis_cap_mm,et_mm,heat_no').in('spool_id',ids).eq('tenant_id',tid).order('tip',{ascending:true}).order('kod',{ascending:true});
+  if(mr.error)throw mr.error;
+  var bySpool={}; (mr.data||[]).forEach(function(m){(bySpool[m.spool_id]=bySpool[m.spool_id]||[]).push(m);});
+  var formRows=[];
+  spools.forEach(function(s){
+    var list=(bySpool[s.id]||[]).filter(function(m){return _btDahil(m.tip,m.tanim,m.kod);});
+    var parsed=list.map(function(m,i){return {parca:i+1, dn:_btDn(m.boyut,m.dis_cap_mm), etpn:_btEtPn(m.tip,m.tanim,m.et_mm,m.boyut), heat:m.heat_no||''};});
+    var groups=[];
+    parsed.forEach(function(p){var g=null;for(var k=0;k<groups.length;k++){if(groups[k].dn===p.dn&&groups[k].etpn===p.etpn&&groups[k].heat===p.heat){g=groups[k];break;}}if(g)g.parcalar.push(p.parca);else groups.push({dn:p.dn,etpn:p.etpn,heat:p.heat,parcalar:[p.parca]});});
+    groups.forEach(function(g){formRows.push({B:s.pipeline_no||'', E:s.spool_no||'', H:_btParcaStr(g.parcalar), I:g.dn, J:yuzeyEtiket(s.yuzey)||'', L:g.etpn, N:g.heat});});
+  });
+  return {d:d, dv:spools[0], formRows:formRows};
+}
+async function boruTakipExcel(davetId, devreId){
   toast(tvv('kk_form_uretiliyor','Form üretiliyor…'),'ok');
   try{
     if(typeof JSZip==='undefined'){toast('JSZip yüklenemedi','er');return;}
-    var supa=ARES.supabase(), tid=ARES.tenantId();
-    var ids=spools.map(function(s){return s.id;}).filter(Boolean);
-    var mr=await supa.from('spool_malzemeleri').select('spool_id,kod,tip,tanim,boyut,dis_cap_mm,et_mm,heat_no').in('spool_id',ids).eq('tenant_id',tid).order('tip',{ascending:true}).order('kod',{ascending:true});
-    if(mr.error)throw mr.error;
-    var bySpool={}; (mr.data||[]).forEach(function(m){(bySpool[m.spool_id]=bySpool[m.spool_id]||[]).push(m);});
-    var formRows=[];
-    spools.forEach(function(s){
-      var list=(bySpool[s.id]||[]).filter(function(m){return _btDahil(m.tip,m.tanim,m.kod);});
-      var parsed=list.map(function(m,i){return {parca:i+1, dn:_btDn(m.boyut,m.dis_cap_mm), etpn:_btEtPn(m.tip,m.tanim,m.et_mm,m.boyut), heat:m.heat_no||''};});
-      var groups=[];
-      parsed.forEach(function(p){var g=null;for(var k=0;k<groups.length;k++){if(groups[k].dn===p.dn&&groups[k].etpn===p.etpn&&groups[k].heat===p.heat){g=groups[k];break;}}if(g)g.parcalar.push(p.parca);else groups.push({dn:p.dn,etpn:p.etpn,heat:p.heat,parcalar:[p.parca]});});
-      groups.forEach(function(g){formRows.push({B:s.pipeline_no||'', E:s.spool_no||'', H:_btParcaStr(g.parcalar), I:g.dn, J:yuzeyEtiket(s.yuzey)||'', L:g.etpn, N:g.heat});});
-    });
+    var V=await _btFormVeri(davetId, devreId); if(!V)return;
+    var d=V.d, dv=V.dv, formRows=V.formRows;
     if(!formRows.length){toast(tvv('kk_form_bos','Forma girecek malzeme yok'),'er');return;}
     var buf=await (await fetch('templates/boru-takip-formu.xlsx')).arrayBuffer();
     var zip=await JSZip.loadAsync(buf);
@@ -1128,6 +1133,56 @@ async function boruTakipExcel(davetId, devreId){
     toast(tvv('kk_form_indirildi','Boru Takip Formu indirildi'),'ok');
     if(formRows.length>CAP)toast(formRows.length+' satır · ilk '+CAP+' forma sığdı (çok sayfa sonraki)','ok');
   }catch(e){console.error('[boru-takip]',e);toast(tvv('kk_form_hata','Form üretilemedi')+': '+(e.message||e),'er');}
+}
+async function boruTakipPdf(davetId, devreId){
+  toast(tvv('kk_form_uretiliyor','Form üretiliyor…'),'ok');
+  try{
+    var V=await _btFormVeri(davetId, devreId); if(!V)return;
+    var d=V.d, dv=V.dv, rows=V.formRows;
+    if(!rows.length){toast(tvv('kk_form_bos','Forma girecek malzeme yok'),'er');return;}
+    var logoUri='';
+    try{ if(typeof JSZip!=='undefined'){ var tb=await (await fetch('templates/boru-takip-formu.xlsx')).arrayBuffer(); var tz=await JSZip.loadAsync(tb); var lf=tz.file('xl/media/image1.png'); if(lf) logoUri='data:image/png;base64,'+await lf.async('base64'); } }catch(_e){}
+    var w=window.open('','_blank','width=860,height=920');
+    if(!w){toast(tvv('sp_popup_blocked','Popup engelleyici kapatın'),'er');return;}
+    var tarih=new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    var gemi=esc(dv._proje_no||'—');
+    function td(v){return '<td>'+esc(v==null||v===''?'':String(v))+'</td>';}
+    var trs=rows.map(function(r){return '<tr>'+td(r.B)+td(r.E)+td(r.H)+td(r.I)+td(r.J)+td(r.L)+td(r.N)+'<td class="kk">\u2713</td></tr>';}).join('');
+    var logoHtml=logoUri?'<img src="'+logoUri+'" alt="TERSAN">':'<span style="font-weight:800;font-size:16px;">TERSAN</span>';
+    w.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>'+tvv('kk_boru_takip','Boru Takip Formu')+' — AresPipe</title><style>'
+      +'@page{size:A4 portrait;margin:9mm;}'
+      +'body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+      +'.tb{position:fixed;top:0;left:0;right:0;height:44px;background:#334155;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px;z-index:9999;}'
+      +'.tb button{padding:6px 14px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;}'
+      +'.wrap{padding:56px 0 8px;}'
+      +'table.f{width:100%;border-collapse:collapse;table-layout:fixed;}'
+      +'table.f th,table.f td{border:1px solid #000;padding:4px 5px;font-size:10px;text-align:center;vertical-align:middle;word-wrap:break-word;}'
+      +'thead{display:table-header-group;}'
+      +'.logo{text-align:left;padding:6px 10px;}.logo img{height:40px;}'
+      +'.ttl{font-size:14px;font-weight:700;line-height:1.35;}'
+      +'.dok{padding:0;}.dok div{border-bottom:1px solid #000;padding:3px 6px;text-align:left;font-size:8px;}.dok div:last-child{border-bottom:none;}'
+      +'.gemi td{text-align:left;font-size:10px;font-weight:600;padding:4px 8px;}'
+      +'.cols th{background:#eee;font-size:9px;font-weight:700;line-height:1.15;}'
+      +'td.kk{font-size:13px;font-weight:700;}'
+      +'@media print{.tb{display:none!important;}.wrap{padding:0;}}'
+      +'</style></head><body>'
+      +'<div class="tb"><button onclick="window.print()" style="background:#2D8EFF;color:#fff;">🖨 '+tvv('cmn_yazdir_pdf','Yazdır / PDF')+'</button>'
+        +'<button onclick="window.close()" style="background:transparent;color:#cbd5e1;border:1px solid #475569;">✕ '+tvv('cmn_kapat','Kapat')+'</button></div>'
+      +'<div class="wrap"><table class="f">'
+      +'<colgroup><col style="width:16%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:12%"><col style="width:18%"><col style="width:12%"></colgroup>'
+      +'<thead>'
+        +'<tr><td class="logo" colspan="3">'+logoHtml+'</td>'
+          +'<td class="ttl" colspan="3">BORU TAKİP FORMU<br>PIPE TRACKING FORM</td>'
+          +'<td class="dok" colspan="2"><div><b>Doküman No</b><br>FR-DNTM-21-03</div><div>Yayın Tarihi</div><div>Revizyon Tarihi</div></td></tr>'
+        +'<tr class="gemi"><td colspan="2">GEMİ NO / HULL NUMBER</td><td colspan="2"><b>'+gemi+'</b></td>'
+          +'<td>TARİH / DATE</td><td colspan="3"><b>'+tarih+'</b></td></tr>'
+        +'<tr class="cols"><th>BORU NUMARASI<br>PIPE NUMBER</th><th>SPOOL NUMARASI<br>SPOOL NUMBER</th><th>PARÇA NO<br>PART NO</th>'
+          +'<th>NOM. ÇAP (DN)<br>NOM. DIA.</th><th>YÜZEY<br>SURFACE</th><th>ET KALINLIĞI<br>THICKNESS</th>'
+          +'<th>HEAT NUMBER</th><th>KONTROL<br>CONTROL</th></tr>'
+      +'</thead><tbody>'+trs+'</tbody></table></div></body></html>');
+    w.document.close();
+    toast(tvv('kk_form_hazir','Form hazır · Yazdır/PDF'),'ok');
+  }catch(e){console.error('[boru-takip-pdf]',e);toast(tvv('kk_form_hata','Form üretilemedi')+': '+(e.message||e),'er');}
 }
 function kkListeExcel(davetId){
   var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
