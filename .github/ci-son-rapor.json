@@ -1,12 +1,12 @@
 {
-  "tarih": "2026-06-24T10:16:29.863Z",
-  "commit_sha": "cb17fc2f326de8e3090e409ef0772b0b8e5867f6",
+  "tarih": "2026-06-24T10:21:41.103Z",
+  "commit_sha": "dc6cc6493e569e8726508b0f040da40424d03075",
   "commit_ref": "main",
-  "workflow_run": 1179,
+  "workflow_run": 1180,
   "ozet": {
     "hata": 0,
     "uyari": 111,
-    "taranan_dosya": 143,
+    "taranan_dosya": 144,
     "sorunlu_dosya": 6,
     "durum": "sari"
   },
@@ -27,7 +27,7 @@
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
-            1060
+            1100
           ]
         }
       ]
@@ -193,7 +193,7 @@
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
-            759
+            760
           ]
         }
       ]
@@ -775,13 +775,13 @@
         {
           "kod": "G03_HAM_MALZEME",
           "tip": "uyari",
-          "satir": 1060,
+          "satir": 1100,
           "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 759,
+          "satir": 760,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
