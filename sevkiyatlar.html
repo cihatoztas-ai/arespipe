@@ -646,7 +646,9 @@ function tabGit(v){document.querySelectorAll('.main-tab').forEach(function(t){t.
 
 /* ───────── INIT ───────── */
 (function init(){
-  function go(){ if(typeof ARES==='undefined'||!ARES.supabase){setTimeout(go,60);return;} veriYukle(); }
+  var tries=0;
+  function hazirMi(){ return typeof ARES!=='undefined' && typeof ARES.supabase==='function' && ARES.supabase()!=null; }
+  function go(){ if(!hazirMi()){ if(++tries>200){console.error('ARES.supabase hazir olmadi');return;} setTimeout(go,60); return; } veriYukle(); }
   if(document.readyState!=='loading')go(); else document.addEventListener('DOMContentLoaded',go);
 })();
 </script>
