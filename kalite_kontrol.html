@@ -433,6 +433,7 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 <script src="ares-normalize.js"></script>
 <script src="ares-layout.js"></script>
 <script src="kk-belgeler-yukle.js"></script>
+<script src="vendor/jszip.min.js"></script>
 <script>
 /* ───────── Kalite Kontrol — Oturum 200 (yeni model: durum bekliyor/tamamlandi, sonuc gecti/tamir/hatali/bekliyor)
    KARAR (200): UI ikili onay=gecti, ret=tamir; hatali yazılmaz ama gösterilir (MK-72.11 görünür ad).
@@ -1047,8 +1048,47 @@ function belgeUretilenCiz(){
     tvv('kk_belge_liste_alt','Bu paketin güncel spool listesi'),
     '<button class="btn sm" onclick="kkDavetPdf(\''+esc(String(d.id))+'\')">PDF</button>'
    +'<button class="btn sm gho" onclick="kkListeExcel(\''+esc(String(d.id))+'\')">Excel</button>');
-  /* Boru Takip Formu (TERSAN) — üretim akışı bağlanınca buraya gerçek PDF/Excel satırları gelecek */
+  /* Boru Takip Formu (TERSAN) — devre başına, JSZip şablon-doldur */
+  var ters=String(d._tersane||'').toLowerCase();
+  if(ters.indexOf('tersan')>=0){
+    _davetDevreler(d).forEach(function(dv){
+      rows+=_uretRow('📋', tvv('kk_boru_takip','Boru Takip Formu')+' \u00b7 '+tvv('kk_devre','Devre')+' '+esc(dv.devre_no),
+        tvv('kk_boru_takip_alt','TERSAN \u00b7 HEAT boş (müfettiş doldurur)'),
+        '<button class="btn sm gho" onclick="boruTakipExcel(\''+esc(String(d.id))+'\',\''+esc(String(dv.devre_id))+'\')">Excel</button>');
+    });
+  }
   el.innerHTML='<div class="flist uretilen">'+rows+'</div>';
+}
+async function boruTakipExcel(davetId, devreId){
+  var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
+  if(!d){toast(tvv('kk_davet_yok','Davet bulunamadı'),'er');return;}
+  var sp=d.spoollar.filter(function(s){return String(s.devre_id)===String(devreId);});
+  if(!sp.length){toast(tvv('kk_spool_yok','Spool bulunamadı'),'er');return;}
+  var dv=sp[0];
+  toast(tvv('kk_form_uretiliyor','Form üretiliyor…'),'ok');
+  try{
+    if(typeof JSZip==='undefined'){toast('JSZip yüklenemedi','er');return;}
+    var buf=await (await fetch('templates/boru-takip-formu.xlsx')).arrayBuffer();
+    var zip=await JSZip.loadAsync(buf);
+    var xml=await zip.file('xl/worksheets/sheet1.xml').async('string');
+    function xesc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function setcell(ref,val){var re=new RegExp('<c r="'+ref+'"(\\s+s="\\d+")?[^>]*?(?:/>|></c>)');xml=xml.replace(re,'<c r="'+ref+'"$1 t="inlineStr"><is><t>'+xesc(val)+'</t></is></c>');}
+    setcell('E6', dv._proje_no||'');
+    setcell('L6', tvv('kk_devre','Devre')+' '+(dv._devre_no||'')+' \u00b7 '+new Date().toLocaleDateString('tr-TR'));
+    var SIG=33;
+    sp.slice(0,SIG).forEach(function(s,i){
+      var rn=8+i;
+      var v={B:s.pipeline_no||'', E:markaId(s.spool_id)||s.spool_no||'', I:_fmt(s.dis_cap_mm), J:yuzeyEtiket(s.yuzey)||'', L:_fmt(s.et_mm)};
+      Object.keys(v).forEach(function(c){if(v[c]!==''&&v[c]!=null&&v[c]!=='—')setcell(c+rn, v[c]);});
+    });
+    zip.file('xl/worksheets/sheet1.xml', xml);
+    var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='BoruTakipFormu_'+(d.davet_no||davetId)+'_Devre'+(dv._devre_no||devreId)+'.xlsx';
+    document.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);
+    toast(tvv('kk_form_indirildi','Boru Takip Formu indirildi'),'ok');
+    if(sp.length>SIG)toast(sp.length+' spool · ilk '+SIG+' forma sığdı',' ok');
+  }catch(e){console.error('[boru-takip]',e);toast(tvv('kk_form_hata','Form üretilemedi')+': '+(e.message||e),'er');}
 }
 function kkListeExcel(davetId){
   var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
