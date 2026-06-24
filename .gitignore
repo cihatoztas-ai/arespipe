@@ -35,3 +35,4 @@ _arsiv/
 .env*.local
 scripts/re-parse-s02.mjs
 ai-*.json
+kk_v3_patch.py
