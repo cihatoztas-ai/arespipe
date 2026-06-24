@@ -17,7 +17,7 @@
 [data-theme=light-anthracite]{--bg:#d8dde4;--sur:#e4e9ef;--sur2:#d0d7e0;--bor:#bcc5d0;--tx:#141e2b;--txm:#3a4f63;--txd:#637080;}
 
 /* ── SAYFA LAYOUT ── */
-.page{padding:28px 28px 40px;max-width:1180px;}
+.page{padding:28px 28px 40px;}
 .breadcrumb{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--txd);margin-bottom:6px;}
 .breadcrumb a{color:var(--txd);text-decoration:none;}.breadcrumb a:hover{color:var(--ac);}
 .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--tx);line-height:1;margin-bottom:4px;}
@@ -521,13 +521,13 @@ function havuzDrawerAc(devreId){
     +'<div class="dw-sub"><span class="ratio">'+grup.spoollar.length+'/'+top+'</span> spool · '+_fmt(grupAgirlik(grup.spoollar))+' kg · '+matBadge(grup.spoollar[0].malzeme)+'</div>'
     +'<div class="dw-act"><label class="dw-all"><input type="checkbox" class="kkcheck" '+(tumSec?'checked':'')+' onclick="grupSec(\''+grup.devre_id+'\',this.checked)"> '+tvv('kk_drawer_tumsec','Devredeki tüm spoolları seç')+'</label></div>';
   var body='<table class="dw-tab"><thead><tr><th class="num">#</th><th class="chk"></th><th>'+tvv('kk_th_marka','Marka')+'</th><th>Rev</th><th>Spool ID</th>'
-    +'<th class="num">Çap</th><th class="num">Et</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th><th>'+tvv('cmn_kalite','Kalite')+'</th><th>'+tvv('kk_th_yuzey','Yüzey')+'</th></tr></thead><tbody>';
+    +'<th class="num">Çap</th><th class="num">Et</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th><th>'+tvv('cmn_malzeme','Malzeme')+'</th><th>'+tvv('cmn_kalite','Kalite')+'</th><th>'+tvv('kk_th_yuzey','Yüzey')+'</th></tr></thead><tbody>';
   grup.spoollar.forEach(function(s,i){
     body+='<tr class="'+(_secili[s.id]?'sel':'')+'"><td class="num cidx">'+(i+1)+'</td>'
       +'<td class="chk"><input type="checkbox" class="kkcheck" '+(_secili[s.id]?'checked':'')+' onclick="spoolSec(\''+s.id+'\',this.checked)"></td>'
       +'<td class="mrk">'+esc(marka(s))+'</td><td>'+esc(s.rev||'—')+'</td><td class="sid">'+esc(markaId(s.spool_id))+'</td>'
       +'<td class="num">'+_fmt(s.dis_cap_mm)+'</td><td class="num">'+_fmt(s.et_mm)+'</td><td class="num">'+_fmt(s.agirlik)+' kg</td>'
-      +'<td class="kal">'+kaliteGoster(s.kalite)+'</td><td>'+_yuzBadge(s.yuzey)+'</td></tr>';
+      +'<td>'+matBadge(s.malzeme)+'</td><td class="kal">'+kaliteGoster(s.kalite)+'</td><td>'+_yuzBadge(s.yuzey)+'</td></tr>';
   });
   body+='</tbody></table>';
   _drawerCiz(head,body);
