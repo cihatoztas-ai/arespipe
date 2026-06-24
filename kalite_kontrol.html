@@ -159,7 +159,7 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .table-updated{font-size:12px;color:var(--txd);}
 .table-scroll{overflow-x:auto;}
 .data-table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap;}
-.data-table.kkml{min-width:780px;}
+.data-table.kkml{min-width:880px;}
 .data-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;background:var(--sur2);border-bottom:1px solid var(--bor);}
 .data-table td{padding:11px 12px;border-bottom:1px solid var(--bor);vertical-align:middle;color:var(--tx);}
 .data-table tr:last-child td{border-bottom:none;}
@@ -172,8 +172,9 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .mlrow[data-ci="0"]{animation-delay:0ms}.mlrow[data-ci="1"]{animation-delay:40ms}.mlrow[data-ci="2"]{animation-delay:80ms}.mlrow[data-ci="3"]{animation-delay:120ms}.mlrow[data-ci="4"]{animation-delay:160ms}.mlrow[data-ci="5"]{animation-delay:200ms}.mlrow[data-ci="6"]{animation-delay:240ms}.mlrow[data-ci="7"]{animation-delay:280ms}.mlrow[data-ci="8"]{animation-delay:320ms}.mlrow[data-ci="9"]{animation-delay:360ms}.mlrow[data-ci="10"]{animation-delay:400ms}.mlrow[data-ci="11"]{animation-delay:440ms}.mlrow[data-ci="12"]{animation-delay:480ms}.mlrow[data-ci="13"]{animation-delay:520ms}.mlrow[data-ci="14"]{animation-delay:560ms}.mlrow[data-ci="15"]{animation-delay:600ms}.mlrow[data-ci="16"]{animation-delay:640ms}.mlrow[data-ci="17"]{animation-delay:680ms}.mlrow[data-ci="18"]{animation-delay:720ms}.mlrow[data-ci="19"]{animation-delay:760ms}
 @keyframes _cascadeIn{to{opacity:1}}
 /* ── ortak hücre stilleri (eski accordion bloğundan korunan) ── */
-.gemi{color:var(--ac);font-weight:600;}
-.zone{color:var(--txm);font-size:13px;}
+.gemi{font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;color:var(--ac);letter-spacing:.2px;}
+.isemri{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--leg);}
+.zone{color:var(--txd);font-size:14px;}
 .devre-ad{font-weight:600;color:var(--tx);max-width:260px;overflow:hidden;text-overflow:ellipsis;}
 .ratio{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--ac);background:rgba(45,142,255,.12);padding:3px 9px;border-radius:7px;}
 .agir{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--txm);}
@@ -192,10 +193,10 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 /* ── SAĞDAN DRAWER ── */
 .drawerbg{position:fixed;inset:0;background:rgba(5,8,14,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;}
 .drawerbg.acik{opacity:1;pointer-events:auto;}
-.drawer{position:fixed;top:0;right:0;height:100vh;width:min(860px,95vw);background:var(--sur);border-left:1px solid var(--bor);box-shadow:-10px 0 44px rgba(0,0,0,.32);z-index:61;transform:translateX(101%);transition:transform .24s ease;display:flex;flex-direction:column;}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:75vw;max-width:100vw;background:var(--sur);border-left:1px solid var(--bor);box-shadow:-10px 0 44px rgba(0,0,0,.32);z-index:61;transform:translateX(101%);transition:transform .24s ease;display:flex;flex-direction:column;}
 .drawer.acik{transform:translateX(0);}
 .drawer-head{padding:20px 22px 14px;border-bottom:1px solid var(--bor);background:var(--sur2);flex:0 0 auto;}
-.drawer-body{padding:14px 0 32px;overflow-y:auto;flex:1 1 auto;}
+.drawer-body{padding:14px 0 32px;overflow:auto;flex:1 1 auto;}
 .dw-top{display:flex;align-items:flex-start;gap:12px;}
 .dw-no{font-family:'Barlow Condensed',monospace;font-size:22px;font-weight:700;color:var(--ac);line-height:1.05;}
 .dw-meta{font-size:13px;color:var(--txm);margin-top:5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
@@ -207,13 +208,19 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .dw-grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 20px 7px;font-size:13px;color:var(--tx);}
 .dw-grp b{font-weight:700;}
 .dw-gmeta{margin-left:auto;font-size:12px;color:var(--txd);}
-.dw-tab{width:100%;border-collapse:collapse;font-size:13px;}
-.dw-tab thead th{text-align:left;font-size:10px;font-weight:600;color:var(--txd);text-transform:uppercase;letter-spacing:.3px;padding:7px 10px;background:var(--sur2);}
-.dw-tab th.num,.dw-tab td.num{text-align:right;}
+.dw-tab{width:100%;border-collapse:collapse;font-size:13px;min-width:600px;}
+.dw-tab thead th{text-align:left;font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;background:var(--sur2);border-bottom:1px solid var(--bor);white-space:nowrap;}
+.dw-tab th.num,.dw-tab td.num{text-align:left;}
 .dw-tab th.chk,.dw-tab td.chk{width:30px;text-align:center;}
-.dw-tab td{padding:8px 10px;border-top:1px solid var(--bor);color:var(--tx);white-space:nowrap;}
+.dw-tab td{padding:9px 10px;border-bottom:1px solid var(--bor);color:var(--tx);white-space:nowrap;vertical-align:middle;}
+.dw-tab tr:last-child td{border-bottom:none;}
+.dw-tab tbody tr:hover td{background:rgba(45,142,255,.025);}
 .dw-tab tr.sel td{background:rgba(45,142,255,.06);}
-.dw-tab td.mrk{white-space:normal;}
+.dw-tab td.mrk{white-space:normal;color:var(--ac);font-weight:700;font-size:13px;}
+.dw-tab td.sid{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--leg);}
+.dw-tab td.cidx{color:var(--txd);font-size:12px;}
+.dw-tab td.num{color:var(--txm);}
+.dw-tab td.kal{color:var(--ac);font-weight:600;}
 /* ── BELGELER POPUP (görsel kabuk) ── */
 .belge-defer{font-size:12px;color:var(--txm);background:var(--sur2);border-radius:8px;padding:9px 12px;margin:14px 18px 0;line-height:1.5;}
 .belge-sec{padding:14px 18px;border-bottom:1px solid var(--bor);}
@@ -402,13 +409,13 @@ async function veriYukle(){
   if(ARES.tenantKod) await ARES.tenantKod();
 
   var hv=await supa.from('spooller')
-    .select('id,spool_id,spool_no,pipeline_no,rev,dis_cap_mm,et_kalinligi_mm,agirlik,malzeme,kalite,yuzey,devre_id,devreler(devre_no,ad,zone,projeler(proje_no,tersane_id,tersaneler(id,ad,kisa_ad)))')
+    .select('id,spool_id,spool_no,pipeline_no,rev,dis_cap_mm,et_kalinligi_mm,agirlik,malzeme,kalite,yuzey,devre_id,devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersane_id,tersaneler(id,ad,kisa_ad)))')
     .eq('tenant_id',tid).eq('aktif_basamak','on_kontrol');
   if(hv.error){console.error('[KK] havuz:',hv.error);toast(tvv('kk_hata_yukleme','Yükleme hatası'),'er');}
   HAVUZ=(hv.data||[]).map(_spNorm);
 
   var dv=await supa.from('kk_davetler')
-    .select('id,davet_no,durum,tarih,olusturma,kapanis_ts,pdf_yolu,tersane_id,tersaneler(ad,kisa_ad),kk_davet_spooller(id,spool_id,sonuc,not_,sonuc_ts,personel_id,foto_yolu,spooller(id,spool_id,spool_no,pipeline_no,rev,dis_cap_mm,et_kalinligi_mm,agirlik,malzeme,kalite,yuzey,devre_id,devreler(devre_no,ad,zone,projeler(proje_no,tersaneler(id,ad,kisa_ad)))))')
+    .select('id,davet_no,durum,tarih,olusturma,kapanis_ts,pdf_yolu,tersane_id,tersaneler(ad,kisa_ad),kk_davet_spooller(id,spool_id,sonuc,not_,sonuc_ts,personel_id,foto_yolu,spooller(id,spool_id,spool_no,pipeline_no,rev,dis_cap_mm,et_kalinligi_mm,agirlik,malzeme,kalite,yuzey,devre_id,devreler(devre_no,ad,zone,is_emri_no,projeler(proje_no,tersaneler(id,ad,kisa_ad)))))')
     .eq('tenant_id',tid).order('olusturma',{ascending:false});
   if(dv.error){console.error('[KK] davetler:',dv.error);}
   var davetler=(dv.data||[]);
@@ -436,7 +443,7 @@ function _spNorm(s){
   var dev=s.devreler||{}, prj=(dev.projeler)||{}, trs=(prj.tersaneler)||{};
   return {id:s.id,spool_id:s.spool_id,spool_no:s.spool_no,pipeline_no:s.pipeline_no,rev:s.rev,
     dis_cap_mm:s.dis_cap_mm,et_mm:s.et_kalinligi_mm,agirlik:s.agirlik,malzeme:s.malzeme,kalite:s.kalite,yuzey:s.yuzey,
-    devre_id:s.devre_id,_devre_no:dev.devre_no,_devre_ad:dev.ad,_zone:dev.zone,
+    devre_id:s.devre_id,_devre_no:dev.devre_no,_devre_ad:dev.ad,_zone:dev.zone,_is_emri:dev.is_emri_no,
     _proje_no:prj.proje_no,_tersane_id:trs.id,_tersane:trs.kisa_ad||trs.ad||'—'};
 }
 function _davNorm(d){
@@ -449,7 +456,7 @@ function _davNorm(d){
 /* ───────── DEVRE GRUPLAMA ───────── */
 function devreGrupla(spoollar){
   var g={};
-  spoollar.forEach(function(s){var k=s.devre_id||'_';(g[k]=g[k]||{devre_id:s.devre_id,devre_no:s._devre_no,zone:s._zone,tersane:s._tersane,proje_no:s._proje_no,spoollar:[]}).spoollar.push(s);});
+  spoollar.forEach(function(s){var k=s.devre_id||'_';(g[k]=g[k]||{devre_id:s.devre_id,devre_no:s._devre_no,zone:s._zone,tersane:s._tersane,proje_no:s._proje_no,is_emri:s._is_emri,spoollar:[]}).spoollar.push(s);});
   return Object.values(g);
 }
 function grupAgirlik(sp){return sp.reduce(function(a,s){return a+(parseFloat(s.agirlik)||0);},0);}
@@ -479,7 +486,7 @@ function havuzRender(){
   var h='<div class="table-wrap"><div class="table-header"><span class="table-title">'+tvv('kk_tab_havuz','Davet Bekleyenler')+'</span>'
     +'<span class="table-updated">'+gruplar.length+' '+tvv('kk_sec_devre','devre')+' · '+liste.length+' spool</span></div>'
     +'<div class="table-scroll"><table class="data-table kkml"><thead><tr>'
-    +'<th class="chk"></th><th>'+tvv('kk_th_tersane','Tersane')+'</th><th>'+tvv('kk_th_gemi','Gemi')+'</th>'
+    +'<th class="chk"></th><th>'+tvv('cmn_th_is_emri','İş Emri')+'</th><th>'+tvv('kk_th_tersane','Tersane')+'</th><th>'+tvv('kk_th_gemi','Gemi')+'</th>'
     +'<th>'+tvv('kk_th_devre','Devre')+'</th><th>'+tvv('kk_th_zone','Zone')+'</th>'
     +'<th class="num">'+tvv('kk_th_spool','Spool')+'</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th>'
     +'<th>'+tvv('cmn_malzeme','Malzeme')+'</th><th>'+tvv('kk_th_yuzey','Yüzey')+'</th></tr></thead><tbody>';
@@ -490,6 +497,7 @@ function havuzRender(){
     var aktif=_drawerTip==='havuz'&&String(_drawerKey)===String(g.devre_id);
     h+='<tr data-ci="'+Math.min(i,19)+'" class="mlrow'+(aktif?' aktif':'')+'" onclick="havuzDrawerAc(\''+g.devre_id+'\')">'
       +'<td class="chk" onclick="event.stopPropagation()"><input type="checkbox" class="kkcheck'+(baziSec?' yari':'')+'" '+(tumSec?'checked':'')+' onclick="grupSec(\''+g.devre_id+'\',this.checked)"></td>'
+      +'<td class="isemri">'+esc(g.is_emri||'—')+'</td>'
       +'<td>'+tersaneBadge(g.tersane)+'</td><td class="gemi">'+esc(g.proje_no||'—')+'</td>'
       +'<td class="devre-ad">'+esc(g.devre_no||'—')+'</td><td class="zone">'+(g.zone?esc(g.zone):'—')+'</td>'
       +'<td class="num"><span class="ratio">'+g.spoollar.length+'/'+top+'</span></td>'
@@ -508,7 +516,7 @@ function havuzDrawerAc(devreId){
   var top=_devreToplam[grup.devre_id]||grup.spoollar.length;
   var tumSec=grup.spoollar.every(function(s){return _secili[s.id];});
   var head='<div class="dw-top"><div><div class="dw-no">'+esc(grup.devre_no||grup.proje_no||'—')+'</div>'
-    +'<div class="dw-meta">'+tersaneBadge(grup.tersane)+'<span>'+esc(grup.proje_no||'')+'</span>'+(grup.zone?'<span class="zone">· zone '+esc(grup.zone)+'</span>':'')+'</div></div>'
+    +'<div class="dw-meta">'+(grup.is_emri?'<span class="isemri">'+esc(grup.is_emri)+'</span>':'')+tersaneBadge(grup.tersane)+'<span>'+esc(grup.proje_no||'')+'</span>'+(grup.zone?'<span class="zone">· zone '+esc(grup.zone)+'</span>':'')+'</div></div>'
     +'<button class="dw-x" onclick="drawerKapat()" aria-label="'+tvv('cmn_kapat','Kapat')+'">×</button></div>'
     +'<div class="dw-sub"><span class="ratio">'+grup.spoollar.length+'/'+top+'</span> spool · '+_fmt(grupAgirlik(grup.spoollar))+' kg · '+matBadge(grup.spoollar[0].malzeme)+'</div>'
     +'<div class="dw-act"><label class="dw-all"><input type="checkbox" class="kkcheck" '+(tumSec?'checked':'')+' onclick="grupSec(\''+grup.devre_id+'\',this.checked)"> '+tvv('kk_drawer_tumsec','Devredeki tüm spoolları seç')+'</label></div>';
@@ -519,7 +527,7 @@ function havuzDrawerAc(devreId){
       +'<td class="chk"><input type="checkbox" class="kkcheck" '+(_secili[s.id]?'checked':'')+' onclick="spoolSec(\''+s.id+'\',this.checked)"></td>'
       +'<td class="mrk">'+esc(marka(s))+'</td><td>'+esc(s.rev||'—')+'</td><td class="sid">'+esc(markaId(s.spool_id))+'</td>'
       +'<td class="num">'+_fmt(s.dis_cap_mm)+'</td><td class="num">'+_fmt(s.et_mm)+'</td><td class="num">'+_fmt(s.agirlik)+' kg</td>'
-      +'<td>'+kaliteGoster(s.kalite)+'</td><td>'+_yuzBadge(s.yuzey)+'</td></tr>';
+      +'<td class="kal">'+kaliteGoster(s.kalite)+'</td><td>'+_yuzBadge(s.yuzey)+'</td></tr>';
   });
   body+='</tbody></table>';
   _drawerCiz(head,body);
@@ -784,7 +792,7 @@ function paketDrawerAc(pid,arsiv){
   var body='';
   gruplar.forEach(function(g){
     var top=_devreToplam[g.devre_id]||g.spoollar.length;
-    body+='<div class="dw-grp">'+tersaneBadge(g.tersane)+' <b>'+esc(g.devre_no||g.proje_no||'—')+'</b>'+(g.zone?' <span class="zone">· '+esc(g.zone)+'</span>':'')
+    body+='<div class="dw-grp">'+(g.is_emri?'<span class="isemri">'+esc(g.is_emri)+'</span> ':'')+tersaneBadge(g.tersane)+' <b>'+esc(g.devre_no||g.proje_no||'—')+'</b>'+(g.zone?' <span class="zone">· '+esc(g.zone)+'</span>':'')
       +'<span class="dw-gmeta">'+g.spoollar.length+'/'+top+' · '+_fmt(grupAgirlik(g.spoollar))+' kg</span></div>';
     body+=_altTablo(g.spoollar);
   });
@@ -808,6 +816,13 @@ function _drawerKonumla(){
   top=Math.round(top)||64;
   dr.style.top=top+'px';
   dr.style.height='calc(100vh - '+top+'px)';
+  // GENİŞLİK: sol menü hariç içerik alanının %75'i (her ekranda tutarlı). Küçük ekranda dar kalırsa içerik yatay kayar.
+  var alan=document.querySelector('.main-content')||document.querySelector('.page');
+  var icW=alan?Math.round(alan.getBoundingClientRect().width):window.innerWidth;
+  if(!icW||icW<320)icW=window.innerWidth;
+  var w=Math.round(icW*0.75);
+  if(w>window.innerWidth)w=window.innerWidth;   // güvenlik: viewport'u aşma
+  dr.style.width=w+'px';
 }
 window.addEventListener('resize',function(){var dr=document.getElementById('drawer');if(dr&&dr.classList.contains('acik'))_drawerKonumla();});
 function _drawerCiz(head,body){
