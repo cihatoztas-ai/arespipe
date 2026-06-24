@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-06-24T10:21:41.103Z",
-  "commit_sha": "dc6cc6493e569e8726508b0f040da40424d03075",
+  "tarih": "2026-06-24T11:02:09.403Z",
+  "commit_sha": "4df322952db4f85456cd7267d1e0eab4631fdc8d",
   "commit_ref": "main",
-  "workflow_run": 1180,
+  "workflow_run": 1181,
   "ozet": {
     "hata": 0,
     "uyari": 111,
@@ -27,7 +27,7 @@
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
-            1100
+            1135
           ]
         }
       ]
@@ -775,7 +775,7 @@
         {
           "kod": "G03_HAM_MALZEME",
           "tip": "uyari",
-          "satir": 1100,
+          "satir": 1135,
           "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
         },
         {
