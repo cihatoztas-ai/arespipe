@@ -1053,7 +1053,7 @@ function belgeUretilenCiz(){
   if(ters.indexOf('tersan')>=0){
     _davetDevreler(d).forEach(function(dv){
       rows+=_uretRow('📋', tvv('kk_boru_takip','Boru Takip Formu')+' \u00b7 '+tvv('kk_devre','Devre')+' '+esc(dv.devre_no),
-        tvv('kk_boru_takip_alt','TERSAN \u00b7 HEAT boş (müfettiş doldurur)'),
+        tvv('kk_boru_takip_alt','TERSAN · malzeme izlenebilirlik'),
         '<button class="btn sm gho" onclick="boruTakipExcel(\''+esc(String(d.id))+'\',\''+esc(String(dv.devre_id))+'\')">Excel</button>');
     });
   }
@@ -1073,12 +1073,15 @@ function _btDn(boyut,dis){
   if(dis)return String(_btOd2Dn(parseFloat(dis)));
   return '';
 }
-function _btEtPn(tip,tanim,et){
-  if(tip==='boru'&&et!=null&&et!==''){return String(parseFloat(et)).replace(/\.?0+$/,'').replace('.',',');}
-  var t=String(tanim||''),m;
-  if((m=t.match(/PN\s*(\d+)/i)))return 'PN'+m[1];
-  if((m=t.match(/(\d+)\s*LBS?/i)))return m[1]+'LBS';
-  return '';
+function _btEtPn(tip,tanim,et,boyut){
+  function etFmt(v){return String(parseFloat(v)).replace(/\.?0+$/,'').replace('.',',');}
+  function etFromBoyut(){var m=String(boyut||'').match(/^[\d.]+\s*[xX]\s*([\d.]+)/);return (m&&parseFloat(m[1])<20)?etFmt(m[1]):'';}
+  if(tip==='boru'){if(et!=null&&et!=='')return etFmt(et);return etFromBoyut();}
+  var t=String(tanim||''),b=String(boyut||''),m;
+  if((m=t.match(/PN\s*(\d+)/i))||(m=b.match(/PN\s*(\d+)/i)))return 'PN'+m[1];
+  if((m=t.match(/(\d+)\s*LBS?/i))||(m=t.match(/(\d+)\s*#/)))return m[1]+'LBS';
+  if(et!=null&&et!=='')return etFmt(et);
+  return etFromBoyut();
 }
 function _btParcaStr(arr){arr=arr.slice().sort(function(a,b){return a-b;});var out=[],i=0;while(i<arr.length){var j=i;while(j+1<arr.length&&arr[j+1]===arr[j]+1)j++;out.push(i===j?String(arr[i]):arr[i]+'-'+arr[j]);i=j+1;}return out.join(', ');}
 async function boruTakipExcel(davetId, devreId){
@@ -1098,7 +1101,7 @@ async function boruTakipExcel(davetId, devreId){
     var formRows=[];
     spools.forEach(function(s){
       var list=(bySpool[s.id]||[]).filter(function(m){return _btDahil(m.tip,m.tanim);});
-      var parsed=list.map(function(m,i){return {parca:i+1, dn:_btDn(m.boyut,m.dis_cap_mm), etpn:_btEtPn(m.tip,m.tanim,m.et_mm), heat:m.heat_no||''};});
+      var parsed=list.map(function(m,i){return {parca:i+1, dn:_btDn(m.boyut,m.dis_cap_mm), etpn:_btEtPn(m.tip,m.tanim,m.et_mm,m.boyut), heat:m.heat_no||''};});
       var groups=[];
       parsed.forEach(function(p){var g=null;for(var k=0;k<groups.length;k++){if(groups[k].dn===p.dn&&groups[k].etpn===p.etpn&&groups[k].heat===p.heat){g=groups[k];break;}}if(g)g.parcalar.push(p.parca);else groups.push({dn:p.dn,etpn:p.etpn,heat:p.heat,parcalar:[p.parca]});});
       groups.forEach(function(g){formRows.push({B:s.pipeline_no||'', E:s.spool_no||'', H:_btParcaStr(g.parcalar), I:g.dn, J:yuzeyEtiket(s.yuzey)||'', L:g.etpn, N:g.heat});});
@@ -1115,6 +1118,7 @@ async function boruTakipExcel(davetId, devreId){
     formRows.slice(0,CAP).forEach(function(r,i){
       var rn=8+i;
       ['B','E','H','I','J','L','N'].forEach(function(c){if(r[c]!==''&&r[c]!=null)setcell(c+rn, r[c]);});
+      setcell('O'+rn, '\u2713');
     });
     zip.file('xl/worksheets/sheet1.xml', xml);
     var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
