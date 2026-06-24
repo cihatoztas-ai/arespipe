@@ -1,11 +1,11 @@
 {
-  "tarih": "2026-06-24T08:35:10.898Z",
-  "commit_sha": "76a25d690505d4e861ce6a28757e048688ef2d99",
+  "tarih": "2026-06-24T09:48:06.675Z",
+  "commit_sha": "290468bf4748033570edbfd8d8ed8593f665f5b8",
   "commit_ref": "main",
-  "workflow_run": 1177,
+  "workflow_run": 1178,
   "ozet": {
     "hata": 0,
-    "uyari": 110,
+    "uyari": 111,
     "taranan_dosya": 143,
     "sorunlu_dosya": 6,
     "durum": "sari"
@@ -14,13 +14,20 @@
     "G03_HAM_MALZEME": {
       "tip": "uyari",
       "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
+      "sayi": 2,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
             2325
+          ]
+        },
+        {
+          "dosya": "kalite_kontrol.html",
+          "sayi": 1,
+          "satirlar": [
+            1067
           ]
         }
       ]
@@ -186,7 +193,7 @@
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
-            734
+            759
           ]
         }
       ]
@@ -763,12 +770,18 @@
     {
       "dosya": "kalite_kontrol.html",
       "hata_sayisi": 0,
-      "uyari_sayisi": 1,
+      "uyari_sayisi": 2,
       "hatalar": [
+        {
+          "kod": "G03_HAM_MALZEME",
+          "tip": "uyari",
+          "satir": 1067,
+          "mesaj": "Ham malzeme gösterimi şüphesi. esc(x.malzeme) yerine ARES_NORM.malzemeEtiket(x.malzeme) kullan. (CLAUDE.md 2.18 — G-03)"
+        },
         {
           "kod": "G03_HAM_KALITE",
           "tip": "uyari",
-          "satir": 734,
+          "satir": 759,
           "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
