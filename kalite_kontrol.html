@@ -37,6 +37,10 @@
 .filter-select,.search-input{font-size:14px;padding:7px 10px;border:1px solid var(--bor);border-radius:8px;background:var(--sur2);color:var(--tx);font-family:'Barlow',sans-serif;}
 .search-input{flex:1;min-width:160px;}
 .tmz{background:none;border:none;color:var(--ac);font-size:13px;cursor:pointer;}
+.data-table th.sort-th{cursor:pointer;user-select:none;white-space:nowrap;}
+.data-table th.sort-th:hover{color:var(--ac);}
+.data-table th .sa{color:var(--txd);font-size:11px;margin-left:2px;}
+.data-table th.sort-th.akt .sa{color:var(--ac);}
 
 /* ── AÇILIR DEVRE LİSTESİ ── */
 .liste{border:1px solid var(--bor);border-radius:12px;overflow:hidden;background:var(--sur);}
@@ -270,6 +274,12 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .flist{display:flex;flex-direction:column;gap:8px;}
 .frow{display:flex;align-items:center;gap:11px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:9px 12px;}
 .fico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.3px;}
+.flist.uretilen{margin-bottom:8px;}
+.frow.uret{background:var(--sur);border-style:dashed;}
+.fico.sys{background:rgba(45,142,255,.12);color:var(--ac);font-size:16px;}
+.uret-act{display:flex;gap:6px;align-items:center;margin-left:auto;}
+.uret-act .btn.sm{padding:4px 12px;font-size:12px;}
+.uret-yakinda{font-size:11px;color:var(--txd);background:var(--sur2);border:1px solid var(--bor);border-radius:20px;padding:3px 10px;}
 .fico.pdf{background:#dc3a3a;}.fico.xls{background:#16a36e;}.fico.doc{background:#2D8EFF;}.fico.img{background:#7c3aed;}.fico.gen{background:#637080;}
 .frow .ft{flex:1;min-width:0;}
 .frow .ft b{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -283,6 +293,9 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 .dropzone b{font-size:13px;color:var(--tx);}
 .dropzone span{display:block;font-size:11.5px;margin-top:3px;}
 .belge-bos{font-size:12.5px;color:var(--txd);padding:6px 2px;}
+.belge-yukleniyor{display:flex;align-items:center;gap:10px;justify-content:center;padding:26px;color:var(--ac);font-size:13px;font-weight:600;border:1px dashed var(--ac);border-radius:11px;}
+.spin{width:16px;height:16px;border:2px solid rgba(45,142,255,.3);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -317,11 +330,21 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
 
   <!-- ════ AÇIK DAVETİYELER ════ -->
   <section id="v-acik" class="view gizli">
+    <div class="filtre">
+      <select class="filter-select" id="faTersane" onchange="acikRender()"><option value="" data-i18n="kk_f_tersane">Tersane: hepsi</option></select>
+      <input class="search-input" id="faArama" placeholder="Davet / gemi / devre ara…" data-i18n-placeholder="kk_f_ara_paket" oninput="acikRender()">
+      <button class="tmz" onclick="acikTemizle()" data-i18n="cmn_temizle">temizle</button>
+    </div>
     <div id="acikListe"><div class="yukleniyor" data-i18n="cmn_yukleniyor">Yükleniyor…</div></div>
   </section>
 
   <!-- ════ ARŞİV ════ -->
   <section id="v-arsiv" class="view gizli">
+    <div class="filtre">
+      <select class="filter-select" id="frTersane" onchange="arsivRender()"><option value="" data-i18n="kk_f_tersane">Tersane: hepsi</option></select>
+      <input class="search-input" id="frArama" placeholder="Davet / gemi / devre ara…" data-i18n-placeholder="kk_f_ara_paket" oninput="arsivRender()">
+      <button class="tmz" onclick="arsivTemizle()" data-i18n="cmn_temizle">temizle</button>
+    </div>
     <div id="arsivListe"><div class="yukleniyor" data-i18n="cmn_yukleniyor">Yükleniyor…</div></div>
   </section>
 
@@ -378,17 +401,13 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--ac);cursor:pointe
       <span class="kapsam-not" data-i18n="kk_kapsam_not">Eklenen foto / belge bu kapsama bağlanır.</span>
     </div>
     <div class="belge-sec">
-      <h4>📄 <span data-i18n="kk_belge_liste_pdf">Kalite Kontrol Listesi</span></h4>
-      <p class="page-alt" style="margin:0 0 8px;" data-i18n="kk_belge_liste_pdf_alt">Bu paketin güncel spool listesi — yazdır veya PDF olarak kaydet. Arşivde de aynı yerden erişilir.</p>
-      <button class="btn btn-pri sm" onclick="belgeListePdf()" data-i18n="kk_btn_liste_pdf">📄 Liste PDF Aç</button>
-    </div>
-    <div class="belge-sec">
       <h4>🖼 <span data-i18n="kk_belge_galeri">Resim Galerisi</span> <span class="cnt" id="bFotoSay"></span></h4>
       <div id="bGaleri"></div>
       <input type="file" id="bFotoInput" accept="image/*" multiple style="display:none" onchange="belgeFotoEkle(this)">
     </div>
     <div class="belge-sec">
       <h4>📎 <span data-i18n="kk_belgeler">Belgeler</span> <span class="cnt" id="bDosyaSay"></span></h4>
+      <div id="bUretilen"></div>
       <div id="bDosyalar"></div>
       <div class="dropzone" onclick="document.getElementById('bDosyaInput').click()">
         <div class="big">＋</div><b data-i18n="kk_belge_yukle">Belge Yükle</b>
@@ -536,18 +555,24 @@ function havuzFiltreli(){
     return true;
   });
 }
+var _havuzSort={key:'',dir:1};
+function havuzSortBy(key){if(_havuzSort.key===key)_havuzSort.dir=-_havuzSort.dir;else{_havuzSort.key=key;_havuzSort.dir=1;}havuzRender();}
+function _havuzSortVal(g,key){switch(key){case 'isEmri':return (g.is_emri||'').toLowerCase();case 'tersane':return (g.tersane||'').toLowerCase();case 'gemi':return (g.proje_no||'').toLowerCase();case 'devre':return (g.devre_no||'').toLowerCase();case 'zone':return (g.zone||'').toLowerCase();case 'spool':return g.spoollar.length;case 'agirlik':return grupAgirlik(g.spoollar);default:return '';}}
+function _hsTh(key,label,extraCls){var akt=_havuzSort.key===key,ar=akt?(_havuzSort.dir===1?'↑':'↓'):'↕';return '<th class="sort-th'+(akt?' akt':'')+(extraCls?' '+extraCls:'')+'" onclick="havuzSortBy(\''+key+'\')">'+esc(label)+' <span class="sa">'+ar+'</span></th>';}
 function havuzRender(){
   var liste=havuzFiltreli(), gruplar=devreGrupla(liste), el=document.getElementById('havuzListe');
   // FİLTRE-SEÇİM: filtreyle görünmeyen (gizli) seçimleri at — seçim yalnız filtrelenenlerden olur
   var _fids={}; liste.forEach(function(s){_fids[s.id]=1;});
   Object.keys(_secili).forEach(function(id){if(!_fids[id])delete _secili[id];});
   if(!liste.length){el.innerHTML='<div class="bos">'+tvv('kk_bos_havuz','Ön Kontrol havuzunda spool yok.')+'</div>';secOzetGuncelle();_drawerYenile();return;}
+  if(_havuzSort.key){gruplar=gruplar.slice().sort(function(a,b){var va=_havuzSortVal(a,_havuzSort.key),vb=_havuzSortVal(b,_havuzSort.key);return va<vb?-_havuzSort.dir:va>vb?_havuzSort.dir:0;});}
   var h='<div class="table-wrap"><div class="table-header"><span class="table-title">'+tvv('kk_tab_havuz','Davet Bekleyenler')+'</span>'
     +'<span class="table-updated">'+gruplar.length+' '+tvv('kk_sec_devre','devre')+' · '+liste.length+' spool</span></div>'
     +'<div class="table-scroll"><table class="data-table kkml"><thead><tr>'
-    +'<th class="chk"><input type="checkbox" id="hepsiSec" class="kkcheck" onclick="tumunuSec(this.checked)" title="'+tvv('kk_tumunu_sec','Filtrelenenlerin tümünü seç')+'"></th><th>'+tvv('cmn_th_is_emri','İş Emri')+'</th><th>'+tvv('kk_th_tersane','Tersane')+'</th><th>'+tvv('kk_th_gemi','Gemi')+'</th>'
-    +'<th>'+tvv('kk_th_devre','Devre')+'</th><th>'+tvv('kk_th_zone','Zone')+'</th>'
-    +'<th class="num">'+tvv('kk_th_spool','Spool')+'</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th>'
+    +'<th class="chk"><input type="checkbox" id="hepsiSec" class="kkcheck" onclick="tumunuSec(this.checked)" title="'+tvv('kk_tumunu_sec','Filtrelenenlerin tümünü seç')+'"></th>'
+    +_hsTh('isEmri',tvv('cmn_th_is_emri','İş Emri'))+_hsTh('tersane',tvv('kk_th_tersane','Tersane'))+_hsTh('gemi',tvv('kk_th_gemi','Gemi'))
+    +_hsTh('devre',tvv('kk_th_devre','Devre'))+_hsTh('zone',tvv('kk_th_zone','Zone'))
+    +_hsTh('spool',tvv('kk_th_spool','Spool'),'num')+_hsTh('agirlik',tvv('cmn_agirlik','Ağırlık'),'num')
     +'<th>'+tvv('cmn_malzeme','Malzeme')+'</th><th>'+tvv('kk_th_yuzey','Yüzey')+'</th></tr></thead><tbody>';
   gruplar.forEach(function(g,i){
     var top=_devreToplam[g.devre_id]||g.spoollar.length;
@@ -801,16 +826,65 @@ function _altTablo(spoollar){
   return h+'</tbody></table>';
 }
 
-/* ───────── AÇIK / ARŞİV — düz master liste (satıra tıkla → sağ drawer) ───────── */
-function paketSatirlari(list,arsiv){
-  if(!list.length)return '<div class="bos">'+(arsiv?tvv('kk_bos_arsiv','Arşivde davet yok.'):tvv('kk_bos_acik','Açık davetiye yok.'))+'</div>';
+/* ───────── AÇIK / ARŞİV — düz master liste (filtre + sort + satıra tıkla → drawer) ───────── */
+var _paketSort={acik:{key:'davet',dir:-1}, arsiv:{key:'davet',dir:-1}};
+function _paketFiltreEl(tip){var p=tip==='arsiv'?'fr':'fa';return {tersane:document.getElementById(p+'Tersane'), arama:document.getElementById(p+'Arama')};}
+function _gemiRaw(d){var p=[...new Set(d.spoollar.map(function(s){return s._proje_no;}).filter(Boolean))];return p.length===1?p[0]:(p.length?p.length+' gemi':'—');}
+function paketFiltreDoldur(tip,list){
+  var el=_paketFiltreEl(tip); if(!el.tersane)return;
+  var mevcut=el.tersane.value, ters={};
+  list.forEach(function(d){if(d._tersane&&d._tersane!=='—')ters[d._tersane]=1;});
+  el.tersane.innerHTML='<option value="">'+tvv('kk_f_tersane','Tersane: hepsi')+'</option>'+Object.keys(ters).sort().map(function(t){return '<option'+(t===mevcut?' selected':'')+'>'+esc(t)+'</option>';}).join('');
+}
+function paketFiltreli(list,tip){
+  var el=_paketFiltreEl(tip), ft=el.tersane?el.tersane.value:'', q=el.arama?el.arama.value.toLowerCase().trim():'';
+  return list.filter(function(d){
+    if(ft&&d._tersane!==ft)return false;
+    if(q){var hay=[d.davet_no,_gemiRaw(d)].concat(d.spoollar.map(function(s){return s._devre_no;})).join(' ').toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;
+  });
+}
+function _paketSortVal(d,key){
+  switch(key){
+    case 'davet':   return (d.davet_no||'').toLowerCase();
+    case 'tersane': return (d._tersane||'').toLowerCase();
+    case 'gemi':    return _gemiRaw(d).toLowerCase();
+    case 'devre':   return devreGrupla(d.spoollar).length;
+    case 'sonuc':   return d.spoollar.filter(function(s){return s._sonuc==='gecti';}).length;
+    case 'spool':   return d.spoollar.length;
+    case 'agirlik': return grupAgirlik(d.spoollar);
+    case 'tarih':   return d.kapanis_ts||d.tarih||'';
+    default:        return '';
+  }
+}
+function paketSirala(list,tip){
+  var st=_paketSort[tip]; if(!st.key)return list;
+  return list.slice().sort(function(a,b){var va=_paketSortVal(a,st.key),vb=_paketSortVal(b,st.key);return va<vb?-st.dir:va>vb?st.dir:0;});
+}
+function paketSortBy(tip,key){var st=_paketSort[tip];if(st.key===key)st.dir=-st.dir;else{st.key=key;st.dir=1;}(tip==='arsiv'?arsivRender:acikRender)();}
+function _sortTh(tip,key,label,extraCls){
+  var st=_paketSort[tip], akt=st.key===key, ar=akt?(st.dir===1?'↑':'↓'):'↕';
+  return '<th class="sort-th'+(akt?' akt':'')+(extraCls?' '+extraCls:'')+'" onclick="paketSortBy(\''+tip+'\',\''+key+'\')">'+esc(label)+' <span class="sa">'+ar+'</span></th>';
+}
+function paketSatirlari(tip){
+  var arsiv=tip==='arsiv', list0=arsiv?ARSIV:ACIK;
+  paketFiltreDoldur(tip,list0);
+  if(!list0.length)return '<div class="bos">'+(arsiv?tvv('kk_bos_arsiv','Arşivde davet yok.'):tvv('kk_bos_acik','Açık davetiye yok.'))+'</div>';
+  var list=paketSirala(paketFiltreli(list0,tip),tip);
   var sonBas=arsiv?tvv('kk_th_sonuc','Sonuç'):tvv('kk_th_durum','Durum');
   var h='<div class="table-wrap"><div class="table-header"><span class="table-title">'+(arsiv?tvv('kk_tab_arsiv','Arşiv'):tvv('kk_tab_acik','Açık Davetiyeler'))+'</span>'
-    +'<span class="table-updated">'+list.length+' '+tvv('kk_paket','paket')+'</span></div>'
+    +'<span class="table-updated">'+list.length+' / '+list0.length+' '+tvv('kk_paket','paket')+'</span></div>'
     +'<div class="table-scroll"><table class="data-table kkml"><thead><tr>'
-    +'<th>'+tvv('kk_th_davet','Davet / Tersane')+'</th><th>'+tvv('kk_th_gemi','Gemi')+'</th><th>'+tvv('kk_th_devre','Devre')+'</th>'
-    +'<th>'+sonBas+'</th><th class="num">'+tvv('kk_th_spool','Spool')+'</th><th class="num">'+tvv('cmn_agirlik','Ağırlık')+'</th>'
-    +'<th>'+(arsiv?tvv('kk_kapanis','Kapanış'):tvv('cmn_tarih','Tarih'))+'</th></tr></thead><tbody>';
+    +_sortTh(tip,'davet',tvv('kk_th_davet_no','Davet'))
+    +_sortTh(tip,'tersane',tvv('kk_th_tersane','Tersane'))
+    +_sortTh(tip,'gemi',tvv('kk_th_gemi','Gemi'))
+    +_sortTh(tip,'devre',tvv('kk_th_devre','Devre'))
+    +(arsiv?_sortTh(tip,'sonuc',sonBas):'<th>'+sonBas+'</th>')
+    +_sortTh(tip,'spool',tvv('kk_th_spool','Spool'),'num')
+    +_sortTh(tip,'agirlik',tvv('cmn_agirlik','Ağırlık'),'num')
+    +_sortTh(tip,'tarih',(arsiv?tvv('kk_kapanis','Kapanış'):tvv('cmn_tarih','Tarih')))
+    +'</tr></thead><tbody>';
+  if(!list.length){h+='<tr><td colspan="8" style="text-align:center;padding:26px;color:var(--txd);">'+tvv('kk_filtre_bos','Filtreyle eşleşen paket yok')+'</td></tr>';}
   list.forEach(function(d,i){
     var gruplar=devreGrupla(d.spoollar);
     var onay=d.spoollar.filter(function(s){return s._sonuc==='gecti';}).length;
@@ -821,7 +895,8 @@ function paketSatirlari(list,arsiv){
     else{sonCell='<span class="dstat bek">'+tvv('kk_durum_bekliyor','Bekliyor')+'</span>';dateCell=esc(tarih);}
     var aktif=_drawerTip==='paket'&&String(_drawerKey)===String(d.id);
     h+='<tr data-ci="'+Math.min(i,19)+'" class="mlrow'+(aktif?' aktif':'')+'" onclick="paketDrawerAc(\''+d.id+'\','+(arsiv?'true':'false')+')">'
-      +'<td><span class="no">'+esc(d.davet_no)+'</span> &nbsp;'+tersaneBadge(d._tersane)+'</td>'
+      +'<td><span class="no">'+esc(d.davet_no)+'</span></td>'
+      +'<td>'+tersaneBadge(d._tersane)+'</td>'
       +'<td class="gemi">'+_gemiOzet(d)+'</td>'
       +'<td class="zone">'+gruplar.length+' '+tvv('kk_sec_devre','devre')+'</td>'
       +'<td>'+sonCell+'</td>'
@@ -831,8 +906,10 @@ function paketSatirlari(list,arsiv){
   });
   return h+'</tbody></table></div></div>';
 }
-function acikRender(){document.getElementById('acikListe').innerHTML=paketSatirlari(ACIK,false);_drawerYenile();}
-function arsivRender(){document.getElementById('arsivListe').innerHTML=paketSatirlari(ARSIV,true);_drawerYenile();}
+function acikRender(){document.getElementById('acikListe').innerHTML=paketSatirlari('acik');_drawerYenile();}
+function arsivRender(){document.getElementById('arsivListe').innerHTML=paketSatirlari('arsiv');_drawerYenile();}
+function acikTemizle(){var e=_paketFiltreEl('acik');if(e.tersane)e.tersane.value='';if(e.arama)e.arama.value='';acikRender();}
+function arsivTemizle(){var e=_paketFiltreEl('arsiv');if(e.tersane)e.tersane.value='';if(e.arama)e.arama.value='';arsivRender();}
 
 function paketDrawerAc(pid,arsiv){
   var d=(arsiv?ARSIV:ACIK).find(function(x){return x.id===pid;});
@@ -954,7 +1031,48 @@ function belgeRender(){
   if(_bFotoIdx>=fotolar.length)_bFotoIdx=Math.max(0,fotolar.length-1);
   document.getElementById('bFotoSay').textContent=fotolar.length?(fotolar.length+' '+tvv('kk_foto','foto')):'';
   document.getElementById('bDosyaSay').textContent=dosyalar.length?(dosyalar.length+' '+tvv('kk_dosya','dosya')):'';
-  belgeGaleriCiz(fotolar); belgeDosyaCiz(dosyalar);
+  belgeUretilenCiz(); belgeGaleriCiz(fotolar); belgeDosyaCiz(dosyalar);
+}
+/* ── ÜRETİLEN BELGELER (sistem) — KK Listesi + Boru Takip Formu (TERSAN) ── */
+function _davetDevreler(d){var m={};(d.spoollar||[]).forEach(function(s){var k=s.devre_id;if(k&&!m[k])m[k]={devre_id:k,devre_no:s._devre_no||s._devre_ad||k};});return Object.keys(m).map(function(k){return m[k];});}
+function _uretRow(ico,ad,alt,act){
+  return '<div class="frow uret"><span class="fico sys">'+ico+'</span>'
+    +'<div class="ft"><b>'+ad+'</b><p>'+alt+'</p></div>'
+    +'<div class="uret-act">'+act+'</div></div>';
+}
+function belgeUretilenCiz(){
+  var el=document.getElementById('bUretilen'); if(!el)return;
+  var d=_bDavet; if(!d){el.innerHTML='';return;}
+  var rows=_uretRow('📄', tvv('kk_belge_liste_pdf','Kalite Kontrol Listesi'),
+    tvv('kk_belge_liste_alt','Bu paketin güncel spool listesi'),
+    '<button class="btn sm" onclick="kkDavetPdf(\''+esc(String(d.id))+'\')">PDF</button>'
+   +'<button class="btn sm gho" onclick="kkListeExcel(\''+esc(String(d.id))+'\')">Excel</button>');
+  var ters=String(d._tersane||'').toLowerCase();
+  if(ters.indexOf('tersan')>=0){
+    _davetDevreler(d).forEach(function(dv){
+      rows+=_uretRow('📋', tvv('kk_boru_takip','Boru Takip Formu')+' · '+tvv('kk_devre','Devre')+' '+esc(dv.devre_no),
+        tvv('kk_boru_takip_alt','TERSAN malzeme izlenebilirlik · yarı dolu (heat boş)'),
+        '<span class="uret-yakinda">'+tvv('kk_hazirlaniyor','hazırlanıyor')+'</span>');
+    });
+  }
+  el.innerHTML='<div class="flist uretilen">'+rows+'</div>';
+}
+function kkListeExcel(davetId){
+  var d=(ACIK.concat(ARSIV)).find(function(x){return String(x.id)===String(davetId);});
+  if(!d){toast(tvv('kk_davet_yok','Davet bulunamadı'),'er');return;}
+  var heads=['#',tvv('kk_th_marka','Marka'),'Rev','Spool ID',tvv('kk_th_cap','Çap'),tvv('kk_th_et','Et'),tvv('cmn_agirlik','Ağırlık')+' (kg)',tvv('cmn_malzeme','Malzeme'),tvv('kk_th_yuzey','Yüzey'),tvv('kk_th_sonuc','Sonuç')];
+  var trs=d.spoollar.map(function(s,i){
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(marka(s))+'</td><td>'+esc(s.rev||'')+'</td><td>'+esc(markaId(s.spool_id))+'</td>'
+      +'<td>'+_fmt(s.dis_cap_mm)+'</td><td>'+_fmt(s.et_mm)+'</td><td>'+_fmt(s.agirlik)+'</td>'
+      +'<td>'+esc(s.malzeme||'')+'</td><td>'+esc(yuzeyEtiket(s.yuzey))+'</td><td>'+esc(sonucEtiket(s._sonuc))+'</td></tr>';
+  }).join('');
+  var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>td,th{border:1px solid #888;padding:3px 6px;font-family:Arial;font-size:11px;}th{background:#1f4e79;color:#fff;}</style></head><body>'
+    +'<table><thead><tr>'+heads.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+trs+'</tbody></table></body></html>';
+  var blob=new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='KK_Listesi_'+(d.davet_no||davetId)+'.xls'; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);
+  toast(tvv('kk_excel_indirildi','Excel indirildi'),'ok');
 }
 function belgeGaleriCiz(fotolar){
   var el=document.getElementById('bGaleri');
@@ -1001,13 +1119,19 @@ function belgeFotoGit(d){var f=_bFiltreli().filter(function(b){return b.tip==='f
 function belgeFotoSec(i){_bFotoIdx=i;belgeRender();}
 async function belgeFotoEkle(input){
   if(!input.files||!input.files.length||!_aktifBelgeDavet)return;
-  try{await kkBelgelerYukle(input.files,{davetId:_aktifBelgeDavet,spoolId:_bKapsam()||null,tip:'foto'});toast(tvv('kk_foto_eklendi','Foto eklendi'),'ok');}
+  var n=input.files.length, files=input.files;
+  document.getElementById('bGaleri').innerHTML='<div class="belge-yukleniyor"><span class="spin"></span>'+n+' '+tvv('kk_foto','foto')+' '+tvv('cmn_yukleniyor','yükleniyor…')+'</div>';
+  toast(tvv('kk_yukleniyor','Yükleniyor…'),'ok');
+  try{await kkBelgelerYukle(files,{davetId:_aktifBelgeDavet,spoolId:_bKapsam()||null,tip:'foto'});toast(n+' '+tvv('kk_foto_eklendi','foto eklendi'),'ok');}
   catch(e){console.error(e);toast(tvv('kk_hata_yukleme','Yükleme hatası')+': '+(e.message||e),'er');}
   input.value=''; await belgeYukleVeRender();
 }
 async function belgeDosyaEkle(input){
   if(!input.files||!input.files.length||!_aktifBelgeDavet)return;
-  try{await kkBelgelerYukle(input.files,{davetId:_aktifBelgeDavet,spoolId:_bKapsam()||null,tip:'belge'});toast(tvv('kk_belge_eklendi','Belge eklendi'),'ok');}
+  var n=input.files.length, files=input.files;
+  document.getElementById('bDosyalar').innerHTML='<div class="belge-yukleniyor"><span class="spin"></span>'+n+' '+tvv('kk_dosya','dosya')+' '+tvv('cmn_yukleniyor','yükleniyor…')+'</div>';
+  toast(tvv('kk_yukleniyor','Yükleniyor…'),'ok');
+  try{await kkBelgelerYukle(files,{davetId:_aktifBelgeDavet,spoolId:_bKapsam()||null,tip:'belge'});toast(n+' '+tvv('kk_belge_eklendi','belge eklendi'),'ok');}
   catch(e){console.error(e);toast(tvv('kk_hata_yukleme','Yükleme hatası')+': '+(e.message||e),'er');}
   input.value=''; await belgeYukleVeRender();
 }
