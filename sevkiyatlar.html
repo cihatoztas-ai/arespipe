@@ -768,11 +768,13 @@ function paketDrawerAc(pid){
     +_belgelerSec(p,haz);
 
   // FOOT — durum aksiyonları
+  var yazdirBtn=(p.tip==='giden_spool')?'<button class="btn'+(haz?'':' ml-a')+'" onclick="sevkiyatListesiYazdir(\''+p.id+'\')">🖨 Sevkiyat Listesi</button>':'';
   var foot = haz
     ? '<span class="info">⚠ <b>Hazırlanıyor</b> — spool ekle/çıkar, liste/irsaliye yazdır. Kamyona yüklenince Sevk Et.</span>'
+      +yazdirBtn
       +'<button class="btn btn-danger" onclick="paketIptal(\''+p.id+'\')">Paketi sil</button>'
       +'<button class="btn btn-ok ml-a" onclick="sevkEt(\''+p.id+'\')">🚚 Sevk Et (kilitle)</button>'
-    : '<span class="info">✓ <b>Sevk edildi</b> — paket kilitli, içerik değişmez.</span>';
+    : '<span class="info">✓ <b>Sevk edildi</b> — paket kilitli, içerik değişmez.</span>'+yazdirBtn;
 
   drawerCiz(head,body,foot);
 }
@@ -884,6 +886,74 @@ async function belgeSil(id){
   if(_drawerKey)paketDrawerAc(_drawerKey);
 }
 /* === /205 belge/foto storage === */
+
+/* === 205 sevkiyat listesi pdf === */
+function sevkiyatListesiYazdir(pid){
+  var p=SEVK.find(function(x){return x.id===pid;}); if(!p){toast('Paket bulunamadı','er');return;}
+  if(p.tip!=='giden_spool'){toast('Bu paket türünde spool listesi yok','er');return;}
+  var g=pkgGonderen(p), a=pkgAlici(p);
+  var lang=document.documentElement.getAttribute('lang')||'tr';
+  var tarihStr=p.tarih||new Date().toLocaleDateString(lang);
+  var sp=p._spoollar||[];
+  var topKg=sp.reduce(function(x,s){return x+(s.agir||0);},0);
+  var sat=sp.map(function(s,i){
+    var et=(s.et!=null)?_fmt(s.et):'—';
+    return '<tr style="border-bottom:1px solid #e2e8f0;">'
+      +'<td style="padding:5px 8px;text-align:right;color:#94a3b8;">'+(i+1)+'</td>'
+      +'<td style="padding:5px 8px;font-weight:600;">'+esc(s.marka||'—')+'</td>'
+      +'<td style="padding:5px 8px;">'+esc(s.rev||'—')+'</td>'
+      +'<td style="padding:5px 8px;color:#2D8EFF;font-weight:600;">'+esc(markaId(s.spool_id))+'</td>'
+      +'<td style="padding:5px 8px;text-align:right;">'+_fmt(s.cap)+'</td>'
+      +'<td style="padding:5px 8px;text-align:right;">'+et+'</td>'
+      +'<td style="padding:5px 8px;text-align:right;">'+_fmt(s.agir)+' kg</td>'
+      +'<td style="padding:5px 8px;">'+esc(s.mat||'—')+'</td>'
+      +'<td style="padding:5px 8px;">'+esc(s.kalite||'—')+'</td>'
+      +'<td style="padding:5px 8px;">'+esc(s.yuzey||'—')+'</td>'
+      +'</tr>';
+  }).join('');
+  function kv(k,v){return v?('<span style="margin-right:18px;"><b style="color:#1e293b;">'+esc(k)+':</b> <span style="color:#475569;">'+esc(v)+'</span></span>'):'';}
+  var durumRoz=' &nbsp;·&nbsp; <span style="font-weight:700;color:'+(p.durum==='sevk_edildi'?'#16a36e':'#d97706')+';">'+(p.durum==='sevk_edildi'?'Sevk edildi':'Hazırlanıyor')+'</span>';
+  var w=window.open('','_blank'); if(!w){toast('Açılır pencere engellendi (popup izni verin)','er');return;}
+  w.document.write('<!DOCTYPE html><html lang="'+lang+'"><head><meta charset="UTF-8">'
+    +'<title>Sevkiyat Listesi '+esc(p.sevk_no||'')+' — AresPipe</title><style>'
+    +'@page{size:A4 landscape;margin:14mm 12mm;}'
+    +'body{margin:0;padding:112px 0 40px;font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    +'.toolbar{position:fixed;top:0;left:0;right:0;height:44px;background:#334155;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;gap:8px;z-index:10000;}'
+    +'.ph{position:fixed;top:44px;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 12mm;border-bottom:1px solid #e2e8f0;background:#fff;z-index:9999;}'
+    +'.pf{position:fixed;bottom:0;left:0;right:0;height:28px;display:flex;align-items:center;justify-content:center;border-top:1px solid #e2e8f0;background:#fff;font-size:12px;color:#94a3b8;z-index:9999;}'
+    +'.lf-ad{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:1px;}.la-ad{font-size:15px;font-weight:800;color:#2D8EFF;}'
+    +'.ic{padding:0 12mm;}table{width:100%;border-collapse:collapse;font-size:12px;}'
+    +'thead th{padding:6px 8px;text-align:left;font-size:10px;color:#637080;text-transform:uppercase;border-bottom:2px solid #1e293b;}'
+    +'@media print{.toolbar{display:none!important;}.ph{top:0;}body{padding:60px 0 32px;}}'
+    +'</style></head><body>'
+    +'<div class="toolbar">'
+      +'<button onclick="window.print()" style="padding:6px 14px;background:#2D8EFF;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;">🖨 Yazdır / PDF</button>'
+      +'<button onclick="window.close()" style="padding:6px 12px;background:transparent;color:#94a3b8;border:1px solid #475569;border-radius:6px;font-size:14px;cursor:pointer;">✕ Kapat</button></div>'
+    +'<div class="ph">'
+      +'<div style="display:flex;align-items:center;gap:8px;">'+(window.aresFirmaLogo?window.aresFirmaLogo(40):'<span class="lf-ad">'+esc(BIZ_AD||'AresPipe')+'</span>')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;">'+(window.aresLogoPrint?window.aresLogoPrint(34):'<span class="la-ad">AresPipe</span>')+'</div></div>'
+    +'<div class="pf">Bu belge AresPipe tarafından üretilmiştir.</div>'
+    +'<div class="ic">'
+      +'<div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:10px;margin-bottom:6px;">'
+        +'<div style="font-size:19px;font-weight:800;letter-spacing:.5px;">SEVKİYAT LİSTESİ</div>'
+        +'<div style="font-size:13px;color:#64748b;text-align:right;"><b style="color:#1e293b;">No:</b> '+esc(p.sevk_no||'—')+' &nbsp;·&nbsp; '+esc(tarihStr)+durumRoz+'</div></div>'
+      +'<div style="font-size:13px;margin:10px 0 14px;line-height:1.9;">'
+        +'<span style="margin-right:18px;"><b>Gönderen:</b> '+esc(g.n)+' <span style="color:#94a3b8;">→</span> <b>Alıcı:</b> '+esc(a.n)+'</span>'
+        +kv('Proje',(p._proje&&p._proje!=='—')?p._proje:'')
+        +kv('Araç',p.arac_plaka)+kv('İrsaliye No',p.irsaliye_no)+kv('Sevk Fiş No',p.sevk_fis_no)
+        +kv('Teslim Alan',p.teslim_alan)
+      +'</div>'
+      +'<table><thead><tr>'
+        +'<th style="text-align:right;width:30px;">#</th><th>Marka</th><th>Rev</th><th>Spool ID</th>'
+        +'<th style="text-align:right;">Çap</th><th style="text-align:right;">Et</th><th style="text-align:right;">Ağırlık</th>'
+        +'<th>Malzeme</th><th>Kalite</th><th>Yüzey</th>'
+      +'</tr></thead><tbody>'+sat+'</tbody>'
+      +'<tfoot><tr style="border-top:2px solid #1e293b;font-weight:700;"><td colspan="6" style="padding:8px;text-align:right;">Toplam ('+sp.length+' spool)</td><td style="padding:8px;text-align:right;">'+_fmt(topKg)+' kg</td><td colspan="3"></td></tr></tfoot>'
+      +'</table>'
+    +'</div></body></html>');
+  w.document.close();
+}
+/* === /205 sevkiyat listesi pdf === */
 
 async function spoolPaketCikar(spoolId){
   if(!_drawerKey)return;
