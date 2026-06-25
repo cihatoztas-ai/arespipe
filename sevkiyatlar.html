@@ -355,6 +355,7 @@ function _spNorm(s){var dev=s.devreler||{},prj=dev.projeler||{},trs=prj.tersanel
 /* ───────── YÜKLEME ───────── */
 async function veriYukle(){
   var supa=ARES.supabase(), tid=ARES.tenantId();
+  if(!supa||!tid){console.error('veriYukle: supabase/tenantId hazir degil');return;}
   try{
     var tn=await supa.from('tenants').select('ad').eq('id',tid).single();
     if(tn.data&&tn.data.ad)BIZ_AD=tn.data.ad;
@@ -646,10 +647,15 @@ function tabGit(v){document.querySelectorAll('.main-tab').forEach(function(t){t.
 
 /* ───────── INIT ───────── */
 (function init(){
-  var tries=0;
-  function hazirMi(){ return typeof ARES!=='undefined' && typeof ARES.supabase==='function' && ARES.supabase()!=null; }
-  function go(){ if(!hazirMi()){ if(++tries>200){console.error('ARES.supabase hazir olmadi');return;} setTimeout(go,60); return; } veriYukle(); }
-  if(document.readyState!=='loading')go(); else document.addEventListener('DOMContentLoaded',go);
+  function calistir(){
+    var p = (typeof ARES.oturumKontrol==='function') ? Promise.resolve(ARES.oturumKontrol()) : Promise.resolve();
+    p.then(function(){
+      if(ARES.tenantId()){ veriYukle(); return; }
+      var t=0, iv=setInterval(function(){ if(ARES.tenantId()||++t>200){ clearInterval(iv); if(ARES.tenantId())veriYukle(); else console.error('tenantId gelmedi'); } },60);
+    }).catch(function(e){ console.error('oturumKontrol hata:',e); });
+  }
+  function bekle(){ if(typeof ARES==='undefined'||typeof ARES.supabase!=='function'||!ARES.supabase()){setTimeout(bekle,60);return;} calistir(); }
+  if(document.readyState!=='loading')bekle(); else document.addEventListener('DOMContentLoaded',bekle);
 })();
 </script>
 </body>
