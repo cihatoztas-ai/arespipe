@@ -372,6 +372,35 @@
   </div>
 </div>
 
+<!-- MODAL: Belge / Foto ekle (sevkiyat paketi) -->
+<div id="m-belge" class="modbg gizli">
+  <div class="mod" style="max-width:520px;">
+    <div class="modh"><h2>Belge / Foto Ekle</h2><button class="x" onclick="modKapat('m-belge')">×</button></div>
+    <div class="modb">
+      <div class="frm">
+        <input type="hidden" id="bgSevkId">
+        <label>Dosya</label>
+        <label id="bgLabel" style="display:flex;align-items:center;gap:8px;padding:14px;border:1px dashed var(--bor);border-radius:8px;cursor:pointer;color:var(--txm);">
+          <span>Dosya seç</span>
+          <input type="file" id="bgInput" onchange="belgeDosyaSec(this)" style="display:none;">
+        </label>
+        <div class="ikili">
+          <div><label>Belge Adı</label><input id="bgAd" placeholder="İrsaliye 2026-001"></div>
+          <div><label>Tür</label><select id="bgTur">
+            <option value="irsaliye">İrsaliye</option>
+            <option value="teslim_fisi">Teslim Fişi</option>
+            <option value="foto">Foto</option>
+            <option value="sertifika">Sertifika</option>
+            <option value="rapor">Rapor</option>
+            <option value="diger">Diğer</option>
+          </select></div>
+        </div>
+      </div>
+    </div>
+    <div class="modf"><button class="btn btn-gho" onclick="modKapat('m-belge')">Vazgeç</button><button class="btn btn-pri ml-a" id="bgBtn" onclick="belgeKaydet()">Yükle</button></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="ares-store.js"></script>
@@ -651,6 +680,7 @@ async function sevkYukle(){
     return p;
   });
   document.getElementById('cntSevk').textContent=SEVK.length;
+  await belgelerYukle();
   sevkRender();
 }
 function pkgGonderen(p){return p.tip==='gelen_malzeme'?{n:p._tersane,biz:false}:{n:BIZ_AD,biz:true};}
@@ -735,7 +765,7 @@ function paketDrawerAc(pid){
       +'<div class="kart"><h4>Özet</h4>'+ozet+(p.not_?'<div class="kv" style="margin-top:10px;border-top:1px solid var(--bor);padding-top:10px;"><span class="k">Not</span><span class="v">'+esc(p.not_)+'</span></div>':(ozet?'':'<div class="kv bos"><span class="k">Not</span><span class="v">—</span></div>'))+'</div>'
     +'</div>'
     +icerik
-    +'<div class="dw-sec"><h3>Belgeler & Fotoğraflar</h3><div class="defer">İrsaliye, teslimat fişi ve fotoğraf eki sonraki parçada (Storage bağlama) eklenecek.</div></div>';
+    +_belgelerSec(p,haz);
 
   // FOOT — durum aksiyonları
   var foot = haz
@@ -747,6 +777,113 @@ function paketDrawerAc(pid){
   drawerCiz(head,body,foot);
 }
 function _kv(k,v){var bos=!v;return '<div class="kv'+(bos?' bos':'')+'"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v||'—')+'</span></div>';}
+
+/* === 205 belge/foto storage === */
+function _turLbl(t){return {izometri:'İzometri',sertifika:'Sertifika',prosedur:'Prosedür',rapor:'Rapor',irsaliye:'İrsaliye',teslim_fisi:'Teslim Fişi',foto:'Foto',diger:'Diğer'}[t]||'Diğer';}
+function _belgelerSec(p,haz){
+  var arr=p._belgeler||[];
+  var head='<div class="dw-sec"><h3>Belgeler &amp; Fotoğraflar <span class="c">'+arr.length+'</span>'
+    +(haz?'<button class="sec-ekle" onclick="belgeModalAc()">+ Belge / Foto ekle</button>':'')+'</h3>';
+  if(!arr.length){
+    return head+'<div class="defer">'+(haz?'Henüz belge/foto eklenmedi. "Belge / Foto ekle" ile irsaliye, teslim fişi veya fotoğraf yükleyin.':'Belge/foto eklenmedi.')+'</div></div>';
+  }
+  var rows=arr.map(function(b){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);">'
+      +'<span style="flex:1;min-width:0;"><span style="font-size:13px;font-weight:600;">'+esc(b.ad)+'</span> '
+      +'<span style="padding:1px 6px;border-radius:6px;background:var(--sur2);color:var(--txm);font-size:11px;font-weight:700;">'+esc(_turLbl(b.tur))+'</span>'
+      +'<span style="color:var(--txd);font-size:12px;margin-left:6px;">'+esc(b.tarih)+'</span></span>'
+      +'<button class="btn sm" onclick="belgeAc(\''+esc(b.dosyaPath)+'\')" title="Aç">↗</button>'
+      +(haz?'<button class="cikar" title="Sil" onclick="belgeSil(\''+esc(b.id)+'\')">×</button>':'')
+      +'</div>';
+  }).join('');
+  return head+'<div>'+rows+'</div></div>';
+}
+async function belgelerYukle(){
+  if(!SEVK.length)return;
+  var supa=ARES.supabase(), tid=ARES.tenantId();
+  var ids=SEVK.map(function(p){return p.id;});
+  var br=await supa.from('belgeler')
+    .select('id,sevkiyat_id,ad,tur,dosya_url,dosya_boyut,olusturma')
+    .eq('tenant_id',tid).in('sevkiyat_id',ids).neq('silindi',true)
+    .order('olusturma',{ascending:false});
+  var byId={};
+  if(!br.error){
+    var lang=document.documentElement.getAttribute('lang')||'tr';
+    (br.data||[]).forEach(function(b){
+      (byId[b.sevkiyat_id]=byId[b.sevkiyat_id]||[]).push({
+        id:b.id, ad:b.ad, tur:b.tur||'diger',
+        dosyaPath:b.dosya_url||'',
+        tarih:b.olusturma?new Date(b.olusturma).toLocaleDateString(lang):''
+      });
+    });
+  }else{ console.warn('belgelerYukle:',br.error); }
+  SEVK.forEach(function(p){p._belgeler=byId[p.id]||[];});
+}
+function belgeModalAc(){
+  if(!_drawerKey)return;
+  var p=SEVK.find(function(x){return x.id===_drawerKey;});
+  if(!p||p.durum==='sevk_edildi'){toast('Sevk edilmiş paket — belge eklenemez','er');return;}
+  document.getElementById('bgSevkId').value=_drawerKey;
+  document.getElementById('bgAd').value='';
+  document.getElementById('bgTur').value='irsaliye';
+  document.getElementById('bgInput').value='';
+  var lbl=document.getElementById('bgLabel'); if(lbl)lbl.querySelector('span').textContent='Dosya seç';
+  var b=document.getElementById('bgBtn'); if(b)b.disabled=false;
+  modAc('m-belge');
+}
+function belgeDosyaSec(input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  document.getElementById('bgLabel').querySelector('span').textContent='✓ '+f.name;
+  var ad=document.getElementById('bgAd'); if(ad&&!ad.value.trim())ad.value=f.name.replace(/\.[^/.]+$/,'');
+}
+async function belgeKaydet(){
+  var sevkId=document.getElementById('bgSevkId').value;
+  var inp=document.getElementById('bgInput'); var file=inp&&inp.files&&inp.files[0];
+  var ad=(document.getElementById('bgAd').value||'').trim();
+  var tur=document.getElementById('bgTur').value||'diger';
+  if(!sevkId){toast('Paket bulunamadı','er');return;}
+  if(!file){toast('Dosya seçin','er');return;}
+  if(!ad){toast('Belge adı zorunlu','er');return;}
+  var btn=document.getElementById('bgBtn'); if(btn)btn.disabled=true;
+  var supa=ARES.supabase(), tid=ARES.tenantId();
+  var path='';
+  try{
+    var bucketPath=tid+'/sevkiyat/'+sevkId+'/'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var upRes=await supa.storage.from('arespipe-dosyalar').upload(bucketPath,file,{contentType:file.type||'application/octet-stream',upsert:false});
+    if(upRes.error)throw new Error(upRes.error.message);
+    path=upRes.data.path;
+    var uid=(ARES.kullaniciId&&ARES.kullaniciId())||null;
+    var dbRes=await supa.from('belgeler').insert({
+      tenant_id:tid, sevkiyat_id:sevkId, ad:ad, tur:tur,
+      dosya_url:path, dosya_boyut:file.size||null, yukleyen_id:uid
+    }).select().single();
+    if(dbRes.error){ await supa.storage.from('arespipe-dosyalar').remove([path]); throw new Error(dbRes.error.message); }
+    modKapat('m-belge');
+    toast(ad+' eklendi','ok');
+    await belgelerYukle();
+    if(_drawerKey)paketDrawerAc(_drawerKey);
+  }catch(e){
+    if(btn)btn.disabled=false;
+    console.warn('belgeKaydet:',e);
+    toast('Hata: '+(e.message||e),'er');
+  }
+}
+async function belgeAc(path){
+  if(!path){toast('Dosya yolu yok','er');return;}
+  var url='';
+  try{ if(typeof ARES!=='undefined'&&typeof ARES.dosyaUrlAl==='function')url=await ARES.dosyaUrlAl(path)||''; }catch(e){}
+  if(url)window.open(url,'_blank'); else toast('Dosya açılamadı','er');
+}
+async function belgeSil(id){
+  if(!confirm('Belge silinsin mi?'))return;
+  var supa=ARES.supabase();
+  var res=await supa.from('belgeler').update({silindi:true,silinme_tarihi:new Date().toISOString()}).eq('id',id);
+  if(res.error){toast('Hata: '+res.error.message,'er');return;}
+  toast('Belge silindi','bilgi');
+  await belgelerYukle();
+  if(_drawerKey)paketDrawerAc(_drawerKey);
+}
+/* === /205 belge/foto storage === */
 
 async function spoolPaketCikar(spoolId){
   if(!_drawerKey)return;
