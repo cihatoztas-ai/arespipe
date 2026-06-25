@@ -73,6 +73,52 @@
 /* GÖNDEREN/ALICI — Aresmak yeşil (yalnız ona özel) */
 .biz{font-weight:700;color:var(--gr);font-size:13px;}
 
+/* DURUM rozeti (Hazırlanıyor / Sevk edildi) */
+.dstat{font-size:11px;font-weight:700;padding:3px 10px;border-radius:7px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.dstat .pt{width:7px;height:7px;border-radius:50%;background:currentColor;}
+.dstat.hz{color:var(--warn);background:rgba(217,119,6,.14);}
+.dstat.se{color:var(--gr);background:rgba(22,163,110,.14);}
+
+/* DRAWER header akış bloğu */
+.hd-no-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.hd-flow{display:flex;align-items:center;gap:16px;margin-top:13px;flex-wrap:wrap;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:11px 15px;}
+.tarafblok{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.tarafblok .rol{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--txd);}
+.tarafblok .ad{font-size:15px;font-weight:600;color:var(--tx);}
+.tarafblok .ad.biz{color:var(--gr);}
+.hd-flow .ok{color:var(--txd);font-size:18px;}
+.hd-flow .sep{width:1px;align-self:stretch;background:var(--bor);}
+.hd-flow .meta{display:flex;flex-direction:column;gap:2px;}
+.hd-flow .meta .rol{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--txd);}
+.hd-flow .meta .val{font-size:14px;font-weight:600;color:var(--tx);}
+.hd-flow .meta .val.proje{font-family:'Barlow Condensed',sans-serif;color:var(--leg);}
+.hd-flow .sag{margin-left:auto;}
+
+/* İçerik bölüm başlığı + ekle butonu */
+.sec-ekle{margin-left:auto;font-size:12px;font-weight:600;color:var(--ac);background:rgba(45,142,255,.1);border:1px solid rgba(45,142,255,.3);border-radius:7px;padding:5px 11px;cursor:pointer;}
+.cikar{background:rgba(229,62,62,.12);color:var(--re);border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;}
+.cikar:hover{background:rgba(229,62,62,.22);}
+
+/* DRAWER alt aksiyon barı */
+.dw-foot{display:flex;align-items:center;gap:10px;padding:13px 22px;border-top:1px solid var(--bor);background:var(--sur2);flex:0 0 auto;}
+.dw-foot .info{font-size:12.5px;color:var(--txm);}
+.dw-foot .info b{color:var(--tx);}
+.btn-ok{background:var(--gr);border-color:var(--gr);color:#fff;}
+.btn-ok:hover{filter:brightness(1.08);}
+.btn-danger{color:var(--re);border-color:rgba(229,62,62,.4);background:none;}
+
+/* DRAWER gövde kartları */
+.kartlar{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin:0 22px 4px;}
+.kart{background:var(--sur2);border:1px solid var(--bor);border-radius:12px;padding:14px 15px;}
+.kart h4{margin:0 0 11px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txd);}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;}
+.kv .k{color:var(--txm);}.kv .v{color:var(--tx);font-weight:500;text-align:right;}
+.kv.bos .v{color:var(--txd);opacity:.45;}
+.ozet-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.metrik{text-align:center;background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:11px 8px;}
+.metrik .n{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--ac);line-height:1;}
+.metrik .l{font-size:11px;color:var(--txm);margin-top:4px;}
+
 /* AKSİYON BAR (KK birebir) */
 .aksbar{position:sticky;bottom:0;margin-top:14px;display:flex;align-items:center;gap:12px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:12px 16px;box-shadow:0 -2px 12px rgba(0,0,0,.18);}
 .aksbar .sec{font-size:14px;color:var(--txm);}.aksbar .sec b{color:var(--tx);}
@@ -204,6 +250,7 @@
   <section id="v-sevk" class="view">
     <div class="filtre">
       <select class="filter-select" id="fTur" onchange="sevkRender()"><option value="">Tür: hepsi</option><option value="giden_spool">Spool Sevkiyatı</option><option value="serbest_giden">Giden Malzeme</option><option value="gelen_malzeme">Gelen Malzeme</option></select>
+      <select class="filter-select" id="fDurum" onchange="sevkRender()"><option value="">Durum: hepsi</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="sevk_edildi">Sevk edildi</option></select>
       <span class="flbl">Tarih:</span>
       <input type="date" class="date-input" id="fD1" onchange="sevkRender()">
       <span class="flbl">–</span>
@@ -226,7 +273,7 @@
     <div id="havuzListe"><div class="yukleniyor" data-i18n="cmn_yukleniyor">Yükleniyor…</div></div>
     <div class="aksbar">
       <span class="sec"><b id="secN">0</b> spool seçili <span id="secKg" style="color:var(--txd);"></span></span>
-      <button class="btn btn-pri ml-a" id="btnSevk" onclick="sevkEtAc()" disabled>🚚 Sevk Et</button>
+      <button class="btn btn-pri ml-a" id="btnSevk" onclick="hazirlaAc()" disabled>📦 Sevkiyata Hazırla</button>
     </div>
   </section>
 
@@ -239,6 +286,7 @@
 <aside id="drawer" class="drawer" aria-label="Detay">
   <div class="drawer-head" id="drawerHead"></div>
   <div class="drawer-body" id="drawerBody"></div>
+  <div class="dw-foot" id="drawerFoot" style="display:none;"></div>
 </aside>
 
 <!-- MODAL: Sevkiyat Ekle (tip) -->
@@ -247,11 +295,12 @@
     <div class="modh"><h2>Yeni Sevkiyat</h2><button class="x" onclick="modKapat('m-tip')">×</button></div>
     <div class="modb">
       <p style="font-size:13px;color:var(--txm);margin:0 0 14px;">Sevkiyat türünü seç:</p>
-      <div class="tip-grid">
-        <div class="tip-card" onclick="malzemeAc('serbest_giden')"><div class="big">📤</div><div class="t">Giden Malzeme</div><div class="d">Artan · hurda · iade · değişecek</div></div>
-        <div class="tip-card" onclick="malzemeAc('gelen_malzeme')"><div class="big">📥</div><div class="t">Gelen Malzeme</div><div class="d">Tersaneden / tedarikçiden gelen</div></div>
+      <div class="tip-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="tip-card" onclick="spoolSevkiyatGit()"><div class="big">🚚</div><div class="t">Spool Sevkiyatı</div><div class="d">Havuzdan spool seç → hazırla</div></div>
+        <div class="tip-card" onclick="malzemeAc('serbest_giden')"><div class="big">📤</div><div class="t">Giden Malzeme</div><div class="d">Artan · hurda · iade</div></div>
+        <div class="tip-card" onclick="malzemeAc('gelen_malzeme')"><div class="big">📥</div><div class="t">Gelen Malzeme</div><div class="d">Tersaneden / tedarikçiden</div></div>
       </div>
-      <p style="font-size:12px;color:var(--txd);margin:14px 0 0;line-height:1.5;">Spool sevkiyatı buradan değil — "Sevkiyat Hazırlık"tan spool seçip <b>Sevk Et</b> ile oluşturulur.</p>
+      <p style="font-size:12px;color:var(--txd);margin:14px 0 0;line-height:1.5;">Spool sevkiyatı için "Sevkiyat Hazırlık" sekmesinden spool seçip <b>Sevkiyata Hazırla</b> yapılır.</p>
     </div>
   </div>
 </div>
@@ -259,7 +308,7 @@
 <!-- MODAL: Sevk Et (spool paketi) -->
 <div id="m-sevk" class="modbg gizli">
   <div class="mod">
-    <div class="modh"><h2>Spool Sevkiyatı Oluştur</h2><button class="x" onclick="modKapat('m-sevk')">×</button></div>
+    <div class="modh"><h2>Sevkiyata Hazırla</h2><button class="x" onclick="modKapat('m-sevk')">×</button></div>
     <div class="modb">
       <div id="sevkGuard"></div>
       <div class="frm">
@@ -279,7 +328,7 @@
       </div>
       <div id="sevkOzet" style="margin-top:14px;"></div>
     </div>
-    <div class="modf"><button class="btn btn-gho" onclick="modKapat('m-sevk')">Vazgeç</button><button class="btn btn-pri ml-a" id="svBtn" onclick="sevkOnayla()">Oluştur (S…)</button></div>
+    <div class="modf"><button class="btn btn-gho" onclick="modKapat('m-sevk')">Vazgeç</button><button class="btn btn-pri ml-a" id="svBtn" onclick="hazirlaOnayla()">Hazırla (S…)</button></div>
   </div>
 </div>
 
@@ -308,6 +357,18 @@
       </div>
     </div>
     <div class="modf"><button class="btn btn-gho" onclick="modKapat('m-malzeme')">Vazgeç</button><button class="btn btn-pri ml-a" id="mzBtn" onclick="malzemeOnayla()">Oluştur (S…)</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Havuzdan spool ekle (hazırlanıyor pakete) -->
+<div id="m-havuzekle" class="modbg gizli">
+  <div class="mod" style="max-width:820px;">
+    <div class="modh"><h2>Havuzdan Spool Ekle</h2><button class="x" onclick="modKapat('m-havuzekle')">×</button></div>
+    <div class="modb">
+      <div id="heGuard"></div>
+      <div id="heListe"><div class="yukleniyor">Yükleniyor…</div></div>
+    </div>
+    <div class="modf"><span class="info" id="heOzet" style="font-size:13px;color:var(--txm);"></span><button class="btn btn-gho" onclick="modKapat('m-havuzekle')">Vazgeç</button><button class="btn btn-pri ml-a" id="heBtn" onclick="havuzEkleOnayla()" disabled>Pakete Ekle</button></div>
   </div>
 </div>
 
@@ -497,7 +558,7 @@ function havuzDrawerYenile(){if(_drawerTip==='havuz'&&_drawerKey){var still=HAVU
 
 /* ───────── SEVK ET (spool paketi) ───────── */
 function _seciliSpoollar(){var all=HAVUZ.reduce(function(a,g){return a.concat(g.spoollar);},[]);return all.filter(function(s){return _secili[s.id];});}
-function sevkEtAc(){
+function hazirlaAc(){
   var sec=_seciliSpoollar(); if(!sec.length)return;
   var trs=[...new Set(sec.map(function(s){return s._tersane_id;}))];
   var tekT=trs.length===1;
@@ -512,7 +573,7 @@ function sevkEtAc(){
     +'</tbody><tfoot><tr><td colspan="2">Toplam ('+sec.length+' spool)</td><td>'+_fmt(kg)+' kg</td></tr></tfoot></table>';
   modAc('m-sevk');
 }
-async function sevkOnayla(){
+async function hazirlaOnayla(){
   var sec=_seciliSpoollar(); if(!sec.length){toast('Spool seçili değil','er');return;}
   var trs=[...new Set(sec.map(function(s){return s._tersane_id;}))]; if(trs.length>1){toast('Tek tersane olmalı','er');return;}
   var btn=document.getElementById('svBtn'); btn.disabled=true; btn.textContent='Kaydediliyor…';
@@ -521,7 +582,7 @@ async function sevkOnayla(){
     var sevkNo=await ARES.sonrakiNo('sevkiyat');
     var kg=sec.reduce(function(a,s){return a+(parseFloat(s.agirlik)||0);},0);
     var ins=await supa.from('sevkiyatlar').insert({
-      tenant_id:tid, tersane_id:trs[0]||sec[0]._tersane_id, sevk_no:sevkNo, tip:'giden_spool',
+      tenant_id:tid, tersane_id:trs[0]||sec[0]._tersane_id, sevk_no:sevkNo, tip:'giden_spool', durum:'hazirlaniyor',
       tarih:document.getElementById('svTarih').value||new Date().toISOString().slice(0,10),
       arac_plaka:document.getElementById('svArac').value||null, irsaliye_no:document.getElementById('svIrsaliye').value||null,
       sevk_fis_no:document.getElementById('svFis').value||null, teslim_alan:document.getElementById('svTeslim').value||null,
@@ -533,10 +594,11 @@ async function sevkOnayla(){
     var jr=await supa.from('sevkiyat_spooller').insert(sec.map(function(s){return {tenant_id:tid,sevkiyat_id:sevkId,spool_id:s.id};}));
     if(jr.error)throw jr.error;
     modKapat('m-sevk'); _secili={};
-    toast(sevkNo+' oluşturuldu ('+sec.length+' spool)','ok');
+    toast(sevkNo+' hazırlanıyor ('+sec.length+' spool)','ok');
     await havuzYukle(); await sevkYukle();
+    tabGit('sevk'); paketDrawerAc(sevkId);
   }catch(e){toast('Hata: '+(e.message||e),'er');}
-  btn.disabled=false; btn.textContent='Oluştur (S…)';
+  btn.disabled=false; btn.textContent='Hazırla (S…)';
 }
 
 /* ───────── MALZEME (gelen/giden) ───────── */
@@ -575,12 +637,16 @@ async function malzemeOnayla(){
 async function sevkYukle(){
   var supa=ARES.supabase(), tid=ARES.tenantId();
   var sv=await supa.from('sevkiyatlar')
-    .select('id,sevk_no,sevk_fis_no,tip,tarih,arac_plaka,irsaliye_no,teslim_alan,teslim_tel,not_,icerik,tersane_id,olusturma,tersaneler(ad,kisa_ad),sevkiyat_spooller(spool_id,spooller(spool_no,pipeline_no,rev,agirlik,malzeme,devre_id,devreler(devre_no,projeler(proje_no))))')
+    .select('id,sevk_no,sevk_fis_no,tip,durum,tarih,arac_plaka,irsaliye_no,teslim_alan,teslim_tel,not_,icerik,tersane_id,olusturma,tersaneler(ad,kisa_ad),sevkiyat_spooller(spool_id,spooller(id,spool_no,spool_id,pipeline_no,rev,dis_cap_mm,et_kalinligi_mm,agirlik,malzeme,kalite,yuzey,devre_id,devreler(devre_no,projeler(proje_no))))')
     .eq('tenant_id',tid).order('olusturma',{ascending:false});
   if(sv.error){document.getElementById('sevkListe').innerHTML='<div class="bos">Sevkiyatlar yüklenemedi.</div>';return;}
   SEVK=(sv.data||[]).map(function(p){
     var trs=p.tersaneler||{}; p._tersane=trs.kisa_ad||trs.ad||'—';
-    p._spoollar=(p.sevkiyat_spooller||[]).map(function(j){var s=j.spooller||{};var dv=s.devreler||{},prj=dv.projeler||{};return {marka:[prj.proje_no,s.pipeline_no,s.spool_no].filter(Boolean).join('-')||s.spool_no,devre:dv.devre_no,agir:parseFloat(s.agirlik)||0,proje:prj.proje_no};});
+    if(!p.durum)p.durum='hazirlaniyor';
+    p._spoollar=(p.sevkiyat_spooller||[]).map(function(j){var s=j.spooller||{};var dv=s.devreler||{},prj=dv.projeler||{};
+      return {id:s.id, spool_id:s.spool_id, marka:[prj.proje_no,s.pipeline_no,s.spool_no].filter(Boolean).join('-')||s.spool_no,
+        rev:s.rev, cap:s.dis_cap_mm, et:s.et_kalinligi_mm, agir:parseFloat(s.agirlik)||0, mat:s.malzeme, kalite:s.kalite, yuzey:s.yuzey,
+        devre:dv.devre_no, proje:prj.proje_no};});
     p._proje=(p._spoollar[0]&&p._spoollar[0].proje)||'—';
     return p;
   });
@@ -593,11 +659,13 @@ function tarafCell(o){return o.biz?'<span class="biz">'+esc(o.n)+'</span>':tersa
 function _icerikOzet(p){if(p.tip==='giden_spool'){var kg=p._spoollar.reduce(function(a,s){return a+s.agir;},0);return p._spoollar.length+' spool · '+_fmt(kg)+' kg';}return p.icerik||'—';}
 function _parseTarih(t){if(!t)return null;var p=String(t).slice(0,10).split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 
+function _durumBadge(d){return d==='sevk_edildi'?'<span class="dstat se"><span class="pt"></span>Sevk edildi</span>':'<span class="dstat hz"><span class="pt"></span>Hazırlanıyor</span>';}
 function sevkRender(){
-  var tur=document.getElementById('fTur').value, ara=(document.getElementById('fAra').value||'').trim().toLowerCase();
+  var tur=document.getElementById('fTur').value, durum=document.getElementById('fDurum').value, ara=(document.getElementById('fAra').value||'').trim().toLowerCase();
   var d1=document.getElementById('fD1').value, d2=document.getElementById('fD2').value;
   var list=SEVK.filter(function(p){
     if(tur&&p.tip!==tur)return false;
+    if(durum&&p.durum!==durum)return false;
     if(ara){var hay=[p.sevk_no,p._proje,pkgGonderen(p).n,pkgAlici(p).n,p.irsaliye_no].join(' ').toLowerCase();if(hay.indexOf(ara)<0)return false;}
     var d=_parseTarih(p.tarih);
     if(d1&&d&&d<new Date(d1))return false;
@@ -607,12 +675,12 @@ function sevkRender(){
   var el=document.getElementById('sevkListe');
   if(!list.length){el.innerHTML='<div class="bos">Sevkiyat kaydı yok.</div>';return;}
   var h='<div class="table-wrap"><div class="table-header"><span class="table-title">Sevkiyat Paketleri</span><span class="table-updated">'+list.length+' paket</span></div>'
-    +'<div class="table-scroll"><table class="data-table kkml"><thead><tr><th style="width:34px;">#</th><th>Paket No</th><th>Tür</th><th>Gönderen</th><th>Alıcı</th><th>Proje</th><th>İçerik</th><th>Tarih</th></tr></thead><tbody>';
+    +'<div class="table-scroll"><table class="data-table kkml"><thead><tr><th style="width:34px;">#</th><th>Paket No</th><th>Tür</th><th>Durum</th><th>Gönderen</th><th>Alıcı</th><th>Proje</th><th>İçerik</th><th>Tarih</th></tr></thead><tbody>';
   list.forEach(function(p,i){
     var aktif=_drawerTip==='paket'&&_drawerKey===p.id;
     h+='<tr class="mlrow'+(aktif?' aktif':'')+'" onclick="paketDrawerAc(\''+p.id+'\')">'
       +'<td class="cidx">'+(i+1)+'</td><td><span class="no">'+esc(p.sevk_no||'—')+'</span></td>'
-      +'<td>'+turBadge(p.tip)+'</td><td>'+tarafCell(pkgGonderen(p))+'</td><td>'+tarafCell(pkgAlici(p))+'</td>'
+      +'<td>'+turBadge(p.tip)+'</td><td>'+_durumBadge(p.durum)+'</td><td>'+tarafCell(pkgGonderen(p))+'</td><td>'+tarafCell(pkgAlici(p))+'</td>'
       +'<td><span class="proje">'+esc(p._proje)+'</span></td>'
       +'<td style="white-space:normal;max-width:240px;color:var(--txm);font-size:13px;">'+esc(_icerikOzet(p))+'</td>'
       +'<td class="pdate">'+esc(p.tarih||'—')+'</td></tr>';
@@ -620,31 +688,141 @@ function sevkRender(){
   h+='</tbody></table></div></div>';
   el.innerHTML=h;
 }
-function sevkTemizle(){document.getElementById('fTur').value='';document.getElementById('fAra').value='';document.getElementById('fD1').value='';document.getElementById('fD2').value='';sevkRender();}
+function sevkTemizle(){document.getElementById('fTur').value='';document.getElementById('fDurum').value='';document.getElementById('fAra').value='';document.getElementById('fD1').value='';document.getElementById('fD2').value='';sevkRender();}
 
 function paketDrawerAc(pid){
   var p=SEVK.find(function(x){return x.id===pid;}); if(!p){drawerKapat();return;}
   _drawerTip='paket';_drawerKey=pid;
-  var head='<div class="dw-top"><div><div class="dw-no">'+esc(p.sevk_no||'—')+'</div>'
-    +'<div class="dw-meta">'+tarafCell(pkgGonderen(p))+'<span>→</span>'+tarafCell(pkgAlici(p))+(p._proje&&p._proje!=='—'?'<span class="proje">'+esc(p._proje)+'</span>':'')+'</div></div>'
-    +'<button class="dw-x" onclick="drawerKapat()">×</button></div>'
-    +'<div class="dw-sub">'+turBadge(p.tip)+'<span class="pdate">'+esc(p.tarih||'')+'</span></div>';
+  var haz=(p.durum!=='sevk_edildi');
+  var g=pkgGonderen(p), a=pkgAlici(p);
+
+  // HEADER — akış bloğu
+  var head='<div class="hd-top" style="display:flex;align-items:flex-start;gap:14px;">'
+    +'<div><div class="hd-no-row"><span class="dw-no">'+esc(p.sevk_no||'—')+'</span>'+turBadge(p.tip)+_durumBadge(p.durum)+'</div></div>'
+    +'<button class="dw-x" onclick="drawerKapat()" style="margin-left:auto;">×</button></div>'
+    +'<div class="hd-flow">'
+      +'<div class="tarafblok"><span class="rol">Gönderen</span><span class="ad'+(g.biz?' biz':'')+'">'+esc(g.n)+'</span></div>'
+      +'<span class="ok">→</span>'
+      +'<div class="tarafblok"><span class="rol">Alıcı</span><span class="ad'+(a.biz?' biz':'')+'">'+esc(a.n)+'</span></div>'
+      +(p._proje&&p._proje!=='—'?'<span class="sep"></span><div class="meta"><span class="rol">Proje</span><span class="val proje">'+esc(p._proje)+'</span></div>':'')
+      +'<div class="meta sag"><span class="rol">Tarih</span><span class="val">'+esc(p.tarih||'—')+'</span></div>'
+    +'</div>';
+
+  // İÇERİK
   var icerik;
-  if(p.tip==='giden_spool'&&p._spoollar.length){
-    var kg=p._spoollar.reduce(function(a,s){return a+s.agir;},0);
-    icerik='<table class="itab"><thead><tr><th>Marka</th><th>Devre</th><th>Ağırlık</th></tr></thead><tbody>'
-      +p._spoollar.map(function(s){return '<tr><td><span class="no" style="font-size:14px;">'+esc(s.marka)+'</span></td><td style="color:var(--txm);">'+esc(s.devre||'—')+'</td><td class="agir">'+_fmt(s.agir)+' kg</td></tr>';}).join('')
-      +'</tbody><tfoot><tr><td colspan="2">Toplam ('+p._spoollar.length+' spool)</td><td>'+_fmt(kg)+' kg</td></tr></tfoot></table>';
-  }else{icerik='<div class="serb">'+esc(p.icerik||'—')+'</div>';}
-  var body='<div class="dw-sec"><h3>Teslimat Bilgileri</h3>'
-    +_inforow('Gönderen',pkgGonderen(p).n)+_inforow('Alıcı',pkgAlici(p).n)
-    +_inforow('Araç',p.arac_plaka||'—')+_inforow('İrsaliye No',p.irsaliye_no||'—')+_inforow('Sevk Fiş No',p.sevk_fis_no||'—')
-    +_inforow('Teslim Alan',p.teslim_alan||'—')+_inforow('Telefon',p.teslim_tel||'—')+_inforow('Not',p.not_||'—')+'</div>'
-    +'<div class="dw-sec"><h3>İçerik <span class="c">'+esc(_icerikOzet(p))+'</span></h3>'+icerik+'</div>'
+  if(p.tip==='giden_spool'){
+    var kg=p._spoollar.reduce(function(a2,s){return a2+s.agir;},0);
+    icerik='<div class="dw-sec"><h3>İçerik <span class="c">'+p._spoollar.length+' spool · '+_fmt(kg)+' kg</span>'
+      +(haz?'<button class="sec-ekle" onclick="havuzEkleAc()">+ Havuzdan spool ekle</button>':'')+'</h3>'
+      +'<div class="dw-scroll"><table class="dw-tab"><thead><tr><th class="num">#</th><th>Marka</th><th>Rev</th><th>Spool ID</th><th class="num">Çap</th><th class="num">Et</th><th class="num">Ağırlık</th><th>Malzeme</th><th>Kalite</th><th>Yüzey</th>'+(haz?'<th></th>':'')+'</tr></thead><tbody>'
+      +p._spoollar.map(function(s,i){var et=(s.et!=null)?_fmt(s.et):'—';
+        return '<tr><td class="num cidx">'+(i+1)+'</td><td class="mrk">'+esc(s.marka)+'</td><td>'+esc(s.rev||'—')+'</td><td class="sid">'+esc(markaId(s.spool_id))+'</td>'
+          +'<td class="num">'+_fmt(s.cap)+'</td><td class="num">'+et+'</td><td class="num">'+_fmt(s.agir)+' kg</td>'
+          +'<td>'+matBadge(s.mat)+'</td><td class="kal">'+kaliteGoster(s.kalite)+'</td><td>'+_yuzBadge(s.yuzey)+'</td>'
+          +(haz?'<td><button class="cikar" title="Paketten çıkar" onclick="spoolPaketCikar(\''+s.id+'\')">×</button></td>':'')+'</tr>';
+      }).join('')
+      +'</tbody><tfoot><tr><td class="num" colspan="6">Toplam ('+p._spoollar.length+' spool)</td><td class="num agir">'+_fmt(kg)+' kg</td><td colspan="'+(haz?4:3)+'"></td></tr></tfoot></table></div></div>';
+  }else{
+    icerik='<div class="dw-sec"><h3>İçerik</h3><div class="serb">'+esc(p.icerik||'—')+'</div></div>';
+  }
+
+  // GÖVDE — teslimat + özet kartları
+  var ozet = p.tip==='giden_spool'
+    ? '<div class="ozet-grid"><div class="metrik"><div class="n">'+p._spoollar.length+'</div><div class="l">spool</div></div><div class="metrik"><div class="n">'+_fmt(p._spoollar.reduce(function(a2,s){return a2+s.agir;},0))+'</div><div class="l">kg toplam</div></div></div>'
+    : '';
+  var body='<div class="kartlar">'
+      +'<div class="kart"><h4>Teslimat</h4>'+_kv('Araç',p.arac_plaka)+_kv('İrsaliye No',p.irsaliye_no)+_kv('Sevk Fiş No',p.sevk_fis_no)+_kv('Teslim Alan',p.teslim_alan)+_kv('Telefon',p.teslim_tel)+'</div>'
+      +'<div class="kart"><h4>Özet</h4>'+ozet+(p.not_?'<div class="kv" style="margin-top:10px;border-top:1px solid var(--bor);padding-top:10px;"><span class="k">Not</span><span class="v">'+esc(p.not_)+'</span></div>':(ozet?'':'<div class="kv bos"><span class="k">Not</span><span class="v">—</span></div>'))+'</div>'
+    +'</div>'
+    +icerik
     +'<div class="dw-sec"><h3>Belgeler & Fotoğraflar</h3><div class="defer">İrsaliye, teslimat fişi ve fotoğraf eki sonraki parçada (Storage bağlama) eklenecek.</div></div>';
-  drawerCiz(head,body);
+
+  // FOOT — durum aksiyonları
+  var foot = haz
+    ? '<span class="info">⚠ <b>Hazırlanıyor</b> — spool ekle/çıkar, liste/irsaliye yazdır. Kamyona yüklenince Sevk Et.</span>'
+      +'<button class="btn btn-danger" onclick="paketIptal(\''+p.id+'\')">Paketi sil</button>'
+      +'<button class="btn btn-ok ml-a" onclick="sevkEt(\''+p.id+'\')">🚚 Sevk Et (kilitle)</button>'
+    : '<span class="info">✓ <b>Sevk edildi</b> — paket kilitli, içerik değişmez.</span>';
+
+  drawerCiz(head,body,foot);
 }
-function _inforow(k,v){return '<div class="inforow"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v)+'</span></div>';}
+function _kv(k,v){var bos=!v;return '<div class="kv'+(bos?' bos':'')+'"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v||'—')+'</span></div>';}
+
+async function spoolPaketCikar(spoolId){
+  if(!_drawerKey)return;
+  var p=SEVK.find(function(x){return x.id===_drawerKey;}); if(!p||p.durum==='sevk_edildi')return;
+  if(p._spoollar.length<=1){toast('Pakette tek spool kaldı — çıkarmak yerine paketi silin','er');return;}
+  try{
+    var supa=ARES.supabase(), tid=ARES.tenantId();
+    var dr=await supa.from('sevkiyat_spooller').delete().eq('sevkiyat_id',_drawerKey).eq('spool_id',spoolId).eq('tenant_id',tid);
+    if(dr.error)throw dr.error;
+    toast('Spool paketten çıkarıldı — havuza döndü','ok');
+    await havuzYukle(); await sevkYukle(); paketDrawerAc(_drawerKey);
+  }catch(e){toast('Hata: '+(e.message||e),'er');}
+}
+
+/* Havuzdan spool ekle (aynı tersane) */
+var _heSecili={};
+function havuzEkleAc(){
+  var p=SEVK.find(function(x){return x.id===_drawerKey;}); if(!p)return;
+  _heSecili={};
+  var trsId=p.tersane_id;
+  // havuzdaki (pakete girmemiş) aynı tersane spool'ları
+  var aday=HAVUZ.reduce(function(a,g){return a.concat(g.spoollar);},[]).filter(function(s){return String(s._tersane_id)===String(trsId);});
+  var el=document.getElementById('heListe');
+  if(!aday.length){el.innerHTML='<div class="bos">Bu tersane için havuzda eklenebilir spool yok.</div>';document.getElementById('heGuard').innerHTML='';document.getElementById('heBtn').disabled=true;document.getElementById('heOzet').textContent='';modAc('m-havuzekle');return;}
+  document.getElementById('heGuard').innerHTML='<div class="guard guard-ok">✓ Tersane: <b>'+esc(p._tersane)+'</b> · paket <b>'+esc(p.sevk_no)+'</b></div>';
+  var h='<div class="dw-scroll"><table class="dw-tab"><thead><tr><th class="chk"></th><th>Marka</th><th>Devre</th><th>Spool ID</th><th class="num">Çap</th><th class="num">Ağırlık</th><th>Malzeme</th></tr></thead><tbody>';
+  aday.forEach(function(s){
+    h+='<tr><td class="chk"><input type="checkbox" class="kkcheck" onclick="heSec(\''+s.id+'\',this.checked)"></td>'
+      +'<td class="mrk">'+esc(marka(s))+'</td><td style="color:var(--txm);">'+esc(s._devre_no||'—')+'</td><td class="sid">'+esc(markaId(s.spool_id))+'</td>'
+      +'<td class="num">'+_fmt(s.dis_cap_mm)+'</td><td class="num">'+_fmt(s.agirlik)+' kg</td><td>'+matBadge(s.malzeme)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  el.innerHTML=h;
+  heOzetGuncelle();
+  modAc('m-havuzekle');
+}
+function heSec(id,c){c?_heSecili[id]=1:delete _heSecili[id];heOzetGuncelle();}
+function heOzetGuncelle(){var n=Object.keys(_heSecili).length;document.getElementById('heBtn').disabled=n===0;document.getElementById('heOzet').textContent=n?n+' spool seçili':'';}
+async function havuzEkleOnayla(){
+  var ids=Object.keys(_heSecili); if(!ids.length)return;
+  var btn=document.getElementById('heBtn'); btn.disabled=true; btn.textContent='Ekleniyor…';
+  try{
+    var supa=ARES.supabase(), tid=ARES.tenantId();
+    var jr=await supa.from('sevkiyat_spooller').insert(ids.map(function(id){return {tenant_id:tid,sevkiyat_id:_drawerKey,spool_id:id};}));
+    if(jr.error)throw jr.error;
+    modKapat('m-havuzekle'); _heSecili={};
+    toast(ids.length+' spool pakete eklendi','ok');
+    await havuzYukle(); await sevkYukle(); paketDrawerAc(_drawerKey);
+  }catch(e){toast('Hata: '+(e.message||e),'er');}
+  btn.disabled=false; btn.textContent='Pakete Ekle';
+}
+
+async function sevkEt(pid){
+  var p=SEVK.find(function(x){return x.id===pid;}); if(!p)return;
+  if(!confirm(p.sevk_no+' sevk edilecek ve kilitlenecek. Onaylıyor musunuz?'))return;
+  try{
+    var supa=ARES.supabase(), tid=ARES.tenantId();
+    var up=await supa.from('sevkiyatlar').update({durum:'sevk_edildi'}).eq('id',pid).eq('tenant_id',tid);
+    if(up.error)throw up.error;
+    toast(p.sevk_no+' sevk edildi','ok');
+    await sevkYukle(); paketDrawerAc(pid);
+  }catch(e){toast('Hata: '+(e.message||e),'er');}
+}
+async function paketIptal(pid){
+  var p=SEVK.find(function(x){return x.id===pid;}); if(!p||p.durum==='sevk_edildi')return;
+  if(!confirm(p.sevk_no+' silinecek, spool\'lar havuza dönecek. Onaylıyor musunuz?'))return;
+  try{
+    var supa=ARES.supabase(), tid=ARES.tenantId();
+    var d1=await supa.from('sevkiyat_spooller').delete().eq('sevkiyat_id',pid).eq('tenant_id',tid); if(d1.error)throw d1.error;
+    var d2=await supa.from('sevkiyatlar').delete().eq('id',pid).eq('tenant_id',tid); if(d2.error)throw d2.error;
+    drawerKapat();
+    toast(p.sevk_no+' silindi','ok');
+    await havuzYukle(); await sevkYukle();
+  }catch(e){toast('Hata: '+(e.message||e),'er');}
+}
+function spoolSevkiyatGit(){modKapat('m-tip');tabGit('havuz');toast('Havuzdan spool seçip "Sevkiyata Hazırla" ile oluşturun','bilgi');}
 
 /* ───────── DRAWER / TAB ───────── */
 function _drawerKonumla(){
@@ -666,7 +844,7 @@ function _drawerKonumla(){
   dr.style.width=w+'px';
 }
 window.addEventListener('resize',function(){var dr=document.getElementById('drawer');if(dr&&dr.classList.contains('acik'))_drawerKonumla();});
-function drawerCiz(head,body){document.getElementById('drawerHead').innerHTML=head;document.getElementById('drawerBody').innerHTML=body;_drawerKonumla();document.getElementById('drawer').classList.add('acik');document.getElementById('drawer-bg').classList.add('acik');}
+function drawerCiz(head,body,foot){document.getElementById('drawerHead').innerHTML=head;document.getElementById('drawerBody').innerHTML=body;var f=document.getElementById('drawerFoot');if(foot){f.innerHTML=foot;f.style.display='flex';}else{f.innerHTML='';f.style.display='none';}_drawerKonumla();document.getElementById('drawer').classList.add('acik');document.getElementById('drawer-bg').classList.add('acik');}
 function drawerKapat(){document.getElementById('drawer').classList.remove('acik');document.getElementById('drawer-bg').classList.remove('acik');_drawerTip=null;_drawerKey=null;havuzRender();sevkRender();}
 function tabGit(v){document.querySelectorAll('.main-tab').forEach(function(t){t.classList.toggle('akt',t.dataset.v===v);});document.getElementById('v-havuz').classList.toggle('gizli',v!=='havuz');document.getElementById('v-sevk').classList.toggle('gizli',v!=='sevk');if(_drawerTip)drawerKapat();}
 
