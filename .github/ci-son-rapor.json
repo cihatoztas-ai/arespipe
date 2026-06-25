@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-06-25T11:11:39.966Z",
-  "commit_sha": "4ee08f59a470b7a56637a0277aac547b0cb71611",
+  "tarih": "2026-06-25T12:12:38.647Z",
+  "commit_sha": "d43e4517523b386b4e3c104f6ebdc70c89cf1dbd",
   "commit_ref": "main",
-  "workflow_run": 1191,
+  "workflow_run": 1192,
   "ozet": {
     "hata": 0,
-    "uyari": 111,
+    "uyari": 113,
     "taranan_dosya": 144,
-    "sorunlu_dosya": 6,
+    "sorunlu_dosya": 7,
     "durum": "sari"
   },
   "kurallar": {
@@ -35,13 +35,20 @@
     "G03_HAM_YUZEY": {
       "tip": "uyari",
       "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
+      "sayi": 2,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
           "sayi": 1,
           "satirlar": [
             1652
+          ]
+        },
+        {
+          "dosya": "sevkiyatlar.html",
+          "sayi": 1,
+          "satirlar": [
+            911
           ]
         }
       ]
@@ -187,13 +194,20 @@
     "G03_HAM_KALITE": {
       "tip": "uyari",
       "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)",
-      "sayi": 1,
+      "sayi": 2,
       "dosyalar": [
         {
           "dosya": "kalite_kontrol.html",
           "sayi": 1,
           "satirlar": [
             782
+          ]
+        },
+        {
+          "dosya": "sevkiyatlar.html",
+          "sayi": 1,
+          "satirlar": [
+            910
           ]
         }
       ]
@@ -802,6 +816,25 @@
           "tip": "uyari",
           "satir": 359,
           "mesaj": "tv('kt_bos') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "sevkiyatlar.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 2,
+      "hatalar": [
+        {
+          "kod": "G03_HAM_KALITE",
+          "tip": "uyari",
+          "satir": 910,
+          "mesaj": "Ham kalite gösterimi şüphesi. esc(x.kalite) yerine ARES_NORM.kaliteGoster(x.kalite) kullan. (CLAUDE.md 2.18 — G-03)"
+        },
+        {
+          "kod": "G03_HAM_YUZEY",
+          "tip": "uyari",
+          "satir": 911,
+          "mesaj": "Ham yüzey gösterimi şüphesi. esc(x.yuzey) yerine ARES_NORM.yuzeyEtiket(x.yuzey) kullan. (CLAUDE.md 2.18 — G-03)"
         }
       ]
     },
