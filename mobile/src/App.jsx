@@ -11,6 +11,7 @@ import MDevreDetay from './screens/MDevreDetay'
 import MDevreler from './screens/MDevreler'
 import MQRTara from './screens/MQRTara'
 import MIsBaslat from './screens/MIsBaslat'
+import MUygulamalar from './screens/MUygulamalar'
 
 export default function App() {
   const [oturum, setOturum] = useState(null)
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/devreler" element={oturum ? <MDevreler /> : <Navigate to="/giris" />} />
         <Route path="/qr" element={oturum ? <MQRTara /> : <Navigate to="/giris" />} />
         <Route path="/is-baslat" element={oturum ? <MIsBaslat /> : <Navigate to="/giris" />} />
+        <Route path="/uygulamalar" element={oturum ? <MUygulamalar /> : <Navigate to="/giris" />} />
         {/* 67. oturum: bottom nav loop'u önlemek için placeholder rotalar */}
         <Route path="/ara" element={oturum ? <MYakinda baslik="Ara" /> : <Navigate to="/giris" />} />
         <Route path="/bildirim" element={oturum ? <MYakinda baslik="Bildirim" /> : <Navigate to="/giris" />} />

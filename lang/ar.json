@@ -1942,5 +1942,21 @@
   "sp_cizimden_duzelt": "تصحيح من الرسم",
   "dv_is_emri_terfide": "سيُنشأ عند الترقية",
   "dv_taslak_banner_yol": "التحرير والموافقة في المعالج",
-  "dv_taslak_wizard": "التحرير والموافقة في المعالج"
+  "dv_taslak_wizard": "التحرير والموافقة في المعالج",
+  "m_gunaydin": "صباح الخير",
+  "m_iyi_gunler": "نهارك سعيد",
+  "m_iyi_aksamlar": "مساء الخير",
+  "m_geri": "رجوع",
+  "m_uyg_basligi": "التطبيقات",
+  "m_uyg_basligi_alt": "تطبيقاتك",
+  "m_uyg_yakinda": "{ad} قريباً",
+  "m_uyg_rozet_yakinda": "قريباً",
+  "m_uyg_birim_cevirici": "محول الوحدات",
+  "m_uyg_birim_cevirici_alt": "DN ↔ إنش، مم ↔ إنش، الوزن",
+  "m_uyg_kutuphane": "المكتبة",
+  "m_uyg_kutuphane_alt": "بحث أبعاد الأنابيب والوصلات والشفاه",
+  "m_uyg_kesim_opt": "تحسين القص",
+  "m_uyg_kesim_opt_alt": "تقليل هدر الطول",
+  "m_uyg_parca_tanima": "التعرف على القطعة",
+  "m_uyg_parca_tanima_alt": "صورة الشفة/الوصلة ← معلومات المعيار"
 }

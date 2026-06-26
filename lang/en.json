@@ -1942,5 +1942,21 @@
   "sp_cizimden_duzelt": "Correct from drawing",
   "dv_is_emri_terfide": "Generated on promotion",
   "dv_taslak_banner_yol": "editing and approval in the Wizard",
-  "dv_taslak_wizard": "Edit & approve in Wizard"
+  "dv_taslak_wizard": "Edit & approve in Wizard",
+  "m_gunaydin": "Good morning",
+  "m_iyi_gunler": "Good afternoon",
+  "m_iyi_aksamlar": "Good evening",
+  "m_geri": "Back",
+  "m_uyg_basligi": "Apps",
+  "m_uyg_basligi_alt": "Your apps",
+  "m_uyg_yakinda": "{ad} coming soon",
+  "m_uyg_rozet_yakinda": "SOON",
+  "m_uyg_birim_cevirici": "Unit Converter",
+  "m_uyg_birim_cevirici_alt": "DN ↔ inch, mm ↔ inch, weight",
+  "m_uyg_kutuphane": "Library",
+  "m_uyg_kutuphane_alt": "Pipe, fitting, flange dimension lookup",
+  "m_uyg_kesim_opt": "Cut Optimization",
+  "m_uyg_kesim_opt_alt": "Minimize length waste",
+  "m_uyg_parca_tanima": "Part Recognition",
+  "m_uyg_parca_tanima_alt": "Flange/fitting photo → standard info"
 }

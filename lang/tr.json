@@ -1942,5 +1942,21 @@
   "sp_cizimden_duzelt": "Çizimden düzelt",
   "dv_is_emri_terfide": "Terfide üretilecek",
   "dv_taslak_banner_yol": "düzenleme ve onay Wizard'da",
-  "dv_taslak_wizard": "Wizard'da düzenle & onayla"
+  "dv_taslak_wizard": "Wizard'da düzenle & onayla",
+  "m_gunaydin": "Günaydın",
+  "m_iyi_gunler": "İyi günler",
+  "m_iyi_aksamlar": "İyi akşamlar",
+  "m_geri": "Geri",
+  "m_uyg_basligi": "Uygulamalar",
+  "m_uyg_basligi_alt": "Uygulamalarınız",
+  "m_uyg_yakinda": "{ad} yakında",
+  "m_uyg_rozet_yakinda": "YAKINDA",
+  "m_uyg_birim_cevirici": "Birim Çevirici",
+  "m_uyg_birim_cevirici_alt": "DN ↔ inç, mm ↔ inç, ağırlık",
+  "m_uyg_kutuphane": "Kütüphane",
+  "m_uyg_kutuphane_alt": "Boru, fitting, flanş ölçü sorgu",
+  "m_uyg_kesim_opt": "Kesim Optimizasyonu",
+  "m_uyg_kesim_opt_alt": "Boy fire en aza indirme",
+  "m_uyg_parca_tanima": "Parça Tanıma",
+  "m_uyg_parca_tanima_alt": "Flanş/fitting fotoğrafı → standart bilgi"
 }
