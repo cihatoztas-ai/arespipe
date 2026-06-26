@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AresPipe — Ana Sayfa Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ac:#2D8EFF; --gr:#16a36e; --re:#e53e3e; --warn:#d97706; --leg:#7c3aed;
+    --bg:#0d1117; --sur:#161b24; --sur2:#1c2333; --bor:#262f3e;
+    --tx:#e6ecf4; --txm:#94a3b8; --txd:#6b7a90;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:#070a0f; color:var(--tx);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    padding:32px 20px 60px; -webkit-font-smoothing:antialiased;}
+  .baslik-blok{max-width:1200px; margin:0 auto 28px;}
+  h1{font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:30px; letter-spacing:.4px; color:#fff;}
+  .alt{color:var(--txm); font-size:14px; margin-top:6px; line-height:1.5; max-width:760px;}
+  .grid{display:flex; flex-wrap:wrap; gap:30px 26px; justify-content:center; max-width:1200px; margin:0 auto;}
+  .kolon{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .etiket{font-size:13px; font-weight:700; color:var(--txm); text-align:center;}
+  .etiket span{display:block; color:var(--txd); font-weight:400; font-size:12px; margin-top:2px;}
+  .tel{width:300px; height:600px; background:var(--bg); border:9px solid #1a212e; border-radius:32px;
+    overflow:hidden; display:flex; flex-direction:column; position:relative; box-shadow:0 12px 40px rgba(0,0,0,.5);}
+  .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:22px; background:#1a212e; border-radius:0 0 14px 14px; z-index:5;}
+  .topbar{flex-shrink:0; display:flex; align-items:center; gap:10px; padding:30px 12px 10px; background:var(--sur); border-bottom:1px solid var(--bor);}
+  .ap{width:30px; height:30px; border-radius:8px; background:var(--ac); color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center;}
+  .ap-title{flex:1; font-size:15px; font-weight:700;}
+  .avatar{width:34px; height:34px; border-radius:50%; background:var(--sur2); border:1px solid var(--bor); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;}
+  .scroll{flex:1; overflow-y:auto; padding-bottom:8px;}
+  .scroll::-webkit-scrollbar{width:0;}
+  .hero{background:var(--sur); border-bottom:1px solid var(--bor); padding:16px 14px;}
+  .hero .gun{font-size:13px; color:var(--txd); font-weight:600;}
+  .hero .ad{font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:800; line-height:1; margin-top:2px;}
+  .hero .rol{font-size:13px; color:var(--txm); margin-top:6px;}
+  .sec{padding:14px 14px 6px; font-size:12px; font-weight:700; color:var(--txd); text-transform:uppercase; letter-spacing:.6px;}
+  .liste{display:flex; flex-direction:column; gap:9px; padding:0 14px;}
+  .btn{display:flex; align-items:center; gap:12px; padding:13px 12px; background:var(--sur); border:1px solid var(--bor); border-left:4px solid var(--ac); border-radius:11px; cursor:pointer; text-align:left; width:100%;}
+  .btn .ico{width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;}
+  .btn .body{flex:1; min-width:0;}
+  .btn .bas{font-size:15px; font-weight:700;}
+  .btn .alt2{font-size:12px; color:var(--txd); margin-top:1px;}
+  .btn .ok{font-size:20px; color:var(--txd); flex-shrink:0;}
+  .btn.yakinda{opacity:.85; cursor:default;}
+  .rozet{font-size:10px; font-weight:700; color:var(--warn); background:rgba(217,119,6,.14); padding:3px 8px; border-radius:20px; letter-spacing:.4px; flex-shrink:0;}
+  .btn.app{border-left-color:var(--leg);} .btn.app .ico{background:rgba(124,58,237,.14);}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px; padding:14px 14px 4px;}
+  .stat{background:var(--sur); border:1px solid var(--bor); border-radius:11px; padding:12px;}
+  .stat .n{font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:800; line-height:1;}
+  .stat .l{font-size:11px; color:var(--txm); margin-top:4px; text-transform:uppercase; letter-spacing:.4px;}
+  .stat.b .n{color:var(--warn);} .stat.k .n{color:var(--leg);} .stat.s .n{color:var(--gr);}
+  .islem-baslat{margin:4px 14px 0; padding:13px; background:var(--ac); color:#fff; border:none; border-radius:11px; font-size:15px; font-weight:700; width:calc(100% - 28px); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;}
+  .nav{flex-shrink:0; display:flex; align-items:center; justify-content:space-around; background:var(--sur); border-top:1px solid var(--bor); padding:6px 0 8px;}
+  .nav .it{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; color:var(--txd);}
+  .nav .it.aktif{color:var(--ac);}
+  .nav .it .i{font-size:18px;}
+  .nav .qr{width:48px; height:48px; border-radius:50%; background:var(--ac); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; margin-top:-18px; border:3px solid var(--bg); box-shadow:0 4px 12px rgba(45,142,255,.4);}
+  .not{padding:10px 14px 16px; font-size:11px; color:var(--txd); line-height:1.5;}
+  #toast{position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--sur2); color:var(--tx); border:1px solid var(--bor); padding:12px 20px; border-radius:12px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; z-index:99;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="baslik-blok">
+  <h1>Ana Sayfa — v2 (uygulama kullanıcısı doğrudan içeri)</h1>
+  <div class="alt">Yetki bloğu olmayan kullanıcı giriş yapınca ara buton görmeden doğrudan uygulamalarına düşer. Spool kullanıcısı ve yönetici için uygulamalar ikincil olduğundan tek "Uygulamalar" butonu kalır — o buton 1. ekrandaki listeyi açar.</div>
+</div>
+
+<div class="grid">
+
+  <!-- 1. UYGULAMA KULLANICISI = ANA SAYFA DOĞRUDAN UYGULAMALAR -->
+  <div class="kolon">
+    <div class="etiket">Uygulama kullanıcısı<span>ana sayfa = uygulamalar (ara buton yok)</span></div>
+    <div class="tel">
+      <div class="notch"></div>
+      <div class="topbar"><div class="ap">AP</div><div class="ap-title">AresPipe</div><div class="avatar">M</div></div>
+      <div class="scroll">
+        <div class="hero"><div class="gun">Günaydın</div><div class="ad">Mehmet Demir</div><div class="rol">Uygulamalarınız</div></div>
+        <div class="liste" style="margin-top:14px">
+          <div class="btn yakinda" onclick="yakinda()"><div class="ico" style="background:rgba(124,58,237,.14)">📚</div><div class="body"><div class="bas">Kütüphane</div><div class="alt2">Boru, fitting, flanş ölçü sorgu</div></div><div class="rozet">YAKINDA</div></div>
+          <div class="btn yakinda" onclick="yakinda()"><div class="ico" style="background:rgba(45,142,255,.14)">✂️</div><div class="body"><div class="bas">Kesim Optimizasyonu</div><div class="alt2">Boy fire en aza indirme</div></div><div class="rozet">YAKINDA</div></div>
+          <div class="btn yakinda" onclick="yakinda()"><div class="ico" style="background:rgba(22,163,110,.14)">🔢</div><div class="body"><div class="bas">Birim Çevirici</div><div class="alt2">DN ↔ inç, mm ↔ inç, ağırlık</div></div><div class="rozet">YAKINDA</div></div>
+        </div>
+        <div class="not">Spool sekmeleri (QR vb.) bu kullanıcıya gereksiz; alt menü sadeleştirilebilir.</div>
+      </div>
+      <div class="nav">
+        <div class="it aktif"><span class="i">🏠</span>Ana Sayfa</div>
+        <div class="it"><span class="i">🔍</span>Ara</div>
+        <div class="it"><span class="i">🔔</span>Bildirim</div>
+        <div class="it"><span class="i">☰</span>Menü</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. SPOOL KULLANICISI -->
+  <div class="kolon">
+    <div class="etiket">Spool kullanıcısı (operatör)<span>işlemler odaklı · uygulamalar ikincil</span></div>
+    <div class="tel">
+      <div class="notch"></div>
+      <div class="topbar"><div class="ap">AP</div><div class="ap-title">AresPipe</div><div class="avatar">A</div></div>
+      <div class="scroll">
+        <div class="hero"><div class="gun">Günaydın</div><div class="ad">Ali Yılmaz</div><div class="rol">Operatör</div></div>
+        <div class="sec">İşlemlerim</div>
+        <div class="liste">
+          <div class="btn"><div class="ico" style="background:rgba(45,142,255,.14)">✂️</div><div class="body"><div class="bas">Kesim</div><div class="alt2">QR okut, işe başla</div></div><div class="ok">›</div></div>
+          <div class="btn"><div class="ico" style="background:rgba(45,142,255,.14)">↩️</div><div class="body"><div class="bas">Büküm</div><div class="alt2">QR okut, işe başla</div></div><div class="ok">›</div></div>
+          <div class="btn"><div class="ico" style="background:rgba(45,142,255,.14)">📷</div><div class="body"><div class="bas">QR Tara</div><div class="alt2">Spool bilgisini gör</div></div><div class="ok">›</div></div>
+        </div>
+        <div class="sec">Uygulamalar</div>
+        <div class="liste">
+          <div class="btn app" onclick="git()"><div class="ico">📚</div><div class="body"><div class="bas">Uygulamalar</div><div class="alt2">Kütüphane, araçlar</div></div><div class="ok">›</div></div>
+        </div>
+        <div class="not">Asıl içerik işlemler; uygulamalar tek butonla altta. İstersen sıra değişir.</div>
+      </div>
+      <div class="nav">
+        <div class="it aktif"><span class="i">🏠</span>Ana Sayfa</div>
+        <div class="it"><span class="i">🔍</span>Ara</div>
+        <div class="qr">📷</div>
+        <div class="it"><span class="i">🔔</span>Bildirim</div>
+        <div class="it"><span class="i">☰</span>Menü</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. YÖNETİCİ -->
+  <div class="kolon">
+    <div class="etiket">Program yöneticisi<span>dashboard + uygulamalar</span></div>
+    <div class="tel">
+      <div class="notch"></div>
+      <div class="topbar"><div class="ap">AP</div><div class="ap-title">AresPipe</div><div class="avatar">C</div></div>
+      <div class="scroll">
+        <div class="hero"><div class="gun">Günaydın</div><div class="ad">Cihat Öztaş</div><div class="rol">Yönetici</div></div>
+        <div class="stat-grid">
+          <div class="stat"><div class="n">24</div><div class="l">Devre</div></div>
+          <div class="stat b"><div class="n">18</div><div class="l">Bekleyen</div></div>
+          <div class="stat k"><div class="n">7</div><div class="l">Kalite Kontrol</div></div>
+          <div class="stat s"><div class="n">12</div><div class="l">Sevkiyat (ay)</div></div>
+        </div>
+        <button class="islem-baslat">▶ İşlem Başlat</button>
+        <div class="sec">Uygulamalar</div>
+        <div class="liste">
+          <div class="btn app" onclick="git()"><div class="ico">📚</div><div class="body"><div class="bas">Uygulamalar</div><div class="alt2">Kütüphane, araçlar</div></div><div class="ok">›</div></div>
+        </div>
+        <div class="not">Dashboard korunur; uygulamalar buraya + menüye eklenir.</div>
+      </div>
+      <div class="nav">
+        <div class="it aktif"><span class="i">🏠</span>Ana Sayfa</div>
+        <div class="it"><span class="i">🔍</span>Ara</div>
+        <div class="qr">📷</div>
+        <div class="it"><span class="i">🔔</span>Bildirim</div>
+        <div class="it"><span class="i">☰</span>Menü</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+<script>
+  var t=document.getElementById('toast'), tm;
+  function show(m){ t.textContent=m; t.classList.add('show'); clearTimeout(tm); tm=setTimeout(function(){t.classList.remove('show');},1800); }
+  function git(){ show('→ Uygulamalar listesini açar (1. ekrandaki liste)'); }
+  function yakinda(){ show('Bu uygulama yakında'); }
+</script>
+</body>
+</html>

@@ -1,45 +1,35 @@
-# Sıradaki Oturum (206) — Ajanda: MOBİL TAMAMLAMA
+# Sıradaki Oturum (207) — Ajanda: MOBİL KAYIT AKIŞI + İLK KOD
 
 ## 0. Açılış ritüeli
-`git pull --rebase` · `git status` · `git log --oneline -3` · `ls api/*.js | wc -l` (≤12) · `gh run list -L 1` (205 push'u yeşil mi) · handoff oku.
+`git pull --rebase` · `git status` · `git log --oneline -3` · `ls api/*.js | wc -l` (≤12) · `gh run list -L 1` · handoff oku.
+**Ek (zorunlu):** `docs/MOBIL-STRATEJI.md` (yaşayan belge — ANA REFERANS) + `CLAUDE-MOBILE.md` oku.
 
-## 1. ÖNCE: 205'ten devreden teyitler (5 dk, mobil'e geçmeden)
-- [ ] **205 CI yeşil mi** (`4ee08f5` belge storage + migration 111).
-- [ ] **Sevkiyat Listesi push durumu:** `md5sum ~/Desktop/arespipe/sevkiyatlar.html` → `622fdde9cac4d5bd0a476d2fc87cfc1f` mü? `git log --oneline -1` liste commit'i var mı? Yoksa kopyala+push.
-- [ ] **Sevkiyat Listesi rötuşu:** Cihat "tam istediğim gibi değil" dedi. NE eksik? (kolon seçimi / üst bilgi / düzen / başlık / imza alanı?) Önce Cihat'tan netleştir, sonra dokun.
+## 1. Ana referans
+**`docs/MOBIL-STRATEJI.md` tüm tasarımı taşır.** Ajanda = oradaki **§7 açık kararlar**.
+Mimari kapalı: **native React** (taviz yok, §0). Çatal yaklaşımı kapalı: native "Denetim" sekmesi (§6).
 
-## 2. ANA İŞ: Mobil tamamlama
-⚠ **HAFIZA ÇOK ESKİ — önce envanter (MK-126.8, kör yazma yok):**
-```bash
-cd ~/Desktop/arespipe
-ls -R mobile/src | head -60
-cat mobile/src/App.jsx | head -80          # route'lar, hangi ekran var/yok
-ls mobile/src/screens 2>/dev/null || ls mobile/src
-grep -rn "Route\|element=" mobile/src/App.jsx
-```
-Bilinen (eski, oturum ~2-3) mobil iskelet: i18n (`i18n.jsx`, `lang/`), `MGiris`, `MAnasayfa`(router), `MAnasayfaYonetici`, `MIslemler`, `MDrawer`, tema (`tema.jsx`). Stack: React (Vite) + Supabase, deploy `arespipe-mob.vercel.app` (root `mobile`, `npm run build`). **Ama bunların güncel hâli envanterle DOĞRULANMALI.**
+## 2. ÖNCE: §7-1 Kayıt akışı (en büyük karar — kodun önünü açar)
+- Mevcut web'de kullanıcı ekleme nasıl yapılıyor? `information_schema` + kod kontrolü:
+  `kullanicilar` (rol değerleri?), `kullanici_bloklar`, davet/kod kolonu/tablosu var mı.
+- Karar: spool kullanıcısı kaydı **A (davet kodu) / B (yönetici ekler) / ikisi**.
+- Uygulama kullanıcısı DB modeli: yeni `rol` mü, "tenant+blok yok" durumu mu.
+- Müşteri akışı + RLS. Tek hesap çoklu rol?
 
-### Mobil kuralları (CLAUDE-MOBILE.md'den)
-- **R-10 Mockup-First:** Yeni ekran/component yazmadan ÖNCE artifact mockup + Cihat onayı.
-- **R-09 Tema:** sadece `useTema()`; direct DOM yasak.
-- `kullanicilar.ad` YOK → `ad_soyad`. `tenants(ad)` JOIN bazı RLS'de 400 → tenant ad'ı ayrı sorgu.
-- Storage bucket aynı: `arespipe-dosyalar`. Upload deseni `CLAUDE-MOBILE.md`'de (fotograflar insert).
+## 3. İLK GÜVENLİ KOD PUSH (hiçbir karara bağlı değil)
+`MOBIL-STRATEJI.md` §8 sıra 1 — mevcut akışı bozmaz, mockup onaylı (`docs/anasayfa-mockup.html`):
+- `mobile/src/lib/uygulamalar.js` — sabit liste (id, ad, ikon, açıklama, durum='yakinda').
+  Öğeler: Birim Çevirici, Kütüphane, Kesim Optimizasyonu, Parça Tanıma.
+- `mobile/src/screens/MUygulamalar.jsx` — liste ekranı; ana sayfa modu + route modu; "yakında" toast.
+- `mobile/src/App.jsx` — `/uygulamalar` route.
+- `lang/{tr,en,ar}.json` — yeni `m_*` anahtarlar (R-08, üçü birden).
 
-### Eski bekleyen mobil ekranlar (öncelik — envanterle güncelle)
-1. **MProfil** — avatar yükleme + kişisel bilgi (mockup-first).
-2. **MIsBaslat** — operatör iş akışı (eski `is_baslat.html`'den).
-3. **MDevreler / MDevreDetay / MSpoolDetay / MQRTara** (mockup-first).
-4. Rol etiketi i18n mapping.
-5. Supabase Storage avatar upload.
-6. Web/mobil dil dosyası senkron scripti.
-
-→ Cihat'a sor: "Mobil tamamlama"dan kastın hangisi? (A) eksik ekranları yazmak (B) mevcut ekranların bug/eksik fix (C) belirli bir akış (örn. QR→spool→iş başlat) uçtan uca (D) başka. Mockup-first ile ilerle.
-
-## 3. Genel borç (eski, fırsat olursa)
-- Logo kalıcılığı `tenants.logo_url` + Storage.
-- `devre_detay` `SV-/KK-Date.now()` → sayaç deseni (kapsam genişletir, `izometri-oku.js` DOKUNMA MK-49.1).
-- Issue 117 (`yukleyen_id` null devre dokümanları).
-- Library audit A11, fitting/flange FK + `yaricap_mm` (A8).
+## 4. Sonra (kayıt kararı netleşince)
+§8 sıra 2-9: `yetki.js` (`musteriMi` + uygulama kullanıcısı tespiti), 4 dallı router (MAnasayfa),
+MIslemler güncelleme (Uygulamalar butonu + 🔒 kaldır), MProfil (avatar, `foto_url`+Storage),
+MMusteri (mockup-first), kayıt/davet akışı (en büyük), çatal birleştirme (IbSpoolDetay Denetim sekmesi).
 
 ## Disiplin
-MK-85.3 information_schema önce · MK-126.8 önce oku · MK-98.2/200.5 BEGIN/ROLLBACK (≠apply) · MK-163.1 by-ID SQL · MK-129.3 ≤12 fonksiyon · dosya teslim: present_files → `arespipe_kopyala <md5>` · `node --check` + `grep -c "</html>"` (print sayfasında 2 normal — string-içi) · code commit `[skip ci]` YOK, doc commit `[skip ci]` VAR · canlı test = PUSH şart (kopyala yetmez) · R-10 mockup-first (mobil).
+Native React (taviz yok). R-10 mockup-first · R-08 i18n (`tv()`, tr/en/ar) · R-09 `useTema()` (direct DOM yok).
+`ad_soyad` (ad değil) · tenant ayrı sorgu · `kullanici_bloklar` INSERT'te tenant_id · JWT anon key.
+"M" ön eki · buton min 72px (eldivenli el) · ≤12 api (MK-129.3, kayıt endpoint'i gerekirse consolidasyon).
+Kod commit `[skip ci]` YOK · doc commit `[skip ci]` VAR · canlı test = PUSH şart.
