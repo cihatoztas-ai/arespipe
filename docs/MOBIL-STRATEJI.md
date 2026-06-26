@@ -4,6 +4,11 @@
 > Tasarım turu (oturum 206) çıktısıdır; önceki mobil kararları (CLAUDE-MOBILE.md,
 > ARCHITECTURE.md, oturum arşivleri) İPTAL ETMEZ, üstüne kurar ve onlarla hizalar.
 > Açık kararlar `⏳ KARAR BEKLİYOR` etiketli (seçenek + öneri). Referans mockup: `anasayfa-mockup.html`.
+>
+> **GÜNCELLEME (oturum 207):** §7 kayıt kararları DATA-first kilitlendi (aşağıda). Sıra-1 (uygulamalar
+> ekranı) canlıda — `/uygulamalar` route modu doğrulandı. İki yeni kural: **MK-207.1** (12-fonksiyon tavanı
+> kısıttır, mimari pusula değil — doğru tasarım endpoint isterse Pro'ya geçilir) · **MK-207.2** (offboarding
+> kod tarafında zorlanamaz; atıl kullanıcı yöneticiye görünür kılınır: son_giris dormancy + dashboard sayaç).
 
 ---
 
@@ -158,16 +163,23 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 
 ## 7. Açık kararlar — sonraki oturum ajandası
 
-1. **§4 Kayıt akışı (EN BÜYÜK):** spool kullanıcısı kaydı A / B / ikisi. Mevcut web ekleme akışını kontrol et.
-2. **§4** Uygulama kullanıcısı DB modeli: yeni `rol` mü, "tenant+blok yok" mu?
-3. **§4** Müşteri davet akışı + RLS kapsamı.
-4. **§4** Tek hesap çoklu rol (uygulama→spool geçişi) destekleniyor mu?
-5. **§8 Yönetici ana sayfa içeriği** — Cihat: "tam kafamda canlanmadı". Dashboard'da ne olmalı?
-6. **§3** Bottom nav QR butonu: kalsın mı, etiketi "spool bul" mu?
-7. **§2** Hangi uygulama önce aktif (öneri: Birim Çevirici — saf hesap).
-8. **§6** Yönetici spool işlem aksiyonu yapabilir mi?
+**KİLİTLENDİ (oturum 207, DATA-first):**
+1. ✅ **§4 Spool kullanıcısı kaydı = B** (yönetici davet). Web `kullanicilar.html` akışı: `auth.signInWithOtp`
+   + `kullanicilar.upsert(onConflict:email)`, endpoint'siz → mobile'a birebir. A (davet kodu) = 53+ park.
+2. ✅ **§4 Uygulama kullanıcısı = yeni `rol='uygulama'` + ortak "uygulama" tenant'ı.** Gerekçe: `tenant_id
+   NOT NULL` → nullable yapmak tüm RLS'i riske atar; yeni rol = sıfır migration. signUp ile self-servis.
+4. ✅ **§4 Tek hesap çoklu rol = bedava:** `upsert(onConflict:email)` davet gelince mevcut satırın rol+tenant'ını
+   günceller (uygulama→spool doğal geçiş).
+3. ⏳ **§4 Müşteri:** `customers` tablosu hazır → ayrı tur (RLS kapsamı).
 
-> ÇÖZÜLDÜ: Mimari = native React (§0). Çatal yaklaşımı = native toplamsal birleştirme (§6).
+**HÂLÂ AÇIK (sonraki turlar):**
+5. **§8 Yönetici dashboard içeriği** — netleşmedi. MK-207.2 atıl kullanıcı sayacı buraya oturabilir.
+   (Not 207: dashboard'da "durdurulmuş spool var" uyarı bandı ZATEN kurulu — dormancy sayacı bu kalıptan türer.)
+6. **§3** Bottom nav QR butonu etiketi ("spool bul" mu?).
+7. **§2** İlk aktif uygulama (öneri: Birim Çevirici — saf hesap, AI maliyeti yok).
+8. **§6** Yönetici spool işlem aksiyonu yapabilir mi (Denetim dışında)?
+
+> ÇÖZÜLDÜ: Mimari = native React (§0) · Çatal = native toplamsal (§6) · Kayıt §7-1/2/4 (207, yukarıda).
 
 ---
 
@@ -175,7 +187,7 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 
 | Sıra | İş | Bağımlılık |
 |------|-----|-----------|
-| 1 | `lib/uygulamalar.js` sabit liste + `MUygulamalar.jsx` + `/uygulamalar` route + dil | yok → ilk güvenli push |
+| 1 | ✅ **TAMAMLANDI (207)** `lib/uygulamalar.js` + `MUygulamalar.jsx` + `/uygulamalar` route + 48 dil anahtarı. Canlı doğrulandı (route modu). | — |
 | 2 | `yetki.js`: `musteriMi`, "uygulama kullanıcısı" tespiti | §7-2 |
 | 3 | `MAnasayfa.jsx` 4 dallı router | §4 |
 | 4 | `MIslemler.jsx`: işlem butonları + Uygulamalar butonu; 🔒 kalkar | §3 |
@@ -186,7 +198,7 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 | 9 | Spool detay çatalı: IbSpoolDetay'a "Denetim" sekmesi + MSpoolDetay emekli | §6 |
 | 10 | Kesim/Büküm/Markalama native React işlem ekranları (saha düzeni) | büyük, ayrı turlar |
 
-**İlk güvenli push:** Sıra 1 — hiçbir karara bağlı değil, mevcut akışı bozmaz.
+**Sıra 1 tamamlandı (207).** Sonraki: Sıra 2 (yetki.js: musteriMi + uygulama-kullanıcı tespiti) → Sıra 3 (MAnasayfa 4 dallı router; `MUygulamalar` anaSayfaModu'nu uygulama kullanıcısına bağlar).
 
 ---
 
