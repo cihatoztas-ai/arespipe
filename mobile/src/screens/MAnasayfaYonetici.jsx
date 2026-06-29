@@ -206,6 +206,21 @@ export default function MAnasayfaYonetici({ kullanici }) {
           )}
         </div>
 
+        {/* Uygulamalar — yönetici için ikincil erişim (§5) */}
+        <div style={s.sectionRow}>
+          <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+        </div>
+        <div style={{ padding: '0 16px' }}>
+          <button style={s.uygLink} onClick={() => navigate('/uygulamalar')}>
+            <div style={s.uygIkon}>📚</div>
+            <div style={s.uygBody}>
+              <div style={s.uygBaslik}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+              <div style={s.uygAlt}>{tv('m_uyg_basligi_alt', 'Uygulamalarınız')}</div>
+            </div>
+            <div style={s.uygOk}>›</div>
+          </button>
+        </div>
+
         <div style={{ height: 'calc(16px + env(safe-area-inset-bottom))' }} />
       </div>
 
@@ -351,6 +366,12 @@ const s = {
   aktiviteSub: { fontSize: 14, color: 'var(--txd)', marginTop: 2 },
   aktiviteTime: { fontSize: 14, color: 'var(--txd)', flexShrink: 0, marginTop: 2 },
   bosDurum: { padding: 24, textAlign: 'center', color: 'var(--txd)', fontSize: 14 },
+  uygLink: { width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 14px', background: 'var(--sur)', border: '1px solid var(--bor)', borderLeft: '4px solid var(--ac)', borderRadius: 12, cursor: 'pointer', textAlign: 'left', minHeight: 72, color: 'var(--tx)' },
+  uygIkon: { fontSize: 26, width: 48, height: 48, borderRadius: 12, background: 'var(--sur2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  uygBody: { flex: 1, minWidth: 0 },
+  uygBaslik: { fontSize: 16, fontWeight: 700, color: 'var(--tx)', marginBottom: 2 },
+  uygAlt: { fontSize: 14, color: 'var(--txd)' },
+  uygOk: { fontSize: 22, color: 'var(--txd)', flexShrink: 0 },
 }
 
 const st = {
