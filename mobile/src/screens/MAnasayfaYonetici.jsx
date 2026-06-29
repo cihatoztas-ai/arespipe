@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import MDrawer from '../components/MDrawer'
+import MMarkLogo from '../components/MMarkLogo'
 
 export default function MAnasayfaYonetici({ kullanici }) {
   const navigate = useNavigate()
@@ -108,7 +109,7 @@ export default function MAnasayfaYonetici({ kullanici }) {
     <div style={s.sayfa}>
       {/* Topbar */}
       <div style={s.topbar}>
-        <img src="/arespipe-mark.svg" alt="AresPipe" style={s.topbarLogo} />
+        <MMarkLogo style={s.topbarLogo} />
         <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
         <button
           style={s.profilBtn}

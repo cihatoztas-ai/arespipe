@@ -4,6 +4,7 @@
 // Sınıflar ares-mobile.css'ten gelir: .m-topbar, .m-topbar-logo, .m-topbar-title, .m-topbar-actions, .m-topbar-btn
 
 import { useT } from '../lib/i18n'
+import MMarkLogo from './MMarkLogo'
 
 function _inisiyalCiz(kullanici) {
   if (!kullanici) return '—'
@@ -25,7 +26,7 @@ export default function MTopBar({ title, kullanici, onAvatarClick }) {
 
   return (
     <div className="m-topbar">
-      <img src="/arespipe-mark.svg" alt="AresPipe" className="m-topbar-mark" />
+      <MMarkLogo style={{ width: 30, height: 30, flexShrink: 0 }} />
       <div className="m-topbar-title">
         {title || tv('m_app_baslik', 'AresPipe')}
       </div>

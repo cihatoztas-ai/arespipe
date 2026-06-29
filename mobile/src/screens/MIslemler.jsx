@@ -12,6 +12,7 @@ import { useT } from '../lib/i18n'
 import { getKullaniciGruplari } from '../lib/yetki'
 import { getGrupBilgisi } from '../lib/gruplar'
 import MDrawer from '../components/MDrawer'
+import MMarkLogo from '../components/MMarkLogo'
 
 export default function MIslemler({ kullanici }) {
   const navigate = useNavigate()
@@ -55,7 +56,7 @@ export default function MIslemler({ kullanici }) {
     <div style={s.sayfa}>
       {/* Topbar */}
       <div style={s.topbar}>
-        <img src="/arespipe-mark.svg" alt="AresPipe" style={s.topbarLogo} />
+        <MMarkLogo style={s.topbarLogo} />
         <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
         <button
           style={s.profilBtn}

@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { UYGULAMALAR } from '../lib/uygulamalar'
 import MDrawer from '../components/MDrawer'
+import MMarkLogo from '../components/MMarkLogo'
 
 export default function MUygulamalar({ kullanici = null, anaSayfaModu = false }) {
   const navigate = useNavigate()
@@ -49,7 +50,7 @@ export default function MUygulamalar({ kullanici = null, anaSayfaModu = false })
             ‹
           </button>
         )}
-        <img src="/arespipe-mark.svg" alt="AresPipe" style={s.topbarLogo} />
+        <MMarkLogo style={s.topbarLogo} />
         <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
         <button
           style={s.profilBtn}
