@@ -1195,6 +1195,7 @@
   "m_sure_sa": "{n} س",
   "m_toast_yakinda": "صفحة {sayfa} قريباً",
   "m_uyari_durdurulmus_spool": "{n} سبول متوقف — راجع التفاصيل",
+  "m_uyari_atil_kullanici": "{n} مستخدم غير نشط منذ 30+ يومًا",
   "m_uyarilar": "التنبيهات",
   "m_yetki_yok_aciklama": "تواصل مع المسؤول.",
   "m_yetki_yok_baslik": "لم يتم تعيين صلاحيات بعد",

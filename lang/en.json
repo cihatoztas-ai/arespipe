@@ -1195,6 +1195,7 @@
   "m_sure_sa": "{n} h",
   "m_toast_yakinda": "{sayfa} page coming soon",
   "m_uyari_durdurulmus_spool": "{n} stopped spool(s) — review details",
+  "m_uyari_atil_kullanici": "{n} user(s) inactive for 30+ days",
   "m_uyarilar": "Alerts",
   "m_yetki_yok_aciklama": "Contact your administrator.",
   "m_yetki_yok_baslik": "No permissions assigned yet",

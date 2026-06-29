@@ -15,7 +15,7 @@ export default function MAnasayfaYonetici({ kullanici }) {
   const [drawerAcik, setDrawerAcik] = useState(false)
 
   const [istatistik, setIstatistik] = useState({
-    devre: null, bekleyen: null, kk: null, sevk: null, durdurulmus: 0,
+    devre: null, bekleyen: null, kk: null, sevk: null, durdurulmus: 0, atil: 0,
   })
   const [aktiviteler, setAktiviteler] = useState(null)
   const [aktiviteYukleniyor, setAktiviteYukleniyor] = useState(true)
@@ -35,7 +35,10 @@ export default function MAnasayfaYonetici({ kullanici }) {
         const buAyBas = new Date()
         buAyBas.setDate(1); buAyBas.setHours(0, 0, 0, 0)
 
-        const [rDvr, rBek, rKK, rSvk, rUyari] = await Promise.all([
+        const otuzGunOnce = new Date()
+        otuzGunOnce.setDate(otuzGunOnce.getDate() - 30)
+
+        const [rDvr, rBek, rKK, rSvk, rUyari, rAtil] = await Promise.all([
           supabase.from('devreler')
             .select('id', { count: 'exact', head: true })
             .eq('tenant_id', tenantId)
@@ -56,6 +59,12 @@ export default function MAnasayfaYonetici({ kullanici }) {
             .select('id', { count: 'exact', head: true })
             .eq('tenant_id', tenantId)
             .eq('durduruldu', true),
+          supabase.from('kullanicilar')
+            .select('id', { count: 'exact', head: true })
+            .eq('tenant_id', tenantId)
+            .eq('aktif', true)
+            .not('son_giris', 'is', null)
+            .lt('son_giris', otuzGunOnce.toISOString()),
         ])
 
         setIstatistik({
@@ -64,6 +73,7 @@ export default function MAnasayfaYonetici({ kullanici }) {
           kk: rKK.count ?? 0,
           sevk: rSvk.count ?? 0,
           durdurulmus: rUyari.count ?? 0,
+          atil: rAtil.count ?? 0,
         })
       } catch (e) {
         console.warn('[MAnasayfaYonetici] Stat:', e)
@@ -159,6 +169,21 @@ export default function MAnasayfaYonetici({ kullanici }) {
                 .replace('{n}', istatistik.durdurulmus)}
             </div>
             <div style={s.uyariArrow}>›</div>
+          </button>
+        )}
+
+        {/* Atıl kullanıcı bandı (MK-207.2) — 30+ gün giriş yok */}
+        {istatistik.atil > 0 && (
+          <button
+            style={{ ...s.uyariBanner, background: 'rgba(245,158,11,.1)', border: '1px solid var(--warn)' }}
+            onClick={() => yakinda(tv('m_uyarilar', 'Uyarılar'))}
+          >
+            <div style={s.uyariIcon}>😴</div>
+            <div style={{ ...s.uyariText, color: 'var(--warn)' }}>
+              {tv('m_uyari_atil_kullanici', '{n} kullanıcı 30+ gündür giriş yapmadı')
+                .replace('{n}', istatistik.atil)}
+            </div>
+            <div style={{ ...s.uyariArrow, color: 'var(--warn)' }}>›</div>
           </button>
         )}
 
