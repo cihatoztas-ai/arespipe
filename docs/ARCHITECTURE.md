@@ -278,7 +278,7 @@ Belge yazımı maliyetli. Hiçbir insan "51 tablomuz var" kısmını sürekli g�
 > Son güncelleme: 2026-06-29 (otomatik)
 
 - **Web sayfa:** 49
-- **Mobil ekran (React):** 18
+- **Mobil ekran (React):** 19
 - **Tablo:** 0
 - **API endpoint:** 12
 - **CI kural:** 170 (7 kategori)
