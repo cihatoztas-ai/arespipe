@@ -751,3 +751,12 @@ input, select, textarea { font-family: inherit; }
 .font-bold { font-weight: 700; }
 .text-sm { font-size: 13px; }
 .text-xs { font-size: 11px; }
+
+/* ── Marka logoları (tema-duyarlı) ───────────────── */
+.giris-logo { height: 56px; width: auto; display: block; margin-bottom: 40px; }
+.logo-koyu { display: none; }
+[data-theme=dark] .logo-acik { display: none; }
+[data-theme=dark] .logo-koyu { display: block; }
+
+/* Topbar köşe mark (AP text yerine) */
+.m-topbar-mark { width: 30px; height: 30px; display: block; flex-shrink: 0; }

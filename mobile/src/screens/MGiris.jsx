@@ -43,8 +43,8 @@ export default function Giris() {
       {/* Üst */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 24px' }}>
 
-        <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:52, fontWeight:900, color:'var(--ac)', letterSpacing:-2, lineHeight:1, marginBottom:6 }}>AP</div>
-        <div style={{ fontSize:13, fontWeight:600, color:'var(--txd)', textTransform:'uppercase', letterSpacing:2, marginBottom:48 }}>AresPipe</div>
+        <img src="/arespipe-logo-yatay.svg" alt="AresPipe" className="giris-logo logo-acik" />
+        <img src="/arespipe-logo-yatay-koyu.svg" alt="AresPipe" className="giris-logo logo-koyu" />
 
         <form onSubmit={girisYap} style={{ width:'100%', maxWidth:380 }}>
 

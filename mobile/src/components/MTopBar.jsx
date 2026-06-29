@@ -25,7 +25,7 @@ export default function MTopBar({ title, kullanici, onAvatarClick }) {
 
   return (
     <div className="m-topbar">
-      <div className="m-topbar-logo">AP</div>
+      <img src="/arespipe-mark.svg" alt="AresPipe" className="m-topbar-mark" />
       <div className="m-topbar-title">
         {title || tv('m_app_baslik', 'AresPipe')}
       </div>

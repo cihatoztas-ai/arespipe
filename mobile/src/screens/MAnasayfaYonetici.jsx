@@ -108,7 +108,7 @@ export default function MAnasayfaYonetici({ kullanici }) {
     <div style={s.sayfa}>
       {/* Topbar */}
       <div style={s.topbar}>
-        <div style={s.topbarLogo}>AP</div>
+        <img src="/arespipe-mark.svg" alt="AresPipe" style={s.topbarLogo} />
         <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
         <button
           style={s.profilBtn}
@@ -248,12 +248,9 @@ const s = {
     height: 'calc(56px + env(safe-area-inset-top))',
   },
   topbarLogo: {
-    width: 32, height: 32, borderRadius: 8,
-    background: 'var(--ac)',
-    color: '#fff',
-    fontWeight: 800, fontSize: 14,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: "'Barlow Condensed', sans-serif",
+    width: 30, height: 30,
+    display: 'block',
+    flexShrink: 0,
   },
   topbarTitle: { flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--tx)' },
   topbarBtn: {
