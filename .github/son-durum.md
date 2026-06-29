@@ -1,50 +1,41 @@
-# AresPipe — Son Durum (Oturum 207 kapanışı)
+# AresPipe — Son Durum (Oturum 208 kapanışı)
 
-## Bu oturum: KARAR + İLK MOBİL KOD PUSH
-Mobil kayıt akışı kararları DATA-first verildi (MK-158.1), ardından Sıra-1 güvenli push yapıldı.
-Mockup onaylı (`docs/anasayfa-mockup.html`), mevcut akışı bozmayan ilk native React ekran canlıya çıktı.
+## Bu oturum: 4 DALLI ROUTER + MARKA ENTEGRASYONU
+Sıra 3 (MAnasayfa 4 dallı router) canlıya çıktı. Ardından logo/marka mobile'a entegre edildi
+(PWA ikonları, manifest, giriş + topbar logoları). İş modeli MK-208.1 olarak kilitlendi.
 
-## Yapılanlar
-- **Veri teşhisi (information_schema + canlı dağılım):**
-  - `kullanicilar.tenant_id = NOT NULL` → "tenant yok" modeli migration'sız imkânsız.
-  - `kendi_personel` tüm satırlarda `false` → ÖLÜ KOLON, iç/dış ayrımı taşımıyor.
-  - Web kayıt akışı (`kullanicilar.html`) = saf B: `auth.signInWithOtp` + `kullanicilar.upsert(onConflict:email)`,
-    HİÇ `api/*.js` kullanmıyor → mobile'da endpoint'siz tekrarlanabilir.
-  - Görünmeyen RBAC katmanı tespit edildi: `yetki_tanimlari`, `kullanici_yetkileri`, `rol_sablonlari`,
-    `blok_sayfa_yetkileri`, `firma_moduller`, `feature_flags`, `tenant_features`, `customers` (müşteri için hazır).
-  - `lib/yetki.js` zaten kurulu (`yoneticiMi`, `getKullaniciGruplari`); eksik: `musteriMi` + uygulama-kullanıcı tespiti.
-- **Sıra-1 push (be3d560, CI yeşil):**
-  - `mobile/src/lib/uygulamalar.js` — 4 uygulama sabit liste (gruplar.js deseni).
-  - `mobile/src/screens/MUygulamalar.jsx` — iki modlu (route + anaSayfaModu), MIslemler s/b kalıbı, min 72px.
-  - `mobile/src/App.jsx` — `/uygulamalar` route + import.
-  - `lang/{tr,en,ar}.json` — 16'şar (48 toplam) yeni `m_*` anahtar (root canonical, prebuild mobile/src/lang üretir).
-- **Hijyen (658e68f):** kazara commit'lenen `mobile.zip` repodan çıkarıldı + `.gitignore`'a eklendi.
+## Yapılanlar (canlı, 7 push)
+- **Router (972d47c):** MAnasayfa 4 dallı — yoneticiMi → dashboard, musteriMi → MMusteri placeholder,
+  gruplar.length>0 → MIslemler, else → MUygulamalar anaSayfaModu. `yetki.js`'e `musteriMi` (rol-temelli,
+  yoneticiMi kalıbı). DATA teşhisi: customers↔kullanicilar bağı DB'de YOK → musteriMi rol-temelli,
+  bugün hiç tetiklenmez (canlıda rol='musteri' yok), §7-3'e park. `m_musteri_yakinda` dil anahtarı (3 dil).
+- **PWA ikon+manifest (9a62f40):** `mobile/public`'e icon-180/192/512/1024 + favicon. manifest.webmanifest
+  oluşturuldu (standalone, AresPipe). index.html head: apple-touch-icon, manifest, theme-color, title=AresPipe, lang=tr.
+- **Ekran içi logo (a60410d):** topbar "AP" text → mark SVG (4 ekran). MGiris büyük "AP" → yatay logo.
+- **Giriş animasyonu (23da069):** MGiris inline SVG (tema-değişkenli var(--tx/--ac/--bg)) + tarama
+  animasyonu (web kalıbı: useRef + beginElement, açılışta bir kez). ÇALIŞIYOR.
+- **Topbar mark animasyonu (2263a7e → 1a129b8):** ortak MMarkLogo component (MK-109.1), mark-anim-bk.svg.
+  ⚠️ iOS Safari'de tarama çizgisi GÖRÜNMÜYOR/takılıyor — SMIL beginElement + CSS keyframes denendi, ikisi de
+  iOS'ta tutmadı. KOD DURUYOR (mark statik görünüyor, animasyon oynamıyor) — 209 debt.
 
-## Kesinleşen kararlar (MOBIL-STRATEJI §7 kilitleri)
-- **§7-1 Spool kullanıcısı kaydı = B** (yönetici davet, web OTP+upsert akışı mobile'a birebir). A (davet kodu) = park.
-- **§7-2 Uygulama kullanıcısı = yeni `rol='uygulama'` + ortak "uygulama" tenant'ı** (signUp self-servis, endpoint'siz).
-  Gerekçe: `tenant_id NOT NULL`'ı nullable yapmak tüm RLS'i riske atar — yeni rol = sıfır migration.
-- **§7-4 Çoklu rol = bedava:** `upsert(onConflict:email)` davet gelince mevcut satırın rol+tenant'ını günceller.
-- **§7-3 Müşteri:** `customers` tablosu hazır → ayrı tur.
+## Kesinleşen karar
+- **MK-208.1** — Üç erişim katmanı (ücretli kurumsal SaaS teklif-usulü off-app / ücretsiz müşteri izleme /
+  halka açık uygulama mobil-kayıt). Platform-bağımsız kimlik. Market engelleri = Safari PWA dağıtımında PARK.
+  KARARLAR.md + (MOBIL-STRATEJI'ye işlenecek — 209).
 
-## Yeni kararlar (KARARLAR.md'ye işlenecek)
-- **MK-207.1** — 12-fonksiyon tavanı (MK-129.3) bir KISIT'tır, mimari pusula DEĞİL. Doğru tasarım yeni endpoint
-  gerektiriyorsa ve konsolidasyonla yer açılamıyorsa Pro'ya geçilir. Tavanı korumak için kötü tasarıma sapılmaz.
-- **MK-207.2** — Kullanıcı offboarding kod tarafında ZORLANAMAZ (süreç sorunu). Sistem atıl/pasif kullanıcıyı
-  yöneticiye GÖRÜNÜR kılar: `son_giris` dormancy uyarısı + dashboard sayaç (aktif/pasif/atıl).
-  Mevcut kaldıraçlar: `aktif=false` (tam kilit), `kullanici_bloklar` satır silme (uygulama kullanıcısına düşür).
-  → Kayıt/davet build turuna (Sıra 8) yazıldı.
-
-## Tespit edilen borçlar (yeni)
-- Davet upsert'i `kullanicilar.davet_eden`'i YAZMIYOR (şemada var, akış doldurmuyor) — denetim izi eksik.
-- `kendi_personel` ölü kolon — DROP adayı (önce kullanım taraması).
+## Açık debt (209)
+- **Topbar mark animasyonu:** web `beginElement()` ile tetikliyor; mobilde iOS Safari uyumlu hale getir.
+  Web giris.html satır 230 (inline SVG) + 383 (tara() fonksiyonu) referans. Kod hazır (MMarkLogo + mark-anim-bk.svg),
+  iOS tetikleme çözülmedi. Statiğe DÖNÜLMEDİ — web statik kullanmıyor, animasyon hedefi korunuyor.
+- MK-208.1 MOBIL-STRATEJI'ye işlenmedi (sadece KARARLAR'da).
 
 ## CI / push
-- Kod commit'i (be3d560) `[skip ci]` YOK → CI yeşil, bot ci-son-rapor.json (732ee05) + AUTO docs (8b8364c) geldi.
-- `api/*.js = 12` (tavan korundu, endpoint eklenmedi). HEAD: 8b71a6e.
-- Canlı test: /uygulamalar — ✅ DOĞRULANDI (route modu, 4 YAKINDA kartı, doğru ikon/renk, dil dosyası, geri butonu).
-- Bonus tespit: yönetici dashboard'da "durdurulmuş spool var" uyarı bandı zaten kurulu → MK-207.2 dormancy sayacı bu kalıptan türetilir.
+- HEAD: 1a129b8 (+ varsa bot ci commit'leri). api/*.js = 12 (tavan korundu, endpoint eklenmedi).
+- Kod commit'leri [skip ci] YOK; bu kapanış doc commit'i [skip ci] VAR.
+- Canlı: router + ikonlar + giriş logosu/animasyonu ✅. Topbar mark görünüyor, animasyon iOS'ta ⚠️.
 
-## Sonraki oturum (208) — detay CLAUDE-SONRAKI-OTURUM.md
-- **Sıra 3: MAnasayfa 4 dallı router** (§4). `MUygulamalar`'ın `anaSayfaModu` prop'unu uygulama kullanıcısına bağla
-  → ana-sayfa modu ilk kez canlıya çıkar. `yetki.js`'e `musteriMi` + uygulama-kullanıcı tespiti (Sıra 2) eklenir.
+## Sonraki oturum (209) — detay CLAUDE-SONRAKI-OTURUM.md
+- Topbar mark animasyonu iOS fix (web kalıbı) VEYA kabul edilebilir bırak.
+- Sıra 4: MIslemler "Uygulamalar" butonu + 🔒 kalkar.
+- Sıra 7: MMusteri gerçek ekran (mockup-first, customers RLS).
+- Sıra 8: Kayıt/davet akışı (EN BÜYÜK) — §7 kararları kilitli.

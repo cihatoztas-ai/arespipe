@@ -3158,3 +3158,23 @@ Davet PDF'i paket oluşumuyla atomik, CLIENT-SIDE üretilir (jsPDF/pdfmake — P
 Yeni/yeniden-yazılan sayfaların DOMContentLoaded init'i **kanonik auth-ready döngüsünü** kullanmalı: `getSession() → ARES.oturumKontrol() → tenantKod() → sayfaYetkiKontrol()`. 200'de kalite_kontrol.html ilk rewrite'ında `oturumKontrol()` atlanmıştı → `_oturum` null → `sayfaYetkiKontrol` (ares-store:844 `if(!_oturum)`) sayfayı **giris.html'e atıyordu** (rol reddi index.html'e atar; giris.html = oturum yok demek). `ARES.mod==='supabase'` guard'ı da kırılgandı (mod async set ediliyorsa init hiç çalışmaz). Fix commit `64148f8`. Eski sayfaların init deseni referans.
 
 **İlişkili:** MK-126.8 (mevcut deseni oku, varsayma), MK-129.3 (12 endpoint — client-side auth).
+
+
+### MK-208.1 [MIMARI/IS-MODELI] — Üç erişim katmanı + platform-bağımsız kimlik + market engelleri
+
+**İş modeli (kilitli, Cihat oturum 208):** Üç erişim katmanı, tek kod tabanı, tek kimlik sistemi:
+1. **Asıl ürün (ücretli SaaS):** imalat firmaları (önce kendi atölyemiz → başka imalatçılar → imalat+montaj firmaları). Tenant başına abonelik. **Teklif usulü** fiyat (sabit liste yok), ödeme **off-app** (uygulama dışı anlaşma). `tenant_id` izolasyonu = firma ayrımı. Tam program: spool yaşam döngüsü, firmanın kendi sürecine göre.
+2. **Müşteri izleme (ÜCRETSİZ):** firmanın müşterisi, salt-okunur, yalnız kendi projesi. `customers` + RLS. "Kendi işini takip için para ödemez." Hem web hem mobil erişir.
+3. **Halka açık uygulama (şimdilik ücretsiz → ileride abonelik olabilir):** dışarıdan herkes, yalnız Uygulamalar. `rol='uygulama'` + ortak tenant. Kayıt **yalnız mobil** (self-servis).
+
+**Kimlik = platform-bağımsız:** Aynı e-posta+şifre = aynı `auth.users` = aynı `kullanicilar` satırı. iOS/Android/web yalnız istemci; platform kimliğin parçası DEĞİL. Çoklu cihaz/platform = sıfır kimlik riski. Apple'dan üye olup Android/web'den giren aynı satıra bağlanır.
+
+**Abonelik kişiye bağlanır, store'a değil:** Ödeme katmanı geldiğinde abonelik `tenant_features`/`feature_flags` + `kullanicilar` satırı üstünde yaşar. Store makbuzu → kullanıcı entitlement uzlaştırması (receipt validation) o turda kurulur.
+
+**Market engelleri = ŞU AN PARK (aktif risk değil):** Mevcut dağıtım = Safari PWA "ana ekrana ekle" kısayolu (`arespipe-mob.vercel.app`), market gönderimi YOK → App Store/Play inceleme süreci devrede değil → G-4.2 / G-3.1.1 / gizlilik etiketi engelleri ŞU AN GEÇERSİZ. Bunlar yalnız ileride markete native binary gönderilirse aktifleşir. O turda:
+- **G-4.2 (PWA/WebView reddi):** Native React kararı (MK-206.1) doğru zemin; iOS'ta native özellik kanıtı gerekir. Android (TWA) kolay, iOS aynı PWA'yı reddedebilir.
+- **G-3.1.1 (ödeme) — B2B lehine:** Kurumsal SaaS off-app teklif usulü → "hesap erişim istemcisi" istisnası, IAP zorunlu DEĞİL. KRİTİK: mobilde web satın alma linki/butonu/"sitemizden abone ol" metni OLMAZ. Risk sadece gelecekteki halka açık tüketici aboneliğinde (mobilde IAP gerekir).
+- **G-2.1 (eksik uygulama):** YAKINDA kartlar ret riski → gönderimde ≥1 uygulama çalışır olmalı. (Not: uygulamalar zaten YAKINDA iken kullanıma kapalı, gönderim zamanı açılacak.)
+- **Gizlilik (2026 sıkı):** App Privacy etiketi + AI bildirimi (Parça Tanıma Vision AI) + Gizlilik Politikası + Kullanım Şartları.
+
+**İlişkili:** MK-206.1 (native React), MK-207.1/207.2, §7-2/7-3 (MOBIL-STRATEJI), MK-129.3.
