@@ -86,21 +86,11 @@ export default function MIslemler({ kullanici }) {
           </div>
         </div>
 
-        {/* Buton listesi veya boş durum */}
+        {/* Buton listesi (yetki bloğu olanlar; bloğu olmayan zaten router'da MUygulamalar'a gider) */}
         {gruplar === null && !hata ? (
           <div style={s.bosDurum}>•••</div>
         ) : hata ? (
           <div style={{ ...s.bosDurum, color: 'var(--re)' }}>{hata}</div>
-        ) : gruplar.length === 0 ? (
-          <div style={s.bosDurum}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginBottom: 6 }}>
-              {tv('m_yetki_yok_baslik', 'Henüz yetki tanımlanmamış')}
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--txd)', lineHeight: 1.5 }}>
-              {tv('m_yetki_yok_aciklama', 'Yöneticinizle iletişime geçin.')}
-            </div>
-          </div>
         ) : (
           <div style={s.butonListe}>
             {gruplar.map((grup) => {
@@ -130,6 +120,24 @@ export default function MIslemler({ kullanici }) {
               onClick={() => navigate('/qr')}
             />
           </div>
+        )}
+
+        {/* Uygulamalar — herkese açık, blok gerektirmez (§2) */}
+        {gruplar !== null && !hata && (
+          <>
+            <div style={s.sectionRow}>
+              <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+            </div>
+            <div style={s.butonListe}>
+              <GrupButonu
+                ikon="📚"
+                renk="var(--ac)"
+                baslik={tv('m_uyg_basligi', 'Uygulamalar')}
+                altbaslik={tv('m_uyg_basligi_alt', 'Uygulamalarınız')}
+                onClick={() => navigate('/uygulamalar')}
+              />
+            </div>
+          </>
         )}
 
         {/* Alt boşluk safe-area */}
