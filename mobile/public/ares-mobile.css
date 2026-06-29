@@ -760,3 +760,7 @@ input, select, textarea { font-family: inherit; }
 
 /* Topbar köşe mark (AP text yerine) */
 .m-topbar-mark { width: 30px; height: 30px; display: block; flex-shrink: 0; }
+
+/* Giriş inline logo sarmalayıcı */
+.giris-logo-wrap { margin-bottom: 40px; }
+.giris-logo-wrap svg { height: 56px; width: auto; display: block; }
