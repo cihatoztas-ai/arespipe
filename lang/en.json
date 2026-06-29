@@ -1958,5 +1958,6 @@
   "m_uyg_kesim_opt": "Cut Optimization",
   "m_uyg_kesim_opt_alt": "Minimize length waste",
   "m_uyg_parca_tanima": "Part Recognition",
-  "m_uyg_parca_tanima_alt": "Flange/fitting photo → standard info"
+  "m_uyg_parca_tanima_alt": "Flange/fitting photo → standard info",
+  "m_musteri_yakinda": "Your projects will appear here soon."
 }

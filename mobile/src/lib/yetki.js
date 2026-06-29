@@ -140,3 +140,15 @@ export function yoneticiMi(kullanici) {
   if (!kullanici) return false
   return ['super_admin', 'yonetici', 'firma_admin'].includes(kullanici.rol)
 }
+
+/**
+ * Kullanıcının rolü müşteri mi?
+ * (MAnasayfa router: müşteri → kendi projeleri ekranı.)
+ * NOT: customers↔kullanicilar bağı DB'de yok (Session 208 teşhisi);
+ * bağ rol-temelli, yoneticiMi kalıbının aynısı. Bugün hiç tetiklenmez
+ * (canlıda rol='musteri' kullanıcı yok) — §7-3 müşteri turunda dolar.
+ */
+export function musteriMi(kullanici) {
+  if (!kullanici) return false
+  return kullanici.rol === 'musteri'
+}
