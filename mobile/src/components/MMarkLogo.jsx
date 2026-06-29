@@ -12,8 +12,8 @@ export default function MMarkLogo({ style }) {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      const a = ref.current?.querySelector('.ares-tara-anim')
-      if (a && a.beginElement) { try { a.beginElement() } catch (e) {} }
+      const animler = ref.current?.querySelectorAll('.ares-tara-anim')
+      animler?.forEach(a => { if (a.beginElement) { try { a.beginElement() } catch (e) {} } })
     }, 250)
     return () => clearTimeout(t)
   }, [])
