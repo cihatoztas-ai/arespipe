@@ -1,8 +1,8 @@
 {
-  "tarih": "2026-06-30T20:16:32.312Z",
-  "commit_sha": "1f2f641815606541389aed06eed99e3596559510",
+  "tarih": "2026-06-30T20:54:22.936Z",
+  "commit_sha": "a531447c06d722d8d980768ce0610514462b1710",
   "commit_ref": "main",
-  "workflow_run": 1209,
+  "workflow_run": 1210,
   "ozet": {
     "hata": 0,
     "uyari": 114,
@@ -221,7 +221,7 @@
           "dosya": "mobile/src/App.jsx",
           "sayi": 1,
           "satirlar": [
-            180
+            187
           ]
         }
       ]
@@ -841,7 +841,7 @@
         {
           "kod": "HISTORY_BACK",
           "tip": "uyari",
-          "satir": 180,
+          "satir": 187,
           "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan."
         }
       ]
