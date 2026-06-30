@@ -101,8 +101,11 @@ export default function IbSpoolDetay({
   bloklar = [],
   onBaskaSpool,
   onGeri,
+  mod = 'operator',
 }) {
   const { tv } = useT()
+  // 210/Sira9: 'operator' (varsayilan, hic degismez) | 'denetim' (yonetici salt-izleyici)
+  const denetimMod = mod === 'denetim'
 
   const navigate = useNavigate()
   const [yerelSpool, setYerelSpool] = useState(spool)
@@ -119,6 +122,8 @@ export default function IbSpoolDetay({
   // Kaydet sonrası 1.2sn 'basarili'/'hata' gösterilir, sonra silinir.
   const [heatKayitDurumu, setHeatKayitDurumu] = useState({})
   const [aktifSekme, setAktifSekme] = useState('genel')
+  // 210/Sira9: denetim modu verisi (sadece denetimMod iken cekilir)
+  const [denetimVeri, setDenetimVeri] = useState({ kk: null, sevk: null, belgeler: [], loglar: [] })
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   // 3f.1: 'peek' (mevcut tap-to-expand) | 'kapat' (yeni kapat onay) | null (kapalı)
   const [yumusDrawerMod, setYumusDrawerMod] = useState(null)
@@ -346,6 +351,50 @@ export default function IbSpoolDetay({
     return () => { iptal = true }
   }, [yerelSpool?.id])
 
+  // ─── 210/Sira9: Denetim verisi (KK / sevkiyat / belgeler / islem_log) ───
+  // Sadece yonetici salt-izleyici modunda. MSpoolDetay sorgularinin birebir
+  // muadili (kolon adlari canli koddan teyitli). Operator modunda hic calismaz.
+  useEffect(() => {
+    if (!denetimMod || !yerelSpool?.id) return
+    let iptal = false
+    ;(async () => {
+      try {
+        const [rKK, rSevk, rBelge, rLog] = await Promise.all([
+          supabase.from('kk_davet_spooller')
+            .select('kk_davetler(davet_no, olusturma)')
+            .eq('spool_id', yerelSpool.id),
+          supabase.from('sevkiyat_spooller')
+            .select('sevkiyatlar(sevk_no, tarih)')
+            .eq('spool_id', yerelSpool.id)
+            .limit(1),
+          supabase.from('belgeler')
+            .select('ad, dosya_url, olusturma')
+            .eq('spool_id', yerelSpool.id)
+            .order('olusturma', { ascending: false }),
+          supabase.from('islem_log')
+            .select('katman, islem, olusturma')
+            .eq('spool_id', yerelSpool.id)
+            .order('olusturma', { ascending: false })
+            .limit(30),
+        ])
+        if (iptal) return
+        const kkList = (rKK?.data || [])
+          .map(r => r.kk_davetler)
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.olusturma) - new Date(a.olusturma))
+        setDenetimVeri({
+          kk:       kkList[0] || null,
+          sevk:     rSevk?.data?.[0]?.sevkiyatlar || null,
+          belgeler: rBelge?.data || [],
+          loglar:   rLog?.data || [],
+        })
+      } catch (e) {
+        console.warn('[IbSpoolDetay] denetim verisi yuklenemedi:', e)
+      }
+    })()
+    return () => { iptal = true }
+  }, [denetimMod, yerelSpool?.id])
+
   // ─── Yumuşak uyarı kartlarını topla ───
   // 4 kategori (70. oturum 3d, doygun palet):
   //   Alıştırma kırmızı (spool.alistirma VAR/KISMI)
@@ -429,6 +478,7 @@ export default function IbSpoolDetay({
   //   4. alternatifBasamak  — kaynak ailesi içi geçiş
   useEffect(() => {
     if (!yerelSpool) return
+    if (denetimMod) return  // 210/Sira9: yonetici salt-izleyici — akis-kesici drawer yok
 
     // 1. tamAlistirmaKaynak (70. oturum 3d-fix3) — Spool tamamen alıştırma
     // ise kaynak yapılmaz. Kaynakçı operatöre "yetki yok" yerine net mesaj.
@@ -1039,8 +1089,13 @@ export default function IbSpoolDetay({
 
       {/* Aktif rol + Spool ID + Peek tab satırı */}
       <div style={s.idSatir}>
-        <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
+        {denetimMod ? (
+          <span style={s.denetimPill}>{tv('m_ib_sd_denetim', 'Denetim')}</span>
+        ) : (
+          <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
+        )}
         <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
+        {!denetimMod && (
         <button
           type="button"
           style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
@@ -1057,6 +1112,7 @@ export default function IbSpoolDetay({
             <span style={s.peekSayi}>{yumusKartlar.length}</span>
           )}
         </button>
+        )}
       </div>
 
       {/* Sekmeler */}
@@ -1075,6 +1131,15 @@ export default function IbSpoolDetay({
         >
           {tv('m_ib_sd_malzeme', 'Malzeme')}
         </button>
+        {denetimMod && (
+          <button
+            type="button"
+            style={aktifSekme === 'denetim' ? s.sekmeAktif : s.sekme}
+            onClick={() => setAktifSekme('denetim')}
+          >
+            {tv('m_ib_sd_denetim', 'Denetim')}
+          </button>
+        )}
       </div>
 
       {/* İçerik */}
@@ -1085,8 +1150,12 @@ export default function IbSpoolDetay({
             malzemeler={malzemeler}
             heatKaydet={heatKaydet}
             kayitDurumu={heatKayitDurumu}
+            saltOkur={denetimMod}
             tv={tv}
           />
+        )}
+        {aktifSekme === 'denetim' && denetimMod && (
+          <DenetimPanel spool={yerelSpool} veri={denetimVeri} tv={tv} />
         )}
       </div>
 
@@ -1095,6 +1164,16 @@ export default function IbSpoolDetay({
           priority 1). Footer'da "İşe Başla" disabled gösterilir, info
           satırı yok (mesaj drawer'da). */}
       <div style={s.footWrap}>
+        {denetimMod ? (
+          <button
+            type="button"
+            style={s.footBtnIkincil}
+            onClick={() => navigate(devre?.id ? `/devre/${devre.id}` : '/devreler')}
+          >
+            {tv('m_ib_sd_devreye_don', 'Devreye Dön')}
+          </button>
+        ) : (
+        <>
         {basamakTamamlanmis && !isDevamEdiyor && (
           <div style={s.tamamlanmisInfo}>
             <strong>{hedefBasamakAd}</strong> {tv('m_ib_sd_tek_seferlik', 'basamağı bu spool için zaten tamamlanmış. Tekrar başlatılamaz.')}
@@ -1126,6 +1205,8 @@ export default function IbSpoolDetay({
               {tv('m_ib_sd_iptal', 'İptal Et')}
             </button>
           </>
+        )}
+        </>
         )}
       </div>
 
@@ -1413,7 +1494,136 @@ function GenelPanel({ spool, devre, tv }) {
 //   dirsek, fitting, te (default) → amber (yön/fitting)
 //   bilinmeyen                    → gri
 
-function MalzemePanel({ malzemeler, heatKaydet, kayitDurumu, tv }) {
+// ─────────── 210/Sira9: Denetim Paneli (yonetici salt-izleyici) ───────────
+// MSpoolDetay'in yonetici-ozel bloklari tek sekmede: Islem Durumu n/N,
+// KK & Sevkiyat, Belgeler, Islem Kayitlari. n/N spool nested kalemlerden
+// (wrapper spooller'i nested cekiyor). Tarih/sure formatlari inline.
+function denetimTarih(x) {
+  if (!x) return '—'
+  try {
+    return new Date(x).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return '—' }
+}
+function denetimSure(x) {
+  if (!x) return ''
+  try {
+    const d = new Date(x); const fark = Date.now() - d.getTime()
+    const sa = Math.floor(fark / 3600000)
+    if (sa < 1) return 'az önce'
+    if (sa < 24) return `${sa} saat önce`
+    return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  } catch { return '' }
+}
+function nNDenetimRenk(tam, top) {
+  if (top === 0) return { bg: 'var(--sur2)', tx: 'var(--txd)' }
+  if (tam === top) return { bg: 'rgba(29,158,117,.14)', tx: 'var(--gr)' }
+  if (tam === 0)   return { bg: 'var(--sur2)', tx: 'var(--txd)' }
+  return { bg: 'rgba(217,119,6,.14)', tx: 'var(--warn)' }
+}
+
+function DenetimPanel({ spool, veri, tv }) {
+  const dnt = {
+    kart:   { background: 'var(--sur)', border: '0.5px solid var(--bor)', borderRadius: 12, padding: '12px 14px', marginBottom: 12 },
+    baslik: { fontSize: 13, fontWeight: 600, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    sayac:  { fontSize: 12, color: 'var(--txd)', fontWeight: 400 },
+    satir:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '4px 0' },
+    etk:    { color: 'var(--txd)' },
+    deg:    { color: 'var(--tx)' },
+    bos:    { color: 'var(--txd)' },
+    pill:   { fontSize: 12, padding: '2px 10px', borderRadius: 12 },
+  }
+
+  const kalem = (arr, anahtar) => {
+    const l = Array.isArray(arr) ? arr : []
+    return { top: l.length, tam: l.filter(k => k[anahtar]).length }
+  }
+  const islemler = {
+    kesim:     kalem(spool?.kesim_kalemleri, 'kesildi'),
+    bukum:     kalem(spool?.bukum_kalemleri, 'bukuldu'),
+    markalama: kalem(spool?.markalama_kalemleri, 'markalandi'),
+    test:      { top: 0, tam: 0 },
+  }
+  const sirali = [
+    ['kesim',     tv('m_ib_sd_kesim', 'Kesim')],
+    ['bukum',     tv('m_ib_sd_bukum', 'Büküm')],
+    ['markalama', tv('m_ib_sd_markalama', 'Markalama')],
+    ['test',      tv('m_ib_sd_test', 'Test')],
+  ]
+  const tamSay = sirali.filter(([k]) => islemler[k].top > 0 && islemler[k].tam === islemler[k].top).length
+  const aktSay = sirali.filter(([k]) => islemler[k].top > 0).length || 4
+
+  const { kk, sevk, belgeler, loglar } = veri
+  const renkMap = { insert: 'var(--gr)', update: 'var(--ac)', delete: 'var(--re)' }
+
+  return (
+    <div style={{ padding: '12px 16px' }}>
+
+      {/* Islem Durumu n/N */}
+      <div style={dnt.kart}>
+        <div style={dnt.baslik}>
+          <span>{tv('m_ib_sd_islem_durumu', 'İşlem Durumu')}</span>
+          <span style={dnt.sayac}>{tamSay}/{aktSay} {tv('m_ib_sd_tamam', 'tamam')}</span>
+        </div>
+        {sirali.map(([k, ad]) => {
+          const r = nNDenetimRenk(islemler[k].tam, islemler[k].top)
+          return (
+            <div style={dnt.satir} key={k}>
+              <span style={dnt.etk}>{ad}</span>
+              <span style={{ ...dnt.pill, background: r.bg, color: r.tx }}>{islemler[k].tam}/{islemler[k].top}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* KK & Sevkiyat */}
+      <div style={dnt.kart}>
+        <div style={dnt.baslik}><span>{tv('m_ib_sd_kk_sevk', 'KK ve Sevkiyat')}</span></div>
+        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_kk', 'Kalite Kontrol')}</span><span style={kk ? { color: 'var(--ac)' } : dnt.bos}>{kk?.davet_no || '—'}</span></div>
+        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_kk_tarih', 'KK Tarihi')}</span><span style={kk ? dnt.deg : dnt.bos}>{kk ? denetimTarih(kk.olusturma) : '—'}</span></div>
+        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_sevk', 'Sevkiyat')}</span><span style={sevk ? dnt.deg : dnt.bos}>{sevk?.sevk_no || '—'}</span></div>
+        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_sevk_tarih', 'Sevk Tarihi')}</span><span style={sevk ? dnt.deg : dnt.bos}>{sevk ? denetimTarih(sevk.tarih) : '—'}</span></div>
+      </div>
+
+      {/* Belgeler */}
+      <div style={dnt.kart}>
+        <div style={dnt.baslik}><span>{tv('m_ib_sd_belgeler', 'Belgeler')}</span></div>
+        {(!belgeler || belgeler.length === 0) ? (
+          <div style={{ ...dnt.bos, fontSize: 13, padding: '4px 0' }}>{tv('m_ib_sd_belge_yok', 'Belge eklenmemiş')}</div>
+        ) : belgeler.map((b, i) => (
+          <div key={i} onClick={() => b.dosya_url && window.open(b.dosya_url, '_blank', 'noopener')}
+               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', cursor: b.dosya_url ? 'pointer' : 'default' }}>
+            <span style={{ fontSize: 18 }} aria-hidden="true">📄</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.ad || tv('m_ib_sd_belge', 'Belge')}</div>
+              <div style={{ fontSize: 11, color: 'var(--txd)' }}>{denetimTarih(b.olusturma)}</div>
+            </div>
+            <span style={{ color: 'var(--txd)' }}>›</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Islem Kayitlari */}
+      <div style={dnt.kart}>
+        <div style={dnt.baslik}><span>{tv('m_ib_sd_islem_kayitlari', 'İşlem Kayıtları')}</span></div>
+        {(!loglar || loglar.length === 0) ? (
+          <div style={{ ...dnt.bos, fontSize: 13, padding: '4px 0' }}>{tv('m_ib_sd_islem_yok', 'İşlem kaydı yok')}</div>
+        ) : loglar.map((l, i) => (
+          <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '5px 0' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: renkMap[l.islem] || 'var(--txd)', marginTop: 6, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 13, color: 'var(--tx)' }}>{(l.katman || '—')} · {(l.islem || '—')}</div>
+              <div style={{ fontSize: 11, color: 'var(--txd)' }}>{denetimSure(l.olusturma)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ height: 16 }} />
+    </div>
+  )
+}
+
+function MalzemePanel({ malzemeler, heatKaydet, kayitDurumu, saltOkur = false, tv }) {
   if (!malzemeler || malzemeler.length === 0) {
     return (
       <div style={s.merkezBos}>
@@ -1443,6 +1653,7 @@ function MalzemePanel({ malzemeler, heatKaydet, kayitDurumu, tv }) {
           sira={idx + 1}
           heatKaydet={heatKaydet}
           kayitDurumu={kayitDurumu[m.id]}
+          saltOkur={saltOkur}
           tv={tv}
         />
       ))}
@@ -1451,7 +1662,7 @@ function MalzemePanel({ malzemeler, heatKaydet, kayitDurumu, tv }) {
   )
 }
 
-function MalzemeKart({ malzeme, sira, heatKaydet, kayitDurumu, tv }) {
+function MalzemeKart({ malzeme, sira, heatKaydet, kayitDurumu, saltOkur = false, tv }) {
   const [heatLocal, setHeatLocal] = useState(malzeme.heat_no || '')
 
   // malzeme.heat_no dış kaynaktan değişirse (başka tab/cihaz) state senkron
@@ -1522,13 +1733,14 @@ function MalzemeKart({ malzeme, sira, heatKaydet, kayitDurumu, tv }) {
         <input
           type="text"
           value={heatLocal}
-          onChange={(e) => setHeatLocal(e.target.value)}
-          onBlur={() => heatKaydet(malzeme.id, heatLocal)}
+          onChange={saltOkur ? undefined : (e) => setHeatLocal(e.target.value)}
+          onBlur={saltOkur ? undefined : () => heatKaydet(malzeme.id, heatLocal)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
           placeholder={tv('m_ib_sd_malzeme_heat_placeholder', 'Heat no...')}
-          style={{ ...s.heatInput, borderColor: heatBorderColor }}
+          style={{ ...s.heatInput, borderColor: heatBorderColor, ...(saltOkur ? { opacity: 0.7, cursor: 'default' } : {}) }}
+          readOnly={saltOkur}
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
@@ -1857,6 +2069,15 @@ const s = {
     fontWeight: 500,
     color: 'var(--ac)',
     background: 'rgba(45,142,255,0.12)',
+    padding: '5px 12px',
+    borderRadius: 8,
+  },
+  // 210/Sira9: Denetim modu rol pill'i (mor — KK/leg ailesi)
+  denetimPill: {
+    fontSize: 14,
+    fontWeight: 500,
+    color: 'var(--leg)',
+    background: 'rgba(124,58,237,0.12)',
     padding: '5px 12px',
     borderRadius: 8,
   },

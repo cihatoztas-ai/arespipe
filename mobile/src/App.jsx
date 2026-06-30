@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { I18nProvider } from './lib/i18n'
 
 import MGiris from './screens/MGiris'
 import MAnasayfa from './screens/MAnasayfa'
 import MIslemler from './screens/MIslemler'
-import MSpoolDetay from './screens/MSpoolDetay'
+import IbSpoolDetay from './components/isbaslat/IbSpoolDetay'  // 210/Sira9: /spool/:id denetim host (MSpoolDetay emekli)
 import MDevreDetay from './screens/MDevreDetay'
 import MDevreler from './screens/MDevreler'
 import MQRTara from './screens/MQRTara'
@@ -53,7 +53,7 @@ export default function App() {
         <Route path="/giris" element={!oturum ? <MGiris /> : <Navigate to="/" />} />
         <Route path="/" element={oturum ? <MAnasayfa /> : <Navigate to="/giris" />} />
         <Route path="/islemler" element={oturum ? <MIslemlerSayfasi /> : <Navigate to="/giris" />} />
-        <Route path="/spool/:id" element={oturum ? <MSpoolDetay /> : <Navigate to="/giris" />} />
+        <Route path="/spool/:id" element={oturum ? <MSpoolDenetimSayfasi /> : <Navigate to="/giris" />} />
         <Route path="/devre/:id" element={oturum ? <MDevreDetay /> : <Navigate to="/giris" />} />
         <Route path="/devreler" element={oturum ? <MDevreler /> : <Navigate to="/giris" />} />
         <Route path="/qr" element={oturum ? <MQRTara /> : <Navigate to="/giris" />} />
@@ -111,6 +111,87 @@ function MIslemlerSayfasi() {
   if (!kullanici) return <Navigate to="/giris" />
 
   return <MIslemler kullanici={kullanici} />
+}
+
+// 210/Sira9: /spool/:id yonetici denetim wrapper.
+// Kullanici + spool'u (nested kalemlerle, n/N icin) ceker, IbSpoolDetay'i
+// mod="denetim" ile host eder. Operator IbSpoolDetay'a MIsBaslat'tan QR ile
+// girer; yonetici buradan salt-izleyici olarak girer. MSpoolDetay emekli.
+function MSpoolDenetimSayfasi() {
+  const { id } = useParams()
+  const [kullanici, setKullanici] = useState(null)
+  const [spool, setSpool] = useState(null)
+  const [yukleniyor, setYukleniyor] = useState(true)
+  const [bulunamadi, setBulunamadi] = useState(false)
+
+  useEffect(() => {
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) { if (!iptal) setYukleniyor(false); return }
+        const { data: kData } = await supabase
+          .from('kullanicilar')
+          .select('id, ad_soyad, email, rol, tenant_id')
+          .eq('id', session.user.id)
+          .single()
+        if (iptal) return
+        if (!kData) { setYukleniyor(false); return }
+        setKullanici(kData)
+
+        const { data: spData, error: spErr } = await supabase
+          .from('spooller')
+          .select(`
+            *,
+            kesim_kalemleri(id, kesildi),
+            bukum_kalemleri(id, bukuldu),
+            markalama_kalemleri(id, markalandi)
+          `)
+          .eq('id', id)
+          .eq('tenant_id', kData.tenant_id)
+          .single()
+        if (iptal) return
+        if (spErr || !spData) { setBulunamadi(true); setYukleniyor(false); return }
+        setSpool(spData)
+        setYukleniyor(false)
+      } catch (e) {
+        console.warn('[MSpoolDenetim] yukle hata:', e)
+        if (!iptal) { setBulunamadi(true); setYukleniyor(false) }
+      }
+    })()
+    return () => { iptal = true }
+  }, [id])
+
+  if (yukleniyor) {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--txd)', fontSize: 14 }}>
+        •••
+      </div>
+    )
+  }
+
+  if (!kullanici) return <Navigate to="/giris" />
+
+  if (bulunamadi || !spool) {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, background: 'var(--bg)', color: 'var(--tx)', textAlign: 'center' }}>
+        <div style={{ fontSize: 40 }}>🔍</div>
+        <div style={{ fontSize: 15, color: 'var(--txd)' }}>Spool bulunamadı</div>
+        <button type="button" onClick={() => history.back()} style={{ marginTop: 8, padding: '10px 24px', background: 'transparent', color: 'var(--txd)', border: '1px solid var(--bor)', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+          Geri
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <IbSpoolDetay
+      spool={spool}
+      kullanici={kullanici}
+      aktifRol={null}
+      mod="denetim"
+    />
+  )
 }
 
 function MProfilSayfasi() {
