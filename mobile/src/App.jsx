@@ -12,6 +12,7 @@ import MDevreler from './screens/MDevreler'
 import MQRTara from './screens/MQRTara'
 import MIsBaslat from './screens/MIsBaslat'
 import MUygulamalar from './screens/MUygulamalar'
+import MProfil from './screens/MProfil'
 
 export default function App() {
   const [oturum, setOturum] = useState(null)
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/qr" element={oturum ? <MQRTara /> : <Navigate to="/giris" />} />
         <Route path="/is-baslat" element={oturum ? <MIsBaslat /> : <Navigate to="/giris" />} />
         <Route path="/uygulamalar" element={oturum ? <MUygulamalar /> : <Navigate to="/giris" />} />
+        <Route path="/profil" element={oturum ? <MProfilSayfasi /> : <Navigate to="/giris" />} />
         {/* 67. oturum: bottom nav loop'u önlemek için placeholder rotalar */}
         <Route path="/ara" element={oturum ? <MYakinda baslik="Ara" /> : <Navigate to="/giris" />} />
         <Route path="/bildirim" element={oturum ? <MYakinda baslik="Bildirim" /> : <Navigate to="/giris" />} />
@@ -109,6 +111,48 @@ function MIslemlerSayfasi() {
   if (!kullanici) return <Navigate to="/giris" />
 
   return <MIslemler kullanici={kullanici} />
+}
+
+function MProfilSayfasi() {
+  const [kullanici, setKullanici] = useState(null)
+  const [yukleniyor, setYukleniyor] = useState(true)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+        const { data } = await supabase
+          .from('kullanicilar')
+          .select('id, ad_soyad, email, rol, tenant_id, firma, foto_url')
+          .eq('id', session.user.id)
+          .single()
+        setKullanici(data)
+      } finally {
+        setYukleniyor(false)
+      }
+    })()
+  }, [])
+
+  if (yukleniyor) {
+    return (
+      <div style={{
+        height: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        color: 'var(--txd)',
+        fontSize: 14,
+      }}>
+        •••
+      </div>
+    )
+  }
+
+  if (!kullanici) return <Navigate to="/giris" />
+
+  return <MProfil kullanici={kullanici} />
 }
 
 // 67. oturum: /ara ve /bildirim için sade placeholder.
