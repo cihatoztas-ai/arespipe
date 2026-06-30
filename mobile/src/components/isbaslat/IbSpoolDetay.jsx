@@ -91,6 +91,7 @@ import { dosyaUrlAl } from '../../lib/dosya'
 import { aktifBasamakYetkili, basamakAdi, aktifIsKaydet, aktifIsHatirla, aktifIsUnut } from '../../lib/isbaslat'
 import { islemLogYaz } from '../../lib/islem-log'
 import { basamakListesiniGetir, sonrakiBasamaklar } from '../../lib/basamak-akisi'
+import { nNRenkler, formatTarih, formatSure } from '../../lib/format'  // 210/Sira9: resmi n/N + tarih kurallari
 import IbUyariDrawer from './IbUyariDrawer'
 import IbSonrakiBasamakDrawer from './IbSonrakiBasamakDrawer'
 
@@ -1497,128 +1498,104 @@ function GenelPanel({ spool, devre, tv }) {
 // ─────────── 210/Sira9: Denetim Paneli (yonetici salt-izleyici) ───────────
 // MSpoolDetay'in yonetici-ozel bloklari tek sekmede: Islem Durumu n/N,
 // KK & Sevkiyat, Belgeler, Islem Kayitlari. n/N spool nested kalemlerden
-// (wrapper spooller'i nested cekiyor). Tarih/sure formatlari inline.
-function denetimTarih(x) {
-  if (!x) return '—'
-  try {
-    return new Date(x).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })
-  } catch { return '—' }
-}
-function denetimSure(x) {
-  if (!x) return ''
-  try {
-    const d = new Date(x); const fark = Date.now() - d.getTime()
-    const sa = Math.floor(fark / 3600000)
-    if (sa < 1) return 'az önce'
-    if (sa < 24) return `${sa} saat önce`
-    return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-  } catch { return '' }
-}
-function nNDenetimRenk(tam, top) {
-  if (top === 0) return { bg: 'var(--sur2)', tx: 'var(--txd)' }
-  if (tam === top) return { bg: 'rgba(29,158,117,.14)', tx: 'var(--gr)' }
-  if (tam === 0)   return { bg: 'var(--sur2)', tx: 'var(--txd)' }
-  return { bg: 'rgba(217,119,6,.14)', tx: 'var(--warn)' }
-}
+// (wrapper spooller'i nested ceker). nNRenkler/formatTarih/formatSure
+// lib/format'tan — resmi kural: 0/N kirmizi, N/N yesil, kismi sari, bos tire.
 
 function DenetimPanel({ spool, veri, tv }) {
-  const dnt = {
-    kart:   { background: 'var(--sur)', border: '0.5px solid var(--bor)', borderRadius: 12, padding: '12px 14px', marginBottom: 12 },
-    baslik: { fontSize: 13, fontWeight: 600, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    sayac:  { fontSize: 12, color: 'var(--txd)', fontWeight: 400 },
-    satir:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '4px 0' },
-    etk:    { color: 'var(--txd)' },
-    deg:    { color: 'var(--tx)' },
-    bos:    { color: 'var(--txd)' },
-    pill:   { fontSize: 12, padding: '2px 10px', borderRadius: 12 },
-  }
-
   const kalem = (arr, anahtar) => {
     const l = Array.isArray(arr) ? arr : []
     return { top: l.length, tam: l.filter(k => k[anahtar]).length }
   }
-  const islemler = {
-    kesim:     kalem(spool?.kesim_kalemleri, 'kesildi'),
-    bukum:     kalem(spool?.bukum_kalemleri, 'bukuldu'),
-    markalama: kalem(spool?.markalama_kalemleri, 'markalandi'),
-    test:      { top: 0, tam: 0 },
-  }
-  const sirali = [
-    ['kesim',     tv('m_ib_sd_kesim', 'Kesim')],
-    ['bukum',     tv('m_ib_sd_bukum', 'Büküm')],
-    ['markalama', tv('m_ib_sd_markalama', 'Markalama')],
-    ['test',      tv('m_ib_sd_test', 'Test')],
+  const islemler = [
+    { ad: tv('m_ib_sd_kesim', 'Kesim'),         ...kalem(spool?.kesim_kalemleri, 'kesildi') },
+    { ad: tv('m_ib_sd_bukum', 'Büküm'),         ...kalem(spool?.bukum_kalemleri, 'bukuldu') },
+    { ad: tv('m_ib_sd_markalama', 'Markalama'), ...kalem(spool?.markalama_kalemleri, 'markalandi') },
+    { ad: tv('m_ib_sd_test', 'Test'),           top: 0, tam: 0 },
   ]
-  const tamSay = sirali.filter(([k]) => islemler[k].top > 0 && islemler[k].tam === islemler[k].top).length
-  const aktSay = sirali.filter(([k]) => islemler[k].top > 0).length || 4
+  const aktif  = islemler.filter(i => i.top > 0)
+  const tamSay = aktif.filter(i => i.tam === i.top).length
+  const aktSay = aktif.length || islemler.length
 
   const { kk, sevk, belgeler, loglar } = veri
   const renkMap = { insert: 'var(--gr)', update: 'var(--ac)', delete: 'var(--re)' }
 
+  // Bolum basligi — GenelPanel'deki "SPOOL BILGILERI" buyuk-harf gri kaliba uyumlu
+  const bolum = (baslik, sag, ilk) => (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      textTransform: 'uppercase', fontSize: 12, fontWeight: 600, letterSpacing: 0.6,
+      color: 'var(--txd)', margin: ilk ? '8px 0 2px' : '24px 0 2px',
+    }}>
+      <span>{baslik}</span>
+      {sag != null && <span style={{ fontWeight: 500 }}>{sag}</span>}
+    </div>
+  )
+
+  // n/N degeri — tamam: yesil rozet, yarim: amber rozet, baslanmamis: guclu metin
+  // Resmi n/N kurali — lib/format nNRenkler. cls -> dosyanin tema degiskenlerine
+  // eslenir (dark-tema otomatik). 0/N kirmizi, N/N yesil, kismi sari, bos '—'.
+  const PILL_STIL = {
+    'msd-pill-red':    { ...s.gpBadge, background: 'rgba(229,62,62,.14)',  color: 'var(--re)' },
+    'msd-pill-yellow': { ...s.gpBadge, background: 'rgba(217,119,6,.18)',  color: 'var(--warn)' },
+    'msd-pill-green':  { ...s.gpBadge, background: 'rgba(22,163,110,.16)', color: 'var(--gr)' },
+  }
+  const nN = (tam, top) => {
+    const r = nNRenkler(tam, top)
+    if (r.cls === 'msd-pill-none') return <span style={s.gpDeger}>{r.txt}</span>
+    return <span style={PILL_STIL[r.cls]}>{r.txt}</span>
+  }
+
   return (
-    <div style={{ padding: '12px 16px' }}>
-
-      {/* Islem Durumu n/N */}
-      <div style={dnt.kart}>
-        <div style={dnt.baslik}>
-          <span>{tv('m_ib_sd_islem_durumu', 'İşlem Durumu')}</span>
-          <span style={dnt.sayac}>{tamSay}/{aktSay} {tv('m_ib_sd_tamam', 'tamam')}</span>
+    <div>
+      {/* İşlem Durumu */}
+      {bolum(tv('m_ib_sd_islem_durumu', 'İşlem Durumu'), `${tamSay}/${aktSay} ${tv('m_ib_sd_tamam', 'tamam')}`, true)}
+      {islemler.map((it, i) => (
+        <div key={it.ad} style={i === islemler.length - 1 ? s.gpSatirSon : s.gpSatir}>
+          <span style={s.gpEtiket}>{it.ad}</span>
+          {nN(it.tam, it.top)}
         </div>
-        {sirali.map(([k, ad]) => {
-          const r = nNDenetimRenk(islemler[k].tam, islemler[k].top)
-          return (
-            <div style={dnt.satir} key={k}>
-              <span style={dnt.etk}>{ad}</span>
-              <span style={{ ...dnt.pill, background: r.bg, color: r.tx }}>{islemler[k].tam}/{islemler[k].top}</span>
-            </div>
-          )
-        })}
-      </div>
+      ))}
 
-      {/* KK & Sevkiyat */}
-      <div style={dnt.kart}>
-        <div style={dnt.baslik}><span>{tv('m_ib_sd_kk_sevk', 'KK ve Sevkiyat')}</span></div>
-        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_kk', 'Kalite Kontrol')}</span><span style={kk ? { color: 'var(--ac)' } : dnt.bos}>{kk?.davet_no || '—'}</span></div>
-        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_kk_tarih', 'KK Tarihi')}</span><span style={kk ? dnt.deg : dnt.bos}>{kk ? denetimTarih(kk.olusturma) : '—'}</span></div>
-        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_sevk', 'Sevkiyat')}</span><span style={sevk ? dnt.deg : dnt.bos}>{sevk?.sevk_no || '—'}</span></div>
-        <div style={dnt.satir}><span style={dnt.etk}>{tv('m_ib_sd_sevk_tarih', 'Sevk Tarihi')}</span><span style={sevk ? dnt.deg : dnt.bos}>{sevk ? denetimTarih(sevk.tarih) : '—'}</span></div>
-      </div>
+      {/* KK ve Sevkiyat */}
+      {bolum(tv('m_ib_sd_kk_sevk', 'KK ve Sevkiyat'))}
+      <div style={s.gpSatir}><span style={s.gpEtiket}>{tv('m_ib_sd_kk', 'Kalite Kontrol')}</span><span style={s.gpDeger}>{kk?.davet_no || '—'}</span></div>
+      <div style={s.gpSatir}><span style={s.gpEtiket}>{tv('m_ib_sd_kk_tarih', 'KK Tarihi')}</span><span style={s.gpDeger}>{kk ? formatTarih(kk.olusturma) : '—'}</span></div>
+      <div style={s.gpSatir}><span style={s.gpEtiket}>{tv('m_ib_sd_sevk', 'Sevkiyat')}</span><span style={s.gpDeger}>{sevk?.sevk_no || '—'}</span></div>
+      <div style={s.gpSatirSon}><span style={s.gpEtiket}>{tv('m_ib_sd_sevk_tarih', 'Sevk Tarihi')}</span><span style={s.gpDeger}>{sevk ? formatTarih(sevk.tarih) : '—'}</span></div>
 
       {/* Belgeler */}
-      <div style={dnt.kart}>
-        <div style={dnt.baslik}><span>{tv('m_ib_sd_belgeler', 'Belgeler')}</span></div>
-        {(!belgeler || belgeler.length === 0) ? (
-          <div style={{ ...dnt.bos, fontSize: 13, padding: '4px 0' }}>{tv('m_ib_sd_belge_yok', 'Belge eklenmemiş')}</div>
-        ) : belgeler.map((b, i) => (
-          <div key={i} onClick={() => b.dosya_url && window.open(b.dosya_url, '_blank', 'noopener')}
-               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', cursor: b.dosya_url ? 'pointer' : 'default' }}>
-            <span style={{ fontSize: 18 }} aria-hidden="true">📄</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.ad || tv('m_ib_sd_belge', 'Belge')}</div>
-              <div style={{ fontSize: 11, color: 'var(--txd)' }}>{denetimTarih(b.olusturma)}</div>
-            </div>
-            <span style={{ color: 'var(--txd)' }}>›</span>
-          </div>
-        ))}
-      </div>
+      {bolum(tv('m_ib_sd_belgeler', 'Belgeler'))}
+      {(!belgeler || belgeler.length === 0) ? (
+        <div style={s.gpSatirSon}><span style={s.gpEtiket}>{tv('m_ib_sd_belge_yok', 'Belge eklenmemiş')}</span></div>
+      ) : belgeler.map((b, i) => (
+        <div
+          key={i}
+          onClick={() => b.dosya_url && window.open(b.dosya_url, '_blank', 'noopener')}
+          style={{ ...(i === belgeler.length - 1 ? s.gpSatirSon : s.gpSatir), cursor: b.dosya_url ? 'pointer' : 'default' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, color: 'var(--tx)', fontWeight: 500 }}>
+            <span aria-hidden="true">📄</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.ad || tv('m_ib_sd_belge', 'Belge')}</span>
+          </span>
+          <span style={{ color: 'var(--txd)', fontSize: 13, flexShrink: 0 }}>{formatTarih(b.olusturma)}</span>
+        </div>
+      ))}
 
-      {/* Islem Kayitlari */}
-      <div style={dnt.kart}>
-        <div style={dnt.baslik}><span>{tv('m_ib_sd_islem_kayitlari', 'İşlem Kayıtları')}</span></div>
-        {(!loglar || loglar.length === 0) ? (
-          <div style={{ ...dnt.bos, fontSize: 13, padding: '4px 0' }}>{tv('m_ib_sd_islem_yok', 'İşlem kaydı yok')}</div>
-        ) : loglar.map((l, i) => (
-          <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '5px 0' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: renkMap[l.islem] || 'var(--txd)', marginTop: 6, flexShrink: 0 }} />
-            <div>
-              <div style={{ fontSize: 13, color: 'var(--tx)' }}>{(l.katman || '—')} · {(l.islem || '—')}</div>
-              <div style={{ fontSize: 11, color: 'var(--txd)' }}>{denetimSure(l.olusturma)}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* İşlem Kayıtları */}
+      {bolum(tv('m_ib_sd_islem_kayitlari', 'İşlem Kayıtları'))}
+      {(!loglar || loglar.length === 0) ? (
+        <div style={s.gpSatirSon}><span style={s.gpEtiket}>{tv('m_ib_sd_islem_yok', 'İşlem kaydı yok')}</span></div>
+      ) : loglar.map((l, i) => (
+        <div key={i} style={i === loglar.length - 1 ? s.gpSatirSon : s.gpSatir}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--tx)', fontWeight: 500, minWidth: 0 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: renkMap[l.islem] || 'var(--txd)', flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(l.katman || '—')} · {(l.islem || '—')}</span>
+          </span>
+          <span style={{ color: 'var(--txd)', fontSize: 13, flexShrink: 0 }}>{formatSure(l.olusturma)}</span>
+        </div>
+      ))}
 
-      <div style={{ height: 16 }} />
+      <div style={{ height: 12 }} />
     </div>
   )
 }
