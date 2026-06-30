@@ -182,11 +182,24 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 
 **Karar (native, toplamsal — eritme YOK):**
 - Tek sayfa, temel = **IbSpoolDetay** (zengin). Herkes buraya girer.
-- MSpoolDetay'ın yönetici-özel bilgileri (KK durumu, sevkiyat, belgeler, işlem log) tek bir
-  **"Denetim" sekmesinde** toplanır; `yoneticiMi(k)` ise görünür, personel görmez.
-- `MSpoolDetay` emekli; `/spool/:id` → IbSpoolDetay'a yönlenir.
+- MSpoolDetay'ın yönetici-özel bilgileri (n/N işlem durumu, KK & sevkiyat, belgeler, işlem log) tek bir
+  **"Denetim" sekmesinde** toplanır.
+- `MSpoolDetay` emekli; `/spool/:id` → IbSpoolDetay `mod="denetim"` (App.jsx `MSpoolDenetimSayfasi`
+  wrapper, spool'u nested kalemlerle çeker).
 - Mevcut işlem sekmeleri/akışı (mockup-kilitli, MK-68.3 vb.) DEĞİŞMEZ → regresyon riski düşük.
-- ⏳ Yönetici "Denetim" dışında işlem aksiyonu (başlat/ilerlet) yapabilir mi, yoksa salt-izleyici mi?
+
+**✅ İLK YARI CANLI (210):** Yönetici operatörle **AYNI ekranı** görür + "Yönetici" pill (mor) + ek
+**Denetim** sekmesi. İlke (210, Cihat): rol farkı = "aynı ekran + ek sekme"; ayrım yalnız YETKİ'de
+(footer aksiyonu yok, Malzeme heat salt-okunur). Denetim n/N resmi `lib/format` `nNRenkler` kuralında
+(0/N kırmızı, N/N yeşil, kısmi sarı, boş tire). Kozmetik fark (rozet/bant ayrı) YOK — yetki `bloklar`'dan
+gelir (`aktifBasamakYetkili`), mod'dan değil. (DenetimPanel `s.gp*` satır dili + resmi formatTarih/formatSure.)
+
+**⏳ İKİNCİ YARI AÇIK — B köprüsü (211, kilitli, kod yok):** "Yönetici Denetim dışında işlem aksiyonu
+yapabilir mi" sorusu **B ile çözüldü** = yetkili formen (yönetici + uygun blok) için Denetim footer'ında
+"Bu Spool'da İşlem Yap" → spool seed'li operatör akışına gir (QR/rolSec atla). Denetim varsayılan
+salt-izleyici kalır (bak ≠ çalış). ÖNKOŞUL: wrapper'a `bloklar` geçişi (`islemBloklariniGetir`) +
+MIsBaslat seed-spool girişi (router state → direkt spoolDetay ekranı). Aksiyon rolü spool'un
+`aktif_basamak`'ından türetilir.
 
 ---
 
@@ -213,12 +226,15 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
    Dashboard içeriğinin geri kalanı (ek widget vb.) hâlâ açık.
 6. **§3** Bottom nav QR butonu etiketi ("spool bul" mu?).
 7. **§2** İlk aktif uygulama (öneri: Birim Çevirici — saf hesap, AI maliyeti yok).
-8. **§6** Yönetici spool işlem aksiyonu yapabilir mi (Denetim dışında)?
+8. ✅ **§6 ÇÖZÜLDÜ (210→211): B köprüsü.** Yetkili formen için Denetim footer'ında "Bu Spool'da İşlem
+   Yap" → spool seed'li operatör akışı. İlk yarı (salt-izleyici Denetim görünümü) **210'da canlı**;
+   köprü kodu 211'e açık (wrapper'a `bloklar` + MIsBaslat seed-spool).
 9. **§11 (208 yeni)** Topbar mark animasyonu iOS Safari fix — web kalıbı (beginElement) mobilde tutmadı.
 
 > ÇÖZÜLDÜ: Mimari = native React (§0) · Çatal = native toplamsal (§6) · Kayıt §7-1/2/4 (207) ·
 > Router + musteriMi (208) · İş modeli MK-208.1 (208, §11) ·
-> Sıra 4/5a/5b/6 + atıl sayacı + MProfil + son_giris damgası (209).
+> Sıra 4/5a/5b/6 + atıl sayacı + MProfil + son_giris damgası (209) ·
+> Sıra 9 ilk yarısı = yönetici Denetim görünümü ("aynı ekran + sekme", resmi nNRenkler) (210).
 
 ---
 
@@ -234,12 +250,14 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 | 6 | ✅ **TAMAMLANDI (209)** `MProfil.jsx` (avatar `foto_url`+Storage client upload / bilgiler salt-okunur / şifre reset / hesap-sil soft-delete) + `/profil` route + MProfilSayfasi wrapper + 20×3 i18n. | mockup-first |
 | 7 | `MMusteri.jsx` (yeni — placeholder yerine) | §7-3, mockup-first |
 | 8 | Kayıt/davet akışı (kod + DB) | §7-1 — en büyük iş |
-| 9 | Spool detay çatalı: IbSpoolDetay'a "Denetim" sekmesi + MSpoolDetay emekli | §6 — **önce IbSpoolDetay.jsx yerini bul (screens/'da YOK)** |
+| 9 | ✅ **İLK YARI CANLI (210)** Spool detay çatalı: `/spool/:id` → IbSpoolDetay `mod="denetim"` + Denetim sekmesi (n/N resmi `nNRenkler`, KK&sevk, belge, log); yönetici operatörle aynı ekran + "Yönetici" pill; Malzeme heat salt-okunur; MSpoolDetay emekli (route koptu, dosya duruyor → `_arsiv/` 211). | §6 |
+| 9b | **AÇIK (211)** B köprüsü: yetkili formen için Denetim footer "Bu Spool'da İşlem Yap" → spool seed'li operatör akışı. Wrapper'a `bloklar` + MIsBaslat seed-spool girişi. | §6 — mockup-first |
 | 10 | Kesim/Büküm/Markalama native React işlem ekranları (saha düzeni) | büyük, ayrı turlar |
 
-**Sıra 1–6 tamamlandı (207–209).** Sonraki: Sıra 7 (MMusteri — önce `customers`↔kullanıcı DB bağı kurulmalı,
-208 teşhisi: bağ YOK) → Sıra 8 (kayıt akışı, en büyük) → Sıra 9 (çatal — önce IbSpoolDetay.jsx yeri bulunmalı).
-Devreden debt: topbar animasyon iOS fix (§11) + üyelik paketi abonelik bağı (§11).
+**Sıra 1–6 + 9 (ilk yarı) tamamlandı (207–210).** Sonraki: Sıra 9b (B köprüsü — yetkili formen işlem
+aksiyonu) + MSpoolDetay `_arsiv/` taşıma → Sıra 7 (MMusteri — önce `customers`↔kullanıcı DB bağı,
+208 teşhisi: bağ YOK) → Sıra 8 (kayıt akışı, en büyük).
+Devreden debt: topbar animasyon iOS fix (§11) + üyelik paketi abonelik bağı (§11) + avatar canlı teyit (209).
 
 ---
 

@@ -1,47 +1,50 @@
-# CLAUDE — Oturum 209 Log
+# CLAUDE — Oturum 210 Log
 
 ## Özet
-MOBIL-STRATEJI §8 kod planı Sıra 4→6 canlıya alındı (Uygulamalar erişimi operatör+yönetici, yönetici
-dashboard atıl sayacı, MProfil ekranı). 5b'nin `son_giris` debt'i aynı oturumda kapatıldı. 5 kod push,
-hepsi CI yeşil. Yeni endpoint yok (api/*.js=12 sabit).
+MOBİL §8 Sıra 9 ilk yarısı canlıya alındı: yönetici Denetim görünümü. `/spool/:id` →
+IbSpoolDetay mod="denetim" (MSpoolDetay emekli). 4 push, CI yeşil, api=12 sabit.
+Oturum 3 düzeltme turu içerdi (tasarım + n/N kuralı + sadeleştirme) — ders: hazır olanı
+oku/taşı, sıfırdan uydurma (hafıza #10).
 
 ## Akış
-1. Açılış ritüeli — git temiz, HEAD a6c9e16 (208 kapanış), api/*.js=12. Handoff üçlüsü + MOBIL-STRATEJI okundu.
-   Yakalama: handoff "MK-208.1 MOBIL-STRATEJI'ye işlenmedi" diyordu ama §11'de zaten doluydu → tekrar yazılmadı.
-2. **Sıra 4 (MIslemler):** DATA okundu — `/uygulamalar` route hazır, `m_uyg_basligi`/`_alt` anahtarları mevcut.
-   🔒 boş-durum dalı kaldırıldı (router zaten bloğu olmayanı MUygulamalar'a yolluyor), QR'ın altına Uygulamalar
-   bölümü. Yeni anahtar gerekmedi. esbuild + Python anchor patch.
-3. **Sıra 5a (MAnasayfaYonetici):** Son Aktiviteler'in altına Uygulamalar linki. `uygLink` stilleri (uygIkon
-   arka planı `var(--sur2)` — `${renk}22` template'i düz string'de geçersiz olurdu). esbuild geçti.
-4. **Sıra 5b (atıl bandı):** DATA→ `kullanicilar.son_giris` (timestamptz) VAR; `silindi` YOK → `aktif` kullan
-   (MK-85.3). Canlı sorgu: tenant'ta atil_30g=0, hic_girmemis=8 (hepsi NULL — son_giris hiç damgalanmamış).
-   Karar A (30g, NULL hariç). Promise.all kalemi + bant (`var(--warn)`). m_uyari_atil_kullanici 3 dil.
-5. **Sıra 6 (MProfil) — mockup-first:** 2 mockup turu. Kapsam Cihat ile netleşti: ad_soyad da salt-okunur
-   (Kaydet kalktı), Şifre Değiştir + Hesabı Sil (market şartı) eklendi, Üyelik Paketi (statik). DATA: avatar
-   upload RLS politikaları okundu → client upload çalışır, yeni endpoint yok. `firma` kolonu doğrudan var.
-   MProfil.jsx (294) + App.jsx (route+wrapper) + 20×3 i18n. arespipe_kopyala (MD5) + esbuild + JSON validate.
-6. **son_giris damgası (MGiris):** Cihat "5b sayacı son_giris yazılmadan hep 0 kalır" debt'ini kapatmak istedi.
-   signInWithPassword başarılı dalına fire-and-forget update. 5b debt kapandı.
-7. **Atıl sayacı tartışması:** Cihat "30 gün giren tekrar mı kayıt olacak?" diye sordu → kavram netleşti
-   (atıl ≠ tekrar kayıt; sadece yöneticiye görünürlük sinyali). Kalsın kararı.
+1. Açılış ritüeli — git temiz, HEAD 0958d15 (209 kapanış), api=12. Handoff üçlüsü okundu.
+2. **Karar: A (DATA investigation).** Sıra 9 = spool detay çatallanması. Cihat netleştirdi:
+   taban = İşlem Başlat'tan açılan IbSpoolDetay (üzerine çok çalışılan); yöneticiye özel alanlar
+   AYRI sekme; yönetici ekranından açılan MSpoolDetay emekli.
+3. **DATA→UI→kod:** IbSpoolDetay (2370 satır, prop'lu component, MIsBaslat'tan çağrılıyor, zaten
+   Genel/Malzeme sekmeleri var) + MSpoolDetay (yönetici sorguları: KK/sevk/belge/log/nested kalem)
+   okundu. Kritik tıkanık: akış-kesici useEffect bloklar=[] iken 'yetkisiz' drawer açıyor → mod gerekli.
+4. **Mockup (R-10) + footer kararı B (Devreye Dön).** Adım 1+2 (IbSpoolDetay mod prop + denetim
+   dalları + DenetimPanel), Adım 3 (App.jsx wrapper + route), Adım 4 (lang 18×3). Push 79d6db3.
+   Build doğru dizinden (mobile/) koşuldu, gizli pencerede Denetim sekmesi canlı doğrulandı.
+5. **Çok-rollü kullanıcı sorusu (Cihat):** Formen hem yönetici hem imalatçı olabilir (yaygın, teorik
+   değil). `aktifBasamakYetkili`+`kullanici_bloklar` okundu → yetki rol'den bağımsız. A vs B tartışıldı,
+   **B (köprü) kilitlendi** (bak≠çalış ayrımı, operatör akışına sıfır risk). Kod sonraki oturuma.
+6. **Düzeltme 1 — DenetimPanel tasarımı:** İlk hali okunmuyordu (kutulu inline gri). GenelPanel
+   satır diline + resmi nNRenkler/formatTarih/formatSure'ye bağlandı. Tek birleşik patch (base64
+   gömülü blok), repo durumuna karşı test. Push ffbf856.
+7. **n/N renk kuralı (Cihat sordu):** Uygulanmamıştı — resmi nNRenkler (0/N kırmızı, N/N yeşil,
+   kısmi sarı, boş tire) lib/format'ta vardı, kendi mantığımı koymuştum. Düzeltmeye dahil edildi.
+8. **Sadeleştirme (Cihat ilkesi):** "Yönetici operatörle aynı ekran + ek sekme; rozet/bant ayırma."
+   Pill 'Yönetici', peek tab geri açıldı, footer+heat zaten yetki bazlı. Push 1f2f641.
 
 ## Kararlar / öğrenmeler
-- Avatar upload client-side (path `{tenant_id}/avatar/{id}.jpg`) → RLS geçer, endpoint yok (12-tavan korundu).
-- `kullanicilar.firma` doğrudan var → tenants JOIN gerekmez.
-- Hesabı Sil = soft-delete (`aktif=false`) + signOut; veri korunur (market şartı + veri-asla-silinmez kuralı).
-- Üyelik paketi statik "Kurumsal" + uyarı notu → abonelik debt (§11).
-- `gpc` ayrı commit yapıp "nothing to commit"te zinciri kesiyor → ayrı commit + tek `gp`.
-- Çift-uygulanan Python anchor patch 0 bulup ABORT eder (zararsız, dosya bozulmaz — MK-111.2).
-- Lang patch'leri metin-bazlı satır-insert (json.dump değil) → format korunur, +N satır temiz diff.
+- Yetki ≠ rol: aktifBasamakYetkili(aktif_basamak, bloklar) saf, kullanici_bloklar'a bakar. B köprüsünün temeli.
+- Üst bant "işlemde" sinyali (renk+pulse) is_durumu veri alanına bağlı → denetim modunda da görünür.
+- Operatör yolu hiç değişmedi: tüm eklemeler denetimMod dalında veya yetki bazlı (footer/heat).
+- Hafıza #10: mevcut/emekli komponenti oku-taşı; "aynı ekran + sekme" varsayılan; ayrım yalnız yetkide.
+- grep -c 0 dönünce && zincirini kırar → kontrolleri ; ile ayır.
+- push öncesi pull --rebase (bot ci-son-rapor.json commit'i fast-forward'u reddediyor; rebase çakışmasız, farklı dosya).
 
 ## Teslim edilenler
-- 5 push: 11c6eba (Sıra 4), 9c21193 (5a), fba80b6 (5b), e01cb46 (Sıra 6 — MProfil), 750f09f (son_giris).
-- MProfil.jsx YENİ. App.jsx route+wrapper. lang tr/en/ar: +1 (atıl) +20 (profil) = 21 anahtar/dil.
-- Kapanış üçlüsü + MOBIL-STRATEJI güncellemesi (kesintisiz, sadece 209 değişiklikleri).
+- 4 push: 79d6db3 (Sıra 9: IbSpoolDetay mod + App wrapper + lang), ffbf856 (DenetimPanel redesign
+  + resmi nNRenkler), 1f2f641 (Yönetici pill + peek tab + lang m_ib_sd_yonetici).
+- IbSpoolDetay.jsx: mod prop, DenetimPanel (gpSatir dili, nNRenkler), Yönetici pill, peek tab açık.
+- App.jsx: MSpoolDenetimSayfasi wrapper (nested kalem select), /spool/:id route, MSpoolDetay import koptu.
+- lang tr/en/ar: +18 (Denetim blokları) +1 (m_ib_sd_yonetici) = 19/dil.
 
 ## Disiplin uygulananlar
-- MK-158.1 (DATA→UI→kod: her ekranda önce şema/RLS/kalıp okundu). MK-85.3 (silindi yok→aktif).
-- MK-126.8 (MIslemler/MAnasayfaYonetici/MDrawer/App.jsx/dosya.js okundu yazmadan önce).
-- MK-129.3 (api=12 korundu, yeni endpoint yok). MK-51.1 (MProfil MD5'li kopya).
-- R-08 (i18n 3 dil), R-10 (MProfil mockup-first 2 tur). Python anchor patch + .bak + esbuild + JSON validate.
-- Kod commit [skip ci] YOK; kapanış doc commit [skip ci] VAR.
+- MK-158.1 (DATA→UI→kod), MK-126.8 (IbSpoolDetay+MSpoolDetay+MIsBaslat+isbaslat.js+format.js okundu).
+- MK-85.3 (kolon adları MSpoolDetay canlı sorgularından teyitli). MK-129.3 (api=12, endpoint yok).
+- R-10 (Denetim sekmesi + footer mockup'ları). Python anchor patch + .bak + esbuild + JSON validate.
+- Kod commit [skip ci] YOK; kapanış doc [skip ci] VAR. Lang satır-insert (json.dump değil).

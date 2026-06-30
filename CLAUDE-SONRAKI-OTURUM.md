@@ -1,50 +1,47 @@
-# Sıradaki Oturum (210) — Ajanda
+# Sıradaki Oturum (211) — Ajanda
 
 ## 0. Açılış ritüeli
 `git pull --rebase` · `git status` · `git log --oneline -5` · `ls api/*.js | wc -l` (≤12) · handoff oku.
-**Ek (zorunlu):** `docs/MOBIL-STRATEJI.md` + `CLAUDE-MOBILE.md`.
-Beklenen HEAD: 209 kapanış doc commit'i [skip ci] (+ bot ci commit'leri).
+**Ek (zorunlu):** `docs/MOBIL-STRATEJI.md`. Beklenen HEAD: 210 kapanış doc commit'i [skip ci] (+ bot ci).
 
 ## 1. Durum
-209'da §8 Sıra 4→6 canlıya çıktı: MIslemler Uygulamalar butonu + 🔒 kalktı (4), MAnasayfaYonetici
-Uygulamalar linki (5a) + atıl kullanıcı bandı MK-207.2 (5b), MProfil ekranı — avatar/bilgiler/şifre/hesap-sil (6).
-`son_giris` MGiris'te damgalanıyor → 5b sayacı gerçek çalışır. api/*.js=12 sabit (yeni endpoint yok).
+210'da §8 Sıra 9 **ilk yarısı canlı**: yönetici Denetim görünümü. `/spool/:id` → IbSpoolDetay
+mod="denetim" (MSpoolDetay emekli, dosya duruyor). Yönetici operatörle AYNI ekran + Denetim sekmesi;
+tek fark yetki (footer aksiyonu yok, heat salt-okunur). Pill "Yönetici". DenetimPanel resmi
+nNRenkler kuralında (0/N kırmızı, N/N yeşil, kısmi sarı). api/*.js=12 sabit. HEAD 1f2f641.
 
-## 2. AÇIK DEBT (209'dan taşınan)
-- **Üyelik paketi abonelik bağı:** MProfil'de **statik "Kurumsal"** + uyarı notu gösteriliyor. Abonelik
-  altyapısı (tenant_features / paket alanı) gelince gerçek alana bağlanmalı. Kayıt akışı (Sıra 8) + ≥1 aktif
-  uygulama sonrası para katmanıyla birlikte (§11, MK-208.1).
-- **Avatar canlı teyit:** kod doğru + esbuild geçti ama deploy'da upload + görüntüleme + JWT `tenant_id` claim
-  henüz canlı doğrulanmadı. dosyaUrlAl zaten canlı çalıştığından claim büyük olasılıkla var; ilk fırsatta teyit.
-- **Topbar mark animasyonu iOS Safari fix (208'den):** 209'da dokunulmadı. Kod hazır (`MMarkLogo.jsx` +
-  `arespipe-mark-anim-bk.svg`). Seçenek (A) web yöntemi + iOS teşhis, (B) statik kabul. Statiğe DÖNÜLMEDİ.
+## 2. EN ÖNCELİKLİ — Sıra 9 ikinci yarısı: B köprüsü (KİLİTLİ, kod yok)
+Yetkili formen (yönetici + uygun blok) Denetim ekranından oracıkta iş başlatabilsin:
+- **Denetim footer'ı koşullu:** `aktifBasamakYetkili(spool.aktif_basamak, bloklar)` true ise
+  "Devreye Dön" + **"Bu Spool'da İşlem Yap"**; false ise sadece "Devreye Dön".
+  → ÖNKOŞUL: denetim wrapper'ı (App.jsx MSpoolDenetimSayfasi) şu an bloklar GEÇMİYOR. Wrapper'da
+  `islemBloklariniGetir(kullanici.id, kullanici.tenant_id)` çağrılıp IbSpoolDetay'a `bloklar` geçilmeli.
+- **"İşlem Yap" aksiyonu:** spool seed'li operatör akışına gir (QR/rolSec atla). MIsBaslat'a
+  router-state seed girişi eklenmeli: location.state.seedSpool → direkt 'spoolDetay' ekranı.
+  Aksiyon rolü spool'un aktif_basamak'ından türetilir (kullanıcının o basamakla eşleşen bloğu;
+  yetkiliRolAdlari(bloklar) yardımcı olabilir). Operatör akışına SIFIR dokunuş, sadece yeni giriş kapısı.
+- İlke: Denetim varsayılan salt-izleyici kalır (bak ≠ çalış). Mockup-first (R-10).
 
-## 3. Kod planı (MOBIL-STRATEJI §8 sırası) — KALAN
-- **Sıra 7:** `MMusteri.jsx` (yeni, placeholder yerine) — **mockup-first**. ÖNKOŞUL: `customers`↔`kullanicilar`
-  bağı DB'de YOK (208 teşhisi). Önce o ilişki kurulmalı (customers.kullanici_id mı, kullanicilar.customer_id mı,
-  yoksa iletisim_mail eşleştirmesi mi — DATA→UI→kod). musteriMi bugün hiç tetiklenmiyor.
-- **Sıra 8 (EN BÜYÜK):** Kayıt/davet akışı (kod + DB). §7 kararları kilitli:
-  - Spool: **B akışı** (signInWithOtp + upsert(onConflict:email), web kalıbı). `davet_eden` YAZILMALI (207 borcu).
-  - Uygulama: signUp self-servis → `rol='uygulama'` + ortak "uygulama" tenant'ı (önce bu tenant'ı oluştur).
-  - Kayıt endpoint'i gerekirse MK-207.1 (konsolide ya da Pro — kötü tasarıma sapma; ≤12 MK-129.3).
-- **Sıra 9:** Spool detay çatalı (IbSpoolDetay'a "Denetim" sekmesi + MSpoolDetay emekli) — §6.
-  **ÖNKOŞUL:** `IbSpoolDetay.jsx` `mobile/src/screens/`'da YOK (grep "No such file"). App.jsx `/spool/:id` →
-  `MSpoolDetay`. İlk iş: dosyanın gerçek yerini bul (is-baslat alt-klasörü? farklı isim?), sonra çatala başla.
-  ⏳ Açık alt-karar: Yönetici "Denetim" dışında işlem aksiyonu yapabilir mi (öneri: salt-izleyici başla).
+## 3. Temizlik
+- **MSpoolDetay emekli dosya → `_arsiv/`:** route'tan koptu (App.jsx artık IbSpoolDetay host).
+  `mobile/src/screens/MSpoolDetay.jsx` `_arsiv/`'e taşı (kontrol.js _arsiv/ tarar değil). Import
+  artığı kalmadığını teyit et (grep MSpoolDetay).
 
-## 4. Açık kararlar (MOBIL-STRATEJI §7 — bekleyen)
-- §7-3 Müşteri: `customers` RLS kapsamı + kullanıcı bağı (DB'de yok, kurulmalı) — Sıra 7 önkoşulu.
-- §3 Bottom nav QR butonu etiketi ("spool bul" mu?).
-- §2 İlk aktif uygulama (öneri: Birim Çevirici — AI maliyeti yok).
-- §6 Yönetici "Denetim" dışında işlem aksiyonu yapabilir mi?
+## 4. Devreden (önceki oturumlardan)
+- **Sıra 7:** MMusteri gerçek ekran — ÖNKOŞUL customers↔kullanıcı DB bağı (208 teşhisi: bağ YOK).
+- **Sıra 8 (EN BÜYÜK):** Kayıt/davet akışı. §7 kararları kilitli (Spool B akışı; uygulama signUp).
+- **Topbar mark animasyonu iOS Safari fix (208'den):** dokunulmadı.
+- **Üyelik paketi abonelik bağı (209'dan):** MProfil statik "Kurumsal".
+- **Avatar canlı teyit (209'dan):** upload + JWT tenant_id claim deploy testinde doğrulanacak.
 
-## Disiplin
-Native React (MK-206.1). R-10 mockup-first · R-08 i18n (root `lang/{tr,en,ar}` üçü birden) · R-09 useTema().
-`ad_soyad` · tenant ayrı sorgu (firma kolonu DOĞRUDAN var, JOIN yok) · `kullanici_bloklar` INSERT'te tenant_id ·
-JWT anon key · "M" ön eki · buton min 72px. ≤12 api (MK-129.3) — kayıt endpoint'i gerekirse MK-207.1.
-DATA→UI→kod (MK-158.1) · önce mevcut kalıbı oku (MK-126.8) · MK-85.3 (kolon adı information_schema ile teyit).
-Kod commit [skip ci] YOK · canlı test = PUSH.
+## Disiplin (özet)
+Native React. R-10 mockup-first · R-08 i18n (root lang/{tr,en,ar} üçü, satır-insert) · DATA→UI→kod
+(MK-158.1) · önce mevcut kalıbı oku (MK-126.8) · kolon adı information_schema/canlı kod ile teyit (MK-85.3).
+**Hafıza #10 (210 dersi):** yeni panel = mevcut/emekli komponenti oku-taşı (s.gp* + lib/format helper'lar
++ nNRenkler/formatTarih/formatSure), inline/eşik icat etme; rol farkı = "aynı ekran + sekme", ayrım
+yalnız yetkide (footer/heat), kozmetik (rozet/bant) ayırma; yetki bloklar'dan gelir, mod'dan değil.
+≤12 api (MK-129.3). Kod commit [skip ci] YOK · canlı test = PUSH. **Push öncesi `pull --rebase`**
+(bot ci-son-rapor.json fast-forward'u reddeder; rebase çakışmasız, farklı dosya).
 **Patch akışı:** Python anchor patch + .bak + ABORT-on-mismatch, esbuild (JSX) + JSON validate (lang),
-container'da test → kanıtlanmış script Cihat'a. Büyük dosya (>45KB / >100 satır) → arespipe_kopyala + MD5.
-Lang patch'leri metin-bazlı satır-insert (json.dump DEĞİL — format korunur).
-**Git:** `gpc` "nothing to commit"te zinciri kesiyor → ayrı `git commit` + tek `gp`.
+container'da test → kanıtlanmış script Cihat'a. Büyük blok değişimi → base64-gömülü tek patch.
+grep -c 0 dönünce && kırılır → kontrolleri ; ile ayır. `gpc` yerine ayrı commit + tek push.
