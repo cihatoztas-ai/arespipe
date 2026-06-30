@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-06-30T07:17:05.359Z",
-  "commit_sha": "bde557ed9a0b21b6dc4f579a7f23b57445ec070e",
+  "tarih": "2026-06-30T08:40:37.244Z",
+  "commit_sha": "79d6db3a32c16e2b1a62b4ecb4b7eec60f9647a9",
   "commit_ref": "main",
-  "workflow_run": 1206,
+  "workflow_run": 1207,
   "ozet": {
     "hata": 0,
-    "uyari": 113,
+    "uyari": 114,
     "taranan_dosya": 148,
-    "sorunlu_dosya": 7,
+    "sorunlu_dosya": 8,
     "durum": "sari"
   },
   "kurallar": {
@@ -208,6 +208,20 @@
           "sayi": 1,
           "satirlar": [
             910
+          ]
+        }
+      ]
+    },
+    "HISTORY_BACK": {
+      "tip": "uyari",
+      "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan.",
+      "sayi": 1,
+      "dosyalar": [
+        {
+          "dosya": "mobile/src/App.jsx",
+          "sayi": 1,
+          "satirlar": [
+            180
           ]
         }
       ]
@@ -816,6 +830,19 @@
           "tip": "uyari",
           "satir": 359,
           "mesaj": "tv('kt_bos') kullanılıyor ama lang/tr.json'da yok"
+        }
+      ]
+    },
+    {
+      "dosya": "mobile/src/App.jsx",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "HISTORY_BACK",
+          "tip": "uyari",
+          "satir": 180,
+          "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan."
         }
       ]
     },
