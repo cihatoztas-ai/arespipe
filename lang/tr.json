@@ -1998,5 +1998,6 @@
   "m_ib_sd_belge": "Belge",
   "m_ib_sd_belge_yok": "Belge eklenmemiş",
   "m_ib_sd_islem_kayitlari": "İşlem Kayıtları",
-  "m_ib_sd_islem_yok": "İşlem kaydı yok"
+  "m_ib_sd_islem_yok": "İşlem kaydı yok",
+  "m_ib_sd_yonetici": "Yönetici"
 }

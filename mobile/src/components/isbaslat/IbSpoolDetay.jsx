@@ -1091,12 +1091,11 @@ export default function IbSpoolDetay({
       {/* Aktif rol + Spool ID + Peek tab satırı */}
       <div style={s.idSatir}>
         {denetimMod ? (
-          <span style={s.denetimPill}>{tv('m_ib_sd_denetim', 'Denetim')}</span>
+          <span style={s.denetimPill}>{tv('m_ib_sd_yonetici', 'Yönetici')}</span>
         ) : (
           <span style={s.rolPill}>{aktifRol?.ad || '—'}</span>
         )}
         <span style={s.spoolPill}>{normalizeSpoolId(yerelSpool.spool_id)}</span>
-        {!denetimMod && (
         <button
           type="button"
           style={yumusKartlar.length > 0 ? s.peekAktif : s.peekPasif}
@@ -1113,7 +1112,6 @@ export default function IbSpoolDetay({
             <span style={s.peekSayi}>{yumusKartlar.length}</span>
           )}
         </button>
-        )}
       </div>
 
       {/* Sekmeler */}
