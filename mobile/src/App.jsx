@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { I18nProvider } from './lib/i18n'
+import { islemBloklariniGetir } from './lib/isbaslat'  // 211/Sira9b: B koprusu yetki gate
 
 import MGiris from './screens/MGiris'
 import MAnasayfa from './screens/MAnasayfa'
@@ -123,6 +124,7 @@ function MSpoolDenetimSayfasi() {
   const [spool, setSpool] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [bulunamadi, setBulunamadi] = useState(false)
+  const [bloklar, setBloklar] = useState([])  // 211/Sira9b: yetki gate
 
   useEffect(() => {
     let iptal = false
@@ -138,6 +140,11 @@ function MSpoolDenetimSayfasi() {
         if (iptal) return
         if (!kData) { setYukleniyor(false); return }
         setKullanici(kData)
+
+        // 211/Sira9b: B koprusu gate verisi — yetkili formen footer'da islem aksiyonu gorur
+        const blk = await islemBloklariniGetir(kData.id, kData.tenant_id)
+        if (iptal) return
+        setBloklar(Array.isArray(blk) ? blk : [])
 
         const { data: spData, error: spErr } = await supabase
           .from('spooller')
@@ -189,6 +196,7 @@ function MSpoolDenetimSayfasi() {
       spool={spool}
       kullanici={kullanici}
       aktifRol={null}
+      bloklar={bloklar}
       mod="denetim"
     />
   )

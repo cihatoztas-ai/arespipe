@@ -1164,13 +1164,25 @@ export default function IbSpoolDetay({
           satırı yok (mesaj drawer'da). */}
       <div style={s.footWrap}>
         {denetimMod ? (
-          <button
-            type="button"
-            style={s.footBtnIkincil}
-            onClick={() => navigate(devre?.id ? `/devre/${devre.id}` : '/devreler')}
-          >
-            {tv('m_ib_sd_devreye_don', 'Devreye Dön')}
-          </button>
+          /* 211/Sira9b: B koprusu — yetkili formen icin ek islem aksiyonu */
+          <>
+            <button
+              type="button"
+              style={s.footBtnIkincil}
+              onClick={() => navigate(devre?.id ? `/devre/${devre.id}` : '/devreler')}
+            >
+              {tv('m_ib_sd_devreye_don', 'Devreye Dön')}
+            </button>
+            {yetkili && (
+              <button
+                type="button"
+                style={s.footBtnYesilGhost}
+                onClick={() => navigate('/islemler')}
+              >
+                {tv('m_ib_sd_islem_yap', 'Bu Spool\'da İşlem Yap')}
+              </button>
+            )}
+          </>
         ) : (
         <>
         {basamakTamamlanmis && !isDevamEdiyor && (
