@@ -83,7 +83,7 @@
 // - 6 yeni i18n: m_ib_sd_malzeme_{birim, sert_kisa, heat_label,
 //   heat_placeholder, bos, kayit_hatasi} × 3 dil = 18 satır.
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
@@ -128,6 +128,7 @@ export default function IbSpoolDetay({
   const [uyariDrawer, setUyariDrawer] = useState(null)        // akış-kesici
   // 3f.1: 'peek' (mevcut tap-to-expand) | 'kapat' (yeni kapat onay) | null (kapalı)
   const [yumusDrawerMod, setYumusDrawerMod] = useState(null)
+  const otoAcildiRef = useRef(null)  // 211 fix: yumusak drawer spool basina tek kez oto-acilir
   const yumusDrawerAcik = yumusDrawerMod !== null  // backward-compat alias
 
   // 71 (3f.3): Sonraki basamak secim drawer'i
@@ -590,15 +591,23 @@ export default function IbSpoolDetay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yerelSpool?.id])
 
-  // ─── Yumuşak drawer otomatik aç ───
-  // Akış-kesici varsa atla. İlk yüklemede yumuşak kart varsa drawer aç.
+  // ─── Yumuşak drawer otomatik aç (211 fix: async kart timing) ───
+  // yumusKartlar useMemo'su malzemeler/notlar/testlerSayi async dolunca 0→N
+  // cikar; eski deps=[id] mount'ta bos goruyor, bir daha kosmuyordu (badge
+  // "1" ama drawer kapali). Simdi yumusKartlar.length izlenir; ref ile spool
+  // basina TEK kez oto-acilir (kullanici kapatinca tekrar acilmaz, spool
+  // degisince reset). Hem operator hem denetim modunu kapsar.
+  useEffect(() => {
+    if (otoAcildiRef.current !== yerelSpool?.id) otoAcildiRef.current = null
+  }, [yerelSpool?.id])
   useEffect(() => {
     if (uyariDrawer) return  // akış-kesici var → yumuşak atla
+    if (otoAcildiRef.current === yerelSpool?.id) return  // bu spoolda zaten oto-acildi
     if (yumusKartlar.length > 0) {
+      otoAcildiRef.current = yerelSpool?.id
       setYumusDrawerAcik(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [yerelSpool?.id])
+  }, [yerelSpool?.id, yumusKartlar.length, uyariDrawer])
 
   // ─── Drawer handler'ları ───
   // 70. oturum (3d): Akış-kesici kapatılınca yumuşak uyarı varsa drawer
