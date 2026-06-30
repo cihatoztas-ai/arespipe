@@ -1,41 +1,52 @@
-# AresPipe — Son Durum (Oturum 208 kapanışı)
+# AresPipe — Son Durum (Oturum 209 kapanışı)
 
-## Bu oturum: 4 DALLI ROUTER + MARKA ENTEGRASYONU
-Sıra 3 (MAnasayfa 4 dallı router) canlıya çıktı. Ardından logo/marka mobile'a entegre edildi
-(PWA ikonları, manifest, giriş + topbar logoları). İş modeli MK-208.1 olarak kilitlendi.
+## Bu oturum: MOBİL §8 SIRA 4→6 (Uygulamalar erişimi + dashboard + MProfil)
+MOBIL-STRATEJI §8 kod planında Sıra 4, 5a, 5b ve 6 canlıya alındı. Ayrıca 5b'nin açık debt'i
+(`son_giris` damgası) aynı oturumda kapatıldı. 5 kod push, hepsi CI yeşil.
 
-## Yapılanlar (canlı, 7 push)
-- **Router (972d47c):** MAnasayfa 4 dallı — yoneticiMi → dashboard, musteriMi → MMusteri placeholder,
-  gruplar.length>0 → MIslemler, else → MUygulamalar anaSayfaModu. `yetki.js`'e `musteriMi` (rol-temelli,
-  yoneticiMi kalıbı). DATA teşhisi: customers↔kullanicilar bağı DB'de YOK → musteriMi rol-temelli,
-  bugün hiç tetiklenmez (canlıda rol='musteri' yok), §7-3'e park. `m_musteri_yakinda` dil anahtarı (3 dil).
-- **PWA ikon+manifest (9a62f40):** `mobile/public`'e icon-180/192/512/1024 + favicon. manifest.webmanifest
-  oluşturuldu (standalone, AresPipe). index.html head: apple-touch-icon, manifest, theme-color, title=AresPipe, lang=tr.
-- **Ekran içi logo (a60410d):** topbar "AP" text → mark SVG (4 ekran). MGiris büyük "AP" → yatay logo.
-- **Giriş animasyonu (23da069):** MGiris inline SVG (tema-değişkenli var(--tx/--ac/--bg)) + tarama
-  animasyonu (web kalıbı: useRef + beginElement, açılışta bir kez). ÇALIŞIYOR.
-- **Topbar mark animasyonu (2263a7e → 1a129b8):** ortak MMarkLogo component (MK-109.1), mark-anim-bk.svg.
-  ⚠️ iOS Safari'de tarama çizgisi GÖRÜNMÜYOR/takılıyor — SMIL beginElement + CSS keyframes denendi, ikisi de
-  iOS'ta tutmadı. KOD DURUYOR (mark statik görünüyor, animasyon oynamıyor) — 209 debt.
+## Yapılanlar (canlı, 5 push)
+- **Sıra 4 (11c6eba):** `MIslemler.jsx` — işlem butonları + QR'ın altına **UYGULAMALAR** bölümü + 📚 Uygulamalar
+  butonu (`/uygulamalar`). Eski `gruplar.length===0` **🔒 boş durum dalı kaldırıldı** (bloğu olmayan zaten
+  router'da MUygulamalar'a gidiyor). Yeni dil anahtarı YOK (`m_uyg_basligi`/`m_uyg_basligi_alt` reuse).
+- **Sıra 5a (9c21193):** `MAnasayfaYonetici.jsx` — Son Aktiviteler'in altına yönetici için ikincil
+  **Uygulamalar linki** (📚 `/uygulamalar`). Yeni dil anahtarı YOK.
+- **Sıra 5b (fba80b6):** `MAnasayfaYonetici.jsx` — **atıl kullanıcı bandı** (MK-207.2). "durdurulmuş spool"
+  bandının ikizi: `son_giris < now()-30g` (NULL hariç), `aktif=true`. `istatistik.atil` + `Promise.all`
+  kalemi + sarı bant (`> 0` iken görünür). Yeni anahtar `m_uyari_atil_kullanici` (tr/en/ar). Yeni endpoint YOK.
+- **Sıra 6 (e01cb46):** `MProfil.jsx` (294 satır, YENİ) + `App.jsx` (`import` + `/profil` route + `MProfilSayfasi`
+  wrapper, select'e `firma, foto_url`) + **20 i18n anahtarı × 3 dil**. Avatar (foto_url, client upload),
+  bilgiler salt-okunur (ad/email/rol/firma/paket), Şifre Değiştir (resetPasswordForEmail), Hesabı Sil
+  (soft-delete `aktif=false` + signOut, inline onay). MDrawer "Profili Düzenle" zaten `/profil`'e bağlıydı
+  (route eksikti, şimdi tamam).
+- **son_giris damgası (750f09f):** `MGiris.jsx` — başarılı `signInWithPassword` sonrası
+  `kullanicilar.son_giris = now()` (fire-and-forget, girişi yavaşlatmaz). **5b debt kapandı** —
+  artık atıl sayacı gerçek çalışır.
 
-## Kesinleşen karar
-- **MK-208.1** — Üç erişim katmanı (ücretli kurumsal SaaS teklif-usulü off-app / ücretsiz müşteri izleme /
-  halka açık uygulama mobil-kayıt). Platform-bağımsız kimlik. Market engelleri = Safari PWA dağıtımında PARK.
-  KARARLAR.md + (MOBIL-STRATEJI'ye işlenecek — 209).
+## Önemli kararlar / yakalamalar
+- **Avatar upload client-side ÇALIŞIR (yeni endpoint YOK):** `arespipe-dosyalar` private ama INSERT politikası
+  ("Authenticated upload" + tenant_yazma) izinli; path **`{tenant_id}/avatar/{id}.jpg`** SELECT (tenant)
+  politikasıyla uyumlu. `supabase.storage.upload()` yeter; görüntüleme `dosyaUrlAl()` (mevcut signed-url
+  endpoint'i). 12-fonksiyon tavanı korundu.
+- **`kullanicilar.firma` text kolonu DOĞRUDAN var** → firma adı için `tenants` JOIN gerekmez (DATA teşhisi).
+- **Üyelik paketi statik:** "Kurumsal" + ekranda uyarı notu. Gerçek aboneliğe bağlı DEĞİL → debt (§11).
+- **Hesabı Sil = soft-delete + logout** (market şartı, MK-208.1 uyumlu); veri korunur, hard-delete yok.
+- **`gpc` davranışı:** commit'i kendi yapıp "nothing to commit"te zinciri kesiyor → ayrı `git commit` + tek `gp`.
 
-## Açık debt (209)
-- **Topbar mark animasyonu:** web `beginElement()` ile tetikliyor; mobilde iOS Safari uyumlu hale getir.
-  Web giris.html satır 230 (inline SVG) + 383 (tara() fonksiyonu) referans. Kod hazır (MMarkLogo + mark-anim-bk.svg),
-  iOS tetikleme çözülmedi. Statiğe DÖNÜLMEDİ — web statik kullanmıyor, animasyon hedefi korunuyor.
-- MK-208.1 MOBIL-STRATEJI'ye işlenmedi (sadece KARARLAR'da).
+## Açık debt (210)
+- **Üyelik paketi abonelik bağı (YENİ):** MProfil statik "Kurumsal" gösteriyor; abonelik altyapısı gelince bağla.
+- **Sıra 9 önkoşulu:** `IbSpoolDetay.jsx` `mobile/src/screens/`'da YOK (grep "No such file"). App.jsx
+  `/spool/:id` → `MSpoolDetay`. §6 çatalı bu dosya bulunmadan başlamaz — ilk iş yerini bulmak.
+- **Avatar canlı teyit:** kod doğru + esbuild geçti; deploy testinde upload + görüntüleme + JWT `tenant_id`
+  claim doğrulanacak (dosyaUrlAl zaten canlı çalıştığından claim büyük olasılıkla mevcut).
+- **Topbar mark animasyonu iOS (208'den devreden):** 209'da dokunulmadı, hâlâ açık (§11).
 
 ## CI / push
-- HEAD: 1a129b8 (+ varsa bot ci commit'leri). api/*.js = 12 (tavan korundu, endpoint eklenmedi).
+- HEAD: bde557e (+ varsa bot ci commit'leri). api/*.js = 12 (tavan korundu, endpoint EKLENMEDİ).
 - Kod commit'leri [skip ci] YOK; bu kapanış doc commit'i [skip ci] VAR.
-- Canlı: router + ikonlar + giriş logosu/animasyonu ✅. Topbar mark görünüyor, animasyon iOS'ta ⚠️.
+- Push zinciri: 11c6eba → 9c21193 → fba80b6 → e01cb46 (=fc84563 push'ta) → 750f09f (=bde557e push'ta).
 
-## Sonraki oturum (209) — detay CLAUDE-SONRAKI-OTURUM.md
-- Topbar mark animasyonu iOS fix (web kalıbı) VEYA kabul edilebilir bırak.
-- Sıra 4: MIslemler "Uygulamalar" butonu + 🔒 kalkar.
-- Sıra 7: MMusteri gerçek ekran (mockup-first, customers RLS).
+## Sonraki oturum (210) — detay CLAUDE-SONRAKI-OTURUM.md
+- Sıra 7: MMusteri gerçek ekran — ÖNCE `customers`↔kullanıcı DB bağı kurulmalı (208 teşhisi: bağ YOK).
 - Sıra 8: Kayıt/davet akışı (EN BÜYÜK) — §7 kararları kilitli.
+- Sıra 9: Spool detay çatalı — önce `IbSpoolDetay.jsx` yerini bul.
+- Devreden: topbar animasyon iOS fix, üyelik paketi abonelik bağı.
