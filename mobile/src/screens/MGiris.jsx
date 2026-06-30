@@ -36,7 +36,7 @@ export default function Giris() {
     if (!sifre) { setHata(tv('m_gr_hata_sifre_bos')); return }
 
     setYukleniyor(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password: sifre })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: sifre })
     setYukleniyor(false)
 
     if (error) {
@@ -44,6 +44,12 @@ export default function Giris() {
       else if (error.message.includes('Email not confirmed')) setHata(tv('m_gr_hata_dogrulama'))
       else if (error.message.includes('Too many requests'))   setHata(tv('m_gr_hata_cok_deneme'))
       else setHata(error.message)
+    } else if (data?.user?.id) {
+      // son_giris damgala (atil kullanici sayaci icin) — fire-and-forget, girisi yavaslatmaz
+      supabase.from('kullanicilar')
+        .update({ son_giris: new Date().toISOString() })
+        .eq('id', data.user.id)
+        .then(({ error: e }) => { if (e) console.warn('[MGiris] son_giris:', e.message) })
     }
   }
 
