@@ -489,7 +489,7 @@ export default function MDevreler() {
               return (
                 <div
                   key={d.id}
-                  style={{ ...s.devreKart, animationDelay: (i * 45 + 80) + 'ms' }}
+                  style={s.devreKart}
                   onClick={() => devreAc(d.id)}
                   role="button"
                   tabIndex={0}
@@ -920,8 +920,6 @@ const s = {
     display: 'flex', alignItems: 'stretch',
     cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
-    opacity: 0,
-    animation: 'mDvrFadeIn 260ms ease-out forwards',
   },
   dkSol: { width: 4, flexShrink: 0 },
   dkSag: { width: 4, flexShrink: 0 },
