@@ -1,50 +1,54 @@
-# CLAUDE — Oturum 210 Log
+# CLAUDE — Oturum 211 Log
 
 ## Özet
-MOBİL §8 Sıra 9 ilk yarısı canlıya alındı: yönetici Denetim görünümü. `/spool/:id` →
-IbSpoolDetay mod="denetim" (MSpoolDetay emekli). 4 push, CI yeşil, api=12 sabit.
-Oturum 3 düzeltme turu içerdi (tasarım + n/N kuralı + sadeleştirme) — ders: hazır olanı
-oku/taşı, sıfırdan uydurma (hafıza #10).
+MOBİL §8 Sıra 9b tamamlandı: B köprüsü + auto-open timing fix + MSpoolDetay _arsiv temizliği. 3 push,
+hepsi CI'a açık, api=12 sabit. **Ana karar:** seed-spool planı İPTAL → düz /islemler köprüsü (Cihat).
+Ders: emekli plana bağlı kalma — saha gerçeği (QR bağı) daha basit çözüm sundu, kabul edildi.
 
 ## Akış
-1. Açılış ritüeli — git temiz, HEAD 0958d15 (209 kapanış), api=12. Handoff üçlüsü okundu.
-2. **Karar: A (DATA investigation).** Sıra 9 = spool detay çatallanması. Cihat netleştirdi:
-   taban = İşlem Başlat'tan açılan IbSpoolDetay (üzerine çok çalışılan); yöneticiye özel alanlar
-   AYRI sekme; yönetici ekranından açılan MSpoolDetay emekli.
-3. **DATA→UI→kod:** IbSpoolDetay (2370 satır, prop'lu component, MIsBaslat'tan çağrılıyor, zaten
-   Genel/Malzeme sekmeleri var) + MSpoolDetay (yönetici sorguları: KK/sevk/belge/log/nested kalem)
-   okundu. Kritik tıkanık: akış-kesici useEffect bloklar=[] iken 'yetkisiz' drawer açıyor → mod gerekli.
-4. **Mockup (R-10) + footer kararı B (Devreye Dön).** Adım 1+2 (IbSpoolDetay mod prop + denetim
-   dalları + DenetimPanel), Adım 3 (App.jsx wrapper + route), Adım 4 (lang 18×3). Push 79d6db3.
-   Build doğru dizinden (mobile/) koşuldu, gizli pencerede Denetim sekmesi canlı doğrulandı.
-5. **Çok-rollü kullanıcı sorusu (Cihat):** Formen hem yönetici hem imalatçı olabilir (yaygın, teorik
-   değil). `aktifBasamakYetkili`+`kullanici_bloklar` okundu → yetki rol'den bağımsız. A vs B tartışıldı,
-   **B (köprü) kilitlendi** (bak≠çalış ayrımı, operatör akışına sıfır risk). Kod sonraki oturuma.
-6. **Düzeltme 1 — DenetimPanel tasarımı:** İlk hali okunmuyordu (kutulu inline gri). GenelPanel
-   satır diline + resmi nNRenkler/formatTarih/formatSure'ye bağlandı. Tek birleşik patch (base64
-   gömülü blok), repo durumuna karşı test. Push ffbf856.
-7. **n/N renk kuralı (Cihat sordu):** Uygulanmamıştı — resmi nNRenkler (0/N kırmızı, N/N yeşil,
-   kısmi sarı, boş tire) lib/format'ta vardı, kendi mantığımı koymuştum. Düzeltmeye dahil edildi.
-8. **Sadeleştirme (Cihat ilkesi):** "Yönetici operatörle aynı ekran + ek sekme; rozet/bant ayırma."
-   Pill 'Yönetici', peek tab geri açıldı, footer+heat zaten yetki bazlı. Push 1f2f641.
+1. Açılış ritüeli — git temiz, HEAD e46b1e8 (210 kapanış doc), api=12. Handoff üçlüsü + MOBIL-STRATEJI okundu.
+2. **Karar: B köprüsü.** Mockup-first (R-10): koşullu Denetim footer 2 durum + akış diyagramı çıkarıldı.
+   3 tasarım kararı soruldu (buton hiyerarşisi / aksiyon sonrası / çoklu blok rol belirsizliği).
+3. **Cihat sadeleştirdi:** "İşlem yap → İşlemler sayfasına gitsin; operatör orada işlem seçer, QR okutur."
+   → seed-spool planı İPTAL. Karar 3 (rol türetme) düştü, MIsBaslat'a dokunulmayacak. Gate = (i) spool'un
+   aktif basamağına uygun blok.
+4. **DATA→UI→kod (MK-158.1):** grep'lerle canlı kod okundu. IbSpoolDetay `mobile/src/components/isbaslat/`
+   altındaymış (screens/ değil) → Sıra 9 dosya-konum önkoşulu kapandı. `bloklar` zaten IbSpoolDetay prop'u;
+   `yetkili` satır 1034'te hesaplı; footer denetim dalı tek "Devreye Dön". Wrapper (App.jsx) `bloklar` HİÇ
+   geçmiyordu → gate hep false. Anchor'lar birebir alındı.
+5. **B köprüsü patch (a531447):** App.jsx 4 patch (import + bloklar state + fetch + prop) + IbSpoolDetay
+   footer 2 buton + lang ×3. Container'da esbuild + JSON + idempotency test. İlk idempotency guard bug'lı
+   (yeni ⊃ anchor → çift ekleme) → marker-tabanlı guard'a çevrildi, düzeldi. Canlı doğrulandı.
+6. **Auto-open regresyon raporu (Cihat, görsel):** Peek drawer açılışta kapalı geliyor. İki-adım teşhis:
+   önce `if (denetimMod) return` sanıldı → kod okununca YANLIŞ olduğu görüldü (o return doğru). Gerçek
+   neden: auto-open effect deps=`[id]`, `yumusKartlar` async useMemo sonradan dolunca effect koşmuyor.
+7. **Auto-open fix (674b246):** otoAcildiRef (useRef) + deps=`[id, yumusKartlar.length, uyariDrawer]` +
+   reset effect. Container'da esbuild + idempotency test. Canlı: "test tamam sorun yok".
+8. **Temizlik (8b930a3):** MSpoolDetay → _arsiv/ (`git mv`). kontrol.js:55 _arsiv tarama dışı teyitli;
+   canlı kodda import referansı yok (grep). Build yeşil.
+9. **Kapanış:** MOBIL-STRATEJI §6/§7/§8 seed-iptal + CANLI işlendi; 4 handoff dosyası hazırlandı.
 
 ## Kararlar / öğrenmeler
-- Yetki ≠ rol: aktifBasamakYetkili(aktif_basamak, bloklar) saf, kullanici_bloklar'a bakar. B köprüsünün temeli.
-- Üst bant "işlemde" sinyali (renk+pulse) is_durumu veri alanına bağlı → denetim modunda da görünür.
-- Operatör yolu hiç değişmedi: tüm eklemeler denetimMod dalında veya yetki bazlı (footer/heat).
-- Hafıza #10: mevcut/emekli komponenti oku-taşı; "aynı ekran + sekme" varsayılan; ayrım yalnız yetkide.
-- grep -c 0 dönünce && zincirini kırar → kontrolleri ; ile ayır.
-- push öncesi pull --rebase (bot ci-son-rapor.json commit'i fast-forward'u reddediyor; rebase çakışmasız, farklı dosya).
+- **Seed-spool İPTAL → /islemler köprüsü + QR bağı.** Emekli plana bağlı kalmadan basit/sağlam çözüm.
+  Buton spool taşımıyor; QR saha gerçeği (fiziksel spool operatörün elinde). MIsBaslat sıfır-dokunuş.
+- **Auto-open bug: async useMemo timing.** deps'e türetilmiş .length eklenmeli; ilk-yükte boş olan
+  memo'ya bağlı auto-open için `[id]` yetmez. Ref ile "spool başına tek kez" idempotent açılış.
+- **İki-adım teşhis disiplini:** ilk hipotez (`denetimMod return`) kod okunca çürüdü; MK-158.1 körlemesine
+  düzeltmeyi engelledi. Yanlış yeri "düzeltseydik" gerçek bug kalırdı.
+- **Idempotency guard tuzağı:** `yeni` string'i `anchor`'ı içeriyorsa "anchor not in icerik" guard'ı
+  çalışmaz → çift ekleme. Çözüm: yeni içerikten benzersiz MARKER ile kontrol.
 
 ## Teslim edilenler
-- 4 push: 79d6db3 (Sıra 9: IbSpoolDetay mod + App wrapper + lang), ffbf856 (DenetimPanel redesign
-  + resmi nNRenkler), 1f2f641 (Yönetici pill + peek tab + lang m_ib_sd_yonetici).
-- IbSpoolDetay.jsx: mod prop, DenetimPanel (gpSatir dili, nNRenkler), Yönetici pill, peek tab açık.
-- App.jsx: MSpoolDenetimSayfasi wrapper (nested kalem select), /spool/:id route, MSpoolDetay import koptu.
-- lang tr/en/ar: +18 (Denetim blokları) +1 (m_ib_sd_yonetici) = 19/dil.
+- 3 kod push: a531447 (B köprüsü: footer /islemler + wrapper bloklar + lang), 674b246 (auto-open timing
+  fix: useRef + deps), 8b930a3 (MSpoolDetay → _arsiv/ git mv).
+- IbSpoolDetay.jsx: denetim footer koşullu 2 buton (yetkili→/islemler); useRef auto-open (id başına 1 kez).
+- App.jsx: MSpoolDenetimSayfasi wrapper bloklar fetch + prop; islemBloklariniGetir import.
+- lang tr/en/ar: +1 (m_ib_sd_islem_yap).
+- MSpoolDetay.jsx → screens/_arsiv/.
 
 ## Disiplin uygulananlar
-- MK-158.1 (DATA→UI→kod), MK-126.8 (IbSpoolDetay+MSpoolDetay+MIsBaslat+isbaslat.js+format.js okundu).
-- MK-85.3 (kolon adları MSpoolDetay canlı sorgularından teyitli). MK-129.3 (api=12, endpoint yok).
-- R-10 (Denetim sekmesi + footer mockup'ları). Python anchor patch + .bak + esbuild + JSON validate.
-- Kod commit [skip ci] YOK; kapanış doc [skip ci] VAR. Lang satır-insert (json.dump değil).
+- R-10 (footer mockup + akış diyagramı — visualizer). MK-158.1 (DATA→UI→kod, iki-adım teşhis).
+- MK-126.8 (IbSpoolDetay + App.jsx + isbaslat.js grep'le okundu, anchor birebir). MK-129.3 (api=12).
+- Hafıza #10 (mevcut stil footBtnYesilGhost + resmi helper'lar; yeni stil icat yok).
+- Python anchor patch + .bak + ABORT-on-mismatch + MARKER-idempotency; esbuild JSX + JSON validate (container).
+- Kod commit [skip ci] YOK; kapanış doc [skip ci] VAR. Push öncesi pull --rebase (bot ci çakışmasız).

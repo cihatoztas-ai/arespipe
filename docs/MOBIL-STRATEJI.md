@@ -194,12 +194,30 @@ Hero: ad / Uygulamalar     Hero: ad / rol             Hero: ad / Yönetici    He
 (0/N kırmızı, N/N yeşil, kısmi sarı, boş tire). Kozmetik fark (rozet/bant ayrı) YOK — yetki `bloklar`'dan
 gelir (`aktifBasamakYetkili`), mod'dan değil. (DenetimPanel `s.gp*` satır dili + resmi formatTarih/formatSure.)
 
-**⏳ İKİNCİ YARI AÇIK — B köprüsü (211, kilitli, kod yok):** "Yönetici Denetim dışında işlem aksiyonu
-yapabilir mi" sorusu **B ile çözüldü** = yetkili formen (yönetici + uygun blok) için Denetim footer'ında
-"Bu Spool'da İşlem Yap" → spool seed'li operatör akışına gir (QR/rolSec atla). Denetim varsayılan
-salt-izleyici kalır (bak ≠ çalış). ÖNKOŞUL: wrapper'a `bloklar` geçişi (`islemBloklariniGetir`) +
-MIsBaslat seed-spool girişi (router state → direkt spoolDetay ekranı). Aksiyon rolü spool'un
-`aktif_basamak`'ından türetilir.
+**✅ İKİNCİ YARI CANLI (211) — B köprüsü:** "Yönetici Denetim dışında işlem aksiyonu yapabilir mi"
+sorusu **B ile çözüldü** = yetkili formen (yönetici + uygun blok) için Denetim footer'ında
+"Bu Spool'da İşlem Yap" butonu. Gate: `aktifBasamakYetkili(spool.aktif_basamak, bloklar)` (spool'un
+mevcut basamağına uygun blok varsa görünür; yoksa sadece "Devreye Dön"). Denetim varsayılan
+salt-izleyici kalır (bak ≠ çalış).
+
+> **⚠️ SEED-SPOOL PLANI İPTAL (211, Cihat kararı):** Buton **spool seed'li akışa girmiyor**. Basınca
+> düz `/islemler`'e gider; operatör orada işlemi kendi seçer → **QR okutur** (spool bağı QR'da kurulur —
+> saha gerçeği: operatörün elinde fiziksel spool + QR var). Sonuç: `MIsBaslat`'a DOKUNULMADI (seed girişi
+> yok, QR/rolSec atlanmadı → olgun operatör akışı sıfır-dokunuş), rol türetme mantığı gereksiz düştü.
+> Uygulama: `App.jsx MSpoolDenetimSayfasi` wrapper'a `islemBloklariniGetir` ile `bloklar` çekilip
+> IbSpoolDetay'a prop geçildi (gate önkoşulu); footer'a `yetkili && <button → navigate('/islemler')>`;
+> stil `s.footBtnYesilGhost` (yeşil = "işe başla", Hafıza #10 mevcut stil). lang `m_ib_sd_islem_yap` ×3.
+> Commit `a531447`.
+
+**✅ AUTO-OPEN TIMING FIX (211, ayrı bug):** Yumuşak uyarı peek drawer'ı açılışta varsayılan açık gelmiyordu
+(badge "1" ama kapalı). Kök neden: `yumusKartlar` (useMemo) async veriden (malzemeler/notlar/testlerSayi)
+0→N sonradan dolar; eski auto-open effect deps=`[yerelSpool?.id]` mount'ta boş görüyor, bir daha koşmuyordu.
+Fix: `otoAcildiRef` (useRef) ile spool başına TEK kez aç; effect deps=`[id, yumusKartlar.length, uyariDrawer]`;
+`[id]`'de reset. Hem operatör hem denetimi kapsar. Commit `674b246`.
+
+**✅ TEMİZLİK (211):** Emekli `MSpoolDetay.jsx` → `mobile/src/screens/_arsiv/` (`git mv`, geçmiş korundu).
+`.github/kontrol.js:55` `_arsiv`'i zaten tarama dışı bırakıyor. Canlı kodda `import MSpoolDetay` referansı
+kalmadı (grep teyitli; kalan eşleşmeler yalnız yorum satırı). Commit `8b930a3`.
 
 ---
 
@@ -226,15 +244,16 @@ MIsBaslat seed-spool girişi (router state → direkt spoolDetay ekranı). Aksiy
    Dashboard içeriğinin geri kalanı (ek widget vb.) hâlâ açık.
 6. **§3** Bottom nav QR butonu etiketi ("spool bul" mu?).
 7. **§2** İlk aktif uygulama (öneri: Birim Çevirici — saf hesap, AI maliyeti yok).
-8. ✅ **§6 ÇÖZÜLDÜ (210→211): B köprüsü.** Yetkili formen için Denetim footer'ında "Bu Spool'da İşlem
-   Yap" → spool seed'li operatör akışı. İlk yarı (salt-izleyici Denetim görünümü) **210'da canlı**;
-   köprü kodu 211'e açık (wrapper'a `bloklar` + MIsBaslat seed-spool).
+8. ✅ **§6 TAMAMEN CANLI (210→211): B köprüsü.** Yetkili formen için Denetim footer'ında "Bu Spool'da
+   İşlem Yap" → düz `/islemler` (seed-spool İPTAL; operatör işlemi seçip QR okutur). İlk yarı (salt-izleyici
+   Denetim) 210'da; köprü + auto-open fix + MSpoolDetay `_arsiv/` **211'de canlı** (a531447/674b246/8b930a3).
 9. **§11 (208 yeni)** Topbar mark animasyonu iOS Safari fix — web kalıbı (beginElement) mobilde tutmadı.
 
 > ÇÖZÜLDÜ: Mimari = native React (§0) · Çatal = native toplamsal (§6) · Kayıt §7-1/2/4 (207) ·
 > Router + musteriMi (208) · İş modeli MK-208.1 (208, §11) ·
 > Sıra 4/5a/5b/6 + atıl sayacı + MProfil + son_giris damgası (209) ·
-> Sıra 9 ilk yarısı = yönetici Denetim görünümü ("aynı ekran + sekme", resmi nNRenkler) (210).
+> Sıra 9 ilk yarısı = yönetici Denetim görünümü ("aynı ekran + sekme", resmi nNRenkler) (210) ·
+> Sıra 9b = B köprüsü (footer → /islemler, seed İPTAL) + auto-open timing fix + MSpoolDetay _arsiv/ (211).
 
 ---
 
@@ -251,12 +270,11 @@ MIsBaslat seed-spool girişi (router state → direkt spoolDetay ekranı). Aksiy
 | 7 | `MMusteri.jsx` (yeni — placeholder yerine) | §7-3, mockup-first |
 | 8 | Kayıt/davet akışı (kod + DB) | §7-1 — en büyük iş |
 | 9 | ✅ **İLK YARI CANLI (210)** Spool detay çatalı: `/spool/:id` → IbSpoolDetay `mod="denetim"` + Denetim sekmesi (n/N resmi `nNRenkler`, KK&sevk, belge, log); yönetici operatörle aynı ekran + "Yönetici" pill; Malzeme heat salt-okunur; MSpoolDetay emekli (route koptu, dosya duruyor → `_arsiv/` 211). | §6 |
-| 9b | **AÇIK (211)** B köprüsü: yetkili formen için Denetim footer "Bu Spool'da İşlem Yap" → spool seed'li operatör akışı. Wrapper'a `bloklar` + MIsBaslat seed-spool girişi. | §6 — mockup-first |
+| 9b | ✅ **CANLI (211)** B köprüsü: Denetim footer `yetkili && "Bu Spool'da İşlem Yap"` → düz `/islemler` (**seed-spool İPTAL** — operatör işlem seçip QR okutur; MIsBaslat'a dokunulmadı). Wrapper'a `bloklar` prop'u. + auto-open timing fix + MSpoolDetay→`_arsiv/`. | §6 |
 | 10 | Kesim/Büküm/Markalama native React işlem ekranları (saha düzeni) | büyük, ayrı turlar |
 
-**Sıra 1–6 + 9 (ilk yarı) tamamlandı (207–210).** Sonraki: Sıra 9b (B köprüsü — yetkili formen işlem
-aksiyonu) + MSpoolDetay `_arsiv/` taşıma → Sıra 7 (MMusteri — önce `customers`↔kullanıcı DB bağı,
-208 teşhisi: bağ YOK) → Sıra 8 (kayıt akışı, en büyük).
+**Sıra 1–6 + 9 + 9b tamamlandı (207–211).** Sonraki: Sıra 7 (MMusteri — önce `customers`↔kullanıcı
+DB bağı, 208 teşhisi: bağ YOK) → Sıra 8 (kayıt akışı, en büyük).
 Devreden debt: topbar animasyon iOS fix (§11) + üyelik paketi abonelik bağı (§11) + avatar canlı teyit (209).
 
 ---
